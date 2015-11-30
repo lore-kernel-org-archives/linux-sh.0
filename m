@@ -1,70 +1,66 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Thu, 19 Nov 2015 15:56:42 +0000
-Subject: [PATCH v3 02/11] i2c: rcar: rework hw init
-Message-Id: <1447948611-2615-3-git-send-email-wsa@the-dreams.de>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 30 Nov 2015 13:49:38 +0000
+Subject: [PATCH v2 1/2] pinctrl: sh-pfc: r8a7795: Add pinmux data for single-function pins
+Message-Id: <1448891379-2457-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447948611-2615-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1447948611-2615-1-git-send-email-wsa@the-dreams.de>
+References: <1448891379-2457-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1448891379-2457-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Linus Walleij <linus.walleij@linaro.org>
+Cc: linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Pins that (1) can be configured as either GPIO or a single peripheral
+function, and (2) that don't need configuration in an IPSRx register,
+should still be listed in the pinmux_data[] array.
 
-We don't need to init HW before every transfer since we know the HW
-state then. HW init at probe time is enough. While here, add setting the
-clock register which belongs to init HW. Also, set MDBS bit since not
-setting it is prohibited according to the manual.
+Else selecting the peripheral function fails with e.g.:
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+    sh-pfc e6060000.pfc: cannot locate data/mark enum_id for mark 1281
+
+(mark 1281 is MSIOF0_SCK_MARK).
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/i2c/busses/i2c-rcar.c | 16 ++++------------
- 1 file changed, 4 insertions(+), 12 deletions(-)
+This depends on "pinctrl: sh-pfc: Add PINMUX_SINGLE()".
 
-diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
-index dac0f5d1945341..efc8de6cc8a2f9 100644
---- a/drivers/i2c/busses/i2c-rcar.c
-+++ b/drivers/i2c/busses/i2c-rcar.c
-@@ -144,9 +144,10 @@ static void rcar_i2c_init(struct rcar_i2c_priv *priv)
- {
- 	/* reset master mode */
- 	rcar_i2c_write(priv, ICMIER, 0);
--	rcar_i2c_write(priv, ICMCR, 0);
-+	rcar_i2c_write(priv, ICMCR, MDBS);
- 	rcar_i2c_write(priv, ICMSR, 0);
--	rcar_i2c_write(priv, ICMAR, 0);
-+	/* start clock */
-+	rcar_i2c_write(priv, ICCCR, priv->icccr);
- }
+v2:
+  - Use PINMUX_SINGLE() instead of raw PINMUX_DATA().
+---
+ drivers/pinctrl/sh-pfc/pfc-r8a7795.c | 19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
+
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7795.c b/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
+index 678c3801e999453c..e9dafe3d3320eb9f 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
+@@ -580,6 +580,25 @@ enum {
+ static const u16 pinmux_data[] = {
+ 	PINMUX_DATA_GP_ALL(),
  
- static int rcar_i2c_bus_barrier(struct rcar_i2c_priv *priv)
-@@ -496,16 +497,6 @@ static int rcar_i2c_master_xfer(struct i2c_adapter *adap,
- 
- 	pm_runtime_get_sync(dev);
- 
--	/*-------------- spin lock -----------------*/
--	spin_lock_irqsave(&priv->lock, flags);
--
--	rcar_i2c_init(priv);
--	/* start clock */
--	rcar_i2c_write(priv, ICCCR, priv->icccr);
--
--	spin_unlock_irqrestore(&priv->lock, flags);
--	/*-------------- spin unlock -----------------*/
--
- 	ret = rcar_i2c_bus_barrier(priv);
- 	if (ret < 0)
- 		goto out;
-@@ -666,6 +657,7 @@ static int rcar_i2c_probe(struct platform_device *pdev)
- 	if (ret < 0)
- 		goto out_pm_put;
- 
-+	rcar_i2c_init(priv);
- 	pm_runtime_put(dev);
- 
- 	irq = platform_get_irq(pdev, 0);
++	PINMUX_SINGLE(AVS1),
++	PINMUX_SINGLE(AVS2),
++	PINMUX_SINGLE(HDMI0_CEC),
++	PINMUX_SINGLE(HDMI1_CEC),
++	PINMUX_SINGLE(MSIOF0_RXD),
++	PINMUX_SINGLE(MSIOF0_SCK),
++	PINMUX_SINGLE(MSIOF0_TXD),
++	PINMUX_SINGLE(SD2_CMD),
++	PINMUX_SINGLE(SD3_CLK),
++	PINMUX_SINGLE(SD3_CMD),
++	PINMUX_SINGLE(SD3_DAT0),
++	PINMUX_SINGLE(SD3_DAT1),
++	PINMUX_SINGLE(SD3_DAT2),
++	PINMUX_SINGLE(SD3_DAT3),
++	PINMUX_SINGLE(SD3_DS),
++	PINMUX_SINGLE(SSI_SCK5),
++	PINMUX_SINGLE(SSI_SDATA5),
++	PINMUX_SINGLE(SSI_WS5),
++
+ 	/* IPSR0 */
+ 	PINMUX_IPSR_GPSR(IP0_3_0,	AVB_MDC),
+ 	PINMUX_IPSR_MSEL(IP0_3_0,	MSIOF2_SS2_C,		SEL_MSIOF2_2),
 -- 
-2.1.4
+1.9.1
 
