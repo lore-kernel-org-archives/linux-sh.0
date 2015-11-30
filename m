@@ -1,89 +1,53 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 19 Nov 2015 18:36:06 +0000
-Subject: [PATCH v2 09/16] ARM: shmobile: r8a7779 dtsi: Rename the serial port clock to fck
-Message-Id: <1447958173-543-10-git-send-email-geert+renesas@glider.be>
+Date: Mon, 30 Nov 2015 13:41:05 +0000
+Subject: [PATCH 4/4] pinctrl: sh-pfc: sh7734: Use PINMUX_SINGLE() instead of raw PINMUX_DATA()
+Message-Id: <1448890865-1856-5-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447958173-543-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1447958173-543-1-git-send-email-geert+renesas@glider.be>
+References: <1448890865-1856-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1448890865-1856-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Linus Walleij <linus.walleij@linaro.org>
+Cc: linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-
-The clock is really the device functional clock, not the interface
-clock. Rename it.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-v2:
-  - Add Acked-by.
----
- arch/arm/boot/dts/r8a7779.dtsi | 12 ++++++------
- 1 file changed, 6 insertions(+), 6 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-sh7734.c | 21 ++++++++++++---------
+ 1 file changed, 12 insertions(+), 9 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
-index 6afa909865b52b71..e4054119ee7c5aa9 100644
---- a/arch/arm/boot/dts/r8a7779.dtsi
-+++ b/arch/arm/boot/dts/r8a7779.dtsi
-@@ -215,7 +215,7 @@
- 		reg = <0xffe40000 0x100>;
- 		interrupts = <0 88 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp0_clks R8A7779_CLK_SCIF0>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -225,7 +225,7 @@
- 		reg = <0xffe41000 0x100>;
- 		interrupts = <0 89 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp0_clks R8A7779_CLK_SCIF1>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -235,7 +235,7 @@
- 		reg = <0xffe42000 0x100>;
- 		interrupts = <0 90 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp0_clks R8A7779_CLK_SCIF2>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -245,7 +245,7 @@
- 		reg = <0xffe43000 0x100>;
- 		interrupts = <0 91 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp0_clks R8A7779_CLK_SCIF3>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -255,7 +255,7 @@
- 		reg = <0xffe44000 0x100>;
- 		interrupts = <0 92 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp0_clks R8A7779_CLK_SCIF4>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -265,7 +265,7 @@
- 		reg = <0xffe45000 0x100>;
- 		interrupts = <0 93 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp0_clks R8A7779_CLK_SCIF5>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7734.c b/drivers/pinctrl/sh-pfc/pfc-sh7734.c
+index 5243da3564c84a1a..9e5212fb49fa516c 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7734.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7734.c
+@@ -585,15 +585,18 @@ enum {
+ static const u16 pinmux_data[] = {
+ 	PINMUX_DATA_GP_ALL(), /* PINMUX_DATA(GP_M_N_DATA, GP_M_N_FN...), */
+ 
+-	PINMUX_DATA(CLKOUT_MARK, FN_CLKOUT),
+-	PINMUX_DATA(BS_MARK, FN_BS), PINMUX_DATA(CS0_MARK, FN_CS0),
+-	PINMUX_DATA(EX_CS0_MARK, FN_EX_CS0),
+-	PINMUX_DATA(RD_MARK, FN_RD), PINMUX_DATA(WE0_MARK, FN_WE0),
+-	PINMUX_DATA(WE1_MARK, FN_WE1),
+-	PINMUX_DATA(SCL0_MARK, FN_SCL0), PINMUX_DATA(PENC0_MARK, FN_PENC0),
+-	PINMUX_DATA(USB_OVC0_MARK, FN_USB_OVC0),
+-	PINMUX_DATA(IRQ2_B_MARK, FN_IRQ2_B),
+-		PINMUX_DATA(IRQ3_B_MARK, FN_IRQ3_B),
++	PINMUX_SINGLE(CLKOUT),
++	PINMUX_SINGLE(BS),
++	PINMUX_SINGLE(CS0),
++	PINMUX_SINGLE(EX_CS0),
++	PINMUX_SINGLE(RD),
++	PINMUX_SINGLE(WE0),
++	PINMUX_SINGLE(WE1),
++	PINMUX_SINGLE(SCL0),
++	PINMUX_SINGLE(PENC0),
++	PINMUX_SINGLE(USB_OVC0),
++	PINMUX_SINGLE(IRQ2_B),
++	PINMUX_SINGLE(IRQ3_B),
+ 
+ 	/* IPSR0 */
+ 	PINMUX_IPSR_GPSR(IP0_1_0, A0),
 -- 
 1.9.1
 
