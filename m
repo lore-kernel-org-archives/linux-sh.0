@@ -1,27 +1,145 @@
-From: David Miller <davem@davemloft.net>
-Date: Mon, 16 Nov 2015 19:44:55 +0000
-Subject: Re: [PATCH net] ravb: Fix int mask value overwritten issue
-Message-Id: <20151116.144455.482805305323360767.davem@davemloft.net>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Mon, 30 Nov 2015 01:44:32 +0000
+Subject: [PATCH v6 3/4] phy: rcar-gen3-usb2: add runtime ID/VBUS pin detection
+Message-Id: <1448847873-7072-4-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447410289-3741-1-git-send-email-ykaneko0929@gmail.com>
-In-Reply-To: <1447410289-3741-1-git-send-email-ykaneko0929@gmail.com>
+References: <1448847873-7072-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+In-Reply-To: <1448847873-7072-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: ykaneko0929@gmail.com
-Cc: netdev@vger.kernel.org, horms@verge.net.au, magnus.damm@gmail.com, linux-sh@vger.kernel.org
+To: kishon@ti.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org
+Cc: linux-kernel@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Fri, 13 Nov 2015 19:24:49 +0900
+This patch adds support for runtime ID/VBUS pin detection if
+the channel 0 of R-Car gen3 is used. So, we are able to use
+the channel as both host and peripheral.
 
-> From: Masaru Nagai <masaru.nagai.vx@renesas.com>
-> 
-> When RX/TX interrupt for Network Control queue and Best Effort queue
-> is issued at the same time, the interrupt mask of Network Control
-> queue will be reset when the mask of Best Effort queue is set.
-> This patch fixes this problem.
-> 
-> Signed-off-by: Masaru Nagai <masaru.nagai.vx@renesas.com>
-> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ .../devicetree/bindings/phy/rcar-gen3-phy-usb2.txt |  2 +
+ drivers/phy/phy-rcar-gen3-usb2.c                   | 43 +++++++++++++++++++++-
+ 2 files changed, 44 insertions(+), 1 deletion(-)
 
-Applied.
+diff --git a/Documentation/devicetree/bindings/phy/rcar-gen3-phy-usb2.txt b/Documentation/devicetree/bindings/phy/rcar-gen3-phy-usb2.txt
+index affa0f7..2390e4e 100644
+--- a/Documentation/devicetree/bindings/phy/rcar-gen3-phy-usb2.txt
++++ b/Documentation/devicetree/bindings/phy/rcar-gen3-phy-usb2.txt
+@@ -18,6 +18,7 @@ properties. This is because HSUSB has registers to select USB 2.0 host or
+ peripheral at that channel:
+ - reg: offset and length of the partial HSUSB register block.
+ - reg-names: must be "hsusb".
++- interrupts: interrupt specifier for the PHY.
+ 
+ Example (R-Car H3):
+ 
+@@ -25,6 +26,7 @@ Example (R-Car H3):
+ 		compatible = "renesas,usb2-phy-r8a7795";
+ 		reg = <0 0xee080200 0 0x700>, <0 0xe6590100 0 0x100>;
+ 		reg-names = "usb2_host", "hsusb";
++		interrupts = <GIC_SPI 108 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp7_clks R8A7795_CLK_EHCI0>,
+ 			 <&mstp7_clks R8A7795_CLK_HSUSB>;
+ 	};
+diff --git a/drivers/phy/phy-rcar-gen3-usb2.c b/drivers/phy/phy-rcar-gen3-usb2.c
+index 2b5d890..ef332ef 100644
+--- a/drivers/phy/phy-rcar-gen3-usb2.c
++++ b/drivers/phy/phy-rcar-gen3-usb2.c
+@@ -12,6 +12,7 @@
+  * published by the Free Software Foundation.
+  */
+ 
++#include <linux/interrupt.h>
+ #include <linux/io.h>
+ #include <linux/module.h>
+ #include <linux/of.h>
+@@ -25,14 +26,18 @@
+ #define USB2_SPD_RSM_TIMSET	0x10c
+ #define USB2_OC_TIMSET		0x110
+ #define USB2_COMMCTRL		0x600
++#define USB2_OBINTSTA		0x604
++#define USB2_OBINTEN		0x608
+ #define USB2_VBCTRL		0x60c
+ #define USB2_LINECTRL1		0x610
+ #define USB2_ADPCTRL		0x630
+ 
+ /* INT_ENABLE */
++#define USB2_INT_ENABLE_UCOM_INTEN	BIT(3)
+ #define USB2_INT_ENABLE_USBH_INTB_EN	BIT(2)
+ #define USB2_INT_ENABLE_USBH_INTA_EN	BIT(1)
+-#define USB2_INT_ENABLE_INIT		(USB2_INT_ENABLE_USBH_INTB_EN | \
++#define USB2_INT_ENABLE_INIT		(USB2_INT_ENABLE_UCOM_INTEN | \
++					 USB2_INT_ENABLE_USBH_INTB_EN | \
+ 					 USB2_INT_ENABLE_USBH_INTA_EN)
+ 
+ /* USBCTR */
+@@ -48,6 +53,12 @@
+ /* COMMCTRL */
+ #define USB2_COMMCTRL_OTG_PERI		BIT(31)	/* 1 = Peripheral mode */
+ 
++/* OBINTSTA and OBINTEN */
++#define USB2_OBINT_SESSVLDCHG		BIT(12)
++#define USB2_OBINT_IDDIGCHG		BIT(11)
++#define USB2_OBINT_BITS			(USB2_OBINT_SESSVLDCHG | \
++					 USB2_OBINT_IDDIGCHG)
++
+ /* VBCTRL */
+ #define USB2_VBCTRL_DRVVBUSSEL		BIT(8)
+ 
+@@ -174,6 +185,9 @@ static void rcar_gen3_init_otg(struct rcar_gen3_chan *ch)
+ 
+ 	val = readl(usb2_base + USB2_VBCTRL);
+ 	writel(val | USB2_VBCTRL_DRVVBUSSEL, usb2_base + USB2_VBCTRL);
++	writel(USB2_OBINT_BITS, usb2_base + USB2_OBINTSTA);
++	val = readl(usb2_base + USB2_OBINTEN);
++	writel(val | USB2_OBINT_BITS, usb2_base + USB2_OBINTEN);
+ 	val = readl(usb2_base + USB2_ADPCTRL);
+ 	writel(val | USB2_ADPCTRL_IDPULLUP, usb2_base + USB2_ADPCTRL);
+ 	val = readl(usb2_base + USB2_LINECTRL1);
+@@ -270,6 +284,23 @@ static struct phy_ops rcar_gen3_phy_usb2_ops = {
+ 	.owner		= THIS_MODULE,
+ };
+ 
++static irqreturn_t rcar_gen3_phy_usb2_irq(int irq, void *_ch)
++{
++	struct rcar_gen3_chan *ch = _ch;
++	void __iomem *usb2_base = ch->usb2.base;
++	u32 status = readl(usb2_base + USB2_OBINTSTA);
++	irqreturn_t ret = IRQ_NONE;
++
++	if (status & USB2_OBINT_BITS) {
++		dev_vdbg(&ch->phy->dev, "%s: %08x\n", __func__, status);
++		writel(USB2_OBINT_BITS, usb2_base + USB2_OBINTSTA);
++		rcar_gen3_device_recognition(ch);
++		ret = IRQ_HANDLED;
++	}
++
++	return ret;
++}
++
+ static const struct of_device_id rcar_gen3_phy_usb2_match_table[] = {
+ 	{ .compatible = "renesas,usb2-phy-r8a7795" },
+ 	{ }
+@@ -302,9 +333,19 @@ static int rcar_gen3_phy_usb2_probe(struct platform_device *pdev)
+ 
+ 	/* To avoid error message by devm_ioremap_resource() */
+ 	if (res) {
++		int irq;
++
+ 		channel->hsusb.base = devm_ioremap_resource(dev, res);
+ 		if (IS_ERR(channel->hsusb.base))
+ 			channel->hsusb.base = NULL;
++		/* call request_irq for OTG */
++		irq = platform_get_irq(pdev, 0);
++		if (irq >= 0)
++			irq = devm_request_irq(dev, irq, rcar_gen3_phy_usb2_irq,
++					       IRQF_SHARED, dev_name(dev),
++					       channel);
++		if (irq < 0)
++			dev_err(dev, "No irq handler (%d)\n", irq);
+ 	}
+ 
+ 	/* devm_phy_create() will call pm_runtime_enable(dev); */
+-- 
+1.9.1
+
