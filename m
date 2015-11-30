@@ -1,106 +1,54 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 19 Nov 2015 18:38:51 +0000
-Subject: [PATCH 12/25] serial: sh-sci: Merge sci_scbrr_calc() and sci_baud_calc_hscif()
-Message-Id: <1447958344-836-13-git-send-email-geert+renesas@glider.be>
+Date: Mon, 30 Nov 2015 13:41:03 +0000
+Subject: [PATCH 2/4] pinctrl: sh-pfc: r8a7778: Use PINMUX_SINGLE() instead of raw PINMUX_DATA()
+Message-Id: <1448890865-1856-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447958344-836-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1447958344-836-1-git-send-email-geert+renesas@glider.be>
+References: <1448890865-1856-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1448890865-1856-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
-
-For low bit rates, the for-loop that reduces the divider returned by
-sci_scbrr_calc() and picks the clock select value may terminate without
-finding suitable values, leading to out-of-range divider and clock
-select values.
-sci_baud_calc_hscif() doesn't suffer from this problem, as it correctly
-uses clamp().
-
-Since there are only two relevant differences between HSCIF and other
-variants w.r.t. bit rate configuration (fixed vs. variable sample rate,
-and an additional factor of two), sci_scbrr_calc() and
-sci_baud_calc_hscif() can be merged, fixing the issue with out-of-range
-values.
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Linus Walleij <linus.walleij@linaro.org>
+Cc: linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/tty/serial/sh-sci.c | 42 +++++++++++++++++++-----------------------
- 1 file changed, 19 insertions(+), 23 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-r8a7778.c | 22 +++++++++++-----------
+ 1 file changed, 11 insertions(+), 11 deletions(-)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index c2ab29ddedbc26a2..dccea5df5355076a 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -1860,20 +1860,24 @@ static void sci_shutdown(struct uart_port *port)
- 	sci_free_irq(s);
- }
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
+index 6b6e5aa2db0d7d10..411d0887ba19bae6 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
+@@ -548,17 +548,17 @@ enum {
+ static const u16 pinmux_data[] = {
+ 	PINMUX_DATA_GP_ALL(), /* PINMUX_DATA(GP_M_N_DATA, GP_M_N_FN...), */
  
--static unsigned int sci_scbrr_calc(struct sci_port *s, unsigned int bps,
--				   unsigned long freq)
-+/* calculate sample rate, BRR, and clock select */
-+static void sci_scbrr_calc(struct sci_port *s, unsigned int bps,
-+			   unsigned long freq, int *brr, unsigned int *srr,
-+			   unsigned int *cks)
- {
--	return DIV_ROUND_CLOSEST(freq, s->sampling_rate * bps) - 1;
--}
--
--/* calculate sample rate, BRR, and clock select for HSCIF */
--static void sci_baud_calc_hscif(struct sci_port *s, unsigned int bps,
--				unsigned long freq, int *brr,
--				unsigned int *srr, unsigned int *cks)
--{
--	unsigned int sr, br, a, b, c;
-+	unsigned int min_sr, max_sr, shift, sr, br, a, b, c;
- 	int err, min_err = INT_MAX;
+-	PINMUX_DATA(PENC0_MARK,		FN_PENC0),
+-	PINMUX_DATA(PENC1_MARK,		FN_PENC1),
+-	PINMUX_DATA(A1_MARK,		FN_A1),
+-	PINMUX_DATA(A2_MARK,		FN_A2),
+-	PINMUX_DATA(A3_MARK,		FN_A3),
+-	PINMUX_DATA(WE0_MARK,		FN_WE0),
+-	PINMUX_DATA(AUDIO_CLKA_MARK,	FN_AUDIO_CLKA),
+-	PINMUX_DATA(AUDIO_CLKB_MARK,	FN_AUDIO_CLKB),
+-	PINMUX_DATA(SSI_SCK34_MARK,	FN_SSI_SCK34),
+-	PINMUX_DATA(AVS1_MARK,		FN_AVS1),
+-	PINMUX_DATA(AVS2_MARK,		FN_AVS2),
++	PINMUX_SINGLE(PENC0),
++	PINMUX_SINGLE(PENC1),
++	PINMUX_SINGLE(A1),
++	PINMUX_SINGLE(A2),
++	PINMUX_SINGLE(A3),
++	PINMUX_SINGLE(WE0),
++	PINMUX_SINGLE(AUDIO_CLKA),
++	PINMUX_SINGLE(AUDIO_CLKB),
++	PINMUX_SINGLE(SSI_SCK34),
++	PINMUX_SINGLE(AVS1),
++	PINMUX_SINGLE(AVS2),
  
-+	if (s->sampling_rate) {
-+		min_sr = max_sr = s->sampling_rate;
-+		shift = 0;
-+	} else {
-+		/* HSCIF has a variable sample rate */
-+		min_sr = 8;
-+		max_sr = 32;
-+		shift = 1;
-+	}
-+
- 	/*
- 	 * Find the combination of sample rate and clock select with the
- 	 * smallest deviation from the desired baud rate.
-@@ -1889,10 +1893,10 @@ static void sci_baud_calc_hscif(struct sci_port *s, unsigned int bps,
- 	 *      (|D - 0.5| / N * (1 + F))|
- 	 *  NOTE: Usually, treat D for 0.5, F is 0 by this calculation.
- 	 */
--	for (sr = 32; sr >= 8; sr--) {
-+	for (sr = max_sr; sr >= min_sr; sr--) {
- 		for (c = 0; c <= 3; c++) {
- 			/* integerized formulas from HSCIF documentation */
--			a = sr * (1 << (2 * c + 1));
-+			a = sr * (1 << (2 * c + shift));
- 			if (bps > UINT_MAX / a)
- 				break;
- 
-@@ -1960,16 +1964,8 @@ static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
- 	max_baud = port->uartclk ? port->uartclk / 16 : 115200;
- 
- 	baud = uart_get_baud_rate(port, termios, old, 0, max_baud);
--	if (likely(baud && port->uartclk)) {
--		if (s->cfg->type = PORT_HSCIF) {
--			sci_baud_calc_hscif(s, baud, port->uartclk, &t, &srr,
--					    &cks);
--		} else {
--			t = sci_scbrr_calc(s, baud, port->uartclk);
--			for (cks = 0; t >= 256 && cks <= 3; cks++)
--				t >>= 2;
--		}
--	}
-+	if (likely(baud && port->uartclk))
-+		sci_scbrr_calc(s, baud, port->uartclk, &t, &srr, &cks);
- 
- 	sci_port_enable(s);
- 
+ 	/* IPSR0 */
+ 	PINMUX_IPSR_GPSR(IP0_1_0,	PRESETOUT),
 -- 
 1.9.1
 
