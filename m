@@ -1,39 +1,281 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 23 Nov 2015 01:11:05 +0000
-Subject: Re: [PATCH] mach-shmobile/setup-r8a7793.c: proper constness with __initconst
-Message-Id: <20151123011105.GF29534@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 30 Nov 2015 13:41:02 +0000
+Subject: [PATCH 1/4] pinctrl: sh-pfc: emev2: Use PINMUX_SINGLE() instead of raw PINMUX_DATA()
+Message-Id: <1448890865-1856-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <alpine.LFD.2.20.1511212036580.22569@knanqh.ubzr>
-In-Reply-To: <alpine.LFD.2.20.1511212036580.22569@knanqh.ubzr>
+References: <1448890865-1856-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1448890865-1856-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Linus Walleij <linus.walleij@linaro.org>
+Cc: linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-[CC: linux-sh]
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ drivers/pinctrl/sh-pfc/pfc-emev2.c | 134 ++++++++++++++++++-------------------
+ 1 file changed, 67 insertions(+), 67 deletions(-)
 
-On Sat, Nov 21, 2015 at 08:41:07PM -0500, Nicolas Pitre wrote:
-> Both the pointer array and the pointed data have to be const when using
-> __initconst to be correct.  This also fixes LTO builds that otherwise
-> fail with section mismatch errors.
-> 
-> Signed-off-by: Nicolas Pitre <nico@linaro.org>
+diff --git a/drivers/pinctrl/sh-pfc/pfc-emev2.c b/drivers/pinctrl/sh-pfc/pfc-emev2.c
+index 02118ab336fcbd6c..a3a4b67c5434163d 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-emev2.c
++++ b/drivers/pinctrl/sh-pfc/pfc-emev2.c
+@@ -258,18 +258,18 @@ static const u16 pinmux_data[] = {
+ 
+ 	/* GPSR0 */
+ 	/* V9 */
+-	PINMUX_DATA(JT_SEL_MARK, FN_JT_SEL),
++	PINMUX_SINGLE(JT_SEL),
+ 	/* U9 */
+-	PINMUX_DATA(ERR_RST_REQB_MARK, FN_ERR_RST_REQB),
++	PINMUX_SINGLE(ERR_RST_REQB),
+ 	/* V8 */
+-	PINMUX_DATA(REF_CLKO_MARK, FN_REF_CLKO),
++	PINMUX_SINGLE(REF_CLKO),
+ 	/* U8 */
+-	PINMUX_DATA(EXT_CLKI_MARK, FN_EXT_CLKI),
++	PINMUX_SINGLE(EXT_CLKI),
+ 	/* B22*/
+ 	PINMUX_IPSR_NOFN(LCD3_1_0_PORT18, LCD3_PXCLK, SEL_LCD3_1_0_00),
+ 	PINMUX_IPSR_NOFN(LCD3_1_0_PORT18, YUV3_CLK_O, SEL_LCD3_1_0_01),
+ 	/* C21 */
+-	PINMUX_DATA(LCD3_PXCLKB_MARK, FN_LCD3_PXCLKB),
++	PINMUX_SINGLE(LCD3_PXCLKB),
+ 	/* A21 */
+ 	PINMUX_IPSR_NOFN(LCD3_1_0_PORT20, LCD3_CLK_I, SEL_LCD3_1_0_00),
+ 	PINMUX_IPSR_NOFN(LCD3_1_0_PORT20, YUV3_CLK_I, SEL_LCD3_1_0_01),
+@@ -285,17 +285,17 @@ static const u16 pinmux_data[] = {
+ 
+ 	/* GPSR1 */
+ 	/* A20 */
+-	PINMUX_DATA(LCD3_R0_MARK, FN_LCD3_R0),
++	PINMUX_SINGLE(LCD3_R0),
+ 	/* B20 */
+-	PINMUX_DATA(LCD3_R1_MARK, FN_LCD3_R1),
++	PINMUX_SINGLE(LCD3_R1),
+ 	/* A19 */
+-	PINMUX_DATA(LCD3_R2_MARK, FN_LCD3_R2),
++	PINMUX_SINGLE(LCD3_R2),
+ 	/* B19 */
+-	PINMUX_DATA(LCD3_R3_MARK, FN_LCD3_R3),
++	PINMUX_SINGLE(LCD3_R3),
+ 	/* C19 */
+-	PINMUX_DATA(LCD3_R4_MARK, FN_LCD3_R4),
++	PINMUX_SINGLE(LCD3_R4),
+ 	/* B18 */
+-	PINMUX_DATA(LCD3_R5_MARK, FN_LCD3_R5),
++	PINMUX_SINGLE(LCD3_R5),
+ 	/* C18 */
+ 	PINMUX_IPSR_NOFN(LCD3_9_8_PORT38, LCD3_R6, SEL_LCD3_9_8_00),
+ 	PINMUX_IPSR_NOFN(LCD3_9_8_PORT38, TP33_CLK, SEL_LCD3_9_8_10),
+@@ -367,9 +367,9 @@ static const u16 pinmux_data[] = {
+ 	PINMUX_IPSR_NOFN(LCD3_11_10_PORT43, YUV3_D15, SEL_LCD3_11_10_01),
+ 	PINMUX_IPSR_NOFN(LCD3_11_10_PORT43, TP33_DATA15, SEL_LCD3_11_10_10),
+ 	/* AA9 */
+-	PINMUX_DATA(IIC0_SCL_MARK, FN_IIC0_SCL),
++	PINMUX_SINGLE(IIC0_SCL),
+ 	/* AA8 */
+-	PINMUX_DATA(IIC0_SDA_MARK, FN_IIC0_SDA),
++	PINMUX_SINGLE(IIC0_SDA),
+ 	/* Y9 */
+ 	PINMUX_IPSR_NOFN(IIC_1_0_PORT46, IIC1_SCL, SEL_IIC_1_0_00),
+ 	PINMUX_IPSR_NOFN(IIC_1_0_PORT46, UART3_RX, SEL_IIC_1_0_01),
+@@ -377,51 +377,51 @@ static const u16 pinmux_data[] = {
+ 	PINMUX_IPSR_NOFN(IIC_1_0_PORT47, IIC1_SDA, SEL_IIC_1_0_00),
+ 	PINMUX_IPSR_NOFN(IIC_1_0_PORT47, UART3_TX, SEL_IIC_1_0_01),
+ 	/* AC19 */
+-	PINMUX_DATA(SD_CKI_MARK, FN_SD_CKI),
++	PINMUX_SINGLE(SD_CKI),
+ 	/* AB18 */
+-	PINMUX_DATA(SDI0_CKO_MARK, FN_SDI0_CKO),
++	PINMUX_SINGLE(SDI0_CKO),
+ 	/* AC18 */
+-	PINMUX_DATA(SDI0_CKI_MARK, FN_SDI0_CKI),
++	PINMUX_SINGLE(SDI0_CKI),
+ 	/* Y12 */
+-	PINMUX_DATA(SDI0_CMD_MARK, FN_SDI0_CMD),
++	PINMUX_SINGLE(SDI0_CMD),
+ 	/* AA13 */
+-	PINMUX_DATA(SDI0_DATA0_MARK, FN_SDI0_DATA0),
++	PINMUX_SINGLE(SDI0_DATA0),
+ 	/* Y13 */
+-	PINMUX_DATA(SDI0_DATA1_MARK, FN_SDI0_DATA1),
++	PINMUX_SINGLE(SDI0_DATA1),
+ 	/* AA14 */
+-	PINMUX_DATA(SDI0_DATA2_MARK, FN_SDI0_DATA2),
++	PINMUX_SINGLE(SDI0_DATA2),
+ 	/* Y14 */
+-	PINMUX_DATA(SDI0_DATA3_MARK, FN_SDI0_DATA3),
++	PINMUX_SINGLE(SDI0_DATA3),
+ 	/* AA15 */
+-	PINMUX_DATA(SDI0_DATA4_MARK, FN_SDI0_DATA4),
++	PINMUX_SINGLE(SDI0_DATA4),
+ 	/* Y15 */
+-	PINMUX_DATA(SDI0_DATA5_MARK, FN_SDI0_DATA5),
++	PINMUX_SINGLE(SDI0_DATA5),
+ 	/* AA16 */
+-	PINMUX_DATA(SDI0_DATA6_MARK, FN_SDI0_DATA6),
++	PINMUX_SINGLE(SDI0_DATA6),
+ 	/* Y16 */
+-	PINMUX_DATA(SDI0_DATA7_MARK, FN_SDI0_DATA7),
++	PINMUX_SINGLE(SDI0_DATA7),
+ 	/* AB22 */
+-	PINMUX_DATA(SDI1_CKO_MARK, FN_SDI1_CKO),
++	PINMUX_SINGLE(SDI1_CKO),
+ 	/* AA23 */
+-	PINMUX_DATA(SDI1_CKI_MARK, FN_SDI1_CKI),
++	PINMUX_SINGLE(SDI1_CKI),
+ 	/* AC21 */
+-	PINMUX_DATA(SDI1_CMD_MARK, FN_SDI1_CMD),
++	PINMUX_SINGLE(SDI1_CMD),
+ 
+ 	/* GPSR2 */
+ 	/* AB21 */
+-	PINMUX_DATA(SDI1_DATA0_MARK, FN_SDI1_DATA0),
++	PINMUX_SINGLE(SDI1_DATA0),
+ 	/* AB20 */
+-	PINMUX_DATA(SDI1_DATA1_MARK, FN_SDI1_DATA1),
++	PINMUX_SINGLE(SDI1_DATA1),
+ 	/* AB19 */
+-	PINMUX_DATA(SDI1_DATA2_MARK, FN_SDI1_DATA2),
++	PINMUX_SINGLE(SDI1_DATA2),
+ 	/* AA19 */
+-	PINMUX_DATA(SDI1_DATA3_MARK, FN_SDI1_DATA3),
++	PINMUX_SINGLE(SDI1_DATA3),
+ 	/* J23 */
+-	PINMUX_DATA(AB_CLK_MARK, FN_AB_CLK),
++	PINMUX_SINGLE(AB_CLK),
+ 	/* D21 */
+-	PINMUX_DATA(AB_CSB0_MARK, FN_AB_CSB0),
++	PINMUX_SINGLE(AB_CSB0),
+ 	/* E21 */
+-	PINMUX_DATA(AB_CSB1_MARK, FN_AB_CSB1),
++	PINMUX_SINGLE(AB_CSB1),
+ 	/* F20 */
+ 	PINMUX_IPSR_NOFN(AB_1_0_PORT71, AB_CSB2, SEL_AB_1_0_00),
+ 	PINMUX_IPSR_NOFN(AB_1_0_PORT71, CF_CSB0, SEL_AB_1_0_10),
+@@ -514,7 +514,7 @@ static const u16 pinmux_data[] = {
+ 
+ 	/* GPSR3 */
+ 	/* M21 */
+-	PINMUX_DATA(AB_A20_MARK, FN_AB_A20),
++	PINMUX_SINGLE(AB_A20),
+ 	/* N21 */
+ 	PINMUX_IPSR_NOFN(AB_9_8_PORT97, AB_A21, SEL_AB_9_8_00),
+ 	PINMUX_IPSR_NOFN(AB_9_8_PORT97, SDI2_CKO, SEL_AB_9_8_01),
+@@ -541,13 +541,13 @@ static const u16 pinmux_data[] = {
+ 	PINMUX_IPSR_NOFN(AB_13_12_PORT104, AB_A28, SEL_AB_13_12_00),
+ 	PINMUX_IPSR_NOFN(AB_13_12_PORT104, AB_BEN1, SEL_AB_13_12_10),
+ 	/* B8 */
+-	PINMUX_DATA(USI0_CS1_MARK, FN_USI0_CS1),
++	PINMUX_SINGLE(USI0_CS1),
+ 	/* B9 */
+-	PINMUX_DATA(USI0_CS2_MARK, FN_USI0_CS2),
++	PINMUX_SINGLE(USI0_CS2),
+ 	/* C10 */
+-	PINMUX_DATA(USI1_DI_MARK, FN_USI1_DI),
++	PINMUX_SINGLE(USI1_DI),
+ 	/* D10 */
+-	PINMUX_DATA(USI1_DO_MARK, FN_USI1_DO),
++	PINMUX_SINGLE(USI1_DO),
+ 	/* AB5 */
+ 	PINMUX_IPSR_NOFN(USI_1_0_PORT109, USI2_CLK, SEL_USI_1_0_00),
+ 	PINMUX_IPSR_NOFN(USI_1_0_PORT109, DTV_BCLK_B, SEL_USI_1_0_01),
+@@ -587,49 +587,49 @@ static const u16 pinmux_data[] = {
+ 	PINMUX_IPSR_NOFN(USI_9_8_PORT121, PWM1, SEL_USI_9_8_00),
+ 	PINMUX_IPSR_NOFN(USI_9_8_PORT121, USI4_DO, SEL_USI_9_8_01),
+ 	/* V20 */
+-	PINMUX_DATA(NTSC_CLK_MARK, FN_NTSC_CLK),
++	PINMUX_SINGLE(NTSC_CLK),
+ 	/* P20 */
+-	PINMUX_DATA(NTSC_DATA0_MARK, FN_NTSC_DATA0),
++	PINMUX_SINGLE(NTSC_DATA0),
+ 	/* P18 */
+-	PINMUX_DATA(NTSC_DATA1_MARK, FN_NTSC_DATA1),
++	PINMUX_SINGLE(NTSC_DATA1),
+ 	/* R20 */
+-	PINMUX_DATA(NTSC_DATA2_MARK, FN_NTSC_DATA2),
++	PINMUX_SINGLE(NTSC_DATA2),
+ 	/* R18 */
+-	PINMUX_DATA(NTSC_DATA3_MARK, FN_NTSC_DATA3),
++	PINMUX_SINGLE(NTSC_DATA3),
+ 	/* T20 */
+-	PINMUX_DATA(NTSC_DATA4_MARK, FN_NTSC_DATA4),
++	PINMUX_SINGLE(NTSC_DATA4),
+ 
+ 	/* GPRS3 */
+ 	/* T18 */
+-	PINMUX_DATA(NTSC_DATA5_MARK, FN_NTSC_DATA5),
++	PINMUX_SINGLE(NTSC_DATA5),
+ 	/* U20 */
+-	PINMUX_DATA(NTSC_DATA6_MARK, FN_NTSC_DATA6),
++	PINMUX_SINGLE(NTSC_DATA6),
+ 	/* U18 */
+-	PINMUX_DATA(NTSC_DATA7_MARK, FN_NTSC_DATA7),
++	PINMUX_SINGLE(NTSC_DATA7),
+ 	/* W23 */
+-	PINMUX_DATA(CAM_CLKO_MARK, FN_CAM_CLKO),
++	PINMUX_SINGLE(CAM_CLKO),
+ 	/* Y23 */
+-	PINMUX_DATA(CAM_CLKI_MARK, FN_CAM_CLKI),
++	PINMUX_SINGLE(CAM_CLKI),
+ 	/* W22 */
+-	PINMUX_DATA(CAM_VS_MARK, FN_CAM_VS),
++	PINMUX_SINGLE(CAM_VS),
+ 	/* V21 */
+-	PINMUX_DATA(CAM_HS_MARK, FN_CAM_HS),
++	PINMUX_SINGLE(CAM_HS),
+ 	/* T21 */
+-	PINMUX_DATA(CAM_YUV0_MARK, FN_CAM_YUV0),
++	PINMUX_SINGLE(CAM_YUV0),
+ 	/* T22 */
+-	PINMUX_DATA(CAM_YUV1_MARK, FN_CAM_YUV1),
++	PINMUX_SINGLE(CAM_YUV1),
+ 	/* T23 */
+-	PINMUX_DATA(CAM_YUV2_MARK, FN_CAM_YUV2),
++	PINMUX_SINGLE(CAM_YUV2),
+ 	/* U21 */
+-	PINMUX_DATA(CAM_YUV3_MARK, FN_CAM_YUV3),
++	PINMUX_SINGLE(CAM_YUV3),
+ 	/* U22 */
+-	PINMUX_DATA(CAM_YUV4_MARK, FN_CAM_YUV4),
++	PINMUX_SINGLE(CAM_YUV4),
+ 	/* U23 */
+-	PINMUX_DATA(CAM_YUV5_MARK, FN_CAM_YUV5),
++	PINMUX_SINGLE(CAM_YUV5),
+ 	/* V22 */
+-	PINMUX_DATA(CAM_YUV6_MARK, FN_CAM_YUV6),
++	PINMUX_SINGLE(CAM_YUV6),
+ 	/* V23 */
+-	PINMUX_DATA(CAM_YUV7_MARK, FN_CAM_YUV7),
++	PINMUX_SINGLE(CAM_YUV7),
+ 	/* K22 */
+ 	PINMUX_IPSR_NOFN(HSI_1_0_PORT143, USI5_CLK_B, SEL_HSI_1_0_01),
+ 	/* K23 */
+@@ -647,17 +647,17 @@ static const u16 pinmux_data[] = {
+ 	/* M22 */
+ 	PINMUX_IPSR_NOFN(HSI_1_0_PORT150, USI5_DI_B, SEL_HSI_1_0_01),
+ 	/* D13 */
+-	PINMUX_DATA(JT_TDO_MARK, FN_JT_TDO),
++	PINMUX_SINGLE(JT_TDO),
+ 	/* F13 */
+-	PINMUX_DATA(JT_TDOEN_MARK, FN_JT_TDOEN),
++	PINMUX_SINGLE(JT_TDOEN),
+ 	/* AA12 */
+-	PINMUX_DATA(USB_VBUS_MARK, FN_USB_VBUS),
++	PINMUX_SINGLE(USB_VBUS),
+ 	/* A12 */
+-	PINMUX_DATA(LOWPWR_MARK, FN_LOWPWR),
++	PINMUX_SINGLE(LOWPWR),
+ 	/* Y11 */
+-	PINMUX_DATA(UART1_RX_MARK, FN_UART1_RX),
++	PINMUX_SINGLE(UART1_RX),
+ 	/* Y10 */
+-	PINMUX_DATA(UART1_TX_MARK, FN_UART1_TX),
++	PINMUX_SINGLE(UART1_TX),
+ 	/* AA10 */
+ 	PINMUX_IPSR_NOFN(UART_1_0_PORT157, UART1_CTSB, SEL_UART_1_0_00),
+ 	PINMUX_IPSR_NOFN(UART_1_0_PORT157, UART2_RX, SEL_UART_1_0_01),
+-- 
+1.9.1
 
-Thanks, I have queued this up as a fix for v4.4 with the following tag:
-
-Fixes: ec60d95b4fac ("ARM: shmobile: Basic r8a7793 SoC support")
-
-> diff --git a/arch/arm/mach-shmobile/setup-r8a7793.c b/arch/arm/mach-shmobile/setup-r8a7793.c
-> index 1d2825cb7a..5fce87f7f2 100644
-> --- a/arch/arm/mach-shmobile/setup-r8a7793.c
-> +++ b/arch/arm/mach-shmobile/setup-r8a7793.c
-> @@ -19,7 +19,7 @@
->  #include "common.h"
->  #include "rcar-gen2.h"
->  
-> -static const char *r8a7793_boards_compat_dt[] __initconst = {
-> +static const char * const r8a7793_boards_compat_dt[] __initconst = {
->  	"renesas,r8a7793",
->  	NULL,
->  };
-> 
