@@ -1,51 +1,127 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 15 Dec 2015 08:18:23 +0000
-Subject: Re: renesas-drivers-2015-12-14-v4.4-rc5
-Message-Id: <CAMuHMdWMyOhhg9nYgwZDY-x-TDdQ-O1+tQ5KKy3zwdoFSjtk-A@mail.gmail.com>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Tue, 01 Dec 2015 17:04:39 +0000
+Subject: [PATCH net-next] ravb: ptp: Add CONFIG mode support
+Message-Id: <1448989479-11594-1-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450119324-659-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1450119324-659-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: netdev@vger.kernel.org
+Cc: "David S. Miller" <davem@davemloft.net>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-Hi Khiem-san,
+From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
 
-On Tue, Dec 15, 2015 at 2:18 AM, Khiem Nguyen
-<khiem.nguyen.xt@rvc.renesas.com> wrote:
-> On 12/15/2015 1:55 AM, Geert Uytterhoeven wrote:
->> I've pushed renesas-drivers-2015-12-14-v4.4-rc5 to
->> https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git
->> This tree is meant to ease development of platform support and drivers for
->> Renesas ARM ("shmobile") SoCs. It's created by merging (a) the for-next
->> branches of various subsystem trees and (b) branches with driver code
->> submitted or planned for submission to maintainers into the development
->> branch of Simon Horman's renesas.git tree.
->>
->> Today's version is based on renesas-devel-20151214-v4.4-rc5.
->>
-> [snip]
->>
->> Dropped (crashes):
->>    - git://linuxtv.org/mchehab/media-next.git#master
->>    - git://linuxtv.org/pinchartl/media.git#vsp1-kms-20151206~3
->
-> I believe that Laurent will have to look into this crash. :)
-> The crash is occurred when CONFIG_VIDEO_RENESAS_VSP1 config is enabled, I
-> guess.
+This patch makes PTP support active in CONFIG mode on R-Car Gen3.
 
-Yes.
+Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+---
 
-Details have already been reported upstream.
+This patch is based on the master branch of David Miller's next networking
+tree.
 
-Gr{oetje,eeting}s,
+ drivers/net/ethernet/renesas/ravb.h      |  1 +
+ drivers/net/ethernet/renesas/ravb_main.c | 33 +++++++++++++++++++++++++++-----
+ 2 files changed, 29 insertions(+), 5 deletions(-)
 
-                        Geert
+diff --git a/drivers/net/ethernet/renesas/ravb.h b/drivers/net/ethernet/renesas/ravb.h
+index f9dee74..9fbe92a 100644
+--- a/drivers/net/ethernet/renesas/ravb.h
++++ b/drivers/net/ethernet/renesas/ravb.h
+@@ -206,6 +206,7 @@ enum CCC_BIT {
+ 	CCC_OPC_RESET	= 0x00000000,
+ 	CCC_OPC_CONFIG	= 0x00000001,
+ 	CCC_OPC_OPERATION = 0x00000002,
++	CCC_GAC		= 0x00000080,
+ 	CCC_DTSR	= 0x00000100,
+ 	CCC_CSEL	= 0x00030000,
+ 	CCC_CSEL_HPB	= 0x00010000,
+diff --git a/drivers/net/ethernet/renesas/ravb_main.c b/drivers/net/ethernet/renesas/ravb_main.c
+index 990dc55..293046d 100644
+--- a/drivers/net/ethernet/renesas/ravb_main.c
++++ b/drivers/net/ethernet/renesas/ravb_main.c
+@@ -1231,7 +1231,8 @@ static int ravb_open(struct net_device *ndev)
+ 	ravb_emac_init(ndev);
+ 
+ 	/* Initialise PTP Clock driver */
+-	ravb_ptp_init(ndev, priv->pdev);
++	if (priv->chip_id = RCAR_GEN2)
++		ravb_ptp_init(ndev, priv->pdev);
+ 
+ 	netif_tx_start_all_queues(ndev);
+ 
+@@ -1244,7 +1245,8 @@ static int ravb_open(struct net_device *ndev)
+ 
+ out_ptp_stop:
+ 	/* Stop PTP Clock driver */
+-	ravb_ptp_stop(ndev);
++	if (priv->chip_id = RCAR_GEN2)
++		ravb_ptp_stop(ndev);
+ out_free_irq:
+ 	free_irq(ndev->irq, ndev);
+ 	free_irq(priv->emac_irq, ndev);
+@@ -1476,7 +1478,8 @@ static int ravb_close(struct net_device *ndev)
+ 	ravb_write(ndev, 0, TIC);
+ 
+ 	/* Stop PTP Clock driver */
+-	ravb_ptp_stop(ndev);
++	if (priv->chip_id = RCAR_GEN2)
++		ravb_ptp_stop(ndev);
+ 
+ 	/* Set the config mode to stop the AVB-DMAC's processes */
+ 	if (ravb_stop_dma(ndev) < 0)
+@@ -1781,8 +1784,16 @@ static int ravb_probe(struct platform_device *pdev)
+ 	ndev->ethtool_ops = &ravb_ethtool_ops;
+ 
+ 	/* Set AVB config mode */
+-	ravb_write(ndev, (ravb_read(ndev, CCC) & ~CCC_OPC) | CCC_OPC_CONFIG,
+-		   CCC);
++	if (chip_id = RCAR_GEN2) {
++		ravb_write(ndev, (ravb_read(ndev, CCC) & ~CCC_OPC) |
++			   CCC_OPC_CONFIG, CCC);
++		/* Set CSEL value */
++		ravb_write(ndev, (ravb_read(ndev, CCC) & ~CCC_CSEL) |
++			   CCC_CSEL_HPB, CCC);
++	} else {
++		ravb_write(ndev, (ravb_read(ndev, CCC) & ~CCC_OPC) |
++			   CCC_OPC_CONFIG | CCC_GAC | CCC_CSEL_HPB, CCC);
++	}
+ 
+ 	/* Set CSEL value */
+ 	ravb_write(ndev, (ravb_read(ndev, CCC) & ~CCC_CSEL) | CCC_CSEL_HPB,
+@@ -1814,6 +1825,10 @@ static int ravb_probe(struct platform_device *pdev)
+ 	/* Initialise HW timestamp list */
+ 	INIT_LIST_HEAD(&priv->ts_skb_list);
+ 
++	/* Initialise PTP Clock driver */
++	if (chip_id != RCAR_GEN2)
++		ravb_ptp_init(ndev, pdev);
++
+ 	/* Debug message level */
+ 	priv->msg_enable = RAVB_DEF_MSG_ENABLE;
+ 
+@@ -1855,6 +1870,10 @@ out_napi_del:
+ out_dma_free:
+ 	dma_free_coherent(ndev->dev.parent, priv->desc_bat_size, priv->desc_bat,
+ 			  priv->desc_bat_dma);
++
++	/* Stop PTP Clock driver */
++	if (chip_id != RCAR_GEN2)
++		ravb_ptp_stop(ndev);
+ out_release:
+ 	if (ndev)
+ 		free_netdev(ndev);
+@@ -1869,6 +1888,10 @@ static int ravb_remove(struct platform_device *pdev)
+ 	struct net_device *ndev = platform_get_drvdata(pdev);
+ 	struct ravb_private *priv = netdev_priv(ndev);
+ 
++	/* Stop PTP Clock driver */
++	if (priv->chip_id != RCAR_GEN2)
++		ravb_ptp_stop(ndev);
++
+ 	dma_free_coherent(ndev->dev.parent, priv->desc_bat_size, priv->desc_bat,
+ 			  priv->desc_bat_dma);
+ 	/* Set reset mode */
+-- 
+1.9.1
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
