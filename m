@@ -1,77 +1,69 @@
-From: Pantelis Antoniou <pantelis.antoniou@konsulko.com>
-Date: Thu, 17 Dec 2015 08:18:28 +0000
-Subject: Re: [PATCH/RFC 00/03] ARM: shmobile: r8a7795 Salvator-X IPMMU test code
-Message-Id: <6C0A2B35-C5B3-4D1A-89F1-9B8F6E27CB2F@konsulko.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 01 Dec 2015 06:47:26 +0000
+Subject: Re: [PATCH] dmaengine: usb-dmac: Document SoC specific bindings
+Message-Id: <20151201064726.GJ16260@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20151215132634.15356.29848.sendpatchset@little-apple>
-In-Reply-To: <20151215132634.15356.29848.sendpatchset@little-apple>
+References: <1448331641-21758-1-git-send-email-horms+renesas@verge.net.au>
+ <20151124201655.GA23437@rob-hp-laptop>
+ <20151125002032.GF20596@verge.net.au>
+In-Reply-To: <20151125002032.GF20596@verge.net.au>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Rob Herring <robh@kernel.org>
+Cc: Vinod Koul <vinod.koul@intel.com>, dmaengine@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, devicetree@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-Hi Geert,
+Hi Rob,
 
-> On Dec 17, 2015, at 10:02 , Geert Uytterhoeven <geert@linux-m68k.org> wrote:
+On Wed, Nov 25, 2015 at 09:20:32AM +0900, Simon Horman wrote:
+> On Tue, Nov 24, 2015 at 02:16:55PM -0600, Rob Herring wrote:
+> > On Tue, Nov 24, 2015 at 11:20:41AM +0900, Simon Horman wrote:
+> > > In general Renesas hardware is not documented to the extent where the
+> > > relationship between IP blocks on different SoCs can be assumed although
+> > > they may appear to operate the same way. Furthermore the documentation
+> > > typically does not specify a version for individual IP blocks. For these
+> > > reasons a convention of using the SoC name in place of a version and
+> > > providing SoC-specific compat strings has been adopted.
+> > > 
+> > > Although not universally liked this convention is used in the bindings for
+> > > most drivers for Renesas hardware. The purpose of this patch is to
+> > > update the Renesas USB DMA Controller driver to follow this convention.
+> > > 
+> > > Cc: devicetree@vger.kernel.org
+> > > Cc: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+> > > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+> > > 
+> > > ---
+> > > * r8a7792 (R-Car V2H) is omitted as my reading of the documentation
+> > >   is that Renesas USB-DMAC does not exist on that SoC
+> > > * r8a7795 (R-Car H2) is omitted as its unclear to me on the compatibility
+> > >   of USB-DMAC that SoC
+> > > 
+> > > * Once this has been merged I intend to provide follow-up patches
+> > >   to use these new compat strings in the relevant dtsi files.
+> > > ---
+> > >  Documentation/devicetree/bindings/dma/renesas,usb-dmac.txt | 9 +++++++--
+> > >  1 file changed, 7 insertions(+), 2 deletions(-)
+> > > 
+> > > diff --git a/Documentation/devicetree/bindings/dma/renesas,usb-dmac.txt b/Documentation/devicetree/bindings/dma/renesas,usb-dmac.txt
+> > > index 040f365954cc..3bb624e10615 100644
+> > > --- a/Documentation/devicetree/bindings/dma/renesas,usb-dmac.txt
+> > > +++ b/Documentation/devicetree/bindings/dma/renesas,usb-dmac.txt
+> > > @@ -1,7 +1,12 @@
+> > >  * Renesas USB DMA Controller Device Tree bindings
+> > >  
+> > >  Required Properties:
+> > > -- compatible: must contain "renesas,usb-dmac"
+> > > +- compatible: "renesas,usb-dmac-<soctype>", "renesas,usb-dmac" as fallback.
+> > > +	      Examples with soctypes are:
+> > > +		- "renesas,usb-dmac-r8a7790" (R-Car H2)
+> > > +		- "renesas,usb-dmac-r8a7791" (R-Car M2-W)
+> > > +		- "renesas,usb-dmac-r8a7793" (R-Car M2-N)
+> > > +		- "renesas,usb-dmac-r8a7794" (R-Car E2)
+> > 
+> > Weren't you changing the order of SoC and block names on new bindings? 
 > 
-> Hi Magnus,
-> 
-> CC Pantelis
-> 
-> On Thu, Dec 17, 2015 at 2:42 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
->> On Wed, Dec 16, 2015 at 5:22 PM, Geert Uytterhoeven
->> <geert@linux-m68k.org> wrote:
->>> On Tue, Dec 15, 2015 at 2:26 PM, Magnus Damm <magnus.damm@gmail.com> wrote:
->>>> ARM: shmobile: r8a7795 Salvator-X IPMMU test code
->>>> 
->>>> [PATCH/RFC 01/03] ARM: shmobile: External Salvator-X SCIF3/HSCIF3 loop
->>>> [PATCH/RFC 02/03] ARM: shmobile: r8a7795: Hack up SYS-DMAC0 support
->>>> [PATCH/RFC 03/03] ARM: shmobile: r8a7795: Tie in IPMMU with SYS-DMAC0
->>>> 
->>>> Hook up the external SCIF3/HSCIF3 loop back adapter via DT and tie
->>>> in SYS-DMAC0 and the IPMMU units for test purpose.
->>>> 
->>>> Not for upstream merge.
->>> 
->>> Have you considered using DT overlays for this?
->> 
->> Yes, that is a very good idea! That is the next step for sure.
->> 
->> What is the current state of DT overlays in upstream? For the various
->> loop back adapter designs For Renesas R-Car Gen2 and Gen3 it would be
->> nice to be able to upstream the overlay code somehow.
-> 
-> Not yet upstream. Not much activity in the area lately. Pantelis?
-> 
+> Could you clarify what the desired order is?
+> My intention is for these bindings to use the preferred order.
 
-Not dropped. Just buried with $DAYTIME_WORK. We had a release out and things have been
-hectic. Pace will pick up again during the holiday break.
-
-> Code-wise, I'm using:
-> https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git/log/?h=topic/overlays
-> 
-
-> The various overlays I use for testing (+ code depending on r8a7795, which
-> is not yet upstream and thus not included in the branc above):
-> https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git/log/?h=topic/renesas-overlays
-> 
-
-
-Good, I’ll check this too and pick up things for my submission. Hang in there :)
-
-> Gr{oetje,eeting}s,
-> 
->                        Geert
-> 
-
-Regards
-
-— Pantelis
-
-> --
-> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-> 
-> In personal conversations with technical people, I call myself a hacker. But
-> when I'm talking to journalists I just say "programmer" or something like that.
->                                -- Linus Torvalds
-
+ping
