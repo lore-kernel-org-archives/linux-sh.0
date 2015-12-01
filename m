@@ -1,18 +1,21 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 01 Dec 2015 08:42:52 +0000
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 01 Dec 2015 10:26:08 +0000
 Subject: Re: [PATCH 1/2 net-next] ravb: Add fallback compatibility strings
-Message-Id: <CAMuHMdW_PagMbAqrvM-_-sJumhMPoYGobNF485Q1D+CRQ5j+bQ@mail.gmail.com>
+Message-Id: <565D75C0.1020502@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1448955783-22806-1-git-send-email-horms+renesas@verge.net.au>
-	<1448955783-22806-2-git-send-email-horms+renesas@verge.net.au>
+ <1448955783-22806-2-git-send-email-horms+renesas@verge.net.au>
 In-Reply-To: <1448955783-22806-2-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms+renesas@verge.net.au>
-Cc: "netdev@vger.kernel.org" <netdev@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: Simon Horman <horms+renesas@verge.net.au>, netdev@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, devicetree@vger.kernel.org
 
-On Tue, Dec 1, 2015 at 8:43 AM, Simon Horman <horms+renesas@verge.net.au> wrote:
+Hello.
+
+On 12/1/2015 10:43 AM, Simon Horman wrote:
+
 > Add fallback compatibility strings for R-Car Gen 2 & 3 SoC Families.
 > This is in keeping with the fallback scheme being adopted wherever
 > appropriate for drivers for Renesas SoCs.
@@ -21,43 +24,24 @@ On Tue, Dec 1, 2015 at 8:43 AM, Simon Horman <horms+renesas@verge.net.au> wrote:
 >
 > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 > ---
->  Documentation/devicetree/bindings/net/renesas,ravb.txt | 11 +++++++++--
->  drivers/net/ethernet/renesas/ravb_main.c               |  2 ++
->  2 files changed, 11 insertions(+), 2 deletions(-)
+>   Documentation/devicetree/bindings/net/renesas,ravb.txt | 11 +++++++++--
+>   drivers/net/ethernet/renesas/ravb_main.c               |  2 ++
+>   2 files changed, 11 insertions(+), 2 deletions(-)
 >
 > diff --git a/Documentation/devicetree/bindings/net/renesas,ravb.txt b/Documentation/devicetree/bindings/net/renesas,ravb.txt
 > index b486f3f5f6a3..115006325bff 100644
 > --- a/Documentation/devicetree/bindings/net/renesas,ravb.txt
 > +++ b/Documentation/devicetree/bindings/net/renesas,ravb.txt
 > @@ -1,12 +1,19 @@
->  * Renesas Electronics Ethernet AVB
+>   * Renesas Electronics Ethernet AVB
 >
->  This file provides information on what the device node for the Ethernet AVB
+>   This file provides information on what the device node for the Ethernet AVB
 > -interface contains.
 > +interface.
->
->  Required properties:
->  - compatible: "renesas,etheravb-r8a7790" if the device is a part of R8A7790 SoC.
->               "renesas,etheravb-r8a7794" if the device is a part of R8A7794 SoC.
->               "renesas,etheravb-r8a7795" if the device is a part of R8A7795 SoC.
-> +             "renesas,etheravb-gen2" for generic R-Car Gen 2 compatible interface.
-> +             "renesas,etheravb-gen3" for generic R-Car Gen 3 compatible interface.
-> +
 
-(Same comment, different audience)
+    Why?
 
-Shouldn't that be "renesas,etheravb-rcar-gen" or "renesas,etheravb-rcar2"?
+[...]
 
-Else you'll be in trouble when Renesas starts focussing on airplanes
-(R-Plane Gen2), rockets (R-Rocket Gen2), or IoT (R-IoT Gen2).
+MBR, Sergei
 
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
