@@ -1,70 +1,55 @@
-From: Yang Yingliang <yangyingliang@huawei.com>
-Date: Tue, 15 Dec 2015 06:59:45 +0000
-Subject: Re: [RFC PATCH v6 3/3] arm: fix a migrating irq bug when hotplug cpu
-Message-Id: <566FBA61.3010400@huawei.com>
+From: Yang Shi <yang.shi@linaro.org>
+Date: Tue, 01 Dec 2015 23:06:16 +0000
+Subject: [PATCH 6/7] sh: mm/gup: add gup trace points
+Message-Id: <1449011177-30686-7-git-send-email-yang.shi@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1443087135-17044-1-git-send-email-yangyingliang@huawei.com>
- <1443087135-17044-4-git-send-email-yangyingliang@huawei.com>
- <CAMuHMdWyvaecQHOzFnxVZus_Pfkxjw1XfkGdcLK=D2ThaoJMzA@mail.gmail.com>
- <20151021202907.GN32532@n2100.arm.linux.org.uk>
- <20151022092629.GQ32532@n2100.arm.linux.org.uk> <5628C0DD.50900@huawei.com>
- <20151022111307.GS32532@n2100.arm.linux.org.uk>
-In-Reply-To: <20151022111307.GS32532@n2100.arm.linux.org.uk>
+References: <1449011177-30686-1-git-send-email-yang.shi@linaro.org>
+In-Reply-To: <1449011177-30686-1-git-send-email-yang.shi@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: akpm@linux-foundation.org, rostedt@goodmis.org, mingo@redhat.com
+Cc: linux-kernel@vger.kernel.org, linux-mm@kvack.org, linaro-kernel@lists.linaro.org, yang.shi@linaro.org, linux-sh@vger.kernel.org
 
-Hi, Russell
+Cc: linux-sh@vger.kernel.org
+Signed-off-by: Yang Shi <yang.shi@linaro.org>
+---
+ arch/sh/mm/gup.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
 
-On 2015/10/22 19:13, Russell King - ARM Linux wrote:
-> On Thu, Oct 22, 2015 at 06:56:29PM +0800, Yang Yingliang wrote:
->> I described it in v2 cover letter and kept the change history in v6
->> cover letter. There is no comment on the change when patch the was
->> reviewing in v2, so I thought it's ok and I kept the change in the
->> next versions.
->
-> Cover letters don't always get read, neither do changelogs.
->
-> However, there's a principle here: never mix moving code around with
-> changes to that code.  Always move code with as few changes as possible
-> in one patch, and then make changes in a subsequent patch.
->
-> The "few changes as possible" means that if you need to make changes
-> for it to end up building in its new location, such as removing a
-> 'static' or adding an 'EXPORT_SYMBOL' then those are fine, but the
-> main body of the code should remain identical, even down to style.
->
-> Any changes (such as, in this case, replacing pr_debug with pr_warn)
-> should be done as a distinctly separate patch so that such changes
-> are immediately obvious to reviewers.
->
->> Need I send a patch to the Thomas branch to revert the change ?
->
-> I think wait for Thomas and Catalin to reply.  Your patch series is
-> currently merged into two different trees (Thomas' and Catalin's
-> trees) and what action is needed depends on how they want to handle
-> it.
->
-> The solutions are:
-> * A patch to restore the pr_debug() which Thomas applies, and Catalin
->    and myself then pull Thomas' tree again, which potentially creates
->    a messier history.
->
-> * Catalin drops the ARM64 change and Thomas' tree from the ARM64 tree,
->    Thomas drops the original commit, and we start again doing it
->    correctly.
->
-> Which is up to Catalin and Thomas.
->
-> I've dropped it from my tree as an easy way to fix the regression
-> on ARM for the time being, pending the outcome of deciding how to
-> fix this.
->
-
-The regression had been fixed.
-Do I need to put the patch in the patch system again ?
-
-Regards,
-Yang
+diff --git a/arch/sh/mm/gup.c b/arch/sh/mm/gup.c
+index e7af6a6..6df3e97 100644
+--- a/arch/sh/mm/gup.c
++++ b/arch/sh/mm/gup.c
+@@ -12,6 +12,10 @@
+ #include <linux/mm.h>
+ #include <linux/vmstat.h>
+ #include <linux/highmem.h>
++
++#define CREATE_TRACE_POINTS
++#include <trace/events/gup.h>
++
+ #include <asm/pgtable.h>
+ 
+ static inline pte_t gup_get_pte(pte_t *ptep)
+@@ -178,6 +182,8 @@ int __get_user_pages_fast(unsigned long start, int nr_pages, int write,
+ 					(void __user *)start, len)))
+ 		return 0;
+ 
++	trace_gup_get_user_pages_fast(start, nr_pages, write, pages);
++
+ 	/*
+ 	 * This doesn't prevent pagetable teardown, but does prevent
+ 	 * the pagetables and pages from being freed.
+@@ -231,6 +237,8 @@ int get_user_pages_fast(unsigned long start, int nr_pages, int write,
+ 	if (end < start)
+ 		goto slow_irqon;
+ 
++	trace_gup_get_user_pages_fast(start, nr_pages, write, pages);
++
+ 	local_irq_disable();
+ 	pgdp = pgd_offset(mm, addr);
+ 	do {
+-- 
+2.0.2
 
