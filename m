@@ -1,67 +1,52 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 01 Dec 2015 07:24:29 +0000
-Subject: [PATCH 1/4] PCI: rcar-gen2: Add generic compatibility string
-Message-Id: <1448954672-27236-2-git-send-email-horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 01 Dec 2015 08:41:49 +0000
+Subject: Re: [PATCH 1/4] PCI: rcar-gen2: Add generic compatibility string
+Message-Id: <CAMuHMdVJvChiFTkeeJNBcPG2CsC3PxoEC4Lx0fHOeMMMPLew0g@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1448954672-27236-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1448954672-27236-1-git-send-email-horms+renesas@verge.net.au>
+	<1448954672-27236-2-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1448954672-27236-2-git-send-email-horms+renesas-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Bjorn Helgaas <bhelgaas@google.com>
-Cc: Magnus Damm <magnus.damm@gmail.com>, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Simon Horman <horms+renesas@verge.net.au>
+To: Simon Horman <horms+renesas-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>
+Cc: Bjorn Helgaas <bhelgaas-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-pci <linux-pci-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-Add fallback compatibility string for R-Car Gen 2 Family.
-This is in keeping with the fallback scheme being adopted wherever
-appropriate for drivers for Renesas SoCs.
+On Tue, Dec 1, 2015 at 8:24 AM, Simon Horman <horms+renesas@verge.net.au> wrote:
+> Add fallback compatibility string for R-Car Gen 2 Family.
+> This is in keeping with the fallback scheme being adopted wherever
+> appropriate for drivers for Renesas SoCs.
+>
+> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+> ---
+>  Documentation/devicetree/bindings/pci/pci-rcar-gen2.txt | 11 +++++++++--
+>  drivers/pci/host/pci-rcar-gen2.c                        |  1 +
+>  2 files changed, 10 insertions(+), 2 deletions(-)
+>
+> diff --git a/Documentation/devicetree/bindings/pci/pci-rcar-gen2.txt b/Documentation/devicetree/bindings/pci/pci-rcar-gen2.txt
+> index 891463cb09c2..b19be08a8113 100644
+> --- a/Documentation/devicetree/bindings/pci/pci-rcar-gen2.txt
+> +++ b/Documentation/devicetree/bindings/pci/pci-rcar-gen2.txt
+> @@ -8,7 +8,14 @@ OHCI and EHCI controllers.
+>  Required properties:
+>  - compatible: "renesas,pci-r8a7790" for the R8A7790 SoC;
+>               "renesas,pci-r8a7791" for the R8A7791 SoC;
+> -             "renesas,pci-r8a7794" for the R8A7794 SoC.
+> +             "renesas,pci-r8a7794" for the R8A7794 SoC;
+> +             "renesas,pci-gen2" for a generic R-Car Gen2 compatible device.
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- Documentation/devicetree/bindings/pci/pci-rcar-gen2.txt | 11 +++++++++--
- drivers/pci/host/pci-rcar-gen2.c                        |  1 +
- 2 files changed, 10 insertions(+), 2 deletions(-)
+Shouldn't that be "renesas,pci-rcar-gen" or "renesas,pci-rcar2"?
 
-diff --git a/Documentation/devicetree/bindings/pci/pci-rcar-gen2.txt b/Documentation/devicetree/bindings/pci/pci-rcar-gen2.txt
-index 891463cb09c2..b19be08a8113 100644
---- a/Documentation/devicetree/bindings/pci/pci-rcar-gen2.txt
-+++ b/Documentation/devicetree/bindings/pci/pci-rcar-gen2.txt
-@@ -8,7 +8,14 @@ OHCI and EHCI controllers.
- Required properties:
- - compatible: "renesas,pci-r8a7790" for the R8A7790 SoC;
- 	      "renesas,pci-r8a7791" for the R8A7791 SoC;
--	      "renesas,pci-r8a7794" for the R8A7794 SoC.
-+	      "renesas,pci-r8a7794" for the R8A7794 SoC;
-+	      "renesas,pci-gen2" for a generic R-Car Gen2 compatible device.
-+
-+
-+	      When compatible with the generic version, nodes must list the
-+	      SoC-specific version corresponding to the platform first
-+	      followed by the generic version.
-+
- - reg:	A list of physical regions to access the device: the first is
- 	the operational registers for the OHCI/EHCI controllers and the
- 	second is for the bridge configuration and control registers.
-@@ -32,7 +39,7 @@ Optional properties:
- Example SoC configuration:
- 
- 	pci0: pci@ee090000  {
--		compatible = "renesas,pci-r8a7790";
-+		compatible = "renesas,pci-r8a7790", "renesas,pci-gen2";
- 		clocks = <&mstp7_clks R8A7790_CLK_EHCI>;
- 		reg = <0x0 0xee090000 0x0 0xc00>,
- 		      <0x0 0xee080000 0x0 0x1100>;
-diff --git a/drivers/pci/host/pci-rcar-gen2.c b/drivers/pci/host/pci-rcar-gen2.c
-index 62951165dcbb..a93403823353 100644
---- a/drivers/pci/host/pci-rcar-gen2.c
-+++ b/drivers/pci/host/pci-rcar-gen2.c
-@@ -430,6 +430,7 @@ static int rcar_pci_probe(struct platform_device *pdev)
- }
- 
- static struct of_device_id rcar_pci_of_match[] = {
-+	{ .compatible = "renesas,pci-gen2", },
- 	{ .compatible = "renesas,pci-r8a7790", },
- 	{ .compatible = "renesas,pci-r8a7791", },
- 	{ .compatible = "renesas,pci-r8a7794", },
--- 
-2.1.4
+Else you'll be in trouble when Renesas starts focussing on airplanes
+(R-Plane Gen2), rockets (R-Rocket Gen2), or IoT (R-IoT Gen2).
 
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
