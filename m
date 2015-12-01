@@ -1,65 +1,102 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 15 Dec 2015 01:17:56 +0000
-Subject: [PATCH 3/8 v5] thermal: rcar: check irq possibility in rcar_thermal_irq_xxx()
-Message-Id: <878u4wqzq9.wl%kuninori.morimoto.gx@renesas.com>
+Date: Tue, 01 Dec 2015 05:36:34 +0000
+Subject: [PATCH 1/2] arm64: renesas: salvator-x: use CS2000 as AUDIO_CLK_B
+Message-Id: <87k2oyybp2.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87d1u8qzsy.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87d1u8qzsy.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, Zhang Rui <rui.zhang@intel.com>, Eduardo Valentin <edubezval@gmail.com>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: linux-sh@vger.kernel.org
+
 
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Current rcar thermal driver sometimes checks irq possibility when it
-calls rcar_thermal_irq_enable/disable(), but sometimes not.
-This patch checks it inside rcar_thermal_irq_enable/disable().
+CS2000 needs AUDIO_CLKOUT as master clock which is generated
+by Renesas sound, and Renesas sound needs CS2000 as ADUIO_CLK_B.
+Because of this relationship, it will be dead-lock when driver probe.
+
+cs2000: clk_multiplier@4f {
+        ...
+        clocks = <&rcar_sound 0>, <&x12_clk>;
+        ...
+};
+
+&rcar_sound {
+        ...
+        assigned-clocks = <&cs2000>;
+        ...
+};
+
+This patch is using dummy audio_clkout to avoid this issue.
 
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-v4 -> v5
+ arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 38 ++++++++++++++++++++++
+ 1 file changed, 38 insertions(+)
 
- - no change
-
- drivers/thermal/rcar_thermal.c | 9 +++++----
- 1 file changed, 5 insertions(+), 4 deletions(-)
-
-diff --git a/drivers/thermal/rcar_thermal.c b/drivers/thermal/rcar_thermal.c
-index 0b19743..e9e4e39 100644
---- a/drivers/thermal/rcar_thermal.c
-+++ b/drivers/thermal/rcar_thermal.c
-@@ -290,6 +290,9 @@ static void _rcar_thermal_irq_ctrl(struct rcar_thermal_priv *priv, int enable)
- 	unsigned long flags;
- 	u32 mask = 0x3 << rcar_id_to_shift(priv); /* enable Rising/Falling */
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+index beeacfa..75af5ec 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
++++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+@@ -61,6 +61,16 @@
+ 		clock-frequency = <24576000>;
+ 	};
  
-+	if (!rcar_has_irq_support(priv))
-+		return;
++	audio_clkout: audio_clkout {
++		/*
++		 * This is same as <&rcar_sound 0>
++		 * but needed to avoid cs2000/rcar_sound probe dead-lock
++		 */
++		compatible = "fixed-clock";
++		#clock-cells = <0>;
++		clock-frequency = <11289600>;
++	};
 +
- 	spin_lock_irqsave(&common->lock, flags);
+ 	rsnd_ak4613: sound {
+ 		compatible = "simple-audio-card";
  
- 	rcar_thermal_common_bset(common, INTMSK, mask, enable ? 0 : mask);
-@@ -441,8 +444,7 @@ static int rcar_thermal_probe(struct platform_device *pdev)
- 			goto error_unregister;
- 		}
+@@ -151,6 +161,17 @@
+ 		asahi-kasei,out5-single-end;
+ 		asahi-kasei,out6-single-end;
+ 	};
++
++	cs2000: clk_multiplier@4f {
++		#clock-cells = <0>;
++		compatible = "cirrus,cs2000-cp";
++		reg = <0x4f>;
++		clocks = <&audio_clkout>, <&x12_clk>;
++		clock-names = "clk_in", "ref_clk";
++
++		assigned-clocks = <&cs2000>;
++		assigned-clock-rates = <24576000>; /* 1/1 divide */
++	};
+ };
  
--		if (rcar_has_irq_support(priv))
--			rcar_thermal_irq_enable(priv);
-+		rcar_thermal_irq_enable(priv);
+ &rcar_sound {
+@@ -166,6 +187,23 @@
  
- 		list_move_tail(&priv->list, &common->head);
+ 	status = "okay";
  
-@@ -488,8 +490,7 @@ static int rcar_thermal_remove(struct platform_device *pdev)
- 	struct rcar_thermal_priv *priv;
- 
- 	rcar_thermal_for_each_priv(priv, common) {
--		if (rcar_has_irq_support(priv))
--			rcar_thermal_irq_disable(priv);
-+		rcar_thermal_irq_disable(priv);
- 		thermal_zone_device_unregister(priv->zone);
- 	}
- 
++	/* update <audio_clk_b> to <cs2000> */
++	clocks = <&cpg CPG_MOD 1005>,
++		 <&cpg CPG_MOD 1006>, <&cpg CPG_MOD 1007>,
++		 <&cpg CPG_MOD 1008>, <&cpg CPG_MOD 1009>,
++		 <&cpg CPG_MOD 1010>, <&cpg CPG_MOD 1011>,
++		 <&cpg CPG_MOD 1012>, <&cpg CPG_MOD 1013>,
++		 <&cpg CPG_MOD 1014>, <&cpg CPG_MOD 1015>,
++		 <&cpg CPG_MOD 1022>, <&cpg CPG_MOD 1023>,
++		 <&cpg CPG_MOD 1024>, <&cpg CPG_MOD 1025>,
++		 <&cpg CPG_MOD 1026>, <&cpg CPG_MOD 1027>,
++		 <&cpg CPG_MOD 1028>, <&cpg CPG_MOD 1029>,
++		 <&cpg CPG_MOD 1030>, <&cpg CPG_MOD 1031>,
++		 <&cpg CPG_MOD 1019>, <&cpg CPG_MOD 1018>,
++		 <&audio_clk_a>, <&cs2000>,
++		 <&audio_clk_c>,
++		 <&cpg CPG_CORE R8A7795_CLK_S0D4>;
++
+ 	rcar_sound,dai {
+ 		dai0 {
+ 			playback = <&ssi0 &src0 &dvc0>;
 -- 
 1.9.1
 
