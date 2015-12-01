@@ -1,35 +1,56 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 10 Dec 2015 04:57:49 +0000
-Subject: Re: [PATCH 0/8 v4] enable to use thermal-zone on r8a7790/1
-Message-Id: <20151210045745.GD6964@verge.net.au>
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Tue, 01 Dec 2015 09:54:57 +0000
+Subject: Re: [PATCH] gpio: rcar: Improve clock error handling and reporting
+Message-Id: <CACRpkdabE9=UsGsRqzVZg3P09ntLTMz1NE3ginQ_XdFiddh4bw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87vb895x9d.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87vb895x9d.wl%kuninori.morimoto.gx@renesas.com>
+References: <1448377528-19307-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1448377528-19307-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Cc: Zhang Rui <rui.zhang@intel.com>, Eduardo Valentin <edubezval@gmail.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Alexandre Courbot <gnurou@gmail.com>, Magnus Damm <magnus.damm@gmail.com>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
 
-On Tue, Dec 08, 2015 at 05:26:20AM +0000, Kuninori Morimoto wrote:
-> 
-> Hi
-> 
-> These are v4 of thermal-zone support for r8a7790/r8a7791.
-> Mainly, it cares return value of get_temp()
-> 
-> I think 8) is needed on of-thermal (?)
-> 
-> Kuninori Morimoto (8):
->       1) thermal: rcar: move rcar_thermal_dt_ids to upside
->       2) thermal: rcar: check every rcar_thermal_update_temp() return value
->       3) thermal: rcar: check irq possibility in rcar_thermal_irq_xxx()
->       4) thermal: rcar: retern error rcar_thermal_get_temp() if no ctemp update
->       5) thermal: rcar: enable to use thermal-zone on DT
->       6) ARM: shmobile: r8a7790: enable to use thermal-zone
->       7) ARM: shmobile: r8a7791: enable to use thermal-zone
->       8) thermal: of-thermal: of_thermal_set_trip_temp() call thermal_zone_device_update()
-> 
+On Tue, Nov 24, 2015 at 4:05 PM, Geert Uytterhoeven
+<geert+renesas@glider.be> wrote:
 
-I have marked patches 6 and 7 as deferred pending acceptance of the driver
-changes.
+> If the Renesas R-Car GPIO driver cannot find a functional clock, it
+> prints a warning, .e.g.
+>
+>         gpio_rcar ffc40000.gpio: unable to get clock
+>
+> and continues, as the clock is optional, depending on the SoC type.
+> This warning may confuse users.
+>
+> To fix this, add a flag to indicate that the clock is mandatory or
+> optional:
+>   - If the clock is mandatory (on R-Car Gen2), a missing clock is now
+>     treated as a fatal error,
+>   - If the clock is optional (on R-Car Gen1), the warning is no longer
+>     printed.
+>
+> The new flag is merged with the existing has_both_edge_trigger boolean
+> into a bitfield to save space.
+
+*DON'T* try to save bits in a megabyte kernel like this.
+The better readability is worth the extra bits or bytes it takes.
+Besides, did you really try to compile it before/after that change
+to verify that it actually saved that space?
+
+> Suggested-by: Magnus Damm <magnus.damm@gmail.com>
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> ---
+> This depends on "gpio: rcar: Remove obsolete platform data support".
+
+Where is that patch? This does not apply to my tree,
+probably because of this.
+
+Please sent the patches in a series.
+
+>         unsigned has_both_edge_trigger:1;
+> +       unsigned needs_clk:1;
+
+both should be bool and assigned true/false.
+
+Yours,
+Linus Walleij
