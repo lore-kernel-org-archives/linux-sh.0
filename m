@@ -1,53 +1,35 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 11 Dec 2015 09:45:38 +0000
-Subject: Re: [PATCH/RFC 00/19] r8a7793, gose: Add i2c and audio support to device tree
-Message-Id: <CAMuHMdWh4t+-V=CbGpKWfWJLGrEtBhkEBmy__g9449Ay-St9nA@mail.gmail.com>
+From: Jiri Kosina <jikos@kernel.org>
+Date: Tue, 01 Dec 2015 23:24:49 +0000
+Subject: Re: [PATCH v2 1/5] printk/nmi: Generic solution for safe printk in NMI
+Message-Id: <alpine.LNX.2.00.1512020022460.32500@pobox.suse.cz>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449802376-11301-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1449802376-11301-1-git-send-email-horms+renesas@verge.net.au>
+References: <1448622572-16900-2-git-send-email-pmladek@suse.com>
+ <201511271919.aEZuZKNe%fengguang.wu@intel.com>
+ <20151127153804.GC2648@pathway.suse.cz>
+In-Reply-To: <20151127153804.GC2648@pathway.suse.cz>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Simon,
+On Fri, 27 Nov 2015, Petr Mladek wrote:
 
-On Fri, Dec 11, 2015 at 3:52 AM, Simon Horman
-<horms+renesas@verge.net.au> wrote:
-> this series adds support to r8a7793 and gose device trees for:
-> * i2c and iic
-> * rcar sound: first in PIO mode then using DMA
->
-> i2c support is a pre-requisite for rcar sound support.
+> MN10300 has its own implementation for entering and exiting NMI 
+> handlers. It does not call nmi_enter() and nmi_exit(). Please, find 
+> below an updated patch that adds printk_nmi_enter() and 
+> printk_nmi_exit() to the custom entry points. Then we could add HAVE_NMI 
+> to arch/mn10300/Kconfig and avoid the above warning.
 
-This series looks fine, when comparing the resulting DTS of
-r8a7793 and r8a7791, and taking into account the i2c/iic alias differences.
+Hmm, so what exactly would go wrong if MN10300 (whatever that architecture 
+is) would call nmi_enter() and nmi_exit() at the places where it's 
+starting and finishing NMI handler?
 
-Except for the missing audmapp.
+From a cursory look, it seems like most (if not all) of the things called 
+from nmi_{enter,exit}() would be nops there anyway.
 
-You can add my
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-to all but 8.
+Thanks,
 
-> Unfortunately there appears to be some problem with DMA
-> for rcar sound that I have been unable to track down. On booting I see:
->
-> rcar_sound ec500000.sound: dma allocate failed
-> rcar_sound ec500000.sound: ssi[0] fallback to PIO mode
-> rcar_sound ec500000.sound: ssi[1] fallback to PIO mode
-> rcar_sound ec500000.sound: probed
->
-> I would appreciate any insights regarding the above.
+-- 
+Jiri Kosina
+SUSE Labs
 
-Missing periperi?
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
