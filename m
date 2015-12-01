@@ -1,50 +1,45 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 15 Dec 2015 19:11:47 +0000
-Subject: Re: [PATCH v2] extcon: add Maxim MAX3355 driver
-Message-Id: <567065F3.6010009@cogentembedded.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 01 Dec 2015 06:22:19 +0000
+Subject: Re: [PATCH] ravb: add R8A7791 support
+Message-Id: <20151201062218.GD16260@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <5045536.UEVncNCOZE@wasted.cogentembedded.com>
- <566F6AEC.1030903@samsung.com>
-In-Reply-To: <566F6AEC.1030903@samsung.com>
+References: <6051623.qN4lqSyZKg@wasted.cogentembedded.com>
+ <CAMuHMdWE_G2WqsGZEaa4Ck3zziTLGVPfaVdU2gbnLA5zWpmR1w@mail.gmail.com>
+ <565B6AAD.8080205@cogentembedded.com>
+ <20151130004207.GD3501@verge.net.au>
+ <CAMuHMdV6frDHnsNo5+C3TPD-T8vgBZWkn722wCc5aCQ8+NDn+A@mail.gmail.com>
+In-Reply-To: <CAMuHMdV6frDHnsNo5+C3TPD-T8vgBZWkn722wCc5aCQ8+NDn+A@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Chanwoo Choi <cw00.choi@samsung.com>, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, myungjoo.ham@samsung.com, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, linux-usb@vger.kernel.org
+To: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, "netdev@vger.kernel.org" <netdev@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Rob Herring <robh+dt@kernel.org>, Pawel Moll <pawel.moll@arm.com>, Mark Rutland <mark.rutland@arm.com>, Ian Campbell <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
 
-On 12/15/2015 04:20 AM, Chanwoo Choi wrote:
+On Mon, Nov 30, 2015 at 09:08:57AM +0100, Geert Uytterhoeven wrote:
+> Hi Simon,
+> 
+> On Mon, Nov 30, 2015 at 1:42 AM, Simon Horman <horms@verge.net.au> wrote:
+> > On Mon, Nov 30, 2015 at 12:14:21AM +0300, Sergei Shtylyov wrote:
+> >> On 11/29/2015 10:26 PM, Geert Uytterhoeven wrote:
+> >> >>Add support  for yet another ARM member of the R-Car family, R-Car M2, also
+> >> >R-Car M2-W?
+> >>
+> >>    Right, forgot about the postfixes.
+> >>
+> >> >>known as R8A7791.
+> >> >
+> >> >There's also R-Car M2-N, aka R8A7793, but you probably know that ;-)
+> >>
+> >>    Will fix.
+> >
+> > I would prefer if we added generic gen2 and gen3 compat strings to the driver
+> > and only documented new soc-specific compat strings.
+> >
+> > Actually by chance I was planning to up patches to do that and add compat
+> > strings for the missing Gen2 boards. But I won't complain if you beat me to
+> > it.
+> 
+> You're aware we have to keep the existing SoC-specific ones in the driver,
+> for backwards compatibility?
 
->> Maxim  Integrated MAX3355E chip integrates a  charge pump and comparators to
->         ^^                                     ^^
->> enable a system with an integrated USB OTG dual-role transceiver to function
->> as  an USB  OTG dual-role device.  In addition  to sensing/controlling Vbus,
->      ^^      ^^                     ^^           ^^
->> the chip also passes thru the ID signal  from the USB  OTG connector.
->                                           ^^
->> On some Renesas boards,  this signal is  just fed into the SoC thru a GPIO
->                           ^^              ^^
->> pin --  there's no real  OTG controller, only host and gadget USB controllers
->          ^^               ^^
->> sharing the same USB bus; however, we'd  like to allow host or gadget drivers
->                                           ^^
->> to be loaded depending on the cable type,  hence the need for the MAX3355
->                                             ^^
->> extcon driver. The Vbus status signals are also  wired to GPIOs (however, we
->> aren't currently interested in them),  the OFFVBUS# signal is controlled  by
->                                         ^^                                 ^^
->> the host controllers, there's  also the SHDN# signal wired to a GPIO, it
->                                 ^^
->> should be driven high for the  normal operation.
->                                 ^^
-> As above '^' expression, you used the double space between words.
-> You should fix it.
-
-    OK, since so many people seem to be offended by that, I'll fix it. 
-Meanwhile, please comment on the patch itself.
-
-> Thanks,
-> Chanwoo Choi
-[...]
-
-MBR, Sergei
-
+Yes, I am aware of that.
