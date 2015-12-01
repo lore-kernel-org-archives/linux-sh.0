@@ -1,33 +1,56 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 15 Dec 2015 17:24:29 +0000
-Subject: Re: [PATCH 1/3] pinctrl: sh-pfc: r8a7779: Add SCIF_CLK support
-Message-Id: <5734500.nIa6IDBXUp@avalon>
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 01 Dec 2015 06:41:50 +0000
+Subject: Re: [PATCH] ARM: shmobile: alt: Add QSPI device to DT
+Message-Id: <20151201064149.GH16260@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449841738-17490-1-git-send-email-geert+renesas@glider.be> <1449841738-17490-2-git-send-email-geert+renesas@glider.be> <CACRpkdapAtyz18WZ9=9-=5yV5hLyQ-_Ka2OVyZosHEESUtTbgw@mail.gmail.com>
-In-Reply-To: <CACRpkdapAtyz18WZ9=9-=5yV5hLyQ-_Ka2OVyZosHEESUtTbgw@mail.gmail.com>
+References: <1448863990-16276-1-git-send-email-horms+renesas@verge.net.au>
+ <CAMuHMdWnyZbHiLEPn-6dEweBEXHzWr6o2KF2iCpzg2-OhZRVSw@mail.gmail.com>
+In-Reply-To: <CAMuHMdWnyZbHiLEPn-6dEweBEXHzWr6o2KF2iCpzg2-OhZRVSw@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Linus Walleij <linus.walleij@linaro.org>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: linux-arm-kernel@lists.infradead.org
 
-On Tuesday 15 December 2015 09:36:06 Linus Walleij wrote:
-> On Fri, Dec 11, 2015 at 2:48 PM, Geert Uytterhoeven wrote:
-> > Add pins, groups, and a function for SCIF_CLK, which is the external
-> > clock source for the Baud Rate Generator for External Clock (BRG) on
-> > SCIF.
-> > 
-> > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> 
-> All looks OK to me, Acked-by.
-> 
-> BTW: Geert, what do you say as listing yourself as comaintainer for SH-PFC
-> below Laurent in MAINTAINERS? I think it's about time.
+On Mon, Nov 30, 2015 at 09:34:10AM +0100, Geert Uytterhoeven wrote:
+> On Mon, Nov 30, 2015 at 7:13 AM, Simon Horman
+> <horms+renesas@verge.net.au> wrote:
+> > Enable the QSPI controller in the alt device tree.
+> >
+> > Based similar work for the silk board by by Vladimir Barinov and
+> > Sergei Shtylyov.
+> >
+> > Cc: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+> > Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+>=20
+> Verified against Alt schematics and r8a7794 datasheet.
+>=20
+> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+>=20
+> I can't verify the FLASH layout. Note that p.11 of
+> ALT_MiniMonitor_Manual(SPI_Boot)_Rev0.01_e.pdf shows a different
+> FLASH layout for the second and third partition.
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Thanks. I see the following in v1.9.6 of the BSP[1]. Is it
+the same as the document you referred to above?
 
--- 
-Regards,
 
-Laurent Pinchart
+		partition@0 {
+			label =3D "loader";
+			reg =3D <0x00000000 0x00080000>;
+			read-only;
+		};
+		partition@40000 {
+			label =3D "user";
+			reg =3D <0x00080000 0x00580000>;
+			read-only;
+		};
+		partition@440000 {
+			label =3D "flash";
+			reg =3D <0x00600000 0x03a00000>;
+		};
 
+
+[1] https://git.kernel.org/cgit/linux/kernel/git/horms/renesas-backport.git=
+/tree/arch/arm/boot/dts/r8a7794-alt.dts?h=3Drcar-gen2/v1.9.6&id=E1acbe074f3=
+6d96e901bf5346c50ee51da2ced42#n379
