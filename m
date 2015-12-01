@@ -1,95 +1,39 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 18 Dec 2015 02:29:52 +0000
-Subject: [PATCH 22/25] ARM: shmobile: r8a7791: IPMMU compat string SoC part number update
-Message-Id: <3c8ab0c88eff0a5cc61bc56a5929819f26da0b4a.1450402264.git.horms+renesas@verge.net.au>
+Date: Tue, 01 Dec 2015 07:43:03 +0000
+Subject: [PATCH 2/2 net-next] ravb: Add device tree support for r8a779[123]
+Message-Id: <1448955783-22806-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1450402264.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1450402264.git.horms+renesas@verge.net.au>
+References: <1448955783-22806-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1448955783-22806-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: netdev@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, devicetree@vger.kernel.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+Simply document new compat strings.
+As a previous patch adds a generic R-Car Gen2 compat string
+there appears to be no need for a driver updates.
 
-Update IPMMU compat strings to include SoC part number.
-
-By specifying SoC part number in DT it becomes possible
-to implement SoC specific features in the IPMMU driver.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7791.dtsi | 14 +++++++-------
- 1 file changed, 7 insertions(+), 7 deletions(-)
+ Documentation/devicetree/bindings/net/renesas,ravb.txt | 3 +++
+ 1 file changed, 3 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 3a2551094b8b..3f15aa7dc4d6 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -1590,7 +1590,7 @@
- 	};
+diff --git a/Documentation/devicetree/bindings/net/renesas,ravb.txt b/Documentation/devicetree/bindings/net/renesas,ravb.txt
+index 115006325bff..076accb652ad 100644
+--- a/Documentation/devicetree/bindings/net/renesas,ravb.txt
++++ b/Documentation/devicetree/bindings/net/renesas,ravb.txt
+@@ -5,6 +5,9 @@ interface.
  
- 	ipmmu_sy0: mmu@e6280000 {
--		compatible = "renesas,ipmmu-vmsa";
-+		compatible = "renesas,ipmmu-r8a7791", "renesas,ipmmu-vmsa";
- 		reg = <0 0xe6280000 0 0x1000>;
- 		interrupts = <0 223 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 224 IRQ_TYPE_LEVEL_HIGH>;
-@@ -1599,7 +1599,7 @@
- 	};
- 
- 	ipmmu_sy1: mmu@e6290000 {
--		compatible = "renesas,ipmmu-vmsa";
-+		compatible = "renesas,ipmmu-r8a7791", "renesas,ipmmu-vmsa";
- 		reg = <0 0xe6290000 0 0x1000>;
- 		interrupts = <0 225 IRQ_TYPE_LEVEL_HIGH>;
- 		#iommu-cells = <1>;
-@@ -1607,7 +1607,7 @@
- 	};
- 
- 	ipmmu_ds: mmu@e6740000 {
--		compatible = "renesas,ipmmu-vmsa";
-+		compatible = "renesas,ipmmu-r8a7791", "renesas,ipmmu-vmsa";
- 		reg = <0 0xe6740000 0 0x1000>;
- 		interrupts = <0 198 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 199 IRQ_TYPE_LEVEL_HIGH>;
-@@ -1616,7 +1616,7 @@
- 	};
- 
- 	ipmmu_mp: mmu@ec680000 {
--		compatible = "renesas,ipmmu-vmsa";
-+		compatible = "renesas,ipmmu-r8a7791", "renesas,ipmmu-vmsa";
- 		reg = <0 0xec680000 0 0x1000>;
- 		interrupts = <0 226 IRQ_TYPE_LEVEL_HIGH>;
- 		#iommu-cells = <1>;
-@@ -1624,7 +1624,7 @@
- 	};
- 
- 	ipmmu_mx: mmu@fe951000 {
--		compatible = "renesas,ipmmu-vmsa";
-+		compatible = "renesas,ipmmu-r8a7791", "renesas,ipmmu-vmsa";
- 		reg = <0 0xfe951000 0 0x1000>;
- 		interrupts = <0 222 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 221 IRQ_TYPE_LEVEL_HIGH>;
-@@ -1633,7 +1633,7 @@
- 	};
- 
- 	ipmmu_rt: mmu@ffc80000 {
--		compatible = "renesas,ipmmu-vmsa";
-+		compatible = "renesas,ipmmu-r8a7791", "renesas,ipmmu-vmsa";
- 		reg = <0 0xffc80000 0 0x1000>;
- 		interrupts = <0 307 IRQ_TYPE_LEVEL_HIGH>;
- 		#iommu-cells = <1>;
-@@ -1641,7 +1641,7 @@
- 	};
- 
- 	ipmmu_gp: mmu@e62a0000 {
--		compatible = "renesas,ipmmu-vmsa";
-+		compatible = "renesas,ipmmu-r8a7791", "renesas,ipmmu-vmsa";
- 		reg = <0 0xe62a0000 0 0x1000>;
- 		interrupts = <0 260 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 261 IRQ_TYPE_LEVEL_HIGH>;
+ Required properties:
+ - compatible: "renesas,etheravb-r8a7790" if the device is a part of R8A7790 SoC.
++	      "renesas,etheravb-r8a7791" if the device is a part of R8A7791 SoC.
++	      "renesas,etheravb-r8a7792" if the device is a part of R8A7792 SoC.
++	      "renesas,etheravb-r8a7793" if the device is a part of R8A7793 SoC.
+ 	      "renesas,etheravb-r8a7794" if the device is a part of R8A7794 SoC.
+ 	      "renesas,etheravb-r8a7795" if the device is a part of R8A7795 SoC.
+ 	      "renesas,etheravb-gen2" for generic R-Car Gen 2 compatible interface.
 -- 
 2.1.4
 
