@@ -1,56 +1,69 @@
-From: Felipe Balbi <balbi@ti.com>
-Date: Wed, 16 Dec 2015 15:49:34 +0000
-Subject: Re: [PATCH] usb: gadget: renesas_usb3: add support for Renesas USB3.0 peripheral controller
-Message-Id: <87wpsefl69.fsf@saruman.tx.rr.com>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="=-=-="
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 01 Dec 2015 07:24:31 +0000
+Subject: [PATCH 3/4] PCI: rcar: Add Gen2 fallback compatibility string
+Message-Id: <1448954672-27236-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450162472-6664-1-git-send-email-yoshihiro.shimoda.uh@renesas.com> <7989573.HuGUrIYJy9@wuerfel>
-In-Reply-To: <7989573.HuGUrIYJy9@wuerfel>
-To: Arnd Bergmann <arnd@arndb.de>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Cc: gregkh@linuxfoundation.org, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, linux-usb@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org
+References: <1448954672-27236-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1448954672-27236-1-git-send-email-horms+renesas@verge.net.au>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Bjorn Helgaas <bhelgaas@google.com>
+Cc: Magnus Damm <magnus.damm@gmail.com>, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Simon Horman <horms+renesas@verge.net.au>
 
---=-=-=
-Content-Type: text/plain
-Content-Transfer-Encoding: quoted-printable
+Add fallback compatibility string for R-Car Gen 2 Family.
+This is in keeping with the fallback scheme being adopted wherever
+appropriate for drivers for Renesas SoCs.
 
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ Documentation/devicetree/bindings/pci/rcar-pci.txt | 13 ++++++++++---
+ drivers/pci/host/pcie-rcar.c                       |  1 +
+ 2 files changed, 11 insertions(+), 3 deletions(-)
 
-Hi,
+diff --git a/Documentation/devicetree/bindings/pci/rcar-pci.txt b/Documentation/devicetree/bindings/pci/rcar-pci.txt
+index 29d3b989d3b0..872cea085be8 100644
+--- a/Documentation/devicetree/bindings/pci/rcar-pci.txt
++++ b/Documentation/devicetree/bindings/pci/rcar-pci.txt
+@@ -1,8 +1,15 @@
+ * Renesas RCar PCIe interface
+ 
+ Required properties:
+-- compatible: should contain one of the following
+-	"renesas,pcie-r8a7779", "renesas,pcie-r8a7790", "renesas,pcie-r8a7791"
++compatible: "renesas,pcie-r8a7779" for the R8A7779 SoC;
++	    "renesas,pcie-r8a7790" for the R8A7790 SoC;
++	    "renesas,pcie-r8a7791" for the R8A7791 SoC;
++	    "renesas,pcie-gen2" for a generic R-Car Gen2 compatible device.
++
++	    When compatible with the generic version, nodes must list the
++	    SoC-specific version corresponding to the platform first
++	    followed by the generic version.
++
+ - reg: base address and length of the pcie controller registers.
+ - #address-cells: set to <3>
+ - #size-cells: set to <2>
+@@ -25,7 +32,7 @@ Example:
+ SoC specific DT Entry:
+ 
+ 	pcie: pcie@fe000000 {
+-		compatible = "renesas,pcie-r8a7791";
++		compatible = "renesas,pcie-r8a7791", "renesas,pcie-gen2";
+ 		reg = <0 0xfe000000 0 0x80000>;
+ 		#address-cells = <3>;
+ 		#size-cells = <2>;
+diff --git a/drivers/pci/host/pcie-rcar.c b/drivers/pci/host/pcie-rcar.c
+index f4fa6c537448..17ee0422ddb1 100644
+--- a/drivers/pci/host/pcie-rcar.c
++++ b/drivers/pci/host/pcie-rcar.c
+@@ -917,6 +917,7 @@ static int rcar_pcie_parse_map_dma_ranges(struct rcar_pcie *pcie,
+ 
+ static const struct of_device_id rcar_pcie_of_match[] = {
+ 	{ .compatible = "renesas,pcie-r8a7779", .data = rcar_pcie_hw_init_h1 },
++	{ .compatible = "renesas,pcie-gen2", .data = rcar_pcie_hw_init },
+ 	{ .compatible = "renesas,pcie-r8a7790", .data = rcar_pcie_hw_init },
+ 	{ .compatible = "renesas,pcie-r8a7791", .data = rcar_pcie_hw_init },
+ 	{},
+-- 
+2.1.4
 
-Arnd Bergmann <arnd@arndb.de> writes:
->> +struct renesas_usb3;
->> +struct renesas_usb3_request {
->> +	struct usb_request	req;
->> +	struct list_head	queue;
->> +};
->
-> There is already a list_head in struct usb_request. Could you use that?
-> (I don't know, just asking because this looks odd)
-
-no, no. Don't do that. The list_head in usb_request is for use by the
-gadget drivers and the gadget drivers only.
-
-=2D-=20
-balbi
-
---=-=-=
-Content-Type: application/pgp-signature; name="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBAgAGBQJWcYgPAAoJEIaOsuA1yqREpyoP/RqwNfttuepxwlFZT6HPQ/Yb
-4tsUau3lDz9DasWSD0S/aFCz2Jw2rJHWvcLh9YsEBCpn9jzc3al2wkF9pr0GFKtu
-hczDtxStN4R6G6GC6apfAi8+0DTaEVxWFFS+IgAH7jpXMNHsW3aMipTUdVMh4oKn
-GcihTxU3eYgyfQq01j4h/JyJcbuXwkDTVmmlazjKVAg424S6fJkOUZJn7oelzc+A
-B+nzqXlYuh05SprqmUYcw7mjJtcrQE+y2YnC32Qt2r2fcW6f+nP5Re8Ty47SV6MH
-PNIS+aDMiKQ8tA7Zx3gCcb26WVxVdH7KK11nG3Mp8XkoPwHUu27dDlgaXy+qGdLZ
-++L2c0H+6TVGxRg9ueQjuTJTrxFFKWqru6eIYsI5MXK9s83lRwBeqpCEZ9Fad9bq
-xIXFzXsVW8xoaS+N1Fr2qveQt2IERJ7wJlCqBLSr/MxuE32CrgfCVuckBCeZ/ARw
-4vgpNuKLnOR5cDGSCt41Q3mzzedErp3hdT5K4+efcAxKFOMLSSjNrgAEmxPcDJtV
-rk6XB5cMrSJOkBgXAknzPG9GJH8k0HizDnYnzu+FB3o1oNgRe0F9DRTMkOsEJyIP
-ilk51SYrGoc1j7oOpRkD1n4G4RjDZPfQWA5lKoH4ZJp09manyGr2Uk8mU54TJKKs
-icWUSmqc+7VqWvlD/X9z
-=A0lP
------END PGP SIGNATURE-----
---=-=-=--
