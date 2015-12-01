@@ -1,81 +1,71 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 01 Dec 2015 11:50:27 +0000
-Subject: renesas-drivers-2015-12-01-v4.4-rc3
-Message-Id: <1448970627-8690-1-git-send-email-geert+renesas@glider.be>
+From: Dirk Behme <dirk.behme@gmail.com>
+Date: Tue, 01 Dec 2015 16:05:24 +0000
+Subject: Re: renesas-drivers-2015-12-01-v4.4-rc3
+Message-Id: <565DC544.7080008@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1448970627-8690-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1448970627-8690-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-I've pushed renesas-drivers-2015-12-01-v4.4-rc3 to
-https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git
-This tree is meant to ease development of platform support and drivers for
-Renesas ARM ("shmobile") SoCs. It's created by merging (a) the for-next 
-branches of various subsystem trees and (b) branches with driver code
-submitted or planned for submission to maintainers into the development
-branch of Simon Horman's renesas.git tree.
+Hi Geert und Simon,
 
-Today's version is based on renesas-devel-20151201-v4.4-rc3.
+On 01.12.2015 12:50, Geert Uytterhoeven wrote:
+> I've pushed renesas-drivers-2015-12-01-v4.4-rc3 to
+> https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git
+> This tree is meant to ease development of platform support and drivers for
+> Renesas ARM ("shmobile") SoCs. It's created by merging (a) the for-next
+> branches of various subsystem trees and (b) branches with driver code
+> submitted or planned for submission to maintainers into the development
+> branch of Simon Horman's renesas.git tree.
 
-Included branches with driver code:
-  - sh-pfc-for-v4.5
-  - topic/rcar-dmac-residue-v1
-  - topic/rcar-dmac-hamza-v3
-  - topic/scif-iommu
-  - topic/sci-clk-cleanup-v2
-  - topic/pfc-scif-clk
-  - topic/scif-brg
-  - topic/cpg-mssr-v6
-  - topic/r8a7795-drivers-sh-v1
-  - git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git#topic/r8a7795-pcie
-  - git://linuxtv.org/pinchartl/media.git#vsp1-kms-20151112~4
 
-Included subsystem trees:
-  - git://git.kernel.org/pub/scm/linux/kernel/git/rafael/linux-pm.git#linux-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/clk/linux.git#clk-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-pinctrl.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-gpio.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/spi.git#for-next
-  - git://git.infradead.org/users/dedekind/l2-mtd-2.6.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/davem/net-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/tty.git#tty-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git#i2c/for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/mkl/linux-can-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/usb.git#usb-next
-  - git://people.freedesktop.org/~airlied/linux#drm-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/joro/iommu.git#next
-  - git://linuxtv.org/mchehab/media-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/cjb/mmc.git#mmc-next
-  - git://git.linaro.org/people/ulf.hansson/mmc.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/thierry.reding/linux-pwm.git#for-next
-  - git://git.linaro.org/people/daniel.lezcano/linux.git#clockevents/next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/balbi/usb.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/djbw/dmaengine.git#next
-  - git://git.infradead.org/users/vkoul/slave-dma.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/staging.git#staging-next
-  - git://ftp.arm.linux.org.uk/pub/linux/arm/kernel/git-cur/linux-arm.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/rzhang/linux.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regmap.git#for-next
-  - git://git.infradead.org/users/jcooper/linux.git#irqchip/for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/tomba/linux.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/tj/libata.git#for-next
-  - git://git.infradead.org/battery-2.6.git#master
-  - git://www.linux-watchdog.org/linux-watchdog-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/arm/arm-soc.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regulator.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/arm64/linux.git#for-next/core
-  - git://anongit.freedesktop.org/drm-intel#topic/drm-misc
-  - git://git.kernel.org/pub/scm/linux/kernel/git/helgaas/pci.git#next
+Many thanks for distilling this!
 
-Gr{oetje,eeting}s,
+Using this on the SalvatorX, we get the latest kernel with the latest 
+drivers.
 
-						Geert
+On the other hand, there is
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+https://git.kernel.org/cgit/linux/kernel/git/horms/renesas-bsp.git/log/?h=v4.2/rcar-3.0.x
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
+which is on an older kernel using older driver versions. But, it seems 
+to me that compared to renesas-drivers-2015-12-01-v4.4-rc3 it has some 
+additional drivers / functionality.
+
+I wonder if we want to try to combine both to get something like the 
+"latest and greatest" for the SalvatorX? I.e. take 
+renesas-drivers-2015-12-01-v4.4-rc3 and extend it by the additional 
+functionality from v4.2/rcar-3.0.x.
+
+To illustrate what I'm talking about I cherry picked some low hanging 
+fruits from v4.2/rcar-3.0.x and put them on 
+renesas-drivers-2015-12-01-v4.4-rc3:
+
+https://github.com/dirkbehme/linux-renesas-rcar-gen3/commits/dirk/gen3-latest-update
+
+The idea is to extend this step by step by additional parts of 
+v4.2/rcar-3.0.x.
+
+What do you think?
+
+Maybe the first step would be to identify the parts from 
+v4.2/rcar-3.0.x not yet in renesas-drivers-2015-12-01-v4.4-rc3. Having 
+a quick look based on the defconfigs results in
+
+* more/extended USB functionality?
+* SATA?
+* I2C / ADV7482?
+* media / camera?
+* DRM / framebuffer / HDMI?
+* eMMC ?
+* ...?
+
+Best regards
+
+Dirk
+
+
+
