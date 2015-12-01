@@ -1,31 +1,41 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 01 Dec 2015 06:36:03 +0000
-Subject: Re: [PATCH 0/2] ARM: shmobile: sh73a0: Add MSIOF support
-Message-Id: <20151201063602.GG16260@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 01 Dec 2015 07:24:32 +0000
+Subject: [PATCH 4/4] PCI: rcar: Add device tree support for r8a7793
+Message-Id: <1448954672-27236-5-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1448893012-8465-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1448893012-8465-1-git-send-email-geert+renesas@glider.be>
+References: <1448954672-27236-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1448954672-27236-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, devicetree@vger.kernel.org
+To: Bjorn Helgaas <bhelgaas@google.com>
+Cc: Magnus Damm <magnus.damm@gmail.com>, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Simon Horman <horms+renesas@verge.net.au>
 
-On Mon, Nov 30, 2015 at 03:16:50PM +0100, Geert Uytterhoeven wrote:
-> 	Hi Simon, Magnus,
-> 
-> This patch series adds support for the 4 MSIOF channels on SH-Mobile
-> AG5.
-> 
-> It has been tested (TX only) using MSIOF1 on the CN21 test connector.
-> RX hasn't been tested, as there are one-directional buffers between the
-> real MSIOF interface on high-density connector CN8 and the CN21 test
-> connector.
-> 
-> Functionality-wise, this depends on the bindings in "[PATCH] spi:
-> sh-msiof: Add support for SH-Mobile AG5", and pinctrl in "[PATCH]
-> pinctrl: sh-pfc: sh73a0: Add MSIOF support".
-> 
-> Thanks!
+Simply document new compat strings.
+As a previous patch adds a generic R-Car Gen2 compat string
+there appears to be no need for a driver updates.
 
-Thanks, I have queued these up.
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
+---
+* The r8a7792 and r8a7794 are omitted from this change as the
+  hardware in question does not appear to be present on those SoCs.
+---
+ Documentation/devicetree/bindings/pci/rcar-pci.txt | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/Documentation/devicetree/bindings/pci/rcar-pci.txt b/Documentation/devicetree/bindings/pci/rcar-pci.txt
+index 872cea085be8..4548b9b54165 100644
+--- a/Documentation/devicetree/bindings/pci/rcar-pci.txt
++++ b/Documentation/devicetree/bindings/pci/rcar-pci.txt
+@@ -4,6 +4,7 @@ Required properties:
+ compatible: "renesas,pcie-r8a7779" for the R8A7779 SoC;
+ 	    "renesas,pcie-r8a7790" for the R8A7790 SoC;
+ 	    "renesas,pcie-r8a7791" for the R8A7791 SoC;
++	    "renesas,pcie-r8a7793" for the R8A7793 SoC;
+ 	    "renesas,pcie-gen2" for a generic R-Car Gen2 compatible device.
+ 
+ 	    When compatible with the generic version, nodes must list the
+-- 
+2.1.4
+
