@@ -1,23 +1,30 @@
-From: David Miller <davem@davemloft.net>
-Date: Thu, 03 Dec 2015 20:01:27 +0000
-Subject: Re: [PATCH v2 net-next 0/2] ravb: More compatibility strings
-Message-Id: <20151203.150127.704957742248906445.davem@davemloft.net>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 01 Dec 2015 05:35:51 +0000
+Subject: [PATCH 0/2] arm64: renesas: CS2000 support for sound
+Message-Id: <87lh9eybq9.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449035913-9129-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1449035913-9129-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: horms+renesas@verge.net.au
-Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org, magnus.damm@gmail.com, sergei.shtylyov@cogentembedded.com, devicetree@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed,  2 Dec 2015 14:58:31 +0900
 
-> this short series adds generic gen2 and gen3, and soc-specific
-> compatibility strings for the missing gen2 SoCs.
-> 
-> Key Changes in v2:
-> * Include "rcar-" in generic bindings
+Hi Simon
 
-Series applied, thanks Simon.
+CS2000 driver was accepted in clk-next
+https://git.kernel.org/cgit/linux/kernel/git/clk/linux.git/log/?h=clk-next
+
+These patches add cs2000 support on salvator-x board for sound.
+
+Kuninori Morimoto (2):
+      arm64: renesas: salvator-x: use CS2000 as AUDIO_CLK_B
+      arm64: defconfig: add CS2000 support
+
+ arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 38 ++++++++++++++++++++++++++++++++++++++
+ arch/arm64/configs/defconfig                       |  1 +
+ 2 files changed, 39 insertions(+)
+
+
+Best regards
+---
+Kuninori Morimoto
