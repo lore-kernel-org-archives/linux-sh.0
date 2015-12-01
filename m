@@ -1,45 +1,76 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Sat, 05 Dec 2015 18:59:30 +0000
-Subject: Re: [PATCH v2] emev2: add slave support
-Message-Id: <20151205185929.GB1597@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="wq9mPyueHGvFACwf"
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 01 Dec 2015 07:43:02 +0000
+Subject: [PATCH 1/2 net-next] ravb: Add fallback compatibility strings
+Message-Id: <1448955783-22806-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449337891-3880-1-git-send-email-niklas.soderlund+renesas@ragnatech.se>
-In-Reply-To: <1449337891-3880-1-git-send-email-niklas.soderlund+renesas@ragnatech.se>
-To: Niklas =?utf-8?Q?S=C3=B6derlund?= <niklas.soderlund@ragnatech.se>
-Cc: linux-i2c@vger.kernel.org, ian.molton@codethink.co.uk, laurent.pinchart@ideasonboard.com, magnus.damm@gmail.com, linux-sh@vger.kernel.org, Niklas =?utf-8?Q?S=C3=B6derlund?= <niklas.soderlund+renesas@ragnatech.se>
+References: <1448955783-22806-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1448955783-22806-1-git-send-email-horms+renesas@verge.net.au>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: netdev@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, devicetree@vger.kernel.org
 
+Add fallback compatibility strings for R-Car Gen 2 & 3 SoC Families.
+This is in keeping with the fallback scheme being adopted wherever
+appropriate for drivers for Renesas SoCs.
 
---wq9mPyueHGvFACwf
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Also correct typo.
 
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ Documentation/devicetree/bindings/net/renesas,ravb.txt | 11 +++++++++--
+ drivers/net/ethernet/renesas/ravb_main.c               |  2 ++
+ 2 files changed, 11 insertions(+), 2 deletions(-)
 
-> - Updated email to contain +renesas
+diff --git a/Documentation/devicetree/bindings/net/renesas,ravb.txt b/Documentation/devicetree/bindings/net/renesas,ravb.txt
+index b486f3f5f6a3..115006325bff 100644
+--- a/Documentation/devicetree/bindings/net/renesas,ravb.txt
++++ b/Documentation/devicetree/bindings/net/renesas,ravb.txt
+@@ -1,12 +1,19 @@
+ * Renesas Electronics Ethernet AVB
+ 
+ This file provides information on what the device node for the Ethernet AVB
+-interface contains.
++interface.
+ 
+ Required properties:
+ - compatible: "renesas,etheravb-r8a7790" if the device is a part of R8A7790 SoC.
+ 	      "renesas,etheravb-r8a7794" if the device is a part of R8A7794 SoC.
+ 	      "renesas,etheravb-r8a7795" if the device is a part of R8A7795 SoC.
++	      "renesas,etheravb-gen2" for generic R-Car Gen 2 compatible interface.
++	      "renesas,etheravb-gen3" for generic R-Car Gen 3 compatible interface.
++
++	      When compatible with the generic version, nodes must list the
++	      SoC-specific version corresponding to the platform first
++	      followed by the generic version.
++
+ - reg: offset and length of (1) the register block and (2) the stream buffer.
+ - interrupts: A list of interrupt-specifiers, one for each entry in
+ 	      interrupt-names.
+@@ -37,7 +44,7 @@ Optional properties:
+ Example:
+ 
+ 	ethernet@e6800000 {
+-		compatible = "renesas,etheravb-r8a7795";
++		compatible = "renesas,etheravb-r8a7795", "renesas,etheravb-gen3";
+ 		reg = <0 0xe6800000 0 0x800>, <0 0xe6a00000 0 0x10000>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <GIC_SPI 39 IRQ_TYPE_LEVEL_HIGH>,
+diff --git a/drivers/net/ethernet/renesas/ravb_main.c b/drivers/net/ethernet/renesas/ravb_main.c
+index 990dc55cdada..d3b4f574d346 100644
+--- a/drivers/net/ethernet/renesas/ravb_main.c
++++ b/drivers/net/ethernet/renesas/ravb_main.c
+@@ -1656,7 +1656,9 @@ static int ravb_mdio_release(struct ravb_private *priv)
+ static const struct of_device_id ravb_match_table[] = {
+ 	{ .compatible = "renesas,etheravb-r8a7790", .data = (void *)RCAR_GEN2 },
+ 	{ .compatible = "renesas,etheravb-r8a7794", .data = (void *)RCAR_GEN2 },
++	{ .compatible = "renesas,etheravb-gen2",    .data = (void *)RCAR_GEN2 },
+ 	{ .compatible = "renesas,etheravb-r8a7795", .data = (void *)RCAR_GEN3 },
++	{ .compatible = "renesas,etheravb-gen3",    .data = (void *)RCAR_GEN3 },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(of, ravb_match_table);
+-- 
+2.1.4
 
-This mail address did not work a second ago.
-
---wq9mPyueHGvFACwf
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBAgAGBQJWYzQRAAoJEBQN5MwUoCm2mr0P/1bM3q4ZZqZRZo0RHjhTy6rD
-9Q24YsU28AWaUB6r/+sw0bqW4IUEIqFpAUTXPBrWeC1kRxDJo+ZyfrBOo6OW594E
-10Gic8pE+xMw2KZ4wYQCw0aX12LVosphwpIYh81gQ8Ynm9RlZdEAG/slXepmpcWu
-HcoLOzJuwzjp7vbhGyKbiVYHpJSqX5piJzxIj5Y6GKsaAFZTtdz4S7u9ky/QrhDR
-DRkTNRJdp57NmZ5osBiM2QmFy6J8JgYgt+2NKckAdeFCqkyVvBj/xhGZNlbLkrZN
-RpmaXTXF8TfNSAxp5e5OwEqDj1FnkOe10f0PwZIQNMh+1F0vQByPFveNKe0uOKAS
-S92XF0YKKO1ftoyu/o9SJ1NMnLgF91ucKLgfhsXmDf+QMe0pIRy4E2rr/bnOIK73
-eXnV05s2ZIYXDuURChzJz9/SmNJ+TyHwI03rOxPY61ytzstwAG0P6Zc2E+Ew71xR
-JMZlPJ7fm/1wx0w/ltWAVc23qp2QBlWBcnfyJNu8iIp94Osh2avnigdTlnegJErJ
-UFznbRkQNEHAk1LgsJ/d5xNaT0InHPp1f7CaPZHB0RUM0rJUxkzdpnAJkSFXNKP/
-yxItiIb8qISRsyl/9xoBF/OiIV35Ql+gmtboqGNjycRKxdxnWPmpX612VfDMirJ1
-bNxntbX7GwNtFx31Ny0h
-=QaFt
------END PGP SIGNATURE-----
-
---wq9mPyueHGvFACwf--
