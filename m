@@ -1,56 +1,24 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Thu, 17 Dec 2015 19:39:07 +0000
-Subject: Re: [PATCH v2] i2c: rcar: disable runtime PM correctly in slave mode
-Message-Id: <20151217193907.GC1530@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="lCAWRPmW1mITcIfM"
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 01 Dec 2015 03:00:18 +0000
+Subject: Re: [PATCH] thermal: rcar: add .set_trip_temp support
+Message-Id: <87r3j6yixm.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450292718-11951-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1450292718-11951-1-git-send-email-wsa@the-dreams.de>
-To: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, linux-pm@vger.kernel.org
+References: <87a8q28wsv.wl%kuninori.morimoto.gx@renesas.com>
+	<20151130185058.GA5900@localhost.localdomain>
+In-Reply-To: <20151130185058.GA5900@localhost.localdomain>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Eduardo Valentin <edubezval@gmail.com>
+Cc: Zhang Rui <rui.zhang@intel.com>, Rob Herring <robh+dt@kernel.org>, Pawel Moll <pawel.moll@arm.com>, Mark Rutland <mark.rutland@arm.com>, Ian Campbell <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, Ryusuke Sakato <ryusuke.sakato.bx@renesas.com>, linux-kernel@vger.kernel.org, "osd2@lm.renesas.com" <osd2@lm.renesas.com>
 
 
---lCAWRPmW1mITcIfM
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Hi Eduardo
 
-On Wed, Dec 16, 2015 at 08:05:18PM +0100, Wolfram Sang wrote:
-> From: Wolfram Sang <wsa+renesas@sang-engineering.com>
->=20
-> When we also are I2C slave, we need to disable runtime PM because the
-> address detection mechanism needs to be active all the time. However, we
-> can reenable runtime PM once the slave instance was unregistered. So,
-> use pm_runtime_get_sync/put to achieve this, since it has proper
-> refcounting. pm_runtime_allow/forbid is like a global knob controllable
-> from userspace which is unsuitable here.
->=20
-> Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+> According to discussion on your first version [1], this patch is not needed
+> anymore, right?
+> 
+> If you want to add the support for writable trip points, please, add the
+> support to of-thermal, as this driver supports only DT booting boards.
 
-Applied to for-current, thanks!
-
-
---lCAWRPmW1mITcIfM
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBAgAGBQJWcw9aAAoJEBQN5MwUoCm2AVcP+wdMLl83gMeg0K6RDiCYm817
-71luAhK+f5L9xAq0sjs67m24F+G3igkE4UuDHtKWDKnc6j4oSpj8BoYbIGJikFLh
-oqDCwK0dOuXPjnVok6Rp+XF0/VFrD34uhudvbZBP9e3aKygBtZY2C9hDbQdTP5gS
-/p6mCLaCKQwAcFhfmHUW2PuUeeoy7r9Pt2fE5tnUV+AB2aTd2IEfJOkI9phDgUO4
-92ddu2j8il1YM2RFxjt6Z7QzlcTu/+NCuShzng+PUXj0aHHT9EsrRPzyO0ZEEcuT
-C95NkOhYnNdOQnHesDE8APb4fkMpM48ODKppch9u1ePPS+VijZBSmlw/PffrW5yW
-fTxXJJlXz81qvDB3sI+RT+9NNT02IRAfUG6Vh3BTsopvxBzHSo21mRDkWtzx3Kw0
-heRVMi+uBK7uktwWteXOvXszrz2UKpBUDpANP6hnZpZQLwDcApNapDbZR+f7FIQd
-0D4r8/VWNOfKr/gQMZE8pclvkcbN4oV1bG5B0+hNAvRSVVVl+gxHU0jBwqKs0WO6
-bvKyHVT36O0kOsKE0KO13ARvnwosk8CE2MqMKLQjkSDqGwvQ8TVxpNFMkS5knI1p
-3TvQUtzHi/h2USam1m7haGAQ5PxUggNwte0Rk4pgcdIW8UNuO1hxMTrmMI6nOJm7
-ytkmdGlo8ShCRkCwPxq3
-=Mssd
------END PGP SIGNATURE-----
-
---lCAWRPmW1mITcIfM--
+Thanks. I will investigate it.
