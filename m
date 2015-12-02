@@ -1,48 +1,73 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 21 Dec 2015 13:16:36 +0000
-Subject: Re: [PATCH 2/4] PCI: rcar: Support runtime PM link state L1 handling in pcie-rcar
-Message-Id: <CAMuHMdUKHO50n_OAhx-OcZX9FwN+dUbZCHnjP4HaPqgt3j=MzQ@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 02 Dec 2015 22:51:39 +0000
+Subject: [PATCH v2 3/4] PCI: rcar: add gen2 fallback compatibility string
+Message-Id: <1449096700-23304-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450358557-28376-1-git-send-email-phil.edworthy@renesas.com>
-	<1450358557-28376-3-git-send-email-phil.edworthy@renesas.com>
-	<20151217133058.GA20372@katana>
-	<PS1PR06MB1180304088ECF5384C497E40F5E10@PS1PR06MB1180.apcprd06.prod.outlook.com>
-	<20151218140412.GA4595@katana>
-	<KL1PR06MB1174165C6112327548CD29DDF5E40@KL1PR06MB1174.apcprd06.prod.outlook.com>
-In-Reply-To: <KL1PR06MB1174165C6112327548CD29DDF5E40@KL1PR06MB1174.apcprd06.prod.outlook.com>
+References: <1449096700-23304-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1449096700-23304-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Phil Edworthy <phil.edworthy@renesas.com>
-Cc: Wolfram Sang <wsa@the-dreams.de>, Simon Horman <horms@verge.net.au>, Bjorn Helgaas <bhelgaas@google.com>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "linux-pci@vger.kernel.org" <linux-pci@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+To: Bjorn Helgaas <bhelgaas@google.com>
+Cc: Magnus Damm <magnus.damm@gmail.com>, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Simon Horman <horms+renesas@verge.net.au>
 
-Hi Phil,
+Add fallback compatibility string for R-Car Gen 2 family.
+This is in keeping with the fallback scheme being adopted wherever
+appropriate for drivers for Renesas SoCs.
 
-(this time with full CC list)
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-On Mon, Dec 21, 2015 at 11:52 AM, Phil Edworthy
-<phil.edworthy@renesas.com> wrote:
-> On 18 December 2015 14:04, Wolfram Sang wrote:
->> > Since the hardware doesn't support hot plug, I believe this loop will
->> > always exit very quickly. Unless someone has taken a hammer to the HW
->> > of course.
->>
->> I know what you mean. But since readl_poll_timeout() makes it easy, we
->> should better be safe than sorry.
-> Hmm, I changed the code, but now it doesn't come out of suspend unless
-> sleep_us passed to readl_poll_timeout is 0. Any reason you can think of?
+---
+v2
+* Include "rcar-" in new compatibility string
+---
+ Documentation/devicetree/bindings/pci/rcar-pci.txt | 13 ++++++++++---
+ drivers/pci/host/pcie-rcar.c                       |  1 +
+ 2 files changed, 11 insertions(+), 3 deletions(-)
 
-Timers or interrupts disabled?
+diff --git a/Documentation/devicetree/bindings/pci/rcar-pci.txt b/Documentation/devicetree/bindings/pci/rcar-pci.txt
+index 29d3b989d3b0..6b4d2f798386 100644
+--- a/Documentation/devicetree/bindings/pci/rcar-pci.txt
++++ b/Documentation/devicetree/bindings/pci/rcar-pci.txt
+@@ -1,8 +1,15 @@
+ * Renesas RCar PCIe interface
+ 
+ Required properties:
+-- compatible: should contain one of the following
+-	"renesas,pcie-r8a7779", "renesas,pcie-r8a7790", "renesas,pcie-r8a7791"
++compatible: "renesas,pcie-r8a7779" for the R8A7779 SoC;
++	    "renesas,pcie-r8a7790" for the R8A7790 SoC;
++	    "renesas,pcie-r8a7791" for the R8A7791 SoC;
++	    "renesas,pcie-rcar-gen2" for a generic R-Car Gen2 compatible device.
++
++	    When compatible with the generic version, nodes must list the
++	    SoC-specific version corresponding to the platform first
++	    followed by the generic version.
++
+ - reg: base address and length of the pcie controller registers.
+ - #address-cells: set to <3>
+ - #size-cells: set to <2>
+@@ -25,7 +32,7 @@ Example:
+ SoC specific DT Entry:
+ 
+ 	pcie: pcie@fe000000 {
+-		compatible = "renesas,pcie-r8a7791";
++		compatible = "renesas,pcie-r8a7791", "renesas,pcie-rcar-gen2";
+ 		reg = <0 0xfe000000 0 0x80000>;
+ 		#address-cells = <3>;
+ 		#size-cells = <2>;
+diff --git a/drivers/pci/host/pcie-rcar.c b/drivers/pci/host/pcie-rcar.c
+index f4fa6c537448..047279bdc3fe 100644
+--- a/drivers/pci/host/pcie-rcar.c
++++ b/drivers/pci/host/pcie-rcar.c
+@@ -917,6 +917,7 @@ static int rcar_pcie_parse_map_dma_ranges(struct rcar_pcie *pcie,
+ 
+ static const struct of_device_id rcar_pcie_of_match[] = {
+ 	{ .compatible = "renesas,pcie-r8a7779", .data = rcar_pcie_hw_init_h1 },
++	{ .compatible = "renesas,pcie-rcar-gen2", .data = rcar_pcie_hw_init },
+ 	{ .compatible = "renesas,pcie-r8a7790", .data = rcar_pcie_hw_init },
+ 	{ .compatible = "renesas,pcie-r8a7791", .data = rcar_pcie_hw_init },
+ 	{},
+-- 
+2.1.4
 
-Does the might_sleep_if() scream if CONFIG_DEBUG_ATOMIC_SLEEP=y?
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
