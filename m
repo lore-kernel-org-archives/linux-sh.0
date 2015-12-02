@@ -1,54 +1,43 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 15 Dec 2015 08:45:06 +0000
-Subject: Re: [PATCH v2 6/6] arm64: renesas: r8a7795: Add L2 cache-controller nodes
-Message-Id: <CAMuHMdWELqMQ+CCENsGtdBx7n_YV=D6pJpo02jeQRe67jEehyQ@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 02 Dec 2015 05:58:33 +0000
+Subject: [PATCH v2 net-next 2/2] ravb: add device tree support for r8a779[123]
+Message-Id: <1449035913-9129-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449512659-16688-1-git-send-email-geert+renesas@glider.be>
- <1449512659-16688-7-git-send-email-geert+renesas@glider.be>
- <5665D4C7.1050705@arm.com> <20151207190355.GE28024@leverpostej>
- <CAMuHMdWrXiYkcFwSkgbEfQRXvT2FsSTbqD72vtiedmeEZZKxLg@mail.gmail.com>
-In-Reply-To: <CAMuHMdWrXiYkcFwSkgbEfQRXvT2FsSTbqD72vtiedmeEZZKxLg@mail.gmail.com>
+References: <1449035913-9129-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1449035913-9129-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: netdev@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, devicetree@vger.kernel.org
 
-Hi Mark,
+Simply document new compatibility strings.
+As a previous patch adds a generic R-Car Gen2 compatibility string
+there appears to be no need for a driver updates.
 
-On Mon, Dec 7, 2015 at 9:18 PM, Geert Uytterhoeven <geert@linux-m68k.org> wrote:
-> On Mon, Dec 7, 2015 at 8:03 PM, Mark Rutland <mark.rutland@arm.com> wrote:
->> On Mon, Dec 07, 2015 at 06:49:43PM +0000, Sudeep Holla wrote:
->>> On 07/12/15 18:24, Geert Uytterhoeven wrote:
->>> >+    L2_CA57: cache-controller@0 {
->>> >+            compatible = "cache";
->>> >+            arm,data-latency = <4 4 1>;
->>> >+            arm,tag-latency = <3 3 3>;
->>>
->>> Interesting, only PL2xx/3xx cache controller driver reads this from the
->>> DT and configures the controller. The integrated L2 found in
->>> A15/A7/A57/A53 needs doesn't make use of these values from the DT.
->>
->> These properties seem to be from l2cc.txt, which really only corresponds
->> to PL210/PL220/PL310 (and variants) and isn't as generic as it sounds.
->>
->> I don't see that these are necessary at all.
->
-> The datasheet does mention the data/tag RAM latencies/setup values, so
-> I put them in DT using the properties I could fine.
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-Furthermore these values are different for different SoCs in the same family
-(e.g. r8a7790 vs. other R-Car Gen2 members), even though they seem to
-have the same Cortex-A15 cores.
+---
+v2
+* No change
+---
+ Documentation/devicetree/bindings/net/renesas,ravb.txt | 3 +++
+ 1 file changed, 3 insertions(+)
 
-So to me these look like properties we want to document in the DTS...
+diff --git a/Documentation/devicetree/bindings/net/renesas,ravb.txt b/Documentation/devicetree/bindings/net/renesas,ravb.txt
+index 7555116b5db2..81a9f9e6b45f 100644
+--- a/Documentation/devicetree/bindings/net/renesas,ravb.txt
++++ b/Documentation/devicetree/bindings/net/renesas,ravb.txt
+@@ -5,6 +5,9 @@ interface contains.
+ 
+ Required properties:
+ - compatible: "renesas,etheravb-r8a7790" if the device is a part of R8A7790 SoC.
++	      "renesas,etheravb-r8a7791" if the device is a part of R8A7791 SoC.
++	      "renesas,etheravb-r8a7792" if the device is a part of R8A7792 SoC.
++	      "renesas,etheravb-r8a7793" if the device is a part of R8A7793 SoC.
+ 	      "renesas,etheravb-r8a7794" if the device is a part of R8A7794 SoC.
+ 	      "renesas,etheravb-r8a7795" if the device is a part of R8A7795 SoC.
+ 	      "renesas,etheravb-rcar-gen2" for generic R-Car Gen 2 compatible interface.
+-- 
+2.1.4
 
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
