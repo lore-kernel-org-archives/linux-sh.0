@@ -1,62 +1,35 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 04 Dec 2015 08:34:17 +0000
-Subject: Re: [PATCH 2/4] thermal: rcar: enable to use thermal-zone on DT
-Message-Id: <CAMuHMdUe8kZdZ7-xS7B8J6LdaK7FAitE0Qms=vMAmNis24u7SA@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 02 Dec 2015 22:51:36 +0000
+Subject: [PATCH v2 0/4] PCI: rcar, rcar-gen2: More Gen2 compatibility strings
+Message-Id: <1449096700-23304-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <871tb2hpn2.wl%kuninori.morimoto.gx@renesas.com>
-	<87y4dagb0i.wl%kuninori.morimoto.gx@renesas.com>
-	<CAMuHMdUcQFcQuEmQZ4yMGwm=ouH+aQQhG3V95p=Pb56qWberQA@mail.gmail.com>
-In-Reply-To: <CAMuHMdUcQFcQuEmQZ4yMGwm=ouH+aQQhG3V95p=Pb56qWberQA-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
-Cc: Simon <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Zhang Rui <rui.zhang-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, Eduardo Valentin <edubezval-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Magnus <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux PM list <linux-pm-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Bjorn Helgaas <bhelgaas@google.com>
+Cc: Magnus Damm <magnus.damm@gmail.com>, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Simon Horman <horms+renesas@verge.net.au>
 
-On Fri, Dec 4, 2015 at 9:32 AM, Geert Uytterhoeven <geert@linux-m68k.org> wrote:
->> +Example (with thermal-zone):
->> +
->> +thermal-zones {
->> +       cpu_thermal: cpu-thermal {
->> +               polling-delay-passive   = <1000>;
->> +               polling-delay           = <5000>;
->> +
->> +               thermal-sensors = <&thermal>;
->> +
->> +               trips {
->> +                       cpu-crit {
->> +                               temperature     = <1150000>;
->> +                               hysteresis      = <0>;
->> +                               type            = "critical";
->> +                       };
->> +               };
->> +               cooling-maps {
->> +               };
->> +       };
->> +};
->> +
->> +thermal: thermal@e61f0000 {
->> +       compatible =    "renesas,thermal-r8a7790",
->> +                       "renesas,rcar-thermal-gen2",
->> +                       "renesas,rcar-thermal";
->> +       reg = <0 0xe61f0000 0 0x14>, <0 0xe61f0100 0 0x38>;
->> +       interrupts = <0 69 IRQ_TYPE_LEVEL_HIGH>;
->> +       clocks = <&mstp5_clks R8A7790_CLK_THERMAL>;
->> +       power-domains = <&cpg_clocks>;
->> +       #thermal-sensor-cells = <0>;
->> +};
->
-> How are the two nodes above linked?
+Hi,
 
-Pleae ignore my comment, I found the "<&thermal>".
+this short series adds generic gen2 and SoC-specific r8a7793 compatibility
+strings to the rcar PCI and rcar-gen2 PCIE drivers. The intention is to
+provide a complete set of compatibility strings for known Gen2 SoCs.
 
-Gr{oetje,eeting}s,
+Key Changes in v2:
+* Include "rcar-" in generic bindings
 
-                        Geert
+Simon Horman (4):
+  PCI: rcar-gen2: add gen2 fallback compatibility string
+  PCI: rcar-gen2: add device tree support for r8a7793
+  PCI: rcar: add gen2 fallback compatibility string
+  PCI: rcar: add device tree support for r8a7793
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+ Documentation/devicetree/bindings/pci/pci-rcar-gen2.txt | 12 ++++++++++--
+ Documentation/devicetree/bindings/pci/rcar-pci.txt      | 14 +++++++++++---
+ drivers/pci/host/pci-rcar-gen2.c                        |  1 +
+ drivers/pci/host/pcie-rcar.c                            |  1 +
+ 4 files changed, 23 insertions(+), 5 deletions(-)
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+-- 
+2.1.4
+
