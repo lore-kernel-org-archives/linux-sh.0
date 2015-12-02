@@ -1,94 +1,146 @@
-From: "Michael S. Tsirkin" <mst@redhat.com>
-Date: Thu, 31 Dec 2015 19:08:22 +0000
-Subject: [PATCH v2 20/32] metag: define __smp_xxx
-Message-Id: <1451572003-2440-21-git-send-email-mst@redhat.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 02 Dec 2015 20:11:35 +0000
+Subject: [PATCH] pinctrl: sh-pfc: r8a7791: add EtherAVB pin groups
+Message-Id: <1512650.VUqGxiAB2A@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1451572003-2440-1-git-send-email-mst@redhat.com>
-In-Reply-To: <1451572003-2440-1-git-send-email-mst-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+References: <13219129.kD4pZSmcAP@wasted.cogentembedded.com>
+In-Reply-To: <13219129.kD4pZSmcAP@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Peter Zijlstra <peterz-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>, Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>, linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Cooper <andrew.cooper3-Sxgqhf6Nn4DQT0dZR+AlfA@public.gmane.org>, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Stefano Stabellini <stefano.stabellini-mvvWK6WmYclDPfheJLI6IQ@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>, linux-ia64-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linuxppc-dev-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org, linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sparclinux-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, linux-metag-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mips-6z/3iImG2C8G8FEW9MqTrA@public.gmane.org, x86-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, user-mode-linux-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, adi-buildroot-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-xtensa-PjhNF2WwrV/0Sa2dR60CXw@public.gmane.org, xen-devel-GuqFBffKawtpuQazS67q72D2FQJk+8+b@public.gmane.org, James Hogan <james.hogan-1AXoQHu6uovQT0dZR+AlfA@public.gmane.org>, Ingo Molnar <mingo-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Davidlohr Bueso <dbueso-l3A5Bk7waGM@public.gmane.org>
+To: linus.walleij@linaro.org, linux-sh@vger.kernel.org, laurent.pinchart@ideasonboard.com, linux-gpio@vger.kernel.org
 
-This defines __smp_xxx barriers for metag,
-for use by virtualization.
+Add the EtherAVB pin groups to the R8A7791 PFC driver.
 
-smp_xxx barriers are removed as they are
-defined correctly by asm-generic/barriers.h
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Note: as __smp_XX macros should not depend on CONFIG_SMP, they can not
-use the existing fence() macro since that is defined differently between
-SMP and !SMP.  For this reason, this patch introduces a wrapper
-metag_fence() that doesn't depend on CONFIG_SMP.
-fence() is then defined using that, depending on CONFIG_SMP.
-
-Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
-Acked-by: Arnd Bergmann <arnd@arndb.de>
 ---
- arch/metag/include/asm/barrier.h | 32 +++++++++++++++-----------------
- 1 file changed, 15 insertions(+), 17 deletions(-)
+The patch is against the 'devel' branch of Linus W.'s 'linux-pinctrl.git' repo.
 
-diff --git a/arch/metag/include/asm/barrier.h b/arch/metag/include/asm/barrier.h
-index b5b778b..84880c9 100644
---- a/arch/metag/include/asm/barrier.h
-+++ b/arch/metag/include/asm/barrier.h
-@@ -44,13 +44,6 @@ static inline void wr_fence(void)
- #define rmb()		barrier()
- #define wmb()		mb()
+ drivers/pinctrl/sh-pfc/pfc-r8a7791.c |   92 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 92 insertions(+)
+
+Index: linux-pinctrl/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
+=================================--- linux-pinctrl.orig/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
++++ linux-pinctrl/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
+@@ -1740,6 +1740,82 @@ static const unsigned int audio_clkout_m
+ 	AUDIO_CLKOUT_MARK,
+ };
  
--#ifndef CONFIG_SMP
--#define fence()		do { } while (0)
--#define smp_mb()        barrier()
--#define smp_rmb()       barrier()
--#define smp_wmb()       barrier()
--#else
--
- #ifdef CONFIG_METAG_SMP_WRITE_REORDERING
- /*
-  * Write to the atomic memory unlock system event register (command 0). This is
-@@ -60,26 +53,31 @@ static inline void wr_fence(void)
-  * incoherence). It is therefore ineffective if used after and on the same
-  * thread as a write.
-  */
--static inline void fence(void)
-+static inline void metag_fence(void)
- {
- 	volatile int *flushptr = (volatile int *) LINSYSEVENT_WR_ATOMIC_UNLOCK;
- 	barrier();
- 	*flushptr = 0;
- 	barrier();
- }
--#define smp_mb()        fence()
--#define smp_rmb()       fence()
--#define smp_wmb()       barrier()
-+#define __smp_mb()        metag_fence()
-+#define __smp_rmb()       metag_fence()
-+#define __smp_wmb()       barrier()
- #else
--#define fence()		do { } while (0)
--#define smp_mb()        barrier()
--#define smp_rmb()       barrier()
--#define smp_wmb()       barrier()
-+#define metag_fence()		do { } while (0)
-+#define __smp_mb()        barrier()
-+#define __smp_rmb()       barrier()
-+#define __smp_wmb()       barrier()
- #endif
++/* - AVB -------------------------------------------------------------------- */
++static const unsigned int avb_link_pins[] = {
++	RCAR_GP_PIN(5, 14),
++};
++static const unsigned int avb_link_mux[] = {
++	AVB_LINK_MARK,
++};
++static const unsigned int avb_magic_pins[] = {
++	RCAR_GP_PIN(5, 11),
++};
++static const unsigned int avb_magic_mux[] = {
++	AVB_MAGIC_MARK,
++};
++static const unsigned int avb_phy_int_pins[] = {
++	RCAR_GP_PIN(5, 16),
++};
++static const unsigned int avb_phy_int_mux[] = {
++	AVB_PHY_INT_MARK,
++};
++static const unsigned int avb_mdio_pins[] = {
++	RCAR_GP_PIN(5, 12), RCAR_GP_PIN(5, 9),
++};
++static const unsigned int avb_mdio_mux[] = {
++	AVB_MDC_MARK, AVB_MDIO_MARK,
++};
++static const unsigned int avb_mii_pins[] = {
++	RCAR_GP_PIN(5, 18), RCAR_GP_PIN(5, 19), RCAR_GP_PIN(5, 20),
++	RCAR_GP_PIN(5, 21),
 +
-+#ifdef CONFIG_SMP
-+#define fence() metag_fence()
-+#else
-+#define fence()		do { } while (0)
- #endif
++	RCAR_GP_PIN(5, 0), RCAR_GP_PIN(5, 1), RCAR_GP_PIN(5, 2),
++	RCAR_GP_PIN(5, 3),
++
++	RCAR_GP_PIN(5, 8), RCAR_GP_PIN(5, 13), RCAR_GP_PIN(5, 10),
++	RCAR_GP_PIN(5, 15), RCAR_GP_PIN(5, 26), RCAR_GP_PIN(5, 28),
++	RCAR_GP_PIN(5, 29),
++};
++static const unsigned int avb_mii_mux[] = {
++	AVB_TXD0_MARK, AVB_TXD1_MARK, AVB_TXD2_MARK,
++	AVB_TXD3_MARK,
++
++	AVB_RXD0_MARK, AVB_RXD1_MARK, AVB_RXD2_MARK,
++	AVB_RXD3_MARK,
++
++	AVB_RX_ER_MARK, AVB_RX_CLK_MARK, AVB_RX_DV_MARK,
++	AVB_CRS_MARK, AVB_TX_EN_MARK, AVB_TX_CLK_MARK,
++	AVB_COL_MARK,
++};
++static const unsigned int avb_gmii_pins[] = {
++	RCAR_GP_PIN(5, 18), RCAR_GP_PIN(5, 19), RCAR_GP_PIN(5, 20),
++	RCAR_GP_PIN(5, 21), RCAR_GP_PIN(5, 22), RCAR_GP_PIN(5, 23),
++	RCAR_GP_PIN(5, 24), RCAR_GP_PIN(5, 25),
++
++	RCAR_GP_PIN(5, 0), RCAR_GP_PIN(5, 1), RCAR_GP_PIN(5, 2),
++	RCAR_GP_PIN(5, 3), RCAR_GP_PIN(5, 4), RCAR_GP_PIN(5, 5),
++	RCAR_GP_PIN(5, 6), RCAR_GP_PIN(5, 7),
++
++	RCAR_GP_PIN(5, 8), RCAR_GP_PIN(5, 13), RCAR_GP_PIN(5, 10),
++	RCAR_GP_PIN(5, 15), RCAR_GP_PIN(5, 30), RCAR_GP_PIN(5, 17),
++	RCAR_GP_PIN(5, 26), RCAR_GP_PIN(5, 27), RCAR_GP_PIN(5, 28),
++	RCAR_GP_PIN(5, 29),
++};
++static const unsigned int avb_gmii_mux[] = {
++	AVB_TXD0_MARK, AVB_TXD1_MARK, AVB_TXD2_MARK,
++	AVB_TXD3_MARK, AVB_TXD4_MARK, AVB_TXD5_MARK,
++	AVB_TXD6_MARK, AVB_TXD7_MARK,
++
++	AVB_RXD0_MARK, AVB_RXD1_MARK, AVB_RXD2_MARK,
++	AVB_RXD3_MARK, AVB_RXD4_MARK, AVB_RXD5_MARK,
++	AVB_RXD6_MARK, AVB_RXD7_MARK,
++
++	AVB_RX_ER_MARK, AVB_RX_CLK_MARK, AVB_RX_DV_MARK,
++	AVB_CRS_MARK, AVB_GTX_CLK_MARK, AVB_GTXREFCLK_MARK,
++	AVB_TX_EN_MARK, AVB_TX_ER_MARK, AVB_TX_CLK_MARK,
++	AVB_COL_MARK,
++};
++
+ /* - CAN -------------------------------------------------------------------- */
  
--#define smp_mb__before_atomic()	barrier()
--#define smp_mb__after_atomic()	barrier()
-+#define __smp_mb__before_atomic()	barrier()
-+#define __smp_mb__after_atomic()	barrier()
+ static const unsigned int can0_data_pins[] = {
+@@ -4258,6 +4334,12 @@ static const struct sh_pfc_pin_group pin
+ 	SH_PFC_PIN_GROUP(audio_clk_b_b),
+ 	SH_PFC_PIN_GROUP(audio_clk_c),
+ 	SH_PFC_PIN_GROUP(audio_clkout),
++	SH_PFC_PIN_GROUP(avb_link),
++	SH_PFC_PIN_GROUP(avb_magic),
++	SH_PFC_PIN_GROUP(avb_phy_int),
++	SH_PFC_PIN_GROUP(avb_mdio),
++	SH_PFC_PIN_GROUP(avb_mii),
++	SH_PFC_PIN_GROUP(avb_gmii),
+ 	SH_PFC_PIN_GROUP(can0_data),
+ 	SH_PFC_PIN_GROUP(can0_data_b),
+ 	SH_PFC_PIN_GROUP(can0_data_c),
+@@ -4597,6 +4679,15 @@ static const char * const audio_clk_grou
+ 	"audio_clkout",
+ };
  
- #include <asm-generic/barrier.h>
++static const char * const avb_groups[] = {
++	"avb_link",
++	"avb_magic",
++	"avb_phy_int",
++	"avb_mdio",
++	"avb_mii",
++	"avb_gmii",
++};
++
+ static const char * const can0_groups[] = {
+ 	"can0_data",
+ 	"can0_data_b",
+@@ -5081,6 +5172,7 @@ static const char * const vin2_groups[]
  
--- 
-MST
+ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(audio_clk),
++	SH_PFC_FUNCTION(avb),
+ 	SH_PFC_FUNCTION(can0),
+ 	SH_PFC_FUNCTION(can1),
+ 	SH_PFC_FUNCTION(du),
 
