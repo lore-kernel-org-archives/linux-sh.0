@@ -1,42 +1,92 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 15 Dec 2015 09:22:06 +0000
-Subject: Re: [PATCH 00/04] ARM: shmobile: IPMMU compat string SoC part number update
-Message-Id: <CANqRtoQN-R-1i945eapafSQO1Y1HwR0TDvtMycgu8UXY_kFhOg@mail.gmail.com>
+From: Cao Minh Hiep <cm-hiep@jinso.co.jp>
+Date: Wed, 02 Dec 2015 07:23:36 +0000
+Subject: Re: Rcar Gen2: DU: Bootlogs Error and show image error
+Message-Id: <565E9C78.4080203@jinso.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20151117043047.4521.84234.sendpatchset@little-apple>
-In-Reply-To: <20151117043047.4521.84234.sendpatchset@little-apple>
+References: <564ECE30.9000206@jinso.co.jp>
+In-Reply-To: <564ECE30.9000206@jinso.co.jp>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
 To: linux-sh@vger.kernel.org
 
-Hi Simon,
+Hi Laurent-san
 
-On Tue, Dec 15, 2015 at 6:17 PM, Simon Horman <horms@verge.net.au> wrote:
-> On Tue, Nov 24, 2015 at 11:45:41AM +0900, Simon Horman wrote:
->> On Tue, Nov 17, 2015 at 01:30:47PM +0900, Magnus Damm wrote:
->> > ARM: shmobile: IPMMU compat string SoC part number update
->> >
->> > [PATCH 01/04] ARM: shmobile: r8a7790: IPMMU compat string SoC part number update
->> > [PATCH 02/04] ARM: shmobile: r8a7791: IPMMU compat string SoC part number update
->> > [PATCH 03/04] ARM: shmobile: r8a7793: IPMMU compat string SoC part number update
->> > [PATCH 04/04] ARM: shmobile: r8a7794: IPMMU compat string SoC part number update
->> >
->> > Update R-Car Gen2 DT compat strings for IPMMU devices to follow the updated
->> > DT binding documentation included in:
->> > "[PATCH v2] iommu/ipmmu-vmsa: Include SoC part number in DT binding docs"
->> >
->> > With this compat string change we may in the future add SoC-specific features
->> > such as IPMMU performance counters that only exist on some SoCs.
->> >
->> > Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
->>
->> I have marked these patches as deferred pending the binding changes being
->> accepted. Please repost or otherwise ping me once that has happened.
+Sorry to bother you again!
+
+On 2015年11月27日 15:13, Cao Minh Hiep wrote:
+> Hello Laurent-san,
 >
-> As discussed elsewhere, the bindings have been accepted.
-> I have queued up these patches accordingly.
+>
+>>>>> But as you know, we have reported to you before, have some problems
+>>>>> related to DU driver.
+>>>>> We couldn't show a image on the display. We found the messages as 
+>>>>> showed
+>>>>> below:
+>>>>> -----
+>>>>> Boot logs on Rcar-H2:
+>>>>> rcar-du feb00000.display: failed to initialize encoder
+>>>>> /i2c@e6520000/hdmi@39 (-38), skipping
+>>>>> rcar-du feb00000.display: fb0:  frame buffer device
+>>>>> -----
+>>>>> Boot logs on Rcar-M2:
+>>>>> rcar-du feb00000.display: failed to initialize encoder
+>>>>> /i2c@e6530000/hdmi@39 (-g
+>>>>> rcar-du feb00000.display: error: no encoder could be initialized
+>>>>> rcar-du feb00000.display: failed to initialize DRM/KMS (-22)
+>>>>> rcar-du: probe of feb00000.display failed with error -22
+>>>>> -----
+>>>>>
+>>>>> This is tested on linux stable v4.3.
+>>>>> Please have a look when you have time.
+>>>> Have you enabled CONFIG_DRM_RCAR_HDMI ?
+>>> Yes, These initialize logs are taken with default config that
+>>> CONFIG_DRM_RCAR_HDMI disabled at v4.3.
+>>> But when we enabled CONFIG_DRM_RCAR_HDMI, then we still could not show
+>>> any images on HDMI or RGB Screen.
+>>>
+>>> I found that, CONFIG_DRM_RCAR_HDMI have already enabled in default
+>>> config at v4.4-rc2.
+>>> But have a error message as below and DU is still not improved(still 
+>>> can
+>>> not show images on screen).
+>>>
+>>>
+>>> On Rcar-H2(Lager):
+>>>
+>>> [drm] Initialized drm 1.1.0 20060810
+>>> [drm] Supports vblank timestamp caching Rev 2 (21.10.2013).
+>>> [drm] No driver support for vblank timestamp query.
+>>> rcar-du feb00000.display: failed to initialize DRM/KMS (-517)
+>>> rcar-du feb00000.display: fb0:  frame buffer device
+>>> [drm] Initialized rcar-du 1.0.0 20130110 on minor 0
+>>>
+>>> On Rcar-M2(Koelsch):
+>>>
+>>> [drm] Initialized drm 1.1.0 20060810
+>>> [drm] Supports vblank timestamp caching Rev 2 (21.10.2013).
+>>> [drm] No driver support for vblank timestamp query.
+>>> rcar-du feb00000.display: failed to initialize DRM/KMS (-517)
+>>> rcar-du feb00000.display: fb0:  frame buffer device
+>>> [drm] Initialized rcar-du 1.0.0 20130110 on minor 0
+>> -517 (-EPROBE_DEFER) means that probe deferral is requested because a 
+>> required
+>> dependency is not present. Have you compiled and loaded the adv7511 
+>> driver
+>> (CONFIG_DRM_I2C_ADV7511) ?
+>>
+> Yes, CONFIG_DRM_I2C_ADV7511=y has already enabled in default config at 
+> v4.4-rc2.
+> I also have enabled CONFIG_DRM_SHMOBILE and CONFIG_FB_SH_MOBILE_HDMI 
+> then test.
+> But It has nothing change.
+> Is there other configuration or reason could we think?
+>
 
-Thanks for your help!!
+Does this problem happen on your board?
+If not, Could you please send me your config file?.
 
-/ magnus
+
+Thank you!
+Jinso/Hiep
+
