@@ -1,50 +1,55 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 04 Dec 2015 21:58:57 +0000
-Subject: [PATCH 2/2] sh_eth: read MAC address registers only once
-Message-Id: <2035649.FBvo9Og81d@wasted.cogentembedded.com>
+From: Yang Shi <yang.shi@linaro.org>
+Date: Wed, 02 Dec 2015 22:53:32 +0000
+Subject: [PATCH V2 6/7] sh: mm/gup: add gup trace points
+Message-Id: <1449096813-22436-7-git-send-email-yang.shi@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <10429393.qU4CxZ5nlj@wasted.cogentembedded.com>
-In-Reply-To: <10429393.qU4CxZ5nlj@wasted.cogentembedded.com>
+References: <1449096813-22436-1-git-send-email-yang.shi@linaro.org>
+In-Reply-To: <1449096813-22436-1-git-send-email-yang.shi@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org
+To: akpm@linux-foundation.org, rostedt@goodmis.org, mingo@redhat.com
+Cc: linux-kernel@vger.kernel.org, linux-mm@kvack.org, linaro-kernel@lists.linaro.org, yang.shi@linaro.org, linux-sh@vger.kernel.org
+
 Cc: linux-sh@vger.kernel.org
-
-The code reading the MAHR/MALR registers in read_mac_address() is terribly
-ineffective -- it reads MAHR 4 times and MALR 2 times, while it's enough to
-read each register only once.  Use the local variables to achieve that,
-somewhat beautifying the code while at it...
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Yang Shi <yang.shi@linaro.org>
 ---
- drivers/net/ethernet/renesas/sh_eth.c |   15 +++++++++------
- 1 file changed, 9 insertions(+), 6 deletions(-)
+ arch/sh/mm/gup.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
 
-Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
-=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
-+++ net-next/drivers/net/ethernet/renesas/sh_eth.c
-@@ -989,12 +989,15 @@ static void read_mac_address(struct net_
- 	if (mac[0] || mac[1] || mac[2] || mac[3] || mac[4] || mac[5]) {
- 		memcpy(ndev->dev_addr, mac, ETH_ALEN);
- 	} else {
--		ndev->dev_addr[0] = (sh_eth_read(ndev, MAHR) >> 24);
--		ndev->dev_addr[1] = (sh_eth_read(ndev, MAHR) >> 16) & 0xFF;
--		ndev->dev_addr[2] = (sh_eth_read(ndev, MAHR) >> 8) & 0xFF;
--		ndev->dev_addr[3] = (sh_eth_read(ndev, MAHR) & 0xFF);
--		ndev->dev_addr[4] = (sh_eth_read(ndev, MALR) >> 8) & 0xFF;
--		ndev->dev_addr[5] = (sh_eth_read(ndev, MALR) & 0xFF);
-+		u32 mahr = sh_eth_read(ndev, MAHR);
-+		u32 malr = sh_eth_read(ndev, MALR);
+diff --git a/arch/sh/mm/gup.c b/arch/sh/mm/gup.c
+index e7af6a6..6df3e97 100644
+--- a/arch/sh/mm/gup.c
++++ b/arch/sh/mm/gup.c
+@@ -12,6 +12,10 @@
+ #include <linux/mm.h>
+ #include <linux/vmstat.h>
+ #include <linux/highmem.h>
 +
-+		ndev->dev_addr[0] = (mahr >> 24) & 0xFF;
-+		ndev->dev_addr[1] = (mahr >> 16) & 0xFF;
-+		ndev->dev_addr[2] = (mahr >>  8) & 0xFF;
-+		ndev->dev_addr[3] = (mahr >>  0) & 0xFF;
-+		ndev->dev_addr[4] = (malr >>  8) & 0xFF;
-+		ndev->dev_addr[5] = (malr >>  0) & 0xFF;
- 	}
- }
++#define CREATE_TRACE_POINTS
++#include <trace/events/gup.h>
++
+ #include <asm/pgtable.h>
  
+ static inline pte_t gup_get_pte(pte_t *ptep)
+@@ -178,6 +182,8 @@ int __get_user_pages_fast(unsigned long start, int nr_pages, int write,
+ 					(void __user *)start, len)))
+ 		return 0;
+ 
++	trace_gup_get_user_pages_fast(start, nr_pages, write, pages);
++
+ 	/*
+ 	 * This doesn't prevent pagetable teardown, but does prevent
+ 	 * the pagetables and pages from being freed.
+@@ -231,6 +237,8 @@ int get_user_pages_fast(unsigned long start, int nr_pages, int write,
+ 	if (end < start)
+ 		goto slow_irqon;
+ 
++	trace_gup_get_user_pages_fast(start, nr_pages, write, pages);
++
+ 	local_irq_disable();
+ 	pgdp = pgd_offset(mm, addr);
+ 	do {
+-- 
+2.0.2
 
