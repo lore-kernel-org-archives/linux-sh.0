@@ -1,74 +1,44 @@
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Tue, 15 Dec 2015 10:47:54 +0000
-Subject: Re: [PATCH net-next] ravb: Add fixed-link support
-Message-Id: <CAH1o70+SDy=S7nuePAO3KOh6vp7oaYi05Ez04VnDv3LaT3P7Ug@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 02 Dec 2015 22:51:40 +0000
+Subject: [PATCH v2 4/4] PCI: rcar: add device tree support for r8a7793
+Message-Id: <1449096700-23304-5-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450019810-324-1-git-send-email-ykaneko0929@gmail.com>
-	<566DDC89.2070804@cogentembedded.com>
-In-Reply-To: <566DDC89.2070804@cogentembedded.com>
+References: <1449096700-23304-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1449096700-23304-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: netdev@vger.kernel.org, "David S. Miller" <davem@davemloft.net>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>
+To: Bjorn Helgaas <bhelgaas@google.com>
+Cc: Magnus Damm <magnus.damm@gmail.com>, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Simon Horman <horms+renesas@verge.net.au>
 
-Hi,
+Simply document new compatibility string.
+As a previous patch adds a generic R-Car Gen2 compatibility string
+there appears to be no need for a driver updates.
 
-2015-12-14 6:00 GMT+09:00 Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>:
-> Hello.
->
-> On 12/13/2015 06:16 PM, Yoshihiro Kaneko wrote:
->
->> From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
->>
->> This patch adds support of the fixed PHY.
->> This patch is based on commit 87009814cdbb ("ucc_geth: use the new fixed
->> PHY helpers").
->>
->> Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
->> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
->> ---
->>
->> This patch is based on the master branch of David Miller's next networking
->> tree.
->>
->>   drivers/net/ethernet/renesas/ravb_main.c | 12 ++++++++++++
->>   1 file changed, 12 insertions(+)
->>
->> diff --git a/drivers/net/ethernet/renesas/ravb_main.c
->> b/drivers/net/ethernet/renesas/ravb_main.c
->> index 1cf1226..300acb3 100644
->> --- a/drivers/net/ethernet/renesas/ravb_main.c
->> +++ b/drivers/net/ethernet/renesas/ravb_main.c
->
-> [...]
->>
->> @@ -887,6 +888,17 @@ static int ravb_phy_init(struct net_device *ndev)
->>
->>         /* Try connecting to PHY */
->>         pn = of_parse_phandle(np, "phy-handle", 0);
->> +       if (!pn) {
->> +               /* In the case of a fixed PHY, the DT node associated
->> +                * to the PHY is the Ethernet MAC DT node.
->> +                */
->> +               if (of_phy_is_fixed_link(np)) {
->> +                       err = of_phy_register_fixed_link(np);
->> +                       if (err)
->> +                               return err;
->> +               }
->> +               pn = np;
->
->
->    I'm seeing that other drivers call of_node_get() here, why don't you?
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-Thanks.
-I sent v2.
+---
+* The r8a7792 and r8a7794 are omitted from this change as the
+  hardware in question does not appear to be present on those SoCs.
 
->
-> [...]
->
-> MBR, Sergei
->
+v2
+* No change
+---
+ Documentation/devicetree/bindings/pci/rcar-pci.txt | 1 +
+ 1 file changed, 1 insertion(+)
 
-Thanks,
-kaneko
+diff --git a/Documentation/devicetree/bindings/pci/rcar-pci.txt b/Documentation/devicetree/bindings/pci/rcar-pci.txt
+index 6b4d2f798386..d529530b27d2 100644
+--- a/Documentation/devicetree/bindings/pci/rcar-pci.txt
++++ b/Documentation/devicetree/bindings/pci/rcar-pci.txt
+@@ -4,6 +4,7 @@ Required properties:
+ compatible: "renesas,pcie-r8a7779" for the R8A7779 SoC;
+ 	    "renesas,pcie-r8a7790" for the R8A7790 SoC;
+ 	    "renesas,pcie-r8a7791" for the R8A7791 SoC;
++	    "renesas,pcie-r8a7793" for the R8A7793 SoC;
+ 	    "renesas,pcie-rcar-gen2" for a generic R-Car Gen2 compatible device.
+ 
+ 	    When compatible with the generic version, nodes must list the
+-- 
+2.1.4
+
