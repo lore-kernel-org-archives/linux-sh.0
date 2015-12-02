@@ -1,34 +1,23 @@
-From: Rob Herring <robh@kernel.org>
-Date: Sun, 20 Dec 2015 03:39:29 +0000
-Subject: Re: [PATCH v3 03/27] serial: sh-sci: Update DT binding documentation for external clock input
-Message-Id: <20151220033929.GL9883@rob-hp-laptop>
+From: David Laight <David.Laight@ACULAB.COM>
+Date: Wed, 02 Dec 2015 16:20:41 +0000
+Subject: RE: [PATCH v2 5/5] printk/nmi: Increase the size of the temporary buffer
+Message-Id: <063D6719AE5E284EB5DD2968C1650D6D1CBE1231@AcuExch.aculab.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450119456-964-1-git-send-email-geert+renesas@glider.be>
- <1450119456-964-4-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1450119456-964-4-git-send-email-geert+renesas@glider.be>
+References: <1448622572-16900-1-git-send-email-pmladek@suse.com>
+ <1448622572-16900-6-git-send-email-pmladek@suse.com>
+ <81211733-2484-40A9-9D4A-644AA27FBC73@gmail.com>
+In-Reply-To: <81211733-2484-40A9-9D4A-644AA27FBC73@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Dec 14, 2015 at 07:57:12PM +0100, Geert Uytterhoeven wrote:
-> Amend the DT bindings to include the optional external clock on
-> (H)SCI(F) and some SCIFA, where this pin can serve as a clock input,
-> depending on board wiring.
-> 
-> Clarify the use of the divided functional clock as a source for the
-> sampling clock.
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-> Cc: devicetree@vger.kernel.org
-> ---
-> v3:
->   - Add Acked-by,
->   - Clarify the use of the divided functional clock.
-> ---
->  Documentation/devicetree/bindings/serial/renesas,sci-serial.txt | 5 +++++
->  1 file changed, 5 insertions(+)
-
-Acked-by: Rob Herring <robh@kernel.org>
+RnJvbTogeWFsaW4gd2FuZw0KPiBTZW50OiAzMCBOb3ZlbWJlciAyMDE1IDE2OjQyDQo+ID4gT24g
+Tm92IDI3LCAyMDE1LCBhdCAxOTowOSwgUGV0ciBNbGFkZWsgPHBtbGFkZWtAc3VzZS5jb20+IHdy
+b3RlOg0KPiA+DQo+ID4gVGVzdGluZyBoYXMgc2hvd24gdGhhdCB0aGUgYmFja3RyYWNlIHNvbWV0
+aW1lcyBkb2VzIG5vdCBmaXQNCj4gPiBpbnRvIHRoZSA0a0IgdGVtcG9yYXJ5IGJ1ZmZlciB0aGF0
+IGlzIHVzZWQgaW4gTk1JIGNvbnRleHQuDQo+ID4NCj4gPiBUaGUgd2FybmluZ3MgYXJlIGdvbmUg
+d2hlbiBJIGRvdWJsZSB0aGUgdGVtcG9yYXJ5IGJ1ZmZlciBzaXplLg0KDQpZb3UgYXJlIHdhc3Rp
+bmcgYSBsb3Qgb2YgbWVtb3J5IGZvciBzb21ldGhpbmcgdGhhdCBpcyBpbmZyZXF1ZW50bHkgdXNl
+ZC4NClRoZXJlIG91Z2h0IHRvIGJlIHNvbWUgd2F5IG9mIGNvcHlpbmcgcGFydGlhbCB0cmFjZWJh
+Y2tzIGludG8gdGhlDQptYWluIGJ1ZmZlci4NCg0KCURhdmlkDQoNCg=
