@@ -1,52 +1,61 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 29 Dec 2015 00:05:17 +0000
-Subject: Re: [PATCH 03/06] iommu/ipmmu-vmsa: Break out utlb control function
-Message-Id: <1823351.xcsKyrzciK@avalon>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 02 Dec 2015 22:21:49 +0000
+Subject: [PATCH 1/2] ARM: shmobile: r8a7791: add EtherAVB clock
+Message-Id: <1620245.6Dzpr9HbEp@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20151215120212.26216.61530.sendpatchset@little-apple> <20151215120239.26216.43390.sendpatchset@little-apple> <CAMuHMdXYzO=+xuH2UwOUzDPoiyW-fBBaby91Ywr_Moa9bi17YQ@mail.gmail.com>
-In-Reply-To: <CAMuHMdXYzO=+xuH2UwOUzDPoiyW-fBBaby91Ywr_Moa9bi17YQ@mail.gmail.com>
+References: <2926317.Iq110C4Bmk@wasted.cogentembedded.com>
+In-Reply-To: <2926317.Iq110C4Bmk@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Magnus Damm <magnus.damm@gmail.com>, iommu@lists.linux-foundation.org, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Geert Uytterhoeven <geert+renesas@glider.be>, Linux-sh list <linux-sh@vger.kernel.org>, Joerg Roedel <joro@8bytes.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Simon Horman <horms+renesas@verge.net.au>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Magnus,
+Add the EtherAVB clock to the R8A7791 device tree.
 
-On Tuesday 15 December 2015 16:48:42 Geert Uytterhoeven wrote:
-> On Tue, Dec 15, 2015 at 1:02 PM, Magnus Damm <magnus.damm@gmail.com> wrote:
-> > --- 0004/drivers/iommu/ipmmu-vmsa.c
-> > +++ work/drivers/iommu/ipmmu-vmsa.c     2015-12-15 13:17:40.580513000
-> > +0900
-> > @@ -279,9 +279,18 @@ static void ipmmu_utlb_enable(struct ipm
-> >  static void ipmmu_utlb_disable(struct ipmmu_vmsa_domain *domain,
-> >                                unsigned int utlb)
-> >  {
-> > -       struct ipmmu_vmsa_device *mmu = domain->mmu;
-> > +       ipmmu_write(domain->mmu, IMUCTR(utlb), 0);
-> > +}
-> > +
-> > +static void ipmmu_utlb_ctrl(struct ipmmu_vmsa_domain *domain,
-> > +                           void (*fn)(struct ipmmu_vmsa_domain *,
-> > +                                      unsigned int utlb), struct device
-> > *dev)
-> > +{
-> > +       struct ipmmu_vmsa_dev_data *dev_data = get_dev_data(dev);
-> > +       unsigned int i;
-> > 
-> > -       ipmmu_write(mmu, IMUCTR(utlb), 0);
-> > +       for (i = 0; i < dev_data->num_utlbs; ++i)
-> > +               fn(domain, dev_data->utlbs[i]);
-> > 
-> >  }
-> 
-> Unless you have further plans with the "fn" parameter, I would simply pass
-> a bool enable/disable flag instead of a function pointer.
+Based on the commit 63d2d750c902 ("ARM: shmobile: r8a7790: add EtherAVB
+clocks").
 
-I agree with Geert. What's your plan here ?
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
--- 
-Regards,
+---
+ arch/arm/boot/dts/r8a7791.dtsi            |   10 ++++++----
+ include/dt-bindings/clock/r8a7791-clock.h |    1 +
+ 2 files changed, 7 insertions(+), 4 deletions(-)
 
-Laurent Pinchart
+Index: renesas/arch/arm/boot/dts/r8a7791.dtsi
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7791.dtsi
++++ renesas/arch/arm/boot/dts/r8a7791.dtsi
+@@ -1329,16 +1329,18 @@
+ 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150990 0 4>, <0 0xe61509a0 0 4>;
+ 			clocks = <&zx_clk>, <&hp_clk>, <&zg_clk>, <&zg_clk>,
+-			         <&zg_clk>, <&p_clk>, <&zs_clk>, <&zs_clk>;
++			         <&zg_clk>, <&hp_clk>, <&p_clk>, <&zs_clk>,
++				 <&zs_clk>;
+ 			#clock-cells = <1>;
+ 			clock-indices = <
+ 				R8A7791_CLK_IPMMU_SGX R8A7791_CLK_MLB
+ 				R8A7791_CLK_VIN2 R8A7791_CLK_VIN1 R8A7791_CLK_VIN0
+-				R8A7791_CLK_ETHER R8A7791_CLK_SATA1 R8A7791_CLK_SATA0
++				R8A7791_CLK_ETHERAVB R8A7791_CLK_ETHER
++				R8A7791_CLK_SATA1 R8A7791_CLK_SATA0
+ 			>;
+ 			clock-output-names -				"ipmmu_sgx", "mlb", "vin2", "vin1", "vin0", "ether",
+-				"sata1", "sata0";
++				"ipmmu_sgx", "mlb", "vin2", "vin1", "vin0",
++				"etheravb", "ether", "sata1", "sata0";
+ 		};
+ 		mstp9_clks: mstp9_clks@e6150994 {
+ 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
+Index: renesas/include/dt-bindings/clock/r8a7791-clock.h
+=================================--- renesas.orig/include/dt-bindings/clock/r8a7791-clock.h
++++ renesas/include/dt-bindings/clock/r8a7791-clock.h
+@@ -102,6 +102,7 @@
+ #define R8A7791_CLK_VIN2		9
+ #define R8A7791_CLK_VIN1		10
+ #define R8A7791_CLK_VIN0		11
++#define R8A7791_CLK_ETHERAVB		12
+ #define R8A7791_CLK_ETHER		13
+ #define R8A7791_CLK_SATA1		14
+ #define R8A7791_CLK_SATA0		15
 
