@@ -1,22 +1,72 @@
-From: Vinod Koul <vinod.koul@intel.com>
-Date: Sat, 05 Dec 2015 08:20:19 +0000
-Subject: Re: [PATCH] dmaengine: usb-dmac: fix endless loop in usb_dmac_chan_terminate_all()
-Message-Id: <20151205080819.GL1854@localhost>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 02 Dec 2015 05:58:32 +0000
+Subject: [PATCH v2 net-next 1/2] ravb: add fallback compatibility strings
+Message-Id: <1449035913-9129-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447303060-7880-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1447303060-7880-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+References: <1449035913-9129-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1449035913-9129-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: netdev@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, devicetree@vger.kernel.org
 
-On Thu, Nov 12, 2015 at 01:37:40PM +0900, Yoshihiro Shimoda wrote:
-> This patch fixes an issue that list_for_each_entry() in
-> usb_dmac_chan_terminate_all() is possible to cause endless loop because
-> this will move own desc to the desc_freed. So, this driver should use
-> list_for_each_entry_safe() instead of list_for_each_entry().
+Add fallback compatibility strings for R-Car Gen 2 & 3 SoC Families.
+This is in keeping with the fallback scheme being adopted wherever appropriate
+for drivers for Renesas SoCs.
 
-Applied now, thanks
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
+---
+v2
+* Drop bogus typo non-fix
+* include "rcar-" in generic bindings
+---
+ Documentation/devicetree/bindings/net/renesas,ravb.txt | 9 ++++++++-
+ drivers/net/ethernet/renesas/ravb_main.c               | 2 ++
+ 2 files changed, 10 insertions(+), 1 deletion(-)
+
+diff --git a/Documentation/devicetree/bindings/net/renesas,ravb.txt b/Documentation/devicetree/bindings/net/renesas,ravb.txt
+index b486f3f5f6a3..7555116b5db2 100644
+--- a/Documentation/devicetree/bindings/net/renesas,ravb.txt
++++ b/Documentation/devicetree/bindings/net/renesas,ravb.txt
+@@ -7,6 +7,13 @@ Required properties:
+ - compatible: "renesas,etheravb-r8a7790" if the device is a part of R8A7790 SoC.
+ 	      "renesas,etheravb-r8a7794" if the device is a part of R8A7794 SoC.
+ 	      "renesas,etheravb-r8a7795" if the device is a part of R8A7795 SoC.
++	      "renesas,etheravb-rcar-gen2" for generic R-Car Gen 2 compatible interface.
++	      "renesas,etheravb-rcar-gen3" for generic R-Car Gen 3 compatible interface.
++
++	      When compatible with the generic version, nodes must list the
++	      SoC-specific version corresponding to the platform first
++	      followed by the generic version.
++
+ - reg: offset and length of (1) the register block and (2) the stream buffer.
+ - interrupts: A list of interrupt-specifiers, one for each entry in
+ 	      interrupt-names.
+@@ -37,7 +44,7 @@ Optional properties:
+ Example:
+ 
+ 	ethernet@e6800000 {
+-		compatible = "renesas,etheravb-r8a7795";
++		compatible = "renesas,etheravb-r8a7795", "renesas,etheravb-rcar-gen3";
+ 		reg = <0 0xe6800000 0 0x800>, <0 0xe6a00000 0 0x10000>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <GIC_SPI 39 IRQ_TYPE_LEVEL_HIGH>,
+diff --git a/drivers/net/ethernet/renesas/ravb_main.c b/drivers/net/ethernet/renesas/ravb_main.c
+index 990dc55cdada..c12b163ed7fe 100644
+--- a/drivers/net/ethernet/renesas/ravb_main.c
++++ b/drivers/net/ethernet/renesas/ravb_main.c
+@@ -1656,7 +1656,9 @@ static int ravb_mdio_release(struct ravb_private *priv)
+ static const struct of_device_id ravb_match_table[] = {
+ 	{ .compatible = "renesas,etheravb-r8a7790", .data = (void *)RCAR_GEN2 },
+ 	{ .compatible = "renesas,etheravb-r8a7794", .data = (void *)RCAR_GEN2 },
++	{ .compatible = "renesas,etheravb-rcar-gen2", .data = (void *)RCAR_GEN2 },
+ 	{ .compatible = "renesas,etheravb-r8a7795", .data = (void *)RCAR_GEN3 },
++	{ .compatible = "renesas,etheravb-rcar-gen3", .data = (void *)RCAR_GEN3 },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(of, ravb_match_table);
 -- 
-~Vinod
+2.1.4
+
