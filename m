@@ -1,88 +1,44 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 23 Dec 2015 19:56:06 +0000
-Subject: Re: [PATCH v5] extcon: add Maxim MAX3355 driver
-Message-Id: <567AFC56.8050806@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 02 Dec 2015 22:51:38 +0000
+Subject: [PATCH v2 2/4] PCI: rcar-gen2: add device tree support for r8a7793
+Message-Id: <1449096700-23304-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <5948633.my3nAG6hRz@wasted.cogentembedded.com>
- <CAGTfZH34rfMfjsAFgyPeNue74-5iCi6ZwrdN26_jwOXE6R=hwg@mail.gmail.com>
- <5676E214.2040009@cogentembedded.com> <5677662C.6060409@samsung.com>
- <5677DC21.3040509@cogentembedded.com> <5678A3BE.3040701@samsung.com>
- <567930C3.3090600@cogentembedded.com> <567A0456.7090400@samsung.com>
-In-Reply-To: <567A0456.7090400-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>
+References: <1449096700-23304-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1449096700-23304-1-git-send-email-horms+renesas-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Chanwoo Choi <cw00.choi-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>
-Cc: Rob Herring <robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Pawel Moll <pawel.moll-5wv7dgnIgG8@public.gmane.org>, Mark Rutland <mark.rutland-5wv7dgnIgG8@public.gmane.org>, Ian Campbell <ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org>, Kumar Gala <galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org>, "myungjoo.ham-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org" <myungjoo.ham-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>, devicetree <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, linux-kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Bjorn Helgaas <bhelgaas-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-pci-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Simon Horman <horms+renesas-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>
 
-Hello.
+Simply document new compatibility string.
+As a previous patch adds a generic R-Car Gen2 compatibility string
+there appears to be no need for a driver updates.
 
-On 12/23/2015 05:17 AM, Chanwoo Choi wrote:
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
->>>>>>> This patch depend on GPIOLIB configuration as following:
->>>>>>> I modified it with following diff and applied it.
->>>>>>>
->>>>>>> diff --git a/drivers/extcon/Kconfig b/drivers/extcon/Kconfig
->>>>>>> index ba4db7d..3d89e60 100644
->>>>>>> --- a/drivers/extcon/Kconfig
->>>>>>> +++ b/drivers/extcon/Kconfig
->>>>>>> @@ -54,6 +54,7 @@ config EXTCON_MAX14577
->>>>>>>
->>>>>>>      config EXTCON_MAX3355
->>>>>>>             tristate "Maxim MAX3355 USB OTG EXTCON Support"
->>>>>>> +       depends on GPIOLIB || COMPILE_TEST
->>>>>>
->>>>>>       If it won't compile w/o gpiolib, what's the use of COMIPLE_TEST?
->>>>>>       And no, it shouldn't depend on gpiolib. It has empty stubs for the case of CONFIG_GPIOLIB=n. Obviously something is wrong with the GPIO headers, I'll look into it.
->>>>>
->>>>> Yes. When GPIOLIB is disabled, the build issue don't happen.
->>>>
->>>>      What? It surely does happen!
->>>
->>> hmm....
->>> Sure. you need to check the include/linux/gpio/consumer.h.
->>>
->>> Because of build error happen, you miss to include the "linux/gpio/consumer.h"
->>> header file in extcon-max3355.c. Please test it for enough time.
->>
->>     Yes, with this file #include'd, it build fine now.
->>
->>>>> because include/linux/gpio/consumer.h implement the dummy function
->>>>> for all gpio functions if CONFIG_GPIOLIB is disabled.
->>>>
->>>>      Linus W. advised to #include this header explicitly -- I'll try and post.
->>>
->>> Don't necessary. I already updated it including the "include/linux/gpio/consumer.h".
->>
->>     I saw that, yes.
->>
->>>>> For correct operation of max3355, you should add the dependency
->>>>> to the extcon-max3355.c driver. This driver use the GPIO library
->>>>> certainly.
->>>>
->>>>      I disagree. The driver will just cease to load in this case. I don't see why we need such dependency. Only compilation time dependencies should be
->>>> specified, I think.
->>>
->>> This driver have to depend on GPIOLIB.
->>> Why are you disagreeing the COMPILE_TEST dependency? It is just compile test
->>> without anything.
->>
->>     I agree now. I still disagree about the gpiolib dependency though.
->
-> If gpiolib is disabled, extcon-max3355.c might not operate it correctly.
+---
+* The r8a7792 is omitted from this change as the hardware in question
+  does not appear to be present on that SoC.
 
-    It'll just fail the probe, that's all.
+v2
+* No change
+---
+ Documentation/devicetree/bindings/pci/pci-rcar-gen2.txt | 1 +
+ 1 file changed, 1 insertion(+)
 
-> Just this driver could be built without operation because gpiolib function
-> will not do the any behavior.
-
-    devm_gpiod_get() will just fail with -ENOSYS.
-
-> I think that it is not too much problem. I should send the pull request within this week.
-> If you want to need more discussion of extcon-max3355.c,
-> I will not include it on pull request for v4.5 because there is issue.
-
-    No, please include it into the pull request.
-
-MBR, Sergei
+diff --git a/Documentation/devicetree/bindings/pci/pci-rcar-gen2.txt b/Documentation/devicetree/bindings/pci/pci-rcar-gen2.txt
+index 089a99dcdf10..9c50e0c9d6da 100644
+--- a/Documentation/devicetree/bindings/pci/pci-rcar-gen2.txt
++++ b/Documentation/devicetree/bindings/pci/pci-rcar-gen2.txt
+@@ -8,6 +8,7 @@ OHCI and EHCI controllers.
+ Required properties:
+ - compatible: "renesas,pci-r8a7790" for the R8A7790 SoC;
+ 	      "renesas,pci-r8a7791" for the R8A7791 SoC;
++	      "renesas,pci-r8a7793" for the R8A7793 SoC;
+ 	      "renesas,pci-r8a7794" for the R8A7794 SoC;
+ 	      "renesas,pci-rcar-gen2" for a generic R-Car Gen2 compatible device.
+ 
+-- 
+2.1.4
 
