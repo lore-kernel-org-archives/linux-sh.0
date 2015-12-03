@@ -1,39 +1,98 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 17 Dec 2015 08:39:51 +0000
-Subject: [PATCH/RFC 13/48] v4l: vsp1: Document calling context of vsp1_pipeline_propagate_alpha()
-Message-Id: <1450341626-6695-14-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Thu, 03 Dec 2015 15:51:33 +0000
+Subject: [PATCH 3/9] i2c: rcar: refactor probe function a little
+Message-Id: <1449157899-6572-4-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450341626-6695-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1450341626-6695-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1449157899-6572-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1449157899-6572-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, linux-rockchip@lists.infradead.org, Mika Westerberg <mika.westerberg@linux.intel.com>, Andy Shevchenko <andriy.shevchenko@linux.intel.com>, Jarkko Nikula <jarkko.nikula@linux.intel.com>
 
-The function can only be called from a s_stream handler as it requires a
-valid display list context (due to calling vsp1_uds_set_alpha() which
-writes to module registers). Document the requirement.
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+The probe function is a little bit messy, something here, something
+there. Rework it so that there is some order: first init the private
+structure, then the adapter, then do HW init. This also allows us to
+remove the device argument of the clock calculation function, because it
+now can be deduced from the private structure. Also, shorten some lines
+where possible. This is a preparation for further refactoring.
+
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 ---
- drivers/media/platform/vsp1/vsp1_pipe.c | 3 +++
- 1 file changed, 3 insertions(+)
+ drivers/i2c/busses/i2c-rcar.c | 40 +++++++++++++++++-----------------------
+ 1 file changed, 17 insertions(+), 23 deletions(-)
 
-diff --git a/drivers/media/platform/vsp1/vsp1_pipe.c b/drivers/media/platform/vsp1/vsp1_pipe.c
-index facf68f999ce..9549aacab3cf 100644
---- a/drivers/media/platform/vsp1/vsp1_pipe.c
-+++ b/drivers/media/platform/vsp1/vsp1_pipe.c
-@@ -297,6 +297,9 @@ done:
-  * to be scaled, we disable alpha scaling when the UDS input has a fixed alpha
-  * value. The UDS then outputs a fixed alpha value which needs to be programmed
-  * from the input RPF alpha.
-+ *
-+ * This function can only be called from a subdev s_stream handler as it
-+ * requires a valid display list context.
-  */
- void vsp1_pipeline_propagate_alpha(struct vsp1_pipeline *pipe,
- 				   struct vsp1_entity *input,
+diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
+index 3ed1f0aa5eeb16..d4322a9096786f 100644
+--- a/drivers/i2c/busses/i2c-rcar.c
++++ b/drivers/i2c/busses/i2c-rcar.c
+@@ -162,15 +162,11 @@ static int rcar_i2c_bus_barrier(struct rcar_i2c_priv *priv)
+ 	return -EBUSY;
+ }
+ 
+-static int rcar_i2c_clock_calculate(struct rcar_i2c_priv *priv,
+-				    u32 bus_speed,
+-				    struct device *dev)
++static int rcar_i2c_clock_calculate(struct rcar_i2c_priv *priv, u32 bus_speed)
+ {
+-	u32 scgd, cdf;
+-	u32 round, ick;
+-	u32 scl;
+-	u32 cdf_width;
++	u32 scgd, cdf, round, ick, scl, cdf_width;
+ 	unsigned long rate;
++	struct device *dev = rcar_i2c_priv_to_dev(priv);
+ 
+ 	switch (priv->devtype) {
+ 	case I2C_RCAR_GEN1:
+@@ -610,21 +606,7 @@ static int rcar_i2c_probe(struct platform_device *pdev)
+ 	if (IS_ERR(priv->io))
+ 		return PTR_ERR(priv->io);
+ 
+-	bus_speed = 100000; /* default 100 kHz */
+-	of_property_read_u32(dev->of_node, "clock-frequency", &bus_speed);
+-
+ 	priv->devtype = (enum rcar_i2c_type)of_match_device(rcar_i2c_dt_ids, dev)->data;
+-
+-	pm_runtime_enable(dev);
+-	pm_runtime_get_sync(dev);
+-	ret = rcar_i2c_clock_calculate(priv, bus_speed, dev);
+-	if (ret < 0)
+-		goto out_pm_put;
+-
+-	rcar_i2c_init(priv);
+-	pm_runtime_put(dev);
+-
+-	irq = platform_get_irq(pdev, 0);
+ 	init_waitqueue_head(&priv->wait);
+ 
+ 	adap = &priv->adap;
+@@ -637,8 +619,20 @@ static int rcar_i2c_probe(struct platform_device *pdev)
+ 	i2c_set_adapdata(adap, priv);
+ 	strlcpy(adap->name, pdev->name, sizeof(adap->name));
+ 
+-	ret = devm_request_irq(dev, irq, rcar_i2c_irq, 0,
+-			       dev_name(dev), priv);
++	bus_speed = 100000; /* default 100 kHz */
++	of_property_read_u32(dev->of_node, "clock-frequency", &bus_speed);
++
++	pm_runtime_enable(dev);
++	pm_runtime_get_sync(dev);
++	ret = rcar_i2c_clock_calculate(priv, bus_speed);
++	if (ret < 0)
++		goto out_pm_put;
++
++	rcar_i2c_init(priv);
++	pm_runtime_put(dev);
++
++	irq = platform_get_irq(pdev, 0);
++	ret = devm_request_irq(dev, irq, rcar_i2c_irq, 0, dev_name(dev), priv);
+ 	if (ret < 0) {
+ 		dev_err(dev, "cannot get irq %d\n", irq);
+ 		goto out_pm_disable;
 -- 
-2.4.10
+2.1.4
 
