@@ -1,123 +1,73 @@
-From: Petr Mladek <pmladek@suse.com>
-Date: Thu, 10 Dec 2015 15:26:06 +0000
-Subject: Re: [PATCH v3 1/4] printk/nmi: Generic solution for safe printk in NMI
-Message-Id: <20151210152606.GD2946@pathway.suse.cz>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Thu, 03 Dec 2015 15:51:31 +0000
+Subject: [PATCH 1/9] i2c: document generic DT bindings for timing parameters
+Message-Id: <1449157899-6572-2-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449667265-17525-1-git-send-email-pmladek@suse.com>
- <1449667265-17525-2-git-send-email-pmladek@suse.com>
- <20151209155007.cab2f1afd7e76878a1733033@linux-foundation.org>
-In-Reply-To: <20151209155007.cab2f1afd7e76878a1733033@linux-foundation.org>
+References: <1449157899-6572-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1449157899-6572-1-git-send-email-wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, Yoshihiro Shimoda <yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, linux-rockchip-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, Mika Westerberg <mika.westerberg-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>, Andy Shevchenko <andriy.shevchenko-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>, Jarkko Nikula <jarkko.nikula-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Wed 2015-12-09 15:50:07, Andrew Morton wrote:
-> On Wed,  9 Dec 2015 14:21:02 +0100 Petr Mladek <pmladek@suse.com> wrote:
-> 
-> > printk() takes some locks and could not be used a safe way in NMI
-> > context.
-> > 
-> > The chance of a deadlock is real especially when printing
-> > stacks from all CPUs. This particular problem has been addressed
-> > on x86 by the commit a9edc8809328 ("x86/nmi: Perform a safe NMI stack
-> > trace on all CPUs").
-> > 
-> > This patch reuses most of the code and makes it generic. It is
-> > useful for all messages and architectures that support NMI.
-> > 
-> > The patch is heavily based on the draft from Peter Zijlstra,
-> > see https://lkml.org/lkml/2015/6/10/327
-> > 
-> 
-> I guess this code is useful even on CONFIG_SMP=n: to avoid corruption
-> of the printk internal structures whcih the problematic locking
-> protects.
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Yup and it is used even on CONFIG_SMP=n if I am not missing
-something. At least, CONFIG_PRINTK_NMI stays enabled here.
+Also, sort the properties alphabetically and make indentation
+consistent. Wording largely taken from i2c-rk3x.txt, thanks guys!
 
+Only "i2c-scl-internal-delay-ns" is new, the rest is used by two drivers
+already and was documented in their driver binding documentation.
 
-> > +#define NMI_LOG_BUF_LEN (4096 - sizeof(atomic_t) - sizeof(struct irq_work))
-> > +
-> > +struct nmi_seq_buf {
-> > +	atomic_t		len;	/* length of written data */
-> > +	struct irq_work		work;	/* IRQ work that flushes the buffer */
-> > +	unsigned char		buffer[NMI_LOG_BUF_LEN];
-> 
-> When this buffer overflows, which characters get lost?  Most recent or
-> least recent?
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Cc: devicetree@vger.kernel.org
+---
+ Documentation/devicetree/bindings/i2c/i2c.txt | 31 ++++++++++++++++++++++-----
+ 1 file changed, 26 insertions(+), 5 deletions(-)
 
-The most recent messages are lost when the buffer overflows. The other
-way would require to use a ring-buffer instead the seq_buf. We would need
-a lock-less synchronization for both, begin and end, pointers. It
-would add quite some complications.
+diff --git a/Documentation/devicetree/bindings/i2c/i2c.txt b/Documentation/devicetree/bindings/i2c/i2c.txt
+index 8a99150ac3a7fd..a00219f5ee0733 100644
+--- a/Documentation/devicetree/bindings/i2c/i2c.txt
++++ b/Documentation/devicetree/bindings/i2c/i2c.txt
+@@ -29,12 +29,33 @@ Optional properties
+ These properties may not be supported by all drivers. However, if a driver
+ wants to support one of the below features, it should adapt the bindings below.
+ 
+-- clock-frequency	- frequency of bus clock in Hz.
+-- wakeup-source		- device can be used as a wakeup source.
++- clock-frequency
++	frequency of bus clock in Hz.
+ 
+-- interrupts		- interrupts used by the device.
+-- interrupt-names	- "irq" and "wakeup" names are recognized by I2C core,
+-			  other names are left to individual drivers.
++- i2c-scl-falling-time-ns
++	Number of nanoseconds the SCL signal takes to fall; t(f) in the I2C
++	specification.
++
++- i2c-scl-internal-delay-ns
++	Number of nanoseconds the IP core additionally needs to setup SCL.
++
++- i2c-scl-rising-time-ns
++	Number of nanoseconds the SCL signal takes to rise; t(r) in the I2C
++	specification.
++
++- i2c-sda-falling-time-ns
++	Number of nanoseconds the SDA signal takes to fall; t(f) in the I2C
++	specification.
++
++- interrupts
++	interrupts used by the device.
++
++- interrupt-names
++	"irq" and "wakeup" names are recognized by I2C core, other names are
++	left to individual drivers.
++
++- wakeup-source
++	device can be used as a wakeup source.
+ 
+ Binding may contain optional "interrupts" property, describing interrupts
+ used by the device. I2C core will assign "irq" interrupt (or the very first
+-- 
+2.1.4
 
-
-> I'm not sure which is best, really.  For an oops trace you probably
-> want to preserve the least recent output: the stuff at the start of the
-> output.
-
-I agree. Fortunately, this is easier and it works this way.
-
-
-> > +static void __printk_nmi_flush(struct irq_work *work)
-> > +{
-> > +	static raw_spinlock_t read_lock > > +		__RAW_SPIN_LOCK_INITIALIZER(read_lock);
-> > +	struct nmi_seq_buf *s = container_of(work, struct nmi_seq_buf, work);
-> > +	int len, size, i, last_i;
-> > +
-> > +	/*
-> > +	 * The lock has two functions. First, one reader has to flush all
-> > +	 * available message to make the lockless synchronization with
-> > +	 * writers easier. Second, we do not want to mix messages from
-> > +	 * different CPUs. This is especially important when printing
-> > +	 * a backtrace.
-> > +	 */
-> > +	raw_spin_lock(&read_lock);
-> > +
-> > +	i = 0;
-> > +more:
-> > +	len = atomic_read(&s->len);
-> > +
-> > +	/*
-> > +	 * This is just a paranoid check that nobody has manipulated
-> > +	 * the buffer an unexpected way. If we printed something then
-> > +	 * @len must only increase.
-> > +	 */
-> > +	WARN_ON(i && i >= len);
-> 
-> hm, dumping a big backtrace in this context seems a poor idea.  Oh
-> well, shouldn't happen.
-
-I see and the backtrace probably would not help much because "len"
-might be manipulated also from NMI context. I am going to change
-this to:
-
-	if (i && i >= len)
-		pr_err("printk_nmi_flush: internal error: i=%d >		len=%d)\n", i, len);
-
-
-
-> > +	if (!len)
-> > +		goto out; /* Someone else has already flushed the buffer. */
-> > +
-> > +	/* Make sure that data has been written up to the @len */
-> > +	smp_rmb();
-> > +
-> > +	size = min_t(int, len, sizeof(s->buffer));
-> 
-> len and size should have type size_t.
-
-OK
-
-> > --- /dev/null
-> > +++ b/kernel/printk/printk.h
-> 
-> I find it a bit irritating to have duplicated filenames.  We could
-> follow convention and call this "internal.h".
-
-No problem. I am going to send an updated patchset soon.
-
-Thanks a lot for review,
-Petr
