@@ -1,50 +1,59 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 18 Dec 2015 02:29:36 +0000
-Subject: [PATCH 06/25] ARM: shmobile: bockw dts: Override #sound-dai-cells to zero
-Message-Id: <a6ff5e8d5ebc0392d5c470652cd22f730e090e29.1450402264.git.horms+renesas@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Thu, 03 Dec 2015 15:51:36 +0000
+Subject: [PATCH 6/9] ARM: shmobile: r8a7790: dtsi: add internal delay for i2c IPs
+Message-Id: <1449157899-6572-7-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1450402264.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1450402264.git.horms+renesas@verge.net.au>
+References: <1449157899-6572-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1449157899-6572-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, linux-rockchip@lists.infradead.org, Mika Westerberg <mika.westerberg@linux.intel.com>, Andy Shevchenko <andriy.shevchenko@linux.intel.com>, Jarkko Nikula <jarkko.nikula@linux.intel.com>
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-The default value of #sound-dai-cells in r8a7778.dtsi is one, while
-the /sound/simple-audio-card,cpu device node in r8a7778-bockw.dts uses a
-phandle without any extra cells ("<&rcar_sound>"), causing:
-
-    /sound/simple-audio-card,cpu: arguments longer than property
-    asoc-simple-card sound: parse error -22
-    asoc-simple-card: probe of sound failed with error -22
-
-Override #sound-dai-cells to zero to fix this.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 ---
- arch/arm/boot/dts/r8a7778-bockw.dts | 5 +++++
- 1 file changed, 5 insertions(+)
+ arch/arm/boot/dts/r8a7790.dtsi | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
-index 3c03e6b8261e..158ad94fd4d1 100644
---- a/arch/arm/boot/dts/r8a7778-bockw.dts
-+++ b/arch/arm/boot/dts/r8a7778-bockw.dts
-@@ -172,6 +172,11 @@
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 6cfd0dc79bbec0..64a3f4a05f36d0 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -417,6 +417,7 @@
+ 		interrupts = <0 287 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp9_clks R8A7790_CLK_I2C0>;
+ 		power-domains = <&cpg_clocks>;
++		i2c-scl-internal-delay-ns = <110>;
+ 		status = "disabled";
  	};
- };
  
-+&rcar_sound {
-+	/* Single DAI */
-+	#sound-dai-cells = <0>;
-+};
-+
- &sdhi0 {
- 	pinctrl-0 = <&sdhi0_pins>, <&sdhi0_pup_pins>;
- 	pinctrl-names = "default";
+@@ -428,6 +429,7 @@
+ 		interrupts = <0 288 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp9_clks R8A7790_CLK_I2C1>;
+ 		power-domains = <&cpg_clocks>;
++		i2c-scl-internal-delay-ns = <6>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -439,6 +441,7 @@
+ 		interrupts = <0 286 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp9_clks R8A7790_CLK_I2C2>;
+ 		power-domains = <&cpg_clocks>;
++		i2c-scl-internal-delay-ns = <6>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -450,6 +453,7 @@
+ 		interrupts = <0 290 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp9_clks R8A7790_CLK_I2C3>;
+ 		power-domains = <&cpg_clocks>;
++		i2c-scl-internal-delay-ns = <110>;
+ 		status = "disabled";
+ 	};
+ 
 -- 
 2.1.4
 
