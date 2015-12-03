@@ -1,51 +1,59 @@
-From: Gregory CLEMENT <gregory.clement@free-electrons.com>
-Date: Wed, 23 Dec 2015 11:07:12 +0000
-Subject: Re: [PATCH v2 1/9] ARM: mvebu: ix4-300d: Add compatible property to "partitions" node
-Message-Id: <87a8p1fmov.fsf@free-electrons.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Thu, 03 Dec 2015 15:51:30 +0000
+Subject: [PATCH 0/9] i2c: add generic support for timing parameters in DT
+Message-Id: <1449157899-6572-1-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450694033-27717-1-git-send-email-geert+renesas@glider.be>
- <1450694033-27717-2-git-send-email-geert+renesas@glider.be>
- <87zix3rbm7.fsf@free-electrons.com> <20151222212225.GE30172@localhost>
-In-Reply-To: <20151222212225.GE30172@localhost> (Olof Johansson's message of
- "Tue, 22 Dec 2015 13:22:25 -0800")
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, linux-rockchip@lists.infradead.org, Mika Westerberg <mika.westerberg@linux.intel.com>, Andy Shevchenko <andriy.shevchenko@linux.intel.com>, Jarkko Nikula <jarkko.nikula@linux.intel.com>
 
-Hi Olof,
-=20
- On mar., d=C3=A9c. 22 2015, Olof Johansson <olof@lixom.net> wrote:
+Here is a patch series adding better DT support for timing parameters like the
+raise time or the fall time which are generic for the I2C subsystem. There is a
+core function for parsing and an implementation for the RCar driver how to use
+it.
 
-> On Mon, Dec 21, 2015 at 05:48:48PM +0100, Gregory CLEMENT wrote:
->> Hi Geert,
->> =20
->>  On lun., d??c. 21 2015, Geert Uytterhoeven <geert+renesas@glider.be> wr=
-ote:
->>=20
->> > As of commit e488ca9f8d4f62c2 ("doc: dt: mtd: partitions: add compatib=
-le
->> > property to "partitions" node"), the "partitions" subnode of an SPI
->> > FLASH device node must have a compatible property. The partitions are =
-no
->> > longer detected if it is not present.
->> >
->> > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
->> > Acked-by: Brian Norris <computersforpeace@gmail.com>
->>=20
->> Applied on mvebu/dt (with the hope that it is still time to push it to
->> arm-soc)
->
-> I think we should just take this directly, so feel free to drop it. I'll
-> followup on 0/9.
+I added people of the designware and rk3x driver to CC because they might be
+interested in this new function. They provided the basis for this series, so it
+should be easy to convert them.
 
-OK I will drop it of my mvebu/dt and for-next branches.
+Please have a look, test, comment...
 
-Gregory
+Thanks,
+
+    Wolfram
 
 
---=20
-Gregory Clement, Free Electrons
-Kernel, drivers, real-time and embedded Linux
-development, consulting, training and support.
-http://free-electrons.com
+Changes since RFC:
+* better tested
+* added documentation for the new function and the new struct
+* reworded some commit messages slightly
+* moved the new property in the dtsi above the "status" property
+
+
+Wolfram Sang (9):
+  i2c: document generic DT bindings for timing parameters
+  i2c: add generic routine to parse DT for timing information
+  i2c: rcar: refactor probe function a little
+  i2c: rcar: switch to i2c generic dt parsing
+  i2c: rcar: honor additional i2c timings from DT
+  ARM: shmobile: r8a7790: dtsi: add internal delay for i2c IPs
+  ARM: shmobile: r8a7791: dtsi: add internal delay for i2c IPs
+  ARM: shmobile: r8a7794: dtsi: add internal delay for i2c IPs
+  arm64: renesas: r8a7795: add internal delay for i2c IPs
+
+ Documentation/devicetree/bindings/i2c/i2c-rcar.txt |  4 ++
+ Documentation/devicetree/bindings/i2c/i2c.txt      | 31 ++++++++--
+ arch/arm/boot/dts/r8a7790.dtsi                     |  4 ++
+ arch/arm/boot/dts/r8a7791.dtsi                     |  6 ++
+ arch/arm/boot/dts/r8a7794.dtsi                     |  6 ++
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi           |  7 +++
+ drivers/i2c/busses/i2c-rcar.c                      | 67 +++++++++++-----------
+ drivers/i2c/i2c-core.c                             | 50 ++++++++++++++++
+ include/linux/i2c.h                                | 22 +++++++
+ 9 files changed, 158 insertions(+), 39 deletions(-)
+
+-- 
+2.1.4
+
