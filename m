@@ -1,94 +1,75 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 11 Dec 2015 02:52:48 +0000
-Subject: [PATCH/RFC 11/19] ARM: shmobile: r8a7793: add audio DMAC to device tree
-Message-Id: <1449802376-11301-12-git-send-email-horms+renesas@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Thu, 03 Dec 2015 15:51:38 +0000
+Subject: [PATCH 8/9] ARM: shmobile: r8a7794: dtsi: add internal delay for i2c IPs
+Message-Id: <1449157899-6572-9-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449802376-11301-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1449802376-11301-1-git-send-email-horms+renesas@verge.net.au>
+References: <1449157899-6572-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1449157899-6572-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, linux-rockchip@lists.infradead.org, Mika Westerberg <mika.westerberg@linux.intel.com>, Andy Shevchenko <andriy.shevchenko@linux.intel.com>, Jarkko Nikula <jarkko.nikula@linux.intel.com>
 
-Instantiate the two Audio DMA controllers in the r8a7791 device tree.
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Based on similar work for the r8a7791 by Kuninori Morimoto.
-
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 ---
- arch/arm/boot/dts/r8a7793.dtsi | 58 ++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 58 insertions(+)
+ arch/arm/boot/dts/r8a7794.dtsi | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7793.dtsi b/arch/arm/boot/dts/r8a7793.dtsi
-index 13c0acc44ba7..1d68c0dd84e5 100644
---- a/arch/arm/boot/dts/r8a7793.dtsi
-+++ b/arch/arm/boot/dts/r8a7793.dtsi
-@@ -306,6 +306,64 @@
- 		dma-channels = <15>;
- 	};
- 
-+	audma0: dma-controller@ec700000 {
-+		compatible = "renesas,dmac-r8a7793", "renesas,rcar-dmac";
-+		reg = <0 0xec700000 0 0x10000>;
-+		interrupts =	<0 346 IRQ_TYPE_LEVEL_HIGH
-+				 0 320 IRQ_TYPE_LEVEL_HIGH
-+				 0 321 IRQ_TYPE_LEVEL_HIGH
-+				 0 322 IRQ_TYPE_LEVEL_HIGH
-+				 0 323 IRQ_TYPE_LEVEL_HIGH
-+				 0 324 IRQ_TYPE_LEVEL_HIGH
-+				 0 325 IRQ_TYPE_LEVEL_HIGH
-+				 0 326 IRQ_TYPE_LEVEL_HIGH
-+				 0 327 IRQ_TYPE_LEVEL_HIGH
-+				 0 328 IRQ_TYPE_LEVEL_HIGH
-+				 0 329 IRQ_TYPE_LEVEL_HIGH
-+				 0 330 IRQ_TYPE_LEVEL_HIGH
-+				 0 331 IRQ_TYPE_LEVEL_HIGH
-+				 0 332 IRQ_TYPE_LEVEL_HIGH>;
-+		interrupt-names = "error",
-+				"ch0", "ch1", "ch2", "ch3",
-+				"ch4", "ch5", "ch6", "ch7",
-+				"ch8", "ch9", "ch10", "ch11",
-+				"ch12";
-+		clocks = <&mstp5_clks R8A7793_CLK_AUDIO_DMAC0>;
-+		clock-names = "fck";
-+		power-domains = <&cpg_clocks>;
-+		#dma-cells = <1>;
-+		dma-channels = <13>;
-+	};
-+
-+	audma1: dma-controller@ec720000 {
-+		compatible = "renesas,dmac-r8a7793", "renesas,rcar-dmac";
-+		reg = <0 0xec720000 0 0x10000>;
-+		interrupts =	<0 347 IRQ_TYPE_LEVEL_HIGH
-+				 0 333 IRQ_TYPE_LEVEL_HIGH
-+				 0 334 IRQ_TYPE_LEVEL_HIGH
-+				 0 335 IRQ_TYPE_LEVEL_HIGH
-+				 0 336 IRQ_TYPE_LEVEL_HIGH
-+				 0 337 IRQ_TYPE_LEVEL_HIGH
-+				 0 338 IRQ_TYPE_LEVEL_HIGH
-+				 0 339 IRQ_TYPE_LEVEL_HIGH
-+				 0 340 IRQ_TYPE_LEVEL_HIGH
-+				 0 341 IRQ_TYPE_LEVEL_HIGH
-+				 0 342 IRQ_TYPE_LEVEL_HIGH
-+				 0 343 IRQ_TYPE_LEVEL_HIGH
-+				 0 344 IRQ_TYPE_LEVEL_HIGH
-+				 0 345 IRQ_TYPE_LEVEL_HIGH>;
-+		interrupt-names = "error",
-+				"ch0", "ch1", "ch2", "ch3",
-+				"ch4", "ch5", "ch6", "ch7",
-+				"ch8", "ch9", "ch10", "ch11",
-+				"ch12";
-+		clocks = <&mstp5_clks R8A7793_CLK_AUDIO_DMAC1>;
-+		clock-names = "fck";
-+		power-domains = <&cpg_clocks>;
-+		#dma-cells = <1>;
-+		dma-channels = <13>;
-+	};
-+
- 	i2c0: i2c@e6508000 {
+diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
+index 6f2f01914db295..37809b8aae65f9 100644
+--- a/arch/arm/boot/dts/r8a7794.dtsi
++++ b/arch/arm/boot/dts/r8a7794.dtsi
+@@ -519,6 +519,7 @@
+ 		power-domains = <&cpg_clocks>;
  		#address-cells = <1>;
  		#size-cells = <0>;
++		i2c-scl-internal-delay-ns = <6>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -530,6 +531,7 @@
+ 		power-domains = <&cpg_clocks>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
++		i2c-scl-internal-delay-ns = <6>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -541,6 +543,7 @@
+ 		power-domains = <&cpg_clocks>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
++		i2c-scl-internal-delay-ns = <6>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -552,6 +555,7 @@
+ 		power-domains = <&cpg_clocks>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
++		i2c-scl-internal-delay-ns = <6>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -563,6 +567,7 @@
+ 		power-domains = <&cpg_clocks>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
++		i2c-scl-internal-delay-ns = <6>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -574,6 +579,7 @@
+ 		power-domains = <&cpg_clocks>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
++		i2c-scl-internal-delay-ns = <6>;
+ 		status = "disabled";
+ 	};
+ 
 -- 
 2.1.4
 
