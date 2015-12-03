@@ -1,76 +1,32 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 03 Dec 2015 21:09:29 +0000
+Date: Thu, 03 Dec 2015 21:10:56 +0000
 Subject: Re: [PATCH net-next] ravb: ptp: Add CONFIG mode support
-Message-Id: <5660AF89.1010008@cogentembedded.com>
+Message-Id: <5660AFE0.7060401@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1448989479-11594-1-git-send-email-ykaneko0929@gmail.com>
-In-Reply-To: <1448989479-11594-1-git-send-email-ykaneko0929@gmail.com>
+ <20151203.142839.1524060182047354031.davem@davemloft.net>
+In-Reply-To: <20151203.142839.1524060182047354031.davem@davemloft.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshihiro Kaneko <ykaneko0929@gmail.com>, netdev@vger.kernel.org
-Cc: "David S. Miller" <davem@davemloft.net>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: David Miller <davem@davemloft.net>, ykaneko0929@gmail.com
+Cc: netdev@vger.kernel.org, horms@verge.net.au, magnus.damm@gmail.com, linux-sh@vger.kernel.org
 
 Hello.
 
-On 12/01/2015 08:04 PM, Yoshihiro Kaneko wrote:
+On 12/03/2015 10:28 PM, David Miller wrote:
 
-> From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+>> From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+>>
+>> This patch makes PTP support active in CONFIG mode on R-Car Gen3.
+>>
+>> Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+>> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
 >
-> This patch makes PTP support active in CONFIG mode on R-Car Gen3.
->
-> Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
-> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-> ---
->
-> This patch is based on the master branch of David Miller's next networking
-> tree.
->
->   drivers/net/ethernet/renesas/ravb.h      |  1 +
->   drivers/net/ethernet/renesas/ravb_main.c | 33 +++++++++++++++++++++++++++-----
->   2 files changed, 29 insertions(+), 5 deletions(-)
->
-> diff --git a/drivers/net/ethernet/renesas/ravb.h b/drivers/net/ethernet/renesas/ravb.h
-> index f9dee74..9fbe92a 100644
-> --- a/drivers/net/ethernet/renesas/ravb.h
-> +++ b/drivers/net/ethernet/renesas/ravb.h
-> @@ -206,6 +206,7 @@ enum CCC_BIT {
->   	CCC_OPC_RESET	= 0x00000000,
->   	CCC_OPC_CONFIG	= 0x00000001,
->   	CCC_OPC_OPERATION = 0x00000002,
-> +	CCC_GAC		= 0x00000080,
+> Applied, thank you.
 
-    I'd have added a comment that it's gen3 specific.
-
-[...]
-> diff --git a/drivers/net/ethernet/renesas/ravb_main.c b/drivers/net/ethernet/renesas/ravb_main.c
-> index 990dc55..293046d 100644
-> --- a/drivers/net/ethernet/renesas/ravb_main.c
-> +++ b/drivers/net/ethernet/renesas/ravb_main.c
-[...]
-> @@ -1814,6 +1825,10 @@ static int ravb_probe(struct platform_device *pdev)
->   	/* Initialise HW timestamp list */
->   	INIT_LIST_HEAD(&priv->ts_skb_list);
->
-> +	/* Initialise PTP Clock driver */
-> +	if (chip_id != RCAR_GEN2)
-> +		ravb_ptp_init(ndev, pdev);
-> +
->   	/* Debug message level */
->   	priv->msg_enable = RAVB_DEF_MSG_ENABLE;
->
-> @@ -1855,6 +1870,10 @@ out_napi_del:
->   out_dma_free:
->   	dma_free_coherent(ndev->dev.parent, priv->desc_bat_size, priv->desc_bat,
->   			  priv->desc_bat_dma);
-> +
-> +	/* Stop PTP Clock driver */
-> +	if (chip_id != RCAR_GEN2)
-> +		ravb_ptp_stop(ndev);
-
-    This is clearly misplaced.
-
-[...]
+    You were too fast for me. Alas, I overlooked it. :-/
+    Perhaps worth adding me to MAINTAINERS as (a new role of) a reviewer...
 
 MBR, Sergei
 
