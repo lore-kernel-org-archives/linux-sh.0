@@ -1,59 +1,56 @@
 From: Wolfram Sang <wsa@the-dreams.de>
-Date: Wed, 02 Dec 2015 10:02:38 +0000
+Date: Thu, 03 Dec 2015 21:03:39 +0000
 Subject: Re: [PATCH] i2c: emev2: add slave support
-Message-Id: <20151202100238.GE1555@katana>
+Message-Id: <20151203210339.GD8509@katana>
 MIME-Version: 1
-Content-Type: multipart/mixed; boundary="KuLpqunXa7jZSBt+"
+Content-Type: multipart/mixed; boundary="SFyWQ0h3ruR435lw"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1448842558-18654-1-git-send-email-niklas.soderlund@ragnatech.se>
-In-Reply-To: <1448842558-18654-1-git-send-email-niklas.soderlund@ragnatech.se>
+ <1448842558-18654-2-git-send-email-niklas.soderlund@ragnatech.se>
+In-Reply-To: <1448842558-18654-2-git-send-email-niklas.soderlund@ragnatech.se>
 To: Niklas =?utf-8?Q?S=C3=B6derlund?= <niklas.soderlund@ragnatech.se>
 Cc: linux-i2c@vger.kernel.org, ian.molton@codethink.co.uk, laurent.pinchart@ideasonboard.com, magnus.damm@gmail.com, linux-sh@vger.kernel.org
 
 
---KuLpqunXa7jZSBt+
+--SFyWQ0h3ruR435lw
 Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
 Content-Transfer-Encoding: quoted-printable
 
-On Mon, Nov 30, 2015 at 01:15:57AM +0100, Niklas S=C3=B6derlund wrote:
-> Add i2c slave support to EMEV2.
+On Mon, Nov 30, 2015 at 01:15:58AM +0100, Niklas S=C3=B6derlund wrote:
+> Add I2C slave provider using the generic slave interface.
 >=20
-> Tested using a EMEV2, BeagleBone Black and a 24c02 eeprom. While the
-> EMEV2 provided a emulated eeprom on iic0 using slave-24c02 iic0 the Bone
-> could talk to both the physical and the emulated eeprom. The EMEV2 could
-> talk to the physical eeprom while still provide the emulated eeprom.
+> Signed-off-by: Niklas S=C3=B6derlund <niklas.soderlund@ragnatech.se>
 
-Yay, good testing here.
+Looks mostly fine. Sparse says:
 
-Which board did you use? KZM9D? Do you have pin descriptions for the
-connectors, if so? I am looking for these for quite some time.
+    SPARSE
+drivers/i2c/busses/i2c-emev2.c:267:25: warning: mixing declarations and code
+drivers/i2c/busses/i2c-emev2.c:289:25: warning: mixing declarations and code
 
-Thanks,
-
-   Wolfram
+Please fix.
 
 
---KuLpqunXa7jZSBt+
+--SFyWQ0h3ruR435lw
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: Digital signature
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1
 
-iQIcBAEBAgAGBQJWXsG+AAoJEBQN5MwUoCm2Mn0P/jScuSHBbUvYv56zuyIgutJu
-/obWSCGRW+spywrQv7ErQsDnYj0Dbp0EV2YOARIJBzDmZbEhM/xw1hCScGhNOWzm
-TVnvm3jxITwhgm5x4Q7BAMNWeC5A/hN3dDPo+kcr6D9CrNXzQ4ldq/TVneJt8i8n
-HeAbeim5ceNl0YpNwnKONIplo1/98HzYJwEUuphZPKmKKQX3BT2OltKAv0idYncL
-Bjm4hYf+XPJb3j+yPlYAox3wt2vT4expC3G5i0SKht8mh8v4wDQ2iXFZ7bMU+Ge7
-PNdCq4XfeUNWKLabgPxpG4EByYb7XlLwgLmaRYpesWoexa+JlFLeDaRyOvRoLWd5
-ijF51IeBIDS6uyIssfVHy4OXk0Dxlu3+gmzlZOUK9TqJOFnI27VIlya2q5AAfrS3
-nEf1P2V+rZ5WbmM+v/xuwtBRGfmxlivVmTEKSrhg5MY2MiH0r49Di2OAUv/Jx5KD
-dqAwcdpihkD7sfdB0EWGpF/RDk6mWHoXSKg1oQRrrj5PUJd+ApqA3eIeCxuwNreR
-4RFyY/qfozs+0swFWW3jZ+mP10nlknt3qT5e7RWIiyNqZO8Sg0TbZifYCXrc6703
-5mADdg5vYnKTiiGel434MH0U9e0nJWaaaSYrqlXGIO0dWhTJuAqv4NAN9MkRzPwp
-U4NmdjhEW8Z/hR6bBEnv
-=FfcG
+iQIcBAEBAgAGBQJWYK4rAAoJEBQN5MwUoCm2+DUP/jdV2s72ywTC2UgciPonA5d8
+9LBPPq9p2Guh8rowfTTH+E6//whz1CvIGWRZCzMD+Va5OqSzys2+Uo2vsyzhW3cy
+E49T/H25fsz9VMUMMKHFX95FHnJqhow36B2T9lFi4Abqh322Du7kmtaNPNIpzqSW
+VvvHaYGjMQQ8NWUHpzEpSTQtxk2JOIm3fl5tIe7ckIAI7YUb+Q9NF75BDNyQhRZ1
++UYc/nGuv2E/KWyLB2Cu6hYboW41QhKCdn2YA34+lffUDNbDb994M5mh0zJZq8ke
+0sLT2VCrK+M8NfIFiefchT5hDRk9UXl21JuGvz7NhDNT6+ptRb+wiKsU8NEM6Y8M
+qdb7sxQsCsVqC5t7hQqCcdUCjp4d2W+K1EdwQNi2WpQqNnkHxYwR3Tsa+EiYxpNw
+9omh9/bBZ5au3m+fWaQ2PCkq2mJaYhIIVxbvTYrNm/VWHdbzPdLMtnP9dtcPKQUF
+t+7N9K7BWIv+7hYURlFRmwTqLbuMR85sXdSTMvbFzIB2PPz+LUrJ28hTtqL2u2gY
+0PpAJQoucY6df1J8+zt612skbYH4sQ0pMKwa6D4Vvg1tbWNNG3ivjtvMJo8Vdsf6
+ik4dUUFYQf6VJu1adeHRYiXczDK5BXb4RFt5bTFnd4RJjPX7PUWOVlNeRcd2CHRu
+jsJqCWc+tncEcVhrtikp
+=GltJ
 -----END PGP SIGNATURE-----
 
---KuLpqunXa7jZSBt+--
+--SFyWQ0h3ruR435lw--
