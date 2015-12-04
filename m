@@ -1,41 +1,50 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 18 Dec 2015 02:29:35 +0000
-Subject: [PATCH 05/25] ARM: shmobile: r8a7793: remove deprecated #gpio-range-cells
-Message-Id: <f00be687f5fd2b626aa975dc4513cad525823c05.1450402264.git.horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 04 Dec 2015 21:58:57 +0000
+Subject: [PATCH 2/2] sh_eth: read MAC address registers only once
+Message-Id: <2035649.FBvo9Og81d@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1450402264.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1450402264.git.horms+renesas@verge.net.au>
+References: <10429393.qU4CxZ5nlj@wasted.cogentembedded.com>
+In-Reply-To: <10429393.qU4CxZ5nlj@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: netdev@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-Commit a1bc260bb5f5d9 ("gpio: clean up gpio-ranges documentation")
-declares the above property deprecated. That was more than 2 years ago.
-Remove it, so it doesn't get copied around needlessly.
+The code reading the MAHR/MALR registers in read_mac_address() is terribly
+ineffective -- it reads MAHR 4 times and MALR 2 times, while it's enough to
+read each register only once.  Use the local variables to achieve that,
+somewhat beautifying the code while at it...
 
-Based on similar work for the r8a7791 and r8a7794 by Wolfram Sang.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Cc: Wolfram Sang <wsa+renesas@sang-engineering.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-Reported-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
-Acked-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 ---
- arch/arm/boot/dts/r8a7793.dtsi | 1 -
- 1 file changed, 1 deletion(-)
+ drivers/net/ethernet/renesas/sh_eth.c |   15 +++++++++------
+ 1 file changed, 9 insertions(+), 6 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7793.dtsi b/arch/arm/boot/dts/r8a7793.dtsi
-index cbcda80f4658..4c74a9229e71 100644
---- a/arch/arm/boot/dts/r8a7793.dtsi
-+++ b/arch/arm/boot/dts/r8a7793.dtsi
-@@ -233,7 +233,6 @@
- 	pfc: pfc@e6060000 {
- 		compatible = "renesas,pfc-r8a7793";
- 		reg = <0 0xe6060000 0 0x250>;
--		#gpio-range-cells = <3>;
- 	};
+Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
+=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
++++ net-next/drivers/net/ethernet/renesas/sh_eth.c
+@@ -989,12 +989,15 @@ static void read_mac_address(struct net_
+ 	if (mac[0] || mac[1] || mac[2] || mac[3] || mac[4] || mac[5]) {
+ 		memcpy(ndev->dev_addr, mac, ETH_ALEN);
+ 	} else {
+-		ndev->dev_addr[0] = (sh_eth_read(ndev, MAHR) >> 24);
+-		ndev->dev_addr[1] = (sh_eth_read(ndev, MAHR) >> 16) & 0xFF;
+-		ndev->dev_addr[2] = (sh_eth_read(ndev, MAHR) >> 8) & 0xFF;
+-		ndev->dev_addr[3] = (sh_eth_read(ndev, MAHR) & 0xFF);
+-		ndev->dev_addr[4] = (sh_eth_read(ndev, MALR) >> 8) & 0xFF;
+-		ndev->dev_addr[5] = (sh_eth_read(ndev, MALR) & 0xFF);
++		u32 mahr = sh_eth_read(ndev, MAHR);
++		u32 malr = sh_eth_read(ndev, MALR);
++
++		ndev->dev_addr[0] = (mahr >> 24) & 0xFF;
++		ndev->dev_addr[1] = (mahr >> 16) & 0xFF;
++		ndev->dev_addr[2] = (mahr >>  8) & 0xFF;
++		ndev->dev_addr[3] = (mahr >>  0) & 0xFF;
++		ndev->dev_addr[4] = (malr >>  8) & 0xFF;
++		ndev->dev_addr[5] = (malr >>  0) & 0xFF;
+ 	}
+ }
  
- 	dmac0: dma-controller@e6700000 {
--- 
-2.1.4
 
