@@ -1,34 +1,50 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Tue, 22 Dec 2015 19:48:56 +0000
-Subject: Re: [GIT PULL] Renesas ARM Based SoC Defconfig Updates for v4.5
-Message-Id: <20151222194856.GD30172@localhost>
+From: Rob Herring <robh@kernel.org>
+Date: Fri, 04 Dec 2015 18:56:08 +0000
+Subject: Re: [PATCH] spi: sh-msiof: Add support for SH-Mobile AG5
+Message-Id: <20151204185608.GA10576@rob-hp-laptop>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1450315426.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1450315426.git.horms+renesas@verge.net.au>
+References: <1448892840-8195-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1448892840-8195-1-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
+Cc: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Thu, Dec 17, 2015 at 02:24:46PM +0900, Simon Horman wrote:
-> Hi Olof, Hi Kevin, Hi Arnd,
+On Mon, Nov 30, 2015 at 03:14:00PM +0100, Geert Uytterhoeven wrote:
+> MSIOF in SH-Mobile AG5 (sh73a0) is handled fine by the existing driver.
 > 
-> Please consider these Renesas ARM based SoC defconfig updates for v4.5.
-> 
-> 
-> The following changes since commit 8005c49d9aea74d382f474ce11afbbc7d7130bec:
-> 
->   Linux 4.4-rc1 (2015-11-15 17:00:27 -0800)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-defconfig-for-v4.5
-> 
-> for you to fetch changes up to 3bf834e17c8736537a08abfa509ae3a8c8446b08:
-> 
->   ARM: multi_v7_defconfig: Enable frame buffer console for armadillo800eva (2015-12-14 14:13:18 +0900)
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Merged, thanks!
+Applied, thanks.
+
+Rob
 
 
--Olof
+Applied, thanks.
+
+Rob
+
+> ---
+>  Documentation/devicetree/bindings/spi/sh-msiof.txt | 1 +
+>  1 file changed, 1 insertion(+)
+> 
+> diff --git a/Documentation/devicetree/bindings/spi/sh-msiof.txt b/Documentation/devicetree/bindings/spi/sh-msiof.txt
+> index 705075da2f10156e..aa005c1d10d95756 100644
+> --- a/Documentation/devicetree/bindings/spi/sh-msiof.txt
+> +++ b/Documentation/devicetree/bindings/spi/sh-msiof.txt
+> @@ -10,6 +10,7 @@ Required properties:
+>  			 "renesas,msiof-r8a7792" (R-Car V2H)
+>  			 "renesas,msiof-r8a7793" (R-Car M2-N)
+>  			 "renesas,msiof-r8a7794" (R-Car E2)
+> +			 "renesas,msiof-sh73a0" (SH-Mobile AG5)
+>  - reg                  : A list of offsets and lengths of the register sets for
+>  			 the device.
+>  			 If only one register set is present, it is to be used
+> -- 
+> 1.9.1
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe devicetree" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
