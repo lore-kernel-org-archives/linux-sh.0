@@ -1,119 +1,65 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 14 Dec 2015 18:57:59 +0000
-Subject: [PATCH v3 05/12] ARM: shmobile: r8a7740 dtsi: Rename the serial port clock to fck
-Message-Id: <1450119486-1285-6-git-send-email-geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 04 Dec 2015 08:32:57 +0000
+Subject: [PATCH 3/8 v2] thermal: rcar: check irq possibility in rcar_thermal_irq_xxx()
+Message-Id: <87d1umfwf6.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450119486-1285-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1450119486-1285-1-git-send-email-geert+renesas@glider.be>
+References: <87h9jyfwj7.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87h9jyfwj7.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: linux-sh@vger.kernel.org, linux-serial@vger.kernel.org, devicetree@vger.kernel.org, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Simon <horms@verge.net.au>, Zhang Rui <rui.zhang@intel.com>, Eduardo Valentin <edubezval@gmail.com>
+Cc: Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-The clock is really the device functional clock, not the interface
-clock. Rename it.
+Current rcar thermal driver sometimes checks irq possibility when it
+calls rcar_thermal_irq_enable/disable(), but sometimes not.
+This patch checks it inside rcar_thermal_irq_enable/disable().
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-v3:
-  - No changes,
+v1 -> v2
 
-v2:
-  - Add Acked-by.
----
- arch/arm/boot/dts/r8a7740.dtsi | 18 +++++++++---------
- 1 file changed, 9 insertions(+), 9 deletions(-)
+ - new patch
 
-diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
-index 6ef954766eef740f..dcd46ab125bcbb80 100644
---- a/arch/arm/boot/dts/r8a7740.dtsi
-+++ b/arch/arm/boot/dts/r8a7740.dtsi
-@@ -213,7 +213,7 @@
- 		reg = <0xe6c40000 0x100>;
- 		interrupts = <0 100 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7740_CLK_SCIFA0>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&pd_a3sp>;
- 		status = "disabled";
- 	};
-@@ -223,7 +223,7 @@
- 		reg = <0xe6c50000 0x100>;
- 		interrupts = <0 101 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7740_CLK_SCIFA1>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&pd_a3sp>;
- 		status = "disabled";
- 	};
-@@ -233,7 +233,7 @@
- 		reg = <0xe6c60000 0x100>;
- 		interrupts = <0 102 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7740_CLK_SCIFA2>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&pd_a3sp>;
- 		status = "disabled";
- 	};
-@@ -243,7 +243,7 @@
- 		reg = <0xe6c70000 0x100>;
- 		interrupts = <0 103 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7740_CLK_SCIFA3>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&pd_a3sp>;
- 		status = "disabled";
- 	};
-@@ -253,7 +253,7 @@
- 		reg = <0xe6c80000 0x100>;
- 		interrupts = <0 104 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7740_CLK_SCIFA4>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&pd_a3sp>;
- 		status = "disabled";
- 	};
-@@ -263,7 +263,7 @@
- 		reg = <0xe6cb0000 0x100>;
- 		interrupts = <0 105 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7740_CLK_SCIFA5>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&pd_a3sp>;
- 		status = "disabled";
- 	};
-@@ -273,7 +273,7 @@
- 		reg = <0xe6cc0000 0x100>;
- 		interrupts = <0 106 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7740_CLK_SCIFA6>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&pd_a3sp>;
- 		status = "disabled";
- 	};
-@@ -283,7 +283,7 @@
- 		reg = <0xe6cd0000 0x100>;
- 		interrupts = <0 107 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7740_CLK_SCIFA7>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&pd_a3sp>;
- 		status = "disabled";
- 	};
-@@ -293,7 +293,7 @@
- 		reg = <0xe6c30000 0x100>;
- 		interrupts = <0 108 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7740_CLK_SCIFB>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&pd_a3sp>;
- 		status = "disabled";
- 	};
+ drivers/thermal/rcar_thermal.c | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/thermal/rcar_thermal.c b/drivers/thermal/rcar_thermal.c
+index 4d1bc2b..aaedf37 100644
+--- a/drivers/thermal/rcar_thermal.c
++++ b/drivers/thermal/rcar_thermal.c
+@@ -297,6 +297,9 @@ static void _rcar_thermal_irq_ctrl(struct rcar_thermal_priv *priv, int enable)
+ 	unsigned long flags;
+ 	u32 mask = 0x3 << rcar_id_to_shift(priv); /* enable Rising/Falling */
+ 
++	if (!rcar_has_irq_support(priv))
++		return;
++
+ 	spin_lock_irqsave(&common->lock, flags);
+ 
+ 	rcar_thermal_common_bset(common, INTMSK, mask, enable ? 0 : mask);
+@@ -381,8 +384,7 @@ static int rcar_thermal_remove(struct platform_device *pdev)
+ 	struct rcar_thermal_priv *priv;
+ 
+ 	rcar_thermal_for_each_priv(priv, common) {
+-		if (rcar_has_irq_support(priv))
+-			rcar_thermal_irq_disable(priv);
++		rcar_thermal_irq_disable(priv);
+ 		thermal_zone_device_unregister(priv->zone);
+ 	}
+ 
+@@ -468,8 +470,7 @@ static int rcar_thermal_probe(struct platform_device *pdev)
+ 			goto error_unregister;
+ 		}
+ 
+-		if (rcar_has_irq_support(priv))
+-			rcar_thermal_irq_enable(priv);
++		rcar_thermal_irq_enable(priv);
+ 
+ 		list_move_tail(&priv->list, &common->head);
+ 
 -- 
 1.9.1
 
