@@ -1,53 +1,50 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 11 Dec 2015 02:52:46 +0000
-Subject: [PATCH/RFC 09/19] ARM: shmobile: r8a7793: add DVC support to device tree
-Message-Id: <1449802376-11301-10-git-send-email-horms+renesas@verge.net.au>
+From: Dirk Behme <dirk.behme@gmail.com>
+Date: Fri, 04 Dec 2015 13:54:44 +0000
+Subject: [PATCH] clk: shmobile: r8a7795: Add SDHI clocks
+Message-Id: <1449237284-4744-1-git-send-email-dirk.behme@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449802376-11301-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1449802376-11301-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Add DVS support to sound node in r8a7793 device tree.
+Add R8A7795 SDHI clocks.
 
-Based on similar work for the r8a7791 by Kuninori Morimoto.
-
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Dirk Behme <dirk.behme@gmail.com>
 ---
- arch/arm/boot/dts/r8a7793.dtsi | 6 ++++++
- 1 file changed, 6 insertions(+)
+Note: This patch is based on
 
-diff --git a/arch/arm/boot/dts/r8a7793.dtsi b/arch/arm/boot/dts/r8a7793.dtsi
-index 5b02b0b1d7ac..7ee85a774542 100644
---- a/arch/arm/boot/dts/r8a7793.dtsi
-+++ b/arch/arm/boot/dts/r8a7793.dtsi
-@@ -1119,17 +1119,23 @@
- 			<&mstp10_clks R8A7793_CLK_SCU_SRC5>, <&mstp10_clks R8A7793_CLK_SCU_SRC4>,
- 			<&mstp10_clks R8A7793_CLK_SCU_SRC3>, <&mstp10_clks R8A7793_CLK_SCU_SRC2>,
- 			<&mstp10_clks R8A7793_CLK_SCU_SRC1>, <&mstp10_clks R8A7793_CLK_SCU_SRC0>,
-+			<&mstp10_clks R8A7793_CLK_SCU_DVC0>, <&mstp10_clks R8A7793_CLK_SCU_DVC1>,
- 			<&audio_clk_a>, <&audio_clk_b>, <&audio_clk_c>, <&m2_clk>;
- 		clock-names = "ssi-all",
- 				"ssi.9", "ssi.8", "ssi.7", "ssi.6", "ssi.5",
- 				"ssi.4", "ssi.3", "ssi.2", "ssi.1", "ssi.0",
- 				"src.9", "src.8", "src.7", "src.6", "src.5",
- 				"src.4", "src.3", "src.2", "src.1", "src.0",
-+				"dvc.0", "dvc.1",
- 				"clk_a", "clk_b", "clk_c", "clk_i";
- 		power-domains = <&cpg_clocks>;
+https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git/log/?h=topic/gen3-latest renesas-drivers-2015-12-01-v4.4-rc3
+
+ drivers/clk/shmobile/r8a7795-cpg-mssr.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/drivers/clk/shmobile/r8a7795-cpg-mssr.c b/drivers/clk/shmobile/r8a7795-cpg-mssr.c
+index 05479e6..b8831bd 100644
+--- a/drivers/clk/shmobile/r8a7795-cpg-mssr.c
++++ b/drivers/clk/shmobile/r8a7795-cpg-mssr.c
+@@ -99,6 +99,10 @@ static const struct cpg_core_clk r8a7795_core_clks[] __initconst = {
+ 	DEF_FIXED("s3d1",       R8A7795_CLK_S3D1,  CLK_S3,         1, 1),
+ 	DEF_FIXED("s3d2",       R8A7795_CLK_S3D2,  CLK_S3,         2, 1),
+ 	DEF_FIXED("s3d4",       R8A7795_CLK_S3D4,  CLK_S3,         4, 1),
++	DEF_FIXED("sd0",        R8A7795_CLK_SD0,   CLK_PLL1_DIV2, 16, 1),
++	DEF_FIXED("sd1",        R8A7795_CLK_SD1,   CLK_PLL1_DIV2, 16, 1),
++	DEF_FIXED("sd2",        R8A7795_CLK_SD2,   CLK_PLL1_DIV2, 16, 1),
++	DEF_FIXED("sd3",        R8A7795_CLK_SD3,   CLK_PLL1_DIV2, 16, 1),
+ 	DEF_FIXED("cl",         R8A7795_CLK_CL,    CLK_PLL1_DIV2, 48, 1),
+ 	DEF_FIXED("cp",         R8A7795_CLK_CP,    CLK_EXTAL,      2, 1),
  
- 		status = "disabled";
- 
-+		rcar_sound,dvc {
-+			dvc0: dvc@0 { };
-+			dvc1: dvc@1 { };
-+		};
- 		rcar_sound,src {
- 			src0: src@0 { };
- 			src1: src@1 { };
+@@ -120,6 +124,10 @@ static const struct mssr_mod_clk r8a7795_mod_clks[] __initconst = {
+ 	DEF_MOD("sys-dmac1",		 218,	R8A7795_CLK_S3D1),
+ 	DEF_MOD("sys-dmac0",		 219,	R8A7795_CLK_S3D1),
+ 	DEF_MOD("scif2",		 310,	R8A7795_CLK_S3D4),
++	DEF_MOD("sdhi3",	       	 311,	R8A7795_CLK_SD3),
++	DEF_MOD("sdhi2",	       	 312,	R8A7795_CLK_SD2),
++	DEF_MOD("sdhi1",	      	 313,	R8A7795_CLK_SD1),
++	DEF_MOD("sdhi0",	     	 314,	R8A7795_CLK_SD0),
+ 	DEF_MOD("pcie1",		 318,	R8A7795_CLK_S3D1),
+ 	DEF_MOD("pcie0",		 319,	R8A7795_CLK_S3D1),
+ 	DEF_MOD("intc-ap",		 408,	R8A7795_CLK_S3D1),
 -- 
-2.1.4
+2.6.3
 
