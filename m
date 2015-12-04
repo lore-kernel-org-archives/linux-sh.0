@@ -1,54 +1,88 @@
-From: "Shevchenko, Andriy" <andriy.shevchenko@intel.com>
-Date: Tue, 08 Dec 2015 11:00:29 +0000
-Subject: Re: [PATCH v2 4/9] i2c: rcar: switch to i2c generic dt parsing
-Message-Id: <1449572444.30729.32.camel@intel.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 04 Dec 2015 03:18:11 +0000
+Subject: [PATCH 3/4] ARM: shmobile: r8a7790: enable to use thermal-zone
+Message-Id: <87wpsugazs.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449567473-2084-1-git-send-email-wsa@the-dreams.de>
-	 <1449567473-2084-5-git-send-email-wsa@the-dreams.de>
-	 <1449572360.30729.31.camel@linux.intel.com>
-In-Reply-To: <1449572360.30729.31.camel@linux.intel.com>
+References: <871tb2hpn2.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <871tb2hpn2.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "wsa@the-dreams.de" <wsa@the-dreams.de>, "linux-i2c@vger.kernel.org" <linux-i2c@vger.kernel.org>
-Cc: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "yoshihiro.shimoda.uh@renesas.com" <yoshihiro.shimoda.uh@renesas.com>, "horms@verge.net.au" <horms@verge.net.au>, "magnus.damm@gmail.com" <magnus.damm@gmail.com>, "mika.westerberg@linux.intel.com" <mika.westerberg@linux.intel.com>, "jarkko.nikula@linux.intel.com" <jarkko.nikula@linux.intel.com>, "linux-rockchip@lists.infradead.org" <linux-rockchip@lists.infradead.org>, "laurent.pinchart@ideasonboard.com" <laurent.pinchart@ideasonboard.com>, "geert@linux-m68k.org" <geert@linux-m68k.org>
+To: Simon <horms@verge.net.au>, Zhang Rui <rui.zhang@intel.com>, Eduardo Valentin <edubezval@gmail.com>
+Cc: Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org
 
-T24gVHVlLCAyMDE1LTEyLTA4IGF0IDEyOjU5ICswMjAwLCBBbmR5IFNoZXZjaGVua28gd3JvdGU6
-DQo+IE9uIFR1ZSwgMjAxNS0xMi0wOCBhdCAxMDozNyArMDEwMCwgV29sZnJhbSBTYW5nIHdyb3Rl
-Og0KPiA+IEZyb206IFdvbGZyYW0gU2FuZyA8d3NhK3JlbmVzYXNAc2FuZy1lbmdpbmVlcmluZy5j
-b20+DQo+ID4gDQo+ID4gU3dpdGNoIHRvIHRoZSBuZXcgZ2VuZXJpYyBmdW5jdGlvbnMuIFBsYWlu
-IGNvbnZlcnQsIG5vDQo+ID4gZnVuY3Rpb25hbGl0eQ0KPiA+IGFkZGVkIHlldC4NCj4gDQo+IE9u
-ZSBzdHlsZSBuaXRwaWNrLg0KDQpBaCwganVzdCBzZWVuIG5leHQgcGF0Y2guIFllYWgsIGN1cnJl
-bnQgbWFrZSBzZW5zZS4NCk5ldmVyIG1pbmQgYmVsb3cgY29tbWVudC4NCg0KPiANCj4gPiANCj4g
-PiBTaWduZWQtb2ZmLWJ5OiBXb2xmcmFtIFNhbmcgPHdzYStyZW5lc2FzQHNhbmctZW5naW5lZXJp
-bmcuY29tPg0KPiA+IC0tLQ0KPiA+IMKgZHJpdmVycy9pMmMvYnVzc2VzL2kyYy1yY2FyLmMgfCAx
-NiArKysrKysrKystLS0tLS0tDQo+ID4gwqAxIGZpbGUgY2hhbmdlZCwgOSBpbnNlcnRpb25zKCsp
-LCA3IGRlbGV0aW9ucygtKQ0KPiA+IA0KPiA+IGRpZmYgLS1naXQgYS9kcml2ZXJzL2kyYy9idXNz
-ZXMvaTJjLXJjYXIuYw0KPiA+IGIvZHJpdmVycy9pMmMvYnVzc2VzL2kyYy0NCj4gPiByY2FyLmMN
-Cj4gPiBpbmRleCBkNDMyMmE5MDk2Nzg2Zi4uYzY2M2Y0Mzg5YmY4OTggMTAwNjQ0DQo+ID4gLS0t
-IGEvZHJpdmVycy9pMmMvYnVzc2VzL2kyYy1yY2FyLmMNCj4gPiArKysgYi9kcml2ZXJzL2kyYy9i
-dXNzZXMvaTJjLXJjYXIuYw0KPiA+IEBAIC0xNjIsMTIgKzE2MiwxNSBAQCBzdGF0aWMgaW50IHJj
-YXJfaTJjX2J1c19iYXJyaWVyKHN0cnVjdA0KPiA+IHJjYXJfaTJjX3ByaXYgKnByaXYpDQo+ID4g
-wqAJcmV0dXJuIC1FQlVTWTsNCj4gPiDCoH0NCj4gPiDCoA0KPiA+IC1zdGF0aWMgaW50IHJjYXJf
-aTJjX2Nsb2NrX2NhbGN1bGF0ZShzdHJ1Y3QgcmNhcl9pMmNfcHJpdiAqcHJpdiwNCj4gPiB1MzIN
-Cj4gPiBidXNfc3BlZWQpDQo+ID4gK3N0YXRpYyBpbnQgcmNhcl9pMmNfY2xvY2tfY2FsY3VsYXRl
-KHN0cnVjdCByY2FyX2kyY19wcml2ICpwcml2LA0KPiA+IHN0cnVjdCBpMmNfdGltaW5ncyAqdCkN
-Cj4gPiDCoHsNCj4gPiDCoAl1MzIgc2NnZCwgY2RmLCByb3VuZCwgaWNrLCBzY2wsIGNkZl93aWR0
-aDsNCj4gPiDCoAl1bnNpZ25lZCBsb25nIHJhdGU7DQo+ID4gwqAJc3RydWN0IGRldmljZSAqZGV2
-ID0gcmNhcl9pMmNfcHJpdl90b19kZXYocHJpdik7DQo+ID4gwqANCj4gPiArCS8qIEZhbGwgYmFj
-ayB0byBwcmV2aW91c2x5IHVzZWQgdmFsdWVzIGlmIG5vdCBzdXBwbGllZCAqLw0KPiA+ICsJdC0+
-YnVzX2ZyZXFfaHogPSB0LT5idXNfZnJlcV9oeiA/OiAxMDAwMDA7DQo+IA0KPiBPbiBvbmUgaGFu
-ZCBpdCBzZWVtcyBlbm91Z2ggc3BhY2UgdG8gcHV0IG9uZSBtb3JlIHQtPmJ1c19mcmVxX2h6LCBv
-bg0KPiB0aGUgb3RoZXIgd2h5IG5vdA0KPiANCj4gaWYgKCF0LT5idXNfZnJlcV9oeikNCj4gwqAg
-PSAxMDAwMDA7DQo+IA0KPiBJIHRoaW5rIGEgYml0IGJldHRlciB0byBtYWludGFpbiBsYXR0ZXIu
-DQo+IA0KDQotLSANCkFuZHkgU2hldmNoZW5rbyA8YW5kcml5LnNoZXZjaGVua29AaW50ZWwuY29t
-Pg0KSW50ZWwgRmlubGFuZCBPeQ0KLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
-LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tCkludGVsIEZpbmxhbmQgT3kKUmVnaXN0
-ZXJlZCBBZGRyZXNzOiBQTCAyODEsIDAwMTgxIEhlbHNpbmtpIApCdXNpbmVzcyBJZGVudGl0eSBD
-b2RlOiAwMzU3NjA2IC0gNCAKRG9taWNpbGVkIGluIEhlbHNpbmtpIAoKVGhpcyBlLW1haWwgYW5k
-IGFueSBhdHRhY2htZW50cyBtYXkgY29udGFpbiBjb25maWRlbnRpYWwgbWF0ZXJpYWwgZm9yCnRo
-ZSBzb2xlIHVzZSBvZiB0aGUgaW50ZW5kZWQgcmVjaXBpZW50KHMpLiBBbnkgcmV2aWV3IG9yIGRp
-c3RyaWJ1dGlvbgpieSBvdGhlcnMgaXMgc3RyaWN0bHkgcHJvaGliaXRlZC4gSWYgeW91IGFyZSBu
-b3QgdGhlIGludGVuZGVkCnJlY2lwaWVudCwgcGxlYXNlIGNvbnRhY3QgdGhlIHNlbmRlciBhbmQg
-ZGVsZXRlIGFsbCBjb3BpZXMuCg=
+
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+
+This patch enables to use thermal-zone on r8a7790.
+This thermal sensor can measure temperature from -40000 to 125000,
+but over 117000 can be critical on this chip.
+Thus, default critical temperature is now set as 115000 (this driver
+is using 5000 steps) (Current critical temperature is using it as
+90000, but there is no big reason about it)
+
+And it doesn't check thermal zone periodically (same as current
+behavior). You can exchange it by modifing polling-delay[-passive]
+property.
+
+You can set trip temp if your kernel has CONFIG_THERMAL_WRITABLE_TRIPS,
+but you need to take care to use it, since it will call
+orderly_poweroff() it it reached to the value.
+echo $temp > /sys/class/thermal/thermal_zone0/trip_point_0_temp
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/boot/dts/r8a7790.dtsi | 26 ++++++++++++++++++++++++--
+ 1 file changed, 24 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 6cfd0dc..bbbc3cd 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -112,6 +112,25 @@
+ 		};
+ 	};
+ 
++	thermal-zones {
++		cpu_thermal: cpu-thermal {
++			polling-delay-passive	= <0>;
++			polling-delay		= <0>;
++
++			thermal-sensors = <&thermal>;
++
++			trips {
++				cpu-crit {
++					temperature	= <1150000>;
++					hysteresis	= <0>;
++					type		= "critical";
++				};
++			};
++			cooling-maps {
++			};
++		};
++	};
++
+ 	gic: interrupt-controller@f1001000 {
+ 		compatible = "arm,gic-400";
+ 		#interrupt-cells = <3>;
+@@ -202,12 +221,15 @@
+ 		power-domains = <&cpg_clocks>;
+ 	};
+ 
+-	thermal@e61f0000 {
+-		compatible = "renesas,thermal-r8a7790", "renesas,rcar-thermal";
++	thermal: thermal@e61f0000 {
++		compatible =	"renesas,thermal-r8a7790",
++				"renesas,rcar-thermal-gen2",
++				"renesas,rcar-thermal";
+ 		reg = <0 0xe61f0000 0 0x14>, <0 0xe61f0100 0 0x38>;
+ 		interrupts = <0 69 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp5_clks R8A7790_CLK_THERMAL>;
+ 		power-domains = <&cpg_clocks>;
++		#thermal-sensor-cells = <0>;
+ 	};
+ 
+ 	timer {
+-- 
+1.9.1
 
