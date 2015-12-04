@@ -1,52 +1,73 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 18 Dec 2015 02:29:11 +0000
-Subject: [PATCH 03/10] arm64: dts: r8a7795: Add PSCI node
-Message-Id: <12e5155783bfdd50d93f9868b2209db190df8b68.1450401186.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 04 Dec 2015 08:32:22 +0000
+Subject: [PATCH 2/8 v2] thermal: rcar: check every rcar_thermal_update_temp() return value
+Message-Id: <87egf2fwg6.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1450401186.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1450401186.git.horms+renesas@verge.net.au>
+References: <87h9jyfwj7.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87h9jyfwj7.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon <horms@verge.net.au>, Zhang Rui <rui.zhang@intel.com>, Eduardo Valentin <edubezval@gmail.com>
+Cc: Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org
 
-From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Add PSCI node for r8a7795 SoC, and cpu node enable-method property is
-set to "psci".
-
-Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
-Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
-Signed-off-by: Dirk Behme <dirk.behme@gmail.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm64/boot/dts/renesas/r8a7795.dtsi | 6 ++++++
- 1 file changed, 6 insertions(+)
+v1 -> v2
 
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-index b1902ea1dae4..051ff143506e 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-+++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-@@ -26,6 +26,11 @@
- 		i2c6 = &i2c6;
- 	};
+ - new patch
+
+ drivers/thermal/rcar_thermal.c | 17 +++++++++++++----
+ 1 file changed, 13 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/thermal/rcar_thermal.c b/drivers/thermal/rcar_thermal.c
+index 96707a6..4d1bc2b 100644
+--- a/drivers/thermal/rcar_thermal.c
++++ b/drivers/thermal/rcar_thermal.c
+@@ -210,8 +210,11 @@ static int rcar_thermal_get_temp(struct thermal_zone_device *zone, int *temp)
+ {
+ 	struct rcar_thermal_priv *priv = rcar_zone_to_priv(zone);
  
-+	psci {
-+		compatible = "arm,psci-0.2";
-+		method = "smc";
-+	};
+-	if (!rcar_has_irq_support(priv) || rcar_force_update_temp(priv))
+-		rcar_thermal_update_temp(priv);
++	if (!rcar_has_irq_support(priv) || rcar_force_update_temp(priv)) {
++		int ret = rcar_thermal_update_temp(priv);
++		if (ret < 0)
++			return ret;
++	}
+ 
+ 	mutex_lock(&priv->lock);
+ 	*temp =  MCELSIUS((priv->ctemp * 5) - 65);
+@@ -305,11 +308,15 @@ static void rcar_thermal_work(struct work_struct *work)
+ {
+ 	struct rcar_thermal_priv *priv;
+ 	int cctemp, nctemp;
++	int ret;
+ 
+ 	priv = container_of(work, struct rcar_thermal_priv, work.work);
+ 
+ 	rcar_thermal_get_temp(priv->zone, &cctemp);
+-	rcar_thermal_update_temp(priv);
++	ret = rcar_thermal_update_temp(priv);
++	if (ret < 0)
++		return;
 +
- 	cpus {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-@@ -35,6 +40,7 @@
- 			compatible = "arm,cortex-a57", "arm,armv8";
- 			reg = <0x0>;
- 			device_type = "cpu";
-+			enable-method = "psci";
- 		};
- 	};
+ 	rcar_thermal_irq_enable(priv);
  
+ 	rcar_thermal_get_temp(priv->zone, &nctemp);
+@@ -447,7 +454,9 @@ static int rcar_thermal_probe(struct platform_device *pdev)
+ 		mutex_init(&priv->lock);
+ 		INIT_LIST_HEAD(&priv->list);
+ 		INIT_DELAYED_WORK(&priv->work, rcar_thermal_work);
+-		rcar_thermal_update_temp(priv);
++		ret = rcar_thermal_update_temp(priv);
++		if (ret < 0)
++			goto error_unregister;
+ 
+ 		priv->zone = thermal_zone_device_register("rcar_thermal",
+ 						1, 0, priv,
 -- 
-2.1.4
+1.9.1
 
