@@ -1,45 +1,43 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 18 Dec 2015 02:29:16 +0000
-Subject: [PATCH 08/10] arm64: dts: r8a7795: Add SATA controller node
-Message-Id: <4c13472b8cc4a326041584b88c534663bb829102.1450401186.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 04 Dec 2015 08:36:18 +0000
+Subject: [PATCH 8/8 v2] thermal: of-thermal: of_thermal_set_trip_temp() call thermal_zone_device_update()
+Message-Id: <87610efw9k.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1450401186.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1450401186.git.horms+renesas@verge.net.au>
+References: <87h9jyfwj7.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87h9jyfwj7.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon <horms@verge.net.au>, Zhang Rui <rui.zhang@intel.com>, Eduardo Valentin <edubezval@gmail.com>
+Cc: Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org
 
-From: Kouei Abe <kouei.abe.cp@renesas.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-This adds SATA device node to r8a7795.dtsi.
+of_thermal_set_trip_temp() updates trip temperature. It should call
+thermal_zone_device_update() immediately.
 
-Signed-off-by: Kouei Abe <kouei.abe.cp@renesas.com>
-[uli: adjusted for new MSTP clock scheme]
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm64/boot/dts/renesas/r8a7795.dtsi | 8 ++++++++
- 1 file changed, 8 insertions(+)
+v1 -> v2
 
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-index e14251164480..9ce6a5ea6629 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-+++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-@@ -767,5 +767,13 @@
- 				};
- 			};
- 		};
+ - new patch
+
+ drivers/thermal/of-thermal.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/thermal/of-thermal.c b/drivers/thermal/of-thermal.c
+index be4eedc..d59595b 100644
+--- a/drivers/thermal/of-thermal.c
++++ b/drivers/thermal/of-thermal.c
+@@ -334,6 +334,8 @@ static int of_thermal_set_trip_temp(struct thermal_zone_device *tz, int trip,
+ 	/* thermal framework should take care of data->mask & (1 << trip) */
+ 	data->trips[trip].temperature = temp;
+ 
++	thermal_zone_device_update(tz);
 +
-+		sata: sata@ee300000 {
-+			compatible = "renesas,sata-r8a7795";
-+			reg = <0 0xee300000 0 0x1fff>;
-+			interrupts = <GIC_SPI 105 IRQ_TYPE_LEVEL_HIGH>;
-+			clocks = <&cpg CPG_MOD 915>;
-+			status = "disabled";
-+		};
- 	};
- };
+ 	return 0;
+ }
+ 
 -- 
-2.1.4
+1.9.1
 
