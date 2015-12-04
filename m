@@ -1,44 +1,38 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 18 Dec 2015 02:30:42 +0000
-Subject: [PATCH 4/6] ARM: shmobile: r8a7778 dtsi: Use "arm,pl390" for GIC
-Message-Id: <26828d9e943dbc67ef4104eabc869ee407b9be64.1450401902.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 04 Dec 2015 03:16:29 +0000
+Subject: [PATCH 0/4] enable to use thermal-zone on r8a7790/1
+Message-Id: <871tb2hpn2.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1450401902.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1450401902.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon <horms@verge.net.au>, Zhang Rui <rui.zhang@intel.com>, Eduardo Valentin <edubezval@gmail.com>
+Cc: Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Replace the "arm,cortex-a9-gic" compatible value for the GIC by
-"arm,pl390", as the documentation states it is a PL390.
-This has been confirmed by reading the GICD_IIDR register, which reports
-0x0000043b (PL390 = 0x00, ARM = 0x43b).
+Hi
 
-This has no effect on runtime behavior, as currently the GIC driver
-treats both compatible values the same.
+These are enable to use thermal-zone on r8a7790/r8a7791.
+The rcar thermal driver can use of-thermal style zone by this patch,
+but it still keeping current style too.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+You can select trip temp by DT if you use of-thermal style (this patch).
+If not, it will use fixed trip temp.
+
+Kuninori Morimoto (4):
+      thermal: rcar: move rcar_thermal_dt_ids to upside
+      thermal: rcar: enable to use thermal-zone on DT
+      ARM: shmobile: r8a7790: enable to use thermal-zone
+      ARM: shmobile: r8a7791: enable to use thermal-zone
+
+ Documentation/devicetree/bindings/thermal/rcar-thermal.txt | 37 +++++++++++++++++++++++++++++++++++--
+ arch/arm/boot/dts/r8a7790.dtsi                             | 26 ++++++++++++++++++++++++--
+ arch/arm/boot/dts/r8a7791.dtsi                             | 26 ++++++++++++++++++++++++--
+ drivers/thermal/rcar_thermal.c                             | 57 +++++++++++++++++++++++++++++++++++++++++++++------------
+ 4 files changed, 128 insertions(+), 18 deletions(-)
+
+
+
+Best regards
 ---
- arch/arm/boot/dts/r8a7778.dtsi | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
-index 4f8e07811746..757c6ff319df 100644
---- a/arch/arm/boot/dts/r8a7778.dtsi
-+++ b/arch/arm/boot/dts/r8a7778.dtsi
-@@ -61,7 +61,7 @@
- 	};
- 
- 	gic: interrupt-controller@fe438000 {
--		compatible = "arm,cortex-a9-gic";
-+		compatible = "arm,pl390";
- 		#interrupt-cells = <3>;
- 		interrupt-controller;
- 		reg = <0xfe438000 0x1000>,
--- 
-2.1.4
-
+Kuninori Morimoto
