@@ -1,72 +1,57 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Mon, 21 Dec 2015 09:34:23 +0000
-Subject: RE: [PATCH v2] usb: gadget: renesas_usb3: add support for Renesas USB3.0 peripheral controller
-Message-Id: <SG2PR06MB0919CD95414FC0671C0CC4C4D8E40@SG2PR06MB0919.apcprd06.prod.outlook.com>
+From: Dirk Behme <dirk.behme@gmail.com>
+Date: Fri, 04 Dec 2015 13:38:53 +0000
+Subject: [PATCH 3/3] arm64: dts: r8a7795: Add pmu device nodes
+Message-Id: <1449236333-4410-3-git-send-email-dirk.behme@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450234319-5872-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
- <20151219041930.GR14936@rob-hp-laptop>
-In-Reply-To: <20151219041930.GR14936@rob-hp-laptop>
+References: <1449236333-4410-1-git-send-email-dirk.behme@gmail.com>
+In-Reply-To: <1449236333-4410-1-git-send-email-dirk.behme@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Rob Herring <robh@kernel.org>
-Cc: "gregkh@linuxfoundation.org" <gregkh@linuxfoundation.org>, "balbi@ti.com" <balbi@ti.com>, "pawel.moll@arm.com" <pawel.moll@arm.com>, "mark.rutland@arm.com" <mark.rutland@arm.com>, "ijc+devicetree@hellion.org.uk" <ijc+devicetree@hellion.org.uk>, "galak@codeaurora.org" <galak@codeaurora.org>, "linux-usb@vger.kernel.org" <linux-usb@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Rob,
+From: Yoshifumi Hosoya <yoshifumi.hosoya.wj@renesas.com>
 
-> From: Rob Herring [mailto:robh@kernel.org]
-> Sent: Saturday, December 19, 2015 1:20 PM
-> 
-> On Wed, Dec 16, 2015 at 11:51:59AM +0900, Yoshihiro Shimoda wrote:
-> > R-Car H3 has USB3.0 peripheral controllers. This controller's has the
-> > following features:
-> >  - Supports super, high and full speed
-> >  - Contains 30 pipes for bulk or interrupt transfer
-> >  - Contains dedicated DMA controller
-> >
-> > This driver doesn't support the dedicated DMAC for now.
-> >
-> > Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-> > ---
-> >  This patch is based on the latest Felipe's usb.git / testing/next branch.
-> >  (commit id = e9284de9fae69f1d5e57a4817bfc36dc5f3adf71)
-> >
-> >  Changes from v1:
-> >   - fix build error in i386 environment if COMPILE_TEST=y
-> >   - merge the header file code into the .c file
-> >   - revise the device tree document about "clocks"
-> >   - remove prototype declarations
-> >   - use udelay(1) instead of ndelay(1) in usb3_wait()
-> >   - remove empty function "usb3_init_phy()"
-> >   - use module_platform_driver()
-> >   - remove bit fields member in some structures
-> >
-> >  .../devicetree/bindings/usb/renesas_usb3.txt       |   23 +
-> >  drivers/usb/gadget/udc/Kconfig                     |   11 +
-> >  drivers/usb/gadget/udc/Makefile                    |    1 +
-> >  drivers/usb/gadget/udc/renesas_usb3.c              | 1975 ++++++++++++++++++++
-> >  4 files changed, 2010 insertions(+)
-> >  create mode 100644 Documentation/devicetree/bindings/usb/renesas_usb3.txt
-> >  create mode 100644 drivers/usb/gadget/udc/renesas_usb3.c
-> >
-> > diff --git a/Documentation/devicetree/bindings/usb/renesas_usb3.txt
-> b/Documentation/devicetree/bindings/usb/renesas_usb3.txt
-> > new file mode 100644
-> > index 0000000..71bee11
-> > --- /dev/null
-> > +++ b/Documentation/devicetree/bindings/usb/renesas_usb3.txt
-> > @@ -0,0 +1,23 @@
-> > +Renesas Electronics USB3.0 Peripheral driver
-> > +
-> > +Required properties:
-> > +  - compatible: Must contain one of the following:
-> > +	- "renesas,usb3-peri-r8a7795"
-> 
-> Aren't you all doing <chip>-<peripheral> order for new bindings?
+Enabling the performance monitor unit on r8a7795.
 
-Oops, thank you for the point. I will fix this.
+Signed-off-by: Masaru Nagai <masaru.nagai.vx@renesas.com>
+Signed-off-by: Yoshifumi Hosoya <yoshifumi.hosoya.wj@renesas.com>
+Sigend-off-by: Dirk Behme <dirk.behme@gmail.com>
+---
+Note: This patch picked from
 
-Best regards,
-Yoshihiro Shimoda
+https://git.kernel.org/cgit/linux/kernel/git/horms/renesas-bsp.git/log/?h=v4.2/rcar-3.0.x
 
-> Rob
+and rebased against
+
+https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git/log/?h=topic/gen3-latest renesas-drivers-2015-12-01-v4.4-rc3
+
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index 946a5bb..8113b71 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -247,6 +247,18 @@
+ 			power-domains = <&cpg>;
+ 		};
+ 
++		pmu {
++			compatible = "arm,armv8-pmuv3";
++			interrupts = <GIC_SPI 72 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 73 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 74 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 75 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-affinity = <&a57_0>,
++					     <&a57_1>,
++					     <&a57_2>,
++					     <&a57_3>;
++		};
++
+ 		timer {
+ 			compatible = "arm,armv8-timer";
+ 			interrupts = <GIC_PPI 13
+-- 
+2.6.3
+
