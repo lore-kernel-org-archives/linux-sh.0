@@ -1,69 +1,52 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 14 Dec 2015 18:58:20 +0000
-Subject: [PATCH v2 5/9] ARM: shmobile: lager dts: Enable SCIF_CLK frequency and pins
-Message-Id: <1450119504-1517-6-git-send-email-geert+renesas@glider.be>
+From: Li Bin <huawei.libin@huawei.com>
+Date: Fri, 04 Dec 2015 07:27:42 +0000
+Subject: [PATCH 0/5] ftrace: fix ftrace misleading comments for arch using it
+Message-Id: <1449214067-12177-1-git-send-email-huawei.libin@huawei.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450119504-1517-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1450119504-1517-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-sh@vger.kernel.org, linux-serial@vger.kernel.org, devicetree@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: rostedt@goodmis.org, mingo@redhat.com
+Cc: linux-kernel@vger.kernel.org, Li Bin <huawei.libin@huawei.com>, Tony
+ Luck <tony.luck@intel.com>, Fenghua Yu <fenghua.yu@intel.com>, linux-ia64@vger.kernel.org, James Hogan <james.hogan@imgtec.com>, linux-metag@vger.kernel.org, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Michael
+ Ellerman <mpe@ellerman.id.au>, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, Thomas Gleixner <tglx@linutronix.de>, x86@kernel.org
 
-Add and enable the external crystal for the SCIF_CLK and its pinctrl, to
-be used by the Baud Rate Generator for External Clock (BRG) on (H)SCIF.
+Fix the following similar misleading comments of ftrace for arch
+ia64/metag/powerpc/sh/x86:
 
-This increases the range and accuracy of supported baud rates.
+Note: Due to modules and __init, code can
+ disappear and change, we need to protect against faulting
+ as well as code changing. We do this by using the
+ probe_kernel_* functions.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
-Untested, based on schematics.
+No real locking needed, this code is run through
+kstop_machine, or before SMP starts.
 
-v2:
-  - New.
----
- arch/arm/boot/dts/r8a7790-lager.dts | 13 +++++++++++++
- 1 file changed, 13 insertions(+)
+Cc: Tony Luck <tony.luck@intel.com>
+Cc: Fenghua Yu <fenghua.yu@intel.com>
+Cc: linux-ia64@vger.kernel.org
+Cc: James Hogan <james.hogan@imgtec.com>
+Cc: linux-metag@vger.kernel.org
+Cc: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+Cc: Paul Mackerras <paulus@samba.org>
+Cc: Michael Ellerman <mpe@ellerman.id.au> 
+Cc: linuxppc-dev@lists.ozlabs.org
+Cc: linux-sh@vger.kernel.org
+Cc: Thomas Gleixner <tglx@linutronix.de>
+"Cc: H. Peter Anvin" <hpa@zytor.com>
+Cc: x86@kernel.org
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 44ba69b974a21de2..7773cb1f10317d85 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -291,6 +291,9 @@
- };
- 
- &pfc {
-+	pinctrl-0 = <&scif_clk_pins>;
-+	pinctrl-names = "default";
-+
- 	du_pins: du {
- 		renesas,groups = "du_rgb666", "du_sync_1", "du_clk_out_0";
- 		renesas,function = "du";
-@@ -301,6 +304,11 @@
- 		renesas,function = "scif0";
- 	};
- 
-+	scif_clk_pins: scif_clk {
-+		renesas,groups = "scif_clk";
-+		renesas,function = "scif_clk";
-+	};
-+
- 	ether_pins: ether {
- 		renesas,groups = "eth_link", "eth_mdio", "eth_rmii";
- 		renesas,function = "eth";
-@@ -484,6 +492,11 @@
- 	status = "okay";
- };
- 
-+&scif_clk {
-+	clock-frequency = <14745600>;
-+	status = "okay";
-+};
-+
- &msiof1 {
- 	pinctrl-0 = <&msiof1_pins>;
- 	pinctrl-names = "default";
--- 
-1.9.1
+Li Bin (5):
+  ia64: ftrace: fix the comments for ftrace_modify_code
+  metag: ftrace: fix the comments for ftrace_modify_code
+  powerpc: ftrace: fix the comments for ftrace_modify_code
+  sh: ftrace: fix the comments for ftrace_modify_code
+  x86: ftrace: fix the comments for ftrace_modify_code_direct
+
+ arch/ia64/kernel/ftrace.c    |   13 ++++++-------
+ arch/metag/kernel/ftrace.c   |   12 ++++++------
+ arch/powerpc/kernel/ftrace.c |   13 ++++++-------
+ arch/sh/kernel/ftrace.c      |   13 ++++++-------
+ arch/x86/kernel/ftrace.c     |   13 ++++++-------
+ 5 files changed, 30 insertions(+), 34 deletions(-)
 
