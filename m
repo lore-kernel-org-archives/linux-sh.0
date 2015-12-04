@@ -1,31 +1,57 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 21 Dec 2015 04:34:48 +0000
-Subject: Re: [PATCH 3/3] ARM: shmobile: r8a7794: use fallback usbhs compatibility string
-Message-Id: <20151221043447.GF14422@verge.net.au>
+From: Dirk Behme <dirk.behme@gmail.com>
+Date: Fri, 04 Dec 2015 13:38:51 +0000
+Subject: [PATCH 1/3] arm64: dts: r8a7795: Add PSCI node
+Message-Id: <1449236333-4410-1-git-send-email-dirk.behme@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450404705-5449-1-git-send-email-horms+renesas@verge.net.au>
- <1450404705-5449-4-git-send-email-horms+renesas@verge.net.au>
- <CAMuHMdVAPYj5X4uF4vgfufnVToywBEAj9mwAgz0VQauUCB6m=Q@mail.gmail.com>
-In-Reply-To: <CAMuHMdVAPYj5X4uF4vgfufnVToywBEAj9mwAgz0VQauUCB6m=Q@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Dec 18, 2015 at 11:16:11AM +0100, Geert Uytterhoeven wrote:
-> On Fri, Dec 18, 2015 at 3:11 AM, Simon Horman
-> <horms+renesas@verge.net.au> wrote:
-> > --- a/arch/arm/boot/dts/r8a7794.dtsi
-> > +++ b/arch/arm/boot/dts/r8a7794.dtsi
-> > @@ -724,7 +724,7 @@
-> >         };
-> >
-> >         hsusb: usb@e6590000 {
-> > -               compatible = "renesas,usbhs-r8a7794";
-> > +               compatible = "renesas,usbhs-r8a7794", "renesas,usbhs";
-> 
-> "renesas,rcar-gen2-usbhs", not "renesas,usbhs".
-> 
-> (no complaints from checkpatch.pl?)
+From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
 
-Silly me, I will fix that.
+Add PSCI node for r8a7795 SoC, and cpu node enable-method property is
+set to "psci".
+
+Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
+Sigend-off-by: Dirk Behme <dirk.behme@gmail.com>
+---
+Note: This patch picked from
+
+https://git.kernel.org/cgit/linux/kernel/git/horms/renesas-bsp.git/log/?h=v4.2/rcar-3.0.x
+
+and rebased against
+
+https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git/log/?h=topic/gen3-latest renesas-drivers-2015-12-01-v4.4-rc3
+
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index 816400c..5611597 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -26,6 +26,11 @@
+ 		i2c6 = &i2c6;
+ 	};
+ 
++	psci {
++		compatible = "arm,psci-0.2";
++		method = "smc";
++	};
++
+ 	cpus {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+@@ -35,6 +40,7 @@
+ 			compatible = "arm,cortex-a57", "arm,armv8";
+ 			reg = <0x0>;
+ 			device_type = "cpu";
++			enable-method = "psci";
+ 		};
+ 	};
+ 
+-- 
+2.6.3
+
