@@ -1,39 +1,92 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 14 Dec 2015 19:11:41 +0000
-Subject: [PATCH/RFC 4/7] ARM: shmobile: koelsch dts: Add compatible property to "partitions" node
-Message-Id: <1450120304-2760-5-git-send-email-geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 04 Dec 2015 08:35:11 +0000
+Subject: [PATCH 6/8 v2] ARM: shmobile: r8a7790: enable to use thermal-zone
+Message-Id: <878u5afwbg.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450120304-2760-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1450120304-2760-1-git-send-email-geert+renesas@glider.be>
+References: <87h9jyfwj7.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87h9jyfwj7.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon <horms@verge.net.au>, Zhang Rui <rui.zhang@intel.com>, Eduardo Valentin <edubezval@gmail.com>
+Cc: Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org
 
-As of commit e488ca9f8d4f62c2 ("doc: dt: mtd: partitions: add compatible
-property to "partitions" node"), the "partitions" subnode of an SPI
-FLASH device node must have a compatible property. The partitions are no
-longer detected if it is not present.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+
+This patch enables to use thermal-zone on r8a7790.
+This thermal sensor can measure temperature from -40000 to 125000,
+but over 117000 can be critical on this chip.
+Thus, default critical temperature is now set as 115000 (this driver
+is using 5000 steps) (Current critical temperature is using it as
+90000, but there is no big reason about it)
+
+And it doesn't check thermal zone periodically (same as current
+behavior). You can exchange it by modifing polling-delay[-passive]
+property.
+
+You can set trip temp if your kernel has CONFIG_THERMAL_WRITABLE_TRIPS,
+but you need to take care to use it, since it will call
+orderly_poweroff() it it reached to the value.
+echo $temp > /sys/class/thermal/thermal_zone0/trip_point_0_temp
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-The abovementioned commit is destined for v4.4.
----
- arch/arm/boot/dts/r8a7791-koelsch.dts | 1 +
- 1 file changed, 1 insertion(+)
+v1 -> v2
 
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index f8024c0d1114c607..0ad71b81d3a25f59 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -502,6 +502,7 @@
- 		m25p,fast-read;
+ - no change
+
+ arch/arm/boot/dts/r8a7790.dtsi | 26 ++++++++++++++++++++++++--
+ 1 file changed, 24 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 6cfd0dc..bbbc3cd 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -112,6 +112,25 @@
+ 		};
+ 	};
  
- 		partitions {
-+			compatible = "fixed-partitions";
- 			#address-cells = <1>;
- 			#size-cells = <1>;
++	thermal-zones {
++		cpu_thermal: cpu-thermal {
++			polling-delay-passive	= <0>;
++			polling-delay		= <0>;
++
++			thermal-sensors = <&thermal>;
++
++			trips {
++				cpu-crit {
++					temperature	= <1150000>;
++					hysteresis	= <0>;
++					type		= "critical";
++				};
++			};
++			cooling-maps {
++			};
++		};
++	};
++
+ 	gic: interrupt-controller@f1001000 {
+ 		compatible = "arm,gic-400";
+ 		#interrupt-cells = <3>;
+@@ -202,12 +221,15 @@
+ 		power-domains = <&cpg_clocks>;
+ 	};
  
+-	thermal@e61f0000 {
+-		compatible = "renesas,thermal-r8a7790", "renesas,rcar-thermal";
++	thermal: thermal@e61f0000 {
++		compatible =	"renesas,thermal-r8a7790",
++				"renesas,rcar-thermal-gen2",
++				"renesas,rcar-thermal";
+ 		reg = <0 0xe61f0000 0 0x14>, <0 0xe61f0100 0 0x38>;
+ 		interrupts = <0 69 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp5_clks R8A7790_CLK_THERMAL>;
+ 		power-domains = <&cpg_clocks>;
++		#thermal-sensor-cells = <0>;
+ 	};
+ 
+ 	timer {
 -- 
 1.9.1
 
