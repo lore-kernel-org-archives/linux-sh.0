@@ -1,30 +1,238 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 14 Dec 2015 01:54:57 +0000
-Subject: Re: [PATCH/RFC 19/19] ARM: shmobile: r8a7793: add Audio MIX support to device tree
-Message-Id: <20151214015453.GC13945@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 04 Dec 2015 15:33:52 +0000
+Subject: [PATCH v2 1/2] gpio: rcar: Remove obsolete platform data support
+Message-Id: <1449243233-11089-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449802376-11301-1-git-send-email-horms+renesas@verge.net.au>
- <1449802376-11301-20-git-send-email-horms+renesas@verge.net.au>
- <87mvtdkfgl.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87mvtdkfgl.wl%kuninori.morimoto.gx@renesas.com>
+References: <1449243233-11089-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1449243233-11089-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Linus Walleij <linus.walleij@linaro.org>, Alexandre Courbot <gnurou@gmail.com>
+Cc: Magnus Damm <magnus.damm@gmail.com>, linux-gpio@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Mon, Dec 14, 2015 at 01:07:46AM +0000, Kuninori Morimoto wrote:
-> 
-> Hi Simon
-> 
-> > Instantiate audio MIX support in r8a7793 device tree.
-> > 
-> > Based on similar work for the r8a7791 by Kuninori Morimoto.
-> > 
-> > Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> > ---
-> 
-> Can you please Drop MIX/CTU support from this series ?
-> These works, but needs more debug
+Since commit 4baadb9e05c68962 ("ARM: shmobile: r8a7778: remove obsolete
+setup code"), Renesas R-Car SoCs are only supported in generic DT-only
+ARM multi-platform builds.  The driver doesn't need to use platform data
+anymore, hence remove platform data configuration.
 
-Sure, will do.
+Make gpio_rcar_priv.has_both_edge_trigger a boolean for consistency with
+gpio_rcar_info.has_both_edge_trigger.
+Move gpio_rcar_priv.irq_parent down while we're at it, to prevent gaps
+on 64-bit.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+Commit 4baadb9e05c68962 is in v4.4-rc1.
+
+v2:
+  - Convert gpio_rcar_priv.has_both_edge_trigger from a bitfield to a
+    boolean.
+---
+ drivers/gpio/gpio-rcar.c                | 77 +++++++++++----------------------
+ include/linux/platform_data/gpio-rcar.h | 29 -------------
+ 2 files changed, 26 insertions(+), 80 deletions(-)
+ delete mode 100644 include/linux/platform_data/gpio-rcar.h
+
+diff --git a/drivers/gpio/gpio-rcar.c b/drivers/gpio/gpio-rcar.c
+index 3cbb25ecfc7a1b6a..1ed52fc026cb4dd2 100644
+--- a/drivers/gpio/gpio-rcar.c
++++ b/drivers/gpio/gpio-rcar.c
+@@ -25,7 +25,6 @@
+ #include <linux/module.h>
+ #include <linux/of.h>
+ #include <linux/pinctrl/consumer.h>
+-#include <linux/platform_data/gpio-rcar.h>
+ #include <linux/platform_device.h>
+ #include <linux/pm_runtime.h>
+ #include <linux/spinlock.h>
+@@ -34,12 +33,12 @@
+ struct gpio_rcar_priv {
+ 	void __iomem *base;
+ 	spinlock_t lock;
+-	struct gpio_rcar_config config;
+ 	struct platform_device *pdev;
+ 	struct gpio_chip gpio_chip;
+ 	struct irq_chip irq_chip;
+-	unsigned int irq_parent;
+ 	struct clk *clk;
++	unsigned int irq_parent;
++	bool has_both_edge_trigger;
+ };
+ 
+ #define IOINTSEL 0x00	/* General IO/Interrupt Switching Register */
+@@ -121,7 +120,7 @@ static void gpio_rcar_config_interrupt_input_mode(struct gpio_rcar_priv *p,
+ 	gpio_rcar_modify_bit(p, EDGLEVEL, hwirq, !level_trigger);
+ 
+ 	/* Select one edge or both edges in BOTHEDGE */
+-	if (p->config.has_both_edge_trigger)
++	if (p->has_both_edge_trigger)
+ 		gpio_rcar_modify_bit(p, BOTHEDGE, hwirq, both);
+ 
+ 	/* Select "Interrupt Input Mode" in IOINTSEL */
+@@ -161,7 +160,7 @@ static int gpio_rcar_irq_set_type(struct irq_data *d, unsigned int type)
+ 						      false);
+ 		break;
+ 	case IRQ_TYPE_EDGE_BOTH:
+-		if (!p->config.has_both_edge_trigger)
++		if (!p->has_both_edge_trigger)
+ 			return -EINVAL;
+ 		gpio_rcar_config_interrupt_input_mode(p, hwirq, true, false,
+ 						      true);
+@@ -355,39 +354,29 @@ static const struct of_device_id gpio_rcar_of_table[] = {
+ 
+ MODULE_DEVICE_TABLE(of, gpio_rcar_of_table);
+ 
+-static int gpio_rcar_parse_pdata(struct gpio_rcar_priv *p)
++static int gpio_rcar_parse_dt(struct gpio_rcar_priv *p, unsigned int *npins)
+ {
+-	struct gpio_rcar_config *pdata = dev_get_platdata(&p->pdev->dev);
+ 	struct device_node *np = p->pdev->dev.of_node;
++	const struct of_device_id *match;
++	const struct gpio_rcar_info *info;
+ 	struct of_phandle_args args;
+ 	int ret;
+ 
+-	if (pdata) {
+-		p->config = *pdata;
+-	} else if (IS_ENABLED(CONFIG_OF) && np) {
+-		const struct of_device_id *match;
+-		const struct gpio_rcar_info *info;
++	match = of_match_node(gpio_rcar_of_table, np);
++	if (!match)
++		return -EINVAL;
+ 
+-		match = of_match_node(gpio_rcar_of_table, np);
+-		if (!match)
+-			return -EINVAL;
++	info = match->data;
+ 
+-		info = match->data;
++	ret = of_parse_phandle_with_fixed_args(np, "gpio-ranges", 3, 0, &args);
++	*npins = ret = 0 ? args.args[2] : RCAR_MAX_GPIO_PER_BANK;
++	p->has_both_edge_trigger = info->has_both_edge_trigger;
+ 
+-		ret = of_parse_phandle_with_fixed_args(np, "gpio-ranges", 3, 0,
+-						       &args);
+-		p->config.number_of_pins = ret = 0 ? args.args[2]
+-					 : RCAR_MAX_GPIO_PER_BANK;
+-		p->config.gpio_base = -1;
+-		p->config.has_both_edge_trigger = info->has_both_edge_trigger;
+-	}
+-
+-	if (p->config.number_of_pins = 0 ||
+-	    p->config.number_of_pins > RCAR_MAX_GPIO_PER_BANK) {
++	if (*npins = 0 || *npins > RCAR_MAX_GPIO_PER_BANK) {
+ 		dev_warn(&p->pdev->dev,
+-			 "Invalid number of gpio lines %u, using %u\n",
+-			 p->config.number_of_pins, RCAR_MAX_GPIO_PER_BANK);
+-		p->config.number_of_pins = RCAR_MAX_GPIO_PER_BANK;
++			 "Invalid number of gpio lines %u, using %u\n", *npins,
++			 RCAR_MAX_GPIO_PER_BANK);
++		*npins = RCAR_MAX_GPIO_PER_BANK;
+ 	}
+ 
+ 	return 0;
+@@ -401,6 +390,7 @@ static int gpio_rcar_probe(struct platform_device *pdev)
+ 	struct irq_chip *irq_chip;
+ 	struct device *dev = &pdev->dev;
+ 	const char *name = dev_name(dev);
++	unsigned int npins;
+ 	int ret;
+ 
+ 	p = devm_kzalloc(dev, sizeof(*p), GFP_KERNEL);
+@@ -410,8 +400,8 @@ static int gpio_rcar_probe(struct platform_device *pdev)
+ 	p->pdev = pdev;
+ 	spin_lock_init(&p->lock);
+ 
+-	/* Get device configuration from DT node or platform data. */
+-	ret = gpio_rcar_parse_pdata(p);
++	/* Get device configuration from DT node */
++	ret = gpio_rcar_parse_dt(p, &npins);
+ 	if (ret < 0)
+ 		return ret;
+ 
+@@ -451,8 +441,8 @@ static int gpio_rcar_probe(struct platform_device *pdev)
+ 	gpio_chip->label = name;
+ 	gpio_chip->parent = dev;
+ 	gpio_chip->owner = THIS_MODULE;
+-	gpio_chip->base = p->config.gpio_base;
+-	gpio_chip->ngpio = p->config.number_of_pins;
++	gpio_chip->base = -1;
++	gpio_chip->ngpio = npins;
+ 
+ 	irq_chip = &p->irq_chip;
+ 	irq_chip->name = name;
+@@ -468,8 +458,8 @@ static int gpio_rcar_probe(struct platform_device *pdev)
+ 		goto err0;
+ 	}
+ 
+-	ret = gpiochip_irqchip_add(gpio_chip, irq_chip, p->config.irq_base,
+-				   handle_level_irq, IRQ_TYPE_NONE);
++	ret = gpiochip_irqchip_add(gpio_chip, irq_chip, 0, handle_level_irq,
++				   IRQ_TYPE_NONE);
+ 	if (ret) {
+ 		dev_err(dev, "cannot add irqchip\n");
+ 		goto err1;
+@@ -483,22 +473,7 @@ static int gpio_rcar_probe(struct platform_device *pdev)
+ 		goto err1;
+ 	}
+ 
+-	dev_info(dev, "driving %d GPIOs\n", p->config.number_of_pins);
+-
+-	/* warn in case of mismatch if irq base is specified */
+-	if (p->config.irq_base) {
+-		ret = irq_find_mapping(gpio_chip->irqdomain, 0);
+-		if (p->config.irq_base != ret)
+-			dev_warn(dev, "irq base mismatch (%u/%u)\n",
+-				 p->config.irq_base, ret);
+-	}
+-
+-	if (p->config.pctl_name) {
+-		ret = gpiochip_add_pin_range(gpio_chip, p->config.pctl_name, 0,
+-					     gpio_chip->base, gpio_chip->ngpio);
+-		if (ret < 0)
+-			dev_warn(dev, "failed to add pin range\n");
+-	}
++	dev_info(dev, "driving %d GPIOs\n", npins);
+ 
+ 	return 0;
+ 
+diff --git a/include/linux/platform_data/gpio-rcar.h b/include/linux/platform_data/gpio-rcar.h
+deleted file mode 100644
+index 2d8d6943281376a7..0000000000000000
+--- a/include/linux/platform_data/gpio-rcar.h
++++ /dev/null
+@@ -1,29 +0,0 @@
+-/*
+- * Renesas R-Car GPIO Support
+- *
+- *  Copyright (C) 2013 Magnus Damm
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation; either version 2 of the License
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- */
+-
+-#ifndef __GPIO_RCAR_H__
+-#define __GPIO_RCAR_H__
+-
+-struct gpio_rcar_config {
+-	int gpio_base;
+-	unsigned int irq_base;
+-	unsigned int number_of_pins;
+-	const char *pctl_name;
+-	unsigned has_both_edge_trigger:1;
+-};
+-
+-#define RCAR_GP_PIN(bank, pin)		(((bank) * 32) + (pin))
+-
+-#endif /* __GPIO_RCAR_H__ */
+-- 
+1.9.1
+
