@@ -1,25 +1,42 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Wed, 16 Dec 2015 10:23:53 +0000
-Subject: Re: [PATCH 5/6] pinctrl: sh-pfc: r8a7795: add SATA0 pin conf to DT
-Message-Id: <CAO3366xuwvQH1pkFk0DJ01skWqjCki1Ndg5BHrWdauCkkR2HCQ@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 04 Dec 2015 14:21:19 +0000
+Subject: [PATCH] serial: sh-sci: Fix length of scatterlist
+Message-Id: <1449238879-31169-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450107758-2544-1-git-send-email-ulrich.hecht+renesas@gmail.com>
- <1450107758-2544-6-git-send-email-ulrich.hecht+renesas@gmail.com>
- <CAMuHMdW3ZtvWkhZW1Locmu3WL1YixGrVAdiy7nKywkTiDB+X1w@mail.gmail.com>
-In-Reply-To: <CAMuHMdW3ZtvWkhZW1Locmu3WL1YixGrVAdiy7nKywkTiDB+X1w@mail.gmail.com>
+References: <1445343502-4436-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+In-Reply-To: <1445343502-4436-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
+Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Wed, Dec 16, 2015 at 11:11 AM, Geert Uytterhoeven
-<geert@linux-m68k.org> wrote:
-> Hence I expect SATA to work fine without any pinctrl, and this patch should
-> just be dropped?
->
-> Can you please check? Thanks!
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-Works just fine without.  I'll drop it.
+This patch fixes an issue that the "length" of scatterlist should be
+set using sg_dma_len(). Otherwise, a dmaengine driver cannot work
+correctly if CONFIG_NEED_SG_DMA_LENGTH=y.
 
-CU
-Uli
+Fixes: 7b39d90184 (serial: sh-sci: Fix NULL pointer dereference if HIGHMEM is enabled)
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ drivers/tty/serial/sh-sci.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 960e50a97558cff5..51c7507b0444957b 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1437,7 +1437,7 @@ static void sci_request_dma(struct uart_port *port)
+ 			sg_init_table(sg, 1);
+ 			s->rx_buf[i] = buf;
+ 			sg_dma_address(sg) = dma;
+-			sg->length = s->buf_len_rx;
++			sg_dma_len(sg) = s->buf_len_rx;
+ 
+ 			buf += s->buf_len_rx;
+ 			dma += s->buf_len_rx;
+-- 
+1.9.1
+
