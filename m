@@ -1,99 +1,43 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 18 Dec 2015 02:29:12 +0000
-Subject: [PATCH 04/10] arm64: dts: r8a7795: Add Cortex-A57 CPU cores
-Message-Id: <0ed1a79ed0c17631fb41d336a4eddb9bbd299b64.1450401186.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 04 Dec 2015 08:30:34 +0000
+Subject: [PATCH 0/8 v2] enable to use thermal-zone on r8a7790/1
+Message-Id: <87h9jyfwj7.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1450401186.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1450401186.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon <horms@verge.net.au>, Zhang Rui <rui.zhang@intel.com>, Eduardo Valentin <edubezval@gmail.com>
+Cc: Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org
 
-From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
 
-Add Cortex-A57 CPU cores to r8a7795 SoC for a total of 4 x Cortex-A57.
+Hi
 
-Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
-Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
-Sigend-off-by: Dirk Behme <dirk.behme@gmail.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+These are v2 of thermal-zone support for r8a7790/r8a7791.
+Mainly, it cares return value of get_temp()
+
+I think 8) is needed on of-thermal (?)
+
+Kuninori Morimoto (8):
+      1) thermal: rcar: move rcar_thermal_dt_ids to upside
+      2) thermal: rcar: check every rcar_thermal_update_temp() return value
+      3) thermal: rcar: check irq possibility in rcar_thermal_irq_xxx()
+      4) thermal: rcar: retern error rcar_thermal_get_temp() if no ctemp update
+      5) thermal: rcar: enable to use thermal-zone on DT
+      6) ARM: shmobile: r8a7790: enable to use thermal-zone
+      7) ARM: shmobile: r8a7791: enable to use thermal-zone
+      8) thermal: of-thermal: of_thermal_set_trip_temp() call thermal_zone_device_update()
+
+ Documentation/devicetree/bindings/thermal/rcar-thermal.txt | 37 +++++++++++++++++++++++++++++++++++--
+ arch/arm/boot/dts/r8a7790.dtsi                             | 26 ++++++++++++++++++++++++--
+ arch/arm/boot/dts/r8a7791.dtsi                             | 26 ++++++++++++++++++++++++--
+ drivers/thermal/of-thermal.c                               |  2 ++
+ drivers/thermal/rcar_thermal.c                             | 96 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++---------------------
+ 5 files changed, 160 insertions(+), 27 deletions(-)
+
+Best regards
 ---
- arch/arm64/boot/dts/renesas/r8a7795.dtsi | 31 +++++++++++++++++++++++++------
- 1 file changed, 25 insertions(+), 6 deletions(-)
-
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-index 051ff143506e..4d43cf31418f 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-+++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-@@ -35,13 +35,31 @@
- 		#address-cells = <1>;
- 		#size-cells = <0>;
- 
--		/* 1 core only at this point */
- 		a57_0: cpu@0 {
- 			compatible = "arm,cortex-a57", "arm,armv8";
- 			reg = <0x0>;
- 			device_type = "cpu";
- 			enable-method = "psci";
- 		};
-+
-+		a57_1: cpu@1 {
-+			compatible = "arm,cortex-a57","arm,armv8";
-+			reg = <0x1>;
-+			device_type = "cpu";
-+			enable-method = "psci";
-+		};
-+		a57_2: cpu@2 {
-+			compatible = "arm,cortex-a57","arm,armv8";
-+			reg = <0x2>;
-+			device_type = "cpu";
-+			enable-method = "psci";
-+		};
-+		a57_3: cpu@3 {
-+			compatible = "arm,cortex-a57","arm,armv8";
-+			reg = <0x3>;
-+			device_type = "cpu";
-+			enable-method = "psci";
-+		};
- 	};
- 
- 	extal_clk: extal {
-@@ -84,6 +102,7 @@
- 	soc {
- 		compatible = "simple-bus";
- 		interrupt-parent = <&gic>;
-+
- 		#address-cells = <2>;
- 		#size-cells = <2>;
- 		ranges;
-@@ -96,7 +115,7 @@
- 			reg = <0x0 0xf1010000 0 0x1000>,
- 			      <0x0 0xf1020000 0 0x2000>;
- 			interrupts = <GIC_PPI 9
--					(GIC_CPU_MASK_SIMPLE(1) | IRQ_TYPE_LEVEL_HIGH)>;
-+					(GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_HIGH)>;
- 		};
- 
- 		gpio0: gpio@e6050000 {
-@@ -214,13 +233,13 @@
- 		timer {
- 			compatible = "arm,armv8-timer";
- 			interrupts = <GIC_PPI 13
--					(GIC_CPU_MASK_SIMPLE(1) | IRQ_TYPE_LEVEL_LOW)>,
-+					(GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
- 				     <GIC_PPI 14
--					(GIC_CPU_MASK_SIMPLE(1) | IRQ_TYPE_LEVEL_LOW)>,
-+					(GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
- 				     <GIC_PPI 11
--					(GIC_CPU_MASK_SIMPLE(1) | IRQ_TYPE_LEVEL_LOW)>,
-+					(GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
- 				     <GIC_PPI 10
--					(GIC_CPU_MASK_SIMPLE(1) | IRQ_TYPE_LEVEL_LOW)>;
-+					(GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>;
- 		};
- 
- 		cpg: clock-controller@e6150000 {
--- 
-2.1.4
-
+Kuninori Morimoto
+--
+To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html
