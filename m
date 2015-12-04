@@ -1,75 +1,56 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 17 Dec 2015 07:21:35 +0000
-Subject: [PATCH 4/4] ARM64: renesas: salvator-x: Enable DU
-Message-Id: <1450336895-4279-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 04 Dec 2015 03:17:21 +0000
+Subject: [PATCH 1/4] thermal: rcar: move rcar_thermal_dt_ids to upside
+Message-Id: <87zixqgb15.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <871tb2hpn2.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <871tb2hpn2.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Simon <horms@verge.net.au>, Zhang Rui <rui.zhang@intel.com>, Eduardo Valentin <edubezval@gmail.com>
+Cc: Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Only the VGA output is supported for now.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+
+This patch is prepare for of-thermal support.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 44 ++++++++++++++++++++++
- 1 file changed, 44 insertions(+)
+ drivers/thermal/rcar_thermal.c | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
 
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-index 265d12ff6022..8ab3b684864b 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-+++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-@@ -86,6 +86,50 @@
- 			sound-dai = <&ak4613>;
- 		};
- 	};
-+
-+	vga-encoder {
-+		compatible = "adi,adv7123";
-+
-+		ports {
-+			#address-cells = <1>;
-+			#size-cells = <0>;
-+
-+			port@0 {
-+				reg = <0>;
-+				adv7123_in: endpoint {
-+					remote-endpoint = <&du_out_rgb>;
-+				};
-+			};
-+			port@1 {
-+				reg = <1>;
-+				adv7123_out: endpoint {
-+					remote-endpoint = <&vga_in>;
-+				};
-+			};
-+		};
-+	};
-+
-+	vga {
-+		compatible = "vga-connector";
-+
-+		port {
-+			vga_in: endpoint {
-+				remote-endpoint = <&adv7123_out>;
-+			};
-+		};
-+	};
-+};
-+
-+&du {
-+	status = "okay";
-+
-+	ports {
-+		port@0 {
-+			endpoint {
-+				remote-endpoint = <&adv7123_in>;
-+			};
-+		};
-+	};
- };
+diff --git a/drivers/thermal/rcar_thermal.c b/drivers/thermal/rcar_thermal.c
+index 13d01ed..96707a6 100644
+--- a/drivers/thermal/rcar_thermal.c
++++ b/drivers/thermal/rcar_thermal.c
+@@ -81,6 +81,12 @@ struct rcar_thermal_priv {
+ # define rcar_force_update_temp(priv)	0
+ #endif
  
- &extal_clk {
++static const struct of_device_id rcar_thermal_dt_ids[] = {
++	{ .compatible = "renesas,rcar-thermal", },
++	{},
++};
++MODULE_DEVICE_TABLE(of, rcar_thermal_dt_ids);
++
+ /*
+  *		basic functions
+  */
+@@ -484,12 +490,6 @@ error_unregister:
+ 	return ret;
+ }
+ 
+-static const struct of_device_id rcar_thermal_dt_ids[] = {
+-	{ .compatible = "renesas,rcar-thermal", },
+-	{},
+-};
+-MODULE_DEVICE_TABLE(of, rcar_thermal_dt_ids);
+-
+ static struct platform_driver rcar_thermal_driver = {
+ 	.driver	= {
+ 		.name	= "rcar_thermal",
 -- 
-2.4.10
+1.9.1
 
