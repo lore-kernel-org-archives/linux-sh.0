@@ -1,67 +1,50 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 14 Dec 2015 18:58:17 +0000
-Subject: [PATCH v2 2/9] ARM: shmobile: bockw dts: Enable SCIF_CLK frequency and pins
-Message-Id: <1450119504-1517-3-git-send-email-geert+renesas@glider.be>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 04 Dec 2015 21:58:07 +0000
+Subject: [PATCH 1/2] ravb: read MAC address registers only once
+Message-Id: <6904286.WCKWH7i1NK@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450119504-1517-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1450119504-1517-1-git-send-email-geert+renesas@glider.be>
+References: <10429393.qU4CxZ5nlj@wasted.cogentembedded.com>
+In-Reply-To: <10429393.qU4CxZ5nlj@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-sh@vger.kernel.org, linux-serial@vger.kernel.org, devicetree@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: netdev@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-Add and enable the external crystal for the SCIF_CLK and its pinctrl, to
-be used by the Baud Rate Generator for External Clock (BRG) on (H)SCIF.
+The code reading the MAHR/MALR registers in ravb_read_mac_address() is
+terribly ineffective -- it reads  MAHR 4 times and MALR 2 times, while
+it's enough to read each register only once. Use the local variables to
+achieve that, somewhat beautifying the code while at it...
 
-This increases the range and accuracy of supported baud rates.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-Based on schematics, tested with remote access.
+ drivers/net/ethernet/renesas/ravb_main.c |   15 +++++++++------
+ 1 file changed, 9 insertions(+), 6 deletions(-)
 
-v2:
-  - New.
----
- arch/arm/boot/dts/r8a7778-bockw.dts | 13 +++++++++++++
- 1 file changed, 13 insertions(+)
-
-diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
-index b1aa025992293a58..482228b8a984656e 100644
---- a/arch/arm/boot/dts/r8a7778-bockw.dts
-+++ b/arch/arm/boot/dts/r8a7778-bockw.dts
-@@ -126,11 +126,19 @@
- };
- 
- &pfc {
-+	pinctrl-0 = <&scif_clk_pins>;
-+	pinctrl-names = "default";
+Index: net-next/drivers/net/ethernet/renesas/ravb_main.c
+=================================--- net-next.orig/drivers/net/ethernet/renesas/ravb_main.c
++++ net-next/drivers/net/ethernet/renesas/ravb_main.c
+@@ -115,12 +115,15 @@ static void ravb_read_mac_address(struct
+ 	if (mac) {
+ 		ether_addr_copy(ndev->dev_addr, mac);
+ 	} else {
+-		ndev->dev_addr[0] = (ravb_read(ndev, MAHR) >> 24);
+-		ndev->dev_addr[1] = (ravb_read(ndev, MAHR) >> 16) & 0xFF;
+-		ndev->dev_addr[2] = (ravb_read(ndev, MAHR) >> 8) & 0xFF;
+-		ndev->dev_addr[3] = (ravb_read(ndev, MAHR) >> 0) & 0xFF;
+-		ndev->dev_addr[4] = (ravb_read(ndev, MALR) >> 8) & 0xFF;
+-		ndev->dev_addr[5] = (ravb_read(ndev, MALR) >> 0) & 0xFF;
++		u32 mahr = ravb_read(ndev, MAHR);
++		u32 malr = ravb_read(ndev, MALR);
 +
- 	scif0_pins: serial0 {
- 		renesas,groups = "scif0_data_a", "scif0_ctrl";
- 		renesas,function = "scif0";
- 	};
++		ndev->dev_addr[0] = (mahr >> 24) & 0xFF;
++		ndev->dev_addr[1] = (mahr >> 16) & 0xFF;
++		ndev->dev_addr[2] = (mahr >>  8) & 0xFF;
++		ndev->dev_addr[3] = (mahr >>  0) & 0xFF;
++		ndev->dev_addr[4] = (malr >>  8) & 0xFF;
++		ndev->dev_addr[5] = (malr >>  0) & 0xFF;
+ 	}
+ }
  
-+	scif_clk_pins: scif_clk {
-+		renesas,groups = "scif_clk";
-+		renesas,function = "scif_clk";
-+	};
-+
- 	mmc_pins: mmc {
- 		renesas,groups = "mmc_data8", "mmc_ctrl";
- 		renesas,function = "mmc";
-@@ -177,6 +185,11 @@
- 	#sound-dai-cells = <0>;
- };
- 
-+&scif_clk {
-+	clock-frequency = <14745600>;
-+	status = "okay";
-+};
-+
- &sdhi0 {
- 	pinctrl-0 = <&sdhi0_pins>, <&sdhi0_pup_pins>;
- 	pinctrl-names = "default";
--- 
-1.9.1
 
