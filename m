@@ -1,87 +1,133 @@
-From: "Michael S. Tsirkin" <mst@redhat.com>
-Date: Thu, 31 Dec 2015 19:07:10 +0000
-Subject: [PATCH v2 11/32] mips: reuse asm-generic/barrier.h
-Message-Id: <1451572003-2440-12-git-send-email-mst@redhat.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sat, 05 Dec 2015 02:12:59 +0000
+Subject: [PATCH v2 25/32] v4l: vsp1: Make pipeline inputs array index by RPF index
+Message-Id: <1449281586-25726-26-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1451572003-2440-1-git-send-email-mst@redhat.com>
-In-Reply-To: <1451572003-2440-1-git-send-email-mst@redhat.com>
+References: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Peter Zijlstra <peterz@infradead.org>, Arnd Bergmann <arnd@arndb.de>, linux-arch@vger.kernel.org, Andrew Cooper <andrew.cooper3@citrix.com>, virtualization@lists.linux-foundation.org, Stefano Stabellini <stefano.stabellini@eu.citrix.com>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@elte.hu>, "H. Peter Anvin" <hpa@zytor.com>, David Miller <davem@davemloft.net>, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, sparclinux@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-metag@vger.kernel.org, linux-mips@linux-mips.org, x86@kernel.org, user-mode-linux-devel@lists.sourceforge.net, adi-buildroot-devel@lists.sourceforge.net, linux-sh@vger.kernel.org, linux-xtensa@linux-xtensa.org, xen-devel@lists.xenproject.org, Ralf Baechle <ralf@linux-mips.org>, Ingo Molnar <mingo@kernel.org>, Michael Ellerman <mpe@ellerman.id.>
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-On mips dma_rmb, dma_wmb, smp_store_mb, read_barrier_depends,
-smp_read_barrier_depends, smp_store_release and smp_load_acquire  match
-the asm-generic variants exactly. Drop the local definitions and pull in
-asm-generic/barrier.h instead.
+The pipeline inputs array stores pointers to all RPFs contained in the
+pipeline. It's currently indexed contiguously by adding RPFs in the
+order they are found during graph walk. This can't easily support
+dynamic addition and removal of RPFs while streaming, which will be
+required for combined VSP+DU support.
 
-This is in preparation to refactoring this code area.
+Make the array indexed by RPF index instead and skip NULL elements when
+iterating over RPFs.
 
-Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
-Acked-by: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/mips/include/asm/barrier.h | 25 ++-----------------------
- 1 file changed, 2 insertions(+), 23 deletions(-)
+ drivers/media/platform/vsp1/vsp1_pipe.c  |  6 +++++-
+ drivers/media/platform/vsp1/vsp1_pipe.h  |  2 +-
+ drivers/media/platform/vsp1/vsp1_video.c | 16 ++++++++++++----
+ drivers/media/platform/vsp1/vsp1_wpf.c   |  5 ++++-
+ 4 files changed, 22 insertions(+), 7 deletions(-)
 
-diff --git a/arch/mips/include/asm/barrier.h b/arch/mips/include/asm/barrier.h
-index 752e0b8..3eac4b9 100644
---- a/arch/mips/include/asm/barrier.h
-+++ b/arch/mips/include/asm/barrier.h
-@@ -10,9 +10,6 @@
+diff --git a/drivers/media/platform/vsp1/vsp1_pipe.c b/drivers/media/platform/vsp1/vsp1_pipe.c
+index df11259dcc0a..d41e4ca94a02 100644
+--- a/drivers/media/platform/vsp1/vsp1_pipe.c
++++ b/drivers/media/platform/vsp1/vsp1_pipe.c
+@@ -140,14 +140,18 @@ const struct vsp1_format_info *vsp1_get_format_info(u32 fourcc)
  
- #include <asm/addrspace.h>
- 
--#define read_barrier_depends()		do { } while(0)
--#define smp_read_barrier_depends()	do { } while(0)
--
- #ifdef CONFIG_CPU_HAS_SYNC
- #define __sync()				\
- 	__asm__ __volatile__(			\
-@@ -87,8 +84,6 @@
- 
- #define wmb()		fast_wmb()
- #define rmb()		fast_rmb()
--#define dma_wmb()	fast_wmb()
--#define dma_rmb()	fast_rmb()
- 
- #if defined(CONFIG_WEAK_ORDERING) && defined(CONFIG_SMP)
- # ifdef CONFIG_CPU_CAVIUM_OCTEON
-@@ -112,9 +107,6 @@
- #define __WEAK_LLSC_MB		"		\n"
- #endif
- 
--#define smp_store_mb(var, value) \
--	do { WRITE_ONCE(var, value); smp_mb(); } while (0)
--
- #define smp_llsc_mb()	__asm__ __volatile__(__WEAK_LLSC_MB : : :"memory")
- 
- #ifdef CONFIG_CPU_CAVIUM_OCTEON
-@@ -129,22 +121,9 @@
- #define nudge_writes() mb()
- #endif
- 
--#define smp_store_release(p, v)						\
--do {									\
--	compiletime_assert_atomic_type(*p);				\
--	smp_mb();							\
--	WRITE_ONCE(*p, v);						\
--} while (0)
--
--#define smp_load_acquire(p)						\
--({									\
--	typeof(*p) ___p1 = READ_ONCE(*p);				\
--	compiletime_assert_atomic_type(*p);				\
--	smp_mb();							\
--	___p1;								\
--})
--
- #define smp_mb__before_atomic()	smp_mb__before_llsc()
- #define smp_mb__after_atomic()	smp_llsc_mb()
- 
-+#include <asm-generic/barrier.h>
+ void vsp1_pipeline_reset(struct vsp1_pipeline *pipe)
+ {
++	unsigned int i;
 +
- #endif /* __ASM_BARRIER_H */
+ 	if (pipe->bru) {
+ 		struct vsp1_bru *bru = to_bru(&pipe->bru->subdev);
+-		unsigned int i;
+ 
+ 		for (i = 0; i < ARRAY_SIZE(bru->inputs); ++i)
+ 			bru->inputs[i].rpf = NULL;
+ 	}
+ 
++	for (i = 0; i < ARRAY_SIZE(pipe->inputs); ++i)
++		pipe->inputs[i] = NULL;
++
+ 	INIT_LIST_HEAD(&pipe->entities);
+ 	pipe->state = VSP1_PIPELINE_STOPPED;
+ 	pipe->buffers_ready = 0;
+diff --git a/drivers/media/platform/vsp1/vsp1_pipe.h b/drivers/media/platform/vsp1/vsp1_pipe.h
+index f9035c739e9a..c4c300561c5c 100644
+--- a/drivers/media/platform/vsp1/vsp1_pipe.h
++++ b/drivers/media/platform/vsp1/vsp1_pipe.h
+@@ -66,7 +66,7 @@ enum vsp1_pipeline_state {
+  * @stream_count: number of streaming video nodes
+  * @buffers_ready: bitmask of RPFs and WPFs with at least one buffer available
+  * @num_inputs: number of RPFs
+- * @inputs: array of RPFs in the pipeline
++ * @inputs: array of RPFs in the pipeline (indexed by RPF index)
+  * @output: WPF at the output of the pipeline
+  * @bru: BRU entity, if present
+  * @lif: LIF entity, if present
+diff --git a/drivers/media/platform/vsp1/vsp1_video.c b/drivers/media/platform/vsp1/vsp1_video.c
+index 141e489a8aa9..d3335eb24cce 100644
+--- a/drivers/media/platform/vsp1/vsp1_video.c
++++ b/drivers/media/platform/vsp1/vsp1_video.c
+@@ -305,8 +305,8 @@ static int vsp1_video_pipeline_validate(struct vsp1_pipeline *pipe,
+ 
+ 		if (e->type = VSP1_ENTITY_RPF) {
+ 			rwpf = to_rwpf(subdev);
+-			pipe->inputs[pipe->num_inputs++] = rwpf;
+-			rwpf->video->pipe_index = pipe->num_inputs;
++			pipe->inputs[rwpf->entity.index] = rwpf;
++			rwpf->video->pipe_index = ++pipe->num_inputs;
+ 		} else if (e->type = VSP1_ENTITY_WPF) {
+ 			rwpf = to_rwpf(subdev);
+ 			pipe->output = rwpf;
+@@ -329,7 +329,10 @@ static int vsp1_video_pipeline_validate(struct vsp1_pipeline *pipe,
+ 	/* Follow links downstream for each input and make sure the graph
+ 	 * contains no loop and that all branches end at the output WPF.
+ 	 */
+-	for (i = 0; i < pipe->num_inputs; ++i) {
++	for (i = 0; i < video->vsp1->pdata.rpf_count; ++i) {
++		if (!pipe->inputs[i])
++			continue;
++
+ 		ret = vsp1_video_pipeline_validate_branch(pipe, pipe->inputs[i],
+ 							  pipe->output);
+ 		if (ret < 0)
+@@ -454,11 +457,16 @@ static void vsp1_video_frame_end(struct vsp1_pipeline *pipe,
+ 
+ static void vsp1_video_pipeline_frame_end(struct vsp1_pipeline *pipe)
+ {
++	struct vsp1_device *vsp1 = pipe->output->entity.vsp1;
+ 	unsigned int i;
+ 
+ 	/* Complete buffers on all video nodes. */
+-	for (i = 0; i < pipe->num_inputs; ++i)
++	for (i = 0; i < vsp1->pdata.rpf_count; ++i) {
++		if (!pipe->inputs[i])
++			continue;
++
+ 		vsp1_video_frame_end(pipe, pipe->inputs[i]);
++	}
+ 
+ 	if (!pipe->lif)
+ 		vsp1_video_frame_end(pipe, pipe->output);
+diff --git a/drivers/media/platform/vsp1/vsp1_wpf.c b/drivers/media/platform/vsp1/vsp1_wpf.c
+index 184a7e01aad5..d0edcde721bd 100644
+--- a/drivers/media/platform/vsp1/vsp1_wpf.c
++++ b/drivers/media/platform/vsp1/vsp1_wpf.c
+@@ -97,9 +97,12 @@ static int wpf_s_stream(struct v4l2_subdev *subdev, int enable)
+ 	 * inputs as sub-layers and select the virtual RPF as the master
+ 	 * layer.
+ 	 */
+-	for (i = 0; i < pipe->num_inputs; ++i) {
++	for (i = 0; i < vsp1->pdata.rpf_count; ++i) {
+ 		struct vsp1_rwpf *input = pipe->inputs[i];
+ 
++		if (!input)
++			continue;
++
+ 		srcrpf |= (!pipe->bru && pipe->num_inputs = 1)
+ 			? VI6_WPF_SRCRPF_RPF_ACT_MST(input->entity.index)
+ 			: VI6_WPF_SRCRPF_RPF_ACT_SUB(input->entity.index);
 -- 
-MST
+2.4.10
 
