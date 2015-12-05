@@ -1,104 +1,53 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sat, 05 Dec 2015 02:12:34 +0000
-Subject: [PATCH v2 00/32] VSP: Add R-Car Gen3 support
-Message-Id: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Sat, 05 Dec 2015 10:57:49 +0000
+Subject: Re: [PATCH v2 00/32] VSP: Add R-Car Gen3 support
+Message-Id: <CAMuHMdW13=rftd1HOWBGcjH8aYCjyGZ0u60TkVeTif7+HFuwsQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: Linux Media Mailing List <linux-media@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
 
-Hello,
+Hi Laurent,
 
-This patch set adds support for the Renesas R-Car Gen3 SoC family to the VSP1
-driver. The large number of patches is caused by a change in the display
-controller architecture that makes usage of the VSP mandatory as the display
-controller has lost the ability to read data from memory.
+On Sat, Dec 5, 2015 at 3:12 AM, Laurent Pinchart
+<laurent.pinchart+renesas@ideasonboard.com> wrote:
+> This patch set adds support for the Renesas R-Car Gen3 SoC family to the VSP1
+> driver. The large number of patches is caused by a change in the display
+> controller architecture that makes usage of the VSP mandatory as the display
+> controller has lost the ability to read data from memory.
+>
+> Patch 01/32 to 27/32 prepare for the implementation of an API exported to the
+> DRM driver in patch 28/32. Patches 31/32 enables support for the R-Car Gen3
+> family, and patch 32/32 finally enhances perfomances by implementing support
+> for display lists.
+>
+> The major change compared to v1 is the usage of the IP version register
+> instead of DT properties to configure device parameters such as the number of
+> BRU inputs or the availability of the BRU.
 
-Patch 01/32 to 27/32 prepare for the implementation of an API exported to the
-DRM driver in patch 28/32. Patches 31/32 enables support for the R-Car Gen3
-family, and patch 32/32 finally enhances perfomances by implementing support
-for display lists.
+Thanks for your series!
 
-The major change compared to v1 is the usage of the IP version register
-instead of DT properties to configure device parameters such as the number of
-BRU inputs or the availability of the BRU.
+As http://git.linuxtv.org/pinchartl/media.git/tag/?id=vsp1-kms-20151112 is
+getting old, and has lots of conflicts with recent -next, do you plan to publish
+this in a branch, and a separate branch for integration, to ease integration
+in renesas-drivers?
 
-Laurent Pinchart (31):
-  v4l: vsp1: Change the type of the rwpf field in struct vsp1_video
-  v4l: vsp1: Store the memory format in struct vsp1_rwpf
-  v4l: vsp1: Move video operations to vsp1_rwpf
-  v4l: vsp1: Rename vsp1_video_buffer to vsp1_vb2_buffer
-  v4l: vsp1: Move video device out of struct vsp1_rwpf
-  v4l: vsp1: Make rwpf operations independent of video device
-  v4l: vsp1: Support VSP1 instances without any UDS
-  v4l: vsp1: Move vsp1_video pointer from vsp1_entity to vsp1_rwpf
-  v4l: vsp1: Remove struct vsp1_pipeline num_video field
-  v4l: vsp1: Decouple pipeline end of frame processing from vsp1_video
-  v4l: vsp1: Split pipeline management code from vsp1_video.c
-  v4l: vsp1: Rename video pipeline functions to use vsp1_video prefix
-  v4l: vsp1: Extract pipeline initialization code into a function
-  v4l: vsp1: Reuse local variable instead of recomputing it
-  v4l: vsp1: Extract link creation to separate function
-  v4l: vsp1: Document the vsp1_pipeline structure
-  v4l: vsp1: Fix typo in VI6_DISP_IRQ_STA_DST register name
-  v4l: vsp1: Set the SRU CTRL0 register when starting the stream
-  v4l: vsp1: Remove unused module read functions
-  v4l: vsp1: Move entity route setup function to vsp1_entity.c
-  v4l: vsp1: Make number of BRU inputs configurable
-  v4l: vsp1: Make the BRU optional
-  v4l: vsp1: Move format info to vsp1_pipe.c
-  v4l: vsp1: Make the userspace API optional
-  v4l: vsp1: Make pipeline inputs array index by RPF index
-  v4l: vsp1: Set the alpha value manually in RPF and WPF s_stream
-    handlers
-  v4l: vsp1: Don't validate links when the userspace API is disabled
-  v4l: vsp1: Add VSP+DU support
-  v4l: vsp1: Disconnect unused RPFs from the DRM pipeline
-  v4l: vsp1: Implement atomic update for the DRM driver
-  v4l: vsp1: Add support for the R-Car Gen3 VSP2
+Alternatively, I can just import the series you posted, but having the
+broken-out integration part would be nice.
 
-Takashi Saito (1):
-  v4l: vsp1: Add display list support
+Thanks again!
 
- .../devicetree/bindings/media/renesas,vsp1.txt     |  21 +-
- drivers/media/platform/vsp1/Makefile               |   3 +-
- drivers/media/platform/vsp1/vsp1.h                 |  24 +
- drivers/media/platform/vsp1/vsp1_bru.c             |  33 +-
- drivers/media/platform/vsp1/vsp1_bru.h             |   3 +-
- drivers/media/platform/vsp1/vsp1_dl.c              | 304 +++++++++++
- drivers/media/platform/vsp1/vsp1_dl.h              |  42 ++
- drivers/media/platform/vsp1/vsp1_drm.c             | 595 +++++++++++++++++++++
- drivers/media/platform/vsp1/vsp1_drm.h             |  38 ++
- drivers/media/platform/vsp1/vsp1_drv.c             | 254 +++++++--
- drivers/media/platform/vsp1/vsp1_entity.c          |  31 +-
- drivers/media/platform/vsp1/vsp1_entity.h          |  14 +-
- drivers/media/platform/vsp1/vsp1_hsit.c            |   2 +-
- drivers/media/platform/vsp1/vsp1_lif.c             |  11 +-
- drivers/media/platform/vsp1/vsp1_lut.c             |   7 +-
- drivers/media/platform/vsp1/vsp1_pipe.c            | 405 ++++++++++++++
- drivers/media/platform/vsp1/vsp1_pipe.h            | 134 +++++
- drivers/media/platform/vsp1/vsp1_regs.h            |  32 +-
- drivers/media/platform/vsp1/vsp1_rpf.c             |  77 ++-
- drivers/media/platform/vsp1/vsp1_rwpf.h            |  24 +-
- drivers/media/platform/vsp1/vsp1_sru.c             |   9 +-
- drivers/media/platform/vsp1/vsp1_uds.c             |   8 +-
- drivers/media/platform/vsp1/vsp1_video.c           | 516 ++++--------------
- drivers/media/platform/vsp1/vsp1_video.h           | 111 +---
- drivers/media/platform/vsp1/vsp1_wpf.c             |  88 ++-
- include/media/vsp1.h                               |  33 ++
- 26 files changed, 2069 insertions(+), 750 deletions(-)
- create mode 100644 drivers/media/platform/vsp1/vsp1_dl.c
- create mode 100644 drivers/media/platform/vsp1/vsp1_dl.h
- create mode 100644 drivers/media/platform/vsp1/vsp1_drm.c
- create mode 100644 drivers/media/platform/vsp1/vsp1_drm.h
- create mode 100644 drivers/media/platform/vsp1/vsp1_pipe.c
- create mode 100644 drivers/media/platform/vsp1/vsp1_pipe.h
- create mode 100644 include/media/vsp1.h
+Gr{oetje,eeting}s,
 
--- 
-Regards,
+                        Geert
 
-Laurent Pinchart
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
