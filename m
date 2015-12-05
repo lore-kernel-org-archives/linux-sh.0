@@ -1,28 +1,109 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 18 Dec 2015 02:36:01 +0000
-Subject: [PATCH 0/2] ARM: shmobile: r8a779x: use fallback pcie compatibility string
-Message-Id: <1450406163-23795-1-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sat, 05 Dec 2015 02:12:53 +0000
+Subject: [PATCH v2 19/32] v4l: vsp1: Remove unused module read functions
+Message-Id: <1449281586-25726-20-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-Hi,
+Several module read functions are not used, remove them.
 
-this short series makes use of the recently added fallback pcie
-compatibility string in the r8a779[01] device trees.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/media/platform/vsp1/vsp1_bru.c | 5 -----
+ drivers/media/platform/vsp1/vsp1_lif.c | 5 -----
+ drivers/media/platform/vsp1/vsp1_lut.c | 5 -----
+ drivers/media/platform/vsp1/vsp1_rpf.c | 6 ------
+ drivers/media/platform/vsp1/vsp1_uds.c | 6 ------
+ 5 files changed, 27 deletions(-)
 
-Based on renesas-devel-20151218-v4.4-rc5.
-
-Simon Horman (2):
-  ARM: shmobile: r8a7790: use fallback pcie compatibility string
-  ARM: shmobile: r8a7791: use fallback pcie compatibility string
-
- arch/arm/boot/dts/r8a7790.dtsi | 2 +-
- arch/arm/boot/dts/r8a7791.dtsi | 2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
-
+diff --git a/drivers/media/platform/vsp1/vsp1_bru.c b/drivers/media/platform/vsp1/vsp1_bru.c
+index b4cc9bc478af..841bc6664bca 100644
+--- a/drivers/media/platform/vsp1/vsp1_bru.c
++++ b/drivers/media/platform/vsp1/vsp1_bru.c
+@@ -28,11 +28,6 @@
+  * Device Access
+  */
+ 
+-static inline u32 vsp1_bru_read(struct vsp1_bru *bru, u32 reg)
+-{
+-	return vsp1_read(bru->entity.vsp1, reg);
+-}
+-
+ static inline void vsp1_bru_write(struct vsp1_bru *bru, u32 reg, u32 data)
+ {
+ 	vsp1_write(bru->entity.vsp1, reg, data);
+diff --git a/drivers/media/platform/vsp1/vsp1_lif.c b/drivers/media/platform/vsp1/vsp1_lif.c
+index 39fa5ef20fbb..b868bce08982 100644
+--- a/drivers/media/platform/vsp1/vsp1_lif.c
++++ b/drivers/media/platform/vsp1/vsp1_lif.c
+@@ -26,11 +26,6 @@
+  * Device Access
+  */
+ 
+-static inline u32 vsp1_lif_read(struct vsp1_lif *lif, u32 reg)
+-{
+-	return vsp1_read(lif->entity.vsp1, reg);
+-}
+-
+ static inline void vsp1_lif_write(struct vsp1_lif *lif, u32 reg, u32 data)
+ {
+ 	vsp1_write(lif->entity.vsp1, reg, data);
+diff --git a/drivers/media/platform/vsp1/vsp1_lut.c b/drivers/media/platform/vsp1/vsp1_lut.c
+index 656ec272a414..9e33caa9c616 100644
+--- a/drivers/media/platform/vsp1/vsp1_lut.c
++++ b/drivers/media/platform/vsp1/vsp1_lut.c
+@@ -27,11 +27,6 @@
+  * Device Access
+  */
+ 
+-static inline u32 vsp1_lut_read(struct vsp1_lut *lut, u32 reg)
+-{
+-	return vsp1_read(lut->entity.vsp1, reg);
+-}
+-
+ static inline void vsp1_lut_write(struct vsp1_lut *lut, u32 reg, u32 data)
+ {
+ 	vsp1_write(lut->entity.vsp1, reg, data);
+diff --git a/drivers/media/platform/vsp1/vsp1_rpf.c b/drivers/media/platform/vsp1/vsp1_rpf.c
+index c0b7f76cd0b5..b9c39f9e4458 100644
+--- a/drivers/media/platform/vsp1/vsp1_rpf.c
++++ b/drivers/media/platform/vsp1/vsp1_rpf.c
+@@ -26,12 +26,6 @@
+  * Device Access
+  */
+ 
+-static inline u32 vsp1_rpf_read(struct vsp1_rwpf *rpf, u32 reg)
+-{
+-	return vsp1_read(rpf->entity.vsp1,
+-			 reg + rpf->entity.index * VI6_RPF_OFFSET);
+-}
+-
+ static inline void vsp1_rpf_write(struct vsp1_rwpf *rpf, u32 reg, u32 data)
+ {
+ 	vsp1_write(rpf->entity.vsp1,
+diff --git a/drivers/media/platform/vsp1/vsp1_uds.c b/drivers/media/platform/vsp1/vsp1_uds.c
+index ccc8243e3493..27ad07466ebd 100644
+--- a/drivers/media/platform/vsp1/vsp1_uds.c
++++ b/drivers/media/platform/vsp1/vsp1_uds.c
+@@ -29,12 +29,6 @@
+  * Device Access
+  */
+ 
+-static inline u32 vsp1_uds_read(struct vsp1_uds *uds, u32 reg)
+-{
+-	return vsp1_read(uds->entity.vsp1,
+-			 reg + uds->entity.index * VI6_UDS_OFFSET);
+-}
+-
+ static inline void vsp1_uds_write(struct vsp1_uds *uds, u32 reg, u32 data)
+ {
+ 	vsp1_write(uds->entity.vsp1,
 -- 
-2.1.4
+2.4.10
 
