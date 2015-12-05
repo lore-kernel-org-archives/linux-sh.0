@@ -1,73 +1,38 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Tue, 08 Dec 2015 09:37:45 +0000
-Subject: [PATCH v2 1/9] i2c: document generic DT bindings for timing parameters
-Message-Id: <1449567473-2084-2-git-send-email-wsa@the-dreams.de>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sat, 05 Dec 2015 02:12:52 +0000
+Subject: [PATCH v2 18/32] v4l: vsp1: Set the SRU CTRL0 register when starting the stream
+Message-Id: <1449281586-25726-19-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449567473-2084-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1449567473-2084-1-git-send-email-wsa@the-dreams.de>
+References: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, linux-rockchip@lists.infradead.org, Mika Westerberg <mika.westerberg@linux.intel.com>, Andy Shevchenko <andriy.shevchenko@linux.intel.com>, Jarkko Nikula <jarkko.nikula@linux.intel.com>, Rob Herring <robh@kernel.org>
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Commit 58f896d859ce ("[media] v4l: vsp1: sru: Make the intensity
+controllable during streaming") refactored the stream start code and
+removed the SRU CTRL0 register write by mistake. Add it back.
 
-Also, sort the properties alphabetically and make indentation
-consistent. Wording largely taken from i2c-rk3x.txt, thanks guys!
-
-Only "i2c-scl-internal-delay-ns" is new, the rest is used by two drivers
-already and was documented in their driver binding documentation.
-
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
-Acked-by: Rob Herring <robh@kernel.org>
+Fixes: 58f896d859ce ("[media] v4l: vsp1: sru: Make the intensity controllable during streaming")
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- Documentation/devicetree/bindings/i2c/i2c.txt | 31 ++++++++++++++++++++++-----
- 1 file changed, 26 insertions(+), 5 deletions(-)
+ drivers/media/platform/vsp1/vsp1_sru.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/Documentation/devicetree/bindings/i2c/i2c.txt b/Documentation/devicetree/bindings/i2c/i2c.txt
-index 8a99150ac3a7fd..a00219f5ee0733 100644
---- a/Documentation/devicetree/bindings/i2c/i2c.txt
-+++ b/Documentation/devicetree/bindings/i2c/i2c.txt
-@@ -29,12 +29,33 @@ Optional properties
- These properties may not be supported by all drivers. However, if a driver
- wants to support one of the below features, it should adapt the bindings below.
+diff --git a/drivers/media/platform/vsp1/vsp1_sru.c b/drivers/media/platform/vsp1/vsp1_sru.c
+index 6310acab60e7..d41ae950d1a1 100644
+--- a/drivers/media/platform/vsp1/vsp1_sru.c
++++ b/drivers/media/platform/vsp1/vsp1_sru.c
+@@ -154,6 +154,7 @@ static int sru_s_stream(struct v4l2_subdev *subdev, int enable)
+ 	mutex_lock(sru->ctrls.lock);
+ 	ctrl0 |= vsp1_sru_read(sru, VI6_SRU_CTRL0)
+ 	       & (VI6_SRU_CTRL0_PARAM0_MASK | VI6_SRU_CTRL0_PARAM1_MASK);
++	vsp1_sru_write(sru, VI6_SRU_CTRL0, ctrl0);
+ 	mutex_unlock(sru->ctrls.lock);
  
--- clock-frequency	- frequency of bus clock in Hz.
--- wakeup-source		- device can be used as a wakeup source.
-+- clock-frequency
-+	frequency of bus clock in Hz.
- 
--- interrupts		- interrupts used by the device.
--- interrupt-names	- "irq" and "wakeup" names are recognized by I2C core,
--			  other names are left to individual drivers.
-+- i2c-scl-falling-time-ns
-+	Number of nanoseconds the SCL signal takes to fall; t(f) in the I2C
-+	specification.
-+
-+- i2c-scl-internal-delay-ns
-+	Number of nanoseconds the IP core additionally needs to setup SCL.
-+
-+- i2c-scl-rising-time-ns
-+	Number of nanoseconds the SCL signal takes to rise; t(r) in the I2C
-+	specification.
-+
-+- i2c-sda-falling-time-ns
-+	Number of nanoseconds the SDA signal takes to fall; t(f) in the I2C
-+	specification.
-+
-+- interrupts
-+	interrupts used by the device.
-+
-+- interrupt-names
-+	"irq" and "wakeup" names are recognized by I2C core, other names are
-+	left to individual drivers.
-+
-+- wakeup-source
-+	device can be used as a wakeup source.
- 
- Binding may contain optional "interrupts" property, describing interrupts
- used by the device. I2C core will assign "irq" interrupt (or the very first
+ 	vsp1_sru_write(sru, VI6_SRU_CTRL1, VI6_SRU_CTRL1_PARAM5);
 -- 
-2.1.4
+2.4.10
 
