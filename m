@@ -1,60 +1,36 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 15 Dec 2015 01:18:13 +0000
-Subject: [PATCH 4/8 v5] thermal: rcar: rcar_thermal_get_temp() return error if strange temp
-Message-Id: <877fkgqzpt.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sat, 05 Dec 2015 02:12:48 +0000
+Subject: [PATCH v2 14/32] v4l: vsp1: Reuse local variable instead of recomputing it
+Message-Id: <1449281586-25726-15-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87d1u8qzsy.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87d1u8qzsy.wl%kuninori.morimoto.gx@renesas.com>
+References: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, Zhang Rui <rui.zhang@intel.com>, Eduardo Valentin <edubezval@gmail.com>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+No need to waste CPU cycles when the value we need is already available.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-v4 -> v5
+ drivers/media/platform/vsp1/vsp1_video.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
- - rcar_thermal_update_temp() has no change
- - "retern" -> "return" on Subject
-
- drivers/thermal/rcar_thermal.c | 12 +++++++++++-
- 1 file changed, 11 insertions(+), 1 deletion(-)
-
-diff --git a/drivers/thermal/rcar_thermal.c b/drivers/thermal/rcar_thermal.c
-index e9e4e39..30602f2 100644
---- a/drivers/thermal/rcar_thermal.c
-+++ b/drivers/thermal/rcar_thermal.c
-@@ -203,6 +203,7 @@ err_out_unlock:
- static int rcar_thermal_get_temp(struct thermal_zone_device *zone, int *temp)
- {
- 	struct rcar_thermal_priv *priv = rcar_zone_to_priv(zone);
-+	int tmp;
- 	int ret;
- 
- 	ret = rcar_thermal_update_temp(priv);
-@@ -210,9 +211,18 @@ static int rcar_thermal_get_temp(struct thermal_zone_device *zone, int *temp)
- 		return ret;
- 
- 	mutex_lock(&priv->lock);
--	*temp =  MCELSIUS((priv->ctemp * 5) - 65);
-+	tmp =  MCELSIUS((priv->ctemp * 5) - 65);
- 	mutex_unlock(&priv->lock);
- 
-+	if ((tmp < MCELSIUS(-45)) || (tmp > MCELSIUS(125))) {
-+		struct device *dev = rcar_priv_to_dev(priv);
-+
-+		dev_err(dev, "it couldn't measure temperature correctly\n");
-+		return -EIO;
-+	}
-+
-+	*temp = tmp;
-+
- 	return 0;
- }
- 
+diff --git a/drivers/media/platform/vsp1/vsp1_video.c b/drivers/media/platform/vsp1/vsp1_video.c
+index b82ff1a0371b..c958ba6a20ce 100644
+--- a/drivers/media/platform/vsp1/vsp1_video.c
++++ b/drivers/media/platform/vsp1/vsp1_video.c
+@@ -416,7 +416,7 @@ static int vsp1_video_pipeline_validate(struct vsp1_pipeline *pipe,
+ 			rwpf->video->pipe_index = pipe->num_inputs;
+ 		} else if (e->type = VSP1_ENTITY_WPF) {
+ 			rwpf = to_rwpf(subdev);
+-			pipe->output = to_rwpf(subdev);
++			pipe->output = rwpf;
+ 			rwpf->video->pipe_index = 0;
+ 		} else if (e->type = VSP1_ENTITY_LIF) {
+ 			pipe->lif = e;
 -- 
-1.9.1
+2.4.10
 
