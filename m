@@ -1,207 +1,133 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 15 Dec 2015 13:05:27 +0000
-Subject: [PATCH/RFC 02/10] iommu/ipmmu-vmsa: Add optional root device feature
-Message-Id: <20151215130527.13535.63386.sendpatchset@little-apple>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sat, 05 Dec 2015 02:12:42 +0000
+Subject: [PATCH v2 08/32] v4l: vsp1: Move vsp1_video pointer from vsp1_entity to vsp1_rwpf
+Message-Id: <1449281586-25726-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20151215130508.13535.26186.sendpatchset@little-apple>
-In-Reply-To: <20151215130508.13535.26186.sendpatchset@little-apple>
+References: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: laurent.pinchart+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org, geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, horms+renesas-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+Only RPFs and WPFs can be associated with video nodes, don't waste
+memory by storing the video pointer in all entities.
 
-Add root device handling to the IPMMU driver by
-allowing certain DT compat strings to enable
-had_cache_leaf_nodes that in turn will support
-both root devices with interrupts and leaf devices
-that face the actual IPMMU consumer devices.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
+ drivers/media/platform/vsp1/vsp1_drv.c    |  6 +++---
+ drivers/media/platform/vsp1/vsp1_entity.h |  3 ---
+ drivers/media/platform/vsp1/vsp1_rwpf.h   |  3 +++
+ drivers/media/platform/vsp1/vsp1_video.c  | 10 +++++-----
+ 4 files changed, 11 insertions(+), 11 deletions(-)
 
- drivers/iommu/ipmmu-vmsa.c |   86 +++++++++++++++++++++++++++++++++++---------
- 1 file changed, 69 insertions(+), 17 deletions(-)
+diff --git a/drivers/media/platform/vsp1/vsp1_drv.c b/drivers/media/platform/vsp1/vsp1_drv.c
+index 5f93cbdcb0f1..91ecf75119ba 100644
+--- a/drivers/media/platform/vsp1/vsp1_drv.c
++++ b/drivers/media/platform/vsp1/vsp1_drv.c
+@@ -289,8 +289,8 @@ static int vsp1_create_entities(struct vsp1_device *vsp1)
+ 	for (i = 0; i < vsp1->pdata.rpf_count; ++i) {
+ 		struct vsp1_rwpf *rpf = vsp1->rpf[i];
+ 
+-		ret = media_entity_create_link(&rpf->entity.video->video.entity,
+-					       0, &rpf->entity.subdev.entity,
++		ret = media_entity_create_link(&rpf->video->video.entity, 0,
++					       &rpf->entity.subdev.entity,
+ 					       RWPF_PAD_SINK,
+ 					       MEDIA_LNK_FL_ENABLED |
+ 					       MEDIA_LNK_FL_IMMUTABLE);
+@@ -311,7 +311,7 @@ static int vsp1_create_entities(struct vsp1_device *vsp1)
+ 
+ 		ret = media_entity_create_link(&wpf->entity.subdev.entity,
+ 					       RWPF_PAD_SOURCE,
+-					       &wpf->entity.video->video.entity,
++					       &wpf->video->video.entity,
+ 					       0, flags);
+ 		if (ret < 0)
+ 			goto done;
+diff --git a/drivers/media/platform/vsp1/vsp1_entity.h b/drivers/media/platform/vsp1/vsp1_entity.h
+index 8867a5787c28..9c95507ec762 100644
+--- a/drivers/media/platform/vsp1/vsp1_entity.h
++++ b/drivers/media/platform/vsp1/vsp1_entity.h
+@@ -19,7 +19,6 @@
+ #include <media/v4l2-subdev.h>
+ 
+ struct vsp1_device;
+-struct vsp1_video;
+ 
+ enum vsp1_entity_type {
+ 	VSP1_ENTITY_BRU,
+@@ -71,8 +70,6 @@ struct vsp1_entity {
+ 	struct v4l2_subdev subdev;
+ 	struct v4l2_mbus_framefmt *formats;
+ 
+-	struct vsp1_video *video;
+-
+ 	spinlock_t lock;		/* Protects the streaming field */
+ 	bool streaming;
+ };
+diff --git a/drivers/media/platform/vsp1/vsp1_rwpf.h b/drivers/media/platform/vsp1/vsp1_rwpf.h
+index 0076920adb28..1a90c7c8e972 100644
+--- a/drivers/media/platform/vsp1/vsp1_rwpf.h
++++ b/drivers/media/platform/vsp1/vsp1_rwpf.h
+@@ -24,6 +24,7 @@
+ #define RWPF_PAD_SOURCE				1
+ 
+ struct vsp1_rwpf;
++struct vsp1_video;
+ 
+ struct vsp1_rwpf_memory {
+ 	unsigned int num_planes;
+@@ -40,6 +41,8 @@ struct vsp1_rwpf {
+ 	struct vsp1_entity entity;
+ 	struct v4l2_ctrl_handler ctrls;
+ 
++	struct vsp1_video *video;
++
+ 	const struct vsp1_rwpf_operations *ops;
+ 
+ 	unsigned int max_width;
+diff --git a/drivers/media/platform/vsp1/vsp1_video.c b/drivers/media/platform/vsp1/vsp1_video.c
+index 0d600b8de6b1..8ffe54260725 100644
+--- a/drivers/media/platform/vsp1/vsp1_video.c
++++ b/drivers/media/platform/vsp1/vsp1_video.c
+@@ -435,11 +435,11 @@ static int vsp1_pipeline_validate(struct vsp1_pipeline *pipe,
+ 		if (e->type = VSP1_ENTITY_RPF) {
+ 			rwpf = to_rwpf(subdev);
+ 			pipe->inputs[pipe->num_inputs++] = rwpf;
+-			rwpf->entity.video->pipe_index = pipe->num_inputs;
++			rwpf->video->pipe_index = pipe->num_inputs;
+ 		} else if (e->type = VSP1_ENTITY_WPF) {
+ 			rwpf = to_rwpf(subdev);
+ 			pipe->output = to_rwpf(subdev);
+-			rwpf->entity.video->pipe_index = 0;
++			rwpf->video->pipe_index = 0;
+ 		} else if (e->type = VSP1_ENTITY_LIF) {
+ 			pipe->lif = e;
+ 		} else if (e->type = VSP1_ENTITY_BRU) {
+@@ -649,10 +649,10 @@ void vsp1_pipeline_frame_end(struct vsp1_pipeline *pipe)
+ 
+ 	/* Complete buffers on all video nodes. */
+ 	for (i = 0; i < pipe->num_inputs; ++i)
+-		vsp1_video_frame_end(pipe, pipe->inputs[i]->entity.video);
++		vsp1_video_frame_end(pipe, pipe->inputs[i]->video);
+ 
+ 	if (!pipe->lif)
+-		vsp1_video_frame_end(pipe, pipe->output->entity.video);
++		vsp1_video_frame_end(pipe, pipe->output->video);
+ 
+ 	spin_lock_irqsave(&pipe->irqlock, flags);
+ 
+@@ -1204,7 +1204,7 @@ struct vsp1_video *vsp1_video_create(struct vsp1_device *vsp1,
+ 	if (!video)
+ 		return ERR_PTR(-ENOMEM);
+ 
+-	rwpf->entity.video = video;
++	rwpf->video = video;
+ 
+ 	video->vsp1 = vsp1;
+ 	video->rwpf = rwpf;
+-- 
+2.4.10
 
---- 0010/drivers/iommu/ipmmu-vmsa.c
-+++ work/drivers/iommu/ipmmu-vmsa.c	2015-12-15 21:13:00.440513000 +0900
-@@ -33,6 +33,7 @@
- 
- struct ipmmu_features {
- 	bool use_ns_alias_offset;
-+	bool has_cache_leaf_nodes;
- };
- 
- struct ipmmu_vmsa_device {
-@@ -48,10 +49,12 @@ struct ipmmu_vmsa_device {
- 	struct dma_iommu_mapping *mapping;
- #endif
- 	const struct ipmmu_features *features;
-+	bool is_leaf;
- };
- 
- struct ipmmu_vmsa_domain {
- 	struct ipmmu_vmsa_device *mmu;
-+	struct ipmmu_vmsa_device *root;
- 	struct iommu_domain io_domain;
- 
- 	struct io_pgtable_cfg cfg;
-@@ -210,6 +213,36 @@ static void set_dev_data(struct device *
- }
- 
- /* -----------------------------------------------------------------------------
-+ * Root device handling
-+ */
-+
-+static bool ipmmu_is_root(struct ipmmu_vmsa_device *mmu)
-+{
-+	if (mmu->features->has_cache_leaf_nodes)
-+		return mmu->is_leaf ? false : true;
-+	else
-+		return true; /* older IPMMU hardware treated as single root */
-+}
-+
-+static struct ipmmu_vmsa_device *ipmmu_find_root(struct ipmmu_vmsa_device *leaf)
-+{
-+	struct ipmmu_vmsa_device *mmu;
-+
-+	if (ipmmu_is_root(leaf))
-+		return leaf;
-+
-+	spin_lock(&ipmmu_devices_lock);
-+
-+	list_for_each_entry(mmu, &ipmmu_devices, list) {
-+		if (ipmmu_is_root(mmu))
-+			break;
-+	}
-+
-+	spin_unlock(&ipmmu_devices_lock);
-+	return mmu;
-+}
-+
-+/* -----------------------------------------------------------------------------
-  * Read/Write Access
-  */
- 
-@@ -226,13 +259,13 @@ static void ipmmu_write(struct ipmmu_vms
- 
- static u32 ipmmu_ctx_read(struct ipmmu_vmsa_domain *domain, unsigned int reg)
- {
--	return ipmmu_read(domain->mmu, domain->context_id * IM_CTX_SIZE + reg);
-+	return ipmmu_read(domain->root, domain->context_id * IM_CTX_SIZE + reg);
- }
- 
- static void ipmmu_ctx_write(struct ipmmu_vmsa_domain *domain, unsigned int reg,
- 			    u32 data)
- {
--	ipmmu_write(domain->mmu, domain->context_id * IM_CTX_SIZE + reg, data);
-+	ipmmu_write(domain->root, domain->context_id * IM_CTX_SIZE + reg, data);
- }
- 
- /* -----------------------------------------------------------------------------
-@@ -355,7 +388,7 @@ static int ipmmu_domain_init_context(str
- 	 * TODO: Add support for coherent walk through CCI with DVM and remove
- 	 * cache handling. For now, delegate it to the io-pgtable code.
- 	 */
--	domain->cfg.iommu_dev = domain->mmu->dev;
-+	domain->cfg.iommu_dev = domain->root->dev;
- 
- 	domain->iop = alloc_io_pgtable_ops(ARM_32_LPAE_S1, &domain->cfg,
- 					   domain);
-@@ -365,14 +398,14 @@ static int ipmmu_domain_init_context(str
- 	/*
- 	 * Find an unused context.
- 	 */
--	ret = bitmap_find_free_region(domain->mmu->ctx, IPMMU_CTX_MAX, 0);
-+	ret = bitmap_find_free_region(domain->root->ctx, IPMMU_CTX_MAX, 0);
- 	if (ret < 0) {
- 		free_io_pgtable_ops(domain->iop);
- 		return ret;
- 	}
- 
- 	domain->context_id = ret;
--	domain->mmu->domains[ret] = domain;
-+	domain->root->domains[ret] = domain;
- 
- 	/* TTBR0 */
- 	ttbr = domain->cfg.arm_lpae_s1_cfg.ttbr[0];
-@@ -532,7 +565,7 @@ static int ipmmu_attach_device(struct io
- 			       struct device *dev)
- {
- 	struct ipmmu_vmsa_dev_data *dev_data = get_dev_data(dev);
--	struct ipmmu_vmsa_device *mmu = dev_data->mmu;
-+	struct ipmmu_vmsa_device *root, *mmu = dev_data->mmu;
- 	struct ipmmu_vmsa_domain *domain = to_vmsa_domain(io_domain);
- 	unsigned long flags;
- 	int ret = 0;
-@@ -542,11 +575,18 @@ static int ipmmu_attach_device(struct io
- 		return -ENXIO;
- 	}
- 
-+	root = ipmmu_find_root(dev_data->mmu);
-+	if (!root) {
-+		dev_err(dev, "Unable to locate root IPMMU\n");
-+		return -EAGAIN;
-+	}
-+
- 	spin_lock_irqsave(&domain->lock, flags);
- 
- 	if (!domain->mmu) {
- 		/* The domain hasn't been used yet, initialize it. */
- 		domain->mmu = mmu;
-+		domain->root = root;
- 		ret = ipmmu_domain_init_context(domain);
- 	} else if (domain->mmu != mmu) {
- 		/*
-@@ -824,6 +864,7 @@ static void ipmmu_device_reset(struct ip
- 
- static const struct ipmmu_features ipmmu_features_default = {
- 	.use_ns_alias_offset = true,
-+	.has_cache_leaf_nodes = false,
- };
- 
- static const struct of_device_id ipmmu_of_ids[] = {
-@@ -882,19 +923,30 @@ static int ipmmu_probe(struct platform_d
- 		mmu->base += IM_NS_ALIAS_OFFSET;
- 
- 	irq = platform_get_irq(pdev, 0);
--	if (irq < 0) {
--		dev_err(&pdev->dev, "no IRQ found\n");
--		return irq;
--	}
- 
--	ret = devm_request_irq(&pdev->dev, irq, ipmmu_irq, 0,
--			       dev_name(&pdev->dev), mmu);
--	if (ret < 0) {
--		dev_err(&pdev->dev, "failed to request IRQ %d\n", irq);
--		return ret;
--	}
-+	/*
-+	 * Determine if this IPMMU instance is a leaf device by checking
-+	 * if an interrupt is availabile or not
-+	 */
-+	if (mmu->features->has_cache_leaf_nodes && irq < 0)
-+		mmu->is_leaf = true;
-+
-+	/* Root devices have mandatory IRQs */
-+	if (ipmmu_is_root(mmu)) {
-+		if (irq < 0) {
-+			dev_err(&pdev->dev, "no IRQ found\n");
-+			return irq;
-+		}
- 
--	ipmmu_device_reset(mmu);
-+		ret = devm_request_irq(&pdev->dev, irq, ipmmu_irq, 0,
-+				       dev_name(&pdev->dev), mmu);
-+		if (ret < 0) {
-+			dev_err(&pdev->dev, "failed to request IRQ %d\n", irq);
-+			return ret;
-+		}
-+
-+		ipmmu_device_reset(mmu);
-+	}
- 
- 	/*
- 	 * We can't create the ARM mapping here as it requires the bus to have
