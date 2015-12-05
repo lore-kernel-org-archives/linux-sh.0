@@ -1,60 +1,99 @@
-From: "Michael S. Tsirkin" <mst@redhat.com>
-Date: Thu, 31 Dec 2015 19:07:51 +0000
-Subject: [PATCH v2 16/32] arm64: define __smp_xxx
-Message-Id: <1451572003-2440-17-git-send-email-mst@redhat.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sat, 05 Dec 2015 02:12:44 +0000
+Subject: [PATCH v2 10/32] v4l: vsp1: Decouple pipeline end of frame processing from vsp1_video
+Message-Id: <1449281586-25726-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1451572003-2440-1-git-send-email-mst@redhat.com>
-In-Reply-To: <1451572003-2440-1-git-send-email-mst@redhat.com>
+References: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Peter Zijlstra <peterz@infradead.org>, Arnd Bergmann <arnd@arndb.de>, linux-arch@vger.kernel.org, Andrew Cooper <andrew.cooper3@citrix.com>, virtualization@lists.linux-foundation.org, Stefano Stabellini <stefano.stabellini@eu.citrix.com>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@elte.hu>, "H. Peter Anvin" <hpa@zytor.com>, David Miller <davem@davemloft.net>, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, sparclinux@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-metag@vger.kernel.org, linux-mips@linux-mips.org, x86@kernel.org, user-mode-linux-devel@lists.sourceforge.net, adi-buildroot-devel@lists.sourceforge.net, linux-sh@vger.kernel.org, linux-xtensa@linux-xtensa.org, xen-devel@lists.xenproject.org, Catalin Marinas <catalin.marinas@arm.com>, Will Deacon <will.deacon@arm.com>, Ingo Molnar <mingo@kern>
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-This defines __smp_xxx barriers for arm64,
-for use by virtualization.
+To make the pipeline structure and operations usable without video
+devices the frame end processing must be decoupled from struct
+vsp1_video. Implement this by calling the video frame end function
+indirectly through a function pointer in struct vsp1_pipeline.
 
-smp_xxx barriers are removed as they are
-defined correctly by asm-generic/barriers.h
-
-Note: arm64 does not support !SMP config,
-so smp_xxx and __smp_xxx are always equivalent.
-
-Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
-Acked-by: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm64/include/asm/barrier.h | 10 +++++-----
- 1 file changed, 5 insertions(+), 5 deletions(-)
+ drivers/media/platform/vsp1/vsp1_video.c | 25 +++++++++++++++++--------
+ drivers/media/platform/vsp1/vsp1_video.h |  2 ++
+ 2 files changed, 19 insertions(+), 8 deletions(-)
 
-diff --git a/arch/arm64/include/asm/barrier.h b/arch/arm64/include/asm/barrier.h
-index 91a43f4..dae5c49 100644
---- a/arch/arm64/include/asm/barrier.h
-+++ b/arch/arm64/include/asm/barrier.h
-@@ -35,11 +35,11 @@
- #define dma_rmb()	dmb(oshld)
- #define dma_wmb()	dmb(oshst)
+diff --git a/drivers/media/platform/vsp1/vsp1_video.c b/drivers/media/platform/vsp1/vsp1_video.c
+index e9c5682b0d74..8f9807e6a606 100644
+--- a/drivers/media/platform/vsp1/vsp1_video.c
++++ b/drivers/media/platform/vsp1/vsp1_video.c
+@@ -618,8 +618,9 @@ vsp1_video_complete_buffer(struct vsp1_video *video)
+ }
  
--#define smp_mb()	dmb(ish)
--#define smp_rmb()	dmb(ishld)
--#define smp_wmb()	dmb(ishst)
-+#define __smp_mb()	dmb(ish)
-+#define __smp_rmb()	dmb(ishld)
-+#define __smp_wmb()	dmb(ishst)
+ static void vsp1_video_frame_end(struct vsp1_pipeline *pipe,
+-				 struct vsp1_video *video)
++				 struct vsp1_rwpf *rwpf)
+ {
++	struct vsp1_video *video = rwpf->video;
+ 	struct vsp1_vb2_buffer *buf;
+ 	unsigned long flags;
  
--#define smp_store_release(p, v)						\
-+#define __smp_store_release(p, v)						\
- do {									\
- 	compiletime_assert_atomic_type(*p);				\
- 	switch (sizeof(*p)) {						\
-@@ -62,7 +62,7 @@ do {									\
- 	}								\
- } while (0)
+@@ -635,21 +636,28 @@ static void vsp1_video_frame_end(struct vsp1_pipeline *pipe,
+ 	spin_unlock_irqrestore(&pipe->irqlock, flags);
+ }
  
--#define smp_load_acquire(p)						\
-+#define __smp_load_acquire(p)						\
- ({									\
- 	union { typeof(*p) __val; char __c[1]; } __u;			\
- 	compiletime_assert_atomic_type(*p);				\
++static void vsp1_video_pipeline_frame_end(struct vsp1_pipeline *pipe)
++{
++	unsigned int i;
++
++	/* Complete buffers on all video nodes. */
++	for (i = 0; i < pipe->num_inputs; ++i)
++		vsp1_video_frame_end(pipe, pipe->inputs[i]);
++
++	if (!pipe->lif)
++		vsp1_video_frame_end(pipe, pipe->output);
++}
++
+ void vsp1_pipeline_frame_end(struct vsp1_pipeline *pipe)
+ {
+ 	enum vsp1_pipeline_state state;
+ 	unsigned long flags;
+-	unsigned int i;
+ 
+ 	if (pipe = NULL)
+ 		return;
+ 
+-	/* Complete buffers on all video nodes. */
+-	for (i = 0; i < pipe->num_inputs; ++i)
+-		vsp1_video_frame_end(pipe, pipe->inputs[i]->video);
+-
+-	if (!pipe->lif)
+-		vsp1_video_frame_end(pipe, pipe->output->video);
++	/* Signal frame end to the pipeline handler. */
++	pipe->frame_end(pipe);
+ 
+ 	spin_lock_irqsave(&pipe->irqlock, flags);
+ 
+@@ -1227,6 +1235,7 @@ struct vsp1_video *vsp1_video_create(struct vsp1_device *vsp1,
+ 	INIT_LIST_HEAD(&video->pipe.entities);
+ 	init_waitqueue_head(&video->pipe.wq);
+ 	video->pipe.state = VSP1_PIPELINE_STOPPED;
++	video->pipe.frame_end = vsp1_video_pipeline_frame_end;
+ 
+ 	/* Initialize the media entity... */
+ 	ret = media_entity_init(&video->video.entity, 1, &video->pad, 0);
+diff --git a/drivers/media/platform/vsp1/vsp1_video.h b/drivers/media/platform/vsp1/vsp1_video.h
+index e9d0e1ab9162..b79fdaa7ebdc 100644
+--- a/drivers/media/platform/vsp1/vsp1_video.h
++++ b/drivers/media/platform/vsp1/vsp1_video.h
+@@ -70,6 +70,8 @@ struct vsp1_pipeline {
+ 	enum vsp1_pipeline_state state;
+ 	wait_queue_head_t wq;
+ 
++	void (*frame_end)(struct vsp1_pipeline *pipe);
++
+ 	struct mutex lock;
+ 	unsigned int use_count;
+ 	unsigned int stream_count;
 -- 
-MST
+2.4.10
 
