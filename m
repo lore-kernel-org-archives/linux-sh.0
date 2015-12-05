@@ -1,36 +1,22 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 03 Dec 2015 22:51:10 +0000
-Subject: [PATCH] ravb: fix RX queue #1 frame error counter name
-Message-Id: <2605754.h5jel2JHUq@wasted.cogentembedded.com>
+From: David Miller <davem@davemloft.net>
+Date: Sat, 05 Dec 2015 22:46:55 +0000
+Subject: Re: [PATCH] ravb: fix RX queue #1 frame error counter name
+Message-Id: <20151205.174655.363763973003627210.davem@davemloft.net>
 List-Id: <linux-sh.vger.kernel.org>
+References: <2605754.h5jel2JHUq@wasted.cogentembedded.com>
+In-Reply-To: <2605754.h5jel2JHUq@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: sergei.shtylyov@cogentembedded.com
+Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org
 
-The Rx queue #1 frame error counter name contains trailing underscore,
-probably due to a typo...
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 04 Dec 2015 01:51:10 +0300
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+> The Rx queue #1 frame error counter name contains trailing underscore,
+> probably due to a typo...
+> 
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
----
-The patch is against Dave Miller's 'net.git' repo but I won't mind if it gets
-merged to 'net-next.git' instead...
-
- drivers/net/ethernet/renesas/ravb_main.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-Index: net/drivers/net/ethernet/renesas/ravb_main.c
-=================================--- net.orig/drivers/net/ethernet/renesas/ravb_main.c
-+++ net/drivers/net/ethernet/renesas/ravb_main.c
-@@ -1037,7 +1037,7 @@ static const char ravb_gstrings_stats[][
- 	"rx_queue_1_mcast_packets",
- 	"rx_queue_1_errors",
- 	"rx_queue_1_crc_errors",
--	"rx_queue_1_frame_errors_",
-+	"rx_queue_1_frame_errors",
- 	"rx_queue_1_length_errors",
- 	"rx_queue_1_missed_errors",
- 	"rx_queue_1_over_errors",
-
+Applied.
