@@ -1,92 +1,226 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 15 Dec 2015 01:19:16 +0000
-Subject: [PATCH 7/8 v5] ARM: shmobile: r8a7791: enable to use thermal-zone
-Message-Id: <8737v4qzo2.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sat, 05 Dec 2015 02:13:01 +0000
+Subject: [PATCH v2 27/32] v4l: vsp1: Don't validate links when the userspace API is disabled
+Message-Id: <1449281586-25726-28-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87d1u8qzsy.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87d1u8qzsy.wl%kuninori.morimoto.gx@renesas.com>
+References: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, Zhang Rui <rui.zhang@intel.com>, Eduardo Valentin <edubezval@gmail.com>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
+As the pipeline is configured internally by the driver when the
+userspace API is disabled its configuration can be trusted and link
+validation isn't needed.
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-
-This patch enables to use thermal-zone on r8a7791.
-This thermal sensor can measure temperature from -40000 to 125000,
-but over 117000 can be critical on this chip.
-Thus, default critical temperature is now set as 115000 (this driver
-is using 5000 steps) (Current critical temperature is using it as
-90000, but there is no big reason about it)
-
-And it doesn't check thermal zone periodically (same as current
-behavior). You can exchange it by modifying polling-delay[-passive]
-property.
-
-You can set trip temp if your kernel has CONFIG_THERMAL_WRITABLE_TRIPS,
-but you need to take care to use it, since it will call
-orderly_poweroff() it it reaches to the value.
-echo $temp > /sys/class/thermal/thermal_zone0/trip_point_0_temp
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-v4 -> v5
+ drivers/media/platform/vsp1/vsp1.h        |  2 ++
+ drivers/media/platform/vsp1/vsp1_bru.c    |  2 +-
+ drivers/media/platform/vsp1/vsp1_drv.c    | 10 ++++++++++
+ drivers/media/platform/vsp1/vsp1_entity.c | 11 +++--------
+ drivers/media/platform/vsp1/vsp1_entity.h |  5 ++++-
+ drivers/media/platform/vsp1/vsp1_hsit.c   |  2 +-
+ drivers/media/platform/vsp1/vsp1_lif.c    |  2 +-
+ drivers/media/platform/vsp1/vsp1_lut.c    |  2 +-
+ drivers/media/platform/vsp1/vsp1_rpf.c    |  2 +-
+ drivers/media/platform/vsp1/vsp1_sru.c    |  2 +-
+ drivers/media/platform/vsp1/vsp1_uds.c    |  2 +-
+ drivers/media/platform/vsp1/vsp1_wpf.c    |  2 +-
+ 12 files changed, 27 insertions(+), 17 deletions(-)
 
- - no change
-
- arch/arm/boot/dts/r8a7791.dtsi | 26 ++++++++++++++++++++++++--
- 1 file changed, 24 insertions(+), 2 deletions(-)
-
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 3776974..9b37c80 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -69,6 +69,25 @@
- 		};
- 	};
+diff --git a/drivers/media/platform/vsp1/vsp1.h b/drivers/media/platform/vsp1/vsp1.h
+index 4fd4386a7049..454201bf59ee 100644
+--- a/drivers/media/platform/vsp1/vsp1.h
++++ b/drivers/media/platform/vsp1/vsp1.h
+@@ -78,6 +78,8 @@ struct vsp1_device {
  
-+	thermal-zones {
-+		cpu_thermal: cpu-thermal {
-+			polling-delay-passive	= <0>;
-+			polling-delay		= <0>;
+ 	struct v4l2_device v4l2_dev;
+ 	struct media_device media_dev;
 +
-+			thermal-sensors = <&thermal>;
-+
-+			trips {
-+				cpu-crit {
-+					temperature	= <115000>;
-+					hysteresis	= <0>;
-+					type		= "critical";
-+				};
-+			};
-+			cooling-maps {
-+			};
-+		};
-+	};
-+
- 	gic: interrupt-controller@f1001000 {
- 		compatible = "arm,gic-400";
- 		#interrupt-cells = <3>;
-@@ -185,12 +204,15 @@
- 		power-domains = <&cpg_clocks>;
- 	};
++	struct media_entity_operations media_ops;
+ };
  
--	thermal@e61f0000 {
--		compatible = "renesas,thermal-r8a7791", "renesas,rcar-thermal";
-+	thermal: thermal@e61f0000 {
-+		compatible =	"renesas,thermal-r8a7791",
-+				"renesas,rcar-gen2-thermal",
-+				"renesas,rcar-thermal";
- 		reg = <0 0xe61f0000 0 0x14>, <0 0xe61f0100 0 0x38>;
- 		interrupts = <0 69 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp5_clks R8A7791_CLK_THERMAL>;
- 		power-domains = <&cpg_clocks>;
-+		#thermal-sensor-cells = <0>;
- 	};
+ int vsp1_device_get(struct vsp1_device *vsp1);
+diff --git a/drivers/media/platform/vsp1/vsp1_bru.c b/drivers/media/platform/vsp1/vsp1_bru.c
+index baebfbbef61d..848bfb5a42ff 100644
+--- a/drivers/media/platform/vsp1/vsp1_bru.c
++++ b/drivers/media/platform/vsp1/vsp1_bru.c
+@@ -424,7 +424,7 @@ struct vsp1_bru *vsp1_bru_create(struct vsp1_device *vsp1)
+ 	subdev = &bru->entity.subdev;
+ 	v4l2_subdev_init(subdev, &bru_ops);
  
- 	timer {
+-	subdev->entity.ops = &vsp1_media_ops;
++	subdev->entity.ops = &vsp1->media_ops;
+ 	subdev->internal_ops = &vsp1_subdev_internal_ops;
+ 	snprintf(subdev->name, sizeof(subdev->name), "%s bru",
+ 		 dev_name(vsp1->dev));
+diff --git a/drivers/media/platform/vsp1/vsp1_drv.c b/drivers/media/platform/vsp1/vsp1_drv.c
+index 3c8de1d5c80e..6d086c048975 100644
+--- a/drivers/media/platform/vsp1/vsp1_drv.c
++++ b/drivers/media/platform/vsp1/vsp1_drv.c
+@@ -21,6 +21,8 @@
+ #include <linux/platform_device.h>
+ #include <linux/videodev2.h>
+ 
++#include <media/v4l2-subdev.h>
++
+ #include "vsp1.h"
+ #include "vsp1_bru.h"
+ #include "vsp1_hsit.h"
+@@ -217,6 +219,14 @@ static int vsp1_create_entities(struct vsp1_device *vsp1)
+ 		return ret;
+ 	}
+ 
++	vsp1->media_ops.link_setup = vsp1_entity_link_setup;
++	/* Don't perform link validation when the userspace API is disabled as
++	 * the pipeline is configured internally by the driver in that case, and
++	 * its configuration can thus be trusted.
++	 */
++	if (vsp1->pdata.uapi)
++		vsp1->media_ops.link_validate = v4l2_subdev_link_validate;
++
+ 	vdev->mdev = mdev;
+ 	ret = v4l2_device_register(vsp1->dev, vdev);
+ 	if (ret < 0) {
+diff --git a/drivers/media/platform/vsp1/vsp1_entity.c b/drivers/media/platform/vsp1/vsp1_entity.c
+index 75bf85693f35..38a496f43050 100644
+--- a/drivers/media/platform/vsp1/vsp1_entity.c
++++ b/drivers/media/platform/vsp1/vsp1_entity.c
+@@ -131,9 +131,9 @@ const struct v4l2_subdev_internal_ops vsp1_subdev_internal_ops = {
+  * Media Operations
+  */
+ 
+-static int vsp1_entity_link_setup(struct media_entity *entity,
+-				  const struct media_pad *local,
+-				  const struct media_pad *remote, u32 flags)
++int vsp1_entity_link_setup(struct media_entity *entity,
++			   const struct media_pad *local,
++			   const struct media_pad *remote, u32 flags)
+ {
+ 	struct vsp1_entity *source;
+ 
+@@ -158,11 +158,6 @@ static int vsp1_entity_link_setup(struct media_entity *entity,
+ 	return 0;
+ }
+ 
+-const struct media_entity_operations vsp1_media_ops = {
+-	.link_setup = vsp1_entity_link_setup,
+-	.link_validate = v4l2_subdev_link_validate,
+-};
+-
+ /* -----------------------------------------------------------------------------
+  * Initialization
+  */
+diff --git a/drivers/media/platform/vsp1/vsp1_entity.h b/drivers/media/platform/vsp1/vsp1_entity.h
+index 360a2e668ac2..83570dfde8ec 100644
+--- a/drivers/media/platform/vsp1/vsp1_entity.h
++++ b/drivers/media/platform/vsp1/vsp1_entity.h
+@@ -86,7 +86,10 @@ int vsp1_entity_init(struct vsp1_device *vsp1, struct vsp1_entity *entity,
+ void vsp1_entity_destroy(struct vsp1_entity *entity);
+ 
+ extern const struct v4l2_subdev_internal_ops vsp1_subdev_internal_ops;
+-extern const struct media_entity_operations vsp1_media_ops;
++
++int vsp1_entity_link_setup(struct media_entity *entity,
++			   const struct media_pad *local,
++			   const struct media_pad *remote, u32 flags);
+ 
+ struct v4l2_mbus_framefmt *
+ vsp1_entity_get_pad_format(struct vsp1_entity *entity,
+diff --git a/drivers/media/platform/vsp1/vsp1_hsit.c b/drivers/media/platform/vsp1/vsp1_hsit.c
+index 8ffb817ae525..c1087cff31a0 100644
+--- a/drivers/media/platform/vsp1/vsp1_hsit.c
++++ b/drivers/media/platform/vsp1/vsp1_hsit.c
+@@ -203,7 +203,7 @@ struct vsp1_hsit *vsp1_hsit_create(struct vsp1_device *vsp1, bool inverse)
+ 	subdev = &hsit->entity.subdev;
+ 	v4l2_subdev_init(subdev, &hsit_ops);
+ 
+-	subdev->entity.ops = &vsp1_media_ops;
++	subdev->entity.ops = &vsp1->media_ops;
+ 	subdev->internal_ops = &vsp1_subdev_internal_ops;
+ 	snprintf(subdev->name, sizeof(subdev->name), "%s %s",
+ 		 dev_name(vsp1->dev), inverse ? "hsi" : "hst");
+diff --git a/drivers/media/platform/vsp1/vsp1_lif.c b/drivers/media/platform/vsp1/vsp1_lif.c
+index b868bce08982..b8e73d32d14d 100644
+--- a/drivers/media/platform/vsp1/vsp1_lif.c
++++ b/drivers/media/platform/vsp1/vsp1_lif.c
+@@ -223,7 +223,7 @@ struct vsp1_lif *vsp1_lif_create(struct vsp1_device *vsp1)
+ 	subdev = &lif->entity.subdev;
+ 	v4l2_subdev_init(subdev, &lif_ops);
+ 
+-	subdev->entity.ops = &vsp1_media_ops;
++	subdev->entity.ops = &vsp1->media_ops;
+ 	subdev->internal_ops = &vsp1_subdev_internal_ops;
+ 	snprintf(subdev->name, sizeof(subdev->name), "%s lif",
+ 		 dev_name(vsp1->dev));
+diff --git a/drivers/media/platform/vsp1/vsp1_lut.c b/drivers/media/platform/vsp1/vsp1_lut.c
+index 9e33caa9c616..4b89095e7b5f 100644
+--- a/drivers/media/platform/vsp1/vsp1_lut.c
++++ b/drivers/media/platform/vsp1/vsp1_lut.c
+@@ -237,7 +237,7 @@ struct vsp1_lut *vsp1_lut_create(struct vsp1_device *vsp1)
+ 	subdev = &lut->entity.subdev;
+ 	v4l2_subdev_init(subdev, &lut_ops);
+ 
+-	subdev->entity.ops = &vsp1_media_ops;
++	subdev->entity.ops = &vsp1->media_ops;
+ 	subdev->internal_ops = &vsp1_subdev_internal_ops;
+ 	snprintf(subdev->name, sizeof(subdev->name), "%s lut",
+ 		 dev_name(vsp1->dev));
+diff --git a/drivers/media/platform/vsp1/vsp1_rpf.c b/drivers/media/platform/vsp1/vsp1_rpf.c
+index b1d4a46f230e..3992da09e466 100644
+--- a/drivers/media/platform/vsp1/vsp1_rpf.c
++++ b/drivers/media/platform/vsp1/vsp1_rpf.c
+@@ -245,7 +245,7 @@ struct vsp1_rwpf *vsp1_rpf_create(struct vsp1_device *vsp1, unsigned int index)
+ 	subdev = &rpf->entity.subdev;
+ 	v4l2_subdev_init(subdev, &rpf_ops);
+ 
+-	subdev->entity.ops = &vsp1_media_ops;
++	subdev->entity.ops = &vsp1->media_ops;
+ 	subdev->internal_ops = &vsp1_subdev_internal_ops;
+ 	snprintf(subdev->name, sizeof(subdev->name), "%s rpf.%u",
+ 		 dev_name(vsp1->dev), index);
+diff --git a/drivers/media/platform/vsp1/vsp1_sru.c b/drivers/media/platform/vsp1/vsp1_sru.c
+index cff4a1d82e3b..6dcf76a1ca57 100644
+--- a/drivers/media/platform/vsp1/vsp1_sru.c
++++ b/drivers/media/platform/vsp1/vsp1_sru.c
+@@ -363,7 +363,7 @@ struct vsp1_sru *vsp1_sru_create(struct vsp1_device *vsp1)
+ 	subdev = &sru->entity.subdev;
+ 	v4l2_subdev_init(subdev, &sru_ops);
+ 
+-	subdev->entity.ops = &vsp1_media_ops;
++	subdev->entity.ops = &vsp1->media_ops;
+ 	subdev->internal_ops = &vsp1_subdev_internal_ops;
+ 	snprintf(subdev->name, sizeof(subdev->name), "%s sru",
+ 		 dev_name(vsp1->dev));
+diff --git a/drivers/media/platform/vsp1/vsp1_uds.c b/drivers/media/platform/vsp1/vsp1_uds.c
+index 27ad07466ebd..bba67770cf95 100644
+--- a/drivers/media/platform/vsp1/vsp1_uds.c
++++ b/drivers/media/platform/vsp1/vsp1_uds.c
+@@ -338,7 +338,7 @@ struct vsp1_uds *vsp1_uds_create(struct vsp1_device *vsp1, unsigned int index)
+ 	subdev = &uds->entity.subdev;
+ 	v4l2_subdev_init(subdev, &uds_ops);
+ 
+-	subdev->entity.ops = &vsp1_media_ops;
++	subdev->entity.ops = &vsp1->media_ops;
+ 	subdev->internal_ops = &vsp1_subdev_internal_ops;
+ 	snprintf(subdev->name, sizeof(subdev->name), "%s uds.%u",
+ 		 dev_name(vsp1->dev), index);
+diff --git a/drivers/media/platform/vsp1/vsp1_wpf.c b/drivers/media/platform/vsp1/vsp1_wpf.c
+index 40eeaf2d76d2..849ed81d86a1 100644
+--- a/drivers/media/platform/vsp1/vsp1_wpf.c
++++ b/drivers/media/platform/vsp1/vsp1_wpf.c
+@@ -243,7 +243,7 @@ struct vsp1_rwpf *vsp1_wpf_create(struct vsp1_device *vsp1, unsigned int index)
+ 	subdev = &wpf->entity.subdev;
+ 	v4l2_subdev_init(subdev, &wpf_ops);
+ 
+-	subdev->entity.ops = &vsp1_media_ops;
++	subdev->entity.ops = &vsp1->media_ops;
+ 	subdev->internal_ops = &vsp1_subdev_internal_ops;
+ 	snprintf(subdev->name, sizeof(subdev->name), "%s wpf.%u",
+ 		 dev_name(vsp1->dev), index);
 -- 
-1.9.1
+2.4.10
 
