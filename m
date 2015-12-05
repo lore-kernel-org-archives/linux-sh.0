@@ -1,7 +1,7 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sat, 05 Dec 2015 02:12:42 +0000
-Subject: [PATCH v2 08/32] v4l: vsp1: Move vsp1_video pointer from vsp1_entity to vsp1_rwpf
-Message-Id: <1449281586-25726-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Sat, 05 Dec 2015 02:13:04 +0000
+Subject: [PATCH v2 30/32] v4l: vsp1: Implement atomic update for the DRM driver
+Message-Id: <1449281586-25726-31-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 In-Reply-To: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
@@ -11,123 +11,181 @@ Content-Transfer-Encoding: 7bit
 To: linux-media@vger.kernel.org
 Cc: linux-sh@vger.kernel.org
 
-Only RPFs and WPFs can be associated with video nodes, don't waste
-memory by storing the video pointer in all entities.
+Add two API functions named vsp1_du_atomic_begin() and
+vsp1_du_atomic_flush() to signal the start and end of an atomic update.
+The vsp1_du_setup_rpf() function is renamed to vsp1_du_atomic_update()
+for consistency.
+
+With this new API, the driver will reprogram all modified inputs
+atomically before restarting the video stream.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/media/platform/vsp1/vsp1_drv.c    |  6 +++---
- drivers/media/platform/vsp1/vsp1_entity.h |  3 ---
- drivers/media/platform/vsp1/vsp1_rwpf.h   |  3 +++
- drivers/media/platform/vsp1/vsp1_video.c  | 10 +++++-----
- 4 files changed, 11 insertions(+), 11 deletions(-)
+ drivers/media/platform/vsp1/vsp1_drm.c | 70 +++++++++++++++++++++++++---------
+ drivers/media/platform/vsp1/vsp1_drm.h |  7 ++++
+ include/media/vsp1.h                   |  9 +++--
+ 3 files changed, 66 insertions(+), 20 deletions(-)
 
-diff --git a/drivers/media/platform/vsp1/vsp1_drv.c b/drivers/media/platform/vsp1/vsp1_drv.c
-index 5f93cbdcb0f1..91ecf75119ba 100644
---- a/drivers/media/platform/vsp1/vsp1_drv.c
-+++ b/drivers/media/platform/vsp1/vsp1_drv.c
-@@ -289,8 +289,8 @@ static int vsp1_create_entities(struct vsp1_device *vsp1)
- 	for (i = 0; i < vsp1->pdata.rpf_count; ++i) {
- 		struct vsp1_rwpf *rpf = vsp1->rpf[i];
+diff --git a/drivers/media/platform/vsp1/vsp1_drm.c b/drivers/media/platform/vsp1/vsp1_drm.c
+index 5cef619b708d..ef8e91d65209 100644
+--- a/drivers/media/platform/vsp1/vsp1_drm.c
++++ b/drivers/media/platform/vsp1/vsp1_drm.c
+@@ -254,7 +254,26 @@ int vsp1_du_setup_lif(struct device *dev, unsigned int width,
+ EXPORT_SYMBOL_GPL(vsp1_du_setup_lif);
  
--		ret = media_entity_create_link(&rpf->entity.video->video.entity,
--					       0, &rpf->entity.subdev.entity,
-+		ret = media_entity_create_link(&rpf->video->video.entity, 0,
-+					       &rpf->entity.subdev.entity,
- 					       RWPF_PAD_SINK,
- 					       MEDIA_LNK_FL_ENABLED |
- 					       MEDIA_LNK_FL_IMMUTABLE);
-@@ -311,7 +311,7 @@ static int vsp1_create_entities(struct vsp1_device *vsp1)
- 
- 		ret = media_entity_create_link(&wpf->entity.subdev.entity,
- 					       RWPF_PAD_SOURCE,
--					       &wpf->entity.video->video.entity,
-+					       &wpf->video->video.entity,
- 					       0, flags);
- 		if (ret < 0)
- 			goto done;
-diff --git a/drivers/media/platform/vsp1/vsp1_entity.h b/drivers/media/platform/vsp1/vsp1_entity.h
-index 8867a5787c28..9c95507ec762 100644
---- a/drivers/media/platform/vsp1/vsp1_entity.h
-+++ b/drivers/media/platform/vsp1/vsp1_entity.h
-@@ -19,7 +19,6 @@
- #include <media/v4l2-subdev.h>
- 
- struct vsp1_device;
--struct vsp1_video;
- 
- enum vsp1_entity_type {
- 	VSP1_ENTITY_BRU,
-@@ -71,8 +70,6 @@ struct vsp1_entity {
- 	struct v4l2_subdev subdev;
- 	struct v4l2_mbus_framefmt *formats;
- 
--	struct vsp1_video *video;
--
- 	spinlock_t lock;		/* Protects the streaming field */
- 	bool streaming;
- };
-diff --git a/drivers/media/platform/vsp1/vsp1_rwpf.h b/drivers/media/platform/vsp1/vsp1_rwpf.h
-index 0076920adb28..1a90c7c8e972 100644
---- a/drivers/media/platform/vsp1/vsp1_rwpf.h
-+++ b/drivers/media/platform/vsp1/vsp1_rwpf.h
-@@ -24,6 +24,7 @@
- #define RWPF_PAD_SOURCE				1
- 
- struct vsp1_rwpf;
-+struct vsp1_video;
- 
- struct vsp1_rwpf_memory {
- 	unsigned int num_planes;
-@@ -40,6 +41,8 @@ struct vsp1_rwpf {
- 	struct vsp1_entity entity;
- 	struct v4l2_ctrl_handler ctrls;
- 
-+	struct vsp1_video *video;
+ /**
+- * vsp1_du_setup_rpf - Setup one RPF input of the VSP pipeline
++ * vsp1_du_atomic_begin - Prepare for an atomic update
++ * @dev: the VSP device
++ */
++void vsp1_du_atomic_begin(struct device *dev)
++{
++	struct vsp1_device *vsp1 = dev_get_drvdata(dev);
++	struct vsp1_pipeline *pipe = &vsp1->drm->pipe;
++	unsigned long flags;
 +
- 	const struct vsp1_rwpf_operations *ops;
++	spin_lock_irqsave(&pipe->irqlock, flags);
++
++	vsp1->drm->num_inputs = pipe->num_inputs;
++	vsp1->drm->update = false;
++
++	spin_unlock_irqrestore(&pipe->irqlock, flags);
++}
++EXPORT_SYMBOL_GPL(vsp1_du_atomic_begin);
++
++/**
++ * vsp1_du_atomic_update - Setup one RPF input of the VSP pipeline
+  * @dev: the VSP device
+  * @rpf_index: index of the RPF to setup (0-based)
+  * @pixelformat: V4L2 pixel format for the RPF memory input
+@@ -288,10 +307,10 @@ EXPORT_SYMBOL_GPL(vsp1_du_setup_lif);
+  *
+  * Return 0 on success or a negative error code on failure.
+  */
+-int vsp1_du_setup_rpf(struct device *dev, unsigned int rpf_index,
+-		      u32 pixelformat, unsigned int pitch,
+-		      dma_addr_t mem[2], const struct v4l2_rect *src,
+-		      const struct v4l2_rect *dst)
++int vsp1_du_atomic_update(struct device *dev, unsigned int rpf_index,
++			  u32 pixelformat, unsigned int pitch,
++			  dma_addr_t mem[2], const struct v4l2_rect *src,
++			  const struct v4l2_rect *dst)
+ {
+ 	struct vsp1_device *vsp1 = dev_get_drvdata(dev);
+ 	struct vsp1_pipeline *pipe = &vsp1->drm->pipe;
+@@ -301,7 +320,6 @@ int vsp1_du_setup_rpf(struct device *dev, unsigned int rpf_index,
+ 	struct vsp1_rwpf_memory memory;
+ 	struct vsp1_rwpf *rpf;
+ 	unsigned long flags;
+-	bool start_stop = false;
+ 	int ret;
  
- 	unsigned int max_width;
-diff --git a/drivers/media/platform/vsp1/vsp1_video.c b/drivers/media/platform/vsp1/vsp1_video.c
-index 0d600b8de6b1..8ffe54260725 100644
---- a/drivers/media/platform/vsp1/vsp1_video.c
-+++ b/drivers/media/platform/vsp1/vsp1_video.c
-@@ -435,11 +435,11 @@ static int vsp1_pipeline_validate(struct vsp1_pipeline *pipe,
- 		if (e->type = VSP1_ENTITY_RPF) {
- 			rwpf = to_rwpf(subdev);
- 			pipe->inputs[pipe->num_inputs++] = rwpf;
--			rwpf->entity.video->pipe_index = pipe->num_inputs;
-+			rwpf->video->pipe_index = pipe->num_inputs;
- 		} else if (e->type = VSP1_ENTITY_WPF) {
- 			rwpf = to_rwpf(subdev);
- 			pipe->output = to_rwpf(subdev);
--			rwpf->entity.video->pipe_index = 0;
-+			rwpf->video->pipe_index = 0;
- 		} else if (e->type = VSP1_ENTITY_LIF) {
- 			pipe->lif = e;
- 		} else if (e->type = VSP1_ENTITY_BRU) {
-@@ -649,10 +649,10 @@ void vsp1_pipeline_frame_end(struct vsp1_pipeline *pipe)
+ 	if (rpf_index >= vsp1->pdata.rpf_count)
+@@ -322,16 +340,11 @@ int vsp1_du_setup_rpf(struct device *dev, unsigned int rpf_index,
+ 			vsp1->bru->inputs[rpf_index].rpf = NULL;
+ 			pipe->inputs[rpf_index] = NULL;
  
- 	/* Complete buffers on all video nodes. */
- 	for (i = 0; i < pipe->num_inputs; ++i)
--		vsp1_video_frame_end(pipe, pipe->inputs[i]->entity.video);
-+		vsp1_video_frame_end(pipe, pipe->inputs[i]->video);
+-			vsp1->drm->update = true;
+-			start_stop = --pipe->num_inputs = 0;
++			pipe->num_inputs--;
+ 		}
  
- 	if (!pipe->lif)
--		vsp1_video_frame_end(pipe, pipe->output->entity.video);
-+		vsp1_video_frame_end(pipe, pipe->output->video);
+ 		spin_unlock_irqrestore(&pipe->irqlock, flags);
  
- 	spin_lock_irqsave(&pipe->irqlock, flags);
+-		/* Stop the pipeline if we're the last user. */
+-		if (start_stop)
+-			vsp1_pipeline_stop(pipe);
+-
+ 		return 0;
+ 	}
  
-@@ -1204,7 +1204,7 @@ struct vsp1_video *vsp1_video_create(struct vsp1_device *vsp1,
- 	if (!video)
- 		return ERR_PTR(-ENOMEM);
+@@ -459,19 +472,42 @@ int vsp1_du_setup_rpf(struct device *dev, unsigned int rpf_index,
+ 	if (!pipe->inputs[rpf->entity.index]) {
+ 		vsp1->bru->inputs[rpf_index].rpf = rpf;
+ 		pipe->inputs[rpf->entity.index] = rpf;
+-		start_stop = pipe->num_inputs++ = 0;
++		pipe->num_inputs++;
+ 	}
  
--	rwpf->entity.video = video;
-+	rwpf->video = video;
+-	/* Start the pipeline if it's currently stopped. */
++	spin_unlock_irqrestore(&pipe->irqlock, flags);
++
++	return 0;
++}
++EXPORT_SYMBOL_GPL(vsp1_du_atomic_update);
++
++/**
++ * vsp1_du_atomic_flush - Commit an atomic update
++ * @dev: the VSP device
++ */
++void vsp1_du_atomic_flush(struct device *dev)
++{
++	struct vsp1_device *vsp1 = dev_get_drvdata(dev);
++	struct vsp1_pipeline *pipe = &vsp1->drm->pipe;
++	unsigned long flags;
++	bool stop = false;
++
++	spin_lock_irqsave(&pipe->irqlock, flags);
++
+ 	vsp1->drm->update = true;
+-	if (start_stop)
++
++	/* Start or stop the pipeline if needed. */
++	if (!vsp1->drm->num_inputs && pipe->num_inputs)
+ 		vsp1_drm_pipeline_run(pipe);
++	else if (vsp1->drm->num_inputs && !pipe->num_inputs)
++		stop = true;
  
- 	video->vsp1 = vsp1;
- 	video->rwpf = rwpf;
+ 	spin_unlock_irqrestore(&pipe->irqlock, flags);
+ 
+-	return 0;
++	if (stop)
++		vsp1_pipeline_stop(pipe);
+ }
+-EXPORT_SYMBOL_GPL(vsp1_du_setup_rpf);
++EXPORT_SYMBOL_GPL(vsp1_du_atomic_flush);
+ 
+ /* -----------------------------------------------------------------------------
+  * Initialization
+diff --git a/drivers/media/platform/vsp1/vsp1_drm.h b/drivers/media/platform/vsp1/vsp1_drm.h
+index 2ad320ab1e45..25d7f017feb4 100644
+--- a/drivers/media/platform/vsp1/vsp1_drm.h
++++ b/drivers/media/platform/vsp1/vsp1_drm.h
+@@ -15,8 +15,15 @@
+ 
+ #include "vsp1_pipe.h"
+ 
++/**
++ * vsp1_drm - State for the API exposed to the DRM driver
++ * @pipe: the VSP1 pipeline used for display
++ * @num_inputs: number of active pipeline inputs at the beginning of an update
++ * @update: the pipeline configuration has been updated
++ */
+ struct vsp1_drm {
+ 	struct vsp1_pipeline pipe;
++	unsigned int num_inputs;
+ 	bool update;
+ };
+ 
+diff --git a/include/media/vsp1.h b/include/media/vsp1.h
+index 2c1aea7066be..cc541753896f 100644
+--- a/include/media/vsp1.h
++++ b/include/media/vsp1.h
+@@ -23,8 +23,11 @@ int vsp1_du_init(struct device *dev);
+ int vsp1_du_setup_lif(struct device *dev, unsigned int width,
+ 		      unsigned int height);
+ 
+-int vsp1_du_setup_rpf(struct device *dev, unsigned int rpf, u32 pixelformat,
+-		      unsigned int pitch, dma_addr_t mem[2],
+-		      const struct v4l2_rect *src, const struct v4l2_rect *dst);
++int vsp1_du_atomic_begin(struct device *dev);
++int vsp1_du_atomic_update(struct device *dev, unsigned int rpf, u32 pixelformat,
++			  unsigned int pitch, dma_addr_t mem[2],
++			  const struct v4l2_rect *src,
++			  const struct v4l2_rect *dst);
++int vsp1_du_atomic_flush(struct device *dev);
+ 
+ #endif /* __MEDIA_VSP1_H__ */
 -- 
 2.4.10
 
