@@ -1,59 +1,32 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Sat, 26 Dec 2015 10:53:36 +0000
-Subject: Re: [PATCH v5 09/14] ARM: shmobile: koelsch: Enable DU device in DT
-Message-Id: <1921891.dabbkcGt9n@avalon>
+From: "=?UTF-8?q?Niklas=20S=C3=B6derlund?=" <niklas.soderlund@ragnatech.se>
+Date: Sat, 05 Dec 2015 17:51:30 +0000
+Subject: [PATCH v2] emev2: add slave support
+Message-Id: <1449337891-3880-1-git-send-email-niklas.soderlund+renesas@ragnatech.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414332679-15497-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1414332679-15497-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: wsa@the-dreams.de, linux-i2c@vger.kernel.org
+Cc: ian.molton@codethink.co.uk, laurent.pinchart@ideasonboard.com, magnus.damm@gmail.com, linux-sh@vger.kernel.org, =?UTF-8?q?Niklas=20S=C3=B6derlund?= <niklas.soderlund+renesas@ragnatech.se>
 
-Hi Sergei,
+Add i2c slave support to EMEV2.
 
-On Saturday 26 December 2015 02:45:55 Sergei Shtylyov wrote:
-> On 12/24/2015 10:54 PM, Sergei Shtylyov wrote:
-> >> Specify the DU output topology, enable the DU device and configure the
-> >> related pins.
-> >> 
-> >> Signed-off-by: Laurent Pinchart
-> >> <laurent.pinchart+renesas@ideasonboard.com>
-> >> ---
-> >> 
-> >>   arch/arm/boot/dts/r8a7791-koelsch.dts | 16 +++++++++++++---
-> >>   1 file changed, 13 insertions(+), 3 deletions(-)
-> >> 
-> >> diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts
-> >> b/arch/arm/boot/dts/r8a7791-koelsch.dts
-> >> index 53184637f160..0402c498b05b 100644
-> >> --- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-> >> +++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-> >> @@ -212,14 +212,24 @@
-> >>       };
-> >>   };
-> >> 
-> >> +&du {
-> >> +    pinctrl-0 = <&du_pins>;
-> >> +    pinctrl-names = "default";
-> >> +    status = "okay";
-> >> +
-> >> +    ports {
-> >> +        port@1 {
-> >> +            lvds_connector: endpoint {
-> > 
-> > I don't understand what this unreferenced label achieves. Also, the
-> > Koelsch schematics tells me LVDS is connected to DU0, not DU1...
-> 
-> OK, figured it out now! However in the absence of #include for a LCD
-> panel this still makes little sense.
+Tested using a EMEV2, BeagleBone Black and a 24c02 eeprom. While the
+EMEV2 provided a emulated eeprom on iic0 using slave-24c02 the Bone
+could talk to both the physical and the emulated eeprom. The EMEV2 could
+talk to the physical eeprom while still provide the emulated eeprom.
 
-That's right, but there's no panel mounted directly on the Koelsch board, so 
-we can't hardcode a particular panel model in r8a7791-koelsch.dts. This is 
-where DT overlays can be handy.
+Changes since v1:
+- Fixed sparse errors, thanks Wolfram
+- Updated email to contain +renesas
 
--- 
-Regards,
+Niklas S=C3=B6derlund (1):
+  i2c: emev2: add slave support
 
-Laurent Pinchart
+ drivers/i2c/busses/i2c-emev2.c | 112 +++++++++++++++++++++++++++++++++++++=
++++-
+ 1 file changed, 111 insertions(+), 1 deletion(-)
+
+--
+2.6.3
 
