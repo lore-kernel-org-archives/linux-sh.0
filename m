@@ -1,47 +1,50 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 07 Dec 2015 07:42:02 +0000
-Subject: [PATCH 0/8 v3] enable to use thermal-zone on r8a7790/1
-Message-Id: <87y4d6672t.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sat, 05 Dec 2015 02:12:50 +0000
+Subject: [PATCH v2 16/32] v4l: vsp1: Document the vsp1_pipeline structure
+Message-Id: <1449281586-25726-17-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, Zhang Rui <rui.zhang@intel.com>, Eduardo Valentin <edubezval@gmail.com>, Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-
-Hi
-
-These are v3 of thermal-zone support for r8a7790/r8a7791.
-Mainly, it cares return value of get_temp()
-
-I think 8) is needed on of-thermal (?)
-
-Kuninori Morimoto (8):
-      1) thermal: rcar: move rcar_thermal_dt_ids to upside
-      2) thermal: rcar: check every rcar_thermal_update_temp() return value
-      3) thermal: rcar: check irq possibility in rcar_thermal_irq_xxx()
-      4) thermal: rcar: retern error rcar_thermal_get_temp() if no ctemp update
-      5) thermal: rcar: enable to use thermal-zone on DT
-      6) ARM: shmobile: r8a7790: enable to use thermal-zone
-      7) ARM: shmobile: r8a7791: enable to use thermal-zone
-      8) thermal: of-thermal: of_thermal_set_trip_temp() call thermal_zone_device_update()
-
- Documentation/devicetree/bindings/thermal/rcar-thermal.txt | 37 +++++++++++++++++++++++++++++++++++--
- arch/arm/boot/dts/r8a7790.dtsi                             | 26 ++++++++++++++++++++++++--
- arch/arm/boot/dts/r8a7791.dtsi                             | 26 ++++++++++++++++++++++++--
- drivers/thermal/of-thermal.c                               |  2 ++
- drivers/thermal/rcar_thermal.c                             | 96 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++---------------------
- 5 files changed, 160 insertions(+), 27 deletions(-)
-
-Best regards
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-Kuninori Morimoto
---
-To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
---
-To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+ drivers/media/platform/vsp1/vsp1_pipe.h | 16 +++++++++++++++-
+ 1 file changed, 15 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/media/platform/vsp1/vsp1_pipe.h b/drivers/media/platform/vsp1/vsp1_pipe.h
+index 8553d5a03aa3..9c8ded1c29f6 100644
+--- a/drivers/media/platform/vsp1/vsp1_pipe.h
++++ b/drivers/media/platform/vsp1/vsp1_pipe.h
+@@ -29,9 +29,23 @@ enum vsp1_pipeline_state {
+ 
+ /*
+  * struct vsp1_pipeline - A VSP1 hardware pipeline
+- * @media: the media pipeline
++ * @pipe: the media pipeline
+  * @irqlock: protects the pipeline state
++ * @state: current state
++ * @wq: work queue to wait for state change completion
++ * @frame_end: frame end interrupt handler
+  * @lock: protects the pipeline use count and stream count
++ * @use_count: number of video nodes using the pipeline
++ * @stream_count: number of streaming video nodes
++ * @buffers_ready: bitmask of RPFs and WPFs with at least one buffer available
++ * @num_inputs: number of RPFs
++ * @inputs: array of RPFs in the pipeline
++ * @output: WPF at the output of the pipeline
++ * @bru: BRU entity, if present
++ * @lif: LIF entity, if present
++ * @uds: UDS entity, if present
++ * @uds_input: entity at the input of the UDS, if the UDS is present
++ * @entities: list of entities in the pipeline
+  */
+ struct vsp1_pipeline {
+ 	struct media_pipeline pipe;
+-- 
+2.4.10
+
