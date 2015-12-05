@@ -1,80 +1,119 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 18 Dec 2015 02:29:32 +0000
-Subject: [PATCH 02/25] ARM: shmobile: sh73a0: Add MSIOF device nodes
-Message-Id: <d74f61fee39d5896913d268b60884b13b43edee7.1450402264.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sat, 05 Dec 2015 02:12:46 +0000
+Subject: [PATCH v2 12/32] v4l: vsp1: Rename video pipeline functions to use vsp1_video prefix
+Message-Id: <1449281586-25726-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1450402264.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1450402264.git.horms+renesas@verge.net.au>
+References: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+Those functions are specific to video nodes, rename them for
+consistency.
 
-The sh73a0 has 4 MSIOF devices, located in the A3SP power area.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/sh73a0.dtsi | 44 +++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 44 insertions(+)
+ drivers/media/platform/vsp1/vsp1_video.c | 28 ++++++++++++++--------------
+ 1 file changed, 14 insertions(+), 14 deletions(-)
 
-diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
-index 635564ab98ed..3a6056f9f0d2 100644
---- a/arch/arm/boot/dts/sh73a0.dtsi
-+++ b/arch/arm/boot/dts/sh73a0.dtsi
-@@ -273,6 +273,50 @@
- 		status = "disabled";
- 	};
+diff --git a/drivers/media/platform/vsp1/vsp1_video.c b/drivers/media/platform/vsp1/vsp1_video.c
+index 6a55eba88dba..cd4c2481e4ec 100644
+--- a/drivers/media/platform/vsp1/vsp1_video.c
++++ b/drivers/media/platform/vsp1/vsp1_video.c
+@@ -308,9 +308,9 @@ vsp1_video_format_adjust(struct vsp1_video *video,
+  * Pipeline Management
+  */
  
-+	msiof0: spi@e6e20000 {
-+		compatible = "renesas,msiof-sh73a0", "renesas,sh-mobile-msiof";
-+		reg = <0xe6e20000 0x0064>;
-+		interrupts = <0 142 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp0_clks SH73A0_CLK_MSIOF0>;
-+		power-domains = <&pd_a3sp>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		status = "disabled";
-+	};
-+
-+	msiof1: spi@e6e10000 {
-+		compatible = "renesas,msiof-sh73a0", "renesas,sh-mobile-msiof";
-+		reg = <0xe6e10000 0x0064>;
-+		interrupts = <0 77 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp2_clks SH73A0_CLK_MSIOF1>;
-+		power-domains = <&pd_a3sp>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		status = "disabled";
-+	};
-+
-+	msiof2: spi@e6e00000 {
-+		compatible = "renesas,msiof-sh73a0", "renesas,sh-mobile-msiof";
-+		reg = <0xe6e00000 0x0064>;
-+		interrupts = <0 76 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp2_clks SH73A0_CLK_MSIOF2>;
-+		power-domains = <&pd_a3sp>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		status = "disabled";
-+	};
-+
-+	msiof3: spi@e6c90000 {
-+		compatible = "renesas,msiof-sh73a0", "renesas,sh-mobile-msiof";
-+		reg = <0xe6c90000 0x0064>;
-+		interrupts = <0 59 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp2_clks SH73A0_CLK_MSIOF3>;
-+		power-domains = <&pd_a3sp>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		status = "disabled";
-+	};
-+
- 	sdhi0: sd@ee100000 {
- 		compatible = "renesas,sdhi-sh73a0";
- 		reg = <0xee100000 0x100>;
+-static int vsp1_pipeline_validate_branch(struct vsp1_pipeline *pipe,
+-					 struct vsp1_rwpf *input,
+-					 struct vsp1_rwpf *output)
++static int vsp1_video_pipeline_validate_branch(struct vsp1_pipeline *pipe,
++					       struct vsp1_rwpf *input,
++					       struct vsp1_rwpf *output)
+ {
+ 	struct vsp1_entity *entity;
+ 	unsigned int entities = 0;
+@@ -384,8 +384,8 @@ static int vsp1_pipeline_validate_branch(struct vsp1_pipeline *pipe,
+ 	return 0;
+ }
+ 
+-static int vsp1_pipeline_validate(struct vsp1_pipeline *pipe,
+-				  struct vsp1_video *video)
++static int vsp1_video_pipeline_validate(struct vsp1_pipeline *pipe,
++					struct vsp1_video *video)
+ {
+ 	struct media_entity_graph graph;
+ 	struct media_entity *entity = &video->video.entity;
+@@ -437,8 +437,8 @@ static int vsp1_pipeline_validate(struct vsp1_pipeline *pipe,
+ 	 * contains no loop and that all branches end at the output WPF.
+ 	 */
+ 	for (i = 0; i < pipe->num_inputs; ++i) {
+-		ret = vsp1_pipeline_validate_branch(pipe, pipe->inputs[i],
+-						    pipe->output);
++		ret = vsp1_video_pipeline_validate_branch(pipe, pipe->inputs[i],
++							  pipe->output);
+ 		if (ret < 0)
+ 			goto error;
+ 	}
+@@ -450,8 +450,8 @@ error:
+ 	return ret;
+ }
+ 
+-static int vsp1_pipeline_init(struct vsp1_pipeline *pipe,
+-			      struct vsp1_video *video)
++static int vsp1_video_pipeline_init(struct vsp1_pipeline *pipe,
++				    struct vsp1_video *video)
+ {
+ 	int ret;
+ 
+@@ -459,7 +459,7 @@ static int vsp1_pipeline_init(struct vsp1_pipeline *pipe,
+ 
+ 	/* If we're the first user validate and initialize the pipeline. */
+ 	if (pipe->use_count = 0) {
+-		ret = vsp1_pipeline_validate(pipe, video);
++		ret = vsp1_video_pipeline_validate(pipe, video);
+ 		if (ret < 0)
+ 			goto done;
+ 	}
+@@ -472,7 +472,7 @@ done:
+ 	return ret;
+ }
+ 
+-static void vsp1_pipeline_cleanup(struct vsp1_pipeline *pipe)
++static void vsp1_video_pipeline_cleanup(struct vsp1_pipeline *pipe)
+ {
+ 	mutex_lock(&pipe->lock);
+ 
+@@ -742,7 +742,7 @@ static void vsp1_video_stop_streaming(struct vb2_queue *vq)
+ 	}
+ 	mutex_unlock(&pipe->lock);
+ 
+-	vsp1_pipeline_cleanup(pipe);
++	vsp1_video_pipeline_cleanup(pipe);
+ 	media_entity_pipeline_stop(&video->video.entity);
+ 
+ 	/* Remove all buffers from the IRQ queue. */
+@@ -883,7 +883,7 @@ vsp1_video_streamon(struct file *file, void *fh, enum v4l2_buf_type type)
+ 	if (ret < 0)
+ 		goto err_stop;
+ 
+-	ret = vsp1_pipeline_init(pipe, video);
++	ret = vsp1_video_pipeline_init(pipe, video);
+ 	if (ret < 0)
+ 		goto err_stop;
+ 
+@@ -895,7 +895,7 @@ vsp1_video_streamon(struct file *file, void *fh, enum v4l2_buf_type type)
+ 	return 0;
+ 
+ err_cleanup:
+-	vsp1_pipeline_cleanup(pipe);
++	vsp1_video_pipeline_cleanup(pipe);
+ err_stop:
+ 	media_entity_pipeline_stop(&video->video.entity);
+ 	return ret;
 -- 
-2.1.4
+2.4.10
 
