@@ -1,73 +1,121 @@
-From: "Michael S. Tsirkin" <mst@redhat.com>
-Date: Thu, 31 Dec 2015 19:07:02 +0000
-Subject: [PATCH v2 10/32] metag: reuse asm-generic/barrier.h
-Message-Id: <1451572003-2440-11-git-send-email-mst@redhat.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sat, 05 Dec 2015 02:13:00 +0000
+Subject: [PATCH v2 26/32] v4l: vsp1: Set the alpha value manually in RPF and WPF s_stream handlers
+Message-Id: <1449281586-25726-27-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1451572003-2440-1-git-send-email-mst@redhat.com>
-In-Reply-To: <1451572003-2440-1-git-send-email-mst-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+References: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Peter Zijlstra <peterz-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>, Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>, linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Cooper <andrew.cooper3-Sxgqhf6Nn4DQT0dZR+AlfA@public.gmane.org>, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Stefano Stabellini <stefano.stabellini-mvvWK6WmYclDPfheJLI6IQ@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>, linux-ia64-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linuxppc-dev-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org, linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sparclinux-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, linux-metag-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mips-6z/3iImG2C8G8FEW9MqTrA@public.gmane.org, x86-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, user-mode-linux-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, adi-buildroot-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-xtensa-PjhNF2WwrV/0Sa2dR60CXw@public.gmane.org, xen-devel-GuqFBffKawtpuQazS67q72D2FQJk+8+b@public.gmane.org, James Hogan <james.hogan-1AXoQHu6uovQT0dZR+AlfA@public.gmane.org>, Ingo Molnar <mingo-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Michael Ellerman <mpe@ellerman.>
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-On metag dma_rmb, dma_wmb, smp_store_mb, read_barrier_depends,
-smp_read_barrier_depends, smp_store_release and smp_load_acquire  match
-the asm-generic variants exactly. Drop the local definitions and pull in
-asm-generic/barrier.h instead.
+The RPF and WPF alpha values are set through V4L2 controls and applied
+when starting the video stream by a call to v4l2_ctrl_handler_setup().
+As that function uses the control handler mutex it can't be called in
+interrupt context, where the VSP+DU pipeline handler might need to
+reconfigure the pipeline.
 
-This is in preparation to refactoring this code area.
+Set the alpha value manually in the RPF and WPF s_stream handler to
+ensure that the hardware is properly configured even when controlled
+without the userspace API. If the userspace API is enabled protect that
+with the control lock to avoid race conditions with userspace.
 
-Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
-Acked-by: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/metag/include/asm/barrier.h | 25 ++-----------------------
- 1 file changed, 2 insertions(+), 23 deletions(-)
+ drivers/media/platform/vsp1/vsp1_rpf.c  | 16 ++++++++++++++--
+ drivers/media/platform/vsp1/vsp1_rwpf.h |  2 ++
+ drivers/media/platform/vsp1/vsp1_wpf.c  |  7 ++++---
+ 3 files changed, 20 insertions(+), 5 deletions(-)
 
-diff --git a/arch/metag/include/asm/barrier.h b/arch/metag/include/asm/barrier.h
-index 172b7e5..b5b778b 100644
---- a/arch/metag/include/asm/barrier.h
-+++ b/arch/metag/include/asm/barrier.h
-@@ -44,9 +44,6 @@ static inline void wr_fence(void)
- #define rmb()		barrier()
- #define wmb()		mb()
+diff --git a/drivers/media/platform/vsp1/vsp1_rpf.c b/drivers/media/platform/vsp1/vsp1_rpf.c
+index b9c39f9e4458..b1d4a46f230e 100644
+--- a/drivers/media/platform/vsp1/vsp1_rpf.c
++++ b/drivers/media/platform/vsp1/vsp1_rpf.c
+@@ -68,7 +68,9 @@ static const struct v4l2_ctrl_ops rpf_ctrl_ops = {
  
--#define dma_rmb()	rmb()
--#define dma_wmb()	wmb()
--
- #ifndef CONFIG_SMP
- #define fence()		do { } while (0)
- #define smp_mb()        barrier()
-@@ -81,27 +78,9 @@ static inline void fence(void)
- #endif
- #endif
- 
--#define read_barrier_depends()		do { } while (0)
--#define smp_read_barrier_depends()	do { } while (0)
--
--#define smp_store_mb(var, value) do { WRITE_ONCE(var, value); smp_mb(); } while (0)
--
--#define smp_store_release(p, v)						\
--do {									\
--	compiletime_assert_atomic_type(*p);				\
--	smp_mb();							\
--	WRITE_ONCE(*p, v);						\
--} while (0)
--
--#define smp_load_acquire(p)						\
--({									\
--	typeof(*p) ___p1 = READ_ONCE(*p);				\
--	compiletime_assert_atomic_type(*p);				\
--	smp_mb();							\
--	___p1;								\
--})
--
- #define smp_mb__before_atomic()	barrier()
- #define smp_mb__after_atomic()	barrier()
- 
-+#include <asm-generic/barrier.h>
+ static int rpf_s_stream(struct v4l2_subdev *subdev, int enable)
+ {
++	struct vsp1_pipeline *pipe = to_vsp1_pipeline(&subdev->entity);
+ 	struct vsp1_rwpf *rpf = to_rwpf(subdev);
++	struct vsp1_device *vsp1 = rpf->entity.vsp1;
+ 	const struct vsp1_format_info *fmtinfo = rpf->fmtinfo;
+ 	const struct v4l2_pix_format_mplane *format = &rpf->format;
+ 	const struct v4l2_rect *crop = &rpf->crop;
+@@ -148,6 +150,15 @@ static int rpf_s_stream(struct v4l2_subdev *subdev, int enable)
+ 	vsp1_rpf_write(rpf, VI6_RPF_ALPH_SEL, VI6_RPF_ALPH_SEL_AEXT_EXT |
+ 		       (fmtinfo->alpha ? VI6_RPF_ALPH_SEL_ASEL_PACKED
+ 				       : VI6_RPF_ALPH_SEL_ASEL_FIXED));
 +
- #endif /* _ASM_METAG_BARRIER_H */
++	if (vsp1->pdata.uapi)
++		mutex_lock(rpf->ctrls.lock);
++	vsp1_rpf_write(rpf, VI6_RPF_VRTCOL_SET,
++		       rpf->alpha->cur.val << VI6_RPF_VRTCOL_SET_LAYA_SHIFT);
++	vsp1_pipeline_propagate_alpha(pipe, &rpf->entity, rpf->alpha->cur.val);
++	if (vsp1->pdata.uapi)
++		mutex_unlock(rpf->ctrls.lock);
++
+ 	vsp1_rpf_write(rpf, VI6_RPF_MSK_CTRL, 0);
+ 	vsp1_rpf_write(rpf, VI6_RPF_CKEY_CTRL, 0);
+ 
+@@ -245,8 +256,9 @@ struct vsp1_rwpf *vsp1_rpf_create(struct vsp1_device *vsp1, unsigned int index)
+ 
+ 	/* Initialize the control handler. */
+ 	v4l2_ctrl_handler_init(&rpf->ctrls, 1);
+-	v4l2_ctrl_new_std(&rpf->ctrls, &rpf_ctrl_ops, V4L2_CID_ALPHA_COMPONENT,
+-			  0, 255, 1, 255);
++	rpf->alpha = v4l2_ctrl_new_std(&rpf->ctrls, &rpf_ctrl_ops,
++				       V4L2_CID_ALPHA_COMPONENT,
++				       0, 255, 1, 255);
+ 
+ 	rpf->entity.subdev.ctrl_handler = &rpf->ctrls;
+ 
+diff --git a/drivers/media/platform/vsp1/vsp1_rwpf.h b/drivers/media/platform/vsp1/vsp1_rwpf.h
+index 1a90c7c8e972..8e8235682ada 100644
+--- a/drivers/media/platform/vsp1/vsp1_rwpf.h
++++ b/drivers/media/platform/vsp1/vsp1_rwpf.h
+@@ -23,6 +23,7 @@
+ #define RWPF_PAD_SINK				0
+ #define RWPF_PAD_SOURCE				1
+ 
++struct v4l2_ctrl;
+ struct vsp1_rwpf;
+ struct vsp1_video;
+ 
+@@ -40,6 +41,7 @@ struct vsp1_rwpf_operations {
+ struct vsp1_rwpf {
+ 	struct vsp1_entity entity;
+ 	struct v4l2_ctrl_handler ctrls;
++	struct v4l2_ctrl *alpha;
+ 
+ 	struct vsp1_video *video;
+ 
+diff --git a/drivers/media/platform/vsp1/vsp1_wpf.c b/drivers/media/platform/vsp1/vsp1_wpf.c
+index d0edcde721bd..40eeaf2d76d2 100644
+--- a/drivers/media/platform/vsp1/vsp1_wpf.c
++++ b/drivers/media/platform/vsp1/vsp1_wpf.c
+@@ -156,7 +156,7 @@ static int wpf_s_stream(struct v4l2_subdev *subdev, int enable)
+ 	 */
+ 	if (vsp1->pdata.uapi)
+ 		mutex_lock(wpf->ctrls.lock);
+-	outfmt |= vsp1_wpf_read(wpf, VI6_WPF_OUTFMT) & VI6_WPF_OUTFMT_PDV_MASK;
++	outfmt |= wpf->alpha->cur.val << VI6_WPF_OUTFMT_PDV_SHIFT;
+ 	vsp1_wpf_write(wpf, VI6_WPF_OUTFMT, outfmt);
+ 	if (vsp1->pdata.uapi)
+ 		mutex_unlock(wpf->ctrls.lock);
+@@ -254,8 +254,9 @@ struct vsp1_rwpf *vsp1_wpf_create(struct vsp1_device *vsp1, unsigned int index)
+ 
+ 	/* Initialize the control handler. */
+ 	v4l2_ctrl_handler_init(&wpf->ctrls, 1);
+-	v4l2_ctrl_new_std(&wpf->ctrls, &wpf_ctrl_ops, V4L2_CID_ALPHA_COMPONENT,
+-			  0, 255, 1, 255);
++	wpf->alpha = v4l2_ctrl_new_std(&wpf->ctrls, &wpf_ctrl_ops,
++				       V4L2_CID_ALPHA_COMPONENT,
++				       0, 255, 1, 255);
+ 
+ 	wpf->entity.subdev.ctrl_handler = &wpf->ctrls;
+ 
 -- 
-MST
+2.4.10
 
