@@ -1,44 +1,70 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 18 Dec 2015 02:30:39 +0000
-Subject: [PATCH 1/6] ARM: shmobile: r7s72100 dtsi: Use "arm,pl390" for GIC
-Message-Id: <d9e1a0ef458302d90d4255b243922e45c25913b2.1450401902.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sat, 05 Dec 2015 02:12:43 +0000
+Subject: [PATCH v2 09/32] v4l: vsp1: Remove struct vsp1_pipeline num_video field
+Message-Id: <1449281586-25726-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1450401902.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1450401902.git.horms+renesas@verge.net.au>
+References: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+The field is always equal to the num_inputs field plus one, remove the
+duplicate.
 
-Replace the "arm,cortex-a9-gic" compatible value for the GIC by
-"arm,pl390", as the documentation states it is a PL390.
-This has been confirmed (thanks Chris, Wolfram!) by reading the
-GICD_IIDR register, which reports 0x0000043b (PL390 = 0x00, ARM 0x43b).
-
-This has no effect on runtime behavior, as currently the GIC driver
-treats both compatible values the same.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/r7s72100.dtsi | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ drivers/media/platform/vsp1/vsp1_video.c | 7 ++-----
+ drivers/media/platform/vsp1/vsp1_video.h | 1 -
+ 2 files changed, 2 insertions(+), 6 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r7s72100.dtsi b/arch/arm/boot/dts/r7s72100.dtsi
-index 060c32cbd669..4657d7fb5bce 100644
---- a/arch/arm/boot/dts/r7s72100.dtsi
-+++ b/arch/arm/boot/dts/r7s72100.dtsi
-@@ -329,7 +329,7 @@
- 	};
+diff --git a/drivers/media/platform/vsp1/vsp1_video.c b/drivers/media/platform/vsp1/vsp1_video.c
+index 8ffe54260725..e9c5682b0d74 100644
+--- a/drivers/media/platform/vsp1/vsp1_video.c
++++ b/drivers/media/platform/vsp1/vsp1_video.c
+@@ -396,7 +396,6 @@ static void __vsp1_pipeline_cleanup(struct vsp1_pipeline *pipe)
+ 	INIT_LIST_HEAD(&pipe->entities);
+ 	pipe->state = VSP1_PIPELINE_STOPPED;
+ 	pipe->buffers_ready = 0;
+-	pipe->num_video = 0;
+ 	pipe->num_inputs = 0;
+ 	pipe->output = NULL;
+ 	pipe->bru = NULL;
+@@ -423,10 +422,8 @@ static int vsp1_pipeline_validate(struct vsp1_pipeline *pipe,
+ 		struct vsp1_rwpf *rwpf;
+ 		struct vsp1_entity *e;
  
- 	gic: interrupt-controller@e8201000 {
--		compatible = "arm,cortex-a9-gic";
-+		compatible = "arm,pl390";
- 		#interrupt-cells = <3>;
- 		#address-cells = <0>;
- 		interrupt-controller;
+-		if (media_entity_type(entity) != MEDIA_ENT_T_V4L2_SUBDEV) {
+-			pipe->num_video++;
++		if (media_entity_type(entity) != MEDIA_ENT_T_V4L2_SUBDEV)
+ 			continue;
+-		}
+ 
+ 		subdev = media_entity_to_v4l2_subdev(entity);
+ 		e = to_vsp1_entity(subdev);
+@@ -894,7 +891,7 @@ static int vsp1_video_start_streaming(struct vb2_queue *vq, unsigned int count)
+ 	int ret;
+ 
+ 	mutex_lock(&pipe->lock);
+-	if (pipe->stream_count = pipe->num_video - 1) {
++	if (pipe->stream_count = pipe->num_inputs) {
+ 		if (pipe->uds) {
+ 			struct vsp1_uds *uds = to_uds(&pipe->uds->subdev);
+ 
+diff --git a/drivers/media/platform/vsp1/vsp1_video.h b/drivers/media/platform/vsp1/vsp1_video.h
+index 21096d82af05..e9d0e1ab9162 100644
+--- a/drivers/media/platform/vsp1/vsp1_video.h
++++ b/drivers/media/platform/vsp1/vsp1_video.h
+@@ -75,7 +75,6 @@ struct vsp1_pipeline {
+ 	unsigned int stream_count;
+ 	unsigned int buffers_ready;
+ 
+-	unsigned int num_video;
+ 	unsigned int num_inputs;
+ 	struct vsp1_rwpf *inputs[VSP1_MAX_RPF];
+ 	struct vsp1_rwpf *output;
 -- 
-2.1.4
+2.4.10
 
