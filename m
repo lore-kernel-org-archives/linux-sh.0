@@ -1,38 +1,37 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Fri, 25 Dec 2015 11:26:03 +0000
-Subject: [PATCH] usb: renesas_usbhs: gadget: fix giveback status code in usbhsg_pipe_disable()
-Message-Id: <1451042763-4648-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sat, 05 Dec 2015 02:12:51 +0000
+Subject: [PATCH v2 17/32] v4l: vsp1: Fix typo in VI6_DISP_IRQ_STA_DST register name
+Message-Id: <1449281586-25726-18-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-A udc driver should set the giveback status to -ESHUTDOWN in
-usb_ep_disable(). Otherwise, a gadget driver (e.g. g_serial) might
-request next data wrongly and it is possible to cause kernel panic.
+Rename the VI6_DISP_IRQ_STA_DSE register to VI6_DISP_IRQ_STA_DST to fix
+a typo and match the datasheet.
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- This patch is based on Felipe's usb.git / testing/fixes branch.
- (commit id = 5072cfc40a80cea3749fd3413b3896630d8c787e)
-
- drivers/usb/renesas_usbhs/mod_gadget.c | 2 +-
+ drivers/media/platform/vsp1/vsp1_regs.h | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/usb/renesas_usbhs/mod_gadget.c b/drivers/usb/renesas_usbhs/mod_gadget.c
-index 657f967..664b263 100644
---- a/drivers/usb/renesas_usbhs/mod_gadget.c
-+++ b/drivers/usb/renesas_usbhs/mod_gadget.c
-@@ -561,7 +561,7 @@ static int usbhsg_pipe_disable(struct usbhsg_uep *uep)
- 		if (!pkt)
- 			break;
+diff --git a/drivers/media/platform/vsp1/vsp1_regs.h b/drivers/media/platform/vsp1/vsp1_regs.h
+index 25b48738b147..8173ceaab9f9 100644
+--- a/drivers/media/platform/vsp1/vsp1_regs.h
++++ b/drivers/media/platform/vsp1/vsp1_regs.h
+@@ -46,7 +46,7 @@
+ #define VI6_DISP_IRQ_ENB_LNEE(n)	(1 << (n))
  
--		usbhsg_queue_pop(uep, usbhsg_pkt_to_ureq(pkt), -ECONNRESET);
-+		usbhsg_queue_pop(uep, usbhsg_pkt_to_ureq(pkt), -ESHUTDOWN);
- 	}
+ #define VI6_DISP_IRQ_STA		0x007c
+-#define VI6_DISP_IRQ_STA_DSE		(1 << 8)
++#define VI6_DISP_IRQ_STA_DST		(1 << 8)
+ #define VI6_DISP_IRQ_STA_MAE		(1 << 5)
+ #define VI6_DISP_IRQ_STA_LNE(n)		(1 << (n))
  
- 	usbhs_pipe_disable(pipe);
 -- 
-1.9.1
+2.4.10
 
