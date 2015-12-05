@@ -1,43 +1,107 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 04 Dec 2015 08:30:34 +0000
-Subject: [PATCH 0/8 v2] enable to use thermal-zone on r8a7790/1
-Message-Id: <87h9jyfwj7.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sat, 05 Dec 2015 02:12:35 +0000
+Subject: [PATCH v2 01/32] v4l: vsp1: Change the type of the rwpf field in struct vsp1_video
+Message-Id: <1449281586-25726-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, Zhang Rui <rui.zhang@intel.com>, Eduardo Valentin <edubezval@gmail.com>
-Cc: Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
+The rwpf field contains a pointer to the rpf or wpf associated with the
+video node. Instead of storing it as a vsp1_entity, store the
+corresponding vsp1_rwpf pointer to allow accessing the vsp1_rwpf fields
+directly.
 
-Hi
-
-These are v2 of thermal-zone support for r8a7790/r8a7791.
-Mainly, it cares return value of get_temp()
-
-I think 8) is needed on of-thermal (?)
-
-Kuninori Morimoto (8):
-      1) thermal: rcar: move rcar_thermal_dt_ids to upside
-      2) thermal: rcar: check every rcar_thermal_update_temp() return value
-      3) thermal: rcar: check irq possibility in rcar_thermal_irq_xxx()
-      4) thermal: rcar: retern error rcar_thermal_get_temp() if no ctemp update
-      5) thermal: rcar: enable to use thermal-zone on DT
-      6) ARM: shmobile: r8a7790: enable to use thermal-zone
-      7) ARM: shmobile: r8a7791: enable to use thermal-zone
-      8) thermal: of-thermal: of_thermal_set_trip_temp() call thermal_zone_device_update()
-
- Documentation/devicetree/bindings/thermal/rcar-thermal.txt | 37 +++++++++++++++++++++++++++++++++++--
- arch/arm/boot/dts/r8a7790.dtsi                             | 26 ++++++++++++++++++++++++--
- arch/arm/boot/dts/r8a7791.dtsi                             | 26 ++++++++++++++++++++++++--
- drivers/thermal/of-thermal.c                               |  2 ++
- drivers/thermal/rcar_thermal.c                             | 96 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++---------------------
- 5 files changed, 160 insertions(+), 27 deletions(-)
-
-Best regards
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-Kuninori Morimoto
---
-To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+ drivers/media/platform/vsp1/vsp1_rpf.c   | 2 +-
+ drivers/media/platform/vsp1/vsp1_video.c | 4 ++--
+ drivers/media/platform/vsp1/vsp1_video.h | 5 +++--
+ drivers/media/platform/vsp1/vsp1_wpf.c   | 2 +-
+ 4 files changed, 7 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/media/platform/vsp1/vsp1_rpf.c b/drivers/media/platform/vsp1/vsp1_rpf.c
+index cd5248a9a271..b57373a57dc6 100644
+--- a/drivers/media/platform/vsp1/vsp1_rpf.c
++++ b/drivers/media/platform/vsp1/vsp1_rpf.c
+@@ -271,7 +271,7 @@ struct vsp1_rwpf *vsp1_rpf_create(struct vsp1_device *vsp1, unsigned int index)
+ 	video->vsp1 = vsp1;
+ 	video->ops = &rpf_vdev_ops;
+ 
+-	ret = vsp1_video_init(video, &rpf->entity);
++	ret = vsp1_video_init(video, rpf);
+ 	if (ret < 0)
+ 		goto error;
+ 
+diff --git a/drivers/media/platform/vsp1/vsp1_video.c b/drivers/media/platform/vsp1/vsp1_video.c
+index 5ce88e1f5d71..698cc8aecfbe 100644
+--- a/drivers/media/platform/vsp1/vsp1_video.c
++++ b/drivers/media/platform/vsp1/vsp1_video.c
+@@ -1190,7 +1190,7 @@ static struct v4l2_file_operations vsp1_video_fops = {
+  * Initialization and Cleanup
+  */
+ 
+-int vsp1_video_init(struct vsp1_video *video, struct vsp1_entity *rwpf)
++int vsp1_video_init(struct vsp1_video *video, struct vsp1_rwpf *rwpf)
+ {
+ 	const char *direction;
+ 	int ret;
+@@ -1245,7 +1245,7 @@ int vsp1_video_init(struct vsp1_video *video, struct vsp1_entity *rwpf)
+ 	video->video.v4l2_dev = &video->vsp1->v4l2_dev;
+ 	video->video.fops = &vsp1_video_fops;
+ 	snprintf(video->video.name, sizeof(video->video.name), "%s %s",
+-		 rwpf->subdev.name, direction);
++		 rwpf->entity.subdev.name, direction);
+ 	video->video.vfl_type = VFL_TYPE_GRABBER;
+ 	video->video.release = video_device_release_empty;
+ 	video->video.ioctl_ops = &vsp1_video_ioctl_ops;
+diff --git a/drivers/media/platform/vsp1/vsp1_video.h b/drivers/media/platform/vsp1/vsp1_video.h
+index a929aa81cdbf..c1d9771c55ed 100644
+--- a/drivers/media/platform/vsp1/vsp1_video.h
++++ b/drivers/media/platform/vsp1/vsp1_video.h
+@@ -20,6 +20,7 @@
+ #include <media/media-entity.h>
+ #include <media/videobuf2-v4l2.h>
+ 
++struct vsp1_rwpf;
+ struct vsp1_video;
+ 
+ /*
+@@ -113,7 +114,7 @@ struct vsp1_video_operations {
+ 
+ struct vsp1_video {
+ 	struct vsp1_device *vsp1;
+-	struct vsp1_entity *rwpf;
++	struct vsp1_rwpf *rwpf;
+ 
+ 	const struct vsp1_video_operations *ops;
+ 
+@@ -140,7 +141,7 @@ static inline struct vsp1_video *to_vsp1_video(struct video_device *vdev)
+ 	return container_of(vdev, struct vsp1_video, video);
+ }
+ 
+-int vsp1_video_init(struct vsp1_video *video, struct vsp1_entity *rwpf);
++int vsp1_video_init(struct vsp1_video *video, struct vsp1_rwpf *rwpf);
+ void vsp1_video_cleanup(struct vsp1_video *video);
+ 
+ void vsp1_pipeline_frame_end(struct vsp1_pipeline *pipe);
+diff --git a/drivers/media/platform/vsp1/vsp1_wpf.c b/drivers/media/platform/vsp1/vsp1_wpf.c
+index 95b62f4f77e7..9ba5feee50de 100644
+--- a/drivers/media/platform/vsp1/vsp1_wpf.c
++++ b/drivers/media/platform/vsp1/vsp1_wpf.c
+@@ -271,7 +271,7 @@ struct vsp1_rwpf *vsp1_wpf_create(struct vsp1_device *vsp1, unsigned int index)
+ 	video->vsp1 = vsp1;
+ 	video->ops = &wpf_vdev_ops;
+ 
+-	ret = vsp1_video_init(video, &wpf->entity);
++	ret = vsp1_video_init(video, wpf);
+ 	if (ret < 0)
+ 		goto error;
+ 
+-- 
+2.4.10
+
