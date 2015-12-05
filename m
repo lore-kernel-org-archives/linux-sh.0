@@ -1,91 +1,75 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Thu, 03 Dec 2015 15:51:35 +0000
-Subject: [PATCH 5/9] i2c: rcar: honor additional i2c timings from DT
-Message-Id: <1449157899-6572-6-git-send-email-wsa@the-dreams.de>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sat, 05 Dec 2015 02:12:47 +0000
+Subject: [PATCH v2 13/32] v4l: vsp1: Extract pipeline initialization code into a function
+Message-Id: <1449281586-25726-14-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449157899-6572-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1449157899-6572-1-git-send-email-wsa@the-dreams.de>
+References: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, linux-rockchip@lists.infradead.org, Mika Westerberg <mika.westerberg@linux.intel.com>, Andy Shevchenko <andriy.shevchenko@linux.intel.com>, Jarkko Nikula <jarkko.nikula@linux.intel.com>
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+The code will be reused outside of vsp1_video.c.
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- Documentation/devicetree/bindings/i2c/i2c-rcar.txt |  4 ++++
- drivers/i2c/busses/i2c-rcar.c                      | 21 ++++++++++++---------
- 2 files changed, 16 insertions(+), 9 deletions(-)
+ drivers/media/platform/vsp1/vsp1_pipe.c  | 10 ++++++++++
+ drivers/media/platform/vsp1/vsp1_pipe.h  |  1 +
+ drivers/media/platform/vsp1/vsp1_video.c |  6 +-----
+ 3 files changed, 12 insertions(+), 5 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/i2c/i2c-rcar.txt b/Documentation/devicetree/bindings/i2c/i2c-rcar.txt
-index ea406eb20fa5ad..95e97223a71c83 100644
---- a/Documentation/devicetree/bindings/i2c/i2c-rcar.txt
-+++ b/Documentation/devicetree/bindings/i2c/i2c-rcar.txt
-@@ -20,6 +20,10 @@ Optional properties:
-   propoerty indicates the default frequency 100 kHz.
- - clocks: clock specifier.
+diff --git a/drivers/media/platform/vsp1/vsp1_pipe.c b/drivers/media/platform/vsp1/vsp1_pipe.c
+index 199d57f1fe06..524420ed6333 100644
+--- a/drivers/media/platform/vsp1/vsp1_pipe.c
++++ b/drivers/media/platform/vsp1/vsp1_pipe.c
+@@ -48,6 +48,16 @@ void vsp1_pipeline_reset(struct vsp1_pipeline *pipe)
+ 	pipe->uds = NULL;
+ }
  
-+- i2c-scl-falling-time-ns: see i2c.txt
-+- i2c-scl-internal-delay-ns: see i2c.txt
-+- i2c-scl-rising-time-ns: see i2c.txt
++void vsp1_pipeline_init(struct vsp1_pipeline *pipe)
++{
++	mutex_init(&pipe->lock);
++	spin_lock_init(&pipe->irqlock);
++	init_waitqueue_head(&pipe->wq);
 +
- Examples :
- 
- i2c0: i2c@e6508000 {
-diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
-index 05274fda57eb08..cd1796e51764ee 100644
---- a/drivers/i2c/busses/i2c-rcar.c
-+++ b/drivers/i2c/busses/i2c-rcar.c
-@@ -164,12 +164,15 @@ static int rcar_i2c_bus_barrier(struct rcar_i2c_priv *priv)
- 
- static int rcar_i2c_clock_calculate(struct rcar_i2c_priv *priv, struct i2c_timings *t)
++	INIT_LIST_HEAD(&pipe->entities);
++	pipe->state = VSP1_PIPELINE_STOPPED;
++}
++
+ void vsp1_pipeline_run(struct vsp1_pipeline *pipe)
  {
--	u32 scgd, cdf, round, ick, scl, cdf_width;
-+	u32 scgd, cdf, round, ick, sum, scl, cdf_width;
- 	unsigned long rate;
- 	struct device *dev = rcar_i2c_priv_to_dev(priv);
+ 	struct vsp1_device *vsp1 = pipe->output->entity.vsp1;
+diff --git a/drivers/media/platform/vsp1/vsp1_pipe.h b/drivers/media/platform/vsp1/vsp1_pipe.h
+index f8a099fba973..8553d5a03aa3 100644
+--- a/drivers/media/platform/vsp1/vsp1_pipe.h
++++ b/drivers/media/platform/vsp1/vsp1_pipe.h
+@@ -67,6 +67,7 @@ static inline struct vsp1_pipeline *to_vsp1_pipeline(struct media_entity *e)
+ }
  
- 	/* Fall back to previously used values if not supplied */
- 	t->bus_freq_hz = t->bus_freq_hz ?: 100000;
-+	t->scl_fall_ns = t->scl_fall_ns ?: 35;
-+	t->scl_rise_ns = t->scl_rise_ns ?: 200;
-+	t->scl_int_delay_ns = t->scl_int_delay_ns ?: 50;
+ void vsp1_pipeline_reset(struct vsp1_pipeline *pipe);
++void vsp1_pipeline_init(struct vsp1_pipeline *pipe);
  
- 	switch (priv->devtype) {
- 	case I2C_RCAR_GEN1:
-@@ -193,9 +196,9 @@ static int rcar_i2c_clock_calculate(struct rcar_i2c_priv *priv, struct i2c_timin
- 	 * SCL	= ick / (20 + SCGD * 8 + F[(ticf + tr + intd) * ick])
- 	 *
- 	 * ick  : I2C internal clock < 20 MHz
--	 * ticf : I2C SCL falling time  =  35 ns here
--	 * tr   : I2C SCL rising  time  = 200 ns here
--	 * intd : LSI internal delay    =  50 ns here
-+	 * ticf : I2C SCL falling time
-+	 * tr   : I2C SCL rising  time
-+	 * intd : LSI internal delay
- 	 * clkp : peripheral_clk
- 	 * F[]  : integer up-valuation
- 	 */
-@@ -211,12 +214,12 @@ static int rcar_i2c_clock_calculate(struct rcar_i2c_priv *priv, struct i2c_timin
- 	 * it is impossible to calculate large scale
- 	 * number on u32. separate it
- 	 *
--	 * F[(ticf + tr + intd) * ick]
--	 *  = F[(35 + 200 + 50)ns * ick]
--	 *  = F[285 * ick / 1000000000]
--	 *  = F[(ick / 1000000) * 285 / 1000]
-+	 * F[(ticf + tr + intd) * ick] with sum = (ticf + tr + intd)
-+	 *  = F[sum * ick / 1000000000]
-+	 *  = F[(ick / 1000000) * sum / 1000]
- 	 */
--	round = (ick + 500000) / 1000000 * 285;
-+	sum = t->scl_fall_ns + t->scl_rise_ns + t->scl_int_delay_ns;
-+	round = (ick + 500000) / 1000000 * sum;
- 	round = (round + 500) / 1000;
+ void vsp1_pipeline_run(struct vsp1_pipeline *pipe);
+ bool vsp1_pipeline_stopped(struct vsp1_pipeline *pipe);
+diff --git a/drivers/media/platform/vsp1/vsp1_video.c b/drivers/media/platform/vsp1/vsp1_video.c
+index cd4c2481e4ec..b82ff1a0371b 100644
+--- a/drivers/media/platform/vsp1/vsp1_video.c
++++ b/drivers/media/platform/vsp1/vsp1_video.c
+@@ -1013,11 +1013,7 @@ struct vsp1_video *vsp1_video_create(struct vsp1_device *vsp1,
+ 	spin_lock_init(&video->irqlock);
+ 	INIT_LIST_HEAD(&video->irqqueue);
  
- 	/*
+-	mutex_init(&video->pipe.lock);
+-	spin_lock_init(&video->pipe.irqlock);
+-	INIT_LIST_HEAD(&video->pipe.entities);
+-	init_waitqueue_head(&video->pipe.wq);
+-	video->pipe.state = VSP1_PIPELINE_STOPPED;
++	vsp1_pipeline_init(&video->pipe);
+ 	video->pipe.frame_end = vsp1_video_pipeline_frame_end;
+ 
+ 	/* Initialize the media entity... */
 -- 
-2.1.4
+2.4.10
 
