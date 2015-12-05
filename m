@@ -1,49 +1,44 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 17 Dec 2015 05:24:51 +0000
-Subject: [PATCH 1/7] ARM: shmobile: defconfig: Enable CONFIG_PRINTK_TIME
-Message-Id: <0d8587b49a445d11e497fbe296576e7ab7c54109.1450315426.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sat, 05 Dec 2015 02:13:03 +0000
+Subject: [PATCH v2 29/32] v4l: vsp1: Disconnect unused RPFs from the DRM pipeline
+Message-Id: <1449281586-25726-30-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1450315426.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1450315426.git.horms+renesas@verge.net.au>
+References: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-
-Enable timestamps for kernel log output to improve debugging.
-You can always use "dmesg -t" to strip the timestamps.
-
-Don't specify CONFIG_LOG_BUF_SHIFT while we're at it.  There's a
-reason the default in Kconfig is higher ;-)
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/configs/shmobile_defconfig | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ drivers/media/platform/vsp1/vsp1_drm.c | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
-index 3aef019c0de7..e51f7a79c730 100644
---- a/arch/arm/configs/shmobile_defconfig
-+++ b/arch/arm/configs/shmobile_defconfig
-@@ -2,7 +2,6 @@ CONFIG_SYSVIPC=y
- CONFIG_NO_HZ=y
- CONFIG_IKCONFIG=y
- CONFIG_IKCONFIG_PROC=y
--CONFIG_LOG_BUF_SHIFT
- CONFIG_BLK_DEV_INITRD=y
- CONFIG_CC_OPTIMIZE_FOR_SIZE=y
- CONFIG_SYSCTL_SYSCALL=y
-@@ -199,6 +198,7 @@ CONFIG_NFS_V4_1=y
- CONFIG_ROOT_NFS=y
- CONFIG_NLS_CODEPAGE_437=y
- CONFIG_NLS_ISO8859_1=y
-+CONFIG_PRINTK_TIME=y
- # CONFIG_ENABLE_WARN_DEPRECATED is not set
- # CONFIG_ENABLE_MUST_CHECK is not set
- # CONFIG_ARM_UNWIND is not set
+diff --git a/drivers/media/platform/vsp1/vsp1_drm.c b/drivers/media/platform/vsp1/vsp1_drm.c
+index 2969d570f462..5cef619b708d 100644
+--- a/drivers/media/platform/vsp1/vsp1_drm.c
++++ b/drivers/media/platform/vsp1/vsp1_drm.c
+@@ -38,13 +38,17 @@ static int vsp1_drm_pipeline_run(struct vsp1_pipeline *pipe)
+ 		struct vsp1_entity *entity;
+ 
+ 		list_for_each_entry(entity, &pipe->entities, list_pipe) {
+-			/* Skip unused RPFs. */
++			/* Disconnect unused RPFs from the pipeline. */
+ 			if (entity->type = VSP1_ENTITY_RPF) {
+ 				struct vsp1_rwpf *rpf  					to_rwpf(&entity->subdev);
+ 
+-				if (!pipe->inputs[rpf->entity.index])
++				if (!pipe->inputs[rpf->entity.index]) {
++					vsp1_write(entity->vsp1,
++						   entity->route->reg,
++						   VI6_DPR_NODE_UNUSED);
+ 					continue;
++				}
+ 			}
+ 
+ 			vsp1_entity_route_setup(entity);
 -- 
-2.1.4
+2.4.10
 
