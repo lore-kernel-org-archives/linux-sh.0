@@ -1,60 +1,42 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 07 Dec 2015 07:42:50 +0000
-Subject: [PATCH 1/8 v3] thermal: rcar: move rcar_thermal_dt_ids to upside
-Message-Id: <87wpsq671g.wl%kuninori.morimoto.gx@renesas.com>
+From: Zhaoxiu Zeng <zhaoxiu.zeng@gmail.com>
+Date: Sun, 06 Dec 2015 09:42:22 +0000
+Subject: [PATCH 01/10] sh: Replace "hweight_long(flags) != 1" with "!is_power_of_2(flags)"
+Message-Id: <1449394942-13964-1-git-send-email-zhaoxiu.zeng@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87y4d6672t.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87y4d6672t.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, Zhang Rui <rui.zhang@intel.com>, Eduardo Valentin <edubezval@gmail.com>, Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: linux-sh@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org, Zeng Zhaoxiu <zhaoxiu.zeng@gmail.com>
 
+From: Zeng Zhaoxiu <zhaoxiu.zeng@gmail.com>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-
-This patch is prepare for of-thermal support.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Zeng Zhaoxiu <zhaoxiu.zeng@gmail.com>
 ---
-v2 -> v3
+ arch/sh/kernel/io_trapped.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
- - no change
-
- drivers/thermal/rcar_thermal.c | 12 ++++++------
- 1 file changed, 6 insertions(+), 6 deletions(-)
-
-diff --git a/drivers/thermal/rcar_thermal.c b/drivers/thermal/rcar_thermal.c
-index 13d01ed..96707a6 100644
---- a/drivers/thermal/rcar_thermal.c
-+++ b/drivers/thermal/rcar_thermal.c
-@@ -81,6 +81,12 @@ struct rcar_thermal_priv {
- # define rcar_force_update_temp(priv)	0
- #endif
+diff --git a/arch/sh/kernel/io_trapped.c b/arch/sh/kernel/io_trapped.c
+index f8ce362..d8f32bf 100644
+--- a/arch/sh/kernel/io_trapped.c
++++ b/arch/sh/kernel/io_trapped.c
+@@ -15,6 +15,7 @@
+ #include <linux/vmalloc.h>
+ #include <linux/module.h>
+ #include <linux/init.h>
++#include <linux/log2.h>
+ #include <asm/mmu_context.h>
+ #include <asm/uaccess.h>
+ #include <asm/io.h>
+@@ -62,7 +63,7 @@ int register_trapped_io(struct trapped_io *tiop)
+ 	}
  
-+static const struct of_device_id rcar_thermal_dt_ids[] = {
-+	{ .compatible = "renesas,rcar-thermal", },
-+	{},
-+};
-+MODULE_DEVICE_TABLE(of, rcar_thermal_dt_ids);
-+
- /*
-  *		basic functions
-  */
-@@ -484,12 +490,6 @@ error_unregister:
- 	return ret;
- }
+ 	/* support IORESOURCE_IO _or_ MEM, not both */
+-	if (hweight_long(flags) != 1)
++	if (!is_power_of_2(flags))
+ 		goto bad;
  
--static const struct of_device_id rcar_thermal_dt_ids[] = {
--	{ .compatible = "renesas,rcar-thermal", },
--	{},
--};
--MODULE_DEVICE_TABLE(of, rcar_thermal_dt_ids);
--
- static struct platform_driver rcar_thermal_driver = {
- 	.driver	= {
- 		.name	= "rcar_thermal",
+ 	n = len >> PAGE_SHIFT;
 -- 
-1.9.1
+2.5.0
 
