@@ -1,56 +1,41 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 14 Dec 2015 01:49:06 +0000
-Subject: Re: [PATCH/RFC 08/19] ARM: shmobile: r8a7793: add R-Car sound support to device tree
-Message-Id: <20151214014906.GB13945@verge.net.au>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Sun, 06 Dec 2015 11:42:20 +0000
+Subject: [PATCH net] ravb: Remove clear unhandled interrupt
+Message-Id: <1449402140-24272-1-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449802376-11301-1-git-send-email-horms+renesas@verge.net.au>
- <1449802376-11301-9-git-send-email-horms+renesas@verge.net.au>
- <CAMuHMdWfWcZ9jGvgZBgAXH7z7OZ79LJJ+-ki+REamBJBJc5ZQw@mail.gmail.com>
-In-Reply-To: <CAMuHMdWfWcZ9jGvgZBgAXH7z7OZ79LJJ+-ki+REamBJBJc5ZQw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: netdev@vger.kernel.org
+Cc: "David S. Miller" <davem@davemloft.net>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-On Fri, Dec 11, 2015 at 10:44:11AM +0100, Geert Uytterhoeven wrote:
-> On Fri, Dec 11, 2015 at 3:52 AM, Simon Horman
-> <horms+renesas@verge.net.au> wrote:
-> > Instantiate R-Car sound node in r8a7793 device tree.
-> > This only supports PIO transfers.
-> >
-> > Based on similar work for the r8a7791 by Kuninori Morimoto.
-> >
-> > Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> > ---
-> >  arch/arm/boot/dts/r8a7793.dtsi | 83 ++++++++++++++++++++++++++++++++++++++++++
-> >  1 file changed, 83 insertions(+)
-> >
-> > diff --git a/arch/arm/boot/dts/r8a7793.dtsi b/arch/arm/boot/dts/r8a7793.dtsi
-> > index 99ee88e0e8be..5b02b0b1d7ac 100644
-> > --- a/arch/arm/boot/dts/r8a7793.dtsi
-> > +++ b/arch/arm/boot/dts/r8a7793.dtsi
-> > @@ -1093,4 +1093,87 @@
-> >                 #iommu-cells = <1>;
-> >                 status = "disabled";
-> >         };
-> > +
-> > +       rcar_sound: sound@ec500000 {
-> > +               /*
-> > +                * #sound-dai-cells is required
-> > +                *
-> > +                * Single DAI : #sound-dai-cells = <0>;         <&rcar_sound>;
-> > +                * Multi  DAI : #sound-dai-cells = <1>;         <&rcar_sound N>;
-> > +                */
-> > +               compatible =  "renesas,rcar_sound-r8a7793", "renesas,rcar_sound-gen2";
-> > +               reg =   <0 0xec500000 0 0x1000>, /* SCU */
-> > +                       <0 0xec5a0000 0 0x100>,  /* ADG */
-> > +                       <0 0xec540000 0 0x1000>, /* SSIU */
-> > +                       <0 0xec541000 0 0x280>;  /* SSI */
-> > +               reg-names = "scu", "adg", "ssiu", "ssi";
-> 
-> Missing "audmapp", for Audio DMAC peri peri?
+From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
 
-Thanks! I have added peri peri and Audio appears to now work with DMA
-(though I only have remote access to the gose board so I can't verify
- audio actually works).
+AVB-DMAC Reception Warning interrupt is not enabled, so it is not
+necessary to clear the interrupt.
+
+Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+---
+
+This patch is based on the master branch of David Miller's networking
+tree.
+
+ drivers/net/ethernet/renesas/ravb_main.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/drivers/net/ethernet/renesas/ravb_main.c b/drivers/net/ethernet/renesas/ravb_main.c
+index ed5da4d..b8fd5a5 100644
+--- a/drivers/net/ethernet/renesas/ravb_main.c
++++ b/drivers/net/ethernet/renesas/ravb_main.c
+@@ -1471,7 +1471,6 @@ static int ravb_close(struct net_device *ndev)
+ 
+ 	/* Disable interrupts by clearing the interrupt masks. */
+ 	ravb_write(ndev, 0, RIC0);
+-	ravb_write(ndev, 0, RIC1);
+ 	ravb_write(ndev, 0, RIC2);
+ 	ravb_write(ndev, 0, TIC);
+ 
+-- 
+1.9.1
+
