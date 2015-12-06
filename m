@@ -1,59 +1,74 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Tue, 08 Dec 2015 09:37:50 +0000
-Subject: [PATCH v2 6/9] ARM: shmobile: r8a7790: dtsi: add internal delay for i2c IPs
-Message-Id: <1449567473-2084-7-git-send-email-wsa@the-dreams.de>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Sun, 06 Dec 2015 02:46:14 +0000
+Subject: Re: [PATCH 2/5] [media] v4l: vsp1: create pad links after subdev registration
+Message-Id: <2189762.YSqxXoib1X@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449567473-2084-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1449567473-2084-1-git-send-email-wsa@the-dreams.de>
+References: <1441296036-20727-1-git-send-email-javier@osg.samsung.com> <1441296036-20727-3-git-send-email-javier@osg.samsung.com>
+In-Reply-To: <1441296036-20727-3-git-send-email-javier@osg.samsung.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, linux-rockchip@lists.infradead.org, Mika Westerberg <mika.westerberg@linux.intel.com>, Andy Shevchenko <andriy.shevchenko@linux.intel.com>, Jarkko Nikula <jarkko.nikula@linux.intel.com>
+To: Javier Martinez Canillas <javier@osg.samsung.com>
+Cc: linux-kernel@vger.kernel.org, Hans Verkuil <hans.verkuil@cisco.com>, Mauro Carvalho Chehab <mchehab@osg.samsung.com>, linux-sh@vger.kernel.org, linux-media@vger.kernel.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Hi Javier,
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
----
- arch/arm/boot/dts/r8a7790.dtsi | 4 ++++
- 1 file changed, 4 insertions(+)
+Thank you for the patch.
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 6cfd0dc79bbec0..64a3f4a05f36d0 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -417,6 +417,7 @@
- 		interrupts = <0 287 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp9_clks R8A7790_CLK_I2C0>;
- 		power-domains = <&cpg_clocks>;
-+		i2c-scl-internal-delay-ns = <110>;
- 		status = "disabled";
- 	};
- 
-@@ -428,6 +429,7 @@
- 		interrupts = <0 288 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp9_clks R8A7790_CLK_I2C1>;
- 		power-domains = <&cpg_clocks>;
-+		i2c-scl-internal-delay-ns = <6>;
- 		status = "disabled";
- 	};
- 
-@@ -439,6 +441,7 @@
- 		interrupts = <0 286 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp9_clks R8A7790_CLK_I2C2>;
- 		power-domains = <&cpg_clocks>;
-+		i2c-scl-internal-delay-ns = <6>;
- 		status = "disabled";
- 	};
- 
-@@ -450,6 +453,7 @@
- 		interrupts = <0 290 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp9_clks R8A7790_CLK_I2C3>;
- 		power-domains = <&cpg_clocks>;
-+		i2c-scl-internal-delay-ns = <110>;
- 		status = "disabled";
- 	};
- 
+On Thursday 03 September 2015 18:00:33 Javier Martinez Canillas wrote:
+> The vsp1 driver creates the pads links before the media entities are
+> registered with the media device. This doesn't work now that object
+> IDs are used to create links so the media_device has to be set.
+> 
+> Move entities registration logic before pads links creation.
+> 
+> Signed-off-by: Javier Martinez Canillas <javier@osg.samsung.com>
+
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+
+> ---
+> 
+>  drivers/media/platform/vsp1/vsp1_drv.c | 16 ++++++++--------
+>  1 file changed, 8 insertions(+), 8 deletions(-)
+> 
+> diff --git a/drivers/media/platform/vsp1/vsp1_drv.c
+> b/drivers/media/platform/vsp1/vsp1_drv.c index 9cd94a76a9ed..2aa427d3ff39
+> 100644
+> --- a/drivers/media/platform/vsp1/vsp1_drv.c
+> +++ b/drivers/media/platform/vsp1/vsp1_drv.c
+> @@ -250,6 +250,14 @@ static int vsp1_create_entities(struct vsp1_device
+> *vsp1) list_add_tail(&wpf->entity.list_dev, &vsp1->entities);
+>  	}
+> 
+> +	/* Register all subdevs. */
+> +	list_for_each_entry(entity, &vsp1->entities, list_dev) {
+> +		ret = v4l2_device_register_subdev(&vsp1->v4l2_dev,
+> +						  &entity->subdev);
+> +		if (ret < 0)
+> +			goto done;
+> +	}
+> +
+>  	/* Create links. */
+>  	list_for_each_entry(entity, &vsp1->entities, list_dev) {
+>  		if (entity->type = VSP1_ENTITY_LIF ||
+> @@ -269,14 +277,6 @@ static int vsp1_create_entities(struct vsp1_device
+> *vsp1) return ret;
+>  	}
+> 
+> -	/* Register all subdevs. */
+> -	list_for_each_entry(entity, &vsp1->entities, list_dev) {
+> -		ret = v4l2_device_register_subdev(&vsp1->v4l2_dev,
+> -						  &entity->subdev);
+> -		if (ret < 0)
+> -			goto done;
+> -	}
+> -
+>  	ret = v4l2_device_register_subdev_nodes(&vsp1->v4l2_dev);
+> 
+>  done:
+
 -- 
-2.1.4
+Regards,
+
+Laurent Pinchart
 
