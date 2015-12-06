@@ -1,109 +1,57 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sat, 05 Dec 2015 02:12:53 +0000
-Subject: [PATCH v2 19/32] v4l: vsp1: Remove unused module read functions
-Message-Id: <1449281586-25726-20-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Li Bin <huawei.libin@huawei.com>
+Date: Sun, 06 Dec 2015 02:02:57 +0000
+Subject: [PATCH v2 4/5] sh: ftrace: fix the comments for ftrace_modify_code
+Message-Id: <1449367378-29430-5-git-send-email-huawei.libin@huawei.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1449367378-29430-1-git-send-email-huawei.libin@huawei.com>
+In-Reply-To: <1449367378-29430-1-git-send-email-huawei.libin@huawei.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
+To: rostedt@goodmis.org, mingo@redhat.com
+Cc: linux-kernel@vger.kernel.org, Li Bin <huawei.libin@huawei.com>, linux-sh@vger.kernel.org
+
+There is no need to worry about module and __init text disappearing
+case, because that ftrace has a module notifier that is called when
+a module is being unloaded and before the text goes away and this
+code grabs the ftrace_lock mutex and removes the module functions
+from the ftrace list, such that it will no longer do any
+modifications to that module's text, the update to make functions
+be traced or not is done under the ftrace_lock mutex as well.
+And by now, __init section codes should not been modified
+by ftrace, because it is black listed in recordmcount.c and
+ignored by ftrace.
+
 Cc: linux-sh@vger.kernel.org
-
-Several module read functions are not used, remove them.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Suggested-by: Steven Rostedt <rostedt@goodmis.org>
+Signed-off-by: Li Bin <huawei.libin@huawei.com>
 ---
- drivers/media/platform/vsp1/vsp1_bru.c | 5 -----
- drivers/media/platform/vsp1/vsp1_lif.c | 5 -----
- drivers/media/platform/vsp1/vsp1_lut.c | 5 -----
- drivers/media/platform/vsp1/vsp1_rpf.c | 6 ------
- drivers/media/platform/vsp1/vsp1_uds.c | 6 ------
- 5 files changed, 27 deletions(-)
+ arch/sh/kernel/ftrace.c |   12 +++++-------
+ 1 files changed, 5 insertions(+), 7 deletions(-)
 
-diff --git a/drivers/media/platform/vsp1/vsp1_bru.c b/drivers/media/platform/vsp1/vsp1_bru.c
-index b4cc9bc478af..841bc6664bca 100644
---- a/drivers/media/platform/vsp1/vsp1_bru.c
-+++ b/drivers/media/platform/vsp1/vsp1_bru.c
-@@ -28,11 +28,6 @@
-  * Device Access
-  */
+diff --git a/arch/sh/kernel/ftrace.c b/arch/sh/kernel/ftrace.c
+index 079d70e..38993e0 100644
+--- a/arch/sh/kernel/ftrace.c
++++ b/arch/sh/kernel/ftrace.c
+@@ -212,13 +212,11 @@ static int ftrace_modify_code(unsigned long ip, unsigned char *old_code,
+ 	unsigned char replaced[MCOUNT_INSN_SIZE];
  
--static inline u32 vsp1_bru_read(struct vsp1_bru *bru, u32 reg)
--{
--	return vsp1_read(bru->entity.vsp1, reg);
--}
--
- static inline void vsp1_bru_write(struct vsp1_bru *bru, u32 reg, u32 data)
- {
- 	vsp1_write(bru->entity.vsp1, reg, data);
-diff --git a/drivers/media/platform/vsp1/vsp1_lif.c b/drivers/media/platform/vsp1/vsp1_lif.c
-index 39fa5ef20fbb..b868bce08982 100644
---- a/drivers/media/platform/vsp1/vsp1_lif.c
-+++ b/drivers/media/platform/vsp1/vsp1_lif.c
-@@ -26,11 +26,6 @@
-  * Device Access
-  */
+ 	/*
+-	 * Note: Due to modules and __init, code can
+-	 *  disappear and change, we need to protect against faulting
+-	 *  as well as code changing. We do this by using the
+-	 *  probe_kernel_* functions.
+-	 *
+-	 * No real locking needed, this code is run through
+-	 * kstop_machine, or before SMP starts.
++	 * Note:
++	 * We are paranoid about modifying text, as if a bug was to happen, it
++	 * could cause us to read or write to someplace that could cause harm.
++	 * Carefully read and modify the code with probe_kernel_*(), and make
++	 * sure what we read is what we expected it to be before modifying it.
+ 	 */
  
--static inline u32 vsp1_lif_read(struct vsp1_lif *lif, u32 reg)
--{
--	return vsp1_read(lif->entity.vsp1, reg);
--}
--
- static inline void vsp1_lif_write(struct vsp1_lif *lif, u32 reg, u32 data)
- {
- 	vsp1_write(lif->entity.vsp1, reg, data);
-diff --git a/drivers/media/platform/vsp1/vsp1_lut.c b/drivers/media/platform/vsp1/vsp1_lut.c
-index 656ec272a414..9e33caa9c616 100644
---- a/drivers/media/platform/vsp1/vsp1_lut.c
-+++ b/drivers/media/platform/vsp1/vsp1_lut.c
-@@ -27,11 +27,6 @@
-  * Device Access
-  */
- 
--static inline u32 vsp1_lut_read(struct vsp1_lut *lut, u32 reg)
--{
--	return vsp1_read(lut->entity.vsp1, reg);
--}
--
- static inline void vsp1_lut_write(struct vsp1_lut *lut, u32 reg, u32 data)
- {
- 	vsp1_write(lut->entity.vsp1, reg, data);
-diff --git a/drivers/media/platform/vsp1/vsp1_rpf.c b/drivers/media/platform/vsp1/vsp1_rpf.c
-index c0b7f76cd0b5..b9c39f9e4458 100644
---- a/drivers/media/platform/vsp1/vsp1_rpf.c
-+++ b/drivers/media/platform/vsp1/vsp1_rpf.c
-@@ -26,12 +26,6 @@
-  * Device Access
-  */
- 
--static inline u32 vsp1_rpf_read(struct vsp1_rwpf *rpf, u32 reg)
--{
--	return vsp1_read(rpf->entity.vsp1,
--			 reg + rpf->entity.index * VI6_RPF_OFFSET);
--}
--
- static inline void vsp1_rpf_write(struct vsp1_rwpf *rpf, u32 reg, u32 data)
- {
- 	vsp1_write(rpf->entity.vsp1,
-diff --git a/drivers/media/platform/vsp1/vsp1_uds.c b/drivers/media/platform/vsp1/vsp1_uds.c
-index ccc8243e3493..27ad07466ebd 100644
---- a/drivers/media/platform/vsp1/vsp1_uds.c
-+++ b/drivers/media/platform/vsp1/vsp1_uds.c
-@@ -29,12 +29,6 @@
-  * Device Access
-  */
- 
--static inline u32 vsp1_uds_read(struct vsp1_uds *uds, u32 reg)
--{
--	return vsp1_read(uds->entity.vsp1,
--			 reg + uds->entity.index * VI6_UDS_OFFSET);
--}
--
- static inline void vsp1_uds_write(struct vsp1_uds *uds, u32 reg, u32 data)
- {
- 	vsp1_write(uds->entity.vsp1,
+ 	/* read the text we want to modify */
 -- 
-2.4.10
+1.7.1
 
