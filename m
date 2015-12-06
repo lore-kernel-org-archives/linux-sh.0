@@ -1,95 +1,52 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 30 Dec 2015 10:40:48 +0000
-Subject: [git pull/resend] serial: sh-sci: External Clock Support for v4.5
-Message-Id: <1451472048-25592-1-git-send-email-geert+renesas@glider.be>
+From: Li Bin <huawei.libin@huawei.com>
+Date: Sun, 06 Dec 2015 02:02:53 +0000
+Subject: [PATCH v2 0/5] ftrace: fix ftrace misleading comments for arch using it
+Message-Id: <1449367378-29430-1-git-send-email-huawei.libin@huawei.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
-Cc: Simon Horman <horms+renesas@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: rostedt@goodmis.org, mingo@redhat.com
+Cc: linux-kernel@vger.kernel.org, Li Bin <huawei.libin@huawei.com>, Tony
+ Luck <tony.luck@intel.com>, Fenghua Yu <fenghua.yu@intel.com>, linux-ia64@vger.kernel.org, James Hogan <james.hogan@imgtec.com>, linux-metag@vger.kernel.org, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Michael
+ Ellerman <mpe@ellerman.id.au>, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, Thomas Gleixner <tglx@linutronix.de>, x86@kernel.org
 
-	Hi Greg,
+Fix the following similar misleading comments of ftrace for arch
+ia64/metag/powerpc/sh/x86:
 
-The following changes since commit 8005c49d9aea74d382f474ce11afbbc7d7130bec:
+Note: Due to modules and __init, code can
+ disappear and change, we need to protect against faulting
+ as well as code changing. We do this by using the
+ probe_kernel_* functions.
 
-  Linux 4.4-rc1 (2015-11-15 17:00:27 -0800)
+No real locking needed, this code is run through
+kstop_machine, or before SMP starts.
 
-are available in the git repository at:
+Cc: Tony Luck <tony.luck@intel.com>
+Cc: Fenghua Yu <fenghua.yu@intel.com>
+Cc: linux-ia64@vger.kernel.org
+Cc: James Hogan <james.hogan@imgtec.com>
+Cc: linux-metag@vger.kernel.org
+Cc: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+Cc: Paul Mackerras <paulus@samba.org>
+Cc: Michael Ellerman <mpe@ellerman.id.au> 
+Cc: linuxppc-dev@lists.ozlabs.org
+Cc: linux-sh@vger.kernel.org
+Cc: Thomas Gleixner <tglx@linutronix.de>
+"Cc: H. Peter Anvin" <hpa@zytor.com>
+Cc: x86@kernel.org
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/geert/renesas-drivers.git scif-clk-sck-brg-for-v4.5
+Li Bin (5):
+  ia64: ftrace: fix the comments for ftrace_modify_code
+  metag: ftrace: fix the comments for ftrace_modify_code
+  powerpc: ftrace: fix the comments for ftrace_modify_code
+  sh: ftrace: fix the comments for ftrace_modify_code
+  x86: ftrace: fix the comments for ftrace_modify_code_direct
 
-for you to fetch changes up to 192d367f218d0cd94aa9b5059992e4aa19ec5b36:
+ arch/ia64/kernel/ftrace.c    |   12 +++++-------
+ arch/metag/kernel/ftrace.c   |   11 +++++------
+ arch/powerpc/kernel/ftrace.c |   12 +++++-------
+ arch/sh/kernel/ftrace.c      |   12 +++++-------
+ arch/x86/kernel/ftrace.c     |   12 +++++-------
+ 5 files changed, 25 insertions(+), 34 deletions(-)
 
-  serial: sh-sci: Drop the sci_fck clock fallback (2015-12-17 11:19:12 +0100)
-
-Summary:
-  - Clean up the naming of clocks in the sh-sci driver and its DT bindings,
-  - Add support for the optional external clock on (H)SCI(F), where this pin
-    can serve as a clock input,
-  - Add support for the optional clock sources for the Baud Rate
-    Generator for External Clock (BRG), as found on some SCIF variants
-    and on HSCIF.
-
-Thanks for pulling!
-
-----------------------------------------------------------------
-Geert Uytterhoeven (23):
-      serial: sh-sci: Add fallback compatibility strings
-      serial: sh-sci: Update DT binding documentation for external clock input
-      serial: sh-sci: Update DT binding documentation for BRG support
-      serial: sh-sci: Drop useless check for zero sampling_rate
-      serial: sh-sci: Grammar s/Get ... for/Get ... from/
-      serial: sh-sci: Use existing local variable in sci_parse_dt()
-      serial: sh-sci: Drop unused frame_len parameter for sci_baud_calc_hscif()
-      serial: sh-sci: Don't overwrite clock selection in serial_console_write()
-      serial: sh-sci: Convert from clk_get() to devm_clk_get()
-      serial: sh-sci: Make unsigned values in sci_baud_calc_hscif() unsigned
-      serial: sh-sci: Avoid overflow in sci_baud_calc_hscif()
-      serial: sh-sci: Improve bit rate error calculation for HSCIF
-      serial: sh-sci: Avoid calculating the receive margin for HSCIF
-      serial: sh-sci: Merge sci_scbrr_calc() and sci_baud_calc_hscif()
-      serial: sh-sci: Take into account sampling rate for max baud rate
-      serial: sh-sci: Add BRG register definitions
-      serial: sh-sci: Replace struct sci_port_info by type/regtype encoding
-      serial: sh-sci: Correct SCIF type on RZ/A1H
-      serial: sh-sci: Correct SCIF type on R-Car for BRG
-      serial: sh-sci: Prepare for multiple sampling clock sources
-      serial: sh-sci: Add support for optional external (H)SCK input
-      serial: sh-sci: Add support for optional BRG on (H)SCIF
-      sh: sh7734: Correct SCIF type for BRG
-
-Laurent Pinchart (4):
-      serial: sh-sci: Drop the interface clock
-      sh: Rename sci_ick and sci_fck clock to fck
-      sh: Remove sci_ick clock alias
-      serial: sh-sci: Drop the sci_fck clock fallback
-
- .../bindings/serial/renesas,sci-serial.txt         |  32 +-
- arch/sh/kernel/cpu/clock-cpg.c                     |   1 -
- arch/sh/kernel/cpu/sh2a/clock-sh7264.c             |   9 +-
- arch/sh/kernel/cpu/sh2a/clock-sh7269.c             |  16 +-
- arch/sh/kernel/cpu/sh4a/clock-sh7343.c             |   8 +-
- arch/sh/kernel/cpu/sh4a/clock-sh7366.c             |   6 +-
- arch/sh/kernel/cpu/sh4a/clock-sh7723.c             |  12 +-
- arch/sh/kernel/cpu/sh4a/clock-sh7734.c             |  12 +-
- arch/sh/kernel/cpu/sh4a/clock-sh7757.c             |   6 +-
- arch/sh/kernel/cpu/sh4a/clock-sh7785.c             |  12 +-
- arch/sh/kernel/cpu/sh4a/clock-sh7786.c             |  12 +-
- arch/sh/kernel/cpu/sh4a/clock-shx3.c               |   8 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7734.c             |  12 +-
- drivers/tty/serial/sh-sci.c                        | 555 +++++++++++++++------
- drivers/tty/serial/sh-sci.h                        |  10 +
- include/linux/serial_sci.h                         |   1 +
- 16 files changed, 500 insertions(+), 212 deletions(-)
-
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
