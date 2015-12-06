@@ -1,46 +1,22 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 05 Dec 2015 01:50:48 +0000
-Subject: [PATCH v3] MAINTAINERS: add myself as Renesas Ethernet drivers reviewer
-Message-Id: <4240679.6nOnT2RPZY@wasted.cogentembedded.com>
+From: David Miller <davem@davemloft.net>
+Date: Sun, 06 Dec 2015 03:44:47 +0000
+Subject: Re: [PATCH v3] MAINTAINERS: add myself as Renesas Ethernet drivers reviewer
+Message-Id: <20151205.224447.1662738391217239902.davem@davemloft.net>
 List-Id: <linux-sh.vger.kernel.org>
+References: <4240679.6nOnT2RPZY@wasted.cogentembedded.com>
+In-Reply-To: <4240679.6nOnT2RPZY@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: sergei.shtylyov@cogentembedded.com
+Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Add myself as  a reviewer for the Renesas Ethernet drivers -- hopefully I
-won't miss the buggy  patches anymore. :-)
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 05 Dec 2015 04:50:48 +0300
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+> Add myself as  a reviewer for the Renesas Ethernet drivers -- hopefully I
+> won't miss the buggy  patches anymore. :-)
+> 
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
----
-The patch is against DaveM's 'net.git' repo.
-
-Changes in version 3:
-- removed the status entry;
-
-Changes in version 2:
-- removed garbage from the changelog.
-
- MAINTAINERS |    7 +++++++
- 1 file changed, 7 insertions(+)
-
-Index: net/MAINTAINERS
-=================================--- net.orig/MAINTAINERS
-+++ net/MAINTAINERS
-@@ -8929,6 +8929,13 @@ F:	drivers/rpmsg/
- F:	Documentation/rpmsg.txt
- F:	include/linux/rpmsg.h
- 
-+RENESAS ETHERNET DRIVERS
-+R:	Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-+L:	netdev@vger.kernel.org
-+L:	linux-sh@vger.kernel.org
-+F:	drivers/net/ethernet/renesas/
-+F:	include/linux/sh_eth.h
-+
- RESET CONTROLLER FRAMEWORK
- M:	Philipp Zabel <p.zabel@pengutronix.de>
- S:	Maintained
-
+Applied, thanks.
