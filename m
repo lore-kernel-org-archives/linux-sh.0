@@ -1,210 +1,127 @@
 From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Sun, 06 Dec 2015 02:51:04 +0000
-Subject: Re: [PATCH 3/5] [media] v4l: vsp1: separate links creation from entities init
-Message-Id: <7559062.XA9lTlmQ7K@avalon>
+Date: Sun, 06 Dec 2015 03:20:20 +0000
+Subject: Re: [PATCH v8 01/55] [media] media: create a macro to get entity ID
+Message-Id: <2446178.XgL7rIoWQj@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1441296036-20727-1-git-send-email-javier@osg.samsung.com> <1441296036-20727-4-git-send-email-javier@osg.samsung.com>
-In-Reply-To: <1441296036-20727-4-git-send-email-javier@osg.samsung.com>
+References: <cover.1440902901.git.mchehab@osg.samsung.com> <6185117c4ad70fd3e1c780689e0ad2407fdf1294.1440902901.git.mchehab@osg.samsung.com>
+In-Reply-To: <6185117c4ad70fd3e1c780689e0ad2407fdf1294.1440902901.git.mchehab@osg.samsung.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Javier Martinez Canillas <javier@osg.samsung.com>
-Cc: linux-kernel@vger.kernel.org, Hans Verkuil <hans.verkuil@cisco.com>, Mauro Carvalho Chehab <mchehab@osg.samsung.com>, linux-sh@vger.kernel.org, linux-media@vger.kernel.org
+To: Mauro Carvalho Chehab <mchehab@osg.samsung.com>
+Cc: Linux Media Mailing List <linux-media@vger.kernel.org>, Mauro Carvalho Chehab <mchehab@infradead.org>, linux-sh@vger.kernel.org
 
-Hi Javier,
+Hi Mauro,
 
 Thank you for the patch.
 
-On Thursday 03 September 2015 18:00:34 Javier Martinez Canillas wrote:
-> The vsp1 driver initializes the entities and creates the pads links
-> before the entities are registered with the media device. This doesn't
-> work now that object IDs are used to create links so the media_device
-> has to be set.
+On Sunday 30 August 2015 00:06:12 Mauro Carvalho Chehab wrote:
+> Instead of accessing directly entity.id, let's create a macro,
+> as this field will be moved into a common struct later on.
 > 
-> Split out the pads links creation from the entity initialization so are
-> made after the entities registration.
-> 
-> Signed-off-by: Javier Martinez Canillas <javier@osg.samsung.com>
-> ---
-> 
->  drivers/media/platform/vsp1/vsp1_drv.c  | 14 ++++++++++--
->  drivers/media/platform/vsp1/vsp1_rpf.c  | 29 ++++++++++++++++--------
->  drivers/media/platform/vsp1/vsp1_rwpf.h |  5 +++++
->  drivers/media/platform/vsp1/vsp1_wpf.c  | 40 +++++++++++++++++-------------
->  4 files changed, 62 insertions(+), 26 deletions(-)
-> 
-> diff --git a/drivers/media/platform/vsp1/vsp1_drv.c
-> b/drivers/media/platform/vsp1/vsp1_drv.c index 2aa427d3ff39..8f995d267646
-> 100644
-> --- a/drivers/media/platform/vsp1/vsp1_drv.c
-> +++ b/drivers/media/platform/vsp1/vsp1_drv.c
-> @@ -260,9 +260,19 @@ static int vsp1_create_entities(struct vsp1_device
-> *vsp1)
-> 
->  	/* Create links. */
->  	list_for_each_entry(entity, &vsp1->entities, list_dev) {
-> -		if (entity->type = VSP1_ENTITY_LIF ||
-> -		    entity->type = VSP1_ENTITY_RPF)
-> +		if (entity->type = VSP1_ENTITY_LIF) {
-> +			ret = vsp1_wpf_create_pads_links(vsp1, entity);
-
-Could you please s/pads_links/links/ ? There's no other type of links handled 
-by the driver.
-
-> +			if (ret < 0)
-> +				goto done;
-> +			continue;
-
-I would use
-
-	} else if (...) {
-
-instead of a continue.
-
-> +		}
-> +
-> +		if (entity->type = VSP1_ENTITY_RPF) {
-> +			ret = vsp1_rpf_create_pads_links(vsp1, entity);
-> +			if (ret < 0)
-> +				goto done;
->  			continue;
-
-Same here.
-
-Apart from that,
+> Signed-off-by: Mauro Carvalho Chehab <mchehab@osg.samsung.com>
+> Acked-by: Hans Verkuil <hans.verkuil@cisco.com>
 
 Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 
-> +		}
+> diff --git a/drivers/media/media-device.c b/drivers/media/media-device.c
+> index c55ab5029323..e429605ca2c3 100644
+> --- a/drivers/media/media-device.c
+> +++ b/drivers/media/media-device.c
+> @@ -77,8 +77,8 @@ static struct media_entity *find_entity(struct
+> media_device *mdev, u32 id) spin_lock(&mdev->lock);
 > 
->  		ret = vsp1_create_links(vsp1, entity);
->  		if (ret < 0)
-> diff --git a/drivers/media/platform/vsp1/vsp1_rpf.c
-> b/drivers/media/platform/vsp1/vsp1_rpf.c index b60a528a8fe8..38aebdf691b5
-> 100644
-> --- a/drivers/media/platform/vsp1/vsp1_rpf.c
-> +++ b/drivers/media/platform/vsp1/vsp1_rpf.c
-> @@ -277,18 +277,29 @@ struct vsp1_rwpf *vsp1_rpf_create(struct vsp1_device
-> *vsp1, unsigned int index)
+>  	media_device_for_each_entity(entity, mdev) {
+> -		if ((entity->id = id && !next) ||
+> -		    (entity->id > id && next)) {
+> +		if (((media_entity_id(entity) = id) && !next) ||
+> +		    ((media_entity_id(entity) > id) && next)) {
+>  			spin_unlock(&mdev->lock);
+>  			return entity;
+>  		}
+> @@ -104,7 +104,7 @@ static long media_device_enum_entities(struct
+> media_device *mdev, if (ent = NULL)
+>  		return -EINVAL;
 > 
->  	rpf->entity.video = video;
-> 
-> -	/* Connect the video device to the RPF. */
-> -	ret = media_create_pad_link(&rpf->video.video.entity, 0,
-> -				       &rpf->entity.subdev.entity,
-> -				       RWPF_PAD_SINK,
-> -				       MEDIA_LNK_FL_ENABLED |
-> -				       MEDIA_LNK_FL_IMMUTABLE);
-> -	if (ret < 0)
-> -		goto error;
-> -
->  	return rpf;
-> 
->  error:
->  	vsp1_entity_destroy(&rpf->entity);
->  	return ERR_PTR(ret);
+> -	u_ent.id = ent->id;
+> +	u_ent.id = media_entity_id(ent);
+>  	if (ent->name)
+>  		strlcpy(u_ent.name, ent->name, sizeof(u_ent.name));
+>  	u_ent.type = ent->type;
+> @@ -122,7 +122,7 @@ static long media_device_enum_entities(struct
+> media_device *mdev, static void media_device_kpad_to_upad(const struct
+> media_pad *kpad, struct media_pad_desc *upad)
+>  {
+> -	upad->entity = kpad->entity->id;
+> +	upad->entity = media_entity_id(kpad->entity);
+>  	upad->index = kpad->index;
+>  	upad->flags = kpad->flags;
 >  }
-> +
-> +/*
-> + * vsp1_rpf_create_pads_links_create_pads_links() - RPF pads links creation
-> + * @vsp1: Pointer to VSP1 device
-> + * @entity: Pointer to VSP1 entity
-> + *
-> + * return negative error code or zero on success
-> + */
-> +int vsp1_rpf_create_pads_links(struct vsp1_device *vsp1,
-> +			       struct vsp1_entity *entity)
-> +{
-> +	struct vsp1_rwpf *rpf = to_rwpf(&entity->subdev);
-> +
-> +	/* Connect the video device to the RPF. */
-> +	return media_create_pad_link(&rpf->video.video.entity, 0,
-> +				     &rpf->entity.subdev.entity,
-> +				     RWPF_PAD_SINK,
-> +				     MEDIA_LNK_FL_ENABLED |
-> +				     MEDIA_LNK_FL_IMMUTABLE);
-> +}
-> diff --git a/drivers/media/platform/vsp1/vsp1_rwpf.h
-> b/drivers/media/platform/vsp1/vsp1_rwpf.h index f452dce1a931..6638b3587369
-> 100644
-> --- a/drivers/media/platform/vsp1/vsp1_rwpf.h
-> +++ b/drivers/media/platform/vsp1/vsp1_rwpf.h
-> @@ -50,6 +50,11 @@ static inline struct vsp1_rwpf *to_rwpf(struct
-> v4l2_subdev *subdev) struct vsp1_rwpf *vsp1_rpf_create(struct vsp1_device
-> *vsp1, unsigned int index); struct vsp1_rwpf *vsp1_wpf_create(struct
-> vsp1_device *vsp1, unsigned int index);
+> diff --git a/drivers/media/media-entity.c b/drivers/media/media-entity.c
+> index 949e5f92cbdc..cb0ac4e0dfa5 100644
+> --- a/drivers/media/media-entity.c
+> +++ b/drivers/media/media-entity.c
+> @@ -140,10 +140,10 @@ void media_entity_graph_walk_start(struct
+> media_entity_graph *graph, graph->stack[graph->top].entity = NULL;
+>  	bitmap_zero(graph->entities, MEDIA_ENTITY_ENUM_MAX_ID);
 > 
-> +int vsp1_rpf_create_pads_links(struct vsp1_device *vsp1,
-> +			       struct vsp1_entity *entity);
-> +int vsp1_wpf_create_pads_links(struct vsp1_device *vsp1,
-> +			       struct vsp1_entity *entity);
-> +
->  int vsp1_rwpf_enum_mbus_code(struct v4l2_subdev *subdev,
->  			     struct v4l2_subdev_pad_config *cfg,
->  			     struct v4l2_subdev_mbus_code_enum *code);
-> diff --git a/drivers/media/platform/vsp1/vsp1_wpf.c
-> b/drivers/media/platform/vsp1/vsp1_wpf.c index d39aa4b8aea1..1be363e4f741
-> 100644
-> --- a/drivers/media/platform/vsp1/vsp1_wpf.c
-> +++ b/drivers/media/platform/vsp1/vsp1_wpf.c
-> @@ -220,7 +220,6 @@ struct vsp1_rwpf *vsp1_wpf_create(struct vsp1_device
-> *vsp1, unsigned int index) struct v4l2_subdev *subdev;
->  	struct vsp1_video *video;
->  	struct vsp1_rwpf *wpf;
-> -	unsigned int flags;
->  	int ret;
+> -	if (WARN_ON(entity->id >= MEDIA_ENTITY_ENUM_MAX_ID))
+> +	if (WARN_ON(media_entity_id(entity) >= MEDIA_ENTITY_ENUM_MAX_ID))
+>  		return;
 > 
->  	wpf = devm_kzalloc(vsp1->dev, sizeof(*wpf), GFP_KERNEL);
-> @@ -276,20 +275,6 @@ struct vsp1_rwpf *vsp1_wpf_create(struct vsp1_device
-> *vsp1, unsigned int index) goto error;
-> 
->  	wpf->entity.video = video;
-> -
-> -	/* Connect the video device to the WPF. All connections are immutable
-> -	 * except for the WPF0 source link if a LIF is present.
-> -	 */
-> -	flags = MEDIA_LNK_FL_ENABLED;
-> -	if (!(vsp1->pdata.features & VSP1_HAS_LIF) || index != 0)
-> -		flags |= MEDIA_LNK_FL_IMMUTABLE;
-> -
-> -	ret = media_create_pad_link(&wpf->entity.subdev.entity,
-> -				       RWPF_PAD_SOURCE,
-> -				       &wpf->video.video.entity, 0, flags);
-> -	if (ret < 0)
-> -		goto error;
-> -
->  	wpf->entity.sink = &wpf->video.video.entity;
-> 
->  	return wpf;
-> @@ -298,3 +283,28 @@ error:
->  	vsp1_entity_destroy(&wpf->entity);
->  	return ERR_PTR(ret);
+> -	__set_bit(entity->id, graph->entities);
+> +	__set_bit(media_entity_id(entity), graph->entities);
+>  	stack_push(graph, entity);
 >  }
-> +
-> +/*
-> + * vsp1_wpf_create_pads_links_create_pads_links() - RPF pads links creation
-> + * @vsp1: Pointer to VSP1 device
-> + * @entity: Pointer to VSP1 entity
-> + *
-> + * return negative error code or zero on success
-> + */
-> +int vsp1_wpf_create_pads_links(struct vsp1_device *vsp1,
-> +			       struct vsp1_entity *entity)
+>  EXPORT_SYMBOL_GPL(media_entity_graph_walk_start);
+> @@ -184,11 +184,11 @@ media_entity_graph_walk_next(struct media_entity_graph
+> *graph)
+> 
+>  		/* Get the entity in the other end of the link . */
+>  		next = media_entity_other(entity, link);
+> -		if (WARN_ON(next->id >= MEDIA_ENTITY_ENUM_MAX_ID))
+> +		if (WARN_ON(media_entity_id(next) >= MEDIA_ENTITY_ENUM_MAX_ID))
+>  			return NULL;
+> 
+>  		/* Has the entity already been visited? */
+> -		if (__test_and_set_bit(next->id, graph->entities)) {
+> +		if (__test_and_set_bit(media_entity_id(next), graph->entities)) {
+>  			link_top(graph)++;
+>  			continue;
+>  		}
+> diff --git a/drivers/media/platform/vsp1/vsp1_video.c
+> b/drivers/media/platform/vsp1/vsp1_video.c index 17f08973f835..debe4e539df6
+> 100644
+> --- a/drivers/media/platform/vsp1/vsp1_video.c
+> +++ b/drivers/media/platform/vsp1/vsp1_video.c
+> @@ -352,10 +352,10 @@ static int vsp1_pipeline_validate_branch(struct
+> vsp1_pipeline *pipe, break;
+> 
+>  		/* Ensure the branch has no loop. */
+> -		if (entities & (1 << entity->subdev.entity.id))
+> +		if (entities & (1 << media_entity_id(&entity->subdev.entity)))
+>  			return -EPIPE;
+> 
+> -		entities |= 1 << entity->subdev.entity.id;
+> +		entities |= 1 << media_entity_id(&entity->subdev.entity);
+> 
+>  		/* UDS can't be chained. */
+>  		if (entity->type = VSP1_ENTITY_UDS) {
+> diff --git a/include/media/media-entity.h b/include/media/media-entity.h
+> index 8b21a4d920d9..0a66fc225559 100644
+> --- a/include/media/media-entity.h
+> +++ b/include/media/media-entity.h
+> @@ -113,6 +113,11 @@ static inline u32 media_entity_subtype(struct
+> media_entity *entity) return entity->type & MEDIA_ENT_SUBTYPE_MASK;
+>  }
+> 
+> +static inline u32 media_entity_id(struct media_entity *entity)
 > +{
-> +	struct vsp1_rwpf *wpf = to_rwpf(&entity->subdev);
-> +	unsigned int flags;
-> +
-> +	/* Connect the video device to the WPF. All connections are immutable
-> +	 * except for the WPF0 source link if a LIF is present.
-> +	 */
-> +	flags = MEDIA_LNK_FL_ENABLED;
-> +	if (!(vsp1->pdata.features & VSP1_HAS_LIF) || entity->index != 0)
-> +		flags |= MEDIA_LNK_FL_IMMUTABLE;
-> +
-> +	return media_create_pad_link(&wpf->entity.subdev.entity,
-> +				     RWPF_PAD_SOURCE,
-> +				     &wpf->video.video.entity, 0, flags);
+> +	return entity->id;
 > +}
+> +
+>  #define MEDIA_ENTITY_ENUM_MAX_DEPTH	16
+>  #define MEDIA_ENTITY_ENUM_MAX_ID	64
 
 -- 
 Regards,
