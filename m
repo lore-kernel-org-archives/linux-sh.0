@@ -1,104 +1,102 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 18 Dec 2015 02:29:10 +0000
-Subject: [PATCH 02/10] arm64: renesas: salvator-x: use CS2000 as AUDIO_CLK_B
-Message-Id: <8a8f181d2cfdbff772ff2cc895f59bb28beafbdf.1450401186.git.horms+renesas@verge.net.au>
+From: Javier Martinez Canillas <javier@osg.samsung.com>
+Date: Mon, 07 Dec 2015 15:08:27 +0000
+Subject: Re: [PATCH 3/5] [media] v4l: vsp1: separate links creation from entities init
+Message-Id: <5665A0EB.5050202@osg.samsung.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1450401186.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1450401186.git.horms+renesas@verge.net.au>
+References: <1441296036-20727-1-git-send-email-javier@osg.samsung.com>
+ <1441296036-20727-4-git-send-email-javier@osg.samsung.com>
+ <7559062.XA9lTlmQ7K@avalon>
+In-Reply-To: <7559062.XA9lTlmQ7K@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Cc: linux-kernel@vger.kernel.org, Hans Verkuil <hans.verkuil@cisco.com>, Mauro Carvalho Chehab <mchehab@osg.samsung.com>, linux-sh@vger.kernel.org, linux-media@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Hello Laurent,
 
-CS2000 needs AUDIO_CLKOUT as master clock which is generated
-by Renesas sound, and Renesas sound needs CS2000 as ADUIO_CLK_B.
-Because of this relationship, it will be dead-lock when driver probe.
+On 12/05/2015 11:51 PM, Laurent Pinchart wrote:
+> Hi Javier,
+> 
+> Thank you for the patch.
+>
 
-cs2000: clk_multiplier@4f {
-        ...
-        clocks = <&rcar_sound 0>, <&x12_clk>;
-        ...
-};
-
-&rcar_sound {
-        ...
-        assigned-clocks = <&cs2000>;
-        ...
-};
-
-This patch is using dummy audio_clkout to avoid this issue.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 38 ++++++++++++++++++++++
- 1 file changed, 38 insertions(+)
-
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-index beeacfaf18d0..75af5ec5a4d4 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-+++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-@@ -61,6 +61,16 @@
- 		clock-frequency = <24576000>;
- 	};
+Thanks for your feedback.
  
-+	audio_clkout: audio_clkout {
-+		/*
-+		 * This is same as <&rcar_sound 0>
-+		 * but needed to avoid cs2000/rcar_sound probe dead-lock
-+		 */
-+		compatible = "fixed-clock";
-+		#clock-cells = <0>;
-+		clock-frequency = <11289600>;
-+	};
-+
- 	rsnd_ak4613: sound {
- 		compatible = "simple-audio-card";
+> On Thursday 03 September 2015 18:00:34 Javier Martinez Canillas wrote:
+>> The vsp1 driver initializes the entities and creates the pads links
+>> before the entities are registered with the media device. This doesn't
+>> work now that object IDs are used to create links so the media_device
+>> has to be set.
+>>
+>> Split out the pads links creation from the entity initialization so are
+>> made after the entities registration.
+>>
+>> Signed-off-by: Javier Martinez Canillas <javier@osg.samsung.com>
+>> ---
+>>
+>>  drivers/media/platform/vsp1/vsp1_drv.c  | 14 ++++++++++--
+>>  drivers/media/platform/vsp1/vsp1_rpf.c  | 29 ++++++++++++++++--------
+>>  drivers/media/platform/vsp1/vsp1_rwpf.h |  5 +++++
+>>  drivers/media/platform/vsp1/vsp1_wpf.c  | 40 +++++++++++++++++-------------
+>>  4 files changed, 62 insertions(+), 26 deletions(-)
+>>
+>> diff --git a/drivers/media/platform/vsp1/vsp1_drv.c
+>> b/drivers/media/platform/vsp1/vsp1_drv.c index 2aa427d3ff39..8f995d267646
+>> 100644
+>> --- a/drivers/media/platform/vsp1/vsp1_drv.c
+>> +++ b/drivers/media/platform/vsp1/vsp1_drv.c
+>> @@ -260,9 +260,19 @@ static int vsp1_create_entities(struct vsp1_device
+>> *vsp1)
+>>
+>>  	/* Create links. */
+>>  	list_for_each_entry(entity, &vsp1->entities, list_dev) {
+>> -		if (entity->type = VSP1_ENTITY_LIF ||
+>> -		    entity->type = VSP1_ENTITY_RPF)
+>> +		if (entity->type = VSP1_ENTITY_LIF) {
+>> +			ret = vsp1_wpf_create_pads_links(vsp1, entity);
+> 
+> Could you please s/pads_links/links/ ? There's no other type of links handled 
+> by the driver.
+>
+
+Sure, I'll do that for all the drivers that only handle pad links.
  
-@@ -151,6 +161,17 @@
- 		asahi-kasei,out5-single-end;
- 		asahi-kasei,out6-single-end;
- 	};
-+
-+	cs2000: clk_multiplier@4f {
-+		#clock-cells = <0>;
-+		compatible = "cirrus,cs2000-cp";
-+		reg = <0x4f>;
-+		clocks = <&audio_clkout>, <&x12_clk>;
-+		clock-names = "clk_in", "ref_clk";
-+
-+		assigned-clocks = <&cs2000>;
-+		assigned-clock-rates = <24576000>; /* 1/1 divide */
-+	};
- };
+>> +			if (ret < 0)
+>> +				goto done;
+>> +			continue;
+> 
+> I would use
+> 
+> 	} else if (...) {
+> 
+> instead of a continue.
+>
+
+Yes, that will be better indeed.
  
- &rcar_sound {
-@@ -166,6 +187,23 @@
+>> +		}
+>> +
+>> +		if (entity->type = VSP1_ENTITY_RPF) {
+>> +			ret = vsp1_rpf_create_pads_links(vsp1, entity);
+>> +			if (ret < 0)
+>> +				goto done;
+>>  			continue;
+> 
+> Same here.
+>
+
+Ok.
  
- 	status = "okay";
- 
-+	/* update <audio_clk_b> to <cs2000> */
-+	clocks = <&cpg CPG_MOD 1005>,
-+		 <&cpg CPG_MOD 1006>, <&cpg CPG_MOD 1007>,
-+		 <&cpg CPG_MOD 1008>, <&cpg CPG_MOD 1009>,
-+		 <&cpg CPG_MOD 1010>, <&cpg CPG_MOD 1011>,
-+		 <&cpg CPG_MOD 1012>, <&cpg CPG_MOD 1013>,
-+		 <&cpg CPG_MOD 1014>, <&cpg CPG_MOD 1015>,
-+		 <&cpg CPG_MOD 1022>, <&cpg CPG_MOD 1023>,
-+		 <&cpg CPG_MOD 1024>, <&cpg CPG_MOD 1025>,
-+		 <&cpg CPG_MOD 1026>, <&cpg CPG_MOD 1027>,
-+		 <&cpg CPG_MOD 1028>, <&cpg CPG_MOD 1029>,
-+		 <&cpg CPG_MOD 1030>, <&cpg CPG_MOD 1031>,
-+		 <&cpg CPG_MOD 1019>, <&cpg CPG_MOD 1018>,
-+		 <&audio_clk_a>, <&cs2000>,
-+		 <&audio_clk_c>,
-+		 <&cpg CPG_CORE R8A7795_CLK_S0D4>;
-+
- 	rcar_sound,dai {
- 		dai0 {
- 			playback = <&ssi0 &src0 &dvc0>;
+> Apart from that,
+> 
+> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+>
+
+Thanks.
+
+Best regards,
 -- 
-2.1.4
-
+Javier Martinez Canillas
+Open Source Group
+Samsung Research America
