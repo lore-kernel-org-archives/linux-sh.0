@@ -1,21 +1,60 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 16 Dec 2015 05:00:52 +0000
-Subject: [ANNOUNCE] renesas tree closed for v4.5
-Message-Id: <20151216050052.GF21904@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 07 Dec 2015 07:42:50 +0000
+Subject: [PATCH 1/8 v3] thermal: rcar: move rcar_thermal_dt_ids to upside
+Message-Id: <87wpsq671g.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87y4d6672t.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87y4d6672t.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Simon <horms@verge.net.au>, Zhang Rui <rui.zhang@intel.com>, Eduardo Valentin <edubezval@gmail.com>, Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
 
-Hi,
 
-As v4.4-rc6 is looming, which is my deadline for pull-request submissions
-to ARM SoC, I am no longer taking any non-fix patches for v4.5.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-I have already started queuing-up patches for v4.6.  These appear in
-the devel branch of the renesas tree and migrate over to the next branch
-after being rebased on v4.5-rc1 once it has been released.
+This patch is prepare for of-thermal support.
 
-The next branch is merged into the devel branch so patches available in the
-next branch are also available in the devel branch.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v2 -> v3
+
+ - no change
+
+ drivers/thermal/rcar_thermal.c | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/thermal/rcar_thermal.c b/drivers/thermal/rcar_thermal.c
+index 13d01ed..96707a6 100644
+--- a/drivers/thermal/rcar_thermal.c
++++ b/drivers/thermal/rcar_thermal.c
+@@ -81,6 +81,12 @@ struct rcar_thermal_priv {
+ # define rcar_force_update_temp(priv)	0
+ #endif
+ 
++static const struct of_device_id rcar_thermal_dt_ids[] = {
++	{ .compatible = "renesas,rcar-thermal", },
++	{},
++};
++MODULE_DEVICE_TABLE(of, rcar_thermal_dt_ids);
++
+ /*
+  *		basic functions
+  */
+@@ -484,12 +490,6 @@ error_unregister:
+ 	return ret;
+ }
+ 
+-static const struct of_device_id rcar_thermal_dt_ids[] = {
+-	{ .compatible = "renesas,rcar-thermal", },
+-	{},
+-};
+-MODULE_DEVICE_TABLE(of, rcar_thermal_dt_ids);
+-
+ static struct platform_driver rcar_thermal_driver = {
+ 	.driver	= {
+ 		.name	= "rcar_thermal",
+-- 
+1.9.1
+
