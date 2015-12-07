@@ -1,45 +1,28 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Sun, 13 Dec 2015 18:45:13 +0000
-Subject: Re: [PATCH 0/3] pinctrl: sh-pfc: r8a7779/r8a7790/r8a7794: Add SCIF_CLK support
-Message-Id: <6563506.quzPSTWjGH@avalon>
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 07 Dec 2015 06:43:42 +0000
+Subject: Re: [PATCH] ARM: shmobile: r8a7793: remove deprecated #gpio-range-cells
+Message-Id: <20151207064342.GJ22834@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449841738-17490-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1449841738-17490-1-git-send-email-geert+renesas@glider.be>
+References: <1448511980-12173-1-git-send-email-horms+renesas@verge.net.au>
+ <20151126090055.GA1531@katana>
+In-Reply-To: <20151126090055.GA1531@katana>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Linus Walleij <linus.walleij@linaro.org>, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Geert,
-
-Thank you for the patch.
-
-On Friday 11 December 2015 14:48:55 Geert Uytterhoeven wrote:
-> 	Hi Linus, Laurent,
+On Thu, Nov 26, 2015 at 10:00:55AM +0100, Wolfram Sang wrote:
+> On Thu, Nov 26, 2015 at 01:26:20PM +0900, Simon Horman wrote:
+> > Commit a1bc260bb5f5d9 ("gpio: clean up gpio-ranges documentation")
+> > declares the above property deprecated. That was more than 2 years ago.
+> > Remove it, so it doesn't get copied around needlessly.
+> > 
+> > Based on similar work for the r8a7791 and r8a7794 by Wolfram Sang.
+> > 
+> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 > 
-> This patch series add pins, groups, and a function for SCIF_CLK on R-Car
-> SoCs that don't have that support yet (H1, H2, and E2). SCIF_CLK is the
-> external clock source for the Baud Rate Generator for External Clock
-> (BRG) on (H)SCIF.
-> 
-> Geert Uytterhoeven (3):
->   pinctrl: sh-pfc: r8a7779: Add SCIF_CLK support
->   pinctrl: sh-pfc: r8a7790: Add SCIF_CLK support
->   pinctrl: sh-pfc: r8a7794: Add SCIF_CLK support
+> Reported-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+> Acked-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-I haven't checked the pin assignments so I'll trust you on that. The function 
-and group names seem good to me, so, for the whole series,
-
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-
->  drivers/pinctrl/sh-pfc/pfc-r8a7779.c | 41 +++++++++++++++++++++++++++++++++
->  drivers/pinctrl/sh-pfc/pfc-r8a7790.c | 23 ++++++++++++++++++++
->  drivers/pinctrl/sh-pfc/pfc-r8a7794.c | 23 ++++++++++++++++++++
->  3 files changed, 87 insertions(+)
-
--- 
-Regards,
-
-Laurent Pinchart
+Thanks, I have queued this up.
 
