@@ -1,37 +1,63 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 14 Dec 2015 18:57:16 +0000
-Subject: [PATCH v3 07/27] serial: sh-sci: Use existing local variable in sci_parse_dt()
-Message-Id: <1450119456-964-8-git-send-email-geert+renesas@glider.be>
+Date: Mon, 07 Dec 2015 18:24:18 +0000
+Subject: [PATCH v2 5/6] ARM: shmobile: r8a7794 dtsi: Add L2 cache-controller node
+Message-Id: <1449512659-16688-6-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450119456-964-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1450119456-964-1-git-send-email-geert+renesas@glider.be>
+References: <1449512659-16688-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1449512659-16688-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arm-kernel@lists.infradead.org
+
+Add a device node for the L2 cache, and link the CPU nodes to it.
+
+The L2 cache for the Cortex-A7 CPU cores is 512 KiB large (organized as
+64 KiB x 8 ways).
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-v3:
-  - New.
----
- drivers/tty/serial/sh-sci.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+What are the DT bindings for a Cortex-A7 L2 cache controller?
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 5ec1a70cd2f49ada..36077193f11168f0 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -2635,7 +2635,7 @@ sci_parse_dt(struct platform_device *pdev, unsigned int *dev_id)
- 	if (!IS_ENABLED(CONFIG_OF) || !np)
- 		return NULL;
+v2:
+  - Drop (incorrect) optional cache-{size,sets,{block,line}-size}
+    properties, as this information is auto-detected,
+  - Integrate linking CPUs to L2 cache into this patch,
+  - Extracted from series "[PATCH/RFC 00/15] ARM: shmobile: R-Car: Add
+    SYSC PM Domain DT Support".
+---
+ arch/arm/boot/dts/r8a7794.dtsi | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
+index 56acafbb70dc7bc9..1b53495b9c95611c 100644
+--- a/arch/arm/boot/dts/r8a7794.dtsi
++++ b/arch/arm/boot/dts/r8a7794.dtsi
+@@ -40,6 +40,7 @@
+ 			compatible = "arm,cortex-a7";
+ 			reg = <0>;
+ 			clock-frequency = <1000000000>;
++			next-level-cache = <&L2_CA7>;
+ 		};
  
--	match = of_match_node(of_sci_match, pdev->dev.of_node);
-+	match = of_match_node(of_sci_match, np);
- 	if (!match)
- 		return NULL;
+ 		cpu1: cpu@1 {
+@@ -47,9 +48,16 @@
+ 			compatible = "arm,cortex-a7";
+ 			reg = <1>;
+ 			clock-frequency = <1000000000>;
++			next-level-cache = <&L2_CA7>;
+ 		};
+ 	};
  
++	L2_CA7: cache-controller@1 {
++		compatible = "cache";
++		cache-unified;
++		cache-level = <2>;
++	};
++
+ 	gic: interrupt-controller@f1001000 {
+ 		compatible = "arm,gic-400";
+ 		#interrupt-cells = <3>;
 -- 
 1.9.1
 
