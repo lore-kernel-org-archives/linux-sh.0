@@ -1,40 +1,87 @@
-From: Petr Mladek <pmladek@suse.com>
-Date: Fri, 04 Dec 2015 16:57:44 +0000
-Subject: Re: [PATCH v2 1/5] printk/nmi: Generic solution for safe printk in NMI
-Message-Id: <20151204165744.GD20935@pathway.suse.cz>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Mon, 07 Dec 2015 21:40:57 +0000
+Subject: [PATCH 2/3] sh_eth: factor out common code from MDIO bitbang methods
+Message-Id: <2708108.aPmlclaWv5@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1448622572-16900-2-git-send-email-pmladek@suse.com>
- <201511271919.aEZuZKNe%fengguang.wu@intel.com>
- <20151127153804.GC2648@pathway.suse.cz>
- <alpine.LNX.2.00.1512020022460.32500@pobox.suse.cz>
-In-Reply-To: <alpine.LNX.2.00.1512020022460.32500@pobox.suse.cz>
+References: <1582774.FcjyuztLtc@wasted.cogentembedded.com>
+In-Reply-To: <1582774.FcjyuztLtc@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: netdev@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-On Wed 2015-12-02 00:24:49, Jiri Kosina wrote:
-> On Fri, 27 Nov 2015, Petr Mladek wrote:
-> 
-> > MN10300 has its own implementation for entering and exiting NMI 
-> > handlers. It does not call nmi_enter() and nmi_exit(). Please, find 
-> > below an updated patch that adds printk_nmi_enter() and 
-> > printk_nmi_exit() to the custom entry points. Then we could add HAVE_NMI 
-> > to arch/mn10300/Kconfig and avoid the above warning.
-> 
-> Hmm, so what exactly would go wrong if MN10300 (whatever that architecture 
-> is) would call nmi_enter() and nmi_exit() at the places where it's 
-> starting and finishing NMI handler?
-> 
-> >From a cursory look, it seems like most (if not all) of the things called 
-> from nmi_{enter,exit}() would be nops there anyway.
+sh_mm[cd]_ctrl()  and sh_set_mdio() all look mostly the same -- factor out
+their common code and put it into sh_mdio_ctrl().
 
-Good point. Max mentioned in the other main that the NMI handler
-should follow the NMI ruler. I do not why it could not work.
-In fact, it might improve things, e.g. nmi_enter() blocks
-recursive NMIs.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-I think that it will move it into a separate patch, thought.
+---
+ drivers/net/ethernet/renesas/sh_eth.c |   35 +++++++++++-----------------------
+ 1 file changed, 12 insertions(+), 23 deletions(-)
 
-Best Regards,
-Petr
+Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
+=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
++++ net-next/drivers/net/ethernet/renesas/sh_eth.c
+@@ -1033,32 +1033,29 @@ static int bb_read(void *addr, u32 msk)
+ 	return (ioread32(addr) & msk) != 0;
+ }
+ 
+-/* Data I/O pin control */
+-static void sh_mmd_ctrl(struct mdiobb_ctrl *ctrl, int bit)
++static void sh_mdio_ctrl(struct mdiobb_ctrl *ctrl, u32 mask, int set)
+ {
+ 	struct bb_info *bitbang = container_of(ctrl, struct bb_info, ctrl);
+ 
+ 	if (bitbang->set_gate)
+ 		bitbang->set_gate(bitbang->addr);
+ 
+-	if (bit)
+-		bb_set(bitbang->addr, PIR_MMD);
++	if (set)
++		bb_set(bitbang->addr, mask);
+ 	else
+-		bb_clr(bitbang->addr, PIR_MMD);
++		bb_clr(bitbang->addr, mask);
++}
++
++/* Data I/O pin control */
++static void sh_mmd_ctrl(struct mdiobb_ctrl *ctrl, int bit)
++{
++	sh_mdio_ctrl(ctrl, PIR_MMD, bit);
+ }
+ 
+ /* Set bit data*/
+ static void sh_set_mdio(struct mdiobb_ctrl *ctrl, int bit)
+ {
+-	struct bb_info *bitbang = container_of(ctrl, struct bb_info, ctrl);
+-
+-	if (bitbang->set_gate)
+-		bitbang->set_gate(bitbang->addr);
+-
+-	if (bit)
+-		bb_set(bitbang->addr, PIR_MDO);
+-	else
+-		bb_clr(bitbang->addr, PIR_MDO);
++	sh_mdio_ctrl(ctrl, PIR_MDO, bit);
+ }
+ 
+ /* Get bit data*/
+@@ -1075,15 +1072,7 @@ static int sh_get_mdio(struct mdiobb_ctr
+ /* MDC pin control */
+ static void sh_mdc_ctrl(struct mdiobb_ctrl *ctrl, int bit)
+ {
+-	struct bb_info *bitbang = container_of(ctrl, struct bb_info, ctrl);
+-
+-	if (bitbang->set_gate)
+-		bitbang->set_gate(bitbang->addr);
+-
+-	if (bit)
+-		bb_set(bitbang->addr, PIR_MDC);
+-	else
+-		bb_clr(bitbang->addr, PIR_MDC);
++	sh_mdio_ctrl(ctrl, PIR_MDC, bit);
+ }
+ 
+ /* mdio bus control struct */
+
