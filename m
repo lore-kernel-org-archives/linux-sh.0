@@ -1,44 +1,74 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Tue, 01 Dec 2015 10:13:35 +0000
-Subject: Re: [PATCH] pinctrl: sh-pfc: sh7734: Add missing cfg macro parameter to fix build
-Message-Id: <CACRpkdawUfss2NDwLfEPEJQZ+YifqtbHg+xOX7qsYkrNmBZjUw@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 07 Dec 2015 18:24:14 +0000
+Subject: [PATCH v2 1/6] ARM: shmobile: r8a73a4 dtsi: Add L2 cache-controller nodes
+Message-Id: <1449512659-16688-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1448455933-20276-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1448455933-20276-1-git-send-email-geert+renesas@glider.be>
+References: <1449512659-16688-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1449512659-16688-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Nov 25, 2015 at 1:52 PM, Geert Uytterhoeven
-<geert+renesas@glider.be> wrote:
+Add device nodes for the L2 caches, and link the CPU node to its L2
+cache node.
 
-> When building for SH7734:
->
->     drivers/pinctrl/sh-pfc/pfc-sh7734.c:586:1: error: macro "_GP_DATA" passed 5 arguments, but takes just 4
->     drivers/pinctrl/sh-pfc/pfc-sh7734.c:586:2: error: '_GP_DATA' undeclared here (not in a function)
->     drivers/pinctrl/sh-pfc/pfc-sh7734.c:586:1: error: macro "_GP_DATA" passed 5 arguments, but takes just 4
->     drivers/pinctrl/sh-pfc/pfc-sh7734.c:586:1: error: macro "_GP_DATA" passed 5 arguments, but takes just 4
->     ...
->     drivers/pinctrl/sh-pfc/pfc-sh7734.c:2389:1: error: macro "_GP_INOUTSEL" passed 5 arguments, but takes just 4
->     drivers/pinctrl/sh-pfc/pfc-sh7734.c:2389:53: error: '_GP_INOUTSEL' undeclared here (not in a function)
->     drivers/pinctrl/sh-pfc/pfc-sh7734.c:2389:2: warning: initialization makes integer from pointer without a cast [enabled by default]
->     drivers/pinctrl/sh-pfc/pfc-sh7734.c:2389:2: warning: (near initialization for '(anonymous)[0]') [enabled by default]
->     ...
->     drivers/pinctrl/sh-pfc/pfc-sh7734.c:2416:1: error: macro "_GP_INDT" passed 5 arguments, but takes just 4
->     drivers/pinctrl/sh-pfc/pfc-sh7734.c:2416:47: error: '_GP_INDT' undeclared here (not in a function)
->     drivers/pinctrl/sh-pfc/pfc-sh7734.c:2416:2: warning: initialization makes integer from pointer without a cast [enabled by default]
->     drivers/pinctrl/sh-pfc/pfc-sh7734.c:2416:2: warning: (near initialization for '(anonymous)[0]') [enabled by default]
->     ...
->
-> Add the missing "cfg" macro parameters to the sh7734-specific
-> _GP_DATA(), _GP_INOUTSEL(), and _GP_INDT() macros to fix this.
->
-> Fixes: 22768fc60abbf58b ("pinctrl: sh-pfc: Add macros defining GP ports with config flags")
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+The L2 cache for the Cortex-A15 CPU cores is 1 MiB large (organized as
+64 KiB x 16 ways), and located in PM domain A3SM. It requires the
+following settings:
+  - Tag RAM latency: 3 cycles,
+  - Data RAM latency: 4 cycles.
 
-Patch applied for fixes.
+The L2 cache for the Cortex-A7 CPU cores is 512 KiB large (organized as
+64 KiB x 8 ways), and located in PM domain A3KM.
 
-Yours,
-Linus Walleij
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+What are the DT bindings for Cortex-A15/A7 L2 cache controllers?
+
+v2:
+  - New.
+---
+ arch/arm/boot/dts/r8a73a4.dtsi | 19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
+index 86fab56cd6314df7..73f7ea3cb2209a00 100644
+--- a/arch/arm/boot/dts/r8a73a4.dtsi
++++ b/arch/arm/boot/dts/r8a73a4.dtsi
+@@ -29,6 +29,7 @@
+ 			reg = <0>;
+ 			clock-frequency = <1500000000>;
+ 			power-domains = <&pd_a2sl>;
++			next-level-cache = <&L2_CA15>;
+ 		};
+ 	};
+ 
+@@ -45,6 +46,24 @@
+ 			     <1 10 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>;
+ 	};
+ 
++	L2_CA15: cache-controller@0 {
++		compatible = "cache";
++		clocks = <&cpg_clocks R8A73A4_CLK_Z>;
++		power-domains = <&pd_a3sm>;
++		arm,data-latency = <4 4 0>;
++		arm,tag-latency = <3 3 3>;
++		cache-unified;
++		cache-level = <2>;
++	};
++
++	L2_CA7: cache-controller@1 {
++		compatible = "cache";
++		clocks = <&cpg_clocks R8A73A4_CLK_Z2>;
++		power-domains = <&pd_a3km>;
++		cache-unified;
++		cache-level = <2>;
++	};
++
+ 	dbsc1: memory-controller@e6790000 {
+ 		compatible = "renesas,dbsc-r8a73a4";
+ 		reg = <0 0xe6790000 0 0x10000>;
+-- 
+1.9.1
+
