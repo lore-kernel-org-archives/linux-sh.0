@@ -1,66 +1,68 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 10 Dec 2015 09:33:36 +0000
-Subject: Re: [PATCH v2 2/2] usb: renesas_usbhs: add device tree support for r8a779[23]
-Message-Id: <CAMuHMdVNi9OKmJBq5-H83WVN_N+wK4b1TSSg2hwTosWi0mMSew@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 07 Dec 2015 18:24:13 +0000
+Subject: [PATCH v2 0/6] ARM/arm64 : shmobile/renesas: Add L2 cache-controller nodes
+Message-Id: <1449512659-16688-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449726033-17117-1-git-send-email-horms+renesas@verge.net.au>
-	<1449726033-17117-3-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1449726033-17117-3-git-send-email-horms+renesas-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms+renesas-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>
-Cc: Greg Kroah-Hartman <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, Kuninori Morimoto <kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, Yoshihiro Shimoda <yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, USB list <linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Simon,
+	Hi Simon, Magnus,
 
-On Thu, Dec 10, 2015 at 6:40 AM, Simon Horman
-<horms+renesas@verge.net.au> wrote:
-> Simply document new compatibility string.
-> As a previous patch adds a generic R-Car Gen2 compatibility string
-> there appears to be no need for a driver updates.
->
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> Acked-by: Rob Herring <robh@kernel.org>
-> ---
->  Documentation/devicetree/bindings/usb/renesas_usbhs.txt | 2 ++
->  1 file changed, 2 insertions(+)
->
-> diff --git a/Documentation/devicetree/bindings/usb/renesas_usbhs.txt b/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
-> index b959059826cd..efb3199a2a80 100644
-> --- a/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
-> +++ b/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
-> @@ -5,6 +5,8 @@ Required properties:
->
->         - "renesas,usbhs-r8a7790" for r8a7790 (R-Car H2) compatible device
->         - "renesas,usbhs-r8a7791" for r8a7791 (R-Car M2-W) compatible device
-> +       - "renesas,usbhs-r8a7792" for r8a7792 (R-Car V2H) compatible device
-> +       - "renesas,usbhs-r8a7793" for r8a7793 (R-Car M2-N) compatible device
->         - "renesas,usbhs-r8a7794" for r8a7794 (R-Car E2) compatible device
->         - "renesas,usbhs-r8a7795" for r8a7795 (R-Car H3) compatible device
->         - "renesas,rcar-gen2-usbhs" for R-Car Gen2 compatibile device
+This patch series adds the missing L2 cache-controller nodes to the
+DTSes for various Renesas ARM-based SoCs, and links the CPU nodes to
+them.
 
-I see a possible issue here:
+For R-Mobile APE6 (r8a73a4), the L2 cache-controllers are also linked to
+the respective (already existing) SYSC Power Domains. Fortunately these
+Power Domains were never powered down, as they are parents of the Power
+Domains containing CPU cores. This may change in the future.
 
-Old r8a7791 dtsi just has "renesas,usbhs-r8a7791", so it works with the current
-driver, as the driver matches against "renesas,usbhs-r8a7791".
+For R-Car Gen2 and Gen3 (r8a779x), this serves as a preparatory step for
+adding SYSC Power Domain support later.
 
-Existing (out-of-tree) r8a7792 dtsi may have followed existing practices,
-and just have "renesas,usbhs-r8a7792".
-This won't work with the new driver, as the driver doesn't match again
-"renesas,usbhs-r8a7792". The same applies to r8a7793.
+Question for the ARM/DT people: What are the DT bindings for
+Cortex-A15/A7/A57/A53 L2 cache controllers?
+Everybody just seems to use "cache" for the compatible values...
 
-Do we care about this
-  - in upstream? Probably not.
-  - in the BSP? It seems to have r8a7790/r8a7791 usbhs only, though.
+Patches 2-5 were extracted from series "[PATCH/RFC 00/15]
+ARM: shmobile: R-Car: Add SYSC PM Domain DT Support",
+(http://lists.infradead.org/pipermail/linux-arm-kernel/2015-June/348742.html)
+and received some fixes. You can find more detailed changelogs in the
+individual patches).
+
+This has been tested on r8a73a4/ape6evm, r8a7791/koelsch, and
+r8a7795/salvator-x.
+
+Thanks!
+
+Geert Uytterhoeven (6):
+  ARM: shmobile: r8a73a4 dtsi: Add L2 cache-controller nodes
+  ARM: shmobile: r8a7790 dtsi: Add L2 cache-controller nodes
+  ARM: shmobile: r8a7791 dtsi: Add L2 cache-controller node
+  ARM: shmobile: r8a7793 dtsi: Add L2 cache-controller node
+  ARM: shmobile: r8a7794 dtsi: Add L2 cache-controller node
+  arm64: renesas: r8a7795: Add L2 cache-controller nodes
+
+ arch/arm/boot/dts/r8a73a4.dtsi           | 19 +++++++++++++++++++
+ arch/arm/boot/dts/r8a7790.dtsi           | 22 ++++++++++++++++++++++
+ arch/arm/boot/dts/r8a7791.dtsi           | 10 ++++++++++
+ arch/arm/boot/dts/r8a7793.dtsi           |  9 +++++++++
+ arch/arm/boot/dts/r8a7794.dtsi           |  8 ++++++++
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi | 15 +++++++++++++++
+ 6 files changed, 83 insertions(+)
+
+-- 
+1.9.1
 
 Gr{oetje,eeting}s,
 
-                        Geert
+						Geert
 
 --
 Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
 In personal conversations with technical people, I call myself a hacker. But
 when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+							    -- Linus Torvalds
