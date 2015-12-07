@@ -1,42 +1,47 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 18 Dec 2015 02:29:41 +0000
-Subject: [PATCH 11/25] ARM: shmobile: bockw dts: Update console parameters
-Message-Id: <f84a9cbb173946754712b366524fc4f5fb744424.1450402264.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 07 Dec 2015 07:42:02 +0000
+Subject: [PATCH 0/8 v3] enable to use thermal-zone on r8a7790/1
+Message-Id: <87y4d6672t.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1450402264.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1450402264.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon <horms@verge.net.au>, Zhang Rui <rui.zhang@intel.com>, Eduardo Valentin <edubezval@gmail.com>, Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Drop the "console=" parameter from the kernel command line, as it's no
-longer needed for DT-based platforms.
-Add serial port config to chosen/stdout-path.
+Hi
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+These are v3 of thermal-zone support for r8a7790/r8a7791.
+Mainly, it cares return value of get_temp()
+
+I think 8) is needed on of-thermal (?)
+
+Kuninori Morimoto (8):
+      1) thermal: rcar: move rcar_thermal_dt_ids to upside
+      2) thermal: rcar: check every rcar_thermal_update_temp() return value
+      3) thermal: rcar: check irq possibility in rcar_thermal_irq_xxx()
+      4) thermal: rcar: retern error rcar_thermal_get_temp() if no ctemp update
+      5) thermal: rcar: enable to use thermal-zone on DT
+      6) ARM: shmobile: r8a7790: enable to use thermal-zone
+      7) ARM: shmobile: r8a7791: enable to use thermal-zone
+      8) thermal: of-thermal: of_thermal_set_trip_temp() call thermal_zone_device_update()
+
+ Documentation/devicetree/bindings/thermal/rcar-thermal.txt | 37 +++++++++++++++++++++++++++++++++++--
+ arch/arm/boot/dts/r8a7790.dtsi                             | 26 ++++++++++++++++++++++++--
+ arch/arm/boot/dts/r8a7791.dtsi                             | 26 ++++++++++++++++++++++++--
+ drivers/thermal/of-thermal.c                               |  2 ++
+ drivers/thermal/rcar_thermal.c                             | 96 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++---------------------
+ 5 files changed, 160 insertions(+), 27 deletions(-)
+
+Best regards
 ---
- arch/arm/boot/dts/r8a7778-bockw.dts | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
-
-diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
-index 158ad94fd4d1..b1aa02599229 100644
---- a/arch/arm/boot/dts/r8a7778-bockw.dts
-+++ b/arch/arm/boot/dts/r8a7778-bockw.dts
-@@ -28,8 +28,8 @@
- 	};
- 
- 	chosen {
--		bootargs = "console=ttySC0,115200 ignore_loglevel ip=dhcp root=/dev/nfs rw";
--		stdout-path = &scif0;
-+		bootargs = "ignore_loglevel ip=dhcp root=/dev/nfs rw";
-+		stdout-path = "serial0:115200n8";
- 	};
- 
- 	memory {
--- 
-2.1.4
-
+Kuninori Morimoto
+--
+To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html
+--
+To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html
