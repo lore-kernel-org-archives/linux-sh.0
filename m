@@ -1,32 +1,32 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 08 Dec 2015 05:27:31 +0000
-Subject: [PATCH 2/8 v4] thermal: rcar: check every rcar_thermal_update_temp() return value
-Message-Id: <87si3d5x7g.wl%kuninori.morimoto.gx@renesas.com>
+Date: Mon, 07 Dec 2015 07:43:09 +0000
+Subject: [PATCH 2/8 v3] thermal: rcar: check every rcar_thermal_update_temp() return value
+Message-Id: <87vb8a6710.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87vb895x9d.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87vb895x9d.wl%kuninori.morimoto.gx@renesas.com>
+References: <87y4d6672t.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87y4d6672t.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, Zhang Rui <rui.zhang@intel.com>, Eduardo Valentin <edubezval@gmail.com>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: Simon <horms@verge.net.au>, Zhang Rui <rui.zhang@intel.com>, Eduardo Valentin <edubezval@gmail.com>, Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
 
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-v3 -> v4
+v2 -> v3
 
- - add 1line between int <-> return
+ - no change
 
- drivers/thermal/rcar_thermal.c | 18 ++++++++++++++----
- 1 file changed, 14 insertions(+), 4 deletions(-)
+ drivers/thermal/rcar_thermal.c | 17 +++++++++++++----
+ 1 file changed, 13 insertions(+), 4 deletions(-)
 
 diff --git a/drivers/thermal/rcar_thermal.c b/drivers/thermal/rcar_thermal.c
-index ac8d1eb..a1a93f3 100644
+index 96707a6..4d1bc2b 100644
 --- a/drivers/thermal/rcar_thermal.c
 +++ b/drivers/thermal/rcar_thermal.c
-@@ -210,8 +210,12 @@ static int rcar_thermal_get_temp(struct thermal_zone_device *zone, int *temp)
+@@ -210,8 +210,11 @@ static int rcar_thermal_get_temp(struct thermal_zone_device *zone, int *temp)
  {
  	struct rcar_thermal_priv *priv = rcar_zone_to_priv(zone);
  
@@ -34,14 +34,13 @@ index ac8d1eb..a1a93f3 100644
 -		rcar_thermal_update_temp(priv);
 +	if (!rcar_has_irq_support(priv) || rcar_force_update_temp(priv)) {
 +		int ret = rcar_thermal_update_temp(priv);
-+
 +		if (ret < 0)
 +			return ret;
 +	}
  
  	mutex_lock(&priv->lock);
  	*temp =  MCELSIUS((priv->ctemp * 5) - 65);
-@@ -305,11 +309,15 @@ static void rcar_thermal_work(struct work_struct *work)
+@@ -305,11 +308,15 @@ static void rcar_thermal_work(struct work_struct *work)
  {
  	struct rcar_thermal_priv *priv;
  	int cctemp, nctemp;
@@ -58,7 +57,7 @@ index ac8d1eb..a1a93f3 100644
  	rcar_thermal_irq_enable(priv);
  
  	rcar_thermal_get_temp(priv->zone, &nctemp);
-@@ -427,7 +435,9 @@ static int rcar_thermal_probe(struct platform_device *pdev)
+@@ -447,7 +454,9 @@ static int rcar_thermal_probe(struct platform_device *pdev)
  		mutex_init(&priv->lock);
  		INIT_LIST_HEAD(&priv->list);
  		INIT_DELAYED_WORK(&priv->work, rcar_thermal_work);
