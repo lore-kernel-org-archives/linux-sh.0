@@ -1,78 +1,125 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 15 Dec 2015 13:05:55 +0000
-Subject: [PATCH/RFC 05/10] iommu/ipmmu-vmsa: Allow two bit SL0
-Message-Id: <20151215130555.13535.39164.sendpatchset@little-apple>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 07 Dec 2015 18:24:15 +0000
+Subject: [PATCH v2 2/6] ARM: shmobile: r8a7790 dtsi: Add L2 cache-controller nodes
+Message-Id: <1449512659-16688-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20151215130508.13535.26186.sendpatchset@little-apple>
-In-Reply-To: <20151215130508.13535.26186.sendpatchset@little-apple>
+References: <1449512659-16688-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1449512659-16688-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: laurent.pinchart+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org, geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, horms+renesas-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+Add device nodes for the L2 caches, and link the CPU nodes to them.
 
-Introduce support for two bit SL0 bitfield in IMTTBCR
-by using a separate feature flag.
+The L2 cache for the Cortex-A15 CPU cores is 2 MiB large (organized as
+128 KiB x 16 ways), and requires the following settings:
+  - Tag RAM latency: 3 cycles,
+  - Data RAM latency: 4 cycles,
+  - Data RAM setup: 1 cycle.
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+The L2 cache for the Cortex-A7 CPU cores is 512 KiB large (organized as
+64 KiB x 8 ways).
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
+What are the DT bindings for Cortex-A15/A7 L2 cache controllers?
 
- drivers/iommu/ipmmu-vmsa.c |   15 ++++++++++++++-
- 1 file changed, 14 insertions(+), 1 deletion(-)
+v2:
+  - Drop (incorrect) optional cache-{size,sets,{block,line}-size}
+    properties, as this information is auto-detected,
+  - Integrate linking CPUs to L2 caches into this patch,
+  - Extracted from series "[PATCH/RFC 00/15] ARM: shmobile: R-Car: Add
+    SYSC PM Domain DT Support".
+---
+ arch/arm/boot/dts/r8a7790.dtsi | 22 ++++++++++++++++++++++
+ 1 file changed, 22 insertions(+)
 
---- 0014/drivers/iommu/ipmmu-vmsa.c
-+++ work/drivers/iommu/ipmmu-vmsa.c	2015-12-15 21:17:55.110513000 +0900
-@@ -35,6 +35,7 @@ struct ipmmu_features {
- 	bool use_ns_alias_offset;
- 	bool has_cache_leaf_nodes;
- 	bool setup_imbuscr;
-+	bool twobit_imttbcr_sl0;
- };
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 6cfd0dc79bbec067..ef5d46faef0c5975 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -52,6 +52,7 @@
+ 			voltage-tolerance = <1>; /* 1% */
+ 			clocks = <&cpg_clocks R8A7790_CLK_Z>;
+ 			clock-latency = <300000>; /* 300 us */
++			next-level-cache = <&L2_CA15>;
  
- struct ipmmu_vmsa_device {
-@@ -139,6 +140,10 @@ static struct ipmmu_vmsa_domain *to_vmsa
- #define IMTTBCR_TSZ0_MASK		(7 << 0)
- #define IMTTBCR_TSZ0_SHIFT		O
+ 			/* kHz - uV - OPPs unknown yet */
+ 			operating-points = <1400000 1000000>,
+@@ -67,6 +68,7 @@
+ 			compatible = "arm,cortex-a15";
+ 			reg = <1>;
+ 			clock-frequency = <1300000000>;
++			next-level-cache = <&L2_CA15>;
+ 		};
  
-+#define IMTTBCR_SL0_TWOBIT_LVL_3	(0 << 6)
-+#define IMTTBCR_SL0_TWOBIT_LVL_2	(1 << 6)
-+#define IMTTBCR_SL0_TWOBIT_LVL_1	(2 << 6)
+ 		cpu2: cpu@2 {
+@@ -74,6 +76,7 @@
+ 			compatible = "arm,cortex-a15";
+ 			reg = <2>;
+ 			clock-frequency = <1300000000>;
++			next-level-cache = <&L2_CA15>;
+ 		};
+ 
+ 		cpu3: cpu@3 {
+@@ -81,6 +84,7 @@
+ 			compatible = "arm,cortex-a15";
+ 			reg = <3>;
+ 			clock-frequency = <1300000000>;
++			next-level-cache = <&L2_CA15>;
+ 		};
+ 
+ 		cpu4: cpu@4 {
+@@ -88,6 +92,7 @@
+ 			compatible = "arm,cortex-a7";
+ 			reg = <0x100>;
+ 			clock-frequency = <780000000>;
++			next-level-cache = <&L2_CA7>;
+ 		};
+ 
+ 		cpu5: cpu@5 {
+@@ -95,6 +100,7 @@
+ 			compatible = "arm,cortex-a7";
+ 			reg = <0x101>;
+ 			clock-frequency = <780000000>;
++			next-level-cache = <&L2_CA7>;
+ 		};
+ 
+ 		cpu6: cpu@6 {
+@@ -102,6 +108,7 @@
+ 			compatible = "arm,cortex-a7";
+ 			reg = <0x102>;
+ 			clock-frequency = <780000000>;
++			next-level-cache = <&L2_CA7>;
+ 		};
+ 
+ 		cpu7: cpu@7 {
+@@ -109,9 +116,24 @@
+ 			compatible = "arm,cortex-a7";
+ 			reg = <0x103>;
+ 			clock-frequency = <780000000>;
++			next-level-cache = <&L2_CA7>;
+ 		};
+ 	};
+ 
++	L2_CA15: cache-controller@0 {
++		compatible = "cache";
++		arm,data-latency = <4 4 1>;
++		arm,tag-latency = <3 3 3>;
++		cache-unified;
++		cache-level = <2>;
++	};
 +
- #define IMBUSCR				0x000c
- #define IMBUSCR_DVM			(1 << 2)
- #define IMBUSCR_BUSSEL_SYS		(0 << 0)
-@@ -377,6 +382,7 @@ static struct iommu_gather_ops ipmmu_gat
- static int ipmmu_domain_init_context(struct ipmmu_vmsa_domain *domain)
- {
- 	phys_addr_t ttbr;
-+	u32 tmp;
- 	int ret;
- 
- 	/*
-@@ -428,9 +434,15 @@ static int ipmmu_domain_init_context(str
- 	 * We use long descriptors with inner-shareable WBWA tables and allocate
- 	 * the whole 32-bit VA space to TTBR0.
- 	 */
++	L2_CA7: cache-controller@1 {
++		compatible = "cache";
++		cache-unified;
++		cache-level = <2>;
++	};
 +
-+	if (domain->root->features->twobit_imttbcr_sl0)
-+		tmp = IMTTBCR_SL0_TWOBIT_LVL_1;
-+	else
-+		tmp = IMTTBCR_SL0_LVL_1;
-+
- 	ipmmu_ctx_write(domain, IMTTBCR, IMTTBCR_EAE |
- 			IMTTBCR_SH0_INNER_SHAREABLE | IMTTBCR_ORGN0_WB_WA |
--			IMTTBCR_IRGN0_WB_WA | IMTTBCR_SL0_LVL_1);
-+			IMTTBCR_IRGN0_WB_WA | tmp);
- 
- 	/* MAIR0 */
- 	ipmmu_ctx_write(domain, IMMAIR0, domain->cfg.arm_lpae_s1_cfg.mair[0]);
-@@ -878,6 +890,7 @@ static const struct ipmmu_features ipmmu
- 	.use_ns_alias_offset = true,
- 	.has_cache_leaf_nodes = false,
- 	.setup_imbuscr = true,
-+	.twobit_imttbcr_sl0 = false,
- };
- 
- static const struct of_device_id ipmmu_of_ids[] = {
+ 	gic: interrupt-controller@f1001000 {
+ 		compatible = "arm,gic-400";
+ 		#interrupt-cells = <3>;
+-- 
+1.9.1
+
