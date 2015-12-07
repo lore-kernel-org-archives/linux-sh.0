@@ -1,58 +1,47 @@
-From: Chanwoo Choi <cw00.choi@samsung.com>
-Date: Mon, 21 Dec 2015 02:42:05 +0000
-Subject: Re: [PATCH] extcon: max3355: kill unneeded #include's
-Message-Id: <567766FD.2030004@samsung.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 07 Dec 2015 16:25:37 +0000
+Subject: [PATCH] [RFC] ARM: shmobile: bockw dts: Override #sound-dai-cells to zero
+Message-Id: <1449505537-15428-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <6137530.8k1Rzov2Uy@wasted.cogentembedded.com>
-In-Reply-To: <6137530.8k1Rzov2Uy@wasted.cogentembedded.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, myungjoo.ham@samsung.com, linux-kernel@vger.kernel.org
-Cc: linux-usb@vger.kernel.org, linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Cc: alsa-devel@alsa-project.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On 2015년 12월 21일 03:31, Sergei Shtylyov wrote:
-> Some #include's weren't needed from the start, some are left overs from the
-> earlier driver versions... Kill 'em all! :-)
+The default value of #sound-dai-cells in r8a7778.dtsi is one, while
+the /sound/simple-audio-card,cpu device node in r8a7778-bockw.dts uses a
+phandle without any extra cells ("<&rcar_sound>"), causing:
 
-I don't prefer following expression. I think you should write the description
-to maintain the formal style on the next.
-- "... Kill 'em all! :-) "
+    /sound/simple-audio-card,cpu: arguments longer than property
+    asoc-simple-card sound: parse error -22
+    asoc-simple-card: probe of sound failed with error -22
 
-> 
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> 
-> ---
-> The patch is against the 'extcon-next' branch of the 'extcon.git' repo.
-> If possible, please fold this patch into the main MAX3355 driver patch.
-> 
->  drivers/extcon/extcon-max3355.c |    5 -----
->  1 file changed, 5 deletions(-)
-> 
-> Index: extcon/drivers/extcon/extcon-max3355.c
-> =================================> --- extcon.orig/drivers/extcon/extcon-max3355.c
-> +++ extcon/drivers/extcon/extcon-max3355.c
-> @@ -11,14 +11,9 @@
->  
->  #include <linux/extcon.h>
->  #include <linux/gpio.h>
-> -#include <linux/init.h>
->  #include <linux/interrupt.h>
-> -#include <linux/kernel.h>
->  #include <linux/module.h>
-> -#include <linux/of_gpio.h>
->  #include <linux/platform_device.h>
-> -#include <linux/slab.h>
-> -#include <linux/workqueue.h>
->  
->  struct max3355_data {
->  	struct extcon_dev *edev;
-> 
+Override #sound-dai-cells to zero to fix this.
 
-I combine it on original patch.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+The rcar_sound node is still disabled. So why is this needed?!?
+---
+ arch/arm/boot/dts/r8a7778-bockw.dts | 5 +++++
+ 1 file changed, 5 insertions(+)
 
-Thanks,
-Chanwoo Choi
-
-
+diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
+index 3c03e6b8261e9348..158ad94fd4d187a7 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw.dts
+@@ -172,6 +172,11 @@
+ 	};
+ };
+ 
++&rcar_sound {
++	/* Single DAI */
++	#sound-dai-cells = <0>;
++};
++
+ &sdhi0 {
+ 	pinctrl-0 = <&sdhi0_pins>, <&sdhi0_pup_pins>;
+ 	pinctrl-names = "default";
+-- 
+1.9.1
 
