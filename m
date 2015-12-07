@@ -1,68 +1,92 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 07 Dec 2015 18:24:13 +0000
-Subject: [PATCH v2 0/6] ARM/arm64 : shmobile/renesas: Add L2 cache-controller nodes
-Message-Id: <1449512659-16688-1-git-send-email-geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 07 Dec 2015 07:44:43 +0000
+Subject: [PATCH 7/8 v3] ARM: shmobile: r8a7791: enable to use thermal-zone
+Message-Id: <87oae266yc.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87y4d6672t.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87y4d6672t.wl%kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Zhang Rui <rui.zhang-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, Eduardo Valentin <edubezval-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
+Cc: Magnus <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-pm-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-	Hi Simon, Magnus,
 
-This patch series adds the missing L2 cache-controller nodes to the
-DTSes for various Renesas ARM-based SoCs, and links the CPU nodes to
-them.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-For R-Mobile APE6 (r8a73a4), the L2 cache-controllers are also linked to
-the respective (already existing) SYSC Power Domains. Fortunately these
-Power Domains were never powered down, as they are parents of the Power
-Domains containing CPU cores. This may change in the future.
+This patch enables to use thermal-zone on r8a7791.
+This thermal sensor can measure temperature from -40000 to 125000,
+but over 117000 can be critical on this chip.
+Thus, default critical temperature is now set as 115000 (this driver
+is using 5000 steps) (Current critical temperature is using it as
+90000, but there is no big reason about it)
 
-For R-Car Gen2 and Gen3 (r8a779x), this serves as a preparatory step for
-adding SYSC Power Domain support later.
+And it doesn't check thermal zone periodically (same as current
+behavior). You can exchange it by modifing polling-delay[-passive]
+property.
 
-Question for the ARM/DT people: What are the DT bindings for
-Cortex-A15/A7/A57/A53 L2 cache controllers?
-Everybody just seems to use "cache" for the compatible values...
+You can set trip temp if your kernel has CONFIG_THERMAL_WRITABLE_TRIPS,
+but you need to take care to use it, since it will call
+orderly_poweroff() it it reached to the value.
+echo $temp > /sys/class/thermal/thermal_zone0/trip_point_0_temp
 
-Patches 2-5 were extracted from series "[PATCH/RFC 00/15]
-ARM: shmobile: R-Car: Add SYSC PM Domain DT Support",
-(http://lists.infradead.org/pipermail/linux-arm-kernel/2015-June/348742.html)
-and received some fixes. You can find more detailed changelogs in the
-individual patches).
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v2 -> v3
 
-This has been tested on r8a73a4/ape6evm, r8a7791/koelsch, and
-r8a7795/salvator-x.
+ - compatible "renesas,rcar-thermal-gen2" -> "renesas,rcar-gen2-thermal"
 
-Thanks!
+ arch/arm/boot/dts/r8a7791.dtsi | 26 ++++++++++++++++++++++++--
+ 1 file changed, 24 insertions(+), 2 deletions(-)
 
-Geert Uytterhoeven (6):
-  ARM: shmobile: r8a73a4 dtsi: Add L2 cache-controller nodes
-  ARM: shmobile: r8a7790 dtsi: Add L2 cache-controller nodes
-  ARM: shmobile: r8a7791 dtsi: Add L2 cache-controller node
-  ARM: shmobile: r8a7793 dtsi: Add L2 cache-controller node
-  ARM: shmobile: r8a7794 dtsi: Add L2 cache-controller node
-  arm64: renesas: r8a7795: Add L2 cache-controller nodes
-
- arch/arm/boot/dts/r8a73a4.dtsi           | 19 +++++++++++++++++++
- arch/arm/boot/dts/r8a7790.dtsi           | 22 ++++++++++++++++++++++
- arch/arm/boot/dts/r8a7791.dtsi           | 10 ++++++++++
- arch/arm/boot/dts/r8a7793.dtsi           |  9 +++++++++
- arch/arm/boot/dts/r8a7794.dtsi           |  8 ++++++++
- arch/arm64/boot/dts/renesas/r8a7795.dtsi | 15 +++++++++++++++
- 6 files changed, 83 insertions(+)
-
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 1487d92..d885e5f 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -69,6 +69,25 @@
+ 		};
+ 	};
+ 
++	thermal-zones {
++		cpu_thermal: cpu-thermal {
++			polling-delay-passive	= <0>;
++			polling-delay		= <0>;
++
++			thermal-sensors = <&thermal>;
++
++			trips {
++				cpu-crit {
++					temperature	= <1150000>;
++					hysteresis	= <0>;
++					type		= "critical";
++				};
++			};
++			cooling-maps {
++			};
++		};
++	};
++
+ 	gic: interrupt-controller@f1001000 {
+ 		compatible = "arm,gic-400";
+ 		#interrupt-cells = <3>;
+@@ -185,12 +204,15 @@
+ 		power-domains = <&cpg_clocks>;
+ 	};
+ 
+-	thermal@e61f0000 {
+-		compatible = "renesas,thermal-r8a7791", "renesas,rcar-thermal";
++	thermal: thermal@e61f0000 {
++		compatible =	"renesas,thermal-r8a7791",
++				"renesas,rcar-gen2-thermal",
++				"renesas,rcar-thermal";
+ 		reg = <0 0xe61f0000 0 0x14>, <0 0xe61f0100 0 0x38>;
+ 		interrupts = <0 69 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp5_clks R8A7791_CLK_THERMAL>;
+ 		power-domains = <&cpg_clocks>;
++		#thermal-sensor-cells = <0>;
+ 	};
+ 
+ 	timer {
 -- 
 1.9.1
 
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
