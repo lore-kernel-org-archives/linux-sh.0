@@ -1,7 +1,7 @@
-From: Rob Herring <robh@kernel.org>
-Date: Fri, 04 Dec 2015 15:02:33 +0000
+From: Bjorn Helgaas <helgaas@kernel.org>
+Date: Mon, 07 Dec 2015 15:41:23 +0000
 Subject: Re: [PATCH v2 3/4] PCI: rcar: add gen2 fallback compatibility string
-Message-Id: <20151204150233.GA27319@rob-hp-laptop>
+Message-Id: <20151207154123.GE7994@localhost>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1449096700-23304-1-git-send-email-horms+renesas@verge.net.au>
  <1449096700-23304-4-git-send-email-horms+renesas@verge.net.au>
@@ -19,9 +19,8 @@ On Thu, Dec 03, 2015 at 07:51:39AM +0900, Simon Horman wrote:
 > 
 > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-Acked-by: Rob Herring <robh@kernel.org>
+Acked-by: Bjorn Helgaas <bhelgaas@google.com>
 
-> 
 > ---
 > v2
 > * Include "rcar-" in new compatibility string
@@ -77,6 +76,6 @@ Acked-by: Rob Herring <robh@kernel.org>
 > 2.1.4
 > 
 > --
-> To unsubscribe from this list: send the line "unsubscribe devicetree" in
+> To unsubscribe from this list: send the line "unsubscribe linux-pci" in
 > the body of a message to majordomo@vger.kernel.org
 > More majordomo info at  http://vger.kernel.org/majordomo-info.html
