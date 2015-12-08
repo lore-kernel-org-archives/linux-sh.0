@@ -1,70 +1,43 @@
-From: Laurent Pinchart <pinchart_laurent@projectara.com>
-Date: Sun, 13 Dec 2015 18:18:31 +0000
-Subject: Re: [PATCH 1/3] media: adv7604: implement g_crop
-Message-Id: <3290325.ZSnHk6CZGE@avalon>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 08 Dec 2015 17:54:10 +0000
+Subject: [PATCH 05/13] ARM: shmobile: genmai dts: Update console parameters
+Message-Id: <1449597258-32623-6-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449849893-14865-1-git-send-email-ulrich.hecht+renesas@gmail.com> <1449849893-14865-2-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1449849893-14865-2-git-send-email-ulrich.hecht+renesas@gmail.com>
+References: <1449597258-32623-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1449597258-32623-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Cc: linux-media@vger.kernel.org, linux-sh@vger.kernel.org, magnus.damm@gmail.com, hans.verkuil@cisco.com, ian.molton@codethink.co.uk, lars@metafoo.de, william.towle@codethink.co.uk
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Ulrich,
+Change the console alias to "serial0", for consistency with other
+boards (the first unlabeled serial port is always called "serial0").
+Add serial port config to chosen/stdout-path.
 
-Thank you for the patch.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/boot/dts/r7s72100-genmai.dts | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-On Friday 11 December 2015 17:04:51 Ulrich Hecht wrote:
-> The rcar_vin driver relies on this.
-> 
-> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-> ---
->  drivers/media/i2c/adv7604.c | 12 ++++++++++++
->  1 file changed, 12 insertions(+)
-> 
-> diff --git a/drivers/media/i2c/adv7604.c b/drivers/media/i2c/adv7604.c
-> index 129009f..d30e7cc 100644
-> --- a/drivers/media/i2c/adv7604.c
-> +++ b/drivers/media/i2c/adv7604.c
-> @@ -1885,6 +1885,17 @@ static int adv76xx_get_format(struct v4l2_subdev *sd,
-> return 0;
->  }
-> 
-> +static int adv76xx_g_crop(struct v4l2_subdev *sd, struct v4l2_crop *a)
-> +{
-> +	struct adv76xx_state *state = to_state(sd);
-> +
-> +	a->c.height = state->timings.bt.height;
-> +	a->c.width  = state->timings.bt.width;
-
-Shouldn't you set a->c.top and a->c.left to 0 ? There's no guarantee that the 
-caller will always zero the structure before calling you.
-
-> +	a->type	    = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-
-The type field is an input parameter, you should just return -EINVAL if the 
-value is not V4L2_BUF_TYPE_VIDEO_CAPTURE.
-
-> +
-> +	return 0;
-> +}
-> +
->  static int adv76xx_set_format(struct v4l2_subdev *sd,
->  			      struct v4l2_subdev_pad_config *cfg,
->  			      struct v4l2_subdev_format *format)
-> @@ -2407,6 +2418,7 @@ static const struct v4l2_subdev_core_ops
-> adv76xx_core_ops = {
-> 
->  static const struct v4l2_subdev_video_ops adv76xx_video_ops = {
->  	.s_routing = adv76xx_s_routing,
-> +	.g_crop = adv76xx_g_crop,
->  	.g_input_status = adv76xx_g_input_status,
->  	.s_dv_timings = adv76xx_s_dv_timings,
->  	.g_dv_timings = adv76xx_g_dv_timings,
-
+diff --git a/arch/arm/boot/dts/r7s72100-genmai.dts b/arch/arm/boot/dts/r7s72100-genmai.dts
+index a9da7a89fc4ba65a..47533c2c419e164d 100644
+--- a/arch/arm/boot/dts/r7s72100-genmai.dts
++++ b/arch/arm/boot/dts/r7s72100-genmai.dts
+@@ -17,12 +17,12 @@
+ 	compatible = "renesas,genmai", "renesas,r7s72100";
+ 
+ 	aliases {
+-		serial2 = &scif2;
++		serial0 = &scif2;
+ 	};
+ 
+ 	chosen {
+ 		bootargs = "ignore_loglevel rw root=/dev/nfs ip=dhcp";
+-		stdout-path = &scif2;
++		stdout-path = "serial0:115200n8";
+ 	};
+ 
+ 	memory {
 -- 
-Regards,
-
-Laurent Pinchart
+1.9.1
 
