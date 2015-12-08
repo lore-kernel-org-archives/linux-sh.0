@@ -1,145 +1,91 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 17 Dec 2015 08:39:47 +0000
-Subject: [PATCH/RFC 09/48] v4l: vsp1: Don't setup control handler when starting streaming
-Message-Id: <1450341626-6695-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Tue, 08 Dec 2015 09:37:49 +0000
+Subject: [PATCH v2 5/9] i2c: rcar: honor additional i2c timings from DT
+Message-Id: <1449567473-2084-6-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450341626-6695-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1450341626-6695-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1449567473-2084-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1449567473-2084-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, linux-rockchip@lists.infradead.org, Mika Westerberg <mika.westerberg@linux.intel.com>, Andy Shevchenko <andriy.shevchenko@linux.intel.com>, Jarkko Nikula <jarkko.nikula@linux.intel.com>
 
-The control handler set operations don't program the hardware anymore,
-there's thus no need to call them when starting the stream.
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 ---
- drivers/media/platform/vsp1/vsp1_bru.c    |  5 +----
- drivers/media/platform/vsp1/vsp1_entity.c | 18 +-----------------
- drivers/media/platform/vsp1/vsp1_entity.h |  2 +-
- drivers/media/platform/vsp1/vsp1_rpf.c    |  5 +----
- drivers/media/platform/vsp1/vsp1_sru.c    |  5 +----
- drivers/media/platform/vsp1/vsp1_wpf.c    |  5 +----
- 6 files changed, 6 insertions(+), 34 deletions(-)
+ Documentation/devicetree/bindings/i2c/i2c-rcar.txt |  4 ++++
+ drivers/i2c/busses/i2c-rcar.c                      | 21 ++++++++++++---------
+ 2 files changed, 16 insertions(+), 9 deletions(-)
 
-diff --git a/drivers/media/platform/vsp1/vsp1_bru.c b/drivers/media/platform/vsp1/vsp1_bru.c
-index 4c1bd0419e12..27a9043b11e2 100644
---- a/drivers/media/platform/vsp1/vsp1_bru.c
-+++ b/drivers/media/platform/vsp1/vsp1_bru.c
-@@ -66,11 +66,8 @@ static int bru_s_stream(struct v4l2_subdev *subdev, int enable)
- 	struct v4l2_mbus_framefmt *format;
- 	unsigned int flags;
- 	unsigned int i;
--	int ret;
+diff --git a/Documentation/devicetree/bindings/i2c/i2c-rcar.txt b/Documentation/devicetree/bindings/i2c/i2c-rcar.txt
+index ea406eb20fa5ad..95e97223a71c83 100644
+--- a/Documentation/devicetree/bindings/i2c/i2c-rcar.txt
++++ b/Documentation/devicetree/bindings/i2c/i2c-rcar.txt
+@@ -20,6 +20,10 @@ Optional properties:
+   propoerty indicates the default frequency 100 kHz.
+ - clocks: clock specifier.
  
--	ret = vsp1_entity_set_streaming(&bru->entity, enable);
--	if (ret < 0)
--		return ret;
-+	vsp1_entity_set_streaming(&bru->entity, enable);
++- i2c-scl-falling-time-ns: see i2c.txt
++- i2c-scl-internal-delay-ns: see i2c.txt
++- i2c-scl-rising-time-ns: see i2c.txt
++
+ Examples :
  
- 	if (!enable)
- 		return 0;
-diff --git a/drivers/media/platform/vsp1/vsp1_entity.c b/drivers/media/platform/vsp1/vsp1_entity.c
-index c005d374c254..a366cb64ae9d 100644
---- a/drivers/media/platform/vsp1/vsp1_entity.c
-+++ b/drivers/media/platform/vsp1/vsp1_entity.c
-@@ -45,29 +45,13 @@ bool vsp1_entity_is_streaming(struct vsp1_entity *entity)
- 	return streaming;
- }
+ i2c0: i2c@e6508000 {
+diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
+index c663f4389bf898..b2389c492579cf 100644
+--- a/drivers/i2c/busses/i2c-rcar.c
++++ b/drivers/i2c/busses/i2c-rcar.c
+@@ -164,12 +164,15 @@ static int rcar_i2c_bus_barrier(struct rcar_i2c_priv *priv)
  
--int vsp1_entity_set_streaming(struct vsp1_entity *entity, bool streaming)
-+void vsp1_entity_set_streaming(struct vsp1_entity *entity, bool streaming)
+ static int rcar_i2c_clock_calculate(struct rcar_i2c_priv *priv, struct i2c_timings *t)
  {
- 	unsigned long flags;
--	int ret;
+-	u32 scgd, cdf, round, ick, scl, cdf_width;
++	u32 scgd, cdf, round, ick, sum, scl, cdf_width;
+ 	unsigned long rate;
+ 	struct device *dev = rcar_i2c_priv_to_dev(priv);
  
- 	spin_lock_irqsave(&entity->lock, flags);
- 	entity->streaming = streaming;
- 	spin_unlock_irqrestore(&entity->lock, flags);
--
--	if (!streaming)
--		return 0;
--
--	if (!entity->vsp1->info->uapi || !entity->subdev.ctrl_handler)
--		return 0;
--
--	ret = v4l2_ctrl_handler_setup(entity->subdev.ctrl_handler);
--	if (ret < 0) {
--		spin_lock_irqsave(&entity->lock, flags);
--		entity->streaming = false;
--		spin_unlock_irqrestore(&entity->lock, flags);
--	}
--
--	return ret;
- }
+ 	/* Fall back to previously used values if not supplied */
+ 	t->bus_freq_hz = t->bus_freq_hz ?: 100000;
++	t->scl_fall_ns = t->scl_fall_ns ?: 35;
++	t->scl_rise_ns = t->scl_rise_ns ?: 200;
++	t->scl_int_delay_ns = t->scl_int_delay_ns ?: 50;
  
- void vsp1_entity_route_setup(struct vsp1_entity *source)
-diff --git a/drivers/media/platform/vsp1/vsp1_entity.h b/drivers/media/platform/vsp1/vsp1_entity.h
-index 259880e524fe..c0d6db82ebfb 100644
---- a/drivers/media/platform/vsp1/vsp1_entity.h
-+++ b/drivers/media/platform/vsp1/vsp1_entity.h
-@@ -101,7 +101,7 @@ void vsp1_entity_init_formats(struct v4l2_subdev *subdev,
- 			      struct v4l2_subdev_pad_config *cfg);
+ 	switch (priv->devtype) {
+ 	case I2C_RCAR_GEN1:
+@@ -193,9 +196,9 @@ static int rcar_i2c_clock_calculate(struct rcar_i2c_priv *priv, struct i2c_timin
+ 	 * SCL	= ick / (20 + SCGD * 8 + F[(ticf + tr + intd) * ick])
+ 	 *
+ 	 * ick  : I2C internal clock < 20 MHz
+-	 * ticf : I2C SCL falling time  =  35 ns here
+-	 * tr   : I2C SCL rising  time  = 200 ns here
+-	 * intd : LSI internal delay    =  50 ns here
++	 * ticf : I2C SCL falling time
++	 * tr   : I2C SCL rising  time
++	 * intd : LSI internal delay
+ 	 * clkp : peripheral_clk
+ 	 * F[]  : integer up-valuation
+ 	 */
+@@ -211,12 +214,12 @@ static int rcar_i2c_clock_calculate(struct rcar_i2c_priv *priv, struct i2c_timin
+ 	 * it is impossible to calculate large scale
+ 	 * number on u32. separate it
+ 	 *
+-	 * F[(ticf + tr + intd) * ick]
+-	 *  = F[(35 + 200 + 50)ns * ick]
+-	 *  = F[285 * ick / 1000000000]
+-	 *  = F[(ick / 1000000) * 285 / 1000]
++	 * F[(ticf + tr + intd) * ick] with sum = (ticf + tr + intd)
++	 *  = F[sum * ick / 1000000000]
++	 *  = F[(ick / 1000000) * sum / 1000]
+ 	 */
+-	round = (ick + 500000) / 1000000 * 285;
++	sum = t->scl_fall_ns + t->scl_rise_ns + t->scl_int_delay_ns;
++	round = (ick + 500000) / 1000000 * sum;
+ 	round = (round + 500) / 1000;
  
- bool vsp1_entity_is_streaming(struct vsp1_entity *entity);
--int vsp1_entity_set_streaming(struct vsp1_entity *entity, bool streaming);
-+void vsp1_entity_set_streaming(struct vsp1_entity *entity, bool streaming);
- 
- void vsp1_entity_route_setup(struct vsp1_entity *source);
- 
-diff --git a/drivers/media/platform/vsp1/vsp1_rpf.c b/drivers/media/platform/vsp1/vsp1_rpf.c
-index 9ccfb572b4a5..48870b257a81 100644
---- a/drivers/media/platform/vsp1/vsp1_rpf.c
-+++ b/drivers/media/platform/vsp1/vsp1_rpf.c
-@@ -45,11 +45,8 @@ static int rpf_s_stream(struct v4l2_subdev *subdev, int enable)
- 	const struct v4l2_rect *crop = &rpf->crop;
- 	u32 pstride;
- 	u32 infmt;
--	int ret;
- 
--	ret = vsp1_entity_set_streaming(&rpf->entity, enable);
--	if (ret < 0)
--		return ret;
-+	vsp1_entity_set_streaming(&rpf->entity, enable);
- 
- 	if (!enable)
- 		return 0;
-diff --git a/drivers/media/platform/vsp1/vsp1_sru.c b/drivers/media/platform/vsp1/vsp1_sru.c
-index ec4741efc7f8..15fc562a52da 100644
---- a/drivers/media/platform/vsp1/vsp1_sru.c
-+++ b/drivers/media/platform/vsp1/vsp1_sru.c
-@@ -113,11 +113,8 @@ static int sru_s_stream(struct v4l2_subdev *subdev, int enable)
- 	struct v4l2_mbus_framefmt *input;
- 	struct v4l2_mbus_framefmt *output;
- 	u32 ctrl0;
--	int ret;
- 
--	ret = vsp1_entity_set_streaming(&sru->entity, enable);
--	if (ret < 0)
--		return ret;
-+	vsp1_entity_set_streaming(&sru->entity, enable);
- 
- 	if (!enable)
- 		return 0;
-diff --git a/drivers/media/platform/vsp1/vsp1_wpf.c b/drivers/media/platform/vsp1/vsp1_wpf.c
-index 2135cca2490e..d68c90d45232 100644
---- a/drivers/media/platform/vsp1/vsp1_wpf.c
-+++ b/drivers/media/platform/vsp1/vsp1_wpf.c
-@@ -46,11 +46,8 @@ static int wpf_s_stream(struct v4l2_subdev *subdev, int enable)
- 	unsigned int i;
- 	u32 srcrpf = 0;
- 	u32 outfmt = 0;
--	int ret;
- 
--	ret = vsp1_entity_set_streaming(&wpf->entity, enable);
--	if (ret < 0)
--		return ret;
-+	vsp1_entity_set_streaming(&wpf->entity, enable);
- 
- 	if (!enable) {
- 		vsp1_write(vsp1, VI6_WPF_IRQ_ENB(wpf->entity.index), 0);
+ 	/*
 -- 
-2.4.10
+2.1.4
 
