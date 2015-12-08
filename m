@@ -1,161 +1,94 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 11 Dec 2015 02:52:54 +0000
-Subject: [PATCH/RFC 17/19] ARM: shmobile: r8a7793: enable audio DMAC in device tree
-Message-Id: <1449802376-11301-18-git-send-email-horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 08 Dec 2015 05:29:20 +0000
+Subject: [PATCH 6/8 v4] ARM: shmobile: r8a7790: enable to use thermal-zone
+Message-Id: <87lh955x4h.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449802376-11301-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1449802376-11301-1-git-send-email-horms+renesas@verge.net.au>
+References: <87vb895x9d.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87vb895x9d.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon <horms@verge.net.au>, Zhang Rui <rui.zhang@intel.com>, Eduardo Valentin <edubezval@gmail.com>
+Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
 
-Enable audio DMAC (= rcar-dmac) in r8a7793 device tree.
 
-Based on similar work for the r8a7791 by Kuninori Morimoto.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+This patch enables to use thermal-zone on r8a7790.
+This thermal sensor can measure temperature from -40000 to 125000,
+but over 117000 can be critical on this chip.
+Thus, default critical temperature is now set as 115000 (this driver
+is using 5000 steps) (Current critical temperature is using it as
+90000, but there is no big reason about it)
+
+And it doesn't check thermal zone periodically (same as current
+behavior). You can exchange it by modifying polling-delay[-passive]
+property.
+
+You can set trip temp if your kernel has CONFIG_THERMAL_WRITABLE_TRIPS,
+but you need to take care to use it, since it will call
+orderly_poweroff() it it reaches to the value.
+echo $temp > /sys/class/thermal/thermal_zone0/trip_point_0_temp
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/boot/dts/r8a7793.dtsi | 91 ++++++++++++++++++++++++++++++++++++------
- 1 file changed, 79 insertions(+), 12 deletions(-)
+v3 -> v4
 
-diff --git a/arch/arm/boot/dts/r8a7793.dtsi b/arch/arm/boot/dts/r8a7793.dtsi
-index 1d68c0dd84e5..ed2acd9967b1 100644
---- a/arch/arm/boot/dts/r8a7793.dtsi
-+++ b/arch/arm/boot/dts/r8a7793.dtsi
-@@ -1192,52 +1192,119 @@
- 		status = "disabled";
- 
- 		rcar_sound,dvc {
--			dvc0: dvc@0 { };
--			dvc1: dvc@1 { };
-+			dvc0: dvc@0 {
-+				dmas = <&audma0 0xbc>;
-+				dma-names = "tx";
-+			};
-+			dvc1: dvc@1 {
-+				dmas = <&audma0 0xbe>;
-+				dma-names = "tx";
-+			};
- 		};
-+
- 		rcar_sound,src {
--			src0: src@0 { };
--			src1: src@1 { };
--			src2: src@2 { };
--			src3: src@3 { };
--			src4: src@4 { };
--			src5: src@5 { };
--			src6: src@6 { };
--			src7: src@7 { };
--			src8: src@8 { };
--			src9: src@9 { };
-+			src0: src@0 {
-+				interrupts = <0 352 IRQ_TYPE_LEVEL_HIGH>;
-+				dmas = <&audma0 0x85>, <&audma1 0x9a>;
-+				dma-names = "rx", "tx";
-+			};
-+			src1: src@1 {
-+				interrupts = <0 353 IRQ_TYPE_LEVEL_HIGH>;
-+				dmas = <&audma0 0x87>, <&audma1 0x9c>;
-+				dma-names = "rx", "tx";
-+			};
-+			src2: src@2 {
-+				interrupts = <0 354 IRQ_TYPE_LEVEL_HIGH>;
-+				dmas = <&audma0 0x89>, <&audma1 0x9e>;
-+				dma-names = "rx", "tx";
-+			};
-+			src3: src@3 {
-+				interrupts = <0 355 IRQ_TYPE_LEVEL_HIGH>;
-+				dmas = <&audma0 0x8b>, <&audma1 0xa0>;
-+				dma-names = "rx", "tx";
-+			};
-+			src4: src@4 {
-+				interrupts = <0 356 IRQ_TYPE_LEVEL_HIGH>;
-+				dmas = <&audma0 0x8d>, <&audma1 0xb0>;
-+				dma-names = "rx", "tx";
-+			};
-+			src5: src@5 {
-+				interrupts = <0 357 IRQ_TYPE_LEVEL_HIGH>;
-+				dmas = <&audma0 0x8f>, <&audma1 0xb2>;
-+				dma-names = "rx", "tx";
-+			};
-+			src6: src@6 {
-+				interrupts = <0 358 IRQ_TYPE_LEVEL_HIGH>;
-+				dmas = <&audma0 0x91>, <&audma1 0xb4>;
-+				dma-names = "rx", "tx";
-+			};
-+			src7: src@7 {
-+				interrupts = <0 359 IRQ_TYPE_LEVEL_HIGH>;
-+				dmas = <&audma0 0x93>, <&audma1 0xb6>;
-+				dma-names = "rx", "tx";
-+			};
-+			src8: src@8 {
-+				interrupts = <0 360 IRQ_TYPE_LEVEL_HIGH>;
-+				dmas = <&audma0 0x95>, <&audma1 0xb8>;
-+				dma-names = "rx", "tx";
-+			};
-+			src9: src@9 {
-+				interrupts = <0 361 IRQ_TYPE_LEVEL_HIGH>;
-+				dmas = <&audma0 0x97>, <&audma1 0xba>;
-+				dma-names = "rx", "tx";
-+			};
- 		};
- 
- 		rcar_sound,ssi {
- 			ssi0: ssi@0 {
- 				interrupts = <0 370 IRQ_TYPE_LEVEL_HIGH>;
-+				dmas = <&audma0 0x01>, <&audma1 0x02>, <&audma0 0x15>, <&audma1 0x16>;
-+				dma-names = "rx", "tx", "rxu", "txu";
- 			};
- 			ssi1: ssi@1 {
- 				 interrupts = <0 371 IRQ_TYPE_LEVEL_HIGH>;
-+				dmas = <&audma0 0x03>, <&audma1 0x04>, <&audma0 0x49>, <&audma1 0x4a>;
-+				dma-names = "rx", "tx", "rxu", "txu";
- 			};
- 			ssi2: ssi@2 {
- 				interrupts = <0 372 IRQ_TYPE_LEVEL_HIGH>;
-+				dmas = <&audma0 0x05>, <&audma1 0x06>, <&audma0 0x63>, <&audma1 0x64>;
-+				dma-names = "rx", "tx", "rxu", "txu";
- 			};
- 			ssi3: ssi@3 {
- 				interrupts = <0 373 IRQ_TYPE_LEVEL_HIGH>;
-+				dmas = <&audma0 0x07>, <&audma1 0x08>, <&audma0 0x6f>, <&audma1 0x70>;
-+				dma-names = "rx", "tx", "rxu", "txu";
- 			};
- 			ssi4: ssi@4 {
- 				interrupts = <0 374 IRQ_TYPE_LEVEL_HIGH>;
-+				dmas = <&audma0 0x09>, <&audma1 0x0a>, <&audma0 0x71>, <&audma1 0x72>;
-+				dma-names = "rx", "tx", "rxu", "txu";
- 			};
- 			ssi5: ssi@5 {
- 				interrupts = <0 375 IRQ_TYPE_LEVEL_HIGH>;
-+				dmas = <&audma0 0x0b>, <&audma1 0x0c>, <&audma0 0x73>, <&audma1 0x74>;
-+				dma-names = "rx", "tx", "rxu", "txu";
- 			};
- 			ssi6: ssi@6 {
- 				interrupts = <0 376 IRQ_TYPE_LEVEL_HIGH>;
-+				dmas = <&audma0 0x0d>, <&audma1 0x0e>, <&audma0 0x75>, <&audma1 0x76>;
-+				dma-names = "rx", "tx", "rxu", "txu";
- 			};
- 			ssi7: ssi@7 {
- 				interrupts = <0 377 IRQ_TYPE_LEVEL_HIGH>;
-+				dmas = <&audma0 0x0f>, <&audma1 0x10>, <&audma0 0x79>, <&audma1 0x7a>;
-+				dma-names = "rx", "tx", "rxu", "txu";
- 			};
- 			ssi8: ssi@8 {
- 				interrupts = <0 378 IRQ_TYPE_LEVEL_HIGH>;
-+				dmas = <&audma0 0x11>, <&audma1 0x12>, <&audma0 0x7b>, <&audma1 0x7c>;
-+				dma-names = "rx", "tx", "rxu", "txu";
- 			};
- 			ssi9: ssi@9 {
- 				interrupts = <0 379 IRQ_TYPE_LEVEL_HIGH>;
-+				dmas = <&audma0 0x13>, <&audma1 0x14>, <&audma0 0x7d>, <&audma1 0x7e>;
-+				dma-names = "rx", "tx", "rxu", "txu";
- 			};
+ - modifing -> modifying
+ - reached -> reaches
+ - <1150000> -> <115000>
+
+ arch/arm/boot/dts/r8a7790.dtsi | 26 ++++++++++++++++++++++++--
+ 1 file changed, 24 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 9f3036b..2203b97 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -112,6 +112,25 @@
  		};
  	};
+ 
++	thermal-zones {
++		cpu_thermal: cpu-thermal {
++			polling-delay-passive	= <0>;
++			polling-delay		= <0>;
++
++			thermal-sensors = <&thermal>;
++
++			trips {
++				cpu-crit {
++					temperature	= <115000>;
++					hysteresis	= <0>;
++					type		= "critical";
++				};
++			};
++			cooling-maps {
++			};
++		};
++	};
++
+ 	gic: interrupt-controller@f1001000 {
+ 		compatible = "arm,gic-400";
+ 		#interrupt-cells = <3>;
+@@ -202,12 +221,15 @@
+ 		power-domains = <&cpg_clocks>;
+ 	};
+ 
+-	thermal@e61f0000 {
+-		compatible = "renesas,thermal-r8a7790", "renesas,rcar-thermal";
++	thermal: thermal@e61f0000 {
++		compatible =	"renesas,thermal-r8a7790",
++				"renesas,rcar-gen2-thermal",
++				"renesas,rcar-thermal";
+ 		reg = <0 0xe61f0000 0 0x14>, <0 0xe61f0100 0 0x38>;
+ 		interrupts = <0 69 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp5_clks R8A7790_CLK_THERMAL>;
+ 		power-domains = <&cpg_clocks>;
++		#thermal-sensor-cells = <0>;
+ 	};
+ 
+ 	timer {
 -- 
-2.1.4
+1.9.1
 
