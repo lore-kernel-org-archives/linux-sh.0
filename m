@@ -1,36 +1,75 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 18 Dec 2015 02:29:45 +0000
-Subject: [PATCH 15/25] ARM: shmobile: lager dts: Add serial port config to chosen/stdout-path
-Message-Id: <57d19f813177243382fbdc14fef06d19f0956228.1450402264.git.horms+renesas@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Tue, 08 Dec 2015 09:37:52 +0000
+Subject: [PATCH v2 8/9] ARM: shmobile: r8a7794: dtsi: add internal delay for i2c IPs
+Message-Id: <1449567473-2084-9-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1450402264.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1450402264.git.horms+renesas@verge.net.au>
+References: <1449567473-2084-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1449567473-2084-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, linux-rockchip@lists.infradead.org, Mika Westerberg <mika.westerberg@linux.intel.com>, Andy Shevchenko <andriy.shevchenko@linux.intel.com>, Jarkko Nikula <jarkko.nikula@linux.intel.com>
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 ---
- arch/arm/boot/dts/r8a7790-lager.dts | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/boot/dts/r8a7794.dtsi | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index c46295afb08a..44ba69b974a2 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -53,7 +53,7 @@
- 
- 	chosen {
- 		bootargs = "ignore_loglevel rw root=/dev/nfs ip=dhcp";
--		stdout-path = &scif0;
-+		stdout-path = "serial0:115200n8";
+diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
+index 6f2f01914db295..37809b8aae65f9 100644
+--- a/arch/arm/boot/dts/r8a7794.dtsi
++++ b/arch/arm/boot/dts/r8a7794.dtsi
+@@ -519,6 +519,7 @@
+ 		power-domains = <&cpg_clocks>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
++		i2c-scl-internal-delay-ns = <6>;
+ 		status = "disabled";
  	};
  
- 	memory@40000000 {
+@@ -530,6 +531,7 @@
+ 		power-domains = <&cpg_clocks>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
++		i2c-scl-internal-delay-ns = <6>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -541,6 +543,7 @@
+ 		power-domains = <&cpg_clocks>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
++		i2c-scl-internal-delay-ns = <6>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -552,6 +555,7 @@
+ 		power-domains = <&cpg_clocks>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
++		i2c-scl-internal-delay-ns = <6>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -563,6 +567,7 @@
+ 		power-domains = <&cpg_clocks>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
++		i2c-scl-internal-delay-ns = <6>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -574,6 +579,7 @@
+ 		power-domains = <&cpg_clocks>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
++		i2c-scl-internal-delay-ns = <6>;
+ 		status = "disabled";
+ 	};
+ 
 -- 
 2.1.4
 
