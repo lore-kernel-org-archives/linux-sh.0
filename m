@@ -1,77 +1,83 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 14 Dec 2015 18:57:19 +0000
-Subject: [PATCH v3 10/27] serial: sh-sci: Convert from clk_get() to devm_clk_get()
-Message-Id: <1450119456-964-11-git-send-email-geert+renesas@glider.be>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Tue, 08 Dec 2015 09:37:53 +0000
+Subject: [PATCH v2 9/9] arm64: renesas: r8a7795: add internal delay for i2c IPs
+Message-Id: <1449567473-2084-10-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450119456-964-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1450119456-964-1-git-send-email-geert+renesas@glider.be>
+References: <1449567473-2084-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1449567473-2084-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, linux-rockchip@lists.infradead.org, Mika Westerberg <mika.westerberg@linux.intel.com>, Andy Shevchenko <andriy.shevchenko@linux.intel.com>, Jarkko Nikula <jarkko.nikula@linux.intel.com>
 
-Transfer clock cleanup handling to the core device management code.
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 ---
-v3:
-  - Add Acked-by,
-  - Convert "sci_fck", as its removal has been moved after the BRG
-    patches.
----
- drivers/tty/serial/sh-sci.c | 10 ++++------
- 1 file changed, 4 insertions(+), 6 deletions(-)
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi | 7 +++++++
+ 1 file changed, 7 insertions(+)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 136ad2f633413cbc..b9eb4b525c0a7571 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -2216,7 +2216,7 @@ static struct uart_ops sci_uart_ops = {
- static int sci_init_clocks(struct sci_port *sci_port, struct device *dev)
- {
- 	/* Get the SCI functional clock. It's called "fck" on ARM. */
--	sci_port->fclk = clk_get(dev, "fck");
-+	sci_port->fclk = devm_clk_get(dev, "fck");
- 	if (PTR_ERR(sci_port->fclk) = -EPROBE_DEFER)
- 		return -EPROBE_DEFER;
- 	if (!IS_ERR(sci_port->fclk))
-@@ -2226,14 +2226,14 @@ static int sci_init_clocks(struct sci_port *sci_port, struct device *dev)
- 	 * But it used to be called "sci_ick", and we need to maintain DT
- 	 * backward compatibility.
- 	 */
--	sci_port->fclk = clk_get(dev, "sci_ick");
-+	sci_port->fclk = devm_clk_get(dev, "sci_ick");
- 	if (PTR_ERR(sci_port->fclk) = -EPROBE_DEFER)
- 		return -EPROBE_DEFER;
- 	if (!IS_ERR(sci_port->fclk))
- 		return 0;
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index 56d6a5b23a4e38..b02a7ad1583933 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -519,6 +519,7 @@
+ 			interrupts = <GIC_SPI 287 IRQ_TYPE_LEVEL_HIGH>;
+ 			clocks = <&cpg CPG_MOD 931>;
+ 			power-domains = <&cpg>;
++			i2c-scl-internal-delay-ns = <110>;
+ 			status = "disabled";
+ 		};
  
- 	/* SH has historically named the clock "sci_fck". */
--	sci_port->fclk = clk_get(dev, "sci_fck");
-+	sci_port->fclk = devm_clk_get(dev, "sci_fck");
- 	if (!IS_ERR(sci_port->fclk))
- 		return 0;
+@@ -530,6 +531,7 @@
+ 			interrupts = <GIC_SPI 288 IRQ_TYPE_LEVEL_HIGH>;
+ 			clocks = <&cpg CPG_MOD 930>;
+ 			power-domains = <&cpg>;
++			i2c-scl-internal-delay-ns = <6>;
+ 			status = "disabled";
+ 		};
  
-@@ -2241,7 +2241,7 @@ static int sci_init_clocks(struct sci_port *sci_port, struct device *dev)
- 	 * Not all SH platforms declare a clock lookup entry for SCI devices,
- 	 * in which case we need to get the global "peripheral_clk" clock.
- 	 */
--	sci_port->fclk = clk_get(dev, "peripheral_clk");
-+	sci_port->fclk = devm_clk_get(dev, "peripheral_clk");
- 	if (!IS_ERR(sci_port->fclk))
- 		return 0;
+@@ -541,6 +543,7 @@
+ 			interrupts = <GIC_SPI 286 IRQ_TYPE_LEVEL_HIGH>;
+ 			clocks = <&cpg CPG_MOD 929>;
+ 			power-domains = <&cpg>;
++			i2c-scl-internal-delay-ns = <6>;
+ 			status = "disabled";
+ 		};
  
-@@ -2400,8 +2400,6 @@ static int sci_init_single(struct platform_device *dev,
+@@ -552,6 +555,7 @@
+ 			interrupts = <GIC_SPI 290 IRQ_TYPE_LEVEL_HIGH>;
+ 			clocks = <&cpg CPG_MOD 928>;
+ 			power-domains = <&cpg>;
++			i2c-scl-internal-delay-ns = <110>;
+ 			status = "disabled";
+ 		};
  
- static void sci_cleanup_single(struct sci_port *port)
- {
--	clk_put(port->fclk);
--
- 	pm_runtime_disable(port->port.dev);
- }
+@@ -563,6 +567,7 @@
+ 			interrupts = <GIC_SPI 19 IRQ_TYPE_LEVEL_HIGH>;
+ 			clocks = <&cpg CPG_MOD 927>;
+ 			power-domains = <&cpg>;
++			i2c-scl-internal-delay-ns = <110>;
+ 			status = "disabled";
+ 		};
+ 
+@@ -574,6 +579,7 @@
+ 			interrupts = <GIC_SPI 20 IRQ_TYPE_LEVEL_HIGH>;
+ 			clocks = <&cpg CPG_MOD 919>;
+ 			power-domains = <&cpg>;
++			i2c-scl-internal-delay-ns = <110>;
+ 			status = "disabled";
+ 		};
+ 
+@@ -585,6 +591,7 @@
+ 			interrupts = <GIC_SPI 21 IRQ_TYPE_LEVEL_HIGH>;
+ 			clocks = <&cpg CPG_MOD 918>;
+ 			power-domains = <&cpg>;
++			i2c-scl-internal-delay-ns = <6>;
+ 			status = "disabled";
+ 		};
  
 -- 
-1.9.1
+2.1.4
 
