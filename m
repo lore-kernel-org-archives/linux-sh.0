@@ -1,145 +1,98 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 17 Dec 2015 08:40:16 +0000
-Subject: [PATCH/RFC 38/48] DocBook: media: Document the V4L2 subdev request API
-Message-Id: <1450341626-6695-39-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Tue, 08 Dec 2015 09:37:47 +0000
+Subject: [PATCH v2 3/9] i2c: rcar: refactor probe function a little
+Message-Id: <1449567473-2084-4-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450341626-6695-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1450341626-6695-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1449567473-2084-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1449567473-2084-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, linux-rockchip@lists.infradead.org, Mika Westerberg <mika.westerberg@linux.intel.com>, Andy Shevchenko <andriy.shevchenko@linux.intel.com>, Jarkko Nikula <jarkko.nikula@linux.intel.com>
 
-The V4L2 subdev request API consists in extensions to existing V4L2
-subdev ioctls. Document it.
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+The probe function is a little bit messy, something here, something
+there. Rework it so that there is some order: first init the private
+structure, then the adapter, then do HW init. This also allows us to
+remove the device argument of the clock calculation function, because it
+now can be deduced from the private structure. Also, shorten some lines
+where possible. This is a preparation for further refactoring.
+
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 ---
- .../DocBook/media/v4l/vidioc-subdev-g-fmt.xml      | 33 ++++++++++++++++++++--
- .../media/v4l/vidioc-subdev-g-selection.xml        | 28 ++++++++++++++++--
- 2 files changed, 55 insertions(+), 6 deletions(-)
+ drivers/i2c/busses/i2c-rcar.c | 40 +++++++++++++++++-----------------------
+ 1 file changed, 17 insertions(+), 23 deletions(-)
 
-diff --git a/Documentation/DocBook/media/v4l/vidioc-subdev-g-fmt.xml b/Documentation/DocBook/media/v4l/vidioc-subdev-g-fmt.xml
-index a67cde6f8c54..2623e8f52362 100644
---- a/Documentation/DocBook/media/v4l/vidioc-subdev-g-fmt.xml
-+++ b/Documentation/DocBook/media/v4l/vidioc-subdev-g-fmt.xml
-@@ -97,6 +97,13 @@
-     low-pass noise filter might crop pixels at the frame boundaries, modifying
-     its output frame size.</para>
+diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
+index 3ed1f0aa5eeb16..d4322a9096786f 100644
+--- a/drivers/i2c/busses/i2c-rcar.c
++++ b/drivers/i2c/busses/i2c-rcar.c
+@@ -162,15 +162,11 @@ static int rcar_i2c_bus_barrier(struct rcar_i2c_priv *priv)
+ 	return -EBUSY;
+ }
  
-+    <para>Applications can get and set formats stored in a request by setting
-+    the <structfield>which</structfield> field to
-+    <constant>V4L2_SUBDEV_FORMAT_REQUEST</constant> and the
-+    <structfield>request</structfield> to the request ID. See
-+    <xref linkend="v4l2-requests" /> for more information about the request
-+    API.</para>
-+
-     <para>Drivers must not return an error solely because the requested format
-     doesn't match the device capabilities. They must instead modify the format
-     to match what the hardware can provide. The modified format should be as
-@@ -124,8 +131,22 @@
- 	    linkend="v4l2-mbus-framefmt" /> for details.</entry>
- 	  </row>
- 	  <row>
-+	    <entry>__u16</entry>
-+	    <entry><structfield>request</structfield></entry>
-+	    <entry>Request ID, only valid when the <structfield>which</structfield>
-+	    field is set to <constant>V4L2_SUBDEV_FORMAT_REQUEST</constant>.
-+	    Applications and drivers must set the field to zero in all other
-+	    cases.</entry>
-+	  </row>
-+	  <row>
-+	    <entry>__u16</entry>
-+	    <entry><structfield>reserved2</structfield></entry>
-+	    <entry>Reserved for future extensions. Applications and drivers must
-+	    set the field to zero.</entry>
-+	  </row>
-+	  <row>
- 	    <entry>__u32</entry>
--	    <entry><structfield>reserved</structfield>[8]</entry>
-+	    <entry><structfield>reserved</structfield>[7]</entry>
- 	    <entry>Reserved for future extensions. Applications and drivers must
- 	    set the array to zero.</entry>
- 	  </row>
-@@ -148,6 +169,11 @@
- 	    <entry>1</entry>
- 	    <entry>Active formats, applied to the hardware.</entry>
- 	  </row>
-+	  <row>
-+	    <entry>V4L2_SUBDEV_FORMAT_REQUEST</entry>
-+	    <entry>1</entry>
-+	    <entry>Request formats, used with the requests API.</entry>
-+	  </row>
- 	</tbody>
-       </tgroup>
-     </table>
-@@ -171,8 +197,9 @@
- 	<term><errorcode>EINVAL</errorcode></term>
- 	<listitem>
- 	  <para>The &v4l2-subdev-format; <structfield>pad</structfield>
--	  references a non-existing pad, or the <structfield>which</structfield>
--	  field references a non-existing format.</para>
-+	  references a non-existing pad, the <structfield>which</structfield>
-+	  field references a non-existing format or the request ID references
-+	  a nonexistant request.</para>
- 	</listitem>
-       </varlistentry>
-     </variablelist>
-diff --git a/Documentation/DocBook/media/v4l/vidioc-subdev-g-selection.xml b/Documentation/DocBook/media/v4l/vidioc-subdev-g-selection.xml
-index 9b59b49db0c3..f1f6a31baa63 100644
---- a/Documentation/DocBook/media/v4l/vidioc-subdev-g-selection.xml
-+++ b/Documentation/DocBook/media/v4l/vidioc-subdev-g-selection.xml
-@@ -100,6 +100,13 @@
-     handle. Two applications querying the same sub-device would thus not
-     interfere with each other.</para>
+-static int rcar_i2c_clock_calculate(struct rcar_i2c_priv *priv,
+-				    u32 bus_speed,
+-				    struct device *dev)
++static int rcar_i2c_clock_calculate(struct rcar_i2c_priv *priv, u32 bus_speed)
+ {
+-	u32 scgd, cdf;
+-	u32 round, ick;
+-	u32 scl;
+-	u32 cdf_width;
++	u32 scgd, cdf, round, ick, scl, cdf_width;
+ 	unsigned long rate;
++	struct device *dev = rcar_i2c_priv_to_dev(priv);
  
-+    <para>Applications can get and set selection rectangles stored in a request
-+    by setting the <structfield>which</structfield> field to
-+    <constant>V4L2_SUBDEV_FORMAT_REQUEST</constant> and the
-+    <structfield>request</structfield> to the request ID. See
-+    <xref linkend="v4l2-requests" /> for more information about the request
-+    API.</para>
+ 	switch (priv->devtype) {
+ 	case I2C_RCAR_GEN1:
+@@ -610,21 +606,7 @@ static int rcar_i2c_probe(struct platform_device *pdev)
+ 	if (IS_ERR(priv->io))
+ 		return PTR_ERR(priv->io);
+ 
+-	bus_speed = 100000; /* default 100 kHz */
+-	of_property_read_u32(dev->of_node, "clock-frequency", &bus_speed);
+-
+ 	priv->devtype = (enum rcar_i2c_type)of_match_device(rcar_i2c_dt_ids, dev)->data;
+-
+-	pm_runtime_enable(dev);
+-	pm_runtime_get_sync(dev);
+-	ret = rcar_i2c_clock_calculate(priv, bus_speed, dev);
+-	if (ret < 0)
+-		goto out_pm_put;
+-
+-	rcar_i2c_init(priv);
+-	pm_runtime_put(dev);
+-
+-	irq = platform_get_irq(pdev, 0);
+ 	init_waitqueue_head(&priv->wait);
+ 
+ 	adap = &priv->adap;
+@@ -637,8 +619,20 @@ static int rcar_i2c_probe(struct platform_device *pdev)
+ 	i2c_set_adapdata(adap, priv);
+ 	strlcpy(adap->name, pdev->name, sizeof(adap->name));
+ 
+-	ret = devm_request_irq(dev, irq, rcar_i2c_irq, 0,
+-			       dev_name(dev), priv);
++	bus_speed = 100000; /* default 100 kHz */
++	of_property_read_u32(dev->of_node, "clock-frequency", &bus_speed);
 +
-     <para>Drivers must not return an error solely because the requested
-     selection rectangle doesn't match the device capabilities. They must instead
-     modify the rectangle to match what the hardware can provide. The modified
-@@ -160,8 +167,22 @@
- 	    <entry>Selection rectangle, in pixels.</entry>
- 	  </row>
- 	  <row>
-+	    <entry>__u16</entry>
-+	    <entry><structfield>request</structfield></entry>
-+	    <entry>Request ID, only valid when the <structfield>which</structfield>
-+	    field is set to <constant>V4L2_SUBDEV_FORMAT_REQUEST</constant>.
-+	    Applications and drivers must set the field to zero in all other
-+	    cases.</entry>
-+	  </row>
-+	  <row>
-+	    <entry>__u16</entry>
-+	    <entry><structfield>reserved2</structfield></entry>
-+	    <entry>Reserved for future extensions. Applications and drivers must
-+	    set the field to zero.</entry>
-+	  </row>
-+	  <row>
- 	    <entry>__u32</entry>
--	    <entry><structfield>reserved</structfield>[8]</entry>
-+	    <entry><structfield>reserved</structfield>[7]</entry>
- 	    <entry>Reserved for future extensions. Applications and drivers must
- 	    set the array to zero.</entry>
- 	  </row>
-@@ -193,8 +214,9 @@
- 	  <para>The &v4l2-subdev-selection;
- 	  <structfield>pad</structfield> references a non-existing
- 	  pad, the <structfield>which</structfield> field references a
--	  non-existing format, or the selection target is not
--	  supported on the given subdev pad.</para>
-+	  non-existing format, the selection target is not supported on
-+	  the given subdev pad or the request ID references a nonexistant
-+	  request.</para>
- 	</listitem>
-       </varlistentry>
-     </variablelist>
++	pm_runtime_enable(dev);
++	pm_runtime_get_sync(dev);
++	ret = rcar_i2c_clock_calculate(priv, bus_speed);
++	if (ret < 0)
++		goto out_pm_put;
++
++	rcar_i2c_init(priv);
++	pm_runtime_put(dev);
++
++	irq = platform_get_irq(pdev, 0);
++	ret = devm_request_irq(dev, irq, rcar_i2c_irq, 0, dev_name(dev), priv);
+ 	if (ret < 0) {
+ 		dev_err(dev, "cannot get irq %d\n", irq);
+ 		goto out_pm_disable;
 -- 
-2.4.10
+2.1.4
 
