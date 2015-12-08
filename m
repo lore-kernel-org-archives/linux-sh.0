@@ -1,73 +1,33 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 04 Dec 2015 08:32:22 +0000
-Subject: [PATCH 2/8 v2] thermal: rcar: check every rcar_thermal_update_temp() return value
-Message-Id: <87egf2fwg6.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 08 Dec 2015 17:54:17 +0000
+Subject: [PATCH 12/13] ARM: shmobile: porter dts: Add serial port config to chosen/stdout-path
+Message-Id: <1449597258-32623-13-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87h9jyfwj7.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87h9jyfwj7.wl%kuninori.morimoto.gx@renesas.com>
+References: <1449597258-32623-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1449597258-32623-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, Zhang Rui <rui.zhang@intel.com>, Eduardo Valentin <edubezval@gmail.com>
-Cc: Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-v1 -> v2
+ arch/arm/boot/dts/r8a7791-porter.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
- - new patch
-
- drivers/thermal/rcar_thermal.c | 17 +++++++++++++----
- 1 file changed, 13 insertions(+), 4 deletions(-)
-
-diff --git a/drivers/thermal/rcar_thermal.c b/drivers/thermal/rcar_thermal.c
-index 96707a6..4d1bc2b 100644
---- a/drivers/thermal/rcar_thermal.c
-+++ b/drivers/thermal/rcar_thermal.c
-@@ -210,8 +210,11 @@ static int rcar_thermal_get_temp(struct thermal_zone_device *zone, int *temp)
- {
- 	struct rcar_thermal_priv *priv = rcar_zone_to_priv(zone);
+diff --git a/arch/arm/boot/dts/r8a7791-porter.dts b/arch/arm/boot/dts/r8a7791-porter.dts
+index f2dd5356eac8786c..71ba7b6b3a337cd9 100644
+--- a/arch/arm/boot/dts/r8a7791-porter.dts
++++ b/arch/arm/boot/dts/r8a7791-porter.dts
+@@ -22,7 +22,7 @@
  
--	if (!rcar_has_irq_support(priv) || rcar_force_update_temp(priv))
--		rcar_thermal_update_temp(priv);
-+	if (!rcar_has_irq_support(priv) || rcar_force_update_temp(priv)) {
-+		int ret = rcar_thermal_update_temp(priv);
-+		if (ret < 0)
-+			return ret;
-+	}
+ 	chosen {
+ 		bootargs = "ignore_loglevel rw root=/dev/nfs ip=dhcp";
+-		stdout-path = &scif0;
++		stdout-path = "serial0:115200n8";
+ 	};
  
- 	mutex_lock(&priv->lock);
- 	*temp =  MCELSIUS((priv->ctemp * 5) - 65);
-@@ -305,11 +308,15 @@ static void rcar_thermal_work(struct work_struct *work)
- {
- 	struct rcar_thermal_priv *priv;
- 	int cctemp, nctemp;
-+	int ret;
- 
- 	priv = container_of(work, struct rcar_thermal_priv, work.work);
- 
- 	rcar_thermal_get_temp(priv->zone, &cctemp);
--	rcar_thermal_update_temp(priv);
-+	ret = rcar_thermal_update_temp(priv);
-+	if (ret < 0)
-+		return;
-+
- 	rcar_thermal_irq_enable(priv);
- 
- 	rcar_thermal_get_temp(priv->zone, &nctemp);
-@@ -447,7 +454,9 @@ static int rcar_thermal_probe(struct platform_device *pdev)
- 		mutex_init(&priv->lock);
- 		INIT_LIST_HEAD(&priv->list);
- 		INIT_DELAYED_WORK(&priv->work, rcar_thermal_work);
--		rcar_thermal_update_temp(priv);
-+		ret = rcar_thermal_update_temp(priv);
-+		if (ret < 0)
-+			goto error_unregister;
- 
- 		priv->zone = thermal_zone_device_register("rcar_thermal",
- 						1, 0, priv,
+ 	memory@40000000 {
 -- 
 1.9.1
 
