@@ -1,65 +1,55 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 15 Dec 2015 13:27:00 +0000
-Subject: [PATCH/RFC 03/03] ARM: shmobile: r8a7795: Tie in IPMMU with SYS-DMAC0
-Message-Id: <20151215132700.15356.86856.sendpatchset@little-apple>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 08 Dec 2015 17:54:08 +0000
+Subject: [PATCH 03/13] ARM: shmobile: armadillo800eva dts: Update console parameters
+Message-Id: <1449597258-32623-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1449597258-32623-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1449597258-32623-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+Change the console alias to "serial0", for consistency with other
+boards (the first unlabeled serial port is always called "serial0").
+Drop the "console=" parameters from the kernel command line, as they're
+no longer needed for DT-based platforms.
+Add the serial port config to chosen/stdout-path.
 
-Hook up IPMMU-MM and IPMMU-DS0 to the r8a7795 DTS and
-make sure the SYS-DMAC0 is connected to IPMMU-DS0.
-
-The DT binding for the IPMMU will change.
-
-Not for upstream merge.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
+ arch/arm/boot/dts/r8a7740-armadillo800eva.dts | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
- arch/arm64/boot/dts/renesas/r8a7795.dtsi |   24 ++++++++++++++++++++++++
- 1 file changed, 24 insertions(+)
+diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
+index 78a21f2828dff6d1..296a0d1c1fe266c7 100644
+--- a/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
++++ b/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
+@@ -20,12 +20,12 @@
+ 	compatible = "renesas,armadillo800eva", "renesas,r8a7740";
+ 
+ 	aliases {
+-		serial1 = &scifa1;
++		serial0 = &scifa1;
+ 	};
+ 
+ 	chosen {
+-		bootargs = "console=tty0 console=ttySC1,115200 earlyprintk=sh-sci.1,115200 ignore_loglevel root=/dev/nfs ip=dhcp rw";
+-		stdout-path = &scifa1;
++		bootargs = "earlyprintk ignore_loglevel root=/dev/nfs ip=dhcp rw";
++		stdout-path = "serial0:115200n8";
+ 	};
+ 
+ 	memory {
+@@ -232,7 +232,7 @@
+ 		renesas,function = "gether";
+ 	};
+ 
+-	scifa1_pins: serial1 {
++	scifa1_pins: serial0 {
+ 		renesas,groups = "scifa1_data";
+ 		renesas,function = "scifa1";
+ 	};
+-- 
+1.9.1
 
---- 0023/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-+++ work/arch/arm64/boot/dts/renesas/r8a7795.dtsi	2015-12-15 15:13:00.300513000 +0900
-@@ -312,6 +312,22 @@
- 			reg = <0 0xe6060000 0 0x50c>;
- 		};
- 
-+		ipmmu_mm: mmu@e67b0000 {
-+			compatible = "renesas,ipmmu-r8a7795";
-+			reg = <0 0xe67b0000 0 0x1000>; /* IPMMU-MM */
-+			interrupts = <GIC_SPI 196 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 197 IRQ_TYPE_LEVEL_HIGH>;
-+			#iommu-cells = <1>;
-+			status = "okay";
-+		};
-+
-+		ipmmu_ds0: mmu@e6740000 {
-+			compatible = "renesas,ipmmu-r8a7795";
-+			reg = <0 0xe6740000 0 0x1000>; /* IPMMU-DS0 */
-+			#iommu-cells = <1>;
-+			status = "okay";
-+		};
-+
- 		dmac0: dma-controller@e6700000 {
- 			compatible = "renesas,rcar-dmac";
- 			reg = <0 0xe6700000 0 0x10000>;
-@@ -342,6 +358,14 @@
- 			power-domains = <&cpg>;
- 			#dma-cells = <1>;
- 			dma-channels = <16>;
-+			iommus = <&ipmmu_ds0 0>, <&ipmmu_ds0 1>,
-+			       <&ipmmu_ds0 2>, <&ipmmu_ds0 3>,
-+			       <&ipmmu_ds0 4>, <&ipmmu_ds0 5>,
-+			       <&ipmmu_ds0 6>, <&ipmmu_ds0 7>,
-+			       <&ipmmu_ds0 8>, <&ipmmu_ds0 9>,
-+			       <&ipmmu_ds0 10>, <&ipmmu_ds0 11>,
-+			       <&ipmmu_ds0 12>, <&ipmmu_ds0 13>,
-+			       <&ipmmu_ds0 14>, <&ipmmu_ds0 15>;
- 		};
- 
- 		dmac1: dma-controller@e7300000 {
