@@ -1,38 +1,64 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 14 Dec 2015 19:11:42 +0000
-Subject: [PATCH/RFC 5/7] ARM: shmobile: porter dts: Add compatible property to "partitions" node
-Message-Id: <1450120304-2760-6-git-send-email-geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 08 Dec 2015 05:27:56 +0000
+Subject: [PATCH 3/8 v4] thermal: rcar: check irq possibility in rcar_thermal_irq_xxx()
+Message-Id: <87r3ix5x6y.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450120304-2760-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1450120304-2760-1-git-send-email-geert+renesas@glider.be>
+References: <87vb895x9d.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87vb895x9d.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon <horms@verge.net.au>, Zhang Rui <rui.zhang@intel.com>, Eduardo Valentin <edubezval@gmail.com>
+Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
 
-As of commit e488ca9f8d4f62c2 ("doc: dt: mtd: partitions: add compatible
-property to "partitions" node"), the "partitions" subnode of an SPI
-FLASH device node must have a compatible property. The partitions are no
-longer detected if it is not present.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Current rcar thermal driver sometimes checks irq possibility when it
+calls rcar_thermal_irq_enable/disable(), but sometimes not.
+This patch checks it inside rcar_thermal_irq_enable/disable().
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-The abovementioned commit is destined for v4.4.
----
- arch/arm/boot/dts/r8a7791-porter.dts | 1 +
- 1 file changed, 1 insertion(+)
+v3 -> v4
 
-diff --git a/arch/arm/boot/dts/r8a7791-porter.dts b/arch/arm/boot/dts/r8a7791-porter.dts
-index b93016896378c350..f8d8e2e2169a9c40 100644
---- a/arch/arm/boot/dts/r8a7791-porter.dts
-+++ b/arch/arm/boot/dts/r8a7791-porter.dts
-@@ -213,6 +213,7 @@
- 		m25p,fast-read;
+ - no change
+
+ drivers/thermal/rcar_thermal.c | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/thermal/rcar_thermal.c b/drivers/thermal/rcar_thermal.c
+index a1a93f3..67b5216 100644
+--- a/drivers/thermal/rcar_thermal.c
++++ b/drivers/thermal/rcar_thermal.c
+@@ -298,6 +298,9 @@ static void _rcar_thermal_irq_ctrl(struct rcar_thermal_priv *priv, int enable)
+ 	unsigned long flags;
+ 	u32 mask = 0x3 << rcar_id_to_shift(priv); /* enable Rising/Falling */
  
- 		partitions {
-+			compatible = "fixed-partitions";
- 			#address-cells = <1>;
- 			#size-cells = <1>;
++	if (!rcar_has_irq_support(priv))
++		return;
++
+ 	spin_lock_irqsave(&common->lock, flags);
+ 
+ 	rcar_thermal_common_bset(common, INTMSK, mask, enable ? 0 : mask);
+@@ -449,8 +452,7 @@ static int rcar_thermal_probe(struct platform_device *pdev)
+ 			goto error_unregister;
+ 		}
+ 
+-		if (rcar_has_irq_support(priv))
+-			rcar_thermal_irq_enable(priv);
++		rcar_thermal_irq_enable(priv);
+ 
+ 		list_move_tail(&priv->list, &common->head);
+ 
+@@ -496,8 +498,7 @@ static int rcar_thermal_remove(struct platform_device *pdev)
+ 	struct rcar_thermal_priv *priv;
+ 
+ 	rcar_thermal_for_each_priv(priv, common) {
+-		if (rcar_has_irq_support(priv))
+-			rcar_thermal_irq_disable(priv);
++		rcar_thermal_irq_disable(priv);
+ 		thermal_zone_device_unregister(priv->zone);
+ 	}
  
 -- 
 1.9.1
