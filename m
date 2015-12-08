@@ -1,92 +1,105 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 07 Dec 2015 07:44:43 +0000
-Subject: [PATCH 7/8 v3] ARM: shmobile: r8a7791: enable to use thermal-zone
-Message-Id: <87oae266yc.wl%kuninori.morimoto.gx@renesas.com>
+From: Khiem Nguyen <khiem.nguyen.xt@rvc.renesas.com>
+Date: Tue, 08 Dec 2015 03:10:13 +0000
+Subject: Re: [PATCH 7/8 v3] ARM: shmobile: r8a7791: enable to use thermal-zone
+Message-Id: <56664A15.3000209@rvc.renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87y4d6672t.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87y4d6672t.wl%kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
+References: <87y4d6672t.wl%kuninori.morimoto.gx@renesas.com> <87oae266yc.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87oae266yc.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Zhang Rui <rui.zhang-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, Eduardo Valentin <edubezval-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
-Cc: Magnus <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-pm-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: Simon <horms@verge.net.au>, Zhang Rui <rui.zhang@intel.com>, Eduardo Valentin <edubezval@gmail.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Magnus <magnus.damm@gmail.com>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-pm@vger.kernel.org" <linux-pm@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, "Hien Duy. Dang" <hien.dang.eb@rvc.renesas.com>, Toru Oishi <toru.oishi.zj@rvc.renesas.com>, Khiem Nguyen <khiem.nguyen.xt@rvc.renesas.com>
 
+Hi Morimoto-san,
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Thanks for your patch.
+I have same comments as patch 0006.
 
-This patch enables to use thermal-zone on r8a7791.
-This thermal sensor can measure temperature from -40000 to 125000,
-but over 117000 can be critical on this chip.
-Thus, default critical temperature is now set as 115000 (this driver
-is using 5000 steps) (Current critical temperature is using it as
-90000, but there is no big reason about it)
+On 12/7/2015 2:44 PM, Kuninori Morimoto wrote:
+>
+> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+>
+> This patch enables to use thermal-zone on r8a7791.
+> This thermal sensor can measure temperature from -40000 to 125000,
+> but over 117000 can be critical on this chip.
+> Thus, default critical temperature is now set as 115000 (this driver
+> is using 5000 steps) (Current critical temperature is using it as
+> 90000, but there is no big reason about it)
+>
+> And it doesn't check thermal zone periodically (same as current
+> behavior). You can exchange it by modifing polling-delay[-passive]
 
-And it doesn't check thermal zone periodically (same as current
-behavior). You can exchange it by modifing polling-delay[-passive]
-property.
+modifing -> modifying
 
-You can set trip temp if your kernel has CONFIG_THERMAL_WRITABLE_TRIPS,
-but you need to take care to use it, since it will call
-orderly_poweroff() it it reached to the value.
-echo $temp > /sys/class/thermal/thermal_zone0/trip_point_0_temp
+> property.
+>
+> You can set trip temp if your kernel has CONFIG_THERMAL_WRITABLE_TRIPS,
+> but you need to take care to use it, since it will call
+> orderly_poweroff() it it reached to the value.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
-v2 -> v3
+if it reaches
 
- - compatible "renesas,rcar-thermal-gen2" -> "renesas,rcar-gen2-thermal"
+> echo $temp > /sys/class/thermal/thermal_zone0/trip_point_0_temp
+>
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> ---
+> v2 -> v3
+>
+>   - compatible "renesas,rcar-thermal-gen2" -> "renesas,rcar-gen2-thermal"
+>
+>   arch/arm/boot/dts/r8a7791.dtsi | 26 ++++++++++++++++++++++++--
+>   1 file changed, 24 insertions(+), 2 deletions(-)
+>
+> diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+> index 1487d92..d885e5f 100644
+> --- a/arch/arm/boot/dts/r8a7791.dtsi
+> +++ b/arch/arm/boot/dts/r8a7791.dtsi
+> @@ -69,6 +69,25 @@
+>   		};
+>   	};
+>
+> +	thermal-zones {
+> +		cpu_thermal: cpu-thermal {
+> +			polling-delay-passive	= <0>;
+> +			polling-delay		= <0>;
+> +
+> +			thermal-sensors = <&thermal>;
+> +
+> +			trips {
+> +				cpu-crit {
+> +					temperature	= <1150000>;
 
- arch/arm/boot/dts/r8a7791.dtsi | 26 ++++++++++++++++++++++++--
- 1 file changed, 24 insertions(+), 2 deletions(-)
+One zero is redundant here. It should be 115000.
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 1487d92..d885e5f 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -69,6 +69,25 @@
- 		};
- 	};
- 
-+	thermal-zones {
-+		cpu_thermal: cpu-thermal {
-+			polling-delay-passive	= <0>;
-+			polling-delay		= <0>;
-+
-+			thermal-sensors = <&thermal>;
-+
-+			trips {
-+				cpu-crit {
-+					temperature	= <1150000>;
-+					hysteresis	= <0>;
-+					type		= "critical";
-+				};
-+			};
-+			cooling-maps {
-+			};
-+		};
-+	};
-+
- 	gic: interrupt-controller@f1001000 {
- 		compatible = "arm,gic-400";
- 		#interrupt-cells = <3>;
-@@ -185,12 +204,15 @@
- 		power-domains = <&cpg_clocks>;
- 	};
- 
--	thermal@e61f0000 {
--		compatible = "renesas,thermal-r8a7791", "renesas,rcar-thermal";
-+	thermal: thermal@e61f0000 {
-+		compatible =	"renesas,thermal-r8a7791",
-+				"renesas,rcar-gen2-thermal",
-+				"renesas,rcar-thermal";
- 		reg = <0 0xe61f0000 0 0x14>, <0 0xe61f0100 0 0x38>;
- 		interrupts = <0 69 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp5_clks R8A7791_CLK_THERMAL>;
- 		power-domains = <&cpg_clocks>;
-+		#thermal-sensor-cells = <0>;
- 	};
- 
- 	timer {
--- 
-1.9.1
-
+> +					hysteresis	= <0>;
+> +					type		= "critical";
+> +				};
+> +			};
+> +			cooling-maps {
+> +			};
+> +		};
+> +	};
+> +
+>   	gic: interrupt-controller@f1001000 {
+>   		compatible = "arm,gic-400";
+>   		#interrupt-cells = <3>;
+> @@ -185,12 +204,15 @@
+>   		power-domains = <&cpg_clocks>;
+>   	};
+>
+> -	thermal@e61f0000 {
+> -		compatible = "renesas,thermal-r8a7791", "renesas,rcar-thermal";
+> +	thermal: thermal@e61f0000 {
+> +		compatible =	"renesas,thermal-r8a7791",
+> +				"renesas,rcar-gen2-thermal",
+> +				"renesas,rcar-thermal";
+>   		reg = <0 0xe61f0000 0 0x14>, <0 0xe61f0100 0 0x38>;
+>   		interrupts = <0 69 IRQ_TYPE_LEVEL_HIGH>;
+>   		clocks = <&mstp5_clks R8A7791_CLK_THERMAL>;
+>   		power-domains = <&cpg_clocks>;
+> +		#thermal-sensor-cells = <0>;
+>   	};
+>
+>   	timer {
+>
