@@ -1,45 +1,74 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Thu, 17 Dec 2015 19:57:04 +0000
-Subject: Re: [PATCH] i2c: allow building emev2 without slave mode again
-Message-Id: <7990730.tNeXHUrIig@wuerfel>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 08 Dec 2015 05:28:13 +0000
+Subject: [PATCH 4/8 v4] thermal: rcar: retern error rcar_thermal_get_temp() if no ctemp update
+Message-Id: <87poyh5x69.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201512102224.cVm7Hcp0%fengguang.wu@intel.com>
- <7947081.psvz6dklxq@wuerfel> <20151217194016.GD1530@katana>
-In-Reply-To: <20151217194016.GD1530@katana>
+References: <87vb895x9d.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87vb895x9d.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon <horms@verge.net.au>, Zhang Rui <rui.zhang@intel.com>, Eduardo Valentin <edubezval@gmail.com>
+Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
 
-On Thursday 17 December 2015 20:40:17 Wolfram Sang wrote:
-> > > My conclusion for now is:
-> > > 
-> > > There needs something to be done surely, but currently I don't have the
-> > > bandwidth to do it or even play around with it. I am not fully happy
-> > > with your patches as well because __maybe_unused has some kind of "last
-> > > resort" feeling to me.
-> > 
-> > I generally like __maybe_unused, but it's a matter of personal preference.
-> > We could avoid the __maybe_unused if the reg_slave/unreg_slave callback
-> > pointers are always available in struct i2c_algorithm.
-> 
-> Yes, I was thinking in this direction, looking at how PM does it. Needs
-> some playing around, though.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-I think PM gets it slightly wrong, the way you have to use #ifdef leads
-to subtle bugs all the time, and I actually have a patch that converts
-a few dozen drivers to use __maybe_unused to shut up build warnings and
-errors.
+Current rcar_thermal_get_temp() returns latest temperature, but it might
+not be updated if some HW issue happened. This means user might get
+wrong temperature. This patch solved this issue.
 
-What you can do though is to use a reference like
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v3 -> v4
 
-#define __i2c_slave_ptr(x) (IS_ENABLED(CONFIG_I2C_SLAVE) ? (x) : NULL)
+ - "happend" -> "happened"
 
-	...
-	.reg_slave = __i2c_slave_ptr(em_i2c_reg_slave),
-	.unreg_slave = __i2c_slave_ptr(em_i2c_unreg_slave),
-	...
+ drivers/thermal/rcar_thermal.c | 14 ++++++++++++--
+ 1 file changed, 12 insertions(+), 2 deletions(-)
 
-This has the same effect as the __maybe_unused annotation.
+diff --git a/drivers/thermal/rcar_thermal.c b/drivers/thermal/rcar_thermal.c
+index 67b5216..40c3ba5 100644
+--- a/drivers/thermal/rcar_thermal.c
++++ b/drivers/thermal/rcar_thermal.c
+@@ -199,9 +199,9 @@ static int rcar_thermal_update_temp(struct rcar_thermal_priv *priv)
+ 
+ 	dev_dbg(dev, "thermal%d  %d -> %d\n", priv->id, priv->ctemp, ctemp);
+ 
+-	priv->ctemp = ctemp;
+ 	ret = 0;
+ err_out_unlock:
++	priv->ctemp = ctemp;
+ 	mutex_unlock(&priv->lock);
+ 	return ret;
+ }
+@@ -209,6 +209,7 @@ err_out_unlock:
+ static int rcar_thermal_get_temp(struct thermal_zone_device *zone, int *temp)
+ {
+ 	struct rcar_thermal_priv *priv = rcar_zone_to_priv(zone);
++	int tmp;
+ 
+ 	if (!rcar_has_irq_support(priv) || rcar_force_update_temp(priv)) {
+ 		int ret = rcar_thermal_update_temp(priv);
+@@ -218,9 +219,18 @@ static int rcar_thermal_get_temp(struct thermal_zone_device *zone, int *temp)
+ 	}
+ 
+ 	mutex_lock(&priv->lock);
+-	*temp =  MCELSIUS((priv->ctemp * 5) - 65);
++	tmp =  MCELSIUS((priv->ctemp * 5) - 65);
+ 	mutex_unlock(&priv->lock);
+ 
++	if ((tmp < MCELSIUS(-45)) || (tmp > MCELSIUS(125))) {
++		struct device *dev = rcar_priv_to_dev(priv);
++
++		dev_err(dev, "it couldn't measure temperature correctly\n");
++		return -EIO;
++	}
++
++	*temp = tmp;
++
+ 	return 0;
+ }
+ 
+-- 
+1.9.1
 
-	Arnd
