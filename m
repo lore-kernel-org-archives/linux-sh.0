@@ -1,44 +1,33 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 18 Dec 2015 02:30:40 +0000
-Subject: [PATCH 2/6] ARM: shmobile: r8a7740 dtsi: Use "arm,pl390" for GIC
-Message-Id: <ad14ba96f962a44df0a6d5645beed7d2f776bdfa.1450401902.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 08 Dec 2015 17:54:18 +0000
+Subject: [PATCH 13/13] ARM: shmobile: silk dts: Add serial port config to chosen/stdout-path
+Message-Id: <1449597258-32623-14-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1450401902.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1450401902.git.horms+renesas@verge.net.au>
+References: <1449597258-32623-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1449597258-32623-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-
-Replace the "arm,cortex-a9-gic" compatible value for the GIC by
-"arm,pl390", as the documentation states it is a PL390.
-This has been confirmed by reading the GICD_IIDR register, which reports
-0x0000043b (PL390 = 0x00, ARM = 0x43b).
-
-This has no effect on runtime behavior, as currently the GIC driver
-treats both compatible values the same.
-
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7740.dtsi | 2 +-
+ arch/arm/boot/dts/r8a7794-silk.dts | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
-index e14cb1438216..20d20f67620b 100644
---- a/arch/arm/boot/dts/r8a7740.dtsi
-+++ b/arch/arm/boot/dts/r8a7740.dtsi
-@@ -30,7 +30,7 @@
+diff --git a/arch/arm/boot/dts/r8a7794-silk.dts b/arch/arm/boot/dts/r8a7794-silk.dts
+index 58f0ddf21c17bfaa..5a8dcac37c8e70c2 100644
+--- a/arch/arm/boot/dts/r8a7794-silk.dts
++++ b/arch/arm/boot/dts/r8a7794-silk.dts
+@@ -24,7 +24,7 @@
+ 
+ 	chosen {
+ 		bootargs = "ignore_loglevel rw root=/dev/nfs ip=dhcp";
+-		stdout-path = &scif2;
++		stdout-path = "serial0:115200n8";
  	};
  
- 	gic: interrupt-controller@c2800000 {
--		compatible = "arm,cortex-a9-gic";
-+		compatible = "arm,pl390";
- 		#interrupt-cells = <3>;
- 		interrupt-controller;
- 		reg = <0xc2800000 0x1000>,
+ 	memory@40000000 {
 -- 
-2.1.4
+1.9.1
 
