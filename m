@@ -1,65 +1,28 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 07 Dec 2015 07:43:28 +0000
-Subject: [PATCH 3/8 v3] thermal: rcar: check irq possibility in rcar_thermal_irq_xxx()
-Message-Id: <87twnu670f.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 08 Dec 2015 05:51:49 +0000
+Subject: [PATCH 0/2] usb: renesas_usbhs: More compat strings
+Message-Id: <1449553911-21412-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87y4d6672t.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87y4d6672t.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, Zhang Rui <rui.zhang@intel.com>, Eduardo Valentin <edubezval@gmail.com>, Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Cc: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Magnus Damm <magnus.damm@gmail.com>, linux-usb@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Simon Horman <horms+renesas@verge.net.au>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Hi,
 
-Current rcar thermal driver sometimes checks irq possibility when it
-calls rcar_thermal_irq_enable/disable(), but sometimes not.
-This patch checks it inside rcar_thermal_irq_enable/disable().
+this short series adds generic, and soc-specific r8a7792 and r8a7793 compat
+strings to the Renesas USBHS driver. The intention is to provide a complete
+set of compat strings for known R-Car SoCs.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
-v2 -> v3
+Simon Horman (2):
+  usb: renesas_usbhs: add fallback compatibility string
+  usb: renesas_usbhs: add device tree support for r8a779[23]
 
- - no change
+ Documentation/devicetree/bindings/usb/renesas_usbhs.txt | 14 ++++++++------
+ drivers/usb/renesas_usbhs/common.c                      |  4 ++++
+ 2 files changed, 12 insertions(+), 6 deletions(-)
 
- drivers/thermal/rcar_thermal.c | 9 +++++----
- 1 file changed, 5 insertions(+), 4 deletions(-)
-
-diff --git a/drivers/thermal/rcar_thermal.c b/drivers/thermal/rcar_thermal.c
-index 4d1bc2b..aaedf37 100644
---- a/drivers/thermal/rcar_thermal.c
-+++ b/drivers/thermal/rcar_thermal.c
-@@ -297,6 +297,9 @@ static void _rcar_thermal_irq_ctrl(struct rcar_thermal_priv *priv, int enable)
- 	unsigned long flags;
- 	u32 mask = 0x3 << rcar_id_to_shift(priv); /* enable Rising/Falling */
- 
-+	if (!rcar_has_irq_support(priv))
-+		return;
-+
- 	spin_lock_irqsave(&common->lock, flags);
- 
- 	rcar_thermal_common_bset(common, INTMSK, mask, enable ? 0 : mask);
-@@ -381,8 +384,7 @@ static int rcar_thermal_remove(struct platform_device *pdev)
- 	struct rcar_thermal_priv *priv;
- 
- 	rcar_thermal_for_each_priv(priv, common) {
--		if (rcar_has_irq_support(priv))
--			rcar_thermal_irq_disable(priv);
-+		rcar_thermal_irq_disable(priv);
- 		thermal_zone_device_unregister(priv->zone);
- 	}
- 
-@@ -468,8 +470,7 @@ static int rcar_thermal_probe(struct platform_device *pdev)
- 			goto error_unregister;
- 		}
- 
--		if (rcar_has_irq_support(priv))
--			rcar_thermal_irq_enable(priv);
-+		rcar_thermal_irq_enable(priv);
- 
- 		list_move_tail(&priv->list, &common->head);
- 
 -- 
-1.9.1
+2.1.4
 
