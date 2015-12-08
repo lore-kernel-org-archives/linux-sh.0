@@ -1,102 +1,33 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 01 Dec 2015 05:36:34 +0000
-Subject: [PATCH 1/2] arm64: renesas: salvator-x: use CS2000 as AUDIO_CLK_B
-Message-Id: <87k2oyybp2.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 08 Dec 2015 17:54:06 +0000
+Subject: [PATCH 01/13] ARM: shmobile: alt dts: Add serial port config to chosen/stdout-path
+Message-Id: <1449597258-32623-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1449597258-32623-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1449597258-32623-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-
-CS2000 needs AUDIO_CLKOUT as master clock which is generated
-by Renesas sound, and Renesas sound needs CS2000 as ADUIO_CLK_B.
-Because of this relationship, it will be dead-lock when driver probe.
-
-cs2000: clk_multiplier@4f {
-        ...
-        clocks = <&rcar_sound 0>, <&x12_clk>;
-        ...
-};
-
-&rcar_sound {
-        ...
-        assigned-clocks = <&cs2000>;
-        ...
-};
-
-This patch is using dummy audio_clkout to avoid this issue.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 38 ++++++++++++++++++++++
- 1 file changed, 38 insertions(+)
+ arch/arm/boot/dts/r8a7794-alt.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-index beeacfa..75af5ec 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-+++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-@@ -61,6 +61,16 @@
- 		clock-frequency = <24576000>;
+diff --git a/arch/arm/boot/dts/r8a7794-alt.dts b/arch/arm/boot/dts/r8a7794-alt.dts
+index 767d9224d6cc5cc1..2394e4883786f13e 100644
+--- a/arch/arm/boot/dts/r8a7794-alt.dts
++++ b/arch/arm/boot/dts/r8a7794-alt.dts
+@@ -21,7 +21,7 @@
+ 
+ 	chosen {
+ 		bootargs = "ignore_loglevel rw root=/dev/nfs ip=dhcp";
+-		stdout-path = &scif2;
++		stdout-path = "serial0:115200n8";
  	};
  
-+	audio_clkout: audio_clkout {
-+		/*
-+		 * This is same as <&rcar_sound 0>
-+		 * but needed to avoid cs2000/rcar_sound probe dead-lock
-+		 */
-+		compatible = "fixed-clock";
-+		#clock-cells = <0>;
-+		clock-frequency = <11289600>;
-+	};
-+
- 	rsnd_ak4613: sound {
- 		compatible = "simple-audio-card";
- 
-@@ -151,6 +161,17 @@
- 		asahi-kasei,out5-single-end;
- 		asahi-kasei,out6-single-end;
- 	};
-+
-+	cs2000: clk_multiplier@4f {
-+		#clock-cells = <0>;
-+		compatible = "cirrus,cs2000-cp";
-+		reg = <0x4f>;
-+		clocks = <&audio_clkout>, <&x12_clk>;
-+		clock-names = "clk_in", "ref_clk";
-+
-+		assigned-clocks = <&cs2000>;
-+		assigned-clock-rates = <24576000>; /* 1/1 divide */
-+	};
- };
- 
- &rcar_sound {
-@@ -166,6 +187,23 @@
- 
- 	status = "okay";
- 
-+	/* update <audio_clk_b> to <cs2000> */
-+	clocks = <&cpg CPG_MOD 1005>,
-+		 <&cpg CPG_MOD 1006>, <&cpg CPG_MOD 1007>,
-+		 <&cpg CPG_MOD 1008>, <&cpg CPG_MOD 1009>,
-+		 <&cpg CPG_MOD 1010>, <&cpg CPG_MOD 1011>,
-+		 <&cpg CPG_MOD 1012>, <&cpg CPG_MOD 1013>,
-+		 <&cpg CPG_MOD 1014>, <&cpg CPG_MOD 1015>,
-+		 <&cpg CPG_MOD 1022>, <&cpg CPG_MOD 1023>,
-+		 <&cpg CPG_MOD 1024>, <&cpg CPG_MOD 1025>,
-+		 <&cpg CPG_MOD 1026>, <&cpg CPG_MOD 1027>,
-+		 <&cpg CPG_MOD 1028>, <&cpg CPG_MOD 1029>,
-+		 <&cpg CPG_MOD 1030>, <&cpg CPG_MOD 1031>,
-+		 <&cpg CPG_MOD 1019>, <&cpg CPG_MOD 1018>,
-+		 <&audio_clk_a>, <&cs2000>,
-+		 <&audio_clk_c>,
-+		 <&cpg CPG_CORE R8A7795_CLK_S0D4>;
-+
- 	rcar_sound,dai {
- 		dai0 {
- 			playback = <&ssi0 &src0 &dvc0>;
+ 	memory@40000000 {
 -- 
 1.9.1
 
