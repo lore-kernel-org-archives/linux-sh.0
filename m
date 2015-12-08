@@ -1,54 +1,79 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 18 Dec 2015 03:02:39 +0000
-Subject: Re: [PATCH/RFC 03/19] ARM: shmobile: gose: add i2c2 bus to device tree
-Message-Id: <20151218030239.GB10973@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 08 Dec 2015 17:54:05 +0000
+Subject: [PATCH 00/13] ARM: shmobile: dts: Update console parameters
+Message-Id: <1449597258-32623-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449802376-11301-1-git-send-email-horms+renesas@verge.net.au>
- <1449802376-11301-4-git-send-email-horms+renesas@verge.net.au>
- <566AB2A5.4090105@cogentembedded.com>
- <20151214021110.GD13945@verge.net.au>
- <20151214071103.GC1516@katana>
- <CAMuHMdXWcyEmoVRZuCTM4yqfxXYjgZF1yP8uqCEU8Bj=pmkNYw@mail.gmail.com>
-In-Reply-To: <CAMuHMdXWcyEmoVRZuCTM4yqfxXYjgZF1yP8uqCEU8Bj=pmkNYw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Dec 14, 2015 at 10:39:47AM +0100, Geert Uytterhoeven wrote:
-> On Mon, Dec 14, 2015 at 8:11 AM, Wolfram Sang <wsa@the-dreams.de> wrote:
-> >> > >+  eeprom@50 {
-> >> > >+          compatible = "renesas,24c02";
-> >> >
-> >> >    This is not a valid value -- the Renesas chip model is different from 24c02.
-> >>
-> >> I copied this value from r8a7791.dtsi.
-> >>
-> >> Looking at the schematic for gose (v100), koelsch (rev024) and porter (v300)
-> >> I see the following "R1EX24002ATAS0G#U0". Shall we update r8a7791 and
-> >> this patch to "renesas,24002" or leave things as is?
-> >
-> > I wouldn't like to update the at24 driver with all namings from all
-> > vendors for chips which in large cases are simple 24c02 devices.
-> >
-> > So, if Sergei insists on the change, I'd propose
-> >
-> >         compatible = "renesas,24002", "24c02";
-> 
-> "renesas,r1ex24002"?
-> 
-> I don't think the "A" is relevant (<= 64 is A, >= 128 is B).
-> 
-> http://www.renesas.com/products/memory/eeprom/product_selector.jsp
+	Hi Simon, Magnus,
 
-Thanks.
+This patch series updates the console parameters in the DTSes for
+various Renesas ARM boards.
 
-It seems to me that we have some consensus around:
+  - For all of them, the serial port config is added to
+    chosen/stdout-path, as per current best practices,
+  - On some boards (armadillo, bockw, kzm9d, kzm9g), "console="
+    parameters are removed from the kernel command lines, as they're no
+    longer needed for DT-only platforms,
+  - On some boards (genmai, kzm9g), the console alias is changed to
+    "serial0", for consistency with other boards (the first serial port
+    is always called "serial0", unless labeled otherwise); this does
+    mean the device changes its name to /dev/ttySC0 in userspace, which
+    also happened on R-Car Gen2 before,
+  - On kzm9d, a console alias is added.
+	    
+Tested on r8a73a4/ape6evm, r8a7740/armadillo, r8a7778/bockw,
+r8a7779/marzen, r8a7791/koelsch, and sh73a0/kzm9g.
 
-	compatible = "renesas,r1ex24002", "24c02";
+Thanks for applying!
 
-Should this be added to Documentation/devicetree/bindings/eeprom/eeprom.txt ?
-Or documented elsewhere?
+Geert Uytterhoeven (13):
+  ARM: shmobile: alt dts: Add serial port config to chosen/stdout-path
+  ARM: shmobile: ape6evm dts: Add serial port config to
+    chosen/stdout-path
+  ARM: shmobile: armadillo800eva dts: Update console parameters
+  ARM: shmobile: bockw dts: Update console parameters
+  ARM: shmobile: genmai dts: Update console parameters
+  ARM: shmobile: gose dts: Add serial port config to chosen/stdout-path
+  ARM: shmobile: koelsch dts: Add serial port config to
+    chosen/stdout-path
+  ARM: shmobile: kzm9d dts: Update console parameters
+  ARM: shmobile: kzm9g dts: Update console parameters
+  ARM: shmobile: lager dts: Add serial port config to chosen/stdout-path
+  ARM: shmobile: marzen dts: Add serial port config to
+    chosen/stdout-path
+  ARM: shmobile: porter dts: Add serial port config to
+    chosen/stdout-path
+  ARM: shmobile: silk dts: Add serial port config to chosen/stdout-path
 
-I believe that as well as any documentation and update of this patch-set
-that r8a7791-koelsch.dts will also need to be updated. I plan to do so.
+ arch/arm/boot/dts/emev2-kzm9d.dts             | 8 ++++++--
+ arch/arm/boot/dts/r7s72100-genmai.dts         | 4 ++--
+ arch/arm/boot/dts/r8a73a4-ape6evm.dts         | 2 +-
+ arch/arm/boot/dts/r8a7740-armadillo800eva.dts | 8 ++++----
+ arch/arm/boot/dts/r8a7778-bockw.dts           | 4 ++--
+ arch/arm/boot/dts/r8a7779-marzen.dts          | 2 +-
+ arch/arm/boot/dts/r8a7790-lager.dts           | 2 +-
+ arch/arm/boot/dts/r8a7791-koelsch.dts         | 2 +-
+ arch/arm/boot/dts/r8a7791-porter.dts          | 2 +-
+ arch/arm/boot/dts/r8a7793-gose.dts            | 2 +-
+ arch/arm/boot/dts/r8a7794-alt.dts             | 2 +-
+ arch/arm/boot/dts/r8a7794-silk.dts            | 2 +-
+ arch/arm/boot/dts/sh73a0-kzm9g.dts            | 8 ++++----
+ 13 files changed, 26 insertions(+), 22 deletions(-)
+
+-- 
+1.9.1
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
