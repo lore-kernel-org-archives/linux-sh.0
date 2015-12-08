@@ -1,29 +1,36 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 16 Dec 2015 11:08:35 +0000
-Subject: Re: [PATCH v2 2/2] arm64: dts: r8a7795: fix SATA clock assignment
-Message-Id: <CAMuHMdVrqQgCHsnJVAETyM=P4mE7is1m6QQ16qA6cQENDoPwhg@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 08 Dec 2015 17:40:59 +0000
+Subject: [PATCH] mtd: nand: Confine MTD_NAND_SH_FLCTL to SUPERH
+Message-Id: <1449596459-31653-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450262061-1441-1-git-send-email-ulrich.hecht+renesas@gmail.com>
- <1450262061-1441-3-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1450262061-1441-3-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: David Woodhouse <dwmw2@infradead.org>, Brian Norris <computersforpeace@gmail.com>
+Cc: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Arnd Bergmann <arnd@arndb.de>, linux-mtd@lists.infradead.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Wed, Dec 16, 2015 at 11:34 AM, Ulrich Hecht
-<ulrich.hecht+renesas@gmail.com> wrote:
-> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+As of commit a521422ea4ae6128 ("ARM: shmobile: mackerel: Remove Legacy C
+board code"), the Renesas SuperH FLCTL driver is no longer used on ARM
+SH-Mobile SoCs. Restrict the dependencies, unless compile-testing.
 
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ drivers/mtd/nand/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Gr{oetje,eeting}s,
+diff --git a/drivers/mtd/nand/Kconfig b/drivers/mtd/nand/Kconfig
+index 289664089cf32ce9..6c71f623a932be67 100644
+--- a/drivers/mtd/nand/Kconfig
++++ b/drivers/mtd/nand/Kconfig
+@@ -480,7 +480,7 @@ config MTD_NAND_MXC
+ 
+ config MTD_NAND_SH_FLCTL
+ 	tristate "Support for NAND on Renesas SuperH FLCTL"
+-	depends on SUPERH || ARCH_SHMOBILE || COMPILE_TEST
++	depends on SUPERH || COMPILE_TEST
+ 	depends on HAS_IOMEM
+ 	depends on HAS_DMA
+ 	help
+-- 
+1.9.1
 
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
