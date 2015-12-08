@@ -1,97 +1,54 @@
-From: "Michael S. Tsirkin" <mst@redhat.com>
-Date: Thu, 31 Dec 2015 19:05:45 +0000
-Subject: [PATCH v2 01/32] lcoking/barriers, arch: Use smp barriers in smp_store_release()
-Message-Id: <1451572003-2440-2-git-send-email-mst@redhat.com>
+From: Yang Shi <yang.shi@linaro.org>
+Date: Tue, 08 Dec 2015 19:39:54 +0000
+Subject: [PATCH v3 6/7] sh: mm/gup: add gup trace points
+Message-Id: <1449603595-718-7-git-send-email-yang.shi@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1451572003-2440-1-git-send-email-mst@redhat.com>
-In-Reply-To: <1451572003-2440-1-git-send-email-mst@redhat.com>
+References: <1449603595-718-1-git-send-email-yang.shi@linaro.org>
+In-Reply-To: <1449603595-718-1-git-send-email-yang.shi@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: linux-mips@linux-mips.org, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Heiko Carstens <heiko.carstens@de.ibm.com>, virtualization@lists.linux-foundation.org, Paul Mackerras <paulus@samba.org>, "H. Peter Anvin" <hpa@zytor.com>, sparclinux@vger.kernel.org, Ingo Molnar <mingo@kernel.org>, linux-arch@vger.kernel.org, linux-s390@vger.kernel.org, Davidlohr Bueso <dave@stgolabs.net>, Arnd Bergmann <arnd@arndb.de>, Davidlohr Bueso <dbueso@suse.de>, Michael Ellerman <mpe@ellerman.id.au>, x86@kernel.org, Christian Borntraeger <borntraeger@de.ibm.com>, Linus Torvalds <torvalds@linux-foundation.org>, xen-devel@lists.xenproject.org, Ingo Molnar <mingo@elte.hu>, "Paul E . McKenney" <paulmck@linux.vnet.ibm.com>, linux-xtensa@linux-xtensa.org, user-mode-linux-devel@lists.sourceforge.net
+To: akpm@linux-foundation.org, rostedt@goodmis.org, mingo@redhat.com
+Cc: linux-kernel@vger.kernel.org, linux-mm@kvack.org, linaro-kernel@lists.linaro.org, yang.shi@linaro.org, linux-sh@vger.kernel.org
 
-From: Davidlohr Bueso <dave@stgolabs.net>
-
-With commit b92b8b35a2e ("locking/arch: Rename set_mb() to smp_store_mb()")
-it was made clear that the context of this call (and thus set_mb)
-is strictly for CPU ordering, as opposed to IO. As such all archs
-should use the smp variant of mb(), respecting the semantics and
-saving a mandatory barrier on UP.
-
-Signed-off-by: Davidlohr Bueso <dbueso@suse.de>
-Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
-Cc: <linux-arch@vger.kernel.org>
-Cc: Andrew Morton <akpm@linux-foundation.org>
-Cc: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-Cc: Heiko Carstens <heiko.carstens@de.ibm.com>
-Cc: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: Paul E. McKenney <paulmck@linux.vnet.ibm.com>
-Cc: Peter Zijlstra <peterz@infradead.org>
-Cc: Thomas Gleixner <tglx@linutronix.de>
-Cc: Tony Luck <tony.luck@intel.com>
-Cc: dave@stgolabs.net
-Link: http://lkml.kernel.org/r/1445975631-17047-3-git-send-email-dave@stgolabs.net
-Signed-off-by: Ingo Molnar <mingo@kernel.org>
+Cc: linux-sh@vger.kernel.org
+Signed-off-by: Yang Shi <yang.shi@linaro.org>
 ---
- arch/ia64/include/asm/barrier.h    | 2 +-
- arch/powerpc/include/asm/barrier.h | 2 +-
- arch/s390/include/asm/barrier.h    | 2 +-
- include/asm-generic/barrier.h      | 2 +-
- 4 files changed, 4 insertions(+), 4 deletions(-)
+ arch/sh/mm/gup.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
 
-diff --git a/arch/ia64/include/asm/barrier.h b/arch/ia64/include/asm/barrier.h
-index df896a1..209c4b8 100644
---- a/arch/ia64/include/asm/barrier.h
-+++ b/arch/ia64/include/asm/barrier.h
-@@ -77,7 +77,7 @@ do {									\
- 	___p1;								\
- })
+diff --git a/arch/sh/mm/gup.c b/arch/sh/mm/gup.c
+index e7af6a6..d4c9a6e 100644
+--- a/arch/sh/mm/gup.c
++++ b/arch/sh/mm/gup.c
+@@ -14,6 +14,9 @@
+ #include <linux/highmem.h>
+ #include <asm/pgtable.h>
  
--#define smp_store_mb(var, value)	do { WRITE_ONCE(var, value); mb(); } while (0)
-+#define smp_store_mb(var, value) do { WRITE_ONCE(var, value); smp_mb(); } while (0)
++#define CREATE_TRACE_POINTS
++#include <trace/events/gup.h>
++
+ static inline pte_t gup_get_pte(pte_t *ptep)
+ {
+ #ifndef CONFIG_X2TLB
+@@ -178,6 +181,8 @@ int __get_user_pages_fast(unsigned long start, int nr_pages, int write,
+ 					(void __user *)start, len)))
+ 		return 0;
  
- /*
-  * The group barrier in front of the rsm & ssm are necessary to ensure
-diff --git a/arch/powerpc/include/asm/barrier.h b/arch/powerpc/include/asm/barrier.h
-index 0eca6ef..a7af5fb 100644
---- a/arch/powerpc/include/asm/barrier.h
-+++ b/arch/powerpc/include/asm/barrier.h
-@@ -34,7 +34,7 @@
- #define rmb()  __asm__ __volatile__ ("sync" : : : "memory")
- #define wmb()  __asm__ __volatile__ ("sync" : : : "memory")
++	trace_gup_get_user_pages_fast(start, (unsigned long) nr_pages);
++
+ 	/*
+ 	 * This doesn't prevent pagetable teardown, but does prevent
+ 	 * the pagetables and pages from being freed.
+@@ -244,6 +249,8 @@ int get_user_pages_fast(unsigned long start, int nr_pages, int write,
+ 	} while (pgdp++, addr = next, addr != end);
+ 	local_irq_enable();
  
--#define smp_store_mb(var, value)	do { WRITE_ONCE(var, value); mb(); } while (0)
-+#define smp_store_mb(var, value) do { WRITE_ONCE(var, value); smp_mb(); } while (0)
++	trace_gup_get_user_pages_fast(start, (unsigned long) nr_pages);
++
+ 	VM_BUG_ON(nr != (end - start) >> PAGE_SHIFT);
+ 	return nr;
  
- #ifdef __SUBARCH_HAS_LWSYNC
- #    define SMPWMB      LWSYNC
-diff --git a/arch/s390/include/asm/barrier.h b/arch/s390/include/asm/barrier.h
-index d68e11e..7ffd0b1 100644
---- a/arch/s390/include/asm/barrier.h
-+++ b/arch/s390/include/asm/barrier.h
-@@ -36,7 +36,7 @@
- #define smp_mb__before_atomic()		smp_mb()
- #define smp_mb__after_atomic()		smp_mb()
- 
--#define smp_store_mb(var, value)		do { WRITE_ONCE(var, value); mb(); } while (0)
-+#define smp_store_mb(var, value)	do { WRITE_ONCE(var, value); smp_mb(); } while (0)
- 
- #define smp_store_release(p, v)						\
- do {									\
-diff --git a/include/asm-generic/barrier.h b/include/asm-generic/barrier.h
-index b42afad..0f45f93 100644
---- a/include/asm-generic/barrier.h
-+++ b/include/asm-generic/barrier.h
-@@ -93,7 +93,7 @@
- #endif	/* CONFIG_SMP */
- 
- #ifndef smp_store_mb
--#define smp_store_mb(var, value)  do { WRITE_ONCE(var, value); mb(); } while (0)
-+#define smp_store_mb(var, value)  do { WRITE_ONCE(var, value); smp_mb(); } while (0)
- #endif
- 
- #ifndef smp_mb__before_atomic
 -- 
-MST
+2.0.2
 
