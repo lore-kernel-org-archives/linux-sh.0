@@ -1,86 +1,75 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 18 Dec 2015 02:29:51 +0000
-Subject: [PATCH 21/25] ARM: shmobile: r8a7790: IPMMU compat string SoC part number update
-Message-Id: <c8d6686e41afa560e4d5fc2b3f62aa79be3fb6d1.1450402264.git.horms+renesas@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Tue, 08 Dec 2015 09:37:51 +0000
+Subject: [PATCH v2 7/9] ARM: shmobile: r8a7791: dtsi: add internal delay for i2c IPs
+Message-Id: <1449567473-2084-8-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1450402264.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1450402264.git.horms+renesas@verge.net.au>
+References: <1449567473-2084-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1449567473-2084-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, linux-rockchip@lists.infradead.org, Mika Westerberg <mika.westerberg@linux.intel.com>, Andy Shevchenko <andriy.shevchenko@linux.intel.com>, Jarkko Nikula <jarkko.nikula@linux.intel.com>
 
-From: Magnus Damm <damm+renesas@opensource.se>
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Update IPMMU compat strings to include SoC part number.
-
-By specifying SoC part number in DT it becomes possible
-to implement SoC specific features in the IPMMU driver.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 12 ++++++------
- 1 file changed, 6 insertions(+), 6 deletions(-)
+ arch/arm/boot/dts/r8a7791.dtsi | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 4eab5f43f7e5..ee587cd823f5 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -1770,7 +1770,7 @@
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 76b33e895513c1..3161dfcdd002dd 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -407,6 +407,7 @@
+ 		interrupts = <0 287 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp9_clks R8A7791_CLK_I2C0>;
+ 		power-domains = <&cpg_clocks>;
++		i2c-scl-internal-delay-ns = <6>;
+ 		status = "disabled";
  	};
  
- 	ipmmu_sy0: mmu@e6280000 {
--		compatible = "renesas,ipmmu-vmsa";
-+		compatible = "renesas,ipmmu-r8a7790", "renesas,ipmmu-vmsa";
- 		reg = <0 0xe6280000 0 0x1000>;
- 		interrupts = <0 223 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 224 IRQ_TYPE_LEVEL_HIGH>;
-@@ -1779,7 +1779,7 @@
+@@ -418,6 +419,7 @@
+ 		interrupts = <0 288 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp9_clks R8A7791_CLK_I2C1>;
+ 		power-domains = <&cpg_clocks>;
++		i2c-scl-internal-delay-ns = <6>;
+ 		status = "disabled";
  	};
  
- 	ipmmu_sy1: mmu@e6290000 {
--		compatible = "renesas,ipmmu-vmsa";
-+		compatible = "renesas,ipmmu-r8a7790", "renesas,ipmmu-vmsa";
- 		reg = <0 0xe6290000 0 0x1000>;
- 		interrupts = <0 225 IRQ_TYPE_LEVEL_HIGH>;
- 		#iommu-cells = <1>;
-@@ -1787,7 +1787,7 @@
+@@ -429,6 +431,7 @@
+ 		interrupts = <0 286 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp9_clks R8A7791_CLK_I2C2>;
+ 		power-domains = <&cpg_clocks>;
++		i2c-scl-internal-delay-ns = <6>;
+ 		status = "disabled";
  	};
  
- 	ipmmu_ds: mmu@e6740000 {
--		compatible = "renesas,ipmmu-vmsa";
-+		compatible = "renesas,ipmmu-r8a7790", "renesas,ipmmu-vmsa";
- 		reg = <0 0xe6740000 0 0x1000>;
- 		interrupts = <0 198 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 199 IRQ_TYPE_LEVEL_HIGH>;
-@@ -1796,7 +1796,7 @@
+@@ -440,6 +443,7 @@
+ 		interrupts = <0 290 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp9_clks R8A7791_CLK_I2C3>;
+ 		power-domains = <&cpg_clocks>;
++		i2c-scl-internal-delay-ns = <6>;
+ 		status = "disabled";
  	};
  
- 	ipmmu_mp: mmu@ec680000 {
--		compatible = "renesas,ipmmu-vmsa";
-+		compatible = "renesas,ipmmu-r8a7790", "renesas,ipmmu-vmsa";
- 		reg = <0 0xec680000 0 0x1000>;
- 		interrupts = <0 226 IRQ_TYPE_LEVEL_HIGH>;
- 		#iommu-cells = <1>;
-@@ -1804,7 +1804,7 @@
+@@ -451,6 +455,7 @@
+ 		interrupts = <0 19 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp9_clks R8A7791_CLK_I2C4>;
+ 		power-domains = <&cpg_clocks>;
++		i2c-scl-internal-delay-ns = <6>;
+ 		status = "disabled";
  	};
  
- 	ipmmu_mx: mmu@fe951000 {
--		compatible = "renesas,ipmmu-vmsa";
-+		compatible = "renesas,ipmmu-r8a7790", "renesas,ipmmu-vmsa";
- 		reg = <0 0xfe951000 0 0x1000>;
- 		interrupts = <0 222 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 221 IRQ_TYPE_LEVEL_HIGH>;
-@@ -1813,7 +1813,7 @@
+@@ -463,6 +468,7 @@
+ 		interrupts = <0 20 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp9_clks R8A7791_CLK_I2C5>;
+ 		power-domains = <&cpg_clocks>;
++		i2c-scl-internal-delay-ns = <110>;
+ 		status = "disabled";
  	};
  
- 	ipmmu_rt: mmu@ffc80000 {
--		compatible = "renesas,ipmmu-vmsa";
-+		compatible = "renesas,ipmmu-r8a7790", "renesas,ipmmu-vmsa";
- 		reg = <0 0xffc80000 0 0x1000>;
- 		interrupts = <0 307 IRQ_TYPE_LEVEL_HIGH>;
- 		#iommu-cells = <1>;
 -- 
 2.1.4
 
