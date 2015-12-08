@@ -1,83 +1,57 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 16 Dec 2015 10:37:33 +0000
-Subject: Re: [PATCH v2 00/32] VSP: Add R-Car Gen3 support
-Message-Id: <1476580.3KzNLJVXIA@avalon>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 08 Dec 2015 00:10:59 +0000
+Subject: [PATCH] ARM: shmobile: r8a7778: tidyup #sound-dai-cells settings
+Message-Id: <878u557qff.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <3938053.0568U3PJkY@avalon> <CAMuHMdXpJP9GFCsOVz2224BS5-XFTMrQwoDnzBbcuo+iv4R=Gw@mail.gmail.com>
-In-Reply-To: <CAMuHMdXpJP9GFCsOVz2224BS5-XFTMrQwoDnzBbcuo+iv4R=Gw@mail.gmail.com>
+References: <1449505537-15428-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1449505537-15428-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Linux Media Mailing List <linux-media@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
+To: Simon Horman <horms@verge.net.au>
+Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Magnus Damm <magnus.damm@gmail.com>, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>, devicetree@vger.kernel.org, linux-sh@vger.kernel.org
 
-Hi Geert,
 
-On Wednesday 16 December 2015 09:39:29 Geert Uytterhoeven wrote:
-> On Sat, Dec 5, 2015 at 11:54 PM, Laurent Pinchart wrote:
-> > On Saturday 05 December 2015 11:57:49 Geert Uytterhoeven wrote:
-> >> As http://git.linuxtv.org/pinchartl/media.git/tag/?id=vsp1-kms-20151112
-> >> is getting old, and has lots of conflicts with recent -next, do you plan
-> >> to publish this in a branch, and a separate branch for integration, to
-> >> ease integration in renesas-drivers?
-> >> 
-> >> Alternatively, I can just import the series you posted, but having the
-> >> broken-out integration part would be nice.
-> > 
-> > The issue I'm facing is that there's more than just two series. Beside the
-> > base VSP patches from this series, I have a series of DRM patches that
-> > depend on this one, a series of V4L2 core patches, another series of VSP
-> > patches that I still need to finish and a bunch of integration patches.
-> > As some of these have dependencies on H3 CCF support that hasn't landed
-> > in Simon's tree yet, I have merged your topic/cpg-mssr-v6 and
-> > topic/r8a7795-drivers-sh-v1 branches into my tree for development.
-> > 
-> > I could keep all series in separate branches and merge the two topic
-> > branches last, but that's not very handy during development when I have
-> > to continuously rebase my patches. Is there a way I could handle this
-> > that would make your life easier while not making mine more difficult ?
-> 
-> I feel your pain...
-> 
-> For development, committing to a single branch and rebasing interactively is
-> also my workflow. But after a few 100 commits, rebasing takes a long time.
-> And you can't publish that tree.
-> 
-> I started moving "finished" stuff to separate topic branches (this is the
-> stuff published/imported into renesas-drivers topic branches, or kept in
-> private branches for the parts I don't want to publish it yet), and merging
-> them early on.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-The issue here is that there is only a single batch of patches I consider as 
-finished, and those are already present in a branch based directly on top of 
-linuxtv/master that I then merge into my working branches. On a side note I've 
-now sent a pull request for that.
+Renesas sound driver needs #sound-dai-cells settings, but, this usage
+is a little bit confusable. It came from ALSA SoC historical reasons.
+The sound DAI naming method is different between Single/Multi DAI in
+the ALSA framework, and it is used for sound card matching.
+And this #sound-dai-cells has relationship to it.
+Current SoC dtsi has #sound-dai-cells = <1> as default settings
+(= it is assuming that board/platform has multi DAI), and
+board/platform side needs to overwrite it if board/platform was single
+DAI. This style is more confusable for users.
+This patch removes SoC side default settings, and force to set it by
+board/platform side.
 
-The rest is not considered finished yet, I've modified the oldest branches no 
-later than today. The code is stabilizing though, and I expect to send a pull 
-request for a first batch of DU patches after the v4.5 merge window closes.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+This patch is based on Geert's
+ARM: shmobile: bockw dts: Override #sound-dai-cells to zero
 
-> Actual development is still done on top with frequent rebasing.
-> 
-> The problem starts when updating that. Instead of a simple rebase -i, it now
-> involves:
->   - Duplicating the old topic branch, version number increased,
->   - Interactively rebasing the new topic branch, including/squashing commits
-> from recent development,
->   - Merging in the new topic branch "early on", and rebasing all other
-> private development on top of that.
-> For "big" changes that's OK. For adding a bunch of Acked-by's it's a lot of
-> work.
-> 
-> > In the meantime I've pushed vsp1-kms-20151206 to
-> > git://linuxtv.org/pinchartl/media.git.
-> 
-> Hadn't thanked you yet for that: Thanks!
+ arch/arm/boot/dts/r8a7778.dtsi | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
 
-You're welcome, and there's now vsp1-kms-20151216 :-)
-
+diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
+index 4f8e078..b140627 100644
+--- a/arch/arm/boot/dts/r8a7778.dtsi
++++ b/arch/arm/boot/dts/r8a7778.dtsi
+@@ -236,7 +236,12 @@
+ 	};
+ 
+ 	rcar_sound: sound@ffd90000 {
+-		#sound-dai-cells = <1>;
++		/*
++		 * #sound-dai-cells is required
++		 *
++		 * Single DAI : #sound-dai-cells = <0>;         <&rcar_sound>;
++		 * Multi  DAI : #sound-dai-cells = <1>;         <&rcar_sound N>;
++		 */
+ 		compatible = "renesas,rcar_sound-r8a7778", "renesas,rcar_sound-gen1";
+ 		reg =	<0xffd90000 0x1000>,	/* SRU */
+ 			<0xffd91000 0x240>,	/* SSI */
 -- 
-Regards,
-
-Laurent Pinchart
+1.9.1
 
