@@ -1,35 +1,94 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 16 Dec 2015 10:31:12 +0000
-Subject: [PATCH] MAINTAINERS: Add co-maintainer for Renesas Pin Controllers
-Message-Id: <1450261872-540-1-git-send-email-geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 08 Dec 2015 05:29:39 +0000
+Subject: [PATCH 7/8 v4] ARM: shmobile: r8a7791: enable to use thermal-zone
+Message-Id: <87k2op5x3x.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87vb895x9d.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87vb895x9d.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Linus Walleij <linus.walleij@linaro.org>
-Cc: linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Simon <horms@verge.net.au>, Zhang Rui <rui.zhang@intel.com>, Eduardo Valentin <edubezval@gmail.com>
+Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
 
-Add myself as a co-maintainer for Renesas Pin Controllers.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+
+This patch enables to use thermal-zone on r8a7791.
+This thermal sensor can measure temperature from -40000 to 125000,
+but over 117000 can be critical on this chip.
+Thus, default critical temperature is now set as 115000 (this driver
+is using 5000 steps) (Current critical temperature is using it as
+90000, but there is no big reason about it)
+
+And it doesn't check thermal zone periodically (same as current
+behavior). You can exchange it by modifying polling-delay[-passive]
+property.
+
+You can set trip temp if your kernel has CONFIG_THERMAL_WRITABLE_TRIPS,
+but you need to take care to use it, since it will call
+orderly_poweroff() it it reaches to the value.
+echo $temp > /sys/class/thermal/thermal_zone0/trip_point_0_temp
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-To be included in next sh-pfc-for-v4.5 pull request.
+v3 -> v4
 
- MAINTAINERS | 1 +
- 1 file changed, 1 insertion(+)
+ - modifing -> modifying
+ - reached -> reaches
+ - <1150000> -> <115000>
 
-diff --git a/MAINTAINERS b/MAINTAINERS
-index e9caa4b288284b92..f625860effec8c16 100644
---- a/MAINTAINERS
-+++ b/MAINTAINERS
-@@ -8351,6 +8351,7 @@ F:	drivers/pinctrl/intel/
+ arch/arm/boot/dts/r8a7791.dtsi | 26 ++++++++++++++++++++++++--
+ 1 file changed, 24 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 3776974..9b37c80 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -69,6 +69,25 @@
+ 		};
+ 	};
  
- PIN CONTROLLER - RENESAS
- M:	Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-+M:	Geert Uytterhoeven <geert+renesas@glider.be>
- L:	linux-sh@vger.kernel.org
- S:	Maintained
- F:	drivers/pinctrl/sh-pfc/
++	thermal-zones {
++		cpu_thermal: cpu-thermal {
++			polling-delay-passive	= <0>;
++			polling-delay		= <0>;
++
++			thermal-sensors = <&thermal>;
++
++			trips {
++				cpu-crit {
++					temperature	= <115000>;
++					hysteresis	= <0>;
++					type		= "critical";
++				};
++			};
++			cooling-maps {
++			};
++		};
++	};
++
+ 	gic: interrupt-controller@f1001000 {
+ 		compatible = "arm,gic-400";
+ 		#interrupt-cells = <3>;
+@@ -185,12 +204,15 @@
+ 		power-domains = <&cpg_clocks>;
+ 	};
+ 
+-	thermal@e61f0000 {
+-		compatible = "renesas,thermal-r8a7791", "renesas,rcar-thermal";
++	thermal: thermal@e61f0000 {
++		compatible =	"renesas,thermal-r8a7791",
++				"renesas,rcar-gen2-thermal",
++				"renesas,rcar-thermal";
+ 		reg = <0 0xe61f0000 0 0x14>, <0 0xe61f0100 0 0x38>;
+ 		interrupts = <0 69 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp5_clks R8A7791_CLK_THERMAL>;
+ 		power-domains = <&cpg_clocks>;
++		#thermal-sensor-cells = <0>;
+ 	};
+ 
+ 	timer {
 -- 
 1.9.1
 
