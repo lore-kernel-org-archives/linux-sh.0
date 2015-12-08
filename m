@@ -1,223 +1,33 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 17 Dec 2015 08:40:21 +0000
-Subject: [PATCH/RFC 43/48] v4l: vsp1: Merge RPF and WPF pad ops structures
-Message-Id: <1450341626-6695-44-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 08 Dec 2015 17:54:16 +0000
+Subject: [PATCH 11/13] ARM: shmobile: marzen dts: Add serial port config to chosen/stdout-path
+Message-Id: <1449597258-32623-12-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450341626-6695-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1450341626-6695-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1449597258-32623-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1449597258-32623-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The two structures are identical, merge them and move the result to
-vsp1_rwpf.c. All rwpf pad operations can now be declared static.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/media/platform/vsp1/vsp1_rpf.c  | 12 +------
- drivers/media/platform/vsp1/vsp1_rwpf.c | 60 +++++++++++++++++++--------------
- drivers/media/platform/vsp1/vsp1_rwpf.h | 19 +----------
- drivers/media/platform/vsp1/vsp1_wpf.c  | 12 +------
- 4 files changed, 38 insertions(+), 65 deletions(-)
+ arch/arm/boot/dts/r8a7779-marzen.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/media/platform/vsp1/vsp1_rpf.c b/drivers/media/platform/vsp1/vsp1_rpf.c
-index eb17fa134750..84a3aedae768 100644
---- a/drivers/media/platform/vsp1/vsp1_rpf.c
-+++ b/drivers/media/platform/vsp1/vsp1_rpf.c
-@@ -36,18 +36,8 @@ static inline void vsp1_rpf_write(struct vsp1_rwpf *rpf, u32 reg, u32 data)
-  * V4L2 Subdevice Operations
-  */
+diff --git a/arch/arm/boot/dts/r8a7779-marzen.dts b/arch/arm/boot/dts/r8a7779-marzen.dts
+index fe396c8d58db7986..2193ba07d5334760 100644
+--- a/arch/arm/boot/dts/r8a7779-marzen.dts
++++ b/arch/arm/boot/dts/r8a7779-marzen.dts
+@@ -25,7 +25,7 @@
  
--static struct v4l2_subdev_pad_ops rpf_pad_ops = {
--	.init_cfg = vsp1_entity_init_cfg,
--	.enum_mbus_code = vsp1_rwpf_enum_mbus_code,
--	.enum_frame_size = vsp1_rwpf_enum_frame_size,
--	.get_fmt = vsp1_rwpf_get_format,
--	.set_fmt = vsp1_rwpf_set_format,
--	.get_selection = vsp1_rwpf_get_selection,
--	.set_selection = vsp1_rwpf_set_selection,
--};
--
- static struct v4l2_subdev_ops rpf_ops = {
--	.pad    = &rpf_pad_ops,
-+	.pad    = &vsp1_rwpf_pad_ops,
- };
+ 	chosen {
+ 		bootargs = "ignore_loglevel root=/dev/nfs ip=on";
+-		stdout-path = &scif2;
++		stdout-path = "serial0:115200n8";
+ 	};
  
- /* -----------------------------------------------------------------------------
-diff --git a/drivers/media/platform/vsp1/vsp1_rwpf.c b/drivers/media/platform/vsp1/vsp1_rwpf.c
-index 0c5ad023adfb..4d302f5cccb2 100644
---- a/drivers/media/platform/vsp1/vsp1_rwpf.c
-+++ b/drivers/media/platform/vsp1/vsp1_rwpf.c
-@@ -20,13 +20,20 @@
- #define RWPF_MIN_WIDTH				1
- #define RWPF_MIN_HEIGHT				1
- 
-+struct v4l2_rect *vsp1_rwpf_get_crop(struct vsp1_rwpf *rwpf,
-+				     struct v4l2_subdev_pad_config *config)
-+{
-+	return v4l2_subdev_get_try_crop(&rwpf->entity.subdev, config,
-+					RWPF_PAD_SINK);
-+}
-+
- /* -----------------------------------------------------------------------------
-  * V4L2 Subdevice Pad Operations
-  */
- 
--int vsp1_rwpf_enum_mbus_code(struct v4l2_subdev *subdev,
--			     struct v4l2_subdev_pad_config *cfg,
--			     struct v4l2_subdev_mbus_code_enum *code)
-+static int vsp1_rwpf_enum_mbus_code(struct v4l2_subdev *subdev,
-+				    struct v4l2_subdev_pad_config *cfg,
-+				    struct v4l2_subdev_mbus_code_enum *code)
- {
- 	static const unsigned int codes[] = {
- 		MEDIA_BUS_FMT_ARGB8888_1X32,
-@@ -41,9 +48,9 @@ int vsp1_rwpf_enum_mbus_code(struct v4l2_subdev *subdev,
- 	return 0;
- }
- 
--int vsp1_rwpf_enum_frame_size(struct v4l2_subdev *subdev,
--			      struct v4l2_subdev_pad_config *cfg,
--			      struct v4l2_subdev_frame_size_enum *fse)
-+static int vsp1_rwpf_enum_frame_size(struct v4l2_subdev *subdev,
-+				     struct v4l2_subdev_pad_config *cfg,
-+				     struct v4l2_subdev_frame_size_enum *fse)
- {
- 	struct vsp1_rwpf *rwpf = to_rwpf(subdev);
- 	struct v4l2_subdev_pad_config *config;
-@@ -76,16 +83,9 @@ int vsp1_rwpf_enum_frame_size(struct v4l2_subdev *subdev,
- 	return 0;
- }
- 
--struct v4l2_rect *vsp1_rwpf_get_crop(struct vsp1_rwpf *rwpf,
--				     struct v4l2_subdev_pad_config *config)
--{
--	return v4l2_subdev_get_try_crop(&rwpf->entity.subdev, config,
--					RWPF_PAD_SINK);
--}
--
--int vsp1_rwpf_get_format(struct v4l2_subdev *subdev,
--			 struct v4l2_subdev_pad_config *cfg,
--			 struct v4l2_subdev_format *fmt)
-+static int vsp1_rwpf_get_format(struct v4l2_subdev *subdev,
-+				struct v4l2_subdev_pad_config *cfg,
-+				struct v4l2_subdev_format *fmt)
- {
- 	struct vsp1_rwpf *rwpf = to_rwpf(subdev);
- 	struct v4l2_subdev_pad_config *config;
-@@ -100,9 +100,9 @@ int vsp1_rwpf_get_format(struct v4l2_subdev *subdev,
- 	return 0;
- }
- 
--int vsp1_rwpf_set_format(struct v4l2_subdev *subdev,
--			 struct v4l2_subdev_pad_config *cfg,
--			 struct v4l2_subdev_format *fmt)
-+static int vsp1_rwpf_set_format(struct v4l2_subdev *subdev,
-+				struct v4l2_subdev_pad_config *cfg,
-+				struct v4l2_subdev_format *fmt)
- {
- 	struct vsp1_rwpf *rwpf = to_rwpf(subdev);
- 	struct v4l2_subdev_pad_config *config;
-@@ -154,9 +154,9 @@ int vsp1_rwpf_set_format(struct v4l2_subdev *subdev,
- 	return 0;
- }
- 
--int vsp1_rwpf_get_selection(struct v4l2_subdev *subdev,
--			    struct v4l2_subdev_pad_config *cfg,
--			    struct v4l2_subdev_selection *sel)
-+static int vsp1_rwpf_get_selection(struct v4l2_subdev *subdev,
-+				   struct v4l2_subdev_pad_config *cfg,
-+				   struct v4l2_subdev_selection *sel)
- {
- 	struct vsp1_rwpf *rwpf = to_rwpf(subdev);
- 	struct v4l2_subdev_pad_config *config;
-@@ -191,9 +191,9 @@ int vsp1_rwpf_get_selection(struct v4l2_subdev *subdev,
- 	return 0;
- }
- 
--int vsp1_rwpf_set_selection(struct v4l2_subdev *subdev,
--			    struct v4l2_subdev_pad_config *cfg,
--			    struct v4l2_subdev_selection *sel)
-+static int vsp1_rwpf_set_selection(struct v4l2_subdev *subdev,
-+				   struct v4l2_subdev_pad_config *cfg,
-+				   struct v4l2_subdev_selection *sel)
- {
- 	struct vsp1_rwpf *rwpf = to_rwpf(subdev);
- 	struct v4l2_subdev_pad_config *config;
-@@ -250,6 +250,16 @@ int vsp1_rwpf_set_selection(struct v4l2_subdev *subdev,
- 	return 0;
- }
- 
-+const struct v4l2_subdev_pad_ops vsp1_rwpf_pad_ops = {
-+	.init_cfg = vsp1_entity_init_cfg,
-+	.enum_mbus_code = vsp1_rwpf_enum_mbus_code,
-+	.enum_frame_size = vsp1_rwpf_enum_frame_size,
-+	.get_fmt = vsp1_rwpf_get_format,
-+	.set_fmt = vsp1_rwpf_set_format,
-+	.get_selection = vsp1_rwpf_get_selection,
-+	.set_selection = vsp1_rwpf_set_selection,
-+};
-+
- /* -----------------------------------------------------------------------------
-  * Controls
-  */
-diff --git a/drivers/media/platform/vsp1/vsp1_rwpf.h b/drivers/media/platform/vsp1/vsp1_rwpf.h
-index 4ebfab61e0ef..9502710977e8 100644
---- a/drivers/media/platform/vsp1/vsp1_rwpf.h
-+++ b/drivers/media/platform/vsp1/vsp1_rwpf.h
-@@ -68,24 +68,7 @@ struct vsp1_rwpf *vsp1_wpf_create(struct vsp1_device *vsp1, unsigned int index);
- 
- int vsp1_rwpf_init_ctrls(struct vsp1_rwpf *rwpf);
- 
--int vsp1_rwpf_enum_mbus_code(struct v4l2_subdev *subdev,
--			     struct v4l2_subdev_pad_config *cfg,
--			     struct v4l2_subdev_mbus_code_enum *code);
--int vsp1_rwpf_enum_frame_size(struct v4l2_subdev *subdev,
--			      struct v4l2_subdev_pad_config *cfg,
--			      struct v4l2_subdev_frame_size_enum *fse);
--int vsp1_rwpf_get_format(struct v4l2_subdev *subdev,
--			 struct v4l2_subdev_pad_config *cfg,
--			 struct v4l2_subdev_format *fmt);
--int vsp1_rwpf_set_format(struct v4l2_subdev *subdev,
--			 struct v4l2_subdev_pad_config *cfg,
--			 struct v4l2_subdev_format *fmt);
--int vsp1_rwpf_get_selection(struct v4l2_subdev *subdev,
--			    struct v4l2_subdev_pad_config *cfg,
--			    struct v4l2_subdev_selection *sel);
--int vsp1_rwpf_set_selection(struct v4l2_subdev *subdev,
--			    struct v4l2_subdev_pad_config *cfg,
--			    struct v4l2_subdev_selection *sel);
-+extern const struct v4l2_subdev_pad_ops vsp1_rwpf_pad_ops;
- 
- struct v4l2_rect *vsp1_rwpf_get_crop(struct vsp1_rwpf *rwpf,
- 				     struct v4l2_subdev_pad_config *config);
-diff --git a/drivers/media/platform/vsp1/vsp1_wpf.c b/drivers/media/platform/vsp1/vsp1_wpf.c
-index bdc7d6623fe1..3f4b7208f3ef 100644
---- a/drivers/media/platform/vsp1/vsp1_wpf.c
-+++ b/drivers/media/platform/vsp1/vsp1_wpf.c
-@@ -92,19 +92,9 @@ static struct v4l2_subdev_video_ops wpf_video_ops = {
- 	.s_stream = wpf_s_stream,
- };
- 
--static struct v4l2_subdev_pad_ops wpf_pad_ops = {
--	.init_cfg = vsp1_entity_init_cfg,
--	.enum_mbus_code = vsp1_rwpf_enum_mbus_code,
--	.enum_frame_size = vsp1_rwpf_enum_frame_size,
--	.get_fmt = vsp1_rwpf_get_format,
--	.set_fmt = vsp1_rwpf_set_format,
--	.get_selection = vsp1_rwpf_get_selection,
--	.set_selection = vsp1_rwpf_set_selection,
--};
--
- static struct v4l2_subdev_ops wpf_ops = {
- 	.video	= &wpf_video_ops,
--	.pad    = &wpf_pad_ops,
-+	.pad    = &vsp1_rwpf_pad_ops,
- };
- 
- /* -----------------------------------------------------------------------------
+ 	memory {
 -- 
-2.4.10
+1.9.1
 
