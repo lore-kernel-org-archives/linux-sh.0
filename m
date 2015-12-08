@@ -1,49 +1,60 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Wed, 23 Dec 2015 17:19:28 +0000
-Subject: [PATCH 1/2] i2c: always enable RuntimePM for the adapter device
-Message-Id: <1450891169-13708-2-git-send-email-wsa@the-dreams.de>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 08 Dec 2015 05:27:10 +0000
+Subject: [PATCH 1/8 v4] thermal: rcar: move rcar_thermal_dt_ids to upside
+Message-Id: <87twnt5x80.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450891169-13708-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1450891169-13708-1-git-send-email-wsa@the-dreams.de>
+References: <87vb895x9d.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87vb895x9d.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, linux-pm@vger.kernel.org, Sylwester Nawrocki <s.nawrocki@samsung.com>, Charles Keepax <ckeepax@opensource.wolfsonmicro.com>
+To: Simon <horms@verge.net.au>, Zhang Rui <rui.zhang@intel.com>, Eduardo Valentin <edubezval@gmail.com>
+Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-The adapter device is a logical device. Because of that, it already uses
-pm_runtime_no_callbacks() in the core. To ensure proper propagation from
-the children (i2c devices) to the parent of the adapter (the HW device),
-make sure RuntimePM is enabled in any case.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+This patch is prepare for of-thermal support.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/i2c/i2c-core.c | 3 +++
- 1 file changed, 3 insertions(+)
+v3 -> v4
 
-diff --git a/drivers/i2c/i2c-core.c b/drivers/i2c/i2c-core.c
-index e94d2ca2aab4aa..55159e8e53283a 100644
---- a/drivers/i2c/i2c-core.c
-+++ b/drivers/i2c/i2c-core.c
-@@ -1610,6 +1610,7 @@ static int i2c_register_adapter(struct i2c_adapter *adap)
- 	dev_dbg(&adap->dev, "adapter [%s] registered\n", adap->name);
+ - no change
+
+ drivers/thermal/rcar_thermal.c | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/thermal/rcar_thermal.c b/drivers/thermal/rcar_thermal.c
+index 5d4ae7d..ac8d1eb 100644
+--- a/drivers/thermal/rcar_thermal.c
++++ b/drivers/thermal/rcar_thermal.c
+@@ -81,6 +81,12 @@ struct rcar_thermal_priv {
+ # define rcar_force_update_temp(priv)	0
+ #endif
  
- 	pm_runtime_no_callbacks(&adap->dev);
-+	pm_runtime_enable(&adap->dev);
- 
- #ifdef CONFIG_I2C_COMPAT
- 	res = class_compat_create_link(i2c_adapter_compat_class, &adap->dev,
-@@ -1864,6 +1865,8 @@ void i2c_del_adapter(struct i2c_adapter *adap)
- 	/* device name is gone after device_unregister */
- 	dev_dbg(&adap->dev, "adapter [%s] unregistered\n", adap->name);
- 
-+	pm_runtime_disable(&adap->dev);
++static const struct of_device_id rcar_thermal_dt_ids[] = {
++	{ .compatible = "renesas,rcar-thermal", },
++	{},
++};
++MODULE_DEVICE_TABLE(of, rcar_thermal_dt_ids);
 +
- 	/* wait until all references to the device are gone
- 	 *
- 	 * FIXME: This is old code and should ideally be replaced by an
+ /*
+  *		basic functions
+  */
+@@ -491,12 +497,6 @@ static int rcar_thermal_remove(struct platform_device *pdev)
+ 	return 0;
+ }
+ 
+-static const struct of_device_id rcar_thermal_dt_ids[] = {
+-	{ .compatible = "renesas,rcar-thermal", },
+-	{},
+-};
+-MODULE_DEVICE_TABLE(of, rcar_thermal_dt_ids);
+-
+ static struct platform_driver rcar_thermal_driver = {
+ 	.driver	= {
+ 		.name	= "rcar_thermal",
 -- 
-2.1.4
+1.9.1
 
