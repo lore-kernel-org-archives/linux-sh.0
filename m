@@ -1,7 +1,7 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 07 Dec 2015 20:18:05 +0000
+From: Dirk Behme <dirk.behme@gmail.com>
+Date: Tue, 08 Dec 2015 18:50:38 +0000
 Subject: Re: [PATCH v2 6/6] arm64: renesas: r8a7795: Add L2 cache-controller nodes
-Message-Id: <CAMuHMdWrXiYkcFwSkgbEfQRXvT2FsSTbqD72vtiedmeEZZKxLg@mail.gmail.com>
+Message-Id: <5667267E.2080601@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1449512659-16688-1-git-send-email-geert+renesas@glider.be>
  <1449512659-16688-7-git-send-email-geert+renesas@glider.be>
@@ -12,15 +12,14 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Mark,
-
-On Mon, Dec 7, 2015 at 8:03 PM, Mark Rutland <mark.rutland@arm.com> wrote:
+On 07.12.2015 20:03, Mark Rutland wrote:
 > On Mon, Dec 07, 2015 at 06:49:43PM +0000, Sudeep Holla wrote:
+>>
 >> On 07/12/15 18:24, Geert Uytterhoeven wrote:
->> >+    L2_CA57: cache-controller@0 {
->> >+            compatible = "cache";
->> >+            arm,data-latency = <4 4 1>;
->> >+            arm,tag-latency = <3 3 3>;
+>>> +	L2_CA57: cache-controller@0 {
+>>> +		compatible = "cache";
+>>> +		arm,data-latency = <4 4 1>;
+>>> +		arm,tag-latency = <3 3 3>;
 >>
 >> Interesting, only PL2xx/3xx cache controller driver reads this from the
 >> DT and configures the controller. The integrated L2 found in
@@ -31,16 +30,63 @@ On Mon, Dec 7, 2015 at 8:03 PM, Mark Rutland <mark.rutland@arm.com> wrote:
 >
 > I don't see that these are necessary at all.
 
-The datasheet does mention the data/tag RAM latencies/setup values, so
-I put them in DT using the properties I could fine.
 
-Gr{oetje,eeting}s,
+What's about a documentation patch like [1], then?
 
-                        Geert
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+For what is the arm64 dts entry
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+cpu@0 {
+	...
+	next-level-cache = <&L2_0>;
+};
+
+L2_0: l2-cache0 {
+	compatible = "cache";
+};
+
+good for at all, then?
+
+
+Best regards
+
+Dirk
+
+
+[1]
+
+diff --git a/Documentation/devicetree/bindings/arm/l2cc.txt 
+b/Documentation/devicetree/bindings/arm/l2cc.txt
+index 06c88a4..f687aed 100644
+--- a/Documentation/devicetree/bindings/arm/l2cc.txt
++++ b/Documentation/devicetree/bindings/arm/l2cc.txt
+@@ -1,12 +1,18 @@
+  * ARM L2 Cache Controller
+
+-ARM cores often have a separate level 2 cache controller. There are 
+various
++ARM 32-bit cores often have a separate level 2 cache controller. 
+There are various
+  implementations of the L2 cache controller with compatible 
+programming models.
+  Some of the properties that are just prefixed "cache-*" are taken 
+from section
+  3.7.3 of the ePAPR v1.1 specification which can be found at:
+ 
+https://www.power.org/wp-content/uploads/2012/06/Power_ePAPR_APPROVED_v1.1.pdf
+
+-The ARM L2 cache representation in the device tree should be done as 
+follows:
++ARM 64-bit cores (e.g. A15/A7/A57/A53) have an integrated level 2 
+cache which
++doesn't make use of any values from the kernel device tree. There is no
++L2 cache configuration done in the kernel. The L2 cache is assumed to be
++preconfigured by early secure boot code.
++
++The ARM L2 cache representation for 32-bit cores in the device tree 
+should be done
++as follows:
+
+  Required properties:
+
+
