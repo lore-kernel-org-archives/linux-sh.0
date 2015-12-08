@@ -1,42 +1,48 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 15 Dec 2015 10:41:32 +0000
-Subject: Re: [PATCH 1/6] clk: shmobile: r8a7795: Add SATA0 clock
-Message-Id: <CAMuHMdV7EqSkQUr1MfCWr+y7q9Bura86r92r6wMQZfYb+YiXug@mail.gmail.com>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Tue, 08 Dec 2015 18:39:29 +0000
+Subject: [PATCH net-next] ravb: ptp: fix misplaced ravb_ptp_stop() calling in ravb_probe()
+Message-Id: <1449599969-20628-1-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450107758-2544-1-git-send-email-ulrich.hecht+renesas@gmail.com>
- <1450107758-2544-2-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1450107758-2544-2-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: netdev@vger.kernel.org
+Cc: "David S. Miller" <davem@davemloft.net>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-On Mon, Dec 14, 2015 at 4:42 PM, Ulrich Hecht
-<ulrich.hecht+renesas@gmail.com> wrote:
-> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-> ---
->  drivers/clk/shmobile/r8a7795-cpg-mssr.c | 1 +
->  1 file changed, 1 insertion(+)
->
-> diff --git a/drivers/clk/shmobile/r8a7795-cpg-mssr.c b/drivers/clk/shmobile/r8a7795-cpg-mssr.c
-> index 05479e6..ad4d9fd 100644
-> --- a/drivers/clk/shmobile/r8a7795-cpg-mssr.c
-> +++ b/drivers/clk/shmobile/r8a7795-cpg-mssr.c
-> @@ -159,6 +159,7 @@ static const struct mssr_mod_clk r8a7795_mod_clks[] __initconst = {
->         DEF_MOD("gpio2",                 910,   R8A7795_CLK_CP),
->         DEF_MOD("gpio1",                 911,   R8A7795_CLK_CP),
->         DEF_MOD("gpio0",                 912,   R8A7795_CLK_CP),
-> +       DEF_MOD("sata0",                 915,   R8A7795_CLK_S3D2),
+'commit <f5d7837f96e5> ("ravb: ptp: Add CONFIG mode support")' added
+a calling of ravb_ptp_stop() in a wrong place in ravb_probe().
 
-My datasheet says 815?
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+---
 
-Gr{oetje,eeting}s,
+This patch is based on the master branch of David Miller's next networking
+tree.
 
-                        Geert
+Compile tested only.
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+ drivers/net/ethernet/renesas/ravb_main.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+diff --git a/drivers/net/ethernet/renesas/ravb_main.c b/drivers/net/ethernet/renesas/ravb_main.c
+index 1cf1226..93be519 100644
+--- a/drivers/net/ethernet/renesas/ravb_main.c
++++ b/drivers/net/ethernet/renesas/ravb_main.c
+@@ -1875,12 +1875,12 @@ out_napi_del:
+ 	netif_napi_del(&priv->napi[RAVB_BE]);
+ 	ravb_mdio_release(priv);
+ out_dma_free:
+-	dma_free_coherent(ndev->dev.parent, priv->desc_bat_size, priv->desc_bat,
+-			  priv->desc_bat_dma);
+-
+ 	/* Stop PTP Clock driver */
+ 	if (chip_id != RCAR_GEN2)
+ 		ravb_ptp_stop(ndev);
++
++	dma_free_coherent(ndev->dev.parent, priv->desc_bat_size, priv->desc_bat,
++			  priv->desc_bat_dma);
+ out_release:
+ 	if (ndev)
+ 		free_netdev(ndev);
+-- 
+1.9.1
+
