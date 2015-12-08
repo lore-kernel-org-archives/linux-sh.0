@@ -1,91 +1,58 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 14 Dec 2015 18:58:01 +0000
-Subject: [PATCH v3 07/12] ARM: shmobile: r8a7779 dtsi: Rename the serial port clock to fck
-Message-Id: <1450119486-1285-8-git-send-email-geert+renesas@glider.be>
+Date: Tue, 08 Dec 2015 17:54:14 +0000
+Subject: [PATCH 09/13] ARM: shmobile: kzm9g dts: Update console parameters
+Message-Id: <1449597258-32623-10-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450119486-1285-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1450119486-1285-1-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
+References: <1449597258-32623-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1449597258-32623-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Yoshinori Sato <ysato-Rn4VEauK+AKRv+LV9MX5uooqe+aC9MnS@public.gmane.org>
-Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-serial-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Laurent Pinchart <laurent.pinchart+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Change the console alias to "serial0", for consistency with other
+boards (the first unlabeled serial port is always called "serial0").
+Drop the "console=" parameters from the kernel command line, as they're
+no longer needed for DT-based platforms.
+Add the serial port config to chosen/stdout-path.
 
-The clock is really the device functional clock, not the interface
-clock. Rename it.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-v3:
-  - No changes,
+ arch/arm/boot/dts/sh73a0-kzm9g.dts | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
-v2:
-  - Add Acked-by.
----
- arch/arm/boot/dts/r8a7779.dtsi | 12 ++++++------
- 1 file changed, 6 insertions(+), 6 deletions(-)
-
-diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
-index 4afd8b12f8694c13..aa71cd234ac4dd3e 100644
---- a/arch/arm/boot/dts/r8a7779.dtsi
-+++ b/arch/arm/boot/dts/r8a7779.dtsi
-@@ -216,7 +216,7 @@
- 		reg = <0xffe40000 0x100>;
- 		interrupts = <0 88 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp0_clks R8A7779_CLK_SCIF0>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g.dts b/arch/arm/boot/dts/sh73a0-kzm9g.dts
+index aa8bae3b8fcff6d6..554b275b1de50929 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g.dts
+@@ -22,7 +22,7 @@
+ 	compatible = "renesas,kzm9g", "renesas,sh73a0";
+ 
+ 	aliases {
+-		serial4 = &scifa4;
++		serial0 = &scifa4;
  	};
-@@ -227,7 +227,7 @@
- 		reg = <0xffe41000 0x100>;
- 		interrupts = <0 89 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp0_clks R8A7779_CLK_SCIF1>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
+ 
+ 	cpus {
+@@ -39,8 +39,8 @@
  	};
-@@ -238,7 +238,7 @@
- 		reg = <0xffe42000 0x100>;
- 		interrupts = <0 90 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp0_clks R8A7779_CLK_SCIF2>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
+ 
+ 	chosen {
+-		bootargs = "console=tty0 console=ttySC4,115200 root=/dev/nfs ip=dhcp ignore_loglevel rw";
+-		stdout-path = &scifa4;
++		bootargs = "root=/dev/nfs ip=dhcp ignore_loglevel rw";
++		stdout-path = "serial0:115200n8";
  	};
-@@ -249,7 +249,7 @@
- 		reg = <0xffe43000 0x100>;
- 		interrupts = <0 91 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp0_clks R8A7779_CLK_SCIF3>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
+ 
+ 	memory {
+@@ -345,7 +345,7 @@
+ 		};
  	};
-@@ -260,7 +260,7 @@
- 		reg = <0xffe44000 0x100>;
- 		interrupts = <0 92 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp0_clks R8A7779_CLK_SCIF4>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -271,7 +271,7 @@
- 		reg = <0xffe45000 0x100>;
- 		interrupts = <0 93 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp0_clks R8A7779_CLK_SCIF5>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
+ 
+-	scifa4_pins: serial4 {
++	scifa4_pins: serial0 {
+ 		renesas,groups = "scifa4_data", "scifa4_ctrl";
+ 		renesas,function = "scifa4";
  	};
 -- 
 1.9.1
