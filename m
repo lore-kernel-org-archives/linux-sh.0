@@ -1,89 +1,48 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Thu, 03 Dec 2015 15:51:34 +0000
-Subject: [PATCH 4/9] i2c: rcar: switch to i2c generic dt parsing
-Message-Id: <1449157899-6572-5-git-send-email-wsa@the-dreams.de>
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Wed, 09 Dec 2015 13:42:37 +0000
+Subject: [PATCH 150/182] sh: sdk7786-gpio: switch to gpiochip_add_data()
+Message-Id: <1449668557-5309-1-git-send-email-linus.walleij@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449157899-6572-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1449157899-6572-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, linux-rockchip@lists.infradead.org, Mika Westerberg <mika.westerberg@linux.intel.com>, Andy Shevchenko <andriy.shevchenko@linux.intel.com>, Jarkko Nikula <jarkko.nikula@linux.intel.com>
+To: linux-gpio@vger.kernel.org, Johan Hovold <johan@kernel.org>, Alexandre Courbot <acourbot@nvidia.com>, Michael Welling <mwelling@ieee.org>, Markus Pargmann <mpa@pengutronix.de>, Paul Mundt <lethal@linux-sh.org>
+Cc: Linus Walleij <linus.walleij@linaro.org>, linux-sh@vger.kernel.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+We're planning to remove the gpiochip_add() function to swith
+to gpiochip_add_data() with NULL for data argument.
 
-Switch to the new generic functions. Plain convert, no functionality
-added yet.
-
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Cc: Paul Mundt <lethal@linux-sh.org>
+Cc: linux-sh@vger.kernel.org
+Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- drivers/i2c/busses/i2c-rcar.c | 16 +++++++++-------
- 1 file changed, 9 insertions(+), 7 deletions(-)
+SH people: please ACK this so I can take it through the
+GPIO tree.
+---
+ arch/sh/boards/mach-sdk7786/gpio.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
-index d4322a9096786f..05274fda57eb08 100644
---- a/drivers/i2c/busses/i2c-rcar.c
-+++ b/drivers/i2c/busses/i2c-rcar.c
-@@ -162,12 +162,15 @@ static int rcar_i2c_bus_barrier(struct rcar_i2c_priv *priv)
- 	return -EBUSY;
- }
+diff --git a/arch/sh/boards/mach-sdk7786/gpio.c b/arch/sh/boards/mach-sdk7786/gpio.c
+index f71ce09d4e15..47997010b77a 100644
+--- a/arch/sh/boards/mach-sdk7786/gpio.c
++++ b/arch/sh/boards/mach-sdk7786/gpio.c
+@@ -9,7 +9,7 @@
+  */
+ #include <linux/init.h>
+ #include <linux/interrupt.h>
+-#include <linux/gpio.h>
++#include <linux/gpio/driver.h>
+ #include <linux/irq.h>
+ #include <linux/kernel.h>
+ #include <linux/spinlock.h>
+@@ -44,6 +44,6 @@ static struct gpio_chip usrgpir_gpio_chip = {
  
--static int rcar_i2c_clock_calculate(struct rcar_i2c_priv *priv, u32 bus_speed)
-+static int rcar_i2c_clock_calculate(struct rcar_i2c_priv *priv, struct i2c_timings *t)
+ static int __init usrgpir_gpio_setup(void)
  {
- 	u32 scgd, cdf, round, ick, scl, cdf_width;
- 	unsigned long rate;
- 	struct device *dev = rcar_i2c_priv_to_dev(priv);
- 
-+	/* Fall back to previously used values if not supplied */
-+	t->bus_freq_hz = t->bus_freq_hz ?: 100000;
-+
- 	switch (priv->devtype) {
- 	case I2C_RCAR_GEN1:
- 		cdf_width = 2;
-@@ -230,7 +233,7 @@ static int rcar_i2c_clock_calculate(struct rcar_i2c_priv *priv, u32 bus_speed)
- 	 */
- 	for (scgd = 0; scgd < 0x40; scgd++) {
- 		scl = ick / (20 + (scgd * 8) + round);
--		if (scl <= bus_speed)
-+		if (scl <= t->bus_freq_hz)
- 			goto scgd_find;
- 	}
- 	dev_err(dev, "it is impossible to calculate best SCL\n");
-@@ -238,7 +241,7 @@ static int rcar_i2c_clock_calculate(struct rcar_i2c_priv *priv, u32 bus_speed)
- 
- scgd_find:
- 	dev_dbg(dev, "clk %d/%d(%lu), round %u, CDF:0x%x, SCGD: 0x%x\n",
--		scl, bus_speed, clk_get_rate(priv->clk), round, cdf, scgd);
-+		scl, t->bus_freq_hz, clk_get_rate(priv->clk), round, cdf, scgd);
- 
- 	/* keep icccr value */
- 	priv->icccr = scgd << cdf_width | cdf;
-@@ -588,7 +591,7 @@ static int rcar_i2c_probe(struct platform_device *pdev)
- 	struct i2c_adapter *adap;
- 	struct resource *res;
- 	struct device *dev = &pdev->dev;
--	u32 bus_speed;
-+	struct i2c_timings i2c_t;
- 	int irq, ret;
- 
- 	priv = devm_kzalloc(dev, sizeof(struct rcar_i2c_priv), GFP_KERNEL);
-@@ -619,12 +622,11 @@ static int rcar_i2c_probe(struct platform_device *pdev)
- 	i2c_set_adapdata(adap, priv);
- 	strlcpy(adap->name, pdev->name, sizeof(adap->name));
- 
--	bus_speed = 100000; /* default 100 kHz */
--	of_property_read_u32(dev->of_node, "clock-frequency", &bus_speed);
-+	of_i2c_parse_timings(dev->of_node, &i2c_t, false);
- 
- 	pm_runtime_enable(dev);
- 	pm_runtime_get_sync(dev);
--	ret = rcar_i2c_clock_calculate(priv, bus_speed);
-+	ret = rcar_i2c_clock_calculate(priv, &i2c_t);
- 	if (ret < 0)
- 		goto out_pm_put;
- 
+-	return gpiochip_add(&usrgpir_gpio_chip);
++	return gpiochip_add_data(&usrgpir_gpio_chip, NULL);
+ }
+ device_initcall(usrgpir_gpio_setup);
 -- 
-2.1.4
+2.4.3
 
