@@ -1,175 +1,71 @@
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Sun, 20 Dec 2015 09:10:35 +0000
-Subject: Re: [PATCH/RFC net-next] ravb: Add dma queue interrupt support
-Message-Id: <CAH1o70K87cCy9qyWDjLy=otzhVg7V=znfZNbLV2XcTYyW6didQ@mail.gmail.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 09 Dec 2015 10:47:36 +0000
+Subject: Re: [PATCH 2/2] ARM: shmobile: r8a7793: Describe DMA for the serial ports
+Message-Id: <CAMuHMdVfMp0awRZh6S7YiSPFpUyAvwGXSQb2RYU7DkK_SOwH9Q@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450182181-12575-1-git-send-email-ykaneko0929@gmail.com>
-	<56706330.2060803@cogentembedded.com>
-	<CAH1o70LnEEu3iYos8wsaEZ=T67N+Tex_XHZgE9P93n6X6Bzz4A@mail.gmail.com>
-	<5672F423.6010807@cogentembedded.com>
-In-Reply-To: <5672F423.6010807@cogentembedded.com>
+References: <1448589166-11612-1-git-send-email-horms+renesas@verge.net.au>
+ <1448589166-11612-3-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1448589166-11612-3-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: netdev@vger.kernel.org, "David S. Miller" <davem@davemloft.net>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi,
+Hi Simon,
 
-2015-12-18 2:42 GMT+09:00 Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>:
-> Hello.
+On Fri, Nov 27, 2015 at 2:52 AM, Simon Horman
+<horms+renesas@verge.net.au> wrote:
+> Add DMA properties to all SCIF, SCIFA, SCIFB, and HSCIF device nodes.
 >
-> On 12/17/2015 07:29 PM, Yoshihiro Kaneko wrote:
+> Based on similar work for the r8a7791 by Geert Uytterhoeven.
 >
->>>> From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
->>>>
->>>> This patch supports the following interrupts.
->>>>
->>>> - One interrupt for multiple (descriptor, error, management)
->>>> - One interrupt for emac
->>>> - Four interrupts for dma queue (best effort rx/tx, network control
->>>> rx/tx)
->>>
->>>
->>>
->>>     You don't say why the current 2-interrupt scheme (implemented by
->>> Simon's
->>> patch) isn't enpough...
->>>
->>>> Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
->>>> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
->>>
->>>
->>> [...]
->>>
->>>> diff --git a/drivers/net/ethernet/renesas/ravb.h
->>>> b/drivers/net/ethernet/renesas/ravb.h
->>>> index 9fbe92a..eada5a1 100644
->>>> --- a/drivers/net/ethernet/renesas/ravb.h
->>>> +++ b/drivers/net/ethernet/renesas/ravb.h
->>>> @@ -157,6 +157,7 @@ enum ravb_reg {
+> Cc: Geert Uytterhoeven <geert+renesas@glider.be>
+> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+> ---
+>  arch/arm/boot/dts/r8a7793.dtsi | 36 ++++++++++++++++++++++++++++++++++++
+>  1 file changed, 36 insertions(+)
 >
-> [...]
->>>>
->>>> +#define RAVB_RIx2_ALL  0x8003ffff
->>>
->>>
->>>     No prefix. And there's bit 31 in this register, according to my gen3
->>> manual. So, your _ALL isn't really "all bits". I'd rather call it
->>> RIx2_QFx.
->>> Or even RIE2_QFS and RID2_QFD.
->>
->>
->> I think that bit 31 is included in the value 0x8003ffff. Or I'm
->> missing something?
->
->
->    Sorry, I misread the code.
->
->>>> +
->>>> +/* TIx */
->>>
->>>
->>>     TIE/TID.
->>>
->>>> +#define RAVB_TIx_ALL   0x000fffff
->>>
->>>
->>>     No prefix. And there's bit 31 in this register, according to my gen3
->>> manual.
->
->
->    Oops, no bit 31 in these regs.
->
->> So, your _ALL isn't really "all bits".
->>
->> I think the correct value is 0x000f0f0f.
->
->
->    Indeed, please fix.
->
->>> [...]
->>>>
->>>>
->>>> diff --git a/drivers/net/ethernet/renesas/ravb_main.c
->>>> b/drivers/net/ethernet/renesas/ravb_main.c
->>>> index 120cc25..753b67d 100644
->>>> --- a/drivers/net/ethernet/renesas/ravb_main.c
->>>> +++ b/drivers/net/ethernet/renesas/ravb_main.c
->
-> [...]
->>>>
->>>> @@ -654,7 +679,7 @@ static int ravb_stop_dma(struct net_device *ndev)
->>>>    }
->>>>
->>>>    /* E-MAC interrupt handler */
->>>> -static void ravb_emac_interrupt(struct net_device *ndev)
->>>> +static void _ravb_emac_interrupt(struct net_device *ndev)
->>>
->>>
->>>
->>>     ravb_emac_interrupt_[un]locked() perhaps? Not sure which is more
->>> correct... :-)
->>
->>
->> How about ravb_process_emac_interrupt() ?
->
->
->    I've made up my mind -- I'd prefer ravb_emac_interrupt_unlocked().
+> diff --git a/arch/arm/boot/dts/r8a7793.dtsi b/arch/arm/boot/dts/r8a7793.dtsi
+> index 3ac2ec0414a0..8d5cbdfc3d5d 100644
+> --- a/arch/arm/boot/dts/r8a7793.dtsi
+> +++ b/arch/arm/boot/dts/r8a7793.dtsi
 
-Got it.
+> @@ -394,6 +412,8 @@
+>                 interrupts = <0 152 IRQ_TYPE_LEVEL_HIGH>;
+>                 clocks = <&mstp7_clks R8A7793_CLK_SCIF0>;
+>                 clock-names = "sci_ick";
+> +               dmas = <&dmac0 0x29>, <&dmac0 0x2a>;
+> +               dma-names = "tx", "rx";
+>                 power-domains = <&cpg_clocks>;
+>                 status = "disabled";
+>         };
+> @@ -404,6 +424,8 @@
+>                 interrupts = <0 153 IRQ_TYPE_LEVEL_HIGH>;
+>                 clocks = <&mstp7_clks R8A7793_CLK_SCIF1>;
+>                 clock-names = "sci_ick";
+> +               dmas = <&dmac0 0x29>, <&dmac0 0x2a>;
 
->
-> [...]
->>>>
->>>> +static irqreturn_t ravb_multi_interrupt(int irq, void *dev_id)
->>>> +{
->>>> +       struct net_device *ndev = dev_id;
->>>> +       struct ravb_private *priv = netdev_priv(ndev);
->>>> +       irqreturn_t result = IRQ_NONE;
->>>> +       u32 iss;
->>>> +
->>>> +       spin_lock(&priv->lock);
->>>> +       /* Get interrupt status */
->>>> +       iss = ravb_read(ndev, ISS);
->>>> +
->>>>          /* Error status summary */
->>>>          if (iss & ISS_ES) {
->>>>                  ravb_error_interrupt(ndev);
->>>>                  result = IRQ_HANDLED;
->>>>          }
->>>>
->>>> +       /* Management */
->>>
->>>
->>>
->>>     Really? I thought that's gPTP Interrupt...
->>
->>
->> gPTP seems to be a part of Management related interrupts.
->
->
->    ISS.CGIM is still described as gPTP interrupt mirror in my gen3 manual.
+This is duplicated from scif0, and should be:
 
-It is true.
-And also gPTP interrupt belongs to the interrupt Group 2, Management
-related interrupt.
+        dmas = <&dmac0 0x2d>, <&dmac0 0x2e>;
 
->
->>>>          if (iss & ISS_CGIS)
->>>>                  result = ravb_ptp_interrupt(ndev);
->>>>
->>>> @@ -776,6 +843,55 @@ static irqreturn_t ravb_interrupt(int irq, void
->>>> *dev_id)
->
-> [...]
->
->> Thanks,
->> kaneko
->
->
-> MBR, Sergei
->
+> +               dma-names = "tx", "rx";
 
-Thanks,
-kaneko
+After
+
+        sed -i -e 's/7791/779x/g' arch/arm/boot/dts/r8a7791.dtsi
+        sed -i -e 's/7793/779x/g' arch/arm/boot/dts/r8a7793.dtsi
+
+arch/arm/boot/dts/r8a7791.dtsi and arch/arm/boot/dts/r8a7793.dtsi should
+be identical ;-)
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
