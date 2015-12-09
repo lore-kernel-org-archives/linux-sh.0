@@ -1,57 +1,35 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 29 Dec 2015 00:26:32 +0000
-Subject: Re: [PATCH 06/06] iommu/ipmmu-vmsa: Drop LPAE Kconfig dependency
-Message-Id: <2937538.nzTTWYnTym@avalon>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 09 Dec 2015 10:42:35 +0000
+Subject: Re: [PATCH 1/2] ARM: shmobile: r8a7793: Add missing serial devices to DT
+Message-Id: <CAMuHMdUXaO6PynwOaEP9e88F10uJSoc7u848RgnDVRdqyYFnTg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20151215120212.26216.61530.sendpatchset@little-apple>
-	<20151215120308.26216.38754.sendpatchset@little-apple>
-In-Reply-To: <20151215120308.26216.38754.sendpatchset@little-apple>
+References: <1448589166-11612-1-git-send-email-horms+renesas@verge.net.au>
+ <1448589166-11612-2-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1448589166-11612-2-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: laurent.pinchart+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org, geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, horms+renesas-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Magnus,
+On Fri, Nov 27, 2015 at 2:52 AM, Simon Horman
+<horms+renesas@verge.net.au> wrote:
+> Instantiate all serial devices in r8a7793 device tree
+> and set them as disabled by default.
+>
+> Based on similar work for the r8a7791 by Laurent Pinchart.
+>
+> Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-Thank you for the patch.
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Tuesday 15 December 2015 21:03:08 Magnus Damm wrote:
-> From: Magnus Damm <damm+renesas@opensource.se>
-> 
-> Neither the ARM page table code enabled by IOMMU_IO_PGTABLE_LPAE
-> nor the IPMMU_VMSA driver actually depends on ARM_LPAE, so get
-> rid of the dependency.
-> 
-> Tested with ipmmu-vmsa on r8a7794 ALT and a kernel config using:
->  # CONFIG_ARM_LPAE is not set
-> 
-> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Gr{oetje,eeting}s,
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+                        Geert
 
-> ---
-> 
->  This time the result also compiles on x86. Need to be
->  applied as last patch in the following series:
->  [PATCH 00/06] iommu/ipmmu-vmsa: IPMMU multi-arch update
-> 
->  drivers/iommu/Kconfig |    1 -
->  1 file changed, 1 deletion(-)
-> 
-> --- 0001/drivers/iommu/Kconfig
-> +++ work/drivers/iommu/Kconfig	2015-10-18 14:58:09.080513000 +0900
-> @@ -324,7 +324,6 @@ config SHMOBILE_IOMMU_L1SIZE
-> 
->  config IPMMU_VMSA
->  	bool "Renesas VMSA-compatible IPMMU"
-> -	depends on ARM_LPAE
->  	depends on ARCH_SHMOBILE || COMPILE_TEST
->  	select IOMMU_API
->  	select IOMMU_IO_PGTABLE_LPAE
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
--- 
-Regards,
-
-Laurent Pinchart
-
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
