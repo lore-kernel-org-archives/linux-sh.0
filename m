@@ -1,82 +1,49 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sat, 05 Dec 2015 02:12:54 +0000
-Subject: [PATCH v2 20/32] v4l: vsp1: Move entity route setup function to vsp1_entity.c
-Message-Id: <1449281586-25726-21-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Wed, 09 Dec 2015 13:42:46 +0000
+Subject: [PATCH 151/182] sh: x3proto-gpio: switch to gpiochip_add_data()
+Message-Id: <1449668566-5356-1-git-send-email-linus.walleij@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
+To: linux-gpio@vger.kernel.org, Johan Hovold <johan@kernel.org>, Alexandre Courbot <acourbot@nvidia.com>, Michael Welling <mwelling@ieee.org>, Markus Pargmann <mpa@pengutronix.de>, Paul Mundt <lethal@linux-sh.org>
+Cc: Linus Walleij <linus.walleij@linaro.org>, linux-sh@vger.kernel.org
+
+We're planning to remove the gpiochip_add() function to swith
+to gpiochip_add_data() with NULL for data argument.
+
+Cc: Paul Mundt <lethal@linux-sh.org>
 Cc: linux-sh@vger.kernel.org
-
-The function will be used by the DU code, move it out of vsp1_video.c.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- drivers/media/platform/vsp1/vsp1_entity.c | 12 ++++++++++++
- drivers/media/platform/vsp1/vsp1_entity.h |  2 ++
- drivers/media/platform/vsp1/vsp1_video.c  | 12 ------------
- 3 files changed, 14 insertions(+), 12 deletions(-)
+SH people: please ACK this so I can take it through the
+GPIO tree.
+---
+ arch/sh/boards/mach-x3proto/gpio.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/media/platform/vsp1/vsp1_entity.c b/drivers/media/platform/vsp1/vsp1_entity.c
-index 0c52e4b71a98..cb9d480d8ee5 100644
---- a/drivers/media/platform/vsp1/vsp1_entity.c
-+++ b/drivers/media/platform/vsp1/vsp1_entity.c
-@@ -58,6 +58,18 @@ int vsp1_entity_set_streaming(struct vsp1_entity *entity, bool streaming)
- 	return ret;
- }
+diff --git a/arch/sh/boards/mach-x3proto/gpio.c b/arch/sh/boards/mach-x3proto/gpio.c
+index 1fb2cbee25f2..cea88b0effa2 100644
+--- a/arch/sh/boards/mach-x3proto/gpio.c
++++ b/arch/sh/boards/mach-x3proto/gpio.c
+@@ -13,7 +13,7 @@
  
-+void vsp1_entity_route_setup(struct vsp1_entity *source)
-+{
-+	struct vsp1_entity *sink;
-+
-+	if (source->route->reg = 0)
-+		return;
-+
-+	sink = container_of(source->sink, struct vsp1_entity, subdev.entity);
-+	vsp1_write(source->vsp1, source->route->reg,
-+		   sink->route->inputs[source->sink_pad]);
-+}
-+
- /* -----------------------------------------------------------------------------
-  * V4L2 Subdevice Operations
-  */
-diff --git a/drivers/media/platform/vsp1/vsp1_entity.h b/drivers/media/platform/vsp1/vsp1_entity.h
-index 9c95507ec762..9606d0d21263 100644
---- a/drivers/media/platform/vsp1/vsp1_entity.h
-+++ b/drivers/media/platform/vsp1/vsp1_entity.h
-@@ -96,4 +96,6 @@ void vsp1_entity_init_formats(struct v4l2_subdev *subdev,
- bool vsp1_entity_is_streaming(struct vsp1_entity *entity);
- int vsp1_entity_set_streaming(struct vsp1_entity *entity, bool streaming);
+ #include <linux/init.h>
+ #include <linux/interrupt.h>
+-#include <linux/gpio.h>
++#include <linux/gpio/driver.h>
+ #include <linux/irq.h>
+ #include <linux/kernel.h>
+ #include <linux/spinlock.h>
+@@ -107,7 +107,7 @@ int __init x3proto_gpio_setup(void)
+ 	if (unlikely(ilsel < 0))
+ 		return ilsel;
  
-+void vsp1_entity_route_setup(struct vsp1_entity *source);
-+
- #endif /* __VSP1_ENTITY_H__ */
-diff --git a/drivers/media/platform/vsp1/vsp1_video.c b/drivers/media/platform/vsp1/vsp1_video.c
-index c958ba6a20ce..a9b7bafc5fa2 100644
---- a/drivers/media/platform/vsp1/vsp1_video.c
-+++ b/drivers/media/platform/vsp1/vsp1_video.c
-@@ -661,18 +661,6 @@ static void vsp1_video_buffer_queue(struct vb2_buffer *vb)
- 	spin_unlock_irqrestore(&pipe->irqlock, flags);
- }
+-	ret = gpiochip_add(&x3proto_gpio_chip);
++	ret = gpiochip_add_data(&x3proto_gpio_chip, NULL);
+ 	if (unlikely(ret))
+ 		goto err_gpio;
  
--static void vsp1_entity_route_setup(struct vsp1_entity *source)
--{
--	struct vsp1_entity *sink;
--
--	if (source->route->reg = 0)
--		return;
--
--	sink = container_of(source->sink, struct vsp1_entity, subdev.entity);
--	vsp1_write(source->vsp1, source->route->reg,
--		   sink->route->inputs[source->sink_pad]);
--}
--
- static int vsp1_video_start_streaming(struct vb2_queue *vq, unsigned int count)
- {
- 	struct vsp1_video *video = vb2_get_drv_priv(vq);
 -- 
-2.4.10
+2.4.3
 
