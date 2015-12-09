@@ -1,50 +1,54 @@
-From: Dirk Behme <dirk.behme@gmail.com>
-Date: Fri, 04 Dec 2015 13:54:44 +0000
-Subject: [PATCH] clk: shmobile: r8a7795: Add SDHI clocks
-Message-Id: <1449237284-4744-1-git-send-email-dirk.behme@gmail.com>
+From: Yang Shi <yang.shi@linaro.org>
+Date: Wed, 09 Dec 2015 17:29:23 +0000
+Subject: [PATCH v4 6/7] sh: mm/gup: add gup trace points
+Message-Id: <1449682164-9933-7-git-send-email-yang.shi@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1449682164-9933-1-git-send-email-yang.shi@linaro.org>
+In-Reply-To: <1449682164-9933-1-git-send-email-yang.shi@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: akpm@linux-foundation.org, rostedt@goodmis.org, mingo@redhat.com
+Cc: linux-kernel@vger.kernel.org, linux-mm@kvack.org, linaro-kernel@lists.linaro.org, yang.shi@linaro.org, linux-sh@vger.kernel.org
 
-Add R8A7795 SDHI clocks.
-
-Signed-off-by: Dirk Behme <dirk.behme@gmail.com>
+Cc: linux-sh@vger.kernel.org
+Signed-off-by: Yang Shi <yang.shi@linaro.org>
 ---
-Note: This patch is based on
+ arch/sh/mm/gup.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
 
-https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git/log/?h=topic/gen3-latest renesas-drivers-2015-12-01-v4.4-rc3
-
- drivers/clk/shmobile/r8a7795-cpg-mssr.c | 8 ++++++++
- 1 file changed, 8 insertions(+)
-
-diff --git a/drivers/clk/shmobile/r8a7795-cpg-mssr.c b/drivers/clk/shmobile/r8a7795-cpg-mssr.c
-index 05479e6..b8831bd 100644
---- a/drivers/clk/shmobile/r8a7795-cpg-mssr.c
-+++ b/drivers/clk/shmobile/r8a7795-cpg-mssr.c
-@@ -99,6 +99,10 @@ static const struct cpg_core_clk r8a7795_core_clks[] __initconst = {
- 	DEF_FIXED("s3d1",       R8A7795_CLK_S3D1,  CLK_S3,         1, 1),
- 	DEF_FIXED("s3d2",       R8A7795_CLK_S3D2,  CLK_S3,         2, 1),
- 	DEF_FIXED("s3d4",       R8A7795_CLK_S3D4,  CLK_S3,         4, 1),
-+	DEF_FIXED("sd0",        R8A7795_CLK_SD0,   CLK_PLL1_DIV2, 16, 1),
-+	DEF_FIXED("sd1",        R8A7795_CLK_SD1,   CLK_PLL1_DIV2, 16, 1),
-+	DEF_FIXED("sd2",        R8A7795_CLK_SD2,   CLK_PLL1_DIV2, 16, 1),
-+	DEF_FIXED("sd3",        R8A7795_CLK_SD3,   CLK_PLL1_DIV2, 16, 1),
- 	DEF_FIXED("cl",         R8A7795_CLK_CL,    CLK_PLL1_DIV2, 48, 1),
- 	DEF_FIXED("cp",         R8A7795_CLK_CP,    CLK_EXTAL,      2, 1),
+diff --git a/arch/sh/mm/gup.c b/arch/sh/mm/gup.c
+index e7af6a6..fa72aac 100644
+--- a/arch/sh/mm/gup.c
++++ b/arch/sh/mm/gup.c
+@@ -14,6 +14,9 @@
+ #include <linux/highmem.h>
+ #include <asm/pgtable.h>
  
-@@ -120,6 +124,10 @@ static const struct mssr_mod_clk r8a7795_mod_clks[] __initconst = {
- 	DEF_MOD("sys-dmac1",		 218,	R8A7795_CLK_S3D1),
- 	DEF_MOD("sys-dmac0",		 219,	R8A7795_CLK_S3D1),
- 	DEF_MOD("scif2",		 310,	R8A7795_CLK_S3D4),
-+	DEF_MOD("sdhi3",	       	 311,	R8A7795_CLK_SD3),
-+	DEF_MOD("sdhi2",	       	 312,	R8A7795_CLK_SD2),
-+	DEF_MOD("sdhi1",	      	 313,	R8A7795_CLK_SD1),
-+	DEF_MOD("sdhi0",	     	 314,	R8A7795_CLK_SD0),
- 	DEF_MOD("pcie1",		 318,	R8A7795_CLK_S3D1),
- 	DEF_MOD("pcie0",		 319,	R8A7795_CLK_S3D1),
- 	DEF_MOD("intc-ap",		 408,	R8A7795_CLK_S3D1),
++#define CREATE_TRACE_POINTS
++#include <trace/events/gup.h>
++
+ static inline pte_t gup_get_pte(pte_t *ptep)
+ {
+ #ifndef CONFIG_X2TLB
+@@ -178,6 +181,8 @@ int __get_user_pages_fast(unsigned long start, int nr_pages, int write,
+ 					(void __user *)start, len)))
+ 		return 0;
+ 
++	trace_gup_get_user_pages_fast(start, nr_pages);
++
+ 	/*
+ 	 * This doesn't prevent pagetable teardown, but does prevent
+ 	 * the pagetables and pages from being freed.
+@@ -244,6 +249,8 @@ int get_user_pages_fast(unsigned long start, int nr_pages, int write,
+ 	} while (pgdp++, addr = next, addr != end);
+ 	local_irq_enable();
+ 
++	trace_gup_get_user_pages_fast(start, nr_pages);
++
+ 	VM_BUG_ON(nr != (end - start) >> PAGE_SHIFT);
+ 	return nr;
+ 
 -- 
-2.6.3
+2.0.2
 
