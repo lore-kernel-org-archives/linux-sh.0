@@ -1,75 +1,53 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Tue, 08 Dec 2015 09:37:52 +0000
-Subject: [PATCH v2 8/9] ARM: shmobile: r8a7794: dtsi: add internal delay for i2c IPs
-Message-Id: <1449567473-2084-9-git-send-email-wsa@the-dreams.de>
+From: Yang Shi <yang.shi@linaro.org>
+Date: Wed, 09 Dec 2015 21:22:30 +0000
+Subject: [PATCH v5 6/7] sh: mm/gup: add gup trace points
+Message-Id: <1449696151-4195-7-git-send-email-yang.shi@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449567473-2084-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1449567473-2084-1-git-send-email-wsa@the-dreams.de>
+References: <1449696151-4195-1-git-send-email-yang.shi@linaro.org>
+In-Reply-To: <1449696151-4195-1-git-send-email-yang.shi@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, linux-rockchip@lists.infradead.org, Mika Westerberg <mika.westerberg@linux.intel.com>, Andy Shevchenko <andriy.shevchenko@linux.intel.com>, Jarkko Nikula <jarkko.nikula@linux.intel.com>
+To: akpm@linux-foundation.org, rostedt@goodmis.org, mingo@redhat.com
+Cc: linux-kernel@vger.kernel.org, linux-mm@kvack.org, linaro-kernel@lists.linaro.org, yang.shi@linaro.org, linux-sh@vger.kernel.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
-
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Cc: linux-sh@vger.kernel.org
+Signed-off-by: Yang Shi <yang.shi@linaro.org>
 ---
- arch/arm/boot/dts/r8a7794.dtsi | 6 ++++++
+ arch/sh/mm/gup.c | 6 ++++++
  1 file changed, 6 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
-index 6f2f01914db295..37809b8aae65f9 100644
---- a/arch/arm/boot/dts/r8a7794.dtsi
-+++ b/arch/arm/boot/dts/r8a7794.dtsi
-@@ -519,6 +519,7 @@
- 		power-domains = <&cpg_clocks>;
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-+		i2c-scl-internal-delay-ns = <6>;
- 		status = "disabled";
- 	};
+diff --git a/arch/sh/mm/gup.c b/arch/sh/mm/gup.c
+index e7af6a6..dc80480 100644
+--- a/arch/sh/mm/gup.c
++++ b/arch/sh/mm/gup.c
+@@ -14,6 +14,8 @@
+ #include <linux/highmem.h>
+ #include <asm/pgtable.h>
  
-@@ -530,6 +531,7 @@
- 		power-domains = <&cpg_clocks>;
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-+		i2c-scl-internal-delay-ns = <6>;
- 		status = "disabled";
- 	};
++#include <trace/events/gup.h>
++
+ static inline pte_t gup_get_pte(pte_t *ptep)
+ {
+ #ifndef CONFIG_X2TLB
+@@ -178,6 +180,8 @@ int __get_user_pages_fast(unsigned long start, int nr_pages, int write,
+ 					(void __user *)start, len)))
+ 		return 0;
  
-@@ -541,6 +543,7 @@
- 		power-domains = <&cpg_clocks>;
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-+		i2c-scl-internal-delay-ns = <6>;
- 		status = "disabled";
- 	};
++	trace_gup_get_user_pages_fast(start, nr_pages);
++
+ 	/*
+ 	 * This doesn't prevent pagetable teardown, but does prevent
+ 	 * the pagetables and pages from being freed.
+@@ -244,6 +248,8 @@ int get_user_pages_fast(unsigned long start, int nr_pages, int write,
+ 	} while (pgdp++, addr = next, addr != end);
+ 	local_irq_enable();
  
-@@ -552,6 +555,7 @@
- 		power-domains = <&cpg_clocks>;
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-+		i2c-scl-internal-delay-ns = <6>;
- 		status = "disabled";
- 	};
- 
-@@ -563,6 +567,7 @@
- 		power-domains = <&cpg_clocks>;
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-+		i2c-scl-internal-delay-ns = <6>;
- 		status = "disabled";
- 	};
- 
-@@ -574,6 +579,7 @@
- 		power-domains = <&cpg_clocks>;
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-+		i2c-scl-internal-delay-ns = <6>;
- 		status = "disabled";
- 	};
++	trace_gup_get_user_pages_fast(start, nr_pages);
++
+ 	VM_BUG_ON(nr != (end - start) >> PAGE_SHIFT);
+ 	return nr;
  
 -- 
-2.1.4
+2.0.2
 
