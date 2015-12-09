@@ -1,137 +1,108 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 15 Dec 2015 13:06:32 +0000
-Subject: [PATCH/RFC 09/10] iommu/ipmmu-vmsa: Add new IOMMU_DOMAIN_DMA ops
-Message-Id: <20151215130632.13535.48038.sendpatchset@little-apple>
+From: Petr Mladek <pmladek@suse.com>
+Date: Wed, 09 Dec 2015 13:21:04 +0000
+Subject: [PATCH v3 3/4] printk/nmi: Warn when some message has been lost in NMI context
+Message-Id: <1449667265-17525-4-git-send-email-pmladek@suse.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20151215130508.13535.26186.sendpatchset@little-apple>
-In-Reply-To: <20151215130508.13535.26186.sendpatchset@little-apple>
+References: <1449667265-17525-1-git-send-email-pmladek@suse.com>
+In-Reply-To: <1449667265-17525-1-git-send-email-pmladek@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: laurent.pinchart+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org, geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, horms+renesas-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+We could not resize the temporary buffer in NMI context. Let's warn
+if a message is lost.
 
-Introduce a new set of iommu_ops suitable for 64-bit ARM
-and IOMMU_OF_DECLARE() used on r8a7795. The ->of_xlate()
-callback is wrapped in #ifdefs to also compile of x86_64.
+This is rather theoretical. printk() should not be used in NMI.
+The only sensible use is when we want to print backtrace from all
+CPUs. The current buffer should be enough for this purpose.
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Petr Mladek <pmladek@suse.com>
 ---
+ kernel/printk/nmi.c    |  5 ++++-
+ kernel/printk/printk.c | 10 ++++++++++
+ kernel/printk/printk.h | 11 +++++++++++
+ 3 files changed, 25 insertions(+), 1 deletion(-)
 
- drivers/iommu/ipmmu-vmsa.c |   89 +++++++++++++++++++++++++++++++++++++++++++-
- 1 file changed, 88 insertions(+), 1 deletion(-)
-
---- 0020/drivers/iommu/ipmmu-vmsa.c
-+++ work/drivers/iommu/ipmmu-vmsa.c	2015-12-15 21:23:05.770513000 +0900
-@@ -10,6 +10,7 @@
+diff --git a/kernel/printk/nmi.c b/kernel/printk/nmi.c
+index 29a498586465..5465230b75ec 100644
+--- a/kernel/printk/nmi.c
++++ b/kernel/printk/nmi.c
+@@ -39,6 +39,7 @@
+  */
+ DEFINE_PER_CPU(printk_func_t, printk_func) = vprintk_default;
+ static int printk_nmi_irq_ready;
++atomic_t nmi_message_lost;
  
- #include <linux/bitmap.h>
- #include <linux/delay.h>
-+#include <linux/dma-iommu.h>
- #include <linux/dma-mapping.h>
- #include <linux/err.h>
- #include <linux/export.h>
-@@ -895,6 +896,92 @@ static const struct iommu_ops ipmmu_ops
- 	.pgsize_bitmap = SZ_1G | SZ_2M | SZ_4K,
- };
+ #define NMI_LOG_BUF_LEN (4096 - sizeof(atomic_t) - sizeof(struct irq_work))
  
-+static struct iommu_domain *ipmmu_domain_alloc_dma(unsigned type)
-+{
-+	struct iommu_domain *io_domain;
-+
-+	if (type != IOMMU_DOMAIN_DMA)
-+		return NULL;
-+
-+	io_domain = __ipmmu_domain_alloc(type);
-+	if (io_domain)
-+		iommu_get_dma_cookie(io_domain);
-+
-+	return io_domain;
-+}
-+
-+static void ipmmu_domain_free_dma(struct iommu_domain *io_domain)
-+{
-+	iommu_put_dma_cookie(io_domain);
-+	ipmmu_domain_free(io_domain);
-+}
-+
-+static int ipmmu_add_device_dma(struct device *dev)
-+{
-+	struct iommu_group *group;
-+
-+	/* only accept devices with iommus property */
-+	if (of_count_phandle_with_args(dev->of_node, "iommus",
-+				       "#iommu-cells") < 0)
-+		return -ENODEV;
-+
-+	group = iommu_group_get_for_dev(dev);
-+	if (IS_ERR(group))
-+		return PTR_ERR(group);
-+
-+	return 0;
-+}
-+
-+static void ipmmu_remove_device_dma(struct device *dev)
-+{
-+	iommu_group_remove_device(dev);
-+}
-+
-+static struct iommu_group *ipmmu_device_group_dma(struct device *dev)
-+{
-+	struct iommu_group *group;
-+	int ret;
-+
-+	group = generic_device_group(dev);
-+	if (IS_ERR(group))
-+		return group;
-+
-+	ret = ipmmu_init_platform_device(dev, group);
-+	if (ret) {
-+		iommu_group_put(group);
-+		group = ERR_PTR(ret);
+@@ -63,8 +64,10 @@ static int vprintk_nmi(const char *fmt, va_list args)
+ again:
+ 	len = atomic_read(&s->len);
+ 
+-	if (len >=  sizeof(s->buffer))
++	if (len >=  sizeof(s->buffer)) {
++		atomic_inc(&nmi_message_lost);
+ 		return 0;
++	}
+ 
+ 	/*
+ 	 * Make sure that all old data have been read before the buffer was
+diff --git a/kernel/printk/printk.c b/kernel/printk/printk.c
+index 88641c74163d..a6bb0b0838f3 100644
+--- a/kernel/printk/printk.c
++++ b/kernel/printk/printk.c
+@@ -1669,6 +1669,7 @@ asmlinkage int vprintk_emit(int facility, int level,
+ 	unsigned long flags;
+ 	int this_cpu;
+ 	int printed_len = 0;
++	int nmi_message_lost;
+ 	bool in_sched = false;
+ 	/* cpu currently holding logbuf_lock in this function */
+ 	static unsigned int logbuf_cpu = UINT_MAX;
+@@ -1719,6 +1720,15 @@ asmlinkage int vprintk_emit(int facility, int level,
+ 					 strlen(recursion_msg));
+ 	}
+ 
++	nmi_message_lost = get_nmi_message_lost();
++	if (unlikely(nmi_message_lost)) {
++		text_len = scnprintf(textbuf, sizeof(textbuf),
++				     "BAD LUCK: lost %d message(s) from NMI context!",
++				     nmi_message_lost);
++		printed_len += log_store(0, 2, LOG_PREFIX|LOG_NEWLINE, 0,
++					 NULL, 0, textbuf, text_len);
 +	}
 +
-+	return group;
+ 	/*
+ 	 * The printf needs to come first; we need the syslog
+ 	 * prefix which might be passed-in as a parameter.
+diff --git a/kernel/printk/printk.h b/kernel/printk/printk.h
+index dc97c1c4d53b..7f778b609492 100644
+--- a/kernel/printk/printk.h
++++ b/kernel/printk/printk.h
+@@ -34,6 +34,12 @@ static inline __printf(1, 0) int vprintk_func(const char *fmt, va_list args)
+ 	return this_cpu_read(printk_func)(fmt, args);
+ }
+ 
++extern atomic_t nmi_message_lost;
++static inline int get_nmi_message_lost(void)
++{
++	return atomic_xchg(&nmi_message_lost, 0);
 +}
 +
-+#ifdef CONFIG_OF_IOMMU
-+static int ipmmu_of_xlate_dma(struct device *dev,
-+			      struct of_phandle_args *spec)
+ #else /* CONFIG_PRINTK_NMI */
+ 
+ static inline __printf(1, 0) int vprintk_func(const char *fmt, va_list args)
+@@ -41,4 +47,9 @@ static inline __printf(1, 0) int vprintk_func(const char *fmt, va_list args)
+ 	return vprintk_default(fmt, args);
+ }
+ 
++static inline int get_nmi_message_lost(void)
 +{
-+	/* dummy callback to satisfy of_iommu_configure() */
 +	return 0;
 +}
-+#endif
 +
-+static const struct iommu_ops ipmmu_ops_dma = {
-+	.domain_alloc = ipmmu_domain_alloc_dma,
-+	.domain_free = ipmmu_domain_free_dma,
-+	.attach_dev = ipmmu_attach_device,
-+	.detach_dev = ipmmu_detach_device,
-+	.map = ipmmu_map,
-+	.unmap = ipmmu_unmap,
-+	.map_sg = default_iommu_map_sg,
-+	.iova_to_phys = ipmmu_iova_to_phys,
-+	.add_device = ipmmu_add_device_dma,
-+	.remove_device = ipmmu_remove_device_dma,
-+	.device_group = ipmmu_device_group_dma,
-+	.pgsize_bitmap = SZ_4K,
-+#ifdef CONFIG_OF_IOMMU
-+	.of_xlate = ipmmu_of_xlate_dma,
-+#endif
-+};
-+
- /* -----------------------------------------------------------------------------
-  * Probe/remove and init
-  */
-@@ -1068,7 +1155,7 @@ static int __init ipmmu_vmsa_iommu_of_se
- {
- 	const struct of_device_id *match;
- 	const struct ipmmu_features *feature;
--	static const struct iommu_ops *ops = &ipmmu_ops;
-+	static const struct iommu_ops *ops = &ipmmu_ops_dma;
- 
- 	ipmmu_init();
- 
+ #endif /* CONFIG_PRINTK_NMI */
+-- 
+1.8.5.6
+
