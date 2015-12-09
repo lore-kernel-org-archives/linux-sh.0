@@ -1,64 +1,79 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 22 Dec 2015 17:44:36 +0000
-Subject: Re: [PATCH v2] adv7604: add direct interrupt handling
-Message-Id: <56798C04.1030109@cogentembedded.com>
+From: Petr Mladek <pmladek@suse.com>
+Date: Wed, 09 Dec 2015 13:21:05 +0000
+Subject: [PATCH v3 4/4] printk/nmi: Increase the size of NMI buffer and make it configurable
+Message-Id: <1449667265-17525-5-git-send-email-pmladek@suse.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450794087-31153-1-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1450794087-31153-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+References: <1449667265-17525-1-git-send-email-pmladek@suse.com>
+In-Reply-To: <1449667265-17525-1-git-send-email-pmladek@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>, linux-media@vger.kernel.org, linux-sh@vger.kernel.org
-Cc: magnus.damm@gmail.com, laurent.pinchart@ideasonboard.com, hans.verkuil@cisco.com, ian.molton@codethink.co.uk, lars@metafoo.de, william.towle@codethink.co.uk
+To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+Testing has shown that the backtrace sometimes does not fit
+into the 4kB temporary buffer that is used in NMI context.
+The warnings are gone when I double the temporary buffer size.
 
-On 12/22/2015 05:21 PM, Ulrich Hecht wrote:
+This patch doubles the buffer size and makes it configurable.
 
-> When probed from device tree, the i2c client driver can handle the
-> interrupt on its own.
->
-> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-> Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-> ---
-> This revision implements the suggested style changes and drops the
-> IRQF_TRIGGER_LOW flag, which is handled in the device tree.
->
-> CU
-> Uli
->
->
->   drivers/media/i2c/adv7604.c | 24 ++++++++++++++++++++++--
->   1 file changed, 22 insertions(+), 2 deletions(-)
->
-> diff --git a/drivers/media/i2c/adv7604.c b/drivers/media/i2c/adv7604.c
-> index 5bd81bd..be5980c 100644
-> --- a/drivers/media/i2c/adv7604.c
-> +++ b/drivers/media/i2c/adv7604.c
-> @@ -31,6 +31,7 @@
->   #include <linux/gpio/consumer.h>
->   #include <linux/hdmi.h>
->   #include <linux/i2c.h>
-> +#include <linux/interrupt.h>
->   #include <linux/kernel.h>
->   #include <linux/module.h>
->   #include <linux/slab.h>
-> @@ -1971,6 +1972,16 @@ static int adv76xx_isr(struct v4l2_subdev *sd, u32 status, bool *handled)
->   	return 0;
->   }
->
-> +static irqreturn_t adv76xx_irq_handler(int irq, void *devid)
-> +{
-> +	struct adv76xx_state *state = devid;
-> +	bool handled;
-> +
-> +	adv76xx_isr(&state->sd, 0, &handled);
-> +
-> +	return handled ? IRQ_HANDLED : IRQ_NONE;
+Note that this problem existed even in the x86-specific
+implementation that was added by the commit a9edc8809328
+("x86/nmi: Perform a safe NMI stack trace on all CPUs").
+Nobody noticed it because it did not print any warnings.
 
-    Just IRQ_RETVAL(handled), maybe?
+Signed-off-by: Petr Mladek <pmladek@suse.com>
+---
+ init/Kconfig        | 22 ++++++++++++++++++++++
+ kernel/printk/nmi.c |  3 ++-
+ 2 files changed, 24 insertions(+), 1 deletion(-)
 
-[...]
-
-MBR, Sergei
+diff --git a/init/Kconfig b/init/Kconfig
+index c1c0b6a2d712..efcff25a112d 100644
+--- a/init/Kconfig
++++ b/init/Kconfig
+@@ -866,6 +866,28 @@ config LOG_CPU_MAX_BUF_SHIFT
+ 		     13 =>   8 KB for each CPU
+ 		     12 =>   4 KB for each CPU
+ 
++config NMI_LOG_BUF_SHIFT
++	int "Temporary per-CPU NMI log buffer size (12 => 4KB, 13 => 8KB)"
++	range 10 21
++	default 13
++	depends on PRINTK && HAVE_NMI
++	help
++	  Select the size of a per-CPU buffer where NMI messages are temporary
++	  stored. They are copied to the main log buffer in a safe context
++	  to avoid a deadlock. The value defines the size as a power of 2.
++
++	  NMI messages are rare and limited. The largest one is when
++	  a backtrace is printed. It usually fits into 4KB. Select
++	  8KB if you want to be on the safe side.
++
++	  Examples:
++		     17 => 128 KB for each CPU
++		     16 =>  64 KB for each CPU
++		     15 =>  32 KB for each CPU
++		     14 =>  16 KB for each CPU
++		     13 =>   8 KB for each CPU
++		     12 =>   4 KB for each CPU
++
+ #
+ # Architectures with an unreliable sched_clock() should select this:
+ #
+diff --git a/kernel/printk/nmi.c b/kernel/printk/nmi.c
+index 5465230b75ec..78c07d441b4e 100644
+--- a/kernel/printk/nmi.c
++++ b/kernel/printk/nmi.c
+@@ -41,7 +41,8 @@ DEFINE_PER_CPU(printk_func_t, printk_func) = vprintk_default;
+ static int printk_nmi_irq_ready;
+ atomic_t nmi_message_lost;
+ 
+-#define NMI_LOG_BUF_LEN (4096 - sizeof(atomic_t) - sizeof(struct irq_work))
++#define NMI_LOG_BUF_LEN ((1 << CONFIG_NMI_LOG_BUF_SHIFT) -		\
++			 sizeof(atomic_t) - sizeof(struct irq_work))
+ 
+ struct nmi_seq_buf {
+ 	atomic_t		len;	/* length of written data */
+-- 
+1.8.5.6
 
