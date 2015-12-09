@@ -1,45 +1,39 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 18 Dec 2015 10:15:34 +0000
-Subject: Re: [PATCH 2/3] ARM: shmobile: r8a7791: use fallback usbhs compatibility string
-Message-Id: <CAMuHMdVzcvJvOKp6y2faU-5KevRFfOAmPYSBYL9pm9S-bod-gA@mail.gmail.com>
+From: "Dmitry V. Levin" <ldv@altlinux.org>
+Date: Wed, 09 Dec 2015 03:16:55 +0000
+Subject: [PATCH] sh64: fix __NR_fgetxattr
+Message-Id: <20151209031655.GA22704@altlinux.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450404705-5449-1-git-send-email-horms+renesas@verge.net.au>
- <1450404705-5449-3-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1450404705-5449-3-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org
 
-On Fri, Dec 18, 2015 at 3:11 AM, Simon Horman
-<horms+renesas@verge.net.au> wrote:
-> Use recently added fallback compatibility string in r8a7791 device tree.
->
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> ---
->  arch/arm/boot/dts/r8a7791.dtsi | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
->
-> diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-> index 2a369ddcb6fd..e2ffbfae6c5c 100644
-> --- a/arch/arm/boot/dts/r8a7791.dtsi
-> +++ b/arch/arm/boot/dts/r8a7791.dtsi
-> @@ -822,7 +822,7 @@
->         };
->
->         hsusb: usb@e6590000 {
-> -               compatible = "renesas,usbhs-r8a7791";
-> +               compatible = "renesas,usbhs-r8a7791", "renesas,usbhs";
+According to arch/sh/kernel/syscalls_64.S and common sense,
+__NR_fgetxattr has to be defined to 259, but it doesn't.
+Instead, it's defined to 269, which is of course used
+by another syscall, __NR_sched_setaffinity in this case.
 
-"renesas,rcar-gen2-usbhs", not "renesas,usbhs".
+This bug was found by strace test suite.
 
-Gr{oetje,eeting}s,
+Signed-off-by: Dmitry V. Levin <ldv@altlinux.org>
+Cc: stable@vger.kernel.org
+---
+ arch/sh/include/uapi/asm/unistd_64.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+diff --git a/arch/sh/include/uapi/asm/unistd_64.h b/arch/sh/include/uapi/asm/unistd_64.h
+index e6820c8..47ebd5b 100644
+--- a/arch/sh/include/uapi/asm/unistd_64.h
++++ b/arch/sh/include/uapi/asm/unistd_64.h
+@@ -278,7 +278,7 @@
+ #define __NR_fsetxattr		256
+ #define __NR_getxattr		257
+ #define __NR_lgetxattr		258
+-#define __NR_fgetxattr		269
++#define __NR_fgetxattr		259
+ #define __NR_listxattr		260
+ #define __NR_llistxattr		261
+ #define __NR_flistxattr		262
+-- 
+ldv
