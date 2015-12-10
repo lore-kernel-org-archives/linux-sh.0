@@ -1,60 +1,48 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 08 Dec 2015 05:27:10 +0000
-Subject: [PATCH 1/8 v4] thermal: rcar: move rcar_thermal_dt_ids to upside
-Message-Id: <87twnt5x80.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 10 Dec 2015 15:16:02 +0000
+Subject: [PATCH 3/3] ARM: shmobile: defconfig: Enable frame buffer console for armadillo800eva
+Message-Id: <1449760562-26795-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87vb895x9d.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87vb895x9d.wl%kuninori.morimoto.gx@renesas.com>
+References: <1449760562-26795-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1449760562-26795-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, Zhang Rui <rui.zhang@intel.com>, Eduardo Valentin <edubezval@gmail.com>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
+Enabling the frame buffer device on armadillo800eva requires the board
+staging code.
+Also enable the frame buffer, so you will actually see output during
+boot.
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-
-This patch is prepare for of-thermal support.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-v3 -> v4
+An alternative to CONFIG_FRAMEBUFFER_CONSOLE=y would be CONFIG_LOGO=y.
+---
+ arch/arm/configs/shmobile_defconfig | 3 +++
+ 1 file changed, 3 insertions(+)
 
- - no change
-
- drivers/thermal/rcar_thermal.c | 12 ++++++------
- 1 file changed, 6 insertions(+), 6 deletions(-)
-
-diff --git a/drivers/thermal/rcar_thermal.c b/drivers/thermal/rcar_thermal.c
-index 5d4ae7d..ac8d1eb 100644
---- a/drivers/thermal/rcar_thermal.c
-+++ b/drivers/thermal/rcar_thermal.c
-@@ -81,6 +81,12 @@ struct rcar_thermal_priv {
- # define rcar_force_update_temp(priv)	0
- #endif
- 
-+static const struct of_device_id rcar_thermal_dt_ids[] = {
-+	{ .compatible = "renesas,rcar-thermal", },
-+	{},
-+};
-+MODULE_DEVICE_TABLE(of, rcar_thermal_dt_ids);
-+
- /*
-  *		basic functions
-  */
-@@ -491,12 +497,6 @@ static int rcar_thermal_remove(struct platform_device *pdev)
- 	return 0;
- }
- 
--static const struct of_device_id rcar_thermal_dt_ids[] = {
--	{ .compatible = "renesas,rcar-thermal", },
--	{},
--};
--MODULE_DEVICE_TABLE(of, rcar_thermal_dt_ids);
--
- static struct platform_driver rcar_thermal_driver = {
- 	.driver	= {
- 		.name	= "rcar_thermal",
+diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
+index 09a83d1411cc598b..969738324a5d5f81 100644
+--- a/arch/arm/configs/shmobile_defconfig
++++ b/arch/arm/configs/shmobile_defconfig
+@@ -153,6 +153,7 @@ CONFIG_FB_SH_MOBILE_MERAM=y
+ # CONFIG_BACKLIGHT_GENERIC is not set
+ CONFIG_BACKLIGHT_PWM=y
+ CONFIG_BACKLIGHT_AS3711=y
++CONFIG_FRAMEBUFFER_CONSOLE=y
+ CONFIG_SOUND=y
+ CONFIG_SND=y
+ CONFIG_SND_SOC=y
+@@ -184,6 +185,8 @@ CONFIG_DMADEVICES=y
+ CONFIG_SH_DMAE=y
+ CONFIG_RCAR_DMAC=y
+ CONFIG_RENESAS_USB_DMAC=y
++CONFIG_STAGING=y
++CONFIG_STAGING_BOARD=y
+ # CONFIG_IOMMU_SUPPORT is not set
+ CONFIG_IIO=y
+ CONFIG_AK8975=y
 -- 
 1.9.1
 
