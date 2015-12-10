@@ -1,55 +1,149 @@
-From: "Michael S. Tsirkin" <mst@redhat.com>
-Date: Thu, 31 Dec 2015 19:06:30 +0000
-Subject: [PATCH v2 06/32] s390: reuse asm-generic/barrier.h
-Message-Id: <1451572003-2440-7-git-send-email-mst@redhat.com>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Thu, 10 Dec 2015 13:14:49 +0000
+Subject: [PATCH] i2c: allow building emev2 without slave mode again
+Message-Id: <2144222.LfzPx9mJ0p@wuerfel>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1451572003-2440-1-git-send-email-mst@redhat.com>
-In-Reply-To: <1451572003-2440-1-git-send-email-mst@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Peter Zijlstra <peterz@infradead.org>, Arnd Bergmann <arnd@arndb.de>, linux-arch@vger.kernel.org, Andrew Cooper <andrew.cooper3@citrix.com>, virtualization@lists.linux-foundation.org, Stefano Stabellini <stefano.stabellini@eu.citrix.com>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@elte.hu>, "H. Peter Anvin" <hpa@zytor.com>, David Miller <davem@davemloft.net>, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, sparclinux@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-metag@vger.kernel.org, linux-mips@linux-mips.org, x86@kernel.org, user-mode-linux-devel@lists.sourceforge.net, adi-buildroot-devel@lists.sourceforge.net, linux-sh@vger.kernel.org, linux-xtensa@linux-xtensa.org, xen-devel@lists.xenproject.org, Martin Schwidefsky <schwidefsky@de.ibm.com>, Heiko Carstens <heiko.carstens@de.ibm.com>Ingo
+To: linux-arm-kernel@lists.infradead.org
 
-On s390 read_barrier_depends, smp_read_barrier_depends
-smp_store_mb(), smp_mb__before_atomic and smp_mb__after_atomic match the
-asm-generic variants exactly. Drop the local definitions and pull in
-asm-generic/barrier.h instead.
+The emev2 driver stopped compiling in today's linux-next kernel:
 
-This is in preparation to refactoring this code area.
+drivers/i2c/busses/i2c-emev2.c: In function 'em_i2c_slave_irq':
+drivers/i2c/busses/i2c-emev2.c:233:23: error: storage size of 'event' isn't known
+drivers/i2c/busses/i2c-emev2.c:250:3: error: implicit declaration of function 'i2c_slave_event' [-Werror=implicit-function-declaration]
+drivers/i2c/busses/i2c-emev2.c:250:32: error: 'I2C_SLAVE_STOP' undeclared (first use in this function)
 
-Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
-Acked-by: Arnd Bergmann <arnd@arndb.de>
----
- arch/s390/include/asm/barrier.h | 10 ++--------
- 1 file changed, 2 insertions(+), 8 deletions(-)
+It works again if we enable CONFIG_I2C_SLAVE, but it seems wrong
+to add a dependency on that symbol:
 
-diff --git a/arch/s390/include/asm/barrier.h b/arch/s390/include/asm/barrier.h
-index 7ffd0b1..c358c31 100644
---- a/arch/s390/include/asm/barrier.h
-+++ b/arch/s390/include/asm/barrier.h
-@@ -30,14 +30,6 @@
- #define smp_rmb()			rmb()
- #define smp_wmb()			wmb()
+* The symbol is user-selectable, but only one or two (including this
+  one) bus drivers actually implement it, and it makes no sense
+  if you don't have one of them.
+
+* The other driver (R-Car) uses 'select I2C_SLAVE', which seems
+  reasonable in principle, but we should not do that on user
+  visible symbols.
+
+* I2C slave mode could be implemented in a lot of other drivers
+  as an optional feature, but we shouldn't require enabling it
+  if we don't use it.
+
+This changes the two drivers that provide I2C slave mode so they
+can again build if the slave mode being disabled. To do this, I
+move the definition of i2c_slave_event() and enum i2c_slave_event
+out of the #ifdef and instead make the assignment of the reg_slave
+and unreg_slave pointers optional in the bus drivers. The functions
+implementing the feature are unused in that case, so they get
+marked as __maybe_unused in order to still give compile-time
+coverage.
+
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+Fixes: c31d0a00021d ("i2c: emev2: add slave support")
+
+diff --git a/drivers/i2c/busses/Kconfig b/drivers/i2c/busses/Kconfig
+index 69c46fe13777..1c8d53f34dd3 100644
+--- a/drivers/i2c/busses/Kconfig
++++ b/drivers/i2c/busses/Kconfig
+@@ -985,7 +985,6 @@ config I2C_XLP9XX
+ config I2C_RCAR
+ 	tristate "Renesas R-Car I2C Controller"
+ 	depends on ARCH_SHMOBILE || COMPILE_TEST
+-	select I2C_SLAVE
+ 	help
+ 	  If you say yes to this option, support will be included for the
+ 	  R-Car I2C controller.
+diff --git a/drivers/i2c/busses/i2c-emev2.c b/drivers/i2c/busses/i2c-emev2.c
+index 96bb4e749012..75d6095c5fe1 100644
+--- a/drivers/i2c/busses/i2c-emev2.c
++++ b/drivers/i2c/busses/i2c-emev2.c
+@@ -316,7 +316,7 @@ static u32 em_i2c_func(struct i2c_adapter *adap)
+ 	return I2C_FUNC_I2C | I2C_FUNC_SMBUS_EMUL | I2C_FUNC_SLAVE;
+ }
  
--#define read_barrier_depends()		do { } while (0)
--#define smp_read_barrier_depends()	do { } while (0)
--
--#define smp_mb__before_atomic()		smp_mb()
--#define smp_mb__after_atomic()		smp_mb()
--
--#define smp_store_mb(var, value)	do { WRITE_ONCE(var, value); smp_mb(); } while (0)
--
- #define smp_store_release(p, v)						\
- do {									\
- 	compiletime_assert_atomic_type(*p);				\
-@@ -53,4 +45,6 @@ do {									\
- 	___p1;								\
- })
+-static int em_i2c_reg_slave(struct i2c_client *slave)
++static int __maybe_unused em_i2c_reg_slave(struct i2c_client *slave)
+ {
+ 	struct em_i2c_device *priv = i2c_get_adapdata(slave->adapter);
  
-+#include <asm-generic/barrier.h>
-+
- #endif /* __ASM_BARRIER_H */
--- 
-MST
+@@ -334,7 +334,7 @@ static int em_i2c_reg_slave(struct i2c_client *slave)
+ 	return 0;
+ }
+ 
+-static int em_i2c_unreg_slave(struct i2c_client *slave)
++static int __maybe_unused em_i2c_unreg_slave(struct i2c_client *slave)
+ {
+ 	struct em_i2c_device *priv = i2c_get_adapdata(slave->adapter);
+ 
+@@ -350,8 +350,10 @@ static int em_i2c_unreg_slave(struct i2c_client *slave)
+ static struct i2c_algorithm em_i2c_algo = {
+ 	.master_xfer = em_i2c_xfer,
+ 	.functionality = em_i2c_func,
++#ifdef CONFIG_I2C_SLAVE
+ 	.reg_slave      = em_i2c_reg_slave,
+ 	.unreg_slave    = em_i2c_unreg_slave,
++#endif
+ };
+ 
+ static int em_i2c_probe(struct platform_device *pdev)
+diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
+index 3ed1f0aa5eeb..e67824adeba0 100644
+--- a/drivers/i2c/busses/i2c-rcar.c
++++ b/drivers/i2c/busses/i2c-rcar.c
+@@ -521,7 +521,7 @@ out:
+ 	return ret;
+ }
+ 
+-static int rcar_reg_slave(struct i2c_client *slave)
++static int __maybe_unused rcar_reg_slave(struct i2c_client *slave)
+ {
+ 	struct rcar_i2c_priv *priv = i2c_get_adapdata(slave->adapter);
+ 
+@@ -542,7 +542,7 @@ static int rcar_reg_slave(struct i2c_client *slave)
+ 	return 0;
+ }
+ 
+-static int rcar_unreg_slave(struct i2c_client *slave)
++static int __maybe_unused rcar_unreg_slave(struct i2c_client *slave)
+ {
+ 	struct rcar_i2c_priv *priv = i2c_get_adapdata(slave->adapter);
+ 
+@@ -568,8 +568,10 @@ static u32 rcar_i2c_func(struct i2c_adapter *adap)
+ static const struct i2c_algorithm rcar_i2c_algo = {
+ 	.master_xfer	= rcar_i2c_master_xfer,
+ 	.functionality	= rcar_i2c_func,
++#ifdef CONFIG_I2C_SLAVE
+ 	.reg_slave	= rcar_reg_slave,
+ 	.unreg_slave	= rcar_unreg_slave,
++#endif
+ };
+ 
+ static const struct of_device_id rcar_i2c_dt_ids[] = {
+diff --git a/include/linux/i2c.h b/include/linux/i2c.h
+index 51028f351d13..69871e5ee44a 100644
+--- a/include/linux/i2c.h
++++ b/include/linux/i2c.h
+@@ -254,7 +254,6 @@ static inline void i2c_set_clientdata(struct i2c_client *dev, void *data)
+ 
+ /* I2C slave support */
+ 
+-#if IS_ENABLED(CONFIG_I2C_SLAVE)
+ enum i2c_slave_event {
+ 	I2C_SLAVE_READ_REQUESTED,
+ 	I2C_SLAVE_WRITE_REQUESTED,
+@@ -269,9 +268,12 @@ extern int i2c_slave_unregister(struct i2c_client *client);
+ static inline int i2c_slave_event(struct i2c_client *client,
+ 				  enum i2c_slave_event event, u8 *val)
+ {
++#if IS_ENABLED(CONFIG_I2C_SLAVE)
+ 	return client->slave_cb(client, event, val);
+-}
++#else
++	return 0;
+ #endif
++}
+ 
+ /**
+  * struct i2c_board_info - template for device creation
 
