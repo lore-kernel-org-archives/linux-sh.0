@@ -1,27 +1,38 @@
-From: David Miller <davem@davemloft.net>
-Date: Tue, 22 Dec 2015 20:24:01 +0000
-Subject: Re: [PATCH] sh_eth: fix 16-bit descriptor field access endianness too
-Message-Id: <20151222.152401.1350968132902705224.davem@davemloft.net>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 10 Dec 2015 15:15:59 +0000
+Subject: [PATCH 0/3] ARM: shmobile: defconfig: Misc updates
+Message-Id: <1449760562-26795-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <16692899.McEvu8S87q@wasted.cogentembedded.com>
-In-Reply-To: <16692899.McEvu8S87q@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: sergei.shtylyov@cogentembedded.com
-Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sun, 20 Dec 2015 01:48:04 +0300
+	Hi Simon, Magnus,
 
-> Commit 1299653affa4 ("sh_eth: fix descriptor access endianness") only
-> addressed the 32-bit buffer address field byte-swapping  but the driver
-> still accesses 16-bit frame/buffer length descriptor fields without the
-> necessary byte-swapping -- which should affect the big-endian kernels.
-> In order to be able to use {cpu|edmac}_to_{edmac|cpu}(), we need to declare
-> the RX/TX descriptor word 1 as a 32-bit field and use shifts/masking to
-> access the 16-bit subfields (which gets rid of the ugly #ifdef'ery too)...
-> 
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Here are a few updates for the shmobile defconfig.
+If these are accepted, I'll send out equivalent updates for
+multi_v7_defconfig.
 
-Applied, thanks Sergei.
+Geert Uytterhoeven (3):
+  ARM: shmobile: defconfig: Drop useless CONFIG_USB_RCAR_PHY=y
+  ARM: shmobile: defconfig: Enable missing support based on DTSes
+  ARM: shmobile: defconfig: Enable frame buffer console for
+    armadillo800eva
+
+ arch/arm/configs/shmobile_defconfig | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+-- 
+1.9.1
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
