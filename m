@@ -1,35 +1,28 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 09 Dec 2015 10:42:35 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 10 Dec 2015 04:48:15 +0000
 Subject: Re: [PATCH 1/2] ARM: shmobile: r8a7793: Add missing serial devices to DT
-Message-Id: <CAMuHMdUXaO6PynwOaEP9e88F10uJSoc7u848RgnDVRdqyYFnTg@mail.gmail.com>
+Message-Id: <20151210044815.GB6964@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1448589166-11612-1-git-send-email-horms+renesas@verge.net.au>
  <1448589166-11612-2-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1448589166-11612-2-git-send-email-horms+renesas@verge.net.au>
+ <CAMuHMdUXaO6PynwOaEP9e88F10uJSoc7u848RgnDVRdqyYFnTg@mail.gmail.com>
+In-Reply-To: <CAMuHMdUXaO6PynwOaEP9e88F10uJSoc7u848RgnDVRdqyYFnTg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Nov 27, 2015 at 2:52 AM, Simon Horman
-<horms+renesas@verge.net.au> wrote:
-> Instantiate all serial devices in r8a7793 device tree
-> and set them as disabled by default.
->
-> Based on similar work for the r8a7791 by Laurent Pinchart.
->
-> Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+On Wed, Dec 09, 2015 at 11:42:35AM +0100, Geert Uytterhoeven wrote:
+> On Fri, Nov 27, 2015 at 2:52 AM, Simon Horman
+> <horms+renesas@verge.net.au> wrote:
+> > Instantiate all serial devices in r8a7793 device tree
+> > and set them as disabled by default.
+> >
+> > Based on similar work for the r8a7791 by Laurent Pinchart.
+> >
+> > Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+> 
+> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+Thanks, I have queued this up.
