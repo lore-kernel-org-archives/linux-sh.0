@@ -1,39 +1,86 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Thu, 10 Dec 2015 23:13:57 +0000
-Subject: Re: [PATCH v2 1/2] gpio: rcar: Remove obsolete platform data support
-Message-Id: <CACRpkdZDkH_ADYthEOmZZWuyoJTegVTSBSxvCLQ3KB-AJm4U2w@mail.gmail.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 10 Dec 2015 12:30:18 +0000
+Subject: Re: [PATCH 07/25] serial: sh-sci: Convert from clk_get() to devm_clk_get()
+Message-Id: <CAMuHMdXn4xa-0wfL8DXbhzfsPwymT5XXBR70eSL-OF5Fv67+mg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449243233-11089-1-git-send-email-geert+renesas@glider.be>
-	<1449243233-11089-2-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1449243233-11089-2-git-send-email-geert+renesas@glider.be>
+References: <1447958344-836-1-git-send-email-geert+renesas@glider.be>
+	<1447958344-836-8-git-send-email-geert+renesas@glider.be>
+	<3399561.8ERHTtILhO@avalon>
+In-Reply-To: <3399561.8ERHTtILhO@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Alexandre Courbot <gnurou@gmail.com>, Magnus Damm <magnus.damm@gmail.com>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, "linux-serial@vger.kernel.org" <linux-serial@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Linux PM list <linux-pm@vger.kernel.org>
 
-On Fri, Dec 4, 2015 at 4:33 PM, Geert Uytterhoeven
-<geert+renesas@glider.be> wrote:
+Hi Laurent,
 
-> Since commit 4baadb9e05c68962 ("ARM: shmobile: r8a7778: remove obsolete
-> setup code"), Renesas R-Car SoCs are only supported in generic DT-only
-> ARM multi-platform builds.  The driver doesn't need to use platform data
-> anymore, hence remove platform data configuration.
+On Thu, Nov 19, 2015 at 9:38 PM, Laurent Pinchart
+<laurent.pinchart@ideasonboard.com> wrote:
+> On Thursday 19 November 2015 19:38:46 Geert Uytterhoeven wrote:
+>> Transfer clock cleanup handling to the core device management code.
+>>
+>> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+>> ---
+>>  drivers/tty/serial/sh-sci.c | 8 +++-----
+>>  1 file changed, 3 insertions(+), 5 deletions(-)
+>>
+>> diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+>> index cba51da604253db6..9442961a198378c7 100644
+>> --- a/drivers/tty/serial/sh-sci.c
+>> +++ b/drivers/tty/serial/sh-sci.c
+>> @@ -2216,7 +2216,7 @@ static struct uart_ops sci_uart_ops = {
+>>  static int sci_init_clocks(struct sci_port *sci_port, struct device *dev)
+>>  {
+>>       /* Get the SCI functional clock. It's called "fck" on ARM. */
+>> -     sci_port->fclk = clk_get(dev, "fck");
+>> +     sci_port->fclk = devm_clk_get(dev, "fck");
 >
-> Make gpio_rcar_priv.has_both_edge_trigger a boolean for consistency with
-> gpio_rcar_info.has_both_edge_trigger.
-> Move gpio_rcar_priv.irq_parent down while we're at it, to prevent gaps
-> on 64-bit.
->
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> ---
-> Commit 4baadb9e05c68962 is in v4.4-rc1.
->
-> v2:
->   - Convert gpio_rcar_priv.has_both_edge_trigger from a bitfield to a
->     boolean.
+> Have you tested what happens if you unbind the device from the driver while
+> userspace has the serial port open ?
 
-Patch applied. Thanks for fixing this the way I want it, too.
+Yes I have. And I didn't notice any user-visible behavioral differences.
 
-Yours,
-Linus Walleij
+There is a small ordering difference, though: with clk_get() and clk_put(), the
+explicit clk_put() is done before removing the device from its PM Domain
+(which involces another call to clk_put() on the module clock):
+
+    device_release_driver
+        __device_release_driver
+            platform_drv_remove
+                sci_remove
+                    sci_cleanup_single
+                        __clk_put
+                genpd_dev_pm_detach
+                    pm_genpd_remove_device
+                        pm_clk_destroy
+                            __pm_clk_remove
+                                __clk_put
+
+When using devm_clk_get(), the managed cleanup is done after the device has
+been removed from its PM Domain:
+
+    device_release_driver
+        __device_release_driver
+            platform_drv_remove
+                genpd_dev_pm_detach
+                    pm_genpd_remove_device
+                        pm_clk_destroy
+                            __pm_clk_remove
+                                __clk_put
+            release_nodes
+                __clk_put
+
+This shouldn't make a difference, and applies to all other drivers using
+devm_*(), and devices that are part of a PM Domain.
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
