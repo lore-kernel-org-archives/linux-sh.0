@@ -1,47 +1,64 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 17 Dec 2015 08:40:23 +0000
-Subject: [PATCH/RFC 45/48] v4l: vsp1: Use __vsp1_video_try_format to initialize format at init time
-Message-Id: <1450341626-6695-46-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 10 Dec 2015 15:16:01 +0000
+Subject: [PATCH 2/3] ARM: shmobile: defconfig: Enable missing support based on DTSes
+Message-Id: <1449760562-26795-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450341626-6695-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1450341626-6695-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1449760562-26795-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1449760562-26795-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Reuse the runtime logic to initialize the default format instead of
-open-coding it. This ensures coherency between intialization and
-runtime.
+Enable all missing support, extracted from the various Renesas ARM DTSes
+using linux-config-from-dt.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/media/platform/vsp1/vsp1_video.c | 11 ++---------
- 1 file changed, 2 insertions(+), 9 deletions(-)
+ arch/arm/configs/shmobile_defconfig | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
-diff --git a/drivers/media/platform/vsp1/vsp1_video.c b/drivers/media/platform/vsp1/vsp1_video.c
-index c757847110ba..a1527d622734 100644
---- a/drivers/media/platform/vsp1/vsp1_video.c
-+++ b/drivers/media/platform/vsp1/vsp1_video.c
-@@ -966,17 +966,10 @@ struct vsp1_video *vsp1_video_create(struct vsp1_device *vsp1,
- 		return ERR_PTR(ret);
- 
- 	/* ... and the format ... */
--	rwpf->fmtinfo = vsp1_get_format_info(VSP1_VIDEO_DEF_FORMAT);
--	rwpf->format.pixelformat = rwpf->fmtinfo->fourcc;
--	rwpf->format.colorspace = V4L2_COLORSPACE_SRGB;
--	rwpf->format.field = V4L2_FIELD_NONE;
-+	rwpf->format.pixelformat = VSP1_VIDEO_DEF_FORMAT;
- 	rwpf->format.width = VSP1_VIDEO_DEF_WIDTH;
- 	rwpf->format.height = VSP1_VIDEO_DEF_HEIGHT;
--	rwpf->format.num_planes = 1;
--	rwpf->format.plane_fmt[0].bytesperline -		rwpf->format.width * rwpf->fmtinfo->bpp[0] / 8;
--	rwpf->format.plane_fmt[0].sizeimage -		rwpf->format.plane_fmt[0].bytesperline * rwpf->format.height;
-+	__vsp1_video_try_format(video, &rwpf->format, &rwpf->fmtinfo);
- 
- 	/* ... and the video node... */
- 	video->video.v4l2_dev = &video->vsp1->v4l2_dev;
+diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
+index 9a30c2c464c946ca..09a83d1411cc598b 100644
+--- a/arch/arm/configs/shmobile_defconfig
++++ b/arch/arm/configs/shmobile_defconfig
+@@ -52,6 +52,8 @@ CONFIG_UNIX=y
+ CONFIG_INET=y
+ CONFIG_IP_PNP=y
+ CONFIG_IP_PNP_DHCP=y
++CONFIG_CAN=y
++CONFIG_CAN_RCAR=y
+ CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
+ CONFIG_DEVTMPFS=y
+ CONFIG_DEVTMPFS_MOUNT=y
+@@ -98,6 +100,7 @@ CONFIG_SERIAL_SH_SCI=y
+ CONFIG_SERIAL_SH_SCI_NR_UARTS 
+ CONFIG_SERIAL_SH_SCI_CONSOLE=y
+ CONFIG_I2C_CHARDEV=y
++CONFIG_I2C_EMEV2=y
+ CONFIG_I2C_GPIO=y
+ CONFIG_I2C_RIIC=y
+ CONFIG_I2C_SH_MOBILE=y
+@@ -134,6 +137,7 @@ CONFIG_SOC_CAMERA=y
+ CONFIG_SOC_CAMERA_PLATFORM=y
+ CONFIG_VIDEO_RCAR_VIN=y
+ CONFIG_V4L_MEM2MEM_DRIVERS=y
++CONFIG_VIDEO_RENESAS_JPU=y
+ CONFIG_VIDEO_RENESAS_VSP1=y
+ # CONFIG_MEDIA_SUBDRV_AUTOSELECT is not set
+ CONFIG_VIDEO_ADV7180=y
+@@ -175,9 +179,11 @@ CONFIG_RTC_CLASS=y
+ CONFIG_RTC_DRV_RS5C372=y
+ CONFIG_RTC_DRV_S35390A=y
+ CONFIG_RTC_DRV_RX8581=y
++CONFIG_RTC_DRV_DA9063=y
+ CONFIG_DMADEVICES=y
+ CONFIG_SH_DMAE=y
+ CONFIG_RCAR_DMAC=y
++CONFIG_RENESAS_USB_DMAC=y
+ # CONFIG_IOMMU_SUPPORT is not set
+ CONFIG_IIO=y
+ CONFIG_AK8975=y
 -- 
-2.4.10
+1.9.1
 
