@@ -1,47 +1,46 @@
-From: Rob Herring <robh@kernel.org>
-Date: Wed, 23 Dec 2015 00:47:46 +0000
-Subject: Re: [PATCH v3] usb: gadget: renesas_usb3: add support for Renesas USB3.0 peripheral controller
-Message-Id: <20151223004746.GA27730@rob-hp-laptop>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 11 Dec 2015 02:12:25 +0000
+Subject: [PATCH v3 1/3] usb: renesas_usbhs: add SoC names to compatibility string documentation
+Message-Id: <1449799947-19866-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450690804-3672-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1450690804-3672-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+References: <1449799947-19866-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1449799947-19866-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Cc: gregkh@linuxfoundation.org, balbi@ti.com, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, linux-usb@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Magnus Damm <magnus.damm@gmail.com>, linux-usb@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Simon Horman <horms+renesas@verge.net.au>
 
-On Mon, Dec 21, 2015 at 06:40:04PM +0900, Yoshihiro Shimoda wrote:
-> R-Car H3 has USB3.0 peripheral controllers. This controller's has the
-> following features:
->  - Supports super, high and full speed
->  - Contains 30 pipes for bulk or interrupt transfer
->  - Contains dedicated DMA controller
-> 
-> This driver doesn't support the dedicated DMAC for now.
-> 
-> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-> ---
->  This patch is based on the latest Felipe's usb.git / testing/next branch.
->  (commit id = e9284de9fae69f1d5e57a4817bfc36dc5f3adf71)
-> 
->  Changes from v2:
->   - Fix compatible string order to "<chip>-<peripheral>".
-> 
->  Changes from v1:
->   - fix build error in i386 environment if COMPILE_TEST=y
->   - merge the header file code into the .c file
->   - revise the device tree document about "clocks"
->   - remove prototype declarations
->   - use udelay(1) instead of ndelay(1) in usb3_wait()
->   - remove empty function "usb3_init_phy()"
->   - use module_platform_driver()
->   - remove bit fields member in some structures
-> 
-> 
->  .../devicetree/bindings/usb/renesas_usb3.txt       |   23 +
+This extends the documentation of compatibility strings a little to
+include the SoC names.
 
-For the binding:
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+v3
+* Split into separate patch
+---
+ Documentation/devicetree/bindings/usb/renesas_usbhs.txt | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
-Acked-by: Rob Herring <robh@kernel.org>
+diff --git a/Documentation/devicetree/bindings/usb/renesas_usbhs.txt b/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
+index 7d48f63db44e..a14c0bb561d5 100644
+--- a/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
++++ b/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
+@@ -2,10 +2,10 @@ Renesas Electronics USBHS driver
+ 
+ Required properties:
+   - compatible: Must contain one of the following:
+-	- "renesas,usbhs-r8a7790"
+-	- "renesas,usbhs-r8a7791"
+-	- "renesas,usbhs-r8a7794"
+-	- "renesas,usbhs-r8a7795"
++	- "renesas,usbhs-r8a7790" for r8a7790 (R-Car H2) compatible device
++	- "renesas,usbhs-r8a7791" for r8a7791 (R-Car M2-W) compatible device
++	- "renesas,usbhs-r8a7794" for r8a7794 (R-Car E2) compatible device
++	- "renesas,usbhs-r8a7795" for r8a7795 (R-Car H3) compatible device
+   - reg: Base address and length of the register for the USBHS
+   - interrupts: Interrupt specifier for the USBHS
+   - clocks: A list of phandle + clock specifier pairs
+-- 
+2.1.4
 
