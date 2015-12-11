@@ -1,29 +1,47 @@
-From: Rob Herring <robh@kernel.org>
-Date: Sat, 19 Dec 2015 04:19:23 +0000
-Subject: Re: [PATCH v4 1/3] usb: renesas_usbhs: add SoC names to compatibility string documentation
-Message-Id: <20151219041923.GP14936@rob-hp-laptop>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Fri, 11 Dec 2015 23:21:32 +0000
+Subject: Re: [GIT PULL] Renesas ARM Based SoC Cleanup for v4.5
+Message-Id: <1650671.Xh9EhEssTx@wuerfel>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450241512-24699-1-git-send-email-horms+renesas@verge.net.au>
- <1450241512-24699-2-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1450241512-24699-2-git-send-email-horms+renesas-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>
+References: <cover.1448585673.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1448585673.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms+renesas-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>
-Cc: Greg Kroah-Hartman <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, Kuninori Morimoto <kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, Yoshihiro Shimoda <yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Dec 16, 2015 at 01:51:50PM +0900, Simon Horman wrote:
-> This extends the documentation of compatibility strings a little to
-> include the SoC names.
+On Friday 27 November 2015 10:55:47 Simon Horman wrote:
+> Hi Olof, Hi Kevin, Hi Arnd,
 > 
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> Please consider these Renesas ARM based SoC cleanup for v4.5.
 > 
-> ---
-> v3
-> * Split into separate patch
-> ---
->  Documentation/devicetree/bindings/usb/renesas_usbhs.txt | 8 ++++----
->  1 file changed, 4 insertions(+), 4 deletions(-)
+> This pull request includes some minor cleanups and
+> introduces ARCH_RENESAS as a firs step to migrating away
+> from ARCH_SHMOBILE and ARCH_SHMOBILE_MULTI.
+> 
+> 
+> The following changes since commit 8005c49d9aea74d382f474ce11afbbc7d7130bec:
+> 
+>   Linux 4.4-rc1 (2015-11-15 17:00:27 -0800)
+> 
+> are available in the git repository at:
+> 
+>   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-cleanup-for-v4.5
+> 
+> for you to fetch changes up to c8cd74a1468ffe20db3ddc6e6f408d5377f9be43:
+> 
+>   ARM: shmobile: Remove legacy mach/irqs.h (2015-11-19 16:28:01 -0800)
+> 
+> ----------------------------------------------------------------
+> Renesas ARM Based SoC Cleanup for v4.5
+> 
+> * Remove now unnecessary header
+> * Introduce ARCH_RENESAS
+> * Remove unmaintened URL from MAINTAINERS
+> 
 
-Acked-by: Rob Herring <robh@kernel.org>
+Pulled into next/cleanup, one conflict gone from linux-next.
+
+Thanks,
+
+	Arnd
