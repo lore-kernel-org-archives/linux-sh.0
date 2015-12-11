@@ -1,107 +1,23 @@
-From: Dirk Behme <dirk.behme@gmail.com>
-Date: Fri, 04 Dec 2015 13:38:52 +0000
-Subject: [PATCH 2/3] arm64: dts: r8a7795: Add Cortex-A57 CPU cores
-Message-Id: <1449236333-4410-2-git-send-email-dirk.behme@gmail.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 11 Dec 2015 23:07:51 +0000
+Subject: Re: [PATCH 2/3] arm64: dts: r8a7795: Add Cortex-A57 CPU cores
+Message-Id: <20151211230751.GD6496@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1449236333-4410-1-git-send-email-dirk.behme@gmail.com>
-In-Reply-To: <1449236333-4410-1-git-send-email-dirk.behme@gmail.com>
+ <1449236333-4410-2-git-send-email-dirk.behme@gmail.com>
+In-Reply-To: <1449236333-4410-2-git-send-email-dirk.behme@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+On Fri, Dec 04, 2015 at 02:38:52PM +0100, Dirk Behme wrote:
+> From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+> 
+> Add Cortex-A57 CPU cores to r8a7795 SoC for a total of 4 x Cortex-A57.
+> 
+> Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+> Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
+> Sigend-off-by: Dirk Behme <dirk.behme@gmail.com>
 
-Add Cortex-A57 CPU cores to r8a7795 SoC for a total of 4 x Cortex-A57.
-
-Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
-Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
-Sigend-off-by: Dirk Behme <dirk.behme@gmail.com>
----
-
-Note: This patch picked from
-
-https://git.kernel.org/cgit/linux/kernel/git/horms/renesas-bsp.git/log/?h=v4.2/rcar-3.0.x
-
-and rebased against
-
-https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git/log/?h=topic/gen3-latest renesas-drivers-2015-12-01-v4.4-rc3
-
- arch/arm64/boot/dts/renesas/r8a7795.dtsi | 31 +++++++++++++++++++++++++------
- 1 file changed, 25 insertions(+), 6 deletions(-)
-
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-index 5611597..946a5bb 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-+++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-@@ -35,13 +35,31 @@
- 		#address-cells = <1>;
- 		#size-cells = <0>;
- 
--		/* 1 core only at this point */
- 		a57_0: cpu@0 {
- 			compatible = "arm,cortex-a57", "arm,armv8";
- 			reg = <0x0>;
- 			device_type = "cpu";
- 			enable-method = "psci";
- 		};
-+
-+		a57_1: cpu@1 {
-+			compatible = "arm,cortex-a57","arm,armv8";
-+			reg = <0x1>;
-+			device_type = "cpu";
-+			enable-method = "psci";
-+		};
-+		a57_2: cpu@2 {
-+			compatible = "arm,cortex-a57","arm,armv8";
-+			reg = <0x2>;
-+			device_type = "cpu";
-+			enable-method = "psci";
-+		};
-+		a57_3: cpu@3 {
-+			compatible = "arm,cortex-a57","arm,armv8";
-+			reg = <0x3>;
-+			device_type = "cpu";
-+			enable-method = "psci";
-+		};
- 	};
- 
- 	extal_clk: extal {
-@@ -101,6 +119,7 @@
- 	soc {
- 		compatible = "simple-bus";
- 		interrupt-parent = <&gic>;
-+
- 		#address-cells = <2>;
- 		#size-cells = <2>;
- 		ranges;
-@@ -113,7 +132,7 @@
- 			reg = <0x0 0xf1010000 0 0x1000>,
- 			      <0x0 0xf1020000 0 0x2000>;
- 			interrupts = <GIC_PPI 9
--					(GIC_CPU_MASK_SIMPLE(1) | IRQ_TYPE_LEVEL_HIGH)>;
-+					(GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_HIGH)>;
- 		};
- 
- 		gpio0: gpio@e6050000 {
-@@ -231,13 +250,13 @@
- 		timer {
- 			compatible = "arm,armv8-timer";
- 			interrupts = <GIC_PPI 13
--					(GIC_CPU_MASK_SIMPLE(1) | IRQ_TYPE_LEVEL_LOW)>,
-+					(GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
- 				     <GIC_PPI 14
--					(GIC_CPU_MASK_SIMPLE(1) | IRQ_TYPE_LEVEL_LOW)>,
-+					(GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
- 				     <GIC_PPI 11
--					(GIC_CPU_MASK_SIMPLE(1) | IRQ_TYPE_LEVEL_LOW)>,
-+					(GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
- 				     <GIC_PPI 10
--					(GIC_CPU_MASK_SIMPLE(1) | IRQ_TYPE_LEVEL_LOW)>;
-+					(GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>;
- 		};
- 
- 		cpg: clock-controller@e6150000 {
--- 
-2.6.3
-
+Thanks, I have queued this up for v4.5.
