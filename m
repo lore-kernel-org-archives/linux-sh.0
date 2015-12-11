@@ -1,50 +1,136 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sat, 05 Dec 2015 02:12:50 +0000
-Subject: [PATCH v2 16/32] v4l: vsp1: Document the vsp1_pipeline structure
-Message-Id: <1449281586-25726-17-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 11 Dec 2015 02:52:49 +0000
+Subject: [PATCH/RFC 12/19] ARM: shmobile: gose: Enable sound PIO support in device tree
+Message-Id: <1449802376-11301-13-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1449802376-11301-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1449802376-11301-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Enable sound PIO support in the r8a7793/gose device tree.
+
+Based on similar work for the r8a7791/koelsch by Kuninori Morimoto.
+
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/media/platform/vsp1/vsp1_pipe.h | 16 +++++++++++++++-
- 1 file changed, 15 insertions(+), 1 deletion(-)
+ arch/arm/boot/dts/r8a7793-gose.dts | 76 ++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 76 insertions(+)
 
-diff --git a/drivers/media/platform/vsp1/vsp1_pipe.h b/drivers/media/platform/vsp1/vsp1_pipe.h
-index 8553d5a03aa3..9c8ded1c29f6 100644
---- a/drivers/media/platform/vsp1/vsp1_pipe.h
-+++ b/drivers/media/platform/vsp1/vsp1_pipe.h
-@@ -29,9 +29,23 @@ enum vsp1_pipeline_state {
- 
- /*
-  * struct vsp1_pipeline - A VSP1 hardware pipeline
-- * @media: the media pipeline
-+ * @pipe: the media pipeline
-  * @irqlock: protects the pipeline state
-+ * @state: current state
-+ * @wq: work queue to wait for state change completion
-+ * @frame_end: frame end interrupt handler
-  * @lock: protects the pipeline use count and stream count
-+ * @use_count: number of video nodes using the pipeline
-+ * @stream_count: number of streaming video nodes
-+ * @buffers_ready: bitmask of RPFs and WPFs with at least one buffer available
-+ * @num_inputs: number of RPFs
-+ * @inputs: array of RPFs in the pipeline
-+ * @output: WPF at the output of the pipeline
-+ * @bru: BRU entity, if present
-+ * @lif: LIF entity, if present
-+ * @uds: UDS entity, if present
-+ * @uds_input: entity at the input of the UDS, if the UDS is present
-+ * @entities: list of entities in the pipeline
+diff --git a/arch/arm/boot/dts/r8a7793-gose.dts b/arch/arm/boot/dts/r8a7793-gose.dts
+index 9a71ff6d4474..64bcde44f4e5 100644
+--- a/arch/arm/boot/dts/r8a7793-gose.dts
++++ b/arch/arm/boot/dts/r8a7793-gose.dts
+@@ -8,6 +8,17 @@
+  * kind, whether express or implied.
   */
- struct vsp1_pipeline {
- 	struct media_pipeline pipe;
+ 
++/*
++ * SSI-AK4643
++ *
++ * SW1: 1: AK4643
++ *      2: CN22
++ *      3: ADV7511
++ *
++ * This command is required when Playback/Capture
++ *
++ *	amixer set "LINEOUT Mixer DACL" on
++ */
+ /dts-v1/;
+ #include "r8a7793.dtsi"
+ #include <dt-bindings/gpio/gpio.h>
+@@ -31,6 +42,30 @@
+ 		device_type = "memory";
+ 		reg = <0 0x40000000 0 0x40000000>;
+ 	};
++
++	audio_clock: clock {
++		compatible = "fixed-clock";
++		#clock-cells = <0>;
++		clock-frequency = <11289600>;
++		clock-output-names = "audio_clock";
++	};
++
++	rsnd_ak4643: sound {
++		compatible = "simple-audio-card";
++
++		simple-audio-card,format = "left_j";
++		simple-audio-card,bitclock-master = <&sndcodec>;
++		simple-audio-card,frame-master = <&sndcodec>;
++
++		sndcpu: simple-audio-card,cpu {
++			sound-dai = <&rcar_sound>;
++		};
++
++		sndcodec: simple-audio-card,codec {
++			sound-dai = <&ak4643>;
++			clocks = <&audio_clock>;
++		};
++	};
+ };
+ 
+ &extal_clk {
+@@ -67,6 +102,16 @@
+ 		renesas,groups = "qspi_ctrl", "qspi_data4";
+ 		renesas,function = "qspi";
+ 	};
++
++	sound_pins: sound {
++		renesas,groups = "ssi0129_ctrl", "ssi0_data", "ssi1_data";
++		renesas,function = "ssi";
++	};
++
++	sound_clk_pins: sound_clk {
++		renesas,groups = "audio_clk_a";
++		renesas,function = "audio_clk";
++	};
+ };
+ 
+ &ether {
+@@ -148,9 +193,40 @@
+ 	status = "okay";
+ 	clock-frequency = <100000>;
+ 
++	ak4643: codec@12 {
++		compatible = "asahi-kasei,ak4643";
++		#sound-dai-cells = <0>;
++		reg = <0x12>;
++	};
+ 	eeprom@50 {
+ 		compatible = "renesas,24c02";
+ 		reg = <0x50>;
+ 		pagesize = <16>;
+ 	};
+ };
++
++&rcar_sound {
++	pinctrl-0 = <&sound_pins &sound_clk_pins>;
++	pinctrl-names = "default";
++
++	/* Single DAI */
++	#sound-dai-cells = <0>;
++
++	status = "okay";
++
++	rcar_sound,dai {
++		dai0 {
++			playback = <&ssi0>;
++			capture  = <&ssi1>;
++		};
++	};
++};
++
++&ssi0 {
++	pio-transfer;
++};
++
++&ssi1 {
++	pio-transfer;
++	shared-pin;
++};
 -- 
-2.4.10
+2.1.4
 
