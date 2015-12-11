@@ -1,29 +1,32 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 11 Dec 2015 23:07:38 +0000
-Subject: Re: [PATCH 0/3] ARM: shmobile: defconfig: Misc updates
-Message-Id: <20151211230737.GB6496@verge.net.au>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Fri, 11 Dec 2015 16:04:50 +0000
+Subject: [PATCH 0/3] adv7604: .g_crop and .cropcap support
+Message-Id: <1449849893-14865-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449760562-26795-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1449760562-26795-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: magnus.damm@gmail.com, laurent.pinchart@ideasonboard.com, hans.verkuil@cisco.com, ian.molton@codethink.co.uk, lars@metafoo.de, william.towle@codethink.co.uk, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 
-On Thu, Dec 10, 2015 at 04:15:59PM +0100, Geert Uytterhoeven wrote:
-> 	Hi Simon, Magnus,
-> 
-> Here are a few updates for the shmobile defconfig.
-> If these are accepted, I'll send out equivalent updates for
-> multi_v7_defconfig.
-> 
-> Geert Uytterhoeven (3):
->   ARM: shmobile: defconfig: Drop useless CONFIG_USB_RCAR_PHY=y
->   ARM: shmobile: defconfig: Enable missing support based on DTSes
->   ARM: shmobile: defconfig: Enable frame buffer console for
->     armadillo800eva
-> 
->  arch/arm/configs/shmobile_defconfig | 10 +++++++++-
->  1 file changed, 9 insertions(+), 1 deletion(-)
+Hi!
 
-Thanks, I have queued these up.
+The rcar_vin driver relies on these methods.  The third patch makes sure
+that they return up-to-date data if the input signal has changed since
+initialization.
+
+CU
+Uli
+
+
+Ulrich Hecht (3):
+  media: adv7604: implement g_crop
+  media: adv7604: implement cropcap
+  media: adv7604: update timings on change of input signal
+
+ drivers/media/i2c/adv7604.c | 38 ++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 38 insertions(+)
+
+-- 
+2.6.3
+
