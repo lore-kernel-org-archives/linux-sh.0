@@ -1,67 +1,53 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 11 Dec 2015 02:52:37 +0000
-Subject: [PATCH/RFC 00/19] r8a7793, gose: Add i2c and audio support to device tree
-Message-Id: <1449802376-11301-1-git-send-email-horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 11 Dec 2015 09:45:38 +0000
+Subject: Re: [PATCH/RFC 00/19] r8a7793, gose: Add i2c and audio support to device tree
+Message-Id: <CAMuHMdWh4t+-V=CbGpKWfWJLGrEtBhkEBmy__g9449Ay-St9nA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1449802376-11301-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1449802376-11301-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi,
+Hi Simon,
 
-this series adds support to r8a7793 and gose device trees for:
-* i2c and iic
-* rcar sound: first in PIO mode then using DMA
+On Fri, Dec 11, 2015 at 3:52 AM, Simon Horman
+<horms+renesas@verge.net.au> wrote:
+> this series adds support to r8a7793 and gose device trees for:
+> * i2c and iic
+> * rcar sound: first in PIO mode then using DMA
+>
+> i2c support is a pre-requisite for rcar sound support.
 
-i2c support is a pre-requisite for rcar sound support.
+This series looks fine, when comparing the resulting DTS of
+r8a7793 and r8a7791, and taking into account the i2c/iic alias differences.
 
-Unfortunately there appears to be some problem with DMA
-for rcar sound that I have been unable to track down. On booting I see:
+Except for the missing audmapp.
 
-rcar_sound ec500000.sound: dma allocate failed
-rcar_sound ec500000.sound: ssi[0] fallback to PIO mode
-rcar_sound ec500000.sound: ssi[1] fallback to PIO mode
-rcar_sound ec500000.sound: probed
+You can add my
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+to all but 8.
 
-I would appreciate any insights regarding the above.
+> Unfortunately there appears to be some problem with DMA
+> for rcar sound that I have been unable to track down. On booting I see:
+>
+> rcar_sound ec500000.sound: dma allocate failed
+> rcar_sound ec500000.sound: ssi[0] fallback to PIO mode
+> rcar_sound ec500000.sound: ssi[1] fallback to PIO mode
+> rcar_sound ec500000.sound: probed
+>
+> I would appreciate any insights regarding the above.
 
-I have been unable to test if audio works (in PIO mode) as I
-do not have physical access to a gose board. I would appreaciate
-some assistance there too.
+Missing periperi?
 
-This work is based heavily on the work of others for the r8a7791 and
-koelsch.  as noted in the changelogs of individual patches.
+Gr{oetje,eeting}s,
 
-This series is based on renesas-devel-20151211-v4.4-rc4.
+                        Geert
 
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-Simon Horman (19):
-  ARM: shmobile: r8a7793: add i2c clocks
-  ARM: shmobile: r8a7793: add i2c to device tree
-  ARM: shmobile: gose: add i2c2 bus to device tree
-  ARM: shmobile: r8a7793: add iic(b)  to device tree
-  ARM: shmobile: r8a7793: add MSTP10 clocks to device tree
-  ARM: shmobile: r8a7793: add audio clock to device tree
-  ARM: shmobile: r8a7793: add m2 clock to device tree
-  ARM: shmobile: r8a7793: add R-Car sound support to device tree
-  ARM: shmobile: r8a7793: add DVC support to device tree
-  ARM: shmobile: r8a7793: add audio DMAC clocks to device tree
-  ARM: shmobile: r8a7793: add audio DMAC to device tree
-  ARM: shmobile: gose: Enable sound PIO support in device tree
-  ARM: shmobile: gose: enable sound DMA support in device tree
-  ARM: shmobile: gose: enable sound DMA support via BUSIF in device tree
-  ARM: shmobile: gose: enable sound DMA support via SRC in device tree
-  ARM: shmobile: gose: enable sound DMA support via DVC in device tree
-  ARM: shmobile: r8a7793: enable audio DMAC in device tree
-  ARM: shmobile: r8a7793: Add Audio CTU support to device tree
-  ARM: shmobile: r8a7793: add Audio MIX support to device tree
-
- arch/arm/boot/dts/r8a7793-gose.dts        | 107 ++++++++
- arch/arm/boot/dts/r8a7793.dtsi            | 437 +++++++++++++++++++++++++++++-
- include/dt-bindings/clock/r8a7793-clock.h |   2 +
- 3 files changed, 539 insertions(+), 7 deletions(-)
-
--- 
-2.1.4
-
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
