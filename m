@@ -1,39 +1,60 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 17 Dec 2015 05:24:57 +0000
-Subject: [PATCH 7/7] ARM: multi_v7_defconfig: Enable frame buffer console for armadillo800eva
-Message-Id: <3bf834e17c8736537a08abfa509ae3a8c8446b08.1450315426.git.horms+renesas@verge.net.au>
+Date: Fri, 11 Dec 2015 02:52:43 +0000
+Subject: [PATCH/RFC 06/19] ARM: shmobile: r8a7793: add audio clock to device tree
+Message-Id: <1449802376-11301-7-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1450315426.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1450315426.git.horms+renesas@verge.net.au>
+References: <1449802376-11301-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1449802376-11301-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+Instantiate audio clock in r8a7793 device tree.
+audio_clk_a/b/c are required for R-Car sound.
 
-Enabling the frame buffer device on r8a7740/armadillo800eva requires the
-board staging code.
+Based on similar work for the r8a7791 by Kuninori Morimoto.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Arnd Bergmann <arnd@arndb.de>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/configs/multi_v7_defconfig | 1 +
- 1 file changed, 1 insertion(+)
+ arch/arm/boot/dts/r8a7793.dtsi | 23 +++++++++++++++++++++++
+ 1 file changed, 23 insertions(+)
 
-diff --git a/arch/arm/configs/multi_v7_defconfig b/arch/arm/configs/multi_v7_defconfig
-index 32d1573d3cce..31be07178cc6 100644
---- a/arch/arm/configs/multi_v7_defconfig
-+++ b/arch/arm/configs/multi_v7_defconfig
-@@ -663,6 +663,7 @@ CONFIG_QCOM_SMD_RPM=y
- CONFIG_QCOM_SMEM=y
- CONFIG_COMMON_CLK_QCOM=y
- CONFIG_CHROME_PLATFORMS=y
-+CONFIG_STAGING_BOARD=y
- CONFIG_CROS_EC_CHARDEV=m
- CONFIG_COMMON_CLK_MAX77686=y
- CONFIG_COMMON_CLK_MAX77802=m
+diff --git a/arch/arm/boot/dts/r8a7793.dtsi b/arch/arm/boot/dts/r8a7793.dtsi
+index 5f953c594395..7179c3cba20a 100644
+--- a/arch/arm/boot/dts/r8a7793.dtsi
++++ b/arch/arm/boot/dts/r8a7793.dtsi
+@@ -698,6 +698,29 @@
+ 			clock-output-names = "extal";
+ 		};
+ 
++		/*
++		 * The external audio clocks are configured as 0 Hz fixed frequency clocks by
++		 * default. Boards that provide audio clocks should override them.
++		 */
++		audio_clk_a: audio_clk_a {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-frequency = <0>;
++			clock-output-names = "audio_clk_a";
++		};
++		audio_clk_b: audio_clk_b {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-frequency = <0>;
++			clock-output-names = "audio_clk_b";
++		};
++		audio_clk_c: audio_clk_c {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-frequency = <0>;
++			clock-output-names = "audio_clk_c";
++		};
++
+ 		/* Special CPG clocks */
+ 		cpg_clocks: cpg_clocks@e6150000 {
+ 			compatible = "renesas,r8a7793-cpg-clocks",
 -- 
 2.1.4
 
