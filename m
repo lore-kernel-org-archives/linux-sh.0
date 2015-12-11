@@ -1,186 +1,39 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sat, 05 Dec 2015 02:12:37 +0000
-Subject: [PATCH v2 03/32] v4l: vsp1: Move video operations to vsp1_rwpf
-Message-Id: <1449281586-25726-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 11 Dec 2015 02:12:27 +0000
+Subject: [PATCH v3 3/3] usb: renesas_usbhs: add device tree support for r8a779[23]
+Message-Id: <1449799947-19866-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1449799947-19866-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1449799947-19866-1-git-send-email-horms+renesas-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: Greg Kroah-Hartman <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, Yoshihiro Shimoda <yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Simon Horman <horms+renesas-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>
 
-This removes the dependency of vsp1_rpf and vsp1_wpf on vsp1_video,
-making it possible to reuse the operations without a V4L2 video device
-node.
+Simply document new compatibility string.
+As a previous patch adds a generic R-Car Gen2 compatibility string
+there appears to be no need for a driver updates.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Acked-by: Rob Herring <robh@kernel.org>
 ---
- drivers/media/platform/vsp1/vsp1_rpf.c   | 11 +++++------
- drivers/media/platform/vsp1/vsp1_rwpf.h  |  9 +++++++++
- drivers/media/platform/vsp1/vsp1_video.c |  4 ++--
- drivers/media/platform/vsp1/vsp1_video.h |  6 ------
- drivers/media/platform/vsp1/vsp1_wpf.c   | 12 +++++-------
- 5 files changed, 21 insertions(+), 21 deletions(-)
+ Documentation/devicetree/bindings/usb/renesas_usbhs.txt | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/drivers/media/platform/vsp1/vsp1_rpf.c b/drivers/media/platform/vsp1/vsp1_rpf.c
-index ae63dce38b0c..ee0a1472a13c 100644
---- a/drivers/media/platform/vsp1/vsp1_rpf.c
-+++ b/drivers/media/platform/vsp1/vsp1_rpf.c
-@@ -186,10 +186,8 @@ static struct v4l2_subdev_ops rpf_ops = {
-  * Video Device Operations
-  */
+diff --git a/Documentation/devicetree/bindings/usb/renesas_usbhs.txt b/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
+index c55cf77006d0..471a0649e63e 100644
+--- a/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
++++ b/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
+@@ -5,6 +5,8 @@ Required properties:
  
--static void rpf_vdev_queue(struct vsp1_video *video,
--			   struct vsp1_video_buffer *buf)
-+static void rpf_buf_queue(struct vsp1_rwpf *rpf, struct vsp1_video_buffer *buf)
- {
--	struct vsp1_rwpf *rpf = container_of(video, struct vsp1_rwpf, video);
- 	unsigned int i;
- 
- 	for (i = 0; i < 3; ++i)
-@@ -208,8 +206,8 @@ static void rpf_vdev_queue(struct vsp1_video *video,
- 			       buf->addr[2] + rpf->offsets[1]);
- }
- 
--static const struct vsp1_video_operations rpf_vdev_ops = {
--	.queue = rpf_vdev_queue,
-+static const struct vsp1_rwpf_operations rpf_vdev_ops = {
-+	.queue = rpf_buf_queue,
- };
- 
- /* -----------------------------------------------------------------------------
-@@ -227,6 +225,8 @@ struct vsp1_rwpf *vsp1_rpf_create(struct vsp1_device *vsp1, unsigned int index)
- 	if (rpf = NULL)
- 		return ERR_PTR(-ENOMEM);
- 
-+	rpf->ops = &rpf_vdev_ops;
-+
- 	rpf->max_width = RPF_MAX_WIDTH;
- 	rpf->max_height = RPF_MAX_HEIGHT;
- 
-@@ -269,7 +269,6 @@ struct vsp1_rwpf *vsp1_rpf_create(struct vsp1_device *vsp1, unsigned int index)
- 
- 	video->type = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE;
- 	video->vsp1 = vsp1;
--	video->ops = &rpf_vdev_ops;
- 
- 	ret = vsp1_video_init(video, rpf);
- 	if (ret < 0)
-diff --git a/drivers/media/platform/vsp1/vsp1_rwpf.h b/drivers/media/platform/vsp1/vsp1_rwpf.h
-index 8609c3d02679..3cc80be03524 100644
---- a/drivers/media/platform/vsp1/vsp1_rwpf.h
-+++ b/drivers/media/platform/vsp1/vsp1_rwpf.h
-@@ -24,11 +24,20 @@
- #define RWPF_PAD_SINK				0
- #define RWPF_PAD_SOURCE				1
- 
-+struct vsp1_rwpf;
-+struct vsp1_video_buffer;
-+
-+struct vsp1_rwpf_operations {
-+	void (*queue)(struct vsp1_rwpf *rwpf, struct vsp1_video_buffer *buf);
-+};
-+
- struct vsp1_rwpf {
- 	struct vsp1_entity entity;
- 	struct vsp1_video video;
- 	struct v4l2_ctrl_handler ctrls;
- 
-+	const struct vsp1_rwpf_operations *ops;
-+
- 	unsigned int max_width;
- 	unsigned int max_height;
- 
-diff --git a/drivers/media/platform/vsp1/vsp1_video.c b/drivers/media/platform/vsp1/vsp1_video.c
-index 3eaf06903495..932225ec45f6 100644
---- a/drivers/media/platform/vsp1/vsp1_video.c
-+++ b/drivers/media/platform/vsp1/vsp1_video.c
-@@ -631,7 +631,7 @@ static void vsp1_video_frame_end(struct vsp1_pipeline *pipe,
- 
- 	spin_lock_irqsave(&pipe->irqlock, flags);
- 
--	video->ops->queue(video, buf);
-+	video->rwpf->ops->queue(video->rwpf, buf);
- 	pipe->buffers_ready |= 1 << video->pipe_index;
- 
- 	spin_unlock_irqrestore(&pipe->irqlock, flags);
-@@ -860,7 +860,7 @@ static void vsp1_video_buffer_queue(struct vb2_buffer *vb)
- 
- 	spin_lock_irqsave(&pipe->irqlock, flags);
- 
--	video->ops->queue(video, buf);
-+	video->rwpf->ops->queue(video->rwpf, buf);
- 	pipe->buffers_ready |= 1 << video->pipe_index;
- 
- 	if (vb2_is_streaming(&video->queue) &&
-diff --git a/drivers/media/platform/vsp1/vsp1_video.h b/drivers/media/platform/vsp1/vsp1_video.h
-index 56d0e7bd4327..72be847f2df9 100644
---- a/drivers/media/platform/vsp1/vsp1_video.h
-+++ b/drivers/media/platform/vsp1/vsp1_video.h
-@@ -108,16 +108,10 @@ to_vsp1_video_buffer(struct vb2_v4l2_buffer *vbuf)
- 	return container_of(vbuf, struct vsp1_video_buffer, buf);
- }
- 
--struct vsp1_video_operations {
--	void (*queue)(struct vsp1_video *video, struct vsp1_video_buffer *buf);
--};
--
- struct vsp1_video {
- 	struct vsp1_device *vsp1;
- 	struct vsp1_rwpf *rwpf;
- 
--	const struct vsp1_video_operations *ops;
--
- 	struct video_device video;
- 	enum v4l2_buf_type type;
- 	struct media_pad pad;
-diff --git a/drivers/media/platform/vsp1/vsp1_wpf.c b/drivers/media/platform/vsp1/vsp1_wpf.c
-index e2afd9797e25..b25c5e6976ef 100644
---- a/drivers/media/platform/vsp1/vsp1_wpf.c
-+++ b/drivers/media/platform/vsp1/vsp1_wpf.c
-@@ -195,11 +195,8 @@ static struct v4l2_subdev_ops wpf_ops = {
-  * Video Device Operations
-  */
- 
--static void wpf_vdev_queue(struct vsp1_video *video,
--			   struct vsp1_video_buffer *buf)
-+static void wpf_buf_queue(struct vsp1_rwpf *wpf, struct vsp1_video_buffer *buf)
- {
--	struct vsp1_rwpf *wpf = container_of(video, struct vsp1_rwpf, video);
--
- 	vsp1_wpf_write(wpf, VI6_WPF_DSTM_ADDR_Y, buf->addr[0]);
- 	if (buf->buf.vb2_buf.num_planes > 1)
- 		vsp1_wpf_write(wpf, VI6_WPF_DSTM_ADDR_C0, buf->addr[1]);
-@@ -207,8 +204,8 @@ static void wpf_vdev_queue(struct vsp1_video *video,
- 		vsp1_wpf_write(wpf, VI6_WPF_DSTM_ADDR_C1, buf->addr[2]);
- }
- 
--static const struct vsp1_video_operations wpf_vdev_ops = {
--	.queue = wpf_vdev_queue,
-+static const struct vsp1_rwpf_operations wpf_vdev_ops = {
-+	.queue = wpf_buf_queue,
- };
- 
- /* -----------------------------------------------------------------------------
-@@ -227,6 +224,8 @@ struct vsp1_rwpf *vsp1_wpf_create(struct vsp1_device *vsp1, unsigned int index)
- 	if (wpf = NULL)
- 		return ERR_PTR(-ENOMEM);
- 
-+	wpf->ops = &wpf_vdev_ops;
-+
- 	wpf->max_width = WPF_MAX_WIDTH;
- 	wpf->max_height = WPF_MAX_HEIGHT;
- 
-@@ -269,7 +268,6 @@ struct vsp1_rwpf *vsp1_wpf_create(struct vsp1_device *vsp1, unsigned int index)
- 
- 	video->type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
- 	video->vsp1 = vsp1;
--	video->ops = &wpf_vdev_ops;
- 
- 	ret = vsp1_video_init(video, wpf);
- 	if (ret < 0)
+ 	- "renesas,usbhs-r8a7790" for r8a7790 (R-Car H2) compatible device
+ 	- "renesas,usbhs-r8a7791" for r8a7791 (R-Car M2-W) compatible device
++	- "renesas,usbhs-r8a7792" for r8a7792 (R-Car V2H) compatible device
++	- "renesas,usbhs-r8a7793" for r8a7793 (R-Car M2-N) compatible device
+ 	- "renesas,usbhs-r8a7794" for r8a7794 (R-Car E2) compatible device
+ 	- "renesas,usbhs-r8a7795" for r8a7795 (R-Car H3) compatible device
+ 	- "renesas,rcar-gen2-usbhs" for R-Car Gen2 compatible device
 -- 
-2.4.10
+2.1.4
 
