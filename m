@@ -1,133 +1,63 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sat, 05 Dec 2015 02:12:59 +0000
-Subject: [PATCH v2 25/32] v4l: vsp1: Make pipeline inputs array index by RPF index
-Message-Id: <1449281586-25726-26-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 11 Dec 2015 02:52:55 +0000
+Subject: [PATCH/RFC 18/19] ARM: shmobile: r8a7793: Add Audio CTU support to device tree
+Message-Id: <1449802376-11301-19-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1449802376-11301-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1449802376-11301-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The pipeline inputs array stores pointers to all RPFs contained in the
-pipeline. It's currently indexed contiguously by adding RPFs in the
-order they are found during graph walk. This can't easily support
-dynamic addition and removal of RPFs while streaming, which will be
-required for combined VSP+DU support.
+Instantiate audio CTU support in r8a7793 device tee.
 
-Make the array indexed by RPF index instead and skip NULL elements when
-iterating over RPFs.
+Based on similar work for the r8a7791 by Kuninori Morimoto.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/media/platform/vsp1/vsp1_pipe.c  |  6 +++++-
- drivers/media/platform/vsp1/vsp1_pipe.h  |  2 +-
- drivers/media/platform/vsp1/vsp1_video.c | 16 ++++++++++++----
- drivers/media/platform/vsp1/vsp1_wpf.c   |  5 ++++-
- 4 files changed, 22 insertions(+), 7 deletions(-)
+ arch/arm/boot/dts/r8a7793.dtsi | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
 
-diff --git a/drivers/media/platform/vsp1/vsp1_pipe.c b/drivers/media/platform/vsp1/vsp1_pipe.c
-index df11259dcc0a..d41e4ca94a02 100644
---- a/drivers/media/platform/vsp1/vsp1_pipe.c
-+++ b/drivers/media/platform/vsp1/vsp1_pipe.c
-@@ -140,14 +140,18 @@ const struct vsp1_format_info *vsp1_get_format_info(u32 fourcc)
+diff --git a/arch/arm/boot/dts/r8a7793.dtsi b/arch/arm/boot/dts/r8a7793.dtsi
+index ed2acd9967b1..d9ba1c97cefc 100644
+--- a/arch/arm/boot/dts/r8a7793.dtsi
++++ b/arch/arm/boot/dts/r8a7793.dtsi
+@@ -1178,6 +1178,7 @@
+ 			<&mstp10_clks R8A7793_CLK_SCU_SRC5>, <&mstp10_clks R8A7793_CLK_SCU_SRC4>,
+ 			<&mstp10_clks R8A7793_CLK_SCU_SRC3>, <&mstp10_clks R8A7793_CLK_SCU_SRC2>,
+ 			<&mstp10_clks R8A7793_CLK_SCU_SRC1>, <&mstp10_clks R8A7793_CLK_SCU_SRC0>,
++			<&mstp10_clks R8A7793_CLK_SCU_CTU0_MIX0>, <&mstp10_clks R8A7793_CLK_SCU_CTU1_MIX1>,
+ 			<&mstp10_clks R8A7793_CLK_SCU_DVC0>, <&mstp10_clks R8A7793_CLK_SCU_DVC1>,
+ 			<&audio_clk_a>, <&audio_clk_b>, <&audio_clk_c>, <&m2_clk>;
+ 		clock-names = "ssi-all",
+@@ -1185,6 +1186,7 @@
+ 				"ssi.4", "ssi.3", "ssi.2", "ssi.1", "ssi.0",
+ 				"src.9", "src.8", "src.7", "src.6", "src.5",
+ 				"src.4", "src.3", "src.2", "src.1", "src.0",
++				"ctu.0", "ctu.1",
+ 				"dvc.0", "dvc.1",
+ 				"clk_a", "clk_b", "clk_c", "clk_i";
+ 		power-domains = <&cpg_clocks>;
+@@ -1202,6 +1204,17 @@
+ 			};
+ 		};
  
- void vsp1_pipeline_reset(struct vsp1_pipeline *pipe)
- {
-+	unsigned int i;
++		rcar_sound,ctu {
++			ctu00: ctu@0 { };
++			ctu01: ctu@1 { };
++			ctu02: ctu@2 { };
++			ctu03: ctu@3 { };
++			ctu10: ctu@4 { };
++			ctu11: ctu@5 { };
++			ctu12: ctu@6 { };
++			ctu13: ctu@7 { };
++		};
 +
- 	if (pipe->bru) {
- 		struct vsp1_bru *bru = to_bru(&pipe->bru->subdev);
--		unsigned int i;
- 
- 		for (i = 0; i < ARRAY_SIZE(bru->inputs); ++i)
- 			bru->inputs[i].rpf = NULL;
- 	}
- 
-+	for (i = 0; i < ARRAY_SIZE(pipe->inputs); ++i)
-+		pipe->inputs[i] = NULL;
-+
- 	INIT_LIST_HEAD(&pipe->entities);
- 	pipe->state = VSP1_PIPELINE_STOPPED;
- 	pipe->buffers_ready = 0;
-diff --git a/drivers/media/platform/vsp1/vsp1_pipe.h b/drivers/media/platform/vsp1/vsp1_pipe.h
-index f9035c739e9a..c4c300561c5c 100644
---- a/drivers/media/platform/vsp1/vsp1_pipe.h
-+++ b/drivers/media/platform/vsp1/vsp1_pipe.h
-@@ -66,7 +66,7 @@ enum vsp1_pipeline_state {
-  * @stream_count: number of streaming video nodes
-  * @buffers_ready: bitmask of RPFs and WPFs with at least one buffer available
-  * @num_inputs: number of RPFs
-- * @inputs: array of RPFs in the pipeline
-+ * @inputs: array of RPFs in the pipeline (indexed by RPF index)
-  * @output: WPF at the output of the pipeline
-  * @bru: BRU entity, if present
-  * @lif: LIF entity, if present
-diff --git a/drivers/media/platform/vsp1/vsp1_video.c b/drivers/media/platform/vsp1/vsp1_video.c
-index 141e489a8aa9..d3335eb24cce 100644
---- a/drivers/media/platform/vsp1/vsp1_video.c
-+++ b/drivers/media/platform/vsp1/vsp1_video.c
-@@ -305,8 +305,8 @@ static int vsp1_video_pipeline_validate(struct vsp1_pipeline *pipe,
- 
- 		if (e->type = VSP1_ENTITY_RPF) {
- 			rwpf = to_rwpf(subdev);
--			pipe->inputs[pipe->num_inputs++] = rwpf;
--			rwpf->video->pipe_index = pipe->num_inputs;
-+			pipe->inputs[rwpf->entity.index] = rwpf;
-+			rwpf->video->pipe_index = ++pipe->num_inputs;
- 		} else if (e->type = VSP1_ENTITY_WPF) {
- 			rwpf = to_rwpf(subdev);
- 			pipe->output = rwpf;
-@@ -329,7 +329,10 @@ static int vsp1_video_pipeline_validate(struct vsp1_pipeline *pipe,
- 	/* Follow links downstream for each input and make sure the graph
- 	 * contains no loop and that all branches end at the output WPF.
- 	 */
--	for (i = 0; i < pipe->num_inputs; ++i) {
-+	for (i = 0; i < video->vsp1->pdata.rpf_count; ++i) {
-+		if (!pipe->inputs[i])
-+			continue;
-+
- 		ret = vsp1_video_pipeline_validate_branch(pipe, pipe->inputs[i],
- 							  pipe->output);
- 		if (ret < 0)
-@@ -454,11 +457,16 @@ static void vsp1_video_frame_end(struct vsp1_pipeline *pipe,
- 
- static void vsp1_video_pipeline_frame_end(struct vsp1_pipeline *pipe)
- {
-+	struct vsp1_device *vsp1 = pipe->output->entity.vsp1;
- 	unsigned int i;
- 
- 	/* Complete buffers on all video nodes. */
--	for (i = 0; i < pipe->num_inputs; ++i)
-+	for (i = 0; i < vsp1->pdata.rpf_count; ++i) {
-+		if (!pipe->inputs[i])
-+			continue;
-+
- 		vsp1_video_frame_end(pipe, pipe->inputs[i]);
-+	}
- 
- 	if (!pipe->lif)
- 		vsp1_video_frame_end(pipe, pipe->output);
-diff --git a/drivers/media/platform/vsp1/vsp1_wpf.c b/drivers/media/platform/vsp1/vsp1_wpf.c
-index 184a7e01aad5..d0edcde721bd 100644
---- a/drivers/media/platform/vsp1/vsp1_wpf.c
-+++ b/drivers/media/platform/vsp1/vsp1_wpf.c
-@@ -97,9 +97,12 @@ static int wpf_s_stream(struct v4l2_subdev *subdev, int enable)
- 	 * inputs as sub-layers and select the virtual RPF as the master
- 	 * layer.
- 	 */
--	for (i = 0; i < pipe->num_inputs; ++i) {
-+	for (i = 0; i < vsp1->pdata.rpf_count; ++i) {
- 		struct vsp1_rwpf *input = pipe->inputs[i];
- 
-+		if (!input)
-+			continue;
-+
- 		srcrpf |= (!pipe->bru && pipe->num_inputs = 1)
- 			? VI6_WPF_SRCRPF_RPF_ACT_MST(input->entity.index)
- 			: VI6_WPF_SRCRPF_RPF_ACT_SUB(input->entity.index);
+ 		rcar_sound,src {
+ 			src0: src@0 {
+ 				interrupts = <0 352 IRQ_TYPE_LEVEL_HIGH>;
 -- 
-2.4.10
+2.1.4
 
