@@ -1,56 +1,44 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 18 Dec 2015 01:46:59 +0000
-Subject: Re: [PATCH 0/2] ARM: shmobile: gose: Add GPIO keys and leds to DT
-Message-Id: <20151218014659.GE1164@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 11 Dec 2015 02:52:44 +0000
+Subject: [PATCH/RFC 07/19] ARM: shmobile: r8a7793: add m2 clock to device tree
+Message-Id: <1449802376-11301-8-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447885235-17858-1-git-send-email-horms+renesas@verge.net.au>
- <CANqRtoRtv--W-yVcAQYbHCz0-=AZqAy0jenBzQfEjfAVyJWP3A@mail.gmail.com>
-In-Reply-To: <CANqRtoRtv--W-yVcAQYbHCz0-=AZqAy0jenBzQfEjfAVyJWP3A@mail.gmail.com>
+References: <1449802376-11301-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1449802376-11301-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Dec 17, 2015 at 12:53:12PM +0900, Magnus Damm wrote:
-> Hi Simon,
-> 
-> On Thu, Nov 19, 2015 at 7:20 AM, Simon Horman
-> <horms+renesas@verge.net.au> wrote:
-> > Hi,
-> >
-> > this short series adds GPIO keys and leds to the device tree
-> > of the r8a7793 based Gose board.
-> >
-> > It uses the makes use of the recently addition of GPIO devices
-> > to the device tree of the r8a7793. Thanks Magnus!
-> >
-> > I have booted a system with these changes and verified that the
-> > relevant entries appear to be present in sysfs.
-> >
-> > I have not tested button press events or illumination of the leds
-> > as I do not currently have physical access to a Gose board.
-> >
-> > Based on renesas-devel-20151118-v4.4-rc1
-> >
-> > Simon Horman (2):
-> >   ARM: shmobile: gose: Add GPIO keys to DT
-> >   ARM: shmobile: gose: Add GPIO leds to DT
-> >
-> >  arch/arm/boot/dts/r8a7793-gose.dts | 98 ++++++++++++++++++++++++++++++++++++++
-> >  1 file changed, 98 insertions(+)
-> 
-> Thanks a lot for these patches! Very useful as basic a test
-> environment for the r8a7793 GPIO device nodes.
-> 
-> So I've now managed to test the GPIO keys and LED devices on a
-> physical Gose board. The LED6 -> LED 8 entries will be lit as expected
-> by controlling brightness in /sys/class/leds/. The GPIO keys
-> associated with buttons SW30 to SW36 and the dip switch SW2 all
-> generate interrupts in /proc/interrupts on key press or dip switch
-> change. All good!
-> 
-> Please queue up these changes. Feel free to add:
-> 
-> Tested-by: Magnus Damm <damm+renesas@opensource.se>
+Declare m2 clock in r8a7793 device tree.
 
-Thanks, I have queued these up for v4.6.
+Based on similar work for the r8a7791 by Laurent Pinchart.
+
+Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7793.dtsi | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7793.dtsi b/arch/arm/boot/dts/r8a7793.dtsi
+index 7179c3cba20a..99ee88e0e8be 100644
+--- a/arch/arm/boot/dts/r8a7793.dtsi
++++ b/arch/arm/boot/dts/r8a7793.dtsi
+@@ -809,6 +809,14 @@
+ 			clock-mult = <1>;
+ 			clock-output-names = "p";
+ 		};
++		m2_clk: m2_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A7793_CLK_PLL1>;
++			#clock-cells = <0>;
++			clock-div = <8>;
++			clock-mult = <1>;
++			clock-output-names = "m2";
++		};
+ 		rclk_clk: rclk_clk {
+ 			compatible = "fixed-factor-clock";
+ 			clocks = <&cpg_clocks R8A7793_CLK_PLL1>;
+-- 
+2.1.4
+
