@@ -1,119 +1,52 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sat, 05 Dec 2015 02:12:46 +0000
-Subject: [PATCH v2 12/32] v4l: vsp1: Rename video pipeline functions to use vsp1_video prefix
-Message-Id: <1449281586-25726-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 11 Dec 2015 02:52:52 +0000
+Subject: [PATCH/RFC 15/19] ARM: shmobile: gose: enable sound DMA support via SRC in device tree
+Message-Id: <1449802376-11301-16-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1449802376-11301-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1449802376-11301-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Those functions are specific to video nodes, rename them for
-consistency.
+Enable DMA transfer to/from SRC in r8a7793/gose device tree.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+     DMA      DMApp
+[MEM] -> [SRC] -> [SSIU] -> [SSI]
+
+     DMA      DMApp
+[MEM] <- [SRC] <- [SSIU] <- [SSI]
+
+Current sound driver is supporting
+SSI/SRC random connection.
+So, this patch is tring
+SSI0 -> SRC2
+SSI1 <- SRC3
+
+Based on similar work for the r8a7791/koeslch by Kuninori Morimoto.
+
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/media/platform/vsp1/vsp1_video.c | 28 ++++++++++++++--------------
- 1 file changed, 14 insertions(+), 14 deletions(-)
+ arch/arm/boot/dts/r8a7793-gose.dts | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/media/platform/vsp1/vsp1_video.c b/drivers/media/platform/vsp1/vsp1_video.c
-index 6a55eba88dba..cd4c2481e4ec 100644
---- a/drivers/media/platform/vsp1/vsp1_video.c
-+++ b/drivers/media/platform/vsp1/vsp1_video.c
-@@ -308,9 +308,9 @@ vsp1_video_format_adjust(struct vsp1_video *video,
-  * Pipeline Management
-  */
+diff --git a/arch/arm/boot/dts/r8a7793-gose.dts b/arch/arm/boot/dts/r8a7793-gose.dts
+index 763cc272127e..30edd5fef626 100644
+--- a/arch/arm/boot/dts/r8a7793-gose.dts
++++ b/arch/arm/boot/dts/r8a7793-gose.dts
+@@ -216,8 +216,8 @@
  
--static int vsp1_pipeline_validate_branch(struct vsp1_pipeline *pipe,
--					 struct vsp1_rwpf *input,
--					 struct vsp1_rwpf *output)
-+static int vsp1_video_pipeline_validate_branch(struct vsp1_pipeline *pipe,
-+					       struct vsp1_rwpf *input,
-+					       struct vsp1_rwpf *output)
- {
- 	struct vsp1_entity *entity;
- 	unsigned int entities = 0;
-@@ -384,8 +384,8 @@ static int vsp1_pipeline_validate_branch(struct vsp1_pipeline *pipe,
- 	return 0;
- }
- 
--static int vsp1_pipeline_validate(struct vsp1_pipeline *pipe,
--				  struct vsp1_video *video)
-+static int vsp1_video_pipeline_validate(struct vsp1_pipeline *pipe,
-+					struct vsp1_video *video)
- {
- 	struct media_entity_graph graph;
- 	struct media_entity *entity = &video->video.entity;
-@@ -437,8 +437,8 @@ static int vsp1_pipeline_validate(struct vsp1_pipeline *pipe,
- 	 * contains no loop and that all branches end at the output WPF.
- 	 */
- 	for (i = 0; i < pipe->num_inputs; ++i) {
--		ret = vsp1_pipeline_validate_branch(pipe, pipe->inputs[i],
--						    pipe->output);
-+		ret = vsp1_video_pipeline_validate_branch(pipe, pipe->inputs[i],
-+							  pipe->output);
- 		if (ret < 0)
- 			goto error;
- 	}
-@@ -450,8 +450,8 @@ error:
- 	return ret;
- }
- 
--static int vsp1_pipeline_init(struct vsp1_pipeline *pipe,
--			      struct vsp1_video *video)
-+static int vsp1_video_pipeline_init(struct vsp1_pipeline *pipe,
-+				    struct vsp1_video *video)
- {
- 	int ret;
- 
-@@ -459,7 +459,7 @@ static int vsp1_pipeline_init(struct vsp1_pipeline *pipe,
- 
- 	/* If we're the first user validate and initialize the pipeline. */
- 	if (pipe->use_count = 0) {
--		ret = vsp1_pipeline_validate(pipe, video);
-+		ret = vsp1_video_pipeline_validate(pipe, video);
- 		if (ret < 0)
- 			goto done;
- 	}
-@@ -472,7 +472,7 @@ done:
- 	return ret;
- }
- 
--static void vsp1_pipeline_cleanup(struct vsp1_pipeline *pipe)
-+static void vsp1_video_pipeline_cleanup(struct vsp1_pipeline *pipe)
- {
- 	mutex_lock(&pipe->lock);
- 
-@@ -742,7 +742,7 @@ static void vsp1_video_stop_streaming(struct vb2_queue *vq)
- 	}
- 	mutex_unlock(&pipe->lock);
- 
--	vsp1_pipeline_cleanup(pipe);
-+	vsp1_video_pipeline_cleanup(pipe);
- 	media_entity_pipeline_stop(&video->video.entity);
- 
- 	/* Remove all buffers from the IRQ queue. */
-@@ -883,7 +883,7 @@ vsp1_video_streamon(struct file *file, void *fh, enum v4l2_buf_type type)
- 	if (ret < 0)
- 		goto err_stop;
- 
--	ret = vsp1_pipeline_init(pipe, video);
-+	ret = vsp1_video_pipeline_init(pipe, video);
- 	if (ret < 0)
- 		goto err_stop;
- 
-@@ -895,7 +895,7 @@ vsp1_video_streamon(struct file *file, void *fh, enum v4l2_buf_type type)
- 	return 0;
- 
- err_cleanup:
--	vsp1_pipeline_cleanup(pipe);
-+	vsp1_video_pipeline_cleanup(pipe);
- err_stop:
- 	media_entity_pipeline_stop(&video->video.entity);
- 	return ret;
+ 	rcar_sound,dai {
+ 		dai0 {
+-			playback = <&ssi0>;
+-			capture  = <&ssi1>;
++			playback = <&ssi0 &src2>;
++			capture  = <&ssi1 &src3>;
+ 		};
+ 	};
+ };
 -- 
-2.4.10
+2.1.4
 
