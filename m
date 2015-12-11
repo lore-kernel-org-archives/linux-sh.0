@@ -1,38 +1,21 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 14 Dec 2015 08:13:05 +0000
-Subject: Re: [PATCH/RFC 04/19] ARM: shmobile: r8a7793: add iic(b) to device tree
-Message-Id: <CAMuHMdU3+JwHJbK8rZeJQYmsmPY1nvgz72xyx19J908viTKB+Q@mail.gmail.com>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Fri, 11 Dec 2015 23:53:42 +0000
+Subject: Re: [GIT PULL] Second Round of Renesas ARM64 Based SoC DT Updates for v4.5
+Message-Id: <2606049.WPpRG1K994@wuerfel>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449802376-11301-1-git-send-email-horms+renesas@verge.net.au>
- <1449802376-11301-5-git-send-email-horms+renesas@verge.net.au>
- <CAMuHMdWyHHV-QOXc-7g0XjWvWbhb8RcKkX+NTvA1HMngpM1sPQ@mail.gmail.com>
- <20151214022145.GE13945@verge.net.au>
-In-Reply-To: <20151214022145.GE13945@verge.net.au>
+References: <cover.1448587800.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1448587800.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Dec 14, 2015 at 3:21 AM, Simon Horman <horms@verge.net.au> wrote:
->> >   - Documentation makes note of (v1.02, table 12.2.1).
->>
->> Which document is this exactly?
->
-> I am looking at:
->
-> R-Car Series, 2nd Generation
-> User's Manual: Hardware
-> Rev.1.02 Oct 2014
+On Friday 27 November 2015 10:55:32 Simon Horman wrote:
+> Second Round of Renesas ARM64 Based SoC DT Updates for v4.5
+> 
+> * Enable GPIO, EthernetAVB, I2C and Sound on r8a7795/salvator-x
+> 
 
-Ah, the latest I have is v1.01, which lacks that table.
+Merged this into next/dt64 as well, thanks!
 
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+	Arnd 
