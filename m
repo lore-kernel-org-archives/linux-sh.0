@@ -1,17 +1,36 @@
-From: "Jeff Skoll" <verna.viajar@icdd.uni-kassel.de>
-Date: Mon, 28 Dec 2015 19:23:47 +0000
-Subject: Charity Donation
-Message-Id: <auto-000005247212@mailadmin.uni-kassel.de>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 11 Dec 2015 10:45:25 +0000
+Subject: [PATCH 1/3] ARM: multi_v7_defconfig: Drop useless CONFIG_USB_RCAR_PHY=y
+Message-Id: <1449830727-325-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1449830727-325-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1449830727-325-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
-Hi,
-My name is Jeffrey Skoll, a philanthropist and the founder of one of the largest private foundations in the world. I believe strongly in ‘giving while living.’ I had one idea that never changed in my mind — that you should use your wealth to help people and I have decided to secretly give USD2.498 Million to a randomly selected individual. On receipt of this email, you should count yourself as the individual. Kindly get back to me at your earliest convenience, so I know your email address is valid.
+The Renesas R-Car (Gen1) USB PHY driver (which is being removed) does
+not support DT, and is thus useless in a generic ARM multi-platform
+kernel.
 
-Visit the web page to know more about me: http://www.theglobeandmail.com/news/national/meet-the-canadian-billionaire-whos-giving-it-all-away/article4209888/ or you can read an article of me on Wikipedia.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/configs/multi_v7_defconfig | 1 -
+ 1 file changed, 1 deletion(-)
 
-Regards,
-Jeffrey Skoll.
+diff --git a/arch/arm/configs/multi_v7_defconfig b/arch/arm/configs/multi_v7_defconfig
+index 2735bc73b2854882..e0fb5f34c0aca450 100644
+--- a/arch/arm/configs/multi_v7_defconfig
++++ b/arch/arm/configs/multi_v7_defconfig
+@@ -545,7 +545,6 @@ CONFIG_USB_GPIO_VBUS=y
+ CONFIG_USB_ISP1301=y
+ CONFIG_USB_MSM_OTG=m
+ CONFIG_USB_MXS_PHY=y
+-CONFIG_USB_RCAR_PHY=m
+ CONFIG_USB_GADGET=y
+ CONFIG_USB_RENESAS_USBHS_UDC=m
+ CONFIG_USB_ETH=m
+-- 
+1.9.1
+
