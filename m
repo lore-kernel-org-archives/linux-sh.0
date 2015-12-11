@@ -1,76 +1,71 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 17 Dec 2015 07:21:34 +0000
-Subject: [PATCH 3/4] ARM64: renesas: r8a7795: Add DU device to DT
-Message-Id: <1450336895-4279-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 11 Dec 2015 02:52:53 +0000
+Subject: [PATCH/RFC 16/19] ARM: shmobile: gose: enable sound DMA support via DVC in device tree
+Message-Id: <1449802376-11301-17-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1449802376-11301-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1449802376-11301-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Add the DU device to r8a7795.dtsi in a disabled state.
+Enable DMA transfer using DVC in r8a7793/gose device tree.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+     DMA               DMApp
+[MEM] -> [SRC] -> [DVC] -> [SSIU] -> [SSI]
+
+     DMA               DMApp
+[MEM] <- [DVC] <- [SRC] <- [SSIU] <- [SSI]
+
+Based on similar work for the r8a7791/koelsch by Kuninori Morimoto.
+
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm64/boot/dts/renesas/r8a7795.dtsi | 46 ++++++++++++++++++++++++++++++++
- 1 file changed, 46 insertions(+)
+ arch/arm/boot/dts/r8a7793-gose.dts | 21 +++++++++++++++++++--
+ 1 file changed, 19 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-index 47f97ffc6c8b..8cda02ffd58e 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-+++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-@@ -889,5 +889,51 @@
- 			renesas,#rpf = <5>;
- 			renesas,#wpf = <2>;
+diff --git a/arch/arm/boot/dts/r8a7793-gose.dts b/arch/arm/boot/dts/r8a7793-gose.dts
+index 30edd5fef626..def5490761fc 100644
+--- a/arch/arm/boot/dts/r8a7793-gose.dts
++++ b/arch/arm/boot/dts/r8a7793-gose.dts
+@@ -18,7 +18,24 @@
+  * This command is required when Playback/Capture
+  *
+  *	amixer set "LINEOUT Mixer DACL" on
++ *	amixer set "DVC Out" 100%
++ *	amixer set "DVC In" 100%
++ *
++ * You can use Mute
++ *
++ *	amixer set "DVC Out Mute" on
++ *	amixer set "DVC In Mute" on
++ *
++ * You can use Volume Ramp
++ *
++ *	amixer set "DVC Out Ramp Up Rate"   "0.125 dB/64 steps"
++ *	amixer set "DVC Out Ramp Down Rate" "0.125 dB/512 steps"
++ *	amixer set "DVC Out Ramp" on
++ *	aplay xxx.wav &
++ *	amixer set "DVC Out"  80%  // Volume Down
++ *	amixer set "DVC Out" 100%  // Volume Up
+  */
++
+ /dts-v1/;
+ #include "r8a7793.dtsi"
+ #include <dt-bindings/gpio/gpio.h>
+@@ -216,8 +233,8 @@
+ 
+ 	rcar_sound,dai {
+ 		dai0 {
+-			playback = <&ssi0 &src2>;
+-			capture  = <&ssi1 &src3>;
++			playback = <&ssi0 &src2 &dvc0>;
++			capture  = <&ssi1 &src3 &dvc1>;
  		};
-+
-+		du: display@feb00000 {
-+			compatible = "renesas,du-r8a7795";
-+			reg = <0 0xfeb00000 0 0x80000>,
-+			      <0 0xfeb90000 0 0x14>;
-+			reg-names = "du", "lvds.0";
-+			interrupts = <0 256 IRQ_TYPE_LEVEL_HIGH>,
-+				     <0 268 IRQ_TYPE_LEVEL_HIGH>,
-+				     <0 269 IRQ_TYPE_LEVEL_HIGH>,
-+				     <0 270 IRQ_TYPE_LEVEL_HIGH>;
-+			clocks = <&cpg CPG_MOD 724>,
-+				 <&cpg CPG_MOD 723>,
-+				 <&cpg CPG_MOD 722>,
-+				 <&cpg CPG_MOD 721>,
-+				 <&cpg CPG_MOD 727>;
-+			clock-names = "du.0", "du.1", "du.2", "du.3", "lvds.0";
-+			status = "disabled";
-+
-+			vsps = <&vspd0 &vspd1 &vspd2 &vspd3>;
-+
-+			ports {
-+				#address-cells = <1>;
-+				#size-cells = <0>;
-+
-+				port@0 {
-+					reg = <0>;
-+					du_out_rgb: endpoint {
-+					};
-+				};
-+				port@1 {
-+					reg = <1>;
-+					du_out_hdmi0: endpoint {
-+					};
-+				};
-+				port@2 {
-+					reg = <2>;
-+					du_out_hdmi1: endpoint {
-+					};
-+				};
-+				port@3 {
-+					reg = <3>;
-+					du_out_lvds0: endpoint {
-+					};
-+				};
-+			};
-+		};
  	};
  };
 -- 
-2.4.10
+2.1.4
 
