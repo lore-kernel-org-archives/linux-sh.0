@@ -1,31 +1,24 @@
-From: David Miller <davem@davemloft.net>
-Date: Mon, 14 Dec 2015 21:25:55 +0000
-Subject: Re: [PATCH] sh_eth: uninline sh_eth_{write|read}()
-Message-Id: <20151214.162555.1844850396449382434.davem@davemloft.net>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Fri, 11 Dec 2015 23:16:46 +0000
+Subject: Re: [GIT PULL] Second Round of Renesas ARM Based SoC DT Updates for v4.5
+Message-Id: <1701638.qWSQXvbWuo@wuerfel>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4404920.p7TanuLbY1@wasted.cogentembedded.com>
-In-Reply-To: <4404920.p7TanuLbY1@wasted.cogentembedded.com>
+References: <cover.1448586938.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1448586938.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: sergei.shtylyov@cogentembedded.com
-Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org, ben.hutchings@codethink.co.uk
+To: linux-arm-kernel@lists.infradead.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sun, 13 Dec 2015 01:44:50 +0300
-
-> Commit 3365711df024 ("sh_eth: WARN on access to a register not implemented in
-> in  a particular chip") added WARN_ON() to sh_eth_{read|write}(), thus making
-> it  unacceptable for these functions to be *inline* anymore. Remove *inline*
-> and move the functions from the header to the driver itself. Below   is our
-> code economy with ARM gcc 4.7.3:
+On Friday 27 November 2015 10:55:56 Simon Horman wrote:
+> Hi Olof, Hi Kevin, Hi Arnd,
 > 
-> $ size drivers/net/ethernet/renesas/sh_eth.o{~,}
->    text	   data	    bss	    dec	    hex	filename
->   32489	   1140	      0	  33629	   835d	drivers/net/ethernet/renesas/sh_eth.o~
->   25413	   1140	      0	  26553	   67b9	drivers/net/ethernet/renesas/sh_eth.o
+> Please consider these second round of Renesas ARM based SoC DT updates for v4.5.
 > 
-> Suggested-by: Ben Hutchings <ben.hutchings@codethink.co.uk>
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+> This pull request extends support for Renesas ARM Based SoCs via DT
+> and includes several minor fixes and cleanups.
+> 
 
-Applied.
+Pulled first and second round of this into next/dt, thanks!
+
+	Arnd
