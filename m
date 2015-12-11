@@ -1,26 +1,40 @@
-From: Rob Herring <robh@kernel.org>
-Date: Fri, 11 Dec 2015 03:53:12 +0000
+From: Chanwoo Choi <cw00.choi@samsung.com>
+Date: Fri, 11 Dec 2015 04:05:43 +0000
 Subject: Re: [PATCH] extcon-usb-gpio: add enable pin support
-Message-Id: <20151211035312.GA9088@rob-hp-laptop>
+Message-Id: <566A4B97.7080801@samsung.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <4393960.B6dD3UkQy3@wasted.cogentembedded.com>
 In-Reply-To: <4393960.B6dD3UkQy3@wasted.cogentembedded.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, myungjoo.ham@samsung.com, cw00.choi@samsung.com, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, linux-usb@vger.kernel.org
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, myungjoo.ham@samsung.com, devicetree@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, linux-usb@vger.kernel.org
 
-On Fri, Dec 11, 2015 at 02:07:05AM +0300, Sergei Shtylyov wrote:
+Hi Sergei,
+
+On 2015년 12월 11일 08:07, Sergei Shtylyov wrote:
 > Sometimes  there's a real  OTG chip behind the USB ID signal mapped to a GPIO
 > pin: in my case it's Maxim Integrated MAX3355E which  integrates Vbus charge
 > pump and comparators and passes  thru the ID  signal  from an OTG connector.
+
+s/thru/through ?
+
 > This chip also has the SHDN# pin which  should be  driven high for the normal
 > operation  and low to  save power;  it  is connected to a GPIO pin as well on,
 > hence  we'll have  to  teach the driver to parse the new optional device tree
 > property, "enable-gpio"...
 
-Some wierd spacing going on here.
+This patch description includes the double space between words. Also, I think
+you need to write the patch description again for formal style.
+
+This patch adds the specific 'enable-gpio' pin to express the SHDN#pin for MAX3355E.
+I think it is not regular and standard case because maybe USB specification
+don't include the SHDN#pin information. I think it not appropriate way.
+Instead, you better to make the MAX3355 extcon driver to support this case.
+
+Thanks,
+Chanwoo 
 
 > 
 > Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
@@ -41,9 +55,6 @@ Some wierd spacing going on here.
 >  
 > +Optional properties:
 > +- enable-gpio: gpio for the enable pin. See gpio binding.
-
-Use -gpios as -gpio is deprecated. 
-
 > +
 >  Example: Examples of extcon-usb-gpio node in dra7-evm.dts as listed below:
 >  	extcon_usb1 {
@@ -73,7 +84,16 @@ Use -gpios as -gpio is deprecated.
 >  	cancel_delayed_work_sync(&info->wq_detcable);
 >  
 > +	gpiod_set_value_cansleep(info->enable_gpiod, 0);
+> +
+>  	return 0;
+>  }
+>  
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> Please read the FAQ at  http://www.tux.org/lkml/
+> 
+> 
 
-Shouldn't you support either polarity?
-
-Rob
