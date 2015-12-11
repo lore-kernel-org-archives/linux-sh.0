@@ -1,76 +1,67 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 30 Dec 2015 22:06:57 +0000
-Subject: Re: [PATCH v5 03/14] ARM: shmobile: r8a7791: Add DU node to device tree
-Message-Id: <56845581.3010605@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 11 Dec 2015 02:52:37 +0000
+Subject: [PATCH/RFC 00/19] r8a7793, gose: Add i2c and audio support to device tree
+Message-Id: <1449802376-11301-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414332679-15497-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1414332679-15497-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On 12/27/2015 03:07 AM, Laurent Pinchart wrote:
+Hi,
 
->>> Add the DU device with a disabled state. Boards that want to enable the
->>> DU need to specify the output topology
->>>
->>> Signed-off-by: Laurent Pinchart
->>> <laurent.pinchart+renesas@ideasonboard.com>
->>> ---
->>>
->>>    arch/arm/boot/dts/r8a7791.dtsi | 30 ++++++++++++++++++++++++++++++
->>>    1 file changed, 30 insertions(+)
->>>
->>> diff --git a/arch/arm/boot/dts/r8a7791.dtsi
->>> b/arch/arm/boot/dts/r8a7791.dtsi index 74f18d89a35f..6b06a7665fae 100644
->>> --- a/arch/arm/boot/dts/r8a7791.dtsi
->>> +++ b/arch/arm/boot/dts/r8a7791.dtsi
->>> @@ -695,6 +695,36 @@
->>>    		renesas,#wpf = <4>;
->>>    	};
->>>
->>> +	du: display@feb00000 {
->>> +		compatible = "renesas,du-r8a7791";
->>> +		reg = <0 0xfeb00000 0 0x40000>,
->>> +		      <0 0xfeb90000 0 0x1c>;
->>> +		reg-names = "du", "lvds.0";
->>> +		interrupts = <0 256 IRQ_TYPE_LEVEL_HIGH>,
->>> +			     <0 268 IRQ_TYPE_LEVEL_HIGH>;
->>> +		clocks = <&mstp7_clks R8A7791_CLK_DU0>,
->>> +			 <&mstp7_clks R8A7791_CLK_DU1>,
->>> +			 <&mstp7_clks R8A7791_CLK_LVDS0>;
->>> +		clock-names = "du.0", "du.1", "lvds.0";
->>> +		status = "disabled";
->>> +
->>> +		ports {
->>> +			#address-cells = <1>;
->>> +			#size-cells = <0>;
->>> +
->>> +			port@0 {
->>> +				reg = <0>;
->>> +				du_out_rgb: endpoint {
->>> +				};
->>> +			};
->>> +			port@1 {
->>> +				reg = <1>;
->>> +				du_out_lvds0: endpoint {
->>> +				};
->>
->> Hm, my manual tell me LVDS is supported on DU0 only for R8A7791/3...
->
-> Yes, but note that the port number doesn't correspond to the DU number. A
-> given port can be driven by multiple DU channels on some of the R-Car SoCs.
+this series adds support to r8a7793 and gose device trees for:
+* i2c and iic
+* rcar sound: first in PIO mode then using DMA
 
-    Ah, I didn't dive into these matters deep enough...
+i2c support is a pre-requisite for rcar sound support.
 
-> The routing tables are defined in the per-SoC device info in
-> drivers/gpu/drm/rcar-du/rcar_du_drv.c.
+Unfortunately there appears to be some problem with DMA
+for rcar sound that I have been unable to track down. On booting I see:
 
-    Thank you for the pointer!
-    I've fixed up the Porter patch to hang HDMI deconder from the "correct" 
-port 0 ISO port 1 and I lost the picture on my LVDS display after doing that. 
-With the wrong Porter patch, both displays work...
+rcar_sound ec500000.sound: dma allocate failed
+rcar_sound ec500000.sound: ssi[0] fallback to PIO mode
+rcar_sound ec500000.sound: ssi[1] fallback to PIO mode
+rcar_sound ec500000.sound: probed
 
-MBR, Sergei
+I would appreciate any insights regarding the above.
+
+I have been unable to test if audio works (in PIO mode) as I
+do not have physical access to a gose board. I would appreaciate
+some assistance there too.
+
+This work is based heavily on the work of others for the r8a7791 and
+koelsch.  as noted in the changelogs of individual patches.
+
+This series is based on renesas-devel-20151211-v4.4-rc4.
+
+
+Simon Horman (19):
+  ARM: shmobile: r8a7793: add i2c clocks
+  ARM: shmobile: r8a7793: add i2c to device tree
+  ARM: shmobile: gose: add i2c2 bus to device tree
+  ARM: shmobile: r8a7793: add iic(b)  to device tree
+  ARM: shmobile: r8a7793: add MSTP10 clocks to device tree
+  ARM: shmobile: r8a7793: add audio clock to device tree
+  ARM: shmobile: r8a7793: add m2 clock to device tree
+  ARM: shmobile: r8a7793: add R-Car sound support to device tree
+  ARM: shmobile: r8a7793: add DVC support to device tree
+  ARM: shmobile: r8a7793: add audio DMAC clocks to device tree
+  ARM: shmobile: r8a7793: add audio DMAC to device tree
+  ARM: shmobile: gose: Enable sound PIO support in device tree
+  ARM: shmobile: gose: enable sound DMA support in device tree
+  ARM: shmobile: gose: enable sound DMA support via BUSIF in device tree
+  ARM: shmobile: gose: enable sound DMA support via SRC in device tree
+  ARM: shmobile: gose: enable sound DMA support via DVC in device tree
+  ARM: shmobile: r8a7793: enable audio DMAC in device tree
+  ARM: shmobile: r8a7793: Add Audio CTU support to device tree
+  ARM: shmobile: r8a7793: add Audio MIX support to device tree
+
+ arch/arm/boot/dts/r8a7793-gose.dts        | 107 ++++++++
+ arch/arm/boot/dts/r8a7793.dtsi            | 437 +++++++++++++++++++++++++++++-
+ include/dt-bindings/clock/r8a7793-clock.h |   2 +
+ 3 files changed, 539 insertions(+), 7 deletions(-)
+
+-- 
+2.1.4
 
