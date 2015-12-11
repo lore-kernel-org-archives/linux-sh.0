@@ -1,49 +1,53 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Wed, 09 Dec 2015 13:42:46 +0000
-Subject: [PATCH 151/182] sh: x3proto-gpio: switch to gpiochip_add_data()
-Message-Id: <1449668566-5356-1-git-send-email-linus.walleij@linaro.org>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 11 Dec 2015 02:52:46 +0000
+Subject: [PATCH/RFC 09/19] ARM: shmobile: r8a7793: add DVC support to device tree
+Message-Id: <1449802376-11301-10-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1449802376-11301-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1449802376-11301-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-gpio@vger.kernel.org, Johan Hovold <johan@kernel.org>, Alexandre Courbot <acourbot@nvidia.com>, Michael Welling <mwelling@ieee.org>, Markus Pargmann <mpa@pengutronix.de>, Paul Mundt <lethal@linux-sh.org>
-Cc: Linus Walleij <linus.walleij@linaro.org>, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-We're planning to remove the gpiochip_add() function to swith
-to gpiochip_add_data() with NULL for data argument.
+Add DVS support to sound node in r8a7793 device tree.
 
-Cc: Paul Mundt <lethal@linux-sh.org>
-Cc: linux-sh@vger.kernel.org
-Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
+Based on similar work for the r8a7791 by Kuninori Morimoto.
+
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-SH people: please ACK this so I can take it through the
-GPIO tree.
----
- arch/sh/boards/mach-x3proto/gpio.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ arch/arm/boot/dts/r8a7793.dtsi | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
-diff --git a/arch/sh/boards/mach-x3proto/gpio.c b/arch/sh/boards/mach-x3proto/gpio.c
-index 1fb2cbee25f2..cea88b0effa2 100644
---- a/arch/sh/boards/mach-x3proto/gpio.c
-+++ b/arch/sh/boards/mach-x3proto/gpio.c
-@@ -13,7 +13,7 @@
+diff --git a/arch/arm/boot/dts/r8a7793.dtsi b/arch/arm/boot/dts/r8a7793.dtsi
+index 5b02b0b1d7ac..7ee85a774542 100644
+--- a/arch/arm/boot/dts/r8a7793.dtsi
++++ b/arch/arm/boot/dts/r8a7793.dtsi
+@@ -1119,17 +1119,23 @@
+ 			<&mstp10_clks R8A7793_CLK_SCU_SRC5>, <&mstp10_clks R8A7793_CLK_SCU_SRC4>,
+ 			<&mstp10_clks R8A7793_CLK_SCU_SRC3>, <&mstp10_clks R8A7793_CLK_SCU_SRC2>,
+ 			<&mstp10_clks R8A7793_CLK_SCU_SRC1>, <&mstp10_clks R8A7793_CLK_SCU_SRC0>,
++			<&mstp10_clks R8A7793_CLK_SCU_DVC0>, <&mstp10_clks R8A7793_CLK_SCU_DVC1>,
+ 			<&audio_clk_a>, <&audio_clk_b>, <&audio_clk_c>, <&m2_clk>;
+ 		clock-names = "ssi-all",
+ 				"ssi.9", "ssi.8", "ssi.7", "ssi.6", "ssi.5",
+ 				"ssi.4", "ssi.3", "ssi.2", "ssi.1", "ssi.0",
+ 				"src.9", "src.8", "src.7", "src.6", "src.5",
+ 				"src.4", "src.3", "src.2", "src.1", "src.0",
++				"dvc.0", "dvc.1",
+ 				"clk_a", "clk_b", "clk_c", "clk_i";
+ 		power-domains = <&cpg_clocks>;
  
- #include <linux/init.h>
- #include <linux/interrupt.h>
--#include <linux/gpio.h>
-+#include <linux/gpio/driver.h>
- #include <linux/irq.h>
- #include <linux/kernel.h>
- #include <linux/spinlock.h>
-@@ -107,7 +107,7 @@ int __init x3proto_gpio_setup(void)
- 	if (unlikely(ilsel < 0))
- 		return ilsel;
+ 		status = "disabled";
  
--	ret = gpiochip_add(&x3proto_gpio_chip);
-+	ret = gpiochip_add_data(&x3proto_gpio_chip, NULL);
- 	if (unlikely(ret))
- 		goto err_gpio;
- 
++		rcar_sound,dvc {
++			dvc0: dvc@0 { };
++			dvc1: dvc@1 { };
++		};
+ 		rcar_sound,src {
+ 			src0: src@0 { };
+ 			src1: src@1 { };
 -- 
-2.4.3
+2.1.4
 
