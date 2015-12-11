@@ -1,38 +1,46 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 18 Dec 2015 02:29:17 +0000
-Subject: [PATCH 09/10] arm64: dts: salvator-x: Enable SATA controller
-Message-Id: <52ee9fb34aa4b839b784e2e224a7c525cc51c955.1450401186.git.horms+renesas@verge.net.au>
+Date: Fri, 11 Dec 2015 02:52:50 +0000
+Subject: [PATCH/RFC 13/19] ARM: shmobile: gose: enable sound DMA support in device tree
+Message-Id: <1449802376-11301-14-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1450401186.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1450401186.git.horms+renesas@verge.net.au>
+References: <1449802376-11301-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1449802376-11301-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kouei Abe <kouei.abe.cp@renesas.com>
+Enable DMA transfer to/from SSI in r8a7793/gose device tree.
 
-This enables SATA device in r8a7795-salvator-x.dts.
+     DMA
+[MEM] -> [SSI]
 
-Signed-off-by: Kouei Abe <kouei.abe.cp@renesas.com>
+     DMA
+[MEM] <- [SSI]
+
+Based on similar work for the r8a7791/koelsch by Kuninori Morimoto.
+
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 4 ++++
- 1 file changed, 4 insertions(+)
+ arch/arm/boot/dts/r8a7793-gose.dts | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-index 75af5ec5a4d4..265d12ff6022 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-+++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-@@ -212,6 +212,10 @@
- 	};
+diff --git a/arch/arm/boot/dts/r8a7793-gose.dts b/arch/arm/boot/dts/r8a7793-gose.dts
+index 64bcde44f4e5..b43a06104125 100644
+--- a/arch/arm/boot/dts/r8a7793-gose.dts
++++ b/arch/arm/boot/dts/r8a7793-gose.dts
+@@ -223,10 +223,10 @@
  };
  
-+&sata {
-+	status = "okay";
-+};
-+
+ &ssi0 {
+-	pio-transfer;
++	no-busif;
+ };
+ 
  &ssi1 {
+-	pio-transfer;
++	no-busif;
  	shared-pin;
  };
 -- 
