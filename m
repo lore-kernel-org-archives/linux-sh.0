@@ -1,47 +1,57 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 28 Dec 2015 10:24:31 +0000
-Subject: Re: [PATCH/RFC] ARM: shmobile: LPAE memory bank CMA assignment prototype
-Message-Id: <3987591.uIcGfaluy4@avalon>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 11 Dec 2015 02:52:56 +0000
+Subject: [PATCH/RFC 19/19] ARM: shmobile: r8a7793: add Audio MIX support to device tree
+Message-Id: <1449802376-11301-20-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20151219014005.6274.87661.sendpatchset@little-apple>
-In-Reply-To: <20151219014005.6274.87661.sendpatchset@little-apple>
+References: <1449802376-11301-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1449802376-11301-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Geert,
+Instantiate audio MIX support in r8a7793 device tree.
 
-On Monday 28 December 2015 11:21:08 Geert Uytterhoeven wrote:
-> On Mon, Dec 28, 2015 at 11:10 AM, Laurent Pinchart wrote:
-> >> Regarding this patch, it is just a proof of concept to test allocation
-> >> from a high memory address without modifying any hardware description.
-> >> 
-> >> > I don't want to see board code coming back through the back door.
-> >> > What's wrong with just reserving memory in DT with the reserved-memory
-> >> > bindings and assigning it to the DU ?
-> >> 
-> >> Describing device-to-memory bank assignment in DT equals mixing
-> >> software policy with hardware description. I prefer to keep the
-> >> software policy in C and the hardware description in DT.
-> >> 
-> >> If you think there are better ways to reserve memory, why don't you
-> >> cook up a counter proposal and post it in a public space? =)
-> > 
-> > Doing it in DT is the better way in my opinion :-) There are established
-> > DT bindings for that purpose, and that's what upstream is using.
-> 
-> I'm a bit sceptical about describing this in DT, too, as this is a software
-> policy, not a hardware description, but it's indeed described in
-> Documentation/devicetree/bindings/reserved-memory/reserved-memory.txt
+Based on similar work for the r8a7791 by Kuninori Morimoto.
 
-The idea of a DT-like kernel configuration file has been toyed with in the 
-past but as far as I know it got abandoned. It was certainly an interesting 
-idea, and could possibly have led to a better solution, but today what we have 
-is DT. Board files are not the way to go to implement such a feature.
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7793.dtsi | 7 +++++++
+ 1 file changed, 7 insertions(+)
 
+diff --git a/arch/arm/boot/dts/r8a7793.dtsi b/arch/arm/boot/dts/r8a7793.dtsi
+index d9ba1c97cefc..a5054d49cd5b 100644
+--- a/arch/arm/boot/dts/r8a7793.dtsi
++++ b/arch/arm/boot/dts/r8a7793.dtsi
+@@ -1179,6 +1179,7 @@
+ 			<&mstp10_clks R8A7793_CLK_SCU_SRC3>, <&mstp10_clks R8A7793_CLK_SCU_SRC2>,
+ 			<&mstp10_clks R8A7793_CLK_SCU_SRC1>, <&mstp10_clks R8A7793_CLK_SCU_SRC0>,
+ 			<&mstp10_clks R8A7793_CLK_SCU_CTU0_MIX0>, <&mstp10_clks R8A7793_CLK_SCU_CTU1_MIX1>,
++			<&mstp10_clks R8A7793_CLK_SCU_CTU0_MIX0>, <&mstp10_clks R8A7793_CLK_SCU_CTU1_MIX1>,
+ 			<&mstp10_clks R8A7793_CLK_SCU_DVC0>, <&mstp10_clks R8A7793_CLK_SCU_DVC1>,
+ 			<&audio_clk_a>, <&audio_clk_b>, <&audio_clk_c>, <&m2_clk>;
+ 		clock-names = "ssi-all",
+@@ -1187,6 +1188,7 @@
+ 				"src.9", "src.8", "src.7", "src.6", "src.5",
+ 				"src.4", "src.3", "src.2", "src.1", "src.0",
+ 				"ctu.0", "ctu.1",
++				"mix.0", "mix.1",
+ 				"dvc.0", "dvc.1",
+ 				"clk_a", "clk_b", "clk_c", "clk_i";
+ 		power-domains = <&cpg_clocks>;
+@@ -1204,6 +1206,11 @@
+ 			};
+ 		};
+ 
++		rcar_sound,mix {
++			mix0: mix@0 { };
++			mix1: mix@1 { };
++		};
++
+ 		rcar_sound,ctu {
+ 			ctu00: ctu@0 { };
+ 			ctu01: ctu@1 { };
 -- 
-Regards,
-
-Laurent Pinchart
+2.1.4
 
