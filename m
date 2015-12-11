@@ -1,49 +1,66 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 11 Dec 2015 04:02:34 +0000
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 11 Dec 2015 12:24:27 +0000
 Subject: Re: [PATCH v3 2/3] usb: renesas_usbhs: add fallback compatibility strings
-Message-Id: <20151211040233.GA13336@verge.net.au>
+Message-Id: <566AC07B.6060201@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1449799947-19866-1-git-send-email-horms+renesas@verge.net.au>
  <1449799947-19866-3-git-send-email-horms+renesas@verge.net.au>
- <20151211035624.GA12611@rob-hp-laptop>
-In-Reply-To: <20151211035624.GA12611@rob-hp-laptop>
+In-Reply-To: <1449799947-19866-3-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Rob Herring <robh@kernel.org>
-Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Magnus Damm <magnus.damm@gmail.com>, linux-usb@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org
+To: Simon Horman <horms+renesas@verge.net.au>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Magnus Damm <magnus.damm@gmail.com>, linux-usb@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org
 
-On Thu, Dec 10, 2015 at 09:56:24PM -0600, Rob Herring wrote:
-> On Fri, Dec 11, 2015 at 11:12:26AM +0900, Simon Horman wrote:
-> > Add fallback compatibility strings for R-Car Gen2 and Gen3.
-> > This is in keeping with the fallback scheme being adopted wherever
-> > appropriate for drivers for Renesas SoCs.
-> > 
-> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> 
-> Binding looks okay, but one possible typo.
-> 
-> Acked-by: Rob Herring <robh@kernel.org>
-> 
-> > --- a/drivers/usb/renesas_usbhs/common.c
-> > +++ b/drivers/usb/renesas_usbhs/common.c
-> > @@ -481,6 +481,15 @@ static const struct of_device_id usbhs_of_match[] = {
-> >  		.compatible = "renesas,usbhs-r8a7795",
-> >  		.data = (void *)USBHS_TYPE_RCAR_GEN2,
-> >  	},
-> > +	{
-> > +		.compatible = "renesas,rcar-gen2-usbhs",
-> > +		.data = (void *)USBHS_TYPE_RCAR_GEN2,
-> > +	},
-> > +	{
-> > +		/* Gen3 is compatible with Gen2 */
-> > +		.compatible = "renesas,rcar-gen3-usbhs",
-> > +		.data = (void *)USBHS_TYPE_RCAR_GEN2,
-> 
-> This supposed to be GEN3?
+Hello.
 
-Confusingly the symbol is called GEN2 as it was there for Gen 2
-before Gen 3 came along and (so far) Gen 3 is compatible with Gen 2.
+On 12/11/2015 5:12 AM, Simon Horman wrote:
 
-I'd be happy to change the name but I think that would be best
-as an incremental change on top of this one.
+> Add fallback compatibility strings for R-Car Gen2 and Gen3.
+> This is in keeping with the fallback scheme being adopted wherever
+> appropriate for drivers for Renesas SoCs.
+>
+> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+> ---
+> v3
+> * Moved documentation of SoC names to a separate patch
+> * Use correct fallback compatibility string in example
+>
+> v2
+> * Add R-Car Gen2 and Gen3 fallback compatibility strings rather than
+>    a single compatibility string for all of R-Car.
+> ---
+>   Documentation/devicetree/bindings/usb/renesas_usbhs.txt | 10 +++++++++-
+>   drivers/usb/renesas_usbhs/common.c                      |  9 +++++++++
+>   2 files changed, 18 insertions(+), 1 deletion(-)
+>
+> diff --git a/Documentation/devicetree/bindings/usb/renesas_usbhs.txt b/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
+> index a14c0bb561d5..c55cf77006d0 100644
+> --- a/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
+> +++ b/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
+> @@ -2,10 +2,18 @@ Renesas Electronics USBHS driver
+>
+>   Required properties:
+>     - compatible: Must contain one of the following:
+
+    Really?
+
+> +
+>   	- "renesas,usbhs-r8a7790" for r8a7790 (R-Car H2) compatible device
+>   	- "renesas,usbhs-r8a7791" for r8a7791 (R-Car M2-W) compatible device
+>   	- "renesas,usbhs-r8a7794" for r8a7794 (R-Car E2) compatible device
+>   	- "renesas,usbhs-r8a7795" for r8a7795 (R-Car H3) compatible device
+> +	- "renesas,rcar-gen2-usbhs" for R-Car Gen2 compatible device
+> +	- "renesas,rcar-gen3-usbhs" for R-Car Gen3 compatible device
+> +
+> +	When compatible with the generic version, nodes must list the
+> +	SoC-specific version corresponding to the platform first followed
+> +	by the generic version.
+> +
+
+    This kinda contradicts the above claim.
+
+[...]
+
+MBR, Sergei
+
