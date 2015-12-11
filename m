@@ -1,32 +1,53 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 10 Dec 2015 07:04:48 +0000
-Subject: Re: [PATCH] ARM: shmobile: defconfig: Enable CONFIG_PRINTK_TIME
-Message-Id: <20151210070447.GC17682@verge.net.au>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Fri, 11 Dec 2015 16:04:51 +0000
+Subject: [PATCH 1/3] media: adv7604: implement g_crop
+Message-Id: <1449849893-14865-2-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1448890534-1430-1-git-send-email-geert+renesas@glider.be>
- <20151201064434.GI16260@verge.net.au>
- <CAMuHMdWy3BWSe7ASwN4JejoJR8cDT06gSA5d+bPSRB7COR3Mzg@mail.gmail.com>
-In-Reply-To: <CAMuHMdWy3BWSe7ASwN4JejoJR8cDT06gSA5d+bPSRB7COR3Mzg@mail.gmail.com>
+References: <1449849893-14865-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+In-Reply-To: <1449849893-14865-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: magnus.damm@gmail.com, laurent.pinchart@ideasonboard.com, hans.verkuil@cisco.com, ian.molton@codethink.co.uk, lars@metafoo.de, william.towle@codethink.co.uk, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 
-On Wed, Dec 09, 2015 at 10:28:22AM +0100, Geert Uytterhoeven wrote:
-> Hi Simon,
-> 
-> On Tue, Dec 1, 2015 at 7:44 AM, Simon Horman <horms@verge.net.au> wrote:
-> > On Mon, Nov 30, 2015 at 02:35:34PM +0100, Geert Uytterhoeven wrote:
-> >> Enable timestamps for kernel log output to improve debugging.
-> >> You can always use "dmesg -t" to strip the timestamps.
-> >>
-> >> Don't specify CONFIG_LOG_BUF_SHIFT while we're at it.  There's a
-> >> reason the default in Kconfig is higher ;-)
-> >>
-> >> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> >
-> > Thanks, I have queued this up.
-> 
-> Still not present in renesas-devel?
+The rcar_vin driver relies on this.
 
-Sorry about that, it should appear there soon.
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+---
+ drivers/media/i2c/adv7604.c | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+diff --git a/drivers/media/i2c/adv7604.c b/drivers/media/i2c/adv7604.c
+index 129009f..d30e7cc 100644
+--- a/drivers/media/i2c/adv7604.c
++++ b/drivers/media/i2c/adv7604.c
+@@ -1885,6 +1885,17 @@ static int adv76xx_get_format(struct v4l2_subdev *sd,
+ 	return 0;
+ }
+ 
++static int adv76xx_g_crop(struct v4l2_subdev *sd, struct v4l2_crop *a)
++{
++	struct adv76xx_state *state = to_state(sd);
++
++	a->c.height = state->timings.bt.height;
++	a->c.width  = state->timings.bt.width;
++	a->type	    = V4L2_BUF_TYPE_VIDEO_CAPTURE;
++
++	return 0;
++}
++
+ static int adv76xx_set_format(struct v4l2_subdev *sd,
+ 			      struct v4l2_subdev_pad_config *cfg,
+ 			      struct v4l2_subdev_format *format)
+@@ -2407,6 +2418,7 @@ static const struct v4l2_subdev_core_ops adv76xx_core_ops = {
+ 
+ static const struct v4l2_subdev_video_ops adv76xx_video_ops = {
+ 	.s_routing = adv76xx_s_routing,
++	.g_crop = adv76xx_g_crop,
+ 	.g_input_status = adv76xx_g_input_status,
+ 	.s_dv_timings = adv76xx_s_dv_timings,
+ 	.g_dv_timings = adv76xx_g_dv_timings,
+-- 
+2.6.3
+
