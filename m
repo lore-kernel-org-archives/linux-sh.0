@@ -1,63 +1,41 @@
-From: Sudeep Holla <sudeep.holla@arm.com>
-Date: Fri, 18 Dec 2015 10:47:19 +0000
-Subject: Re: [PATCH 05/10] arm64: dts: r8a7795: Add pmu device nodes
-Message-Id: <5673E437.7020300@arm.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 11 Dec 2015 13:48:55 +0000
+Subject: [PATCH 0/3] pinctrl: sh-pfc: r8a7779/r8a7790/r8a7794: Add SCIF_CLK support
+Message-Id: <1449841738-17490-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1450401186.git.horms+renesas@verge.net.au>
- <a6b6b478459be0c5614626ba6ac95df05a7fc5e9.1450401186.git.horms+renesas@verge.net.au>
- <5673DCF7.1050008@arm.com> <5673E39C.6050206@gmail.com>
-In-Reply-To: <5673E39C.6050206@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Linus Walleij <linus.walleij@linaro.org>
+Cc: linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
+	Hi Linus, Laurent,
 
+This patch series add pins, groups, and a function for SCIF_CLK on R-Car
+SoCs that don't have that support yet (H1, H2, and E2). SCIF_CLK is the
+external clock source for the Baud Rate Generator for External Clock
+(BRG) on (H)SCIF.
 
-On 18/12/15 10:44, Dirk Behme wrote:
-> On 18.12.2015 11:16, Sudeep Holla wrote:
->>
->>
->> On 18/12/15 02:29, Simon Horman wrote:
->>> From: Yoshifumi Hosoya <yoshifumi.hosoya.wj@renesas.com>
->>>
->>> Enabling the performance monitor unit on r8a7795.
->>>
->>> Signed-off-by: Masaru Nagai <masaru.nagai.vx@renesas.com>
->>> Signed-off-by: Yoshifumi Hosoya <yoshifumi.hosoya.wj@renesas.com>
->>> Signed-off-by: Dirk Behme <dirk.behme@gmail.com>
->>> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
->>> ---
->>>   arch/arm64/boot/dts/renesas/r8a7795.dtsi | 12 ++++++++++++
->>>   1 file changed, 12 insertions(+)
->>>
->>> diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
->>> b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
->>> index 4d43cf31418f..b9229a49dabc 100644
->>> --- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
->>> +++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
->>> @@ -230,6 +230,18 @@
->>>               power-domains = <&cpg>;
->>>           };
->>>
->>> +        pmu {
->>> +            compatible = "arm,armv8-pmuv3";
->>
->> Please use arm,cortex-a57-pmu to be more specific. IIRC I mentioned this
->> for some shmobile platform recently.
->
->
-> Yes. But as this patch has been applied already to some branches, I
-> incorporated your a57-pmu hint with an additional update patch:
->
-> http://marc.info/?l=linux-sh&m5011467914857
->
-> Feel free to squash if still possible.
->
+Geert Uytterhoeven (3):
+  pinctrl: sh-pfc: r8a7779: Add SCIF_CLK support
+  pinctrl: sh-pfc: r8a7790: Add SCIF_CLK support
+  pinctrl: sh-pfc: r8a7794: Add SCIF_CLK support
 
-Ah OK, I didn't know the exact dts name, sorry for the noise.
-Better if it was posted as part of this series :)
+ drivers/pinctrl/sh-pfc/pfc-r8a7779.c | 41 ++++++++++++++++++++++++++++++++++++
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c | 23 ++++++++++++++++++++
+ drivers/pinctrl/sh-pfc/pfc-r8a7794.c | 23 ++++++++++++++++++++
+ 3 files changed, 87 insertions(+)
 
 -- 
-Regards,
-Sudeep
+1.9.1
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
