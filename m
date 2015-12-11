@@ -1,80 +1,83 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 11 Dec 2015 13:48:57 +0000
-Subject: [PATCH 2/3] pinctrl: sh-pfc: r8a7790: Add SCIF_CLK support
-Message-Id: <1449841738-17490-3-git-send-email-geert+renesas@glider.be>
+Date: Fri, 11 Dec 2015 10:45:26 +0000
+Subject: [PATCH 2/3] ARM: multi_v7_defconfig: Enable missing Renesas ARM support based on DTSes
+Message-Id: <1449830727-325-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449841738-17490-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1449841738-17490-1-git-send-email-geert+renesas@glider.be>
+References: <1449830727-325-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1449830727-325-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Linus Walleij <linus.walleij@linaro.org>
-Cc: linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arm-kernel@lists.infradead.org
 
-Add pins, groups, and a function for SCIF_CLK, which is the external
-clock source for the Baud Rate Generator for External Clock (BRG) on
-(H)SCIF.
+Enable all missing support, extracted from the various Renesas ARM DTSes
+using linux-config-from-dt.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7790.c | 23 +++++++++++++++++++++++
- 1 file changed, 23 insertions(+)
+ arch/arm/configs/multi_v7_defconfig | 7 +++++++
+ 1 file changed, 7 insertions(+)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-index d99a5bcd90d9c5d3..a8b629bc7a557b2f 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-@@ -3219,6 +3219,21 @@ static const unsigned int scifb2_data_c_pins[] = {
- static const unsigned int scifb2_data_c_mux[] = {
- 	SCIFB2_RXD_C_MARK, SCIFB2_TXD_C_MARK,
- };
-+/* - SCIF Clock ------------------------------------------------------------- */
-+static const unsigned int scif_clk_pins[] = {
-+	/* SCIF_CLK */
-+	RCAR_GP_PIN(4, 26),
-+};
-+static const unsigned int scif_clk_mux[] = {
-+	SCIF_CLK_MARK,
-+};
-+static const unsigned int scif_clk_b_pins[] = {
-+	/* SCIF_CLK */
-+	RCAR_GP_PIN(5, 4),
-+};
-+static const unsigned int scif_clk_b_mux[] = {
-+	SCIF_CLK_B_MARK,
-+};
- /* - SDHI0 ------------------------------------------------------------------ */
- static const unsigned int sdhi0_data1_pins[] = {
- 	/* D0 */
-@@ -4122,6 +4137,8 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(scifb2_clk_b),
- 	SH_PFC_PIN_GROUP(scifb2_ctrl_b),
- 	SH_PFC_PIN_GROUP(scifb2_data_c),
-+	SH_PFC_PIN_GROUP(scif_clk),
-+	SH_PFC_PIN_GROUP(scif_clk_b),
- 	SH_PFC_PIN_GROUP(sdhi0_data1),
- 	SH_PFC_PIN_GROUP(sdhi0_data4),
- 	SH_PFC_PIN_GROUP(sdhi0_ctrl),
-@@ -4538,6 +4555,11 @@ static const char * const scifb2_groups[] = {
- 	"scifb2_data_c",
- };
- 
-+static const char * const scif_clk_groups[] = {
-+	"scif_clk",
-+	"scif_clk_b",
-+};
-+
- static const char * const sdhi0_groups[] = {
- 	"sdhi0_data1",
- 	"sdhi0_data4",
-@@ -4712,6 +4734,7 @@ static const struct sh_pfc_function pinmux_functions[] = {
- 	SH_PFC_FUNCTION(scifb0),
- 	SH_PFC_FUNCTION(scifb1),
- 	SH_PFC_FUNCTION(scifb2),
-+	SH_PFC_FUNCTION(scif_clk),
- 	SH_PFC_FUNCTION(sdhi0),
- 	SH_PFC_FUNCTION(sdhi1),
- 	SH_PFC_FUNCTION(sdhi2),
+diff --git a/arch/arm/configs/multi_v7_defconfig b/arch/arm/configs/multi_v7_defconfig
+index e0fb5f34c0aca450..3d3c2b8522a23a93 100644
+--- a/arch/arm/configs/multi_v7_defconfig
++++ b/arch/arm/configs/multi_v7_defconfig
+@@ -152,6 +152,7 @@ CONFIG_CAN_RAW=y
+ CONFIG_CAN_BCM=y
+ CONFIG_CAN_DEV=y
+ CONFIG_CAN_AT91=m
++CONFIG_CAN_RCAR=m
+ CONFIG_CAN_XILINXCAN=y
+ CONFIG_CAN_MCP251X=y
+ CONFIG_CAN_SUN4I=y
+@@ -304,6 +305,7 @@ CONFIG_I2C_AT91=m
+ CONFIG_I2C_CADENCE=y
+ CONFIG_I2C_DESIGNWARE_PLATFORM=y
+ CONFIG_I2C_DIGICOLOR=m
++CONFIG_I2C_EMEV2=m
+ CONFIG_I2C_GPIO=m
+ CONFIG_I2C_EXYNOS5=y
+ CONFIG_I2C_MV64XXX=y
+@@ -384,6 +386,7 @@ CONFIG_EXYNOS_THERMAL=m
+ CONFIG_ST_THERMAL_SYSCFG=y
+ CONFIG_ST_THERMAL_MEMMAP=y
+ CONFIG_WATCHDOG=y
++CONFIG_DA9063_WATCHDOG=m
+ CONFIG_XILINX_WATCHDOG=y
+ CONFIG_ARM_SP805_WATCHDOG=y
+ CONFIG_ORION_WATCHDOG=y
+@@ -400,6 +403,7 @@ CONFIG_MFD_AXP20X=y
+ CONFIG_MFD_CROS_EC=y
+ CONFIG_MFD_CROS_EC_I2C=m
+ CONFIG_MFD_CROS_EC_SPI=y
++CONFIG_MFD_DA9063=m
+ CONFIG_MFD_MAX14577=y
+ CONFIG_MFD_MAX77686=y
+ CONFIG_MFD_MAX77693=y
+@@ -457,6 +461,7 @@ CONFIG_SOC_CAMERA=m
+ CONFIG_SOC_CAMERA_PLATFORM=m
+ CONFIG_VIDEO_RCAR_VIN=m
+ CONFIG_V4L_MEM2MEM_DRIVERS=y
++CONFIG_VIDEO_RENESAS_JPU=m
+ CONFIG_VIDEO_RENESAS_VSP1=m
+ # CONFIG_MEDIA_SUBDRV_AUTOSELECT is not set
+ CONFIG_VIDEO_ADV7180=m
+@@ -611,6 +616,7 @@ CONFIG_RTC_DRV_TPS65910=y
+ CONFIG_RTC_DRV_S35390A=m
+ CONFIG_RTC_DRV_RX8581=m
+ CONFIG_RTC_DRV_EM3027=y
++CONFIG_RTC_DRV_DA9063=m
+ CONFIG_RTC_DRV_DIGICOLOR=m
+ CONFIG_RTC_DRV_S5M=m
+ CONFIG_RTC_DRV_S3C=m
+@@ -630,6 +636,7 @@ CONFIG_MV_XOR=y
+ CONFIG_TEGRA20_APB_DMA=y
+ CONFIG_SH_DMAE=y
+ CONFIG_RCAR_DMAC=y
++CONFIG_RENESAS_USB_DMAC=m
+ CONFIG_STE_DMA40=y
+ CONFIG_SIRF_DMA=y
+ CONFIG_TI_EDMA=y
 -- 
 1.9.1
 
