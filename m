@@ -1,70 +1,114 @@
-From: Petr Mladek <pmladek@suse.com>
-Date: Mon, 07 Dec 2015 14:16:46 +0000
-Subject: Re: [PATCH v2 5/5] printk/nmi: Increase the size of the temporary buffer
-Message-Id: <20151207141646.GF20935@pathway.suse.cz>
+From: Dirk Behme <dirk.behme@gmail.com>
+Date: Sat, 12 Dec 2015 07:16:46 +0000
+Subject: [PATCH 1/2] arm64: dts: r8a7795: Add Cortex-A53 CPU cores
+Message-Id: <1449904607-4060-1-git-send-email-dirk.behme@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1448622572-16900-1-git-send-email-pmladek@suse.com>
- <1448622572-16900-6-git-send-email-pmladek@suse.com>
- <81211733-2484-40A9-9D4A-644AA27FBC73@gmail.com>
-In-Reply-To: <81211733-2484-40A9-9D4A-644AA27FBC73@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon 2015-11-30 08:42:04, yalin wang wrote:
-> 
-> > On Nov 27, 2015, at 19:09, Petr Mladek <pmladek@suse.com> wrote:
-> > 
-> > Testing has shown that the backtrace sometimes does not fit
-> > into the 4kB temporary buffer that is used in NMI context.
-> > 
-> > The warnings are gone when I double the temporary buffer size.
-> > 
-> > Note that this problem existed even in the x86-specific
-> > implementation that was added by the commit a9edc8809328
-> > ("x86/nmi: Perform a safe NMI stack trace on all CPUs").
-> > Nobody noticed it because it did not print any warnings.
-> > 
-> > Signed-off-by: Petr Mladek <pmladek@suse.com>
-> > ---
-> > kernel/printk/nmi.c | 2 +-
-> > 1 file changed, 1 insertion(+), 1 deletion(-)
-> > 
-> > diff --git a/kernel/printk/nmi.c b/kernel/printk/nmi.c
-> > index 8af1e4016719..6111644d5f01 100644
-> > --- a/kernel/printk/nmi.c
-> > +++ b/kernel/printk/nmi.c
-> > @@ -42,7 +42,7 @@ atomic_t nmi_message_lost;
-> > struct nmi_seq_buf {
-> > 	atomic_t		len;	/* length of written data */
-> > 	struct irq_work		work;	/* IRQ work that flushes the buffer */
-> > -	unsigned char		buffer[PAGE_SIZE - sizeof(atomic_t) -
-> > +	unsigned char		buffer[2 * PAGE_SIZE - sizeof(atomic_t) -
-> > 				       sizeof(struct irq_work)];
-> > };
-> > 
-> 
-> why not define like this:
-> 
-> union {
-> struct {atomic_t		len;	
-> 	struct irq_work		work;
-> }
-> unsigned char		buffer[PAGE_SIZE * 2] ;
-> }
-> 
-> we can make sure the union is 2 PAGE_SIZE .
+From: Takeshi Kihara <takeshi.kihara.df@renesas.com>
 
-IMHO, this would add more confusion. It would just move the
-computation somewhere else. The union will have 2*PAGE_SIZE
-but the beginning of "buffer" will be shared with "len"
-and "work". Therefore, we would need to skip the beginning
-of the buffer when storing the data. By other words, we still
-will be able to use only (sizeof(buffer) - sizeof(atomic_t) -
-sizeof(struct irq_work)] of the "buffer".
+This patch adds Cortex-A53 CPU cores to r8a7795 SoC for a total of 8
+cores (4 x Cortex-A57 + 4 x Cortex-A53).
 
-Or did I miss something, please?
+Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
+Signed-off-by: Dirk Behme <dirk.behme@gmail.com>
+---
+Note: This patch is picked from
 
-Best Regards,
-Petr
+https://git.kernel.org/cgit/linux/kernel/git/horms/renesas-bsp.git/log/?h=v4.2/rcar-3.0.x
+
+and rebased against
+
+https://git.kernel.org/cgit/linux/kernel/git/horms/renesas.git/log/?h=next renesas-next-20151211v2-v4.4-rc1
+
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi | 46 +++++++++++++++++++++++++++-----
+ 1 file changed, 39 insertions(+), 7 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index b9229a4..3633a2a 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -60,6 +60,30 @@
+ 			device_type = "cpu";
+ 			enable-method = "psci";
+ 		};
++		a53_0: cpu@100 {
++			compatible = "arm,cortex-a53", "arm,armv8";
++			reg = <0x100>;
++			device_type = "cpu";
++			enable-method = "psci";
++		};
++		a53_1: cpu@101 {
++			compatible = "arm,cortex-a53","arm,armv8";
++			reg = <0x101>;
++			device_type = "cpu";
++			enable-method = "psci";
++		};
++		a53_2: cpu@102 {
++			compatible = "arm,cortex-a53","arm,armv8";
++			reg = <0x102>;
++			device_type = "cpu";
++			enable-method = "psci";
++		};
++		a53_3: cpu@103 {
++			compatible = "arm,cortex-a53","arm,armv8";
++			reg = <0x103>;
++			device_type = "cpu";
++			enable-method = "psci";
++		};
+ 	};
+ 
+ 	extal_clk: extal {
+@@ -115,7 +139,7 @@
+ 			reg = <0x0 0xf1010000 0 0x1000>,
+ 			      <0x0 0xf1020000 0 0x2000>;
+ 			interrupts = <GIC_PPI 9
+-					(GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_HIGH)>;
++					(GIC_CPU_MASK_SIMPLE(8) | IRQ_TYPE_LEVEL_HIGH)>;
+ 		};
+ 
+ 		gpio0: gpio@e6050000 {
+@@ -235,23 +259,31 @@
+ 			interrupts = <GIC_SPI 72 IRQ_TYPE_LEVEL_HIGH>,
+ 				     <GIC_SPI 73 IRQ_TYPE_LEVEL_HIGH>,
+ 				     <GIC_SPI 74 IRQ_TYPE_LEVEL_HIGH>,
+-				     <GIC_SPI 75 IRQ_TYPE_LEVEL_HIGH>;
++				     <GIC_SPI 75 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 84 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 85 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 86 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 87 IRQ_TYPE_LEVEL_HIGH>;
+ 			interrupt-affinity = <&a57_0>,
+ 					     <&a57_1>,
+ 					     <&a57_2>,
+-					     <&a57_3>;
++					     <&a57_3>,
++					     <&a53_0>,
++					     <&a53_1>,
++					     <&a53_2>,
++					     <&a53_3>;
+ 		};
+ 
+ 		timer {
+ 			compatible = "arm,armv8-timer";
+ 			interrupts = <GIC_PPI 13
+-					(GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
++					(GIC_CPU_MASK_SIMPLE(8) | IRQ_TYPE_LEVEL_LOW)>,
+ 				     <GIC_PPI 14
+-					(GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
++					(GIC_CPU_MASK_SIMPLE(8) | IRQ_TYPE_LEVEL_LOW)>,
+ 				     <GIC_PPI 11
+-					(GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
++					(GIC_CPU_MASK_SIMPLE(8) | IRQ_TYPE_LEVEL_LOW)>,
+ 				     <GIC_PPI 10
+-					(GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>;
++					(GIC_CPU_MASK_SIMPLE(8) | IRQ_TYPE_LEVEL_LOW)>;
+ 		};
+ 
+ 		cpg: clock-controller@e6150000 {
+-- 
+2.6.4
+
