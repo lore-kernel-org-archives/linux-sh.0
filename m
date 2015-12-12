@@ -1,80 +1,47 @@
-From: Bjorn Helgaas <helgaas@kernel.org>
-Date: Mon, 07 Dec 2015 15:40:59 +0000
-Subject: Re: [PATCH v2 1/4] PCI: rcar-gen2: add gen2 fallback compatibility string
-Message-Id: <20151207154059.GD7994@localhost>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 12 Dec 2015 22:24:13 +0000
+Subject: Re: [PATCH] sh_eth: move inline functions to the header file
+Message-Id: <566C9E8D.7060704@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449096700-23304-1-git-send-email-horms+renesas@verge.net.au>
- <1449096700-23304-2-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1449096700-23304-2-git-send-email-horms+renesas@verge.net.au>
+References: <4254119.qJUdUQCUqs@wasted.cogentembedded.com>
+ <20150407.152249.360575010614186977.davem@davemloft.net>
+ <55242F5F.2060409@cogentembedded.com>
+ <20150407.153337.1789757717574323514.davem@davemloft.net>
+In-Reply-To: <20150407.153337.1789757717574323514.davem@davemloft.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms+renesas@verge.net.au>
-Cc: Bjorn Helgaas <bhelgaas@google.com>, Magnus Damm <magnus.damm@gmail.com>, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org
+To: David Miller <davem@davemloft.net>
+Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org
 
-On Thu, Dec 03, 2015 at 07:51:37AM +0900, Simon Horman wrote:
-> Add fallback compatibility string for R-Car Gen 2 family.
-> This is in keeping with the fallback scheme being adopted wherever
-> appropriate for drivers for Renesas SoCs.
-> 
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Hello.
 
-Acked-by: Bjorn Helgaas <bhelgaas@google.com>
+On 04/07/2015 10:33 PM, David Miller wrote:
 
-> 
-> ---
-> v2
-> * Include "rcar-" in new compatibility string
-> ---
->  Documentation/devicetree/bindings/pci/pci-rcar-gen2.txt | 11 +++++++++--
->  drivers/pci/host/pci-rcar-gen2.c                        |  1 +
->  2 files changed, 10 insertions(+), 2 deletions(-)
-> 
-> diff --git a/Documentation/devicetree/bindings/pci/pci-rcar-gen2.txt b/Documentation/devicetree/bindings/pci/pci-rcar-gen2.txt
-> index 891463cb09c2..089a99dcdf10 100644
-> --- a/Documentation/devicetree/bindings/pci/pci-rcar-gen2.txt
-> +++ b/Documentation/devicetree/bindings/pci/pci-rcar-gen2.txt
-> @@ -8,7 +8,14 @@ OHCI and EHCI controllers.
->  Required properties:
->  - compatible: "renesas,pci-r8a7790" for the R8A7790 SoC;
->  	      "renesas,pci-r8a7791" for the R8A7791 SoC;
-> -	      "renesas,pci-r8a7794" for the R8A7794 SoC.
-> +	      "renesas,pci-r8a7794" for the R8A7794 SoC;
-> +	      "renesas,pci-rcar-gen2" for a generic R-Car Gen2 compatible device.
-> +
-> +
-> +	      When compatible with the generic version, nodes must list the
-> +	      SoC-specific version corresponding to the platform first
-> +	      followed by the generic version.
-> +
->  - reg:	A list of physical regions to access the device: the first is
->  	the operational registers for the OHCI/EHCI controllers and the
->  	second is for the bridge configuration and control registers.
-> @@ -32,7 +39,7 @@ Optional properties:
->  Example SoC configuration:
->  
->  	pci0: pci@ee090000  {
-> -		compatible = "renesas,pci-r8a7790";
-> +		compatible = "renesas,pci-r8a7790", "renesas,pci-rcar-gen2";
->  		clocks = <&mstp7_clks R8A7790_CLK_EHCI>;
->  		reg = <0x0 0xee090000 0x0 0xc00>,
->  		      <0x0 0xee080000 0x0 0x1100>;
-> diff --git a/drivers/pci/host/pci-rcar-gen2.c b/drivers/pci/host/pci-rcar-gen2.c
-> index 62951165dcbb..9980a4bdae7e 100644
-> --- a/drivers/pci/host/pci-rcar-gen2.c
-> +++ b/drivers/pci/host/pci-rcar-gen2.c
-> @@ -430,6 +430,7 @@ static int rcar_pci_probe(struct platform_device *pdev)
->  }
->  
->  static struct of_device_id rcar_pci_of_match[] = {
-> +	{ .compatible = "renesas,pci-rcar-gen2", },
->  	{ .compatible = "renesas,pci-r8a7790", },
->  	{ .compatible = "renesas,pci-r8a7791", },
->  	{ .compatible = "renesas,pci-r8a7794", },
-> -- 
-> 2.1.4
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-pci" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>>> The explicitly inline functions belong to the header files, so move
+>>>> cpu_to_edmac() and edmac_to_cpu() into the driver header.
+>>
+>>>> While at it, make these functions return 'u32' instead of '__u32'.
+>>
+>>>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+>>
+>>> Then... ummm... remove the inline keyword?
+>>
+>>> If it's not used anywhere else, that's the thing to do.
+>>
+>>     Results in more code, as I noted in the patch posting that you skipped
+>>     when replying. At least with gcc 4.7.
+>
+> That's a compiler bug.
+
+    Just tried x86 gcc 5.1.1, same result:
+
+$ size drivers/net/ethernet/renesas/sh_eth.o{~,}
+    text	   data	    bss	    dec	    hex	filename
+   23245	   1188	      0	  24433	   5f71	drivers/net/ethernet/renesas/sh_eth.o~
+   23259	   1188	      0	  24447	   5f7f	drivers/net/ethernet/renesas/sh_eth.o
+
+i.e. +14 bytes of code. :-O
+
+MBR, Sergei
+
