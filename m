@@ -1,9 +1,9 @@
 From: Wolfram Sang <wsa@the-dreams.de>
-Date: Thu, 10 Dec 2015 15:17:41 +0000
+Date: Sat, 12 Dec 2015 16:20:57 +0000
 Subject: Re: [PATCH] i2c: allow building emev2 without slave mode again
-Message-Id: <20151210151741.GE1573@katana>
+Message-Id: <20151212162057.GA1530@katana>
 MIME-Version: 1
-Content-Type: multipart/mixed; boundary="pY3vCvL1qV+PayAL"
+Content-Type: multipart/mixed; boundary="bg08WKrSYDhXBjb5"
 List-Id: <linux-sh.vger.kernel.org>
 References: <201512102224.cVm7Hcp0%fengguang.wu@intel.com>
  <2592093.cGKEcKVqLU@wuerfel>
@@ -11,36 +11,70 @@ In-Reply-To: <2592093.cGKEcKVqLU@wuerfel>
 To: linux-arm-kernel@lists.infradead.org
 
 
---pY3vCvL1qV+PayAL
+--bg08WKrSYDhXBjb5
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
+
+Hi Arnd,
+
+thanks for looking into this, but I don't get your point yet.
+
+> The slave_cb callback function is supposed to set the 'value'
+> here,
+
+Only if a master wants to READ from us.
+
+> but it might return an error not assign the pointer,
+
+An error is only returned if a WRITE from a master was not accepted by
+the slave backend.
+
+> It might be best to change the callback to return 'void' and not
+> allow it to fail.
+
+We need that because in case of an errno, the slave should send NACK to
+the master instead of ACK.
+
+> At least the eeprom slave cannot fail anyway, and it is the only
+> implementation we have at the moment.
+
+True. But giving a slave the possibility to NACK a write should be
+present IMO.
 
 > Alternatively, the  inline could return an error, and both bus
 > drivers check for the error before using 'value'.
 
-I'll try to check these options tomorrow.
+Hum, it does return an error?
+
+	return client->slave_cb(client, event, val);
+
+You probably mean something else?
+
+Regards,
+
+   Wolfram
 
 
---pY3vCvL1qV+PayAL
+--bg08WKrSYDhXBjb5
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: Digital signature
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1
 
-iQIcBAEBAgAGBQJWaZeVAAoJEBQN5MwUoCm24/IP/AqRzOe/mC1ip6rf6i1QwnUu
-0x+1fjbJVOZmanGJN7TfB9/pn4VBtcv5auYNPNy83aMfF9oDOOW1gZkMF3609Zco
-2IIK6qWunqM0Hw8QSbsR8Rk3ayBjjO8Q93u6VGU4/LTjMLCOQYFcWHU+CKRoCGPM
-EEi4DctTMNxzc41YMBljO9Iqs8LeddDe39k7pJIHpA0SgEdmA2Ps6A/fxlYUlYTQ
-2pYH049Nrfpxccxco2HUJYkB/QpjyqX9YoRUiIB61VnLj0laO9KS/OWnDyBmO7Av
-bc7fJQVsRqP8E8RRjU3epAqJI6kVSzG/SmEhL1jw4zMdT3ORaDsxN6BRDq6yJ+SU
-6g8XelP+y+Zr3wDx3zocAz+TYrqPsAGCbbihbNiLtTJTHXYVBAZeT6Fl9xBXcyUR
-MRQ5DIbvzbmE1Qu0vgYowwkxJwKhec3pQisM8iDBogLRCz+bij0TUWi/D78TBdAH
-d2R/Ao9NtTXswxAwkoNEPVth98LhY0PIyz30qIhlxil0TWQAD9VCH9PEh9fIcPpr
-+8hHwHMuV8Onn2ARQLB5cpeb2DkrDF7dZD6goKbPpmYlwxubfSmrcystfSHz82kN
-o8/8X1As0xeb8sif0/DwRvpZWKOkd6DmhZbcgadWQe9/m97HKajhC5cyBsFOJDnk
-opNmqP0Q4JmkebRVnP+S
-=Nk7R
+iQIcBAEBAgAGBQJWbElpAAoJEBQN5MwUoCm2krMQAI0nNyDHSSGT8QjrPwaJIU2H
+s2UEXp3np8CNek2xWRWB2UmSe8LO9YJEr2Zx0ojBQmxaL7v+NAkiC+FSMndMsS1b
+fy5OC83UQqFdqUt/sUPJlGm4uua/Ebbrlxwl0AlSwJQXzGxp8xn8wVe8asdfjPf2
+riVvUX619uenEpjL/uAanZOd5oDwmTRF80rVwGe6aKmE/pBd6jVbUEfoGMuf0U+m
+WofdJgqAt7Ef3s5Ll1xWW6HTXem7jQSw/5lfyE2GkAukFCJNh0ZgGjbYaBnqJ6l9
+FL6ySoleBBV6iPll28zJcr/hcCILYcmRCXw/EyUopv1oE69baAwjXhUdHz4uIqRy
+FeSS32bWmnB66EH8LrJWEZn9AyrUe2n4TzQ/V+X2IfgNVvro6NM1j3EGGAIcPq29
+vJOh5dGi2tdRBal+QF6HBsP8ANZ2dyOkn8ng0XiNwdLdLZ1k7KPbgr6bXi0KarPb
+ky5xO6uhe7Uyq3AsZpqiOpGq5vKmonq8KJGDnc3rUlJlV9nI4i+uU22cw+YpHFHS
+BWIoK2iw9b3Rtj8MdG5Mq3inbjfp+dvEqov6TXbUK21/G0XaP7lwc70cg6XVwQIl
++CVmjOfYcAgAa7TT/WvteCEck4UMGSbpC2zLv71djSgeCeek9G2Ff6RYILMFKh11
+pi9kGwkm3RBVPZc/TI/T
+=YMMR
 -----END PGP SIGNATURE-----
 
---pY3vCvL1qV+PayAL--
+--bg08WKrSYDhXBjb5--
