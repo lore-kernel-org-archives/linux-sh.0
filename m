@@ -1,40 +1,28 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sun, 13 Dec 2015 18:27:04 +0000
-Subject: [PATCH] sh_eth: fix TX buffer byte-swapping
-Message-Id: <4052048.4A561jYI0l@wasted.cogentembedded.com>
+From: Rob Landley <rob@landley.net>
+Date: Sun, 13 Dec 2015 22:25:17 +0000
+Subject: Re: [PATCH] sh_eth: fix TX buffer byte-swapping
+Message-Id: <CAOS_Y6ScbQg-Kh_gNTh2XWKyDEN_uGJt5q1Na5GFDWR9MSbabw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <4052048.4A561jYI0l@wasted.cogentembedded.com>
+In-Reply-To: <4052048.4A561jYI0l@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Cc: netdev@vger.kernel.org, Linux-sh list <linux-sh@vger.kernel.org>
 
-For the little-endian SH771x kernels the driver has to byte-swap the RX/TX
-buffers,  however yet unset physcial address from the TX descriptor is used
-to call sh_eth_soft_swap(). Use 'skb->data' instead...
+On Sun, Dec 13, 2015 at 12:27 PM, Sergei Shtylyov
+<sergei.shtylyov@cogentembedded.com> wrote:
+> For the little-endian SH771x kernels the driver has to byte-swap the RX/TX
+> buffers,  however yet unset physcial address from the TX descriptor is used
+> to call sh_eth_soft_swap(). Use 'skb->data' instead...
 
-Fixes: 31fcb99d9958 ("net: sh_eth: remove __flush_purge_region")
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Rummage rummage rummage...
 
----
-The patch is against Dave Miller's 'net.git' repo.
-Although there have been no complaints during 4+ years of this being broken,
-I  think it's  probably  worth queuing the patch for  the stable trees...
+Ah, my sh4 qemu system has an rtl-8139cp network driver, and the sh2
+j-core numato board one is A) big endian, B) has an oddball version
+with its own driver.
 
- drivers/net/ethernet/renesas/sh_eth.c |    3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
+That's why I haven't hit this.
 
-Index: net/drivers/net/ethernet/renesas/sh_eth.c
-=================================--- net.orig/drivers/net/ethernet/renesas/sh_eth.c
-+++ net/drivers/net/ethernet/renesas/sh_eth.c
-@@ -2372,8 +2372,7 @@ static int sh_eth_start_xmit(struct sk_b
- 	txdesc = &mdp->tx_ring[entry];
- 	/* soft swap. */
- 	if (!mdp->cd->hw_swap)
--		sh_eth_soft_swap(phys_to_virt(ALIGN(txdesc->addr, 4)),
--				 skb->len + 2);
-+		sh_eth_soft_swap(PTR_ALIGN(skb->data, 4), skb->len + 2);
- 	txdesc->addr = dma_map_single(&ndev->dev, skb->data, skb->len,
- 				      DMA_TO_DEVICE);
- 	if (dma_mapping_error(&ndev->dev, txdesc->addr)) {
-
+Rob
