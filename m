@@ -1,51 +1,62 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 15 Dec 2015 19:02:41 +0000
-Subject: Re: [PATCH] sh_eth: fix descriptor access endianness
-Message-Id: <567063D1.1020909@cogentembedded.com>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Sun, 13 Dec 2015 15:27:16 +0000
+Subject: [PATCH] media: soc_camera: rcar_vin: Add R-Car Gen3 support
+Message-Id: <1450020436-809-1-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <11070795.yxBPvlHg4n@wasted.cogentembedded.com>
- <20151215.002541.762812772082527155.davem@davemloft.net>
- <566FF8FB.2010005@cogentembedded.com>
- <20151215.125336.1876941788722356501.davem@davemloft.net>
- <56705698.9010703@cogentembedded.com>
-In-Reply-To: <56705698.9010703@cogentembedded.com>
+References: <1387830486-10650-1-git-send-email-valentine.barshak@cogentembedded.com>
+In-Reply-To: <1387830486-10650-1-git-send-email-valentine.barshak@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: David Miller <davem@davemloft.net>
-Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-media@vger.kernel.org
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-Hello.
+From: Yoshihiko Mori <yoshihiko.mori.nx@renesas.com>
 
-On 12/15/2015 09:06 PM, Sergei Shtylyov wrote:
+Add chip identification for R-Car Gen3.
 
->>>>> The driver never calls cpu_to_edmac() when writing the descriptor
->>>>> address
->>>>> and edmac_to_cpu() when reading it, although it should -- fix this.
->>>>>
->>>>> Note that the frame/buffer length descriptor field accesses also need
->>>>> fixing
->>>>> but since they are both 16-bit we can't use
->>>>> {cpu|edmac}_to_{edmac|cpu}()...
->>>>>
->>>>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
->>>>
->>>> Applied.
->>>
->>>     I was going to rework this to fix _all_ cases, and sent follow-up
->>>     email about that yesterday... Haven't you received it?
->>
->> I saw it but you were not entirely clear whether you were going to do
->> that work in a follow-on patch or not.
->>
->> If you don't clearly say "Dave, please drop this patch." expect me to
->> do random things.
->
->     Previously I had a plan to get rid of never used EDMAC_BIG_ENDIAN and then
-> get rid of {edmac|cpu}_to_{cpu|edmac}() and fix 16-bit descriptor R/W by using
-> {cpu|le32}_to_{le32|cpu}(). How's that plan to you?
+Signed-off-by: Yoshihiko Mori <yoshihiko.mori.nx@renesas.com>
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+---
 
-   le16, of course.
+This patch is against master branch of linuxtv.org/media_tree.git.
 
-MBR, Sergei
+ Documentation/devicetree/bindings/media/rcar_vin.txt | 1 +
+ drivers/media/platform/soc_camera/rcar_vin.c         | 2 ++
+ 2 files changed, 3 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/media/rcar_vin.txt b/Documentation/devicetree/bindings/media/rcar_vin.txt
+index 9dafe6b..619193c 100644
+--- a/Documentation/devicetree/bindings/media/rcar_vin.txt
++++ b/Documentation/devicetree/bindings/media/rcar_vin.txt
+@@ -6,6 +6,7 @@ family of devices. The current blocks are always slaves and suppot one input
+ channel which can be either RGB, YUYV or BT656.
+ 
+  - compatible: Must be one of the following
++   - "renesas,vin-r8a7795" for the R8A7795 device
+    - "renesas,vin-r8a7794" for the R8A7794 device
+    - "renesas,vin-r8a7793" for the R8A7793 device
+    - "renesas,vin-r8a7791" for the R8A7791 device
+diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
+index 5d90f39..29e7ca4 100644
+--- a/drivers/media/platform/soc_camera/rcar_vin.c
++++ b/drivers/media/platform/soc_camera/rcar_vin.c
+@@ -143,6 +143,7 @@
+ #define RCAR_VIN_BT656			(1 << 3)
+ 
+ enum chip_id {
++	RCAR_GEN3,
+ 	RCAR_GEN2,
+ 	RCAR_H1,
+ 	RCAR_M1,
+@@ -1846,6 +1847,7 @@ static struct soc_camera_host_ops rcar_vin_host_ops = {
+ 
+ #ifdef CONFIG_OF
+ static const struct of_device_id rcar_vin_of_table[] = {
++	{ .compatible = "renesas,vin-r8a7795", .data = (void *)RCAR_GEN3 },
+ 	{ .compatible = "renesas,vin-r8a7794", .data = (void *)RCAR_GEN2 },
+ 	{ .compatible = "renesas,vin-r8a7793", .data = (void *)RCAR_GEN2 },
+ 	{ .compatible = "renesas,vin-r8a7791", .data = (void *)RCAR_GEN2 },
+-- 
+1.9.1
 
