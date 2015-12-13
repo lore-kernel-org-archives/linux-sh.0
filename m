@@ -1,47 +1,40 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 08 Dec 2015 02:00:50 +0000
-Subject: Re: [PATCH] ARM: shmobile: r8a7778: tidyup #sound-dai-cells settings
-Message-Id: <20151208020046.GB20031@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sun, 13 Dec 2015 18:27:04 +0000
+Subject: [PATCH] sh_eth: fix TX buffer byte-swapping
+Message-Id: <4052048.4A561jYI0l@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449505537-15428-1-git-send-email-geert+renesas@glider.be>
- <878u557qff.wl%kuninori.morimoto.gx@renesas.com>
- <20151208003724.GG10799@verge.net.au>
- <874mft7mrh.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <874mft7mrh.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Magnus Damm <magnus.damm@gmail.com>, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>, devicetree@vger.kernel.org, linux-sh@vger.kernel.org
+To: netdev@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-On Tue, Dec 08, 2015 at 01:30:12AM +0000, Kuninori Morimoto wrote:
-> 
-> Hi Simon
-> 
-> > > From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> > > 
-> > > Renesas sound driver needs #sound-dai-cells settings, but, this usage
-> > > is a little bit confusable. It came from ALSA SoC historical reasons.
-> > > The sound DAI naming method is different between Single/Multi DAI in
-> > > the ALSA framework, and it is used for sound card matching.
-> > > And this #sound-dai-cells has relationship to it.
-> > > Current SoC dtsi has #sound-dai-cells = <1> as default settings
-> > > (= it is assuming that board/platform has multi DAI), and
-> > > board/platform side needs to overwrite it if board/platform was single
-> > > DAI. This style is more confusable for users.
-> > > This patch removes SoC side default settings, and force to set it by
-> > > board/platform side.
-> > > 
-> > > Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> > > ---
-> > > This patch is based on Geert's
-> > > ARM: shmobile: bockw dts: Override #sound-dai-cells to zero
-> > 
-> > Is Geert's patch necessary with this patch?
-> 
-> I think best order (for git bisect) is
-> 
-> 	1. Geert's patch
-> 	2. My patch
+For the little-endian SH771x kernels the driver has to byte-swap the RX/TX
+buffers,  however yet unset physcial address from the TX descriptor is used
+to call sh_eth_soft_swap(). Use 'skb->data' instead...
 
-Thanks, I will make it so.
+Fixes: 31fcb99d9958 ("net: sh_eth: remove __flush_purge_region")
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+---
+The patch is against Dave Miller's 'net.git' repo.
+Although there have been no complaints during 4+ years of this being broken,
+I  think it's  probably  worth queuing the patch for  the stable trees...
+
+ drivers/net/ethernet/renesas/sh_eth.c |    3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+Index: net/drivers/net/ethernet/renesas/sh_eth.c
+=================================--- net.orig/drivers/net/ethernet/renesas/sh_eth.c
++++ net/drivers/net/ethernet/renesas/sh_eth.c
+@@ -2372,8 +2372,7 @@ static int sh_eth_start_xmit(struct sk_b
+ 	txdesc = &mdp->tx_ring[entry];
+ 	/* soft swap. */
+ 	if (!mdp->cd->hw_swap)
+-		sh_eth_soft_swap(phys_to_virt(ALIGN(txdesc->addr, 4)),
+-				 skb->len + 2);
++		sh_eth_soft_swap(PTR_ALIGN(skb->data, 4), skb->len + 2);
+ 	txdesc->addr = dma_map_single(&ndev->dev, skb->data, skb->len,
+ 				      DMA_TO_DEVICE);
+ 	if (dma_mapping_error(&ndev->dev, txdesc->addr)) {
+
