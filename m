@@ -1,56 +1,90 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 09 Dec 2015 08:24:57 +0000
-Subject: Re: [PATCH] sh64: fix __NR_fgetxattr
-Message-Id: <CAMuHMdUqGnJQZo0gAt=scgAWfKLcw_5yXFzgArK+Uo-Bw9+N-g@mail.gmail.com>
+From: Paul Gortmaker <paul.gortmaker@windriver.com>
+Date: Sun, 13 Dec 2015 01:41:52 +0000
+Subject: [PATCH 05/10] drivers/pci: make host/pci-rcar-gen2.c explicitly non-modular
+Message-Id: <1449970917-12633-6-git-send-email-paul.gortmaker@windriver.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20151209031655.GA22704@altlinux.org>
-In-Reply-To: <20151209031655.GA22704@altlinux.org>
+References: <1449970917-12633-1-git-send-email-paul.gortmaker@windriver.com>
+In-Reply-To: <1449970917-12633-1-git-send-email-paul.gortmaker@windriver.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "Dmitry V. Levin" <ldv@altlinux.org>
-Cc: Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Andrew Morton <akpm@linux-foundation.org>
+To: linux-kernel@vger.kernel.org
+Cc: Paul Gortmaker <paul.gortmaker@windriver.com>, Simon Horman <horms@verge.net.au>, Bjorn Helgaas <bhelgaas@google.com>, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org
 
-CC akpm
+The Kconfig currently controlling compilation of this code is:
 
-On Wed, Dec 9, 2015 at 4:16 AM, Dmitry V. Levin <ldv@altlinux.org> wrote:
-> According to arch/sh/kernel/syscalls_64.S and common sense,
-> __NR_fgetxattr has to be defined to 259, but it doesn't.
-> Instead, it's defined to 269, which is of course used
-> by another syscall, __NR_sched_setaffinity in this case.
->
-> This bug was found by strace test suite.
->
-> Signed-off-by: Dmitry V. Levin <ldv@altlinux.org>
-> Cc: stable@vger.kernel.org
+drivers/pci/host/Kconfig:config PCI_RCAR_GEN2
+drivers/pci/host/Kconfig:       bool "Renesas R-Car Gen2 Internal PCI controller"
 
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+...meaning that it currently is not being built as a module by anyone.
 
-> ---
->  arch/sh/include/uapi/asm/unistd_64.h | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
->
-> diff --git a/arch/sh/include/uapi/asm/unistd_64.h b/arch/sh/include/uapi/asm/unistd_64.h
-> index e6820c8..47ebd5b 100644
-> --- a/arch/sh/include/uapi/asm/unistd_64.h
-> +++ b/arch/sh/include/uapi/asm/unistd_64.h
-> @@ -278,7 +278,7 @@
->  #define __NR_fsetxattr         256
->  #define __NR_getxattr          257
->  #define __NR_lgetxattr         258
-> -#define __NR_fgetxattr         269
-> +#define __NR_fgetxattr         259
->  #define __NR_listxattr         260
->  #define __NR_llistxattr                261
->  #define __NR_flistxattr                262
+Lets remove the modular code that is essentially orphaned, so that
+when reading the driver there is no doubt it is builtin-only.
 
-Gr{oetje,eeting}s,
+We don't have to disallow a driver unbind, since that is already
+done for us in this driver.
 
-                        Geert
+Since module_platform_driver() uses the same init level priority as
+builtin_platform_driver() the init ordering remains unchanged with
+this commit.
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+We don't replace module.h with init.h since the file already has that.
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+Also note that MODULE_DEVICE_TABLE is a no-op for non-modular code.
+
+We also delete the MODULE_LICENSE tag etc. since all that information
+was (or is now) contained at the top of the file in the comments.
+
+Cc: Simon Horman <horms@verge.net.au>
+Cc: Bjorn Helgaas <bhelgaas@google.com>
+Cc: linux-pci@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
+Signed-off-by: Paul Gortmaker <paul.gortmaker@windriver.com>
+---
+ drivers/pci/host/pci-rcar-gen2.c | 12 +++---------
+ 1 file changed, 3 insertions(+), 9 deletions(-)
+
+diff --git a/drivers/pci/host/pci-rcar-gen2.c b/drivers/pci/host/pci-rcar-gen2.c
+index c4f64bfee551..81dda40c7a9f 100644
+--- a/drivers/pci/host/pci-rcar-gen2.c
++++ b/drivers/pci/host/pci-rcar-gen2.c
+@@ -4,6 +4,8 @@
+  * Copyright (C) 2013 Renesas Solutions Corp.
+  * Copyright (C) 2013 Cogent Embedded, Inc.
+  *
++ * Module Author: Valentine Barshak <valentine.barshak@cogentembedded.com>
++ *
+  * This program is free software; you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License version 2 as
+  * published by the Free Software Foundation.
+@@ -14,7 +16,6 @@
+ #include <linux/interrupt.h>
+ #include <linux/io.h>
+ #include <linux/kernel.h>
+-#include <linux/module.h>
+ #include <linux/of_pci.h>
+ #include <linux/pci.h>
+ #include <linux/platform_device.h>
+@@ -366,8 +367,6 @@ static struct of_device_id rcar_pci_of_match[] = {
+ 	{ },
+ };
+ 
+-MODULE_DEVICE_TABLE(of, rcar_pci_of_match);
+-
+ static struct platform_driver rcar_pci_driver = {
+ 	.driver = {
+ 		.name = "pci-rcar-gen2",
+@@ -376,9 +375,4 @@ static struct platform_driver rcar_pci_driver = {
+ 	},
+ 	.probe = rcar_pci_probe,
+ };
+-
+-module_platform_driver(rcar_pci_driver);
+-
+-MODULE_LICENSE("GPL v2");
+-MODULE_DESCRIPTION("Renesas R-Car Gen2 internal PCI");
+-MODULE_AUTHOR("Valentine Barshak <valentine.barshak@cogentembedded.com>");
++builtin_platform_driver(rcar_pci_driver);
+-- 
+2.6.1
+
