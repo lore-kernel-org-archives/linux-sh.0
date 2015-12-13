@@ -1,86 +1,36 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 14 Dec 2015 05:10:41 +0000
-Subject: Re: [PATCH] ARM: shmobile: r8a779x: use SoC-specific usb-dac compatibility strings
-Message-Id: <20151214051041.GD18143@verge.net.au>
+From: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Date: Sun, 13 Dec 2015 06:42:37 +0000
+Subject: Re: [PATCH v2 01/16] serial: sh-sci: Drop the interface clock
+Message-Id: <20151213064237.GA16326@kroah.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449802778-11777-1-git-send-email-horms+renesas@verge.net.au>
- <20151211040406.GB13336@verge.net.au>
-In-Reply-To: <20151211040406.GB13336@verge.net.au>
+References: <1447958173-543-1-git-send-email-geert+renesas@glider.be>
+ <1447958173-543-2-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1447958173-543-2-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org
 
-On Fri, Dec 11, 2015 at 01:04:06PM +0900, Simon Horman wrote:
-> On Fri, Dec 11, 2015 at 11:59:38AM +0900, Simon Horman wrote:
-> > Use recently SoC-specific compatibility strings in r8a779[01] device trees.
-> > 
-> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> > ---
-> > Based on renesas-devel-20151211-v4.4-rc4
+On Thu, Nov 19, 2015 at 07:35:58PM +0100, Geert Uytterhoeven wrote:
+> From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 > 
-> Bother, there is a typo in the subject.
-> I plan to fix that either when merging or reposting the patch
-> depending on what other feedback I get.
+> As no platform defines an interface clock the SCI driver always falls
+> back to a clock named "peripheral_clk".
+>   - On SH platforms that clock is the base clock for the SCI functional
+>     clock and has the same frequency,
+>   - On ARM platforms that clock doesn't exist, and clk_get() will return
+>     the default clock for the device.
+> We can thus make the functional clock mandatory and drop the interface
+> clock.
+> 
+> EPROBE_DEFER is handled for clocks that may be referenced from DT (i.e.
+> "fck" and deprecated "sci_ick").
+> 
+> Cc: devicetree@vger.kernel.org
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+> Acked-by: Simon Horman <horms+renesas@verge.net.au>
+> [geert: Handle EPROBE_DEFER, reformat description, break long comment line]
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-I have queued up the following:
-
-From: Simon Horman <horms+renesas@verge.net.au>
-Subject: [PATCH] ARM: shmobile: r8a779x: use SoC-specific usb-dmac
- compatibility strings
-
-Use recently SoC-specific compatibility strings in r8a779[01] device trees.
-
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7790.dtsi | 4 ++--
- arch/arm/boot/dts/r8a7791.dtsi | 4 ++--
- 2 files changed, 4 insertions(+), 4 deletions(-)
-
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 9f3036b80c0e..c6f083c9345d 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -386,7 +386,7 @@
- 	};
- 
- 	usb_dmac0: dma-controller@e65a0000 {
--		compatible = "renesas,usb-dmac";
-+		compatible = "renesas,r8a7790-usb-dmac", "renesas,usb-dmac";
- 		reg = <0 0xe65a0000 0 0x100>;
- 		interrupts = <0 109 IRQ_TYPE_LEVEL_HIGH
- 			      0 109 IRQ_TYPE_LEVEL_HIGH>;
-@@ -398,7 +398,7 @@
- 	};
- 
- 	usb_dmac1: dma-controller@e65b0000 {
--		compatible = "renesas,usb-dmac";
-+		compatible = "renesas,r8a7790-usb-dmac", "renesas,usb-dmac";
- 		reg = <0 0xe65b0000 0 0x100>;
- 		interrupts = <0 110 IRQ_TYPE_LEVEL_HIGH
- 			      0 110 IRQ_TYPE_LEVEL_HIGH>;
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 36559cb0eb6b..ae1dda181624 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -375,7 +375,7 @@
- 	};
- 
- 	usb_dmac0: dma-controller@e65a0000 {
--		compatible = "renesas,usb-dmac";
-+		compatible = "renesas,r8a7791-usb-dmac", "renesas,usb-dmac";
- 		reg = <0 0xe65a0000 0 0x100>;
- 		interrupts = <0 109 IRQ_TYPE_LEVEL_HIGH
- 			      0 109 IRQ_TYPE_LEVEL_HIGH>;
-@@ -387,7 +387,7 @@
- 	};
- 
- 	usb_dmac1: dma-controller@e65b0000 {
--		compatible = "renesas,usb-dmac";
-+		compatible = "renesas,r8a7791-usb-dmac", "renesas,usb-dmac";
- 		reg = <0 0xe65b0000 0 0x100>;
- 		interrupts = <0 110 IRQ_TYPE_LEVEL_HIGH
- 			      0 110 IRQ_TYPE_LEVEL_HIGH>;
--- 
-2.1.4
-
+Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
