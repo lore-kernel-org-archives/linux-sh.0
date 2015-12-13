@@ -1,35 +1,21 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 28 Dec 2015 21:37:33 +0000
-Subject: Re: [PATCH v2 09/16] drivers: Initialize resource entry to zero
-Message-Id: <20151228213733.GA16152@verge.net.au>
+From: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Date: Sun, 13 Dec 2015 06:52:50 +0000
+Subject: Re: [PATCH] serial: sh-sci: Add device tree support for r8a779[23]
+Message-Id: <20151213065250.GA2230@kroah.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1451081365-15190-1-git-send-email-toshi.kani@hpe.com>
- <1451081365-15190-9-git-send-email-toshi.kani@hpe.com>
-In-Reply-To: <1451081365-15190-9-git-send-email-toshi.kani@hpe.com>
+References: <1448587224-8633-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1448587224-8633-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Toshi Kani <toshi.kani@hpe.com>
-Cc: akpm@linux-foundation.org, bp@alien8.de, linux-arch@vger.kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linux-acpi@vger.kernel.org, linux-parisc@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Dec 25, 2015 at 03:09:18PM -0700, Toshi Kani wrote:
-> I/O resource descriptor, 'desc' added to struct resource, needs
-> to be initialized to zero by default.  Some drivers call kmalloc()
-> to allocate a resource entry, but does not initialize it to zero
-> by memset().  Change these drivers to call kzalloc(), instead.
+On Fri, Nov 27, 2015 at 10:20:24AM +0900, Simon Horman wrote:
+> Simply document new compat strings.
+> There appears to be no need for a driver updates.
 > 
-> Cc: linux-acpi@vger.kernel.org
-> Cc: linux-parisc@vger.kernel.org
-> Cc: linux-sh@vger.kernel.org
-> Signed-off-by: Toshi Kani <toshi.kani@hpe.com>
-> ---
->  drivers/acpi/acpi_platform.c       |    2 +-
->  drivers/parisc/eisa_enumerator.c   |    4 ++--
->  drivers/rapidio/rio.c              |    8 ++++----
->  drivers/sh/superhyway/superhyway.c |    2 +-
->  4 files changed, 8 insertions(+), 8 deletions(-)
+> Also update the name of the r8a7791 to M2-W: the name changed a while back.
+> 
+> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-drivers/sh/ portion:
-
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
-
+Doesn't apply to my tree :(
