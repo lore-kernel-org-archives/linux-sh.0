@@ -1,80 +1,87 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 16 Dec 2015 16:10:34 +0000
-Subject: Re: [PATCH] i2c: rcar: disable runtime PM correctly in slave mode
-Message-Id: <CAMuHMdU7gZze1F4eRJJKRsv7gM+D0k6w10NwHX67nSk3O_OT1Q@mail.gmail.com>
+From: Paul Gortmaker <paul.gortmaker@windriver.com>
+Date: Sun, 13 Dec 2015 01:41:54 +0000
+Subject: [PATCH 07/10] drivers/pci: make host/pcie-rcar.c explicitly non-modular
+Message-Id: <1449970917-12633-8-git-send-email-paul.gortmaker@windriver.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450263756-12013-1-git-send-email-wsa@the-dreams.de>
-	<Pine.LNX.4.44L0.1512161011070.1751-100000@iolanthe.rowland.org>
-	<20151216154358.GA14817@katana>
-	<CAMuHMdV81YwhVn_BYTaEybZhW04KFg_gERPJ88UsKSSSwWcvKg@mail.gmail.com>
-	<20151216160642.GB14817@katana>
-In-Reply-To: <20151216160642.GB14817@katana>
+References: <1449970917-12633-1-git-send-email-paul.gortmaker@windriver.com>
+In-Reply-To: <1449970917-12633-1-git-send-email-paul.gortmaker@windriver.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Wolfram Sang <wsa@the-dreams.de>
-Cc: Alan Stern <stern@rowland.harvard.edu>, Linux I2C <linux-i2c@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Linux PM list <linux-pm@vger.kernel.org>
+To: linux-kernel@vger.kernel.org
+Cc: Paul Gortmaker <paul.gortmaker@windriver.com>, Simon Horman <horms@verge.net.au>, Bjorn Helgaas <bhelgaas@google.com>, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org
 
-Hi Wolfram,
+The Kconfig currently controlling compilation of this code is:
 
-On Wed, Dec 16, 2015 at 5:06 PM, Wolfram Sang <wsa@the-dreams.de> wrote:
-> On Wed, Dec 16, 2015 at 04:55:28PM +0100, Geert Uytterhoeven wrote:
->> On Wed, Dec 16, 2015 at 4:43 PM, Wolfram Sang <wsa@the-dreams.de> wrote:
->> > I have another case, may I ask your advice about this, too? When an I2C
->> > bus is marked in DT as multi-master, then RuntimePM also needs to be
->> > disabled, because arbitration detection needs to stay awake. I am
->> > currently implementing this for the i2c-rcar driver:
->> >
->> > -       pm_runtime_enable(dev);
->> > +       /* No RuntimePM in multi-master to keep arbitration working */
->> > +       if (!of_get_property(dev->of_node, "multi-master", NULL)) {
->> > +               pm_runtime_enable(dev);
->> > +               priv->flags |= ID_P_PM;
->> > +       }
->> > +
->> >         pm_runtime_get_sync(dev);
->> >         ...
->> >
->> > @@ -664,7 +673,8 @@ static int rcar_i2c_remove(struct platform_device *pdev)
->> >         struct device *dev = &pdev->dev;
->> >
->> >         i2c_del_adapter(&priv->adap);
->> > -       pm_runtime_disable(dev);
->> > +       if (priv->flags & ID_P_PM)
->> > +               pm_runtime_disable(dev);
->> >
->> >         return 0;
->> >  }
->> >
->> > Here, I'd tend to keep using enable/disable, although get/put would
->> > probably also work. What is the rule of thumb using this pattern or the
->> > other?
->>
->> Have you actually tried the above?
->
-> Nope, I just finished the sketching phase when Alan's mail came along.
->
->> All our drivers rely on Runtime PM for the power/clock domain handling.
->> I believe the pm_runtime_get_sync() won't do anything if you haven't enabled
->> Runtime PM for the device, so the device's module clock won't be enabled at
->> all.
->
-> This was another question I had: Is this a bug or a feature :) But if
-> you say it is policy, I will count this as "feature" and switch to
-> get/put here as well.
+drivers/pci/host/Kconfig:config PCI_RCAR_GEN2_PCIE
+drivers/pci/host/Kconfig:       bool "Renesas R-Car PCIe controller"
 
-It's a feature ;-)
+...meaning that it currently is not being built as a module by anyone.
 
-Without using Runtime PM, your driver has to care about clocks and power
-domains, which may or may not be present, depending on the SoC.
+Lets remove the modular code that is essentially orphaned, so that
+when reading the driver there is no doubt it is builtin-only.
 
-Gr{oetje,eeting}s,
+Since module_platform_driver() uses the same init level priority as
+builtin_platform_driver() the init ordering remains unchanged with
+this commit.
 
-                        Geert
+We don't have to disallow a driver unbind, since that is already
+done for us in this driver.
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+Also note that MODULE_DEVICE_TABLE is a no-op for non-modular code.
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+We also delete the MODULE_LICENSE tag etc. since all that information
+was (or is now) contained at the top of the file in the comments.
+
+Cc: Simon Horman <horms@verge.net.au>
+Cc: Bjorn Helgaas <bhelgaas@google.com>
+Cc: linux-pci@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
+Signed-off-by: Paul Gortmaker <paul.gortmaker@windriver.com>
+---
+ drivers/pci/host/pcie-rcar.c | 11 ++++-------
+ 1 file changed, 4 insertions(+), 7 deletions(-)
+
+diff --git a/drivers/pci/host/pcie-rcar.c b/drivers/pci/host/pcie-rcar.c
+index f4fa6c537448..2c619277d265 100644
+--- a/drivers/pci/host/pcie-rcar.c
++++ b/drivers/pci/host/pcie-rcar.c
+@@ -7,6 +7,8 @@
+  *  arch/sh/drivers/pci/ops-sh7786.c
+  *  Copyright (C) 2009 - 2011  Paul Mundt
+  *
++ * Module Author: Phil Edworthy <phil.edworthy@renesas.com>
++ *
+  * This file is licensed under the terms of the GNU General Public
+  * License version 2.  This program is licensed "as is" without any
+  * warranty of any kind, whether express or implied.
+@@ -18,7 +20,7 @@
+ #include <linux/irq.h>
+ #include <linux/irqdomain.h>
+ #include <linux/kernel.h>
+-#include <linux/module.h>
++#include <linux/init.h>
+ #include <linux/msi.h>
+ #include <linux/of_address.h>
+ #include <linux/of_irq.h>
+@@ -921,7 +923,6 @@ static const struct of_device_id rcar_pcie_of_match[] = {
+ 	{ .compatible = "renesas,pcie-r8a7791", .data = rcar_pcie_hw_init },
+ 	{},
+ };
+-MODULE_DEVICE_TABLE(of, rcar_pcie_of_match);
+ 
+ static int rcar_pcie_probe(struct platform_device *pdev)
+ {
+@@ -1007,8 +1008,4 @@ static struct platform_driver rcar_pcie_driver = {
+ 	},
+ 	.probe = rcar_pcie_probe,
+ };
+-module_platform_driver(rcar_pcie_driver);
+-
+-MODULE_AUTHOR("Phil Edworthy <phil.edworthy@renesas.com>");
+-MODULE_DESCRIPTION("Renesas R-Car PCIe driver");
+-MODULE_LICENSE("GPL v2");
++builtin_platform_driver(rcar_pcie_driver);
+-- 
+2.6.1
+
