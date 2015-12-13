@@ -1,52 +1,61 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 01 Dec 2015 06:24:37 +0000
-Subject: Re: [PATCH] ravb: add R8A7791 support
-Message-Id: <20151201062437.GE16260@verge.net.au>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Sun, 13 Dec 2015 15:12:23 +0000
+Subject: [PATCH v2 net] ravb: Remove clear unhandled interrupt
+Message-Id: <1450019545-32540-1-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <6051623.qN4lqSyZKg@wasted.cogentembedded.com>
- <CAMuHMdWE_G2WqsGZEaa4Ck3zziTLGVPfaVdU2gbnLA5zWpmR1w@mail.gmail.com>
- <565B6AAD.8080205@cogentembedded.com>
- <20151130004207.GD3501@verge.net.au>
- <565C9EA6.309@cogentembedded.com>
-In-Reply-To: <565C9EA6.309@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>, "netdev@vger.kernel.org" <netdev@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Rob Herring <robh+dt@kernel.org>, Pawel Moll <pawel.moll@arm.com>, Mark Rutland <mark.rutland@arm.com>, Ian Campbell <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: netdev@vger.kernel.org
+Cc: "David S. Miller" <davem@davemloft.net>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-On Mon, Nov 30, 2015 at 10:08:22PM +0300, Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 11/30/2015 03:42 AM, Simon Horman wrote:
-> 
-> >>>>Add support  for yet another ARM member of the R-Car family, R-Car M2, also
-> >>
-> >>>R-Car M2-W?
-> >>
-> >>    Right, forgot about the postfixes.
-> >>
-> >>>>known as R8A7791.
-> >>>
-> >>>There's also R-Car M2-N, aka R8A7793, but you probably know that ;-)
-> >>
-> >>    Will fix.
-> >
-> >I would prefer if we added generic gen2 and gen3 compat strings to the driver
-> >and only documented new soc-specific compat strings.
-> 
->    That's a new policy it seems. Previously you preferred the SoC-specific
-> strings to be used, didn;t you?
+From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
 
-Yes, that is correct on all counts.
+AVB-DMAC Receive FIFO Warning interrupt is not enabled, so it is not
+necessary to disable the interrupt in ndo_close().
+On the other hand, this patch disables the interrupt in ndo_open() to
+prevent the possibility that the interrupt is issued by the state that
+a boot loader left.
 
-To clarify new policy for Renesas IP is:
-	soc-specific compat + generic compat as fallback
+Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+---
 
-> >Actually by chance I was planning to up patches to do that and add compat
-> >strings for the missing Gen2 boards. But I won't complain if you beat me to
-> >it.
-> 
->    No, I'm pretty busy as is. :-)
+This patch is based on the master branch of David Miller's networking
+tree.
 
-Ok, I'll handle this.
+v2 [Yoshihiro Kaneko]
+* compile tested only
+* As suggested by Sergei Shtylyov
+  - clear RIC1 in ndo_open() to disable the interrupt regardless of
+    a left state from a bootloader.
+
+
+ drivers/net/ethernet/renesas/ravb_main.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/net/ethernet/renesas/ravb_main.c b/drivers/net/ethernet/renesas/ravb_main.c
+index b69e0c2..5e34a88 100644
+--- a/drivers/net/ethernet/renesas/ravb_main.c
++++ b/drivers/net/ethernet/renesas/ravb_main.c
+@@ -1228,6 +1228,9 @@ static int ravb_open(struct net_device *ndev)
+ 		goto out_free_irq2;
+ 	ravb_emac_init(ndev);
+ 
++	/* Disable unhandled interrupt */
++	ravb_write(ndev, 0, RIC1);
++
+ 	/* Initialise PTP Clock driver */
+ 	ravb_ptp_init(ndev, priv->pdev);
+ 
+@@ -1471,7 +1474,6 @@ static int ravb_close(struct net_device *ndev)
+ 
+ 	/* Disable interrupts by clearing the interrupt masks. */
+ 	ravb_write(ndev, 0, RIC0);
+-	ravb_write(ndev, 0, RIC1);
+ 	ravb_write(ndev, 0, RIC2);
+ 	ravb_write(ndev, 0, TIC);
+ 
+-- 
+1.9.1
+
