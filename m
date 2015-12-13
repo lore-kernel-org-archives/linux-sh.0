@@ -1,22 +1,25 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sun, 27 Dec 2015 23:05:24 +0000
-Subject: [PATCH 0/2] sh_eth: remove unused BE descriptor support
-Message-Id: <27915743.MLN0FvErP3@wasted.cogentembedded.com>
+From: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Date: Sun, 13 Dec 2015 06:42:47 +0000
+Subject: Re: [PATCH v2 16/16] serial: sh-sci: Drop the sci_fck clock fallback
+Message-Id: <20151213064247.GB16326@kroah.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1447958173-543-1-git-send-email-geert+renesas@glider.be>
+ <1447958173-543-17-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1447958173-543-17-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org
 
-Hello.
+On Thu, Nov 19, 2015 at 07:36:13PM +0100, Geert Uytterhoeven wrote:
+> From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+> 
+> All platforms that used to define an sci_fck clock have now switched to
+> the fck name. Remove the fallback code.
+> 
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+> Acked-by: Simon Horman <horms+renesas@verge.net.au>
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-   Here's a set of 2 patches against DaveM's 'net-next.git' repo plus the
-recently merged to 'net.git' repo fix for the 16-bit descriptor endianness.
-We get rid of ~30 LoCs and ~300 bytes of code.
-
-[1/2] sh_eth: remove EDMAC_BIG_ENDIAN
-[2/2] sh_eth: get rid of {cpu|edmac}_to_{edmac|cpu}()
-
-MBR, Sergei
-
+Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
