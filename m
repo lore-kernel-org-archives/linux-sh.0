@@ -1,94 +1,111 @@
-From: hverkuil <hverkuil@xs4all.nl>
-Date: Thu, 24 Dec 2015 12:59:30 +0000
-Subject: Re: [PATCH v2 2/2] media: adv7604: update timings on change of input signal
-Message-Id: <b8b9c951d78719e219d2a53f029df009@xs4all.nl>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sun, 13 Dec 2015 20:05:07 +0000
+Subject: [PATCH] sh_eth: fix descriptor access endianness
+Message-Id: <11070795.yxBPvlHg4n@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450794122-31293-1-git-send-email-ulrich.hecht+renesas@gmail.com>
- <1450794122-31293-3-git-send-email-ulrich.hecht+renesas@gmail.com>
- <1491106.CZOxgP2rDa@avalon>
-In-Reply-To: <1491106.CZOxgP2rDa@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, magnus.damm@gmail.com, hans.verkuil@cisco.com, ian.molton@codethink.co.uk, lars@metafoo.de, william.towle@codethink.co.uk, linux-media-owner@vger.kernel.org
+To: netdev@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-On 2015-12-24 12:47, Laurent Pinchart wrote:
-> Hi Ulrich,
-> 
-> (With a question for Hans below)
-> 
-> Thank you for the patch.
-> 
-> On Tuesday 22 December 2015 15:22:02 Ulrich Hecht wrote:
->> Without this, .get_selection will always return the boot-time state.
->> 
->> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
->> ---
->>  drivers/media/i2c/adv7604.c | 9 +++++++++
->>  1 file changed, 9 insertions(+)
->> 
->> diff --git a/drivers/media/i2c/adv7604.c b/drivers/media/i2c/adv7604.c
->> index 8ad5c28..dcd659b 100644
->> --- a/drivers/media/i2c/adv7604.c
->> +++ b/drivers/media/i2c/adv7604.c
->> @@ -1945,6 +1945,7 @@ static int adv76xx_isr(struct v4l2_subdev *sd, 
->> u32
->> status, bool *handled) u8 fmt_change_digital;
->>  	u8 fmt_change;
->>  	u8 tx_5v;
->> +	int ret;
->> 
->>  	if (irq_reg_0x43)
->>  		io_write(sd, 0x44, irq_reg_0x43);
->> @@ -1968,6 +1969,14 @@ static int adv76xx_isr(struct v4l2_subdev *sd, 
->> u32
->> status, bool *handled)
->> 
->>  		v4l2_subdev_notify_event(sd, &adv76xx_ev_fmt);
->> 
->> +		/* update timings */
->> +		ret = adv76xx_query_dv_timings(sd, &state->timings);
-> 
-> I'm not too familiar with the DV timings API, but I'm not sure this is
-> correct. This would result in g_dv_timings returning the detected 
-> timings,
-> while we have the dedicated query_dv_timings operation for that. Hans, 
-> could
-> you comment on this ? How do query_dv_timings and g_dv_timings interact 
-> ? The
-> API documentation isn't very clear about that.
+The driver never  calls cpu_to_edmac() when writing the descriptor address
+and edmac_to_cpu() when reading it, although it should -- fix this.
 
-This code is wrong. If a format/timings change is detected the driver 
-can send
-an event, but it should never change the current timings. The 
-application has
-to call the query function first, then set the detected new timings. You 
-can't
-just change timings on the fly since that often means changes to buffer 
-sizes
-as well, and changing buffer sizes on the fly is very dangerous.
+Note that the frame/buffer length descriptor field accesses also need fixing
+but since they are both 16-bit we can't  use {cpu|edmac}_to_{edmac|cpu}()...
 
-So if a change is detected, send the V4L2_EVENT_SOURCE_CHANGE event. In 
-response
-the application will call QUERY_DV_TIMINGS and, if valid new timings are 
-detected,
-S_DV_TIMINGS. Usually this will require the stop streaming, set the new 
-timings,
-allocate new buffers and start streaming sequence.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Regards,
+---
+The patch is against DaveM's 'net.git' repo plus the patch I've posted today.
 
-     Hans
+ drivers/net/ethernet/renesas/sh_eth.c |   24 ++++++++++++++----------
+ 1 file changed, 14 insertions(+), 10 deletions(-)
 
-> 
->> +		if (ret = -ENOLINK) {
->> +			/* no signal, fall back to default timings */
->> +			state->timings = (struct v4l2_dv_timings)
->> +				V4L2_DV_BT_CEA_640X480P59_94;
->> +		}
->> +
->>  		if (handled)
->>  			*handled = true;
->>  	}
+Index: net/drivers/net/ethernet/renesas/sh_eth.c
+=================================--- net.orig/drivers/net/ethernet/renesas/sh_eth.c
++++ net/drivers/net/ethernet/renesas/sh_eth.c
+@@ -1172,7 +1172,7 @@ static void sh_eth_ring_format(struct ne
+ 			break;
+ 		}
+ 		mdp->rx_skbuff[i] = skb;
+-		rxdesc->addr = dma_addr;
++		rxdesc->addr = cpu_to_edmac(mdp, dma_addr);
+ 		rxdesc->status = cpu_to_edmac(mdp, RD_RACT | RD_RFP);
+ 
+ 		/* Rx descriptor address set */
+@@ -1403,7 +1403,8 @@ static int sh_eth_txfree(struct net_devi
+ 			   entry, edmac_to_cpu(mdp, txdesc->status));
+ 		/* Free the original skb. */
+ 		if (mdp->tx_skbuff[entry]) {
+-			dma_unmap_single(&ndev->dev, txdesc->addr,
++			dma_unmap_single(&ndev->dev,
++					 edmac_to_cpu(mdp, txdesc->addr),
+ 					 txdesc->buffer_length, DMA_TO_DEVICE);
+ 			dev_kfree_skb_irq(mdp->tx_skbuff[entry]);
+ 			mdp->tx_skbuff[entry] = NULL;
+@@ -1479,14 +1480,15 @@ static int sh_eth_rx(struct net_device *
+ 			if (desc_status & RD_RFS10)
+ 				ndev->stats.rx_over_errors++;
+ 		} else	if (skb) {
++			dma_addr = edmac_to_cpu(mdp, rxdesc->addr);
+ 			if (!mdp->cd->hw_swap)
+ 				sh_eth_soft_swap(
+-					phys_to_virt(ALIGN(rxdesc->addr, 4)),
++					phys_to_virt(ALIGN(dma_addr, 4)),
+ 					pkt_len + 2);
+ 			mdp->rx_skbuff[entry] = NULL;
+ 			if (mdp->cd->rpadir)
+ 				skb_reserve(skb, NET_IP_ALIGN);
+-			dma_unmap_single(&ndev->dev, rxdesc->addr,
++			dma_unmap_single(&ndev->dev, dma_addr,
+ 					 ALIGN(mdp->rx_buf_sz, 32),
+ 					 DMA_FROM_DEVICE);
+ 			skb_put(skb, pkt_len);
+@@ -1523,7 +1525,7 @@ static int sh_eth_rx(struct net_device *
+ 			mdp->rx_skbuff[entry] = skb;
+ 
+ 			skb_checksum_none_assert(skb);
+-			rxdesc->addr = dma_addr;
++			rxdesc->addr = cpu_to_edmac(mdp, dma_addr);
+ 		}
+ 		dma_wmb(); /* RACT bit must be set after all the above writes */
+ 		if (entry >= mdp->num_rx_ring - 1)
+@@ -2331,8 +2333,8 @@ static void sh_eth_tx_timeout(struct net
+ 	/* Free all the skbuffs in the Rx queue. */
+ 	for (i = 0; i < mdp->num_rx_ring; i++) {
+ 		rxdesc = &mdp->rx_ring[i];
+-		rxdesc->status = 0;
+-		rxdesc->addr = 0xBADF00D0;
++		rxdesc->status = cpu_to_edmac(mdp, 0);
++		rxdesc->addr = cpu_to_edmac(mdp, 0xBADF00D0);
+ 		dev_kfree_skb(mdp->rx_skbuff[i]);
+ 		mdp->rx_skbuff[i] = NULL;
+ 	}
+@@ -2350,6 +2352,7 @@ static int sh_eth_start_xmit(struct sk_b
+ {
+ 	struct sh_eth_private *mdp = netdev_priv(ndev);
+ 	struct sh_eth_txdesc *txdesc;
++	dma_addr_t dma_addr;
+ 	u32 entry;
+ 	unsigned long flags;
+ 
+@@ -2373,12 +2376,13 @@ static int sh_eth_start_xmit(struct sk_b
+ 	/* soft swap. */
+ 	if (!mdp->cd->hw_swap)
+ 		sh_eth_soft_swap(PTR_ALIGN(skb->data, 4), skb->len + 2);
+-	txdesc->addr = dma_map_single(&ndev->dev, skb->data, skb->len,
+-				      DMA_TO_DEVICE);
+-	if (dma_mapping_error(&ndev->dev, txdesc->addr)) {
++	dma_addr = dma_map_single(&ndev->dev, skb->data, skb->len,
++				  DMA_TO_DEVICE);
++	if (dma_mapping_error(&ndev->dev, dma_addr)) {
+ 		kfree_skb(skb);
+ 		return NETDEV_TX_OK;
+ 	}
++	txdesc->addr = cpu_to_edmac(mdp, dma_addr);
+ 	txdesc->buffer_length = skb->len;
+ 
+ 	dma_wmb(); /* TACT bit must be set after all the above writes */
 
