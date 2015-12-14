@@ -1,7 +1,7 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 11 Dec 2015 23:07:55 +0000
+From: Sudeep Holla <sudeep.holla@arm.com>
+Date: Mon, 14 Dec 2015 14:36:05 +0000
 Subject: Re: [PATCH 3/3] arm64: dts: r8a7795: Add pmu device nodes
-Message-Id: <20151211230755.GE6496@verge.net.au>
+Message-Id: <566ED3D5.1080301@arm.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1449236333-4410-1-git-send-email-dirk.behme@gmail.com>
  <1449236333-4410-3-git-send-email-dirk.behme@gmail.com>
@@ -11,14 +11,42 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Dec 04, 2015 at 02:38:53PM +0100, Dirk Behme wrote:
+
+
+On 04/12/15 13:38, Dirk Behme wrote:
 > From: Yoshifumi Hosoya <yoshifumi.hosoya.wj@renesas.com>
-> 
+>
 > Enabling the performance monitor unit on r8a7795.
-> 
+>
 > Signed-off-by: Masaru Nagai <masaru.nagai.vx@renesas.com>
 > Signed-off-by: Yoshifumi Hosoya <yoshifumi.hosoya.wj@renesas.com>
 > Sigend-off-by: Dirk Behme <dirk.behme@gmail.com>
+> ---
+> Note: This patch picked from
+>
+> https://git.kernel.org/cgit/linux/kernel/git/horms/renesas-bsp.git/log/?h=v4.2/rcar-3.0.x
+>
+> and rebased against
+>
+> https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git/log/?h=topic/gen3-latest renesas-drivers-2015-12-01-v4.4-rc3
+>
+>   arch/arm64/boot/dts/renesas/r8a7795.dtsi | 12 ++++++++++++
+>   1 file changed, 12 insertions(+)
+>
+> diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+> index 946a5bb..8113b71 100644
+> --- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+> +++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+> @@ -247,6 +247,18 @@
+>   			power-domains = <&cpg>;
+>   		};
+>
+> +		pmu {
+> +			compatible = "arm,armv8-pmuv3";
 
-I took the liberty of correcting the spelling of "Signed" when
-queuing up this patch for v4.5.
+You can add more specific compatible "arm,cortex-a57-pmu" if it's Cortex
+A57.
+
+-- 
+Regards,
+Sudeep
