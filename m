@@ -1,60 +1,69 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Sat, 05 Dec 2015 22:20:35 +0000
-Subject: Re: [PATCH v2 17/32] v4l: vsp1: Fix typo in VI6_DISP_IRQ_STA_DST register name
-Message-Id: <2694247.f6vaztlhDB@avalon>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Mon, 14 Dec 2015 16:24:58 +0000
+Subject: [PATCH v3 net] ravb: clear RIC1 in init instead of stop
+Message-Id: <1450110298-21392-1-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <1449281586-25726-18-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <56635B69.3000800@cogentembedded.com>
-In-Reply-To: <56635B69.3000800@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, linux-media@vger.kernel.org, linux-sh@vger.kernel.org
+To: netdev@vger.kernel.org
+Cc: "David S. Miller" <davem@davemloft.net>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-Hi Sergio,
+From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
 
-On Sunday 06 December 2015 00:47:21 Sergei Shtylyov wrote:
-> On 12/5/2015 5:12 AM, Laurent Pinchart wrote:
-> > Rename the VI6_DISP_IRQ_STA_DSE register
-> 
->     Register bit, perhaps?
+AVB-DMAC Receive FIFO Warning interrupt is not enabled, so it is not
+necessary to disable the interrupt in ravb_close().
+On the other hand, this patch disables the interrupt in ravb_dmac_init() to
+prevent the possibility that the interrupt is issued by the state that
+a boot loader left.
 
-Indeed. I know I can count on you to catch even such small issues :-)
+Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+---
 
-I'll fix it for the next version (or the pull request if no issue that require 
-a new review round is found).
+This patch is based on the master branch of David Miller's networking
+tree.
 
-> > to VI6_DISP_IRQ_STA_DST to fix
-> > a typo and match the datasheet.
-> > 
-> > Signed-off-by: Laurent Pinchart
-> > <laurent.pinchart+renesas@ideasonboard.com>
-> > ---
-> > 
-> >   drivers/media/platform/vsp1/vsp1_regs.h | 2 +-
-> >   1 file changed, 1 insertion(+), 1 deletion(-)
-> > 
-> > diff --git a/drivers/media/platform/vsp1/vsp1_regs.h
-> > b/drivers/media/platform/vsp1/vsp1_regs.h index
-> > 25b48738b147..8173ceaab9f9 100644
-> > --- a/drivers/media/platform/vsp1/vsp1_regs.h
-> > +++ b/drivers/media/platform/vsp1/vsp1_regs.h
-> > @@ -46,7 +46,7 @@
-> > 
-> >   #define VI6_DISP_IRQ_ENB_LNEE(n)	(1 << (n))
-> >   
-> >   #define VI6_DISP_IRQ_STA		0x007c
-> > 
-> > -#define VI6_DISP_IRQ_STA_DSE		(1 << 8)
-> > +#define VI6_DISP_IRQ_STA_DST		(1 << 8)
-> > 
-> >   #define VI6_DISP_IRQ_STA_MAE		(1 << 5)
-> >   #define VI6_DISP_IRQ_STA_LNE(n)		(1 << (n))
-> 
-> MBR, Sergei
+v3 [Yoshihiro Kaneko]
+* compile tested only
+* As suggested by Sergei Shtylyov
+  - update the subject to reflect what this patch is doing.
+  - clear RIC1 in ravb_dmac_init() instead of ravb_open().
 
+v2 [Yoshihiro Kaneko]
+* compile tested only
+* As suggested by Sergei Shtylyov
+  - clear RIC1 in ndo_open() to disable the interrupt regardless of
+    a left state from a bootloader.
+
+ drivers/net/ethernet/renesas/ravb_main.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/ethernet/renesas/ravb_main.c b/drivers/net/ethernet/renesas/ravb_main.c
+index b69e0c2..b76303e 100644
+--- a/drivers/net/ethernet/renesas/ravb_main.c
++++ b/drivers/net/ethernet/renesas/ravb_main.c
+@@ -405,9 +405,11 @@ static int ravb_dmac_init(struct net_device *ndev)
+ 	/* Timestamp enable */
+ 	ravb_write(ndev, TCCR_TFEN, TCCR);
+ 
+-	/* Interrupt enable: */
++	/* Interrupt init: */
+ 	/* Frame receive */
+ 	ravb_write(ndev, RIC0_FRE0 | RIC0_FRE1, RIC0);
++	/* Disable FIFO full warning */
++	ravb_write(ndev, 0, RIC1);
+ 	/* Receive FIFO full error, descriptor empty */
+ 	ravb_write(ndev, RIC2_QFE0 | RIC2_QFE1 | RIC2_RFFE, RIC2);
+ 	/* Frame transmitted, timestamp FIFO updated */
+@@ -1471,7 +1473,6 @@ static int ravb_close(struct net_device *ndev)
+ 
+ 	/* Disable interrupts by clearing the interrupt masks. */
+ 	ravb_write(ndev, 0, RIC0);
+-	ravb_write(ndev, 0, RIC1);
+ 	ravb_write(ndev, 0, RIC2);
+ 	ravb_write(ndev, 0, TIC);
+ 
 -- 
-Regards,
-
-Laurent Pinchart
+1.9.1
 
