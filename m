@@ -1,115 +1,69 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 14 Dec 2015 18:57:27 +0000
-Subject: [PATCH v3 18/27] serial: sh-sci: Replace struct sci_port_info by type/regtype encoding
-Message-Id: <1450119456-964-19-git-send-email-geert+renesas@glider.be>
+Date: Mon, 14 Dec 2015 18:58:21 +0000
+Subject: [PATCH v2 6/9] ARM: shmobile: marzen dts: Enable SCIF_CLK frequency and pins
+Message-Id: <1450119504-1517-7-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450119456-964-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1450119456-964-1-git-send-email-geert+renesas@glider.be>
+References: <1450119504-1517-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1450119504-1517-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: linux-sh@vger.kernel.org, linux-serial@vger.kernel.org, devicetree@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Store the encoded port and register types directly in of_device_id.data,
-instead of using a pointer to a structure.
-This saves memory and simplifies the source code, especially when adding
-more compatible entries later.
+Add and enable the external crystal for the SCIF_CLK and its pinctrl, to
+be used by the Baud Rate Generator for External Clock (BRG) on (H)SCIF.
+
+This increases the range and accuracy of supported baud rates.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Reviewed-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 ---
-v3:
-  - Add Reviewed-by, Acked-by.
----
- drivers/tty/serial/sh-sci.c | 40 +++++++++++-----------------------------
- 1 file changed, 11 insertions(+), 29 deletions(-)
+Based on schematics, tested with remote access.
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index fb5eac2e3182304d..13c6abe9d842c0a8 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -2614,42 +2614,27 @@ static int sci_remove(struct platform_device *dev)
- 	return 0;
- }
+v2:
+  - New.
+---
+ arch/arm/boot/dts/r8a7779-marzen.dts | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7779-marzen.dts b/arch/arm/boot/dts/r8a7779-marzen.dts
+index fe396c8d58db7986..e111d35d02aebe19 100644
+--- a/arch/arm/boot/dts/r8a7779-marzen.dts
++++ b/arch/arm/boot/dts/r8a7779-marzen.dts
+@@ -165,6 +165,9 @@
+ };
  
--struct sci_port_info {
--	unsigned int type;
--	unsigned int regtype;
--};
+ &pfc {
++	pinctrl-0 = <&scif_clk_pins>;
++	pinctrl-names = "default";
 +
-+#define SCI_OF_DATA(type, regtype)	(void *)((type) << 16 | (regtype))
-+#define SCI_OF_TYPE(data)		((unsigned long)(data) >> 16)
-+#define SCI_OF_REGTYPE(data)		((unsigned long)(data) & 0xffff)
+ 	du_pins: du {
+ 		du0 {
+ 			renesas,groups = "du0_rgb888", "du0_sync_1", "du0_clk_out_0";
+@@ -176,6 +179,11 @@
+ 		};
+ 	};
  
- static const struct of_device_id of_sci_match[] = {
- 	{
- 		.compatible = "renesas,scif",
--		.data = &(const struct sci_port_info) {
--			.type = PORT_SCIF,
--			.regtype = SCIx_SH4_SCIF_REGTYPE,
--		},
-+		.data = SCI_OF_DATA(PORT_SCIF, SCIx_SH4_SCIF_REGTYPE),
- 	}, {
- 		.compatible = "renesas,scifa",
--		.data = &(const struct sci_port_info) {
--			.type = PORT_SCIFA,
--			.regtype = SCIx_SCIFA_REGTYPE,
--		},
-+		.data = SCI_OF_DATA(PORT_SCIFA, SCIx_SCIFA_REGTYPE),
- 	}, {
- 		.compatible = "renesas,scifb",
--		.data = &(const struct sci_port_info) {
--			.type = PORT_SCIFB,
--			.regtype = SCIx_SCIFB_REGTYPE,
--		},
-+		.data = SCI_OF_DATA(PORT_SCIFB, SCIx_SCIFB_REGTYPE),
- 	}, {
- 		.compatible = "renesas,hscif",
--		.data = &(const struct sci_port_info) {
--			.type = PORT_HSCIF,
--			.regtype = SCIx_HSCIF_REGTYPE,
--		},
-+		.data = SCI_OF_DATA(PORT_HSCIF, SCIx_HSCIF_REGTYPE),
- 	}, {
- 		.compatible = "renesas,sci",
--		.data = &(const struct sci_port_info) {
--			.type = PORT_SCI,
--			.regtype = SCIx_SCI_REGTYPE,
--		},
-+		.data = SCI_OF_DATA(PORT_SCI, SCIx_SCI_REGTYPE),
- 	}, {
- 		/* Terminator */
- 	},
-@@ -2661,7 +2646,6 @@ sci_parse_dt(struct platform_device *pdev, unsigned int *dev_id)
- {
- 	struct device_node *np = pdev->dev.of_node;
- 	const struct of_device_id *match;
--	const struct sci_port_info *info;
- 	struct plat_sci_port *p;
- 	int id;
++	scif_clk_pins: scif_clk {
++		renesas,groups = "scif_clk_b";
++		renesas,function = "scif_clk";
++	};
++
+ 	ethernet_pins: ethernet {
+ 		intc {
+ 			renesas,groups = "intc_irq1_b";
+@@ -222,6 +230,11 @@
+ 	status = "okay";
+ };
  
-@@ -2672,8 +2656,6 @@ sci_parse_dt(struct platform_device *pdev, unsigned int *dev_id)
- 	if (!match)
- 		return NULL;
- 
--	info = match->data;
--
- 	p = devm_kzalloc(&pdev->dev, sizeof(struct plat_sci_port), GFP_KERNEL);
- 	if (!p)
- 		return NULL;
-@@ -2688,8 +2670,8 @@ sci_parse_dt(struct platform_device *pdev, unsigned int *dev_id)
- 	*dev_id = id;
- 
- 	p->flags = UPF_IOREMAP | UPF_BOOT_AUTOCONF;
--	p->type = info->type;
--	p->regtype = info->regtype;
-+	p->type = SCI_OF_TYPE(match->data);
-+	p->regtype = SCI_OF_REGTYPE(match->data);
- 	p->scscr = SCSCR_RE | SCSCR_TE;
- 
- 	return p;
++&scif_clk {
++	clock-frequency = <14745600>;
++	status = "okay";
++};
++
+ &sdhi0 {
+ 	pinctrl-0 = <&sdhi0_pins>;
+ 	pinctrl-names = "default";
 -- 
 1.9.1
 
