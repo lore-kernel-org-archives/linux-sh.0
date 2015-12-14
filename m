@@ -1,71 +1,163 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 11 Dec 2015 02:52:53 +0000
-Subject: [PATCH/RFC 16/19] ARM: shmobile: gose: enable sound DMA support via DVC in device tree
-Message-Id: <1449802376-11301-17-git-send-email-horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 14 Dec 2015 18:58:12 +0000
+Subject: [PATCH v2 4/7] ARM: shmobile: r8a7791 dtsi: Add BRG support for (H)SCIF
+Message-Id: <1450119495-1416-5-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449802376-11301-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1449802376-11301-1-git-send-email-horms+renesas@verge.net.au>
+References: <1450119495-1416-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1450119495-1416-1-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-serial-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
 
-Enable DMA transfer using DVC in r8a7793/gose device tree.
+Add the device node for the external SCIF_CLK.
+The presence of the SCIF_CLK crystal and its clock frequency depends on
+the actual board.
 
-     DMA               DMApp
-[MEM] -> [SRC] -> [DVC] -> [SSIU] -> [SSI]
+Add the two optional clock sources (ZS_CLK and SCIF_CLK for the internal
+resp. external clock) for the Baud Rate Generator for External Clock
+(BRG) to all SCIF and HSCIF device nodes.
 
-     DMA               DMApp
-[MEM] <- [DVC] <- [SRC] <- [SSIU] <- [SSI]
+This increases the range and accuracy of supported baud rates on
+(H)SCIF.
 
-Based on similar work for the r8a7791/koelsch by Kuninori Morimoto.
-
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r8a7793-gose.dts | 21 +++++++++++++++++++--
- 1 file changed, 19 insertions(+), 2 deletions(-)
+v2:
+  - Rename "int_clk" to "brg_int".
+---
+ arch/arm/boot/dts/r8a7791.dtsi | 54 ++++++++++++++++++++++++++++--------------
+ 1 file changed, 36 insertions(+), 18 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7793-gose.dts b/arch/arm/boot/dts/r8a7793-gose.dts
-index 30edd5fef626..def5490761fc 100644
---- a/arch/arm/boot/dts/r8a7793-gose.dts
-+++ b/arch/arm/boot/dts/r8a7793-gose.dts
-@@ -18,7 +18,24 @@
-  * This command is required when Playback/Capture
-  *
-  *	amixer set "LINEOUT Mixer DACL" on
-+ *	amixer set "DVC Out" 100%
-+ *	amixer set "DVC In" 100%
-+ *
-+ * You can use Mute
-+ *
-+ *	amixer set "DVC Out Mute" on
-+ *	amixer set "DVC In Mute" on
-+ *
-+ * You can use Volume Ramp
-+ *
-+ *	amixer set "DVC Out Ramp Up Rate"   "0.125 dB/64 steps"
-+ *	amixer set "DVC Out Ramp Down Rate" "0.125 dB/512 steps"
-+ *	amixer set "DVC Out Ramp" on
-+ *	aplay xxx.wav &
-+ *	amixer set "DVC Out"  80%  // Volume Down
-+ *	amixer set "DVC Out" 100%  // Volume Up
-  */
-+
- /dts-v1/;
- #include "r8a7793.dtsi"
- #include <dt-bindings/gpio/gpio.h>
-@@ -216,8 +233,8 @@
- 
- 	rcar_sound,dai {
- 		dai0 {
--			playback = <&ssi0 &src2>;
--			capture  = <&ssi1 &src3>;
-+			playback = <&ssi0 &src2 &dvc0>;
-+			capture  = <&ssi1 &src3 &dvc1>;
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 514294e5d4f047c3..e9bdf87576c3b317 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -679,8 +679,9 @@
+ 			     "renesas,scif";
+ 		reg = <0 0xe6e60000 0 64>;
+ 		interrupts = <0 152 IRQ_TYPE_LEVEL_HIGH>;
+-		clocks = <&mstp7_clks R8A7791_CLK_SCIF0>;
+-		clock-names = "fck";
++		clocks = <&mstp7_clks R8A7791_CLK_SCIF0>, <&zs_clk>,
++			 <&scif_clk>;
++		clock-names = "fck", "brg_int", "scif_clk";
+ 		dmas = <&dmac0 0x29>, <&dmac0 0x2a>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
+@@ -692,8 +693,9 @@
+ 			     "renesas,scif";
+ 		reg = <0 0xe6e68000 0 64>;
+ 		interrupts = <0 153 IRQ_TYPE_LEVEL_HIGH>;
+-		clocks = <&mstp7_clks R8A7791_CLK_SCIF1>;
+-		clock-names = "fck";
++		clocks = <&mstp7_clks R8A7791_CLK_SCIF1>, <&zs_clk>,
++			 <&scif_clk>;
++		clock-names = "fck", "brg_int", "scif_clk";
+ 		dmas = <&dmac0 0x2d>, <&dmac0 0x2e>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
+@@ -705,8 +707,9 @@
+ 			     "renesas,scif";
+ 		reg = <0 0xe6e58000 0 64>;
+ 		interrupts = <0 22 IRQ_TYPE_LEVEL_HIGH>;
+-		clocks = <&mstp7_clks R8A7791_CLK_SCIF2>;
+-		clock-names = "fck";
++		clocks = <&mstp7_clks R8A7791_CLK_SCIF2>, <&zs_clk>,
++			 <&scif_clk>;
++		clock-names = "fck", "brg_int", "scif_clk";
+ 		dmas = <&dmac0 0x2b>, <&dmac0 0x2c>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
+@@ -718,8 +721,9 @@
+ 			     "renesas,scif";
+ 		reg = <0 0xe6ea8000 0 64>;
+ 		interrupts = <0 23 IRQ_TYPE_LEVEL_HIGH>;
+-		clocks = <&mstp7_clks R8A7791_CLK_SCIF3>;
+-		clock-names = "fck";
++		clocks = <&mstp7_clks R8A7791_CLK_SCIF3>, <&zs_clk>,
++			 <&scif_clk>;
++		clock-names = "fck", "brg_int", "scif_clk";
+ 		dmas = <&dmac0 0x2f>, <&dmac0 0x30>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
+@@ -731,8 +735,9 @@
+ 			     "renesas,scif";
+ 		reg = <0 0xe6ee0000 0 64>;
+ 		interrupts = <0 24 IRQ_TYPE_LEVEL_HIGH>;
+-		clocks = <&mstp7_clks R8A7791_CLK_SCIF4>;
+-		clock-names = "fck";
++		clocks = <&mstp7_clks R8A7791_CLK_SCIF4>, <&zs_clk>,
++			 <&scif_clk>;
++		clock-names = "fck", "brg_int", "scif_clk";
+ 		dmas = <&dmac0 0xfb>, <&dmac0 0xfc>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
+@@ -744,8 +749,9 @@
+ 			     "renesas,scif";
+ 		reg = <0 0xe6ee8000 0 64>;
+ 		interrupts = <0 25 IRQ_TYPE_LEVEL_HIGH>;
+-		clocks = <&mstp7_clks R8A7791_CLK_SCIF5>;
+-		clock-names = "fck";
++		clocks = <&mstp7_clks R8A7791_CLK_SCIF5>, <&zs_clk>,
++			 <&scif_clk>;
++		clock-names = "fck", "brg_int", "scif_clk";
+ 		dmas = <&dmac0 0xfd>, <&dmac0 0xfe>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
+@@ -757,8 +763,9 @@
+ 			     "renesas,rcar-gen2-hscif", "renesas,hscif";
+ 		reg = <0 0xe62c0000 0 96>;
+ 		interrupts = <0 154 IRQ_TYPE_LEVEL_HIGH>;
+-		clocks = <&mstp7_clks R8A7791_CLK_HSCIF0>;
+-		clock-names = "fck";
++		clocks = <&mstp7_clks R8A7791_CLK_HSCIF0>, <&zs_clk>,
++			 <&scif_clk>;
++		clock-names = "fck", "brg_int", "scif_clk";
+ 		dmas = <&dmac0 0x39>, <&dmac0 0x3a>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
+@@ -770,8 +777,9 @@
+ 			     "renesas,rcar-gen2-hscif", "renesas,hscif";
+ 		reg = <0 0xe62c8000 0 96>;
+ 		interrupts = <0 155 IRQ_TYPE_LEVEL_HIGH>;
+-		clocks = <&mstp7_clks R8A7791_CLK_HSCIF1>;
+-		clock-names = "fck";
++		clocks = <&mstp7_clks R8A7791_CLK_HSCIF1>, <&zs_clk>,
++			 <&scif_clk>;
++		clock-names = "fck", "brg_int", "scif_clk";
+ 		dmas = <&dmac0 0x4d>, <&dmac0 0x4e>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
+@@ -783,8 +791,9 @@
+ 			     "renesas,rcar-gen2-hscif", "renesas,hscif";
+ 		reg = <0 0xe62d0000 0 96>;
+ 		interrupts = <0 21 IRQ_TYPE_LEVEL_HIGH>;
+-		clocks = <&mstp7_clks R8A7791_CLK_HSCIF2>;
+-		clock-names = "fck";
++		clocks = <&mstp7_clks R8A7791_CLK_HSCIF2>, <&zs_clk>,
++			 <&scif_clk>;
++		clock-names = "fck", "brg_int", "scif_clk";
+ 		dmas = <&dmac0 0x3b>, <&dmac0 0x3c>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
+@@ -1043,6 +1052,15 @@
+ 			status = "disabled";
  		};
- 	};
- };
+ 
++		/* External SCIF clock */
++		scif_clk: scif {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			/* This value must be overridden by the board. */
++			clock-frequency = <0>;
++			status = "disabled";
++		};
++
+ 		/* External USB clock - can be overridden by the board */
+ 		usb_extal_clk: usb_extal_clk {
+ 			compatible = "fixed-clock";
 -- 
-2.1.4
+1.9.1
 
