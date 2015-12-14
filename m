@@ -1,33 +1,39 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 08 Dec 2015 17:54:12 +0000
-Subject: [PATCH 07/13] ARM: shmobile: koelsch dts: Add serial port config to chosen/stdout-path
-Message-Id: <1449597258-32623-8-git-send-email-geert+renesas@glider.be>
+Date: Mon, 14 Dec 2015 18:57:15 +0000
+Subject: [PATCH v3 06/27] serial: sh-sci: Grammar s/Get ... for/Get ... from/
+Message-Id: <1450119456-964-7-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449597258-32623-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1449597258-32623-1-git-send-email-geert+renesas@glider.be>
+References: <1450119456-964-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1450119456-964-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reviewed-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 ---
- arch/arm/boot/dts/r8a7791-koelsch.dts | 2 +-
+v3:
+  - Add Reviewed-by, Acked-by.
+---
+ drivers/tty/serial/sh-sci.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index 4fd2d35ef5d6f1ce..b8dde26987f1dd85 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -54,7 +54,7 @@
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index dfee7a2f51f147d1..5ec1a70cd2f49ada 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -2645,7 +2645,7 @@ sci_parse_dt(struct platform_device *pdev, unsigned int *dev_id)
+ 	if (!p)
+ 		return NULL;
  
- 	chosen {
- 		bootargs = "ignore_loglevel rw root=/dev/nfs ip=dhcp";
--		stdout-path = &scif0;
-+		stdout-path = "serial0:115200n8";
- 	};
- 
- 	memory@40000000 {
+-	/* Get the line number for the aliases node. */
++	/* Get the line number from the aliases node. */
+ 	id = of_alias_get_id(np, "serial");
+ 	if (id < 0) {
+ 		dev_err(&pdev->dev, "failed to get alias id (%d)\n", id);
 -- 
 1.9.1
 
