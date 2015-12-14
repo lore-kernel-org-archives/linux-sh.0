@@ -1,49 +1,39 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 16 Dec 2015 18:48:24 +0000
-Subject: Re: [RFC 3/3] i2c: rcar: disable PM in multi-master mode
-Message-Id: <5671B1F8.8070103@cogentembedded.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 14 Dec 2015 19:11:38 +0000
+Subject: [PATCH/RFC 1/7] ARM: dt: mvebu: ix4-300d: Add compatible property to "partitions" node
+Message-Id: <1450120304-2760-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450291460-10514-1-git-send-email-wsa@the-dreams.de>
- <1450291460-10514-4-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1450291460-10514-4-git-send-email-wsa@the-dreams.de>
+References: <1450120304-2760-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1450120304-2760-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Wolfram Sang <wsa@the-dreams.de>, linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, linux-pm@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+As of commit e488ca9f8d4f62c2 ("doc: dt: mtd: partitions: add compatible
+property to "partitions" node"), the "partitions" subnode of an SPI
+FLASH device node must have a compatible property. The partitions are no
+longer detected if it is not present.
 
-On 12/16/2015 09:44 PM, Wolfram Sang wrote:
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+The abovementioned commit is destined for v4.4.
+---
+ arch/arm/boot/dts/armada-xp-lenovo-ix4-300d.dts | 1 +
+ 1 file changed, 1 insertion(+)
 
-> From: Wolfram Sang <wsa+renesas@sang-engineering.com>
->
-> In multi master mode, the IP core needs to be always active for
-> arbitration reasons. Get the config from DT and set up PM depending on
-> the config.
->
-> Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
-> ---
->   drivers/i2c/busses/i2c-rcar.c | 17 ++++++++++++++---
->   1 file changed, 14 insertions(+), 3 deletions(-)
->
-> diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
-> index 79fd2aab8fa087..7c523dcaee3e48 100644
-> --- a/drivers/i2c/busses/i2c-rcar.c
-> +++ b/drivers/i2c/busses/i2c-rcar.c
-[...]
-> @@ -630,7 +633,13 @@ static int rcar_i2c_probe(struct platform_device *pdev)
->   		goto out_pm_put;
->
->   	rcar_i2c_init(priv);
-> -	pm_runtime_put(dev);
-> +
-> +	/* Don't suspend when multi-master to keep arbitration working */
-> +	if (of_get_property(dev->of_node, "multi-master", NULL))
-
-     of_property_read_bool(), perhaps?
-
-[...]
-
-MBR, Sergei
+diff --git a/arch/arm/boot/dts/armada-xp-lenovo-ix4-300d.dts b/arch/arm/boot/dts/armada-xp-lenovo-ix4-300d.dts
+index 13cf69a8d0fb392b..fb9e1bbf23385b85 100644
+--- a/arch/arm/boot/dts/armada-xp-lenovo-ix4-300d.dts
++++ b/arch/arm/boot/dts/armada-xp-lenovo-ix4-300d.dts
+@@ -152,6 +152,7 @@
+ 				nand-on-flash-bbt;
+ 
+ 				partitions {
++					compatible = "fixed-partitions";
+ 					#address-cells = <1>;
+ 					#size-cells = <1>;
+ 
+-- 
+1.9.1
 
