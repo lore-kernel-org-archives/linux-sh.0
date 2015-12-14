@@ -1,136 +1,66 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 11 Dec 2015 02:52:49 +0000
-Subject: [PATCH/RFC 12/19] ARM: shmobile: gose: Enable sound PIO support in device tree
-Message-Id: <1449802376-11301-13-git-send-email-horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 14 Dec 2015 18:58:16 +0000
+Subject: [PATCH v2 1/9] ARM: shmobile: alt dts: Enable SCIF_CLK frequency and pins
+Message-Id: <1450119504-1517-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449802376-11301-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1449802376-11301-1-git-send-email-horms+renesas@verge.net.au>
+References: <1450119504-1517-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1450119504-1517-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: linux-sh@vger.kernel.org, linux-serial@vger.kernel.org, devicetree@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Enable sound PIO support in the r8a7793/gose device tree.
+Add and enable the external crystal for the SCIF_CLK and its pinctrl, to
+be used by the Baud Rate Generator for External Clock (BRG) on (H)SCIF.
 
-Based on similar work for the r8a7791/koelsch by Kuninori Morimoto.
+This increases the range and accuracy of supported baud rates.
 
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r8a7793-gose.dts | 76 ++++++++++++++++++++++++++++++++++++++
- 1 file changed, 76 insertions(+)
+Untested, based on schematics.
 
-diff --git a/arch/arm/boot/dts/r8a7793-gose.dts b/arch/arm/boot/dts/r8a7793-gose.dts
-index 9a71ff6d4474..64bcde44f4e5 100644
---- a/arch/arm/boot/dts/r8a7793-gose.dts
-+++ b/arch/arm/boot/dts/r8a7793-gose.dts
-@@ -8,6 +8,17 @@
-  * kind, whether express or implied.
-  */
- 
-+/*
-+ * SSI-AK4643
-+ *
-+ * SW1: 1: AK4643
-+ *      2: CN22
-+ *      3: ADV7511
-+ *
-+ * This command is required when Playback/Capture
-+ *
-+ *	amixer set "LINEOUT Mixer DACL" on
-+ */
- /dts-v1/;
- #include "r8a7793.dtsi"
- #include <dt-bindings/gpio/gpio.h>
-@@ -31,6 +42,30 @@
- 		device_type = "memory";
- 		reg = <0 0x40000000 0 0x40000000>;
- 	};
-+
-+	audio_clock: clock {
-+		compatible = "fixed-clock";
-+		#clock-cells = <0>;
-+		clock-frequency = <11289600>;
-+		clock-output-names = "audio_clock";
-+	};
-+
-+	rsnd_ak4643: sound {
-+		compatible = "simple-audio-card";
-+
-+		simple-audio-card,format = "left_j";
-+		simple-audio-card,bitclock-master = <&sndcodec>;
-+		simple-audio-card,frame-master = <&sndcodec>;
-+
-+		sndcpu: simple-audio-card,cpu {
-+			sound-dai = <&rcar_sound>;
-+		};
-+
-+		sndcodec: simple-audio-card,codec {
-+			sound-dai = <&ak4643>;
-+			clocks = <&audio_clock>;
-+		};
-+	};
+v2:
+  - New.
+---
+ arch/arm/boot/dts/r8a7794-alt.dts | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7794-alt.dts b/arch/arm/boot/dts/r8a7794-alt.dts
+index 2394e4883786f13e..f376b9df1f107a47 100644
+--- a/arch/arm/boot/dts/r8a7794-alt.dts
++++ b/arch/arm/boot/dts/r8a7794-alt.dts
+@@ -103,6 +103,9 @@
  };
  
- &extal_clk {
-@@ -67,6 +102,16 @@
- 		renesas,groups = "qspi_ctrl", "qspi_data4";
- 		renesas,function = "qspi";
- 	};
-+
-+	sound_pins: sound {
-+		renesas,groups = "ssi0129_ctrl", "ssi0_data", "ssi1_data";
-+		renesas,function = "ssi";
-+	};
-+
-+	sound_clk_pins: sound_clk {
-+		renesas,groups = "audio_clk_a";
-+		renesas,function = "audio_clk";
-+	};
- };
- 
- &ether {
-@@ -148,9 +193,40 @@
- 	status = "okay";
- 	clock-frequency = <100000>;
- 
-+	ak4643: codec@12 {
-+		compatible = "asahi-kasei,ak4643";
-+		#sound-dai-cells = <0>;
-+		reg = <0x12>;
-+	};
- 	eeprom@50 {
- 		compatible = "renesas,24c02";
- 		reg = <0x50>;
- 		pagesize = <16>;
- 	};
- };
-+
-+&rcar_sound {
-+	pinctrl-0 = <&sound_pins &sound_clk_pins>;
+ &pfc {
++	pinctrl-0 = <&scif_clk_pins>;
 +	pinctrl-names = "default";
 +
-+	/* Single DAI */
-+	#sound-dai-cells = <0>;
-+
-+	status = "okay";
-+
-+	rcar_sound,dai {
-+		dai0 {
-+			playback = <&ssi0>;
-+			capture  = <&ssi1>;
-+		};
+ 	du_pins: du {
+ 		renesas,groups = "du1_rgb666", "du1_sync", "du1_disp", "du1_dotclkout0";
+ 		renesas,function = "du";
+@@ -113,6 +116,11 @@
+ 		renesas,function = "scif2";
+ 	};
+ 
++	scif_clk_pins: scif_clk {
++		renesas,groups = "scif_clk";
++		renesas,function = "scif_clk";
 +	};
-+};
 +
-+&ssi0 {
-+	pio-transfer;
-+};
+ 	ether_pins: ether {
+ 		renesas,groups = "eth_link", "eth_mdio", "eth_rmii";
+ 		renesas,function = "eth";
+@@ -197,3 +205,8 @@
+ 
+ 	status = "okay";
+ };
 +
-+&ssi1 {
-+	pio-transfer;
-+	shared-pin;
++&scif_clk {
++	clock-frequency = <14745600>;
++	status = "okay";
 +};
 -- 
-2.1.4
+1.9.1
 
