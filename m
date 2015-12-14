@@ -1,28 +1,57 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 07 Dec 2015 06:23:06 +0000
-Subject: Re: [PATCH] usb: phy: Remove unused Renesas R-Car (Gen1) USB PHY driveer
-Message-Id: <20151207062305.GB22834@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 14 Dec 2015 19:11:37 +0000
+Subject: [PATCH/RFC 0/7] ARM: dts: Add compatible property to "partitions" node
+Message-Id: <1450120304-2760-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449245065-23664-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1449245065-23664-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Dec 04, 2015 at 05:04:25PM +0100, Geert Uytterhoeven wrote:
-> As of commit 3d7608e4c169af03 ("ARM: shmobile: bockw: remove legacy
-> board file and config"), the Renesas R-Car (Gen1) USB PHY driver is no
-> longer used.
-> In theory it could still be used on R-Car Gen1 SoCs, but that would
-> require adding DT support to the driver. Instead, a new driver using the
-> generic PHY framework should be written, as was done for R-Car Gen2.
-> 
-> Remove the driver for good.
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+	Hi,
 
-There is a typo in the subject, but that aside:
+As of commit e488ca9f8d4f62c2 ("doc: dt: mtd: partitions: add compatible
+property to "partitions" node"), the "partitions" subnode of an SPI
+FLASH device node must have a compatible property. The partitions are no
+longer detected if it is not present.
 
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+I marked this series as "RFC", as the abovementioned commit is not yet
+upstream. Ideally, the users should be fixed first, to avoid breakage.
 
+Tested on r8a7791/koelsch.
+
+Thanks!
+
+Geert Uytterhoeven (7):
+  ARM: dt: mvebu: ix4-300d: Add compatible property to "partitions" node
+  ARM: shmobile: bockw dts: Add compatible property to "partitions" node
+  ARM: shmobile: lager dts: Add compatible property to "partitions" node
+  ARM: shmobile: koelsch dts: Add compatible property to "partitions"
+    node
+  ARM: shmobile: porter dts: Add compatible property to "partitions"
+    node
+  ARM: shmobile: gose dts: Add compatible property to "partitions" node
+  ARM: shmobile: silk dts: Add compatible property to "partitions" node
+
+ arch/arm/boot/dts/armada-xp-lenovo-ix4-300d.dts | 1 +
+ arch/arm/boot/dts/r8a7778-bockw.dts             | 1 +
+ arch/arm/boot/dts/r8a7790-lager.dts             | 1 +
+ arch/arm/boot/dts/r8a7791-koelsch.dts           | 1 +
+ arch/arm/boot/dts/r8a7791-porter.dts            | 1 +
+ arch/arm/boot/dts/r8a7793-gose.dts              | 1 +
+ arch/arm/boot/dts/r8a7794-silk.dts              | 1 +
+ 7 files changed, 7 insertions(+)
+
+-- 
+1.9.1
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
