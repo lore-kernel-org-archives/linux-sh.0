@@ -1,38 +1,205 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 04 Dec 2015 03:16:29 +0000
-Subject: [PATCH 0/4] enable to use thermal-zone on r8a7790/1
-Message-Id: <871tb2hpn2.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 14 Dec 2015 18:57:53 +0000
+Subject: [PATCH 5/7] ARM: shmobile: r8a7793 dtsi: Add SCIF fallback compatibility strings
+Message-Id: <1450119475-1183-6-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1450119475-1183-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1450119475-1183-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, Zhang Rui <rui.zhang@intel.com>, Eduardo Valentin <edubezval@gmail.com>
-Cc: Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: linux-sh@vger.kernel.org, linux-serial@vger.kernel.org, devicetree@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-
-Hi
-
-These are enable to use thermal-zone on r8a7790/r8a7791.
-The rcar thermal driver can use of-thermal style zone by this patch,
-but it still keeping current style too.
-
-You can select trip temp by DT if you use of-thermal style (this patch).
-If not, it will use fixed trip temp.
-
-Kuninori Morimoto (4):
-      thermal: rcar: move rcar_thermal_dt_ids to upside
-      thermal: rcar: enable to use thermal-zone on DT
-      ARM: shmobile: r8a7790: enable to use thermal-zone
-      ARM: shmobile: r8a7791: enable to use thermal-zone
-
- Documentation/devicetree/bindings/thermal/rcar-thermal.txt | 37 +++++++++++++++++++++++++++++++++++--
- arch/arm/boot/dts/r8a7790.dtsi                             | 26 ++++++++++++++++++++++++--
- arch/arm/boot/dts/r8a7791.dtsi                             | 26 ++++++++++++++++++++++++--
- drivers/thermal/rcar_thermal.c                             | 57 +++++++++++++++++++++++++++++++++++++++++++++------------
- 4 files changed, 128 insertions(+), 18 deletions(-)
-
-
-
-Best regards
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-Kuninori Morimoto
+ arch/arm/boot/dts/r8a7793.dtsi | 54 ++++++++++++++++++++++++++++--------------
+ 1 file changed, 36 insertions(+), 18 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a7793.dtsi b/arch/arm/boot/dts/r8a7793.dtsi
+index df607a92b2edeb66..4b70159111f91499 100644
+--- a/arch/arm/boot/dts/r8a7793.dtsi
++++ b/arch/arm/boot/dts/r8a7793.dtsi
+@@ -298,7 +298,8 @@
+ 	};
+ 
+ 	scifa0: serial@e6c40000 {
+-		compatible = "renesas,scifa-r8a7793", "renesas,scifa";
++		compatible = "renesas,scifa-r8a7793",
++			     "renesas,rcar-gen2-scifa", "renesas,scifa";
+ 		reg = <0 0xe6c40000 0 64>;
+ 		interrupts = <0 144 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7793_CLK_SCIFA0>;
+@@ -310,7 +311,8 @@
+ 	};
+ 
+ 	scifa1: serial@e6c50000 {
+-		compatible = "renesas,scifa-r8a7793", "renesas,scifa";
++		compatible = "renesas,scifa-r8a7793",
++			     "renesas,rcar-gen2-scifa", "renesas,scifa";
+ 		reg = <0 0xe6c50000 0 64>;
+ 		interrupts = <0 145 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7793_CLK_SCIFA1>;
+@@ -322,7 +324,8 @@
+ 	};
+ 
+ 	scifa2: serial@e6c60000 {
+-		compatible = "renesas,scifa-r8a7793", "renesas,scifa";
++		compatible = "renesas,scifa-r8a7793",
++			     "renesas,rcar-gen2-scifa", "renesas,scifa";
+ 		reg = <0 0xe6c60000 0 64>;
+ 		interrupts = <0 151 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7793_CLK_SCIFA2>;
+@@ -334,7 +337,8 @@
+ 	};
+ 
+ 	scifa3: serial@e6c70000 {
+-		compatible = "renesas,scifa-r8a7793", "renesas,scifa";
++		compatible = "renesas,scifa-r8a7793",
++			     "renesas,rcar-gen2-scifa", "renesas,scifa";
+ 		reg = <0 0xe6c70000 0 64>;
+ 		interrupts = <0 29 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp11_clks R8A7793_CLK_SCIFA3>;
+@@ -346,7 +350,8 @@
+ 	};
+ 
+ 	scifa4: serial@e6c78000 {
+-		compatible = "renesas,scifa-r8a7793", "renesas,scifa";
++		compatible = "renesas,scifa-r8a7793",
++			     "renesas,rcar-gen2-scifa", "renesas,scifa";
+ 		reg = <0 0xe6c78000 0 64>;
+ 		interrupts = <0 30 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp11_clks R8A7793_CLK_SCIFA4>;
+@@ -358,7 +363,8 @@
+ 	};
+ 
+ 	scifa5: serial@e6c80000 {
+-		compatible = "renesas,scifa-r8a7793", "renesas,scifa";
++		compatible = "renesas,scifa-r8a7793",
++			     "renesas,rcar-gen2-scifa", "renesas,scifa";
+ 		reg = <0 0xe6c80000 0 64>;
+ 		interrupts = <0 31 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp11_clks R8A7793_CLK_SCIFA5>;
+@@ -370,7 +376,8 @@
+ 	};
+ 
+ 	scifb0: serial@e6c20000 {
+-		compatible = "renesas,scifb-r8a7793", "renesas,scifb";
++		compatible = "renesas,scifb-r8a7793",
++			     "renesas,rcar-gen2-scifb", "renesas,scifb";
+ 		reg = <0 0xe6c20000 0 64>;
+ 		interrupts = <0 148 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7793_CLK_SCIFB0>;
+@@ -382,7 +389,8 @@
+ 	};
+ 
+ 	scifb1: serial@e6c30000 {
+-		compatible = "renesas,scifb-r8a7793", "renesas,scifb";
++		compatible = "renesas,scifb-r8a7793",
++			     "renesas,rcar-gen2-scifb", "renesas,scifb";
+ 		reg = <0 0xe6c30000 0 64>;
+ 		interrupts = <0 149 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7793_CLK_SCIFB1>;
+@@ -394,7 +402,8 @@
+ 	};
+ 
+ 	scifb2: serial@e6ce0000 {
+-		compatible = "renesas,scifb-r8a7793", "renesas,scifb";
++		compatible = "renesas,scifb-r8a7793",
++			     "renesas,rcar-gen2-scifb", "renesas,scifb";
+ 		reg = <0 0xe6ce0000 0 64>;
+ 		interrupts = <0 150 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7793_CLK_SCIFB2>;
+@@ -406,7 +415,8 @@
+ 	};
+ 
+ 	scif0: serial@e6e60000 {
+-		compatible = "renesas,scif-r8a7793", "renesas,scif";
++		compatible = "renesas,scif-r8a7793", "renesas,rcar-gen2-scif",
++			     "renesas,scif";
+ 		reg = <0 0xe6e60000 0 64>;
+ 		interrupts = <0 152 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp7_clks R8A7793_CLK_SCIF0>;
+@@ -418,7 +428,8 @@
+ 	};
+ 
+ 	scif1: serial@e6e68000 {
+-		compatible = "renesas,scif-r8a7793", "renesas,scif";
++		compatible = "renesas,scif-r8a7793", "renesas,rcar-gen2-scif",
++			     "renesas,scif";
+ 		reg = <0 0xe6e68000 0 64>;
+ 		interrupts = <0 153 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp7_clks R8A7793_CLK_SCIF1>;
+@@ -430,7 +441,8 @@
+ 	};
+ 
+ 	scif2: serial@e6e58000 {
+-		compatible = "renesas,scif-r8a7793", "renesas,scif";
++		compatible = "renesas,scif-r8a7793", "renesas,rcar-gen2-scif",
++			     "renesas,scif";
+ 		reg = <0 0xe6e58000 0 64>;
+ 		interrupts = <0 22 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp7_clks R8A7793_CLK_SCIF2>;
+@@ -442,7 +454,8 @@
+ 	};
+ 
+ 	scif3: serial@e6ea8000 {
+-		compatible = "renesas,scif-r8a7793", "renesas,scif";
++		compatible = "renesas,scif-r8a7793", "renesas,rcar-gen2-scif",
++			     "renesas,scif";
+ 		reg = <0 0xe6ea8000 0 64>;
+ 		interrupts = <0 23 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp7_clks R8A7793_CLK_SCIF3>;
+@@ -454,7 +467,8 @@
+ 	};
+ 
+ 	scif4: serial@e6ee0000 {
+-		compatible = "renesas,scif-r8a7793", "renesas,scif";
++		compatible = "renesas,scif-r8a7793", "renesas,rcar-gen2-scif",
++			     "renesas,scif";
+ 		reg = <0 0xe6ee0000 0 64>;
+ 		interrupts = <0 24 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp7_clks R8A7793_CLK_SCIF4>;
+@@ -466,7 +480,8 @@
+ 	};
+ 
+ 	scif5: serial@e6ee8000 {
+-		compatible = "renesas,scif-r8a7793", "renesas,scif";
++		compatible = "renesas,scif-r8a7793", "renesas,rcar-gen2-scif",
++			     "renesas,scif";
+ 		reg = <0 0xe6ee8000 0 64>;
+ 		interrupts = <0 25 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp7_clks R8A7793_CLK_SCIF5>;
+@@ -478,7 +493,8 @@
+ 	};
+ 
+ 	hscif0: serial@e62c0000 {
+-		compatible = "renesas,hscif-r8a7793", "renesas,hscif";
++		compatible = "renesas,hscif-r8a7793",
++			     "renesas,rcar-gen2-hscif", "renesas,hscif";
+ 		reg = <0 0xe62c0000 0 96>;
+ 		interrupts = <0 154 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp7_clks R8A7793_CLK_HSCIF0>;
+@@ -490,7 +506,8 @@
+ 	};
+ 
+ 	hscif1: serial@e62c8000 {
+-		compatible = "renesas,hscif-r8a7793", "renesas,hscif";
++		compatible = "renesas,hscif-r8a7793",
++			     "renesas,rcar-gen2-hscif", "renesas,hscif";
+ 		reg = <0 0xe62c8000 0 96>;
+ 		interrupts = <0 155 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp7_clks R8A7793_CLK_HSCIF1>;
+@@ -502,7 +519,8 @@
+ 	};
+ 
+ 	hscif2: serial@e62d0000 {
+-		compatible = "renesas,hscif-r8a7793", "renesas,hscif";
++		compatible = "renesas,hscif-r8a7793",
++			     "renesas,rcar-gen2-hscif", "renesas,hscif";
+ 		reg = <0 0xe62d0000 0 96>;
+ 		interrupts = <0 21 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp7_clks R8A7793_CLK_HSCIF2>;
+-- 
+1.9.1
+
