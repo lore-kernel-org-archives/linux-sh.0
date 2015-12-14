@@ -1,209 +1,128 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sat, 05 Dec 2015 02:13:05 +0000
-Subject: [PATCH v2 31/32] v4l: vsp1: Add support for the R-Car Gen3 VSP2
-Message-Id: <1449281586-25726-32-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 14 Dec 2015 18:58:02 +0000
+Subject: [PATCH v3 08/12] ARM: shmobile: r8a7790 dtsi: Rename the serial port clock to fck
+Message-Id: <1450119486-1285-9-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1450119486-1285-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1450119486-1285-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: linux-sh@vger.kernel.org, linux-serial@vger.kernel.org, devicetree@vger.kernel.org, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Add DT compatible strings for the VSP2 instances found in the R-Car Gen3
-SoCs and support them in the vsp1 driver.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+
+The clock is really the device functional clock, not the interface
+clock. Rename it.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
+v3:
+  - No changes,
 
-Changes since v1:
-
-- Configure device parameters based on the version register
-
+v2:
+  - Add Acked-by.
 ---
- .../devicetree/bindings/media/renesas,vsp1.txt     | 20 ++++++++-------
- drivers/media/platform/vsp1/vsp1_drv.c             | 25 ++++++++++++++++++
- drivers/media/platform/vsp1/vsp1_entity.c          |  3 ++-
- drivers/media/platform/vsp1/vsp1_regs.h            | 30 +++++++++++++++++-----
- 4 files changed, 62 insertions(+), 16 deletions(-)
+ arch/arm/boot/dts/r8a7790.dtsi | 20 ++++++++++----------
+ 1 file changed, 10 insertions(+), 10 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/media/renesas,vsp1.txt b/Documentation/devicetree/bindings/media/renesas,vsp1.txt
-index 674c8c30d046..fe74fb38e4d5 100644
---- a/Documentation/devicetree/bindings/media/renesas,vsp1.txt
-+++ b/Documentation/devicetree/bindings/media/renesas,vsp1.txt
-@@ -1,24 +1,26 @@
--* Renesas VSP1 Video Processing Engine
-+* Renesas VSP Video Processing Engine
- 
--The VSP1 is a video processing engine that supports up-/down-scaling, alpha
-+The VSP is a video processing engine that supports up-/down-scaling, alpha
- blending, color space conversion and various other image processing features.
- It can be found in the Renesas R-Car second generation SoCs.
- 
- Required properties:
- 
--  - compatible: Must contain "renesas,vsp1"
-+  - compatible: Must contain one of the following values
-+    - "renesas,vsp1" for the R-Car Gen2 VSP1
-+    - "renesas,vsp2" for the R-Car Gen3 VSP2
- 
--  - reg: Base address and length of the registers block for the VSP1.
--  - interrupts: VSP1 interrupt specifier.
--  - clocks: A phandle + clock-specifier pair for the VSP1 functional clock.
-+  - reg: Base address and length of the registers block for the VSP.
-+  - interrupts: VSP interrupt specifier.
-+  - clocks: A phandle + clock-specifier pair for the VSP functional clock.
- 
--  - renesas,#rpf: Number of Read Pixel Formatter (RPF) modules in the VSP1.
--  - renesas,#wpf: Number of Write Pixel Formatter (WPF) modules in the VSP1.
-+  - renesas,#rpf: Number of Read Pixel Formatter (RPF) modules in the VSP.
-+  - renesas,#wpf: Number of Write Pixel Formatter (WPF) modules in the VSP.
- 
- 
- Optional properties:
- 
--  - renesas,#uds: Number of Up Down Scaler (UDS) modules in the VSP1. Defaults
-+  - renesas,#uds: Number of Up Down Scaler (UDS) modules in the VSP. Defaults
-     to 0 if not present.
-   - renesas,has-lif: Boolean, indicates that the LCD Interface (LIF) module is
-     available.
-diff --git a/drivers/media/platform/vsp1/vsp1_drv.c b/drivers/media/platform/vsp1/vsp1_drv.c
-index 377b167892e3..9a30c96dc642 100644
---- a/drivers/media/platform/vsp1/vsp1_drv.c
-+++ b/drivers/media/platform/vsp1/vsp1_drv.c
-@@ -575,6 +575,7 @@ static int vsp1_probe(struct platform_device *pdev)
- 	struct vsp1_device *vsp1;
- 	struct resource *irq;
- 	struct resource *io;
-+	u32 version;
- 	int ret;
- 
- 	vsp1 = devm_kzalloc(&pdev->dev, sizeof(*vsp1), GFP_KERNEL);
-@@ -615,6 +616,29 @@ static int vsp1_probe(struct platform_device *pdev)
- 		return ret;
- 	}
- 
-+	/* Configure device parameters based on the version register. */
-+	ret = clk_prepare_enable(vsp1->clock);
-+	if (ret < 0)
-+		return ret;
-+
-+	version = vsp1_read(vsp1, VI6_IP_VERSION);
-+	clk_disable_unprepare(vsp1->clock);
-+
-+	dev_dbg(&pdev->dev, "IP version 0x%08x\n", version);
-+
-+	switch (version & VI6_IP_VERSION_MODEL_MASK) {
-+	case VI6_IP_VERSION_MODEL_VSPD_GEN3:
-+		vsp1->pdata.num_bru_inputs = 5;
-+		vsp1->pdata.uapi = false;
-+		break;
-+
-+	case VI6_IP_VERSION_MODEL_VSPI_GEN3:
-+	case VI6_IP_VERSION_MODEL_VSPBD_GEN3:
-+	case VI6_IP_VERSION_MODEL_VSPBC_GEN3:
-+		vsp1->pdata.features &= ~VSP1_HAS_BRU;
-+		break;
-+	}
-+
- 	/* Instanciate entities */
- 	ret = vsp1_create_entities(vsp1);
- 	if (ret < 0) {
-@@ -638,6 +662,7 @@ static int vsp1_remove(struct platform_device *pdev)
- 
- static const struct of_device_id vsp1_of_match[] = {
- 	{ .compatible = "renesas,vsp1" },
-+	{ .compatible = "renesas,vsp2" },
- 	{ },
- };
- 
-diff --git a/drivers/media/platform/vsp1/vsp1_entity.c b/drivers/media/platform/vsp1/vsp1_entity.c
-index 38a496f43050..4b46cb0e0e8a 100644
---- a/drivers/media/platform/vsp1/vsp1_entity.c
-+++ b/drivers/media/platform/vsp1/vsp1_entity.c
-@@ -165,7 +165,8 @@ int vsp1_entity_link_setup(struct media_entity *entity,
- static const struct vsp1_route vsp1_routes[] = {
- 	{ VSP1_ENTITY_BRU, 0, VI6_DPR_BRU_ROUTE,
- 	  { VI6_DPR_NODE_BRU_IN(0), VI6_DPR_NODE_BRU_IN(1),
--	    VI6_DPR_NODE_BRU_IN(2), VI6_DPR_NODE_BRU_IN(3), } },
-+	    VI6_DPR_NODE_BRU_IN(2), VI6_DPR_NODE_BRU_IN(3),
-+	    VI6_DPR_NODE_BRU_IN(4) } },
- 	{ VSP1_ENTITY_HSI, 0, VI6_DPR_HSI_ROUTE, { VI6_DPR_NODE_HSI, } },
- 	{ VSP1_ENTITY_HST, 0, VI6_DPR_HST_ROUTE, { VI6_DPR_NODE_HST, } },
- 	{ VSP1_ENTITY_LIF, 0, 0, { VI6_DPR_NODE_LIF, } },
-diff --git a/drivers/media/platform/vsp1/vsp1_regs.h b/drivers/media/platform/vsp1/vsp1_regs.h
-index 8173ceaab9f9..a3a0a15d9997 100644
---- a/drivers/media/platform/vsp1/vsp1_regs.h
-+++ b/drivers/media/platform/vsp1/vsp1_regs.h
-@@ -322,7 +322,7 @@
- #define VI6_DPR_NODE_SRU		16
- #define VI6_DPR_NODE_UDS(n)		(17 + (n))
- #define VI6_DPR_NODE_LUT		22
--#define VI6_DPR_NODE_BRU_IN(n)		(23 + (n))
-+#define VI6_DPR_NODE_BRU_IN(n)		(((n) <= 3) ? 23 + (n) : 49)
- #define VI6_DPR_NODE_BRU_OUT		27
- #define VI6_DPR_NODE_CLU		29
- #define VI6_DPR_NODE_HST		30
-@@ -504,12 +504,12 @@
- #define VI6_BRU_VIRRPF_COL_BCB_MASK	(0xff << 0)
- #define VI6_BRU_VIRRPF_COL_BCB_SHIFT	0
- 
--#define VI6_BRU_CTRL(n)			(0x2c10 + (n) * 8)
-+#define VI6_BRU_CTRL(n)			(0x2c10 + (n) * 8 + ((n) <= 3 ? 0 : 4))
- #define VI6_BRU_CTRL_RBC		(1 << 31)
--#define VI6_BRU_CTRL_DSTSEL_BRUIN(n)	((n) << 20)
-+#define VI6_BRU_CTRL_DSTSEL_BRUIN(n)	(((n) <= 3 ? (n) : (n)+1) << 20)
- #define VI6_BRU_CTRL_DSTSEL_VRPF	(4 << 20)
- #define VI6_BRU_CTRL_DSTSEL_MASK	(7 << 20)
--#define VI6_BRU_CTRL_SRCSEL_BRUIN(n)	((n) << 16)
-+#define VI6_BRU_CTRL_SRCSEL_BRUIN(n)	(((n) <= 3 ? (n) : (n)+1) << 16)
- #define VI6_BRU_CTRL_SRCSEL_VRPF	(4 << 16)
- #define VI6_BRU_CTRL_SRCSEL_MASK	(7 << 16)
- #define VI6_BRU_CTRL_CROP(rop)		((rop) << 4)
-@@ -517,7 +517,7 @@
- #define VI6_BRU_CTRL_AROP(rop)		((rop) << 0)
- #define VI6_BRU_CTRL_AROP_MASK		(0xf << 0)
- 
--#define VI6_BRU_BLD(n)			(0x2c14 + (n) * 8)
-+#define VI6_BRU_BLD(n)			(0x2c14 + (n) * 8 + ((n) <= 3 ? 0 : 4))
- #define VI6_BRU_BLD_CBES		(1 << 31)
- #define VI6_BRU_BLD_CCMDX_DST_A		(0 << 28)
- #define VI6_BRU_BLD_CCMDX_255_DST_A	(1 << 28)
-@@ -551,7 +551,7 @@
- #define VI6_BRU_BLD_COEFY_SHIFT		0
- 
- #define VI6_BRU_ROP			0x2c30
--#define VI6_BRU_ROP_DSTSEL_BRUIN(n)	((n) << 20)
-+#define VI6_BRU_ROP_DSTSEL_BRUIN(n)	(((n) <= 3 ? (n) : (n)+1) << 20)
- #define VI6_BRU_ROP_DSTSEL_VRPF		(4 << 20)
- #define VI6_BRU_ROP_DSTSEL_MASK		(7 << 20)
- #define VI6_BRU_ROP_CROP(rop)		((rop) << 4)
-@@ -625,6 +625,24 @@
- #define VI6_SECURITY_CTRL1		0x3d04
- 
- /* -----------------------------------------------------------------------------
-+ * IP Version Registers
-+ */
-+
-+#define VI6_IP_VERSION			0x3f00
-+#define VI6_IP_VERSION_MODEL_MASK	(0xff << 8)
-+#define VI6_IP_VERSION_MODEL_VSPS_H2	(0x09 << 8)
-+#define VI6_IP_VERSION_MODEL_VSPR_GEN2	(0x0a << 8)
-+#define VI6_IP_VERSION_MODEL_VSPD_H2	(0x0b << 8)
-+#define VI6_IP_VERSION_MODEL_VSPS_M2	(0x0c << 8)
-+#define VI6_IP_VERSION_MODEL_VSPI_GEN3	(0x14 << 8)
-+#define VI6_IP_VERSION_MODEL_VSPBD_GEN3	(0x15 << 8)
-+#define VI6_IP_VERSION_MODEL_VSPBC_GEN3	(0x16 << 8)
-+#define VI6_IP_VERSION_MODEL_VSPD_GEN3	(0x17 << 8)
-+#define VI6_IP_VERSION_SOC_MASK		(0xff << 0)
-+#define VI6_IP_VERSION_SOC_H		(0x01 << 0)
-+#define VI6_IP_VERSION_SOC_M		(0x02 << 0)
-+
-+/* -----------------------------------------------------------------------------
-  * RPF CLUT Registers
-  */
- 
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index de65cb731fa5e801..cb3d9b8790d2dfdb 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -586,7 +586,7 @@
+ 		reg = <0 0xe6c40000 0 64>;
+ 		interrupts = <0 144 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7790_CLK_SCIFA0>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		dmas = <&dmac0 0x21>, <&dmac0 0x22>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
+@@ -599,7 +599,7 @@
+ 		reg = <0 0xe6c50000 0 64>;
+ 		interrupts = <0 145 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7790_CLK_SCIFA1>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		dmas = <&dmac0 0x25>, <&dmac0 0x26>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
+@@ -612,7 +612,7 @@
+ 		reg = <0 0xe6c60000 0 64>;
+ 		interrupts = <0 151 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7790_CLK_SCIFA2>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		dmas = <&dmac0 0x27>, <&dmac0 0x28>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
+@@ -625,7 +625,7 @@
+ 		reg = <0 0xe6c20000 0 64>;
+ 		interrupts = <0 148 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7790_CLK_SCIFB0>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		dmas = <&dmac0 0x3d>, <&dmac0 0x3e>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
+@@ -638,7 +638,7 @@
+ 		reg = <0 0xe6c30000 0 64>;
+ 		interrupts = <0 149 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7790_CLK_SCIFB1>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		dmas = <&dmac0 0x19>, <&dmac0 0x1a>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
+@@ -651,7 +651,7 @@
+ 		reg = <0 0xe6ce0000 0 64>;
+ 		interrupts = <0 150 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7790_CLK_SCIFB2>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		dmas = <&dmac0 0x1d>, <&dmac0 0x1e>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
+@@ -664,7 +664,7 @@
+ 		reg = <0 0xe6e60000 0 64>;
+ 		interrupts = <0 152 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp7_clks R8A7790_CLK_SCIF0>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		dmas = <&dmac0 0x29>, <&dmac0 0x2a>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
+@@ -677,7 +677,7 @@
+ 		reg = <0 0xe6e68000 0 64>;
+ 		interrupts = <0 153 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp7_clks R8A7790_CLK_SCIF1>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		dmas = <&dmac0 0x2d>, <&dmac0 0x2e>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
+@@ -690,7 +690,7 @@
+ 		reg = <0 0xe62c0000 0 96>;
+ 		interrupts = <0 154 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp7_clks R8A7790_CLK_HSCIF0>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		dmas = <&dmac0 0x39>, <&dmac0 0x3a>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
+@@ -703,7 +703,7 @@
+ 		reg = <0 0xe62c8000 0 96>;
+ 		interrupts = <0 155 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp7_clks R8A7790_CLK_HSCIF1>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		dmas = <&dmac0 0x4d>, <&dmac0 0x4e>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
 -- 
-2.4.10
+1.9.1
 
