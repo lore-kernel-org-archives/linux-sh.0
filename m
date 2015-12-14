@@ -1,80 +1,67 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 14 Dec 2015 18:58:08 +0000
-Subject: [PATCH v2 0/7] ARM: shmobile: dtsi: Add BRG support for (H)SCIF
-Message-Id: <1450119495-1416-1-git-send-email-geert+renesas@glider.be>
+From: Dirk Behme <dirk.behme@gmail.com>
+Date: Mon, 14 Dec 2015 17:37:51 +0000
+Subject: [PATCH] arm64: dts: r8a7795: pmu: switch to Cortex specific device nodes
+Message-Id: <1450114671-10711-1-git-send-email-dirk.behme@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-sh@vger.kernel.org, linux-serial@vger.kernel.org, devicetree@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arm-kernel@lists.infradead.org
 
-	Hi Simon, Magnus,
+Instead of using the generic armv8-pmuv3 compatibility use the more
+specific Cortex A57 and A53 compatibility.
 
-This patch series adds support for the Baud Rate Generator for External
-Clock (BRG), as found on SCIF and HSCIF, to the DTS files for all R-Car
-Gen1, Gen2, and Gen3 SoCs.
+Signed-off-by: Dirk Behme <dirk.behme@gmail.com>
+---
+Note: This patch applies on top of
 
-This series is an updated version of a part of a series I sent before as
-"[PATCH v2 00/16] serial: sh-sci: Clock Cleanups"
-(http://www.spinics.net/lists/linux-serial/msg19762.html). To reduce
-(cross) dependencies, I split off the core patches and some DT parts
-into separate series.
+https://patchwork.kernel.org/patch/7834201/
 
-Changes compared to previous submission:
-  - Rename "int_clk" to "brg_int",
-  - Add support for R-Car M1A (r8a7778) and R-Car H1 (r8a7779),
-  - Add support for R-Car H2 (r8a7790), R-Car M2-N (r8a7793), and R-Car
-    E2 (r8a7794),
-  - Correct internal clock source ZS_CLK to S3D1 in patch description
-    for r8a7795,
+https://patchwork.kernel.org/patch/7834211/
 
-Dependencies:
-  - This series is against renesas-devel-20151214-v4.4-rc5, with the
-    following applied on top:
-      - "[PATCH 0/7] ARM: shmobile: dtsi: Add SCIF fallback
-	 compatibility strings",
-      - "[PATCH v3 00/12] ARM: shmobile: dtsi: Rename the serial port
-	 clock to fck",
-  - It can be applied as soon as the DT bindings in "[PATCH v3 04/27]
-    serial: sh-sci: Update DT binding documentation for BRG support" of
-    series "[PATCH v3 00/27] serial: sh-sci: External Clock Support"
-    have been accepted,
-  - Later series depend on this:
-      - "[PATCH v2 0/9] ARM: shmobile: dts: Enable SCIF_CLK frequency
-	 and pins".
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi | 23 ++++++++++++++---------
+ 1 file changed, 14 insertions(+), 9 deletions(-)
 
-This was tested on r8a7778/bockw, r8a7779/marzen, r8a7791/koelsch, and
-r8a7795/salvator-x.
-
-Geert Uytterhoeven (7):
-  ARM: shmobile: r8a7778 dtsi: Add BRG support for SCIF
-  ARM: shmobile: r8a7779 dtsi: Add BRG support for SCIF
-  ARM: shmobile: r8a7790 dtsi: Add BRG support for (H)SCIF
-  ARM: shmobile: r8a7791 dtsi: Add BRG support for (H)SCIF
-  ARM: shmobile: r8a7793 dtsi: Add BRG support for SCIF
-  ARM: shmobile: r8a7794 dtsi: Add BRG support for (H)SCIF
-  arm64: renesas: r8a7795 dtsi: Add BRG support for (H)SCIF
-
- arch/arm/boot/dts/r8a7778.dtsi           | 39 +++++++++++------
- arch/arm/boot/dts/r8a7779.dtsi           | 39 +++++++++++------
- arch/arm/boot/dts/r8a7790.dtsi           | 29 +++++++++----
- arch/arm/boot/dts/r8a7791.dtsi           | 54 +++++++++++++++--------
- arch/arm/boot/dts/r8a7793.dtsi           | 54 +++++++++++++++--------
- arch/arm/boot/dts/r8a7794.dtsi           | 54 +++++++++++++++--------
- arch/arm64/boot/dts/renesas/r8a7795.dtsi | 74 ++++++++++++++++++++++----------
- 7 files changed, 235 insertions(+), 108 deletions(-)
-
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index 30ebc08..590c510 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -287,21 +287,26 @@
+ 			power-domains = <&cpg>;
+ 		};
+ 
+-		pmu {
+-			compatible = "arm,armv8-pmuv3";
++		pmu_a57 {
++			compatible = "arm,cortex-a57-pmu";
+ 			interrupts = <GIC_SPI 72 IRQ_TYPE_LEVEL_HIGH>,
+ 				     <GIC_SPI 73 IRQ_TYPE_LEVEL_HIGH>,
+ 				     <GIC_SPI 74 IRQ_TYPE_LEVEL_HIGH>,
+-				     <GIC_SPI 75 IRQ_TYPE_LEVEL_HIGH>,
+-				     <GIC_SPI 84 IRQ_TYPE_LEVEL_HIGH>,
+-				     <GIC_SPI 85 IRQ_TYPE_LEVEL_HIGH>,
+-				     <GIC_SPI 86 IRQ_TYPE_LEVEL_HIGH>,
+-				     <GIC_SPI 87 IRQ_TYPE_LEVEL_HIGH>;
++				     <GIC_SPI 75 IRQ_TYPE_LEVEL_HIGH>;
+ 			interrupt-affinity = <&a57_0>,
+ 					     <&a57_1>,
+ 					     <&a57_2>,
+-					     <&a57_3>,
+-					     <&a53_0>,
++					     <&a57_3>;
++
++		};
++
++		pmu_a53 {
++			compatible = "arm,cortex-a53-pmu";
++			interrupts = <GIC_SPI 84 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 85 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 86 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 87 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-affinity = <&a53_0>,
+ 					     <&a53_1>,
+ 					     <&a53_2>,
+ 					     <&a53_3>;
 -- 
-1.9.1
+2.6.4
 
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
