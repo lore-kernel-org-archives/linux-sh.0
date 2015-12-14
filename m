@@ -1,74 +1,55 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 08 Dec 2015 05:28:13 +0000
-Subject: [PATCH 4/8 v4] thermal: rcar: retern error rcar_thermal_get_temp() if no ctemp update
-Message-Id: <87poyh5x69.wl%kuninori.morimoto.gx@renesas.com>
+From: Eduardo Valentin <edubezval@gmail.com>
+Date: Mon, 14 Dec 2015 21:20:22 +0000
+Subject: Re: [PATCH 4/8 v4] thermal: rcar: retern error rcar_thermal_get_temp() if no ctemp update
+Message-Id: <20151214212021.GA10992@localhost.localdomain>
 List-Id: <linux-sh.vger.kernel.org>
 References: <87vb895x9d.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87vb895x9d.wl%kuninori.morimoto.gx@renesas.com>
+ <87poyh5x69.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87poyh5x69.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, Zhang Rui <rui.zhang@intel.com>, Eduardo Valentin <edubezval@gmail.com>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: Simon <horms@verge.net.au>, Zhang Rui <rui.zhang@intel.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+On Tue, Dec 08, 2015 at 05:28:13AM +0000, Kuninori Morimoto wrote:
+> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> 
+> Current rcar_thermal_get_temp() returns latest temperature, but it might
+> not be updated if some HW issue happened. This means user might get
+> wrong temperature. This patch solved this issue.
+> 
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> ---
+> v3 -> v4
+> 
+>  - "happend" -> "happened"
+> 
+>  drivers/thermal/rcar_thermal.c | 14 ++++++++++++--
+>  1 file changed, 12 insertions(+), 2 deletions(-)
+> 
+> diff --git a/drivers/thermal/rcar_thermal.c b/drivers/thermal/rcar_thermal.c
+> index 67b5216..40c3ba5 100644
+> --- a/drivers/thermal/rcar_thermal.c
+> +++ b/drivers/thermal/rcar_thermal.c
+> @@ -199,9 +199,9 @@ static int rcar_thermal_update_temp(struct rcar_thermal_priv *priv)
+>  
+>  	dev_dbg(dev, "thermal%d  %d -> %d\n", priv->id, priv->ctemp, ctemp);
+>  
+> -	priv->ctemp = ctemp;
+>  	ret = 0;
+>  err_out_unlock:
+> +	priv->ctemp = ctemp;
+>  	mutex_unlock(&priv->lock);
+>  	return ret;
 
-Current rcar_thermal_get_temp() returns latest temperature, but it might
-not be updated if some HW issue happened. This means user might get
-wrong temperature. This patch solved this issue.
+I believe the problem here is actually the lack of error
+handling/propagation. Are you sure you want to write to parameter
+in the fail path ?
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
-v3 -> v4
+rcar_thermal_update_temp already returns error code when it fails
+to read temperature. Don't you think it would make more sense to fix the
+places that call rcar_thermal_update_temp to properly handle its return
+value and propagate that error code when necessary?
 
- - "happend" -> "happened"
-
- drivers/thermal/rcar_thermal.c | 14 ++++++++++++--
- 1 file changed, 12 insertions(+), 2 deletions(-)
-
-diff --git a/drivers/thermal/rcar_thermal.c b/drivers/thermal/rcar_thermal.c
-index 67b5216..40c3ba5 100644
---- a/drivers/thermal/rcar_thermal.c
-+++ b/drivers/thermal/rcar_thermal.c
-@@ -199,9 +199,9 @@ static int rcar_thermal_update_temp(struct rcar_thermal_priv *priv)
- 
- 	dev_dbg(dev, "thermal%d  %d -> %d\n", priv->id, priv->ctemp, ctemp);
- 
--	priv->ctemp = ctemp;
- 	ret = 0;
- err_out_unlock:
-+	priv->ctemp = ctemp;
- 	mutex_unlock(&priv->lock);
- 	return ret;
- }
-@@ -209,6 +209,7 @@ err_out_unlock:
- static int rcar_thermal_get_temp(struct thermal_zone_device *zone, int *temp)
- {
- 	struct rcar_thermal_priv *priv = rcar_zone_to_priv(zone);
-+	int tmp;
- 
- 	if (!rcar_has_irq_support(priv) || rcar_force_update_temp(priv)) {
- 		int ret = rcar_thermal_update_temp(priv);
-@@ -218,9 +219,18 @@ static int rcar_thermal_get_temp(struct thermal_zone_device *zone, int *temp)
- 	}
- 
- 	mutex_lock(&priv->lock);
--	*temp =  MCELSIUS((priv->ctemp * 5) - 65);
-+	tmp =  MCELSIUS((priv->ctemp * 5) - 65);
- 	mutex_unlock(&priv->lock);
- 
-+	if ((tmp < MCELSIUS(-45)) || (tmp > MCELSIUS(125))) {
-+		struct device *dev = rcar_priv_to_dev(priv);
-+
-+		dev_err(dev, "it couldn't measure temperature correctly\n");
-+		return -EIO;
-+	}
-+
-+	*temp = tmp;
-+
- 	return 0;
- }
- 
--- 
-1.9.1
-
+BR,
