@@ -1,98 +1,103 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Thu, 03 Dec 2015 15:51:33 +0000
-Subject: [PATCH 3/9] i2c: rcar: refactor probe function a little
-Message-Id: <1449157899-6572-4-git-send-email-wsa@the-dreams.de>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 14 Dec 2015 18:58:11 +0000
+Subject: [PATCH v2 3/7] ARM: shmobile: r8a7790 dtsi: Add BRG support for (H)SCIF
+Message-Id: <1450119495-1416-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449157899-6572-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1449157899-6572-1-git-send-email-wsa@the-dreams.de>
+References: <1450119495-1416-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1450119495-1416-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, linux-rockchip@lists.infradead.org, Mika Westerberg <mika.westerberg@linux.intel.com>, Andy Shevchenko <andriy.shevchenko@linux.intel.com>, Jarkko Nikula <jarkko.nikula@linux.intel.com>
+To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: linux-sh@vger.kernel.org, linux-serial@vger.kernel.org, devicetree@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Add the device node for the external SCIF_CLK.
+The presence of the SCIF_CLK crystal and its clock frequency depends on
+the actual board.
 
-The probe function is a little bit messy, something here, something
-there. Rework it so that there is some order: first init the private
-structure, then the adapter, then do HW init. This also allows us to
-remove the device argument of the clock calculation function, because it
-now can be deduced from the private structure. Also, shorten some lines
-where possible. This is a preparation for further refactoring.
+Add the two optional clock sources (ZS_CLK and SCIF_CLK for the internal
+resp. external clock) for the Baud Rate Generator for External Clock
+(BRG) to all SCIF and HSCIF device nodes.
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+This increases the range and accuracy of supported baud rates on
+(H)SCIF.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/i2c/busses/i2c-rcar.c | 40 +++++++++++++++++-----------------------
- 1 file changed, 17 insertions(+), 23 deletions(-)
+v2:
+  - New.
+---
+ arch/arm/boot/dts/r8a7790.dtsi | 29 +++++++++++++++++++++--------
+ 1 file changed, 21 insertions(+), 8 deletions(-)
 
-diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
-index 3ed1f0aa5eeb16..d4322a9096786f 100644
---- a/drivers/i2c/busses/i2c-rcar.c
-+++ b/drivers/i2c/busses/i2c-rcar.c
-@@ -162,15 +162,11 @@ static int rcar_i2c_bus_barrier(struct rcar_i2c_priv *priv)
- 	return -EBUSY;
- }
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index cb3d9b8790d2dfdb..ec71d89f16db1eec 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -663,8 +663,9 @@
+ 			     "renesas,scif";
+ 		reg = <0 0xe6e60000 0 64>;
+ 		interrupts = <0 152 IRQ_TYPE_LEVEL_HIGH>;
+-		clocks = <&mstp7_clks R8A7790_CLK_SCIF0>;
+-		clock-names = "fck";
++		clocks = <&mstp7_clks R8A7790_CLK_SCIF0>, <&zs_clk>,
++			 <&scif_clk>;
++		clock-names = "fck", "brg_int", "scif_clk";
+ 		dmas = <&dmac0 0x29>, <&dmac0 0x2a>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
+@@ -676,8 +677,9 @@
+ 			     "renesas,scif";
+ 		reg = <0 0xe6e68000 0 64>;
+ 		interrupts = <0 153 IRQ_TYPE_LEVEL_HIGH>;
+-		clocks = <&mstp7_clks R8A7790_CLK_SCIF1>;
+-		clock-names = "fck";
++		clocks = <&mstp7_clks R8A7790_CLK_SCIF1>, <&zs_clk>,
++			 <&scif_clk>;
++		clock-names = "fck", "brg_int", "scif_clk";
+ 		dmas = <&dmac0 0x2d>, <&dmac0 0x2e>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
+@@ -689,8 +691,9 @@
+ 			     "renesas,rcar-gen2-hscif", "renesas,hscif";
+ 		reg = <0 0xe62c0000 0 96>;
+ 		interrupts = <0 154 IRQ_TYPE_LEVEL_HIGH>;
+-		clocks = <&mstp7_clks R8A7790_CLK_HSCIF0>;
+-		clock-names = "fck";
++		clocks = <&mstp7_clks R8A7790_CLK_HSCIF0>, <&zs_clk>,
++			 <&scif_clk>;
++		clock-names = "fck", "brg_int", "scif_clk";
+ 		dmas = <&dmac0 0x39>, <&dmac0 0x3a>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
+@@ -702,8 +705,9 @@
+ 			     "renesas,rcar-gen2-hscif", "renesas,hscif";
+ 		reg = <0 0xe62c8000 0 96>;
+ 		interrupts = <0 155 IRQ_TYPE_LEVEL_HIGH>;
+-		clocks = <&mstp7_clks R8A7790_CLK_HSCIF1>;
+-		clock-names = "fck";
++		clocks = <&mstp7_clks R8A7790_CLK_HSCIF1>, <&zs_clk>,
++			 <&scif_clk>;
++		clock-names = "fck", "brg_int", "scif_clk";
+ 		dmas = <&dmac0 0x4d>, <&dmac0 0x4e>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
+@@ -992,6 +996,15 @@
+ 			clock-output-names = "audio_clk_c";
+ 		};
  
--static int rcar_i2c_clock_calculate(struct rcar_i2c_priv *priv,
--				    u32 bus_speed,
--				    struct device *dev)
-+static int rcar_i2c_clock_calculate(struct rcar_i2c_priv *priv, u32 bus_speed)
- {
--	u32 scgd, cdf;
--	u32 round, ick;
--	u32 scl;
--	u32 cdf_width;
-+	u32 scgd, cdf, round, ick, scl, cdf_width;
- 	unsigned long rate;
-+	struct device *dev = rcar_i2c_priv_to_dev(priv);
- 
- 	switch (priv->devtype) {
- 	case I2C_RCAR_GEN1:
-@@ -610,21 +606,7 @@ static int rcar_i2c_probe(struct platform_device *pdev)
- 	if (IS_ERR(priv->io))
- 		return PTR_ERR(priv->io);
- 
--	bus_speed = 100000; /* default 100 kHz */
--	of_property_read_u32(dev->of_node, "clock-frequency", &bus_speed);
--
- 	priv->devtype = (enum rcar_i2c_type)of_match_device(rcar_i2c_dt_ids, dev)->data;
--
--	pm_runtime_enable(dev);
--	pm_runtime_get_sync(dev);
--	ret = rcar_i2c_clock_calculate(priv, bus_speed, dev);
--	if (ret < 0)
--		goto out_pm_put;
--
--	rcar_i2c_init(priv);
--	pm_runtime_put(dev);
--
--	irq = platform_get_irq(pdev, 0);
- 	init_waitqueue_head(&priv->wait);
- 
- 	adap = &priv->adap;
-@@ -637,8 +619,20 @@ static int rcar_i2c_probe(struct platform_device *pdev)
- 	i2c_set_adapdata(adap, priv);
- 	strlcpy(adap->name, pdev->name, sizeof(adap->name));
- 
--	ret = devm_request_irq(dev, irq, rcar_i2c_irq, 0,
--			       dev_name(dev), priv);
-+	bus_speed = 100000; /* default 100 kHz */
-+	of_property_read_u32(dev->of_node, "clock-frequency", &bus_speed);
++		/* External SCIF clock */
++		scif_clk: scif {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			/* This value must be overridden by the board. */
++			clock-frequency = <0>;
++			status = "disabled";
++		};
 +
-+	pm_runtime_enable(dev);
-+	pm_runtime_get_sync(dev);
-+	ret = rcar_i2c_clock_calculate(priv, bus_speed);
-+	if (ret < 0)
-+		goto out_pm_put;
-+
-+	rcar_i2c_init(priv);
-+	pm_runtime_put(dev);
-+
-+	irq = platform_get_irq(pdev, 0);
-+	ret = devm_request_irq(dev, irq, rcar_i2c_irq, 0, dev_name(dev), priv);
- 	if (ret < 0) {
- 		dev_err(dev, "cannot get irq %d\n", irq);
- 		goto out_pm_disable;
+ 		/* External USB clock - can be overridden by the board */
+ 		usb_extal_clk: usb_extal_clk {
+ 			compatible = "fixed-clock";
 -- 
-2.1.4
+1.9.1
 
