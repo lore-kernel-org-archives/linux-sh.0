@@ -1,28 +1,73 @@
-From: Nguyen Viet Dung <nv-dung@jinso.co.jp>
-Date: Fri, 18 Dec 2015 02:01:56 +0000
-Subject: Summary of LTSI-v4.1.13-rc1 test result on RENESAS SOC
-Message-Id: <56736914.1030608@jinso.co.jp>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 14 Dec 2015 18:58:24 +0000
+Subject: [PATCH v2 9/9] arm64: renesas: salvator-x dts: Enable SCIF_CLK frequency and pins
+Message-Id: <1450119504-1517-10-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1450119504-1517-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1450119504-1517-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: linux-sh@vger.kernel.org, linux-serial@vger.kernel.org, devicetree@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Hi,
+Add and enable the external crystal for the SCIF_CLK and its pinctrl, to
+be used by the Baud Rate Generator for External Clock (BRG) on (H)SCIF.
 
-We have testted LTSI-v4.1.13-rc1 on the RENESAS SOC.
-Bellow is summary of test result.
-1) Target board:LAGER, KOELSCH, ALT
-2) Total of test cases:
-  LAGER  :488
-  KOELSCH:502
-  ALT    :49
-3) Compare with LTS-v4.1.13 have two cases is failure.
-4) Corresponding state of two failure:
-  -Failure relate with rcar-thermal driver:
-   Had resolution patch on Linux-Next branch(5de85b9 commit).
-  -Failure relate with mmcif driver:
-   In waitting countermeasure of Mr.Geert
+This increases the range and accuracy of supported baud rates:
+  - SCIF:
+      - Supports now 50, 230400, 460800, 500000, and 921600 bps,
+      - Perfect match for standard 50-460800, and 9216000 bps.
+  - HSCIF:
+      - Supports now 50, 75, and 110 bps,
+      - Perfect match for standard 50-460800, and 9216000 bps.
 
-   Best Regards,
-   Nguyen Viet Dung
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reviewed-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+v2:
+  - Add Reviewed-by.
+---
+ arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+index 75af5ec5a4d4133d..56bb64838ba3cecf 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
++++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+@@ -93,6 +93,9 @@
+ };
+ 
+ &pfc {
++	pinctrl-0 = <&scif_clk_pins>;
++	pinctrl-names = "default";
++
+ 	scif1_pins: scif1 {
+ 		renesas,groups = "scif1_data_a", "scif1_ctrl";
+ 		renesas,function = "scif1";
+@@ -101,6 +104,10 @@
+ 		renesas,groups = "scif2_data_a";
+ 		renesas,function = "scif2";
+ 	};
++	scif_clk_pins: scif_clk {
++		renesas,groups = "scif_clk_a";
++		renesas,function = "scif_clk";
++	};
+ 
+ 	i2c2_pins: i2c2 {
+ 		renesas,groups = "i2c2_a";
+@@ -138,6 +145,11 @@
+ 	status = "okay";
+ };
+ 
++&scif_clk {
++	clock-frequency = <14745600>;
++	status = "okay";
++};
++
+ &i2c2 {
+ 	pinctrl-0 = <&i2c2_pins>;
+ 	pinctrl-names = "default";
+-- 
+1.9.1
+
