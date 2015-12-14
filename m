@@ -1,37 +1,47 @@
-From: Joe Perches <joe@perches.com>
-Date: Sun, 13 Dec 2015 20:37:02 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 14 Dec 2015 05:19:19 +0000
 Subject: Re: [PATCH 05/10] drivers/pci: make host/pci-rcar-gen2.c explicitly non-modular
-Message-Id: <1450039022.20678.3.camel@perches.com>
+Message-Id: <20151214051919.GG18143@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1449970917-12633-1-git-send-email-paul.gortmaker@windriver.com>
-	 <1449970917-12633-6-git-send-email-paul.gortmaker@windriver.com>
-	 <CAMuHMdUJzRMaRosLSUhH=_1Li+u4eWeqjee6iUoeWfac_2G3wA@mail.gmail.com>
-	 <20151213181517.GB32362@windriver.com>
-In-Reply-To: <20151213181517.GB32362@windriver.com>
+ <1449970917-12633-6-git-send-email-paul.gortmaker@windriver.com>
+In-Reply-To: <1449970917-12633-6-git-send-email-paul.gortmaker@windriver.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: Paul Gortmaker <paul.gortmaker@windriver.com>, Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Valentine Barshak <valentine.barshak@cogentembedded.com>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Simon Horman <horms@verge.net.au>, Bjorn Helgaas <bhelgaas@google.com>, linux-pci <linux-pci@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Paul Gortmaker <paul.gortmaker@windriver.com>
+Cc: linux-kernel@vger.kernel.org, Bjorn Helgaas <bhelgaas@google.com>, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org
 
-On Sun, 2015-12-13 at 13:15 -0500, Paul Gortmaker wrote:
-> [Re: [PATCH 05/10] drivers/pci: make host/pci-rcar-gen2.c explicitly
-> non-modular] On 13/12/2015 (Sun 11:59) Geert Uytterhoeven wrote:
->=20
-> > CC MODULE_AUTHOR
->=20
-> Thanks, I just assumed get-maintainer.pl would have automatically
-> collected that up with the other names it emits.=A0=A0Apparently not.
->=20
-> Joe: is there a reason it doesn't use the module author field?
+On Sat, Dec 12, 2015 at 08:41:52PM -0500, Paul Gortmaker wrote:
+> The Kconfig currently controlling compilation of this code is:
+> 
+> drivers/pci/host/Kconfig:config PCI_RCAR_GEN2
+> drivers/pci/host/Kconfig:       bool "Renesas R-Car Gen2 Internal PCI controller"
+> 
+> ...meaning that it currently is not being built as a module by anyone.
+> 
+> Lets remove the modular code that is essentially orphaned, so that
+> when reading the driver there is no doubt it is builtin-only.
+> 
+> We don't have to disallow a driver unbind, since that is already
+> done for us in this driver.
+> 
+> Since module_platform_driver() uses the same init level priority as
+> builtin_platform_driver() the init ordering remains unchanged with
+> this commit.
+> 
+> We don't replace module.h with init.h since the file already has that.
+> 
+> Also note that MODULE_DEVICE_TABLE is a no-op for non-modular code.
+> 
+> We also delete the MODULE_LICENSE tag etc. since all that information
+> was (or is now) contained at the top of the file in the comments.
+> 
+> Cc: Simon Horman <horms@verge.net.au>
+> Cc: Bjorn Helgaas <bhelgaas@google.com>
+> Cc: linux-pci@vger.kernel.org
+> Cc: linux-sh@vger.kernel.org
+> Signed-off-by: Paul Gortmaker <paul.gortmaker@windriver.com>
 
-Because it's frequently out-of-date and the
-MAINTAINERS entry is generally enough.
-
-If you want to add it, there's an option for it
-	--file-emails
-
-> Paul
-
-cheers, Joe
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
 
