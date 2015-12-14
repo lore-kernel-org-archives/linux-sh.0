@@ -1,48 +1,61 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 15 Dec 2015 01:19:53 +0000
-Subject: [PATCH 8/8 v5] thermal: trip_point_temp_store() calls thermal_zone_device_update()
-Message-Id: <871taoqzn3.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 14 Dec 2015 18:57:29 +0000
+Subject: [PATCH v3 20/27] serial: sh-sci: Correct SCIF type on R-Car for BRG
+Message-Id: <1450119456-964-21-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87d1u8qzsy.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87d1u8qzsy.wl%kuninori.morimoto.gx@renesas.com>
+References: <1450119456-964-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1450119456-964-1-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, Zhang Rui <rui.zhang@intel.com>, Eduardo Valentin <edubezval@gmail.com>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: Greg Kroah-Hartman <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Yoshinori Sato <ysato-Rn4VEauK+AKRv+LV9MX5uooqe+aC9MnS@public.gmane.org>
+Cc: linux-serial-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The "renesas,scif" compatible value is currently used for the SCIF
+variant in all Renesas SoCs of the R-Car family.  However, the variant
+used in the R-Car family is not the common "SH-4(A)" variant, but a
+derivative with added "Baud Rate Generator for External Clock" (BRG),
+which is also present in sh7734.
 
-trip_point_temp_store() updates trip temperature. It should call
-thermal_zone_device_update() immediately.
+Use the family-specific SCIF compatible values for R-Car Gen1, Gen2, and
+Gen3 SoCs to differentiate.  The "renesas,scif" compatible value can
+still be used as a common denominator for SCIF variants with the
+"SH-4(A)" register layout (i.e. ignoring the "Serial Extension Mode
+Register" (SCEMR) and the new BRG-specific registers).
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Cc: devicetree@vger.kernel.org
 ---
-v4 -> v5
+v3:
+  - Add Acked-by,
+  - Use family-specific instead of SoC-specific compatible values.
+---
+ drivers/tty/serial/sh-sci.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
 
- - implemented on thermal_core.c
-
- drivers/thermal/thermal_core.c | 6 +++++-
- 1 file changed, 5 insertions(+), 1 deletion(-)
-
-diff --git a/drivers/thermal/thermal_core.c b/drivers/thermal/thermal_core.c
-index d9e525c..768fb10 100644
---- a/drivers/thermal/thermal_core.c
-+++ b/drivers/thermal/thermal_core.c
-@@ -676,8 +676,12 @@ trip_point_temp_store(struct device *dev, struct device_attribute *attr,
- 		return -EINVAL;
- 
- 	ret = tz->ops->set_trip_temp(tz, trip, temperature);
-+	if (ret)
-+		return ret;
- 
--	return ret ? ret : count;
-+	thermal_zone_device_update(tz);
-+
-+	return count;
- }
- 
- static ssize_t
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 5b8504bfd42e9906..a202e4e40b8adafb 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -2625,6 +2625,17 @@ static const struct of_device_id of_sci_match[] = {
+ 		.compatible = "renesas,scif-r7s72100",
+ 		.data = SCI_OF_DATA(PORT_SCIF, SCIx_SH2_SCIF_FIFODATA_REGTYPE),
+ 	},
++	/* Family-specific types */
++	{
++		.compatible = "renesas,rcar-gen1-scif",
++		.data = SCI_OF_DATA(PORT_SCIF, SCIx_SH4_SCIF_BRG_REGTYPE),
++	}, {
++		.compatible = "renesas,rcar-gen2-scif",
++		.data = SCI_OF_DATA(PORT_SCIF, SCIx_SH4_SCIF_BRG_REGTYPE),
++	}, {
++		.compatible = "renesas,rcar-gen3-scif",
++		.data = SCI_OF_DATA(PORT_SCIF, SCIx_SH4_SCIF_BRG_REGTYPE),
++	},
+ 	/* Generic types */
+ 	{
+ 		.compatible = "renesas,scif",
 -- 
 1.9.1
 
