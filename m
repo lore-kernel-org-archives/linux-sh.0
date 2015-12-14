@@ -1,215 +1,115 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 17 Dec 2015 08:40:02 +0000
-Subject: [PATCH/RFC 24/48] media: Add per-entity request data support
-Message-Id: <1450341626-6695-25-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 14 Dec 2015 18:57:27 +0000
+Subject: [PATCH v3 18/27] serial: sh-sci: Replace struct sci_port_info by type/regtype encoding
+Message-Id: <1450119456-964-19-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450341626-6695-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1450341626-6695-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1450119456-964-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1450119456-964-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Allow subsystems to associate data with entities in each request. This
-will be used by the V4L2 subdev core to store pad formats in requests.
+Store the encoded port and register types directly in of_device_id.data,
+instead of using a pointer to a structure.
+This saves memory and simplifies the source code, especially when adding
+more compatible entries later.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reviewed-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 ---
-
-Changes since v0:
-
-- Dereference requests without holding the list lock
-- Remove requests from global list when closing the fh
+v3:
+  - Add Reviewed-by, Acked-by.
 ---
- drivers/media/media-device.c | 82 ++++++++++++++++++++++++++++++++++++++++++--
- include/media/media-device.h |  7 ++++
- include/media/media-entity.h | 12 +++++++
- 3 files changed, 99 insertions(+), 2 deletions(-)
+ drivers/tty/serial/sh-sci.c | 40 +++++++++++-----------------------------
+ 1 file changed, 11 insertions(+), 29 deletions(-)
 
-diff --git a/drivers/media/media-device.c b/drivers/media/media-device.c
-index 37da26806ed8..7fc94bf23eff 100644
---- a/drivers/media/media-device.c
-+++ b/drivers/media/media-device.c
-@@ -86,10 +86,16 @@ EXPORT_SYMBOL_GPL(media_device_request_get);
- 
- static void media_device_request_release(struct kref *kref)
- {
-+	struct media_entity_request_data *data, *next;
- 	struct media_device_request *req  		container_of(kref, struct media_device_request, kref);
- 	struct media_device *mdev = req->mdev;
- 
-+	list_for_each_entry_safe(data, next, &req->data, list) {
-+		list_del(&data->list);
-+		data->release(data);
-+	}
-+
- 	mdev->ops->req_free(mdev, req);
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index fb5eac2e3182304d..13c6abe9d842c0a8 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -2614,42 +2614,27 @@ static int sci_remove(struct platform_device *dev)
+ 	return 0;
  }
  
-@@ -99,6 +105,70 @@ void media_device_request_put(struct media_device_request *req)
- }
- EXPORT_SYMBOL_GPL(media_device_request_put);
+-struct sci_port_info {
+-	unsigned int type;
+-	unsigned int regtype;
+-};
++
++#define SCI_OF_DATA(type, regtype)	(void *)((type) << 16 | (regtype))
++#define SCI_OF_TYPE(data)		((unsigned long)(data) >> 16)
++#define SCI_OF_REGTYPE(data)		((unsigned long)(data) & 0xffff)
  
-+/**
-+ * media_device_request_get_entity_data - Get per-entity data
-+ * @req: The request
-+ * @entity: The entity
-+ *
-+ * Search and return per-entity data (as a struct media_entity_request_data
-+ * instance) associated with the given entity for the request, as previously
-+ * registered by a call to media_device_request_set_entity_data().
-+ *
-+ * The caller is expected to hold a reference to the request. Per-entity data is
-+ * not reference counted, the returned pointer will be valid only as long as the
-+ * reference to the request is held.
-+ *
-+ * Return the data instance pointer or NULL if no data could be found.
-+ */
-+struct media_entity_request_data *
-+media_device_request_get_entity_data(struct media_device_request *req,
-+				     struct media_entity *entity)
-+{
-+	struct media_entity_request_data *data;
-+	unsigned long flags;
-+
-+	spin_lock_irqsave(&req->mdev->req_lock, flags);
-+
-+	list_for_each_entry(data, &req->data, list) {
-+		if (data->entity = entity)
-+			goto done;
-+	}
-+
-+	data = NULL;
-+
-+done:
-+	spin_unlock_irqrestore(&req->mdev->req_lock, flags);
-+	return data;
-+}
-+EXPORT_SYMBOL_GPL(media_device_request_get_entity_data);
-+
-+/**
-+ * media_device_request_set_entity_data - Set per-entity data
-+ * @req: The request
-+ * @entity: The entity
-+ * @data: The data
-+ *
-+ * Record the given per-entity data as being associated with the entity for the
-+ * request.
-+ *
-+ * Only one per-entity data instance can be associated with a request. The
-+ * caller is responsible for enforcing this requirement.
-+ *
-+ * Ownership of the per-entity data is transferred to the request when calling
-+ * this function. The data will be freed automatically when the last reference
-+ * to the request is released.
-+ */
-+void media_device_request_set_entity_data(struct media_device_request *req,
-+	struct media_entity *entity, struct media_entity_request_data *data)
-+{
-+	unsigned long flags;
-+
-+	spin_lock_irqsave(&req->mdev->req_lock, flags);
-+	list_add_tail(&data->list, &req->data);
-+	spin_unlock_irqrestore(&req->mdev->req_lock, flags);
-+}
-+EXPORT_SYMBOL_GPL(media_device_request_set_entity_data);
-+
- static int media_device_request_alloc(struct media_device *mdev,
- 				      struct media_device_fh *fh,
- 				      struct media_request_cmd *cmd)
-@@ -112,6 +182,7 @@ static int media_device_request_alloc(struct media_device *mdev,
- 
- 	req->mdev = mdev;
- 	kref_init(&req->kref);
-+	INIT_LIST_HEAD(&req->data);
- 
- 	spin_lock_irqsave(&mdev->req_lock, flags);
- 	req->id = ++mdev->req_id;
-@@ -130,6 +201,7 @@ static void media_device_request_delete(struct media_device *mdev,
- 
- 	spin_lock_irqsave(&mdev->req_lock, flags);
- 	list_del(&req->list);
-+	list_del(&req->fh_list);
- 	spin_unlock_irqrestore(&mdev->req_lock, flags);
- 
- 	media_device_request_put(req);
-@@ -218,12 +290,18 @@ static int media_device_close(struct file *filp)
+ static const struct of_device_id of_sci_match[] = {
+ 	{
+ 		.compatible = "renesas,scif",
+-		.data = &(const struct sci_port_info) {
+-			.type = PORT_SCIF,
+-			.regtype = SCIx_SH4_SCIF_REGTYPE,
+-		},
++		.data = SCI_OF_DATA(PORT_SCIF, SCIx_SH4_SCIF_REGTYPE),
+ 	}, {
+ 		.compatible = "renesas,scifa",
+-		.data = &(const struct sci_port_info) {
+-			.type = PORT_SCIFA,
+-			.regtype = SCIx_SCIFA_REGTYPE,
+-		},
++		.data = SCI_OF_DATA(PORT_SCIFA, SCIx_SCIFA_REGTYPE),
+ 	}, {
+ 		.compatible = "renesas,scifb",
+-		.data = &(const struct sci_port_info) {
+-			.type = PORT_SCIFB,
+-			.regtype = SCIx_SCIFB_REGTYPE,
+-		},
++		.data = SCI_OF_DATA(PORT_SCIFB, SCIx_SCIFB_REGTYPE),
+ 	}, {
+ 		.compatible = "renesas,hscif",
+-		.data = &(const struct sci_port_info) {
+-			.type = PORT_HSCIF,
+-			.regtype = SCIx_HSCIF_REGTYPE,
+-		},
++		.data = SCI_OF_DATA(PORT_HSCIF, SCIx_HSCIF_REGTYPE),
+ 	}, {
+ 		.compatible = "renesas,sci",
+-		.data = &(const struct sci_port_info) {
+-			.type = PORT_SCI,
+-			.regtype = SCIx_SCI_REGTYPE,
+-		},
++		.data = SCI_OF_DATA(PORT_SCI, SCIx_SCI_REGTYPE),
+ 	}, {
+ 		/* Terminator */
+ 	},
+@@ -2661,7 +2646,6 @@ sci_parse_dt(struct platform_device *pdev, unsigned int *dev_id)
  {
- 	struct media_device_fh *fh = media_device_fh(filp);
- 	struct media_device *mdev = to_media_device(fh->fh.devnode);
--	struct media_device_request *req, *next;
+ 	struct device_node *np = pdev->dev.of_node;
+ 	const struct of_device_id *match;
+-	const struct sci_port_info *info;
+ 	struct plat_sci_port *p;
+ 	int id;
  
- 	spin_lock_irq(&mdev->req_lock);
--	list_for_each_entry_safe(req, next, &fh->requests, fh_list) {
-+	while (!list_empty(&fh->requests)) {
-+		struct media_device_request *req;
-+
-+		req = list_first_entry(&fh->requests, typeof(*req), fh_list);
-+		list_del(&req->list);
- 		list_del(&req->fh_list);
-+
-+		spin_unlock_irq(&mdev->req_lock);
- 		media_device_request_put(req);
-+		spin_lock_irq(&mdev->req_lock);
- 	}
- 	spin_unlock_irq(&mdev->req_lock);
+@@ -2672,8 +2656,6 @@ sci_parse_dt(struct platform_device *pdev, unsigned int *dev_id)
+ 	if (!match)
+ 		return NULL;
  
-diff --git a/include/media/media-device.h b/include/media/media-device.h
-index bc003bedf087..0a374328a135 100644
---- a/include/media/media-device.h
-+++ b/include/media/media-device.h
-@@ -41,6 +41,7 @@ struct media_device;
-  * @kref: Reference count
-  * @list: List entry in the media device requests list
-  * @fh_list: List entry in the media file handle requests list
-+ * @data: Per-entity data list
-  */
- struct media_device_request {
- 	u32 id;
-@@ -48,6 +49,7 @@ struct media_device_request {
- 	struct kref kref;
- 	struct list_head list;
- 	struct list_head fh_list;
-+	struct list_head data;
- };
+-	info = match->data;
+-
+ 	p = devm_kzalloc(&pdev->dev, sizeof(struct plat_sci_port), GFP_KERNEL);
+ 	if (!p)
+ 		return NULL;
+@@ -2688,8 +2670,8 @@ sci_parse_dt(struct platform_device *pdev, unsigned int *dev_id)
+ 	*dev_id = id;
  
- /**
-@@ -148,5 +150,10 @@ struct media_device_request *
- media_device_request_find(struct media_device *mdev, u16 reqid);
- void media_device_request_get(struct media_device_request *req);
- void media_device_request_put(struct media_device_request *req);
-+struct media_entity_request_data *
-+media_device_request_get_entity_data(struct media_device_request *req,
-+				     struct media_entity *entity);
-+void media_device_request_set_entity_data(struct media_device_request *req,
-+	struct media_entity *entity, struct media_entity_request_data *data);
+ 	p->flags = UPF_IOREMAP | UPF_BOOT_AUTOCONF;
+-	p->type = info->type;
+-	p->regtype = info->regtype;
++	p->type = SCI_OF_TYPE(match->data);
++	p->regtype = SCI_OF_REGTYPE(match->data);
+ 	p->scscr = SCSCR_RE | SCSCR_TE;
  
- #endif
-diff --git a/include/media/media-entity.h b/include/media/media-entity.h
-index 197f93799753..36e2129e61c6 100644
---- a/include/media/media-entity.h
-+++ b/include/media/media-entity.h
-@@ -133,6 +133,18 @@ struct media_entity_graph {
- 	int top;
- };
- 
-+/**
-+ * struct media_entity_request_data - Per-entity request data
-+ * @entity: Entity this data belongs to
-+ * @release: Release operation to free the data
-+ * @list: List entry in the media_device_request data list
-+ */
-+struct media_entity_request_data {
-+	struct media_entity *entity;
-+	void (*release)(struct media_entity_request_data *data);
-+	struct list_head list;
-+};
-+
- int media_entity_init(struct media_entity *entity, u16 num_pads,
- 		struct media_pad *pads, u16 extra_links);
- void media_entity_cleanup(struct media_entity *entity);
+ 	return p;
 -- 
-2.4.10
+1.9.1
 
