@@ -1,53 +1,90 @@
-From: Yang Shi <yang.shi@linaro.org>
-Date: Wed, 09 Dec 2015 21:22:30 +0000
-Subject: [PATCH v5 6/7] sh: mm/gup: add gup trace points
-Message-Id: <1449696151-4195-7-git-send-email-yang.shi@linaro.org>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 14 Dec 2015 18:57:35 +0000
+Subject: [PATCH v3 26/27] sh: sh7734: Correct SCIF type for BRG
+Message-Id: <1450119456-964-27-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449696151-4195-1-git-send-email-yang.shi@linaro.org>
-In-Reply-To: <1449696151-4195-1-git-send-email-yang.shi@linaro.org>
+References: <1450119456-964-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1450119456-964-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: akpm@linux-foundation.org, rostedt@goodmis.org, mingo@redhat.com
-Cc: linux-kernel@vger.kernel.org, linux-mm@kvack.org, linaro-kernel@lists.linaro.org, yang.shi@linaro.org, linux-sh@vger.kernel.org
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Cc: linux-sh@vger.kernel.org
-Signed-off-by: Yang Shi <yang.shi@linaro.org>
+The SCIF variant in the sh7734 SoC is not the common "SH-4(A)" variant,
+but a derivative with added "Baud Rate Generator for External Clock"
+(BRG). Correct the regtype value in platform data to fix this.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/sh/mm/gup.c | 6 ++++++
- 1 file changed, 6 insertions(+)
+Untested due to lack of hardware.
+This shouldn't make any difference until the additional clocks are
+provided by the platform.
 
-diff --git a/arch/sh/mm/gup.c b/arch/sh/mm/gup.c
-index e7af6a6..dc80480 100644
---- a/arch/sh/mm/gup.c
-+++ b/arch/sh/mm/gup.c
-@@ -14,6 +14,8 @@
- #include <linux/highmem.h>
- #include <asm/pgtable.h>
+v3:
+  - No changes.
+---
+ arch/sh/kernel/cpu/sh4a/setup-sh7734.c | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7734.c b/arch/sh/kernel/cpu/sh4a/setup-sh7734.c
+index f617bcb734dfeb76..69b8a50310d9a23f 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7734.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7734.c
+@@ -28,7 +28,7 @@ static struct plat_sci_port scif0_platform_data = {
+ 	.flags          = UPF_BOOT_AUTOCONF,
+ 	.scscr          = SCSCR_RE | SCSCR_TE | SCSCR_REIE,
+ 	.type           = PORT_SCIF,
+-	.regtype        = SCIx_SH4_SCIF_REGTYPE,
++	.regtype        = SCIx_SH4_SCIF_BRG_REGTYPE,
+ };
  
-+#include <trace/events/gup.h>
-+
- static inline pte_t gup_get_pte(pte_t *ptep)
- {
- #ifndef CONFIG_X2TLB
-@@ -178,6 +180,8 @@ int __get_user_pages_fast(unsigned long start, int nr_pages, int write,
- 					(void __user *)start, len)))
- 		return 0;
+ static struct resource scif0_resources[] = {
+@@ -50,7 +50,7 @@ static struct plat_sci_port scif1_platform_data = {
+ 	.flags          = UPF_BOOT_AUTOCONF,
+ 	.scscr          = SCSCR_RE | SCSCR_TE | SCSCR_REIE,
+ 	.type           = PORT_SCIF,
+-	.regtype        = SCIx_SH4_SCIF_REGTYPE,
++	.regtype        = SCIx_SH4_SCIF_BRG_REGTYPE,
+ };
  
-+	trace_gup_get_user_pages_fast(start, nr_pages);
-+
- 	/*
- 	 * This doesn't prevent pagetable teardown, but does prevent
- 	 * the pagetables and pages from being freed.
-@@ -244,6 +248,8 @@ int get_user_pages_fast(unsigned long start, int nr_pages, int write,
- 	} while (pgdp++, addr = next, addr != end);
- 	local_irq_enable();
+ static struct resource scif1_resources[] = {
+@@ -72,7 +72,7 @@ static struct plat_sci_port scif2_platform_data = {
+ 	.flags          = UPF_BOOT_AUTOCONF,
+ 	.scscr          = SCSCR_RE | SCSCR_TE | SCSCR_REIE,
+ 	.type           = PORT_SCIF,
+-	.regtype        = SCIx_SH4_SCIF_REGTYPE,
++	.regtype        = SCIx_SH4_SCIF_BRG_REGTYPE,
+ };
  
-+	trace_gup_get_user_pages_fast(start, nr_pages);
-+
- 	VM_BUG_ON(nr != (end - start) >> PAGE_SHIFT);
- 	return nr;
+ static struct resource scif2_resources[] = {
+@@ -94,7 +94,7 @@ static struct plat_sci_port scif3_platform_data = {
+ 	.flags          = UPF_BOOT_AUTOCONF,
+ 	.scscr          = SCSCR_RE | SCSCR_TE | SCSCR_REIE | SCSCR_TOIE,
+ 	.type           = PORT_SCIF,
+-	.regtype        = SCIx_SH4_SCIF_REGTYPE,
++	.regtype        = SCIx_SH4_SCIF_BRG_REGTYPE,
+ };
  
+ static struct resource scif3_resources[] = {
+@@ -116,7 +116,7 @@ static struct plat_sci_port scif4_platform_data = {
+ 	.flags          = UPF_BOOT_AUTOCONF,
+ 	.scscr          = SCSCR_RE | SCSCR_TE | SCSCR_REIE,
+ 	.type           = PORT_SCIF,
+-	.regtype        = SCIx_SH4_SCIF_REGTYPE,
++	.regtype        = SCIx_SH4_SCIF_BRG_REGTYPE,
+ };
+ 
+ static struct resource scif4_resources[] = {
+@@ -138,7 +138,7 @@ static struct plat_sci_port scif5_platform_data = {
+ 	.flags          = UPF_BOOT_AUTOCONF,
+ 	.scscr          = SCSCR_RE | SCSCR_TE | SCSCR_REIE,
+ 	.type           = PORT_SCIF,
+-	.regtype		= SCIx_SH4_SCIF_REGTYPE,
++	.regtype	= SCIx_SH4_SCIF_BRG_REGTYPE,
+ };
+ 
+ static struct resource scif5_resources[] = {
 -- 
-2.0.2
+1.9.1
 
