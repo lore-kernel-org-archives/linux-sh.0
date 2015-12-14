@@ -1,70 +1,48 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sat, 05 Dec 2015 02:12:43 +0000
-Subject: [PATCH v2 09/32] v4l: vsp1: Remove struct vsp1_pipeline num_video field
-Message-Id: <1449281586-25726-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 14 Dec 2015 18:57:14 +0000
+Subject: [PATCH v3 05/27] serial: sh-sci: Drop useless check for zero sampling_rate
+Message-Id: <1450119456-964-6-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1450119456-964-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1450119456-964-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-The field is always equal to the num_inputs field plus one, remove the
-duplicate.
+sci_port.sampling_rate is always non-zero, except for HSCIF, which uses
+sci_baud_calc_hscif() instead of sci_scbrr_calc().
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reviewed-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 ---
- drivers/media/platform/vsp1/vsp1_video.c | 7 ++-----
- drivers/media/platform/vsp1/vsp1_video.h | 1 -
- 2 files changed, 2 insertions(+), 6 deletions(-)
+v3:
+  - Add Reviewed-by, Acked-by,
+---
+ drivers/tty/serial/sh-sci.c | 8 +-------
+ 1 file changed, 1 insertion(+), 7 deletions(-)
 
-diff --git a/drivers/media/platform/vsp1/vsp1_video.c b/drivers/media/platform/vsp1/vsp1_video.c
-index 8ffe54260725..e9c5682b0d74 100644
---- a/drivers/media/platform/vsp1/vsp1_video.c
-+++ b/drivers/media/platform/vsp1/vsp1_video.c
-@@ -396,7 +396,6 @@ static void __vsp1_pipeline_cleanup(struct vsp1_pipeline *pipe)
- 	INIT_LIST_HEAD(&pipe->entities);
- 	pipe->state = VSP1_PIPELINE_STOPPED;
- 	pipe->buffers_ready = 0;
--	pipe->num_video = 0;
- 	pipe->num_inputs = 0;
- 	pipe->output = NULL;
- 	pipe->bru = NULL;
-@@ -423,10 +422,8 @@ static int vsp1_pipeline_validate(struct vsp1_pipeline *pipe,
- 		struct vsp1_rwpf *rwpf;
- 		struct vsp1_entity *e;
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index cc6fa55231ba3536..dfee7a2f51f147d1 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1863,13 +1863,7 @@ static void sci_shutdown(struct uart_port *port)
+ static unsigned int sci_scbrr_calc(struct sci_port *s, unsigned int bps,
+ 				   unsigned long freq)
+ {
+-	if (s->sampling_rate)
+-		return DIV_ROUND_CLOSEST(freq, s->sampling_rate * bps) - 1;
+-
+-	/* Warn, but use a safe default */
+-	WARN_ON(1);
+-
+-	return ((freq + 16 * bps) / (32 * bps) - 1);
++	return DIV_ROUND_CLOSEST(freq, s->sampling_rate * bps) - 1;
+ }
  
--		if (media_entity_type(entity) != MEDIA_ENT_T_V4L2_SUBDEV) {
--			pipe->num_video++;
-+		if (media_entity_type(entity) != MEDIA_ENT_T_V4L2_SUBDEV)
- 			continue;
--		}
- 
- 		subdev = media_entity_to_v4l2_subdev(entity);
- 		e = to_vsp1_entity(subdev);
-@@ -894,7 +891,7 @@ static int vsp1_video_start_streaming(struct vb2_queue *vq, unsigned int count)
- 	int ret;
- 
- 	mutex_lock(&pipe->lock);
--	if (pipe->stream_count = pipe->num_video - 1) {
-+	if (pipe->stream_count = pipe->num_inputs) {
- 		if (pipe->uds) {
- 			struct vsp1_uds *uds = to_uds(&pipe->uds->subdev);
- 
-diff --git a/drivers/media/platform/vsp1/vsp1_video.h b/drivers/media/platform/vsp1/vsp1_video.h
-index 21096d82af05..e9d0e1ab9162 100644
---- a/drivers/media/platform/vsp1/vsp1_video.h
-+++ b/drivers/media/platform/vsp1/vsp1_video.h
-@@ -75,7 +75,6 @@ struct vsp1_pipeline {
- 	unsigned int stream_count;
- 	unsigned int buffers_ready;
- 
--	unsigned int num_video;
- 	unsigned int num_inputs;
- 	struct vsp1_rwpf *inputs[VSP1_MAX_RPF];
- 	struct vsp1_rwpf *output;
+ /* calculate frame length from SMR */
 -- 
-2.4.10
+1.9.1
 
