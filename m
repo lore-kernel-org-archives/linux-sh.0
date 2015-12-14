@@ -1,25 +1,44 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 28 Dec 2015 05:32:21 +0000
-Subject: Re: [PATCH 1/2] sh_eth: remove EDMAC_BIG_ENDIAN
-Message-Id: <20151228053220.GG1066@verge.net.au>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Mon, 14 Dec 2015 15:42:34 +0000
+Subject: [PATCH 2/6] arm64: dts: r8a7795: Add SATA controller node
+Message-Id: <1450107758-2544-3-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <27915743.MLN0FvErP3@wasted.cogentembedded.com>
- <1789816.9Rg3E9smcf@wasted.cogentembedded.com>
-In-Reply-To: <1789816.9Rg3E9smcf@wasted.cogentembedded.com>
+References: <1450107758-2544-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+In-Reply-To: <1450107758-2544-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Dec 28, 2015 at 02:07:08AM +0300, Sergei Shtylyov wrote:
-> Commit  71557a37adb5 ("[netdrvr] sh_eth: Add SH7619 support") added support
-> for the big-endian EDMAC descriptors. However, it was never used and never
-> worked right until the recent driver  fixes. I think we now  can just remove
-> this support,  it was only burdening the driver from the start. It should be
-> easy to do without disturbing the SH platform code, at least for now...
-> 
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+From: Kouei Abe <kouei.abe.cp@renesas.com>
 
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+This adds SATA device node to r8a7795.dtsi.
+
+Signed-off-by: Kouei Abe <kouei.abe.cp@renesas.com>
+[uli: adjusted for new MSTP clock scheme]
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+---
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index c018423..7d4707e 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -972,5 +972,13 @@
+ 				};
+ 			};
+ 		};
++
++		sata: sata@ee300000 {
++			compatible = "renesas,sata-r8a7795";
++			reg = <0 0xee300000 0 0x1fff>;
++			interrupts = <GIC_SPI 105 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cpg CPG_MOD 915>;
++			status = "disabled";
++		};
+ 	};
+ };
+-- 
+2.6.3
 
