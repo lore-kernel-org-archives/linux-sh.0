@@ -1,94 +1,85 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 08 Dec 2015 05:29:20 +0000
-Subject: [PATCH 6/8 v4] ARM: shmobile: r8a7790: enable to use thermal-zone
-Message-Id: <87lh955x4h.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 14 Dec 2015 18:57:50 +0000
+Subject: [PATCH 2/7] ARM: shmobile: r8a7779 dtsi: Add SCIF fallback compatibility strings
+Message-Id: <1450119475-1183-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87vb895x9d.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87vb895x9d.wl%kuninori.morimoto.gx@renesas.com>
+References: <1450119475-1183-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1450119475-1183-1-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, Zhang Rui <rui.zhang@intel.com>, Eduardo Valentin <edubezval@gmail.com>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-serial-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
 
-
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-
-This patch enables to use thermal-zone on r8a7790.
-This thermal sensor can measure temperature from -40000 to 125000,
-but over 117000 can be critical on this chip.
-Thus, default critical temperature is now set as 115000 (this driver
-is using 5000 steps) (Current critical temperature is using it as
-90000, but there is no big reason about it)
-
-And it doesn't check thermal zone periodically (same as current
-behavior). You can exchange it by modifying polling-delay[-passive]
-property.
-
-You can set trip temp if your kernel has CONFIG_THERMAL_WRITABLE_TRIPS,
-but you need to take care to use it, since it will call
-orderly_poweroff() it it reaches to the value.
-echo $temp > /sys/class/thermal/thermal_zone0/trip_point_0_temp
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-v3 -> v4
+ arch/arm/boot/dts/r8a7779.dtsi | 18 ++++++++++++------
+ 1 file changed, 12 insertions(+), 6 deletions(-)
 
- - modifing -> modifying
- - reached -> reaches
- - <1150000> -> <115000>
-
- arch/arm/boot/dts/r8a7790.dtsi | 26 ++++++++++++++++++++++++--
- 1 file changed, 24 insertions(+), 2 deletions(-)
-
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 9f3036b..2203b97 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -112,6 +112,25 @@
- 		};
+diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
+index 6afa909865b52b71..4afd8b12f8694c13 100644
+--- a/arch/arm/boot/dts/r8a7779.dtsi
++++ b/arch/arm/boot/dts/r8a7779.dtsi
+@@ -211,7 +211,8 @@
  	};
  
-+	thermal-zones {
-+		cpu_thermal: cpu-thermal {
-+			polling-delay-passive	= <0>;
-+			polling-delay		= <0>;
-+
-+			thermal-sensors = <&thermal>;
-+
-+			trips {
-+				cpu-crit {
-+					temperature	= <115000>;
-+					hysteresis	= <0>;
-+					type		= "critical";
-+				};
-+			};
-+			cooling-maps {
-+			};
-+		};
-+	};
-+
- 	gic: interrupt-controller@f1001000 {
- 		compatible = "arm,gic-400";
- 		#interrupt-cells = <3>;
-@@ -202,12 +221,15 @@
- 		power-domains = <&cpg_clocks>;
+ 	scif0: serial@ffe40000 {
+-		compatible = "renesas,scif-r8a7779", "renesas,scif";
++		compatible = "renesas,scif-r8a7779", "renesas,rcar-gen1-scif",
++			     "renesas,scif";
+ 		reg = <0xffe40000 0x100>;
+ 		interrupts = <0 88 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7779_CLK_SCIF0>;
+@@ -221,7 +222,8 @@
  	};
  
--	thermal@e61f0000 {
--		compatible = "renesas,thermal-r8a7790", "renesas,rcar-thermal";
-+	thermal: thermal@e61f0000 {
-+		compatible =	"renesas,thermal-r8a7790",
-+				"renesas,rcar-gen2-thermal",
-+				"renesas,rcar-thermal";
- 		reg = <0 0xe61f0000 0 0x14>, <0 0xe61f0100 0 0x38>;
- 		interrupts = <0 69 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp5_clks R8A7790_CLK_THERMAL>;
- 		power-domains = <&cpg_clocks>;
-+		#thermal-sensor-cells = <0>;
+ 	scif1: serial@ffe41000 {
+-		compatible = "renesas,scif-r8a7779", "renesas,scif";
++		compatible = "renesas,scif-r8a7779", "renesas,rcar-gen1-scif",
++			     "renesas,scif";
+ 		reg = <0xffe41000 0x100>;
+ 		interrupts = <0 89 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7779_CLK_SCIF1>;
+@@ -231,7 +233,8 @@
  	};
  
- 	timer {
+ 	scif2: serial@ffe42000 {
+-		compatible = "renesas,scif-r8a7779", "renesas,scif";
++		compatible = "renesas,scif-r8a7779", "renesas,rcar-gen1-scif",
++			     "renesas,scif";
+ 		reg = <0xffe42000 0x100>;
+ 		interrupts = <0 90 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7779_CLK_SCIF2>;
+@@ -241,7 +244,8 @@
+ 	};
+ 
+ 	scif3: serial@ffe43000 {
+-		compatible = "renesas,scif-r8a7779", "renesas,scif";
++		compatible = "renesas,scif-r8a7779", "renesas,rcar-gen1-scif",
++			     "renesas,scif";
+ 		reg = <0xffe43000 0x100>;
+ 		interrupts = <0 91 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7779_CLK_SCIF3>;
+@@ -251,7 +255,8 @@
+ 	};
+ 
+ 	scif4: serial@ffe44000 {
+-		compatible = "renesas,scif-r8a7779", "renesas,scif";
++		compatible = "renesas,scif-r8a7779", "renesas,rcar-gen1-scif",
++			     "renesas,scif";
+ 		reg = <0xffe44000 0x100>;
+ 		interrupts = <0 92 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7779_CLK_SCIF4>;
+@@ -261,7 +266,8 @@
+ 	};
+ 
+ 	scif5: serial@ffe45000 {
+-		compatible = "renesas,scif-r8a7779", "renesas,scif";
++		compatible = "renesas,scif-r8a7779", "renesas,rcar-gen1-scif",
++			     "renesas,scif";
+ 		reg = <0xffe45000 0x100>;
+ 		interrupts = <0 93 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7779_CLK_SCIF5>;
 -- 
 1.9.1
 
