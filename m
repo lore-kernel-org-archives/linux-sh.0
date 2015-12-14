@@ -1,51 +1,39 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 18 Dec 2015 02:29:34 +0000
-Subject: [PATCH 04/25] ARM: shmobile: r8a7791: add EtherAVB DT support
-Message-Id: <46ece349aa54f6e55b5f8d30bbecbaf2884ba869.1450402264.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 14 Dec 2015 19:11:39 +0000
+Subject: [PATCH/RFC 2/7] ARM: shmobile: bockw dts: Add compatible property to "partitions" node
+Message-Id: <1450120304-2760-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1450402264.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1450402264.git.horms+renesas@verge.net.au>
+References: <1450120304-2760-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1450120304-2760-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+As of commit e488ca9f8d4f62c2 ("doc: dt: mtd: partitions: add compatible
+property to "partitions" node"), the "partitions" subnode of an SPI
+FLASH device node must have a compatible property. The partitions are no
+longer detected if it is not present.
 
-Define the generic R8A7791 part of the EtherAVB device node.
-
-Based on the commit f25d6b977240 ("ARM: shmobile: r8a7790: add EtherAVB DT
-support").
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r8a7791.dtsi | 12 ++++++++++++
- 1 file changed, 12 insertions(+)
+The abovementioned commit is destined for v4.4.
+---
+ arch/arm/boot/dts/r8a7778-bockw.dts | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 4b3132d9807f..36559cb0eb6b 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -785,6 +785,18 @@
- 		status = "disabled";
- 	};
+diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
+index 482228b8a984656e..06ceefe3cb500dc7 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw.dts
+@@ -212,6 +212,7 @@
+ 		m25p,fast-read;
  
-+	avb: ethernet@e6800000 {
-+		compatible = "renesas,etheravb-r8a7791",
-+			     "renesas,etheravb-rcar-gen2";
-+		reg = <0 0xe6800000 0 0x800>, <0 0xee0e8000 0 0x4000>;
-+		interrupts = <0 163 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp8_clks R8A7791_CLK_ETHERAVB>;
-+		power-domains = <&cpg_clocks>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		status = "disabled";
-+	};
-+
- 	sata0: sata@ee300000 {
- 		compatible = "renesas,sata-r8a7791";
- 		reg = <0 0xee300000 0 0x2000>;
+ 		partitions {
++			compatible = "fixed-partitions";
+ 			#address-cells = <1>;
+ 			#size-cells = <1>;
+ 
 -- 
-2.1.4
+1.9.1
 
