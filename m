@@ -1,40 +1,119 @@
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Thu, 24 Dec 2015 11:16:47 +0000
-Subject: [PATCH 2/2] spi: sh-msiof: Add compatible string for r8a7795
-Message-Id: <1450955807-22869-3-git-send-email-ykaneko0929@gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 14 Dec 2015 18:57:59 +0000
+Subject: [PATCH v3 05/12] ARM: shmobile: r8a7740 dtsi: Rename the serial port clock to fck
+Message-Id: <1450119486-1285-6-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450955807-22869-1-git-send-email-ykaneko0929@gmail.com>
-In-Reply-To: <1450955807-22869-1-git-send-email-ykaneko0929@gmail.com>
+References: <1450119486-1285-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1450119486-1285-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-spi@vger.kernel.org
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Mark Brown <broonie@kernel.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: linux-sh@vger.kernel.org, linux-serial@vger.kernel.org, devicetree@vger.kernel.org, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Hiromitsu Yamasaki <hiromitsu.yamasaki.ym@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Simply documents new compatibility string.
-As a previous patch adds a generic R-Car Gen3 compatibility string
-there appears to be no need for a driver updates.
+The clock is really the device functional clock, not the interface
+clock. Rename it.
 
-Signed-off-by: Hiromitsu Yamasaki <hiromitsu.yamasaki.ym@renesas.com>
-Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- Documentation/devicetree/bindings/spi/sh-msiof.txt | 1 +
- 1 file changed, 1 insertion(+)
+v3:
+  - No changes,
 
-diff --git a/Documentation/devicetree/bindings/spi/sh-msiof.txt b/Documentation/devicetree/bindings/spi/sh-msiof.txt
-index d9d89ee..81c1389 100644
---- a/Documentation/devicetree/bindings/spi/sh-msiof.txt
-+++ b/Documentation/devicetree/bindings/spi/sh-msiof.txt
-@@ -11,6 +11,7 @@ Required properties:
- 			 "renesas,msiof-r8a7793" (R-Car M2-N)
- 			 "renesas,msiof-r8a7794" (R-Car E2)
- 			 "renesas,msiof-sh73a0" (SH-Mobile AG5)
-+			 "renesas,msiof-r8a7795" (R-Car H3)
- 
- 			 When compatible with the generic version, nodes must
- 			 list the SoC-specific version corresponding to the
+v2:
+  - Add Acked-by.
+---
+ arch/arm/boot/dts/r8a7740.dtsi | 18 +++++++++---------
+ 1 file changed, 9 insertions(+), 9 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
+index 6ef954766eef740f..dcd46ab125bcbb80 100644
+--- a/arch/arm/boot/dts/r8a7740.dtsi
++++ b/arch/arm/boot/dts/r8a7740.dtsi
+@@ -213,7 +213,7 @@
+ 		reg = <0xe6c40000 0x100>;
+ 		interrupts = <0 100 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7740_CLK_SCIFA0>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+@@ -223,7 +223,7 @@
+ 		reg = <0xe6c50000 0x100>;
+ 		interrupts = <0 101 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7740_CLK_SCIFA1>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+@@ -233,7 +233,7 @@
+ 		reg = <0xe6c60000 0x100>;
+ 		interrupts = <0 102 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7740_CLK_SCIFA2>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+@@ -243,7 +243,7 @@
+ 		reg = <0xe6c70000 0x100>;
+ 		interrupts = <0 103 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7740_CLK_SCIFA3>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+@@ -253,7 +253,7 @@
+ 		reg = <0xe6c80000 0x100>;
+ 		interrupts = <0 104 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7740_CLK_SCIFA4>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+@@ -263,7 +263,7 @@
+ 		reg = <0xe6cb0000 0x100>;
+ 		interrupts = <0 105 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7740_CLK_SCIFA5>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+@@ -273,7 +273,7 @@
+ 		reg = <0xe6cc0000 0x100>;
+ 		interrupts = <0 106 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7740_CLK_SCIFA6>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+@@ -283,7 +283,7 @@
+ 		reg = <0xe6cd0000 0x100>;
+ 		interrupts = <0 107 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7740_CLK_SCIFA7>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+@@ -293,7 +293,7 @@
+ 		reg = <0xe6c30000 0x100>;
+ 		interrupts = <0 108 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7740_CLK_SCIFB>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
 -- 
 1.9.1
 
