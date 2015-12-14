@@ -1,75 +1,163 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 18 Dec 2015 02:29:50 +0000
-Subject: [PATCH 20/25] ARM: shmobile: r8a7794: dtsi: add internal delay for i2c IPs
-Message-Id: <691cd0a64d9215a838a7351de890d815b9a2622e.1450402264.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 14 Dec 2015 18:58:14 +0000
+Subject: [PATCH v2 6/7] ARM: shmobile: r8a7794 dtsi: Add BRG support for (H)SCIF
+Message-Id: <1450119495-1416-7-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1450402264.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1450402264.git.horms+renesas@verge.net.au>
+References: <1450119495-1416-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1450119495-1416-1-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-serial-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Add the device node for the external SCIF_CLK.
+The presence of the SCIF_CLK crystal and its clock frequency depends on
+the actual board.
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Add the two optional clock sources (ZS_CLK and SCIF_CLK for the internal
+resp. external clock) for the Baud Rate Generator for External Clock
+(BRG) to all SCIF and HSCIF device nodes.
+
+This increases the range and accuracy of supported baud rates on
+(H)SCIF.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r8a7794.dtsi | 6 ++++++
- 1 file changed, 6 insertions(+)
+v2:
+  - New.
+---
+ arch/arm/boot/dts/r8a7794.dtsi | 54 ++++++++++++++++++++++++++++--------------
+ 1 file changed, 36 insertions(+), 18 deletions(-)
 
 diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
-index 89e914f2a2cf..7fb2da2f54ff 100644
+index 900dced9d9687ec4..1609af0932be020c 100644
 --- a/arch/arm/boot/dts/r8a7794.dtsi
 +++ b/arch/arm/boot/dts/r8a7794.dtsi
-@@ -518,6 +518,7 @@
+@@ -403,8 +403,9 @@
+ 			     "renesas,scif";
+ 		reg = <0 0xe6e60000 0 64>;
+ 		interrupts = <0 152 IRQ_TYPE_LEVEL_HIGH>;
+-		clocks = <&mstp7_clks R8A7794_CLK_SCIF0>;
+-		clock-names = "fck";
++		clocks = <&mstp7_clks R8A7794_CLK_SCIF0>, <&zs_clk>,
++			 <&scif_clk>;
++		clock-names = "fck", "brg_int", "scif_clk";
+ 		dmas = <&dmac0 0x29>, <&dmac0 0x2a>;
+ 		dma-names = "tx", "rx";
  		power-domains = <&cpg_clocks>;
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-+		i2c-scl-internal-delay-ns = <6>;
- 		status = "disabled";
- 	};
- 
-@@ -529,6 +530,7 @@
+@@ -416,8 +417,9 @@
+ 			     "renesas,scif";
+ 		reg = <0 0xe6e68000 0 64>;
+ 		interrupts = <0 153 IRQ_TYPE_LEVEL_HIGH>;
+-		clocks = <&mstp7_clks R8A7794_CLK_SCIF1>;
+-		clock-names = "fck";
++		clocks = <&mstp7_clks R8A7794_CLK_SCIF1>, <&zs_clk>,
++			 <&scif_clk>;
++		clock-names = "fck", "brg_int", "scif_clk";
+ 		dmas = <&dmac0 0x2d>, <&dmac0 0x2e>;
+ 		dma-names = "tx", "rx";
  		power-domains = <&cpg_clocks>;
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-+		i2c-scl-internal-delay-ns = <6>;
- 		status = "disabled";
- 	};
- 
-@@ -540,6 +542,7 @@
+@@ -429,8 +431,9 @@
+ 			     "renesas,scif";
+ 		reg = <0 0xe6e58000 0 64>;
+ 		interrupts = <0 22 IRQ_TYPE_LEVEL_HIGH>;
+-		clocks = <&mstp7_clks R8A7794_CLK_SCIF2>;
+-		clock-names = "fck";
++		clocks = <&mstp7_clks R8A7794_CLK_SCIF2>, <&zs_clk>,
++			 <&scif_clk>;
++		clock-names = "fck", "brg_int", "scif_clk";
+ 		dmas = <&dmac0 0x2b>, <&dmac0 0x2c>;
+ 		dma-names = "tx", "rx";
  		power-domains = <&cpg_clocks>;
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-+		i2c-scl-internal-delay-ns = <6>;
- 		status = "disabled";
- 	};
- 
-@@ -551,6 +554,7 @@
+@@ -442,8 +445,9 @@
+ 			     "renesas,scif";
+ 		reg = <0 0xe6ea8000 0 64>;
+ 		interrupts = <0 23 IRQ_TYPE_LEVEL_HIGH>;
+-		clocks = <&mstp7_clks R8A7794_CLK_SCIF3>;
+-		clock-names = "fck";
++		clocks = <&mstp7_clks R8A7794_CLK_SCIF3>, <&zs_clk>,
++			 <&scif_clk>;
++		clock-names = "fck", "brg_int", "scif_clk";
+ 		dmas = <&dmac0 0x2f>, <&dmac0 0x30>;
+ 		dma-names = "tx", "rx";
  		power-domains = <&cpg_clocks>;
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-+		i2c-scl-internal-delay-ns = <6>;
- 		status = "disabled";
- 	};
- 
-@@ -562,6 +566,7 @@
+@@ -455,8 +459,9 @@
+ 			     "renesas,scif";
+ 		reg = <0 0xe6ee0000 0 64>;
+ 		interrupts = <0 24 IRQ_TYPE_LEVEL_HIGH>;
+-		clocks = <&mstp7_clks R8A7794_CLK_SCIF4>;
+-		clock-names = "fck";
++		clocks = <&mstp7_clks R8A7794_CLK_SCIF4>, <&zs_clk>,
++			 <&scif_clk>;
++		clock-names = "fck", "brg_int", "scif_clk";
+ 		dmas = <&dmac0 0xfb>, <&dmac0 0xfc>;
+ 		dma-names = "tx", "rx";
  		power-domains = <&cpg_clocks>;
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-+		i2c-scl-internal-delay-ns = <6>;
- 		status = "disabled";
- 	};
- 
-@@ -573,6 +578,7 @@
+@@ -468,8 +473,9 @@
+ 			     "renesas,scif";
+ 		reg = <0 0xe6ee8000 0 64>;
+ 		interrupts = <0 25 IRQ_TYPE_LEVEL_HIGH>;
+-		clocks = <&mstp7_clks R8A7794_CLK_SCIF5>;
+-		clock-names = "fck";
++		clocks = <&mstp7_clks R8A7794_CLK_SCIF5>, <&zs_clk>,
++			 <&scif_clk>;
++		clock-names = "fck", "brg_int", "scif_clk";
+ 		dmas = <&dmac0 0xfd>, <&dmac0 0xfe>;
+ 		dma-names = "tx", "rx";
  		power-domains = <&cpg_clocks>;
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-+		i2c-scl-internal-delay-ns = <6>;
- 		status = "disabled";
- 	};
+@@ -481,8 +487,9 @@
+ 			     "renesas,rcar-gen2-hscif", "renesas,hscif";
+ 		reg = <0 0xe62c0000 0 96>;
+ 		interrupts = <0 154 IRQ_TYPE_LEVEL_HIGH>;
+-		clocks = <&mstp7_clks R8A7794_CLK_HSCIF0>;
+-		clock-names = "fck";
++		clocks = <&mstp7_clks R8A7794_CLK_HSCIF0>, <&zs_clk>,
++			 <&scif_clk>;
++		clock-names = "fck", "brg_int", "scif_clk";
+ 		dmas = <&dmac0 0x39>, <&dmac0 0x3a>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
+@@ -494,8 +501,9 @@
+ 			     "renesas,rcar-gen2-hscif", "renesas,hscif";
+ 		reg = <0 0xe62c8000 0 96>;
+ 		interrupts = <0 155 IRQ_TYPE_LEVEL_HIGH>;
+-		clocks = <&mstp7_clks R8A7794_CLK_HSCIF1>;
+-		clock-names = "fck";
++		clocks = <&mstp7_clks R8A7794_CLK_HSCIF1>, <&zs_clk>,
++			 <&scif_clk>;
++		clock-names = "fck", "brg_int", "scif_clk";
+ 		dmas = <&dmac0 0x4d>, <&dmac0 0x4e>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
+@@ -507,8 +515,9 @@
+ 			     "renesas,rcar-gen2-hscif", "renesas,hscif";
+ 		reg = <0 0xe62d0000 0 96>;
+ 		interrupts = <0 21 IRQ_TYPE_LEVEL_HIGH>;
+-		clocks = <&mstp7_clks R8A7794_CLK_HSCIF2>;
+-		clock-names = "fck";
++		clocks = <&mstp7_clks R8A7794_CLK_HSCIF2>, <&zs_clk>,
++			 <&scif_clk>;
++		clock-names = "fck", "brg_int", "scif_clk";
+ 		dmas = <&dmac0 0x3b>, <&dmac0 0x3c>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
+@@ -809,6 +818,15 @@
+ 			clock-output-names = "extal";
+ 		};
  
++		/* External SCIF clock */
++		scif_clk: scif {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			/* This value must be overridden by the board. */
++			clock-frequency = <0>;
++			status = "disabled";
++		};
++
+ 		/* Special CPG clocks */
+ 		cpg_clocks: cpg_clocks@e6150000 {
+ 			compatible = "renesas,r8a7794-cpg-clocks",
 -- 
-2.1.4
+1.9.1
 
