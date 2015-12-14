@@ -1,85 +1,57 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 14 Dec 2015 18:57:50 +0000
-Subject: [PATCH 2/7] ARM: shmobile: r8a7779 dtsi: Add SCIF fallback compatibility strings
-Message-Id: <1450119475-1183-3-git-send-email-geert+renesas@glider.be>
+Date: Mon, 14 Dec 2015 18:57:28 +0000
+Subject: [PATCH v3 19/27] serial: sh-sci: Correct SCIF type on RZ/A1H
+Message-Id: <1450119456-964-20-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450119475-1183-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1450119475-1183-1-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
+References: <1450119456-964-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1450119456-964-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-serial-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+
+The "renesas,scif" compatible value is currently used for the SCIF
+variant in all Renesas SoCs of the R-Car and RZ families.  However, the
+variant used in the RZ family is not the common "SH-4(A)" variant, but
+the "SH-2(A) with FIFO data count register" variant, as it has the
+"Serial Extension Mode Register" (SCEMR), just like on sh7203, sh7263,
+sh7264, and sh7269.
+
+Use the (already documented) SoC-specific "renesas,scif-r7s72100"
+compatible value to differentiate.  The "renesas,scif" compatible value
+can still be used as a common denominator for SCIF variants with the
+"SH-4(A)" register layout (i.e. ignoring the SCEMR register).
+Note that currently both variants are treated the same, but this may
+change if support for the SCEMR register is ever added.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reviewed-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 ---
- arch/arm/boot/dts/r8a7779.dtsi | 18 ++++++++++++------
- 1 file changed, 12 insertions(+), 6 deletions(-)
+v3:
+  - Add Reviewed-by, Acked-by.
+---
+ drivers/tty/serial/sh-sci.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
-index 6afa909865b52b71..4afd8b12f8694c13 100644
---- a/arch/arm/boot/dts/r8a7779.dtsi
-+++ b/arch/arm/boot/dts/r8a7779.dtsi
-@@ -211,7 +211,8 @@
- 	};
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 13c6abe9d842c0a8..5b8504bfd42e9906 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -2620,6 +2620,12 @@ static int sci_remove(struct platform_device *dev)
+ #define SCI_OF_REGTYPE(data)		((unsigned long)(data) & 0xffff)
  
- 	scif0: serial@ffe40000 {
--		compatible = "renesas,scif-r8a7779", "renesas,scif";
-+		compatible = "renesas,scif-r8a7779", "renesas,rcar-gen1-scif",
-+			     "renesas,scif";
- 		reg = <0xffe40000 0x100>;
- 		interrupts = <0 88 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp0_clks R8A7779_CLK_SCIF0>;
-@@ -221,7 +222,8 @@
- 	};
- 
- 	scif1: serial@ffe41000 {
--		compatible = "renesas,scif-r8a7779", "renesas,scif";
-+		compatible = "renesas,scif-r8a7779", "renesas,rcar-gen1-scif",
-+			     "renesas,scif";
- 		reg = <0xffe41000 0x100>;
- 		interrupts = <0 89 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp0_clks R8A7779_CLK_SCIF1>;
-@@ -231,7 +233,8 @@
- 	};
- 
- 	scif2: serial@ffe42000 {
--		compatible = "renesas,scif-r8a7779", "renesas,scif";
-+		compatible = "renesas,scif-r8a7779", "renesas,rcar-gen1-scif",
-+			     "renesas,scif";
- 		reg = <0xffe42000 0x100>;
- 		interrupts = <0 90 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp0_clks R8A7779_CLK_SCIF2>;
-@@ -241,7 +244,8 @@
- 	};
- 
- 	scif3: serial@ffe43000 {
--		compatible = "renesas,scif-r8a7779", "renesas,scif";
-+		compatible = "renesas,scif-r8a7779", "renesas,rcar-gen1-scif",
-+			     "renesas,scif";
- 		reg = <0xffe43000 0x100>;
- 		interrupts = <0 91 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp0_clks R8A7779_CLK_SCIF3>;
-@@ -251,7 +255,8 @@
- 	};
- 
- 	scif4: serial@ffe44000 {
--		compatible = "renesas,scif-r8a7779", "renesas,scif";
-+		compatible = "renesas,scif-r8a7779", "renesas,rcar-gen1-scif",
-+			     "renesas,scif";
- 		reg = <0xffe44000 0x100>;
- 		interrupts = <0 92 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp0_clks R8A7779_CLK_SCIF4>;
-@@ -261,7 +266,8 @@
- 	};
- 
- 	scif5: serial@ffe45000 {
--		compatible = "renesas,scif-r8a7779", "renesas,scif";
-+		compatible = "renesas,scif-r8a7779", "renesas,rcar-gen1-scif",
-+			     "renesas,scif";
- 		reg = <0xffe45000 0x100>;
- 		interrupts = <0 93 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp0_clks R8A7779_CLK_SCIF5>;
+ static const struct of_device_id of_sci_match[] = {
++	/* SoC-specific types */
++	{
++		.compatible = "renesas,scif-r7s72100",
++		.data = SCI_OF_DATA(PORT_SCIF, SCIx_SH2_SCIF_FIFODATA_REGTYPE),
++	},
++	/* Generic types */
+ 	{
+ 		.compatible = "renesas,scif",
+ 		.data = SCI_OF_DATA(PORT_SCIF, SCIx_SH4_SCIF_REGTYPE),
 -- 
 1.9.1
 
