@@ -1,38 +1,78 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Tue, 22 Dec 2015 20:55:30 +0000
-Subject: Re: [GIT PULL] Renesas ARM Based SoC GIC Cleanup for v4.5
-Message-Id: <20151222205530.GS30172@localhost>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 14 Dec 2015 18:57:11 +0000
+Subject: [PATCH v3 02/27] serial: sh-sci: Add fallback compatibility strings
+Message-Id: <1450119456-964-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1450401902.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1450401902.git.horms+renesas@verge.net.au>
+References: <1450119456-964-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1450119456-964-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>, devicetree@vger.kernel.org
 
-On Fri, Dec 18, 2015 at 11:30:41AM +0900, Simon Horman wrote:
-> Hi Olof, Hi Kevin, Hi Arnd,
-> 
-> Please consider these Renesas ARM based SoC GIC cleanup for v4.5.
-> 
-> This pull-request includes staging-board changes which have been
-> acked by Greg Kroah-Hartman. They are bundled into this pull-request
-> as not-doing so would break the drivers they update.
-> 
-> The following changes since commit 8005c49d9aea74d382f474ce11afbbc7d7130bec:
-> 
->   Linux 4.4-rc1 (2015-11-15 17:00:27 -0800)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-gic-cleanup-for-v4.5
-> 
-> for you to fetch changes up to 1474136ce6a457a10a797b3de04adbb035e90901:
-> 
->   staging: board: armadillo800eva: Use "arm,pl390" (2015-12-18 10:21:10 +0900)
+Add fallback compatibility strings for R-Car Gen1, Gen2, and Gen3.
+This is in keeping with the fallback scheme being adopted wherever
+appropriate for drivers for Renesas SoCs.
 
-Merged, thanks.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: devicetree@vger.kernel.org
+---
+v3:
+  - New.
+---
+ .../devicetree/bindings/serial/renesas,sci-serial.txt   | 17 +++++++++++++----
+ 1 file changed, 13 insertions(+), 4 deletions(-)
 
-
--Olof
+diff --git a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+index 2c9e6b8477e92792..7091213f02513cda 100644
+--- a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
++++ b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+@@ -2,7 +2,7 @@
+ 
+ Required properties:
+ 
+-  - compatible: Must contain one of the following:
++  - compatible: Must contain one or more of the following:
+ 
+     - "renesas,scif-r7s72100" for R7S72100 (RZ/A1H) SCIF compatible UART.
+     - "renesas,scifa-r8a73a4" for R8A73A4 (R-Mobile APE6) SCIFA compatible UART.
+@@ -27,6 +27,14 @@ Required properties:
+     - "renesas,hscif-r8a7795" for R8A7795 (R-Car H3) HSCIF compatible UART.
+     - "renesas,scifa-sh73a0" for SH73A0 (SH-Mobile AG5) SCIFA compatible UART.
+     - "renesas,scifb-sh73a0" for SH73A0 (SH-Mobile AG5) SCIFB compatible UART.
++    - "renesas,rcar-gen1-scif" for R-Car Gen1 SCIF compatible UART,
++    - "renesas,rcar-gen2-scif" for R-Car Gen2 SCIF compatible UART,
++    - "renesas,rcar-gen3-scif" for R-Car Gen3 SCIF compatible UART,
++    - "renesas,rcar-gen2-scifa" for R-Car Gen2 SCIFA compatible UART,
++    - "renesas,rcar-gen2-scifb" for R-Car Gen2 SCIFB compatible UART,
++    - "renesas,rcar-gen1-hscif" for R-Car Gen1 HSCIF compatible UART,
++    - "renesas,rcar-gen2-hscif" for R-Car Gen2 HSCIF compatible UART,
++    - "renesas,rcar-gen3-hscif" for R-Car Gen3 HSCIF compatible UART,
+     - "renesas,scif" for generic SCIF compatible UART.
+     - "renesas,scifa" for generic SCIFA compatible UART.
+     - "renesas,scifb" for generic SCIFB compatible UART.
+@@ -34,8 +42,8 @@ Required properties:
+     - "renesas,sci" for generic SCI compatible UART.
+ 
+     When compatible with the generic version, nodes must list the
+-    SoC-specific version corresponding to the platform first followed by the
+-    generic version.
++    SoC-specific version corresponding to the platform first, followed by the
++    family-specific and/or generic versions.
+ 
+   - reg: Base address and length of the I/O registers used by the UART.
+   - interrupts: Must contain an interrupt-specifier for the SCIx interrupt.
+@@ -58,7 +66,8 @@ Example:
+ 	};
+ 
+ 	scifa0: serial@e6c40000 {
+-		compatible = "renesas,scifa-r8a7790", "renesas,scifa";
++		compatible = "renesas,scifa-r8a7790",
++			     "renesas,rcar-gen2-scifa", "renesas,scifa";
+ 		reg = <0 0xe6c40000 0 64>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 144 IRQ_TYPE_LEVEL_HIGH>;
+-- 
+1.9.1
 
