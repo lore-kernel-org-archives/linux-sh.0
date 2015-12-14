@@ -1,169 +1,126 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sat, 05 Dec 2015 02:12:49 +0000
-Subject: [PATCH v2 15/32] v4l: vsp1: Extract link creation to separate function
-Message-Id: <1449281586-25726-16-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 14 Dec 2015 18:58:09 +0000
+Subject: [PATCH v2 1/7] ARM: shmobile: r8a7778 dtsi: Add BRG support for SCIF
+Message-Id: <1450119495-1416-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1450119495-1416-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1450119495-1416-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: linux-sh@vger.kernel.org, linux-serial@vger.kernel.org, devicetree@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Link creation will be handled differently for the DU pipeline.
+Add the device node for the external SCIF_CLK.
+The presence of the SCIF_CLK crystal and its clock frequency depends on
+the actual board.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Add the two optional clock sources (S1 and SCIF_CLK for the internal
+resp. external clock) for the Baud Rate Generator for External Clock
+(BRG) to all SCIF device nodes.
+
+This increases the range and accuracy of supported baud rates on SCIF.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/media/platform/vsp1/vsp1_drv.c | 114 ++++++++++++++++++---------------
- 1 file changed, 64 insertions(+), 50 deletions(-)
+v2:
+  - New.
+---
+ arch/arm/boot/dts/r8a7778.dtsi | 39 +++++++++++++++++++++++++++------------
+ 1 file changed, 27 insertions(+), 12 deletions(-)
 
-diff --git a/drivers/media/platform/vsp1/vsp1_drv.c b/drivers/media/platform/vsp1/vsp1_drv.c
-index 91ecf75119ba..d1e42260a871 100644
---- a/drivers/media/platform/vsp1/vsp1_drv.c
-+++ b/drivers/media/platform/vsp1/vsp1_drv.c
-@@ -67,7 +67,7 @@ static irqreturn_t vsp1_irq_handler(int irq, void *data)
-  */
+diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
+index 3e9c9d2f28deaf20..a192355e740abb07 100644
+--- a/arch/arm/boot/dts/r8a7778.dtsi
++++ b/arch/arm/boot/dts/r8a7778.dtsi
+@@ -300,8 +300,9 @@
+ 			     "renesas,scif";
+ 		reg = <0xffe40000 0x100>;
+ 		interrupts = <0 70 IRQ_TYPE_LEVEL_HIGH>;
+-		clocks = <&mstp0_clks R8A7778_CLK_SCIF0>;
+-		clock-names = "fck";
++		clocks = <&mstp0_clks R8A7778_CLK_SCIF0>,
++			 <&cpg_clocks R8A7778_CLK_S1>, <&scif_clk>;
++		clock-names = "fck", "brg_int", "scif_clk";
+ 		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+@@ -311,8 +312,9 @@
+ 			     "renesas,scif";
+ 		reg = <0xffe41000 0x100>;
+ 		interrupts = <0 71 IRQ_TYPE_LEVEL_HIGH>;
+-		clocks = <&mstp0_clks R8A7778_CLK_SCIF1>;
+-		clock-names = "fck";
++		clocks = <&mstp0_clks R8A7778_CLK_SCIF1>,
++			 <&cpg_clocks R8A7778_CLK_S1>, <&scif_clk>;
++		clock-names = "fck", "brg_int", "scif_clk";
+ 		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+@@ -322,8 +324,9 @@
+ 			     "renesas,scif";
+ 		reg = <0xffe42000 0x100>;
+ 		interrupts = <0 72 IRQ_TYPE_LEVEL_HIGH>;
+-		clocks = <&mstp0_clks R8A7778_CLK_SCIF2>;
+-		clock-names = "fck";
++		clocks = <&mstp0_clks R8A7778_CLK_SCIF2>,
++			 <&cpg_clocks R8A7778_CLK_S1>, <&scif_clk>;
++		clock-names = "fck", "brg_int", "scif_clk";
+ 		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+@@ -333,8 +336,9 @@
+ 			     "renesas,scif";
+ 		reg = <0xffe43000 0x100>;
+ 		interrupts = <0 73 IRQ_TYPE_LEVEL_HIGH>;
+-		clocks = <&mstp0_clks R8A7778_CLK_SCIF3>;
+-		clock-names = "fck";
++		clocks = <&mstp0_clks R8A7778_CLK_SCIF3>,
++			 <&cpg_clocks R8A7778_CLK_S1>, <&scif_clk>;
++		clock-names = "fck", "brg_int", "scif_clk";
+ 		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+@@ -344,8 +348,9 @@
+ 			     "renesas,scif";
+ 		reg = <0xffe44000 0x100>;
+ 		interrupts = <0 74 IRQ_TYPE_LEVEL_HIGH>;
+-		clocks = <&mstp0_clks R8A7778_CLK_SCIF4>;
+-		clock-names = "fck";
++		clocks = <&mstp0_clks R8A7778_CLK_SCIF4>,
++			 <&cpg_clocks R8A7778_CLK_S1>, <&scif_clk>;
++		clock-names = "fck", "brg_int", "scif_clk";
+ 		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+@@ -355,8 +360,9 @@
+ 			     "renesas,scif";
+ 		reg = <0xffe45000 0x100>;
+ 		interrupts = <0 75 IRQ_TYPE_LEVEL_HIGH>;
+-		clocks = <&mstp0_clks R8A7778_CLK_SCIF5>;
+-		clock-names = "fck";
++		clocks = <&mstp0_clks R8A7778_CLK_SCIF5>,
++			 <&cpg_clocks R8A7778_CLK_S1>, <&scif_clk>;
++		clock-names = "fck", "brg_int", "scif_clk";
+ 		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+@@ -443,6 +449,15 @@
+ 			clock-output-names = "extal";
+ 		};
  
- /*
-- * vsp1_create_links - Create links from all sources to the given sink
-+ * vsp1_create_sink_links - Create links from all sources to the given sink
-  *
-  * This function creates media links from all valid sources to the given sink
-  * pad. Links that would be invalid according to the VSP1 hardware capabilities
-@@ -76,7 +76,8 @@ static irqreturn_t vsp1_irq_handler(int irq, void *data)
-  * - from a UDS to a UDS (UDS entities can't be chained)
-  * - from an entity to itself (no loops are allowed)
-  */
--static int vsp1_create_links(struct vsp1_device *vsp1, struct vsp1_entity *sink)
-+static int vsp1_create_sink_links(struct vsp1_device *vsp1,
-+				  struct vsp1_entity *sink)
- {
- 	struct media_entity *entity = &sink->subdev.entity;
- 	struct vsp1_entity *source;
-@@ -116,6 +117,64 @@ static int vsp1_create_links(struct vsp1_device *vsp1, struct vsp1_entity *sink)
- 	return 0;
- }
- 
-+static int vsp1_create_links(struct vsp1_device *vsp1)
-+{
-+	struct vsp1_entity *entity;
-+	unsigned int i;
-+	int ret;
++		/* External SCIF clock */
++		scif_clk: scif {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			/* This value must be overridden by the board. */
++			clock-frequency = <0>;
++			status = "disabled";
++		};
 +
-+	list_for_each_entry(entity, &vsp1->entities, list_dev) {
-+		if (entity->type = VSP1_ENTITY_LIF ||
-+		    entity->type = VSP1_ENTITY_RPF)
-+			continue;
-+
-+		ret = vsp1_create_sink_links(vsp1, entity);
-+		if (ret < 0)
-+			return ret;
-+	}
-+
-+	for (i = 0; i < vsp1->pdata.rpf_count; ++i) {
-+		struct vsp1_rwpf *rpf = vsp1->rpf[i];
-+
-+		ret = media_entity_create_link(&rpf->video->video.entity, 0,
-+					       &rpf->entity.subdev.entity,
-+					       RWPF_PAD_SINK,
-+					       MEDIA_LNK_FL_ENABLED |
-+					       MEDIA_LNK_FL_IMMUTABLE);
-+		if (ret < 0)
-+			return ret;
-+	}
-+
-+	for (i = 0; i < vsp1->pdata.wpf_count; ++i) {
-+		/* Connect the video device to the WPF. All connections are
-+		 * immutable except for the WPF0 source link if a LIF is
-+		 * present.
-+		 */
-+		struct vsp1_rwpf *wpf = vsp1->wpf[i];
-+		unsigned int flags = MEDIA_LNK_FL_ENABLED;
-+
-+		if (!(vsp1->pdata.features & VSP1_HAS_LIF) || i != 0)
-+			flags |= MEDIA_LNK_FL_IMMUTABLE;
-+
-+		ret = media_entity_create_link(&wpf->entity.subdev.entity,
-+					       RWPF_PAD_SOURCE,
-+					       &wpf->video->video.entity,
-+					       0, flags);
-+		if (ret < 0)
-+			return ret;
-+	}
-+
-+	if (vsp1->pdata.features & VSP1_HAS_LIF) {
-+		ret = media_entity_create_link(
-+			&vsp1->wpf[0]->entity.subdev.entity, RWPF_PAD_SOURCE,
-+			&vsp1->lif->entity.subdev.entity, LIF_PAD_SINK, 0);
-+		if (ret < 0)
-+			return ret;
-+	}
-+
-+	return 0;
-+}
-+
- static void vsp1_destroy_entities(struct vsp1_device *vsp1)
- {
- 	struct vsp1_entity *entity, *_entity;
-@@ -276,54 +335,9 @@ static int vsp1_create_entities(struct vsp1_device *vsp1)
- 	}
- 
- 	/* Create links. */
--	list_for_each_entry(entity, &vsp1->entities, list_dev) {
--		if (entity->type = VSP1_ENTITY_LIF ||
--		    entity->type = VSP1_ENTITY_RPF)
--			continue;
--
--		ret = vsp1_create_links(vsp1, entity);
--		if (ret < 0)
--			goto done;
--	}
--
--	for (i = 0; i < vsp1->pdata.rpf_count; ++i) {
--		struct vsp1_rwpf *rpf = vsp1->rpf[i];
--
--		ret = media_entity_create_link(&rpf->video->video.entity, 0,
--					       &rpf->entity.subdev.entity,
--					       RWPF_PAD_SINK,
--					       MEDIA_LNK_FL_ENABLED |
--					       MEDIA_LNK_FL_IMMUTABLE);
--		if (ret < 0)
--			goto done;
--	}
--
--	for (i = 0; i < vsp1->pdata.wpf_count; ++i) {
--		/* Connect the video device to the WPF. All connections are
--		 * immutable except for the WPF0 source link if a LIF is
--		 * present.
--		 */
--		struct vsp1_rwpf *wpf = vsp1->wpf[i];
--		unsigned int flags = MEDIA_LNK_FL_ENABLED;
--
--		if (!(vsp1->pdata.features & VSP1_HAS_LIF) || i != 0)
--			flags |= MEDIA_LNK_FL_IMMUTABLE;
--
--		ret = media_entity_create_link(&wpf->entity.subdev.entity,
--					       RWPF_PAD_SOURCE,
--					       &wpf->video->video.entity,
--					       0, flags);
--		if (ret < 0)
--			goto done;
--	}
--
--	if (vsp1->pdata.features & VSP1_HAS_LIF) {
--		ret = media_entity_create_link(
--			&vsp1->wpf[0]->entity.subdev.entity, RWPF_PAD_SOURCE,
--			&vsp1->lif->entity.subdev.entity, LIF_PAD_SINK, 0);
--		if (ret < 0)
--			return ret;
--	}
-+	ret = vsp1_create_links(vsp1);
-+	if (ret < 0)
-+		goto done;
- 
- 	/* Register all subdevs. */
- 	list_for_each_entry(entity, &vsp1->entities, list_dev) {
+ 		/* Special CPG clocks */
+ 		cpg_clocks: cpg_clocks@ffc80000 {
+ 			compatible = "renesas,r8a7778-cpg-clocks";
 -- 
-2.4.10
+1.9.1
 
