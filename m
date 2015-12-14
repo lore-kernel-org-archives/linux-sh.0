@@ -1,44 +1,39 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sat, 05 Dec 2015 02:13:03 +0000
-Subject: [PATCH v2 29/32] v4l: vsp1: Disconnect unused RPFs from the DRM pipeline
-Message-Id: <1449281586-25726-30-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 14 Dec 2015 19:11:44 +0000
+Subject: [PATCH/RFC 7/7] ARM: shmobile: silk dts: Add compatible property to "partitions" node
+Message-Id: <1450120304-2760-8-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1450120304-2760-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1450120304-2760-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+As of commit e488ca9f8d4f62c2 ("doc: dt: mtd: partitions: add compatible
+property to "partitions" node"), the "partitions" subnode of an SPI
+FLASH device node must have a compatible property. The partitions are no
+longer detected if it is not present.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/media/platform/vsp1/vsp1_drm.c | 8 ++++++--
- 1 file changed, 6 insertions(+), 2 deletions(-)
+The abovementioned commit is destined for v4.4.
+---
+ arch/arm/boot/dts/r8a7794-silk.dts | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/drivers/media/platform/vsp1/vsp1_drm.c b/drivers/media/platform/vsp1/vsp1_drm.c
-index 2969d570f462..5cef619b708d 100644
---- a/drivers/media/platform/vsp1/vsp1_drm.c
-+++ b/drivers/media/platform/vsp1/vsp1_drm.c
-@@ -38,13 +38,17 @@ static int vsp1_drm_pipeline_run(struct vsp1_pipeline *pipe)
- 		struct vsp1_entity *entity;
+diff --git a/arch/arm/boot/dts/r8a7794-silk.dts b/arch/arm/boot/dts/r8a7794-silk.dts
+index eb608283a24c070c..c0ae94979a71b04c 100644
+--- a/arch/arm/boot/dts/r8a7794-silk.dts
++++ b/arch/arm/boot/dts/r8a7794-silk.dts
+@@ -217,6 +217,7 @@
+ 		m25p,fast-read;
  
- 		list_for_each_entry(entity, &pipe->entities, list_pipe) {
--			/* Skip unused RPFs. */
-+			/* Disconnect unused RPFs from the pipeline. */
- 			if (entity->type = VSP1_ENTITY_RPF) {
- 				struct vsp1_rwpf *rpf  					to_rwpf(&entity->subdev);
+ 		partitions {
++			compatible = "fixed-partitions";
+ 			#address-cells = <1>;
+ 			#size-cells = <1>;
  
--				if (!pipe->inputs[rpf->entity.index])
-+				if (!pipe->inputs[rpf->entity.index]) {
-+					vsp1_write(entity->vsp1,
-+						   entity->route->reg,
-+						   VI6_DPR_NODE_UNUSED);
- 					continue;
-+				}
- 			}
- 
- 			vsp1_entity_route_setup(entity);
 -- 
-2.4.10
+1.9.1
 
