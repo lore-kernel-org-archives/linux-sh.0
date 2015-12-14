@@ -1,207 +1,65 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 17 Dec 2015 08:40:06 +0000
-Subject: [PATCH/RFC 28/48] v4l: Support the request API in format operations
-Message-Id: <1450341626-6695-29-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 14 Dec 2015 18:57:20 +0000
+Subject: [PATCH v3 11/27] serial: sh-sci: Make unsigned values in sci_baud_calc_hscif() unsigned
+Message-Id: <1450119456-964-12-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450341626-6695-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1450341626-6695-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1450119456-964-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1450119456-964-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Store the formats in per-entity request data. The get and set format
-operations are completely handled by the V4L2 core with help of the try
-format driver operation.
+Move the -1 offset of br to the assignment to *brr, so br cannot become
+negative anymore, and update the clamp() call. Now all unsigned values
+in sci_baud_calc_hscif() can become unsigned.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 ---
- drivers/media/v4l2-core/v4l2-ioctl.c | 121 +++++++++++++++++++++++++++++++++++
- include/media/v4l2-dev.h             |  13 ++++
- 2 files changed, 134 insertions(+)
+v3:
+  - Add Acked-by.
+---
+ drivers/tty/serial/sh-sci.c | 11 ++++++-----
+ 1 file changed, 6 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/media/v4l2-core/v4l2-ioctl.c b/drivers/media/v4l2-core/v4l2-ioctl.c
-index 67a4aa760aa3..1143d70d578a 100644
---- a/drivers/media/v4l2-core/v4l2-ioctl.c
-+++ b/drivers/media/v4l2-core/v4l2-ioctl.c
-@@ -1341,6 +1341,119 @@ static int v4l_enum_fmt(const struct v4l2_ioctl_ops *ops,
- 	return ret;
- }
- 
-+#if defined(CONFIG_MEDIA_CONTROLLER)
-+static void vdev_request_data_release(struct media_entity_request_data *data)
-+{
-+	struct video_device_request_data *vdata +		to_video_device_request_data(data);
-+
-+	kfree(vdata);
-+}
-+
-+static int vdev_request_format(struct video_device *vdev, unsigned int req_id,
-+			       struct media_device_request **_req,
-+			       struct v4l2_pix_format_mplane **_fmt)
-+{
-+	struct media_entity_request_data *data;
-+	struct video_device_request_data *vdata;
-+	struct media_device_request *req;
-+
-+	if (!vdev->v4l2_dev || !vdev->v4l2_dev->mdev)
-+		return -EINVAL;
-+
-+	req = media_device_request_find(vdev->v4l2_dev->mdev, req_id);
-+	if (!req)
-+		return -EINVAL;
-+
-+	*_req = req;
-+
-+	data = media_device_request_get_entity_data(req, &vdev->entity);
-+	if (data) {
-+		vdata = to_video_device_request_data(data);
-+		*_fmt = &vdata->format;
-+		return 0;
-+	}
-+
-+	vdata = kzalloc(sizeof(*vdata), GFP_KERNEL);
-+	if (!vdata) {
-+		media_device_request_put(req);
-+		return -ENOMEM;
-+	}
-+
-+	vdata->data.release = vdev_request_data_release;
-+
-+	media_device_request_set_entity_data(req, &vdev->entity, &vdata->data);
-+
-+	*_fmt = &vdata->format;
-+	return 0;
-+}
-+
-+static int v4l_g_req_mplane_fmt(const struct v4l2_ioctl_ops *ops,
-+				struct file *file, void *fh,
-+				struct v4l2_format *fmt)
-+{
-+	struct video_device *vdev = video_devdata(file);
-+	struct v4l2_pix_format_mplane *format;
-+	struct media_device_request *req;
-+	int ret;
-+
-+	ret = vdev_request_format(vdev, fmt->fmt.pix_mp.request,
-+				  &req, &format);
-+	if (ret < 0)
-+		return ret;
-+
-+	fmt->fmt.pix_mp = *format;
-+	media_device_request_put(req);
-+	return 0;
-+}
-+
-+static int v4l_s_req_mplane_fmt(const struct v4l2_ioctl_ops *ops,
-+				struct file *file, void *fh,
-+				struct v4l2_format *fmt)
-+{
-+	int (*try_op)(struct file *file, void *fh, struct v4l2_format *fmt);
-+	struct video_device *vdev = video_devdata(file);
-+	struct v4l2_pix_format_mplane *format;
-+	struct media_device_request *req;
-+	int ret;
-+
-+	if (fmt->type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE)
-+		try_op = ops->vidioc_try_fmt_vid_cap_mplane;
-+	else
-+		try_op = ops->vidioc_try_fmt_vid_out_mplane;
-+
-+	if (unlikely(!try_op))
-+		return -ENOSYS;
-+
-+	ret = try_op(file, fh, fmt);
-+	if (ret < 0)
-+		return ret;
-+
-+	ret = vdev_request_format(vdev, fmt->fmt.pix_mp.request,
-+				  &req, &format);
-+	if (ret < 0)
-+		return ret;
-+
-+	*format = fmt->fmt.pix_mp;
-+	media_device_request_put(req);
-+	return 0;
-+}
-+#else
-+static int v4l_g_req_mplane_fmt(const struct v4l2_ioctl_ops *ops,
-+				struct file *file, void *fh,
-+				struct v4l2_format *fmt)
-+{
-+	return -ENOSYS;
-+}
-+
-+static int v4l_s_req_mplane_fmt(const struct v4l2_ioctl_ops *ops,
-+				struct file *file, void *fh,
-+				struct v4l2_format *fmt)
-+{
-+	return -ENOSYS;
-+}
-+#endif
-+
- static int v4l_g_fmt(const struct v4l2_ioctl_ops *ops,
- 				struct file *file, void *fh, void *arg)
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index b9eb4b525c0a7571..77e0a582da44947f 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1870,7 +1870,8 @@ static unsigned int sci_scbrr_calc(struct sci_port *s, unsigned int bps,
+ static void sci_baud_calc_hscif(unsigned int bps, unsigned long freq, int *brr,
+ 				unsigned int *srr, unsigned int *cks)
  {
-@@ -1388,6 +1501,8 @@ static int v4l_g_fmt(const struct v4l2_ioctl_ops *ops,
- 	case V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE:
- 		if (unlikely(!is_rx || !is_vid || !ops->vidioc_g_fmt_vid_cap_mplane))
- 			break;
-+		if (p->fmt.pix_mp.request)
-+			return v4l_g_req_mplane_fmt(ops, file, fh, p);
- 		return ops->vidioc_g_fmt_vid_cap_mplane(file, fh, arg);
- 	case V4L2_BUF_TYPE_VIDEO_OVERLAY:
- 		if (unlikely(!is_rx || !is_vid || !ops->vidioc_g_fmt_vid_overlay))
-@@ -1412,6 +1527,8 @@ static int v4l_g_fmt(const struct v4l2_ioctl_ops *ops,
- 	case V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE:
- 		if (unlikely(!is_tx || !is_vid || !ops->vidioc_g_fmt_vid_out_mplane))
- 			break;
-+		if (p->fmt.pix_mp.request)
-+			return v4l_g_req_mplane_fmt(ops, file, fh, p);
- 		return ops->vidioc_g_fmt_vid_out_mplane(file, fh, arg);
- 	case V4L2_BUF_TYPE_VIDEO_OUTPUT_OVERLAY:
- 		if (unlikely(!is_tx || !is_vid || !ops->vidioc_g_fmt_vid_out_overlay))
-@@ -1463,6 +1580,8 @@ static int v4l_s_fmt(const struct v4l2_ioctl_ops *ops,
- 		if (unlikely(!is_rx || !is_vid || !ops->vidioc_s_fmt_vid_cap_mplane))
- 			break;
- 		CLEAR_AFTER_FIELD(p, fmt.pix_mp);
-+		if (p->fmt.pix_mp.request)
-+			return v4l_s_req_mplane_fmt(ops, file, fh, p);
- 		return ops->vidioc_s_fmt_vid_cap_mplane(file, fh, arg);
- 	case V4L2_BUF_TYPE_VIDEO_OVERLAY:
- 		if (unlikely(!is_rx || !is_vid || !ops->vidioc_s_fmt_vid_overlay))
-@@ -1491,6 +1610,8 @@ static int v4l_s_fmt(const struct v4l2_ioctl_ops *ops,
- 		if (unlikely(!is_tx || !is_vid || !ops->vidioc_s_fmt_vid_out_mplane))
- 			break;
- 		CLEAR_AFTER_FIELD(p, fmt.pix_mp);
-+		if (p->fmt.pix_mp.request)
-+			return v4l_s_req_mplane_fmt(ops, file, fh, p);
- 		return ops->vidioc_s_fmt_vid_out_mplane(file, fh, arg);
- 	case V4L2_BUF_TYPE_VIDEO_OUTPUT_OVERLAY:
- 		if (unlikely(!is_tx || !is_vid || !ops->vidioc_s_fmt_vid_out_overlay))
-diff --git a/include/media/v4l2-dev.h b/include/media/v4l2-dev.h
-index acbcd2f5fe7f..9fb386a6e505 100644
---- a/include/media/v4l2-dev.h
-+++ b/include/media/v4l2-dev.h
-@@ -233,4 +233,17 @@ static inline int video_is_registered(struct video_device *vdev)
- 	return test_bit(V4L2_FL_REGISTERED, &vdev->flags);
- }
+-	int sr, c, br, err, recv_margin;
++	unsigned int sr, br, c;
++	int err, recv_margin;
+ 	int min_err = 1000; /* 100% */
+ 	int recv_max_margin = 0;
  
-+#if defined(CONFIG_MEDIA_CONTROLLER)
-+struct video_device_request_data {
-+	struct media_entity_request_data data;
-+	struct v4l2_pix_format_mplane format;
-+};
-+
-+static inline struct video_device_request_data *
-+to_video_device_request_data(struct media_entity_request_data *data)
-+{
-+	return container_of(data, struct video_device_request_data, data);
-+}
-+#endif
-+
- #endif /* _V4L2_DEV_H */
+@@ -1880,9 +1881,9 @@ static void sci_baud_calc_hscif(unsigned int bps, unsigned long freq, int *brr,
+ 		for (c = 0; c <= 3; c++) {
+ 			/* integerized formulas from HSCIF documentation */
+ 			br = DIV_ROUND_CLOSEST(freq, (sr *
+-					      (1 << (2 * c + 1)) * bps)) - 1;
+-			br = clamp(br, 0, 255);
+-			err = DIV_ROUND_CLOSEST(freq, ((br + 1) * bps * sr *
++					      (1 << (2 * c + 1)) * bps));
++			br = clamp(br, 1U, 256U);
++			err = DIV_ROUND_CLOSEST(freq, (br * bps * sr *
+ 					       (1 << (2 * c + 1)) / 1000)) -
+ 					       1000;
+ 			/* Calc recv margin
+@@ -1908,7 +1909,7 @@ static void sci_baud_calc_hscif(unsigned int bps, unsigned long freq, int *brr,
+ 			else
+ 				continue;
+ 
+-			*brr = br;
++			*brr = br - 1;
+ 			*srr = sr - 1;
+ 			*cks = c;
+ 		}
 -- 
-2.4.10
+1.9.1
 
