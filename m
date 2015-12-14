@@ -1,50 +1,45 @@
-From: Jacek Anaszewski <j.anaszewski@samsung.com>
-Date: Fri, 11 Dec 2015 14:04:52 +0000
-Subject: Re: [PATCH 03/10] media framework: rename pads init function to media_entity_pads_init()
-Message-Id: <566AD804.5040403@samsung.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Mon, 14 Dec 2015 15:42:37 +0000
+Subject: [PATCH 5/6] pinctrl: sh-pfc: r8a7795: add SATA0 pin conf to DT
+Message-Id: <1450107758-2544-6-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1449840443.git.mchehab@osg.samsung.com>
- <063476f381aebf981106b7d134348a0a9acc67cc.1449840443.git.mchehab@osg.samsung.com>
-In-Reply-To: <063476f381aebf981106b7d134348a0a9acc67cc.1449840443.git.mchehab@osg.samsung.com>
+References: <1450107758-2544-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+In-Reply-To: <1450107758-2544-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On 12/11/2015 02:34 PM, Mauro Carvalho Chehab wrote:
-> With the MC next gen rework, what's left for media_entity_init()
-> is to just initialize the PADs. However, certain devices, like
-> a FLASH led/light doesn't have any input or output PAD.
->
-> So, there's no reason why calling media_entity_init() would be
-> mandatory. Also, despite its name, what this function actually
-> does is to initialize the PADs data. So, rename it to
-> media_entity_pads_init() in order to reflect that.
->
-> The media entity actual init happens during entity register,
-> at media_device_register_entity(). We should move init of
-> num_links and num_backlinks to it.
->
-> Signed-off-by: Mauro Carvalho Chehab <mchehab@osg.samsung.com>
-[...]
-> diff --git a/drivers/media/v4l2-core/v4l2-flash-led-class.c b/drivers/media/v4l2-core/v4l2-flash-led-class.c
-> index 5c686a24712b..13d5a36bc5d8 100644
-> --- a/drivers/media/v4l2-core/v4l2-flash-led-class.c
-> +++ b/drivers/media/v4l2-core/v4l2-flash-led-class.c
-> @@ -651,7 +651,7 @@ struct v4l2_flash *v4l2_flash_init(
->   	sd->flags |= V4L2_SUBDEV_FL_HAS_DEVNODE;
->   	strlcpy(sd->name, config->dev_name, sizeof(sd->name));
->
-> -	ret = media_entity_init(&sd->entity, 0, NULL);
-> +	ret = media_entity_pads_init(&sd->entity, 0, NULL);
->   	if (ret < 0)
->   		return ERR_PTR(ret);
->
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+---
+ arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 7 +++++++
+ 1 file changed, 7 insertions(+)
 
-For this part:
-
-Acked-by: Jacek Anaszewski <j.anaszewski@samsung.com>
-
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+index 297c9f0..3d6c1e0 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
++++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+@@ -140,6 +140,10 @@
+ 	pinctrl-0 = <&scif_clk_pins>;
+ 	pinctrl-names = "default";
+ 
++	sata0_pins: sata0 {
++		renesas,groups = "sata0_devslp_a";
++		renesas,function = "sata0";
++	};
+ 	scif1_pins: scif1 {
+ 		renesas,groups = "scif1_data_a", "scif1_ctrl";
+ 		renesas,function = "scif1";
+@@ -269,6 +273,9 @@
+ };
+ 
+ &sata {
++	pinctrl-0 = <&sata0_pins>;
++	pinctrl-names = "default";
++
+ 	status = "okay";
+ };
+ 
 -- 
-Best Regards,
-Jacek Anaszewski
+2.6.3
+
