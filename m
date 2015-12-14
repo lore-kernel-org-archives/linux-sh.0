@@ -1,40 +1,74 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 16 Dec 2015 04:51:52 +0000
-Subject: [PATCH v4 3/3] usb: renesas_usbhs: add device tree support for r8a779[23]
-Message-Id: <1450241512-24699-4-git-send-email-horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 14 Dec 2015 18:57:17 +0000
+Subject: [PATCH v3 08/27] serial: sh-sci: Drop unused frame_len parameter for sci_baud_calc_hscif()
+Message-Id: <1450119456-964-9-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450241512-24699-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1450241512-24699-1-git-send-email-horms+renesas-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>
+References: <1450119456-964-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1450119456-964-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>
-Cc: Kuninori Morimoto <kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, Yoshihiro Shimoda <yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Simon Horman <horms+renesas-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Simply document new compatibility string.
-As a previous patch adds a generic R-Car Gen2 compatibility string
-there appears to be no need for a driver updates.
+As F is assumed to be zero in the receive margin formula, frame_len is
+not used. Remove it, together with the sci_baud_calc_frame_len() helper
+function.
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-Acked-by: Rob Herring <robh@kernel.org>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reviewed-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 ---
- Documentation/devicetree/bindings/usb/renesas_usbhs.txt | 2 ++
- 1 file changed, 2 insertions(+)
+v3:
+  - Add Reviewed-by, Acked-by.
+---
+ drivers/tty/serial/sh-sci.c | 24 +++---------------------
+ 1 file changed, 3 insertions(+), 21 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/usb/renesas_usbhs.txt b/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
-index 45d9ae13ffa3..b6040563e51a 100644
---- a/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
-+++ b/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
-@@ -5,6 +5,8 @@ Required properties:
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 36077193f11168f0..05ac15336e4f918d 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1866,26 +1866,9 @@ static unsigned int sci_scbrr_calc(struct sci_port *s, unsigned int bps,
+ 	return DIV_ROUND_CLOSEST(freq, s->sampling_rate * bps) - 1;
+ }
  
- 	- "renesas,usbhs-r8a7790" for r8a7790 (R-Car H2) compatible device
- 	- "renesas,usbhs-r8a7791" for r8a7791 (R-Car M2-W) compatible device
-+	- "renesas,usbhs-r8a7792" for r8a7792 (R-Car V2H) compatible device
-+	- "renesas,usbhs-r8a7793" for r8a7793 (R-Car M2-N) compatible device
- 	- "renesas,usbhs-r8a7794" for r8a7794 (R-Car E2) compatible device
- 	- "renesas,usbhs-r8a7795" for r8a7795 (R-Car H3) compatible device
- 	- "renesas,rcar-gen2-usbhs" for R-Car Gen2 compatible device
+-/* calculate frame length from SMR */
+-static int sci_baud_calc_frame_len(unsigned int smr_val)
+-{
+-	int len = 10;
+-
+-	if (smr_val & SCSMR_CHR)
+-		len--;
+-	if (smr_val & SCSMR_PE)
+-		len++;
+-	if (smr_val & SCSMR_STOP)
+-		len++;
+-
+-	return len;
+-}
+-
+-
+ /* calculate sample rate, BRR, and clock select for HSCIF */
+-static void sci_baud_calc_hscif(unsigned int bps, unsigned long freq,
+-				int *brr, unsigned int *srr,
+-				unsigned int *cks, int frame_len)
++static void sci_baud_calc_hscif(unsigned int bps, unsigned long freq, int *brr,
++				unsigned int *srr, unsigned int *cks)
+ {
+ 	int sr, c, br, err, recv_margin;
+ 	int min_err = 1000; /* 100% */
+@@ -1987,9 +1970,8 @@ static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
+ 	baud = uart_get_baud_rate(port, termios, old, 0, max_baud);
+ 	if (likely(baud && port->uartclk)) {
+ 		if (s->cfg->type = PORT_HSCIF) {
+-			int frame_len = sci_baud_calc_frame_len(smr_val);
+ 			sci_baud_calc_hscif(baud, port->uartclk, &t, &srr,
+-					    &cks, frame_len);
++					    &cks);
+ 		} else {
+ 			t = sci_scbrr_calc(s, baud, port->uartclk);
+ 			for (cks = 0; t >= 256 && cks <= 3; cks++)
 -- 
-2.1.4
+1.9.1
 
