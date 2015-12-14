@@ -1,36 +1,114 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 18 Dec 2015 02:29:38 +0000
-Subject: [PATCH 08/25] ARM: shmobile: koelsch dts: Add serial port config to chosen/stdout-path
-Message-Id: <832dae1fcb72adff9e28eee9b768786fc7a0e0a9.1450402264.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 14 Dec 2015 18:57:23 +0000
+Subject: [PATCH v3 14/27] serial: sh-sci: Avoid calculating the receive margin for HSCIF
+Message-Id: <1450119456-964-15-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1450402264.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1450402264.git.horms+renesas@verge.net.au>
+References: <1450119456-964-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1450119456-964-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+When assuming D = 0.5 and F = 0, maximizing the receive margin M is
+equivalent to maximizing the sample rate N.
+
+Hence there's no need to calculate the receive margin, as we can obtain
+the same result by iterating over all possible sample rates in reverse
+order, and skipping parameter sets that don't provide a lower bit rate
+error.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 ---
- arch/arm/boot/dts/r8a7791-koelsch.dts | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+v3:
+  - Add Acked-by,
+  - Rebased,
+  - Terminate loop over sampling rates on perfect match.
+---
+ drivers/tty/serial/sh-sci.c | 51 +++++++++++++++++++++------------------------
+ 1 file changed, 24 insertions(+), 27 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index 50d7b17c6ebd..c94a0fb807a2 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -54,7 +54,7 @@
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 306497ee5c326d19..c3a193616484a62c 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1872,13 +1872,24 @@ static void sci_baud_calc_hscif(struct sci_port *s, unsigned int bps,
+ 				unsigned int *srr, unsigned int *cks)
+ {
+ 	unsigned int sr, br, prediv, scrate, c;
+-	int err, recv_margin;
+-	int min_err = INT_MAX;
+-	int recv_max_margin = 0;
++	int err, min_err = INT_MAX;
  
- 	chosen {
- 		bootargs = "ignore_loglevel rw root=/dev/nfs ip=dhcp";
--		stdout-path = &scif0;
-+		stdout-path = "serial0:115200n8";
- 	};
+-	/* Find the combination of sample rate and clock select with the
+-	   smallest deviation from the desired baud rate. */
+-	for (sr = 8; sr <= 32; sr++) {
++	/*
++	 * Find the combination of sample rate and clock select with the
++	 * smallest deviation from the desired baud rate.
++	 * Prefer high sample rates to maximise the receive margin.
++	 *
++	 * M: Receive margin (%)
++	 * N: Ratio of bit rate to clock (N = sampling rate)
++	 * D: Clock duty (D = 0 to 1.0)
++	 * L: Frame length (L = 9 to 12)
++	 * F: Absolute value of clock frequency deviation
++	 *
++	 *  M = |(0.5 - 1 / 2 * N) - ((L - 0.5) * F) -
++	 *      (|D - 0.5| / N * (1 + F))|
++	 *  NOTE: Usually, treat D for 0.5, F is 0 by this calculation.
++	 */
++	for (sr = 32; sr >= 8; sr--) {
+ 		for (c = 0; c <= 3; c++) {
+ 			/* integerized formulas from HSCIF documentation */
+ 			prediv = sr * (1 << (2 * c + 1));
+@@ -1898,36 +1909,22 @@ static void sci_baud_calc_hscif(struct sci_port *s, unsigned int bps,
+ 			scrate = prediv * bps;
+ 			br = DIV_ROUND_CLOSEST(freq, scrate);
+ 			br = clamp(br, 1U, 256U);
++
+ 			err = DIV_ROUND_CLOSEST(freq, br * prediv) - bps;
+-			/* Calc recv margin
+-			 * M: Receive margin (%)
+-			 * N: Ratio of bit rate to clock (N = sampling rate)
+-			 * D: Clock duty (D = 0 to 1.0)
+-			 * L: Frame length (L = 9 to 12)
+-			 * F: Absolute value of clock frequency deviation
+-			 *
+-			 *  M = |(0.5 - 1 / 2 * N) - ((L - 0.5) * F) -
+-			 *      (|D - 0.5| / N * (1 + F))|
+-			 *  NOTE: Usually, treat D for 0.5, F is 0 by this
+-			 *        calculation.
+-			 */
+-			recv_margin = abs((500 -
+-					DIV_ROUND_CLOSEST(1000, sr << 1)) / 10);
+-			if (abs(min_err) > abs(err)) {
+-				min_err = err;
+-				recv_max_margin = recv_margin;
+-			} else if ((min_err = err) &&
+-				   (recv_margin > recv_max_margin))
+-				recv_max_margin = recv_margin;
+-			else
++			if (abs(err) >= abs(min_err))
+ 				continue;
  
- 	memory@40000000 {
++			min_err = err;
+ 			*brr = br - 1;
+ 			*srr = sr - 1;
+ 			*cks = c;
++
++			if (!err)
++				goto found;
+ 		}
+ 	}
+ 
++found:
+ 	dev_dbg(s->port.dev, "BRR: %u%+d bps using N %u SR %u cks %u\n", bps,
+ 		min_err, *brr, *srr + 1, *cks);
+ }
 -- 
-2.1.4
+1.9.1
 
