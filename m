@@ -1,105 +1,110 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 09 Dec 2015 08:23:24 +0000
-Subject: Re: [PATCH v11 1/8] arm64: renesas: r8a7795: Add Renesas R8A7795 SoC support
-Message-Id: <CAMuHMdUbPHOmjj2t+tPgJVavkHVAbBxxzxZdtAEr9BSqQ-C5tQ@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 14 Dec 2015 18:57:57 +0000
+Subject: [PATCH v3 03/12] ARM: shmobile: r7s72100 dtsi: Rename the serial port clock to fck
+Message-Id: <1450119486-1285-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1444890243-6978-1-git-send-email-horms+renesas@verge.net.au>
- <1444890243-6978-2-git-send-email-horms+renesas@verge.net.au>
- <20151015105820.GF8825@leverpostej>
- <CAMuHMdU00wJcrb7EsFjkKMw-gy04tXdGoyzPRNL-cjYZH8zneA@mail.gmail.com>
- <20151103142810.GC4049@leverpostej>
-In-Reply-To: <20151103142810.GC4049@leverpostej>
+References: <1450119486-1285-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1450119486-1285-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: linux-sh@vger.kernel.org, linux-serial@vger.kernel.org, devicetree@vger.kernel.org, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Hi Mark,
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-On Tue, Nov 3, 2015 at 3:28 PM, Mark Rutland <mark.rutland@arm.com> wrote:
-> On Wed, Oct 21, 2015 at 03:34:39PM +0200, Geert Uytterhoeven wrote:
->> On Thu, Oct 15, 2015 at 12:58 PM, Mark Rutland <mark.rutland@arm.com> wrote:
->> >> > +           gic: interrupt-controller@0xf1010000 {
->> >> +                     compatible = "arm,gic-400";
->> >> +                     #interrupt-cells = <3>;
->> >> +                     #address-cells = <0>;
->> >> +                     interrupt-controller;
->> >> +                     reg = <0x0 0xf1010000 0 0x1000>,
->> >> +                           <0x0 0xf1020000 0 0x2000>;
->> >> +                     interrupts = <GIC_PPI 9
->> >> +                                     (GIC_CPU_MASK_SIMPLE(1) | IRQ_TYPE_LEVEL_HIGH)>;
->> >> +             };
->> >
->> > No GICH and GICV?
->>
->> These seem to be defined in the "arm,gic-v3" DT bindings only, while this is
->> an "arm,gic-400" (GICD_IIDR 0x0200043b)?
->
-> See the "GIC virtualization extensions (VGIC)" section in
-> Documentation/devicetree/bindings/arm/gic.txt
+The clock is really the device functional clock, not the interface
+clock. Rename it.
 
-DDI0471B_gic400_r0p1_trm.pdf says:
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+v3:
+  - No changes,
 
-    Address range GIC-400 functional block
-    A. 0x0000 - 0x0FFF Reserved
-    B. 0x1000 - 0x1FFF Distributor
-    C. 0x2000 - 0x3FFF CPU interfaces
-    D. 0x4000 - 0x4FFF Virtual interface control block, for the processor that
-                       is performing the access
-    E. 0x5000 - 0x5FFF Virtual interface control block, for the processor
-                       selected by address bits [11:9]
-    F. 0x6000 - 0x7FFF Virtual CPU interfaces
+v2:
+  - Add Acked-by.
+---
+ arch/arm/boot/dts/r7s72100.dtsi | 16 ++++++++--------
+ 1 file changed, 8 insertions(+), 8 deletions(-)
 
-The DT binding document says:
-  1. The  first region is the GIC distributor register base and size.
-  2. The 2nd region is the GIC cpu interface register base and size.
-  3. The first additional region is the GIC virtual interface control register
-     base and size.
-  4. The 2nd additional region is the GIC virtual cpu interface register base
-     and size.
+diff --git a/arch/arm/boot/dts/r7s72100.dtsi b/arch/arm/boot/dts/r7s72100.dtsi
+index 4657d7fb5bceede5..0c3b9e341ce7fd8e 100644
+--- a/arch/arm/boot/dts/r7s72100.dtsi
++++ b/arch/arm/boot/dts/r7s72100.dtsi
+@@ -157,7 +157,7 @@
+ 			     <0 192 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 189 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp4_clks R7S72100_CLK_SCIF0>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+@@ -170,7 +170,7 @@
+ 			     <0 196 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 193 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp4_clks R7S72100_CLK_SCIF1>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+@@ -183,7 +183,7 @@
+ 			     <0 200 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 197 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp4_clks R7S72100_CLK_SCIF2>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+@@ -196,7 +196,7 @@
+ 			     <0 204 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 201 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp4_clks R7S72100_CLK_SCIF3>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+@@ -209,7 +209,7 @@
+ 			     <0 208 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 205 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp4_clks R7S72100_CLK_SCIF4>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+@@ -222,7 +222,7 @@
+ 			     <0 212 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 209 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp4_clks R7S72100_CLK_SCIF5>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+@@ -235,7 +235,7 @@
+ 			     <0 216 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 213 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp4_clks R7S72100_CLK_SCIF6>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+@@ -248,7 +248,7 @@
+ 			     <0 220 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 217 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp4_clks R7S72100_CLK_SCIF7>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+-- 
+1.9.1
 
-Matching with the example:
-
-        interrupt-controller@2c001000 {
-                compatible = "arm,cortex-a15-gic";
-                #interrupt-cells = <3>;
-                interrupt-controller;
-                reg = <0x2c001000 0x1000>,
-                      <0x2c002000 0x1000>,
-                      <0x2c004000 0x2000>,
-                      <0x2c006000 0x2000>;
-                interrupts = <1 9 0xf04>;
-        };
-
-This means:
-  - reg entry 1. covers address range B,
-  - reg entry 2. covers address range C,
-  - reg entry 3. covers address ranges D _and_ E,
-  - reg entry 4. covers address range F.
-
-On R-Car Gen3, the base addresses are:
-
-    Distributor             : 0xF101_0000
-    CPU interfaces          : 0xF102_0000
-    Virtual interfaces      : 0xF104_0000
-    Virtual interfaces      : 0xF105_0000
-    Virtual CPU interfaces  : 0xF106_0000
-
-Note the additional multiplication factor of 16 in the offsets relative to
-the base address 0xf1000000 (e.g. 0x50000 instead of 0x5000).
-
-As address ranges D and E are merged in a single reg entry, how is the GIC
-driver supposed to know about this multiplication factor?
-
-Thanks!
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
