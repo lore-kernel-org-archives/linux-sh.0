@@ -1,39 +1,37 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Mon, 14 Dec 2015 15:42:35 +0000
-Subject: [PATCH 3/6] arm64: dts: salvator-x: Enable SATA controller
-Message-Id: <1450107758-2544-4-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 14 Dec 2015 18:57:16 +0000
+Subject: [PATCH v3 07/27] serial: sh-sci: Use existing local variable in sci_parse_dt()
+Message-Id: <1450119456-964-8-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450107758-2544-1-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1450107758-2544-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+References: <1450119456-964-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1450119456-964-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Kouei Abe <kouei.abe.cp@renesas.com>
-
-This enables SATA device in r8a7795-salvator-x.dts.
-
-Signed-off-by: Kouei Abe <kouei.abe.cp@renesas.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 4 ++++
- 1 file changed, 4 insertions(+)
+v3:
+  - New.
+---
+ drivers/tty/serial/sh-sci.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-index 0c67442..297c9f0 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-+++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-@@ -268,6 +268,10 @@
- 	};
- };
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 5ec1a70cd2f49ada..36077193f11168f0 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -2635,7 +2635,7 @@ sci_parse_dt(struct platform_device *pdev, unsigned int *dev_id)
+ 	if (!IS_ENABLED(CONFIG_OF) || !np)
+ 		return NULL;
  
-+&sata {
-+	status = "okay";
-+};
-+
- &ssi1 {
- 	shared-pin;
- };
+-	match = of_match_node(of_sci_match, pdev->dev.of_node);
++	match = of_match_node(of_sci_match, np);
+ 	if (!match)
+ 		return NULL;
+ 
 -- 
-2.6.3
+1.9.1
 
