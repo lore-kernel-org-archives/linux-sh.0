@@ -1,180 +1,69 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sat, 05 Dec 2015 02:12:38 +0000
-Subject: [PATCH v2 04/32] v4l: vsp1: Rename vsp1_video_buffer to vsp1_vb2_buffer
-Message-Id: <1449281586-25726-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 14 Dec 2015 18:58:20 +0000
+Subject: [PATCH v2 5/9] ARM: shmobile: lager dts: Enable SCIF_CLK frequency and pins
+Message-Id: <1450119504-1517-6-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1450119504-1517-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1450119504-1517-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: linux-sh@vger.kernel.org, linux-serial@vger.kernel.org, devicetree@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-The structure represent a vsp1 videobuf2 buffer, name it accordingly.
+Add and enable the external crystal for the SCIF_CLK and its pinctrl, to
+be used by the Baud Rate Generator for External Clock (BRG) on (H)SCIF.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+This increases the range and accuracy of supported baud rates.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/media/platform/vsp1/vsp1_rpf.c   |  2 +-
- drivers/media/platform/vsp1/vsp1_rwpf.h  |  4 ++--
- drivers/media/platform/vsp1/vsp1_video.c | 20 ++++++++++----------
- drivers/media/platform/vsp1/vsp1_video.h |  8 ++++----
- drivers/media/platform/vsp1/vsp1_wpf.c   |  2 +-
- 5 files changed, 18 insertions(+), 18 deletions(-)
+Untested, based on schematics.
 
-diff --git a/drivers/media/platform/vsp1/vsp1_rpf.c b/drivers/media/platform/vsp1/vsp1_rpf.c
-index ee0a1472a13c..1f91fc4c4857 100644
---- a/drivers/media/platform/vsp1/vsp1_rpf.c
-+++ b/drivers/media/platform/vsp1/vsp1_rpf.c
-@@ -186,7 +186,7 @@ static struct v4l2_subdev_ops rpf_ops = {
-  * Video Device Operations
-  */
- 
--static void rpf_buf_queue(struct vsp1_rwpf *rpf, struct vsp1_video_buffer *buf)
-+static void rpf_buf_queue(struct vsp1_rwpf *rpf, struct vsp1_vb2_buffer *buf)
- {
- 	unsigned int i;
- 
-diff --git a/drivers/media/platform/vsp1/vsp1_rwpf.h b/drivers/media/platform/vsp1/vsp1_rwpf.h
-index 3cc80be03524..aa22cc062ff3 100644
---- a/drivers/media/platform/vsp1/vsp1_rwpf.h
-+++ b/drivers/media/platform/vsp1/vsp1_rwpf.h
-@@ -25,10 +25,10 @@
- #define RWPF_PAD_SOURCE				1
- 
- struct vsp1_rwpf;
--struct vsp1_video_buffer;
-+struct vsp1_vb2_buffer;
- 
- struct vsp1_rwpf_operations {
--	void (*queue)(struct vsp1_rwpf *rwpf, struct vsp1_video_buffer *buf);
-+	void (*queue)(struct vsp1_rwpf *rwpf, struct vsp1_vb2_buffer *buf);
+v2:
+  - New.
+---
+ arch/arm/boot/dts/r8a7790-lager.dts | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 44ba69b974a21de2..7773cb1f10317d85 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -291,6 +291,9 @@
  };
  
- struct vsp1_rwpf {
-diff --git a/drivers/media/platform/vsp1/vsp1_video.c b/drivers/media/platform/vsp1/vsp1_video.c
-index 932225ec45f6..e96160d90b35 100644
---- a/drivers/media/platform/vsp1/vsp1_video.c
-+++ b/drivers/media/platform/vsp1/vsp1_video.c
-@@ -577,12 +577,12 @@ static bool vsp1_pipeline_ready(struct vsp1_pipeline *pipe)
-  *
-  * Return the next queued buffer or NULL if the queue is empty.
-  */
--static struct vsp1_video_buffer *
-+static struct vsp1_vb2_buffer *
- vsp1_video_complete_buffer(struct vsp1_video *video)
- {
- 	struct vsp1_pipeline *pipe = to_vsp1_pipeline(&video->video.entity);
--	struct vsp1_video_buffer *next = NULL;
--	struct vsp1_video_buffer *done;
-+	struct vsp1_vb2_buffer *next = NULL;
-+	struct vsp1_vb2_buffer *done;
- 	unsigned long flags;
- 	unsigned int i;
+ &pfc {
++	pinctrl-0 = <&scif_clk_pins>;
++	pinctrl-names = "default";
++
+ 	du_pins: du {
+ 		renesas,groups = "du_rgb666", "du_sync_1", "du_clk_out_0";
+ 		renesas,function = "du";
+@@ -301,6 +304,11 @@
+ 		renesas,function = "scif0";
+ 	};
  
-@@ -594,7 +594,7 @@ vsp1_video_complete_buffer(struct vsp1_video *video)
- 	}
- 
- 	done = list_first_entry(&video->irqqueue,
--				struct vsp1_video_buffer, queue);
-+				struct vsp1_vb2_buffer, queue);
- 
- 	/* In DU output mode reuse the buffer if the list is singular. */
- 	if (pipe->lif && list_is_singular(&video->irqqueue)) {
-@@ -606,7 +606,7 @@ vsp1_video_complete_buffer(struct vsp1_video *video)
- 
- 	if (!list_empty(&video->irqqueue))
- 		next = list_first_entry(&video->irqqueue,
--					struct vsp1_video_buffer, queue);
-+					struct vsp1_vb2_buffer, queue);
- 
- 	spin_unlock_irqrestore(&video->irqlock, flags);
- 
-@@ -622,7 +622,7 @@ vsp1_video_complete_buffer(struct vsp1_video *video)
- static void vsp1_video_frame_end(struct vsp1_pipeline *pipe,
- 				 struct vsp1_video *video)
- {
--	struct vsp1_video_buffer *buf;
-+	struct vsp1_vb2_buffer *buf;
- 	unsigned long flags;
- 
- 	buf = vsp1_video_complete_buffer(video);
-@@ -823,7 +823,7 @@ static int vsp1_video_buffer_prepare(struct vb2_buffer *vb)
- {
- 	struct vb2_v4l2_buffer *vbuf = to_vb2_v4l2_buffer(vb);
- 	struct vsp1_video *video = vb2_get_drv_priv(vb->vb2_queue);
--	struct vsp1_video_buffer *buf = to_vsp1_video_buffer(vbuf);
-+	struct vsp1_vb2_buffer *buf = to_vsp1_vb2_buffer(vbuf);
- 	const struct v4l2_pix_format_mplane *format = &video->rwpf->format;
- 	unsigned int i;
- 
-@@ -846,7 +846,7 @@ static void vsp1_video_buffer_queue(struct vb2_buffer *vb)
- 	struct vb2_v4l2_buffer *vbuf = to_vb2_v4l2_buffer(vb);
- 	struct vsp1_video *video = vb2_get_drv_priv(vb->vb2_queue);
- 	struct vsp1_pipeline *pipe = to_vsp1_pipeline(&video->video.entity);
--	struct vsp1_video_buffer *buf = to_vsp1_video_buffer(vbuf);
-+	struct vsp1_vb2_buffer *buf = to_vsp1_vb2_buffer(vbuf);
- 	unsigned long flags;
- 	bool empty;
- 
-@@ -938,7 +938,7 @@ static void vsp1_video_stop_streaming(struct vb2_queue *vq)
- {
- 	struct vsp1_video *video = vb2_get_drv_priv(vq);
- 	struct vsp1_pipeline *pipe = to_vsp1_pipeline(&video->video.entity);
--	struct vsp1_video_buffer *buffer;
-+	struct vsp1_vb2_buffer *buffer;
- 	unsigned long flags;
- 	int ret;
- 
-@@ -1263,7 +1263,7 @@ int vsp1_video_init(struct vsp1_video *video, struct vsp1_rwpf *rwpf)
- 	video->queue.io_modes = VB2_MMAP | VB2_USERPTR | VB2_DMABUF;
- 	video->queue.lock = &video->lock;
- 	video->queue.drv_priv = video;
--	video->queue.buf_struct_size = sizeof(struct vsp1_video_buffer);
-+	video->queue.buf_struct_size = sizeof(struct vsp1_vb2_buffer);
- 	video->queue.ops = &vsp1_video_queue_qops;
- 	video->queue.mem_ops = &vb2_dma_contig_memops;
- 	video->queue.timestamp_flags = V4L2_BUF_FLAG_TIMESTAMP_COPY;
-diff --git a/drivers/media/platform/vsp1/vsp1_video.h b/drivers/media/platform/vsp1/vsp1_video.h
-index 72be847f2df9..c7e143125ef7 100644
---- a/drivers/media/platform/vsp1/vsp1_video.h
-+++ b/drivers/media/platform/vsp1/vsp1_video.h
-@@ -94,7 +94,7 @@ static inline struct vsp1_pipeline *to_vsp1_pipeline(struct media_entity *e)
- 		return NULL;
- }
- 
--struct vsp1_video_buffer {
-+struct vsp1_vb2_buffer {
- 	struct vb2_v4l2_buffer buf;
- 	struct list_head queue;
- 
-@@ -102,10 +102,10 @@ struct vsp1_video_buffer {
- 	unsigned int length[3];
++	scif_clk_pins: scif_clk {
++		renesas,groups = "scif_clk";
++		renesas,function = "scif_clk";
++	};
++
+ 	ether_pins: ether {
+ 		renesas,groups = "eth_link", "eth_mdio", "eth_rmii";
+ 		renesas,function = "eth";
+@@ -484,6 +492,11 @@
+ 	status = "okay";
  };
  
--static inline struct vsp1_video_buffer *
--to_vsp1_video_buffer(struct vb2_v4l2_buffer *vbuf)
-+static inline struct vsp1_vb2_buffer *
-+to_vsp1_vb2_buffer(struct vb2_v4l2_buffer *vbuf)
- {
--	return container_of(vbuf, struct vsp1_video_buffer, buf);
-+	return container_of(vbuf, struct vsp1_vb2_buffer, buf);
- }
- 
- struct vsp1_video {
-diff --git a/drivers/media/platform/vsp1/vsp1_wpf.c b/drivers/media/platform/vsp1/vsp1_wpf.c
-index b25c5e6976ef..e41d8bcd9d97 100644
---- a/drivers/media/platform/vsp1/vsp1_wpf.c
-+++ b/drivers/media/platform/vsp1/vsp1_wpf.c
-@@ -195,7 +195,7 @@ static struct v4l2_subdev_ops wpf_ops = {
-  * Video Device Operations
-  */
- 
--static void wpf_buf_queue(struct vsp1_rwpf *wpf, struct vsp1_video_buffer *buf)
-+static void wpf_buf_queue(struct vsp1_rwpf *wpf, struct vsp1_vb2_buffer *buf)
- {
- 	vsp1_wpf_write(wpf, VI6_WPF_DSTM_ADDR_Y, buf->addr[0]);
- 	if (buf->buf.vb2_buf.num_planes > 1)
++&scif_clk {
++	clock-frequency = <14745600>;
++	status = "okay";
++};
++
+ &msiof1 {
+ 	pinctrl-0 = <&msiof1_pins>;
+ 	pinctrl-names = "default";
 -- 
-2.4.10
+1.9.1
 
