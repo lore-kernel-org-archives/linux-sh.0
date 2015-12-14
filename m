@@ -1,198 +1,172 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 14 Dec 2015 18:58:15 +0000
-Subject: [PATCH v2 7/7] arm64: renesas: r8a7795 dtsi: Add BRG support for (H)SCIF
-Message-Id: <1450119495-1416-8-git-send-email-geert+renesas@glider.be>
+Date: Mon, 14 Dec 2015 18:57:32 +0000
+Subject: [PATCH v3 23/27] serial: sh-sci: Add support for optional BRG on (H)SCIF
+Message-Id: <1450119456-964-24-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450119495-1416-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1450119495-1416-1-git-send-email-geert+renesas@glider.be>
+References: <1450119456-964-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1450119456-964-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-sh@vger.kernel.org, linux-serial@vger.kernel.org, devicetree@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Add the device node for the external SCIF_CLK.
-The presence of the SCIF_CLK crystal and its clock frequency depend on
-the actual board.
-
-Add the two optional clock sources (S3D1 and SCIF_CLK for the internal
-resp. external clock) for the Baud Rate Generator for External Clock
-(BRG) to all SCIF and HSCIF device nodes.
-
-This increases the range and accuracy of supported baud rates on
-(H)SCIF.
+Add support for using the Baud Rate Generator for External Clock (BRG), as
+found on some SCIF and HSCIF variants, to provide the sampling clock.
+This can improve baud rate range and accuracy.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 ---
-v2:
-  - Correct internal clock source ZS_CLK to S3D1 in patch description,
-  - Rename "int_clk" to "brg_int".
+v3:
+  - Add Acked-by,
+  - Terminate loop over sampling rates on perfect match,
+  - Rename "int_clk" to "brg_int", "SCI_INT_CLK" to "SCI_BRG_INT",
+  - Add comment that the BRG divides the internal/external clock,
+  - Reword patch description, using sampling clock source.
 ---
- arch/arm64/boot/dts/renesas/r8a7795.dtsi | 74 ++++++++++++++++++++++----------
- 1 file changed, 52 insertions(+), 22 deletions(-)
+ drivers/tty/serial/sh-sci.c | 85 ++++++++++++++++++++++++++++++++++++++++++---
+ 1 file changed, 80 insertions(+), 5 deletions(-)
 
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-index a5afd9bad6791398..75d21c548f081e01 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-+++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-@@ -99,6 +99,14 @@
- 		clock-frequency = <0>;
- 	};
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 229162481fd67b9d..4ff5d0cf812688ff 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -80,6 +80,8 @@ enum {
+ enum SCI_CLKS {
+ 	SCI_FCK,		/* Functional Clock */
+ 	SCI_SCK,		/* Optional External Clock */
++	SCI_BRG_INT,		/* Optional BRG Internal Clock Source */
++	SCI_SCIF_CLK,		/* Optional BRG External Clock Source */
+ 	SCI_NUM_CLKS
+ };
  
-+	/* External SCIF clock - to be overridden by boards that provide it */
-+	scif_clk: scif {
-+		compatible = "fixed-clock";
-+		#clock-cells = <0>;
-+		clock-frequency = <0>;
-+		status = "disabled";
-+	};
+@@ -1958,6 +1960,43 @@ static int sci_sck_calc(struct sci_port *s, unsigned int bps,
+ 	return min_err;
+ }
+ 
++static int sci_brg_calc(struct sci_port *s, unsigned int bps,
++			unsigned long freq, unsigned int *dlr,
++			unsigned int *srr)
++{
++	unsigned int min_sr, max_sr, sr, dl;
++	int err, min_err = INT_MAX;
 +
- 	soc {
- 		compatible = "simple-bus";
- 		interrupt-parent = <&gic>;
-@@ -392,8 +400,10 @@
- 				     "renesas,hscif";
- 			reg = <0 0xe6540000 0 96>;
- 			interrupts = <GIC_SPI 154 IRQ_TYPE_LEVEL_HIGH>;
--			clocks = <&cpg CPG_MOD 520>;
--			clock-names = "fck";
-+			clocks = <&cpg CPG_MOD 520>,
-+				 <&cpg CPG_CORE R8A7795_CLK_S3D1>,
-+				 <&scif_clk>;
-+			clock-names = "fck", "brg_int", "scif_clk";
- 			dmas = <&dmac1 0x31>, <&dmac1 0x30>;
- 			dma-names = "tx", "rx";
- 			power-domains = <&cpg>;
-@@ -406,8 +416,10 @@
- 				     "renesas,hscif";
- 			reg = <0 0xe6550000 0 96>;
- 			interrupts = <GIC_SPI 155 IRQ_TYPE_LEVEL_HIGH>;
--			clocks = <&cpg CPG_MOD 519>;
--			clock-names = "fck";
-+			clocks = <&cpg CPG_MOD 519>,
-+				 <&cpg CPG_CORE R8A7795_CLK_S3D1>,
-+				 <&scif_clk>;
-+			clock-names = "fck", "brg_int", "scif_clk";
- 			dmas = <&dmac1 0x33>, <&dmac1 0x32>;
- 			dma-names = "tx", "rx";
- 			power-domains = <&cpg>;
-@@ -420,8 +432,10 @@
- 				     "renesas,hscif";
- 			reg = <0 0xe6560000 0 96>;
- 			interrupts = <GIC_SPI 144 IRQ_TYPE_LEVEL_HIGH>;
--			clocks = <&cpg CPG_MOD 518>;
--			clock-names = "fck";
-+			clocks = <&cpg CPG_MOD 518>,
-+				 <&cpg CPG_CORE R8A7795_CLK_S3D1>,
-+				 <&scif_clk>;
-+			clock-names = "fck", "brg_int", "scif_clk";
- 			dmas = <&dmac1 0x35>, <&dmac1 0x34>;
- 			dma-names = "tx", "rx";
- 			power-domains = <&cpg>;
-@@ -434,8 +448,10 @@
- 				     "renesas,hscif";
- 			reg = <0 0xe66a0000 0 96>;
- 			interrupts = <GIC_SPI 145 IRQ_TYPE_LEVEL_HIGH>;
--			clocks = <&cpg CPG_MOD 517>;
--			clock-names = "fck";
-+			clocks = <&cpg CPG_MOD 517>,
-+				 <&cpg CPG_CORE R8A7795_CLK_S3D1>,
-+				 <&scif_clk>;
-+			clock-names = "fck", "brg_int", "scif_clk";
- 			dmas = <&dmac0 0x37>, <&dmac0 0x36>;
- 			dma-names = "tx", "rx";
- 			power-domains = <&cpg>;
-@@ -448,8 +464,10 @@
- 				     "renesas,hscif";
- 			reg = <0 0xe66b0000 0 96>;
- 			interrupts = <GIC_SPI 146 IRQ_TYPE_LEVEL_HIGH>;
--			clocks = <&cpg CPG_MOD 516>;
--			clock-names = "fck";
-+			clocks = <&cpg CPG_MOD 516>,
-+				 <&cpg CPG_CORE R8A7795_CLK_S3D1>,
-+				 <&scif_clk>;
-+			clock-names = "fck", "brg_int", "scif_clk";
- 			dmas = <&dmac0 0x39>, <&dmac0 0x38>;
- 			dma-names = "tx", "rx";
- 			power-domains = <&cpg>;
-@@ -461,8 +479,10 @@
- 				     "renesas,rcar-gen3-scif", "renesas,scif";
- 			reg = <0 0xe6e60000 0 64>;
- 			interrupts = <GIC_SPI 152 IRQ_TYPE_LEVEL_HIGH>;
--			clocks = <&cpg CPG_MOD 207>;
--			clock-names = "fck";
-+			clocks = <&cpg CPG_MOD 207>,
-+				 <&cpg CPG_CORE R8A7795_CLK_S3D1>,
-+				 <&scif_clk>;
-+			clock-names = "fck", "brg_int", "scif_clk";
- 			dmas = <&dmac1 0x51>, <&dmac1 0x50>;
- 			dma-names = "tx", "rx";
- 			power-domains = <&cpg>;
-@@ -474,8 +494,10 @@
- 				     "renesas,rcar-gen3-scif", "renesas,scif";
- 			reg = <0 0xe6e68000 0 64>;
- 			interrupts = <GIC_SPI 153 IRQ_TYPE_LEVEL_HIGH>;
--			clocks = <&cpg CPG_MOD 206>;
--			clock-names = "fck";
-+			clocks = <&cpg CPG_MOD 206>,
-+				 <&cpg CPG_CORE R8A7795_CLK_S3D1>,
-+				 <&scif_clk>;
-+			clock-names = "fck", "brg_int", "scif_clk";
- 			dmas = <&dmac1 0x53>, <&dmac1 0x52>;
- 			dma-names = "tx", "rx";
- 			power-domains = <&cpg>;
-@@ -487,8 +509,10 @@
- 				     "renesas,rcar-gen3-scif", "renesas,scif";
- 			reg = <0 0xe6e88000 0 64>;
- 			interrupts = <GIC_SPI 164 IRQ_TYPE_LEVEL_HIGH>;
--			clocks = <&cpg CPG_MOD 310>;
--			clock-names = "fck";
-+			clocks = <&cpg CPG_MOD 310>,
-+				 <&cpg CPG_CORE R8A7795_CLK_S3D1>,
-+				 <&scif_clk>;
-+			clock-names = "fck", "brg_int", "scif_clk";
- 			dmas = <&dmac1 0x13>, <&dmac1 0x12>;
- 			dma-names = "tx", "rx";
- 			power-domains = <&cpg>;
-@@ -500,8 +524,10 @@
- 				     "renesas,rcar-gen3-scif", "renesas,scif";
- 			reg = <0 0xe6c50000 0 64>;
- 			interrupts = <GIC_SPI 23 IRQ_TYPE_LEVEL_HIGH>;
--			clocks = <&cpg CPG_MOD 204>;
--			clock-names = "fck";
-+			clocks = <&cpg CPG_MOD 204>,
-+				 <&cpg CPG_CORE R8A7795_CLK_S3D1>,
-+				 <&scif_clk>;
-+			clock-names = "fck", "brg_int", "scif_clk";
- 			dmas = <&dmac0 0x57>, <&dmac0 0x56>;
- 			dma-names = "tx", "rx";
- 			power-domains = <&cpg>;
-@@ -513,8 +539,10 @@
- 				     "renesas,rcar-gen3-scif", "renesas,scif";
- 			reg = <0 0xe6c40000 0 64>;
- 			interrupts = <GIC_SPI 16 IRQ_TYPE_LEVEL_HIGH>;
--			clocks = <&cpg CPG_MOD 203>;
--			clock-names = "fck";
-+			clocks = <&cpg CPG_MOD 203>,
-+				 <&cpg CPG_CORE R8A7795_CLK_S3D1>,
-+				 <&scif_clk>;
-+			clock-names = "fck", "brg_int", "scif_clk";
- 			dmas = <&dmac0 0x59>, <&dmac0 0x58>;
- 			dma-names = "tx", "rx";
- 			power-domains = <&cpg>;
-@@ -526,8 +554,10 @@
- 				     "renesas,rcar-gen3-scif", "renesas,scif";
- 			reg = <0 0xe6f30000 0 64>;
- 			interrupts = <GIC_SPI 17 IRQ_TYPE_LEVEL_HIGH>;
--			clocks = <&cpg CPG_MOD 202>;
--			clock-names = "fck";
-+			clocks = <&cpg CPG_MOD 202>,
-+				 <&cpg CPG_CORE R8A7795_CLK_S3D1>,
-+				 <&scif_clk>;
-+			clock-names = "fck", "brg_int", "scif_clk";
- 			dmas = <&dmac1 0x5b>, <&dmac1 0x5a>;
- 			dma-names = "tx", "rx";
- 			power-domains = <&cpg>;
++	if (s->sampling_rate) {
++		/* SCIF has a fixed sampling rate */
++		min_sr = max_sr = s->sampling_rate / 2;
++	} else {
++		/* HSCIF has a variable 1/(8..32) sampling rate */
++		min_sr = 8;
++		max_sr = 32;
++	}
++
++	for (sr = max_sr; sr >= min_sr; sr--) {
++		dl = DIV_ROUND_CLOSEST(freq, sr * bps);
++		dl = clamp(dl, 1U, 65535U);
++
++		err = DIV_ROUND_CLOSEST(freq, sr * dl) - bps;
++		if (abs(err) >= abs(min_err))
++			continue;
++
++		min_err = err;
++		*dlr = dl;
++		*srr = sr - 1;
++
++		if (!err)
++			break;
++	}
++
++	dev_dbg(s->port.dev, "BRG: %u%+d bps using DL %u SR %u\n", bps,
++		min_err, *dlr, *srr + 1);
++	return min_err;
++}
++
+ /* calculate sample rate, BRR, and clock select */
+ static int sci_scbrr_calc(struct sci_port *s, unsigned int bps,
+ 			  unsigned int *brr, unsigned int *srr,
+@@ -2053,8 +2092,8 @@ static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
+ 			    struct ktermios *old)
+ {
+ 	unsigned int baud, smr_val = 0, scr_val = 0, i;
+-	unsigned int brr = 255, cks = 0, srr = 15, sccks = 0;
+-	unsigned int brr1 = 255, cks1 = 0, srr1 = 15;
++	unsigned int brr = 255, cks = 0, srr = 15, dl = 0, sccks = 0;
++	unsigned int brr1 = 255, cks1 = 0, srr1 = 15, dl1 = 0;
+ 	struct sci_port *s = to_sci_port(port);
+ 	const struct plat_sci_reg *reg;
+ 	int min_err = INT_MAX, err;
+@@ -2111,6 +2150,38 @@ static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
+ 		}
+ 	}
+ 
++	/* Optional BRG Frequency Divided External Clock */
++	if (s->clk_rates[SCI_SCIF_CLK] && sci_getreg(port, SCDL)->size) {
++		err = sci_brg_calc(s, baud, s->clk_rates[SCI_SCIF_CLK], &dl1,
++				   &srr1);
++		if (abs(err) < abs(min_err)) {
++			best_clk = SCI_SCIF_CLK;
++			scr_val = SCSCR_CKE1;
++			sccks = 0;
++			min_err = err;
++			dl = dl1;
++			srr = srr1;
++			if (!err)
++				goto done;
++		}
++	}
++
++	/* Optional BRG Frequency Divided Internal Clock */
++	if (s->clk_rates[SCI_BRG_INT] && sci_getreg(port, SCDL)->size) {
++		err = sci_brg_calc(s, baud, s->clk_rates[SCI_BRG_INT], &dl1,
++				   &srr1);
++		if (abs(err) < abs(min_err)) {
++			best_clk = SCI_BRG_INT;
++			scr_val = SCSCR_CKE1;
++			sccks = SCCKS_XIN;
++			min_err = err;
++			dl = dl1;
++			srr = srr1;
++			if (!min_err)
++				goto done;
++		}
++	}
++
+ 	/* Divided Functional Clock using standard Bit Rate Register */
+ 	err = sci_scbrr_calc(s, baud, &brr1, &srr1, &cks1);
+ 	if (abs(err) < abs(min_err)) {
+@@ -2133,8 +2204,10 @@ done:
+ 	 * Program the optional External Baud Rate Generator (BRG) first.
+ 	 * It controls the mux to select (H)SCK or frequency divided clock.
+ 	 */
+-	if (best_clk >= 0 && sci_getreg(port, SCCKS)->size)
++	if (best_clk >= 0 && sci_getreg(port, SCCKS)->size) {
++		serial_port_out(port, SCDL, dl);
+ 		serial_port_out(port, SCCKS, sccks);
++	}
+ 
+ 	sci_reset(port);
+ 
+@@ -2143,8 +2216,8 @@ done:
+ 	if (best_clk >= 0) {
+ 		smr_val |= cks;
+ 		dev_dbg(port->dev,
+-			 "SCR 0x%x SMR 0x%x BRR %u CKS 0x%x SRR %u\n",
+-			 scr_val, smr_val, brr, sccks, srr);
++			 "SCR 0x%x SMR 0x%x BRR %u CKS 0x%x DL %u SRR %u\n",
++			 scr_val, smr_val, brr, sccks, dl, srr);
+ 		serial_port_out(port, SCSCR, scr_val);
+ 		serial_port_out(port, SCSMR, smr_val);
+ 		serial_port_out(port, SCBRR, brr);
+@@ -2382,6 +2455,8 @@ static int sci_init_clocks(struct sci_port *sci_port, struct device *dev)
+ 	const char *clk_names[] = {
+ 		[SCI_FCK] = "fck",
+ 		[SCI_SCK] = "sck",
++		[SCI_BRG_INT] = "brg_int",
++		[SCI_SCIF_CLK] = "scif_clk",
+ 	};
+ 	struct clk *clk;
+ 	unsigned int i;
 -- 
 1.9.1
 
