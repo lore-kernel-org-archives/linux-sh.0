@@ -1,108 +1,46 @@
-From: Petr Mladek <pmladek@suse.com>
-Date: Wed, 09 Dec 2015 13:21:04 +0000
-Subject: [PATCH v3 3/4] printk/nmi: Warn when some message has been lost in NMI context
-Message-Id: <1449667265-17525-4-git-send-email-pmladek@suse.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 14 Dec 2015 18:57:25 +0000
+Subject: [PATCH v3 16/27] serial: sh-sci: Take into account sampling rate for max baud rate
+Message-Id: <1450119456-964-17-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449667265-17525-1-git-send-email-pmladek@suse.com>
-In-Reply-To: <1449667265-17525-1-git-send-email-pmladek@suse.com>
+References: <1450119456-964-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1450119456-964-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-We could not resize the temporary buffer in NMI context. Let's warn
-if a message is lost.
+The maximum baud rate depends on the sampling rate.
+HSCIF has a variable sampling rate and sets s->sampling_rate to zero,
+hence use the minimum sampling rate of 8.
 
-This is rather theoretical. printk() should not be used in NMI.
-The only sensible use is when we want to print backtrace from all
-CPUs. The current buffer should be enough for this purpose.
-
-Signed-off-by: Petr Mladek <pmladek@suse.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reviewed-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 ---
- kernel/printk/nmi.c    |  5 ++++-
- kernel/printk/printk.c | 10 ++++++++++
- kernel/printk/printk.h | 11 +++++++++++
- 3 files changed, 25 insertions(+), 1 deletion(-)
+v3:
+  - Add Reviewed-by, Acked-by.
+---
+ drivers/tty/serial/sh-sci.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
 
-diff --git a/kernel/printk/nmi.c b/kernel/printk/nmi.c
-index 29a498586465..5465230b75ec 100644
---- a/kernel/printk/nmi.c
-+++ b/kernel/printk/nmi.c
-@@ -39,6 +39,7 @@
-  */
- DEFINE_PER_CPU(printk_func_t, printk_func) = vprintk_default;
- static int printk_nmi_irq_ready;
-+atomic_t nmi_message_lost;
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index d89d4b7576cf3a15..5b120757c02a555a 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1975,7 +1975,10 @@ static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
+ 	 * that the previous boot loader has enabled required clocks and
+ 	 * setup the baud rate generator hardware for us already.
+ 	 */
+-	max_baud = port->uartclk ? port->uartclk / 16 : 115200;
++	if (port->uartclk)
++		max_baud = port->uartclk / max(s->sampling_rate, 8U);
++	else
++		max_baud = 115200;
  
- #define NMI_LOG_BUF_LEN (4096 - sizeof(atomic_t) - sizeof(struct irq_work))
- 
-@@ -63,8 +64,10 @@ static int vprintk_nmi(const char *fmt, va_list args)
- again:
- 	len = atomic_read(&s->len);
- 
--	if (len >=  sizeof(s->buffer))
-+	if (len >=  sizeof(s->buffer)) {
-+		atomic_inc(&nmi_message_lost);
- 		return 0;
-+	}
- 
- 	/*
- 	 * Make sure that all old data have been read before the buffer was
-diff --git a/kernel/printk/printk.c b/kernel/printk/printk.c
-index 88641c74163d..a6bb0b0838f3 100644
---- a/kernel/printk/printk.c
-+++ b/kernel/printk/printk.c
-@@ -1669,6 +1669,7 @@ asmlinkage int vprintk_emit(int facility, int level,
- 	unsigned long flags;
- 	int this_cpu;
- 	int printed_len = 0;
-+	int nmi_message_lost;
- 	bool in_sched = false;
- 	/* cpu currently holding logbuf_lock in this function */
- 	static unsigned int logbuf_cpu = UINT_MAX;
-@@ -1719,6 +1720,15 @@ asmlinkage int vprintk_emit(int facility, int level,
- 					 strlen(recursion_msg));
- 	}
- 
-+	nmi_message_lost = get_nmi_message_lost();
-+	if (unlikely(nmi_message_lost)) {
-+		text_len = scnprintf(textbuf, sizeof(textbuf),
-+				     "BAD LUCK: lost %d message(s) from NMI context!",
-+				     nmi_message_lost);
-+		printed_len += log_store(0, 2, LOG_PREFIX|LOG_NEWLINE, 0,
-+					 NULL, 0, textbuf, text_len);
-+	}
-+
- 	/*
- 	 * The printf needs to come first; we need the syslog
- 	 * prefix which might be passed-in as a parameter.
-diff --git a/kernel/printk/printk.h b/kernel/printk/printk.h
-index dc97c1c4d53b..7f778b609492 100644
---- a/kernel/printk/printk.h
-+++ b/kernel/printk/printk.h
-@@ -34,6 +34,12 @@ static inline __printf(1, 0) int vprintk_func(const char *fmt, va_list args)
- 	return this_cpu_read(printk_func)(fmt, args);
- }
- 
-+extern atomic_t nmi_message_lost;
-+static inline int get_nmi_message_lost(void)
-+{
-+	return atomic_xchg(&nmi_message_lost, 0);
-+}
-+
- #else /* CONFIG_PRINTK_NMI */
- 
- static inline __printf(1, 0) int vprintk_func(const char *fmt, va_list args)
-@@ -41,4 +47,9 @@ static inline __printf(1, 0) int vprintk_func(const char *fmt, va_list args)
- 	return vprintk_default(fmt, args);
- }
- 
-+static inline int get_nmi_message_lost(void)
-+{
-+	return 0;
-+}
-+
- #endif /* CONFIG_PRINTK_NMI */
+ 	baud = uart_get_baud_rate(port, termios, old, 0, max_baud);
+ 	if (likely(baud && port->uartclk))
 -- 
-1.8.5.6
+1.9.1
 
