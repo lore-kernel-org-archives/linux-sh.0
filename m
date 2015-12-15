@@ -1,71 +1,60 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Fri, 25 Dec 2015 11:52:39 +0000
-Subject: [PATCH v2 4/6] arm64: renesas: salvator-x: enable usb2_phy
-Message-Id: <1451044361-5896-5-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 15 Dec 2015 01:18:13 +0000
+Subject: [PATCH 4/8 v5] thermal: rcar: rcar_thermal_get_temp() return error if strange temp
+Message-Id: <877fkgqzpt.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1451044361-5896-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1451044361-5896-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+References: <87d1u8qzsy.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87d1u8qzsy.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: horms@verge.net.au, magnus.damm@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org
-Cc: devicetree@vger.kernel.org, linux-arm-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+To: Simon <horms@verge.net.au>, Zhang Rui <rui.zhang@intel.com>, Eduardo Valentin <edubezval@gmail.com>
+Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 34 +++++++++++++++++++++-
- 1 file changed, 33 insertions(+), 1 deletion(-)
+v4 -> v5
 
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-index 265d12f..7353407 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-+++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-@@ -122,8 +122,22 @@
- 				 "audio_clkout_a", "audio_clkout3_a";
- 		renesas,function = "audio_clk";
- 	};
--};
+ - rcar_thermal_update_temp() has no change
+ - "retern" -> "return" on Subject
+
+ drivers/thermal/rcar_thermal.c | 12 +++++++++++-
+ 1 file changed, 11 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/thermal/rcar_thermal.c b/drivers/thermal/rcar_thermal.c
+index e9e4e39..30602f2 100644
+--- a/drivers/thermal/rcar_thermal.c
++++ b/drivers/thermal/rcar_thermal.c
+@@ -203,6 +203,7 @@ err_out_unlock:
+ static int rcar_thermal_get_temp(struct thermal_zone_device *zone, int *temp)
+ {
+ 	struct rcar_thermal_priv *priv = rcar_zone_to_priv(zone);
++	int tmp;
+ 	int ret;
  
-+	usb0_pins: usb0 {
-+		renesas,groups = "usb0";
-+		renesas,function = "usb";
-+	};
+ 	ret = rcar_thermal_update_temp(priv);
+@@ -210,9 +211,18 @@ static int rcar_thermal_get_temp(struct thermal_zone_device *zone, int *temp)
+ 		return ret;
+ 
+ 	mutex_lock(&priv->lock);
+-	*temp =  MCELSIUS((priv->ctemp * 5) - 65);
++	tmp =  MCELSIUS((priv->ctemp * 5) - 65);
+ 	mutex_unlock(&priv->lock);
+ 
++	if ((tmp < MCELSIUS(-45)) || (tmp > MCELSIUS(125))) {
++		struct device *dev = rcar_priv_to_dev(priv);
 +
-+	usb1_pins: usb1 {
-+		renesas,groups = "usb1";
-+		renesas,function = "usb";
-+	};
++		dev_err(dev, "it couldn't measure temperature correctly\n");
++		return -EIO;
++	}
 +
-+	usb2_pins: usb2 {
-+		renesas,groups = "usb2";
-+		renesas,function = "usb";
-+	};
-+};
- &scif1 {
- 	pinctrl-0 = <&scif1_pins>;
- 	pinctrl-names = "default";
-@@ -249,3 +263,21 @@
- 		interrupts = <11 IRQ_TYPE_LEVEL_LOW>;
- 	};
- };
++	*temp = tmp;
 +
-+&usb2_phy0 {
-+	status = "okay";
-+	pinctrl-0 = <&usb0_pins>;
-+	pinctrl-names = "default";
-+};
-+
-+&usb2_phy1 {
-+	status = "okay";
-+	pinctrl-0 = <&usb1_pins>;
-+	pinctrl-names = "default";
-+};
-+
-+&usb2_phy2 {
-+	status = "okay";
-+	pinctrl-0 = <&usb2_pins>;
-+	pinctrl-names = "default";
-+};
+ 	return 0;
+ }
+ 
 -- 
 1.9.1
 
