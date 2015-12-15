@@ -1,205 +1,200 @@
-From: Grygorii Strashko <grygorii.strashko@ti.com>
-Date: Thu, 10 Dec 2015 19:18:20 +0000
-Subject: [PATCH v3] PCI: hosts: mark pcie/pci (msi) irq cascade handler as IRQF_NO_THREAD
-Message-Id: <1449775100-30877-1-git-send-email-grygorii.strashko@ti.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 15 Dec 2015 01:18:39 +0000
+Subject: [PATCH 5/8 v5] thermal: rcar: enable to use thermal-zone on DT
+Message-Id: <876100qzp6.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87d1u8qzsy.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87d1u8qzsy.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Simon <horms@verge.net.au>, Zhang Rui <rui.zhang@intel.com>, Eduardo Valentin <edubezval@gmail.com>
+Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
 
-On -RT and if kernel is booting with "threadirqs" cmd line parameter
-pcie/pci (msi) irq cascade handlers (like dra7xx_pcie_msi_irq_handler())
-will be forced threaded and, as result, will generate warnings like:
 
-WARNING: CPU: 1 PID: 82 at kernel/irq/handle.c:150 handle_irq_event_percpu+=
-0x14c/0x174()
-irq 460 handler irq_default_primary_handler+0x0/0x14 enabled interrupts
-Backtrace:
- (warn_slowpath_common) from [<c0043758>] (warn_slowpath_fmt+0x38/0x40)
- (warn_slowpath_fmt) from [<c0085fd0>] (handle_irq_event_percpu+0x14c/0x174)
- (handle_irq_event_percpu) from [<c008607c>] (handle_irq_event+0x84/0xb8)
- (handle_irq_event) from [<c0089240>] (handle_simple_irq+0x90/0x118)
- (handle_simple_irq) from [<c0085514>] (generic_handle_irq+0x30/0x44)
- (generic_handle_irq) from [<c034a7d4>] (dra7xx_pcie_msi_irq_handler+0x7c/0=
-x8c)
- (dra7xx_pcie_msi_irq_handler) from [<c0086f08>] (irq_forced_thread_fn+0x28=
-/0x5c)
- (irq_forced_thread_fn) from [<c00871dc>] (irq_thread+0x128/0x204)
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-This happens because all of them invoke generic_handle_irq() from the
-requsted handler. generic_handle_irq grabs raw_locks and this needs to
-run in raw-irq context.
+This patch enables to use thermal-zone on DT if it was call as
+"renesas,rcar-thermal-gen2".
+Previous style is still supported by "renesas,rcar-thermal".
 
-This issue was originally reproduced on TI dra7-evem, but, as was
-identified during dicussion [1], other PCI(e) hosts can also suffer
-from this issue. So let's fix all them at once and mark pcie/pci (msi)
-irq cascade handlers IRQF_NO_THREAD explicitly.
-
-[1] https://lkml.org/lkml/2015/11/20/356
-
-Cc: Kishon Vijay Abraham I <kishon@ti.com>
-Cc: Bjorn Helgaas <bhelgaas@google.com>
-Cc: Jingoo Han <jingoohan1@gmail.com>
-Cc: Kukjin Kim <kgene@kernel.org>
-Cc: Krzysztof Kozlowski <k.kozlowski@samsung.com>
-Cc: Richard Zhu <Richard.Zhu@freescale.com>
-Cc: Lucas Stach <l.stach@pengutronix.de>
-Cc: Thierry Reding <thierry.reding@gmail.com>
-Cc: Stephen Warren <swarren@wwwdotorg.org>
-Cc: Alexandre Courbot <gnurou@gmail.com>
-Cc: Simon Horman <horms@verge.net.au>
-Cc: Pratyush Anand <pratyush.anand@gmail.com>
-Cc: Michal Simek <michal.simek@xilinx.com>
-Cc: "S=C3=B6ren Brinkmann" <soren.brinkmann@xilinx.com>
-Cc: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
-Signed-off-by: Grygorii Strashko <grygorii.strashko@ti.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-Changes in v3:
- - change applied to all affected pci(e) host drivers in drivers/pci/hosts.
-   After some invsetigation I've decided to not touch arch code - it is not=
- easy
-   to identify all places which need to be fixed.=20
-   if it's still required - i can send separate patches for=20
-   arch/mips/pci/msi-octeon.c and arch/sparc/kernel/pci_msi.c.
-Links
-v2: https://lkml.org/lkml/2015/11/20/356
-v1: https://lkml.org/lkml/2015/11/5/593
-ref: https://lkml.org/lkml/2015/11/3/660
+v4 -> v5
 
- drivers/pci/host/pci-dra7xx.c     | 13 ++++++++++++-
- drivers/pci/host/pci-exynos.c     |  3 ++-
- drivers/pci/host/pci-imx6.c       |  3 ++-
- drivers/pci/host/pci-tegra.c      |  2 +-
- drivers/pci/host/pcie-rcar.c      |  6 ++++--
- drivers/pci/host/pcie-spear13xx.c |  3 ++-
- drivers/pci/host/pcie-xilinx.c    |  3 ++-
- 7 files changed, 25 insertions(+), 8 deletions(-)
+ - "1150000" -> "115000" on rcar-thermal.txt
 
-diff --git a/drivers/pci/host/pci-dra7xx.c b/drivers/pci/host/pci-dra7xx.c
-index 8c36880..0415192 100644
---- a/drivers/pci/host/pci-dra7xx.c
-+++ b/drivers/pci/host/pci-dra7xx.c
-@@ -301,8 +301,19 @@ static int __init dra7xx_add_pcie_port(struct dra7xx_p=
-cie *dra7xx,
- 		return -EINVAL;
- 	}
-=20
-+	/*
-+	 * Mark dra7xx_pcie_msi IRQ as IRQF_NO_THREAD
-+	 * On -RT and if kernel is booting with "threadirqs" cmd line parameter
-+	 * the dra7xx_pcie_msi_irq_handler() will be forced threaded but,
-+	 * in the same time, it's IRQ dispatcher and calls generic_handle_irq(),
-+	 * which, in turn, will be resolved to handle_simple_irq() call.
-+	 * The handle_simple_irq() expected to be called with IRQ disabled, as
-+	 * result kernle will display warning:
-+	 * "irq XXX handler YYY+0x0/0x14 enabled interrupts".
-+	 */
- 	ret =3D devm_request_irq(&pdev->dev, pp->irq,
--			       dra7xx_pcie_msi_irq_handler, IRQF_SHARED,
-+			       dra7xx_pcie_msi_irq_handler,
-+			       IRQF_SHARED | IRQF_NO_THREAD,
- 			       "dra7-pcie-msi",	pp);
- 	if (ret) {
- 		dev_err(&pdev->dev, "failed to request irq\n");
-diff --git a/drivers/pci/host/pci-exynos.c b/drivers/pci/host/pci-exynos.c
-index 01095e1..d997d22 100644
---- a/drivers/pci/host/pci-exynos.c
-+++ b/drivers/pci/host/pci-exynos.c
-@@ -522,7 +522,8 @@ static int __init exynos_add_pcie_port(struct pcie_port=
- *pp,
-=20
- 		ret =3D devm_request_irq(&pdev->dev, pp->msi_irq,
- 					exynos_pcie_msi_irq_handler,
--					IRQF_SHARED, "exynos-pcie", pp);
-+					IRQF_SHARED | IRQF_NO_THREAD,
-+					"exynos-pcie", pp);
- 		if (ret) {
- 			dev_err(&pdev->dev, "failed to request msi irq\n");
- 			return ret;
-diff --git a/drivers/pci/host/pci-imx6.c b/drivers/pci/host/pci-imx6.c
-index 22e8224..9ce7cd1 100644
---- a/drivers/pci/host/pci-imx6.c
-+++ b/drivers/pci/host/pci-imx6.c
-@@ -537,7 +537,8 @@ static int __init imx6_add_pcie_port(struct pcie_port *=
-pp,
-=20
- 		ret =3D devm_request_irq(&pdev->dev, pp->msi_irq,
- 				       imx6_pcie_msi_handler,
--				       IRQF_SHARED, "mx6-pcie-msi", pp);
-+				       IRQF_SHARED | IRQF_NO_THREAD,
-+				       "mx6-pcie-msi", pp);
- 		if (ret) {
- 			dev_err(&pdev->dev, "failed to request MSI irq\n");
- 			return ret;
-diff --git a/drivers/pci/host/pci-tegra.c b/drivers/pci/host/pci-tegra.c
-index 3018ae5..3032311 100644
---- a/drivers/pci/host/pci-tegra.c
-+++ b/drivers/pci/host/pci-tegra.c
-@@ -1288,7 +1288,7 @@ static int tegra_pcie_enable_msi(struct tegra_pcie *p=
-cie)
-=20
- 	msi->irq =3D err;
-=20
--	err =3D request_irq(msi->irq, tegra_pcie_msi_irq, 0,
-+	err =3D request_irq(msi->irq, tegra_pcie_msi_irq, IRQF_NO_THREAD,
- 			  tegra_msi_irq_chip.name, pcie);
- 	if (err < 0) {
- 		dev_err(&pdev->dev, "failed to request IRQ: %d\n", err);
-diff --git a/drivers/pci/host/pcie-rcar.c b/drivers/pci/host/pcie-rcar.c
-index f4fa6c5..414c336 100644
---- a/drivers/pci/host/pcie-rcar.c
-+++ b/drivers/pci/host/pcie-rcar.c
-@@ -720,14 +720,16 @@ static int rcar_pcie_enable_msi(struct rcar_pcie *pci=
-e)
-=20
- 	/* Two irqs are for MSI, but they are also used for non-MSI irqs */
- 	err =3D devm_request_irq(&pdev->dev, msi->irq1, rcar_pcie_msi_irq,
--			       IRQF_SHARED, rcar_msi_irq_chip.name, pcie);
-+			       IRQF_SHARED | IRQF_NO_THREAD,
-+			       rcar_msi_irq_chip.name, pcie);
- 	if (err < 0) {
- 		dev_err(&pdev->dev, "failed to request IRQ: %d\n", err);
- 		goto err;
- 	}
-=20
- 	err =3D devm_request_irq(&pdev->dev, msi->irq2, rcar_pcie_msi_irq,
--			       IRQF_SHARED, rcar_msi_irq_chip.name, pcie);
-+			       IRQF_SHARED | IRQF_NO_THREAD,
-+			       rcar_msi_irq_chip.name, pcie);
- 	if (err < 0) {
- 		dev_err(&pdev->dev, "failed to request IRQ: %d\n", err);
- 		goto err;
-diff --git a/drivers/pci/host/pcie-spear13xx.c b/drivers/pci/host/pcie-spea=
-r13xx.c
-index b95b756..a6cd823 100644
---- a/drivers/pci/host/pcie-spear13xx.c
-+++ b/drivers/pci/host/pcie-spear13xx.c
-@@ -279,7 +279,8 @@ static int spear13xx_add_pcie_port(struct pcie_port *pp,
- 		return -ENODEV;
- 	}
- 	ret =3D devm_request_irq(dev, pp->irq, spear13xx_pcie_irq_handler,
--			       IRQF_SHARED, "spear1340-pcie", pp);
-+			       IRQF_SHARED | IRQF_NO_THREAD,
-+			       "spear1340-pcie", pp);
- 	if (ret) {
- 		dev_err(dev, "failed to request irq %d\n", pp->irq);
- 		return ret;
-diff --git a/drivers/pci/host/pcie-xilinx.c b/drivers/pci/host/pcie-xilinx.c
-index 3c7a0d5..4cfa463 100644
---- a/drivers/pci/host/pcie-xilinx.c
-+++ b/drivers/pci/host/pcie-xilinx.c
-@@ -781,7 +781,8 @@ static int xilinx_pcie_parse_dt(struct xilinx_pcie_port=
- *port)
-=20
- 	port->irq =3D irq_of_parse_and_map(node, 0);
- 	err =3D devm_request_irq(dev, port->irq, xilinx_pcie_intr_handler,
--			       IRQF_SHARED, "xilinx-pcie", port);
-+			       IRQF_SHARED | IRQF_NO_THREAD,
-+			       "xilinx-pcie", port);
- 	if (err) {
- 		dev_err(dev, "unable to request irq %d\n", port->irq);
- 		return err;
---=20
-2.6.4
+
+ .../devicetree/bindings/thermal/rcar-thermal.txt   | 37 +++++++++++++++++-
+ drivers/thermal/rcar_thermal.c                     | 45 +++++++++++++++++++---
+ 2 files changed, 75 insertions(+), 7 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/thermal/rcar-thermal.txt b/Documentation/devicetree/bindings/thermal/rcar-thermal.txt
+index 332e625..e5ee3f1 100644
+--- a/Documentation/devicetree/bindings/thermal/rcar-thermal.txt
++++ b/Documentation/devicetree/bindings/thermal/rcar-thermal.txt
+@@ -1,8 +1,9 @@
+ * Renesas R-Car Thermal
+ 
+ Required properties:
+-- compatible		: "renesas,thermal-<soctype>", "renesas,rcar-thermal"
+-			  as fallback.
++- compatible		: "renesas,thermal-<soctype>",
++			   "renesas,rcar-gen2-thermal" (with thermal-zone) or
++			   "renesas,rcar-thermal" (without thermal-zone) as fallback.
+ 			  Examples with soctypes are:
+ 			    - "renesas,thermal-r8a73a4" (R-Mobile APE6)
+ 			    - "renesas,thermal-r8a7779" (R-Car H1)
+@@ -36,3 +37,35 @@ thermal@e61f0000 {
+ 		0xe61f0300 0x38>;
+ 	interrupts = <0 69 IRQ_TYPE_LEVEL_HIGH>;
+ };
++
++Example (with thermal-zone):
++
++thermal-zones {
++	cpu_thermal: cpu-thermal {
++		polling-delay-passive	= <1000>;
++		polling-delay		= <5000>;
++
++		thermal-sensors = <&thermal>;
++
++		trips {
++			cpu-crit {
++				temperature	= <115000>;
++				hysteresis	= <0>;
++				type		= "critical";
++			};
++		};
++		cooling-maps {
++		};
++	};
++};
++
++thermal: thermal@e61f0000 {
++	compatible =	"renesas,thermal-r8a7790",
++			"renesas,rcar-gen2-thermal",
++			"renesas,rcar-thermal";
++	reg = <0 0xe61f0000 0 0x14>, <0 0xe61f0100 0 0x38>;
++	interrupts = <0 69 IRQ_TYPE_LEVEL_HIGH>;
++	clocks = <&mstp5_clks R8A7790_CLK_THERMAL>;
++	power-domains = <&cpg_clocks>;
++	#thermal-sensor-cells = <0>;
++};
+diff --git a/drivers/thermal/rcar_thermal.c b/drivers/thermal/rcar_thermal.c
+index 30602f2..e92f29b 100644
+--- a/drivers/thermal/rcar_thermal.c
++++ b/drivers/thermal/rcar_thermal.c
+@@ -23,6 +23,7 @@
+ #include <linux/interrupt.h>
+ #include <linux/io.h>
+ #include <linux/module.h>
++#include <linux/of_device.h>
+ #include <linux/platform_device.h>
+ #include <linux/pm_runtime.h>
+ #include <linux/reboot.h>
+@@ -75,8 +76,10 @@ struct rcar_thermal_priv {
+ #define rcar_has_irq_support(priv)	((priv)->common->base)
+ #define rcar_id_to_shift(priv)		((priv)->id * 8)
+ 
++#define USE_OF_THERMAL	1
+ static const struct of_device_id rcar_thermal_dt_ids[] = {
+ 	{ .compatible = "renesas,rcar-thermal", },
++	{ .compatible = "renesas,rcar-gen2-thermal", .data = (void *)USE_OF_THERMAL },
+ 	{},
+ };
+ MODULE_DEVICE_TABLE(of, rcar_thermal_dt_ids);
+@@ -200,9 +203,9 @@ err_out_unlock:
+ 	return ret;
+ }
+ 
+-static int rcar_thermal_get_temp(struct thermal_zone_device *zone, int *temp)
++static int rcar_thermal_get_current_temp(struct rcar_thermal_priv *priv,
++					 int *temp)
+ {
+-	struct rcar_thermal_priv *priv = rcar_zone_to_priv(zone);
+ 	int tmp;
+ 	int ret;
+ 
+@@ -226,6 +229,20 @@ static int rcar_thermal_get_temp(struct thermal_zone_device *zone, int *temp)
+ 	return 0;
+ }
+ 
++static int rcar_thermal_of_get_temp(void *data, int *temp)
++{
++	struct rcar_thermal_priv *priv = data;
++
++	return rcar_thermal_get_current_temp(priv, temp);
++}
++
++static int rcar_thermal_get_temp(struct thermal_zone_device *zone, int *temp)
++{
++	struct rcar_thermal_priv *priv = rcar_zone_to_priv(zone);
++
++	return rcar_thermal_get_current_temp(priv, temp);
++}
++
+ static int rcar_thermal_get_trip_type(struct thermal_zone_device *zone,
+ 				      int trip, enum thermal_trip_type *type)
+ {
+@@ -282,6 +299,10 @@ static int rcar_thermal_notify(struct thermal_zone_device *zone,
+ 	return 0;
+ }
+ 
++static const struct thermal_zone_of_device_ops rcar_thermal_zone_of_ops = {
++	.get_temp	= rcar_thermal_of_get_temp,
++};
++
+ static struct thermal_zone_device_ops rcar_thermal_zone_ops = {
+ 	.get_temp	= rcar_thermal_get_temp,
+ 	.get_trip_type	= rcar_thermal_get_trip_type,
+@@ -318,14 +339,20 @@ static void rcar_thermal_work(struct work_struct *work)
+ 
+ 	priv = container_of(work, struct rcar_thermal_priv, work.work);
+ 
+-	rcar_thermal_get_temp(priv->zone, &cctemp);
++	ret = rcar_thermal_get_current_temp(priv, &cctemp);
++	if (ret < 0)
++		return;
++
+ 	ret = rcar_thermal_update_temp(priv);
+ 	if (ret < 0)
+ 		return;
+ 
+ 	rcar_thermal_irq_enable(priv);
+ 
+-	rcar_thermal_get_temp(priv->zone, &nctemp);
++	ret = rcar_thermal_get_current_temp(priv, &nctemp);
++	if (ret < 0)
++		return;
++
+ 	if (nctemp != cctemp)
+ 		thermal_zone_device_update(priv->zone);
+ }
+@@ -386,6 +413,8 @@ static int rcar_thermal_probe(struct platform_device *pdev)
+ 	struct rcar_thermal_priv *priv;
+ 	struct device *dev = &pdev->dev;
+ 	struct resource *res, *irq;
++	const struct of_device_id *of_id = of_match_device(rcar_thermal_dt_ids, dev);
++	unsigned long of_data = (unsigned long)of_id->data;
+ 	int mres = 0;
+ 	int i;
+ 	int ret = -ENODEV;
+@@ -444,7 +473,13 @@ static int rcar_thermal_probe(struct platform_device *pdev)
+ 		if (ret < 0)
+ 			goto error_unregister;
+ 
+-		priv->zone = thermal_zone_device_register("rcar_thermal",
++		if (of_data = USE_OF_THERMAL)
++			priv->zone = thermal_zone_of_sensor_register(
++						dev, i, priv,
++						&rcar_thermal_zone_of_ops);
++		else
++			priv->zone = thermal_zone_device_register(
++						"rcar_thermal",
+ 						1, 0, priv,
+ 						&rcar_thermal_zone_ops, NULL, 0,
+ 						idle);
+-- 
+1.9.1
 
