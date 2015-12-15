@@ -1,37 +1,42 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 28 Dec 2015 21:43:25 +0000
-Subject: Re: [PATCH] ARM: shmobile: porter: add DU DT support
-Message-Id: <20151228214325.GA16456@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 15 Dec 2015 12:03:08 +0000
+Subject: [PATCH 06/06] iommu/ipmmu-vmsa: Drop LPAE Kconfig dependency
+Message-Id: <20151215120308.26216.38754.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1674850.BZpGW9kEud@wasted.cogentembedded.com>
- <2158897.lfmL4b1c4V@wasted.cogentembedded.com>
- <20151228052902.GF1066@verge.net.au>
- <568148B5.6080202@cogentembedded.com>
-In-Reply-To: <568148B5.6080202@cogentembedded.com>
+References: <20151215120212.26216.61530.sendpatchset@little-apple>
+In-Reply-To: <20151215120212.26216.61530.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: laurent.pinchart+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org, geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, horms+renesas-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org
 
-On Mon, Dec 28, 2015 at 05:35:33PM +0300, Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 12/28/2015 08:29 AM, Simon Horman wrote:
-> 
-> >>Define  the Porter board dependent part of the DU device node.
-> >>Add the device node  for Analog Devices ADV7511W  HDMI transmitter to I2C2
-> >>bus and the HDMI connector. Add the necessary subnodes to interconnect  DU
-> >>and HDMI devices.
-> >>
-> >>Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> >>
-> >>---
-> >>This patch is against 'renesas-devel-20151221-v4.4-rc6' tag of Simon Horman's
-> >>'renesas.git' repo.
-> >
-> >Thanks, I have queued this up for v4.6.
-> 
->    Actually, I was going to check this patch WRT the DU channels used, given
-> Laurent's remark. OK, I will just send an incremental patch if needed.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Thanks and sorry for being a bit hasty.
+Neither the ARM page table code enabled by IOMMU_IO_PGTABLE_LPAE
+nor the IPMMU_VMSA driver actually depends on ARM_LPAE, so get
+rid of the dependency.
+
+Tested with ipmmu-vmsa on r8a7794 ALT and a kernel config using:
+ # CONFIG_ARM_LPAE is not set
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
+
+ This time the result also compiles on x86. Need to be
+ applied as last patch in the following series:
+ [PATCH 00/06] iommu/ipmmu-vmsa: IPMMU multi-arch update
+
+ drivers/iommu/Kconfig |    1 -
+ 1 file changed, 1 deletion(-)
+
+--- 0001/drivers/iommu/Kconfig
++++ work/drivers/iommu/Kconfig	2015-10-18 14:58:09.080513000 +0900
+@@ -324,7 +324,6 @@ config SHMOBILE_IOMMU_L1SIZE
+ 
+ config IPMMU_VMSA
+ 	bool "Renesas VMSA-compatible IPMMU"
+-	depends on ARM_LPAE
+ 	depends on ARCH_SHMOBILE || COMPILE_TEST
+ 	select IOMMU_API
+ 	select IOMMU_IO_PGTABLE_LPAE
