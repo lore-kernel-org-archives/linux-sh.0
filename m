@@ -1,78 +1,188 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sat, 05 Dec 2015 02:12:56 +0000
-Subject: [PATCH v2 22/32] v4l: vsp1: Make the BRU optional
-Message-Id: <1449281586-25726-23-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 15 Dec 2015 13:06:14 +0000
+Subject: [PATCH/RFC 07/10] iommu/ipmmu-vmsa: Break out utlb parsing code
+Message-Id: <20151215130614.13535.5206.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <20151215130508.13535.26186.sendpatchset@little-apple>
+In-Reply-To: <20151215130508.13535.26186.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: iommu@lists.linux-foundation.org
+Cc: laurent.pinchart+renesas@ideasonboard.com, geert+renesas@glider.be, linux-sh@vger.kernel.org, joro@8bytes.org, linux-kernel@vger.kernel.org, horms+renesas@verge.net.au, Magnus Damm <magnus.damm@gmail.com>
 
-Not all VSP instances have a BRU on R-Car Gen3, make it optional. Set
-the feature unconditionally for now, this will be fixed when adding Gen3
-support.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Break out the utlb parsing code and dev_data allocation into a
+separate function. This is preparation for future code sharing.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
 
-Changes since v1:
+ drivers/iommu/ipmmu-vmsa.c |  126 ++++++++++++++++++++++++--------------------
+ 1 file changed, 70 insertions(+), 56 deletions(-)
 
-- Don't add a new DT property
-
----
- drivers/media/platform/vsp1/vsp1.h     |  1 +
- drivers/media/platform/vsp1/vsp1_drv.c | 15 +++++++++------
- 2 files changed, 10 insertions(+), 6 deletions(-)
-
-diff --git a/drivers/media/platform/vsp1/vsp1.h b/drivers/media/platform/vsp1/vsp1.h
-index 29a8fd94a0aa..d980f32aac0b 100644
---- a/drivers/media/platform/vsp1/vsp1.h
-+++ b/drivers/media/platform/vsp1/vsp1.h
-@@ -42,6 +42,7 @@ struct vsp1_uds;
- #define VSP1_HAS_LIF		(1 << 0)
- #define VSP1_HAS_LUT		(1 << 1)
- #define VSP1_HAS_SRU		(1 << 2)
-+#define VSP1_HAS_BRU		(1 << 3)
+--- 0012/drivers/iommu/ipmmu-vmsa.c
++++ work/drivers/iommu/ipmmu-vmsa.c	2015-12-14 18:56:47.020513000 +0900
+@@ -607,6 +607,69 @@ static int ipmmu_find_utlbs(struct ipmmu
+ 	return 0;
+ }
  
- struct vsp1_platform_data {
- 	unsigned int features;
-diff --git a/drivers/media/platform/vsp1/vsp1_drv.c b/drivers/media/platform/vsp1/vsp1_drv.c
-index 53a32f6ccbc0..42b6a106cbbb 100644
---- a/drivers/media/platform/vsp1/vsp1_drv.c
-+++ b/drivers/media/platform/vsp1/vsp1_drv.c
-@@ -223,13 +223,15 @@ static int vsp1_create_entities(struct vsp1_device *vsp1)
- 	}
- 
- 	/* Instantiate all the entities. */
--	vsp1->bru = vsp1_bru_create(vsp1);
--	if (IS_ERR(vsp1->bru)) {
--		ret = PTR_ERR(vsp1->bru);
--		goto done;
--	}
-+	if (vsp1->pdata.features & VSP1_HAS_BRU) {
-+		vsp1->bru = vsp1_bru_create(vsp1);
-+		if (IS_ERR(vsp1->bru)) {
-+			ret = PTR_ERR(vsp1->bru);
-+			goto done;
++static int ipmmu_init_platform_device(struct device *dev,
++				      struct iommu_group *group)
++{
++	struct ipmmu_vmsa_dev_data *dev_data;
++	struct ipmmu_vmsa_device *mmu;
++	unsigned int *utlbs;
++	unsigned int i;
++	int num_utlbs;
++	int ret = -ENODEV;
++
++	/* Find the master corresponding to the device. */
++
++	num_utlbs = of_count_phandle_with_args(dev->of_node, "iommus",
++					       "#iommu-cells");
++	if (num_utlbs < 0)
++		return -ENODEV;
++
++	utlbs = kcalloc(num_utlbs, sizeof(*utlbs), GFP_KERNEL);
++	if (!utlbs)
++		return -ENOMEM;
++
++	spin_lock(&ipmmu_devices_lock);
++
++	list_for_each_entry(mmu, &ipmmu_devices, list) {
++		ret = ipmmu_find_utlbs(mmu, dev, utlbs, num_utlbs);
++		if (!ret) {
++			/*
++			 * TODO Take a reference to the MMU to protect
++			 * against device removal.
++			 */
++			break;
 +		}
- 
--	list_add_tail(&vsp1->bru->entity.list_dev, &vsp1->entities);
-+		list_add_tail(&vsp1->bru->entity.list_dev, &vsp1->entities);
 +	}
++
++	spin_unlock(&ipmmu_devices_lock);
++
++	if (ret < 0)
++		goto error;
++
++	for (i = 0; i < num_utlbs; ++i) {
++		if (utlbs[i] >= mmu->num_utlbs) {
++			ret = -EINVAL;
++			goto error;
++		}
++	}
++
++	dev_data = kzalloc(sizeof(*dev_data), GFP_KERNEL);
++	if (!dev_data) {
++		ret = -ENOMEM;
++		goto error;
++	}
++
++	dev_data->mmu = mmu;
++	dev_data->utlbs = utlbs;
++	dev_data->num_utlbs = num_utlbs;
++	set_dev_data(dev, dev_data);
++	return 0;
++
++error:
++	kfree(utlbs);
++	return ret;
++}
++
+ #ifdef CONFIG_ARM
+ static int ipmmu_map_attach(struct device *dev, struct ipmmu_vmsa_device *mmu)
+ {
+@@ -663,56 +726,15 @@ static inline void ipmmu_release_mapping
  
- 	vsp1->hsi = vsp1_hsit_create(vsp1, true);
- 	if (IS_ERR(vsp1->hsi)) {
-@@ -540,6 +542,7 @@ static int vsp1_parse_dt(struct vsp1_device *vsp1)
+ static int ipmmu_add_device(struct device *dev)
+ {
+-	struct ipmmu_vmsa_dev_data *dev_data = get_dev_data(dev);
+-	struct ipmmu_vmsa_device *mmu;
+-	struct iommu_group *group = NULL;
+-	unsigned int *utlbs;
+-	unsigned int i;
+-	int num_utlbs;
+-	int ret = -ENODEV;
++	struct iommu_group *group;
++	int ret;
+ 
+-	if (dev_data) {
++	if (get_dev_data(dev)) {
+ 		dev_warn(dev, "IOMMU driver already assigned to device %s\n",
+ 			 dev_name(dev));
  		return -EINVAL;
  	}
  
-+	pdata->features |= VSP1_HAS_BRU;
- 	pdata->num_bru_inputs = 4;
+-	/* Find the master corresponding to the device. */
+-
+-	num_utlbs = of_count_phandle_with_args(dev->of_node, "iommus",
+-					       "#iommu-cells");
+-	if (num_utlbs < 0)
+-		return -ENODEV;
+-
+-	utlbs = kcalloc(num_utlbs, sizeof(*utlbs), GFP_KERNEL);
+-	if (!utlbs)
+-		return -ENOMEM;
+-
+-	spin_lock(&ipmmu_devices_lock);
+-
+-	list_for_each_entry(mmu, &ipmmu_devices, list) {
+-		ret = ipmmu_find_utlbs(mmu, dev, utlbs, num_utlbs);
+-		if (!ret) {
+-			/*
+-			 * TODO Take a reference to the MMU to protect
+-			 * against device removal.
+-			 */
+-			break;
+-		}
+-	}
+-
+-	spin_unlock(&ipmmu_devices_lock);
+-
+-	if (ret < 0)
+-		return -ENODEV;
+-
+-	for (i = 0; i < num_utlbs; ++i) {
+-		if (utlbs[i] >= mmu->num_utlbs) {
+-			ret = -EINVAL;
+-			goto error;
+-		}
+-	}
+-
+ 	/* Create a device group and add the device to it. */
+ 	group = iommu_group_alloc();
+ 	if (IS_ERR(group)) {
+@@ -730,27 +752,19 @@ static int ipmmu_add_device(struct devic
+ 		goto error;
+ 	}
+ 
+-	dev_data = kzalloc(sizeof(*dev_data), GFP_KERNEL);
+-	if (!dev_data) {
+-		ret = -ENOMEM;
++	ret = ipmmu_init_platform_device(dev, group);
++	if (ret < 0) {
++		dev_err(dev, "Failed to init platform device\n");
+ 		goto error;
+ 	}
+ 
+-	dev_data->mmu = mmu;
+-	dev_data->utlbs = utlbs;
+-	dev_data->num_utlbs = num_utlbs;
+-	set_dev_data(dev, dev_data);
+-
+-	ret = ipmmu_map_attach(dev, mmu);
++	ret = ipmmu_map_attach(dev, get_dev_data(dev)->mmu);
+ 	if (ret < 0)
+ 		goto error;
  
  	return 0;
--- 
-2.4.10
-
+ 
+ error:
+-	kfree(dev_data);
+-	kfree(utlbs);
+-
+ 	set_dev_data(dev, NULL);
+ 
+ 	if (!IS_ERR_OR_NULL(group))
