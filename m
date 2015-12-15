@@ -1,40 +1,48 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 17 Dec 2015 05:24:55 +0000
-Subject: [PATCH 5/7] ARM: multi_v7_defconfig: Drop useless CONFIG_USB_RCAR_PHY=y
-Message-Id: <65e5698c27865617813f00706ad3e5fb0f98277d.1450315426.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 15 Dec 2015 01:19:53 +0000
+Subject: [PATCH 8/8 v5] thermal: trip_point_temp_store() calls thermal_zone_device_update()
+Message-Id: <871taoqzn3.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1450315426.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1450315426.git.horms+renesas@verge.net.au>
+References: <87d1u8qzsy.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87d1u8qzsy.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon <horms@verge.net.au>, Zhang Rui <rui.zhang@intel.com>, Eduardo Valentin <edubezval@gmail.com>
+Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-The Renesas R-Car (Gen1) USB PHY driver (which is being removed) does
-not support DT, and is thus useless in a generic ARM multi-platform
-kernel.
+trip_point_temp_store() updates trip temperature. It should call
+thermal_zone_device_update() immediately.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Arnd Bergmann <arnd@arndb.de>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/configs/multi_v7_defconfig | 1 -
- 1 file changed, 1 deletion(-)
+v4 -> v5
 
-diff --git a/arch/arm/configs/multi_v7_defconfig b/arch/arm/configs/multi_v7_defconfig
-index 69a22fdb52a5..a3d65beacf7c 100644
---- a/arch/arm/configs/multi_v7_defconfig
-+++ b/arch/arm/configs/multi_v7_defconfig
-@@ -545,7 +545,6 @@ CONFIG_USB_GPIO_VBUS=y
- CONFIG_USB_ISP1301=y
- CONFIG_USB_MSM_OTG=m
- CONFIG_USB_MXS_PHY=y
--CONFIG_USB_RCAR_PHY=m
- CONFIG_USB_GADGET=y
- CONFIG_USB_RENESAS_USBHS_UDC=m
- CONFIG_USB_ETH=m
+ - implemented on thermal_core.c
+
+ drivers/thermal/thermal_core.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/thermal/thermal_core.c b/drivers/thermal/thermal_core.c
+index d9e525c..768fb10 100644
+--- a/drivers/thermal/thermal_core.c
++++ b/drivers/thermal/thermal_core.c
+@@ -676,8 +676,12 @@ trip_point_temp_store(struct device *dev, struct device_attribute *attr,
+ 		return -EINVAL;
+ 
+ 	ret = tz->ops->set_trip_temp(tz, trip, temperature);
++	if (ret)
++		return ret;
+ 
+-	return ret ? ret : count;
++	thermal_zone_device_update(tz);
++
++	return count;
+ }
+ 
+ static ssize_t
 -- 
-2.1.4
+1.9.1
 
