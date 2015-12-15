@@ -1,91 +1,37 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 14 Dec 2015 18:55:24 +0000
-Subject: renesas-drivers-2015-12-14-v4.4-rc5
-Message-Id: <1450119324-659-1-git-send-email-geert+renesas@glider.be>
+From: Khiem Nguyen <khiem.nguyen.xt@rvc.renesas.com>
+Date: Tue, 15 Dec 2015 01:18:40 +0000
+Subject: Re: renesas-drivers-2015-12-14-v4.4-rc5
+Message-Id: <566F6A70.5050003@rvc.renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1450119324-659-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1450119324-659-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-I've pushed renesas-drivers-2015-12-14-v4.4-rc5 to
-https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git
-This tree is meant to ease development of platform support and drivers for
-Renesas ARM ("shmobile") SoCs. It's created by merging (a) the for-next 
-branches of various subsystem trees and (b) branches with driver code
-submitted or planned for submission to maintainers into the development
-branch of Simon Horman's renesas.git tree.
+On 12/15/2015 1:55 AM, Geert Uytterhoeven wrote:
+> I've pushed renesas-drivers-2015-12-14-v4.4-rc5 to
+> https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git
+> This tree is meant to ease development of platform support and drivers for
+> Renesas ARM ("shmobile") SoCs. It's created by merging (a) the for-next
+> branches of various subsystem trees and (b) branches with driver code
+> submitted or planned for submission to maintainers into the development
+> branch of Simon Horman's renesas.git tree.
+>
+> Today's version is based on renesas-devel-20151214-v4.4-rc5.
+>
+[snip]
+>
+> Dropped (crashes):
+>    - git://linuxtv.org/mchehab/media-next.git#master
+>    - git://linuxtv.org/pinchartl/media.git#vsp1-kms-20151206~3
+>
 
-Today's version is based on renesas-devel-20151214-v4.4-rc5.
+I believe that Laurent will have to look into this crash. :)
+The crash is occurred when CONFIG_VIDEO_RENESAS_VSP1 config is enabled, 
+I guess.
 
-Included branches with driver code:
-  - sh-pfc-for-v4.5
-  - clk-shmobile-for-v4.5
-  - topic/rcar-dmac-residue-v1
-  - topic/rcar-dmac-hamza-v3
-  - topic/scif-iommu
-  - topic/scif-clk-sck-brg-core-v3
-  - topic/scif-clk-sck-brg-integration-v3
-  - topic/r8a7795-drivers-sh-v1
-  - git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git#topic/r8a7795-pcie
-
-Included fixes:
-  - ARM: dt: mvebu: ix4-300d: Add compatible property to "partitions" node
-  - ARM: shmobile: bockw dts: Add compatible property to "partitions" node
-  - ARM: shmobile: lager dts: Add compatible property to "partitions" node
-  - ARM: shmobile: koelsch dts: Add compatible property to "partitions" node
-  - ARM: shmobile: porter dts: Add compatible property to "partitions" node
-  - ARM: shmobile: gose dts: Add compatible property to "partitions" node
-  - ARM: shmobile: silk dts: Add compatible property to "partitions" node
-
-Included subsystem trees:
-  - git://git.kernel.org/pub/scm/linux/kernel/git/rafael/linux-pm.git#linux-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/clk/linux.git#clk-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-pinctrl.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-gpio.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/spi.git#for-next
-  - git://git.infradead.org/users/dedekind/l2-mtd-2.6.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/davem/net-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/tty.git#tty-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git#i2c/for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/mkl/linux-can-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/usb.git#usb-next
-  - git://people.freedesktop.org/~airlied/linux#drm-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/joro/iommu.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/cjb/mmc.git#mmc-next
-  - git://git.linaro.org/people/ulf.hansson/mmc.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/thierry.reding/linux-pwm.git#for-next
-  - git://git.linaro.org/people/daniel.lezcano/linux.git#clockevents/next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/balbi/usb.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/djbw/dmaengine.git#next
-  - git://git.infradead.org/users/vkoul/slave-dma.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/staging.git#staging-next
-  - git://ftp.arm.linux.org.uk/pub/linux/arm/kernel/git-cur/linux-arm.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/rzhang/linux.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regmap.git#for-next
-  - git://git.infradead.org/users/jcooper/linux.git#irqchip/for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/tomba/linux.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/tj/libata.git#for-next
-  - git://git.infradead.org/battery-2.6.git#master
-  - git://www.linux-watchdog.org/linux-watchdog-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/arm/arm-soc.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regulator.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/arm64/linux.git#for-next/core
-  - git://anongit.freedesktop.org/drm-intel#topic/drm-misc
-  - git://git.kernel.org/pub/scm/linux/kernel/git/helgaas/pci.git#next
-
-Dropped (crashes):
-  - git://linuxtv.org/mchehab/media-next.git#master
-  - git://linuxtv.org/pinchartl/media.git#vsp1-kms-20151206~3
-
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
+-- 
+Best regards,
+KHIEM Nguyen
