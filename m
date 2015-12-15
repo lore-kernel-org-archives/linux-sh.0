@@ -1,98 +1,37 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Tue, 08 Dec 2015 09:37:47 +0000
-Subject: [PATCH v2 3/9] i2c: rcar: refactor probe function a little
-Message-Id: <1449567473-2084-4-git-send-email-wsa@the-dreams.de>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 15 Dec 2015 12:02:12 +0000
+Subject: [PATCH 00/06] iommu/ipmmu-vmsa: IPMMU multi-arch update
+Message-Id: <20151215120212.26216.61530.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449567473-2084-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1449567473-2084-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, linux-rockchip@lists.infradead.org, Mika Westerberg <mika.westerberg@linux.intel.com>, Andy Shevchenko <andriy.shevchenko@linux.intel.com>, Jarkko Nikula <jarkko.nikula@linux.intel.com>
+To: iommu@lists.linux-foundation.org
+Cc: laurent.pinchart+renesas@ideasonboard.com, geert+renesas@glider.be, linux-sh@vger.kernel.org, joro@8bytes.org, linux-kernel@vger.kernel.org, horms+renesas@verge.net.au, Magnus Damm <magnus.damm@gmail.com>
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+iommu/ipmmu-vmsa: IPMMU multi-arch update
 
-The probe function is a little bit messy, something here, something
-there. Rework it so that there is some order: first init the private
-structure, then the adapter, then do HW init. This also allows us to
-remove the device argument of the clock calculation function, because it
-now can be deduced from the private structure. Also, shorten some lines
-where possible. This is a preparation for further refactoring.
+[PATCH 01/06] iommu/ipmmu-vmsa: Remove platform data handling
+[PATCH 02/06] iommu/ipmmu-vmsa: Convert to dev_data
+[PATCH 03/06] iommu/ipmmu-vmsa: Break out utlb control function
+[PATCH 04/06] iommu/ipmmu-vmsa: Rework interrupt code and use bitmap for context
+[PATCH 05/06] iommu/ipmmu-vmsa: Break out 32-bit ARM mapping code
+[PATCH 06/06] iommu/ipmmu-vmsa: Drop LPAE Kconfig dependency
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+These patches update the IPMMU driver with a few minor changes
+to support multiple architectures. With these patches applied
+the driver is known to compile without issues on 32-bit ARM,
+64-bit ARM and x86_64.
+
+With the series applied the r8a7790 IPMMU still gets invoked
+when the modetest utility is used to display a test pattern
+on the VGA port driven by the DU device.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- drivers/i2c/busses/i2c-rcar.c | 40 +++++++++++++++++-----------------------
- 1 file changed, 17 insertions(+), 23 deletions(-)
 
-diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
-index 3ed1f0aa5eeb16..d4322a9096786f 100644
---- a/drivers/i2c/busses/i2c-rcar.c
-+++ b/drivers/i2c/busses/i2c-rcar.c
-@@ -162,15 +162,11 @@ static int rcar_i2c_bus_barrier(struct rcar_i2c_priv *priv)
- 	return -EBUSY;
- }
- 
--static int rcar_i2c_clock_calculate(struct rcar_i2c_priv *priv,
--				    u32 bus_speed,
--				    struct device *dev)
-+static int rcar_i2c_clock_calculate(struct rcar_i2c_priv *priv, u32 bus_speed)
- {
--	u32 scgd, cdf;
--	u32 round, ick;
--	u32 scl;
--	u32 cdf_width;
-+	u32 scgd, cdf, round, ick, scl, cdf_width;
- 	unsigned long rate;
-+	struct device *dev = rcar_i2c_priv_to_dev(priv);
- 
- 	switch (priv->devtype) {
- 	case I2C_RCAR_GEN1:
-@@ -610,21 +606,7 @@ static int rcar_i2c_probe(struct platform_device *pdev)
- 	if (IS_ERR(priv->io))
- 		return PTR_ERR(priv->io);
- 
--	bus_speed = 100000; /* default 100 kHz */
--	of_property_read_u32(dev->of_node, "clock-frequency", &bus_speed);
--
- 	priv->devtype = (enum rcar_i2c_type)of_match_device(rcar_i2c_dt_ids, dev)->data;
--
--	pm_runtime_enable(dev);
--	pm_runtime_get_sync(dev);
--	ret = rcar_i2c_clock_calculate(priv, bus_speed, dev);
--	if (ret < 0)
--		goto out_pm_put;
--
--	rcar_i2c_init(priv);
--	pm_runtime_put(dev);
--
--	irq = platform_get_irq(pdev, 0);
- 	init_waitqueue_head(&priv->wait);
- 
- 	adap = &priv->adap;
-@@ -637,8 +619,20 @@ static int rcar_i2c_probe(struct platform_device *pdev)
- 	i2c_set_adapdata(adap, priv);
- 	strlcpy(adap->name, pdev->name, sizeof(adap->name));
- 
--	ret = devm_request_irq(dev, irq, rcar_i2c_irq, 0,
--			       dev_name(dev), priv);
-+	bus_speed = 100000; /* default 100 kHz */
-+	of_property_read_u32(dev->of_node, "clock-frequency", &bus_speed);
-+
-+	pm_runtime_enable(dev);
-+	pm_runtime_get_sync(dev);
-+	ret = rcar_i2c_clock_calculate(priv, bus_speed);
-+	if (ret < 0)
-+		goto out_pm_put;
-+
-+	rcar_i2c_init(priv);
-+	pm_runtime_put(dev);
-+
-+	irq = platform_get_irq(pdev, 0);
-+	ret = devm_request_irq(dev, irq, rcar_i2c_irq, 0, dev_name(dev), priv);
- 	if (ret < 0) {
- 		dev_err(dev, "cannot get irq %d\n", irq);
- 		goto out_pm_disable;
--- 
-2.1.4
+ Developed on top of renesas-drivers-2015-12-08-v4.4-rc4
 
+ drivers/iommu/Kconfig      |    1 
+ drivers/iommu/ipmmu-vmsa.c |  224 +++++++++++++++++++++++++++-----------------
+ 2 files changed, 139 insertions(+), 86 deletions(-)
