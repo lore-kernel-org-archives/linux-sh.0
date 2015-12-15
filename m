@@ -1,197 +1,105 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sat, 05 Dec 2015 02:12:40 +0000
-Subject: [PATCH v2 06/32] v4l: vsp1: Make rwpf operations independent of video device
-Message-Id: <1449281586-25726-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 15 Dec 2015 13:06:04 +0000
+Subject: [PATCH/RFC 06/10] iommu/ipmmu-vmsa: Also use IOMMU_OF_DECLARE()
+Message-Id: <20151215130604.13535.42142.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <20151215130508.13535.26186.sendpatchset@little-apple>
+In-Reply-To: <20151215130508.13535.26186.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: laurent.pinchart+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org, geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, horms+renesas-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org
 
-The rwpf queue operation doesn't queue a buffer but sets the memory
-address for the next run. Rename it to set_memory and pass it a new
-structure independent of the video buffer than only contains memory
-information.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Hook up IOMMU_OF_DECLARE() support. The default case
+has the use_of_iommu feature disabled so the init
+order remains unchanged for the default case.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- drivers/media/platform/vsp1/vsp1_rpf.c   | 16 ++++++++--------
- drivers/media/platform/vsp1/vsp1_rwpf.h  | 10 ++++++++--
- drivers/media/platform/vsp1/vsp1_video.c | 15 +++++++++------
- drivers/media/platform/vsp1/vsp1_video.h |  7 +++----
- drivers/media/platform/vsp1/vsp1_wpf.c   | 14 +++++++-------
- 5 files changed, 35 insertions(+), 27 deletions(-)
 
-diff --git a/drivers/media/platform/vsp1/vsp1_rpf.c b/drivers/media/platform/vsp1/vsp1_rpf.c
-index 085d10056297..c0b7f76cd0b5 100644
---- a/drivers/media/platform/vsp1/vsp1_rpf.c
-+++ b/drivers/media/platform/vsp1/vsp1_rpf.c
-@@ -186,28 +186,28 @@ static struct v4l2_subdev_ops rpf_ops = {
-  * Video Device Operations
-  */
+ drivers/iommu/ipmmu-vmsa.c |   35 ++++++++++++++++++++++++++++++++++-
+ 1 file changed, 34 insertions(+), 1 deletion(-)
+
+--- 0016/drivers/iommu/ipmmu-vmsa.c
++++ work/drivers/iommu/ipmmu-vmsa.c	2015-12-15 21:19:31.090513000 +0900
+@@ -18,6 +18,8 @@
+ #include <linux/iommu.h>
+ #include <linux/module.h>
+ #include <linux/of.h>
++#include <linux/of_iommu.h>
++#include <linux/of_platform.h>
+ #include <linux/platform_device.h>
+ #include <linux/sizes.h>
+ #include <linux/slab.h>
+@@ -36,6 +38,7 @@ struct ipmmu_features {
+ 	bool has_cache_leaf_nodes;
+ 	bool setup_imbuscr;
+ 	bool twobit_imttbcr_sl0;
++	bool use_of_iommu;
+ };
  
--static void rpf_buf_queue(struct vsp1_rwpf *rpf, struct vsp1_vb2_buffer *buf)
-+static void rpf_set_memory(struct vsp1_rwpf *rpf, struct vsp1_rwpf_memory *mem)
+ struct ipmmu_vmsa_device {
+@@ -891,6 +894,7 @@ static const struct ipmmu_features ipmmu
+ 	.has_cache_leaf_nodes = false,
+ 	.setup_imbuscr = true,
+ 	.twobit_imttbcr_sl0 = false,
++	.use_of_iommu = false,
+ };
+ 
+ static const struct of_device_id ipmmu_of_ids[] = {
+@@ -1015,15 +1019,21 @@ static struct platform_driver ipmmu_driv
+ 
+ static int __init ipmmu_init(void)
  {
- 	unsigned int i;
++	static bool setup_done;
+ 	int ret;
  
- 	for (i = 0; i < 3; ++i)
--		rpf->buf_addr[i] = buf->addr[i];
-+		rpf->buf_addr[i] = mem->addr[i];
- 
- 	if (!vsp1_entity_is_streaming(&rpf->entity))
- 		return;
- 
- 	vsp1_rpf_write(rpf, VI6_RPF_SRCM_ADDR_Y,
--		       buf->addr[0] + rpf->offsets[0]);
--	if (buf->buf.vb2_buf.num_planes > 1)
-+		       mem->addr[0] + rpf->offsets[0]);
-+	if (mem->num_planes > 1)
- 		vsp1_rpf_write(rpf, VI6_RPF_SRCM_ADDR_C0,
--			       buf->addr[1] + rpf->offsets[1]);
--	if (buf->buf.vb2_buf.num_planes > 2)
-+			       mem->addr[1] + rpf->offsets[1]);
-+	if (mem->num_planes > 2)
- 		vsp1_rpf_write(rpf, VI6_RPF_SRCM_ADDR_C1,
--			       buf->addr[2] + rpf->offsets[1]);
-+			       mem->addr[2] + rpf->offsets[1]);
- }
- 
- static const struct vsp1_rwpf_operations rpf_vdev_ops = {
--	.queue = rpf_buf_queue,
-+	.set_memory = rpf_set_memory,
- };
- 
- /* -----------------------------------------------------------------------------
-diff --git a/drivers/media/platform/vsp1/vsp1_rwpf.h b/drivers/media/platform/vsp1/vsp1_rwpf.h
-index ee2a8bf269fa..0076920adb28 100644
---- a/drivers/media/platform/vsp1/vsp1_rwpf.h
-+++ b/drivers/media/platform/vsp1/vsp1_rwpf.h
-@@ -24,10 +24,16 @@
- #define RWPF_PAD_SOURCE				1
- 
- struct vsp1_rwpf;
--struct vsp1_vb2_buffer;
++	if (setup_done)
++		return 0;
 +
-+struct vsp1_rwpf_memory {
-+	unsigned int num_planes;
-+	dma_addr_t addr[3];
-+	unsigned int length[3];
-+};
+ 	ret = platform_driver_register(&ipmmu_driver);
+ 	if (ret < 0)
+ 		return ret;
  
- struct vsp1_rwpf_operations {
--	void (*queue)(struct vsp1_rwpf *rwpf, struct vsp1_vb2_buffer *buf);
-+	void (*set_memory)(struct vsp1_rwpf *rwpf,
-+			   struct vsp1_rwpf_memory *mem);
- };
- 
- struct vsp1_rwpf {
-diff --git a/drivers/media/platform/vsp1/vsp1_video.c b/drivers/media/platform/vsp1/vsp1_video.c
-index 3086cdbeaf9a..0d600b8de6b1 100644
---- a/drivers/media/platform/vsp1/vsp1_video.c
-+++ b/drivers/media/platform/vsp1/vsp1_video.c
-@@ -613,7 +613,8 @@ vsp1_video_complete_buffer(struct vsp1_video *video)
- 	done->buf.sequence = video->sequence++;
- 	v4l2_get_timestamp(&done->buf.timestamp);
- 	for (i = 0; i < done->buf.vb2_buf.num_planes; ++i)
--		vb2_set_plane_payload(&done->buf.vb2_buf, i, done->length[i]);
-+		vb2_set_plane_payload(&done->buf.vb2_buf, i,
-+				      done->mem.length[i]);
- 	vb2_buffer_done(&done->buf.vb2_buf, VB2_BUF_STATE_DONE);
- 
- 	return next;
-@@ -631,7 +632,7 @@ static void vsp1_video_frame_end(struct vsp1_pipeline *pipe,
- 
- 	spin_lock_irqsave(&pipe->irqlock, flags);
- 
--	video->rwpf->ops->queue(video->rwpf, buf);
-+	video->rwpf->ops->set_memory(video->rwpf, &buf->mem);
- 	pipe->buffers_ready |= 1 << video->pipe_index;
- 
- 	spin_unlock_irqrestore(&pipe->irqlock, flags);
-@@ -830,11 +831,13 @@ static int vsp1_video_buffer_prepare(struct vb2_buffer *vb)
- 	if (vb->num_planes < format->num_planes)
- 		return -EINVAL;
- 
-+	buf->mem.num_planes = vb->num_planes;
-+
- 	for (i = 0; i < vb->num_planes; ++i) {
--		buf->addr[i] = vb2_dma_contig_plane_dma_addr(vb, i);
--		buf->length[i] = vb2_plane_size(vb, i);
-+		buf->mem.addr[i] = vb2_dma_contig_plane_dma_addr(vb, i);
-+		buf->mem.length[i] = vb2_plane_size(vb, i);
- 
--		if (buf->length[i] < format->plane_fmt[i].sizeimage)
-+		if (buf->mem.length[i] < format->plane_fmt[i].sizeimage)
- 			return -EINVAL;
- 	}
- 
-@@ -860,7 +863,7 @@ static void vsp1_video_buffer_queue(struct vb2_buffer *vb)
- 
- 	spin_lock_irqsave(&pipe->irqlock, flags);
- 
--	video->rwpf->ops->queue(video->rwpf, buf);
-+	video->rwpf->ops->set_memory(video->rwpf, &buf->mem);
- 	pipe->buffers_ready |= 1 << video->pipe_index;
- 
- 	if (vb2_is_streaming(&video->queue) &&
-diff --git a/drivers/media/platform/vsp1/vsp1_video.h b/drivers/media/platform/vsp1/vsp1_video.h
-index cbd44c336169..21096d82af05 100644
---- a/drivers/media/platform/vsp1/vsp1_video.h
-+++ b/drivers/media/platform/vsp1/vsp1_video.h
-@@ -20,7 +20,8 @@
- #include <media/media-entity.h>
- #include <media/videobuf2-v4l2.h>
- 
--struct vsp1_rwpf;
-+#include "vsp1_rwpf.h"
-+
- struct vsp1_video;
- 
- /*
-@@ -97,9 +98,7 @@ static inline struct vsp1_pipeline *to_vsp1_pipeline(struct media_entity *e)
- struct vsp1_vb2_buffer {
- 	struct vb2_v4l2_buffer buf;
- 	struct list_head queue;
++#ifdef CONFIG_ARM
+ 	if (!iommu_present(&platform_bus_type))
+ 		bus_set_iommu(&platform_bus_type, &ipmmu_ops);
 -
--	dma_addr_t addr[3];
--	unsigned int length[3];
-+	struct vsp1_rwpf_memory mem;
- };
- 
- static inline struct vsp1_vb2_buffer *
-diff --git a/drivers/media/platform/vsp1/vsp1_wpf.c b/drivers/media/platform/vsp1/vsp1_wpf.c
-index a4c0888a1b46..d2537b46fc46 100644
---- a/drivers/media/platform/vsp1/vsp1_wpf.c
-+++ b/drivers/media/platform/vsp1/vsp1_wpf.c
-@@ -195,17 +195,17 @@ static struct v4l2_subdev_ops wpf_ops = {
-  * Video Device Operations
-  */
- 
--static void wpf_buf_queue(struct vsp1_rwpf *wpf, struct vsp1_vb2_buffer *buf)
-+static void wpf_set_memory(struct vsp1_rwpf *wpf, struct vsp1_rwpf_memory *mem)
- {
--	vsp1_wpf_write(wpf, VI6_WPF_DSTM_ADDR_Y, buf->addr[0]);
--	if (buf->buf.vb2_buf.num_planes > 1)
--		vsp1_wpf_write(wpf, VI6_WPF_DSTM_ADDR_C0, buf->addr[1]);
--	if (buf->buf.vb2_buf.num_planes > 2)
--		vsp1_wpf_write(wpf, VI6_WPF_DSTM_ADDR_C1, buf->addr[2]);
-+	vsp1_wpf_write(wpf, VI6_WPF_DSTM_ADDR_Y, mem->addr[0]);
-+	if (mem->num_planes > 1)
-+		vsp1_wpf_write(wpf, VI6_WPF_DSTM_ADDR_C0, mem->addr[1]);
-+	if (mem->num_planes > 2)
-+		vsp1_wpf_write(wpf, VI6_WPF_DSTM_ADDR_C1, mem->addr[2]);
++#endif
++	setup_done = true;
+ 	return 0;
  }
  
- static const struct vsp1_rwpf_operations wpf_vdev_ops = {
--	.queue = wpf_buf_queue,
-+	.set_memory = wpf_set_memory,
- };
+@@ -1035,6 +1045,29 @@ static void __exit ipmmu_exit(void)
+ subsys_initcall(ipmmu_init);
+ module_exit(ipmmu_exit);
  
- /* -----------------------------------------------------------------------------
--- 
-2.4.10
-
++static int __init ipmmu_vmsa_iommu_of_setup(struct device_node *np)
++{
++	const struct of_device_id *match;
++	const struct ipmmu_features *feature;
++	static const struct iommu_ops *ops = &ipmmu_ops;
++
++	ipmmu_init();
++
++	match = of_match_node(ipmmu_of_ids, np);
++	if (match) {
++		feature = match->data;
++		if (feature->use_of_iommu) {
++			of_iommu_set_ops(np, (struct iommu_ops *)ops);
++			if (!iommu_present(&platform_bus_type))
++				bus_set_iommu(&platform_bus_type, ops);
++		}
++	}
++	return 0;
++}
++
++IOMMU_OF_DECLARE(ipmmu_vmsa_iommu_of, "renesas,ipmmu-vmsa",
++		 ipmmu_vmsa_iommu_of_setup);
++
+ MODULE_DESCRIPTION("IOMMU API for Renesas VMSA-compatible IPMMU");
+ MODULE_AUTHOR("Laurent Pinchart <laurent.pinchart@ideasonboard.com>");
+ MODULE_LICENSE("GPL v2");
