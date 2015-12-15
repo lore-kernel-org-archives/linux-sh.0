@@ -1,62 +1,50 @@
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Sun, 20 Dec 2015 09:52:31 +0000
-Subject: Re: [PATCH] media: soc_camera: rcar_vin: Add R-Car Gen3 support
-Message-Id: <CAH1o70+V1yExrxHUvOPnZci0YNif2a2SMRwCZzAfRggGNRFQFQ@mail.gmail.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 15 Dec 2015 07:58:35 +0000
+Subject: Re: [PATCH/RFC 2/6] boot-mode-reg: Add R-Car Gen2 driver
+Message-Id: <20151215075832.GB29842@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450020436-809-1-git-send-email-ykaneko0929@gmail.com>
-	<566DAE57.6030000@cogentembedded.com>
-In-Reply-To: <566DAE57.6030000@cogentembedded.com>
+References: <1444892377-10170-3-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1444892377-10170-3-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: Linux Media Mailing List <linux-media@vger.kernel.org>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-Hi,
+On Mon, Oct 26, 2015 at 04:08:04AM +0200, Laurent Pinchart wrote:
+> Hi Geert,
+> 
+> On Saturday 24 October 2015 19:46:11 Geert Uytterhoeven wrote:
+> > On Fri, Oct 23, 2015 at 2:49 PM, Laurent Pinchart wrote:
+> > >> --- a/include/misc/boot-mode-reg.h
+> > >> +++ b/include/misc/boot-mode-reg.h
+> > >> @@ -21,4 +21,7 @@
+> > >> 
+> > >>  int boot_mode_reg_get(u32 *mode);
+> > >>  int boot_mode_reg_set(u32 mode);
+> > >> 
+> > >> +/* Allow explicit initialisation before initcalls */
+> > >> +int rcar_gen2_init_boot_mode(void);
+> > >> +
+> > > 
+> > > I would move this to a separate header file.
+> > > 
+> > > And I'd like to also get rid of it :-) Do we need this function for any
+> > > purpose other than arch timer initialization in
+> > > arch/arm/mach-shmobile/setup-rcar-gen2.c ? Quickly looking it that code
+> > > I wonder whether we couldn't get the extal frequency from DT instead of
+> > > the boot mode pins, which would then remove the dependency.
+> > 
+> > We do have the extal frequency in DT.
+> > 
+> > The boot mode pins does not control the extal frequency, but a few dividers
+> > internal to the CPG.
+> 
+> Agreed, but in rcar_gen2_read_mode_pins() it's used to get the external clock 
+> frequency as each PLL setting is specific to one external frequency.
 
-2015-12-14 2:43 GMT+09:00 Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>:
-> On 12/13/2015 06:27 PM, Yoshihiro Kaneko wrote:
->
->> From: Yoshihiko Mori <yoshihiko.mori.nx@renesas.com>
->>
->> Add chip identification for R-Car Gen3.
->>
->> Signed-off-by: Yoshihiko Mori <yoshihiko.mori.nx@renesas.com>
->> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
->
-> [...]
->>
->> diff --git a/drivers/media/platform/soc_camera/rcar_vin.c
->> b/drivers/media/platform/soc_camera/rcar_vin.c
->> index 5d90f39..29e7ca4 100644
->> --- a/drivers/media/platform/soc_camera/rcar_vin.c
->> +++ b/drivers/media/platform/soc_camera/rcar_vin.c
->> @@ -143,6 +143,7 @@
->>   #define RCAR_VIN_BT656                        (1 << 3)
->>
->>   enum chip_id {
->> +       RCAR_GEN3,
->>         RCAR_GEN2,
->>         RCAR_H1,
->>         RCAR_M1,
->> @@ -1846,6 +1847,7 @@ static struct soc_camera_host_ops rcar_vin_host_ops
->> = {
->>
->>   #ifdef CONFIG_OF
->>   static const struct of_device_id rcar_vin_of_table[] = {
->> +       { .compatible = "renesas,vin-r8a7795", .data = (void *)RCAR_GEN3
->> },
->
->
->    I don't see where this is checked in the driver. Shouldn't we just use
-> gen2?
+I think that Laurent has a good point here and if extal frequency
+was taken from DT then we probably wouldn't need early access to mode pins
+in rcar_gen2_read_mode_pins().
 
-I'd like to withdraw this patch now.
-I intend to post the series patch including this patch at another day.
-
->
-> MBR, Sergei
->
-
-Thanks,
-kaneko
+However, early access to mode pins is also seems to be required by
+rcar_gen2_cpg_register_clock().
