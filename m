@@ -1,23 +1,24 @@
-From: David Miller <davem@davemloft.net>
-Date: Tue, 15 Dec 2015 18:26:50 +0000
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 15 Dec 2015 19:02:41 +0000
 Subject: Re: [PATCH] sh_eth: fix descriptor access endianness
-Message-Id: <20151215.132650.1190111989349535666.davem@davemloft.net>
+Message-Id: <567063D1.1020909@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <566FF8FB.2010005@cogentembedded.com>
-	<20151215.125336.1876941788722356501.davem@davemloft.net>
-	<56705698.9010703@cogentembedded.com>
+References: <11070795.yxBPvlHg4n@wasted.cogentembedded.com>
+ <20151215.002541.762812772082527155.davem@davemloft.net>
+ <566FF8FB.2010005@cogentembedded.com>
+ <20151215.125336.1876941788722356501.davem@davemloft.net>
+ <56705698.9010703@cogentembedded.com>
 In-Reply-To: <56705698.9010703@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: sergei.shtylyov@cogentembedded.com
+To: David Miller <davem@davemloft.net>
 Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 15 Dec 2015 21:06:16 +0300
+Hello.
 
-> On 12/15/2015 08:53 PM, David Miller wrote:
-> 
+On 12/15/2015 09:06 PM, Sergei Shtylyov wrote:
+
 >>>>> The driver never calls cpu_to_edmac() when writing the descriptor
 >>>>> address
 >>>>> and edmac_to_cpu() when reading it, although it should -- fix this.
@@ -39,13 +40,12 @@ Date: Tue, 15 Dec 2015 21:06:16 +0300
 >>
 >> If you don't clearly say "Dave, please drop this patch." expect me to
 >> do random things.
-> 
->    Previously I had a plan to get rid of never used EDMAC_BIG_ENDIAN and
->    then get rid of {edmac|cpu}_to_{cpu|edmac}() and fix 16-bit descriptor
->    R/W by using {cpu|le32}_to_{le32|cpu}(). How's that plan to you?
+>
+>     Previously I had a plan to get rid of never used EDMAC_BIG_ENDIAN and then
+> get rid of {edmac|cpu}_to_{cpu|edmac}() and fix 16-bit descriptor R/W by using
+> {cpu|le32}_to_{le32|cpu}(). How's that plan to you?
 
-I personally don't care what work you do on this driver.
+   le16, of course.
 
-All I care about is that people communicate clearly with me when they
-want me to take, or not take, a given patch.
+MBR, Sergei
 
