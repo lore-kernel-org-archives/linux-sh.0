@@ -1,57 +1,65 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 14 Dec 2015 18:57:28 +0000
-Subject: [PATCH v3 19/27] serial: sh-sci: Correct SCIF type on RZ/A1H
-Message-Id: <1450119456-964-20-git-send-email-geert+renesas@glider.be>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 15 Dec 2015 13:27:00 +0000
+Subject: [PATCH/RFC 03/03] ARM: shmobile: r8a7795: Tie in IPMMU with SYS-DMAC0
+Message-Id: <20151215132700.15356.86856.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450119456-964-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1450119456-964-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-sh@vger.kernel.org
 
-The "renesas,scif" compatible value is currently used for the SCIF
-variant in all Renesas SoCs of the R-Car and RZ families.  However, the
-variant used in the RZ family is not the common "SH-4(A)" variant, but
-the "SH-2(A) with FIFO data count register" variant, as it has the
-"Serial Extension Mode Register" (SCEMR), just like on sh7203, sh7263,
-sh7264, and sh7269.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Use the (already documented) SoC-specific "renesas,scif-r7s72100"
-compatible value to differentiate.  The "renesas,scif" compatible value
-can still be used as a common denominator for SCIF variants with the
-"SH-4(A)" register layout (i.e. ignoring the SCEMR register).
-Note that currently both variants are treated the same, but this may
-change if support for the SCEMR register is ever added.
+Hook up IPMMU-MM and IPMMU-DS0 to the r8a7795 DTS and
+make sure the SYS-DMAC0 is connected to IPMMU-DS0.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Reviewed-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+The DT binding for the IPMMU will change.
+
+Not for upstream merge.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
-v3:
-  - Add Reviewed-by, Acked-by.
----
- drivers/tty/serial/sh-sci.c | 6 ++++++
- 1 file changed, 6 insertions(+)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 13c6abe9d842c0a8..5b8504bfd42e9906 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -2620,6 +2620,12 @@ static int sci_remove(struct platform_device *dev)
- #define SCI_OF_REGTYPE(data)		((unsigned long)(data) & 0xffff)
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi |   24 ++++++++++++++++++++++++
+ 1 file changed, 24 insertions(+)
+
+--- 0023/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ work/arch/arm64/boot/dts/renesas/r8a7795.dtsi	2015-12-15 15:13:00.300513000 +0900
+@@ -312,6 +312,22 @@
+ 			reg = <0 0xe6060000 0 0x50c>;
+ 		};
  
- static const struct of_device_id of_sci_match[] = {
-+	/* SoC-specific types */
-+	{
-+		.compatible = "renesas,scif-r7s72100",
-+		.data = SCI_OF_DATA(PORT_SCIF, SCIx_SH2_SCIF_FIFODATA_REGTYPE),
-+	},
-+	/* Generic types */
- 	{
- 		.compatible = "renesas,scif",
- 		.data = SCI_OF_DATA(PORT_SCIF, SCIx_SH4_SCIF_REGTYPE),
--- 
-1.9.1
-
++		ipmmu_mm: mmu@e67b0000 {
++			compatible = "renesas,ipmmu-r8a7795";
++			reg = <0 0xe67b0000 0 0x1000>; /* IPMMU-MM */
++			interrupts = <GIC_SPI 196 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 197 IRQ_TYPE_LEVEL_HIGH>;
++			#iommu-cells = <1>;
++			status = "okay";
++		};
++
++		ipmmu_ds0: mmu@e6740000 {
++			compatible = "renesas,ipmmu-r8a7795";
++			reg = <0 0xe6740000 0 0x1000>; /* IPMMU-DS0 */
++			#iommu-cells = <1>;
++			status = "okay";
++		};
++
+ 		dmac0: dma-controller@e6700000 {
+ 			compatible = "renesas,rcar-dmac";
+ 			reg = <0 0xe6700000 0 0x10000>;
+@@ -342,6 +358,14 @@
+ 			power-domains = <&cpg>;
+ 			#dma-cells = <1>;
+ 			dma-channels = <16>;
++			iommus = <&ipmmu_ds0 0>, <&ipmmu_ds0 1>,
++			       <&ipmmu_ds0 2>, <&ipmmu_ds0 3>,
++			       <&ipmmu_ds0 4>, <&ipmmu_ds0 5>,
++			       <&ipmmu_ds0 6>, <&ipmmu_ds0 7>,
++			       <&ipmmu_ds0 8>, <&ipmmu_ds0 9>,
++			       <&ipmmu_ds0 10>, <&ipmmu_ds0 11>,
++			       <&ipmmu_ds0 12>, <&ipmmu_ds0 13>,
++			       <&ipmmu_ds0 14>, <&ipmmu_ds0 15>;
+ 		};
+ 
+ 		dmac1: dma-controller@e7300000 {
