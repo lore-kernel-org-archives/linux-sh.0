@@ -1,7 +1,7 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 14 Dec 2015 23:55:30 +0000
+Date: Tue, 15 Dec 2015 00:24:45 +0000
 Subject: Re: [PATCH 4/8 v4] thermal: rcar: retern error rcar_thermal_get_temp() if no ctemp update
-Message-Id: <87h9jkr3jo.wl%kuninori.morimoto.gx@renesas.com>
+Message-Id: <87egeor26y.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <87vb895x9d.wl%kuninori.morimoto.gx@renesas.com>
 	<87poyh5x69.wl%kuninori.morimoto.gx@renesas.com>
@@ -14,21 +14,8 @@ To: Eduardo Valentin <edubezval@gmail.com>
 Cc: Simon <horms@verge.net.au>, Zhang Rui <rui.zhang@intel.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
 
 
-Hi Eduardo
+Hi Eduardo, again
 
-> > --- a/drivers/thermal/rcar_thermal.c
-> > +++ b/drivers/thermal/rcar_thermal.c
-> > @@ -199,9 +199,9 @@ static int rcar_thermal_update_temp(struct rcar_thermal_priv *priv)
-> >  
-> >  	dev_dbg(dev, "thermal%d  %d -> %d\n", priv->id, priv->ctemp, ctemp);
-> >  
-> > -	priv->ctemp = ctemp;
-> >  	ret = 0;
-> >  err_out_unlock:
-> > +	priv->ctemp = ctemp;
-> >  	mutex_unlock(&priv->lock);
-> >  	return ret;
-> 
 > I believe the problem here is actually the lack of error
 > handling/propagation. Are you sure you want to write to parameter
 > in the fail path ?
@@ -38,13 +25,4 @@ Hi Eduardo
 > places that call rcar_thermal_update_temp to properly handle its return
 > value and propagate that error code when necessary?
 
-Thanks. But the logic is that
-priv->ctemp will be 0 in error cases, and it will be reported as
-dev_err() in rcar_thermal_get_current_temp()
-
-The problem was that priv->ctemp will not be updated
-in error case of rcar_thermal_update_temp().
-but user can call get_temp (it doesn't call
-rcar_thermal_update_temp() if interrupt was supported).
-In such case, user will get old thermal.
-
+Will update in v5
