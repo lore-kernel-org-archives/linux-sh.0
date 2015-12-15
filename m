@@ -1,48 +1,74 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 15 Dec 2015 00:20:59 +0000
-Subject: Re: [PATCH 8/8 v4] thermal: of-thermal: of_thermal_set_trip_temp() call thermal_zone_device_update()
-Message-Id: <87fuz4r2d8.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 15 Dec 2015 10:48:24 +0000
+Subject: Re: [PATCH] dmaengine: use phys_addr_t for slave configuration
+Message-Id: <CAMuHMdV8a1W1MyJPanUNBzaiNsL96JYzetBVSiZoC3=eKXzo1Q@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87vb895x9d.wl%kuninori.morimoto.gx@renesas.com>
-	<87io495x3c.wl%kuninori.morimoto.gx@renesas.com>
-	<20151214211103.GB10924@localhost.localdomain>
-In-Reply-To: <20151214211103.GB10924@localhost.localdomain>
+References: <1366967214-20776-1-git-send-email-linus.walleij@linaro.org>
+	<CAMuHMdUTzTBT8DyRb5WN048U5DbVsFnhJB0c5tjHBnA4rfetJg@mail.gmail.com>
+	<20150710081411.GF836@localhost>
+In-Reply-To: <20150710081411.GF836@localhost>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Eduardo Valentin <edubezval@gmail.com>
-Cc: Simon <horms@verge.net.au>, Zhang Rui <rui.zhang@intel.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: Vinod Koul <vinod.koul@intel.com>
+Cc: Linus Walleij <linus.walleij@linaro.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Arnd Bergmann <arnd@arndb.de>, Lee Jones <lee.jones@linaro.org>, dmaengine@vger.kernel.org, Linux-sh list <linux-sh@vger.kernel.org>
 
+Hi Vinod,
 
-Hi Eduardo
+On Fri, Jul 10, 2015 at 10:14 AM, Vinod Koul <vinod.koul@intel.com> wrote:
+> On Wed, Jul 08, 2015 at 12:12:52PM +0200, Geert Uytterhoeven wrote:
+>> On Fri, Apr 26, 2013 at 11:06 AM, Linus Walleij
+>> <linus.walleij@linaro.org> wrote:
+>> > The documentation already says these are physical addresses, and
+>> > we have concluded that any translation into the DMA address space
+>> > needs to reside in the dmaengine driver, so change the type of
+>> > the passed arguments.
+>> >
+>> > Cc: Arnd Bergmann <arnd@arndb.de>
+>> > Cc: Lee Jones <lee.jones@linaro.org>
+>> > Cc: Vinod Koul <vinod.koul@intel.com>
+>> > Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
+>>
+>> What's the status of this one, which has been acked by Lee and Arnd?
+> Looks to have slipped thru. I will redo it
 
-> > From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> > 
-> > of_thermal_set_trip_temp() updates trip temperature. It should call
-> > thermal_zone_device_update() immediately.
-> > 
-> > Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> > ---
-> > v3 -> v4
-> > 
-> >  - no change
-> > 
-> >  drivers/thermal/of-thermal.c | 2 ++
-> >  1 file changed, 2 insertions(+)
-> > 
-> > diff --git a/drivers/thermal/of-thermal.c b/drivers/thermal/of-thermal.c
-> > index 42b7d42..a1dd7b1 100644
-> > --- a/drivers/thermal/of-thermal.c
-> > +++ b/drivers/thermal/of-thermal.c
-> > @@ -334,6 +334,8 @@ static int of_thermal_set_trip_temp(struct thermal_zone_device *tz, int trip,
-> >  	/* thermal framework should take care of data->mask & (1 << trip) */
-> >  	data->trips[trip].temperature = temp;
-> >  
-> > +	thermal_zone_device_update(tz);
-> > +
-> 
-> Although I understand the need for this, I would prefer you move this change
-> to thermal_core.c. The reasoning is to keep the same behavior for
-> thermal zones created over of thermal and regular thermal zones.
+Ping?
 
-Indeed. will do in v5
+> --
+> ~Vinod
+>
+>>
+>> Thanks!
+>>
+>> > ---
+>> >  include/linux/dmaengine.h | 4 ++--
+>> >  1 file changed, 2 insertions(+), 2 deletions(-)
+>> >
+>> > diff --git a/include/linux/dmaengine.h b/include/linux/dmaengine.h
+>> > index 91ac8da..681df5f9 100644
+>> > --- a/include/linux/dmaengine.h
+>> > +++ b/include/linux/dmaengine.h
+>> > @@ -361,8 +361,8 @@ enum dma_slave_buswidth {
+>> >   */
+>> >  struct dma_slave_config {
+>> >         enum dma_transfer_direction direction;
+>> > -       dma_addr_t src_addr;
+>> > -       dma_addr_t dst_addr;
+>> > +       phys_addr_t src_addr;
+>> > +       phys_addr_t dst_addr;
+>> >         enum dma_slave_buswidth src_addr_width;
+>> >         enum dma_slave_buswidth dst_addr_width;
+>> >         u32 src_maxburst;
+>> > --
+>> > 1.8.1.4
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
