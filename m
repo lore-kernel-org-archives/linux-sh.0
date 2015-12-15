@@ -1,62 +1,72 @@
-From: Steven Rostedt <rostedt@goodmis.org>
-Date: Thu, 24 Dec 2015 14:28:03 +0000
-Subject: [for-next][PATCH 11/13] sh: ftrace: Fix the comments for ftrace_modify_code()
-Message-Id: <20151224142901.218696743@goodmis.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 15 Dec 2015 13:26:43 +0000
+Subject: [PATCH/RFC 01/03] ARM: shmobile: External Salvator-X SCIF3/HSCIF3 loop
+Message-Id: <20151215132643.15356.92444.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20151224142752.534947674@goodmis.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Ingo Molnar <mingo@kernel.org>, Andrew Morton <akpm@linux-foundation.org>, linux-sh@vger.kernel.org, Li Bin <huawei.libin@huawei.com>
+To: linux-sh@vger.kernel.org
 
-From: Li Bin <huawei.libin@huawei.com>
+From: Magnus Damm <damm+renesas@opensource.se>
 
-There is no need to worry about module and __init text disappearing
-case, because that ftrace has a module notifier that is called when
-a module is being unloaded and before the text goes away and this
-code grabs the ftrace_lock mutex and removes the module functions
-from the ftrace list, such that it will no longer do any
-modifications to that module's text, the update to make functions
-be traced or not is done under the ftrace_lock mutex as well.
-And by now, __init section codes should not been modified
-by ftrace, because it is black listed in recordmcount.c and
-ignored by ftrace.
+Add SCIF3 and HSCIF3 as two new serial ports to the r8a7795
+Salvator-X DT file. 
 
-Link: http://lkml.kernel.org/r/1449367378-29430-5-git-send-email-huawei.libin@huawei.com
-
-Cc: linux-sh@vger.kernel.org
-Suggested-by: Steven Rostedt <rostedt@goodmis.org>
-Signed-off-by: Li Bin <huawei.libin@huawei.com>
-Signed-off-by: Steven Rostedt <rostedt@goodmis.org>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- arch/sh/kernel/ftrace.c | 12 +++++-------
- 1 file changed, 5 insertions(+), 7 deletions(-)
 
-diff --git a/arch/sh/kernel/ftrace.c b/arch/sh/kernel/ftrace.c
-index 079d70e6d74b..38993e09ef03 100644
---- a/arch/sh/kernel/ftrace.c
-+++ b/arch/sh/kernel/ftrace.c
-@@ -212,13 +212,11 @@ static int ftrace_modify_code(unsigned long ip, unsigned char *old_code,
- 	unsigned char replaced[MCOUNT_INSN_SIZE];
+ arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts |   28 ++++++++++++++++++++
+ 1 file changed, 28 insertions(+)
+
+--- 0001/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
++++ work/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts	2015-11-06 14:21:56.640513000 +0900
+@@ -41,6 +41,8 @@
+ 	aliases {
+ 		serial0 = &scif2;
+ 		serial1 = &scif1;
++		serial2 = &scif3;
++		serial3 = &hscif3;
+ 		ethernet0 = &avb;
+ 	};
  
- 	/*
--	 * Note: Due to modules and __init, code can
--	 *  disappear and change, we need to protect against faulting
--	 *  as well as code changing. We do this by using the
--	 *  probe_kernel_* functions.
--	 *
--	 * No real locking needed, this code is run through
--	 * kstop_machine, or before SMP starts.
-+	 * Note:
-+	 * We are paranoid about modifying text, as if a bug was to happen, it
-+	 * could cause us to read or write to someplace that could cause harm.
-+	 * Carefully read and modify the code with probe_kernel_*(), and make
-+	 * sure what we read is what we expected it to be before modifying it.
- 	 */
+@@ -135,6 +137,16 @@
+ 		renesas,groups = "scif2_data_a";
+ 		renesas,function = "scif2";
+ 	};
++	
++	scif3_pins: scif3 { /* TX: 1_11, RX: 1_8 */
++		renesas,groups = "scif3_data_b";
++		renesas,function = "scif3";
++	};
++
++	hscif3_pins: hscif3 { /* TX: 2_8, RX: 2_7 */
++		renesas,groups = "hscif3_data_d";
++		renesas,function = "hscif3";
++	};
  
- 	/* read the text we want to modify */
--- 
-2.6.2
-
-
+ 	i2c2_pins: i2c2 {
+ 		renesas,groups = "i2c2_a";
+@@ -169,6 +181,22 @@
+ 	pinctrl-names = "default";
+ 
+ 	status = "okay";
++};
++
++&scif3 {
++	pinctrl-0 = <&scif3_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++};
++
++/* SCIF3 TX -> HSCIF3 RX, HSCIF3 TX -> SCIF3 RX */
++
++&hscif3 {
++	pinctrl-0 = <&hscif3_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
+ };
+ 
+ &i2c2 {
