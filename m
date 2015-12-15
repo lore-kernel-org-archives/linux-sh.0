@@ -1,26 +1,108 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Tue, 22 Dec 2015 08:49:27 +0000
-Subject: Re: [git pull] pinctrl: sh-pfc: Updates for v4.5 (take two)
-Message-Id: <CACRpkdYQAY=TJ6z2OFTHB0U=WxzC1Z48ZZ+UBdouorWgVneS7Q@mail.gmail.com>
+From: Mauro Carvalho Chehab <mchehab@osg.samsung.com>
+Date: Tue, 15 Dec 2015 11:13:42 +0000
+Subject: Re: [PATCH 2/2] [media] media-device: split media initialization and registration
+Message-Id: <20151215091342.2f825d91@recife.lan>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450446511-7649-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1450446511-7649-1-git-send-email-geert+renesas@glider.be>
+References: <1441890195-11650-1-git-send-email-javier@osg.samsung.com>
+ <1441890195-11650-3-git-send-email-javier@osg.samsung.com>
+ <55F1BA5C.50508@linux.intel.com>
+In-Reply-To: <55F1BA5C.50508@linux.intel.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Dec 18, 2015 at 2:48 PM, Geert Uytterhoeven
-<geert+renesas@glider.be> wrote:
+Em Thu, 10 Sep 2015 20:14:04 +0300
+Sakari Ailus <sakari.ailus@linux.intel.com> escreveu:
 
-> The following changes since commit f27200f9dce59ce5063bf722ef6ccedd34e4357b:
->
->   pinctrl: sh-pfc: r8a7795: Add SCIF_CLK support (2015-12-08 14:18:45 +0100)
->
-> are available in the git repository at:
+> Hi Javier,
+> 
+> Thanks for the set! A few comments below.
+> 
+> Javier Martinez Canillas wrote:
+> > The media device node is registered and so made visible to user-space
+> > before entities are registered and links created which means that the
+> > media graph obtained by user-space could be only partially enumerated
+> > if that happens too early before all the graph has been created.
+> > 
+> > To avoid this race condition, split the media init and registration
+> > in separate functions and only register the media device node when
+> > all the pending subdevices have been registered, either explicitly
+> > by the driver or asynchronously using v4l2_async_register_subdev().
+> > 
+> > Also, add a media_entity_cleanup() function that will destroy the
+> > graph_mutex that is initialized in media_entity_init().
+> > 
+> > Suggested-by: Sakari Ailus <sakari.ailus@linux.intel.com>
+> > Signed-off-by: Javier Martinez Canillas <javier@osg.samsung.com>
+> > 
+> > ---
+> > 
+> >  drivers/media/common/siano/smsdvb-main.c      |  1 +
+> >  drivers/media/media-device.c                  | 38 +++++++++++++++++++++++----
+> >  drivers/media/platform/exynos4-is/media-dev.c | 12 ++++++---
+> >  drivers/media/platform/omap3isp/isp.c         | 11 +++++---
+> >  drivers/media/platform/s3c-camif/camif-core.c | 13 ++++++---
+> >  drivers/media/platform/vsp1/vsp1_drv.c        | 19 ++++++++++----
+> >  drivers/media/platform/xilinx/xilinx-vipp.c   | 11 +++++---
+> >  drivers/media/usb/au0828/au0828-core.c        | 26 +++++++++++++-----
+> >  drivers/media/usb/cx231xx/cx231xx-cards.c     | 22 +++++++++++-----
+> >  drivers/media/usb/dvb-usb-v2/dvb_usb_core.c   | 11 +++++---
+> >  drivers/media/usb/dvb-usb/dvb-usb-dvb.c       | 13 ++++++---
+> >  drivers/media/usb/siano/smsusb.c              | 14 ++++++++--
+> >  drivers/media/usb/uvc/uvc_driver.c            |  9 +++++--
+> >  include/media/media-device.h                  |  2 ++
+> >  14 files changed, 156 insertions(+), 46 deletions(-)
+> > 
+> > diff --git a/drivers/media/common/siano/smsdvb-main.c b/drivers/media/common/siano/smsdvb-main.c
+> > index ab345490a43a..8a1ea2192439 100644
+> > --- a/drivers/media/common/siano/smsdvb-main.c
+> > +++ b/drivers/media/common/siano/smsdvb-main.c
+> > @@ -617,6 +617,7 @@ static void smsdvb_media_device_unregister(struct smsdvb_client_t *client)
+> >  	if (!coredev->media_dev)
+> >  		return;
+> >  	media_device_unregister(coredev->media_dev);
+> > +	media_device_cleanup(coredev->media_dev);
+> >  	kfree(coredev->media_dev);
+> >  	coredev->media_dev = NULL;
+> >  #endif
+> > diff --git a/drivers/media/media-device.c b/drivers/media/media-device.c
+> > index 745defb34b33..a8beb0b445a6 100644
+> > --- a/drivers/media/media-device.c
+> > +++ b/drivers/media/media-device.c
+> > @@ -526,7 +526,7 @@ static void media_device_release(struct media_devnode *mdev)
+> >  }
+> >  
+> >  /**
+> > - * media_device_register - register a media device
+> > + * media_device_init() - initialize a media device
+> >   * @mdev:	The media device
+> >   *
+> >   * The caller is responsible for initializing the media device before
+> > @@ -534,12 +534,11 @@ static void media_device_release(struct media_devnode *mdev)
+> >   *
+> >   * - dev must point to the parent device
+> >   * - model must be filled with the device model name
+> > + *
+> > + * returns zero on success or a negative error code.
+> >   */
+> > -int __must_check __media_device_register(struct media_device *mdev,
+> > -					 struct module *owner)
+> > +int __must_check media_device_init(struct media_device *mdev)
+> 
+> I think I suggested making media_device_init() return void as the only
+> remaining source of errors would be driver bugs.
+> 
+> I'd simply replace the WARN_ON() below with BUG().
 
-Pulled into the pinctrl "devel" branch for v4.5, thanks!
+That sounds like bad idea to me, and it is against the current
+Kernel policy of using BUG() only when there's no other way, e. g. on
+event so severe that the Kernel has no other thing to do except to
+stop running.
 
-Yours,
-Linus Walleij
+For sure, this is not the case here. Also, all drivers have already
+a logic that checks if the device init happened. So, they should already
+be doing the right thing.
+
+Regards,
+Mauro
