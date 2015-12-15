@@ -1,63 +1,92 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 17 Dec 2015 08:40:10 +0000
-Subject: [PATCH/RFC 32/48] vb2: Add allow_requests flag
-Message-Id: <1450341626-6695-33-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 15 Dec 2015 01:19:16 +0000
+Subject: [PATCH 7/8 v5] ARM: shmobile: r8a7791: enable to use thermal-zone
+Message-Id: <8737v4qzo2.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450341626-6695-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1450341626-6695-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <87d1u8qzsy.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87d1u8qzsy.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: Simon <horms@verge.net.au>, Zhang Rui <rui.zhang@intel.com>, Eduardo Valentin <edubezval@gmail.com>
+Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
 
-From: Hans Verkuil <hans.verkuil@cisco.com>
 
-The driver has to set allow_requests explicitly in order to allow
-queuing or preparing buffers for a specific request ID.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Hans Verkuil <hans.verkuil@cisco.com>
+This patch enables to use thermal-zone on r8a7791.
+This thermal sensor can measure temperature from -40000 to 125000,
+but over 117000 can be critical on this chip.
+Thus, default critical temperature is now set as 115000 (this driver
+is using 5000 steps) (Current critical temperature is using it as
+90000, but there is no big reason about it)
+
+And it doesn't check thermal zone periodically (same as current
+behavior). You can exchange it by modifying polling-delay[-passive]
+property.
+
+You can set trip temp if your kernel has CONFIG_THERMAL_WRITABLE_TRIPS,
+but you need to take care to use it, since it will call
+orderly_poweroff() it it reaches to the value.
+echo $temp > /sys/class/thermal/thermal_zone0/trip_point_0_temp
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/media/v4l2-core/videobuf2-v4l2.c | 5 +++++
- include/media/videobuf2-core.h           | 2 ++
- 2 files changed, 7 insertions(+)
+v4 -> v5
 
-diff --git a/drivers/media/v4l2-core/videobuf2-v4l2.c b/drivers/media/v4l2-core/videobuf2-v4l2.c
-index f6a2800e5f66..2c8776891535 100644
---- a/drivers/media/v4l2-core/videobuf2-v4l2.c
-+++ b/drivers/media/v4l2-core/videobuf2-v4l2.c
-@@ -169,6 +169,11 @@ static int vb2_queue_or_prepare_buf(struct vb2_queue *q, struct v4l2_buffer *b,
- 		return -EINVAL;
- 	}
+ - no change
+
+ arch/arm/boot/dts/r8a7791.dtsi | 26 ++++++++++++++++++++++++--
+ 1 file changed, 24 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 3776974..9b37c80 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -69,6 +69,25 @@
+ 		};
+ 	};
  
-+	if (!q->allow_requests && b->request) {
-+		dprintk(1, "%s: unsupported request ID\n", opname);
-+		return -EINVAL;
-+	}
++	thermal-zones {
++		cpu_thermal: cpu-thermal {
++			polling-delay-passive	= <0>;
++			polling-delay		= <0>;
 +
- 	return __verify_planes_array(q->bufs[b->index], b);
- }
++			thermal-sensors = <&thermal>;
++
++			trips {
++				cpu-crit {
++					temperature	= <115000>;
++					hysteresis	= <0>;
++					type		= "critical";
++				};
++			};
++			cooling-maps {
++			};
++		};
++	};
++
+ 	gic: interrupt-controller@f1001000 {
+ 		compatible = "arm,gic-400";
+ 		#interrupt-cells = <3>;
+@@ -185,12 +204,15 @@
+ 		power-domains = <&cpg_clocks>;
+ 	};
  
-diff --git a/include/media/videobuf2-core.h b/include/media/videobuf2-core.h
-index 647ebfe5174f..5eb30071dcf1 100644
---- a/include/media/videobuf2-core.h
-+++ b/include/media/videobuf2-core.h
-@@ -379,6 +379,7 @@ struct vb2_buf_ops {
-  * @fileio_read_once:		report EOF after reading the first buffer
-  * @fileio_write_immediately:	queue buffer after each write() call
-  * @allow_zero_bytesused:	allow bytesused = 0 to be passed to the driver
-+ * @allow_requests:		allow request != 0 to be passed to the driver
-  * @lock:	pointer to a mutex that protects the vb2_queue struct. The
-  *		driver can set this to a mutex to let the v4l2 core serialize
-  *		the queuing ioctls. If the driver wants to handle locking
-@@ -441,6 +442,7 @@ struct vb2_queue {
- 	unsigned			fileio_read_once:1;
- 	unsigned			fileio_write_immediately:1;
- 	unsigned			allow_zero_bytesused:1;
-+	unsigned			allow_requests:1;
+-	thermal@e61f0000 {
+-		compatible = "renesas,thermal-r8a7791", "renesas,rcar-thermal";
++	thermal: thermal@e61f0000 {
++		compatible =	"renesas,thermal-r8a7791",
++				"renesas,rcar-gen2-thermal",
++				"renesas,rcar-thermal";
+ 		reg = <0 0xe61f0000 0 0x14>, <0 0xe61f0100 0 0x38>;
+ 		interrupts = <0 69 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp5_clks R8A7791_CLK_THERMAL>;
+ 		power-domains = <&cpg_clocks>;
++		#thermal-sensor-cells = <0>;
+ 	};
  
- 	struct mutex			*lock;
- 	void				*owner;
+ 	timer {
 -- 
-2.4.10
+1.9.1
 
