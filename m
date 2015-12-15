@@ -1,66 +1,70 @@
-From: Petr Mladek <pmladek@suse.com>
-Date: Wed, 09 Dec 2015 13:21:03 +0000
-Subject: [PATCH v3 2/4] printk/nmi: Use IRQ work only when ready
-Message-Id: <1449667265-17525-3-git-send-email-pmladek@suse.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 15 Dec 2015 13:05:36 +0000
+Subject: [PATCH/RFC 03/10] iommu/ipmmu-vmsa: Write IMCTR twice
+Message-Id: <20151215130536.13535.79372.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449667265-17525-1-git-send-email-pmladek@suse.com>
-In-Reply-To: <1449667265-17525-1-git-send-email-pmladek@suse.com>
+References: <20151215130508.13535.26186.sendpatchset@little-apple>
+In-Reply-To: <20151215130508.13535.26186.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: iommu@lists.linux-foundation.org
+Cc: laurent.pinchart+renesas@ideasonboard.com, geert+renesas@glider.be, linux-sh@vger.kernel.org, joro@8bytes.org, linux-kernel@vger.kernel.org, horms+renesas@verge.net.au, Magnus Damm <magnus.damm@gmail.com>
 
-NMIs could happen at any time. This patch makes sure that the safe
-printk() in NMI will schedule IRQ work only when the related
-structs are initialized.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-All pending messages are flushed when the IRQ work is being
-initialized.
+Write IMCTR both in the root device and the leaf node.
 
-Signed-off-by: Petr Mladek <pmladek@suse.com>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- kernel/printk/nmi.c | 13 ++++++++++++-
- 1 file changed, 12 insertions(+), 1 deletion(-)
 
-diff --git a/kernel/printk/nmi.c b/kernel/printk/nmi.c
-index 7b5ff81b291f..29a498586465 100644
---- a/kernel/printk/nmi.c
-+++ b/kernel/printk/nmi.c
-@@ -38,6 +38,7 @@
-  * were handled or when IRQs are blocked.
+ drivers/iommu/ipmmu-vmsa.c |   17 ++++++++++++++---
+ 1 file changed, 14 insertions(+), 3 deletions(-)
+
+--- 0014/drivers/iommu/ipmmu-vmsa.c
++++ work/drivers/iommu/ipmmu-vmsa.c	2015-12-15 14:11:05.210513000 +0900
+@@ -268,6 +268,16 @@ static void ipmmu_ctx_write(struct ipmmu
+ 	ipmmu_write(domain->root, domain->context_id * IM_CTX_SIZE + reg, data);
+ }
+ 
++static void ipmmu_ctx_write2(struct ipmmu_vmsa_domain *domain, unsigned int reg,
++			     u32 data)
++{
++	if (domain->mmu != domain->root)
++		ipmmu_write(domain->mmu,
++			    domain->context_id * IM_CTX_SIZE + reg, data);
++
++	ipmmu_write(domain->root, domain->context_id * IM_CTX_SIZE + reg, data);
++}
++
+ /* -----------------------------------------------------------------------------
+  * TLB and microTLB Management
   */
- DEFINE_PER_CPU(printk_func_t, printk_func) = vprintk_default;
-+static int printk_nmi_irq_ready;
+@@ -294,7 +304,7 @@ static void ipmmu_tlb_invalidate(struct
  
- #define NMI_LOG_BUF_LEN (4096 - sizeof(atomic_t) - sizeof(struct irq_work))
+ 	reg = ipmmu_ctx_read(domain, IMCTR);
+ 	reg |= IMCTR_FLUSH;
+-	ipmmu_ctx_write(domain, IMCTR, reg);
++	ipmmu_ctx_write2(domain, IMCTR, reg);
  
-@@ -83,8 +84,11 @@ again:
- 		goto again;
- 
- 	/* Get flushed in a more safe context. */
--	if (add)
-+	if (add && printk_nmi_irq_ready) {
-+		/* Make sure that IRQ work is really initialized. */
-+		smp_rmb();
- 		irq_work_queue(&s->work);
-+	}
- 
- 	return add;
+ 	ipmmu_tlb_sync(domain);
  }
-@@ -190,6 +194,13 @@ void __init printk_nmi_init(void)
+@@ -442,7 +452,8 @@ static int ipmmu_domain_init_context(str
+ 	 * software management as we have no use for it. Flush the TLB as
+ 	 * required when modifying the context registers.
+ 	 */
+-	ipmmu_ctx_write(domain, IMCTR, IMCTR_INTEN | IMCTR_FLUSH | IMCTR_MMUEN);
++	ipmmu_ctx_write2(domain, IMCTR,
++			 IMCTR_INTEN | IMCTR_FLUSH | IMCTR_MMUEN);
  
- 		init_irq_work(&s->work, __printk_nmi_flush);
- 	}
-+
-+	/* Make sure that IRQ works are initialized before enabling. */
-+	smp_wmb();
-+	printk_nmi_irq_ready = 1;
-+
-+	/* Flush pending messages that did not have scheduled IRQ works. */
-+	printk_nmi_flush();
+ 	return 0;
+ }
+@@ -457,7 +468,7 @@ static void ipmmu_domain_destroy_context
+ 	 *
+ 	 * TODO: Is TLB flush really needed ?
+ 	 */
+-	ipmmu_ctx_write(domain, IMCTR, IMCTR_FLUSH);
++	ipmmu_ctx_write2(domain, IMCTR, IMCTR_FLUSH);
+ 	ipmmu_tlb_sync(domain);
  }
  
- void printk_nmi_enter(void)
--- 
-1.8.5.6
-
