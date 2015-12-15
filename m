@@ -1,63 +1,92 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 11 Dec 2015 02:52:55 +0000
-Subject: [PATCH/RFC 18/19] ARM: shmobile: r8a7793: Add Audio CTU support to device tree
-Message-Id: <1449802376-11301-19-git-send-email-horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 15 Dec 2015 01:17:40 +0000
+Subject: [PATCH 2/8 v5] thermal: rcar: check every rcar_thermal_update_temp() return value
+Message-Id: <87a8pcqzqq.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449802376-11301-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1449802376-11301-1-git-send-email-horms+renesas@verge.net.au>
+References: <87d1u8qzsy.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87d1u8qzsy.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon <horms@verge.net.au>, Zhang Rui <rui.zhang@intel.com>, Eduardo Valentin <edubezval@gmail.com>
+Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
 
-Instantiate audio CTU support in r8a7793 device tee.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Based on similar work for the r8a7791 by Kuninori Morimoto.
+Every rcar_thermal_update_temp() return value will be checked.
 
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+And also, rcar_thermal_get_temp() always call
+rcar_thermal_update_temp() by this patch.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/boot/dts/r8a7793.dtsi | 13 +++++++++++++
- 1 file changed, 13 insertions(+)
+v4 -> v5
 
-diff --git a/arch/arm/boot/dts/r8a7793.dtsi b/arch/arm/boot/dts/r8a7793.dtsi
-index ed2acd9967b1..d9ba1c97cefc 100644
---- a/arch/arm/boot/dts/r8a7793.dtsi
-+++ b/arch/arm/boot/dts/r8a7793.dtsi
-@@ -1178,6 +1178,7 @@
- 			<&mstp10_clks R8A7793_CLK_SCU_SRC5>, <&mstp10_clks R8A7793_CLK_SCU_SRC4>,
- 			<&mstp10_clks R8A7793_CLK_SCU_SRC3>, <&mstp10_clks R8A7793_CLK_SCU_SRC2>,
- 			<&mstp10_clks R8A7793_CLK_SCU_SRC1>, <&mstp10_clks R8A7793_CLK_SCU_SRC0>,
-+			<&mstp10_clks R8A7793_CLK_SCU_CTU0_MIX0>, <&mstp10_clks R8A7793_CLK_SCU_CTU1_MIX1>,
- 			<&mstp10_clks R8A7793_CLK_SCU_DVC0>, <&mstp10_clks R8A7793_CLK_SCU_DVC1>,
- 			<&audio_clk_a>, <&audio_clk_b>, <&audio_clk_c>, <&m2_clk>;
- 		clock-names = "ssi-all",
-@@ -1185,6 +1186,7 @@
- 				"ssi.4", "ssi.3", "ssi.2", "ssi.1", "ssi.0",
- 				"src.9", "src.8", "src.7", "src.6", "src.5",
- 				"src.4", "src.3", "src.2", "src.1", "src.0",
-+				"ctu.0", "ctu.1",
- 				"dvc.0", "dvc.1",
- 				"clk_a", "clk_b", "clk_c", "clk_i";
- 		power-domains = <&cpg_clocks>;
-@@ -1202,6 +1204,17 @@
- 			};
- 		};
+ - rcar_thermal_get_temp() calls rcar_thermal_update_temp()
+   without checking rcar_has_irq_support()
+
+ drivers/thermal/rcar_thermal.c | 22 ++++++++++++----------
+ 1 file changed, 12 insertions(+), 10 deletions(-)
+
+diff --git a/drivers/thermal/rcar_thermal.c b/drivers/thermal/rcar_thermal.c
+index ac8d1eb..0b19743 100644
+--- a/drivers/thermal/rcar_thermal.c
++++ b/drivers/thermal/rcar_thermal.c
+@@ -75,12 +75,6 @@ struct rcar_thermal_priv {
+ #define rcar_has_irq_support(priv)	((priv)->common->base)
+ #define rcar_id_to_shift(priv)		((priv)->id * 8)
  
-+		rcar_sound,ctu {
-+			ctu00: ctu@0 { };
-+			ctu01: ctu@1 { };
-+			ctu02: ctu@2 { };
-+			ctu03: ctu@3 { };
-+			ctu10: ctu@4 { };
-+			ctu11: ctu@5 { };
-+			ctu12: ctu@6 { };
-+			ctu13: ctu@7 { };
-+		};
+-#ifdef DEBUG
+-# define rcar_force_update_temp(priv)	1
+-#else
+-# define rcar_force_update_temp(priv)	0
+-#endif
+-
+ static const struct of_device_id rcar_thermal_dt_ids[] = {
+ 	{ .compatible = "renesas,rcar-thermal", },
+ 	{},
+@@ -209,9 +203,11 @@ err_out_unlock:
+ static int rcar_thermal_get_temp(struct thermal_zone_device *zone, int *temp)
+ {
+ 	struct rcar_thermal_priv *priv = rcar_zone_to_priv(zone);
++	int ret;
+ 
+-	if (!rcar_has_irq_support(priv) || rcar_force_update_temp(priv))
+-		rcar_thermal_update_temp(priv);
++	ret = rcar_thermal_update_temp(priv);
++	if (ret < 0)
++		return ret;
+ 
+ 	mutex_lock(&priv->lock);
+ 	*temp =  MCELSIUS((priv->ctemp * 5) - 65);
+@@ -305,11 +301,15 @@ static void rcar_thermal_work(struct work_struct *work)
+ {
+ 	struct rcar_thermal_priv *priv;
+ 	int cctemp, nctemp;
++	int ret;
+ 
+ 	priv = container_of(work, struct rcar_thermal_priv, work.work);
+ 
+ 	rcar_thermal_get_temp(priv->zone, &cctemp);
+-	rcar_thermal_update_temp(priv);
++	ret = rcar_thermal_update_temp(priv);
++	if (ret < 0)
++		return;
 +
- 		rcar_sound,src {
- 			src0: src@0 {
- 				interrupts = <0 352 IRQ_TYPE_LEVEL_HIGH>;
+ 	rcar_thermal_irq_enable(priv);
+ 
+ 	rcar_thermal_get_temp(priv->zone, &nctemp);
+@@ -427,7 +427,9 @@ static int rcar_thermal_probe(struct platform_device *pdev)
+ 		mutex_init(&priv->lock);
+ 		INIT_LIST_HEAD(&priv->list);
+ 		INIT_DELAYED_WORK(&priv->work, rcar_thermal_work);
+-		rcar_thermal_update_temp(priv);
++		ret = rcar_thermal_update_temp(priv);
++		if (ret < 0)
++			goto error_unregister;
+ 
+ 		priv->zone = thermal_zone_device_register("rcar_thermal",
+ 						1, 0, priv,
 -- 
-2.1.4
+1.9.1
 
