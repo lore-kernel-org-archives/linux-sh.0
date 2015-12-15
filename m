@@ -1,73 +1,54 @@
-From: Sudeep Holla <sudeep.holla@arm.com>
-Date: Wed, 09 Dec 2015 17:34:45 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 15 Dec 2015 08:45:06 +0000
 Subject: Re: [PATCH v2 6/6] arm64: renesas: r8a7795: Add L2 cache-controller nodes
-Message-Id: <56686635.8030104@arm.com>
+Message-Id: <CAMuHMdWELqMQ+CCENsGtdBx7n_YV=D6pJpo02jeQRe67jEehyQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1449512659-16688-1-git-send-email-geert+renesas@glider.be>
  <1449512659-16688-7-git-send-email-geert+renesas@glider.be>
  <5665D4C7.1050705@arm.com> <20151207190355.GE28024@leverpostej>
- <5667267E.2080601@gmail.com> <20151208191656.GD11797@leverpostej>
- <56685DBE.8030001@gmail.com> <20151209172127.GA24353@leverpostej>
-In-Reply-To: <20151209172127.GA24353@leverpostej>
+ <CAMuHMdWrXiYkcFwSkgbEfQRXvT2FsSTbqD72vtiedmeEZZKxLg@mail.gmail.com>
+In-Reply-To: <CAMuHMdWrXiYkcFwSkgbEfQRXvT2FsSTbqD72vtiedmeEZZKxLg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
+Hi Mark,
 
-
-On 09/12/15 17:21, Mark Rutland wrote:
-> On Wed, Dec 09, 2015 at 05:58:38PM +0100, Dirk Behme wrote:
->>>> For what is the arm64 dts entry
->>>>
->>>> cpu@0 {
->>>> 	...
->>>> 	next-level-cache = <&L2_0>;
->>>> };
->>>>
->>>> L2_0: l2-cache0 {
->>>> 	compatible = "cache";
->>>> };
->>>>
->>>> good for at all, then?
+On Mon, Dec 7, 2015 at 9:18 PM, Geert Uytterhoeven <geert@linux-m68k.org> wrote:
+> On Mon, Dec 7, 2015 at 8:03 PM, Mark Rutland <mark.rutland@arm.com> wrote:
+>> On Mon, Dec 07, 2015 at 06:49:43PM +0000, Sudeep Holla wrote:
+>>> On 07/12/15 18:24, Geert Uytterhoeven wrote:
+>>> >+    L2_CA57: cache-controller@0 {
+>>> >+            compatible = "cache";
+>>> >+            arm,data-latency = <4 4 1>;
+>>> >+            arm,tag-latency = <3 3 3>;
 >>>
->>> With the other properties from ePAPR you can acquire information on the
->>> geometry of the cache, which cannot be acquired from architected
->>> registers.
+>>> Interesting, only PL2xx/3xx cache controller driver reads this from the
+>>> DT and configures the controller. The integrated L2 found in
+>>> A15/A7/A57/A53 needs doesn't make use of these values from the DT.
 >>
+>> These properties seem to be from l2cc.txt, which really only corresponds
+>> to PL210/PL220/PL310 (and variants) and isn't as generic as it sounds.
 >>
->> Just for my understanding: Yes, if other properties from ePAPR like
->> geometry of the cache are added to the device tree l2 cache entries
->> then it makes sense to have them.
->>
->> But an "empty" entry like the one given in the example above doesn't
->> make much sense and could be removed without loosing any
->> functionality?
->>
->> It looks to me that most of the L2 entries we have in
->> arch/arm64/boot/dts are such "empty" entries.
->>
->> Is this understanding correct?
+>> I don't see that these are necessary at all.
 >
-> You are mostly correct, just missing some history.
->
-> It was previously (erroneously) assumed that the cache geometry could be
-> derived from architected registers used for set/way maintenance.
-> However, we knew that this did not describe how those caches were linked
-> to each other (e.g. which CPU shared with level x cache). So the
-> description in DT was required to provide that.
->
-> Now, we all know that the geometry is necessary too. Those DTs should be
-> fixed.
->
-> Sudeep, do you know what's happening on that front?
->
+> The datasheet does mention the data/tag RAM latencies/setup values, so
+> I put them in DT using the properties I could fine.
 
-No updates yet. I thought Alex Van Brunt would pick that. I have a patch
-for PPC which never got tested/reviewed. It moves PPC code to reuse the
-generic cacheinfo. If I can revive that and look into ways of moving it
-to core code.
+Furthermore these values are different for different SoCs in the same family
+(e.g. r8a7790 vs. other R-Car Gen2 members), even though they seem to
+have the same Cortex-A15 cores.
 
--- 
-Regards,
-Sudeep
+So to me these look like properties we want to document in the DTS...
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
