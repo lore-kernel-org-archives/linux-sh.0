@@ -1,137 +1,65 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 18 Dec 2015 10:07:23 +0000
-Subject: Re: [PATCH] ARM: shmobile: alt: Add QSPI device to DT
-Message-Id: <CAMuHMdWtv3Vin9jiwAsqZOmnuSYJeviCA6PuHt6C=-fvOSFsVA@mail.gmail.com>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Tue, 15 Dec 2015 10:44:13 +0000
+Subject: [PATCH v2 net-next] ravb: Add fixed-link support
+Message-Id: <1450176253-24131-1-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1448863990-16276-1-git-send-email-horms+renesas@verge.net.au>
- <CAMuHMdWnyZbHiLEPn-6dEweBEXHzWr6o2KF2iCpzg2-OhZRVSw@mail.gmail.com>
- <20151201064149.GH16260@verge.net.au>
- <CAMuHMdXgr5FbS0_L8g0xdesFZ-utPH+G8VgXQKqXZd3t4OsXcw@mail.gmail.com>
- <20151218025410.GA10973@verge.net.au>
-In-Reply-To: <20151218025410.GA10973@verge.net.au>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: netdev@vger.kernel.org
+Cc: "David S. Miller" <davem@davemloft.net>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-Hi Simon,
+From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
 
-On Fri, Dec 18, 2015 at 3:54 AM, Simon Horman <horms@verge.net.au> wrote:
-> On Tue, Dec 01, 2015 at 09:06:17AM +0100, Geert Uytterhoeven wrote:
->> On Tue, Dec 1, 2015 at 7:41 AM, Simon Horman <horms@verge.net.au> wrote:
->> > On Mon, Nov 30, 2015 at 09:34:10AM +0100, Geert Uytterhoeven wrote:
->> >> On Mon, Nov 30, 2015 at 7:13 AM, Simon Horman
->> >> <horms+renesas@verge.net.au> wrote:
->> >> > Enable the QSPI controller in the alt device tree.
->> >> >
->> >> > Based similar work for the silk board by by Vladimir Barinov and
->> >> > Sergei Shtylyov.
->> >> >
->> >> > Cc: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
->> >> > Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
->> >> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
->> >>
->> >> Verified against Alt schematics and r8a7794 datasheet.
->> >>
->> >> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
->> >>
->> >> I can't verify the FLASH layout. Note that p.11 of
->> >> ALT_MiniMonitor_Manual(SPI_Boot)_Rev0.01_e.pdf shows a different
->> >> FLASH layout for the second and third partition.
->> >
->> > Thanks. I see the following in v1.9.6 of the BSP[1]. Is it
->> > the same as the document you referred to above?
->> >
->> >
->> >                 partition@0 {
->> >                         label =3D "loader";
->> >                         reg =3D <0x00000000 0x00080000>;
->> >                         read-only;
->> >                 };
->> >                 partition@40000 {
->> >                         label =3D "user";
->> >                         reg =3D <0x00080000 0x00580000>;
->> >                         read-only;
->> >                 };
->> >                 partition@440000 {
->> >                         label =3D "flash";
->> >                         reg =3D <0x00600000 0x03a00000>;
->> >                 };
->> >
->> >
->> > [1] https://git.kernel.org/cgit/linux/kernel/git/horms/renesas-backpor=
-t.git/tree/arch/arm/boot/dts/r8a7794-alt.dts?h=3Drcar-gen2/v1.9.6&id=E1acbe=
-074f36d96e901bf5346c50ee51da2ced42#n379
->>
->> No, the document specifies 3 partitions:
->>   - SA0: loader program area, 16 KiB,
+This patch adds support of the fixed PHY.
+This patch is based on commit 87009814cdbb ("ucc_geth: use the new fixed
+PHY helpers").
 
-Sorry, I missed a "Not used" part after that, and started miscounting zeroes
-on top of that :-(
+Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+---
 
-So the loader consumes 16 KiB out of the 256 KiB SA0 partition.
+This patch is based on the master branch of David Miller's next networking
+tree.
 
->>   - SA1: System area, 16 KiB,
+v2 [Yoshihiro Kaneko]
+* compile tested only
+* As suggested by Sergei Shtylyov
+  - use of_node_get() to increment refcount.
 
-Should be 256 KiB.
+ drivers/net/ethernet/renesas/ravb_main.c | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
 
->>   - SA2: User program area, remainder.
->>
->> FWIW, the unit addresses in the device nodes above are not consistent
->> with their reg properties.
->
-> My feeling is that we should follow the documentation.
-> Does this reflect the scheme it describes?
->
->
->                 partitions {
->                         #address-cells =3D <1>;
->                         #size-cells =3D <1>;
->
->                         partition@0 {
->                                 label =3D "loader";
->                                 reg =3D <0x00000000 0x00004000>;
+diff --git a/drivers/net/ethernet/renesas/ravb_main.c b/drivers/net/ethernet/renesas/ravb_main.c
+index 120cc25..3448eb0 100644
+--- a/drivers/net/ethernet/renesas/ravb_main.c
++++ b/drivers/net/ethernet/renesas/ravb_main.c
+@@ -882,6 +882,7 @@ static int ravb_phy_init(struct net_device *ndev)
+ 	struct ravb_private *priv = netdev_priv(ndev);
+ 	struct phy_device *phydev;
+ 	struct device_node *pn;
++	int err;
+ 
+ 	priv->link = 0;
+ 	priv->speed = 0;
+@@ -889,6 +890,17 @@ static int ravb_phy_init(struct net_device *ndev)
+ 
+ 	/* Try connecting to PHY */
+ 	pn = of_parse_phandle(np, "phy-handle", 0);
++	if (!pn) {
++		/* In the case of a fixed PHY, the DT node associated
++		 * to the PHY is the Ethernet MAC DT node.
++		 */
++		if (of_phy_is_fixed_link(np)) {
++			err = of_phy_register_fixed_link(np);
++			if (err)
++				return err;
++		}
++		pn = of_node_get(np);
++	}
+ 	phydev = of_phy_connect(ndev, pn, ravb_adjust_link, 0,
+ 				priv->phy_interface);
+ 	if (!phydev) {
+-- 
+1.9.1
 
-reg =3D <0x00000000 0x00040000>;
-
->                                 read-only;
->                         };
->                         partition@4000 {
-
-partition@40000
-
->                                 label =3D "system";
->                                 reg =3D <0x00004000 0x00004000>;
-
-reg =3D <0x00040000 0x00040000>;
-
->                                 read-only;
->                         };
->                         partition@8000 {
-
-partition@80000
-
->                                 label =3D "user";
->                                 reg =3D <0x00008000 0x03ff8000>;
-
-reg =3D <0x00080000 0x03f80000>;
-
->                         };
->                 };
-
-I don't have an ALT. Does this match with the actual FLASH contents?
-
-Sorry for the wreck on my side.
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k=
-.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like t=
-hat.
-                                -- Linus Torvalds
