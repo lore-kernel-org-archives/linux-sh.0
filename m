@@ -1,63 +1,60 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 17 Dec 2015 08:39:40 +0000
-Subject: [PATCH/RFC 02/48] v4l: vsp1: Always setup the display list
-Message-Id: <1450341626-6695-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 15 Dec 2015 01:17:07 +0000
+Subject: [PATCH 1/8 v5] thermal: rcar: move rcar_thermal_dt_ids to upside
+Message-Id: <87bn9sqzro.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450341626-6695-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1450341626-6695-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <87d1u8qzsy.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87d1u8qzsy.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: Simon <horms@verge.net.au>, Zhang Rui <rui.zhang@intel.com>, Eduardo Valentin <edubezval@gmail.com>
+Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
 
-Make sure display list usage is correctly disabled by always setting up
-the corresponding registers, including when the display list feature
-isn't used.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+
+This patch is prepare for of-thermal support.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/media/platform/vsp1/vsp1_dl.c  | 7 +++----
- drivers/media/platform/vsp1/vsp1_drv.c | 3 +--
- 2 files changed, 4 insertions(+), 6 deletions(-)
+v4 -> v5
 
-diff --git a/drivers/media/platform/vsp1/vsp1_dl.c b/drivers/media/platform/vsp1/vsp1_dl.c
-index 1e5cff590e87..caf20f5f31f3 100644
---- a/drivers/media/platform/vsp1/vsp1_dl.c
-+++ b/drivers/media/platform/vsp1/vsp1_dl.c
-@@ -243,15 +243,14 @@ done:
+ - no change
+
+ drivers/thermal/rcar_thermal.c | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/thermal/rcar_thermal.c b/drivers/thermal/rcar_thermal.c
+index 5d4ae7d..ac8d1eb 100644
+--- a/drivers/thermal/rcar_thermal.c
++++ b/drivers/thermal/rcar_thermal.c
+@@ -81,6 +81,12 @@ struct rcar_thermal_priv {
+ # define rcar_force_update_temp(priv)	0
+ #endif
  
- void vsp1_dl_setup(struct vsp1_device *vsp1)
- {
--	u32 ctrl = (256 << VI6_DL_CTRL_AR_WAIT_SHIFT)
--		 | VI6_DL_CTRL_DC2 | VI6_DL_CTRL_DC1 | VI6_DL_CTRL_DC0
--		 | VI6_DL_CTRL_DLE;
-+	u32 ctrl = (256 << VI6_DL_CTRL_AR_WAIT_SHIFT);
- 
- 	/* The DRM pipeline operates with header-less display lists in
- 	 * Continuous Frame Mode.
- 	 */
- 	if (vsp1->drm)
--		ctrl |= VI6_DL_CTRL_CFM0 | VI6_DL_CTRL_NH0;
-+		ctrl |= VI6_DL_CTRL_DC2 | VI6_DL_CTRL_DC1 | VI6_DL_CTRL_DC0
-+		     |  VI6_DL_CTRL_DLE | VI6_DL_CTRL_CFM0 | VI6_DL_CTRL_NH0;
- 
- 	vsp1_write(vsp1, VI6_DL_CTRL, ctrl);
- 	vsp1_write(vsp1, VI6_DL_SWAP, VI6_DL_SWAP_LWS);
-diff --git a/drivers/media/platform/vsp1/vsp1_drv.c b/drivers/media/platform/vsp1/vsp1_drv.c
-index cf469bd76f43..871cbeea5695 100644
---- a/drivers/media/platform/vsp1/vsp1_drv.c
-+++ b/drivers/media/platform/vsp1/vsp1_drv.c
-@@ -458,8 +458,7 @@ static int vsp1_device_init(struct vsp1_device *vsp1)
- 	vsp1_write(vsp1, VI6_DPR_HGT_SMPPT, (7 << VI6_DPR_SMPPT_TGW_SHIFT) |
- 		   (VI6_DPR_NODE_UNUSED << VI6_DPR_SMPPT_PT_SHIFT));
- 
--	if (!vsp1->info->uapi)
--		vsp1_dl_setup(vsp1);
-+	vsp1_dl_setup(vsp1);
- 
++static const struct of_device_id rcar_thermal_dt_ids[] = {
++	{ .compatible = "renesas,rcar-thermal", },
++	{},
++};
++MODULE_DEVICE_TABLE(of, rcar_thermal_dt_ids);
++
+ /*
+  *		basic functions
+  */
+@@ -491,12 +497,6 @@ static int rcar_thermal_remove(struct platform_device *pdev)
  	return 0;
  }
+ 
+-static const struct of_device_id rcar_thermal_dt_ids[] = {
+-	{ .compatible = "renesas,rcar-thermal", },
+-	{},
+-};
+-MODULE_DEVICE_TABLE(of, rcar_thermal_dt_ids);
+-
+ static struct platform_driver rcar_thermal_driver = {
+ 	.driver	= {
+ 		.name	= "rcar_thermal",
 -- 
-2.4.10
+1.9.1
 
