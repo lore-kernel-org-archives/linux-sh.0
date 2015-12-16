@@ -1,68 +1,54 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Sun, 13 Dec 2015 19:45:43 +0000
-Subject: Re: Rcar Gen2: DU: Bootlogs Error and show image error
-Message-Id: <1996821.PsnRA3cm66@avalon>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Wed, 16 Dec 2015 19:05:18 +0000
+Subject: [PATCH v2] i2c: rcar: disable runtime PM correctly in slave mode
+Message-Id: <1450292718-11951-1-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <564ECE30.9000206@jinso.co.jp>
-In-Reply-To: <564ECE30.9000206@jinso.co.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, linux-pm@vger.kernel.org
 
-Hello Cao Minh-san,
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-(this is a bit of a stupid question, and I apologize for that, but what is the 
-proper way to address you, Cao-san, Cao Minh-san, Hiep-san, or something else 
-?)
+When we also are I2C slave, we need to disable runtime PM because the
+address detection mechanism needs to be active all the time. However, we
+can reenable runtime PM once the slave instance was unregistered. So,
+use pm_runtime_get_sync/put to achieve this, since it has proper
+refcounting. pm_runtime_allow/forbid is like a global knob controllable
+from userspace which is unsuitable here.
 
-On Thursday 10 December 2015 10:43:18 Cao Minh Hiep wrote:
-> 
-> >>> Yes, CONFIG_DRM_I2C_ADV7511=y has already enabled in default config at
-> >>> v4.4-rc2.
-> >>> I also have enabled CONFIG_DRM_SHMOBILE and CONFIG_FB_SH_MOBILE_HDMI
-> >>> then test.
-> >>> But It has nothing change.
-> >>> Is there other configuration or reason could we think?
-> >> 
-> >> Does this problem happen on your board?
-> >> If not, Could you please send me your config file?.
-> > 
-> > Sorry for the delay, I wanted to retry on my Koelsch board before
-> > replying.
-> > 
-> > The probe deferral error (-517) you're seeing is normal, it comes from the
-> > DU being probed before its dependencies. Probe is deferred and retried,
-> > and finally succeeds as shown by
-> > 
-> > [drm] Initialized rcar-du 1.0.0 20130110 on minor 0
-> > 
-> > With a stock v4.4-rc2 kernel I get the same result, and I can then use the
-> > HDMI output without any issue with the modetest application.
-> > 
-> > I've attached the kernel configuration I used for testing, just in case.
-> 
-> Thanks, I have changed our HDMI display device(Old one -> other newer one),
-> and then I could show a image on the display successfully. This test is
-> on Koelsch board.
-> But I found that, before showing the image on HDMI display,
-> I have to enable CONFIG_FRAMEBUFFER_CONSOLE =y or
-> run a command something like "fbset -xres 640 -yres 480 -laced 0", in
-> order to clear the first screen.
-> 
-> On Lager, with the same test method, I could show a image on RGB display
-> very well,
-> but when I showed image on HDMI display, The image showed on display
-> looks bad as attached picture.
-> The attached picture: HDMI-Display-image-showed-from-Lager.jpg
-> 
-> Please have a look and show me what i have to do!
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+---
 
-I'll try to reproduce that. Could you please send me the image file and the 
-exact test procedure ?
+Change since v1 is the use of get/put instead of enable/disable. Thanks to Alan
+and Geert for the pointers!
 
+ drivers/i2c/busses/i2c-rcar.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
+index 7c523dcaee3e48..02f9f5d57b1eae 100644
+--- a/drivers/i2c/busses/i2c-rcar.c
++++ b/drivers/i2c/busses/i2c-rcar.c
+@@ -532,7 +532,7 @@ static int rcar_reg_slave(struct i2c_client *slave)
+ 	if (slave->flags & I2C_CLIENT_TEN)
+ 		return -EAFNOSUPPORT;
+ 
+-	pm_runtime_forbid(rcar_i2c_priv_to_dev(priv));
++	pm_runtime_get_sync(rcar_i2c_priv_to_dev(priv));
+ 
+ 	priv->slave = slave;
+ 	rcar_i2c_write(priv, ICSAR, slave->addr);
+@@ -554,7 +554,7 @@ static int rcar_unreg_slave(struct i2c_client *slave)
+ 
+ 	priv->slave = NULL;
+ 
+-	pm_runtime_allow(rcar_i2c_priv_to_dev(priv));
++	pm_runtime_put(rcar_i2c_priv_to_dev(priv));
+ 
+ 	return 0;
+ }
 -- 
-Regards,
-
-Laurent Pinchart
+2.1.4
 
