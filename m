@@ -1,53 +1,48 @@
-From: "Michael S. Tsirkin" <mst@redhat.com>
-Date: Thu, 31 Dec 2015 19:07:59 +0000
-Subject: [PATCH v2 17/32] arm: define __smp_xxx
-Message-Id: <1451572003-2440-18-git-send-email-mst@redhat.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 16 Dec 2015 04:51:50 +0000
+Subject: [PATCH v4 1/3] usb: renesas_usbhs: add SoC names to compatibility string documentation
+Message-Id: <1450241512-24699-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1451572003-2440-1-git-send-email-mst@redhat.com>
-In-Reply-To: <1451572003-2440-1-git-send-email-mst@redhat.com>
+References: <1450241512-24699-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1450241512-24699-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Peter Zijlstra <peterz@infradead.org>, Arnd Bergmann <arnd@arndb.de>, linux-arch@vger.kernel.org, Andrew Cooper <andrew.cooper3@citrix.com>, virtualization@lists.linux-foundation.org, Stefano Stabellini <stefano.stabellini@eu.citrix.com>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@elte.hu>, "H. Peter Anvin" <hpa@zytor.com>, David Miller <davem@davemloft.net>, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, sparclinux@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-metag@vger.kernel.org, linux-mips@linux-mips.org, x86@kernel.org, user-mode-linux-devel@lists.sourceforge.net, adi-buildroot-devel@lists.sourceforge.net, linux-sh@vger.kernel.org, linux-xtensa@linux-xtensa.org, xen-devel@lists.xenproject.org, Russell King <linux@arm.linux.org.uk>, Ingo Molnar <mingo@kernel.org>, Tony Lindgren <tony@atomide.co>
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Magnus Damm <magnus.damm@gmail.com>, linux-usb@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Simon Horman <horms+renesas@verge.net.au>
 
-This defines __smp_xxx barriers for arm,
-for use by virtualization.
+This extends the documentation of compatibility strings a little to
+include the SoC names.
 
-smp_xxx barriers are removed as they are
-defined correctly by asm-generic/barriers.h
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-This reduces the amount of arch-specific boiler-plate code.
-
-Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
-Acked-by: Arnd Bergmann <arnd@arndb.de>
 ---
- arch/arm/include/asm/barrier.h | 12 +++---------
- 1 file changed, 3 insertions(+), 9 deletions(-)
+v3
+* Split into separate patch
+---
+ Documentation/devicetree/bindings/usb/renesas_usbhs.txt | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/include/asm/barrier.h b/arch/arm/include/asm/barrier.h
-index 31152e8..112cc1a 100644
---- a/arch/arm/include/asm/barrier.h
-+++ b/arch/arm/include/asm/barrier.h
-@@ -60,15 +60,9 @@ extern void arm_heavy_mb(void);
- #define dma_wmb()	barrier()
- #endif
+diff --git a/Documentation/devicetree/bindings/usb/renesas_usbhs.txt b/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
+index 7d48f63db44e..a14c0bb561d5 100644
+--- a/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
++++ b/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
+@@ -2,10 +2,10 @@ Renesas Electronics USBHS driver
  
--#ifndef CONFIG_SMP
--#define smp_mb()	barrier()
--#define smp_rmb()	barrier()
--#define smp_wmb()	barrier()
--#else
--#define smp_mb()	dmb(ish)
--#define smp_rmb()	smp_mb()
--#define smp_wmb()	dmb(ishst)
--#endif
-+#define __smp_mb()	dmb(ish)
-+#define __smp_rmb()	__smp_mb()
-+#define __smp_wmb()	dmb(ishst)
- 
- #include <asm-generic/barrier.h>
- 
+ Required properties:
+   - compatible: Must contain one of the following:
+-	- "renesas,usbhs-r8a7790"
+-	- "renesas,usbhs-r8a7791"
+-	- "renesas,usbhs-r8a7794"
+-	- "renesas,usbhs-r8a7795"
++	- "renesas,usbhs-r8a7790" for r8a7790 (R-Car H2) compatible device
++	- "renesas,usbhs-r8a7791" for r8a7791 (R-Car M2-W) compatible device
++	- "renesas,usbhs-r8a7794" for r8a7794 (R-Car E2) compatible device
++	- "renesas,usbhs-r8a7795" for r8a7795 (R-Car H3) compatible device
+   - reg: Base address and length of the register for the USBHS
+   - interrupts: Interrupt specifier for the USBHS
+   - clocks: A list of phandle + clock specifier pairs
 -- 
-MST
+2.1.4
 
