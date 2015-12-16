@@ -1,54 +1,35 @@
-From: Paul Gortmaker <paul.gortmaker@windriver.com>
-Date: Tue, 22 Dec 2015 00:59:07 +0000
-Subject: [PATCH 0/2] drivers/pci: use builtin_platform_driver in renesas
-Message-Id: <1450745949-23882-1-git-send-email-paul.gortmaker@windriver.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Wed, 16 Dec 2015 10:34:21 +0000
+Subject: [PATCH v2 2/2] arm64: dts: r8a7795: fix SATA clock assignment
+Message-Id: <1450262061-1441-3-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1450262061-1441-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+In-Reply-To: <1450262061-1441-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Paul Gortmaker <paul.gortmaker@windriver.com>, Bjorn Helgaas <bhelgaas@google.com>, Phil Edworthy <phil.edworthy@renesas.com>, Simon Horman <horms@verge.net.au>, Valentine Barshak <valentine.barshak@cogentembedded.com>, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-These two commits are extracted from what was a larger series[1] of
-demodularization in PCI host code that was bool Kconfig.
+SATA clock is 815, not 915.
 
-With the other commits, there was some mixed opinions whether we
-should make it explicitly non-modular or move towards making it
-functionally working as a tristate in order to reduce the size of
-built-in code for multi-platform kernels.
-
-However with the renesas changes, there was no ".remove" and no
-"module_exit" code stripped out ; it is just a straight 1:1 mapping
-of the modular macros onto what they become in the non-modular case
-anyway -- meaning the runtime remains unchanged.
-
-Given that, and the several Ack rec'd, it makes sense to at least
-get these two in and out of my queue while we consider what to do
-with the other PCI host code drivers that do have some modularity
-already coded into them.
-
-Build testing was done on pci/next, using an ARCH=arm allmodconfig
-and then explicitly building the files changed in this series.  
-
-Paul.
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 ---
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-[1] https://lkml.kernel.org/r/1449970917-12633-1-git-send-email-paul.gortmaker@windriver.com
-
-Cc: Bjorn Helgaas <bhelgaas@google.com>
-Cc: Phil Edworthy <phil.edworthy@renesas.com>
-Cc: Simon Horman <horms@verge.net.au>
-Cc: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Cc: linux-pci@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
-
-Paul Gortmaker (2):
-  drivers/pci: make host/pcie-rcar.c explicitly non-modular
-  drivers/pci: make host/pci-rcar-gen2.c explicitly non-modular
-
- drivers/pci/host/pci-rcar-gen2.c | 12 +++---------
- drivers/pci/host/pcie-rcar.c     | 11 ++++-------
- 2 files changed, 7 insertions(+), 16 deletions(-)
-
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index 7d4707e..7b02281 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -977,7 +977,7 @@
+ 			compatible = "renesas,sata-r8a7795";
+ 			reg = <0 0xee300000 0 0x1fff>;
+ 			interrupts = <GIC_SPI 105 IRQ_TYPE_LEVEL_HIGH>;
+-			clocks = <&cpg CPG_MOD 915>;
++			clocks = <&cpg CPG_MOD 815>;
+ 			status = "disabled";
+ 		};
+ 	};
 -- 
-2.6.1
+2.6.3
+
