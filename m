@@ -1,54 +1,41 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Wed, 16 Dec 2015 11:02:36 +0000
-Subject: [PATCH] i2c: rcar: disable runtime PM correctly in slave mode
-Message-Id: <1450263756-12013-1-git-send-email-wsa@the-dreams.de>
+From: Alan Stern <stern@rowland.harvard.edu>
+Date: Wed, 16 Dec 2015 15:16:18 +0000
+Subject: Re: [PATCH] i2c: rcar: disable runtime PM correctly in slave mode
+Message-Id: <Pine.LNX.4.44L0.1512161011070.1751-100000@iolanthe.rowland.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1450263756-12013-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1450263756-12013-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, linux-pm@vger.kernel.org
+To: Wolfram Sang <wsa@the-dreams.de>
+Cc: linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, linux-pm@vger.kernel.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+On Wed, 16 Dec 2015, Wolfram Sang wrote:
 
-When we also are I2C slave, we need to disable runtime PM because the
-address detection mechanism needs to be active all the time. However, we
-can reenable runtime PM once the slave instance was unregistered. So,
-use pm_runtime_disable/enable to achieve this, since it has proper
-refcounting. pm_runtime_allow/forbid is like a global switch which is
-unsuitable here.
+> From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+> 
+> When we also are I2C slave, we need to disable runtime PM because the
+> address detection mechanism needs to be active all the time. However, we
+> can reenable runtime PM once the slave instance was unregistered. So,
+> use pm_runtime_disable/enable to achieve this, since it has proper
+> refcounting. pm_runtime_allow/forbid is like a global switch which is
+> unsuitable here.
+> 
+> Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+> ---
+> 
+> I'd be grateful to get an ACK from a runtime PM expert to verify that my
+> assumptions match reality :)
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
----
+Yes, disabling runtime PM will do what you want.  However you might 
+consider using pm_runtime_get_sync() and pm_runtime_put() instead, 
+because pm_runtime_enable() does not check to see if the device is idle 
+and can be suspended right away.  Alternatively, you can call 
+pm_runtime_idle() after pm_runtime_enable().
 
-I'd be grateful to get an ACK from a runtime PM expert to verify that my
-assumptions match reality :)
+pm_runtime_allow/forbid is even more unsuitable than you said, because
+it can be overridden by the user.
 
- drivers/i2c/busses/i2c-rcar.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
-
-diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
-index b2389c492579cf..dc3343291e7497 100644
---- a/drivers/i2c/busses/i2c-rcar.c
-+++ b/drivers/i2c/busses/i2c-rcar.c
-@@ -533,7 +533,7 @@ static int rcar_reg_slave(struct i2c_client *slave)
- 	if (slave->flags & I2C_CLIENT_TEN)
- 		return -EAFNOSUPPORT;
- 
--	pm_runtime_forbid(rcar_i2c_priv_to_dev(priv));
-+	pm_runtime_disable(rcar_i2c_priv_to_dev(priv));
- 
- 	priv->slave = slave;
- 	rcar_i2c_write(priv, ICSAR, slave->addr);
-@@ -555,7 +555,7 @@ static int rcar_unreg_slave(struct i2c_client *slave)
- 
- 	priv->slave = NULL;
- 
--	pm_runtime_allow(rcar_i2c_priv_to_dev(priv));
-+	pm_runtime_enable(rcar_i2c_priv_to_dev(priv));
- 
- 	return 0;
- }
--- 
-2.1.4
+Alan Stern
 
