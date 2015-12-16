@@ -1,22 +1,32 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 08 Dec 2015 00:42:30 +0000
-Subject: Re: [PATCH 2/3] sh_eth: factor out common code from MDIO bitbang methods
-Message-Id: <20151208004230.GI10799@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Wed, 16 Dec 2015 18:44:17 +0000
+Subject: [RFC 0/3] i2c: rcar: adapt PM usage to multi master case
+Message-Id: <1450291460-10514-1-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1582774.FcjyuztLtc@wasted.cogentembedded.com>
- <2708108.aPmlclaWv5@wasted.cogentembedded.com>
-In-Reply-To: <2708108.aPmlclaWv5@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, linux-pm@vger.kernel.org
 
-On Tue, Dec 08, 2015 at 12:40:57AM +0300, Sergei Shtylyov wrote:
-> sh_mm[cd]_ctrl()  and sh_set_mdio() all look mostly the same -- factor out
-> their common code and put it into sh_mdio_ctrl().
-> 
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+If we are in a multi-master scenario, we need to block runtime PM so the
+arbitration circuit stays awake.
 
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+So, we define a new binding and adapt the i2c-rcar driver to have an example
+implementation.
+
+This series is RFC because I want to do some more regression testing. The
+actual functionality works fine here on my Lager board.
+
+Wolfram Sang (3):
+  i2c: document binding for multi-master case
+  i2c: rcar: remove macros dealing with flags
+  i2c: rcar: disable PM in multi-master mode
+
+ Documentation/devicetree/bindings/i2c/i2c.txt |  5 ++++
+ drivers/i2c/busses/i2c-rcar.c                 | 39 ++++++++++++++++-----------
+ 2 files changed, 28 insertions(+), 16 deletions(-)
+
+-- 
+2.1.4
 
