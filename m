@@ -1,41 +1,32 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 21 Dec 2015 10:33:48 +0000
-Subject: [PATCH v2 4/9] ARM: shmobile: lager dts: Add compatible property to "partitions" node
-Message-Id: <1450694033-27717-5-git-send-email-geert+renesas@glider.be>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Wed, 16 Dec 2015 10:34:20 +0000
+Subject: [PATCH v2 1/2] clk: shmobile: r8a7795: Add SATA0 clock
+Message-Id: <1450262061-1441-2-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450694033-27717-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1450694033-27717-1-git-send-email-geert+renesas@glider.be>
+References: <1450262061-1441-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+In-Reply-To: <1450262061-1441-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-As of commit e488ca9f8d4f62c2 ("doc: dt: mtd: partitions: add compatible
-property to "partitions" node"), the "partitions" subnode of an SPI
-FLASH device node must have a compatible property. The partitions are no
-longer detected if it is not present.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Brian Norris <computersforpeace@gmail.com>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 ---
-v2:
-  - Add Acked-by.
----
- arch/arm/boot/dts/r8a7790-lager.dts | 1 +
+ drivers/clk/shmobile/r8a7795-cpg-mssr.c | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 7773cb1f10317d85..cdc0414f5f0716dd 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -457,6 +457,7 @@
- 		m25p,fast-read;
- 
- 		partitions {
-+			compatible = "fixed-partitions";
- 			#address-cells = <1>;
- 			#size-cells = <1>;
- 
+diff --git a/drivers/clk/shmobile/r8a7795-cpg-mssr.c b/drivers/clk/shmobile/r8a7795-cpg-mssr.c
+index 05479e6..23e98fe 100644
+--- a/drivers/clk/shmobile/r8a7795-cpg-mssr.c
++++ b/drivers/clk/shmobile/r8a7795-cpg-mssr.c
+@@ -151,6 +151,7 @@ static const struct mssr_mod_clk r8a7795_mod_clks[] __initconst = {
+ 	DEF_MOD("hdmi1",		 728,	R8A7795_CLK_HDMI),
+ 	DEF_MOD("hdmi0",		 729,	R8A7795_CLK_HDMI),
+ 	DEF_MOD("etheravb",		 812,	R8A7795_CLK_S3D2),
++	DEF_MOD("sata0",		 815,	R8A7795_CLK_S3D2),
+ 	DEF_MOD("gpio7",		 905,	R8A7795_CLK_CP),
+ 	DEF_MOD("gpio6",		 906,	R8A7795_CLK_CP),
+ 	DEF_MOD("gpio5",		 907,	R8A7795_CLK_CP),
 -- 
-1.9.1
+2.6.3
 
