@@ -1,55 +1,83 @@
-From: Rob Herring <robh@kernel.org>
-Date: Fri, 11 Dec 2015 03:54:28 +0000
-Subject: Re: [PATCH v3 1/3] usb: renesas_usbhs: add SoC names to compatibility string documentation
-Message-Id: <20151211035428.GA11940@rob-hp-laptop>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Wed, 16 Dec 2015 18:44:20 +0000
+Subject: [RFC 3/3] i2c: rcar: disable PM in multi-master mode
+Message-Id: <1450291460-10514-4-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449799947-19866-1-git-send-email-horms+renesas@verge.net.au>
- <1449799947-19866-2-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1449799947-19866-2-git-send-email-horms+renesas@verge.net.au>
+References: <1450291460-10514-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1450291460-10514-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms+renesas@verge.net.au>
-Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Magnus Damm <magnus.damm@gmail.com>, linux-usb@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, linux-pm@vger.kernel.org
 
-On Fri, Dec 11, 2015 at 11:12:25AM +0900, Simon Horman wrote:
-> This extends the documentation of compatibility strings a little to
-> include the SoC names.
-> 
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Acked-by: Rob Herring <robh@kernel.org>
+In multi master mode, the IP core needs to be always active for
+arbitration reasons. Get the config from DT and set up PM depending on
+the config.
 
-> ---
-> v3
-> * Split into separate patch
-> ---
->  Documentation/devicetree/bindings/usb/renesas_usbhs.txt | 8 ++++----
->  1 file changed, 4 insertions(+), 4 deletions(-)
-> 
-> diff --git a/Documentation/devicetree/bindings/usb/renesas_usbhs.txt b/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
-> index 7d48f63db44e..a14c0bb561d5 100644
-> --- a/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
-> +++ b/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
-> @@ -2,10 +2,10 @@ Renesas Electronics USBHS driver
->  
->  Required properties:
->    - compatible: Must contain one of the following:
-> -	- "renesas,usbhs-r8a7790"
-> -	- "renesas,usbhs-r8a7791"
-> -	- "renesas,usbhs-r8a7794"
-> -	- "renesas,usbhs-r8a7795"
-> +	- "renesas,usbhs-r8a7790" for r8a7790 (R-Car H2) compatible device
-> +	- "renesas,usbhs-r8a7791" for r8a7791 (R-Car M2-W) compatible device
-> +	- "renesas,usbhs-r8a7794" for r8a7794 (R-Car E2) compatible device
-> +	- "renesas,usbhs-r8a7795" for r8a7795 (R-Car H3) compatible device
->    - reg: Base address and length of the register for the USBHS
->    - interrupts: Interrupt specifier for the USBHS
->    - clocks: A list of phandle + clock specifier pairs
-> -- 
-> 2.1.4
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe devicetree" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+---
+ drivers/i2c/busses/i2c-rcar.c | 17 ++++++++++++++---
+ 1 file changed, 14 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
+index 79fd2aab8fa087..7c523dcaee3e48 100644
+--- a/drivers/i2c/busses/i2c-rcar.c
++++ b/drivers/i2c/busses/i2c-rcar.c
+@@ -96,6 +96,9 @@
+ #define ID_DONE		(1 << 2)
+ #define ID_ARBLOST	(1 << 3)
+ #define ID_NACK		(1 << 4)
++/* persistent flags */
++#define ID_P_PM_BLOCKED	(1 << 31)
++#define ID_P_MASK	ID_P_PM_BLOCKED
+ 
+ enum rcar_i2c_type {
+ 	I2C_RCAR_GEN1,
+@@ -277,7 +280,7 @@ static void rcar_i2c_next_msg(struct rcar_i2c_priv *priv)
+ {
+ 	priv->msg++;
+ 	priv->msgs_left--;
+-	priv->flags = 0;
++	priv->flags &= ID_P_MASK;
+ 	rcar_i2c_prepare_msg(priv);
+ }
+ 
+@@ -495,7 +498,7 @@ static int rcar_i2c_master_xfer(struct i2c_adapter *adap,
+ 	/* init first message */
+ 	priv->msg = msgs;
+ 	priv->msgs_left = num;
+-	priv->flags = ID_FIRST_MSG;
++	priv->flags = (priv->flags & ID_P_MASK) | ID_FIRST_MSG;
+ 	rcar_i2c_prepare_msg(priv);
+ 
+ 	time_left = wait_event_timeout(priv->wait, priv->flags & ID_DONE,
+@@ -630,7 +633,13 @@ static int rcar_i2c_probe(struct platform_device *pdev)
+ 		goto out_pm_put;
+ 
+ 	rcar_i2c_init(priv);
+-	pm_runtime_put(dev);
++
++	/* Don't suspend when multi-master to keep arbitration working */
++	if (of_get_property(dev->of_node, "multi-master", NULL))
++		priv->flags |= ID_P_PM_BLOCKED;
++	else
++		pm_runtime_put(dev);
++
+ 
+ 	irq = platform_get_irq(pdev, 0);
+ 	ret = devm_request_irq(dev, irq, rcar_i2c_irq, 0, dev_name(dev), priv);
+@@ -664,6 +673,8 @@ static int rcar_i2c_remove(struct platform_device *pdev)
+ 	struct device *dev = &pdev->dev;
+ 
+ 	i2c_del_adapter(&priv->adap);
++	if (priv->flags & ID_P_PM_BLOCKED)
++		pm_runtime_put(dev);
+ 	pm_runtime_disable(dev);
+ 
+ 	return 0;
+-- 
+2.1.4
+
