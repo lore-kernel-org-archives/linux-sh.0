@@ -1,61 +1,54 @@
-From: Gregory CLEMENT <gregory.clement@free-electrons.com>
-Date: Mon, 21 Dec 2015 16:49:58 +0000
-Subject: Re: [PATCH v2 2/9] ARM: mvebu: kirkwood: Add compatible property to "partitions" node
-Message-Id: <87vb7rrbk9.fsf@free-electrons.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Wed, 16 Dec 2015 11:02:36 +0000
+Subject: [PATCH] i2c: rcar: disable runtime PM correctly in slave mode
+Message-Id: <1450263756-12013-1-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450694033-27717-1-git-send-email-geert+renesas@glider.be>
- <1450694033-27717-3-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1450694033-27717-3-git-send-email-geert+renesas@glider.be>
- (Geert Uytterhoeven's message of "Mon, 21 Dec 2015 11:33:46 +0100")
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, linux-pm@vger.kernel.org
 
-Hi Geert,
-=20
- On lun., d=C3=A9c. 21 2015, Geert Uytterhoeven <geert+renesas@glider.be> w=
-rote:
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-> As of commit e488ca9f8d4f62c2 ("doc: dt: mtd: partitions: add compatible
-> property to "partitions" node"), the "partitions" subnode of an SPI
-> FLASH device node must have a compatible property. The partitions are no
-> longer detected if it is not present.
->
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+When we also are I2C slave, we need to disable runtime PM because the
+address detection mechanism needs to be active all the time. However, we
+can reenable runtime PM once the slave instance was unregistered. So,
+use pm_runtime_disable/enable to achieve this, since it has proper
+refcounting. pm_runtime_allow/forbid is like a global switch which is
+unsuitable here.
 
-Applied on mvebu/dt
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+---
 
-Thanks,
+I'd be grateful to get an ACK from a runtime PM expert to verify that my
+assumptions match reality :)
 
-Gregory
+ drivers/i2c/busses/i2c-rcar.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-> ---
-> v2:
->   - New.
-> ---
->  arch/arm/boot/dts/kirkwood-pogoplug-series-4.dts | 1 +
->  1 file changed, 1 insertion(+)
->
-> diff --git a/arch/arm/boot/dts/kirkwood-pogoplug-series-4.dts b/arch/arm/=
-boot/dts/kirkwood-pogoplug-series-4.dts
-> index 1db6f2c506cce320..8082d64266a37c33 100644
-> --- a/arch/arm/boot/dts/kirkwood-pogoplug-series-4.dts
-> +++ b/arch/arm/boot/dts/kirkwood-pogoplug-series-4.dts
-> @@ -131,6 +131,7 @@
->  	chip-delay =3D <40>;
->  	status =3D "okay";
->  	partitions {
-> +		compatible =3D "fixed-partitions";
->  		#address-cells =3D <1>;
->  		#size-cells =3D <1>;
-> =20
-> --=20
-> 1.9.1
->
+diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
+index b2389c492579cf..dc3343291e7497 100644
+--- a/drivers/i2c/busses/i2c-rcar.c
++++ b/drivers/i2c/busses/i2c-rcar.c
+@@ -533,7 +533,7 @@ static int rcar_reg_slave(struct i2c_client *slave)
+ 	if (slave->flags & I2C_CLIENT_TEN)
+ 		return -EAFNOSUPPORT;
+ 
+-	pm_runtime_forbid(rcar_i2c_priv_to_dev(priv));
++	pm_runtime_disable(rcar_i2c_priv_to_dev(priv));
+ 
+ 	priv->slave = slave;
+ 	rcar_i2c_write(priv, ICSAR, slave->addr);
+@@ -555,7 +555,7 @@ static int rcar_unreg_slave(struct i2c_client *slave)
+ 
+ 	priv->slave = NULL;
+ 
+-	pm_runtime_allow(rcar_i2c_priv_to_dev(priv));
++	pm_runtime_enable(rcar_i2c_priv_to_dev(priv));
+ 
+ 	return 0;
+ }
+-- 
+2.1.4
 
---=20
-Gregory Clement, Free Electrons
-Kernel, drivers, real-time and embedded Linux
-development, consulting, training and support.
-http://free-electrons.com
