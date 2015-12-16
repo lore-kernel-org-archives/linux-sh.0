@@ -1,56 +1,56 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Wed, 16 Dec 2015 08:55:20 +0000
+From: Felipe Balbi <balbi@ti.com>
+Date: Wed, 16 Dec 2015 15:49:34 +0000
 Subject: Re: [PATCH] usb: gadget: renesas_usb3: add support for Renesas USB3.0 peripheral controller
-Message-Id: <1682829.86QFiIiJjD@wuerfel>
+Message-Id: <87wpsefl69.fsf@saruman.tx.rr.com>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="=-=-="
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450162472-6664-1-git-send-email-yoshihiro.shimoda.uh@renesas.com> <7989573.HuGUrIYJy9@wuerfel> <SG2PR06MB0919D7F6AC941F8B1456AF26D8EF0@SG2PR06MB0919.apcprd06.prod.outlook.com>
-In-Reply-To: <SG2PR06MB0919D7F6AC941F8B1456AF26D8EF0-ESzmfEwOt/zNQ8RBPPB5A20DtJ1/0DrXvxpqHgZTriW3zl9H0oFU5g@public.gmane.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Yoshihiro Shimoda <yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
-Cc: "gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org" <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, "balbi-l0cyMroinI0@public.gmane.org" <balbi-l0cyMroinI0@public.gmane.org>, "robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org" <robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, "pawel.moll-5wv7dgnIgG8@public.gmane.org" <pawel.moll-5wv7dgnIgG8@public.gmane.org>, "mark.rutland-5wv7dgnIgG8@public.gmane.org" <mark.rutland-5wv7dgnIgG8@public.gmane.org>, "ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org" <ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org>, "galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org" <galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org>, "linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+References: <1450162472-6664-1-git-send-email-yoshihiro.shimoda.uh@renesas.com> <7989573.HuGUrIYJy9@wuerfel>
+In-Reply-To: <7989573.HuGUrIYJy9@wuerfel>
+To: Arnd Bergmann <arnd@arndb.de>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Cc: gregkh@linuxfoundation.org, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, linux-usb@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org
 
-On Wednesday 16 December 2015 02:26:26 Yoshihiro Shimoda wrote:
-> Hi Arnd again,
-> 
-> > From: Yoshihiro Shimoda
-> > Sent: Wednesday, December 16, 2015 10:43 AM
-> < snip >
-> > > > +static void usb3_write(struct renesas_usb3 *usb3, u32 data, u32 offs)
-> > > > +{
-> > > > +	iowrite32(data, usb3->reg + offs);
-> > > > +}
-> > > > +
-> > > > +static u32 usb3_read(struct renesas_usb3 *usb3, u32 offs)
-> > > > +{
-> > > > +	return ioread32(usb3->reg + offs);
-> > > > +}
-> > >
-> > > I think using readl() is more common than ioread32() if the driver cannot
-> > > use IORESOURCE_IO but only IORESOURCE_MEM.
-> > >
-> > > On ARM, the two are the same, but on some architectures ioread32 is more
-> > > expensive, so using the former is preferred.
-> > 
-> > I will use {read,write}l() instead of io{read,write}32().
-> > Also I will change io{read,write}32_rep() functions too.
-> 
-> Oops. If I used {read,write}sl() instead of io{read,write}32_rep(),
-> build error happened in x86 environment.
-> 
->   CC [M]  drivers/usb/gadget/udc/renesas_usb3.o
-> ./drivers/usb/gadget/udc/renesas_usb3.c: In function 'usb3_write_pipe':
-> ./drivers/usb/gadget/udc/renesas_usb3.c:879:3: error: implicit declaration of function 'writesl' [-Werror=implicit-function-declaration]
->    writesl(usb3->reg + fifo_reg, buf, len / 4);
->    ^
-> ./drivers/usb/gadget/udc/renesas_usb3.c: In function 'usb3_read_pipe':
-> ./drivers/usb/gadget/udc/renesas_usb3.c:923:3: error: implicit declaration of function 'readsl' [-Werror=implicit-function-declaration]
->    readsl(usb3->reg + fifo_reg, buf, len / 4);
-> 
-> So, I will keep to use io{read,write}32(_rep) functions.
+--=-=-=
+Content-Type: text/plain
+Content-Transfer-Encoding: quoted-printable
 
-Sounds ok. I actually thought we had added readsl to all architectures, but apparently
-we only changed some architectures that needed it in the past.
 
-	Arnd
+Hi,
+
+Arnd Bergmann <arnd@arndb.de> writes:
+>> +struct renesas_usb3;
+>> +struct renesas_usb3_request {
+>> +	struct usb_request	req;
+>> +	struct list_head	queue;
+>> +};
+>
+> There is already a list_head in struct usb_request. Could you use that?
+> (I don't know, just asking because this looks odd)
+
+no, no. Don't do that. The list_head in usb_request is for use by the
+gadget drivers and the gadget drivers only.
+
+=2D-=20
+balbi
+
+--=-=-=
+Content-Type: application/pgp-signature; name="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBAgAGBQJWcYgPAAoJEIaOsuA1yqREpyoP/RqwNfttuepxwlFZT6HPQ/Yb
+4tsUau3lDz9DasWSD0S/aFCz2Jw2rJHWvcLh9YsEBCpn9jzc3al2wkF9pr0GFKtu
+hczDtxStN4R6G6GC6apfAi8+0DTaEVxWFFS+IgAH7jpXMNHsW3aMipTUdVMh4oKn
+GcihTxU3eYgyfQq01j4h/JyJcbuXwkDTVmmlazjKVAg424S6fJkOUZJn7oelzc+A
+B+nzqXlYuh05SprqmUYcw7mjJtcrQE+y2YnC32Qt2r2fcW6f+nP5Re8Ty47SV6MH
+PNIS+aDMiKQ8tA7Zx3gCcb26WVxVdH7KK11nG3Mp8XkoPwHUu27dDlgaXy+qGdLZ
+++L2c0H+6TVGxRg9ueQjuTJTrxFFKWqru6eIYsI5MXK9s83lRwBeqpCEZ9Fad9bq
+xIXFzXsVW8xoaS+N1Fr2qveQt2IERJ7wJlCqBLSr/MxuE32CrgfCVuckBCeZ/ARw
+4vgpNuKLnOR5cDGSCt41Q3mzzedErp3hdT5K4+efcAxKFOMLSSjNrgAEmxPcDJtV
+rk6XB5cMrSJOkBgXAknzPG9GJH8k0HizDnYnzu+FB3o1oNgRe0F9DRTMkOsEJyIP
+ilk51SYrGoc1j7oOpRkD1n4G4RjDZPfQWA5lKoH4ZJp09manyGr2Uk8mU54TJKKs
+icWUSmqc+7VqWvlD/X9z
+=A0lP
+-----END PGP SIGNATURE-----
+--=-=-=--
