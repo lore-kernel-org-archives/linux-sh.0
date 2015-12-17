@@ -1,130 +1,215 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Sun, 06 Dec 2015 03:20:20 +0000
-Subject: Re: [PATCH v8 01/55] [media] media: create a macro to get entity ID
-Message-Id: <2446178.XgL7rIoWQj@avalon>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 17 Dec 2015 08:40:02 +0000
+Subject: [PATCH/RFC 24/48] media: Add per-entity request data support
+Message-Id: <1450341626-6695-25-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1440902901.git.mchehab@osg.samsung.com> <6185117c4ad70fd3e1c780689e0ad2407fdf1294.1440902901.git.mchehab@osg.samsung.com>
-In-Reply-To: <6185117c4ad70fd3e1c780689e0ad2407fdf1294.1440902901.git.mchehab@osg.samsung.com>
+References: <1450341626-6695-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1450341626-6695-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mauro Carvalho Chehab <mchehab@osg.samsung.com>
-Cc: Linux Media Mailing List <linux-media@vger.kernel.org>, Mauro Carvalho Chehab <mchehab@infradead.org>, linux-sh@vger.kernel.org
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-Hi Mauro,
+Allow subsystems to associate data with entities in each request. This
+will be used by the V4L2 subdev core to store pad formats in requests.
 
-Thank you for the patch.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-On Sunday 30 August 2015 00:06:12 Mauro Carvalho Chehab wrote:
-> Instead of accessing directly entity.id, let's create a macro,
-> as this field will be moved into a common struct later on.
-> 
-> Signed-off-by: Mauro Carvalho Chehab <mchehab@osg.samsung.com>
-> Acked-by: Hans Verkuil <hans.verkuil@cisco.com>
+---
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Changes since v0:
 
-> diff --git a/drivers/media/media-device.c b/drivers/media/media-device.c
-> index c55ab5029323..e429605ca2c3 100644
-> --- a/drivers/media/media-device.c
-> +++ b/drivers/media/media-device.c
-> @@ -77,8 +77,8 @@ static struct media_entity *find_entity(struct
-> media_device *mdev, u32 id) spin_lock(&mdev->lock);
-> 
->  	media_device_for_each_entity(entity, mdev) {
-> -		if ((entity->id = id && !next) ||
-> -		    (entity->id > id && next)) {
-> +		if (((media_entity_id(entity) = id) && !next) ||
-> +		    ((media_entity_id(entity) > id) && next)) {
->  			spin_unlock(&mdev->lock);
->  			return entity;
->  		}
-> @@ -104,7 +104,7 @@ static long media_device_enum_entities(struct
-> media_device *mdev, if (ent = NULL)
->  		return -EINVAL;
-> 
-> -	u_ent.id = ent->id;
-> +	u_ent.id = media_entity_id(ent);
->  	if (ent->name)
->  		strlcpy(u_ent.name, ent->name, sizeof(u_ent.name));
->  	u_ent.type = ent->type;
-> @@ -122,7 +122,7 @@ static long media_device_enum_entities(struct
-> media_device *mdev, static void media_device_kpad_to_upad(const struct
-> media_pad *kpad, struct media_pad_desc *upad)
->  {
-> -	upad->entity = kpad->entity->id;
-> +	upad->entity = media_entity_id(kpad->entity);
->  	upad->index = kpad->index;
->  	upad->flags = kpad->flags;
->  }
-> diff --git a/drivers/media/media-entity.c b/drivers/media/media-entity.c
-> index 949e5f92cbdc..cb0ac4e0dfa5 100644
-> --- a/drivers/media/media-entity.c
-> +++ b/drivers/media/media-entity.c
-> @@ -140,10 +140,10 @@ void media_entity_graph_walk_start(struct
-> media_entity_graph *graph, graph->stack[graph->top].entity = NULL;
->  	bitmap_zero(graph->entities, MEDIA_ENTITY_ENUM_MAX_ID);
-> 
-> -	if (WARN_ON(entity->id >= MEDIA_ENTITY_ENUM_MAX_ID))
-> +	if (WARN_ON(media_entity_id(entity) >= MEDIA_ENTITY_ENUM_MAX_ID))
->  		return;
-> 
-> -	__set_bit(entity->id, graph->entities);
-> +	__set_bit(media_entity_id(entity), graph->entities);
->  	stack_push(graph, entity);
->  }
->  EXPORT_SYMBOL_GPL(media_entity_graph_walk_start);
-> @@ -184,11 +184,11 @@ media_entity_graph_walk_next(struct media_entity_graph
-> *graph)
-> 
->  		/* Get the entity in the other end of the link . */
->  		next = media_entity_other(entity, link);
-> -		if (WARN_ON(next->id >= MEDIA_ENTITY_ENUM_MAX_ID))
-> +		if (WARN_ON(media_entity_id(next) >= MEDIA_ENTITY_ENUM_MAX_ID))
->  			return NULL;
-> 
->  		/* Has the entity already been visited? */
-> -		if (__test_and_set_bit(next->id, graph->entities)) {
-> +		if (__test_and_set_bit(media_entity_id(next), graph->entities)) {
->  			link_top(graph)++;
->  			continue;
->  		}
-> diff --git a/drivers/media/platform/vsp1/vsp1_video.c
-> b/drivers/media/platform/vsp1/vsp1_video.c index 17f08973f835..debe4e539df6
-> 100644
-> --- a/drivers/media/platform/vsp1/vsp1_video.c
-> +++ b/drivers/media/platform/vsp1/vsp1_video.c
-> @@ -352,10 +352,10 @@ static int vsp1_pipeline_validate_branch(struct
-> vsp1_pipeline *pipe, break;
-> 
->  		/* Ensure the branch has no loop. */
-> -		if (entities & (1 << entity->subdev.entity.id))
-> +		if (entities & (1 << media_entity_id(&entity->subdev.entity)))
->  			return -EPIPE;
-> 
-> -		entities |= 1 << entity->subdev.entity.id;
-> +		entities |= 1 << media_entity_id(&entity->subdev.entity);
-> 
->  		/* UDS can't be chained. */
->  		if (entity->type = VSP1_ENTITY_UDS) {
-> diff --git a/include/media/media-entity.h b/include/media/media-entity.h
-> index 8b21a4d920d9..0a66fc225559 100644
-> --- a/include/media/media-entity.h
-> +++ b/include/media/media-entity.h
-> @@ -113,6 +113,11 @@ static inline u32 media_entity_subtype(struct
-> media_entity *entity) return entity->type & MEDIA_ENT_SUBTYPE_MASK;
->  }
-> 
-> +static inline u32 media_entity_id(struct media_entity *entity)
-> +{
-> +	return entity->id;
-> +}
-> +
->  #define MEDIA_ENTITY_ENUM_MAX_DEPTH	16
->  #define MEDIA_ENTITY_ENUM_MAX_ID	64
+- Dereference requests without holding the list lock
+- Remove requests from global list when closing the fh
+---
+ drivers/media/media-device.c | 82 ++++++++++++++++++++++++++++++++++++++++++--
+ include/media/media-device.h |  7 ++++
+ include/media/media-entity.h | 12 +++++++
+ 3 files changed, 99 insertions(+), 2 deletions(-)
 
+diff --git a/drivers/media/media-device.c b/drivers/media/media-device.c
+index 37da26806ed8..7fc94bf23eff 100644
+--- a/drivers/media/media-device.c
++++ b/drivers/media/media-device.c
+@@ -86,10 +86,16 @@ EXPORT_SYMBOL_GPL(media_device_request_get);
+ 
+ static void media_device_request_release(struct kref *kref)
+ {
++	struct media_entity_request_data *data, *next;
+ 	struct media_device_request *req  		container_of(kref, struct media_device_request, kref);
+ 	struct media_device *mdev = req->mdev;
+ 
++	list_for_each_entry_safe(data, next, &req->data, list) {
++		list_del(&data->list);
++		data->release(data);
++	}
++
+ 	mdev->ops->req_free(mdev, req);
+ }
+ 
+@@ -99,6 +105,70 @@ void media_device_request_put(struct media_device_request *req)
+ }
+ EXPORT_SYMBOL_GPL(media_device_request_put);
+ 
++/**
++ * media_device_request_get_entity_data - Get per-entity data
++ * @req: The request
++ * @entity: The entity
++ *
++ * Search and return per-entity data (as a struct media_entity_request_data
++ * instance) associated with the given entity for the request, as previously
++ * registered by a call to media_device_request_set_entity_data().
++ *
++ * The caller is expected to hold a reference to the request. Per-entity data is
++ * not reference counted, the returned pointer will be valid only as long as the
++ * reference to the request is held.
++ *
++ * Return the data instance pointer or NULL if no data could be found.
++ */
++struct media_entity_request_data *
++media_device_request_get_entity_data(struct media_device_request *req,
++				     struct media_entity *entity)
++{
++	struct media_entity_request_data *data;
++	unsigned long flags;
++
++	spin_lock_irqsave(&req->mdev->req_lock, flags);
++
++	list_for_each_entry(data, &req->data, list) {
++		if (data->entity = entity)
++			goto done;
++	}
++
++	data = NULL;
++
++done:
++	spin_unlock_irqrestore(&req->mdev->req_lock, flags);
++	return data;
++}
++EXPORT_SYMBOL_GPL(media_device_request_get_entity_data);
++
++/**
++ * media_device_request_set_entity_data - Set per-entity data
++ * @req: The request
++ * @entity: The entity
++ * @data: The data
++ *
++ * Record the given per-entity data as being associated with the entity for the
++ * request.
++ *
++ * Only one per-entity data instance can be associated with a request. The
++ * caller is responsible for enforcing this requirement.
++ *
++ * Ownership of the per-entity data is transferred to the request when calling
++ * this function. The data will be freed automatically when the last reference
++ * to the request is released.
++ */
++void media_device_request_set_entity_data(struct media_device_request *req,
++	struct media_entity *entity, struct media_entity_request_data *data)
++{
++	unsigned long flags;
++
++	spin_lock_irqsave(&req->mdev->req_lock, flags);
++	list_add_tail(&data->list, &req->data);
++	spin_unlock_irqrestore(&req->mdev->req_lock, flags);
++}
++EXPORT_SYMBOL_GPL(media_device_request_set_entity_data);
++
+ static int media_device_request_alloc(struct media_device *mdev,
+ 				      struct media_device_fh *fh,
+ 				      struct media_request_cmd *cmd)
+@@ -112,6 +182,7 @@ static int media_device_request_alloc(struct media_device *mdev,
+ 
+ 	req->mdev = mdev;
+ 	kref_init(&req->kref);
++	INIT_LIST_HEAD(&req->data);
+ 
+ 	spin_lock_irqsave(&mdev->req_lock, flags);
+ 	req->id = ++mdev->req_id;
+@@ -130,6 +201,7 @@ static void media_device_request_delete(struct media_device *mdev,
+ 
+ 	spin_lock_irqsave(&mdev->req_lock, flags);
+ 	list_del(&req->list);
++	list_del(&req->fh_list);
+ 	spin_unlock_irqrestore(&mdev->req_lock, flags);
+ 
+ 	media_device_request_put(req);
+@@ -218,12 +290,18 @@ static int media_device_close(struct file *filp)
+ {
+ 	struct media_device_fh *fh = media_device_fh(filp);
+ 	struct media_device *mdev = to_media_device(fh->fh.devnode);
+-	struct media_device_request *req, *next;
+ 
+ 	spin_lock_irq(&mdev->req_lock);
+-	list_for_each_entry_safe(req, next, &fh->requests, fh_list) {
++	while (!list_empty(&fh->requests)) {
++		struct media_device_request *req;
++
++		req = list_first_entry(&fh->requests, typeof(*req), fh_list);
++		list_del(&req->list);
+ 		list_del(&req->fh_list);
++
++		spin_unlock_irq(&mdev->req_lock);
+ 		media_device_request_put(req);
++		spin_lock_irq(&mdev->req_lock);
+ 	}
+ 	spin_unlock_irq(&mdev->req_lock);
+ 
+diff --git a/include/media/media-device.h b/include/media/media-device.h
+index bc003bedf087..0a374328a135 100644
+--- a/include/media/media-device.h
++++ b/include/media/media-device.h
+@@ -41,6 +41,7 @@ struct media_device;
+  * @kref: Reference count
+  * @list: List entry in the media device requests list
+  * @fh_list: List entry in the media file handle requests list
++ * @data: Per-entity data list
+  */
+ struct media_device_request {
+ 	u32 id;
+@@ -48,6 +49,7 @@ struct media_device_request {
+ 	struct kref kref;
+ 	struct list_head list;
+ 	struct list_head fh_list;
++	struct list_head data;
+ };
+ 
+ /**
+@@ -148,5 +150,10 @@ struct media_device_request *
+ media_device_request_find(struct media_device *mdev, u16 reqid);
+ void media_device_request_get(struct media_device_request *req);
+ void media_device_request_put(struct media_device_request *req);
++struct media_entity_request_data *
++media_device_request_get_entity_data(struct media_device_request *req,
++				     struct media_entity *entity);
++void media_device_request_set_entity_data(struct media_device_request *req,
++	struct media_entity *entity, struct media_entity_request_data *data);
+ 
+ #endif
+diff --git a/include/media/media-entity.h b/include/media/media-entity.h
+index 197f93799753..36e2129e61c6 100644
+--- a/include/media/media-entity.h
++++ b/include/media/media-entity.h
+@@ -133,6 +133,18 @@ struct media_entity_graph {
+ 	int top;
+ };
+ 
++/**
++ * struct media_entity_request_data - Per-entity request data
++ * @entity: Entity this data belongs to
++ * @release: Release operation to free the data
++ * @list: List entry in the media_device_request data list
++ */
++struct media_entity_request_data {
++	struct media_entity *entity;
++	void (*release)(struct media_entity_request_data *data);
++	struct list_head list;
++};
++
+ int media_entity_init(struct media_entity *entity, u16 num_pads,
+ 		struct media_pad *pads, u16 extra_links);
+ void media_entity_cleanup(struct media_entity *entity);
 -- 
-Regards,
-
-Laurent Pinchart
+2.4.10
 
