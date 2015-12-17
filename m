@@ -1,82 +1,54 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Thu, 17 Dec 2015 13:22:35 +0000
-Subject: [PATCH 2/4] PCI: rcar: Support runtime PM link state L1 handling in pcie-rcar
-Message-Id: <1450358557-28376-3-git-send-email-phil.edworthy@renesas.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Thu, 17 Dec 2015 13:30:58 +0000
+Subject: Re: [PATCH 2/4] PCI: rcar: Support runtime PM link state L1 handling in pcie-rcar
+Message-Id: <20151217133058.GA20372@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="vtzGhvizbBRQ85DL"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1450358557-28376-1-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1450358557-28376-1-git-send-email-phil.edworthy@renesas.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>, Bjorn Helgaas <bhelgaas@google.com>
-Cc: Wolfram Sang <wsa@the-dreams.de>, Geert Uytterhoeven <geert@linux-m68k.org>, linux-kernel@vger.kernel.org, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org, Phil Edworthy <phil.edworthy@renesas.com>
+ <1450358557-28376-3-git-send-email-phil.edworthy@renesas.com>
+In-Reply-To: <1450358557-28376-3-git-send-email-phil.edworthy@renesas.com>
+To: Phil Edworthy <phil.edworthy@renesas.com>
+Cc: Simon Horman <horms@verge.net.au>, Bjorn Helgaas <bhelgaas@google.com>, Geert Uytterhoeven <geert@linux-m68k.org>, linux-kernel@vger.kernel.org, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org
 
-The R-Car PCIe host controller does not handle L1 ASPM. Instead, the
-hardware needs assistance to transition to L1. When the controller
-has received a PM_ENTER_L1 DLLP, we can't access a card's config regs
-until we have got it out of L1 link state. The host controller will
-handle this as long as it has also been transitioned to L1 link state.
 
-So, when attempting a config access, check to see if the card has gone
-into L1, and if so, do the same for the host controller.
+--vtzGhvizbBRQ85DL
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-This is based on a patch by Hien Dang <hien.dang.eb@rvc.renesas.com>
+Hi Phil,
 
-Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
----
- drivers/pci/host/pcie-rcar.c | 25 +++++++++++++++++++++++++
- 1 file changed, 25 insertions(+)
+> +		/* Wait until we are in L1 */
+> +		while (!(val & L1FAEG))
+> +			val = rcar_pci_read_reg(pcie, PMSR);
 
-diff --git a/drivers/pci/host/pcie-rcar.c b/drivers/pci/host/pcie-rcar.c
-index c72c0ae..4a4f8e1 100644
---- a/drivers/pci/host/pcie-rcar.c
-+++ b/drivers/pci/host/pcie-rcar.c
-@@ -83,6 +83,14 @@
- #define MACSR			0x011054
- #define MACCTLR			0x011058
- #define  SCRAMBLE_DISABLE	(1 << 27)
-+#define PMSR			0x01105c
-+#define  L1FAEG			(1 << 31)
-+#define  PM_ENTER_L1RX		(1 << 23)
-+#define  PMSTATE		(7 << 16)
-+#define  PMSTATE_L1		(3 << 16)
-+#define PMCTLR			0x011060
-+#define  L1_INIT		(1 << 31)
-+
- 
- /* R-Car H1 PHY */
- #define H1_PCIEPHYADRR		0x04000c
-@@ -175,6 +183,7 @@ static int rcar_pcie_config_access(struct rcar_pcie *pcie,
- 		unsigned int devfn, int where, u32 *data)
- {
- 	int dev, func, reg, index;
-+	u32 val;
- 
- 	dev = PCI_SLOT(devfn);
- 	func = PCI_FUNC(devfn);
-@@ -216,6 +225,22 @@ static int rcar_pcie_config_access(struct rcar_pcie *pcie,
- 	if (pcie->root_bus_nr < 0)
- 		return PCIBIOS_DEVICE_NOT_FOUND;
- 
-+	/*
-+	 * If we are not in L1 link state but have received PM_ENTER_L1 DLLP,
-+	 * transition to L1 link state. The HW will handle coming out of L1.
-+	 */
-+	val = rcar_pci_read_reg(pcie, PMSR);
-+	if ((val & PM_ENTER_L1RX) && ((val & PMSTATE) != PMSTATE_L1)) {
-+		rcar_pci_write_reg(pcie, L1_INIT, PMCTLR);
-+
-+		/* Wait until we are in L1 */
-+		while (!(val & L1FAEG))
-+			val = rcar_pci_read_reg(pcie, PMSR);
-+
-+		/* Clear flags indicating link has transitioned to L1 */
-+		rcar_pci_write_reg(pcie, L1FAEG | PM_ENTER_L1RX, PMSR);
-+	}
-+
- 	/* Clear errors */
- 	rcar_pci_write_reg(pcie, rcar_pci_read_reg(pcie, PCIEERRFR), PCIEERRFR);
- 
--- 
-2.5.0
+No timeout?
 
+Regards,
+
+   Wolfram
+
+
+--vtzGhvizbBRQ85DL
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBAgAGBQJWcrkSAAoJEBQN5MwUoCm25gMP/0A7amB4URQTjWW/rjBaoXkk
+J81Q7+DbRqKt4iXIbE8HJuzpN+8nT83UK+ooy3gL7bESFNRyeand2urBFAf3jVDY
+wGH8ooj+mbFFRBFfvIO0cJITmzxpEaGtHXPU+r4XKEFZzrCBJcmYnIUL8h77tXX9
+uF+lgc/1uQ0O/FK9wyJsoYtdZFqNOziQRfnnpKQWgo18amgi1Ux1XI93EjkX8sYy
+EGI7X3aR+q2ytbRmp4jJoFMd7qwlfruNuStPTzkCQVYiks++YWWZ5Tq7x/GO8n7y
+GNU/iLZLYKEr5loj802YSX70ayKJZ8xJEG2FwPgRf0uDrBkDeLz465o6srk4Dp3R
+1w3sVYGSyXBM2K0RbEFz6b1O8agX/AFRgIp5z+1jLcUvZ+mLq5ZTEYZRtJcAeOcl
+GaF96T01d3zakW3KC6hcOb6SmNoO4Bu1OWXQy0ajxLLhCOcK5k86shlIV+ojFu9z
++cT2lV44JYndACQ4Oybtv5YI3ugXCNGnrf4sJHymWFH9D3KXw1NxJbfW1AyfORHr
+8cu6PR3rokNEfUK8yzILRigTVNBu1hwfex83QIgsWfeauwQM+MbBpescFyw8PlPq
+31h0XsumYGjvgZXhKv2zdlf3AXSp8L4Xt96w4nEZS3fs+B4RbdkxlgZS07vHESQ8
+ZRBs7xOYQtZxoRjh1smZ
+=3ccK
+-----END PGP SIGNATURE-----
+
+--vtzGhvizbBRQ85DL--
