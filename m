@@ -1,83 +1,49 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Tue, 08 Dec 2015 09:37:53 +0000
-Subject: [PATCH v2 9/9] arm64: renesas: r8a7795: add internal delay for i2c IPs
-Message-Id: <1449567473-2084-10-git-send-email-wsa@the-dreams.de>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 17 Dec 2015 06:25:39 +0000
+Subject: [PATCH] drm: rcar-du: Add probe deferral debug messages
+Message-Id: <1450333539-32178-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449567473-2084-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1449567473-2084-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, linux-rockchip@lists.infradead.org, Mika Westerberg <mika.westerberg@linux.intel.com>, Andy Shevchenko <andriy.shevchenko@linux.intel.com>, Jarkko Nikula <jarkko.nikula@linux.intel.com>
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Print a message when the HDMI I2C slave encoder can't be found to help
+debugging probe deferral issues.
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm64/boot/dts/renesas/r8a7795.dtsi | 7 +++++++
- 1 file changed, 7 insertions(+)
+ drivers/gpu/drm/rcar-du/rcar_du_hdmienc.c | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-index 56d6a5b23a4e38..b02a7ad1583933 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-+++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-@@ -519,6 +519,7 @@
- 			interrupts = <GIC_SPI 287 IRQ_TYPE_LEVEL_HIGH>;
- 			clocks = <&cpg CPG_MOD 931>;
- 			power-domains = <&cpg>;
-+			i2c-scl-internal-delay-ns = <110>;
- 			status = "disabled";
- 		};
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_hdmienc.c b/drivers/gpu/drm/rcar-du/rcar_du_hdmienc.c
+index 00fea7e6b378..cb892eefc723 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_hdmienc.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_hdmienc.c
+@@ -131,12 +131,19 @@ int rcar_du_hdmienc_init(struct rcar_du_device *rcdu,
  
-@@ -530,6 +531,7 @@
- 			interrupts = <GIC_SPI 288 IRQ_TYPE_LEVEL_HIGH>;
- 			clocks = <&cpg CPG_MOD 930>;
- 			power-domains = <&cpg>;
-+			i2c-scl-internal-delay-ns = <6>;
- 			status = "disabled";
- 		};
+ 	/* Locate the slave I2C device and driver. */
+ 	i2c_slave = of_find_i2c_device_by_node(np);
+-	if (!i2c_slave || !i2c_get_clientdata(i2c_slave))
++	if (!i2c_slave || !i2c_get_clientdata(i2c_slave)) {
++		dev_dbg(rcdu->dev,
++			"can't get I2C slave for %s, deferring probe\n",
++			of_node_full_name(np));
+ 		return -EPROBE_DEFER;
++	}
  
-@@ -541,6 +543,7 @@
- 			interrupts = <GIC_SPI 286 IRQ_TYPE_LEVEL_HIGH>;
- 			clocks = <&cpg CPG_MOD 929>;
- 			power-domains = <&cpg>;
-+			i2c-scl-internal-delay-ns = <6>;
- 			status = "disabled";
- 		};
+ 	hdmienc->dev = &i2c_slave->dev;
  
-@@ -552,6 +555,7 @@
- 			interrupts = <GIC_SPI 290 IRQ_TYPE_LEVEL_HIGH>;
- 			clocks = <&cpg CPG_MOD 928>;
- 			power-domains = <&cpg>;
-+			i2c-scl-internal-delay-ns = <110>;
- 			status = "disabled";
- 		};
- 
-@@ -563,6 +567,7 @@
- 			interrupts = <GIC_SPI 19 IRQ_TYPE_LEVEL_HIGH>;
- 			clocks = <&cpg CPG_MOD 927>;
- 			power-domains = <&cpg>;
-+			i2c-scl-internal-delay-ns = <110>;
- 			status = "disabled";
- 		};
- 
-@@ -574,6 +579,7 @@
- 			interrupts = <GIC_SPI 20 IRQ_TYPE_LEVEL_HIGH>;
- 			clocks = <&cpg CPG_MOD 919>;
- 			power-domains = <&cpg>;
-+			i2c-scl-internal-delay-ns = <110>;
- 			status = "disabled";
- 		};
- 
-@@ -585,6 +591,7 @@
- 			interrupts = <GIC_SPI 21 IRQ_TYPE_LEVEL_HIGH>;
- 			clocks = <&cpg CPG_MOD 918>;
- 			power-domains = <&cpg>;
-+			i2c-scl-internal-delay-ns = <6>;
- 			status = "disabled";
- 		};
- 
+ 	if (hdmienc->dev->driver = NULL) {
++		dev_dbg(rcdu->dev,
++			"I2C slave %s not probed yet, deferring probe\n",
++			dev_name(hdmienc->dev));
+ 		ret = -EPROBE_DEFER;
+ 		goto error;
+ 	}
 -- 
-2.1.4
+Regards,
+
+Laurent Pinchart
 
