@@ -1,36 +1,73 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Mon, 14 Dec 2015 15:42:38 +0000
-Subject: [PATCH 6/6] arm64: defconfig: Add Renesas R-Car SATA driver for R-Car Gen3 SoCs
-Message-Id: <1450107758-2544-7-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 17 Dec 2015 08:40:15 +0000
+Subject: [PATCH/RFC 37/48] DocBook: media: Document the subdev selection API
+Message-Id: <1450341626-6695-38-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450107758-2544-1-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1450107758-2544-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+References: <1450341626-6695-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1450341626-6695-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-From: Kouei Abe <kouei.abe.cp@renesas.com>
+Now that the subdev crop API is considered obsolete, the selection API
+that replaces it deserves a full documentation instead of referring to
+the crop API documentation.
 
-This adds Renesas sata_rcar driver to defconfig.
-
-Signed-off-by: Kouei Abe <kouei.abe.cp@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm64/configs/defconfig | 1 +
- 1 file changed, 1 insertion(+)
+ .../media/v4l/vidioc-subdev-g-selection.xml        | 37 ++++++++++++++++++++++
+ 1 file changed, 37 insertions(+)
 
-diff --git a/arch/arm64/configs/defconfig b/arch/arm64/configs/defconfig
-index f239a2e..bdbe783 100644
---- a/arch/arm64/configs/defconfig
-+++ b/arch/arm64/configs/defconfig
-@@ -93,6 +93,7 @@ CONFIG_SATA_AHCI=y
- CONFIG_SATA_AHCI_PLATFORM=y
- CONFIG_AHCI_CEVA=y
- CONFIG_AHCI_XGENE=y
-+CONFIG_SATA_RCAR=y
- CONFIG_PATA_PLATFORM=y
- CONFIG_PATA_OF_PLATFORM=y
- CONFIG_NETDEVICES=y
+diff --git a/Documentation/DocBook/media/v4l/vidioc-subdev-g-selection.xml b/Documentation/DocBook/media/v4l/vidioc-subdev-g-selection.xml
+index c62a7360719b..9b59b49db0c3 100644
+--- a/Documentation/DocBook/media/v4l/vidioc-subdev-g-selection.xml
++++ b/Documentation/DocBook/media/v4l/vidioc-subdev-g-selection.xml
+@@ -69,6 +69,43 @@
+     more information on how each selection target affects the image
+     processing pipeline inside the subdevice.</para>
+ 
++    <para>To retrieve a current selection rectangle applications set the
++    <structfield>pad</structfield> field of a &v4l2-subdev-selection; to the
++    desired pad number as reported by the media API, the
++    <structfield>which</structfield> field to
++    <constant>V4L2_SUBDEV_FORMAT_ACTIVE</constant> and the
++    <structfield>target</structfield> to the target selection rectangle. They
++    then call the <constant>VIDIOC_SUBDEV_G_SELECTION</constant> ioctl with a
++    pointer to this structure. The driver fills the members of the
++    <structfield>r</structfield> field or returns &EINVAL; if the input
++    arguments are invalid, or if selection is not supported on the given pad.
++    </para>
++
++    <para>To change a current selection rectangle applications set the
++    <structfield>pad</structfield>, <structfield>which</structfield> and
++    <structfield>target</structfield> fields and all members of the
++    <structfield>r</structfield> field. They then call the
++    <constant>VIDIOC_SUBDEV_S_SELECTION</constant> ioctl with a pointer to this
++    structure. The driver verifies the requested selection rectangle, adjusts it
++    based on the hardware capabilities and configures the device. Upon return
++    the &v4l2-subdev-selection; contains the current selection rectangle as
++    would be returned by a <constant>VIDIOC_SUBDEV_G_SELECTION</constant> call.
++    </para>
++
++    <para>Applications can query the device capabilities by setting the
++    <structfield>which</structfield> to
++    <constant>V4L2_SUBDEV_FORMAT_TRY</constant>. When set, 'try' selection
++    rectangles are not applied to the device by the driver, but are mangled
++    exactly as active selection rectangles and stored in the sub-device file
++    handle. Two applications querying the same sub-device would thus not
++    interfere with each other.</para>
++
++    <para>Drivers must not return an error solely because the requested
++    selection rectangle doesn't match the device capabilities. They must instead
++    modify the rectangle to match what the hardware can provide. The modified
++    selection rectangle should be as close as possible to the original request.
++    </para>
++
+     <refsect2>
+       <title>Types of selection targets</title>
+ 
 -- 
-2.6.3
+2.4.10
 
