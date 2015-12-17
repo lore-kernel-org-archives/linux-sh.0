@@ -1,44 +1,83 @@
-From: Joe Perches <joe@perches.com>
-Date: Sat, 05 Dec 2015 01:18:36 +0000
-Subject: Re: [PATCH] MAINTAINERS: add myself as Renesas Ethernet drivers reviewer
-Message-Id: <1449278316.8611.30.camel@perches.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 17 Dec 2015 08:40:05 +0000
+Subject: [PATCH/RFC 27/48] v4l2-subdev.h: Add request field to format and selection structures
+Message-Id: <1450341626-6695-28-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1846877.jRW8849mPU@wasted.cogentembedded.com>
-	 <1449276063.8611.25.camel@perches.com>
-	 <56623680.4050808@cogentembedded.com>
-	 <1449277327.8611.27.camel@perches.com>
-	 <56623A25.3040002@cogentembedded.com>
-In-Reply-To: <56623A25.3040002@cogentembedded.com>
+References: <1450341626-6695-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1450341626-6695-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, netdev@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-On Sat, 2015-12-05 at 04:13 +0300, Sergei Shtylyov wrote:
-> On 12/05/2015 04:02 AM, Joe Perches wrote:
-> > > Since you seem to be get_maintainers.pl maintainer, I (and not only I)
-> > > would like to propose a switch to suppress the committers/authors/etc=
-. It's
-> > > generally annoying and unhelpful to have the bunch of people listed, =
-none of
-> > > which usually are a good addressees for the patches...
-> >=20
-> > Done!
->=20
-> > Add "--nogit" and "--nogit-fallback"
->=20
-> =A0=A0=A0=A0Em, --nogit is the dafault, according to --help. --nogit-fall=
-back is=A0
-> enough but it's undocumented. :-/
+Let userspace specify a request ID when getting or setting formats or
+selection rectangles.
 
-umm
+From a userspace point of view the API change is minimized and doesn't
+require any new ioctl.
 
-$ ./scripts/get_maintainer.pl --help
-[...]
-=A0 =A0 --git-fallback =3D> use git when no exact MAINTAINERS pattern (defa=
-ult: 1)
-[...]
-=A0 Most options have both positive and negative forms.
-=A0=A0=A0=A0=A0=A0The negative forms for --<foo> are --no<foo> and --no-<fo=
-o>.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ include/uapi/linux/v4l2-subdev.h | 15 +++++++++++++--
+ 1 file changed, 13 insertions(+), 2 deletions(-)
+
+diff --git a/include/uapi/linux/v4l2-subdev.h b/include/uapi/linux/v4l2-subdev.h
+index dbce2b554e02..2f1691ce9df5 100644
+--- a/include/uapi/linux/v4l2-subdev.h
++++ b/include/uapi/linux/v4l2-subdev.h
+@@ -32,10 +32,12 @@
+  * enum v4l2_subdev_format_whence - Media bus format type
+  * @V4L2_SUBDEV_FORMAT_TRY: try format, for negotiation only
+  * @V4L2_SUBDEV_FORMAT_ACTIVE: active format, applied to the device
++ * @V4L2_SUBDEV_FORMAT_REQUEST: format stored in request
+  */
+ enum v4l2_subdev_format_whence {
+ 	V4L2_SUBDEV_FORMAT_TRY = 0,
+ 	V4L2_SUBDEV_FORMAT_ACTIVE = 1,
++	V4L2_SUBDEV_FORMAT_REQUEST = 2,
+ };
+ 
+ /**
+@@ -43,12 +45,17 @@ enum v4l2_subdev_format_whence {
+  * @which: format type (from enum v4l2_subdev_format_whence)
+  * @pad: pad number, as reported by the media API
+  * @format: media bus format (format code and frame size)
++ * @request: request ID (when which is set to V4L2_SUBDEV_FORMAT_REQUEST)
++ * @reserved2: for future use, set to zero for now
++ * @reserved: for future use, set to zero for now
+  */
+ struct v4l2_subdev_format {
+ 	__u32 which;
+ 	__u32 pad;
+ 	struct v4l2_mbus_framefmt format;
+-	__u32 reserved[8];
++	__u16 request;
++	__u16 reserved2;
++	__u32 reserved[7];
+ };
+ 
+ /**
+@@ -139,6 +146,8 @@ struct v4l2_subdev_frame_interval_enum {
+  *	    defined in v4l2-common.h; V4L2_SEL_TGT_* .
+  * @flags: constraint flags, defined in v4l2-common.h; V4L2_SEL_FLAG_*.
+  * @r: coordinates of the selection window
++ * @request: request ID (when which is set to V4L2_SUBDEV_FORMAT_REQUEST)
++ * @reserved2: for future use, set to zero for now
+  * @reserved: for future use, set to zero for now
+  *
+  * Hardware may use multiple helper windows to process a video stream.
+@@ -151,7 +160,9 @@ struct v4l2_subdev_selection {
+ 	__u32 target;
+ 	__u32 flags;
+ 	struct v4l2_rect r;
+-	__u32 reserved[8];
++	__u16 request;
++	__u16 reserved2;
++	__u32 reserved[7];
+ };
+ 
+ /* Backwards compatibility define --- to be removed */
+-- 
+2.4.10
+
