@@ -1,7 +1,7 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 17 Dec 2015 08:39:43 +0000
-Subject: [PATCH/RFC 05/48] v4l: vsp1: Store the display list manager in the WPF
-Message-Id: <1450341626-6695-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 17 Dec 2015 08:40:19 +0000
+Subject: [PATCH/RFC 41/48] v4l: vsp1: Store active selection rectangles in a pad config structure
+Message-Id: <1450341626-6695-42-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1450341626-6695-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 In-Reply-To: <1450341626-6695-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
@@ -11,332 +11,334 @@ Content-Transfer-Encoding: 7bit
 To: linux-media@vger.kernel.org
 Cc: linux-sh@vger.kernel.org
 
-Each WPF can process display lists independently, move the manager to
-the WPF to reflect that and prepare for display list support for non-DRM
-pipelines.
+Use the pad config structure part of the vsp1_entity to store all active
+pad selection rectangles. This generalizes the code to operate on pad
+config structures, a prerequisite to implement the request API.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/media/platform/vsp1/vsp1_dl.c     | 37 ++++++++++++++++++++++++++-----
- drivers/media/platform/vsp1/vsp1_dl.h     | 26 ++++------------------
- drivers/media/platform/vsp1/vsp1_drm.c    | 19 +++++++---------
- drivers/media/platform/vsp1/vsp1_drm.h    |  9 +-------
- drivers/media/platform/vsp1/vsp1_entity.c |  2 ++
- drivers/media/platform/vsp1/vsp1_entity.h |  2 ++
- drivers/media/platform/vsp1/vsp1_rwpf.h   |  3 +++
- drivers/media/platform/vsp1/vsp1_wpf.c    | 18 +++++++++++++++
- 8 files changed, 70 insertions(+), 46 deletions(-)
+ drivers/media/platform/vsp1/vsp1_bru.c    | 24 +++++++++++-------------
+ drivers/media/platform/vsp1/vsp1_bru.h    |  1 -
+ drivers/media/platform/vsp1/vsp1_drm.c    |  5 ++---
+ drivers/media/platform/vsp1/vsp1_entity.c |  8 ++++++++
+ drivers/media/platform/vsp1/vsp1_entity.h |  4 ++++
+ drivers/media/platform/vsp1/vsp1_rpf.c    | 20 +++++++++++++++++---
+ drivers/media/platform/vsp1/vsp1_rwpf.c   | 22 +++++++---------------
+ drivers/media/platform/vsp1/vsp1_rwpf.h   |  8 +++-----
+ drivers/media/platform/vsp1/vsp1_video.c  | 13 +++----------
+ drivers/media/platform/vsp1/vsp1_wpf.c    |  4 +++-
+ 10 files changed, 58 insertions(+), 51 deletions(-)
 
-diff --git a/drivers/media/platform/vsp1/vsp1_dl.c b/drivers/media/platform/vsp1/vsp1_dl.c
-index 5f49f52e22f2..32661daac7b0 100644
---- a/drivers/media/platform/vsp1/vsp1_dl.c
-+++ b/drivers/media/platform/vsp1/vsp1_dl.c
-@@ -48,6 +48,25 @@ struct vsp1_dl_list {
- 	int reg_count;
- };
+diff --git a/drivers/media/platform/vsp1/vsp1_bru.c b/drivers/media/platform/vsp1/vsp1_bru.c
+index a0aa0fb2a5e1..c1848a3ac010 100644
+--- a/drivers/media/platform/vsp1/vsp1_bru.c
++++ b/drivers/media/platform/vsp1/vsp1_bru.c
+@@ -231,17 +231,9 @@ static int bru_enum_frame_size(struct v4l2_subdev *subdev,
  
-+/**
-+ * struct vsp1_dl_manager - Display List manager
-+ * @vsp1: the VSP1 device
-+ * @lock: protects the active, queued and pending lists
-+ * @free: array of all free display lists
-+ * @active: list currently being processed (loaded) by hardware
-+ * @queued: list queued to the hardware (written to the DL registers)
-+ * @pending: list waiting to be queued to the hardware
-+ */
-+struct vsp1_dl_manager {
-+	struct vsp1_device *vsp1;
-+
-+	spinlock_t lock;
-+	struct list_head free;
-+	struct vsp1_dl_list *active;
-+	struct vsp1_dl_list *queued;
-+	struct vsp1_dl_list *pending;
-+};
-+
- /* -----------------------------------------------------------------------------
-  * Display List Transaction Management
-  */
-@@ -257,11 +276,16 @@ void vsp1_dlm_reset(struct vsp1_dl_manager *dlm)
- 	dlm->pending = NULL;
+ static struct v4l2_rect *bru_get_compose(struct vsp1_bru *bru,
+ 					 struct v4l2_subdev_pad_config *cfg,
+-					 unsigned int pad, u32 which)
++					 unsigned int pad)
+ {
+-	switch (which) {
+-	case V4L2_SUBDEV_FORMAT_TRY:
+-		return v4l2_subdev_get_try_compose(&bru->entity.subdev, cfg,
+-						   pad);
+-	case V4L2_SUBDEV_FORMAT_ACTIVE:
+-		return &bru->inputs[pad].compose;
+-	default:
+-		return NULL;
+-	}
++	return v4l2_subdev_get_try_compose(&bru->entity.subdev, cfg, pad);
  }
  
--int vsp1_dlm_init(struct vsp1_device *vsp1, struct vsp1_dl_manager *dlm,
--		  unsigned int prealloc)
-+struct vsp1_dl_manager *vsp1_dlm_create(struct vsp1_device *vsp1,
-+					unsigned int prealloc)
+ static int bru_get_format(struct v4l2_subdev *subdev,
+@@ -310,7 +302,7 @@ static int bru_set_format(struct v4l2_subdev *subdev,
+ 	if (fmt->pad != bru->entity.source_pad) {
+ 		struct v4l2_rect *compose;
+ 
+-		compose = bru_get_compose(bru, cfg, fmt->pad, fmt->which);
++		compose = bru_get_compose(bru, config, fmt->pad);
+ 		compose->left = 0;
+ 		compose->top = 0;
+ 		compose->width = format->width;
+@@ -336,6 +328,7 @@ static int bru_get_selection(struct v4l2_subdev *subdev,
+ 			     struct v4l2_subdev_selection *sel)
  {
-+	struct vsp1_dl_manager *dlm;
- 	unsigned int i;
+ 	struct vsp1_bru *bru = to_bru(subdev);
++	struct v4l2_subdev_pad_config *config;
  
-+	dlm = devm_kzalloc(vsp1->dev, sizeof(*dlm), GFP_KERNEL);
-+	if (!dlm)
-+		return NULL;
+ 	if (sel->pad = bru->entity.source_pad)
+ 		return -EINVAL;
+@@ -349,7 +342,12 @@ static int bru_get_selection(struct v4l2_subdev *subdev,
+ 		return 0;
+ 
+ 	case V4L2_SEL_TGT_COMPOSE:
+-		sel->r = *bru_get_compose(bru, cfg, sel->pad, sel->which);
++		config = vsp1_entity_get_pad_config(&bru->entity, cfg,
++						    sel->which);
++		if (!config)
++			return -EINVAL;
 +
- 	dlm->vsp1 = vsp1;
++		sel->r = *bru_get_compose(bru, config, sel->pad);
+ 		return 0;
  
- 	spin_lock_init(&dlm->lock);
-@@ -272,18 +296,21 @@ int vsp1_dlm_init(struct vsp1_device *vsp1, struct vsp1_dl_manager *dlm,
+ 	default:
+@@ -391,7 +389,7 @@ static int bru_set_selection(struct v4l2_subdev *subdev,
+ 	sel->r.width = format->width;
+ 	sel->r.height = format->height;
  
- 		dl = vsp1_dl_list_alloc(dlm);
- 		if (!dl)
--			return -ENOMEM;
-+			return NULL;
+-	compose = bru_get_compose(bru, cfg, sel->pad, sel->which);
++	compose = bru_get_compose(bru, config, sel->pad);
+ 	*compose = sel->r;
  
- 		list_add_tail(&dl->list, &dlm->free);
- 	}
+ 	return 0;
+diff --git a/drivers/media/platform/vsp1/vsp1_bru.h b/drivers/media/platform/vsp1/vsp1_bru.h
+index 4e7d2e79b940..828a3fcadea8 100644
+--- a/drivers/media/platform/vsp1/vsp1_bru.h
++++ b/drivers/media/platform/vsp1/vsp1_bru.h
+@@ -31,7 +31,6 @@ struct vsp1_bru {
  
--	return 0;
-+	return dlm;
- }
+ 	struct {
+ 		struct vsp1_rwpf *rpf;
+-		struct v4l2_rect compose;
+ 	} inputs[VSP1_MAX_RPF];
  
--void vsp1_dlm_cleanup(struct vsp1_dl_manager *dlm)
-+void vsp1_dlm_destroy(struct vsp1_dl_manager *dlm)
- {
- 	struct vsp1_dl_list *dl, *next;
- 
-+	if (!dlm)
-+		return;
-+
- 	list_for_each_entry_safe(dl, next, &dlm->free, list) {
- 		list_del(&dl->list);
- 		vsp1_dl_list_free(dl);
-diff --git a/drivers/media/platform/vsp1/vsp1_dl.h b/drivers/media/platform/vsp1/vsp1_dl.h
-index caa6a85f6825..46f7ae337374 100644
---- a/drivers/media/platform/vsp1/vsp1_dl.h
-+++ b/drivers/media/platform/vsp1/vsp1_dl.h
-@@ -17,31 +17,13 @@
- 
- struct vsp1_device;
- struct vsp1_dl_list;
--
--/**
-- * struct vsp1_dl_manager - Display List manager
-- * @vsp1: the VSP1 device
-- * @lock: protects the active, queued and pending lists
-- * @free: array of all free display lists
-- * @active: list currently being processed (loaded) by hardware
-- * @queued: list queued to the hardware (written to the DL registers)
-- * @pending: list waiting to be queued to the hardware
-- */
--struct vsp1_dl_manager {
--	struct vsp1_device *vsp1;
--
--	spinlock_t lock;
--	struct list_head free;
--	struct vsp1_dl_list *active;
--	struct vsp1_dl_list *queued;
--	struct vsp1_dl_list *pending;
--};
-+struct vsp1_dl_manager;
- 
- void vsp1_dlm_setup(struct vsp1_device *vsp1);
- 
--int vsp1_dlm_init(struct vsp1_device *vsp1, struct vsp1_dl_manager *dlm,
--		  unsigned int prealloc);
--void vsp1_dlm_cleanup(struct vsp1_dl_manager *dlm);
-+struct vsp1_dl_manager *vsp1_dlm_create(struct vsp1_device *vsp1,
-+					unsigned int prealloc);
-+void vsp1_dlm_destroy(struct vsp1_dl_manager *dlm);
- void vsp1_dlm_reset(struct vsp1_dl_manager *dlm);
- void vsp1_dlm_irq_display_start(struct vsp1_dl_manager *dlm);
- void vsp1_dlm_irq_frame_end(struct vsp1_dl_manager *dlm);
+ 	u32 bgcolor;
 diff --git a/drivers/media/platform/vsp1/vsp1_drm.c b/drivers/media/platform/vsp1/vsp1_drm.c
-index bc275bb38352..b3df694569e7 100644
+index 90157ac9b0b1..e1216732e192 100644
 --- a/drivers/media/platform/vsp1/vsp1_drm.c
 +++ b/drivers/media/platform/vsp1/vsp1_drm.c
-@@ -31,11 +31,14 @@
-  * Interrupt Handling
-  */
+@@ -410,9 +410,8 @@ int vsp1_du_atomic_update(struct device *dev, unsigned int rpf_index,
+ 		__func__, sel.r.left, sel.r.top, sel.r.width, sel.r.height,
+ 		sel.pad);
  
--void vsp1_drm_frame_end(struct vsp1_pipeline *pipe)
-+void vsp1_drm_display_start(struct vsp1_device *vsp1)
- {
--	struct vsp1_device *vsp1 = pipe->output->entity.vsp1;
-+	vsp1_dlm_irq_display_start(vsp1->drm->pipe.output->dlm);
-+}
+-	/* Store the compose rectangle coordinates in the RPF. */
+-	rpf->location.left = dst->left;
+-	rpf->location.top = dst->top;
++	/* Store the BRU input pad number in the RPF. */
++	rpf->bru_input = rpf->entity.index;
  
--	vsp1_dlm_irq_frame_end(&vsp1->drm->dlm);
-+void vsp1_drm_frame_end(struct vsp1_pipeline *pipe)
-+{
-+	vsp1_dlm_irq_frame_end(pipe->output->dlm);
- }
- 
- /* -----------------------------------------------------------------------------
-@@ -101,7 +104,7 @@ int vsp1_du_setup_lif(struct device *dev, unsigned int width,
- 
- 		pipe->num_inputs = 0;
- 
--		vsp1_dlm_reset(&vsp1->drm->dlm);
-+		vsp1_dlm_reset(pipe->output->dlm);
- 		vsp1_device_put(vsp1);
- 
- 		dev_dbg(vsp1->dev, "%s: pipeline disabled\n", __func__);
-@@ -228,7 +231,7 @@ void vsp1_du_atomic_begin(struct device *dev)
- 	spin_unlock_irqrestore(&pipe->irqlock, flags);
- 
- 	/* Prepare the display list. */
--	pipe->dl = vsp1_dl_list_get(&vsp1->drm->dlm);
-+	pipe->dl = vsp1_dl_list_get(pipe->output->dlm);
- }
- EXPORT_SYMBOL_GPL(vsp1_du_atomic_begin);
- 
-@@ -555,16 +558,11 @@ int vsp1_drm_init(struct vsp1_device *vsp1)
- {
- 	struct vsp1_pipeline *pipe;
- 	unsigned int i;
--	int ret;
- 
- 	vsp1->drm = devm_kzalloc(vsp1->dev, sizeof(*vsp1->drm), GFP_KERNEL);
- 	if (!vsp1->drm)
- 		return -ENOMEM;
- 
--	ret = vsp1_dlm_init(vsp1, &vsp1->drm->dlm, 4);
--	if (ret < 0)
--		return ret;
--
- 	pipe = &vsp1->drm->pipe;
- 
- 	vsp1_pipeline_init(pipe);
-@@ -590,5 +588,4 @@ int vsp1_drm_init(struct vsp1_device *vsp1)
- 
- void vsp1_drm_cleanup(struct vsp1_device *vsp1)
- {
--	vsp1_dlm_cleanup(&vsp1->drm->dlm);
- }
-diff --git a/drivers/media/platform/vsp1/vsp1_drm.h b/drivers/media/platform/vsp1/vsp1_drm.h
-index 5ef32cff9601..1acf6048841b 100644
---- a/drivers/media/platform/vsp1/vsp1_drm.h
-+++ b/drivers/media/platform/vsp1/vsp1_drm.h
-@@ -13,7 +13,6 @@
- #ifndef __VSP1_DRM_H__
- #define __VSP1_DRM_H__
- 
--#include "vsp1_dl.h"
- #include "vsp1_pipe.h"
- 
- /**
-@@ -21,22 +20,16 @@
-  * @pipe: the VSP1 pipeline used for display
-  * @num_inputs: number of active pipeline inputs at the beginning of an update
-  * @update: the pipeline configuration has been updated
-- * @dlm: display list manager used for DRM operation
-  */
- struct vsp1_drm {
- 	struct vsp1_pipeline pipe;
- 	unsigned int num_inputs;
- 	bool update;
--	struct vsp1_dl_manager dlm;
- };
- 
- int vsp1_drm_init(struct vsp1_device *vsp1);
- void vsp1_drm_cleanup(struct vsp1_device *vsp1);
- int vsp1_drm_create_links(struct vsp1_device *vsp1);
--
--static inline void vsp1_drm_display_start(struct vsp1_device *vsp1)
--{
--	vsp1_dlm_irq_display_start(&vsp1->drm->dlm);
--}
-+void vsp1_drm_display_start(struct vsp1_device *vsp1);
- 
- #endif /* __VSP1_DRM_H__ */
+ 	/* Cache the memory buffer address but don't apply the values to the
+ 	 * hardware as the crop offsets haven't been computed yet.
 diff --git a/drivers/media/platform/vsp1/vsp1_entity.c b/drivers/media/platform/vsp1/vsp1_entity.c
-index 0d1163eb3362..c005d374c254 100644
+index 3ccc83781d4e..0620f1772cab 100644
 --- a/drivers/media/platform/vsp1/vsp1_entity.c
 +++ b/drivers/media/platform/vsp1/vsp1_entity.c
-@@ -244,6 +244,8 @@ int vsp1_entity_init(struct vsp1_device *vsp1, struct vsp1_entity *entity,
+@@ -89,6 +89,14 @@ vsp1_entity_get_pad_format(struct vsp1_entity *entity,
+ 	return v4l2_subdev_get_try_format(&entity->subdev, cfg, pad);
+ }
  
- void vsp1_entity_destroy(struct vsp1_entity *entity)
- {
-+	if (entity->destroy)
-+		entity->destroy(entity);
- 	if (entity->subdev.ctrl_handler)
- 		v4l2_ctrl_handler_free(entity->subdev.ctrl_handler);
- 	media_entity_cleanup(&entity->subdev.entity);
-diff --git a/drivers/media/platform/vsp1/vsp1_entity.h b/drivers/media/platform/vsp1/vsp1_entity.h
-index 311d5b64c9a5..259880e524fe 100644
---- a/drivers/media/platform/vsp1/vsp1_entity.h
-+++ b/drivers/media/platform/vsp1/vsp1_entity.h
-@@ -56,6 +56,8 @@ struct vsp1_route {
- struct vsp1_entity {
- 	struct vsp1_device *vsp1;
- 
-+	void (*destroy)(struct vsp1_entity *);
-+
- 	enum vsp1_entity_type type;
- 	unsigned int index;
- 	const struct vsp1_route *route;
-diff --git a/drivers/media/platform/vsp1/vsp1_rwpf.h b/drivers/media/platform/vsp1/vsp1_rwpf.h
-index 8e8235682ada..d04df39b2737 100644
---- a/drivers/media/platform/vsp1/vsp1_rwpf.h
-+++ b/drivers/media/platform/vsp1/vsp1_rwpf.h
-@@ -24,6 +24,7 @@
- #define RWPF_PAD_SOURCE				1
- 
- struct v4l2_ctrl;
-+struct vsp1_dl_manager;
- struct vsp1_rwpf;
- struct vsp1_video;
- 
-@@ -60,6 +61,8 @@ struct vsp1_rwpf {
- 
- 	unsigned int offsets[2];
- 	dma_addr_t buf_addr[3];
-+
-+	struct vsp1_dl_manager *dlm;
- };
- 
- static inline struct vsp1_rwpf *to_rwpf(struct v4l2_subdev *subdev)
-diff --git a/drivers/media/platform/vsp1/vsp1_wpf.c b/drivers/media/platform/vsp1/vsp1_wpf.c
-index c78d4af50fcf..6afc9c8d9adc 100644
---- a/drivers/media/platform/vsp1/vsp1_wpf.c
-+++ b/drivers/media/platform/vsp1/vsp1_wpf.c
-@@ -16,6 +16,7 @@
- #include <media/v4l2-subdev.h>
- 
- #include "vsp1.h"
-+#include "vsp1_dl.h"
- #include "vsp1_rwpf.h"
- #include "vsp1_video.h"
- 
-@@ -218,6 +219,13 @@ static const struct vsp1_rwpf_operations wpf_vdev_ops = {
-  * Initialization and Cleanup
-  */
- 
-+static void vsp1_wpf_destroy(struct vsp1_entity *entity)
++struct v4l2_rect *
++vsp1_entity_get_pad_compose(struct vsp1_entity *entity,
++			    struct v4l2_subdev_pad_config *cfg,
++			    unsigned int pad)
 +{
-+	struct vsp1_rwpf *wpf = container_of(entity, struct vsp1_rwpf, entity);
-+
-+	vsp1_dlm_destroy(wpf->dlm);
++	return v4l2_subdev_get_try_compose(&entity->subdev, cfg, pad);
 +}
 +
- struct vsp1_rwpf *vsp1_wpf_create(struct vsp1_device *vsp1, unsigned int index)
- {
- 	struct v4l2_subdev *subdev;
-@@ -233,6 +241,7 @@ struct vsp1_rwpf *vsp1_wpf_create(struct vsp1_device *vsp1, unsigned int index)
- 	wpf->max_width = WPF_MAX_WIDTH;
- 	wpf->max_height = WPF_MAX_HEIGHT;
+ /*
+  * vsp1_entity_init_cfg - Initialize formats on all pads
+  * @subdev: V4L2 subdevice
+diff --git a/drivers/media/platform/vsp1/vsp1_entity.h b/drivers/media/platform/vsp1/vsp1_entity.h
+index 086dc2b22d61..1b0e31ec0f1f 100644
+--- a/drivers/media/platform/vsp1/vsp1_entity.h
++++ b/drivers/media/platform/vsp1/vsp1_entity.h
+@@ -111,6 +111,10 @@ struct v4l2_mbus_framefmt *
+ vsp1_entity_get_pad_format(struct vsp1_entity *entity,
+ 			   struct v4l2_subdev_pad_config *cfg,
+ 			   unsigned int pad);
++struct v4l2_rect *
++vsp1_entity_get_pad_compose(struct vsp1_entity *entity,
++			    struct v4l2_subdev_pad_config *cfg,
++			    unsigned int pad);
+ void vsp1_entity_init_cfg(struct v4l2_subdev *subdev,
+ 			  struct v4l2_subdev_pad_config *cfg);
  
-+	wpf->entity.destroy = vsp1_wpf_destroy;
- 	wpf->entity.type = VSP1_ENTITY_WPF;
- 	wpf->entity.index = index;
+diff --git a/drivers/media/platform/vsp1/vsp1_rpf.c b/drivers/media/platform/vsp1/vsp1_rpf.c
+index 3b55cd93983f..cb3d5ed148cc 100644
+--- a/drivers/media/platform/vsp1/vsp1_rpf.c
++++ b/drivers/media/platform/vsp1/vsp1_rpf.c
+@@ -44,7 +44,9 @@ static int rpf_s_stream(struct v4l2_subdev *subdev, int enable)
+ 	const struct v4l2_pix_format_mplane *format = &rpf->format;
+ 	const struct v4l2_mbus_framefmt *source_format;
+ 	const struct v4l2_mbus_framefmt *sink_format;
+-	const struct v4l2_rect *crop = &rpf->crop;
++	const struct v4l2_rect *crop;
++	unsigned int left = 0;
++	unsigned int top = 0;
+ 	u32 pstride;
+ 	u32 infmt;
  
-@@ -240,6 +249,15 @@ struct vsp1_rwpf *vsp1_wpf_create(struct vsp1_device *vsp1, unsigned int index)
- 	if (ret < 0)
- 		return ERR_PTR(ret);
+@@ -57,6 +59,8 @@ static int rpf_s_stream(struct v4l2_subdev *subdev, int enable)
+ 	 * left corner in the plane buffer. Only two offsets are needed, as
+ 	 * planes 2 and 3 always have identical strides.
+ 	 */
++	crop = vsp1_rwpf_get_crop(rpf, rpf->entity.config);
++
+ 	vsp1_rpf_write(rpf, VI6_RPF_SRC_BSIZE,
+ 		       (crop->width << VI6_RPF_SRC_BSIZE_BHSIZE_SHIFT) |
+ 		       (crop->height << VI6_RPF_SRC_BSIZE_BVSIZE_SHIFT));
+@@ -103,9 +107,19 @@ static int rpf_s_stream(struct v4l2_subdev *subdev, int enable)
+ 	vsp1_rpf_write(rpf, VI6_RPF_DSWAP, fmtinfo->swap);
  
-+	/* Initialize the display list manager if the WPF is used for display */
-+	if ((vsp1->info->features & VSP1_HAS_LIF) && index = 0) {
-+		wpf->dlm = vsp1_dlm_create(vsp1, 4);
-+		if (!wpf->dlm) {
-+			ret = -ENOMEM;
-+			goto error;
-+		}
+ 	/* Output location */
++	if (pipe->bru) {
++		const struct v4l2_rect *compose;
++
++		compose = vsp1_entity_get_pad_compose(pipe->bru,
++						      pipe->bru->config,
++						      rpf->bru_input);
++		left = compose->left;
++		top = compose->top;
 +	}
 +
- 	/* Initialize the V4L2 subdev. */
- 	subdev = &wpf->entity.subdev;
- 	v4l2_subdev_init(subdev, &wpf_ops);
+ 	vsp1_rpf_write(rpf, VI6_RPF_LOC,
+-		       (rpf->location.left << VI6_RPF_LOC_HCOORD_SHIFT) |
+-		       (rpf->location.top << VI6_RPF_LOC_VCOORD_SHIFT));
++		       (left << VI6_RPF_LOC_HCOORD_SHIFT) |
++		       (top << VI6_RPF_LOC_VCOORD_SHIFT));
+ 
+ 	/* Use the alpha channel (extended to 8 bits) when available or an
+ 	 * alpha value set through the V4L2_CID_ALPHA_COMPONENT control
+diff --git a/drivers/media/platform/vsp1/vsp1_rwpf.c b/drivers/media/platform/vsp1/vsp1_rwpf.c
+index e5216d39723e..0c5ad023adfb 100644
+--- a/drivers/media/platform/vsp1/vsp1_rwpf.c
++++ b/drivers/media/platform/vsp1/vsp1_rwpf.c
+@@ -76,19 +76,11 @@ int vsp1_rwpf_enum_frame_size(struct v4l2_subdev *subdev,
+ 	return 0;
+ }
+ 
+-static struct v4l2_rect *
+-vsp1_rwpf_get_crop(struct vsp1_rwpf *rwpf, struct v4l2_subdev_pad_config *cfg,
+-		   u32 which)
++struct v4l2_rect *vsp1_rwpf_get_crop(struct vsp1_rwpf *rwpf,
++				     struct v4l2_subdev_pad_config *config)
+ {
+-	switch (which) {
+-	case V4L2_SUBDEV_FORMAT_TRY:
+-		return v4l2_subdev_get_try_crop(&rwpf->entity.subdev, cfg,
+-						RWPF_PAD_SINK);
+-	case V4L2_SUBDEV_FORMAT_ACTIVE:
+-		return &rwpf->crop;
+-	default:
+-		return NULL;
+-	}
++	return v4l2_subdev_get_try_crop(&rwpf->entity.subdev, config,
++					RWPF_PAD_SINK);
+ }
+ 
+ int vsp1_rwpf_get_format(struct v4l2_subdev *subdev,
+@@ -148,7 +140,7 @@ int vsp1_rwpf_set_format(struct v4l2_subdev *subdev,
+ 	fmt->format = *format;
+ 
+ 	/* Update the sink crop rectangle. */
+-	crop = vsp1_rwpf_get_crop(rwpf, cfg, fmt->which);
++	crop = vsp1_rwpf_get_crop(rwpf, config);
+ 	crop->left = 0;
+ 	crop->top = 0;
+ 	crop->width = fmt->format.width;
+@@ -180,7 +172,7 @@ int vsp1_rwpf_get_selection(struct v4l2_subdev *subdev,
+ 
+ 	switch (sel->target) {
+ 	case V4L2_SEL_TGT_CROP:
+-		sel->r = *vsp1_rwpf_get_crop(rwpf, cfg, sel->which);
++		sel->r = *vsp1_rwpf_get_crop(rwpf, config);
+ 		break;
+ 
+ 	case V4L2_SEL_TGT_CROP_BOUNDS:
+@@ -246,7 +238,7 @@ int vsp1_rwpf_set_selection(struct v4l2_subdev *subdev,
+ 	sel->r.height = min_t(unsigned int, sel->r.height,
+ 			      format->height - sel->r.top);
+ 
+-	crop = vsp1_rwpf_get_crop(rwpf, cfg, sel->which);
++	crop = vsp1_rwpf_get_crop(rwpf, config);
+ 	*crop = sel->r;
+ 
+ 	/* Propagate the format to the source pad. */
+diff --git a/drivers/media/platform/vsp1/vsp1_rwpf.h b/drivers/media/platform/vsp1/vsp1_rwpf.h
+index e8ca9b6ee689..4ebfab61e0ef 100644
+--- a/drivers/media/platform/vsp1/vsp1_rwpf.h
++++ b/drivers/media/platform/vsp1/vsp1_rwpf.h
+@@ -43,11 +43,7 @@ struct vsp1_rwpf {
+ 
+ 	struct v4l2_pix_format_mplane format;
+ 	const struct vsp1_format_info *fmtinfo;
+-	struct {
+-		unsigned int left;
+-		unsigned int top;
+-	} location;
+-	struct v4l2_rect crop;
++	unsigned int bru_input;
+ 
+ 	unsigned int alpha;
+ 
+@@ -91,6 +87,8 @@ int vsp1_rwpf_set_selection(struct v4l2_subdev *subdev,
+ 			    struct v4l2_subdev_pad_config *cfg,
+ 			    struct v4l2_subdev_selection *sel);
+ 
++struct v4l2_rect *vsp1_rwpf_get_crop(struct vsp1_rwpf *rwpf,
++				     struct v4l2_subdev_pad_config *config);
+ /**
+  * vsp1_rwpf_set_memory - Configure DMA addresses for a [RW]PF
+  * @rwpf: the [RW]PF instance
+diff --git a/drivers/media/platform/vsp1/vsp1_video.c b/drivers/media/platform/vsp1/vsp1_video.c
+index ec1394289659..b1cb6b8a2452 100644
+--- a/drivers/media/platform/vsp1/vsp1_video.c
++++ b/drivers/media/platform/vsp1/vsp1_video.c
+@@ -211,9 +211,6 @@ static int vsp1_video_pipeline_validate_branch(struct vsp1_pipeline *pipe,
+ 	struct media_pad *pad;
+ 	bool bru_found = false;
+ 
+-	input->location.left = 0;
+-	input->location.top = 0;
+-
+ 	pad = media_entity_remote_pad(&input->entity.pads[RWPF_PAD_SOURCE]);
+ 
+ 	while (1) {
+@@ -226,18 +223,14 @@ static int vsp1_video_pipeline_validate_branch(struct vsp1_pipeline *pipe,
+ 
+ 		entity = to_vsp1_entity(media_entity_to_v4l2_subdev(pad->entity));
+ 
+-		/* A BRU is present in the pipeline, store the compose rectangle
+-		 * location in the input RPF for use when configuring the RPF.
++		/* A BRU is present in the pipeline, store the BRU input pad
++		 * number in the input RPF for use when configuring the RPF.
+ 		 */
+ 		if (entity->type = VSP1_ENTITY_BRU) {
+ 			struct vsp1_bru *bru = to_bru(&entity->subdev);
+-			struct v4l2_rect *rect -				&bru->inputs[pad->index].compose;
+ 
+ 			bru->inputs[pad->index].rpf = input;
+-
+-			input->location.left = rect->left;
+-			input->location.top = rect->top;
++			input->bru_input = pad->index;
+ 
+ 			bru_found = true;
+ 		}
+diff --git a/drivers/media/platform/vsp1/vsp1_wpf.c b/drivers/media/platform/vsp1/vsp1_wpf.c
+index c86d31f274bf..0797927d14cf 100644
+--- a/drivers/media/platform/vsp1/vsp1_wpf.c
++++ b/drivers/media/platform/vsp1/vsp1_wpf.c
+@@ -44,7 +44,7 @@ static int wpf_s_stream(struct v4l2_subdev *subdev, int enable)
+ 	struct vsp1_device *vsp1 = wpf->entity.vsp1;
+ 	const struct v4l2_mbus_framefmt *source_format;
+ 	const struct v4l2_mbus_framefmt *sink_format;
+-	const struct v4l2_rect *crop = &wpf->crop;
++	const struct v4l2_rect *crop;
+ 	unsigned int i;
+ 	u32 srcrpf = 0;
+ 	u32 outfmt = 0;
+@@ -88,6 +88,8 @@ static int wpf_s_stream(struct v4l2_subdev *subdev, int enable)
+ 				       format->plane_fmt[1].bytesperline);
+ 	}
+ 
++	crop = vsp1_rwpf_get_crop(wpf, wpf->entity.config);
++
+ 	vsp1_wpf_write(wpf, VI6_WPF_HSZCLIP, VI6_WPF_SZCLIP_EN |
+ 		       (crop->left << VI6_WPF_SZCLIP_OFST_SHIFT) |
+ 		       (crop->width << VI6_WPF_SZCLIP_SIZE_SHIFT));
 -- 
 2.4.10
 
