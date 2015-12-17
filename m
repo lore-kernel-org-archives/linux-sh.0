@@ -1,80 +1,127 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Thu, 17 Dec 2015 11:32:23 +0000
-Subject: RE: [PATCH 07/10] drivers/pci: make host/pcie-rcar.c explicitly non-modular
-Message-Id: <PS1PR06MB11800C425B2DB1CD08A635B7F5E00@PS1PR06MB1180.apcprd06.prod.outlook.com>
+From: Paul Gortmaker <paul.gortmaker@windriver.com>
+Date: Thu, 17 Dec 2015 16:06:31 +0000
+Subject: Re: [PATCH 07/10] drivers/pci: make host/pcie-rcar.c explicitly non-modular
+Message-Id: <20151217160631.GA2772@windriver.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1449970917-12633-1-git-send-email-paul.gortmaker@windriver.com>
-	<1449970917-12633-8-git-send-email-paul.gortmaker@windriver.com>
+ <1449970917-12633-8-git-send-email-paul.gortmaker@windriver.com>
  <CAMuHMdWF+g4hwzcCRGkTYM=TpiBmxOn3GYmr+zO8c0QJUgH1fg@mail.gmail.com>
-In-Reply-To: <CAMuHMdWF+g4hwzcCRGkTYM=TpiBmxOn3GYmr+zO8c0QJUgH1fg@mail.gmail.com>
+ <PS1PR06MB11800C425B2DB1CD08A635B7F5E00@PS1PR06MB1180.apcprd06.prod.outlook.com>
+In-Reply-To: <PS1PR06MB11800C425B2DB1CD08A635B7F5E00@PS1PR06MB1180.apcprd06.prod.outlook.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Paul Gortmaker <paul.gortmaker@windriver.com>
+To: Phil Edworthy <phil.edworthy@renesas.com>
 Cc: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Simon Horman <horms@verge.net.au>, Bjorn Helgaas <bhelgaas@google.com>, linux-pci <linux-pci@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Geert Uytterhoeven <geert@linux-m68k.org>
 
-SGkgUGF1bCwNCg0KT24gMTMgRGVjZW1iZXIgMjAxNSAxMDo1OSwgR2VlcnQgVXl0dGVyaG9ldmVu
-IHdyb3RlOg0KPiANCj4gQ0MgTU9EVUxFX0FVVEhPUg0KPiANCj4gT24gU3VuLCBEZWMgMTMsIDIw
-MTUgYXQgMjo0MSBBTSwgUGF1bCBHb3J0bWFrZXINCj4gPHBhdWwuZ29ydG1ha2VyQHdpbmRyaXZl
-ci5jb20+IHdyb3RlOg0KPiA+IFRoZSBLY29uZmlnIGN1cnJlbnRseSBjb250cm9sbGluZyBjb21w
-aWxhdGlvbiBvZiB0aGlzIGNvZGUgaXM6DQo+ID4NCj4gPiBkcml2ZXJzL3BjaS9ob3N0L0tjb25m
-aWc6Y29uZmlnIFBDSV9SQ0FSX0dFTjJfUENJRQ0KPiA+IGRyaXZlcnMvcGNpL2hvc3QvS2NvbmZp
-ZzogICAgICAgYm9vbCAiUmVuZXNhcyBSLUNhciBQQ0llIGNvbnRyb2xsZXIiDQo+ID4NCj4gPiAu
-Li5tZWFuaW5nIHRoYXQgaXQgY3VycmVudGx5IGlzIG5vdCBiZWluZyBidWlsdCBhcyBhIG1vZHVs
-ZSBieSBhbnlvbmUuDQo+ID4NCj4gPiBMZXRzIHJlbW92ZSB0aGUgbW9kdWxhciBjb2RlIHRoYXQg
-aXMgZXNzZW50aWFsbHkgb3JwaGFuZWQsIHNvIHRoYXQNCj4gPiB3aGVuIHJlYWRpbmcgdGhlIGRy
-aXZlciB0aGVyZSBpcyBubyBkb3VidCBpdCBpcyBidWlsdGluLW9ubHkuDQo+ID4NCj4gPiBTaW5j
-ZSBtb2R1bGVfcGxhdGZvcm1fZHJpdmVyKCkgdXNlcyB0aGUgc2FtZSBpbml0IGxldmVsIHByaW9y
-aXR5IGFzDQo+ID4gYnVpbHRpbl9wbGF0Zm9ybV9kcml2ZXIoKSB0aGUgaW5pdCBvcmRlcmluZyBy
-ZW1haW5zIHVuY2hhbmdlZCB3aXRoDQo+ID4gdGhpcyBjb21taXQuDQo+ID4NCj4gPiBXZSBkb24n
-dCBoYXZlIHRvIGRpc2FsbG93IGEgZHJpdmVyIHVuYmluZCwgc2luY2UgdGhhdCBpcyBhbHJlYWR5
-DQo+ID4gZG9uZSBmb3IgdXMgaW4gdGhpcyBkcml2ZXIuDQo+ID4NCj4gPiBBbHNvIG5vdGUgdGhh
-dCBNT0RVTEVfREVWSUNFX1RBQkxFIGlzIGEgbm8tb3AgZm9yIG5vbi1tb2R1bGFyIGNvZGUuDQo+
-ID4NCj4gPiBXZSBhbHNvIGRlbGV0ZSB0aGUgTU9EVUxFX0xJQ0VOU0UgdGFnIGV0Yy4gc2luY2Ug
-YWxsIHRoYXQgaW5mb3JtYXRpb24NCj4gPiB3YXMgKG9yIGlzIG5vdykgY29udGFpbmVkIGF0IHRo
-ZSB0b3Agb2YgdGhlIGZpbGUgaW4gdGhlIGNvbW1lbnRzLg0KPiA+DQo+ID4gQ2M6IFNpbW9uIEhv
-cm1hbiA8aG9ybXNAdmVyZ2UubmV0LmF1Pg0KPiA+IENjOiBCam9ybiBIZWxnYWFzIDxiaGVsZ2Fh
-c0Bnb29nbGUuY29tPg0KPiA+IENjOiBsaW51eC1wY2lAdmdlci5rZXJuZWwub3JnDQo+ID4gQ2M6
-IGxpbnV4LXNoQHZnZXIua2VybmVsLm9yZw0KPiA+IFNpZ25lZC1vZmYtYnk6IFBhdWwgR29ydG1h
-a2VyIDxwYXVsLmdvcnRtYWtlckB3aW5kcml2ZXIuY29tPg0KDQpJdCBkb2Vzbid0IGFwcGx5LCB3
-b3VsZCB5b3UgbWluZCByZWJhc2luZyBvbnRvOg0KaHR0cHM6Ly9naXQua2VybmVsLm9yZy9jZ2l0
-L2xpbnV4L2tlcm5lbC9naXQvaGVsZ2Fhcy9wY2kuZ2l0L2xvZy8/aD1uZXh0DQoNCkFzIGZvciB0
-aGUgY2hhbmdlcyB0aGVtc2VsdmVzLA0KQWNrZWQtYnk6IFBoaWwgRWR3b3J0aHkgPHBoaWwuZWR3
-b3J0aHlAcmVuZXNhcy5jb20+DQoNClRoYW5rcw0KUGhpbA0KDQo+ID4gLS0tDQo+ID4gIGRyaXZl
-cnMvcGNpL2hvc3QvcGNpZS1yY2FyLmMgfCAxMSArKysrLS0tLS0tLQ0KPiA+ICAxIGZpbGUgY2hh
-bmdlZCwgNCBpbnNlcnRpb25zKCspLCA3IGRlbGV0aW9ucygtKQ0KPiA+DQo+ID4gZGlmZiAtLWdp
-dCBhL2RyaXZlcnMvcGNpL2hvc3QvcGNpZS1yY2FyLmMgYi9kcml2ZXJzL3BjaS9ob3N0L3BjaWUt
-cmNhci5jDQo+ID4gaW5kZXggZjRmYTZjNTM3NDQ4Li4yYzYxOTI3N2QyNjUgMTAwNjQ0DQo+ID4g
-LS0tIGEvZHJpdmVycy9wY2kvaG9zdC9wY2llLXJjYXIuYw0KPiA+ICsrKyBiL2RyaXZlcnMvcGNp
-L2hvc3QvcGNpZS1yY2FyLmMNCj4gPiBAQCAtNyw2ICs3LDggQEANCj4gPiAgICogIGFyY2gvc2gv
-ZHJpdmVycy9wY2kvb3BzLXNoNzc4Ni5jDQo+ID4gICAqICBDb3B5cmlnaHQgKEMpIDIwMDkgLSAy
-MDExICBQYXVsIE11bmR0DQo+ID4gICAqDQo+ID4gKyAqIE1vZHVsZSBBdXRob3I6IFBoaWwgRWR3
-b3J0aHkgPHBoaWwuZWR3b3J0aHlAcmVuZXNhcy5jb20+DQo+ID4gKyAqDQo+ID4gICAqIFRoaXMg
-ZmlsZSBpcyBsaWNlbnNlZCB1bmRlciB0aGUgdGVybXMgb2YgdGhlIEdOVSBHZW5lcmFsIFB1Ymxp
-Yw0KPiA+ICAgKiBMaWNlbnNlIHZlcnNpb24gMi4gIFRoaXMgcHJvZ3JhbSBpcyBsaWNlbnNlZCAi
-YXMgaXMiIHdpdGhvdXQgYW55DQo+ID4gICAqIHdhcnJhbnR5IG9mIGFueSBraW5kLCB3aGV0aGVy
-IGV4cHJlc3Mgb3IgaW1wbGllZC4NCj4gPiBAQCAtMTgsNyArMjAsNyBAQA0KPiA+ICAjaW5jbHVk
-ZSA8bGludXgvaXJxLmg+DQo+ID4gICNpbmNsdWRlIDxsaW51eC9pcnFkb21haW4uaD4NCj4gPiAg
-I2luY2x1ZGUgPGxpbnV4L2tlcm5lbC5oPg0KPiA+IC0jaW5jbHVkZSA8bGludXgvbW9kdWxlLmg+
-DQo+ID4gKyNpbmNsdWRlIDxsaW51eC9pbml0Lmg+DQo+ID4gICNpbmNsdWRlIDxsaW51eC9tc2ku
-aD4NCj4gPiAgI2luY2x1ZGUgPGxpbnV4L29mX2FkZHJlc3MuaD4NCj4gPiAgI2luY2x1ZGUgPGxp
-bnV4L29mX2lycS5oPg0KPiA+IEBAIC05MjEsNyArOTIzLDYgQEAgc3RhdGljIGNvbnN0IHN0cnVj
-dCBvZl9kZXZpY2VfaWQgcmNhcl9wY2llX29mX21hdGNoW10gPSB7DQo+ID4gICAgICAgICB7IC5j
-b21wYXRpYmxlID0gInJlbmVzYXMscGNpZS1yOGE3NzkxIiwgLmRhdGEgPSByY2FyX3BjaWVfaHdf
-aW5pdCB9LA0KPiA+ICAgICAgICAge30sDQo+ID4gIH07DQo+ID4gLU1PRFVMRV9ERVZJQ0VfVEFC
-TEUob2YsIHJjYXJfcGNpZV9vZl9tYXRjaCk7DQo+ID4NCj4gPiAgc3RhdGljIGludCByY2FyX3Bj
-aWVfcHJvYmUoc3RydWN0IHBsYXRmb3JtX2RldmljZSAqcGRldikNCj4gPiAgew0KPiA+IEBAIC0x
-MDA3LDggKzEwMDgsNCBAQCBzdGF0aWMgc3RydWN0IHBsYXRmb3JtX2RyaXZlciByY2FyX3BjaWVf
-ZHJpdmVyID0gew0KPiA+ICAgICAgICAgfSwNCj4gPiAgICAgICAgIC5wcm9iZSA9IHJjYXJfcGNp
-ZV9wcm9iZSwNCj4gPiAgfTsNCj4gPiAtbW9kdWxlX3BsYXRmb3JtX2RyaXZlcihyY2FyX3BjaWVf
-ZHJpdmVyKTsNCj4gPiAtDQo+ID4gLU1PRFVMRV9BVVRIT1IoIlBoaWwgRWR3b3J0aHkgPHBoaWwu
-ZWR3b3J0aHlAcmVuZXNhcy5jb20+Iik7DQo+ID4gLU1PRFVMRV9ERVNDUklQVElPTigiUmVuZXNh
-cyBSLUNhciBQQ0llIGRyaXZlciIpOw0KPiA+IC1NT0RVTEVfTElDRU5TRSgiR1BMIHYyIik7DQo+
-ID4gK2J1aWx0aW5fcGxhdGZvcm1fZHJpdmVyKHJjYXJfcGNpZV9kcml2ZXIpOw0KPiANCj4gR3J7
-b2V0amUsZWV0aW5nfXMsDQo+IA0KPiAgICAgICAgICAgICAgICAgICAgICAgICBHZWVydA0KPiAN
-Cj4gLS0NCj4gR2VlcnQgVXl0dGVyaG9ldmVuIC0tIFRoZXJlJ3MgbG90cyBvZiBMaW51eCBiZXlv
-bmQgaWEzMiAtLSBnZWVydEBsaW51eC1tNjhrLm9yZw0KPiANCj4gSW4gcGVyc29uYWwgY29udmVy
-c2F0aW9ucyB3aXRoIHRlY2huaWNhbCBwZW9wbGUsIEkgY2FsbCBteXNlbGYgYSBoYWNrZXIuIEJ1
-dA0KPiB3aGVuIEknbSB0YWxraW5nIHRvIGpvdXJuYWxpc3RzIEkganVzdCBzYXkgInByb2dyYW1t
-ZXIiIG9yIHNvbWV0aGluZyBsaWtlIHRoYXQuDQo+ICAgICAgICAgICAgICAgICAgICAgICAgICAg
-ICAgICAgLS0gTGludXMgVG9ydmFsZHMNCg=
+[RE: [PATCH 07/10] drivers/pci: make host/pcie-rcar.c explicitly non-modular] On 17/12/2015 (Thu 11:32) Phil Edworthy wrote:
+
+> Hi Paul,
+> 
+> On 13 December 2015 10:59, Geert Uytterhoeven wrote:
+> > 
+> > CC MODULE_AUTHOR
+> > 
+> > On Sun, Dec 13, 2015 at 2:41 AM, Paul Gortmaker
+> > <paul.gortmaker@windriver.com> wrote:
+> > > The Kconfig currently controlling compilation of this code is:
+> > >
+> > > drivers/pci/host/Kconfig:config PCI_RCAR_GEN2_PCIE
+> > > drivers/pci/host/Kconfig:       bool "Renesas R-Car PCIe controller"
+> > >
+> > > ...meaning that it currently is not being built as a module by anyone.
+> > >
+> > > Lets remove the modular code that is essentially orphaned, so that
+> > > when reading the driver there is no doubt it is builtin-only.
+> > >
+> > > Since module_platform_driver() uses the same init level priority as
+> > > builtin_platform_driver() the init ordering remains unchanged with
+> > > this commit.
+> > >
+> > > We don't have to disallow a driver unbind, since that is already
+> > > done for us in this driver.
+> > >
+> > > Also note that MODULE_DEVICE_TABLE is a no-op for non-modular code.
+> > >
+> > > We also delete the MODULE_LICENSE tag etc. since all that information
+> > > was (or is now) contained at the top of the file in the comments.
+> > >
+> > > Cc: Simon Horman <horms@verge.net.au>
+> > > Cc: Bjorn Helgaas <bhelgaas@google.com>
+> > > Cc: linux-pci@vger.kernel.org
+> > > Cc: linux-sh@vger.kernel.org
+> > > Signed-off-by: Paul Gortmaker <paul.gortmaker@windriver.com>
+> 
+> It doesn't apply, would you mind rebasing onto:
+> https://git.kernel.org/cgit/linux/kernel/git/helgaas/pci.git/log/?h=next
+> 
+
+Sure I can do that and just resend the 2 renesas commits if there is no
+interest in tristate conversions for them.  As for the others, I'm still
+awaiting feedback on what approach people want to take;  I listed what I
+figured our possible options are.
+
+Paul.
+--
+
+> As for the changes themselves,
+> Acked-by: Phil Edworthy <phil.edworthy@renesas.com>
+> 
+> Thanks
+> Phil
+> 
+> > > ---
+> > >  drivers/pci/host/pcie-rcar.c | 11 ++++-------
+> > >  1 file changed, 4 insertions(+), 7 deletions(-)
+> > >
+> > > diff --git a/drivers/pci/host/pcie-rcar.c b/drivers/pci/host/pcie-rcar.c
+> > > index f4fa6c537448..2c619277d265 100644
+> > > --- a/drivers/pci/host/pcie-rcar.c
+> > > +++ b/drivers/pci/host/pcie-rcar.c
+> > > @@ -7,6 +7,8 @@
+> > >   *  arch/sh/drivers/pci/ops-sh7786.c
+> > >   *  Copyright (C) 2009 - 2011  Paul Mundt
+> > >   *
+> > > + * Module Author: Phil Edworthy <phil.edworthy@renesas.com>
+> > > + *
+> > >   * This file is licensed under the terms of the GNU General Public
+> > >   * License version 2.  This program is licensed "as is" without any
+> > >   * warranty of any kind, whether express or implied.
+> > > @@ -18,7 +20,7 @@
+> > >  #include <linux/irq.h>
+> > >  #include <linux/irqdomain.h>
+> > >  #include <linux/kernel.h>
+> > > -#include <linux/module.h>
+> > > +#include <linux/init.h>
+> > >  #include <linux/msi.h>
+> > >  #include <linux/of_address.h>
+> > >  #include <linux/of_irq.h>
+> > > @@ -921,7 +923,6 @@ static const struct of_device_id rcar_pcie_of_match[] = {
+> > >         { .compatible = "renesas,pcie-r8a7791", .data = rcar_pcie_hw_init },
+> > >         {},
+> > >  };
+> > > -MODULE_DEVICE_TABLE(of, rcar_pcie_of_match);
+> > >
+> > >  static int rcar_pcie_probe(struct platform_device *pdev)
+> > >  {
+> > > @@ -1007,8 +1008,4 @@ static struct platform_driver rcar_pcie_driver = {
+> > >         },
+> > >         .probe = rcar_pcie_probe,
+> > >  };
+> > > -module_platform_driver(rcar_pcie_driver);
+> > > -
+> > > -MODULE_AUTHOR("Phil Edworthy <phil.edworthy@renesas.com>");
+> > > -MODULE_DESCRIPTION("Renesas R-Car PCIe driver");
+> > > -MODULE_LICENSE("GPL v2");
+> > > +builtin_platform_driver(rcar_pcie_driver);
+> > 
+> > Gr{oetje,eeting}s,
+> > 
+> >                         Geert
+> > 
+> > --
+> > Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+> > 
+> > In personal conversations with technical people, I call myself a hacker. But
+> > when I'm talking to journalists I just say "programmer" or something like that.
+> >                                 -- Linus Torvalds
