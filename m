@@ -1,54 +1,97 @@
-From: Yang Shi <yang.shi@linaro.org>
-Date: Tue, 08 Dec 2015 19:39:54 +0000
-Subject: [PATCH v3 6/7] sh: mm/gup: add gup trace points
-Message-Id: <1449603595-718-7-git-send-email-yang.shi@linaro.org>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 17 Dec 2015 08:40:12 +0000
+Subject: [PATCH/RFC 34/48] vb2: Add helper function to queue request-specific buffer.
+Message-Id: <1450341626-6695-35-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449603595-718-1-git-send-email-yang.shi@linaro.org>
-In-Reply-To: <1449603595-718-1-git-send-email-yang.shi@linaro.org>
+References: <1450341626-6695-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1450341626-6695-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: akpm@linux-foundation.org, rostedt@goodmis.org, mingo@redhat.com
-Cc: linux-kernel@vger.kernel.org, linux-mm@kvack.org, linaro-kernel@lists.linaro.org, yang.shi@linaro.org, linux-sh@vger.kernel.org
-
+To: linux-media@vger.kernel.org
 Cc: linux-sh@vger.kernel.org
-Signed-off-by: Yang Shi <yang.shi@linaro.org>
----
- arch/sh/mm/gup.c | 7 +++++++
- 1 file changed, 7 insertions(+)
 
-diff --git a/arch/sh/mm/gup.c b/arch/sh/mm/gup.c
-index e7af6a6..d4c9a6e 100644
---- a/arch/sh/mm/gup.c
-+++ b/arch/sh/mm/gup.c
-@@ -14,6 +14,9 @@
- #include <linux/highmem.h>
- #include <asm/pgtable.h>
+From: Hans Verkuil <hans.verkuil@cisco.com>
+
+The vb2_qbuf_request() function will queue any buffers for the given request
+that are in state PREPARED.
+
+Useful when drivers have to implement the req_queue callback.
+
+Signed-off-by: Hans Verkuil <hans.verkuil@cisco.com>
+---
+ drivers/media/v4l2-core/videobuf2-v4l2.c | 31 +++++++++++++++++++++++++++++++
+ include/media/videobuf2-v4l2.h           |  1 +
+ 2 files changed, 32 insertions(+)
+
+diff --git a/drivers/media/v4l2-core/videobuf2-v4l2.c b/drivers/media/v4l2-core/videobuf2-v4l2.c
+index 0db7d67092ab..1f649b15990f 100644
+--- a/drivers/media/v4l2-core/videobuf2-v4l2.c
++++ b/drivers/media/v4l2-core/videobuf2-v4l2.c
+@@ -113,6 +113,9 @@ static int __set_timestamp(struct vb2_buffer *vb, const void *pb)
+ 	struct vb2_v4l2_buffer *vbuf = to_vb2_v4l2_buffer(vb);
+ 	struct vb2_queue *q = vb->vb2_queue;
  
-+#define CREATE_TRACE_POINTS
-+#include <trace/events/gup.h>
++	if (!pb)
++		return 0;
 +
- static inline pte_t gup_get_pte(pte_t *ptep)
+ 	if (q->is_output) {
+ 		/*
+ 		 * For output buffers copy the timestamp if needed,
+@@ -188,6 +191,9 @@ static int __fill_v4l2_buffer(struct vb2_buffer *vb, void *pb)
+ 	struct vb2_queue *q = vb->vb2_queue;
+ 	unsigned int plane;
+ 
++	if (!pb)
++		return 0;
++
+ 	/* Copy back data such as timestamp, flags, etc. */
+ 	b->index = vb->index;
+ 	b->type = vb->type;
+@@ -578,6 +584,31 @@ int vb2_qbuf(struct vb2_queue *q, struct v4l2_buffer *b)
+ }
+ EXPORT_SYMBOL_GPL(vb2_qbuf);
+ 
++int vb2_qbuf_request(struct vb2_queue *q, u16 request, struct vb2_buffer **p_buf)
++{
++	unsigned int buffer;
++
++	for (buffer = 0; buffer < q->num_buffers; buffer++) {
++		struct vb2_buffer *vb = q->bufs[buffer];
++		struct vb2_v4l2_buffer *vbuf = to_vb2_v4l2_buffer(vb);
++
++		if (vbuf->request = request &&
++		    vb->state = VB2_BUF_STATE_PREPARED) {
++			if (p_buf)
++				*p_buf = vb;
++			/*
++			 * The buffer has already been prepared so we can skip
++			 * the vb2_queue_or_prepare_buf() call in vb2_qbuf() and
++			 * call the core function directly.
++			 */
++			return vb2_core_qbuf(q, vb->index, NULL);
++		}
++	}
++
++	return -ENOENT;
++}
++EXPORT_SYMBOL_GPL(vb2_qbuf_request);
++
+ static int vb2_internal_dqbuf(struct vb2_queue *q, struct v4l2_buffer *b,
+ 		bool nonblocking)
  {
- #ifndef CONFIG_X2TLB
-@@ -178,6 +181,8 @@ int __get_user_pages_fast(unsigned long start, int nr_pages, int write,
- 					(void __user *)start, len)))
- 		return 0;
+diff --git a/include/media/videobuf2-v4l2.h b/include/media/videobuf2-v4l2.h
+index 7cb428fc66ad..bc742a174f2b 100644
+--- a/include/media/videobuf2-v4l2.h
++++ b/include/media/videobuf2-v4l2.h
+@@ -59,6 +59,7 @@ int vb2_create_bufs(struct vb2_queue *q, struct v4l2_create_buffers *create);
+ int vb2_prepare_buf(struct vb2_queue *q, struct v4l2_buffer *b);
  
-+	trace_gup_get_user_pages_fast(start, (unsigned long) nr_pages);
-+
- 	/*
- 	 * This doesn't prevent pagetable teardown, but does prevent
- 	 * the pagetables and pages from being freed.
-@@ -244,6 +249,8 @@ int get_user_pages_fast(unsigned long start, int nr_pages, int write,
- 	} while (pgdp++, addr = next, addr != end);
- 	local_irq_enable();
- 
-+	trace_gup_get_user_pages_fast(start, (unsigned long) nr_pages);
-+
- 	VM_BUG_ON(nr != (end - start) >> PAGE_SHIFT);
- 	return nr;
+ int vb2_qbuf(struct vb2_queue *q, struct v4l2_buffer *b);
++int vb2_qbuf_request(struct vb2_queue *q, u16 request, struct vb2_buffer **p_buf);
+ int vb2_expbuf(struct vb2_queue *q, struct v4l2_exportbuffer *eb);
+ int vb2_dqbuf(struct vb2_queue *q, struct v4l2_buffer *b, bool nonblocking);
  
 -- 
-2.0.2
+2.4.10
 
