@@ -1,65 +1,27 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 08 Dec 2015 05:27:56 +0000
-Subject: [PATCH 3/8 v4] thermal: rcar: check irq possibility in rcar_thermal_irq_xxx()
-Message-Id: <87r3ix5x6y.wl%kuninori.morimoto.gx@renesas.com>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Thu, 17 Dec 2015 13:22:33 +0000
+Subject: [PATCH 0/4] Various R-Car PCIe patches
+Message-Id: <1450358557-28376-1-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87vb895x9d.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87vb895x9d.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, Zhang Rui <rui.zhang@intel.com>, Eduardo Valentin <edubezval@gmail.com>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: Simon Horman <horms@verge.net.au>, Bjorn Helgaas <bhelgaas@google.com>
+Cc: Wolfram Sang <wsa@the-dreams.de>, Geert Uytterhoeven <geert@linux-m68k.org>, linux-kernel@vger.kernel.org, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org, Phil Edworthy <phil.edworthy@renesas.com>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The first patch removes code that is no longer used. The next two allow us to
+use runtim PM. The last patch is for PHY setup in order to get PCIe compliance
+apparently. For that last patch, I've been told that this is what I must set.
 
-Current rcar thermal driver sometimes checks irq possibility when it
-calls rcar_thermal_irq_enable/disable(), but sometimes not.
-This patch checks it inside rcar_thermal_irq_enable/disable().
+Phil Edworthy (4):
+  PCI: rcar: remove unused pci_sys_data structure in pcie-rcar
+  PCI: rcar: Support runtime PM link state L1 handling in pcie-rcar
+  PCI: rcar: Add runtime PM support to pcie-rcar
+  PCI: rcar: Add Gen2 PHY setup to pcie-rcar
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
-v3 -> v4
+ drivers/pci/host/pcie-rcar.c | 105 +++++++++++++++++++++++++++++++++----------
+ 1 file changed, 81 insertions(+), 24 deletions(-)
 
- - no change
-
- drivers/thermal/rcar_thermal.c | 9 +++++----
- 1 file changed, 5 insertions(+), 4 deletions(-)
-
-diff --git a/drivers/thermal/rcar_thermal.c b/drivers/thermal/rcar_thermal.c
-index a1a93f3..67b5216 100644
---- a/drivers/thermal/rcar_thermal.c
-+++ b/drivers/thermal/rcar_thermal.c
-@@ -298,6 +298,9 @@ static void _rcar_thermal_irq_ctrl(struct rcar_thermal_priv *priv, int enable)
- 	unsigned long flags;
- 	u32 mask = 0x3 << rcar_id_to_shift(priv); /* enable Rising/Falling */
- 
-+	if (!rcar_has_irq_support(priv))
-+		return;
-+
- 	spin_lock_irqsave(&common->lock, flags);
- 
- 	rcar_thermal_common_bset(common, INTMSK, mask, enable ? 0 : mask);
-@@ -449,8 +452,7 @@ static int rcar_thermal_probe(struct platform_device *pdev)
- 			goto error_unregister;
- 		}
- 
--		if (rcar_has_irq_support(priv))
--			rcar_thermal_irq_enable(priv);
-+		rcar_thermal_irq_enable(priv);
- 
- 		list_move_tail(&priv->list, &common->head);
- 
-@@ -496,8 +498,7 @@ static int rcar_thermal_remove(struct platform_device *pdev)
- 	struct rcar_thermal_priv *priv;
- 
- 	rcar_thermal_for_each_priv(priv, common) {
--		if (rcar_has_irq_support(priv))
--			rcar_thermal_irq_disable(priv);
-+		rcar_thermal_irq_disable(priv);
- 		thermal_zone_device_unregister(priv->zone);
- 	}
- 
 -- 
-1.9.1
+2.5.0
 
