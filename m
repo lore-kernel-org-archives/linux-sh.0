@@ -1,75 +1,56 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Thu, 03 Dec 2015 15:51:38 +0000
-Subject: [PATCH 8/9] ARM: shmobile: r8a7794: dtsi: add internal delay for i2c IPs
-Message-Id: <1449157899-6572-9-git-send-email-wsa@the-dreams.de>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 17 Dec 2015 07:21:31 +0000
+Subject: [PATCH 0/4] Enable DU on Salvator-X board
+Message-Id: <1450336895-4279-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449157899-6572-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1449157899-6572-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, linux-rockchip@lists.infradead.org, Mika Westerberg <mika.westerberg@linux.intel.com>, Andy Shevchenko <andriy.shevchenko@linux.intel.com>, Jarkko Nikula <jarkko.nikula@linux.intel.com>
+To: linux-sh@vger.kernel.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Hello,
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
----
- arch/arm/boot/dts/r8a7794.dtsi | 6 ++++++
- 1 file changed, 6 insertions(+)
+This patch series enables support for DU on the Salvator-X board. Only the VGA
+output is supported for now.
 
-diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
-index 6f2f01914db295..37809b8aae65f9 100644
---- a/arch/arm/boot/dts/r8a7794.dtsi
-+++ b/arch/arm/boot/dts/r8a7794.dtsi
-@@ -519,6 +519,7 @@
- 		power-domains = <&cpg_clocks>;
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-+		i2c-scl-internal-delay-ns = <6>;
- 		status = "disabled";
- 	};
- 
-@@ -530,6 +531,7 @@
- 		power-domains = <&cpg_clocks>;
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-+		i2c-scl-internal-delay-ns = <6>;
- 		status = "disabled";
- 	};
- 
-@@ -541,6 +543,7 @@
- 		power-domains = <&cpg_clocks>;
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-+		i2c-scl-internal-delay-ns = <6>;
- 		status = "disabled";
- 	};
- 
-@@ -552,6 +555,7 @@
- 		power-domains = <&cpg_clocks>;
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-+		i2c-scl-internal-delay-ns = <6>;
- 		status = "disabled";
- 	};
- 
-@@ -563,6 +567,7 @@
- 		power-domains = <&cpg_clocks>;
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-+		i2c-scl-internal-delay-ns = <6>;
- 		status = "disabled";
- 	};
- 
-@@ -574,6 +579,7 @@
- 		power-domains = <&cpg_clocks>;
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-+		i2c-scl-internal-delay-ns = <6>;
- 		status = "disabled";
- 	};
- 
+The patches are pretty straightforward but depend on two large patch series
+(plus the oddball patches) for the VSP1 and DU drivers.
+
+On the VSP1 side the series has been posted to the linux-media and linux-sh
+mailing lists under the subject "[PATCH v2 00/32] VSP: Add R-Car Gen3
+support". A pull request for v4.5 has been submitted. An additional patch
+named "[RFC/PATCH] v4l: vsp1: Configure device based on IP version" is also
+needed. It has posted to the same mailing lists but has not been included in
+the pull request.
+
+On the DU side the series has been posted to the dri-devel and linux-sh
+mailing lists under the subject "[PATCH 00/22] R-Car DU: Add Gen3 support".
+As the series depends on the VSP1 series integration is a bit tricky and the
+pull request will be submitted for v4.6.
+
+The code has been tested on Salvator-X (quite obviously), and the changes have
+also been tested on Lager and Koelsch to try and prevent regressions. You can
+find the code with all its dependencies (including R-Car H3 CCF support) at
+
+	git://linuxtv.org/pinchartl/media.git drm/du/vsp1-kms/boards
+
+Please note that the branch is a working branch and is thus frequently rebased
+with the latest code. You can alternatively use the vsp1-kms-20151217 tag
+which corresponds to the above branch as of today.
+
+Laurent Pinchart (4):
+  clk: shmobile: r8a7795: Add LVDS module clock
+  ARM64: renesas: r8a7795: Add VSP instances
+  ARM64: renesas: r8a7795: Add DU device to DT
+  ARM64: renesas: salvator-x: Enable DU
+
+ arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts |  44 ++++++
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi           | 160 +++++++++++++++++++++
+ drivers/clk/shmobile/r8a7795-cpg-mssr.c            |   1 +
+ 3 files changed, 205 insertions(+)
+
 -- 
-2.1.4
+Regards,
+
+Laurent Pinchart
 
