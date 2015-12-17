@@ -1,7 +1,7 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 17 Dec 2015 08:06:11 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 17 Dec 2015 10:30:14 +0000
 Subject: Re: [PATCH/RFC 02/03] ARM: shmobile: r8a7795: Hack up SYS-DMAC0 support
-Message-Id: <CAMuHMdVyT6eFM0iQvY7VBN5ruUbh0MVqd0NZ6T8dMu5dEyyogw@mail.gmail.com>
+Message-Id: <CANqRtoQWtNv8qQou=FTWnQyqMgTo5AfL3-g6GoM+RYBW7ssqoA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20151215132652.15356.75661.sendpatchset@little-apple>
 In-Reply-To: <20151215132652.15356.75661.sendpatchset@little-apple>
@@ -10,34 +10,36 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Simon,
-
-On Thu, Dec 17, 2015 at 1:35 AM, Simon Horman <horms@verge.net.au> wrote:
->> > +                       interrupts =    <0 119 IRQ_TYPE_LEVEL_HIGH
+On Wed, Dec 16, 2015 at 5:21 PM, Geert Uytterhoeven
+<geert@linux-m68k.org> wrote:
+> On Tue, Dec 15, 2015 at 2:26 PM, Magnus Damm <magnus.damm@gmail.com> wrote:
+>> From: Magnus Damm <damm+renesas@opensource.se>
 >>
->> GIC_SPI
+>> This hooks up SYS-DMAC0 as r8a7795 device node. Note that the
+>> generic compat string is used, this should be replaced by
+>> SoC-specific compat string. Not for upstream merge.
 >>
->> (we should fix up all interrupts properties in R-Car Gen2 DTSes, too)
+>> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+>> ---
+>>
+>>  arch/arm64/boot/dts/renesas/r8a7795.dtsi |   30 +++++++++++++++++++++++++++++-
+>>  1 file changed, 29 insertions(+), 1 deletion(-)
+>>
+>> --- 0003/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+>> +++ work/arch/arm64/boot/dts/renesas/r8a7795.dtsi       2015-11-10 20:48:56.410513000 +0900
+>> @@ -295,7 +295,35 @@
+>>                 };
+>>
+>>                 dmac0: dma-controller@e6700000 {
+>> -                       /* Empty node for now */
+>> +                       compatible = "renesas,rcar-dmac";
+>> +                       reg = <0 0xe6700000 0 0x10000>;
+>> +                       interrupts =    <0 119 IRQ_TYPE_LEVEL_HIGH
 >
-> Can I clarify that the idea is to substitute the first cell of the
-> value of interrupt properties as follows:
-> * s/0/GIC_SPI/
-> * s/1/GIC_PPI/
+> GIC_SPI
+>
+> (we should fix up all interrupts properties in R-Car Gen2 DTSes, too)
 
-Indeed.
+Thanks, totally agree!
 
-> If so, I can add this to my (long) integration todo list.
-> I'm also quite happy for someone else to handle this.
-
-Thanks!
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+/ magnus
