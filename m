@@ -1,82 +1,58 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Tue, 22 Dec 2015 20:53:23 +0000
-Subject: Re: [GIT PULL] Third Round of Renesas ARM Based SoC DT Updates for v4.5
-Message-Id: <20151222205323.GR30172@localhost>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 17 Dec 2015 06:45:35 +0000
+Subject: [PATCH] ARM: shmobile: r8a7790: DU and IPMMU-MX prototype
+Message-Id: <20151217064535.30114.91840.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1450402264.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1450402264.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Fri, Dec 18, 2015 at 11:29:43AM +0900, Simon Horman wrote:
-> Hi Olof, Hi Kevin, Hi Arnd,
-> 
-> Please consider these third round of Renesas ARM based SoC DT updates for v4.5.
-> 
-> This pull request is based on the previous round of
-> such requests, tagged as renesas-dt2-for-v4.5,
-> which you have already pulled.
-> 
-> 
-> The following changes since commit c8d9fdbe2d648caaa510d45dc13eba2e9957140b:
-> 
->   ARM: shmobile: sh73a0 dtsi: Add L2 cache-controller node (2015-11-25 10:42:38 +0900)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt3-for-v4.5
-> 
-> for you to fetch changes up to d01c8bec91414f2110370dfcb9dd33fc0e573cee:
-> 
->   ARM: shmobile: r8a779x: use SoC-specific usb-dmac compatibility strings (2015-12-17 10:10:54 +0900)
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Merged, thanks.
+Enable the IPMMU-MX device and hook up the DU on r8a7790,
+and also include enable debug messages.
 
+On boards such as r8a7790 Lager the DU will with this change
+included use IOMMU framework and IPMMU-MX device  when driving
+on-board video output via VGA, HDMI and LVDS.
 
+Not-Yet-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
 
-> ----------------------------------------------------------------
-> Geert Uytterhoeven (11):
->       ARM: shmobile: sh73a0: Add MSIOF clocks
->       ARM: shmobile: sh73a0: Add MSIOF device nodes
->       ARM: shmobile: bockw dts: Override #sound-dai-cells to zero
->       ARM: shmobile: koelsch dts: Add serial port config to chosen/stdout-path
->       ARM: shmobile: alt dts: Add serial port config to chosen/stdout-path
->       ARM: shmobile: ape6evm dts: Add serial port config to chosen/stdout-path
->       ARM: shmobile: bockw dts: Update console parameters
->       ARM: shmobile: gose dts: Add serial port config to chosen/stdout-path
->       ARM: shmobile: silk dts: Add serial port config to chosen/stdout-path
->       ARM: shmobile: porter dts: Add serial port config to chosen/stdout-path
->       ARM: shmobile: lager dts: Add serial port config to chosen/stdout-path
-> 
-> Kuninori Morimoto (1):
->       ARM: shmobile: r8a7778: tidyup #sound-dai-cells settings
-> 
-> Magnus Damm (4):
->       ARM: shmobile: r8a7790: IPMMU compat string SoC part number update
->       ARM: shmobile: r8a7791: IPMMU compat string SoC part number update
->       ARM: shmobile: r8a7793: IPMMU compat string SoC part number update
->       ARM: shmobile: r8a7794: IPMMU compat string SoC part number update
-> 
-> Sergei Shtylyov (2):
->       ARM: shmobile: r8a7791: add EtherAVB clock
->       ARM: shmobile: r8a7791: add EtherAVB DT support
-> 
-> Simon Horman (4):
->       ARM: shmobile: r8a7793: remove deprecated #gpio-range-cells
->       ARM: shmobile: r8a7793: Add missing serial devices to DT
->       ARM: shmobile: r8a7793: Describe DMA for the serial ports
->       ARM: shmobile: r8a779x: use SoC-specific usb-dmac compatibility strings
-> 
-> Wolfram Sang (3):
->       ARM: shmobile: r8a7790: dtsi: add internal delay for i2c IPs
->       ARM: shmobile: r8a7791: dtsi: add internal delay for i2c IPs
->       ARM: shmobile: r8a7794: dtsi: add internal delay for i2c IPs
+ Written against renesas-devel-20151217v2-v4.4-rc5
 
-Again, on ARM we use ARM: dts: <platform>: ...
+ arch/arm/boot/dts/r8a7790.dtsi |    3 ++-
+ drivers/iommu/iommu.c          |    2 +-
+ 2 files changed, 3 insertions(+), 2 deletions(-)
 
-
-
--Olof
-
+--- 0001/arch/arm/boot/dts/r8a7790.dtsi
++++ work/arch/arm/boot/dts/r8a7790.dtsi	2015-12-17 15:38:20.890513000 +0900
+@@ -886,6 +886,7 @@
+ 			 <&mstp7_clks R8A7790_CLK_LVDS0>,
+ 			 <&mstp7_clks R8A7790_CLK_LVDS1>;
+ 		clock-names = "du.0", "du.1", "du.2", "lvds.0", "lvds.1";
++		iommus = <&ipmmu_mx 15>, <&ipmmu_mx 16>;
+ 		status = "disabled";
+ 
+ 		ports {
+@@ -1809,7 +1810,7 @@
+ 		interrupts = <0 222 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 221 IRQ_TYPE_LEVEL_HIGH>;
+ 		#iommu-cells = <1>;
+-		status = "disabled";
++		status = "okay";
+ 	};
+ 
+ 	ipmmu_rt: mmu@ffc80000 {
+--- 0001/drivers/iommu/iommu.c
++++ work/drivers/iommu/iommu.c	2015-12-17 15:38:34.880513000 +0900
+@@ -15,7 +15,7 @@
+  * along with this program; if not, write to the Free Software
+  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
+  */
+-
++#define DEBUG
+ #define pr_fmt(fmt)    "iommu: " fmt
+ 
+ #include <linux/device.h>
