@@ -1,22 +1,76 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 01 Dec 2015 06:33:09 +0000
-Subject: Re: [PATCH 0/2] arm64: renesas: CS2000 support for sound
-Message-Id: <20151201063305.GF16260@verge.net.au>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Thu, 17 Dec 2015 13:22:37 +0000
+Subject: [PATCH 4/4] PCI: rcar: Add Gen2 PHY setup to pcie-rcar
+Message-Id: <1450358557-28376-5-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87lh9eybq9.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87lh9eybq9.wl%kuninori.morimoto.gx@renesas.com>
+References: <1450358557-28376-1-git-send-email-phil.edworthy@renesas.com>
+In-Reply-To: <1450358557-28376-1-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Simon Horman <horms@verge.net.au>, Bjorn Helgaas <bhelgaas@google.com>
+Cc: Wolfram Sang <wsa@the-dreams.de>, Geert Uytterhoeven <geert@linux-m68k.org>, linux-kernel@vger.kernel.org, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org, Phil Edworthy <phil.edworthy@renesas.com>
 
-On Tue, Dec 01, 2015 at 05:35:51AM +0000, Kuninori Morimoto wrote:
-> 
-> Hi Simon
-> 
-> CS2000 driver was accepted in clk-next
-> https://git.kernel.org/cgit/linux/kernel/git/clk/linux.git/log/?h=clk-next
-> 
-> These patches add cs2000 support on salvator-x board for sound.
+For PCIe compliance, the PHY registers need setting as per the
+manual.
 
-Thanks, I have queued these up.
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+---
+ drivers/pci/host/pcie-rcar.c | 27 ++++++++++++++++++++++++---
+ 1 file changed, 24 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/pci/host/pcie-rcar.c b/drivers/pci/host/pcie-rcar.c
+index 02a5993..61e112e 100644
+--- a/drivers/pci/host/pcie-rcar.c
++++ b/drivers/pci/host/pcie-rcar.c
+@@ -103,6 +103,11 @@
+ #define H1_PCIEPHYDOUTR		0x040014
+ #define H1_PCIEPHYSR		0x040018
+ 
++/* R-Car Gen2 PHY */
++#define GEN2_PCIEPHYADDR	0x780
++#define GEN2_PCIEPHYDATA	0x784
++#define GEN2_PCIEPHYCTRL	0x78c
++
+ #define INT_PCI_MSI_NR	32
+ 
+ #define RCONF(x)	(PCICONF(0)+(x))
+@@ -593,6 +598,22 @@ static int rcar_pcie_hw_init_h1(struct rcar_pcie *pcie)
+ 	return -ETIMEDOUT;
+ }
+ 
++static int rcar_pcie_hw_init_gen2(struct rcar_pcie *pcie)
++{
++	rcar_pci_write_reg(pcie, 0x000f0030, GEN2_PCIEPHYADDR);
++	rcar_pci_write_reg(pcie, 0x00381203, GEN2_PCIEPHYDATA);
++	rcar_pci_write_reg(pcie, 0x00000001, GEN2_PCIEPHYCTRL);
++	rcar_pci_write_reg(pcie, 0x00000006, GEN2_PCIEPHYCTRL);
++
++	rcar_pci_write_reg(pcie, 0x000f0054, GEN2_PCIEPHYADDR);
++	/* The following value is for DC connection, no termination resistor */
++	rcar_pci_write_reg(pcie, 0x13802007, GEN2_PCIEPHYDATA);
++	rcar_pci_write_reg(pcie, 0x00000001, GEN2_PCIEPHYCTRL);
++	rcar_pci_write_reg(pcie, 0x00000006, GEN2_PCIEPHYCTRL);
++
++	return rcar_pcie_hw_init(pcie);
++}
++
+ static int rcar_msi_alloc(struct rcar_msi *chip)
+ {
+ 	int msi;
+@@ -932,9 +953,9 @@ static int rcar_pcie_parse_map_dma_ranges(struct rcar_pcie *pcie,
+ 
+ static const struct of_device_id rcar_pcie_of_match[] = {
+ 	{ .compatible = "renesas,pcie-r8a7779", .data = rcar_pcie_hw_init_h1 },
+-	{ .compatible = "renesas,pcie-rcar-gen2", .data = rcar_pcie_hw_init },
+-	{ .compatible = "renesas,pcie-r8a7790", .data = rcar_pcie_hw_init },
+-	{ .compatible = "renesas,pcie-r8a7791", .data = rcar_pcie_hw_init },
++	{ .compatible = "renesas,pcie-rcar-gen2", .data = rcar_pcie_hw_init_gen2 },
++	{ .compatible = "renesas,pcie-r8a7790", .data = rcar_pcie_hw_init_gen2 },
++	{ .compatible = "renesas,pcie-r8a7791", .data = rcar_pcie_hw_init_gen2 },
+ 	{ .compatible = "renesas,pcie-r8a7795", .data = rcar_pcie_hw_init },
+ 	{},
+ };
+-- 
+2.5.0
+
