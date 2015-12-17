@@ -1,54 +1,67 @@
-From: Yang Shi <yang.shi@linaro.org>
-Date: Wed, 09 Dec 2015 17:29:23 +0000
-Subject: [PATCH v4 6/7] sh: mm/gup: add gup trace points
-Message-Id: <1449682164-9933-7-git-send-email-yang.shi@linaro.org>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 17 Dec 2015 05:24:53 +0000
+Subject: [PATCH 3/7] ARM: shmobile: defconfig: Enable missing support based on DTSes
+Message-Id: <6161cc147277e7537d73a45d732a7112997c20f6.1450315426.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449682164-9933-1-git-send-email-yang.shi@linaro.org>
-In-Reply-To: <1449682164-9933-1-git-send-email-yang.shi@linaro.org>
+References: <cover.1450315426.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1450315426.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: akpm@linux-foundation.org, rostedt@goodmis.org, mingo@redhat.com
-Cc: linux-kernel@vger.kernel.org, linux-mm@kvack.org, linaro-kernel@lists.linaro.org, yang.shi@linaro.org, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Cc: linux-sh@vger.kernel.org
-Signed-off-by: Yang Shi <yang.shi@linaro.org>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+
+Enable all missing support, extracted from the various Renesas ARM DTSes
+using linux-config-from-dt.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/sh/mm/gup.c | 7 +++++++
- 1 file changed, 7 insertions(+)
+ arch/arm/configs/shmobile_defconfig | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
-diff --git a/arch/sh/mm/gup.c b/arch/sh/mm/gup.c
-index e7af6a6..fa72aac 100644
---- a/arch/sh/mm/gup.c
-+++ b/arch/sh/mm/gup.c
-@@ -14,6 +14,9 @@
- #include <linux/highmem.h>
- #include <asm/pgtable.h>
- 
-+#define CREATE_TRACE_POINTS
-+#include <trace/events/gup.h>
-+
- static inline pte_t gup_get_pte(pte_t *ptep)
- {
- #ifndef CONFIG_X2TLB
-@@ -178,6 +181,8 @@ int __get_user_pages_fast(unsigned long start, int nr_pages, int write,
- 					(void __user *)start, len)))
- 		return 0;
- 
-+	trace_gup_get_user_pages_fast(start, nr_pages);
-+
- 	/*
- 	 * This doesn't prevent pagetable teardown, but does prevent
- 	 * the pagetables and pages from being freed.
-@@ -244,6 +249,8 @@ int get_user_pages_fast(unsigned long start, int nr_pages, int write,
- 	} while (pgdp++, addr = next, addr != end);
- 	local_irq_enable();
- 
-+	trace_gup_get_user_pages_fast(start, nr_pages);
-+
- 	VM_BUG_ON(nr != (end - start) >> PAGE_SHIFT);
- 	return nr;
- 
+diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
+index 91233ed27578..d2259952879d 100644
+--- a/arch/arm/configs/shmobile_defconfig
++++ b/arch/arm/configs/shmobile_defconfig
+@@ -52,6 +52,8 @@ CONFIG_UNIX=y
+ CONFIG_INET=y
+ CONFIG_IP_PNP=y
+ CONFIG_IP_PNP_DHCP=y
++CONFIG_CAN=y
++CONFIG_CAN_RCAR=y
+ CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
+ CONFIG_DEVTMPFS=y
+ CONFIG_DEVTMPFS_MOUNT=y
+@@ -98,6 +100,7 @@ CONFIG_SERIAL_SH_SCI=y
+ CONFIG_SERIAL_SH_SCI_NR_UARTS 
+ CONFIG_SERIAL_SH_SCI_CONSOLE=y
+ CONFIG_I2C_CHARDEV=y
++CONFIG_I2C_EMEV2=y
+ CONFIG_I2C_GPIO=y
+ CONFIG_I2C_RIIC=y
+ CONFIG_I2C_SH_MOBILE=y
+@@ -134,6 +137,7 @@ CONFIG_SOC_CAMERA=y
+ CONFIG_SOC_CAMERA_PLATFORM=y
+ CONFIG_VIDEO_RCAR_VIN=y
+ CONFIG_V4L_MEM2MEM_DRIVERS=y
++CONFIG_VIDEO_RENESAS_JPU=y
+ CONFIG_VIDEO_RENESAS_VSP1=y
+ # CONFIG_MEDIA_SUBDRV_AUTOSELECT is not set
+ CONFIG_VIDEO_ADV7180=y
+@@ -175,9 +179,11 @@ CONFIG_RTC_CLASS=y
+ CONFIG_RTC_DRV_RS5C372=y
+ CONFIG_RTC_DRV_S35390A=y
+ CONFIG_RTC_DRV_RX8581=y
++CONFIG_RTC_DRV_DA9063=y
+ CONFIG_DMADEVICES=y
+ CONFIG_SH_DMAE=y
+ CONFIG_RCAR_DMAC=y
++CONFIG_RENESAS_USB_DMAC=y
+ # CONFIG_IOMMU_SUPPORT is not set
+ CONFIG_IIO=y
+ CONFIG_AK8975=y
 -- 
-2.0.2
+2.1.4
 
