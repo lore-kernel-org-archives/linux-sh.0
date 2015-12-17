@@ -1,77 +1,39 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 14 Dec 2015 18:57:21 +0000
-Subject: [PATCH v3 12/27] serial: sh-sci: Avoid overflow in sci_baud_calc_hscif()
-Message-Id: <1450119456-964-13-git-send-email-geert+renesas@glider.be>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 17 Dec 2015 08:39:51 +0000
+Subject: [PATCH/RFC 13/48] v4l: vsp1: Document calling context of vsp1_pipeline_propagate_alpha()
+Message-Id: <1450341626-6695-14-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450119456-964-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1450119456-964-1-git-send-email-geert+renesas@glider.be>
+References: <1450341626-6695-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1450341626-6695-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-If bps >= 1048576, the multiplication of the predivider and "bps" will
-overflow, and both br and err will contain bogus values.
-Skip the current and all higher clock select predividers when overflow
-is detected.  Simplify the calculations using intermediates while we're
-at it.
+The function can only be called from a s_stream handler as it requires a
+valid display list context (due to calling vsp1_uds_set_alpha() which
+writes to module registers). Document the requirement.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-v3:
-  - Add Acked-by,
-  - Rename intermediates to "prediv" and "scrate",
-  - Add a comment explaining the calculation and possible overflow.
----
- drivers/tty/serial/sh-sci.c | 25 +++++++++++++++++++------
- 1 file changed, 19 insertions(+), 6 deletions(-)
+ drivers/media/platform/vsp1/vsp1_pipe.c | 3 +++
+ 1 file changed, 3 insertions(+)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 77e0a582da44947f..c490c51d6032786b 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -1870,7 +1870,7 @@ static unsigned int sci_scbrr_calc(struct sci_port *s, unsigned int bps,
- static void sci_baud_calc_hscif(unsigned int bps, unsigned long freq, int *brr,
- 				unsigned int *srr, unsigned int *cks)
- {
--	unsigned int sr, br, c;
-+	unsigned int sr, br, prediv, scrate, c;
- 	int err, recv_margin;
- 	int min_err = 1000; /* 100% */
- 	int recv_max_margin = 0;
-@@ -1880,12 +1880,25 @@ static void sci_baud_calc_hscif(unsigned int bps, unsigned long freq, int *brr,
- 	for (sr = 8; sr <= 32; sr++) {
- 		for (c = 0; c <= 3; c++) {
- 			/* integerized formulas from HSCIF documentation */
--			br = DIV_ROUND_CLOSEST(freq, (sr *
--					      (1 << (2 * c + 1)) * bps));
-+			prediv = sr * (1 << (2 * c + 1));
-+
-+			/*
-+			 * We need to calculate:
-+			 *
-+			 *     br = freq / (prediv * bps) clamped to [1..256]
-+			 *     err = (freq / (br * prediv * bps / 1000)) - 1000
-+			 *
-+			 * Watch out for overflow when calculating the desired
-+			 * sampling clock rate!
-+			 */
-+			if (bps > UINT_MAX / prediv)
-+				break;
-+
-+			scrate = prediv * bps;
-+			br = DIV_ROUND_CLOSEST(freq, scrate);
- 			br = clamp(br, 1U, 256U);
--			err = DIV_ROUND_CLOSEST(freq, (br * bps * sr *
--					       (1 << (2 * c + 1)) / 1000)) -
--					       1000;
-+			err = DIV_ROUND_CLOSEST(freq, (br * scrate) / 1000) -
-+			      1000;
- 			/* Calc recv margin
- 			 * M: Receive margin (%)
- 			 * N: Ratio of bit rate to clock (N = sampling rate)
+diff --git a/drivers/media/platform/vsp1/vsp1_pipe.c b/drivers/media/platform/vsp1/vsp1_pipe.c
+index facf68f999ce..9549aacab3cf 100644
+--- a/drivers/media/platform/vsp1/vsp1_pipe.c
++++ b/drivers/media/platform/vsp1/vsp1_pipe.c
+@@ -297,6 +297,9 @@ done:
+  * to be scaled, we disable alpha scaling when the UDS input has a fixed alpha
+  * value. The UDS then outputs a fixed alpha value which needs to be programmed
+  * from the input RPF alpha.
++ *
++ * This function can only be called from a subdev s_stream handler as it
++ * requires a valid display list context.
+  */
+ void vsp1_pipeline_propagate_alpha(struct vsp1_pipeline *pipe,
+ 				   struct vsp1_entity *input,
 -- 
-1.9.1
+2.4.10
 
