@@ -1,76 +1,57 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Thu, 17 Dec 2015 13:22:37 +0000
-Subject: [PATCH 4/4] PCI: rcar: Add Gen2 PHY setup to pcie-rcar
-Message-Id: <1450358557-28376-5-git-send-email-phil.edworthy@renesas.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Thu, 17 Dec 2015 13:33:08 +0000
+Subject: Re: [PATCH 4/4] PCI: rcar: Add Gen2 PHY setup to pcie-rcar
+Message-Id: <20151217133308.GB20372@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="EuxKj2iCbKjpUGkD"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1450358557-28376-1-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1450358557-28376-1-git-send-email-phil.edworthy@renesas.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>, Bjorn Helgaas <bhelgaas@google.com>
-Cc: Wolfram Sang <wsa@the-dreams.de>, Geert Uytterhoeven <geert@linux-m68k.org>, linux-kernel@vger.kernel.org, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org, Phil Edworthy <phil.edworthy@renesas.com>
+ <1450358557-28376-5-git-send-email-phil.edworthy@renesas.com>
+In-Reply-To: <1450358557-28376-5-git-send-email-phil.edworthy@renesas.com>
+To: Phil Edworthy <phil.edworthy@renesas.com>
+Cc: Simon Horman <horms@verge.net.au>, Bjorn Helgaas <bhelgaas@google.com>, Geert Uytterhoeven <geert@linux-m68k.org>, linux-kernel@vger.kernel.org, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org
 
-For PCIe compliance, the PHY registers need setting as per the
-manual.
 
-Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
----
- drivers/pci/host/pcie-rcar.c | 27 ++++++++++++++++++++++++---
- 1 file changed, 24 insertions(+), 3 deletions(-)
+--EuxKj2iCbKjpUGkD
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-diff --git a/drivers/pci/host/pcie-rcar.c b/drivers/pci/host/pcie-rcar.c
-index 02a5993..61e112e 100644
---- a/drivers/pci/host/pcie-rcar.c
-+++ b/drivers/pci/host/pcie-rcar.c
-@@ -103,6 +103,11 @@
- #define H1_PCIEPHYDOUTR		0x040014
- #define H1_PCIEPHYSR		0x040018
- 
-+/* R-Car Gen2 PHY */
-+#define GEN2_PCIEPHYADDR	0x780
-+#define GEN2_PCIEPHYDATA	0x784
-+#define GEN2_PCIEPHYCTRL	0x78c
-+
- #define INT_PCI_MSI_NR	32
- 
- #define RCONF(x)	(PCICONF(0)+(x))
-@@ -593,6 +598,22 @@ static int rcar_pcie_hw_init_h1(struct rcar_pcie *pcie)
- 	return -ETIMEDOUT;
- }
- 
-+static int rcar_pcie_hw_init_gen2(struct rcar_pcie *pcie)
-+{
-+	rcar_pci_write_reg(pcie, 0x000f0030, GEN2_PCIEPHYADDR);
-+	rcar_pci_write_reg(pcie, 0x00381203, GEN2_PCIEPHYDATA);
-+	rcar_pci_write_reg(pcie, 0x00000001, GEN2_PCIEPHYCTRL);
-+	rcar_pci_write_reg(pcie, 0x00000006, GEN2_PCIEPHYCTRL);
-+
-+	rcar_pci_write_reg(pcie, 0x000f0054, GEN2_PCIEPHYADDR);
-+	/* The following value is for DC connection, no termination resistor */
-+	rcar_pci_write_reg(pcie, 0x13802007, GEN2_PCIEPHYDATA);
-+	rcar_pci_write_reg(pcie, 0x00000001, GEN2_PCIEPHYCTRL);
-+	rcar_pci_write_reg(pcie, 0x00000006, GEN2_PCIEPHYCTRL);
-+
-+	return rcar_pcie_hw_init(pcie);
-+}
-+
- static int rcar_msi_alloc(struct rcar_msi *chip)
- {
- 	int msi;
-@@ -932,9 +953,9 @@ static int rcar_pcie_parse_map_dma_ranges(struct rcar_pcie *pcie,
- 
- static const struct of_device_id rcar_pcie_of_match[] = {
- 	{ .compatible = "renesas,pcie-r8a7779", .data = rcar_pcie_hw_init_h1 },
--	{ .compatible = "renesas,pcie-rcar-gen2", .data = rcar_pcie_hw_init },
--	{ .compatible = "renesas,pcie-r8a7790", .data = rcar_pcie_hw_init },
--	{ .compatible = "renesas,pcie-r8a7791", .data = rcar_pcie_hw_init },
-+	{ .compatible = "renesas,pcie-rcar-gen2", .data = rcar_pcie_hw_init_gen2 },
-+	{ .compatible = "renesas,pcie-r8a7790", .data = rcar_pcie_hw_init_gen2 },
-+	{ .compatible = "renesas,pcie-r8a7791", .data = rcar_pcie_hw_init_gen2 },
- 	{ .compatible = "renesas,pcie-r8a7795", .data = rcar_pcie_hw_init },
- 	{},
- };
--- 
-2.5.0
 
+> +	rcar_pci_write_reg(pcie, 0x000f0030, GEN2_PCIEPHYADDR);
+> +	rcar_pci_write_reg(pcie, 0x00381203, GEN2_PCIEPHYDATA);
+> +	rcar_pci_write_reg(pcie, 0x00000001, GEN2_PCIEPHYCTRL);
+> +	rcar_pci_write_reg(pcie, 0x00000006, GEN2_PCIEPHYCTRL);
+> +
+> +	rcar_pci_write_reg(pcie, 0x000f0054, GEN2_PCIEPHYADDR);
+> +	/* The following value is for DC connection, no termination resistor */
+> +	rcar_pci_write_reg(pcie, 0x13802007, GEN2_PCIEPHYDATA);
+> +	rcar_pci_write_reg(pcie, 0x00000001, GEN2_PCIEPHYCTRL);
+> +	rcar_pci_write_reg(pcie, 0x00000006, GEN2_PCIEPHYCTRL);
+
+I'd vote for a comment saying where these magic values come from, i.e.
+which manual, which chapter, etc...
+
+
+--EuxKj2iCbKjpUGkD
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBAgAGBQJWcrmUAAoJEBQN5MwUoCm2zbAQAKf6ScYmjRKEg5cPcmkU8WfB
+aB6qMRD2Dz0F//h6dja5kSRF/OCIpeUALpW8NJgL9fCG49F9gd0Syv/VfWSVn9jf
+vvVlxoLcf2YsJ7s8QXFz6twkTNi675tmvoI7JDt88OnH7U8vBK/TUy1rxMKZo+ti
+VIgVg1IJ/qJhUbPS1rzTbD4XBneaZDRkO87mYfxNTmlipWKzBtkIr30NlsOtuaEX
+V/a1tgIsEMMxzMF0/Q7Mzc4yqX3RSXMOOq7SS5ljywLfO/Dc7yQ88f6TnCZAENa4
+s3wp4GIQJXlxTAVOde4pKvcG2vPGDl9NFv1fsz0NgNw8F7lU1cyf+tIYDyZuGhXe
+65QRflJR33TMdiRpp8QLP0VPCs/IcqMO4m/JBFQpT2AA8imPHUiWaTtzGZt8cG3Y
+KzSag1lZLu3Vrdl4WjNSfHtifMtrR1sUaoiV3oWn3CPnzKMAWSLn37atq8XJIVRL
+4BQXjkCm3FxBFBxdbMPmvhjDUxIutVSBm/JhYQwcKJDS3VqdUPLd5uFOOqMG/F0w
+WmHAjFghAuSRcuna5HmHuw6AxKuJZg5JDYCgRMCHAUrA/4JXeK5OO4YT4xMELqge
+1cXsz5gHdI08tSy73yl9FD+g0LKVdy191nMd6wlDWVXx/xu9a5dToA+OgXmmRkIm
+zpW5u/8DM3Jezi14QhIJ
+=Ygd9
+-----END PGP SIGNATURE-----
+
+--EuxKj2iCbKjpUGkD--
