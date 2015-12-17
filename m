@@ -1,56 +1,50 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 16 Dec 2015 08:17:59 +0000
-Subject: Re: [PATCH/RFC 01/10] iommu/ipmmu-vmsa: Introduce features, break out alias
-Message-Id: <CAMuHMdV2DzMVyWNX2Z3dOH4OV7_6G28HQMKcB9pEA06Vq=ZBhg@mail.gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 17 Dec 2015 08:40:04 +0000
+Subject: [PATCH/RFC 26/48] videodev2.h: Add request field to v4l2_pix_format_mplane
+Message-Id: <1450341626-6695-27-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20151215130508.13535.26186.sendpatchset@little-apple>
-	<20151215130518.13535.13822.sendpatchset@little-apple>
-In-Reply-To: <20151215130518.13535.13822.sendpatchset@little-apple>
+References: <1450341626-6695-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1450341626-6695-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: iommu@lists.linux-foundation.org, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Geert Uytterhoeven <geert+renesas@glider.be>, Linux-sh list <linux-sh@vger.kernel.org>, Joerg Roedel <joro@8bytes.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Simon Horman <horms+renesas@verge.net.au>
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-Hi Magnus,
+Let userspace specify a request ID when getting or setting formats. The
+support is limited to the multi-planar API at the moment, extending it
+to the single-planar API is possible if needed.
 
-On Tue, Dec 15, 2015 at 2:05 PM, Magnus Damm <magnus.damm@gmail.com> wrote:
-> From: Magnus Damm <damm+renesas@opensource.se>
->
-> Introduce struct ipmmu_features to track various hardware
-> and software implementation changes inside the driver for
-> various kinds of IPMMU hardware. Add use_ns_alias_offset
-> as a first example of a feature to control if the secure
-> register bank offset should be used or not.
->
-> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-> ---
->
->  drivers/iommu/ipmmu-vmsa.c |   34 ++++++++++++++++++++++++++++------
->  1 file changed, 28 insertions(+), 6 deletions(-)
->
-> --- 0009/drivers/iommu/ipmmu-vmsa.c
-> +++ work/drivers/iommu/ipmmu-vmsa.c     2015-12-15 13:41:22.600513000 +0900
-> @@ -31,6 +31,10 @@
->
->  #define IPMMU_CTX_MAX 1
->
-> +struct ipmmu_features {
-> +       bool use_ns_alias_offset;
-> +};
+From a userspace point of view the API change is also minimized and
+doesn't require any new ioctl.
 
-Given you're adding more than 4 features in this series, you may want to
-consider using an unsigned int bitfield instead.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ include/uapi/linux/videodev2.h | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-That way you could also store it directly in of_device_id.data, if you want.
+diff --git a/include/uapi/linux/videodev2.h b/include/uapi/linux/videodev2.h
+index 5af1d2d87558..5b2a8bc80eb2 100644
+--- a/include/uapi/linux/videodev2.h
++++ b/include/uapi/linux/videodev2.h
+@@ -1973,6 +1973,7 @@ struct v4l2_plane_pix_format {
+  * @ycbcr_enc:		enum v4l2_ycbcr_encoding, Y'CbCr encoding
+  * @quantization:	enum v4l2_quantization, colorspace quantization
+  * @xfer_func:		enum v4l2_xfer_func, colorspace transfer function
++ * @request:		request ID
+  */
+ struct v4l2_pix_format_mplane {
+ 	__u32				width;
+@@ -1987,7 +1988,8 @@ struct v4l2_pix_format_mplane {
+ 	__u8				ycbcr_enc;
+ 	__u8				quantization;
+ 	__u8				xfer_func;
+-	__u8				reserved[7];
++	__u8				reserved[3];
++	__u32				request;
+ } __attribute__ ((packed));
+ 
+ /**
+-- 
+2.4.10
 
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
