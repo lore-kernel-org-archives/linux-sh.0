@@ -1,93 +1,157 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 08 Dec 2015 00:45:19 +0000
-Subject: Re: [PATCH 2/4] PCI: rcar-gen2: Add device tree support for r8a7793
-Message-Id: <20151208004519.GK10799@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 17 Dec 2015 07:11:49 +0000
+Subject: Re: [PATCH 08/22] drm: rcar-du: Restart the DU group when a plane source changes
+Message-Id: <2986707.83nd5NsHMZ@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1448954672-27236-1-git-send-email-horms+renesas@verge.net.au>
- <1448954672-27236-3-git-send-email-horms+renesas@verge.net.au>
- <20151204212649.GJ20125@localhost>
- <CAMuHMdWEXA-KTkqJsofXuBTQKBrtGW7x+2r+V42CuWwbjkqmvQ@mail.gmail.com>
- <20151207153833.GB7994@localhost>
-In-Reply-To: <20151207153833.GB7994@localhost>
+References: <1442184669-30990-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <1442184669-30990-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <20150914072213.GC3383@phenom.ffwll.local>
+In-Reply-To: <20150914072213.GC3383@phenom.ffwll.local>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Bjorn Helgaas <helgaas@kernel.org>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Bjorn Helgaas <bhelgaas@google.com>, Magnus Damm <magnus.damm@gmail.com>, linux-pci <linux-pci@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: Daniel Vetter <daniel@ffwll.ch>
+Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, dri-devel@lists.freedesktop.org, linux-sh@vger.kernel.org
 
-On Mon, Dec 07, 2015 at 09:38:33AM -0600, Bjorn Helgaas wrote:
-> On Sat, Dec 05, 2015 at 11:38:37AM +0100, Geert Uytterhoeven wrote:
-> > Hi Bjorn,
+Hi Daniel,
+
+On Monday 14 September 2015 09:22:13 Daniel Vetter wrote:
+> On Mon, Sep 14, 2015 at 01:50:55AM +0300, Laurent Pinchart wrote:
+> > Plane sources are configured by the VSPS bit in the PnDDCR4 register.
+> > Although the datasheet states that the bit is updated during vertical
+> > blanking, it seems that updates only occur when the DU group is held in
+> > reset through the DSYSR.DRES bit. Restart the group if the source
+> > changes.
 > > 
-> > On Fri, Dec 4, 2015 at 10:26 PM, Bjorn Helgaas <helgaas@kernel.org> wrote:
-> > > On Tue, Dec 01, 2015 at 04:24:30PM +0900, Simon Horman wrote:
-> > >> Simply document new compat strings.
-> > >> There appears to be no need for a driver updates.
-> > >>
-> > >> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> > >> ---
-> > >>  Documentation/devicetree/bindings/pci/pci-rcar-gen2.txt | 1 +
-> > >>  1 file changed, 1 insertion(+)
-> > >>
-> > >> diff --git a/Documentation/devicetree/bindings/pci/pci-rcar-gen2.txt b/Documentation/devicetree/bindings/pci/pci-rcar-gen2.txt
-> > >> index b19be08a8113..7c231b3e5872 100644
-> > >> --- a/Documentation/devicetree/bindings/pci/pci-rcar-gen2.txt
-> > >> +++ b/Documentation/devicetree/bindings/pci/pci-rcar-gen2.txt
-> > >> @@ -8,6 +8,7 @@ OHCI and EHCI controllers.
-> > >>  Required properties:
-> > >>  - compatible: "renesas,pci-r8a7790" for the R8A7790 SoC;
-> > >>             "renesas,pci-r8a7791" for the R8A7791 SoC;
-> > >> +           "renesas,pci-r8a7793" for the R8A7793 SoC;
-> > >
-> > > What's the benefit of adding a string here if the driver doesn't check
-> > > for it?  Since the driver doesn't look for it, there's no way to test
-> > > anything.
+> > Signed-off-by: Laurent Pinchart
+> > <laurent.pinchart+renesas@ideasonboard.com>
+> > ---
 > > 
-> > If we ever discover a difference between PCI on r8a7793 compared to PCI on
-> > other SoCs of the R-Car Gen2 family, we can handle that difference in the
-> > driver.
+> >  drivers/gpu/drm/rcar-du/rcar_du_crtc.c  |  4 ++++
+> >  drivers/gpu/drm/rcar-du/rcar_du_group.c |  2 ++
+> >  drivers/gpu/drm/rcar-du/rcar_du_group.h |  2 ++
+> >  drivers/gpu/drm/rcar-du/rcar_du_plane.c | 22 ++++++++++++++++++++--
+> >  4 files changed, 28 insertions(+), 2 deletions(-)
 > > 
-> > > It doesn't seem like this file is an authoritative source of names, so
+> > diff --git a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
+> > b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c index 48cb19949ca3..7e2f5c26d589
+> > 100644
+> > --- a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
+> > +++ b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
+> > @@ -272,6 +272,10 @@ static void rcar_du_crtc_update_planes(struct
+> > rcar_du_crtc *rcrtc)
+> >  			rcar_du_group_restart(rcrtc->group);
+> >  	}
 > > 
-> > Yes it is. When adding compatible values to a DTS, checkpatch.pl will check
-> > for their existence in the binding documentation. Hence we always add the
-> > compatible values to the DT binding docs, before we start using them.
+> > +	/* Restart the group if plane sources have changed. */
+> > +	if (rcrtc->group->need_restart)
+> > +		rcar_du_group_restart(rcrtc->group);
+> > +
+> >  	mutex_unlock(&rcrtc->group->lock);
+> >  	
+> >  	rcar_du_group_write(rcrtc->group, rcrtc->index % 2 ? DS2PR : DS1PR,
+> > diff --git a/drivers/gpu/drm/rcar-du/rcar_du_group.c
+> > b/drivers/gpu/drm/rcar-du/rcar_du_group.c index
+> > 4a44ddd51766..0e2b46dce563 100644
+> > --- a/drivers/gpu/drm/rcar-du/rcar_du_group.c
+> > +++ b/drivers/gpu/drm/rcar-du/rcar_du_group.c
+> > @@ -162,6 +162,8 @@ void rcar_du_group_start_stop(struct rcar_du_group
+> > *rgrp, bool start)
 > > 
-> > > if we add it here, there's the possibility the r8a7793 will be
-> > > canceled or renamed, and then we'd have to update this if the driver
-> > > ever did need an r8a7793-specific quirk.  If we waited until the
+> >  void rcar_du_group_restart(struct rcar_du_group *rgrp)
+> >  {
+> > +	rgrp->need_restart = false;
+> > +
+> >  	__rcar_du_group_start_stop(rgrp, false);
+> >  	__rcar_du_group_start_stop(rgrp, true);
+> >  }
+> > diff --git a/drivers/gpu/drm/rcar-du/rcar_du_group.h
+> > b/drivers/gpu/drm/rcar-du/rcar_du_group.h index
+> > 4b1952fd4e7d..5e3adc6b31b5 100644
+> > --- a/drivers/gpu/drm/rcar-du/rcar_du_group.h
+> > +++ b/drivers/gpu/drm/rcar-du/rcar_du_group.h
+> > @@ -32,6 +32,7 @@ struct rcar_du_device;
+> >   * @dptsr_planes: bitmask of planes driven by dot-clock and timing
+> >   generator 1
+> >   * @num_planes: number of planes in the group
+> >   * @planes: planes handled by the group
+> > + * @need_restart: the group needs to be restarted due to a configuration
+> > change
+> >   */
+> >  struct rcar_du_group {
+> >  	struct rcar_du_device *dev;
+> > @@ -47,6 +48,7 @@ struct rcar_du_group {
+> >  	unsigned int num_planes;
+> >  	struct rcar_du_plane planes[RCAR_DU_NUM_KMS_PLANES];
 > > 
-> > I don't understand what you mean here.
-> > 
-> > > driver actually needs a quirk, then we'd know exactly what name to
-> > > look for and we could update the driver, DT, and doc all together.
-> > 
-> > If we update driver, DT, and doc only after we discover the need for a quirk,
-> > it's already too late, due to stable DT rules. Hence we always document and
-> > use SoC-specific compatible values, sometimes combined with family-specific
-> > compatible values. The driver only matches to the as least specific value as
-> > possible.
+> > +	bool need_restart;
 > 
-> The stable DT rules seem to be the key here, but I don't know what
-> they are.  I found Documentation/devicetree/bindings/ABI.txt, but it
-> doesn't clear it up for me.
-> 
-> I was assuming vendors could ship a DT in a platform ROM, in the same
-> way platforms ship with an ACPI system description.  For ACPI, the
-> _HID/_CID in the ROM in the field is authoritative in the sense that
-> we have to regard it as a fixed, unchangeable feature of the platform.
-> If we want a driver to recognize that device, we have to build the ID
-> from the ROM into the driver, and it doesn't matter what is documented
-> in the spec or in the kernel source.
-> 
-> If we had a one-sentence description of why adding the doc update when
-> we actually need it is too late, that would probably be enough.
+> My recommendation is to keep any of these intermediate values in state
+> objects too. The reason is that eventually we want to also support real
+> queues of atomic commits,
 
-I agree that would be useful.
+I like the idea :-)
 
-> I'm perfectly happy with the PCI changes, so if somebody else wants to
-> just merge all these via a DT tree, I'm happy to ack the PCI ones.
+> and then anything stored globally (well, outside of the state objects) won't
+> work. And yes it's ok to push that kind of stuff into helper, this isn't
+> really any different than e.g. crtc_state->active_changed and similar
+> booleans indicating that something special needs to be done when committing.
 
-I have no fixed ideas about who should take these changes
-but I think you could take them through the PCI tree if you
-are so inclined.
+I agree with you. There's still a couple of state variables I need to remove 
+in the driver structures, and that's on my todo list (although not very high 
+I'm afraid).
+
+The group state is a bit of an oddball. The DU groups CRTCs by two and shares 
+resources inside a group. Implementing that resource sharing requires storing 
+group state, which is very difficult without an atomic state object for the 
+group.
+
+Am I missing an easy way to fix that ? And would it be fine to upstream this 
+patch as-is in the meantime ? I'd like to get it in v4.6, it's been out for 
+long enough and is blocking other people.
+
+> >  };
+> >  
+> >  u32 rcar_du_group_read(struct rcar_du_group *rgrp, u32 reg);
+> > 
+> > diff --git a/drivers/gpu/drm/rcar-du/rcar_du_plane.c
+> > b/drivers/gpu/drm/rcar-du/rcar_du_plane.c index
+> > 78ca353bfcf0..c7e0535c0e77 100644
+> > --- a/drivers/gpu/drm/rcar-du/rcar_du_plane.c
+> > +++ b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
+> > @@ -275,9 +275,27 @@ static void rcar_du_plane_atomic_update(struct
+> > drm_plane *plane,
+> >  					struct drm_plane_state *old_state)
+> >  {
+> >  	struct rcar_du_plane *rplane = to_rcar_plane(plane);
+> > +	struct rcar_du_plane_state *old_rstate;
+> > +	struct rcar_du_plane_state *new_rstate;
+> > 
+> > -	if (plane->state->crtc)
+> > -		rcar_du_plane_setup(rplane);
+> > +	if (!plane->state->crtc)
+> > +		return;
+> > +
+> > +	rcar_du_plane_setup(rplane);
+> > +
+> > +	/* Check whether the source has changed from memory to live source or
+> > +	 * from live source to memory. The source has been configured by the
+> > +	 * VSPS bit in the PnDDCR4 register. Although the datasheet states
+> > that
+> > +	 * the bit is updated during vertical blanking, it seems that updates
+> > +	 * only occur when the DU group is held in reset through the
+> > DSYSR.DRES
+> > +	 * bit. We thus need to restart the group if the source changes.
+> > +	 */
+> > +	old_rstate = to_rcar_plane_state(old_state);
+> > +	new_rstate = to_rcar_plane_state(plane->state);
+> > +
+> > +	if ((old_rstate->source = RCAR_DU_PLANE_MEMORY) !> > +	    (new_rstate->source = RCAR_DU_PLANE_MEMORY))
+> > +		rplane->group->need_restart = true;
+> >  }
+> >  
+> >  static const struct drm_plane_helper_funcs rcar_du_plane_helper_funcs = {
+
+-- 
+Regards,
+
+Laurent Pinchart
+
