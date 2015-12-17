@@ -1,59 +1,136 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Mon, 14 Dec 2015 09:49:17 +0000
-Subject: Re: [PATCH v2 2/9] i2c: add generic routine to parse DT for timing information
-Message-Id: <20151214094917.GC1733@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="GZVR6ND4mMseVXL/"
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 17 Dec 2015 06:57:15 +0000
+Subject: [PATCH] ARM: shmobile: r8a7795: DU and IPMMU prototype hack
+Message-Id: <20151217065715.31261.43936.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449567473-2084-1-git-send-email-wsa@the-dreams.de>
- <1449567473-2084-3-git-send-email-wsa@the-dreams.de>
- <1449572085.30729.28.camel@linux.intel.com>
- <20151208130323.GB3359@katana>
- <20151208215103.GA1601@katana>
- <1449663156.30729.63.camel@linux.intel.com>
-In-Reply-To: <1449663156.30729.63.camel@linux.intel.com>
-To: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
-Cc: linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, linux-rockchip@lists.infradead.org, Mika Westerberg <mika.westerberg@linux.intel.com>, Jarkko Nikula <jarkko.nikula@linux.intel.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
+From: Magnus Damm <damm+renesas@opensource.se>
 
---GZVR6ND4mMseVXL/
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+This prototype hack tries to hook up the r8a7795 DU/VSPD/FCPVD
+instance to the IPMMU device and hack the driver to get something
+to work. The IPMMU device has been proven to work with other
+on-chip r8a7795 devices with upstream support, however the DU
+devices are not yet working and seem to be a moving target.
 
-> Or maybe just be a bit verbose like the original variant
-> int ret;
->=20
-> ret =3D device_property_read=E2=80=A6(=E2=80=A6);
-> if (ret && use_defaults) {
-> =E2=80=A6
-> }
->=20
-> Among all variants I like the latter one here. What do you think?
+Developed on top on older renesas-drivers release that has the
+DU patch stack included. More recent releases have the DU patch
+stack excluded due to merge issues. Needs more work.
 
-I agree and fixed it like this.
+Not-Yet-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
 
+ Developed on top of renesas-drivers-2015-12-08-v4.4-rc4 and
+ [PATCH 00/06] iommu/ipmmu-vmsa: IPMMU multi-arch update
+ [PATCH/RFC 00/10] iommu/ipmmu-vmsa: Experimental r8a7795 support
+ [PATCH/RFC 00/03] ARM: shmobile: r8a7795 Salvator-X IPMMU test code
+ 
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi |   15 +++++++++++++--
+ drivers/gpu/drm/rcar-du/rcar_du_drv.c    |    4 ++--
+ drivers/gpu/drm/rcar-du/rcar_du_vsp.c    |    2 ++
+ drivers/media/platform/vsp1/vsp1_wpf.c   |    3 +++
+ 4 files changed, 20 insertions(+), 4 deletions(-)
 
---GZVR6ND4mMseVXL/
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBAgAGBQJWbpCdAAoJEBQN5MwUoCm2oVkP/RjZqDK5AOtqspvmyuxZzCs0
-BQaBbRqL16DL08wDJ4PCzo0q3kbZJluIBCDp+7FGayBnhhhpvcKORLLX3e5B8YOy
-4z1iuP7NptPyb/cor2DeGS7u40W+I1QVcgG0oTAiycjyVzmi483O9ULzryq5dEjk
-3IGGTo4jvEm+cVUxduWduTSX5onX89wfoPIy6pYRt/4gcJiWE4s8JSWnNqMxlMuk
-b+KHMnw/GFMt7yQrskDlvz2xXLqPyQrFgU9ppuUweZHYqUFUEtek3MCEW9WT7qyP
-Py4fR2Bms8qex0rdxDDaeUCDpWuB9SZKuJwyNWg5/G4vlHiPM3V1PiCr0D8fQyCF
-fra3lih05SdEGwB4cIRGlkE6UrFm5Qx4uX4n+AEhTTvomngpnhbMQodRp9hXxQgQ
-N63m2XAf+qGXRq98CGN0plRSMEbk6ZVkrqTbvitnp+8ooCmOn4qf/XxnWA2swugL
-xc9ZGTFbrlHaalrrCfBafHSGdW46BgiahNijNke8HkgfXkFCzmFIswrAYQ1b7vtu
-HruWUiNZt7GFj346mYJHtnpUWK3jv2wzRCU+217ezG4iSqHT6HQWDf1xSewogTX5
-kNJORfdbujcjCwo7Ux8IQifBmF5GSxnnk8lpaZmk7b3OmuGOnb34CYAZdo0XyuXh
-MJtYRrv54ifR7URy5cby
-=ViYu
------END PGP SIGNATURE-----
-
---GZVR6ND4mMseVXL/--
+--- 0028/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ work/arch/arm64/boot/dts/renesas/r8a7795.dtsi	2015-12-17 11:28:23.700513000 +0900
+@@ -325,7 +325,14 @@
+ 			compatible = "renesas,ipmmu-r8a7795";
+ 			reg = <0 0xe6740000 0 0x1000>; /* IPMMU-DS0 */
+ 			#iommu-cells = <1>;
+-			status = "okay";
++			status = "disabled";
++		};
++
++		ipmmu_vi: mmu@febd0000 {
++			compatible = "renesas,ipmmu-r8a7795";
++			reg = <0 0xfebd0000 0 0x1000>;
++			#iommu-cells = <1>;
++			status = "disabled";
+ 		};
+ 
+ 		dmac0: dma-controller@e6700000 {
+@@ -936,6 +943,7 @@
+ 			reg = <0 0xfea20000 0 0x8000>;
+ 			interrupts = <GIC_SPI 466 IRQ_TYPE_LEVEL_HIGH>;
+ 			clocks = <&cpg CPG_MOD 623>;
++			iommus = <&ipmmu_vi 8>;
+ 
+ 			renesas,has-lif;
+ 			renesas,has-lut;
+@@ -948,6 +956,7 @@
+ 			reg = <0 0xfea28000 0 0x8000>;
+ 			interrupts = <GIC_SPI 467 IRQ_TYPE_LEVEL_HIGH>;
+ 			clocks = <&cpg CPG_MOD 622>;
++			iommus = <&ipmmu_vi 9>;
+ 
+ 			renesas,has-lif;
+ 			renesas,has-lut;
+@@ -960,6 +969,7 @@
+ 			reg = <0 0xfea30000 0 0x8000>;
+ 			interrupts = <GIC_SPI 468 IRQ_TYPE_LEVEL_HIGH>;
+ 			clocks = <&cpg CPG_MOD 621>;
++			iommus = <&ipmmu_vi 10>;
+ 
+ 			renesas,has-lif;
+ 			renesas,has-lut;
+@@ -972,6 +982,7 @@
+ 			reg = <0 0xfea38000 0 0x8000>;
+ 			interrupts = <GIC_SPI 469 IRQ_TYPE_LEVEL_HIGH>;
+ 			clocks = <&cpg CPG_MOD 620>;
++			iommus = <&ipmmu_vi 11>;
+ 
+ 			renesas,has-lif;
+ 			renesas,has-lut;
+@@ -996,7 +1007,7 @@
+ 			clock-names = "du.0", "du.1", "du.2", "du.3", "lvds.0";
+ 			status = "disabled";
+ 
+-			vsps = <&vspd0 &vspd1 &vspd2 &vspd3>;
++			vsps = <&vspd0>;
+ 
+ 			ports {
+ 				#address-cells = <1>;
+--- 0001/drivers/gpu/drm/rcar-du/rcar_du_drv.c
++++ work/drivers/gpu/drm/rcar-du/rcar_du_drv.c	2015-12-17 11:10:01.380513000 +0900
+@@ -138,13 +138,13 @@ static const struct rcar_du_device_info
+ 	.features = RCAR_DU_FEATURE_CRTC_IRQ_CLOCK
+ 		  | RCAR_DU_FEATURE_EXT_CTRL_REGS
+ 		  | RCAR_DU_FEATURE_VSP1_SOURCE,
+-	.num_crtcs = 4,
++	.num_crtcs = 1,
+ 	.routes = {
+ 		/* R8A7795 has one RGB output, one LVDS output and two
+ 		 * (currently unsupported) HDMI outputs.
+ 		 */
+ 		[RCAR_DU_OUTPUT_DPAD0] = {
+-			.possible_crtcs = BIT(3),
++			.possible_crtcs = BIT(0),
+ 			.encoder_type = DRM_MODE_ENCODER_NONE,
+ 			.port = 0,
+ 		},
+--- 0001/drivers/gpu/drm/rcar-du/rcar_du_vsp.c
++++ work/drivers/gpu/drm/rcar-du/rcar_du_vsp.c	2015-12-17 11:10:01.380513000 +0900
+@@ -329,6 +329,8 @@ int rcar_du_vsp_init(struct rcar_du_vsp
+ 
+ 	vsp->vsp = &pdev->dev;
+ 
++	rcdu->ddev->dev = vsp->vsp; // HACK
++	
+ 	ret = vsp1_du_init(vsp->vsp);
+ 	if (ret < 0)
+ 		return ret;
+--- 0001/drivers/media/platform/vsp1/vsp1_wpf.c
++++ work/drivers/media/platform/vsp1/vsp1_wpf.c	2015-12-17 11:11:46.790513000 +0900
+@@ -158,6 +158,9 @@ static int wpf_s_stream(struct v4l2_subd
+ 	if (vsp1->pdata.uapi)
+ 		mutex_lock(wpf->ctrls.lock);
+ 	outfmt |= wpf->alpha->cur.val << VI6_WPF_OUTFMT_PDV_SHIFT;
++#if 1	
++	outfmt |= (1 << 20);
++#endif
+ 	vsp1_wpf_write(wpf, VI6_WPF_OUTFMT, outfmt);
+ 	if (vsp1->pdata.uapi)
+ 		mutex_unlock(wpf->ctrls.lock);
