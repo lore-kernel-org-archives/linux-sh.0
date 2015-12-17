@@ -1,25 +1,29 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 11 Dec 2015 10:45:26 +0000
-Subject: [PATCH 2/3] ARM: multi_v7_defconfig: Enable missing Renesas ARM support based on DTSes
-Message-Id: <1449830727-325-3-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 17 Dec 2015 05:24:56 +0000
+Subject: [PATCH 6/7] ARM: multi_v7_defconfig: Enable missing Renesas ARM support based on DTSes
+Message-Id: <954ceafd50cf370ba546d01422de883337f6705f.1450315426.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449830727-325-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1449830727-325-1-git-send-email-geert+renesas@glider.be>
+References: <cover.1450315426.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1450315426.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+
 Enable all missing support, extracted from the various Renesas ARM DTSes
 using linux-config-from-dt.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
  arch/arm/configs/multi_v7_defconfig | 7 +++++++
  1 file changed, 7 insertions(+)
 
 diff --git a/arch/arm/configs/multi_v7_defconfig b/arch/arm/configs/multi_v7_defconfig
-index e0fb5f34c0aca450..3d3c2b8522a23a93 100644
+index a3d65beacf7c..32d1573d3cce 100644
 --- a/arch/arm/configs/multi_v7_defconfig
 +++ b/arch/arm/configs/multi_v7_defconfig
 @@ -152,6 +152,7 @@ CONFIG_CAN_RAW=y
@@ -79,5 +83,5 @@ index e0fb5f34c0aca450..3d3c2b8522a23a93 100644
  CONFIG_SIRF_DMA=y
  CONFIG_TI_EDMA=y
 -- 
-1.9.1
+2.1.4
 
