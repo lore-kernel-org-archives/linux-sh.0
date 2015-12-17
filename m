@@ -1,7 +1,7 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 17 Dec 2015 11:38:28 +0000
+Date: Thu, 17 Dec 2015 11:42:23 +0000
 Subject: Re: [PATCH] ARM: shmobile: r8a7790: DU and IPMMU-MX prototype
-Message-Id: <56729EB4.3070501@cogentembedded.com>
+Message-Id: <56729F9F.9070307@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20151217064535.30114.91840.sendpatchset@little-apple>
 In-Reply-To: <20151217064535.30114.91840.sendpatchset@little-apple>
