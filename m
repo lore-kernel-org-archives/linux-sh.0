@@ -1,121 +1,91 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sat, 05 Dec 2015 02:13:00 +0000
-Subject: [PATCH v2 26/32] v4l: vsp1: Set the alpha value manually in RPF and WPF s_stream handlers
-Message-Id: <1449281586-25726-27-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 17 Dec 2015 08:39:41 +0000
+Subject: [PATCH/RFC 03/48] v4l: vsp1: Simplify frame end processing
+Message-Id: <1450341626-6695-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1450341626-6695-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1450341626-6695-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-media@vger.kernel.org
 Cc: linux-sh@vger.kernel.org
 
-The RPF and WPF alpha values are set through V4L2 controls and applied
-when starting the video stream by a call to v4l2_ctrl_handler_setup().
-As that function uses the control handler mutex it can't be called in
-interrupt context, where the VSP+DU pipeline handler might need to
-reconfigure the pipeline.
+The DRM pipeline, as it runs in automatic restart mode, never sees the
+pipeline state set to VSP1_PIPELINE_STOPPING or VSP1_PIPELINE_STOPPED
+when running the frame end interrupt handler. We can thus skip the
+checks various checks in the handler and return immediately.
 
-Set the alpha value manually in the RPF and WPF s_stream handler to
-ensure that the hardware is properly configured even when controlled
-without the userspace API. If the userspace API is enabled protect that
-with the control lock to avoid race conditions with userspace.
+Similarly the DRM frame end handler calls vsp1_pipeline_run()
+unnecessarily, as the state there is never VSP1_PIPELINE_STOPPED. Remove
+the function call and the frame end handler is it's now empty.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/media/platform/vsp1/vsp1_rpf.c  | 16 ++++++++++++++--
- drivers/media/platform/vsp1/vsp1_rwpf.h |  2 ++
- drivers/media/platform/vsp1/vsp1_wpf.c  |  7 ++++---
- 3 files changed, 20 insertions(+), 5 deletions(-)
+ drivers/media/platform/vsp1/vsp1_drm.c  | 15 ---------------
+ drivers/media/platform/vsp1/vsp1_pipe.c |  9 ++++++---
+ 2 files changed, 6 insertions(+), 18 deletions(-)
 
-diff --git a/drivers/media/platform/vsp1/vsp1_rpf.c b/drivers/media/platform/vsp1/vsp1_rpf.c
-index b9c39f9e4458..b1d4a46f230e 100644
---- a/drivers/media/platform/vsp1/vsp1_rpf.c
-+++ b/drivers/media/platform/vsp1/vsp1_rpf.c
-@@ -68,7 +68,9 @@ static const struct v4l2_ctrl_ops rpf_ctrl_ops = {
+diff --git a/drivers/media/platform/vsp1/vsp1_drm.c b/drivers/media/platform/vsp1/vsp1_drm.c
+index 302d02a5c1c0..1cfa8a0e43b6 100644
+--- a/drivers/media/platform/vsp1/vsp1_drm.c
++++ b/drivers/media/platform/vsp1/vsp1_drm.c
+@@ -27,20 +27,6 @@
+ #include "vsp1_rwpf.h"
  
- static int rpf_s_stream(struct v4l2_subdev *subdev, int enable)
- {
-+	struct vsp1_pipeline *pipe = to_vsp1_pipeline(&subdev->entity);
- 	struct vsp1_rwpf *rpf = to_rwpf(subdev);
-+	struct vsp1_device *vsp1 = rpf->entity.vsp1;
- 	const struct vsp1_format_info *fmtinfo = rpf->fmtinfo;
- 	const struct v4l2_pix_format_mplane *format = &rpf->format;
- 	const struct v4l2_rect *crop = &rpf->crop;
-@@ -148,6 +150,15 @@ static int rpf_s_stream(struct v4l2_subdev *subdev, int enable)
- 	vsp1_rpf_write(rpf, VI6_RPF_ALPH_SEL, VI6_RPF_ALPH_SEL_AEXT_EXT |
- 		       (fmtinfo->alpha ? VI6_RPF_ALPH_SEL_ASEL_PACKED
- 				       : VI6_RPF_ALPH_SEL_ASEL_FIXED));
-+
-+	if (vsp1->pdata.uapi)
-+		mutex_lock(rpf->ctrls.lock);
-+	vsp1_rpf_write(rpf, VI6_RPF_VRTCOL_SET,
-+		       rpf->alpha->cur.val << VI6_RPF_VRTCOL_SET_LAYA_SHIFT);
-+	vsp1_pipeline_propagate_alpha(pipe, &rpf->entity, rpf->alpha->cur.val);
-+	if (vsp1->pdata.uapi)
-+		mutex_unlock(rpf->ctrls.lock);
-+
- 	vsp1_rpf_write(rpf, VI6_RPF_MSK_CTRL, 0);
- 	vsp1_rpf_write(rpf, VI6_RPF_CKEY_CTRL, 0);
+ /* -----------------------------------------------------------------------------
+- * Runtime Handling
+- */
+-
+-static void vsp1_drm_pipeline_frame_end(struct vsp1_pipeline *pipe)
+-{
+-	unsigned long flags;
+-
+-	spin_lock_irqsave(&pipe->irqlock, flags);
+-	if (pipe->num_inputs)
+-		vsp1_pipeline_run(pipe);
+-	spin_unlock_irqrestore(&pipe->irqlock, flags);
+-}
+-
+-/* -----------------------------------------------------------------------------
+  * DU Driver API
+  */
  
-@@ -245,8 +256,9 @@ struct vsp1_rwpf *vsp1_rpf_create(struct vsp1_device *vsp1, unsigned int index)
+@@ -569,7 +555,6 @@ int vsp1_drm_init(struct vsp1_device *vsp1)
+ 	pipe = &vsp1->drm->pipe;
  
- 	/* Initialize the control handler. */
- 	v4l2_ctrl_handler_init(&rpf->ctrls, 1);
--	v4l2_ctrl_new_std(&rpf->ctrls, &rpf_ctrl_ops, V4L2_CID_ALPHA_COMPONENT,
--			  0, 255, 1, 255);
-+	rpf->alpha = v4l2_ctrl_new_std(&rpf->ctrls, &rpf_ctrl_ops,
-+				       V4L2_CID_ALPHA_COMPONENT,
-+				       0, 255, 1, 255);
+ 	vsp1_pipeline_init(pipe);
+-	pipe->frame_end = vsp1_drm_pipeline_frame_end;
  
- 	rpf->entity.subdev.ctrl_handler = &rpf->ctrls;
+ 	/* The DRM pipeline is static, add entities manually. */
+ 	for (i = 0; i < vsp1->info->rpf_count; ++i) {
+diff --git a/drivers/media/platform/vsp1/vsp1_pipe.c b/drivers/media/platform/vsp1/vsp1_pipe.c
+index 96f0e7d4c400..9c6d295ca843 100644
+--- a/drivers/media/platform/vsp1/vsp1_pipe.c
++++ b/drivers/media/platform/vsp1/vsp1_pipe.c
+@@ -268,7 +268,8 @@ void vsp1_pipeline_frame_end(struct vsp1_pipeline *pipe)
+ 		vsp1_dl_irq_frame_end(pipe->dl);
  
-diff --git a/drivers/media/platform/vsp1/vsp1_rwpf.h b/drivers/media/platform/vsp1/vsp1_rwpf.h
-index 1a90c7c8e972..8e8235682ada 100644
---- a/drivers/media/platform/vsp1/vsp1_rwpf.h
-+++ b/drivers/media/platform/vsp1/vsp1_rwpf.h
-@@ -23,6 +23,7 @@
- #define RWPF_PAD_SINK				0
- #define RWPF_PAD_SOURCE				1
+ 	/* Signal frame end to the pipeline handler. */
+-	pipe->frame_end(pipe);
++	if (pipe->frame_end)
++		pipe->frame_end(pipe);
  
-+struct v4l2_ctrl;
- struct vsp1_rwpf;
- struct vsp1_video;
+ 	spin_lock_irqsave(&pipe->irqlock, flags);
  
-@@ -40,6 +41,7 @@ struct vsp1_rwpf_operations {
- struct vsp1_rwpf {
- 	struct vsp1_entity entity;
- 	struct v4l2_ctrl_handler ctrls;
-+	struct v4l2_ctrl *alpha;
- 
- 	struct vsp1_video *video;
- 
-diff --git a/drivers/media/platform/vsp1/vsp1_wpf.c b/drivers/media/platform/vsp1/vsp1_wpf.c
-index d0edcde721bd..40eeaf2d76d2 100644
---- a/drivers/media/platform/vsp1/vsp1_wpf.c
-+++ b/drivers/media/platform/vsp1/vsp1_wpf.c
-@@ -156,7 +156,7 @@ static int wpf_s_stream(struct v4l2_subdev *subdev, int enable)
+@@ -277,8 +278,10 @@ void vsp1_pipeline_frame_end(struct vsp1_pipeline *pipe)
+ 	/* When using display lists in continuous frame mode the pipeline is
+ 	 * automatically restarted by the hardware.
  	 */
- 	if (vsp1->pdata.uapi)
- 		mutex_lock(wpf->ctrls.lock);
--	outfmt |= vsp1_wpf_read(wpf, VI6_WPF_OUTFMT) & VI6_WPF_OUTFMT_PDV_MASK;
-+	outfmt |= wpf->alpha->cur.val << VI6_WPF_OUTFMT_PDV_SHIFT;
- 	vsp1_wpf_write(wpf, VI6_WPF_OUTFMT, outfmt);
- 	if (vsp1->pdata.uapi)
- 		mutex_unlock(wpf->ctrls.lock);
-@@ -254,8 +254,9 @@ struct vsp1_rwpf *vsp1_wpf_create(struct vsp1_device *vsp1, unsigned int index)
+-	if (!pipe->dl)
+-		pipe->state = VSP1_PIPELINE_STOPPED;
++	if (pipe->dl)
++		goto done;
++
++	pipe->state = VSP1_PIPELINE_STOPPED;
  
- 	/* Initialize the control handler. */
- 	v4l2_ctrl_handler_init(&wpf->ctrls, 1);
--	v4l2_ctrl_new_std(&wpf->ctrls, &wpf_ctrl_ops, V4L2_CID_ALPHA_COMPONENT,
--			  0, 255, 1, 255);
-+	wpf->alpha = v4l2_ctrl_new_std(&wpf->ctrls, &wpf_ctrl_ops,
-+				       V4L2_CID_ALPHA_COMPONENT,
-+				       0, 255, 1, 255);
- 
- 	wpf->entity.subdev.ctrl_handler = &wpf->ctrls;
- 
+ 	/* If a stop has been requested, mark the pipeline as stopped and
+ 	 * return.
 -- 
 2.4.10
 
