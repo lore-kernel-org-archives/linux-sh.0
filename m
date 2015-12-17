@@ -1,17 +1,19 @@
-From: Krzysztof Kozlowski <k.kozlowski@samsung.com>
-Date: Thu, 17 Dec 2015 00:53:49 +0000
+From: Chanwoo Choi <cw00.choi@samsung.com>
+Date: Thu, 17 Dec 2015 02:16:30 +0000
 Subject: Re: [PATCH v3] extcon: add Maxim MAX3355 driver
-Message-Id: <CAJKOXPfD8DnDow04_wyRyGk+8zBmT15giDS+WDcV+pFaWSypGw@mail.gmail.com>
+Message-Id: <56721AFE.9020103@samsung.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <2473780.4IzuWX8hE2@wasted.cogentembedded.com>
-In-Reply-To: <2473780.4IzuWX8hE2@wasted.cogentembedded.com>
+In-Reply-To: <2473780.4IzuWX8hE2-gHKXc3Y1Z8zGSmamagVegGFoWSdPRAKMAL8bYrjMMd8@public.gmane.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, myungjoo.ham@samsung.com, Chanwoo Choi <cw00.choi@samsung.com>, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, linux-usb@vger.kernel.org
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: Sergei Shtylyov <sergei.shtylyov-M4DtvfQ/ZS1MRgGoP+s0PdBPR1lH4CV8@public.gmane.org>, robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, pawel.moll-5wv7dgnIgG8@public.gmane.org, mark.rutland-5wv7dgnIgG8@public.gmane.org, ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org, galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org, myungjoo.ham-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-2015-12-17 3:07 GMT+09:00 Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>:
+Hi Sergei,
+
+On 2015년 12월 17일 03:07, Sergei Shtylyov wrote:
 > Maxim Integrated MAX3355E chip integrates a charge pump and comparators to
 > enable a system with an integrated USB OTG dual-role transceiver to
 > function as an USB OTG dual-role device. In addition to sensing/controlling
@@ -24,13 +26,13 @@ Cc: robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree
 > (however, we aren't currently interested in them), the OFFVBUS# signal is
 > controlled by the host controllers, there's also the SHDN# signal wired to
 > a GPIO, it should be driven high for the normal operation.
->
+> 
 > Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
->
+> 
 > ---
 > Changes in version 3:
 > - reformatted the change log.
->
+> 
 > Changes in version 2:
 > - added the USB gadget cable support;
 > - added the remove() driver method which drives SHDN# GPIO low to save power;
@@ -45,13 +47,13 @@ Cc: robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree
 > - added vendor name to the patch summary, the bindings document, the Kconfig
 >   entry, the driver heading comment, the module description, and the change log;
 > - fixed up and reformatted the change log.
->
+> 
 >  Documentation/devicetree/bindings/extcon/extcon-max3355.txt |   21 +
->  drivers/extcon/Kconfig                                      |    8
->  drivers/extcon/Makefile                                     |    1
+>  drivers/extcon/Kconfig                                      |    8 
+>  drivers/extcon/Makefile                                     |    1 
 >  drivers/extcon/extcon-max3355.c                             |  153 ++++++++++++
 >  4 files changed, 183 insertions(+)
->
+> 
 > Index: renesas/Documentation/devicetree/bindings/extcon/extcon-max3355.txt
 > =================================> --- /dev/null
 > +++ renesas/Documentation/devicetree/bindings/extcon/extcon-max3355.txt
@@ -67,55 +69,45 @@ Cc: robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree
 > +- compatible: should be "maxim,max3355";
 > +- maxim,shdn-gpios: should contain a phandle and GPIO specifier for the GPIO pin
 > +  connected to the MAX3355's SHDN# pin;
-
-Could you add some indentation to the wrapped line for this property?
-For readability.
-
 > +- id-gpios: should contain a phandle and GPIO specifier for the GPIO pin
 > +  connected to the MAX3355's ID_OUT pin.
-
-Ditto.
-
-Why this property lacks the vendor prefix i(n comparison to shdn-gpios
-which has the prefix)?
-
 > +
 > +Example (Koelsch board):
 > +
-> +       usb-otg {
-> +               compatible = "maxim,max3355";
-> +               maxim,shdn-gpios = <&gpio2 4 GPIO_ACTIVE_LOW>;
-> +               id-gpios = <&gpio5 31 GPIO_ACTIVE_HIGH>;
-> +       };
+> +	usb-otg {
+> +		compatible = "maxim,max3355";
+> +		maxim,shdn-gpios = <&gpio2 4 GPIO_ACTIVE_LOW>;
+> +		id-gpios = <&gpio5 31 GPIO_ACTIVE_HIGH>;
+> +	};
 > Index: renesas/drivers/extcon/Kconfig
 > =================================> --- renesas.orig/drivers/extcon/Kconfig
 > +++ renesas/drivers/extcon/Kconfig
 > @@ -52,6 +52,14 @@ config EXTCON_MAX14577
->           Maxim MAX14577/77836. The MAX14577/77836 MUIC is a USB port accessory
->           detector and switch.
->
+>  	  Maxim MAX14577/77836. The MAX14577/77836 MUIC is a USB port accessory
+>  	  detector and switch.
+>  
 > +config EXTCON_MAX3355
-> +       tristate "Maxim MAX3355 USB OTG EXTCON Support"
-> +       help
-> +         If you say yes here you get support for the USB OTG role detection by
-> +         MAX3355. The MAX3355 chip integrates a charge pump and comparators to
-> +         enable a system with an integrated USB OTG dual-role transceiver to
-> +         function as an USB OTG dual-role device.
+> +	tristate "Maxim MAX3355 USB OTG EXTCON Support"
+> +	help
+> +	  If you say yes here you get support for the USB OTG role detection by
+> +	  MAX3355. The MAX3355 chip integrates a charge pump and comparators to
+> +	  enable a system with an integrated USB OTG dual-role transceiver to
+> +	  function as an USB OTG dual-role device.
 > +
 >  config EXTCON_MAX77693
->         tristate "Maxim MAX77693 EXTCON Support"
->         depends on MFD_MAX77693 && INPUT
+>  	tristate "Maxim MAX77693 EXTCON Support"
+>  	depends on MFD_MAX77693 && INPUT
 > Index: renesas/drivers/extcon/Makefile
 > =================================> --- renesas.orig/drivers/extcon/Makefile
 > +++ renesas/drivers/extcon/Makefile
-> @@ -8,6 +8,7 @@ obj-$(CONFIG_EXTCON_ARIZONA)    += extcon-a
->  obj-$(CONFIG_EXTCON_AXP288)    += extcon-axp288.o
->  obj-$(CONFIG_EXTCON_GPIO)      += extcon-gpio.o
->  obj-$(CONFIG_EXTCON_MAX14577)  += extcon-max14577.o
-> +obj-$(CONFIG_EXTCON_MAX3355)   += extcon-max3355.o
->  obj-$(CONFIG_EXTCON_MAX77693)  += extcon-max77693.o
->  obj-$(CONFIG_EXTCON_MAX77843)  += extcon-max77843.o
->  obj-$(CONFIG_EXTCON_MAX8997)   += extcon-max8997.o
+> @@ -8,6 +8,7 @@ obj-$(CONFIG_EXTCON_ARIZONA)	+= extcon-a
+>  obj-$(CONFIG_EXTCON_AXP288)	+= extcon-axp288.o
+>  obj-$(CONFIG_EXTCON_GPIO)	+= extcon-gpio.o
+>  obj-$(CONFIG_EXTCON_MAX14577)	+= extcon-max14577.o
+> +obj-$(CONFIG_EXTCON_MAX3355)	+= extcon-max3355.o
+>  obj-$(CONFIG_EXTCON_MAX77693)	+= extcon-max77693.o
+>  obj-$(CONFIG_EXTCON_MAX77843)	+= extcon-max77843.o
+>  obj-$(CONFIG_EXTCON_MAX8997)	+= extcon-max8997.o
 > Index: renesas/drivers/extcon/extcon-max3355.c
 > =================================> --- /dev/null
 > +++ renesas/drivers/extcon/extcon-max3355.c
@@ -124,6 +116,9 @@ which has the prefix)?
 > + * Maxim Integrated MAX3355 USB OTG chip extcon driver
 > + *
 > + * Copyright (C) 2014 Cogent Embedded, Inc.
+
+2014 -> 2015
+
 > + * Author: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 > + *
 > + * This software is licensed under the terms of the GNU General Public
@@ -143,136 +138,152 @@ which has the prefix)?
 > +#include <linux/workqueue.h>
 > +
 > +struct max3355_data {
-> +       struct extcon_dev *edev;
-> +       struct gpio_desc *id_gpiod;
-> +       struct gpio_desc *shdn_gpiod;
+> +	struct extcon_dev *edev;
+> +	struct gpio_desc *id_gpiod;
+> +	struct gpio_desc *shdn_gpiod;
 > +};
 > +
 > +static const unsigned int max3355_cable[] = {
-> +       EXTCON_USB,
-> +       EXTCON_USB_HOST,
-> +       EXTCON_NONE,
+> +	EXTCON_USB,
+> +	EXTCON_USB_HOST,
+> +	EXTCON_NONE,
 > +};
 > +
 > +static irqreturn_t max3355_id_irq(int irq, void *dev_id)
 > +{
-> +       struct max3355_data *data = dev_id;
-> +       int id = gpiod_get_value_cansleep(data->id_gpiod);
+> +	struct max3355_data *data = dev_id;
+> +	int id = gpiod_get_value_cansleep(data->id_gpiod);
 > +
-> +       if (id) {
-> +               /*
-> +                * ID = 1 means USB HOST cable detached.
-> +                * As we don't have event for USB peripheral cable attached,
-> +                * we simulate USB peripheral attach here.
-> +                */
-> +               extcon_set_cable_state_(data->edev, EXTCON_USB_HOST, false);
-> +               extcon_set_cable_state_(data->edev, EXTCON_USB, true);
-> +       } else {
-> +               /*
-> +                * ID = 0 means USB HOST cable attached.
-> +                * As we don't have event for USB peripheral cable detached,
-> +                * we simulate USB peripheral detach here.
-> +                */
-> +               extcon_set_cable_state_(data->edev, EXTCON_USB, false);
-> +               extcon_set_cable_state_(data->edev, EXTCON_USB_HOST, true);
-> +       }
+> +	if (id) {
+> +		/*
+> +		 * ID = 1 means USB HOST cable detached.
+> +		 * As we don't have event for USB peripheral cable attached,
+> +		 * we simulate USB peripheral attach here.
+> +		 */
+> +		extcon_set_cable_state_(data->edev, EXTCON_USB_HOST, false);
+> +		extcon_set_cable_state_(data->edev, EXTCON_USB, true);
+> +	} else {
+> +		/*
+> +		 * ID = 0 means USB HOST cable attached.
+> +		 * As we don't have event for USB peripheral cable detached,
+> +		 * we simulate USB peripheral detach here.
+> +		 */
+> +		extcon_set_cable_state_(data->edev, EXTCON_USB, false);
+> +		extcon_set_cable_state_(data->edev, EXTCON_USB_HOST, true);
+> +	}
 > +
-> +       return IRQ_HANDLED;
+> +	return IRQ_HANDLED;
 > +}
 > +
 > +static int max3355_probe(struct platform_device *pdev)
 > +{
-> +       struct device_node *np = pdev->dev.of_node;
-> +       struct max3355_data *data;
-> +       struct gpio_desc *gpiod;
-> +       int irq, err;
+> +	struct device_node *np = pdev->dev.of_node;
+> +	struct max3355_data *data;
+> +	struct gpio_desc *gpiod;
+> +	int irq, err;
 > +
-> +       data = devm_kzalloc(&pdev->dev, sizeof(struct max3355_data),
-> +                           GFP_KERNEL);
-> +       if (!data)
-> +               return -ENOMEM;
+> +	data = devm_kzalloc(&pdev->dev, sizeof(struct max3355_data),
+> +			    GFP_KERNEL);
+> +	if (!data)
+> +		return -ENOMEM;
 > +
-> +       data->edev = devm_extcon_dev_allocate(&pdev->dev, max3355_cable);
-> +       if (IS_ERR(data->edev)) {
-> +               dev_err(&pdev->dev, "failed to allocate extcon device\n");
-> +               return PTR_ERR(data->edev);
-> +       }
-> +       data->edev->name = kstrdup(np->name, GFP_KERNEL);
+> +	data->edev = devm_extcon_dev_allocate(&pdev->dev, max3355_cable);
+> +	if (IS_ERR(data->edev)) {
+> +		dev_err(&pdev->dev, "failed to allocate extcon device\n");
+> +		return PTR_ERR(data->edev);
+> +	}
+> +	data->edev->name = kstrdup(np->name, GFP_KERNEL);
 
-I think it is not needed any more (extcon_dev_register()) will set it.
-Anyway there is no checking for NULL return value and no freeing in
-error/exit paths.
+You don't need to set the name of extcon device.
+Instead, the extcon_dev_register() will set it.
 
 > +
-> +       gpiod = devm_gpiod_get(&pdev->dev, "id", GPIOD_IN);
-> +       if (IS_ERR(gpiod)) {
-> +               dev_err(&pdev->dev, "failed to get ID_OUT GPIO\n");
-> +               return PTR_ERR(gpiod);
-> +       }
-> +       data->id_gpiod = gpiod;
+> +	gpiod = devm_gpiod_get(&pdev->dev, "id", GPIOD_IN);
+> +	if (IS_ERR(gpiod)) {
+> +		dev_err(&pdev->dev, "failed to get ID_OUT GPIO\n");
+> +		return PTR_ERR(gpiod);
+> +	}
+> +	data->id_gpiod = gpiod;
 > +
-> +       gpiod = devm_gpiod_get(&pdev->dev, "maxim,shdn", GPIOD_OUT_HIGH);
-> +       if (IS_ERR(gpiod)) {
-> +               dev_err(&pdev->dev, "failed to get SHDN# GPIO\n");
-> +               return PTR_ERR(gpiod);
-> +       }
-> +       data->shdn_gpiod = gpiod;
+> +	gpiod = devm_gpiod_get(&pdev->dev, "maxim,shdn", GPIOD_OUT_HIGH);
+> +	if (IS_ERR(gpiod)) {
+> +		dev_err(&pdev->dev, "failed to get SHDN# GPIO\n");
+> +		return PTR_ERR(gpiod);
+> +	}
+> +	data->shdn_gpiod = gpiod;
 > +
-> +       err = devm_extcon_dev_register(&pdev->dev, data->edev);
-> +       if (err < 0) {
-> +               dev_err(&pdev->dev, "failed to register extcon device\n");
-> +               return err;
-> +       }
+> +	err = devm_extcon_dev_register(&pdev->dev, data->edev);
+> +	if (err < 0) {
+> +		dev_err(&pdev->dev, "failed to register extcon device\n");
+> +		return err;
+> +	}
 > +
-> +       irq = gpiod_to_irq(data->id_gpiod);
-> +       if (irq < 0) {
-> +               dev_err(&pdev->dev, "failed to translate ID_OUT GPIO to IRQ\n");
-> +               return irq;
-> +       }
+> +	irq = gpiod_to_irq(data->id_gpiod);
+> +	if (irq < 0) {
+> +		dev_err(&pdev->dev, "failed to translate ID_OUT GPIO to IRQ\n");
+> +		return irq;
+> +	}
 > +
-> +       err = devm_request_threaded_irq(&pdev->dev, irq, NULL, max3355_id_irq,
-> +                                       IRQF_ONESHOT | IRQF_NO_SUSPEND |
-> +                                       IRQF_TRIGGER_RISING |
-> +                                       IRQF_TRIGGER_FALLING,
-> +                                       pdev->name, data);
-> +       if (err < 0) {
-> +               dev_err(&pdev->dev, "failed to request ID_OUT IRQ\n");
-> +               return err;
-> +       }
+> +	err = devm_request_threaded_irq(&pdev->dev, irq, NULL, max3355_id_irq,
+> +					IRQF_ONESHOT | IRQF_NO_SUSPEND |
+> +					IRQF_TRIGGER_RISING |
+> +					IRQF_TRIGGER_FALLING,
+> +					pdev->name, data);
+> +	if (err < 0) {
+> +		dev_err(&pdev->dev, "failed to request ID_OUT IRQ\n");
+> +		return err;
+> +	}
+
+I recommend that you reorder the init code in probe() as following:
+
+1. Allocate the memory of max3355_data *data.
+2. Parse and initialize the gpio (id, shdn)
+3. Allocate the memory of extcon_dev and register it.
+4. Request the interrupt.
+
 > +
-> +       platform_set_drvdata(pdev, data);
+> +	platform_set_drvdata(pdev, data);
 > +
-> +       /* Perform initial detection */
-> +       max3355_id_irq(irq, data);
+> +	/* Perform initial detection */
+> +	max3355_id_irq(irq, data);
 > +
-> +       return 0;
+> +	return 0;
 > +}
 > +
 > +static int max3355_remove(struct platform_device *pdev)
 > +{
-> +       struct max3355_data *data = platform_get_drvdata(pdev);
+> +	struct max3355_data *data = platform_get_drvdata(pdev);
 > +
-> +       gpiod_set_value_cansleep(data->shdn_gpiod, 0);
+> +	gpiod_set_value_cansleep(data->shdn_gpiod, 0);
 > +
-> +       return 0;
+> +	return 0;
 > +}
 > +
 > +static const struct of_device_id max3355_match_table[] = {
-> +       { .compatible = "maxim,max3355", },
-> +       { }
+> +	{ .compatible = "maxim,max3355", },
+> +	{ }
 > +};
 > +MODULE_DEVICE_TABLE(of, max3355_match_table);
 > +
 > +static struct platform_driver max3355_driver = {
-> +       .probe          = max3355_probe,
-> +       .remove         = max3355_remove,
-> +       .driver         = {
-> +               .name   = "extcon-max3355",
-> +               .of_match_table = max3355_match_table,
-> +               .owner  = THIS_MODULE,
+> +	.probe		= max3355_probe,
+> +	.remove		= max3355_remove,
+> +	.driver		= {
+> +		.name	= "extcon-max3355",
+> +		.of_match_table = max3355_match_table,
+> +		.owner	= THIS_MODULE,
 
-No need for owner.
-Please pass the source through recent coccicheck and fix the findings.
+You don't need to add the 'owner'.
 
-Best regards,
-Krzysztof
+> +	},
+> +};
+> +
+> +module_platform_driver(max3355_driver);
+> +
+> +MODULE_AUTHOR("Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>");
+> +MODULE_DESCRIPTION("Maxim MAX3355 extcon driver");
+> +MODULE_LICENSE("GPL v2");
+
+Thanks,
+Chanwoo Choi
+
