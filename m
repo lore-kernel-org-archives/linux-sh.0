@@ -1,83 +1,39 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Thu, 03 Dec 2015 15:51:39 +0000
-Subject: [PATCH 9/9] arm64: renesas: r8a7795: add internal delay for i2c IPs
-Message-Id: <1449157899-6572-10-git-send-email-wsa@the-dreams.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 17 Dec 2015 05:24:52 +0000
+Subject: [PATCH 2/7] ARM: shmobile: defconfig: Drop useless CONFIG_USB_RCAR_PHY=y
+Message-Id: <59ab5e08b2a60f97e3b59eb8fa4a79c567fc98a5.1450315426.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449157899-6572-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1449157899-6572-1-git-send-email-wsa@the-dreams.de>
+References: <cover.1450315426.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1450315426.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, linux-rockchip@lists.infradead.org, Mika Westerberg <mika.westerberg@linux.intel.com>, Andy Shevchenko <andriy.shevchenko@linux.intel.com>, Jarkko Nikula <jarkko.nikula@linux.intel.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+The Renesas R-Car (Gen1) USB PHY driver (which is being removed) does
+not support DT, and is thus useless in a Renesas ARM multi-platform
+kernel.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm64/boot/dts/renesas/r8a7795.dtsi | 7 +++++++
- 1 file changed, 7 insertions(+)
+ arch/arm/configs/shmobile_defconfig | 1 -
+ 1 file changed, 1 deletion(-)
 
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-index 56d6a5b23a4e38..b02a7ad1583933 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-+++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-@@ -519,6 +519,7 @@
- 			interrupts = <GIC_SPI 287 IRQ_TYPE_LEVEL_HIGH>;
- 			clocks = <&cpg CPG_MOD 931>;
- 			power-domains = <&cpg>;
-+			i2c-scl-internal-delay-ns = <110>;
- 			status = "disabled";
- 		};
- 
-@@ -530,6 +531,7 @@
- 			interrupts = <GIC_SPI 288 IRQ_TYPE_LEVEL_HIGH>;
- 			clocks = <&cpg CPG_MOD 930>;
- 			power-domains = <&cpg>;
-+			i2c-scl-internal-delay-ns = <6>;
- 			status = "disabled";
- 		};
- 
-@@ -541,6 +543,7 @@
- 			interrupts = <GIC_SPI 286 IRQ_TYPE_LEVEL_HIGH>;
- 			clocks = <&cpg CPG_MOD 929>;
- 			power-domains = <&cpg>;
-+			i2c-scl-internal-delay-ns = <6>;
- 			status = "disabled";
- 		};
- 
-@@ -552,6 +555,7 @@
- 			interrupts = <GIC_SPI 290 IRQ_TYPE_LEVEL_HIGH>;
- 			clocks = <&cpg CPG_MOD 928>;
- 			power-domains = <&cpg>;
-+			i2c-scl-internal-delay-ns = <110>;
- 			status = "disabled";
- 		};
- 
-@@ -563,6 +567,7 @@
- 			interrupts = <GIC_SPI 19 IRQ_TYPE_LEVEL_HIGH>;
- 			clocks = <&cpg CPG_MOD 927>;
- 			power-domains = <&cpg>;
-+			i2c-scl-internal-delay-ns = <110>;
- 			status = "disabled";
- 		};
- 
-@@ -574,6 +579,7 @@
- 			interrupts = <GIC_SPI 20 IRQ_TYPE_LEVEL_HIGH>;
- 			clocks = <&cpg CPG_MOD 919>;
- 			power-domains = <&cpg>;
-+			i2c-scl-internal-delay-ns = <110>;
- 			status = "disabled";
- 		};
- 
-@@ -585,6 +591,7 @@
- 			interrupts = <GIC_SPI 21 IRQ_TYPE_LEVEL_HIGH>;
- 			clocks = <&cpg CPG_MOD 918>;
- 			power-domains = <&cpg>;
-+			i2c-scl-internal-delay-ns = <6>;
- 			status = "disabled";
- 		};
- 
+diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
+index e51f7a79c730..91233ed27578 100644
+--- a/arch/arm/configs/shmobile_defconfig
++++ b/arch/arm/configs/shmobile_defconfig
+@@ -162,7 +162,6 @@ CONFIG_USB_EHCI_HCD=y
+ CONFIG_USB_OHCI_HCD=y
+ CONFIG_USB_R8A66597_HCD=y
+ CONFIG_USB_RENESAS_USBHS=y
+-CONFIG_USB_RCAR_PHY=y
+ CONFIG_USB_GADGET=y
+ CONFIG_USB_RENESAS_USBHS_UDC=y
+ CONFIG_USB_ETH=y
 -- 
 2.1.4
 
