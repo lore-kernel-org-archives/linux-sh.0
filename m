@@ -1,23 +1,21 @@
-From: Chanwoo Choi <cw00.choi@samsung.com>
-Date: Thu, 17 Dec 2015 02:34:25 +0000
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 17 Dec 2015 14:36:52 +0000
 Subject: Re: [PATCH v3] extcon: add Maxim MAX3355 driver
-Message-Id: <56721F31.5060608@samsung.com>
+Message-Id: <5672C884.3000603@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <2473780.4IzuWX8hE2@wasted.cogentembedded.com>
- <56721AFE.9020103@samsung.com>
-In-Reply-To: <56721AFE.9020103-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>
+ <CAJKOXPfD8DnDow04_wyRyGk+8zBmT15giDS+WDcV+pFaWSypGw@mail.gmail.com>
+In-Reply-To: <CAJKOXPfD8DnDow04_wyRyGk+8zBmT15giDS+WDcV+pFaWSypGw@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: Sergei Shtylyov <sergei.shtylyov-M4DtvfQ/ZS1MRgGoP+s0PdBPR1lH4CV8@public.gmane.org>, robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, pawel.moll-5wv7dgnIgG8@public.gmane.org, mark.rutland-5wv7dgnIgG8@public.gmane.org, ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org, galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org, myungjoo.ham-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Krzysztof Kozlowski <k.kozlowski@samsung.com>
+Cc: robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, myungjoo.ham@samsung.com, Chanwoo Choi <cw00.choi@samsung.com>, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, linux-usb@vger.kernel.org
 
-Hi,
+Hello.
 
-On 2015년 12월 17일 11:16, Chanwoo Choi wrote:
-> Hi Sergei,
-> 
-> On 2015년 12월 17일 03:07, Sergei Shtylyov wrote:
+On 12/17/2015 3:53 AM, Krzysztof Kozlowski wrote:
+
 >> Maxim Integrated MAX3355E chip integrates a charge pump and comparators to
 >> enable a system with an integrated USB OTG dual-role transceiver to
 >> function as an USB OTG dual-role device. In addition to sensing/controlling
@@ -49,33 +47,94 @@ On 2015년 12월 17일 11:16, Chanwoo Choi wrote:
 >> - renamed 'ret' variable to 'err' in max3355_probe();
 >> - expanded the Kconfig entry help text;
 >> - added vendor name to the patch summary, the bindings document, the Kconfig
->>   entry, the driver heading comment, the module description, and the change log;
+>>    entry, the driver heading comment, the module description, and the change log;
 >> - fixed up and reformatted the change log.
 >>
->>  Documentation/devicetree/bindings/extcon/extcon-max3355.txt |   21 +
->>  drivers/extcon/Kconfig                                      |    8 
->>  drivers/extcon/Makefile                                     |    1 
->>  drivers/extcon/extcon-max3355.c                             |  153 ++++++++++++
->>  4 files changed, 183 insertions(+)
+>>   Documentation/devicetree/bindings/extcon/extcon-max3355.txt |   21 +
+>>   drivers/extcon/Kconfig                                      |    8
+>>   drivers/extcon/Makefile                                     |    1
+>>   drivers/extcon/extcon-max3355.c                             |  153 ++++++++++++
+>>   4 files changed, 183 insertions(+)
 >>
-
-[snip]
-
->> +	return 0;
->> +}
+>> Index: renesas/Documentation/devicetree/bindings/extcon/extcon-max3355.txt
+>> =================================>> --- /dev/null
+>> +++ renesas/Documentation/devicetree/bindings/extcon/extcon-max3355.txt
+>> @@ -0,0 +1,21 @@
+>> +Maxim Integrated MAX3355 USB OTG chip
+>> +-------------------------------------
 >> +
->> +static int max3355_remove(struct platform_device *pdev)
+>> +MAX3355 integrates a charge pump and comparators to enable a system with an
+>> +integrated USB OTG dual-role transceiver to function as a USB OTG dual-role
+>> +device.
+>> +
+>> +Required properties:
+>> +- compatible: should be "maxim,max3355";
+>> +- maxim,shdn-gpios: should contain a phandle and GPIO specifier for the GPIO pin
+>> +  connected to the MAX3355's SHDN# pin;
+>
+> Could you add some indentation to the wrapped line for this property?
+> For readability.
+
+    If it's not indented enough, I can add more spaces/tabs.
+
+>> +- id-gpios: should contain a phandle and GPIO specifier for the GPIO pin
+>> +  connected to the MAX3355's ID_OUT pin.
+>
+> Ditto.
+>
+> Why this property lacks the vendor prefix i(n comparison to shdn-gpios
+> which has the prefix)?
+
+    Since the extcon-usb-gpio driver uses "id-gpio" prop already. I can add 
+back the vendor prefix if you insist.
+
+[...]
+>> Index: renesas/drivers/extcon/extcon-max3355.c
+>> =================================>> --- /dev/null
+>> +++ renesas/drivers/extcon/extcon-max3355.c
+>> @@ -0,0 +1,153 @@
+[...]
+>> +static int max3355_probe(struct platform_device *pdev)
 >> +{
->> +	struct max3355_data *data = platform_get_drvdata(pdev);
+>> +       struct device_node *np = pdev->dev.of_node;
+>> +       struct max3355_data *data;
+>> +       struct gpio_desc *gpiod;
+>> +       int irq, err;
 >> +
->> +	gpiod_set_value_cansleep(data->shdn_gpiod, 0);
+>> +       data = devm_kzalloc(&pdev->dev, sizeof(struct max3355_data),
+>> +                           GFP_KERNEL);
+>> +       if (!data)
+>> +               return -ENOMEM;
+>> +
+>> +       data->edev = devm_extcon_dev_allocate(&pdev->dev, max3355_cable);
+>> +       if (IS_ERR(data->edev)) {
+>> +               dev_err(&pdev->dev, "failed to allocate extcon device\n");
+>> +               return PTR_ERR(data->edev);
+>> +       }
+>> +       data->edev->name = kstrdup(np->name, GFP_KERNEL);
+>
+> I think it is not needed any more (extcon_dev_register()) will set it.
+> Anyway there is no checking for NULL return value and no freeing in
+> error/exit paths.
 
-Don't need to handle the 'shdn' gpio on resume/suspend funtcion?
+    Oops, will fix.
 
-But, if the interrput of id gpio is used for wakeup source,
-there is no reason to handle it for suspend mode.
+[...]
+>> +static struct platform_driver max3355_driver = {
+>> +       .probe          = max3355_probe,
+>> +       .remove         = max3355_remove,
+>> +       .driver         = {
+>> +               .name   = "extcon-max3355",
+>> +               .of_match_table = max3355_match_table,
+>> +               .owner  = THIS_MODULE,
+>
+> No need for owner.
+> Please pass the source through recent coccicheck and fix the findings.
 
-[snip]
+    Has it been included in the kernel source somewhere already?
 
-Thanks,
-Chanwoo Choi
+> Best regards,
+> Krzysztof
+
+MBR, Sergei
+
