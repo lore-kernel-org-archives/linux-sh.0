@@ -1,95 +1,90 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 18 Dec 2015 02:29:53 +0000
-Subject: [PATCH 23/25] ARM: shmobile: r8a7793: IPMMU compat string SoC part number update
-Message-Id: <c51b1473edf88d40b65f6ce95e35465484d2eb48.1450402264.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 17 Dec 2015 08:39:44 +0000
+Subject: [PATCH/RFC 06/48] v4l: vsp1: bru: Don't program background color in control set handler
+Message-Id: <1450341626-6695-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1450402264.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1450402264.git.horms+renesas@verge.net.au>
+References: <1450341626-6695-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1450341626-6695-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+The datasheet clearly states that all but a few registers can't be
+modified when the device is running. Programming the background color
+in the control set handler is thus prohibited. Program it when starting
+the module instead.
 
-Update IPMMU compat strings to include SoC part number.
+This requires storing the background color value internally as the
+module can be started from the frame completion interrupt handler, and
+accessing control values requires taking a mutex.
 
-By specifying SoC part number in DT it becomes possible
-to implement SoC specific features in the IPMMU driver.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a7793.dtsi | 14 +++++++-------
- 1 file changed, 7 insertions(+), 7 deletions(-)
+ drivers/media/platform/vsp1/vsp1_bru.c | 15 +++++++++------
+ drivers/media/platform/vsp1/vsp1_bru.h |  2 ++
+ 2 files changed, 11 insertions(+), 6 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7793.dtsi b/arch/arm/boot/dts/r8a7793.dtsi
-index df607a92b2ed..aef9e69d6c26 100644
---- a/arch/arm/boot/dts/r8a7793.dtsi
-+++ b/arch/arm/boot/dts/r8a7793.dtsi
-@@ -847,7 +847,7 @@
- 	};
+diff --git a/drivers/media/platform/vsp1/vsp1_bru.c b/drivers/media/platform/vsp1/vsp1_bru.c
+index cb0dbc15ddad..4c1bd0419e12 100644
+--- a/drivers/media/platform/vsp1/vsp1_bru.c
++++ b/drivers/media/platform/vsp1/vsp1_bru.c
+@@ -42,13 +42,9 @@ static int bru_s_ctrl(struct v4l2_ctrl *ctrl)
+ 	struct vsp1_bru *bru  		container_of(ctrl->handler, struct vsp1_bru, ctrls);
  
- 	ipmmu_sy0: mmu@e6280000 {
--		compatible = "renesas,ipmmu-vmsa";
-+		compatible = "renesas,ipmmu-r8a7793", "renesas,ipmmu-vmsa";
- 		reg = <0 0xe6280000 0 0x1000>;
- 		interrupts = <0 223 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 224 IRQ_TYPE_LEVEL_HIGH>;
-@@ -856,7 +856,7 @@
- 	};
+-	if (!vsp1_entity_is_streaming(&bru->entity))
+-		return 0;
+-
+ 	switch (ctrl->id) {
+ 	case V4L2_CID_BG_COLOR:
+-		vsp1_bru_write(bru, VI6_BRU_VIRRPF_COL, ctrl->val |
+-			       (0xff << VI6_BRU_VIRRPF_COL_A_SHIFT));
++		bru->bgcolor = ctrl->val;
+ 		break;
+ 	}
  
- 	ipmmu_sy1: mmu@e6290000 {
--		compatible = "renesas,ipmmu-vmsa";
-+		compatible = "renesas,ipmmu-r8a7793", "renesas,ipmmu-vmsa";
- 		reg = <0 0xe6290000 0 0x1000>;
- 		interrupts = <0 225 IRQ_TYPE_LEVEL_HIGH>;
- 		#iommu-cells = <1>;
-@@ -864,7 +864,7 @@
- 	};
+@@ -95,12 +91,17 @@ static int bru_s_stream(struct v4l2_subdev *subdev, int enable)
+ 		       flags & V4L2_PIX_FMT_FLAG_PREMUL_ALPHA ?
+ 		       0 : VI6_BRU_INCTRL_NRM);
  
- 	ipmmu_ds: mmu@e6740000 {
--		compatible = "renesas,ipmmu-vmsa";
-+		compatible = "renesas,ipmmu-r8a7793", "renesas,ipmmu-vmsa";
- 		reg = <0 0xe6740000 0 0x1000>;
- 		interrupts = <0 198 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 199 IRQ_TYPE_LEVEL_HIGH>;
-@@ -873,7 +873,7 @@
- 	};
+-	/* Set the background position to cover the whole output image. */
++	/* Set the background position to cover the whole output image and
++	 * configure its color.
++	 */
+ 	vsp1_bru_write(bru, VI6_BRU_VIRRPF_SIZE,
+ 		       (format->width << VI6_BRU_VIRRPF_SIZE_HSIZE_SHIFT) |
+ 		       (format->height << VI6_BRU_VIRRPF_SIZE_VSIZE_SHIFT));
+ 	vsp1_bru_write(bru, VI6_BRU_VIRRPF_LOC, 0);
  
- 	ipmmu_mp: mmu@ec680000 {
--		compatible = "renesas,ipmmu-vmsa";
-+		compatible = "renesas,ipmmu-r8a7793", "renesas,ipmmu-vmsa";
- 		reg = <0 0xec680000 0 0x1000>;
- 		interrupts = <0 226 IRQ_TYPE_LEVEL_HIGH>;
- 		#iommu-cells = <1>;
-@@ -881,7 +881,7 @@
- 	};
++	vsp1_bru_write(bru, VI6_BRU_VIRRPF_COL, bru->bgcolor |
++		       (0xff << VI6_BRU_VIRRPF_COL_A_SHIFT));
++
+ 	/* Route BRU input 1 as SRC input to the ROP unit and configure the ROP
+ 	 * unit with a NOP operation to make BRU input 1 available as the
+ 	 * Blend/ROP unit B SRC input.
+@@ -438,6 +439,8 @@ struct vsp1_bru *vsp1_bru_create(struct vsp1_device *vsp1)
+ 	v4l2_ctrl_new_std(&bru->ctrls, &bru_ctrl_ops, V4L2_CID_BG_COLOR,
+ 			  0, 0xffffff, 1, 0);
  
- 	ipmmu_mx: mmu@fe951000 {
--		compatible = "renesas,ipmmu-vmsa";
-+		compatible = "renesas,ipmmu-r8a7793", "renesas,ipmmu-vmsa";
- 		reg = <0 0xfe951000 0 0x1000>;
- 		interrupts = <0 222 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 221 IRQ_TYPE_LEVEL_HIGH>;
-@@ -890,7 +890,7 @@
- 	};
++	bru->bgcolor = 0;
++
+ 	bru->entity.subdev.ctrl_handler = &bru->ctrls;
  
- 	ipmmu_rt: mmu@ffc80000 {
--		compatible = "renesas,ipmmu-vmsa";
-+		compatible = "renesas,ipmmu-r8a7793", "renesas,ipmmu-vmsa";
- 		reg = <0 0xffc80000 0 0x1000>;
- 		interrupts = <0 307 IRQ_TYPE_LEVEL_HIGH>;
- 		#iommu-cells = <1>;
-@@ -898,7 +898,7 @@
- 	};
+ 	if (bru->ctrls.error) {
+diff --git a/drivers/media/platform/vsp1/vsp1_bru.h b/drivers/media/platform/vsp1/vsp1_bru.h
+index dbac9686ea69..4e7d2e79b940 100644
+--- a/drivers/media/platform/vsp1/vsp1_bru.h
++++ b/drivers/media/platform/vsp1/vsp1_bru.h
+@@ -33,6 +33,8 @@ struct vsp1_bru {
+ 		struct vsp1_rwpf *rpf;
+ 		struct v4l2_rect compose;
+ 	} inputs[VSP1_MAX_RPF];
++
++	u32 bgcolor;
+ };
  
- 	ipmmu_gp: mmu@e62a0000 {
--		compatible = "renesas,ipmmu-vmsa";
-+		compatible = "renesas,ipmmu-r8a7793", "renesas,ipmmu-vmsa";
- 		reg = <0 0xe62a0000 0 0x1000>;
- 		interrupts = <0 260 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 261 IRQ_TYPE_LEVEL_HIGH>;
+ static inline struct vsp1_bru *to_bru(struct v4l2_subdev *subdev)
 -- 
-2.1.4
+2.4.10
 
