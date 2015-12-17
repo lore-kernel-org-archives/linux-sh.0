@@ -1,100 +1,63 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Thu, 17 Dec 2015 13:22:36 +0000
-Subject: [PATCH 3/4] PCI: rcar: Add runtime PM support to pcie-rcar
-Message-Id: <1450358557-28376-4-git-send-email-phil.edworthy@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 17 Dec 2015 08:40:10 +0000
+Subject: [PATCH/RFC 32/48] vb2: Add allow_requests flag
+Message-Id: <1450341626-6695-33-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450358557-28376-1-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1450358557-28376-1-git-send-email-phil.edworthy@renesas.com>
+References: <1450341626-6695-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1450341626-6695-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>, Bjorn Helgaas <bhelgaas@google.com>
-Cc: Wolfram Sang <wsa@the-dreams.de>, Geert Uytterhoeven <geert@linux-m68k.org>, linux-kernel@vger.kernel.org, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org, Phil Edworthy <phil.edworthy@renesas.com>
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-If runtime PM is enabled in the kernel config, simply enable the
-clocks once during probe.
+From: Hans Verkuil <hans.verkuil@cisco.com>
 
-Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+The driver has to set allow_requests explicitly in order to allow
+queuing or preparing buffers for a specific request ID.
+
+Signed-off-by: Hans Verkuil <hans.verkuil@cisco.com>
 ---
- drivers/pci/host/pcie-rcar.c | 44 ++++++++++++++++++++++++++++++++------------
- 1 file changed, 32 insertions(+), 12 deletions(-)
+ drivers/media/v4l2-core/videobuf2-v4l2.c | 5 +++++
+ include/media/videobuf2-core.h           | 2 ++
+ 2 files changed, 7 insertions(+)
 
-diff --git a/drivers/pci/host/pcie-rcar.c b/drivers/pci/host/pcie-rcar.c
-index 4a4f8e1..02a5993 100644
---- a/drivers/pci/host/pcie-rcar.c
-+++ b/drivers/pci/host/pcie-rcar.c
-@@ -26,6 +26,7 @@
- #include <linux/of_platform.h>
- #include <linux/pci.h>
- #include <linux/platform_device.h>
-+#include <linux/pm_runtime.h>
- #include <linux/slab.h>
- 
- #define DRV_NAME "rcar-pcie"
-@@ -1019,32 +1020,51 @@ static int rcar_pcie_probe(struct platform_device *pdev)
- 	 if (err)
- 		return err;
- 
--	if (IS_ENABLED(CONFIG_PCI_MSI)) {
--		err = rcar_pcie_enable_msi(pcie);
--		if (err < 0) {
--			dev_err(&pdev->dev,
--				"failed to enable MSI support: %d\n",
--				err);
--			return err;
--		}
--	}
--
- 	of_id = of_match_device(rcar_pcie_of_match, pcie->dev);
- 	if (!of_id || !of_id->data)
+diff --git a/drivers/media/v4l2-core/videobuf2-v4l2.c b/drivers/media/v4l2-core/videobuf2-v4l2.c
+index f6a2800e5f66..2c8776891535 100644
+--- a/drivers/media/v4l2-core/videobuf2-v4l2.c
++++ b/drivers/media/v4l2-core/videobuf2-v4l2.c
+@@ -169,6 +169,11 @@ static int vb2_queue_or_prepare_buf(struct vb2_queue *q, struct v4l2_buffer *b,
  		return -EINVAL;
- 	hw_init_fn = of_id->data;
- 
-+	pm_runtime_enable(pcie->dev);
-+	err = pm_runtime_get_sync(pcie->dev);
-+	if (err < 0) {
-+		dev_err(pcie->dev, "pm_runtime_get_sync failed\n");
-+		goto err_pm_disable;
-+	}
-+
- 	/* Failure to get a link might just be that no cards are inserted */
- 	err = hw_init_fn(pcie);
- 	if (err) {
- 		dev_info(&pdev->dev, "PCIe link down\n");
--		return 0;
-+		err = 0;
-+		goto err_pm_put;
  	}
  
- 	data = rcar_pci_read_reg(pcie, MACSR);
- 	dev_info(&pdev->dev, "PCIe x%d: link up\n", (data >> 20) & 0x3f);
- 
--	return rcar_pcie_enable(pcie);
-+	if (IS_ENABLED(CONFIG_PCI_MSI)) {
-+		err = rcar_pcie_enable_msi(pcie);
-+		if (err < 0) {
-+			dev_err(&pdev->dev,
-+				"failed to enable MSI support: %d\n",
-+				err);
-+			goto err_pm_put;
-+		}
++	if (!q->allow_requests && b->request) {
++		dprintk(1, "%s: unsupported request ID\n", opname);
++		return -EINVAL;
 +	}
 +
-+	err = rcar_pcie_enable(pcie);
-+	if (err)
-+		goto err_pm_put;
-+
-+	return 0;
-+
-+err_pm_put:
-+	pm_runtime_put(pcie->dev);
-+
-+err_pm_disable:
-+	pm_runtime_disable(pcie->dev);
-+	return err;
+ 	return __verify_planes_array(q->bufs[b->index], b);
  }
  
- static struct platform_driver rcar_pcie_driver = {
+diff --git a/include/media/videobuf2-core.h b/include/media/videobuf2-core.h
+index 647ebfe5174f..5eb30071dcf1 100644
+--- a/include/media/videobuf2-core.h
++++ b/include/media/videobuf2-core.h
+@@ -379,6 +379,7 @@ struct vb2_buf_ops {
+  * @fileio_read_once:		report EOF after reading the first buffer
+  * @fileio_write_immediately:	queue buffer after each write() call
+  * @allow_zero_bytesused:	allow bytesused = 0 to be passed to the driver
++ * @allow_requests:		allow request != 0 to be passed to the driver
+  * @lock:	pointer to a mutex that protects the vb2_queue struct. The
+  *		driver can set this to a mutex to let the v4l2 core serialize
+  *		the queuing ioctls. If the driver wants to handle locking
+@@ -441,6 +442,7 @@ struct vb2_queue {
+ 	unsigned			fileio_read_once:1;
+ 	unsigned			fileio_write_immediately:1;
+ 	unsigned			allow_zero_bytesused:1;
++	unsigned			allow_requests:1;
+ 
+ 	struct mutex			*lock;
+ 	void				*owner;
 -- 
-2.5.0
+2.4.10
 
