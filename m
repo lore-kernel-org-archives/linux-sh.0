@@ -1,25 +1,47 @@
-From: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-Date: Sun, 13 Dec 2015 06:42:47 +0000
-Subject: Re: [PATCH v2 16/16] serial: sh-sci: Drop the sci_fck clock fallback
-Message-Id: <20151213064247.GB16326@kroah.com>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Thu, 17 Dec 2015 13:22:34 +0000
+Subject: [PATCH 1/4] PCI: rcar: remove unused pci_sys_data structure in pcie-rcar
+Message-Id: <1450358557-28376-2-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447958173-543-1-git-send-email-geert+renesas@glider.be>
- <1447958173-543-17-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1447958173-543-17-git-send-email-geert+renesas@glider.be>
+References: <1450358557-28376-1-git-send-email-phil.edworthy@renesas.com>
+In-Reply-To: <1450358557-28376-1-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org
+To: Simon Horman <horms@verge.net.au>, Bjorn Helgaas <bhelgaas@google.com>
+Cc: Wolfram Sang <wsa@the-dreams.de>, Geert Uytterhoeven <geert@linux-m68k.org>, linux-kernel@vger.kernel.org, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org, Phil Edworthy <phil.edworthy@renesas.com>
 
-On Thu, Nov 19, 2015 at 07:36:13PM +0100, Geert Uytterhoeven wrote:
-> From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> 
-> All platforms that used to define an sci_fck clock have now switched to
-> the fck name. Remove the fallback code.
-> 
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> Acked-by: Simon Horman <horms+renesas@verge.net.au>
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Commit b3a72384fe29 ("ARM/PCI: Replace pci_sys_data->align_resource
+with global function pointer") removed the struct pci_sys_data
+dependency from the ARM pcibios functions, so remove it from this
+driver.
 
-Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+---
+ drivers/pci/host/pcie-rcar.c | 9 ---------
+ 1 file changed, 9 deletions(-)
+
+diff --git a/drivers/pci/host/pcie-rcar.c b/drivers/pci/host/pcie-rcar.c
+index 5c29626..c72c0ae 100644
+--- a/drivers/pci/host/pcie-rcar.c
++++ b/drivers/pci/host/pcie-rcar.c
+@@ -124,16 +124,7 @@ static inline struct rcar_msi *to_rcar_msi(struct msi_controller *chip)
+ }
+ 
+ /* Structure representing the PCIe interface */
+-/*
+- * ARM pcibios functions expect the ARM struct pci_sys_data as the PCI
+- * sysdata.  Add pci_sys_data as the first element in struct gen_pci so
+- * that when we use a gen_pci pointer as sysdata, it is also a pointer to
+- * a struct pci_sys_data.
+- */
+ struct rcar_pcie {
+-#ifdef CONFIG_ARM
+-	struct pci_sys_data	sys;
+-#endif
+ 	struct device		*dev;
+ 	void __iomem		*base;
+ 	struct list_head	resources;
+-- 
+2.5.0
+
