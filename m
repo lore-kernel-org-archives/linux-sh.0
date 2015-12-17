@@ -1,63 +1,36 @@
-From: "Michael S. Tsirkin" <mst@redhat.com>
-Date: Thu, 31 Dec 2015 19:08:38 +0000
-Subject: [PATCH v2 22/32] s390: define __smp_xxx
-Message-Id: <1451572003-2440-23-git-send-email-mst@redhat.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Thu, 17 Dec 2015 12:09:32 +0000
+Subject: [PATCH] i2c: emev: select I2C slave support
+Message-Id: <1450354172-5656-1-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1451572003-2440-1-git-send-email-mst@redhat.com>
-In-Reply-To: <1451572003-2440-1-git-send-email-mst@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Peter Zijlstra <peterz@infradead.org>, Arnd Bergmann <arnd@arndb.de>, linux-arch@vger.kernel.org, Andrew Cooper <andrew.cooper3@citrix.com>, virtualization@lists.linux-foundation.org, Stefano Stabellini <stefano.stabellini@eu.citrix.com>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@elte.hu>, "H. Peter Anvin" <hpa@zytor.com>, David Miller <davem@davemloft.net>, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, sparclinux@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-metag@vger.kernel.org, linux-mips@linux-mips.org, x86@kernel.org, user-mode-linux-devel@lists.sourceforge.net, adi-buildroot-devel@lists.sourceforge.net, linux-sh@vger.kernel.org, linux-xtensa@linux-xtensa.org, xen-devel@lists.xenproject.org, Martin Schwidefsky <schwidefsky@de.ibm.com>, Heiko Carstens <heiko.carstens@de.ibm.com>Ingo
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, =?UTF-8?q?Niklas=20S=C3=B6derlund?= <niklas.soderlund+renesas@ragnatech.se>, Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-This defines __smp_xxx barriers for s390,
-for use by virtualization.
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Some smp_xxx barriers are removed as they are
-defined correctly by asm-generic/barriers.h
+Until we have proper support to make I2C slave support fully optional,
+select it to prevent build errors on randconfigs.
 
-Note: smp_mb, smp_rmb and smp_wmb are defined as full barriers
-unconditionally on this architecture.
-
-Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
-Acked-by: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 ---
- arch/s390/include/asm/barrier.h | 15 +++++++++------
- 1 file changed, 9 insertions(+), 6 deletions(-)
+ drivers/i2c/busses/Kconfig | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/s390/include/asm/barrier.h b/arch/s390/include/asm/barrier.h
-index c358c31..fbd25b2 100644
---- a/arch/s390/include/asm/barrier.h
-+++ b/arch/s390/include/asm/barrier.h
-@@ -26,18 +26,21 @@
- #define wmb()				barrier()
- #define dma_rmb()			mb()
- #define dma_wmb()			mb()
--#define smp_mb()			mb()
--#define smp_rmb()			rmb()
--#define smp_wmb()			wmb()
--
--#define smp_store_release(p, v)						\
-+#define __smp_mb()			mb()
-+#define __smp_rmb()			rmb()
-+#define __smp_wmb()			wmb()
-+#define smp_mb()			__smp_mb()
-+#define smp_rmb()			__smp_rmb()
-+#define smp_wmb()			__smp_wmb()
-+
-+#define __smp_store_release(p, v)					\
- do {									\
- 	compiletime_assert_atomic_type(*p);				\
- 	barrier();							\
- 	WRITE_ONCE(*p, v);						\
- } while (0)
- 
--#define smp_load_acquire(p)						\
-+#define __smp_load_acquire(p)						\
- ({									\
- 	typeof(*p) ___p1 = READ_ONCE(*p);				\
- 	compiletime_assert_atomic_type(*p);				\
+diff --git a/drivers/i2c/busses/Kconfig b/drivers/i2c/busses/Kconfig
+index eaa7b4a0e48438..0299dfa746a387 100644
+--- a/drivers/i2c/busses/Kconfig
++++ b/drivers/i2c/busses/Kconfig
+@@ -532,6 +532,7 @@ config I2C_EG20T
+ config I2C_EMEV2
+ 	tristate "EMMA Mobile series I2C adapter"
+ 	depends on HAVE_CLK
++	select I2C_SLAVE
+ 	help
+ 	  If you say yes to this option, support will be included for the
+ 	  I2C interface on the Renesas Electronics EM/EV family of processors.
 -- 
-MST
+2.1.4
 
