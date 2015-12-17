@@ -1,151 +1,168 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Sun, 27 Dec 2015 09:00:07 +0000
-Subject: Re: [PATCH 08/22] drm: rcar-du: Restart the DU group when a plane source changes
-Message-Id: <3199261.oWaujEx9hz@avalon>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 17 Dec 2015 08:39:59 +0000
+Subject: [PATCH/RFC 21/48] media: Move media_device link_notify operation to an ops structure
+Message-Id: <1450341626-6695-22-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1442184669-30990-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <2986707.83nd5NsHMZ@avalon> <20151217094151.GV30437@phenom.ffwll.local>
-In-Reply-To: <20151217094151.GV30437@phenom.ffwll.local>
+References: <1450341626-6695-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1450341626-6695-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Daniel Vetter <daniel@ffwll.ch>
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, dri-devel@lists.freedesktop.org, linux-sh@vger.kernel.org
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-Hi Daniel,
+This will allow adding new operations without increasing the
+media_device structure size for drivers that don't implement any media
+device operation.
 
-On Thursday 17 December 2015 10:41:51 Daniel Vetter wrote:
-> On Thu, Dec 17, 2015 at 09:11:49AM +0200, Laurent Pinchart wrote:
-> > On Monday 14 September 2015 09:22:13 Daniel Vetter wrote:
-> >> On Mon, Sep 14, 2015 at 01:50:55AM +0300, Laurent Pinchart wrote:
-> >>> Plane sources are configured by the VSPS bit in the PnDDCR4 register.
-> >>> Although the datasheet states that the bit is updated during vertical
-> >>> blanking, it seems that updates only occur when the DU group is held
-> >>> in reset through the DSYSR.DRES bit. Restart the group if the source
-> >>> changes.
-> >>> 
-> >>> Signed-off-by: Laurent Pinchart
-> >>> <laurent.pinchart+renesas@ideasonboard.com>
-> >>> ---
-> >>> 
-> >>>  drivers/gpu/drm/rcar-du/rcar_du_crtc.c  |  4 ++++
-> >>>  drivers/gpu/drm/rcar-du/rcar_du_group.c |  2 ++
-> >>>  drivers/gpu/drm/rcar-du/rcar_du_group.h |  2 ++
-> >>>  drivers/gpu/drm/rcar-du/rcar_du_plane.c | 22 ++++++++++++++++++++--
-> >>>  4 files changed, 28 insertions(+), 2 deletions(-)
-> >>> 
-> >>> diff --git a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
-> >>> b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c index
-> >>> 48cb19949ca3..7e2f5c26d589
-> >>> 100644
-> >>> --- a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
-> >>> +++ b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
-> >>> @@ -272,6 +272,10 @@ static void rcar_du_crtc_update_planes(struct
-> >>> rcar_du_crtc *rcrtc)
-> >>>  			rcar_du_group_restart(rcrtc->group);
-> >>>  	}
-> >>> 
-> >>> +	/* Restart the group if plane sources have changed. */
-> >>> +	if (rcrtc->group->need_restart)
-> >>> +		rcar_du_group_restart(rcrtc->group);
-> >>> +
-> >>>  	mutex_unlock(&rcrtc->group->lock);
-> >>>  	
-> >>>  	rcar_du_group_write(rcrtc->group, rcrtc->index % 2 ? DS2PR : DS1PR,
-> >>> diff --git a/drivers/gpu/drm/rcar-du/rcar_du_group.c
-> >>> b/drivers/gpu/drm/rcar-du/rcar_du_group.c index
-> >>> 4a44ddd51766..0e2b46dce563 100644
-> >>> --- a/drivers/gpu/drm/rcar-du/rcar_du_group.c
-> >>> +++ b/drivers/gpu/drm/rcar-du/rcar_du_group.c
-> >>> @@ -162,6 +162,8 @@ void rcar_du_group_start_stop(struct rcar_du_group
-> >>> *rgrp, bool start)
-> >>> 
-> >>>  void rcar_du_group_restart(struct rcar_du_group *rgrp)
-> >>>  {
-> >>> +	rgrp->need_restart = false;
-> >>> +
-> >>>  	__rcar_du_group_start_stop(rgrp, false);
-> >>>  	__rcar_du_group_start_stop(rgrp, true);
-> >>>  }
-> >>> diff --git a/drivers/gpu/drm/rcar-du/rcar_du_group.h
-> >>> b/drivers/gpu/drm/rcar-du/rcar_du_group.h index
-> >>> 4b1952fd4e7d..5e3adc6b31b5 100644
-> >>> --- a/drivers/gpu/drm/rcar-du/rcar_du_group.h
-> >>> +++ b/drivers/gpu/drm/rcar-du/rcar_du_group.h
-> >>> @@ -32,6 +32,7 @@ struct rcar_du_device;
-> >>>   * @dptsr_planes: bitmask of planes driven by dot-clock and timing
-> >>>   generator 1
-> >>>   * @num_planes: number of planes in the group
-> >>>   * @planes: planes handled by the group
-> >>> + * @need_restart: the group needs to be restarted due to a
-> >>> configuration change
-> >>>   */
-> >>>  struct rcar_du_group {
-> >>>  	struct rcar_du_device *dev;
-> >>> @@ -47,6 +48,7 @@ struct rcar_du_group {
-> >>>  	unsigned int num_planes;
-> >>>  	struct rcar_du_plane planes[RCAR_DU_NUM_KMS_PLANES];
-> >>> 
-> >>> +	bool need_restart;
-> >> 
-> >> My recommendation is to keep any of these intermediate values in state
-> >> objects too. The reason is that eventually we want to also support real
-> >> queues of atomic commits,
-> > 
-> > I like the idea :-)
-> > 
-> >> and then anything stored globally (well, outside of the state objects)
-> >> won't work. And yes it's ok to push that kind of stuff into helper,
-> >> this isn't really any different than e.g. crtc_state->active_changed
-> >> and similar booleans indicating that something special needs to be done
-> >> when committing.
-> >
-> > I agree with you. There's still a couple of state variables I need to
-> > remove in the driver structures, and that's on my todo list (although not
-> > very high I'm afraid).
-> > 
-> > The group state is a bit of an oddball. The DU groups CRTCs by two and
-> > shares resources inside a group. Implementing that resource sharing
-> > requires storing group state, which is very difficult without an atomic
-> > state object for the group.
-> > 
-> > Am I missing an easy way to fix that ? And would it be fine to upstream
-> > this patch as-is in the meantime ? I'd like to get it in v4.6, it's been
-> > out for long enough and is blocking other people.
-> 
-> Involves a bit of typing, but we allow drivers to subclass
-> drm_atomic_state and add whatever they want.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/media/media-entity.c                  | 11 ++++++-----
+ drivers/media/platform/exynos4-is/media-dev.c |  6 +++++-
+ drivers/media/platform/omap3isp/isp.c         |  6 +++++-
+ drivers/staging/media/omap4iss/iss.c          |  6 +++++-
+ include/media/media-device.h                  | 14 +++++++++++---
+ 5 files changed, 32 insertions(+), 11 deletions(-)
 
-I hadn't noticed it had been introduced, that's very nice.
-
-> The important part is to make sure you get the locking right, i.e. only ever
-> duplicate anything when you hold the right locks. For that you have about 3
-> options:
-> - protect all group state with mode_config->connection_lock. Might
->   unecessarily serialize updates.
-> - create a per-group ww_mutex (atomic allows you to throw as many
->   additional ww_mutex locks encapsulated within a drm_modeset_lock as you
->   want).
-> - just grab the crtc states (plus locks) for all the crtcs in a group when
->   duplicating a group state
-> 
-> I highly recommend you follow the patterns laid out in drm_atomic.c and
-> only allow your driver to get at the group state through a get_group_state
-> helper, like we have for plane/crtc/connector states. That can then take
-> care of the locking and everything.
-
-Thanks for the tip, I'll give it a try.
-
-> i915 uses this to keep track of shared resources like dpll and display
-> core clock.
-> 
-> There should be kerneldoc for the individual functions, but I think we
-> lack an overview/example section ... hint, hint ;-)
-
-I'll first try to understand it by using it :-)
-
+diff --git a/drivers/media/media-entity.c b/drivers/media/media-entity.c
+index 767fe55ba08e..1e1c08c0c947 100644
+--- a/drivers/media/media-entity.c
++++ b/drivers/media/media-entity.c
+@@ -592,17 +592,18 @@ int __media_entity_setup_link(struct media_link *link, u32 flags)
+ 
+ 	mdev = source->parent;
+ 
+-	if (mdev->link_notify) {
+-		ret = mdev->link_notify(link, flags,
+-					MEDIA_DEV_NOTIFY_PRE_LINK_CH);
++	if (mdev->ops && mdev->ops->link_notify) {
++		ret = mdev->ops->link_notify(link, flags,
++					     MEDIA_DEV_NOTIFY_PRE_LINK_CH);
+ 		if (ret < 0)
+ 			return ret;
+ 	}
+ 
+ 	ret = __media_entity_setup_link_notify(link, flags);
+ 
+-	if (mdev->link_notify)
+-		mdev->link_notify(link, flags, MEDIA_DEV_NOTIFY_POST_LINK_CH);
++	if (mdev->ops && mdev->ops->link_notify)
++		mdev->ops->link_notify(link, flags,
++				       MEDIA_DEV_NOTIFY_POST_LINK_CH);
+ 
+ 	return ret;
+ }
+diff --git a/drivers/media/platform/exynos4-is/media-dev.c b/drivers/media/platform/exynos4-is/media-dev.c
+index 9481ce3201a2..091f5930e424 100644
+--- a/drivers/media/platform/exynos4-is/media-dev.c
++++ b/drivers/media/platform/exynos4-is/media-dev.c
+@@ -1111,6 +1111,10 @@ static int fimc_md_link_notify(struct media_link *link, unsigned int flags,
+ 	return ret ? -EPIPE : 0;
+ }
+ 
++static const struct media_device_ops fimc_md_ops = {
++	.link_notify = fimc_md_link_notify,
++};
++
+ static ssize_t fimc_md_sysfs_show(struct device *dev,
+ 				  struct device_attribute *attr, char *buf)
+ {
+@@ -1334,7 +1338,7 @@ static int fimc_md_probe(struct platform_device *pdev)
+ 
+ 	strlcpy(fmd->media_dev.model, "SAMSUNG S5P FIMC",
+ 		sizeof(fmd->media_dev.model));
+-	fmd->media_dev.link_notify = fimc_md_link_notify;
++	fmd->media_dev.ops = &fimc_md_ops;
+ 	fmd->media_dev.dev = dev;
+ 
+ 	v4l2_dev = &fmd->v4l2_dev;
+diff --git a/drivers/media/platform/omap3isp/isp.c b/drivers/media/platform/omap3isp/isp.c
+index 56e683b19a73..a35c292955e7 100644
+--- a/drivers/media/platform/omap3isp/isp.c
++++ b/drivers/media/platform/omap3isp/isp.c
+@@ -851,6 +851,10 @@ static int isp_pipeline_link_notify(struct media_link *link, u32 flags,
+ 	return 0;
+ }
+ 
++static const struct media_device_ops isp_media_ops {
++	.link_notify = isp_pipeline_link_notify,
++};
++
+ /* -----------------------------------------------------------------------------
+  * Pipeline stream management
+  */
+@@ -1873,7 +1877,7 @@ static int isp_register_entities(struct isp_device *isp)
+ 	strlcpy(isp->media_dev.model, "TI OMAP3 ISP",
+ 		sizeof(isp->media_dev.model));
+ 	isp->media_dev.hw_revision = isp->revision;
+-	isp->media_dev.link_notify = isp_pipeline_link_notify;
++	isp->media_dev.ops = &isp_media_ops;
+ 	ret = media_device_register(&isp->media_dev);
+ 	if (ret < 0) {
+ 		dev_err(isp->dev, "%s: Media device registration failed (%d)\n",
+diff --git a/drivers/staging/media/omap4iss/iss.c b/drivers/staging/media/omap4iss/iss.c
+index e27a988540a6..dbff493c6a25 100644
+--- a/drivers/staging/media/omap4iss/iss.c
++++ b/drivers/staging/media/omap4iss/iss.c
+@@ -556,6 +556,10 @@ static int iss_pipeline_link_notify(struct media_link *link, u32 flags,
+ 	return 0;
+ }
+ 
++static const struct media_device_ops iss_media_ops = {
++	.link_notify = iss_pipeline_link_notify,
++};
++
+ /* -----------------------------------------------------------------------------
+  * Pipeline stream management
+  */
+@@ -1183,7 +1187,7 @@ static int iss_register_entities(struct iss_device *iss)
+ 	strlcpy(iss->media_dev.model, "TI OMAP4 ISS",
+ 		sizeof(iss->media_dev.model));
+ 	iss->media_dev.hw_revision = iss->revision;
+-	iss->media_dev.link_notify = iss_pipeline_link_notify;
++	iss->media_dev.ops = &iss_media_ops;
+ 	ret = media_device_register(&iss->media_dev);
+ 	if (ret < 0) {
+ 		dev_err(iss->dev, "Media device registration failed (%d)\n",
+diff --git a/include/media/media-device.h b/include/media/media-device.h
+index 6e6db78f1ee2..7e6de4dbf497 100644
+--- a/include/media/media-device.h
++++ b/include/media/media-device.h
+@@ -33,6 +33,15 @@
+ struct device;
+ 
+ /**
++ * struct media_device_ops - Media device operations
++ * @link_notify: Link state change notification callback
++ */
++struct media_device_ops {
++	int (*link_notify)(struct media_link *link, u32 flags,
++			   unsigned int notification);
++};
++
++/**
+  * struct media_device - Media device
+  * @dev:	Parent device
+  * @devnode:	Media device node
+@@ -45,7 +54,7 @@ struct device;
+  * @entities:	List of registered entities
+  * @lock:	Entities list lock
+  * @graph_mutex: Entities graph operation lock
+- * @link_notify: Link state change notification callback
++ * @ops:	Operation handler callbacks
+  *
+  * This structure represents an abstract high-level media device. It allows easy
+  * access to entities and provides basic media device-level support. The
+@@ -76,8 +85,7 @@ struct media_device {
+ 	/* Serializes graph operations. */
+ 	struct mutex graph_mutex;
+ 
+-	int (*link_notify)(struct media_link *link, u32 flags,
+-			   unsigned int notification);
++	const struct media_device_ops *ops;
+ };
+ 
+ /* Supported link_notify @notification values. */
 -- 
-Regards,
-
-Laurent Pinchart
+2.4.10
 
