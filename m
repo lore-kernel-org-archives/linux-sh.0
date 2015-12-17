@@ -1,110 +1,165 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 14 Dec 2015 18:57:57 +0000
-Subject: [PATCH v3 03/12] ARM: shmobile: r7s72100 dtsi: Rename the serial port clock to fck
-Message-Id: <1450119486-1285-4-git-send-email-geert+renesas@glider.be>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 17 Dec 2015 08:40:00 +0000
+Subject: [PATCH/RFC 22/48] media: Add per-file-handle data support
+Message-Id: <1450341626-6695-23-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450119486-1285-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1450119486-1285-1-git-send-email-geert+renesas@glider.be>
+References: <1450341626-6695-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1450341626-6695-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: linux-sh@vger.kernel.org, linux-serial@vger.kernel.org, devicetree@vger.kernel.org, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+The media devnode core associates devnodes with files by storing the
+devnode pointer in the file structure private_data field. In order to
+allow tracking of per-file-handle data introduce a new media devnode
+file handle structure that stores the devnode pointer, and store a
+pointer to that structure in the file private_data field.
 
-The clock is really the device functional clock, not the interface
-clock. Rename it.
+Users of the media devnode code (the only existing user being
+media_device) are responsible for managing their own subclass of the
+media_devnode_fh structure.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-v3:
-  - No changes,
+ drivers/media/media-device.c  | 22 ++++++++++++++++++++++
+ drivers/media/media-devnode.c | 19 +++++++++----------
+ include/media/media-devnode.h | 18 +++++++++++++++++-
+ 3 files changed, 48 insertions(+), 11 deletions(-)
 
-v2:
-  - Add Acked-by.
----
- arch/arm/boot/dts/r7s72100.dtsi | 16 ++++++++--------
- 1 file changed, 8 insertions(+), 8 deletions(-)
-
-diff --git a/arch/arm/boot/dts/r7s72100.dtsi b/arch/arm/boot/dts/r7s72100.dtsi
-index 4657d7fb5bceede5..0c3b9e341ce7fd8e 100644
---- a/arch/arm/boot/dts/r7s72100.dtsi
-+++ b/arch/arm/boot/dts/r7s72100.dtsi
-@@ -157,7 +157,7 @@
- 			     <0 192 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 189 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp4_clks R7S72100_CLK_SCIF0>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -170,7 +170,7 @@
- 			     <0 196 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 193 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp4_clks R7S72100_CLK_SCIF1>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -183,7 +183,7 @@
- 			     <0 200 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 197 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp4_clks R7S72100_CLK_SCIF2>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -196,7 +196,7 @@
- 			     <0 204 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 201 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp4_clks R7S72100_CLK_SCIF3>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -209,7 +209,7 @@
- 			     <0 208 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 205 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp4_clks R7S72100_CLK_SCIF4>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -222,7 +222,7 @@
- 			     <0 212 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 209 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp4_clks R7S72100_CLK_SCIF5>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -235,7 +235,7 @@
- 			     <0 216 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 213 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp4_clks R7S72100_CLK_SCIF6>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -248,7 +248,7 @@
- 			     <0 220 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 217 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp4_clks R7S72100_CLK_SCIF7>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
+diff --git a/drivers/media/media-device.c b/drivers/media/media-device.c
+index 7b39440192d6..285f7d79d848 100644
+--- a/drivers/media/media-device.c
++++ b/drivers/media/media-device.c
+@@ -24,23 +24,45 @@
+ #include <linux/export.h>
+ #include <linux/ioctl.h>
+ #include <linux/media.h>
++#include <linux/slab.h>
+ #include <linux/types.h>
+ 
+ #include <media/media-device.h>
+ #include <media/media-devnode.h>
+ #include <media/media-entity.h>
+ 
++struct media_device_fh {
++	struct media_devnode_fh fh;
++};
++
++static inline struct media_device_fh *media_device_fh(struct file *filp)
++{
++	return container_of(filp->private_data, struct media_device_fh, fh);
++}
++
+ /* -----------------------------------------------------------------------------
+  * Userspace API
+  */
+ 
+ static int media_device_open(struct file *filp)
+ {
++	struct media_device_fh *fh;
++
++	fh = kzalloc(sizeof(*media_device_fh), GFP_KERNEL);
++	if (!fh)
++		return -ENOMEM;
++
++	filp->private_data = &fh->fh;
++
+ 	return 0;
+ }
+ 
+ static int media_device_close(struct file *filp)
+ {
++	struct media_device_fh *fh = media_device_fh(filp);
++
++	kfree(fh);
++
+ 	return 0;
+ }
+ 
+diff --git a/drivers/media/media-devnode.c b/drivers/media/media-devnode.c
+index ebf9626e5ae5..67bac29838d3 100644
+--- a/drivers/media/media-devnode.c
++++ b/drivers/media/media-devnode.c
+@@ -154,6 +154,7 @@ static long media_compat_ioctl(struct file *filp, unsigned int cmd,
+ /* Override for the open function */
+ static int media_open(struct inode *inode, struct file *filp)
+ {
++	struct media_devnode_fh *fh;
+ 	struct media_devnode *mdev;
+ 	int ret;
+ 
+@@ -175,16 +176,15 @@ static int media_open(struct inode *inode, struct file *filp)
+ 	get_device(&mdev->dev);
+ 	mutex_unlock(&media_devnode_lock);
+ 
+-	filp->private_data = mdev;
+-
+-	if (mdev->fops->open) {
+-		ret = mdev->fops->open(filp);
+-		if (ret) {
+-			put_device(&mdev->dev);
+-			return ret;
+-		}
++	ret = mdev->fops->open(filp);
++	if (ret) {
++		put_device(&mdev->dev);
++		return ret;
+ 	}
+ 
++	fh = filp->private_data;
++	fh->devnode = mdev;
++
+ 	return 0;
+ }
+ 
+@@ -193,8 +193,7 @@ static int media_release(struct inode *inode, struct file *filp)
+ {
+ 	struct media_devnode *mdev = media_devnode_data(filp);
+ 
+-	if (mdev->fops->release)
+-		mdev->fops->release(filp);
++	mdev->fops->release(filp);
+ 
+ 	/* decrease the refcount unconditionally since the release()
+ 	   return value is ignored. */
+diff --git a/include/media/media-devnode.h b/include/media/media-devnode.h
+index 17ddae32060d..ce81047cb4fc 100644
+--- a/include/media/media-devnode.h
++++ b/include/media/media-devnode.h
+@@ -52,6 +52,20 @@ struct media_file_operations {
+ };
+ 
+ /**
++ * struct media_devnode_fh - Media device node file handle
++ * @devnode:	pointer to the media device node
++ *
++ * This structure serves as a base for per-file-handle data storage. Media
++ * device node users embed media_devnode_fh in their custom file handle data
++ * structures and store the media_devnode_fh in the file private_data in order
++ * to let the media device node core locate the media_devnode corresponding to a
++ * file handle.
++ */
++struct media_devnode_fh {
++	struct media_devnode *devnode;
++};
++
++/**
+  * struct media_devnode - Media device node
+  * @fops:	pointer to struct media_file_operations with media device ops
+  * @dev:	struct device pointer for the media controller device
+@@ -92,7 +106,9 @@ void media_devnode_unregister(struct media_devnode *mdev);
+ 
+ static inline struct media_devnode *media_devnode_data(struct file *filp)
+ {
+-	return filp->private_data;
++	struct media_devnode_fh *fh = filp->private_data;
++
++	return fh->devnode;
+ }
+ 
+ static inline int media_devnode_is_registered(struct media_devnode *mdev)
 -- 
-1.9.1
+2.4.10
 
