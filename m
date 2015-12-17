@@ -1,48 +1,49 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 11 Dec 2015 02:52:50 +0000
-Subject: [PATCH/RFC 13/19] ARM: shmobile: gose: enable sound DMA support in device tree
-Message-Id: <1449802376-11301-14-git-send-email-horms+renesas@verge.net.au>
+Date: Thu, 17 Dec 2015 05:24:54 +0000
+Subject: [PATCH 4/7] ARM: shmobile: defconfig: Enable frame buffer console for armadillo800eva
+Message-Id: <af48156ff3a1762989627fba7c56e77743fc0fdc.1450315426.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449802376-11301-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1449802376-11301-1-git-send-email-horms+renesas@verge.net.au>
+References: <cover.1450315426.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1450315426.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Enable DMA transfer to/from SSI in r8a7793/gose device tree.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-     DMA
-[MEM] -> [SSI]
+Enabling the frame buffer device on armadillo800eva requires the board
+staging code.
+Also enable the frame buffer, so you will actually see output during
+boot.
 
-     DMA
-[MEM] <- [SSI]
-
-Based on similar work for the r8a7791/koelsch by Kuninori Morimoto.
-
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7793-gose.dts | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ arch/arm/configs/shmobile_defconfig | 3 +++
+ 1 file changed, 3 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7793-gose.dts b/arch/arm/boot/dts/r8a7793-gose.dts
-index 64bcde44f4e5..b43a06104125 100644
---- a/arch/arm/boot/dts/r8a7793-gose.dts
-+++ b/arch/arm/boot/dts/r8a7793-gose.dts
-@@ -223,10 +223,10 @@
- };
- 
- &ssi0 {
--	pio-transfer;
-+	no-busif;
- };
- 
- &ssi1 {
--	pio-transfer;
-+	no-busif;
- 	shared-pin;
- };
+diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
+index d2259952879d..5bc4f537f9da 100644
+--- a/arch/arm/configs/shmobile_defconfig
++++ b/arch/arm/configs/shmobile_defconfig
+@@ -153,6 +153,7 @@ CONFIG_FB_SH_MOBILE_MERAM=y
+ # CONFIG_BACKLIGHT_GENERIC is not set
+ CONFIG_BACKLIGHT_PWM=y
+ CONFIG_BACKLIGHT_AS3711=y
++CONFIG_FRAMEBUFFER_CONSOLE=y
+ CONFIG_SOUND=y
+ CONFIG_SND=y
+ CONFIG_SND_SOC=y
+@@ -184,6 +185,8 @@ CONFIG_DMADEVICES=y
+ CONFIG_SH_DMAE=y
+ CONFIG_RCAR_DMAC=y
+ CONFIG_RENESAS_USB_DMAC=y
++CONFIG_STAGING=y
++CONFIG_STAGING_BOARD=y
+ # CONFIG_IOMMU_SUPPORT is not set
+ CONFIG_IIO=y
+ CONFIG_AK8975=y
 -- 
 2.1.4
 
