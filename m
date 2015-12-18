@@ -1,94 +1,44 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 22 Dec 2015 16:14:47 +0000
-Subject: renesas-drivers-2015-12-22-v4.4-rc6
-Message-Id: <1450800887-20970-1-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 18 Dec 2015 02:30:40 +0000
+Subject: [PATCH 2/6] ARM: shmobile: r8a7740 dtsi: Use "arm,pl390" for GIC
+Message-Id: <ad14ba96f962a44df0a6d5645beed7d2f776bdfa.1450401902.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1450401902.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1450401902.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-I've pushed renesas-drivers-2015-12-22-v4.4-rc6 to
-https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git
-This tree is meant to ease development of platform support and drivers for
-Renesas ARM ("shmobile") SoCs. It's created by merging (a) the for-next 
-branches of various subsystem trees and (b) branches with driver code
-submitted or planned for submission to maintainers into the development
-branch of Simon Horman's renesas.git tree.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Today's version is based on renesas-devel-20151221-v4.4-rc6.
+Replace the "arm,cortex-a9-gic" compatible value for the GIC by
+"arm,pl390", as the documentation states it is a PL390.
+This has been confirmed by reading the GICD_IIDR register, which reports
+0x0000043b (PL390 = 0x00, ARM = 0x43b).
 
-Included branches with driver code:
-  - sh-pfc-for-v4.5
-  - clk-shmobile-for-v4.5
-  - scif-clk-sck-brg-for-v4.5
-  - topic/rcar-dmac-residue-v1
-  - topic/rcar-dmac-hamza-v3
-  - topic/scif-earlycon
-  - topic/scif-clk-sck-brg-integration-v3
-  - topic/r8a7795-drivers-sh-v1
-  - git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git#topic/r8a7795-pcie
-  - topic/ipmmu-multi-arch-v1
-  - topic/r8a7795-ipmmu-rfc
-  - git://linuxtv.org/pinchartl/media.git#vsp1-kms-20151217~3
-  - topic/r8a7795-cpg-mssr-sata
+This has no effect on runtime behavior, as currently the GIC driver
+treats both compatible values the same.
 
-Included fixes:
-  - Revert "ARM: 8470/1: mm: flip priority of CONFIG_DEBUG_RODATA"
-  - ARM: shmobile: bockw dts: Add compatible property to "partitions" node
-  - ARM: shmobile: lager dts: Add compatible property to "partitions" node
-  - ARM: shmobile: koelsch dts: Add compatible property to "partitions" node
-  - ARM: shmobile: porter dts: Add compatible property to "partitions" node
-  - ARM: shmobile: gose dts: Add compatible property to "partitions" node
-  - ARM: shmobile: silk dts: Add compatible property to "partitions" node
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7740.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Included subsystem trees:
-  - git://git.kernel.org/pub/scm/linux/kernel/git/rafael/linux-pm.git#linux-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/clk/linux.git#clk-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-pinctrl.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-gpio.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/spi.git#for-next
-  - git://git.infradead.org/users/dedekind/l2-mtd-2.6.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/davem/net-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/tty.git#tty-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git#i2c/for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/mkl/linux-can-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/usb.git#usb-next
-  - git://people.freedesktop.org/~airlied/linux#drm-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/joro/iommu.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/cjb/mmc.git#mmc-next
-  - git://git.linaro.org/people/ulf.hansson/mmc.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/thierry.reding/linux-pwm.git#for-next
-  - git://git.linaro.org/people/daniel.lezcano/linux.git#clockevents/next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/balbi/usb.git#testing/next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/djbw/dmaengine.git#next
-  - git://git.infradead.org/users/vkoul/slave-dma.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/staging.git#staging-next
-  - git://ftp.arm.linux.org.uk/pub/linux/arm/kernel/git-cur/linux-arm.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/rzhang/linux.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regmap.git#for-next
-  - git://git.infradead.org/users/jcooper/linux.git#irqchip/for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/tomba/linux.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/tj/libata.git#for-next
-  - git://git.infradead.org/battery-2.6.git#master
-  - git://www.linux-watchdog.org/linux-watchdog-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/arm/arm-soc.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regulator.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/arm64/linux.git#for-next/core
-  - git://anongit.freedesktop.org/drm-intel#topic/drm-misc
-  - git://git.kernel.org/pub/scm/linux/kernel/git/helgaas/pci.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/kishon/linux-phy.git#next
+diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
+index e14cb1438216..20d20f67620b 100644
+--- a/arch/arm/boot/dts/r8a7740.dtsi
++++ b/arch/arm/boot/dts/r8a7740.dtsi
+@@ -30,7 +30,7 @@
+ 	};
+ 
+ 	gic: interrupt-controller@c2800000 {
+-		compatible = "arm,cortex-a9-gic";
++		compatible = "arm,pl390";
+ 		#interrupt-cells = <3>;
+ 		interrupt-controller;
+ 		reg = <0xc2800000 0x1000>,
+-- 
+2.1.4
 
-Merry Christmas and a Happy New Year!
-
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
