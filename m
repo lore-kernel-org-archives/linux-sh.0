@@ -1,26 +1,28 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 01 Dec 2015 05:36:57 +0000
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 18 Dec 2015 02:29:03 +0000
 Subject: [PATCH 2/2] arm64: defconfig: add CS2000 support
-Message-Id: <87io4iyboj.wl%kuninori.morimoto.gx@renesas.com>
+Message-Id: <d3643e1669e59c374e78e3af9d93def5ac1f81bc.1450400996.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1450400996.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1450400996.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-
+To: linux-arm-kernel@lists.infradead.org
 
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
  arch/arm64/configs/defconfig | 1 +
  1 file changed, 1 insertion(+)
 
 diff --git a/arch/arm64/configs/defconfig b/arch/arm64/configs/defconfig
-index 2b0a9dc..f239a2e 100644
+index 93288968b8f9..bdbe783584ec 100644
 --- a/arch/arm64/configs/defconfig
 +++ b/arch/arm64/configs/defconfig
-@@ -189,6 +189,7 @@ CONFIG_QCOM_BAM_DMA=y
+@@ -190,6 +190,7 @@ CONFIG_QCOM_BAM_DMA=y
  CONFIG_VIRTIO_PCI=y
  CONFIG_VIRTIO_BALLOON=y
  CONFIG_VIRTIO_MMIO=y
@@ -29,5 +31,5 @@ index 2b0a9dc..f239a2e 100644
  CONFIG_MSM_GCC_8916=y
  CONFIG_HWSPINLOCK_QCOM=y
 -- 
-1.9.1
+2.1.4
 
