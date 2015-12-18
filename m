@@ -1,39 +1,42 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 01 Dec 2015 07:43:03 +0000
-Subject: [PATCH 2/2 net-next] ravb: Add device tree support for r8a779[123]
-Message-Id: <1448955783-22806-3-git-send-email-horms+renesas@verge.net.au>
+Date: Fri, 18 Dec 2015 02:29:41 +0000
+Subject: [PATCH 11/25] ARM: shmobile: bockw dts: Update console parameters
+Message-Id: <f84a9cbb173946754712b366524fc4f5fb744424.1450402264.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1448955783-22806-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1448955783-22806-1-git-send-email-horms+renesas@verge.net.au>
+References: <cover.1450402264.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1450402264.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org, linux-sh@vger.kernel.org
-Cc: Magnus Damm <magnus.damm@gmail.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, devicetree@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Simply document new compat strings.
-As a previous patch adds a generic R-Car Gen2 compat string
-there appears to be no need for a driver updates.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
+Drop the "console=" parameter from the kernel command line, as it's no
+longer needed for DT-based platforms.
+Add serial port config to chosen/stdout-path.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- Documentation/devicetree/bindings/net/renesas,ravb.txt | 3 +++
- 1 file changed, 3 insertions(+)
+ arch/arm/boot/dts/r8a7778-bockw.dts | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/net/renesas,ravb.txt b/Documentation/devicetree/bindings/net/renesas,ravb.txt
-index 115006325bff..076accb652ad 100644
---- a/Documentation/devicetree/bindings/net/renesas,ravb.txt
-+++ b/Documentation/devicetree/bindings/net/renesas,ravb.txt
-@@ -5,6 +5,9 @@ interface.
+diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
+index 158ad94fd4d1..b1aa02599229 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw.dts
+@@ -28,8 +28,8 @@
+ 	};
  
- Required properties:
- - compatible: "renesas,etheravb-r8a7790" if the device is a part of R8A7790 SoC.
-+	      "renesas,etheravb-r8a7791" if the device is a part of R8A7791 SoC.
-+	      "renesas,etheravb-r8a7792" if the device is a part of R8A7792 SoC.
-+	      "renesas,etheravb-r8a7793" if the device is a part of R8A7793 SoC.
- 	      "renesas,etheravb-r8a7794" if the device is a part of R8A7794 SoC.
- 	      "renesas,etheravb-r8a7795" if the device is a part of R8A7795 SoC.
- 	      "renesas,etheravb-gen2" for generic R-Car Gen 2 compatible interface.
+ 	chosen {
+-		bootargs = "console=ttySC0,115200 ignore_loglevel ip=dhcp root=/dev/nfs rw";
+-		stdout-path = &scif0;
++		bootargs = "ignore_loglevel ip=dhcp root=/dev/nfs rw";
++		stdout-path = "serial0:115200n8";
+ 	};
+ 
+ 	memory {
 -- 
 2.1.4
 
