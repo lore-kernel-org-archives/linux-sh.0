@@ -1,87 +1,67 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 17 Dec 2015 05:24:56 +0000
-Subject: [PATCH 6/7] ARM: multi_v7_defconfig: Enable missing Renesas ARM support based on DTSes
-Message-Id: <954ceafd50cf370ba546d01422de883337f6705f.1450315426.git.horms+renesas@verge.net.au>
+Date: Fri, 18 Dec 2015 02:29:33 +0000
+Subject: [PATCH 03/25] ARM: shmobile: r8a7791: add EtherAVB clock
+Message-Id: <eaa870b3055384092d8fc075bca3a3a819f73c43.1450402264.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1450315426.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1450315426.git.horms+renesas@verge.net.au>
+References: <cover.1450402264.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1450402264.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Enable all missing support, extracted from the various Renesas ARM DTSes
-using linux-config-from-dt.
+Add the EtherAVB clock to the R8A7791 device tree.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Arnd Bergmann <arnd@arndb.de>
+Based on the commit 63d2d750c902 ("ARM: shmobile: r8a7790: add EtherAVB
+clocks").
+
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/configs/multi_v7_defconfig | 7 +++++++
- 1 file changed, 7 insertions(+)
+ arch/arm/boot/dts/r8a7791.dtsi            | 10 ++++++----
+ include/dt-bindings/clock/r8a7791-clock.h |  1 +
+ 2 files changed, 7 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/configs/multi_v7_defconfig b/arch/arm/configs/multi_v7_defconfig
-index a3d65beacf7c..32d1573d3cce 100644
---- a/arch/arm/configs/multi_v7_defconfig
-+++ b/arch/arm/configs/multi_v7_defconfig
-@@ -152,6 +152,7 @@ CONFIG_CAN_RAW=y
- CONFIG_CAN_BCM=y
- CONFIG_CAN_DEV=y
- CONFIG_CAN_AT91=m
-+CONFIG_CAN_RCAR=m
- CONFIG_CAN_XILINXCAN=y
- CONFIG_CAN_MCP251X=y
- CONFIG_CAN_SUN4I=y
-@@ -304,6 +305,7 @@ CONFIG_I2C_AT91=m
- CONFIG_I2C_CADENCE=y
- CONFIG_I2C_DESIGNWARE_PLATFORM=y
- CONFIG_I2C_DIGICOLOR=m
-+CONFIG_I2C_EMEV2=m
- CONFIG_I2C_GPIO=m
- CONFIG_I2C_EXYNOS5=y
- CONFIG_I2C_MV64XXX=y
-@@ -384,6 +386,7 @@ CONFIG_EXYNOS_THERMAL=m
- CONFIG_ST_THERMAL_SYSCFG=y
- CONFIG_ST_THERMAL_MEMMAP=y
- CONFIG_WATCHDOG=y
-+CONFIG_DA9063_WATCHDOG=m
- CONFIG_XILINX_WATCHDOG=y
- CONFIG_ARM_SP805_WATCHDOG=y
- CONFIG_ORION_WATCHDOG=y
-@@ -400,6 +403,7 @@ CONFIG_MFD_AXP20X=y
- CONFIG_MFD_CROS_EC=y
- CONFIG_MFD_CROS_EC_I2C=m
- CONFIG_MFD_CROS_EC_SPI=y
-+CONFIG_MFD_DA9063=m
- CONFIG_MFD_MAX14577=y
- CONFIG_MFD_MAX77686=y
- CONFIG_MFD_MAX77693=y
-@@ -457,6 +461,7 @@ CONFIG_SOC_CAMERA=m
- CONFIG_SOC_CAMERA_PLATFORM=m
- CONFIG_VIDEO_RCAR_VIN=m
- CONFIG_V4L_MEM2MEM_DRIVERS=y
-+CONFIG_VIDEO_RENESAS_JPU=m
- CONFIG_VIDEO_RENESAS_VSP1=m
- # CONFIG_MEDIA_SUBDRV_AUTOSELECT is not set
- CONFIG_VIDEO_ADV7180=m
-@@ -611,6 +616,7 @@ CONFIG_RTC_DRV_TPS65910=y
- CONFIG_RTC_DRV_S35390A=m
- CONFIG_RTC_DRV_RX8581=m
- CONFIG_RTC_DRV_EM3027=y
-+CONFIG_RTC_DRV_DA9063=m
- CONFIG_RTC_DRV_DIGICOLOR=m
- CONFIG_RTC_DRV_S5M=m
- CONFIG_RTC_DRV_S3C=m
-@@ -630,6 +636,7 @@ CONFIG_MV_XOR=y
- CONFIG_TEGRA20_APB_DMA=y
- CONFIG_SH_DMAE=y
- CONFIG_RCAR_DMAC=y
-+CONFIG_RENESAS_USB_DMAC=m
- CONFIG_STE_DMA40=y
- CONFIG_SIRF_DMA=y
- CONFIG_TI_EDMA=y
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 12b2b0f95806..4b3132d9807f 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -1329,16 +1329,18 @@
+ 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150990 0 4>, <0 0xe61509a0 0 4>;
+ 			clocks = <&zx_clk>, <&hp_clk>, <&zg_clk>, <&zg_clk>,
+-			         <&zg_clk>, <&p_clk>, <&zs_clk>, <&zs_clk>;
++			         <&zg_clk>, <&hp_clk>, <&p_clk>, <&zs_clk>,
++				 <&zs_clk>;
+ 			#clock-cells = <1>;
+ 			clock-indices = <
+ 				R8A7791_CLK_IPMMU_SGX R8A7791_CLK_MLB
+ 				R8A7791_CLK_VIN2 R8A7791_CLK_VIN1 R8A7791_CLK_VIN0
+-				R8A7791_CLK_ETHER R8A7791_CLK_SATA1 R8A7791_CLK_SATA0
++				R8A7791_CLK_ETHERAVB R8A7791_CLK_ETHER
++				R8A7791_CLK_SATA1 R8A7791_CLK_SATA0
+ 			>;
+ 			clock-output-names -				"ipmmu_sgx", "mlb", "vin2", "vin1", "vin0", "ether",
+-				"sata1", "sata0";
++				"ipmmu_sgx", "mlb", "vin2", "vin1", "vin0",
++				"etheravb", "ether", "sata1", "sata0";
+ 		};
+ 		mstp9_clks: mstp9_clks@e6150994 {
+ 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
+diff --git a/include/dt-bindings/clock/r8a7791-clock.h b/include/dt-bindings/clock/r8a7791-clock.h
+index dd09b73c4aaf..ffa11379b3f0 100644
+--- a/include/dt-bindings/clock/r8a7791-clock.h
++++ b/include/dt-bindings/clock/r8a7791-clock.h
+@@ -102,6 +102,7 @@
+ #define R8A7791_CLK_VIN2		9
+ #define R8A7791_CLK_VIN1		10
+ #define R8A7791_CLK_VIN0		11
++#define R8A7791_CLK_ETHERAVB		12
+ #define R8A7791_CLK_ETHER		13
+ #define R8A7791_CLK_SATA1		14
+ #define R8A7791_CLK_SATA0		15
 -- 
 2.1.4
 
