@@ -1,75 +1,99 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sat, 05 Dec 2015 02:12:47 +0000
-Subject: [PATCH v2 13/32] v4l: vsp1: Extract pipeline initialization code into a function
-Message-Id: <1449281586-25726-14-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 18 Dec 2015 02:29:12 +0000
+Subject: [PATCH 04/10] arm64: dts: r8a7795: Add Cortex-A57 CPU cores
+Message-Id: <0ed1a79ed0c17631fb41d336a4eddb9bbd299b64.1450401186.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1449281586-25726-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1450401186.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1450401186.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The code will be reused outside of vsp1_video.c.
+From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Add Cortex-A57 CPU cores to r8a7795 SoC for a total of 4 x Cortex-A57.
+
+Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
+Sigend-off-by: Dirk Behme <dirk.behme@gmail.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/media/platform/vsp1/vsp1_pipe.c  | 10 ++++++++++
- drivers/media/platform/vsp1/vsp1_pipe.h  |  1 +
- drivers/media/platform/vsp1/vsp1_video.c |  6 +-----
- 3 files changed, 12 insertions(+), 5 deletions(-)
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi | 31 +++++++++++++++++++++++++------
+ 1 file changed, 25 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/media/platform/vsp1/vsp1_pipe.c b/drivers/media/platform/vsp1/vsp1_pipe.c
-index 199d57f1fe06..524420ed6333 100644
---- a/drivers/media/platform/vsp1/vsp1_pipe.c
-+++ b/drivers/media/platform/vsp1/vsp1_pipe.c
-@@ -48,6 +48,16 @@ void vsp1_pipeline_reset(struct vsp1_pipeline *pipe)
- 	pipe->uds = NULL;
- }
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index 051ff143506e..4d43cf31418f 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -35,13 +35,31 @@
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
  
-+void vsp1_pipeline_init(struct vsp1_pipeline *pipe)
-+{
-+	mutex_init(&pipe->lock);
-+	spin_lock_init(&pipe->irqlock);
-+	init_waitqueue_head(&pipe->wq);
+-		/* 1 core only at this point */
+ 		a57_0: cpu@0 {
+ 			compatible = "arm,cortex-a57", "arm,armv8";
+ 			reg = <0x0>;
+ 			device_type = "cpu";
+ 			enable-method = "psci";
+ 		};
 +
-+	INIT_LIST_HEAD(&pipe->entities);
-+	pipe->state = VSP1_PIPELINE_STOPPED;
-+}
++		a57_1: cpu@1 {
++			compatible = "arm,cortex-a57","arm,armv8";
++			reg = <0x1>;
++			device_type = "cpu";
++			enable-method = "psci";
++		};
++		a57_2: cpu@2 {
++			compatible = "arm,cortex-a57","arm,armv8";
++			reg = <0x2>;
++			device_type = "cpu";
++			enable-method = "psci";
++		};
++		a57_3: cpu@3 {
++			compatible = "arm,cortex-a57","arm,armv8";
++			reg = <0x3>;
++			device_type = "cpu";
++			enable-method = "psci";
++		};
+ 	};
+ 
+ 	extal_clk: extal {
+@@ -84,6 +102,7 @@
+ 	soc {
+ 		compatible = "simple-bus";
+ 		interrupt-parent = <&gic>;
 +
- void vsp1_pipeline_run(struct vsp1_pipeline *pipe)
- {
- 	struct vsp1_device *vsp1 = pipe->output->entity.vsp1;
-diff --git a/drivers/media/platform/vsp1/vsp1_pipe.h b/drivers/media/platform/vsp1/vsp1_pipe.h
-index f8a099fba973..8553d5a03aa3 100644
---- a/drivers/media/platform/vsp1/vsp1_pipe.h
-+++ b/drivers/media/platform/vsp1/vsp1_pipe.h
-@@ -67,6 +67,7 @@ static inline struct vsp1_pipeline *to_vsp1_pipeline(struct media_entity *e)
- }
+ 		#address-cells = <2>;
+ 		#size-cells = <2>;
+ 		ranges;
+@@ -96,7 +115,7 @@
+ 			reg = <0x0 0xf1010000 0 0x1000>,
+ 			      <0x0 0xf1020000 0 0x2000>;
+ 			interrupts = <GIC_PPI 9
+-					(GIC_CPU_MASK_SIMPLE(1) | IRQ_TYPE_LEVEL_HIGH)>;
++					(GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_HIGH)>;
+ 		};
  
- void vsp1_pipeline_reset(struct vsp1_pipeline *pipe);
-+void vsp1_pipeline_init(struct vsp1_pipeline *pipe);
+ 		gpio0: gpio@e6050000 {
+@@ -214,13 +233,13 @@
+ 		timer {
+ 			compatible = "arm,armv8-timer";
+ 			interrupts = <GIC_PPI 13
+-					(GIC_CPU_MASK_SIMPLE(1) | IRQ_TYPE_LEVEL_LOW)>,
++					(GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
+ 				     <GIC_PPI 14
+-					(GIC_CPU_MASK_SIMPLE(1) | IRQ_TYPE_LEVEL_LOW)>,
++					(GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
+ 				     <GIC_PPI 11
+-					(GIC_CPU_MASK_SIMPLE(1) | IRQ_TYPE_LEVEL_LOW)>,
++					(GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
+ 				     <GIC_PPI 10
+-					(GIC_CPU_MASK_SIMPLE(1) | IRQ_TYPE_LEVEL_LOW)>;
++					(GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>;
+ 		};
  
- void vsp1_pipeline_run(struct vsp1_pipeline *pipe);
- bool vsp1_pipeline_stopped(struct vsp1_pipeline *pipe);
-diff --git a/drivers/media/platform/vsp1/vsp1_video.c b/drivers/media/platform/vsp1/vsp1_video.c
-index cd4c2481e4ec..b82ff1a0371b 100644
---- a/drivers/media/platform/vsp1/vsp1_video.c
-+++ b/drivers/media/platform/vsp1/vsp1_video.c
-@@ -1013,11 +1013,7 @@ struct vsp1_video *vsp1_video_create(struct vsp1_device *vsp1,
- 	spin_lock_init(&video->irqlock);
- 	INIT_LIST_HEAD(&video->irqqueue);
- 
--	mutex_init(&video->pipe.lock);
--	spin_lock_init(&video->pipe.irqlock);
--	INIT_LIST_HEAD(&video->pipe.entities);
--	init_waitqueue_head(&video->pipe.wq);
--	video->pipe.state = VSP1_PIPELINE_STOPPED;
-+	vsp1_pipeline_init(&video->pipe);
- 	video->pipe.frame_end = vsp1_video_pipeline_frame_end;
- 
- 	/* Initialize the media entity... */
+ 		cpg: clock-controller@e6150000 {
 -- 
-2.4.10
+2.1.4
 
