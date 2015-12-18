@@ -1,44 +1,76 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 05 Dec 2015 00:05:07 +0000
-Subject: [PATCH v2] MAINTAINERS: add myself as Renesas Ethernet drivers reviewer
-Message-Id: <1507975.7SzdHK19xl@wasted.cogentembedded.com>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Fri, 18 Dec 2015 15:33:51 +0000
+Subject: [PATCH RESENT] staging/emxx_udc: fix 64-bit warnings
+Message-Id: <2183225.RrE6ZdDul9@wuerfel>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Add myself as  a reviewer for the Renesas Ethernet drivers -- hopefully I
-won't miss the buggy  patches anymore. :-)
+ARCH_SHMOBILE is coming to arm64, which creates new warnings in allmodconfig:
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+drivers/staging/emxx_udc/emxx_udc.c: In function '_nbu2ss_out_dma':
+drivers/staging/emxx_udc/emxx_udc.c:843:45: warning: cast from pointer to integer of different size [-Wpointer-to-int-cast]
+  _nbu2ss_writel(&preg->EP_DCR[num].EP_TADR, (u32)pBuffer);
 
+This is clearly a mistake from confusing a dma_addr_t with a pointer,
+so the fix is to use the correct types in two places.
+
+The third warning of this kind is a check for an unaligned pointer,
+which should be done by casting the pointer to uintptr_t, not int.
+
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
 ---
-The patch is against DaveM's 'net.git' repo.
+I sent this a month ago, here is the same patch again in case it got lost.
 
-Changes in version 2:
-- remove garbage from the changelog.
-
- MAINTAINERS |    8 ++++++++
- 1 file changed, 8 insertions(+)
-
-Index: net/MAINTAINERS
-=================================--- net.orig/MAINTAINERS
-+++ net/MAINTAINERS
-@@ -8929,6 +8929,14 @@ F:	drivers/rpmsg/
- F:	Documentation/rpmsg.txt
- F:	include/linux/rpmsg.h
+diff --git a/drivers/staging/emxx_udc/emxx_udc.c b/drivers/staging/emxx_udc/emxx_udc.c
+index 4e6c16af40fc..c168845cbb91 100644
+--- a/drivers/staging/emxx_udc/emxx_udc.c
++++ b/drivers/staging/emxx_udc/emxx_udc.c
+@@ -823,7 +823,7 @@ static int _nbu2ss_out_dma(
+ 	u32		length
+ )
+ {
+-	u8		*pBuffer;
++	dma_addr_t	pBuffer;
+ 	u32		mpkt;
+ 	u32		lmpkt;
+ 	u32		dmacnt;
+@@ -836,7 +836,7 @@ static int _nbu2ss_out_dma(
+ 		return 1;		/* DMA is forwarded */
  
-+RENESAS ETHERNET DRIVERS
-+R:	Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-+L:	netdev@vger.kernel.org
-+L:	linux-sh@vger.kernel.org
-+S:	Maintained
-+F:	drivers/net/ethernet/renesas/
-+F:	include/linux/sh_eth.h
-+
- RESET CONTROLLER FRAMEWORK
- M:	Philipp Zabel <p.zabel@pengutronix.de>
- S:	Maintained
+ 	req->dma_flag = TRUE;
+-	pBuffer = (u8 *)req->req.dma;
++	pBuffer = req->req.dma;
+ 	pBuffer += req->req.actual;
+ 
+ 	/* DMA Address */
+@@ -1034,7 +1034,7 @@ static int _nbu2ss_in_dma(
+ 	u32		length
+ )
+ {
+-	u8		*pBuffer;
++	dma_addr_t	pBuffer;
+ 	u32		mpkt;		/* MaxPacketSize */
+ 	u32		lmpkt;		/* Last Packet Data Size */
+ 	u32		dmacnt;		/* IN Data Size */
+@@ -1080,7 +1080,7 @@ static int _nbu2ss_in_dma(
+ 	_nbu2ss_writel(&preg->EP_DCR[num].EP_DCR2, data);
+ 
+ 	/* Address setting */
+-	pBuffer = (u8 *)req->req.dma;
++	pBuffer = req->req.dma;
+ 	pBuffer += req->req.actual;
+ 	_nbu2ss_writel(&preg->EP_DCR[num].EP_TADR, (u32)pBuffer);
+ 
+@@ -2728,7 +2728,7 @@ static int nbu2ss_ep_queue(
+ 	spin_lock_irqsave(&udc->lock, flags);
+ 
+ #ifdef USE_DMA
+-	if ((u32)req->req.buf & 0x3)
++	if ((uintptr_t)req->req.buf & 0x3)
+ 		req->unaligned = TRUE;
+ 	else
+ 		req->unaligned = FALSE;
 
