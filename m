@@ -1,76 +1,41 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Fri, 18 Dec 2015 15:33:51 +0000
-Subject: [PATCH RESENT] staging/emxx_udc: fix 64-bit warnings
-Message-Id: <2183225.RrE6ZdDul9@wuerfel>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 18 Dec 2015 02:29:35 +0000
+Subject: [PATCH 05/25] ARM: shmobile: r8a7793: remove deprecated #gpio-range-cells
+Message-Id: <f00be687f5fd2b626aa975dc4513cad525823c05.1450402264.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1450402264.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1450402264.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-ARCH_SHMOBILE is coming to arm64, which creates new warnings in allmodconfig:
+Commit a1bc260bb5f5d9 ("gpio: clean up gpio-ranges documentation")
+declares the above property deprecated. That was more than 2 years ago.
+Remove it, so it doesn't get copied around needlessly.
 
-drivers/staging/emxx_udc/emxx_udc.c: In function '_nbu2ss_out_dma':
-drivers/staging/emxx_udc/emxx_udc.c:843:45: warning: cast from pointer to integer of different size [-Wpointer-to-int-cast]
-  _nbu2ss_writel(&preg->EP_DCR[num].EP_TADR, (u32)pBuffer);
+Based on similar work for the r8a7791 and r8a7794 by Wolfram Sang.
 
-This is clearly a mistake from confusing a dma_addr_t with a pointer,
-so the fix is to use the correct types in two places.
-
-The third warning of this kind is a check for an unaligned pointer,
-which should be done by casting the pointer to uintptr_t, not int.
-
-Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+Cc: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Reported-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Acked-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 ---
-I sent this a month ago, here is the same patch again in case it got lost.
+ arch/arm/boot/dts/r8a7793.dtsi | 1 -
+ 1 file changed, 1 deletion(-)
 
-diff --git a/drivers/staging/emxx_udc/emxx_udc.c b/drivers/staging/emxx_udc/emxx_udc.c
-index 4e6c16af40fc..c168845cbb91 100644
---- a/drivers/staging/emxx_udc/emxx_udc.c
-+++ b/drivers/staging/emxx_udc/emxx_udc.c
-@@ -823,7 +823,7 @@ static int _nbu2ss_out_dma(
- 	u32		length
- )
- {
--	u8		*pBuffer;
-+	dma_addr_t	pBuffer;
- 	u32		mpkt;
- 	u32		lmpkt;
- 	u32		dmacnt;
-@@ -836,7 +836,7 @@ static int _nbu2ss_out_dma(
- 		return 1;		/* DMA is forwarded */
+diff --git a/arch/arm/boot/dts/r8a7793.dtsi b/arch/arm/boot/dts/r8a7793.dtsi
+index cbcda80f4658..4c74a9229e71 100644
+--- a/arch/arm/boot/dts/r8a7793.dtsi
++++ b/arch/arm/boot/dts/r8a7793.dtsi
+@@ -233,7 +233,6 @@
+ 	pfc: pfc@e6060000 {
+ 		compatible = "renesas,pfc-r8a7793";
+ 		reg = <0 0xe6060000 0 0x250>;
+-		#gpio-range-cells = <3>;
+ 	};
  
- 	req->dma_flag = TRUE;
--	pBuffer = (u8 *)req->req.dma;
-+	pBuffer = req->req.dma;
- 	pBuffer += req->req.actual;
- 
- 	/* DMA Address */
-@@ -1034,7 +1034,7 @@ static int _nbu2ss_in_dma(
- 	u32		length
- )
- {
--	u8		*pBuffer;
-+	dma_addr_t	pBuffer;
- 	u32		mpkt;		/* MaxPacketSize */
- 	u32		lmpkt;		/* Last Packet Data Size */
- 	u32		dmacnt;		/* IN Data Size */
-@@ -1080,7 +1080,7 @@ static int _nbu2ss_in_dma(
- 	_nbu2ss_writel(&preg->EP_DCR[num].EP_DCR2, data);
- 
- 	/* Address setting */
--	pBuffer = (u8 *)req->req.dma;
-+	pBuffer = req->req.dma;
- 	pBuffer += req->req.actual;
- 	_nbu2ss_writel(&preg->EP_DCR[num].EP_TADR, (u32)pBuffer);
- 
-@@ -2728,7 +2728,7 @@ static int nbu2ss_ep_queue(
- 	spin_lock_irqsave(&udc->lock, flags);
- 
- #ifdef USE_DMA
--	if ((u32)req->req.buf & 0x3)
-+	if ((uintptr_t)req->req.buf & 0x3)
- 		req->unaligned = TRUE;
- 	else
- 		req->unaligned = FALSE;
+ 	dmac0: dma-controller@e6700000 {
+-- 
+2.1.4
 
