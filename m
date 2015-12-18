@@ -1,60 +1,101 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 04 Dec 2015 12:44:27 +0000
-Subject: Re: [PATCH 4/5] sh: ftrace: fix the comments for ftrace_modify_code
-Message-Id: <56618AAB.2000202@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 18 Dec 2015 02:29:43 +0000
+Subject: [GIT PULL] Third Round of Renesas ARM Based SoC DT Updates for v4.5
+Message-Id: <cover.1450402264.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449214067-12177-1-git-send-email-huawei.libin@huawei.com>
- <1449214067-12177-5-git-send-email-huawei.libin@huawei.com>
-In-Reply-To: <1449214067-12177-5-git-send-email-huawei.libin@huawei.com>
+References: <cover.1378362045.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1378362045.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Li Bin <huawei.libin@huawei.com>, rostedt@goodmis.org, mingo@redhat.com
-Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+Hi Olof, Hi Kevin, Hi Arnd,
 
-On 12/4/2015 10:27 AM, Li Bin wrote:
+Please consider these third round of Renesas ARM based SoC DT updates for v4.5.
 
-> There is no need to worry about module and __init text disappearing
-> case, because that ftrace has a module notifier that is called when
-> a module is being unloaded and before the text goes away and this
-> code grabs the ftrace_lock mutex and removes the module functions
-> from the ftrace list, such that it will no longer do any
-> modifications to that module's text, the update to make functions
-> be traced or not is done under the ftrace_lock mutex as well.
-> And by now, __init section codes should not been modified
-> by ftrace, because it is black listed in recordmcount.c and
-> ignored by ftrace.
->
-> Cc: linux-sh@vger.kernel.org
-> Suggested-by: Steven Rostedt <rostedt@goodmis.org>
-> Signed-off-by: Li Bin <huawei.libin@huawei.com>
-> ---
->   arch/sh/kernel/ftrace.c |   13 ++++++-------
->   1 files changed, 6 insertions(+), 7 deletions(-)
->
-> diff --git a/arch/sh/kernel/ftrace.c b/arch/sh/kernel/ftrace.c
-> index 079d70e..b696f92 100644
-> --- a/arch/sh/kernel/ftrace.c
-> +++ b/arch/sh/kernel/ftrace.c
-> @@ -212,13 +212,12 @@ static int ftrace_modify_code(unsigned long ip, unsigned char *old_code,
->   	unsigned char replaced[MCOUNT_INSN_SIZE];
->
->   	/*
-> -	 * Note: Due to modules and __init, code can
-> -	 *  disappear and change, we need to protect against faulting
-> -	 *  as well as code changing. We do this by using the
-> -	 *  probe_kernel_* functions.
-> -	 *
-> -	 * No real locking needed, this code is run through
-> -	 * kstop_machine, or before SMP starts.
-> +	 * Note:
-> +	 * We are paranoid about modifying text, as if a bug were to happen, it
+This pull request is based on the previous round of
+such requests, tagged as renesas-dt2-for-v4.5,
+which you have already pulled.
 
-    s/were/was/.
 
-[...]
+The following changes since commit c8d9fdbe2d648caaa510d45dc13eba2e9957140b:
 
-MBR, Sergei
+  ARM: shmobile: sh73a0 dtsi: Add L2 cache-controller node (2015-11-25 10:42:38 +0900)
 
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt3-for-v4.5
+
+for you to fetch changes up to d01c8bec91414f2110370dfcb9dd33fc0e573cee:
+
+  ARM: shmobile: r8a779x: use SoC-specific usb-dmac compatibility strings (2015-12-17 10:10:54 +0900)
+
+----------------------------------------------------------------
+Third Round of Renesas ARM Based SoC DT Updates for v4.5
+
+* Use SoC-specific usb-dmac and IPMMU compatibility strings
+* Add internal delay for i2c IPs
+* Add missing serial devices to r8a7793
+* Enable DMA for r8a7793 serial devices
+* Add serial port config to chosen/stdout-path
+* Tidyup #sound-dai-cells settings for r8a7798/bockw
+* Remove deprecated #gpio-range-cells from r8a7793
+* Add EtherAVB support to r8a7791
+* Add MSIOF support to sh73a0
+
+----------------------------------------------------------------
+Geert Uytterhoeven (11):
+      ARM: shmobile: sh73a0: Add MSIOF clocks
+      ARM: shmobile: sh73a0: Add MSIOF device nodes
+      ARM: shmobile: bockw dts: Override #sound-dai-cells to zero
+      ARM: shmobile: koelsch dts: Add serial port config to chosen/stdout-path
+      ARM: shmobile: alt dts: Add serial port config to chosen/stdout-path
+      ARM: shmobile: ape6evm dts: Add serial port config to chosen/stdout-path
+      ARM: shmobile: bockw dts: Update console parameters
+      ARM: shmobile: gose dts: Add serial port config to chosen/stdout-path
+      ARM: shmobile: silk dts: Add serial port config to chosen/stdout-path
+      ARM: shmobile: porter dts: Add serial port config to chosen/stdout-path
+      ARM: shmobile: lager dts: Add serial port config to chosen/stdout-path
+
+Kuninori Morimoto (1):
+      ARM: shmobile: r8a7778: tidyup #sound-dai-cells settings
+
+Magnus Damm (4):
+      ARM: shmobile: r8a7790: IPMMU compat string SoC part number update
+      ARM: shmobile: r8a7791: IPMMU compat string SoC part number update
+      ARM: shmobile: r8a7793: IPMMU compat string SoC part number update
+      ARM: shmobile: r8a7794: IPMMU compat string SoC part number update
+
+Sergei Shtylyov (2):
+      ARM: shmobile: r8a7791: add EtherAVB clock
+      ARM: shmobile: r8a7791: add EtherAVB DT support
+
+Simon Horman (4):
+      ARM: shmobile: r8a7793: remove deprecated #gpio-range-cells
+      ARM: shmobile: r8a7793: Add missing serial devices to DT
+      ARM: shmobile: r8a7793: Describe DMA for the serial ports
+      ARM: shmobile: r8a779x: use SoC-specific usb-dmac compatibility strings
+
+Wolfram Sang (3):
+      ARM: shmobile: r8a7790: dtsi: add internal delay for i2c IPs
+      ARM: shmobile: r8a7791: dtsi: add internal delay for i2c IPs
+      ARM: shmobile: r8a7794: dtsi: add internal delay for i2c IPs
+
+ arch/arm/boot/dts/r8a73a4-ape6evm.dts     |   2 +-
+ arch/arm/boot/dts/r8a7778-bockw.dts       |   9 +-
+ arch/arm/boot/dts/r8a7778.dtsi            |   7 +-
+ arch/arm/boot/dts/r8a7790-lager.dts       |   2 +-
+ arch/arm/boot/dts/r8a7790.dtsi            |  20 +--
+ arch/arm/boot/dts/r8a7791-koelsch.dts     |   2 +-
+ arch/arm/boot/dts/r8a7791-porter.dts      |   2 +-
+ arch/arm/boot/dts/r8a7791.dtsi            |  46 ++++--
+ arch/arm/boot/dts/r8a7793-gose.dts        |   2 +-
+ arch/arm/boot/dts/r8a7793.dtsi            | 230 ++++++++++++++++++++++++++++--
+ arch/arm/boot/dts/r8a7794-alt.dts         |   2 +-
+ arch/arm/boot/dts/r8a7794-silk.dts        |   2 +-
+ arch/arm/boot/dts/r8a7794.dtsi            |  18 ++-
+ arch/arm/boot/dts/sh73a0.dtsi             |  72 ++++++++--
+ include/dt-bindings/clock/r8a7791-clock.h |   1 +
+ include/dt-bindings/clock/sh73a0-clock.h  |   6 +-
+ 16 files changed, 363 insertions(+), 60 deletions(-)
