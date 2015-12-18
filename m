@@ -1,40 +1,67 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Tue, 22 Dec 2015 14:22:00 +0000
-Subject: [PATCH v2 0/2] adv7604: .get_selection support
-Message-Id: <1450794122-31293-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 18 Dec 2015 02:29:55 +0000
+Subject: [PATCH 25/25] ARM: shmobile: r8a779x: use SoC-specific usb-dmac compatibility strings
+Message-Id: <d01c8bec91414f2110370dfcb9dd33fc0e573cee.1450402264.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1450402264.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1450402264.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
-To: linux-media@vger.kernel.org, linux-sh@vger.kernel.org
-Cc: magnus.damm@gmail.com, laurent.pinchart@ideasonboard.com, hans.verkuil@cisco.com, ian.molton@codethink.co.uk, lars@metafoo.de, william.towle@codethink.co.uk, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
-Hi!
+Use recently SoC-specific compatibility strings in r8a779[01] device trees.
 
-The rcar_vin driver relies on this method.  The second patch makes sure that
-they return up-to-date data if the input signal has changed since
-initialization.
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7790.dtsi | 4 ++--
+ arch/arm/boot/dts/r8a7791.dtsi | 4 ++--
+ 2 files changed, 4 insertions(+), 4 deletions(-)
 
-This revision implements .get_selection instead of .g_crop/.cropcap and
-includes the suggested style changes.
-
-It has been tested with the rcar_vin driver together with Hans Verkuil's
-"v4l2: remove g/s_crop and cropcap from video ops" patch:
-
-https://git.linuxtv.org/hverkuil/media_tree.git/commit/?h=3Drmcrop&id=9Ff32=
-166c29d1323db090d638da27ea652d1d4d8
-
-CU
-Uli
-
-
-Ulrich Hecht (2):
-  media: adv7604: implement get_selection
-  media: adv7604: update timings on change of input signal
-
- drivers/media/i2c/adv7604.c | 30 ++++++++++++++++++++++++++++++
- 1 file changed, 30 insertions(+)
-
---=20
-2.6.3
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index ee587cd823f5..7dfd393bfc7e 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -386,7 +386,7 @@
+ 	};
+ 
+ 	usb_dmac0: dma-controller@e65a0000 {
+-		compatible = "renesas,usb-dmac";
++		compatible = "renesas,r8a7790-usb-dmac", "renesas,usb-dmac";
+ 		reg = <0 0xe65a0000 0 0x100>;
+ 		interrupts = <0 109 IRQ_TYPE_LEVEL_HIGH
+ 			      0 109 IRQ_TYPE_LEVEL_HIGH>;
+@@ -398,7 +398,7 @@
+ 	};
+ 
+ 	usb_dmac1: dma-controller@e65b0000 {
+-		compatible = "renesas,usb-dmac";
++		compatible = "renesas,r8a7790-usb-dmac", "renesas,usb-dmac";
+ 		reg = <0 0xe65b0000 0 0x100>;
+ 		interrupts = <0 110 IRQ_TYPE_LEVEL_HIGH
+ 			      0 110 IRQ_TYPE_LEVEL_HIGH>;
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 3f15aa7dc4d6..2a369ddcb6fd 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -375,7 +375,7 @@
+ 	};
+ 
+ 	usb_dmac0: dma-controller@e65a0000 {
+-		compatible = "renesas,usb-dmac";
++		compatible = "renesas,r8a7791-usb-dmac", "renesas,usb-dmac";
+ 		reg = <0 0xe65a0000 0 0x100>;
+ 		interrupts = <0 109 IRQ_TYPE_LEVEL_HIGH
+ 			      0 109 IRQ_TYPE_LEVEL_HIGH>;
+@@ -387,7 +387,7 @@
+ 	};
+ 
+ 	usb_dmac1: dma-controller@e65b0000 {
+-		compatible = "renesas,usb-dmac";
++		compatible = "renesas,r8a7791-usb-dmac", "renesas,usb-dmac";
+ 		reg = <0 0xe65b0000 0 0x100>;
+ 		interrupts = <0 110 IRQ_TYPE_LEVEL_HIGH
+ 			      0 110 IRQ_TYPE_LEVEL_HIGH>;
+-- 
+2.1.4
 
