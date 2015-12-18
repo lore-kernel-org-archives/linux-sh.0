@@ -1,8 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 18 Dec 2015 02:28:59 +0000
-Subject: [GIT PULL] Third Round of Renesas ARM64 Based SoC Defconfig Updates for v4.5
-Message-Id: <cover.1450400996.git.horms+renesas@verge.net.au>
+Date: Fri, 18 Dec 2015 02:29:14 +0000
+Subject: [GIT PULL] Third Round of Renesas ARM64 Based SoC DT Updates for v4.5
+Message-Id: <cover.1450401186.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1450400996.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1450400996.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -10,37 +12,62 @@ To: linux-arm-kernel@lists.infradead.org
 
 Hi Olof, Hi Kevin, Hi Arnd,
 
-Please consider these third round of Renesas ARM64 based SoC defconfig
-updates for v4.5.
+Please consider these third round of Renesas ARM64 based SoC DT updates
+for v4.5.
 
 This pull request is based on the previous round of
-such requests, tagged as renesas-arm64-defconfig2-for-v4.5,
+such requests, tagged as renesas-arm64-dt2-for-v4.5,
 which you have already pulled.
 
 
-The following changes since commit 05a64b3b8b41bf3c3ca9b7f9f8a0e81ffadb20e3:
+The following changes since commit 672b79312c04016481a11d4b996b4512207ffbd3:
 
-  arm64: defconfig: add Renesas sound and AK4613 support (2015-11-26 11:35:21 +0900)
+  arm64: renesas: salvator-x: Sound DVC support (2015-11-26 11:31:43 +0900)
 
 are available in the git repository at:
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-arm64-defconfig3-for-v4.5
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-arm64-dt3-for-v4.5
 
-for you to fetch changes up to d3643e1669e59c374e78e3af9d93def5ac1f81bc:
+for you to fetch changes up to 2eb2b5066197eab00c55dcd1132f17836e4975b2:
 
-  arm64: defconfig: add CS2000 support (2015-12-18 10:06:57 +0900)
-
-----------------------------------------------------------------
-Third Round of Renesas ARM64 Based SoC Defconfig Updates for v4.5
-
-* Enable CS2000 and Renesas R-Car SATA driver
+  arm64: renesas: r8a7795: fix SATA clock assignment (2015-12-18 10:07:29 +0900)
 
 ----------------------------------------------------------------
-Kouei Abe (1):
-      arm64: defconfig: Add Renesas R-Car SATA driver for R-Car Gen3 SoCs
+Third Round of Renesas ARM64 Based SoC DT Updates for v4.5
 
-Kuninori Morimoto (1):
-      arm64: defconfig: add CS2000 support
+* Enable SATA
+* Add salvator-x part number to DT bindings documentation
+* Enable all four A57 cores instead of just one
+* Enhanced audio support:
+  - Use CS2000 as AUDIO_CLK_B
+  - Set ak4613 In/Out pin as single-end
 
- arch/arm64/configs/defconfig | 2 ++
- 1 file changed, 2 insertions(+)
+----------------------------------------------------------------
+Gaku Inami (2):
+      arm64: dts: r8a7795: Add PSCI node
+      arm64: dts: r8a7795: Add Cortex-A57 CPU cores
+
+Geert Uytterhoeven (1):
+      arm64: renesas: salvator-x: Add board part number to DT bindings
+
+Kouei Abe (2):
+      arm64: dts: r8a7795: Add SATA controller node
+      arm64: dts: salvator-x: Enable SATA controller
+
+Kuninori Morimoto (2):
+      arm64: renesas: salvator-x: set ak4613 In/Out pin as single-end
+      arm64: renesas: salvator-x: use CS2000 as AUDIO_CLK_B
+
+Ulrich Hecht (1):
+      arm64: renesas: r8a7795: fix SATA clock assignment
+
+Wolfram Sang (1):
+      arm64: renesas: r8a7795: add internal delay for i2c IPs
+
+Yoshifumi Hosoya (1):
+      arm64: dts: r8a7795: Add pmu device nodes
+
+ Documentation/devicetree/bindings/arm/shmobile.txt |  2 +-
+ arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 51 +++++++++++++++++
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi           | 64 ++++++++++++++++++++--
+ 3 files changed, 110 insertions(+), 7 deletions(-)
