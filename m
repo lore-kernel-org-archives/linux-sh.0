@@ -1,39 +1,51 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Wed, 16 Dec 2015 10:34:19 +0000
-Subject: [PATCH v2 0/2] SATA for r8a7795, Salvator-X
-Message-Id: <1450262061-1441-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 18 Dec 2015 02:29:34 +0000
+Subject: [PATCH 04/25] ARM: shmobile: r8a7791: add EtherAVB DT support
+Message-Id: <46ece349aa54f6e55b5f8d30bbecbaf2884ba869.1450402264.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1450402264.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1450402264.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi!
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-This is an adaptation of the patch set from the BSP, adjusted to the new PFC
-and MSTP clock models.
+Define the generic R8A7791 part of the EtherAVB device node.
 
-This revision drops the patches that have been picked up by Simon and Geert,
-incrementally fixes the incorrect clock assignment, and drops the
-unnecessary pin assignment from the DT.
+Based on the commit f25d6b977240 ("ARM: shmobile: r8a7790: add EtherAVB DT
+support").
 
-CU
-Uli
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7791.dtsi | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
 
-
-Changes since v1:
-- drop picked up patches
-- drop superfluous pin assignment
-- fix SATA clock assignment (915 -> 815)
-
-Ulrich Hecht (2):
-  clk: shmobile: r8a7795: Add SATA0 clock
-  arm64: dts: r8a7795: fix SATA clock assignment
-
- arch/arm64/boot/dts/renesas/r8a7795.dtsi | 2 +-
- drivers/clk/shmobile/r8a7795-cpg-mssr.c  | 1 +
- 2 files changed, 2 insertions(+), 1 deletion(-)
-
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 4b3132d9807f..36559cb0eb6b 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -785,6 +785,18 @@
+ 		status = "disabled";
+ 	};
+ 
++	avb: ethernet@e6800000 {
++		compatible = "renesas,etheravb-r8a7791",
++			     "renesas,etheravb-rcar-gen2";
++		reg = <0 0xe6800000 0 0x800>, <0 0xee0e8000 0 0x4000>;
++		interrupts = <0 163 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp8_clks R8A7791_CLK_ETHERAVB>;
++		power-domains = <&cpg_clocks>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
++
+ 	sata0: sata@ee300000 {
+ 		compatible = "renesas,sata-r8a7791";
+ 		reg = <0 0xee300000 0 0x2000>;
 -- 
-2.6.3
+2.1.4
 
