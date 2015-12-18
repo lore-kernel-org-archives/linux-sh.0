@@ -1,61 +1,52 @@
-From: "Michael S. Tsirkin" <mst@redhat.com>
-Date: Thu, 31 Dec 2015 19:06:05 +0000
-Subject: [PATCH v2 03/32] ia64: rename nop->iosapic_nop
-Message-Id: <1451572003-2440-4-git-send-email-mst@redhat.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 18 Dec 2015 02:29:11 +0000
+Subject: [PATCH 03/10] arm64: dts: r8a7795: Add PSCI node
+Message-Id: <12e5155783bfdd50d93f9868b2209db190df8b68.1450401186.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1451572003-2440-1-git-send-email-mst@redhat.com>
-In-Reply-To: <1451572003-2440-1-git-send-email-mst@redhat.com>
+References: <cover.1450401186.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1450401186.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Peter Zijlstra <peterz@infradead.org>, Arnd Bergmann <arnd@arndb.de>, linux-arch@vger.kernel.org, Andrew Cooper <andrew.cooper3@citrix.com>, virtualization@lists.linux-foundation.org, Stefano Stabellini <stefano.stabellini@eu.citrix.com>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@elte.hu>, "H. Peter Anvin" <hpa@zytor.com>, David Miller <davem@davemloft.net>, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, sparclinux@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-metag@vger.kernel.org, linux-mips@linux-mips.org, x86@kernel.org, user-mode-linux-devel@lists.sourceforge.net, adi-buildroot-devel@lists.sourceforge.net, linux-sh@vger.kernel.org, linux-xtensa@linux-xtensa.org, xen-devel@lists.xenproject.org, Tony Luck <tony.luck@intel.com>, Fenghua Yu <fenghua.yu@intel.com>, Jiang Liu <jiang.liu@linux.intel.c>
+To: linux-arm-kernel@lists.infradead.org
 
-asm-generic/barrier.h defines a nop() macro.
-To be able to use this header on ia64, we shouldn't
-call local functions/variables nop().
+From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
 
-There's one instance where this breaks on ia64:
-rename the function to iosapic_nop to avoid the conflict.
+Add PSCI node for r8a7795 SoC, and cpu node enable-method property is
+set to "psci".
 
-Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
-Acked-by: Tony Luck <tony.luck@intel.com>
-Acked-by: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
+Signed-off-by: Dirk Behme <dirk.behme@gmail.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/ia64/kernel/iosapic.c | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
-diff --git a/arch/ia64/kernel/iosapic.c b/arch/ia64/kernel/iosapic.c
-index d2fae05..90fde5b 100644
---- a/arch/ia64/kernel/iosapic.c
-+++ b/arch/ia64/kernel/iosapic.c
-@@ -256,7 +256,7 @@ set_rte (unsigned int gsi, unsigned int irq, unsigned int dest, int mask)
- }
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index b1902ea1dae4..051ff143506e 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -26,6 +26,11 @@
+ 		i2c6 = &i2c6;
+ 	};
  
- static void
--nop (struct irq_data *data)
-+iosapic_nop (struct irq_data *data)
- {
- 	/* do nothing... */
- }
-@@ -415,7 +415,7 @@ iosapic_unmask_level_irq (struct irq_data *data)
- #define iosapic_shutdown_level_irq	mask_irq
- #define iosapic_enable_level_irq	unmask_irq
- #define iosapic_disable_level_irq	mask_irq
--#define iosapic_ack_level_irq		nop
-+#define iosapic_ack_level_irq		iosapic_nop
++	psci {
++		compatible = "arm,psci-0.2";
++		method = "smc";
++	};
++
+ 	cpus {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+@@ -35,6 +40,7 @@
+ 			compatible = "arm,cortex-a57", "arm,armv8";
+ 			reg = <0x0>;
+ 			device_type = "cpu";
++			enable-method = "psci";
+ 		};
+ 	};
  
- static struct irq_chip irq_type_iosapic_level = {
- 	.name =			"IO-SAPIC-level",
-@@ -453,7 +453,7 @@ iosapic_ack_edge_irq (struct irq_data *data)
- }
- 
- #define iosapic_enable_edge_irq		unmask_irq
--#define iosapic_disable_edge_irq	nop
-+#define iosapic_disable_edge_irq	iosapic_nop
- 
- static struct irq_chip irq_type_iosapic_edge = {
- 	.name =			"IO-SAPIC-edge",
 -- 
-MST
+2.1.4
 
