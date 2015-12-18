@@ -1,46 +1,50 @@
-From: Andrew Morton <akpm@linux-foundation.org>
-Date: Fri, 18 Dec 2015 23:03:20 +0000
-Subject: Re: [PATCH v3 4/4] printk/nmi: Increase the size of NMI buffer and make it configurable
-Message-Id: <20151218150320.5d377789ee6253379b82412d@linux-foundation.org>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 18 Dec 2015 02:29:13 +0000
+Subject: [PATCH 05/10] arm64: dts: r8a7795: Add pmu device nodes
+Message-Id: <a6b6b478459be0c5614626ba6ac95df05a7fc5e9.1450401186.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449667265-17525-1-git-send-email-pmladek@suse.com>
- <1449667265-17525-5-git-send-email-pmladek@suse.com>
- <CAMuHMdXVgr58YjoePGrRbMyMncQ27f85prL7G5SpeHeNxoYrXQ@mail.gmail.com>
- <20151211124159.GB3729@pathway.suse.cz>
- <20151211145725.b0e81bb4bb18fcd72ef5f557@linux-foundation.org>
- <20151211232113.GZ8644@n2100.arm.linux.org.uk>
- <alpine.LNX.2.00.1512120024370.9922@cbobk.fhfr.pm>
- <5673DD60.7080302@linaro.org>
- <20151218112902.GO6344@twins.programming.kicks-ass.net>
- <20151218121141.GR6373@twins.programming.kicks-ass.net>
-In-Reply-To: <20151218121141.GR6373@twins.programming.kicks-ass.net>
+References: <cover.1450401186.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1450401186.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, 18 Dec 2015 13:11:41 +0100 Peter Zijlstra <peterz@infradead.org> wrote:
+From: Yoshifumi Hosoya <yoshifumi.hosoya.wj@renesas.com>
 
-> On Fri, Dec 18, 2015 at 12:29:02PM +0100, Peter Zijlstra wrote:
-> > On Fri, Dec 18, 2015 at 10:18:08AM +0000, Daniel Thompson wrote:
-> > > I'm not entirely sure that this is an improvement.
-> > 
-> > What I do these days is delete everything in vprintk_emit() and simply
-> > call early_printk().
-> 
-> On that, whoever made the device model use vprintk_emit() broke the
-> debugger (KGDB/KDB) printk intercept, and the whole vprintk_func
-> redirection scheme.
+Enabling the performance monitor unit on r8a7795.
 
-crap, we have a whole set of interfaces which are broken this way. 
-printk_emit(), vprintk(), vprintk_emit().
+Signed-off-by: Masaru Nagai <masaru.nagai.vx@renesas.com>
+Signed-off-by: Yoshifumi Hosoya <yoshifumi.hosoya.wj@renesas.com>
+Signed-off-by: Dirk Behme <dirk.behme@gmail.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
 
-
-commit 7ff9554bb578ba02166071d2d487b7fc7d860d62
-Author:     Kay Sievers <kay@vrfy.org>
-AuthorDate: Thu May 3 02:29:13 2012 +0200
-Commit:     Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-CommitDate: Mon May 7 16:53:02 2012 -0700
-
-    printk: convert byte-buffer to variable-length record buffer
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index 4d43cf31418f..b9229a49dabc 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -230,6 +230,18 @@
+ 			power-domains = <&cpg>;
+ 		};
+ 
++		pmu {
++			compatible = "arm,armv8-pmuv3";
++			interrupts = <GIC_SPI 72 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 73 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 74 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 75 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-affinity = <&a57_0>,
++					     <&a57_1>,
++					     <&a57_2>,
++					     <&a57_3>;
++		};
++
+ 		timer {
+ 			compatible = "arm,armv8-timer";
+ 			interrupts = <GIC_PPI 13
+-- 
+2.1.4
 
