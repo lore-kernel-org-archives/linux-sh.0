@@ -1,47 +1,39 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Thu, 17 Dec 2015 13:22:34 +0000
-Subject: [PATCH 1/4] PCI: rcar: remove unused pci_sys_data structure in pcie-rcar
-Message-Id: <1450358557-28376-2-git-send-email-phil.edworthy@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 18 Dec 2015 02:29:18 +0000
+Subject: [PATCH 10/10] arm64: renesas: r8a7795: fix SATA clock assignment
+Message-Id: <2eb2b5066197eab00c55dcd1132f17836e4975b2.1450401186.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450358557-28376-1-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1450358557-28376-1-git-send-email-phil.edworthy@renesas.com>
+References: <cover.1450401186.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1450401186.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>, Bjorn Helgaas <bhelgaas@google.com>
-Cc: Wolfram Sang <wsa@the-dreams.de>, Geert Uytterhoeven <geert@linux-m68k.org>, linux-kernel@vger.kernel.org, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org, Phil Edworthy <phil.edworthy@renesas.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Commit b3a72384fe29 ("ARM/PCI: Replace pci_sys_data->align_resource
-with global function pointer") removed the struct pci_sys_data
-dependency from the ARM pcibios functions, so remove it from this
-driver.
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 
-Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+SATA clock is 815, not 915.
+
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/pci/host/pcie-rcar.c | 9 ---------
- 1 file changed, 9 deletions(-)
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/pci/host/pcie-rcar.c b/drivers/pci/host/pcie-rcar.c
-index 5c29626..c72c0ae 100644
---- a/drivers/pci/host/pcie-rcar.c
-+++ b/drivers/pci/host/pcie-rcar.c
-@@ -124,16 +124,7 @@ static inline struct rcar_msi *to_rcar_msi(struct msi_controller *chip)
- }
- 
- /* Structure representing the PCIe interface */
--/*
-- * ARM pcibios functions expect the ARM struct pci_sys_data as the PCI
-- * sysdata.  Add pci_sys_data as the first element in struct gen_pci so
-- * that when we use a gen_pci pointer as sysdata, it is also a pointer to
-- * a struct pci_sys_data.
-- */
- struct rcar_pcie {
--#ifdef CONFIG_ARM
--	struct pci_sys_data	sys;
--#endif
- 	struct device		*dev;
- 	void __iomem		*base;
- 	struct list_head	resources;
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index 9ce6a5ea6629..bb353cde1253 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -772,7 +772,7 @@
+ 			compatible = "renesas,sata-r8a7795";
+ 			reg = <0 0xee300000 0 0x1fff>;
+ 			interrupts = <GIC_SPI 105 IRQ_TYPE_LEVEL_HIGH>;
+-			clocks = <&cpg CPG_MOD 915>;
++			clocks = <&cpg CPG_MOD 815>;
+ 			status = "disabled";
+ 		};
+ 	};
 -- 
-2.5.0
+2.1.4
 
