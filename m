@@ -1,44 +1,38 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 18 Dec 2015 02:42:39 +0000
-Subject: [PATCH 3/3] ARM: shmobile: r8a7794: use fallback pci compatibility string
-Message-Id: <1450406559-9076-4-git-send-email-horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 18 Dec 2015 10:16:11 +0000
+Subject: Re: [PATCH 3/3] ARM: shmobile: r8a7794: use fallback usbhs compatibility string
+Message-Id: <CAMuHMdVAPYj5X4uF4vgfufnVToywBEAj9mwAgz0VQauUCB6m=Q@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450406559-9076-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1450406559-9076-1-git-send-email-horms+renesas@verge.net.au>
+References: <1450404705-5449-1-git-send-email-horms+renesas@verge.net.au>
+ <1450404705-5449-4-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1450404705-5449-4-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Use recently added fallback compatibility string in r8a7794 device tree.
+On Fri, Dec 18, 2015 at 3:11 AM, Simon Horman
+<horms+renesas@verge.net.au> wrote:
+> --- a/arch/arm/boot/dts/r8a7794.dtsi
+> +++ b/arch/arm/boot/dts/r8a7794.dtsi
+> @@ -724,7 +724,7 @@
+>         };
+>
+>         hsusb: usb@e6590000 {
+> -               compatible = "renesas,usbhs-r8a7794";
+> +               compatible = "renesas,usbhs-r8a7794", "renesas,usbhs";
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7794.dtsi | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+"renesas,rcar-gen2-usbhs", not "renesas,usbhs".
 
-diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
-index 6c78f1fae90f..94ef03ad9cc3 100644
---- a/arch/arm/boot/dts/r8a7794.dtsi
-+++ b/arch/arm/boot/dts/r8a7794.dtsi
-@@ -654,7 +654,7 @@
- 	};
- 
- 	pci0: pci@ee090000 {
--		compatible = "renesas,pci-r8a7794";
-+		compatible = "renesas,pci-r8a7794", "renesas,pci-rcar-gen2";
- 		device_type = "pci";
- 		reg = <0 0xee090000 0 0xc00>,
- 		      <0 0xee080000 0 0x1100>;
-@@ -689,7 +689,7 @@
- 	};
- 
- 	pci1: pci@ee0d0000 {
--		compatible = "renesas,pci-r8a7794";
-+		compatible = "renesas,pci-r8a7794", "renesas,pci-rcar-gen2";
- 		device_type = "pci";
- 		reg = <0 0xee0d0000 0 0xc00>,
- 		      <0 0xee0c0000 0 0x1100>;
--- 
-2.1.4
+(no complaints from checkpatch.pl?)
 
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
