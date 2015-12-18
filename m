@@ -1,56 +1,46 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 15 Dec 2015 04:22:45 +0000
-Subject: Re: [PATCH 0/6] SATA for r8a7795, Salvator-X
-Message-Id: <20151215042245.GB32397@verge.net.au>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Fri, 18 Dec 2015 15:02:41 +0000
+Subject: [PATCH] PCI: provide of_pci_get_host_bridge_resources helper
+Message-Id: <8759253.sZisGJ6Km3@wuerfel>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450107758-2544-1-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1450107758-2544-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Dec 14, 2015 at 04:42:32PM +0100, Ulrich Hecht wrote:
-> Hi!
-> 
-> This is an adaptation of the patch set from the BSP, adjusted to the new PFC
-> and MSTP clock models.  Applied on top of renesas-drivers, this works great
-> for me.
-> 
-> CU
-> Uli
-> 
-> 
-> Kouei Abe (3):
->   arm64: dts: r8a7795: Add SATA controller node
->   arm64: dts: salvator-x: Enable SATA controller
->   arm64: defconfig: Add Renesas R-Car SATA driver for R-Car Gen3 SoCs
+The pcie-rcar driver can be built for any ARM platform (for COMPILE_TEST)
+including those without CONFIG_OF enabled, and that results in a compile-time
+error:
 
-Thanks, I have queued up the above three arm64 patches for v4.5.
-Please send incremental updates if changes need to be made.
+drivers/pci/host/pcie-rcar.c: In function 'rcar_pcie_parse_request_of_pci_ranges':
+drivers/pci/host/pcie-rcar.c:939:8: error: implicit declaration of function 'of_pci_get_host_bridge_resources' [-Werror=implicit-function-declaration]
+  err = of_pci_get_host_bridge_resources(np, 0, 0xff, &pci->resources, &iobase);
 
-The remaining patches, below, can probably be guided into next by Geert.
+In order to allow compile-testing on all platforms, this adds a
+of_pci_get_host_bridge_resources() helper stub function that gets
+used when CONFIG_OF_ADDRESS is disabled. This mirrors what we do for
+other OF-specific functions.
 
-> 
-> Takeshi Kihara (1):
->   pinctrl: sh-pfc: r8a7795: Add SATA support
-> 
-> Ulrich Hecht (2):
->   clk: shmobile: r8a7795: Add SATA0 clock
->   pinctrl: sh-pfc: r8a7795: add SATA0 pin conf to DT
-> 
->  arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 11 ++++++++++
->  arch/arm64/boot/dts/renesas/r8a7795.dtsi           |  8 ++++++++
->  arch/arm64/configs/defconfig                       |  1 +
->  drivers/clk/shmobile/r8a7795-cpg-mssr.c            |  1 +
->  drivers/pinctrl/sh-pfc/pfc-r8a7795.c               | 24 ++++++++++++++++++++++
->  5 files changed, 45 insertions(+)
-> 
-> -- 
-> 2.6.3
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+Fixes: 5d2917d469fa ("PCI: rcar: Convert to DT resource parsing API")
+
+diff --git a/include/linux/of_pci.h b/include/linux/of_pci.h
+index 2c51ee78b1c0..874d68f50a40 100644
+--- a/include/linux/of_pci.h
++++ b/include/linux/of_pci.h
+@@ -59,6 +59,14 @@ static inline void of_pci_check_probe_only(void) { }
+ int of_pci_get_host_bridge_resources(struct device_node *dev,
+ 			unsigned char busno, unsigned char bus_max,
+ 			struct list_head *resources, resource_size_t *io_base);
++#else
++static inline
++int of_pci_get_host_bridge_resources(struct device_node *dev,
++			unsigned char busno, unsigned char bus_max,
++			struct list_head *resources, resource_size_t *io_base)
++{
++	return -EINVAL;
++}
+ #endif
+ 
+ #if defined(CONFIG_OF) && defined(CONFIG_PCI_MSI)
+
