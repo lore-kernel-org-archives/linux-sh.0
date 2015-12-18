@@ -1,50 +1,45 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 18 Dec 2015 02:29:13 +0000
-Subject: [PATCH 05/10] arm64: dts: r8a7795: Add pmu device nodes
-Message-Id: <a6b6b478459be0c5614626ba6ac95df05a7fc5e9.1450401186.git.horms+renesas@verge.net.au>
+From: Sudeep Holla <sudeep.holla@arm.com>
+Date: Fri, 18 Dec 2015 10:16:23 +0000
+Subject: Re: [PATCH 05/10] arm64: dts: r8a7795: Add pmu device nodes
+Message-Id: <5673DCF7.1050008@arm.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1450401186.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1450401186.git.horms+renesas@verge.net.au>
+ <a6b6b478459be0c5614626ba6ac95df05a7fc5e9.1450401186.git.horms+renesas@verge.net.au>
+In-Reply-To: <a6b6b478459be0c5614626ba6ac95df05a7fc5e9.1450401186.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Yoshifumi Hosoya <yoshifumi.hosoya.wj@renesas.com>
 
-Enabling the performance monitor unit on r8a7795.
 
-Signed-off-by: Masaru Nagai <masaru.nagai.vx@renesas.com>
-Signed-off-by: Yoshifumi Hosoya <yoshifumi.hosoya.wj@renesas.com>
-Signed-off-by: Dirk Behme <dirk.behme@gmail.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm64/boot/dts/renesas/r8a7795.dtsi | 12 ++++++++++++
- 1 file changed, 12 insertions(+)
+On 18/12/15 02:29, Simon Horman wrote:
+> From: Yoshifumi Hosoya <yoshifumi.hosoya.wj@renesas.com>
+>
+> Enabling the performance monitor unit on r8a7795.
+>
+> Signed-off-by: Masaru Nagai <masaru.nagai.vx@renesas.com>
+> Signed-off-by: Yoshifumi Hosoya <yoshifumi.hosoya.wj@renesas.com>
+> Signed-off-by: Dirk Behme <dirk.behme@gmail.com>
+> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+> ---
+>   arch/arm64/boot/dts/renesas/r8a7795.dtsi | 12 ++++++++++++
+>   1 file changed, 12 insertions(+)
+>
+> diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+> index 4d43cf31418f..b9229a49dabc 100644
+> --- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+> +++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+> @@ -230,6 +230,18 @@
+>   			power-domains = <&cpg>;
+>   		};
+>
+> +		pmu {
+> +			compatible = "arm,armv8-pmuv3";
 
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-index 4d43cf31418f..b9229a49dabc 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-+++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-@@ -230,6 +230,18 @@
- 			power-domains = <&cpg>;
- 		};
- 
-+		pmu {
-+			compatible = "arm,armv8-pmuv3";
-+			interrupts = <GIC_SPI 72 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 73 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 74 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 75 IRQ_TYPE_LEVEL_HIGH>;
-+			interrupt-affinity = <&a57_0>,
-+					     <&a57_1>,
-+					     <&a57_2>,
-+					     <&a57_3>;
-+		};
-+
- 		timer {
- 			compatible = "arm,armv8-timer";
- 			interrupts = <GIC_PPI 13
+Please use arm,cortex-a57-pmu to be more specific. IIRC I mentioned this
+for some shmobile platform recently.
+
 -- 
-2.1.4
-
+Regards,
+Sudeep
