@@ -1,60 +1,75 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 15 Dec 2015 01:17:07 +0000
-Subject: [PATCH 1/8 v5] thermal: rcar: move rcar_thermal_dt_ids to upside
-Message-Id: <87bn9sqzro.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 18 Dec 2015 02:29:50 +0000
+Subject: [PATCH 20/25] ARM: shmobile: r8a7794: dtsi: add internal delay for i2c IPs
+Message-Id: <691cd0a64d9215a838a7351de890d815b9a2622e.1450402264.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87d1u8qzsy.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87d1u8qzsy.wl%kuninori.morimoto.gx@renesas.com>
+References: <cover.1450402264.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1450402264.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, Zhang Rui <rui.zhang@intel.com>, Eduardo Valentin <edubezval@gmail.com>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-
-This patch is prepare for of-thermal support.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v4 -> v5
+ arch/arm/boot/dts/r8a7794.dtsi | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
- - no change
-
- drivers/thermal/rcar_thermal.c | 12 ++++++------
- 1 file changed, 6 insertions(+), 6 deletions(-)
-
-diff --git a/drivers/thermal/rcar_thermal.c b/drivers/thermal/rcar_thermal.c
-index 5d4ae7d..ac8d1eb 100644
---- a/drivers/thermal/rcar_thermal.c
-+++ b/drivers/thermal/rcar_thermal.c
-@@ -81,6 +81,12 @@ struct rcar_thermal_priv {
- # define rcar_force_update_temp(priv)	0
- #endif
+diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
+index 89e914f2a2cf..7fb2da2f54ff 100644
+--- a/arch/arm/boot/dts/r8a7794.dtsi
++++ b/arch/arm/boot/dts/r8a7794.dtsi
+@@ -518,6 +518,7 @@
+ 		power-domains = <&cpg_clocks>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
++		i2c-scl-internal-delay-ns = <6>;
+ 		status = "disabled";
+ 	};
  
-+static const struct of_device_id rcar_thermal_dt_ids[] = {
-+	{ .compatible = "renesas,rcar-thermal", },
-+	{},
-+};
-+MODULE_DEVICE_TABLE(of, rcar_thermal_dt_ids);
-+
- /*
-  *		basic functions
-  */
-@@ -491,12 +497,6 @@ static int rcar_thermal_remove(struct platform_device *pdev)
- 	return 0;
- }
+@@ -529,6 +530,7 @@
+ 		power-domains = <&cpg_clocks>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
++		i2c-scl-internal-delay-ns = <6>;
+ 		status = "disabled";
+ 	};
  
--static const struct of_device_id rcar_thermal_dt_ids[] = {
--	{ .compatible = "renesas,rcar-thermal", },
--	{},
--};
--MODULE_DEVICE_TABLE(of, rcar_thermal_dt_ids);
--
- static struct platform_driver rcar_thermal_driver = {
- 	.driver	= {
- 		.name	= "rcar_thermal",
+@@ -540,6 +542,7 @@
+ 		power-domains = <&cpg_clocks>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
++		i2c-scl-internal-delay-ns = <6>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -551,6 +554,7 @@
+ 		power-domains = <&cpg_clocks>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
++		i2c-scl-internal-delay-ns = <6>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -562,6 +566,7 @@
+ 		power-domains = <&cpg_clocks>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
++		i2c-scl-internal-delay-ns = <6>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -573,6 +578,7 @@
+ 		power-domains = <&cpg_clocks>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
++		i2c-scl-internal-delay-ns = <6>;
+ 		status = "disabled";
+ 	};
+ 
 -- 
-1.9.1
+2.1.4
 
