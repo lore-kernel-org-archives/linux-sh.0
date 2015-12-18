@@ -1,74 +1,37 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 04 Dec 2015 08:33:47 +0000
-Subject: [PATCH 4/8 v2] thermal: rcar: retern error rcar_thermal_get_temp() if no ctemp update
-Message-Id: <87bna6fwdr.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 18 Dec 2015 02:30:43 +0000
+Subject: [PATCH 5/6] staging: board: kzm9d: Use "arm,pl390"
+Message-Id: <cebbddb6f9cc1d1cce11490903d07c2da228cec9.1450401902.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87h9jyfwj7.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87h9jyfwj7.wl%kuninori.morimoto.gx@renesas.com>
+References: <cover.1450401902.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1450401902.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, Zhang Rui <rui.zhang@intel.com>, Eduardo Valentin <edubezval@gmail.com>
-Cc: Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Current rcar_thermal_get_temp() returns latest temperature, but it might
-not be updated if some HW issue happend. This means user might get
-wrong temperature. This patch solved this issue.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v1 -> v2
+ drivers/staging/board/kzm9d.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
- - new patch
-
- drivers/thermal/rcar_thermal.c | 14 ++++++++++++--
- 1 file changed, 12 insertions(+), 2 deletions(-)
-
-diff --git a/drivers/thermal/rcar_thermal.c b/drivers/thermal/rcar_thermal.c
-index aaedf37..52493b4 100644
---- a/drivers/thermal/rcar_thermal.c
-+++ b/drivers/thermal/rcar_thermal.c
-@@ -199,9 +199,9 @@ static int rcar_thermal_update_temp(struct rcar_thermal_priv *priv)
+diff --git a/drivers/staging/board/kzm9d.c b/drivers/staging/board/kzm9d.c
+index 8d1eb09bc66e..05a6d434d307 100644
+--- a/drivers/staging/board/kzm9d.c
++++ b/drivers/staging/board/kzm9d.c
+@@ -11,7 +11,7 @@ static struct resource usbs1_res[] __initdata = {
  
- 	dev_dbg(dev, "thermal%d  %d -> %d\n", priv->id, priv->ctemp, ctemp);
- 
--	priv->ctemp = ctemp;
- 	ret = 0;
- err_out_unlock:
-+	priv->ctemp = ctemp;
- 	mutex_unlock(&priv->lock);
- 	return ret;
- }
-@@ -209,6 +209,7 @@ err_out_unlock:
- static int rcar_thermal_get_temp(struct thermal_zone_device *zone, int *temp)
+ static void __init kzm9d_init(void)
  {
- 	struct rcar_thermal_priv *priv = rcar_zone_to_priv(zone);
-+	int tmp;
+-	board_staging_gic_setup_xlate("arm,cortex-a9-gic", 32);
++	board_staging_gic_setup_xlate("arm,pl390", 32);
  
- 	if (!rcar_has_irq_support(priv) || rcar_force_update_temp(priv)) {
- 		int ret = rcar_thermal_update_temp(priv);
-@@ -217,9 +218,18 @@ static int rcar_thermal_get_temp(struct thermal_zone_device *zone, int *temp)
- 	}
- 
- 	mutex_lock(&priv->lock);
--	*temp =  MCELSIUS((priv->ctemp * 5) - 65);
-+	tmp =  MCELSIUS((priv->ctemp * 5) - 65);
- 	mutex_unlock(&priv->lock);
- 
-+	if ((tmp < MCELSIUS(-45)) || (tmp > MCELSIUS(125))) {
-+		struct device *dev = rcar_priv_to_dev(priv);
-+
-+		dev_err(dev, "it couldn't measure temperature correctly\n");
-+		return -EIO;
-+	}
-+
-+	*temp = tmp;
-+
- 	return 0;
- }
- 
+ 	if (!board_staging_dt_node_available(usbs1_res,
+ 					     ARRAY_SIZE(usbs1_res))) {
 -- 
-1.9.1
+2.1.4
 
