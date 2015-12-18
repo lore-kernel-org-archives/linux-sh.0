@@ -1,67 +1,39 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 14 Dec 2015 18:57:48 +0000
-Subject: [PATCH 0/7] ARM: shmobile: dtsi: Add SCIF fallback compatibility strings
-Message-Id: <1450119475-1183-1-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 18 Dec 2015 03:20:12 +0000
+Subject: Re: [PATCH 0/7] ARM: shmobile: dtsi: Add SCIF fallback compatibility strings
+Message-Id: <20151218032011.GA9704@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1450119475-1183-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1450119475-1183-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-sh@vger.kernel.org, linux-serial@vger.kernel.org, devicetree@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-serial@vger.kernel.org, devicetree@vger.kernel.org
 
-	Hi Simon, Magnus,
+On Mon, Dec 14, 2015 at 07:57:48PM +0100, Geert Uytterhoeven wrote:
+> 	Hi Simon, Magnus,
+> 
+> This patch series adds fallback compatibility strings for SCIF and HSCIF
+> to the DTS files for R-Car Gen1, Gen2, and Gen3, as defined in
+> "[PATCH v3 02/27] serial: sh-sci: Add fallback compatibility strings" of
+> series "[PATCH v3 00/27] serial: sh-sci: External Clock Support".
+> This will allow the sh-sci driver to match on family-specific compatible
+> values to enable BGR support later.
+> 
+> Note that fallback compatibility strings for SCIFA/SCIFB are not added
+> yet.
+> 
+> Dependencies:
+>   - This series is against renesas-devel-20151214-v4.4-rc5,
+>   - It can be applied independently, as soon as the aforementioned DT
+>     binding patch has been accepted,
+>   - Later series depend on this:
+>       - "[PATCH v3 00/12] ARM: shmobile: dtsi: Rename the serial port
+> 	 clock to fck",
+>       - "[PATCH v2 0/7] ARM: shmobile: dtsi: Add BRG support for (H)SCIF",
+>       - "[PATCH v2 0/9] ARM: shmobile: dts: Enable SCIF_CLK frequency and
+> 	 pins".
 
-This patch series adds fallback compatibility strings for SCIF and HSCIF
-to the DTS files for R-Car Gen1, Gen2, and Gen3, as defined in
-"[PATCH v3 02/27] serial: sh-sci: Add fallback compatibility strings" of
-series "[PATCH v3 00/27] serial: sh-sci: External Clock Support".
-This will allow the sh-sci driver to match on family-specific compatible
-values to enable BGR support later.
-
-Note that fallback compatibility strings for SCIFA/SCIFB are not added
-yet.
-
-Dependencies:
-  - This series is against renesas-devel-20151214-v4.4-rc5,
-  - It can be applied independently, as soon as the aforementioned DT
-    binding patch has been accepted,
-  - Later series depend on this:
-      - "[PATCH v3 00/12] ARM: shmobile: dtsi: Rename the serial port
-	 clock to fck",
-      - "[PATCH v2 0/7] ARM: shmobile: dtsi: Add BRG support for (H)SCIF",
-      - "[PATCH v2 0/9] ARM: shmobile: dts: Enable SCIF_CLK frequency and
-	 pins".
-
-Thanks for applying!
-
-Geert Uytterhoeven (7):
-  ARM: shmobile: r8a7778 dtsi: Add SCIF fallback compatibility strings
-  ARM: shmobile: r8a7779 dtsi: Add SCIF fallback compatibility strings
-  ARM: shmobile: r8a7790 dtsi: Add SCIF fallback compatibility strings
-  ARM: shmobile: r8a7791 dtsi: Add SCIF fallback compatibility strings
-  ARM: shmobile: r8a7793 dtsi: Add SCIF fallback compatibility strings
-  ARM: shmobile: r8a7794 dtsi: Add SCIF fallback compatibility strings
-  arm64: renesas: r8a7795 dtsi: Add SCIF fallback compatibility strings
-
- arch/arm/boot/dts/r8a7778.dtsi           | 18 +++++++----
- arch/arm/boot/dts/r8a7779.dtsi           | 18 +++++++----
- arch/arm/boot/dts/r8a7790.dtsi           | 30 ++++++++++++------
- arch/arm/boot/dts/r8a7791.dtsi           | 54 +++++++++++++++++++++-----------
- arch/arm/boot/dts/r8a7793.dtsi           | 54 +++++++++++++++++++++-----------
- arch/arm/boot/dts/r8a7794.dtsi           | 54 +++++++++++++++++++++-----------
- arch/arm64/boot/dts/renesas/r8a7795.dtsi | 38 +++++++++++++++-------
- 7 files changed, 179 insertions(+), 87 deletions(-)
-
--- 
-1.9.1
-
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
+I have marked this and the above series as deferred pending
+acceptance of the driver changes.
