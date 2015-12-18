@@ -1,32 +1,50 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Fri, 25 Dec 2015 11:52:35 +0000
-Subject: [PATCH v2 0/6] arm64: renesas: add USB 2.0 device nodes for r8a7795
-Message-Id: <1451044361-5896-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 18 Dec 2015 02:29:36 +0000
+Subject: [PATCH 06/25] ARM: shmobile: bockw dts: Override #sound-dai-cells to zero
+Message-Id: <a6ff5e8d5ebc0392d5c470652cd22f730e090e29.1450402264.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1450402264.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1450402264.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: horms@verge.net.au, magnus.damm@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org
-Cc: devicetree@vger.kernel.org, linux-arm-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+To: linux-arm-kernel@lists.infradead.org
 
-This patch set is based on the renesas.git / 20151221renesas-devel-20151221-v4.4-rc6 tag.
-(commit id = fe0e8e675dedf1877709a17258e88151c2614b77)
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Changed from v1:
- - Fix register size from 0xff to 0x100 in patch 2
+The default value of #sound-dai-cells in r8a7778.dtsi is one, while
+the /sound/simple-audio-card,cpu device node in r8a7778-bockw.dts uses a
+phandle without any extra cells ("<&rcar_sound>"), causing:
 
-Yoshihiro Shimoda (6):
-  arm64: renesas: r8a7795: add usb2_phy device nodes
-  arm64: renesas: r8a7795: add USB2.0 Host (EHCI/OHCI) device nodes
-  arm64: renesas: r8a7795: add HS-USB device node
-  arm64: renesas: salvator-x: enable usb2_phy
-  arm64: renesas: salvator-x: enable USB 2.0 Host channel 1 and 2
-  arm64: renesas: salvator-x: enable HS-USB
+    /sound/simple-audio-card,cpu: arguments longer than property
+    asoc-simple-card sound: parse error -22
+    asoc-simple-card: probe of sound failed with error -22
 
- arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts |  54 +++++++++-
- arch/arm64/boot/dts/renesas/r8a7795.dtsi           | 113 +++++++++++++++++++++
- 2 files changed, 166 insertions(+), 1 deletion(-)
+Override #sound-dai-cells to zero to fix this.
 
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7778-bockw.dts | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
+index 3c03e6b8261e..158ad94fd4d1 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw.dts
+@@ -172,6 +172,11 @@
+ 	};
+ };
+ 
++&rcar_sound {
++	/* Single DAI */
++	#sound-dai-cells = <0>;
++};
++
+ &sdhi0 {
+ 	pinctrl-0 = <&sdhi0_pins>, <&sdhi0_pup_pins>;
+ 	pinctrl-names = "default";
 -- 
-1.9.1
+2.1.4
 
