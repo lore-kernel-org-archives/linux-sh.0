@@ -1,92 +1,36 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 14 Dec 2015 18:57:58 +0000
-Subject: [PATCH v3 04/12] ARM: shmobile: r8a73a4 dtsi: Rename the serial port clock to fck
-Message-Id: <1450119486-1285-5-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 18 Dec 2015 02:29:40 +0000
+Subject: [PATCH 10/25] ARM: shmobile: ape6evm dts: Add serial port config to chosen/stdout-path
+Message-Id: <6deac6d0b931825081c5894d186abd1c6ec4c524.1450402264.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450119486-1285-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1450119486-1285-1-git-send-email-geert+renesas@glider.be>
+References: <cover.1450402264.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1450402264.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: linux-sh@vger.kernel.org, linux-serial@vger.kernel.org, devicetree@vger.kernel.org, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-The clock is really the device functional clock, not the interface
-clock. Rename it.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v3:
-  - No changes,
+ arch/arm/boot/dts/r8a73a4-ape6evm.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-v2:
-  - Add Acked-by.
----
- arch/arm/boot/dts/r8a73a4.dtsi | 12 ++++++------
- 1 file changed, 6 insertions(+), 6 deletions(-)
-
-diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
-index cb4f7b2798fe23be..86fab56cd6314df7 100644
---- a/arch/arm/boot/dts/r8a73a4.dtsi
-+++ b/arch/arm/boot/dts/r8a73a4.dtsi
-@@ -335,7 +335,7 @@
- 		reg = <0 0xe6c20000 0 0x100>;
- 		interrupts = <0 148 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A73A4_CLK_SCIFB0>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&pd_a3sp>;
- 		status = "disabled";
+diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm.dts b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
+index 9b7eabd3eba3..590257095700 100644
+--- a/arch/arm/boot/dts/r8a73a4-ape6evm.dts
++++ b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
+@@ -23,7 +23,7 @@
+ 
+ 	chosen {
+ 		bootargs = "ignore_loglevel root=/dev/nfs ip=dhcp rw";
+-		stdout-path = &scifa0;
++		stdout-path = "serial0:115200n8";
  	};
-@@ -345,7 +345,7 @@
- 		reg = <0 0xe6c30000 0 0x100>;
- 		interrupts = <0 149 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A73A4_CLK_SCIFB1>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&pd_a3sp>;
- 		status = "disabled";
- 	};
-@@ -355,7 +355,7 @@
- 		reg = <0 0xe6c40000 0 0x100>;
- 		interrupts = <0 144 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A73A4_CLK_SCIFA0>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&pd_a3sp>;
- 		status = "disabled";
- 	};
-@@ -365,7 +365,7 @@
- 		reg = <0 0xe6c50000 0 0x100>;
- 		interrupts = <0 145 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A73A4_CLK_SCIFA1>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&pd_a3sp>;
- 		status = "disabled";
- 	};
-@@ -375,7 +375,7 @@
- 		reg = <0 0xe6ce0000 0 0x100>;
- 		interrupts = <0 150 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A73A4_CLK_SCIFB2>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&pd_a3sp>;
- 		status = "disabled";
- 	};
-@@ -385,7 +385,7 @@
- 		reg = <0 0xe6cf0000 0 0x100>;
- 		interrupts = <0 151 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A73A4_CLK_SCIFB3>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&pd_c4>;
- 		status = "disabled";
- 	};
+ 
+ 	memory@40000000 {
 -- 
-1.9.1
+2.1.4
 
