@@ -1,52 +1,53 @@
-From: Li Bin <huawei.libin@huawei.com>
-Date: Fri, 04 Dec 2015 07:27:42 +0000
-Subject: [PATCH 0/5] ftrace: fix ftrace misleading comments for arch using it
-Message-Id: <1449214067-12177-1-git-send-email-huawei.libin@huawei.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 18 Dec 2015 02:29:37 +0000
+Subject: [PATCH 07/25] ARM: shmobile: r8a7778: tidyup #sound-dai-cells settings
+Message-Id: <2020dddd67c1884ea7cb9891b36aac7ff5e73038.1450402264.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1450402264.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1450402264.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: rostedt@goodmis.org, mingo@redhat.com
-Cc: linux-kernel@vger.kernel.org, Li Bin <huawei.libin@huawei.com>, Tony
- Luck <tony.luck@intel.com>, Fenghua Yu <fenghua.yu@intel.com>, linux-ia64@vger.kernel.org, James Hogan <james.hogan@imgtec.com>, linux-metag@vger.kernel.org, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Michael
- Ellerman <mpe@ellerman.id.au>, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, Thomas Gleixner <tglx@linutronix.de>, x86@kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Fix the following similar misleading comments of ftrace for arch
-ia64/metag/powerpc/sh/x86:
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Note: Due to modules and __init, code can
- disappear and change, we need to protect against faulting
- as well as code changing. We do this by using the
- probe_kernel_* functions.
+Renesas sound driver needs #sound-dai-cells settings, but, this usage
+is a little bit confusable. It came from ALSA SoC historical reasons.
+The sound DAI naming method is different between Single/Multi DAI in
+the ALSA framework, and it is used for sound card matching.
+And this #sound-dai-cells has relationship to it.
+Current SoC dtsi has #sound-dai-cells = <1> as default settings
+(= it is assuming that board/platform has multi DAI), and
+board/platform side needs to overwrite it if board/platform was single
+DAI. This style is more confusable for users.
+This patch removes SoC side default settings, and force to set it by
+board/platform side.
 
-No real locking needed, this code is run through
-kstop_machine, or before SMP starts.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7778.dtsi | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
 
-Cc: Tony Luck <tony.luck@intel.com>
-Cc: Fenghua Yu <fenghua.yu@intel.com>
-Cc: linux-ia64@vger.kernel.org
-Cc: James Hogan <james.hogan@imgtec.com>
-Cc: linux-metag@vger.kernel.org
-Cc: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-Cc: Paul Mackerras <paulus@samba.org>
-Cc: Michael Ellerman <mpe@ellerman.id.au> 
-Cc: linuxppc-dev@lists.ozlabs.org
-Cc: linux-sh@vger.kernel.org
-Cc: Thomas Gleixner <tglx@linutronix.de>
-"Cc: H. Peter Anvin" <hpa@zytor.com>
-Cc: x86@kernel.org
-
-Li Bin (5):
-  ia64: ftrace: fix the comments for ftrace_modify_code
-  metag: ftrace: fix the comments for ftrace_modify_code
-  powerpc: ftrace: fix the comments for ftrace_modify_code
-  sh: ftrace: fix the comments for ftrace_modify_code
-  x86: ftrace: fix the comments for ftrace_modify_code_direct
-
- arch/ia64/kernel/ftrace.c    |   13 ++++++-------
- arch/metag/kernel/ftrace.c   |   12 ++++++------
- arch/powerpc/kernel/ftrace.c |   13 ++++++-------
- arch/sh/kernel/ftrace.c      |   13 ++++++-------
- arch/x86/kernel/ftrace.c     |   13 ++++++-------
- 5 files changed, 30 insertions(+), 34 deletions(-)
+diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
+index 4f8e07811746..b140627dd88b 100644
+--- a/arch/arm/boot/dts/r8a7778.dtsi
++++ b/arch/arm/boot/dts/r8a7778.dtsi
+@@ -236,7 +236,12 @@
+ 	};
+ 
+ 	rcar_sound: sound@ffd90000 {
+-		#sound-dai-cells = <1>;
++		/*
++		 * #sound-dai-cells is required
++		 *
++		 * Single DAI : #sound-dai-cells = <0>;         <&rcar_sound>;
++		 * Multi  DAI : #sound-dai-cells = <1>;         <&rcar_sound N>;
++		 */
+ 		compatible = "renesas,rcar_sound-r8a7778", "renesas,rcar_sound-gen1";
+ 		reg =	<0xffd90000 0x1000>,	/* SRU */
+ 			<0xffd91000 0x240>,	/* SSI */
+-- 
+2.1.4
 
