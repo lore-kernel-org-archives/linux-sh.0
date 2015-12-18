@@ -1,44 +1,44 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Wed, 23 Dec 2015 16:56:32 +0000
-Subject: [PATCH 1/3] i2c: document binding for multi-master case
-Message-Id: <1450889794-9509-2-git-send-email-wsa@the-dreams.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 18 Dec 2015 02:30:39 +0000
+Subject: [PATCH 1/6] ARM: shmobile: r7s72100 dtsi: Use "arm,pl390" for GIC
+Message-Id: <d9e1a0ef458302d90d4255b243922e45c25913b2.1450401902.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450889794-9509-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1450889794-9509-1-git-send-email-wsa@the-dreams.de>
+References: <cover.1450401902.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1450401902.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: Wolfram Sang <wsa@the-dreams.de>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Geert Uytterhoeven <geert+renesas@glider.be>, Rob Herring <robh@kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-We need this binding because some I2C master drivers will need to adapt
-their PM settings for the arbitration circuitry.
+Replace the "arm,cortex-a9-gic" compatible value for the GIC by
+"arm,pl390", as the documentation states it is a PL390.
+This has been confirmed (thanks Chris, Wolfram!) by reading the
+GICD_IIDR register, which reports 0x0000043b (PL390 = 0x00, ARM 0x43b).
 
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Rob Herring <robh@kernel.org>
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+This has no effect on runtime behavior, as currently the GIC driver
+treats both compatible values the same.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- Documentation/devicetree/bindings/i2c/i2c.txt | 5 +++++
- 1 file changed, 5 insertions(+)
+ arch/arm/boot/dts/r7s72100.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/Documentation/devicetree/bindings/i2c/i2c.txt b/Documentation/devicetree/bindings/i2c/i2c.txt
-index a00219f5ee0733..c8d977ed847f3c 100644
---- a/Documentation/devicetree/bindings/i2c/i2c.txt
-+++ b/Documentation/devicetree/bindings/i2c/i2c.txt
-@@ -54,6 +54,11 @@ wants to support one of the below features, it should adapt the bindings below.
- 	"irq" and "wakeup" names are recognized by I2C core, other names are
- 	left to individual drivers.
+diff --git a/arch/arm/boot/dts/r7s72100.dtsi b/arch/arm/boot/dts/r7s72100.dtsi
+index 060c32cbd669..4657d7fb5bce 100644
+--- a/arch/arm/boot/dts/r7s72100.dtsi
++++ b/arch/arm/boot/dts/r7s72100.dtsi
+@@ -329,7 +329,7 @@
+ 	};
  
-+- multi-master
-+	states that there is another master active on this bus. The OS can use
-+	this information to adapt power management to keep the arbitration awake
-+	all the time, for example.
-+
- - wakeup-source
- 	device can be used as a wakeup source.
- 
+ 	gic: interrupt-controller@e8201000 {
+-		compatible = "arm,cortex-a9-gic";
++		compatible = "arm,pl390";
+ 		#interrupt-cells = <3>;
+ 		#address-cells = <0>;
+ 		interrupt-controller;
 -- 
 2.1.4
 
