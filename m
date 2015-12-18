@@ -1,138 +1,58 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 25 Nov 2015 06:36:25 +0000
-Subject: [PATCH 02/12] arm64: renesas: r8a7795: Sound SSI PIO support
-Message-Id: <87ziy27fqk.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 18 Dec 2015 02:30:41 +0000
+Subject: [GIT PULL] Renesas ARM Based SoC GIC Cleanup for v4.5
+Message-Id: <cover.1450401902.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <8737vu8ucv.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <8737vu8ucv.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
+Hi Olof, Hi Kevin, Hi Arnd,
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Please consider these Renesas ARM based SoC GIC cleanup for v4.5.
 
-This patch adds SSI for PIO sound support
+This pull-request includes staging-board changes which have been
+acked by Greg Kroah-Hartman. They are bundled into this pull-request
+as not-doing so would break the drivers they update.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm64/boot/dts/renesas/r8a7795.dtsi | 95 ++++++++++++++++++++++++++++++++
- 1 file changed, 95 insertions(+)
+The following changes since commit 8005c49d9aea74d382f474ce11afbbc7d7130bec:
 
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-index 18d2221..6fff49c 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-+++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-@@ -52,6 +52,29 @@
- 		clock-frequency = <0>;
- 	};
- 
-+	/*
-+	 * The external audio clocks are configured as 0 Hz fixed frequency
-+	 * clocks by default.
-+	 * Boards that provide audio clocks should override them.
-+	 */
-+	audio_clk_a: audio_clk_a {
-+		compatible = "fixed-clock";
-+		#clock-cells = <0>;
-+		clock-frequency = <0>;
-+	};
-+
-+	audio_clk_b: audio_clk_b {
-+		compatible = "fixed-clock";
-+		#clock-cells = <0>;
-+		clock-frequency = <0>;
-+	};
-+
-+	audio_clk_c: audio_clk_c {
-+		compatible = "fixed-clock";
-+		#clock-cells = <0>;
-+		clock-frequency = <0>;
-+	};
-+
- 	soc {
- 		compatible = "simple-bus";
- 		interrupt-parent = <&gic>;
-@@ -474,5 +497,77 @@
- 			power-domains = <&cpg>;
- 			status = "disabled";
- 		};
-+
-+		rcar_sound: sound@ec500000 {
-+			/*
-+			 * #sound-dai-cells is required
-+			 *
-+			 * Single DAI : #sound-dai-cells = <0>;	<&rcar_sound>;
-+			 * Multi  DAI : #sound-dai-cells = <1>;	<&rcar_sound N>;
-+			 */
-+			/*
-+			 * #clock-cells is required for audio_clkout0/1/2/3
-+			 *
-+			 * clkout	: #clock-cells = <0>;	<&rcar_sound>;
-+			 * clkout0/1/2/3: #clock-cells = <1>;	<&rcar_sound N>;
-+			 */
-+			compatible =  "renesas,rcar_sound-r8a7795", "renesas,rcar_sound-gen3";
-+			reg =	<0 0xec500000 0 0x1000>, /* SCU */
-+				<0 0xec5a0000 0 0x100>,  /* ADG */
-+				<0 0xec540000 0 0x1000>, /* SSIU */
-+				<0 0xec541000 0 0x280>,  /* SSI */
-+				<0 0xec740000 0 0x200>;  /* Audio DMAC peri peri*/
-+			reg-names = "scu", "adg", "ssiu", "ssi", "audmapp";
-+
-+			clocks = <&cpg CPG_MOD 1005>,
-+				 <&cpg CPG_MOD 1006>, <&cpg CPG_MOD 1007>,
-+				 <&cpg CPG_MOD 1008>, <&cpg CPG_MOD 1009>,
-+				 <&cpg CPG_MOD 1010>, <&cpg CPG_MOD 1011>,
-+				 <&cpg CPG_MOD 1012>, <&cpg CPG_MOD 1013>,
-+				 <&cpg CPG_MOD 1014>, <&cpg CPG_MOD 1015>,
-+				 <&audio_clk_a>, <&audio_clk_b>,
-+				 <&audio_clk_c>,
-+				 <&cpg CPG_CORE R8A7795_CLK_S0D4>;
-+			clock-names = "ssi-all",
-+				      "ssi.9", "ssi.8", "ssi.7", "ssi.6",
-+				      "ssi.5", "ssi.4", "ssi.3", "ssi.2",
-+				      "ssi.1", "ssi.0",
-+				      "clk_a", "clk_b", "clk_c", "clk_i";
-+			power-domains = <&cpg>;
-+			status = "disabled";
-+
-+			rcar_sound,ssi {
-+				ssi0: ssi@0 {
-+					interrupts = <0 370 IRQ_TYPE_LEVEL_HIGH>;
-+				};
-+				ssi1: ssi@1 {
-+					 interrupts = <0 371 IRQ_TYPE_LEVEL_HIGH>;
-+				};
-+				ssi2: ssi@2 {
-+					interrupts = <0 372 IRQ_TYPE_LEVEL_HIGH>;
-+				};
-+				ssi3: ssi@3 {
-+					interrupts = <0 373 IRQ_TYPE_LEVEL_HIGH>;
-+				};
-+				ssi4: ssi@4 {
-+					interrupts = <0 374 IRQ_TYPE_LEVEL_HIGH>;
-+				};
-+				ssi5: ssi@5 {
-+					interrupts = <0 375 IRQ_TYPE_LEVEL_HIGH>;
-+				};
-+				ssi6: ssi@6 {
-+					interrupts = <0 376 IRQ_TYPE_LEVEL_HIGH>;
-+				};
-+				ssi7: ssi@7 {
-+					interrupts = <0 377 IRQ_TYPE_LEVEL_HIGH>;
-+				};
-+				ssi8: ssi@8 {
-+					interrupts = <0 378 IRQ_TYPE_LEVEL_HIGH>;
-+				};
-+				ssi9: ssi@9 {
-+					interrupts = <0 379 IRQ_TYPE_LEVEL_HIGH>;
-+				};
-+			};
-+		};
- 	};
- };
--- 
-1.9.1
+  Linux 4.4-rc1 (2015-11-15 17:00:27 -0800)
 
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-gic-cleanup-for-v4.5
+
+for you to fetch changes up to 1474136ce6a457a10a797b3de04adbb035e90901:
+
+  staging: board: armadillo800eva: Use "arm,pl390" (2015-12-18 10:21:10 +0900)
+
+----------------------------------------------------------------
+Renesas ARM Based SoC GIC Cleanup for v4.5
+
+On several Renesas ARM SoCs, the GIC is described in DT as being a
+Cortex A9 GIC, while it's actually a PL390. This is not only stated in
+the documentation, but has been verified by reading the GICD_IIDR
+register.
+
+To correct this:
+  1. Update the DT compatible value to match reality,
+  2. Update the board staging drivers to match the above.
+
+----------------------------------------------------------------
+Geert Uytterhoeven (6):
+      ARM: shmobile: r7s72100 dtsi: Use "arm,pl390" for GIC
+      ARM: shmobile: r8a7740 dtsi: Use "arm,pl390" for GIC
+      ARM: shmobile: emev2 dtsi: Use "arm,pl390" for GIC
+      ARM: shmobile: r8a7778 dtsi: Use "arm,pl390" for GIC
+      staging: board: kzm9d: Use "arm,pl390"
+      staging: board: armadillo800eva: Use "arm,pl390"
+
+ arch/arm/boot/dts/emev2.dtsi            | 2 +-
+ arch/arm/boot/dts/r7s72100.dtsi         | 2 +-
+ arch/arm/boot/dts/r8a7740.dtsi          | 2 +-
+ arch/arm/boot/dts/r8a7778.dtsi          | 2 +-
+ drivers/staging/board/armadillo800eva.c | 2 +-
+ drivers/staging/board/kzm9d.c           | 2 +-
+ 6 files changed, 6 insertions(+), 6 deletions(-)
