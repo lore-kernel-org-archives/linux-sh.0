@@ -1,61 +1,54 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 14 Dec 2015 17:03:21 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 18 Dec 2015 03:02:39 +0000
 Subject: Re: [PATCH/RFC 03/19] ARM: shmobile: gose: add i2c2 bus to device tree
-Message-Id: <566EF659.2010105@cogentembedded.com>
+Message-Id: <20151218030239.GB10973@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1449802376-11301-1-git-send-email-horms+renesas@verge.net.au>
  <1449802376-11301-4-git-send-email-horms+renesas@verge.net.au>
- <566AB2A5.4090105@cogentembedded.com> <20151214021110.GD13945@verge.net.au>
-In-Reply-To: <20151214021110.GD13945@verge.net.au>
+ <566AB2A5.4090105@cogentembedded.com>
+ <20151214021110.GD13945@verge.net.au>
+ <20151214071103.GC1516@katana>
+ <CAMuHMdXWcyEmoVRZuCTM4yqfxXYjgZF1yP8uqCEU8Bj=pmkNYw@mail.gmail.com>
+In-Reply-To: <CAMuHMdXWcyEmoVRZuCTM4yqfxXYjgZF1yP8uqCEU8Bj=pmkNYw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On 12/14/2015 05:11 AM, Simon Horman wrote:
+On Mon, Dec 14, 2015 at 10:39:47AM +0100, Geert Uytterhoeven wrote:
+> On Mon, Dec 14, 2015 at 8:11 AM, Wolfram Sang <wsa@the-dreams.de> wrote:
+> >> > >+  eeprom@50 {
+> >> > >+          compatible = "renesas,24c02";
+> >> >
+> >> >    This is not a valid value -- the Renesas chip model is different from 24c02.
+> >>
+> >> I copied this value from r8a7791.dtsi.
+> >>
+> >> Looking at the schematic for gose (v100), koelsch (rev024) and porter (v300)
+> >> I see the following "R1EX24002ATAS0G#U0". Shall we update r8a7791 and
+> >> this patch to "renesas,24002" or leave things as is?
+> >
+> > I wouldn't like to update the at24 driver with all namings from all
+> > vendors for chips which in large cases are simple 24c02 devices.
+> >
+> > So, if Sergei insists on the change, I'd propose
+> >
+> >         compatible = "renesas,24002", "24c02";
+> 
+> "renesas,r1ex24002"?
+> 
+> I don't think the "A" is relevant (<= 64 is A, >= 128 is B).
+> 
+> http://www.renesas.com/products/memory/eeprom/product_selector.jsp
 
->>> Activate i2c2 bus in r8a7793/gose device tree.
->>>
->>> Based on similar work for the r8a7791/koelsch by Wolfram Sang.
->>>
->>> Cc: Wolfram Sang <wsa@sang-engineering.com>
->>> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
->>> ---
->>>   arch/arm/boot/dts/r8a7793-gose.dts | 19 +++++++++++++++++++
->>>   1 file changed, 19 insertions(+)
->>>
->>> diff --git a/arch/arm/boot/dts/r8a7793-gose.dts b/arch/arm/boot/dts/r8a7793-gose.dts
->>> index 3e3122490650..9a71ff6d4474 100644
->>> --- a/arch/arm/boot/dts/r8a7793-gose.dts
->>> +++ b/arch/arm/boot/dts/r8a7793-gose.dts
->> [...]
->>> @@ -135,3 +140,17 @@
->>>   		};
->>>   	};
->>>   };
->>> +
->>> +&i2c2 {
->>> +	pinctrl-0 = <&i2c2_pins>;
->>> +	pinctrl-names = "default";
->>> +
->>> +	status = "okay";
->>> +	clock-frequency = <100000>;
->>> +
->>> +	eeprom@50 {
->>> +		compatible = "renesas,24c02";
->>
->>     This is not a valid value -- the Renesas chip model is different from 24c02.
->
-> I copied this value from r8a7791.dtsi.
+Thanks.
 
-    r8a7791-koelsch.dts, you mean? I remember there has been a discussion on 
-this topic, and I then refrained from adding MAC address EEPROMs as a result. :-)
+It seems to me that we have some consensus around:
 
-> Looking at the schematic for gose (v100), koelsch (rev024) and porter (v300)
-> I see the following "R1EX24002ATAS0G#U0". Shall we update r8a7791 and
-> this patch to "renesas,24002" or leave things as is?
+	compatible = "renesas,r1ex24002", "24c02";
 
-    What Geert has suggested seems the right thing to me.
+Should this be added to Documentation/devicetree/bindings/eeprom/eeprom.txt ?
+Or documented elsewhere?
 
-MBR, Sergei
-
+I believe that as well as any documentation and update of this patch-set
+that r8a7791-koelsch.dts will also need to be updated. I plan to do so.
