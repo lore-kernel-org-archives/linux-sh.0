@@ -1,97 +1,86 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Fri, 25 Dec 2015 11:52:37 +0000
-Subject: [PATCH v2 2/6] arm64: renesas: r8a7795: add USB2.0 Host (EHCI/OHCI) device nodes
-Message-Id: <1451044361-5896-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 18 Dec 2015 02:29:54 +0000
+Subject: [PATCH 24/25] ARM: shmobile: r8a7794: IPMMU compat string SoC part number update
+Message-Id: <0da4cfd1a22acd521d385bc80ef48f4d038d0a03.1450402264.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1451044361-5896-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1451044361-5896-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+References: <cover.1450402264.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1450402264.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: horms@verge.net.au, magnus.damm@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org
-Cc: devicetree@vger.kernel.org, linux-arm-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+From: Magnus Damm <damm+renesas@opensource.se>
+
+Update IPMMU compat strings to include SoC part number.
+
+By specifying SoC part number in DT it becomes possible
+to implement SoC specific features in the IPMMU driver.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm64/boot/dts/renesas/r8a7795.dtsi | 66 ++++++++++++++++++++++++++++++++
- 1 file changed, 66 insertions(+)
+ arch/arm/boot/dts/r8a7794.dtsi | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
 
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-index 89393ea..499e158 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-+++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-@@ -809,5 +809,71 @@
- 			#phy-cells = <0>;
- 			status = "disabled";
- 		};
-+
-+		ehci0: usb@ee080100 {
-+			compatible = "renesas,ehci-r8a7795", "generic-ehci";
-+			reg = <0 0xee080100 0 0x100>;
-+			interrupts = <GIC_SPI 108 IRQ_TYPE_LEVEL_HIGH>;
-+			clocks = <&cpg CPG_MOD 703>;
-+			phys = <&usb2_phy0>;
-+			phy-names = "usb";
-+			power-domains = <&cpg>;
-+			status = "disabled";
-+		};
-+
-+		ehci1: usb@ee0a0100 {
-+			compatible = "renesas,ehci-r8a7795", "generic-ehci";
-+			reg = <0 0xee0a0100 0 0x100>;
-+			interrupts = <GIC_SPI 112 IRQ_TYPE_LEVEL_HIGH>;
-+			clocks = <&cpg CPG_MOD 702>;
-+			phys = <&usb2_phy1>;
-+			phy-names = "usb";
-+			power-domains = <&cpg>;
-+			status = "disabled";
-+		};
-+
-+		ehci2: usb@ee0c0100 {
-+			compatible = "renesas,ehci-r8a7795", "generic-ehci";
-+			reg = <0 0xee0c0100 0 0x100>;
-+			interrupts = <GIC_SPI 113 IRQ_TYPE_LEVEL_HIGH>;
-+			clocks = <&cpg CPG_MOD 701>;
-+			phys = <&usb2_phy2>;
-+			phy-names = "usb";
-+			power-domains = <&cpg>;
-+			status = "disabled";
-+		};
-+
-+		ohci0: usb@ee080000 {
-+			compatible = "renesas,ohci-r8a7795", "generic-ohci";
-+			reg = <0 0xee080000 0 0x100>;
-+			interrupts = <GIC_SPI 108 IRQ_TYPE_LEVEL_HIGH>;
-+			clocks = <&cpg CPG_MOD 703>;
-+			phys = <&usb2_phy0>;
-+			phy-names = "usb";
-+			power-domains = <&cpg>;
-+			status = "disabled";
-+		};
-+
-+		ohci1: usb@ee0a0000 {
-+			compatible = "renesas,ohci-r8a7795", "generic-ohci";
-+			reg = <0 0xee0a0000 0 0x100>;
-+			interrupts = <GIC_SPI 112 IRQ_TYPE_LEVEL_HIGH>;
-+			clocks = <&cpg CPG_MOD 702>;
-+			phys = <&usb2_phy1>;
-+			phy-names = "usb";
-+			power-domains = <&cpg>;
-+			status = "disabled";
-+		};
-+
-+		ohci2: usb@ee0c0000 {
-+			compatible = "renesas,ohci-r8a7795", "generic-ohci";
-+			reg = <0 0xee0c0000 0 0x100>;
-+			interrupts = <GIC_SPI 113 IRQ_TYPE_LEVEL_HIGH>;
-+			clocks = <&cpg CPG_MOD 701>;
-+			phys = <&usb2_phy2>;
-+			phy-names = "usb";
-+			power-domains = <&cpg>;
-+			status = "disabled";
-+		};
+diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
+index 7fb2da2f54ff..6c78f1fae90f 100644
+--- a/arch/arm/boot/dts/r8a7794.dtsi
++++ b/arch/arm/boot/dts/r8a7794.dtsi
+@@ -1109,7 +1109,7 @@
  	};
- };
+ 
+ 	ipmmu_sy0: mmu@e6280000 {
+-		compatible = "renesas,ipmmu-vmsa";
++		compatible = "renesas,ipmmu-r8a7794", "renesas,ipmmu-vmsa";
+ 		reg = <0 0xe6280000 0 0x1000>;
+ 		interrupts = <0 223 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 224 IRQ_TYPE_LEVEL_HIGH>;
+@@ -1118,7 +1118,7 @@
+ 	};
+ 
+ 	ipmmu_sy1: mmu@e6290000 {
+-		compatible = "renesas,ipmmu-vmsa";
++		compatible = "renesas,ipmmu-r8a7794", "renesas,ipmmu-vmsa";
+ 		reg = <0 0xe6290000 0 0x1000>;
+ 		interrupts = <0 225 IRQ_TYPE_LEVEL_HIGH>;
+ 		#iommu-cells = <1>;
+@@ -1126,7 +1126,7 @@
+ 	};
+ 
+ 	ipmmu_ds: mmu@e6740000 {
+-		compatible = "renesas,ipmmu-vmsa";
++		compatible = "renesas,ipmmu-r8a7794", "renesas,ipmmu-vmsa";
+ 		reg = <0 0xe6740000 0 0x1000>;
+ 		interrupts = <0 198 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 199 IRQ_TYPE_LEVEL_HIGH>;
+@@ -1135,7 +1135,7 @@
+ 	};
+ 
+ 	ipmmu_mp: mmu@ec680000 {
+-		compatible = "renesas,ipmmu-vmsa";
++		compatible = "renesas,ipmmu-r8a7794", "renesas,ipmmu-vmsa";
+ 		reg = <0 0xec680000 0 0x1000>;
+ 		interrupts = <0 226 IRQ_TYPE_LEVEL_HIGH>;
+ 		#iommu-cells = <1>;
+@@ -1143,7 +1143,7 @@
+ 	};
+ 
+ 	ipmmu_mx: mmu@fe951000 {
+-		compatible = "renesas,ipmmu-vmsa";
++		compatible = "renesas,ipmmu-r8a7794", "renesas,ipmmu-vmsa";
+ 		reg = <0 0xfe951000 0 0x1000>;
+ 		interrupts = <0 222 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 221 IRQ_TYPE_LEVEL_HIGH>;
+@@ -1152,7 +1152,7 @@
+ 	};
+ 
+ 	ipmmu_gp: mmu@e62a0000 {
+-		compatible = "renesas,ipmmu-vmsa";
++		compatible = "renesas,ipmmu-r8a7794", "renesas,ipmmu-vmsa";
+ 		reg = <0 0xe62a0000 0 0x1000>;
+ 		interrupts = <0 260 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 261 IRQ_TYPE_LEVEL_HIGH>;
 -- 
-1.9.1
+2.1.4
 
