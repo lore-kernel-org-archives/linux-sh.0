@@ -1,114 +1,41 @@
-From: Dirk Behme <dirk.behme@gmail.com>
-Date: Sat, 12 Dec 2015 07:16:46 +0000
-Subject: [PATCH 1/2] arm64: dts: r8a7795: Add Cortex-A53 CPU cores
-Message-Id: <1449904607-4060-1-git-send-email-dirk.behme@gmail.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 18 Dec 2015 11:02:42 +0000
+Subject: Re: [PATCH 1/2] arm64: dts: r8a7795: Add Cortex-A53 CPU cores
+Message-Id: <CAMuHMdVVL9T6U8npb5kOLdP3PmS6Lhx0b9O3FKgxd2HQcUedFw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1449904607-4060-1-git-send-email-dirk.behme@gmail.com>
+In-Reply-To: <1449904607-4060-1-git-send-email-dirk.behme@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Takeshi Kihara <takeshi.kihara.df@renesas.com>
+Hi Dirk,
 
-This patch adds Cortex-A53 CPU cores to r8a7795 SoC for a total of 8
-cores (4 x Cortex-A57 + 4 x Cortex-A53).
+On Sat, Dec 12, 2015 at 8:16 AM, Dirk Behme <dirk.behme@gmail.com> wrote:
+> From: Takeshi Kihara <takeshi.kihara.df@renesas.com>
+>
+> This patch adds Cortex-A53 CPU cores to r8a7795 SoC for a total of 8
+> cores (4 x Cortex-A57 + 4 x Cortex-A53).
+>
+> Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
+> Signed-off-by: Dirk Behme <dirk.behme@gmail.com>
 
-Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
-Signed-off-by: Dirk Behme <dirk.behme@gmail.com>
----
-Note: This patch is picked from
+Thanks, I can confirm this works.
 
-https://git.kernel.org/cgit/linux/kernel/git/horms/renesas-bsp.git/log/?h=v4.2/rcar-3.0.x
+However, as the scheduler is not big.LITTLE aware (running processes are not
+migrated automatically to the faster CA57 cores when these are idle), it makes
+performance less deterministic.
 
-and rebased against
+Hence we would like to postpone this.
 
-https://git.kernel.org/cgit/linux/kernel/git/horms/renesas.git/log/?h=next renesas-next-20151211v2-v4.4-rc1
+Gr{oetje,eeting}s,
 
- arch/arm64/boot/dts/renesas/r8a7795.dtsi | 46 +++++++++++++++++++++++++++-----
- 1 file changed, 39 insertions(+), 7 deletions(-)
+                        Geert
 
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-index b9229a4..3633a2a 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-+++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-@@ -60,6 +60,30 @@
- 			device_type = "cpu";
- 			enable-method = "psci";
- 		};
-+		a53_0: cpu@100 {
-+			compatible = "arm,cortex-a53", "arm,armv8";
-+			reg = <0x100>;
-+			device_type = "cpu";
-+			enable-method = "psci";
-+		};
-+		a53_1: cpu@101 {
-+			compatible = "arm,cortex-a53","arm,armv8";
-+			reg = <0x101>;
-+			device_type = "cpu";
-+			enable-method = "psci";
-+		};
-+		a53_2: cpu@102 {
-+			compatible = "arm,cortex-a53","arm,armv8";
-+			reg = <0x102>;
-+			device_type = "cpu";
-+			enable-method = "psci";
-+		};
-+		a53_3: cpu@103 {
-+			compatible = "arm,cortex-a53","arm,armv8";
-+			reg = <0x103>;
-+			device_type = "cpu";
-+			enable-method = "psci";
-+		};
- 	};
- 
- 	extal_clk: extal {
-@@ -115,7 +139,7 @@
- 			reg = <0x0 0xf1010000 0 0x1000>,
- 			      <0x0 0xf1020000 0 0x2000>;
- 			interrupts = <GIC_PPI 9
--					(GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_HIGH)>;
-+					(GIC_CPU_MASK_SIMPLE(8) | IRQ_TYPE_LEVEL_HIGH)>;
- 		};
- 
- 		gpio0: gpio@e6050000 {
-@@ -235,23 +259,31 @@
- 			interrupts = <GIC_SPI 72 IRQ_TYPE_LEVEL_HIGH>,
- 				     <GIC_SPI 73 IRQ_TYPE_LEVEL_HIGH>,
- 				     <GIC_SPI 74 IRQ_TYPE_LEVEL_HIGH>,
--				     <GIC_SPI 75 IRQ_TYPE_LEVEL_HIGH>;
-+				     <GIC_SPI 75 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 84 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 85 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 86 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 87 IRQ_TYPE_LEVEL_HIGH>;
- 			interrupt-affinity = <&a57_0>,
- 					     <&a57_1>,
- 					     <&a57_2>,
--					     <&a57_3>;
-+					     <&a57_3>,
-+					     <&a53_0>,
-+					     <&a53_1>,
-+					     <&a53_2>,
-+					     <&a53_3>;
- 		};
- 
- 		timer {
- 			compatible = "arm,armv8-timer";
- 			interrupts = <GIC_PPI 13
--					(GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
-+					(GIC_CPU_MASK_SIMPLE(8) | IRQ_TYPE_LEVEL_LOW)>,
- 				     <GIC_PPI 14
--					(GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
-+					(GIC_CPU_MASK_SIMPLE(8) | IRQ_TYPE_LEVEL_LOW)>,
- 				     <GIC_PPI 11
--					(GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
-+					(GIC_CPU_MASK_SIMPLE(8) | IRQ_TYPE_LEVEL_LOW)>,
- 				     <GIC_PPI 10
--					(GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>;
-+					(GIC_CPU_MASK_SIMPLE(8) | IRQ_TYPE_LEVEL_LOW)>;
- 		};
- 
- 		cpg: clock-controller@e6150000 {
--- 
-2.6.4
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
