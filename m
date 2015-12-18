@@ -1,53 +1,44 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 18 Dec 2015 02:29:37 +0000
-Subject: [PATCH 07/25] ARM: shmobile: r8a7778: tidyup #sound-dai-cells settings
-Message-Id: <2020dddd67c1884ea7cb9891b36aac7ff5e73038.1450402264.git.horms+renesas@verge.net.au>
+Date: Fri, 18 Dec 2015 02:30:41 +0000
+Subject: [PATCH 3/6] ARM: shmobile: emev2 dtsi: Use "arm,pl390" for GIC
+Message-Id: <c8a5880afeb8f14c8338e90e7b7c4c597a6f7e0b.1450401902.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1450402264.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1450402264.git.horms+renesas@verge.net.au>
+References: <cover.1450401902.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1450401902.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Renesas sound driver needs #sound-dai-cells settings, but, this usage
-is a little bit confusable. It came from ALSA SoC historical reasons.
-The sound DAI naming method is different between Single/Multi DAI in
-the ALSA framework, and it is used for sound card matching.
-And this #sound-dai-cells has relationship to it.
-Current SoC dtsi has #sound-dai-cells = <1> as default settings
-(= it is assuming that board/platform has multi DAI), and
-board/platform side needs to overwrite it if board/platform was single
-DAI. This style is more confusable for users.
-This patch removes SoC side default settings, and force to set it by
-board/platform side.
+Replace the "arm,cortex-a9-gic" compatible value for the GIC by
+"arm,pl390", as the documentation states it is a PL390.
+This has been confirmed (thanks Simon!) by reading the GICD_IIDR
+register, which reports 0x0000043b (PL390 = 0x00, ARM = 0x43b).
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+This has no effect on runtime behavior, as currently the GIC driver
+treats both compatible values the same.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7778.dtsi | 7 ++++++-
- 1 file changed, 6 insertions(+), 1 deletion(-)
+ arch/arm/boot/dts/emev2.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
-index 4f8e07811746..b140627dd88b 100644
---- a/arch/arm/boot/dts/r8a7778.dtsi
-+++ b/arch/arm/boot/dts/r8a7778.dtsi
-@@ -236,7 +236,12 @@
+diff --git a/arch/arm/boot/dts/emev2.dtsi b/arch/arm/boot/dts/emev2.dtsi
+index edad0c4eea35..57795da616cb 100644
+--- a/arch/arm/boot/dts/emev2.dtsi
++++ b/arch/arm/boot/dts/emev2.dtsi
+@@ -44,7 +44,7 @@
  	};
  
- 	rcar_sound: sound@ffd90000 {
--		#sound-dai-cells = <1>;
-+		/*
-+		 * #sound-dai-cells is required
-+		 *
-+		 * Single DAI : #sound-dai-cells = <0>;         <&rcar_sound>;
-+		 * Multi  DAI : #sound-dai-cells = <1>;         <&rcar_sound N>;
-+		 */
- 		compatible = "renesas,rcar_sound-r8a7778", "renesas,rcar_sound-gen1";
- 		reg =	<0xffd90000 0x1000>,	/* SRU */
- 			<0xffd91000 0x240>,	/* SSI */
+ 	gic: interrupt-controller@e0020000 {
+-		compatible = "arm,cortex-a9-gic";
++		compatible = "arm,pl390";
+ 		interrupt-controller;
+ 		#interrupt-cells = <3>;
+ 		reg = <0xe0028000 0x1000>,
 -- 
 2.1.4
 
