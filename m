@@ -1,43 +1,59 @@
-From: "Michael S. Tsirkin" <mst@redhat.com>
-Date: Thu, 31 Dec 2015 19:08:46 +0000
-Subject: [PATCH v2 23/32] sh: define __smp_xxx, fix smp_store_mb for !SMP
-Message-Id: <1451572003-2440-24-git-send-email-mst@redhat.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 18 Dec 2015 02:29:48 +0000
+Subject: [PATCH 18/25] ARM: shmobile: r8a7790: dtsi: add internal delay for i2c IPs
+Message-Id: <ac8e7f31c70e3089a46afd449d84c8a957053eea.1450402264.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1451572003-2440-1-git-send-email-mst@redhat.com>
-In-Reply-To: <1451572003-2440-1-git-send-email-mst@redhat.com>
+References: <cover.1450402264.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1450402264.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Peter Zijlstra <peterz@infradead.org>, Arnd Bergmann <arnd@arndb.de>, linux-arch@vger.kernel.org, Andrew Cooper <andrew.cooper3@citrix.com>, virtualization@lists.linux-foundation.org, Stefano Stabellini <stefano.stabellini@eu.citrix.com>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@elte.hu>, "H. Peter Anvin" <hpa@zytor.com>, David Miller <davem@davemloft.net>, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, sparclinux@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-metag@vger.kernel.org, linux-mips@linux-mips.org, x86@kernel.org, user-mode-linux-devel@lists.sourceforge.net, adi-buildroot-devel@lists.sourceforge.net, linux-sh@vger.kernel.org, linux-xtensa@linux-xtensa.org, xen-devel@lists.xenproject.org, Ingo Molnar <mingo@kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-sh variant of smp_store_mb() calls xchg() on !SMP which is stronger than
-implied by both the name and the documentation.
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-define __smp_store_mb instead: code in asm-generic/barrier.h
-will then define smp_store_mb correctly depending on
-CONFIG_SMP.
-
-Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
-Acked-by: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/sh/include/asm/barrier.h | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ arch/arm/boot/dts/r8a7790.dtsi | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-diff --git a/arch/sh/include/asm/barrier.h b/arch/sh/include/asm/barrier.h
-index bf91037..f887c64 100644
---- a/arch/sh/include/asm/barrier.h
-+++ b/arch/sh/include/asm/barrier.h
-@@ -32,7 +32,8 @@
- #define ctrl_barrier()	__asm__ __volatile__ ("nop;nop;nop;nop;nop;nop;nop;nop")
- #endif
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 9f3036b80c0e..4eab5f43f7e5 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -417,6 +417,7 @@
+ 		interrupts = <0 287 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp9_clks R8A7790_CLK_I2C0>;
+ 		power-domains = <&cpg_clocks>;
++		i2c-scl-internal-delay-ns = <110>;
+ 		status = "disabled";
+ 	};
  
--#define smp_store_mb(var, value) do { (void)xchg(&var, value); } while (0)
-+#define __smp_store_mb(var, value) do { (void)xchg(&var, value); } while (0)
-+#define smp_store_mb(var, value) __smp_store_mb(var, value)
+@@ -428,6 +429,7 @@
+ 		interrupts = <0 288 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp9_clks R8A7790_CLK_I2C1>;
+ 		power-domains = <&cpg_clocks>;
++		i2c-scl-internal-delay-ns = <6>;
+ 		status = "disabled";
+ 	};
  
- #include <asm-generic/barrier.h>
+@@ -439,6 +441,7 @@
+ 		interrupts = <0 286 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp9_clks R8A7790_CLK_I2C2>;
+ 		power-domains = <&cpg_clocks>;
++		i2c-scl-internal-delay-ns = <6>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -450,6 +453,7 @@
+ 		interrupts = <0 290 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp9_clks R8A7790_CLK_I2C3>;
+ 		power-domains = <&cpg_clocks>;
++		i2c-scl-internal-delay-ns = <110>;
+ 		status = "disabled";
+ 	};
  
 -- 
-MST
+2.1.4
 
