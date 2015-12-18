@@ -1,50 +1,104 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 04 Dec 2015 21:58:07 +0000
-Subject: [PATCH 1/2] ravb: read MAC address registers only once
-Message-Id: <6904286.WCKWH7i1NK@wasted.cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 18 Dec 2015 02:29:10 +0000
+Subject: [PATCH 02/10] arm64: renesas: salvator-x: use CS2000 as AUDIO_CLK_B
+Message-Id: <8a8f181d2cfdbff772ff2cc895f59bb28beafbdf.1450401186.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <10429393.qU4CxZ5nlj@wasted.cogentembedded.com>
-In-Reply-To: <10429393.qU4CxZ5nlj@wasted.cogentembedded.com>
+References: <cover.1450401186.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1450401186.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The code reading the MAHR/MALR registers in ravb_read_mac_address() is
-terribly ineffective -- it reads  MAHR 4 times and MALR 2 times, while
-it's enough to read each register only once. Use the local variables to
-achieve that, somewhat beautifying the code while at it...
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+CS2000 needs AUDIO_CLKOUT as master clock which is generated
+by Renesas sound, and Renesas sound needs CS2000 as ADUIO_CLK_B.
+Because of this relationship, it will be dead-lock when driver probe.
 
+cs2000: clk_multiplier@4f {
+        ...
+        clocks = <&rcar_sound 0>, <&x12_clk>;
+        ...
+};
+
+&rcar_sound {
+        ...
+        assigned-clocks = <&cs2000>;
+        ...
+};
+
+This patch is using dummy audio_clkout to avoid this issue.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/net/ethernet/renesas/ravb_main.c |   15 +++++++++------
- 1 file changed, 9 insertions(+), 6 deletions(-)
+ arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 38 ++++++++++++++++++++++
+ 1 file changed, 38 insertions(+)
 
-Index: net-next/drivers/net/ethernet/renesas/ravb_main.c
-=================================--- net-next.orig/drivers/net/ethernet/renesas/ravb_main.c
-+++ net-next/drivers/net/ethernet/renesas/ravb_main.c
-@@ -115,12 +115,15 @@ static void ravb_read_mac_address(struct
- 	if (mac) {
- 		ether_addr_copy(ndev->dev_addr, mac);
- 	} else {
--		ndev->dev_addr[0] = (ravb_read(ndev, MAHR) >> 24);
--		ndev->dev_addr[1] = (ravb_read(ndev, MAHR) >> 16) & 0xFF;
--		ndev->dev_addr[2] = (ravb_read(ndev, MAHR) >> 8) & 0xFF;
--		ndev->dev_addr[3] = (ravb_read(ndev, MAHR) >> 0) & 0xFF;
--		ndev->dev_addr[4] = (ravb_read(ndev, MALR) >> 8) & 0xFF;
--		ndev->dev_addr[5] = (ravb_read(ndev, MALR) >> 0) & 0xFF;
-+		u32 mahr = ravb_read(ndev, MAHR);
-+		u32 malr = ravb_read(ndev, MALR);
-+
-+		ndev->dev_addr[0] = (mahr >> 24) & 0xFF;
-+		ndev->dev_addr[1] = (mahr >> 16) & 0xFF;
-+		ndev->dev_addr[2] = (mahr >>  8) & 0xFF;
-+		ndev->dev_addr[3] = (mahr >>  0) & 0xFF;
-+		ndev->dev_addr[4] = (malr >>  8) & 0xFF;
-+		ndev->dev_addr[5] = (malr >>  0) & 0xFF;
- 	}
- }
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+index beeacfaf18d0..75af5ec5a4d4 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
++++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+@@ -61,6 +61,16 @@
+ 		clock-frequency = <24576000>;
+ 	};
  
++	audio_clkout: audio_clkout {
++		/*
++		 * This is same as <&rcar_sound 0>
++		 * but needed to avoid cs2000/rcar_sound probe dead-lock
++		 */
++		compatible = "fixed-clock";
++		#clock-cells = <0>;
++		clock-frequency = <11289600>;
++	};
++
+ 	rsnd_ak4613: sound {
+ 		compatible = "simple-audio-card";
+ 
+@@ -151,6 +161,17 @@
+ 		asahi-kasei,out5-single-end;
+ 		asahi-kasei,out6-single-end;
+ 	};
++
++	cs2000: clk_multiplier@4f {
++		#clock-cells = <0>;
++		compatible = "cirrus,cs2000-cp";
++		reg = <0x4f>;
++		clocks = <&audio_clkout>, <&x12_clk>;
++		clock-names = "clk_in", "ref_clk";
++
++		assigned-clocks = <&cs2000>;
++		assigned-clock-rates = <24576000>; /* 1/1 divide */
++	};
+ };
+ 
+ &rcar_sound {
+@@ -166,6 +187,23 @@
+ 
+ 	status = "okay";
+ 
++	/* update <audio_clk_b> to <cs2000> */
++	clocks = <&cpg CPG_MOD 1005>,
++		 <&cpg CPG_MOD 1006>, <&cpg CPG_MOD 1007>,
++		 <&cpg CPG_MOD 1008>, <&cpg CPG_MOD 1009>,
++		 <&cpg CPG_MOD 1010>, <&cpg CPG_MOD 1011>,
++		 <&cpg CPG_MOD 1012>, <&cpg CPG_MOD 1013>,
++		 <&cpg CPG_MOD 1014>, <&cpg CPG_MOD 1015>,
++		 <&cpg CPG_MOD 1022>, <&cpg CPG_MOD 1023>,
++		 <&cpg CPG_MOD 1024>, <&cpg CPG_MOD 1025>,
++		 <&cpg CPG_MOD 1026>, <&cpg CPG_MOD 1027>,
++		 <&cpg CPG_MOD 1028>, <&cpg CPG_MOD 1029>,
++		 <&cpg CPG_MOD 1030>, <&cpg CPG_MOD 1031>,
++		 <&cpg CPG_MOD 1019>, <&cpg CPG_MOD 1018>,
++		 <&audio_clk_a>, <&cs2000>,
++		 <&audio_clk_c>,
++		 <&cpg CPG_CORE R8A7795_CLK_S0D4>;
++
+ 	rcar_sound,dai {
+ 		dai0 {
+ 			playback = <&ssi0 &src0 &dvc0>;
+-- 
+2.1.4
 
