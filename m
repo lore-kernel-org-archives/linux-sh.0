@@ -1,50 +1,37 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 14 Dec 2015 08:15:27 +0000
-Subject: Re: [PATCH 6/6] staging: board: armadillo800eva: Use "arm,pl390"
-Message-Id: <20151214081526.GB9929@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 18 Dec 2015 02:30:44 +0000
+Subject: [PATCH 6/6] staging: board: armadillo800eva: Use "arm,pl390"
+Message-Id: <1474136ce6a457a10a797b3de04adbb035e90901.1450401902.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <CAMuHMdXZdJ3WFNm=rRHwd=XtCF3mmbGCH1kA7HoPYdzcXhE8_Q@mail.gmail.com>
-In-Reply-To: <CAMuHMdXZdJ3WFNm=rRHwd=XtCF3mmbGCH1kA7HoPYdzcXhE8_Q@mail.gmail.com>
+References: <cover.1450401902.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1450401902.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Dec 14, 2015 at 08:51:24AM +0100, Geert Uytterhoeven wrote:
-> Hi Simon,
-> 
-> On Mon, Dec 14, 2015 at 7:29 AM, Simon Horman <horms@verge.net.au> wrote:
-> > On Sun, Dec 13, 2015 at 09:16:47PM -0800, Greg Kroah-Hartman wrote:
-> >> On Mon, Dec 14, 2015 at 02:05:26PM +0900, Simon Horman wrote:
-> >> > On Fri, Dec 11, 2015 at 11:28:30AM -0500, Greg Kroah-Hartman wrote:
-> >> > > On Fri, Nov 20, 2015 at 01:36:57PM +0100, Geert Uytterhoeven wrote:
-> >> > > > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> >> > > > ---
-> >> > > > Must be applied together with "ARM: shmobile: r8a7740 dtsi: Use
-> >> > > > "arm,pl390" for GIC"!
-> >> > > >
-> >> > > > Greg: Can you please provide your ack? Thanks!
-> >> > >
-> >> > > Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-> >> >
-> >> > Thanks Greg,
-> >> >
-> >> > I have taken the liberty of assuming that ack also applies to
-> >> > patch 5/6 of this series, the other staging/board patch in
-> >> > this series.
-> >>
-> >> Oops, yes, good call, thanks for doing this.
-> >
-> > No problem.
-> >
-> > For the record I have queued up these patches for v4.6 as I
-> > believe that the ARM SoC maintainers prefer not to have
-> > driver changes depending on DT changes and the first four patches
-> > of this series are DT changes.
-> 
-> Do you mean you have queued up the DT changes for v4.5, and the
-> staging changes for v4.6.? That would break staging/board in v4.5, as both
-> changes should be together as close as possible.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-That is what I meant. Thanks for letting me know that it wont fly.
-I'll see about bundling all the changes in a single branch for v4.5.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ drivers/staging/board/armadillo800eva.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/staging/board/armadillo800eva.c b/drivers/staging/board/armadillo800eva.c
+index 9c41652ee908..912c96b0536d 100644
+--- a/drivers/staging/board/armadillo800eva.c
++++ b/drivers/staging/board/armadillo800eva.c
+@@ -97,7 +97,7 @@ static const struct board_staging_dev armadillo800eva_devices[] __initconst = {
+ 
+ static void __init armadillo800eva_init(void)
+ {
+-	board_staging_gic_setup_xlate("arm,cortex-a9-gic", 32);
++	board_staging_gic_setup_xlate("arm,pl390", 32);
+ 	board_staging_register_devices(armadillo800eva_devices,
+ 				       ARRAY_SIZE(armadillo800eva_devices));
+ }
+-- 
+2.1.4
+
