@@ -1,203 +1,64 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 18 Dec 2015 00:25:51 +0000
-Subject: [PATCH 5/8 v6] thermal: rcar: enable to use thermal-zone on DT
-Message-Id: <87wpsctxjv.wl%kuninori.morimoto.gx@renesas.com>
+From: Rob Herring <robh@kernel.org>
+Date: Sat, 19 Dec 2015 04:17:06 +0000
+Subject: Re: [PATCH 5/8 v6] thermal: rcar: enable to use thermal-zone on DT
+Message-Id: <20151219041706.GA14936@rob-hp-laptop>
 List-Id: <linux-sh.vger.kernel.org>
 References: <87d1u8qzsy.wl%kuninori.morimoto.gx@renesas.com>
-	<876100qzp6.wl%kuninori.morimoto.gx@renesas.com>
-	<20151217203707.GD7999@localhost.localdomain>
-In-Reply-To: <20151217203707.GD7999@localhost.localdomain>
+ <876100qzp6.wl%kuninori.morimoto.gx@renesas.com>
+ <20151217203707.GD7999@localhost.localdomain>
+ <87wpsctxjv.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87wpsctxjv.wl%kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Eduardo Valentin <edubezval@gmail.com>
-Cc: Simon <horms@verge.net.au>, Zhang Rui <rui.zhang@intel.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: Kuninori Morimoto <kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
+Cc: Eduardo Valentin <edubezval-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Simon <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Zhang Rui <rui.zhang-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Magnus <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-pm-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
+On Fri, Dec 18, 2015 at 12:25:51AM +0000, Kuninori Morimoto wrote:
+> 
+> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> 
+> This patch enables to use thermal-zone on DT if it was calles as
+> "renesas,rcar-thermal-gen2".
+> Previous style (= non thermal-zone) is still supported by
+> "renesas,rcar-thermal" to keep compatibility for "git bisect".
+> 
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> ---
+> v5 -> v6
+> 
+>  - "was call" -> "was called"
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Except there is a typo...
 
-This patch enables to use thermal-zone on DT if it was calles as
-"renesas,rcar-thermal-gen2".
-Previous style (= non thermal-zone) is still supported by
-"renesas,rcar-thermal" to keep compatibility for "git bisect".
+>  - add reason why it keeps previous style
+> 
+>  .../devicetree/bindings/thermal/rcar-thermal.txt   | 37 +++++++++++++++++-
+>  drivers/thermal/rcar_thermal.c                     | 45 +++++++++++++++++++---
+>  2 files changed, 75 insertions(+), 7 deletions(-)
+> 
+> diff --git a/Documentation/devicetree/bindings/thermal/rcar-thermal.txt b/Documentation/devicetree/bindings/thermal/rcar-thermal.txt
+> index 332e625..e5ee3f1 100644
+> --- a/Documentation/devicetree/bindings/thermal/rcar-thermal.txt
+> +++ b/Documentation/devicetree/bindings/thermal/rcar-thermal.txt
+> @@ -1,8 +1,9 @@
+>  * Renesas R-Car Thermal
+>  
+>  Required properties:
+> -- compatible		: "renesas,thermal-<soctype>", "renesas,rcar-thermal"
+> -			  as fallback.
+> +- compatible		: "renesas,thermal-<soctype>",
+> +			   "renesas,rcar-gen2-thermal" (with thermal-zone) or
+> +			   "renesas,rcar-thermal" (without thermal-zone) as fallback.
+>  			  Examples with soctypes are:
+>  			    - "renesas,thermal-r8a73a4" (R-Mobile APE6)
+>  			    - "renesas,thermal-r8a7779" (R-Car H1)
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
-v5 -> v6
+> +thermal: thermal@e61f0000 {
+> +	compatible =	"renesas,thermal-r8a7790",
+> +			"renesas,rcar-gen2-thermal",
+> +			"renesas,rcar-thermal";
 
- - "was call" -> "was called"
- - add reason why it keeps previous style
+Isn't having both mutually exclusive?
 
- .../devicetree/bindings/thermal/rcar-thermal.txt   | 37 +++++++++++++++++-
- drivers/thermal/rcar_thermal.c                     | 45 +++++++++++++++++++---
- 2 files changed, 75 insertions(+), 7 deletions(-)
-
-diff --git a/Documentation/devicetree/bindings/thermal/rcar-thermal.txt b/Documentation/devicetree/bindings/thermal/rcar-thermal.txt
-index 332e625..e5ee3f1 100644
---- a/Documentation/devicetree/bindings/thermal/rcar-thermal.txt
-+++ b/Documentation/devicetree/bindings/thermal/rcar-thermal.txt
-@@ -1,8 +1,9 @@
- * Renesas R-Car Thermal
- 
- Required properties:
--- compatible		: "renesas,thermal-<soctype>", "renesas,rcar-thermal"
--			  as fallback.
-+- compatible		: "renesas,thermal-<soctype>",
-+			   "renesas,rcar-gen2-thermal" (with thermal-zone) or
-+			   "renesas,rcar-thermal" (without thermal-zone) as fallback.
- 			  Examples with soctypes are:
- 			    - "renesas,thermal-r8a73a4" (R-Mobile APE6)
- 			    - "renesas,thermal-r8a7779" (R-Car H1)
-@@ -36,3 +37,35 @@ thermal@e61f0000 {
- 		0xe61f0300 0x38>;
- 	interrupts = <0 69 IRQ_TYPE_LEVEL_HIGH>;
- };
-+
-+Example (with thermal-zone):
-+
-+thermal-zones {
-+	cpu_thermal: cpu-thermal {
-+		polling-delay-passive	= <1000>;
-+		polling-delay		= <5000>;
-+
-+		thermal-sensors = <&thermal>;
-+
-+		trips {
-+			cpu-crit {
-+				temperature	= <115000>;
-+				hysteresis	= <0>;
-+				type		= "critical";
-+			};
-+		};
-+		cooling-maps {
-+		};
-+	};
-+};
-+
-+thermal: thermal@e61f0000 {
-+	compatible =	"renesas,thermal-r8a7790",
-+			"renesas,rcar-gen2-thermal",
-+			"renesas,rcar-thermal";
-+	reg = <0 0xe61f0000 0 0x14>, <0 0xe61f0100 0 0x38>;
-+	interrupts = <0 69 IRQ_TYPE_LEVEL_HIGH>;
-+	clocks = <&mstp5_clks R8A7790_CLK_THERMAL>;
-+	power-domains = <&cpg_clocks>;
-+	#thermal-sensor-cells = <0>;
-+};
-diff --git a/drivers/thermal/rcar_thermal.c b/drivers/thermal/rcar_thermal.c
-index 30602f2..e92f29b 100644
---- a/drivers/thermal/rcar_thermal.c
-+++ b/drivers/thermal/rcar_thermal.c
-@@ -23,6 +23,7 @@
- #include <linux/interrupt.h>
- #include <linux/io.h>
- #include <linux/module.h>
-+#include <linux/of_device.h>
- #include <linux/platform_device.h>
- #include <linux/pm_runtime.h>
- #include <linux/reboot.h>
-@@ -75,8 +76,10 @@ struct rcar_thermal_priv {
- #define rcar_has_irq_support(priv)	((priv)->common->base)
- #define rcar_id_to_shift(priv)		((priv)->id * 8)
- 
-+#define USE_OF_THERMAL	1
- static const struct of_device_id rcar_thermal_dt_ids[] = {
- 	{ .compatible = "renesas,rcar-thermal", },
-+	{ .compatible = "renesas,rcar-gen2-thermal", .data = (void *)USE_OF_THERMAL },
- 	{},
- };
- MODULE_DEVICE_TABLE(of, rcar_thermal_dt_ids);
-@@ -200,9 +203,9 @@ err_out_unlock:
- 	return ret;
- }
- 
--static int rcar_thermal_get_temp(struct thermal_zone_device *zone, int *temp)
-+static int rcar_thermal_get_current_temp(struct rcar_thermal_priv *priv,
-+					 int *temp)
- {
--	struct rcar_thermal_priv *priv = rcar_zone_to_priv(zone);
- 	int tmp;
- 	int ret;
- 
-@@ -226,6 +229,20 @@ static int rcar_thermal_get_temp(struct thermal_zone_device *zone, int *temp)
- 	return 0;
- }
- 
-+static int rcar_thermal_of_get_temp(void *data, int *temp)
-+{
-+	struct rcar_thermal_priv *priv = data;
-+
-+	return rcar_thermal_get_current_temp(priv, temp);
-+}
-+
-+static int rcar_thermal_get_temp(struct thermal_zone_device *zone, int *temp)
-+{
-+	struct rcar_thermal_priv *priv = rcar_zone_to_priv(zone);
-+
-+	return rcar_thermal_get_current_temp(priv, temp);
-+}
-+
- static int rcar_thermal_get_trip_type(struct thermal_zone_device *zone,
- 				      int trip, enum thermal_trip_type *type)
- {
-@@ -282,6 +299,10 @@ static int rcar_thermal_notify(struct thermal_zone_device *zone,
- 	return 0;
- }
- 
-+static const struct thermal_zone_of_device_ops rcar_thermal_zone_of_ops = {
-+	.get_temp	= rcar_thermal_of_get_temp,
-+};
-+
- static struct thermal_zone_device_ops rcar_thermal_zone_ops = {
- 	.get_temp	= rcar_thermal_get_temp,
- 	.get_trip_type	= rcar_thermal_get_trip_type,
-@@ -318,14 +339,20 @@ static void rcar_thermal_work(struct work_struct *work)
- 
- 	priv = container_of(work, struct rcar_thermal_priv, work.work);
- 
--	rcar_thermal_get_temp(priv->zone, &cctemp);
-+	ret = rcar_thermal_get_current_temp(priv, &cctemp);
-+	if (ret < 0)
-+		return;
-+
- 	ret = rcar_thermal_update_temp(priv);
- 	if (ret < 0)
- 		return;
- 
- 	rcar_thermal_irq_enable(priv);
- 
--	rcar_thermal_get_temp(priv->zone, &nctemp);
-+	ret = rcar_thermal_get_current_temp(priv, &nctemp);
-+	if (ret < 0)
-+		return;
-+
- 	if (nctemp != cctemp)
- 		thermal_zone_device_update(priv->zone);
- }
-@@ -386,6 +413,8 @@ static int rcar_thermal_probe(struct platform_device *pdev)
- 	struct rcar_thermal_priv *priv;
- 	struct device *dev = &pdev->dev;
- 	struct resource *res, *irq;
-+	const struct of_device_id *of_id = of_match_device(rcar_thermal_dt_ids, dev);
-+	unsigned long of_data = (unsigned long)of_id->data;
- 	int mres = 0;
- 	int i;
- 	int ret = -ENODEV;
-@@ -444,7 +473,13 @@ static int rcar_thermal_probe(struct platform_device *pdev)
- 		if (ret < 0)
- 			goto error_unregister;
- 
--		priv->zone = thermal_zone_device_register("rcar_thermal",
-+		if (of_data = USE_OF_THERMAL)
-+			priv->zone = thermal_zone_of_sensor_register(
-+						dev, i, priv,
-+						&rcar_thermal_zone_of_ops);
-+		else
-+			priv->zone = thermal_zone_device_register(
-+						"rcar_thermal",
- 						1, 0, priv,
- 						&rcar_thermal_zone_ops, NULL, 0,
- 						idle);
--- 
-1.9.1
-
+Rob
