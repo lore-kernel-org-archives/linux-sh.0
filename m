@@ -1,46 +1,42 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Fri, 18 Dec 2015 15:02:41 +0000
-Subject: [PATCH] PCI: provide of_pci_get_host_bridge_resources helper
-Message-Id: <8759253.sZisGJ6Km3@wuerfel>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sun, 20 Dec 2015 18:31:20 +0000
+Subject: [PATCH] extcon: max3355: kill unneeded #include's
+Message-Id: <6137530.8k1Rzov2Uy@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: myungjoo.ham@samsung.com, cw00.choi@samsung.com, linux-kernel@vger.kernel.org
+Cc: linux-usb@vger.kernel.org, linux-sh@vger.kernel.org
 
-The pcie-rcar driver can be built for any ARM platform (for COMPILE_TEST)
-including those without CONFIG_OF enabled, and that results in a compile-time
-error:
+Some #include's weren't needed from the start, some are left overs from the
+earlier driver versions... Kill 'em all! :-)
 
-drivers/pci/host/pcie-rcar.c: In function 'rcar_pcie_parse_request_of_pci_ranges':
-drivers/pci/host/pcie-rcar.c:939:8: error: implicit declaration of function 'of_pci_get_host_bridge_resources' [-Werror=implicit-function-declaration]
-  err = of_pci_get_host_bridge_resources(np, 0, 0xff, &pci->resources, &iobase);
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-In order to allow compile-testing on all platforms, this adds a
-of_pci_get_host_bridge_resources() helper stub function that gets
-used when CONFIG_OF_ADDRESS is disabled. This mirrors what we do for
-other OF-specific functions.
+---
+The patch is against the 'extcon-next' branch of the 'extcon.git' repo.
+If possible, please fold this patch into the main MAX3355 driver patch.
 
-Signed-off-by: Arnd Bergmann <arnd@arndb.de>
-Fixes: 5d2917d469fa ("PCI: rcar: Convert to DT resource parsing API")
+ drivers/extcon/extcon-max3355.c |    5 -----
+ 1 file changed, 5 deletions(-)
 
-diff --git a/include/linux/of_pci.h b/include/linux/of_pci.h
-index 2c51ee78b1c0..874d68f50a40 100644
---- a/include/linux/of_pci.h
-+++ b/include/linux/of_pci.h
-@@ -59,6 +59,14 @@ static inline void of_pci_check_probe_only(void) { }
- int of_pci_get_host_bridge_resources(struct device_node *dev,
- 			unsigned char busno, unsigned char bus_max,
- 			struct list_head *resources, resource_size_t *io_base);
-+#else
-+static inline
-+int of_pci_get_host_bridge_resources(struct device_node *dev,
-+			unsigned char busno, unsigned char bus_max,
-+			struct list_head *resources, resource_size_t *io_base)
-+{
-+	return -EINVAL;
-+}
- #endif
+Index: extcon/drivers/extcon/extcon-max3355.c
+=================================--- extcon.orig/drivers/extcon/extcon-max3355.c
++++ extcon/drivers/extcon/extcon-max3355.c
+@@ -11,14 +11,9 @@
  
- #if defined(CONFIG_OF) && defined(CONFIG_PCI_MSI)
+ #include <linux/extcon.h>
+ #include <linux/gpio.h>
+-#include <linux/init.h>
+ #include <linux/interrupt.h>
+-#include <linux/kernel.h>
+ #include <linux/module.h>
+-#include <linux/of_gpio.h>
+ #include <linux/platform_device.h>
+-#include <linux/slab.h>
+-#include <linux/workqueue.h>
+ 
+ struct max3355_data {
+ 	struct extcon_dev *edev;
 
