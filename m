@@ -1,39 +1,78 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 18 Dec 2015 03:20:12 +0000
-Subject: Re: [PATCH 0/7] ARM: shmobile: dtsi: Add SCIF fallback compatibility strings
-Message-Id: <20151218032011.GA9704@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 21 Dec 2015 10:33:44 +0000
+Subject: [PATCH v2 0/9] ARM: dts: Add compatible property to "partitions" node
+Message-Id: <1450694033-27717-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450119475-1183-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1450119475-1183-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-serial@vger.kernel.org, devicetree@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Dec 14, 2015 at 07:57:48PM +0100, Geert Uytterhoeven wrote:
-> 	Hi Simon, Magnus,
-> 
-> This patch series adds fallback compatibility strings for SCIF and HSCIF
-> to the DTS files for R-Car Gen1, Gen2, and Gen3, as defined in
-> "[PATCH v3 02/27] serial: sh-sci: Add fallback compatibility strings" of
-> series "[PATCH v3 00/27] serial: sh-sci: External Clock Support".
-> This will allow the sh-sci driver to match on family-specific compatible
-> values to enable BGR support later.
-> 
-> Note that fallback compatibility strings for SCIFA/SCIFB are not added
-> yet.
-> 
-> Dependencies:
->   - This series is against renesas-devel-20151214-v4.4-rc5,
->   - It can be applied independently, as soon as the aforementioned DT
->     binding patch has been accepted,
->   - Later series depend on this:
->       - "[PATCH v3 00/12] ARM: shmobile: dtsi: Rename the serial port
-> 	 clock to fck",
->       - "[PATCH v2 0/7] ARM: shmobile: dtsi: Add BRG support for (H)SCIF",
->       - "[PATCH v2 0/9] ARM: shmobile: dts: Enable SCIF_CLK frequency and
-> 	 pins".
+	Hi,
 
-I have marked this and the above series as deferred pending
-acceptance of the driver changes.
+As of commit e488ca9f8d4f62c2 ("doc: dt: mtd: partitions: add compatible
+property to "partitions" node"), which is in v4.4-rc6, the "partitions"
+subnode of an SPI FLASH device node must have a compatible property. The
+partitions are no longer detected if it is not present.
+
+However, several DTSes in -next have already been converted to the
+"partitions" subnode without "compatible" property, introduced by
+commits 5cfdedb7b9a0fe38 ("mtd: ofpart: move ofpart partitions to a
+dedicated dt node") and fe2585e9c29a650a ("doc: dt: mtd: support
+partitions in a special 'partitions' subnode"). Hence all of these are
+now broken in -next, and will be broken in upstream during the merge
+window.
+
+This series fixes all users in next-20151221.
+Tested on r8a7791/koelsch.
+
+Changes since v1:
+  - Add Acked-by,
+  - Fix new users in -next (kirkwood, ci20).
+
+Most of these are in arm-soc/for-next. Exceptions are kirkwood (in
+mvebu/for-next), and ci20 (in mips/mips-for-linux-next).
+
+Given we're late in the v4.4-rc cycle, perhaps it's easiest if the
+arm-soc maintainers take all applicable patches directly, bypassing the
+mvebu and shmobile maintainers?
+
+Thanks for queuing for v4.5!
+
+Geert Uytterhoeven (9):
+  ARM: mvebu: ix4-300d: Add compatible property to "partitions" node
+  ARM: mvebu: kirkwood: Add compatible property to "partitions" node
+  ARM: shmobile: bockw dts: Add compatible property to "partitions" node
+  ARM: shmobile: lager dts: Add compatible property to "partitions" node
+  ARM: shmobile: koelsch dts: Add compatible property to "partitions"
+    node
+  ARM: shmobile: porter dts: Add compatible property to "partitions"
+    node
+  ARM: shmobile: gose dts: Add compatible property to "partitions" node
+  ARM: shmobile: silk dts: Add compatible property to "partitions" node
+  MIPS: dts: jz4780/ci20: Add compatible property to "partitions" node
+
+ arch/arm/boot/dts/armada-xp-lenovo-ix4-300d.dts  | 1 +
+ arch/arm/boot/dts/kirkwood-pogoplug-series-4.dts | 1 +
+ arch/arm/boot/dts/r8a7778-bockw.dts              | 1 +
+ arch/arm/boot/dts/r8a7790-lager.dts              | 1 +
+ arch/arm/boot/dts/r8a7791-koelsch.dts            | 1 +
+ arch/arm/boot/dts/r8a7791-porter.dts             | 1 +
+ arch/arm/boot/dts/r8a7793-gose.dts               | 1 +
+ arch/arm/boot/dts/r8a7794-silk.dts               | 1 +
+ arch/mips/boot/dts/ingenic/ci20.dts              | 1 +
+ 9 files changed, 9 insertions(+)
+
+-- 
+1.9.1
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
