@@ -1,34 +1,40 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sun, 13 Dec 2015 21:10:31 +0000
-Subject: Re: [PATCH net-next] ravb: ptp: fix misplaced ravb_ptp_stop() calling in ravb_probe()
-Message-Id: <566DDEC7.9050302@cogentembedded.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 21 Dec 2015 10:33:53 +0000
+Subject: [PATCH v2 9/9] MIPS: dts: jz4780/ci20: Add compatible property to "partitions" node
+Message-Id: <1450694033-27717-10-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449599969-20628-1-git-send-email-ykaneko0929@gmail.com>
- <566838CB.10500@cogentembedded.com>
- <CAH1o70KogcskpKP+yx3A52c3spAakroRiAuRfi4HkkQq0NguHA@mail.gmail.com>
-In-Reply-To: <CAH1o70KogcskpKP+yx3A52c3spAakroRiAuRfi4HkkQq0NguHA@mail.gmail.com>
+References: <1450694033-27717-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1450694033-27717-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Cc: netdev@vger.kernel.org, "David S. Miller" <davem@davemloft.net>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+As of commit e488ca9f8d4f62c2 ("doc: dt: mtd: partitions: add compatible
+property to "partitions" node"), the "partitions" subnode of an SPI
+FLASH device node must have a compatible property. The partitions are no
+longer detected if it is not present.
 
-On 12/13/2015 06:39 PM, Yoshihiro Kaneko wrote:
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+v2:
+  - New.
+---
+ arch/mips/boot/dts/ingenic/ci20.dts | 1 +
+ 1 file changed, 1 insertion(+)
 
->>> 'commit <f5d7837f96e5> ("ravb: ptp: Add CONFIG mode support")' added
->>> a calling of ravb_ptp_stop() in a wrong place in ravb_probe().
->>>
->>> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
->>
->>
->>     Well, this patch is good to apply anyway:
->
-> I thought that the interrupt should be disabled before freeing memory.
-> anyway, thanks.
-
-    You mean PTP interrupts?
-
-MBR, Sergei
+diff --git a/arch/mips/boot/dts/ingenic/ci20.dts b/arch/mips/boot/dts/ingenic/ci20.dts
+index 782258c0e4fbba8e..1652d8d60b1e4b86 100644
+--- a/arch/mips/boot/dts/ingenic/ci20.dts
++++ b/arch/mips/boot/dts/ingenic/ci20.dts
+@@ -70,6 +70,7 @@
+ 			nand-on-flash-bbt;
+ 
+ 			partitions {
++				compatible = "fixed-partitions";
+ 				#address-cells = <2>;
+ 				#size-cells = <2>;
+ 
+-- 
+1.9.1
 
