@@ -1,28 +1,41 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 11 Dec 2015 01:17:19 +0000
-Subject: Re: [PATCH v2] ARM: shmobile: r8a7793: Describe DMA for the serial ports
-Message-Id: <20151211011719.GF9927@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 21 Dec 2015 10:33:45 +0000
+Subject: [PATCH v2 1/9] ARM: mvebu: ix4-300d: Add compatible property to "partitions" node
+Message-Id: <1450694033-27717-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449796058-12160-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1449796058-12160-1-git-send-email-horms+renesas@verge.net.au>
+References: <1450694033-27717-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1450694033-27717-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Dec 11, 2015 at 10:07:38AM +0900, Simon Horman wrote:
-> Add DMA properties to all SCIF, SCIFA, SCIFB, and HSCIF device nodes.
-> 
-> Based on similar work for the r8a7791 by Geert Uytterhoeven.
-> 
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> 
-> ---
-> 
-> Based on renesas-devel-20151210-v4.4-rc4
-> 
-> v2
-> * Corrected dmas for scif1, thanks to Geert Uytterhoeven
+As of commit e488ca9f8d4f62c2 ("doc: dt: mtd: partitions: add compatible
+property to "partitions" node"), the "partitions" subnode of an SPI
+FLASH device node must have a compatible property. The partitions are no
+longer detected if it is not present.
 
-For the record I have queued this up.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Brian Norris <computersforpeace@gmail.com>
+---
+v2:
+  - Add Acked-by.
+---
+ arch/arm/boot/dts/armada-xp-lenovo-ix4-300d.dts | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/boot/dts/armada-xp-lenovo-ix4-300d.dts b/arch/arm/boot/dts/armada-xp-lenovo-ix4-300d.dts
+index 13cf69a8d0fb392b..fb9e1bbf23385b85 100644
+--- a/arch/arm/boot/dts/armada-xp-lenovo-ix4-300d.dts
++++ b/arch/arm/boot/dts/armada-xp-lenovo-ix4-300d.dts
+@@ -152,6 +152,7 @@
+ 				nand-on-flash-bbt;
+ 
+ 				partitions {
++					compatible = "fixed-partitions";
+ 					#address-cells = <1>;
+ 					#size-cells = <1>;
+ 
+-- 
+1.9.1
+
