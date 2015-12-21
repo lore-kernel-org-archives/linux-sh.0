@@ -1,71 +1,47 @@
 From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 15 Dec 2015 08:01:45 +0000
-Subject: Re: [PATCH/RFC 0/7] ARM: dts: Add compatible property to "partitions" node
-Message-Id: <CAMuHMdWPL_c_YVjuTH+bsh_DgaquYSTcZu01nZO74ue9VyBeFw@mail.gmail.com>
+Date: Mon, 21 Dec 2015 14:20:34 +0000
+Subject: Re: [PATCH 01/25] serial: sh-sci: Update DT binding documentation for external clock input
+Message-Id: <CAMuHMdV30XBQDvbDFnF1f23zrKt8_=5cX9XNJ8WFcKQS9Kkp-w@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450120304-2760-1-git-send-email-geert+renesas@glider.be>
- <20151214194613.GA126731@google.com>
- <CAMuHMdW=wJEoi-+EWAKBjRwb+QFvk=iFur1yFqR=q0f4zwzb2Q@mail.gmail.com>
- <20151214214312.GA86857@google.com>
- <CAN8TOE9O_egvFevRj3WaUcJd8GMFAAQcWLHMtKe1gwCR14zDPg@mail.gmail.com>
-In-Reply-To: <CAN8TOE9O_egvFevRj3WaUcJd8GMFAAQcWLHMtKe1gwCR14zDPg@mail.gmail.com>
+References: <1447958344-836-1-git-send-email-geert+renesas@glider.be>
+	<1447958344-836-2-git-send-email-geert+renesas@glider.be>
+	<1756365.Ijac5ApxcA@avalon>
+	<CAMuHMdX4ToefbBLR6o2AMuzCMoKcYo9XRZOzHJzgtQn552vmNg@mail.gmail.com>
+In-Reply-To: <CAMuHMdX4ToefbBLR6o2AMuzCMoKcYo9XRZOzHJzgtQn552vmNg-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>
+Cc: Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>, Greg Kroah-Hartman <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Yoshinori Sato <ysato-Rn4VEauK+AKRv+LV9MX5uooqe+aC9MnS@public.gmane.org>, Laurent Pinchart <laurent.pinchart+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, "linux-serial-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-serial-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-Hi Brian,
-
-On Mon, Dec 14, 2015 at 10:45 PM, Brian Norris
-<computersforpeace@gmail.com> wrote:
-> + real linux-mtd mailing list
->
-> On Mon, Dec 14, 2015 at 1:43 PM, Brian Norris
-> <computersforpeace@gmail.com> wrote:
->> On Mon, Dec 14, 2015 at 10:20:19PM +0100, Geert Uytterhoeven wrote:
->>> On Mon, Dec 14, 2015 at 8:46 PM, Brian Norris
->>> <computersforpeace@gmail.com> wrote:
->>> > On Mon, Dec 14, 2015 at 08:11:37PM +0100, Geert Uytterhoeven wrote:
->>> >> As of commit e488ca9f8d4f62c2 ("doc: dt: mtd: partitions: add compatible
->>> >> property to "partitions" node"), the "partitions" subnode of an SPI
->>> >> FLASH device node must have a compatible property. The partitions are no
->>> >> longer detected if it is not present.
->>> >
->>> > For all patches:
->>> >
->>> > Acked-by: Brian Norris <computersforpeace@gmail.com>
->>> >
->>> >> I marked this series as "RFC", as the abovementioned commit is not yet
->>> >> upstream. Ideally, the users should be fixed first, to avoid breakage.
->>>
->>> It breaks bisectability in mainline.
+On Thu, Nov 19, 2015 at 9:33 PM, Geert Uytterhoeven
+<geert@linux-m68k.org> wrote:
+> On Thu, Nov 19, 2015 at 9:19 PM, Laurent Pinchart
+> <laurent.pinchart@ideasonboard.com> wrote:
+>> On Thursday 19 November 2015 19:38:40 Geert Uytterhoeven wrote:
+>>> diff --git a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+>>> b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt index
+>>> 2c9e6b8477e92792..8efc9b6f35637fbb 100644
+>>> --- a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+>>> +++ b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+>>> @@ -43,6 +43,9 @@ Required properties:
+>>>    - clocks: Must contain a phandle and clock-specifier pair for each entry
+>>>      in clock-names.
+>>>    - clock-names: Must contain "fck" for the SCIx UART functional clock.
+>>> +    On (H)SCI(F) and some SCIFA, an additional clock may be specified:
 >>
->> The files you are fixing are not converted in mainline yet, are they?
+>> Could you list the SCIFA variants that support external clocks ?
+>
+> The list is in the commit description of "[PATCH 19/25] serial: sh-sci: Add
+> support for optional external (H)SCK input": sh7723, sh7724, and r8a7740.
+>
+> Note that the list is probably incomplete, so I don't know if it's that useful
+> to have it in the binding docs. Especially as I haven't verified yet that it
+> actually works ;-)
 
-Sorry, too long after my morning coffee...
-Yes, you're right, they won't be in mainline before v4.5-rc1.
-
-When I noticed the problem, I didn't see the cause immediately, so I did a
-bisect. Which didn't help much, as the problem only occurs when merging
-l2-mtd/master...
-
->>> > I'd differ on the last sentence. It's more important to straighten out
->>> > the release features for 4.4 than to make sure that linux-next has
->>> > perfect DTS files. So I'll submit whenever ready :)
->>>
->>> If the DTS changes go in first, bisectability is preserved.
-
-Scrap, they can't go in first...
-
->> Are you asking me to delay fixing the DT binding until 4.5, just because
->> your for-next branches can't be fixed? IOW, you want me to release the
->> bad DT binding for a whole cycle?
-
-No, please don't delay it to 4.5.
-
-But I'm afraid the for-next branches can't be fixed, as the DTS updates been in
-arm-soc/for-next for a while. I don't think the arm-soc maintainers can be
-bothered redoing all their merges, so we'll have to live with it...
+For the record: on r8a7740, this feature is not available on SCIFA instances
+2-7. The sole pins providing access to SCIFA_SCK[01] are muxed for Ethernet use
+on r8a7740/armadillo. So it's unlikely I'll be able to support and test this.
 
 Gr{oetje,eeting}s,
 
