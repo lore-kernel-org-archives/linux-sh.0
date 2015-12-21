@@ -1,59 +1,126 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 15 Dec 2015 13:05:08 +0000
-Subject: [PATCH/RFC 00/10] iommu/ipmmu-vmsa: Experimental r8a7795 support
-Message-Id: <20151215130508.13535.26186.sendpatchset@little-apple>
+From: Julia Lawall <Julia.Lawall@lip6.fr>
+Date: Mon, 21 Dec 2015 16:39:43 +0000
+Subject: [PATCH 0/5] add missing of_node_put
+Message-Id: <1450715988-4770-1-git-send-email-Julia.Lawall@lip6.fr>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: iommu@lists.linux-foundation.org
-Cc: laurent.pinchart+renesas@ideasonboard.com, geert+renesas@glider.be, linux-sh@vger.kernel.org, joro@8bytes.org, linux-kernel@vger.kernel.org, horms+renesas@verge.net.au, Magnus Damm <magnus.damm@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-iommu/ipmmu-vmsa: Experimental r8a7795 support
+The various for_each device_node iterators performs an of_node_get on each
+iteration, so a break out of the loop requires an of_node_put.
 
-[PATCH/RFC 01/10] iommu/ipmmu-vmsa: Introduce features, break out alias
-[PATCH/RFC 02/10] iommu/ipmmu-vmsa: Add optional root device feature
-[PATCH/RFC 03/10] iommu/ipmmu-vmsa: Write IMCTR twice
-[PATCH/RFC 04/10] iommu/ipmmu-vmsa: Make IMBUSCTR setup optional
-[PATCH/RFC 05/10] iommu/ipmmu-vmsa: Allow two bit SL0
-[PATCH/RFC 06/10] iommu/ipmmu-vmsa: Also use IOMMU_OF_DECLARE()
-[PATCH/RFC 07/10] iommu/ipmmu-vmsa: Break out utlb parsing code
-[PATCH/RFC 08/10] iommu/ipmmu-vmsa: Break out domain allocation code
-[PATCH/RFC 09/10] iommu/ipmmu-vmsa: Add new IOMMU_DOMAIN_DMA ops
-[PATCH/RFC 10/10] iommu/ipmmu-vmsa: Hook up r8a7795 DT matching code
+The complete semantic patch that fixes this problem is
+(http://coccinelle.lip6.fr):
 
-Add experimental r8a7795 support for the IPMMU driver. At this point
-the code is in rather early stages of development and not ready for
-upstream merge. The DT binding is undocumented and will change.
+// <smpl>
+@r@
+local idexpression n;
+expression e1,e2;
+iterator name for_each_node_by_name, for_each_node_by_type,
+for_each_compatible_node, for_each_matching_node,
+for_each_matching_node_and_match, for_each_child_of_node,
+for_each_available_child_of_node, for_each_node_with_property;
+iterator i;
+statement S;
+expression list [n1] es;
+@@
 
-The r8a7795 IPMMU is almost register compatible with earlier devices
-like r8a7790-r8a7794, however some bitfields have been shifted
-slightly. On a grander scale topology has been added and interrupts
-have been reworked. So now there are several "cache" IPMMU units
-without interrupt that somehow communicate with IPMMU-MM that
-is the only instance that supports interrupts. The code refers to
-IPMMU-MM as a "root" device and the other ones as leaf nodes.
-In the future the plan is to use DT to describe the relationship.
+(
+(
+for_each_node_by_name(n,e1) S
+|
+for_each_node_by_type(n,e1) S
+|
+for_each_compatible_node(n,e1,e2) S
+|
+for_each_matching_node(n,e1) S
+|
+for_each_matching_node_and_match(n,e1,e2) S
+|
+for_each_child_of_node(e1,n) S
+|
+for_each_available_child_of_node(e1,n) S
+|
+for_each_node_with_property(n,e1) S
+)
+&
+i(es,n,...) S
+)
 
-To make this more interesting the IPMMU driver needs to be shared
-between 32-bit ARM for r8a7790-r8a7794 and 64-bit ARM for r8a7795.
-In practice this means that two separate implementations are needed
-inside the driver to attach to the rather different architecture
-specific code.
+@@
+local idexpression r.n;
+iterator r.i;
+expression e;
+expression list [r.n1] es;
+@@
 
-CONFIG_IOMMU_DMA=y is needed on 64-bit ARM while on 32-bit ARM
-the arch specific dma-mapping code is hooked up rather directly.
-During init 64-bit ARM IPMMU support is relying on IOMMU_OF_DECLARE().
+ i(es,n,...) {
+   ...
+(
+   of_node_put(n);
+|
+   e = n
+|
+   return n;
+|
++  of_node_put(n);
+?  return ...;
+)
+   ...
+ }
 
-The code is known to build on 32-bit and 64-bit ARM and x86_64.
-Tested on 32-bit ARM and 64-bit ARM with addtional DT integration
-changes.
+@@
+local idexpression r.n;
+iterator r.i;
+expression e;
+expression list [r.n1] es;
+@@
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+ i(es,n,...) {
+   ...
+(
+   of_node_put(n);
+|
+   e = n
+|
++  of_node_put(n);
+?  break;
+)
+   ...
+ }
+... when != n
+
+@@
+local idexpression r.n;
+iterator r.i;
+expression e;
+identifier l;
+expression list [r.n1] es;
+@@
+
+ i(es,n,...) {
+   ...
+(
+   of_node_put(n);
+|
+   e = n
+|
++  of_node_put(n);
+?  goto l;
+)
+   ...
+ }
+...
+l: ... when != n// </smpl>
+
 ---
 
- Developed on top of renesas-drivers-2015-12-08-v4.4-rc4 and
- [PATCH 00/06] iommu/ipmmu-vmsa: IPMMU multi-arch update
-
- drivers/iommu/ipmmu-vmsa.c |  438 ++++++++++++++++++++++++++++++++++----------
- 1 file changed, 344 insertions(+), 94 deletions(-)
+ drivers/pinctrl/mediatek/pinctrl-mtk-common.c |    1 +
+ drivers/pinctrl/pinctrl-rockchip.c            |    5 ++++-
+ drivers/pinctrl/pinctrl-tegra-xusb.c          |    4 +++-
+ drivers/pinctrl/pinctrl-tegra.c               |    1 +
+ drivers/pinctrl/sh-pfc/pinctrl.c              |    4 +++-
+ drivers/pinctrl/sirf/pinctrl-sirf.c           |    8 ++++++--
+ 6 files changed, 18 insertions(+), 5 deletions(-)
