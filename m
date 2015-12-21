@@ -1,7 +1,7 @@
-From: Greg Ungerer <gerg@uclinux.org>
-Date: Thu, 10 Dec 2015 09:40:21 +0000
+From: Wan ZongShun <mcuos.com@gmail.com>
+Date: Mon, 21 Dec 2015 06:43:27 +0000
 Subject: Re: [PATCH] clk: let clk_disable() return immediately if clk is NULL or error
-Message-Id: <56694885.1080609@uclinux.org>
+Message-Id: <CAKT61h_1+_1Cw1m4Tg1i+1fTD_eGz0=AFTR1+NaN1H==PGCzsQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1449296276-32208-1-git-send-email-yamada.masahiro@socionext.com>
 In-Reply-To: <1449296276-32208-1-git-send-email-yamada.masahiro@socionext.com>
@@ -10,9 +10,7 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Masahiro,
-
-On 05/12/15 16:17, Masahiro Yamada wrote:
+2015-12-05 14:17 GMT+08:00 Masahiro Yamada <yamada.masahiro@socionext.com>:
 > The clk_disable() in the common clock framework (drivers/clk/clk.c)
 > returns immediately if the given clk is NULL or an error pointer.
 > It allows drivers to call clk_disable() (and clk_disable_unprepare())
@@ -25,15 +23,6 @@ On 05/12/15 16:17, Masahiro Yamada wrote:
 > checks to all callees.
 >
 > Signed-off-by: Masahiro Yamada <yamada.masahiro@socionext.com>
-
-I have no problems with the m68k/coldfire change:
-
-Acked-by: Greg Ungerer <gerg@uclinux.org>
-
-Regards
-Greg
-
-
 > ---
 >
 >  arch/arm/mach-ep93xx/clock.c     |  2 +-
@@ -54,64 +43,64 @@ Greg
 > +++ b/arch/arm/mach-ep93xx/clock.c
 > @@ -293,7 +293,7 @@ void clk_disable(struct clk *clk)
 >  {
->  	unsigned long flags;
+>         unsigned long flags;
 >
-> -	if (!clk)
-> +	if (IS_ERR_OR_NULL(clk))
->  		return;
+> -       if (!clk)
+> +       if (IS_ERR_OR_NULL(clk))
+>                 return;
 >
->  	spin_lock_irqsave(&clk_lock, flags);
+>         spin_lock_irqsave(&clk_lock, flags);
 > diff --git a/arch/arm/mach-lpc32xx/clock.c b/arch/arm/mach-lpc32xx/clock.c
 > index 661c8f4..07faac2 100644
 > --- a/arch/arm/mach-lpc32xx/clock.c
 > +++ b/arch/arm/mach-lpc32xx/clock.c
 > @@ -1125,6 +1125,9 @@ void clk_disable(struct clk *clk)
 >  {
->  	unsigned long flags;
+>         unsigned long flags;
 >
-> +	if (IS_ERR_OR_NULL(clk))
-> +		return;
+> +       if (IS_ERR_OR_NULL(clk))
+> +               return;
 > +
->  	spin_lock_irqsave(&global_clkregs_lock, flags);
->  	local_clk_disable(clk);
->  	spin_unlock_irqrestore(&global_clkregs_lock, flags);
+>         spin_lock_irqsave(&global_clkregs_lock, flags);
+>         local_clk_disable(clk);
+>         spin_unlock_irqrestore(&global_clkregs_lock, flags);
 > diff --git a/arch/arm/mach-mmp/clock.c b/arch/arm/mach-mmp/clock.c
 > index 7c6f95f..7b33122 100644
 > --- a/arch/arm/mach-mmp/clock.c
 > +++ b/arch/arm/mach-mmp/clock.c
 > @@ -67,6 +67,9 @@ void clk_disable(struct clk *clk)
 >  {
->  	unsigned long flags;
+>         unsigned long flags;
 >
-> +	if (IS_ERR_OR_NULL(clk))
-> +		return;
+> +       if (IS_ERR_OR_NULL(clk))
+> +               return;
 > +
->  	WARN_ON(clk->enabled = 0);
+>         WARN_ON(clk->enabled = 0);
 >
->  	spin_lock_irqsave(&clocks_lock, flags);
+>         spin_lock_irqsave(&clocks_lock, flags);
 > diff --git a/arch/arm/mach-sa1100/clock.c b/arch/arm/mach-sa1100/clock.c
 > index cbf53bb..ea103fd 100644
 > --- a/arch/arm/mach-sa1100/clock.c
 > +++ b/arch/arm/mach-sa1100/clock.c
 > @@ -85,13 +85,14 @@ void clk_disable(struct clk *clk)
 >  {
->  	unsigned long flags;
+>         unsigned long flags;
 >
-> -	if (clk) {
-> -		WARN_ON(clk->enabled = 0);
-> -		spin_lock_irqsave(&clocks_lock, flags);
-> -		if (--clk->enabled = 0)
-> -			clk->ops->disable(clk);
-> -		spin_unlock_irqrestore(&clocks_lock, flags);
-> -	}
-> +	if (IS_ERR_OR_NULL(clk))
-> +		return;
+> -       if (clk) {
+> -               WARN_ON(clk->enabled = 0);
+> -               spin_lock_irqsave(&clocks_lock, flags);
+> -               if (--clk->enabled = 0)
+> -                       clk->ops->disable(clk);
+> -               spin_unlock_irqrestore(&clocks_lock, flags);
+> -       }
+> +       if (IS_ERR_OR_NULL(clk))
+> +               return;
 > +
-> +	WARN_ON(clk->enabled = 0);
-> +	spin_lock_irqsave(&clocks_lock, flags);
-> +	if (--clk->enabled = 0)
-> +		clk->ops->disable(clk);
-> +	spin_unlock_irqrestore(&clocks_lock, flags);
+> +       WARN_ON(clk->enabled = 0);
+> +       spin_lock_irqsave(&clocks_lock, flags);
+> +       if (--clk->enabled = 0)
+> +               clk->ops->disable(clk);
+> +       spin_unlock_irqrestore(&clocks_lock, flags);
 >  }
 >  EXPORT_SYMBOL(clk_disable);
 >
@@ -121,14 +110,18 @@ Greg
 > +++ b/arch/arm/mach-w90x900/clock.c
 > @@ -46,6 +46,9 @@ void clk_disable(struct clk *clk)
 >  {
->  	unsigned long flags;
+>         unsigned long flags;
 >
-> +	if (IS_ERR_OR_NULL(clk))
-> +		return;
+> +       if (IS_ERR_OR_NULL(clk))
+> +               return;
+
+Looks good for w90x900 platform.
+Acked-by: Wan Zongshun <mcuos.com@gmail.com>
+
 > +
->  	WARN_ON(clk->enabled = 0);
+>         WARN_ON(clk->enabled = 0);
 >
->  	spin_lock_irqsave(&clocks_lock, flags);
+>         spin_lock_irqsave(&clocks_lock, flags);
 > diff --git a/arch/blackfin/mach-bf609/clock.c b/arch/blackfin/mach-bf609/clock.c
 > index 3783058..fed8015 100644
 > --- a/arch/blackfin/mach-bf609/clock.c
@@ -137,11 +130,11 @@ Greg
 >
 >  void clk_disable(struct clk *clk)
 >  {
-> +	if (IS_ERR_OR_NULL(clk))
-> +		return;
+> +       if (IS_ERR_OR_NULL(clk))
+> +               return;
 > +
->  	if (clk->ops && clk->ops->disable)
->  		clk->ops->disable(clk);
+>         if (clk->ops && clk->ops->disable)
+>                 clk->ops->disable(clk);
 >  }
 > diff --git a/arch/m68k/coldfire/clk.c b/arch/m68k/coldfire/clk.c
 > index fddfdcc..eb0e8c1 100644
@@ -150,14 +143,14 @@ Greg
 > @@ -101,6 +101,10 @@ EXPORT_SYMBOL(clk_enable);
 >  void clk_disable(struct clk *clk)
 >  {
->  	unsigned long flags;
+>         unsigned long flags;
 > +
-> +	if (IS_ERR_OR_NULL(clk))
-> +		return;
+> +       if (IS_ERR_OR_NULL(clk))
+> +               return;
 > +
->  	spin_lock_irqsave(&clk_lock, flags);
->  	if ((--clk->enabled = 0) && clk->clk_ops)
->  		clk->clk_ops->disable(clk);
+>         spin_lock_irqsave(&clk_lock, flags);
+>         if ((--clk->enabled = 0) && clk->clk_ops)
+>                 clk->clk_ops->disable(clk);
 > diff --git a/arch/mips/bcm63xx/clk.c b/arch/mips/bcm63xx/clk.c
 > index 6375652..d6a39bf 100644
 > --- a/arch/mips/bcm63xx/clk.c
@@ -166,12 +159,12 @@ Greg
 >
 >  void clk_disable(struct clk *clk)
 >  {
-> +	if (IS_ERR_OR_NULL(clk))
-> +		return;
+> +       if (IS_ERR_OR_NULL(clk))
+> +               return;
 > +
->  	mutex_lock(&clocks_mutex);
->  	clk_disable_unlocked(clk);
->  	mutex_unlock(&clocks_mutex);
+>         mutex_lock(&clocks_mutex);
+>         clk_disable_unlocked(clk);
+>         mutex_unlock(&clocks_mutex);
 > diff --git a/arch/mips/lantiq/clk.c b/arch/mips/lantiq/clk.c
 > index a0706fd..c8d87b1 100644
 > --- a/arch/mips/lantiq/clk.c
@@ -180,11 +173,11 @@ Greg
 >
 >  void clk_disable(struct clk *clk)
 >  {
-> +	if (IS_ERR_OR_NULL(clk))
-> +		return;
+> +       if (IS_ERR_OR_NULL(clk))
+> +               return;
 > +
->  	if (unlikely(!clk_good(clk)))
->  		return;
+>         if (unlikely(!clk_good(clk)))
+>                 return;
 >
 > diff --git a/drivers/sh/clk/core.c b/drivers/sh/clk/core.c
 > index be56b22..3dd20cf 100644
@@ -192,12 +185,20 @@ Greg
 > +++ b/drivers/sh/clk/core.c
 > @@ -252,7 +252,7 @@ void clk_disable(struct clk *clk)
 >  {
->  	unsigned long flags;
+>         unsigned long flags;
 >
-> -	if (!clk)
-> +	if (IS_ERR_OR_NULL(clk))
->  		return;
+> -       if (!clk)
+> +       if (IS_ERR_OR_NULL(clk))
+>                 return;
 >
->  	spin_lock_irqsave(&clock_lock, flags);
+>         spin_lock_irqsave(&clock_lock, flags);
+> --
+> 1.9.1
 >
 
+
+
+-- 
+---
+Vincent Wan(Zongshun)
+www.mcuos.com
