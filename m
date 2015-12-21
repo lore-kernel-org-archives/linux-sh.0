@@ -1,91 +1,41 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 17 Dec 2015 08:39:41 +0000
-Subject: [PATCH/RFC 03/48] v4l: vsp1: Simplify frame end processing
-Message-Id: <1450341626-6695-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 21 Dec 2015 10:33:47 +0000
+Subject: [PATCH v2 3/9] ARM: shmobile: bockw dts: Add compatible property to "partitions" node
+Message-Id: <1450694033-27717-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450341626-6695-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1450341626-6695-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1450694033-27717-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1450694033-27717-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The DRM pipeline, as it runs in automatic restart mode, never sees the
-pipeline state set to VSP1_PIPELINE_STOPPING or VSP1_PIPELINE_STOPPED
-when running the frame end interrupt handler. We can thus skip the
-checks various checks in the handler and return immediately.
+As of commit e488ca9f8d4f62c2 ("doc: dt: mtd: partitions: add compatible
+property to "partitions" node"), the "partitions" subnode of an SPI
+FLASH device node must have a compatible property. The partitions are no
+longer detected if it is not present.
 
-Similarly the DRM frame end handler calls vsp1_pipeline_run()
-unnecessarily, as the state there is never VSP1_PIPELINE_STOPPED. Remove
-the function call and the frame end handler is it's now empty.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Brian Norris <computersforpeace@gmail.com>
 ---
- drivers/media/platform/vsp1/vsp1_drm.c  | 15 ---------------
- drivers/media/platform/vsp1/vsp1_pipe.c |  9 ++++++---
- 2 files changed, 6 insertions(+), 18 deletions(-)
+v2:
+  - Add Acked-by.
+---
+ arch/arm/boot/dts/r8a7778-bockw.dts | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/drivers/media/platform/vsp1/vsp1_drm.c b/drivers/media/platform/vsp1/vsp1_drm.c
-index 302d02a5c1c0..1cfa8a0e43b6 100644
---- a/drivers/media/platform/vsp1/vsp1_drm.c
-+++ b/drivers/media/platform/vsp1/vsp1_drm.c
-@@ -27,20 +27,6 @@
- #include "vsp1_rwpf.h"
+diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
+index 482228b8a984656e..06ceefe3cb500dc7 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw.dts
+@@ -212,6 +212,7 @@
+ 		m25p,fast-read;
  
- /* -----------------------------------------------------------------------------
-- * Runtime Handling
-- */
--
--static void vsp1_drm_pipeline_frame_end(struct vsp1_pipeline *pipe)
--{
--	unsigned long flags;
--
--	spin_lock_irqsave(&pipe->irqlock, flags);
--	if (pipe->num_inputs)
--		vsp1_pipeline_run(pipe);
--	spin_unlock_irqrestore(&pipe->irqlock, flags);
--}
--
--/* -----------------------------------------------------------------------------
-  * DU Driver API
-  */
+ 		partitions {
++			compatible = "fixed-partitions";
+ 			#address-cells = <1>;
+ 			#size-cells = <1>;
  
-@@ -569,7 +555,6 @@ int vsp1_drm_init(struct vsp1_device *vsp1)
- 	pipe = &vsp1->drm->pipe;
- 
- 	vsp1_pipeline_init(pipe);
--	pipe->frame_end = vsp1_drm_pipeline_frame_end;
- 
- 	/* The DRM pipeline is static, add entities manually. */
- 	for (i = 0; i < vsp1->info->rpf_count; ++i) {
-diff --git a/drivers/media/platform/vsp1/vsp1_pipe.c b/drivers/media/platform/vsp1/vsp1_pipe.c
-index 96f0e7d4c400..9c6d295ca843 100644
---- a/drivers/media/platform/vsp1/vsp1_pipe.c
-+++ b/drivers/media/platform/vsp1/vsp1_pipe.c
-@@ -268,7 +268,8 @@ void vsp1_pipeline_frame_end(struct vsp1_pipeline *pipe)
- 		vsp1_dl_irq_frame_end(pipe->dl);
- 
- 	/* Signal frame end to the pipeline handler. */
--	pipe->frame_end(pipe);
-+	if (pipe->frame_end)
-+		pipe->frame_end(pipe);
- 
- 	spin_lock_irqsave(&pipe->irqlock, flags);
- 
-@@ -277,8 +278,10 @@ void vsp1_pipeline_frame_end(struct vsp1_pipeline *pipe)
- 	/* When using display lists in continuous frame mode the pipeline is
- 	 * automatically restarted by the hardware.
- 	 */
--	if (!pipe->dl)
--		pipe->state = VSP1_PIPELINE_STOPPED;
-+	if (pipe->dl)
-+		goto done;
-+
-+	pipe->state = VSP1_PIPELINE_STOPPED;
- 
- 	/* If a stop has been requested, mark the pipeline as stopped and
- 	 * return.
 -- 
-2.4.10
+1.9.1
 
