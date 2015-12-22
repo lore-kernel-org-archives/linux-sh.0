@@ -1,137 +1,86 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 28 Dec 2015 10:41:22 +0000
-Subject: Re: [PATCH v2] ARM: shmobile: r8a7793: gose: HDMI prototype
-Message-Id: <9025713.1MtsRGHuE3@avalon>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Tue, 22 Dec 2015 14:21:27 +0000
+Subject: [PATCH v2] adv7604: add direct interrupt handling
+Message-Id: <1450794087-31153-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20151217063328.27906.61335.sendpatchset@little-apple>
-In-Reply-To: <20151217063328.27906.61335.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-media@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: magnus.damm@gmail.com, laurent.pinchart@ideasonboard.com, hans.verkuil@cisco.com, ian.molton@codethink.co.uk, lars@metafoo.de, william.towle@codethink.co.uk, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 
-Hi Magnus,
+When probed from device tree, the i2c client driver can handle the
+interrupt on its own.
 
-On Monday 28 December 2015 12:20:36 Magnus Damm wrote:
-> On Mon, Dec 28, 2015 at 2:42 AM, Laurent Pinchart wrote:
-> > On Thursday 17 December 2015 15:33:28 Magnus Damm wrote:
-> >> From: Magnus Damm <damm+renesas@opensource.se>
-> >> 
-> >> This prototype V2 patch adds r8a7793 GOSE HDMI video out support.
-> >> 
-> >> The r8a7793 GOSE board is similar to r8a7791 Koelsch. For those
-> >> boards an on-board HDMI encoder chip drives an HDMI port and
-> >> also a LVDS port is available for external LCD panels.
-> >> 
-> >> Basic testing with modetest seems to work well. The current state of
-> >> r8a7793 SoC support is improving, however I2C support is still missing.
-> >> 
-> >> To check if the DU and HDMI drivers and hardware are working this
-> >> patch simply ties together I2C2 and GPIO3 with the DU and HDMI
-> >> devices. Once I2C is enabled in upstream for r8a7793 and GOSE then
-> >> this patch can easily be reworked into something suitable for upstream.
-> > 
-> > Why don't you just split this patch to enable I2C and GPIO on r8a7793 ?
-> 
-> I broke out GPIO after doing V1 and posted that separately. It has now
-> been merged.
-> 
-> Regarding I2C, I would prefer if someone else could do that.
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+---
+This revision implements the suggested style changes and drops the
+IRQF_TRIGGER_LOW flag, which is handled in the device tree.
 
-Done :-)
+CU
+Uli
 
-> >> Tested on r8a7793 Gose with HDMI hooked up to a Toshiba TV.
-> >> # modetest -M rcar-du -s 33:1280x720@AR24
-> >> 
-> >> Not-yet-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-> >> ---
-> >> 
-> >>  Built on top of "renesas-devel-20151217v2-v4.4-rc5"
-> >>  
-> >>  arch/arm/boot/dts/r8a7793-gose.dts |   98 ++++++++++++++++++++++++++++++
-> >>  arch/arm/boot/dts/r8a7793.dtsi     |   18 +++++-
-> >>  2 files changed, 113 insertions(+), 3 deletions(-)
-> >> 
-> >> --- 0001/arch/arm/boot/dts/r8a7793-gose.dts
-> >> +++ work/arch/arm/boot/dts/r8a7793-gose.dts   2015-12-17
-> >> 11:48:47.880513000
-> >> +0900 @@ -31,6 +31,54 @@
-> >>               device_type = "memory";
-> >>               reg = <0 0x40000000 0 0x40000000>;
-> >>       };
-> >> +
-> >> +     hdmi-out {
-> >> +             compatible = "hdmi-connector";
-> >> +             type = "a";
-> >> +
-> >> +             port {
-> >> +                     hdmi_con: endpoint {
-> >> +                             remote-endpoint = <&adv7511_out>;
-> >> +                     };
-> >> +             };
-> >> +     };
-> >> +
-> >> +     x2_clk: x2-clock {
-> >> +             compatible = "fixed-clock";
-> >> +             #clock-cells = <0>;
-> >> +             clock-frequency = <74250000>;
-> >> +     };
-> >> +
-> >> +     x13_clk: x13-clock {
-> >> +             compatible = "fixed-clock";
-> >> +             #clock-cells = <0>;
-> >> +             clock-frequency = <148500000>;
-> >> +     };
-> >> +};
-> >> +
-> >> +&du {
-> >> +     pinctrl-0 = <&du_pins>;
-> >> +     pinctrl-names = "default";
-> >> +     status = "okay";
-> >> +
-> >> +     clocks = <&mstp7_clks R8A7793_CLK_DU0>,
-> >> +              <&mstp7_clks R8A7793_CLK_DU1>,
-> >> +              <&mstp7_clks R8A7793_CLK_LVDS0>,
-> >> +              <&x13_clk>, <&x2_clk>;
-> >> +     clock-names = "du.0", "du.1", "lvds.0",
-> >> +                   "dclkin.0", "dclkin.1";
-> >> +
-> >> +     ports {
-> >> +             port@0 {
-> >> +                     endpoint {
-> >> +                             remote-endpoint = <&adv7511_in>;
-> >> +                     };
-> >> +             };
-> >> +             port@1 {
-> >> +                     lvds_connector: endpoint {
-> >> +                     };
-> >> +             };
-> >> +     };
-> >>  };
-> >>  
-> >>  &extal_clk {
-> >> @@ -38,6 +86,16 @@
-> >>  };
-> >>  
-> >>  &pfc {
-> >> +     i2c2_pins: i2c2 {
-> >> +             renesas,groups = "i2c2";
-> >> +             renesas,function = "i2c2";
-> >> +     };
-> >> +
-> >> +     du_pins: du {
-> >> +             renesas,groups = "du_rgb666", "du_sync", "du_disp",
-> >> "du_clk_out_0";
-> >
-> > How about taking the comments I've made about v1 into account ?
-> 
-> I must have missed those, sorry. Will do when when I post v3 - once
-> someone has added I2C support.
 
-Thanks.
+ drivers/media/i2c/adv7604.c | 24 ++++++++++++++++++++++--
+ 1 file changed, 22 insertions(+), 2 deletions(-)
 
+diff --git a/drivers/media/i2c/adv7604.c b/drivers/media/i2c/adv7604.c
+index 5bd81bd..be5980c 100644
+--- a/drivers/media/i2c/adv7604.c
++++ b/drivers/media/i2c/adv7604.c
+@@ -31,6 +31,7 @@
+ #include <linux/gpio/consumer.h>
+ #include <linux/hdmi.h>
+ #include <linux/i2c.h>
++#include <linux/interrupt.h>
+ #include <linux/kernel.h>
+ #include <linux/module.h>
+ #include <linux/slab.h>
+@@ -1971,6 +1972,16 @@ static int adv76xx_isr(struct v4l2_subdev *sd, u32 status, bool *handled)
+ 	return 0;
+ }
+ 
++static irqreturn_t adv76xx_irq_handler(int irq, void *devid)
++{
++	struct adv76xx_state *state = devid;
++	bool handled;
++
++	adv76xx_isr(&state->sd, 0, &handled);
++
++	return handled ? IRQ_HANDLED : IRQ_NONE;
++}
++
+ static int adv76xx_get_edid(struct v4l2_subdev *sd, struct v4l2_edid *edid)
+ {
+ 	struct adv76xx_state *state = to_state(sd);
+@@ -2844,8 +2855,7 @@ static int adv76xx_parse_dt(struct adv76xx_state *state)
+ 		state->pdata.op_656_range = 1;
+ 	}
+ 
+-	/* Disable the interrupt for now as no DT-based board uses it. */
+-	state->pdata.int1_config = ADV76XX_INT1_CONFIG_DISABLED;
++	state->pdata.int1_config = ADV76XX_INT1_CONFIG_ACTIVE_LOW;
+ 
+ 	/* Use the default I2C addresses. */
+ 	state->pdata.i2c_addresses[ADV7604_PAGE_AVLINK] = 0x42;
+@@ -3235,6 +3245,16 @@ static int adv76xx_probe(struct i2c_client *client,
+ 	v4l2_info(sd, "%s found @ 0x%x (%s)\n", client->name,
+ 			client->addr << 1, client->adapter->name);
+ 
++	if (client->irq) {
++		err = devm_request_threaded_irq(&client->dev,
++						client->irq,
++						NULL, adv76xx_irq_handler,
++						IRQF_ONESHOT,
++						dev_name(&client->dev), state);
++		if (err)
++			goto err_entity;
++	}
++
+ 	err = v4l2_async_register_subdev(sd);
+ 	if (err)
+ 		goto err_entity;
 -- 
-Regards,
-
-Laurent Pinchart
+2.6.3
 
