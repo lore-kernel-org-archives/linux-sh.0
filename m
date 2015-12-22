@@ -1,35 +1,54 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 16 Dec 2015 09:55:57 +0000
-Subject: Re: [PATCH 4/6] pinctrl: sh-pfc: r8a7795: Add SATA support
-Message-Id: <CAMuHMdWs-mfMH+JHvGX3e26A_hnSScw1kNrLr-xYJxuuX_7eUg@mail.gmail.com>
+From: Paul Gortmaker <paul.gortmaker@windriver.com>
+Date: Tue, 22 Dec 2015 00:59:07 +0000
+Subject: [PATCH 0/2] drivers/pci: use builtin_platform_driver in renesas
+Message-Id: <1450745949-23882-1-git-send-email-paul.gortmaker@windriver.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450107758-2544-1-git-send-email-ulrich.hecht+renesas@gmail.com>
- <1450107758-2544-5-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1450107758-2544-5-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@vger.kernel.org
+Cc: Paul Gortmaker <paul.gortmaker@windriver.com>, Bjorn Helgaas <bhelgaas@google.com>, Phil Edworthy <phil.edworthy@renesas.com>, Simon Horman <horms@verge.net.au>, Valentine Barshak <valentine.barshak@cogentembedded.com>, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org
 
-On Mon, Dec 14, 2015 at 4:42 PM, Ulrich Hecht
-<ulrich.hecht+renesas@gmail.com> wrote:
-> From: Takeshi Kihara <takeshi.kihara.df@renesas.com>
->
-> This patch adds SATA0 pinmux support to r8a7795 SoC.
->
-> Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
-> [uli: adjusted for new PFC driver]
-> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+These two commits are extracted from what was a larger series[1] of
+demodularization in PCI host code that was bool Kconfig.
 
-Thanks, queued for v4.5.
+With the other commits, there was some mixed opinions whether we
+should make it explicitly non-modular or move towards making it
+functionally working as a tristate in order to reduce the size of
+built-in code for multi-platform kernels.
 
-Gr{oetje,eeting}s,
+However with the renesas changes, there was no ".remove" and no
+"module_exit" code stripped out ; it is just a straight 1:1 mapping
+of the modular macros onto what they become in the non-modular case
+anyway -- meaning the runtime remains unchanged.
 
-                        Geert
+Given that, and the several Ack rec'd, it makes sense to at least
+get these two in and out of my queue while we consider what to do
+with the other PCI host code drivers that do have some modularity
+already coded into them.
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+Build testing was done on pci/next, using an ARCH=arm allmodconfig
+and then explicitly building the files changed in this series.  
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+Paul.
+---
+
+[1] https://lkml.kernel.org/r/1449970917-12633-1-git-send-email-paul.gortmaker@windriver.com
+
+Cc: Bjorn Helgaas <bhelgaas@google.com>
+Cc: Phil Edworthy <phil.edworthy@renesas.com>
+Cc: Simon Horman <horms@verge.net.au>
+Cc: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Cc: linux-pci@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
+
+Paul Gortmaker (2):
+  drivers/pci: make host/pcie-rcar.c explicitly non-modular
+  drivers/pci: make host/pci-rcar-gen2.c explicitly non-modular
+
+ drivers/pci/host/pci-rcar-gen2.c | 12 +++---------
+ drivers/pci/host/pcie-rcar.c     | 11 ++++-------
+ 2 files changed, 7 insertions(+), 16 deletions(-)
+
+-- 
+2.6.1
