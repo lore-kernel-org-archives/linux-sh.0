@@ -1,35 +1,50 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 08 Dec 2015 09:38:13 +0000
-Subject: Re: [PATCH v6 4/5] clk: shmobile: Add new CPG/MSSR driver core
-Message-Id: <CAMuHMdVY_Vm5V0m_wznHbC6oy+=fov6h=cYg-BVJqTvR=LS=6Q@mail.gmail.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Tue, 22 Dec 2015 14:22:02 +0000
+Subject: [PATCH v2 2/2] media: adv7604: update timings on change of input signal
+Message-Id: <1450794122-31293-3-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447343686-2038-1-git-send-email-geert+renesas@glider.be>
-	<1447343686-2038-5-git-send-email-geert+renesas@glider.be>
-	<1816814.hXph9CLyDv@avalon>
-In-Reply-To: <1816814.hXph9CLyDv@avalon>
+References: <1450794122-31293-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+In-Reply-To: <1450794122-31293-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Michael Turquette <mturquette@baylibre.com>, Stephen Boyd <sboyd@codeaurora.org>, Magnus Damm <damm+renesas@opensource.se>, Simon Horman <horms+renesas@verge.net.au>, linux-clk <linux-clk@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+To: linux-media@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: magnus.damm@gmail.com, laurent.pinchart@ideasonboard.com, hans.verkuil@cisco.com, ian.molton@codethink.co.uk, lars@metafoo.de, william.towle@codethink.co.uk, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 
-On Sat, Dec 5, 2015 at 4:08 AM, Laurent Pinchart
-<laurent.pinchart@ideasonboard.com> wrote:
->> +static inline int cpg_mssr_add_clk_domain(struct device *dev,
->> +                                       const unsigned int *core_pm_clks,
->> +                                       unsigned int num_core_pm_clks) {}
->
-> The function is missing a return statement.
+Without this, .get_selection will always return the boot-time state.
 
-Thank you, will include for v7 and/or final pull request.
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+---
+ drivers/media/i2c/adv7604.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
 
-Gr{oetje,eeting}s,
+diff --git a/drivers/media/i2c/adv7604.c b/drivers/media/i2c/adv7604.c
+index 8ad5c28..dcd659b 100644
+--- a/drivers/media/i2c/adv7604.c
++++ b/drivers/media/i2c/adv7604.c
+@@ -1945,6 +1945,7 @@ static int adv76xx_isr(struct v4l2_subdev *sd, u32 status, bool *handled)
+ 	u8 fmt_change_digital;
+ 	u8 fmt_change;
+ 	u8 tx_5v;
++	int ret;
+ 
+ 	if (irq_reg_0x43)
+ 		io_write(sd, 0x44, irq_reg_0x43);
+@@ -1968,6 +1969,14 @@ static int adv76xx_isr(struct v4l2_subdev *sd, u32 status, bool *handled)
+ 
+ 		v4l2_subdev_notify_event(sd, &adv76xx_ev_fmt);
+ 
++		/* update timings */
++		ret = adv76xx_query_dv_timings(sd, &state->timings);
++		if (ret = -ENOLINK) {
++			/* no signal, fall back to default timings */
++			state->timings = (struct v4l2_dv_timings)
++				V4L2_DV_BT_CEA_640X480P59_94;
++		}
++
+ 		if (handled)
+ 			*handled = true;
+ 	}
+-- 
+2.6.3
 
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
