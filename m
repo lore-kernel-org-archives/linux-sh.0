@@ -1,35 +1,42 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Fri, 18 Dec 2015 13:43:21 +0000
-Subject: RE: [PATCH 4/4] PCI: rcar: Add Gen2 PHY setup to pcie-rcar
-Message-Id: <PS1PR06MB1180B9A7108987F56F5A1288F5E10@PS1PR06MB1180.apcprd06.prod.outlook.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 22 Dec 2015 19:01:06 +0000
+Subject: [PATCH] iommu/ipmmu-vmsa: Don't truncate ttbr if LPAE is not enabled
+Message-Id: <1450810866-4716-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450358557-28376-1-git-send-email-phil.edworthy@renesas.com>
- <1450358557-28376-5-git-send-email-phil.edworthy@renesas.com>
- <20151217133308.GB20372@katana>
-In-Reply-To: <20151217133308.GB20372@katana>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Wolfram Sang <wsa@the-dreams.de>
-Cc: Simon Horman <horms@verge.net.au>, Bjorn Helgaas <bhelgaas@google.com>, Geert Uytterhoeven <geert@linux-m68k.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "linux-pci@vger.kernel.org" <linux-pci@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+To: Joerg Roedel <joro@8bytes.org>, Magnus Damm <magnus.damm@gmail.com>
+Cc: iommu@lists.linux-foundation.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Hi Wolfram,
+If CONFIG_PHYS_ADDR_T_64BIT=n:
 
-On 17 December 2015 13:33, Wolfram Sang wrote:
-> > +	rcar_pci_write_reg(pcie, 0x000f0030, GEN2_PCIEPHYADDR);
-> > +	rcar_pci_write_reg(pcie, 0x00381203, GEN2_PCIEPHYDATA);
-> > +	rcar_pci_write_reg(pcie, 0x00000001, GEN2_PCIEPHYCTRL);
-> > +	rcar_pci_write_reg(pcie, 0x00000006, GEN2_PCIEPHYCTRL);
-> > +
-> > +	rcar_pci_write_reg(pcie, 0x000f0054, GEN2_PCIEPHYADDR);
-> > +	/* The following value is for DC connection, no termination resistor */
-> > +	rcar_pci_write_reg(pcie, 0x13802007, GEN2_PCIEPHYDATA);
-> > +	rcar_pci_write_reg(pcie, 0x00000001, GEN2_PCIEPHYCTRL);
-> > +	rcar_pci_write_reg(pcie, 0x00000006, GEN2_PCIEPHYCTRL);
-> 
-> I'd vote for a comment saying where these magic values come from, i.e.
-> which manual, which chapter, etc...
-Ok, will do.
+    drivers/iommu/ipmmu-vmsa.c: In function 'ipmmu_domain_init_context':
+    drivers/iommu/ipmmu-vmsa.c:434:2: warning: right shift count >= width of type
+      ipmmu_ctx_write(domain, IMTTUBR0, ttbr >> 32);
+      ^
 
-Thanks
-Phil
+As io_pgtable_cfg.arm_lpae_s1_cfg.ttbr[] is an array of u64s, assigning
+it to a phys_addr_t may truncates it.  Make ttbr u64 to fix this.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ drivers/iommu/ipmmu-vmsa.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/iommu/ipmmu-vmsa.c b/drivers/iommu/ipmmu-vmsa.c
+index e08f4945cd5abb0c..83d7f0c7f47f1296 100644
+--- a/drivers/iommu/ipmmu-vmsa.c
++++ b/drivers/iommu/ipmmu-vmsa.c
+@@ -385,7 +385,7 @@ static struct iommu_gather_ops ipmmu_gather_ops = {
+ 
+ static int ipmmu_domain_init_context(struct ipmmu_vmsa_domain *domain)
+ {
+-	phys_addr_t ttbr;
++	u64 ttbr;
+ 	u32 tmp;
+ 	int ret;
+ 
+-- 
+1.9.1
+
