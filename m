@@ -1,49 +1,113 @@
-From: "Michael S. Tsirkin" <mst@redhat.com>
-Date: Thu, 31 Dec 2015 19:06:54 +0000
-Subject: [PATCH v2 09/32] arm64: reuse asm-generic/barrier.h
-Message-Id: <1451572003-2440-10-git-send-email-mst@redhat.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Wed, 23 Dec 2015 16:56:33 +0000
+Subject: [PATCH 2/3] i2c: rcar: remove macros dealing with flags
+Message-Id: <1450889794-9509-3-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1451572003-2440-1-git-send-email-mst@redhat.com>
-In-Reply-To: <1451572003-2440-1-git-send-email-mst@redhat.com>
+References: <1450889794-9509-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1450889794-9509-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Peter Zijlstra <peterz@infradead.org>, Arnd Bergmann <arnd@arndb.de>, linux-arch@vger.kernel.org, Andrew Cooper <andrew.cooper3@citrix.com>, virtualization@lists.linux-foundation.org, Stefano Stabellini <stefano.stabellini@eu.citrix.com>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@elte.hu>, "H. Peter Anvin" <hpa@zytor.com>, David Miller <davem@davemloft.net>, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, sparclinux@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-metag@vger.kernel.org, linux-mips@linux-mips.org, x86@kernel.org, user-mode-linux-devel@lists.sourceforge.net, adi-buildroot-devel@lists.sourceforge.net, linux-sh@vger.kernel.org, linux-xtensa@linux-xtensa.org, xen-devel@lists.xenproject.org, Catalin Marinas <catalin.marinas@arm.com>, Will Deacon <will.deacon@arm.com>, Ingo Molnar <mingo@kern>
+To: linux-i2c@vger.kernel.org
+Cc: Wolfram Sang <wsa@the-dreams.de>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On arm64 nop, read_barrier_depends, smp_read_barrier_depends
-smp_store_mb(), smp_mb__before_atomic and smp_mb__after_atomic match the
-asm-generic variants exactly. Drop the local definitions and pull in
-asm-generic/barrier.h instead.
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-This is in preparation to refactoring this code area.
+These macros don't really hide complexity, but C idioms. Removing them
+makes the code easier to read IMO and make a planned extension easier.
 
-Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
-Acked-by: Arnd Bergmann <arnd@arndb.de>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 ---
- arch/arm64/include/asm/barrier.h | 9 +--------
- 1 file changed, 1 insertion(+), 8 deletions(-)
+ drivers/i2c/busses/i2c-rcar.c | 22 +++++++++-------------
+ 1 file changed, 9 insertions(+), 13 deletions(-)
 
-diff --git a/arch/arm64/include/asm/barrier.h b/arch/arm64/include/asm/barrier.h
-index 9622eb4..91a43f4 100644
---- a/arch/arm64/include/asm/barrier.h
-+++ b/arch/arm64/include/asm/barrier.h
-@@ -91,14 +91,7 @@ do {									\
- 	__u.__val;							\
- })
+diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
+index 74077e9ab8cad6..fab841899e65f2 100644
+--- a/drivers/i2c/busses/i2c-rcar.c
++++ b/drivers/i2c/busses/i2c-rcar.c
+@@ -122,9 +122,6 @@ struct rcar_i2c_priv {
+ #define rcar_i2c_priv_to_dev(p)		((p)->adap.dev.parent)
+ #define rcar_i2c_is_recv(p)		((p)->msg->flags & I2C_M_RD)
  
--#define read_barrier_depends()		do { } while(0)
--#define smp_read_barrier_depends()	do { } while(0)
+-#define rcar_i2c_flags_set(p, f)	((p)->flags |= (f))
+-#define rcar_i2c_flags_has(p, f)	((p)->flags & (f))
 -
--#define smp_store_mb(var, value)	do { WRITE_ONCE(var, value); smp_mb(); } while (0)
--#define nop()		asm volatile("nop");
--
--#define smp_mb__before_atomic()	smp_mb()
--#define smp_mb__after_atomic()	smp_mb()
-+#include <asm-generic/barrier.h>
+ #define LOOP_TIMEOUT	1024
  
- #endif	/* __ASSEMBLY__ */
  
+@@ -258,7 +255,7 @@ static void rcar_i2c_prepare_msg(struct rcar_i2c_priv *priv)
+ 
+ 	priv->pos = 0;
+ 	if (priv->msgs_left = 1)
+-		rcar_i2c_flags_set(priv, ID_LAST_MSG);
++		priv->flags |= ID_LAST_MSG;
+ 
+ 	rcar_i2c_write(priv, ICMAR, (priv->msg->addr << 1) | read);
+ 	/*
+@@ -266,7 +263,7 @@ static void rcar_i2c_prepare_msg(struct rcar_i2c_priv *priv)
+ 	 * of ICMSR and ICMCR depends on whether we issue START or REP_START. Since
+ 	 * it didn't cause a drawback for me, let's rather be safe than sorry.
+ 	 */
+-	if (rcar_i2c_flags_has(priv, ID_FIRST_MSG)) {
++	if (priv->flags & ID_FIRST_MSG) {
+ 		rcar_i2c_write(priv, ICMSR, 0);
+ 		rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_START);
+ 	} else {
+@@ -438,7 +435,7 @@ static irqreturn_t rcar_i2c_irq(int irq, void *ptr)
+ 
+ 	/* Arbitration lost */
+ 	if (msr & MAL) {
+-		rcar_i2c_flags_set(priv, (ID_DONE | ID_ARBLOST));
++		priv->flags |= ID_DONE | ID_ARBLOST;
+ 		goto out;
+ 	}
+ 
+@@ -446,14 +443,14 @@ static irqreturn_t rcar_i2c_irq(int irq, void *ptr)
+ 	if (msr & MNR) {
+ 		/* HW automatically sends STOP after received NACK */
+ 		rcar_i2c_write(priv, ICMIER, RCAR_IRQ_STOP);
+-		rcar_i2c_flags_set(priv, ID_NACK);
++		priv->flags |= ID_NACK;
+ 		goto out;
+ 	}
+ 
+ 	/* Stop */
+ 	if (msr & MST) {
+ 		priv->msgs_left--; /* The last message also made it */
+-		rcar_i2c_flags_set(priv, ID_DONE);
++		priv->flags |= ID_DONE;
+ 		goto out;
+ 	}
+ 
+@@ -463,7 +460,7 @@ static irqreturn_t rcar_i2c_irq(int irq, void *ptr)
+ 		rcar_i2c_irq_send(priv, msr);
+ 
+ out:
+-	if (rcar_i2c_flags_has(priv, ID_DONE)) {
++	if (priv->flags & ID_DONE) {
+ 		rcar_i2c_write(priv, ICMIER, 0);
+ 		rcar_i2c_write(priv, ICMSR, 0);
+ 		wake_up(&priv->wait);
+@@ -501,15 +498,14 @@ static int rcar_i2c_master_xfer(struct i2c_adapter *adap,
+ 	priv->flags = ID_FIRST_MSG;
+ 	rcar_i2c_prepare_msg(priv);
+ 
+-	time_left = wait_event_timeout(priv->wait,
+-				     rcar_i2c_flags_has(priv, ID_DONE),
++	time_left = wait_event_timeout(priv->wait, priv->flags & ID_DONE,
+ 				     num * adap->timeout);
+ 	if (!time_left) {
+ 		rcar_i2c_init(priv);
+ 		ret = -ETIMEDOUT;
+-	} else if (rcar_i2c_flags_has(priv, ID_NACK)) {
++	} else if (priv->flags & ID_NACK) {
+ 		ret = -ENXIO;
+-	} else if (rcar_i2c_flags_has(priv, ID_ARBLOST)) {
++	} else if (priv->flags & ID_ARBLOST) {
+ 		ret = -EAGAIN;
+ 	} else {
+ 		ret = num - priv->msgs_left; /* The number of transfer */
 -- 
-MST
+2.1.4
 
