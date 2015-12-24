@@ -1,52 +1,42 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 29 Dec 2015 00:00:40 +0000
-Subject: Re: [PATCH 01/06] iommu/ipmmu-vmsa: Remove platform data handling
-Message-Id: <1636680.rtxtBRILSH@avalon>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 24 Dec 2015 10:14:18 +0000
+Subject: [PATCH] clk: shmobile: r8a7795: Add SATA0 clock
+Message-Id: <1450952058-15888-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20151215120212.26216.61530.sendpatchset@little-apple> <20151215120221.26216.739.sendpatchset@little-apple>
-In-Reply-To: <20151215120221.26216.739.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: iommu@lists.linux-foundation.org, geert+renesas@glider.be, linux-sh@vger.kernel.org, joro@8bytes.org, linux-kernel@vger.kernel.org, horms+renesas@verge.net.au
+To: Michael Turquette <mturquette@baylibre.com>, Stephen Boyd <sboyd@codeaurora.org>
+Cc: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>, linux-clk@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Hi Magnus,
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 
-Thank you for the patch.
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+Hi Mike, Stephen,
 
-On Tuesday 15 December 2015 21:02:21 Magnus Damm wrote:
-> From: Magnus Damm <damm+renesas@opensource.se>
-> 
-> The IPMMU driver is using DT these days, and platform data is no longer
-> used by the driver. Remove unused code.
-> 
-> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+This is the sole missing piece to make SATA work on r8a7795 in v4.5.
+All other pieces (bindings, driver, pinctrl, dts) are already queued for
+v4.5.
 
-Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Thanks for applying!
 
-> ---
-> 
->  drivers/iommu/ipmmu-vmsa.c |    5 -----
->  1 file changed, 5 deletions(-)
-> 
-> --- 0001/drivers/iommu/ipmmu-vmsa.c
-> +++ work/drivers/iommu/ipmmu-vmsa.c	2015-12-15 11:35:00.490513000 +0900
-> @@ -766,11 +766,6 @@ static int ipmmu_probe(struct platform_d
->  	int irq;
->  	int ret;
-> 
-> -	if (!IS_ENABLED(CONFIG_OF) && !pdev->dev.platform_data) {
-> -		dev_err(&pdev->dev, "missing platform data\n");
-> -		return -EINVAL;
-> -	}
-> -
->  	mmu = devm_kzalloc(&pdev->dev, sizeof(*mmu), GFP_KERNEL);
->  	if (!mmu) {
->  		dev_err(&pdev->dev, "cannot allocate device data\n");
+ drivers/clk/shmobile/r8a7795-cpg-mssr.c | 1 +
+ 1 file changed, 1 insertion(+)
 
+diff --git a/drivers/clk/shmobile/r8a7795-cpg-mssr.c b/drivers/clk/shmobile/r8a7795-cpg-mssr.c
+index 57c413635d1af135..13e994772dfd0cf2 100644
+--- a/drivers/clk/shmobile/r8a7795-cpg-mssr.c
++++ b/drivers/clk/shmobile/r8a7795-cpg-mssr.c
+@@ -150,6 +150,7 @@ static const struct mssr_mod_clk r8a7795_mod_clks[] __initconst = {
+ 	DEF_MOD("hdmi1",		 728,	R8A7795_CLK_HDMI),
+ 	DEF_MOD("hdmi0",		 729,	R8A7795_CLK_HDMI),
+ 	DEF_MOD("etheravb",		 812,	R8A7795_CLK_S3D2),
++	DEF_MOD("sata0",		 815,	R8A7795_CLK_S3D2),
+ 	DEF_MOD("gpio7",		 905,	R8A7795_CLK_CP),
+ 	DEF_MOD("gpio6",		 906,	R8A7795_CLK_CP),
+ 	DEF_MOD("gpio5",		 907,	R8A7795_CLK_CP),
 -- 
-Regards,
-
-Laurent Pinchart
+1.9.1
 
