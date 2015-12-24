@@ -1,60 +1,36 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Thu, 24 Dec 2015 08:41:06 +0000
+From: Shubhrajyoti Datta <shubhrajyoti.datta@gmail.com>
+Date: Thu, 24 Dec 2015 17:16:23 +0000
 Subject: Re: [PATCH 0/2] i2c: proper RuntimePM for the adapter device
-Message-Id: <20151224084105.GA1548@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="TB36FDmn/VVEgNH/"
+Message-Id: <CAKfKVtEmsrQT6x2p=Knz836iNXw3vwQyx1M_WJ=GJjVDgBjWFA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1450891169-13708-1-git-send-email-wsa@the-dreams.de>
- <CAKfKVtHt8BpakkffRp=_2GUxqK5JO0WCsizCrjtwH5hv+TWvWg@mail.gmail.com>
-In-Reply-To: <CAKfKVtHt8BpakkffRp=_2GUxqK5JO0WCsizCrjtwH5hv+TWvWg@mail.gmail.com>
-To: Shubhrajyoti Datta <shubhrajyoti.datta@gmail.com>
+	<CAKfKVtHt8BpakkffRp=_2GUxqK5JO0WCsizCrjtwH5hv+TWvWg@mail.gmail.com>
+	<20151224084105.GA1548@katana>
+In-Reply-To: <20151224084105.GA1548@katana>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Wolfram Sang <wsa@the-dreams.de>
 Cc: linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, linux-pm@vger.kernel.org, Sylwester Nawrocki <s.nawrocki@samsung.com>, Charles Keepax <ckeepax@opensource.wolfsonmicro.com>
 
+>
+>> Also maybe we can add a flag that the driver enables.
+>> that way for a short period till the driver removes the call
+>> the double call is not there.
+>
+> The only driver I found was the s3c2410 and I fixed it. Is there another
+> one? Then, I'd update my series because I want a consistent state in one
+> go.
+>
+I think the below drivers
 
---TB36FDmn/VVEgNH/
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
-
-
-> > RuntimePM for the logical adapter device should be handled in a central=
- place
-> > by the core, and not by drivers. This series does exactly that.
->=20
-> This is good idea.
-
-Thanks!
-
-> Also maybe we can add a flag that the driver enables.
-> that way for a short period till the driver removes the call
-> the double call is not there.
-
-The only driver I found was the s3c2410 and I fixed it. Is there another
-one? Then, I'd update my series because I want a consistent state in one
-go.
-
-
---TB36FDmn/VVEgNH/
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBAgAGBQJWe6+hAAoJEBQN5MwUoCm2WoEP/39mpSOXPE8EUvE5e2ac3SQK
-PLmwn5EB6X+WUuMFTH9879xLI9XEfzoxzXIL9UqRshnd/ZCqUEoxBhXhr+oe+9Ha
-02O1xZG9taTqhUESZVS50ItyC+9eerT2r0AG2EUrinzlblo0E/hfrzfIFMROWN4f
-XwhU/kThu85h1ZHy7tRj01LZhxi7DyiMNt0kaRHu+/Dgruv4vzy8Ft82OLz4Nv1m
-uBw8k4TBcuhGnYGC+IA1hbcwC0me/mU+xx/OwQlzHyn8m7/Dkr2xOLW5ov0GrZSF
-p0pfDWIKf0APRl2j5aBxuI6MqfZYBDS4WEc6jGcG7jfEtVywuSPSyAKtPek/3b+b
-B1TqepkYLzvomRoQzM8GLE1sMbGmH8rgcLxg2FBdtM8jXSkf4uXPGBx23gmrzAXE
-FIgslggCixRW58+nZt8OTctls5jJK7wyjK7tg0163ujgik7yefj0Nooc0U8U9PZu
-3to6fjw9DI0auUhIx0h7qPF+6resmloRAITzGy4FtYxgpMb/+k/yoR9trkwEIA4w
-cBX+MZeVUJR8xo8hGzbLzBBd2+PCCcnOvnCKHbiRn8hOBaSdUQ/9lIhssEL1CjLW
-DbIlUhBnMMedauV0kJGlBAsxo63TZ0jxegTQh3UyQ8NK5hTiBurlwPS+dVtr/tjr
-RZJU+LQJ75oYpdiIECkl
-=qGZ+
------END PGP SIGNATURE-----
-
---TB36FDmn/VVEgNH/--
+drivers/i2c/busses/i2c-at91.c
+drivers/i2c/busses/i2c-designware-core.c
+drivers/i2c/busses/i2c-designware-platdrv.c
+drivers/i2c/busses/i2c-rcar.c
+drivers/i2c/busses/i2c-sh_mobile.c
+drivers/i2c/busses/i2c-hix5hd2.c
+drivers/i2c/busses/i2c-nomadik.c
+drivers/i2c/busses/i2c-omap.c
+drivers/i2c/busses/i2c-qup.c
+drivers/i2c/busses/i2c-s3c2410.c
