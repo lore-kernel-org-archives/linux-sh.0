@@ -1,201 +1,65 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 26 Dec 2015 23:09:21 +0000
-Subject: Re: [PATCH/RFC v2 net-next] ravb: Add dma queue interrupt support
-Message-Id: <567F1E21.2040900@cogentembedded.com>
+Date: Thu, 24 Dec 2015 19:45:33 +0000
+Subject: Re: [PATCH v5 03/14] ARM: shmobile: r8a7791: Add DU node to device tree
+Message-Id: <567C4B5D.30504@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450602948-6777-1-git-send-email-ykaneko0929@gmail.com>
- <56796600.3010407@cogentembedded.com>
- <CAH1o70JdmPDchbCnRjbt+SmW4juow+ConD96_BBv8u51-KEW6A@mail.gmail.com>
-In-Reply-To: <CAH1o70JdmPDchbCnRjbt+SmW4juow+ConD96_BBv8u51-KEW6A@mail.gmail.com>
+References: <1414332679-15497-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1414332679-15497-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Cc: netdev@vger.kernel.org, "David S. Miller" <davem@davemloft.net>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
 Hello.
 
-On 12/26/2015 02:26 PM, Yoshihiro Kaneko wrote:
+On 10/26/2014 05:11 PM, Laurent Pinchart wrote:
 
->>> From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
->>>
->>> This patch supports the following interrupts.
->>>
->>> - One interrupt for multiple (descriptor, error, management)
->>> - One interrupt for emac
->>> - Four interrupts for dma queue (best effort rx/tx, network control rx/tx)
->>
->>     You still don't say why it's better than the current scheme...
+> Add the DU device with a disabled state. Boards that want to enable the
+> DU need to specify the output topology
 >
-> I missed the comment for some reason.
-> I will think about updating the changelog.
-
-    TIA.
-
->>> Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
->>> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-[...]
->>> b/drivers/net/ethernet/renesas/ravb.h
->>> index 9fbe92a..71badd6d 100644
->>> --- a/drivers/net/ethernet/renesas/ravb.h
->>> +++ b/drivers/net/ethernet/renesas/ravb.h
-[...]
->>> @@ -1223,23 +1343,68 @@ static const struct ethtool_ops ravb_ethtool_ops >>> {
->>>    static int ravb_open(struct net_device *ndev)
->>>    {
->>>          struct ravb_private *priv = netdev_priv(ndev);
->>> -       int error;
->>> +       struct platform_device *pdev = priv->pdev;
->>> +       struct device *dev = &pdev->dev;
->>> +       int error, i;
->>> +       char *name;
->>>
->>>          napi_enable(&priv->napi[RAVB_BE]);
->>>          napi_enable(&priv->napi[RAVB_NC]);
->>>
->>> -       error = request_irq(ndev->irq, ravb_interrupt, IRQF_SHARED,
->>> ndev->name,
->>> -                           ndev);
->>> -       if (error) {
->>> -               netdev_err(ndev, "cannot request IRQ\n");
->>> -               goto out_napi_off;
->>> -       }
->>> -
->>> -       if (priv->chip_id = RCAR_GEN3) {
->>> -               error = request_irq(priv->emac_irq, ravb_interrupt,
->>> -                                   IRQF_SHARED, ndev->name, ndev);
->>> +       if (priv->chip_id = RCAR_GEN2) {
->>> +               error = request_irq(ndev->irq, ravb_interrupt,
->>> IRQF_SHARED,
->>> +                                   ndev->name, ndev);
->>>                  if (error) {
->>>                          netdev_err(ndev, "cannot request IRQ\n");
->>> +                       goto out_napi_off;
->>> +               }
->>> +       } else {
->>> +               name = devm_kasprintf(dev, GFP_KERNEL, "%s:ch22:multi",
->>> +                                     ndev->name);
->>> +               error = request_irq(ndev->irq, ravb_multi_interrupt,
->>> +                                   IRQF_SHARED, name, ndev);
->>> +               if (error) {
->>> +                       netdev_err(ndev, "cannot request IRQ %s\n", name);
->>> +                       goto out_napi_off;
->>> +               }
->>> +               name = devm_kasprintf(dev, GFP_KERNEL, "%s:ch24:emac",
->>> +                                     ndev->name);
->>> +               error = request_irq(priv->emac_irq, ravb_emac_interrupt,
->>> +                                   IRQF_SHARED, name, ndev);
->>> +               if (error) {
->>> +                       netdev_err(ndev, "cannot request IRQ %s\n", name);
->>> +                       goto out_free_irq;
->>> +               }
->>> +               name = devm_kasprintf(dev, GFP_KERNEL, "%s:ch0:rx_be",
->>> +                                     ndev->name);
->>> +               error = request_irq(priv->rx_irqs[RAVB_BE],
->>> ravb_be_interrupt,
->>> +                                   IRQF_SHARED, name, ndev);
->>> +               if (error) {
->>> +                       netdev_err(ndev, "cannot request IRQ %s\n", name);
->>> +                       goto out_free_irq;
->>> +               }
->>> +               name = devm_kasprintf(dev, GFP_KERNEL, "%s:ch18:tx_be",
->>> +                                     ndev->name);
->>> +               error = request_irq(priv->tx_irqs[RAVB_BE],
->>> ravb_be_interrupt,
->>> +                                   IRQF_SHARED, name, ndev);
->>> +               if (error) {
->>> +                       netdev_err(ndev, "cannot request IRQ %s\n", name);
->>> +                       goto out_free_irq;
->>> +               }
->>> +               name = devm_kasprintf(dev, GFP_KERNEL, "%s:ch1:rx_nc",
->>> +                                     ndev->name);
->>> +               error = request_irq(priv->rx_irqs[RAVB_NC],
->>> ravb_nc_interrupt,
->>> +                                   IRQF_SHARED, name, ndev);
->>> +               if (error) {
->>> +                       netdev_err(ndev, "cannot request IRQ %s\n", name);
->>> +                       goto out_free_irq;
->>> +               }
->>> +               name = devm_kasprintf(dev, GFP_KERNEL, "%s:ch19:tx_nc",
->>> +                                     ndev->name);
->>> +               error = request_irq(priv->tx_irqs[RAVB_NC],
->>> ravb_nc_interrupt,
->>> +                                   IRQF_SHARED, name, ndev);
->>> +               if (error) {
->>> +                       netdev_err(ndev, "cannot request IRQ %s\n", name);
->>>                          goto out_free_irq;
->>>                  }
->>
->>
->>     This error case is repetitive, couldn't you consolidate it somehow?
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+> ---
+>   arch/arm/boot/dts/r8a7791.dtsi | 30 ++++++++++++++++++++++++++++++
+>   1 file changed, 30 insertions(+)
 >
-> It seems to be impossible to be solved by the simple change of the code.
-> Do you intend to add macro or a small helper function?
-
-    What I meant should look like this:
-
-	} else {
-		name = devm_kasprintf(dev, GFP_KERNEL, "%s:ch22:multi",
-				      ndev->name);
-		error = request_irq(ndev->irq, ravb_multi_interrupt,
-				    IRQF_SHARED, name, ndev);
-		if (error)
-			goto out;
-[...]
-		name = devm_kasprintf(dev, GFP_KERNEL, "%s:ch19:tx_nc",
-				      ndev->name);
-		error = request_irq(priv->tx_irqs[RAVB_NC], ravb_nc_interrupt,
-                                    IRQF_SHARED, name, ndev);
-		if (error)
-			goto out;
-	}
-
-out:
-	if (error) {
-		netdev_err(ndev, "cannot request IRQ %s\n", name);
-		goto out_free_irq;
-	}
-
-    Did it make things clearer?
-    But indeed, a helper function would probably be even better...
-
-[...]
->>> @@ -1798,6 +1973,22 @@ static int ravb_probe(struct platform_device *pdev)
->>>                          goto out_release;
->>>                  }
->>>                  priv->emac_irq = irq;
->>> +               for (i = 0; i < NUM_RX_QUEUE; i++) {
->>> +                       irq = platform_get_irq_byname(pdev,
->>> ravb_rx_irqs[i]);
->>> +                       if (irq < 0) {
->>> +                               error = irq;
->>> +                               goto out_release;
->>> +                       }
->>> +                       priv->rx_irqs[i] = irq;
->>> +               }
->>> +               for (i = 0; i < NUM_TX_QUEUE; i++) {
->>> +                       irq = platform_get_irq_byname(pdev,
->>> ravb_tx_irqs[i]);
->>> +                       if (irq < 0) {
->>> +                               error = irq;
->>> +                               goto out_release;
->>> +                       }
->>> +                       priv->tx_irqs[i] = irq;
->>> +               }
->>
->>
->>     Perhaps it would better to use sprintf() here, in both loops...
+> diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+> index 74f18d89a35f..6b06a7665fae 100644
+> --- a/arch/arm/boot/dts/r8a7791.dtsi
+> +++ b/arch/arm/boot/dts/r8a7791.dtsi
+> @@ -695,6 +695,36 @@
+>   		renesas,#wpf = <4>;
+>   	};
 >
-> Could you give me some more details?
+> +	du: display@feb00000 {
+> +		compatible = "renesas,du-r8a7791";
+> +		reg = <0 0xfeb00000 0 0x40000>,
+> +		      <0 0xfeb90000 0 0x1c>;
+> +		reg-names = "du", "lvds.0";
+> +		interrupts = <0 256 IRQ_TYPE_LEVEL_HIGH>,
+> +			     <0 268 IRQ_TYPE_LEVEL_HIGH>;
+> +		clocks = <&mstp7_clks R8A7791_CLK_DU0>,
+> +			 <&mstp7_clks R8A7791_CLK_DU1>,
+> +			 <&mstp7_clks R8A7791_CLK_LVDS0>;
+> +		clock-names = "du.0", "du.1", "lvds.0";
+> +		status = "disabled";
+> +
+> +		ports {
+> +			#address-cells = <1>;
+> +			#size-cells = <0>;
+> +
+> +			port@0 {
+> +				reg = <0>;
+> +				du_out_rgb: endpoint {
+> +				};
+> +			};
+> +			port@1 {
+> +				reg = <1>;
+> +				du_out_lvds0: endpoint {
+> +				};
 
-    I think it would be better to use sprintf() to generate the IRQ names 
-passed to platfrom_get_irq_byname() instead of string literals grouped into 
-arrays. I may be wrong though...
+    Hm, my manual tell me LVDS is supported on DU0 only for R8A7791/3...
 
 [...]
-
-> Thanks,
-> kaneko
 
 MBR, Sergei
 
