@@ -1,82 +1,58 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 11 Dec 2015 18:33:18 +0000
-Subject: Re: [PATCH] extcon-usb-gpio: add enable pin support
-Message-Id: <566B16EE.5080206@cogentembedded.com>
+From: Dirk Behme <dirk.behme@gmail.com>
+Date: Thu, 24 Dec 2015 10:09:21 +0000
+Subject: [PATCH v2] clk: shmobile: r8a7795: Add SDHI clocks
+Message-Id: <1450951761-3160-1-git-send-email-dirk.behme@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4393960.B6dD3UkQy3@wasted.cogentembedded.com>
- <20151211035312.GA9088@rob-hp-laptop>
-In-Reply-To: <20151211035312.GA9088@rob-hp-laptop>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Rob Herring <robh@kernel.org>
-Cc: pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, myungjoo.ham@samsung.com, cw00.choi@samsung.com, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, linux-usb@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Hello.
+Add R8A7795 SDHI clocks.
 
-On 12/11/2015 06:53 AM, Rob Herring wrote:
+Signed-off-by: Dirk Behme <dirk.behme@gmail.com>
+---
+Changes in v2: Add the missing *H clocks and correct the dividers.
 
->> Sometimes  there's a real  OTG chip behind the USB ID signal mapped to a GPIO
->> pin: in my case it's Maxim Integrated MAX3355E which  integrates Vbus charge
->> pump and comparators and passes  thru the ID  signal  from an OTG connector.
->> This chip also has the SHDN# pin which  should be  driven high for the normal
->> operation  and low to  save power;  it  is connected to a GPIO pin as well on,
->> hence  we'll have  to  teach the driver to parse the new optional device tree
->> property, "enable-gpio"...
->
-> Some wierd spacing going on here.
+This replaces v1
 
-    I like my text properly filling up the given columns. What's the problem? :-)
+http://www.spinics.net/lists/linux-sh/msg47464.html
 
->> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
->>
->> ---
->> The patch is against the 'extcon-next' branch of the 'extcon.git' repo.
->>
->>   Documentation/devicetree/bindings/extcon/extcon-usb-gpio.txt |    3 +++
->>   drivers/extcon/extcon-usb-gpio.c                             |    5 +++++
->>   2 files changed, 8 insertions(+)
->>
->> Index: extcon/Documentation/devicetree/bindings/extcon/extcon-usb-gpio.txt
->> =================================>> --- extcon.orig/Documentation/devicetree/bindings/extcon/extcon-usb-gpio.txt
->> +++ extcon/Documentation/devicetree/bindings/extcon/extcon-usb-gpio.txt
->> @@ -7,6 +7,9 @@ Required properties:
->>   - compatible: Should be "linux,extcon-usb-gpio"
->>   - id-gpio: gpio for USB ID pin. See gpio binding.
->>
->> +Optional properties:
->> +- enable-gpio: gpio for the enable pin. See gpio binding.
->
-> Use -gpios as -gpio is deprecated.
+ drivers/clk/shmobile/r8a7795-cpg-mssr.c | 13 ++++++++++++-
+ 1 file changed, 12 insertions(+), 1 deletion(-)
 
-    Didn't know, thanks.
-
-[...]
->> Index: extcon/drivers/extcon/extcon-usb-gpio.c
->> =================================>> --- extcon.orig/drivers/extcon/extcon-usb-gpio.c
->> +++ extcon/drivers/extcon/extcon-usb-gpio.c
-[...]
->> @@ -99,6 +100,8 @@ static int usb_extcon_probe(struct platf
->>   		return -ENOMEM;
->>
->>   	info->dev = dev;
->> +	info->enable_gpiod = devm_gpiod_get_optional(&pdev->dev, "enable",
->> +						     GPIOD_OUT_HIGH);
->>   	info->id_gpiod = devm_gpiod_get(&pdev->dev, "id", GPIOD_IN);
->>   	if (IS_ERR(info->id_gpiod)) {
->>   		dev_err(dev, "failed to get ID GPIO\n");
->> @@ -155,6 +158,8 @@ static int usb_extcon_remove(struct plat
->>
->>   	cancel_delayed_work_sync(&info->wq_detcable);
->>
->> +	gpiod_set_value_cansleep(info->enable_gpiod, 0);
-
-> Shouldn't you support either polarity?
-
-    The gpiolib does that for me -- devm_gpiod_get_optional() should read the 
-polarity from DT.
-
-> Rob
-
-MBR, Sergei
+diff --git a/drivers/clk/shmobile/r8a7795-cpg-mssr.c b/drivers/clk/shmobile/r8a7795-cpg-mssr.c
+index 05479e6..f30ed32 100644
+--- a/drivers/clk/shmobile/r8a7795-cpg-mssr.c
++++ b/drivers/clk/shmobile/r8a7795-cpg-mssr.c
+@@ -100,8 +100,15 @@ static const struct cpg_core_clk r8a7795_core_clks[] __initconst = {
+ 	DEF_FIXED("s3d2",       R8A7795_CLK_S3D2,  CLK_S3,         2, 1),
+ 	DEF_FIXED("s3d4",       R8A7795_CLK_S3D4,  CLK_S3,         4, 1),
+ 	DEF_FIXED("cl",         R8A7795_CLK_CL,    CLK_PLL1_DIV2, 48, 1),
++	DEF_FIXED("sd0h",       R8A7795_CLK_SD0H,  CLK_PLL1_DIV2,  2, 1),
++	DEF_FIXED("sd0",        R8A7795_CLK_SD0,   CLK_PLL1_DIV2,  8, 1),
++	DEF_FIXED("sd1h",       R8A7795_CLK_SD1H,  CLK_PLL1_DIV2,  2, 1),
++	DEF_FIXED("sd1",        R8A7795_CLK_SD1,   CLK_PLL1_DIV2,  8, 1),
++	DEF_FIXED("sd2h",       R8A7795_CLK_SD2H,  CLK_PLL1_DIV2,  2, 1),
++	DEF_FIXED("sd2",        R8A7795_CLK_SD2,   CLK_PLL1_DIV2,  8, 1),
++	DEF_FIXED("sd3h",       R8A7795_CLK_SD3H,  CLK_PLL1_DIV2,  2, 1),
++	DEF_FIXED("sd3",        R8A7795_CLK_SD3,   CLK_PLL1_DIV2,  8, 1),
+ 	DEF_FIXED("cp",         R8A7795_CLK_CP,    CLK_EXTAL,      2, 1),
+-
+ 	DEF_DIV6P1("mso",       R8A7795_CLK_MSO,   CLK_PLL1_DIV4, 0x014),
+ 	DEF_DIV6P1("hdmi",      R8A7795_CLK_HDMI,  CLK_PLL1_DIV2, 0x250),
+ };
+@@ -120,6 +127,10 @@ static const struct mssr_mod_clk r8a7795_mod_clks[] __initconst = {
+ 	DEF_MOD("sys-dmac1",		 218,	R8A7795_CLK_S3D1),
+ 	DEF_MOD("sys-dmac0",		 219,	R8A7795_CLK_S3D1),
+ 	DEF_MOD("scif2",		 310,	R8A7795_CLK_S3D4),
++	DEF_MOD("sdif3",	       	 311,	R8A7795_CLK_SD3),
++	DEF_MOD("sdif2",	       	 312,	R8A7795_CLK_SD2),
++	DEF_MOD("sdif1",	      	 313,	R8A7795_CLK_SD1),
++	DEF_MOD("sdif0",	     	 314,	R8A7795_CLK_SD0),
+ 	DEF_MOD("pcie1",		 318,	R8A7795_CLK_S3D1),
+ 	DEF_MOD("pcie0",		 319,	R8A7795_CLK_S3D1),
+ 	DEF_MOD("intc-ap",		 408,	R8A7795_CLK_S3D1),
+-- 
+2.6.4
 
