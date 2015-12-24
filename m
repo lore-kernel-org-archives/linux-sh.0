@@ -1,61 +1,178 @@
-From: "Michael S. Tsirkin" <mst@redhat.com>
-Date: Thu, 31 Dec 2015 19:06:13 +0000
-Subject: [PATCH v2 04/32] ia64: reuse asm-generic/barrier.h
-Message-Id: <1451572003-2440-5-git-send-email-mst@redhat.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 24 Dec 2015 10:24:48 +0000
+Subject: [PATCH] serial: sh-sci: Add CONFIG_SERIAL_EARLYCON support
+Message-Id: <1450952688-20573-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1451572003-2440-1-git-send-email-mst@redhat.com>
-In-Reply-To: <1451572003-2440-1-git-send-email-mst@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Peter Zijlstra <peterz@infradead.org>, Arnd Bergmann <arnd@arndb.de>, linux-arch@vger.kernel.org, Andrew Cooper <andrew.cooper3@citrix.com>, virtualization@lists.linux-foundation.org, Stefano Stabellini <stefano.stabellini@eu.citrix.com>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@elte.hu>, "H. Peter Anvin" <hpa@zytor.com>, David Miller <davem@davemloft.net>, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, sparclinux@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-metag@vger.kernel.org, linux-mips@linux-mips.org, x86@kernel.org, user-mode-linux-devel@lists.sourceforge.net, adi-buildroot-devel@lists.sourceforge.net, linux-sh@vger.kernel.org, linux-xtensa@linux-xtensa.org, xen-devel@lists.xenproject.org, Tony Luck <tony.luck@intel.com>, Fenghua Yu <fenghua.yu@intel.com>, Ingo Molnar <mingo@kernel.org>D
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On ia64 smp_rmb, smp_wmb, read_barrier_depends, smp_read_barrier_depends
-and smp_store_mb() match the asm-generic variants exactly. Drop the
-local definitions and pull in asm-generic/barrier.h instead.
+From: Yoshinori Sato <ysato@users.sourceforge.jp>
 
-This is in preparation to refactoring this code area.
+"earlyprintk" is architecture specific option.
+General "earlycon" option support is much better.
 
-Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
-Acked-by: Tony Luck <tony.luck@intel.com>
-Acked-by: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
+[uli: preserve other SCSCR bits when asserting RE and TE]
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+[geert: rewording, #ifdef rework]
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/ia64/include/asm/barrier.h | 10 ++--------
- 1 file changed, 2 insertions(+), 8 deletions(-)
+This depends on commit e1dd3bef6d03c908 ("serial: earlycon: Add missing
+spinlock initialization"), which is now in v4.4-rc6.
 
-diff --git a/arch/ia64/include/asm/barrier.h b/arch/ia64/include/asm/barrier.h
-index 209c4b8..2f93348 100644
---- a/arch/ia64/include/asm/barrier.h
-+++ b/arch/ia64/include/asm/barrier.h
-@@ -48,12 +48,6 @@
- # define smp_mb()	barrier()
- #endif
+I applies to tty-next with and without merging the pending pull request of
+git://git.kernel.org/pub/scm/linux/kernel/git/geert/renesas-drivers.git \
+scif-clk-sck-brg-for-v4.5
+---
+ drivers/tty/serial/Kconfig  |  6 ++++
+ drivers/tty/serial/sh-sci.c | 77 ++++++++++++++++++++++++++++++++++++++++++---
+ 2 files changed, 78 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/tty/serial/Kconfig b/drivers/tty/serial/Kconfig
+index 1aec4404062d8f19..5ff8c64304665903 100644
+--- a/drivers/tty/serial/Kconfig
++++ b/drivers/tty/serial/Kconfig
+@@ -742,6 +742,12 @@ config SERIAL_SH_SCI_CONSOLE
+ 	depends on SERIAL_SH_SCI=y
+ 	select SERIAL_CORE_CONSOLE
  
--#define smp_rmb()	smp_mb()
--#define smp_wmb()	smp_mb()
--
--#define read_barrier_depends()		do { } while (0)
--#define smp_read_barrier_depends()	do { } while (0)
--
- #define smp_mb__before_atomic()	barrier()
- #define smp_mb__after_atomic()	barrier()
- 
-@@ -77,12 +71,12 @@ do {									\
- 	___p1;								\
- })
- 
--#define smp_store_mb(var, value) do { WRITE_ONCE(var, value); smp_mb(); } while (0)
--
- /*
-  * The group barrier in front of the rsm & ssm are necessary to ensure
-  * that none of the previous instructions in the same group are
-  * affected by the rsm/ssm.
-  */
- 
-+#include <asm-generic/barrier.h>
++config SERIAL_SH_SCI_EARLYCON
++	bool "Support for early console on SuperH SCI(F)"
++	depends on SERIAL_SH_SCI=y
++	select SERIAL_CORE_CONSOLE
++	select SERIAL_EARLYCON
 +
- #endif /* _ASM_IA64_BARRIER_H */
+ config SERIAL_SH_SCI_DMA
+ 	bool "DMA support"
+ 	depends on SERIAL_SH_SCI && DMA_ENGINE
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 960e50a97558cff5..b296d0783f72199d 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -580,7 +580,8 @@ static void sci_clear_SCxSR(struct uart_port *port, unsigned int mask)
+ 	}
+ }
+ 
+-#if defined(CONFIG_CONSOLE_POLL) || defined(CONFIG_SERIAL_SH_SCI_CONSOLE)
++#if defined(CONFIG_CONSOLE_POLL) || defined(CONFIG_SERIAL_SH_SCI_CONSOLE) || \
++    defined(CONFIG_SERIAL_SH_SCI_EARLYCON)
+ 
+ #ifdef CONFIG_CONSOLE_POLL
+ static int sci_poll_get_char(struct uart_port *port)
+@@ -621,7 +622,8 @@ static void sci_poll_put_char(struct uart_port *port, unsigned char c)
+ 	serial_port_out(port, SCxTDR, c);
+ 	sci_clear_SCxSR(port, SCxSR_TDxE_CLEAR(port) & ~SCxSR_TEND(port));
+ }
+-#endif /* CONFIG_CONSOLE_POLL || CONFIG_SERIAL_SH_SCI_CONSOLE */
++#endif /* CONFIG_CONSOLE_POLL || CONFIG_SERIAL_SH_SCI_CONSOLE ||
++	  CONFIG_SERIAL_SH_SCI_EARLYCON */
+ 
+ static void sci_init_pins(struct uart_port *port, unsigned int cflag)
+ {
+@@ -2411,7 +2413,8 @@ static void sci_cleanup_single(struct sci_port *port)
+ 	pm_runtime_disable(port->port.dev);
+ }
+ 
+-#ifdef CONFIG_SERIAL_SH_SCI_CONSOLE
++#if defined(CONFIG_SERIAL_SH_SCI_CONSOLE) || \
++    defined(CONFIG_SERIAL_SH_SCI_EARLYCON)
+ static void serial_console_putchar(struct uart_port *port, int ch)
+ {
+ 	sci_poll_put_char(port, ch);
+@@ -2431,9 +2434,12 @@ static void serial_console_write(struct console *co, const char *s,
+ 	int locked = 1;
+ 
+ 	local_irq_save(flags);
++#if defined(SUPPORT_SYSRQ)
+ 	if (port->sysrq)
+ 		locked = 0;
+-	else if (oops_in_progress)
++	else
++#endif
++	if (oops_in_progress)
+ 		locked = spin_trylock(&port->lock);
+ 	else
+ 		spin_lock(&port->lock);
+@@ -2541,7 +2547,7 @@ static inline int sci_probe_earlyprintk(struct platform_device *pdev)
+ 
+ #define SCI_CONSOLE	NULL
+ 
+-#endif /* CONFIG_SERIAL_SH_SCI_CONSOLE */
++#endif /* CONFIG_SERIAL_SH_SCI_CONSOLE || CONFIG_SERIAL_SH_SCI_EARLYCON */
+ 
+ static const char banner[] __initconst = "SuperH (H)SCI(F) driver initialized";
+ 
+@@ -2789,6 +2795,67 @@ static void __exit sci_exit(void)
+ early_platform_init_buffer("earlyprintk", &sci_driver,
+ 			   early_serial_buf, ARRAY_SIZE(early_serial_buf));
+ #endif
++#ifdef CONFIG_SERIAL_SH_SCI_EARLYCON
++static struct __init plat_sci_port port_cfg;
++
++static int __init early_console_setup(struct earlycon_device *device,
++				      int type)
++{
++	if (!device->port.membase)
++		return -ENODEV;
++
++	device->port.serial_in = sci_serial_in;
++	device->port.serial_out	= sci_serial_out;
++	device->port.type = type;
++	memcpy(&sci_ports[0].port, &device->port, sizeof(struct uart_port));
++	sci_ports[0].cfg = &port_cfg;
++	sci_ports[0].cfg->type = type;
++	sci_probe_regmap(sci_ports[0].cfg);
++	port_cfg.scscr = sci_serial_in(&sci_ports[0].port, SCSCR) |
++			 SCSCR_RE | SCSCR_TE;
++	sci_serial_out(&sci_ports[0].port, SCSCR, port_cfg.scscr);
++
++	device->con->write = serial_console_write;
++	return 0;
++}
++static int __init sci_early_console_setup(struct earlycon_device *device,
++					  const char *opt)
++{
++	return early_console_setup(device, PORT_SCI);
++}
++static int __init scif_early_console_setup(struct earlycon_device *device,
++					  const char *opt)
++{
++	return early_console_setup(device, PORT_SCIF);
++}
++static int __init scifa_early_console_setup(struct earlycon_device *device,
++					  const char *opt)
++{
++	return early_console_setup(device, PORT_SCIFA);
++}
++static int __init scifb_early_console_setup(struct earlycon_device *device,
++					  const char *opt)
++{
++	return early_console_setup(device, PORT_SCIFB);
++}
++static int __init hscif_early_console_setup(struct earlycon_device *device,
++					  const char *opt)
++{
++	return early_console_setup(device, PORT_HSCIF);
++}
++
++EARLYCON_DECLARE(sci, sci_early_console_setup);
++OF_EARLYCON_DECLARE(sci, "renesas,sci", sci_early_console_setup);
++EARLYCON_DECLARE(scif, scif_early_console_setup);
++OF_EARLYCON_DECLARE(scif, "renesas,scif", scif_early_console_setup);
++EARLYCON_DECLARE(scifa, scifa_early_console_setup);
++OF_EARLYCON_DECLARE(scifa, "renesas,scifa", scifa_early_console_setup);
++EARLYCON_DECLARE(scifb, scifb_early_console_setup);
++OF_EARLYCON_DECLARE(scifb, "renesas,scifb", scifb_early_console_setup);
++EARLYCON_DECLARE(hscif, hscif_early_console_setup);
++OF_EARLYCON_DECLARE(hscif, "renesas,hscif", hscif_early_console_setup);
++#endif /* CONFIG_SERIAL_SH_SCI_EARLYCON */
++
+ module_init(sci_init);
+ module_exit(sci_exit);
+ 
 -- 
-MST
+1.9.1
 
