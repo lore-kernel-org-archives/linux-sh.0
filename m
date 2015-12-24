@@ -1,54 +1,86 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Sun, 13 Dec 2015 09:09:58 +0000
-Subject: Re: [PATCH 00/25] serial: sh-sci: Add external clock and BRG Support
-Message-Id: <CAMuHMdUtkyUbVDNBcrUVWj=FE=tO8x522Krk2c4q-7UAXe=P0g@mail.gmail.com>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Thu, 24 Dec 2015 11:16:46 +0000
+Subject: [PATCH 1/2] spi: sh-msiof: Add rcar fallback compatibility string
+Message-Id: <1450955807-22869-2-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447958344-836-1-git-send-email-geert+renesas@glider.be>
-	<CAMuHMdVGni+uTcFzMwnjJ2R_K-FiHpzeEioMMmqwXzdnOYu30g@mail.gmail.com>
-	<20151213064348.GC16326@kroah.com>
-In-Reply-To: <20151213064348.GC16326@kroah.com>
+References: <1450955807-22869-1-git-send-email-ykaneko0929@gmail.com>
+In-Reply-To: <1450955807-22869-1-git-send-email-ykaneko0929@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, "linux-serial@vger.kernel.org" <linux-serial@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+To: linux-spi@vger.kernel.org
+Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Mark Brown <broonie@kernel.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-Hi Greg,
+Add fallback compatibility string for R-Car Gen2 and Gen3.
+This is in keeping with the fallback scheme being adopted wherever
+appropriate for drivers for Renesas SoCs.
+In Addition, this patch deletes the compat strings for old SoCs.
 
-On Sun, Dec 13, 2015 at 7:43 AM, Greg Kroah-Hartman
-<gregkh@linuxfoundation.org> wrote:
-> On Fri, Nov 20, 2015 at 10:09:24AM +0100, Geert Uytterhoeven wrote:
->> On Thu, Nov 19, 2015 at 7:38 PM, Geert Uytterhoeven
->> <geert+renesas@glider.be> wrote:
->> > This patch series adds support to the Renesas SCI serial driver for
->> >   - the optional external clock on (H)SCI(F) and some SCIFA, where this
->> >     pin can serve as a clock input,
->> >   - the optional clock sources for the Baud Rate Generator for External
->> >     Clock (BRG), as found on some SCIF variants and on HSCIF.
->> > Using external clocks increases the range and accuracy of supported baud
->> > rates. Please see the descriptions of the DTS patches for more detailed
->> > information regarding the impact on the supported platforms.
->>
->> For the consumers: I've pushed this (incl. the dependencies and a few
->> WIP patches) to the scif-brg branch of my renesas-drivers repo.
->
-> I don't know what I can do with this series given the dependancies, but
-> if it helps, you can add:
->         Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-> to the serial patches and take them through what ever tree you want to.
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+---
+ Documentation/devicetree/bindings/spi/sh-msiof.txt | 11 ++++++++---
+ drivers/spi/spi-sh-msiof.c                         |  5 +++--
+ 2 files changed, 11 insertions(+), 5 deletions(-)
 
-Thanks for your ackes, they make (my) life a bit simpler!
+diff --git a/Documentation/devicetree/bindings/spi/sh-msiof.txt b/Documentation/devicetree/bindings/spi/sh-msiof.txt
+index aa005c1..d9d89ee 100644
+--- a/Documentation/devicetree/bindings/spi/sh-msiof.txt
++++ b/Documentation/devicetree/bindings/spi/sh-msiof.txt
+@@ -2,8 +2,8 @@ Renesas MSIOF spi controller
+ 
+ Required properties:
+ - compatible           : "renesas,msiof-<soctype>" for SoCs,
+-			 "renesas,sh-msiof" for SuperH, or
+-			 "renesas,sh-mobile-msiof" for SH Mobile series.
++			 "renesas,rcar-gen2-msiof" for R-Car Gen2 series, or
++			 "renesas,rcar-gen3-msiof" for R-Car Gen3 series.
+ 			 Examples with soctypes are:
+ 			 "renesas,msiof-r8a7790" (R-Car H2)
+ 			 "renesas,msiof-r8a7791" (R-Car M2-W)
+@@ -11,6 +11,11 @@ Required properties:
+ 			 "renesas,msiof-r8a7793" (R-Car M2-N)
+ 			 "renesas,msiof-r8a7794" (R-Car E2)
+ 			 "renesas,msiof-sh73a0" (SH-Mobile AG5)
++
++			 When compatible with the generic version, nodes must
++			 list the SoC-specific version corresponding to the
++			 platform first followed by the generic version.
++
+ - reg                  : A list of offsets and lengths of the register sets for
+ 			 the device.
+ 			 If only one register set is present, it is to be used
+@@ -60,7 +65,7 @@ Documentation/devicetree/bindings/pinctrl/renesas,*.
+ Example:
+ 
+ 	msiof0: spi@e6e20000 {
+-		compatible = "renesas,msiof-r8a7791";
++		compatible = "renesas,msiof-r8a7791", "renesas,rcar-gen2-msiof";
+ 		reg = <0 0xe6e20000 0 0x0064>;
+ 		interrupts = <0 156 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7791_CLK_MSIOF0>;
+diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
+index a7934ab..283fb31 100644
+--- a/drivers/spi/spi-sh-msiof.c
++++ b/drivers/spi/spi-sh-msiof.c
+@@ -1,6 +1,7 @@
+ /*
+  * SuperH MSIOF SPI Master Interface
+  *
++ * Copyright (C) 2014-2015 Renesas Electronics Corporation
+  * Copyright (c) 2009 Magnus Damm
+  * Copyright (C) 2014 Glider bvba
+  *
+@@ -971,8 +972,8 @@ static const struct sh_msiof_chipdata r8a779x_data = {
+ };
+ 
+ static const struct of_device_id sh_msiof_match[] = {
+-	{ .compatible = "renesas,sh-msiof",        .data = &sh_data },
+-	{ .compatible = "renesas,sh-mobile-msiof", .data = &sh_data },
++	{ .compatible = "renesas,rcar-gen2-msiof", .data = &r8a779x_data },
++	{ .compatible = "renesas,rcar-gen3-msiof", .data = &r8a779x_data },
+ 	{ .compatible = "renesas,msiof-r8a7790",   .data = &r8a779x_data },
+ 	{ .compatible = "renesas,msiof-r8a7791",   .data = &r8a779x_data },
+ 	{ .compatible = "renesas,msiof-r8a7792",   .data = &r8a779x_data },
+-- 
+1.9.1
 
-I was going to post an updated version tomorrow. I will include a list of
-merge options.
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
