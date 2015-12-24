@@ -1,191 +1,40 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 18 Dec 2015 02:29:47 +0000
-Subject: [PATCH 17/25] ARM: shmobile: r8a7793: Describe DMA for the serial ports
-Message-Id: <4b0f88796bd3d19331550dad2a9d958091f874a2.1450402264.git.horms+renesas@verge.net.au>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Thu, 24 Dec 2015 11:16:47 +0000
+Subject: [PATCH 2/2] spi: sh-msiof: Add compatible string for r8a7795
+Message-Id: <1450955807-22869-3-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1450402264.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1450402264.git.horms+renesas@verge.net.au>
+References: <1450955807-22869-1-git-send-email-ykaneko0929@gmail.com>
+In-Reply-To: <1450955807-22869-1-git-send-email-ykaneko0929@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-spi@vger.kernel.org
+Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Mark Brown <broonie@kernel.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-Add DMA properties to all SCIF, SCIFA, SCIFB, and HSCIF device nodes.
+From: Hiromitsu Yamasaki <hiromitsu.yamasaki.ym@renesas.com>
 
-Based on similar work for the r8a7791 by Geert Uytterhoeven.
+Simply documents new compatibility string.
+As a previous patch adds a generic R-Car Gen3 compatibility string
+there appears to be no need for a driver updates.
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Hiromitsu Yamasaki <hiromitsu.yamasaki.ym@renesas.com>
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
 ---
- arch/arm/boot/dts/r8a7793.dtsi | 36 ++++++++++++++++++++++++++++++++++++
- 1 file changed, 36 insertions(+)
+ Documentation/devicetree/bindings/spi/sh-msiof.txt | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/boot/dts/r8a7793.dtsi b/arch/arm/boot/dts/r8a7793.dtsi
-index 309b33d60001..df607a92b2ed 100644
---- a/arch/arm/boot/dts/r8a7793.dtsi
-+++ b/arch/arm/boot/dts/r8a7793.dtsi
-@@ -303,6 +303,8 @@
- 		interrupts = <0 144 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7793_CLK_SCIFA0>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x21>, <&dmac0 0x22>;
-+		dma-names = "tx", "rx";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -313,6 +315,8 @@
- 		interrupts = <0 145 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7793_CLK_SCIFA1>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x25>, <&dmac0 0x26>;
-+		dma-names = "tx", "rx";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -323,6 +327,8 @@
- 		interrupts = <0 151 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7793_CLK_SCIFA2>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x27>, <&dmac0 0x28>;
-+		dma-names = "tx", "rx";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -333,6 +339,8 @@
- 		interrupts = <0 29 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp11_clks R8A7793_CLK_SCIFA3>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x1b>, <&dmac0 0x1c>;
-+		dma-names = "tx", "rx";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -343,6 +351,8 @@
- 		interrupts = <0 30 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp11_clks R8A7793_CLK_SCIFA4>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x1f>, <&dmac0 0x20>;
-+		dma-names = "tx", "rx";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -353,6 +363,8 @@
- 		interrupts = <0 31 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp11_clks R8A7793_CLK_SCIFA5>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x23>, <&dmac0 0x24>;
-+		dma-names = "tx", "rx";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -363,6 +375,8 @@
- 		interrupts = <0 148 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7793_CLK_SCIFB0>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x3d>, <&dmac0 0x3e>;
-+		dma-names = "tx", "rx";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -373,6 +387,8 @@
- 		interrupts = <0 149 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7793_CLK_SCIFB1>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x19>, <&dmac0 0x1a>;
-+		dma-names = "tx", "rx";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -383,6 +399,8 @@
- 		interrupts = <0 150 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7793_CLK_SCIFB2>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x1d>, <&dmac0 0x1e>;
-+		dma-names = "tx", "rx";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -393,6 +411,8 @@
- 		interrupts = <0 152 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7793_CLK_SCIF0>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x29>, <&dmac0 0x2a>;
-+		dma-names = "tx", "rx";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -403,6 +423,8 @@
- 		interrupts = <0 153 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7793_CLK_SCIF1>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x2d>, <&dmac0 0x2e>;
-+		dma-names = "tx", "rx";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -413,6 +435,8 @@
- 		interrupts = <0 22 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7793_CLK_SCIF2>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x2b>, <&dmac0 0x2c>;
-+		dma-names = "tx", "rx";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -423,6 +447,8 @@
- 		interrupts = <0 23 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7793_CLK_SCIF3>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x2f>, <&dmac0 0x30>;
-+		dma-names = "tx", "rx";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -433,6 +459,8 @@
- 		interrupts = <0 24 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7793_CLK_SCIF4>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0xfb>, <&dmac0 0xfc>;
-+		dma-names = "tx", "rx";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -443,6 +471,8 @@
- 		interrupts = <0 25 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7793_CLK_SCIF5>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0xfd>, <&dmac0 0xfe>;
-+		dma-names = "tx", "rx";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -453,6 +483,8 @@
- 		interrupts = <0 154 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7793_CLK_HSCIF0>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x39>, <&dmac0 0x3a>;
-+		dma-names = "tx", "rx";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -463,6 +495,8 @@
- 		interrupts = <0 155 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7793_CLK_HSCIF1>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x4d>, <&dmac0 0x4e>;
-+		dma-names = "tx", "rx";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -473,6 +507,8 @@
- 		interrupts = <0 21 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7793_CLK_HSCIF2>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x3b>, <&dmac0 0x3c>;
-+		dma-names = "tx", "rx";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
+diff --git a/Documentation/devicetree/bindings/spi/sh-msiof.txt b/Documentation/devicetree/bindings/spi/sh-msiof.txt
+index d9d89ee..81c1389 100644
+--- a/Documentation/devicetree/bindings/spi/sh-msiof.txt
++++ b/Documentation/devicetree/bindings/spi/sh-msiof.txt
+@@ -11,6 +11,7 @@ Required properties:
+ 			 "renesas,msiof-r8a7793" (R-Car M2-N)
+ 			 "renesas,msiof-r8a7794" (R-Car E2)
+ 			 "renesas,msiof-sh73a0" (SH-Mobile AG5)
++			 "renesas,msiof-r8a7795" (R-Car H3)
+ 
+ 			 When compatible with the generic version, nodes must
+ 			 list the SoC-specific version corresponding to the
 -- 
-2.1.4
+1.9.1
 
