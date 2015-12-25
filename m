@@ -1,65 +1,38 @@
 From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Fri, 25 Dec 2015 11:52:36 +0000
-Subject: [PATCH v2 1/6] arm64: renesas: r8a7795: add usb2_phy device nodes
-Message-Id: <1451044361-5896-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+Date: Fri, 25 Dec 2015 11:26:03 +0000
+Subject: [PATCH] usb: renesas_usbhs: gadget: fix giveback status code in usbhsg_pipe_disable()
+Message-Id: <1451042763-4648-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1451044361-5896-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1451044361-5896-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: horms@verge.net.au, magnus.damm@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org
-Cc: devicetree@vger.kernel.org, linux-arm-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+To: linux-sh@vger.kernel.org
+
+A udc driver should set the giveback status to -ESHUTDOWN in
+usb_ep_disable(). Otherwise, a gadget driver (e.g. g_serial) might
+request next data wrongly and it is possible to cause kernel panic.
 
 Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- arch/arm64/boot/dts/renesas/r8a7795.dtsi | 34 ++++++++++++++++++++++++++++++++
- 1 file changed, 34 insertions(+)
+ This patch is based on Felipe's usb.git / testing/fixes branch.
+ (commit id = 5072cfc40a80cea3749fd3413b3896630d8c787e)
 
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-index bb353cd..89393ea 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-+++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-@@ -775,5 +775,39 @@
- 			clocks = <&cpg CPG_MOD 815>;
- 			status = "disabled";
- 		};
-+
-+		usb2_phy0: usb-phy@ee080200 {
-+			compatible = "renesas,usb2-phy-r8a7795";
-+			reg = <0 0xee080200 0 0x700>, <0 0xe6590100 0 0x100>;
-+			reg-names = "usb2_host", "hsusb";
-+			interrupts = <GIC_SPI 108 IRQ_TYPE_LEVEL_HIGH>;
-+			clocks = <&cpg CPG_MOD 703>, <&cpg CPG_MOD 704>;
-+			clock-names = "usb2", "hsusb";
-+			power-domains = <&cpg>;
-+			#phy-cells = <0>;
-+			status = "disabled";
-+		};
-+
-+		usb2_phy1: usb-phy@ee0a0200 {
-+			compatible = "renesas,usb2-phy-r8a7795";
-+			reg = <0 0xee0a0200 0 0x700>;
-+			reg-names = "usb2_host";
-+			clocks = <&cpg CPG_MOD 702>;
-+			clock-names = "usb2";
-+			power-domains = <&cpg>;
-+			#phy-cells = <0>;
-+			status = "disabled";
-+		};
-+
-+		usb2_phy2: usb-phy@ee0c0200 {
-+			compatible = "renesas,usb2-phy-r8a7795";
-+			reg = <0 0xee0c0200 0 0x700>;
-+			reg-names = "usb2_host";
-+			clocks = <&cpg CPG_MOD 701>;
-+			clock-names = "usb2";
-+			power-domains = <&cpg>;
-+			#phy-cells = <0>;
-+			status = "disabled";
-+		};
- 	};
- };
+ drivers/usb/renesas_usbhs/mod_gadget.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/usb/renesas_usbhs/mod_gadget.c b/drivers/usb/renesas_usbhs/mod_gadget.c
+index 657f967..664b263 100644
+--- a/drivers/usb/renesas_usbhs/mod_gadget.c
++++ b/drivers/usb/renesas_usbhs/mod_gadget.c
+@@ -561,7 +561,7 @@ static int usbhsg_pipe_disable(struct usbhsg_uep *uep)
+ 		if (!pkt)
+ 			break;
+ 
+-		usbhsg_queue_pop(uep, usbhsg_pkt_to_ureq(pkt), -ECONNRESET);
++		usbhsg_queue_pop(uep, usbhsg_pkt_to_ureq(pkt), -ESHUTDOWN);
+ 	}
+ 
+ 	usbhs_pipe_disable(pipe);
 -- 
 1.9.1
 
