@@ -1,63 +1,71 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 07 Dec 2015 18:24:18 +0000
-Subject: [PATCH v2 5/6] ARM: shmobile: r8a7794 dtsi: Add L2 cache-controller node
-Message-Id: <1449512659-16688-6-git-send-email-geert+renesas@glider.be>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Fri, 25 Dec 2015 11:52:39 +0000
+Subject: [PATCH v2 4/6] arm64: renesas: salvator-x: enable usb2_phy
+Message-Id: <1451044361-5896-5-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449512659-16688-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1449512659-16688-1-git-send-email-geert+renesas@glider.be>
+References: <1451044361-5896-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+In-Reply-To: <1451044361-5896-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: horms@verge.net.au, magnus.damm@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org
+Cc: devicetree@vger.kernel.org, linux-arm-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-Add a device node for the L2 cache, and link the CPU nodes to it.
-
-The L2 cache for the Cortex-A7 CPU cores is 512 KiB large (organized as
-64 KiB x 8 ways).
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
-What are the DT bindings for a Cortex-A7 L2 cache controller?
+ arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 34 +++++++++++++++++++++-
+ 1 file changed, 33 insertions(+), 1 deletion(-)
 
-v2:
-  - Drop (incorrect) optional cache-{size,sets,{block,line}-size}
-    properties, as this information is auto-detected,
-  - Integrate linking CPUs to L2 cache into this patch,
-  - Extracted from series "[PATCH/RFC 00/15] ARM: shmobile: R-Car: Add
-    SYSC PM Domain DT Support".
----
- arch/arm/boot/dts/r8a7794.dtsi | 8 ++++++++
- 1 file changed, 8 insertions(+)
-
-diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
-index 56acafbb70dc7bc9..1b53495b9c95611c 100644
---- a/arch/arm/boot/dts/r8a7794.dtsi
-+++ b/arch/arm/boot/dts/r8a7794.dtsi
-@@ -40,6 +40,7 @@
- 			compatible = "arm,cortex-a7";
- 			reg = <0>;
- 			clock-frequency = <1000000000>;
-+			next-level-cache = <&L2_CA7>;
- 		};
- 
- 		cpu1: cpu@1 {
-@@ -47,9 +48,16 @@
- 			compatible = "arm,cortex-a7";
- 			reg = <1>;
- 			clock-frequency = <1000000000>;
-+			next-level-cache = <&L2_CA7>;
- 		};
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+index 265d12f..7353407 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
++++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+@@ -122,8 +122,22 @@
+ 				 "audio_clkout_a", "audio_clkout3_a";
+ 		renesas,function = "audio_clk";
  	};
+-};
  
-+	L2_CA7: cache-controller@1 {
-+		compatible = "cache";
-+		cache-unified;
-+		cache-level = <2>;
++	usb0_pins: usb0 {
++		renesas,groups = "usb0";
++		renesas,function = "usb";
 +	};
 +
- 	gic: interrupt-controller@f1001000 {
- 		compatible = "arm,gic-400";
- 		#interrupt-cells = <3>;
++	usb1_pins: usb1 {
++		renesas,groups = "usb1";
++		renesas,function = "usb";
++	};
++
++	usb2_pins: usb2 {
++		renesas,groups = "usb2";
++		renesas,function = "usb";
++	};
++};
+ &scif1 {
+ 	pinctrl-0 = <&scif1_pins>;
+ 	pinctrl-names = "default";
+@@ -249,3 +263,21 @@
+ 		interrupts = <11 IRQ_TYPE_LEVEL_LOW>;
+ 	};
+ };
++
++&usb2_phy0 {
++	status = "okay";
++	pinctrl-0 = <&usb0_pins>;
++	pinctrl-names = "default";
++};
++
++&usb2_phy1 {
++	status = "okay";
++	pinctrl-0 = <&usb1_pins>;
++	pinctrl-names = "default";
++};
++
++&usb2_phy2 {
++	status = "okay";
++	pinctrl-0 = <&usb2_pins>;
++	pinctrl-names = "default";
++};
 -- 
 1.9.1
 
