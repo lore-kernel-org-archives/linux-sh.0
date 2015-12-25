@@ -1,114 +1,32 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 14 Dec 2015 18:57:23 +0000
-Subject: [PATCH v3 14/27] serial: sh-sci: Avoid calculating the receive margin for HSCIF
-Message-Id: <1450119456-964-15-git-send-email-geert+renesas@glider.be>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Fri, 25 Dec 2015 11:52:35 +0000
+Subject: [PATCH v2 0/6] arm64: renesas: add USB 2.0 device nodes for r8a7795
+Message-Id: <1451044361-5896-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450119456-964-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1450119456-964-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: horms@verge.net.au, magnus.damm@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org
+Cc: devicetree@vger.kernel.org, linux-arm-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-When assuming D = 0.5 and F = 0, maximizing the receive margin M is
-equivalent to maximizing the sample rate N.
+This patch set is based on the renesas.git / 20151221renesas-devel-20151221-v4.4-rc6 tag.
+(commit id = fe0e8e675dedf1877709a17258e88151c2614b77)
 
-Hence there's no need to calculate the receive margin, as we can obtain
-the same result by iterating over all possible sample rates in reverse
-order, and skipping parameter sets that don't provide a lower bit rate
-error.
+Changed from v1:
+ - Fix register size from 0xff to 0x100 in patch 2
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
----
-v3:
-  - Add Acked-by,
-  - Rebased,
-  - Terminate loop over sampling rates on perfect match.
----
- drivers/tty/serial/sh-sci.c | 51 +++++++++++++++++++++------------------------
- 1 file changed, 24 insertions(+), 27 deletions(-)
+Yoshihiro Shimoda (6):
+  arm64: renesas: r8a7795: add usb2_phy device nodes
+  arm64: renesas: r8a7795: add USB2.0 Host (EHCI/OHCI) device nodes
+  arm64: renesas: r8a7795: add HS-USB device node
+  arm64: renesas: salvator-x: enable usb2_phy
+  arm64: renesas: salvator-x: enable USB 2.0 Host channel 1 and 2
+  arm64: renesas: salvator-x: enable HS-USB
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 306497ee5c326d19..c3a193616484a62c 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -1872,13 +1872,24 @@ static void sci_baud_calc_hscif(struct sci_port *s, unsigned int bps,
- 				unsigned int *srr, unsigned int *cks)
- {
- 	unsigned int sr, br, prediv, scrate, c;
--	int err, recv_margin;
--	int min_err = INT_MAX;
--	int recv_max_margin = 0;
-+	int err, min_err = INT_MAX;
- 
--	/* Find the combination of sample rate and clock select with the
--	   smallest deviation from the desired baud rate. */
--	for (sr = 8; sr <= 32; sr++) {
-+	/*
-+	 * Find the combination of sample rate and clock select with the
-+	 * smallest deviation from the desired baud rate.
-+	 * Prefer high sample rates to maximise the receive margin.
-+	 *
-+	 * M: Receive margin (%)
-+	 * N: Ratio of bit rate to clock (N = sampling rate)
-+	 * D: Clock duty (D = 0 to 1.0)
-+	 * L: Frame length (L = 9 to 12)
-+	 * F: Absolute value of clock frequency deviation
-+	 *
-+	 *  M = |(0.5 - 1 / 2 * N) - ((L - 0.5) * F) -
-+	 *      (|D - 0.5| / N * (1 + F))|
-+	 *  NOTE: Usually, treat D for 0.5, F is 0 by this calculation.
-+	 */
-+	for (sr = 32; sr >= 8; sr--) {
- 		for (c = 0; c <= 3; c++) {
- 			/* integerized formulas from HSCIF documentation */
- 			prediv = sr * (1 << (2 * c + 1));
-@@ -1898,36 +1909,22 @@ static void sci_baud_calc_hscif(struct sci_port *s, unsigned int bps,
- 			scrate = prediv * bps;
- 			br = DIV_ROUND_CLOSEST(freq, scrate);
- 			br = clamp(br, 1U, 256U);
-+
- 			err = DIV_ROUND_CLOSEST(freq, br * prediv) - bps;
--			/* Calc recv margin
--			 * M: Receive margin (%)
--			 * N: Ratio of bit rate to clock (N = sampling rate)
--			 * D: Clock duty (D = 0 to 1.0)
--			 * L: Frame length (L = 9 to 12)
--			 * F: Absolute value of clock frequency deviation
--			 *
--			 *  M = |(0.5 - 1 / 2 * N) - ((L - 0.5) * F) -
--			 *      (|D - 0.5| / N * (1 + F))|
--			 *  NOTE: Usually, treat D for 0.5, F is 0 by this
--			 *        calculation.
--			 */
--			recv_margin = abs((500 -
--					DIV_ROUND_CLOSEST(1000, sr << 1)) / 10);
--			if (abs(min_err) > abs(err)) {
--				min_err = err;
--				recv_max_margin = recv_margin;
--			} else if ((min_err = err) &&
--				   (recv_margin > recv_max_margin))
--				recv_max_margin = recv_margin;
--			else
-+			if (abs(err) >= abs(min_err))
- 				continue;
- 
-+			min_err = err;
- 			*brr = br - 1;
- 			*srr = sr - 1;
- 			*cks = c;
-+
-+			if (!err)
-+				goto found;
- 		}
- 	}
- 
-+found:
- 	dev_dbg(s->port.dev, "BRR: %u%+d bps using N %u SR %u cks %u\n", bps,
- 		min_err, *brr, *srr + 1, *cks);
- }
+ arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts |  54 +++++++++-
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi           | 113 +++++++++++++++++++++
+ 2 files changed, 166 insertions(+), 1 deletion(-)
+
 -- 
 1.9.1
 
