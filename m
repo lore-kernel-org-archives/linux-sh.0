@@ -1,66 +1,97 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 17 Dec 2015 08:40:11 +0000
-Subject: [PATCH/RFC 33/48] vb2: Add helper function to check for request buffers
-Message-Id: <1450341626-6695-34-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Fri, 25 Dec 2015 11:52:37 +0000
+Subject: [PATCH v2 2/6] arm64: renesas: r8a7795: add USB2.0 Host (EHCI/OHCI) device nodes
+Message-Id: <1451044361-5896-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450341626-6695-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1450341626-6695-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1451044361-5896-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+In-Reply-To: <1451044361-5896-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: horms@verge.net.au, magnus.damm@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org
+Cc: devicetree@vger.kernel.org, linux-arm-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-The vb2_queue_has_request() function will check whether a buffer has
-been prepared for the given request ID.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- drivers/media/v4l2-core/videobuf2-v4l2.c | 17 +++++++++++++++++
- include/media/videobuf2-v4l2.h           |  2 ++
- 2 files changed, 19 insertions(+)
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi | 66 ++++++++++++++++++++++++++++++++
+ 1 file changed, 66 insertions(+)
 
-diff --git a/drivers/media/v4l2-core/videobuf2-v4l2.c b/drivers/media/v4l2-core/videobuf2-v4l2.c
-index 2c8776891535..0db7d67092ab 100644
---- a/drivers/media/v4l2-core/videobuf2-v4l2.c
-+++ b/drivers/media/v4l2-core/videobuf2-v4l2.c
-@@ -753,6 +753,23 @@ void vb2_queue_release(struct vb2_queue *q)
- }
- EXPORT_SYMBOL_GPL(vb2_queue_release);
- 
-+bool vb2_queue_has_request(struct vb2_queue *q, unsigned int request)
-+{
-+	unsigned int i;
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index 89393ea..499e158 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -809,5 +809,71 @@
+ 			#phy-cells = <0>;
+ 			status = "disabled";
+ 		};
 +
-+	for (i = 0; i < q->num_buffers; i++) {
-+		struct vb2_buffer *vb = q->bufs[i];
-+		struct vb2_v4l2_buffer *vbuf = to_vb2_v4l2_buffer(vb);
++		ehci0: usb@ee080100 {
++			compatible = "renesas,ehci-r8a7795", "generic-ehci";
++			reg = <0 0xee080100 0 0x100>;
++			interrupts = <GIC_SPI 108 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cpg CPG_MOD 703>;
++			phys = <&usb2_phy0>;
++			phy-names = "usb";
++			power-domains = <&cpg>;
++			status = "disabled";
++		};
 +
-+		if (vb->state = VB2_BUF_STATE_PREPARED &&
-+		    vbuf->request = request)
-+			return true;
-+	}
++		ehci1: usb@ee0a0100 {
++			compatible = "renesas,ehci-r8a7795", "generic-ehci";
++			reg = <0 0xee0a0100 0 0x100>;
++			interrupts = <GIC_SPI 112 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cpg CPG_MOD 702>;
++			phys = <&usb2_phy1>;
++			phy-names = "usb";
++			power-domains = <&cpg>;
++			status = "disabled";
++		};
 +
-+	return false;
-+}
-+EXPORT_SYMBOL_GPL(vb2_queue_has_request);
++		ehci2: usb@ee0c0100 {
++			compatible = "renesas,ehci-r8a7795", "generic-ehci";
++			reg = <0 0xee0c0100 0 0x100>;
++			interrupts = <GIC_SPI 113 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cpg CPG_MOD 701>;
++			phys = <&usb2_phy2>;
++			phy-names = "usb";
++			power-domains = <&cpg>;
++			status = "disabled";
++		};
 +
- /**
-  * vb2_poll() - implements poll userspace operation
-  * @q:		videobuf2 queue
-diff --git a/include/media/videobuf2-v4l2.h b/include/media/videobuf2-v4l2.h
-index 48d6a34dcdb4..7cb428fc66ad 100644
---- a/include/media/videobuf2-v4l2.h
-+++ b/include/media/videobuf2-v4l2.h
-@@ -68,6 +68,8 @@ int vb2_streamoff(struct vb2_queue *q, enum v4l2_buf_type type);
- int __must_check vb2_queue_init(struct vb2_queue *q);
- void vb2_queue_release(struct vb2_queue *q);
- 
-+bool vb2_queue_has_request(struct vb2_queue *q, unsigned int request);
++		ohci0: usb@ee080000 {
++			compatible = "renesas,ohci-r8a7795", "generic-ohci";
++			reg = <0 0xee080000 0 0x100>;
++			interrupts = <GIC_SPI 108 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cpg CPG_MOD 703>;
++			phys = <&usb2_phy0>;
++			phy-names = "usb";
++			power-domains = <&cpg>;
++			status = "disabled";
++		};
 +
- unsigned int vb2_poll(struct vb2_queue *q, struct file *file, poll_table *wait);
- size_t vb2_read(struct vb2_queue *q, char __user *data, size_t count,
- 		loff_t *ppos, int nonblock);
++		ohci1: usb@ee0a0000 {
++			compatible = "renesas,ohci-r8a7795", "generic-ohci";
++			reg = <0 0xee0a0000 0 0x100>;
++			interrupts = <GIC_SPI 112 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cpg CPG_MOD 702>;
++			phys = <&usb2_phy1>;
++			phy-names = "usb";
++			power-domains = <&cpg>;
++			status = "disabled";
++		};
++
++		ohci2: usb@ee0c0000 {
++			compatible = "renesas,ohci-r8a7795", "generic-ohci";
++			reg = <0 0xee0c0000 0 0x100>;
++			interrupts = <GIC_SPI 113 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cpg CPG_MOD 701>;
++			phys = <&usb2_phy2>;
++			phy-names = "usb";
++			power-domains = <&cpg>;
++			status = "disabled";
++		};
+ 	};
+ };
 -- 
-2.4.10
+1.9.1
 
