@@ -1,72 +1,29 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 15 Dec 2015 13:26:43 +0000
-Subject: [PATCH/RFC 01/03] ARM: shmobile: External Salvator-X SCIF3/HSCIF3 loop
-Message-Id: <20151215132643.15356.92444.sendpatchset@little-apple>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Fri, 25 Dec 2015 10:03:53 +0000
+Subject: [PATCH 0/6] arm64: renesas: add USB 2.0 device nodes for r8a7795
+Message-Id: <1451037839-572-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: horms@verge.net.au, magnus.damm@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org
+Cc: devicetree@vger.kernel.org, linux-arm-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-From: Magnus Damm <damm+renesas@opensource.se>
+This patch set is based on the renesas.git / 20151221renesas-devel-20151221-v4.4-rc6 tag.
+(commit id = fe0e8e675dedf1877709a17258e88151c2614b77)
 
-Add SCIF3 and HSCIF3 as two new serial ports to the r8a7795
-Salvator-X DT file. 
+Yoshihiro Shimoda (6):
+  arm64: renesas: r8a7795: add usb2_phy device nodes
+  arm64: renesas: r8a7795: add USB2.0 Host (EHCI/OHCI) device nodes
+  arm64: renesas: r8a7795: add HS-USB device node
+  arm64: renesas: salvator-x: enable usb2_phy
+  arm64: renesas: salvator-x: enable USB 2.0 Host channel 1 and 2
+  arm64: renesas: salvator-x: enable HS-USB
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
----
+ arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts |  54 +++++++++-
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi           | 113 +++++++++++++++++++++
+ 2 files changed, 166 insertions(+), 1 deletion(-)
 
- arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts |   28 ++++++++++++++++++++
- 1 file changed, 28 insertions(+)
+-- 
+1.9.1
 
---- 0001/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-+++ work/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts	2015-11-06 14:21:56.640513000 +0900
-@@ -41,6 +41,8 @@
- 	aliases {
- 		serial0 = &scif2;
- 		serial1 = &scif1;
-+		serial2 = &scif3;
-+		serial3 = &hscif3;
- 		ethernet0 = &avb;
- 	};
- 
-@@ -135,6 +137,16 @@
- 		renesas,groups = "scif2_data_a";
- 		renesas,function = "scif2";
- 	};
-+	
-+	scif3_pins: scif3 { /* TX: 1_11, RX: 1_8 */
-+		renesas,groups = "scif3_data_b";
-+		renesas,function = "scif3";
-+	};
-+
-+	hscif3_pins: hscif3 { /* TX: 2_8, RX: 2_7 */
-+		renesas,groups = "hscif3_data_d";
-+		renesas,function = "hscif3";
-+	};
- 
- 	i2c2_pins: i2c2 {
- 		renesas,groups = "i2c2_a";
-@@ -169,6 +181,22 @@
- 	pinctrl-names = "default";
- 
- 	status = "okay";
-+};
-+
-+&scif3 {
-+	pinctrl-0 = <&scif3_pins>;
-+	pinctrl-names = "default";
-+
-+	status = "okay";
-+};
-+
-+/* SCIF3 TX -> HSCIF3 RX, HSCIF3 TX -> SCIF3 RX */
-+
-+&hscif3 {
-+	pinctrl-0 = <&hscif3_pins>;
-+	pinctrl-names = "default";
-+
-+	status = "okay";
- };
- 
- &i2c2 {
