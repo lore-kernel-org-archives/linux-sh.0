@@ -1,10 +1,10 @@
 From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Fri, 25 Dec 2015 10:03:58 +0000
-Subject: [PATCH 5/6] arm64: renesas: salvator-x: enable USB 2.0 Host channel 1 and 2
-Message-Id: <1451037839-572-6-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+Date: Fri, 25 Dec 2015 11:52:40 +0000
+Subject: [PATCH v2 5/6] arm64: renesas: salvator-x: enable USB 2.0 Host channel 1 and 2
+Message-Id: <1451044361-5896-6-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1451037839-572-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1451037839-572-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+References: <1451044361-5896-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+In-Reply-To: <1451044361-5896-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
