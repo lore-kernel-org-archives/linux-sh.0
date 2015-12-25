@@ -1,39 +1,117 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 07 Dec 2015 06:34:47 +0000
-Subject: Re: [PATCH 3/4] ARM: shmobile: r8a7790: enable to use thermal-zone
-Message-Id: <20151207063443.GH22834@verge.net.au>
+From: Toshi Kani <toshi.kani@hpe.com>
+Date: Fri, 25 Dec 2015 22:09:18 +0000
+Subject: [PATCH v2 09/16] drivers: Initialize resource entry to zero
+Message-Id: <1451081365-15190-9-git-send-email-toshi.kani@hpe.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <871tb2hpn2.wl%kuninori.morimoto.gx@renesas.com>
- <87wpsugazs.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87wpsugazs.wl%kuninori.morimoto.gx@renesas.com>
+References: <1451081365-15190-1-git-send-email-toshi.kani@hpe.com>
+In-Reply-To: <1451081365-15190-1-git-send-email-toshi.kani@hpe.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Cc: Zhang Rui <rui.zhang@intel.com>, Eduardo Valentin <edubezval@gmail.com>, Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org
+To: akpm@linux-foundation.org, bp@alien8.de
+Cc: linux-arch@vger.kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linux-acpi@vger.kernel.org, linux-parisc@vger.kernel.org, linux-sh@vger.kernel.org, Toshi Kani <toshi.kani@hpe.com>
 
-On Fri, Dec 04, 2015 at 03:18:11AM +0000, Kuninori Morimoto wrote:
-> 
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> 
-> This patch enables to use thermal-zone on r8a7790.
-> This thermal sensor can measure temperature from -40000 to 125000,
-> but over 117000 can be critical on this chip.
-> Thus, default critical temperature is now set as 115000 (this driver
-> is using 5000 steps) (Current critical temperature is using it as
-> 90000, but there is no big reason about it)
-> 
-> And it doesn't check thermal zone periodically (same as current
-> behavior). You can exchange it by modifing polling-delay[-passive]
-> property.
-> 
-> You can set trip temp if your kernel has CONFIG_THERMAL_WRITABLE_TRIPS,
-> but you need to take care to use it, since it will call
-> orderly_poweroff() it it reached to the value.
-> echo $temp > /sys/class/thermal/thermal_zone0/trip_point_0_temp
-> 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+I/O resource descriptor, 'desc' added to struct resource, needs
+to be initialized to zero by default.  Some drivers call kmalloc()
+to allocate a resource entry, but does not initialize it to zero
+by memset().  Change these drivers to call kzalloc(), instead.
 
-I have marked this and the following shmobile patch as deffered
-pending acceptance of the driver changes (earlier in the patchset).
-Please repost the shmobile patches once that has occurred.
+Cc: linux-acpi@vger.kernel.org
+Cc: linux-parisc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
+Signed-off-by: Toshi Kani <toshi.kani@hpe.com>
+---
+ drivers/acpi/acpi_platform.c       |    2 +-
+ drivers/parisc/eisa_enumerator.c   |    4 ++--
+ drivers/rapidio/rio.c              |    8 ++++----
+ drivers/sh/superhyway/superhyway.c |    2 +-
+ 4 files changed, 8 insertions(+), 8 deletions(-)
+
+diff --git a/drivers/acpi/acpi_platform.c b/drivers/acpi/acpi_platform.c
+index 296b7a1..b6f7fa3 100644
+--- a/drivers/acpi/acpi_platform.c
++++ b/drivers/acpi/acpi_platform.c
+@@ -62,7 +62,7 @@ struct platform_device *acpi_create_platform_device(struct acpi_device *adev)
+ 	if (count < 0) {
+ 		return NULL;
+ 	} else if (count > 0) {
+-		resources = kmalloc(count * sizeof(struct resource),
++		resources = kzalloc(count * sizeof(struct resource),
+ 				    GFP_KERNEL);
+ 		if (!resources) {
+ 			dev_err(&adev->dev, "No memory for resources\n");
+diff --git a/drivers/parisc/eisa_enumerator.c b/drivers/parisc/eisa_enumerator.c
+index a656d9e..21905fe 100644
+--- a/drivers/parisc/eisa_enumerator.c
++++ b/drivers/parisc/eisa_enumerator.c
+@@ -91,7 +91,7 @@ static int configure_memory(const unsigned char *buf,
+ 	for (i=0;i<HPEE_MEMORY_MAX_ENT;i++) {
+ 		c = get_8(buf+len);
+ 		
+-		if (NULL != (res = kmalloc(sizeof(struct resource), GFP_KERNEL))) {
++		if (NULL != (res = kzalloc(sizeof(struct resource), GFP_KERNEL))) {
+ 			int result;
+ 			
+ 			res->name = name;
+@@ -183,7 +183,7 @@ static int configure_port(const unsigned char *buf, struct resource *io_parent,
+ 	for (i=0;i<HPEE_PORT_MAX_ENT;i++) {
+ 		c = get_8(buf+len);
+ 		
+-		if (NULL != (res = kmalloc(sizeof(struct resource), GFP_KERNEL))) {
++		if (NULL != (res = kzalloc(sizeof(struct resource), GFP_KERNEL))) {
+ 			res->name = board;
+ 			res->start = get_16(buf+len+1);
+ 			res->end = get_16(buf+len+1)+(c&HPEE_PORT_SIZE_MASK)+1;
+diff --git a/drivers/rapidio/rio.c b/drivers/rapidio/rio.c
+index d7b87c6..e220edc 100644
+--- a/drivers/rapidio/rio.c
++++ b/drivers/rapidio/rio.c
+@@ -117,7 +117,7 @@ int rio_request_inb_mbox(struct rio_mport *mport,
+ 	if (mport->ops->open_inb_mbox = NULL)
+ 		goto out;
+ 
+-	res = kmalloc(sizeof(struct resource), GFP_KERNEL);
++	res = kzalloc(sizeof(struct resource), GFP_KERNEL);
+ 
+ 	if (res) {
+ 		rio_init_mbox_res(res, mbox, mbox);
+@@ -185,7 +185,7 @@ int rio_request_outb_mbox(struct rio_mport *mport,
+ 	if (mport->ops->open_outb_mbox = NULL)
+ 		goto out;
+ 
+-	res = kmalloc(sizeof(struct resource), GFP_KERNEL);
++	res = kzalloc(sizeof(struct resource), GFP_KERNEL);
+ 
+ 	if (res) {
+ 		rio_init_mbox_res(res, mbox, mbox);
+@@ -285,7 +285,7 @@ int rio_request_inb_dbell(struct rio_mport *mport,
+ {
+ 	int rc = 0;
+ 
+-	struct resource *res = kmalloc(sizeof(struct resource), GFP_KERNEL);
++	struct resource *res = kzalloc(sizeof(struct resource), GFP_KERNEL);
+ 
+ 	if (res) {
+ 		rio_init_dbell_res(res, start, end);
+@@ -360,7 +360,7 @@ int rio_release_inb_dbell(struct rio_mport *mport, u16 start, u16 end)
+ struct resource *rio_request_outb_dbell(struct rio_dev *rdev, u16 start,
+ 					u16 end)
+ {
+-	struct resource *res = kmalloc(sizeof(struct resource), GFP_KERNEL);
++	struct resource *res = kzalloc(sizeof(struct resource), GFP_KERNEL);
+ 
+ 	if (res) {
+ 		rio_init_dbell_res(res, start, end);
+diff --git a/drivers/sh/superhyway/superhyway.c b/drivers/sh/superhyway/superhyway.c
+index 2d9e7f3..bb1fb771 100644
+--- a/drivers/sh/superhyway/superhyway.c
++++ b/drivers/sh/superhyway/superhyway.c
+@@ -66,7 +66,7 @@ int superhyway_add_device(unsigned long base, struct superhyway_device *sdev,
+ 	superhyway_read_vcr(dev, base, &dev->vcr);
+ 
+ 	if (!dev->resource) {
+-		dev->resource = kmalloc(sizeof(struct resource), GFP_KERNEL);
++		dev->resource = kzalloc(sizeof(struct resource), GFP_KERNEL);
+ 		if (!dev->resource) {
+ 			kfree(dev);
+ 			return -ENOMEM;
