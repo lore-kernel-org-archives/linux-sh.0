@@ -1,59 +1,44 @@
-From: Thierry Reding <thierry.reding@gmail.com>
-Date: Wed, 16 Dec 2015 16:03:34 +0000
-Subject: Re: [PATCH] pwm: rcar: Improve accuracy of frequency division setting
-Message-Id: <20151216160334.GK28947@ulmo>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="huBJOJF9BsF479P6"
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Fri, 25 Dec 2015 11:52:38 +0000
+Subject: [PATCH v2 3/6] arm64: renesas: r8a7795: add HS-USB device node
+Message-Id: <1451044361-5896-4-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447029745-3648-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1447029745-3648-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-To: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Cc: ryo.kodama.vz@renesas.com, linux-pwm@vger.kernel.org, linux-sh@vger.kernel.org
+References: <1451044361-5896-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+In-Reply-To: <1451044361-5896-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: horms@verge.net.au, magnus.damm@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org
+Cc: devicetree@vger.kernel.org, linux-arm-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
 
---huBJOJF9BsF479P6
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index 499e158..e027314 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -875,5 +875,18 @@
+ 			power-domains = <&cpg>;
+ 			status = "disabled";
+ 		};
++
++		hsusb: usb@e6590000 {
++			compatible = "renesas,usbhs-r8a7795",
++				     "renesas,rcar-gen3-usbhs";
++			reg = <0 0xe6590000 0 0x100>;
++			interrupts = <0 107 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cpg CPG_MOD 704>;
++			renesas,buswait = <11>;
++			phys = <&usb2_phy0>;
++			phy-names = "usb";
++			power-domains = <&cpg>;
++			status = "disabled";
++		};
+ 	};
+ };
+-- 
+1.9.1
 
-On Mon, Nov 09, 2015 at 09:42:25AM +0900, Yoshihiro Shimoda wrote:
-> From: Ryo Kodama <ryo.kodama.vz@renesas.com>
->=20
-> From: Ryo Kodama <ryo.kodama.vz@renesas.com>
->=20
-> When period_ns is set to the same value of RCAR_PWM_MAX_CYCLE in
-> rcar_pwm_get_clock_division(), this function should allow such value
-> for improving accuracy of frequency division setting.
->=20
-> Signed-off-by: Ryo Kodama <ryo.kodama.vz@renesas.com>
-> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-> ---
->  drivers/pwm/pwm-rcar.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-
-Applied, thanks.
-
-Thierry
-
---huBJOJF9BsF479P6
-Content-Type: application/pgp-signature; name="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iQIcBAABCAAGBQJWcYtVAAoJEN0jrNd/PrOha80QAKYWtLT8IrX1Bq5JzGnLOUII
-LlgxnXEQYolTgaE5g7BBMP4jrwSR2JqQZuSGlCrlBH7LL6PHaG1MBOnhapb474Yf
-vp6tcgZmZmjR0wNm0dAQonJ2yRSACWN5OcseUOvy/UTjaYRIgwaJwipcGgGvCnCu
-vgzPRIyMr19t/J0vaw3PGU1O15QxfPLs1G3VyhcFrj4Fg/WornLcaq92YFT53eeR
-cZPs5gS2QUR0fVxjqnkV3DfWK6qQfFRhZonPqDHmcXF2wfoScacdRU/K0WXwuOPm
-J3JktExa22n0lZCtevCYikVNb4PRgeLOd7h+PEYkYkc6aYKEpDd/K7W2ynBNFDhJ
-jO4vEFermV9GmV6JE44pE2AArUNEufYQ/kYtz9XXqe8mFXKJHlho1Zn36TE7CZAM
-177kzuMrkM8kzZ8Dad9hF1o/F/20wldmXA3AdjC7nPvAxRIArIf/3JRkrmmFkVkU
-tqZragSymJlEXa+EnT4gNminfvOZoQFJccC88Xhzw9+6TjDslBxIGrdpt6WU7wMW
-TDcUUtSdxWoUHGigHZASq4AHJOtMD28i9WULfemR/m1F3hk989i0jXAJYycCCdKF
-ofuOWnmRMAfnlF1BEj4Ijfx8hYC+DenZEA6vXN/HVgE798rhqAAZjC3D8gTkKsSm
-P31MPGCWK7V4epCGQuF0
-=EQOx
------END PGP SIGNATURE-----
-
---huBJOJF9BsF479P6--
