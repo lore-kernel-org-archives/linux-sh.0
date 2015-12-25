@@ -1,65 +1,65 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 04 Dec 2015 08:32:57 +0000
-Subject: [PATCH 3/8 v2] thermal: rcar: check irq possibility in rcar_thermal_irq_xxx()
-Message-Id: <87d1umfwf6.wl%kuninori.morimoto.gx@renesas.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Fri, 25 Dec 2015 10:03:54 +0000
+Subject: [PATCH 1/6] arm64: renesas: r8a7795: add usb2_phy device nodes
+Message-Id: <1451037839-572-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87h9jyfwj7.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87h9jyfwj7.wl%kuninori.morimoto.gx@renesas.com>
+References: <1451037839-572-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+In-Reply-To: <1451037839-572-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, Zhang Rui <rui.zhang@intel.com>, Eduardo Valentin <edubezval@gmail.com>
-Cc: Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org
+To: horms@verge.net.au, magnus.damm@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org
+Cc: devicetree@vger.kernel.org, linux-arm-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-
-Current rcar thermal driver sometimes checks irq possibility when it
-calls rcar_thermal_irq_enable/disable(), but sometimes not.
-This patch checks it inside rcar_thermal_irq_enable/disable().
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
-v1 -> v2
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi | 34 ++++++++++++++++++++++++++++++++
+ 1 file changed, 34 insertions(+)
 
- - new patch
-
- drivers/thermal/rcar_thermal.c | 9 +++++----
- 1 file changed, 5 insertions(+), 4 deletions(-)
-
-diff --git a/drivers/thermal/rcar_thermal.c b/drivers/thermal/rcar_thermal.c
-index 4d1bc2b..aaedf37 100644
---- a/drivers/thermal/rcar_thermal.c
-+++ b/drivers/thermal/rcar_thermal.c
-@@ -297,6 +297,9 @@ static void _rcar_thermal_irq_ctrl(struct rcar_thermal_priv *priv, int enable)
- 	unsigned long flags;
- 	u32 mask = 0x3 << rcar_id_to_shift(priv); /* enable Rising/Falling */
- 
-+	if (!rcar_has_irq_support(priv))
-+		return;
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index bb353cd..89393ea 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -775,5 +775,39 @@
+ 			clocks = <&cpg CPG_MOD 815>;
+ 			status = "disabled";
+ 		};
 +
- 	spin_lock_irqsave(&common->lock, flags);
- 
- 	rcar_thermal_common_bset(common, INTMSK, mask, enable ? 0 : mask);
-@@ -381,8 +384,7 @@ static int rcar_thermal_remove(struct platform_device *pdev)
- 	struct rcar_thermal_priv *priv;
- 
- 	rcar_thermal_for_each_priv(priv, common) {
--		if (rcar_has_irq_support(priv))
--			rcar_thermal_irq_disable(priv);
-+		rcar_thermal_irq_disable(priv);
- 		thermal_zone_device_unregister(priv->zone);
- 	}
- 
-@@ -468,8 +470,7 @@ static int rcar_thermal_probe(struct platform_device *pdev)
- 			goto error_unregister;
- 		}
- 
--		if (rcar_has_irq_support(priv))
--			rcar_thermal_irq_enable(priv);
-+		rcar_thermal_irq_enable(priv);
- 
- 		list_move_tail(&priv->list, &common->head);
- 
++		usb2_phy0: usb-phy@ee080200 {
++			compatible = "renesas,usb2-phy-r8a7795";
++			reg = <0 0xee080200 0 0x700>, <0 0xe6590100 0 0x100>;
++			reg-names = "usb2_host", "hsusb";
++			interrupts = <GIC_SPI 108 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cpg CPG_MOD 703>, <&cpg CPG_MOD 704>;
++			clock-names = "usb2", "hsusb";
++			power-domains = <&cpg>;
++			#phy-cells = <0>;
++			status = "disabled";
++		};
++
++		usb2_phy1: usb-phy@ee0a0200 {
++			compatible = "renesas,usb2-phy-r8a7795";
++			reg = <0 0xee0a0200 0 0x700>;
++			reg-names = "usb2_host";
++			clocks = <&cpg CPG_MOD 702>;
++			clock-names = "usb2";
++			power-domains = <&cpg>;
++			#phy-cells = <0>;
++			status = "disabled";
++		};
++
++		usb2_phy2: usb-phy@ee0c0200 {
++			compatible = "renesas,usb2-phy-r8a7795";
++			reg = <0 0xee0c0200 0 0x700>;
++			reg-names = "usb2_host";
++			clocks = <&cpg CPG_MOD 701>;
++			clock-names = "usb2";
++			power-domains = <&cpg>;
++			#phy-cells = <0>;
++			status = "disabled";
++		};
+ 	};
+ };
 -- 
 1.9.1
 
