@@ -1,90 +1,48 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 17 Dec 2015 08:39:44 +0000
-Subject: [PATCH/RFC 06/48] v4l: vsp1: bru: Don't program background color in control set handler
-Message-Id: <1450341626-6695-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Fri, 25 Dec 2015 10:03:58 +0000
+Subject: [PATCH 5/6] arm64: renesas: salvator-x: enable USB 2.0 Host channel 1 and 2
+Message-Id: <1451037839-572-6-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450341626-6695-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1450341626-6695-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1451037839-572-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+In-Reply-To: <1451037839-572-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: horms@verge.net.au, magnus.damm@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org
+Cc: devicetree@vger.kernel.org, linux-arm-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-The datasheet clearly states that all but a few registers can't be
-modified when the device is running. Programming the background color
-in the control set handler is thus prohibited. Program it when starting
-the module instead.
+This patch doesn't enable USB2.0 Host channel 0 because it is connected
+to MAX3355 and cannot control the SHDN pin for now.
 
-This requires storing the background color value internally as the
-module can be started from the frame completion interrupt handler, and
-accessing control values requires taking a mutex.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- drivers/media/platform/vsp1/vsp1_bru.c | 15 +++++++++------
- drivers/media/platform/vsp1/vsp1_bru.h |  2 ++
- 2 files changed, 11 insertions(+), 6 deletions(-)
+ arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
 
-diff --git a/drivers/media/platform/vsp1/vsp1_bru.c b/drivers/media/platform/vsp1/vsp1_bru.c
-index cb0dbc15ddad..4c1bd0419e12 100644
---- a/drivers/media/platform/vsp1/vsp1_bru.c
-+++ b/drivers/media/platform/vsp1/vsp1_bru.c
-@@ -42,13 +42,9 @@ static int bru_s_ctrl(struct v4l2_ctrl *ctrl)
- 	struct vsp1_bru *bru  		container_of(ctrl->handler, struct vsp1_bru, ctrls);
- 
--	if (!vsp1_entity_is_streaming(&bru->entity))
--		return 0;
--
- 	switch (ctrl->id) {
- 	case V4L2_CID_BG_COLOR:
--		vsp1_bru_write(bru, VI6_BRU_VIRRPF_COL, ctrl->val |
--			       (0xff << VI6_BRU_VIRRPF_COL_A_SHIFT));
-+		bru->bgcolor = ctrl->val;
- 		break;
- 	}
- 
-@@ -95,12 +91,17 @@ static int bru_s_stream(struct v4l2_subdev *subdev, int enable)
- 		       flags & V4L2_PIX_FMT_FLAG_PREMUL_ALPHA ?
- 		       0 : VI6_BRU_INCTRL_NRM);
- 
--	/* Set the background position to cover the whole output image. */
-+	/* Set the background position to cover the whole output image and
-+	 * configure its color.
-+	 */
- 	vsp1_bru_write(bru, VI6_BRU_VIRRPF_SIZE,
- 		       (format->width << VI6_BRU_VIRRPF_SIZE_HSIZE_SHIFT) |
- 		       (format->height << VI6_BRU_VIRRPF_SIZE_VSIZE_SHIFT));
- 	vsp1_bru_write(bru, VI6_BRU_VIRRPF_LOC, 0);
- 
-+	vsp1_bru_write(bru, VI6_BRU_VIRRPF_COL, bru->bgcolor |
-+		       (0xff << VI6_BRU_VIRRPF_COL_A_SHIFT));
-+
- 	/* Route BRU input 1 as SRC input to the ROP unit and configure the ROP
- 	 * unit with a NOP operation to make BRU input 1 available as the
- 	 * Blend/ROP unit B SRC input.
-@@ -438,6 +439,8 @@ struct vsp1_bru *vsp1_bru_create(struct vsp1_device *vsp1)
- 	v4l2_ctrl_new_std(&bru->ctrls, &bru_ctrl_ops, V4L2_CID_BG_COLOR,
- 			  0, 0xffffff, 1, 0);
- 
-+	bru->bgcolor = 0;
-+
- 	bru->entity.subdev.ctrl_handler = &bru->ctrls;
- 
- 	if (bru->ctrls.error) {
-diff --git a/drivers/media/platform/vsp1/vsp1_bru.h b/drivers/media/platform/vsp1/vsp1_bru.h
-index dbac9686ea69..4e7d2e79b940 100644
---- a/drivers/media/platform/vsp1/vsp1_bru.h
-+++ b/drivers/media/platform/vsp1/vsp1_bru.h
-@@ -33,6 +33,8 @@ struct vsp1_bru {
- 		struct vsp1_rwpf *rpf;
- 		struct v4l2_rect compose;
- 	} inputs[VSP1_MAX_RPF];
-+
-+	u32 bgcolor;
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+index 7353407..8e9cd31 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
++++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+@@ -281,3 +281,19 @@
+ 	pinctrl-0 = <&usb2_pins>;
+ 	pinctrl-names = "default";
  };
- 
- static inline struct vsp1_bru *to_bru(struct v4l2_subdev *subdev)
++
++&ehci1 {
++	status = "okay";
++};
++
++&ehci2 {
++	status = "okay";
++};
++
++&ohci1 {
++	status = "okay";
++};
++
++&ohci2 {
++	status = "okay";
++};
 -- 
-2.4.10
+1.9.1
 
