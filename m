@@ -1,41 +1,22 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 01 Dec 2015 07:24:32 +0000
-Subject: [PATCH 4/4] PCI: rcar: Add device tree support for r8a7793
-Message-Id: <1448954672-27236-5-git-send-email-horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sun, 27 Dec 2015 23:05:24 +0000
+Subject: [PATCH 0/2] sh_eth: remove unused BE descriptor support
+Message-Id: <27915743.MLN0FvErP3@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1448954672-27236-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1448954672-27236-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Bjorn Helgaas <bhelgaas@google.com>
-Cc: Magnus Damm <magnus.damm@gmail.com>, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Simon Horman <horms+renesas@verge.net.au>
+To: netdev@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-Simply document new compat strings.
-As a previous patch adds a generic R-Car Gen2 compat string
-there appears to be no need for a driver updates.
+Hello.
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+   Here's a set of 2 patches against DaveM's 'net-next.git' repo plus the
+recently merged to 'net.git' repo fix for the 16-bit descriptor endianness.
+We get rid of ~30 LoCs and ~300 bytes of code.
 
----
-* The r8a7792 and r8a7794 are omitted from this change as the
-  hardware in question does not appear to be present on those SoCs.
----
- Documentation/devicetree/bindings/pci/rcar-pci.txt | 1 +
- 1 file changed, 1 insertion(+)
+[1/2] sh_eth: remove EDMAC_BIG_ENDIAN
+[2/2] sh_eth: get rid of {cpu|edmac}_to_{edmac|cpu}()
 
-diff --git a/Documentation/devicetree/bindings/pci/rcar-pci.txt b/Documentation/devicetree/bindings/pci/rcar-pci.txt
-index 872cea085be8..4548b9b54165 100644
---- a/Documentation/devicetree/bindings/pci/rcar-pci.txt
-+++ b/Documentation/devicetree/bindings/pci/rcar-pci.txt
-@@ -4,6 +4,7 @@ Required properties:
- compatible: "renesas,pcie-r8a7779" for the R8A7779 SoC;
- 	    "renesas,pcie-r8a7790" for the R8A7790 SoC;
- 	    "renesas,pcie-r8a7791" for the R8A7791 SoC;
-+	    "renesas,pcie-r8a7793" for the R8A7793 SoC;
- 	    "renesas,pcie-gen2" for a generic R-Car Gen2 compatible device.
- 
- 	    When compatible with the generic version, nodes must list the
--- 
-2.1.4
+MBR, Sergei
 
