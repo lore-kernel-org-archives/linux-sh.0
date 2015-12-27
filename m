@@ -1,58 +1,90 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Fri, 04 Dec 2015 08:41:40 +0000
-Subject: Re: [PATCH 2/9] i2c: add generic routine to parse DT for timing information
-Message-Id: <20151204084140.GD1526@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="tEFtbjk+mNEviIIX"
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sun, 27 Dec 2015 23:07:08 +0000
+Subject: [PATCH 1/2] sh_eth: remove EDMAC_BIG_ENDIAN
+Message-Id: <1789816.9Rg3E9smcf@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449157899-6572-1-git-send-email-wsa@the-dreams.de>
- <1449157899-6572-3-git-send-email-wsa@the-dreams.de>
- <20151204083428.GC1593@lahna.fi.intel.com>
-In-Reply-To: <20151204083428.GC1593@lahna.fi.intel.com>
-To: Mika Westerberg <mika.westerberg@linux.intel.com>
-Cc: linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, linux-rockchip@lists.infradead.org, Andy Shevchenko <andriy.shevchenko@linux.intel.com>, Jarkko Nikula <jarkko.nikula@linux.intel.com>
+References: <27915743.MLN0FvErP3@wasted.cogentembedded.com>
+In-Reply-To: <27915743.MLN0FvErP3@wasted.cogentembedded.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: netdev@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
+Commit  71557a37adb5 ("[netdrvr] sh_eth: Add SH7619 support") added support
+for the big-endian EDMAC descriptors. However, it was never used and never
+worked right until the recent driver  fixes. I think we now  can just remove
+this support,  it was only burdening the driver from the start. It should be
+easy to do without disturbing the SH platform code, at least for now...
 
---tEFtbjk+mNEviIIX
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-> > +void of_i2c_parse_timings(struct device_node *node, struct i2c_timings=
- *t, bool use_defaults)
-> > +{
-> > +	memset(t, 0, sizeof(*t));
-> > +
-> > +	if (of_property_read_u32(node, "clock-frequency", &t->bus_freq_hz) &&=
- use_defaults)
-> > +		t->bus_freq_hz =3D 100000;
->=20
-> Why not create device_i2c_parse_timings() instead and use unified device
-> properties API?
+---
+ drivers/net/ethernet/renesas/sh_eth.c |   18 ++----------------
+ drivers/net/ethernet/renesas/sh_eth.h |    1 -
+ include/linux/sh_eth.h                |    2 +-
+ 3 files changed, 3 insertions(+), 18 deletions(-)
 
-Sure, just missed it.
+Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
+=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
++++ net-next/drivers/net/ethernet/renesas/sh_eth.c
+@@ -971,24 +971,12 @@ static void sh_eth_set_receive_align(str
+ /* CPU <-> EDMAC endian convert */
+ static inline __u32 cpu_to_edmac(struct sh_eth_private *mdp, u32 x)
+ {
+-	switch (mdp->edmac_endian) {
+-	case EDMAC_LITTLE_ENDIAN:
+-		return cpu_to_le32(x);
+-	case EDMAC_BIG_ENDIAN:
+-		return cpu_to_be32(x);
+-	}
+-	return x;
++	return cpu_to_le32(x);
+ }
+ 
+ static inline __u32 edmac_to_cpu(struct sh_eth_private *mdp, u32 x)
+ {
+-	switch (mdp->edmac_endian) {
+-	case EDMAC_LITTLE_ENDIAN:
+-		return le32_to_cpu(x);
+-	case EDMAC_BIG_ENDIAN:
+-		return be32_to_cpu(x);
+-	}
+-	return x;
++	return le32_to_cpu(x);
+ }
+ 
+ /* Program the hardware MAC address from dev->dev_addr. */
+@@ -3097,8 +3085,6 @@ static int sh_eth_drv_probe(struct platf
+ 	/* get PHY ID */
+ 	mdp->phy_id = pd->phy;
+ 	mdp->phy_interface = pd->phy_interface;
+-	/* EDMAC endian */
+-	mdp->edmac_endian = pd->edmac_endian;
+ 	mdp->no_ether_link = pd->no_ether_link;
+ 	mdp->ether_link_active_low = pd->ether_link_active_low;
+ 
+Index: net-next/drivers/net/ethernet/renesas/sh_eth.h
+=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.h
++++ net-next/drivers/net/ethernet/renesas/sh_eth.h
+@@ -513,7 +513,6 @@ struct sh_eth_private {
+ 	u32 cur_rx, dirty_rx;		/* Producer/consumer ring indices */
+ 	u32 cur_tx, dirty_tx;
+ 	u32 rx_buf_sz;			/* Based on MTU+slack. */
+-	int edmac_endian;
+ 	struct napi_struct napi;
+ 	bool irq_enabled;
+ 	/* MII transceiver section. */
+Index: net-next/include/linux/sh_eth.h
+=================================--- net-next.orig/include/linux/sh_eth.h
++++ net-next/include/linux/sh_eth.h
+@@ -4,7 +4,7 @@
+ #include <linux/phy.h>
+ #include <linux/if_ether.h>
+ 
+-enum {EDMAC_LITTLE_ENDIAN, EDMAC_BIG_ENDIAN};
++enum {EDMAC_LITTLE_ENDIAN};
+ 
+ struct sh_eth_plat_data {
+ 	int phy;
 
-
---tEFtbjk+mNEviIIX
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBAgAGBQJWYVHDAAoJEBQN5MwUoCm2ubwP/2bS6k18AIBEpg9z550wPBNf
-riLNEudioyjnxEpkidwWeV0nYaa7efLAxjagYqTDvXytRSTxvO3b+S2Z125kh0t1
-7cspDpfcuSTrLHJGabQmTUmd/HB7j9QZSyIaJUXgLF+5C7P0Iz8NRHIyTTJS0xCO
-DETYHvm5J9nNkeef88Fp/eBfTY26ev5gZzk1HaoY89+UfEIRDJGExN97v29Y0yIr
-Kv7s7HYVw5pZKf3kN2XZC4c1MM2YBMBKOJ3yqjpdD+5URME2HrFppdQTYdp+Vrlm
-IhecvpCD1VZxVJSBIkaMc38oYSCoq6VfEr0HFJPr9E88BzQQcWq56Ut1zsiOxNRv
-IDoQymkpw02QqaaQyjkoYTc2AhH5v6zdGxnOSIZXQC9WILBOOeu0Pr0D2PRauJZa
-m5bL6wF6IrQ6iolclHn1bRAmPMIZuqSCvM1nDwZyNHrlRmnfMLgsYRS/nR837kAR
-fItnAynX3U8JDHtmd+IbtvdGQ+C3w3JSEZ98vpo/iKYncyR9KphNMKoB82fCRwNk
-S4/igFaU29seVvYR7Ku2kJWEekTOkneQflnaNQEC4BJpLbIaH2Iw3S3rD0MASXV8
-LgwdG0jClcSJ3GVSoY2uIkiCoUfZn7crZ8nnzY/GLwFut3xo04WdRj72/Xvb956m
-6gzRrchtKp4xY8riNOSJ
-=fSXZ
------END PGP SIGNATURE-----
-
---tEFtbjk+mNEviIIX--
