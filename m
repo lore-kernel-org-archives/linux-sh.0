@@ -1,33 +1,17 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Fri, 25 Dec 2015 10:03:59 +0000
-Subject: [PATCH 6/6] arm64: renesas: salvator-x: enable HS-USB
-Message-Id: <1451037839-572-7-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: "Jeff Skoll" <verna.viajar@icdd.uni-kassel.de>
+Date: Mon, 28 Dec 2015 19:23:47 +0000
+Subject: Charity Donation
+Message-Id: <auto-000005247212@mailadmin.uni-kassel.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1451037839-572-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1451037839-572-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: horms@verge.net.au, magnus.damm@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org
-Cc: devicetree@vger.kernel.org, linux-arm-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: linux-sh@vger.kernel.org
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
----
- arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 4 ++++
- 1 file changed, 4 insertions(+)
+Hi,
+My name is Jeffrey Skoll, a philanthropist and the founder of one of the largest private foundations in the world. I believe strongly in ‘giving while living.’ I had one idea that never changed in my mind — that you should use your wealth to help people and I have decided to secretly give USD2.498 Million to a randomly selected individual. On receipt of this email, you should count yourself as the individual. Kindly get back to me at your earliest convenience, so I know your email address is valid.
 
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-index 8e9cd31..eb16403 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-+++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-@@ -297,3 +297,7 @@
- &ohci2 {
- 	status = "okay";
- };
-+
-+&hsusb {
-+	status = "okay";
-+};
--- 
-1.9.1
+Visit the web page to know more about me: http://www.theglobeandmail.com/news/national/meet-the-canadian-billionaire-whos-giving-it-all-away/article4209888/ or you can read an article of me on Wikipedia.
 
+Regards,
+Jeffrey Skoll.
