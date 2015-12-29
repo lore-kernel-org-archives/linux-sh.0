@@ -1,52 +1,52 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 15 Dec 2015 15:48:42 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Tue, 29 Dec 2015 00:05:17 +0000
 Subject: Re: [PATCH 03/06] iommu/ipmmu-vmsa: Break out utlb control function
-Message-Id: <CAMuHMdXYzO=+xuH2UwOUzDPoiyW-fBBaby91Ywr_Moa9bi17YQ@mail.gmail.com>
+Message-Id: <1823351.xcsKyrzciK@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20151215120212.26216.61530.sendpatchset@little-apple>
-	<20151215120239.26216.43390.sendpatchset@little-apple>
-In-Reply-To: <20151215120239.26216.43390.sendpatchset@little-apple>
+References: <20151215120212.26216.61530.sendpatchset@little-apple> <20151215120239.26216.43390.sendpatchset@little-apple> <CAMuHMdXYzO=+xuH2UwOUzDPoiyW-fBBaby91Ywr_Moa9bi17YQ@mail.gmail.com>
+In-Reply-To: <CAMuHMdXYzO=+xuH2UwOUzDPoiyW-fBBaby91Ywr_Moa9bi17YQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: iommu@lists.linux-foundation.org, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Geert Uytterhoeven <geert+renesas@glider.be>, Linux-sh list <linux-sh@vger.kernel.org>, Joerg Roedel <joro@8bytes.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Simon Horman <horms+renesas@verge.net.au>
+To: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: Magnus Damm <magnus.damm@gmail.com>, iommu@lists.linux-foundation.org, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Geert Uytterhoeven <geert+renesas@glider.be>, Linux-sh list <linux-sh@vger.kernel.org>, Joerg Roedel <joro@8bytes.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Simon Horman <horms+renesas@verge.net.au>
 
 Hi Magnus,
 
-On Tue, Dec 15, 2015 at 1:02 PM, Magnus Damm <magnus.damm@gmail.com> wrote:
-> --- 0004/drivers/iommu/ipmmu-vmsa.c
-> +++ work/drivers/iommu/ipmmu-vmsa.c     2015-12-15 13:17:40.580513000 +0900
-> @@ -279,9 +279,18 @@ static void ipmmu_utlb_enable(struct ipm
->  static void ipmmu_utlb_disable(struct ipmmu_vmsa_domain *domain,
->                                unsigned int utlb)
->  {
-> -       struct ipmmu_vmsa_device *mmu = domain->mmu;
-> +       ipmmu_write(domain->mmu, IMUCTR(utlb), 0);
-> +}
-> +
-> +static void ipmmu_utlb_ctrl(struct ipmmu_vmsa_domain *domain,
-> +                           void (*fn)(struct ipmmu_vmsa_domain *,
-> +                                      unsigned int utlb), struct device *dev)
-> +{
-> +       struct ipmmu_vmsa_dev_data *dev_data = get_dev_data(dev);
-> +       unsigned int i;
->
-> -       ipmmu_write(mmu, IMUCTR(utlb), 0);
-> +       for (i = 0; i < dev_data->num_utlbs; ++i)
-> +               fn(domain, dev_data->utlbs[i]);
->  }
+On Tuesday 15 December 2015 16:48:42 Geert Uytterhoeven wrote:
+> On Tue, Dec 15, 2015 at 1:02 PM, Magnus Damm <magnus.damm@gmail.com> wrote:
+> > --- 0004/drivers/iommu/ipmmu-vmsa.c
+> > +++ work/drivers/iommu/ipmmu-vmsa.c     2015-12-15 13:17:40.580513000
+> > +0900
+> > @@ -279,9 +279,18 @@ static void ipmmu_utlb_enable(struct ipm
+> >  static void ipmmu_utlb_disable(struct ipmmu_vmsa_domain *domain,
+> >                                unsigned int utlb)
+> >  {
+> > -       struct ipmmu_vmsa_device *mmu = domain->mmu;
+> > +       ipmmu_write(domain->mmu, IMUCTR(utlb), 0);
+> > +}
+> > +
+> > +static void ipmmu_utlb_ctrl(struct ipmmu_vmsa_domain *domain,
+> > +                           void (*fn)(struct ipmmu_vmsa_domain *,
+> > +                                      unsigned int utlb), struct device
+> > *dev)
+> > +{
+> > +       struct ipmmu_vmsa_dev_data *dev_data = get_dev_data(dev);
+> > +       unsigned int i;
+> > 
+> > -       ipmmu_write(mmu, IMUCTR(utlb), 0);
+> > +       for (i = 0; i < dev_data->num_utlbs; ++i)
+> > +               fn(domain, dev_data->utlbs[i]);
+> > 
+> >  }
+> 
+> Unless you have further plans with the "fn" parameter, I would simply pass
+> a bool enable/disable flag instead of a function pointer.
 
-Unless you have further plans with the "fn" parameter, I would simply pass
-a bool enable/disable flag instead of a function pointer.
+I agree with Geert. What's your plan here ?
 
-Gr{oetje,eeting}s,
+-- 
+Regards,
 
-                        Geert
+Laurent Pinchart
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
