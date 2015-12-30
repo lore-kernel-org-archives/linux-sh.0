@@ -1,55 +1,95 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 21 Dec 2015 14:20:34 +0000
-Subject: Re: [PATCH 01/25] serial: sh-sci: Update DT binding documentation for external clock input
-Message-Id: <CAMuHMdV30XBQDvbDFnF1f23zrKt8_=5cX9XNJ8WFcKQS9Kkp-w@mail.gmail.com>
+From: Mike Frysinger <vapier@gentoo.org>
+Date: Wed, 30 Dec 2015 03:55:54 +0000
+Subject: Re: SH FDPIC ABI spec/binutils and kernel conflict on flag definitions
+Message-Id: <20151230035554.GU25803@vapier.lan>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="elWSKwo949DbmCL3"
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447958344-836-1-git-send-email-geert+renesas@glider.be>
-	<1447958344-836-2-git-send-email-geert+renesas@glider.be>
-	<1756365.Ijac5ApxcA@avalon>
-	<CAMuHMdX4ToefbBLR6o2AMuzCMoKcYo9XRZOzHJzgtQn552vmNg@mail.gmail.com>
-In-Reply-To: <CAMuHMdX4ToefbBLR6o2AMuzCMoKcYo9XRZOzHJzgtQn552vmNg-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>
-Cc: Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>, Greg Kroah-Hartman <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Yoshinori Sato <ysato-Rn4VEauK+AKRv+LV9MX5uooqe+aC9MnS@public.gmane.org>, Laurent Pinchart <laurent.pinchart+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, "linux-serial-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-serial-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+References: <20150910033400.GM17773@brightrain.aerifal.cx>
+In-Reply-To: <20150910033400.GM17773@brightrain.aerifal.cx>
+To: linux-sh@vger.kernel.org
 
-On Thu, Nov 19, 2015 at 9:33 PM, Geert Uytterhoeven
-<geert@linux-m68k.org> wrote:
-> On Thu, Nov 19, 2015 at 9:19 PM, Laurent Pinchart
-> <laurent.pinchart@ideasonboard.com> wrote:
->> On Thursday 19 November 2015 19:38:40 Geert Uytterhoeven wrote:
->>> diff --git a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
->>> b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt index
->>> 2c9e6b8477e92792..8efc9b6f35637fbb 100644
->>> --- a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
->>> +++ b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
->>> @@ -43,6 +43,9 @@ Required properties:
->>>    - clocks: Must contain a phandle and clock-specifier pair for each entry
->>>      in clock-names.
->>>    - clock-names: Must contain "fck" for the SCIx UART functional clock.
->>> +    On (H)SCI(F) and some SCIFA, an additional clock may be specified:
->>
->> Could you list the SCIFA variants that support external clocks ?
->
-> The list is in the commit description of "[PATCH 19/25] serial: sh-sci: Add
-> support for optional external (H)SCK input": sh7723, sh7724, and r8a7740.
->
-> Note that the list is probably incomplete, so I don't know if it's that useful
-> to have it in the binding docs. Especially as I haven't verified yet that it
-> actually works ;-)
 
-For the record: on r8a7740, this feature is not available on SCIFA instances
-2-7. The sole pins providing access to SCIFA_SCK[01] are muxed for Ethernet use
-on r8a7740/armadillo. So it's unlikely I'll be able to support and test this.
+--elWSKwo949DbmCL3
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Gr{oetje,eeting}s,
+On 14 Sep 2015 12:09, Rich Felker wrote:
+> On Thu, Sep 10, 2015 at 04:53:35PM +0100, David Howells wrote:
+> > Rich Felker <dalias@libc.org> wrote:
+> > > On the other hand, the only existing way to produce a binary that both
+> > > (1) needs constant displacement, and (2) actually gets constant
+> > > displacement from the kernel at load time, is to manually edit the ELF
+> > > headers to flip the bit. So I really doubt any such binaries exist. Do
+> > > you have a reason to believe they do?
+> >=20
+> > Well, Fujitsu asked for it for FRV - I've no idea whether they have such
+> > binaries still.
+>=20
+> OK, I've solved part of the mystery: on FRV and Blackfin, binutils
+> matches the kernel behavior and conflicts with the (effectively wrong)
+> ABI documents. As can be seen at the following locations in the
+> source, EF_$ARCH_PIC is cleared by default and set when there is a
+> cross-segment relocation that forces constant displacement:
+>=20
+> Blackfin:
+> https://sourceware.org/git/?p=3Dbinutils-gdb.git;a=3Dblob;f=3Dbfd/elf32-b=
+fin.c;h=3D152134ee7b9b445d96818fcab2350ffd11795897;hb=3DHEAD#l3140
+> https://sourceware.org/git/?p=3Dbinutils-gdb.git;a=3Dblob;f=3Dbfd/elf32-b=
+fin.c;h=3D152134ee7b9b445d96818fcab2350ffd11795897;hb=3DHEAD#l4978
 
-                        Geert
+it's a bit more complicated than that.  only one place does Blackfin
+permit setting of EF_BFIN_PIC:
+https://sourceware.org/git/?p=3Dbinutils-gdb.git;a=3Dblob;f=3Dbfd/elf32-bfi=
+n.c;h=3D152134ee7b9b445d96818fcab2350ffd11795897;hb=3DHEAD#l3140
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+and if you look before that, it has:
+  if (!silence_segment_error && bfd_link_pic (info))
+    return FALSE;
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+and those are defined as:
+  int silence_segment_error =3D !bfd_link_pic (info);
+  #define bfd_link_pic(info)  (bfd_link_dll (info) || bfd_link_pie (info))
+  #define bfd_link_pie(info)  ((info)->type =3D=3D type_pie)
+
+all FDPIC ELFs must be PIE which means it's not possible to create a
+Blackfin FDPIC ELF with EF_BFIN_PIC set.
+
+off the top of my head, i don't recall seeing EF_BFIN_PIC being set
+in Blackfin FDPIC ELFs.  it would show up when generating some FLAT
+code w/-fpic, but that doesn't matter here.
+
+> FRV:
+> https://sourceware.org/git/?p=3Dbinutils-gdb.git;a=3Dblob;f=3Dbfd/elf32-f=
+rv.c;h=3Dfa12528b3d11ab9ed7a4d5d894f8b9c1a5e783a9;hb=3DHEAD#l3919
+> https://sourceware.org/git/?p=3Dbinutils-gdb.git;a=3Dblob;f=3Dbfd/elf32-f=
+rv.c;h=3Dfa12528b3d11ab9ed7a4d5d894f8b9c1a5e783a9;hb=3DHEAD#l6367
+
+the Blackfin code was copied from FRV, and the codepath i noted above
+is the same for FRV.
+-mike
+
+--elWSKwo949DbmCL3
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iQIcBAEBCAAGBQJWg1XJAAoJEEFjO5/oN/WBHjEP/jiqLM2H3iD85RUHTHZehSst
+Qc7hA4n6FAQ9ngIZhbZX/zPVay6PWhK9qqwv2gwC0rhUxUQ7a6HotB82u3zB7ocZ
+4sYUGoCF1ZJwagW/BBVaLv4bU07ec/1Y9v0ZK43k2aAUR+JGQK8ZUduv6038Jbnn
+bOrmYkwNmN0i1HpM9UN7CYpf5RU6CLcWr/XWzxoB2dODFt3q7jPn0qfpc500XC3y
+siDNldTTC079vG9XRQ7yACW98cACCEN+8cv4w+lu0xNdDkmcpuZYMnUWd/rJLneF
+lBhddiuhuBH/aUkfOZDTzS9Gjn4tdkqNsdj1VD2jGQbDcz1h+nHi4jJ2UZM9oFGI
+8gqVTtBw2RrG17FGwy+1VVjlwwo5jT9J7UpGCq6yB55tgUDlIUd8SJiICxXazMcj
+BmCRVts3mLZvN/PiEfQbHxNPyunHeBWYtLfqg5tFPqUqfsLWQP7b6JI/Bai8+4eq
+GRZeKW8xWCU+RtaAdZUy5TlTCBJ1Y0k8MBtlvbxI83OG55/gQ729JnzoomHXv+9e
+ioL3B+0AwW3C6oDhCTAZ8sPyMOByWWEWX5u5Rhva3h3+TjIEYLh3o1eLjU3/K16d
+CZBZa3q51aaNQ+XgfxImGH4W2q7Zd5a3gh16CQTEbhvctvWjFvkL/hHH5Lp09NXi
+UVz7InZs1g6U2EAszmKA
+=bpz+
+-----END PGP SIGNATURE-----
+
+--elWSKwo949DbmCL3--
