@@ -1,64 +1,95 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 10 Dec 2015 15:16:01 +0000
-Subject: [PATCH 2/3] ARM: shmobile: defconfig: Enable missing support based on DTSes
-Message-Id: <1449760562-26795-3-git-send-email-geert+renesas@glider.be>
+Date: Wed, 30 Dec 2015 10:40:48 +0000
+Subject: [git pull/resend] serial: sh-sci: External Clock Support for v4.5
+Message-Id: <1451472048-25592-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449760562-26795-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1449760562-26795-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
+Cc: Simon Horman <horms+renesas@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Enable all missing support, extracted from the various Renesas ARM DTSes
-using linux-config-from-dt.
+	Hi Greg,
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- arch/arm/configs/shmobile_defconfig | 6 ++++++
- 1 file changed, 6 insertions(+)
+The following changes since commit 8005c49d9aea74d382f474ce11afbbc7d7130bec:
 
-diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
-index 9a30c2c464c946ca..09a83d1411cc598b 100644
---- a/arch/arm/configs/shmobile_defconfig
-+++ b/arch/arm/configs/shmobile_defconfig
-@@ -52,6 +52,8 @@ CONFIG_UNIX=y
- CONFIG_INET=y
- CONFIG_IP_PNP=y
- CONFIG_IP_PNP_DHCP=y
-+CONFIG_CAN=y
-+CONFIG_CAN_RCAR=y
- CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
- CONFIG_DEVTMPFS=y
- CONFIG_DEVTMPFS_MOUNT=y
-@@ -98,6 +100,7 @@ CONFIG_SERIAL_SH_SCI=y
- CONFIG_SERIAL_SH_SCI_NR_UARTS 
- CONFIG_SERIAL_SH_SCI_CONSOLE=y
- CONFIG_I2C_CHARDEV=y
-+CONFIG_I2C_EMEV2=y
- CONFIG_I2C_GPIO=y
- CONFIG_I2C_RIIC=y
- CONFIG_I2C_SH_MOBILE=y
-@@ -134,6 +137,7 @@ CONFIG_SOC_CAMERA=y
- CONFIG_SOC_CAMERA_PLATFORM=y
- CONFIG_VIDEO_RCAR_VIN=y
- CONFIG_V4L_MEM2MEM_DRIVERS=y
-+CONFIG_VIDEO_RENESAS_JPU=y
- CONFIG_VIDEO_RENESAS_VSP1=y
- # CONFIG_MEDIA_SUBDRV_AUTOSELECT is not set
- CONFIG_VIDEO_ADV7180=y
-@@ -175,9 +179,11 @@ CONFIG_RTC_CLASS=y
- CONFIG_RTC_DRV_RS5C372=y
- CONFIG_RTC_DRV_S35390A=y
- CONFIG_RTC_DRV_RX8581=y
-+CONFIG_RTC_DRV_DA9063=y
- CONFIG_DMADEVICES=y
- CONFIG_SH_DMAE=y
- CONFIG_RCAR_DMAC=y
-+CONFIG_RENESAS_USB_DMAC=y
- # CONFIG_IOMMU_SUPPORT is not set
- CONFIG_IIO=y
- CONFIG_AK8975=y
--- 
-1.9.1
+  Linux 4.4-rc1 (2015-11-15 17:00:27 -0800)
 
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/geert/renesas-drivers.git scif-clk-sck-brg-for-v4.5
+
+for you to fetch changes up to 192d367f218d0cd94aa9b5059992e4aa19ec5b36:
+
+  serial: sh-sci: Drop the sci_fck clock fallback (2015-12-17 11:19:12 +0100)
+
+Summary:
+  - Clean up the naming of clocks in the sh-sci driver and its DT bindings,
+  - Add support for the optional external clock on (H)SCI(F), where this pin
+    can serve as a clock input,
+  - Add support for the optional clock sources for the Baud Rate
+    Generator for External Clock (BRG), as found on some SCIF variants
+    and on HSCIF.
+
+Thanks for pulling!
+
+----------------------------------------------------------------
+Geert Uytterhoeven (23):
+      serial: sh-sci: Add fallback compatibility strings
+      serial: sh-sci: Update DT binding documentation for external clock input
+      serial: sh-sci: Update DT binding documentation for BRG support
+      serial: sh-sci: Drop useless check for zero sampling_rate
+      serial: sh-sci: Grammar s/Get ... for/Get ... from/
+      serial: sh-sci: Use existing local variable in sci_parse_dt()
+      serial: sh-sci: Drop unused frame_len parameter for sci_baud_calc_hscif()
+      serial: sh-sci: Don't overwrite clock selection in serial_console_write()
+      serial: sh-sci: Convert from clk_get() to devm_clk_get()
+      serial: sh-sci: Make unsigned values in sci_baud_calc_hscif() unsigned
+      serial: sh-sci: Avoid overflow in sci_baud_calc_hscif()
+      serial: sh-sci: Improve bit rate error calculation for HSCIF
+      serial: sh-sci: Avoid calculating the receive margin for HSCIF
+      serial: sh-sci: Merge sci_scbrr_calc() and sci_baud_calc_hscif()
+      serial: sh-sci: Take into account sampling rate for max baud rate
+      serial: sh-sci: Add BRG register definitions
+      serial: sh-sci: Replace struct sci_port_info by type/regtype encoding
+      serial: sh-sci: Correct SCIF type on RZ/A1H
+      serial: sh-sci: Correct SCIF type on R-Car for BRG
+      serial: sh-sci: Prepare for multiple sampling clock sources
+      serial: sh-sci: Add support for optional external (H)SCK input
+      serial: sh-sci: Add support for optional BRG on (H)SCIF
+      sh: sh7734: Correct SCIF type for BRG
+
+Laurent Pinchart (4):
+      serial: sh-sci: Drop the interface clock
+      sh: Rename sci_ick and sci_fck clock to fck
+      sh: Remove sci_ick clock alias
+      serial: sh-sci: Drop the sci_fck clock fallback
+
+ .../bindings/serial/renesas,sci-serial.txt         |  32 +-
+ arch/sh/kernel/cpu/clock-cpg.c                     |   1 -
+ arch/sh/kernel/cpu/sh2a/clock-sh7264.c             |   9 +-
+ arch/sh/kernel/cpu/sh2a/clock-sh7269.c             |  16 +-
+ arch/sh/kernel/cpu/sh4a/clock-sh7343.c             |   8 +-
+ arch/sh/kernel/cpu/sh4a/clock-sh7366.c             |   6 +-
+ arch/sh/kernel/cpu/sh4a/clock-sh7723.c             |  12 +-
+ arch/sh/kernel/cpu/sh4a/clock-sh7734.c             |  12 +-
+ arch/sh/kernel/cpu/sh4a/clock-sh7757.c             |   6 +-
+ arch/sh/kernel/cpu/sh4a/clock-sh7785.c             |  12 +-
+ arch/sh/kernel/cpu/sh4a/clock-sh7786.c             |  12 +-
+ arch/sh/kernel/cpu/sh4a/clock-shx3.c               |   8 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7734.c             |  12 +-
+ drivers/tty/serial/sh-sci.c                        | 555 +++++++++++++++------
+ drivers/tty/serial/sh-sci.h                        |  10 +
+ include/linux/serial_sci.h                         |   1 +
+ 16 files changed, 500 insertions(+), 212 deletions(-)
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
