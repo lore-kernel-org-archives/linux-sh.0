@@ -1,56 +1,59 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 17 Dec 2015 07:21:31 +0000
-Subject: [PATCH 0/4] Enable DU on Salvator-X board
-Message-Id: <1450336895-4279-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: "Michael S. Tsirkin" <mst@redhat.com>
+Date: Thu, 31 Dec 2015 19:05:58 +0000
+Subject: [PATCH v2 02/32] asm-generic: guard smp_store_release/load_acquire
+Message-Id: <1451572003-2440-3-git-send-email-mst@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1451572003-2440-1-git-send-email-mst@redhat.com>
+In-Reply-To: <1451572003-2440-1-git-send-email-mst@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: linux-mips@linux-mips.org, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, virtualization@lists.linux-foundation.org, "H. Peter Anvin" <hpa@zytor.com>, sparclinux@vger.kernel.org, linux-arch@vger.kernel.org, linux-s390@vger.kernel.org, Arnd Bergmann <arnd@arndb.de>, x86@kernel.org, xen-devel@lists.xenproject.org, Ingo Molnar <mingo@elte.hu>, linux-xtensa@linux-xtensa.org, user-mode-linux-devel@lists.sourceforge.net, Stefano Stabellini <stefano.stabellini@eu.citrix.com>, adi-buildroot-devel@lists.sourceforge.net, Thomas Gleixner <tglx@linutronix.de>, linux-metag@vger.kernel.org, linux-arm-kernel@lists.infradead.org, Andrew Cooper <andrew.cooper3@citrix.com>, linuxppc-dev@lists.ozlabs.org, David Miller <davem@davemloft.net>
 
-Hello,
+Allow architectures to override smp_store_release
+and smp_load_acquire by guarding the defines
+in asm-generic/barrier.h with ifndef directives.
 
-This patch series enables support for DU on the Salvator-X board. Only the VGA
-output is supported for now.
+This is in preparation to reusing asm-generic/barrier.h
+on architectures which have their own definition
+of these macros.
 
-The patches are pretty straightforward but depend on two large patch series
-(plus the oddball patches) for the VSP1 and DU drivers.
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+Acked-by: Arnd Bergmann <arnd@arndb.de>
+---
+ include/asm-generic/barrier.h | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-On the VSP1 side the series has been posted to the linux-media and linux-sh
-mailing lists under the subject "[PATCH v2 00/32] VSP: Add R-Car Gen3
-support". A pull request for v4.5 has been submitted. An additional patch
-named "[RFC/PATCH] v4l: vsp1: Configure device based on IP version" is also
-needed. It has posted to the same mailing lists but has not been included in
-the pull request.
-
-On the DU side the series has been posted to the dri-devel and linux-sh
-mailing lists under the subject "[PATCH 00/22] R-Car DU: Add Gen3 support".
-As the series depends on the VSP1 series integration is a bit tricky and the
-pull request will be submitted for v4.6.
-
-The code has been tested on Salvator-X (quite obviously), and the changes have
-also been tested on Lager and Koelsch to try and prevent regressions. You can
-find the code with all its dependencies (including R-Car H3 CCF support) at
-
-	git://linuxtv.org/pinchartl/media.git drm/du/vsp1-kms/boards
-
-Please note that the branch is a working branch and is thus frequently rebased
-with the latest code. You can alternatively use the vsp1-kms-20151217 tag
-which corresponds to the above branch as of today.
-
-Laurent Pinchart (4):
-  clk: shmobile: r8a7795: Add LVDS module clock
-  ARM64: renesas: r8a7795: Add VSP instances
-  ARM64: renesas: r8a7795: Add DU device to DT
-  ARM64: renesas: salvator-x: Enable DU
-
- arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts |  44 ++++++
- arch/arm64/boot/dts/renesas/r8a7795.dtsi           | 160 +++++++++++++++++++++
- drivers/clk/shmobile/r8a7795-cpg-mssr.c            |   1 +
- 3 files changed, 205 insertions(+)
-
+diff --git a/include/asm-generic/barrier.h b/include/asm-generic/barrier.h
+index 0f45f93..987b2e0 100644
+--- a/include/asm-generic/barrier.h
++++ b/include/asm-generic/barrier.h
+@@ -104,13 +104,16 @@
+ #define smp_mb__after_atomic()	smp_mb()
+ #endif
+ 
++#ifndef smp_store_release
+ #define smp_store_release(p, v)						\
+ do {									\
+ 	compiletime_assert_atomic_type(*p);				\
+ 	smp_mb();							\
+ 	WRITE_ONCE(*p, v);						\
+ } while (0)
++#endif
+ 
++#ifndef smp_load_acquire
+ #define smp_load_acquire(p)						\
+ ({									\
+ 	typeof(*p) ___p1 = READ_ONCE(*p);				\
+@@ -118,6 +121,7 @@ do {									\
+ 	smp_mb();							\
+ 	___p1;								\
+ })
++#endif
+ 
+ #endif /* !__ASSEMBLY__ */
+ #endif /* __ASM_GENERIC_BARRIER_H */
 -- 
-Regards,
-
-Laurent Pinchart
+MST
 
