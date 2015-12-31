@@ -1,23 +1,50 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 08 Dec 2015 00:42:37 +0000
-Subject: Re: [PATCH 3/3] sh_eth: get rid of bb_{set|clr|read}()
-Message-Id: <20151208004236.GJ10799@verge.net.au>
+From: "Michael S. Tsirkin" <mst@redhat.com>
+Date: Thu, 31 Dec 2015 19:09:47 +0000
+Subject: [PATCH v2 31/32] sh: support a 2-byte smp_store_mb
+Message-Id: <1451572003-2440-32-git-send-email-mst@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1582774.FcjyuztLtc@wasted.cogentembedded.com>
- <2620242.OINoAeziLK@wasted.cogentembedded.com>
-In-Reply-To: <2620242.OINoAeziLK@wasted.cogentembedded.com>
+References: <1451572003-2440-1-git-send-email-mst@redhat.com>
+In-Reply-To: <1451572003-2440-1-git-send-email-mst-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Peter Zijlstra <peterz-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>, Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>, linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Cooper <andrew.cooper3-Sxgqhf6Nn4DQT0dZR+AlfA@public.gmane.org>, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Stefano Stabellini <stefano.stabellini-mvvWK6WmYclDPfheJLI6IQ@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>, linux-ia64-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linuxppc-dev-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org, linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sparclinux-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, linux-metag-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mips-6z/3iImG2C8G8FEW9MqTrA@public.gmane.org, x86-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, user-mode-linux-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, adi-buildroot-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-xtensa-PjhNF2WwrV/0Sa2dR60CXw@public.gmane.org, xen-devel-GuqFBffKawtpuQazS67q72D2FQJk+8+b@public.gmane.org, Ingo Molnar <mingo-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 
-On Tue, Dec 08, 2015 at 12:41:43AM +0300, Sergei Shtylyov wrote:
-> After the MDIO bitbang code consolidation, there's no need anymore for
-> bb_{set|clr}() as well as bb_read() -- just expand them inline, thus
-> saving more LoCs...
-> 
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+At the moment, xchg on sh only supports 4 and 1 byte values, so using it
+from smp_store_mb means attempts to store a 2 byte value using this
+macro fail.
 
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+And happens to be exactly what virtio drivers want to do.
+
+Check size and fall back to a slower, but safe, WRITE_ONCE+smp_mb.
+
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+---
+ arch/sh/include/asm/barrier.h | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/arch/sh/include/asm/barrier.h b/arch/sh/include/asm/barrier.h
+index f887c64..0cc5735 100644
+--- a/arch/sh/include/asm/barrier.h
++++ b/arch/sh/include/asm/barrier.h
+@@ -32,7 +32,15 @@
+ #define ctrl_barrier()	__asm__ __volatile__ ("nop;nop;nop;nop;nop;nop;nop;nop")
+ #endif
+ 
+-#define __smp_store_mb(var, value) do { (void)xchg(&var, value); } while (0)
++#define __smp_store_mb(var, value) do { \
++	if (sizeof(var) != 4 && sizeof(var) != 1) { \
++		 WRITE_ONCE(var, value); \
++		__smp_mb(); \
++	} else { \
++		(void)xchg(&var, value);  \
++	} \
++} while (0)
++
+ #define smp_store_mb(var, value) __smp_store_mb(var, value)
+ 
+ #include <asm-generic/barrier.h>
+-- 
+MST
 
