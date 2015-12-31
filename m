@@ -1,74 +1,43 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 07 Dec 2015 18:24:14 +0000
-Subject: [PATCH v2 1/6] ARM: shmobile: r8a73a4 dtsi: Add L2 cache-controller nodes
-Message-Id: <1449512659-16688-2-git-send-email-geert+renesas@glider.be>
+From: "Michael S. Tsirkin" <mst@redhat.com>
+Date: Thu, 31 Dec 2015 19:09:09 +0000
+Subject: [PATCH v2 26/32] xtensa: define __smp_xxx
+Message-Id: <1451572003-2440-27-git-send-email-mst@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449512659-16688-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1449512659-16688-1-git-send-email-geert+renesas@glider.be>
+References: <1451572003-2440-1-git-send-email-mst@redhat.com>
+In-Reply-To: <1451572003-2440-1-git-send-email-mst@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@vger.kernel.org
+Cc: linux-mips@linux-mips.org, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, virtualization@lists.linux-foundation.org, Max Filippov <jcmvbkbc@gmail.com>, "H. Peter Anvin" <hpa@zytor.com>, sparclinux@vger.kernel.org, linux-arch@vger.kernel.org, linux-s390@vger.kernel.org, Arnd Bergmann <arnd@arndb.de>, x86@kernel.org, xen-devel@lists.xenproject.org, Ingo Molnar <mingo@elte.hu>, linux-xtensa@linux-xtensa.org, user-mode-linux-devel@lists.sourceforge.net, Stefano Stabellini <stefano.stabellini@eu.citrix.com>, adi-buildroot-devel@lists.sourceforge.net, Thomas Gleixner <tglx@linutronix.de>, linux-metag@vger.kernel.org, linux-arm-kernel@lists.infradead.org, Chris Zankel <chris@zankel.net>, Andrew Cooper <andrew.cooper3@citrix.com>, linuxppc-dev@lists.ozlabs.org, David Miller <davem@davemloft.net>
 
-Add device nodes for the L2 caches, and link the CPU node to its L2
-cache node.
+This defines __smp_xxx barriers for xtensa,
+for use by virtualization.
 
-The L2 cache for the Cortex-A15 CPU cores is 1 MiB large (organized as
-64 KiB x 16 ways), and located in PM domain A3SM. It requires the
-following settings:
-  - Tag RAM latency: 3 cycles,
-  - Data RAM latency: 4 cycles.
+smp_xxx barriers are removed as they are
+defined correctly by asm-generic/barriers.h
 
-The L2 cache for the Cortex-A7 CPU cores is 512 KiB large (organized as
-64 KiB x 8 ways), and located in PM domain A3KM.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+Acked-by: Arnd Bergmann <arnd@arndb.de>
 ---
-What are the DT bindings for Cortex-A15/A7 L2 cache controllers?
+ arch/xtensa/include/asm/barrier.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-v2:
-  - New.
----
- arch/arm/boot/dts/r8a73a4.dtsi | 19 +++++++++++++++++++
- 1 file changed, 19 insertions(+)
-
-diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
-index 86fab56cd6314df7..73f7ea3cb2209a00 100644
---- a/arch/arm/boot/dts/r8a73a4.dtsi
-+++ b/arch/arm/boot/dts/r8a73a4.dtsi
-@@ -29,6 +29,7 @@
- 			reg = <0>;
- 			clock-frequency = <1500000000>;
- 			power-domains = <&pd_a2sl>;
-+			next-level-cache = <&L2_CA15>;
- 		};
- 	};
+diff --git a/arch/xtensa/include/asm/barrier.h b/arch/xtensa/include/asm/barrier.h
+index 5b88774..956596e 100644
+--- a/arch/xtensa/include/asm/barrier.h
++++ b/arch/xtensa/include/asm/barrier.h
+@@ -13,8 +13,8 @@
+ #define rmb() barrier()
+ #define wmb() mb()
  
-@@ -45,6 +46,24 @@
- 			     <1 10 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>;
- 	};
+-#define smp_mb__before_atomic()		barrier()
+-#define smp_mb__after_atomic()		barrier()
++#define __smp_mb__before_atomic()		barrier()
++#define __smp_mb__after_atomic()		barrier()
  
-+	L2_CA15: cache-controller@0 {
-+		compatible = "cache";
-+		clocks = <&cpg_clocks R8A73A4_CLK_Z>;
-+		power-domains = <&pd_a3sm>;
-+		arm,data-latency = <4 4 0>;
-+		arm,tag-latency = <3 3 3>;
-+		cache-unified;
-+		cache-level = <2>;
-+	};
-+
-+	L2_CA7: cache-controller@1 {
-+		compatible = "cache";
-+		clocks = <&cpg_clocks R8A73A4_CLK_Z2>;
-+		power-domains = <&pd_a3km>;
-+		cache-unified;
-+		cache-level = <2>;
-+	};
-+
- 	dbsc1: memory-controller@e6790000 {
- 		compatible = "renesas,dbsc-r8a73a4";
- 		reg = <0 0xe6790000 0 0x10000>;
+ #include <asm-generic/barrier.h>
+ 
 -- 
-1.9.1
+MST
 
