@@ -1,88 +1,43 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 04 Dec 2015 03:18:28 +0000
-Subject: [PATCH 4/4] ARM: shmobile: r8a7791: enable to use thermal-zone
-Message-Id: <87vb8egaz9.wl%kuninori.morimoto.gx@renesas.com>
+From: "Michael S. Tsirkin" <mst@redhat.com>
+Date: Thu, 31 Dec 2015 19:08:46 +0000
+Subject: [PATCH v2 23/32] sh: define __smp_xxx, fix smp_store_mb for !SMP
+Message-Id: <1451572003-2440-24-git-send-email-mst@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <871tb2hpn2.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <871tb2hpn2.wl%kuninori.morimoto.gx@renesas.com>
+References: <1451572003-2440-1-git-send-email-mst@redhat.com>
+In-Reply-To: <1451572003-2440-1-git-send-email-mst@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, Zhang Rui <rui.zhang@intel.com>, Eduardo Valentin <edubezval@gmail.com>
-Cc: Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: Peter Zijlstra <peterz@infradead.org>, Arnd Bergmann <arnd@arndb.de>, linux-arch@vger.kernel.org, Andrew Cooper <andrew.cooper3@citrix.com>, virtualization@lists.linux-foundation.org, Stefano Stabellini <stefano.stabellini@eu.citrix.com>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@elte.hu>, "H. Peter Anvin" <hpa@zytor.com>, David Miller <davem@davemloft.net>, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, sparclinux@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-metag@vger.kernel.org, linux-mips@linux-mips.org, x86@kernel.org, user-mode-linux-devel@lists.sourceforge.net, adi-buildroot-devel@lists.sourceforge.net, linux-sh@vger.kernel.org, linux-xtensa@linux-xtensa.org, xen-devel@lists.xenproject.org, Ingo Molnar <mingo@kernel.org>
 
+sh variant of smp_store_mb() calls xchg() on !SMP which is stronger than
+implied by both the name and the documentation.
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+define __smp_store_mb instead: code in asm-generic/barrier.h
+will then define smp_store_mb correctly depending on
+CONFIG_SMP.
 
-This patch enables to use thermal-zone on r8a7791.
-This thermal sensor can measure temperature from -40000 to 125000,
-but over 117000 can be critical on this chip.
-Thus, default critical temperature is now set as 115000 (this driver
-is using 5000 steps) (Current critical temperature is using it as
-90000, but there is no big reason about it)
-
-And it doesn't check thermal zone periodically (same as current
-behavior). You can exchange it by modifing polling-delay[-passive]
-property.
-
-You can set trip temp if your kernel has CONFIG_THERMAL_WRITABLE_TRIPS,
-but you need to take care to use it, since it will call
-orderly_poweroff() it it reached to the value.
-echo $temp > /sys/class/thermal/thermal_zone0/trip_point_0_temp
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+Acked-by: Arnd Bergmann <arnd@arndb.de>
 ---
- arch/arm/boot/dts/r8a7791.dtsi | 26 ++++++++++++++++++++++++--
- 1 file changed, 24 insertions(+), 2 deletions(-)
+ arch/sh/include/asm/barrier.h | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 1487d92..2fff856 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -69,6 +69,25 @@
- 		};
- 	};
+diff --git a/arch/sh/include/asm/barrier.h b/arch/sh/include/asm/barrier.h
+index bf91037..f887c64 100644
+--- a/arch/sh/include/asm/barrier.h
++++ b/arch/sh/include/asm/barrier.h
+@@ -32,7 +32,8 @@
+ #define ctrl_barrier()	__asm__ __volatile__ ("nop;nop;nop;nop;nop;nop;nop;nop")
+ #endif
  
-+	thermal-zones {
-+		cpu_thermal: cpu-thermal {
-+			polling-delay-passive	= <0>;
-+			polling-delay		= <0>;
-+
-+			thermal-sensors = <&thermal>;
-+
-+			trips {
-+				cpu-crit {
-+					temperature	= <1150000>;
-+					hysteresis	= <0>;
-+					type		= "critical";
-+				};
-+			};
-+			cooling-maps {
-+			};
-+		};
-+	};
-+
- 	gic: interrupt-controller@f1001000 {
- 		compatible = "arm,gic-400";
- 		#interrupt-cells = <3>;
-@@ -185,12 +204,15 @@
- 		power-domains = <&cpg_clocks>;
- 	};
+-#define smp_store_mb(var, value) do { (void)xchg(&var, value); } while (0)
++#define __smp_store_mb(var, value) do { (void)xchg(&var, value); } while (0)
++#define smp_store_mb(var, value) __smp_store_mb(var, value)
  
--	thermal@e61f0000 {
--		compatible = "renesas,thermal-r8a7791", "renesas,rcar-thermal";
-+	thermal: thermal@e61f0000 {
-+		compatible =	"renesas,thermal-r8a7791",
-+				"renesas,rcar-thermal-gen2",
-+				"renesas,rcar-thermal";
- 		reg = <0 0xe61f0000 0 0x14>, <0 0xe61f0100 0 0x38>;
- 		interrupts = <0 69 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp5_clks R8A7791_CLK_THERMAL>;
- 		power-domains = <&cpg_clocks>;
-+		#thermal-sensor-cells = <0>;
- 	};
+ #include <asm-generic/barrier.h>
  
- 	timer {
 -- 
-1.9.1
+MST
 
