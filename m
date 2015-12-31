@@ -1,46 +1,189 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 14 Dec 2015 18:57:25 +0000
-Subject: [PATCH v3 16/27] serial: sh-sci: Take into account sampling rate for max baud rate
-Message-Id: <1450119456-964-17-git-send-email-geert+renesas@glider.be>
+From: "Michael S. Tsirkin" <mst@redhat.com>
+Date: Thu, 31 Dec 2015 19:07:35 +0000
+Subject: [PATCH v2 14/32] asm-generic: add __smp_xxx wrappers
+Message-Id: <1451572003-2440-15-git-send-email-mst@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450119456-964-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1450119456-964-1-git-send-email-geert+renesas@glider.be>
+References: <1451572003-2440-1-git-send-email-mst@redhat.com>
+In-Reply-To: <1451572003-2440-1-git-send-email-mst-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Peter Zijlstra <peterz-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>, Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>, linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Cooper <andrew.cooper3-Sxgqhf6Nn4DQT0dZR+AlfA@public.gmane.org>, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Stefano Stabellini <stefano.stabellini-mvvWK6WmYclDPfheJLI6IQ@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>, linux-ia64-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linuxppc-dev-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org, linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sparclinux-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, linux-metag-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mips-6z/3iImG2C8G8FEW9MqTrA@public.gmane.org, x86-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, user-mode-linux-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, adi-buildroot-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-xtensa-PjhNF2WwrV/0Sa2dR60CXw@public.gmane.org, xen-devel-GuqFBffKawtpuQazS67q72D2FQJk+8+b@public.gmane.org
 
-The maximum baud rate depends on the sampling rate.
-HSCIF has a variable sampling rate and sets s->sampling_rate to zero,
-hence use the minimum sampling rate of 8.
+On !SMP, most architectures define their
+barriers as compiler barriers.
+On SMP, most need an actual barrier.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Reviewed-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Make it possible to remove the code duplication for
+!SMP by defining low-level __smp_xxx barriers
+which do not depend on the value of SMP, then
+use them from asm-generic conditionally.
+
+Besides reducing code duplication, these low level APIs will also be
+useful for virtualization, where a barrier is sometimes needed even if
+!SMP since we might be talking to another kernel on the same SMP system.
+
+Both virtio and Xen drivers will benefit.
+
+The smp_xxx variants should use __smp_XXX ones or barrier() depending on
+SMP, identically for all architectures.
+
+We keep ifndef guards around them for now - once/if all
+architectures are converted to use the generic
+code, we'll be able to remove these.
+
+Suggested-by: Peter Zijlstra <peterz@infradead.org>
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+Acked-by: Arnd Bergmann <arnd@arndb.de>
 ---
-v3:
-  - Add Reviewed-by, Acked-by.
----
- drivers/tty/serial/sh-sci.c | 5 ++++-
- 1 file changed, 4 insertions(+), 1 deletion(-)
+ include/asm-generic/barrier.h | 91 ++++++++++++++++++++++++++++++++++++++-----
+ 1 file changed, 82 insertions(+), 9 deletions(-)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index d89d4b7576cf3a15..5b120757c02a555a 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -1975,7 +1975,10 @@ static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
- 	 * that the previous boot loader has enabled required clocks and
- 	 * setup the baud rate generator hardware for us already.
- 	 */
--	max_baud = port->uartclk ? port->uartclk / 16 : 115200;
-+	if (port->uartclk)
-+		max_baud = port->uartclk / max(s->sampling_rate, 8U);
-+	else
-+		max_baud = 115200;
+diff --git a/include/asm-generic/barrier.h b/include/asm-generic/barrier.h
+index 987b2e0..8752964 100644
+--- a/include/asm-generic/barrier.h
++++ b/include/asm-generic/barrier.h
+@@ -54,22 +54,38 @@
+ #define read_barrier_depends()		do { } while (0)
+ #endif
  
- 	baud = uart_get_baud_rate(port, termios, old, 0, max_baud);
- 	if (likely(baud && port->uartclk))
++#ifndef __smp_mb
++#define __smp_mb()	mb()
++#endif
++
++#ifndef __smp_rmb
++#define __smp_rmb()	rmb()
++#endif
++
++#ifndef __smp_wmb
++#define __smp_wmb()	wmb()
++#endif
++
++#ifndef __smp_read_barrier_depends
++#define __smp_read_barrier_depends()	read_barrier_depends()
++#endif
++
+ #ifdef CONFIG_SMP
+ 
+ #ifndef smp_mb
+-#define smp_mb()	mb()
++#define smp_mb()	__smp_mb()
+ #endif
+ 
+ #ifndef smp_rmb
+-#define smp_rmb()	rmb()
++#define smp_rmb()	__smp_rmb()
+ #endif
+ 
+ #ifndef smp_wmb
+-#define smp_wmb()	wmb()
++#define smp_wmb()	__smp_wmb()
+ #endif
+ 
+ #ifndef smp_read_barrier_depends
+-#define smp_read_barrier_depends()	read_barrier_depends()
++#define smp_read_barrier_depends()	__smp_read_barrier_depends()
+ #endif
+ 
+ #else	/* !CONFIG_SMP */
+@@ -92,23 +108,78 @@
+ 
+ #endif	/* CONFIG_SMP */
+ 
++#ifndef __smp_store_mb
++#define __smp_store_mb(var, value)  do { WRITE_ONCE(var, value); __smp_mb(); } while (0)
++#endif
++
++#ifndef __smp_mb__before_atomic
++#define __smp_mb__before_atomic()	__smp_mb()
++#endif
++
++#ifndef __smp_mb__after_atomic
++#define __smp_mb__after_atomic()	__smp_mb()
++#endif
++
++#ifndef __smp_store_release
++#define __smp_store_release(p, v)					\
++do {									\
++	compiletime_assert_atomic_type(*p);				\
++	__smp_mb();							\
++	WRITE_ONCE(*p, v);						\
++} while (0)
++#endif
++
++#ifndef __smp_load_acquire
++#define __smp_load_acquire(p)						\
++({									\
++	typeof(*p) ___p1 = READ_ONCE(*p);				\
++	compiletime_assert_atomic_type(*p);				\
++	__smp_mb();							\
++	___p1;								\
++})
++#endif
++
++#ifdef CONFIG_SMP
++
++#ifndef smp_store_mb
++#define smp_store_mb(var, value)  __smp_store_mb(var, value)
++#endif
++
++#ifndef smp_mb__before_atomic
++#define smp_mb__before_atomic()	__smp_mb__before_atomic()
++#endif
++
++#ifndef smp_mb__after_atomic
++#define smp_mb__after_atomic()	__smp_mb__after_atomic()
++#endif
++
++#ifndef smp_store_release
++#define smp_store_release(p, v) __smp_store_release(p, v)
++#endif
++
++#ifndef smp_load_acquire
++#define smp_load_acquire(p) __smp_load_acquire(p)
++#endif
++
++#else	/* !CONFIG_SMP */
++
+ #ifndef smp_store_mb
+-#define smp_store_mb(var, value)  do { WRITE_ONCE(var, value); smp_mb(); } while (0)
++#define smp_store_mb(var, value)  do { WRITE_ONCE(var, value); barrier(); } while (0)
+ #endif
+ 
+ #ifndef smp_mb__before_atomic
+-#define smp_mb__before_atomic()	smp_mb()
++#define smp_mb__before_atomic()	barrier()
+ #endif
+ 
+ #ifndef smp_mb__after_atomic
+-#define smp_mb__after_atomic()	smp_mb()
++#define smp_mb__after_atomic()	barrier()
+ #endif
+ 
+ #ifndef smp_store_release
+ #define smp_store_release(p, v)						\
+ do {									\
+ 	compiletime_assert_atomic_type(*p);				\
+-	smp_mb();							\
++	barrier();							\
+ 	WRITE_ONCE(*p, v);						\
+ } while (0)
+ #endif
+@@ -118,10 +189,12 @@ do {									\
+ ({									\
+ 	typeof(*p) ___p1 = READ_ONCE(*p);				\
+ 	compiletime_assert_atomic_type(*p);				\
+-	smp_mb();							\
++	barrier();							\
+ 	___p1;								\
+ })
+ #endif
+ 
++#endif
++
+ #endif /* !__ASSEMBLY__ */
+ #endif /* __ASM_GENERIC_BARRIER_H */
 -- 
-1.9.1
+MST
 
