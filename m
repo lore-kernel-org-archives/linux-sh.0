@@ -1,122 +1,91 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 17 Dec 2015 08:39:46 +0000
-Subject: [PATCH/RFC 08/48] v4l: vsp1: sru: Don't program intensity in control set handler
-Message-Id: <1450341626-6695-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: "Michael S. Tsirkin" <mst@redhat.com>
+Date: Thu, 31 Dec 2015 19:10:09 +0000
+Subject: [PATCH v2 34/34] xen/io: use virt_xxx barriers
+Message-Id: <1451572003-2440-35-git-send-email-mst@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450341626-6695-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1450341626-6695-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1451572003-2440-1-git-send-email-mst@redhat.com>
+In-Reply-To: <1451572003-2440-1-git-send-email-mst@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: Peter Zijlstra <peterz@infradead.org>, Arnd Bergmann <arnd@arndb.de>, linux-arch@vger.kernel.org, Andrew Cooper <andrew.cooper3@citrix.com>, virtualization@lists.linux-foundation.org, Stefano Stabellini <stefano.stabellini@eu.citrix.com>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@elte.hu>, "H. Peter Anvin" <hpa@zytor.com>, David Miller <davem@davemloft.net>, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, sparclinux@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-metag@vger.kernel.org, linux-mips@linux-mips.org, x86@kernel.org, user-mode-linux-devel@lists.sourceforge.net, adi-buildroot-devel@lists.sourceforge.net, linux-sh@vger.kernel.org, linux-xtensa@linux-xtensa.org, xen-devel@lists.xenproject.org, Konrad Rzeszutek Wilk <konrad.wilk@oracle.com>, Boris Ostrovsky <boris.ostrovsky@oracle.com>David
 
-The datasheet clearly states that all but a few registers can't be
-modified when the device is running. Programming the intensity
-parameters in the control set handler is thus prohibited. Program it
-when starting the module instead.
+include/xen/interface/io/ring.h uses
+full memory barriers to communicate with the other side.
 
-This requires storing the intensity value internally as the module can
-be started from the frame completion interrupt handler, and accessing
-control values requires taking a mutex.
+For guests compiled with CONFIG_SMP, smp_wmb and smp_mb
+would be sufficient, so mb() and wmb() here are only needed if
+a non-SMP guest runs on an SMP host.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Switch to virt_xxx barriers which serve this exact purpose.
+
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
 ---
- drivers/media/platform/vsp1/vsp1_sru.c | 35 +++++++++-------------------------
- drivers/media/platform/vsp1/vsp1_sru.h |  2 ++
- 2 files changed, 11 insertions(+), 26 deletions(-)
+ include/xen/interface/io/ring.h | 16 ++++++++--------
+ 1 file changed, 8 insertions(+), 8 deletions(-)
 
-diff --git a/drivers/media/platform/vsp1/vsp1_sru.c b/drivers/media/platform/vsp1/vsp1_sru.c
-index cc09efbfb24f..ec4741efc7f8 100644
---- a/drivers/media/platform/vsp1/vsp1_sru.c
-+++ b/drivers/media/platform/vsp1/vsp1_sru.c
-@@ -26,11 +26,6 @@
-  * Device Access
-  */
+diff --git a/include/xen/interface/io/ring.h b/include/xen/interface/io/ring.h
+index 7dc685b..21f4fbd 100644
+--- a/include/xen/interface/io/ring.h
++++ b/include/xen/interface/io/ring.h
+@@ -208,12 +208,12 @@ struct __name##_back_ring {						\
  
--static inline u32 vsp1_sru_read(struct vsp1_sru *sru, u32 reg)
--{
--	return vsp1_read(sru->entity.vsp1, reg);
--}
--
- static inline void vsp1_sru_write(struct vsp1_sru *sru, u32 reg, u32 data)
- {
- 	vsp1_write(sru->entity.vsp1, reg, data);
-@@ -82,20 +77,10 @@ static int sru_s_ctrl(struct v4l2_ctrl *ctrl)
- {
- 	struct vsp1_sru *sru  		container_of(ctrl->handler, struct vsp1_sru, ctrls);
--	const struct vsp1_sru_param *param;
--	u32 value;
  
- 	switch (ctrl->id) {
- 	case V4L2_CID_VSP1_SRU_INTENSITY:
--		param = &vsp1_sru_params[ctrl->val - 1];
--
--		value = vsp1_sru_read(sru, VI6_SRU_CTRL0);
--		value &= ~(VI6_SRU_CTRL0_PARAM0_MASK |
--			   VI6_SRU_CTRL0_PARAM1_MASK);
--		value |= param->ctrl0;
--		vsp1_sru_write(sru, VI6_SRU_CTRL0, value);
--
--		vsp1_sru_write(sru, VI6_SRU_CTRL2, param->ctrl2);
-+		sru->intensity = ctrl->val;
- 		break;
- 	}
+ #define RING_PUSH_REQUESTS(_r) do {					\
+-    wmb(); /* back sees requests /before/ updated producer index */	\
++    virt_wmb(); /* back sees requests /before/ updated producer index */	\
+     (_r)->sring->req_prod = (_r)->req_prod_pvt;				\
+ } while (0)
  
-@@ -123,6 +108,7 @@ static const struct v4l2_ctrl_config sru_intensity_control = {
+ #define RING_PUSH_RESPONSES(_r) do {					\
+-    wmb(); /* front sees responses /before/ updated producer index */	\
++    virt_wmb(); /* front sees responses /before/ updated producer index */	\
+     (_r)->sring->rsp_prod = (_r)->rsp_prod_pvt;				\
+ } while (0)
  
- static int sru_s_stream(struct v4l2_subdev *subdev, int enable)
- {
-+	const struct vsp1_sru_param *param;
- 	struct vsp1_sru *sru = to_sru(subdev);
- 	struct v4l2_mbus_framefmt *input;
- 	struct v4l2_mbus_framefmt *output;
-@@ -148,18 +134,13 @@ static int sru_s_stream(struct v4l2_subdev *subdev, int enable)
- 	if (input->width != output->width)
- 		ctrl0 |= VI6_SRU_CTRL0_MODE_UPSCALE;
+@@ -250,9 +250,9 @@ struct __name##_back_ring {						\
+ #define RING_PUSH_REQUESTS_AND_CHECK_NOTIFY(_r, _notify) do {		\
+     RING_IDX __old = (_r)->sring->req_prod;				\
+     RING_IDX __new = (_r)->req_prod_pvt;				\
+-    wmb(); /* back sees requests /before/ updated producer index */	\
++    virt_wmb(); /* back sees requests /before/ updated producer index */	\
+     (_r)->sring->req_prod = __new;					\
+-    mb(); /* back sees new requests /before/ we check req_event */	\
++    virt_mb(); /* back sees new requests /before/ we check req_event */	\
+     (_notify) = ((RING_IDX)(__new - (_r)->sring->req_event) <		\
+ 		 (RING_IDX)(__new - __old));				\
+ } while (0)
+@@ -260,9 +260,9 @@ struct __name##_back_ring {						\
+ #define RING_PUSH_RESPONSES_AND_CHECK_NOTIFY(_r, _notify) do {		\
+     RING_IDX __old = (_r)->sring->rsp_prod;				\
+     RING_IDX __new = (_r)->rsp_prod_pvt;				\
+-    wmb(); /* front sees responses /before/ updated producer index */	\
++    virt_wmb(); /* front sees responses /before/ updated producer index */	\
+     (_r)->sring->rsp_prod = __new;					\
+-    mb(); /* front sees new responses /before/ we check rsp_event */	\
++    virt_mb(); /* front sees new responses /before/ we check rsp_event */	\
+     (_notify) = ((RING_IDX)(__new - (_r)->sring->rsp_event) <		\
+ 		 (RING_IDX)(__new - __old));				\
+ } while (0)
+@@ -271,7 +271,7 @@ struct __name##_back_ring {						\
+     (_work_to_do) = RING_HAS_UNCONSUMED_REQUESTS(_r);			\
+     if (_work_to_do) break;						\
+     (_r)->sring->req_event = (_r)->req_cons + 1;			\
+-    mb();								\
++    virt_mb();								\
+     (_work_to_do) = RING_HAS_UNCONSUMED_REQUESTS(_r);			\
+ } while (0)
  
--	/* Take the control handler lock to ensure that the CTRL0 value won't be
--	 * changed behind our back by a set control operation.
--	 */
--	if (sru->entity.vsp1->info->uapi)
--		mutex_lock(sru->ctrls.lock);
--	ctrl0 |= vsp1_sru_read(sru, VI6_SRU_CTRL0)
--	       & (VI6_SRU_CTRL0_PARAM0_MASK | VI6_SRU_CTRL0_PARAM1_MASK);
--	vsp1_sru_write(sru, VI6_SRU_CTRL0, ctrl0);
--	if (sru->entity.vsp1->info->uapi)
--		mutex_unlock(sru->ctrls.lock);
-+	param = &vsp1_sru_params[sru->intensity - 1];
-+
-+	ctrl0 |= param->ctrl0;
+@@ -279,7 +279,7 @@ struct __name##_back_ring {						\
+     (_work_to_do) = RING_HAS_UNCONSUMED_RESPONSES(_r);			\
+     if (_work_to_do) break;						\
+     (_r)->sring->rsp_event = (_r)->rsp_cons + 1;			\
+-    mb();								\
++    virt_mb();								\
+     (_work_to_do) = RING_HAS_UNCONSUMED_RESPONSES(_r);			\
+ } while (0)
  
-+	vsp1_sru_write(sru, VI6_SRU_CTRL0, ctrl0);
- 	vsp1_sru_write(sru, VI6_SRU_CTRL1, VI6_SRU_CTRL1_PARAM5);
-+	vsp1_sru_write(sru, VI6_SRU_CTRL2, param->ctrl2);
- 
- 	return 0;
- }
-@@ -376,6 +357,8 @@ struct vsp1_sru *vsp1_sru_create(struct vsp1_device *vsp1)
- 	v4l2_ctrl_handler_init(&sru->ctrls, 1);
- 	v4l2_ctrl_new_custom(&sru->ctrls, &sru_intensity_control, NULL);
- 
-+	sru->intensity = 1;
-+
- 	sru->entity.subdev.ctrl_handler = &sru->ctrls;
- 
- 	if (sru->ctrls.error) {
-diff --git a/drivers/media/platform/vsp1/vsp1_sru.h b/drivers/media/platform/vsp1/vsp1_sru.h
-index b6768bf3dc47..85e241457af2 100644
---- a/drivers/media/platform/vsp1/vsp1_sru.h
-+++ b/drivers/media/platform/vsp1/vsp1_sru.h
-@@ -28,6 +28,8 @@ struct vsp1_sru {
- 	struct vsp1_entity entity;
- 
- 	struct v4l2_ctrl_handler ctrls;
-+
-+	unsigned int intensity;
- };
- 
- static inline struct vsp1_sru *to_sru(struct v4l2_subdev *subdev)
 -- 
-2.4.10
+MST
 
