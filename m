@@ -1,77 +1,81 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 11 Dec 2015 01:08:05 +0000
-Subject: Re: [PATCH 2/2] ARM: shmobile: r8a7793: Describe DMA for the serial ports
-Message-Id: <20151211010805.GB9927@verge.net.au>
+From: "Michael S. Tsirkin" <mst@redhat.com>
+Date: Thu, 31 Dec 2015 19:07:42 +0000
+Subject: [PATCH v2 15/32] powerpc: define __smp_xxx
+Message-Id: <1451572003-2440-16-git-send-email-mst@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1448589166-11612-1-git-send-email-horms+renesas@verge.net.au>
- <1448589166-11612-3-git-send-email-horms+renesas@verge.net.au>
- <CAMuHMdVfMp0awRZh6S7YiSPFpUyAvwGXSQb2RYU7DkK_SOwH9Q@mail.gmail.com>
- <20151210045444.GC6964@verge.net.au>
- <CAMuHMdWCc-fZwr0eNBk5k4_qMuER76DDQndRiWX9zhrk0gqSQw@mail.gmail.com>
-In-Reply-To: <CAMuHMdWCc-fZwr0eNBk5k4_qMuER76DDQndRiWX9zhrk0gqSQw@mail.gmail.com>
+References: <1451572003-2440-1-git-send-email-mst@redhat.com>
+In-Reply-To: <1451572003-2440-1-git-send-email-mst@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@vger.kernel.org
+Cc: Peter Zijlstra <peterz@infradead.org>, Arnd Bergmann <arnd@arndb.de>, linux-arch@vger.kernel.org, Andrew Cooper <andrew.cooper3@citrix.com>, virtualization@lists.linux-foundation.org, Stefano Stabellini <stefano.stabellini@eu.citrix.com>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@elte.hu>, "H. Peter Anvin" <hpa@zytor.com>, David Miller <davem@davemloft.net>, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, sparclinux@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-metag@vger.kernel.org, linux-mips@linux-mips.org, x86@kernel.org, user-mode-linux-devel@lists.sourceforge.net, adi-buildroot-devel@lists.sourceforge.net, linux-sh@vger.kernel.org, linux-xtensa@linux-xtensa.org, xen-devel@lists.xenproject.org, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Michael
 
-On Thu, Dec 10, 2015 at 11:14:47AM +0100, Geert Uytterhoeven wrote:
-> On Thu, Dec 10, 2015 at 5:54 AM, Simon Horman <horms@verge.net.au> wrote:
-> > On Wed, Dec 09, 2015 at 11:47:36AM +0100, Geert Uytterhoeven wrote:
-> >> Hi Simon,
-> >>
-> >> On Fri, Nov 27, 2015 at 2:52 AM, Simon Horman
-> >> <horms+renesas@verge.net.au> wrote:
-> >> > Add DMA properties to all SCIF, SCIFA, SCIFB, and HSCIF device nodes.
-> >> >
-> >> > Based on similar work for the r8a7791 by Geert Uytterhoeven.
-> >> >
-> >> > Cc: Geert Uytterhoeven <geert+renesas@glider.be>
-> >> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> >> > ---
-> >> >  arch/arm/boot/dts/r8a7793.dtsi | 36 ++++++++++++++++++++++++++++++++++++
-> >> >  1 file changed, 36 insertions(+)
-> >> >
-> >> > diff --git a/arch/arm/boot/dts/r8a7793.dtsi b/arch/arm/boot/dts/r8a7793.dtsi
-> >> > index 3ac2ec0414a0..8d5cbdfc3d5d 100644
-> >> > --- a/arch/arm/boot/dts/r8a7793.dtsi
-> >> > +++ b/arch/arm/boot/dts/r8a7793.dtsi
-> >>
-> >> > @@ -394,6 +412,8 @@
-> >> >                 interrupts = <0 152 IRQ_TYPE_LEVEL_HIGH>;
-> >> >                 clocks = <&mstp7_clks R8A7793_CLK_SCIF0>;
-> >> >                 clock-names = "sci_ick";
-> >> > +               dmas = <&dmac0 0x29>, <&dmac0 0x2a>;
-> >> > +               dma-names = "tx", "rx";
-> >> >                 power-domains = <&cpg_clocks>;
-> >> >                 status = "disabled";
-> >> >         };
-> >> > @@ -404,6 +424,8 @@
-> >> >                 interrupts = <0 153 IRQ_TYPE_LEVEL_HIGH>;
-> >> >                 clocks = <&mstp7_clks R8A7793_CLK_SCIF1>;
-> >> >                 clock-names = "sci_ick";
-> >> > +               dmas = <&dmac0 0x29>, <&dmac0 0x2a>;
-> >>
-> >> This is duplicated from scif0, and should be:
-> >>
-> >>         dmas = <&dmac0 0x2d>, <&dmac0 0x2e>;
-> >>
-> >> > +               dma-names = "tx", "rx";
-> >>
-> >> After
-> >>
-> >>         sed -i -e 's/7791/779x/g' arch/arm/boot/dts/r8a7791.dtsi
-> >>         sed -i -e 's/7793/779x/g' arch/arm/boot/dts/r8a7793.dtsi
-> >>
-> >> arch/arm/boot/dts/r8a7791.dtsi and arch/arm/boot/dts/r8a7793.dtsi should
-> >> be identical ;-)
-> >
-> > Thanks, I have fixed that in v2.
-> 
-> Haven't seen that patch, but feel free to add my
-> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> after having corrected the scif1 DMA names.
-> The sooner it arrives in renesas-devel, the better (I have patches depending
-> on it).
+This defines __smp_xxx barriers for powerpc
+for use by virtualization.
 
-Sorry for being a bit slow there.
-I have sent it out with your Ack and plan to queue it up a bit later today.
+smp_xxx barriers are removed as they are
+defined correctly by asm-generic/barriers.h
+
+This reduces the amount of arch-specific boiler-plate code.
+
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+Acked-by: Arnd Bergmann <arnd@arndb.de>
+---
+ arch/powerpc/include/asm/barrier.h | 24 ++++++++----------------
+ 1 file changed, 8 insertions(+), 16 deletions(-)
+
+diff --git a/arch/powerpc/include/asm/barrier.h b/arch/powerpc/include/asm/barrier.h
+index 980ad0c..c0deafc 100644
+--- a/arch/powerpc/include/asm/barrier.h
++++ b/arch/powerpc/include/asm/barrier.h
+@@ -44,19 +44,11 @@
+ #define dma_rmb()	__lwsync()
+ #define dma_wmb()	__asm__ __volatile__ (stringify_in_c(SMPWMB) : : :"memory")
+ 
+-#ifdef CONFIG_SMP
+-#define smp_lwsync()	__lwsync()
++#define __smp_lwsync()	__lwsync()
+ 
+-#define smp_mb()	mb()
+-#define smp_rmb()	__lwsync()
+-#define smp_wmb()	__asm__ __volatile__ (stringify_in_c(SMPWMB) : : :"memory")
+-#else
+-#define smp_lwsync()	barrier()
+-
+-#define smp_mb()	barrier()
+-#define smp_rmb()	barrier()
+-#define smp_wmb()	barrier()
+-#endif /* CONFIG_SMP */
++#define __smp_mb()	mb()
++#define __smp_rmb()	__lwsync()
++#define __smp_wmb()	__asm__ __volatile__ (stringify_in_c(SMPWMB) : : :"memory")
+ 
+ /*
+  * This is a barrier which prevents following instructions from being
+@@ -67,18 +59,18 @@
+ #define data_barrier(x)	\
+ 	asm volatile("twi 0,%0,0; isync" : : "r" (x) : "memory");
+ 
+-#define smp_store_release(p, v)						\
++#define __smp_store_release(p, v)						\
+ do {									\
+ 	compiletime_assert_atomic_type(*p);				\
+-	smp_lwsync();							\
++	__smp_lwsync();							\
+ 	WRITE_ONCE(*p, v);						\
+ } while (0)
+ 
+-#define smp_load_acquire(p)						\
++#define __smp_load_acquire(p)						\
+ ({									\
+ 	typeof(*p) ___p1 = READ_ONCE(*p);				\
+ 	compiletime_assert_atomic_type(*p);				\
+-	smp_lwsync();							\
++	__smp_lwsync();							\
+ 	___p1;								\
+ })
+ 
+-- 
+MST
+
