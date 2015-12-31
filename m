@@ -1,140 +1,52 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 14 Dec 2015 18:57:55 +0000
-Subject: [PATCH 7/7] arm64: renesas: r8a7795 dtsi: Add SCIF fallback compatibility strings
-Message-Id: <1450119475-1183-8-git-send-email-geert+renesas@glider.be>
+From: "Michael S. Tsirkin" <mst@redhat.com>
+Date: Thu, 31 Dec 2015 19:09:01 +0000
+Subject: [PATCH v2 25/32] tile: define __smp_xxx
+Message-Id: <1451572003-2440-26-git-send-email-mst@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450119475-1183-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1450119475-1183-1-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
+References: <1451572003-2440-1-git-send-email-mst@redhat.com>
+In-Reply-To: <1451572003-2440-1-git-send-email-mst@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-serial-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
+To: linux-kernel@vger.kernel.org
+Cc: Peter Zijlstra <peterz@infradead.org>, Arnd Bergmann <arnd@arndb.de>, linux-arch@vger.kernel.org, Andrew Cooper <andrew.cooper3@citrix.com>, virtualization@lists.linux-foundation.org, Stefano Stabellini <stefano.stabellini@eu.citrix.com>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@elte.hu>, "H. Peter Anvin" <hpa@zytor.com>, David Miller <davem@davemloft.net>, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, sparclinux@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-metag@vger.kernel.org, linux-mips@linux-mips.org, x86@kernel.org, user-mode-linux-devel@lists.sourceforge.net, adi-buildroot-devel@lists.sourceforge.net, linux-sh@vger.kernel.org, linux-xtensa@linux-xtensa.org, xen-devel@lists.xenproject.org, Chris Metcalf <cmetcalf@ezchip.com>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+This defines __smp_xxx barriers for tile,
+for use by virtualization.
+
+Some smp_xxx barriers are removed as they are
+defined correctly by asm-generic/barriers.h
+
+Note: for 32 bit, keep smp_mb__after_atomic around since it's faster
+than the generic implementation.
+
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+Acked-by: Arnd Bergmann <arnd@arndb.de>
 ---
- arch/arm64/boot/dts/renesas/r8a7795.dtsi | 38 +++++++++++++++++++++++---------
- 1 file changed, 27 insertions(+), 11 deletions(-)
+ arch/tile/include/asm/barrier.h | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-index b9229a49dabca343..dd266e56f23ded2c 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-+++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-@@ -387,7 +387,9 @@
- 		};
+diff --git a/arch/tile/include/asm/barrier.h b/arch/tile/include/asm/barrier.h
+index 96a42ae..d552228 100644
+--- a/arch/tile/include/asm/barrier.h
++++ b/arch/tile/include/asm/barrier.h
+@@ -79,11 +79,12 @@ mb_incoherent(void)
+  * But after the word is updated, the routine issues an "mf" before returning,
+  * and since it's a function call, we don't even need a compiler barrier.
+  */
+-#define smp_mb__before_atomic()	smp_mb()
+-#define smp_mb__after_atomic()	do { } while (0)
++#define __smp_mb__before_atomic()	__smp_mb()
++#define __smp_mb__after_atomic()	do { } while (0)
++#define smp_mb__after_atomic()	__smp_mb__after_atomic()
+ #else /* 64 bit */
+-#define smp_mb__before_atomic()	smp_mb()
+-#define smp_mb__after_atomic()	smp_mb()
++#define __smp_mb__before_atomic()	__smp_mb()
++#define __smp_mb__after_atomic()	__smp_mb()
+ #endif
  
- 		hscif0: serial@e6540000 {
--			compatible = "renesas,hscif-r8a7795", "renesas,hscif";
-+			compatible = "renesas,hscif-r8a7795",
-+				     "renesas,rcar-gen3-hscif",
-+				     "renesas,hscif";
- 			reg = <0 0xe6540000 0 96>;
- 			interrupts = <GIC_SPI 154 IRQ_TYPE_LEVEL_HIGH>;
- 			clocks = <&cpg CPG_MOD 520>;
-@@ -399,7 +401,9 @@
- 		};
- 
- 		hscif1: serial@e6550000 {
--			compatible = "renesas,hscif-r8a7795", "renesas,hscif";
-+			compatible = "renesas,hscif-r8a7795",
-+				     "renesas,rcar-gen3-hscif",
-+				     "renesas,hscif";
- 			reg = <0 0xe6550000 0 96>;
- 			interrupts = <GIC_SPI 155 IRQ_TYPE_LEVEL_HIGH>;
- 			clocks = <&cpg CPG_MOD 519>;
-@@ -411,7 +415,9 @@
- 		};
- 
- 		hscif2: serial@e6560000 {
--			compatible = "renesas,hscif-r8a7795", "renesas,hscif";
-+			compatible = "renesas,hscif-r8a7795",
-+				     "renesas,rcar-gen3-hscif",
-+				     "renesas,hscif";
- 			reg = <0 0xe6560000 0 96>;
- 			interrupts = <GIC_SPI 144 IRQ_TYPE_LEVEL_HIGH>;
- 			clocks = <&cpg CPG_MOD 518>;
-@@ -423,7 +429,9 @@
- 		};
- 
- 		hscif3: serial@e66a0000 {
--			compatible = "renesas,hscif-r8a7795", "renesas,hscif";
-+			compatible = "renesas,hscif-r8a7795",
-+				     "renesas,rcar-gen3-hscif",
-+				     "renesas,hscif";
- 			reg = <0 0xe66a0000 0 96>;
- 			interrupts = <GIC_SPI 145 IRQ_TYPE_LEVEL_HIGH>;
- 			clocks = <&cpg CPG_MOD 517>;
-@@ -435,7 +443,9 @@
- 		};
- 
- 		hscif4: serial@e66b0000 {
--			compatible = "renesas,hscif-r8a7795", "renesas,hscif";
-+			compatible = "renesas,hscif-r8a7795",
-+				     "renesas,rcar-gen3-hscif",
-+				     "renesas,hscif";
- 			reg = <0 0xe66b0000 0 96>;
- 			interrupts = <GIC_SPI 146 IRQ_TYPE_LEVEL_HIGH>;
- 			clocks = <&cpg CPG_MOD 516>;
-@@ -447,7 +457,8 @@
- 		};
- 
- 		scif0: serial@e6e60000 {
--			compatible = "renesas,scif-r8a7795", "renesas,scif";
-+			compatible = "renesas,scif-r8a7795",
-+				     "renesas,rcar-gen3-scif", "renesas,scif";
- 			reg = <0 0xe6e60000 0 64>;
- 			interrupts = <GIC_SPI 152 IRQ_TYPE_LEVEL_HIGH>;
- 			clocks = <&cpg CPG_MOD 207>;
-@@ -459,7 +470,8 @@
- 		};
- 
- 		scif1: serial@e6e68000 {
--			compatible = "renesas,scif-r8a7795", "renesas,scif";
-+			compatible = "renesas,scif-r8a7795",
-+				     "renesas,rcar-gen3-scif", "renesas,scif";
- 			reg = <0 0xe6e68000 0 64>;
- 			interrupts = <GIC_SPI 153 IRQ_TYPE_LEVEL_HIGH>;
- 			clocks = <&cpg CPG_MOD 206>;
-@@ -471,7 +483,8 @@
- 		};
- 
- 		scif2: serial@e6e88000 {
--			compatible = "renesas,scif-r8a7795", "renesas,scif";
-+			compatible = "renesas,scif-r8a7795",
-+				     "renesas,rcar-gen3-scif", "renesas,scif";
- 			reg = <0 0xe6e88000 0 64>;
- 			interrupts = <GIC_SPI 164 IRQ_TYPE_LEVEL_HIGH>;
- 			clocks = <&cpg CPG_MOD 310>;
-@@ -483,7 +496,8 @@
- 		};
- 
- 		scif3: serial@e6c50000 {
--			compatible = "renesas,scif-r8a7795", "renesas,scif";
-+			compatible = "renesas,scif-r8a7795",
-+				     "renesas,rcar-gen3-scif", "renesas,scif";
- 			reg = <0 0xe6c50000 0 64>;
- 			interrupts = <GIC_SPI 23 IRQ_TYPE_LEVEL_HIGH>;
- 			clocks = <&cpg CPG_MOD 204>;
-@@ -495,7 +509,8 @@
- 		};
- 
- 		scif4: serial@e6c40000 {
--			compatible = "renesas,scif-r8a7795", "renesas,scif";
-+			compatible = "renesas,scif-r8a7795",
-+				     "renesas,rcar-gen3-scif", "renesas,scif";
- 			reg = <0 0xe6c40000 0 64>;
- 			interrupts = <GIC_SPI 16 IRQ_TYPE_LEVEL_HIGH>;
- 			clocks = <&cpg CPG_MOD 203>;
-@@ -507,7 +522,8 @@
- 		};
- 
- 		scif5: serial@e6f30000 {
--			compatible = "renesas,scif-r8a7795", "renesas,scif";
-+			compatible = "renesas,scif-r8a7795",
-+				     "renesas,rcar-gen3-scif", "renesas,scif";
- 			reg = <0 0xe6f30000 0 64>;
- 			interrupts = <GIC_SPI 17 IRQ_TYPE_LEVEL_HIGH>;
- 			clocks = <&cpg CPG_MOD 202>;
+ #include <asm-generic/barrier.h>
 -- 
-1.9.1
+MST
 
