@@ -1,60 +1,53 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Thu, 10 Dec 2015 17:11:52 +0000
-Subject: Re: [PATCH] gpio: rcar: Improve clock error handling and reporting
-Message-Id: <CACRpkdaeuQ7d804Es5pkm5QH3bMn=ykG5pXeHyrOHRMmcvAuwQ@mail.gmail.com>
+From: "Michael S. Tsirkin" <mst@redhat.com>
+Date: Thu, 31 Dec 2015 19:07:59 +0000
+Subject: [PATCH v2 17/32] arm: define __smp_xxx
+Message-Id: <1451572003-2440-18-git-send-email-mst@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1448377528-19307-1-git-send-email-geert+renesas@glider.be>
-	<CACRpkdabE9=UsGsRqzVZg3P09ntLTMz1NE3ginQ_XdFiddh4bw@mail.gmail.com>
-	<CAMuHMdUJYF_DQ_zaS-+nEcam-tuwPCjeowvr-iQyqJdz=825Zg@mail.gmail.com>
-In-Reply-To: <CAMuHMdUJYF_DQ_zaS-+nEcam-tuwPCjeowvr-iQyqJdz=825Zg@mail.gmail.com>
+References: <1451572003-2440-1-git-send-email-mst@redhat.com>
+In-Reply-To: <1451572003-2440-1-git-send-email-mst@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Alexandre Courbot <gnurou@gmail.com>, Magnus Damm <magnus.damm@gmail.com>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+To: linux-kernel@vger.kernel.org
+Cc: Peter Zijlstra <peterz@infradead.org>, Arnd Bergmann <arnd@arndb.de>, linux-arch@vger.kernel.org, Andrew Cooper <andrew.cooper3@citrix.com>, virtualization@lists.linux-foundation.org, Stefano Stabellini <stefano.stabellini@eu.citrix.com>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@elte.hu>, "H. Peter Anvin" <hpa@zytor.com>, David Miller <davem@davemloft.net>, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, sparclinux@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-metag@vger.kernel.org, linux-mips@linux-mips.org, x86@kernel.org, user-mode-linux-devel@lists.sourceforge.net, adi-buildroot-devel@lists.sourceforge.net, linux-sh@vger.kernel.org, linux-xtensa@linux-xtensa.org, xen-devel@lists.xenproject.org, Russell King <linux@arm.linux.org.uk>, Ingo Molnar <mingo@kernel.org>, Tony Lindgren <tony@atomide.co>
 
-On Tue, Dec 1, 2015 at 11:09 AM, Geert Uytterhoeven
-<geert@linux-m68k.org> wrote:
-> On Tue, Dec 1, 2015 at 10:54 AM, Linus Walleij <linus.walleij@linaro.org> wrote:
->> On Tue, Nov 24, 2015 at 4:05 PM, Geert Uytterhoeven
->> <geert+renesas@glider.be> wrote:
+This defines __smp_xxx barriers for arm,
+for use by virtualization.
 
->>> The new flag is merged with the existing has_both_edge_trigger boolean
->>> into a bitfield to save space.
->>
->> *DON'T* try to save bits in a megabyte kernel like this.
->> The better readability is worth the extra bits or bytes it takes.
->> Besides, did you really try to compile it before/after that change
->> to verify that it actually saved that space?
->
-> Is it better readable?
+smp_xxx barriers are removed as they are
+defined correctly by asm-generic/barriers.h
 
-OK sorry for being such an ass, I'm a bit stressed out.
+This reduces the amount of arch-specific boiler-plate code.
 
-> Size also depends on how many more flags we'll add later.
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+Acked-by: Arnd Bergmann <arnd@arndb.de>
+---
+ arch/arm/include/asm/barrier.h | 12 +++---------
+ 1 file changed, 3 insertions(+), 9 deletions(-)
 
-Yeah. But I really like the bools, I think the static checkers can also
-make better use of them, but that's just me.
+diff --git a/arch/arm/include/asm/barrier.h b/arch/arm/include/asm/barrier.h
+index 31152e8..112cc1a 100644
+--- a/arch/arm/include/asm/barrier.h
++++ b/arch/arm/include/asm/barrier.h
+@@ -60,15 +60,9 @@ extern void arm_heavy_mb(void);
+ #define dma_wmb()	barrier()
+ #endif
+ 
+-#ifndef CONFIG_SMP
+-#define smp_mb()	barrier()
+-#define smp_rmb()	barrier()
+-#define smp_wmb()	barrier()
+-#else
+-#define smp_mb()	dmb(ish)
+-#define smp_rmb()	smp_mb()
+-#define smp_wmb()	dmb(ishst)
+-#endif
++#define __smp_mb()	dmb(ish)
++#define __smp_rmb()	__smp_mb()
++#define __smp_wmb()	dmb(ishst)
+ 
+ #include <asm-generic/barrier.h>
+ 
+-- 
+MST
 
->> Where is that patch? This does not apply to my tree,
->> probably because of this.
->
-> IIRC, you said "include it in your pull request" for that series.
-
-OK so this needs to go in with the pin control stuff? Then it's cool...
-
->> Please sent the patches in a series.
->
-> I can send both to you, as they're not pinctrl but gpio.
->
->>>         unsigned has_both_edge_trigger:1;
->>> +       unsigned needs_clk:1;
->>
->> both should be bool and assigned true/false.
->
-> OK, if you prefer it that way.
-
-Thanks!
-
-Yours,
-Linus Walleij
