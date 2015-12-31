@@ -1,60 +1,61 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 14 Dec 2015 18:57:18 +0000
-Subject: [PATCH v3 09/27] serial: sh-sci: Don't overwrite clock selection in serial_console_write()
-Message-Id: <1450119456-964-10-git-send-email-geert+renesas@glider.be>
+From: "Michael S. Tsirkin" <mst@redhat.com>
+Date: Thu, 31 Dec 2015 19:06:13 +0000
+Subject: [PATCH v2 04/32] ia64: reuse asm-generic/barrier.h
+Message-Id: <1451572003-2440-5-git-send-email-mst@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450119456-964-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1450119456-964-1-git-send-email-geert+renesas@glider.be>
+References: <1451572003-2440-1-git-send-email-mst@redhat.com>
+In-Reply-To: <1451572003-2440-1-git-send-email-mst@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-kernel@vger.kernel.org
+Cc: Peter Zijlstra <peterz@infradead.org>, Arnd Bergmann <arnd@arndb.de>, linux-arch@vger.kernel.org, Andrew Cooper <andrew.cooper3@citrix.com>, virtualization@lists.linux-foundation.org, Stefano Stabellini <stefano.stabellini@eu.citrix.com>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@elte.hu>, "H. Peter Anvin" <hpa@zytor.com>, David Miller <davem@davemloft.net>, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, sparclinux@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-metag@vger.kernel.org, linux-mips@linux-mips.org, x86@kernel.org, user-mode-linux-devel@lists.sourceforge.net, adi-buildroot-devel@lists.sourceforge.net, linux-sh@vger.kernel.org, linux-xtensa@linux-xtensa.org, xen-devel@lists.xenproject.org, Tony Luck <tony.luck@intel.com>, Fenghua Yu <fenghua.yu@intel.com>, Ingo Molnar <mingo@kernel.org>D
 
-Blindly writing the default configuration value into the SCSCR register
-may change the clock selection bits, breaking the serial console if the
-current driver settings differ from the default settings.
+On ia64 smp_rmb, smp_wmb, read_barrier_depends, smp_read_barrier_depends
+and smp_store_mb() match the asm-generic variants exactly. Drop the
+local definitions and pull in asm-generic/barrier.h instead.
 
-Keep the current clock selection bits to prevent this from happening
-on e.g. r8a7791/koelsch when support for the BRG will be added.
+This is in preparation to refactoring this code area.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Reviewed-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+Acked-by: Tony Luck <tony.luck@intel.com>
+Acked-by: Arnd Bergmann <arnd@arndb.de>
 ---
-v3:
-  - Add Reviewed-by, Acked-by.
----
- drivers/tty/serial/sh-sci.c | 8 +++++---
- 1 file changed, 5 insertions(+), 3 deletions(-)
+ arch/ia64/include/asm/barrier.h | 10 ++--------
+ 1 file changed, 2 insertions(+), 8 deletions(-)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 05ac15336e4f918d..136ad2f633413cbc 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -2420,7 +2420,7 @@ static void serial_console_write(struct console *co, const char *s,
- {
- 	struct sci_port *sci_port = &sci_ports[co->index];
- 	struct uart_port *port = &sci_port->port;
--	unsigned short bits, ctrl;
-+	unsigned short bits, ctrl, ctrl_temp;
- 	unsigned long flags;
- 	int locked = 1;
+diff --git a/arch/ia64/include/asm/barrier.h b/arch/ia64/include/asm/barrier.h
+index 209c4b8..2f93348 100644
+--- a/arch/ia64/include/asm/barrier.h
++++ b/arch/ia64/include/asm/barrier.h
+@@ -48,12 +48,6 @@
+ # define smp_mb()	barrier()
+ #endif
  
-@@ -2432,9 +2432,11 @@ static void serial_console_write(struct console *co, const char *s,
- 	else
- 		spin_lock(&port->lock);
+-#define smp_rmb()	smp_mb()
+-#define smp_wmb()	smp_mb()
+-
+-#define read_barrier_depends()		do { } while (0)
+-#define smp_read_barrier_depends()	do { } while (0)
+-
+ #define smp_mb__before_atomic()	barrier()
+ #define smp_mb__after_atomic()	barrier()
  
--	/* first save the SCSCR then disable the interrupts */
-+	/* first save SCSCR then disable interrupts, keep clock source */
- 	ctrl = serial_port_in(port, SCSCR);
--	serial_port_out(port, SCSCR, sci_port->cfg->scscr);
-+	ctrl_temp = (sci_port->cfg->scscr & ~(SCSCR_CKE1 | SCSCR_CKE0)) |
-+		    (ctrl & (SCSCR_CKE1 | SCSCR_CKE0));
-+	serial_port_out(port, SCSCR, ctrl_temp);
+@@ -77,12 +71,12 @@ do {									\
+ 	___p1;								\
+ })
  
- 	uart_console_write(port, s, count, serial_console_putchar);
+-#define smp_store_mb(var, value) do { WRITE_ONCE(var, value); smp_mb(); } while (0)
+-
+ /*
+  * The group barrier in front of the rsm & ssm are necessary to ensure
+  * that none of the previous instructions in the same group are
+  * affected by the rsm/ssm.
+  */
  
++#include <asm-generic/barrier.h>
++
+ #endif /* _ASM_IA64_BARRIER_H */
 -- 
-1.9.1
+MST
 
