@@ -1,67 +1,43 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 18 Dec 2015 02:29:33 +0000
-Subject: [PATCH 03/25] ARM: shmobile: r8a7791: add EtherAVB clock
-Message-Id: <eaa870b3055384092d8fc075bca3a3a819f73c43.1450402264.git.horms+renesas@verge.net.au>
+From: "Michael S. Tsirkin" <mst@redhat.com>
+Date: Thu, 31 Dec 2015 19:08:07 +0000
+Subject: [PATCH v2 18/32] blackfin: define __smp_xxx
+Message-Id: <1451572003-2440-19-git-send-email-mst@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1450402264.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1450402264.git.horms+renesas@verge.net.au>
+References: <1451572003-2440-1-git-send-email-mst@redhat.com>
+In-Reply-To: <1451572003-2440-1-git-send-email-mst@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@vger.kernel.org
+Cc: Peter Zijlstra <peterz@infradead.org>, Arnd Bergmann <arnd@arndb.de>, linux-arch@vger.kernel.org, Andrew Cooper <andrew.cooper3@citrix.com>, virtualization@lists.linux-foundation.org, Stefano Stabellini <stefano.stabellini@eu.citrix.com>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@elte.hu>, "H. Peter Anvin" <hpa@zytor.com>, David Miller <davem@davemloft.net>, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, sparclinux@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-metag@vger.kernel.org, linux-mips@linux-mips.org, x86@kernel.org, user-mode-linux-devel@lists.sourceforge.net, adi-buildroot-devel@lists.sourceforge.net, linux-sh@vger.kernel.org, linux-xtensa@linux-xtensa.org, xen-devel@lists.xenproject.org, Steven Miao <realmz6@gmail.com>
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+This defines __smp_xxx barriers for blackfin,
+for use by virtualization.
 
-Add the EtherAVB clock to the R8A7791 device tree.
+smp_xxx barriers are removed as they are
+defined correctly by asm-generic/barriers.h
 
-Based on the commit 63d2d750c902 ("ARM: shmobile: r8a7790: add EtherAVB
-clocks").
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+Acked-by: Arnd Bergmann <arnd@arndb.de>
 ---
- arch/arm/boot/dts/r8a7791.dtsi            | 10 ++++++----
- include/dt-bindings/clock/r8a7791-clock.h |  1 +
- 2 files changed, 7 insertions(+), 4 deletions(-)
+ arch/blackfin/include/asm/barrier.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 12b2b0f95806..4b3132d9807f 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -1329,16 +1329,18 @@
- 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe6150990 0 4>, <0 0xe61509a0 0 4>;
- 			clocks = <&zx_clk>, <&hp_clk>, <&zg_clk>, <&zg_clk>,
--			         <&zg_clk>, <&p_clk>, <&zs_clk>, <&zs_clk>;
-+			         <&zg_clk>, <&hp_clk>, <&p_clk>, <&zs_clk>,
-+				 <&zs_clk>;
- 			#clock-cells = <1>;
- 			clock-indices = <
- 				R8A7791_CLK_IPMMU_SGX R8A7791_CLK_MLB
- 				R8A7791_CLK_VIN2 R8A7791_CLK_VIN1 R8A7791_CLK_VIN0
--				R8A7791_CLK_ETHER R8A7791_CLK_SATA1 R8A7791_CLK_SATA0
-+				R8A7791_CLK_ETHERAVB R8A7791_CLK_ETHER
-+				R8A7791_CLK_SATA1 R8A7791_CLK_SATA0
- 			>;
- 			clock-output-names -				"ipmmu_sgx", "mlb", "vin2", "vin1", "vin0", "ether",
--				"sata1", "sata0";
-+				"ipmmu_sgx", "mlb", "vin2", "vin1", "vin0",
-+				"etheravb", "ether", "sata1", "sata0";
- 		};
- 		mstp9_clks: mstp9_clks@e6150994 {
- 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
-diff --git a/include/dt-bindings/clock/r8a7791-clock.h b/include/dt-bindings/clock/r8a7791-clock.h
-index dd09b73c4aaf..ffa11379b3f0 100644
---- a/include/dt-bindings/clock/r8a7791-clock.h
-+++ b/include/dt-bindings/clock/r8a7791-clock.h
-@@ -102,6 +102,7 @@
- #define R8A7791_CLK_VIN2		9
- #define R8A7791_CLK_VIN1		10
- #define R8A7791_CLK_VIN0		11
-+#define R8A7791_CLK_ETHERAVB		12
- #define R8A7791_CLK_ETHER		13
- #define R8A7791_CLK_SATA1		14
- #define R8A7791_CLK_SATA0		15
+diff --git a/arch/blackfin/include/asm/barrier.h b/arch/blackfin/include/asm/barrier.h
+index dfb66fe..7cca51c 100644
+--- a/arch/blackfin/include/asm/barrier.h
++++ b/arch/blackfin/include/asm/barrier.h
+@@ -78,8 +78,8 @@
+ 
+ #endif /* !CONFIG_SMP */
+ 
+-#define smp_mb__before_atomic()	barrier()
+-#define smp_mb__after_atomic()	barrier()
++#define __smp_mb__before_atomic()	barrier()
++#define __smp_mb__after_atomic()	barrier()
+ 
+ #include <asm-generic/barrier.h>
+ 
 -- 
-2.1.4
+MST
 
