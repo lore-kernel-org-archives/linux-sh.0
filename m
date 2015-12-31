@@ -1,37 +1,60 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 18 Dec 2015 02:30:44 +0000
-Subject: [PATCH 6/6] staging: board: armadillo800eva: Use "arm,pl390"
-Message-Id: <1474136ce6a457a10a797b3de04adbb035e90901.1450401902.git.horms+renesas@verge.net.au>
+From: "Michael S. Tsirkin" <mst@redhat.com>
+Date: Thu, 31 Dec 2015 19:08:53 +0000
+Subject: [PATCH v2 24/32] sparc: define __smp_xxx
+Message-Id: <1451572003-2440-25-git-send-email-mst@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1450401902.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1450401902.git.horms+renesas@verge.net.au>
+References: <1451572003-2440-1-git-send-email-mst@redhat.com>
+In-Reply-To: <1451572003-2440-1-git-send-email-mst@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@vger.kernel.org
+Cc: Peter Zijlstra <peterz@infradead.org>, Arnd Bergmann <arnd@arndb.de>, linux-arch@vger.kernel.org, Andrew Cooper <andrew.cooper3@citrix.com>, virtualization@lists.linux-foundation.org, Stefano Stabellini <stefano.stabellini@eu.citrix.com>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@elte.hu>, "H. Peter Anvin" <hpa@zytor.com>, David Miller <davem@davemloft.net>, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, sparclinux@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-metag@vger.kernel.org, linux-mips@linux-mips.org, x86@kernel.org, user-mode-linux-devel@lists.sourceforge.net, adi-buildroot-devel@lists.sourceforge.net, linux-sh@vger.kernel.org, linux-xtensa@linux-xtensa.org, xen-devel@lists.xenproject.org, Ingo Molnar <mingo@kernel.org>, Ralf Baechle <ralf@linux-mips.org>, Andrey Konovalov <andreyknvl@googl>
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+This defines __smp_xxx barriers for sparc,
+for use by virtualization.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+smp_xxx barriers are removed as they are
+defined correctly by asm-generic/barriers.h
+
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+Acked-by: Arnd Bergmann <arnd@arndb.de>
 ---
- drivers/staging/board/armadillo800eva.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/sparc/include/asm/barrier_64.h | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/staging/board/armadillo800eva.c b/drivers/staging/board/armadillo800eva.c
-index 9c41652ee908..912c96b0536d 100644
---- a/drivers/staging/board/armadillo800eva.c
-+++ b/drivers/staging/board/armadillo800eva.c
-@@ -97,7 +97,7 @@ static const struct board_staging_dev armadillo800eva_devices[] __initconst = {
+diff --git a/arch/sparc/include/asm/barrier_64.h b/arch/sparc/include/asm/barrier_64.h
+index 26c3f72..c9f6ee6 100644
+--- a/arch/sparc/include/asm/barrier_64.h
++++ b/arch/sparc/include/asm/barrier_64.h
+@@ -37,14 +37,14 @@ do {	__asm__ __volatile__("ba,pt	%%xcc, 1f\n\t" \
+ #define rmb()	__asm__ __volatile__("":::"memory")
+ #define wmb()	__asm__ __volatile__("":::"memory")
  
- static void __init armadillo800eva_init(void)
- {
--	board_staging_gic_setup_xlate("arm,cortex-a9-gic", 32);
-+	board_staging_gic_setup_xlate("arm,pl390", 32);
- 	board_staging_register_devices(armadillo800eva_devices,
- 				       ARRAY_SIZE(armadillo800eva_devices));
- }
+-#define smp_store_release(p, v)						\
++#define __smp_store_release(p, v)						\
+ do {									\
+ 	compiletime_assert_atomic_type(*p);				\
+ 	barrier();							\
+ 	WRITE_ONCE(*p, v);						\
+ } while (0)
+ 
+-#define smp_load_acquire(p)						\
++#define __smp_load_acquire(p)						\
+ ({									\
+ 	typeof(*p) ___p1 = READ_ONCE(*p);				\
+ 	compiletime_assert_atomic_type(*p);				\
+@@ -52,8 +52,8 @@ do {									\
+ 	___p1;								\
+ })
+ 
+-#define smp_mb__before_atomic()	barrier()
+-#define smp_mb__after_atomic()	barrier()
++#define __smp_mb__before_atomic()	barrier()
++#define __smp_mb__after_atomic()	barrier()
+ 
+ #include <asm-generic/barrier.h>
+ 
 -- 
-2.1.4
+MST
 
