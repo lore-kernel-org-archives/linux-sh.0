@@ -1,102 +1,91 @@
-From: Javier Martinez Canillas <javier@osg.samsung.com>
-Date: Mon, 07 Dec 2015 15:08:27 +0000
-Subject: Re: [PATCH 3/5] [media] v4l: vsp1: separate links creation from entities init
-Message-Id: <5665A0EB.5050202@osg.samsung.com>
+From: "Michael S. Tsirkin" <mst@redhat.com>
+Date: Thu, 31 Dec 2015 19:09:32 +0000
+Subject: [PATCH v2 29/32] Revert "virtio_ring: Update weak barriers to use dma_wmb/rmb"
+Message-Id: <1451572003-2440-30-git-send-email-mst@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1441296036-20727-1-git-send-email-javier@osg.samsung.com>
- <1441296036-20727-4-git-send-email-javier@osg.samsung.com>
- <7559062.XA9lTlmQ7K@avalon>
-In-Reply-To: <7559062.XA9lTlmQ7K@avalon>
+References: <1451572003-2440-1-git-send-email-mst@redhat.com>
+In-Reply-To: <1451572003-2440-1-git-send-email-mst@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: linux-kernel@vger.kernel.org, Hans Verkuil <hans.verkuil@cisco.com>, Mauro Carvalho Chehab <mchehab@osg.samsung.com>, linux-sh@vger.kernel.org, linux-media@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: Peter Zijlstra <peterz@infradead.org>, Arnd Bergmann <arnd@arndb.de>, linux-arch@vger.kernel.org, Andrew Cooper <andrew.cooper3@citrix.com>, virtualization@lists.linux-foundation.org, Stefano Stabellini <stefano.stabellini@eu.citrix.com>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@elte.hu>, "H. Peter Anvin" <hpa@zytor.com>, David Miller <davem@davemloft.net>, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, sparclinux@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-metag@vger.kernel.org, linux-mips@linux-mips.org, x86@kernel.org, user-mode-linux-devel@lists.sourceforge.net, adi-buildroot-devel@lists.sourceforge.net, linux-sh@vger.kernel.org, linux-xtensa@linux-xtensa.org, xen-devel@lists.xenproject.org, Alexander Duyck <alexander.duyck@gmail.com>
 
-Hello Laurent,
+This reverts commit 9e1a27ea42691429e31f158cce6fc61bc79bb2e9.
 
-On 12/05/2015 11:51 PM, Laurent Pinchart wrote:
-> Hi Javier,
-> 
-> Thank you for the patch.
->
+While that commit optimizes !CONFIG_SMP, it mixes
+up DMA and SMP concepts, making the code hard
+to figure out.
 
-Thanks for your feedback.
+A better way to optimize this is with the new __smp_XXX
+barriers.
+
+As a first step, go back to full rmb/wmb barriers
+for !SMP.
+We switch to __smp_XXX barriers in the next patch.
+
+Cc: Peter Zijlstra <peterz@infradead.org>
+Cc: Alexander Duyck <alexander.duyck@gmail.com>
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+---
+ include/linux/virtio_ring.h | 23 +++++++++++++++++++----
+ 1 file changed, 19 insertions(+), 4 deletions(-)
+
+diff --git a/include/linux/virtio_ring.h b/include/linux/virtio_ring.h
+index 8e50888..67e06fe 100644
+--- a/include/linux/virtio_ring.h
++++ b/include/linux/virtio_ring.h
+@@ -21,20 +21,19 @@
+  * actually quite cheap.
+  */
  
-> On Thursday 03 September 2015 18:00:34 Javier Martinez Canillas wrote:
->> The vsp1 driver initializes the entities and creates the pads links
->> before the entities are registered with the media device. This doesn't
->> work now that object IDs are used to create links so the media_device
->> has to be set.
->>
->> Split out the pads links creation from the entity initialization so are
->> made after the entities registration.
->>
->> Signed-off-by: Javier Martinez Canillas <javier@osg.samsung.com>
->> ---
->>
->>  drivers/media/platform/vsp1/vsp1_drv.c  | 14 ++++++++++--
->>  drivers/media/platform/vsp1/vsp1_rpf.c  | 29 ++++++++++++++++--------
->>  drivers/media/platform/vsp1/vsp1_rwpf.h |  5 +++++
->>  drivers/media/platform/vsp1/vsp1_wpf.c  | 40 +++++++++++++++++-------------
->>  4 files changed, 62 insertions(+), 26 deletions(-)
->>
->> diff --git a/drivers/media/platform/vsp1/vsp1_drv.c
->> b/drivers/media/platform/vsp1/vsp1_drv.c index 2aa427d3ff39..8f995d267646
->> 100644
->> --- a/drivers/media/platform/vsp1/vsp1_drv.c
->> +++ b/drivers/media/platform/vsp1/vsp1_drv.c
->> @@ -260,9 +260,19 @@ static int vsp1_create_entities(struct vsp1_device
->> *vsp1)
->>
->>  	/* Create links. */
->>  	list_for_each_entry(entity, &vsp1->entities, list_dev) {
->> -		if (entity->type = VSP1_ENTITY_LIF ||
->> -		    entity->type = VSP1_ENTITY_RPF)
->> +		if (entity->type = VSP1_ENTITY_LIF) {
->> +			ret = vsp1_wpf_create_pads_links(vsp1, entity);
-> 
-> Could you please s/pads_links/links/ ? There's no other type of links handled 
-> by the driver.
->
-
-Sure, I'll do that for all the drivers that only handle pad links.
++#ifdef CONFIG_SMP
+ static inline void virtio_mb(bool weak_barriers)
+ {
+-#ifdef CONFIG_SMP
+ 	if (weak_barriers)
+ 		smp_mb();
+ 	else
+-#endif
+ 		mb();
+ }
  
->> +			if (ret < 0)
->> +				goto done;
->> +			continue;
-> 
-> I would use
-> 
-> 	} else if (...) {
-> 
-> instead of a continue.
->
-
-Yes, that will be better indeed.
+ static inline void virtio_rmb(bool weak_barriers)
+ {
+ 	if (weak_barriers)
+-		dma_rmb();
++		smp_rmb();
+ 	else
+ 		rmb();
+ }
+@@ -42,10 +41,26 @@ static inline void virtio_rmb(bool weak_barriers)
+ static inline void virtio_wmb(bool weak_barriers)
+ {
+ 	if (weak_barriers)
+-		dma_wmb();
++		smp_wmb();
+ 	else
+ 		wmb();
+ }
++#else
++static inline void virtio_mb(bool weak_barriers)
++{
++	mb();
++}
++
++static inline void virtio_rmb(bool weak_barriers)
++{
++	rmb();
++}
++
++static inline void virtio_wmb(bool weak_barriers)
++{
++	wmb();
++}
++#endif
  
->> +		}
->> +
->> +		if (entity->type = VSP1_ENTITY_RPF) {
->> +			ret = vsp1_rpf_create_pads_links(vsp1, entity);
->> +			if (ret < 0)
->> +				goto done;
->>  			continue;
-> 
-> Same here.
->
-
-Ok.
- 
-> Apart from that,
-> 
-> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
->
-
-Thanks.
-
-Best regards,
+ struct virtio_device;
+ struct virtqueue;
 -- 
-Javier Martinez Canillas
-Open Source Group
-Samsung Research America
+MST
+
