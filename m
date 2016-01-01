@@ -1,95 +1,92 @@
-From: Hans Verkuil <hverkuil@xs4all.nl>
-Date: Mon, 18 Jan 2016 11:10:25 +0000
-Subject: Re: [PATCH v3] adv7604: add direct interrupt handling
-Message-Id: <569CC821.6040905@xs4all.nl>
+From: "Michael S. Tsirkin" <mst@redhat.com>
+Date: Fri, 01 Jan 2016 09:39:40 +0000
+Subject: [PATCH v2 30/32] virtio_ring: update weak barriers to use __smp_xxx
+Message-Id: <1451572003-2440-31-git-send-email-mst@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1452698143-31897-1-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1452698143-31897-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+References: <1451572003-2440-1-git-send-email-mst@redhat.com>
+In-Reply-To: <1451572003-2440-1-git-send-email-mst@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>, linux-media@vger.kernel.org, linux-sh@vger.kernel.org
-Cc: magnus.damm@gmail.com, laurent.pinchart@ideasonboard.com, hans.verkuil@cisco.com, ian.molton@codethink.co.uk, lars@metafoo.de, william.towle@codethink.co.uk, sergei.shtylyov@cogentembedded.com
+To: linux-kernel@vger.kernel.org
+Cc: linux-mips@linux-mips.org, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, Alexander Duyck <alexander.duyck@gmail.com>, virtualization@lists.linux-foundation.org, "H. Peter Anvin" <hpa@zytor.com>, sparclinux@vger.kernel.org, linux-arch@vger.kernel.org, linux-s390@vger.kernel.org, Arnd Bergmann <arnd@arndb.de>, x86@kernel.org, xen-devel@lists.xenproject.org, Ingo Molnar <mingo@elte.hu>, linux-xtensa@linux-xtensa.org, user-mode-linux-devel@lists.sourceforge.net, Stefano Stabellini <stefano.stabellini@eu.citrix.com>, adi-buildroot-devel@lists.sourceforge.net, Thomas Gleixner <tglx@linutronix.de>, linux-metag@vger.kernel.org, linux-arm-kernel@lists.infradead.org, Andrew Cooper <andrew.cooper3@citrix.com>, linuxppc-dev@lists.ozlabs.org, David Miller <davem@davemloft.net>
 
-On 01/13/2016 04:15 PM, Ulrich Hecht wrote:
-> When probed from device tree, the i2c client driver can handle the
-> interrupt on its own.
-> 
-> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-> Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-> ---
-> v3: uses IRQ_RETVAL
-> 
-> v2: implements the suggested style changes and drops the IRQF_TRIGGER_LOW
-> flag, which is handled in the device tree.
-> 
-> 
->  drivers/media/i2c/adv7604.c | 24 ++++++++++++++++++++++--
->  1 file changed, 22 insertions(+), 2 deletions(-)
-> 
-> diff --git a/drivers/media/i2c/adv7604.c b/drivers/media/i2c/adv7604.c
-> index 5bd81bd..ab4cb25 100644
-> --- a/drivers/media/i2c/adv7604.c
-> +++ b/drivers/media/i2c/adv7604.c
-> @@ -31,6 +31,7 @@
->  #include <linux/gpio/consumer.h>
->  #include <linux/hdmi.h>
->  #include <linux/i2c.h>
-> +#include <linux/interrupt.h>
->  #include <linux/kernel.h>
->  #include <linux/module.h>
->  #include <linux/slab.h>
-> @@ -1971,6 +1972,16 @@ static int adv76xx_isr(struct v4l2_subdev *sd, u32 status, bool *handled)
->  	return 0;
->  }
->  
-> +static irqreturn_t adv76xx_irq_handler(int irq, void *devid)
-> +{
-> +	struct adv76xx_state *state = devid;
-> +	bool handled;
-> +
-> +	adv76xx_isr(&state->sd, 0, &handled);
-> +
-> +	return IRQ_RETVAL(handled);
-> +}
-> +
->  static int adv76xx_get_edid(struct v4l2_subdev *sd, struct v4l2_edid *edid)
->  {
->  	struct adv76xx_state *state = to_state(sd);
-> @@ -2844,8 +2855,7 @@ static int adv76xx_parse_dt(struct adv76xx_state *state)
->  		state->pdata.op_656_range = 1;
->  	}
->  
-> -	/* Disable the interrupt for now as no DT-based board uses it. */
-> -	state->pdata.int1_config = ADV76XX_INT1_CONFIG_DISABLED;
-> +	state->pdata.int1_config = ADV76XX_INT1_CONFIG_ACTIVE_LOW;
+virtio ring uses smp_wmb on SMP and wmb on !SMP,
+the reason for the later being that it might be
+talking to another kernel on the same SMP machine.
 
-Hmm, this hardcodes the interrupt to active low. Can you use the DT to determine
-whether it should be active low or high?
+This is exactly what __smp_XXX barriers do,
+so switch to these instead of homegrown ifdef hacks.
 
-Regards,
+Cc: Peter Zijlstra <peterz@infradead.org>
+Cc: Alexander Duyck <alexander.duyck@gmail.com>
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+---
+ include/linux/virtio_ring.h | 25 ++++---------------------
+ 1 file changed, 4 insertions(+), 21 deletions(-)
 
-	Hans
-
->  
->  	/* Use the default I2C addresses. */
->  	state->pdata.i2c_addresses[ADV7604_PAGE_AVLINK] = 0x42;
-> @@ -3235,6 +3245,16 @@ static int adv76xx_probe(struct i2c_client *client,
->  	v4l2_info(sd, "%s found @ 0x%x (%s)\n", client->name,
->  			client->addr << 1, client->adapter->name);
->  
-> +	if (client->irq) {
-> +		err = devm_request_threaded_irq(&client->dev,
-> +						client->irq,
-> +						NULL, adv76xx_irq_handler,
-> +						IRQF_ONESHOT,
-> +						dev_name(&client->dev), state);
-> +		if (err)
-> +			goto err_entity;
-> +	}
-> +
->  	err = v4l2_async_register_subdev(sd);
->  	if (err)
->  		goto err_entity;
-> 
-
+diff --git a/include/linux/virtio_ring.h b/include/linux/virtio_ring.h
+index 67e06fe..f3fa55b 100644
+--- a/include/linux/virtio_ring.h
++++ b/include/linux/virtio_ring.h
+@@ -12,7 +12,7 @@
+  * anyone care?
+  *
+  * For virtio_pci on SMP, we don't need to order with respect to MMIO
+- * accesses through relaxed memory I/O windows, so smp_mb() et al are
++ * accesses through relaxed memory I/O windows, so virt_mb() et al are
+  * sufficient.
+  *
+  * For using virtio to talk to real devices (eg. other heterogeneous
+@@ -21,11 +21,10 @@
+  * actually quite cheap.
+  */
+ 
+-#ifdef CONFIG_SMP
+ static inline void virtio_mb(bool weak_barriers)
+ {
+ 	if (weak_barriers)
+-		smp_mb();
++		virt_mb();
+ 	else
+ 		mb();
+ }
+@@ -33,7 +32,7 @@ static inline void virtio_mb(bool weak_barriers)
+ static inline void virtio_rmb(bool weak_barriers)
+ {
+ 	if (weak_barriers)
+-		smp_rmb();
++		virt_rmb();
+ 	else
+ 		rmb();
+ }
+@@ -41,26 +40,10 @@ static inline void virtio_rmb(bool weak_barriers)
+ static inline void virtio_wmb(bool weak_barriers)
+ {
+ 	if (weak_barriers)
+-		smp_wmb();
++		virt_wmb();
+ 	else
+ 		wmb();
+ }
+-#else
+-static inline void virtio_mb(bool weak_barriers)
+-{
+-	mb();
+-}
+-
+-static inline void virtio_rmb(bool weak_barriers)
+-{
+-	rmb();
+-}
+-
+-static inline void virtio_wmb(bool weak_barriers)
+-{
+-	wmb();
+-}
+-#endif
+ 
+ struct virtio_device;
+ struct virtqueue;
+-- 
+MST
