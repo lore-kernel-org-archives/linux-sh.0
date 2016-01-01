@@ -1,71 +1,62 @@
-From: "Paul E. McKenney" <paulmck@linux.vnet.ibm.com>
-Date: Tue, 12 Jan 2016 16:31:02 +0000
-Subject: Re: [PATCH v3 05/41] powerpc: reuse asm-generic/barrier.h
-Message-Id: <20160112163102.GE3818@linux.vnet.ibm.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 01 Jan 2016 17:23:46 +0000
+Subject: Re: [PATCH v2 32/32] virtio_ring: use virt_store_mb
+Message-Id: <5686B622.6070600@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1452426622-4471-1-git-send-email-mst@redhat.com>
-	<1452426622-4471-6-git-send-email-mst@redhat.com>
-In-Reply-To: <1452426622-4471-6-git-send-email-mst@redhat.com>
+References: <1451572003-2440-1-git-send-email-mst@redhat.com>
+	<1451572003-2440-33-git-send-email-mst@redhat.com>
+In-Reply-To: <1451572003-2440-33-git-send-email-mst@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "Michael S. Tsirkin" <mst@redhat.com>
-Cc: linux-mips@linux-mips.org, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, virtualization@lists.linux-foundation.org, Paul Mackerras <paulus@samba.org>, "H. Peter Anvin" <hpa@zytor.com>, sparclinux@vger.kernel.org, Ingo Molnar <mingo@kernel.org>, linux-arch@vger.kernel.org, linux-s390@vger.kernel.org, Davidlohr Bueso <dave@stgolabs.net>, Russell King - ARM Linux <linux@arm.linux.org.uk>, Arnd Bergmann <arnd@arndb.de>, Michael Ellerman <mpe@ellerman.id.au>, x86@kernel.org, xen-devel@lists.xenproject.org, Ingo Molnar <mingo@elte.hu>, linux-xtensa@linux-xtensa.org, user-mode-linux-devel@lists.sourceforge.net, Stefano Stabellini <stefano.stabellini@eu.citrix.com>, adi-buildroot-devel@lists.sourceforge.net, Thomas Gleixner <tglx@linutronix.de>, linux-metag@vger.kernel.orglinux
+To: "Michael S. Tsirkin" <mst@redhat.com>, linux-kernel@vger.kernel.org
+Cc: linux-mips@linux-mips.org, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, virtualization@lists.linux-foundation.org, "H. Peter Anvin" <hpa@zytor.com>, sparclinux@vger.kernel.org, linux-arch@vger.kernel.org, linux-s390@vger.kernel.org, Arnd Bergmann <arnd@arndb.de>, x86@kernel.org, xen-devel@lists.xenproject.org, Ingo Molnar <mingo@elte.hu>, linux-xtensa@linux-xtensa.org, user-mode-linux-devel@lists.sourceforge.net, Stefano Stabellini <stefano.stabellini@eu.citrix.com>, adi-buildroot-devel@lists.sourceforge.net, Thomas Gleixner <tglx@linutronix.de>, linux-metag@vger.kernel.org, linux-arm-kernel@lists.infradead.org, Andrew Cooper <andrew.cooper3@citrix.com>, linuxppc-dev@lists.ozlabs.org, David Miller <davem@davemloft.net>
 
-On Sun, Jan 10, 2016 at 04:17:09PM +0200, Michael S. Tsirkin wrote:
-> On powerpc read_barrier_depends, smp_read_barrier_depends
-> smp_store_mb(), smp_mb__before_atomic and smp_mb__after_atomic match the
-> asm-generic variants exactly. Drop the local definitions and pull in
-> asm-generic/barrier.h instead.
-> 
-> This is in preparation to refactoring this code area.
-> 
+Hello.
+
+On 12/31/2015 10:09 PM, Michael S. Tsirkin wrote:
+
+> We need a full barrier after writing out event index, using
+> virt_store_mb there seems better than open-coding.  As usual, we need a
+> wrapper to account for strong barriers.
+>
+> It's tempting to use this in vhost as well, for that, we'll
+> need a variant of smp_store_mb that works on __user pointers.
+>
 > Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
-> Acked-by: Arnd Bergmann <arnd@arndb.de>
-
-Looks sane to me.
-
-Reviewed-by: Paul E. McKenney <paulmck@linux.vnet.ibm.com>
-
 > ---
->  arch/powerpc/include/asm/barrier.h | 9 ++-------
->  1 file changed, 2 insertions(+), 7 deletions(-)
-> 
-> diff --git a/arch/powerpc/include/asm/barrier.h b/arch/powerpc/include/asm/barrier.h
-> index a7af5fb..980ad0c 100644
-> --- a/arch/powerpc/include/asm/barrier.h
-> +++ b/arch/powerpc/include/asm/barrier.h
-> @@ -34,8 +34,6 @@
->  #define rmb()  __asm__ __volatile__ ("sync" : : : "memory")
->  #define wmb()  __asm__ __volatile__ ("sync" : : : "memory")
-> 
-> -#define smp_store_mb(var, value) do { WRITE_ONCE(var, value); smp_mb(); } while (0)
-> -
->  #ifdef __SUBARCH_HAS_LWSYNC
->  #    define SMPWMB      LWSYNC
->  #else
-> @@ -60,9 +58,6 @@
->  #define smp_wmb()	barrier()
->  #endif /* CONFIG_SMP */
-> 
-> -#define read_barrier_depends()		do { } while (0)
-> -#define smp_read_barrier_depends()	do { } while (0)
-> -
->  /*
->   * This is a barrier which prevents following instructions from being
->   * started until the value of the argument x is known.  For example, if
-> @@ -87,8 +82,8 @@ do {									\
->  	___p1;								\
->  })
-> 
-> -#define smp_mb__before_atomic()     smp_mb()
-> -#define smp_mb__after_atomic()      smp_mb()
->  #define smp_mb__before_spinlock()   smp_mb()
-> 
-> +#include <asm-generic/barrier.h>
+>   include/linux/virtio_ring.h  | 12 ++++++++++++
+>   drivers/virtio/virtio_ring.c | 15 +++++++++------
+>   2 files changed, 21 insertions(+), 6 deletions(-)
+>
+> diff --git a/include/linux/virtio_ring.h b/include/linux/virtio_ring.h
+> index f3fa55b..3a74d91 100644
+> --- a/include/linux/virtio_ring.h
+> +++ b/include/linux/virtio_ring.h
+> @@ -45,6 +45,18 @@ static inline void virtio_wmb(bool weak_barriers)
+>   		wmb();
+>   }
+>
+> +static inline void virtio_store_mb(bool weak_barriers,
+> +				   __virtio16 *p, __virtio16 v)
+> +{
+> +	if (weak_barriers)
+> +		virt_store_mb(*p, v);
+> +	else
+> +	{
+
+    The kernel coding style dictates:
+
+	if (weak_barriers) {
+		virt_store_mb(*p, v);
+	} else {
+
+> +		WRITE_ONCE(*p, v);
+> +		mb();
+> +	}
+> +}
 > +
->  #endif /* _ASM_POWERPC_BARRIER_H */
-> -- 
-> MST
-> 
+[...]
+
+MBR, Sergei
 
