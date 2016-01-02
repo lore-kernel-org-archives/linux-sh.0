@@ -1,96 +1,45 @@
-From: Yoshinori Sato <ysato@users.sourceforge.jp>
-Date: Sat, 30 Jan 2016 17:05:43 +0000
-Subject: Re: [RFC/PATCH] sh: Use generic clkdev.h header
-Message-Id: <87lh77ro9k.wl-ysato@users.sourceforge.jp>
+From: Russell King - ARM Linux <linux@arm.linux.org.uk>
+Date: Sat, 02 Jan 2016 11:24:38 +0000
+Subject: Re: [PATCH v2 17/32] arm: define __smp_xxx
+Message-Id: <20160102112438.GU8644@n2100.arm.linux.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1453937814-17819-1-git-send-email-sboyd@codeaurora.org>
-In-Reply-To: <1453937814-17819-1-git-send-email-sboyd@codeaurora.org>
+References: <1451572003-2440-1-git-send-email-mst@redhat.com>
+ <1451572003-2440-18-git-send-email-mst@redhat.com>
+In-Reply-To: <1451572003-2440-18-git-send-email-mst@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Stephen Boyd <sboyd@codeaurora.org>
-Cc: Rich Felker <dalias@libc.org>, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
+To: "Michael S. Tsirkin" <mst@redhat.com>
+Cc: linux-kernel@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, Arnd Bergmann <arnd@arndb.de>, linux-arch@vger.kernel.org, Andrew Cooper <andrew.cooper3@citrix.com>, virtualization@lists.linux-foundation.org, Stefano Stabellini <stefano.stabellini@eu.citrix.com>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@elte.hu>, "H. Peter Anvin" <hpa@zytor.com>, David Miller <davem@davemloft.net>, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, sparclinux@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-metag@vger.kernel.org, linux-mips@linux-mips.org, x86@kernel.org, user-mode-linux-devel@lists.sourceforge.net, adi-buildroot-devel@lists.sourceforge.net, linux-sh@vger.kernel.org, linux-xtensa@linux-xtensa.org, xen-devel@lists.xenproject.org, Ingo Molnar <mingo@kernel.org>, Tony Lindgren <tony@atomide.com>Andre
 
-On Thu, 28 Jan 2016 08:36:54 +0900,
-Stephen Boyd wrote:
+On Thu, Dec 31, 2015 at 09:07:59PM +0200, Michael S. Tsirkin wrote:
+> This defines __smp_xxx barriers for arm,
+> for use by virtualization.
 > 
-> The generic header file is almost equivalent to the SH one. The
-> only difference is that the SH one supports allocating clkdev
-> lookups early using bootmem allocators instead of the slabs. From
-> what I can tell using visual inspection, the slab is initialized
-> before any clkdev allocation is made under arch/sh. So let's
-> remove the arch specific clkdev.h header and use the generic one
-> instead.
+> smp_xxx barriers are removed as they are
+> defined correctly by asm-generic/barriers.h
+> 
+> This reduces the amount of arch-specific boiler-plate code.
+> 
+> Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+> Acked-by: Arnd Bergmann <arnd@arndb.de>
 
-OK.
-Works fine. Applied later.
-Thanks.
+In combination with patch 14, this looks like it should result in no
+change to the resulting code.
 
-> Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
-> ---
-> 
-> Not even compile tested, but done with visual inspection.
-> 
->  arch/sh/include/asm/Kbuild   |  1 +
->  arch/sh/include/asm/clkdev.h | 33 ---------------------------------
->  2 files changed, 1 insertion(+), 33 deletions(-)
->  delete mode 100644 arch/sh/include/asm/clkdev.h
-> 
-> diff --git a/arch/sh/include/asm/Kbuild b/arch/sh/include/asm/Kbuild
-> index aac452b26aa8..a319745a7b63 100644
-> --- a/arch/sh/include/asm/Kbuild
-> +++ b/arch/sh/include/asm/Kbuild
-> @@ -1,5 +1,6 @@
->  
->  generic-y += bitsperlong.h
-> +generic-y += clkdev.h
->  generic-y += cputime.h
->  generic-y += current.h
->  generic-y += delay.h
-> diff --git a/arch/sh/include/asm/clkdev.h b/arch/sh/include/asm/clkdev.h
-> deleted file mode 100644
-> index c41901465fb0..000000000000
-> --- a/arch/sh/include/asm/clkdev.h
-> +++ /dev/null
-> @@ -1,33 +0,0 @@
-> -/*
-> - *  Copyright (C) 2010 Paul Mundt <lethal@linux-sh.org>
-> - *
-> - * This program is free software; you can redistribute it and/or modify
-> - * it under the terms of the GNU General Public License version 2 as
-> - * published by the Free Software Foundation.
-> - *
-> - * Helper for the clk API to assist looking up a struct clk.
-> - */
-> -
-> -#ifndef __CLKDEV__H_
-> -#define __CLKDEV__H_
-> -
-> -#include <linux/bootmem.h>
-> -#include <linux/mm.h>
-> -#include <linux/slab.h>
-> -
-> -#include <asm/clock.h>
-> -
-> -static inline struct clk_lookup_alloc *__clkdev_alloc(size_t size)
-> -{
-> -	if (!slab_is_available())
-> -		return alloc_bootmem_low_pages(size);
-> -	else
-> -		return kzalloc(size, GFP_KERNEL);
-> -}
-> -
-> -#ifndef CONFIG_COMMON_CLK
-> -#define __clk_put(clk)
-> -#define __clk_get(clk) ({ 1; })
-> -#endif
-> -
-> -#endif /* __CLKDEV_H__ */
-> -- 
-> The Qualcomm Innovation Center, Inc. is a member of the Code Aurora Forum,
-> a Linux Foundation Collaborative Project
-> 
+Acked-by: Russell King <rmk+kernel@arm.linux.org.uk>
+
+My only concern is that it gives people an additional handle onto a
+"new" set of barriers - just because they're prefixed with __*
+unfortunately doesn't stop anyone from using it (been there with
+other arch stuff before.)
+
+I wonder whether we should consider making the smp memory barriers
+inline functions, so these __smp_xxx() variants can be undef'd
+afterwards, thereby preventing drivers getting their hands on these
+new macros?
 
 -- 
-Yoshinori Sato
-<ysato@users.sourceforge.jp>
+RMK's Patch system: http://www.arm.linux.org.uk/developer/patches/
+FTTC broadband for 0.8mile line: currently at 9.6Mbps down 400kbps up
+according to speedtest.net.
