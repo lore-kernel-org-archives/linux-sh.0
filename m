@@ -1,82 +1,41 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Mon, 18 Jan 2016 01:57:33 +0000
-Subject: Re: [PATCH 2/2] ARM: dts: r8a7790: add iommus to dmac0 and dmac1
-Message-Id: <20160118015733.GH1905@verge.net.au>
+Date: Sun, 03 Jan 2016 21:59:36 +0000
+Subject: Re: [PATCH] ARM: shmobile: r8a7793: Add I2C master nodes to DT
+Message-Id: <20160103215935.GE22806@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1452478667-30966-3-git-send-email-niklas.soderlund+renesas@ragnatech.se>
-In-Reply-To: <1452478667-30966-3-git-send-email-niklas.soderlund+renesas@ragnatech.se>
+References: <1451299221-18679-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1451299221-18679-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Niklas,
-
-On Mon, Jan 11, 2016 at 03:17:47AM +0100, Niklas Söderlund wrote:
-> Signed-off-by: Niklas Söderlund <niklas.soderlund+renesas@ragnatech.se>
-
-I am marking this patch as Deffered pending acceptance of the
-driver change which is patch 1/2 of this series. If I am mistaken
-and it is appropriate to queue up this patch now for v4.6 then
-please don't hesitate to let me know.
-
-> ---
->  arch/arm/boot/dts/r8a7790.dtsi | 30 ++++++++++++++++++++++++++++++
->  1 file changed, 30 insertions(+)
+On Wed, Dec 30, 2015 at 12:46:32AM +0200, Laurent Pinchart wrote:
+> Hi Simon,
 > 
-> diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-> index e07ae5d..23af349 100644
-> --- a/arch/arm/boot/dts/r8a7790.dtsi
-> +++ b/arch/arm/boot/dts/r8a7790.dtsi
-> @@ -294,6 +294,21 @@
->  		power-domains = <&cpg_clocks>;
->  		#dma-cells = <1>;
->  		dma-channels = <15>;
-> +		iommus = <&ipmmu_ds 0>,
-> +			 <&ipmmu_ds 1>,
-> +			 <&ipmmu_ds 2>,
-> +			 <&ipmmu_ds 3>,
-> +			 <&ipmmu_ds 4>,
-> +			 <&ipmmu_ds 5>,
-> +			 <&ipmmu_ds 6>,
-> +			 <&ipmmu_ds 7>,
-> +			 <&ipmmu_ds 8>,
-> +			 <&ipmmu_ds 9>,
-> +			 <&ipmmu_ds 10>,
-> +			 <&ipmmu_ds 11>,
-> +			 <&ipmmu_ds 12>,
-> +			 <&ipmmu_ds 13>,
-> +			 <&ipmmu_ds 14>;
->  	};
->  
->  	dmac1: dma-controller@e6720000 {
-> @@ -325,6 +340,21 @@
->  		power-domains = <&cpg_clocks>;
->  		#dma-cells = <1>;
->  		dma-channels = <15>;
-> +		iommus = <&ipmmu_ds 15>,
-> +			 <&ipmmu_ds 16>,
-> +			 <&ipmmu_ds 17>,
-> +			 <&ipmmu_ds 18>,
-> +			 <&ipmmu_ds 19>,
-> +			 <&ipmmu_ds 20>,
-> +			 <&ipmmu_ds 21>,
-> +			 <&ipmmu_ds 22>,
-> +			 <&ipmmu_ds 23>,
-> +			 <&ipmmu_ds 24>,
-> +			 <&ipmmu_ds 25>,
-> +			 <&ipmmu_ds 26>,
-> +			 <&ipmmu_ds 27>,
-> +			 <&ipmmu_ds 28>,
-> +			 <&ipmmu_ds 29>;
->  	};
->  
->  	audma0: dma-controller@ec700000 {
-> -- 
-> 2.7.0
+> On Wednesday 30 December 2015 09:32:52 Simon Horman wrote:
+> > On Mon, Dec 28, 2015 at 12:40:21PM +0200, Laurent Pinchart wrote:
+> > > Instantiate all the 9 I2C controllers in the disabled state.
+> > > 
+> > > Signed-off-by: Laurent Pinchart
+> > > <laurent.pinchart+renesas@ideasonboard.com>
+> > 
+> > I took a slightly different approach for the last 3 controllers in:
+> > 
+> > * [PATCH/RFC 01/19] ARM: shmobile: r8a7793: add i2c clocks
+> > * [PATCH/RFC 04/19] ARM: shmobile: r8a7793: add iic(b)  to device tree
+> > 
+> > I'm wondering if we could reach some consensus on how to handle that.
+> > If that seems difficult perhaps we could just enable the first 6
+> > controllers for now.
 > 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+> I'm fine with any approach. This is a case where discussing how to implement 
+> the feature will take longer than implementing it, so feel free to drop my 
+> patch and use yours :-)
+
+Point taken.
+
+I have queued up your version on the basis that the implementation matches
+that of the r8a7791, the closes relative of the r8a7793 in hardware terms.
+We can do a dance around re-arranging things, as my patches suggested,
+if the need arises.
