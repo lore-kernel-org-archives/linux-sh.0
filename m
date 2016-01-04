@@ -1,72 +1,45 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 15 Jan 2016 02:38:06 +0000
-Subject: [PATCH v3 13/14] ARM: shmobile: gose: enable sound DMA support via DVC in device tree
-Message-Id: <1452825487-15931-14-git-send-email-horms+renesas@verge.net.au>
+Date: Mon, 04 Jan 2016 22:27:40 +0000
+Subject: [PATCH v2 05/13] ARM: shmobile: r8a7793: add audio DMAC clocks to device tree
+Message-Id: <1451946468-20499-6-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1452825487-15931-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1452825487-15931-1-git-send-email-horms+renesas@verge.net.au>
+References: <1451946468-20499-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1451946468-20499-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Enable DMA transfer using DVC in r8a7793/gose device tree.
+Instantiate Audio DMA clocks in the r8a7791 device tree.
 
-     DMA               DMApp
-[MEM] -> [SRC] -> [DVC] -> [SSIU] -> [SSI]
-
-     DMA               DMApp
-[MEM] <- [DVC] <- [SRC] <- [SSIU] <- [SSI]
-
-Based on similar work for the r8a7791/koelsch by Kuninori Morimoto.
+Based on similar work for the r8a7791 by Kuninori Morimoto.
 
 Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7793-gose.dts | 21 +++++++++++++++++++--
- 1 file changed, 19 insertions(+), 2 deletions(-)
+ arch/arm/boot/dts/r8a7793.dtsi | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7793-gose.dts b/arch/arm/boot/dts/r8a7793-gose.dts
-index ad20ddc5203d..958ef72991c5 100644
---- a/arch/arm/boot/dts/r8a7793-gose.dts
-+++ b/arch/arm/boot/dts/r8a7793-gose.dts
-@@ -18,7 +18,24 @@
-  * This command is required when Playback/Capture
-  *
-  *	amixer set "LINEOUT Mixer DACL" on
-+ *	amixer set "DVC Out" 100%
-+ *	amixer set "DVC In" 100%
-+ *
-+ * You can use Mute
-+ *
-+ *	amixer set "DVC Out Mute" on
-+ *	amixer set "DVC In Mute" on
-+ *
-+ * You can use Volume Ramp
-+ *
-+ *	amixer set "DVC Out Ramp Up Rate"   "0.125 dB/64 steps"
-+ *	amixer set "DVC Out Ramp Down Rate" "0.125 dB/512 steps"
-+ *	amixer set "DVC Out Ramp" on
-+ *	aplay xxx.wav &
-+ *	amixer set "DVC Out"  80%  // Volume Down
-+ *	amixer set "DVC Out" 100%  // Volume Up
-  */
-+
- /dts-v1/;
- #include "r8a7793.dtsi"
- #include <dt-bindings/gpio/gpio.h>
-@@ -315,8 +332,8 @@
- 
- 	rcar_sound,dai {
- 		dai0 {
--			playback = <&ssi0 &src2>;
--			capture  = <&ssi1 &src3>;
-+			playback = <&ssi0 &src2 &dvc0>;
-+			capture  = <&ssi1 &src3 &dvc1>;
+diff --git a/arch/arm/boot/dts/r8a7793.dtsi b/arch/arm/boot/dts/r8a7793.dtsi
+index 1a260676682f..4a58994ba124 100644
+--- a/arch/arm/boot/dts/r8a7793.dtsi
++++ b/arch/arm/boot/dts/r8a7793.dtsi
+@@ -924,10 +924,11 @@
+ 		mstp5_clks: mstp5_clks@e6150144 {
+ 			compatible = "renesas,r8a7793-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150144 0 4>, <0 0xe615003c 0 4>;
+-			clocks = <&extal_clk>;
++			clocks = <&hp_clk>, <&hp_clk>, <&extal_clk>;
+ 			#clock-cells = <1>;
+-			clock-indices = <R8A7793_CLK_THERMAL>;
+-			clock-output-names = "thermal";
++			clock-indices = <R8A7793_CLK_AUDIO_DMAC0 R8A7793_CLK_AUDIO_DMAC1
++					 R8A7793_CLK_THERMAL>;
++			clock-output-names = "audmac0", "audmac1", "thermal";
  		};
- 	};
- };
+ 		mstp7_clks: mstp7_clks@e615014c {
+ 			compatible = "renesas,r8a7793-mstp-clocks",
 -- 
 2.1.4
 
