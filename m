@@ -1,107 +1,119 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 04 Jan 2016 13:45:22 +0000
-Subject: [PATCH 5/5] serial: sh-sci: Add support for SCIFA/SCIFB variable sampling rates
-Message-Id: <1451915122-30219-6-git-send-email-geert+renesas@glider.be>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Mon, 04 Jan 2016 12:17:47 +0000
+Subject: [PATCH v2] of/unittest: Show broken behaviour in the platform bus (fwd)
+Message-Id: <20160104121746.GE1524@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="phCU5ROyZO6kBE05"
 List-Id: <linux-sh.vger.kernel.org>
-References: <1451915122-30219-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1451915122-30219-1-git-send-email-geert+renesas@glider.be>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
-Cc: Simon Horman <horms+renesas@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-sh@vger.kernel.org
 
-Add support for sparse variable sampling rates on SCIFA and SCIFB.
-According to the datasheet, sampling rate 1/5 needs a small quirk to
-avoid corrupting the first byte received.
 
-This increases the range and accuracy of supported baud rates.
-E.g. on r8a7791/koelsch:
-  - Supports now 134, 150, and standard 500000-4000000 bps,
-  - Perfect match for 134, 150, 500000, 1000000, 2000000, and 4000000
-    bps,
-  - Accuracy has increased for most standard bps values.
+--phCU5ROyZO6kBE05
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+
+FYI, I forgot to cc this list...
+
+----- Forwarded message from Wolfram Sang <wsa@the-dreams.de> -----
+
+Date: Mon,  4 Jan 2016 13:13:21 +0100
+=46rom: Wolfram Sang <wsa@the-dreams.de>
+To: linux-kernel@vger.kernel.org
+Cc: Wolfram Sang <wsa@the-dreams.de>, Pantelis Antoniou <pantelis.antoniou@=
+konsulko.com>, Rob Herring <robh@kernel.org>, Greg Kroah-Hartman <gregkh@li=
+nuxfoundation.org>, Ricardo Ribalda Delgado <ricardo.ribalda@gmail.com>, Rob
+	Herring <robh+dt@kernel.org>, Frank Rowand <frowand.list@gmail.com>, Grant=
+ Likely <grant.likely@linaro.org>, devicetree@vger.kernel.org
+Subject: [PATCH v2] of/unittest: Show broken behaviour in the platform bus
+Message-Id: <1451909614-5519-1-git-send-email-wsa@the-dreams.de>
+X-Mailer: git-send-email 2.1.4
+
+=46rom: Grant Likely <grant.likely@linaro.org>
+
+Add a single resource to the test bus device to exercise the platform
+bus code a little more. This isn't strictly a devicetree test, but it is
+a corner case that the devicetree runs into. Until we've got platform
+device unittests, it can live here. It doesn't need to be an explicit
+text because the kernel will oops when it is wrong.
+
+Cc: Pantelis Antoniou <pantelis.antoniou@konsulko.com>
+Cc: Rob Herring <robh@kernel.org>
+Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Cc: Ricardo Ribalda Delgado <ricardo.ribalda@gmail.com>
+Signed-off-by: Grant Likely <grant.likely@linaro.org>
+[wsa: added the comment provided by Grant, rebased, and tested]
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 ---
-Tested on:
-  - r8a7791/koelsch (Fully tested on SCIFA and SCIFB),
-  - r8a7740/armadillo (Fully tested on SCIFA and SCIFB),
-  - sh73a0/kzm9g (Fully tested on SCIFA only, no easy access to SCIFB),
-  - r8a73a4/ape6evm (SCIFA/FTDI console at 460800 bps, no easy access to
-    SCIFB).
----
- drivers/tty/serial/sh-sci.c | 29 +++++++++++++++++++++++++++--
- 1 file changed, 27 insertions(+), 2 deletions(-)
+ drivers/of/unittest.c | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 17188fc4b1b32439..4f638c480c5b270a 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -89,6 +89,10 @@ enum SCI_CLKS {
- #define SCI_SR(x)		BIT((x) - 1)
- #define SCI_SR_RANGE(x, y)	GENMASK((y) - 1, (x) - 1)
- 
-+#define SCI_SR_SCIFAB		SCI_SR(5) | SCI_SR(7) | SCI_SR(11) | \
-+				SCI_SR(13) | SCI_SR(16) | SCI_SR(17) | \
-+				SCI_SR(19) | SCI_SR(27)
+I found this patch in one of my branches and think it is still worth applyi=
+ng.
+In v1, Rob wanted a comment added which Grant provided but never folded into
+the patch. I have done so now :) Note that the fix to this problem was alre=
+ady
+picked up by Rob.
+
+diff --git a/drivers/of/unittest.c b/drivers/of/unittest.c
+index e16ea5717b7f76..bbff09dee1cf45 100644
+--- a/drivers/of/unittest.c
++++ b/drivers/of/unittest.c
+@@ -757,6 +757,11 @@ static void __init of_unittest_match_node(void)
+ 	}
+ }
+=20
++static struct resource test_bus_res =3D {
++	.start =3D 0xfffffff8,
++	.end =3D 0xfffffff9,
++	.flags =3D IORESOURCE_MEM,
++};
+ static const struct platform_device_info test_bus_info =3D {
+ 	.name =3D "unittest-bus",
+ };
+@@ -800,6 +805,15 @@ static void __init of_unittest_platform_populate(void)
+ 		return;
+ 	test_bus->dev.of_node =3D np;
+=20
++	/*
++	 * Add a dummy resource to the test bus node after it is
++	 * registered to catch problems with un-inserted resources. The
++	 * DT code doesn't insert the resources, and it has caused the
++	 * kernel to oops in the past. This makes sure the same bug
++	 * doesn't crop up again.
++	 */
++	platform_device_add_resources(test_bus, &test_bus_res, 1);
 +
- #define min_sr(_port)		ffs((_port)->sampling_rate_mask)
- #define max_sr(_port)		fls((_port)->sampling_rate_mask)
- 
-@@ -2206,6 +2210,17 @@ done:
- 	uart_update_timeout(port, termios->c_cflag, baud);
- 
- 	if (best_clk >= 0) {
-+		if (port->type = PORT_SCIFA || port->type = PORT_SCIFB)
-+			switch (srr + 1) {
-+			case 5:  smr_val |= SCSMR_SRC_5;  break;
-+			case 7:  smr_val |= SCSMR_SRC_7;  break;
-+			case 11: smr_val |= SCSMR_SRC_11; break;
-+			case 13: smr_val |= SCSMR_SRC_13; break;
-+			case 16: smr_val |= SCSMR_SRC_16; break;
-+			case 17: smr_val |= SCSMR_SRC_17; break;
-+			case 19: smr_val |= SCSMR_SRC_19; break;
-+			case 27: smr_val |= SCSMR_SRC_27; break;
-+			}
- 		smr_val |= cks;
- 		dev_dbg(port->dev,
- 			 "SCR 0x%x SMR 0x%x BRR %u CKS 0x%x DL %u SRR %u\n",
-@@ -2254,6 +2269,16 @@ done:
- 	scr_val |= s->cfg->scscr & ~(SCSCR_CKE1 | SCSCR_CKE0);
- 	dev_dbg(port->dev, "SCSCR 0x%x\n", scr_val);
- 	serial_port_out(port, SCSCR, scr_val);
-+	if ((srr + 1 = 5) &&
-+	    (port->type = PORT_SCIFA || port->type = PORT_SCIFB)) {
-+		/*
-+		 * In asynchronous mode, when the sampling rate is 1/5, first
-+		 * received data may become invalid on some SCIFA and SCIFB.
-+		 * To avoid this problem wait more than 1 serial data time (1
-+		 * bit time x serial data number) after setting SCSCR.RE = 1.
-+		 */
-+		udelay(DIV_ROUND_UP(10 * 1000000, baud));
-+	}
- 
- #ifdef CONFIG_SERIAL_SH_SCI_DMA
- 	/*
-@@ -2550,7 +2575,7 @@ static int sci_init_single(struct platform_device *dev,
- 		port->fifosize = 256;
- 		sci_port->overrun_reg = SCxSR;
- 		sci_port->overrun_mask = SCIFA_ORER;
--		sci_port->sampling_rate_mask = SCI_SR(16);
-+		sci_port->sampling_rate_mask = SCI_SR_SCIFAB;
- 		break;
- 	case PORT_HSCIF:
- 		port->fifosize = 128;
-@@ -2562,7 +2587,7 @@ static int sci_init_single(struct platform_device *dev,
- 		port->fifosize = 64;
- 		sci_port->overrun_reg = SCxSR;
- 		sci_port->overrun_mask = SCIFA_ORER;
--		sci_port->sampling_rate_mask = SCI_SR(16);
-+		sci_port->sampling_rate_mask = SCI_SR_SCIFAB;
- 		break;
- 	case PORT_SCIF:
- 		port->fifosize = 16;
--- 
-1.9.1
+ 	of_platform_populate(np, match, NULL, &test_bus->dev);
+ 	for_each_child_of_node(np, child) {
+ 		for_each_child_of_node(child, grandchild)
+--=20
+2.1.4
 
+
+----- End forwarded message -----
+
+--phCU5ROyZO6kBE05
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBAgAGBQJWimLqAAoJEBQN5MwUoCm2VrsQAIRG1xyM7tKoOka7mVdVvCgH
+cpGitvbKbwhWYWYEjeM9+2RoyPP0UBejo265K+9RB2QD4X5PfW2bVg+js7YCzGRi
+R+xQ4Fahq9fwnWs/paTDEfDn98FvzBV3eahe4Mo+S3XsM5VP/37feM95lY9ZUFee
+Gja11dtf61lEx9YYm4hne41KdYC40yEgqREh4CN7Z46DudqsHsGlX358/lsjEh8H
+hei3sucUokYXq5WEDy+G1lMHuuRigSh3ex+2QB/aXjwvldw2QQgv59ozgY8L1Dcl
++9gZtYKHYDuYeAILMFkvgRMeyaHOp21Y/8YvTxr0wd/rj5T2+e8HfEAzE6jg2vru
+P8BztB9qGS/Hqy2z7aWtM0s3R9Ue+yGIFharB09tKAppK6SVdCqdn7JK7+glvkNx
+dOvxy/TxHeB6RAnPHi90gkWbeH58Riyzqae7Vb4L9PIKfI/+Jx4iLD1Nyd85BtFs
+/5W5CnCewwlg+BjIvq+wPLW61VPWPhjmfWYKUp75S+K3r28L1y/PmhMXV9Da0AdD
+uNwjIw5f58ll9oA9nxo1rLeV2bX2XL/j1gdxScuduUSjGhba2N+teukycUVNqNdc
+pJd0fdeKzxGwtg9A92WDO6xDIVGG9e0fM4aG7zi9X9g5K4y5dQKtR/qFp5beLi6n
+NSGC07jQzPzFJJJ5PwxU
+=QiAD
+-----END PGP SIGNATURE-----
+
+--phCU5ROyZO6kBE05--
