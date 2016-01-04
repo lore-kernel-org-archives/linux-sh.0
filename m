@@ -1,45 +1,107 @@
-From: "Michael S. Tsirkin" <mst@redhat.com>
-Date: Thu, 21 Jan 2016 10:29:22 +0000
-Subject: [PATCH] sh: fix smp_store_mb for !SMP
-Message-Id: <1453371795-32669-1-git-send-email-mst@redhat.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 04 Jan 2016 13:45:22 +0000
+Subject: [PATCH 5/5] serial: sh-sci: Add support for SCIFA/SCIFB variable sampling rates
+Message-Id: <1451915122-30219-6-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1451915122-30219-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1451915122-30219-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: linux-arch@vger.kernel.org, Arnd Bergmann <arnd@arndb.de>, linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, virtualization@lists.linux-foundation.org, Linus Torvalds <torvalds@linux-foundation.org>, Ingo Molnar <mingo@kernel.org>
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
+Cc: Simon Horman <horms+renesas@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-sh variant of smp_store_mb() calls xchg() on !SMP which is stronger than
-implied by both the name and the documentation.
+Add support for sparse variable sampling rates on SCIFA and SCIFB.
+According to the datasheet, sampling rate 1/5 needs a small quirk to
+avoid corrupting the first byte received.
 
-commit 90a3ccb0be538a914e6a5c51ae919762261563ad ("sh: define __smp_xxx,
-fix smp_store_mb for !SMP") was supposed to fix it but
-left the bug in place.
+This increases the range and accuracy of supported baud rates.
+E.g. on r8a7791/koelsch:
+  - Supports now 134, 150, and standard 500000-4000000 bps,
+  - Perfect match for 134, 150, 500000, 1000000, 2000000, and 4000000
+    bps,
+  - Accuracy has increased for most standard bps values.
 
-Drop smp_store_mb, so that code in asm-generic/barrier.h
-will define it correctly depending on CONFIG_SMP.
-
-Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
+Tested on:
+  - r8a7791/koelsch (Fully tested on SCIFA and SCIFB),
+  - r8a7740/armadillo (Fully tested on SCIFA and SCIFB),
+  - sh73a0/kzm9g (Fully tested on SCIFA only, no easy access to SCIFB),
+  - r8a73a4/ape6evm (SCIFA/FTDI console at 460800 bps, no easy access to
+    SCIFB).
+---
+ drivers/tty/serial/sh-sci.c | 29 +++++++++++++++++++++++++++--
+ 1 file changed, 27 insertions(+), 2 deletions(-)
 
-I put this in my tree as that's where the original commit
-came through, but if anyone else prefers to merge it, pls
-let me know.
-
- arch/sh/include/asm/barrier.h | 1 -
- 1 file changed, 1 deletion(-)
-
-diff --git a/arch/sh/include/asm/barrier.h b/arch/sh/include/asm/barrier.h
-index f887c64..8a84e05 100644
---- a/arch/sh/include/asm/barrier.h
-+++ b/arch/sh/include/asm/barrier.h
-@@ -33,7 +33,6 @@
- #endif
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 17188fc4b1b32439..4f638c480c5b270a 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -89,6 +89,10 @@ enum SCI_CLKS {
+ #define SCI_SR(x)		BIT((x) - 1)
+ #define SCI_SR_RANGE(x, y)	GENMASK((y) - 1, (x) - 1)
  
- #define __smp_store_mb(var, value) do { (void)xchg(&var, value); } while (0)
--#define smp_store_mb(var, value) __smp_store_mb(var, value)
++#define SCI_SR_SCIFAB		SCI_SR(5) | SCI_SR(7) | SCI_SR(11) | \
++				SCI_SR(13) | SCI_SR(16) | SCI_SR(17) | \
++				SCI_SR(19) | SCI_SR(27)
++
+ #define min_sr(_port)		ffs((_port)->sampling_rate_mask)
+ #define max_sr(_port)		fls((_port)->sampling_rate_mask)
  
- #include <asm-generic/barrier.h>
+@@ -2206,6 +2210,17 @@ done:
+ 	uart_update_timeout(port, termios->c_cflag, baud);
  
+ 	if (best_clk >= 0) {
++		if (port->type = PORT_SCIFA || port->type = PORT_SCIFB)
++			switch (srr + 1) {
++			case 5:  smr_val |= SCSMR_SRC_5;  break;
++			case 7:  smr_val |= SCSMR_SRC_7;  break;
++			case 11: smr_val |= SCSMR_SRC_11; break;
++			case 13: smr_val |= SCSMR_SRC_13; break;
++			case 16: smr_val |= SCSMR_SRC_16; break;
++			case 17: smr_val |= SCSMR_SRC_17; break;
++			case 19: smr_val |= SCSMR_SRC_19; break;
++			case 27: smr_val |= SCSMR_SRC_27; break;
++			}
+ 		smr_val |= cks;
+ 		dev_dbg(port->dev,
+ 			 "SCR 0x%x SMR 0x%x BRR %u CKS 0x%x DL %u SRR %u\n",
+@@ -2254,6 +2269,16 @@ done:
+ 	scr_val |= s->cfg->scscr & ~(SCSCR_CKE1 | SCSCR_CKE0);
+ 	dev_dbg(port->dev, "SCSCR 0x%x\n", scr_val);
+ 	serial_port_out(port, SCSCR, scr_val);
++	if ((srr + 1 = 5) &&
++	    (port->type = PORT_SCIFA || port->type = PORT_SCIFB)) {
++		/*
++		 * In asynchronous mode, when the sampling rate is 1/5, first
++		 * received data may become invalid on some SCIFA and SCIFB.
++		 * To avoid this problem wait more than 1 serial data time (1
++		 * bit time x serial data number) after setting SCSCR.RE = 1.
++		 */
++		udelay(DIV_ROUND_UP(10 * 1000000, baud));
++	}
+ 
+ #ifdef CONFIG_SERIAL_SH_SCI_DMA
+ 	/*
+@@ -2550,7 +2575,7 @@ static int sci_init_single(struct platform_device *dev,
+ 		port->fifosize = 256;
+ 		sci_port->overrun_reg = SCxSR;
+ 		sci_port->overrun_mask = SCIFA_ORER;
+-		sci_port->sampling_rate_mask = SCI_SR(16);
++		sci_port->sampling_rate_mask = SCI_SR_SCIFAB;
+ 		break;
+ 	case PORT_HSCIF:
+ 		port->fifosize = 128;
+@@ -2562,7 +2587,7 @@ static int sci_init_single(struct platform_device *dev,
+ 		port->fifosize = 64;
+ 		sci_port->overrun_reg = SCxSR;
+ 		sci_port->overrun_mask = SCIFA_ORER;
+-		sci_port->sampling_rate_mask = SCI_SR(16);
++		sci_port->sampling_rate_mask = SCI_SR_SCIFAB;
+ 		break;
+ 	case PORT_SCIF:
+ 		port->fifosize = 16;
 -- 
-MST
+1.9.1
+
