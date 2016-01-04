@@ -1,66 +1,67 @@
-From: "=?UTF-8?q?Niklas=20S=C3=B6derlund?=" <niklas.soderlund@ragnatech.se>
-Date: Fri, 08 Jan 2016 08:23:05 +0000
-Subject: [RFC 3/4] ARM: dts: r8a7790: add iommus to dmac0 and dmac1
-Message-Id: <1452241386-22830-4-git-send-email-niklas.soderlund+renesas@ragnatech.se>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 04 Jan 2016 13:45:18 +0000
+Subject: [PATCH 1/5] serial: sh-sci: Add more Serial Mode Register documentation
+Message-Id: <1451915122-30219-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1451915122-30219-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1451915122-30219-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
+Cc: Simon Horman <horms+renesas@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Niklas S=C3=B6derlund <niklas.soderlund+renesas@ragnatech.se>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 30 ++++++++++++++++++++++++++++++
- 1 file changed, 30 insertions(+)
+ drivers/tty/serial/sh-sci.c |  2 +-
+ drivers/tty/serial/sh-sci.h | 15 +++++++++++++++
+ 2 files changed, 16 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index e07ae5d..23af349 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -294,6 +294,21 @@
- 		power-domains =3D <&cpg_clocks>;
- 		#dma-cells =3D <1>;
- 		dma-channels =3D <15>;
-+		iommus =3D <&ipmmu_ds 0>,
-+			 <&ipmmu_ds 1>,
-+			 <&ipmmu_ds 2>,
-+			 <&ipmmu_ds 3>,
-+			 <&ipmmu_ds 4>,
-+			 <&ipmmu_ds 5>,
-+			 <&ipmmu_ds 6>,
-+			 <&ipmmu_ds 7>,
-+			 <&ipmmu_ds 8>,
-+			 <&ipmmu_ds 9>,
-+			 <&ipmmu_ds 10>,
-+			 <&ipmmu_ds 11>,
-+			 <&ipmmu_ds 12>,
-+			 <&ipmmu_ds 13>,
-+			 <&ipmmu_ds 14>;
- 	};
-=20
- 	dmac1: dma-controller@e6720000 {
-@@ -325,6 +340,21 @@
- 		power-domains =3D <&cpg_clocks>;
- 		#dma-cells =3D <1>;
- 		dma-channels =3D <15>;
-+		iommus =3D <&ipmmu_ds 15>,
-+			 <&ipmmu_ds 16>,
-+			 <&ipmmu_ds 17>,
-+			 <&ipmmu_ds 18>,
-+			 <&ipmmu_ds 19>,
-+			 <&ipmmu_ds 20>,
-+			 <&ipmmu_ds 21>,
-+			 <&ipmmu_ds 22>,
-+			 <&ipmmu_ds 23>,
-+			 <&ipmmu_ds 24>,
-+			 <&ipmmu_ds 25>,
-+			 <&ipmmu_ds 26>,
-+			 <&ipmmu_ds 27>,
-+			 <&ipmmu_ds 28>,
-+			 <&ipmmu_ds 29>;
- 	};
-=20
- 	audma0: dma-controller@ec700000 {
---=20
-2.6.4
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 6571f4d944c26297..a7c062192e2d3130 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -2091,7 +2091,7 @@ static void sci_reset(struct uart_port *port)
+ static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
+ 			    struct ktermios *old)
+ {
+-	unsigned int baud, smr_val = 0, scr_val = 0, i;
++	unsigned int baud, smr_val = SCSMR_ASYNC, scr_val = 0, i;
+ 	unsigned int brr = 255, cks = 0, srr = 15, dl = 0, sccks = 0;
+ 	unsigned int brr1 = 255, cks1 = 0, srr1 = 15, dl1 = 0;
+ 	struct sci_port *s = to_sci_port(port);
+diff --git a/drivers/tty/serial/sh-sci.h b/drivers/tty/serial/sh-sci.h
+index fb176025042185c4..7a4fa185b93ef307 100644
+--- a/drivers/tty/serial/sh-sci.h
++++ b/drivers/tty/serial/sh-sci.h
+@@ -35,12 +35,27 @@ enum {
+ 
+ 
+ /* SCSMR (Serial Mode Register) */
++#define SCSMR_C_A	BIT(7)	/* Communication Mode */
++#define SCSMR_CSYNC	BIT(7)	/*   - Clocked synchronous mode */
++#define SCSMR_ASYNC	0	/*   - Asynchronous mode */
+ #define SCSMR_CHR	BIT(6)	/* 7-bit Character Length */
+ #define SCSMR_PE	BIT(5)	/* Parity Enable */
+ #define SCSMR_ODD	BIT(4)	/* Odd Parity */
+ #define SCSMR_STOP	BIT(3)	/* Stop Bit Length */
+ #define SCSMR_CKS	0x0003	/* Clock Select */
+ 
++/* Serial Mode Register, SCIFA/SCIFB only bits */
++#define SCSMR_CKEDG	BIT(12)	/* Transmit/Receive Clock Edge Select */
++#define SCSMR_SRC_MASK	0x0700	/* Sampling Control */
++#define SCSMR_SRC_16	0x0000	/* Sampling rate 1/16 */
++#define SCSMR_SRC_5	0x0100	/* Sampling rate 1/5 */
++#define SCSMR_SRC_7	0x0200	/* Sampling rate 1/7 */
++#define SCSMR_SRC_11	0x0300	/* Sampling rate 1/11 */
++#define SCSMR_SRC_13	0x0400	/* Sampling rate 1/13 */
++#define SCSMR_SRC_17	0x0500	/* Sampling rate 1/17 */
++#define SCSMR_SRC_19	0x0600	/* Sampling rate 1/19 */
++#define SCSMR_SRC_27	0x0700	/* Sampling rate 1/27 */
++
+ /* Serial Control Register, SCIFA/SCIFB only bits */
+ #define SCSCR_TDRQE	BIT(15)	/* Tx Data Transfer Request Enable */
+ #define SCSCR_RDRQE	BIT(14)	/* Rx Data Transfer Request Enable */
+-- 
+1.9.1
 
