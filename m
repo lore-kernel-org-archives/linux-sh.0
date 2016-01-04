@@ -1,31 +1,27 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Sun, 03 Jan 2016 21:33:25 +0000
-Subject: [PATCH 0/2] ARM: shmobile: r8a779[01]: use GIC_* defines
-Message-Id: <1451856807-8081-1-git-send-email-horms+renesas@verge.net.au>
+From: David Vrabel <david.vrabel@citrix.com>
+Date: Mon, 04 Jan 2016 11:32:28 +0000
+Subject: Re: [Xen-devel] [PATCH v2 34/34] xen/io: use virt_xxx barriers
+Message-Id: <568A584C.2070501@citrix.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1451572003-2440-1-git-send-email-mst@redhat.com>
+ <1451572003-2440-35-git-send-email-mst@redhat.com>
+In-Reply-To: <1451572003-2440-35-git-send-email-mst@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: "Michael S. Tsirkin" <mst@redhat.com>, linux-kernel@vger.kernel.org
+Cc: linux-mips@linux-mips.org, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, virtualization@lists.linux-foundation.org, "H. Peter Anvin" <hpa@zytor.com>, sparclinux@vger.kernel.org, Boris Ostrovsky <boris.ostrovsky@oracle.com>, linux-arch@vger.kernel.org, linux-s390@vger.kernel.org, Arnd Bergmann <arnd@arndb.de>, x86@kernel.org, xen-devel@lists.xenproject.org, Ingo Molnar <mingo@elte.hu>, linux-xtensa@linux-xtensa.org, user-mode-linux-devel@lists.sourceforge.net, Stefano Stabellini <stefano.stabellini@eu.citrix.com>, adi-buildroot-devel@lists.sourceforge.net, Thomas Gleixner <tglx@linutronix.de>, linux-metag@vger.kernel.org, linux-arm-kernel@lists.infradead.org, Andrew Cooper <andrew.cooper3@citrix.com>, David Vrabel <david.vrabel@citrix.com>, linuxppc-dev@lists.ozlabs.org, David Miller <davem@d>
 
-Hi,
+On 31/12/15 19:10, Michael S. Tsirkin wrote:
+> include/xen/interface/io/ring.h uses
+> full memory barriers to communicate with the other side.
+> 
+> For guests compiled with CONFIG_SMP, smp_wmb and smp_mb
+> would be sufficient, so mb() and wmb() here are only needed if
+> a non-SMP guest runs on an SMP host.
+> 
+> Switch to virt_xxx barriers which serve this exact purpose.
 
-this short series uses GIC_* defines in the r8a779[01] device trees as
-appropriate.
+Acked-by: David Vrabel <david.vrabel@citrix.com>
 
-I plan to post follow up patches to update the device trees for
-other Renesas SoCs depending on the success of this series.
-
-Based on renesas-devel-20151228-v4.4-rc7
-
-Simon Horman (2):
-  ARM: shmobile: r8a7790: use GIC_* defines
-  ARM: shmobile: r8a7791: use GIC_* defines
-
- arch/arm/boot/dts/r8a7790.dtsi | 348 +++++++++++++++++++-------------------
- arch/arm/boot/dts/r8a7791.dtsi | 370 ++++++++++++++++++++---------------------
- 2 files changed, 359 insertions(+), 359 deletions(-)
-
--- 
-2.1.4
-
+David
