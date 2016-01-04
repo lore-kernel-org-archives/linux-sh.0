@@ -1,33 +1,39 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Sun, 03 Jan 2016 21:20:16 +0000
-Subject: [PATCH v2 0/3] ARM: shmobile: r8a779x: use fallback usbhs compatibility string
-Message-Id: <1451856019-4222-1-git-send-email-horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 04 Jan 2016 08:39:17 +0000
+Subject: Re: [PATCH v2 0/3] ARM: shmobile: r8a779x: use fallback usbhs compatibility string
+Message-Id: <CAMuHMdUALH_FQvOVH77V5JC3d4n7444zTh2VU-MEsOoKymFSDg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1451856019-4222-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1451856019-4222-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi,
+On Sun, Jan 3, 2016 at 10:20 PM, Simon Horman
+<horms+renesas@verge.net.au> wrote:
+> this short series makes use of the recently added fallback usbhs
+> compatibility string in the r8a779[014] device trees.
+>
+> Based on renesas-devel-20151228-v4.4-rc7.
+>
+> Changes since v1:
+> * Use "renesas,rcar-gen2-usbhs" instead of "renesas,usbhs"
+>
+> Simon Horman (3):
+>   ARM: shmobile: r8a7790: use fallback usbhs compatibility string
+>   ARM: shmobile: r8a7791: use fallback usbhs compatibility string
+>   ARM: shmobile: r8a7794: use fallback usbhs compatibility string
 
-this short series makes use of the recently added fallback usbhs
-compatibility string in the r8a779[014] device trees.
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Based on renesas-devel-20151228-v4.4-rc7.
+Gr{oetje,eeting}s,
 
-Changes since v1:
-* Use "renesas,rcar-gen2-usbhs" instead of "renesas,usbhs"
+                        Geert
 
-Simon Horman (3):
-  ARM: shmobile: r8a7790: use fallback usbhs compatibility string
-  ARM: shmobile: r8a7791: use fallback usbhs compatibility string
-  ARM: shmobile: r8a7794: use fallback usbhs compatibility string
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
- arch/arm/boot/dts/r8a7790.dtsi | 2 +-
- arch/arm/boot/dts/r8a7791.dtsi | 2 +-
- arch/arm/boot/dts/r8a7794.dtsi | 2 +-
- 3 files changed, 3 insertions(+), 3 deletions(-)
-
--- 
-2.1.4
-
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
