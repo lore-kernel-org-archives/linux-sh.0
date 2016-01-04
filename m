@@ -1,52 +1,31 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 11 Jan 2016 04:07:44 +0000
-Subject: [PATCH 3/3] v4l: vsp1: Add tri-planar memory formats support
-Message-Id: <1452485264-11328-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: David Vrabel <david.vrabel@citrix.com>
+Date: Mon, 04 Jan 2016 11:32:00 +0000
+Subject: Re: [Xen-devel] [PATCH v2 33/34] xenbus: use virt_xxx barriers
+Message-Id: <568A5830.9000501@citrix.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1452485264-11328-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1452485264-11328-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1451572003-2440-1-git-send-email-mst@redhat.com>
+ <1451572003-2440-34-git-send-email-mst@redhat.com>
+In-Reply-To: <1451572003-2440-34-git-send-email-mst@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: "Michael S. Tsirkin" <mst@redhat.com>, linux-kernel@vger.kernel.org
+Cc: linux-mips@linux-mips.org, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, virtualization@lists.linux-foundation.org, "H. Peter Anvin" <hpa@zytor.com>, sparclinux@vger.kernel.org, Boris Ostrovsky <boris.ostrovsky@oracle.com>, linux-arch@vger.kernel.org, linux-s390@vger.kernel.org, Arnd Bergmann <arnd@arndb.de>, x86@kernel.org, xen-devel@lists.xenproject.org, Ingo Molnar <mingo@elte.hu>, linux-xtensa@linux-xtensa.org, user-mode-linux-devel@lists.sourceforge.net, Stefano Stabellini <stefano.stabellini@eu.citrix.com>, adi-buildroot-devel@lists.sourceforge.net, Thomas Gleixner <tglx@linutronix.de>, linux-metag@vger.kernel.org, linux-arm-kernel@lists.infradead.org, Andrew Cooper <andrew.cooper3@citrix.com>, David Vrabel <david.vrabel@citrix.com>, linuxppc-dev@lists.ozlabs.org, David Miller <davem@d>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- drivers/media/platform/vsp1/vsp1_pipe.c | 20 ++++++++++++++++++++
- 1 file changed, 20 insertions(+)
+On 31/12/15 19:10, Michael S. Tsirkin wrote:
+> drivers/xen/xenbus/xenbus_comms.c uses
+> full memory barriers to communicate with the other side.
+> 
+> For guests compiled with CONFIG_SMP, smp_wmb and smp_mb
+> would be sufficient, so mb() and wmb() here are only needed if
+> a non-SMP guest runs on an SMP host.
+> 
+> Switch to virt_xxx barriers which serve this exact purpose.
 
-diff --git a/drivers/media/platform/vsp1/vsp1_pipe.c b/drivers/media/platform/vsp1/vsp1_pipe.c
-index 96f0e7d4c400..c96b47a882de 100644
---- a/drivers/media/platform/vsp1/vsp1_pipe.c
-+++ b/drivers/media/platform/vsp1/vsp1_pipe.c
-@@ -113,6 +113,26 @@ static const struct vsp1_format_info vsp1_video_formats[] = {
- 	  VI6_FMT_Y_U_V_420, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
- 	  VI6_RPF_DSWAP_P_WDS | VI6_RPF_DSWAP_P_BTS,
- 	  3, { 8, 8, 8 }, false, false, 2, 2, false },
-+	{ V4L2_PIX_FMT_YVU420M, MEDIA_BUS_FMT_AYUV8_1X32,
-+	  VI6_FMT_Y_U_V_420, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
-+	  VI6_RPF_DSWAP_P_WDS | VI6_RPF_DSWAP_P_BTS,
-+	  3, { 8, 8, 8 }, false, true, 2, 2, false },
-+	{ V4L2_PIX_FMT_YUV422M, MEDIA_BUS_FMT_AYUV8_1X32,
-+	  VI6_FMT_Y_U_V_422, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
-+	  VI6_RPF_DSWAP_P_WDS | VI6_RPF_DSWAP_P_BTS,
-+	  3, { 8, 8, 8 }, false, false, 2, 1, false },
-+	{ V4L2_PIX_FMT_YVU422M, MEDIA_BUS_FMT_AYUV8_1X32,
-+	  VI6_FMT_Y_U_V_422, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
-+	  VI6_RPF_DSWAP_P_WDS | VI6_RPF_DSWAP_P_BTS,
-+	  3, { 8, 8, 8 }, false, true, 2, 1, false },
-+	{ V4L2_PIX_FMT_YUV444M, MEDIA_BUS_FMT_AYUV8_1X32,
-+	  VI6_FMT_Y_U_V_444, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
-+	  VI6_RPF_DSWAP_P_WDS | VI6_RPF_DSWAP_P_BTS,
-+	  3, { 8, 8, 8 }, false, false, 1, 1, false },
-+	{ V4L2_PIX_FMT_YVU444M, MEDIA_BUS_FMT_AYUV8_1X32,
-+	  VI6_FMT_Y_U_V_444, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
-+	  VI6_RPF_DSWAP_P_WDS | VI6_RPF_DSWAP_P_BTS,
-+	  3, { 8, 8, 8 }, false, true, 1, 1, false },
- };
- 
- /*
--- 
-2.4.10
+Acked-by: David Vrabel <david.vrabel@citrix.com>
 
+If you're feeling particularly keen there's a rmb() consume_one_event()
+in drivers/xen/events/events_fifo.c that can be converted to virt_rmb()
+as well.
+
+David
