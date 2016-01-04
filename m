@@ -1,436 +1,78 @@
-From: Hans Verkuil <hverkuil@xs4all.nl>
-Date: Fri, 22 Jan 2016 12:22:27 +0000
-Subject: Re: [PATCH 2/3] v4l: Add YUV 4:2:2 and YUV 4:4:4 tri-planar non-contiguous formats
-Message-Id: <56A21F03.4080709@xs4all.nl>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 04 Jan 2016 12:09:44 +0000
+Subject: Re: [PATCH 2/4] ARM64: renesas: r8a7795: Add VSP instances
+Message-Id: <CAMuHMdWyciDm=UWMCm-QqqyUM7=dnnabdL4-1ym=cDriwqSi8Q@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1452485264-11328-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1452485264-11328-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1452485264-11328-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1450336895-4279-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1450336895-4279-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-On 01/11/2016 05:07 AM, Laurent Pinchart wrote:
-> The formats use three planes through the multiplanar API, allowing for
-> non-contiguous planes in memory.
-> 
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Hi Laurent,
 
-Acked-by: Hans Verkuil <hans.verkuil@cisco.com>
+On Sun, Dec 27, 2015 at 9:20 AM, Laurent Pinchart
+<laurent.pinchart@ideasonboard.com> wrote:
+> On Tuesday 22 December 2015 14:43:34 Geert Uytterhoeven wrote:
+>> On Thu, Dec 17, 2015 at 8:21 AM, Laurent Pinchart wrote:
+>> > diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+>> > b/arch/arm64/boot/dts/renesas/r8a7795.dtsi index
+>> > 9ce6a5ea6629..47f97ffc6c8b 100644
+>> > --- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+>> > +++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+>> > @@ -775,5 +775,119 @@
+>> >                         clocks = <&cpg CPG_MOD 915>;
+>> >                         status = "disabled";
+>> >                 };
+>> > +
+>> > +               vspbc: vsp@fe920000 {
+>> > +                       compatible = "renesas,vsp2";
+>> > +                       reg = <0 0xfe920000 0 0x8000>;
+>> > +                       interrupts = <GIC_SPI 266 IRQ_TYPE_LEVEL_HIGH>;
+>> > +                       clocks = <&cpg CPG_MOD 624>;
+>>
+>> No "power-domains = <&cpg_clocks>;"?
+>> Each vsp device node corresponds nicely to one vsp module, and the driver
+>> doesn't care at all about the clock, except for (explicit) PM of the vsp
+>> modules.
+>>
+>> That would allow to simplify vsp1_device_get(), vsp1_pm_suspend(), and
+>> vsp1_pm_resume(), and get rid of vsp1_device_put() in favor of
+>> pm_runtime_put().
+>
+> I'm all for simplification :-) I'll try to find time to move the driver to
+> runtime PM. What will happen if the power domain is specified in DT but the
 
 Thanks!
 
-	Hans
+> driver doesn't use runtime PM yet ?
 
-> ---
->  Documentation/DocBook/media/v4l/pixfmt-yuv422m.xml | 166 +++++++++++++++++++
->  Documentation/DocBook/media/v4l/pixfmt-yuv444m.xml | 177 +++++++++++++++++++++
->  Documentation/DocBook/media/v4l/pixfmt.xml         |   2 +
->  drivers/media/v4l2-core/v4l2-ioctl.c               |   4 +
->  include/uapi/linux/videodev2.h                     |   4 +
->  5 files changed, 353 insertions(+)
->  create mode 100644 Documentation/DocBook/media/v4l/pixfmt-yuv422m.xml
->  create mode 100644 Documentation/DocBook/media/v4l/pixfmt-yuv444m.xml
-> 
-> diff --git a/Documentation/DocBook/media/v4l/pixfmt-yuv422m.xml b/Documentation/DocBook/media/v4l/pixfmt-yuv422m.xml
-> new file mode 100644
-> index 000000000000..dd502802cb75
-> --- /dev/null
-> +++ b/Documentation/DocBook/media/v4l/pixfmt-yuv422m.xml
-> @@ -0,0 +1,166 @@
-> +    <refentry>
-> +      <refmeta>
-> +	<refentrytitle>V4L2_PIX_FMT_YUV422M ('YM16'), V4L2_PIX_FMT_YVU422M ('YM61')</refentrytitle>
-> +	&manvol;
-> +      </refmeta>
-> +      <refnamediv>
-> +	<refname id="V4L2-PIX-FMT-YUV422M"><constant>V4L2_PIX_FMT_YUV422M</constant></refname>
-> +	<refname id="V4L2-PIX-FMT-YVU422M"><constant>V4L2_PIX_FMT_YVU422M</constant></refname>
-> +	<refpurpose>Planar formats with &frac12; horizontal resolution, also
-> +	known as YUV and YVU 4:2:2</refpurpose>
-> +      </refnamediv>
-> +
-> +      <refsect1>
-> +	<title>Description</title>
-> +
-> +	<para>This is a multi-planar format, as opposed to a packed format.
-> +The three components are separated into three sub-images or planes.</para>
-> +
-> +	<para>The Y plane is first. The Y plane has one byte per pixel.
-> +For <constant>V4L2_PIX_FMT_YUV422M</constant> the Cb data
-> +constitutes the second plane which is half the width of the Y plane (and of the
-> +image). Each Cb belongs to two pixels. For example,
-> +Cb<subscript>0</subscript> belongs to Y'<subscript>00</subscript>,
-> +Y'<subscript>01</subscript>. The Cr data, just like the Cb plane, is
-> +in the third plane. </para>
-> +
-> +	<para><constant>V4L2_PIX_FMT_YVU422M</constant> is the same except
-> +the Cr data is stored in the second plane and the Cb data in the third plane.
-> +</para>
-> +
-> +	<para>If the Y plane has pad bytes after each row, then the Cb
-> +and Cr planes have half as many pad bytes after their rows. In other
-> +words, two Cx rows (including padding) is exactly as long as one Y row
-> +(including padding).</para>
-> +
-> +	<para><constant>V4L2_PIX_FMT_YUV422M</constant> and
-> +<constant>V4L2_PIX_FMT_YVU422M</constant> are intended to be
-> +used only in drivers and applications that support the multi-planar API,
-> +described in <xref linkend="planar-apis"/>. </para>
-> +
-> +	<example>
-> +	  <title><constant>V4L2_PIX_FMT_YUV422M</constant> 4 &times; 4
-> +pixel image</title>
-> +
-> +	  <formalpara>
-> +	    <title>Byte Order.</title>
-> +	    <para>Each cell is one byte.
-> +		<informaltable frame="none">
-> +		<tgroup cols="5" align="center">
-> +		  <colspec align="left" colwidth="2*" />
-> +		  <tbody valign="top">
-> +		    <row>
-> +		      <entry>start0&nbsp;+&nbsp;0:</entry>
-> +		      <entry>Y'<subscript>00</subscript></entry>
-> +		      <entry>Y'<subscript>01</subscript></entry>
-> +		      <entry>Y'<subscript>02</subscript></entry>
-> +		      <entry>Y'<subscript>03</subscript></entry>
-> +		    </row>
-> +		    <row>
-> +		      <entry>start0&nbsp;+&nbsp;4:</entry>
-> +		      <entry>Y'<subscript>10</subscript></entry>
-> +		      <entry>Y'<subscript>11</subscript></entry>
-> +		      <entry>Y'<subscript>12</subscript></entry>
-> +		      <entry>Y'<subscript>13</subscript></entry>
-> +		    </row>
-> +		    <row>
-> +		      <entry>start0&nbsp;+&nbsp;8:</entry>
-> +		      <entry>Y'<subscript>20</subscript></entry>
-> +		      <entry>Y'<subscript>21</subscript></entry>
-> +		      <entry>Y'<subscript>22</subscript></entry>
-> +		      <entry>Y'<subscript>23</subscript></entry>
-> +		    </row>
-> +		    <row>
-> +		      <entry>start0&nbsp;+&nbsp;12:</entry>
-> +		      <entry>Y'<subscript>30</subscript></entry>
-> +		      <entry>Y'<subscript>31</subscript></entry>
-> +		      <entry>Y'<subscript>32</subscript></entry>
-> +		      <entry>Y'<subscript>33</subscript></entry>
-> +		    </row>
-> +		    <row><entry></entry></row>
-> +		    <row>
-> +		      <entry>start1&nbsp;+&nbsp;0:</entry>
-> +		      <entry>Cb<subscript>00</subscript></entry>
-> +		      <entry>Cb<subscript>01</subscript></entry>
-> +		    </row>
-> +		    <row>
-> +		      <entry>start1&nbsp;+&nbsp;2:</entry>
-> +		      <entry>Cb<subscript>10</subscript></entry>
-> +		      <entry>Cb<subscript>11</subscript></entry>
-> +		    </row>
-> +		    <row>
-> +		      <entry>start1&nbsp;+&nbsp;4:</entry>
-> +		      <entry>Cb<subscript>20</subscript></entry>
-> +		      <entry>Cb<subscript>21</subscript></entry>
-> +		    </row>
-> +		    <row>
-> +		      <entry>start1&nbsp;+&nbsp;6:</entry>
-> +		      <entry>Cb<subscript>30</subscript></entry>
-> +		      <entry>Cb<subscript>31</subscript></entry>
-> +		    </row>
-> +		    <row><entry></entry></row>
-> +		    <row>
-> +		      <entry>start2&nbsp;+&nbsp;0:</entry>
-> +		      <entry>Cr<subscript>00</subscript></entry>
-> +		      <entry>Cr<subscript>01</subscript></entry>
-> +		    </row>
-> +		    <row>
-> +		      <entry>start2&nbsp;+&nbsp;2:</entry>
-> +		      <entry>Cr<subscript>10</subscript></entry>
-> +		      <entry>Cr<subscript>11</subscript></entry>
-> +		    </row>
-> +		    <row>
-> +		      <entry>start2&nbsp;+&nbsp;4:</entry>
-> +		      <entry>Cr<subscript>20</subscript></entry>
-> +		      <entry>Cr<subscript>21</subscript></entry>
-> +		    </row>
-> +		    <row>
-> +		      <entry>start2&nbsp;+&nbsp;6:</entry>
-> +		      <entry>Cr<subscript>30</subscript></entry>
-> +		      <entry>Cr<subscript>31</subscript></entry>
-> +		    </row>
-> +		  </tbody>
-> +		</tgroup>
-> +		</informaltable>
-> +	      </para>
-> +	  </formalpara>
-> +
-> +	  <formalpara>
-> +	    <title>Color Sample Location.</title>
-> +	    <para>
-> +		<informaltable frame="none">
-> +		<tgroup cols="7" align="center">
-> +		  <tbody valign="top">
-> +		    <row>
-> +		      <entry></entry>
-> +		      <entry>0</entry><entry></entry><entry>1</entry><entry></entry>
-> +		      <entry>2</entry><entry></entry><entry>3</entry>
-> +		    </row>
-> +		    <row>
-> +		      <entry>0</entry>
-> +		      <entry>Y</entry><entry>C</entry><entry>Y</entry><entry></entry>
-> +		      <entry>Y</entry><entry>C</entry><entry>Y</entry>
-> +		    </row>
-> +		    <row>
-> +		      <entry>1</entry>
-> +		      <entry>Y</entry><entry>C</entry><entry>Y</entry><entry></entry>
-> +		      <entry>Y</entry><entry>C</entry><entry>Y</entry>
-> +		    </row>
-> +		    <row>
-> +		      <entry>2</entry>
-> +		      <entry>Y</entry><entry>C</entry><entry>Y</entry><entry></entry>
-> +		      <entry>Y</entry><entry>C</entry><entry>Y</entry>
-> +		    </row>
-> +		    <row>
-> +		      <entry>3</entry>
-> +		      <entry>Y</entry><entry>C</entry><entry>Y</entry><entry></entry>
-> +		      <entry>Y</entry><entry>C</entry><entry>Y</entry>
-> +		    </row>
-> +		  </tbody>
-> +		</tgroup>
-> +		</informaltable>
-> +	      </para>
-> +	  </formalpara>
-> +	</example>
-> +      </refsect1>
-> +    </refentry>
-> diff --git a/Documentation/DocBook/media/v4l/pixfmt-yuv444m.xml b/Documentation/DocBook/media/v4l/pixfmt-yuv444m.xml
-> new file mode 100644
-> index 000000000000..1b7335940bc7
-> --- /dev/null
-> +++ b/Documentation/DocBook/media/v4l/pixfmt-yuv444m.xml
-> @@ -0,0 +1,177 @@
-> +    <refentry>
-> +      <refmeta>
-> +	<refentrytitle>V4L2_PIX_FMT_YUV444M ('YM24'), V4L2_PIX_FMT_YVU444M ('YM42')</refentrytitle>
-> +	&manvol;
-> +      </refmeta>
-> +      <refnamediv>
-> +	<refname id="V4L2-PIX-FMT-YUV444M"><constant>V4L2_PIX_FMT_YUV444M</constant></refname>
-> +	<refname id="V4L2-PIX-FMT-YVU444M"><constant>V4L2_PIX_FMT_YVU444M</constant></refname>
-> +	<refpurpose>Planar formats with full horizontal resolution, also
-> +	known as YUV and YVU 4:4:4</refpurpose>
-> +      </refnamediv>
-> +
-> +      <refsect1>
-> +	<title>Description</title>
-> +
-> +	<para>This is a multi-planar format, as opposed to a packed format.
-> +The three components are separated into three sub-images or planes.</para>
-> +
-> +	<para>The Y plane is first. The Y plane has one byte per pixel.
-> +For <constant>V4L2_PIX_FMT_YUV444M</constant> the Cb data
-> +constitutes the second plane which is the same width and height as the Y plane
-> +(and as the image). The Cr data, just like the Cb plane, is in the third plane.
-> +</para>
-> +
-> +	<para><constant>V4L2_PIX_FMT_YVU444M</constant> is the same except
-> +the Cr data is stored in the second plane and the Cb data in the third plane.
-> +</para>
-> +	<para>If the Y plane has pad bytes after each row, then the Cb
-> +and Cr planes have the same number of pad bytes after their rows.</para>
-> +
-> +	<para><constant>V4L2_PIX_FMT_YUV444M</constant> and
-> +<constant>V4L2_PIX_FMT_YUV444M</constant> are intended to be
-> +used only in drivers and applications that support the multi-planar API,
-> +described in <xref linkend="planar-apis"/>. </para>
-> +
-> +	<example>
-> +	  <title><constant>V4L2_PIX_FMT_YUV444M</constant> 4 &times; 4
-> +pixel image</title>
-> +
-> +	  <formalpara>
-> +	    <title>Byte Order.</title>
-> +	    <para>Each cell is one byte.
-> +		<informaltable frame="none">
-> +		<tgroup cols="5" align="center">
-> +		  <colspec align="left" colwidth="2*" />
-> +		  <tbody valign="top">
-> +		    <row>
-> +		      <entry>start0&nbsp;+&nbsp;0:</entry>
-> +		      <entry>Y'<subscript>00</subscript></entry>
-> +		      <entry>Y'<subscript>01</subscript></entry>
-> +		      <entry>Y'<subscript>02</subscript></entry>
-> +		      <entry>Y'<subscript>03</subscript></entry>
-> +		    </row>
-> +		    <row>
-> +		      <entry>start0&nbsp;+&nbsp;4:</entry>
-> +		      <entry>Y'<subscript>10</subscript></entry>
-> +		      <entry>Y'<subscript>11</subscript></entry>
-> +		      <entry>Y'<subscript>12</subscript></entry>
-> +		      <entry>Y'<subscript>13</subscript></entry>
-> +		    </row>
-> +		    <row>
-> +		      <entry>start0&nbsp;+&nbsp;8:</entry>
-> +		      <entry>Y'<subscript>20</subscript></entry>
-> +		      <entry>Y'<subscript>21</subscript></entry>
-> +		      <entry>Y'<subscript>22</subscript></entry>
-> +		      <entry>Y'<subscript>23</subscript></entry>
-> +		    </row>
-> +		    <row>
-> +		      <entry>start0&nbsp;+&nbsp;12:</entry>
-> +		      <entry>Y'<subscript>30</subscript></entry>
-> +		      <entry>Y'<subscript>31</subscript></entry>
-> +		      <entry>Y'<subscript>32</subscript></entry>
-> +		      <entry>Y'<subscript>33</subscript></entry>
-> +		    </row>
-> +		    <row><entry></entry></row>
-> +		    <row>
-> +		      <entry>start1&nbsp;+&nbsp;0:</entry>
-> +		      <entry>Cb<subscript>00</subscript></entry>
-> +		      <entry>Cb<subscript>01</subscript></entry>
-> +		      <entry>Cb<subscript>02</subscript></entry>
-> +		      <entry>Cb<subscript>03</subscript></entry>
-> +		    </row>
-> +		    <row>
-> +		      <entry>start1&nbsp;+&nbsp;4:</entry>
-> +		      <entry>Cb<subscript>10</subscript></entry>
-> +		      <entry>Cb<subscript>11</subscript></entry>
-> +		      <entry>Cb<subscript>12</subscript></entry>
-> +		      <entry>Cb<subscript>13</subscript></entry>
-> +		    </row>
-> +		    <row>
-> +		      <entry>start1&nbsp;+&nbsp;8:</entry>
-> +		      <entry>Cb<subscript>20</subscript></entry>
-> +		      <entry>Cb<subscript>21</subscript></entry>
-> +		      <entry>Cb<subscript>22</subscript></entry>
-> +		      <entry>Cb<subscript>23</subscript></entry>
-> +		    </row>
-> +		    <row>
-> +		      <entry>start1&nbsp;+&nbsp;12:</entry>
-> +		      <entry>Cb<subscript>20</subscript></entry>
-> +		      <entry>Cb<subscript>21</subscript></entry>
-> +		      <entry>Cb<subscript>32</subscript></entry>
-> +		      <entry>Cb<subscript>33</subscript></entry>
-> +		    </row>
-> +		    <row><entry></entry></row>
-> +		    <row>
-> +		      <entry>start2&nbsp;+&nbsp;0:</entry>
-> +		      <entry>Cr<subscript>00</subscript></entry>
-> +		      <entry>Cr<subscript>01</subscript></entry>
-> +		      <entry>Cr<subscript>02</subscript></entry>
-> +		      <entry>Cr<subscript>03</subscript></entry>
-> +		    </row>
-> +		    <row>
-> +		      <entry>start2&nbsp;+&nbsp;4:</entry>
-> +		      <entry>Cr<subscript>10</subscript></entry>
-> +		      <entry>Cr<subscript>11</subscript></entry>
-> +		      <entry>Cr<subscript>12</subscript></entry>
-> +		      <entry>Cr<subscript>13</subscript></entry>
-> +		    </row>
-> +		    <row>
-> +		      <entry>start2&nbsp;+&nbsp;8:</entry>
-> +		      <entry>Cr<subscript>20</subscript></entry>
-> +		      <entry>Cr<subscript>21</subscript></entry>
-> +		      <entry>Cr<subscript>22</subscript></entry>
-> +		      <entry>Cr<subscript>23</subscript></entry>
-> +		    </row>
-> +		    <row>
-> +		      <entry>start2&nbsp;+&nbsp;12:</entry>
-> +		      <entry>Cr<subscript>30</subscript></entry>
-> +		      <entry>Cr<subscript>31</subscript></entry>
-> +		      <entry>Cr<subscript>32</subscript></entry>
-> +		      <entry>Cr<subscript>33</subscript></entry>
-> +		    </row>
-> +		  </tbody>
-> +		</tgroup>
-> +		</informaltable>
-> +	      </para>
-> +	  </formalpara>
-> +
-> +	  <formalpara>
-> +	    <title>Color Sample Location.</title>
-> +	    <para>
-> +		<informaltable frame="none">
-> +		<tgroup cols="7" align="center">
-> +		  <tbody valign="top">
-> +		    <row>
-> +		      <entry></entry>
-> +		      <entry>0</entry><entry></entry><entry>1</entry><entry></entry>
-> +		      <entry>2</entry><entry></entry><entry>3</entry>
-> +		    </row>
-> +		    <row>
-> +		      <entry>0</entry>
-> +		      <entry>YC</entry><entry></entry><entry>YC</entry><entry></entry>
-> +		      <entry>YC</entry><entry></entry><entry>YC</entry>
-> +		    </row>
-> +		    <row>
-> +		      <entry>1</entry>
-> +		      <entry>YC</entry><entry></entry><entry>YC</entry><entry></entry>
-> +		      <entry>YC</entry><entry></entry><entry>YC</entry>
-> +		    </row>
-> +		    <row>
-> +		      <entry>2</entry>
-> +		      <entry>YC</entry><entry></entry><entry>YC</entry><entry></entry>
-> +		      <entry>YC</entry><entry></entry><entry>YC</entry>
-> +		    </row>
-> +		    <row>
-> +		      <entry>3</entry>
-> +		      <entry>YC</entry><entry></entry><entry>YC</entry><entry></entry>
-> +		      <entry>YC</entry><entry></entry><entry>YC</entry>
-> +		    </row>
-> +		  </tbody>
-> +		</tgroup>
-> +		</informaltable>
-> +	      </para>
-> +	  </formalpara>
-> +	</example>
-> +      </refsect1>
-> +    </refentry>
-> diff --git a/Documentation/DocBook/media/v4l/pixfmt.xml b/Documentation/DocBook/media/v4l/pixfmt.xml
-> index 9e77ff353feb..2f02f9441443 100644
-> --- a/Documentation/DocBook/media/v4l/pixfmt.xml
-> +++ b/Documentation/DocBook/media/v4l/pixfmt.xml
-> @@ -1628,6 +1628,8 @@ information.</para>
->      &sub-y41p;
->      &sub-yuv420;
->      &sub-yuv420m;
-> +    &sub-yuv422m;
-> +    &sub-yuv444m;
->      &sub-yuv410;
->      &sub-yuv422p;
->      &sub-yuv411p;
-> diff --git a/drivers/media/v4l2-core/v4l2-ioctl.c b/drivers/media/v4l2-core/v4l2-ioctl.c
-> index 8a018c6dd16a..14843090fd61 100644
-> --- a/drivers/media/v4l2-core/v4l2-ioctl.c
-> +++ b/drivers/media/v4l2-core/v4l2-ioctl.c
-> @@ -1191,6 +1191,10 @@ static void v4l_fill_fmtdesc(struct v4l2_fmtdesc *fmt)
->  	case V4L2_PIX_FMT_NV12MT_16X16:	descr = "Y/CbCr 4:2:0 (16x16 MB, N-C)"; break;
->  	case V4L2_PIX_FMT_YUV420M:	descr = "Planar YUV 4:2:0 (N-C)"; break;
->  	case V4L2_PIX_FMT_YVU420M:	descr = "Planar YVU 4:2:0 (N-C)"; break;
-> +	case V4L2_PIX_FMT_YUV422M:	descr = "Planar YUV 4:2:2 (N-C)"; break;
-> +	case V4L2_PIX_FMT_YVU422M:	descr = "Planar YVU 4:2:2 (N-C)"; break;
-> +	case V4L2_PIX_FMT_YUV444M:	descr = "Planar YUV 4:4:4 (N-C)"; break;
-> +	case V4L2_PIX_FMT_YVU444M:	descr = "Planar YVU 4:4:4 (N-C)"; break;
->  	case V4L2_PIX_FMT_SBGGR8:	descr = "8-bit Bayer BGBG/GRGR"; break;
->  	case V4L2_PIX_FMT_SGBRG8:	descr = "8-bit Bayer GBGB/RGRG"; break;
->  	case V4L2_PIX_FMT_SGRBG8:	descr = "8-bit Bayer GRGR/BGBG"; break;
-> diff --git a/include/uapi/linux/videodev2.h b/include/uapi/linux/videodev2.h
-> index 14cd5ebfee6d..466458422385 100644
-> --- a/include/uapi/linux/videodev2.h
-> +++ b/include/uapi/linux/videodev2.h
-> @@ -546,6 +546,10 @@ struct v4l2_pix_format {
->  /* three non contiguous planes - Y, Cb, Cr */
->  #define V4L2_PIX_FMT_YUV420M v4l2_fourcc('Y', 'M', '1', '2') /* 12  YUV420 planar */
->  #define V4L2_PIX_FMT_YVU420M v4l2_fourcc('Y', 'M', '2', '1') /* 12  YVU420 planar */
-> +#define V4L2_PIX_FMT_YUV422M v4l2_fourcc('Y', 'M', '1', '6') /* 16  YUV422 planar */
-> +#define V4L2_PIX_FMT_YVU422M v4l2_fourcc('Y', 'M', '6', '1') /* 16  YVU422 planar */
-> +#define V4L2_PIX_FMT_YUV444M v4l2_fourcc('Y', 'M', '2', '4') /* 24  YUV444 planar */
-> +#define V4L2_PIX_FMT_YVU444M v4l2_fourcc('Y', 'M', '4', '2') /* 24  YVU444 planar */
->  
->  /* Bayer formats - see http://www.siliconimaging.com/RGB%20Bayer.htm */
->  #define V4L2_PIX_FMT_SBGGR8  v4l2_fourcc('B', 'A', '8', '1') /*  8  BGBG.. GRGR.. */
-> 
+The device will be added to the PM Domain, but the PM Domain will not be
+turned on, and the gpd_dev_ops.start() callback will never be called for the
+device. You need to call pm_runtime_enable() and pm_runtime_get_sync() to
+do that.
 
+The CPG/MSSR PM Domain is a Clock Domain, so the driver can choose to manage
+the device's modulo clock itself instead of relying on the gpd_dev_ops.start()
+callback. But if a VSP IP core ever ends up in an SoC with a hardware Power
+Domain[*], the hardware Power Domain may not be managed correctly.
+Unlike for clocks, you cannot escape proper Runtime PM when dealing with
+hardware Power Domains ;-)
+
+Note that the vsp nodes in r8a7790.dtsi and r8a7791.dtsi already have
+power-domains properties.
+
+[*] Is VSP1 in R-Mobile APE6, which has hardware Power Domains) compatible
+    with VSP1 in R-Car Gen2?
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
