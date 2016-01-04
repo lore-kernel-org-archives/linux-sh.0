@@ -1,30 +1,51 @@
-From: Rob Herring <robh@kernel.org>
-Date: Mon, 11 Jan 2016 02:56:37 +0000
-Subject: Re: [PATCH v2] rcar_jpu: Add R-Car Gen2 Fallback Compatibility String
-Message-Id: <20160111025637.GA17825@rob-hp-laptop>
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 04 Jan 2016 20:22:54 +0000
+Subject: Re: [PATCH] PCI: provide of_pci_get_host_bridge_resources helper
+Message-Id: <20160104202253.GA12748@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1452478400-4267-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1452478400-4267-1-git-send-email-horms+renesas@verge.net.au>
+References: <8759253.sZisGJ6Km3@wuerfel>
+In-Reply-To: <8759253.sZisGJ6Km3@wuerfel>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms+renesas@verge.net.au>
-Cc: Mauro Carvalho Chehab <mchehab@osg.samsung.com>, linux-media@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Jan 11, 2016 at 11:13:20AM +0900, Simon Horman wrote:
-> Add fallback compatibility string.
-> This is in keeping with the fallback scheme being adopted wherever
-> appropriate for drivers for Renesas SoCs.
+On Fri, Dec 18, 2015 at 04:02:41PM +0100, Arnd Bergmann wrote:
+> The pcie-rcar driver can be built for any ARM platform (for COMPILE_TEST)
+> including those without CONFIG_OF enabled, and that results in a compile-time
+> error:
 > 
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+> drivers/pci/host/pcie-rcar.c: In function 'rcar_pcie_parse_request_of_pci_ranges':
+> drivers/pci/host/pcie-rcar.c:939:8: error: implicit declaration of function 'of_pci_get_host_bridge_resources' [-Werror=implicit-function-declaration]
+>   err = of_pci_get_host_bridge_resources(np, 0, 0xff, &pci->resources, &iobase);
 > 
-> ---
-> v2
-> * Make fallback compat string for R-Car Gen2 rather than all renesas
->   hardware: that seems too generic
-> ---
->  Documentation/devicetree/bindings/media/renesas,jpu.txt | 13 +++++++------
->  drivers/media/platform/rcar_jpu.c                       |  1 +
->  2 files changed, 8 insertions(+), 6 deletions(-)
+> In order to allow compile-testing on all platforms, this adds a
+> of_pci_get_host_bridge_resources() helper stub function that gets
+> used when CONFIG_OF_ADDRESS is disabled. This mirrors what we do for
+> other OF-specific functions.
+> 
+> Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+> Fixes: 5d2917d469fa ("PCI: rcar: Convert to DT resource parsing API")
 
-Acked-by: Rob Herring <robh@kernel.org>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
+
+> diff --git a/include/linux/of_pci.h b/include/linux/of_pci.h
+> index 2c51ee78b1c0..874d68f50a40 100644
+> --- a/include/linux/of_pci.h
+> +++ b/include/linux/of_pci.h
+> @@ -59,6 +59,14 @@ static inline void of_pci_check_probe_only(void) { }
+>  int of_pci_get_host_bridge_resources(struct device_node *dev,
+>  			unsigned char busno, unsigned char bus_max,
+>  			struct list_head *resources, resource_size_t *io_base);
+> +#else
+> +static inline
+> +int of_pci_get_host_bridge_resources(struct device_node *dev,
+> +			unsigned char busno, unsigned char bus_max,
+> +			struct list_head *resources, resource_size_t *io_base)
+> +{
+> +	return -EINVAL;
+> +}
+>  #endif
+>  
+>  #if defined(CONFIG_OF) && defined(CONFIG_PCI_MSI)
+> 
