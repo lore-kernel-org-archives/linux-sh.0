@@ -1,70 +1,45 @@
-From: Bjorn Helgaas <helgaas@kernel.org>
-Date: Tue, 26 Jan 2016 20:52:56 +0000
-Subject: Re: [PATCH v9 5/6] PCI: generic: Make pci-host-generic driver numa aware
-Message-Id: <20160126205256.GA26268@localhost>
+From: "Michael S. Tsirkin" <mst@redhat.com>
+Date: Mon, 04 Jan 2016 11:36:53 +0000
+Subject: [PATCH 1/3] checkpatch.pl: add missing memory barriers
+Message-Id: <1451907395-15978-2-git-send-email-mst@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1453134965-6125-1-git-send-email-gkulkarni@caviumnetworks.com>
- <1453134965-6125-6-git-send-email-gkulkarni@caviumnetworks.com>
- <20160126205005.GD17600@localhost>
-In-Reply-To: <20160126205005.GD17600@localhost>
+References: <1451907395-15978-1-git-send-email-mst@redhat.com>
+In-Reply-To: <1451907395-15978-1-git-send-email-mst@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ganapatrao Kulkarni <gkulkarni@caviumnetworks.com>
-Cc: linux-arm-kernel@lists.infradead.org, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org, linux-pci@vger.kernel.org, linux-ia64@vger.kernel.org, linux-metag@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-arch@vger.kernel.org, Will.Deacon@arm.com, catalin.marinas@arm.com, grant.likely@linaro.org, leif.lindholm@linaro.org, rfranz@cavium.com, ard.biesheuvel@linaro.org, msalter@redhat.com, robh+dt@kernel.org, steve.capper@linaro.org, hanjun.guo@linaro.org, al.stone@linaro.org, arnd@arndb.de, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, rjw@rjwysocki.net, lenb@kernel.org, marc.zyngier@arm.com, lorenzo.pieralisi@arm.com, bhelgaas@google.com, tony.luck@intel.com, fenghua.yu@intel.com, james.hogan@imgtec.com, benh@kernel.crashing.org, tglx@linutronix.de, mingo@r
+To: linux-kernel@vger.kernel.org
+Cc: linux-mips@linux-mips.org, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, virtualization@lists.linux-foundation.org, "H. Peter Anvin" <hpa@zytor.com>, sparclinux@vger.kernel.org, Ingo Molnar <mingo@kernel.org>, linux-arch@vger.kernel.org, linux-s390@vger.kernel.org, Russell King - ARM Linux <linux@arm.linux.org.uk>, Arnd Bergmann <arnd@arndb.de>, x86@kernel.org, Tony Lindgren <tony@atomide.com>, xen-devel@lists.xenproject.org, Ingo Molnar <mingo@elte.hu>, linux-xtensa@linux-xtensa.org, user-mode-linux-devel@lists.sourceforge.net, Stefano Stabellini <stefano.stabellini@eu.citrix.com>, Andrey Konovalov <andreyknvl@google.com>, adi-buildroot-devel@lists.sourceforge.net, "Cc : Andy Whitcroft" <apw@canonical.com>, Thomas Gleixner <tglx@linutronix.de>, linux-metag@vger.kernel.org, linux-arm-kernel@lists.infradead.org, Andrew
 
-On Tue, Jan 26, 2016 at 02:50:05PM -0600, Bjorn Helgaas wrote:
-> On Mon, Jan 18, 2016 at 10:06:04PM +0530, Ganapatrao Kulkarni wrote:
-> > update numa_node of device associated with pci bus.
-> > moved down devm_kzalloc to allocate from node memory.
-> > 
-> > Signed-off-by: Ganapatrao Kulkarni <gkulkarni@caviumnetworks.com>
-> > ---
-> >  drivers/pci/host/pci-host-generic.c | 9 ++++++---
-> >  1 file changed, 6 insertions(+), 3 deletions(-)
-> > 
-> > diff --git a/drivers/pci/host/pci-host-generic.c b/drivers/pci/host/pci-host-generic.c
-> > index 5434c90..0e1ce06 100644
-> > --- a/drivers/pci/host/pci-host-generic.c
-> > +++ b/drivers/pci/host/pci-host-generic.c
-> > @@ -215,11 +215,9 @@ static int gen_pci_probe(struct platform_device *pdev)
-> >  	const struct of_device_id *of_id;
-> >  	struct device *dev = &pdev->dev;
-> >  	struct device_node *np = dev->of_node;
-> > -	struct gen_pci *pci = devm_kzalloc(dev, sizeof(*pci), GFP_KERNEL);
-> > +	struct gen_pci *pci;
-> >  	struct pci_bus *bus, *child;
-> >  
-> > -	if (!pci)
-> > -		return -ENOMEM;
-> >  
-> >  	type = of_get_property(np, "device_type", NULL);
-> >  	if (!type || strcmp(type, "pci")) {
-> > @@ -230,6 +228,11 @@ static int gen_pci_probe(struct platform_device *pdev)
-> >  	of_pci_check_probe_only();
-> >  
-> >  	of_id = of_match_node(gen_pci_of_match, np);
-> > +	set_dev_node(dev, of_node_to_nid(np));
-> 
-> I like the idea of this patch, but why do we need to call
-> set_dev_node() here in driver code?  Shouldn't that be done by the
-> OF/platform device infrastructure so that all drivers for platform devices
-> get this benefit?
+SMP-only barriers were missing in checkpatch.pl
 
-Sorry, I'm just a day late and a dollar short.  I see David and Lorenzo
-have already responded about this.
+Refactor code slightly to make adding more variants easier.
 
-> > +	pci = devm_kzalloc(dev, sizeof(*pci), GFP_KERNEL);
-> > +	if (!pci)
-> > +		return -ENOMEM;
-> > +
-> >  	pci->cfg.ops = (struct gen_pci_cfg_bus_ops *)of_id->data;
-> >  	pci->host.dev.parent = dev;
-> >  	INIT_LIST_HEAD(&pci->host.windows);
-> > -- 
-> > 1.8.1.4
-> > 
-> > --
-> > To unsubscribe from this list: send the line "unsubscribe linux-arch" in
-> > the body of a message to majordomo@vger.kernel.org
-> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+---
+ scripts/checkpatch.pl | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/scripts/checkpatch.pl b/scripts/checkpatch.pl
+index 2b3c228..0245bbe 100755
+--- a/scripts/checkpatch.pl
++++ b/scripts/checkpatch.pl
+@@ -5116,7 +5116,14 @@ sub process {
+ 			}
+ 		}
+ # check for memory barriers without a comment.
+-		if ($line =~ /\b(mb|rmb|wmb|read_barrier_depends|smp_mb|smp_rmb|smp_wmb|smp_read_barrier_depends)\(/) {
++
++		my @barriers = ('mb', 'rmb', 'wmb', 'read_barrier_depends');
++		my @smp_barriers = ('smp_store_release', 'smp_load_acquire', 'smp_store_mb');
++
++		@smp_barriers = (@smp_barriers, map {"smp_" . $_} @barriers);
++		my $all_barriers = join('|', (@barriers, @smp_barriers));
++
++		if ($line =~ /\b($all_barriers)\(/) {
+ 			if (!ctx_has_comment($first_line, $linenr)) {
+ 				WARN("MEMORY_BARRIER",
+ 				     "memory barrier without comment\n" . $herecurr);
+-- 
+MST
+
