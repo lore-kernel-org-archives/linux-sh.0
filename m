@@ -1,38 +1,61 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 13 Jan 2016 02:00:35 +0000
-Subject: [PATCH v3 0/2] usb: host: xhci-plat: add R-Car Gen2 and Gen3 fallback compatibility strings
-Message-Id: <1452650437-26312-1-git-send-email-horms+renesas@verge.net.au>
+Date: Mon, 04 Jan 2016 22:27:36 +0000
+Subject: [PATCH v2 01/13] ARM: shmobile: r8a7793: add audio clock to device tree
+Message-Id: <1451946468-20499-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1451946468-20499-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1451946468-20499-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi,
+Instantiate audio clock in r8a7793 device tree.
+audio_clk_a/b/c are required for R-Car sound.
 
-this short series adds Gen2 and Gen3 fallback compatibility strings to the
-xhci-plat driver.
+Based on similar work for the r8a7791 by Kuninori Morimoto.
 
-Changes between v2 and v3:
-* Refer to Armada 38x rather than 380 SoCs.
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7793.dtsi | 23 +++++++++++++++++++++++
+ 1 file changed, 23 insertions(+)
 
-Changes between v1 and v2:
-* Use consistent line ending in documentation
-* Group compat strings at the bottom of usb_xhci_of_match[]
-* Include follow-up patch from Julia Lawall to ensure usb_xhci_of_match
-  is correctly terminated
-
-Julia Lawall (1):
-  usb: host: xhci-plat: fix of_table.cocci warnings
-
-Simon Horman (1):
-  usb: host: xhci-plat: add R-Car Gen2 and Gen3 fallback compatibility
-    strings
-
- Documentation/devicetree/bindings/usb/usb-xhci.txt | 21 +++++++++++++++++----
- drivers/usb/host/xhci-plat.c                       |  6 ++++++
- 2 files changed, 23 insertions(+), 4 deletions(-)
-
+diff --git a/arch/arm/boot/dts/r8a7793.dtsi b/arch/arm/boot/dts/r8a7793.dtsi
+index 221f5707a622..bf6be4a40e31 100644
+--- a/arch/arm/boot/dts/r8a7793.dtsi
++++ b/arch/arm/boot/dts/r8a7793.dtsi
+@@ -706,6 +706,29 @@
+ 			clock-output-names = "extal";
+ 		};
+ 
++		/*
++		 * The external audio clocks are configured as 0 Hz fixed frequency clocks by
++		 * default. Boards that provide audio clocks should override them.
++		 */
++		audio_clk_a: audio_clk_a {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-frequency = <0>;
++			clock-output-names = "audio_clk_a";
++		};
++		audio_clk_b: audio_clk_b {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-frequency = <0>;
++			clock-output-names = "audio_clk_b";
++		};
++		audio_clk_c: audio_clk_c {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-frequency = <0>;
++			clock-output-names = "audio_clk_c";
++		};
++
+ 		/* Special CPG clocks */
+ 		cpg_clocks: cpg_clocks@e6150000 {
+ 			compatible = "renesas,r8a7793-cpg-clocks",
 -- 
 2.1.4
 
