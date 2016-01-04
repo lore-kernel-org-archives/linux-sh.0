@@ -1,61 +1,35 @@
-From: "Michael S. Tsirkin" <mst@redhat.com>
-Date: Sun, 10 Jan 2016 14:16:52 +0000
-Subject: [PATCH v3 03/41] ia64: rename nop->iosapic_nop
-Message-Id: <1452426622-4471-4-git-send-email-mst@redhat.com>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Mon, 04 Jan 2016 14:18:12 +0000
+Subject: RE: [PATCH 2/4] PCI: rcar: Support runtime PM link state L1 handling in pcie-rcar
+Message-Id: <HK2PR0601MB1393CE3EA6A72D0F74498251F5F20@HK2PR0601MB1393.apcprd06.prod.outlook.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1452426622-4471-1-git-send-email-mst@redhat.com>
-In-Reply-To: <1452426622-4471-1-git-send-email-mst@redhat.com>
+References: <1450358557-28376-1-git-send-email-phil.edworthy@renesas.com>
+	<1450358557-28376-3-git-send-email-phil.edworthy@renesas.com>
+	<20151217133058.GA20372@katana>
+	<PS1PR06MB1180304088ECF5384C497E40F5E10@PS1PR06MB1180.apcprd06.prod.outlook.com>
+	<20151218140412.GA4595@katana>
+	<KL1PR06MB1174165C6112327548CD29DDF5E40@KL1PR06MB1174.apcprd06.prod.outlook.com>
+ <CAMuHMdUKHO50n_OAhx-OcZX9FwN+dUbZCHnjP4HaPqgt3j=MzQ@mail.gmail.com>
+In-Reply-To: <CAMuHMdUKHO50n_OAhx-OcZX9FwN+dUbZCHnjP4HaPqgt3j=MzQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Peter Zijlstra <peterz@infradead.org>, Arnd Bergmann <arnd@arndb.de>, linux-arch@vger.kernel.org, Andrew Cooper <andrew.cooper3@citrix.com>, Russell King - ARM Linux <linux@arm.linux.org.uk>, virtualization@lists.linux-foundation.org, Stefano Stabellini <stefano.stabellini@eu.citrix.com>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@elte.hu>, "H. Peter Anvin" <hpa@zytor.com>, Joe Perches <joe@perches.com>, David Miller <davem@davemloft.net>, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, sparclinux@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-metag@vger.kernel.org, linux-mips@linux-mips.org, x86@kernel.org, user-mode-linux-devel@lists.sourceforge.net, adi-buildroot-devel@lists.sourceforge.net, linux-sh@vger.kernel.org, linux-xtensa@linux-xtensa.org, xen-devel@lists.xenproject.org, Tony Luck <tony.luck>
+To: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: Wolfram Sang <wsa@the-dreams.de>, Simon Horman <horms@verge.net.au>, Bjorn Helgaas <bhelgaas@google.com>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "linux-pci@vger.kernel.org" <linux-pci@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
 
-asm-generic/barrier.h defines a nop() macro.
-To be able to use this header on ia64, we shouldn't
-call local functions/variables nop().
-
-There's one instance where this breaks on ia64:
-rename the function to iosapic_nop to avoid the conflict.
-
-Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
-Acked-by: Tony Luck <tony.luck@intel.com>
-Acked-by: Arnd Bergmann <arnd@arndb.de>
----
- arch/ia64/kernel/iosapic.c | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
-
-diff --git a/arch/ia64/kernel/iosapic.c b/arch/ia64/kernel/iosapic.c
-index d2fae05..90fde5b 100644
---- a/arch/ia64/kernel/iosapic.c
-+++ b/arch/ia64/kernel/iosapic.c
-@@ -256,7 +256,7 @@ set_rte (unsigned int gsi, unsigned int irq, unsigned int dest, int mask)
- }
- 
- static void
--nop (struct irq_data *data)
-+iosapic_nop (struct irq_data *data)
- {
- 	/* do nothing... */
- }
-@@ -415,7 +415,7 @@ iosapic_unmask_level_irq (struct irq_data *data)
- #define iosapic_shutdown_level_irq	mask_irq
- #define iosapic_enable_level_irq	unmask_irq
- #define iosapic_disable_level_irq	mask_irq
--#define iosapic_ack_level_irq		nop
-+#define iosapic_ack_level_irq		iosapic_nop
- 
- static struct irq_chip irq_type_iosapic_level = {
- 	.name =			"IO-SAPIC-level",
-@@ -453,7 +453,7 @@ iosapic_ack_edge_irq (struct irq_data *data)
- }
- 
- #define iosapic_enable_edge_irq		unmask_irq
--#define iosapic_disable_edge_irq	nop
-+#define iosapic_disable_edge_irq	iosapic_nop
- 
- static struct irq_chip irq_type_iosapic_edge = {
- 	.name =			"IO-SAPIC-edge",
--- 
-MST
-
+SGkgR2VlcnQsDQoNCk9uIDIxIERlY2VtYmVyIDIwMTUgMTM6MTcsIEdlZXJ0IFV5dHRlcmhvZXZl
+biB3cm90ZToNCj4gT24gTW9uLCBEZWMgMjEsIDIwMTUgYXQgMTE6NTIgQU0sIFBoaWwgRWR3b3J0
+aHkNCj4gPHBoaWwuZWR3b3J0aHlAcmVuZXNhcy5jb20+IHdyb3RlOg0KPiA+IE9uIDE4IERlY2Vt
+YmVyIDIwMTUgMTQ6MDQsIFdvbGZyYW0gU2FuZyB3cm90ZToNCj4gPj4gPiBTaW5jZSB0aGUgaGFy
+ZHdhcmUgZG9lc24ndCBzdXBwb3J0IGhvdCBwbHVnLCBJIGJlbGlldmUgdGhpcyBsb29wIHdpbGwN
+Cj4gPj4gPiBhbHdheXMgZXhpdCB2ZXJ5IHF1aWNrbHkuIFVubGVzcyBzb21lb25lIGhhcyB0YWtl
+biBhIGhhbW1lciB0byB0aGUgSFcNCj4gPj4gPiBvZiBjb3Vyc2UuDQo+ID4+DQo+ID4+IEkga25v
+dyB3aGF0IHlvdSBtZWFuLiBCdXQgc2luY2UgcmVhZGxfcG9sbF90aW1lb3V0KCkgbWFrZXMgaXQg
+ZWFzeSwgd2UNCj4gPj4gc2hvdWxkIGJldHRlciBiZSBzYWZlIHRoYW4gc29ycnkuDQo+ID4gSG1t
+LCBJIGNoYW5nZWQgdGhlIGNvZGUsIGJ1dCBub3cgaXQgZG9lc24ndCBjb21lIG91dCBvZiBzdXNw
+ZW5kIHVubGVzcw0KPiA+IHNsZWVwX3VzIHBhc3NlZCB0byByZWFkbF9wb2xsX3RpbWVvdXQgaXMg
+MC4gQW55IHJlYXNvbiB5b3UgY2FuIHRoaW5rIG9mPw0KPiANCj4gVGltZXJzIG9yIGludGVycnVw
+dHMgZGlzYWJsZWQ/DQo+IA0KPiBEb2VzIHRoZSBtaWdodF9zbGVlcF9pZigpIHNjcmVhbSBpZiBD
+T05GSUdfREVCVUdfQVRPTUlDX1NMRUVQPXk/DQpZZXMsIGl0IGRvZXMgaW5kZWVkIHNjcmVhbS4g
+V291bGQgeW91IHJlY29tbWVuZCB0byBzdGlsbCB1c2UgcmVhZGxfcG9sbF90aW1lb3V0DQp3aXRo
+IHNsZWVwX3VzIHNldCB0byAwPw0KDQpUaGFua3MNClBoaWwNCg=
