@@ -1,59 +1,162 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 04 Jan 2016 22:27:35 +0000
-Subject: [PATCH v2 00/13] r8a7793, gose: Add audio support to device tree
-Message-Id: <1451946468-20499-1-git-send-email-horms+renesas@verge.net.au>
+Date: Mon, 04 Jan 2016 22:27:48 +0000
+Subject: [PATCH v2 13/13] ARM: shmobile: r8a7793: enable audio DMAC in device tree
+Message-Id: <1451946468-20499-14-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1451946468-20499-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1451946468-20499-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi,
+Enable audio DMAC (= rcar-dmac) in r8a7793 device tree.
 
-this series adds support to r8a7793 and gose device trees for
-rcar sound: first in PIO mode then using DMA
+Based on similar work for the r8a7791 by Kuninori Morimoto.
 
-I have been unable to test if audio works (in PIO mode) as I
-do not have physical access to a gose board. I would appreciate
-some assistance there too.
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7793.dtsi | 91 ++++++++++++++++++++++++++++++++++++------
+ 1 file changed, 79 insertions(+), 12 deletions(-)
 
-This work is based heavily on the work of others for the r8a7791 and
-koelsch as noted in the changelogs of individual patches.
-
-This series is based on renesas-devel-20160105-v4.4-rc8.
-
-This series depends on:
-
-* [PATCH] ARM: shmobile: r8a7793: move dmac nodes
-* [PATCH v2] ARM: shmobile: gose: add i2c2 bus to device tree
-
-Changes since v1:
-* Dropped RFC designation
-* Dropped i2c patches: they have been posted and partially merged separately
-* Dropped MIX/CTU support pending more work on that feature
-* Enable Audio DMAC peri peri via sound driver
-* Other changes noted in per-patch changelogs
-
-
-Simon Horman (13):
-  ARM: shmobile: r8a7793: add audio clock to device tree
-  ARM: shmobile: r8a7793: add m2 clock to device tree
-  ARM: shmobile: r8a7793: add R-Car sound support to device tree
-  ARM: shmobile: r8a7793: add DVC support to device tree
-  ARM: shmobile: r8a7793: add audio DMAC clocks to device tree
-  ARM: shmobile: r8a7793: add audio DMAC to device tree
-  ARM: shmobile: r8a7793: enable Audio DMAC peri peri via sound driver
-  ARM: shmobile: gose: Enable sound PIO support in device tree
-  ARM: shmobile: gose: enable sound DMA support in device tree
-  ARM: shmobile: gose: enable sound DMA support via BUSIF in device tree
-  ARM: shmobile: gose: enable sound DMA support via SRC in device tree
-  ARM: shmobile: gose: enable sound DMA support via DVC in device tree
-  ARM: shmobile: r8a7793: enable audio DMAC in device tree
-
- arch/arm/boot/dts/r8a7793-gose.dts |  88 +++++++++++++
- arch/arm/boot/dts/r8a7793.dtsi     | 253 ++++++++++++++++++++++++++++++++++++-
- 2 files changed, 338 insertions(+), 3 deletions(-)
-
+diff --git a/arch/arm/boot/dts/r8a7793.dtsi b/arch/arm/boot/dts/r8a7793.dtsi
+index 9eef99a132ec..6bf7d2264601 100644
+--- a/arch/arm/boot/dts/r8a7793.dtsi
++++ b/arch/arm/boot/dts/r8a7793.dtsi
+@@ -1201,52 +1201,119 @@
+ 		status = "disabled";
+ 
+ 		rcar_sound,dvc {
+-			dvc0: dvc@0 { };
+-			dvc1: dvc@1 { };
++			dvc0: dvc@0 {
++				dmas = <&audma0 0xbc>;
++				dma-names = "tx";
++			};
++			dvc1: dvc@1 {
++				dmas = <&audma0 0xbe>;
++				dma-names = "tx";
++			};
+ 		};
++
+ 		rcar_sound,src {
+-			src0: src@0 { };
+-			src1: src@1 { };
+-			src2: src@2 { };
+-			src3: src@3 { };
+-			src4: src@4 { };
+-			src5: src@5 { };
+-			src6: src@6 { };
+-			src7: src@7 { };
+-			src8: src@8 { };
+-			src9: src@9 { };
++			src0: src@0 {
++				interrupts = <0 352 IRQ_TYPE_LEVEL_HIGH>;
++				dmas = <&audma0 0x85>, <&audma1 0x9a>;
++				dma-names = "rx", "tx";
++			};
++			src1: src@1 {
++				interrupts = <0 353 IRQ_TYPE_LEVEL_HIGH>;
++				dmas = <&audma0 0x87>, <&audma1 0x9c>;
++				dma-names = "rx", "tx";
++			};
++			src2: src@2 {
++				interrupts = <0 354 IRQ_TYPE_LEVEL_HIGH>;
++				dmas = <&audma0 0x89>, <&audma1 0x9e>;
++				dma-names = "rx", "tx";
++			};
++			src3: src@3 {
++				interrupts = <0 355 IRQ_TYPE_LEVEL_HIGH>;
++				dmas = <&audma0 0x8b>, <&audma1 0xa0>;
++				dma-names = "rx", "tx";
++			};
++			src4: src@4 {
++				interrupts = <0 356 IRQ_TYPE_LEVEL_HIGH>;
++				dmas = <&audma0 0x8d>, <&audma1 0xb0>;
++				dma-names = "rx", "tx";
++			};
++			src5: src@5 {
++				interrupts = <0 357 IRQ_TYPE_LEVEL_HIGH>;
++				dmas = <&audma0 0x8f>, <&audma1 0xb2>;
++				dma-names = "rx", "tx";
++			};
++			src6: src@6 {
++				interrupts = <0 358 IRQ_TYPE_LEVEL_HIGH>;
++				dmas = <&audma0 0x91>, <&audma1 0xb4>;
++				dma-names = "rx", "tx";
++			};
++			src7: src@7 {
++				interrupts = <0 359 IRQ_TYPE_LEVEL_HIGH>;
++				dmas = <&audma0 0x93>, <&audma1 0xb6>;
++				dma-names = "rx", "tx";
++			};
++			src8: src@8 {
++				interrupts = <0 360 IRQ_TYPE_LEVEL_HIGH>;
++				dmas = <&audma0 0x95>, <&audma1 0xb8>;
++				dma-names = "rx", "tx";
++			};
++			src9: src@9 {
++				interrupts = <0 361 IRQ_TYPE_LEVEL_HIGH>;
++				dmas = <&audma0 0x97>, <&audma1 0xba>;
++				dma-names = "rx", "tx";
++			};
+ 		};
+ 
+ 		rcar_sound,ssi {
+ 			ssi0: ssi@0 {
+ 				interrupts = <0 370 IRQ_TYPE_LEVEL_HIGH>;
++				dmas = <&audma0 0x01>, <&audma1 0x02>, <&audma0 0x15>, <&audma1 0x16>;
++				dma-names = "rx", "tx", "rxu", "txu";
+ 			};
+ 			ssi1: ssi@1 {
+ 				 interrupts = <0 371 IRQ_TYPE_LEVEL_HIGH>;
++				dmas = <&audma0 0x03>, <&audma1 0x04>, <&audma0 0x49>, <&audma1 0x4a>;
++				dma-names = "rx", "tx", "rxu", "txu";
+ 			};
+ 			ssi2: ssi@2 {
+ 				interrupts = <0 372 IRQ_TYPE_LEVEL_HIGH>;
++				dmas = <&audma0 0x05>, <&audma1 0x06>, <&audma0 0x63>, <&audma1 0x64>;
++				dma-names = "rx", "tx", "rxu", "txu";
+ 			};
+ 			ssi3: ssi@3 {
+ 				interrupts = <0 373 IRQ_TYPE_LEVEL_HIGH>;
++				dmas = <&audma0 0x07>, <&audma1 0x08>, <&audma0 0x6f>, <&audma1 0x70>;
++				dma-names = "rx", "tx", "rxu", "txu";
+ 			};
+ 			ssi4: ssi@4 {
+ 				interrupts = <0 374 IRQ_TYPE_LEVEL_HIGH>;
++				dmas = <&audma0 0x09>, <&audma1 0x0a>, <&audma0 0x71>, <&audma1 0x72>;
++				dma-names = "rx", "tx", "rxu", "txu";
+ 			};
+ 			ssi5: ssi@5 {
+ 				interrupts = <0 375 IRQ_TYPE_LEVEL_HIGH>;
++				dmas = <&audma0 0x0b>, <&audma1 0x0c>, <&audma0 0x73>, <&audma1 0x74>;
++				dma-names = "rx", "tx", "rxu", "txu";
+ 			};
+ 			ssi6: ssi@6 {
+ 				interrupts = <0 376 IRQ_TYPE_LEVEL_HIGH>;
++				dmas = <&audma0 0x0d>, <&audma1 0x0e>, <&audma0 0x75>, <&audma1 0x76>;
++				dma-names = "rx", "tx", "rxu", "txu";
+ 			};
+ 			ssi7: ssi@7 {
+ 				interrupts = <0 377 IRQ_TYPE_LEVEL_HIGH>;
++				dmas = <&audma0 0x0f>, <&audma1 0x10>, <&audma0 0x79>, <&audma1 0x7a>;
++				dma-names = "rx", "tx", "rxu", "txu";
+ 			};
+ 			ssi8: ssi@8 {
+ 				interrupts = <0 378 IRQ_TYPE_LEVEL_HIGH>;
++				dmas = <&audma0 0x11>, <&audma1 0x12>, <&audma0 0x7b>, <&audma1 0x7c>;
++				dma-names = "rx", "tx", "rxu", "txu";
+ 			};
+ 			ssi9: ssi@9 {
+ 				interrupts = <0 379 IRQ_TYPE_LEVEL_HIGH>;
++				dmas = <&audma0 0x13>, <&audma1 0x14>, <&audma0 0x7d>, <&audma1 0x7e>;
++				dma-names = "rx", "tx", "rxu", "txu";
+ 			};
+ 		};
+ 	};
 -- 
 2.1.4
 
