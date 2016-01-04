@@ -1,92 +1,93 @@
-From: "Michael S. Tsirkin" <mst@redhat.com>
-Date: Sun, 10 Jan 2016 14:21:47 +0000
-Subject: [PATCH v3 38/41] xen/io: use virt_xxx barriers
-Message-Id: <1452426622-4471-39-git-send-email-mst@redhat.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 04 Jan 2016 13:45:20 +0000
+Subject: [PATCH 3/5] serial: sh-sci: Use premultiplier to handle half sampling rate
+Message-Id: <1451915122-30219-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1452426622-4471-1-git-send-email-mst@redhat.com>
-In-Reply-To: <1452426622-4471-1-git-send-email-mst@redhat.com>
+References: <1451915122-30219-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1451915122-30219-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Peter Zijlstra <peterz@infradead.org>, Arnd Bergmann <arnd@arndb.de>, linux-arch@vger.kernel.org, Andrew Cooper <andrew.cooper3@citrix.com>, Russell King - ARM Linux <linux@arm.linux.org.uk>, virtualization@lists.linux-foundation.org, Stefano Stabellini <stefano.stabellini@eu.citrix.com>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@elte.hu>, "H. Peter Anvin" <hpa@zytor.com>, Joe Perches <joe@perches.com>, David Miller <davem@davemloft.net>, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, sparclinux@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-metag@vger.kernel.org, linux-mips@linux-mips.org, x86@kernel.org, user-mode-linux-devel@lists.sourceforge.net, adi-buildroot-devel@lists.sourceforge.net, linux-sh@vger.kernel.org, linux-xtensa@linux-xtensa.org, xen-devel@lists.xenproject.org, David Vrabel <david>
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
+Cc: Simon Horman <horms+renesas@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-include/xen/interface/io/ring.h uses
-full memory barriers to communicate with the other side.
+On SCIx variants different from HSCIF, the bit rate is equal to the
+sampling clock rate divided by half the sampling rate. Currently this is
+handled by dividing the sampling rate by two, which was OK as it was
+always even.
 
-For guests compiled with CONFIG_SMP, smp_wmb and smp_mb
-would be sufficient, so mb() and wmb() here are only needed if
-a non-SMP guest runs on an SMP host.
+Replace halving the sampling rate by premultiplying the base clock
+frequency by 2, to accommodate odd sampling rates on SCIFA/SCIFB later.
 
-Switch to virt_xxx barriers which serve this exact purpose.
+Replace the shift value in the BRG divider calculation by a
+premultiplication of the base clock frequency too, for consistency.
 
-Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
-Acked-by: David Vrabel <david.vrabel@citrix.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- include/xen/interface/io/ring.h | 16 ++++++++--------
- 1 file changed, 8 insertions(+), 8 deletions(-)
+ drivers/tty/serial/sh-sci.c | 16 ++++++++++------
+ 1 file changed, 10 insertions(+), 6 deletions(-)
 
-diff --git a/include/xen/interface/io/ring.h b/include/xen/interface/io/ring.h
-index 7dc685b..21f4fbd 100644
---- a/include/xen/interface/io/ring.h
-+++ b/include/xen/interface/io/ring.h
-@@ -208,12 +208,12 @@ struct __name##_back_ring {						\
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index e8d6fa77e11208d4..f3c2a89a9550add9 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1934,9 +1934,11 @@ static int sci_sck_calc(struct sci_port *s, unsigned int bps,
+ 	unsigned int min_sr, max_sr, sr;
+ 	int err, min_err = INT_MAX;
  
++	if (s->port.type != PORT_HSCIF)
++		freq *= 2;
+ 	if (s->sampling_rate) {
+ 		/* SCI(F) has a fixed sampling rate */
+-		min_sr = max_sr = s->sampling_rate / 2;
++		min_sr = max_sr = s->sampling_rate;
+ 	} else {
+ 		/* HSCIF has a variable 1/(8..32) sampling rate */
+ 		min_sr = 8;
+@@ -1967,9 +1969,11 @@ static int sci_brg_calc(struct sci_port *s, unsigned int bps,
+ 	unsigned int min_sr, max_sr, sr, dl;
+ 	int err, min_err = INT_MAX;
  
- #define RING_PUSH_REQUESTS(_r) do {					\
--    wmb(); /* back sees requests /before/ updated producer index */	\
-+    virt_wmb(); /* back sees requests /before/ updated producer index */	\
-     (_r)->sring->req_prod = (_r)->req_prod_pvt;				\
- } while (0)
++	if (s->port.type != PORT_HSCIF)
++		freq *= 2;
+ 	if (s->sampling_rate) {
+ 		/* SCIF has a fixed sampling rate */
+-		min_sr = max_sr = s->sampling_rate / 2;
++		min_sr = max_sr = s->sampling_rate;
+ 	} else {
+ 		/* HSCIF has a variable 1/(8..32) sampling rate */
+ 		min_sr = 8;
+@@ -2002,18 +2006,18 @@ static int sci_scbrr_calc(struct sci_port *s, unsigned int bps,
+ 			  unsigned int *brr, unsigned int *srr,
+ 			  unsigned int *cks)
+ {
+-	unsigned int min_sr, max_sr, shift, sr, br, prediv, scrate, c;
++	unsigned int min_sr, max_sr, sr, br, prediv, scrate, c;
+ 	unsigned long freq = s->clk_rates[SCI_FCK];
+ 	int err, min_err = INT_MAX;
  
- #define RING_PUSH_RESPONSES(_r) do {					\
--    wmb(); /* front sees responses /before/ updated producer index */	\
-+    virt_wmb(); /* front sees responses /before/ updated producer index */	\
-     (_r)->sring->rsp_prod = (_r)->rsp_prod_pvt;				\
- } while (0)
++	if (s->port.type != PORT_HSCIF)
++		freq *= 2;
+ 	if (s->sampling_rate) {
+ 		min_sr = max_sr = s->sampling_rate;
+-		shift = 0;
+ 	} else {
+ 		/* HSCIF has a variable sample rate */
+ 		min_sr = 8;
+ 		max_sr = 32;
+-		shift = 1;
+ 	}
  
-@@ -250,9 +250,9 @@ struct __name##_back_ring {						\
- #define RING_PUSH_REQUESTS_AND_CHECK_NOTIFY(_r, _notify) do {		\
-     RING_IDX __old = (_r)->sring->req_prod;				\
-     RING_IDX __new = (_r)->req_prod_pvt;				\
--    wmb(); /* back sees requests /before/ updated producer index */	\
-+    virt_wmb(); /* back sees requests /before/ updated producer index */	\
-     (_r)->sring->req_prod = __new;					\
--    mb(); /* back sees new requests /before/ we check req_event */	\
-+    virt_mb(); /* back sees new requests /before/ we check req_event */	\
-     (_notify) = ((RING_IDX)(__new - (_r)->sring->req_event) <		\
- 		 (RING_IDX)(__new - __old));				\
- } while (0)
-@@ -260,9 +260,9 @@ struct __name##_back_ring {						\
- #define RING_PUSH_RESPONSES_AND_CHECK_NOTIFY(_r, _notify) do {		\
-     RING_IDX __old = (_r)->sring->rsp_prod;				\
-     RING_IDX __new = (_r)->rsp_prod_pvt;				\
--    wmb(); /* front sees responses /before/ updated producer index */	\
-+    virt_wmb(); /* front sees responses /before/ updated producer index */	\
-     (_r)->sring->rsp_prod = __new;					\
--    mb(); /* front sees new responses /before/ we check rsp_event */	\
-+    virt_mb(); /* front sees new responses /before/ we check rsp_event */	\
-     (_notify) = ((RING_IDX)(__new - (_r)->sring->rsp_event) <		\
- 		 (RING_IDX)(__new - __old));				\
- } while (0)
-@@ -271,7 +271,7 @@ struct __name##_back_ring {						\
-     (_work_to_do) = RING_HAS_UNCONSUMED_REQUESTS(_r);			\
-     if (_work_to_do) break;						\
-     (_r)->sring->req_event = (_r)->req_cons + 1;			\
--    mb();								\
-+    virt_mb();								\
-     (_work_to_do) = RING_HAS_UNCONSUMED_REQUESTS(_r);			\
- } while (0)
+ 	/*
+@@ -2034,7 +2038,7 @@ static int sci_scbrr_calc(struct sci_port *s, unsigned int bps,
+ 	for (sr = max_sr; sr >= min_sr; sr--) {
+ 		for (c = 0; c <= 3; c++) {
+ 			/* integerized formulas from HSCIF documentation */
+-			prediv = sr * (1 << (2 * c + shift));
++			prediv = sr * (1 << (2 * c + 1));
  
-@@ -279,7 +279,7 @@ struct __name##_back_ring {						\
-     (_work_to_do) = RING_HAS_UNCONSUMED_RESPONSES(_r);			\
-     if (_work_to_do) break;						\
-     (_r)->sring->rsp_event = (_r)->rsp_cons + 1;			\
--    mb();								\
-+    virt_mb();								\
-     (_work_to_do) = RING_HAS_UNCONSUMED_RESPONSES(_r);			\
- } while (0)
- 
+ 			/*
+ 			 * We need to calculate:
 -- 
-MST
+1.9.1
 
