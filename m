@@ -1,38 +1,53 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Tue, 19 Jan 2016 16:20:57 +0000
-Subject: [RFC 2/6] mmc: sdhi: error message on ENOMEM is superfluous
-Message-Id: <1453220461-2598-3-git-send-email-wsa@the-dreams.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 04 Jan 2016 22:27:46 +0000
+Subject: [PATCH v2 11/13] ARM: shmobile: gose: enable sound DMA support via SRC in device tree
+Message-Id: <1451946468-20499-12-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1451946468-20499-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1451946468-20499-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Enable DMA transfer to/from SRC in r8a7793/gose device tree.
 
-We will get a full dump anyhow.
+     DMA      DMApp
+[MEM] -> [SRC] -> [SSIU] -> [SSI]
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+     DMA      DMApp
+[MEM] <- [SRC] <- [SSIU] <- [SSI]
+
+Current sound driver is supporting
+SSI/SRC random connection.
+So, this patch is tring
+SSI0 -> SRC2
+SSI1 <- SRC3
+
+Based on similar work for the r8a7791/koeslch by Kuninori Morimoto.
+
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/mmc/host/sh_mobile_sdhi.c | 4 +---
- 1 file changed, 1 insertion(+), 3 deletions(-)
+ arch/arm/boot/dts/r8a7793-gose.dts | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index 61671f3fa09a11..5a10fb3c01a1dd 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -214,10 +214,8 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- 		return -EINVAL;
+diff --git a/arch/arm/boot/dts/r8a7793-gose.dts b/arch/arm/boot/dts/r8a7793-gose.dts
+index 4a7048d676c8..ad20ddc5203d 100644
+--- a/arch/arm/boot/dts/r8a7793-gose.dts
++++ b/arch/arm/boot/dts/r8a7793-gose.dts
+@@ -315,8 +315,8 @@
  
- 	priv = devm_kzalloc(&pdev->dev, sizeof(struct sh_mobile_sdhi), GFP_KERNEL);
--	if (priv = NULL) {
--		dev_err(&pdev->dev, "kzalloc failed\n");
-+	if (!priv)
- 		return -ENOMEM;
--	}
- 
- 	mmc_data = &priv->mmc_data;
- 	dma_priv = &priv->dma_priv;
+ 	rcar_sound,dai {
+ 		dai0 {
+-			playback = <&ssi0>;
+-			capture  = <&ssi1>;
++			playback = <&ssi0 &src2>;
++			capture  = <&ssi1 &src3>;
+ 		};
+ 	};
+ };
 -- 
 2.1.4
 
