@@ -1,55 +1,51 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 28 Jan 2016 20:38:15 +0000
-Subject: Re: [PATCH 2/3] ARM: shmobile: r8a7791: add MSTP10 support on DTSI
-Message-Id: <56AA7C37.7030506@cogentembedded.com>
+From: Peter Zijlstra <peterz@infradead.org>
+Date: Mon, 04 Jan 2016 14:05:09 +0000
+Subject: Re: [PATCH v2 31/32] sh: support a 2-byte smp_store_mb
+Message-Id: <20160104140509.GB6344@twins.programming.kicks-ass.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1387998730-6012-3-git-send-email-valentine.barshak@cogentembedded.com>
-In-Reply-To: <1387998730-6012-3-git-send-email-valentine.barshak@cogentembedded.com>
+References: <1451572003-2440-1-git-send-email-mst@redhat.com>
+ <1451572003-2440-32-git-send-email-mst@redhat.com>
+In-Reply-To: <1451572003-2440-32-git-send-email-mst@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: "Michael S. Tsirkin" <mst@redhat.com>
+Cc: linux-kernel@vger.kernel.org, Arnd Bergmann <arnd@arndb.de>, linux-arch@vger.kernel.org, Andrew Cooper <andrew.cooper3@citrix.com>, virtualization@lists.linux-foundation.org, Stefano Stabellini <stefano.stabellini@eu.citrix.com>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@elte.hu>, "H. Peter Anvin" <hpa@zytor.com>, David Miller <davem@davemloft.net>, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, sparclinux@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-metag@vger.kernel.org, linux-mips@linux-mips.org, x86@kernel.org, user-mode-linux-devel@lists.sourceforge.net, adi-buildroot-devel@lists.sourceforge.net, linux-sh@vger.kernel.org, linux-xtensa@linux-xtensa.org, xen-devel@lists.xenproject.org, Ingo Molnar <mingo@kernel.org>
 
-Hello.
-
-On 06/12/2014 08:44 AM, Kuninori Morimoto wrote:
-
-    Sorry for digging out the ancient patch...
-
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
->
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+On Thu, Dec 31, 2015 at 09:09:47PM +0200, Michael S. Tsirkin wrote:
+> At the moment, xchg on sh only supports 4 and 1 byte values, so using it
+> from smp_store_mb means attempts to store a 2 byte value using this
+> macro fail.
+> 
+> And happens to be exactly what virtio drivers want to do.
+> 
+> Check size and fall back to a slower, but safe, WRITE_ONCE+smp_mb.
+> 
+> Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
 > ---
->   arch/arm/boot/dts/r8a7791.dtsi            |   33 +++++++++++++++++++++++++++++
->   include/dt-bindings/clock/r8a7791-clock.h |   26 +++++++++++++++++++++++
->   2 files changed, 59 insertions(+)
->
-> diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-> index f3b6219..380d058 100644
-> --- a/arch/arm/boot/dts/r8a7791.dtsi
-> +++ b/arch/arm/boot/dts/r8a7791.dtsi
-> @@ -865,6 +865,39 @@
->   				"rcan1", "rcan0", "qspi_mod", "i2c5", "i2c6", "i2c4", "i2c3", "i2c2",
->   				"i2c1", "i2c0";
->   		};
-> +		mstp10_clks: mstp10_clks@e6150998 {
-> +			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
-> +			reg = <0 0xe6150998 0 4>, <0 0xe61509a8 0 4>;
-> +			clocks = <&p_clk>,
-> +				<&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>,
-> +				<&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>,
+>  arch/sh/include/asm/barrier.h | 10 +++++++++-
+>  1 file changed, 9 insertions(+), 1 deletion(-)
+> 
+> diff --git a/arch/sh/include/asm/barrier.h b/arch/sh/include/asm/barrier.h
+> index f887c64..0cc5735 100644
+> --- a/arch/sh/include/asm/barrier.h
+> +++ b/arch/sh/include/asm/barrier.h
+> @@ -32,7 +32,15 @@
+>  #define ctrl_barrier()	__asm__ __volatile__ ("nop;nop;nop;nop;nop;nop;nop;nop")
+>  #endif
+>  
+> -#define __smp_store_mb(var, value) do { (void)xchg(&var, value); } while (0)
+> +#define __smp_store_mb(var, value) do { \
+> +	if (sizeof(var) != 4 && sizeof(var) != 1) { \
+> +		 WRITE_ONCE(var, value); \
+> +		__smp_mb(); \
+> +	} else { \
+> +		(void)xchg(&var, value);  \
+> +	} \
+> +} while (0)
 
-    But don't SSI[0-9] clocks all depend on SSI(all)? Shouldn't the above 10 
-entries be
-<&mstp10_clks R8A7791_CLK_SSI_ALL> like it was done to SCU(all)?
+So SH is an orphaned arch, which is also why I did not comment on using
+xchg() for the UP smp_store_mb() thing.
 
-> +				<&p_clk>,
-> +				<&mstp10_clks R8A7791_CLK_SCU_ALL>, <&mstp10_clks R8A7791_CLK_SCU_ALL>,
-> +				<&mstp10_clks R8A7791_CLK_SCU_ALL>, <&mstp10_clks R8A7791_CLK_SCU_ALL>,
-> +				<&mstp10_clks R8A7791_CLK_SCU_ALL>, <&mstp10_clks R8A7791_CLK_SCU_ALL>,
-> +				<&mstp10_clks R8A7791_CLK_SCU_ALL>, <&mstp10_clks R8A7791_CLK_SCU_ALL>,
-> +				<&mstp10_clks R8A7791_CLK_SCU_ALL>, <&mstp10_clks R8A7791_CLK_SCU_ALL>,
-> +				<&mstp10_clks R8A7791_CLK_SCU_ALL>, <&mstp10_clks R8A7791_CLK_SCU_ALL>;
-
-MBR, Sergei
-
+But I really think we should try fixing the xchg() implementation
+instead of this duct-tape.
