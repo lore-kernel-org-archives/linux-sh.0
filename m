@@ -1,32 +1,62 @@
-From: Rob Herring <robh@kernel.org>
-Date: Fri, 15 Jan 2016 02:03:33 +0000
-Subject: Re: [PATCH 1/3] dt-bindings: i2c: mux: demux-pinctrl: add bindings
-Message-Id: <20160115020333.GA3139@rob-hp-laptop>
+From: Martin Schwidefsky <schwidefsky@de.ibm.com>
+Date: Mon, 04 Jan 2016 15:03:39 +0000
+Subject: Re: [PATCH v2 06/32] s390: reuse asm-generic/barrier.h
+Message-Id: <20160104160339.25101b5d@mschwide>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1452695369-29413-1-git-send-email-wsa@the-dreams.de>
- <1452695369-29413-2-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1452695369-29413-2-git-send-email-wsa@the-dreams.de>
+References: <1451572003-2440-1-git-send-email-mst@redhat.com>
+	<1451572003-2440-7-git-send-email-mst@redhat.com>
+	<20160104132042.GW6344@twins.programming.kicks-ass.net>
+In-Reply-To: <20160104132042.GW6344@twins.programming.kicks-ass.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Wolfram Sang <wsa@the-dreams.de>
-Cc: linux-i2c@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, linux-kernel@vger.kernel.org, Pantelis Antoniou <pantelis.antoniou@konsulko.com>, Jan Luebbe <jlu@pengutronix.de>
+To: Peter Zijlstra <peterz@infradead.org>
+Cc: linux-mips@linux-mips.org, linux-ia64@vger.kernel.org, "Michael S. Tsirkin" <mst@redhat.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, virtualization@lists.linux-foundation.org, "H. Peter Anvin" <hpa@zytor.com>, sparclinux@vger.kernel.org, Ingo Molnar <mingo@kernel.org>, linux-arch@vger.kernel.org, linux-s390@vger.kernel.org, Davidlohr Bueso <dave@stgolabs.net>, Arnd Bergmann <arnd@arndb.de>, linux-sh@vger.kernel.org, x86@kernel.org, Christian Borntraeger <borntraeger@de.ibm.com>, xen-devel@lists.xenproject.org, Ingo Molnar <mingo@elte.hu>, linux-xtensa@linux-xtensa.org, user-mode-linux-devel@lists.sourceforge.net, Stefano Stabellini <stefano.stabellini@eu.citrix.com>, Andrey Konovalov <andreyknvl@google.com>, adi-buildroot-devel@lists.sourceforge.net, Thomas Gleixner <tglx@linutronix.de>, linux-metag@vger.kernel.org, linux-arm-kernel@lists.infradead.org, Andrew
 
-On Wed, Jan 13, 2016 at 03:29:27PM +0100, Wolfram Sang wrote:
-> From: Wolfram Sang <wsa+renesas@sang-engineering.com>
-> 
-> These bindings allow an I2C bus to switch between multiple masters. This
-> is not hot-switching because connected I2C slaves will be
-> re-instantiated. It is meant to select the best I2C core at runtime once
-> the task is known. Example: Prefer i2c-gpio over another I2C core
-> because of HW errata affecting your use case.
-> 
-> Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
-> ---
->  .../ABI/testing/sysfs-platform-i2c-demux-pinctrl   |  23 ++++
->  .../devicetree/bindings/i2c/i2c-demux-pinctrl.txt  | 136 +++++++++++++++++++++
->  2 files changed, 159 insertions(+)
->  create mode 100644 Documentation/ABI/testing/sysfs-platform-i2c-demux-pinctrl
->  create mode 100644 Documentation/devicetree/bindings/i2c/i2c-demux-pinctrl.txt
+On Mon, 4 Jan 2016 14:20:42 +0100
+Peter Zijlstra <peterz@infradead.org> wrote:
 
-Acked-by: Rob Herring <robh@kernel.org>
+> On Thu, Dec 31, 2015 at 09:06:30PM +0200, Michael S. Tsirkin wrote:
+> > On s390 read_barrier_depends, smp_read_barrier_depends
+> > smp_store_mb(), smp_mb__before_atomic and smp_mb__after_atomic match the
+> > asm-generic variants exactly. Drop the local definitions and pull in
+> > asm-generic/barrier.h instead.
+> > 
+> > This is in preparation to refactoring this code area.
+> > 
+> > Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+> > Acked-by: Arnd Bergmann <arnd@arndb.de>
+> > ---
+> >  arch/s390/include/asm/barrier.h | 10 ++--------
+> >  1 file changed, 2 insertions(+), 8 deletions(-)
+> > 
+> > diff --git a/arch/s390/include/asm/barrier.h b/arch/s390/include/asm/barrier.h
+> > index 7ffd0b1..c358c31 100644
+> > --- a/arch/s390/include/asm/barrier.h
+> > +++ b/arch/s390/include/asm/barrier.h
+> > @@ -30,14 +30,6 @@
+> >  #define smp_rmb()			rmb()
+> >  #define smp_wmb()			wmb()
+> >  
+> > -#define read_barrier_depends()		do { } while (0)
+> > -#define smp_read_barrier_depends()	do { } while (0)
+> > -
+> > -#define smp_mb__before_atomic()		smp_mb()
+> > -#define smp_mb__after_atomic()		smp_mb()
+> 
+> As per:
+> 
+>   lkml.kernel.org/r/20150921112252.3c2937e1@mschwide
+> 
+> s390 should change this to barrier() instead of smp_mb() and hence
+> should not use the generic versions.
+ 
+Yes, we wanted to simplify this. Thanks for the reminder, I'll queue
+a patch.
+
+-- 
+blue skies,
+   Martin.
+
+"Reality continues to ruin my life." - Calvin.
+
