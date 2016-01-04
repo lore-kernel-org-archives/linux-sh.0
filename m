@@ -1,52 +1,63 @@
-From: "Michael S. Tsirkin" <mst@redhat.com>
-Date: Sun, 10 Jan 2016 14:20:00 +0000
-Subject: [PATCH v3 25/41] tile: define __smp_xxx
-Message-Id: <1452426622-4471-26-git-send-email-mst@redhat.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 04 Jan 2016 13:45:17 +0000
+Subject: [PATCH 0/5] serial: sh-sci: Add support for SCIFA/SCIFB variable sampling rates
+Message-Id: <1451915122-30219-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1452426622-4471-1-git-send-email-mst@redhat.com>
-In-Reply-To: <1452426622-4471-1-git-send-email-mst-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Peter Zijlstra <peterz-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>, Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>, linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Cooper <andrew.cooper3-Sxgqhf6Nn4DQT0dZR+AlfA@public.gmane.org>, Russell King - ARM Linux <linux-lFZ/pmaqli7XmaaqVzeoHQ@public.gmane.org>, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Stefano Stabellini <stefano.stabellini-mvvWK6WmYclDPfheJLI6IQ@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Joe Perches <joe-6d6DIl74uiNBDgjK7y7TUQ@public.gmane.org>, David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>, linux-ia64-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linuxppc-dev-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org, linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sparclinux-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, linux-metag-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mips-6z/3iImG2C8G8FEW9MqTrA@public.gmane.org, x86-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, user-mode-linux-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, adi-buildroot-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-xtensa-PjhNF2WwrV/0Sa2dR60CXw@public.gmane.org, xen-devel-GuqFBffKawtpuQazS67q72D2FQJk+8+b@public.gmane.org, Chris Metcalf <cmetc>
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
+Cc: Simon Horman <horms+renesas@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-This defines __smp_xxx barriers for tile,
-for use by virtualization.
+	Hi Greg, Jiri,
 
-Some smp_xxx barriers are removed as they are
-defined correctly by asm-generic/barriers.h
+This patch series adds support for variable sampling rates on the SCIFA
+and SCIFB variants.
 
-Note: for 32 bit, keep smp_mb__after_atomic around since it's faster
-than the generic implementation.
+Currently the driver uses a fixed sampling rate divider (usually 16 or 32),
+except on HSCIF (full range of 8 to 32).  Supporting all available
+sampling rates on SCIFA and SCIFB increases the range and accuracy of
+supported baud rates.
 
-Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
-Acked-by: Arnd Bergmann <arnd@arndb.de>
----
- arch/tile/include/asm/barrier.h | 9 +++++----
- 1 file changed, 5 insertions(+), 4 deletions(-)
+E.g. on r8a7791/koelsch:
+  - Supports now 134, 150, and standard 500000-4000000 bps,
+  - Perfect match for 134, 150, 500000, 1000000, 2000000, and 4000000
+    bps,
+  - Accuracy has increased for most standard bps values.
 
-diff --git a/arch/tile/include/asm/barrier.h b/arch/tile/include/asm/barrier.h
-index 96a42ae..d552228 100644
---- a/arch/tile/include/asm/barrier.h
-+++ b/arch/tile/include/asm/barrier.h
-@@ -79,11 +79,12 @@ mb_incoherent(void)
-  * But after the word is updated, the routine issues an "mf" before returning,
-  * and since it's a function call, we don't even need a compiler barrier.
-  */
--#define smp_mb__before_atomic()	smp_mb()
--#define smp_mb__after_atomic()	do { } while (0)
-+#define __smp_mb__before_atomic()	__smp_mb()
-+#define __smp_mb__after_atomic()	do { } while (0)
-+#define smp_mb__after_atomic()	__smp_mb__after_atomic()
- #else /* 64 bit */
--#define smp_mb__before_atomic()	smp_mb()
--#define smp_mb__after_atomic()	smp_mb()
-+#define __smp_mb__before_atomic()	__smp_mb()
-+#define __smp_mb__after_atomic()	__smp_mb()
- #endif
- 
- #include <asm-generic/barrier.h>
+Tested on:
+  - r8a7791/koelsch (Fully tested on SCIFA and SCIFB),
+  - r8a7740/armadillo (Fully tested on SCIFA and SCIFB),
+  - sh73a0/kzm9g (Fully tested on SCIFA only, no easy access to SCIFB),
+  - r8a73a4/ape6evm (SCIFA/FTDI console at 460800 bps, no easy access to
+    SCIFB).
+
+This series depends on my scif-clk-sck-brg-for-v4.5 pull request.
+
+Thanks for your comments!
+
+Geert Uytterhoeven (5):
+  serial: sh-sci: Add more Serial Mode Register documentation
+  serial: sh-sci: Preserve SCIFA/SCIFB bit rate config for serial
+    console
+  serial: sh-sci: Use premultiplier to handle half sampling rate
+  serial: sh-sci: Use a bitmask to indicate supported sampling rates
+  serial: sh-sci: Add support for SCIFA/SCIFB variable sampling rates
+
+ drivers/tty/serial/sh-sci.c | 106 ++++++++++++++++++++++++++------------------
+ drivers/tty/serial/sh-sci.h |  15 +++++++
+ 2 files changed, 77 insertions(+), 44 deletions(-)
+
 -- 
-MST
+1.9.1
 
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
