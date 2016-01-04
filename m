@@ -1,41 +1,59 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 11 Jan 2016 04:32:58 +0000
-Subject: [PATCH 2/6] ARM: dts: lager: Add compatible property to "partitions" node
-Message-Id: <b88ddbdd36859a4dc99bddd9b5730944187530c0.1452486598.git.horms+renesas@verge.net.au>
+Date: Mon, 04 Jan 2016 22:27:35 +0000
+Subject: [PATCH v2 00/13] r8a7793, gose: Add audio support to device tree
+Message-Id: <1451946468-20499-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1452486598.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1452486598.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+Hi,
 
-As of commit e488ca9f8d4f62c2 ("doc: dt: mtd: partitions: add compatible
-property to "partitions" node"), the "partitions" subnode of an SPI
-FLASH device node must have a compatible property. The partitions are no
-longer detected if it is not present.
+this series adds support to r8a7793 and gose device trees for
+rcar sound: first in PIO mode then using DMA
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Brian Norris <computersforpeace@gmail.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7790-lager.dts | 1 +
- 1 file changed, 1 insertion(+)
+I have been unable to test if audio works (in PIO mode) as I
+do not have physical access to a gose board. I would appreciate
+some assistance there too.
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 44ba69b974a2..052dcee4790d 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -449,6 +449,7 @@
- 		m25p,fast-read;
- 
- 		partitions {
-+			compatible = "fixed-partitions";
- 			#address-cells = <1>;
- 			#size-cells = <1>;
- 
+This work is based heavily on the work of others for the r8a7791 and
+koelsch as noted in the changelogs of individual patches.
+
+This series is based on renesas-devel-20160105-v4.4-rc8.
+
+This series depends on:
+
+* [PATCH] ARM: shmobile: r8a7793: move dmac nodes
+* [PATCH v2] ARM: shmobile: gose: add i2c2 bus to device tree
+
+Changes since v1:
+* Dropped RFC designation
+* Dropped i2c patches: they have been posted and partially merged separately
+* Dropped MIX/CTU support pending more work on that feature
+* Enable Audio DMAC peri peri via sound driver
+* Other changes noted in per-patch changelogs
+
+
+Simon Horman (13):
+  ARM: shmobile: r8a7793: add audio clock to device tree
+  ARM: shmobile: r8a7793: add m2 clock to device tree
+  ARM: shmobile: r8a7793: add R-Car sound support to device tree
+  ARM: shmobile: r8a7793: add DVC support to device tree
+  ARM: shmobile: r8a7793: add audio DMAC clocks to device tree
+  ARM: shmobile: r8a7793: add audio DMAC to device tree
+  ARM: shmobile: r8a7793: enable Audio DMAC peri peri via sound driver
+  ARM: shmobile: gose: Enable sound PIO support in device tree
+  ARM: shmobile: gose: enable sound DMA support in device tree
+  ARM: shmobile: gose: enable sound DMA support via BUSIF in device tree
+  ARM: shmobile: gose: enable sound DMA support via SRC in device tree
+  ARM: shmobile: gose: enable sound DMA support via DVC in device tree
+  ARM: shmobile: r8a7793: enable audio DMAC in device tree
+
+ arch/arm/boot/dts/r8a7793-gose.dts |  88 +++++++++++++
+ arch/arm/boot/dts/r8a7793.dtsi     | 253 ++++++++++++++++++++++++++++++++++++-
+ 2 files changed, 338 insertions(+), 3 deletions(-)
+
 -- 
-2.7.0.rc3.207.g0ac5344
+2.1.4
 
