@@ -1,55 +1,48 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Sun, 10 Jan 2016 08:27:52 +0000
-Subject: Re: [PATCH 1/2] i2c: always enable RuntimePM for the adapter device
-Message-Id: <20160110082752.GB1526@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="JYK4vJDZwFMowpUq"
+From: Peter Zijlstra <peterz@infradead.org>
+Date: Mon, 04 Jan 2016 13:20:42 +0000
+Subject: Re: [PATCH v2 06/32] s390: reuse asm-generic/barrier.h
+Message-Id: <20160104132042.GW6344@twins.programming.kicks-ass.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450891169-13708-1-git-send-email-wsa@the-dreams.de>
- <1450891169-13708-2-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1450891169-13708-2-git-send-email-wsa@the-dreams.de>
-To: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, linux-pm@vger.kernel.org, Sylwester Nawrocki <s.nawrocki@samsung.com>, Charles Keepax <ckeepax@opensource.wolfsonmicro.com>
+References: <1451572003-2440-1-git-send-email-mst@redhat.com>
+	<1451572003-2440-7-git-send-email-mst@redhat.com>
+In-Reply-To: <1451572003-2440-7-git-send-email-mst@redhat.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: "Michael S. Tsirkin" <mst@redhat.com>
+Cc: linux-mips@linux-mips.org, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, Heiko Carstens <heiko.carstens@de.ibm.com>, virtualization@lists.linux-foundation.org, "H. Peter Anvin" <hpa@zytor.com>, sparclinux@vger.kernel.org, Ingo Molnar <mingo@kernel.org>, linux-arch@vger.kernel.org, linux-s390@vger.kernel.org, Davidlohr Bueso <dave@stgolabs.net>, Arnd Bergmann <arnd@arndb.de>, x86@kernel.org, Christian Borntraeger <borntraeger@de.ibm.com>, xen-devel@lists.xenproject.org, Ingo Molnar <mingo@elte.hu>, linux-xtensa@linux-xtensa.org, user-mode-linux-devel@lists.sourceforge.net, Stefano Stabellini <stefano.stabellini@eu.citrix.com>, Andrey Konovalov <andreyknvl@google.com>, adi-buildroot-devel@lists.sourceforge.net, Thomas Gleixner <tglx@linutronix.de>, linux-metag@vger.kernel.org, linux-arm-kernel@lists.infradead.org, Andrew Cooper <andrew.cooper3@citrix.com>linux-
 
+On Thu, Dec 31, 2015 at 09:06:30PM +0200, Michael S. Tsirkin wrote:
+> On s390 read_barrier_depends, smp_read_barrier_depends
+> smp_store_mb(), smp_mb__before_atomic and smp_mb__after_atomic match the
+> asm-generic variants exactly. Drop the local definitions and pull in
+> asm-generic/barrier.h instead.
+> 
+> This is in preparation to refactoring this code area.
+> 
+> Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+> Acked-by: Arnd Bergmann <arnd@arndb.de>
+> ---
+>  arch/s390/include/asm/barrier.h | 10 ++--------
+>  1 file changed, 2 insertions(+), 8 deletions(-)
+> 
+> diff --git a/arch/s390/include/asm/barrier.h b/arch/s390/include/asm/barrier.h
+> index 7ffd0b1..c358c31 100644
+> --- a/arch/s390/include/asm/barrier.h
+> +++ b/arch/s390/include/asm/barrier.h
+> @@ -30,14 +30,6 @@
+>  #define smp_rmb()			rmb()
+>  #define smp_wmb()			wmb()
+>  
+> -#define read_barrier_depends()		do { } while (0)
+> -#define smp_read_barrier_depends()	do { } while (0)
+> -
+> -#define smp_mb__before_atomic()		smp_mb()
+> -#define smp_mb__after_atomic()		smp_mb()
 
---JYK4vJDZwFMowpUq
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+As per:
 
-On Wed, Dec 23, 2015 at 06:19:28PM +0100, Wolfram Sang wrote:
-> From: Wolfram Sang <wsa+renesas@sang-engineering.com>
->=20
-> The adapter device is a logical device. Because of that, it already uses
-> pm_runtime_no_callbacks() in the core. To ensure proper propagation from
-> the children (i2c devices) to the parent of the adapter (the HW device),
-> make sure RuntimePM is enabled in any case.
->=20
-> Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+  lkml.kernel.org/r/20150921112252.3c2937e1@mschwide
 
-Applied to for-next, thanks!
-
-
---JYK4vJDZwFMowpUq
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBAgAGBQJWkhYIAAoJEBQN5MwUoCm2X6kP/AvwqKjOjbRJh7rM4Ejh13SS
-y9/6T55ZfKDB0mztJfwIay5lySbNBO0KPNcSU4g2OxP6qY2MXqUHPINdWmTBmKzK
-BDvLx+4dkHSmfUmyOlz9ddRonyYYz+MpboMqgJ9+J+4kOhrQylV2h5p6huO+qix+
-UzccyQOoQcLVSptPS8ude/G//EGuRimmWTdcumihiQZixZUNU+Jy7dNEh/Z5IOmh
-y1zE9xdQbNBhbbclJ017dUxH+7RPLU6KkWwuv80y9oHQdOAR5KAStBf+ddAlYw5E
-NswBoYV0a6tmVlgdOAAw8KYE7ih2BpJ4mDyZoR0hKRlDn/fcCeth9O8MmtUKTnfV
-setO6uUrMp/HnFEbbTuU10E8Pl3lLsujq6MzabW4IuFpFiE8/oIxHzBAZu+6hYlC
-S7osUbwGFt1jgyzcGHBwjYMkyunp7DpEuYdyG6YeWM7zZ0CeQmbhX2KVXJBU4Mey
-2LwC/FnpJTimAwaJ3TchIrJdVqC1mDOauHQogySosfITd1eznyPcQxPWeAOJhzDv
-xwl0jxFCkPzRpNr+9MjTP0N5LfPrR0qWh2YqnHdINGJhm3k4UrO/INzIclF4KTsJ
-KUgtvYHZmSx1gV/h3jmsoQxSbVbYr79rb83Ax56clalDxAJLaBpapBIC2sa9TU0J
-ZwWGhkkQaunQnYyJPubU
-=PqEJ
------END PGP SIGNATURE-----
-
---JYK4vJDZwFMowpUq--
+s390 should change this to barrier() instead of smp_mb() and hence
+should not use the generic versions.
