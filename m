@@ -1,22 +1,69 @@
-From: Joe Perches <joe@perches.com>
-Date: Mon, 11 Jan 2016 21:45:08 +0000
-Subject: Re: [PATCH v4 0/3] checkpatch: handling of memory barriers
-Message-Id: <1452548708.7773.57.camel@perches.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Mon, 04 Jan 2016 12:48:24 +0000
+Subject: [PATCH] soc_camera: cleanup control device on async_unbind
+Message-Id: <1451911723-10868-1-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1452509968-19778-1-git-send-email-mst@redhat.com>
-In-Reply-To: <1452509968-19778-1-git-send-email-mst-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "Michael S. Tsirkin" <mst-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Andy Whitcroft <apw-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Peter Zijlstra <peterz-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>, Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>, linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Cooper <andrew.cooper3-Sxgqhf6Nn4DQT0dZR+AlfA@public.gmane.org>, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Stefano Stabellini <stefano.stabellini-mvvWK6WmYclDPfheJLI6IQ@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>, linux-ia64-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linuxppc-dev-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org, linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sparclinux-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, linux-metag-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mips-6z/3iImG2C8G8FEW9MqTrA@public.gmane.org, x86-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, user-mode-linux-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, adi-buildroot-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-xtensa-PjhNF2WwrV/0Sa2dR60CXw@public.gmane.org, xen-devel-GuqFBffKawtpuQazS67q72D2FQJk+8+b@public.gmane.org, Ingo Molnar <mingo-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Tony Lindgren <tony-4v6yS6AI5VpBDgjK7y7TUQ@public.gmane.org>
+To: linux-sh@vger.kernel.org
+Cc: Wolfram Sang <wsa@the-dreams.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Mauro Carvalho Chehab <mchehab@osg.samsung.com>, linux-media@vger.kernel.org
 
-On Mon, 2016-01-11 at 13:00 +0200, Michael S. Tsirkin wrote:
-> As part of memory barrier cleanup, this patchset
-> extends checkpatch to make it easier to stop
-> incorrect memory barrier usage.
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Thanks Michael.
+I got the following WARN on a simple unbind/bind cycle:
 
-Acked-by: Joe Perches <joe@perches.com>
+root@Lager:/sys/bus/i2c/drivers/adv7180# echo 6-0020 > unbind
+root@Lager:/sys/bus/i2c/drivers/adv7180# echo 6-0020 > bind
+[   31.097652] adv7180 6-0020: chip found @ 0x20 (e6520000.i2c)
+[   31.123744] ------------[ cut here ]------------
+[   31.128413] WARNING: CPU: 3 PID: 873 at drivers/media/platform/soc_camera/soc_camera.c:1463 soc_camera_async_bound+0x40/0xa0()
+[   31.139896] CPU: 3 PID: 873 Comm: sh Not tainted 4.4.0-rc3-00062-ge8ae2c0b6bca2a #172
+[   31.147815] Hardware name: Generic R8A7790 (Flattened Device Tree)
+[   31.154056] Backtrace:
+[   31.156575] [<c0014bc0>] (dump_backtrace) from [<c0014d80>] (show_stack+0x20/0x24)
+[   31.164233]  r6:c05c5b33 r5:00000009 r4:00000000 r3:00404100
+[   31.170017] [<c0014d60>] (show_stack) from [<c01e2344>] (dump_stack+0x78/0x94)
+[   31.177344] [<c01e22cc>] (dump_stack) from [<c0029e7c>] (warn_slowpath_common+0x98/0xc4)
+[   31.185518]  r4:00000000 r3:00000000
+[   31.189172] [<c0029de4>] (warn_slowpath_common) from [<c0029fa0>] (warn_slowpath_null+0x2c/0x34)
+[   31.198043]  r8:eb38df28 r7:eb38c5d0 r6:eb38de80 r5:e6962810 r4:eb38de80
+[   31.204898] [<c0029f74>] (warn_slowpath_null) from [<c0356348>] (soc_camera_async_bound+0x40/0xa0)
+[   31.213955] [<c0356308>] (soc_camera_async_bound) from [<c03499a0>] (v4l2_async_test_notify+0x9c/0x108)
+[   31.223430]  r5:eb38c5ec r4:eb38de80
+[   31.227084] [<c0349904>] (v4l2_async_test_notify) from [<c0349dd8>] (v4l2_async_register_subdev+0x88/0xd0)
+[   31.236822]  r7:c07115c8 r6:c071160c r5:eb38c5ec r4:eb38de80
+[   31.242622] [<c0349d50>] (v4l2_async_register_subdev) from [<c0337040>] (adv7180_probe+0x2c8/0x3a4)
+[   31.251753]  r8:00000000 r7:00000001 r6:eb38de80 r5:ea973400 r4:eb38de10 r3:00000000
+[   31.259660] [<c0336d78>] (adv7180_probe) from [<c032dd80>] (i2c_device_probe+0x1a0/0x1e4)
+
+This gets fixed by clearing the control device pointer on async_unbind.
+
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+---
+
+I stumbled over this while playing with OF_DYNAMIC and rebinding various
+devices through that. I have to admit I am not actually using the camera
+interface besides binding to it. This shouldn't make a difference, though :)
+
+Stable material, I'd think.
+
+ drivers/media/platform/soc_camera/soc_camera.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/media/platform/soc_camera/soc_camera.c b/drivers/media/platform/soc_camera/soc_camera.c
+index dc98122e78dc50..361275c9f770d7 100644
+--- a/drivers/media/platform/soc_camera/soc_camera.c
++++ b/drivers/media/platform/soc_camera/soc_camera.c
+@@ -1493,6 +1493,8 @@ static void soc_camera_async_unbind(struct v4l2_async_notifier *notifier,
+ 					struct soc_camera_async_client, notifier);
+ 	struct soc_camera_device *icd = platform_get_drvdata(sasc->pdev);
+ 
++	icd->control = NULL;
++
+ 	if (icd->clk) {
+ 		v4l2_clk_unregister(icd->clk);
+ 		icd->clk = NULL;
+-- 
+2.1.4
 
