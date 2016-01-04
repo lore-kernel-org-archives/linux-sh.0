@@ -1,91 +1,95 @@
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Mon, 11 Jan 2016 19:10:18 +0000
-Subject: [PATCH 3/3 v2] media: soc_camera: rcar_vin: Add ARGB8888 caputre format support
-Message-Id: <1452539418-28480-4-git-send-email-ykaneko0929@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 04 Jan 2016 22:27:41 +0000
+Subject: [PATCH v2 06/13] ARM: shmobile: r8a7793: add audio DMAC to device tree
+Message-Id: <1451946468-20499-7-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1452539418-28480-1-git-send-email-ykaneko0929@gmail.com>
-In-Reply-To: <1452539418-28480-1-git-send-email-ykaneko0929@gmail.com>
+References: <1451946468-20499-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1451946468-20499-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
+Instantiate the two Audio DMA controllers in the r8a7791 device tree.
 
-This patch adds ARGB8888 capture format support for R-Car Gen3.
+Based on similar work for the r8a7791 by Kuninori Morimoto.
 
-Signed-off-by: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
-Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/boot/dts/r8a7793.dtsi | 58 ++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 58 insertions(+)
 
-v2 [Yoshihiro Kaneko]
-* As suggested by Sergei Shtylyov
-  - fix the coding style of the braces.
-
- drivers/media/platform/soc_camera/rcar_vin.c | 21 +++++++++++++++++++--
- 1 file changed, 19 insertions(+), 2 deletions(-)
-
-diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
-index f72de0b..9883629 100644
---- a/drivers/media/platform/soc_camera/rcar_vin.c
-+++ b/drivers/media/platform/soc_camera/rcar_vin.c
-@@ -124,7 +124,7 @@
- #define VNDMR_EXRGB		(1 << 8)
- #define VNDMR_BPSM		(1 << 4)
- #define VNDMR_DTMD_YCSEP	(1 << 1)
--#define VNDMR_DTMD_ARGB1555	(1 << 0)
-+#define VNDMR_DTMD_ARGB		(1 << 0)
+diff --git a/arch/arm/boot/dts/r8a7793.dtsi b/arch/arm/boot/dts/r8a7793.dtsi
+index 4a58994ba124..d9e284a6a34f 100644
+--- a/arch/arm/boot/dts/r8a7793.dtsi
++++ b/arch/arm/boot/dts/r8a7793.dtsi
+@@ -301,6 +301,64 @@
+ 		dma-channels = <15>;
+ 	};
  
- /* Video n Data Mode Register 2 bits */
- #define VNDMR2_VPS		(1 << 30)
-@@ -643,7 +643,7 @@ static int rcar_vin_setup(struct rcar_vin_priv *priv)
- 		output_is_yuv = true;
- 		break;
- 	case V4L2_PIX_FMT_RGB555X:
--		dmr = VNDMR_DTMD_ARGB1555;
-+		dmr = VNDMR_DTMD_ARGB;
- 		break;
- 	case V4L2_PIX_FMT_RGB565:
- 		dmr = 0;
-@@ -654,6 +654,14 @@ static int rcar_vin_setup(struct rcar_vin_priv *priv)
- 			dmr = VNDMR_EXRGB;
- 			break;
- 		}
-+	case V4L2_PIX_FMT_ARGB32:
-+		if (priv->chip = RCAR_GEN3) {
-+			dmr = VNDMR_EXRGB | VNDMR_DTMD_ARGB;
-+		} else {
-+			dev_err(icd->parent, "Not support format\n");
-+			return -EINVAL;
-+		}
-+		break;
- 	default:
- 		dev_warn(icd->parent, "Invalid fourcc format (0x%x)\n",
- 			 icd->current_fmt->host_fmt->fourcc);
-@@ -1304,6 +1312,14 @@ static const struct soc_mbus_pixelfmt rcar_vin_formats[] = {
- 		.order			= SOC_MBUS_ORDER_LE,
- 		.layout			= SOC_MBUS_LAYOUT_PACKED,
- 	},
-+	{
-+		.fourcc			= V4L2_PIX_FMT_ARGB32,
-+		.name			= "ARGB8888",
-+		.bits_per_sample	= 32,
-+		.packing		= SOC_MBUS_PACKING_NONE,
-+		.order			= SOC_MBUS_ORDER_LE,
-+		.layout			= SOC_MBUS_LAYOUT_PACKED,
-+	},
- };
- 
- static int rcar_vin_get_formats(struct soc_camera_device *icd, unsigned int idx,
-@@ -1611,6 +1627,7 @@ static int rcar_vin_set_fmt(struct soc_camera_device *icd,
- 	case V4L2_PIX_FMT_RGB32:
- 		can_scale = priv->chip != RCAR_E1;
- 		break;
-+	case V4L2_PIX_FMT_ARGB32:
- 	case V4L2_PIX_FMT_UYVY:
- 	case V4L2_PIX_FMT_YUYV:
- 	case V4L2_PIX_FMT_RGB565:
++	audma0: dma-controller@ec700000 {
++		compatible = "renesas,dmac-r8a7793", "renesas,rcar-dmac";
++		reg = <0 0xec700000 0 0x10000>;
++		interrupts =	<0 346 IRQ_TYPE_LEVEL_HIGH
++				 0 320 IRQ_TYPE_LEVEL_HIGH
++				 0 321 IRQ_TYPE_LEVEL_HIGH
++				 0 322 IRQ_TYPE_LEVEL_HIGH
++				 0 323 IRQ_TYPE_LEVEL_HIGH
++				 0 324 IRQ_TYPE_LEVEL_HIGH
++				 0 325 IRQ_TYPE_LEVEL_HIGH
++				 0 326 IRQ_TYPE_LEVEL_HIGH
++				 0 327 IRQ_TYPE_LEVEL_HIGH
++				 0 328 IRQ_TYPE_LEVEL_HIGH
++				 0 329 IRQ_TYPE_LEVEL_HIGH
++				 0 330 IRQ_TYPE_LEVEL_HIGH
++				 0 331 IRQ_TYPE_LEVEL_HIGH
++				 0 332 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "error",
++				"ch0", "ch1", "ch2", "ch3",
++				"ch4", "ch5", "ch6", "ch7",
++				"ch8", "ch9", "ch10", "ch11",
++				"ch12";
++		clocks = <&mstp5_clks R8A7793_CLK_AUDIO_DMAC0>;
++		clock-names = "fck";
++		power-domains = <&cpg_clocks>;
++		#dma-cells = <1>;
++		dma-channels = <13>;
++	};
++
++	audma1: dma-controller@ec720000 {
++		compatible = "renesas,dmac-r8a7793", "renesas,rcar-dmac";
++		reg = <0 0xec720000 0 0x10000>;
++		interrupts =	<0 347 IRQ_TYPE_LEVEL_HIGH
++				 0 333 IRQ_TYPE_LEVEL_HIGH
++				 0 334 IRQ_TYPE_LEVEL_HIGH
++				 0 335 IRQ_TYPE_LEVEL_HIGH
++				 0 336 IRQ_TYPE_LEVEL_HIGH
++				 0 337 IRQ_TYPE_LEVEL_HIGH
++				 0 338 IRQ_TYPE_LEVEL_HIGH
++				 0 339 IRQ_TYPE_LEVEL_HIGH
++				 0 340 IRQ_TYPE_LEVEL_HIGH
++				 0 341 IRQ_TYPE_LEVEL_HIGH
++				 0 342 IRQ_TYPE_LEVEL_HIGH
++				 0 343 IRQ_TYPE_LEVEL_HIGH
++				 0 344 IRQ_TYPE_LEVEL_HIGH
++				 0 345 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "error",
++				"ch0", "ch1", "ch2", "ch3",
++				"ch4", "ch5", "ch6", "ch7",
++				"ch8", "ch9", "ch10", "ch11",
++				"ch12";
++		clocks = <&mstp5_clks R8A7793_CLK_AUDIO_DMAC1>;
++		clock-names = "fck";
++		power-domains = <&cpg_clocks>;
++		#dma-cells = <1>;
++		dma-channels = <13>;
++	};
++
+ 	/* The memory map in the User's Manual maps the cores to bus numbers */
+ 	i2c0: i2c@e6508000 {
+ 		#address-cells = <1>;
 -- 
-1.9.1
+2.1.4
 
