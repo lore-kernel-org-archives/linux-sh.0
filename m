@@ -1,37 +1,48 @@
-From: =?UTF-8?q?Niklas=20S=C3=B6derlund?=  <niklas.soderlund+renesas@ragnatech.se>
-Date: Mon, 11 Jan 2016 02:17:45 +0000
-Subject: [PATCH 0/2] dmaengine: rcar-dmac: add iommu support for slave transfers
-Message-Id: <1452478667-30966-1-git-send-email-niklas.soderlund+renesas@ragnatech.se>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 04 Jan 2016 22:27:45 +0000
+Subject: [PATCH v2 10/13] ARM: shmobile: gose: enable sound DMA support via BUSIF in device tree
+Message-Id: <1451946468-20499-11-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1451946468-20499-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1451946468-20499-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
-Hi,
+Enable DMA transfer to/from SSIU in gose/r8a7791 device tree.
 
-In this series I add iommu support to rcar-damc. It is tested on on the
-lager board. It is tested by enabling CONFIG_IPMMU_VMSA and enable the
-ipmmu_ds node in r8a7790.dtsi. Once booted try using dma with a device
-behind the iommu, I used the mmc at /dev/mmcblk1.
+     DMA
+[MEM] -> [SSIU] -> [SSI]
 
-* Changes since RFC
-- Switch to use the dma-mapping api instead of using the iommu_map()
-  directly. Turns out the dma-mapper is much smarter then me...
-- Dropped the patch to expose domain->ops->pgsize_bitmap from within the
-  iommu api.
-- Dropped the patch showing how I tested the RFC.
+     DMA
+[MEM] <- [SSIU] <- [SSI]
 
+Based on similar work for the r8a7791/koelsch by Kuninori Morimoto.
 
-Niklas S=C3=B6derlund (2):
-  dmaengine: rcar-dmac: add iommu support for slave transfers
-  ARM: dts: r8a7790: add iommus to dmac0 and dmac1
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7793-gose.dts | 5 -----
+ 1 file changed, 5 deletions(-)
 
- arch/arm/boot/dts/r8a7790.dtsi | 30 ++++++++++++++++++++
- drivers/dma/sh/rcar-dmac.c     | 64 ++++++++++++++++++++++++++++++++++++++=
-+---
- 2 files changed, 90 insertions(+), 4 deletions(-)
-
---
-2.7.0
+diff --git a/arch/arm/boot/dts/r8a7793-gose.dts b/arch/arm/boot/dts/r8a7793-gose.dts
+index 0ab0abb9f889..4a7048d676c8 100644
+--- a/arch/arm/boot/dts/r8a7793-gose.dts
++++ b/arch/arm/boot/dts/r8a7793-gose.dts
+@@ -321,11 +321,6 @@
+ 	};
+ };
+ 
+-&ssi0 {
+-	no-busif;
+-};
+-
+ &ssi1 {
+-	no-busif;
+ 	shared-pin;
+ };
+-- 
+2.1.4
 
