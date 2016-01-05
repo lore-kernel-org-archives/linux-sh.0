@@ -1,57 +1,28 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Tue, 12 Jan 2016 17:28:51 +0000
-Subject: [PATCH] regulator: da9210: fix lockdep warning
-Message-Id: <1452619744-14857-1-git-send-email-wsa@the-dreams.de>
+From: Richard Weinberger <richard@nod.at>
+Date: Tue, 05 Jan 2016 23:12:42 +0000
+Subject: Re: [PATCH v2 12/32] x86/um: reuse asm-generic/barrier.h
+Message-Id: <568C4DEA.5070601@nod.at>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1451572003-2440-1-git-send-email-mst@redhat.com>
+ <1451572003-2440-13-git-send-email-mst@redhat.com>
+In-Reply-To: <1451572003-2440-13-git-send-email-mst-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: Wolfram Sang <wsa@the-dreams.de>, Support Opensource <support.opensource@diasemi.com>, Liam Girdwood <lgirdwood@gmail.com>, Mark Brown <broonie@kernel.org>, linux-kernel@vger.kernel.org
+To: "Michael S. Tsirkin" <mst-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Peter Zijlstra <peterz-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>, Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>, linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Cooper <andrew.cooper3-Sxgqhf6Nn4DQT0dZR+AlfA@public.gmane.org>, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Stefano Stabellini <stefano.stabellini-mvvWK6WmYclDPfheJLI6IQ@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>, linux-ia64-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linuxppc-dev-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org, linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sparclinux-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, linux-metag-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mips-6z/3iImG2C8G8FEW9MqTrA@public.gmane.org, x86-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, user-mode-linux-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, adi-buildroot-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-xtensa-PjhNF2WwrV/0Sa2dR60CXw@public.gmane.org, xen-devel-GuqFBffKawtpuQazS67q72D2FQJk+8+b@public.gmane.org, Jeff Dike <jdike-OPE4K8JWMJJBDgjK7y7TUQ@public.gmane.org>, Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Borislav Petkov <bp-l3A5Bk7waGM@public.gmane.org>, Andy
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Am 31.12.2015 um 20:07 schrieb Michael S. Tsirkin:
+> On x86/um CONFIG_SMP is never defined.  As a result, several macros
+> match the asm-generic variant exactly. Drop the local definitions and
+> pull in asm-generic/barrier.h instead.
+> 
+> This is in preparation to refactoring this code area.
+> 
+> Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+> Acked-by: Arnd Bergmann <arnd@arndb.de>
 
-Commit 70cfef26267474 ("regulator: Add lockdep asserts to help detecting
-locking misuse") successfully created this WARN, let's fix it:
+Acked-by: Richard Weinberger <richard@nod.at>
 
-[    1.218660] WARNING: CPU: 0 PID: 553 at drivers/regulator/core.c:3646 regulator_notifier_call_chain+0x5c/0x88()
-...
-[    1.220278] [<c0246c20>] (regulator_notifier_call_chain) from [<c02498b4>] (da9210_irq_handler+0x74/0x10c)
-[    1.220412]  r7:c0080cac r6:eb1daa00 r5:e64bbf10 r4:00000002
-[    1.220547] [<c0249840>] (da9210_irq_handler) from [<c0080cd8>] (irq_thread_fn+0x2c/0x44)
-...
-
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
----
-
-Tested on a Renesas Lager board, running in a reboot-cycle for an hour now.
-
- drivers/regulator/da9210-regulator.c | 5 +++++
- 1 file changed, 5 insertions(+)
-
-diff --git a/drivers/regulator/da9210-regulator.c b/drivers/regulator/da9210-regulator.c
-index 8b3cc9f0cd64c0..01c0e3709b6659 100644
---- a/drivers/regulator/da9210-regulator.c
-+++ b/drivers/regulator/da9210-regulator.c
-@@ -132,6 +132,8 @@ static irqreturn_t da9210_irq_handler(int irq, void *data)
- 	if (error < 0)
- 		goto error_i2c;
- 
-+	mutex_lock(&chip->rdev->mutex);
-+
- 	if (val & DA9210_E_OVCURR) {
- 		regulator_notifier_call_chain(chip->rdev,
- 					      REGULATOR_EVENT_OVER_CURRENT,
-@@ -155,6 +157,9 @@ static irqreturn_t da9210_irq_handler(int irq, void *data)
- 					      NULL);
- 		handled |= DA9210_E_VMAX;
- 	}
-+
-+	mutex_unlock(&chip->rdev->mutex);
-+
- 	if (handled) {
- 		/* Clear handled events */
- 		error = regmap_write(chip->regmap, DA9210_REG_EVENT_B, handled);
--- 
-2.1.4
-
+Thanks,
+//richard
