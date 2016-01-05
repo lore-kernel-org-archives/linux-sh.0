@@ -1,52 +1,138 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Sat, 02 Jan 2016 21:15:19 +0000
-Subject: Re: [PATCH 0/3] i2c: rcar: adapt PM usage to multi master case
-Message-Id: <20160102211519.GE1589@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="TD8GDToEDw0WLGOL"
+From: "Michael S. Tsirkin" <mst@redhat.com>
+Date: Tue, 05 Jan 2016 16:22:18 +0000
+Subject: [PATCH] sh: support a 2-byte xchg
+Message-Id: <1452010849-25546-1-git-send-email-mst@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450889794-9509-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1450889794-9509-1-git-send-email-wsa@the-dreams.de>
-To: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Geert Uytterhoeven <geert@linux-m68k.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-kernel@vger.kernel.org
+Cc: Thomas Gleixner <tglx@linutronix.de>, linux-sh@vger.kernel.org
 
+At the moment, xchg on sh only supports 4 and 1 byte values, so using it
+from smp_store_mb means attempts to store a 2 byte value using this
+macro fail.
 
---TD8GDToEDw0WLGOL
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+And this happens to be exactly what virtio drivers want to do.
 
-On Wed, Dec 23, 2015 at 05:56:31PM +0100, Wolfram Sang wrote:
-> If we are in a multi-master scenario, we need to block runtime PM so the
-> arbitration circuit stays awake.
->=20
-> So, we define a new binding and adapt the i2c-rcar driver to have an exam=
-ple
-> implementation.
+Add a 2-byte xchg variant.
 
-Applied to for-next, thanks!
+Suggested-by: Peter Zijlstra <peterz@infradead.org>
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+---
 
+Notes:
+	- compiled only
+	- arch maintainers, this is a dependency of
+	  virtio driver work, so please ack, do not
+	  cherry-pick
 
---TD8GDToEDw0WLGOL
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+ arch/sh/include/asm/cmpxchg-grb.h  | 22 ++++++++++++++++++++++
+ arch/sh/include/asm/cmpxchg-irq.h  | 11 +++++++++++
+ arch/sh/include/asm/cmpxchg-llsc.h | 21 +++++++++++++++++++++
+ arch/sh/include/asm/cmpxchg.h      |  3 +++
+ 4 files changed, 57 insertions(+)
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBAgAGBQJWiD3mAAoJEBQN5MwUoCm2EukP/0HDtUfyfVCJa2M6e+42+jYD
-6uP42zZwp99PKj6wxeQclxN+uHw7zzFNGzrqKg/ckG7QxQW3ZleRSxKeN34rgXwQ
-9XhvuhbDJFp4GdUUHVOm2A+WYkem9TJflPF58zph2D/JIcYw1ASM5HtGFQyjXA+O
-uPY6u0xbz9nyhtvQajDnzIZm3WQLMgUqxllo3l056qJN21BkOvRAkf66G0jbBny9
-QnJMu/iERKlOmulNAck5eW16lYgtwijY5Rb4dFsB7Xz1CxL0np4mw6qRgGnmI22U
-qSp4MIb1VkHJzseg2UjmJ+DvxswEo+sqnQu3V63I//XnV7kl2iBxMzMApMuovDZq
-nwShaseJhvNRHCvfid2Ci/dPZGI2LHRjS+/hDMDET5Dkmm2t6CNlcj4u4L0A3R4/
-8H9RKNqM/0Vqyk+flwy6Elx4MPp5p/tI/Ov0Lr4ZLA8+ex0lMvsL6CYwSZOS1rZR
-8e3Kq3VCSpLBjzpWT8JPoT0dgdSyxWFJZAqfMM5TxM/6fJZR2dhIa2Q3OT/4OwMW
-R22aPL+HlQ5B0X2SeqQgBROkS70hyYCzUFvTbTqwScOuuxG/b7LCraDZU66cnHJK
-XXFEly5NkoEytBbwtZceLu7738Gna7VIom2rziBceAb+mR2QjV7QKGFEFP9OaLm1
-qahnKg0o6J83vH7BBubk
-=fRNR
------END PGP SIGNATURE-----
-
---TD8GDToEDw0WLGOL--
+diff --git a/arch/sh/include/asm/cmpxchg-grb.h b/arch/sh/include/asm/cmpxchg-grb.h
+index f848dec..2ed557b 100644
+--- a/arch/sh/include/asm/cmpxchg-grb.h
++++ b/arch/sh/include/asm/cmpxchg-grb.h
+@@ -23,6 +23,28 @@ static inline unsigned long xchg_u32(volatile u32 *m, unsigned long val)
+ 	return retval;
+ }
+ 
++static inline unsigned long xchg_u16(volatile u16 *m, unsigned long val)
++{
++	unsigned long retval;
++
++	__asm__ __volatile__ (
++		"   .align  2             \n\t"
++		"   mova    1f,   r0      \n\t" /* r0 = end point */
++		"   mov    r15,   r1      \n\t" /* r1 = saved sp */
++		"   mov    #-6,   r15     \n\t" /* LOGIN */
++		"   mov.w  @%1,   %0      \n\t" /* load  old value */
++		"   extu.w  %0,   %0      \n\t" /* extend as unsigned */
++		"   mov.w   %2,   @%1     \n\t" /* store new value */
++		"1: mov     r1,   r15     \n\t" /* LOGOUT */
++		: "=&r" (retval),
++		  "+r"  (m),
++		  "+r"  (val)		/* inhibit r15 overloading */
++		:
++		: "memory" , "r0", "r1");
++
++	return retval;
++}
++
+ static inline unsigned long xchg_u8(volatile u8 *m, unsigned long val)
+ {
+ 	unsigned long retval;
+diff --git a/arch/sh/include/asm/cmpxchg-irq.h b/arch/sh/include/asm/cmpxchg-irq.h
+index bd11f63..f888772 100644
+--- a/arch/sh/include/asm/cmpxchg-irq.h
++++ b/arch/sh/include/asm/cmpxchg-irq.h
+@@ -14,6 +14,17 @@ static inline unsigned long xchg_u32(volatile u32 *m, unsigned long val)
+ 	return retval;
+ }
+ 
++static inline unsigned long xchg_u16(volatile u16 *m, unsigned long val)
++{
++	unsigned long flags, retval;
++
++	local_irq_save(flags);
++	retval = *m;
++	*m = val;
++	local_irq_restore(flags);
++	return retval;
++}
++
+ static inline unsigned long xchg_u8(volatile u8 *m, unsigned long val)
+ {
+ 	unsigned long flags, retval;
+diff --git a/arch/sh/include/asm/cmpxchg-llsc.h b/arch/sh/include/asm/cmpxchg-llsc.h
+index 4713666..dab6c58 100644
+--- a/arch/sh/include/asm/cmpxchg-llsc.h
++++ b/arch/sh/include/asm/cmpxchg-llsc.h
+@@ -22,6 +22,27 @@ static inline unsigned long xchg_u32(volatile u32 *m, unsigned long val)
+ 	return retval;
+ }
+ 
++static inline unsigned long xchg_u16(volatile u16 *m, unsigned long val)
++{
++	unsigned long retval;
++	unsigned long tmp;
++
++	__asm__ __volatile__ (
++		"1:					\n\t"
++		"movli.l	@%2, %0	! xchg_u16	\n\t"
++		"mov		%0, %1			\n\t"
++		"mov		%3, %0			\n\t"
++		"movco.l	%0, @%2			\n\t"
++		"bf		1b			\n\t"
++		"synco					\n\t"
++		: "=&z"(tmp), "=&r" (retval)
++		: "r" (m), "r" (val & 0xffff)
++		: "t", "memory"
++	);
++
++	return retval;
++}
++
+ static inline unsigned long xchg_u8(volatile u8 *m, unsigned long val)
+ {
+ 	unsigned long retval;
+diff --git a/arch/sh/include/asm/cmpxchg.h b/arch/sh/include/asm/cmpxchg.h
+index 85c97b18..5225916 100644
+--- a/arch/sh/include/asm/cmpxchg.h
++++ b/arch/sh/include/asm/cmpxchg.h
+@@ -27,6 +27,9 @@ extern void __xchg_called_with_bad_pointer(void);
+ 	case 4:						\
+ 		__xchg__res = xchg_u32(__xchg_ptr, x);	\
+ 		break;					\
++	case 2:						\
++		__xchg__res = xchg_u16(__xchg_ptr, x);	\
++		break;					\
+ 	case 1:						\
+ 		__xchg__res = xchg_u8(__xchg_ptr, x);	\
+ 		break;					\
+-- 
+MST
