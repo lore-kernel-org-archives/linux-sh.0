@@ -1,78 +1,103 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 15 Jan 2016 12:14:10 +0000
-Subject: Re: [PATCH v3 14/14] ARM: shmobile: r8a7793: enable audio DMAC in device tree
-Message-Id: <20160115121405.GA4005@verge.net.au>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Tue, 05 Jan 2016 13:00:30 +0000
+Subject: [PATCH v2 3/4] PCI: rcar: Add runtime PM support to pcie-rcar
+Message-Id: <1451998831-27705-4-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1452825487-15931-1-git-send-email-horms+renesas@verge.net.au>
- <1452825487-15931-15-git-send-email-horms+renesas@verge.net.au>
- <CAMuHMdXHixAuiYayxmvOLLm39w4iTosVucRtN7ASuHGuY7p5-Q@mail.gmail.com>
-In-Reply-To: <CAMuHMdXHixAuiYayxmvOLLm39w4iTosVucRtN7ASuHGuY7p5-Q@mail.gmail.com>
+References: <1451998831-27705-1-git-send-email-phil.edworthy@renesas.com>
+In-Reply-To: <1451998831-27705-1-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon Horman <horms@verge.net.au>, Bjorn Helgaas <bhelgaas@google.com>
+Cc: Wolfram Sang <wsa@the-dreams.de>, Geert Uytterhoeven <geert@linux-m68k.org>, linux-kernel@vger.kernel.org, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org, Phil Edworthy <phil.edworthy@renesas.com>
 
-On Fri, Jan 15, 2016 at 11:45:35AM +0100, Geert Uytterhoeven wrote:
-> Hi Simon,
-> 
-> On Fri, Jan 15, 2016 at 3:38 AM, Simon Horman
-> <horms+renesas@verge.net.au> wrote:
-> > --- a/arch/arm/boot/dts/r8a7793.dtsi
-> > +++ b/arch/arm/boot/dts/r8a7793.dtsi
-> > @@ -1201,52 +1201,119 @@
-> >                 status = "disabled";
-> >
-> >                 rcar_sound,dvc {
-> > -                       dvc0: dvc@0 { };
-> > -                       dvc1: dvc@1 { };
-> > +                       dvc0: dvc@0 {
-> > +                               dmas = <&audma0 0xbc>;
-> > +                               dma-names = "tx";
-> > +                       };
-> > +                       dvc1: dvc@1 {
-> > +                               dmas = <&audma0 0xbe>;
-> > +                               dma-names = "tx";
-> > +                       };
-> >                 };
-> > +
-> >                 rcar_sound,src {
-> > -                       src0: src@0 { };
-> > -                       src1: src@1 { };
-> > -                       src2: src@2 { };
-> > -                       src3: src@3 { };
-> > -                       src4: src@4 { };
-> > -                       src5: src@5 { };
-> > -                       src6: src@6 { };
-> > -                       src7: src@7 { };
-> > -                       src8: src@8 { };
-> > -                       src9: src@9 { };
-> > +                       src0: src@0 {
-> > +                               interrupts = <0 352 IRQ_TYPE_LEVEL_HIGH>;
-> 
-> <GIC_SPI ...> (and more below)
-> 
-> >                 rcar_sound,ssi {
-> >                         ssi0: ssi@0 {
-> >                                 interrupts = <0 370 IRQ_TYPE_LEVEL_HIGH>;
-> 
-> <GIC_SPI ...>
-> 
-> Ah, you already let a few pass through before ;-)
+If runtime PM is enabled in the kernel config, simply enable the
+clocks once during probe.
 
-Thanks, I'll fix this up.
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+---
+ v2:
+   - No changes.
+---
+ drivers/pci/host/pcie-rcar.c | 44 ++++++++++++++++++++++++++++++++------------
+ 1 file changed, 32 insertions(+), 12 deletions(-)
 
-> > +                               dmas = <&audma0 0x01>, <&audma1 0x02>, <&audma0 0x15>, <&audma1 0x16>;
-> > +                               dma-names = "rx", "tx", "rxu", "txu";
-> >                         };
-> 
-> Gr{oetje,eeting}s,
-> 
->                         Geert
-> 
-> --
-> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-> 
-> In personal conversations with technical people, I call myself a hacker. But
-> when I'm talking to journalists I just say "programmer" or something like that.
->                                 -- Linus Torvalds
-> 
+diff --git a/drivers/pci/host/pcie-rcar.c b/drivers/pci/host/pcie-rcar.c
+index 31ad93a..7e13fbb 100644
+--- a/drivers/pci/host/pcie-rcar.c
++++ b/drivers/pci/host/pcie-rcar.c
+@@ -27,6 +27,7 @@
+ #include <linux/of_platform.h>
+ #include <linux/pci.h>
+ #include <linux/platform_device.h>
++#include <linux/pm_runtime.h>
+ #include <linux/slab.h>
+ 
+ #define DRV_NAME "rcar-pcie"
+@@ -1025,32 +1026,51 @@ static int rcar_pcie_probe(struct platform_device *pdev)
+ 	 if (err)
+ 		return err;
+ 
+-	if (IS_ENABLED(CONFIG_PCI_MSI)) {
+-		err = rcar_pcie_enable_msi(pcie);
+-		if (err < 0) {
+-			dev_err(&pdev->dev,
+-				"failed to enable MSI support: %d\n",
+-				err);
+-			return err;
+-		}
+-	}
+-
+ 	of_id = of_match_device(rcar_pcie_of_match, pcie->dev);
+ 	if (!of_id || !of_id->data)
+ 		return -EINVAL;
+ 	hw_init_fn = of_id->data;
+ 
++	pm_runtime_enable(pcie->dev);
++	err = pm_runtime_get_sync(pcie->dev);
++	if (err < 0) {
++		dev_err(pcie->dev, "pm_runtime_get_sync failed\n");
++		goto err_pm_disable;
++	}
++
+ 	/* Failure to get a link might just be that no cards are inserted */
+ 	err = hw_init_fn(pcie);
+ 	if (err) {
+ 		dev_info(&pdev->dev, "PCIe link down\n");
+-		return 0;
++		err = 0;
++		goto err_pm_put;
+ 	}
+ 
+ 	data = rcar_pci_read_reg(pcie, MACSR);
+ 	dev_info(&pdev->dev, "PCIe x%d: link up\n", (data >> 20) & 0x3f);
+ 
+-	return rcar_pcie_enable(pcie);
++	if (IS_ENABLED(CONFIG_PCI_MSI)) {
++		err = rcar_pcie_enable_msi(pcie);
++		if (err < 0) {
++			dev_err(&pdev->dev,
++				"failed to enable MSI support: %d\n",
++				err);
++			goto err_pm_put;
++		}
++	}
++
++	err = rcar_pcie_enable(pcie);
++	if (err)
++		goto err_pm_put;
++
++	return 0;
++
++err_pm_put:
++	pm_runtime_put(pcie->dev);
++
++err_pm_disable:
++	pm_runtime_disable(pcie->dev);
++	return err;
+ }
+ 
+ static struct platform_driver rcar_pcie_driver = {
+-- 
+2.5.0
+
