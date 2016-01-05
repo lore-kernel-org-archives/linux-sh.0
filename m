@@ -1,26 +1,31 @@
-From: Borislav Petkov <bp@alien8.de>
-Date: Mon, 25 Jan 2016 21:49:56 +0000
-Subject: Re: [PATCH v3 00/17] Enhance iomem search interfaces and support EINJ to NVDIMM
-Message-Id: <20160125214956.GD4322@pd.tnic>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Tue, 05 Jan 2016 13:00:27 +0000
+Subject: [PATCH v2 0/4] Various R-Car PCIe patches
+Message-Id: <1451998831-27705-1-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1452020068-26492-1-git-send-email-toshi.kani@hpe.com>
- <20160125191804.GE14030@pd.tnic>
- <1453757661.834.99.camel@hpe.com>
-In-Reply-To: <1453757661.834.99.camel@hpe.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Toshi Kani <toshi.kani@hpe.com>
-Cc: akpm@linux-foundation.org, torvalds@linux-foundation.org, rafael.j.wysocki@intel.com, dan.j.williams@intel.com, dyoung@redhat.com, x86@kernel.org, linux-ia64@vger.kernel.org, linux-parisc@vger.kernel.org, linux-sh@vger.kernel.org, kexec@lists.infradead.org, xen-devel@lists.xenproject.org, linux-samsung-soc@vger.kernel.org, linux-arch@vger.kernel.org, linux-mm@kvack.org, linux-nvdimm@lists.01.org, linux-acpi@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Simon Horman <horms@verge.net.au>, Bjorn Helgaas <bhelgaas@google.com>
+Cc: Wolfram Sang <wsa@the-dreams.de>, Geert Uytterhoeven <geert@linux-m68k.org>, linux-kernel@vger.kernel.org, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org, Phil Edworthy <phil.edworthy@renesas.com>
 
-On Mon, Jan 25, 2016 at 02:34:21PM -0700, Toshi Kani wrote:
-> I verified the patches and tested the kernel in the tree. All look
-> good.
+The first patch removes code that is no longer used. The next two allow us to
+use runtim PM. The last patch is for PHY setup in order to get PCIe compliance
+apparently. For that last patch, I've been told that this is what I must set.
 
-Thanks!
+v2:
+ PATCH 2/4 - Use readl_poll_timeout_atomic when waiting until we are in L1.
+ PATCh 4/4 - Added comment about where the PHY settings come from.
+
+Phil Edworthy (4):
+  PCI: rcar: remove unused pci_sys_data structure in pcie-rcar
+  PCI: rcar: Support runtime PM link state L1 handling in pcie-rcar
+  PCI: rcar: Add runtime PM support to pcie-rcar
+  PCI: rcar: Add Gen2 PHY setup to pcie-rcar
+
+ drivers/pci/host/pcie-rcar.c | 115 ++++++++++++++++++++++++++++++++++---------
+ 1 file changed, 91 insertions(+), 24 deletions(-)
 
 -- 
-Regards/Gruss,
-    Boris.
+2.5.0
 
-ECO tip #101: Trim your mails when you reply.
