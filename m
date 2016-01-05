@@ -1,47 +1,83 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 25 Jan 2016 19:03:51 +0000
-Subject: Re: [PATCH 1/2] v4l: vsp1: Add missing #include <linux/sched.h>
-Message-Id: <11540092.dX60pYHxh5@avalon>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Tue, 05 Jan 2016 13:00:31 +0000
+Subject: [PATCH v2 4/4] PCI: rcar: Add Gen2 PHY setup to pcie-rcar
+Message-Id: <1451998831-27705-5-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1452536727-19538-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1452536727-19538-1-git-send-email-geert+renesas@glider.be>
+References: <1451998831-27705-1-git-send-email-phil.edworthy@renesas.com>
+In-Reply-To: <1451998831-27705-1-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Simon Horman <horms@verge.net.au>, Bjorn Helgaas <bhelgaas@google.com>
+Cc: Wolfram Sang <wsa@the-dreams.de>, Geert Uytterhoeven <geert@linux-m68k.org>, linux-kernel@vger.kernel.org, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org, Phil Edworthy <phil.edworthy@renesas.com>
 
-Hi Geert,
+For PCIe compliance, the PHY registers need setting as per the
+manual.
 
-On Monday 25 January 2016 08:50:04 Geert Uytterhoeven wrote:
-> On Mon, Jan 25, 2016 at 1:37 AM, Laurent Pinchart wrote:
-> > I wonder, though, whether the right solution wouldn't be to fix wait.h and
-> > sched.h. They seem to depend on each other.
-> 
-> Include shuffling involving sched.h usually breaks something else, due to
-> include hell.
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+---
+v2:
+  - Added comment about where the PHY settings come from.
+---
+ drivers/pci/host/pcie-rcar.c | 31 ++++++++++++++++++++++++++++---
+ 1 file changed, 28 insertions(+), 3 deletions(-)
 
-Hence why I think that's where the real fix should go :-)
-
-> >> ---
-> >> Against renesas-drivers-2016-01-05-v4.4-rc8
-> >> 
-> >>  drivers/media/platform/vsp1/vsp1_pipe.c | 1 +
-> >>  1 file changed, 1 insertion(+)
-> >> 
-> >> diff --git a/drivers/media/platform/vsp1/vsp1_pipe.c
-> >> b/drivers/media/platform/vsp1/vsp1_pipe.c index
-> >> 96f0e7d4c400172e..2283e64f12faadd1 100644
-> >> --- a/drivers/media/platform/vsp1/vsp1_pipe.c
-> >> +++ b/drivers/media/platform/vsp1/vsp1_pipe.c
-> >> @@ -13,6 +13,7 @@
-> >> 
-> >>  #include <linux/delay.h>
-> >>  #include <linux/list.h>
-> >> 
-> >> +#include <linux/sched.h>
-
+diff --git a/drivers/pci/host/pcie-rcar.c b/drivers/pci/host/pcie-rcar.c
+index 7e13fbb..12be16a 100644
+--- a/drivers/pci/host/pcie-rcar.c
++++ b/drivers/pci/host/pcie-rcar.c
+@@ -104,6 +104,11 @@
+ #define H1_PCIEPHYDOUTR		0x040014
+ #define H1_PCIEPHYSR		0x040018
+ 
++/* R-Car Gen2 PHY */
++#define GEN2_PCIEPHYADDR	0x780
++#define GEN2_PCIEPHYDATA	0x784
++#define GEN2_PCIEPHYCTRL	0x78c
++
+ #define INT_PCI_MSI_NR	32
+ 
+ #define RCONF(x)	(PCICONF(0)+(x))
+@@ -599,6 +604,26 @@ static int rcar_pcie_hw_init_h1(struct rcar_pcie *pcie)
+ 	return -ETIMEDOUT;
+ }
+ 
++static int rcar_pcie_hw_init_gen2(struct rcar_pcie *pcie)
++{
++	/*
++	 * These settings come from the R-Car Series, 2nd Generation User's
++	 * Manual, section 50.3.1 (2) Initialization of the physical layer.
++	 */
++	rcar_pci_write_reg(pcie, 0x000f0030, GEN2_PCIEPHYADDR);
++	rcar_pci_write_reg(pcie, 0x00381203, GEN2_PCIEPHYDATA);
++	rcar_pci_write_reg(pcie, 0x00000001, GEN2_PCIEPHYCTRL);
++	rcar_pci_write_reg(pcie, 0x00000006, GEN2_PCIEPHYCTRL);
++
++	rcar_pci_write_reg(pcie, 0x000f0054, GEN2_PCIEPHYADDR);
++	/* The following value is for DC connection, no termination resistor */
++	rcar_pci_write_reg(pcie, 0x13802007, GEN2_PCIEPHYDATA);
++	rcar_pci_write_reg(pcie, 0x00000001, GEN2_PCIEPHYCTRL);
++	rcar_pci_write_reg(pcie, 0x00000006, GEN2_PCIEPHYCTRL);
++
++	return rcar_pcie_hw_init(pcie);
++}
++
+ static int rcar_msi_alloc(struct rcar_msi *chip)
+ {
+ 	int msi;
+@@ -938,9 +963,9 @@ static int rcar_pcie_parse_map_dma_ranges(struct rcar_pcie *pcie,
+ 
+ static const struct of_device_id rcar_pcie_of_match[] = {
+ 	{ .compatible = "renesas,pcie-r8a7779", .data = rcar_pcie_hw_init_h1 },
+-	{ .compatible = "renesas,pcie-rcar-gen2", .data = rcar_pcie_hw_init },
+-	{ .compatible = "renesas,pcie-r8a7790", .data = rcar_pcie_hw_init },
+-	{ .compatible = "renesas,pcie-r8a7791", .data = rcar_pcie_hw_init },
++	{ .compatible = "renesas,pcie-rcar-gen2", .data = rcar_pcie_hw_init_gen2 },
++	{ .compatible = "renesas,pcie-r8a7790", .data = rcar_pcie_hw_init_gen2 },
++	{ .compatible = "renesas,pcie-r8a7791", .data = rcar_pcie_hw_init_gen2 },
+ 	{ .compatible = "renesas,pcie-r8a7795", .data = rcar_pcie_hw_init },
+ 	{},
+ };
 -- 
-Regards,
-
-Laurent Pinchart
+2.5.0
 
