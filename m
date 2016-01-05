@@ -1,54 +1,98 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 04 Jan 2016 14:56:52 +0000
-Subject: Re: [PATCH 2/4] PCI: rcar: Support runtime PM link state L1 handling in pcie-rcar
-Message-Id: <CAMuHMdVthWRkwQua0bFOSkYrsiaEVWeOWEnQJBOD=8sxL-YJMQ@mail.gmail.com>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Tue, 05 Jan 2016 13:00:29 +0000
+Subject: [PATCH v2 2/4] PCI: rcar: Support runtime PM link state L1 handling in pcie-rcar
+Message-Id: <1451998831-27705-3-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450358557-28376-1-git-send-email-phil.edworthy@renesas.com>
-	<1450358557-28376-3-git-send-email-phil.edworthy@renesas.com>
-	<20151217133058.GA20372@katana>
-	<PS1PR06MB1180304088ECF5384C497E40F5E10@PS1PR06MB1180.apcprd06.prod.outlook.com>
-	<20151218140412.GA4595@katana>
-	<KL1PR06MB1174165C6112327548CD29DDF5E40@KL1PR06MB1174.apcprd06.prod.outlook.com>
-	<CAMuHMdUKHO50n_OAhx-OcZX9FwN+dUbZCHnjP4HaPqgt3j=MzQ@mail.gmail.com>
-	<HK2PR0601MB1393CE3EA6A72D0F74498251F5F20@HK2PR0601MB1393.apcprd06.prod.outlook.com>
-In-Reply-To: <HK2PR0601MB1393CE3EA6A72D0F74498251F5F20@HK2PR0601MB1393.apcprd06.prod.outlook.com>
+References: <1451998831-27705-1-git-send-email-phil.edworthy@renesas.com>
+In-Reply-To: <1451998831-27705-1-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Phil Edworthy <phil.edworthy@renesas.com>
-Cc: Wolfram Sang <wsa@the-dreams.de>, Simon Horman <horms@verge.net.au>, Bjorn Helgaas <bhelgaas@google.com>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "linux-pci@vger.kernel.org" <linux-pci@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+To: Simon Horman <horms@verge.net.au>, Bjorn Helgaas <bhelgaas@google.com>
+Cc: Wolfram Sang <wsa@the-dreams.de>, Geert Uytterhoeven <geert@linux-m68k.org>, linux-kernel@vger.kernel.org, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org, Phil Edworthy <phil.edworthy@renesas.com>
 
-Hi Phil,
+The R-Car PCIe host controller does not handle L1 ASPM. Instead, the
+hardware needs assistance to transition to L1. When the controller
+has received a PM_ENTER_L1 DLLP, we can't access a card's config regs
+until we have got it out of L1 link state. The host controller will
+handle this as long as it has also been transitioned to L1 link state.
 
-On Mon, Jan 4, 2016 at 3:18 PM, Phil Edworthy <phil.edworthy@renesas.com> wrote:
-> On 21 December 2015 13:17, Geert Uytterhoeven wrote:
->> On Mon, Dec 21, 2015 at 11:52 AM, Phil Edworthy
->> <phil.edworthy@renesas.com> wrote:
->> > On 18 December 2015 14:04, Wolfram Sang wrote:
->> >> > Since the hardware doesn't support hot plug, I believe this loop will
->> >> > always exit very quickly. Unless someone has taken a hammer to the HW
->> >> > of course.
->> >>
->> >> I know what you mean. But since readl_poll_timeout() makes it easy, we
->> >> should better be safe than sorry.
->> > Hmm, I changed the code, but now it doesn't come out of suspend unless
->> > sleep_us passed to readl_poll_timeout is 0. Any reason you can think of?
->>
->> Timers or interrupts disabled?
->>
->> Does the might_sleep_if() scream if CONFIG_DEBUG_ATOMIC_SLEEP=y?
-> Yes, it does indeed scream. Would you recommend to still use readl_poll_timeout
-> with sleep_us set to 0?
+So, when attempting a config access, check to see if the card has gone
+into L1, and if so, do the same for the host controller.
 
-Seems like people hit this before: use readl_poll_timeout_atomic().
+This is based on a patch by Hien Dang <hien.dang.eb@rvc.renesas.com>
 
-Gr{oetje,eeting}s,
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+---
+v2:
+ - Use readl_poll_timeout_atomic when waiting until we are in L1.
+---
+ drivers/pci/host/pcie-rcar.c | 31 +++++++++++++++++++++++++++++++
+ 1 file changed, 31 insertions(+)
 
-                        Geert
+diff --git a/drivers/pci/host/pcie-rcar.c b/drivers/pci/host/pcie-rcar.c
+index c72c0ae..31ad93a 100644
+--- a/drivers/pci/host/pcie-rcar.c
++++ b/drivers/pci/host/pcie-rcar.c
+@@ -15,6 +15,7 @@
+ #include <linux/clk.h>
+ #include <linux/delay.h>
+ #include <linux/interrupt.h>
++#include <linux/iopoll.h>
+ #include <linux/irq.h>
+ #include <linux/irqdomain.h>
+ #include <linux/kernel.h>
+@@ -83,6 +84,14 @@
+ #define MACSR			0x011054
+ #define MACCTLR			0x011058
+ #define  SCRAMBLE_DISABLE	(1 << 27)
++#define PMSR			0x01105c
++#define  L1FAEG			(1 << 31)
++#define  PM_ENTER_L1RX		(1 << 23)
++#define  PMSTATE		(7 << 16)
++#define  PMSTATE_L1		(3 << 16)
++#define PMCTLR			0x011060
++#define  L1_INIT		(1 << 31)
++
+ 
+ /* R-Car H1 PHY */
+ #define H1_PCIEPHYADRR		0x04000c
+@@ -175,6 +184,8 @@ static int rcar_pcie_config_access(struct rcar_pcie *pcie,
+ 		unsigned int devfn, int where, u32 *data)
+ {
+ 	int dev, func, reg, index;
++	u32 val;
++	int err;
+ 
+ 	dev = PCI_SLOT(devfn);
+ 	func = PCI_FUNC(devfn);
+@@ -216,6 +227,26 @@ static int rcar_pcie_config_access(struct rcar_pcie *pcie,
+ 	if (pcie->root_bus_nr < 0)
+ 		return PCIBIOS_DEVICE_NOT_FOUND;
+ 
++	/*
++	 * If we are not in L1 link state but have received PM_ENTER_L1 DLLP,
++	 * transition to L1 link state. The HW will handle coming out of L1.
++	 */
++	val = rcar_pci_read_reg(pcie, PMSR);
++	if ((val & PM_ENTER_L1RX) && ((val & PMSTATE) != PMSTATE_L1)) {
++		rcar_pci_write_reg(pcie, L1_INIT, PMCTLR);
++
++		/* Wait until we are in L1 */
++		err = readl_poll_timeout_atomic(pcie->base + PMSR,
++			val, (val & L1FAEG), 5, 1000000);
++		if (err) {
++			dev_err(pcie->dev, "poll for L1 state timed out\n");
++			return PCIBIOS_DEVICE_NOT_FOUND;
++		}
++
++		/* Clear flags indicating link has transitioned to L1 */
++		rcar_pci_write_reg(pcie, L1FAEG | PM_ENTER_L1RX, PMSR);
++	}
++
+ 	/* Clear errors */
+ 	rcar_pci_write_reg(pcie, rcar_pci_read_reg(pcie, PCIEERRFR), PCIEERRFR);
+ 
+-- 
+2.5.0
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
