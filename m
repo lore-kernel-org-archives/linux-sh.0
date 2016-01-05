@@ -1,128 +1,121 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 04 Jan 2016 14:38:35 +0000
-Subject: Re: [PATCH RESEND 3/3] drm: adv7511: it's HPD, not HDP
-Message-Id: <3387173.Dbm3fEH4di@avalon>
+From: Toshi Kani <toshi.kani@hpe.com>
+Date: Tue, 05 Jan 2016 21:15:37 +0000
+Subject: [PATCH v3 UPDATE 09/17] drivers: Initialize resource entry to zero
+Message-Id: <1452028537-27365-1-git-send-email-toshi.kani@hpe.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1451874827-2531-1-git-send-email-wsa@the-dreams.de>
- <1451874827-2531-3-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1451874827-2531-3-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Wolfram Sang <wsa@the-dreams.de>
-Cc: linux-sh@vger.kernel.org, Daniel Vetter <daniel.vetter@ffwll.ch>, Magnus Damm <magnus.damm@gmail.com>, dri-devel@lists.freedesktop.org, Simon Horman <horms@verge.net.au>, Geert Uytterhoeven <geert@linux-m68k.org>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+To: akpm@linux-foundation.org, bp@alien8.de
+Cc: linux-arch@vger.kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, Matt Porter <mporter@kernel.crashing.org>, Alexandre Bounine <alexandre.bounine@idt.com>, linux-acpi@vger.kernel.org, linux-parisc@vger.kernel.org, linux-sh@vger.kernel.org, Toshi Kani <toshi.kani@hpe.com>
 
-Hi Wolfram,
+I/O resource descriptor, 'desc' in struct resource, needs to be
+initialized to zero by default.  Some drivers call kmalloc() to
+allocate a resource entry, but does not initialize it to zero by
+memset().  Change these drivers to call kzalloc(), instead.
 
-Thank you for the patch.
+Cc: Matt Porter <mporter@kernel.crashing.org>
+Cc: Alexandre Bounine <alexandre.bounine@idt.com>
+Cc: linux-acpi@vger.kernel.org
+Cc: linux-parisc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
+Acked-by: Simon Horman <horms+renesas@verge.net.au> # sh
+Acked-by: Helge Deller <deller@gmx.de> # parisc
+Signed-off-by: Toshi Kani <toshi.kani@hpe.com>
+---
+v3 UPDATE: Add cc to RAPIDIO maintainers that was missing.
+---
+ drivers/acpi/acpi_platform.c       |    2 +-
+ drivers/parisc/eisa_enumerator.c   |    4 ++--
+ drivers/rapidio/rio.c              |    8 ++++----
+ drivers/sh/superhyway/superhyway.c |    2 +-
+ 4 files changed, 8 insertions(+), 8 deletions(-)
 
-On Monday 04 January 2016 03:33:47 Wolfram Sang wrote:
-> From: Wolfram Sang <wsa+renesas@sang-engineering.com>
-> 
-> Fix this typo, consequently used over both files :)
-> 
-> Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
-
-Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-
-> ---
->  drivers/gpu/drm/i2c/adv7511.c | 22 +++++++++++-----------
->  drivers/gpu/drm/i2c/adv7511.h | 12 ++++++------
->  2 files changed, 17 insertions(+), 17 deletions(-)
-> 
-> diff --git a/drivers/gpu/drm/i2c/adv7511.c b/drivers/gpu/drm/i2c/adv7511.c
-> index 50a861b12346c4..c03c1ea53fd042 100644
-> --- a/drivers/gpu/drm/i2c/adv7511.c
-> +++ b/drivers/gpu/drm/i2c/adv7511.c
-> @@ -378,16 +378,16 @@ static void adv7511_power_on(struct adv7511 *adv7511)
->  	}
-> 
->  	/*
-> -	 * Per spec it is allowed to pulse the HDP signal to indicate that the
-> +	 * Per spec it is allowed to pulse the HPD signal to indicate that the
->  	 * EDID information has changed. Some monitors do this when they wakeup
-> -	 * from standby or are enabled. When the HDP goes low the adv7511 is
-> +	 * from standby or are enabled. When the HPD goes low the adv7511 is
->  	 * reset and the outputs are disabled which might cause the monitor to
-> -	 * go to standby again. To avoid this we ignore the HDP pin for the
-> +	 * go to standby again. To avoid this we ignore the HPD pin for the
->  	 * first few seconds after enabling the output.
->  	 */
->  	regmap_update_bits(adv7511->regmap, ADV7511_REG_POWER2,
-> -			   ADV7511_REG_POWER2_HDP_SRC_MASK,
-> -			   ADV7511_REG_POWER2_HDP_SRC_NONE);
-> +			   ADV7511_REG_POWER2_HPD_SRC_MASK,
-> +			   ADV7511_REG_POWER2_HPD_SRC_NONE);
-> 
->  	/*
->  	 * Most of the registers are reset during power down or when HPD is low.
-> @@ -421,9 +421,9 @@ static bool adv7511_hpd(struct adv7511 *adv7511)
->  	if (ret < 0)
->  		return false;
-> 
-> -	if (irq0 & ADV7511_INT0_HDP) {
-> +	if (irq0 & ADV7511_INT0_HPD) {
->  		regmap_write(adv7511->regmap, ADV7511_REG_INT(0),
-> -			     ADV7511_INT0_HDP);
-> +			     ADV7511_INT0_HPD);
->  		return true;
->  	}
-> 
-> @@ -446,7 +446,7 @@ static int adv7511_irq_process(struct adv7511 *adv7511)
->  	regmap_write(adv7511->regmap, ADV7511_REG_INT(0), irq0);
->  	regmap_write(adv7511->regmap, ADV7511_REG_INT(1), irq1);
-> 
-> -	if (irq0 & ADV7511_INT0_HDP && adv7511->encoder)
-> +	if (irq0 & ADV7511_INT0_HPD && adv7511->encoder)
->  		drm_helper_hpd_irq_event(adv7511->encoder->dev);
-> 
->  	if (irq0 & ADV7511_INT0_EDID_READY || irq1 & ADV7511_INT1_DDC_ERROR) {
-> @@ -648,10 +648,10 @@ adv7511_encoder_detect(struct drm_encoder *encoder,
->  		if (adv7511->status = connector_status_connected)
->  			status = connector_status_disconnected;
->  	} else {
-> -		/* Renable HDP sensing */
-> +		/* Renable HPD sensing */
->  		regmap_update_bits(adv7511->regmap, ADV7511_REG_POWER2,
-> -				   ADV7511_REG_POWER2_HDP_SRC_MASK,
-> -				   ADV7511_REG_POWER2_HDP_SRC_BOTH);
-> +				   ADV7511_REG_POWER2_HPD_SRC_MASK,
-> +				   ADV7511_REG_POWER2_HPD_SRC_BOTH);
->  	}
-> 
->  	adv7511->status = status;
-> diff --git a/drivers/gpu/drm/i2c/adv7511.h b/drivers/gpu/drm/i2c/adv7511.h
-> index 6599ed538426d6..38515b30cedfc8 100644
-> --- a/drivers/gpu/drm/i2c/adv7511.h
-> +++ b/drivers/gpu/drm/i2c/adv7511.h
-> @@ -90,7 +90,7 @@
->  #define ADV7511_CSC_ENABLE			BIT(7)
->  #define ADV7511_CSC_UPDATE_MODE			BIT(5)
-> 
-> -#define ADV7511_INT0_HDP			BIT(7)
-> +#define ADV7511_INT0_HPD			BIT(7)
->  #define ADV7511_INT0_VSYNC			BIT(5)
->  #define ADV7511_INT0_AUDIO_FIFO_FULL		BIT(4)
->  #define ADV7511_INT0_EDID_READY			BIT(2)
-> @@ -157,11 +157,11 @@
->  #define ADV7511_PACKET_ENABLE_SPARE2		BIT(1)
->  #define ADV7511_PACKET_ENABLE_SPARE1		BIT(0)
-> 
-> -#define ADV7511_REG_POWER2_HDP_SRC_MASK		0xc0
-> -#define ADV7511_REG_POWER2_HDP_SRC_BOTH		0x00
-> -#define ADV7511_REG_POWER2_HDP_SRC_HDP		0x40
-> -#define ADV7511_REG_POWER2_HDP_SRC_CEC		0x80
-> -#define ADV7511_REG_POWER2_HDP_SRC_NONE		0xc0
-> +#define ADV7511_REG_POWER2_HPD_SRC_MASK		0xc0
-> +#define ADV7511_REG_POWER2_HPD_SRC_BOTH		0x00
-> +#define ADV7511_REG_POWER2_HPD_SRC_HPD		0x40
-> +#define ADV7511_REG_POWER2_HPD_SRC_CEC		0x80
-> +#define ADV7511_REG_POWER2_HPD_SRC_NONE		0xc0
->  #define ADV7511_REG_POWER2_TDMS_ENABLE		BIT(4)
->  #define ADV7511_REG_POWER2_GATE_INPUT_CLK	BIT(0)
-
--- 
-Regards,
-
-Laurent Pinchart
-
+diff --git a/drivers/acpi/acpi_platform.c b/drivers/acpi/acpi_platform.c
+index 296b7a1..b6f7fa3 100644
+--- a/drivers/acpi/acpi_platform.c
++++ b/drivers/acpi/acpi_platform.c
+@@ -62,7 +62,7 @@ struct platform_device *acpi_create_platform_device(struct acpi_device *adev)
+ 	if (count < 0) {
+ 		return NULL;
+ 	} else if (count > 0) {
+-		resources = kmalloc(count * sizeof(struct resource),
++		resources = kzalloc(count * sizeof(struct resource),
+ 				    GFP_KERNEL);
+ 		if (!resources) {
+ 			dev_err(&adev->dev, "No memory for resources\n");
+diff --git a/drivers/parisc/eisa_enumerator.c b/drivers/parisc/eisa_enumerator.c
+index a656d9e..21905fe 100644
+--- a/drivers/parisc/eisa_enumerator.c
++++ b/drivers/parisc/eisa_enumerator.c
+@@ -91,7 +91,7 @@ static int configure_memory(const unsigned char *buf,
+ 	for (i=0;i<HPEE_MEMORY_MAX_ENT;i++) {
+ 		c = get_8(buf+len);
+ 		
+-		if (NULL != (res = kmalloc(sizeof(struct resource), GFP_KERNEL))) {
++		if (NULL != (res = kzalloc(sizeof(struct resource), GFP_KERNEL))) {
+ 			int result;
+ 			
+ 			res->name = name;
+@@ -183,7 +183,7 @@ static int configure_port(const unsigned char *buf, struct resource *io_parent,
+ 	for (i=0;i<HPEE_PORT_MAX_ENT;i++) {
+ 		c = get_8(buf+len);
+ 		
+-		if (NULL != (res = kmalloc(sizeof(struct resource), GFP_KERNEL))) {
++		if (NULL != (res = kzalloc(sizeof(struct resource), GFP_KERNEL))) {
+ 			res->name = board;
+ 			res->start = get_16(buf+len+1);
+ 			res->end = get_16(buf+len+1)+(c&HPEE_PORT_SIZE_MASK)+1;
+diff --git a/drivers/rapidio/rio.c b/drivers/rapidio/rio.c
+index d7b87c6..e220edc 100644
+--- a/drivers/rapidio/rio.c
++++ b/drivers/rapidio/rio.c
+@@ -117,7 +117,7 @@ int rio_request_inb_mbox(struct rio_mport *mport,
+ 	if (mport->ops->open_inb_mbox = NULL)
+ 		goto out;
+ 
+-	res = kmalloc(sizeof(struct resource), GFP_KERNEL);
++	res = kzalloc(sizeof(struct resource), GFP_KERNEL);
+ 
+ 	if (res) {
+ 		rio_init_mbox_res(res, mbox, mbox);
+@@ -185,7 +185,7 @@ int rio_request_outb_mbox(struct rio_mport *mport,
+ 	if (mport->ops->open_outb_mbox = NULL)
+ 		goto out;
+ 
+-	res = kmalloc(sizeof(struct resource), GFP_KERNEL);
++	res = kzalloc(sizeof(struct resource), GFP_KERNEL);
+ 
+ 	if (res) {
+ 		rio_init_mbox_res(res, mbox, mbox);
+@@ -285,7 +285,7 @@ int rio_request_inb_dbell(struct rio_mport *mport,
+ {
+ 	int rc = 0;
+ 
+-	struct resource *res = kmalloc(sizeof(struct resource), GFP_KERNEL);
++	struct resource *res = kzalloc(sizeof(struct resource), GFP_KERNEL);
+ 
+ 	if (res) {
+ 		rio_init_dbell_res(res, start, end);
+@@ -360,7 +360,7 @@ int rio_release_inb_dbell(struct rio_mport *mport, u16 start, u16 end)
+ struct resource *rio_request_outb_dbell(struct rio_dev *rdev, u16 start,
+ 					u16 end)
+ {
+-	struct resource *res = kmalloc(sizeof(struct resource), GFP_KERNEL);
++	struct resource *res = kzalloc(sizeof(struct resource), GFP_KERNEL);
+ 
+ 	if (res) {
+ 		rio_init_dbell_res(res, start, end);
+diff --git a/drivers/sh/superhyway/superhyway.c b/drivers/sh/superhyway/superhyway.c
+index 2d9e7f3..bb1fb771 100644
+--- a/drivers/sh/superhyway/superhyway.c
++++ b/drivers/sh/superhyway/superhyway.c
+@@ -66,7 +66,7 @@ int superhyway_add_device(unsigned long base, struct superhyway_device *sdev,
+ 	superhyway_read_vcr(dev, base, &dev->vcr);
+ 
+ 	if (!dev->resource) {
+-		dev->resource = kmalloc(sizeof(struct resource), GFP_KERNEL);
++		dev->resource = kzalloc(sizeof(struct resource), GFP_KERNEL);
+ 		if (!dev->resource) {
+ 			kfree(dev);
+ 			return -ENOMEM;
