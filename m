@@ -1,34 +1,118 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 19 Jan 2016 09:27:28 +0000
-Subject: Re: [PATCH/RFC 2/6] boot-mode-reg: Add R-Car Gen2 driver
-Message-Id: <20160119092728.GA20683@verge.net.au>
+From: Toshi Kani <toshi.kani@hpe.com>
+Date: Tue, 05 Jan 2016 18:54:33 +0000
+Subject: [PATCH v3 09/17] drivers: Initialize resource entry to zero
+Message-Id: <1452020081-26534-9-git-send-email-toshi.kani@hpe.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1444892377-10170-3-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1444892377-10170-3-git-send-email-horms+renesas@verge.net.au>
+References: <1452020081-26534-1-git-send-email-toshi.kani@hpe.com>
+In-Reply-To: <1452020081-26534-1-git-send-email-toshi.kani@hpe.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: akpm@linux-foundation.org, bp@alien8.de
+Cc: linux-arch@vger.kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linux-acpi@vger.kernel.org, linux-parisc@vger.kernel.org, linux-sh@vger.kernel.org, Toshi Kani <toshi.kani@hpe.com>
 
-On Tue, Jan 19, 2016 at 09:01:38AM +0100, Geert Uytterhoeven wrote:
-> Hi Simon,
-> 
-> On Tue, Jan 19, 2016 at 1:30 AM, Simon Horman <horms@verge.net.au> wrote:
-> > In rcar_gen2_timer_init() I think we can replace the use of boot mode pins
-> > with use of extal frequency from DT, as suggested earlier from Laurent.
-> 
-> Indeed. And it's really the extal frequency we need there, not the mode pin
-> configuration.
+I/O resource descriptor, 'desc' in struct resource, needs to be
+initialized to zero by default.  Some drivers call kmalloc() to
+allocate a resource entry, but does not initialize it to zero by
+memset().  Change these drivers to call kzalloc(), instead.
 
-Agreed.
+Cc: linux-acpi@vger.kernel.org
+Cc: linux-parisc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
+Acked-by: Simon Horman <horms+renesas@verge.net.au> # sh
+Signed-off-by: Toshi Kani <toshi.kani@hpe.com>
+---
+ drivers/acpi/acpi_platform.c       |    2 +-
+ drivers/parisc/eisa_enumerator.c   |    4 ++--
+ drivers/rapidio/rio.c              |    8 ++++----
+ drivers/sh/superhyway/superhyway.c |    2 +-
+ 4 files changed, 8 insertions(+), 8 deletions(-)
 
-> > An implication of that is that we could infer the boot mode settings
-> > from the extal frequency and then use that in rcar_gen2_cpg_clocks_init().
-> > Though I'm not sure how we would transmit the information from
-> > rcar_gen2_timer_init() to rcar_gen2_cpg_clocks_init().
-> 
-> Deriving the mode pin configuration from the extal frequency sounds backwards
-> to me. What if a non-standard crystal is used, like on Salvator-X?
-
-I meant to say that it seems a bit awkward in my previous email.
-You've pointed out a good reason why.
+diff --git a/drivers/acpi/acpi_platform.c b/drivers/acpi/acpi_platform.c
+index 296b7a1..b6f7fa3 100644
+--- a/drivers/acpi/acpi_platform.c
++++ b/drivers/acpi/acpi_platform.c
+@@ -62,7 +62,7 @@ struct platform_device *acpi_create_platform_device(struct acpi_device *adev)
+ 	if (count < 0) {
+ 		return NULL;
+ 	} else if (count > 0) {
+-		resources = kmalloc(count * sizeof(struct resource),
++		resources = kzalloc(count * sizeof(struct resource),
+ 				    GFP_KERNEL);
+ 		if (!resources) {
+ 			dev_err(&adev->dev, "No memory for resources\n");
+diff --git a/drivers/parisc/eisa_enumerator.c b/drivers/parisc/eisa_enumerator.c
+index a656d9e..21905fe 100644
+--- a/drivers/parisc/eisa_enumerator.c
++++ b/drivers/parisc/eisa_enumerator.c
+@@ -91,7 +91,7 @@ static int configure_memory(const unsigned char *buf,
+ 	for (i=0;i<HPEE_MEMORY_MAX_ENT;i++) {
+ 		c = get_8(buf+len);
+ 		
+-		if (NULL != (res = kmalloc(sizeof(struct resource), GFP_KERNEL))) {
++		if (NULL != (res = kzalloc(sizeof(struct resource), GFP_KERNEL))) {
+ 			int result;
+ 			
+ 			res->name = name;
+@@ -183,7 +183,7 @@ static int configure_port(const unsigned char *buf, struct resource *io_parent,
+ 	for (i=0;i<HPEE_PORT_MAX_ENT;i++) {
+ 		c = get_8(buf+len);
+ 		
+-		if (NULL != (res = kmalloc(sizeof(struct resource), GFP_KERNEL))) {
++		if (NULL != (res = kzalloc(sizeof(struct resource), GFP_KERNEL))) {
+ 			res->name = board;
+ 			res->start = get_16(buf+len+1);
+ 			res->end = get_16(buf+len+1)+(c&HPEE_PORT_SIZE_MASK)+1;
+diff --git a/drivers/rapidio/rio.c b/drivers/rapidio/rio.c
+index d7b87c6..e220edc 100644
+--- a/drivers/rapidio/rio.c
++++ b/drivers/rapidio/rio.c
+@@ -117,7 +117,7 @@ int rio_request_inb_mbox(struct rio_mport *mport,
+ 	if (mport->ops->open_inb_mbox = NULL)
+ 		goto out;
+ 
+-	res = kmalloc(sizeof(struct resource), GFP_KERNEL);
++	res = kzalloc(sizeof(struct resource), GFP_KERNEL);
+ 
+ 	if (res) {
+ 		rio_init_mbox_res(res, mbox, mbox);
+@@ -185,7 +185,7 @@ int rio_request_outb_mbox(struct rio_mport *mport,
+ 	if (mport->ops->open_outb_mbox = NULL)
+ 		goto out;
+ 
+-	res = kmalloc(sizeof(struct resource), GFP_KERNEL);
++	res = kzalloc(sizeof(struct resource), GFP_KERNEL);
+ 
+ 	if (res) {
+ 		rio_init_mbox_res(res, mbox, mbox);
+@@ -285,7 +285,7 @@ int rio_request_inb_dbell(struct rio_mport *mport,
+ {
+ 	int rc = 0;
+ 
+-	struct resource *res = kmalloc(sizeof(struct resource), GFP_KERNEL);
++	struct resource *res = kzalloc(sizeof(struct resource), GFP_KERNEL);
+ 
+ 	if (res) {
+ 		rio_init_dbell_res(res, start, end);
+@@ -360,7 +360,7 @@ int rio_release_inb_dbell(struct rio_mport *mport, u16 start, u16 end)
+ struct resource *rio_request_outb_dbell(struct rio_dev *rdev, u16 start,
+ 					u16 end)
+ {
+-	struct resource *res = kmalloc(sizeof(struct resource), GFP_KERNEL);
++	struct resource *res = kzalloc(sizeof(struct resource), GFP_KERNEL);
+ 
+ 	if (res) {
+ 		rio_init_dbell_res(res, start, end);
+diff --git a/drivers/sh/superhyway/superhyway.c b/drivers/sh/superhyway/superhyway.c
+index 2d9e7f3..bb1fb771 100644
+--- a/drivers/sh/superhyway/superhyway.c
++++ b/drivers/sh/superhyway/superhyway.c
+@@ -66,7 +66,7 @@ int superhyway_add_device(unsigned long base, struct superhyway_device *sdev,
+ 	superhyway_read_vcr(dev, base, &dev->vcr);
+ 
+ 	if (!dev->resource) {
+-		dev->resource = kmalloc(sizeof(struct resource), GFP_KERNEL);
++		dev->resource = kzalloc(sizeof(struct resource), GFP_KERNEL);
+ 		if (!dev->resource) {
+ 			kfree(dev);
+ 			return -ENOMEM;
