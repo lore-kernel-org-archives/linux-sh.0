@@ -1,58 +1,50 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 25 Jan 2016 08:57:40 +0000
-Subject: Re: [PATCH v3] media: soc_camera: rcar_vin: Add rcar fallback compatibility string
-Message-Id: <CAMuHMdUFWdfHrpCwkuDUTmdBUNdt2d=QZ8hKBbh5CF9wnFdtRA@mail.gmail.com>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Tue, 05 Jan 2016 13:00:28 +0000
+Subject: [PATCH v2 1/4] PCI: rcar: remove unused pci_sys_data structure in pcie-rcar
+Message-Id: <1451998831-27705-2-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1452707918-4321-1-git-send-email-ykaneko0929@gmail.com>
-	<Pine.LNX.4.64.1601231834370.10701@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1601231834370.10701@axis700.grange>
+References: <1451998831-27705-1-git-send-email-phil.edworthy@renesas.com>
+In-Reply-To: <1451998831-27705-1-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Yoshihiro Kaneko <ykaneko0929@gmail.com>, Linux Media Mailing List <linux-media@vger.kernel.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>
+To: Simon Horman <horms@verge.net.au>, Bjorn Helgaas <bhelgaas@google.com>
+Cc: Wolfram Sang <wsa@the-dreams.de>, Geert Uytterhoeven <geert@linux-m68k.org>, linux-kernel@vger.kernel.org, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org, Phil Edworthy <phil.edworthy@renesas.com>
 
-Hi Guennadi,
+Commit b3a72384fe29 ("ARM/PCI: Replace pci_sys_data->align_resource
+with global function pointer") removed the struct pci_sys_data
+dependency from the ARM pcibios functions, so remove it from this
+driver.
 
-On Sat, Jan 23, 2016 at 6:37 PM, Guennadi Liakhovetski
-<g.liakhovetski@gmx.de> wrote:
-> On Thu, 14 Jan 2016, Yoshihiro Kaneko wrote:
->> Add fallback compatibility string for R-Car Gen2 and Gen3, This is
->> in keeping with the fallback scheme being adopted wherever appropriate
->> for drivers for Renesas SoCs.
->>
->> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
->> ---
->>
->> This patch is based on the for-4.6-1 branch of Guennadi's v4l-dvb tree.
->>
->> v3 [Yoshihiro Kaneko]
->> * rebased to for-4.6-1 branch of Guennadi's tree.
->>
->> v2 [Yoshihiro Kaneko]
->> * As suggested by Geert Uytterhoeven
->>   drivers/media/platform/soc_camera/rcar_vin.c:
->>     - The generic compatibility values are listed at the end of the
->>       rcar_vin_of_table[].
->>
->>  Documentation/devicetree/bindings/media/rcar_vin.txt | 8 +++++++-
->>  drivers/media/platform/soc_camera/rcar_vin.c         | 2 ++
->
-> I might be wrong in this specific case, please, correct me someone, but
-> doesn't Documentation/devicetree/bindings/submitting-patches.txt tell us
-> to submit bindings patches separately from the drivers part?
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+---
+ v2:
+   - No changes.
+---
+ drivers/pci/host/pcie-rcar.c | 9 ---------
+ 1 file changed, 9 deletions(-)
 
-I think that mostly applies to new bindings and new drivers.
-For small updates (e.g. adding a new compatible value), these tend to be
-submitted as a single patch.
+diff --git a/drivers/pci/host/pcie-rcar.c b/drivers/pci/host/pcie-rcar.c
+index 5c29626..c72c0ae 100644
+--- a/drivers/pci/host/pcie-rcar.c
++++ b/drivers/pci/host/pcie-rcar.c
+@@ -124,16 +124,7 @@ static inline struct rcar_msi *to_rcar_msi(struct msi_controller *chip)
+ }
+ 
+ /* Structure representing the PCIe interface */
+-/*
+- * ARM pcibios functions expect the ARM struct pci_sys_data as the PCI
+- * sysdata.  Add pci_sys_data as the first element in struct gen_pci so
+- * that when we use a gen_pci pointer as sysdata, it is also a pointer to
+- * a struct pci_sys_data.
+- */
+ struct rcar_pcie {
+-#ifdef CONFIG_ARM
+-	struct pci_sys_data	sys;
+-#endif
+ 	struct device		*dev;
+ 	void __iomem		*base;
+ 	struct list_head	resources;
+-- 
+2.5.0
 
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
