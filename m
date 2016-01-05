@@ -1,46 +1,70 @@
-From: Dirk Behme <dirk.behme@gmail.com>
-Date: Sat, 16 Jan 2016 14:23:29 +0000
-Subject: [PATCH v3] clk: shmobile: r8a7795: Add SDHI clocks
-Message-Id: <1452954209-5282-1-git-send-email-dirk.behme@gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 05 Jan 2016 18:36:35 +0000
+Subject: [PATCH 0/1] serial: sh-sci: Remove cpufreq notifier to fix crash/deadlock
+Message-Id: <1452018997-14103-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Simon Horman <horms+renesas@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Laurent Pinchart <Laurent.pinchart@ideasonboard.com>, Michael Turquette <mturquette@baylibre.com>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Add R8A7795 SDHI clocks.
+	Hi Greg, Jiri,
 
-Signed-off-by: Dirk Behme <dirk.behme@gmail.com>
----
-Changes in v3: Drop the DEF_FIXED as these clocks are not fixed. I'll
-have a look to
+The BSP team noticed that there is spin/mutex lock issue on sh-sci when
+CPUFREQ is used.  The issue is that the notifier function may call
+mutex_lock() while the spinlock is held, which can lead to a BUG().
+This may happen if CPUFREQ is changed while another CPU calls
+clk_get_rate().
 
-https://git.kernel.org/cgit/linux/kernel/git/horms/renesas-bsp.git/commit/d=
-rivers/clk/shmobile/clk-rcar-gen3.c?h=3Dv4.2/rcar-3.0.x&id=CD10385afc15cef6=
-bfbaea4aa5da41193b24fe82
+Taking the spinlock was added to the notifier function in commit
+e552de2413edad1a ("sh-sci: add platform device private data"), to
+protect the list of serial ports against modification during traversal.
+At that time the Common Clock Framework didn't exist yet, and
+clk_get_rate() just returned clk->rate without taking a mutex.
+Note that since commit d535a2305facf9b4 ("serial: sh-sci: Require a
+device per port mapping."), there's no longer a list of serial ports to
+traverse, and taking the spinlock became superfluous.
 
-and see how this could be ported.
+To fix the issue, just remove the cpufreq notifier:
+  1. The notifier doesn't work correctly: all it does is update the
+     stored clock rate; it does not update the divider in the hardware.
+     The divider will only be updated when calling sci_set_termios().
+     I believe this was broken back in 2004, when the old
+     drivers/char/sh-sci.c driver (where the notifier did update the
+     divider) was replaced by drivers/serial/sh-sci.c (where the
+     notifier just updated port->uartclk).
+     Cfr. full-history-linux commits 6f8deaef2e9675d9 ("[PATCH] sh: port
+     sh-sci driver to the new API") and 3f73fe878dc9210a ("[PATCH]
+     Remove old sh-sci driver").
+  2. On modern SoCs, the sh-sci parent clock rate is no longer related
+     to the CPU clock rate anyway, so using a cpufreq notifier is
+     futile.
 
- drivers/clk/shmobile/r8a7795-cpg-mssr.c | 4 ++++
- 1 file changed, 4 insertions(+)
+Both patches fix the same issue:
+  - Patch 1a applies against tty/tty-next and v4.4-rc1..v4.4-rc8, and is
+    intended for current/stable.
+    It needs some rework to apply to earlier kernel versions, as
+    functions were moved around in v4.4.-rc1.
+  - Patch 1b applies against tty/tty-next with scif-clk-sck-brg-for-v4.5
+    (pending pull request for v4.5) appplied, and is intended for next.
 
-diff --git a/drivers/clk/shmobile/r8a7795-cpg-mssr.c b/drivers/clk/shmobile=
-/r8a7795-cpg-mssr.c
-index 23e98fe..c66645f 100644
---- a/drivers/clk/shmobile/r8a7795-cpg-mssr.c
-+++ b/drivers/clk/shmobile/r8a7795-cpg-mssr.c
-@@ -120,6 +120,10 @@ static const struct mssr_mod_clk r8a7795_mod_clks[] __=
-initconst =3D {
- 	DEF_MOD("sys-dmac1",		 218,	R8A7795_CLK_S3D1),
- 	DEF_MOD("sys-dmac0",		 219,	R8A7795_CLK_S3D1),
- 	DEF_MOD("scif2",		 310,	R8A7795_CLK_S3D4),
-+	DEF_MOD("sdif3",	       	 311,	R8A7795_CLK_SD3),
-+	DEF_MOD("sdif2",	       	 312,	R8A7795_CLK_SD2),
-+	DEF_MOD("sdif1",	      	 313,	R8A7795_CLK_SD1),
-+	DEF_MOD("sdif0",	     	 314,	R8A7795_CLK_SD0),
- 	DEF_MOD("pcie1",		 318,	R8A7795_CLK_S3D1),
- 	DEF_MOD("pcie0",		 319,	R8A7795_CLK_S3D1),
- 	DEF_MOD("intc-ap",		 408,	R8A7795_CLK_S3D1),
---=20
-2.7.0
+Thanks for your comments!
 
+Geert Uytterhoeven (1):
+  serial: sh-sci: Remove cpufreq notifier to fix crash/deadlock
+  serial: sh-sci: Remove cpufreq notifier to fix crash/deadlock
+
+ drivers/tty/serial/sh-sci.c | 39/42 ---------------------------------------
+ 1 file changed, 39/42 deletions(-)
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
