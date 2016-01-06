@@ -1,7 +1,7 @@
 From: "Michael S. Tsirkin" <mst@redhat.com>
-Date: Wed, 06 Jan 2016 20:23:12 +0000
+Date: Wed, 06 Jan 2016 22:14:05 +0000
 Subject: Re: [PATCH v2 31/32] sh: support a 2-byte smp_store_mb
-Message-Id: <20160106222019-mutt-send-email-mst@redhat.com>
+Message-Id: <20160107001247-mutt-send-email-mst@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1451572003-2440-1-git-send-email-mst@redhat.com>
  <1451572003-2440-32-git-send-email-mst@redhat.com>
@@ -48,7 +48,9 @@ On Wed, Jan 06, 2016 at 01:23:50PM -0500, Rich Felker wrote:
 > wrapper around the 32-bit cmpxchg. I think this is less error-prone
 > and it can be shared between the multiple sh cmpxchg back-ends,
 > including the new cas.l one we need for J2.
-> 
+
+Sounds much more reasonable.
+
 > > SH's cmpxchg() is equally incomplete and does not provide 1 and 2 byte
 > > versions.
 > > 
@@ -66,14 +68,3 @@ On Wed, Jan 06, 2016 at 01:23:50PM -0500, Rich Felker wrote:
 > existing work to be merged, etc. in that proposal.
 > 
 > Rich
-
-Well I'd like to be able to make progress with generic
-arch cleanups meanwhile.
-
-Could you quickly write a version of 1 and 2 byte xchg that
-works so I can include it?
-
-Thanks!
-
--- 
-MST
