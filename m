@@ -1,7 +1,7 @@
-From: Rob Landley <rob@landley.net>
-Date: Wed, 06 Jan 2016 20:21:19 +0000
+From: "Michael S. Tsirkin" <mst@redhat.com>
+Date: Wed, 06 Jan 2016 20:23:12 +0000
 Subject: Re: [PATCH v2 31/32] sh: support a 2-byte smp_store_mb
-Message-Id: <568D773F.6000408@landley.net>
+Message-Id: <20160106222019-mutt-send-email-mst@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1451572003-2440-1-git-send-email-mst@redhat.com>
  <1451572003-2440-32-git-send-email-mst@redhat.com>
@@ -10,80 +10,70 @@ References: <1451572003-2440-1-git-send-email-mst@redhat.com>
  <20160106114023.GU6344@twins.programming.kicks-ass.net>
  <20160106134301-mutt-send-email-mst@redhat.com>
  <20160106143218.GV6344@twins.programming.kicks-ass.net>
- <568D35EB.7090108@landley.net>
- <20160106165740.GX6344@twins.programming.kicks-ass.net>
-In-Reply-To: <20160106165740.GX6344@twins.programming.kicks-ass.net>
+ <20160106182349.GD238@brightrain.aerifal.cx>
+In-Reply-To: <20160106182349.GD238@brightrain.aerifal.cx>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Peter Zijlstra <peterz@infradead.org>
-Cc: "Michael S. Tsirkin" <mst@redhat.com>, Rich Felker <dalias@libc.org>, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Jeff Dionne <jeff@uclinux.org>, Yoshinori Sato <ysato@users.sourceforge.jp>
+To: Rich Felker <dalias@libc.org>
+Cc: Peter Zijlstra <peterz@infradead.org>, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Rob Landley <rob@landley.net>, Jeff Dionne <jeff@uclinux.org>, Yoshinori Sato <ysato@users.sourceforge.jp>
 
-
-
-On 01/06/2016 10:57 AM, Peter Zijlstra wrote:
-> On Wed, Jan 06, 2016 at 09:42:35AM -0600, Rob Landley wrote:
->> (I would have thought the presence of working QEMU support would tide us
->> over providing an easy basic regression testing environment, but people
->> keep insisting that's not real and doesn't count. But if we can keep it
->> 99% working until the sh4 patents expire later this year, we can add mmu
->> and have full sh4 in hardware again with BSD VHDL.)
+On Wed, Jan 06, 2016 at 01:23:50PM -0500, Rich Felker wrote:
+> On Wed, Jan 06, 2016 at 03:32:18PM +0100, Peter Zijlstra wrote:
+> > On Wed, Jan 06, 2016 at 01:52:17PM +0200, Michael S. Tsirkin wrote:
+> > > > > Peter, what do you think? How about I leave this patch as is for now?
+> > > > 
+> > > > No, and I object to removing the single byte implementation too. Either
+> > > > remove the full arch or fix xchg() to conform. xchg() should work on all
+> > > > native word sizes, for SH that would be 1,2 and 4 bytes.
+> > > 
+> > > Rick, maybe you could explain how is current 1 byte xchg on llsc wrong?
+> > 
+> > It doesn't seem to preserve the 3 other bytes in the word.
+> > 
+> > > It does use 4 byte accesses but IIUC that is all that exists on
+> > > this architecture.
+> > 
+> > Right, that's not a problem, look at arch/alpha/include/asm/xchg.h for
+> > example. A store to another portion of the word should make the
+> > store-conditional fail and we'll retry the loop.
+> > 
+> > The short versions should however preserve the other bytes in the word.
 > 
-> I didn't know there was a 'working' qemu for SH.
+> Indeed. Also, accesses must be aligned, so the asm needs to round down
+> to an aligned address and perform a correct read-modify-write on it,
+> placing the new byte in the correct offset in the word.
+> 
+> Alternatively (my preference) this logic can be impemented in C as a
+> wrapper around the 32-bit cmpxchg. I think this is less error-prone
+> and it can be shared between the multiple sh cmpxchg back-ends,
+> including the new cas.l one we need for J2.
+> 
+> > SH's cmpxchg() is equally incomplete and does not provide 1 and 2 byte
+> > versions.
+> > 
+> > In any case, I'm all for rm -rf arch/sh/, one less arch to worry about
+> > is always good, but ISTR some people wanting to resurrect SH:
+> > 
+> >   http://old.lwn.net/Articles/647636/
+> > 
+> > Rob, Jeff, Sato-san, might I suggest you send a MAINTAINERS patch and
+> > take up an active interest in SH lest someone 'accidentally' nukes it?
+> 
+> We're in the process of preparing such a proposal right now. That
+> current intent is that Sato-san and I will co-maintain arch/sh. We'll
+> include more details about motivation, proposed development direction,
+> existing work to be merged, etc. in that proposal.
+> 
+> Rich
 
-Yes, for several years now?
+Well I'd like to be able to make progress with generic
+arch cleanups meanwhile.
 
-  https://lists.gnu.org/archive/html/qemu-devel/2010-03/msg00976.html
+Could you quickly write a version of 1 and 2 byte xchg that
+works so I can include it?
 
-I try to build bootable images with each new kernel, although I'm a few
-versions behind at the moment (this is 4.1 I think?):
+Thanks!
 
-  wget http://landley.net/aboriginal/bin/system-image-sh4.tar.gz
-  tar xvzf system-image-sh4.tar.gz
-  cd system-image-sh4
-  ./run-emulator.sh
-
-There's an sh2eb one in there too, but you need a $50 FPGA board to run
-it (Numato Mimas v2, setup walkthrough is at http://nommu.org/jcore).
-
-I keep meaning to poke at qemu and get their r2d board emulation to give
-me more than 64 megs of memory so I can do native compiles. (I have a
-native toolchain but building much more than "hello world" requires
-setting up a swap file because the board emulation only gives me one
-virtual disk. None of the other architectures need that...)
-
-I'd _also_ like to get proper sh2 support into qemu (sh2 code runs under
-sh4 but still), but the sh4 patents expire later this year and sometime
-after that we want to add an MMU to the VHDL, so...
-
-(We still want the nommu version because hard realtime is actually
-easier to verify without page faults, and the big product needs
-nanosecond accurate timestamps on stuff...)
-
-> My personal 'complaint' with SH is its lack of maintainer feedback. I do
-> full arch sweeps on semi-regular basis, and while I know in very board
-> terms how a fair number of archs work its impossible to know everything
-> about all 25+ we support.
-
-We (the j-core guys) have wanted to take over arch/sh maintainership for
-a while, we've just been trying to get the board we're working on in
-position to be upstreamed first. The feedback on my craptacular first
-effort to chip off a chunk that other people could at least reproduce
-against a then-current kernel was "ew" and "redo it all as device tree".
-So we went away again to work on that...
-
-Meanwhile all $DAYJOB's in-house resources (at se-instruments.com) have
-been tied up making SMP work for a product. (Yes, sh2 SMP. A NOMMU smp
-system. There were some teething troubles, but it's working now. Alas,
-not on the above $50 FPGA because that's only got an LX9 FPGA which one
-SOC instance uses like 2/3 of the gates in. We're doing the SMP stuff in
-LX45 boards, which are crazy expensive.)
-
-I note I just sent a Numato board to the buildroot maintainer so I can
-walk him through adding jcore support to buildroot. And I got toybox
-working nommu, and Rich added sh2 support to musl-libc... There has been
-activity on this arch, just not on this list due to the noise from a
-bunch of different Renesas arm systems and whatever "arm/shmobile" is.
-("Not superh or jcore compatible", that's all I know...)
-
-Rob
+-- 
+MST
