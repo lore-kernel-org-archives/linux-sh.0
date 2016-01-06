@@ -1,118 +1,204 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 15 Jan 2016 02:37:57 +0000
-Subject: [PATCH v3 04/14] ARM: shmobile: r8a7793: add R-Car sound support to device tree
-Message-Id: <1452825487-15931-5-git-send-email-horms+renesas@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Wed, 06 Jan 2016 13:51:25 +0000
+Subject: [RFC v2 4/4] ARM: shmobile: r8a7790: rework dts to use i2c demuxer
+Message-Id: <1452088285-6427-5-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1452825487-15931-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1452825487-15931-1-git-send-email-horms+renesas@verge.net.au>
+References: <1452088285-6427-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1452088285-6427-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-i2c@vger.kernel.org
+Cc: Wolfram Sang <wsa@the-dreams.de>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org, Pantelis Antoniou <pantelis.antoniou@konsulko.com>, Jan Luebbe <jlu@pengutronix.de>
 
-Instantiate R-Car sound node in r8a7793 device tree.
-This only supports PIO transfers.
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Based on similar work for the r8a7791 by Kuninori Morimoto.
+Create a seperate bus for HDMI related I2C slaves and assign it
+to a i2c-gpio master. It can be switched to the i2c-rcar or
+i2c-sh_mobile core at runtime.
 
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 ---
- arch/arm/boot/dts/r8a7793.dtsi | 83 ++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 83 insertions(+)
+ arch/arm/boot/dts/r8a7790-lager.dts | 141 ++++++++++++++++++++++--------------
+ 1 file changed, 88 insertions(+), 53 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7793.dtsi b/arch/arm/boot/dts/r8a7793.dtsi
-index fa8a0d772d51..90959a925edd 100644
---- a/arch/arm/boot/dts/r8a7793.dtsi
-+++ b/arch/arm/boot/dts/r8a7793.dtsi
-@@ -1101,4 +1101,87 @@
- 		#iommu-cells = <1>;
- 		status = "disabled";
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index c553abd711eeb3..d8f0ca8e094dad 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -49,6 +49,8 @@
+ 	aliases {
+ 		serial0 = &scifa0;
+ 		serial1 = &scifa1;
++		i2c8 = &i2chdmi;
++		i2c9 = &gpioi2c;
+ 	};
+ 
+ 	chosen {
+@@ -252,6 +254,79 @@
+ 		#clock-cells = <0>;
+ 		clock-frequency = <148500000>;
  	};
 +
-+	rcar_sound: sound@ec500000 {
-+		/*
-+		 * #sound-dai-cells is required
-+		 *
-+		 * Single DAI : #sound-dai-cells = <0>;         <&rcar_sound>;
-+		 * Multi  DAI : #sound-dai-cells = <1>;         <&rcar_sound N>;
-+		 */
-+		compatible =  "renesas,rcar_sound-r8a7793", "renesas,rcar_sound-gen2";
-+		reg =	<0 0xec500000 0 0x1000>, /* SCU */
-+			<0 0xec5a0000 0 0x100>,  /* ADG */
-+			<0 0xec540000 0 0x1000>, /* SSIU */
-+			<0 0xec541000 0 0x280>;  /* SSI */
-+		reg-names = "scu", "adg", "ssiu", "ssi";
 +
-+		clocks = <&mstp10_clks R8A7793_CLK_SSI_ALL>,
-+			<&mstp10_clks R8A7793_CLK_SSI9>, <&mstp10_clks R8A7793_CLK_SSI8>,
-+			<&mstp10_clks R8A7793_CLK_SSI7>, <&mstp10_clks R8A7793_CLK_SSI6>,
-+			<&mstp10_clks R8A7793_CLK_SSI5>, <&mstp10_clks R8A7793_CLK_SSI4>,
-+			<&mstp10_clks R8A7793_CLK_SSI3>, <&mstp10_clks R8A7793_CLK_SSI2>,
-+			<&mstp10_clks R8A7793_CLK_SSI1>, <&mstp10_clks R8A7793_CLK_SSI0>,
-+			<&mstp10_clks R8A7793_CLK_SCU_SRC9>, <&mstp10_clks R8A7793_CLK_SCU_SRC8>,
-+			<&mstp10_clks R8A7793_CLK_SCU_SRC7>, <&mstp10_clks R8A7793_CLK_SCU_SRC6>,
-+			<&mstp10_clks R8A7793_CLK_SCU_SRC5>, <&mstp10_clks R8A7793_CLK_SCU_SRC4>,
-+			<&mstp10_clks R8A7793_CLK_SCU_SRC3>, <&mstp10_clks R8A7793_CLK_SCU_SRC2>,
-+			<&mstp10_clks R8A7793_CLK_SCU_SRC1>, <&mstp10_clks R8A7793_CLK_SCU_SRC0>,
-+			<&audio_clk_a>, <&audio_clk_b>, <&audio_clk_c>, <&m2_clk>;
-+		clock-names = "ssi-all",
-+				"ssi.9", "ssi.8", "ssi.7", "ssi.6", "ssi.5",
-+				"ssi.4", "ssi.3", "ssi.2", "ssi.1", "ssi.0",
-+				"src.9", "src.8", "src.7", "src.6", "src.5",
-+				"src.4", "src.3", "src.2", "src.1", "src.0",
-+				"clk_a", "clk_b", "clk_c", "clk_i";
-+		power-domains = <&cpg_clocks>;
-+
++	gpioi2c: i2c@9 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "i2c-gpio";
 +		status = "disabled";
++		gpios = <&gpio5 6 GPIO_ACTIVE_HIGH /* sda */
++			 &gpio5 5 GPIO_ACTIVE_HIGH /* scl */
++			>;
++		i2c-gpio,delay-us = <5>;
++	};
 +
-+		rcar_sound,src {
-+			src0: src@0 { };
-+			src1: src@1 { };
-+			src2: src@2 { };
-+			src3: src@3 { };
-+			src4: src@4 { };
-+			src5: src@5 { };
-+			src6: src@6 { };
-+			src7: src@7 { };
-+			src8: src@8 { };
-+			src9: src@9 { };
++	i2chdmi: i2c@8 {
++
++		compatible = "i2c-demux-pinctrl";
++		i2c-parent = <&gpioi2c>, <&iic2>, <&i2c2>;
++		i2c-bus-name = "i2c-hdmi";
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		ak4643: sound-codec@12 {
++			compatible = "asahi-kasei,ak4643";
++
++			#sound-dai-cells = <0>;
++			reg = <0x12>;
 +		};
 +
-+		rcar_sound,ssi {
-+			ssi0: ssi@0 {
-+				interrupts = <0 370 IRQ_TYPE_LEVEL_HIGH>;
++		composite-in@20 {
++			compatible = "adi,adv7180";
++			reg = <0x20>;
++			remote = <&vin1>;
++
++			port {
++				adv7180: endpoint {
++					bus-width = <8>;
++					remote-endpoint = <&vin1ep0>;
++				};
 +			};
-+			ssi1: ssi@1 {
-+				 interrupts = <0 371 IRQ_TYPE_LEVEL_HIGH>;
-+			};
-+			ssi2: ssi@2 {
-+				interrupts = <0 372 IRQ_TYPE_LEVEL_HIGH>;
-+			};
-+			ssi3: ssi@3 {
-+				interrupts = <0 373 IRQ_TYPE_LEVEL_HIGH>;
-+			};
-+			ssi4: ssi@4 {
-+				interrupts = <0 374 IRQ_TYPE_LEVEL_HIGH>;
-+			};
-+			ssi5: ssi@5 {
-+				interrupts = <0 375 IRQ_TYPE_LEVEL_HIGH>;
-+			};
-+			ssi6: ssi@6 {
-+				interrupts = <0 376 IRQ_TYPE_LEVEL_HIGH>;
-+			};
-+			ssi7: ssi@7 {
-+				interrupts = <0 377 IRQ_TYPE_LEVEL_HIGH>;
-+			};
-+			ssi8: ssi@8 {
-+				interrupts = <0 378 IRQ_TYPE_LEVEL_HIGH>;
-+			};
-+			ssi9: ssi@9 {
-+				interrupts = <0 379 IRQ_TYPE_LEVEL_HIGH>;
++		};
++
++		hdmi@39 {
++			compatible = "adi,adv7511w";
++			reg = <0x39>;
++			interrupt-parent = <&gpio1>;
++			interrupts = <15 IRQ_TYPE_LEVEL_LOW>;
++
++			adi,input-depth = <8>;
++			adi,input-colorspace = "rgb";
++			adi,input-clock = "1x";
++			adi,input-style = <1>;
++			adi,input-justification = "evenly";
++
++			ports {
++				#address-cells = <1>;
++				#size-cells = <0>;
++
++				port@0 {
++					reg = <0>;
++					adv7511_in: endpoint {
++						remote-endpoint = <&du_out_lvds0>;
++					};
++				};
++
++				port@1 {
++					reg = <1>;
++					adv7511_out: endpoint {
++						remote-endpoint = <&hdmi_con>;
++					};
++				};
 +			};
 +		};
 +	};
  };
+ 
+ &du {
+@@ -352,6 +427,11 @@
+ 		renesas,function = "iic1";
+ 	};
+ 
++	i2c2_pins: i2c2 {
++		renesas,groups = "i2c2";
++		renesas,function = "i2c2";
++	};
++
+ 	iic2_pins: iic2 {
+ 		renesas,groups = "iic2";
+ 		renesas,function = "iic2";
+@@ -532,63 +612,18 @@
+ 	pinctrl-names = "default";
+ };
+ 
+-&iic2	{
+-	status = "okay";
+-	pinctrl-0 = <&iic2_pins>;
+-	pinctrl-names = "default";
++&i2c2	{
++	pinctrl-0 = <&i2c2_pins>;
++	pinctrl-names = "i2c-hdmi";
+ 
+ 	clock-frequency = <100000>;
++};
+ 
+-	ak4643: codec@12 {
+-		compatible = "asahi-kasei,ak4643";
+-		#sound-dai-cells = <0>;
+-		reg = <0x12>;
+-	};
+-
+-	composite-in@20 {
+-		compatible = "adi,adv7180";
+-		reg = <0x20>;
+-		remote = <&vin1>;
+-
+-		port {
+-			adv7180: endpoint {
+-				bus-width = <8>;
+-				remote-endpoint = <&vin1ep0>;
+-			};
+-		};
+-	};
+-
+-	hdmi@39 {
+-		compatible = "adi,adv7511w";
+-		reg = <0x39>;
+-		interrupt-parent = <&gpio1>;
+-		interrupts = <15 IRQ_TYPE_LEVEL_LOW>;
+-
+-		adi,input-depth = <8>;
+-		adi,input-colorspace = "rgb";
+-		adi,input-clock = "1x";
+-		adi,input-style = <1>;
+-		adi,input-justification = "evenly";
+-
+-		ports {
+-			#address-cells = <1>;
+-			#size-cells = <0>;
+-
+-			port@0 {
+-				reg = <0>;
+-				adv7511_in: endpoint {
+-					remote-endpoint = <&du_out_lvds0>;
+-				};
+-			};
++&iic2	{
++	pinctrl-0 = <&iic2_pins>;
++	pinctrl-names = "i2c-hdmi";
+ 
+-			port@1 {
+-				reg = <1>;
+-				adv7511_out: endpoint {
+-					remote-endpoint = <&hdmi_con>;
+-				};
+-			};
+-		};
+-	};
++	clock-frequency = <100000>;
+ };
+ 
+ &iic3 {
 -- 
 2.1.4
 
