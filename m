@@ -1,38 +1,63 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 06 Jan 2016 08:45:46 +0000
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Wed, 06 Jan 2016 08:50:24 +0000
 Subject: Re: [PATCH v2 3/4] PCI: rcar: Add runtime PM support to pcie-rcar
-Message-Id: <CAMuHMdUZq=8j8sTAu4SiDu+HuJkqciCx9uy-L5TQUGVbNc-Yaw@mail.gmail.com>
+Message-Id: <20160106085024.GE1525@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="vv4Sf/kQfcwinyKX"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1451998831-27705-1-git-send-email-phil.edworthy@renesas.com>
-	<1451998831-27705-4-git-send-email-phil.edworthy@renesas.com>
-	<20160106083500.GB1525@katana>
-In-Reply-To: <20160106083500.GB1525@katana>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Wolfram Sang <wsa@the-dreams.de>
+ <1451998831-27705-4-git-send-email-phil.edworthy@renesas.com>
+ <20160106083500.GB1525@katana>
+ <CAMuHMdUZq=8j8sTAu4SiDu+HuJkqciCx9uy-L5TQUGVbNc-Yaw@mail.gmail.com>
+In-Reply-To: <CAMuHMdUZq=8j8sTAu4SiDu+HuJkqciCx9uy-L5TQUGVbNc-Yaw@mail.gmail.com>
+To: Geert Uytterhoeven <geert@linux-m68k.org>
 Cc: Phil Edworthy <phil.edworthy@renesas.com>, Simon Horman <horms@verge.net.au>, Bjorn Helgaas <bhelgaas@google.com>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, linux-pci <linux-pci@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
 
-Hi Wolfram,
 
-On Wed, Jan 6, 2016 at 9:35 AM, Wolfram Sang <wsa@the-dreams.de> wrote:
->> +err_pm_put:
->> +     pm_runtime_put(pcie->dev);
->> +
->> +err_pm_disable:
->> +     pm_runtime_disable(pcie->dev);
->
-> What about put/disable in the remove part?
+--vv4Sf/kQfcwinyKX
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Which remove part? (been there, done that ;-)
+On Wed, Jan 06, 2016 at 09:45:46AM +0100, Geert Uytterhoeven wrote:
+> Hi Wolfram,
+>=20
+> On Wed, Jan 6, 2016 at 9:35 AM, Wolfram Sang <wsa@the-dreams.de> wrote:
+> >> +err_pm_put:
+> >> +     pm_runtime_put(pcie->dev);
+> >> +
+> >> +err_pm_disable:
+> >> +     pm_runtime_disable(pcie->dev);
+> >
+> > What about put/disable in the remove part?
+>=20
+> Which remove part? (been there, done that ;-)
 
-Gr{oetje,eeting}s,
+:D Sorry for the noise then!
 
-                        Geert
+Acked-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+--vv4Sf/kQfcwinyKX
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBAgAGBQJWjNVQAAoJEBQN5MwUoCm2FxEP/3xZRDopqzZX8z+6UCyyoZOl
+bT/3F29MZ8BIi4S5Bi9c27qDF6r9LCpMmUaASRinaVI1dK2PQbfVeTlOJo6U1t/N
+QmOf2t/HuWYArGlxPbhmNGfwVTfl+vN5vk4XxulFOux2kywJuUoV5Yc/l2IcYNYm
+dPHG7lmbRwDzgJ9UZwOCNiRL32RwIk1IhRaNAcWrAx6nNyV3V8GHslP0R62iWTBM
+p4i9UfxLg41N1K9t20dKG9NzqddChpWbkaIW0RCH7mabPViJoll8guhl1myTiLuF
+0iRN9hClmBgEEBG9NuOllguYKiUJ+1tgosm1jjjXF0JwR+rn6yW2X/+46Ne4+myv
+thvPg7A36vy10PnOwFa4bDMclgnnpz1m0ikWoMQKsAp7LbC2GhknfkV9+gpwezyH
+wOyHfw/DCrO55n+ViIC7qvCvv6JGyRFhfFBgv1ndCcz9qgVGtCpy2q4UN98PkJtC
+YDYOI9bE1ep/StD+IWU6SDuRTn4igeyTWSjVufctZY1UK5rh9Ns6t2gCa0LGx/Ll
+P3JJXM+cOFxDes5UqaTd0UfuwKbq8S/CAi0R2VBvstKhZ+pmQoKvTNsJLiPFt2G0
+E5l9Xqzu+thdLQoKza97Hzwy/kn1KUVEzhAD9cr5m52jhxIeKqlB/8boD8PQpOZI
+GZGIHYTHI2P0d8zObrVe
+=xaYa
+-----END PGP SIGNATURE-----
+
+--vv4Sf/kQfcwinyKX--
