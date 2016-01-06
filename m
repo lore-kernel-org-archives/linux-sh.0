@@ -1,95 +1,67 @@
-From: =?UTF-8?q?Niklas=20S=C3=B6derlund?=  <niklas.soderlund+renesas@ragnatech.se>
-Date: Thu, 14 Jan 2016 13:30:14 +0000
-Subject: [RFC 3/5] [media] rcar-vin: add array of supported formats
-Message-Id: <1452778216-31978-4-git-send-email-niklas.soderlund+renesas@ragnatech.se>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Wed, 06 Jan 2016 13:51:21 +0000
+Subject: [RFC v2 0/4] i2c/of: switch I2C IP cores at runtime via OF_DYNAMIC
+Message-Id: <1452088285-6427-1-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-i2c@vger.kernel.org
+Cc: Wolfram Sang <wsa@the-dreams.de>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org, Pantelis Antoniou <pantelis.antoniou@konsulko.com>, Jan Luebbe <jlu@pengutronix.de>
 
-Lift over the video formats and helper from the soc_camera driver.
----
- drivers/media/platform/rcar-vin.c | 59 +++++++++++++++++++++++++++++++++++++++
- 1 file changed, 59 insertions(+)
+I know this is gonna be a controversial series, but we have a usecase for this :)
 
-diff --git a/drivers/media/platform/rcar-vin.c b/drivers/media/platform/rcar-vin.c
-index 06616d4..a062287 100644
---- a/drivers/media/platform/rcar-vin.c
-+++ b/drivers/media/platform/rcar-vin.c
-@@ -34,6 +34,12 @@ enum chip_id {
- 	RCAR_E1,
- };
- 
-+struct rcar_vin_format {
-+	const char *description;
-+	u32 fourcc;
-+	u8 bpp;
-+};
-+
- struct rcar_vin {
- 	void __iomem *base;
- 
-@@ -181,6 +187,59 @@ static irqreturn_t rcar_vin_irq(int irq, void *dev_id)
- }
- 
- /* -----------------------------------------------------------------------------
-+ * Video formats
-+ */
-+
-+static const struct rcar_vin_format rcar_vin_formats[] = {
-+	{
-+		.description		= "NV16",
-+		.fourcc			= V4L2_PIX_FMT_NV16,
-+		.bpp			= 8,
-+	},
-+	{
-+		.description		= "YUYV",
-+		.fourcc			= V4L2_PIX_FMT_YUYV,
-+		.bpp			= 16,
-+	},
-+	{
-+		.description		= "UYVY",
-+		.fourcc			= V4L2_PIX_FMT_UYVY,
-+		.bpp			= 16,
-+	},
-+	{
-+		.description		= "RGB565",
-+		.fourcc			= V4L2_PIX_FMT_RGB565,
-+		.bpp			= 16,
-+	},
-+	{
-+		.description		= "ARGB1555",
-+		.fourcc			= V4L2_PIX_FMT_RGB555X,
-+		.bpp			= 16,
-+	},
-+	{
-+		.description		= "RGB888",
-+		.fourcc			= V4L2_PIX_FMT_RGB32,
-+		.bpp			= 32,
-+	},
-+};
-+
-+
-+
-+const struct rcar_vin_format *rcar_vin_get_format_by_fourcc(u32 fourcc)
-+{
-+	unsigned int i;
-+
-+	for (i = 0; i < ARRAY_SIZE(rcar_vin_formats); ++i) {
-+		const struct rcar_vin_format *format = &rcar_vin_formats[i];
-+
-+		if (format->fourcc = fourcc)
-+			return format;
-+	}
-+
-+	return ERR_PTR(-EINVAL);
-+}
-+
-+/* -----------------------------------------------------------------------------
-  * Platform Device Driver
-  */
- 
+This series allows an I2C bus to switch between multiple masters, i.e. a
+n-to-1-demuxer. This is not hot-switching because connected I2C slaves will be
+re-instantiated. It is meant to select the best I2C core at runtime once the
+task is known. Example: Prefer i2c-gpio over another I2C core because of HW
+errata affecting your current runtime configuration.
+
+It works by using OF_DYNAMIC and en-/disabling the i2c parent as needed. See
+the binding docs for more details. Because this is largely using OF_DYNAMIC, I
+decided to post the whole series to the dt list.
+
+Changes since RFC v1:
+
+* gracefully handle if i2c adapters are not present at runtime
+  (driver not loaded yet)
+* added more documentation and examples
+* properly put the i2c adapters after use
+* respect PAGE_SIZE in sysfs_show
+
+This has been tested on a Renesas Lager board switching between i2c-gpio and
+two different IP cores (i2c-rcar and i2c-sh_mobile). The rebinding seems to be
+working as expected. However, in practice, I couldn't use the HDMI i2c slaves
+with another controller yet, because the rcar-du driver OOPSes when unbinding.
+This seems unrelated to this series because it can also be triggered via
+sysfs-unbind. soc-camera also had problems properly cleaning up on unbind, a
+patch for this already has been sent. So, this series is for sure a good test
+for the unbind path of drivers.
+
+Let me know what you think.
+
+Thanks,
+
+   Wolfram
+
+
+Wolfram Sang (4):
+  of: make of_mutex public
+  dt-bindings: i2c: mux: demux-pinctrl: add bindings
+  i2c: mux: demux-pinctrl: add driver
+  ARM: shmobile: r8a7790: rework dts to use i2c demuxer
+
+ .../devicetree/bindings/i2c/i2c-demux-pinctrl.txt  | 155 ++++++++++++
+ arch/arm/boot/dts/r8a7790-lager.dts                | 141 +++++++----
+ drivers/i2c/muxes/Kconfig                          |   9 +
+ drivers/i2c/muxes/Makefile                         |   2 +
+ drivers/i2c/muxes/i2c-demux-pinctrl.c              | 276 +++++++++++++++++++++
+ drivers/of/of_private.h                            |   1 -
+ include/linux/of.h                                 |   2 +
+ 7 files changed, 532 insertions(+), 54 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/i2c/i2c-demux-pinctrl.txt
+ create mode 100644 drivers/i2c/muxes/i2c-demux-pinctrl.c
+
 -- 
-2.7.0
+2.1.4
 
