@@ -1,75 +1,60 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 05 Jan 2016 12:55:44 +0000
-Subject: Re: [PATCH 4/6] arm64: renesas: salvator-x: enable usb2_phy
-Message-Id: <CAMuHMdW7odgpbiPTjd27JMA2axvqXjHHsEGCdPxcy6K4QueqiA@mail.gmail.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Thu, 07 Jan 2016 01:56:24 +0000
+Subject: RE: [PATCH 4/6] arm64: renesas: salvator-x: enable usb2_phy
+Message-Id: <SG2PR06MB091909E565E1108B317B086DD8F50@SG2PR06MB0919.apcprd06.prod.outlook.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1451037839-572-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 	<1451037839-572-5-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1451037839-572-5-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+ <CAMuHMdW7odgpbiPTjd27JMA2axvqXjHHsEGCdPxcy6K4QueqiA@mail.gmail.com>
+In-Reply-To: <CAMuHMdW7odgpbiPTjd27JMA2axvqXjHHsEGCdPxcy6K4QueqiA@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Cc: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Rob Herring <robh+dt@kernel.org>, Pawel Moll <pawel.moll@arm.com>, Mark Rutland <mark.rutland@arm.com>, Ian Campbell <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, linux-arm-kernel@vger.kernel.org, Linux-sh list <linux-sh@vger.kernel.org>
+To: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Rob Herring <robh+dt@kernel.org>, Pawel Moll <pawel.moll@arm.com>, Mark Rutland <mark.rutland@arm.com>, Ian Campbell <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, "linux-arm-kernel@vger.kernel.org" <linux-arm-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
 
-Hi Shimoda-san,
-
-On Fri, Dec 25, 2015 at 11:03 AM, Yoshihiro Shimoda
-<yoshihiro.shimoda.uh@renesas.com> wrote:
-> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-> ---
->  arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 34 +++++++++++++++++++++-
->  1 file changed, 33 insertions(+), 1 deletion(-)
->
-> diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-> index 265d12f..7353407 100644
-> --- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-> +++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-> @@ -122,8 +122,22 @@
->                                  "audio_clkout_a", "audio_clkout3_a";
->                 renesas,function = "audio_clk";
->         };
-> -};
->
-> +       usb0_pins: usb0 {
-> +               renesas,groups = "usb0";
-> +               renesas,function = "usb";
-> +       };
-> +
-> +       usb1_pins: usb1 {
-> +               renesas,groups = "usb1";
-> +               renesas,function = "usb";
-> +       };
-> +
-> +       usb2_pins: usb2 {
-> +               renesas,groups = "usb2";
-> +               renesas,function = "usb";
-> +       };
-
-sh-pfc e6060000.pfc: function 'usb' not supported
-sh-pfc e6060000.pfc: invalid function usb in map table
-sh-pfc e6060000.pfc: function 'usb' not supported
-sh-pfc e6060000.pfc: invalid function usb in map table
-sh-pfc e6060000.pfc: function 'usb' not supported
-sh-pfc e6060000.pfc: invalid function usb in map table
-
-As the usb patches for pfc-r8a7795 haven't been posted yet, it's difficult
-to test/comment.
-
-Note that the functions were called "usb%u" in a previous version, and in the
-pfc-r8a7795 code in the BSP.
-
-Can you please post the pfc-r8a7795 patches, too?
-
-Thanks!
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+SGkgR2VlcnQtc2FuLA0KDQo+IEZyb206IEdlZXJ0IFV5dHRlcmhvZXZlbg0KPiBTZW50OiBUdWVz
+ZGF5LCBKYW51YXJ5IDA1LCAyMDE2IDk6NTYgUE0NCj4gDQo+IEhpIFNoaW1vZGEtc2FuLA0KPiAN
+Cj4gT24gRnJpLCBEZWMgMjUsIDIwMTUgYXQgMTE6MDMgQU0sIFlvc2hpaGlybyBTaGltb2RhDQo+
+IDx5b3NoaWhpcm8uc2hpbW9kYS51aEByZW5lc2FzLmNvbT4gd3JvdGU6DQo+ID4gU2lnbmVkLW9m
+Zi1ieTogWW9zaGloaXJvIFNoaW1vZGEgPHlvc2hpaGlyby5zaGltb2RhLnVoQHJlbmVzYXMuY29t
+Pg0KPiA+IC0tLQ0KPiA+ICBhcmNoL2FybTY0L2Jvb3QvZHRzL3JlbmVzYXMvcjhhNzc5NS1zYWx2
+YXRvci14LmR0cyB8IDM0ICsrKysrKysrKysrKysrKysrKysrKy0NCj4gPiAgMSBmaWxlIGNoYW5n
+ZWQsIDMzIGluc2VydGlvbnMoKyksIDEgZGVsZXRpb24oLSkNCj4gPg0KPiA+IGRpZmYgLS1naXQg
+YS9hcmNoL2FybTY0L2Jvb3QvZHRzL3JlbmVzYXMvcjhhNzc5NS1zYWx2YXRvci14LmR0cyBiL2Fy
+Y2gvYXJtNjQvYm9vdC9kdHMvcmVuZXNhcy9yOGE3Nzk1LXNhbHZhdG9yLXguZHRzDQo+ID4gaW5k
+ZXggMjY1ZDEyZi4uNzM1MzQwNyAxMDA2NDQNCj4gPiAtLS0gYS9hcmNoL2FybTY0L2Jvb3QvZHRz
+L3JlbmVzYXMvcjhhNzc5NS1zYWx2YXRvci14LmR0cw0KPiA+ICsrKyBiL2FyY2gvYXJtNjQvYm9v
+dC9kdHMvcmVuZXNhcy9yOGE3Nzk1LXNhbHZhdG9yLXguZHRzDQo+ID4gQEAgLTEyMiw4ICsxMjIs
+MjIgQEANCj4gPiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAiYXVkaW9fY2xrb3V0
+X2EiLCAiYXVkaW9fY2xrb3V0M19hIjsNCj4gPiAgICAgICAgICAgICAgICAgcmVuZXNhcyxmdW5j
+dGlvbiA9ICJhdWRpb19jbGsiOw0KPiA+ICAgICAgICAgfTsNCj4gPiAtfTsNCj4gPg0KPiA+ICsg
+ICAgICAgdXNiMF9waW5zOiB1c2IwIHsNCj4gPiArICAgICAgICAgICAgICAgcmVuZXNhcyxncm91
+cHMgPSAidXNiMCI7DQo+ID4gKyAgICAgICAgICAgICAgIHJlbmVzYXMsZnVuY3Rpb24gPSAidXNi
+IjsNCj4gPiArICAgICAgIH07DQo+ID4gKw0KPiA+ICsgICAgICAgdXNiMV9waW5zOiB1c2IxIHsN
+Cj4gPiArICAgICAgICAgICAgICAgcmVuZXNhcyxncm91cHMgPSAidXNiMSI7DQo+ID4gKyAgICAg
+ICAgICAgICAgIHJlbmVzYXMsZnVuY3Rpb24gPSAidXNiIjsNCj4gPiArICAgICAgIH07DQo+ID4g
+Kw0KPiA+ICsgICAgICAgdXNiMl9waW5zOiB1c2IyIHsNCj4gPiArICAgICAgICAgICAgICAgcmVu
+ZXNhcyxncm91cHMgPSAidXNiMiI7DQo+ID4gKyAgICAgICAgICAgICAgIHJlbmVzYXMsZnVuY3Rp
+b24gPSAidXNiIjsNCj4gPiArICAgICAgIH07DQo+IA0KPiBzaC1wZmMgZTYwNjAwMDAucGZjOiBm
+dW5jdGlvbiAndXNiJyBub3Qgc3VwcG9ydGVkDQo+IHNoLXBmYyBlNjA2MDAwMC5wZmM6IGludmFs
+aWQgZnVuY3Rpb24gdXNiIGluIG1hcCB0YWJsZQ0KPiBzaC1wZmMgZTYwNjAwMDAucGZjOiBmdW5j
+dGlvbiAndXNiJyBub3Qgc3VwcG9ydGVkDQo+IHNoLXBmYyBlNjA2MDAwMC5wZmM6IGludmFsaWQg
+ZnVuY3Rpb24gdXNiIGluIG1hcCB0YWJsZQ0KPiBzaC1wZmMgZTYwNjAwMDAucGZjOiBmdW5jdGlv
+biAndXNiJyBub3Qgc3VwcG9ydGVkDQo+IHNoLXBmYyBlNjA2MDAwMC5wZmM6IGludmFsaWQgZnVu
+Y3Rpb24gdXNiIGluIG1hcCB0YWJsZQ0KPiANCj4gQXMgdGhlIHVzYiBwYXRjaGVzIGZvciBwZmMt
+cjhhNzc5NSBoYXZlbid0IGJlZW4gcG9zdGVkIHlldCwgaXQncyBkaWZmaWN1bHQNCj4gdG8gdGVz
+dC9jb21tZW50Lg0KPiANCj4gTm90ZSB0aGF0IHRoZSBmdW5jdGlvbnMgd2VyZSBjYWxsZWQgInVz
+YiV1IiBpbiBhIHByZXZpb3VzIHZlcnNpb24sIGFuZCBpbiB0aGUNCj4gcGZjLXI4YTc3OTUgY29k
+ZSBpbiB0aGUgQlNQLg0KPiANCj4gQ2FuIHlvdSBwbGVhc2UgcG9zdCB0aGUgcGZjLXI4YTc3OTUg
+cGF0Y2hlcywgdG9vPw0KDQpUaGFuayB5b3UgZm9yIHRoZSBwb2ludC4gSSBvdmVybG9va2VkIHRo
+ZXNlIGVycm9yIG1lc3NhZ2VzIGJlY2F1c2UNCnVzYiBob3N0IGZ1bmN0aW9ucyB3b3JrZWQgY29y
+cmVjdGx5Li4uDQoNCkFueXdheSwgSSB3aWxsIG1ha2UgdGhlIHBmYy1yOGE3Nzk1IHBhdGNoZXMg
+Zm9yIGl0IGxhdGVyLg0KDQpCZXN0IHJlZ2FyZHMsDQpZb3NoaWhpcm8gU2hpbW9kYQ0KDQo+IFRo
+YW5rcyENCj4gDQo+IEdye29ldGplLGVldGluZ31zLA0KPiANCj4gICAgICAgICAgICAgICAgICAg
+ICAgICAgR2VlcnQNCj4gDQo+IC0tDQo+IEdlZXJ0IFV5dHRlcmhvZXZlbiAtLSBUaGVyZSdzIGxv
+dHMgb2YgTGludXggYmV5b25kIGlhMzIgLS0gZ2VlcnRAbGludXgtbTY4ay5vcmcNCj4gDQo+IElu
+IHBlcnNvbmFsIGNvbnZlcnNhdGlvbnMgd2l0aCB0ZWNobmljYWwgcGVvcGxlLCBJIGNhbGwgbXlz
+ZWxmIGEgaGFja2VyLiBCdXQNCj4gd2hlbiBJJ20gdGFsa2luZyB0byBqb3VybmFsaXN0cyBJIGp1
+c3Qgc2F5ICJwcm9ncmFtbWVyIiBvciBzb21ldGhpbmcgbGlrZSB0aGF0Lg0KPiAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgIC0tIExpbnVzIFRvcnZhbGRzDQo
