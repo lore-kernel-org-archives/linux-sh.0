@@ -1,38 +1,32 @@
 From: Wolfram Sang <wsa@the-dreams.de>
-Date: Fri, 08 Jan 2016 21:12:32 +0000
-Subject: [RFC v4 3/4] arm64: dts: salvator-x: Enable watchdog timer
-Message-Id: <1452287553-18895-4-git-send-email-wsa@the-dreams.de>
+Date: Thu, 07 Jan 2016 20:50:58 +0000
+Subject: [PATCH 0/2] dt-bindings: refactor i2c eeprom bindings, step 1
+Message-Id: <1452199860-3601-1-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: devicetree@vger.kernel.org
+Cc: Wolfram Sang <wsa@the-dreams.de>, linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org, Simon Horman <horms@verge.net.au>, linux-kernel@vger.kernel.org
 
-From: Takeshi Kihara <takeshi.kihara.df@renesas.com>
+A first step to clean up the bindings for i2c eeproms. Please see the patch
+descriptions for further details.
 
-This patch enables watchdog timer for Salvator-X board.
+I suggest I take these via my i2c tree. D'accord?
 
-Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
----
- arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 4 ++++
- 1 file changed, 4 insertions(+)
+Thanks,
 
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-index 594a4f6b8d3f49..164bde49c19a54 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-+++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-@@ -291,6 +291,10 @@
- 	shared-pin;
- };
- 
-+&wdt0 {
-+	status = "okay";
-+};
-+
- &audio_clk_a {
- 	clock-frequency = <22579200>;
- };
+   Wolfram
+
+
+Wolfram Sang (2):
+  dt-bindings: move I2C eeprom descriptions to the proper file
+  dt-bindings: i2c: eeprom: add another EEPROM device
+
+ Documentation/devicetree/bindings/eeprom/eeprom.txt | 21 ++++++++++++++++-----
+ .../devicetree/bindings/i2c/trivial-devices.txt     | 13 -------------
+ 2 files changed, 16 insertions(+), 18 deletions(-)
+
 -- 
 2.1.4
 
