@@ -1,7 +1,7 @@
 From: "Michael S. Tsirkin" <mst@redhat.com>
-Date: Thu, 07 Jan 2016 15:50:58 +0000
+Date: Thu, 07 Jan 2016 17:48:08 +0000
 Subject: Re: [PATCH v2 31/32] sh: support a 2-byte smp_store_mb
-Message-Id: <20160107142254-mutt-send-email-mst@redhat.com>
+Message-Id: <20160107175944-mutt-send-email-mst@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1451572003-2440-1-git-send-email-mst@redhat.com>
  <1451572003-2440-32-git-send-email-mst@redhat.com>
@@ -110,70 +110,11 @@ On Wed, Jan 06, 2016 at 06:53:01PM -0500, Rich Felker wrote:
 > define their own versions rather than having cruft like this repeated
 > per-arch. Strictly speaking, the volatile u32 used to access the
 > 32-bit word containing the u8 or u16 should be
-> __attribute__((__may_alias__)) too.
-> Is there an existing kernel type
+> __attribute__((__may_alias__)) too. Is there an existing kernel type
 > for a "may_alias u32" or should it perhaps be added?
 > 
 > Rich
 
-I'm inclined to write this using shifts, this way there's
-no duplication between 1 and 2 byte variants.
-And READ_ONCE is better than volatile IMHO.
+BTW this seems suboptimal for grb and irq variants which apparently
+can do things correctly.
 
-
-diff --git a/arch/sh/include/asm/cmpxchg.h b/arch/sh/include/asm/cmpxchg.h
-index 85c97b18..a858879 100644
---- a/arch/sh/include/asm/cmpxchg.h
-+++ b/arch/sh/include/asm/cmpxchg.h
-@@ -8,6 +8,7 @@
- 
- #include <linux/compiler.h>
- #include <linux/types.h>
-+#include <asm/byteorder.h>
- 
- #if defined(CONFIG_GUSA_RB)
- #include <asm/cmpxchg-grb.h>
-@@ -19,6 +20,26 @@
- 
- extern void __xchg_called_with_bad_pointer(void);
- 
-+static inline u32 __xchg_cmpxchg(void *ptr, u32 x, int size)
-+{
-+	int off = (unsigned long)ptr % sizeof(u32);
-+	u32 *p = ptr - off;
-+	int bitoff = __BYTE_ORDER = __BIG_ENDIAN ?
-+		((sizeof(u32) - 1 - off) * BITS_PER_BYTE) :
-+		(off * BITS_PER_BYTE);
-+	u32 bitmask = ((0x1 << size * BITS_PER_BYTE) - 1) << bitoff;
-+	u32 oldv, newv;
-+	u32 ret;
-+
-+	do {
-+		oldv = READ_ONCE(*p);
-+		ret = (oldv & bitmask) >> bitoff;
-+		newv = (oldv & ~bitmask) | (x << bitoff);
-+	} while(cmpxchg(p, oldv, newv) != oldv);
-+
-+	return ret;
-+}
-+
- #define __xchg(ptr, x, size)				\
- ({							\
- 	unsigned long __xchg__res;			\
-@@ -27,8 +48,10 @@ extern void __xchg_called_with_bad_pointer(void);
- 	case 4:						\
- 		__xchg__res = xchg_u32(__xchg_ptr, x);	\
- 		break;					\
-+	case 2:						\
- 	case 1:						\
--		__xchg__res = xchg_u8(__xchg_ptr, x);	\
-+		__xchg__res = __xchg_cmpxchg(__xchg_ptr,\
-+					     x, size);	\
- 		break;					\
- 	default:					\
- 		__xchg_called_with_bad_pointer();	\
-
-
-Testing the above now.
--- 
-MST
