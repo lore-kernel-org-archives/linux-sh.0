@@ -1,50 +1,66 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 06 Jan 2016 14:30:39 +0000
+From: Jan =?ISO-8859-1?Q?L=FCbbe?= <jlu@pengutronix.de>
+Date: Thu, 07 Jan 2016 16:56:38 +0000
 Subject: Re: [RFC v2 2/4] dt-bindings: i2c: mux: demux-pinctrl: add bindings
-Message-Id: <CAMuHMdUdxk6yjYAr3i7sjdMa-WJxrbOhsEz3JidY9aZVhaoURw@mail.gmail.com>
+Message-Id: <1452185798.2915.44.camel@pengutronix.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1452088285-6427-1-git-send-email-wsa@the-dreams.de>
-	<1452088285-6427-3-git-send-email-wsa@the-dreams.de>
+	 <1452088285-6427-3-git-send-email-wsa@the-dreams.de>
 In-Reply-To: <1452088285-6427-3-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Wolfram Sang <wsa@the-dreams.de>
-Cc: Linux I2C <linux-i2c@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Pantelis Antoniou <pantelis.antoniou@konsulko.com>, Jan Luebbe <jlu@pengutronix.de>
+Cc: linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org, Pantelis Antoniou <pantelis.antoniou@konsulko.com>
 
 Hi Wolfram,
 
-On Wed, Jan 6, 2016 at 2:51 PM, Wolfram Sang <wsa@the-dreams.de> wrote:
-> These bindings allow an I2C bus to switch between multiple masters. This
-> is not hot-swichting because connected I2C slaves will be
-> re-instantiated. It is meant to select the best I2C core at runtime once
-> the task is known. Example: Prefer i2c-gpio over another I2C core
-> because of HW errata affetcing your use case.
-
-> --- /dev/null
-> +++ b/Documentation/devicetree/bindings/i2c/i2c-demux-pinctrl.txt
-> @@ -0,0 +1,155 @@
-
-> +Here is a snipplet for a bus to be demuxed. It contains various i2c clients for
-
-snippet
-
-> +HDMI, so the bus is named "i2c-hdmi":
+On Mi, 2016-01-06 at 14:51 +0100, Wolfram Sang wrote:
+[...]
+> +Required properties:
+> +- compatible: "i2c-demux-pinctrl"
+> +- i2c-parent: List of phandles of I2C masters available for selection. The first
+> +	      one will be used as default.
+> +- i2c-bus-name: The name of this bus. Also needed as pinctrl-name for the I2C
+> +		parents.
+[...]
+> +	i2chdmi: i2c@8 {
+> +		compatible = "i2c-demux-pinctrl";
+> +		i2c-parent = <&gpioi2c>, <&iic2>, <&i2c2>;
+> +		i2c-bus-name = "i2c-hdmi";
+> +		#address-cells = <1>;
+> +		#size-cells = <0>;
+[...]
+> +	gpioi2c: i2c@9 {
+> +		#address-cells = <1>;
+> +		#size-cells = <0>;
+> +		compatible = "i2c-gpio";
+[...]
+> +&i2c2	{
+> +	pinctrl-0 = <&i2c2_pins>;
+> +	pinctrl-names = "i2c-hdmi";
 > +
-> +       i2chdmi: i2c@8 {
-
-Would it make sense to call the node "i2c-bus@8"?
+> +	clock-frequency = <100000>;
+> +};
+[...]
+> +&iic2	{
+> +	pinctrl-0 = <&iic2_pins>;
+> +	pinctrl-names = "i2c-hdmi";
 > +
-> +               compatible = "i2c-demux-pinctrl";
-> +               i2c-parent = <&gpioi2c>, <&iic2>, <&i2c2>;
+> +	clock-frequency = <100000>;
+> +};
+[...]
 
-Gr{oetje,eeting}s,
+It seems that the demux-pinctrl driver reconfigures the pinctrl settings
+for the parent devices. I would have expected to have alternative
+pinctrl state on the demux node support switching the same external pins
+between the different controllers. Wouldn't it be possible to have
+pinctrl conflicts between &i2c2_pins and &iic2_pins otherwise?
 
-                        Geert
+Regards,
+Jan
+-- 
+Pengutronix e.K.                           |                             |
+Industrial Linux Solutions                 | http://www.pengutronix.de/  |
+Peiner Str. 6-8, 31137 Hildesheim, Germany | Phone: +49-5121-206917-0    |
+Amtsgericht Hildesheim, HRA 2686           | Fax:   +49-5121-206917-5555 |
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
