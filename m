@@ -1,212 +1,173 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 05 Jan 2016 08:08:45 +0000
-Subject: Re: [PATCH 5/8 v6] thermal: rcar: enable to use thermal-zone on DT
-Message-Id: <87lh841mev.wl%kuninori.morimoto.gx@renesas.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Thu, 07 Jan 2016 09:18:13 +0000
+Subject: [PATCH] usb: renesas_usbhs: add R-Car Gen3 power control
+Message-Id: <1452158293-6332-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87d1u8qzsy.wl%kuninori.morimoto.gx@renesas.com>
-	<876100qzp6.wl%kuninori.morimoto.gx@renesas.com>
-	<20151217203707.GD7999@localhost.localdomain>
-	<87wpsctxjv.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87wpsctxjv.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Cc: Eduardo Valentin <edubezval@gmail.com>, Simon <horms@verge.net.au>, Zhang Rui <rui.zhang@intel.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
+Since the usb2 phy driver for gen3 (phy-rcar-gen3-usb2) cannot access
+LPSTS and UGCTRL2 registers in the HSUSB module, this driver have to
+initialize the registers. So, this patch adds such handling code into
+rcar3.c.
 
-Hi
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ This patch is based on the latest Felipe's usb.git / testing/next branch.
+ (commit id = 5072cfc40a80cea3749fd3413b3896630d8c787e)
 
-ping ?
+ drivers/usb/renesas_usbhs/Makefile |  2 +-
+ drivers/usb/renesas_usbhs/common.c | 14 +++++++---
+ drivers/usb/renesas_usbhs/rcar3.c  | 54 ++++++++++++++++++++++++++++++++++++++
+ drivers/usb/renesas_usbhs/rcar3.h  |  3 +++
+ include/linux/usb/renesas_usbhs.h  |  1 +
+ 5 files changed, 69 insertions(+), 5 deletions(-)
+ create mode 100644 drivers/usb/renesas_usbhs/rcar3.c
+ create mode 100644 drivers/usb/renesas_usbhs/rcar3.h
 
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> 
-> This patch enables to use thermal-zone on DT if it was calles as
-> "renesas,rcar-thermal-gen2".
-> Previous style (= non thermal-zone) is still supported by
-> "renesas,rcar-thermal" to keep compatibility for "git bisect".
-> 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> ---
-> v5 -> v6
-> 
->  - "was call" -> "was called"
->  - add reason why it keeps previous style
-> 
->  .../devicetree/bindings/thermal/rcar-thermal.txt   | 37 +++++++++++++++++-
->  drivers/thermal/rcar_thermal.c                     | 45 +++++++++++++++++++---
->  2 files changed, 75 insertions(+), 7 deletions(-)
-> 
-> diff --git a/Documentation/devicetree/bindings/thermal/rcar-thermal.txt b/Documentation/devicetree/bindings/thermal/rcar-thermal.txt
-> index 332e625..e5ee3f1 100644
-> --- a/Documentation/devicetree/bindings/thermal/rcar-thermal.txt
-> +++ b/Documentation/devicetree/bindings/thermal/rcar-thermal.txt
-> @@ -1,8 +1,9 @@
->  * Renesas R-Car Thermal
->  
->  Required properties:
-> -- compatible		: "renesas,thermal-<soctype>", "renesas,rcar-thermal"
-> -			  as fallback.
-> +- compatible		: "renesas,thermal-<soctype>",
-> +			   "renesas,rcar-gen2-thermal" (with thermal-zone) or
-> +			   "renesas,rcar-thermal" (without thermal-zone) as fallback.
->  			  Examples with soctypes are:
->  			    - "renesas,thermal-r8a73a4" (R-Mobile APE6)
->  			    - "renesas,thermal-r8a7779" (R-Car H1)
-> @@ -36,3 +37,35 @@ thermal@e61f0000 {
->  		0xe61f0300 0x38>;
->  	interrupts = <0 69 IRQ_TYPE_LEVEL_HIGH>;
->  };
-> +
-> +Example (with thermal-zone):
-> +
-> +thermal-zones {
-> +	cpu_thermal: cpu-thermal {
-> +		polling-delay-passive	= <1000>;
-> +		polling-delay		= <5000>;
-> +
-> +		thermal-sensors = <&thermal>;
-> +
-> +		trips {
-> +			cpu-crit {
-> +				temperature	= <115000>;
-> +				hysteresis	= <0>;
-> +				type		= "critical";
-> +			};
-> +		};
-> +		cooling-maps {
-> +		};
-> +	};
-> +};
-> +
-> +thermal: thermal@e61f0000 {
-> +	compatible =	"renesas,thermal-r8a7790",
-> +			"renesas,rcar-gen2-thermal",
-> +			"renesas,rcar-thermal";
-> +	reg = <0 0xe61f0000 0 0x14>, <0 0xe61f0100 0 0x38>;
-> +	interrupts = <0 69 IRQ_TYPE_LEVEL_HIGH>;
-> +	clocks = <&mstp5_clks R8A7790_CLK_THERMAL>;
-> +	power-domains = <&cpg_clocks>;
-> +	#thermal-sensor-cells = <0>;
-> +};
-> diff --git a/drivers/thermal/rcar_thermal.c b/drivers/thermal/rcar_thermal.c
-> index 30602f2..e92f29b 100644
-> --- a/drivers/thermal/rcar_thermal.c
-> +++ b/drivers/thermal/rcar_thermal.c
-> @@ -23,6 +23,7 @@
->  #include <linux/interrupt.h>
->  #include <linux/io.h>
->  #include <linux/module.h>
-> +#include <linux/of_device.h>
->  #include <linux/platform_device.h>
->  #include <linux/pm_runtime.h>
->  #include <linux/reboot.h>
-> @@ -75,8 +76,10 @@ struct rcar_thermal_priv {
->  #define rcar_has_irq_support(priv)	((priv)->common->base)
->  #define rcar_id_to_shift(priv)		((priv)->id * 8)
->  
-> +#define USE_OF_THERMAL	1
->  static const struct of_device_id rcar_thermal_dt_ids[] = {
->  	{ .compatible = "renesas,rcar-thermal", },
-> +	{ .compatible = "renesas,rcar-gen2-thermal", .data = (void *)USE_OF_THERMAL },
->  	{},
->  };
->  MODULE_DEVICE_TABLE(of, rcar_thermal_dt_ids);
-> @@ -200,9 +203,9 @@ err_out_unlock:
->  	return ret;
->  }
->  
-> -static int rcar_thermal_get_temp(struct thermal_zone_device *zone, int *temp)
-> +static int rcar_thermal_get_current_temp(struct rcar_thermal_priv *priv,
-> +					 int *temp)
->  {
-> -	struct rcar_thermal_priv *priv = rcar_zone_to_priv(zone);
->  	int tmp;
->  	int ret;
->  
-> @@ -226,6 +229,20 @@ static int rcar_thermal_get_temp(struct thermal_zone_device *zone, int *temp)
->  	return 0;
->  }
->  
-> +static int rcar_thermal_of_get_temp(void *data, int *temp)
-> +{
-> +	struct rcar_thermal_priv *priv = data;
-> +
-> +	return rcar_thermal_get_current_temp(priv, temp);
-> +}
-> +
-> +static int rcar_thermal_get_temp(struct thermal_zone_device *zone, int *temp)
-> +{
-> +	struct rcar_thermal_priv *priv = rcar_zone_to_priv(zone);
-> +
-> +	return rcar_thermal_get_current_temp(priv, temp);
-> +}
-> +
->  static int rcar_thermal_get_trip_type(struct thermal_zone_device *zone,
->  				      int trip, enum thermal_trip_type *type)
->  {
-> @@ -282,6 +299,10 @@ static int rcar_thermal_notify(struct thermal_zone_device *zone,
->  	return 0;
->  }
->  
-> +static const struct thermal_zone_of_device_ops rcar_thermal_zone_of_ops = {
-> +	.get_temp	= rcar_thermal_of_get_temp,
-> +};
-> +
->  static struct thermal_zone_device_ops rcar_thermal_zone_ops = {
->  	.get_temp	= rcar_thermal_get_temp,
->  	.get_trip_type	= rcar_thermal_get_trip_type,
-> @@ -318,14 +339,20 @@ static void rcar_thermal_work(struct work_struct *work)
->  
->  	priv = container_of(work, struct rcar_thermal_priv, work.work);
->  
-> -	rcar_thermal_get_temp(priv->zone, &cctemp);
-> +	ret = rcar_thermal_get_current_temp(priv, &cctemp);
-> +	if (ret < 0)
-> +		return;
-> +
->  	ret = rcar_thermal_update_temp(priv);
->  	if (ret < 0)
->  		return;
->  
->  	rcar_thermal_irq_enable(priv);
->  
-> -	rcar_thermal_get_temp(priv->zone, &nctemp);
-> +	ret = rcar_thermal_get_current_temp(priv, &nctemp);
-> +	if (ret < 0)
-> +		return;
-> +
->  	if (nctemp != cctemp)
->  		thermal_zone_device_update(priv->zone);
->  }
-> @@ -386,6 +413,8 @@ static int rcar_thermal_probe(struct platform_device *pdev)
->  	struct rcar_thermal_priv *priv;
->  	struct device *dev = &pdev->dev;
->  	struct resource *res, *irq;
-> +	const struct of_device_id *of_id = of_match_device(rcar_thermal_dt_ids, dev);
-> +	unsigned long of_data = (unsigned long)of_id->data;
->  	int mres = 0;
->  	int i;
->  	int ret = -ENODEV;
-> @@ -444,7 +473,13 @@ static int rcar_thermal_probe(struct platform_device *pdev)
->  		if (ret < 0)
->  			goto error_unregister;
->  
-> -		priv->zone = thermal_zone_device_register("rcar_thermal",
-> +		if (of_data = USE_OF_THERMAL)
-> +			priv->zone = thermal_zone_of_sensor_register(
-> +						dev, i, priv,
-> +						&rcar_thermal_zone_of_ops);
-> +		else
-> +			priv->zone = thermal_zone_device_register(
-> +						"rcar_thermal",
->  						1, 0, priv,
->  						&rcar_thermal_zone_ops, NULL, 0,
->  						idle);
-> -- 
-> 1.9.1
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+diff --git a/drivers/usb/renesas_usbhs/Makefile b/drivers/usb/renesas_usbhs/Makefile
+index 9e47f47..d787d05 100644
+--- a/drivers/usb/renesas_usbhs/Makefile
++++ b/drivers/usb/renesas_usbhs/Makefile
+@@ -4,7 +4,7 @@
+ 
+ obj-$(CONFIG_USB_RENESAS_USBHS)	+= renesas_usbhs.o
+ 
+-renesas_usbhs-y			:= common.o mod.o pipe.o fifo.o rcar2.o
++renesas_usbhs-y			:= common.o mod.o pipe.o fifo.o rcar2.o rcar3.o
+ 
+ ifneq ($(CONFIG_USB_RENESAS_USBHS_HCD),)
+ 	renesas_usbhs-y		+= mod_host.o
+diff --git a/drivers/usb/renesas_usbhs/common.c b/drivers/usb/renesas_usbhs/common.c
+index 5af9ca5..baeb7d2 100644
+--- a/drivers/usb/renesas_usbhs/common.c
++++ b/drivers/usb/renesas_usbhs/common.c
+@@ -25,6 +25,7 @@
+ #include <linux/sysfs.h>
+ #include "common.h"
+ #include "rcar2.h"
++#include "rcar3.h"
+ 
+ /*
+  *		image of renesas_usbhs
+@@ -477,18 +478,16 @@ static const struct of_device_id usbhs_of_match[] = {
+ 		.data = (void *)USBHS_TYPE_RCAR_GEN2,
+ 	},
+ 	{
+-		/* Gen3 is compatible with Gen2 */
+ 		.compatible = "renesas,usbhs-r8a7795",
+-		.data = (void *)USBHS_TYPE_RCAR_GEN2,
++		.data = (void *)USBHS_TYPE_RCAR_GEN3,
+ 	},
+ 	{
+ 		.compatible = "renesas,rcar-gen2-usbhs",
+ 		.data = (void *)USBHS_TYPE_RCAR_GEN2,
+ 	},
+ 	{
+-		/* Gen3 is compatible with Gen2 */
+ 		.compatible = "renesas,rcar-gen3-usbhs",
+-		.data = (void *)USBHS_TYPE_RCAR_GEN2,
++		.data = (void *)USBHS_TYPE_RCAR_GEN3,
+ 	},
+ 	{ },
+ };
+@@ -578,6 +577,13 @@ static int usbhs_probe(struct platform_device *pdev)
+ 			priv->dparam.pipe_size = ARRAY_SIZE(usbhsc_new_pipe);
+ 		}
+ 		break;
++	case USBHS_TYPE_RCAR_GEN3:
++		priv->pfunc = usbhs_rcar3_ops;
++		if (!priv->dparam.pipe_configs) {
++			priv->dparam.pipe_configs = usbhsc_new_pipe;
++			priv->dparam.pipe_size = ARRAY_SIZE(usbhsc_new_pipe);
++		}
++		break;
+ 	default:
+ 		if (!info->platform_callback.get_id) {
+ 			dev_err(&pdev->dev, "no platform callbacks");
+diff --git a/drivers/usb/renesas_usbhs/rcar3.c b/drivers/usb/renesas_usbhs/rcar3.c
+new file mode 100644
+index 0000000..38b01f2
+--- /dev/null
++++ b/drivers/usb/renesas_usbhs/rcar3.c
+@@ -0,0 +1,54 @@
++/*
++ * Renesas USB driver R-Car Gen. 3 initialization and power control
++ *
++ * Copyright (C) 2016 Renesas Electronics Corporation
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ *
++ */
++
++#include <linux/io.h>
++#include "common.h"
++#include "rcar3.h"
++
++#define LPSTS		0x102
++#define UGCTRL2		0x184	/* 32-bit register */
++
++/* Low Power Status register (LPSTS) */
++#define LPSTS_SUSPM	0x4000
++
++/* USB General control register 2 (UGCTRL2), bit[31:6] should be 0 */
++#define UGCTRL2_RESERVED_3	0x00000001	/* bit[3:0] should be B'0001 */
++#define UGCTRL2_USB0SEL_OTG	0x00000030
++
++void usbhs_write32(struct usbhs_priv *priv, u32 reg, u32 data)
++{
++	iowrite32(data, priv->base + reg);
++}
++
++static int usbhs_rcar3_power_ctrl(struct platform_device *pdev,
++				void __iomem *base, int enable)
++{
++	struct usbhs_priv *priv = usbhs_pdev_to_priv(pdev);
++
++	usbhs_write32(priv, UGCTRL2, UGCTRL2_RESERVED_3 | UGCTRL2_USB0SEL_OTG);
++
++	if (enable)
++		usbhs_bset(priv, LPSTS, LPSTS_SUSPM, LPSTS_SUSPM);
++	else
++		usbhs_bset(priv, LPSTS, LPSTS_SUSPM, 0);
++
++	return 0;
++}
++
++static int usbhs_rcar3_get_id(struct platform_device *pdev)
++{
++	return USBHS_GADGET;
++}
++
++const struct renesas_usbhs_platform_callback usbhs_rcar3_ops = {
++	.power_ctrl = usbhs_rcar3_power_ctrl,
++	.get_id = usbhs_rcar3_get_id,
++};
+diff --git a/drivers/usb/renesas_usbhs/rcar3.h b/drivers/usb/renesas_usbhs/rcar3.h
+new file mode 100644
+index 0000000..5f850b2
+--- /dev/null
++++ b/drivers/usb/renesas_usbhs/rcar3.h
+@@ -0,0 +1,3 @@
++#include "common.h"
++
++extern const struct renesas_usbhs_platform_callback usbhs_rcar3_ops;
+diff --git a/include/linux/usb/renesas_usbhs.h b/include/linux/usb/renesas_usbhs.h
+index 4db191f..00a47d0 100644
+--- a/include/linux/usb/renesas_usbhs.h
++++ b/include/linux/usb/renesas_usbhs.h
+@@ -184,6 +184,7 @@ struct renesas_usbhs_driver_param {
+ };
+ 
+ #define USBHS_TYPE_RCAR_GEN2	1
++#define USBHS_TYPE_RCAR_GEN3	2
+ 
+ /*
+  * option:
+-- 
+1.9.1
+
