@@ -1,63 +1,69 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Wed, 06 Jan 2016 08:50:24 +0000
-Subject: Re: [PATCH v2 3/4] PCI: rcar: Add runtime PM support to pcie-rcar
-Message-Id: <20160106085024.GE1525@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="vv4Sf/kQfcwinyKX"
+From: Rob Landley <rob@landley.net>
+Date: Fri, 08 Jan 2016 18:12:56 +0000
+Subject: Bootable sh4 qemu images.
+Message-Id: <568FFC28.2010409@landley.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1451998831-27705-1-git-send-email-phil.edworthy@renesas.com>
- <1451998831-27705-4-git-send-email-phil.edworthy@renesas.com>
- <20160106083500.GB1525@katana>
- <CAMuHMdUZq=8j8sTAu4SiDu+HuJkqciCx9uy-L5TQUGVbNc-Yaw@mail.gmail.com>
-In-Reply-To: <CAMuHMdUZq=8j8sTAu4SiDu+HuJkqciCx9uy-L5TQUGVbNc-Yaw@mail.gmail.com>
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Phil Edworthy <phil.edworthy@renesas.com>, Simon Horman <horms@verge.net.au>, Bjorn Helgaas <bhelgaas@google.com>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, linux-pci <linux-pci@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
+The question was recently raised about QEMU images for sh. Since I
+maintain those as part of my Aboriginal Linux project, and put out a new
+release last night, I thought I'd link to and explain them.
 
---vv4Sf/kQfcwinyKX
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+The project page is http://landley.net/aboriginal/about.html
 
-On Wed, Jan 06, 2016 at 09:45:46AM +0100, Geert Uytterhoeven wrote:
-> Hi Wolfram,
->=20
-> On Wed, Jan 6, 2016 at 9:35 AM, Wolfram Sang <wsa@the-dreams.de> wrote:
-> >> +err_pm_put:
-> >> +     pm_runtime_put(pcie->dev);
-> >> +
-> >> +err_pm_disable:
-> >> +     pm_runtime_disable(pcie->dev);
-> >
-> > What about put/disable in the remove part?
->=20
-> Which remove part? (been there, done that ;-)
+The sh4 images are "qemu-system-sh4.tar.gz", the current release (1.4.4)
+is based on musl-libc and kernel 4.2, and the previous release (1.4.3)
+was uClibc and 4.1. The stable link to historical prebuilt binary
+versions is at:
 
-:D Sorry for the noise then!
+  http://landley.net/aboriginal/downloads/old/binaries/
 
-Acked-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Download a system image, extract it, and run either ./run-emulator.sh
+(simple initramfs-only, without compiler) or ./dev-environment.sh (with
+compiler loaded from /dev/sda squashfs image).
 
+Unfortunately qemu's r2d board can't give me multiple block devices yet
+(-hdb and later are ignored) so the 2 gig ext2 image dev-environment.sh
+tries to mount on /home is inaccessible, and the native-build.sh script
+is useless on this target because there's no /dev/[sh]dc. Also this
+board is hardwired to provide 64 megs of ram (gcc requires 256 megs to
+build linux from scratch), and when you exit and the kernel tries to
+halt the emulator, qemu panics and doesn't reset the TTY properly. (Type
+"reset" and hit enter to get your cursor back.)
 
---vv4Sf/kQfcwinyKX
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+In the current release's system image tarball is a "mini.config" file
+used to build the kernel. You can expand that via:
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
+  make ARCH=sh allnoconfig KCONFIG_ALLCONFIG=mini.config
 
-iQIcBAEBAgAGBQJWjNVQAAoJEBQN5MwUoCm2FxEP/3xZRDopqzZX8z+6UCyyoZOl
-bT/3F29MZ8BIi4S5Bi9c27qDF6r9LCpMmUaASRinaVI1dK2PQbfVeTlOJo6U1t/N
-QmOf2t/HuWYArGlxPbhmNGfwVTfl+vN5vk4XxulFOux2kywJuUoV5Yc/l2IcYNYm
-dPHG7lmbRwDzgJ9UZwOCNiRL32RwIk1IhRaNAcWrAx6nNyV3V8GHslP0R62iWTBM
-p4i9UfxLg41N1K9t20dKG9NzqddChpWbkaIW0RCH7mabPViJoll8guhl1myTiLuF
-0iRN9hClmBgEEBG9NuOllguYKiUJ+1tgosm1jjjXF0JwR+rn6yW2X/+46Ne4+myv
-thvPg7A36vy10PnOwFa4bDMclgnnpz1m0ikWoMQKsAp7LbC2GhknfkV9+gpwezyH
-wOyHfw/DCrO55n+ViIC7qvCvv6JGyRFhfFBgv1ndCcz9qgVGtCpy2q4UN98PkJtC
-YDYOI9bE1ep/StD+IWU6SDuRTn4igeyTWSjVufctZY1UK5rh9Ns6t2gCa0LGx/Ll
-P3JJXM+cOFxDes5UqaTd0UfuwKbq8S/CAi0R2VBvstKhZ+pmQoKvTNsJLiPFt2G0
-E5l9Xqzu+thdLQoKza97Hzwy/kn1KUVEzhAD9cr5m52jhxIeKqlB/8boD8PQpOZI
-GZGIHYTHI2P0d8zObrVe
-=xaYa
------END PGP SIGNATURE-----
+And then you have a big config from which you can build a kernel. There
+are cross-compilers in each release directory, download and extract
+cross-compiler-sh4.tar.gz and add its "bin" subdirectory to your path,
+and use sh4- as the prefix. (Or you can use the full path to the
+compiler ending with the prefix as the prefix, and not fiddle with the
+$PATH.)
 
---vv4Sf/kQfcwinyKX--
+  make ARCH=sh CROSS_COMPILE=sh4-
+
+(There are also sh2eb images and compilers, sh2 big endian, but the
+kernels in those boot on a Numato board, not under qemu. See
+http://nommu.org/jcore for details of that. Those are all still uClibc,
+they should move to musl next release.)
+
+Again, http://landley.net/aboriginal/about.html should explain or
+provide links to everything else.
+
+This is what I've been using to regression test the sh4 kernel for the
+past several years. I only got involved in the sh2 nommu stuff at the
+end of 2014, and dragged Rich into it what, 6 months ago?
+
+Rob
+
+P.S. Sorry I've fallen a couple kernel versions behind, I'm trying to
+catch up but with https://lwn.net/Articles/629362/ and
+https://lwn.net/Articles/616315/ and now
+http://review.cyanogenmod.org/#/c/119819/1 toybox is dominating my todo
+list...
