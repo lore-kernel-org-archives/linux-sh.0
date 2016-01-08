@@ -1,7 +1,7 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 04 Jan 2016 20:22:54 +0000
+From: Bjorn Helgaas <helgaas@kernel.org>
+Date: Fri, 08 Jan 2016 16:43:52 +0000
 Subject: Re: [PATCH] PCI: provide of_pci_get_host_bridge_resources helper
-Message-Id: <20160104202253.GA12748@verge.net.au>
+Message-Id: <20160108164351.GC31005@localhost>
 List-Id: <linux-sh.vger.kernel.org>
 References: <8759253.sZisGJ6Km3@wuerfel>
 In-Reply-To: <8759253.sZisGJ6Km3@wuerfel>
@@ -27,7 +27,7 @@ On Fri, Dec 18, 2015 at 04:02:41PM +0100, Arnd Bergmann wrote:
 > Signed-off-by: Arnd Bergmann <arnd@arndb.de>
 > Fixes: 5d2917d469fa ("PCI: rcar: Convert to DT resource parsing API")
 
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Applied with acks from Wolfram and Simon to pci/host for v4.5, thanks!
 
 > diff --git a/include/linux/of_pci.h b/include/linux/of_pci.h
 > index 2c51ee78b1c0..874d68f50a40 100644
@@ -49,3 +49,7 @@ Acked-by: Simon Horman <horms+renesas@verge.net.au>
 >  
 >  #if defined(CONFIG_OF) && defined(CONFIG_PCI_MSI)
 > 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-pci" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
