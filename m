@@ -1,55 +1,54 @@
-From: Bjorn Helgaas <helgaas@kernel.org>
-Date: Fri, 08 Jan 2016 16:43:52 +0000
-Subject: Re: [PATCH] PCI: provide of_pci_get_host_bridge_resources helper
-Message-Id: <20160108164351.GC31005@localhost>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Fri, 08 Jan 2016 21:12:29 +0000
+Subject: [RFC v4 0/4] watchdog: add driver for RWDT watchdog
+Message-Id: <1452287553-18895-1-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <8759253.sZisGJ6Km3@wuerfel>
-In-Reply-To: <8759253.sZisGJ6Km3@wuerfel>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Fri, Dec 18, 2015 at 04:02:41PM +0100, Arnd Bergmann wrote:
-> The pcie-rcar driver can be built for any ARM platform (for COMPILE_TEST)
-> including those without CONFIG_OF enabled, and that results in a compile-time
-> error:
-> 
-> drivers/pci/host/pcie-rcar.c: In function 'rcar_pcie_parse_request_of_pci_ranges':
-> drivers/pci/host/pcie-rcar.c:939:8: error: implicit declaration of function 'of_pci_get_host_bridge_resources' [-Werror=implicit-function-declaration]
->   err = of_pci_get_host_bridge_resources(np, 0, 0xff, &pci->resources, &iobase);
-> 
-> In order to allow compile-testing on all platforms, this adds a
-> of_pci_get_host_bridge_resources() helper stub function that gets
-> used when CONFIG_OF_ADDRESS is disabled. This mirrors what we do for
-> other OF-specific functions.
-> 
-> Signed-off-by: Arnd Bergmann <arnd@arndb.de>
-> Fixes: 5d2917d469fa ("PCI: rcar: Convert to DT resource parsing API")
+So, here is my newest version of the RWDT watchdog driver. Changes since last RFC:
 
-Applied with acks from Wolfram and Simon to pci/host for v4.5, thanks!
+* added binding docs
+* removed 'timeout' module parameter in favor of dt setting 'timeout-sec'
+  (The Gen3 BSP did this using an incremental patch)
+* added comment about this driver and Gen2 HW issues
+* rebased to renesas-drivers-2016-01-05-v4.4-rc8
+* use min_t() instead of min()
 
-> diff --git a/include/linux/of_pci.h b/include/linux/of_pci.h
-> index 2c51ee78b1c0..874d68f50a40 100644
-> --- a/include/linux/of_pci.h
-> +++ b/include/linux/of_pci.h
-> @@ -59,6 +59,14 @@ static inline void of_pci_check_probe_only(void) { }
->  int of_pci_get_host_bridge_resources(struct device_node *dev,
->  			unsigned char busno, unsigned char bus_max,
->  			struct list_head *resources, resource_size_t *io_base);
-> +#else
-> +static inline
-> +int of_pci_get_host_bridge_resources(struct device_node *dev,
-> +			unsigned char busno, unsigned char bus_max,
-> +			struct list_head *resources, resource_size_t *io_base)
-> +{
-> +	return -EINVAL;
-> +}
->  #endif
->  
->  #if defined(CONFIG_OF) && defined(CONFIG_PCI_MSI)
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-pci" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+I tested this on Lager with my hacky patches enabling RWDT in UP mode. For this
+series, I picked and updated the integration patches for Gen3 from the BSP.
+Note that this driver also needs a RESET module driver to work on Gen3. Since
+we don't have that yet (couldn't even find it in the BSP), it is untested on
+Gen3. Since it works on Gen2 and the datasheet doesn't specify any difference,
+my proposal would be that I mark this task as done and leave the integration
+with the reset module to the core group. If any problems with this driver show
+up, I'll be there, of course. Would that be okay with the core group?
+
+Regards,
+
+   Wolfram
+
+Takeshi Kihara (1):
+  arm64: dts: salvator-x: Enable watchdog timer
+
+Wolfram Sang (3):
+  watchdog: renesas-rwdt: add driver
+  arm64: dts: r8a7795: Add RWDT node
+  clk: r8a7795: add RWDT clock
+
+ .../devicetree/bindings/watchdog/renesas-rwdt.txt  |  18 ++
+ arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts |   4 +
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi           |   7 +
+ drivers/clk/shmobile/r8a7795-cpg-mssr.c            |   1 +
+ drivers/watchdog/Kconfig                           |   8 +
+ drivers/watchdog/Makefile                          |   1 +
+ drivers/watchdog/renesas_rwdt.c                    | 224 +++++++++++++++++++++
+ 7 files changed, 263 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/watchdog/renesas-rwdt.txt
+ create mode 100644 drivers/watchdog/renesas_rwdt.c
+
+-- 
+2.1.4
+
