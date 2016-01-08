@@ -1,109 +1,78 @@
-From: Dirk Behme <dirk.behme@de.bosch.com>
-Date: Tue, 12 Jan 2016 08:37:37 +0000
-Subject: Re: [PATCH 05/10] arm64: dts: r8a7795: Add pmu device nodes
-Message-Id: <5694BB51.9000800@de.bosch.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 08 Jan 2016 02:37:19 +0000
+Subject: [PATCH] usb: host: xhci-plat: add R-Car Gen2 and Gen3 fallback compatibility strings
+Message-Id: <1452220639-31008-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1450401186.git.horms+renesas@verge.net.au>
- <a6b6b478459be0c5614626ba6ac95df05a7fc5e9.1450401186.git.horms+renesas@verge.net.au>
- <5673DCF7.1050008@arm.com> <5673E39C.6050206@gmail.com>
- <5673E437.7020300@arm.com> <5690AA7A.4000303@gmail.com>
- <20160111103916.GC6499@leverpostej>
-In-Reply-To: <20160111103916.GC6499@leverpostej>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On 11.01.2016 11:39, Mark Rutland wrote:
-> On Sat, Jan 09, 2016 at 07:36:42AM +0100, Dirk Behme wrote:
->> On 18.12.2015 11:47, Sudeep Holla wrote:
->>>
->>>
->>> On 18/12/15 10:44, Dirk Behme wrote:
->>>> On 18.12.2015 11:16, Sudeep Holla wrote:
->>>>>
->>>>>
->>>>> On 18/12/15 02:29, Simon Horman wrote:
->>>>>> From: Yoshifumi Hosoya <yoshifumi.hosoya.wj@renesas.com>
->>>>>>
->>>>>> Enabling the performance monitor unit on r8a7795.
->>>>>>
->>>>>> Signed-off-by: Masaru Nagai <masaru.nagai.vx@renesas.com>
->>>>>> Signed-off-by: Yoshifumi Hosoya <yoshifumi.hosoya.wj@renesas.com>
->>>>>> Signed-off-by: Dirk Behme <dirk.behme@gmail.com>
->>>>>> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
->>>>>> ---
->>>>>>   arch/arm64/boot/dts/renesas/r8a7795.dtsi | 12 ++++++++++++
->>>>>>   1 file changed, 12 insertions(+)
->>>>>>
->>>>>> diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
->>>>>> b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
->>>>>> index 4d43cf31418f..b9229a49dabc 100644
->>>>>> --- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
->>>>>> +++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
->>>>>> @@ -230,6 +230,18 @@
->>>>>>               power-domains = <&cpg>;
->>>>>>           };
->>>>>>
->>>>>> +        pmu {
->>>>>> +            compatible = "arm,armv8-pmuv3";
->>>>>
->>>>> Please use arm,cortex-a57-pmu to be more specific. IIRC I mentioned
->>>>> this
->>>>> for some shmobile platform recently.
->>>>
->>>>
->>>> Yes. But as this patch has been applied already to some branches, I
->>>> incorporated your a57-pmu hint with an additional update patch:
->>>>
->>>> http://marc.info/?l=linux-sh&m5011467914857
->>>>
->>>> Feel free to squash if still possible.
->>>>
->>>
->>> Ah OK, I didn't know the exact dts name, sorry for the noise.
->>> Better if it was posted as part of this series :)
->>
->>
->> I finally found some time to test this
->>
->> http://marc.info/?l=linux-sh&m5011467914857
->>
->> and surprisingly it doesn't seem to work:
->>
->> Using "arm,cortex-a57-pmu" results in
->>
->> hw perfevents: enabled with armv8_cortex_a57 PMU driver, 7 counters
->> available
->
-> This means all the probing logic worked for the A57 PMU.
->
->> hw perfevents: failed to probe PMU!
->> hw perfevents: failed to register PMU devices!
->
-> These are printed in arm_pmu_device_probe, and following the logic we
-> must have succesfully allocated the struct pmu, but failed in either
-> of_pmu_irq_cfg or init_fn (AKA armv8_a53_pmu_init).
->
-> In armv8_a53_pmu_init we call armv8pmu_probe_num_events, which will try
-> to SMP cross-call to an A53 core to probe the number of countesr
-> implemented. Perhaps the cross-call is failing.
->
-> Were the A53s online at this point?
+Add fallback compatibility strings for R-Car Gen2 and Gen3.
 
+This is in keeping with the fallback scheme being adopted wherever
+appropriate for drivers for Renesas SoCs.
 
-Ah, indeed, the A53s failed to run.
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ Documentation/devicetree/bindings/usb/usb-xhci.txt | 21 +++++++++++++++++----
+ drivers/usb/host/xhci-plat.c                       |  5 +++++
+ 2 files changed, 22 insertions(+), 4 deletions(-)
 
-Maybe anything like
-
-http://lists.infradead.org/pipermail/linux-arm-kernel/2016-January/398773.html
-
-helps to make this more obvious, then?
-
-Thanks!
-
-Best regards
-
-Dirk
-
+diff --git a/Documentation/devicetree/bindings/usb/usb-xhci.txt b/Documentation/devicetree/bindings/usb/usb-xhci.txt
+index 082573289f1e..46435b1d5b8c 100644
+--- a/Documentation/devicetree/bindings/usb/usb-xhci.txt
++++ b/Documentation/devicetree/bindings/usb/usb-xhci.txt
+@@ -1,10 +1,23 @@
+ USB xHCI controllers
+ 
+ Required properties:
+-  - compatible: should be one of "generic-xhci",
+-    "marvell,armada-375-xhci", "marvell,armada-380-xhci",
+-    "renesas,xhci-r8a7790", "renesas,xhci-r8a7791", "renesas,xhci-r8a7793",
+-    "renesas,xhci-r8a7795" (deprecated: "xhci-platform").
++  - compatible: should be one or more of
++
++    - "generic-xhci" for generic XHCI device,
++    - "marvell,armada-375-xhci" for Armada 375 SoCs,
++    - "marvell,armada-380-xhci" for Armada 380 SoCs,
++    - "renesas,xhci-r8a7790" for r8a7790 SoC,
++    - "renesas,xhci-r8a7791" for r8a7791 SoC
++    - "renesas,xhci-r8a7793" for r8a7793 SoC
++    - "renesas,xhci-r8a7795" for r8a7795 SoC
++    - "renesas,rcar-gen2-xhci" for a generic R-Car Gen2 compatible device.
++    - "renesas,rcar-gen3-xhci" for a generic R-Car Gen3 compatible device.
++    - "xhci-platform" (deprecated)
++
++    When compatible with the generic version, nodes must list the
++    SoC-specific version corresponding to the platform first
++    followed by the generic version.
++
+   - reg: should contain address and length of the standard XHCI
+     register set for the device.
+   - interrupts: one XHCI interrupt should be described here.
+diff --git a/drivers/usb/host/xhci-plat.c b/drivers/usb/host/xhci-plat.c
+index 770b6b088797..63fb0c9c6612 100644
+--- a/drivers/usb/host/xhci-plat.c
++++ b/drivers/usb/host/xhci-plat.c
+@@ -104,12 +104,17 @@ static const struct of_device_id usb_xhci_of_match[] = {
+ 		.compatible = "renesas,xhci-r8a7791",
+ 		.data = &xhci_plat_renesas_rcar_gen2,
+ 	}, {
++		.compatible = "renesas,rcar-gen2-xhci",
++		.data = &xhci_plat_renesas_rcar_gen2,
++	}, {
+ 		.compatible = "renesas,xhci-r8a7793",
+ 		.data = &xhci_plat_renesas_rcar_gen2,
+ 	}, {
+ 		.compatible = "renesas,xhci-r8a7795",
+ 		.data = &xhci_plat_renesas_rcar_gen3,
+ 	}, {
++		.compatible = "renesas,rcar-gen3-xhci",
++		.data = &xhci_plat_renesas_rcar_gen3,
+ 	},
+ };
+ MODULE_DEVICE_TABLE(of, usb_xhci_of_match);
+-- 
+2.1.4
 
