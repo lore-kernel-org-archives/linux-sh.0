@@ -1,63 +1,73 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Thu, 07 Jan 2016 01:47:47 +0000
-Subject: RE: [PATCH v2 1/6] arm64: renesas: r8a7795: add usb2_phy device nodes
-Message-Id: <SG2PR06MB09198CEABDD4B74DD95B5250D8F50@SG2PR06MB0919.apcprd06.prod.outlook.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 08 Jan 2016 01:37:13 +0000
+Subject: Re: [PATCH v2 1/6] arm64: renesas: r8a7795: add usb2_phy device nodes
+Message-Id: <20160108013713.GA9600@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1451044361-5896-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-	<1451044361-5896-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+ <1451044361-5896-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
  <CAMuHMdWXFVRgMAg90Xxa2N_81ckPdyzJtge8SPUghaSK0EcGOw@mail.gmail.com>
-In-Reply-To: <CAMuHMdWXFVRgMAg90Xxa2N_81ckPdyzJtge8SPUghaSK0EcGOw@mail.gmail.com>
+ <SG2PR06MB09198CEABDD4B74DD95B5250D8F50@SG2PR06MB0919.apcprd06.prod.outlook.com>
+In-Reply-To: <SG2PR06MB09198CEABDD4B74DD95B5250D8F50@SG2PR06MB0919.apcprd06.prod.outlook.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>, Simon Horman <horms@verge.net.au>
-Cc: Magnus Damm <magnus.damm@gmail.com>, Rob Herring <robh+dt@kernel.org>, Pawel Moll <pawel.moll@arm.com>, Mark Rutland <mark.rutland@arm.com>, Ian Campbell <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, "linux-arm-kernel@vger.kernel.org" <linux-arm-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
+To: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Magnus Damm <magnus.damm@gmail.com>, Rob Herring <robh+dt@kernel.org>, Pawel Moll <pawel.moll@arm.com>, Mark Rutland <mark.rutland@arm.com>, Ian Campbell <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, "linux-arm-kernel@vger.kernel.org" <linux-arm-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
 
-SGkgR2VlcnQtc2FuLA0KDQpUaGFuayB5b3UgZm9yIHlvdXIgY29tbWVudCBhbmQgc29ycnkgZm9y
-IHRoZSBkZWxheWVkIHJlc3BvbnNlLg0KDQo+IEZyb206IEdlZXJ0IFV5dHRlcmhvZXZlbg0KPiBT
-ZW50OiBNb25kYXksIEphbnVhcnkgMDQsIDIwMTYgOTo0MiBQTQ0KPiANCj4gT24gRnJpLCBEZWMg
-MjUsIDIwMTUgYXQgMTI6NTIgUE0sIFlvc2hpaGlybyBTaGltb2RhDQo+IDx5b3NoaWhpcm8uc2hp
-bW9kYS51aEByZW5lc2FzLmNvbT4gd3JvdGU6DQo+ID4gLS0tIGEvYXJjaC9hcm02NC9ib290L2R0
-cy9yZW5lc2FzL3I4YTc3OTUuZHRzaQ0KPiA+ICsrKyBiL2FyY2gvYXJtNjQvYm9vdC9kdHMvcmVu
-ZXNhcy9yOGE3Nzk1LmR0c2kNCj4gPiBAQCAtNzc1LDUgKzc3NSwzOSBAQA0KPiA+ICAgICAgICAg
-ICAgICAgICAgICAgICAgIGNsb2NrcyA9IDwmY3BnIENQR19NT0QgODE1PjsNCj4gPiAgICAgICAg
-ICAgICAgICAgICAgICAgICBzdGF0dXMgPSAiZGlzYWJsZWQiOw0KPiA+ICAgICAgICAgICAgICAg
-ICB9Ow0KPiA+ICsNCj4gPiArICAgICAgICAgICAgICAgdXNiMl9waHkwOiB1c2ItcGh5QGVlMDgw
-MjAwIHsNCj4gPiArICAgICAgICAgICAgICAgICAgICAgICBjb21wYXRpYmxlID0gInJlbmVzYXMs
-dXNiMi1waHktcjhhNzc5NSI7DQo+ID4gKyAgICAgICAgICAgICAgICAgICAgICAgcmVnID0gPDAg
-MHhlZTA4MDIwMCAwIDB4NzAwPiwgPDAgMHhlNjU5MDEwMCAwIDB4MTAwPjsNCj4gPiArICAgICAg
-ICAgICAgICAgICAgICAgICByZWctbmFtZXMgPSAidXNiMl9ob3N0IiwgImhzdXNiIjsNCj4gPiAr
-ICAgICAgICAgICAgICAgICAgICAgICBpbnRlcnJ1cHRzID0gPEdJQ19TUEkgMTA4IElSUV9UWVBF
-X0xFVkVMX0hJR0g+Ow0KPiANCj4gSXNuJ3QgMTA4IHRoZSBFSENJMCBpbnRlcnJ1cHQ/DQo+IENm
-ci4gdGhlIG90aGVyIHVzYi1waHkgbm9kZXMgdGhhdCBkb24ndCBoYXZlIGludGVycnVwdHMuDQoN
-ClllcywgMTA4IGlzIHRoZSBFSENJMCBpbnRlcnJ1cHQuDQpIb3dldmVyLCBhcyB0aGUgNzMuNS4x
-IEludGVycnVwdCBTaWduYWwgTGlzdCBpbiB0aGUgZGF0YXNoZWV0IGlzIGRlc2NyaWJlZCwNCnRo
-aXMgRUhDSTAgaGFzIGFsc28gcGh5IGludGVycnVwdCAodGhlIGRhdGFzaGVldCBuYW1lcyAiVUNP
-TiIpLg0KDQo+ID4gKyAgICAgICAgICAgICAgICAgICAgICAgY2xvY2tzID0gPCZjcGcgQ1BHX01P
-RCA3MDM+LCA8JmNwZyBDUEdfTU9EIDcwND47DQo+ID4gKyAgICAgICAgICAgICAgICAgICAgICAg
-Y2xvY2stbmFtZXMgPSAidXNiMiIsICJoc3VzYiI7DQo+ID4gKyAgICAgICAgICAgICAgICAgICAg
-ICAgcG93ZXItZG9tYWlucyA9IDwmY3BnPjsNCj4gDQo+IFRoaXMgZGV2aWNlIGhhcyB0d28gbW9k
-dWxlcyBjbG9ja3MsIGJ1dCB0aGUgQ1BHL01TU1IgZHJpdmVyIG9ubHkgbWFuYWdlcw0KPiB0aGUg
-Zmlyc3QgbW9kdWxvIGNsb2NrLg0KPiBXaG8gZW5hYmxlcyB0aGUgc2Vjb25kIGNsb2NrIChIUy1V
-U0ItSUYpPw0KDQpPb3BzISBUaGFuayB5b3UgZm9yIHRoZSBwb2ludC4NClRoZSBzZWNvbmQgY2xv
-Y2sgd2FzIGVuYWJsZWQgYnkgYSBib290IGxvYWRlci4NCklmIGEgYm9vdCBsb2FkZXIgZG9lc24n
-dCBlbmFibGUgdGhpcyBjbG9jaywNCmEgcGFuaWMgaGFwcGVucyBhcyB0aGUgZm9sbG93aW5ncyBp
-biBwcm9iaW5nIHRpbWluZyBvZiB0aGUgcmVuZXNhcy1oc3VzYiBkcml2ZXI6DQoNCnJlbmVzYXNf
-dXNiaHMgZTY1OTAwMDAudXNiOiB0cmFuc2NlaXZlciBmb3VuZA0KcmVuZXNhc191c2JocyBlNjU5
-MDAwMC51c2I6IGdhZGdldCBwcm9iZWQNCkJhZCBtb2RlIGluIEVycm9yIGhhbmRsZXIgZGV0ZWN0
-ZWQsIGNvZGUgMHhiZjAwMDAwMiAtLSBTRXJyb3INCkNQVTogMyBQSUQ6IDEgQ29tbTogc3dhcHBl
-ci8wIE5vdCB0YWludGVkIDQuNC4wLXJjNisgIzQyDQpIYXJkd2FyZSBuYW1lOiBSZW5lc2FzIFNh
-bHZhdG9yLVggYm9hcmQgYmFzZWQgb24gcjhhNzc5NSAoRFQpDQp0YXNrOiBmZmZmZmZjMDMxODY4
-MDAwIHRpOiBmZmZmZmZjMDMxODcwMDAwIHRhc2sudGk6IGZmZmZmZmMwMzE4NzAwMDANClBDIGlz
-IGF0IHJjYXJfZ2VuM19waHlfdXNiMl9pbml0KzB4MzgvMHgxMTQNCkxSIGlzIGF0IHBoeV9pbml0
-KzB4NjAvMHhjYw0KDQpTbywgSSB3aWxsIGZpeCB0aGlzIGlzc3VlIHNvbWVob3cuDQpBbHNvLCBJ
-IHdvdWxkIGxpa2UgdG8gcmV2ZXJ0IHRoaXMgcGF0Y2ggc2V0IHRvIGF2b2lkIGFueSB0cm91Ymxl
-cy4NClNpbW9uLXNhbiwgd291bGQgeW91IHJldmVydCB0aGlzIHBhdGNoIHNldD8NCg0KQmVzdCBy
-ZWdhcmRzLA0KWW9zaGloaXJvIFNoaW1vZGENCg0KPiANCj4gR3J7b2V0amUsZWV0aW5nfXMsDQo+
-IA0KPiAgICAgICAgICAgICAgICAgICAgICAgICBHZWVydA0KPiANCj4gLS0NCj4gR2VlcnQgVXl0
-dGVyaG9ldmVuIC0tIFRoZXJlJ3MgbG90cyBvZiBMaW51eCBiZXlvbmQgaWEzMiAtLSBnZWVydEBs
-aW51eC1tNjhrLm9yZw0KPiANCj4gSW4gcGVyc29uYWwgY29udmVyc2F0aW9ucyB3aXRoIHRlY2hu
-aWNhbCBwZW9wbGUsIEkgY2FsbCBteXNlbGYgYSBoYWNrZXIuIEJ1dA0KPiB3aGVuIEknbSB0YWxr
-aW5nIHRvIGpvdXJuYWxpc3RzIEkganVzdCBzYXkgInByb2dyYW1tZXIiIG9yIHNvbWV0aGluZyBs
-aWtlIHRoYXQuDQo+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgLS0gTGludXMgVG9y
-dmFsZHMNCg=
+On Thu, Jan 07, 2016 at 01:47:47AM +0000, Yoshihiro Shimoda wrote:
+> Hi Geert-san,
+> 
+> Thank you for your comment and sorry for the delayed response.
+> 
+> > From: Geert Uytterhoeven
+> > Sent: Monday, January 04, 2016 9:42 PM
+> > 
+> > On Fri, Dec 25, 2015 at 12:52 PM, Yoshihiro Shimoda
+> > <yoshihiro.shimoda.uh@renesas.com> wrote:
+> > > --- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+> > > +++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+> > > @@ -775,5 +775,39 @@
+> > >                         clocks = <&cpg CPG_MOD 815>;
+> > >                         status = "disabled";
+> > >                 };
+> > > +
+> > > +               usb2_phy0: usb-phy@ee080200 {
+> > > +                       compatible = "renesas,usb2-phy-r8a7795";
+> > > +                       reg = <0 0xee080200 0 0x700>, <0 0xe6590100 0 0x100>;
+> > > +                       reg-names = "usb2_host", "hsusb";
+> > > +                       interrupts = <GIC_SPI 108 IRQ_TYPE_LEVEL_HIGH>;
+> > 
+> > Isn't 108 the EHCI0 interrupt?
+> > Cfr. the other usb-phy nodes that don't have interrupts.
+> 
+> Yes, 108 is the EHCI0 interrupt.
+> However, as the 73.5.1 Interrupt Signal List in the datasheet is described,
+> this EHCI0 has also phy interrupt (the datasheet names "UCON").
+> 
+> > > +                       clocks = <&cpg CPG_MOD 703>, <&cpg CPG_MOD 704>;
+> > > +                       clock-names = "usb2", "hsusb";
+> > > +                       power-domains = <&cpg>;
+> > 
+> > This device has two modules clocks, but the CPG/MSSR driver only manages
+> > the first modulo clock.
+> > Who enables the second clock (HS-USB-IF)?
+> 
+> Oops! Thank you for the point.
+> The second clock was enabled by a boot loader.
+> If a boot loader doesn't enable this clock,
+> a panic happens as the followings in probing timing of the renesas-hsusb driver:
+> 
+> renesas_usbhs e6590000.usb: transceiver found
+> renesas_usbhs e6590000.usb: gadget probed
+> Bad mode in Error handler detected, code 0xbf000002 -- SError
+> CPU: 3 PID: 1 Comm: swapper/0 Not tainted 4.4.0-rc6+ #42
+> Hardware name: Renesas Salvator-X board based on r8a7795 (DT)
+> task: ffffffc031868000 ti: ffffffc031870000 task.ti: ffffffc031870000
+> PC is at rcar_gen3_phy_usb2_init+0x38/0x114
+> LR is at phy_init+0x60/0xcc
+> 
+> So, I will fix this issue somehow.
+> Also, I would like to revert this patch set to avoid any troubles.
+> Simon-san, would you revert this patch set?
+
+Sure, I will drop the entire patchset.
