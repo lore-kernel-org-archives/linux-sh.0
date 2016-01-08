@@ -1,36 +1,31 @@
 From: Bjorn Helgaas <helgaas@kernel.org>
-Date: Mon, 11 Jan 2016 14:48:52 +0000
-Subject: Re: [PATCH v2 0/4] Various R-Car PCIe patches
-Message-Id: <20160111144852.GC25540@localhost>
+Date: Fri, 08 Jan 2016 20:37:37 +0000
+Subject: Re: [PATCH 0/2] drivers/pci: use builtin_platform_driver in renesas
+Message-Id: <20160108203737.GJ5354@localhost>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1451998831-27705-1-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1451998831-27705-1-git-send-email-phil.edworthy@renesas.com>
+References: <1450745949-23882-1-git-send-email-paul.gortmaker@windriver.com>
+In-Reply-To: <1450745949-23882-1-git-send-email-paul.gortmaker@windriver.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Phil Edworthy <phil.edworthy@renesas.com>
-Cc: Simon Horman <horms@verge.net.au>, Bjorn Helgaas <bhelgaas@google.com>, Wolfram Sang <wsa@the-dreams.de>, Geert Uytterhoeven <geert@linux-m68k.org>, linux-kernel@vger.kernel.org, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org
+To: Paul Gortmaker <paul.gortmaker@windriver.com>
+Cc: linux-kernel@vger.kernel.org, Bjorn Helgaas <bhelgaas@google.com>, Phil Edworthy <phil.edworthy@renesas.com>, Simon Horman <horms@verge.net.au>, Valentine Barshak <valentine.barshak@cogentembedded.com>, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org
 
-On Tue, Jan 05, 2016 at 01:00:27PM +0000, Phil Edworthy wrote:
-> The first patch removes code that is no longer used. The next two allow us to
-> use runtim PM. The last patch is for PHY setup in order to get PCIe compliance
-> apparently. For that last patch, I've been told that this is what I must set.
+On Mon, Dec 21, 2015 at 07:59:07PM -0500, Paul Gortmaker wrote:
+> These two commits are extracted from what was a larger series[1] of
+> demodularization in PCI host code that was bool Kconfig.
 > 
-> v2:
->  PATCH 2/4 - Use readl_poll_timeout_atomic when waiting until we are in L1.
->  PATCh 4/4 - Added comment about where the PHY settings come from.
+> With the other commits, there was some mixed opinions whether we
+> should make it explicitly non-modular or move towards making it
+> functionally working as a tristate in order to reduce the size of
+> built-in code for multi-platform kernels.
 > 
-> Phil Edworthy (4):
->   PCI: rcar: remove unused pci_sys_data structure in pcie-rcar
->   PCI: rcar: Support runtime PM link state L1 handling in pcie-rcar
->   PCI: rcar: Add runtime PM support to pcie-rcar
->   PCI: rcar: Add Gen2 PHY setup to pcie-rcar
-> 
->  drivers/pci/host/pcie-rcar.c | 115 ++++++++++++++++++++++++++++++++++---------
->  1 file changed, 91 insertions(+), 24 deletions(-)
+> However with the renesas changes, there was no ".remove" and no
+> "module_exit" code stripped out ; it is just a straight 1:1 mapping
+> of the modular macros onto what they become in the non-modular case
+> anyway -- meaning the runtime remains unchanged.
 
-I dropped "Support runtime PM link state L1 handling in pcie-rcar" for
-now (until we figure out how that's supposed to work).
+Is there any reason these drivers can't be made modular?  I'd rather
+do that, if we can.
 
-I applied the others to pci/host-rcar and plan to squeeze them into
-v4.5.
+Bjorn
