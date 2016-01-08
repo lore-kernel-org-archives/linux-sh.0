@@ -1,24 +1,41 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 18 Jan 2016 01:34:23 +0000
-Subject: Re: [PATCH v2 1/2] ARM: shmobile: r8a7790: use GIC_* defines
-Message-Id: <20160118013422.GA1905@verge.net.au>
+From: Rich Felker <dalias@libc.org>
+Date: Fri, 08 Jan 2016 04:39:59 +0000
+Subject: [PATCH 1/2] MAINTAINERS: return arch/sh to maintained state, with new maintainers
+Message-Id: <20160108043959.GA7856@brightrain.aerifal.cx>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1452825856-16230-1-git-send-email-horms+renesas@verge.net.au>
- <1452825856-16230-2-git-send-email-horms+renesas@verge.net.au>
- <CAMuHMdVcHH4Sv5b5xweAgSMun3kEWgOiR32pzSuXVAkYwi=RcA@mail.gmail.com>
-In-Reply-To: <CAMuHMdVcHH4Sv5b5xweAgSMun3kEWgOiR32pzSuXVAkYwi=RcA@mail.gmail.com>
+In-Reply-To: <20160108043907.GA7005@brightrain.aerifal.cx>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Geert Uytterhoeven <geert@linux-m68k.org>, Andrew Morton <akpm@linux-foundation.org>, Peter Zijlstra <peterz@infradead.org>, "D. Jeff Dionne" <jeff@uClinux.org>, Rob Landley <rob@landley.net>
 
-On Fri, Jan 15, 2016 at 11:43:47AM +0100, Geert Uytterhoeven wrote:
-> On Fri, Jan 15, 2016 at 3:44 AM, Simon Horman
-> <horms+renesas@verge.net.au> wrote:
-> > Use GIC_* defines for GIC interrupt cells in r8a7791 device tree.
-> >
-> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> 
-> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Rich Felker <dalias@libc.org>
 
-Thanks, I have queued this up.
+Add Yoshinori Sato and Rich Felker as maintainers for arch/sh
+(SUPERH).
+
+Signed-off-by: Rich Felker <dalias@libc.org>
+Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
+Acked-by: D. Jeff Dionne <jeff@uClinux.org>
+Acked-by: Rob Landley <rob@landley.net>
+
+---
+
+diff --git a/MAINTAINERS b/MAINTAINERS
+index 9bff63c..55e48b1 100644
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -10274,9 +10274,11 @@ S:	Maintained
+ F:	drivers/net/ethernet/dlink/sundance.c
+ 
+ SUPERH
++M:	Yoshinori Sato <ysato@users.sourceforge.jp>
++M:	Rich Felker <dalias@libc.org>
+ L:	linux-sh@vger.kernel.org
+ Q:	http://patchwork.kernel.org/project/linux-sh/list/
+-S:	Orphan
++S:	Maintained
+ F:	Documentation/sh/
+ F:	arch/sh/
+ F:	drivers/sh/
