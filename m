@@ -1,69 +1,32 @@
-From: Dirk Behme <dirk.behme@de.bosch.com>
-Date: Fri, 29 Jan 2016 08:29:12 +0000
-Subject: Re: [RFC] clk: shmobile: r8a7795: Add SD divider support
-Message-Id: <56AB22D8.3020002@de.bosch.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Fri, 08 Jan 2016 21:12:33 +0000
+Subject: [RFC v4 4/4] clk: r8a7795: add RWDT clock
+Message-Id: <1452287553-18895-5-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1453465586-12807-1-git-send-email-dirk.behme@de.bosch.com>
-In-Reply-To: <1453465586-12807-1-git-send-email-dirk.behme@de.bosch.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On 29.01.2016 09:14, Wolfram Sang wrote:
->> Having the clock patch applied on top of your renesas/v8-sdhi branch [1] I
->> get
->>
->> root@salvator-x:/sys/kernel/debug/clk# cat clk_summary
->>     clock             enable_cnt  prepare_cnt        rate
->> --------------------------------------------------------
->> ...
->>      .main                     1            1     8333333
->>      ...
->>         .pll1                  1            1  1599999936
->>            .pll1_div2          2            2   799999968
->>               hdmi             0            0    24999999
->>                  hdmi0         0            0    24999999
->>                  hdmi1         0            0    24999999
->>               cl               0            0    16666666
->>               sd3              0            0    99999996
->>                  sdif3         0            0    99999996
->>               sd2              0            0    99999996
->>                  sdif2         0            0    99999996
->>               sd1              0            0    49999998
->>                  sdif1         0            0    49999998
->>               sd0              0            0    49999998
->>                  sdif0         0            0    49999998
->
-> This is what I get (with your cleanup patch also applied):
->
-> ...
->      .main                                 1            1     8333333          0 0
->      ...
->         .pll1                              1            1  1599999936          0 0
->            .pll1_div2                      3            3   799999968          0 0
->               hdmi                         0            0    24999999          0 0
->                  hdmi0                     0            0    24999999          0 0
->                  hdmi1                     0            0    24999999          0 0
->               cl                           0            0    16666666          0 0
->               sd3                          1            1   199999992          0 0
->                  sdif3                     1            2   199999992          0 0
->               sd2                          0            0    49999998          0 0
->                  sdif2                     0            0    49999998          0 0
->               sd1                          0            0    49999998          0 0
->                  sdif1                     0            0    49999998          0 0
->               sd0                          1            1    49999998          0 0
->                  sdif0                     1            2    49999998          0 0
->
-> Could it be a firmware difference (i.e. bootloader trying to boot from eMMC and
-> changing values)?
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+---
+ drivers/clk/shmobile/r8a7795-cpg-mssr.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-Yes, its U-Boot. I have U-Boot from rcar-3.0.3 BSP on the board and 
-verified that it configures exactly the clock configuration I gave above.
+diff --git a/drivers/clk/shmobile/r8a7795-cpg-mssr.c b/drivers/clk/shmobile/r8a7795-cpg-mssr.c
+index 23e98fef97f105..b05cb490394454 100644
+--- a/drivers/clk/shmobile/r8a7795-cpg-mssr.c
++++ b/drivers/clk/shmobile/r8a7795-cpg-mssr.c
+@@ -122,6 +122,7 @@ static const struct mssr_mod_clk r8a7795_mod_clks[] __initconst = {
+ 	DEF_MOD("scif2",		 310,	R8A7795_CLK_S3D4),
+ 	DEF_MOD("pcie1",		 318,	R8A7795_CLK_S3D1),
+ 	DEF_MOD("pcie0",		 319,	R8A7795_CLK_S3D1),
++	DEF_MOD("rwdt0",		 402,	R8A7795_CLK_S3D1),
+ 	DEF_MOD("intc-ap",		 408,	R8A7795_CLK_S3D1),
+ 	DEF_MOD("audmac0",		 502,	R8A7795_CLK_S3D4),
+ 	DEF_MOD("audmac1",		 501,	R8A7795_CLK_S3D4),
+-- 
+2.1.4
 
-Best regards
-
-Dirk
-
-Bes
