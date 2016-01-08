@@ -1,64 +1,61 @@
-From: "Michael S. Tsirkin" <mst@redhat.com>
-Date: Sun, 10 Jan 2016 14:19:35 +0000
-Subject: [PATCH v3 22/41] s390: define __smp_xxx
-Message-Id: <1452426622-4471-23-git-send-email-mst@redhat.com>
+From: Bjorn Helgaas <helgaas@kernel.org>
+Date: Fri, 08 Jan 2016 20:31:02 +0000
+Subject: Re: [PATCH 00/10] drivers/pci: avoid module_init in non-modular host/pci*
+Message-Id: <20160108203102.GH5354@localhost>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1452426622-4471-1-git-send-email-mst@redhat.com>
-In-Reply-To: <1452426622-4471-1-git-send-email-mst@redhat.com>
+References: <1449970917-12633-1-git-send-email-paul.gortmaker@windriver.com>
+ <CAFiDJ5-Y8afg5kDRQLK1pain-k1kPQAn3vhWrVkB1ADPRHvx+A@mail.gmail.com>
+ <20151214091940.GA15126@ulmo.nvidia.com>
+ <3302340.SIljl1qYTl@wuerfel> <20151215151624.GB2772@windriver.com>
+In-Reply-To: <20151215151624.GB2772@windriver.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Peter Zijlstra <peterz@infradead.org>, Arnd Bergmann <arnd@arndb.de>, linux-arch@vger.kernel.org, Andrew Cooper <andrew.cooper3@citrix.com>, Russell King - ARM Linux <linux@arm.linux.org.uk>, virtualization@lists.linux-foundation.org, Stefano Stabellini <stefano.stabellini@eu.citrix.com>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@elte.hu>, "H. Peter Anvin" <hpa@zytor.com>, Joe Perches <joe@perches.com>, David Miller <davem@davemloft.net>, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, sparclinux@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-metag@vger.kernel.org, linux-mips@linux-mips.org, x86@kernel.org, user-mode-linux-devel@lists.sourceforge.net, adi-buildroot-devel@lists.sourceforge.net, linux-sh@vger.kernel.org, linux-xtensa@linux-xtensa.org, xen-devel@lists.xenproject.org, Martin
+To: linux-arm-kernel@lists.infradead.org
 
-This defines __smp_xxx barriers for s390,
-for use by virtualization.
+On Tue, Dec 15, 2015 at 10:16:24AM -0500, Paul Gortmaker wrote:
+> [Re: [PATCH 00/10] drivers/pci: avoid module_init in non-modular host/pci*] On 14/12/2015 (Mon 11:27) Arnd Bergmann wrote:
+> 
+> > On Monday 14 December 2015 10:19:40 Thierry Reding wrote:
+> > > > PCIe host driver that use fixup (DECLARE_PCI_FIXUP_*) can't use tristate.
+> > > > Fixup region is in kernel region and this region if not updated when
+> > > > loading a module.
+> > > 
+> > > Interesting, I hadn't thought about that. I suppose this means that the
+> > > module will end up containing an unused section with the fixup code. It
+> > > might be useful to add a way for that to trigger a warning at build
+> > > time.
+> > > 
+> > > Perhaps to fix this a mechanism could be introduced to add a table of
+> > > fixups to a host controller driver and that will get applied to all
+> > > children of the bridge. It could be problematic to cover all of the
+> > > different fixup stages, though.
+> > 
+> > I think a lot of the fixups shouldn't really be there in the first place,
+> > they are about stuff that we can fix up in the probe function, or that should
+> > be fixed up in the probe function with some appropriate core support added.
+> 
+> So, the feedback on this is a bit all over the map, leaving me unsure
+> what to do next.  And is the choice we make on a per board/bsp basis or
+> ideally across all platforms?  I see the choices as:
+> 
+> 1) do nothing; which IMHO is least desirable as it leaves the code
+> misrepresenting itself as modular; one of the key issues I wanted to fix
+> 
+> 2) use the patches I've sent ; then as they are genuinely made modular,
+> the person doing so essentially "patch -R" or reverts the change as
+> step one.  This has the advantage of solving the "we'll get to it
+> someday" issue if someday never comes.
+> 
+> 3) make them all tristate;  beat it with a stick until it compiles [M]
+> and modposts -- leaving the fixups and functional testing to people with
+> the boards and low level knowledge to make it _work_ as a module.  The
+> downside here is the code is still kind of misrepresenting itself as
+> modularly functional -- a ban of unloading might mitigate that some.
 
-Some smp_xxx barriers are removed as they are
-defined correctly by asm-generic/barriers.h
+I'd like to preserve the mind-set that host controller drivers are
+*expected* to be modular, even if we aren't there yet.  I guess that
+means I'm in favor of option 3, at least for drivers that don't use
+fixups.
 
-Note: smp_mb, smp_rmb and smp_wmb are defined as full barriers
-unconditionally on this architecture.
-
-Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
-Acked-by: Arnd Bergmann <arnd@arndb.de>
-Acked-by: Martin Schwidefsky <schwidefsky@de.ibm.com>
----
- arch/s390/include/asm/barrier.h | 15 +++++++++------
- 1 file changed, 9 insertions(+), 6 deletions(-)
-
-diff --git a/arch/s390/include/asm/barrier.h b/arch/s390/include/asm/barrier.h
-index c358c31..fbd25b2 100644
---- a/arch/s390/include/asm/barrier.h
-+++ b/arch/s390/include/asm/barrier.h
-@@ -26,18 +26,21 @@
- #define wmb()				barrier()
- #define dma_rmb()			mb()
- #define dma_wmb()			mb()
--#define smp_mb()			mb()
--#define smp_rmb()			rmb()
--#define smp_wmb()			wmb()
--
--#define smp_store_release(p, v)						\
-+#define __smp_mb()			mb()
-+#define __smp_rmb()			rmb()
-+#define __smp_wmb()			wmb()
-+#define smp_mb()			__smp_mb()
-+#define smp_rmb()			__smp_rmb()
-+#define smp_wmb()			__smp_wmb()
-+
-+#define __smp_store_release(p, v)					\
- do {									\
- 	compiletime_assert_atomic_type(*p);				\
- 	barrier();							\
- 	WRITE_ONCE(*p, v);						\
- } while (0)
- 
--#define smp_load_acquire(p)						\
-+#define __smp_load_acquire(p)						\
- ({									\
- 	typeof(*p) ___p1 = READ_ONCE(*p);				\
- 	compiletime_assert_atomic_type(*p);				\
--- 
-MST
-
+Bjorn
