@@ -1,204 +1,77 @@
 From: Wolfram Sang <wsa@the-dreams.de>
-Date: Wed, 06 Jan 2016 13:51:25 +0000
-Subject: [RFC v2 4/4] ARM: shmobile: r8a7790: rework dts to use i2c demuxer
-Message-Id: <1452088285-6427-5-git-send-email-wsa@the-dreams.de>
+Date: Fri, 08 Jan 2016 21:56:48 +0000
+Subject: [PATCH v2 1/3] drm: adv7511: really enable interrupts for EDID detection
+Message-Id: <1452290210-20629-2-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1452088285-6427-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1452088285-6427-1-git-send-email-wsa@the-dreams.de>
+References: <1452290210-20629-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1452290210-20629-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: Wolfram Sang <wsa@the-dreams.de>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org, Pantelis Antoniou <pantelis.antoniou@konsulko.com>, Jan Luebbe <jlu@pengutronix.de>
+To: dri-devel@lists.freedesktop.org, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Cc: Wolfram Sang <wsa@the-dreams.de>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Daniel Vetter <daniel.vetter@ffwll.ch>, Lars-Peter Clausen <lars@metafoo.de>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, David Airlie <airlied@linux.ie>, Archit Taneja <architt@codeaurora.org>
 
 From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Create a seperate bus for HDMI related I2C slaves and assign it
-to a i2c-gpio master. It can be switched to the i2c-rcar or
-i2c-sh_mobile core at runtime.
+The interrupts for EDID_READY or DDC_ERROR were never enabled in this
+driver, so reading EDID always timed out when chip was powered down and
+interrupts were used. Fix this and also remove clearing the interrupt
+flags, they are cleared in POWER_DOWN mode anyhow (unlike the interrupt
+enable flags) according to docs and my tests.
 
 Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Tested-by: Archit Taneja <architt@codeaurora.org>
 ---
- arch/arm/boot/dts/r8a7790-lager.dts | 141 ++++++++++++++++++++++--------------
- 1 file changed, 88 insertions(+), 53 deletions(-)
+ drivers/gpu/drm/i2c/adv7511.c | 25 +++++++++++++++++--------
+ 1 file changed, 17 insertions(+), 8 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index c553abd711eeb3..d8f0ca8e094dad 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -49,6 +49,8 @@
- 	aliases {
- 		serial0 = &scifa0;
- 		serial1 = &scifa1;
-+		i2c8 = &i2chdmi;
-+		i2c9 = &gpioi2c;
- 	};
+diff --git a/drivers/gpu/drm/i2c/adv7511.c b/drivers/gpu/drm/i2c/adv7511.c
+index 533d1e3d4a999f..db7435a4517fb4 100644
+--- a/drivers/gpu/drm/i2c/adv7511.c
++++ b/drivers/gpu/drm/i2c/adv7511.c
+@@ -362,12 +362,19 @@ static void adv7511_power_on(struct adv7511 *adv7511)
+ {
+ 	adv7511->current_edid_segment = -1;
  
- 	chosen {
-@@ -252,6 +254,79 @@
- 		#clock-cells = <0>;
- 		clock-frequency = <148500000>;
- 	};
-+
-+
-+	gpioi2c: i2c@9 {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		compatible = "i2c-gpio";
-+		status = "disabled";
-+		gpios = <&gpio5 6 GPIO_ACTIVE_HIGH /* sda */
-+			 &gpio5 5 GPIO_ACTIVE_HIGH /* scl */
-+			>;
-+		i2c-gpio,delay-us = <5>;
-+	};
-+
-+	i2chdmi: i2c@8 {
-+
-+		compatible = "i2c-demux-pinctrl";
-+		i2c-parent = <&gpioi2c>, <&iic2>, <&i2c2>;
-+		i2c-bus-name = "i2c-hdmi";
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+
-+		ak4643: sound-codec@12 {
-+			compatible = "asahi-kasei,ak4643";
-+
-+			#sound-dai-cells = <0>;
-+			reg = <0x12>;
-+		};
-+
-+		composite-in@20 {
-+			compatible = "adi,adv7180";
-+			reg = <0x20>;
-+			remote = <&vin1>;
-+
-+			port {
-+				adv7180: endpoint {
-+					bus-width = <8>;
-+					remote-endpoint = <&vin1ep0>;
-+				};
-+			};
-+		};
-+
-+		hdmi@39 {
-+			compatible = "adi,adv7511w";
-+			reg = <0x39>;
-+			interrupt-parent = <&gpio1>;
-+			interrupts = <15 IRQ_TYPE_LEVEL_LOW>;
-+
-+			adi,input-depth = <8>;
-+			adi,input-colorspace = "rgb";
-+			adi,input-clock = "1x";
-+			adi,input-style = <1>;
-+			adi,input-justification = "evenly";
-+
-+			ports {
-+				#address-cells = <1>;
-+				#size-cells = <0>;
-+
-+				port@0 {
-+					reg = <0>;
-+					adv7511_in: endpoint {
-+						remote-endpoint = <&du_out_lvds0>;
-+					};
-+				};
-+
-+				port@1 {
-+					reg = <1>;
-+					adv7511_out: endpoint {
-+						remote-endpoint = <&hdmi_con>;
-+					};
-+				};
-+			};
-+		};
-+	};
- };
+-	regmap_write(adv7511->regmap, ADV7511_REG_INT(0),
+-		     ADV7511_INT0_EDID_READY);
+-	regmap_write(adv7511->regmap, ADV7511_REG_INT(1),
+-		     ADV7511_INT1_DDC_ERROR);
+ 	regmap_update_bits(adv7511->regmap, ADV7511_REG_POWER,
+ 			   ADV7511_POWER_POWER_DOWN, 0);
++	if (adv7511->i2c_main->irq) {
++		/*
++		 * Documentation says the INT_ENABLE registers are reset in
++		 * POWER_DOWN mode. My 7511w preserved the bits, however.
++		 * Still, let's be safe and stick to the documentation.
++		 */
++		regmap_write(adv7511->regmap, ADV7511_REG_INT_ENABLE(0),
++			     ADV7511_INT0_EDID_READY);
++		regmap_write(adv7511->regmap, ADV7511_REG_INT_ENABLE(1),
++			     ADV7511_INT1_DDC_ERROR);
++	}
  
- &du {
-@@ -352,6 +427,11 @@
- 		renesas,function = "iic1";
- 	};
+ 	/*
+ 	 * Per spec it is allowed to pulse the HDP signal to indicate that the
+@@ -567,12 +574,14 @@ static int adv7511_get_modes(struct drm_encoder *encoder,
  
-+	i2c2_pins: i2c2 {
-+		renesas,groups = "i2c2";
-+		renesas,function = "i2c2";
-+	};
-+
- 	iic2_pins: iic2 {
- 		renesas,groups = "iic2";
- 		renesas,function = "iic2";
-@@ -532,63 +612,18 @@
- 	pinctrl-names = "default";
- };
+ 	/* Reading the EDID only works if the device is powered */
+ 	if (!adv7511->powered) {
+-		regmap_write(adv7511->regmap, ADV7511_REG_INT(0),
+-			     ADV7511_INT0_EDID_READY);
+-		regmap_write(adv7511->regmap, ADV7511_REG_INT(1),
+-			     ADV7511_INT1_DDC_ERROR);
+ 		regmap_update_bits(adv7511->regmap, ADV7511_REG_POWER,
+ 				   ADV7511_POWER_POWER_DOWN, 0);
++		if (adv7511->i2c_main->irq) {
++			regmap_write(adv7511->regmap, ADV7511_REG_INT_ENABLE(0),
++				     ADV7511_INT0_EDID_READY);
++			regmap_write(adv7511->regmap, ADV7511_REG_INT_ENABLE(1),
++				     ADV7511_INT1_DDC_ERROR);
++		}
+ 		adv7511->current_edid_segment = -1;
+ 	}
  
--&iic2	{
--	status = "okay";
--	pinctrl-0 = <&iic2_pins>;
--	pinctrl-names = "default";
-+&i2c2	{
-+	pinctrl-0 = <&i2c2_pins>;
-+	pinctrl-names = "i2c-hdmi";
- 
- 	clock-frequency = <100000>;
-+};
- 
--	ak4643: codec@12 {
--		compatible = "asahi-kasei,ak4643";
--		#sound-dai-cells = <0>;
--		reg = <0x12>;
--	};
--
--	composite-in@20 {
--		compatible = "adi,adv7180";
--		reg = <0x20>;
--		remote = <&vin1>;
--
--		port {
--			adv7180: endpoint {
--				bus-width = <8>;
--				remote-endpoint = <&vin1ep0>;
--			};
--		};
--	};
--
--	hdmi@39 {
--		compatible = "adi,adv7511w";
--		reg = <0x39>;
--		interrupt-parent = <&gpio1>;
--		interrupts = <15 IRQ_TYPE_LEVEL_LOW>;
--
--		adi,input-depth = <8>;
--		adi,input-colorspace = "rgb";
--		adi,input-clock = "1x";
--		adi,input-style = <1>;
--		adi,input-justification = "evenly";
--
--		ports {
--			#address-cells = <1>;
--			#size-cells = <0>;
--
--			port@0 {
--				reg = <0>;
--				adv7511_in: endpoint {
--					remote-endpoint = <&du_out_lvds0>;
--				};
--			};
-+&iic2	{
-+	pinctrl-0 = <&iic2_pins>;
-+	pinctrl-names = "i2c-hdmi";
- 
--			port@1 {
--				reg = <1>;
--				adv7511_out: endpoint {
--					remote-endpoint = <&hdmi_con>;
--				};
--			};
--		};
--	};
-+	clock-frequency = <100000>;
- };
- 
- &iic3 {
 -- 
 2.1.4
 
