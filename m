@@ -1,23 +1,24 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 08 Jan 2016 18:28:51 +0000
+From: Rich Felker <dalias@libc.org>
+Date: Fri, 08 Jan 2016 18:51:37 +0000
 Subject: Re: [PATCH 2/2] MAINTAINERS: remove linux-sh list from non-arch/sh sections
-Message-Id: <7119737.DzNTr3WlaV@avalon>
+Message-Id: <20160108185137.GL238@brightrain.aerifal.cx>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20160108043907.GA7005@brightrain.aerifal.cx> <20160108065642.GA1215@verge.net.au> <568FF369.9080006@landley.net>
+References: <20160108043907.GA7005@brightrain.aerifal.cx>
+ <20160108044054.GA7130@brightrain.aerifal.cx>
+ <20160108065642.GA1215@verge.net.au>
+ <568FF369.9080006@landley.net>
 In-Reply-To: <568FF369.9080006@landley.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Rob Landley <rob@landley.net>
-Cc: Simon Horman <horms@verge.net.au>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Geert Uytterhoeven <geert@linux-m68k.org>, Andrew Morton <akpm@linux-foundation.org>, Peter Zijlstra <peterz@infradead.org>, "D. Jeff Dionne" <jeff@uclinux.org>
+Cc: Simon Horman <horms@verge.net.au>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Geert Uytterhoeven <geert@linux-m68k.org>, Andrew Morton <akpm@linux-foundation.org>, Peter Zijlstra <peterz@infradead.org>, "D. Jeff Dionne" <jeff@uClinux.org>
 
-Hi Rob,
-
-On Friday 08 January 2016 11:35:37 Rob Landley wrote:
+On Fri, Jan 08, 2016 at 11:35:37AM -0600, Rob Landley wrote:
 > On 01/08/2016 12:56 AM, Simon Horman wrote:
 > > On Thu, Jan 07, 2016 at 11:40:54PM -0500, Rich Felker wrote:
 > >> From: Rich Felker <dalias@libc.org>
-> >> 
+> >>
 > >> Recently the bulk of traffic on the linux-sh list has been unrelated
 > >> to arch/sh but instead focused on Renesas hardware for their ARM-based
 > >> SoCs. As part of resuming maintenance of arch/sh, remove the linux-sh
@@ -37,34 +38,19 @@ On Friday 08 January 2016 11:35:37 Rob Landley wrote:
 > architecture's original owner abandoned it and moved on to other things
 > that already _have_ lists, but treated this list as their own personal
 > scratch pad".
->
+> 
 > Those people let the architecture this list was created for become
-> unmaintained for a year and a half.
-
-A year and a half since the architecture was officially marked as orphan, at 
-least one more year since the maintainer stopped handling patches.
-
-> DURING that year and a half they posted unrelated content to the list
-> because they think it belongs to them personally rather than to Linux.
-
-I would hardly call upstream Linux R-Mobile and R-Car development "personal 
-stuff". The decision to keep using the linux-sh mailing list comes from the 
-overlap between the SH-based and ARM-based chips. It sure doesn't match the 
-mailing list description anymore, but jumping to the conclusion that the 
-description is the only authoritative source of information is a bit too 
-hasty.
-
+> unmaintained for a year and a half. DURING that year and a half they
+> posted unrelated content to the list because they think it belongs to
+> them personally rather than to Linux.
+> 
 > Now that the architecture is becoming maintained again (on the hardware
 > side as well, because the patents have expired and other people are
 > taking an interest), we would like to reclaim this list to develop the
 > Linux arch/sh directory.
-
-How about asking nicely instead of claiming ? It usually helps.
-
+> 
 > This is a kernel list, not a Renesas list.
-
-It has never become a Renesas list. We have private mailing lists for that.
-
+> 
 > > Dropping linux-sh@vger.kernel.org from portions of the MAINTAINERS file as
 > > you suggest would essentially leave the Renesas ARM work without a mailing
 > > list or patchwork instance.
@@ -88,7 +74,7 @@ It has never become a Renesas list. We have private mailing lists for that.
 > > 2. Establish a new list (and possibly patchwork instance) for the SH work.
 > 
 > So... squatter's rights?
->
+> 
 > Renesas calling its new arm stuff "shmobile" is as relevant as Intel
 > designating itanic "ia64" as the successor to "ia32". The superh
 > architecture's only been officially unmaintained for a year and change
@@ -98,51 +84,30 @@ It has never become a Renesas list. We have private mailing lists for that.
 > Meanwhile there was active superh-compatible work off-list during that
 > time (the j-core stuff) that's just now coming to fruition, building off
 > 20 years of history and a decade and change of previous Linux development.
-> 
-> > 3. Establish a new list and patchwork instance for the ARM work.
-> 
-> Now that people are interested in superh again, the correct answer
-> seemed to be #3, which is what we were suggesting.
 
-Now I like the suggesting better than the claiming :-)
+I'm not here to place blame or argue over who's "fault" it is that
+this happened, but it is inappropriate for a kernel arch list to be
+used as a development list for hardware that's no longer related to
+the arch and just happens to be produced/used by the same company.
+Another decent analogy might be if the linuxppc list had been deluged
+with driver traffic for Apple-specific x86 hardware after Apple
+dropped PPC and switched to x86. As far as I know, no such thing
+happened, but I don't think it would have gone over well.
 
-> A similar situation occurred when buildroot didn't have its own mailing
-> list for several years and used the uClibc list: uClibc development
-> suffered greatly. I eventually got sick of it and created a new
-> buildroot list and politely kicked the traffic off, which is why the
-> first message in the buildroot mailing list archive is:
-> 
->   http://lists.busybox.net/pipermail/buildroot/2006-July/012219.html
-> 
-> The corresponding "please move the buildroot traffic off the uClibc
-> list" thread started at:
-> 
->   http://lists.busybox.net/pipermail/uclibc/2006-July/036836.html
-> 
-> The current list is not a Renesas list, it is a Linux list for the
-> SuperH architecture port. Says so on the tin, and that was its history
-> until pretty recently. Renesas moving away from the SuperH architecture
-> doesn't change that this is the Linux arch/sh list.
-> 
+> [...]
 > We aren't proposing to rename the arch/sh directory to "jcore", so
 > "linux-sh@vger.kernel.org" remains the logical name for this list. The
-> new stuff is intentionally backwards compatible with the old stuff,
-
-How about IP cores around the CPU, do you plan to develop cores compatible 
-with the Renesas implementations, or go for something else ? If we end up 
-sharing the same peripherals between multiple architectures we will need to 
-decide on how to coordinate the work.
-
-> and we are happy to maintain compatibility with the old stuff, and have
+> new stuff is intentionally backwards compatible with the old stuff, and
+> we are happy to maintain compatibility with the old stuff, and have
 > current plans to move it to device tree. (We just need a lot more legacy
 > test hardware...)
 
-I personally don't think that's worth it given that most of the legacy 
-hardware is buried under a thick layer of dust (when not used as coasters or 
-door stoppers).
+Indeed. SH is a nice arch with a very long history on Linux, and I'm
+happy to be carrying forward its legacy. I believe doing this within
+the framework that's already there (and thereby preserving and
+improving support for the legacy hardware), rather than starting over
+as if it were a new arch, is the right way to go, having the list
+overrun with mostly-unrelated traffic is an unfortunate situation to
+be in, and one that I'd like to see corrected.
 
--- 
-Regards,
-
-Laurent Pinchart
-
+Rich
