@@ -1,42 +1,64 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 21 Jan 2016 08:25:19 +0000
-Subject: Re: [PATCH] MAINTAINERS: Update mailing list for Renesas ARM64 SoC Development
-Message-Id: <CAMuHMdUJXQTGA+thVtm+i8=GoMPoTHaz=skMOUvKzhfH9MyBxg@mail.gmail.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Sat, 09 Jan 2016 10:46:57 +0000
+Subject: Re: [PATCH] media: soc_camera: rcar_vin: Add R-Car Gen3 support
+Message-Id: <Pine.LNX.4.64.1601091140200.15612@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1453357276-10148-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1453357276-10148-1-git-send-email-horms+renesas@verge.net.au>
+References: <1450020436-809-1-git-send-email-ykaneko0929@gmail.com>
+ <566DAE57.6030000@cogentembedded.com>
+In-Reply-To: <566DAE57.6030000@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms+renesas@verge.net.au>
-Cc: Linus Torvalds <torvalds@linux-foundation.org>, Magnus Damm <magnus.damm@gmail.com>, linux-renesas-soc@vger.kernel.org, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Cc: Yoshihiro Kaneko <ykaneko0929@gmail.com>, linux-media@vger.kernel.org, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-On Thu, Jan 21, 2016 at 7:21 AM, Simon Horman
-<horms+renesas@verge.net.au> wrote:
-> Update the mailing list used for development of support for
-> ARM64 Renesas SoCs.
->
-> This is a follow-up for a similar change for other Renesas SoCs and
-> drivers uses by Renesas SoCs. The ARM64 SoC entry was not updated in
-> that patch as it was not yet present in mainline.
->
-> The motivation for the mailing list update is that Renesas SoCs are now
-> much wider than the SH architecture and there is some desire from some for
-> the linux-sh list to refocus on discussion of the work on the SH
-> architecture.
->
-> Cc: Magnus Damm <magnus.damm@gmail.com>
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Hi Sergei,
 
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+On Sun, 13 Dec 2015, Sergei Shtylyov wrote:
 
-Gr{oetje,eeting}s,
+> On 12/13/2015 06:27 PM, Yoshihiro Kaneko wrote:
+> 
+> > From: Yoshihiko Mori <yoshihiko.mori.nx@renesas.com>
+> > 
+> > Add chip identification for R-Car Gen3.
+> > 
+> > Signed-off-by: Yoshihiko Mori <yoshihiko.mori.nx@renesas.com>
+> > Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+> [...]
+> > diff --git a/drivers/media/platform/soc_camera/rcar_vin.c
+> > b/drivers/media/platform/soc_camera/rcar_vin.c
+> > index 5d90f39..29e7ca4 100644
+> > --- a/drivers/media/platform/soc_camera/rcar_vin.c
+> > +++ b/drivers/media/platform/soc_camera/rcar_vin.c
+> > @@ -143,6 +143,7 @@
+> >   #define RCAR_VIN_BT656			(1 << 3)
+> > 
+> >   enum chip_id {
+> > +	RCAR_GEN3,
+> >   	RCAR_GEN2,
+> >   	RCAR_H1,
+> >   	RCAR_M1,
+> > @@ -1846,6 +1847,7 @@ static struct soc_camera_host_ops rcar_vin_host_ops > > {
+> > 
+> >   #ifdef CONFIG_OF
+> >   static const struct of_device_id rcar_vin_of_table[] = {
+> > +	{ .compatible = "renesas,vin-r8a7795", .data = (void *)RCAR_GEN3 },
+> 
+>    I don't see where this is checked in the driver. Shouldn't we just use
+> gen2?
 
-                        Geert
+That would be different. What this patch does is not the same, as using 
+GEN2. GEN2 is used in the driver when setting up the hardware for RGB32, 
+so, if you would use GEN2 for r8a7795 as well, that code path would be 
+used for it too. This patch adds GEN3 without modifying that check, so, if 
+you now attempt to use RGB32 with GEN3 / r8a7795 it would issue an 
+"invalid" warning and fail. Of course, I have no idea, whether this is the 
+intended behaviour, especially since many other chips do seem to support 
+RGB32 via that code...
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+Thanks
+Guennadi
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+> 
+> MBR, Sergei
+> 
