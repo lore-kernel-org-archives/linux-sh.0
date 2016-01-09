@@ -1,58 +1,91 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Sun, 24 Jan 2016 22:58:51 +0000
-Subject: Re: [RFC 0/5] [media] rcar-vin: skeleton driver not depending on soc_camera
-Message-Id: <1555265.Nfj4OXtCrr@avalon>
+From: Dirk Behme <dirk.behme@gmail.com>
+Date: Sat, 09 Jan 2016 06:36:42 +0000
+Subject: Re: [PATCH 05/10] arm64: dts: r8a7795: Add pmu device nodes
+Message-Id: <5690AA7A.4000303@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1452778216-31978-1-git-send-email-niklas.soderlund+renesas@ragnatech.se>
-In-Reply-To: <1452778216-31978-1-git-send-email-niklas.soderlund+renesas@ragnatech.se>
+References: <cover.1450401186.git.horms+renesas@verge.net.au>
+ <a6b6b478459be0c5614626ba6ac95df05a7fc5e9.1450401186.git.horms+renesas@verge.net.au>
+ <5673DCF7.1050008@arm.com> <5673E39C.6050206@gmail.com>
+ <5673E437.7020300@arm.com>
+In-Reply-To: <5673E437.7020300@arm.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Niklas,
+On 18.12.2015 11:47, Sudeep Holla wrote:
+>
+>
+> On 18/12/15 10:44, Dirk Behme wrote:
+>> On 18.12.2015 11:16, Sudeep Holla wrote:
+>>>
+>>>
+>>> On 18/12/15 02:29, Simon Horman wrote:
+>>>> From: Yoshifumi Hosoya <yoshifumi.hosoya.wj@renesas.com>
+>>>>
+>>>> Enabling the performance monitor unit on r8a7795.
+>>>>
+>>>> Signed-off-by: Masaru Nagai <masaru.nagai.vx@renesas.com>
+>>>> Signed-off-by: Yoshifumi Hosoya <yoshifumi.hosoya.wj@renesas.com>
+>>>> Signed-off-by: Dirk Behme <dirk.behme@gmail.com>
+>>>> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+>>>> ---
+>>>>   arch/arm64/boot/dts/renesas/r8a7795.dtsi | 12 ++++++++++++
+>>>>   1 file changed, 12 insertions(+)
+>>>>
+>>>> diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+>>>> b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+>>>> index 4d43cf31418f..b9229a49dabc 100644
+>>>> --- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+>>>> +++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+>>>> @@ -230,6 +230,18 @@
+>>>>               power-domains = <&cpg>;
+>>>>           };
+>>>>
+>>>> +        pmu {
+>>>> +            compatible = "arm,armv8-pmuv3";
+>>>
+>>> Please use arm,cortex-a57-pmu to be more specific. IIRC I mentioned
+>>> this
+>>> for some shmobile platform recently.
+>>
+>>
+>> Yes. But as this patch has been applied already to some branches, I
+>> incorporated your a57-pmu hint with an additional update patch:
+>>
+>> http://marc.info/?l=linux-sh&m5011467914857
+>>
+>> Feel free to squash if still possible.
+>>
+>
+> Ah OK, I didn't know the exact dts name, sorry for the noise.
+> Better if it was posted as part of this series :)
 
-Thank you for the patches.
 
-On Thursday 14 January 2016 14:30:11 Niklas S=F6derlund wrote:
-> Hi,
->=20
-> This is a RFC for the initial work of a rcar-vin driver that do not depend
-> on the soc_camera framework. What is presented here is a WIP, lots of stu=
-ff
-> is missing:
->=20
->  - Setting format handling together with the v4l2_subdev.
->  - DMA engine integration.
->  - Power management
->  - ...
->=20
-> I saw some recent patches on linux-se where the soc_camera rcar_vin driver
-> is extended so I though it best to make others aware of what I'm working
-> on. But since this in such a incomplete state I do not wish to generate
-> noise on linux-media so I just post it here.
->=20
-> Niklas S=F6derlund (5):
->   [media] rcar-vin: add skeleton
->   [media] rcar-vin: hookup a vb2queue
->   [media] rcar-vin: add array of supported formats
->   [media] rcar-vin: add video_device
->   [media] rcar-vin: hookup subdeivce using v4l2-async
+I finally found some time to test this
 
-Could you please resend the five patches squashed together ? It's difficult=
- to=20
-review a new driver split across several patches.
+http://marc.info/?l=linux-sh&m5011467914857
 
->  drivers/media/platform/rcar-vin.c | 697 ++++++++++++++++++++++++++++++++=
-+++
->  1 file changed, 697 insertions(+)
->  create mode 100644 drivers/media/platform/rcar-vin.c
->=20
-> --
-> 2.7.0
+and surprisingly it doesn't seem to work:
 
---=20
-Regards,
+Using "arm,cortex-a57-pmu" results in
 
-Laurent Pinchart
+hw perfevents: enabled with armv8_cortex_a57 PMU driver, 7 counters 
+available
+hw perfevents: failed to probe PMU!
+hw perfevents: failed to register PMU devices!
+
+while switching back to "arm,armv8-pmuv3" successfully gives
+
+hw perfevents: enabled with armv8_pmuv3 PMU driver, 7 counters available
+
+without any further error messages.
+
+Any idea?
+
+Best regards
+
+Dirk
+
+
 
