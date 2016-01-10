@@ -1,43 +1,39 @@
 From: "Michael S. Tsirkin" <mst@redhat.com>
-Date: Sun, 10 Jan 2016 14:19:44 +0000
-Subject: [PATCH v3 23/41] sh: define __smp_xxx, fix smp_store_mb for !SMP
-Message-Id: <1452426622-4471-24-git-send-email-mst@redhat.com>
+Date: Sun, 10 Jan 2016 19:30:27 +0000
+Subject: [PATCH v3 0/3] checkpatch: handling of memory barriers
+Message-Id: <1452454200-8844-1-git-send-email-mst@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1452426622-4471-1-git-send-email-mst@redhat.com>
-In-Reply-To: <1452426622-4471-1-git-send-email-mst@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-kernel@vger.kernel.org
-Cc: Peter Zijlstra <peterz@infradead.org>, Arnd Bergmann <arnd@arndb.de>, linux-arch@vger.kernel.org, Andrew Cooper <andrew.cooper3@citrix.com>, Russell King - ARM Linux <linux@arm.linux.org.uk>, virtualization@lists.linux-foundation.org, Stefano Stabellini <stefano.stabellini@eu.citrix.com>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@elte.hu>, "H. Peter Anvin" <hpa@zytor.com>, Joe Perches <joe@perches.com>, David Miller <davem@davemloft.net>, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, sparclinux@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-metag@vger.kernel.org, linux-mips@linux-mips.org, x86@kernel.org, user-mode-linux-devel@lists.sourceforge.net, adi-buildroot-devel@lists.sourceforge.net, linux-sh@vger.kernel.org, linux-xtensa@linux-xtensa.org, xen-devel@lists.xenproject.org, Ingo Molnar <mingo@k>
+Cc: linux-mips@linux-mips.org, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, virtualization@lists.linux-foundation.org, "H. Peter Anvin" <hpa@zytor.com>, sparclinux@vger.kernel.org, Ingo Molnar <mingo@kernel.org>, linux-arch@vger.kernel.org, linux-s390@vger.kernel.org, Russell King - ARM Linux <linux@arm.linux.org.uk>, Arnd Bergmann <arnd@arndb.de>, x86@kernel.org, Tony Lindgren <tony@atomide.com>, xen-devel@lists.xenproject.org, Ingo Molnar <mingo@elte.hu>, linux-xtensa@linux-xtensa.org, user-mode-linux-devel@lists.sourceforge.net, Stefano Stabellini <stefano.stabellini@eu.citrix.com>, Andrey Konovalov <andreyknvl@google.com>, adi-buildroot-devel@lists.sourceforge.net, Andy Whitcroft <apw@canonical.com>, Thomas Gleixner <tglx@linutronix.de>, linux-metag@vger.kernel.org, linux-arm-kernel@lists.infradead.orgAndrewCooperan
 
-sh variant of smp_store_mb() calls xchg() on !SMP which is stronger than
-implied by both the name and the documentation.
+As part of memory barrier cleanup, this patchset
+extends checkpatch to make it easier to stop
+incorrect memory barrier usage.
 
-define __smp_store_mb instead: code in asm-generic/barrier.h
-will then define smp_store_mb correctly depending on
-CONFIG_SMP.
+This replaces the checkpatch patches in my series
+	arch: barrier cleanup + barriers for virt
+and will be included in the next version of the series.
 
-Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
-Acked-by: Arnd Bergmann <arnd@arndb.de>
----
- arch/sh/include/asm/barrier.h | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+changes from v2:
+	address comments by Joe Perches:
+	use (?: ... ) to avoid unnecessary capture groups
+	rename smp_barriers to smp_barrier_stems for clarity
+	add barriers before/after atomic
+Changes from v1:
+	catch optional\s* before () in barriers
+	rewrite using qr{} instead of map
 
-diff --git a/arch/sh/include/asm/barrier.h b/arch/sh/include/asm/barrier.h
-index bf91037..f887c64 100644
---- a/arch/sh/include/asm/barrier.h
-+++ b/arch/sh/include/asm/barrier.h
-@@ -32,7 +32,8 @@
- #define ctrl_barrier()	__asm__ __volatile__ ("nop;nop;nop;nop;nop;nop;nop;nop")
- #endif
- 
--#define smp_store_mb(var, value) do { (void)xchg(&var, value); } while (0)
-+#define __smp_store_mb(var, value) do { (void)xchg(&var, value); } while (0)
-+#define smp_store_mb(var, value) __smp_store_mb(var, value)
- 
- #include <asm-generic/barrier.h>
- 
+Michael S. Tsirkin (3):
+  checkpatch.pl: add missing memory barriers
+  checkpatch: check for __smp outside barrier.h
+  checkpatch: add virt barriers
+
+ scripts/checkpatch.pl | 33 ++++++++++++++++++++++++++++++++-
+ 1 file changed, 32 insertions(+), 1 deletion(-)
+
 -- 
 MST
 
