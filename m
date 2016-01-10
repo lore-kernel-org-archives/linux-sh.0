@@ -1,80 +1,34 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Wed, 13 Jan 2016 14:29:26 +0000
-Subject: [PATCH 0/3] i2c/of: switch I2C IP cores at runtime via OF_DYNAMIC
-Message-Id: <1452695369-29413-1-git-send-email-wsa@the-dreams.de>
+From: "Michael S. Tsirkin" <mst@redhat.com>
+Date: Sun, 10 Jan 2016 11:56:50 +0000
+Subject: [PATCH v2 0/3] checkpatch: handling of memory barriers
+Message-Id: <1452427000-4520-1-git-send-email-mst@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: Wolfram Sang <wsa@the-dreams.de>, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, linux-kernel@vger.kernel.org, Rob Herring <robh@kernel.org>, Pantelis Antoniou <pantelis.antoniou@konsulko.com>, Jan Luebbe <jlu@pengutronix.de>
+To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Andy Whitcroft <apw-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Joe Perches <joe-6d6DIl74uiNBDgjK7y7TUQ@public.gmane.org>, Peter Zijlstra <peterz-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>, Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>, linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Cooper <andrew.cooper3-Sxgqhf6Nn4DQT0dZR+AlfA@public.gmane.org>, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Stefano Stabellini <stefano.stabellini-mvvWK6WmYclDPfheJLI6IQ@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>, linux-ia64-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linuxppc-dev-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org, linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sparclinux-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, linux-metag-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mips-6z/3iImG2C8G8FEW9MqTrA@public.gmane.org, x86-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, user-mode-linux-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, adi-buildroot-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-xtensa-PjhNF2WwrV/0Sa2dR60CXw@public.gmane.org, xen-devel-GuqFBffKawtpuQazS67q72D2FQJk+8+b@public.gmane.org, Ingo Molnar <mingo-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Ton
 
-Here is the newest version of this patch series. Since Rob indicated to be OK
-with the approach, I am brave and changed the status from RFC to PATCH.
+As part of memory barrier cleanup, this patchset
+extends checkpatch to make it easier to stop
+incorrect memory barrier usage.
 
-This series allows an I2C bus to switch between multiple masters, i.e. a
-n-to-1-demuxer. This is not hot-switching because connected I2C slaves will be
-re-instantiated. It is meant to select the best I2C core at runtime once the
-task is known. Example: Prefer i2c-gpio over another I2C core because of HW
-errata affecting your current runtime configuration.
+This applies on top of my series
+	arch: barrier cleanup + barriers for virt
+and will be included in the next version of the series.
 
-It works by using OF_DYNAMIC and en-/disabling the i2c parent as needed. See
-the binding docs for more details. Because this is largely using OF_DYNAMIC, I
-decided to post the whole series to the dt list.
+Changes from v2:
+	catch optional\s* before () in barriers
+	rewrite using qr{} instead of map
 
-Changes since RFC v2:
+Michael S. Tsirkin (3):
+  checkpatch.pl: add missing memory barriers
+  checkpatch: check for __smp outside barrier.h
+  checkpatch: add virt barriers
 
-* updated docs (sysfs file now described in ABI/testing)
-* depends now on OF (thanks buildbot)
-* removed mutex handling. This creates a dependency on this patch which adds
-  what we need to of-core (thanks Rob):
-	https://patchwork.ozlabs.org/patch/539938/
-* sysfs-store: use uint instead of ulong (thanks Geert)
-* removed typos from commit messages (thanks Geert and Rob)
-
-Changes since RFC v1:
-
-* gracefully handle if i2c adapters are not present at runtime
-  (driver not loaded yet)
-* added more documentation and examples
-* properly put the i2c adapters after use
-* respect PAGE_SIZE in sysfs_show
-
-This has been tested on a Renesas Lager board switching between i2c-gpio and
-two different IP cores (i2c-rcar and i2c-sh_mobile). The rebinding seems to be
-working as expected. However, in practice, I couldn't use the HDMI i2c slaves
-with another controller yet, because the rcar-du driver OOPSes when unbinding.
-This seems unrelated to this series because it can also be triggered via
-sysfs-unbind. soc-camera also had problems properly cleaning up on unbind, a
-patch for this already has been sent. So, this series is for sure a good test
-for the unbind path of drivers.
-
-A branch can be found here:
-
-git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git renesas/ip-core-switch-on-4.4
-
-Let me know what you think.
-
-Thanks,
-
-   Wolfram
-
-Wolfram Sang (3):
-  dt-bindings: i2c: mux: demux-pinctrl: add bindings
-  i2c: mux: demux-pinctrl: add driver
-  ARM: shmobile: r8a7790: rework dts to use i2c demuxer
-
- .../ABI/testing/sysfs-platform-i2c-demux-pinctrl   |  23 ++
- .../devicetree/bindings/i2c/i2c-demux-pinctrl.txt  | 136 +++++++++++
- arch/arm/boot/dts/r8a7790-lager.dts                | 141 +++++++----
- drivers/i2c/muxes/Kconfig                          |   9 +
- drivers/i2c/muxes/Makefile                         |   2 +
- drivers/i2c/muxes/i2c-demux-pinctrl.c              | 272 +++++++++++++++++++++
- 6 files changed, 530 insertions(+), 53 deletions(-)
- create mode 100644 Documentation/ABI/testing/sysfs-platform-i2c-demux-pinctrl
- create mode 100644 Documentation/devicetree/bindings/i2c/i2c-demux-pinctrl.txt
- create mode 100644 drivers/i2c/muxes/i2c-demux-pinctrl.c
+ scripts/checkpatch.pl | 31 ++++++++++++++++++++++++++++++-
+ 1 file changed, 30 insertions(+), 1 deletion(-)
 
 -- 
-2.1.4
+MST
 
