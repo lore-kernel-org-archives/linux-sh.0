@@ -1,67 +1,61 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Mon, 04 Jan 2016 13:21:42 +0000
-Subject: Re: [PATCH] PCI: provide of_pci_get_host_bridge_resources helper
-Message-Id: <20160104132142.GA11689@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="4Ckj6UjgE2iN1+kY"
+From: "Michael S. Tsirkin" <mst@redhat.com>
+Date: Sun, 10 Jan 2016 14:19:52 +0000
+Subject: [PATCH v3 24/41] sparc: define __smp_xxx
+Message-Id: <1452426622-4471-25-git-send-email-mst@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <8759253.sZisGJ6Km3@wuerfel>
-In-Reply-To: <8759253.sZisGJ6Km3@wuerfel>
-To: linux-arm-kernel@lists.infradead.org
+References: <1452426622-4471-1-git-send-email-mst@redhat.com>
+In-Reply-To: <1452426622-4471-1-git-send-email-mst@redhat.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-kernel@vger.kernel.org
+Cc: Peter Zijlstra <peterz@infradead.org>, Arnd Bergmann <arnd@arndb.de>, linux-arch@vger.kernel.org, Andrew Cooper <andrew.cooper3@citrix.com>, Russell King - ARM Linux <linux@arm.linux.org.uk>, virtualization@lists.linux-foundation.org, Stefano Stabellini <stefano.stabellini@eu.citrix.com>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@elte.hu>, "H. Peter Anvin" <hpa@zytor.com>, Joe Perches <joe@perches.com>, David Miller <davem@davemloft.net>, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, sparclinux@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-metag@vger.kernel.org, linux-mips@linux-mips.org, x86@kernel.org, user-mode-linux-devel@lists.sourceforge.net, adi-buildroot-devel@lists.sourceforge.net, linux-sh@vger.kernel.org, linux-xtensa@linux-xtensa.org, xen-devel@lists.xenproject.org, Ingo Molnar <mingo@k>
 
+This defines __smp_xxx barriers for sparc,
+for use by virtualization.
 
---4Ckj6UjgE2iN1+kY
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+smp_xxx barriers are removed as they are
+defined correctly by asm-generic/barriers.h
 
-On Fri, Dec 18, 2015 at 04:02:41PM +0100, Arnd Bergmann wrote:
-> The pcie-rcar driver can be built for any ARM platform (for COMPILE_TEST)
-> including those without CONFIG_OF enabled, and that results in a compile-=
-time
-> error:
->=20
-> drivers/pci/host/pcie-rcar.c: In function 'rcar_pcie_parse_request_of_pci=
-_ranges':
-> drivers/pci/host/pcie-rcar.c:939:8: error: implicit declaration of functi=
-on 'of_pci_get_host_bridge_resources' [-Werror=3Dimplicit-function-declarat=
-ion]
->   err =3D of_pci_get_host_bridge_resources(np, 0, 0xff, &pci->resources, =
-&iobase);
->=20
-> In order to allow compile-testing on all platforms, this adds a
-> of_pci_get_host_bridge_resources() helper stub function that gets
-> used when CONFIG_OF_ADDRESS is disabled. This mirrors what we do for
-> other OF-specific functions.
->=20
-> Signed-off-by: Arnd Bergmann <arnd@arndb.de>
-> Fixes: 5d2917d469fa ("PCI: rcar: Convert to DT resource parsing API")
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+Acked-by: Arnd Bergmann <arnd@arndb.de>
+Acked-by: David S. Miller <davem@davemloft.net>
+---
+ arch/sparc/include/asm/barrier_64.h | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
-Makes sense :)
+diff --git a/arch/sparc/include/asm/barrier_64.h b/arch/sparc/include/asm/barrier_64.h
+index 26c3f72..c9f6ee6 100644
+--- a/arch/sparc/include/asm/barrier_64.h
++++ b/arch/sparc/include/asm/barrier_64.h
+@@ -37,14 +37,14 @@ do {	__asm__ __volatile__("ba,pt	%%xcc, 1f\n\t" \
+ #define rmb()	__asm__ __volatile__("":::"memory")
+ #define wmb()	__asm__ __volatile__("":::"memory")
+ 
+-#define smp_store_release(p, v)						\
++#define __smp_store_release(p, v)						\
+ do {									\
+ 	compiletime_assert_atomic_type(*p);				\
+ 	barrier();							\
+ 	WRITE_ONCE(*p, v);						\
+ } while (0)
+ 
+-#define smp_load_acquire(p)						\
++#define __smp_load_acquire(p)						\
+ ({									\
+ 	typeof(*p) ___p1 = READ_ONCE(*p);				\
+ 	compiletime_assert_atomic_type(*p);				\
+@@ -52,8 +52,8 @@ do {									\
+ 	___p1;								\
+ })
+ 
+-#define smp_mb__before_atomic()	barrier()
+-#define smp_mb__after_atomic()	barrier()
++#define __smp_mb__before_atomic()	barrier()
++#define __smp_mb__after_atomic()	barrier()
+ 
+ #include <asm-generic/barrier.h>
+ 
+-- 
+MST
 
-Acked-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
-
-
---4Ckj6UjgE2iN1+kY
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBAgAGBQJWinHmAAoJEBQN5MwUoCm2az4P/0/aIpq6QV1J6vlmCBRiDCAh
-deAfQgA9skEiuMjrlnptk5JK9P4Og8EVWcCsbN/EtHcTfl2R1J0NGzpyQw0O5r1k
-8AarULVabkNT4w2ZmlAeiRX8kGykumSX1OQk22fjou15eDDQo5OcNu0tpSTISBpN
-a0/5FW4oTAeF99uOASKBo//rTWlevGWYm5Byf5k9cAvoGhZAQd3uB4NC81891Pqm
-GSIHX6nwbIOY5PglYx+1g2cZOtq6KZB0APUiztQMIlift6H6g7dZH/QzvaYxftB+
-BKJJ+w26mEiDYcHoceEQOmFmfo0YsKz1ZBBnPLD2kIJue2CQvrqaxsmEM1gFC01F
-+eL3zeq4s/qFJCfmuK+rhzewL3nOFqHuLn++z/yJ4+gKOvhdyLlcfOiRGeSC2Zn/
-RqsHfQeKeBNXJJsqo2BjPxtiqnY8gbp+a5p7WbPZlMjiyDRj60+6/X4/re1ujpkw
-W6WOb2j12SMBMBX/6QeZBQoG0iXwYgjaj9jM3w5z7W/4dt0DgjeVWvGHx8UziR0c
-8sbodkhalm5XrHFNoPaU8TMY8hvSq2YeQh5bqwCP81r8TE2UbNdNcuDSDQ7QSuPA
-OY+1RWivTHD6hzAmYV8tZk73vtozw5NymoYKkyVo0I0K8sV4AtZXhyLSyP634s2c
-Z1k7Ou6pmoQt5lmTTB1N
-=o8SD
------END PGP SIGNATURE-----
-
---4Ckj6UjgE2iN1+kY--
