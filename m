@@ -1,120 +1,84 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Fri, 08 Jan 2016 21:56:50 +0000
-Subject: [PATCH v2 3/3] drm: adv7511: it's HPD, not HDP
-Message-Id: <1452290210-20629-4-git-send-email-wsa@the-dreams.de>
+From: "Michael S. Tsirkin" <mst@redhat.com>
+Date: Sun, 10 Jan 2016 14:21:07 +0000
+Subject: [PATCH v3 33/41] virtio_ring: use virt_store_mb
+Message-Id: <1452426622-4471-34-git-send-email-mst@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1452290210-20629-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1452290210-20629-1-git-send-email-wsa@the-dreams.de>
+References: <1452426622-4471-1-git-send-email-mst@redhat.com>
+In-Reply-To: <1452426622-4471-1-git-send-email-mst@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Wolfram Sang <wsa@the-dreams.de>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Daniel Vetter <daniel.vetter@ffwll.ch>, Lars-Peter Clausen <lars@metafoo.de>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, David Airlie <airlied@linux.ie>, Archit Taneja <architt@codeaurora.org>
+To: linux-kernel@vger.kernel.org
+Cc: Peter Zijlstra <peterz@infradead.org>, Arnd Bergmann <arnd@arndb.de>, linux-arch@vger.kernel.org, Andrew Cooper <andrew.cooper3@citrix.com>, Russell King - ARM Linux <linux@arm.linux.org.uk>, virtualization@lists.linux-foundation.org, Stefano Stabellini <stefano.stabellini@eu.citrix.com>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@elte.hu>, "H. Peter Anvin" <hpa@zytor.com>, Joe Perches <joe@perches.com>, David Miller <davem@davemloft.net>, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, sparclinux@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-metag@vger.kernel.org, linux-mips@linux-mips.org, x86@kernel.org, user-mode-linux-devel@lists.sourceforge.net, adi-buildroot-devel@lists.sourceforge.net, linux-sh@vger.kernel.org, linux-xtensa@linux-xtensa.org, xen-devel@lists.xenproject.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+We need a full barrier after writing out event index, using
+virt_store_mb there seems better than open-coding.  As usual, we need a
+wrapper to account for strong barriers.
 
-Fix this typo, consequently used over both files :)
+It's tempting to use this in vhost as well, for that, we'll
+need a variant of smp_store_mb that works on __user pointers.
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
-Acked-by: Lars-Peter Clausen <lars@metafoo.de>
-Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Tested-by: Archit Taneja <architt@codeaurora.org>
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
 ---
- drivers/gpu/drm/i2c/adv7511.c | 22 +++++++++++-----------
- drivers/gpu/drm/i2c/adv7511.h | 12 ++++++------
- 2 files changed, 17 insertions(+), 17 deletions(-)
+ include/linux/virtio_ring.h  | 11 +++++++++++
+ drivers/virtio/virtio_ring.c | 15 +++++++++------
+ 2 files changed, 20 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/gpu/drm/i2c/adv7511.c b/drivers/gpu/drm/i2c/adv7511.c
-index e1756a452d6980..a02112ba1c3df6 100644
---- a/drivers/gpu/drm/i2c/adv7511.c
-+++ b/drivers/gpu/drm/i2c/adv7511.c
-@@ -378,16 +378,16 @@ static void adv7511_power_on(struct adv7511 *adv7511)
+diff --git a/include/linux/virtio_ring.h b/include/linux/virtio_ring.h
+index f3fa55b..a156e2b 100644
+--- a/include/linux/virtio_ring.h
++++ b/include/linux/virtio_ring.h
+@@ -45,6 +45,17 @@ static inline void virtio_wmb(bool weak_barriers)
+ 		wmb();
+ }
+ 
++static inline void virtio_store_mb(bool weak_barriers,
++				   __virtio16 *p, __virtio16 v)
++{
++	if (weak_barriers) {
++		virt_store_mb(*p, v);
++	} else {
++		WRITE_ONCE(*p, v);
++		mb();
++	}
++}
++
+ struct virtio_device;
+ struct virtqueue;
+ 
+diff --git a/drivers/virtio/virtio_ring.c b/drivers/virtio/virtio_ring.c
+index ee663c4..e12e385 100644
+--- a/drivers/virtio/virtio_ring.c
++++ b/drivers/virtio/virtio_ring.c
+@@ -517,10 +517,10 @@ void *virtqueue_get_buf(struct virtqueue *_vq, unsigned int *len)
+ 	/* If we expect an interrupt for the next entry, tell host
+ 	 * by writing event index and flush out the write before
+ 	 * the read in the next get_buf call. */
+-	if (!(vq->avail_flags_shadow & VRING_AVAIL_F_NO_INTERRUPT)) {
+-		vring_used_event(&vq->vring) = cpu_to_virtio16(_vq->vdev, vq->last_used_idx);
+-		virtio_mb(vq->weak_barriers);
+-	}
++	if (!(vq->avail_flags_shadow & VRING_AVAIL_F_NO_INTERRUPT))
++		virtio_store_mb(vq->weak_barriers,
++				&vring_used_event(&vq->vring),
++				cpu_to_virtio16(_vq->vdev, vq->last_used_idx));
+ 
+ #ifdef DEBUG
+ 	vq->last_add_time_valid = false;
+@@ -653,8 +653,11 @@ bool virtqueue_enable_cb_delayed(struct virtqueue *_vq)
  	}
- 
- 	/*
--	 * Per spec it is allowed to pulse the HDP signal to indicate that the
-+	 * Per spec it is allowed to pulse the HPD signal to indicate that the
- 	 * EDID information has changed. Some monitors do this when they wakeup
--	 * from standby or are enabled. When the HDP goes low the adv7511 is
-+	 * from standby or are enabled. When the HPD goes low the adv7511 is
- 	 * reset and the outputs are disabled which might cause the monitor to
--	 * go to standby again. To avoid this we ignore the HDP pin for the
-+	 * go to standby again. To avoid this we ignore the HPD pin for the
- 	 * first few seconds after enabling the output.
- 	 */
- 	regmap_update_bits(adv7511->regmap, ADV7511_REG_POWER2,
--			   ADV7511_REG_POWER2_HDP_SRC_MASK,
--			   ADV7511_REG_POWER2_HDP_SRC_NONE);
-+			   ADV7511_REG_POWER2_HPD_SRC_MASK,
-+			   ADV7511_REG_POWER2_HPD_SRC_NONE);
- 
- 	/*
- 	 * Most of the registers are reset during power down or when HPD is low.
-@@ -421,9 +421,9 @@ static bool adv7511_hpd(struct adv7511 *adv7511)
- 	if (ret < 0)
+ 	/* TODO: tune this threshold */
+ 	bufs = (u16)(vq->avail_idx_shadow - vq->last_used_idx) * 3 / 4;
+-	vring_used_event(&vq->vring) = cpu_to_virtio16(_vq->vdev, vq->last_used_idx + bufs);
+-	virtio_mb(vq->weak_barriers);
++
++	virtio_store_mb(vq->weak_barriers,
++			&vring_used_event(&vq->vring),
++			cpu_to_virtio16(_vq->vdev, vq->last_used_idx + bufs));
++
+ 	if (unlikely((u16)(virtio16_to_cpu(_vq->vdev, vq->vring.used->idx) - vq->last_used_idx) > bufs)) {
+ 		END_USE(vq);
  		return false;
- 
--	if (irq0 & ADV7511_INT0_HDP) {
-+	if (irq0 & ADV7511_INT0_HPD) {
- 		regmap_write(adv7511->regmap, ADV7511_REG_INT(0),
--			     ADV7511_INT0_HDP);
-+			     ADV7511_INT0_HPD);
- 		return true;
- 	}
- 
-@@ -446,7 +446,7 @@ static int adv7511_irq_process(struct adv7511 *adv7511)
- 	regmap_write(adv7511->regmap, ADV7511_REG_INT(0), irq0);
- 	regmap_write(adv7511->regmap, ADV7511_REG_INT(1), irq1);
- 
--	if (irq0 & ADV7511_INT0_HDP && adv7511->encoder)
-+	if (irq0 & ADV7511_INT0_HPD && adv7511->encoder)
- 		drm_helper_hpd_irq_event(adv7511->encoder->dev);
- 
- 	if (irq0 & ADV7511_INT0_EDID_READY || irq1 & ADV7511_INT1_DDC_ERROR) {
-@@ -648,10 +648,10 @@ adv7511_encoder_detect(struct drm_encoder *encoder,
- 		if (adv7511->status = connector_status_connected)
- 			status = connector_status_disconnected;
- 	} else {
--		/* Renable HDP sensing */
-+		/* Renable HPD sensing */
- 		regmap_update_bits(adv7511->regmap, ADV7511_REG_POWER2,
--				   ADV7511_REG_POWER2_HDP_SRC_MASK,
--				   ADV7511_REG_POWER2_HDP_SRC_BOTH);
-+				   ADV7511_REG_POWER2_HPD_SRC_MASK,
-+				   ADV7511_REG_POWER2_HPD_SRC_BOTH);
- 	}
- 
- 	adv7511->status = status;
-diff --git a/drivers/gpu/drm/i2c/adv7511.h b/drivers/gpu/drm/i2c/adv7511.h
-index 6599ed538426d6..38515b30cedfc8 100644
---- a/drivers/gpu/drm/i2c/adv7511.h
-+++ b/drivers/gpu/drm/i2c/adv7511.h
-@@ -90,7 +90,7 @@
- #define ADV7511_CSC_ENABLE			BIT(7)
- #define ADV7511_CSC_UPDATE_MODE			BIT(5)
- 
--#define ADV7511_INT0_HDP			BIT(7)
-+#define ADV7511_INT0_HPD			BIT(7)
- #define ADV7511_INT0_VSYNC			BIT(5)
- #define ADV7511_INT0_AUDIO_FIFO_FULL		BIT(4)
- #define ADV7511_INT0_EDID_READY			BIT(2)
-@@ -157,11 +157,11 @@
- #define ADV7511_PACKET_ENABLE_SPARE2		BIT(1)
- #define ADV7511_PACKET_ENABLE_SPARE1		BIT(0)
- 
--#define ADV7511_REG_POWER2_HDP_SRC_MASK		0xc0
--#define ADV7511_REG_POWER2_HDP_SRC_BOTH		0x00
--#define ADV7511_REG_POWER2_HDP_SRC_HDP		0x40
--#define ADV7511_REG_POWER2_HDP_SRC_CEC		0x80
--#define ADV7511_REG_POWER2_HDP_SRC_NONE		0xc0
-+#define ADV7511_REG_POWER2_HPD_SRC_MASK		0xc0
-+#define ADV7511_REG_POWER2_HPD_SRC_BOTH		0x00
-+#define ADV7511_REG_POWER2_HPD_SRC_HPD		0x40
-+#define ADV7511_REG_POWER2_HPD_SRC_CEC		0x80
-+#define ADV7511_REG_POWER2_HPD_SRC_NONE		0xc0
- #define ADV7511_REG_POWER2_TDMS_ENABLE		BIT(4)
- #define ADV7511_REG_POWER2_GATE_INPUT_CLK	BIT(0)
- 
 -- 
-2.1.4
+MST
 
