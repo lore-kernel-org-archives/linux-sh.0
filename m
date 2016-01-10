@@ -1,50 +1,53 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 14 Jan 2016 10:09:47 +0000
-Subject: Re: [PATCH] dmaengine: rcar-dmac: Document SoC specific bindings
-Message-Id: <CAMuHMdXVBSjTb_-7o4rDh_S+i64QKEr-5KUnSfd3Nqt1D1TE2Q@mail.gmail.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Sun, 10 Jan 2016 08:27:58 +0000
+Subject: Re: [PATCH 2/2] i2c: s3c2410: remove superfluous runtime PM calls
+Message-Id: <20160110082758.GC1526@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="hYooF8G/hrfVAmum"
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447293239-8554-1-git-send-email-horms+renesas@verge.net.au>
-	<20151116035533.GC25173@localhost>
-In-Reply-To: <20151116035533.GC25173@localhost>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Vinod Koul <vinod.koul@intel.com>
-Cc: Simon Horman <horms+renesas@verge.net.au>, dmaengine@vger.kernel.org, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+References: <1450891169-13708-1-git-send-email-wsa@the-dreams.de>
+ <1450891169-13708-3-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1450891169-13708-3-git-send-email-wsa@the-dreams.de>
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, linux-pm@vger.kernel.org, Sylwester Nawrocki <s.nawrocki@samsung.com>, Charles Keepax <ckeepax@opensource.wolfsonmicro.com>
 
-Hi Vinod,
 
-On Mon, Nov 16, 2015 at 4:55 AM, Vinod Koul <vinod.koul@intel.com> wrote:
-> On Thu, Nov 12, 2015 at 10:53:59AM +0900, Simon Horman wrote:
->> In general Renesas hardware is not documented to the extent where the
->> relationship between IP blocks on different SoCs can be assumed although
->> they may appear to operate the same way. Furthermore the documentation
->> typically does not specify a version for individual IP blocks. For these
->> reasons a convention of using the SoC name in place of a version and
->> providing SoC-specific compat strings has been adopted.
->>
->> Although not universally liked this convention is used in the bindings for
->> most drivers for Renesas hardware. The purpose of this patch is to
->> update the Renesas R-Car DMA Controller driver to follow this convention.
->
-> Applied, thanks
+--hYooF8G/hrfVAmum
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-This patch (and this patch only) has disappeared from your next branch between
-January 6 and 7, and thus wasn't included in your pull request for v4.5.
+On Wed, Dec 23, 2015 at 06:19:29PM +0100, Wolfram Sang wrote:
+> From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+>=20
+> RuntimePM of the adapter device is now taken care of by the core. So, we
+> can remove these calls.
+>=20
+> Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Was there a specific reason for that, or was it just an oversight?
+Applied to for-next, thanks!
 
-Note that the added compatible values in in use (in arm-soc/for-next).
 
-Thanks!
+--hYooF8G/hrfVAmum
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-Gr{oetje,eeting}s,
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
 
-                        Geert
+iQIcBAEBAgAGBQJWkhYOAAoJEBQN5MwUoCm2nx8P/0CH2tPviHgMPK3GDgrvR/eB
+LXm66DzZaTqf4AW9cPxjqb5WMwl6Jy6OeM/1nz7K6m7dCNvhkGR1JlQTWbJbtiga
+wpkQgLZzAoFYsWtlCpl9EYuomKahYY1RUyZkVyo2eMAPm6wQiMq8PsdEHhZrNKKP
+QHoj26Y41nyQj+3Vm6oTDc11U3MDRWsMi0EgIjivQL+LIouhrclY8E3QQv05sERs
+hvNpP1/96efBbt7KhWnt0Wj/pXViORe45Gpwk/mbZ+dF0TN0Qse51fjaKOU7+dMO
+NGcbdUZxIviRdskxt+aArcxoOU+knZYHgNBPYHU3wW2X1ClyTnM0fGHCk7ZX6HyK
+tg1zI3m9Ov18MhktH/u8UaCkRrNgNvTZgXnfRsxYTcEolX5rbxEjCZvAbjtNF0C7
+Elw6y8M7Cf/wViXICCvMofFzMT81Pt25areOqS0kw+kimflfyqmjHbK/cOx55AU/
+1GipXCt/m+e8AjXe24DdJQpoZRNcUHO+oo+oJTzpDcxyj6GP9QDSB2zQCOUZMELh
+4sUMTpf3P4RrHx/jQnB82FkC7FQm9c7Y5D1fm7TPrZbsmrjnH3nTRy35A/ZiytGp
+uhnsVwyVbyhjry3bF8EmlmRL708j2EVyD/5yxa+EXlYw01R9X6W3AlAsalhIYODP
+SpN8H0a7XMjhb3KZvoqd
+=wcRd
+-----END PGP SIGNATURE-----
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+--hYooF8G/hrfVAmum--
