@@ -1,137 +1,55 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 04 Jan 2016 22:27:43 +0000
-Subject: [PATCH v2 08/13] ARM: shmobile: gose: Enable sound PIO support in device tree
-Message-Id: <1451946468-20499-9-git-send-email-horms+renesas@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Sun, 10 Jan 2016 08:27:52 +0000
+Subject: Re: [PATCH 1/2] i2c: always enable RuntimePM for the adapter device
+Message-Id: <20160110082752.GB1526@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="JYK4vJDZwFMowpUq"
 List-Id: <linux-sh.vger.kernel.org>
-References: <1451946468-20499-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1451946468-20499-1-git-send-email-horms+renesas@verge.net.au>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+References: <1450891169-13708-1-git-send-email-wsa@the-dreams.de>
+ <1450891169-13708-2-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1450891169-13708-2-git-send-email-wsa@the-dreams.de>
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, linux-pm@vger.kernel.org, Sylwester Nawrocki <s.nawrocki@samsung.com>, Charles Keepax <ckeepax@opensource.wolfsonmicro.com>
 
-Enable sound PIO support in the r8a7793/gose device tree.
 
-Based on similar work for the r8a7791/koelsch by Kuninori Morimoto.
+--JYK4vJDZwFMowpUq
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7793-gose.dts | 76 ++++++++++++++++++++++++++++++++++++++
- 1 file changed, 76 insertions(+)
+On Wed, Dec 23, 2015 at 06:19:28PM +0100, Wolfram Sang wrote:
+> From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+>=20
+> The adapter device is a logical device. Because of that, it already uses
+> pm_runtime_no_callbacks() in the core. To ensure proper propagation from
+> the children (i2c devices) to the parent of the adapter (the HW device),
+> make sure RuntimePM is enabled in any case.
+>=20
+> Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-diff --git a/arch/arm/boot/dts/r8a7793-gose.dts b/arch/arm/boot/dts/r8a7793-gose.dts
-index 987ed03b1e02..a90af303e21a 100644
---- a/arch/arm/boot/dts/r8a7793-gose.dts
-+++ b/arch/arm/boot/dts/r8a7793-gose.dts
-@@ -8,6 +8,17 @@
-  * kind, whether express or implied.
-  */
- 
-+/*
-+ * SSI-AK4643
-+ *
-+ * SW1: 1: AK4643
-+ *      2: CN22
-+ *      3: ADV7511
-+ *
-+ * This command is required when Playback/Capture
-+ *
-+ *	amixer set "LINEOUT Mixer DACL" on
-+ */
- /dts-v1/;
- #include "r8a7793.dtsi"
- #include <dt-bindings/gpio/gpio.h>
-@@ -129,6 +140,30 @@
- 			label = "LED8";
- 		};
- 	};
-+
-+	audio_clock: clock {
-+		compatible = "fixed-clock";
-+		#clock-cells = <0>;
-+		clock-frequency = <11289600>;
-+		clock-output-names = "audio_clock";
-+	};
-+
-+	rsnd_ak4643: sound {
-+		compatible = "simple-audio-card";
-+
-+		simple-audio-card,format = "left_j";
-+		simple-audio-card,bitclock-master = <&sndcodec>;
-+		simple-audio-card,frame-master = <&sndcodec>;
-+
-+		sndcpu: simple-audio-card,cpu {
-+			sound-dai = <&rcar_sound>;
-+		};
-+
-+		sndcodec: simple-audio-card,codec {
-+			sound-dai = <&ak4643>;
-+			clocks = <&audio_clock>;
-+		};
-+	};
- };
- 
- &extal_clk {
-@@ -165,6 +200,16 @@
- 		renesas,groups = "qspi_ctrl", "qspi_data4";
- 		renesas,function = "qspi";
- 	};
-+
-+	sound_pins: sound {
-+		renesas,groups = "ssi0129_ctrl", "ssi0_data", "ssi1_data";
-+		renesas,function = "ssi";
-+	};
-+
-+	sound_clk_pins: sound_clk {
-+		renesas,groups = "audio_clk_a";
-+		renesas,function = "audio_clk";
-+	};
- };
- 
- &ether {
-@@ -247,9 +292,40 @@
- 	status = "okay";
- 	clock-frequency = <100000>;
- 
-+	ak4643: codec@12 {
-+		compatible = "asahi-kasei,ak4643";
-+		#sound-dai-cells = <0>;
-+		reg = <0x12>;
-+	};
- 	eeprom@50 {
- 		compatible = "renesas,r1ex24002", "atmel,24c02";
- 		reg = <0x50>;
- 		pagesize = <16>;
- 	};
- };
-+
-+&rcar_sound {
-+	pinctrl-0 = <&sound_pins &sound_clk_pins>;
-+	pinctrl-names = "default";
-+
-+	/* Single DAI */
-+	#sound-dai-cells = <0>;
-+
-+	status = "okay";
-+
-+	rcar_sound,dai {
-+		dai0 {
-+			playback = <&ssi0>;
-+			capture  = <&ssi1>;
-+		};
-+	};
-+};
-+
-+&ssi0 {
-+	pio-transfer;
-+};
-+
-+&ssi1 {
-+	pio-transfer;
-+	shared-pin;
-+};
--- 
-2.1.4
+Applied to for-next, thanks!
 
+
+--JYK4vJDZwFMowpUq
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBAgAGBQJWkhYIAAoJEBQN5MwUoCm2X6kP/AvwqKjOjbRJh7rM4Ejh13SS
+y9/6T55ZfKDB0mztJfwIay5lySbNBO0KPNcSU4g2OxP6qY2MXqUHPINdWmTBmKzK
+BDvLx+4dkHSmfUmyOlz9ddRonyYYz+MpboMqgJ9+J+4kOhrQylV2h5p6huO+qix+
+UzccyQOoQcLVSptPS8ude/G//EGuRimmWTdcumihiQZixZUNU+Jy7dNEh/Z5IOmh
+y1zE9xdQbNBhbbclJ017dUxH+7RPLU6KkWwuv80y9oHQdOAR5KAStBf+ddAlYw5E
+NswBoYV0a6tmVlgdOAAw8KYE7ih2BpJ4mDyZoR0hKRlDn/fcCeth9O8MmtUKTnfV
+setO6uUrMp/HnFEbbTuU10E8Pl3lLsujq6MzabW4IuFpFiE8/oIxHzBAZu+6hYlC
+S7osUbwGFt1jgyzcGHBwjYMkyunp7DpEuYdyG6YeWM7zZ0CeQmbhX2KVXJBU4Mey
+2LwC/FnpJTimAwaJ3TchIrJdVqC1mDOauHQogySosfITd1eznyPcQxPWeAOJhzDv
+xwl0jxFCkPzRpNr+9MjTP0N5LfPrR0qWh2YqnHdINGJhm3k4UrO/INzIclF4KTsJ
+KUgtvYHZmSx1gV/h3jmsoQxSbVbYr79rb83Ax56clalDxAJLaBpapBIC2sa9TU0J
+ZwWGhkkQaunQnYyJPubU
+=PqEJ
+-----END PGP SIGNATURE-----
+
+--JYK4vJDZwFMowpUq--
