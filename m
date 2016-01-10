@@ -1,87 +1,50 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 15 Jan 2016 10:42:54 +0000
-Subject: Re: [PATCH 2/3] arm64: renesas: r8a7795: Add PCIe nodes
-Message-Id: <CAMuHMdWGmvUDsJH16dRhcHAxG5S3=KGSOY+sQRAomubbhdKivg@mail.gmail.com>
+From: "Michael S. Tsirkin" <mst@redhat.com>
+Date: Sun, 10 Jan 2016 11:57:08 +0000
+Subject: [PATCH v2 2/3] checkpatch: check for __smp outside barrier.h
+Message-Id: <1452427000-4520-3-git-send-email-mst@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1446485499-26733-3-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1446485499-26733-3-git-send-email-phil.edworthy@renesas.com>
+References: <1452427000-4520-1-git-send-email-mst@redhat.com>
+In-Reply-To: <1452427000-4520-1-git-send-email-mst@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: linux-mips@linux-mips.org, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, virtualization@lists.linux-foundation.org, "H. Peter Anvin" <hpa@zytor.com>, sparclinux@vger.kernel.org, Ingo Molnar <mingo@kernel.org>, linux-arch@vger.kernel.org, linux-s390@vger.kernel.org, Russell King - ARM Linux <linux@arm.linux.org.uk>, Arnd Bergmann <arnd@arndb.de>, x86@kernel.org, Tony Lindgren <tony@atomide.com>, xen-devel@lists.xenproject.org, Ingo Molnar <mingo@elte.hu>, linux-xtensa@linux-xtensa.org, user-mode-linux-devel@lists.sourceforge.net, Stefano Stabellini <stefano.stabellini@eu.citrix.com>, Andrey Konovalov <andreyknvl@google.com>, adi-buildroot-devel@lists.sourceforge.net, Andy Whitcroft <apw@canonical.com>, Thomas Gleixner <tglx@linutronix.de>, linux-metag@vger.kernel.org, linux-arm-kernel@lists.infradead.orgAndrewCooperan
 
-On Mon, Nov 2, 2015 at 6:31 PM, Phil Edworthy <phil.edworthy@renesas.com> wrote:
-> --- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-> +++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-> @@ -682,6 +691,55 @@
->                                 };
->                         };
->                 };
-> -       };
->
-> +               pciec0: pcie@fe000000 {
-> +                       compatible = "renesas,pcie-r8a7795";
-> +                       reg = <0 0xfe000000 0 0x80000>;
-> +                       #address-cells = <3>;
-> +                       #size-cells = <2>;
-> +                       bus-range = <0x00 0xff>;
-> +                       device_type = "pci";
-> +                       ranges = <0x01000000 0 0x00000000 0 0xfe100000 0 0x00100000
-> +                               0x02000000 0 0xfe200000 0 0xfe200000 0 0x00200000
-> +                               0x02000000 0 0x30000000 0 0x30000000 0 0x08000000
-> +                               0x42000000 0 0x38000000 0 0x38000000 0 0x08000000>;
-> +                       /* Map all possible DDR as inbound ranges */
-> +                       dma-ranges = <0x42000000 0 0x40000000 0 0x40000000 0 0x40000000>;
-> +                       interrupts = <0 116 IRQ_TYPE_LEVEL_HIGH>,
-> +                               <0 117 IRQ_TYPE_LEVEL_HIGH>,
-> +                               <0 118 IRQ_TYPE_LEVEL_HIGH>;
+Introduction of __smp barriers cleans up a bunch of duplicate code, but
+it gives people an additional handle onto a "new" set of barriers - just
+because they're prefixed with __* unfortunately doesn't stop anyone from
+using it (as happened with other arch stuff before.)
 
-<GIC_SPI ...> (x3)
+Add a checkpatch test so it will trigger a warning.
 
-> +                       #interrupt-cells = <1>;
-> +                       interrupt-map-mask = <0 0 0 0>;
-> +                       interrupt-map = <0 0 0 0 &gic 0 116 IRQ_TYPE_LEVEL_HIGH>;
+Reported-by: Russell King <linux@arm.linux.org.uk>
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+---
+ scripts/checkpatch.pl | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
-... &gic GIC_SPI ...
+diff --git a/scripts/checkpatch.pl b/scripts/checkpatch.pl
+index 97b8b62..a96adcb 100755
+--- a/scripts/checkpatch.pl
++++ b/scripts/checkpatch.pl
+@@ -5141,6 +5141,16 @@ sub process {
+ 			}
+ 		}
+ 
++		my $underscore_smp_barriers = qr{__smp_($smp_barriers)}x;
++
++		if ($realfile !~ m@^include/asm-generic/@ &&
++		    $realfile !~ m@/barrier\.h$@ &&
++		    $line =~ m/\b($underscore_smp_barriers)\s*\(/ &&
++		    $line !~ m/^.\s*\#\s*define\s+($underscore_smp_barriers)\s*\(/) {
++			WARN("MEMORY_BARRIER",
++			     "__smp memory barriers shouldn't be used outside barrier.h and asm-generic\n" . $herecurr);
++		}
++
+ # check for waitqueue_active without a comment.
+ 		if ($line =~ /\bwaitqueue_active\s*\(/) {
+ 			if (!ctx_has_comment($first_line, $linenr)) {
+-- 
+MST
 
-> +                       clocks = <&cpg CPG_MOD 319>, <&pcie_bus_clk>;
-> +                       clock-names = "pcie", "pcie_bus";
-> +                       power-domains = <&cpg>;
-> +                       status = "disabled";
-> +               };
-> +
-> +               pciec1: pcie@ee800000 {
-> +                       compatible = "renesas,pcie-r8a7795";
-> +                       reg = <0 0xee800000 0 0x80000>;
-> +                       #address-cells = <3>;
-> +                       #size-cells = <2>;
-> +                       bus-range = <0x00 0xff>;
-> +                       device_type = "pci";
-> +                       ranges = <0x01000000 0 0x00000000 0 0xee900000 0 0x00100000
-> +                               0x02000000 0 0xeea00000 0 0xeea00000 0 0x00200000
-> +                               0x02000000 0 0xc0000000 0 0xc0000000 0 0x08000000
-> +                               0x42000000 0 0xc8000000 0 0xc8000000 0 0x08000000>;
-> +                       /* Map all possible DDR as inbound ranges */
-> +                       dma-ranges = <0x42000000 0 0x40000000 0 0x40000000 0 0x40000000>;
-> +                       interrupts = <0 148 IRQ_TYPE_LEVEL_HIGH>,
-> +                               <0 149 IRQ_TYPE_LEVEL_HIGH>,
-> +                               <0 150 IRQ_TYPE_LEVEL_HIGH>;
-
-<GIC_SPI ...> (x3)
-
-> +                       #interrupt-cells = <1>;
-> +                       interrupt-map-mask = <0 0 0 0>;
-> +                       interrupt-map = <0 0 0 0 &gic 0 148 IRQ_TYPE_LEVEL_HIGH>;
-
-... &gic GIC_SPI ...
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
