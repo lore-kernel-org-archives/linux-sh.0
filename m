@@ -1,60 +1,49 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Tue, 19 Jan 2016 16:20:58 +0000
-Subject: [RFC 3/6] mmc: tmio: add flag to reduce delay after changing clock status
-Message-Id: <1453220461-2598-4-git-send-email-wsa@the-dreams.de>
+From: "Michael S. Tsirkin" <mst@redhat.com>
+Date: Sun, 10 Jan 2016 14:17:44 +0000
+Subject: [PATCH v3 09/41] arm64: reuse asm-generic/barrier.h
+Message-Id: <1452426622-4471-10-git-send-email-mst@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1452426622-4471-1-git-send-email-mst@redhat.com>
+In-Reply-To: <1452426622-4471-1-git-send-email-mst@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: Peter Zijlstra <peterz@infradead.org>, Arnd Bergmann <arnd@arndb.de>, linux-arch@vger.kernel.org, Andrew Cooper <andrew.cooper3@citrix.com>, Russell King - ARM Linux <linux@arm.linux.org.uk>, virtualization@lists.linux-foundation.org, Stefano Stabellini <stefano.stabellini@eu.citrix.com>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@elte.hu>, "H. Peter Anvin" <hpa@zytor.com>, Joe Perches <joe@perches.com>, David Miller <davem@davemloft.net>, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, sparclinux@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-metag@vger.kernel.org, linux-mips@linux-mips.org, x86@kernel.org, user-mode-linux-devel@lists.sourceforge.net, adi-buildroot-devel@lists.sourceforge.net, linux-sh@vger.kernel.org, linux-xtensa@linux-xtensa.org, xen-devel@lists.xenproject.org, Catalin Marinas <ca>
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+On arm64 nop, read_barrier_depends, smp_read_barrier_depends
+smp_store_mb(), smp_mb__before_atomic and smp_mb__after_atomic match the
+asm-generic variants exactly. Drop the local definitions and pull in
+asm-generic/barrier.h instead.
 
-The docs for RCar Gen2 & 3 I have access to, mention delays of 5ms after
-stop and 1ms after start. Make it possible to apply these values.
+This is in preparation to refactoring this code area.
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+Acked-by: Arnd Bergmann <arnd@arndb.de>
 ---
- drivers/mmc/host/tmio_mmc_pio.c | 4 ++--
- include/linux/mfd/tmio.h        | 4 ++++
- 2 files changed, 6 insertions(+), 2 deletions(-)
+ arch/arm64/include/asm/barrier.h | 9 +--------
+ 1 file changed, 1 insertion(+), 8 deletions(-)
 
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index a10fde40b6c3dd..de1edb794c53a0 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -185,14 +185,14 @@ static void tmio_mmc_clk_stop(struct tmio_mmc_host *host)
+diff --git a/arch/arm64/include/asm/barrier.h b/arch/arm64/include/asm/barrier.h
+index 9622eb4..91a43f4 100644
+--- a/arch/arm64/include/asm/barrier.h
++++ b/arch/arm64/include/asm/barrier.h
+@@ -91,14 +91,7 @@ do {									\
+ 	__u.__val;							\
+ })
  
- 	sd_ctrl_write16(host, CTL_SD_CARD_CLK_CTL, ~0x0100 &
- 		sd_ctrl_read16(host, CTL_SD_CARD_CLK_CTL));
--	msleep(10);
-+	msleep(host->pdata->flags & TMIO_MMC_FAST_CLK_CHG ? 5 : 10);
- }
+-#define read_barrier_depends()		do { } while(0)
+-#define smp_read_barrier_depends()	do { } while(0)
+-
+-#define smp_store_mb(var, value)	do { WRITE_ONCE(var, value); smp_mb(); } while (0)
+-#define nop()		asm volatile("nop");
+-
+-#define smp_mb__before_atomic()	smp_mb()
+-#define smp_mb__after_atomic()	smp_mb()
++#include <asm-generic/barrier.h>
  
- static void tmio_mmc_clk_start(struct tmio_mmc_host *host)
- {
- 	sd_ctrl_write16(host, CTL_SD_CARD_CLK_CTL, 0x0100 |
- 		sd_ctrl_read16(host, CTL_SD_CARD_CLK_CTL));
--	msleep(10);
-+	msleep(host->pdata->flags & TMIO_MMC_FAST_CLK_CHG ? 1 : 10);
+ #endif	/* __ASSEMBLY__ */
  
- 	/* implicit BUG_ON(!res) */
- 	if (host->pdata->flags & TMIO_MMC_HAVE_HIGH_REG) {
-diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
-index 24b86d538e8852..05d58ee5e6a78f 100644
---- a/include/linux/mfd/tmio.h
-+++ b/include/linux/mfd/tmio.h
-@@ -65,6 +65,10 @@
-  * Some controllers can support SDIO IRQ signalling.
-  */
- #define TMIO_MMC_SDIO_IRQ		(1 << 2)
-+
-+/* Some controllers don't need to wait 10ms for clock changes */
-+#define TMIO_MMC_FAST_CLK_CHG		(1 << 3)
-+
- /*
-  * Some controllers require waiting for the SD bus to become
-  * idle before writing to some registers.
 -- 
-2.1.4
+MST
 
