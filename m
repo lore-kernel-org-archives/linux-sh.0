@@ -1,43 +1,47 @@
-From: Brian Norris <computersforpeace@gmail.com>
-Date: Mon, 04 Jan 2016 21:25:15 +0000
-Subject: Re: [PATCH v2] ARM: shmobile: alt: Add QSPI device to DT
-Message-Id: <20160104212515.GA39910@google.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sun, 10 Jan 2016 21:27:38 +0000
+Subject: [PATCH 1/2] ravb: stop reading ECMR in ravb_emac_init()
+Message-Id: <1554972.rhPQTyRgNp@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1451903819-19218-1-git-send-email-horms+renesas@verge.net.au>
- <CAMuHMdVFC1TEeTT5Gas8jz0Tvn2HB3EHBo7gp6pthsnOo6x5UQ@mail.gmail.com>
- <20160104203136.GB12748@verge.net.au>
- <CAMuHMdWbFHLKgkn9ShJkyyimpwJAbbL5TjqEp1E9GBteVKQmKg@mail.gmail.com>
-In-Reply-To: <CAMuHMdWbFHLKgkn9ShJkyyimpwJAbbL5TjqEp1E9GBteVKQmKg@mail.gmail.com>
+References: <5859243.yu8qorLmay@wasted.cogentembedded.com>
+In-Reply-To: <5859243.yu8qorLmay@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: netdev@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-On Mon, Jan 04, 2016 at 09:42:59PM +0100, Geert Uytterhoeven wrote:
-> On Mon, Jan 4, 2016 at 9:31 PM, Simon Horman <horms@verge.net.au> wrote:
-> > Should we document "spansion,s25fl512s" for the benefit of checkpatch.pl?
-> 
-> Documentation/devicetree/bindings/mtd/jedec,spi-nor.txt used to point to
-> drivers/mtd/devices/m25p80.c for the list of supported chips.
-> 
-> That seems to have been changed lately. Now jedec,spi-nor.txt includes the
-> list, but lacks the manufacturers' names, so checkpatch.pl is still not happpy.
-> 
-> Brian: Shouldn't the manufacturers's names be added?
+The code in ravb_emac_init() twiddling the ECMR bits always looked a bit
+strange to me: if one intends to respect 'priv->duplex', why save old value
+of the ECMR.DM bit?   As all the other bits are zeroed anyway, we don't
+really need to read ECMR before writing to it.
 
-We've had some of this discussion recently:
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-http://lkml.kernel.org/g/20151118194340.GF140057@google.com
+---
+ drivers/net/ethernet/renesas/ravb_main.c |    7 ++-----
+ 1 file changed, 2 insertions(+), 5 deletions(-)
 
-I don't think we can reasonably determine a good list of complete
-strings, due to historical failures (IMO) in the SPI subsystem. We could
-add a separate list of possible manufacturers, so people can do the MxN
-pairing themselves.
+Index: net/drivers/net/ethernet/renesas/ravb_main.c
+=================================--- net.orig/drivers/net/ethernet/renesas/ravb_main.c
++++ net/drivers/net/ethernet/renesas/ravb_main.c
+@@ -338,16 +338,13 @@ error:
+ static void ravb_emac_init(struct net_device *ndev)
+ {
+ 	struct ravb_private *priv = netdev_priv(ndev);
+-	u32 ecmr;
+ 
+ 	/* Receive frame limit set register */
+ 	ravb_write(ndev, ndev->mtu + ETH_HLEN + VLAN_HLEN + ETH_FCS_LEN, RFLR);
+ 
+ 	/* PAUSE prohibition */
+-	ecmr =  ravb_read(ndev, ECMR);
+-	ecmr &= ECMR_DM;
+-	ecmr |= ECMR_ZPF | (priv->duplex ? ECMR_DM : 0) | ECMR_TE | ECMR_RE;
+-	ravb_write(ndev, ecmr, ECMR);
++	ravb_write(ndev, ECMR_ZPF | (priv->duplex ? ECMR_DM : 0) |
++		   ECMR_TE | ECMR_RE, ECMR);
+ 
+ 	ravb_set_rate(ndev);
+ 
 
-checkpatch.pl has enough false positives that its author doesn't care to
-fix that I'm not personally worried about yet another class of them. But
-if you have good reasons and good patches for the documentation, I'm all
-ears.
-
-Regards,
-Brian
