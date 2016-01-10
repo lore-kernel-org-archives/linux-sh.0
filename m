@@ -1,45 +1,43 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 04 Jan 2016 22:27:37 +0000
-Subject: [PATCH v2 02/13] ARM: shmobile: r8a7793: add m2 clock to device tree
-Message-Id: <1451946468-20499-3-git-send-email-horms+renesas@verge.net.au>
+From: "Michael S. Tsirkin" <mst@redhat.com>
+Date: Sun, 10 Jan 2016 14:20:09 +0000
+Subject: [PATCH v3 26/41] xtensa: define __smp_xxx
+Message-Id: <1452426622-4471-27-git-send-email-mst@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1451946468-20499-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1451946468-20499-1-git-send-email-horms+renesas@verge.net.au>
+References: <1452426622-4471-1-git-send-email-mst@redhat.com>
+In-Reply-To: <1452426622-4471-1-git-send-email-mst@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@vger.kernel.org
+Cc: Peter Zijlstra <peterz@infradead.org>, Arnd Bergmann <arnd@arndb.de>, linux-arch@vger.kernel.org, Andrew Cooper <andrew.cooper3@citrix.com>, Russell King - ARM Linux <linux@arm.linux.org.uk>, virtualization@lists.linux-foundation.org, Stefano Stabellini <stefano.stabellini@eu.citrix.com>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@elte.hu>, "H. Peter Anvin" <hpa@zytor.com>, Joe Perches <joe@perches.com>, David Miller <davem@davemloft.net>, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, sparclinux@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-metag@vger.kernel.org, linux-mips@linux-mips.org, x86@kernel.org, user-mode-linux-devel@lists.sourceforge.net, adi-buildroot-devel@lists.sourceforge.net, linux-sh@vger.kernel.org, linux-xtensa@linux-xtensa.org, xen-devel@lists.xenproject.org
 
-Declare m2 clock in r8a7793 device tree.
+This defines __smp_xxx barriers for xtensa,
+for use by virtualization.
 
-Based on similar work for the r8a7791 by Laurent Pinchart.
+smp_xxx barriers are removed as they are
+defined correctly by asm-generic/barriers.h
 
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+Acked-by: Arnd Bergmann <arnd@arndb.de>
 ---
- arch/arm/boot/dts/r8a7793.dtsi | 8 ++++++++
- 1 file changed, 8 insertions(+)
+ arch/xtensa/include/asm/barrier.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7793.dtsi b/arch/arm/boot/dts/r8a7793.dtsi
-index bf6be4a40e31..fa8a0d772d51 100644
---- a/arch/arm/boot/dts/r8a7793.dtsi
-+++ b/arch/arm/boot/dts/r8a7793.dtsi
-@@ -817,6 +817,14 @@
- 			clock-mult = <1>;
- 			clock-output-names = "p";
- 		};
-+		m2_clk: m2_clk {
-+			compatible = "fixed-factor-clock";
-+			clocks = <&cpg_clocks R8A7793_CLK_PLL1>;
-+			#clock-cells = <0>;
-+			clock-div = <8>;
-+			clock-mult = <1>;
-+			clock-output-names = "m2";
-+		};
- 		rclk_clk: rclk_clk {
- 			compatible = "fixed-factor-clock";
- 			clocks = <&cpg_clocks R8A7793_CLK_PLL1>;
+diff --git a/arch/xtensa/include/asm/barrier.h b/arch/xtensa/include/asm/barrier.h
+index 5b88774..956596e 100644
+--- a/arch/xtensa/include/asm/barrier.h
++++ b/arch/xtensa/include/asm/barrier.h
+@@ -13,8 +13,8 @@
+ #define rmb() barrier()
+ #define wmb() mb()
+ 
+-#define smp_mb__before_atomic()		barrier()
+-#define smp_mb__after_atomic()		barrier()
++#define __smp_mb__before_atomic()		barrier()
++#define __smp_mb__after_atomic()		barrier()
+ 
+ #include <asm-generic/barrier.h>
+ 
 -- 
-2.1.4
+MST
 
