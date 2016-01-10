@@ -1,35 +1,55 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 11 Jan 2016 04:07:23 +0000
-Subject: [PATCH v2 0/2] usb: host: xhci-plat: add R-Car Gen2 and Gen3 fallback compatibility strings
-Message-Id: <1452485245-9001-1-git-send-email-horms+renesas@verge.net.au>
+From: "Michael S. Tsirkin" <mst@redhat.com>
+Date: Sun, 10 Jan 2016 14:17:18 +0000
+Subject: [PATCH v3 06/41] s390: reuse asm-generic/barrier.h
+Message-Id: <1452426622-4471-7-git-send-email-mst@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1452426622-4471-1-git-send-email-mst@redhat.com>
+In-Reply-To: <1452426622-4471-1-git-send-email-mst@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: Peter Zijlstra <peterz@infradead.org>, Arnd Bergmann <arnd@arndb.de>, linux-arch@vger.kernel.org, Andrew Cooper <andrew.cooper3@citrix.com>, Russell King - ARM Linux <linux@arm.linux.org.uk>, virtualization@lists.linux-foundation.org, Stefano Stabellini <stefano.stabellini@eu.citrix.com>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@elte.hu>, "H. Peter Anvin" <hpa@zytor.com>, Joe Perches <joe@perches.com>, David Miller <davem@davemloft.net>, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, sparclinux@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-metag@vger.kernel.org, linux-mips@linux-mips.org, x86@kernel.org, user-mode-linux-devel@lists.sourceforge.net, adi-buildroot-devel@lists.sourceforge.net, linux-sh@vger.kernel.org, linux-xtensa@linux-xtensa.org, xen-devel@lists.xenproject.org, Martin
 
-Hi,
+On s390 read_barrier_depends, smp_read_barrier_depends
+smp_store_mb(), smp_mb__before_atomic and smp_mb__after_atomic match the
+asm-generic variants exactly. Drop the local definitions and pull in
+asm-generic/barrier.h instead.
 
-this short series adds Gen2 and Gen3 fallback compatibility strings to the
-xhci-plat driver.
+This is in preparation to refactoring this code area.
 
-Changes since v1:
-* Use consistent line ending in documentation
-* Group compat strings at the bottom of usb_xhci_of_match[]
-* Include follow-up patch from Julia Lawall to ensure usb_xhci_of_match
-  is correctly terminated
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+Acked-by: Arnd Bergmann <arnd@arndb.de>
+---
+ arch/s390/include/asm/barrier.h | 10 ++--------
+ 1 file changed, 2 insertions(+), 8 deletions(-)
 
-Julia Lawall (1):
-  usb: host: xhci-plat: fix of_table.cocci warnings
-
-Simon Horman (1):
-  usb: host: xhci-plat: add R-Car Gen2 and Gen3 fallback compatibility
-    strings
-
- Documentation/devicetree/bindings/usb/usb-xhci.txt | 21 +++++++++++++++++----
- drivers/usb/host/xhci-plat.c                       |  6 ++++++
- 2 files changed, 23 insertions(+), 4 deletions(-)
-
+diff --git a/arch/s390/include/asm/barrier.h b/arch/s390/include/asm/barrier.h
+index 7ffd0b1..c358c31 100644
+--- a/arch/s390/include/asm/barrier.h
++++ b/arch/s390/include/asm/barrier.h
+@@ -30,14 +30,6 @@
+ #define smp_rmb()			rmb()
+ #define smp_wmb()			wmb()
+ 
+-#define read_barrier_depends()		do { } while (0)
+-#define smp_read_barrier_depends()	do { } while (0)
+-
+-#define smp_mb__before_atomic()		smp_mb()
+-#define smp_mb__after_atomic()		smp_mb()
+-
+-#define smp_store_mb(var, value)	do { WRITE_ONCE(var, value); smp_mb(); } while (0)
+-
+ #define smp_store_release(p, v)						\
+ do {									\
+ 	compiletime_assert_atomic_type(*p);				\
+@@ -53,4 +45,6 @@ do {									\
+ 	___p1;								\
+ })
+ 
++#include <asm-generic/barrier.h>
++
+ #endif /* __ASM_BARRIER_H */
 -- 
-2.7.0.rc3.207.g0ac5344
+MST
 
