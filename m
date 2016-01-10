@@ -1,131 +1,82 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 05 Jan 2016 18:36:36 +0000
-Subject: [PATCH 1a/1] serial: sh-sci: Remove cpufreq notifier to fix crash/deadlock
-Message-Id: <1452018997-14103-2-git-send-email-geert+renesas@glider.be>
+From: "Michael S. Tsirkin" <mst@redhat.com>
+Date: Sun, 10 Jan 2016 14:18:36 +0000
+Subject: [PATCH v3 15/41] powerpc: define __smp_xxx
+Message-Id: <1452426622-4471-16-git-send-email-mst@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1452018997-14103-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1452018997-14103-1-git-send-email-geert+renesas@glider.be>
+References: <1452426622-4471-1-git-send-email-mst@redhat.com>
+In-Reply-To: <1452426622-4471-1-git-send-email-mst@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Simon Horman <horms+renesas@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Laurent Pinchart <Laurent.pinchart@ideasonboard.com>, Michael Turquette <mturquette@baylibre.com>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-kernel@vger.kernel.org
+Cc: Peter Zijlstra <peterz@infradead.org>, Arnd Bergmann <arnd@arndb.de>, linux-arch@vger.kernel.org, Andrew Cooper <andrew.cooper3@citrix.com>, Russell King - ARM Linux <linux@arm.linux.org.uk>, virtualization@lists.linux-foundation.org, Stefano Stabellini <stefano.stabellini@eu.citrix.com>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@elte.hu>, "H. Peter Anvin" <hpa@zytor.com>, Joe Perches <joe@perches.com>, David Miller <davem@davemloft.net>, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, sparclinux@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-metag@vger.kernel.org, linux-mips@linux-mips.org, x86@kernel.org, user-mode-linux-devel@lists.sourceforge.net, adi-buildroot-devel@lists.sourceforge.net, linux-sh@vger.kernel.org, linux-xtensa@linux-xtensa.org, xen-devel@lists.xenproject.org, Boqun Feng <boqun.fe>
 
-The BSP team noticed that there is spin/mutex lock issue on sh-sci when
-CPUFREQ is used.  The issue is that the notifier function may call
-mutex_lock() while the spinlock is held, which can lead to a BUG().
-This may happen if CPUFREQ is changed while another CPU calls
-clk_get_rate().
+This defines __smp_xxx barriers for powerpc
+for use by virtualization.
 
-Taking the spinlock was added to the notifier function in commit
-e552de2413edad1a ("sh-sci: add platform device private data"), to
-protect the list of serial ports against modification during traversal.
-At that time the Common Clock Framework didn't exist yet, and
-clk_get_rate() just returned clk->rate without taking a mutex.
-Note that since commit d535a2305facf9b4 ("serial: sh-sci: Require a
-device per port mapping."), there's no longer a list of serial ports to
-traverse, and taking the spinlock became superfluous.
+smp_xxx barriers are removed as they are
+defined correctly by asm-generic/barriers.h
 
-To fix the issue, just remove the cpufreq notifier:
-  1. The notifier doesn't work correctly: all it does is update the
-     stored clock rate; it does not update the divider in the hardware.
-     The divider will only be updated when calling sci_set_termios().
-     I believe this was broken back in 2004, when the old
-     drivers/char/sh-sci.c driver (where the notifier did update the
-     divider) was replaced by drivers/serial/sh-sci.c (where the
-     notifier just updated port->uartclk).
-     Cfr. full-history-linux commits 6f8deaef2e9675d9 ("[PATCH] sh: port
-     sh-sci driver to the new API") and 3f73fe878dc9210a ("[PATCH]
-     Remove old sh-sci driver").
-  2. On modern SoCs, the sh-sci parent clock rate is no longer related
-     to the CPU clock rate anyway, so using a cpufreq notifier is
-     futile.
+This reduces the amount of arch-specific boiler-plate code.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+Acked-by: Arnd Bergmann <arnd@arndb.de>
+Acked-by: Boqun Feng <boqun.feng@gmail.com>
 ---
-This version applies against tty/tty-next and v4.4-rc1..v4.4-rc8.
----
- drivers/tty/serial/sh-sci.c | 39 ---------------------------------------
- 1 file changed, 39 deletions(-)
+ arch/powerpc/include/asm/barrier.h | 24 ++++++++----------------
+ 1 file changed, 8 insertions(+), 16 deletions(-)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 51c7507b0444957b..63a06ab6ba038ad5 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -38,7 +38,6 @@
- #include <linux/major.h>
- #include <linux/module.h>
- #include <linux/mm.h>
--#include <linux/notifier.h>
- #include <linux/of.h>
- #include <linux/platform_device.h>
- #include <linux/pm_runtime.h>
-@@ -116,8 +115,6 @@ struct sci_port {
- 	struct timer_list		rx_timer;
- 	unsigned int			rx_timeout;
- #endif
--
--	struct notifier_block		freq_transition;
- };
+diff --git a/arch/powerpc/include/asm/barrier.h b/arch/powerpc/include/asm/barrier.h
+index 980ad0c..c0deafc 100644
+--- a/arch/powerpc/include/asm/barrier.h
++++ b/arch/powerpc/include/asm/barrier.h
+@@ -44,19 +44,11 @@
+ #define dma_rmb()	__lwsync()
+ #define dma_wmb()	__asm__ __volatile__ (stringify_in_c(SMPWMB) : : :"memory")
  
- #define SCI_NPORTS CONFIG_SERIAL_SH_SCI_NR_UARTS
-@@ -1606,29 +1603,6 @@ static irqreturn_t sci_mpxed_interrupt(int irq, void *ptr)
- 	return ret;
- }
+-#ifdef CONFIG_SMP
+-#define smp_lwsync()	__lwsync()
++#define __smp_lwsync()	__lwsync()
  
--/*
-- * Here we define a transition notifier so that we can update all of our
-- * ports' baud rate when the peripheral clock changes.
-- */
--static int sci_notifier(struct notifier_block *self,
--			unsigned long phase, void *p)
--{
--	struct sci_port *sci_port;
--	unsigned long flags;
+-#define smp_mb()	mb()
+-#define smp_rmb()	__lwsync()
+-#define smp_wmb()	__asm__ __volatile__ (stringify_in_c(SMPWMB) : : :"memory")
+-#else
+-#define smp_lwsync()	barrier()
 -
--	sci_port = container_of(self, struct sci_port, freq_transition);
--
--	if (phase = CPUFREQ_POSTCHANGE) {
--		struct uart_port *port = &sci_port->port;
--
--		spin_lock_irqsave(&port->lock, flags);
--		port->uartclk = clk_get_rate(sci_port->iclk);
--		spin_unlock_irqrestore(&port->lock, flags);
--	}
--
--	return NOTIFY_OK;
--}
--
- static const struct sci_irq_desc {
- 	const char	*desc;
- 	irq_handler_t	handler;
-@@ -2559,9 +2533,6 @@ static int sci_remove(struct platform_device *dev)
- {
- 	struct sci_port *port = platform_get_drvdata(dev);
+-#define smp_mb()	barrier()
+-#define smp_rmb()	barrier()
+-#define smp_wmb()	barrier()
+-#endif /* CONFIG_SMP */
++#define __smp_mb()	mb()
++#define __smp_rmb()	__lwsync()
++#define __smp_wmb()	__asm__ __volatile__ (stringify_in_c(SMPWMB) : : :"memory")
  
--	cpufreq_unregister_notifier(&port->freq_transition,
--				    CPUFREQ_TRANSITION_NOTIFIER);
--
- 	uart_remove_one_port(&sci_uart_driver, &port->port);
+ /*
+  * This is a barrier which prevents following instructions from being
+@@ -67,18 +59,18 @@
+ #define data_barrier(x)	\
+ 	asm volatile("twi 0,%0,0; isync" : : "r" (x) : "memory");
  
- 	sci_cleanup_single(port);
-@@ -2714,16 +2685,6 @@ static int sci_probe(struct platform_device *dev)
- 	if (ret)
- 		return ret;
+-#define smp_store_release(p, v)						\
++#define __smp_store_release(p, v)						\
+ do {									\
+ 	compiletime_assert_atomic_type(*p);				\
+-	smp_lwsync();							\
++	__smp_lwsync();							\
+ 	WRITE_ONCE(*p, v);						\
+ } while (0)
  
--	sp->freq_transition.notifier_call = sci_notifier;
--
--	ret = cpufreq_register_notifier(&sp->freq_transition,
--					CPUFREQ_TRANSITION_NOTIFIER);
--	if (unlikely(ret < 0)) {
--		uart_remove_one_port(&sci_uart_driver, &sp->port);
--		sci_cleanup_single(sp);
--		return ret;
--	}
--
- #ifdef CONFIG_SH_STANDARD_BIOS
- 	sh_bios_gdb_detach();
- #endif
+-#define smp_load_acquire(p)						\
++#define __smp_load_acquire(p)						\
+ ({									\
+ 	typeof(*p) ___p1 = READ_ONCE(*p);				\
+ 	compiletime_assert_atomic_type(*p);				\
+-	smp_lwsync();							\
++	__smp_lwsync();							\
+ 	___p1;								\
+ })
+ 
 -- 
-1.9.1
+MST
 
