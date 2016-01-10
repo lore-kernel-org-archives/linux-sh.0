@@ -1,229 +1,50 @@
-From: =?UTF-8?q?Niklas=20S=C3=B6derlund?=  <niklas.soderlund+renesas@ragnatech.se>
-Date: Thu, 14 Jan 2016 13:30:15 +0000
-Subject: [RFC 4/5] [media] rcar-vin: add video_device
-Message-Id: <1452778216-31978-5-git-send-email-niklas.soderlund+renesas@ragnatech.se>
+From: "Michael S. Tsirkin" <mst@redhat.com>
+Date: Sun, 10 Jan 2016 14:21:23 +0000
+Subject: [PATCH v3 35/41] checkpatch: check for __smp outside barrier.h
+Message-Id: <1452426622-4471-36-git-send-email-mst@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1452426622-4471-1-git-send-email-mst@redhat.com>
+In-Reply-To: <1452426622-4471-1-git-send-email-mst@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: Peter Zijlstra <peterz@infradead.org>, Arnd Bergmann <arnd@arndb.de>, linux-arch@vger.kernel.org, Andrew Cooper <andrew.cooper3@citrix.com>, Russell King - ARM Linux <linux@arm.linux.org.uk>, virtualization@lists.linux-foundation.org, Stefano Stabellini <stefano.stabellini@eu.citrix.com>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@elte.hu>, "H. Peter Anvin" <hpa@zytor.com>, Joe Perches <joe@perches.com>, David Miller <davem@davemloft.net>, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, sparclinux@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-metag@vger.kernel.org, linux-mips@linux-mips.org, x86@kernel.org, user-mode-linux-devel@lists.sourceforge.net, adi-buildroot-devel@lists.sourceforge.net, linux-sh@vger.kernel.org, linux-xtensa@linux-xtensa.org, xen-devel@lists.xenproject.org
 
-Add a struct video_device with some basic ioctls. The ioctls to handle
-the format settings are at this stage incomplete.
+Introduction of __smp barriers cleans up a bunch of duplicate code, but
+it gives people an additional handle onto a "new" set of barriers - just
+because they're prefixed with __* unfortunately doesn't stop anyone from
+using it (as happened with other arch stuff before.)
+
+Add a checkpatch test so it will trigger a warning.
+
+Reported-by: Russell King <linux@arm.linux.org.uk>
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
 ---
- drivers/media/platform/rcar-vin.c | 167 +++++++++++++++++++++++++++++++++++++-
- 1 file changed, 166 insertions(+), 1 deletion(-)
+ scripts/checkpatch.pl | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
-diff --git a/drivers/media/platform/rcar-vin.c b/drivers/media/platform/rcar-vin.c
-index a062287..810e6e4 100644
---- a/drivers/media/platform/rcar-vin.c
-+++ b/drivers/media/platform/rcar-vin.c
-@@ -45,6 +45,7 @@ struct rcar_vin {
+diff --git a/scripts/checkpatch.pl b/scripts/checkpatch.pl
+index 97b8b62..a96adcb 100755
+--- a/scripts/checkpatch.pl
++++ b/scripts/checkpatch.pl
+@@ -5141,6 +5141,16 @@ sub process {
+ 			}
+ 		}
  
- 	struct platform_device *pdev;
- 	struct v4l2_device v4l2_dev;
-+	struct video_device vdev;
- 	struct mutex lock;
- 	struct v4l2_pix_format format;
- 
-@@ -240,12 +241,154 @@ const struct rcar_vin_format *rcar_vin_get_format_by_fourcc(u32 fourcc)
- }
- 
- /* -----------------------------------------------------------------------------
-+ * V4L2 ioctls
-+ */
++		my $underscore_smp_barriers = qr{__smp_($smp_barriers)}x;
 +
-+static int rcar_vin_querycap(struct file *file, void *priv,
-+		struct v4l2_capability *cap)
-+{
-+	struct rcar_vin *vin = video_drvdata(file);
++		if ($realfile !~ m@^include/asm-generic/@ &&
++		    $realfile !~ m@/barrier\.h$@ &&
++		    $line =~ m/\b($underscore_smp_barriers)\s*\(/ &&
++		    $line !~ m/^.\s*\#\s*define\s+($underscore_smp_barriers)\s*\(/) {
++			WARN("MEMORY_BARRIER",
++			     "__smp memory barriers shouldn't be used outside barrier.h and asm-generic\n" . $herecurr);
++		}
 +
-+	strlcpy(cap->driver, KBUILD_MODNAME, sizeof(cap->driver));
-+	strlcpy(cap->card, "R_Car_VIN", sizeof(cap->card));
-+	snprintf(cap->bus_info, sizeof(cap->bus_info), "platform:%s",
-+			dev_name(&vin->pdev->dev));
-+	cap->device_caps = V4L2_CAP_VIDEO_CAPTURE | V4L2_CAP_STREAMING;
-+	cap->capabilities = cap->device_caps | V4L2_CAP_DEVICE_CAPS;
-+	return 0;
-+}
-+
-+static int rcar_vin_try_fmt_vid_cap(struct file *file, void *priv,
-+		struct v4l2_format *f)
-+{
-+	struct rcar_vin *vin = video_drvdata(file);
-+	struct v4l2_pix_format *pix = &f->fmt.pix;
-+	const struct rcar_vin_format *format;
-+
-+	/* Only single-plane capture is supported so far */
-+	if (f->type != V4L2_BUF_TYPE_VIDEO_CAPTURE)
-+		return -EINVAL;
-+
-+	format = rcar_vin_get_format_by_fourcc(pix->pixelformat);
-+	if (IS_ERR(format))
-+		return -EINVAL;
-+
-+	/* TODO */
-+
-+	return 0;
-+
-+}
-+
-+static int rcar_vin_s_fmt_vid_cap(struct file *file, void *priv,
-+		struct v4l2_format *f)
-+{
-+	struct rcar_vin *vin = video_drvdata(file);
-+	int ret;
-+
-+	ret = rcar_vin_try_fmt_vid_cap(file, priv, f);
-+	if (ret)
-+		return ret;
-+
-+	if (vb2_is_busy(&vin->queue))
-+		return -EBUSY;
-+
-+	/* TODO: change format */
-+	vin->format = f->fmt.pix;
-+
-+	return 0;
-+}
-+
-+static int rcar_vin_g_fmt_vid_cap(struct file *file, void *priv,
-+		struct v4l2_format *f)
-+{
-+	struct rcar_vin *vin = video_drvdata(file);
-+
-+	f->fmt.pix = vin->format;
-+	return 0;
-+}
-+
-+static int rcar_vin_enum_fmt_vid_cap(struct file *file, void *priv,
-+		struct v4l2_fmtdesc *f)
-+{
-+	if (f->index >= ARRAY_SIZE(rcar_vin_formats))
-+		return -EINVAL;
-+
-+	f->pixelformat = rcar_vin_formats[f->index].fourcc;
-+	strlcpy(f->description, rcar_vin_formats[f->index].description,
-+			sizeof(f->description));
-+	return 0;
-+}
-+
-+static int rcar_vin_enum_input(struct file *file, void *priv,
-+		struct v4l2_input *i)
-+{
-+	if (i->index != 0)
-+		return -EINVAL;
-+
-+	i->type = V4L2_INPUT_TYPE_CAMERA;
-+	strlcpy(i->name, "Camera", sizeof(i->name));
-+
-+	return 0;
-+}
-+
-+static int rcar_vin_g_input(struct file *file, void *priv, unsigned int *i)
-+{
-+	*i = 0;
-+
-+	return 0;
-+}
-+
-+static int rcar_vin_s_input(struct file *file, void *priv, unsigned int i)
-+{
-+	if (i > 0)
-+		return -EINVAL;
-+
-+	return 0;
-+}
-+
-+static const struct v4l2_ioctl_ops rcar_vin_ioctl_ops = {
-+	.vidioc_querycap		= rcar_vin_querycap,
-+	.vidioc_try_fmt_vid_cap		= rcar_vin_try_fmt_vid_cap,
-+	.vidioc_g_fmt_vid_cap		= rcar_vin_g_fmt_vid_cap,
-+	.vidioc_s_fmt_vid_cap		= rcar_vin_s_fmt_vid_cap,
-+	.vidioc_enum_fmt_vid_cap	= rcar_vin_enum_fmt_vid_cap,
-+
-+	.vidioc_enum_input		= rcar_vin_enum_input,
-+	.vidioc_g_input			= rcar_vin_g_input,
-+	.vidioc_s_input			= rcar_vin_s_input,
-+
-+	.vidioc_reqbufs			= vb2_ioctl_reqbufs,
-+	.vidioc_create_bufs		= vb2_ioctl_create_bufs,
-+	.vidioc_querybuf		= vb2_ioctl_querybuf,
-+	.vidioc_qbuf			= vb2_ioctl_qbuf,
-+	.vidioc_dqbuf			= vb2_ioctl_dqbuf,
-+	.vidioc_expbuf			= vb2_ioctl_expbuf,
-+	.vidioc_streamon		= vb2_ioctl_streamon,
-+	.vidioc_streamoff		= vb2_ioctl_streamoff,
-+
-+	.vidioc_log_status = v4l2_ctrl_log_status,
-+	.vidioc_subscribe_event = v4l2_ctrl_subscribe_event,
-+	.vidioc_unsubscribe_event = v4l2_event_unsubscribe,
-+};
-+
-+static const struct v4l2_file_operations rcar_vin_fops = {
-+	.owner		= THIS_MODULE,
-+	.unlocked_ioctl	= video_ioctl2,
-+	.open		= v4l2_fh_open,
-+	.release	= vb2_fop_release,
-+	.poll		= vb2_fop_poll,
-+	.mmap		= vb2_fop_mmap,
-+};
-+
-+
-+/* -----------------------------------------------------------------------------
-  * Platform Device Driver
-  */
- 
- static int rcar_vin_probe(struct platform_device *pdev)
- {
- 	struct rcar_vin *vin;
-+	struct video_device *vdev;
- 	struct vb2_queue *q;
- 	struct resource *mem;
- 	int irq, ret;
-@@ -320,12 +463,30 @@ static int rcar_vin_probe(struct platform_device *pdev)
- 	spin_lock_init(&vin->qlock);
- 
- 	/* Initialize the video_device structure */
--	/* TODO */
-+	vdev = &vin->vdev;
-+	strlcpy(vdev->name, KBUILD_MODNAME, sizeof(vdev->name));
-+
-+	/* FIXME: is empty releas OK */
-+	vdev->release = video_device_release_empty;
-+	vdev->fops = &rcar_vin_fops;
-+	vdev->ioctl_ops = &rcar_vin_ioctl_ops;
-+	vdev->lock = &vin->lock;
-+	vdev->queue = q;
-+	vdev->v4l2_dev = &vin->v4l2_dev;
-+	video_set_drvdata(vdev, vin);
-+
-+	ret = video_register_device(vdev, VFL_TYPE_GRABBER, -1);
-+	if (ret)
-+		goto free_ctx;
- 
- 	platform_set_drvdata(pdev, vin);
- 
-+	v4l2_info(&vin->v4l2_dev, "Device registered as /dev/video%d\n",
-+			vdev->num);
- 	return 0;
- 
-+free_ctx:
-+	vb2_dma_contig_cleanup_ctx(vin->alloc_ctx);
- free_hdl:
- 	v4l2_device_unregister(&vin->v4l2_dev);
- disable_dev:
-@@ -336,6 +497,10 @@ static int rcar_vin_remove(struct platform_device *pdev)
- {
- 	struct rcar_vin *vin = platform_get_drvdata(pdev);
- 
-+	v4l2_info(&vin->v4l2_dev, "Removing /dev/video%d\n", vin->vdev.num);
-+
-+	video_unregister_device(&vin->vdev);
-+
- 	vb2_dma_contig_cleanup_ctx(vin->alloc_ctx);
- 	v4l2_device_unregister(&vin->v4l2_dev);
- 	return 0;
+ # check for waitqueue_active without a comment.
+ 		if ($line =~ /\bwaitqueue_active\s*\(/) {
+ 			if (!ctx_has_comment($first_line, $linenr)) {
 -- 
-2.7.0
+MST
 
