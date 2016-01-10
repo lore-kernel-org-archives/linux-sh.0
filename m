@@ -1,41 +1,58 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 11 Jan 2016 04:32:59 +0000
-Subject: [PATCH 3/6] ARM: dts: koelsch: Add compatible property to "partitions" node
-Message-Id: <f6531bb50847af70aa95665e83873c455d7bf06e.1452486598.git.horms+renesas@verge.net.au>
+From: "Michael S. Tsirkin" <mst@redhat.com>
+Date: Sun, 10 Jan 2016 19:30:38 +0000
+Subject: [PATCH v3 1/3] checkpatch.pl: add missing memory barriers
+Message-Id: <1452454200-8844-2-git-send-email-mst@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1452486598.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1452486598.git.horms+renesas@verge.net.au>
+References: <1452454200-8844-1-git-send-email-mst@redhat.com>
+In-Reply-To: <1452454200-8844-1-git-send-email-mst@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@vger.kernel.org
+Cc: linux-mips@linux-mips.org, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, virtualization@lists.linux-foundation.org, "H. Peter Anvin" <hpa@zytor.com>, sparclinux@vger.kernel.org, Ingo Molnar <mingo@kernel.org>, linux-arch@vger.kernel.org, linux-s390@vger.kernel.org, Russell King - ARM Linux <linux@arm.linux.org.uk>, Arnd Bergmann <arnd@arndb.de>, x86@kernel.org, Tony Lindgren <tony@atomide.com>, xen-devel@lists.xenproject.org, Ingo Molnar <mingo@elte.hu>, linux-xtensa@linux-xtensa.org, user-mode-linux-devel@lists.sourceforge.net, Stefano Stabellini <stefano.stabellini@eu.citrix.com>, Andrey Konovalov <andreyknvl@google.com>, adi-buildroot-devel@lists.sourceforge.net, Andy Whitcroft <apw@canonical.com>, Thomas Gleixner <tglx@linutronix.de>, linux-metag@vger.kernel.org, linux-arm-kernel@lists.infradead.orgAndrewCooperan
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+SMP-only barriers were missing in checkpatch.pl
 
-As of commit e488ca9f8d4f62c2 ("doc: dt: mtd: partitions: add compatible
-property to "partitions" node"), the "partitions" subnode of an SPI
-FLASH device node must have a compatible property. The partitions are no
-longer detected if it is not present.
+Refactor code slightly to make adding more variants easier.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Brian Norris <computersforpeace@gmail.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
 ---
- arch/arm/boot/dts/r8a7791-koelsch.dts | 1 +
- 1 file changed, 1 insertion(+)
+ scripts/checkpatch.pl | 22 +++++++++++++++++++++-
+ 1 file changed, 21 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index c94a0fb807a2..45256f3cc835 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -489,6 +489,7 @@
- 		m25p,fast-read;
- 
- 		partitions {
-+			compatible = "fixed-partitions";
- 			#address-cells = <1>;
- 			#size-cells = <1>;
- 
+diff --git a/scripts/checkpatch.pl b/scripts/checkpatch.pl
+index 2b3c228..1c01b7d 100755
+--- a/scripts/checkpatch.pl
++++ b/scripts/checkpatch.pl
+@@ -5116,7 +5116,27 @@ sub process {
+ 			}
+ 		}
+ # check for memory barriers without a comment.
+-		if ($line =~ /\b(mb|rmb|wmb|read_barrier_depends|smp_mb|smp_rmb|smp_wmb|smp_read_barrier_depends)\(/) {
++
++		my $barriers = qr{
++			mb|
++			rmb|
++			wmb|
++			read_barrier_depends
++		}x;
++		my $smp_barrier_stems = qr{
++			mb__before_atomic|
++			mb__after_atomic|
++			store_release|
++			load_acquire|
++			store_mb|
++			(?:$barriers)
++		}x;
++		my $all_barriers = qr{
++			$barriers|
++			smp_(?:$smp_barrier_stems)
++		}x;
++
++		if ($line =~ /\b(?:$all_barriers)\s*\(/) {
+ 			if (!ctx_has_comment($first_line, $linenr)) {
+ 				WARN("MEMORY_BARRIER",
+ 				     "memory barrier without comment\n" . $herecurr);
 -- 
-2.7.0.rc3.207.g0ac5344
+MST
 
