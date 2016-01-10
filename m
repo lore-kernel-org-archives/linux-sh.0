@@ -1,155 +1,97 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Sun, 24 Jan 2016 22:38:33 +0000
-Subject: Re: [PATCH 1/2] dmaengine: rcar-dmac: add iommu support for slave transfers
-Message-Id: <42763951.bnbLue85uX@avalon>
+From: "Michael S. Tsirkin" <mst@redhat.com>
+Date: Sun, 10 Jan 2016 14:16:32 +0000
+Subject: [PATCH v3 01/41] lcoking/barriers, arch: Use smp barriers in smp_store_release()
+Message-Id: <1452426622-4471-2-git-send-email-mst@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1452478667-30966-2-git-send-email-niklas.soderlund+renesas@ragnatech.se>
-In-Reply-To: <1452478667-30966-2-git-send-email-niklas.soderlund+renesas@ragnatech.se>
+References: <1452426622-4471-1-git-send-email-mst@redhat.com>
+In-Reply-To: <1452426622-4471-1-git-send-email-mst@redhat.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-kernel@vger.kernel.org
+Cc: linux-mips@linux-mips.org, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Heiko Carstens <heiko.carstens@de.ibm.com>, virtualization@lists.linux-foundation.org, Paul Mackerras <paulus@samba.org>, "H. Peter Anvin" <hpa@zytor.com>, sparclinux@vger.kernel.org, Ingo Molnar <mingo@kernel.org>, linux-arch@vger.kernel.org, linux-s390@vger.kernel.org, Davidlohr Bueso <dave@stgolabs.net>, Russell King - ARM Linux <linux@arm.linux.org.uk>, Arnd Bergmann <arnd@arndb.de>, Davidlohr Bueso <dbueso@suse.de>, Michael Ellerman <mpe@ellerman.id.au>, x86@kernel.org, Christian Borntraeger <borntraeger@de.ibm.com>, Linus Torvalds <torvalds@linux-foundation.org>, xen-devel@lists.xenproject.org, Ingo Molnar <mingo@elte.hu>, "Paul E . McKenney" <paulmck@linux.vnet.ibm.com>, linux-xtensa@linux-xte
 
-Hi Vinod,
+From: Davidlohr Bueso <dave@stgolabs.net>
 
-On Monday 18 January 2016 19:06:29 Vinod Koul wrote:
-> On Thu, Jan 14, 2016 at 03:59:40PM +0200, Laurent Pinchart wrote:
-> > On Thursday 14 January 2016 09:22:25 Vinod Koul wrote:
-> >> On Thu, Jan 14, 2016 at 01:13:20AM +0200, Laurent Pinchart wrote:
-> >>> On Wednesday 13 January 2016 14:55:50 Niklas S=F6derlund wrote:
-> >>>> * Vinod Koul <vinod.koul@intel.com> [2016-01-13 19:06:01 +0530]:
-> >>>>> On Mon, Jan 11, 2016 at 03:17:46AM +0100, Niklas S=F6derlund wrote:
-> >>>>>> Enable slave transfers to devices behind IPMMU:s by mapping the
-> >>>>>> slave addresses using the dma-mapping API.
-> >>>>>>=20
-> >>>>>> Signed-off-by: Niklas S=F6derlund
-> >>>>>> <niklas.soderlund+renesas@ragnatech.se>
-> >>>>>> ---
-> >>>>>>=20
-> >>>>>>  drivers/dma/sh/rcar-dmac.c | 64 ++++++++++++++++++++++++++++++++-=
---
-> >>>>>>  1 file changed, 60 insertions(+), 4 deletions(-)
-> >>>>>>=20
-> >>>>>> diff --git a/drivers/dma/sh/rcar-dmac.c
-> >>>>>> b/drivers/dma/sh/rcar-dmac.c
-> >>>>>> index 7820d07..da94809 100644
-> >>>>>> --- a/drivers/dma/sh/rcar-dmac.c
-> >>>>>> +++ b/drivers/dma/sh/rcar-dmac.c
-> >>>>>> @@ -13,6 +13,7 @@
-> >>>>>>  #include <linux/dma-mapping.h>
-> >>>>>>  #include <linux/dmaengine.h>
-> >>>>>>  #include <linux/interrupt.h>
-> >>>>>> +#include <linux/iommu.h>
-> >>>>>>  #include <linux/list.h>
-> >>>>>>  #include <linux/module.h>
-> >>>>>>  #include <linux/mutex.h>
-> >>>>>> @@ -1101,6 +1102,24 @@ rcar_dmac_prep_dma_cyclic(struct dma_chan
-> >>>>>> *chan, dma_addr_t buf_addr,
-> >>>>>>  	return desc;
-> >>>>>>  }
-> >>>>>>=20
-> >>>>>> +static dma_addr_t __rcar_dmac_dma_map(struct dma_chan *chan,
-> >>>>>> phys_addr_t addr,
-> >>>>>> +		size_t size, enum dma_data_direction dir)
-> >>>>>> +{
-> >>>>>> +	struct rcar_dmac_chan *rchan =3D to_rcar_dmac_chan(chan);
-> >>>>>> +	struct page *page =3D phys_to_page(addr);
-> >>>>>> +	size_t offset =3D addr - page_to_phys(page);
-> >>>>>> +	dma_addr_t map =3D dma_map_page(chan->device->dev, page, offset,
-> >>>>>> size,
-> >>>>>> +			dir);
-> >>>>>=20
-> >>>>> Hmmmm, dmaengine APIs for slave cases expect that client has already
-> >>>>> ammped and provided an address which the dmaengine understands. So
-> >>>>> doing this in driver here does not sound good to me
-> >>>>=20
-> >>>> It was my understanding that clients do not do this mapping and in
-> >>>> fact are expected not to. Is this not what Linus Walleij is trying to
-> >>>> address in '[PATCH] dmaengine: use phys_addr_t for slave
-> >>>> configuration'?
-> >>>=20
-> >>> There's a problem somewhere and we need to fix it. Clients currently
-> >>> pass physical addresses and the DMA engine API expects a DMA address.
-> >>> There's only two ways to fix that, either modify the API to expect a
-> >>> phys_addr_t, or modify the clients to provide a dma_addr_t.
-> >>=20
-> >> Okay I am in two minds for this, doing phys_addr_t seems okay but
-> >> somehow I feel we should rather pass dma_addr_t and dmaengien driver g=
-et
-> >> a right dma address to use and thus fix the clients, that maybe the
-> >> right thing to do here, thoughts...?
-> >=20
-> > Given that there should be more clients than DMA engine drivers, and gi=
-ven
-> > that knowledge of what has to be done to map a physical address to a DMA
-> > address accessible by the DMA engine should not be included in client
-> > drivers (in most case I assume using the DMA mapping API will be enough,
-> > but details may vary), I believe it makes more sense to pass a
-> > phys_addr_t and let the DMA engine drivers handle it.
-> >=20
-> > There's another issue I just remembered. Consider the following cases.
-> >=20
-> > 1. DMA engine channel that has an optional IOMMU covering both the src =
-and
-> > dst side. In that case mapping can be performed by the client or DMA
-> > engine driver, the DMA mapping API will handle the IOMMU behind the
-> > scene.
-> >=20
-> > 2. DMA engine channel that has an optional IOMMU on the memory side and=
- no
-> > support for IOMMU on the slave (in the sense of the register in front of
-> > the client's FIFO) side. In that case a client mapping buffers on both
-> > the src and dst side would set an IOMMU mapped address for the slave
-> > side, which wouldn't work. If the DMA engine driver were to perform the
-> > mapping then it could skip it on the slave side, knowing that the slave
-> > side has no IOMMU.
-> >=20
-> > 3. DMA engine channel that has independently optional IOMMUs on both
-> > sides. This can't be supported today as we have a single struct device =
-per
-> > channel and thus can't configure the IOMMU independently on the two sid=
-es.
-> >=20
-> > It's getting messy :-)
->=20
-> Yes I do agree on that, but the problem is today none of the slave drivers
-> expect or do the mapping, changing that will cause issues...
->=20
-> And how many do really have an IOMMU behind them, few out of large set we
-> have...
+With commit b92b8b35a2e ("locking/arch: Rename set_mb() to smp_store_mb()")
+it was made clear that the context of this call (and thus set_mb)
+is strictly for CPU ordering, as opposed to IO. As such all archs
+should use the smp variant of mb(), respecting the semantics and
+saving a mandatory barrier on UP.
 
-Today neither the DMA engine drivers nor the client drivers do the mapping,=
- so=20
-we have any issue anyway. The question is on which side to solve it. If I=20
-understand correctly you fear that mapping the address in the DMA engine=20
-drivers would cause issues with client drivers that don't expect that=20
-behaviour, but I don't really see where the issue is. Could you please=20
-elaborate ?
+Signed-off-by: Davidlohr Bueso <dbueso@suse.de>
+Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
+Cc: <linux-arch@vger.kernel.org>
+Cc: Andrew Morton <akpm@linux-foundation.org>
+Cc: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+Cc: Heiko Carstens <heiko.carstens@de.ibm.com>
+Cc: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: Paul E. McKenney <paulmck@linux.vnet.ibm.com>
+Cc: Peter Zijlstra <peterz@infradead.org>
+Cc: Thomas Gleixner <tglx@linutronix.de>
+Cc: Tony Luck <tony.luck@intel.com>
+Cc: dave@stgolabs.net
+Link: http://lkml.kernel.org/r/1445975631-17047-3-git-send-email-dave@stgolabs.net
+Signed-off-by: Ingo Molnar <mingo@kernel.org>
+---
+ arch/ia64/include/asm/barrier.h    | 2 +-
+ arch/powerpc/include/asm/barrier.h | 2 +-
+ arch/s390/include/asm/barrier.h    | 2 +-
+ include/asm-generic/barrier.h      | 2 +-
+ 4 files changed, 4 insertions(+), 4 deletions(-)
 
-> >> The assumption from API was always that the client should perform the
-> >> mapping...
-> >>=20
-> >>> The struct device used to map buffer through the DMA mapping API needs
-> >>> to be the DMA engine struct device, not the client struct device. As
-> >>> the client is not expected to have access to the DMA engine device I
-> >>> would argue that DMA engines should perform the mapping and the API
-> >>> should take a phys_addr_t.
-> >>=20
-> >> That is not a right assumption. Once the client gets a channel, they
-> >> have access to dmaengine device and should use that to map. Yes the key
-> >> is to map using dmaengine device and not client device. You can use
-> >> chan->device->dev.
-> >
-> > Right, that's required by the DMA engine API even when not using slave
-> > transfers. Which raises an interesting consistency issue in the API, I
-> > agree about that.
-> >=20
-> >>> Vinod, unless you have reasons to do it otherwise, can we get your ack
-> >>> on this approach and start hammering at the code ? The problem has
-> >>> remained known and unfixed for too long, we need to move on.
-
---=20
-Regards,
-
-Laurent Pinchart
+diff --git a/arch/ia64/include/asm/barrier.h b/arch/ia64/include/asm/barrier.h
+index df896a1..209c4b8 100644
+--- a/arch/ia64/include/asm/barrier.h
++++ b/arch/ia64/include/asm/barrier.h
+@@ -77,7 +77,7 @@ do {									\
+ 	___p1;								\
+ })
+ 
+-#define smp_store_mb(var, value)	do { WRITE_ONCE(var, value); mb(); } while (0)
++#define smp_store_mb(var, value) do { WRITE_ONCE(var, value); smp_mb(); } while (0)
+ 
+ /*
+  * The group barrier in front of the rsm & ssm are necessary to ensure
+diff --git a/arch/powerpc/include/asm/barrier.h b/arch/powerpc/include/asm/barrier.h
+index 0eca6ef..a7af5fb 100644
+--- a/arch/powerpc/include/asm/barrier.h
++++ b/arch/powerpc/include/asm/barrier.h
+@@ -34,7 +34,7 @@
+ #define rmb()  __asm__ __volatile__ ("sync" : : : "memory")
+ #define wmb()  __asm__ __volatile__ ("sync" : : : "memory")
+ 
+-#define smp_store_mb(var, value)	do { WRITE_ONCE(var, value); mb(); } while (0)
++#define smp_store_mb(var, value) do { WRITE_ONCE(var, value); smp_mb(); } while (0)
+ 
+ #ifdef __SUBARCH_HAS_LWSYNC
+ #    define SMPWMB      LWSYNC
+diff --git a/arch/s390/include/asm/barrier.h b/arch/s390/include/asm/barrier.h
+index d68e11e..7ffd0b1 100644
+--- a/arch/s390/include/asm/barrier.h
++++ b/arch/s390/include/asm/barrier.h
+@@ -36,7 +36,7 @@
+ #define smp_mb__before_atomic()		smp_mb()
+ #define smp_mb__after_atomic()		smp_mb()
+ 
+-#define smp_store_mb(var, value)		do { WRITE_ONCE(var, value); mb(); } while (0)
++#define smp_store_mb(var, value)	do { WRITE_ONCE(var, value); smp_mb(); } while (0)
+ 
+ #define smp_store_release(p, v)						\
+ do {									\
+diff --git a/include/asm-generic/barrier.h b/include/asm-generic/barrier.h
+index b42afad..0f45f93 100644
+--- a/include/asm-generic/barrier.h
++++ b/include/asm-generic/barrier.h
+@@ -93,7 +93,7 @@
+ #endif	/* CONFIG_SMP */
+ 
+ #ifndef smp_store_mb
+-#define smp_store_mb(var, value)  do { WRITE_ONCE(var, value); mb(); } while (0)
++#define smp_store_mb(var, value)  do { WRITE_ONCE(var, value); smp_mb(); } while (0)
+ #endif
+ 
+ #ifndef smp_mb__before_atomic
+-- 
+MST
 
