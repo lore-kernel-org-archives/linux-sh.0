@@ -1,49 +1,66 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 11 Jan 2016 18:43:15 +0000
-Subject: Re: [PATCH 2/2] v4l: vsp1: Add missing #include <linux/slab.h>
-Message-Id: <CAMuHMdWhubiVBJ_-61r8Hk-vaZzQ4RGVs0Nw4TZ8gGaUc7KyHQ@mail.gmail.com>
+From: =?UTF-8?q?Niklas=20S=C3=B6derlund?=  <niklas.soderlund+renesas@ragnatech.se>
+Date: Mon, 11 Jan 2016 02:17:47 +0000
+Subject: [PATCH 2/2] ARM: dts: r8a7790: add iommus to dmac0 and dmac1
+Message-Id: <1452478667-30966-3-git-send-email-niklas.soderlund+renesas@ragnatech.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1452536727-19538-2-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1452536727-19538-2-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 To: linux-sh@vger.kernel.org
 
-Hi Laurent,
+Signed-off-by: Niklas S=C3=B6derlund <niklas.soderlund+renesas@ragnatech.se>
+---
+ arch/arm/boot/dts/r8a7790.dtsi | 30 ++++++++++++++++++++++++++++++
+ 1 file changed, 30 insertions(+)
 
-On Mon, Jan 11, 2016 at 7:27 PM, Laurent Pinchart
-<laurent.pinchart@ideasonboard.com> wrote:
-> On Monday 11 January 2016 19:25:27 Geert Uytterhoeven wrote:
->> If CONFIG_SPI=n:
->>
->> drivers/media/platform/vsp1/vsp1_dl.c: In function 'vsp1_dl_create':
->> drivers/media/platform/vsp1/vsp1_dl.c:271:2: error: implicit declaration of
->> function 'kzalloc' [-Werror=implicit-function-declaration] dl >> kzalloc(sizeof(*dl), GFP_KERNEL);
->>   ^
->> drivers/media/platform/vsp1/vsp1_dl.c:271:5: warning: assignment makes
->> pointer from integer without a cast dl = kzalloc(sizeof(*dl), GFP_KERNEL);
->>      ^
->> drivers/media/platform/vsp1/vsp1_dl.c:283:3: error: implicit declaration of
->> function 'kfree' [-Werror=implicit-function-declaration] kfree(dl);
->>    ^
->>
->> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
->
-> I have this in my tree already.
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index e07ae5d..23af349 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -294,6 +294,21 @@
+ 		power-domains =3D <&cpg_clocks>;
+ 		#dma-cells =3D <1>;
+ 		dma-channels =3D <15>;
++		iommus =3D <&ipmmu_ds 0>,
++			 <&ipmmu_ds 1>,
++			 <&ipmmu_ds 2>,
++			 <&ipmmu_ds 3>,
++			 <&ipmmu_ds 4>,
++			 <&ipmmu_ds 5>,
++			 <&ipmmu_ds 6>,
++			 <&ipmmu_ds 7>,
++			 <&ipmmu_ds 8>,
++			 <&ipmmu_ds 9>,
++			 <&ipmmu_ds 10>,
++			 <&ipmmu_ds 11>,
++			 <&ipmmu_ds 12>,
++			 <&ipmmu_ds 13>,
++			 <&ipmmu_ds 14>;
+ 	};
+=20
+ 	dmac1: dma-controller@e6720000 {
+@@ -325,6 +340,21 @@
+ 		power-domains =3D <&cpg_clocks>;
+ 		#dma-cells =3D <1>;
+ 		dma-channels =3D <15>;
++		iommus =3D <&ipmmu_ds 15>,
++			 <&ipmmu_ds 16>,
++			 <&ipmmu_ds 17>,
++			 <&ipmmu_ds 18>,
++			 <&ipmmu_ds 19>,
++			 <&ipmmu_ds 20>,
++			 <&ipmmu_ds 21>,
++			 <&ipmmu_ds 22>,
++			 <&ipmmu_ds 23>,
++			 <&ipmmu_ds 24>,
++			 <&ipmmu_ds 25>,
++			 <&ipmmu_ds 26>,
++			 <&ipmmu_ds 27>,
++			 <&ipmmu_ds 28>,
++			 <&ipmmu_ds 29>;
+ 	};
+=20
+ 	audma0: dma-controller@ec700000 {
+--=20
+2.7.0
 
-OK.
-
-I had checked http://git.linuxtv.org//pinchartl/media.git/, but didn't see a
-new tag ;-)
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
