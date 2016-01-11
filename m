@@ -1,67 +1,37 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Wed, 06 Jan 2016 13:51:21 +0000
-Subject: [RFC v2 0/4] i2c/of: switch I2C IP cores at runtime via OF_DYNAMIC
-Message-Id: <1452088285-6427-1-git-send-email-wsa@the-dreams.de>
+From: =?UTF-8?q?Niklas=20S=C3=B6derlund?=  <niklas.soderlund+renesas@ragnatech.se>
+Date: Mon, 11 Jan 2016 02:17:45 +0000
+Subject: [PATCH 0/2] dmaengine: rcar-dmac: add iommu support for slave transfers
+Message-Id: <1452478667-30966-1-git-send-email-niklas.soderlund+renesas@ragnatech.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: Wolfram Sang <wsa@the-dreams.de>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org, Pantelis Antoniou <pantelis.antoniou@konsulko.com>, Jan Luebbe <jlu@pengutronix.de>
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: linux-sh@vger.kernel.org
 
-I know this is gonna be a controversial series, but we have a usecase for this :)
+Hi,
 
-This series allows an I2C bus to switch between multiple masters, i.e. a
-n-to-1-demuxer. This is not hot-switching because connected I2C slaves will be
-re-instantiated. It is meant to select the best I2C core at runtime once the
-task is known. Example: Prefer i2c-gpio over another I2C core because of HW
-errata affecting your current runtime configuration.
+In this series I add iommu support to rcar-damc. It is tested on on the
+lager board. It is tested by enabling CONFIG_IPMMU_VMSA and enable the
+ipmmu_ds node in r8a7790.dtsi. Once booted try using dma with a device
+behind the iommu, I used the mmc at /dev/mmcblk1.
 
-It works by using OF_DYNAMIC and en-/disabling the i2c parent as needed. See
-the binding docs for more details. Because this is largely using OF_DYNAMIC, I
-decided to post the whole series to the dt list.
-
-Changes since RFC v1:
-
-* gracefully handle if i2c adapters are not present at runtime
-  (driver not loaded yet)
-* added more documentation and examples
-* properly put the i2c adapters after use
-* respect PAGE_SIZE in sysfs_show
-
-This has been tested on a Renesas Lager board switching between i2c-gpio and
-two different IP cores (i2c-rcar and i2c-sh_mobile). The rebinding seems to be
-working as expected. However, in practice, I couldn't use the HDMI i2c slaves
-with another controller yet, because the rcar-du driver OOPSes when unbinding.
-This seems unrelated to this series because it can also be triggered via
-sysfs-unbind. soc-camera also had problems properly cleaning up on unbind, a
-patch for this already has been sent. So, this series is for sure a good test
-for the unbind path of drivers.
-
-Let me know what you think.
-
-Thanks,
-
-   Wolfram
+* Changes since RFC
+- Switch to use the dma-mapping api instead of using the iommu_map()
+  directly. Turns out the dma-mapper is much smarter then me...
+- Dropped the patch to expose domain->ops->pgsize_bitmap from within the
+  iommu api.
+- Dropped the patch showing how I tested the RFC.
 
 
-Wolfram Sang (4):
-  of: make of_mutex public
-  dt-bindings: i2c: mux: demux-pinctrl: add bindings
-  i2c: mux: demux-pinctrl: add driver
-  ARM: shmobile: r8a7790: rework dts to use i2c demuxer
+Niklas S=C3=B6derlund (2):
+  dmaengine: rcar-dmac: add iommu support for slave transfers
+  ARM: dts: r8a7790: add iommus to dmac0 and dmac1
 
- .../devicetree/bindings/i2c/i2c-demux-pinctrl.txt  | 155 ++++++++++++
- arch/arm/boot/dts/r8a7790-lager.dts                | 141 +++++++----
- drivers/i2c/muxes/Kconfig                          |   9 +
- drivers/i2c/muxes/Makefile                         |   2 +
- drivers/i2c/muxes/i2c-demux-pinctrl.c              | 276 +++++++++++++++++++++
- drivers/of/of_private.h                            |   1 -
- include/linux/of.h                                 |   2 +
- 7 files changed, 532 insertions(+), 54 deletions(-)
- create mode 100644 Documentation/devicetree/bindings/i2c/i2c-demux-pinctrl.txt
- create mode 100644 drivers/i2c/muxes/i2c-demux-pinctrl.c
+ arch/arm/boot/dts/r8a7790.dtsi | 30 ++++++++++++++++++++
+ drivers/dma/sh/rcar-dmac.c     | 64 ++++++++++++++++++++++++++++++++++++++=
++---
+ 2 files changed, 90 insertions(+), 4 deletions(-)
 
--- 
-2.1.4
+--
+2.7.0
 
