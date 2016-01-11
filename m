@@ -1,22 +1,24 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sun, 10 Jan 2016 21:26:07 +0000
-Subject: [PATCH 0/2] Fix some dubious code in the Renesas Ethernet drivers
-Message-Id: <5859243.yu8qorLmay@wasted.cogentembedded.com>
+From: David Miller <davem@davemloft.net>
+Date: Mon, 11 Jan 2016 22:31:27 +0000
+Subject: Re: [PATCH 0/2] Fix some dubious code in the Renesas Ethernet drivers
+Message-Id: <20160111.173127.388387520171868620.davem@davemloft.net>
 List-Id: <linux-sh.vger.kernel.org>
+References: <5859243.yu8qorLmay@wasted.cogentembedded.com>
+In-Reply-To: <5859243.yu8qorLmay@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: sergei.shtylyov@cogentembedded.com
+Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org
 
-Hello.
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Mon, 11 Jan 2016 00:26:07 +0300
 
-   Here's a set of 2 patches against DaveM's 'net.git' repo. While initializing
-EMAC the code tries to respect the duplex mode both programmed into ECMR and
-stored in its own private data -- this just can't be right.
+>    Here's a set of 2 patches against DaveM's 'net.git' repo. While initializing
+> EMAC the code tries to respect the duplex mode both programmed into ECMR and
+> stored in its own private data -- this just can't be right.
+> 
+> [1/2] ravb: stop reading ECMR in ravb_emac_init()
+> [2/2] sh_eth: stop reading ECMR in sh_eth_dev_init()
 
-[1/2] ravb: stop reading ECMR in ravb_emac_init()
-[2/2] sh_eth: stop reading ECMR in sh_eth_dev_init()
-
-MBR, Sergei
-
+Series applied, thanks.
