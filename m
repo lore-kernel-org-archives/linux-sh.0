@@ -1,35 +1,44 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Mon, 04 Jan 2016 14:18:12 +0000
-Subject: RE: [PATCH 2/4] PCI: rcar: Support runtime PM link state L1 handling in pcie-rcar
-Message-Id: <HK2PR0601MB1393CE3EA6A72D0F74498251F5F20@HK2PR0601MB1393.apcprd06.prod.outlook.com>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Mon, 11 Jan 2016 19:10:17 +0000
+Subject: [PATCH 2/3 v2] media: soc_camera: rcar_vin: Add R-Car Gen3 support
+Message-Id: <1452539418-28480-3-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450358557-28376-1-git-send-email-phil.edworthy@renesas.com>
-	<1450358557-28376-3-git-send-email-phil.edworthy@renesas.com>
-	<20151217133058.GA20372@katana>
-	<PS1PR06MB1180304088ECF5384C497E40F5E10@PS1PR06MB1180.apcprd06.prod.outlook.com>
-	<20151218140412.GA4595@katana>
-	<KL1PR06MB1174165C6112327548CD29DDF5E40@KL1PR06MB1174.apcprd06.prod.outlook.com>
- <CAMuHMdUKHO50n_OAhx-OcZX9FwN+dUbZCHnjP4HaPqgt3j=MzQ@mail.gmail.com>
-In-Reply-To: <CAMuHMdUKHO50n_OAhx-OcZX9FwN+dUbZCHnjP4HaPqgt3j=MzQ@mail.gmail.com>
+References: <1452539418-28480-1-git-send-email-ykaneko0929@gmail.com>
+In-Reply-To: <1452539418-28480-1-git-send-email-ykaneko0929@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Wolfram Sang <wsa@the-dreams.de>, Simon Horman <horms@verge.net.au>, Bjorn Helgaas <bhelgaas@google.com>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "linux-pci@vger.kernel.org" <linux-pci@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+To: linux-media@vger.kernel.org
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-SGkgR2VlcnQsDQoNCk9uIDIxIERlY2VtYmVyIDIwMTUgMTM6MTcsIEdlZXJ0IFV5dHRlcmhvZXZl
-biB3cm90ZToNCj4gT24gTW9uLCBEZWMgMjEsIDIwMTUgYXQgMTE6NTIgQU0sIFBoaWwgRWR3b3J0
-aHkNCj4gPHBoaWwuZWR3b3J0aHlAcmVuZXNhcy5jb20+IHdyb3RlOg0KPiA+IE9uIDE4IERlY2Vt
-YmVyIDIwMTUgMTQ6MDQsIFdvbGZyYW0gU2FuZyB3cm90ZToNCj4gPj4gPiBTaW5jZSB0aGUgaGFy
-ZHdhcmUgZG9lc24ndCBzdXBwb3J0IGhvdCBwbHVnLCBJIGJlbGlldmUgdGhpcyBsb29wIHdpbGwN
-Cj4gPj4gPiBhbHdheXMgZXhpdCB2ZXJ5IHF1aWNrbHkuIFVubGVzcyBzb21lb25lIGhhcyB0YWtl
-biBhIGhhbW1lciB0byB0aGUgSFcNCj4gPj4gPiBvZiBjb3Vyc2UuDQo+ID4+DQo+ID4+IEkga25v
-dyB3aGF0IHlvdSBtZWFuLiBCdXQgc2luY2UgcmVhZGxfcG9sbF90aW1lb3V0KCkgbWFrZXMgaXQg
-ZWFzeSwgd2UNCj4gPj4gc2hvdWxkIGJldHRlciBiZSBzYWZlIHRoYW4gc29ycnkuDQo+ID4gSG1t
-LCBJIGNoYW5nZWQgdGhlIGNvZGUsIGJ1dCBub3cgaXQgZG9lc24ndCBjb21lIG91dCBvZiBzdXNw
-ZW5kIHVubGVzcw0KPiA+IHNsZWVwX3VzIHBhc3NlZCB0byByZWFkbF9wb2xsX3RpbWVvdXQgaXMg
-MC4gQW55IHJlYXNvbiB5b3UgY2FuIHRoaW5rIG9mPw0KPiANCj4gVGltZXJzIG9yIGludGVycnVw
-dHMgZGlzYWJsZWQ/DQo+IA0KPiBEb2VzIHRoZSBtaWdodF9zbGVlcF9pZigpIHNjcmVhbSBpZiBD
-T05GSUdfREVCVUdfQVRPTUlDX1NMRUVQPXk/DQpZZXMsIGl0IGRvZXMgaW5kZWVkIHNjcmVhbS4g
-V291bGQgeW91IHJlY29tbWVuZCB0byBzdGlsbCB1c2UgcmVhZGxfcG9sbF90aW1lb3V0DQp3aXRo
-IHNsZWVwX3VzIHNldCB0byAwPw0KDQpUaGFua3MNClBoaWwNCg=
+From: Yoshihiko Mori <yoshihiko.mori.nx@renesas.com>
+
+Simply documents new compatibility string.
+As a previous patch adds a generic R-Car Gen3 compatibility string
+there appears to be no need for a driver updates.
+
+Signed-off-by: Yoshihiko Mori <yoshihiko.mori.nx@renesas.com>
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+---
+
+v2 [Yoshihiro Kaneko]
+* no change
+
+ Documentation/devicetree/bindings/media/rcar_vin.txt | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/Documentation/devicetree/bindings/media/rcar_vin.txt b/Documentation/devicetree/bindings/media/rcar_vin.txt
+index c13ec5a..e1a92c9 100644
+--- a/Documentation/devicetree/bindings/media/rcar_vin.txt
++++ b/Documentation/devicetree/bindings/media/rcar_vin.txt
+@@ -8,6 +8,7 @@ channel which can be either RGB, YUYV or BT656.
+  - compatible: Must be one of the following
+    - "renesas,rcar-gen2-vin" for R-Car Gen2 Series
+    - "renesas,rcar-gen3-vin" for R-Car Gen3 Series
++   - "renesas,vin-r8a7795" for the R8A7795 device
+    - "renesas,vin-r8a7794" for the R8A7794 device
+    - "renesas,vin-r8a7793" for the R8A7793 device
+    - "renesas,vin-r8a7791" for the R8A7791 device
+-- 
+1.9.1
+
