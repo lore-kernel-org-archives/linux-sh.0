@@ -1,49 +1,40 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 13 Jan 2016 14:07:55 +0000
-Subject: Re: [RFC v2 2/4] dt-bindings: i2c: mux: demux-pinctrl: add bindings
-Message-Id: <56965A3B.60208@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 11 Jan 2016 01:39:20 +0000
+Subject: [PATCH] serial: sh-sci: Add device tree support for r8a7792
+Message-Id: <1452476360-20972-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1452088285-6427-1-git-send-email-wsa@the-dreams.de>
- <1452088285-6427-3-git-send-email-wsa@the-dreams.de>
- <CAMuHMdUdxk6yjYAr3i7sjdMa-WJxrbOhsEz3JidY9aZVhaoURw@mail.gmail.com>
- <20160113125227.GD1540@katana>
-In-Reply-To: <20160113125227.GD1540@katana>
+References: <87h9nn7tnt.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87h9nn7tnt.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Wolfram Sang <wsa@the-dreams.de>, Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Linux I2C <linux-i2c@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Pantelis Antoniou <pantelis.antoniou@konsulko.com>, Jan Luebbe <jlu@pengutronix.de>
+To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+Simply document new compat strings.
+There appears to be no need for a driver updates.
 
-On 01/13/2016 03:52 PM, Wolfram Sang wrote:
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
->>> These bindings allow an I2C bus to switch between multiple masters. This
->>> is not hot-swichting because connected I2C slaves will be
->>> re-instantiated. It is meant to select the best I2C core at runtime once
->>> the task is known. Example: Prefer i2c-gpio over another I2C core
->>> because of HW errata affetcing your use case.
->>
->>> --- /dev/null
->>> +++ b/Documentation/devicetree/bindings/i2c/i2c-demux-pinctrl.txt
->>> @@ -0,0 +1,155 @@
->>
->>> +Here is a snipplet for a bus to be demuxed. It contains various i2c clients for
->>
->> snippet
->>
->>> +HDMI, so the bus is named "i2c-hdmi":
->>> +
->>> +       i2chdmi: i2c@8 {
->>
->> Would it make sense to call the node "i2c-bus@8"?
->
-> That sounds like a question for our EPapr expert Sergei (CCed) :)
+---
+* Broken out of a larger patch the remainder of which has
+  already been accepted into tty-next
+---
+ Documentation/devicetree/bindings/serial/renesas,sci-serial.txt | 2 ++
+ 1 file changed, 2 insertions(+)
 
-    ePAPR only mentions "i2c". I'm not sure where the numeric part of the name 
-comes from in this case...
-
-[...]
-
-MBR, Sergei
+diff --git a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+index 401b1b33c2c4..528c3b90f23c 100644
+--- a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
++++ b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+@@ -19,6 +19,8 @@ Required properties:
+     - "renesas,scifa-r8a7791" for R8A7791 (R-Car M2-W) SCIFA compatible UART.
+     - "renesas,scifb-r8a7791" for R8A7791 (R-Car M2-W) SCIFB compatible UART.
+     - "renesas,hscif-r8a7791" for R8A7791 (R-Car M2-W) HSCIF compatible UART.
++    - "renesas,scif-r8a7792" for R8A7792 (R-Car V2H) SCIF compatible UART.
++    - "renesas,hscif-r8a7792" for R8A7792 (R-Car V2H) HSCIF compatible UART.
+     - "renesas,scif-r8a7793" for R8A7793 (R-Car M2-N) SCIF compatible UART.
+     - "renesas,scifa-r8a7793" for R8A7793 (R-Car M2-N) SCIFA compatible UART.
+     - "renesas,scifb-r8a7793" for R8A7793 (R-Car M2-N) SCIFB compatible UART.
+-- 
+2.7.0.rc3.207.g0ac5344
 
