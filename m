@@ -1,48 +1,47 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 11 Jan 2016 18:46:57 +0000
-Subject: r8a7794/alt and CONFIG_PROVE_LOCKING=y
-Message-Id: <CAMuHMdXGgbpsC+JdbGc5D0fd5YSdogpqvffPAB4PU-7H_-jM_Q@mail.gmail.com>
+From: Russell King - ARM Linux <linux@arm.linux.org.uk>
+Date: Mon, 11 Jan 2016 18:55:12 +0000
+Subject: Re: r8a7794/alt and CONFIG_PROVE_LOCKING=y
+Message-Id: <20160111185512.GW19062@n2100.arm.linux.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
+References: <CAMuHMdXGgbpsC+JdbGc5D0fd5YSdogpqvffPAB4PU-7H_-jM_Q@mail.gmail.com>
+In-Reply-To: <CAMuHMdXGgbpsC+JdbGc5D0fd5YSdogpqvffPAB4PU-7H_-jM_Q@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-When CONFIG_PROVE_LOCKING=y, r8a7794/alt doesn't boot (no output).
-Earlycon doesn't help, but DEBUG_LL=y and earlyprintk gave me:
+On Mon, Jan 11, 2016 at 07:46:57PM +0100, Geert Uytterhoeven wrote:
+> When CONFIG_PROVE_LOCKING=y, r8a7794/alt doesn't boot (no output).
+> Earlycon doesn't help, but DEBUG_LL=y and earlyprintk gave me:
+> 
+>     Error: unrecognized/unsupported machine ID (r1 = 0x18009008).
+> 
+>     Available machine support:
+> 
+>     ID (hex) NAME
+>     ffffffff    Generic DT based system
+>     ffffffff Generic R8A7794 (Flattened Device Tree)
+> 
+>     Please check your kernel config and/or bootloader.
+> 
+> I'm booting using
+> 
+>     tftp 41000000 alt/zImage
+>     tftp 40f00000 alt/r8a7794-alt.dtb
+>     bootz 41000000 - 40f00000
+> 
+> just like on r8a7791/koelsch, where CONFIG_PROVE_LOCKING does work.
+> 
+> If I disable CONFIG_PROVE_LOCKING (e.g. shmobile_defconfig), the same kernel
+> boots fine.
+> 
+> Anyone with a clue?
 
-    Error: unrecognized/unsupported machine ID (r1 = 0x18009008).
+You're probably overwriting the dtb.  Presumably, RAM starts at
+0x40000000, which means if your kernel is larger than 16MB-32k
+after decompression, the dtb will get overwritten.
 
-    Available machine support:
-
-    ID (hex) NAME
-    ffffffff    Generic DT based system
-    ffffffff Generic R8A7794 (Flattened Device Tree)
-
-    Please check your kernel config and/or bootloader.
-
-I'm booting using
-
-    tftp 41000000 alt/zImage
-    tftp 40f00000 alt/r8a7794-alt.dtb
-    bootz 41000000 - 40f00000
-
-just like on r8a7791/koelsch, where CONFIG_PROVE_LOCKING does work.
-
-If I disable CONFIG_PROVE_LOCKING (e.g. shmobile_defconfig), the same kernel
-boots fine.
-
-Anyone with a clue?
-
-Thanks!
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+-- 
+RMK's Patch system: http://www.arm.linux.org.uk/developer/patches/
+FTTC broadband for 0.8mile line: currently at 9.6Mbps down 400kbps up
+according to speedtest.net.
