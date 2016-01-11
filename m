@@ -1,86 +1,114 @@
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Mon, 11 Jan 2016 19:10:16 +0000
-Subject: [PATCH 1/3 v2] media: soc_camera: rcar_vin: Add rcar fallback compatibility string
-Message-Id: <1452539418-28480-2-git-send-email-ykaneko0929@gmail.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Mon, 11 Jan 2016 21:13:30 +0000
+Subject: Re: [PATCH 1/3 v2] media: soc_camera: rcar_vin: Add rcar fallback compatibility string
+Message-Id: <Pine.LNX.4.64.1601112210040.31467@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1452539418-28480-1-git-send-email-ykaneko0929@gmail.com>
-In-Reply-To: <1452539418-28480-1-git-send-email-ykaneko0929@gmail.com>
+ <1452539418-28480-2-git-send-email-ykaneko0929@gmail.com>
+In-Reply-To: <1452539418-28480-2-git-send-email-ykaneko0929@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="windows-1252"
+Content-Transfer-Encoding: quoted-printable
+To: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Cc: linux-media@vger.kernel.org, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-Add fallback compatibility string for R-Car Gen2 and Gen3, This is
-in keeping with the fallback scheme being adopted wherever appropriate
-for drivers for Renesas SoCs.
+Hello Kaneko-san,
 
-Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
----
+On Tue, 12 Jan 2016, Yoshihiro Kaneko wrote:
 
-v2 [Yoshihiro Kaneko]
-* As suggested by Geert Uytterhoeven
-  drivers/media/platform/soc_camera/rcar_vin.c:
-    - The generic compatibility values are listed at the end of the
-      rcar_vin_of_table[].
+> Add fallback compatibility string for R-Car Gen2 and Gen3, This is
+> in keeping with the fallback scheme being adopted wherever appropriate
+> for drivers for Renesas SoCs.
+>=20
+> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+> ---
 
- Documentation/devicetree/bindings/media/rcar_vin.txt | 8 +++++++-
- drivers/media/platform/soc_camera/rcar_vin.c         | 3 +++
- 2 files changed, 10 insertions(+), 1 deletion(-)
+Have you seen this patch:
 
-diff --git a/Documentation/devicetree/bindings/media/rcar_vin.txt b/Documentation/devicetree/bindings/media/rcar_vin.txt
-index 9dafe6b..c13ec5a 100644
---- a/Documentation/devicetree/bindings/media/rcar_vin.txt
-+++ b/Documentation/devicetree/bindings/media/rcar_vin.txt
-@@ -6,12 +6,18 @@ family of devices. The current blocks are always slaves and suppot one input
- channel which can be either RGB, YUYV or BT656.
- 
-  - compatible: Must be one of the following
-+   - "renesas,rcar-gen2-vin" for R-Car Gen2 Series
-+   - "renesas,rcar-gen3-vin" for R-Car Gen3 Series
-    - "renesas,vin-r8a7794" for the R8A7794 device
-    - "renesas,vin-r8a7793" for the R8A7793 device
-    - "renesas,vin-r8a7791" for the R8A7791 device
-    - "renesas,vin-r8a7790" for the R8A7790 device
-    - "renesas,vin-r8a7779" for the R8A7779 device
-    - "renesas,vin-r8a7778" for the R8A7778 device
-+
-+   When compatible with the generic version, nodes must list the SoC-specific
-+   version corresponding to the platform first followed by the generic version.
-+
-  - reg: the register base and size for the device registers
-  - interrupts: the interrupt for the device
-  - clocks: Reference to the parent clock
-@@ -36,7 +42,7 @@ Device node example
- 	};
- 
-         vin0: vin@0xe6ef0000 {
--                compatible = "renesas,vin-r8a7790";
-+                compatible = "renesas,vin-r8a7790","renesas,rcar-gen2-vin";
-                 clocks = <&mstp8_clks R8A7790_CLK_VIN0>;
-                 reg = <0 0xe6ef0000 0 0x1000>;
-                 interrupts = <0 188 IRQ_TYPE_LEVEL_HIGH>;
-diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
-index b7fd695..f72de0b 100644
---- a/drivers/media/platform/soc_camera/rcar_vin.c
-+++ b/drivers/media/platform/soc_camera/rcar_vin.c
-@@ -143,6 +143,7 @@
- #define RCAR_VIN_BT656			(1 << 3)
- 
- enum chip_id {
-+	RCAR_GEN3,
- 	RCAR_GEN2,
- 	RCAR_H1,
- 	RCAR_M1,
-@@ -1824,6 +1825,8 @@ static const struct of_device_id rcar_vin_of_table[] = {
- 	{ .compatible = "renesas,vin-r8a7790", .data = (void *)RCAR_GEN2 },
- 	{ .compatible = "renesas,vin-r8a7779", .data = (void *)RCAR_H1 },
- 	{ .compatible = "renesas,vin-r8a7778", .data = (void *)RCAR_M1 },
-+	{ .compatible = "renesas,rcar-gen2-vin", .data = (void *)RCAR_GEN2 },
-+	{ .compatible = "renesas,rcar-gen3-vin", .data = (void *)RCAR_GEN3 },
- 	{ },
- };
- MODULE_DEVICE_TABLE(of, rcar_vin_of_table);
--- 
-1.9.1
+http://git.linuxtv.org/gliakhovetski/v4l-dvb.git/commit/?h=3Dfor-4.6-1&id=
+=8E7825d38bbfcf8af8b0422c88f5e22701d89786
 
+that I pushed yesterday? Is it wrong then? Do we have to cancel it, if=20
+Mauro hasn't pulled it yet? Or would you like to rebase and work on top of =
+
+it?
+
+Thanks
+Guennadi
+
+>=20
+> v2 [Yoshihiro Kaneko]
+> * As suggested by Geert Uytterhoeven
+>   drivers/media/platform/soc_camera/rcar_vin.c:
+>     - The generic compatibility values are listed at the end of the
+>       rcar_vin_of_table[].
+>=20
+>  Documentation/devicetree/bindings/media/rcar_vin.txt | 8 +++++++-
+>  drivers/media/platform/soc_camera/rcar_vin.c         | 3 +++
+>  2 files changed, 10 insertions(+), 1 deletion(-)
+>=20
+> diff --git a/Documentation/devicetree/bindings/media/rcar_vin.txt b/Docum=
+entation/devicetree/bindings/media/rcar_vin.txt
+> index 9dafe6b..c13ec5a 100644
+> --- a/Documentation/devicetree/bindings/media/rcar_vin.txt
+> +++ b/Documentation/devicetree/bindings/media/rcar_vin.txt
+> @@ -6,12 +6,18 @@ family of devices. The current blocks are always slaves=
+ and suppot one input
+>  channel which can be either RGB, YUYV or BT656.
+> =20
+>   - compatible: Must be one of the following
+> +   - "renesas,rcar-gen2-vin" for R-Car Gen2 Series
+> +   - "renesas,rcar-gen3-vin" for R-Car Gen3 Series
+>     - "renesas,vin-r8a7794" for the R8A7794 device
+>     - "renesas,vin-r8a7793" for the R8A7793 device
+>     - "renesas,vin-r8a7791" for the R8A7791 device
+>     - "renesas,vin-r8a7790" for the R8A7790 device
+>     - "renesas,vin-r8a7779" for the R8A7779 device
+>     - "renesas,vin-r8a7778" for the R8A7778 device
+> +
+> +   When compatible with the generic version, nodes must list the SoC-spe=
+cific
+> +   version corresponding to the platform first followed by the generic v=
+ersion.
+> +
+>   - reg: the register base and size for the device registers
+>   - interrupts: the interrupt for the device
+>   - clocks: Reference to the parent clock
+> @@ -36,7 +42,7 @@ Device node example
+>  	};
+> =20
+>          vin0: vin@0xe6ef0000 {
+> -                compatible =3D "renesas,vin-r8a7790";
+> +                compatible =3D "renesas,vin-r8a7790","renesas,rcar-gen2-=
+vin";
+>                  clocks =3D <&mstp8_clks R8A7790_CLK_VIN0>;
+>                  reg =3D <0 0xe6ef0000 0 0x1000>;
+>                  interrupts =3D <0 188 IRQ_TYPE_LEVEL_HIGH>;
+> diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media=
+/platform/soc_camera/rcar_vin.c
+> index b7fd695..f72de0b 100644
+> --- a/drivers/media/platform/soc_camera/rcar_vin.c
+> +++ b/drivers/media/platform/soc_camera/rcar_vin.c
+> @@ -143,6 +143,7 @@
+>  #define RCAR_VIN_BT656			(1 << 3)
+> =20
+>  enum chip_id {
+> +	RCAR_GEN3,
+>  	RCAR_GEN2,
+>  	RCAR_H1,
+>  	RCAR_M1,
+> @@ -1824,6 +1825,8 @@ static const struct of_device_id rcar_vin_of_table[=
+] =3D {
+>  	{ .compatible =3D "renesas,vin-r8a7790", .data =3D (void *)RCAR_GEN2 },
+>  	{ .compatible =3D "renesas,vin-r8a7779", .data =3D (void *)RCAR_H1 },
+>  	{ .compatible =3D "renesas,vin-r8a7778", .data =3D (void *)RCAR_M1 },
+> +	{ .compatible =3D "renesas,rcar-gen2-vin", .data =3D (void *)RCAR_GEN2 =
+},
+> +	{ .compatible =3D "renesas,rcar-gen3-vin", .data =3D (void *)RCAR_GEN3 =
+},
+>  	{ },
+>  };
+>  MODULE_DEVICE_TABLE(of, rcar_vin_of_table);
+> --=20
+> 1.9.1
+>=20
