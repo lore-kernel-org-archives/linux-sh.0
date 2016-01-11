@@ -1,42 +1,43 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 04 Jan 2016 13:45:19 +0000
-Subject: [PATCH 2/5] serial: sh-sci: Preserve SCIFA/SCIFB bit rate config for serial console
-Message-Id: <1451915122-30219-3-git-send-email-geert+renesas@glider.be>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Mon, 11 Jan 2016 18:00:08 +0000
+Subject: [PATCH 0/3] media: soc_camera: rcar_vin: add rcar-gen3 support
+Message-Id: <1452535211-4869-1-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1451915122-30219-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1451915122-30219-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
-Cc: Simon Horman <horms+renesas@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-media@vger.kernel.org
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-SCIFA and SCIFB have additional bit rate config bits in the Serial Mode
-Register.  Don't touch them when using the port as a serial console, as
-we rely on the boot loader to have configured the serial port config.
+* add rcar compatibility strings
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
-I'm not aware of any boot loader setting these bits, but better safe
-than sorry.
----
- drivers/tty/serial/sh-sci.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+  This series adds generic rcar and SoC-specific r8a7795 compatibility
+  strings to the rcar-vin driver. The intention is to provide a complete
+  set of compatibility strings for known R-Car Gen2 and Gen3 SoCs.
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index a7c062192e2d3130..e8d6fa77e11208d4 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -2229,7 +2229,8 @@ done:
- 	} else {
- 		/* Don't touch the bit rate configuration */
- 		scr_val = s->cfg->scscr & (SCSCR_CKE1 | SCSCR_CKE0);
--		smr_val |= serial_port_in(port, SCSMR) & SCSMR_CKS;
-+		smr_val |= serial_port_in(port, SCSMR) &
-+			   (SCSMR_CKEDG | SCSMR_SRC_MASK | SCSMR_CKS);
- 		dev_dbg(port->dev, "SCR 0x%x SMR 0x%x\n", scr_val, smr_val);
- 		serial_port_out(port, SCSCR, scr_val);
- 		serial_port_out(port, SCSMR, smr_val);
+* add ARGB8888 capture format support 
+
+  This series contain a patch which adds the ARGB8888 capture format
+  support for R-Car Gen3.
+
+* compile tested only
+
+This series is based on the master branch of linuxtv.org/media_tree.git.
+
+
+Koji Matsuoka (1):
+  media: soc_camera: rcar_vin: Add ARGB8888 caputre format support
+
+Yoshihiko Mori (1):
+  media: soc_camera: rcar_vin: Add R-Car Gen3 support
+
+Yoshihiro Kaneko (1):
+  media: soc_camera: rcar_vin: Add rcar fallback compatibility string
+
+ .../devicetree/bindings/media/rcar_vin.txt         |  9 +++++++-
+ drivers/media/platform/soc_camera/rcar_vin.c       | 24 ++++++++++++++++++++--
+ 2 files changed, 30 insertions(+), 3 deletions(-)
+
 -- 
 1.9.1
 
