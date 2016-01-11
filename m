@@ -1,40 +1,45 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 11 Jan 2016 01:39:20 +0000
-Subject: [PATCH] serial: sh-sci: Add device tree support for r8a7792
-Message-Id: <1452476360-20972-1-git-send-email-horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 11 Jan 2016 18:41:14 +0000
+Subject: [PATCH 3/3] ARM: shmobile: defconfig: Do not enable CONFIG_CPU_BPREDICT_DISABLE
+Message-Id: <1452537674-20006-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87h9nn7tnt.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87h9nn7tnt.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Simply document new compat strings.
-There appears to be no need for a driver updates.
+Do not disable branch prediction, as this has a big performance impact.
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+After re-enabling branch prediction, __loop_delay() runs 16 (Cortex A15)
+or 11 (Cortex A9) times faster than before.
 
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-* Broken out of a larger patch the remainder of which has
-  already been accepted into tty-next
----
- Documentation/devicetree/bindings/serial/renesas,sci-serial.txt | 2 ++
- 1 file changed, 2 insertions(+)
+This used to be enabled in:
 
-diff --git a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
-index 401b1b33c2c4..528c3b90f23c 100644
---- a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
-+++ b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
-@@ -19,6 +19,8 @@ Required properties:
-     - "renesas,scifa-r8a7791" for R8A7791 (R-Car M2-W) SCIFA compatible UART.
-     - "renesas,scifb-r8a7791" for R8A7791 (R-Car M2-W) SCIFB compatible UART.
-     - "renesas,hscif-r8a7791" for R8A7791 (R-Car M2-W) HSCIF compatible UART.
-+    - "renesas,scif-r8a7792" for R8A7792 (R-Car V2H) SCIF compatible UART.
-+    - "renesas,hscif-r8a7792" for R8A7792 (R-Car V2H) HSCIF compatible UART.
-     - "renesas,scif-r8a7793" for R8A7793 (R-Car M2-N) SCIF compatible UART.
-     - "renesas,scifa-r8a7793" for R8A7793 (R-Car M2-N) SCIFA compatible UART.
-     - "renesas,scifb-r8a7793" for R8A7793 (R-Car M2-N) SCIFB compatible UART.
+  - ag5evm_defconfig (sh73a0)
+  - ape6evm_defconfig (r8a73a4)
+  - armadillo800eva_defconfig (r8a7740)
+  - koelsch_defconfig (r8a7791)
+  - kota2_defconfig (sh73a0)
+
+Was there ever a good reason for that?
+---
+ arch/arm/configs/shmobile_defconfig | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
+index 969738324a5d5f81..5208b5caacd1a4e2 100644
+--- a/arch/arm/configs/shmobile_defconfig
++++ b/arch/arm/configs/shmobile_defconfig
+@@ -20,7 +20,6 @@ CONFIG_ARCH_R8A7791=y
+ CONFIG_ARCH_R8A7793=y
+ CONFIG_ARCH_R8A7794=y
+ CONFIG_ARCH_SH73A0=y
+-CONFIG_CPU_BPREDICT_DISABLE=y
+ CONFIG_PL310_ERRATA_588369=y
+ CONFIG_ARM_ERRATA_754322=y
+ CONFIG_PCI=y
 -- 
-2.7.0.rc3.207.g0ac5344
+1.9.1
 
