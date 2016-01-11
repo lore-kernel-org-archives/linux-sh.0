@@ -1,64 +1,79 @@
-From: Bjorn Helgaas <helgaas@kernel.org>
-Date: Fri, 15 Jan 2016 18:31:30 +0000
-Subject: Re: [PATCH v3] PCI: hosts: mark pcie/pci (msi) irq cascade handler as IRQF_NO_THREAD
-Message-Id: <20160115183130.GB5296@localhost>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Mon, 11 Jan 2016 18:00:09 +0000
+Subject: [PATCH 1/3] media: soc_camera: rcar_vin: Add rcar fallback compatibility string
+Message-Id: <1452535211-4869-2-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449775100-30877-1-git-send-email-grygorii.strashko@ti.com>
- <20160106221827.GD16231@localhost>
- <20160113133904.GD29964@linutronix.de>
- <20160113175016.GB28453@localhost> <56969BE3.6000804@ti.com>
- <56973DEC.2000108@ti.com>
-In-Reply-To: <56973DEC.2000108@ti.com>
+References: <1452535211-4869-1-git-send-email-ykaneko0929@gmail.com>
+In-Reply-To: <1452535211-4869-1-git-send-email-ykaneko0929@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-On Thu, Jan 14, 2016 at 11:49:24AM +0530, Kishon Vijay Abraham I wrote:
-> Hi,
-> 
-> On Thursday 14 January 2016 12:18 AM, Grygorii Strashko wrote:
-> > On 01/13/2016 07:50 PM, Bjorn Helgaas wrote:
-> >> On Wed, Jan 13, 2016 at 02:39:04PM +0100, Sebastian Andrzej Siewior wrote:
-> >>> * Bjorn Helgaas | 2016-01-06 16:18:27 [-0600]:
-> >>>
-> >>>> Hi Bjorn,
-> >>>
-> >>>>> diff --git a/drivers/pci/host/pci-dra7xx.c b/drivers/pci/host/pci-dra7xx.c
-> >>>>> index 8c36880..0415192 100644
-> >>>>> --- a/drivers/pci/host/pci-dra7xx.c
-> >>>>> +++ b/drivers/pci/host/pci-dra7xx.c
-> >>>>> @@ -301,8 +301,19 @@ static int __init dra7xx_add_pcie_port(struct
-> >>>>> dra7xx_pcie *dra7xx,
-> >>>>>           return -EINVAL;
-> >>>>>       }
-> >>>>>
-> >>>>> +    /*
-> >>>>> +     * Mark dra7xx_pcie_msi IRQ as IRQF_NO_THREAD
-> >>>>> +     * On -RT and if kernel is booting with "threadirqs" cmd line parameter
-> >>>>> +     * the dra7xx_pcie_msi_irq_handler() will be forced threaded but,
-> >>>>> +     * in the same time, it's IRQ dispatcher and calls generic_handle_irq(),
-> >>>>> +     * which, in turn, will be resolved to handle_simple_irq() call.
-> >>>>> +     * The handle_simple_irq() expected to be called with IRQ disabled, as
-> >>>>> +     * result kernle will display warning:
-> >>>>> +     * "irq XXX handler YYY+0x0/0x14 enabled interrupts".
-> >>>>> +     */
-> >>>
-> >>> could you _please_ remove this coment? This kind of comment (if at all)
-> >>> should be part of the commit message (which is the case more or less).
-> >>
-> >> IIRC, Grygorii specifically wanted to keep this comment in dra7xx, but
-> > 
-> > True.
-> > 
-> >> I do agree that this level of detail is more appropriate for a changelog.
-> >>
-> >> If Grygorii and Kishon don't object, I can update the patch to remove it.
-> > 
-> > But no objections from my side. Thanks a lot.
-> 
-> I don't have any objections.
+Add fallback compatibility string for R-Car Gen2 and Gen3, This is
+in keeping with the fallback scheme being adopted wherever appropriate
+for drivers for Renesas SoCs.
 
-OK, I dropped it, thanks guys!
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+---
+ Documentation/devicetree/bindings/media/rcar_vin.txt | 8 +++++++-
+ drivers/media/platform/soc_camera/rcar_vin.c         | 3 +++
+ 2 files changed, 10 insertions(+), 1 deletion(-)
 
-Bjorn
+diff --git a/Documentation/devicetree/bindings/media/rcar_vin.txt b/Documentation/devicetree/bindings/media/rcar_vin.txt
+index 9dafe6b..c13ec5a 100644
+--- a/Documentation/devicetree/bindings/media/rcar_vin.txt
++++ b/Documentation/devicetree/bindings/media/rcar_vin.txt
+@@ -6,12 +6,18 @@ family of devices. The current blocks are always slaves and suppot one input
+ channel which can be either RGB, YUYV or BT656.
+ 
+  - compatible: Must be one of the following
++   - "renesas,rcar-gen2-vin" for R-Car Gen2 Series
++   - "renesas,rcar-gen3-vin" for R-Car Gen3 Series
+    - "renesas,vin-r8a7794" for the R8A7794 device
+    - "renesas,vin-r8a7793" for the R8A7793 device
+    - "renesas,vin-r8a7791" for the R8A7791 device
+    - "renesas,vin-r8a7790" for the R8A7790 device
+    - "renesas,vin-r8a7779" for the R8A7779 device
+    - "renesas,vin-r8a7778" for the R8A7778 device
++
++   When compatible with the generic version, nodes must list the SoC-specific
++   version corresponding to the platform first followed by the generic version.
++
+  - reg: the register base and size for the device registers
+  - interrupts: the interrupt for the device
+  - clocks: Reference to the parent clock
+@@ -36,7 +42,7 @@ Device node example
+ 	};
+ 
+         vin0: vin@0xe6ef0000 {
+-                compatible = "renesas,vin-r8a7790";
++                compatible = "renesas,vin-r8a7790","renesas,rcar-gen2-vin";
+                 clocks = <&mstp8_clks R8A7790_CLK_VIN0>;
+                 reg = <0 0xe6ef0000 0 0x1000>;
+                 interrupts = <0 188 IRQ_TYPE_LEVEL_HIGH>;
+diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
+index b7fd695..cccd859 100644
+--- a/drivers/media/platform/soc_camera/rcar_vin.c
++++ b/drivers/media/platform/soc_camera/rcar_vin.c
+@@ -143,6 +143,7 @@
+ #define RCAR_VIN_BT656			(1 << 3)
+ 
+ enum chip_id {
++	RCAR_GEN3,
+ 	RCAR_GEN2,
+ 	RCAR_H1,
+ 	RCAR_M1,
+@@ -1818,6 +1819,8 @@ static struct soc_camera_host_ops rcar_vin_host_ops = {
+ 
+ #ifdef CONFIG_OF
+ static const struct of_device_id rcar_vin_of_table[] = {
++	{ .compatible = "renesas,rcar-gen2-vin", .data = (void *)RCAR_GEN2 },
++	{ .compatible = "renesas,rcar-gen3-vin", .data = (void *)RCAR_GEN3 },
+ 	{ .compatible = "renesas,vin-r8a7794", .data = (void *)RCAR_GEN2 },
+ 	{ .compatible = "renesas,vin-r8a7793", .data = (void *)RCAR_GEN2 },
+ 	{ .compatible = "renesas,vin-r8a7791", .data = (void *)RCAR_GEN2 },
+-- 
+1.9.1
+
