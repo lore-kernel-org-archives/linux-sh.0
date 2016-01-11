@@ -1,52 +1,40 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Tue, 19 Jan 2016 16:20:59 +0000
-Subject: [RFC 4/6] mmc: tmio: remove stale comments
-Message-Id: <1453220461-2598-5-git-send-email-wsa@the-dreams.de>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Mon, 11 Jan 2016 18:00:10 +0000
+Subject: [PATCH 2/3] media: soc_camera: rcar_vin: Add R-Car Gen3 support
+Message-Id: <1452535211-4869-3-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1452535211-4869-1-git-send-email-ykaneko0929@gmail.com>
+In-Reply-To: <1452535211-4869-1-git-send-email-ykaneko0929@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-media@vger.kernel.org
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+From: Yoshihiko Mori <yoshihiko.mori.nx@renesas.com>
 
-These don't make sense anymore since commit 5d60e500541ed1 ("mmc: tmio:
-add new TMIO_MMC_HAVE_HIGH_REG flags") dropped using the function
-checking the resource.
+Simply documents new compatibility string.
+As a previous patch adds a generic R-Car Gen3 compatibility string
+there appears to be no need for a driver updates.
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Yoshihiko Mori <yoshihiko.mori.nx@renesas.com>
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
 ---
- drivers/mmc/host/tmio_mmc_pio.c | 3 ---
- 1 file changed, 3 deletions(-)
+ Documentation/devicetree/bindings/media/rcar_vin.txt | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index de1edb794c53a0..f8103bab0fce31 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -177,7 +177,6 @@ static void tmio_mmc_set_clock(struct tmio_mmc_host *host,
- 
- static void tmio_mmc_clk_stop(struct tmio_mmc_host *host)
- {
--	/* implicit BUG_ON(!res) */
- 	if (host->pdata->flags & TMIO_MMC_HAVE_HIGH_REG) {
- 		sd_ctrl_write16(host, CTL_CLK_AND_WAIT_CTL, 0x0000);
- 		msleep(10);
-@@ -194,7 +193,6 @@ static void tmio_mmc_clk_start(struct tmio_mmc_host *host)
- 		sd_ctrl_read16(host, CTL_SD_CARD_CLK_CTL));
- 	msleep(host->pdata->flags & TMIO_MMC_FAST_CLK_CHG ? 1 : 10);
- 
--	/* implicit BUG_ON(!res) */
- 	if (host->pdata->flags & TMIO_MMC_HAVE_HIGH_REG) {
- 		sd_ctrl_write16(host, CTL_CLK_AND_WAIT_CTL, 0x0100);
- 		msleep(10);
-@@ -205,7 +203,6 @@ static void tmio_mmc_reset(struct tmio_mmc_host *host)
- {
- 	/* FIXME - should we set stop clock reg here */
- 	sd_ctrl_write16(host, CTL_RESET_SD, 0x0000);
--	/* implicit BUG_ON(!res) */
- 	if (host->pdata->flags & TMIO_MMC_HAVE_HIGH_REG)
- 		sd_ctrl_write16(host, CTL_RESET_SDIO, 0x0000);
- 	msleep(10);
+diff --git a/Documentation/devicetree/bindings/media/rcar_vin.txt b/Documentation/devicetree/bindings/media/rcar_vin.txt
+index c13ec5a..e1a92c9 100644
+--- a/Documentation/devicetree/bindings/media/rcar_vin.txt
++++ b/Documentation/devicetree/bindings/media/rcar_vin.txt
+@@ -8,6 +8,7 @@ channel which can be either RGB, YUYV or BT656.
+  - compatible: Must be one of the following
+    - "renesas,rcar-gen2-vin" for R-Car Gen2 Series
+    - "renesas,rcar-gen3-vin" for R-Car Gen3 Series
++   - "renesas,vin-r8a7795" for the R8A7795 device
+    - "renesas,vin-r8a7794" for the R8A7794 device
+    - "renesas,vin-r8a7793" for the R8A7793 device
+    - "renesas,vin-r8a7791" for the R8A7791 device
 -- 
-2.1.4
+1.9.1
 
