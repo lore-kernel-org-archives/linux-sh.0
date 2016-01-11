@@ -1,22 +1,65 @@
-From: David Howells <dhowells@redhat.com>
-Date: Thu, 28 Jan 2016 20:02:14 +0000
-Subject: Re: [PATCH] documentation: Add disclaimer
-Message-Id: <17497.1454011334@warthog.procyon.org.uk>
+From: Hans Verkuil <hverkuil@xs4all.nl>
+Date: Mon, 11 Jan 2016 10:22:29 +0000
+Subject: Re: [PATCH v2 2/2] media: adv7604: update timings on change of input signal
+Message-Id: <56938265.6050803@xs4all.nl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20160127233504.GP4503@linux.vnet.ibm.com> <20160114120445.GB15828@arm.com> <56980145.5030901@imgtec.com> <20160114204827.GE3818@linux.vnet.ibm.com> <56981212.7050301@imgtec.com> <20160114222046.GH3818@linux.vnet.ibm.com> <20160126102402.GE6357@twins.programming.kicks-ass.net> <20160126103200.GI6375@twins.programming.kicks-ass.net> <20160126110053.GA21553@arm.com> <20160126201143.GV4503@linux.vnet.ibm.com> <15882.1453906627@warthog.procyon.org.uk>
-In-Reply-To: <20160127233504.GP4503@linux.vnet.ibm.com>
+References: <1450794122-31293-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+ <1450794122-31293-3-git-send-email-ulrich.hecht+renesas@gmail.com>
+In-Reply-To: <1450794122-31293-3-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: paulmck@linux.vnet.ibm.com
-Cc: dhowells@redhat.com, Peter Zijlstra <peterz@infradead.org>, Will Deacon <will.deacon@arm.com>, Leonid Yegoshin <Leonid.Yegoshin@imgtec.com>, "Michael S. Tsirkin" <mst@redhat.com>, linux-kernel@vger.kernel.org, Arnd Bergmann <arnd@arndb.de>, linux-arch@vger.kernel.org, Andrew Cooper <andrew.cooper3@citrix.com>, Russell King - ARM Linux <linux@arm.linux.org.uk>, virtualization@lists.linux-foundation.org, Stefano Stabellini <stefano.stabellini@eu.citrix.com>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@elte.hu>, "H. Peter Anvin" <hpa@zytor.com>, Joe Perches <joe@perches.com>, David Miller <davem@davemloft.net>, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, sparclinux@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-metag@vger.kernel.org, linux-mips@linux-mips.org, x86@kernel.org, user-mode-linux-devel@lis
+To: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>, linux-media@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: magnus.damm@gmail.com, laurent.pinchart@ideasonboard.com, hans.verkuil@cisco.com, ian.molton@codethink.co.uk, lars@metafoo.de, william.towle@codethink.co.uk
 
-Paul E. McKenney <paulmck@linux.vnet.ibm.com> wrote:
+On 12/22/2015 03:22 PM, Ulrich Hecht wrote:
+> Without this, .get_selection will always return the boot-time state.
+> 
+> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+> ---
+>  drivers/media/i2c/adv7604.c | 9 +++++++++
+>  1 file changed, 9 insertions(+)
+> 
+> diff --git a/drivers/media/i2c/adv7604.c b/drivers/media/i2c/adv7604.c
+> index 8ad5c28..dcd659b 100644
+> --- a/drivers/media/i2c/adv7604.c
+> +++ b/drivers/media/i2c/adv7604.c
+> @@ -1945,6 +1945,7 @@ static int adv76xx_isr(struct v4l2_subdev *sd, u32 status, bool *handled)
+>  	u8 fmt_change_digital;
+>  	u8 fmt_change;
+>  	u8 tx_5v;
+> +	int ret;
+>  
+>  	if (irq_reg_0x43)
+>  		io_write(sd, 0x44, irq_reg_0x43);
+> @@ -1968,6 +1969,14 @@ static int adv76xx_isr(struct v4l2_subdev *sd, u32 status, bool *handled)
+>  
+>  		v4l2_subdev_notify_event(sd, &adv76xx_ev_fmt);
+>  
+> +		/* update timings */
+> +		ret = adv76xx_query_dv_timings(sd, &state->timings);
+> +		if (ret = -ENOLINK) {
+> +			/* no signal, fall back to default timings */
+> +			state->timings = (struct v4l2_dv_timings)
+> +				V4L2_DV_BT_CEA_640X480P59_94;
+> +		}
 
-> Good point!  Would you be willing to add a Signed-off-by so I
-> can take the combined change, assuming Peter and Will are good
-> with it?
+Nack.
 
-Sure!
+If you detect a change in timings, then send the V4L2_EVENT_SOURCE_CHANGE event and leave
+it to the app to query the new timings. Never do this in the driver itself.
 
-David
+The reason is that this will pull the rug out from under the application: the app thinks
+it is using timings A but the driver is using timings B. Instead, tell the app that the
+timings have changed and let the app handle this.
+
+Regards,
+
+	Hans
+
+> +
+>  		if (handled)
+>  			*handled = true;
+>  	}
+> 
+
