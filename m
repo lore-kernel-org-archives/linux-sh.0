@@ -1,21 +1,34 @@
-From: David Miller <davem@davemloft.net>
-Date: Mon, 04 Jan 2016 21:11:28 +0000
-Subject: Re: [PATCH 0/2] sh_eth: remove unused BE descriptor support
-Message-Id: <20160104.161128.2202956416981407539.davem@davemloft.net>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 11 Jan 2016 04:00:00 +0000
+Subject: [PATCH 2/2] ARM: multi_v7_defconfig: Enable XHCI_RCAR
+Message-Id: <1452484800-7470-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <27915743.MLN0FvErP3@wasted.cogentembedded.com>
-In-Reply-To: <27915743.MLN0FvErP3@wasted.cogentembedded.com>
+References: <1452484800-7470-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1452484800-7470-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: sergei.shtylyov@cogentembedded.com
-Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 28 Dec 2015 02:05:24 +0300
+This is used by Renesas R-Car SoCs.
 
->    Here's a set of 2 patches against DaveM's 'net-next.git' repo plus the
-> recently merged to 'net.git' repo fix for the 16-bit descriptor endianness.
-> We get rid of ~30 LoCs and ~300 bytes of code.
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/configs/multi_v7_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
 
-Series applied, thanks Sergei.
+diff --git a/arch/arm/configs/multi_v7_defconfig b/arch/arm/configs/multi_v7_defconfig
+index 653d3c6ac525..33f96b587a8e 100644
+--- a/arch/arm/configs/multi_v7_defconfig
++++ b/arch/arm/configs/multi_v7_defconfig
+@@ -526,6 +526,7 @@ CONFIG_SND_SOC_WM8978=m
+ CONFIG_USB=y
+ CONFIG_USB_XHCI_HCD=y
+ CONFIG_USB_XHCI_MVEBU=y
++CONFIG_USB_XHCI_RCAR=m
+ CONFIG_USB_EHCI_HCD=y
+ CONFIG_USB_EHCI_MSM=m
+ CONFIG_USB_EHCI_EXYNOS=y
+-- 
+2.7.0.rc3.207.g0ac5344
+
