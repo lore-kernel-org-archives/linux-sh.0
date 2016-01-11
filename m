@@ -1,38 +1,72 @@
-From: Dirk Behme <dirk.behme@gmail.com>
-Date: Sat, 16 Jan 2016 14:13:56 +0000
-Subject: [PATCH v2] arm64: dts: r8a7795: pmu: switch to Cortex specific device nodes
-Message-Id: <1452953636-4995-1-git-send-email-dirk.behme@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 11 Jan 2016 02:13:20 +0000
+Subject: [PATCH v2] rcar_jpu: Add R-Car Gen2 Fallback Compatibility String
+Message-Id: <1452478400-4267-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Mauro Carvalho Chehab <mchehab@osg.samsung.com>
+Cc: linux-media@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms+renesas@verge.net.au>
 
-Instead of using the generic armv8-pmuv3 compatibility use the more
-specific Cortex A57 compatibility.
+Add fallback compatibility string.
+This is in keeping with the fallback scheme being adopted wherever
+appropriate for drivers for Renesas SoCs.
 
-Signed-off-by: Dirk Behme <dirk.behme@gmail.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
 ---
-Changes in v2: Drop the not yet merged Cortex A53 part.
+v2
+* Make fallback compat string for R-Car Gen2 rather than all renesas
+  hardware: that seems too generic
+---
+ Documentation/devicetree/bindings/media/renesas,jpu.txt | 13 +++++++------
+ drivers/media/platform/rcar_jpu.c                       |  1 +
+ 2 files changed, 8 insertions(+), 6 deletions(-)
 
- arch/arm64/boot/dts/renesas/r8a7795.dtsi | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
-
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-index 266c5de..a82bce8 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-+++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-@@ -247,8 +247,8 @@
- 			power-domains = <&cpg>;
- 		};
+diff --git a/Documentation/devicetree/bindings/media/renesas,jpu.txt b/Documentation/devicetree/bindings/media/renesas,jpu.txt
+index 0cb94201bf92..d3436e5190f9 100644
+--- a/Documentation/devicetree/bindings/media/renesas,jpu.txt
++++ b/Documentation/devicetree/bindings/media/renesas,jpu.txt
+@@ -5,11 +5,12 @@ and decoding function conforming to the JPEG baseline process, so that the JPU
+ can encode image data and decode JPEG data quickly.
  
--		pmu {
--			compatible = "arm,armv8-pmuv3";
-+		pmu_a57 {
-+			compatible = "arm,cortex-a57-pmu";
- 			interrupts = <GIC_SPI 72 IRQ_TYPE_LEVEL_HIGH>,
- 				     <GIC_SPI 73 IRQ_TYPE_LEVEL_HIGH>,
- 				     <GIC_SPI 74 IRQ_TYPE_LEVEL_HIGH>,
+ Required properties:
+-  - compatible: should containg one of the following:
+-			- "renesas,jpu-r8a7790" for R-Car H2
+-			- "renesas,jpu-r8a7791" for R-Car M2-W
+-			- "renesas,jpu-r8a7792" for R-Car V2H
+-			- "renesas,jpu-r8a7793" for R-Car M2-N
++- compatible: "renesas,jpu-<soctype>", "renesas,rcar-gen2-jpu" as fallback.
++	Examples with soctypes are:
++	  - "renesas,jpu-r8a7790" for R-Car H2
++	  - "renesas,jpu-r8a7791" for R-Car M2-W
++	  - "renesas,jpu-r8a7792" for R-Car V2H
++	  - "renesas,jpu-r8a7793" for R-Car M2-N
+ 
+   - reg: Base address and length of the registers block for the JPU.
+   - interrupts: JPU interrupt specifier.
+@@ -17,7 +18,7 @@ Required properties:
+ 
+ Example: R8A7790 (R-Car H2) JPU node
+ 	jpeg-codec@fe980000 {
+-		compatible = "renesas,jpu-r8a7790";
++		compatible = "renesas,jpu-r8a7790", "renesas,rcar-gen2-jpu";
+ 		reg = <0 0xfe980000 0 0x10300>;
+ 		interrupts = <0 272 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp1_clks R8A7790_CLK_JPU>;
+diff --git a/drivers/media/platform/rcar_jpu.c b/drivers/media/platform/rcar_jpu.c
+index f8e3e83c52a2..4caae52d9864 100644
+--- a/drivers/media/platform/rcar_jpu.c
++++ b/drivers/media/platform/rcar_jpu.c
+@@ -1611,6 +1611,7 @@ static const struct of_device_id jpu_dt_ids[] = {
+ 	{ .compatible = "renesas,jpu-r8a7791" }, /* M2-W */
+ 	{ .compatible = "renesas,jpu-r8a7792" }, /* V2H */
+ 	{ .compatible = "renesas,jpu-r8a7793" }, /* M2-N */
++	{ .compatible = "renesas,rcar-gen2-jpu" },
+ 	{ },
+ };
+ MODULE_DEVICE_TABLE(of, jpu_dt_ids);
 -- 
-2.7.0
+2.7.0.rc3.207.g0ac5344
 
