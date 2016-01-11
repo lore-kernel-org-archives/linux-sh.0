@@ -1,62 +1,77 @@
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Mon, 11 Jan 2016 18:27:49 +0000
-Subject: Re: [PATCH 1/3] media: soc_camera: rcar_vin: Add rcar fallback compatibility string
-Message-Id: <CAH1o70JdTdkPc7C9uBbOvXsoi99mjESKX7RST19xCX1SGCs4cw@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 11 Jan 2016 04:07:24 +0000
+Subject: [PATCH v2 1/2] usb: host: xhci-plat: add R-Car Gen2 and Gen3 fallback compatibility strings
+Message-Id: <1452485245-9001-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1452535211-4869-1-git-send-email-ykaneko0929@gmail.com>
-	<1452535211-4869-2-git-send-email-ykaneko0929@gmail.com>
-	<CAMuHMdWFFVPRQE9TuqQwkH88utZKXLOo2i9GROb80Oc0QKyhDg@mail.gmail.com>
-In-Reply-To: <CAMuHMdWFFVPRQE9TuqQwkH88utZKXLOo2i9GROb80Oc0QKyhDg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Linux Media Mailing List <linux-media@vger.kernel.org>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-Hi Geert-san,
+Add fallback compatibility strings for R-Car Gen2 and Gen3.
 
-2016-01-12 3:19 GMT+09:00 Geert Uytterhoeven <geert@linux-m68k.org>:
-> Hi Kaneko-san,
->
-> On Mon, Jan 11, 2016 at 7:00 PM, Yoshihiro Kaneko <ykaneko0929@gmail.com> wrote:
->> --- a/drivers/media/platform/soc_camera/rcar_vin.c
->> +++ b/drivers/media/platform/soc_camera/rcar_vin.c
->> @@ -143,6 +143,7 @@
->>  #define RCAR_VIN_BT656                 (1 << 3)
->>
->>  enum chip_id {
->> +       RCAR_GEN3,
->>         RCAR_GEN2,
->>         RCAR_H1,
->>         RCAR_M1,
->> @@ -1818,6 +1819,8 @@ static struct soc_camera_host_ops rcar_vin_host_ops = {
->>
->>  #ifdef CONFIG_OF
->>  static const struct of_device_id rcar_vin_of_table[] = {
->> +       { .compatible = "renesas,rcar-gen2-vin", .data = (void *)RCAR_GEN2 },
->> +       { .compatible = "renesas,rcar-gen3-vin", .data = (void *)RCAR_GEN3 },
->
-> Please add the generic compatible values at the end of the list, so SoC-specific
-> ones take precedence.
+This is in keeping with the fallback scheme being adopted wherever
+appropriate for drivers for Renesas SoCs.
 
-Oh, that makes sense.
-I will fix it soon.
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-Thanks,
-kaneko
+---
+v2
+* Use consistent line ending in documentation
+* Group compat strings at the bottom of usb_xhci_of_match[]
+---
+ Documentation/devicetree/bindings/usb/usb-xhci.txt | 21 +++++++++++++++++----
+ drivers/usb/host/xhci-plat.c                       |  5 +++++
+ 2 files changed, 22 insertions(+), 4 deletions(-)
 
->
->>         { .compatible = "renesas,vin-r8a7794", .data = (void *)RCAR_GEN2 },
->>         { .compatible = "renesas,vin-r8a7793", .data = (void *)RCAR_GEN2 },
->>         { .compatible = "renesas,vin-r8a7791", .data = (void *)RCAR_GEN2 },
->
-> Gr{oetje,eeting}s,
->
->                         Geert
->
-> --
-> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
->
-> In personal conversations with technical people, I call myself a hacker. But
-> when I'm talking to journalists I just say "programmer" or something like that.
->                                 -- Linus Torvalds
+diff --git a/Documentation/devicetree/bindings/usb/usb-xhci.txt b/Documentation/devicetree/bindings/usb/usb-xhci.txt
+index 082573289f1e..34e1d7b6a829 100644
+--- a/Documentation/devicetree/bindings/usb/usb-xhci.txt
++++ b/Documentation/devicetree/bindings/usb/usb-xhci.txt
+@@ -1,10 +1,23 @@
+ USB xHCI controllers
+ 
+ Required properties:
+-  - compatible: should be one of "generic-xhci",
+-    "marvell,armada-375-xhci", "marvell,armada-380-xhci",
+-    "renesas,xhci-r8a7790", "renesas,xhci-r8a7791", "renesas,xhci-r8a7793",
+-    "renesas,xhci-r8a7795" (deprecated: "xhci-platform").
++  - compatible: should be one or more of
++
++    - "generic-xhci" for generic XHCI device
++    - "marvell,armada-375-xhci" for Armada 375 SoCs
++    - "marvell,armada-380-xhci" for Armada 380 SoCs
++    - "renesas,xhci-r8a7790" for r8a7790 SoC
++    - "renesas,xhci-r8a7791" for r8a7791 SoC
++    - "renesas,xhci-r8a7793" for r8a7793 SoC
++    - "renesas,xhci-r8a7795" for r8a7795 SoC
++    - "renesas,rcar-gen2-xhci" for a generic R-Car Gen2 compatible device
++    - "renesas,rcar-gen3-xhci" for a generic R-Car Gen3 compatible device
++    - "xhci-platform" (deprecated)
++
++    When compatible with the generic version, nodes must list the
++    SoC-specific version corresponding to the platform first
++    followed by the generic version.
++
+   - reg: should contain address and length of the standard XHCI
+     register set for the device.
+   - interrupts: one XHCI interrupt should be described here.
+diff --git a/drivers/usb/host/xhci-plat.c b/drivers/usb/host/xhci-plat.c
+index 770b6b088797..05d09d7547ea 100644
+--- a/drivers/usb/host/xhci-plat.c
++++ b/drivers/usb/host/xhci-plat.c
+@@ -110,6 +110,11 @@ static const struct of_device_id usb_xhci_of_match[] = {
+ 		.compatible = "renesas,xhci-r8a7795",
+ 		.data = &xhci_plat_renesas_rcar_gen3,
+ 	}, {
++		.compatible = "renesas,rcar-gen2-xhci",
++		.data = &xhci_plat_renesas_rcar_gen2,
++	}, {
++		.compatible = "renesas,rcar-gen3-xhci",
++		.data = &xhci_plat_renesas_rcar_gen3,
+ 	},
+ };
+ MODULE_DEVICE_TABLE(of, usb_xhci_of_match);
+-- 
+2.7.0.rc3.207.g0ac5344
+
