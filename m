@@ -1,78 +1,209 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 04 Jan 2016 12:09:44 +0000
-Subject: Re: [PATCH 2/4] ARM64: renesas: r8a7795: Add VSP instances
-Message-Id: <CAMuHMdWyciDm=UWMCm-QqqyUM7=dnnabdL4-1ym=cDriwqSi8Q@mail.gmail.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Wed, 13 Jan 2016 14:29:29 +0000
+Subject: [PATCH 3/3] ARM: shmobile: r8a7790: rework dts to use i2c demuxer
+Message-Id: <1452695369-29413-4-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450336895-4279-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1450336895-4279-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1452695369-29413-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1452695369-29413-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-i2c@vger.kernel.org
+Cc: Wolfram Sang <wsa@the-dreams.de>, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, linux-kernel@vger.kernel.org, Rob Herring <robh@kernel.org>, Pantelis Antoniou <pantelis.antoniou@konsulko.com>, Jan Luebbe <jlu@pengutronix.de>
 
-Hi Laurent,
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-On Sun, Dec 27, 2015 at 9:20 AM, Laurent Pinchart
-<laurent.pinchart@ideasonboard.com> wrote:
-> On Tuesday 22 December 2015 14:43:34 Geert Uytterhoeven wrote:
->> On Thu, Dec 17, 2015 at 8:21 AM, Laurent Pinchart wrote:
->> > diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
->> > b/arch/arm64/boot/dts/renesas/r8a7795.dtsi index
->> > 9ce6a5ea6629..47f97ffc6c8b 100644
->> > --- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
->> > +++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
->> > @@ -775,5 +775,119 @@
->> >                         clocks = <&cpg CPG_MOD 915>;
->> >                         status = "disabled";
->> >                 };
->> > +
->> > +               vspbc: vsp@fe920000 {
->> > +                       compatible = "renesas,vsp2";
->> > +                       reg = <0 0xfe920000 0 0x8000>;
->> > +                       interrupts = <GIC_SPI 266 IRQ_TYPE_LEVEL_HIGH>;
->> > +                       clocks = <&cpg CPG_MOD 624>;
->>
->> No "power-domains = <&cpg_clocks>;"?
->> Each vsp device node corresponds nicely to one vsp module, and the driver
->> doesn't care at all about the clock, except for (explicit) PM of the vsp
->> modules.
->>
->> That would allow to simplify vsp1_device_get(), vsp1_pm_suspend(), and
->> vsp1_pm_resume(), and get rid of vsp1_device_put() in favor of
->> pm_runtime_put().
->
-> I'm all for simplification :-) I'll try to find time to move the driver to
-> runtime PM. What will happen if the power domain is specified in DT but the
+Create a seperate bus for HDMI related I2C slaves and assign it
+to a i2c-gpio master. It can be switched to the i2c-rcar or
+i2c-sh_mobile core at runtime.
 
-Thanks!
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+---
 
-> driver doesn't use runtime PM yet ?
+After the technical details of the underlying driver seem to be more or less
+sorted out, I would appreciate some discussion here about changing the Lager
+DTS e.g. if we really want GPIO to be the default?
 
-The device will be added to the PM Domain, but the PM Domain will not be
-turned on, and the gpd_dev_ops.start() callback will never be called for the
-device. You need to call pm_runtime_enable() and pm_runtime_get_sync() to
-do that.
+ arch/arm/boot/dts/r8a7790-lager.dts | 141 ++++++++++++++++++++++--------------
+ 1 file changed, 88 insertions(+), 53 deletions(-)
 
-The CPG/MSSR PM Domain is a Clock Domain, so the driver can choose to manage
-the device's modulo clock itself instead of relying on the gpd_dev_ops.start()
-callback. But if a VSP IP core ever ends up in an SoC with a hardware Power
-Domain[*], the hardware Power Domain may not be managed correctly.
-Unlike for clocks, you cannot escape proper Runtime PM when dealing with
-hardware Power Domains ;-)
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index c553abd711eeb3..d8f0ca8e094dad 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -49,6 +49,8 @@
+ 	aliases {
+ 		serial0 = &scifa0;
+ 		serial1 = &scifa1;
++		i2c8 = &i2chdmi;
++		i2c9 = &gpioi2c;
+ 	};
+ 
+ 	chosen {
+@@ -252,6 +254,79 @@
+ 		#clock-cells = <0>;
+ 		clock-frequency = <148500000>;
+ 	};
++
++
++	gpioi2c: i2c@9 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "i2c-gpio";
++		status = "disabled";
++		gpios = <&gpio5 6 GPIO_ACTIVE_HIGH /* sda */
++			 &gpio5 5 GPIO_ACTIVE_HIGH /* scl */
++			>;
++		i2c-gpio,delay-us = <5>;
++	};
++
++	i2chdmi: i2c@8 {
++
++		compatible = "i2c-demux-pinctrl";
++		i2c-parent = <&gpioi2c>, <&iic2>, <&i2c2>;
++		i2c-bus-name = "i2c-hdmi";
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		ak4643: sound-codec@12 {
++			compatible = "asahi-kasei,ak4643";
++
++			#sound-dai-cells = <0>;
++			reg = <0x12>;
++		};
++
++		composite-in@20 {
++			compatible = "adi,adv7180";
++			reg = <0x20>;
++			remote = <&vin1>;
++
++			port {
++				adv7180: endpoint {
++					bus-width = <8>;
++					remote-endpoint = <&vin1ep0>;
++				};
++			};
++		};
++
++		hdmi@39 {
++			compatible = "adi,adv7511w";
++			reg = <0x39>;
++			interrupt-parent = <&gpio1>;
++			interrupts = <15 IRQ_TYPE_LEVEL_LOW>;
++
++			adi,input-depth = <8>;
++			adi,input-colorspace = "rgb";
++			adi,input-clock = "1x";
++			adi,input-style = <1>;
++			adi,input-justification = "evenly";
++
++			ports {
++				#address-cells = <1>;
++				#size-cells = <0>;
++
++				port@0 {
++					reg = <0>;
++					adv7511_in: endpoint {
++						remote-endpoint = <&du_out_lvds0>;
++					};
++				};
++
++				port@1 {
++					reg = <1>;
++					adv7511_out: endpoint {
++						remote-endpoint = <&hdmi_con>;
++					};
++				};
++			};
++		};
++	};
+ };
+ 
+ &du {
+@@ -352,6 +427,11 @@
+ 		renesas,function = "iic1";
+ 	};
+ 
++	i2c2_pins: i2c2 {
++		renesas,groups = "i2c2";
++		renesas,function = "i2c2";
++	};
++
+ 	iic2_pins: iic2 {
+ 		renesas,groups = "iic2";
+ 		renesas,function = "iic2";
+@@ -532,63 +612,18 @@
+ 	pinctrl-names = "default";
+ };
+ 
+-&iic2	{
+-	status = "okay";
+-	pinctrl-0 = <&iic2_pins>;
+-	pinctrl-names = "default";
++&i2c2	{
++	pinctrl-0 = <&i2c2_pins>;
++	pinctrl-names = "i2c-hdmi";
+ 
+ 	clock-frequency = <100000>;
++};
+ 
+-	ak4643: codec@12 {
+-		compatible = "asahi-kasei,ak4643";
+-		#sound-dai-cells = <0>;
+-		reg = <0x12>;
+-	};
+-
+-	composite-in@20 {
+-		compatible = "adi,adv7180";
+-		reg = <0x20>;
+-		remote = <&vin1>;
+-
+-		port {
+-			adv7180: endpoint {
+-				bus-width = <8>;
+-				remote-endpoint = <&vin1ep0>;
+-			};
+-		};
+-	};
+-
+-	hdmi@39 {
+-		compatible = "adi,adv7511w";
+-		reg = <0x39>;
+-		interrupt-parent = <&gpio1>;
+-		interrupts = <15 IRQ_TYPE_LEVEL_LOW>;
+-
+-		adi,input-depth = <8>;
+-		adi,input-colorspace = "rgb";
+-		adi,input-clock = "1x";
+-		adi,input-style = <1>;
+-		adi,input-justification = "evenly";
+-
+-		ports {
+-			#address-cells = <1>;
+-			#size-cells = <0>;
+-
+-			port@0 {
+-				reg = <0>;
+-				adv7511_in: endpoint {
+-					remote-endpoint = <&du_out_lvds0>;
+-				};
+-			};
++&iic2	{
++	pinctrl-0 = <&iic2_pins>;
++	pinctrl-names = "i2c-hdmi";
+ 
+-			port@1 {
+-				reg = <1>;
+-				adv7511_out: endpoint {
+-					remote-endpoint = <&hdmi_con>;
+-				};
+-			};
+-		};
+-	};
++	clock-frequency = <100000>;
+ };
+ 
+ &iic3 {
+-- 
+2.1.4
 
-Note that the vsp nodes in r8a7790.dtsi and r8a7791.dtsi already have
-power-domains properties.
-
-[*] Is VSP1 in R-Mobile APE6, which has hardware Power Domains) compatible
-    with VSP1 in R-Car Gen2?
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
