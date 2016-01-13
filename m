@@ -1,50 +1,86 @@
-From: Niklas =?iso-8859-1?Q?S=F6derlund?=  <niklas.soderlund@ragnatech.se>
-Date: Mon, 11 Jan 2016 02:31:12 +0000
-Subject: Re: [RFC 0/4] dmaengine: rcar-dmac: add iommu support for slave transfers
-Message-Id: <20160111023112.GC31780@bigcity.dyn.berto.se>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Wed, 13 Jan 2016 21:25:41 +0000
+Subject: [PATCH] mmc: tmio_mmc_dma: don't print invalid DMA cookie
+Message-Id: <5032992.kTQ6Oyibpy@wuerfel>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1452241386-22830-1-git-send-email-niklas.soderlund+renesas@ragnatech.se>
-In-Reply-To: <1452241386-22830-1-git-send-email-niklas.soderlund+renesas@ragnatech.se>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Geert,
+The tmio_mmc_start_dma_{rx,tx} function functions contain debug
+code that prints the dma cookie among other things. However,
+in case we fall back to PIO mode for some reason, the cookie
+variable is never initialized, and gcc warns about this:
 
-* Geert Uytterhoeven <geert@linux-m68k.org> [2016-01-08 10:28:22 +0100]:
+In file included from ../include/linux/printk.h:277:0,
+                 from ../include/linux/kernel.h:13,
+                 from ../include/linux/list.h:8,
+                 from ../include/linux/kobject.h:20,
+                 from ../include/linux/device.h:17,
+                 from ../drivers/mmc/host/tmio_mmc_dma.c:13:
+../drivers/mmc/host/tmio_mmc_dma.c: In function 'tmio_mmc_start_dma':
+../include/linux/dynamic_debug.h:86:3: warning: 'cookie' may be used uninitialized in this function [-Wmaybe-uninitialized]
+   __dynamic_dev_dbg(&descriptor, dev, fmt, \
+   ^
+../drivers/mmc/host/tmio_mmc_dma.c:128:15: note: 'cookie' was declared here
+  dma_cookie_t cookie;
 
-> Hi Niklas,
->
-> On Fri, Jan 8, 2016 at 9:23 AM, Niklas S=F6derlund
-> <niklas.soderlund@ragnatech.se> wrote:
-> > What I'm most concerned about is that I could not find a good way too
-> > keep track of mappings from different DMA channels to the same address
-> > so that they could properly be unmapped. This issue is due to that two
-> > channels might both try to map the same address (think rx/tx pair) and
-> > that would make it unsafe for any one of the channels to unmap the
-> > address without knowing if it's in use by the other.
-> >
-> > A follow up problem to this is that if the same address is mapped from
-> > two different channels but with different sizes and the larger size is
-> > tried last. If such a condition should happen and the larger size is so
-> > large that it crosses a page boundary there would be trouble.
-> >
-> > An obvious solution to both problem would be to map address to different
-> > iova:s in each channel and keep track of the unique mapping. That way
-> > all the above problems would go away. The problem is I can't figure out
-> > how to allocate a unique iova to feed to iommu_map.
->
-> What about
->   1. Reference counting the mappings,
->   2. Returning -EBUSY if the same address is already mapped with a
->      different size? In the case of RX/TX pairs, the size should be the s=
-ame
->      (one page).
+This modifies the dev_dbg() statements so we only print the cookie
+when we are already in the DMA path.
 
-Thanks for the pointers Geert. I did a implementation using reference
-counting, it worked but got quiet messy, it was however not all a waste.
-I learned that the dma-mapper api is way smarter then me and provided a
-interface that solves multiple mappings of the same address.
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+---
+This warning has existed for a long time, and it's only in debug code,
+so probably nobody cared.
 
-// Niklas
+diff --git a/drivers/mmc/host/tmio_mmc_dma.c b/drivers/mmc/host/tmio_mmc_dma.c
+index e4b05dbb9ca8..4a0d6b80eaa3 100644
+--- a/drivers/mmc/host/tmio_mmc_dma.c
++++ b/drivers/mmc/host/tmio_mmc_dma.c
+@@ -94,9 +94,9 @@ static void tmio_mmc_start_dma_rx(struct tmio_mmc_host *host)
+ 			desc = NULL;
+ 			ret = cookie;
+ 		}
++		dev_dbg(&host->pdev->dev, "%s(): mapped %d -> %d, cookie %d, rq %p\n",
++			__func__, host->sg_len, ret, cookie, host->mrq);
+ 	}
+-	dev_dbg(&host->pdev->dev, "%s(): mapped %d -> %d, cookie %d, rq %p\n",
+-		__func__, host->sg_len, ret, cookie, host->mrq);
+ 
+ pio:
+ 	if (!desc) {
+@@ -116,8 +116,8 @@ pio:
+ 			 "DMA failed: %d, falling back to PIO\n", ret);
+ 	}
+ 
+-	dev_dbg(&host->pdev->dev, "%s(): desc %p, cookie %d, sg[%d]\n", __func__,
+-		desc, cookie, host->sg_len);
++	dev_dbg(&host->pdev->dev, "%s(): desc %p, sg[%d]\n", __func__,
++		desc, host->sg_len);
+ }
+ 
+ static void tmio_mmc_start_dma_tx(struct tmio_mmc_host *host)
+@@ -174,9 +174,9 @@ static void tmio_mmc_start_dma_tx(struct tmio_mmc_host *host)
+ 			desc = NULL;
+ 			ret = cookie;
+ 		}
++		dev_dbg(&host->pdev->dev, "%s(): mapped %d -> %d, cookie %d, rq %p\n",
++			__func__, host->sg_len, ret, cookie, host->mrq);
+ 	}
+-	dev_dbg(&host->pdev->dev, "%s(): mapped %d -> %d, cookie %d, rq %p\n",
+-		__func__, host->sg_len, ret, cookie, host->mrq);
+ 
+ pio:
+ 	if (!desc) {
+@@ -196,8 +196,7 @@ pio:
+ 			 "DMA failed: %d, falling back to PIO\n", ret);
+ 	}
+ 
+-	dev_dbg(&host->pdev->dev, "%s(): desc %p, cookie %d\n", __func__,
+-		desc, cookie);
++	dev_dbg(&host->pdev->dev, "%s(): desc %p\n", __func__, desc);
+ }
+ 
+ void tmio_mmc_start_dma(struct tmio_mmc_host *host,
+
