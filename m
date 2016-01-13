@@ -1,138 +1,80 @@
-From: "Michael S. Tsirkin" <mst@redhat.com>
-Date: Tue, 05 Jan 2016 16:22:18 +0000
-Subject: [PATCH] sh: support a 2-byte xchg
-Message-Id: <1452010849-25546-1-git-send-email-mst@redhat.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Wed, 13 Jan 2016 14:29:26 +0000
+Subject: [PATCH 0/3] i2c/of: switch I2C IP cores at runtime via OF_DYNAMIC
+Message-Id: <1452695369-29413-1-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Thomas Gleixner <tglx@linutronix.de>, linux-sh@vger.kernel.org
+To: linux-i2c@vger.kernel.org
+Cc: Wolfram Sang <wsa@the-dreams.de>, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, linux-kernel@vger.kernel.org, Rob Herring <robh@kernel.org>, Pantelis Antoniou <pantelis.antoniou@konsulko.com>, Jan Luebbe <jlu@pengutronix.de>
 
-At the moment, xchg on sh only supports 4 and 1 byte values, so using it
-from smp_store_mb means attempts to store a 2 byte value using this
-macro fail.
+Here is the newest version of this patch series. Since Rob indicated to be OK
+with the approach, I am brave and changed the status from RFC to PATCH.
 
-And this happens to be exactly what virtio drivers want to do.
+This series allows an I2C bus to switch between multiple masters, i.e. a
+n-to-1-demuxer. This is not hot-switching because connected I2C slaves will be
+re-instantiated. It is meant to select the best I2C core at runtime once the
+task is known. Example: Prefer i2c-gpio over another I2C core because of HW
+errata affecting your current runtime configuration.
 
-Add a 2-byte xchg variant.
+It works by using OF_DYNAMIC and en-/disabling the i2c parent as needed. See
+the binding docs for more details. Because this is largely using OF_DYNAMIC, I
+decided to post the whole series to the dt list.
 
-Suggested-by: Peter Zijlstra <peterz@infradead.org>
-Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
----
+Changes since RFC v2:
 
-Notes:
-	- compiled only
-	- arch maintainers, this is a dependency of
-	  virtio driver work, so please ack, do not
-	  cherry-pick
+* updated docs (sysfs file now described in ABI/testing)
+* depends now on OF (thanks buildbot)
+* removed mutex handling. This creates a dependency on this patch which adds
+  what we need to of-core (thanks Rob):
+	https://patchwork.ozlabs.org/patch/539938/
+* sysfs-store: use uint instead of ulong (thanks Geert)
+* removed typos from commit messages (thanks Geert and Rob)
 
- arch/sh/include/asm/cmpxchg-grb.h  | 22 ++++++++++++++++++++++
- arch/sh/include/asm/cmpxchg-irq.h  | 11 +++++++++++
- arch/sh/include/asm/cmpxchg-llsc.h | 21 +++++++++++++++++++++
- arch/sh/include/asm/cmpxchg.h      |  3 +++
- 4 files changed, 57 insertions(+)
+Changes since RFC v1:
 
-diff --git a/arch/sh/include/asm/cmpxchg-grb.h b/arch/sh/include/asm/cmpxchg-grb.h
-index f848dec..2ed557b 100644
---- a/arch/sh/include/asm/cmpxchg-grb.h
-+++ b/arch/sh/include/asm/cmpxchg-grb.h
-@@ -23,6 +23,28 @@ static inline unsigned long xchg_u32(volatile u32 *m, unsigned long val)
- 	return retval;
- }
- 
-+static inline unsigned long xchg_u16(volatile u16 *m, unsigned long val)
-+{
-+	unsigned long retval;
-+
-+	__asm__ __volatile__ (
-+		"   .align  2             \n\t"
-+		"   mova    1f,   r0      \n\t" /* r0 = end point */
-+		"   mov    r15,   r1      \n\t" /* r1 = saved sp */
-+		"   mov    #-6,   r15     \n\t" /* LOGIN */
-+		"   mov.w  @%1,   %0      \n\t" /* load  old value */
-+		"   extu.w  %0,   %0      \n\t" /* extend as unsigned */
-+		"   mov.w   %2,   @%1     \n\t" /* store new value */
-+		"1: mov     r1,   r15     \n\t" /* LOGOUT */
-+		: "=&r" (retval),
-+		  "+r"  (m),
-+		  "+r"  (val)		/* inhibit r15 overloading */
-+		:
-+		: "memory" , "r0", "r1");
-+
-+	return retval;
-+}
-+
- static inline unsigned long xchg_u8(volatile u8 *m, unsigned long val)
- {
- 	unsigned long retval;
-diff --git a/arch/sh/include/asm/cmpxchg-irq.h b/arch/sh/include/asm/cmpxchg-irq.h
-index bd11f63..f888772 100644
---- a/arch/sh/include/asm/cmpxchg-irq.h
-+++ b/arch/sh/include/asm/cmpxchg-irq.h
-@@ -14,6 +14,17 @@ static inline unsigned long xchg_u32(volatile u32 *m, unsigned long val)
- 	return retval;
- }
- 
-+static inline unsigned long xchg_u16(volatile u16 *m, unsigned long val)
-+{
-+	unsigned long flags, retval;
-+
-+	local_irq_save(flags);
-+	retval = *m;
-+	*m = val;
-+	local_irq_restore(flags);
-+	return retval;
-+}
-+
- static inline unsigned long xchg_u8(volatile u8 *m, unsigned long val)
- {
- 	unsigned long flags, retval;
-diff --git a/arch/sh/include/asm/cmpxchg-llsc.h b/arch/sh/include/asm/cmpxchg-llsc.h
-index 4713666..dab6c58 100644
---- a/arch/sh/include/asm/cmpxchg-llsc.h
-+++ b/arch/sh/include/asm/cmpxchg-llsc.h
-@@ -22,6 +22,27 @@ static inline unsigned long xchg_u32(volatile u32 *m, unsigned long val)
- 	return retval;
- }
- 
-+static inline unsigned long xchg_u16(volatile u16 *m, unsigned long val)
-+{
-+	unsigned long retval;
-+	unsigned long tmp;
-+
-+	__asm__ __volatile__ (
-+		"1:					\n\t"
-+		"movli.l	@%2, %0	! xchg_u16	\n\t"
-+		"mov		%0, %1			\n\t"
-+		"mov		%3, %0			\n\t"
-+		"movco.l	%0, @%2			\n\t"
-+		"bf		1b			\n\t"
-+		"synco					\n\t"
-+		: "=&z"(tmp), "=&r" (retval)
-+		: "r" (m), "r" (val & 0xffff)
-+		: "t", "memory"
-+	);
-+
-+	return retval;
-+}
-+
- static inline unsigned long xchg_u8(volatile u8 *m, unsigned long val)
- {
- 	unsigned long retval;
-diff --git a/arch/sh/include/asm/cmpxchg.h b/arch/sh/include/asm/cmpxchg.h
-index 85c97b18..5225916 100644
---- a/arch/sh/include/asm/cmpxchg.h
-+++ b/arch/sh/include/asm/cmpxchg.h
-@@ -27,6 +27,9 @@ extern void __xchg_called_with_bad_pointer(void);
- 	case 4:						\
- 		__xchg__res = xchg_u32(__xchg_ptr, x);	\
- 		break;					\
-+	case 2:						\
-+		__xchg__res = xchg_u16(__xchg_ptr, x);	\
-+		break;					\
- 	case 1:						\
- 		__xchg__res = xchg_u8(__xchg_ptr, x);	\
- 		break;					\
+* gracefully handle if i2c adapters are not present at runtime
+  (driver not loaded yet)
+* added more documentation and examples
+* properly put the i2c adapters after use
+* respect PAGE_SIZE in sysfs_show
+
+This has been tested on a Renesas Lager board switching between i2c-gpio and
+two different IP cores (i2c-rcar and i2c-sh_mobile). The rebinding seems to be
+working as expected. However, in practice, I couldn't use the HDMI i2c slaves
+with another controller yet, because the rcar-du driver OOPSes when unbinding.
+This seems unrelated to this series because it can also be triggered via
+sysfs-unbind. soc-camera also had problems properly cleaning up on unbind, a
+patch for this already has been sent. So, this series is for sure a good test
+for the unbind path of drivers.
+
+A branch can be found here:
+
+git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git renesas/ip-core-switch-on-4.4
+
+Let me know what you think.
+
+Thanks,
+
+   Wolfram
+
+Wolfram Sang (3):
+  dt-bindings: i2c: mux: demux-pinctrl: add bindings
+  i2c: mux: demux-pinctrl: add driver
+  ARM: shmobile: r8a7790: rework dts to use i2c demuxer
+
+ .../ABI/testing/sysfs-platform-i2c-demux-pinctrl   |  23 ++
+ .../devicetree/bindings/i2c/i2c-demux-pinctrl.txt  | 136 +++++++++++
+ arch/arm/boot/dts/r8a7790-lager.dts                | 141 +++++++----
+ drivers/i2c/muxes/Kconfig                          |   9 +
+ drivers/i2c/muxes/Makefile                         |   2 +
+ drivers/i2c/muxes/i2c-demux-pinctrl.c              | 272 +++++++++++++++++++++
+ 6 files changed, 530 insertions(+), 53 deletions(-)
+ create mode 100644 Documentation/ABI/testing/sysfs-platform-i2c-demux-pinctrl
+ create mode 100644 Documentation/devicetree/bindings/i2c/i2c-demux-pinctrl.txt
+ create mode 100644 drivers/i2c/muxes/i2c-demux-pinctrl.c
+
 -- 
-MST
+2.1.4
+
