@@ -1,18 +1,21 @@
 From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Wed, 13 Jan 2016 17:58:38 +0000
-Subject: [PATCH v3] media: soc_camera: rcar_vin: Add rcar fallback compatibility string
-Message-Id: <1452707918-4321-1-git-send-email-ykaneko0929@gmail.com>
+Date: Wed, 13 Jan 2016 17:59:24 +0000
+Subject: [PATCH v3] media: soc_camera: rcar_vin: Add ARGB8888 caputre format support
+Message-Id: <1452707964-4379-1-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1452707918-4321-1-git-send-email-ykaneko0929@gmail.com>
+In-Reply-To: <1452707918-4321-1-git-send-email-ykaneko0929@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-media@vger.kernel.org
 Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-Add fallback compatibility string for R-Car Gen2 and Gen3, This is
-in keeping with the fallback scheme being adopted wherever appropriate
-for drivers for Renesas SoCs.
+From: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
 
+This patch adds ARGB8888 capture format support for R-Car Gen3.
+
+Signed-off-by: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
 Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
 ---
 
@@ -22,61 +25,72 @@ v3 [Yoshihiro Kaneko]
 * rebased to for-4.6-1 branch of Guennadi's tree.
 
 v2 [Yoshihiro Kaneko]
-* As suggested by Geert Uytterhoeven
-  drivers/media/platform/soc_camera/rcar_vin.c:
-    - The generic compatibility values are listed at the end of the
-      rcar_vin_of_table[].
+* As suggested by Sergei Shtylyov
+  - fix the coding style of the braces.
 
- Documentation/devicetree/bindings/media/rcar_vin.txt | 8 +++++++-
- drivers/media/platform/soc_camera/rcar_vin.c         | 2 ++
- 2 files changed, 9 insertions(+), 1 deletion(-)
+ drivers/media/platform/soc_camera/rcar_vin.c | 21 +++++++++++++++++++--
+ 1 file changed, 19 insertions(+), 2 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/media/rcar_vin.txt b/Documentation/devicetree/bindings/media/rcar_vin.txt
-index 619193c..e1a92c9 100644
---- a/Documentation/devicetree/bindings/media/rcar_vin.txt
-+++ b/Documentation/devicetree/bindings/media/rcar_vin.txt
-@@ -6,6 +6,8 @@ family of devices. The current blocks are always slaves and suppot one input
- channel which can be either RGB, YUYV or BT656.
- 
-  - compatible: Must be one of the following
-+   - "renesas,rcar-gen2-vin" for R-Car Gen2 Series
-+   - "renesas,rcar-gen3-vin" for R-Car Gen3 Series
-    - "renesas,vin-r8a7795" for the R8A7795 device
-    - "renesas,vin-r8a7794" for the R8A7794 device
-    - "renesas,vin-r8a7793" for the R8A7793 device
-@@ -13,6 +15,10 @@ channel which can be either RGB, YUYV or BT656.
-    - "renesas,vin-r8a7790" for the R8A7790 device
-    - "renesas,vin-r8a7779" for the R8A7779 device
-    - "renesas,vin-r8a7778" for the R8A7778 device
-+
-+   When compatible with the generic version, nodes must list the SoC-specific
-+   version corresponding to the platform first followed by the generic version.
-+
-  - reg: the register base and size for the device registers
-  - interrupts: the interrupt for the device
-  - clocks: Reference to the parent clock
-@@ -37,7 +43,7 @@ Device node example
- 	};
- 
-         vin0: vin@0xe6ef0000 {
--                compatible = "renesas,vin-r8a7790";
-+                compatible = "renesas,vin-r8a7790","renesas,rcar-gen2-vin";
-                 clocks = <&mstp8_clks R8A7790_CLK_VIN0>;
-                 reg = <0 0xe6ef0000 0 0x1000>;
-                 interrupts = <0 188 IRQ_TYPE_LEVEL_HIGH>;
 diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
-index dc75a80..b72a048 100644
+index dc75a80..466c63a 100644
 --- a/drivers/media/platform/soc_camera/rcar_vin.c
 +++ b/drivers/media/platform/soc_camera/rcar_vin.c
-@@ -1826,6 +1826,8 @@ static const struct of_device_id rcar_vin_of_table[] = {
- 	{ .compatible = "renesas,vin-r8a7790", .data = (void *)RCAR_GEN2 },
- 	{ .compatible = "renesas,vin-r8a7779", .data = (void *)RCAR_H1 },
- 	{ .compatible = "renesas,vin-r8a7778", .data = (void *)RCAR_M1 },
-+	{ .compatible = "renesas,rcar-gen2-vin", .data = (void *)RCAR_GEN2 },
-+	{ .compatible = "renesas,rcar-gen3-vin", .data = (void *)RCAR_GEN3 },
- 	{ },
+@@ -124,7 +124,7 @@
+ #define VNDMR_EXRGB		(1 << 8)
+ #define VNDMR_BPSM		(1 << 4)
+ #define VNDMR_DTMD_YCSEP	(1 << 1)
+-#define VNDMR_DTMD_ARGB1555	(1 << 0)
++#define VNDMR_DTMD_ARGB		(1 << 0)
+ 
+ /* Video n Data Mode Register 2 bits */
+ #define VNDMR2_VPS		(1 << 30)
+@@ -643,7 +643,7 @@ static int rcar_vin_setup(struct rcar_vin_priv *priv)
+ 		output_is_yuv = true;
+ 		break;
+ 	case V4L2_PIX_FMT_RGB555X:
+-		dmr = VNDMR_DTMD_ARGB1555;
++		dmr = VNDMR_DTMD_ARGB;
+ 		break;
+ 	case V4L2_PIX_FMT_RGB565:
+ 		dmr = 0;
+@@ -654,6 +654,14 @@ static int rcar_vin_setup(struct rcar_vin_priv *priv)
+ 			dmr = VNDMR_EXRGB;
+ 			break;
+ 		}
++	case V4L2_PIX_FMT_ARGB32:
++		if (priv->chip = RCAR_GEN3) {
++			dmr = VNDMR_EXRGB | VNDMR_DTMD_ARGB;
++		} else {
++			dev_err(icd->parent, "Not support format\n");
++			return -EINVAL;
++		}
++		break;
+ 	default:
+ 		dev_warn(icd->parent, "Invalid fourcc format (0x%x)\n",
+ 			 icd->current_fmt->host_fmt->fourcc);
+@@ -1304,6 +1312,14 @@ static const struct soc_mbus_pixelfmt rcar_vin_formats[] = {
+ 		.order			= SOC_MBUS_ORDER_LE,
+ 		.layout			= SOC_MBUS_LAYOUT_PACKED,
+ 	},
++	{
++		.fourcc			= V4L2_PIX_FMT_ARGB32,
++		.name			= "ARGB8888",
++		.bits_per_sample	= 32,
++		.packing		= SOC_MBUS_PACKING_NONE,
++		.order			= SOC_MBUS_ORDER_LE,
++		.layout			= SOC_MBUS_LAYOUT_PACKED,
++	},
  };
- MODULE_DEVICE_TABLE(of, rcar_vin_of_table);
+ 
+ static int rcar_vin_get_formats(struct soc_camera_device *icd, unsigned int idx,
+@@ -1611,6 +1627,7 @@ static int rcar_vin_set_fmt(struct soc_camera_device *icd,
+ 	case V4L2_PIX_FMT_RGB32:
+ 		can_scale = priv->chip != RCAR_E1;
+ 		break;
++	case V4L2_PIX_FMT_ARGB32:
+ 	case V4L2_PIX_FMT_UYVY:
+ 	case V4L2_PIX_FMT_YUYV:
+ 	case V4L2_PIX_FMT_RGB565:
 -- 
 1.9.1
 
