@@ -1,57 +1,38 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 11 Jan 2016 18:41:11 +0000
-Subject: [PATCH 0/3] ARM: shmobile: Fix loop-based delays
-Message-Id: <1452537674-20006-1-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 13 Jan 2016 02:00:35 +0000
+Subject: [PATCH v3 0/2] usb: host: xhci-plat: add R-Car Gen2 and Gen3 fallback compatibility strings
+Message-Id: <1452650437-26312-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-	Hi Simon, Magnus,
+Hi,
 
-I accidentally noticed that on r8a7740/armadillo, "mdelay(1000)" took
-only 333 ms with my personal config, while it took 3675 ms with
-shmobile_defconfig.
+this short series adds Gen2 and Gen3 fallback compatibility strings to the
+xhci-plat driver.
 
-Finding out why brought me an animating journey through obscure code
-and kernel config options...
+Changes between v2 and v3:
+* Refer to Armada 38x rather than 380 SoCs.
 
-Apparently loop-based delays may complete early on all shmobile SoCs,
-which may lead to subtle driver failures. Fortunately(?) this was
-mitigated by:
-  1. the ARM arch timer on Cortex A7 and A15, which is used instead of
-     loop-based delays if available,
-  2. shmobile_defconfig having CONFIG_CPU_BPREDICT_DISABLE enabled
-     (why?), which makes loops up to 16 times slower.
+Changes between v1 and v2:
+* Use consistent line ending in documentation
+* Group compat strings at the bottom of usb_xhci_of_match[]
+* Include follow-up patch from Julia Lawall to ensure usb_xhci_of_match
+  is correctly terminated
 
-This patch series fixes both, and removes a related check for Cortex A8
-CPU cores, which are no longer supported anyway.
+Julia Lawall (1):
+  usb: host: xhci-plat: fix of_table.cocci warnings
 
-Tested on a collection of shmobile SoCs with Cortex A7, A9, and A15 CPU
-cores, with some verification on BeagleBone Black (Cortex A8).
+Simon Horman (1):
+  usb: host: xhci-plat: add R-Car Gen2 and Gen3 fallback compatibility
+    strings
 
-Thanks for applying!
-
-Geert Uytterhoeven (3):
-  ARM: shmobile: timer: Fix preset_lpj leading to too short delays
-  ARM: shmobile: timer: Drop support for Cortex A8
-  ARM: shmobile: defconfig: Do not enable CONFIG_CPU_BPREDICT_DISABLE
-
- arch/arm/configs/shmobile_defconfig |  1 -
- arch/arm/mach-shmobile/timer.c      | 26 +++++++++-----------------
- 2 files changed, 9 insertions(+), 18 deletions(-)
+ Documentation/devicetree/bindings/usb/usb-xhci.txt | 21 +++++++++++++++++----
+ drivers/usb/host/xhci-plat.c                       |  6 ++++++
+ 2 files changed, 23 insertions(+), 4 deletions(-)
 
 -- 
-1.9.1
+2.1.4
 
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
