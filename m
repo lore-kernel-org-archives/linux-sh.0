@@ -1,172 +1,82 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 14 Dec 2015 18:57:32 +0000
-Subject: [PATCH v3 23/27] serial: sh-sci: Add support for optional BRG on (H)SCIF
-Message-Id: <1450119456-964-24-git-send-email-geert+renesas@glider.be>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Wed, 13 Jan 2016 17:58:38 +0000
+Subject: [PATCH v3] media: soc_camera: rcar_vin: Add rcar fallback compatibility string
+Message-Id: <1452707918-4321-1-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450119456-964-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1450119456-964-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-media@vger.kernel.org
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-Add support for using the Baud Rate Generator for External Clock (BRG), as
-found on some SCIF and HSCIF variants, to provide the sampling clock.
-This can improve baud rate range and accuracy.
+Add fallback compatibility string for R-Car Gen2 and Gen3, This is
+in keeping with the fallback scheme being adopted wherever appropriate
+for drivers for Renesas SoCs.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
 ---
-v3:
-  - Add Acked-by,
-  - Terminate loop over sampling rates on perfect match,
-  - Rename "int_clk" to "brg_int", "SCI_INT_CLK" to "SCI_BRG_INT",
-  - Add comment that the BRG divides the internal/external clock,
-  - Reword patch description, using sampling clock source.
----
- drivers/tty/serial/sh-sci.c | 85 ++++++++++++++++++++++++++++++++++++++++++---
- 1 file changed, 80 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 229162481fd67b9d..4ff5d0cf812688ff 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -80,6 +80,8 @@ enum {
- enum SCI_CLKS {
- 	SCI_FCK,		/* Functional Clock */
- 	SCI_SCK,		/* Optional External Clock */
-+	SCI_BRG_INT,		/* Optional BRG Internal Clock Source */
-+	SCI_SCIF_CLK,		/* Optional BRG External Clock Source */
- 	SCI_NUM_CLKS
- };
+This patch is based on the for-4.6-1 branch of Guennadi's v4l-dvb tree.
+
+v3 [Yoshihiro Kaneko]
+* rebased to for-4.6-1 branch of Guennadi's tree.
+
+v2 [Yoshihiro Kaneko]
+* As suggested by Geert Uytterhoeven
+  drivers/media/platform/soc_camera/rcar_vin.c:
+    - The generic compatibility values are listed at the end of the
+      rcar_vin_of_table[].
+
+ Documentation/devicetree/bindings/media/rcar_vin.txt | 8 +++++++-
+ drivers/media/platform/soc_camera/rcar_vin.c         | 2 ++
+ 2 files changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/Documentation/devicetree/bindings/media/rcar_vin.txt b/Documentation/devicetree/bindings/media/rcar_vin.txt
+index 619193c..e1a92c9 100644
+--- a/Documentation/devicetree/bindings/media/rcar_vin.txt
++++ b/Documentation/devicetree/bindings/media/rcar_vin.txt
+@@ -6,6 +6,8 @@ family of devices. The current blocks are always slaves and suppot one input
+ channel which can be either RGB, YUYV or BT656.
  
-@@ -1958,6 +1960,43 @@ static int sci_sck_calc(struct sci_port *s, unsigned int bps,
- 	return min_err;
- }
- 
-+static int sci_brg_calc(struct sci_port *s, unsigned int bps,
-+			unsigned long freq, unsigned int *dlr,
-+			unsigned int *srr)
-+{
-+	unsigned int min_sr, max_sr, sr, dl;
-+	int err, min_err = INT_MAX;
+  - compatible: Must be one of the following
++   - "renesas,rcar-gen2-vin" for R-Car Gen2 Series
++   - "renesas,rcar-gen3-vin" for R-Car Gen3 Series
+    - "renesas,vin-r8a7795" for the R8A7795 device
+    - "renesas,vin-r8a7794" for the R8A7794 device
+    - "renesas,vin-r8a7793" for the R8A7793 device
+@@ -13,6 +15,10 @@ channel which can be either RGB, YUYV or BT656.
+    - "renesas,vin-r8a7790" for the R8A7790 device
+    - "renesas,vin-r8a7779" for the R8A7779 device
+    - "renesas,vin-r8a7778" for the R8A7778 device
 +
-+	if (s->sampling_rate) {
-+		/* SCIF has a fixed sampling rate */
-+		min_sr = max_sr = s->sampling_rate / 2;
-+	} else {
-+		/* HSCIF has a variable 1/(8..32) sampling rate */
-+		min_sr = 8;
-+		max_sr = 32;
-+	}
++   When compatible with the generic version, nodes must list the SoC-specific
++   version corresponding to the platform first followed by the generic version.
 +
-+	for (sr = max_sr; sr >= min_sr; sr--) {
-+		dl = DIV_ROUND_CLOSEST(freq, sr * bps);
-+		dl = clamp(dl, 1U, 65535U);
-+
-+		err = DIV_ROUND_CLOSEST(freq, sr * dl) - bps;
-+		if (abs(err) >= abs(min_err))
-+			continue;
-+
-+		min_err = err;
-+		*dlr = dl;
-+		*srr = sr - 1;
-+
-+		if (!err)
-+			break;
-+	}
-+
-+	dev_dbg(s->port.dev, "BRG: %u%+d bps using DL %u SR %u\n", bps,
-+		min_err, *dlr, *srr + 1);
-+	return min_err;
-+}
-+
- /* calculate sample rate, BRR, and clock select */
- static int sci_scbrr_calc(struct sci_port *s, unsigned int bps,
- 			  unsigned int *brr, unsigned int *srr,
-@@ -2053,8 +2092,8 @@ static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
- 			    struct ktermios *old)
- {
- 	unsigned int baud, smr_val = 0, scr_val = 0, i;
--	unsigned int brr = 255, cks = 0, srr = 15, sccks = 0;
--	unsigned int brr1 = 255, cks1 = 0, srr1 = 15;
-+	unsigned int brr = 255, cks = 0, srr = 15, dl = 0, sccks = 0;
-+	unsigned int brr1 = 255, cks1 = 0, srr1 = 15, dl1 = 0;
- 	struct sci_port *s = to_sci_port(port);
- 	const struct plat_sci_reg *reg;
- 	int min_err = INT_MAX, err;
-@@ -2111,6 +2150,38 @@ static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
- 		}
- 	}
- 
-+	/* Optional BRG Frequency Divided External Clock */
-+	if (s->clk_rates[SCI_SCIF_CLK] && sci_getreg(port, SCDL)->size) {
-+		err = sci_brg_calc(s, baud, s->clk_rates[SCI_SCIF_CLK], &dl1,
-+				   &srr1);
-+		if (abs(err) < abs(min_err)) {
-+			best_clk = SCI_SCIF_CLK;
-+			scr_val = SCSCR_CKE1;
-+			sccks = 0;
-+			min_err = err;
-+			dl = dl1;
-+			srr = srr1;
-+			if (!err)
-+				goto done;
-+		}
-+	}
-+
-+	/* Optional BRG Frequency Divided Internal Clock */
-+	if (s->clk_rates[SCI_BRG_INT] && sci_getreg(port, SCDL)->size) {
-+		err = sci_brg_calc(s, baud, s->clk_rates[SCI_BRG_INT], &dl1,
-+				   &srr1);
-+		if (abs(err) < abs(min_err)) {
-+			best_clk = SCI_BRG_INT;
-+			scr_val = SCSCR_CKE1;
-+			sccks = SCCKS_XIN;
-+			min_err = err;
-+			dl = dl1;
-+			srr = srr1;
-+			if (!min_err)
-+				goto done;
-+		}
-+	}
-+
- 	/* Divided Functional Clock using standard Bit Rate Register */
- 	err = sci_scbrr_calc(s, baud, &brr1, &srr1, &cks1);
- 	if (abs(err) < abs(min_err)) {
-@@ -2133,8 +2204,10 @@ done:
- 	 * Program the optional External Baud Rate Generator (BRG) first.
- 	 * It controls the mux to select (H)SCK or frequency divided clock.
- 	 */
--	if (best_clk >= 0 && sci_getreg(port, SCCKS)->size)
-+	if (best_clk >= 0 && sci_getreg(port, SCCKS)->size) {
-+		serial_port_out(port, SCDL, dl);
- 		serial_port_out(port, SCCKS, sccks);
-+	}
- 
- 	sci_reset(port);
- 
-@@ -2143,8 +2216,8 @@ done:
- 	if (best_clk >= 0) {
- 		smr_val |= cks;
- 		dev_dbg(port->dev,
--			 "SCR 0x%x SMR 0x%x BRR %u CKS 0x%x SRR %u\n",
--			 scr_val, smr_val, brr, sccks, srr);
-+			 "SCR 0x%x SMR 0x%x BRR %u CKS 0x%x DL %u SRR %u\n",
-+			 scr_val, smr_val, brr, sccks, dl, srr);
- 		serial_port_out(port, SCSCR, scr_val);
- 		serial_port_out(port, SCSMR, smr_val);
- 		serial_port_out(port, SCBRR, brr);
-@@ -2382,6 +2455,8 @@ static int sci_init_clocks(struct sci_port *sci_port, struct device *dev)
- 	const char *clk_names[] = {
- 		[SCI_FCK] = "fck",
- 		[SCI_SCK] = "sck",
-+		[SCI_BRG_INT] = "brg_int",
-+		[SCI_SCIF_CLK] = "scif_clk",
+  - reg: the register base and size for the device registers
+  - interrupts: the interrupt for the device
+  - clocks: Reference to the parent clock
+@@ -37,7 +43,7 @@ Device node example
  	};
- 	struct clk *clk;
- 	unsigned int i;
+ 
+         vin0: vin@0xe6ef0000 {
+-                compatible = "renesas,vin-r8a7790";
++                compatible = "renesas,vin-r8a7790","renesas,rcar-gen2-vin";
+                 clocks = <&mstp8_clks R8A7790_CLK_VIN0>;
+                 reg = <0 0xe6ef0000 0 0x1000>;
+                 interrupts = <0 188 IRQ_TYPE_LEVEL_HIGH>;
+diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
+index dc75a80..b72a048 100644
+--- a/drivers/media/platform/soc_camera/rcar_vin.c
++++ b/drivers/media/platform/soc_camera/rcar_vin.c
+@@ -1826,6 +1826,8 @@ static const struct of_device_id rcar_vin_of_table[] = {
+ 	{ .compatible = "renesas,vin-r8a7790", .data = (void *)RCAR_GEN2 },
+ 	{ .compatible = "renesas,vin-r8a7779", .data = (void *)RCAR_H1 },
+ 	{ .compatible = "renesas,vin-r8a7778", .data = (void *)RCAR_M1 },
++	{ .compatible = "renesas,rcar-gen2-vin", .data = (void *)RCAR_GEN2 },
++	{ .compatible = "renesas,rcar-gen3-vin", .data = (void *)RCAR_GEN3 },
+ 	{ },
+ };
+ MODULE_DEVICE_TABLE(of, rcar_vin_of_table);
 -- 
 1.9.1
 
