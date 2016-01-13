@@ -1,48 +1,85 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Mon, 11 Jan 2016 11:23:37 +0000
-Subject: RE: [PATCH v2 1/4] PCI: rcar: remove unused pci_sys_data structure in pcie-rcar
-Message-Id: <HK2PR0601MB1393C2A62EE47AA804CFCF09F5C90@HK2PR0601MB1393.apcprd06.prod.outlook.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Wed, 13 Jan 2016 15:15:43 +0000
+Subject: [PATCH v3] adv7604: add direct interrupt handling
+Message-Id: <1452698143-31897-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1451998831-27705-1-git-send-email-phil.edworthy@renesas.com>
- <1451998831-27705-2-git-send-email-phil.edworthy@renesas.com>
- <20160108015056.GB9600@verge.net.au> <20160108210635.GL5354@localhost>
-In-Reply-To: <20160108210635.GL5354@localhost>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Bjorn Helgaas <helgaas@kernel.org>, Simon Horman <horms@verge.net.au>
-Cc: Bjorn Helgaas <bhelgaas@google.com>, Wolfram Sang <wsa@the-dreams.de>, Geert Uytterhoeven <geert@linux-m68k.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "linux-pci@vger.kernel.org" <linux-pci@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+To: linux-media@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: magnus.damm@gmail.com, laurent.pinchart@ideasonboard.com, hans.verkuil@cisco.com, ian.molton@codethink.co.uk, lars@metafoo.de, william.towle@codethink.co.uk, sergei.shtylyov@cogentembedded.com, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 
-Hi Bjorn,
+When probed from device tree, the i2c client driver can handle the
+interrupt on its own.
 
-On 08 January 2016 21:07, Bjorn Helgaas wrote:
-> On Fri, Jan 08, 2016 at 10:50:57AM +0900, Simon Horman wrote:
-> > Hi Phil,
-> >
-> > On Tue, Jan 05, 2016 at 01:00:28PM +0000, Phil Edworthy wrote:
-> > > Commit b3a72384fe29 ("ARM/PCI: Replace pci_sys_data->align_resource
-> > > with global function pointer") removed the struct pci_sys_data
-> > > dependency from the ARM pcibios functions, so remove it from this
-> > > driver.
-> >
-> > I am a little confused by this as I still see two instances of
-> > the following in bios32.c as of the commit above.
-> >
-> > 	struct pci_sys_data *sys = dev->sysdata;
-> 
-> This patch only removes a pci_sys_data struct from pcie-rcar.c.  That
-> struct was previously used by pci_common_init_dev() and by the ARM
-> pcibios_align_resource().
-> 
-> After cbce7900598c ("PCI: designware: Make driver arch-agnostic"), none of
-> the DesignWare drivers use pci_common_init_dev(), and after b3a72384fe29,
-> ARM doesn't need pci_sys_data for pcibios_align_resource().
-> 
-> Phil can correct me if I'm wrong, but I think this patch is probably OK.
-You are absolutely right!
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+---
+v3: uses IRQ_RETVAL
 
-> I guess we can tell after I apply it and get a build test :)
-Yes, it has been built and run on both ARM and ARM64 boards.
+v2: implements the suggested style changes and drops the IRQF_TRIGGER_LOW
+flag, which is handled in the device tree.
 
-Thanks
-Phil
+
+ drivers/media/i2c/adv7604.c | 24 ++++++++++++++++++++++--
+ 1 file changed, 22 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/media/i2c/adv7604.c b/drivers/media/i2c/adv7604.c
+index 5bd81bd..ab4cb25 100644
+--- a/drivers/media/i2c/adv7604.c
++++ b/drivers/media/i2c/adv7604.c
+@@ -31,6 +31,7 @@
+ #include <linux/gpio/consumer.h>
+ #include <linux/hdmi.h>
+ #include <linux/i2c.h>
++#include <linux/interrupt.h>
+ #include <linux/kernel.h>
+ #include <linux/module.h>
+ #include <linux/slab.h>
+@@ -1971,6 +1972,16 @@ static int adv76xx_isr(struct v4l2_subdev *sd, u32 status, bool *handled)
+ 	return 0;
+ }
+ 
++static irqreturn_t adv76xx_irq_handler(int irq, void *devid)
++{
++	struct adv76xx_state *state = devid;
++	bool handled;
++
++	adv76xx_isr(&state->sd, 0, &handled);
++
++	return IRQ_RETVAL(handled);
++}
++
+ static int adv76xx_get_edid(struct v4l2_subdev *sd, struct v4l2_edid *edid)
+ {
+ 	struct adv76xx_state *state = to_state(sd);
+@@ -2844,8 +2855,7 @@ static int adv76xx_parse_dt(struct adv76xx_state *state)
+ 		state->pdata.op_656_range = 1;
+ 	}
+ 
+-	/* Disable the interrupt for now as no DT-based board uses it. */
+-	state->pdata.int1_config = ADV76XX_INT1_CONFIG_DISABLED;
++	state->pdata.int1_config = ADV76XX_INT1_CONFIG_ACTIVE_LOW;
+ 
+ 	/* Use the default I2C addresses. */
+ 	state->pdata.i2c_addresses[ADV7604_PAGE_AVLINK] = 0x42;
+@@ -3235,6 +3245,16 @@ static int adv76xx_probe(struct i2c_client *client,
+ 	v4l2_info(sd, "%s found @ 0x%x (%s)\n", client->name,
+ 			client->addr << 1, client->adapter->name);
+ 
++	if (client->irq) {
++		err = devm_request_threaded_irq(&client->dev,
++						client->irq,
++						NULL, adv76xx_irq_handler,
++						IRQF_ONESHOT,
++						dev_name(&client->dev), state);
++		if (err)
++			goto err_entity;
++	}
++
+ 	err = v4l2_async_register_subdev(sd);
+ 	if (err)
+ 		goto err_entity;
+-- 
+2.6.4
+
