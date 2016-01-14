@@ -1,56 +1,95 @@
-From: "Michael S. Tsirkin" <mst@redhat.com>
-Date: Sun, 10 Jan 2016 14:21:15 +0000
-Subject: [PATCH v3 34/41] checkpatch.pl: add missing memory barriers
-Message-Id: <1452426622-4471-35-git-send-email-mst@redhat.com>
+From: =?UTF-8?q?Niklas=20S=C3=B6derlund?=  <niklas.soderlund+renesas@ragnatech.se>
+Date: Thu, 14 Jan 2016 13:30:14 +0000
+Subject: [RFC 3/5] [media] rcar-vin: add array of supported formats
+Message-Id: <1452778216-31978-4-git-send-email-niklas.soderlund+renesas@ragnatech.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1452426622-4471-1-git-send-email-mst@redhat.com>
-In-Reply-To: <1452426622-4471-1-git-send-email-mst@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Peter Zijlstra <peterz@infradead.org>, Arnd Bergmann <arnd@arndb.de>, linux-arch@vger.kernel.org, Andrew Cooper <andrew.cooper3@citrix.com>, Russell King - ARM Linux <linux@arm.linux.org.uk>, virtualization@lists.linux-foundation.org, Stefano Stabellini <stefano.stabellini@eu.citrix.com>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@elte.hu>, "H. Peter Anvin" <hpa@zytor.com>, Joe Perches <joe@perches.com>, David Miller <davem@davemloft.net>, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, sparclinux@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-metag@vger.kernel.org, linux-mips@linux-mips.org, x86@kernel.org, user-mode-linux-devel@lists.sourceforge.net, adi-buildroot-devel@lists.sourceforge.net, linux-sh@vger.kernel.org, linux-xtensa@linux-xtensa.org, xen-devel@lists.xenproject.org
+To: linux-sh@vger.kernel.org
 
-SMP-only barriers were missing in checkpatch.pl
-
-Refactor code slightly to make adding more variants easier.
-
-Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+Lift over the video formats and helper from the soc_camera driver.
 ---
- scripts/checkpatch.pl | 20 +++++++++++++++++++-
- 1 file changed, 19 insertions(+), 1 deletion(-)
+ drivers/media/platform/rcar-vin.c | 59 +++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 59 insertions(+)
 
-diff --git a/scripts/checkpatch.pl b/scripts/checkpatch.pl
-index 2b3c228..97b8b62 100755
---- a/scripts/checkpatch.pl
-+++ b/scripts/checkpatch.pl
-@@ -5116,7 +5116,25 @@ sub process {
- 			}
- 		}
- # check for memory barriers without a comment.
--		if ($line =~ /\b(mb|rmb|wmb|read_barrier_depends|smp_mb|smp_rmb|smp_wmb|smp_read_barrier_depends)\(/) {
+diff --git a/drivers/media/platform/rcar-vin.c b/drivers/media/platform/rcar-vin.c
+index 06616d4..a062287 100644
+--- a/drivers/media/platform/rcar-vin.c
++++ b/drivers/media/platform/rcar-vin.c
+@@ -34,6 +34,12 @@ enum chip_id {
+ 	RCAR_E1,
+ };
+ 
++struct rcar_vin_format {
++	const char *description;
++	u32 fourcc;
++	u8 bpp;
++};
 +
-+		my $barriers = qr{
-+			mb|
-+			rmb|
-+			wmb|
-+			read_barrier_depends
-+		}x;
-+		my $smp_barriers = qr{
-+			store_release|
-+			load_acquire|
-+			store_mb|
-+			($barriers)
-+		}x;
-+		my $all_barriers = qr{
-+			$barriers|
-+			smp_($smp_barriers)
-+		}x;
+ struct rcar_vin {
+ 	void __iomem *base;
+ 
+@@ -181,6 +187,59 @@ static irqreturn_t rcar_vin_irq(int irq, void *dev_id)
+ }
+ 
+ /* -----------------------------------------------------------------------------
++ * Video formats
++ */
 +
-+		if ($line =~ /\b($all_barriers)\s*\(/) {
- 			if (!ctx_has_comment($first_line, $linenr)) {
- 				WARN("MEMORY_BARRIER",
- 				     "memory barrier without comment\n" . $herecurr);
++static const struct rcar_vin_format rcar_vin_formats[] = {
++	{
++		.description		= "NV16",
++		.fourcc			= V4L2_PIX_FMT_NV16,
++		.bpp			= 8,
++	},
++	{
++		.description		= "YUYV",
++		.fourcc			= V4L2_PIX_FMT_YUYV,
++		.bpp			= 16,
++	},
++	{
++		.description		= "UYVY",
++		.fourcc			= V4L2_PIX_FMT_UYVY,
++		.bpp			= 16,
++	},
++	{
++		.description		= "RGB565",
++		.fourcc			= V4L2_PIX_FMT_RGB565,
++		.bpp			= 16,
++	},
++	{
++		.description		= "ARGB1555",
++		.fourcc			= V4L2_PIX_FMT_RGB555X,
++		.bpp			= 16,
++	},
++	{
++		.description		= "RGB888",
++		.fourcc			= V4L2_PIX_FMT_RGB32,
++		.bpp			= 32,
++	},
++};
++
++
++
++const struct rcar_vin_format *rcar_vin_get_format_by_fourcc(u32 fourcc)
++{
++	unsigned int i;
++
++	for (i = 0; i < ARRAY_SIZE(rcar_vin_formats); ++i) {
++		const struct rcar_vin_format *format = &rcar_vin_formats[i];
++
++		if (format->fourcc = fourcc)
++			return format;
++	}
++
++	return ERR_PTR(-EINVAL);
++}
++
++/* -----------------------------------------------------------------------------
+  * Platform Device Driver
+  */
+ 
 -- 
-MST
+2.7.0
 
