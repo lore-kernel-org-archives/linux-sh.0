@@ -1,51 +1,142 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Wed, 06 Jan 2016 08:39:11 +0000
-Subject: Re: [PATCH v2 4/4] PCI: rcar: Add Gen2 PHY setup to pcie-rcar
-Message-Id: <20160106083911.GD1525@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="AkbCVLjbJ9qUtAXD"
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 14 Jan 2016 10:16:53 +0000
+Subject: [PATCH/RFC] dmaengine: rcar-dmac: Use CAE/CAIR instead of error IRQ
+Message-Id: <20160114101653.16562.42789.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1451998831-27705-1-git-send-email-phil.edworthy@renesas.com>
- <1451998831-27705-5-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1451998831-27705-5-git-send-email-phil.edworthy@renesas.com>
-To: Phil Edworthy <phil.edworthy@renesas.com>
-Cc: Simon Horman <horms@verge.net.au>, Bjorn Helgaas <bhelgaas@google.com>, Geert Uytterhoeven <geert@linux-m68k.org>, linux-kernel@vger.kernel.org, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-kernel@vger.kernel.org
+Cc: laurent.pinchart+renesas@ideasonboard.com, geert+renesas@glider.be, linux-sh@vger.kernel.org, vinod.koul@intel.com, dmaengine@vger.kernel.org, horms+renesas@verge.net.au, Magnus Damm <magnus.damm@gmail.com>
 
+From: Magnus Damm <damm+renesas@opensource.se>
 
---AkbCVLjbJ9qUtAXD
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+While using SYS-DMAC together with the IPMMU it became evident
+that the shared error interrupt hooked up by rcar-dmac.c never
+got invoked but instead the per-channel CAE bit got set which
+in turn may generate a per-channel interrupt if CAIE is set.
 
-On Tue, Jan 05, 2016 at 01:00:31PM +0000, Phil Edworthy wrote:
-> For PCIe compliance, the PHY registers need setting as per the
-> manual.
->=20
-> Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+This patch removes the shared interrupt handler and instead
+simply enables CAIE and makes sure CAE gets cleared by the
+interrupt handler. Without enabling CAIE and clearing CAE the
+DMA transfer blocks forever in case of error.
 
-Reviewed-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+During normal operation it is hard to trigger error interrupts,
+but I have managed to trigger the SYS-DMAC error by using local
+IPMMU debug code that tracks active page table entries using
+the AF bit. This debug code results in rather high latencies
+which in turn makes the SYS-DMAC generate error interrupts.
 
+Tested on r8a7795 Salvator-X. Not for upstream merge - needs
+more discussion and testing on other SoCs.
 
---AkbCVLjbJ9qUtAXD
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+Not-Yet-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
+ drivers/dma/sh/rcar-dmac.c |   60 ++------------------------------------------
+ 1 file changed, 3 insertions(+), 57 deletions(-)
 
-iQIcBAEBAgAGBQJWjNKuAAoJEBQN5MwUoCm2NwAP/R1vbh3RUN7ywFs0K0Hb7i9V
-dxCfcPdabei2joIwlGO8ZP5MutVh8yRI3i6cJpJVLmsAw2ZeAxZzQlWhiqKWSZ0d
-0KwZGFNas4dtzJINlGXGx89kpKKCDhiadKbZHQbd+brsEGyxcTTIpuTzms3fhgql
-qI+Rl4bR/l+jxM83H9yPtsieAQLcP2C7oufGmUnbuauf/2Wbi65SNml0ns4sEuz/
-J7VKXXZFTVic/qwafGB5NaJ6SO0dBPHi6ySmAnuvO5vDgQz0AztKeg6E3CS3Okco
-Ll/pDh8UJaitvaM+ujpMyPeyuP1gp5oPbL5mCt3QCGe3L/kyN7bBcQmYYalOkfq8
-mJpCG5EiyUHuiz+nOVJKtptH7XzER3R3nhkBJ2BchxEmHvXDWGm8MxG+bcNdftJI
-Y/XfuBOj4XXeFpLi5E3TMWj/jAm72Z4ZZEz60ZIYQd+bDapsmF4TF+xanwXaP8PK
-X/owHexW+/HWUJnOjKj2rrrXxOGQZCGhY8hjGmyNmh5+1DQO5pO6UjkiacQLDmVs
-iuCkTlkluKPAXih0kuyi/9PRhLqRBX6ndtC76mWpT4UdIrzKPJvZk8Htaj2+QBKo
-Gr/NDy1OsrrITsTlpki/MuZw9VdBXL33bzdEF5FCDzSU2i4Q4cEDIoC/Ewq+zVOe
-HoW4kt6TcRzqj5I6cpXh
-=N1yC
------END PGP SIGNATURE-----
-
---AkbCVLjbJ9qUtAXD--
+--- 0001/drivers/dma/sh/rcar-dmac.c
++++ work/drivers/dma/sh/rcar-dmac.c	2016-01-14 18:16:23.040513000 +0900
+@@ -808,23 +808,6 @@ static void rcar_dmac_stop(struct rcar_d
+ 	rcar_dmac_write(dmac, RCAR_DMAOR, 0);
+ }
+ 
+-static void rcar_dmac_abort(struct rcar_dmac *dmac)
+-{
+-	unsigned int i;
+-
+-	/* Stop all channels. */
+-	for (i = 0; i < dmac->n_channels; ++i) {
+-		struct rcar_dmac_chan *chan = &dmac->channels[i];
+-
+-		/* Stop and reinitialize the channel. */
+-		spin_lock(&chan->lock);
+-		rcar_dmac_chan_halt(chan);
+-		spin_unlock(&chan->lock);
+-
+-		rcar_dmac_chan_reinit(chan);
+-	}
+-}
+-
+ /* -----------------------------------------------------------------------------
+  * Descriptors preparation
+  */
+@@ -864,7 +847,7 @@ static void rcar_dmac_chan_configure_des
+ 	}
+ 
+ 	desc->xfer_shift = ilog2(xfer_size);
+-	desc->chcr = chcr | chcr_ts[desc->xfer_shift];
++	desc->chcr = chcr | chcr_ts[desc->xfer_shift] | RCAR_DMACHCR_CAIE;
+ }
+ 
+ /*
+@@ -1427,6 +1410,8 @@ static irqreturn_t rcar_dmac_isr_channel
+ 	spin_lock(&chan->lock);
+ 
+ 	chcr = rcar_dmac_chan_read(chan, RCAR_DMACHCR);
++	if (chcr & RCAR_DMACHCR_CAE)
++		mask |= RCAR_DMACHCR_CAE;
+ 	if (chcr & RCAR_DMACHCR_TE)
+ 		mask |= RCAR_DMACHCR_DE;
+ 	rcar_dmac_chan_write(chan, RCAR_DMACHCR, chcr & ~mask);
+@@ -1497,24 +1482,6 @@ static irqreturn_t rcar_dmac_isr_channel
+ 	return IRQ_HANDLED;
+ }
+ 
+-static irqreturn_t rcar_dmac_isr_error(int irq, void *data)
+-{
+-	struct rcar_dmac *dmac = data;
+-
+-	if (!(rcar_dmac_read(dmac, RCAR_DMAOR) & RCAR_DMAOR_AE))
+-		return IRQ_NONE;
+-
+-	/*
+-	 * An unrecoverable error occurred on an unknown channel. Halt the DMAC,
+-	 * abort transfers on all channels, and reinitialize the DMAC.
+-	 */
+-	rcar_dmac_stop(dmac);
+-	rcar_dmac_abort(dmac);
+-	rcar_dmac_init(dmac);
+-
+-	return IRQ_HANDLED;
+-}
+-
+ /* -----------------------------------------------------------------------------
+  * OF xlate and channel filter
+  */
+@@ -1693,8 +1660,6 @@ static int rcar_dmac_probe(struct platfo
+ 	struct rcar_dmac *dmac;
+ 	struct resource *mem;
+ 	unsigned int i;
+-	char *irqname;
+-	int irq;
+ 	int ret;
+ 
+ 	dmac = devm_kzalloc(&pdev->dev, sizeof(*dmac), GFP_KERNEL);
+@@ -1732,25 +1697,6 @@ static int rcar_dmac_probe(struct platfo
+ 	if (IS_ERR(dmac->iomem))
+ 		return PTR_ERR(dmac->iomem);
+ 
+-	irq = platform_get_irq_byname(pdev, "error");
+-	if (irq < 0) {
+-		dev_err(&pdev->dev, "no error IRQ specified\n");
+-		return -ENODEV;
+-	}
+-
+-	irqname = devm_kasprintf(dmac->dev, GFP_KERNEL, "%s:error",
+-				 dev_name(dmac->dev));
+-	if (!irqname)
+-		return -ENOMEM;
+-
+-	ret = devm_request_irq(&pdev->dev, irq, rcar_dmac_isr_error, 0,
+-			       irqname, dmac);
+-	if (ret) {
+-		dev_err(&pdev->dev, "failed to request IRQ %u (%d)\n",
+-			irq, ret);
+-		return ret;
+-	}
+-
+ 	/* Enable runtime PM and initialize the device. */
+ 	pm_runtime_enable(&pdev->dev);
+ 	ret = pm_runtime_get_sync(&pdev->dev);
