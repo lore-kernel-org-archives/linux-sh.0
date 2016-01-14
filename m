@@ -1,7 +1,7 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 14 Jan 2016 18:24:26 +0000
+From: Michael Turquette <mturquette@baylibre.com>
+Date: Thu, 14 Jan 2016 18:45:32 +0000
 Subject: Re: [PATCH v2] clk: shmobile: r8a7795: Add SDHI clocks
-Message-Id: <CAMuHMdXa4qdrqu-RjPuxAHQwBJ5LZ+JsfWH83vcvp6EQ+M1-aA@mail.gmail.com>
+Message-Id: <CAEG3pNBr23--APZjMHekPe7u+FwOOqVLLCeziTpBYv1PbN-nfA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1450951761-3160-1-git-send-email-dirk.behme@gmail.com>
 In-Reply-To: <1450951761-3160-1-git-send-email-dirk.behme@gmail.com>
@@ -12,13 +12,18 @@ To: linux-sh@vger.kernel.org
 
 Hi Dirk,
 
-On Sat, Jan 9, 2016 at 7:42 AM, Dirk Behme <dirk.behme@gmail.com> wrote:
+On Fri, Jan 8, 2016 at 10:42 PM, Dirk Behme <dirk.behme@gmail.com> wrote:
 > On 24.12.2015 11:09, Dirk Behme wrote:
+>>
 >> Add R8A7795 SDHI clocks.
-
-Thanks for your patch!
-
+>>
 >> Signed-off-by: Dirk Behme <dirk.behme@gmail.com>
+
+Please Cc linux-clk@vger.kernel.org for review of clk driver patches.
+
+Thanks,
+Mike
+
 >> ---
 >> Changes in v2: Add the missing *H clocks and correct the dividers.
 >>
@@ -47,28 +52,11 @@ Thanks for your patch!
 >> +       DEF_FIXED("sd2",        R8A7795_CLK_SD2,   CLK_PLL1_DIV2,  8, 1),
 >> +       DEF_FIXED("sd3h",       R8A7795_CLK_SD3H,  CLK_PLL1_DIV2,  2, 1),
 >> +       DEF_FIXED("sd3",        R8A7795_CLK_SD3,   CLK_PLL1_DIV2,  8, 1),
-
-The dividers for these clocks are not fixed, they are controlled by the
-SDnCKCR registers.
-
-Unfortunately the register layout is more complicated than on R-Car Gen2, so
-you can no longer use clk_register_divider_table(), but have to write a custom
-clock driver.
-
-For an initial version, a simple "read-only" version that just calls
-clk_register_fixed_factor() with divider values read from the hardware
-registers may be good enough. But for full support, you need a driver that
-can program the registers, too.
-
-Just using fixed dividers like you did won't work, as the boot loader/reset
-state may be different.
-E.g. on my board, which has a 16.66666 MHz crystal, the initial state according
-to the register values is:
-  - sd[0-2]h are stopped,
-  - sd[0-2] run at 25 MHz,
-  - sd3h runs at 400 MHz,
-  - sd3 runs at 100 MHz.
-
+>>         DEF_FIXED("cp",         R8A7795_CLK_CP,    CLK_EXTAL,      2, 1),
+>> -
+>>         DEF_DIV6P1("mso",       R8A7795_CLK_MSO,   CLK_PLL1_DIV4, 0x014),
+>>         DEF_DIV6P1("hdmi",      R8A7795_CLK_HDMI,  CLK_PLL1_DIV2, 0x250),
+>>   };
 >> @@ -120,6 +127,10 @@ static const struct mssr_mod_clk r8a7795_mod_clks[]
 >> __initconst = {
 >>         DEF_MOD("sys-dmac1",             218,   R8A7795_CLK_S3D1),
@@ -78,16 +66,23 @@ to the register values is:
 >> +       DEF_MOD("sdif2",                 312,   R8A7795_CLK_SD2),
 >> +       DEF_MOD("sdif1",                 313,   R8A7795_CLK_SD1),
 >> +       DEF_MOD("sdif0",                 314,   R8A7795_CLK_SD0),
+>>         DEF_MOD("pcie1",                 318,   R8A7795_CLK_S3D1),
+>>         DEF_MOD("pcie0",                 319,   R8A7795_CLK_S3D1),
+>>         DEF_MOD("intc-ap",               408,   R8A7795_CLK_S3D1),
+>
+>
+>
+> Any comments on this? Could this be applied?
+>
+> Best regards
+>
+> Dirk
+>
 
-This part is OK.
 
-Gr{oetje,eeting}s,
 
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+-- 
+Michael Turquette
+CEO
+BayLibre - At the Heart of Embedded Linux
+http://baylibre.com/
