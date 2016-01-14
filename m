@@ -1,72 +1,79 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 25 Jan 2016 08:24:06 +0000
-Subject: Re: Build regressions/improvements in v4.5-rc1
-Message-Id: <CAMuHMdXPFRRJvw4wC8kHvSo7zbcv9159EeRjzh2xiQ_+8zxb6w@mail.gmail.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 14 Jan 2016 09:59:33 +0000
+Subject: [PATCH] dmaengine: rcar-dmac: Rename highmem/lowmem
+Message-Id: <20160114095933.13778.32364.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1453709909-15240-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1453709909-15240-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
-Cc: Linux-sh list <linux-sh@vger.kernel.org>, DRI Development <dri-devel@lists.freedesktop.org>, "linuxppc-dev@lists.ozlabs.org" <linuxppc-dev@lists.ozlabs.org>, Linux MIPS Mailing List <linux-mips@linux-mips.org>
+To: linux-kernel@vger.kernel.org
+Cc: laurent.pinchart+renesas@ideasonboard.com, geert+renesas@glider.be, linux-sh@vger.kernel.org, vinod.koul@intel.com, dmaengine@vger.kernel.org, horms+renesas@verge.net.au, Magnus Damm <magnus.damm@gmail.com>
 
-On Mon, Jan 25, 2016 at 9:18 AM, Geert Uytterhoeven
-<geert@linux-m68k.org> wrote:
-> Below is the list of build error/warning regressions/improvements in
-> v4.5-rc1[1] compared to v4.4[2].
->
-> Summarized:
->   - build errors: +15/-23
+From: Magnus Damm <damm+renesas@opensource.se>
 
-> [1] http://kisskb.ellerman.id.au/kisskb/head/9841/ (all 261 configs)
-> [2] http://kisskb.ellerman.id.au/kisskb/head/9774/ (259 out of 261 configs)
->
->
-> *** ERRORS ***
->
-> 15 error regressions:
->   + /home/kisskb/slave/src/arch/sh/drivers/dma/dma-sh.c: error: 'DMTE6_IRQ' undeclared (first use in this function):  => 58:21
+Update the rcar-dmac driver to rework comments and variable names
+related to lowmem and highmem.
 
-sh-randconfig
+Terminology such as highmem and lowmem are commonly used for Linux
+kernel memory managment. Highmem in particular is about handling more
+physical memory than can fit into the kernel virtual address space.
 
->   + /home/kisskb/slave/src/drivers/gpu/drm/vc4/vc4_v3d.c: error: called object '0u' is not a function:  => 157:29, 159:27
+Highmem and lowmem are related to but not equivalent to the 40-bit
+address limitation that is the real issue the rcar-dmac driver has to
+deal with. For instance, with 1 GiB of RAM highmem is usually needed
+on a 32-bit architecture, but a 32-bit address is still enough.
 
-cris-allmodconfig
-cris-allyesconfig
-m32r/m32700ut.smp_defconfig
-m68k-allmodconfig
-parisc-allmodconfig
-sh-randconfig
-xtensa-allmodconfig
+64-bit architectures tend to not use highmem since the virtual
+address space is more than enough for loads of lowmem. 32-bit
+architectures may still need highmem to access all memory.
 
->   + /home/kisskb/slave/src/sound/core/compress_offload.c: error: case label does not reduce to an integer constant:  => 804:2
+The rcar-dmac driver and the DMA device needs to handle the 40-bit
+limitation on both 64-bit and 32-bit architectures.
 
-ppc64le/allmodconfig+ppc64le
+This patch renames the highmem variable to fourty_bit_required to
+avoid confusion. And the comment gets updated as well.
 
->   + /tmp/ccDC0dZh.s: Error: can't resolve `_start' {*UND* section} - `L0 ' {.text section}:  => 378, 49
->   + /tmp/ccGniXga.s: Error: can't resolve `_start' {*UND* section} - `L0 ' {.text section}:  => 43
->   + /tmp/ccci5ABy.s: Error: can't resolve `_start' {*UND* section} - `L0 ' {.text section}:  => 366, 49
->   + /tmp/cccq2wZf.s: Error: can't resolve `_start' {*UND* section} - `L0 ' {.text section}:  => 43
->   + /tmp/cchnfEGb.s: Error: can't resolve `_start' {*UND* section} - `L0 ' {.text section}:  => 43
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
 
-(reported before)
+ drivers/dma/sh/rcar-dmac.c |   12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
 
-mips-allnoconfig
-mips-defconfig
-ip27_defconfig
-
->   + error: No rule to make target include/config/auto.conf:  => N/A
-
-arm-randconfig (reported before)
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+--- 0001/drivers/dma/sh/rcar-dmac.c
++++ work/drivers/dma/sh/rcar-dmac.c	2016-01-14 18:35:23.780513000 +0900
+@@ -889,7 +889,7 @@ rcar_dmac_chan_prep_sg(struct rcar_dmac_
+ 	unsigned int nchunks = 0;
+ 	unsigned int max_chunk_size;
+ 	unsigned int full_size = 0;
+-	bool highmem = false;
++	bool fourty_bit_required = false;
+ 	unsigned int i;
+ 
+ 	desc = rcar_dmac_desc_get(chan);
+@@ -935,7 +935,7 @@ rcar_dmac_chan_prep_sg(struct rcar_dmac_
+ 			 * hardware descriptor lists.
+ 			 */
+ 			if (dev_addr >> 32 || mem_addr >> 32)
+-				highmem = true;
++				fourty_bit_required = true;
+ #endif
+ 
+ 			chunk = rcar_dmac_xfer_chunk_get(chan);
+@@ -977,13 +977,13 @@ rcar_dmac_chan_prep_sg(struct rcar_dmac_
+ 	 * Use hardware descriptor lists if possible when more than one chunk
+ 	 * needs to be transferred (otherwise they don't make much sense).
+ 	 *
+-	 * The highmem check currently covers the whole transfer. As an
+-	 * optimization we could use descriptor lists for consecutive lowmem
+-	 * chunks and direct manual mode for highmem chunks. Whether the
++	 * The 40-bit address check currently covers the whole transfer. As an
++	 * optimization we could use descriptor lists for consecutive 32-bit
++	 * chunks and direct manual mode for 40-bit chunks. Whether the
+ 	 * performance improvement would be significant enough compared to the
+ 	 * additional complexity remains to be investigated.
+ 	 */
+-	desc->hwdescs.use = !highmem && nchunks > 1;
++	desc->hwdescs.use = !fourty_bit_required && nchunks > 1;
+ 	if (desc->hwdescs.use) {
+ 		if (rcar_dmac_fill_hwdesc(chan, desc) < 0)
+ 			desc->hwdescs.use = false;
