@@ -1,27 +1,48 @@
-From: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-Date: Fri, 08 Jan 2016 05:06:43 +0000
-Subject: Re: [git pull/resend] serial: sh-sci: External Clock Support for v4.5
-Message-Id: <20160108050643.GG30293@kroah.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 15 Jan 2016 02:38:04 +0000
+Subject: [PATCH v3 11/14] ARM: shmobile: gose: enable sound DMA support via BUSIF in device tree
+Message-Id: <1452825487-15931-12-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1451472048-25592-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1451472048-25592-1-git-send-email-geert+renesas@glider.be>
+References: <1452825487-15931-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1452825487-15931-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Jiri Slaby <jslaby@suse.com>, Simon Horman <horms+renesas@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Dec 30, 2015 at 11:40:48AM +0100, Geert Uytterhoeven wrote:
-> 	Hi Greg,
-> 
-> The following changes since commit 8005c49d9aea74d382f474ce11afbbc7d7130bec:
-> 
->   Linux 4.4-rc1 (2015-11-15 17:00:27 -0800)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/geert/renesas-drivers.git scif-clk-sck-brg-for-v4.5
+Enable DMA transfer to/from SSIU in gose/r8a7791 device tree.
 
-sorry for the delay, now pulled.
+     DMA
+[MEM] -> [SSIU] -> [SSI]
 
-greg k-h
+     DMA
+[MEM] <- [SSIU] <- [SSI]
+
+Based on similar work for the r8a7791/koelsch by Kuninori Morimoto.
+
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7793-gose.dts | 5 -----
+ 1 file changed, 5 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a7793-gose.dts b/arch/arm/boot/dts/r8a7793-gose.dts
+index 0ab0abb9f889..4a7048d676c8 100644
+--- a/arch/arm/boot/dts/r8a7793-gose.dts
++++ b/arch/arm/boot/dts/r8a7793-gose.dts
+@@ -321,11 +321,6 @@
+ 	};
+ };
+ 
+-&ssi0 {
+-	no-busif;
+-};
+-
+ &ssi1 {
+-	no-busif;
+ 	shared-pin;
+ };
+-- 
+2.1.4
+
