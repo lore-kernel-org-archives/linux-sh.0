@@ -1,44 +1,46 @@
-From: "Michael S. Tsirkin" <mst@redhat.com>
-Date: Fri, 08 Jan 2016 10:14:48 +0000
-Subject: Re: [PATCH 3/3] checkpatch: add virt barriers
-Message-Id: <20160108121352-mutt-send-email-mst@redhat.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 15 Jan 2016 11:07:02 +0000
+Subject: [PATCH 0/2] pinctrl: sh-pfc: r8a7795: Errata for Rev 0.50 datasheet
+Message-Id: <1452856024-10793-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1451907395-15978-1-git-send-email-mst@redhat.com>
-	<1451907395-15978-4-git-send-email-mst@redhat.com>
-	<1451926073.4334.90.camel@perches.com>
-	<20160104230528-mutt-send-email-mst@redhat.com>
-	<1451945497.4334.107.camel@perches.com>
-In-Reply-To: <1451945497.4334.107.camel@perches.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: Joe Perches <joe@perches.com>
-Cc: linux-mips@linux-mips.org, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, virtualization@lists.linux-foundation.org, "H. Peter Anvin" <hpa@zytor.com>, sparclinux@vger.kernel.org, Ingo Molnar <mingo@kernel.org>, linux-arch@vger.kernel.org, linux-s390@vger.kernel.org, Russell King - ARM Linux <linux@arm.linux.org.uk>, Arnd Bergmann <arnd@arndb.de>, x86@kernel.org, Tony Lindgren <tony@atomide.com>, xen-devel@lists.xenproject.org, Ingo Molnar <mingo@elte.hu>, linux-xtensa@linux-xtensa.org, user-mode-linux-devel@lists.sourceforge.net, Stefano Stabellini <stefano.stabellini@eu.citrix.com>, Andrey Konovalov <andreyknvl@google.com>, adi-buildroot-devel@lists.sourceforge.net, "Cc : Andy Whitcroft" <apw@canonical.com>, Thomas Gleixner <tglx@linutronix.de>, linux-metag@vger.kernel.org, linux-arm-kernel@lists.infradead.org, Andrew
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Linus Walleij <linus.walleij@linaro.org>
+Cc: linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Mon, Jan 04, 2016 at 02:11:37PM -0800, Joe Perches wrote:
-> On Mon, 2016-01-04 at 23:07 +0200, Michael S. Tsirkin wrote:
-> > On Mon, Jan 04, 2016 at 08:47:53AM -0800, Joe Perches wrote:
-> > > On Mon, 2016-01-04 at 13:37 +0200, Michael S. Tsirkin wrote:
-> > > > Add virt_ barriers to list of barriers to check for
-> > > > presence of a comment.
-> > >=20
-> > > Are these virt_ barriers used anywhere?
-> > >=20
-> > > I see some virtio_ barrier like uses.
-> >=20
-> > They will be :) They are added and used by patchset
-> > 	=A0=A0=A0=A0=A0=A0=A0=A0arch: barrier cleanup + barriers for virt
-> >=20
-> > See
-> > http://article.gmane.org/gmane.linux.kernel.virtualization/26555
->=20
-> Ah, OK, thanks.
->=20
-> Are the virtio_ barriers going away?
-> If not, maybe those should be added too.
+	Hi Linus, Laurent,
 
-I don't mind. I'll queue a patch like that.
+This patch series synchronize the R-Car M3 (r8a7795) pin control driver
+code with the latest Manual Errata for Rev 0.50 of the R-Car Gen3
+datasheet.  None of this has user-visible impact.
 
+Laurent: As the first patch depends on (big) "[PATCH v3 2/2]
+pinctrl: sh-pfc: Rename PINMUX_IPSR_DATA() to PINMUX_IPSR_GPSR()", from
+series "[PATCH v3 0/2] pinctrl: sh-pfc: Improve pinmux macros
+documentation", and you had comments on earlier versions of that series,
+it would be good to receive an ack for that series first
+(https://www.spinics.net/lists/linux-gpio/msg09949.html).
 
---=20
-MST
+Thanks!
+
+Geert Uytterhoeven (2):
+  pinctrl: sh-pfc: r8a7795: Rename SSI_{WS,SCK}0129 to SSI_{WS,SCK}01239
+  pinctrl: sh-pfc: r8a7795: Remove bits SEL_VSP_1 and SEL_VSP_0
+
+ drivers/pinctrl/sh-pfc/pfc-r8a7795.c | 20 ++++++++++----------
+ 1 file changed, 10 insertions(+), 10 deletions(-)
+
+-- 
+1.9.1
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
