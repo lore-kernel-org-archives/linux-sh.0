@@ -1,157 +1,45 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Tue, 19 Jan 2016 16:21:01 +0000
-Subject: [RFC 6/6] mmc: sdhi: Add r8a7795 support
-Message-Id: <1453220461-2598-7-git-send-email-wsa@the-dreams.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 15 Jan 2016 02:37:59 +0000
+Subject: [PATCH v3 06/14] ARM: shmobile: r8a7793: add audio DMAC clocks to device tree
+Message-Id: <1452825487-15931-7-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1452825487-15931-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1452825487-15931-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Instantiate Audio DMA clocks in the r8a7791 device tree.
 
-Registers are 64bit apart, so we refactor bus_shift handling a little
-and set it based on the DT compatible. Also, EXT_ACC is different.
+Based on similar work for the r8a7791 by Kuninori Morimoto.
 
-Signed-off-by: Ai Kyuse <ai.kyuse.uw@renesas.com>
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- Documentation/devicetree/bindings/mmc/tmio_mmc.txt |  1 +
- drivers/mmc/host/Kconfig                           |  2 +-
- drivers/mmc/host/sh_mobile_sdhi.c                  | 47 ++++++++++++++++------
- 3 files changed, 36 insertions(+), 14 deletions(-)
+ arch/arm/boot/dts/r8a7793.dtsi | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/mmc/tmio_mmc.txt b/Documentation/devicetree/bindings/mmc/tmio_mmc.txt
-index 400b640fabc768..7fb746dd1a68ca 100644
---- a/Documentation/devicetree/bindings/mmc/tmio_mmc.txt
-+++ b/Documentation/devicetree/bindings/mmc/tmio_mmc.txt
-@@ -22,6 +22,7 @@ Required properties:
- 		"renesas,sdhi-r8a7792" - SDHI IP on R8A7792 SoC
- 		"renesas,sdhi-r8a7793" - SDHI IP on R8A7793 SoC
- 		"renesas,sdhi-r8a7794" - SDHI IP on R8A7794 SoC
-+		"renesas,sdhi-r8a7795" - SDHI IP on R8A7795 SoC
- 
- Optional properties:
- - toshiba,mmc-wrprotect-disable: write-protect detection is unavailable
-diff --git a/drivers/mmc/host/Kconfig b/drivers/mmc/host/Kconfig
-index 1526b8a10b094e..dd1499bd218b16 100644
---- a/drivers/mmc/host/Kconfig
-+++ b/drivers/mmc/host/Kconfig
-@@ -560,7 +560,7 @@ config MMC_TMIO
- 
- config MMC_SDHI
- 	tristate "SH-Mobile SDHI SD/SDIO controller support"
--	depends on SUPERH || ARM
-+	depends on SUPERH || ARM || ARM64
- 	depends on SUPERH || ARCH_SHMOBILE || COMPILE_TEST
- 	select MMC_TMIO_CORE
- 	help
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index 557e2b9dadeec7..1d9c24ed889462 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -1,6 +1,8 @@
- /*
-  * SuperH Mobile SDHI
-  *
-+ * Copyright (C) 2016 Sang Engineering, Wolfram Sang
-+ * Copyright (C) 2015-16 Renesas Electronics Corporation
-  * Copyright (C) 2009 Magnus Damm
-  *
-  * This program is free software; you can redistribute it and/or modify
-@@ -43,6 +45,7 @@ struct sh_mobile_sdhi_of_data {
- 	unsigned long capabilities2;
- 	enum dma_slave_buswidth dma_buswidth;
- 	dma_addr_t dma_rx_offset;
-+	unsigned bus_shift;
- };
- 
- static const struct sh_mobile_sdhi_of_data sh_mobile_sdhi_of_cfg[] = {
-@@ -65,6 +68,13 @@ static const struct sh_mobile_sdhi_of_data of_rcar_gen2_compatible = {
- 	.dma_rx_offset	= 0x2000,
- };
- 
-+static const struct sh_mobile_sdhi_of_data of_rcar_gen3_compatible = {
-+	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE |
-+			  TMIO_MMC_CLK_ACTUAL | TMIO_MMC_FAST_CLK_CHG,
-+	.capabilities	= MMC_CAP_SD_HIGHSPEED,
-+	.bus_shift	= 2,
-+};
-+
- static const struct of_device_id sh_mobile_sdhi_of_match[] = {
- 	{ .compatible = "renesas,sdhi-shmobile" },
- 	{ .compatible = "renesas,sdhi-sh7372" },
-@@ -78,6 +88,7 @@ static const struct of_device_id sh_mobile_sdhi_of_match[] = {
- 	{ .compatible = "renesas,sdhi-r8a7792", .data = &of_rcar_gen2_compatible, },
- 	{ .compatible = "renesas,sdhi-r8a7793", .data = &of_rcar_gen2_compatible, },
- 	{ .compatible = "renesas,sdhi-r8a7794", .data = &of_rcar_gen2_compatible, },
-+	{ .compatible = "renesas,sdhi-r8a7795", .data = &of_rcar_gen3_compatible, },
- 	{},
- };
- MODULE_DEVICE_TABLE(of, sh_mobile_sdhi_of_match);
-@@ -103,6 +114,15 @@ static void sh_mobile_sdhi_sdbuf_width(struct tmio_mmc_host *host, int width)
- 	case 0xCB0D:
- 		val = (width = 32) ? 0x0000 : 0x0001;
- 		break;
-+	case 0xCC10:
-+	case 0xCD10:
-+		if (width = 64)
-+			val = 0x0000;
-+		else if (width = 32)
-+			val = 0x0101;
-+		else
-+			val = 0x0001;
-+		break;
- 	default:
- 		/* nothing to do */
- 		return;
-@@ -233,16 +253,26 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- 		goto eprobe;
- 	}
- 
-+	if (of_id && of_id->data) {
-+		const struct sh_mobile_sdhi_of_data *of_data = of_id->data;
-+
-+		mmc_data->flags |= of_data->tmio_flags;
-+		mmc_data->capabilities |= of_data->capabilities;
-+		mmc_data->capabilities2 |= of_data->capabilities2;
-+		mmc_data->dma_rx_offset = of_data->dma_rx_offset;
-+		dma_priv->dma_buswidth = of_data->dma_buswidth;
-+		host->bus_shift = of_data->bus_shift;
-+	}
-+
- 	host->dma		= dma_priv;
- 	host->write16_hook	= sh_mobile_sdhi_write16_hook;
- 	host->clk_enable	= sh_mobile_sdhi_clk_enable;
- 	host->clk_disable	= sh_mobile_sdhi_clk_disable;
- 	host->multi_io_quirk	= sh_mobile_sdhi_multi_io_quirk;
--	/* SD control register space size is 0x100, 0x200 for bus_shift=1 */
--	if (resource_size(res) > 0x100)
-+
-+	/* Orginally registers were 16 bit apart, could be 32 or 64 nowadays */
-+	if (!host->bus_shift && resource_size(res) > 0x100) /* old way to determine the shift */
- 		host->bus_shift = 1;
--	else
--		host->bus_shift = 0;
- 
- 	if (mmd)
- 		*mmc_data = *mmd;
-@@ -274,15 +304,6 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- 	 */
- 	mmc_data->flags |= TMIO_MMC_SDIO_STATUS_QUIRK;
- 
--	if (of_id && of_id->data) {
--		const struct sh_mobile_sdhi_of_data *of_data = of_id->data;
--		mmc_data->flags |= of_data->tmio_flags;
--		mmc_data->capabilities |= of_data->capabilities;
--		mmc_data->capabilities2 |= of_data->capabilities2;
--		mmc_data->dma_rx_offset = of_data->dma_rx_offset;
--		dma_priv->dma_buswidth = of_data->dma_buswidth;
--	}
--
- 	ret = tmio_mmc_host_probe(host, mmc_data);
- 	if (ret < 0)
- 		goto efree;
+diff --git a/arch/arm/boot/dts/r8a7793.dtsi b/arch/arm/boot/dts/r8a7793.dtsi
+index 1a260676682f..4a58994ba124 100644
+--- a/arch/arm/boot/dts/r8a7793.dtsi
++++ b/arch/arm/boot/dts/r8a7793.dtsi
+@@ -924,10 +924,11 @@
+ 		mstp5_clks: mstp5_clks@e6150144 {
+ 			compatible = "renesas,r8a7793-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150144 0 4>, <0 0xe615003c 0 4>;
+-			clocks = <&extal_clk>;
++			clocks = <&hp_clk>, <&hp_clk>, <&extal_clk>;
+ 			#clock-cells = <1>;
+-			clock-indices = <R8A7793_CLK_THERMAL>;
+-			clock-output-names = "thermal";
++			clock-indices = <R8A7793_CLK_AUDIO_DMAC0 R8A7793_CLK_AUDIO_DMAC1
++					 R8A7793_CLK_THERMAL>;
++			clock-output-names = "audmac0", "audmac1", "thermal";
+ 		};
+ 		mstp7_clks: mstp7_clks@e615014c {
+ 			compatible = "renesas,r8a7793-mstp-clocks",
 -- 
 2.1.4
 
