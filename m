@@ -1,40 +1,137 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Mon, 25 Jan 2016 19:15:09 +0000
-Subject: [PATCH 2/9] mmc: sdhi: Add EXT_ACC register busy check
-Message-Id: <1453749316-1848-3-git-send-email-wsa@the-dreams.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 15 Jan 2016 02:38:02 +0000
+Subject: [PATCH v3 09/14] ARM: shmobile: gose: Enable sound PIO support in device tree
+Message-Id: <1452825487-15931-10-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1453749316-1848-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1453749316-1848-1-git-send-email-wsa@the-dreams.de>
+References: <1452825487-15931-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1452825487-15931-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: Wolfram Sang <wsa@the-dreams.de>, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Dirk Behme <dirk.behme@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
+Enable sound PIO support in the r8a7793/gose device tree.
 
-All the docs I have access to say that this register needs the bus busy
-check.
+Based on similar work for the r8a7791/koelsch by Kuninori Morimoto.
 
-Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
-Signed-off-by: Ai Kyuse <ai.kyuse.uw@renesas.com>
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/mmc/host/sh_mobile_sdhi.c | 1 +
- 1 file changed, 1 insertion(+)
+ arch/arm/boot/dts/r8a7793-gose.dts | 76 ++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 76 insertions(+)
 
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index 354f4f335ed57a..61671f3fa09a11 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -163,6 +163,7 @@ static int sh_mobile_sdhi_write16_hook(struct tmio_mmc_host *host, int addr)
- 	case CTL_SD_MEM_CARD_OPT:
- 	case CTL_TRANSACTION_CTL:
- 	case CTL_DMA_ENABLE:
-+	case EXT_ACC:
- 		return sh_mobile_sdhi_wait_idle(host);
- 	}
+diff --git a/arch/arm/boot/dts/r8a7793-gose.dts b/arch/arm/boot/dts/r8a7793-gose.dts
+index 987ed03b1e02..a90af303e21a 100644
+--- a/arch/arm/boot/dts/r8a7793-gose.dts
++++ b/arch/arm/boot/dts/r8a7793-gose.dts
+@@ -8,6 +8,17 @@
+  * kind, whether express or implied.
+  */
  
++/*
++ * SSI-AK4643
++ *
++ * SW1: 1: AK4643
++ *      2: CN22
++ *      3: ADV7511
++ *
++ * This command is required when Playback/Capture
++ *
++ *	amixer set "LINEOUT Mixer DACL" on
++ */
+ /dts-v1/;
+ #include "r8a7793.dtsi"
+ #include <dt-bindings/gpio/gpio.h>
+@@ -129,6 +140,30 @@
+ 			label = "LED8";
+ 		};
+ 	};
++
++	audio_clock: clock {
++		compatible = "fixed-clock";
++		#clock-cells = <0>;
++		clock-frequency = <11289600>;
++		clock-output-names = "audio_clock";
++	};
++
++	rsnd_ak4643: sound {
++		compatible = "simple-audio-card";
++
++		simple-audio-card,format = "left_j";
++		simple-audio-card,bitclock-master = <&sndcodec>;
++		simple-audio-card,frame-master = <&sndcodec>;
++
++		sndcpu: simple-audio-card,cpu {
++			sound-dai = <&rcar_sound>;
++		};
++
++		sndcodec: simple-audio-card,codec {
++			sound-dai = <&ak4643>;
++			clocks = <&audio_clock>;
++		};
++	};
+ };
+ 
+ &extal_clk {
+@@ -165,6 +200,16 @@
+ 		renesas,groups = "qspi_ctrl", "qspi_data4";
+ 		renesas,function = "qspi";
+ 	};
++
++	sound_pins: sound {
++		renesas,groups = "ssi0129_ctrl", "ssi0_data", "ssi1_data";
++		renesas,function = "ssi";
++	};
++
++	sound_clk_pins: sound_clk {
++		renesas,groups = "audio_clk_a";
++		renesas,function = "audio_clk";
++	};
+ };
+ 
+ &ether {
+@@ -247,9 +292,40 @@
+ 	status = "okay";
+ 	clock-frequency = <100000>;
+ 
++	ak4643: codec@12 {
++		compatible = "asahi-kasei,ak4643";
++		#sound-dai-cells = <0>;
++		reg = <0x12>;
++	};
+ 	eeprom@50 {
+ 		compatible = "renesas,r1ex24002", "atmel,24c02";
+ 		reg = <0x50>;
+ 		pagesize = <16>;
+ 	};
+ };
++
++&rcar_sound {
++	pinctrl-0 = <&sound_pins &sound_clk_pins>;
++	pinctrl-names = "default";
++
++	/* Single DAI */
++	#sound-dai-cells = <0>;
++
++	status = "okay";
++
++	rcar_sound,dai {
++		dai0 {
++			playback = <&ssi0>;
++			capture  = <&ssi1>;
++		};
++	};
++};
++
++&ssi0 {
++	pio-transfer;
++};
++
++&ssi1 {
++	pio-transfer;
++	shared-pin;
++};
 -- 
 2.1.4
 
