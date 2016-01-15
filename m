@@ -1,40 +1,41 @@
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Mon, 11 Jan 2016 18:00:10 +0000
-Subject: [PATCH 2/3] media: soc_camera: rcar_vin: Add R-Car Gen3 support
-Message-Id: <1452535211-4869-3-git-send-email-ykaneko0929@gmail.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 15 Jan 2016 10:40:45 +0000
+Subject: Re: [PATCH 3/4] ARM64: renesas: r8a7795: Add DU device to DT
+Message-Id: <CAMuHMdWB5iuH5P6H71tE-S2CRAFuxTp=VMfnVp696OD=DThq4Q@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1452535211-4869-1-git-send-email-ykaneko0929@gmail.com>
-In-Reply-To: <1452535211-4869-1-git-send-email-ykaneko0929@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-From: Yoshihiko Mori <yoshihiko.mori.nx@renesas.com>
+On Thu, Dec 17, 2015 at 8:21 AM, Laurent Pinchart
+<laurent.pinchart+renesas@ideasonboard.com> wrote:
+> --- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+> +++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+> @@ -889,5 +889,51 @@
+>                         renesas,#rpf = <5>;
+>                         renesas,#wpf = <2>;
+>                 };
+> +
+> +               du: display@feb00000 {
+> +                       compatible = "renesas,du-r8a7795";
+> +                       reg = <0 0xfeb00000 0 0x80000>,
+> +                             <0 0xfeb90000 0 0x14>;
+> +                       reg-names = "du", "lvds.0";
+> +                       interrupts = <0 256 IRQ_TYPE_LEVEL_HIGH>,
+> +                                    <0 268 IRQ_TYPE_LEVEL_HIGH>,
+> +                                    <0 269 IRQ_TYPE_LEVEL_HIGH>,
+> +                                    <0 270 IRQ_TYPE_LEVEL_HIGH>;
 
-Simply documents new compatibility string.
-As a previous patch adds a generic R-Car Gen3 compatibility string
-there appears to be no need for a driver updates.
+<GIC_SPI ...> (x4)
 
-Signed-off-by: Yoshihiko Mori <yoshihiko.mori.nx@renesas.com>
-Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
----
- Documentation/devicetree/bindings/media/rcar_vin.txt | 1 +
- 1 file changed, 1 insertion(+)
+Gr{oetje,eeting}s,
 
-diff --git a/Documentation/devicetree/bindings/media/rcar_vin.txt b/Documentation/devicetree/bindings/media/rcar_vin.txt
-index c13ec5a..e1a92c9 100644
---- a/Documentation/devicetree/bindings/media/rcar_vin.txt
-+++ b/Documentation/devicetree/bindings/media/rcar_vin.txt
-@@ -8,6 +8,7 @@ channel which can be either RGB, YUYV or BT656.
-  - compatible: Must be one of the following
-    - "renesas,rcar-gen2-vin" for R-Car Gen2 Series
-    - "renesas,rcar-gen3-vin" for R-Car Gen3 Series
-+   - "renesas,vin-r8a7795" for the R8A7795 device
-    - "renesas,vin-r8a7794" for the R8A7794 device
-    - "renesas,vin-r8a7793" for the R8A7793 device
-    - "renesas,vin-r8a7791" for the R8A7791 device
--- 
-1.9.1
+                        Geert
 
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
