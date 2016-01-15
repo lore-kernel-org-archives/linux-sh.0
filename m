@@ -1,31 +1,60 @@
-From: David Vrabel <david.vrabel@citrix.com>
-Date: Mon, 04 Jan 2016 11:32:00 +0000
-Subject: Re: [Xen-devel] [PATCH v2 33/34] xenbus: use virt_xxx barriers
-Message-Id: <568A5830.9000501@citrix.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 15 Jan 2016 02:37:53 +0000
+Subject: [PATCH v3 00/14] r8a7793, gose: Add audio support to device tree
+Message-Id: <1452825487-15931-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1451572003-2440-1-git-send-email-mst@redhat.com>
- <1451572003-2440-34-git-send-email-mst@redhat.com>
-In-Reply-To: <1451572003-2440-34-git-send-email-mst@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "Michael S. Tsirkin" <mst@redhat.com>, linux-kernel@vger.kernel.org
-Cc: linux-mips@linux-mips.org, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, virtualization@lists.linux-foundation.org, "H. Peter Anvin" <hpa@zytor.com>, sparclinux@vger.kernel.org, Boris Ostrovsky <boris.ostrovsky@oracle.com>, linux-arch@vger.kernel.org, linux-s390@vger.kernel.org, Arnd Bergmann <arnd@arndb.de>, x86@kernel.org, xen-devel@lists.xenproject.org, Ingo Molnar <mingo@elte.hu>, linux-xtensa@linux-xtensa.org, user-mode-linux-devel@lists.sourceforge.net, Stefano Stabellini <stefano.stabellini@eu.citrix.com>, adi-buildroot-devel@lists.sourceforge.net, Thomas Gleixner <tglx@linutronix.de>, linux-metag@vger.kernel.org, linux-arm-kernel@lists.infradead.org, Andrew Cooper <andrew.cooper3@citrix.com>, David Vrabel <david.vrabel@citrix.com>, linuxppc-dev@lists.ozlabs.org, David Miller <davem@d>
+To: linux-arm-kernel@lists.infradead.org
 
-On 31/12/15 19:10, Michael S. Tsirkin wrote:
-> drivers/xen/xenbus/xenbus_comms.c uses
-> full memory barriers to communicate with the other side.
-> 
-> For guests compiled with CONFIG_SMP, smp_wmb and smp_mb
-> would be sufficient, so mb() and wmb() here are only needed if
-> a non-SMP guest runs on an SMP host.
-> 
-> Switch to virt_xxx barriers which serve this exact purpose.
+Hi,
 
-Acked-by: David Vrabel <david.vrabel@citrix.com>
+this series adds support to r8a7793 and gose device trees for
+rcar sound: first in PIO mode then using DMA
 
-If you're feeling particularly keen there's a rmb() consume_one_event()
-in drivers/xen/events/events_fifo.c that can be converted to virt_rmb()
-as well.
+I have been unable to test if audio works (in PIO mode) as I
+do not have physical access to a gose board. I would appreciate
+some assistance there.
 
-David
+This work is based heavily on the work of others for the r8a7791 and
+koelsch as noted in the changelogs of individual patches.
+
+This series is based on renesas-devel-20160111-v4.4 and
+has no other dependencies that I am aware of.
+
+Changes between v2 and v3
+* Minor changelog tweaks
+
+Changes since v1 and v2:
+* Dropped RFC designation
+* Dropped i2c patches: they have been posted and partially merged separately
+* Dropped MIX/CTU support pending more work on that feature
+* Enable Audio DMAC peri peri via sound driver
+* Other changes noted in per-patch changelogs
+
+
+Simon Horman (14):
+  ARM: shmobile: r8a7793: add MSTP10 clocks to device tree
+  ARM: shmobile: r8a7793: add audio clock to device tree
+  ARM: shmobile: r8a7793: add m2 clock to device tree
+  ARM: shmobile: r8a7793: add R-Car sound support to device tree
+  ARM: shmobile: r8a7793: add DVC support to device tree
+  ARM: shmobile: r8a7793: add audio DMAC clocks to device tree
+  ARM: shmobile: r8a7793: add audio DMAC to device tree
+  ARM: shmobile: r8a7793: enable Audio DMAC peri peri via sound driver
+  ARM: shmobile: gose: Enable sound PIO support in device tree
+  ARM: shmobile: gose: enable sound DMA support in device tree
+  ARM: shmobile: gose: enable sound DMA support via BUSIF in device tree
+  ARM: shmobile: gose: enable sound DMA support via SRC in device tree
+  ARM: shmobile: gose: enable sound DMA support via DVC in device tree
+  ARM: shmobile: r8a7793: enable audio DMAC in device tree
+
+ arch/arm/boot/dts/r8a7793-gose.dts        |  88 +++++++++
+ arch/arm/boot/dts/r8a7793.dtsi            | 289 +++++++++++++++++++++++++++++-
+ include/dt-bindings/clock/r8a7793-clock.h |   2 +
+ 3 files changed, 376 insertions(+), 3 deletions(-)
+
+-- 
+2.1.4
+
