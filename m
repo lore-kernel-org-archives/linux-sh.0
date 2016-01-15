@@ -1,49 +1,86 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sun, 10 Jan 2016 21:28:14 +0000
-Subject: [PATCH 2/2] sh_eth: stop reading ECMR in sh_eth_dev_init()
-Message-Id: <1452487360.1PLDn6dh2G@wasted.cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 15 Jan 2016 02:37:54 +0000
+Subject: [PATCH v3 01/14] ARM: shmobile: r8a7793: add MSTP10 clocks to device tree
+Message-Id: <1452825487-15931-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <5859243.yu8qorLmay@wasted.cogentembedded.com>
-In-Reply-To: <5859243.yu8qorLmay@wasted.cogentembedded.com>
+References: <1452825487-15931-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1452825487-15931-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The code in sh_eth_dev_init()  twiddling the ECMR bits always looked a bit
-strange to me:  if one intends to respect 'mdp->duplex', why save old value
-of the ECMR.DM bit? As all the other bits are zeroed anyway, we don't really
-need to read ECMR before writing to it.
+Instantiate MSTP10 clocks in r8a7793 device tree.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Based on similar work for the r8a7791 by Kuninori Morimoto.
 
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/net/ethernet/renesas/sh_eth.c |    7 ++-----
- 1 file changed, 2 insertions(+), 5 deletions(-)
+ arch/arm/boot/dts/r8a7793.dtsi            | 36 +++++++++++++++++++++++++++++++
+ include/dt-bindings/clock/r8a7793-clock.h |  2 ++
+ 2 files changed, 38 insertions(+)
 
-Index: net/drivers/net/ethernet/renesas/sh_eth.c
-=================================--- net.orig/drivers/net/ethernet/renesas/sh_eth.c
-+++ net/drivers/net/ethernet/renesas/sh_eth.c
-@@ -1289,7 +1289,6 @@ static int sh_eth_dev_init(struct net_de
- {
- 	int ret = 0;
- 	struct sh_eth_private *mdp = netdev_priv(ndev);
--	u32 val;
- 
- 	/* Soft Reset */
- 	ret = sh_eth_reset(ndev);
-@@ -1342,10 +1341,8 @@ static int sh_eth_dev_init(struct net_de
- 	}
- 
- 	/* PAUSE Prohibition */
--	val = (sh_eth_read(ndev, ECMR) & ECMR_DM) |
--		ECMR_ZPF | (mdp->duplex ? ECMR_DM : 0) | ECMR_TE | ECMR_RE;
--
--	sh_eth_write(ndev, val, ECMR);
-+	sh_eth_write(ndev, ECMR_ZPF | (mdp->duplex ? ECMR_DM : 0) |
-+		     ECMR_TE | ECMR_RE, ECMR);
- 
- 	if (mdp->cd->set_rate)
- 		mdp->cd->set_rate(ndev);
+diff --git a/arch/arm/boot/dts/r8a7793.dtsi b/arch/arm/boot/dts/r8a7793.dtsi
+index 0ce7cc420c9d..221f5707a622 100644
+--- a/arch/arm/boot/dts/r8a7793.dtsi
++++ b/arch/arm/boot/dts/r8a7793.dtsi
+@@ -963,6 +963,42 @@
+ 				"qspi_mod", "i2c5", "i2c6", "i2c4",
+ 				"i2c3", "i2c2", "i2c1", "i2c0";
+ 		};
++		mstp10_clks: mstp10_clks@e6150998 {
++			compatible = "renesas,r8a7793-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0 0xe6150998 0 4>, <0 0xe61509a8 0 4>;
++			clocks = <&p_clk>,
++				<&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>,
++				<&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>,
++				<&p_clk>,
++				<&mstp10_clks R8A7793_CLK_SCU_ALL>, <&mstp10_clks R8A7793_CLK_SCU_ALL>,
++				<&mstp10_clks R8A7793_CLK_SCU_ALL>, <&mstp10_clks R8A7793_CLK_SCU_ALL>,
++				<&mstp10_clks R8A7793_CLK_SCU_ALL>, <&mstp10_clks R8A7793_CLK_SCU_ALL>,
++				<&mstp10_clks R8A7793_CLK_SCU_ALL>, <&mstp10_clks R8A7793_CLK_SCU_ALL>,
++				<&mstp10_clks R8A7793_CLK_SCU_ALL>, <&mstp10_clks R8A7793_CLK_SCU_ALL>,
++				<&mstp10_clks R8A7793_CLK_SCU_ALL>, <&mstp10_clks R8A7793_CLK_SCU_ALL>,
++				<&mstp10_clks R8A7793_CLK_SCU_ALL>, <&mstp10_clks R8A7793_CLK_SCU_ALL>;
++
++			#clock-cells = <1>;
++			clock-indices = <
++				R8A7793_CLK_SSI_ALL
++				R8A7793_CLK_SSI9 R8A7793_CLK_SSI8 R8A7793_CLK_SSI7 R8A7793_CLK_SSI6 R8A7793_CLK_SSI5
++				R8A7793_CLK_SSI4 R8A7793_CLK_SSI3 R8A7793_CLK_SSI2 R8A7793_CLK_SSI1 R8A7793_CLK_SSI0
++				R8A7793_CLK_SCU_ALL
++				R8A7793_CLK_SCU_DVC1 R8A7793_CLK_SCU_DVC0
++				R8A7793_CLK_SCU_CTU1_MIX1 R8A7793_CLK_SCU_CTU0_MIX0
++				R8A7793_CLK_SCU_SRC9 R8A7793_CLK_SCU_SRC8 R8A7793_CLK_SCU_SRC7 R8A7793_CLK_SCU_SRC6 R8A7793_CLK_SCU_SRC5
++				R8A7793_CLK_SCU_SRC4 R8A7793_CLK_SCU_SRC3 R8A7793_CLK_SCU_SRC2 R8A7793_CLK_SCU_SRC1 R8A7793_CLK_SCU_SRC0
++			>;
++			clock-output-names +				"ssi-all",
++				"ssi9", "ssi8", "ssi7", "ssi6", "ssi5",
++				"ssi4", "ssi3", "ssi2", "ssi1", "ssi0",
++				"scu-all",
++				"scu-dvc1", "scu-dvc0",
++				"scu-ctu1-mix1", "scu-ctu0-mix0",
++				"scu-src9", "scu-src8", "scu-src7", "scu-src6", "scu-src5",
++				"scu-src4", "scu-src3", "scu-src2", "scu-src1", "scu-src0";
++		};
+ 		mstp11_clks: mstp11_clks@e615099c {
+ 			compatible = "renesas,r8a7793-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe615099c 0 4>, <0 0xe61509ac 0 4>;
+diff --git a/include/dt-bindings/clock/r8a7793-clock.h b/include/dt-bindings/clock/r8a7793-clock.h
+index 1579e07f96a3..efcbc594fe82 100644
+--- a/include/dt-bindings/clock/r8a7793-clock.h
++++ b/include/dt-bindings/clock/r8a7793-clock.h
+@@ -145,6 +145,8 @@
+ #define R8A7793_CLK_SCU_ALL		17
+ #define R8A7793_CLK_SCU_DVC1		18
+ #define R8A7793_CLK_SCU_DVC0		19
++#define R8A7793_CLK_SCU_CTU1_MIX1	20
++#define R8A7793_CLK_SCU_CTU0_MIX0	21
+ #define R8A7793_CLK_SCU_SRC9		22
+ #define R8A7793_CLK_SCU_SRC8		23
+ #define R8A7793_CLK_SCU_SRC7		24
+-- 
+2.1.4
 
