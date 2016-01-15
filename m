@@ -1,422 +1,118 @@
-From: Borislav Petkov <bp@alien8.de>
-Date: Tue, 26 Jan 2016 20:57:22 +0000
-Subject: [PATCH 06/17] arch: Set IORESOURCE_SYSTEM_RAM flag for System RAM
-Message-Id: <1453841853-11383-7-git-send-email-bp@alien8.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 15 Jan 2016 02:37:57 +0000
+Subject: [PATCH v3 04/14] ARM: shmobile: r8a7793: add R-Car sound support to device tree
+Message-Id: <1452825487-15931-5-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1453841853-11383-1-git-send-email-bp@alien8.de>
-In-Reply-To: <1453841853-11383-1-git-send-email-bp@alien8.de>
+References: <1452825487-15931-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1452825487-15931-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ingo Molnar <mingo@kernel.org>
-Cc: LKML <linux-kernel@vger.kernel.org>, linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-mips@linux-mips.org, linux-mm <linux-mm@kvack.org>, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Toshi Kani <toshi.kani@hpe.com>
+Instantiate R-Car sound node in r8a7793 device tree.
+This only supports PIO transfers.
 
-Set IORESOURCE_SYSTEM_RAM in flags of resource ranges with "System RAM",
-"Kernel code", "Kernel data", and "Kernel bss".
+Based on similar work for the r8a7791 by Kuninori Morimoto.
 
-Note that:
-
- - IORESOURCE_SYSRAM (i.e. modifier bit) is set in flags when
-   IORESOURCE_MEM is already set. IORESOURCE_SYSTEM_RAM is defined
-   as (IORESOURCE_MEM|IORESOURCE_SYSRAM).
-
- - Some archs do not set 'flags' for children nodes, such as
-   "Kernel code".  This patch does not change 'flags' in this
-   case.
-
-Signed-off-by: Toshi Kani <toshi.kani@hpe.com>
-Cc: linux-arch@vger.kernel.org
-Cc: linux-arm-kernel@lists.infradead.org
-Cc: linux-mips@linux-mips.org
-Cc: linux-mm <linux-mm@kvack.org>
-Cc: linux-parisc@vger.kernel.org
-Cc: linuxppc-dev@lists.ozlabs.org
-Cc: linux-s390@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
-Cc: sparclinux@vger.kernel.org
-Link: http://lkml.kernel.org/r/1452020081-26534-6-git-send-email-toshi.kani@hpe.com
-Signed-off-by: Borislav Petkov <bp@suse.de>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/kernel/setup.c       |  6 +++---
- arch/arm64/kernel/setup.c     |  6 +++---
- arch/avr32/kernel/setup.c     |  6 +++---
- arch/m32r/kernel/setup.c      |  4 ++--
- arch/mips/kernel/setup.c      | 10 ++++++----
- arch/parisc/mm/init.c         |  6 +++---
- arch/powerpc/mm/mem.c         |  2 +-
- arch/s390/kernel/setup.c      |  8 ++++----
- arch/score/kernel/setup.c     |  2 +-
- arch/sh/kernel/setup.c        |  8 ++++----
- arch/sparc/mm/init_64.c       |  8 ++++----
- arch/tile/kernel/setup.c      | 11 ++++++++---
- arch/unicore32/kernel/setup.c |  6 +++---
- 13 files changed, 45 insertions(+), 38 deletions(-)
+ arch/arm/boot/dts/r8a7793.dtsi | 83 ++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 83 insertions(+)
 
-diff --git a/arch/arm/kernel/setup.c b/arch/arm/kernel/setup.c
-index 7d0cba6f1cc5..139791ed473d 100644
---- a/arch/arm/kernel/setup.c
-+++ b/arch/arm/kernel/setup.c
-@@ -176,13 +176,13 @@ static struct resource mem_res[] = {
- 		.name = "Kernel code",
- 		.start = 0,
- 		.end = 0,
--		.flags = IORESOURCE_MEM
-+		.flags = IORESOURCE_SYSTEM_RAM
- 	},
- 	{
- 		.name = "Kernel data",
- 		.start = 0,
- 		.end = 0,
--		.flags = IORESOURCE_MEM
-+		.flags = IORESOURCE_SYSTEM_RAM
- 	}
- };
- 
-@@ -851,7 +851,7 @@ static void __init request_standard_resources(const struct machine_desc *mdesc)
- 		res->name  = "System RAM";
- 		res->start = __pfn_to_phys(memblock_region_memory_base_pfn(region));
- 		res->end = __pfn_to_phys(memblock_region_memory_end_pfn(region)) - 1;
--		res->flags = IORESOURCE_MEM | IORESOURCE_BUSY;
-+		res->flags = IORESOURCE_SYSTEM_RAM | IORESOURCE_BUSY;
- 
- 		request_resource(&iomem_resource, res);
- 
-diff --git a/arch/arm64/kernel/setup.c b/arch/arm64/kernel/setup.c
-index 8119479147db..450987d99b9b 100644
---- a/arch/arm64/kernel/setup.c
-+++ b/arch/arm64/kernel/setup.c
-@@ -73,13 +73,13 @@ static struct resource mem_res[] = {
- 		.name = "Kernel code",
- 		.start = 0,
- 		.end = 0,
--		.flags = IORESOURCE_MEM
-+		.flags = IORESOURCE_SYSTEM_RAM
- 	},
- 	{
- 		.name = "Kernel data",
- 		.start = 0,
- 		.end = 0,
--		.flags = IORESOURCE_MEM
-+		.flags = IORESOURCE_SYSTEM_RAM
- 	}
- };
- 
-@@ -210,7 +210,7 @@ static void __init request_standard_resources(void)
- 		res->name  = "System RAM";
- 		res->start = __pfn_to_phys(memblock_region_memory_base_pfn(region));
- 		res->end = __pfn_to_phys(memblock_region_memory_end_pfn(region)) - 1;
--		res->flags = IORESOURCE_MEM | IORESOURCE_BUSY;
-+		res->flags = IORESOURCE_SYSTEM_RAM | IORESOURCE_BUSY;
- 
- 		request_resource(&iomem_resource, res);
- 
-diff --git a/arch/avr32/kernel/setup.c b/arch/avr32/kernel/setup.c
-index 209ae5ad3495..e6928896da2a 100644
---- a/arch/avr32/kernel/setup.c
-+++ b/arch/avr32/kernel/setup.c
-@@ -49,13 +49,13 @@ static struct resource __initdata kernel_data = {
- 	.name	= "Kernel data",
- 	.start	= 0,
- 	.end	= 0,
--	.flags	= IORESOURCE_MEM,
-+	.flags	= IORESOURCE_SYSTEM_RAM,
- };
- static struct resource __initdata kernel_code = {
- 	.name	= "Kernel code",
- 	.start	= 0,
- 	.end	= 0,
--	.flags	= IORESOURCE_MEM,
-+	.flags	= IORESOURCE_SYSTEM_RAM,
- 	.sibling = &kernel_data,
- };
- 
-@@ -134,7 +134,7 @@ add_physical_memory(resource_size_t start, resource_size_t end)
- 	new->start = start;
- 	new->end = end;
- 	new->name = "System RAM";
--	new->flags = IORESOURCE_MEM;
-+	new->flags = IORESOURCE_SYSTEM_RAM;
- 
- 	*pprev = new;
- }
-diff --git a/arch/m32r/kernel/setup.c b/arch/m32r/kernel/setup.c
-index a5ecef7188ba..136c69f1fb8a 100644
---- a/arch/m32r/kernel/setup.c
-+++ b/arch/m32r/kernel/setup.c
-@@ -70,14 +70,14 @@ static struct resource data_resource = {
- 	.name   = "Kernel data",
- 	.start  = 0,
- 	.end    = 0,
--	.flags  = IORESOURCE_BUSY | IORESOURCE_MEM
-+	.flags  = IORESOURCE_BUSY | IORESOURCE_SYSTEM_RAM
- };
- 
- static struct resource code_resource = {
- 	.name   = "Kernel code",
- 	.start  = 0,
- 	.end    = 0,
--	.flags  = IORESOURCE_BUSY | IORESOURCE_MEM
-+	.flags  = IORESOURCE_BUSY | IORESOURCE_SYSTEM_RAM
- };
- 
- unsigned long memory_start;
-diff --git a/arch/mips/kernel/setup.c b/arch/mips/kernel/setup.c
-index 569a7d5242dd..c745f0ea2577 100644
---- a/arch/mips/kernel/setup.c
-+++ b/arch/mips/kernel/setup.c
-@@ -732,21 +732,23 @@ static void __init resource_init(void)
- 			end = HIGHMEM_START - 1;
- 
- 		res = alloc_bootmem(sizeof(struct resource));
+diff --git a/arch/arm/boot/dts/r8a7793.dtsi b/arch/arm/boot/dts/r8a7793.dtsi
+index fa8a0d772d51..90959a925edd 100644
+--- a/arch/arm/boot/dts/r8a7793.dtsi
++++ b/arch/arm/boot/dts/r8a7793.dtsi
+@@ -1101,4 +1101,87 @@
+ 		#iommu-cells = <1>;
+ 		status = "disabled";
+ 	};
 +
-+		res->start = start;
-+		res->end = end;
-+		res->flags = IORESOURCE_MEM | IORESOURCE_BUSY;
++	rcar_sound: sound@ec500000 {
++		/*
++		 * #sound-dai-cells is required
++		 *
++		 * Single DAI : #sound-dai-cells = <0>;         <&rcar_sound>;
++		 * Multi  DAI : #sound-dai-cells = <1>;         <&rcar_sound N>;
++		 */
++		compatible =  "renesas,rcar_sound-r8a7793", "renesas,rcar_sound-gen2";
++		reg =	<0 0xec500000 0 0x1000>, /* SCU */
++			<0 0xec5a0000 0 0x100>,  /* ADG */
++			<0 0xec540000 0 0x1000>, /* SSIU */
++			<0 0xec541000 0 0x280>;  /* SSI */
++		reg-names = "scu", "adg", "ssiu", "ssi";
 +
- 		switch (boot_mem_map.map[i].type) {
- 		case BOOT_MEM_RAM:
- 		case BOOT_MEM_INIT_RAM:
- 		case BOOT_MEM_ROM_DATA:
- 			res->name = "System RAM";
-+			res->flags |= IORESOURCE_SYSRAM;
- 			break;
- 		case BOOT_MEM_RESERVED:
- 		default:
- 			res->name = "reserved";
- 		}
- 
--		res->start = start;
--		res->end = end;
--
--		res->flags = IORESOURCE_MEM | IORESOURCE_BUSY;
- 		request_resource(&iomem_resource, res);
- 
- 		/*
-diff --git a/arch/parisc/mm/init.c b/arch/parisc/mm/init.c
-index 1b366c477687..3c07d6b96877 100644
---- a/arch/parisc/mm/init.c
-+++ b/arch/parisc/mm/init.c
-@@ -55,12 +55,12 @@ signed char pfnnid_map[PFNNID_MAP_MAX] __read_mostly;
- 
- static struct resource data_resource = {
- 	.name	= "Kernel data",
--	.flags	= IORESOURCE_BUSY | IORESOURCE_MEM,
-+	.flags	= IORESOURCE_BUSY | IORESOURCE_SYSTEM_RAM,
++		clocks = <&mstp10_clks R8A7793_CLK_SSI_ALL>,
++			<&mstp10_clks R8A7793_CLK_SSI9>, <&mstp10_clks R8A7793_CLK_SSI8>,
++			<&mstp10_clks R8A7793_CLK_SSI7>, <&mstp10_clks R8A7793_CLK_SSI6>,
++			<&mstp10_clks R8A7793_CLK_SSI5>, <&mstp10_clks R8A7793_CLK_SSI4>,
++			<&mstp10_clks R8A7793_CLK_SSI3>, <&mstp10_clks R8A7793_CLK_SSI2>,
++			<&mstp10_clks R8A7793_CLK_SSI1>, <&mstp10_clks R8A7793_CLK_SSI0>,
++			<&mstp10_clks R8A7793_CLK_SCU_SRC9>, <&mstp10_clks R8A7793_CLK_SCU_SRC8>,
++			<&mstp10_clks R8A7793_CLK_SCU_SRC7>, <&mstp10_clks R8A7793_CLK_SCU_SRC6>,
++			<&mstp10_clks R8A7793_CLK_SCU_SRC5>, <&mstp10_clks R8A7793_CLK_SCU_SRC4>,
++			<&mstp10_clks R8A7793_CLK_SCU_SRC3>, <&mstp10_clks R8A7793_CLK_SCU_SRC2>,
++			<&mstp10_clks R8A7793_CLK_SCU_SRC1>, <&mstp10_clks R8A7793_CLK_SCU_SRC0>,
++			<&audio_clk_a>, <&audio_clk_b>, <&audio_clk_c>, <&m2_clk>;
++		clock-names = "ssi-all",
++				"ssi.9", "ssi.8", "ssi.7", "ssi.6", "ssi.5",
++				"ssi.4", "ssi.3", "ssi.2", "ssi.1", "ssi.0",
++				"src.9", "src.8", "src.7", "src.6", "src.5",
++				"src.4", "src.3", "src.2", "src.1", "src.0",
++				"clk_a", "clk_b", "clk_c", "clk_i";
++		power-domains = <&cpg_clocks>;
++
++		status = "disabled";
++
++		rcar_sound,src {
++			src0: src@0 { };
++			src1: src@1 { };
++			src2: src@2 { };
++			src3: src@3 { };
++			src4: src@4 { };
++			src5: src@5 { };
++			src6: src@6 { };
++			src7: src@7 { };
++			src8: src@8 { };
++			src9: src@9 { };
++		};
++
++		rcar_sound,ssi {
++			ssi0: ssi@0 {
++				interrupts = <0 370 IRQ_TYPE_LEVEL_HIGH>;
++			};
++			ssi1: ssi@1 {
++				 interrupts = <0 371 IRQ_TYPE_LEVEL_HIGH>;
++			};
++			ssi2: ssi@2 {
++				interrupts = <0 372 IRQ_TYPE_LEVEL_HIGH>;
++			};
++			ssi3: ssi@3 {
++				interrupts = <0 373 IRQ_TYPE_LEVEL_HIGH>;
++			};
++			ssi4: ssi@4 {
++				interrupts = <0 374 IRQ_TYPE_LEVEL_HIGH>;
++			};
++			ssi5: ssi@5 {
++				interrupts = <0 375 IRQ_TYPE_LEVEL_HIGH>;
++			};
++			ssi6: ssi@6 {
++				interrupts = <0 376 IRQ_TYPE_LEVEL_HIGH>;
++			};
++			ssi7: ssi@7 {
++				interrupts = <0 377 IRQ_TYPE_LEVEL_HIGH>;
++			};
++			ssi8: ssi@8 {
++				interrupts = <0 378 IRQ_TYPE_LEVEL_HIGH>;
++			};
++			ssi9: ssi@9 {
++				interrupts = <0 379 IRQ_TYPE_LEVEL_HIGH>;
++			};
++		};
++	};
  };
- 
- static struct resource code_resource = {
- 	.name	= "Kernel code",
--	.flags	= IORESOURCE_BUSY | IORESOURCE_MEM,
-+	.flags	= IORESOURCE_BUSY | IORESOURCE_SYSTEM_RAM,
- };
- 
- static struct resource pdcdata_resource = {
-@@ -201,7 +201,7 @@ static void __init setup_bootmem(void)
- 		res->name = "System RAM";
- 		res->start = pmem_ranges[i].start_pfn << PAGE_SHIFT;
- 		res->end = res->start + (pmem_ranges[i].pages << PAGE_SHIFT)-1;
--		res->flags = IORESOURCE_MEM | IORESOURCE_BUSY;
-+		res->flags = IORESOURCE_SYSTEM_RAM | IORESOURCE_BUSY;
- 		request_resource(&iomem_resource, res);
- 	}
- 
-diff --git a/arch/powerpc/mm/mem.c b/arch/powerpc/mm/mem.c
-index 22d94c3e6fc4..e78a2b73aa5d 100644
---- a/arch/powerpc/mm/mem.c
-+++ b/arch/powerpc/mm/mem.c
-@@ -541,7 +541,7 @@ static int __init add_system_ram_resources(void)
- 			res->name = "System RAM";
- 			res->start = base;
- 			res->end = base + size - 1;
--			res->flags = IORESOURCE_MEM | IORESOURCE_BUSY;
-+			res->flags = IORESOURCE_SYSTEM_RAM | IORESOURCE_BUSY;
- 			WARN_ON(request_resource(&iomem_resource, res) < 0);
- 		}
- 	}
-diff --git a/arch/s390/kernel/setup.c b/arch/s390/kernel/setup.c
-index c6878fbbcf13..47dc0c011c6d 100644
---- a/arch/s390/kernel/setup.c
-+++ b/arch/s390/kernel/setup.c
-@@ -378,17 +378,17 @@ static void __init setup_lowcore(void)
- 
- static struct resource code_resource = {
- 	.name  = "Kernel code",
--	.flags = IORESOURCE_BUSY | IORESOURCE_MEM,
-+	.flags = IORESOURCE_BUSY | IORESOURCE_SYSTEM_RAM,
- };
- 
- static struct resource data_resource = {
- 	.name = "Kernel data",
--	.flags = IORESOURCE_BUSY | IORESOURCE_MEM,
-+	.flags = IORESOURCE_BUSY | IORESOURCE_SYSTEM_RAM,
- };
- 
- static struct resource bss_resource = {
- 	.name = "Kernel bss",
--	.flags = IORESOURCE_BUSY | IORESOURCE_MEM,
-+	.flags = IORESOURCE_BUSY | IORESOURCE_SYSTEM_RAM,
- };
- 
- static struct resource __initdata *standard_resources[] = {
-@@ -412,7 +412,7 @@ static void __init setup_resources(void)
- 
- 	for_each_memblock(memory, reg) {
- 		res = alloc_bootmem_low(sizeof(*res));
--		res->flags = IORESOURCE_BUSY | IORESOURCE_MEM;
-+		res->flags = IORESOURCE_BUSY | IORESOURCE_SYSTEM_RAM;
- 
- 		res->name = "System RAM";
- 		res->start = reg->base;
-diff --git a/arch/score/kernel/setup.c b/arch/score/kernel/setup.c
-index b48459afefdd..f3a0649ab521 100644
---- a/arch/score/kernel/setup.c
-+++ b/arch/score/kernel/setup.c
-@@ -101,7 +101,7 @@ static void __init resource_init(void)
- 	res->name = "System RAM";
- 	res->start = MEMORY_START;
- 	res->end = MEMORY_START + MEMORY_SIZE - 1;
--	res->flags = IORESOURCE_MEM | IORESOURCE_BUSY;
-+	res->flags = IORESOURCE_SYSTEM_RAM | IORESOURCE_BUSY;
- 	request_resource(&iomem_resource, res);
- 
- 	request_resource(res, &code_resource);
-diff --git a/arch/sh/kernel/setup.c b/arch/sh/kernel/setup.c
-index de19cfa768f2..3f1c18b28e8a 100644
---- a/arch/sh/kernel/setup.c
-+++ b/arch/sh/kernel/setup.c
-@@ -78,17 +78,17 @@ static char __initdata command_line[COMMAND_LINE_SIZE] = { 0, };
- 
- static struct resource code_resource = {
- 	.name = "Kernel code",
--	.flags = IORESOURCE_BUSY | IORESOURCE_MEM,
-+	.flags = IORESOURCE_BUSY | IORESOURCE_SYSTEM_RAM,
- };
- 
- static struct resource data_resource = {
- 	.name = "Kernel data",
--	.flags = IORESOURCE_BUSY | IORESOURCE_MEM,
-+	.flags = IORESOURCE_BUSY | IORESOURCE_SYSTEM_RAM,
- };
- 
- static struct resource bss_resource = {
- 	.name	= "Kernel bss",
--	.flags	= IORESOURCE_BUSY | IORESOURCE_MEM,
-+	.flags	= IORESOURCE_BUSY | IORESOURCE_SYSTEM_RAM,
- };
- 
- unsigned long memory_start;
-@@ -202,7 +202,7 @@ void __init __add_active_range(unsigned int nid, unsigned long start_pfn,
- 	res->name = "System RAM";
- 	res->start = start;
- 	res->end = end - 1;
--	res->flags = IORESOURCE_MEM | IORESOURCE_BUSY;
-+	res->flags = IORESOURCE_SYSTEM_RAM | IORESOURCE_BUSY;
- 
- 	if (request_resource(&iomem_resource, res)) {
- 		pr_err("unable to request memory_resource 0x%lx 0x%lx\n",
-diff --git a/arch/sparc/mm/init_64.c b/arch/sparc/mm/init_64.c
-index 6f216853f272..1cfe6aab7a11 100644
---- a/arch/sparc/mm/init_64.c
-+++ b/arch/sparc/mm/init_64.c
-@@ -2863,17 +2863,17 @@ void hugetlb_setup(struct pt_regs *regs)
- 
- static struct resource code_resource = {
- 	.name	= "Kernel code",
--	.flags	= IORESOURCE_BUSY | IORESOURCE_MEM
-+	.flags	= IORESOURCE_BUSY | IORESOURCE_SYSTEM_RAM
- };
- 
- static struct resource data_resource = {
- 	.name	= "Kernel data",
--	.flags	= IORESOURCE_BUSY | IORESOURCE_MEM
-+	.flags	= IORESOURCE_BUSY | IORESOURCE_SYSTEM_RAM
- };
- 
- static struct resource bss_resource = {
- 	.name	= "Kernel bss",
--	.flags	= IORESOURCE_BUSY | IORESOURCE_MEM
-+	.flags	= IORESOURCE_BUSY | IORESOURCE_SYSTEM_RAM
- };
- 
- static inline resource_size_t compute_kern_paddr(void *addr)
-@@ -2909,7 +2909,7 @@ static int __init report_memory(void)
- 		res->name = "System RAM";
- 		res->start = pavail[i].phys_addr;
- 		res->end = pavail[i].phys_addr + pavail[i].reg_size - 1;
--		res->flags = IORESOURCE_BUSY | IORESOURCE_MEM;
-+		res->flags = IORESOURCE_BUSY | IORESOURCE_SYSTEM_RAM;
- 
- 		if (insert_resource(&iomem_resource, res) < 0) {
- 			pr_warn("Resource insertion failed.\n");
-diff --git a/arch/tile/kernel/setup.c b/arch/tile/kernel/setup.c
-index bbb855de6569..a992238e9b58 100644
---- a/arch/tile/kernel/setup.c
-+++ b/arch/tile/kernel/setup.c
-@@ -1632,14 +1632,14 @@ static struct resource data_resource = {
- 	.name	= "Kernel data",
- 	.start	= 0,
- 	.end	= 0,
--	.flags	= IORESOURCE_BUSY | IORESOURCE_MEM
-+	.flags	= IORESOURCE_BUSY | IORESOURCE_SYSTEM_RAM
- };
- 
- static struct resource code_resource = {
- 	.name	= "Kernel code",
- 	.start	= 0,
- 	.end	= 0,
--	.flags	= IORESOURCE_BUSY | IORESOURCE_MEM
-+	.flags	= IORESOURCE_BUSY | IORESOURCE_SYSTEM_RAM
- };
- 
- /*
-@@ -1673,10 +1673,15 @@ insert_ram_resource(u64 start_pfn, u64 end_pfn, bool reserved)
- 		kzalloc(sizeof(struct resource), GFP_ATOMIC);
- 	if (!res)
- 		return NULL;
--	res->name = reserved ? "Reserved" : "System RAM";
- 	res->start = start_pfn << PAGE_SHIFT;
- 	res->end = (end_pfn << PAGE_SHIFT) - 1;
- 	res->flags = IORESOURCE_BUSY | IORESOURCE_MEM;
-+	if (reserved) {
-+		res->name = "Reserved";
-+	} else {
-+		res->name = "System RAM";
-+		res->flags |= IORESOURCE_SYSRAM;
-+	}
- 	if (insert_resource(&iomem_resource, res)) {
- 		kfree(res);
- 		return NULL;
-diff --git a/arch/unicore32/kernel/setup.c b/arch/unicore32/kernel/setup.c
-index 3fa317f96122..c2bffa5614a4 100644
---- a/arch/unicore32/kernel/setup.c
-+++ b/arch/unicore32/kernel/setup.c
-@@ -72,13 +72,13 @@ static struct resource mem_res[] = {
- 		.name = "Kernel code",
- 		.start = 0,
- 		.end = 0,
--		.flags = IORESOURCE_MEM
-+		.flags = IORESOURCE_SYSTEM_RAM
- 	},
- 	{
- 		.name = "Kernel data",
- 		.start = 0,
- 		.end = 0,
--		.flags = IORESOURCE_MEM
-+		.flags = IORESOURCE_SYSTEM_RAM
- 	}
- };
- 
-@@ -211,7 +211,7 @@ request_standard_resources(struct meminfo *mi)
- 		res->name  = "System RAM";
- 		res->start = mi->bank[i].start;
- 		res->end   = mi->bank[i].start + mi->bank[i].size - 1;
--		res->flags = IORESOURCE_MEM | IORESOURCE_BUSY;
-+		res->flags = IORESOURCE_SYSTEM_RAM | IORESOURCE_BUSY;
- 
- 		request_resource(&iomem_resource, res);
- 
 -- 
-2.3.5
+2.1.4
 
