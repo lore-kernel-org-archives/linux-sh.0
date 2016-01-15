@@ -1,47 +1,74 @@
-From: Joe Perches <joe@perches.com>
-Date: Sun, 10 Jan 2016 15:08:39 +0000
-Subject: Re: [PATCH v2 2/3] checkpatch: check for __smp outside barrier.h
-Message-Id: <1452438519.7773.23.camel@perches.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 15 Jan 2016 11:07:03 +0000
+Subject: [PATCH 1/2] pinctrl: sh-pfc: r8a7795: Rename SSI_{WS,SCK}0129 to SSI_{WS,SCK}01239
+Message-Id: <1452856024-10793-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1452427000-4520-1-git-send-email-mst@redhat.com>
-	 <1452427000-4520-3-git-send-email-mst@redhat.com>
-In-Reply-To: <1452427000-4520-3-git-send-email-mst@redhat.com>
+References: <1452856024-10793-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1452856024-10793-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: "Michael S. Tsirkin" <mst@redhat.com>, linux-kernel@vger.kernel.org
-Cc: Andy Whitcroft <apw@canonical.com>, Peter Zijlstra <peterz@infradead.org>, Arnd Bergmann <arnd@arndb.de>, linux-arch@vger.kernel.org, Andrew Cooper <andrew.cooper3@citrix.com>, virtualization@lists.linux-foundation.org, Stefano Stabellini <stefano.stabellini@eu.citrix.com>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@elte.hu>, "H. Peter Anvin" <hpa@zytor.com>, David Miller <davem@davemloft.net>, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, sparclinux@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-metag@vger.kernel.org, linux-mips@linux-mips.org, x86@kernel.org, user-mode-linux-devel@lists.sourceforge.net, adi-buildroot-devel@lists.sourceforge.net, linux-sh@vger.kernel.org, linux-xtensa@linux-xtensa.org, xen-devel@lists.xenproject.org, Ingo Molnar <mingo@kernel.org>, Tony Lindgren <tony@atomide.com>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Linus Walleij <linus.walleij@linaro.org>
+Cc: linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Sun, 2016-01-10 at 13:57 +0200, Michael S. Tsirkin wrote:
-> Introduction of __smp barriers cleans up a bunch of duplicate code, but
-> it gives people an additional handle onto a "new" set of barriers - just
-> because they're prefixed with __* unfortunately doesn't stop anyone from
-> using it (as happened with other arch stuff before.)
->=20
-> Add a checkpatch test so it will trigger a warning.
-[]
-> diff --git a/scripts/checkpatch.pl b/scripts/checkpatch.pl
-[]
-> @@ -5141,6 +5141,16 @@ sub process {
-> =A0			}
-> =A0		}
-> =A0
-> +		my $underscore_smp_barriers =3D qr{__smp_($smp_barriers)}x;
+Cfr. Manual Errata for Rev 0.50 of the R-Car Gen3 datasheet.
 
-another unnecessary capture group
+This has no user-visible impact, as the string used for configuration
+("ssi01239_ctrl") was already correct.
 
-> +
-> +		if ($realfile !~ m@^include/asm-generic/@ &&
-> +		=A0=A0=A0=A0$realfile !~ m@/barrier\.h$@ &&
-> +		=A0=A0=A0=A0$line =3D~ m/\b($underscore_smp_barriers)\s*\(/ &&
-> +		=A0=A0=A0=A0$line !~ m/^.\s*\#\s*define\s+($underscore_smp_barriers)\s=
-*\(/) {
-> +			WARN("MEMORY_BARRIER",
-> +			=A0=A0=A0=A0=A0"__smp memory barriers shouldn't be used outside barri=
-er.h and asm-generic\n" . $herecurr);
-> +		}
-> +
-> =A0# check for waitqueue_active without a comment.
-> =A0		if ($line =3D~ /\bwaitqueue_active\s*\(/) {
-> =A0			if (!ctx_has_comment($first_line, $linenr)) {
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ drivers/pinctrl/sh-pfc/pfc-r8a7795.c | 14 +++++++-------
+ 1 file changed, 7 insertions(+), 7 deletions(-)
+
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7795.c b/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
+index bcd56affb81350d1..ca55ec92c7716e88 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
+@@ -189,8 +189,8 @@
+ #define GPSR6_4		F_(SSI_SDATA2_A,	IP14_7_4)
+ #define GPSR6_3		F_(SSI_SDATA1_A,	IP14_3_0)
+ #define GPSR6_2		F_(SSI_SDATA0,		IP13_31_28)
+-#define GPSR6_1		F_(SSI_WS0129,		IP13_27_24)
+-#define GPSR6_0		F_(SSI_SCK0129,		IP13_23_20)
++#define GPSR6_1		F_(SSI_WS01239,		IP13_27_24)
++#define GPSR6_0		F_(SSI_SCK01239,	IP13_23_20)
+ 
+ /* GPSR7 */
+ #define GPSR7_3		FM(HDMI1_CEC)
+@@ -315,8 +315,8 @@
+ #define IP13_11_8	FM(MLB_CLK)		F_(0, 0)	FM(MSIOF1_SCK_F)	F_(0, 0)			FM(SCL1_B)	F_(0, 0)	F_(0, 0)		F_(0, 0)	F_(0, 0)		F_(0, 0)	F_(0, 0)	F_(0, 0)	F_(0, 0) F_(0, 0) F_(0, 0) F_(0, 0)
+ #define IP13_15_12	FM(MLB_SIG)		FM(RX1_B)	FM(MSIOF1_SYNC_F)	F_(0, 0)			FM(SDA1_B)	F_(0, 0)	F_(0, 0)		F_(0, 0)	F_(0, 0)		F_(0, 0)	F_(0, 0)	F_(0, 0)	F_(0, 0) F_(0, 0) F_(0, 0) F_(0, 0)
+ #define IP13_19_16	FM(MLB_DAT)		FM(TX1_B)	FM(MSIOF1_RXD_F)	F_(0, 0)			F_(0, 0)	F_(0, 0)	F_(0, 0)		F_(0, 0)	F_(0, 0)		F_(0, 0)	F_(0, 0)	F_(0, 0)	F_(0, 0) F_(0, 0) F_(0, 0) F_(0, 0)
+-#define IP13_23_20	FM(SSI_SCK0129)		F_(0, 0)	FM(MSIOF1_TXD_F)	F_(0, 0)			F_(0, 0)	F_(0, 0)	F_(0, 0)		F_(0, 0)	F_(0, 0)		F_(0, 0)	F_(0, 0)	F_(0, 0)	F_(0, 0) F_(0, 0) F_(0, 0) F_(0, 0)
+-#define IP13_27_24	FM(SSI_WS0129)		F_(0, 0)	FM(MSIOF1_SS1_F)	F_(0, 0)			F_(0, 0)	F_(0, 0)	F_(0, 0)		F_(0, 0)	F_(0, 0)		F_(0, 0)	F_(0, 0)	F_(0, 0)	F_(0, 0) F_(0, 0) F_(0, 0) F_(0, 0)
++#define IP13_23_20	FM(SSI_SCK01239)	F_(0, 0)	FM(MSIOF1_TXD_F)	F_(0, 0)			F_(0, 0)	F_(0, 0)	F_(0, 0)		F_(0, 0)	F_(0, 0)		F_(0, 0)	F_(0, 0)	F_(0, 0)	F_(0, 0) F_(0, 0) F_(0, 0) F_(0, 0)
++#define IP13_27_24	FM(SSI_WS01239)		F_(0, 0)	FM(MSIOF1_SS1_F)	F_(0, 0)			F_(0, 0)	F_(0, 0)	F_(0, 0)		F_(0, 0)	F_(0, 0)		F_(0, 0)	F_(0, 0)	F_(0, 0)	F_(0, 0) F_(0, 0) F_(0, 0) F_(0, 0)
+ #define IP13_31_28	FM(SSI_SDATA0)		F_(0, 0)	FM(MSIOF1_SS2_F)	F_(0, 0)			F_(0, 0)	F_(0, 0)	F_(0, 0)		F_(0, 0)	F_(0, 0)		F_(0, 0)	F_(0, 0)	F_(0, 0)	F_(0, 0) F_(0, 0) F_(0, 0) F_(0, 0)
+ #define IP14_3_0	FM(SSI_SDATA1_A)	F_(0, 0)	F_(0, 0)		F_(0, 0)			F_(0, 0)	F_(0, 0)	F_(0, 0)		F_(0, 0)	F_(0, 0)		F_(0, 0)	F_(0, 0)	F_(0, 0)	F_(0, 0) F_(0, 0) F_(0, 0) F_(0, 0)
+ #define IP14_7_4	FM(SSI_SDATA2_A)	F_(0, 0)	F_(0, 0)		F_(0, 0)			FM(SSI_SCK1_B)	F_(0, 0)	F_(0, 0)		F_(0, 0)	F_(0, 0)		F_(0, 0)	F_(0, 0)	F_(0, 0)	F_(0, 0) F_(0, 0) F_(0, 0) F_(0, 0)
+@@ -1214,10 +1214,10 @@ static const u16 pinmux_data[] = {
+ 	PINMUX_IPSR_MSEL(IP13_19_16,	TX1_B,			SEL_SCIF1_1),
+ 	PINMUX_IPSR_MSEL(IP13_19_16,	MSIOF1_RXD_F,		SEL_MSIOF1_5),
+ 
+-	PINMUX_IPSR_GPSR(IP13_23_20,	SSI_SCK0129),
++	PINMUX_IPSR_GPSR(IP13_23_20,	SSI_SCK01239),
+ 	PINMUX_IPSR_MSEL(IP13_23_20,	MSIOF1_TXD_F,		SEL_MSIOF1_5),
+ 
+-	PINMUX_IPSR_GPSR(IP13_27_24,	SSI_WS0129),
++	PINMUX_IPSR_GPSR(IP13_27_24,	SSI_WS01239),
+ 	PINMUX_IPSR_MSEL(IP13_27_24,	MSIOF1_SS1_F,		SEL_MSIOF1_5),
+ 
+ 	PINMUX_IPSR_GPSR(IP13_31_28,	SSI_SDATA0),
+@@ -2926,7 +2926,7 @@ static const unsigned int ssi01239_ctrl_pins[] = {
+ 	RCAR_GP_PIN(6, 0), RCAR_GP_PIN(6, 1),
+ };
+ static const unsigned int ssi01239_ctrl_mux[] = {
+-	SSI_SCK0129_MARK, SSI_WS0129_MARK,
++	SSI_SCK01239_MARK, SSI_WS01239_MARK,
+ };
+ static const unsigned int ssi1_data_a_pins[] = {
+ 	/* SDATA */
+-- 
+1.9.1
 
