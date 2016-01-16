@@ -1,46 +1,71 @@
-From: Peter Zijlstra <peterz@infradead.org>
-Date: Mon, 04 Jan 2016 14:09:39 +0000
-Subject: Re: [PATCH v2 33/34] xenbus: use virt_xxx barriers
-Message-Id: <20160104140939.GC6344@twins.programming.kicks-ass.net>
+From: Dirk Behme <dirk.behme@gmail.com>
+Date: Sat, 16 Jan 2016 14:17:36 +0000
+Subject: [PATCH v2] arm64: dts: r8a7795: Add L2 cache-controller nodes
+Message-Id: <1452953856-5146-1-git-send-email-dirk.behme@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1451572003-2440-1-git-send-email-mst@redhat.com>
- <1451572003-2440-34-git-send-email-mst@redhat.com>
-In-Reply-To: <1451572003-2440-34-git-send-email-mst-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "Michael S. Tsirkin" <mst-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>, linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Cooper <andrew.cooper3-Sxgqhf6Nn4DQT0dZR+AlfA@public.gmane.org>, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Stefano Stabellini <stefano.stabellini-mvvWK6WmYclDPfheJLI6IQ@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>, linux-ia64-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linuxppc-dev-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org, linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sparclinux-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, linux-metag-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mips-6z/3iImG2C8G8FEW9MqTrA@public.gmane.org, x86-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, user-mode-linux-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, adi-buildroot-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-xtensa-PjhNF2WwrV/0Sa2dR60CXw@public.gmane.org, xen-devel-GuqFBffKawtpuQazS67q72D2FQJk+8+b@public.gmane.org, Konrad Rzeszutek Wilk <konrad.wilk-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, Boris Ostrovsky <boris.ostrovsky-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>David Vrabel <da>
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Dec 31, 2015 at 09:10:01PM +0200, Michael S. Tsirkin wrote:
-> drivers/xen/xenbus/xenbus_comms.c uses
-> full memory barriers to communicate with the other side.
-> 
-> For guests compiled with CONFIG_SMP, smp_wmb and smp_mb
-> would be sufficient, so mb() and wmb() here are only needed if
-> a non-SMP guest runs on an SMP host.
-> 
-> Switch to virt_xxx barriers which serve this exact purpose.
-> 
-> Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
-> ---
->  drivers/xen/xenbus/xenbus_comms.c | 8 ++++----
->  1 file changed, 4 insertions(+), 4 deletions(-)
-> 
-> diff --git a/drivers/xen/xenbus/xenbus_comms.c b/drivers/xen/xenbus/xenbus_comms.c
-> index fdb0f33..ecdecce 100644
-> --- a/drivers/xen/xenbus/xenbus_comms.c
-> +++ b/drivers/xen/xenbus/xenbus_comms.c
-> @@ -123,14 +123,14 @@ int xb_write(const void *data, unsigned len)
->  			avail = len;
->  
->  		/* Must write data /after/ reading the consumer index. */
-> -		mb();
-> +		virt_mb();
->  
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-So its possible to remove this barrier entirely, see the "CONTROL
-DEPENDNCIES" chunk of memory-barrier.txt.
+Add device nodes for the L2 caches, and link the CPU node to its L2
+cache node.
 
-But do that in a separate patch series and only if you really really
-need the performance.
+The L2 cache for the Cortex-A57 CPU cores is 2 MiB large (organized as
+128 KiB x 16 ways).
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Dirk Behme <dirk.behme@gmail.com>
+---
+Changes in v2: Dropped the not yet merged Cortex A53 part.
+
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index a82bce8..a22ae65 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -39,6 +39,7 @@
+ 			compatible = "arm,cortex-a57", "arm,armv8";
+ 			reg = <0x0>;
+ 			device_type = "cpu";
++			next-level-cache = <&L2_CA57>;
+ 			enable-method = "psci";
+ 		};
+ 
+@@ -46,22 +47,29 @@
+ 			compatible = "arm,cortex-a57","arm,armv8";
+ 			reg = <0x1>;
+ 			device_type = "cpu";
++			next-level-cache = <&L2_CA57>;
+ 			enable-method = "psci";
+ 		};
+ 		a57_2: cpu@2 {
+ 			compatible = "arm,cortex-a57","arm,armv8";
+ 			reg = <0x2>;
+ 			device_type = "cpu";
++			next-level-cache = <&L2_CA57>;
+ 			enable-method = "psci";
+ 		};
+ 		a57_3: cpu@3 {
+ 			compatible = "arm,cortex-a57","arm,armv8";
+ 			reg = <0x3>;
+ 			device_type = "cpu";
++			next-level-cache = <&L2_CA57>;
+ 			enable-method = "psci";
+ 		};
+ 	};
+ 
++	L2_CA57: cache-controller@0 {
++		compatible = "cache";
++	};
++
+ 	extal_clk: extal {
+ 		compatible = "fixed-clock";
+ 		#clock-cells = <0>;
+-- 
+2.7.0
+
