@@ -1,48 +1,46 @@
-From: Peter Zijlstra <peterz@infradead.org>
-Date: Mon, 04 Jan 2016 13:20:42 +0000
-Subject: Re: [PATCH v2 06/32] s390: reuse asm-generic/barrier.h
-Message-Id: <20160104132042.GW6344@twins.programming.kicks-ass.net>
+From: Dirk Behme <dirk.behme@gmail.com>
+Date: Sat, 16 Jan 2016 14:23:29 +0000
+Subject: [PATCH v3] clk: shmobile: r8a7795: Add SDHI clocks
+Message-Id: <1452954209-5282-1-git-send-email-dirk.behme@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1451572003-2440-1-git-send-email-mst@redhat.com>
-	<1451572003-2440-7-git-send-email-mst@redhat.com>
-In-Reply-To: <1451572003-2440-7-git-send-email-mst@redhat.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: "Michael S. Tsirkin" <mst@redhat.com>
-Cc: linux-mips@linux-mips.org, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, Heiko Carstens <heiko.carstens@de.ibm.com>, virtualization@lists.linux-foundation.org, "H. Peter Anvin" <hpa@zytor.com>, sparclinux@vger.kernel.org, Ingo Molnar <mingo@kernel.org>, linux-arch@vger.kernel.org, linux-s390@vger.kernel.org, Davidlohr Bueso <dave@stgolabs.net>, Arnd Bergmann <arnd@arndb.de>, x86@kernel.org, Christian Borntraeger <borntraeger@de.ibm.com>, xen-devel@lists.xenproject.org, Ingo Molnar <mingo@elte.hu>, linux-xtensa@linux-xtensa.org, user-mode-linux-devel@lists.sourceforge.net, Stefano Stabellini <stefano.stabellini@eu.citrix.com>, Andrey Konovalov <andreyknvl@google.com>, adi-buildroot-devel@lists.sourceforge.net, Thomas Gleixner <tglx@linutronix.de>, linux-metag@vger.kernel.org, linux-arm-kernel@lists.infradead.org, Andrew Cooper <andrew.cooper3@citrix.com>linux-
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Dec 31, 2015 at 09:06:30PM +0200, Michael S. Tsirkin wrote:
-> On s390 read_barrier_depends, smp_read_barrier_depends
-> smp_store_mb(), smp_mb__before_atomic and smp_mb__after_atomic match the
-> asm-generic variants exactly. Drop the local definitions and pull in
-> asm-generic/barrier.h instead.
-> 
-> This is in preparation to refactoring this code area.
-> 
-> Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
-> Acked-by: Arnd Bergmann <arnd@arndb.de>
-> ---
->  arch/s390/include/asm/barrier.h | 10 ++--------
->  1 file changed, 2 insertions(+), 8 deletions(-)
-> 
-> diff --git a/arch/s390/include/asm/barrier.h b/arch/s390/include/asm/barrier.h
-> index 7ffd0b1..c358c31 100644
-> --- a/arch/s390/include/asm/barrier.h
-> +++ b/arch/s390/include/asm/barrier.h
-> @@ -30,14 +30,6 @@
->  #define smp_rmb()			rmb()
->  #define smp_wmb()			wmb()
->  
-> -#define read_barrier_depends()		do { } while (0)
-> -#define smp_read_barrier_depends()	do { } while (0)
-> -
-> -#define smp_mb__before_atomic()		smp_mb()
-> -#define smp_mb__after_atomic()		smp_mb()
+Add R8A7795 SDHI clocks.
 
-As per:
+Signed-off-by: Dirk Behme <dirk.behme@gmail.com>
+---
+Changes in v3: Drop the DEF_FIXED as these clocks are not fixed. I'll
+have a look to
 
-  lkml.kernel.org/r/20150921112252.3c2937e1@mschwide
+https://git.kernel.org/cgit/linux/kernel/git/horms/renesas-bsp.git/commit/d=
+rivers/clk/shmobile/clk-rcar-gen3.c?h=3Dv4.2/rcar-3.0.x&id=CD10385afc15cef6=
+bfbaea4aa5da41193b24fe82
 
-s390 should change this to barrier() instead of smp_mb() and hence
-should not use the generic versions.
+and see how this could be ported.
+
+ drivers/clk/shmobile/r8a7795-cpg-mssr.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/drivers/clk/shmobile/r8a7795-cpg-mssr.c b/drivers/clk/shmobile=
+/r8a7795-cpg-mssr.c
+index 23e98fe..c66645f 100644
+--- a/drivers/clk/shmobile/r8a7795-cpg-mssr.c
++++ b/drivers/clk/shmobile/r8a7795-cpg-mssr.c
+@@ -120,6 +120,10 @@ static const struct mssr_mod_clk r8a7795_mod_clks[] __=
+initconst =3D {
+ 	DEF_MOD("sys-dmac1",		 218,	R8A7795_CLK_S3D1),
+ 	DEF_MOD("sys-dmac0",		 219,	R8A7795_CLK_S3D1),
+ 	DEF_MOD("scif2",		 310,	R8A7795_CLK_S3D4),
++	DEF_MOD("sdif3",	       	 311,	R8A7795_CLK_SD3),
++	DEF_MOD("sdif2",	       	 312,	R8A7795_CLK_SD2),
++	DEF_MOD("sdif1",	      	 313,	R8A7795_CLK_SD1),
++	DEF_MOD("sdif0",	     	 314,	R8A7795_CLK_SD0),
+ 	DEF_MOD("pcie1",		 318,	R8A7795_CLK_S3D1),
+ 	DEF_MOD("pcie0",		 319,	R8A7795_CLK_S3D1),
+ 	DEF_MOD("intc-ap",		 408,	R8A7795_CLK_S3D1),
+--=20
+2.7.0
+
