@@ -1,111 +1,244 @@
-From: "Michael S. Tsirkin" <mst@redhat.com>
-Date: Tue, 12 Jan 2016 18:40:48 +0000
-Subject: Re: [PATCH v3 01/41] lcoking/barriers, arch: Use smp barriers in smp_store_release()
-Message-Id: <20160112203857-mutt-send-email-mst@redhat.com>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Sun, 17 Jan 2016 10:34:54 +0000
+Subject: Re: [PATCH/RFC v2 net-next] ravb: Add dma queue interrupt support
+Message-Id: <CAH1o70JnMzJ=xYNZZ8PhdEK-LYAVH+NQLrF-6ikwi-nZO=CP-g@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1452426622-4471-1-git-send-email-mst@redhat.com>
- <1452426622-4471-2-git-send-email-mst@redhat.com>
- <20160112162844.GD3818@linux.vnet.ibm.com>
-In-Reply-To: <20160112162844.GD3818@linux.vnet.ibm.com>
+References: <1450602948-6777-1-git-send-email-ykaneko0929@gmail.com>
+	<56796600.3010407@cogentembedded.com>
+	<CAH1o70JdmPDchbCnRjbt+SmW4juow+ConD96_BBv8u51-KEW6A@mail.gmail.com>
+	<567F1E21.2040900@cogentembedded.com>
+In-Reply-To: <567F1E21.2040900@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "Paul E. McKenney" <paulmck@linux.vnet.ibm.com>
-Cc: linux-kernel@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, Arnd Bergmann <arnd@arndb.de>, linux-arch@vger.kernel.org, Andrew Cooper <andrew.cooper3@citrix.com>, Russell King - ARM Linux <linux@arm.linux.org.uk>, virtualization@lists.linux-foundation.org, Stefano Stabellini <stefano.stabellini@eu.citrix.com>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@elte.hu>, "H. Peter Anvin" <hpa@zytor.com>, Joe Perches <joe@perches.com>, David Miller <davem@davemloft.net>, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, sparclinux@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-metag@vger.kernel.org, linux-mips@linux-mips.org, x86@kernel.org, user-mode-linux-devel@lists.sourceforge.net, adi-buildroot-devel@lists.sourceforge.net, linux-sh@vger.kernel.org, linux-xtensa@linux-xtensa.org, xen-devel@lists.xenpr
+To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Cc: netdev@vger.kernel.org, "David S. Miller" <davem@davemloft.net>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>
 
-On Tue, Jan 12, 2016 at 08:28:44AM -0800, Paul E. McKenney wrote:
-> On Sun, Jan 10, 2016 at 04:16:32PM +0200, Michael S. Tsirkin wrote:
-> > From: Davidlohr Bueso <dave@stgolabs.net>
-> > 
-> > With commit b92b8b35a2e ("locking/arch: Rename set_mb() to smp_store_mb()")
-> > it was made clear that the context of this call (and thus set_mb)
-> > is strictly for CPU ordering, as opposed to IO. As such all archs
-> > should use the smp variant of mb(), respecting the semantics and
-> > saving a mandatory barrier on UP.
-> > 
-> > Signed-off-by: Davidlohr Bueso <dbueso@suse.de>
-> > Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
-> > Cc: <linux-arch@vger.kernel.org>
-> > Cc: Andrew Morton <akpm@linux-foundation.org>
-> > Cc: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-> > Cc: Heiko Carstens <heiko.carstens@de.ibm.com>
-> > Cc: Linus Torvalds <torvalds@linux-foundation.org>
-> > Cc: Paul E. McKenney <paulmck@linux.vnet.ibm.com>
-> > Cc: Peter Zijlstra <peterz@infradead.org>
-> > Cc: Thomas Gleixner <tglx@linutronix.de>
-> > Cc: Tony Luck <tony.luck@intel.com>
-> > Cc: dave@stgolabs.net
-> > Link: http://lkml.kernel.org/r/1445975631-17047-3-git-send-email-dave@stgolabs.net
-> > Signed-off-by: Ingo Molnar <mingo@kernel.org>
-> 
-> Aside from a need for s/lcoking/locking/ in the subject line:
-> 
-> Reviewed-by: Paul E. McKenney <paulmck@linux.vnet.ibm.com>
+Hi Sergei,
 
-Thanks!
-Though Ingo already put this in tip tree like this,
-and I need a copy in my tree to avoid breaking bisect,
-so I will probably keep it exactly the same to avoid confusion.
+2015-12-27 8:09 GMT+09:00 Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>:
+> Hello.
+>
+> On 12/26/2015 02:26 PM, Yoshihiro Kaneko wrote:
+>
+>>>> From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+>>>>
+>>>> This patch supports the following interrupts.
+>>>>
+>>>> - One interrupt for multiple (descriptor, error, management)
+>>>> - One interrupt for emac
+>>>> - Four interrupts for dma queue (best effort rx/tx, network control
+>>>> rx/tx)
+>>>
+>>>
+>>>     You still don't say why it's better than the current scheme...
+>>
+>>
+>> I missed the comment for some reason.
+>> I will think about updating the changelog.
+>
+>
+>    TIA.
+>
+>>>> Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+>>>> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+>
+> [...]
+>>>>
+>>>> b/drivers/net/ethernet/renesas/ravb.h
+>>>> index 9fbe92a..71badd6d 100644
+>>>> --- a/drivers/net/ethernet/renesas/ravb.h
+>>>> +++ b/drivers/net/ethernet/renesas/ravb.h
+>
+> [...]
+>>>>
+>>>> @@ -1223,23 +1343,68 @@ static const struct ethtool_ops ravb_ethtool_ops
+>>>> >>>> {
+>>>>    static int ravb_open(struct net_device *ndev)
+>>>>    {
+>>>>          struct ravb_private *priv = netdev_priv(ndev);
+>>>> -       int error;
+>>>> +       struct platform_device *pdev = priv->pdev;
+>>>> +       struct device *dev = &pdev->dev;
+>>>> +       int error, i;
+>>>> +       char *name;
+>>>>
+>>>>          napi_enable(&priv->napi[RAVB_BE]);
+>>>>          napi_enable(&priv->napi[RAVB_NC]);
+>>>>
+>>>> -       error = request_irq(ndev->irq, ravb_interrupt, IRQF_SHARED,
+>>>> ndev->name,
+>>>> -                           ndev);
+>>>> -       if (error) {
+>>>> -               netdev_err(ndev, "cannot request IRQ\n");
+>>>> -               goto out_napi_off;
+>>>> -       }
+>>>> -
+>>>> -       if (priv->chip_id = RCAR_GEN3) {
+>>>> -               error = request_irq(priv->emac_irq, ravb_interrupt,
+>>>> -                                   IRQF_SHARED, ndev->name, ndev);
+>>>> +       if (priv->chip_id = RCAR_GEN2) {
+>>>> +               error = request_irq(ndev->irq, ravb_interrupt,
+>>>> IRQF_SHARED,
+>>>> +                                   ndev->name, ndev);
+>>>>                  if (error) {
+>>>>                          netdev_err(ndev, "cannot request IRQ\n");
+>>>> +                       goto out_napi_off;
+>>>> +               }
+>>>> +       } else {
+>>>> +               name = devm_kasprintf(dev, GFP_KERNEL, "%s:ch22:multi",
+>>>> +                                     ndev->name);
+>>>> +               error = request_irq(ndev->irq, ravb_multi_interrupt,
+>>>> +                                   IRQF_SHARED, name, ndev);
+>>>> +               if (error) {
+>>>> +                       netdev_err(ndev, "cannot request IRQ %s\n",
+>>>> name);
+>>>> +                       goto out_napi_off;
+>>>> +               }
+>>>> +               name = devm_kasprintf(dev, GFP_KERNEL, "%s:ch24:emac",
+>>>> +                                     ndev->name);
+>>>> +               error = request_irq(priv->emac_irq, ravb_emac_interrupt,
+>>>> +                                   IRQF_SHARED, name, ndev);
+>>>> +               if (error) {
+>>>> +                       netdev_err(ndev, "cannot request IRQ %s\n",
+>>>> name);
+>>>> +                       goto out_free_irq;
+>>>> +               }
+>>>> +               name = devm_kasprintf(dev, GFP_KERNEL, "%s:ch0:rx_be",
+>>>> +                                     ndev->name);
+>>>> +               error = request_irq(priv->rx_irqs[RAVB_BE],
+>>>> ravb_be_interrupt,
+>>>> +                                   IRQF_SHARED, name, ndev);
+>>>> +               if (error) {
+>>>> +                       netdev_err(ndev, "cannot request IRQ %s\n",
+>>>> name);
+>>>> +                       goto out_free_irq;
+>>>> +               }
+>>>> +               name = devm_kasprintf(dev, GFP_KERNEL, "%s:ch18:tx_be",
+>>>> +                                     ndev->name);
+>>>> +               error = request_irq(priv->tx_irqs[RAVB_BE],
+>>>> ravb_be_interrupt,
+>>>> +                                   IRQF_SHARED, name, ndev);
+>>>> +               if (error) {
+>>>> +                       netdev_err(ndev, "cannot request IRQ %s\n",
+>>>> name);
+>>>> +                       goto out_free_irq;
+>>>> +               }
+>>>> +               name = devm_kasprintf(dev, GFP_KERNEL, "%s:ch1:rx_nc",
+>>>> +                                     ndev->name);
+>>>> +               error = request_irq(priv->rx_irqs[RAVB_NC],
+>>>> ravb_nc_interrupt,
+>>>> +                                   IRQF_SHARED, name, ndev);
+>>>> +               if (error) {
+>>>> +                       netdev_err(ndev, "cannot request IRQ %s\n",
+>>>> name);
+>>>> +                       goto out_free_irq;
+>>>> +               }
+>>>> +               name = devm_kasprintf(dev, GFP_KERNEL, "%s:ch19:tx_nc",
+>>>> +                                     ndev->name);
+>>>> +               error = request_irq(priv->tx_irqs[RAVB_NC],
+>>>> ravb_nc_interrupt,
+>>>> +                                   IRQF_SHARED, name, ndev);
+>>>> +               if (error) {
+>>>> +                       netdev_err(ndev, "cannot request IRQ %s\n",
+>>>> name);
+>>>>                          goto out_free_irq;
+>>>>                  }
+>>>
+>>>
+>>>
+>>>     This error case is repetitive, couldn't you consolidate it somehow?
+>>
+>>
+>> It seems to be impossible to be solved by the simple change of the code.
+>> Do you intend to add macro or a small helper function?
+>
+>
+>    What I meant should look like this:
+>
+>         } else {
+>                 name = devm_kasprintf(dev, GFP_KERNEL, "%s:ch22:multi",
+>                                       ndev->name);
+>                 error = request_irq(ndev->irq, ravb_multi_interrupt,
+>                                     IRQF_SHARED, name, ndev);
+>                 if (error)
+>                         goto out;
+> [...]
+>                 name = devm_kasprintf(dev, GFP_KERNEL, "%s:ch19:tx_nc",
+>                                       ndev->name);
+>                 error = request_irq(priv->tx_irqs[RAVB_NC],
+> ravb_nc_interrupt,
+>                                    IRQF_SHARED, name, ndev);
+>                 if (error)
+>                         goto out;
+>         }
+>
+> out:
+>         if (error) {
+>                 netdev_err(ndev, "cannot request IRQ %s\n", name);
+>                 goto out_free_irq;
+>         }
+>
+>    Did it make things clearer?
 
-> > ---
-> >  arch/ia64/include/asm/barrier.h    | 2 +-
-> >  arch/powerpc/include/asm/barrier.h | 2 +-
-> >  arch/s390/include/asm/barrier.h    | 2 +-
-> >  include/asm-generic/barrier.h      | 2 +-
-> >  4 files changed, 4 insertions(+), 4 deletions(-)
-> > 
-> > diff --git a/arch/ia64/include/asm/barrier.h b/arch/ia64/include/asm/barrier.h
-> > index df896a1..209c4b8 100644
-> > --- a/arch/ia64/include/asm/barrier.h
-> > +++ b/arch/ia64/include/asm/barrier.h
-> > @@ -77,7 +77,7 @@ do {									\
-> >  	___p1;								\
-> >  })
-> > 
-> > -#define smp_store_mb(var, value)	do { WRITE_ONCE(var, value); mb(); } while (0)
-> > +#define smp_store_mb(var, value) do { WRITE_ONCE(var, value); smp_mb(); } while (0)
-> > 
-> >  /*
-> >   * The group barrier in front of the rsm & ssm are necessary to ensure
-> > diff --git a/arch/powerpc/include/asm/barrier.h b/arch/powerpc/include/asm/barrier.h
-> > index 0eca6ef..a7af5fb 100644
-> > --- a/arch/powerpc/include/asm/barrier.h
-> > +++ b/arch/powerpc/include/asm/barrier.h
-> > @@ -34,7 +34,7 @@
-> >  #define rmb()  __asm__ __volatile__ ("sync" : : : "memory")
-> >  #define wmb()  __asm__ __volatile__ ("sync" : : : "memory")
-> > 
-> > -#define smp_store_mb(var, value)	do { WRITE_ONCE(var, value); mb(); } while (0)
-> > +#define smp_store_mb(var, value) do { WRITE_ONCE(var, value); smp_mb(); } while (0)
-> > 
-> >  #ifdef __SUBARCH_HAS_LWSYNC
-> >  #    define SMPWMB      LWSYNC
-> > diff --git a/arch/s390/include/asm/barrier.h b/arch/s390/include/asm/barrier.h
-> > index d68e11e..7ffd0b1 100644
-> > --- a/arch/s390/include/asm/barrier.h
-> > +++ b/arch/s390/include/asm/barrier.h
-> > @@ -36,7 +36,7 @@
-> >  #define smp_mb__before_atomic()		smp_mb()
-> >  #define smp_mb__after_atomic()		smp_mb()
-> > 
-> > -#define smp_store_mb(var, value)		do { WRITE_ONCE(var, value); mb(); } while (0)
-> > +#define smp_store_mb(var, value)	do { WRITE_ONCE(var, value); smp_mb(); } while (0)
-> > 
-> >  #define smp_store_release(p, v)						\
-> >  do {									\
-> > diff --git a/include/asm-generic/barrier.h b/include/asm-generic/barrier.h
-> > index b42afad..0f45f93 100644
-> > --- a/include/asm-generic/barrier.h
-> > +++ b/include/asm-generic/barrier.h
-> > @@ -93,7 +93,7 @@
-> >  #endif	/* CONFIG_SMP */
-> > 
-> >  #ifndef smp_store_mb
-> > -#define smp_store_mb(var, value)  do { WRITE_ONCE(var, value); mb(); } while (0)
-> > +#define smp_store_mb(var, value)  do { WRITE_ONCE(var, value); smp_mb(); } while (0)
-> >  #endif
-> > 
-> >  #ifndef smp_mb__before_atomic
-> > -- 
-> > MST
-> > 
+Thanks for the clarification.
+
+>    But indeed, a helper function would probably be even better...
+
+I will add a helper function to avoid the use of nested goto statement.
+
+>
+> [...]
+>>>>
+>>>> @@ -1798,6 +1973,22 @@ static int ravb_probe(struct platform_device
+>>>> *pdev)
+>>>>                          goto out_release;
+>>>>                  }
+>>>>                  priv->emac_irq = irq;
+>>>> +               for (i = 0; i < NUM_RX_QUEUE; i++) {
+>>>> +                       irq = platform_get_irq_byname(pdev,
+>>>> ravb_rx_irqs[i]);
+>>>> +                       if (irq < 0) {
+>>>> +                               error = irq;
+>>>> +                               goto out_release;
+>>>> +                       }
+>>>> +                       priv->rx_irqs[i] = irq;
+>>>> +               }
+>>>> +               for (i = 0; i < NUM_TX_QUEUE; i++) {
+>>>> +                       irq = platform_get_irq_byname(pdev,
+>>>> ravb_tx_irqs[i]);
+>>>> +                       if (irq < 0) {
+>>>> +                               error = irq;
+>>>> +                               goto out_release;
+>>>> +                       }
+>>>> +                       priv->tx_irqs[i] = irq;
+>>>> +               }
+>>>
+>>>
+>>>
+>>>     Perhaps it would better to use sprintf() here, in both loops...
+>>
+>>
+>> Could you give me some more details?
+>
+>
+>    I think it would be better to use sprintf() to generate the IRQ names
+> passed to platfrom_get_irq_byname() instead of string literals grouped into
+> arrays. I may be wrong though...
+
+At this moment, I don't think that it is necessary.
+I would do it in other patch when the need became clear.
+
+>
+>
+> [...]
+>
+>> Thanks,
+>> kaneko
+>
+>
+> MBR, Sergei
+>
+
+Thanks,
+kaneko
