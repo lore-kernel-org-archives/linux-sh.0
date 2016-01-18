@@ -1,49 +1,59 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Sat, 09 Jan 2016 13:19:15 +0000
-Subject: Re: [PATCH] soc_camera: cleanup control device on async_unbind
-Message-Id: <20160109131915.GB1520@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="mojUlQ0s9EVzWg2t"
+From: Vinod Koul <vinod.koul@intel.com>
+Date: Mon, 18 Jan 2016 14:49:32 +0000
+Subject: Re: [PATCH] dmaengine: rcar-dmac: Document SoC specific bindings
+Message-Id: <20160118143731.GQ11130@localhost>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1451911723-10868-1-git-send-email-wsa@the-dreams.de>
- <Pine.LNX.4.64.1601091226440.15612@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1601091226440.15612@axis700.grange>
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-sh@vger.kernel.org, Mauro Carvalho Chehab <mchehab@osg.samsung.com>, linux-media@vger.kernel.org
+References: <1447293239-8554-1-git-send-email-horms+renesas@verge.net.au>
+ <20151116035533.GC25173@localhost>
+ <CAMuHMdXVBSjTb_-7o4rDh_S+i64QKEr-5KUnSfd3Nqt1D1TE2Q@mail.gmail.com>
+In-Reply-To: <CAMuHMdXVBSjTb_-7o4rDh_S+i64QKEr-5KUnSfd3Nqt1D1TE2Q@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: Simon Horman <horms+renesas@verge.net.au>, dmaengine@vger.kernel.org, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+
+On Thu, Jan 14, 2016 at 11:09:47AM +0100, Geert Uytterhoeven wrote:
+> Hi Vinod,
+> 
+> On Mon, Nov 16, 2015 at 4:55 AM, Vinod Koul <vinod.koul@intel.com> wrote:
+> > On Thu, Nov 12, 2015 at 10:53:59AM +0900, Simon Horman wrote:
+> >> In general Renesas hardware is not documented to the extent where the
+> >> relationship between IP blocks on different SoCs can be assumed although
+> >> they may appear to operate the same way. Furthermore the documentation
+> >> typically does not specify a version for individual IP blocks. For these
+> >> reasons a convention of using the SoC name in place of a version and
+> >> providing SoC-specific compat strings has been adopted.
+> >>
+> >> Although not universally liked this convention is used in the bindings for
+> >> most drivers for Renesas hardware. The purpose of this patch is to
+> >> update the Renesas R-Car DMA Controller driver to follow this convention.
+> >
+> > Applied, thanks
+> 
+> This patch (and this patch only) has disappeared from your next branch between
+> January 6 and 7, and thus wasn't included in your pull request for v4.5.
+> 
+> Was there a specific reason for that, or was it just an oversight?
+> 
+> Note that the added compatible values in in use (in arm-soc/for-next).
 
 
---mojUlQ0s9EVzWg2t
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Hi Geert,
 
+That only means I messed up. I apply patches to for-linus or topic branches
+and then merge all topics to for-linus and send that to Linus.
 
-> this? Until then I'll just push this for the forthcoming 4.5.
+In this case I didn't see this in any of the topics or for-linus which means
+I applied to next which I usually trash and keep rebuiling on latest -rc.
 
-Come to think of it: I don't have the setup to test this, and the people
-which have that are hopefully off for the weekend. Since 4.4 is to be
-released on Sunday anyhow, 4.5 sounds just fine to me.
+Now git helped me track this commit on a deleted branch (which reminds us
+what a wonderful thing git is... screwed up, dont worrry git is our
+superhero to rescue).
 
+I have cherry-picked this patch and applied to for-4.5 branch and will
+send to Linus in few days along with few more fixes.
 
---mojUlQ0s9EVzWg2t
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBAgAGBQJWkQjTAAoJEBQN5MwUoCm2w8gP/RLLOLroBEqcHgRoevmTnujn
-OIk6PkAuwbm+fYgOfE06DSZks6Lc+GAWIaRsp/wW7UCa3MaGcf3I6Izmu5OAMaMm
-lJxI6Vqu4hbbckDd/cTpBRz9rOoyIZMeSNJd7qamTo0bVwey3Hovp7dAoen09VoL
-2IiQ2SLxEclpE6KwCYEF6iJez9uNdSJAjqCXDIW9BikNlX3K779P5/g2qze5ioU1
-rHqH/vakc7n+glziigWt3KowENVtW1nujQWdKMqKxuAnNr1o+ATGm78cnWDZn+M7
-VcKQyCFTQDnGSeAtxa/Gupc5G7WK0sJzIAUVXp4g0i42nQTGgIa6Y5Ef8JTd5BBS
-1tDs+HfVRkUdQxnltWhjVNaZim8jKTVmUwui+PAfToWFh3j4LdXLsynbRCSZIsEz
-xIDRWscu7m8NR74vprgG/69afZWW8JPzJVSppjVH9jKo0j9RU511+9njkwvWXbCL
-jfg//sdxmaUye+BdTOyWWC2CnA65+0CJJHVxMYWzh3QutjpOvIyP7eN/aY6bLqkD
-49WsY/GAYX+szI0Jwipq25oXVnytVGJhPpMwL0VQVIoY0D2/V/OIyO5SfA99zItz
-HWXEsxnJ0DIz/GeaoIymflmvamMzi2it6E6G66ULRE1DYxPdrZG4UU5kdC0qLSGM
-GhEvHbt8nai0wtlCd3ih
-=AquR
------END PGP SIGNATURE-----
-
---mojUlQ0s9EVzWg2t--
+Thanks for reporting
+-- 
+~Vinod
