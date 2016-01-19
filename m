@@ -1,65 +1,60 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Sun, 03 Jan 2016 21:39:38 +0000
-Subject: Re: [PATCH v2 0/9] ARM: dts: Add compatible property to "partitions" node
-Message-Id: <20160103213938.GD22806@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Tue, 19 Jan 2016 16:20:58 +0000
+Subject: [RFC 3/6] mmc: tmio: add flag to reduce delay after changing clock status
+Message-Id: <1453220461-2598-4-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1450694033-27717-1-git-send-email-geert+renesas@glider.be>
- <20151228050147.GE1066@verge.net.au>
- <CAMuHMdXt36GSDuoFVGBebJVN9OHPh=ze8u8KvQ0B+RcvT6xTYQ@mail.gmail.com>
-In-Reply-To: <CAMuHMdXt36GSDuoFVGBebJVN9OHPh=ze8u8KvQ0B+RcvT6xTYQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Mon, Dec 28, 2015 at 11:15:30AM +0100, Geert Uytterhoeven wrote:
-> Hi Simon,
-> 
-> On Mon, Dec 28, 2015 at 6:01 AM, Simon Horman <horms@verge.net.au> wrote:
-> > On Mon, Dec 21, 2015 at 11:33:44AM +0100, Geert Uytterhoeven wrote:
-> >> As of commit e488ca9f8d4f62c2 ("doc: dt: mtd: partitions: add compatible
-> >> property to "partitions" node"), which is in v4.4-rc6, the "partitions"
-> >> subnode of an SPI FLASH device node must have a compatible property. The
-> >> partitions are no longer detected if it is not present.
-> >>
-> >> However, several DTSes in -next have already been converted to the
-> >> "partitions" subnode without "compatible" property, introduced by
-> >> commits 5cfdedb7b9a0fe38 ("mtd: ofpart: move ofpart partitions to a
-> >> dedicated dt node") and fe2585e9c29a650a ("doc: dt: mtd: support
-> >> partitions in a special 'partitions' subnode"). Hence all of these are
-> >> now broken in -next, and will be broken in upstream during the merge
-> >> window.
-> >>
-> >> This series fixes all users in next-20151221.
-> >> Tested on r8a7791/koelsch.
-> >>
-> >> Changes since v1:
-> >>   - Add Acked-by,
-> >>   - Fix new users in -next (kirkwood, ci20).
-> >>
-> >> Most of these are in arm-soc/for-next. Exceptions are kirkwood (in
-> >> mvebu/for-next), and ci20 (in mips/mips-for-linux-next).
-> >>
-> >> Given we're late in the v4.4-rc cycle, perhaps it's easiest if the
-> >> arm-soc maintainers take all applicable patches directly, bypassing the
-> >> mvebu and shmobile maintainers?
-> >>
-> >> Thanks for queuing for v4.5!
-> >>
-> >> Geert Uytterhoeven (9):
-> >>   ARM: mvebu: ix4-300d: Add compatible property to "partitions" node
-> >>   ARM: mvebu: kirkwood: Add compatible property to "partitions" node
-> >>   ARM: shmobile: bockw dts: Add compatible property to "partitions" node
-> >>   ARM: shmobile: lager dts: Add compatible property to "partitions" node
-> >>   ARM: shmobile: koelsch dts: Add compatible property to "partitions"
-> >>     node
-> >>   ARM: shmobile: porter dts: Add compatible property to "partitions"
-> >>     node
-> >>   ARM: shmobile: gose dts: Add compatible property to "partitions" node
-> >>   ARM: shmobile: silk dts: Add compatible property to "partitions" node
-> >
-> > Thanks, I have queued up the above "shmobile" patches for v4.6.
-> 
-> I'm afraid v4.6 is too late, leaving all SPI FLASHes broken in v4.5.
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Thanks. I'll re-queue them up as fixes for v4.5.
+The docs for RCar Gen2 & 3 I have access to, mention delays of 5ms after
+stop and 1ms after start. Make it possible to apply these values.
+
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+---
+ drivers/mmc/host/tmio_mmc_pio.c | 4 ++--
+ include/linux/mfd/tmio.h        | 4 ++++
+ 2 files changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index a10fde40b6c3dd..de1edb794c53a0 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -185,14 +185,14 @@ static void tmio_mmc_clk_stop(struct tmio_mmc_host *host)
+ 
+ 	sd_ctrl_write16(host, CTL_SD_CARD_CLK_CTL, ~0x0100 &
+ 		sd_ctrl_read16(host, CTL_SD_CARD_CLK_CTL));
+-	msleep(10);
++	msleep(host->pdata->flags & TMIO_MMC_FAST_CLK_CHG ? 5 : 10);
+ }
+ 
+ static void tmio_mmc_clk_start(struct tmio_mmc_host *host)
+ {
+ 	sd_ctrl_write16(host, CTL_SD_CARD_CLK_CTL, 0x0100 |
+ 		sd_ctrl_read16(host, CTL_SD_CARD_CLK_CTL));
+-	msleep(10);
++	msleep(host->pdata->flags & TMIO_MMC_FAST_CLK_CHG ? 1 : 10);
+ 
+ 	/* implicit BUG_ON(!res) */
+ 	if (host->pdata->flags & TMIO_MMC_HAVE_HIGH_REG) {
+diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
+index 24b86d538e8852..05d58ee5e6a78f 100644
+--- a/include/linux/mfd/tmio.h
++++ b/include/linux/mfd/tmio.h
+@@ -65,6 +65,10 @@
+  * Some controllers can support SDIO IRQ signalling.
+  */
+ #define TMIO_MMC_SDIO_IRQ		(1 << 2)
++
++/* Some controllers don't need to wait 10ms for clock changes */
++#define TMIO_MMC_FAST_CLK_CHG		(1 << 3)
++
+ /*
+  * Some controllers require waiting for the SD bus to become
+  * idle before writing to some registers.
+-- 
+2.1.4
+
