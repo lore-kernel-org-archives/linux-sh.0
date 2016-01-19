@@ -1,84 +1,37 @@
 From: Wolfram Sang <wsa@the-dreams.de>
-Date: Mon, 25 Jan 2016 19:15:08 +0000
-Subject: [PATCH 1/9] mmc: tmio_dma: remove debug messages with little information
-Message-Id: <1453749316-1848-2-git-send-email-wsa@the-dreams.de>
+Date: Tue, 19 Jan 2016 16:20:56 +0000
+Subject: [RFC 1/6] mmc: sdhi: Add EXT_ACC register busy check
+Message-Id: <1453220461-2598-2-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1453749316-1848-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1453749316-1848-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: Wolfram Sang <wsa@the-dreams.de>, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Dirk Behme <dirk.behme@gmail.com>
+To: linux-sh@vger.kernel.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
 
-When compiling the driver with CONFIG_MMC_DEBUG set, I get:
+All the docs I have access to say that this register needs the bus busy
+check.
 
-=drivers/mmc/host/tmio_mmc_dma.c: In function 'tmio_mmc_start_dma':
-include/linux/device.h:1186:2: warning: 'cookie' may be used uninitialized in this function [-Wmaybe-uninitialized]
-...
-
-drivers/mmc/host/tmio_mmc_dma.c:52:15: note: 'cookie' was declared here
-  dma_cookie_t cookie;
-...
-
-drivers/mmc/host/tmio_mmc_dma.c:128:15: note: 'cookie' was declared here
-  dma_cookie_t cookie;
-=
-Because these debug messages look random anyhow (some duplicate
-information printed etc), let's just drop them and rather re-add
-something consistent if that should ever be needed.
-
+Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
+Signed-off-by: Ai Kyuse <ai.kyuse.uw@renesas.com>
 Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 ---
- drivers/mmc/host/tmio_mmc_dma.c | 12 ------------
- 1 file changed, 12 deletions(-)
+ drivers/mmc/host/sh_mobile_sdhi.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/drivers/mmc/host/tmio_mmc_dma.c b/drivers/mmc/host/tmio_mmc_dma.c
-index e4b05dbb9ca822..67543587382312 100644
---- a/drivers/mmc/host/tmio_mmc_dma.c
-+++ b/drivers/mmc/host/tmio_mmc_dma.c
-@@ -95,9 +95,6 @@ static void tmio_mmc_start_dma_rx(struct tmio_mmc_host *host)
- 			ret = cookie;
- 		}
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index 354f4f335ed57a..61671f3fa09a11 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -163,6 +163,7 @@ static int sh_mobile_sdhi_write16_hook(struct tmio_mmc_host *host, int addr)
+ 	case CTL_SD_MEM_CARD_OPT:
+ 	case CTL_TRANSACTION_CTL:
+ 	case CTL_DMA_ENABLE:
++	case EXT_ACC:
+ 		return sh_mobile_sdhi_wait_idle(host);
  	}
--	dev_dbg(&host->pdev->dev, "%s(): mapped %d -> %d, cookie %d, rq %p\n",
--		__func__, host->sg_len, ret, cookie, host->mrq);
--
- pio:
- 	if (!desc) {
- 		/* DMA failed, fall back to PIO */
-@@ -115,9 +112,6 @@ pio:
- 		dev_warn(&host->pdev->dev,
- 			 "DMA failed: %d, falling back to PIO\n", ret);
- 	}
--
--	dev_dbg(&host->pdev->dev, "%s(): desc %p, cookie %d, sg[%d]\n", __func__,
--		desc, cookie, host->sg_len);
- }
  
- static void tmio_mmc_start_dma_tx(struct tmio_mmc_host *host)
-@@ -175,9 +169,6 @@ static void tmio_mmc_start_dma_tx(struct tmio_mmc_host *host)
- 			ret = cookie;
- 		}
- 	}
--	dev_dbg(&host->pdev->dev, "%s(): mapped %d -> %d, cookie %d, rq %p\n",
--		__func__, host->sg_len, ret, cookie, host->mrq);
--
- pio:
- 	if (!desc) {
- 		/* DMA failed, fall back to PIO */
-@@ -195,9 +186,6 @@ pio:
- 		dev_warn(&host->pdev->dev,
- 			 "DMA failed: %d, falling back to PIO\n", ret);
- 	}
--
--	dev_dbg(&host->pdev->dev, "%s(): desc %p, cookie %d\n", __func__,
--		desc, cookie);
- }
- 
- void tmio_mmc_start_dma(struct tmio_mmc_host *host,
 -- 
 2.1.4
 
