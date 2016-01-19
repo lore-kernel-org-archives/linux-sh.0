@@ -1,31 +1,46 @@
-From: Bjorn Helgaas <helgaas@kernel.org>
-Date: Fri, 08 Jan 2016 20:37:37 +0000
+From: Paul Gortmaker <paul.gortmaker@windriver.com>
+Date: Tue, 19 Jan 2016 04:19:44 +0000
 Subject: Re: [PATCH 0/2] drivers/pci: use builtin_platform_driver in renesas
-Message-Id: <20160108203737.GJ5354@localhost>
+Message-Id: <20160119041943.GB1696@windriver.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1450745949-23882-1-git-send-email-paul.gortmaker@windriver.com>
-In-Reply-To: <1450745949-23882-1-git-send-email-paul.gortmaker@windriver.com>
+ <20160108203737.GJ5354@localhost>
+In-Reply-To: <20160108203737.GJ5354@localhost>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Paul Gortmaker <paul.gortmaker@windriver.com>
+To: Bjorn Helgaas <helgaas@kernel.org>
 Cc: linux-kernel@vger.kernel.org, Bjorn Helgaas <bhelgaas@google.com>, Phil Edworthy <phil.edworthy@renesas.com>, Simon Horman <horms@verge.net.au>, Valentine Barshak <valentine.barshak@cogentembedded.com>, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org
 
-On Mon, Dec 21, 2015 at 07:59:07PM -0500, Paul Gortmaker wrote:
-> These two commits are extracted from what was a larger series[1] of
-> demodularization in PCI host code that was bool Kconfig.
-> 
-> With the other commits, there was some mixed opinions whether we
-> should make it explicitly non-modular or move towards making it
-> functionally working as a tristate in order to reduce the size of
-> built-in code for multi-platform kernels.
-> 
-> However with the renesas changes, there was no ".remove" and no
-> "module_exit" code stripped out ; it is just a straight 1:1 mapping
-> of the modular macros onto what they become in the non-modular case
-> anyway -- meaning the runtime remains unchanged.
+[Re: [PATCH 0/2] drivers/pci: use builtin_platform_driver in renesas] On 08/01/2016 (Fri 14:37) Bjorn Helgaas wrote:
 
-Is there any reason these drivers can't be made modular?  I'd rather
-do that, if we can.
+> On Mon, Dec 21, 2015 at 07:59:07PM -0500, Paul Gortmaker wrote:
+> > These two commits are extracted from what was a larger series[1] of
+> > demodularization in PCI host code that was bool Kconfig.
+> > 
+> > With the other commits, there was some mixed opinions whether we
+> > should make it explicitly non-modular or move towards making it
+> > functionally working as a tristate in order to reduce the size of
+> > built-in code for multi-platform kernels.
+> > 
+> > However with the renesas changes, there was no ".remove" and no
+> > "module_exit" code stripped out ; it is just a straight 1:1 mapping
+> > of the modular macros onto what they become in the non-modular case
+> > anyway -- meaning the runtime remains unchanged.
+> 
+> Is there any reason these drivers can't be made modular?  I'd rather
+> do that, if we can.
 
-Bjorn
+Per the above comments, the renesas drivers were a no-op and and got
+Ack:  from appropriate people hence why I forked them out of the earlier
+bigger series, in thinking they were OK'd and done as-is.
+
+That said, if "be modular, or die trying" is the desired approach for
+PCI code, I can do my best to work within that constraint.  It just
+won't be the no-op 1:1 mapping that the original proposed changes were.
+
+P.
+--
+
+> 
+> Bjorn
