@@ -1,39 +1,49 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Wed, 27 Jan 2016 14:09:16 +0000
-Subject: Re: [PATCH 1/2] pinctrl: sh-pfc: r8a7795: Rename SSI_{WS,SCK}0129 to SSI_{WS,SCK}01239
-Message-Id: <CACRpkdbOVka1+se86B9Sg3oCZDt65BgmagqwbSc89GABAAmcLg@mail.gmail.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Tue, 19 Jan 2016 16:20:55 +0000
+Subject: [RFC 0/6] mmc: sdhi: add basic r8a7795 support
+Message-Id: <1453220461-2598-1-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1452856024-10793-1-git-send-email-geert+renesas@glider.be>
-	<1452856024-10793-2-git-send-email-geert+renesas@glider.be>
-	<CACRpkda7w6A48Bk2szWmAo1mor-VQGxMjPv6bwaFfoBzhm-DVQ@mail.gmail.com>
-	<CAMuHMdX7HkkXDdvMDPANbHyB5P0k-cgKfj8k84AvXkFLGrdPgw@mail.gmail.com>
-In-Reply-To: <CAMuHMdX7HkkXDdvMDPANbHyB5P0k-cgKfj8k84AvXkFLGrdPgw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-On Wed, Jan 20, 2016 at 2:17 PM, Geert Uytterhoeven
-<geert@linux-m68k.org> wrote:
-> Hi Linus,
->
-> On Wed, Jan 20, 2016 at 2:04 PM, Linus Walleij <linus.walleij@linaro.org> wrote:
->> On Fri, Jan 15, 2016 at 12:07 PM, Geert Uytterhoeven
->> <geert+renesas@glider.be> wrote:
->>
->>> Cfr. Manual Errata for Rev 0.50 of the R-Car Gen3 datasheet.
->>>
->>> This has no user-visible impact, as the string used for configuration
->>> ("ssi01239_ctrl") was already correct.
->>>
->>> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
->>
->> Are these regressions that need to go in as fixes?
->
-> No, I plan to queue them on a branch for v4.6.
+So, I started working on the SDHI part. Since Dirk seems to be working on the
+clocks already (thanks!), I evaluated the patches for the mmc-subsystem and
+refactored the subset which gets the basic functionality run. A few cleanups
+were applied, too. The patches are RFC because I want to check one more issue
+(restore clock settings after software reset) and also I need to do Gen2
+regression testing. However, release early, I wanted to show you what I am
+hacking on here. A branch for testing (with Dirk's clock patches and DTS
+additions can be found here):
 
-Excellent, Acked-by.
+git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git renesas/v8-sdhi-nodma
 
-Yours,
-Linus Walleij
+Further testing much appreciated. It works fine on my Salvator using SD cards
+on both, SDHI0 and SDHI3. Simple testing, though, no stress testing yet.
+
+Thanks,
+
+   Wolfram
+
+
+Shinobu Uehara (1):
+  mmc: sdhi: Add EXT_ACC register busy check
+
+Wolfram Sang (5):
+  mmc: sdhi: error message on ENOMEM is superfluous
+  mmc: tmio: add flag to reduce delay after changing clock status
+  mmc: tmio: remove stale comments
+  mmc: sdhi: use faster clock handling on RCar Gen2
+  mmc: sdhi: Add r8a7795 support
+
+ Documentation/devicetree/bindings/mmc/tmio_mmc.txt |  1 +
+ drivers/mmc/host/Kconfig                           |  2 +-
+ drivers/mmc/host/sh_mobile_sdhi.c                  | 54 +++++++++++++++-------
+ drivers/mmc/host/tmio_mmc_pio.c                    |  7 +--
+ include/linux/mfd/tmio.h                           |  4 ++
+ 5 files changed, 45 insertions(+), 23 deletions(-)
+
+-- 
+2.1.4
+
