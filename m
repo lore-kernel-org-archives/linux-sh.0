@@ -1,61 +1,52 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 04 Jan 2016 22:27:36 +0000
-Subject: [PATCH v2 01/13] ARM: shmobile: r8a7793: add audio clock to device tree
-Message-Id: <1451946468-20499-2-git-send-email-horms+renesas@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Tue, 19 Jan 2016 16:20:59 +0000
+Subject: [RFC 4/6] mmc: tmio: remove stale comments
+Message-Id: <1453220461-2598-5-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1451946468-20499-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1451946468-20499-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Instantiate audio clock in r8a7793 device tree.
-audio_clk_a/b/c are required for R-Car sound.
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Based on similar work for the r8a7791 by Kuninori Morimoto.
+These don't make sense anymore since commit 5d60e500541ed1 ("mmc: tmio:
+add new TMIO_MMC_HAVE_HIGH_REG flags") dropped using the function
+checking the resource.
 
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 ---
- arch/arm/boot/dts/r8a7793.dtsi | 23 +++++++++++++++++++++++
- 1 file changed, 23 insertions(+)
+ drivers/mmc/host/tmio_mmc_pio.c | 3 ---
+ 1 file changed, 3 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7793.dtsi b/arch/arm/boot/dts/r8a7793.dtsi
-index 221f5707a622..bf6be4a40e31 100644
---- a/arch/arm/boot/dts/r8a7793.dtsi
-+++ b/arch/arm/boot/dts/r8a7793.dtsi
-@@ -706,6 +706,29 @@
- 			clock-output-names = "extal";
- 		};
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index de1edb794c53a0..f8103bab0fce31 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -177,7 +177,6 @@ static void tmio_mmc_set_clock(struct tmio_mmc_host *host,
  
-+		/*
-+		 * The external audio clocks are configured as 0 Hz fixed frequency clocks by
-+		 * default. Boards that provide audio clocks should override them.
-+		 */
-+		audio_clk_a: audio_clk_a {
-+			compatible = "fixed-clock";
-+			#clock-cells = <0>;
-+			clock-frequency = <0>;
-+			clock-output-names = "audio_clk_a";
-+		};
-+		audio_clk_b: audio_clk_b {
-+			compatible = "fixed-clock";
-+			#clock-cells = <0>;
-+			clock-frequency = <0>;
-+			clock-output-names = "audio_clk_b";
-+		};
-+		audio_clk_c: audio_clk_c {
-+			compatible = "fixed-clock";
-+			#clock-cells = <0>;
-+			clock-frequency = <0>;
-+			clock-output-names = "audio_clk_c";
-+		};
-+
- 		/* Special CPG clocks */
- 		cpg_clocks: cpg_clocks@e6150000 {
- 			compatible = "renesas,r8a7793-cpg-clocks",
+ static void tmio_mmc_clk_stop(struct tmio_mmc_host *host)
+ {
+-	/* implicit BUG_ON(!res) */
+ 	if (host->pdata->flags & TMIO_MMC_HAVE_HIGH_REG) {
+ 		sd_ctrl_write16(host, CTL_CLK_AND_WAIT_CTL, 0x0000);
+ 		msleep(10);
+@@ -194,7 +193,6 @@ static void tmio_mmc_clk_start(struct tmio_mmc_host *host)
+ 		sd_ctrl_read16(host, CTL_SD_CARD_CLK_CTL));
+ 	msleep(host->pdata->flags & TMIO_MMC_FAST_CLK_CHG ? 1 : 10);
+ 
+-	/* implicit BUG_ON(!res) */
+ 	if (host->pdata->flags & TMIO_MMC_HAVE_HIGH_REG) {
+ 		sd_ctrl_write16(host, CTL_CLK_AND_WAIT_CTL, 0x0100);
+ 		msleep(10);
+@@ -205,7 +203,6 @@ static void tmio_mmc_reset(struct tmio_mmc_host *host)
+ {
+ 	/* FIXME - should we set stop clock reg here */
+ 	sd_ctrl_write16(host, CTL_RESET_SD, 0x0000);
+-	/* implicit BUG_ON(!res) */
+ 	if (host->pdata->flags & TMIO_MMC_HAVE_HIGH_REG)
+ 		sd_ctrl_write16(host, CTL_RESET_SDIO, 0x0000);
+ 	msleep(10);
 -- 
 2.1.4
 
