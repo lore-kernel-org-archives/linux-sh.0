@@ -1,7 +1,7 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 21 Jan 2016 07:29:21 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 21 Jan 2016 08:25:19 +0000
 Subject: Re: [PATCH] MAINTAINERS: Update mailing list for Renesas ARM64 SoC Development
-Message-Id: <CANqRtoTgX7nQ89x0vhMxigVzydDf1gSBwc876Shw=uZuDmKH5w@mail.gmail.com>
+Message-Id: <CAMuHMdUJXQTGA+thVtm+i8=GoMPoTHaz=skMOUvKzhfH9MyBxg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1453357276-10148-1-git-send-email-horms+renesas@verge.net.au>
 In-Reply-To: <1453357276-10148-1-git-send-email-horms+renesas@verge.net.au>
@@ -9,11 +9,9 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Simon Horman <horms+renesas@verge.net.au>
-Cc: Linus Torvalds <torvalds@linux-foundation.org>, linux-renesas-soc@vger.kernel.org, SH-Linux <linux-sh@vger.kernel.org>, linux-kernel <linux-kernel@vger.kernel.org>
+Cc: Linus Torvalds <torvalds@linux-foundation.org>, Magnus Damm <magnus.damm@gmail.com>, linux-renesas-soc@vger.kernel.org, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
 
-Hi Simon, Linus, everyone,
-
-On Thu, Jan 21, 2016 at 3:21 PM, Simon Horman
+On Thu, Jan 21, 2016 at 7:21 AM, Simon Horman
 <horms+renesas@verge.net.au> wrote:
 > Update the mailing list used for development of support for
 > ARM64 Renesas SoCs.
@@ -29,14 +27,16 @@ On Thu, Jan 21, 2016 at 3:21 PM, Simon Horman
 >
 > Cc: Magnus Damm <magnus.damm@gmail.com>
 > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> ---
->  MAINTAINERS | 4 ++--
->  1 file changed, 2 insertions(+), 2 deletions(-)
 
-Thanks, looking good!
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Acked-by: Magnus Damm <damm@opensource.se>
+Gr{oetje,eeting}s,
 
-Cheers,
+                        Geert
 
-/ magnus
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
