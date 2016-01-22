@@ -1,7 +1,7 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Fri, 22 Jan 2016 10:32:28 +0000
-Subject: RE: [RFC 0/6] mmc: sdhi: add basic r8a7795 support
-Message-Id: <SG2PR06MB0919D38E8BDB5F8B1A419F43D8C40@SG2PR06MB0919.apcprd06.prod.outlook.com>
+From: Dirk Behme <dirk.behme@de.bosch.com>
+Date: Fri, 22 Jan 2016 11:26:21 +0000
+Subject: Re: [RFC 0/6] mmc: sdhi: add basic r8a7795 support
+Message-Id: <56A211DD.6050009@de.bosch.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1453220461-2598-1-git-send-email-wsa@the-dreams.de>
 In-Reply-To: <1453220461-2598-1-git-send-email-wsa@the-dreams.de>
@@ -10,27 +10,28 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Dirk-san, Wolfram-san,
+Hi Wolfram,
 
-> > And third, from reading the r8a7795 manual I think the manual talks about
-> >
-> > https://github.com/dirkbehme/linux-renesas-rcar-gen3/commit/f2a727c859916d59dca85dbb72c1b61da3fd6da0
-> >
-> > But testing this it doesn't work. So either the manual is wrong, or I missed
-> > anything else.
-> 
-> I have seen this patch and my gut feeling is that it won't make a
-> difference? SCLKDIVEN is like CBUSY plus some more cycles AFAIU. But I
-> am not working on DMA issues now, this has to wait.
+On 19.01.2016 17:20, Wolfram Sang wrote:
+> So, I started working on the SDHI part. Since Dirk seems to be working on the
+> clocks already (thanks!), I evaluated the patches for the mmc-subsystem and
+> refactored the subset which gets the basic functionality run. A few cleanups
+> were applied, too. The patches are RFC because I want to check one more issue
+> (restore clock settings after software reset) and also I need to do Gen2
+> regression testing. However, release early, I wanted to show you what I am
+> hacking on here.
 
-I'm not sure we have to use CBSY bit instead of SCLKDIVEN on r8a7795.
-However, I could use the CBSY bit if I used the following code.
 
-	while (--timeout && (sd_ctrl_read16(host, CTL_STATUS2) & (1 << 14)))
+I've looked over it and from my limited knowledge point of view it looks 
+good. Thanks!
 
-If we use the CBSY bit, I think we have to wait while the CBSY bit is set to 1.
-(In other words, the behavior of CBSY bit is different from the SCLKDIVEN bit if my understanding is correct.)
+I'd say that patches 2/6 and 4/6 are mainly independent on r8a7795 
+support and could be sent without RFC.
 
-Best regards,
-Yoshihiro Shimoda
+I'm not sure if my knowledge is enough to give an Acked-by or 
+Reviewed-by, though ;)
+
+Best regards
+
+Dirk
 
