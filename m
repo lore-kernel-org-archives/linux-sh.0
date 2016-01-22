@@ -1,67 +1,89 @@
-From: Dirk Behme <dirk.behme@gmail.com>
-Date: Tue, 19 Jan 2016 16:56:45 +0000
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Fri, 22 Jan 2016 08:54:08 +0000
 Subject: Re: [RFC 0/6] mmc: sdhi: add basic r8a7795 support
-Message-Id: <569E6ACD.2060303@gmail.com>
+Message-Id: <20160122085408.GA3967@tetsubishi>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="sm4nu43k4a2Rpi4c"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1453220461-2598-1-git-send-email-wsa@the-dreams.de>
 In-Reply-To: <1453220461-2598-1-git-send-email-wsa@the-dreams.de>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Wolfgang,
 
-On 19.01.2016 17:20, Wolfram Sang wrote:
-> So, I started working on the SDHI part. Since Dirk seems to be working on the
-> clocks already (thanks!), I evaluated the patches for the mmc-subsystem and
-> refactored the subset which gets the basic functionality run. A few cleanups
-> were applied, too. The patches are RFC because I want to check one more issue
-> (restore clock settings after software reset) and also I need to do Gen2
-> regression testing. However, release early, I wanted to show you what I am
-> hacking on here. A branch for testing (with Dirk's clock patches and DTS
-> additions can be found here):
->
-> git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git renesas/v8-sdhi-nodma
->
-> Further testing much appreciated. It works fine on my Salvator using SD cards
-> on both, SDHI0 and SDHI3. Simple testing, though, no stress testing yet.
+--sm4nu43k4a2Rpi4c
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
+
+Hi Dirk,
+
+> First, regarding the clocks, if anybody from the experts could advise me =
+how
+> we'd like to interface dynamic clocks to the existing Gen3 clock code, th=
+at
+> would be really welcome:
+
+I am not the clock expert, but I try to have a look next week.
+
+> Second, I'm mainly interested in eMMC support for the Salvator-X. Therefo=
+re
+
+OK, nice to know. I have eMMC running now, without DMA and HS200, of
+course. My patches need some refactoring, though.
+
+> I picked (hopefully) all patches from the Renesas BSP to
+> renesas-drivers-2016-01-13-v4.4
+
+Yes, that's where I picked your clock patches from :)
+
+> so I'd suspect some memory overwriting. But what confuses me is that the
+> same code works fine on the the 4.2 based Renesas BSP. I have no idea
+> regarding this, yet.
+
+I usually don't have high hopes that putting more than a trivial amount
+of any BSP code on top of upstream will result in success ;)
+
+My obviuos plan is to work incrementally. First basic support, then DMA,
+then UHS-I/HS200. Review, refactor existing patches. Upstream first, etc
+pp... You know all this, I guess.
+
+> And third, from reading the r8a7795 manual I think the manual talks about
+>=20
+> https://github.com/dirkbehme/linux-renesas-rcar-gen3/commit/f2a727c859916=
+d59dca85dbb72c1b61da3fd6da0
+>=20
+> But testing this it doesn't work. So either the manual is wrong, or I mis=
+sed
+> anything else.
+
+I have seen this patch and my gut feeling is that it won't make a
+difference? SCLKDIVEN is like CBUSY plus some more cycles AFAIU. But I
+am not working on DMA issues now, this has to wait.
+
+Kind regards,
+
+   Wolfram
 
 
-Many thanks for working on this! I'll have a look to it, maybe next week.
+--sm4nu43k4a2Rpi4c
+Content-Type: application/pgp-signature; name="signature.asc"
 
-Just fyi, some general remarks, what's my recent status:
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
 
-First, regarding the clocks, if anybody from the experts could advise 
-me how we'd like to interface dynamic clocks to the existing Gen3 
-clock code, that would be really welcome:
+iQIcBAEBAgAGBQJWoe4wAAoJEBQN5MwUoCm2KKgP+gNJ2wMnrFrKs1vj5+d1+XdA
+GGrk2H8jK/8ARRYydXsVORIzTxswb7fW8CypCaI438T5hEz/9w4BcwwaCR4NONaq
+Cj0PvV3+2DFhHhQJ+sFNNCKHAFqBrBF6rfZxWt/+SasV2b6Q4qQxv/3VwzPn4R3i
+9P3LT5yhFYTblVA+3QTKKsWZxl17xROyhILl87tx1ANqNyZKLLmHhwvwl5+2/pDf
+jtUqwszHL25EmER8rw0/0FETrk6lFy3efXVnO/NnX83tK9vGc1u6Np0spqXGuC9r
+bGJl7G6VlNZJkFjb3iihd/6PaK5sgbo7oUD1PtaTWWlhNZFGi3pcEQ73PUYh18bw
+CiMOhEcGAbJd40rXl668UwaPUVJEpAmuW9pyNrV+ri13GHvCl2KEIWD6au95dSb6
+a+XpYp9Ac9Wrn5bF/4I+AmQ8LLq1RSYNMjdP9pwkUIflJPwpBJK91aQtv7u9WejX
+ZChnQRo8oKAsioj+EhOJ66LBZ6KPpO8TzQLf3hPtFZX4SqXJQMsH3T5cygtCSG27
+o++Zli2s8jFBHGNbmJK8cX//r0bpgJsWxX0mfVoSiVR/MWY9Tc3dANcLhaV/cLXB
+tv1f/CVhFE4GB2MRnyzs+Qj+T/OPQbgvW1tt2cQ+gvIn60+1Xfeh68TSVCjd9gov
+tPk3qLQurk9lGcsBfqtA
+=zB9X
+-----END PGP SIGNATURE-----
 
-http://marc.info/?l=linux-sh&m5302405811953
-
-
-Second, I'm mainly interested in eMMC support for the Salvator-X. 
-Therefore I picked (hopefully) all patches from the Renesas BSP to 
-renesas-drivers-2016-01-13-v4.4
-
-https://github.com/dirkbehme/linux-renesas-rcar-gen3/commits/dirk/gen3-latest-update
-
-I compared the Renesas BSP code in drivers/mmc with that version, it's 
-the same. However, this branch crashes more or less immediately after 
-successfully detecting the eMMC in various core kernel parts. This 
-happens as soon as I enable the eMMC in the device tree. It looks to 
-me like a DMA issue, because I'd think the errors are in core kernel 
-code which is fine, so I'd suspect some memory overwriting. But what 
-confuses me is that the same code works fine on the the 4.2 based 
-Renesas BSP. I have no idea regarding this, yet.
-
-And third, from reading the r8a7795 manual I think the manual talks about
-
-https://github.com/dirkbehme/linux-renesas-rcar-gen3/commit/f2a727c859916d59dca85dbb72c1b61da3fd6da0
-
-But testing this it doesn't work. So either the manual is wrong, or I 
-missed anything else.
-
-Best regards
-
-Dirk
-
+--sm4nu43k4a2Rpi4c--
