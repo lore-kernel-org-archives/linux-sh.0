@@ -1,30 +1,32 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 21 Jan 2016 22:22:41 +0000
+From: Hans Verkuil <hverkuil@xs4all.nl>
+Date: Fri, 22 Jan 2016 12:22:27 +0000
 Subject: Re: [PATCH 2/3] v4l: Add YUV 4:2:2 and YUV 4:4:4 tri-planar non-contiguous formats
-Message-Id: <1525315.ufCbO0H8af@avalon>
+Message-Id: <56A21F03.4080709@xs4all.nl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1452485264-11328-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <1452485264-11328-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1452485264-11328-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+ <1452485264-11328-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 In-Reply-To: <1452485264-11328-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Hans Verkuil <hans.verkuil@cisco.com>
-Cc: linux-media@vger.kernel.org, linux-sh@vger.kernel.org
+To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-Hi Hans,
-
-You've requested changes to the previous version of this patch (merging the 
-YUV and YVU variants), could you review this one as well as patch 1/3 in this 
-series ?
-
-On Monday 11 January 2016 06:07:43 Laurent Pinchart wrote:
+On 01/11/2016 05:07 AM, Laurent Pinchart wrote:
 > The formats use three planes through the multiplanar API, allowing for
 > non-contiguous planes in memory.
 > 
 > Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+
+Acked-by: Hans Verkuil <hans.verkuil@cisco.com>
+
+Thanks!
+
+	Hans
+
 > ---
->  Documentation/DocBook/media/v4l/pixfmt-yuv422m.xml | 166 ++++++++++++++++++
->  Documentation/DocBook/media/v4l/pixfmt-yuv444m.xml | 177 ++++++++++++++++++
+>  Documentation/DocBook/media/v4l/pixfmt-yuv422m.xml | 166 +++++++++++++++++++
+>  Documentation/DocBook/media/v4l/pixfmt-yuv444m.xml | 177 +++++++++++++++++++++
 >  Documentation/DocBook/media/v4l/pixfmt.xml         |   2 +
 >  drivers/media/v4l2-core/v4l2-ioctl.c               |   4 +
 >  include/uapi/linux/videodev2.h                     |   4 +
@@ -32,23 +34,21 @@ On Monday 11 January 2016 06:07:43 Laurent Pinchart wrote:
 >  create mode 100644 Documentation/DocBook/media/v4l/pixfmt-yuv422m.xml
 >  create mode 100644 Documentation/DocBook/media/v4l/pixfmt-yuv444m.xml
 > 
-> diff --git a/Documentation/DocBook/media/v4l/pixfmt-yuv422m.xml
-> b/Documentation/DocBook/media/v4l/pixfmt-yuv422m.xml new file mode 100644
+> diff --git a/Documentation/DocBook/media/v4l/pixfmt-yuv422m.xml b/Documentation/DocBook/media/v4l/pixfmt-yuv422m.xml
+> new file mode 100644
 > index 000000000000..dd502802cb75
 > --- /dev/null
 > +++ b/Documentation/DocBook/media/v4l/pixfmt-yuv422m.xml
 > @@ -0,0 +1,166 @@
 > +    <refentry>
 > +      <refmeta>
-> +	<refentrytitle>V4L2_PIX_FMT_YUV422M ('YM16'), V4L2_PIX_FMT_YVU422M
-> ('YM61')</refentrytitle> +	&manvol;
+> +	<refentrytitle>V4L2_PIX_FMT_YUV422M ('YM16'), V4L2_PIX_FMT_YVU422M ('YM61')</refentrytitle>
+> +	&manvol;
 > +      </refmeta>
 > +      <refnamediv>
-> +	<refname
-> id="V4L2-PIX-FMT-YUV422M"><constant>V4L2_PIX_FMT_YUV422M</constant></refnam
-> e> +	<refname
-> id="V4L2-PIX-FMT-YVU422M"><constant>V4L2_PIX_FMT_YVU422M</constant></refnam
-> e> +	<refpurpose>Planar formats with &frac12; horizontal resolution, also
+> +	<refname id="V4L2-PIX-FMT-YUV422M"><constant>V4L2_PIX_FMT_YUV422M</constant></refname>
+> +	<refname id="V4L2-PIX-FMT-YVU422M"><constant>V4L2_PIX_FMT_YVU422M</constant></refname>
+> +	<refpurpose>Planar formats with &frac12; horizontal resolution, also
 > +	known as YUV and YVU 4:2:2</refpurpose>
 > +      </refnamediv>
 > +
@@ -60,15 +60,15 @@ On Monday 11 January 2016 06:07:43 Laurent Pinchart wrote:
 > +
 > +	<para>The Y plane is first. The Y plane has one byte per pixel.
 > +For <constant>V4L2_PIX_FMT_YUV422M</constant> the Cb data
-> +constitutes the second plane which is half the width of the Y plane (and of
-> the +image). Each Cb belongs to two pixels. For example,
+> +constitutes the second plane which is half the width of the Y plane (and of the
+> +image). Each Cb belongs to two pixels. For example,
 > +Cb<subscript>0</subscript> belongs to Y'<subscript>00</subscript>,
 > +Y'<subscript>01</subscript>. The Cr data, just like the Cb plane, is
 > +in the third plane. </para>
 > +
 > +	<para><constant>V4L2_PIX_FMT_YVU422M</constant> is the same except
-> +the Cr data is stored in the second plane and the Cb data in the third
-> plane. +</para>
+> +the Cr data is stored in the second plane and the Cb data in the third plane.
+> +</para>
 > +
 > +	<para>If the Y plane has pad bytes after each row, then the Cb
 > +and Cr planes have half as many pad bytes after their rows. In other
@@ -206,23 +206,21 @@ On Monday 11 January 2016 06:07:43 Laurent Pinchart wrote:
 > +	</example>
 > +      </refsect1>
 > +    </refentry>
-> diff --git a/Documentation/DocBook/media/v4l/pixfmt-yuv444m.xml
-> b/Documentation/DocBook/media/v4l/pixfmt-yuv444m.xml new file mode 100644
+> diff --git a/Documentation/DocBook/media/v4l/pixfmt-yuv444m.xml b/Documentation/DocBook/media/v4l/pixfmt-yuv444m.xml
+> new file mode 100644
 > index 000000000000..1b7335940bc7
 > --- /dev/null
 > +++ b/Documentation/DocBook/media/v4l/pixfmt-yuv444m.xml
 > @@ -0,0 +1,177 @@
 > +    <refentry>
 > +      <refmeta>
-> +	<refentrytitle>V4L2_PIX_FMT_YUV444M ('YM24'), V4L2_PIX_FMT_YVU444M
-> ('YM42')</refentrytitle> +	&manvol;
+> +	<refentrytitle>V4L2_PIX_FMT_YUV444M ('YM24'), V4L2_PIX_FMT_YVU444M ('YM42')</refentrytitle>
+> +	&manvol;
 > +      </refmeta>
 > +      <refnamediv>
-> +	<refname
-> id="V4L2-PIX-FMT-YUV444M"><constant>V4L2_PIX_FMT_YUV444M</constant></refnam
-> e> +	<refname
-> id="V4L2-PIX-FMT-YVU444M"><constant>V4L2_PIX_FMT_YVU444M</constant></refnam
-> e> +	<refpurpose>Planar formats with full horizontal resolution, also
+> +	<refname id="V4L2-PIX-FMT-YUV444M"><constant>V4L2_PIX_FMT_YUV444M</constant></refname>
+> +	<refname id="V4L2-PIX-FMT-YVU444M"><constant>V4L2_PIX_FMT_YVU444M</constant></refname>
+> +	<refpurpose>Planar formats with full horizontal resolution, also
 > +	known as YUV and YVU 4:4:4</refpurpose>
 > +      </refnamediv>
 > +
@@ -234,13 +232,13 @@ On Monday 11 January 2016 06:07:43 Laurent Pinchart wrote:
 > +
 > +	<para>The Y plane is first. The Y plane has one byte per pixel.
 > +For <constant>V4L2_PIX_FMT_YUV444M</constant> the Cb data
-> +constitutes the second plane which is the same width and height as the Y
-> plane +(and as the image). The Cr data, just like the Cb plane, is in the
-> third plane. +</para>
+> +constitutes the second plane which is the same width and height as the Y plane
+> +(and as the image). The Cr data, just like the Cb plane, is in the third plane.
+> +</para>
 > +
 > +	<para><constant>V4L2_PIX_FMT_YVU444M</constant> is the same except
-> +the Cr data is stored in the second plane and the Cb data in the third
-> plane. +</para>
+> +the Cr data is stored in the second plane and the Cb data in the third plane.
+> +</para>
 > +	<para>If the Y plane has pad bytes after each row, then the Cb
 > +and Cr planes have the same number of pad bytes after their rows.</para>
 > +
@@ -365,26 +363,22 @@ On Monday 11 January 2016 06:07:43 Laurent Pinchart wrote:
 > +		    </row>
 > +		    <row>
 > +		      <entry>0</entry>
-> +		      
-<entry>YC</entry><entry></entry><entry>YC</entry><entry></entry>
+> +		      <entry>YC</entry><entry></entry><entry>YC</entry><entry></entry>
 > +		      <entry>YC</entry><entry></entry><entry>YC</entry>
 > +		    </row>
 > +		    <row>
 > +		      <entry>1</entry>
-> +		      
-<entry>YC</entry><entry></entry><entry>YC</entry><entry></entry>
+> +		      <entry>YC</entry><entry></entry><entry>YC</entry><entry></entry>
 > +		      <entry>YC</entry><entry></entry><entry>YC</entry>
 > +		    </row>
 > +		    <row>
 > +		      <entry>2</entry>
-> +		      
-<entry>YC</entry><entry></entry><entry>YC</entry><entry></entry>
+> +		      <entry>YC</entry><entry></entry><entry>YC</entry><entry></entry>
 > +		      <entry>YC</entry><entry></entry><entry>YC</entry>
 > +		    </row>
 > +		    <row>
 > +		      <entry>3</entry>
-> +		      
-<entry>YC</entry><entry></entry><entry>YC</entry><entry></entry>
+> +		      <entry>YC</entry><entry></entry><entry>YC</entry><entry></entry>
 > +		      <entry>YC</entry><entry></entry><entry>YC</entry>
 > +		    </row>
 > +		  </tbody>
@@ -395,9 +389,8 @@ On Monday 11 January 2016 06:07:43 Laurent Pinchart wrote:
 > +	</example>
 > +      </refsect1>
 > +    </refentry>
-> diff --git a/Documentation/DocBook/media/v4l/pixfmt.xml
-> b/Documentation/DocBook/media/v4l/pixfmt.xml index
-> 9e77ff353feb..2f02f9441443 100644
+> diff --git a/Documentation/DocBook/media/v4l/pixfmt.xml b/Documentation/DocBook/media/v4l/pixfmt.xml
+> index 9e77ff353feb..2f02f9441443 100644
 > --- a/Documentation/DocBook/media/v4l/pixfmt.xml
 > +++ b/Documentation/DocBook/media/v4l/pixfmt.xml
 > @@ -1628,6 +1628,8 @@ information.</para>
@@ -409,44 +402,35 @@ On Monday 11 January 2016 06:07:43 Laurent Pinchart wrote:
 >      &sub-yuv410;
 >      &sub-yuv422p;
 >      &sub-yuv411p;
-> diff --git a/drivers/media/v4l2-core/v4l2-ioctl.c
-> b/drivers/media/v4l2-core/v4l2-ioctl.c index 8a018c6dd16a..14843090fd61
-> 100644
+> diff --git a/drivers/media/v4l2-core/v4l2-ioctl.c b/drivers/media/v4l2-core/v4l2-ioctl.c
+> index 8a018c6dd16a..14843090fd61 100644
 > --- a/drivers/media/v4l2-core/v4l2-ioctl.c
 > +++ b/drivers/media/v4l2-core/v4l2-ioctl.c
-> @@ -1191,6 +1191,10 @@ static void v4l_fill_fmtdesc(struct v4l2_fmtdesc
-> *fmt) case V4L2_PIX_FMT_NV12MT_16X16:	descr = "Y/CbCr 4:2:0 (16x16 MB,
-> N-C)"; break; case V4L2_PIX_FMT_YUV420M:	descr = "Planar YUV 4:2:0 (N-
-C)";
-> break; case V4L2_PIX_FMT_YVU420M:	descr = "Planar YVU 4:2:0 (N-C)"; break;
+> @@ -1191,6 +1191,10 @@ static void v4l_fill_fmtdesc(struct v4l2_fmtdesc *fmt)
+>  	case V4L2_PIX_FMT_NV12MT_16X16:	descr = "Y/CbCr 4:2:0 (16x16 MB, N-C)"; break;
+>  	case V4L2_PIX_FMT_YUV420M:	descr = "Planar YUV 4:2:0 (N-C)"; break;
+>  	case V4L2_PIX_FMT_YVU420M:	descr = "Planar YVU 4:2:0 (N-C)"; break;
 > +	case V4L2_PIX_FMT_YUV422M:	descr = "Planar YUV 4:2:2 (N-C)"; break;
 > +	case V4L2_PIX_FMT_YVU422M:	descr = "Planar YVU 4:2:2 (N-C)"; break;
 > +	case V4L2_PIX_FMT_YUV444M:	descr = "Planar YUV 4:4:4 (N-C)"; break;
-> +	case V4L2_PIX_FMT_YVU444M:	descr = "Planar YVU 4:4:4 (N-C)"; break; case
-> V4L2_PIX_FMT_SBGGR8:	descr = "8-bit Bayer BGBG/GRGR"; break; case
-> V4L2_PIX_FMT_SGBRG8:	descr = "8-bit Bayer GBGB/RGRG"; break; case
-> V4L2_PIX_FMT_SGRBG8:	descr = "8-bit Bayer GRGR/BGBG"; break; diff --git
-> a/include/uapi/linux/videodev2.h b/include/uapi/linux/videodev2.h index
-> 14cd5ebfee6d..466458422385 100644
+> +	case V4L2_PIX_FMT_YVU444M:	descr = "Planar YVU 4:4:4 (N-C)"; break;
+>  	case V4L2_PIX_FMT_SBGGR8:	descr = "8-bit Bayer BGBG/GRGR"; break;
+>  	case V4L2_PIX_FMT_SGBRG8:	descr = "8-bit Bayer GBGB/RGRG"; break;
+>  	case V4L2_PIX_FMT_SGRBG8:	descr = "8-bit Bayer GRGR/BGBG"; break;
+> diff --git a/include/uapi/linux/videodev2.h b/include/uapi/linux/videodev2.h
+> index 14cd5ebfee6d..466458422385 100644
 > --- a/include/uapi/linux/videodev2.h
 > +++ b/include/uapi/linux/videodev2.h
 > @@ -546,6 +546,10 @@ struct v4l2_pix_format {
 >  /* three non contiguous planes - Y, Cb, Cr */
->  #define V4L2_PIX_FMT_YUV420M v4l2_fourcc('Y', 'M', '1', '2') /* 12  YUV420
-> planar */ #define V4L2_PIX_FMT_YVU420M v4l2_fourcc('Y', 'M', '2', '1') /*
-> 12  YVU420 planar */ +#define V4L2_PIX_FMT_YUV422M v4l2_fourcc('Y', 'M',
-> '1', '6') /* 16  YUV422 planar */ +#define V4L2_PIX_FMT_YVU422M
-> v4l2_fourcc('Y', 'M', '6', '1') /* 16  YVU422 planar */ +#define
-> V4L2_PIX_FMT_YUV444M v4l2_fourcc('Y', 'M', '2', '4') /* 24  YUV444 planar
-> */ +#define V4L2_PIX_FMT_YVU444M v4l2_fourcc('Y', 'M', '4', '2') /* 24 
-> YVU444 planar */
-> 
+>  #define V4L2_PIX_FMT_YUV420M v4l2_fourcc('Y', 'M', '1', '2') /* 12  YUV420 planar */
+>  #define V4L2_PIX_FMT_YVU420M v4l2_fourcc('Y', 'M', '2', '1') /* 12  YVU420 planar */
+> +#define V4L2_PIX_FMT_YUV422M v4l2_fourcc('Y', 'M', '1', '6') /* 16  YUV422 planar */
+> +#define V4L2_PIX_FMT_YVU422M v4l2_fourcc('Y', 'M', '6', '1') /* 16  YVU422 planar */
+> +#define V4L2_PIX_FMT_YUV444M v4l2_fourcc('Y', 'M', '2', '4') /* 24  YUV444 planar */
+> +#define V4L2_PIX_FMT_YVU444M v4l2_fourcc('Y', 'M', '4', '2') /* 24  YVU444 planar */
+>  
 >  /* Bayer formats - see http://www.siliconimaging.com/RGB%20Bayer.htm */
->  #define V4L2_PIX_FMT_SBGGR8  v4l2_fourcc('B', 'A', '8', '1') /*  8  BGBG..
-> GRGR.. */
-
--- 
-Regards,
-
-Laurent Pinchart
+>  #define V4L2_PIX_FMT_SBGGR8  v4l2_fourcc('B', 'A', '8', '1') /*  8  BGBG.. GRGR.. */
+> 
 
