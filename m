@@ -1,46 +1,129 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Tue, 26 Jan 2016 08:34:35 +0000
-Subject: Re: [RFC 0/6] mmc: sdhi: add basic r8a7795 support
-Message-Id: <20160126083435.GA2190@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="OXfL5xGRrasGEqWY"
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Sun, 24 Jan 2016 16:13:29 +0000
+Subject: [PATCH v5] media: soc_camera: rcar_vin: Add ARGB8888 caputre format support
+Message-Id: <1453652009-4291-1-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1453220461-2598-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1453220461-2598-1-git-send-email-wsa@the-dreams.de>
-To: linux-sh@vger.kernel.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-media@vger.kernel.org
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
+From: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
 
---OXfL5xGRrasGEqWY
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+This patch adds ARGB8888 capture format support for R-Car Gen3.
 
+Signed-off-by: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+---
 
-> Well, if the manual tells us to use CBSY (bit 14), I think it's a good idea
-> to do so and not to use anything else.
+This patch is based on the for-4.6-1 branch of Guennadi's v4l-dvb tree.
 
-I'll try to find out more...
+v5 [Yoshihiro Kaneko]
+* As suggested by Guennadi Liakhovetski
+  rcar_vin_setup():
+    - add a common error handler instead of a falling through to the
+      default case.
+* compile tested only
 
+v4 [Yoshihiro Kaneko]
+* As suggested by Sergei Shtylyov
+  - revised an error message.
 
---OXfL5xGRrasGEqWY
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+v3 [Yoshihiro Kaneko]
+* rebased to for-4.6-1 branch of Guennadi's tree.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
+v2 [Yoshihiro Kaneko]
+* As suggested by Sergei Shtylyov
+  - fix the coding style of the braces.
 
-iQIcBAEBAgAGBQJWpy+bAAoJEBQN5MwUoCm27GoP/R6rfOyHvLkRWJITi/zYDQxR
-5F51CNeDYI7j5dKEvgfPno8B7lDnEYyII5LUAHxrEZ7EvCgTstNtDHC/THMjYSLe
-R7eWSm0GnlooqO8t9Gk8VAivZ7R/LMn27I5GT477HiwXp3scgtDjl3dTcJ4kCQDz
-vGwJJCfwMdoKYsbWWOrirE0rlTUl0fQyJpDqvRHSjR6UODAuOLiH78Hdk9UWdKuE
-Socz3yhxjSfzxvBEnWIu1L1+Brkm6tBaocRhhsr/IJ+nreCUiIwjz09qWvy+7hHo
-DC3WquLuVj6t4hBMzoYIlHjOW6PV/ZIxe48npmBcYcY+lepYVgD1qnywq15+fS3s
-0SmYpb7IShPNEv1OvWGafFTOuFEHu+XyblkYHaiQNKOU+Zjv5yDuiSNdCAuAerpm
-rd0raQTflfuiJxWvOR6YkaN7L97RqbpxV2TGPxk8uNBQ0inMiWZl9ttWcDebIDB0
-k7fw2Fny4qBwPE1ASBOE/gC65pECiMag+8kFsGWNfYN5FyVHynjkETpUzsI3Agsx
-YJsCuM/3xLzVilVMYMahfa8/79O8/Lm1HDSU0qFqGLZmOmNiWUddzXGdszR+dpez
-wSvTcuCccRSKl4+5SWlyAVE3Wv845wOL0GOMvQOZtm52I9vbYsALcDoCAaQGDVUc
-9OYlcHpEezbg/QPWs60x
-=0EUw
------END PGP SIGNATURE-----
+ drivers/media/platform/soc_camera/rcar_vin.c | 39 +++++++++++++++++++++-------
+ 1 file changed, 29 insertions(+), 10 deletions(-)
 
---OXfL5xGRrasGEqWY--
+diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
+index dc75a80..3b8edf4 100644
+--- a/drivers/media/platform/soc_camera/rcar_vin.c
++++ b/drivers/media/platform/soc_camera/rcar_vin.c
+@@ -124,7 +124,7 @@
+ #define VNDMR_EXRGB		(1 << 8)
+ #define VNDMR_BPSM		(1 << 4)
+ #define VNDMR_DTMD_YCSEP	(1 << 1)
+-#define VNDMR_DTMD_ARGB1555	(1 << 0)
++#define VNDMR_DTMD_ARGB		(1 << 0)
+ 
+ /* Video n Data Mode Register 2 bits */
+ #define VNDMR2_VPS		(1 << 30)
+@@ -643,21 +643,26 @@ static int rcar_vin_setup(struct rcar_vin_priv *priv)
+ 		output_is_yuv = true;
+ 		break;
+ 	case V4L2_PIX_FMT_RGB555X:
+-		dmr = VNDMR_DTMD_ARGB1555;
++		dmr = VNDMR_DTMD_ARGB;
+ 		break;
+ 	case V4L2_PIX_FMT_RGB565:
+ 		dmr = 0;
+ 		break;
+ 	case V4L2_PIX_FMT_RGB32:
+-		if (priv->chip = RCAR_GEN2 || priv->chip = RCAR_H1 ||
+-		    priv->chip = RCAR_E1) {
+-			dmr = VNDMR_EXRGB;
+-			break;
+-		}
++		if (priv->chip != RCAR_GEN2 && priv->chip != RCAR_H1 &&
++		    priv->chip != RCAR_E1)
++			goto e_format;
++
++		dmr = VNDMR_EXRGB;
++		break;
++	case V4L2_PIX_FMT_ARGB32:
++		if (priv->chip != RCAR_GEN3)
++			goto e_format;
++
++		dmr = VNDMR_EXRGB | VNDMR_DTMD_ARGB;
++		break;
+ 	default:
+-		dev_warn(icd->parent, "Invalid fourcc format (0x%x)\n",
+-			 icd->current_fmt->host_fmt->fourcc);
+-		return -EINVAL;
++		goto e_format;
+ 	}
+ 
+ 	/* Always update on field change */
+@@ -679,6 +684,11 @@ static int rcar_vin_setup(struct rcar_vin_priv *priv)
+ 	iowrite32(vnmc | VNMC_ME, priv->base + VNMC_REG);
+ 
+ 	return 0;
++
++e_format:
++	dev_warn(icd->parent, "Invalid fourcc format (0x%x)\n",
++		 icd->current_fmt->host_fmt->fourcc);
++	return -EINVAL;
+ }
+ 
+ static void rcar_vin_capture(struct rcar_vin_priv *priv)
+@@ -1304,6 +1314,14 @@ static const struct soc_mbus_pixelfmt rcar_vin_formats[] = {
+ 		.order			= SOC_MBUS_ORDER_LE,
+ 		.layout			= SOC_MBUS_LAYOUT_PACKED,
+ 	},
++	{
++		.fourcc			= V4L2_PIX_FMT_ARGB32,
++		.name			= "ARGB8888",
++		.bits_per_sample	= 32,
++		.packing		= SOC_MBUS_PACKING_NONE,
++		.order			= SOC_MBUS_ORDER_LE,
++		.layout			= SOC_MBUS_LAYOUT_PACKED,
++	},
+ };
+ 
+ static int rcar_vin_get_formats(struct soc_camera_device *icd, unsigned int idx,
+@@ -1611,6 +1629,7 @@ static int rcar_vin_set_fmt(struct soc_camera_device *icd,
+ 	case V4L2_PIX_FMT_RGB32:
+ 		can_scale = priv->chip != RCAR_E1;
+ 		break;
++	case V4L2_PIX_FMT_ARGB32:
+ 	case V4L2_PIX_FMT_UYVY:
+ 	case V4L2_PIX_FMT_YUYV:
+ 	case V4L2_PIX_FMT_RGB565:
+-- 
+1.9.1
+
