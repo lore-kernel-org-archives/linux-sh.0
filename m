@@ -1,41 +1,40 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 11 Jan 2016 04:32:57 +0000
-Subject: [PATCH 1/6] ARM: dts: bockw: Add compatible property to "partitions" node
-Message-Id: <b66c1ebae17bf78eb915f1d22a82e1183b0deb8e.1452486598.git.horms+renesas@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Mon, 25 Jan 2016 19:15:09 +0000
+Subject: [PATCH 2/9] mmc: sdhi: Add EXT_ACC register busy check
+Message-Id: <1453749316-1848-3-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1452486598.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1452486598.git.horms+renesas@verge.net.au>
+References: <1453749316-1848-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1453749316-1848-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-mmc@vger.kernel.org
+Cc: Wolfram Sang <wsa@the-dreams.de>, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Dirk Behme <dirk.behme@gmail.com>
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
 
-As of commit e488ca9f8d4f62c2 ("doc: dt: mtd: partitions: add compatible
-property to "partitions" node"), the "partitions" subnode of an SPI
-FLASH device node must have a compatible property. The partitions are no
-longer detected if it is not present.
+All the docs I have access to say that this register needs the bus busy
+check.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Brian Norris <computersforpeace@gmail.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
+Signed-off-by: Ai Kyuse <ai.kyuse.uw@renesas.com>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 ---
- arch/arm/boot/dts/r8a7778-bockw.dts | 1 +
+ drivers/mmc/host/sh_mobile_sdhi.c | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
-index b1aa02599229..a52b359e2ae2 100644
---- a/arch/arm/boot/dts/r8a7778-bockw.dts
-+++ b/arch/arm/boot/dts/r8a7778-bockw.dts
-@@ -199,6 +199,7 @@
- 		m25p,fast-read;
- 
- 		partitions {
-+			compatible = "fixed-partitions";
- 			#address-cells = <1>;
- 			#size-cells = <1>;
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index 354f4f335ed57a..61671f3fa09a11 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -163,6 +163,7 @@ static int sh_mobile_sdhi_write16_hook(struct tmio_mmc_host *host, int addr)
+ 	case CTL_SD_MEM_CARD_OPT:
+ 	case CTL_TRANSACTION_CTL:
+ 	case CTL_DMA_ENABLE:
++	case EXT_ACC:
+ 		return sh_mobile_sdhi_wait_idle(host);
+ 	}
  
 -- 
-2.7.0.rc3.207.g0ac5344
+2.1.4
 
