@@ -1,47 +1,48 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Fri, 22 Jan 2016 21:30:22 +0000
-Subject: Re: [RFC 0/6] mmc: sdhi: add basic r8a7795 support
-Message-Id: <20160122213022.GA1523@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="9amGYk9869ThD9tj"
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Mon, 25 Jan 2016 08:51:02 +0000
+Subject: RE: [RFC 0/6] mmc: sdhi: add basic r8a7795 support
+Message-Id: <SG2PR06MB0919291EBA454C6887750692D8C70@SG2PR06MB0919.apcprd06.prod.outlook.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1453220461-2598-1-git-send-email-wsa@the-dreams.de>
 In-Reply-To: <1453220461-2598-1-git-send-email-wsa@the-dreams.de>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
+> From: Dirk Behme
+> Sent: Friday, January 22, 2016 8:31 PM
+> 
+> On 22.01.2016 11:32, Yoshihiro Shimoda wrote:
+> > Hi Dirk-san, Wolfram-san,
+> >
+> >>> And third, from reading the r8a7795 manual I think the manual talks about
+> >>>
+> >>> https://github.com/dirkbehme/linux-renesas-rcar-gen3/commit/f2a727c859916d59dca85dbb72c1b61da3fd6da0
+> >>>
+> >>> But testing this it doesn't work. So either the manual is wrong, or I missed
+> >>> anything else.
+> >>
+> >> I have seen this patch and my gut feeling is that it won't make a
+> >> difference? SCLKDIVEN is like CBUSY plus some more cycles AFAIU. But I
+> >> am not working on DMA issues now, this has to wait.
+> >
+> > I'm not sure we have to use CBSY bit instead of SCLKDIVEN on r8a7795.
+> 
+> 
+> The r8a7795 manual I have has several
+> 
+> "Do / Do not xxx when the CBSY bit in SD_INFO2 is set to x"
+> 
+> It always talks about CBSY, not SCLKDIVEN.
 
---9amGYk9869ThD9tj
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Thank you for the detail. I agree with you about r8a7795.
+However, on previous SoC, it doesn't have CBSY bit.
+So, I guess we have to keep compatible for previous SoC somehow.
 
+Best regards,
+Yoshihiro Shimoda
 
-> I'm not sure if my knowledge is enough to give an Acked-by or Reviewed-by,
-> though ;)
-
-What about Tested-by? :) However, I'll send out an improved series on
-Monday, so it probably makes sense to wait for that...
-
-
---9amGYk9869ThD9tj
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBAgAGBQJWop9uAAoJEBQN5MwUoCm2nZ4P/R+Eghjy48XqyHoJN9VMhCCx
-xwTEnznpfVJvlbgcCZNe3bbU3JUkFuzVLDJRazfbB7EPvdMNiy3pZYMPfFfmzgFW
-5ziI3wCaqVCEGGP3p9RIkLFiB51cKjba9fr3d/zji86bibYIBI9k+UZquHkcpyNE
-LnqP+v1WhTcsdwzEmEh5GYXcaK+T5hziRS9Tu7X7qegz1D+8tpXpD4JzQJJmG7KD
-Ze7n0etItvY0ljfLmj/bJAaknk+53fv1GC61Ey4CAFwEYEOZ0bFS6aH1v7n5q6n/
-jKZKq6D4gnE/WuuTUy5dMsLiRq4ZH0N+MsNiLEJKAIqSwqICNUr4DQIAv77pi2Aa
-M8ivim69X02QKycSDWv2CgZUxbR+N0YdhKcy+vLCJZI9hivAT/gbTK5Ji0EBla28
-cV7eovmUW1OdlwN8BTkisaQWZgLRzhHK0cdeAIoPgyYlZyCgIRWwLZsBh7xzeM8s
-uj178zYiEL0MsRpIcJFQk16noJ/MbX97PDWLyChe8KT1Y28Pml+AEc3xcCTrIBdZ
-TPENyC+wfs+3xINwWnn+5v0LUs+/JQf3EdaJ4QG4TL8HQupSHZSRIYmNmtAHHsEy
-MiyxzL3WM9NXW878fE99YeXfBZj3ROKFlAQtaWXphuMJUmEPJn1xTASErpBaYI5l
-CC4NAMdTJIdXyay8HzpA
-=Ef1T
------END PGP SIGNATURE-----
-
---9amGYk9869ThD9tj--
+> Best regards
+> 
+> Dirk
