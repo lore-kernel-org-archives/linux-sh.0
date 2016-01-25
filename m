@@ -1,35 +1,73 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 15 Jan 2016 02:44:14 +0000
-Subject: [PATCH v2 0/2] ARM: shmobile: r8a779[01]: use GIC_* defines
-Message-Id: <1452825856-16230-1-git-send-email-horms+renesas@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Mon, 25 Jan 2016 19:15:11 +0000
+Subject: [PATCH 4/9] mmc: tmio: add flag to reduce delay after changing clock status
+Message-Id: <1453749316-1848-5-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1453749316-1848-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1453749316-1848-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-mmc@vger.kernel.org
+Cc: Wolfram Sang <wsa@the-dreams.de>, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Dirk Behme <dirk.behme@gmail.com>
 
-Hi,
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-this short series uses GIC_* defines in the r8a779[01] device trees as
-appropriate.
+The docs for RCar Gen2 & 3 I have access to, mention delays of 5ms after
+stop and 1ms after start. Make it possible to apply these values.
 
-I plan to post follow up patches to update the device trees for
-other Renesas SoCs depending on the success of this series.
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+---
+ drivers/mmc/host/tmio_mmc_pio.c | 7 ++++---
+ include/linux/mfd/tmio.h        | 4 ++++
+ 2 files changed, 8 insertions(+), 3 deletions(-)
 
-Based on renesas-devel-20160111-v4.4
-
-Changes since v1:
-* Use GIC_* define in a few places that were missed in v1
-
-
-Simon Horman (2):
-  ARM: shmobile: r8a7790: use GIC_* defines
-  ARM: shmobile: r8a7791: use GIC_* defines
-
- arch/arm/boot/dts/r8a7790.dtsi | 368 +++++++++++++++++++--------------------
- arch/arm/boot/dts/r8a7791.dtsi | 386 ++++++++++++++++++++---------------------
- 2 files changed, 377 insertions(+), 377 deletions(-)
-
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index a10fde40b6c3dd..ffff687e98b1e3 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -172,7 +172,8 @@ static void tmio_mmc_set_clock(struct tmio_mmc_host *host,
+ 		host->set_clk_div(host->pdev, (clk>>22) & 1);
+ 
+ 	sd_ctrl_write16(host, CTL_SD_CARD_CLK_CTL, clk & 0x1ff);
+-	msleep(10);
++	if (!(host->pdata->flags & TMIO_MMC_FAST_CLK_CHG))
++		msleep(10);
+ }
+ 
+ static void tmio_mmc_clk_stop(struct tmio_mmc_host *host)
+@@ -185,14 +186,14 @@ static void tmio_mmc_clk_stop(struct tmio_mmc_host *host)
+ 
+ 	sd_ctrl_write16(host, CTL_SD_CARD_CLK_CTL, ~0x0100 &
+ 		sd_ctrl_read16(host, CTL_SD_CARD_CLK_CTL));
+-	msleep(10);
++	msleep(host->pdata->flags & TMIO_MMC_FAST_CLK_CHG ? 5 : 10);
+ }
+ 
+ static void tmio_mmc_clk_start(struct tmio_mmc_host *host)
+ {
+ 	sd_ctrl_write16(host, CTL_SD_CARD_CLK_CTL, 0x0100 |
+ 		sd_ctrl_read16(host, CTL_SD_CARD_CLK_CTL));
+-	msleep(10);
++	msleep(host->pdata->flags & TMIO_MMC_FAST_CLK_CHG ? 1 : 10);
+ 
+ 	/* implicit BUG_ON(!res) */
+ 	if (host->pdata->flags & TMIO_MMC_HAVE_HIGH_REG) {
+diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
+index 24b86d538e8852..05d58ee5e6a78f 100644
+--- a/include/linux/mfd/tmio.h
++++ b/include/linux/mfd/tmio.h
+@@ -65,6 +65,10 @@
+  * Some controllers can support SDIO IRQ signalling.
+  */
+ #define TMIO_MMC_SDIO_IRQ		(1 << 2)
++
++/* Some controllers don't need to wait 10ms for clock changes */
++#define TMIO_MMC_FAST_CLK_CHG		(1 << 3)
++
+ /*
+  * Some controllers require waiting for the SD bus to become
+  * idle before writing to some registers.
 -- 
 2.1.4
 
