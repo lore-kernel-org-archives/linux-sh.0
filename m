@@ -1,61 +1,84 @@
-From: Bjorn Helgaas <helgaas@kernel.org>
-Date: Fri, 08 Jan 2016 20:31:02 +0000
-Subject: Re: [PATCH 00/10] drivers/pci: avoid module_init in non-modular host/pci*
-Message-Id: <20160108203102.GH5354@localhost>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Mon, 25 Jan 2016 19:15:08 +0000
+Subject: [PATCH 1/9] mmc: tmio_dma: remove debug messages with little information
+Message-Id: <1453749316-1848-2-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449970917-12633-1-git-send-email-paul.gortmaker@windriver.com>
- <CAFiDJ5-Y8afg5kDRQLK1pain-k1kPQAn3vhWrVkB1ADPRHvx+A@mail.gmail.com>
- <20151214091940.GA15126@ulmo.nvidia.com>
- <3302340.SIljl1qYTl@wuerfel> <20151215151624.GB2772@windriver.com>
-In-Reply-To: <20151215151624.GB2772@windriver.com>
+References: <1453749316-1848-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1453749316-1848-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-mmc@vger.kernel.org
+Cc: Wolfram Sang <wsa@the-dreams.de>, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Dirk Behme <dirk.behme@gmail.com>
 
-On Tue, Dec 15, 2015 at 10:16:24AM -0500, Paul Gortmaker wrote:
-> [Re: [PATCH 00/10] drivers/pci: avoid module_init in non-modular host/pci*] On 14/12/2015 (Mon 11:27) Arnd Bergmann wrote:
-> 
-> > On Monday 14 December 2015 10:19:40 Thierry Reding wrote:
-> > > > PCIe host driver that use fixup (DECLARE_PCI_FIXUP_*) can't use tristate.
-> > > > Fixup region is in kernel region and this region if not updated when
-> > > > loading a module.
-> > > 
-> > > Interesting, I hadn't thought about that. I suppose this means that the
-> > > module will end up containing an unused section with the fixup code. It
-> > > might be useful to add a way for that to trigger a warning at build
-> > > time.
-> > > 
-> > > Perhaps to fix this a mechanism could be introduced to add a table of
-> > > fixups to a host controller driver and that will get applied to all
-> > > children of the bridge. It could be problematic to cover all of the
-> > > different fixup stages, though.
-> > 
-> > I think a lot of the fixups shouldn't really be there in the first place,
-> > they are about stuff that we can fix up in the probe function, or that should
-> > be fixed up in the probe function with some appropriate core support added.
-> 
-> So, the feedback on this is a bit all over the map, leaving me unsure
-> what to do next.  And is the choice we make on a per board/bsp basis or
-> ideally across all platforms?  I see the choices as:
-> 
-> 1) do nothing; which IMHO is least desirable as it leaves the code
-> misrepresenting itself as modular; one of the key issues I wanted to fix
-> 
-> 2) use the patches I've sent ; then as they are genuinely made modular,
-> the person doing so essentially "patch -R" or reverts the change as
-> step one.  This has the advantage of solving the "we'll get to it
-> someday" issue if someday never comes.
-> 
-> 3) make them all tristate;  beat it with a stick until it compiles [M]
-> and modposts -- leaving the fixups and functional testing to people with
-> the boards and low level knowledge to make it _work_ as a module.  The
-> downside here is the code is still kind of misrepresenting itself as
-> modularly functional -- a ban of unloading might mitigate that some.
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-I'd like to preserve the mind-set that host controller drivers are
-*expected* to be modular, even if we aren't there yet.  I guess that
-means I'm in favor of option 3, at least for drivers that don't use
-fixups.
+When compiling the driver with CONFIG_MMC_DEBUG set, I get:
 
-Bjorn
+=drivers/mmc/host/tmio_mmc_dma.c: In function 'tmio_mmc_start_dma':
+include/linux/device.h:1186:2: warning: 'cookie' may be used uninitialized in this function [-Wmaybe-uninitialized]
+...
+
+drivers/mmc/host/tmio_mmc_dma.c:52:15: note: 'cookie' was declared here
+  dma_cookie_t cookie;
+...
+
+drivers/mmc/host/tmio_mmc_dma.c:128:15: note: 'cookie' was declared here
+  dma_cookie_t cookie;
+=
+Because these debug messages look random anyhow (some duplicate
+information printed etc), let's just drop them and rather re-add
+something consistent if that should ever be needed.
+
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+---
+ drivers/mmc/host/tmio_mmc_dma.c | 12 ------------
+ 1 file changed, 12 deletions(-)
+
+diff --git a/drivers/mmc/host/tmio_mmc_dma.c b/drivers/mmc/host/tmio_mmc_dma.c
+index e4b05dbb9ca822..67543587382312 100644
+--- a/drivers/mmc/host/tmio_mmc_dma.c
++++ b/drivers/mmc/host/tmio_mmc_dma.c
+@@ -95,9 +95,6 @@ static void tmio_mmc_start_dma_rx(struct tmio_mmc_host *host)
+ 			ret = cookie;
+ 		}
+ 	}
+-	dev_dbg(&host->pdev->dev, "%s(): mapped %d -> %d, cookie %d, rq %p\n",
+-		__func__, host->sg_len, ret, cookie, host->mrq);
+-
+ pio:
+ 	if (!desc) {
+ 		/* DMA failed, fall back to PIO */
+@@ -115,9 +112,6 @@ pio:
+ 		dev_warn(&host->pdev->dev,
+ 			 "DMA failed: %d, falling back to PIO\n", ret);
+ 	}
+-
+-	dev_dbg(&host->pdev->dev, "%s(): desc %p, cookie %d, sg[%d]\n", __func__,
+-		desc, cookie, host->sg_len);
+ }
+ 
+ static void tmio_mmc_start_dma_tx(struct tmio_mmc_host *host)
+@@ -175,9 +169,6 @@ static void tmio_mmc_start_dma_tx(struct tmio_mmc_host *host)
+ 			ret = cookie;
+ 		}
+ 	}
+-	dev_dbg(&host->pdev->dev, "%s(): mapped %d -> %d, cookie %d, rq %p\n",
+-		__func__, host->sg_len, ret, cookie, host->mrq);
+-
+ pio:
+ 	if (!desc) {
+ 		/* DMA failed, fall back to PIO */
+@@ -195,9 +186,6 @@ pio:
+ 		dev_warn(&host->pdev->dev,
+ 			 "DMA failed: %d, falling back to PIO\n", ret);
+ 	}
+-
+-	dev_dbg(&host->pdev->dev, "%s(): desc %p, cookie %d\n", __func__,
+-		desc, cookie);
+ }
+ 
+ void tmio_mmc_start_dma(struct tmio_mmc_host *host,
+-- 
+2.1.4
+
