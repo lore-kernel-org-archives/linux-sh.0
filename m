@@ -1,111 +1,111 @@
-From: "=?UTF-8?q?Niklas=20S=C3=B6derlund?=" <niklas.soderlund@ragnatech.se>
-Date: Fri, 08 Jan 2016 08:23:04 +0000
-Subject: [RFC 2/4] dmaengine: rcar-dmac: add iommu support for slave transfers
-Message-Id: <1452241386-22830-3-git-send-email-niklas.soderlund+renesas@ragnatech.se>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Mon, 25 Jan 2016 19:15:14 +0000
+Subject: [PATCH 7/9] mmc: tmio: refactor set_clock a little
+Message-Id: <1453749316-1848-8-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1453749316-1848-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1453749316-1848-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-mmc@vger.kernel.org
+Cc: Wolfram Sang <wsa@the-dreams.de>, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Dirk Behme <dirk.behme@gmail.com>
 
-Enable slave transfers over IPMMU by mapping the slave addresses to the
-DMAC device iommu domain. The mapping is done directly when the slave
-device is configured and is never unmapped.
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-The mapping is permanent for the device since there might be more then
-one channel that maps the same area. Think a rx/tx pair that operates on
-the same address but from separate channels. This makes it hard to map
-and unmap the addresses from device_alloc_chan_resources and
-device_free_chan_resources since all channels share the same iommu
-domain.
+Some of the indentation made the code awful to read. Fix that. Also,
+introduce defines instead of magic hex values. Note that this includes
+one change: We mask out know 0xff instead of 0x1ff. But 0x100 has always
+been the clock enable bit. It doesn't make any sense to set it depending
+on the clock calculation. Update copyright notices, too. I'll be working
+on those files some more in the future.
 
-Signed-off-by: Niklas S=C3=B6derlund <niklas.soderlund+renesas@ragnatech.se>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+
+copy
 ---
- drivers/dma/sh/rcar-dmac.c | 50 ++++++++++++++++++++++++++++++++++++++++++=
-+++-
- 1 file changed, 49 insertions(+), 1 deletion(-)
+ drivers/mmc/host/tmio_mmc_pio.c | 15 +++++++++------
+ include/linux/mmc/tmio.h        |  5 +++++
+ 2 files changed, 14 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/dma/sh/rcar-dmac.c b/drivers/dma/sh/rcar-dmac.c
-index 7820d07..c1138a1 100644
---- a/drivers/dma/sh/rcar-dmac.c
-+++ b/drivers/dma/sh/rcar-dmac.c
-@@ -13,6 +13,7 @@
- #include <linux/dma-mapping.h>
- #include <linux/dmaengine.h>
- #include <linux/interrupt.h>
-+#include <linux/iommu.h>
- #include <linux/list.h>
- #include <linux/module.h>
- #include <linux/mutex.h>
-@@ -1101,10 +1102,49 @@ rcar_dmac_prep_dma_cyclic(struct dma_chan *chan, dm=
-a_addr_t buf_addr,
- 	return desc;
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index 207e77a09cda51..7f6b5adf12094b 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -1,6 +1,8 @@
+ /*
+  * linux/drivers/mmc/host/tmio_mmc_pio.c
+  *
++ * Copyright (C) 2016 Sang Engineering, Wolfram Sang
++ * Copyright (C) 2015-16 Renesas Electronics Corporation
+  * Copyright (C) 2011 Guennadi Liakhovetski
+  * Copyright (C) 2007 Ian Molton
+  * Copyright (C) 2004 Ian Molton
+@@ -159,19 +161,20 @@ static void tmio_mmc_set_clock(struct tmio_mmc_host *host,
+ 
+ 	if (new_clock) {
+ 		for (clock = host->mmc->f_min, clk = 0x80000080;
+-			new_clock >= (clock<<1); clk >>= 1)
++		     new_clock >= (clock << 1);
++		     clk >>= 1)
+ 			clock <<= 1;
+ 
+ 		/* 1/1 clock is option */
+ 		if ((host->pdata->flags & TMIO_MMC_CLK_ACTUAL) &&
+-		    ((clk >> 22) & 0x1))
++		   ((clk >> 22) & 0x1))
+ 			clk |= 0xff;
+ 	}
+ 
+ 	if (host->set_clk_div)
+-		host->set_clk_div(host->pdev, (clk>>22) & 1);
++		host->set_clk_div(host->pdev, (clk >> 22) & 1);
+ 
+-	sd_ctrl_write16(host, CTL_SD_CARD_CLK_CTL, clk & 0x1ff);
++	sd_ctrl_write16(host, CTL_SD_CARD_CLK_CTL, clk & CLK_CTL_DIV_MASK);
+ 	if (!(host->pdata->flags & TMIO_MMC_FAST_CLK_CHG))
+ 		msleep(10);
  }
-=20
-+static int rcar_dmac_iommu_map(struct dma_chan *chan, phys_addr_t addr,
-+			       size_t size)
-+{
-+	struct rcar_dmac_chan *rchan =3D to_rcar_dmac_chan(chan);
-+	struct iommu_domain *domain;
-+	phys_addr_t base;
-+	size_t min_pagesz, sz =3D 0;
-+	int ret;
-+
-+	if (!addr)
-+		return 0;
-+
-+	domain =3D iommu_get_domain_for_dev(chan->device->dev);
-+	if (!domain)
-+		return 0;
-+
-+	/* do nothing if the address  is already mapped to the domain */
-+	/* FIXME: what happens if size is larger for the new mapping? */
-+	if (iommu_iova_to_phys(domain, addr))
-+		return 0;
-+
-+	min_pagesz =3D iommu_min_pgsize(domain);
-+
-+	/* align the address with the min page size */
-+	base =3D addr & ~(min_pagesz - 1);
-+
-+	/* recalculate size for aligned address */
-+	while (sz < size + addr - base)
-+		sz +=3D min_pagesz;
-+
-+	ret =3D iommu_map(domain, base, base, sz, IOMMU_READ | IOMMU_WRITE);
-+	if (ret)
-+		dev_err(chan->device->dev, "chan%u: failed to map %pap",
-+				rchan->index, &addr);
-+
-+	return ret;
-+}
-+
- static int rcar_dmac_device_config(struct dma_chan *chan,
- 				   struct dma_slave_config *cfg)
+@@ -183,14 +186,14 @@ static void tmio_mmc_clk_stop(struct tmio_mmc_host *host)
+ 		msleep(10);
+ 	}
+ 
+-	sd_ctrl_write16(host, CTL_SD_CARD_CLK_CTL, ~0x0100 &
++	sd_ctrl_write16(host, CTL_SD_CARD_CLK_CTL, ~CLK_CTL_SCLKEN &
+ 		sd_ctrl_read16(host, CTL_SD_CARD_CLK_CTL));
+ 	msleep(host->pdata->flags & TMIO_MMC_FAST_CLK_CHG ? 5 : 10);
+ }
+ 
+ static void tmio_mmc_clk_start(struct tmio_mmc_host *host)
  {
- 	struct rcar_dmac_chan *rchan =3D to_rcar_dmac_chan(chan);
-+	int ret =3D 0;
-=20
- 	/*
- 	 * We could lock this, but you shouldn't be configuring the
-@@ -1115,7 +1155,15 @@ static int rcar_dmac_device_config(struct dma_chan *=
-chan,
- 	rchan->src_xfer_size =3D cfg->src_addr_width;
- 	rchan->dst_xfer_size =3D cfg->dst_addr_width;
-=20
--	return 0;
-+	ret =3D rcar_dmac_iommu_map(chan, rchan->src_slave_addr,
-+			rchan->src_xfer_size);
-+	if (ret)
-+		return ret;
+-	sd_ctrl_write16(host, CTL_SD_CARD_CLK_CTL, 0x0100 |
++	sd_ctrl_write16(host, CTL_SD_CARD_CLK_CTL, CLK_CTL_SCLKEN |
+ 		sd_ctrl_read16(host, CTL_SD_CARD_CLK_CTL));
+ 	msleep(host->pdata->flags & TMIO_MMC_FAST_CLK_CHG ? 1 : 10);
+ 
+diff --git a/include/linux/mmc/tmio.h b/include/linux/mmc/tmio.h
+index 84d9053b5dca3e..5f5cd80e976500 100644
+--- a/include/linux/mmc/tmio.h
++++ b/include/linux/mmc/tmio.h
+@@ -1,6 +1,8 @@
+ /*
+  * include/linux/mmc/tmio.h
+  *
++ * Copyright (C) 2016 Sang Engineering, Wolfram Sang
++ * Copyright (C) 2015-16 Renesas Electronics Corporation
+  * Copyright (C) 2007 Ian Molton
+  * Copyright (C) 2004 Ian Molton
+  *
+@@ -61,6 +63,9 @@
+ #define TMIO_STAT_CMD_BUSY      0x40000000
+ #define TMIO_STAT_ILL_ACCESS    0x80000000
+ 
++#define	CLK_CTL_DIV_MASK	0xff
++#define	CLK_CTL_SCLKEN		BIT(8)
 +
-+	ret =3D rcar_dmac_iommu_map(chan, rchan->dst_slave_addr,
-+			rchan->dst_xfer_size);
-+
-+	return ret;
- }
-=20
- static int rcar_dmac_chan_terminate_all(struct dma_chan *chan)
---=20
-2.6.4
+ #define TMIO_BBS		512		/* Boot block size */
+ 
+ #endif /* LINUX_MMC_TMIO_H */
+-- 
+2.1.4
 
