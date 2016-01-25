@@ -1,95 +1,36 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 04 Jan 2016 22:27:41 +0000
-Subject: [PATCH v2 06/13] ARM: shmobile: r8a7793: add audio DMAC to device tree
-Message-Id: <1451946468-20499-7-git-send-email-horms+renesas@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Mon, 25 Jan 2016 19:15:13 +0000
+Subject: [PATCH 6/9] mmc: sdhi: use faster clock handling on RCar Gen2
+Message-Id: <1453749316-1848-7-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1451946468-20499-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1451946468-20499-1-git-send-email-horms+renesas@verge.net.au>
+References: <1453749316-1848-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1453749316-1848-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-mmc@vger.kernel.org
+Cc: Wolfram Sang <wsa@the-dreams.de>, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Dirk Behme <dirk.behme@gmail.com>
 
-Instantiate the two Audio DMA controllers in the r8a7791 device tree.
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Based on similar work for the r8a7791 by Kuninori Morimoto.
-
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 ---
- arch/arm/boot/dts/r8a7793.dtsi | 58 ++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 58 insertions(+)
+ drivers/mmc/host/sh_mobile_sdhi.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7793.dtsi b/arch/arm/boot/dts/r8a7793.dtsi
-index 4a58994ba124..d9e284a6a34f 100644
---- a/arch/arm/boot/dts/r8a7793.dtsi
-+++ b/arch/arm/boot/dts/r8a7793.dtsi
-@@ -301,6 +301,64 @@
- 		dma-channels = <15>;
- 	};
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index 5a10fb3c01a1dd..557e2b9dadeec7 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -59,7 +59,7 @@ static const struct sh_mobile_sdhi_of_data of_rcar_gen1_compatible = {
  
-+	audma0: dma-controller@ec700000 {
-+		compatible = "renesas,dmac-r8a7793", "renesas,rcar-dmac";
-+		reg = <0 0xec700000 0 0x10000>;
-+		interrupts =	<0 346 IRQ_TYPE_LEVEL_HIGH
-+				 0 320 IRQ_TYPE_LEVEL_HIGH
-+				 0 321 IRQ_TYPE_LEVEL_HIGH
-+				 0 322 IRQ_TYPE_LEVEL_HIGH
-+				 0 323 IRQ_TYPE_LEVEL_HIGH
-+				 0 324 IRQ_TYPE_LEVEL_HIGH
-+				 0 325 IRQ_TYPE_LEVEL_HIGH
-+				 0 326 IRQ_TYPE_LEVEL_HIGH
-+				 0 327 IRQ_TYPE_LEVEL_HIGH
-+				 0 328 IRQ_TYPE_LEVEL_HIGH
-+				 0 329 IRQ_TYPE_LEVEL_HIGH
-+				 0 330 IRQ_TYPE_LEVEL_HIGH
-+				 0 331 IRQ_TYPE_LEVEL_HIGH
-+				 0 332 IRQ_TYPE_LEVEL_HIGH>;
-+		interrupt-names = "error",
-+				"ch0", "ch1", "ch2", "ch3",
-+				"ch4", "ch5", "ch6", "ch7",
-+				"ch8", "ch9", "ch10", "ch11",
-+				"ch12";
-+		clocks = <&mstp5_clks R8A7793_CLK_AUDIO_DMAC0>;
-+		clock-names = "fck";
-+		power-domains = <&cpg_clocks>;
-+		#dma-cells = <1>;
-+		dma-channels = <13>;
-+	};
-+
-+	audma1: dma-controller@ec720000 {
-+		compatible = "renesas,dmac-r8a7793", "renesas,rcar-dmac";
-+		reg = <0 0xec720000 0 0x10000>;
-+		interrupts =	<0 347 IRQ_TYPE_LEVEL_HIGH
-+				 0 333 IRQ_TYPE_LEVEL_HIGH
-+				 0 334 IRQ_TYPE_LEVEL_HIGH
-+				 0 335 IRQ_TYPE_LEVEL_HIGH
-+				 0 336 IRQ_TYPE_LEVEL_HIGH
-+				 0 337 IRQ_TYPE_LEVEL_HIGH
-+				 0 338 IRQ_TYPE_LEVEL_HIGH
-+				 0 339 IRQ_TYPE_LEVEL_HIGH
-+				 0 340 IRQ_TYPE_LEVEL_HIGH
-+				 0 341 IRQ_TYPE_LEVEL_HIGH
-+				 0 342 IRQ_TYPE_LEVEL_HIGH
-+				 0 343 IRQ_TYPE_LEVEL_HIGH
-+				 0 344 IRQ_TYPE_LEVEL_HIGH
-+				 0 345 IRQ_TYPE_LEVEL_HIGH>;
-+		interrupt-names = "error",
-+				"ch0", "ch1", "ch2", "ch3",
-+				"ch4", "ch5", "ch6", "ch7",
-+				"ch8", "ch9", "ch10", "ch11",
-+				"ch12";
-+		clocks = <&mstp5_clks R8A7793_CLK_AUDIO_DMAC1>;
-+		clock-names = "fck";
-+		power-domains = <&cpg_clocks>;
-+		#dma-cells = <1>;
-+		dma-channels = <13>;
-+	};
-+
- 	/* The memory map in the User's Manual maps the cores to bus numbers */
- 	i2c0: i2c@e6508000 {
- 		#address-cells = <1>;
+ static const struct sh_mobile_sdhi_of_data of_rcar_gen2_compatible = {
+ 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE |
+-			  TMIO_MMC_CLK_ACTUAL,
++			  TMIO_MMC_CLK_ACTUAL | TMIO_MMC_FAST_CLK_CHG,
+ 	.capabilities	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
+ 	.dma_buswidth	= DMA_SLAVE_BUSWIDTH_4_BYTES,
+ 	.dma_rx_offset	= 0x2000,
 -- 
 2.1.4
 
