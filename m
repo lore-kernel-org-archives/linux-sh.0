@@ -1,44 +1,66 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 15 Jan 2016 23:15:05 +0000
-Subject: Re: [PATCH 0/2] pinctrl: sh-pfc: r8a7795: Errata for Rev 0.50 datasheet
-Message-Id: <4820959.GCDVHibvGF@avalon>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Mon, 25 Jan 2016 19:15:07 +0000
+Subject: [PATCH 0/9] mmc: sdhi: some refactoring and adding basic r8a7795 support
+Message-Id: <1453749316-1848-1-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1452856024-10793-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1452856024-10793-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Linus Walleij <linus.walleij@linaro.org>, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org
+To: linux-mmc@vger.kernel.org
+Cc: Wolfram Sang <wsa@the-dreams.de>, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Dirk Behme <dirk.behme@gmail.com>
 
-Hi Geert,
+So, here is the series to enable basic SD support on r8a7795; no DMA and UHS-I
+for now. Will be added incrementally. It turns out that the driver needs a
+little love, so some refactoring is also in place before adding the actual
+support.
 
-On Friday 15 January 2016 12:07:02 Geert Uytterhoeven wrote:
-> 	Hi Linus, Laurent,
-> 
-> This patch series synchronize the R-Car M3 (r8a7795) pin control driver
-> code with the latest Manual Errata for Rev 0.50 of the R-Car Gen3
-> datasheet.  None of this has user-visible impact.
-> 
-> Laurent: As the first patch depends on (big) "[PATCH v3 2/2]
-> pinctrl: sh-pfc: Rename PINMUX_IPSR_DATA() to PINMUX_IPSR_GPSR()", from
-> series "[PATCH v3 0/2] pinctrl: sh-pfc: Improve pinmux macros
-> documentation", and you had comments on earlier versions of that series,
-> it would be good to receive an ack for that series first
-> (https://www.spinics.net/lists/linux-gpio/msg09949.html).
+eMMC works in 4-bit mode, too. 8-bit mode sadly fails currently. I'll post MMC
+support patches once this issue is fixed.
 
-I'll handle it with the highest vacation-compatible priority :-) I'll have my 
-computer with me this week :-/
+These patches have been tested on Gen3 (Salvator-X) and Gen2 (Lager), doing
+basic operations with SD cards and running the mmc_test driver (its results
+point out some potential corner cases to check later).
 
-> Geert Uytterhoeven (2):
->   pinctrl: sh-pfc: r8a7795: Rename SSI_{WS,SCK}0129 to SSI_{WS,SCK}01239
->   pinctrl: sh-pfc: r8a7795: Remove bits SEL_VSP_1 and SEL_VSP_0
-> 
->  drivers/pinctrl/sh-pfc/pfc-r8a7795.c | 20 ++++++++++----------
->  1 file changed, 10 insertions(+), 10 deletions(-)
+A branch can be found here (including clock and DTS patches):
+
+git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git renesas/v8-sdhi
+
+Changes since RFC (only sent to sh-devel lists):
+
+* patches 1,7,8 are new
+* patch 4 drops 10ms wait also for set_clock
+* patch 9 also sets MMC_CAP_WAIT_WHILE_BUSY (see comment there)
+* some commit message rewording
+
+Please test, comment, apply...
+
+Thanks,
+
+   Wolfram
+
+
+Shinobu Uehara (1):
+  mmc: sdhi: Add EXT_ACC register busy check
+
+Wolfram Sang (8):
+  mmc: tmio_dma: remove debug messages with little information
+  mmc: sdhi: error message on ENOMEM is superfluous
+  mmc: tmio: add flag to reduce delay after changing clock status
+  mmc: tmio: remove stale comments
+  mmc: sdhi: use faster clock handling on RCar Gen2
+  mmc: tmio: refactor set_clock a little
+  mmc: tmio: disable clock before changing it
+  mmc: sdhi: Add r8a7795 support
+
+ Documentation/devicetree/bindings/mmc/tmio_mmc.txt |  1 +
+ drivers/mmc/host/Kconfig                           |  2 +-
+ drivers/mmc/host/sh_mobile_sdhi.c                  | 54 +++++++++++++++-------
+ drivers/mmc/host/tmio_mmc_dma.c                    | 12 -----
+ drivers/mmc/host/tmio_mmc_pio.c                    | 27 ++++++-----
+ include/linux/mfd/tmio.h                           |  4 ++
+ include/linux/mmc/tmio.h                           |  5 ++
+ 7 files changed, 63 insertions(+), 42 deletions(-)
 
 -- 
-Regards,
-
-Laurent Pinchart
+2.1.4
 
