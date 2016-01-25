@@ -1,62 +1,48 @@
-From: Dirk Behme <dirk.behme@de.bosch.com>
-Date: Mon, 25 Jan 2016 09:11:44 +0000
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Mon, 25 Jan 2016 19:23:41 +0000
 Subject: Re: [RFC] clk: shmobile: r8a7795: Add SD divider support
-Message-Id: <56A5E6D0.4040704@de.bosch.com>
+Message-Id: <20160125192341.GA1521@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="DocE+STaALJfprDB"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1453465586-12807-1-git-send-email-dirk.behme@de.bosch.com>
 In-Reply-To: <1453465586-12807-1-git-send-email-dirk.behme@de.bosch.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
 To: linux-sh@vger.kernel.org
 
-On 25.01.2016 09:59, Geert Uytterhoeven wrote:
-> Hi Dirk,
->
-> On Fri, Jan 22, 2016 at 1:26 PM, Dirk Behme <dirk.behme@de.bosch.com> wro=
-te:
->> From: Takeshi Kihara <takeshi.kihara.df@renesas.com>
->>
->> This patch adds SD[0..3] clock divider support for R-Car Gen3 SoC.
->>
->> Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
->> Signed-off-by: Dirk Behme <dirk.behme@de.bosch.com>
->> ---
->> Notes:
->>
->> * This is based on https://git.kernel.org/cgit/linux/kernel/git/horms/re=
-nesas-bsp.git/commit/drivers/clk/shmobile/clk-rcar-gen3.c?h=3Dv4.2/rcar-3.0=
-.x&id=CD10385afc15cef6bfbaea4aa5da41193b24fe82
->>
->> * This is compile tested *only*. The intention is to get some feedback
->>    if this is the way we want to go.
->
-> I didn't look into all details, but in general this is what I intended.
-> Thanks!
+
+--DocE+STaALJfprDB
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
 
-Great, thanks! :)
+> Wolfram: Maybe you like to include this [1] in your testing branch, then?
+>=20
+> If it works for you, I'll remove the RFC, then.
+
+Yes, I'll try to test this tomorrow.
 
 
-Wolfram: Maybe you like to include this [1] in your testing branch, then?
+--DocE+STaALJfprDB
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-If it works for you, I'll remove the RFC, then.
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
 
+iQIcBAEBAgAGBQJWpnY9AAoJEBQN5MwUoCm2D2QP/ija1seQW48mgu7fOc+brfyl
+dMgwWChpb7QCc/0ucvMFw9B7tGqswkAasgNPtTvVWYRkMNwHxShbi9cTpTVpl966
+UEfWuDOUyK/IqbHnABoYF3V4ZYWZkKyH5jUcaAFsal11twRh8ohqEQC5MDH0YaSd
+8NwREJHtWTr6ZYzT2pxiqs+GElbhcU9plj0IKy2dOWPK8dGjONHAqvJCRYUOX2CT
+8g18Qvt6UwC2HMggAKZ8rzi43N5KuI46wAk8b0d9SBUUX8zG2xFVXCzZx5CzYYp0
+Irz6l2nDA2AkUWshFOecZW+n1IRHTtsxxVEUuiAL9q8mVdISTeSPUOfvhw8nCvVg
+L12RE/0+b3ahPnGLWexhg8rcQ+uIJ7K6YaHtgt0RD0cVycGgWvACA0SGQzSY91j2
+cheFcxTDru125h5kLnq4VTqO+MCnRKHdYIaXEeToj3LUwL2qIZCsmnKVewFs0Ddg
+o/WY4f0w9oQK0oOQyFU/Rkam5ZYmacqOjPa7UDvGq05Rt3RGBR+LvDBms0mg/tOw
+MSJOG/l5Qe0rbPXOCsspIrY0z6f4EmyO/QPQ7zpaNyjXq8xdERTHkaglvGQhAbYd
+8DUE35e9IXt8r7W6+efdJYHJzMe/wSE8yHc/EfiNL1V41mNRkg2nmGGvLCBEb2og
+yyxwHtsOhsACh0MuoN/9
+=i92n
+-----END PGP SIGNATURE-----
 
-Best regards
-
-Dirk
-
-
-[1] http://marc.info/?l=3Dlinux-sh&m=145346559429931
-
-See also
-
-https://github.com/dirkbehme/linux-renesas-rcar-gen3/commit/018438cf8ff31e6=
-6a6511b4aa0b51e47a39392ed
-
-https://github.com/dirkbehme/linux-renesas-rcar-gen3/commit/f31b7e18f89c447=
-ad0d3b31c64cf360afe7d1d9f
-
-
-
+--DocE+STaALJfprDB--
