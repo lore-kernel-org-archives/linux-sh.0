@@ -1,55 +1,55 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 26 Jan 2016 00:23:01 +0000
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 26 Jan 2016 19:00:34 +0000
 Subject: Re: [PATCH/RFC v4 net-next] ravb: Add dma queue interrupt support
-Message-Id: <20160126002300.GA27856@verge.net.au>
+Message-Id: <56A7C252.3040707@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1453650775-19886-1-git-send-email-ykaneko0929@gmail.com>
-In-Reply-To: <1453650775-19886-1-git-send-email-ykaneko0929@gmail.com>
+ <20160126002300.GA27856@verge.net.au>
+In-Reply-To: <20160126002300.GA27856@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Cc: netdev@vger.kernel.org, "David S. Miller" <davem@davemloft.net>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: Simon Horman <horms@verge.net.au>, Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Cc: netdev@vger.kernel.org, "David S. Miller" <davem@davemloft.net>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-On Mon, Jan 25, 2016 at 12:52:55AM +0900, Yoshihiro Kaneko wrote:
-> From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
-> 
-> This patch supports the following interrupts.
-> 
-> - One interrupt for multiple (descriptor, error, management)
-> - One interrupt for emac
-> - Four interrupts for dma queue (best effort rx/tx, network control rx/tx)
-> 
-> This patch improve efficiency of the interrupt handler by adding the
-> interrupt handler corresponding to each interrupt source described
-> above. Additionally, it reduces the number of times of the access to
-> EthernetAVB IF.
-> 
-> Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
-> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Hello.
 
-I have tested this patch and the result seems positive.
-Please let me know if any more/different testing would help.
+    Yoshihiro-san, there was no need to hurry -- net-next is still closed and 
+by posting this patch to netdev you're only making DaveM upset...
 
-My test was to examine /proc/interrupts after booting a Salvator-X board
-using NFS root. The test used net-next merged with v4.5-rc1 (for
-r8a7795/Salvator-X support). I then applied this patch.
+On 01/26/2016 03:23 AM, Simon Horman wrote:
 
-Without this patch:
-# grep eth /proc/interrupts
- 74:      13002          0          0          0     GIC-0  93 Level     eth0
- 76:          3          0          0          0     GIC-0  95 Level     eth0
+ >> From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+>>
+>> This patch supports the following interrupts.
+>>
+>> - One interrupt for multiple (descriptor, error, management)
+>> - One interrupt for emac
+>> - Four interrupts for dma queue (best effort rx/tx, network control rx/tx)
+>>
+>> This patch improve efficiency of the interrupt handler by adding the
+>> interrupt handler corresponding to each interrupt source described
+>> above. Additionally, it reduces the number of times of the access to
+>> EthernetAVB IF.
+>>
+>> Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+>> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+>
+> I have tested this patch and the result seems positive.
 
-With this patch:
+    Tested on gen3 only I guess?
 
-# grep eth /proc/interrupts
- 52:       8744          0          0          0     GIC-0  71 Level     eth0:ch0:rx_be
- 53:          0          0          0          0     GIC-0  72 Level     eth0:ch1:rx_nc
- 70:       4277          0          0          0     GIC-0  89 Level     eth0:ch18:tx_be
- 71:          0          0          0          0     GIC-0  90 Level     eth0:ch19:tx_nc
- 74:          0          0          0          0     GIC-0  93 Level     eth0:ch22:multi
- 76:          3          0          0          0     GIC-0  95 Level     eth0:ch24:emac
+> Please let me know if any more/different testing would help.
 
-Please feel free to add:
+    Sanity testing on some gen2 SoC wouldn't hurt (if you have time).
 
-Tested-by: Simon Horman <horms+renesas@verge.net.au>
+[...]
+
+> Please feel free to add:
+>
+> Tested-by: Simon Horman <horms+renesas@verge.net.au>
+
+    Thank you!
+
+MBR, Sergei
+
