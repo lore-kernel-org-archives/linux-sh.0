@@ -1,87 +1,355 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Wed, 27 Jan 2016 07:14:17 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 27 Jan 2016 08:43:50 +0000
 Subject: Re: [RFC] clk: shmobile: r8a7795: Add SD divider support
-Message-Id: <20160127071417.GA1521@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="GvXjxJ+pjyke8COw"
+Message-Id: <CAMuHMdXtfeuz_DJJ3Crq1MmJ-VGU0-i-7mX_8o+Ae3NNm0GjTA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1453465586-12807-1-git-send-email-dirk.behme@de.bosch.com>
 In-Reply-To: <1453465586-12807-1-git-send-email-dirk.behme@de.bosch.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 To: linux-sh@vger.kernel.org
 
+Hi Dirk,
 
---GvXjxJ+pjyke8COw
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
-
-On Fri, Jan 22, 2016 at 01:26:26PM +0100, Dirk Behme wrote:
+On Fri, Jan 22, 2016 at 1:26 PM, Dirk Behme <dirk.behme@de.bosch.com> wrote:
 > From: Takeshi Kihara <takeshi.kihara.df@renesas.com>
->=20
+>
 > This patch adds SD[0..3] clock divider support for R-Car Gen3 SoC.
->=20
+>
 > Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
 > Signed-off-by: Dirk Behme <dirk.behme@de.bosch.com>
+> ---
+> Notes:
+>
+> * This is based on https://git.kernel.org/cgit/linux/kernel/git/horms/ren=
+esas-bsp.git/commit/drivers/clk/shmobile/clk-rcar-gen3.c?h=3Dv4.2/rcar-3.0.=
+x&id=CD10385afc15cef6bfbaea4aa5da41193b24fe82
+>
+> * This is compile tested *only*. The intention is to get some feedback
+>   if this is the way we want to go.
 
-So, I tested this patch and it basically works. I say basically because
-the SDHI code currently does not change the clock rate, only
-en-/disables it. UHS support will need to change the clock later.
-
-One thing I noticed: SD0-2 are 50MHz like the docs say. SD3 is 200MHz
-and I couldn't find a reason for that when having a glimpse. Dirk, can
-you check?
-
-> +		if (i >=3D clock->div_num) {
-> +			pr_err("%s: 0x%4x is not support of division ratio.\n",
-> +				__func__, sd_fc);
-> +			return -ENODATA;
-> +		}
-=2E..
-> +	if (i >=3D clock->div_num) {
-> +		pr_err("%s: 0x%4x is not support of division ratio.\n",
-> +			__func__, sd_fc);
-> +		return 0;
-> +	}
-=2E..
-> +	if (i >=3D clock->div_num) {
-> +		pr_err("%s: Not support divider range : div=3D%d (%lu/%lu).\n",
-> +			__func__, div, parent_rate, rate);
-> +		return -EINVAL;
-> +	}
-
-For the above code blocks:
-
-a) I'd think that a consistent -EINVAL would be a proper return value.
-
-b) The driver doesn't do much error printouts, so I wonder if those
-messages above are favourable. If so, they should probably print which
-sd clock is affected?
-
-Thanks,
-
-   Wolfram
+Thanks for your patch!
+As you want to drop the RFC state, here are some comments from me.
 
 
---GvXjxJ+pjyke8COw
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+> --- a/drivers/clk/shmobile/r8a7795-cpg-mssr.c
+> +++ b/drivers/clk/shmobile/r8a7795-cpg-mssr.c
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
+> @@ -199,6 +207,243 @@ static const unsigned int r8a7795_crit_mod_clks[] _=
+_initconst =3D {
+>         MOD_CLK_ID(408),        /* INTC-AP (GIC) */
+>  };
+>
+> +/* ---------------------------------------------------------------------=
+--------
+> + * SDn Clock
+> + *
+> + */
+> +#define CPG_SD_STP_N_HCK       BIT(9)
+> +#define CPG_SD_STP_N_CK                BIT(8)
+> +#define CPG_SD_SD_N_SRCFC_MASK (0x7 << CPG_SD_SD_N_SRCFC_SHIFT)
+> +#define CPG_SD_SD_N_SRCFC_SHIFT        2
+> +#define CPG_SD_SD_N_FC_MASK    (0x3 << CPG_SD_SD_N_FC_SHIFT)
+> +#define CPG_SD_SD_N_FC_SHIFT   0
 
-iQIcBAEBAgAGBQJWqG5JAAoJEBQN5MwUoCm2iTAQAINHnZdbLuvtzd806+cOjAdg
-AcXVgo+fMXjb1G0ohYpQapg7ZBhDZd8jW/xUjiUR8ZmSVMcVQLZXaT5MoOYyEbEL
-hNekoxB6THrP0gIBH8SS3zi2toKakFC4Ewv4ci3ROCQW5r+Ks66SYUp03ivmUgyO
-mulqJ0dX8J3CiUh+nhJymWG9xpmrNpWitlqvux1C9y7Vif8UkHImBR504URUILGK
-bSJ9nc13RQ4bPXPMd8x6WIc/Z3921T8g49a+nwCC35Df2oncYxJnmkBNUF/TfMbo
-VkX4rGh4L+Bf2p1IvmYlM995m+yDe8m+JtYJ1BCvNERZ+btVPvS5hnr/LrC+rBK8
-xJPjJt7aJAmQMxJKg60y4LtF2SOzJTbk6BjVi0yqsMQOo6cY1LQ06JR7dGBA4fJM
-15+j1f5q1ln0bfwutm9yKMuuPV5MnRfov5Co5IsA46vK3507aYiJYssOflUbQzM7
-1F9TPRvq4nEuppfr+cX+59N64Fsv40U+JlTW966i8tDTC0Aq2dl3TjM1ZYvmXDxE
-U26wrc9ZJOR5dcyNF2R0D0SCu7JrHQ+FVS/2r6BOqJHxipsnJcmlD+MthMQXYjNW
-Ex2VGm+jRcf25mvThpOa696KpYkkiwHjnZiOihvvZTRjjFsWCaZA34ob96aE84or
-CPDN57EgCp1H8vOkiRBg
-=sNHF
------END PGP SIGNATURE-----
+The "N_" in the macro names doesn't gain us much, so I'd remove it.
 
---GvXjxJ+pjyke8COw--
+> +#define CPG_SD_STP_MASK                (CPG_SD_STP_N_HCK | CPG_SD_STP_N_=
+CK)
+> +#define CPG_SD_FC_MASK         (CPG_SD_SD_N_SRCFC_MASK | CPG_SD_SD_N_FC_=
+MASK)
+> +
+> +/* CPG_SD_DIV_TABLE_DATA(stp_n_hck, stp_n_ck, sd_n_srcfc, sd_n_fc, div) =
+*/
+> +#define CPG_SD_DIV_TABLE_DATA(_a, _b, _c, _d, _e) \
+
+I would use descriptive macro parameter names, and drop the comment. E.g.
+
+    #define CPG_SD_DIV_TABLE_DATA(stp_hck, stp_ck, sd_srcfc, sd_fc, div)
+
+> +{ \
+> +       .val =3D ((_a) ? CPG_SD_STP_N_HCK : 0) | \
+> +              ((_b) ? CPG_SD_STP_N_CK : 0) | \
+> +              (((_c) << CPG_SD_SD_N_SRCFC_SHIFT) & CPG_SD_SD_N_SRCFC_MAS=
+K) | \
+> +              (((_d) << CPG_SD_SD_N_FC_SHIFT) & CPG_SD_SD_N_FC_MASK), \
+
+As these are only used here, already abstracted by the macro, and the
+masks never
+really do anything giving the table values below, I would
+  - drop the "& CPG_SD_*_MASK" operations, and the CPG_SD_*_MASK definition=
+s,
+  - hardcode the shifts, and drop the CPG_SD_*_SHIFT definitions.
+
+
+> +       .div =3D (_e), \
+> +}
+> +
+> +struct sd_div_table {
+> +       u32 val;
+> +       unsigned int div;
+> +};
+> +
+> +struct sd_clock {
+> +       struct clk_hw hw;
+> +       void __iomem *reg;
+> +       const struct sd_div_table *div_table;
+> +       int div_num;
+
+unsigned int
+
+> +       unsigned int div_min;
+> +       unsigned int div_max;
+> +};
+> +
+> +/* SDn divider
+> + *                     sd_n_srcfc sd_n_fc   div
+> + * stp_n_hck stp_n_ck  (div)      (div)     =3D sd_n_srcfc x sd_n_fc
+> + *-------------------------------------------------------------------
+> + *  0         0         0 (1)      1 (4)      4
+> + *  0         0         1 (2)      1 (4)      8
+> + *  1         0         2 (4)      1 (4)     16
+> + *  1         0         3 (8)      1 (4)     32
+> + *  1         0         4 (16)     1 (4)     64
+> + *  0         0         0 (1)      0 (2)      2
+> + *  0         0         1 (2)      0 (2)      4
+> + *  1         0         2 (4)      0 (2)      8
+> + *  1         0         3 (8)      0 (2)     16
+> + *  1         0         4 (16)     0 (2)     32
+> + */
+> +static const struct sd_div_table cpg_sd_div_table[] =3D {
+> +/*     CPG_SD_DIV_TABLE_DATA(stp_n_hck, stp_n_ck, sd_n_srcfc, sd_n_fc, d=
+iv) */
+> +       CPG_SD_DIV_TABLE_DATA(0,        0,        0,          1,        4=
+),
+> +       CPG_SD_DIV_TABLE_DATA(0,        0,        1,          1,        8=
+),
+> +       CPG_SD_DIV_TABLE_DATA(1,        0,        2,          1,       16=
+),
+> +       CPG_SD_DIV_TABLE_DATA(1,        0,        3,          1,       32=
+),
+> +       CPG_SD_DIV_TABLE_DATA(1,        0,        4,          1,       64=
+),
+> +       CPG_SD_DIV_TABLE_DATA(0,        0,        0,          0,        2=
+),
+> +       CPG_SD_DIV_TABLE_DATA(0,        0,        1,          0,        4=
+),
+> +       CPG_SD_DIV_TABLE_DATA(1,        0,        2,          0,        8=
+),
+> +       CPG_SD_DIV_TABLE_DATA(1,        0,        3,          0,       16=
+),
+> +       CPG_SD_DIV_TABLE_DATA(1,        0,        4,          0,       32=
+),
+> +};
+> +
+> +#define to_sd_clock(_hw) container_of(_hw, struct sd_clock, hw)
+> +
+> +static int cpg_sd_clock_endisable(struct clk_hw *hw, bool enable)
+> +{
+> +       struct sd_clock *clock =3D to_sd_clock(hw);
+> +       u32 val, sd_fc;
+> +       int i;
+
+unsigned int;
+
+> +
+> +       val =3D clk_readl(clock->reg);
+> +
+> +       if (enable) {
+> +               sd_fc =3D val & CPG_SD_FC_MASK;
+> +               for (i =3D 0; i < clock->div_num; i++)
+> +                       if (sd_fc =3D (clock->div_table[i].val & CPG_SD_F=
+C_MASK))
+> +                               break;
+> +
+> +               if (i >=3D clock->div_num) {
+> +                       pr_err("%s: 0x%4x is not support of division rati=
+o.\n",
+> +                               __func__, sd_fc);
+> +                       return -ENODATA;
+> +               }
+> +
+> +               val &=3D ~(CPG_SD_STP_MASK);
+> +               val |=3D clock->div_table[i].val & CPG_SD_STP_MASK;
+> +       } else
+> +               val |=3D CPG_SD_STP_MASK;
+> +
+> +       clk_writel(val, clock->reg);
+> +
+> +       return 0;
+> +}
+> +
+> +static int cpg_sd_clock_enable(struct clk_hw *hw)
+> +{
+> +       return cpg_sd_clock_endisable(hw, true);
+> +}
+> +
+> +static void cpg_sd_clock_disable(struct clk_hw *hw)
+> +{
+> +       cpg_sd_clock_endisable(hw, false);
+> +}
+
+Given there's not much similarity between the enable and disable cases,
+there's not much gained from having a common cpg_sd_clock_endisable().
+Perhaps just inline the code in cpg_sd_clock_{en,dis}able()?
+
+> +static unsigned long cpg_sd_clock_recalc_rate(struct clk_hw *hw,
+> +                                               unsigned long parent_rate)
+> +{
+> +       struct sd_clock *clock =3D to_sd_clock(hw);
+> +       u32 rate =3D parent_rate;
+
+unsigned long
+
+> +       u32 val, sd_fc;
+> +       int i;
+
+unsigned int
+
+> +
+> +       val =3D clk_readl(clock->reg);
+> +
+> +       sd_fc =3D val & CPG_SD_FC_MASK;
+> +       for (i =3D 0; i < clock->div_num; i++)
+> +               if (sd_fc =3D (clock->div_table[i].val & CPG_SD_FC_MASK))
+> +                       break;
+> +
+> +       if (i >=3D clock->div_num) {
+> +               pr_err("%s: 0x%4x is not support of division ratio.\n",
+> +                       __func__, sd_fc);
+> +               return 0;
+> +       }
+> +
+> +       do_div(rate, clock->div_table[i].div);
+
+do_div() is meant for 64-by-32 division, while this is 32-by-32 on 32-bit
+platforms.
+
+    rate =3D DIV_ROUND_CLOSEST(rate, clock->div_table[i].div);
+
+> +
+> +       return rate;
+> +}
+> +
+> +static unsigned int cpg_sd_clock_calc_div(struct sd_clock *clock,
+> +                                         unsigned long rate,
+> +                                         unsigned long parent_rate)
+> +{
+> +       unsigned int div;
+> +
+> +       if (!rate)
+> +               rate =3D 1;
+> +
+> +       div =3D DIV_ROUND_CLOSEST(parent_rate, rate);
+> +
+> +       return clamp_t(unsigned int, div, clock->div_min, clock->div_max);
+> +}
+> +
+> +static long cpg_sd_clock_round_rate(struct clk_hw *hw, unsigned long rat=
+e,
+> +                                     unsigned long *parent_rate)
+> +{
+> +       struct sd_clock *clock =3D to_sd_clock(hw);
+> +       unsigned int div =3D cpg_sd_clock_calc_div(clock, rate, *parent_r=
+ate);
+> +
+> +       return *parent_rate / div;
+
+DIV_ROUND_CLOSEST()?
+
+> +}
+> +
+> +static int cpg_sd_clock_set_rate(struct clk_hw *hw, unsigned long rate,
+> +                                  unsigned long parent_rate)
+> +{
+> +       struct sd_clock *clock =3D to_sd_clock(hw);
+> +       unsigned int div =3D cpg_sd_clock_calc_div(clock, rate, parent_ra=
+te);
+> +       u32 val;
+> +       int i;
+
+unsigned int
+
+> +
+> +       for (i =3D 0; i < clock->div_num; i++)
+> +               if (div =3D clock->div_table[i].div)
+> +                       break;
+> +
+> +       if (i >=3D clock->div_num) {
+> +               pr_err("%s: Not support divider range : div=3D%d (%lu/%lu=
+).\n",
+
+%u for div
+
+> +                       __func__, div, parent_rate, rate);
+> +               return -EINVAL;
+> +       }
+> +
+> +       val =3D clk_readl(clock->reg);
+> +       val &=3D ~(CPG_SD_STP_MASK | CPG_SD_FC_MASK);
+> +       val |=3D clock->div_table[i].val & (CPG_SD_STP_MASK | CPG_SD_FC_M=
+ASK);
+> +       clk_writel(val, clock->reg);
+> +
+> +       return 0;
+> +}
+
+> +static struct clk * __init cpg_sd_clk_register(const struct cpg_core_clk=
+ *core,
+> +                                              void __iomem *base,
+> +                                              const char *parent_name)
+> +{
+> +       struct clk_init_data init;
+> +       struct sd_clock *clock;
+> +       struct clk *clk;
+> +       int i;
+
+unsigned int
+
+> +
+> +       clock =3D kzalloc(sizeof(*clock), GFP_KERNEL);
+> +       if (!clock)
+> +               return ERR_PTR(-ENOMEM);
+> +
+> +       init.name =3D core->name;
+> +       init.ops =3D &cpg_sd_clock_ops;
+> +       init.flags =3D CLK_IS_BASIC | CLK_SET_RATE_PARENT;
+> +       init.parent_names =3D &parent_name;
+> +       init.num_parents =3D 1;
+> +
+> +       clock->reg =3D base + core->offset;
+> +       clock->hw.init =3D &init;
+> +       clock->div_table =3D cpg_sd_div_table;
+> +       clock->div_num =3D ARRAY_SIZE(cpg_sd_div_table);
+> +
+> +       clock->div_max =3D clock->div_table[0].div;
+> +       clock->div_min =3D clock->div_max;
+> +       for (i =3D 1; i < clock->div_num; i++) {
+> +               clock->div_max =3D max(clock->div_max, clock->div_table[i=
+].div);
+> +               clock->div_min =3D min(clock->div_min, clock->div_table[i=
+].div);
+> +       }
+> +
+> +       clk =3D clk_register(NULL, &clock->hw);
+> +       if (IS_ERR(clk))
+> +               kfree(clock);
+
+Shouldn't this provide the SDnH clocks, too? Or aren't they needed?
+
+> +       return clk;
+> +}
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k=
+.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like t=
+hat.
+                                -- Linus Torvalds
