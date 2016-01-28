@@ -1,64 +1,55 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 28 Jan 2016 18:36:02 +0000
-Subject: Re: [PATCH/RFC v4 net-next] ravb: Add dma queue interrupt support
-Message-Id: <56AA5F92.5030901@cogentembedded.com>
+Date: Thu, 28 Jan 2016 20:38:15 +0000
+Subject: Re: [PATCH 2/3] ARM: shmobile: r8a7791: add MSTP10 support on DTSI
+Message-Id: <56AA7C37.7030506@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1453650775-19886-1-git-send-email-ykaneko0929@gmail.com>
- <20160126002300.GA27856@verge.net.au> <56A7C252.3040707@cogentembedded.com>
- <20160127014944.GD27499@verge.net.au> <56AA38C5.6070004@cogentembedded.com>
-In-Reply-To: <56AA38C5.6070004@cogentembedded.com>
+References: <1387998730-6012-3-git-send-email-valentine.barshak@cogentembedded.com>
+In-Reply-To: <1387998730-6012-3-git-send-email-valentine.barshak@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>
-Cc: Yoshihiro Kaneko <ykaneko0929@gmail.com>, netdev@vger.kernel.org, "David S. Miller" <davem@davemloft.net>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-On 01/28/2016 06:50 PM, Sergei Shtylyov wrote:
+Hello.
 
->>>>> From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
->
->     Kaneko-san, with the amount of the review changes, it might make sense for
-> you to assume the authorship of this patch, only noting it's based on
-> Mizuguchi-san's work. In principle, when you change the original patch, you
-> should document the changes you made in the change log, above ---...
->
->>>>> This patch supports the following interrupts.
->>>>>
->>>>> - One interrupt for multiple (descriptor, error, management)
->>>>> - One interrupt for emac
->>>>> - Four interrupts for dma queue (best effort rx/tx, network control rx/tx)
->>>>>
->>>>> This patch improve efficiency of the interrupt handler by adding the
->>>>> interrupt handler corresponding to each interrupt source described
->>>>> above. Additionally, it reduces the number of times of the access to
->>>>> EthernetAVB IF.
->>>>>
->>>>> Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
->>>>> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
->>>>
->>>> I have tested this patch and the result seems positive.
->>>
->>>     Tested on gen3 only I guess?
->>
->> Yes, that is correct.
->>
->>>> Please let me know if any more/different testing would help.
->>>
->>>     Sanity testing on some gen2 SoC wouldn't hurt (if you have time).
->>
->> I don't believe that I have access to a gen2 board (+ extra hardware ?)
->> where ravb works.
->
->     Sorry, I just forgot about that.
->
->> If you do would it be possible for you to do a sanity test?
->
->     Yes, of course.
+On 06/12/2014 08:44 AM, Kuninori Morimoto wrote:
 
-    Oops, I forgot that I failed to make the driver work on Porter -- it fails 
-to connect to PHY while opening eth<n>. I've tested the patch as far as I 
-could and it didn't blow up. :-)
-    I'll have access to the other board (most probably Alt) next week.
+    Sorry for digging out the ancient patch...
+
+> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+>
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> ---
+>   arch/arm/boot/dts/r8a7791.dtsi            |   33 +++++++++++++++++++++++++++++
+>   include/dt-bindings/clock/r8a7791-clock.h |   26 +++++++++++++++++++++++
+>   2 files changed, 59 insertions(+)
+>
+> diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+> index f3b6219..380d058 100644
+> --- a/arch/arm/boot/dts/r8a7791.dtsi
+> +++ b/arch/arm/boot/dts/r8a7791.dtsi
+> @@ -865,6 +865,39 @@
+>   				"rcan1", "rcan0", "qspi_mod", "i2c5", "i2c6", "i2c4", "i2c3", "i2c2",
+>   				"i2c1", "i2c0";
+>   		};
+> +		mstp10_clks: mstp10_clks@e6150998 {
+> +			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
+> +			reg = <0 0xe6150998 0 4>, <0 0xe61509a8 0 4>;
+> +			clocks = <&p_clk>,
+> +				<&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>,
+> +				<&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>,
+
+    But don't SSI[0-9] clocks all depend on SSI(all)? Shouldn't the above 10 
+entries be
+<&mstp10_clks R8A7791_CLK_SSI_ALL> like it was done to SCU(all)?
+
+> +				<&p_clk>,
+> +				<&mstp10_clks R8A7791_CLK_SCU_ALL>, <&mstp10_clks R8A7791_CLK_SCU_ALL>,
+> +				<&mstp10_clks R8A7791_CLK_SCU_ALL>, <&mstp10_clks R8A7791_CLK_SCU_ALL>,
+> +				<&mstp10_clks R8A7791_CLK_SCU_ALL>, <&mstp10_clks R8A7791_CLK_SCU_ALL>,
+> +				<&mstp10_clks R8A7791_CLK_SCU_ALL>, <&mstp10_clks R8A7791_CLK_SCU_ALL>,
+> +				<&mstp10_clks R8A7791_CLK_SCU_ALL>, <&mstp10_clks R8A7791_CLK_SCU_ALL>,
+> +				<&mstp10_clks R8A7791_CLK_SCU_ALL>, <&mstp10_clks R8A7791_CLK_SCU_ALL>;
 
 MBR, Sergei
 
