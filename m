@@ -1,43 +1,42 @@
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Mon, 11 Jan 2016 19:10:15 +0000
-Subject: [PATCH 0/3 v2] media: soc_camera: rcar_vin: add rcar-gen3 support
-Message-Id: <1452539418-28480-1-git-send-email-ykaneko0929@gmail.com>
+From: Jeffrey Merkey <jeffmerkey@gmail.com>
+Date: Thu, 28 Jan 2016 19:47:24 +0000
+Subject: [PATCH 23/31] Add debugger entry points for SH
+Message-Id: <1454010444-29349-1-git-send-email-jeffmerkey@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: ysato@users.sourceforge.jp, dalias@libc.org, linux.mdb@gmail.com, linux-sh@vger.kernel.org
 
-* add rcar compatibility strings
+This patch series adds an export which can be set by system debuggers to
+direct the hard lockup and soft lockup detector to trigger a breakpoint
+exception and enter a debugger if one is active.  It is assumed that if
+someone sets this variable, then an breakpoint handler of some sort will
+be actively loaded or registered via the notify die handler chain.
 
-  This series adds generic rcar and SoC-specific r8a7795 compatibility
-  strings to the rcar-vin driver. The intention is to provide a complete
-  set of compatibility strings for known R-Car Gen2 and Gen3 SoCs.
+This addition is extremely useful for debugging hard and soft lockups
+real time and quickly from a console debugger.
 
-* add ARGB8888 capture format support 
+Signed-off-by: Jeffrey Merkey <jeffmerkey@gmail.com>
+---
+ arch/sh/include/asm/kdebug.h | 5 +++++
+ 1 file changed, 5 insertions(+)
 
-  This series contain a patch which adds the ARGB8888 capture format
-  support for R-Car Gen3.
-
-* compile tested only
-
-This series is based on the master branch of linuxtv.org/media_tree.git.
-
-
-Koji Matsuoka (1):
-  media: soc_camera: rcar_vin: Add ARGB8888 caputre format support
-
-Yoshihiko Mori (1):
-  media: soc_camera: rcar_vin: Add R-Car Gen3 support
-
-Yoshihiro Kaneko (1):
-  media: soc_camera: rcar_vin: Add rcar fallback compatibility string
-
- .../devicetree/bindings/media/rcar_vin.txt         |  9 +++++++-
- drivers/media/platform/soc_camera/rcar_vin.c       | 24 ++++++++++++++++++++--
- 2 files changed, 30 insertions(+), 3 deletions(-)
-
+diff --git a/arch/sh/include/asm/kdebug.h b/arch/sh/include/asm/kdebug.h
+index 8d6a831..468d17e 100644
+--- a/arch/sh/include/asm/kdebug.h
++++ b/arch/sh/include/asm/kdebug.h
+@@ -14,4 +14,9 @@ enum die_val {
+ extern void printk_address(unsigned long address, int reliable);
+ extern void dump_mem(const char *str, unsigned long bottom, unsigned long top);
+ 
++static inline void arch_breakpoint(void)
++{
++	__asm__ __volatile__ ("trapa #0x3c\n");
++}
++
+ #endif /* __ASM_SH_KDEBUG_H */
 -- 
-1.9.1
+1.8.3.1
 
