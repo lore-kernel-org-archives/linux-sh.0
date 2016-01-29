@@ -1,21 +1,80 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 18 Jan 2016 01:45:28 +0000
-Subject: Re: [PATCH 2/3] ARM: shmobile: timer: Drop support for Cortex A8
-Message-Id: <20160118014528.GE1905@verge.net.au>
+From: Chris Brandt <Chris.Brandt@renesas.com>
+Date: Fri, 29 Jan 2016 21:12:45 +0000
+Subject: RE: [PATCH v3] ARM: xip: Use correct symbol for end of ROM marker
+Message-Id: <SG2PR06MB05720DD4599E038CC4EE77FF8ADB0@SG2PR06MB0572.apcprd06.prod.outlook.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1452537674-20006-1-git-send-email-geert+renesas@glider.be>
- <1452537674-20006-3-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1452537674-20006-3-git-send-email-geert+renesas@glider.be>
+References: <1447362108-4333-1-git-send-email-chris.brandt@renesas.com>
+ <HK2PR06MB05619FACB3725B6F5B2299718A1E0@HK2PR06MB0561.apcprd06.prod.outlook.com>
+ <alpine.LFD.2.20.1511161605070.5826@knanqh.ubzr>
+ <HK2PR06MB056142FFDA4E99A764DF9ECB8A1E0@HK2PR06MB0561.apcprd06.prod.outlook.com>
+ <alpine.LFD.2.20.1511161730030.5826@knanqh.ubzr>
+ <HK2PR06MB05614D47A9C35ECB4CA72D3F8A1D0@HK2PR06MB0561.apcprd06.prod.outlook.com>
+ <alpine.LFD.2.20.1511162127180.5826@knanqh.ubzr>
+ <HK2PR06MB056175E6E4356DD8C3566D758A1D0@HK2PR06MB0561.apcprd06.prod.outlook.com>
+ <alpine.LFD.2.20.1511172255410.22569@knanqh.ubzr>
+ <CANqRtoTkHecGEsbi3EtM8dkHQ=V0RGm7iZcU_igMqLE7Od=xBA@mail.gmail.com>
+ <alpine.LFD.2.20.1511180841000.22569@knanqh.ubzr>
+ <alpine.LFD.2.20.1511181156250.22569@knanqh.ubzr>
+ <HK2PR06MB0561CA7E856CEAA89D0752488A1C0@HK2PR06MB0561.apcprd06.prod.outlook.com>
+ <alpine.LFD.2.20.1511181445550.22569@knanqh.ubzr>
+ <HK2PR06MB05610952B8DAE3C16E1ABC6E8A1C0@HK2PR06MB0561.apcprd06.prod.outlook.com>
+ <alpine.LFD.2.20.1511181635180.22569@knanqh.ubzr>
+In-Reply-To: <alpine.LFD.2.20.1511181635180.22569@knanqh.ubzr>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Jan 11, 2016 at 07:41:13PM +0100, Geert Uytterhoeven wrote:
-> Commit edf4100906044225 ("ARM: shmobile: sh7372 dtsi: Remove Legacy
-> file") removed the DTS for the last shmobile SoC with a Cortex A8 CPU
-> core (sh7372 aka SH-Mobile AP4).
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+On Wed, 18 Nov 2015, Nicolas Pitre wrote:
 
-Thanks, I have queued this up for v4.6.
+> On Wed, 18 Nov 2015, Chris Brandt wrote:
+>
+> > > Probably the best way to fix it would be something like:
+> > >
+> > > in asm/memory.h or similar:
+> > >
+> > > #ifdef CONFIG_XIP_KERNEL
+> > > #define PHYS_OFFSET_FIXUP \
+> > >	( XIP_VIRT_ADDR(CONFIG_XIP_PHYS_ADDR) - PAGE_OFFSET + \
+> > >	  PLAT_PHYS_OFFSET - CONFIG_XIP_PHYS_ADDR ) #else #define  
+> > >PHYS_OFFSET_FIXUP 0 #endif
+> > >
+> > > And then, after my patch is applied, changing:
+> > >
+> > > __v7_setup_stack_ptr:
+> > >        .word   __v7_setup_stack - .
+> > >
+> > > into:
+> > >
+> > > __v7_setup_stack_ptr:
+> > >        .word   __v7_setup_stack - . + PHYS_OFFSET_FIXUP
+> > >
+> > > should do the trick. This way it'll work for all those places where 
+> > > the code is getting at the data area when the MMU is off with no XIP 
+> > > conditionals in the code.
+> > 
+> > 
+> > Tested....it works!
+>
+> Excellent.
+>
+>
+> Nicolas
+
+
+Nicolas,
+
+I applied your PHYS_OFFSET_FIXUP macro code (shown above) to the current tree which already has your commit "ARM: 8453/2: proc-v7.S: don't locate temporary stack space in .text section".
+
+After testing, it shows the same results for an XIP_KERNEL build as it did in November:
+
+   No PHYS_OFFSET_FIXUP = crash
+
+   with PHYS_OFFSET_FIXUP = good
+
+
+Can I submit a patch with your code for review and inclusion to the kernel?
+
+
+Chris
+
