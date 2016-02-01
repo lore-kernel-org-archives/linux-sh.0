@@ -1,151 +1,69 @@
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Mon, 08 Feb 2016 16:11:43 +0000
-Subject: Re: [PATCH v5] media: soc_camera: rcar_vin: Add ARGB8888 caputre format support
-Message-Id: <CAH1o70Lw+qM0gKmx7qQOR9_BrugOmtXaKuUWEM_1nQQJGh9YwA@mail.gmail.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Mon, 01 Feb 2016 13:31:20 +0000
+Subject: Re: [PATCH v2 0/3] drm: adv7511: edid read fixes
+Message-Id: <20160201133119.GB10607@tetsubishi>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="wzJLGUyc3ArbnUjN"
 List-Id: <linux-sh.vger.kernel.org>
-References: <1453652009-4291-1-git-send-email-ykaneko0929@gmail.com>
-	<Pine.LNX.4.64.1602071449170.11458@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1602071449170.11458@axis700.grange>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Linux Media Mailing List <linux-media@vger.kernel.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>
+References: <1452290210-20629-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1452290210-20629-1-git-send-email-wsa@the-dreams.de>
+To: dri-devel@lists.freedesktop.org, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Daniel Vetter <daniel.vetter@ffwll.ch>, Lars-Peter Clausen <lars@metafoo.de>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, David Airlie <airlied@linux.ie>, Hans Verkuil <hans.verkuil@cisco.com>
 
-Hi Guennadi-san,
 
-2016-02-07 22:49 GMT+09:00 Guennadi Liakhovetski <g.liakhovetski@gmx.de>:
-> Hi Kaneko-san,
->
-> On Mon, 25 Jan 2016, Yoshihiro Kaneko wrote:
->
->> From: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
->>
->> This patch adds ARGB8888 capture format support for R-Car Gen3.
->>
->> Signed-off-by: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
->> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
->
-> Thanks for the patch. I'll queue it for 4.6.
+--wzJLGUyc3ArbnUjN
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Thank you very much for your help.
+On Fri, Jan 08, 2016 at 10:56:47PM +0100, Wolfram Sang wrote:
+> So, here is my V2 of this series. Changes:
+>=20
+> * Added tags. Thanks to Laurent and Lars-Peter for review and to Archit f=
+or
+>   testing. Much appreciated!
+> * rephrased the comment and commit message in patch 1 to be hopefully less
+>   confusing :)
+>=20
+> No code changes!
+>=20
+> Thanks,
+>=20
+>    Wolfram
+>=20
+>=20
+> Wolfram Sang (3):
+>   drm: adv7511: really enable interrupts for EDID detection
+>   drm: adv7511: mark ADV7511_REG_EDID_READ_CTRL volatile
+>   drm: adv7511: it's HPD, not HDP
+>=20
+>  drivers/gpu/drm/i2c/adv7511.c | 48 ++++++++++++++++++++++++++-----------=
+------
+>  drivers/gpu/drm/i2c/adv7511.h | 12 +++++------
+>  2 files changed, 35 insertions(+), 25 deletions(-)
 
->
-> Guennadi
+Adding Hans to CC of the proper mail, not patch 1. Sorry for the noise!
 
-Best regards,
-kaneko
 
->
->> ---
->>
->> This patch is based on the for-4.6-1 branch of Guennadi's v4l-dvb tree.
->>
->> v5 [Yoshihiro Kaneko]
->> * As suggested by Guennadi Liakhovetski
->>   rcar_vin_setup():
->>     - add a common error handler instead of a falling through to the
->>       default case.
->> * compile tested only
->>
->> v4 [Yoshihiro Kaneko]
->> * As suggested by Sergei Shtylyov
->>   - revised an error message.
->>
->> v3 [Yoshihiro Kaneko]
->> * rebased to for-4.6-1 branch of Guennadi's tree.
->>
->> v2 [Yoshihiro Kaneko]
->> * As suggested by Sergei Shtylyov
->>   - fix the coding style of the braces.
->>
->>  drivers/media/platform/soc_camera/rcar_vin.c | 39 +++++++++++++++++++++-------
->>  1 file changed, 29 insertions(+), 10 deletions(-)
->>
->> diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
->> index dc75a80..3b8edf4 100644
->> --- a/drivers/media/platform/soc_camera/rcar_vin.c
->> +++ b/drivers/media/platform/soc_camera/rcar_vin.c
->> @@ -124,7 +124,7 @@
->>  #define VNDMR_EXRGB          (1 << 8)
->>  #define VNDMR_BPSM           (1 << 4)
->>  #define VNDMR_DTMD_YCSEP     (1 << 1)
->> -#define VNDMR_DTMD_ARGB1555  (1 << 0)
->> +#define VNDMR_DTMD_ARGB              (1 << 0)
->>
->>  /* Video n Data Mode Register 2 bits */
->>  #define VNDMR2_VPS           (1 << 30)
->> @@ -643,21 +643,26 @@ static int rcar_vin_setup(struct rcar_vin_priv *priv)
->>               output_is_yuv = true;
->>               break;
->>       case V4L2_PIX_FMT_RGB555X:
->> -             dmr = VNDMR_DTMD_ARGB1555;
->> +             dmr = VNDMR_DTMD_ARGB;
->>               break;
->>       case V4L2_PIX_FMT_RGB565:
->>               dmr = 0;
->>               break;
->>       case V4L2_PIX_FMT_RGB32:
->> -             if (priv->chip = RCAR_GEN2 || priv->chip = RCAR_H1 ||
->> -                 priv->chip = RCAR_E1) {
->> -                     dmr = VNDMR_EXRGB;
->> -                     break;
->> -             }
->> +             if (priv->chip != RCAR_GEN2 && priv->chip != RCAR_H1 &&
->> +                 priv->chip != RCAR_E1)
->> +                     goto e_format;
->> +
->> +             dmr = VNDMR_EXRGB;
->> +             break;
->> +     case V4L2_PIX_FMT_ARGB32:
->> +             if (priv->chip != RCAR_GEN3)
->> +                     goto e_format;
->> +
->> +             dmr = VNDMR_EXRGB | VNDMR_DTMD_ARGB;
->> +             break;
->>       default:
->> -             dev_warn(icd->parent, "Invalid fourcc format (0x%x)\n",
->> -                      icd->current_fmt->host_fmt->fourcc);
->> -             return -EINVAL;
->> +             goto e_format;
->>       }
->>
->>       /* Always update on field change */
->> @@ -679,6 +684,11 @@ static int rcar_vin_setup(struct rcar_vin_priv *priv)
->>       iowrite32(vnmc | VNMC_ME, priv->base + VNMC_REG);
->>
->>       return 0;
->> +
->> +e_format:
->> +     dev_warn(icd->parent, "Invalid fourcc format (0x%x)\n",
->> +              icd->current_fmt->host_fmt->fourcc);
->> +     return -EINVAL;
->>  }
->>
->>  static void rcar_vin_capture(struct rcar_vin_priv *priv)
->> @@ -1304,6 +1314,14 @@ static const struct soc_mbus_pixelfmt rcar_vin_formats[] = {
->>               .order                  = SOC_MBUS_ORDER_LE,
->>               .layout                 = SOC_MBUS_LAYOUT_PACKED,
->>       },
->> +     {
->> +             .fourcc                 = V4L2_PIX_FMT_ARGB32,
->> +             .name                   = "ARGB8888",
->> +             .bits_per_sample        = 32,
->> +             .packing                = SOC_MBUS_PACKING_NONE,
->> +             .order                  = SOC_MBUS_ORDER_LE,
->> +             .layout                 = SOC_MBUS_LAYOUT_PACKED,
->> +     },
->>  };
->>
->>  static int rcar_vin_get_formats(struct soc_camera_device *icd, unsigned int idx,
->> @@ -1611,6 +1629,7 @@ static int rcar_vin_set_fmt(struct soc_camera_device *icd,
->>       case V4L2_PIX_FMT_RGB32:
->>               can_scale = priv->chip != RCAR_E1;
->>               break;
->> +     case V4L2_PIX_FMT_ARGB32:
->>       case V4L2_PIX_FMT_UYVY:
->>       case V4L2_PIX_FMT_YUYV:
->>       case V4L2_PIX_FMT_RGB565:
->> --
->> 1.9.1
->>
+--wzJLGUyc3ArbnUjN
+Content-Type: application/pgp-signature; name="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBAgAGBQJWr14nAAoJEBQN5MwUoCm2rSoP/0bOBtTmxW+49hY89L/99aUP
+XCN6TzgxBQe6G0U8h2eT54MMNfgKLefvPzNwiz21q8YR00zXInxmrY91sgLzNz2H
+eyWs/V/2Z9Gi8S67f+ieu4+2kivYRyh79LEIemx07TvVeQXbBoaa2GEl+uGsf4+A
+OUhtDuF0kYiCH8C30fxEw7bsaWUpBnJcimVJumr3U0W3pJs3v0ungiahsKU9DjIz
+MCLdnXp8mPTEl6ZQj2s16kYI9TvU5LMSvNaYMW1R7e+ovn6b9lsE5Dw+hX/T9osU
+hYK1QzrCD8b0VlAn6X9mjPTOr+EU9upe8gYcLKhr/njRvfOY8malZ/5I6Snp/HSw
+4opunamWEkc2/v6bVfU92lGcJn7vHhG8ILzZWuUFHbg4FS1V0D6h+mdAReHcottN
+VpOt0yi0Nepg0CVxMwq6mDeCSLGxQmQgUvSAcUTETr/msZsFmDu9nzbj4vbdGrXP
+tX/NNwjN3+3RfAPBTRs6SUgDtpuhLLVgdMqUZpBHxM6ojExrk/Er96rxwCJjhYc7
+0iShL1/cF2gSvBkRZt5IRzF75xlIj2V2+vUBB6rnpibsh5K2d+pOQz7cTLxa+Rzr
+naPzAsd2cRYWdjMISNjkzxr2Wd8Y/+pZv5XmIG4k+HHigSWxdV/JuSZb1mVjYD3o
+InEDUCMVrniuwRAQR+KD
+=SD1D
+-----END PGP SIGNATURE-----
+
+--wzJLGUyc3ArbnUjN--
