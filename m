@@ -1,188 +1,41 @@
-From: Michal Hocko <mhocko@kernel.org>
-Date: Tue, 02 Feb 2016 20:19:18 +0000
-Subject: [RFC 01/12] locking, rwsem: get rid of __down_write_nested
-Message-Id: <1454444369-2146-2-git-send-email-mhocko@kernel.org>
+From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Date: Mon, 01 Feb 2016 23:09:33 +0000
+Subject: ssh crashes kernel at lookup_user_key
+Message-Id: <56AFE5AD.6010608@physik.fu-berlin.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1454444369-2146-1-git-send-email-mhocko@kernel.org>
-In-Reply-To: <1454444369-2146-1-git-send-email-mhocko@kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: LKML <linux-kernel@vger.kernel.org>
-Cc: Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@redhat.com>, Thomas Gleixner <tglx@linutronix.de>, "H. Peter Anvin" <hpa@zytor.com>, "David S. Miller" <davem@davemloft.net>, Tony Luck <tony.luck@intel.com>, Andrew Morton <akpm@linux-foundation.org>, Chris Zankel <chris@zankel.net>, Max Filippov <jcmvbkbc@gmail.com>, x86@kernel.org, linux-alpha@vger.kernel.org, linux-ia64@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-arch@vger.kernel.org, Michal Hocko <mhocko@suse.com>
+Content-Type: text/plain; charset="windows-1252"
+Content-Transfer-Encoding: quoted-printable
+To: linux-sh@vger.kernel.org
 
-From: Michal Hocko <mhocko@suse.com>
+Hello!
 
-This is no longer used anywhere and all callers (__down_write) use
-0 as a subclass. Ditch __down_write_nested to make the code easier
-to follow.
+I got the news today that SuperH support in the kernel is back to
+maintained state which is awesome news! I am the remaining Debian
+porter for the sh4 port and I recently experienced some issues with
+newer kernel versions on sh4.
 
-This shouldn't introduce any functional change.
+Since the kernel bugzilla doesn't allow to select "SH" as a target
+platform, I filed the following bug under "other":
 
-Signed-off-by: Michal Hocko <mhocko@suse.com>
----
- arch/s390/include/asm/rwsem.h   | 7 +------
- arch/sh/include/asm/rwsem.h     | 5 -----
- arch/sparc/include/asm/rwsem.h  | 7 +------
- arch/x86/include/asm/rwsem.h    | 7 +------
- include/asm-generic/rwsem.h     | 7 +------
- include/linux/rwsem-spinlock.h  | 1 -
- kernel/locking/rwsem-spinlock.c | 7 +------
- 7 files changed, 5 insertions(+), 36 deletions(-)
+> https://bugzilla.kernel.org/show_bug.cgi?id=94901
 
-diff --git a/arch/s390/include/asm/rwsem.h b/arch/s390/include/asm/rwsem.h
-index 4b43ee7e6776..8e52e72f3efc 100644
---- a/arch/s390/include/asm/rwsem.h
-+++ b/arch/s390/include/asm/rwsem.h
-@@ -90,7 +90,7 @@ static inline int __down_read_trylock(struct rw_semaphore *sem)
- /*
-  * lock for writing
-  */
--static inline void __down_write_nested(struct rw_semaphore *sem, int subclass)
-+static inline void __down_write(struct rw_semaphore *sem)
- {
- 	signed long old, new, tmp;
- 
-@@ -108,11 +108,6 @@ static inline void __down_write_nested(struct rw_semaphore *sem, int subclass)
- 		rwsem_down_write_failed(sem);
- }
- 
--static inline void __down_write(struct rw_semaphore *sem)
--{
--	__down_write_nested(sem, 0);
--}
--
- /*
-  * trylock for writing -- returns 1 if successful, 0 if contention
-  */
-diff --git a/arch/sh/include/asm/rwsem.h b/arch/sh/include/asm/rwsem.h
-index edab57265293..a5104bebd1eb 100644
---- a/arch/sh/include/asm/rwsem.h
-+++ b/arch/sh/include/asm/rwsem.h
-@@ -114,11 +114,6 @@ static inline void __downgrade_write(struct rw_semaphore *sem)
- 		rwsem_downgrade_wake(sem);
- }
- 
--static inline void __down_write_nested(struct rw_semaphore *sem, int subclass)
--{
--	__down_write(sem);
--}
--
- /*
-  * implement exchange and add functionality
-  */
-diff --git a/arch/sparc/include/asm/rwsem.h b/arch/sparc/include/asm/rwsem.h
-index 069bf4d663a1..e5a0d575bc7f 100644
---- a/arch/sparc/include/asm/rwsem.h
-+++ b/arch/sparc/include/asm/rwsem.h
-@@ -45,7 +45,7 @@ static inline int __down_read_trylock(struct rw_semaphore *sem)
- /*
-  * lock for writing
-  */
--static inline void __down_write_nested(struct rw_semaphore *sem, int subclass)
-+static inline void __down_write(struct rw_semaphore *sem)
- {
- 	long tmp;
- 
-@@ -55,11 +55,6 @@ static inline void __down_write_nested(struct rw_semaphore *sem, int subclass)
- 		rwsem_down_write_failed(sem);
- }
- 
--static inline void __down_write(struct rw_semaphore *sem)
--{
--	__down_write_nested(sem, 0);
--}
--
- static inline int __down_write_trylock(struct rw_semaphore *sem)
- {
- 	long tmp;
-diff --git a/arch/x86/include/asm/rwsem.h b/arch/x86/include/asm/rwsem.h
-index cad82c9c2fde..d79a218675bc 100644
---- a/arch/x86/include/asm/rwsem.h
-+++ b/arch/x86/include/asm/rwsem.h
-@@ -99,7 +99,7 @@ static inline int __down_read_trylock(struct rw_semaphore *sem)
- /*
-  * lock for writing
-  */
--static inline void __down_write_nested(struct rw_semaphore *sem, int subclass)
-+static inline void __down_write(struct rw_semaphore *sem)
- {
- 	long tmp;
- 	asm volatile("# beginning down_write\n\t"
-@@ -116,11 +116,6 @@ static inline void __down_write_nested(struct rw_semaphore *sem, int subclass)
- 		     : "memory", "cc");
- }
- 
--static inline void __down_write(struct rw_semaphore *sem)
--{
--	__down_write_nested(sem, 0);
--}
--
- /*
-  * trylock for writing -- returns 1 if successful, 0 if contention
-  */
-diff --git a/include/asm-generic/rwsem.h b/include/asm-generic/rwsem.h
-index d6d5dc98d7da..b8d8a6cf4ca8 100644
---- a/include/asm-generic/rwsem.h
-+++ b/include/asm-generic/rwsem.h
-@@ -53,7 +53,7 @@ static inline int __down_read_trylock(struct rw_semaphore *sem)
- /*
-  * lock for writing
-  */
--static inline void __down_write_nested(struct rw_semaphore *sem, int subclass)
-+static inline void __down_write(struct rw_semaphore *sem)
- {
- 	long tmp;
- 
-@@ -63,11 +63,6 @@ static inline void __down_write_nested(struct rw_semaphore *sem, int subclass)
- 		rwsem_down_write_failed(sem);
- }
- 
--static inline void __down_write(struct rw_semaphore *sem)
--{
--	__down_write_nested(sem, 0);
--}
--
- static inline int __down_write_trylock(struct rw_semaphore *sem)
- {
- 	long tmp;
-diff --git a/include/linux/rwsem-spinlock.h b/include/linux/rwsem-spinlock.h
-index 561e8615528d..a733a5467e6c 100644
---- a/include/linux/rwsem-spinlock.h
-+++ b/include/linux/rwsem-spinlock.h
-@@ -34,7 +34,6 @@ struct rw_semaphore {
- extern void __down_read(struct rw_semaphore *sem);
- extern int __down_read_trylock(struct rw_semaphore *sem);
- extern void __down_write(struct rw_semaphore *sem);
--extern void __down_write_nested(struct rw_semaphore *sem, int subclass);
- extern int __down_write_trylock(struct rw_semaphore *sem);
- extern void __up_read(struct rw_semaphore *sem);
- extern void __up_write(struct rw_semaphore *sem);
-diff --git a/kernel/locking/rwsem-spinlock.c b/kernel/locking/rwsem-spinlock.c
-index 3a5048572065..bab26104a5d0 100644
---- a/kernel/locking/rwsem-spinlock.c
-+++ b/kernel/locking/rwsem-spinlock.c
-@@ -191,7 +191,7 @@ int __down_read_trylock(struct rw_semaphore *sem)
- /*
-  * get a write lock on the semaphore
-  */
--void __sched __down_write_nested(struct rw_semaphore *sem, int subclass)
-+void __sched __down_write(struct rw_semaphore *sem)
- {
- 	struct rwsem_waiter waiter;
- 	struct task_struct *tsk;
-@@ -227,11 +227,6 @@ void __sched __down_write_nested(struct rw_semaphore *sem, int subclass)
- 	raw_spin_unlock_irqrestore(&sem->wait_lock, flags);
- }
- 
--void __sched __down_write(struct rw_semaphore *sem)
--{
--	__down_write_nested(sem, 0);
--}
--
- /*
-  * trylock for writing -- returns 1 if successful, 0 if contention
-  */
--- 
-2.7.0
+Basically the problem is that I cannot upgrade ssh on the sh4 machines
+to any newer versions as this will reproducibly crash the kernel and
+let the machine return to the u-boot prompt. The backtrace can be found
+in the bug report above.
 
+This happens with kernel version down to 3.2.0, but I am currently
+running 3.16.7-ckt7 from Debian on my SH7785LCR board. I tried newer
+versions up to 4.3.0 which will actually boot but crash very quickly
+with even more severe problems. I will file a separate bug report for
+these.
+
+Cheers,
+Adrian
+
+--=20
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer - glaubitz@debian.org
+`. `'   Freie Universitaet Berlin - glaubitz@physik.fu-berlin.de
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
