@@ -1,101 +1,287 @@
-From: Lars-Peter Clausen <lars@metafoo.de>
-Date: Mon, 08 Feb 2016 09:29:51 +0000
-Subject: Re: [PATCH v3] adv7604: add direct interrupt handling
-Message-Id: <56B8600F.1080003@metafoo.de>
+From: Ganapatrao Kulkarni <gkulkarni@caviumnetworks.com>
+Date: Tue, 02 Feb 2016 10:21:18 +0000
+Subject: [PATCH v10 3/8] dt, numa: adding numa dt binding implementation.
+Message-Id: <1454407763-1017-4-git-send-email-gkulkarni@caviumnetworks.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1452698143-31897-1-git-send-email-ulrich.hecht+renesas@gmail.com>
- <569CC821.6040905@xs4all.nl> <56B85ED0.9050302@xs4all.nl>
-In-Reply-To: <56B85ED0.9050302@xs4all.nl>
+References: <1454407763-1017-1-git-send-email-gkulkarni@caviumnetworks.com>
+In-Reply-To: <1454407763-1017-1-git-send-email-gkulkarni@caviumnetworks.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Hans Verkuil <hverkuil@xs4all.nl>, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>, linux-media@vger.kernel.org, linux-sh@vger.kernel.org
-Cc: magnus.damm@gmail.com, laurent.pinchart@ideasonboard.com, hans.verkuil@cisco.com, ian.molton@codethink.co.uk, william.towle@codethink.co.uk, sergei.shtylyov@cogentembedded.com
+To: linux-arm-kernel@lists.infradead.org, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org, linux-pci@vger.kernel.org, linux-ia64@vger.kernel.org, linux-metag@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-arch@vger.kernel.org, Will.Deacon@arm.com, catalin.marinas@arm.com, robh+dt@kernel.org, mark.rutland@arm.com, grant.likely@linaro.org, leif.lindholm@linaro.org, rfranz@cavium.com, ard.biesheuvel@linaro.org, msalter@redhat.com, steve.capper@linaro.org, hanjun.guo@linaro.org, al.stone@linaro.org, arnd@arndb.de, pawel.moll@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, rjw@rjwysocki.net, lenb@kernel.org, marc.zyngier@arm.com, lorenzo.pieralisi@arm.com, bhelgaas@google.com, tony.luck@intel.com, fenghua.yu@intel.com, james.hog
+Cc: gpkulkarni@gmail.com
 
-On 02/08/2016 10:24 AM, Hans Verkuil wrote:
-> Hi Ulrich,
-> 
-> On 01/18/2016 12:10 PM, Hans Verkuil wrote:
->> On 01/13/2016 04:15 PM, Ulrich Hecht wrote:
->>> When probed from device tree, the i2c client driver can handle the
->>> interrupt on its own.
->>>
->>> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
->>> Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
->>> ---
->>> v3: uses IRQ_RETVAL
->>>
->>> v2: implements the suggested style changes and drops the IRQF_TRIGGER_LOW
->>> flag, which is handled in the device tree.
->>>
->>>
->>>  drivers/media/i2c/adv7604.c | 24 ++++++++++++++++++++++--
->>>  1 file changed, 22 insertions(+), 2 deletions(-)
->>>
->>> diff --git a/drivers/media/i2c/adv7604.c b/drivers/media/i2c/adv7604.c
->>> index 5bd81bd..ab4cb25 100644
->>> --- a/drivers/media/i2c/adv7604.c
->>> +++ b/drivers/media/i2c/adv7604.c
->>> @@ -31,6 +31,7 @@
->>>  #include <linux/gpio/consumer.h>
->>>  #include <linux/hdmi.h>
->>>  #include <linux/i2c.h>
->>> +#include <linux/interrupt.h>
->>>  #include <linux/kernel.h>
->>>  #include <linux/module.h>
->>>  #include <linux/slab.h>
->>> @@ -1971,6 +1972,16 @@ static int adv76xx_isr(struct v4l2_subdev *sd, u32 status, bool *handled)
->>>  	return 0;
->>>  }
->>>  
->>> +static irqreturn_t adv76xx_irq_handler(int irq, void *devid)
->>> +{
->>> +	struct adv76xx_state *state = devid;
->>> +	bool handled;
->>> +
->>> +	adv76xx_isr(&state->sd, 0, &handled);
->>> +
->>> +	return IRQ_RETVAL(handled);
->>> +}
->>> +
->>>  static int adv76xx_get_edid(struct v4l2_subdev *sd, struct v4l2_edid *edid)
->>>  {
->>>  	struct adv76xx_state *state = to_state(sd);
->>> @@ -2844,8 +2855,7 @@ static int adv76xx_parse_dt(struct adv76xx_state *state)
->>>  		state->pdata.op_656_range = 1;
->>>  	}
->>>  
->>> -	/* Disable the interrupt for now as no DT-based board uses it. */
->>> -	state->pdata.int1_config = ADV76XX_INT1_CONFIG_DISABLED;
->>> +	state->pdata.int1_config = ADV76XX_INT1_CONFIG_ACTIVE_LOW;
->>
->> Hmm, this hardcodes the interrupt to active low. Can you use the DT to determine
->> whether it should be active low or high?
-> 
-> Just a reminder: I don't want to accept this patch without this change. In most
-> cases an interrupt is active on high, not low, so I don't like to see this
-> hardcoded.
+dt node parsing for numa topology is done using device property
+numa-node-id and device node distance-map.
 
-I think the important part here is to configure the IRQ here in the same way
-as the flags that are passed to request_irq(). Right now it does not pass
-any flags to request_irq() which means the result is pretty much
-unpredictable and depends on the default configuration of the IRQ chip
-(which might change between kernel versions).
+Reviewed-by: Robert Richter <rrichter@cavium.com>
+Signed-off-by: Ganapatrao Kulkarni <gkulkarni@caviumnetworks.com>
+---
+ drivers/of/Kconfig   |  11 +++
+ drivers/of/Makefile  |   1 +
+ drivers/of/of_numa.c | 207 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ include/linux/of.h   |   4 +
+ 4 files changed, 223 insertions(+)
+ create mode 100644 drivers/of/of_numa.c
 
->>>  	/* Use the default I2C addresses. */
->>>  	state->pdata.i2c_addresses[ADV7604_PAGE_AVLINK] = 0x42;
->>> @@ -3235,6 +3245,16 @@ static int adv76xx_probe(struct i2c_client *client,
->>>  	v4l2_info(sd, "%s found @ 0x%x (%s)\n", client->name,
->>>  			client->addr << 1, client->adapter->name);
->>>  
->>> +	if (client->irq) {
->>> +		err = devm_request_threaded_irq(&client->dev,
->>> +						client->irq,
->>> +						NULL, adv76xx_irq_handler,
->>> +						IRQF_ONESHOT,
->>> +						dev_name(&client->dev), state);
->>> +		if (err)
->>> +			goto err_entity;
->>> +	}
->>> +
+diff --git a/drivers/of/Kconfig b/drivers/of/Kconfig
+index e2a4841..8f9cc3a 100644
+--- a/drivers/of/Kconfig
++++ b/drivers/of/Kconfig
+@@ -112,4 +112,15 @@ config OF_OVERLAY
+ 	  While this option is selected automatically when needed, you can
+ 	  enable it manually to improve device tree unit test coverage.
+ 
++config OF_NUMA
++	bool "Device Tree NUMA support"
++	depends on NUMA
++	depends on OF
++	depends on ARM64
++	default y
++	help
++	  Enable Device Tree NUMA support.
++	  This enables the numa mapping of cpu, memory, io and
++	  inter node distances using dt bindings.
++
+ endif # OF
+diff --git a/drivers/of/Makefile b/drivers/of/Makefile
+index 156c072..bee3fa9 100644
+--- a/drivers/of/Makefile
++++ b/drivers/of/Makefile
+@@ -14,5 +14,6 @@ obj-$(CONFIG_OF_MTD)	+= of_mtd.o
+ obj-$(CONFIG_OF_RESERVED_MEM) += of_reserved_mem.o
+ obj-$(CONFIG_OF_RESOLVE)  += resolver.o
+ obj-$(CONFIG_OF_OVERLAY) += overlay.o
++obj-$(CONFIG_OF_NUMA) += of_numa.o
+ 
+ obj-$(CONFIG_OF_UNITTEST) += unittest-data/
+diff --git a/drivers/of/of_numa.c b/drivers/of/of_numa.c
+new file mode 100644
+index 0000000..1142cdb
+--- /dev/null
++++ b/drivers/of/of_numa.c
+@@ -0,0 +1,207 @@
++/*
++ * OF NUMA Parsing support.
++ *
++ * Copyright (C) 2015 Cavium Inc.
++ * Author: Ganapatrao Kulkarni <gkulkarni@cavium.com>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
++ */
++
++#include <linux/of.h>
++#include <linux/of_fdt.h>
++
++/* define default numa node to 0 */
++#define DEFAULT_NODE 0
++
++/* Returns nid in the range [0..MAX_NUMNODES-1],
++ * or NUMA_NO_NODE if no valid numa-node-id entry found
++ * or DEFAULT_NODE if no numa-node-id entry exists
++ */
++static int of_numa_prop_to_nid(const __be32 *of_numa_prop, int length)
++{
++	int nid;
++
++	if (!of_numa_prop)
++		return DEFAULT_NODE;
++
++	if (length != sizeof(*of_numa_prop)) {
++		pr_warn("NUMA: Invalid of_numa_prop length %d found.\n",
++				length);
++		return NUMA_NO_NODE;
++	}
++
++	nid = of_read_number(of_numa_prop, 1);
++	if (nid >= MAX_NUMNODES) {
++		pr_warn("NUMA: Invalid numa node %d found.\n", nid);
++		return NUMA_NO_NODE;
++	}
++
++	return nid;
++}
++
++static int __init early_init_of_node_to_nid(unsigned long node)
++{
++	int length;
++	const __be32 *of_numa_prop;
++
++	of_numa_prop = of_get_flat_dt_prop(node, "numa-node-id", &length);
++
++	return of_numa_prop_to_nid(of_numa_prop, length);
++}
++
++/*
++ * Even though we connect cpus to numa domains later in SMP
++ * init, we need to know the node ids now for all cpus.
++*/
++static int __init early_init_parse_cpu_node(unsigned long node)
++{
++	int nid;
++	const char *type = of_get_flat_dt_prop(node, "device_type", NULL);
++
++	if (type = NULL)
++		return 0;
++
++	if (strcmp(type, "cpu") != 0)
++		return 0;
++
++	nid = early_init_of_node_to_nid(node);
++	if (nid = NUMA_NO_NODE)
++		return -EINVAL;
++
++	node_set(nid, numa_nodes_parsed);
++	return 0;
++}
++
++static int __init early_init_parse_memory_node(unsigned long node)
++{
++	const __be32 *reg, *endp;
++	int length;
++	int nid;
++	const char *type = of_get_flat_dt_prop(node, "device_type", NULL);
++
++	if (type = NULL)
++		return 0;
++
++	if (strcmp(type, "memory") != 0)
++		return 0;
++
++	nid = early_init_of_node_to_nid(node);
++	if (nid = NUMA_NO_NODE)
++		return -EINVAL;
++
++	reg = of_get_flat_dt_prop(node, "reg", &length);
++	endp = reg + (length / sizeof(__be32));
++
++	while ((endp - reg) >= (dt_root_addr_cells + dt_root_size_cells)) {
++		u64 base, size;
++
++		base = dt_mem_next_cell(dt_root_addr_cells, &reg);
++		size = dt_mem_next_cell(dt_root_size_cells, &reg);
++		pr_debug("NUMA:  base = %llx , node = %u\n",
++				base, nid);
++
++		if (numa_add_memblk(nid, base, size) < 0)
++			return -EINVAL;
++	}
++
++	return 0;
++}
++
++static int __init early_init_parse_distance_map_v1(unsigned long node,
++		const char *uname)
++{
++	const __be32 *prop_dist_matrix;
++	int length = 0, i, matrix_count;
++	int nr_size_cells = OF_ROOT_NODE_SIZE_CELLS_DEFAULT;
++
++	pr_info("NUMA: parsing numa-distance-map-v1\n");
++
++	prop_dist_matrix +		of_get_flat_dt_prop(node, "distance-matrix", &length);
++
++	if (!length) {
++		pr_err("NUMA: failed to parse distance-matrix\n");
++		return -ENODEV;
++	}
++
++	matrix_count = ((length / sizeof(__be32)) / (3 * nr_size_cells));
++
++	if ((matrix_count * sizeof(__be32) * 3 * nr_size_cells) !=  length) {
++		pr_warn("NUMA: invalid distance-matrix length %d\n", length);
++		return -EINVAL;
++	}
++
++	for (i = 0; i < matrix_count; i++) {
++		u32 nodea, nodeb, distance;
++
++		nodea = dt_mem_next_cell(nr_size_cells, &prop_dist_matrix);
++		nodeb = dt_mem_next_cell(nr_size_cells, &prop_dist_matrix);
++		distance = dt_mem_next_cell(nr_size_cells, &prop_dist_matrix);
++		numa_set_distance(nodea, nodeb, distance);
++		pr_debug("NUMA:  distance[node%d -> node%d] = %d\n",
++				nodea, nodeb, distance);
++
++		/* Set default distance of node B->A same as A->B */
++		if (nodeb > nodea)
++			numa_set_distance(nodeb, nodea, distance);
++	}
++
++	return 0;
++}
++
++static int __init early_init_parse_distance_map(unsigned long node,
++		const char *uname)
++{
++	if (strcmp(uname, "distance-map") != 0)
++		return 0;
++
++	if (of_flat_dt_is_compatible(node, "numa-distance-map-v1"))
++		return early_init_parse_distance_map_v1(node, uname);
++
++	pr_err("NUMA: invalid distance-map device node\n");
++	return -EINVAL;
++}
++
++static int __init early_init_of_scan_numa_map(unsigned long node, const char *uname,
++				     int depth, void *data)
++{
++	int ret;
++
++	ret = early_init_parse_cpu_node(node);
++	if (ret)
++		return ret;
++
++	ret = early_init_parse_memory_node(node);
++	if (ret)
++		return ret;
++
++	return early_init_parse_distance_map(node, uname);
++}
++
++int of_node_to_nid(struct device_node *device)
++{
++	const __be32 *of_numa_prop;
++	int length;
++
++	of_numa_prop = of_get_property(device, "numa-node-id", &length);
++	if (of_numa_prop)
++		return of_numa_prop_to_nid(of_numa_prop, length);
++
++	return NUMA_NO_NODE;
++}
++
++/* DT node mapping is done already early_init_of_scan_memory */
++int __init of_numa_init(void)
++{
++	return of_scan_flat_dt(early_init_of_scan_numa_map, NULL);
++}
+diff --git a/include/linux/of.h b/include/linux/of.h
+index dd10626..23e5bad 100644
+--- a/include/linux/of.h
++++ b/include/linux/of.h
+@@ -685,6 +685,10 @@ static inline int of_node_to_nid(struct device_node *device)
+ }
+ #endif
+ 
++#ifdef CONFIG_OF_NUMA
++extern int __init of_numa_init(void);
++#endif
++
+ static inline struct device_node *of_find_matching_node(
+ 	struct device_node *from,
+ 	const struct of_device_id *matches)
+-- 
+1.8.1.4
 
