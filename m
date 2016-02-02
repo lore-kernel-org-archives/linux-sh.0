@@ -1,66 +1,67 @@
-From: Michal Hocko <mhocko@kernel.org>
-Date: Tue, 02 Feb 2016 20:19:21 +0000
-Subject: [RFC 04/12] alpha, rwsem: provide __down_write_killable
-Message-Id: <1454444369-2146-5-git-send-email-mhocko@kernel.org>
+From: Ganapatrao Kulkarni <gkulkarni@caviumnetworks.com>
+Date: Tue, 02 Feb 2016 10:21:21 +0000
+Subject: [PATCH v10 6/8] arm64, mm, numa: Adding numa balancing support for arm64.
+Message-Id: <1454407763-1017-7-git-send-email-gkulkarni@caviumnetworks.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1454444369-2146-1-git-send-email-mhocko@kernel.org>
-In-Reply-To: <1454444369-2146-1-git-send-email-mhocko@kernel.org>
+References: <1454407763-1017-1-git-send-email-gkulkarni@caviumnetworks.com>
+In-Reply-To: <1454407763-1017-1-git-send-email-gkulkarni@caviumnetworks.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: LKML <linux-kernel@vger.kernel.org>
-Cc: Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@redhat.com>, Thomas Gleixner <tglx@linutronix.de>, "H. Peter Anvin" <hpa@zytor.com>, "David S. Miller" <davem@davemloft.net>, Tony Luck <tony.luck@intel.com>, Andrew Morton <akpm@linux-foundation.org>, Chris Zankel <chris@zankel.net>, Max Filippov <jcmvbkbc@gmail.com>, x86@kernel.org, linux-alpha@vger.kernel.org, linux-ia64@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-arch@vger.kernel.org, Michal Hocko <mhocko@suse.com>
+To: linux-arm-kernel@lists.infradead.org, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org, linux-pci@vger.kernel.org, linux-ia64@vger.kernel.org, linux-metag@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-arch@vger.kernel.org, Will.Deacon@arm.com, catalin.marinas@arm.com, robh+dt@kernel.org, mark.rutland@arm.com, grant.likely@linaro.org, leif.lindholm@linaro.org, rfranz@cavium.com, ard.biesheuvel@linaro.org, msalter@redhat.com, steve.capper@linaro.org, hanjun.guo@linaro.org, al.stone@linaro.org, arnd@arndb.de, pawel.moll@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, rjw@rjwysocki.net, lenb@kernel.org, marc.zyngier@arm.com, lorenzo.pieralisi@arm.com, bhelgaas@google.com, tony.luck@intel.com, fenghua.yu@intel.com, james.hog
+Cc: gpkulkarni@gmail.com
 
-From: Michal Hocko <mhocko@suse.com>
+enabled numa balancing for arm64 platforms.
+added pte, pmd protnone helpers for use by automatic NUMA balancing.
 
-Introduce ___down_write for the fast path and reuse it for __down_write
-resp. __down_write_killable each using the respective generic slow path
-(rwsem_down_write_failed resp. rwsem_down_write_failed_killable).
-
-Signed-off-by: Michal Hocko <mhocko@suse.com>
+Reviewed-by: Robert Richter <rrichter@cavium.com>
+Signed-off-by: Ganapatrao Kulkarni <gkulkarni@caviumnetworks.com>
 ---
- arch/alpha/include/asm/rwsem.h | 18 ++++++++++++++++--
- 1 file changed, 16 insertions(+), 2 deletions(-)
+ arch/arm64/Kconfig               |  1 +
+ arch/arm64/include/asm/pgtable.h | 18 ++++++++++++++++++
+ 2 files changed, 19 insertions(+)
 
-diff --git a/arch/alpha/include/asm/rwsem.h b/arch/alpha/include/asm/rwsem.h
-index a83bbea62c67..0131a7058778 100644
---- a/arch/alpha/include/asm/rwsem.h
-+++ b/arch/alpha/include/asm/rwsem.h
-@@ -63,7 +63,7 @@ static inline int __down_read_trylock(struct rw_semaphore *sem)
- 	return res >= 0 ? 1 : 0;
+diff --git a/arch/arm64/Kconfig b/arch/arm64/Kconfig
+index fcf3950..8a7c02a 100644
+--- a/arch/arm64/Kconfig
++++ b/arch/arm64/Kconfig
+@@ -11,6 +11,7 @@ config ARM64
+ 	select ARCH_HAS_TICK_BROADCAST if GENERIC_CLOCKEVENTS_BROADCAST
+ 	select ARCH_USE_CMPXCHG_LOCKREF
+ 	select ARCH_SUPPORTS_ATOMIC_RMW
++	select ARCH_SUPPORTS_NUMA_BALANCING if NUMA
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select ARCH_WANT_COMPAT_IPC_PARSE_VERSION
+ 	select ARCH_WANT_FRAME_POINTERS
+diff --git a/arch/arm64/include/asm/pgtable.h b/arch/arm64/include/asm/pgtable.h
+index 2d545d7a..24ce546 100644
+--- a/arch/arm64/include/asm/pgtable.h
++++ b/arch/arm64/include/asm/pgtable.h
+@@ -347,6 +347,24 @@ static inline pgprot_t mk_sect_prot(pgprot_t prot)
+ 	return __pgprot(pgprot_val(prot) & ~PTE_TABLE_BIT);
  }
  
--static inline void __down_write(struct rw_semaphore *sem)
-+static inline long ___down_write(struct rw_semaphore *sem)
- {
- 	long oldcount;
- #ifndef	CONFIG_SMP
-@@ -83,10 +83,24 @@ static inline void __down_write(struct rw_semaphore *sem)
- 	:"=&r" (oldcount), "=m" (sem->count), "=&r" (temp)
- 	:"Ir" (RWSEM_ACTIVE_WRITE_BIAS), "m" (sem->count) : "memory");
- #endif
--	if (unlikely(oldcount))
-+	return oldcount;
++#ifdef CONFIG_NUMA_BALANCING
++
++/*
++ * These work without NUMA balancing but the kernel does not care. See the
++ * comment in include/asm-generic/pgtable.h
++ */
++static inline int pte_protnone(pte_t pte)
++{
++	return ((pte_val(pte) & (PTE_VALID | PTE_PROT_NONE)) = PTE_PROT_NONE);
 +}
 +
-+static inline void __down_write(struct rw_semaphore *sem)
++static inline int pmd_protnone(pmd_t pmd)
 +{
-+	if (unlikely(___down_write(sem)))
- 		rwsem_down_write_failed(sem);
- }
- 
-+static inline int __down_write_killable(struct rw_semaphore *sem)
-+{
-+	if (unlikely(___down_write(sem)))
-+		if (IS_ERR(rwsem_down_write_failed_killable(sem)))
-+			return -EINTR;
-+
-+	return 0;
++	return pte_protnone(pmd_pte(pmd));
 +}
++
++#endif /* CONFIG_NUMA_BALANCING */
 +
  /*
-  * trylock for writing -- returns 1 if successful, 0 if contention
+  * THP definitions.
   */
 -- 
-2.7.0
+1.8.1.4
 
