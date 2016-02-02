@@ -1,84 +1,133 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 17 Feb 2016 12:18:41 +0000
-Subject: Re: [PATCH 0/4] Enable PM and PM_GENERIC_DOMAINS for SoCs with PM Domains
-Message-Id: <20160217121840.GC346@verge.net.au>
+From: Ganapatrao Kulkarni <gkulkarni@caviumnetworks.com>
+Date: Tue, 02 Feb 2016 10:21:15 +0000
+Subject: [PATCH v10 0/8] arm64, numa: Add numa support for arm64 platforms
+Message-Id: <1454407763-1017-1-git-send-email-gkulkarni@caviumnetworks.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1455636712-3040-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1455636712-3040-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-arm-kernel@lists.infradead.org, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org, linux-pci@vger.kernel.org, linux-ia64@vger.kernel.org, linux-metag@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-arch@vger.kernel.org, Will.Deacon@arm.com, catalin.marinas@arm.com, robh+dt@kernel.org, mark.rutland@arm.com, grant.likely@linaro.org, leif.lindholm@linaro.org, rfranz@cavium.com, ard.biesheuvel@linaro.org, msalter@redhat.com, steve.capper@linaro.org, hanjun.guo@linaro.org, al.stone@linaro.org, arnd@arndb.de, pawel.moll@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, rjw@rjwysocki.net, lenb@kernel.org, marc.zyngier@arm.com, lorenzo.pieralisi@arm.com, bhelgaas@google.com, tony.luck@intel.com, fenghua.yu@intel.com, james.hog
+Cc: gpkulkarni@gmail.com
 
-On Tue, Feb 16, 2016 at 04:31:48PM +0100, Geert Uytterhoeven wrote:
-> 	Hi Simon, Magnus,
-> 
-> All supported Renesas ARM SoCs (except for Emma Mobile EV2) have clock
-> domains. Some SoCs also have power domains. To ensure proper operation
-> of on-SoC modules, module clocks must be ungated, and power domains must
-> be powered up when needed.
-> 
-> Currently the user can choose to build a kernel with power management
-> enabled or disabled:
->   - If CONFIG_PM=y, power domains and/or module clocks are handled
->     dynamically by Runtime PM and the generic power domain.
->   - If CONFIG_PM=n, power domains are assumed to be powered up by reset
->     state or by the boot loader, and module clocks are handled by the
->     legacy clock domain on driver (un)bind.
->     The latter is implemented using a platform bus notifier, which
->     applies not only to all on-SoC devices, but to all platform devices
->     present in the system.
-> 
-> To remove the dependency on implicit assumptions, and to get rid of the
-> peculiarities of the legacy clock domain, enable CONFIG_PM and
-> CONFIG_PM_GENERIC_DOMAINS unconditionally, for all Renesas ARM SoCs with
-> clock and/or power domains.
-> 
-> Patches:
->   - Patches 1 and 2 enable PM and PM_GENERIC_DOMAINS,
->   - Patch 3 removes the now unused legacy clock domain code for Renesas
->     ARM SoCs,
->   - Patch 4 relieves you from maintaining drivers/sh/, which is no
->     longer used on Renesas ARM SoCs, and returns it to the SuperH
->     people.
-> 
-> Notes:
->   - This does cause an increase in kernel size.  Given bloat-o-meter
->     reports a modest increase of 26 KiB for an RZ/A1H kernel, this
->     should not be a problem, even when used on RZ/A1H with XIP and
->     internal RAM only.
->   - Patch 3 does break booting R-Car Gen2 boards using pre-v4.3 DTSes
->     that don't have power-domains properties,
->   - Patch 3 may unbreak SuperH-based ARCH_SHMOBILE platforms, which were
->     probably broken since v4.4 by commit 0ba58de231066e47 ("drivers: sh:
->     Get rid of CONFIG_ARCH_SHMOBILE_MULTI"),
->   - Currently CONFIG_PM=n doesn't work anyway on r8a7795 as "drivers:
->     sh: Handle PM_GENERIC_DOMAINS_OF=n with new r8a7795 CPG/MSSR
->     driver" isn't upstream.
-> 
-> For your convenience, I've also pushed this series to
-> git://git.kernel.org/pub/scm/linux/kernel/git/geert/renesas-drivers.git#topic/mandatory-pm-v1
-> 
-> Thanks for your comments!
-> 
-> Geert Uytterhoeven (4):
->   ARM: shmobile: Enable PM and PM_GENERIC_DOMAINS for SoCs with PM
->     Domains
->   arm64: renesas: Enable PM and PM_GENERIC_DOMAINS for SoCs with PM
->     Domains
+v10:
+	- Incorporated review comments from Rob Herring.
+	- Moved numa binding and implementation to devicetree core.
+	- Added cleanup patch to remove redundant NODE_DATA macro from asm header files
+	- Include numa balancing support for arm64 patch in this series.
+	- Fix tile build issue reported by the kbuild robot(patch 7)
 
-Thanks, I have tentatively queued up the above two patches for v4.6.
+v9:	- Added cleanup patch to reuse and avoid redefinition of cpumask_of_pcibus
+	  as suggested from Will Deacon and Bjorn Helgaas.
+	- Including patch to Make pci-host-generic driver numa aware.
+	- Incorporated comment from Shannon Zhao.
 
-With regards to the remaining two patches, I propose deferring them
-for a few releases so that we can shake out any regressions that
-may occur before making a compatibility change.
+v8:
+	- Incorporated review comments of Mark Rutland and Will Deacon.
+	- Added pci helper function and macro for numa.
 
->   drivers: sh: Stop using the legacy clock domain on ARM
->   MAINTAINERS: Drop drivers/sh/ for Renesas ARM
-> 
->  MAINTAINERS                    |  1 -
->  arch/arm/mach-shmobile/Kconfig | 13 ++++++++-----
->  arch/arm64/Kconfig.platforms   |  3 ++-
->  drivers/Makefile               |  1 -
->  drivers/sh/pm_runtime.c        |  9 ---------
->  5 files changed, 10 insertions(+), 17 deletions(-)
+v7:
+	- managing numa memory mapping using memblock.
+	- Incorporated review comments of Mark Rutland.
+
+v6:
+	- defined and implemented the numa dt binding using
+	node property proximity and device node distance-map.
+	- renamed dt_numa to of_numa
+
+v5:
+        - created base verion of numa.c which creates dummy numa without using dt
+          on single socket platforms. Then added patches for dt support.
+        - Incorporated review comments from Hanjun Guo.
+
+v4:
+done changes as per Arnd review comments.
+
+v3:
+Added changes to support numa on arm64 based platforms.
+Tested these patches on cavium's multinode(2 node topology) platform.
+In this patchset, defined and implemented dt bindings for numa mapping
+for core and memory using device node property arm,associativity.
+
+v2:
+Defined and implemented numa map for memory, cores to node and
+proximity distance matrix of nodes.
+
+v1:
+Initial patchset to support numa on arm64 platforms.
+
+Note:
+        1. This patchset is tested for numa with dt on
+           thunderx single socket and dual socket boards.
+        2. Numa DT booting needs the dt memory nodes, which are deleted in current efi-stub,
+        hence to try numa with dt, you need to rebase with ard's patchset.
+        http://git.linaro.org/people/ard.biesheuvel/linux-arm.git/shortlog/refs/heads/arm64-uefi-early-fdt-handling
+	3. PATCH[7,8] are not tested for other architectures.
+
+Ganapatrao Kulkarni (8):
+  arm64, numa: adding numa support for arm64 platforms.
+  Documentation, dt, numa: dt bindings for numa.
+  dt, numa: adding numa dt binding implementation.
+  arm64, numa : Enable numa dt for arm64 platforms.
+  arm64, dt, thunderx: Add initial dts for Cavium Thunderx in 2 node
+    topology.
+  arm64, mm, numa: Adding numa balancing support for arm64.
+  topology, cleanup: Avoid redefinition of cpumask_of_pcibus in asm
+    header files.
+  numa, mm, cleanup: remove redundant NODE_DATA macro from asm header
+    files.
+
+ Documentation/devicetree/bindings/numa.txt      | 272 ++++++++
+ arch/arm64/Kconfig                              |  26 +
+ arch/arm64/boot/dts/cavium/Makefile             |   2 +-
+ arch/arm64/boot/dts/cavium/thunder-88xx-2n.dts  |  83 +++
+ arch/arm64/boot/dts/cavium/thunder-88xx-2n.dtsi | 806 ++++++++++++++++++++++++
+ arch/arm64/include/asm/mmzone.h                 |  10 +
+ arch/arm64/include/asm/numa.h                   |  45 ++
+ arch/arm64/include/asm/pgtable.h                |  18 +
+ arch/arm64/include/asm/topology.h               |   7 +
+ arch/arm64/kernel/pci.c                         |  10 +
+ arch/arm64/kernel/setup.c                       |   4 +
+ arch/arm64/kernel/smp.c                         |   4 +
+ arch/arm64/mm/Makefile                          |   1 +
+ arch/arm64/mm/init.c                            |  34 +-
+ arch/arm64/mm/mmu.c                             |   1 +
+ arch/arm64/mm/numa.c                            | 404 ++++++++++++
+ arch/ia64/include/asm/topology.h                |   4 -
+ arch/m32r/include/asm/mmzone.h                  |   4 +-
+ arch/metag/include/asm/mmzone.h                 |   4 +-
+ arch/metag/include/asm/topology.h               |   3 -
+ arch/powerpc/include/asm/mmzone.h               |   8 +-
+ arch/powerpc/include/asm/topology.h             |   4 -
+ arch/s390/include/asm/mmzone.h                  |   6 +-
+ arch/s390/include/asm/pci.h                     |   2 +-
+ arch/s390/include/asm/topology.h                |   1 +
+ arch/sh/include/asm/mmzone.h                    |   4 +-
+ arch/sh/include/asm/topology.h                  |   3 -
+ arch/sparc/include/asm/mmzone.h                 |   6 +-
+ arch/tile/include/asm/pci.h                     |   2 -
+ arch/tile/include/asm/topology.h                |   3 +
+ arch/x86/include/asm/mmzone.h                   |   3 +-
+ arch/x86/include/asm/mmzone_32.h                |   5 -
+ arch/x86/include/asm/mmzone_64.h                |  17 -
+ arch/x86/include/asm/pci.h                      |   2 +-
+ arch/x86/include/asm/topology.h                 |   1 +
+ drivers/of/Kconfig                              |  11 +
+ drivers/of/Makefile                             |   1 +
+ drivers/of/of_numa.c                            | 207 ++++++
+ include/asm-generic/mmzone.h                    |  24 +
+ include/asm-generic/topology.h                  |   4 +-
+ include/linux/of.h                              |   4 +
+ 41 files changed, 1986 insertions(+), 74 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/numa.txt
+ create mode 100644 arch/arm64/boot/dts/cavium/thunder-88xx-2n.dts
+ create mode 100644 arch/arm64/boot/dts/cavium/thunder-88xx-2n.dtsi
+ create mode 100644 arch/arm64/include/asm/mmzone.h
+ create mode 100644 arch/arm64/include/asm/numa.h
+ create mode 100644 arch/arm64/mm/numa.c
+ delete mode 100644 arch/x86/include/asm/mmzone_64.h
+ create mode 100644 drivers/of/of_numa.c
+ create mode 100644 include/asm-generic/mmzone.h
+
+-- 
+1.8.1.4
+
