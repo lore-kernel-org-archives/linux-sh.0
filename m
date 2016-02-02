@@ -1,55 +1,66 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Thu, 04 Feb 2016 19:45:26 +0000
-Subject: Re: [PATCH 2/3] i2c: mux: demux-pinctrl: add driver
-Message-Id: <20160204194526.GC1958@tetsubishi>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="DIOMP1UsTsWJauNi"
+From: Michal Hocko <mhocko@kernel.org>
+Date: Tue, 02 Feb 2016 20:19:21 +0000
+Subject: [RFC 04/12] alpha, rwsem: provide __down_write_killable
+Message-Id: <1454444369-2146-5-git-send-email-mhocko@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1452695369-29413-1-git-send-email-wsa@the-dreams.de>
- <1452695369-29413-3-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1452695369-29413-3-git-send-email-wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
-To: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Rob Herring <robh-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Pantelis Antoniou <pantelis.antoniou-OWPKS81ov/FWk0Htik3J/w@public.gmane.org>, Jan Luebbe <jlu-bIcnvbaLZ9MEGnE8C9+IrQ@public.gmane.org>
+References: <1454444369-2146-1-git-send-email-mhocko@kernel.org>
+In-Reply-To: <1454444369-2146-1-git-send-email-mhocko@kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: LKML <linux-kernel@vger.kernel.org>
+Cc: Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@redhat.com>, Thomas Gleixner <tglx@linutronix.de>, "H. Peter Anvin" <hpa@zytor.com>, "David S. Miller" <davem@davemloft.net>, Tony Luck <tony.luck@intel.com>, Andrew Morton <akpm@linux-foundation.org>, Chris Zankel <chris@zankel.net>, Max Filippov <jcmvbkbc@gmail.com>, x86@kernel.org, linux-alpha@vger.kernel.org, linux-ia64@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-arch@vger.kernel.org, Michal Hocko <mhocko@suse.com>
 
+From: Michal Hocko <mhocko@suse.com>
 
---DIOMP1UsTsWJauNi
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Introduce ___down_write for the fast path and reuse it for __down_write
+resp. __down_write_killable each using the respective generic slow path
+(rwsem_down_write_failed resp. rwsem_down_write_failed_killable).
 
-On Wed, Jan 13, 2016 at 03:29:28PM +0100, Wolfram Sang wrote:
-> From: Wolfram Sang <wsa+renesas@sang-engineering.com>
->=20
-> This driver allows an I2C bus to switch between multiple masters. This
-> is not hot-switching because connected I2C slaves will be
-> re-instantiated. It is meant to select the best I2C core at runtime once
-> the task is known. Example: Prefer i2c-gpio over another I2C core
-> because of HW errata affecting your use case.
->=20
-> Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Michal Hocko <mhocko@suse.com>
+---
+ arch/alpha/include/asm/rwsem.h | 18 ++++++++++++++++--
+ 1 file changed, 16 insertions(+), 2 deletions(-)
 
-Squashed with patch 1 and applied to for-next, thanks!
+diff --git a/arch/alpha/include/asm/rwsem.h b/arch/alpha/include/asm/rwsem.h
+index a83bbea62c67..0131a7058778 100644
+--- a/arch/alpha/include/asm/rwsem.h
++++ b/arch/alpha/include/asm/rwsem.h
+@@ -63,7 +63,7 @@ static inline int __down_read_trylock(struct rw_semaphore *sem)
+ 	return res >= 0 ? 1 : 0;
+ }
+ 
+-static inline void __down_write(struct rw_semaphore *sem)
++static inline long ___down_write(struct rw_semaphore *sem)
+ {
+ 	long oldcount;
+ #ifndef	CONFIG_SMP
+@@ -83,10 +83,24 @@ static inline void __down_write(struct rw_semaphore *sem)
+ 	:"=&r" (oldcount), "=m" (sem->count), "=&r" (temp)
+ 	:"Ir" (RWSEM_ACTIVE_WRITE_BIAS), "m" (sem->count) : "memory");
+ #endif
+-	if (unlikely(oldcount))
++	return oldcount;
++}
++
++static inline void __down_write(struct rw_semaphore *sem)
++{
++	if (unlikely(___down_write(sem)))
+ 		rwsem_down_write_failed(sem);
+ }
+ 
++static inline int __down_write_killable(struct rw_semaphore *sem)
++{
++	if (unlikely(___down_write(sem)))
++		if (IS_ERR(rwsem_down_write_failed_killable(sem)))
++			return -EINTR;
++
++	return 0;
++}
++
+ /*
+  * trylock for writing -- returns 1 if successful, 0 if contention
+  */
+-- 
+2.7.0
 
-
---DIOMP1UsTsWJauNi
-Content-Type: application/pgp-signature; name="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBAgAGBQJWs6pWAAoJEBQN5MwUoCm2nb0P/0CH19u6z2zi4Hjz0YLWMB+E
-LridHIIQpwHr6QuU9ld9pPKREEdcIEaGyHNDw+v5Qy+ekLdEFL9lcJFa+grCfi36
-qLBC31CnF+NpXa/kOlJErSwxolBwyVOhRiZF5aC4M/+LO9JajBkCjTKSNgPE8GmD
-neVOeimltztK1I4Hm/5OTwQZC4SxNJKh/0osbqq+jyorybq3WzyNe8up2dyX89nV
-PITCTyY3ZxjKh6x3TqmUb+mVACAQoX+Z62ycyJ5GAwQQieM4CXMwTLZ9hqwBYvbF
-iGutYsymc8lsWAiIEMecAh0ghqDY1Y/EJNT7oCAX8TS/5+4+06CW1ezHaA6qzvLk
-os9QfqVPuLbceFWTbkVyaVuQ7fi0liSjRMSZixJptBLWv5QyJXhjfXTv1m4+4/LB
-LIv6x8LlSWR1An4jTAzrbXc74ivl7/FaG+buqX+vqb21o1X0U+3zidPRfEcgCehl
-khSjFFXz8ArJDDQzaBeQgTGFBQB1cpTgKvOo2kXriSvng5u2RFKRInHcr5pMnWLf
-gGdW0pC2yTT7vNhaIqV2bVQP/X7TkOkiwSwQWBqDxn2gXkAFfquJ9f6WaXFcK/Fx
-PFQRxJHe1QfyLttCiULV+eyG0xBWQdL69nMxAB+bW/LKFSnIt2NJAmAGQAmfS6cw
-HWyg9XwDmnLj62XhDB7o
-=nkJo
------END PGP SIGNATURE-----
-
---DIOMP1UsTsWJauNi--
