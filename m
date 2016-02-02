@@ -1,35 +1,61 @@
-From: Vinod Koul <vinod.koul@intel.com>
-Date: Mon, 15 Feb 2016 17:41:24 +0000
-Subject: Re: [PATCH 1/2] dmaengine: rcar-dmac: add iommu support for slave transfers
-Message-Id: <20160215172924.GL19598@localhost>
+From: Michal Hocko <mhocko@kernel.org>
+Date: Tue, 02 Feb 2016 20:19:17 +0000
+Subject: [RFC 0/12] introduce down_write_killable for rw_semaphore
+Message-Id: <1454444369-2146-1-git-send-email-mhocko@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1452478667-30966-2-git-send-email-niklas.soderlund+renesas@ragnatech.se>
-In-Reply-To: <1452478667-30966-2-git-send-email-niklas.soderlund+renesas@ragnatech.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: LKML <linux-kernel@vger.kernel.org>
+Cc: Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@redhat.com>, Thomas Gleixner <tglx@linutronix.de>, "H. Peter Anvin" <hpa@zytor.com>, "David S. Miller" <davem@davemloft.net>, Tony Luck <tony.luck@intel.com>, Andrew Morton <akpm@linux-foundation.org>, Chris Zankel <chris@zankel.net>, Max Filippov <jcmvbkbc@gmail.com>, x86@kernel.org, linux-alpha@vger.kernel.org, linux-ia64@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-arch@vger.kernel.org
 
-On Thu, Feb 11, 2016 at 01:51:31AM +0200, Laurent Pinchart wrote:
-> Hi Vinod,
-> 
-> > Okay I did look back and checked. I tend to agree with you on this and
-> > client are not really taking care of mapping so easy approach would be to
-> > get this fixed in dmanegine which helps in IOMMU case (which I still think
-> > is in infancy, but who know how designers will throw their pipe dreams at
-> > us)
-> > 
-> > Now, am checking this with Dan on why we started with client based mapping
-> > assumption in case of slave, we don't want to miss anything here, so I will
-> > get back in couple of days..
+Hi,
+the following patchset implements a killable variant of write lock for
+rw_semaphore. My usecase is to turn as many mmap_sem write users to use
+a killable variant which will be helpful for the oom_reaper [1] to
+asynchronously tear down the oom victim address space which requires
+mmap_sem for read. This will reduce a likelihood of OOM livelocks caused
+by oom victim being stuck on a lock or other resource which prevents it
+to reach its exit path and release the memory. I haven't implemented
+the killable variant of the read lock because I do not have any usecase
+for this API.
 
-So discussed a bit with Dan, and now have ressurected the patch from Linus
-and compiled with it, nothing seems to break. But I think for slave cases we
-should also change the prep_  calls to take phys_addr_t which will fix the
-case for IOMMU being on either side as you pointed out.
+The patchset is organized as follows.
+- Patch 1 is a trivial cleanup
+- Patch 2, I belive, shouldn't introduce any functional changes as per
+  Documentation/memory-barriers.txt.
+- Patch 3 is the preparatory work and necessary infrastructure for
+  down_write_killable. It implements generic __down_write_killable
+  and prepares the write lock slow path to bail out earlier when told so
+- Patch 4-9 are implementing arch specific __down_write_killable. One
+  patch per architecture. I haven't even tried to compile test anything but
+  sparch which uses CONFIG_RWSEM_GENERIC_SPINLOCK in allnoconfig.
+  Those shold be mostly trivial.
+- One exception is x86 which replaces the current implementation of
+  __down_write with the generic one to make easier to read and get rid
+  of one level of indirection to the slow path. More on that in patch 10.
+  I do not have any problems to drop patch 10 and rework 11 to the current
+  inline asm but I think the easier code would be better.
+- finally patch 11 implements down_write_killable and ties everything
+  together. I am not really an expert on lockdep so I hope I got it right.
 
-Should we keep interleaved template as dma or phys, am for latter. Only non
-slave cases will be dma types and mapping done by clients.
+Many of arch specific patches are basically same and I can squash them
+into one patch if this is preferred but I thought that one patch per
+arch is preferable.
 
--- 
-~Vinod
+My patch to change mmap_sem write users to killable form is not part
+of the series because it is not finished yet but I guess it is not
+really necessary for the RFC. The API is used in the same way as
+mutex_lock_killable.
+
+I have tested on x86 with OOM situations with high mmap_sem contention
+(basically many parallel page faults racing with many parallel mmap/munmap
+tight loops) so the waiters for the write locks are routinely interrupted
+by SIGKILL.
+
+Patches should apply cleanly on both Linus and next tree.
+
+Any feedback is highly appreciated.
+---
+[1] http://lkml.kernel.org/r/1452094975-551-1-git-send-email-mhocko@kernel.org
+
