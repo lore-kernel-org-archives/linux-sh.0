@@ -1,7 +1,7 @@
 From: Michal Hocko <mhocko@kernel.org>
-Date: Tue, 02 Feb 2016 20:19:25 +0000
-Subject: [RFC 08/12] sparc, rwsem: provide __down_write_killable
-Message-Id: <1454444369-2146-9-git-send-email-mhocko@kernel.org>
+Date: Tue, 02 Feb 2016 20:19:26 +0000
+Subject: [RFC 09/12] xtensa, rwsem: provide __down_write_killable
+Message-Id: <1454444369-2146-10-git-send-email-mhocko@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1454444369-2146-1-git-send-email-mhocko@kernel.org>
 In-Reply-To: <1454444369-2146-1-git-send-email-mhocko@kernel.org>
@@ -18,24 +18,24 @@ rwsem_down_write_failed_killable slow path and return -EINTR if killed.
 
 Signed-off-by: Michal Hocko <mhocko@suse.com>
 ---
- arch/sparc/include/asm/rwsem.h | 13 +++++++++++++
+ arch/xtensa/include/asm/rwsem.h | 13 +++++++++++++
  1 file changed, 13 insertions(+)
 
-diff --git a/arch/sparc/include/asm/rwsem.h b/arch/sparc/include/asm/rwsem.h
-index e5a0d575bc7f..c1e9e32e8b63 100644
---- a/arch/sparc/include/asm/rwsem.h
-+++ b/arch/sparc/include/asm/rwsem.h
-@@ -55,6 +55,19 @@ static inline void __down_write(struct rw_semaphore *sem)
+diff --git a/arch/xtensa/include/asm/rwsem.h b/arch/xtensa/include/asm/rwsem.h
+index 593483f6e1ff..6283823b8040 100644
+--- a/arch/xtensa/include/asm/rwsem.h
++++ b/arch/xtensa/include/asm/rwsem.h
+@@ -59,6 +59,19 @@ static inline void __down_write(struct rw_semaphore *sem)
  		rwsem_down_write_failed(sem);
  }
  
 +static inline int __down_write_killable(struct rw_semaphore *sem)
 +{
-+	long tmp;
++	int tmp;
 +
-+	tmp = atomic64_add_return(RWSEM_ACTIVE_WRITE_BIAS,
-+				  (atomic64_t *)(&sem->count));
-+	if (unlikely(tmp != RWSEM_ACTIVE_WRITE_BIAS))
++	tmp = atomic_add_return(RWSEM_ACTIVE_WRITE_BIAS,
++				(atomic_t *)(&sem->count));
++	if (tmp != RWSEM_ACTIVE_WRITE_BIAS)
 +		if (IS_ERR(rwsem_down_write_failed_killable(sem)))
 +			return -EINTR;
 +
@@ -44,7 +44,7 @@ index e5a0d575bc7f..c1e9e32e8b63 100644
 +
  static inline int __down_write_trylock(struct rw_semaphore *sem)
  {
- 	long tmp;
+ 	int tmp;
 -- 
 2.7.0
 
