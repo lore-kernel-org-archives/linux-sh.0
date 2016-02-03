@@ -1,7 +1,7 @@
-From: Hisao Munakata <hisao.munakata.vt@renesas.com>
-Date: Wed, 03 Feb 2016 04:57:05 +0000
-Subject: RE: [LTSI-dev] THERMAL:Incorrect measured temperature value after unbind/bind
-Message-Id: <SG2PR06MB11514D8F02AF6F070257353DBED00@SG2PR06MB1151.apcprd06.prod.outlook.com>
+From: Greg KH <gregkh@linuxfoundation.org>
+Date: Wed, 03 Feb 2016 07:11:11 +0000
+Subject: Re: [LTSI-dev] THERMAL:Incorrect measured temperature value after unbind/bind
+Message-Id: <20160203071111.GA11976@kroah.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20160203041020.GA22555@kroah.com>
 In-Reply-To: <20160203041020.GA22555@kroah.com>
@@ -10,35 +10,28 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-R3JlZw0KDQpJZiBJIGFtIG5vdCB3cm9uZywgTFRTSSBjYW4gbWVyZ2UgbGludXgtbmV4dCAobm90
-IHlldCBtZXJnZWQpDQpmaXggdW5saWtlIHJlZ3VsYXIgTFRTIHJlbGVhc2UsIGlmIGl0IGlzIGRl
-bWFuZGVkIGJ5IHRoZSBpbmR1c3RyeS4NCg0KSW4gdGhpcyBwYXJ0aWN1bGFyIGNhc2UsIEkgdGhp
-bmsgaXQgaXMgdG9vIGxhdGUgYXMgTFRTSS00LjEgaXMgYWxyZWFkeSByZWxlYXNlZC4NCkJ1dCBJ
-IHdhbnRlZCB0byByZWNvbmZpcm0gZ3VpZGVsaW5lIG9mIExUU0kgcGF0Y2ggYWRvcHRpb24uDQpG
-b3IgbWUgbGludXgtbmV4dCBjb2RlIGlzIGFscmVhZHkgdmVyaWZpZWQgaW4gdGhlIGNvbW11bml0
-eSBhbmQNCml0IGlzIHJlbGF0aXZlbHkgY2xlYW4gYW5kIHNhZmUgZml4IGNvbXBhcmVkIHRvIGlu
-LWhvdXNlIHBhdGNoLg0KDQpIb3cgZG8geW91IHRoaW5rPw0KDQpNdW5ha2F0YQ0KDQotLS0tLU9y
-aWdpbmFsIE1lc3NhZ2UtLS0tLQ0KRnJvbTogR3JlZyBLSCBbbWFpbHRvOmdyZWdraEBsaW51eGZv
-dW5kYXRpb24ub3JnXSANClNlbnQ6IFdlZG5lc2RheSwgRmVicnVhcnkgMDMsIDIwMTYgMToxMCBQ
-TQ0KVG86IE5ndXllbiBWaWV0IER1bmcgPG52LWR1bmdAamluc28uY28uanA+DQpDYzogbHRzaS1k
-ZXZAbGlzdHMubGludXhmb3VuZGF0aW9uLm9yZzsgbGludXgtc2hAdmdlci5rZXJuZWwub3JnOyBZ
-b3NoaWhpcm8gU2hpbW9kYSA8eW9zaGloaXJvLnNoaW1vZGEudWhAcmVuZXNhcy5jb20+OyBIaXNh
-byBNdW5ha2F0YSA8aGlzYW8ubXVuYWthdGEudnRAcmVuZXNhcy5jb20+OyBLdW5pbm9yaSBNb3Jp
-bW90byA8a3VuaW5vcmkubW9yaW1vdG8uZ3hAcmVuZXNhcy5jb20+DQpTdWJqZWN0OiBSZTogW0xU
-U0ktZGV2XSBUSEVSTUFMOkluY29ycmVjdCBtZWFzdXJlZCB0ZW1wZXJhdHVyZSB2YWx1ZSBhZnRl
-ciB1bmJpbmQvYmluZA0KDQpPbiBXZWQsIEZlYiAwMywgMjAxNiBhdCAwOTo1NTowOUFNICswOTAw
-LCBOZ3V5ZW4gVmlldCBEdW5nIHdyb3RlOg0KPiBIaSwNCj4gDQo+IHdoZW4gdGVzdHRpbmcgTFRT
-SS12NC4xLjEzLXJjMSBvbiB0aGUgU09DIG9mIFJFTkVTQVMoTGFnZXIgYm9hcmQsIA0KPiBLb2Vs
-c2NoIGJvYXJkKSwgd2UgaGF2ZSBmb3VuZCB0aGUgZm9sbG93aW5nIHRoZSBmYWlsdXJlIGFib3V0
-IHRoZSANCj4gcmNhcl90aGVybWFsIGRyaXZlci4NCj4gRGV0YWlsIG9mIHRoaXMgZmFpbHVyZSBp
-czoNCj4gW0FmdGVyIHVuYmluZC9yZWJpbmQgcmNhcl90aGVybWFsIG1lYXN1cmVkIHRlbXBlcmF0
-dXJlIGlzIG5vdCANCj4gY29ycmVjdCgtNjUuMMKwQyldIGVycm9yIGxvZzoNCj4gIEtvZWxzY2hf
-VGhlcm1hbF91bmJpbmRfcmViaW5kX2Vycm9yX2xvZy50eHQNCj4gIExhZ2VyX1RoZXJtYWxfdW5i
-aW5kX3JlYmluZF9lcnJvcl9sb2cudHh0DQo+IA0KPiBXZSBoYXZlIGNoZWNrZWQgdGhhdCB0aGlz
-IGZhaWx1cmUgaGFkIGZpeGVkIGJ5IG9uZSBQYXRjaCBvZiBMaW51eC1OZXh0IA0KPiBicmFuY2gu
-DQo+ICg1ZGU4NWI5ZDU3YWJhM2VkMmUwNDc1OWU2ZGIzYjllODI2ZGQwYjA2DQo+ICJQTSAvIHJ1
-bnRpbWU6IFJlLWluaXQgcnVudGltZSBQTSBzdGF0ZXMgYXQgcHJvYmUgZXJyb3IgYW5kIGRyaXZl
-ciANCj4gdW5iaW5kIikNCj4gDQo+IFBsZWFzZSBjb25zaWRlciB0aGlzIHBhdGNoIHRvIGZpeCBl
-cnJvciBmb3IgbmV4dCBMVFNJIHJlbGVhc2UNCg0KSSdtIGEgYml0IHdvcnJpZWQgdGhhdCBzb21l
-dGhpbmcgbGlrZSB0aGlzIGlzbid0IGluIHRoZSBzdGFibGUga2VybmVsIHJlbGVhc2VzLCBzaG91
-bGRuJ3QgaXQgYWxzbyBnbyB0aGVyZSBhcyB3ZWxsPw0KDQp0aGFua3MsDQoNCmdyZWcgay1oDQo
+On Wed, Feb 03, 2016 at 04:57:05AM +0000, Hisao Munakata wrote:
+> Greg
+> 
+> If I am not wrong, LTSI can merge linux-next (not yet merged)
+> fix unlike regular LTS release, if it is demanded by the industry.
+
+The patch is in Linus's tree, I don't understand why you are referring
+to linux-next here, it came out in 4.5-rc1.
+
+> In this particular case, I think it is too late as LTSI-4.1 is already released.
+> But I wanted to reconfirm guideline of LTSI patch adoption.
+> For me linux-next code is already verified in the community and
+> it is relatively clean and safe fix compared to in-house patch.
+> 
+> How do you think?
+
+I think that if this is a bugfix that really is needed, then it should
+probably go to the stable releases so that everyone can benifit.  Why
+wouldn't it be needed there first?  Then, any LTSI user will
+automatically get it when they update their base kernel version, as they
+always should be doing.
+
+thanks,
+
+greg k-h
