@@ -1,68 +1,46 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Wed, 03 Feb 2016 21:59:52 +0000
-Subject: [PATCH 2/2] of: provide of_n_{addr,size}_cells wrappers for !CONFIG_OF
-Message-Id: <1454536806-3755190-2-git-send-email-arnd@arndb.de>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 04 Feb 2016 18:43:35 +0000
+Subject: Re: [PATCH v3 2/2] pinctrl: sh-pfc: Rename PINMUX_IPSR_DATA() to PINMUX_IPSR_GPSR()
+Message-Id: <4156451.gvQvsaIaBa@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1454536806-3755190-1-git-send-email-arnd@arndb.de>
-In-Reply-To: <1454536806-3755190-1-git-send-email-arnd@arndb.de>
+References: <1448890332-773-1-git-send-email-geert+renesas@glider.be> <1448890332-773-3-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1448890332-773-3-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Linus Walleij <linus.walleij@linaro.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Niklas =?ISO-8859-1?Q?S=F6derlund?= <niklas.soderlund@ragnatech.se>, Magnus Damm <damm@opensource.se>, Nobuhiro Iwamatsu <iwamatsu@nigauri.org>, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org
 
-The pci-rcar driver is enabled for compile tests, and this has
-now shown that the driver cannot build without CONFIG_OF,
-following the inclusion of f8f2fe7355fb "PCI: rcar: Use new OF
-interrupt mapping when possible":
+Hi Geert,
 
-../drivers/pci/host/pcie-rcar.c: In function 'pci_dma_range_parser_init':
-../drivers/pci/host/pcie-rcar.c:856:2: error: implicit declaration of function 'of_n_addr_cells' [-Werror=implicit-function-declaration]
-  parser->pna = of_n_addr_cells(node);
-  ^
-As pointed out by Ben Dooks and Geert Uytterhoeven, this is actually
-supposed to build fine, which we can achieve if we make the
-declaration of of_irq_parse_and_map_pci conditional on CONFIG_OF
-and provide an empty inline function otherwise, as we do for
-a lot of other of interfaces.
+Thank you for the patch.
 
-This lets us build the rcar_pci driver again without CONFIG_OF
-for build testing. All platforms using this driver select OF,
-so this doesn't change anything for the users.
+On Monday 30 November 2015 14:32:12 Geert Uytterhoeven wrote:
+> This macro describes a pinmux configuration that needs configuration in
+> both a Peripheral Function Select Register (IPSR) and in a
+> GPIO/Peripheral Function Select Register 1 (GPSR). Reflect that in the
+> macro name for clarity.
+> 
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Arnd Bergmann <arnd@arndb.de>
-Cc: devicetree@vger.kernel.org
-Cc: Rob Herring <robh+dt@kernel.org>
-Cc: Grant Likely <grant.likely@linaro.org>
-Cc: Lucas Stach <l.stach@pengutronix.de>
-Cc: Bjorn Helgaas <bhelgaas@google.com>
-Cc: Magnus Damm <damm@opensource.se>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Ben Dooks <ben.dooks@codethink.co.uk>
-Cc: linux-pci@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 
----
-I originally sent the patch in 2014 when things initially broke
-and then forgot about while it was applied in my randconfig patch
-stack. It's still broken and I think this is hte correct fix.
----
- include/linux/of.h | 3 +++
- 1 file changed, 3 insertions(+)
+> ---
+> v3:
+>   - New.
+> ---
+>  drivers/pinctrl/sh-pfc/pfc-r8a7778.c |  690 ++++++++++-----------
+>  drivers/pinctrl/sh-pfc/pfc-r8a7779.c | 1136 +++++++++++++++---------------
+>  drivers/pinctrl/sh-pfc/pfc-r8a7790.c |  774 +++++++++++------------
+>  drivers/pinctrl/sh-pfc/pfc-r8a7791.c |  624 +++++++++----------
+>  drivers/pinctrl/sh-pfc/pfc-r8a7794.c |  844 ++++++++++++-------------
+>  drivers/pinctrl/sh-pfc/pfc-r8a7795.c |  554 ++++++++---------
+>  drivers/pinctrl/sh-pfc/pfc-sh7734.c  |  412 ++++++------
+>  drivers/pinctrl/sh-pfc/sh_pfc.h      |    2 +-
+>  8 files changed, 2518 insertions(+), 2518 deletions(-)
 
-diff --git a/include/linux/of.h b/include/linux/of.h
-index f8d9b558f9bd..9c941cd3ba58 100644
---- a/include/linux/of.h
-+++ b/include/linux/of.h
-@@ -565,6 +565,9 @@ static inline struct device_node *of_get_cpu_node(int cpu,
- 	return NULL;
- }
- 
-+static inline int of_n_addr_cells(struct device_node *np) { return 0; }
-+static inline int of_n_size_cells(struct device_node *np) { return 0; }
-+
- static inline int of_property_read_u64(const struct device_node *np,
- 				       const char *propname, u64 *out_value)
- {
 -- 
-2.7.0
+Regards,
+
+Laurent Pinchart
 
