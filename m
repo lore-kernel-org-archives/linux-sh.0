@@ -1,105 +1,54 @@
-From: Michal Hocko <mhocko@kernel.org>
-Date: Mon, 29 Feb 2016 12:58:25 +0000
-Subject: [PATCH 11/11] locking, rwsem: provide down_write_killable
-Message-Id: <1456750705-7141-12-git-send-email-mhocko@kernel.org>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Thu, 04 Feb 2016 19:47:54 +0000
+Subject: Re: [PATCH 3/3] ARM: shmobile: r8a7790: rework dts to use i2c demuxer
+Message-Id: <20160204194754.GD1958@tetsubishi>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="jL2BoiuKMElzg3CS"
 List-Id: <linux-sh.vger.kernel.org>
-References: <1456750705-7141-1-git-send-email-mhocko@kernel.org>
-In-Reply-To: <1456750705-7141-1-git-send-email-mhocko@kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: LKML <linux-kernel@vger.kernel.org>
-Cc: Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@redhat.com>, Thomas Gleixner <tglx@linutronix.de>, "H. Peter Anvin" <hpa@zytor.com>, "David S. Miller" <davem@davemloft.net>, Tony Luck <tony.luck@intel.com>, Andrew Morton <akpm@linux-foundation.org>, Chris Zankel <chris@zankel.net>, Max Filippov <jcmvbkbc@gmail.com>, x86@kernel.org, linux-alpha@vger.kernel.org, linux-ia64@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-arch@vger.kernel.org, Michal Hocko <mhocko@suse.com>
+References: <1452695369-29413-1-git-send-email-wsa@the-dreams.de>
+ <1452695369-29413-4-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1452695369-29413-4-git-send-email-wsa@the-dreams.de>
+To: linux-i2c@vger.kernel.org
+Cc: devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, linux-kernel@vger.kernel.org, Rob Herring <robh@kernel.org>, Pantelis Antoniou <pantelis.antoniou@konsulko.com>, Jan Luebbe <jlu@pengutronix.de>
 
-From: Michal Hocko <mhocko@suse.com>
 
-Now that all the architectures implement the necessary glue code
-we can introduce down_write_killable. The only difference wrt. regular
-down_write is that the slow path waits in TASK_KILLABLE state and the
-interruption by the fatal signal is reported as -EINTR to the caller.
+--jL2BoiuKMElzg3CS
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Signed-off-by: Michal Hocko <mhocko@suse.com>
----
- include/linux/lockdep.h | 15 +++++++++++++++
- include/linux/rwsem.h   |  1 +
- kernel/locking/rwsem.c  | 19 +++++++++++++++++++
- 3 files changed, 35 insertions(+)
+On Wed, Jan 13, 2016 at 03:29:29PM +0100, Wolfram Sang wrote:
+> From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+>=20
+> Create a seperate bus for HDMI related I2C slaves and assign it
+> to a i2c-gpio master. It can be switched to the i2c-rcar or
+> i2c-sh_mobile core at runtime.
+>=20
+> Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-diff --git a/include/linux/lockdep.h b/include/linux/lockdep.h
-index d026b190c530..accfe56d8c51 100644
---- a/include/linux/lockdep.h
-+++ b/include/linux/lockdep.h
-@@ -444,6 +444,18 @@ do {								\
- 	lock_acquired(&(_lock)->dep_map, _RET_IP_);			\
- } while (0)
- 
-+#define LOCK_CONTENDED_RETURN(_lock, try, lock)			\
-+({								\
-+	int ____err = 0;					\
-+	if (!try(_lock)) {					\
-+		lock_contended(&(_lock)->dep_map, _RET_IP_);	\
-+		____err = lock(_lock);				\
-+	}							\
-+	if (!____err)						\
-+		lock_acquired(&(_lock)->dep_map, _RET_IP_);	\
-+	____err;						\
-+})
-+
- #else /* CONFIG_LOCK_STAT */
- 
- #define lock_contended(lockdep_map, ip) do {} while (0)
-@@ -452,6 +464,9 @@ do {								\
- #define LOCK_CONTENDED(_lock, try, lock) \
- 	lock(_lock)
- 
-+#define LOCK_CONTENDED_RETURN(_lock, try, lock) \
-+	lock(_lock)
-+
- #endif /* CONFIG_LOCK_STAT */
- 
- #ifdef CONFIG_LOCKDEP
-diff --git a/include/linux/rwsem.h b/include/linux/rwsem.h
-index 7d7ae029dac5..d1c12d160ace 100644
---- a/include/linux/rwsem.h
-+++ b/include/linux/rwsem.h
-@@ -118,6 +118,7 @@ extern int down_read_trylock(struct rw_semaphore *sem);
-  * lock for writing
-  */
- extern void down_write(struct rw_semaphore *sem);
-+extern int __must_check down_write_killable(struct rw_semaphore *sem);
- 
- /*
-  * trylock for writing -- returns 1 if successful, 0 if contention
-diff --git a/kernel/locking/rwsem.c b/kernel/locking/rwsem.c
-index 205be0ce34de..c817216c1615 100644
---- a/kernel/locking/rwsem.c
-+++ b/kernel/locking/rwsem.c
-@@ -55,6 +55,25 @@ void __sched down_write(struct rw_semaphore *sem)
- EXPORT_SYMBOL(down_write);
- 
- /*
-+ * lock for writing
-+ */
-+int __sched down_write_killable(struct rw_semaphore *sem)
-+{
-+	might_sleep();
-+	rwsem_acquire(&sem->dep_map, 0, 0, _RET_IP_);
-+
-+	if (LOCK_CONTENDED_RETURN(sem, __down_write_trylock, __down_write_killable)) {
-+		rwsem_release(&sem->dep_map, 1, _RET_IP_);
-+		return -EINTR;
-+	}
-+
-+	rwsem_set_owner(sem);
-+	return 0;
-+}
-+
-+EXPORT_SYMBOL(down_write_killable);
-+
-+/*
-  * trylock for writing -- returns 1 if successful, 0 if contention
-  */
- int down_write_trylock(struct rw_semaphore *sem)
--- 
-2.7.0
+After some discussion with Simon (thanks!), I will replace this patch
+with one which is not only simpler but also more useful ;) Stay tuned.
 
+
+--jL2BoiuKMElzg3CS
+Content-Type: application/pgp-signature; name="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBAgAGBQJWs6rpAAoJEBQN5MwUoCm29q0P/1MDlCEN0Lo9oRItp4xMqcat
+xa/wYnq+R/K+i1p7LCvzcRRGVBLDLakDNA5/XH9o5maem9S0DxRB5bu7A79bbowA
+dvb+XaIRv4WS2qRJPDBJyt4kORSeCSOcJ7aaSrgwyHr58C4gV58x0rEBk9lNC5O5
+B9l72H50kE1D5o+seWcf7xxXT9D81raAs4sP6d/7ATOrFz3FRR82XGcgqY5xHCS6
+sSSPXIQ0Zsn+AK4+U+Qn8I4rZvk4J93OLeGHSHiJrmckFJoNJFJjPuTb6+qPAxWN
+v033xl8CywXEzMEy7YIYRr99PwCkYzdCXGtNUKnCv0NKRHIyluFgKl0FqhH9jGRl
+pcHEXfSoK0+8SV0tJyGH/wi7YBj0bGHtnhIoik5U2S/CJE2mB16CPhzNXTWrtYdu
+qat3M4gOxPDojwSk2EQc7PcSgpEkhQ1moCXcLeoGQB6V8p4zThZEGkTilnOsZ++S
+djTLjaOiVsXRIS+6rbpYXAuLECY08nH/yYX1xvRfYE6JA/t+MLAhrN4cbIS4LyO8
+HcuJPBr3MaWatzw94xZXZh1839RpenXBDBJ/eC/VNDkg+R+DvsS1g7M52aLHJG5H
+spWXpGiooptR3al+mtUQnUKyHysdvX3RqPNBOgr7V+EnFvNdxrsT5q7Cv3wCrR9A
+VRM1N/++VCIwKaDoQRSC
+=hLWU
+-----END PGP SIGNATURE-----
+
+--jL2BoiuKMElzg3CS--
