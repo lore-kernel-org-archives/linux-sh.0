@@ -1,41 +1,50 @@
-From: Hisao Munakata <hisao.munakata.vt@renesas.com>
-Date: Wed, 03 Feb 2016 07:15:47 +0000
-Subject: RE: [LTSI-dev] THERMAL:Incorrect measured temperature value after unbind/bind
-Message-Id: <SG2PR06MB11515360E808B5BFF59A9A69BED00@SG2PR06MB1151.apcprd06.prod.outlook.com>
+From: Nguyen Viet Dung <nv-dung@jinso.co.jp>
+Date: Thu, 04 Feb 2016 00:23:51 +0000
+Subject: Re: [LTSI-dev] THERMAL:Incorrect measured temperature value after unbind/bind
+Message-Id: <56B29A17.3030102@jinso.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20160203041020.GA22555@kroah.com>
 In-Reply-To: <20160203041020.GA22555@kroah.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
 To: linux-sh@vger.kernel.org
 
-R3JlZw0KDQpUaGFua3MgZm9yIHRoZSBjbGFyaWZpY2F0aW9uLCBub3cgdW5kZXJzdGFuZCB3YXkg
-eW91IHdhcm4uDQpJIGZ1bGx5IGFncmVlIHdpdGggeW91ciB0aG91Z2h0Lg0KSSB3aWxsIGFzayB0
-ZWFtIHRvIHJlY29uc2lkZXIgaXRzIGltcG9ydGFuY2UuDQoNCkJlc3QNCk11bmFrYXRhDQoNCi0t
-LS0tT3JpZ2luYWwgTWVzc2FnZS0tLS0tDQpGcm9tOiBHcmVnIEtIIFttYWlsdG86Z3JlZ2toQGxp
-bnV4Zm91bmRhdGlvbi5vcmddIA0KU2VudDogV2VkbmVzZGF5LCBGZWJydWFyeSAwMywgMjAxNiA0
-OjExIFBNDQpUbzogSGlzYW8gTXVuYWthdGEgPGhpc2FvLm11bmFrYXRhLnZ0QHJlbmVzYXMuY29t
-Pg0KQ2M6IE5ndXllbiBWaWV0IER1bmcgPG52LWR1bmdAamluc28uY28uanA+OyBsdHNpLWRldkBs
-aXN0cy5saW51eGZvdW5kYXRpb24ub3JnOyBsaW51eC1zaEB2Z2VyLmtlcm5lbC5vcmc7IFlvc2hp
-aGlybyBTaGltb2RhIDx5b3NoaWhpcm8uc2hpbW9kYS51aEByZW5lc2FzLmNvbT47IEt1bmlub3Jp
-IE1vcmltb3RvIDxrdW5pbm9yaS5tb3JpbW90by5neEByZW5lc2FzLmNvbT4NClN1YmplY3Q6IFJl
-OiBbTFRTSS1kZXZdIFRIRVJNQUw6SW5jb3JyZWN0IG1lYXN1cmVkIHRlbXBlcmF0dXJlIHZhbHVl
-IGFmdGVyIHVuYmluZC9iaW5kDQoNCk9uIFdlZCwgRmViIDAzLCAyMDE2IGF0IDA0OjU3OjA1QU0g
-KzAwMDAsIEhpc2FvIE11bmFrYXRhIHdyb3RlOg0KPiBHcmVnDQo+IA0KPiBJZiBJIGFtIG5vdCB3
-cm9uZywgTFRTSSBjYW4gbWVyZ2UgbGludXgtbmV4dCAobm90IHlldCBtZXJnZWQpIGZpeCANCj4g
-dW5saWtlIHJlZ3VsYXIgTFRTIHJlbGVhc2UsIGlmIGl0IGlzIGRlbWFuZGVkIGJ5IHRoZSBpbmR1
-c3RyeS4NCg0KVGhlIHBhdGNoIGlzIGluIExpbnVzJ3MgdHJlZSwgSSBkb24ndCB1bmRlcnN0YW5k
-IHdoeSB5b3UgYXJlIHJlZmVycmluZyB0byBsaW51eC1uZXh0IGhlcmUsIGl0IGNhbWUgb3V0IGlu
-IDQuNS1yYzEuDQoNCj4gSW4gdGhpcyBwYXJ0aWN1bGFyIGNhc2UsIEkgdGhpbmsgaXQgaXMgdG9v
-IGxhdGUgYXMgTFRTSS00LjEgaXMgYWxyZWFkeSByZWxlYXNlZC4NCj4gQnV0IEkgd2FudGVkIHRv
-IHJlY29uZmlybSBndWlkZWxpbmUgb2YgTFRTSSBwYXRjaCBhZG9wdGlvbi4NCj4gRm9yIG1lIGxp
-bnV4LW5leHQgY29kZSBpcyBhbHJlYWR5IHZlcmlmaWVkIGluIHRoZSBjb21tdW5pdHkgYW5kIGl0
-IGlzIA0KPiByZWxhdGl2ZWx5IGNsZWFuIGFuZCBzYWZlIGZpeCBjb21wYXJlZCB0byBpbi1ob3Vz
-ZSBwYXRjaC4NCj4gDQo+IEhvdyBkbyB5b3UgdGhpbms/DQoNCkkgdGhpbmsgdGhhdCBpZiB0aGlz
-IGlzIGEgYnVnZml4IHRoYXQgcmVhbGx5IGlzIG5lZWRlZCwgdGhlbiBpdCBzaG91bGQgcHJvYmFi
-bHkgZ28gdG8gdGhlIHN0YWJsZSByZWxlYXNlcyBzbyB0aGF0IGV2ZXJ5b25lIGNhbiBiZW5pZml0
-LiAgV2h5IHdvdWxkbid0IGl0IGJlIG5lZWRlZCB0aGVyZSBmaXJzdD8gIFRoZW4sIGFueSBMVFNJ
-IHVzZXIgd2lsbCBhdXRvbWF0aWNhbGx5IGdldCBpdCB3aGVuIHRoZXkgdXBkYXRlIHRoZWlyIGJh
-c2Uga2VybmVsIHZlcnNpb24sIGFzIHRoZXkgYWx3YXlzIHNob3VsZCBiZSBkb2luZy4NCg0KdGhh
-bmtzLA0KDQpncmVnIGstaA0K
+Hi Grep
+
+Thanhk for your reply.
+
+I have seen the consultation of you and Mr.munakara.
+I have understanded your thought.
+
+Best regard,
+Nguyen Viet Dung
+
+On 2016年02月03日 13:10, Greg KH wrote:
+> On Wed, Feb 03, 2016 at 09:55:09AM +0900, Nguyen Viet Dung wrote:
+>> Hi,
+>>
+>> when testting LTSI-v4.1.13-rc1 on the SOC of RENESAS(Lager board, Koelsch
+>> board),
+>> we have found the following the failure about the rcar_thermal driver.
+>> Detail of this failure is:
+>> [After unbind/rebind rcar_thermal measured temperature is not
+>> correct(-65.0°C)]
+>> error log:
+>>   Koelsch_Thermal_unbind_rebind_error_log.txt
+>>   Lager_Thermal_unbind_rebind_error_log.txt
+>>
+>> We have checked that this failure had fixed by one Patch of Linux-Next
+>> branch.
+>> (5de85b9d57aba3ed2e04759e6db3b9e826dd0b06
+>> "PM / runtime: Re-init runtime PM states at probe error and driver unbind")
+>>
+>> Please consider this patch to fix error for next LTSI release
+> I'm a bit worried that something like this isn't in the stable
+> kernel releases, shouldn't it also go there as well?
+>
+> thanks,
+>
+> greg k-h
+>
+
