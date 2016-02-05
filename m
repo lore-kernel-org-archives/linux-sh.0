@@ -1,79 +1,40 @@
-From: Dirk Behme <dirk.behme@gmail.com>
-Date: Wed, 03 Feb 2016 17:21:17 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 05 Feb 2016 09:57:59 +0000
 Subject: Re: [PATCH v2] arm64: dts: r8a7795: Add L2 cache-controller nodes
-Message-Id: <56B2370D.2010102@gmail.com>
+Message-Id: <20160205095758.GE16556@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1452953856-5146-1-git-send-email-dirk.behme@gmail.com>
-In-Reply-To: <1452953856-5146-1-git-send-email-dirk.behme@gmail.com>
+ <56B2370D.2010102@gmail.com>
+In-Reply-To: <56B2370D.2010102@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On 16.01.2016 15:17, Dirk Behme wrote:
-> From: Geert Uytterhoeven <geert+renesas@glider.be>
->
-> Add device nodes for the L2 caches, and link the CPU node to its L2
-> cache node.
->
-> The L2 cache for the Cortex-A57 CPU cores is 2 MiB large (organized as
-> 128 KiB x 16 ways).
->
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> Signed-off-by: Dirk Behme <dirk.behme@gmail.com>
-> ---
-> Changes in v2: Dropped the not yet merged Cortex A53 part.
->
->   arch/arm64/boot/dts/renesas/r8a7795.dtsi | 8 ++++++++
->   1 file changed, 8 insertions(+)
->
-> diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-> index a82bce8..a22ae65 100644
-> --- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-> +++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-> @@ -39,6 +39,7 @@
->   			compatible = "arm,cortex-a57", "arm,armv8";
->   			reg = <0x0>;
->   			device_type = "cpu";
-> +			next-level-cache = <&L2_CA57>;
->   			enable-method = "psci";
->   		};
->
-> @@ -46,22 +47,29 @@
->   			compatible = "arm,cortex-a57","arm,armv8";
->   			reg = <0x1>;
->   			device_type = "cpu";
-> +			next-level-cache = <&L2_CA57>;
->   			enable-method = "psci";
->   		};
->   		a57_2: cpu@2 {
->   			compatible = "arm,cortex-a57","arm,armv8";
->   			reg = <0x2>;
->   			device_type = "cpu";
-> +			next-level-cache = <&L2_CA57>;
->   			enable-method = "psci";
->   		};
->   		a57_3: cpu@3 {
->   			compatible = "arm,cortex-a57","arm,armv8";
->   			reg = <0x3>;
->   			device_type = "cpu";
-> +			next-level-cache = <&L2_CA57>;
->   			enable-method = "psci";
->   		};
->   	};
->
-> +	L2_CA57: cache-controller@0 {
-> +		compatible = "cache";
-> +	};
-> +
->   	extal_clk: extal {
->   		compatible = "fixed-clock";
->   		#clock-cells = <0>;
->
+[CC new linux-renesas-soc ML]
 
+Hi Dirk,
 
-Any further comments to this? If not, could this be applied?
+On Wed, Feb 03, 2016 at 06:21:17PM +0100, Dirk Behme wrote:
+> On 16.01.2016 15:17, Dirk Behme wrote:
+> >From: Geert Uytterhoeven <geert+renesas@glider.be>
+> >
+> >Add device nodes for the L2 caches, and link the CPU node to its L2
+> >cache node.
+> >
+> >The L2 cache for the Cortex-A57 CPU cores is 2 MiB large (organized as
+> >128 KiB x 16 ways).
+> >
+> >Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> >Signed-off-by: Dirk Behme <dirk.behme@gmail.com>
 
-Best regards
+[snip]
 
-Dirk
+> Any further comments to this? If not, could this be applied?
+
+Sorry for the delay.
+
+This looks good; I have queued it up.
+
+It should appear in the next (and devel) branches of my renesas tree soon.
+And in linux-next whenever it includes my updated next branch.
