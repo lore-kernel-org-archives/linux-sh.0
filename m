@@ -1,103 +1,140 @@
-From: Michal Hocko <mhocko@kernel.org>
-Date: Mon, 29 Feb 2016 12:58:24 +0000
-Subject: [PATCH 10/11] x86, rwsem: provide __down_write_killable
-Message-Id: <1456750705-7141-11-git-send-email-mhocko@kernel.org>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Sun, 07 Feb 2016 13:49:52 +0000
+Subject: Re: [PATCH v5] media: soc_camera: rcar_vin: Add ARGB8888 caputre format support
+Message-Id: <Pine.LNX.4.64.1602071449170.11458@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1456750705-7141-1-git-send-email-mhocko@kernel.org>
-In-Reply-To: <1456750705-7141-1-git-send-email-mhocko@kernel.org>
+References: <1453652009-4291-1-git-send-email-ykaneko0929@gmail.com>
+In-Reply-To: <1453652009-4291-1-git-send-email-ykaneko0929@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: LKML <linux-kernel@vger.kernel.org>
-Cc: Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@redhat.com>, Thomas Gleixner <tglx@linutronix.de>, "H. Peter Anvin" <hpa@zytor.com>, "David S. Miller" <davem@davemloft.net>, Tony Luck <tony.luck@intel.com>, Andrew Morton <akpm@linux-foundation.org>, Chris Zankel <chris@zankel.net>, Max Filippov <jcmvbkbc@gmail.com>, x86@kernel.org, linux-alpha@vger.kernel.org, linux-ia64@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-arch@vger.kernel.org, Michal Hocko <mhocko@suse.com>
+To: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Cc: linux-media@vger.kernel.org, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-From: Michal Hocko <mhocko@suse.com>
+Hi Kaneko-san,
 
-which uses the same fast path as __down_write except it falls back to
-call_rwsem_down_write_failed_killable slow path and return -EINTR if
-killed. To prevent from code duplication extract the skeleton of
-__down_write into a helper macro which just takes the semaphore
-and the slow path function to be called.
+On Mon, 25 Jan 2016, Yoshihiro Kaneko wrote:
 
-Signed-off-by: Michal Hocko <mhocko@suse.com>
----
- arch/x86/include/asm/rwsem.h | 41 ++++++++++++++++++++++++++++-------------
- arch/x86/lib/rwsem.S         |  8 ++++++++
- 2 files changed, 36 insertions(+), 13 deletions(-)
+> From: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
+> 
+> This patch adds ARGB8888 capture format support for R-Car Gen3.
+> 
+> Signed-off-by: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
+> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
 
-diff --git a/arch/x86/include/asm/rwsem.h b/arch/x86/include/asm/rwsem.h
-index 4a8292a0d6e1..d759c5f70f49 100644
---- a/arch/x86/include/asm/rwsem.h
-+++ b/arch/x86/include/asm/rwsem.h
-@@ -99,21 +99,36 @@ static inline int __down_read_trylock(struct rw_semaphore *sem)
- /*
-  * lock for writing
-  */
-+#define ____down_write(sem, slow_path)			\
-+({							\
-+	long tmp;					\
-+	struct rw_semaphore* ret = sem;			\
-+	asm volatile("# beginning down_write\n\t"	\
-+		     LOCK_PREFIX "  xadd      %1,(%2)\n\t"	\
-+		     /* adds 0xffff0001, returns the old value */ \
-+		     "  test " __ASM_SEL(%w1,%k1) "," __ASM_SEL(%w1,%k1) "\n\t" \
-+		     /* was the active mask 0 before? */\
-+		     "  jz        1f\n"			\
-+		     "  call " slow_path "\n"		\
-+		     "1:\n"				\
-+		     "# ending down_write"		\
-+		     : "+m" (sem->count), "=d" (tmp), "+a" (ret)	\
-+		     : "a" (sem), "1" (RWSEM_ACTIVE_WRITE_BIAS) \
-+		     : "memory", "cc");			\
-+	ret;						\
-+})
-+
- static inline void __down_write(struct rw_semaphore *sem)
- {
--	long tmp;
--	asm volatile("# beginning down_write\n\t"
--		     LOCK_PREFIX "  xadd      %1,(%2)\n\t"
--		     /* adds 0xffff0001, returns the old value */
--		     "  test " __ASM_SEL(%w1,%k1) "," __ASM_SEL(%w1,%k1) "\n\t"
--		     /* was the active mask 0 before? */
--		     "  jz        1f\n"
--		     "  call call_rwsem_down_write_failed\n"
--		     "1:\n"
--		     "# ending down_write"
--		     : "+m" (sem->count), "=d" (tmp)
--		     : "a" (sem), "1" (RWSEM_ACTIVE_WRITE_BIAS)
--		     : "memory", "cc");
-+	____down_write(sem, "call_rwsem_down_write_failed");
-+}
-+
-+static inline int __down_write_killable(struct rw_semaphore *sem)
-+{
-+	if (IS_ERR(____down_write(sem, "call_rwsem_down_write_failed_killable")))
-+		return -EINTR;
-+
-+	return 0;
- }
- 
- /*
-diff --git a/arch/x86/lib/rwsem.S b/arch/x86/lib/rwsem.S
-index be110efa0096..4534a7e912f3 100644
---- a/arch/x86/lib/rwsem.S
-+++ b/arch/x86/lib/rwsem.S
-@@ -106,6 +106,14 @@ ENTRY(call_rwsem_down_write_failed)
- 	ret
- ENDPROC(call_rwsem_down_write_failed)
- 
-+ENTRY(call_rwsem_down_write_failed_killable)
-+	save_common_regs
-+	movq %rax,%rdi
-+	call rwsem_down_write_failed_killable
-+	restore_common_regs
-+	ret
-+ENDPROC(call_rwsem_down_write_failed_killable)
-+
- ENTRY(call_rwsem_wake)
- 	FRAME_BEGIN
- 	/* do nothing if still outstanding active readers */
--- 
-2.7.0
+Thanks for the patch. I'll queue it for 4.6.
 
+Guennadi
+
+> ---
+> 
+> This patch is based on the for-4.6-1 branch of Guennadi's v4l-dvb tree.
+> 
+> v5 [Yoshihiro Kaneko]
+> * As suggested by Guennadi Liakhovetski
+>   rcar_vin_setup():
+>     - add a common error handler instead of a falling through to the
+>       default case.
+> * compile tested only
+> 
+> v4 [Yoshihiro Kaneko]
+> * As suggested by Sergei Shtylyov
+>   - revised an error message.
+> 
+> v3 [Yoshihiro Kaneko]
+> * rebased to for-4.6-1 branch of Guennadi's tree.
+> 
+> v2 [Yoshihiro Kaneko]
+> * As suggested by Sergei Shtylyov
+>   - fix the coding style of the braces.
+> 
+>  drivers/media/platform/soc_camera/rcar_vin.c | 39 +++++++++++++++++++++-------
+>  1 file changed, 29 insertions(+), 10 deletions(-)
+> 
+> diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
+> index dc75a80..3b8edf4 100644
+> --- a/drivers/media/platform/soc_camera/rcar_vin.c
+> +++ b/drivers/media/platform/soc_camera/rcar_vin.c
+> @@ -124,7 +124,7 @@
+>  #define VNDMR_EXRGB		(1 << 8)
+>  #define VNDMR_BPSM		(1 << 4)
+>  #define VNDMR_DTMD_YCSEP	(1 << 1)
+> -#define VNDMR_DTMD_ARGB1555	(1 << 0)
+> +#define VNDMR_DTMD_ARGB		(1 << 0)
+>  
+>  /* Video n Data Mode Register 2 bits */
+>  #define VNDMR2_VPS		(1 << 30)
+> @@ -643,21 +643,26 @@ static int rcar_vin_setup(struct rcar_vin_priv *priv)
+>  		output_is_yuv = true;
+>  		break;
+>  	case V4L2_PIX_FMT_RGB555X:
+> -		dmr = VNDMR_DTMD_ARGB1555;
+> +		dmr = VNDMR_DTMD_ARGB;
+>  		break;
+>  	case V4L2_PIX_FMT_RGB565:
+>  		dmr = 0;
+>  		break;
+>  	case V4L2_PIX_FMT_RGB32:
+> -		if (priv->chip = RCAR_GEN2 || priv->chip = RCAR_H1 ||
+> -		    priv->chip = RCAR_E1) {
+> -			dmr = VNDMR_EXRGB;
+> -			break;
+> -		}
+> +		if (priv->chip != RCAR_GEN2 && priv->chip != RCAR_H1 &&
+> +		    priv->chip != RCAR_E1)
+> +			goto e_format;
+> +
+> +		dmr = VNDMR_EXRGB;
+> +		break;
+> +	case V4L2_PIX_FMT_ARGB32:
+> +		if (priv->chip != RCAR_GEN3)
+> +			goto e_format;
+> +
+> +		dmr = VNDMR_EXRGB | VNDMR_DTMD_ARGB;
+> +		break;
+>  	default:
+> -		dev_warn(icd->parent, "Invalid fourcc format (0x%x)\n",
+> -			 icd->current_fmt->host_fmt->fourcc);
+> -		return -EINVAL;
+> +		goto e_format;
+>  	}
+>  
+>  	/* Always update on field change */
+> @@ -679,6 +684,11 @@ static int rcar_vin_setup(struct rcar_vin_priv *priv)
+>  	iowrite32(vnmc | VNMC_ME, priv->base + VNMC_REG);
+>  
+>  	return 0;
+> +
+> +e_format:
+> +	dev_warn(icd->parent, "Invalid fourcc format (0x%x)\n",
+> +		 icd->current_fmt->host_fmt->fourcc);
+> +	return -EINVAL;
+>  }
+>  
+>  static void rcar_vin_capture(struct rcar_vin_priv *priv)
+> @@ -1304,6 +1314,14 @@ static const struct soc_mbus_pixelfmt rcar_vin_formats[] = {
+>  		.order			= SOC_MBUS_ORDER_LE,
+>  		.layout			= SOC_MBUS_LAYOUT_PACKED,
+>  	},
+> +	{
+> +		.fourcc			= V4L2_PIX_FMT_ARGB32,
+> +		.name			= "ARGB8888",
+> +		.bits_per_sample	= 32,
+> +		.packing		= SOC_MBUS_PACKING_NONE,
+> +		.order			= SOC_MBUS_ORDER_LE,
+> +		.layout			= SOC_MBUS_LAYOUT_PACKED,
+> +	},
+>  };
+>  
+>  static int rcar_vin_get_formats(struct soc_camera_device *icd, unsigned int idx,
+> @@ -1611,6 +1629,7 @@ static int rcar_vin_set_fmt(struct soc_camera_device *icd,
+>  	case V4L2_PIX_FMT_RGB32:
+>  		can_scale = priv->chip != RCAR_E1;
+>  		break;
+> +	case V4L2_PIX_FMT_ARGB32:
+>  	case V4L2_PIX_FMT_UYVY:
+>  	case V4L2_PIX_FMT_YUYV:
+>  	case V4L2_PIX_FMT_RGB565:
+> -- 
+> 1.9.1
+> 
