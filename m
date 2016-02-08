@@ -1,83 +1,32 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 25 Feb 2016 22:22:57 +0000
-Subject: Re: [PATCH/RFC v4 net-next] ravb: Add dma queue interrupt support
-Message-Id: <56CF7EC1.901@cogentembedded.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 08 Feb 2016 00:39:58 +0000
+Subject: Re: [PATCH 2/3] ARM: shmobile: r8a7791: add MSTP10 support on DTSI
+Message-Id: <87r3goqbrt.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1453650775-19886-1-git-send-email-ykaneko0929@gmail.com>
- <56AA4674.6020001@cogentembedded.com>
- <CAH1o70LRuYwKGwhWBy1m6AuWfe-rNRBER7-Oi2u84ahX5+NyuA@mail.gmail.com>
- <56B77A57.2080902@cogentembedded.com>
- <CAH1o70JFUVaRb07ivtnZhOYNbh8n2mdZpH41nsMjEenx5yNeeQ@mail.gmail.com>
- <56C9DAF1.1030003@cogentembedded.com> <56CA0D1D.2090903@cogentembedded.com>
-In-Reply-To: <56CA0D1D.2090903@cogentembedded.com>
+References: <1387998730-6012-3-git-send-email-valentine.barshak@cogentembedded.com>
+In-Reply-To: <1387998730-6012-3-git-send-email-valentine.barshak@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Cc: netdev@vger.kernel.org, "David S. Miller" <davem@davemloft.net>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>, linux-renesas-soc@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-On 02/21/2016 10:16 PM, Sergei Shtylyov wrote:
+Hi Sergei
 
-[...]
+> > +		mstp10_clks: mstp10_clks@e6150998 {
+> > +			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
+> > +			reg = <0 0xe6150998 0 4>, <0 0xe61509a8 0 4>;
+> > +			clocks = <&p_clk>,
+> > +				<&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>,
+> > +				<&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>,
+> 
+>    But don't SSI[0-9] clocks all depend on SSI(all)? Shouldn't the
+> above 10 entries be
+> <&mstp10_clks R8A7791_CLK_SSI_ALL> like it was done to SCU(all)?
 
->>>>>>> From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
->>>>>>>
->>>>>>> This patch supports the following interrupts.
->>>>>>>
->>>>>>> - One interrupt for multiple (descriptor, error, management)
->>>>>>> - One interrupt for emac
->>>>>>> - Four interrupts for dma queue (best effort rx/tx, network control
->>>>>>> rx/tx)
->>>>>>>
->>>>>>> This patch improve efficiency of the interrupt handler by adding the
->>>>>>> interrupt handler corresponding to each interrupt source described
->>>>>>> above. Additionally, it reduces the number of times of the access to
->>>>>>> EthernetAVB IF.
->>>>>>>
->>>>>>> Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
->>>>>>> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
->
-> [...]
->
->>>>>>> diff --git a/drivers/net/ethernet/renesas/ravb_main.c
->>>>>>> b/drivers/net/ethernet/renesas/ravb_main.c
->>>>>>> index ac43ed9..076f25f 100644
->>>>>>> --- a/drivers/net/ethernet/renesas/ravb_main.c
->>>>>>> +++ b/drivers/net/ethernet/renesas/ravb_main.c
-> [...]
->>>>>>> +                          struct net_device *ndev, struct device *dev,
->>>>>>> +                          const char *ch)
->>>>>>> +{
->>>>>>> +       char *name;
->>>>>>> +       int error;
->>>>>>> +
->>>>>>> +       name = devm_kasprintf(dev, GFP_KERNEL, "%s:%s", ndev->name, ch);
->>>>>>> +       error = request_irq(irq, handler, IRQF_SHARED, name, ndev);
->>>>>>
->>>>>>      Not sure if we need IRQF_SHARED on those IRQs, they're not really
->>>>>> shareable...
->>>>>
->>>>> I don't know whether this causes something bad.
->>>>> I think this controller is supporting a shared IRQ.
->>>>
->>>>     Based on the high-level trigger, I'd rather suspect not. Anyway, all the
->>>> SoC IRQs are dedicated to a certain (single) source.
->>>
->>> I don't want to change that if there is no fatal issue in the use of
->>> IRQF_SHARED.
->>> However, I will remove the flag if it is simple waste...
->>
->>     It's not a waste but it just shouldn't be needed.
->
->     Actually for RX/TX DMA you're routing 2 interrupts to the same handler, so
-> it's needed, sorry.
+Basically, you are correct.
+I forgot detail, but SSI(all) will be enabled by normal pm_runtime_xxx().
+And it had clock enable order dependency before.
+(I think it was solved by using clock-indices feature)
 
-    Scratch that, it's not multiple handlers, it's multiple IRQs...
-
-> [...]
->
->>> Thanks,
->>> kaneko
-
-MBR, Sergei
-
+It is not very correct indeed, but basically no problem I think.
+But do you have some issues ?
