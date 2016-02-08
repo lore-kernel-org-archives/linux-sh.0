@@ -1,44 +1,42 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 04 Feb 2016 18:53:23 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 08 Feb 2016 15:36:45 +0000
 Subject: Re: [PATCH 0/3] pinctrl: sh-pfc: Correct pin range comments
-Message-Id: <1489274.AOuTy6zPSb@avalon>
+Message-Id: <CAMuHMdUrGXjoO4nh6ktXKieYe3XyoJ8jSZiwffDyX=w7ZtHcWw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1448891996-5263-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1448891996-5263-1-git-send-email-geert+renesas@glider.be>
+	<1489274.AOuTy6zPSb@avalon>
+In-Reply-To: <1489274.AOuTy6zPSb@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Linus Walleij <linus.walleij@linaro.org>, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Linus Walleij <linus.walleij@linaro.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>
 
-Hi Geert,
+Hi Laurent,
 
-Thank you for the patches.
+On Thu, Feb 4, 2016 at 7:53 PM, Laurent Pinchart
+<laurent.pinchart@ideasonboard.com> wrote:
+> On Monday 30 November 2015 14:59:53 Geert Uytterhoeven wrote:
+>>       Hi Laurent, Linus,
+>>
+>> This patch series corrects a few pin range comments in the Renesas
+>> pinctrl data. No functional changes.
+>>
+>> Thanks!
+>
+> For the whole series,
+>
+> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 
-On Monday 30 November 2015 14:59:53 Geert Uytterhoeven wrote:
-> 	Hi Laurent, Linus,
-> 
-> This patch series corrects a few pin range comments in the Renesas
-> pinctrl data. No functional changes.
-> 
-> Thanks!
+Thanks, now we can have more faith in v4.5-rc1 ;-)
 
-For the whole series,
+Gr{oetje,eeting}s,
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+                        Geert
 
-> Geert Uytterhoeven (3):
->   pinctrl: sh-pfc: emev2: Correct comment for CFI data pins
->   pinctrl: sh-pfc: r8a7740: Correct comment for LCD1 data pins
->   pinctrl: sh-pfc: sh73a0: Correct comment for LCD2 data pins
-> 
->  drivers/pinctrl/sh-pfc/pfc-emev2.c   | 2 +-
->  drivers/pinctrl/sh-pfc/pfc-r8a7740.c | 2 +-
->  drivers/pinctrl/sh-pfc/pfc-sh73a0.c  | 2 +-
->  3 files changed, 3 insertions(+), 3 deletions(-)
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
--- 
-Regards,
-
-Laurent Pinchart
-
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
