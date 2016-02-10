@@ -1,64 +1,37 @@
 From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 15 Feb 2016 10:15:16 +0000
-Subject: Re: [PATCH v2 0/6] ARM/arm64 : shmobile/renesas: Add L2 cache-controller nodes
-Message-Id: <CAMuHMdVRTJ9nXFNQSz+WGSuUGWho3x08WMNZwPS=B-Q8sdzd4w@mail.gmail.com>
+Date: Wed, 10 Feb 2016 08:01:42 +0000
+Subject: Re: [PATCH 2/3] arm64: renesas: r8a7795: Add PCIe nodes
+Message-Id: <CAMuHMdVrJD7izUkSuCsp7F2WG6U3HOJ+c0CGpqXhF0MDBZOZnw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449512659-16688-1-git-send-email-geert+renesas@glider.be>
- <20160215015848.GD14034@verge.net.au>
-In-Reply-To: <20160215015848.GD14034@verge.net.au>
+References: <1446485499-26733-3-git-send-email-phil.edworthy@renesas.com>
+In-Reply-To: <1446485499-26733-3-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi Simon,
-
-On Mon, Feb 15, 2016 at 2:58 AM, Simon Horman <horms@verge.net.au> wrote:
-> On Mon, Dec 07, 2015 at 07:24:13PM +0100, Geert Uytterhoeven wrote:
->> This patch series adds the missing L2 cache-controller nodes to the
->> DTSes for various Renesas ARM-based SoCs, and links the CPU nodes to
->> them.
->>
->> For R-Mobile APE6 (r8a73a4), the L2 cache-controllers are also linked to
->> the respective (already existing) SYSC Power Domains. Fortunately these
->> Power Domains were never powered down, as they are parents of the Power
->> Domains containing CPU cores. This may change in the future.
->>
->> For R-Car Gen2 and Gen3 (r8a779x), this serves as a preparatory step for
->> adding SYSC Power Domain support later.
->>
->> Question for the ARM/DT people: What are the DT bindings for
->> Cortex-A15/A7/A57/A53 L2 cache controllers?
->> Everybody just seems to use "cache" for the compatible values...
->>
->> Patches 2-5 were extracted from series "[PATCH/RFC 00/15]
->> ARM: shmobile: R-Car: Add SYSC PM Domain DT Support",
->> (http://lists.infradead.org/pipermail/linux-arm-kernel/2015-June/348742.html)
->> and received some fixes. You can find more detailed changelogs in the
->> individual patches).
->>
->> This has been tested on r8a73a4/ape6evm, r8a7791/koelsch, and
->> r8a7795/salvator-x.
+On Mon, Nov 2, 2015 at 6:31 PM, Phil Edworthy <phil.edworthy@renesas.com> wrote:
+> --- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+> +++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+> @@ -74,6 +74,15 @@
+>                 clock-frequency = <0>;
+>         };
 >
-> Sorry for loosing track of this until now.
->
-> It seems to me that the Gen-2 changes could be applied, is that correct?
+> +       /* External PCIe clock - can be overridden by the board */
+> +       pcie_bus_clk: pcie_bus_clk {
 
-And APE6 :-)
+Please drop the "_clk" suffix from the device node's name.
 
-> It also seems to me that there was inconclusive discussion regarding
-> the r8a7795 change, is that also correct.
+> +               compatible = "fixed-clock";
+> +               #clock-cells = <0>;
+> +               clock-frequency = <100000000>;
+> +               clock-output-names = "pcie_bus";
 
-There was discussion (for all SoCs) about the presence of the arm,data-latency
-and arm,tag-latency properties. Given the mess^H^H^H^H presence or
-absence of virtualization they may or may not be valid...
+The "clock-output-names" property is optional and not needed. Please drop it,
+the clock will be named after the device node's name.
 
-I think the way forward (keeping the dependency for SYSC PM Domains in mind) is
-to apply the series, after removing the controversial latency properties.
-
-Should I resend, or can/will you handle that?
-
-Thanks!
+> +               status = "disabled";
+> +       };
 
 Gr{oetje,eeting}s,
 
