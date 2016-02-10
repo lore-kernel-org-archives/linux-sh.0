@@ -1,40 +1,33 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 05 Feb 2016 09:57:59 +0000
-Subject: Re: [PATCH v2] arm64: dts: r8a7795: Add L2 cache-controller nodes
-Message-Id: <20160205095758.GE16556@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Wed, 10 Feb 2016 16:36:25 +0000
+Subject: Re: [PATCH 9/9] mmc: sdhi: Add r8a7795 support
+Message-Id: <20160210163623.GA15453@katana>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1452953856-5146-1-git-send-email-dirk.behme@gmail.com>
- <56B2370D.2010102@gmail.com>
-In-Reply-To: <56B2370D.2010102@gmail.com>
+References: <1453749316-1848-1-git-send-email-wsa@the-dreams.de>
+ <1453749316-1848-10-git-send-email-wsa@the-dreams.de>
+ <CAPDyKFo6oXEAy562p7MTxw0eKYZe_nnT2q+hbLKF4Lv2kMUvGg@mail.gmail.com>
+In-Reply-To: <CAPDyKFo6oXEAy562p7MTxw0eKYZe_nnT2q+hbLKF4Lv2kMUvGg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Ulf Hansson <ulf.hansson@linaro.org>
+Cc: linux-mmc <linux-mmc@vger.kernel.org>, linux-renesas-soc@vger.kernel.org, Linux-sh list <linux-sh@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Dirk Behme <dirk.behme@gmail.com>
 
-[CC new linux-renesas-soc ML]
+^
+> I think you should try without MMC_CAP_WAIT_WHILE_BUSY, and then check
+> that a following CMD13 command always states that the card isn't busy.
+> I think the best path to try this is when sending a big write data
+> request, as in that case you can be quite certain that the card gets
+> busy between the requests.
+> 
+> So somewhere in the mmc block layer add some debug prints, that should do it.
 
-Hi Dirk,
+I'd think the mmc_test driver already helped me with this. I ran tests
+like 31 (Consecutive write performance by transfer size) or 36 (Large
+sequential write from scattered pages) which both succeeded without any
+warnings printed. And the code explicitly sends a CMD13 after transfer,
+checks for busy and prints a warning when MMC_CAP_WAIT_WHILE_BUSY is
+set and a busy state is detected. Nice test thing this driver is :)
 
-On Wed, Feb 03, 2016 at 06:21:17PM +0100, Dirk Behme wrote:
-> On 16.01.2016 15:17, Dirk Behme wrote:
-> >From: Geert Uytterhoeven <geert+renesas@glider.be>
-> >
-> >Add device nodes for the L2 caches, and link the CPU node to its L2
-> >cache node.
-> >
-> >The L2 cache for the Cortex-A57 CPU cores is 2 MiB large (organized as
-> >128 KiB x 16 ways).
-> >
-> >Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> >Signed-off-by: Dirk Behme <dirk.behme@gmail.com>
+So, it looks to me that patch 9 is fine to go in?
 
-[snip]
-
-> Any further comments to this? If not, could this be applied?
-
-Sorry for the delay.
-
-This looks good; I have queued it up.
-
-It should appear in the next (and devel) branches of my renesas tree soon.
-And in linux-next whenever it includes my updated next branch.
