@@ -1,53 +1,65 @@
-From: Ulf Hansson <ulf.hansson@linaro.org>
-Date: Wed, 10 Feb 2016 18:43:06 +0000
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Thu, 11 Feb 2016 00:07:16 +0000
 Subject: Re: [PATCH 9/9] mmc: sdhi: Add r8a7795 support
-Message-Id: <CAPDyKFrzFA_3MnkOPGLD7Fy84XAyx7+=utERbNF1cX31KWxHMg@mail.gmail.com>
+Message-Id: <20160211000716.GA2058@tetsubishi>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="0F1p//8PRICkK4MW"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1453749316-1848-1-git-send-email-wsa@the-dreams.de>
-	<1453749316-1848-10-git-send-email-wsa@the-dreams.de>
-	<CAPDyKFo6oXEAy562p7MTxw0eKYZe_nnT2q+hbLKF4Lv2kMUvGg@mail.gmail.com>
-	<20160210163623.GA15453@katana>
-In-Reply-To: <20160210163623.GA15453@katana>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Wolfram Sang <wsa@the-dreams.de>
+ <1453749316-1848-10-git-send-email-wsa@the-dreams.de>
+ <CAPDyKFo6oXEAy562p7MTxw0eKYZe_nnT2q+hbLKF4Lv2kMUvGg@mail.gmail.com>
+ <20160210163623.GA15453@katana>
+ <CAPDyKFrzFA_3MnkOPGLD7Fy84XAyx7+=utERbNF1cX31KWxHMg@mail.gmail.com>
+In-Reply-To: <CAPDyKFrzFA_3MnkOPGLD7Fy84XAyx7+=utERbNF1cX31KWxHMg@mail.gmail.com>
+To: Ulf Hansson <ulf.hansson@linaro.org>
 Cc: linux-mmc <linux-mmc@vger.kernel.org>, linux-renesas-soc@vger.kernel.org, Linux-sh list <linux-sh@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Dirk Behme <dirk.behme@gmail.com>
 
-On 10 February 2016 at 17:36, Wolfram Sang <wsa@the-dreams.de> wrote:
-> ^
->> I think you should try without MMC_CAP_WAIT_WHILE_BUSY, and then check
->> that a following CMD13 command always states that the card isn't busy.
->> I think the best path to try this is when sending a big write data
->> request, as in that case you can be quite certain that the card gets
->> busy between the requests.
->>
->> So somewhere in the mmc block layer add some debug prints, that should do it.
->
-> I'd think the mmc_test driver already helped me with this. I ran tests
-> like 31 (Consecutive write performance by transfer size) or 36 (Large
-> sequential write from scattered pages) which both succeeded without any
-> warnings printed. And the code explicitly sends a CMD13 after transfer,
-> checks for busy and prints a warning when MMC_CAP_WAIT_WHILE_BUSY is
-> set and a busy state is detected. Nice test thing this driver is :)
 
-That should do it!
+--0F1p//8PRICkK4MW
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
->
-> So, it looks to me that patch 9 is fine to go in?
->
+> I suspect you are using a delayed work in this driver to deal with
+> request timeouts.
+>=20
+> The value for the delay that is used, needs to be informed towards the
+> mmc core via the "->max_busy_timeout".
 
-Not yet. :-)
+Shouldn't that be a seperate patch? In patch 9, I add support for
+another SoC. But your requested change will affect all SoCs.
 
-I suspect you are using a delayed work in this driver to deal with
-request timeouts.
+> One more thing, as the documentation of your host controllers lacks
+> some information about the busy mode, perhaps it's worth to add some
+> comments about this in the code and as well in the change-log!?
 
-The value for the delay that is used, needs to be informed towards the
-mmc core via the "->max_busy_timeout".
+Do you mean documenting my findings with the mmc_test driver? Or
+something else?
 
-One more thing, as the documentation of your host controllers lacks
-some information about the busy mode, perhaps it's worth to add some
-comments about this in the code and as well in the change-log!?
+Thanks,
 
-Kind regards
-Uffe
+   Wolfram
+
+
+--0F1p//8PRICkK4MW
+Content-Type: application/pgp-signature; name="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBAgAGBQJWu9C0AAoJEBQN5MwUoCm2zfUQAJqV43W7ZtB/ye+0X8k0U2+y
+Baywmad4k1QZAhev5Lset6xUAksB+2CgK63dSj73z134CX8kZ16707tnQXkEGh24
+Ql+hmKp2RhM868Iz4RlizBU+a3n03mjTqsvk5VmbuCRnyX7PU2ocCYMlWkLpmYyV
+lhuGYZi8yIH7URqvrquN5p/D1b3mUz5CvvizmiywMQYXl1BRRlY1LDNiTk5zASI9
+HVAfAiKy6A9t3bRbukmS2OxKF3MLpZVyrUcCaLj2Njpo003opPw2JPBBrs3uS/Uk
+z/0ibblqtFWgJb+dbuY17f70+fEuTbSL5/sAbs8uKSynqcTU+0u05/PDXSMumn9N
+WDmfd2nXWKxA9xL8nJjaMs3a2WL3F1nnur2q/lGWzXEnAWTsVFaiiP5C6gfvUsS0
+dQHjrDx/sF3GIRY/1DndpifZsLr+wc6epo/2QO0j4GMlEtHOgXmYVlub6dIKJ0nH
+v66aU6s8LG9uYN/IaOKKV4nnacEUvB1eXxVvPVS18yD9gpN2k9+lqcrC1Rt/tEQQ
+iaX3jQeZ6yli+Yz+XwL96h2rDZCKWRcwuKY4Ap3/iEUfO6zpKEILP4ICTl+L84JE
+IAG5MJCzx0ZUx8ysBP8+rwPdbqCZ00hfYKSLvue5YsLeWFaV/B4Ca7bvcedEVPDh
+XaoMMcy1XWts48HKmUD3
+=ViJ0
+-----END PGP SIGNATURE-----
+
+--0F1p//8PRICkK4MW--
