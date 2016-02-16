@@ -1,52 +1,88 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Sun, 07 Feb 2016 22:08:05 +0000
-Subject: Re: [PATCH] soc_camera: cleanup control device on async_unbind
-Message-Id: <20160207220805.GA2453@tetsubishi>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="1yeeQ81UyVL57Vl7"
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 16 Feb 2016 15:31:48 +0000
+Subject: [PATCH 0/4] Enable PM and PM_GENERIC_DOMAINS for SoCs with PM Domains
+Message-Id: <1455636712-3040-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1451911723-10868-1-git-send-email-wsa@the-dreams.de>
- <20160207132307.GC3717@bigcity.dyn.berto.se>
-In-Reply-To: <20160207132307.GC3717@bigcity.dyn.berto.se>
-To: linux-sh@vger.kernel.org, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Mauro Carvalho Chehab <mchehab@osg.samsung.com>, linux-media@vger.kernel.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
+	Hi Simon, Magnus,
 
---1yeeQ81UyVL57Vl7
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+All supported Renesas ARM SoCs (except for Emma Mobile EV2) have clock
+domains. Some SoCs also have power domains. To ensure proper operation
+of on-SoC modules, module clocks must be ungated, and power domains must
+be powered up when needed.
 
-> > This gets fixed by clearing the control device pointer on async_unbind.
-> >
-> > Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
->=20
-> Tested-by: Niklas S=C3=B6derlund <niklas.soderlund@ragnatech.se>
->=20
-> Tested on Koelsch and the camera works fine after a unbind/bind
-> operation.
+Currently the user can choose to build a kernel with power management
+enabled or disabled:
+  - If CONFIG_PM=y, power domains and/or module clocks are handled
+    dynamically by Runtime PM and the generic power domain.
+  - If CONFIG_PM=n, power domains are assumed to be powered up by reset
+    state or by the boot loader, and module clocks are handled by the
+    legacy clock domain on driver (un)bind.
+    The latter is implemented using a platform bus notifier, which
+    applies not only to all on-SoC devices, but to all platform devices
+    present in the system.
 
-Thanks a lot, Niklas!
+To remove the dependency on implicit assumptions, and to get rid of the
+peculiarities of the legacy clock domain, enable CONFIG_PM and
+CONFIG_PM_GENERIC_DOMAINS unconditionally, for all Renesas ARM SoCs with
+clock and/or power domains.
 
+Patches:
+  - Patches 1 and 2 enable PM and PM_GENERIC_DOMAINS,
+  - Patch 3 removes the now unused legacy clock domain code for Renesas
+    ARM SoCs,
+  - Patch 4 relieves you from maintaining drivers/sh/, which is no
+    longer used on Renesas ARM SoCs, and returns it to the SuperH
+    people.
 
---1yeeQ81UyVL57Vl7
-Content-Type: application/pgp-signature; name="signature.asc"
+Notes:
+  - This does cause an increase in kernel size.  Given bloat-o-meter
+    reports a modest increase of 26 KiB for an RZ/A1H kernel, this
+    should not be a problem, even when used on RZ/A1H with XIP and
+    internal RAM only.
+  - Patch 3 does break booting R-Car Gen2 boards using pre-v4.3 DTSes
+    that don't have power-domains properties,
+  - Patch 3 may unbreak SuperH-based ARCH_SHMOBILE platforms, which were
+    probably broken since v4.4 by commit 0ba58de231066e47 ("drivers: sh:
+    Get rid of CONFIG_ARCH_SHMOBILE_MULTI"),
+  - Currently CONFIG_PM=n doesn't work anyway on r8a7795 as "drivers:
+    sh: Handle PM_GENERIC_DOMAINS_OF=n with new r8a7795 CPG/MSSR
+    driver" isn't upstream.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
+For your convenience, I've also pushed this series to
+git://git.kernel.org/pub/scm/linux/kernel/git/geert/renesas-drivers.git#topic/mandatory-pm-v1
 
-iQIcBAEBAgAGBQJWt8BFAAoJEBQN5MwUoCm2fcQP/AmNVNaf+RPXT+AwT7DkQyim
-CVz8PoJspZ0eVcAAlMT1mJE5coT4Fz8fnsMC0uG48zKmr6UgxMw9eluCVJuwNWgl
-cYk88YvkgiHp9WMvTDZwDte1PerKDF/QbVuzCihJmRnF07tKhed5ujCpeorenJ8G
-aVewsPas6v5k4BM8vUO9A9CK5nJsB0UJjDHdpaS6MxBWVHY284em9UXPWuViZpjw
-c3bq72wRgCEvuV9Wtqs5dU4xa1zMpn4gytdcUq2f/3+l/uvza5aETF0tbdi6euQO
-kEyPHAxo5gJ5NdkPxHqHn8NqPcBReG/GMFXRsA8Mlg4vK+ht5dajyBFz3eg44j13
-Nh8LLvHpoVeu9uzEsk1G6mZvJjFFd4vmccbMjEkc/RzlilRa24XPVLlwPPtn+mwd
-LomZj9W1dOMKqgk+pb0uiKKrW73b5xjAhwvvNmHF1YHzS/ZJDMCLqWzXw1Wmc6ng
-NWULxQcMYLZNvbmNpIAm2JWJdYvfJGHdfVMWaqQ2kZAGtaXFrLHQJRi3EeZ8Jo+O
-0k/tCp5sVKUYqYt8UWDx5tik+Tx9pMMx2QDMlGrKCy4shhErsNp0U8XL4Iw+QmPV
-bnTGu2VAG0HL4zgNm0v0eo3hRWhhGhGC8aPspdfanhs2WhsTirZyrmn0uOBT8yVC
-Q+U8MgfIlKZ5H4t8qPBE
-=aIbv
------END PGP SIGNATURE-----
+Thanks for your comments!
 
---1yeeQ81UyVL57Vl7--
+Geert Uytterhoeven (4):
+  ARM: shmobile: Enable PM and PM_GENERIC_DOMAINS for SoCs with PM
+    Domains
+  arm64: renesas: Enable PM and PM_GENERIC_DOMAINS for SoCs with PM
+    Domains
+  drivers: sh: Stop using the legacy clock domain on ARM
+  MAINTAINERS: Drop drivers/sh/ for Renesas ARM
+
+ MAINTAINERS                    |  1 -
+ arch/arm/mach-shmobile/Kconfig | 13 ++++++++-----
+ arch/arm64/Kconfig.platforms   |  3 ++-
+ drivers/Makefile               |  1 -
+ drivers/sh/pm_runtime.c        |  9 ---------
+ 5 files changed, 10 insertions(+), 17 deletions(-)
+
+-- 
+1.9.1
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
