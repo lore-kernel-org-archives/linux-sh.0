@@ -1,50 +1,95 @@
-From: Michal Hocko <mhocko@kernel.org>
-Date: Mon, 29 Feb 2016 12:58:22 +0000
-Subject: [PATCH 08/11] sparc, rwsem: provide __down_write_killable
-Message-Id: <1456750705-7141-9-git-send-email-mhocko@kernel.org>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 16 Feb 2016 15:31:49 +0000
+Subject: [PATCH 1/4] ARM: shmobile: Enable PM and PM_GENERIC_DOMAINS for SoCs with PM Domains
+Message-Id: <1455636712-3040-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1456750705-7141-1-git-send-email-mhocko@kernel.org>
-In-Reply-To: <1456750705-7141-1-git-send-email-mhocko@kernel.org>
+References: <1455636712-3040-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1455636712-3040-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: LKML <linux-kernel@vger.kernel.org>
-Cc: Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@redhat.com>, Thomas Gleixner <tglx@linutronix.de>, "H. Peter Anvin" <hpa@zytor.com>, "David S. Miller" <davem@davemloft.net>, Tony Luck <tony.luck@intel.com>, Andrew Morton <akpm@linux-foundation.org>, Chris Zankel <chris@zankel.net>, Max Filippov <jcmvbkbc@gmail.com>, x86@kernel.org, linux-alpha@vger.kernel.org, linux-ia64@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-arch@vger.kernel.org, Michal Hocko <mhocko@suse.com>
+To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: linux-renesas-soc@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Michal Hocko <mhocko@suse.com>
+All supported Renesas ARM SoCs (except for Emma Mobile EV2) have clock
+domains. Some SoCs also have power domains. To ensure proper operation
+of on-SoC modules, module clocks must be ungated, and power domains must
+be powered up when needed.
 
-which uses the same fast path as __down_write except it falls back to
-rwsem_down_write_failed_killable slow path and return -EINTR if killed.
+Currently the user can choose to build a kernel with power management
+enabled or disabled:
+  - If CONFIG_PM=y, power domains and/or module clocks are handled
+    dynamically by Runtime PM and the generic power domain.
+  - If CONFIG_PM=n, power domains are assumed to be powered up by reset
+    state or by the boot loader, and module clocks are handled by the
+    legacy clock domain on driver (un)bind.
+    The latter is implemented using a platform bus notifier, which
+    applies not only to all on-SoC devices, but to all platform devices
+    present in the system.
 
-Signed-off-by: Michal Hocko <mhocko@suse.com>
+To remove the dependency on implicit assumptions, and to get rid of the
+peculiarities of the legacy clock domain, enable CONFIG_PM and
+CONFIG_PM_GENERIC_DOMAINS unconditionally, for all Renesas ARM SoCs with
+clock and/or power domains.
+
+This does cause an increase in kernel size.  Given bloat-o-meter reports
+a modest increase of 26 KiB for an RZ/A1H kernel, this should not be a
+problem, even when used on RZ/A1H with XIP and internal RAM only.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/sparc/include/asm/rwsem.h | 13 +++++++++++++
- 1 file changed, 13 insertions(+)
+ arch/arm/mach-shmobile/Kconfig | 13 ++++++++-----
+ 1 file changed, 8 insertions(+), 5 deletions(-)
 
-diff --git a/arch/sparc/include/asm/rwsem.h b/arch/sparc/include/asm/rwsem.h
-index e5a0d575bc7f..c1e9e32e8b63 100644
---- a/arch/sparc/include/asm/rwsem.h
-+++ b/arch/sparc/include/asm/rwsem.h
-@@ -55,6 +55,19 @@ static inline void __down_write(struct rw_semaphore *sem)
- 		rwsem_down_write_failed(sem);
- }
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index cd5f171f83ce6420..2824b81f1a392d87 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -6,28 +6,30 @@ config ARCH_SHMOBILE_MULTI
  
-+static inline int __down_write_killable(struct rw_semaphore *sem)
-+{
-+	long tmp;
-+
-+	tmp = atomic64_add_return(RWSEM_ACTIVE_WRITE_BIAS,
-+				  (atomic64_t *)(&sem->count));
-+	if (unlikely(tmp != RWSEM_ACTIVE_WRITE_BIAS))
-+		if (IS_ERR(rwsem_down_write_failed_killable(sem)))
-+			return -EINTR;
-+
-+	return 0;
-+}
-+
- static inline int __down_write_trylock(struct rw_semaphore *sem)
- {
- 	long tmp;
+ config PM_RCAR
+ 	bool
+-	select PM_GENERIC_DOMAINS if PM
++	select PM
++	select PM_GENERIC_DOMAINS
+ 
+ config PM_RMOBILE
+ 	bool
++	select PM
+ 	select PM_GENERIC_DOMAINS
+ 
+ config ARCH_RCAR_GEN1
+ 	bool
+-	select PM_RCAR if PM || SMP
++	select PM_RCAR
+ 	select RENESAS_INTC_IRQPIN
+ 	select SYS_SUPPORTS_SH_TMU
+ 
+ config ARCH_RCAR_GEN2
+ 	bool
+-	select PM_RCAR if PM || SMP
++	select PM_RCAR
+ 	select RENESAS_IRQC
+ 	select SYS_SUPPORTS_SH_CMT
+ 	select PCI_DOMAINS if PCI
+ 
+ config ARCH_RMOBILE
+ 	bool
+-	select PM_RMOBILE if PM
++	select PM_RMOBILE
+ 	select SYS_SUPPORTS_SH_CMT
+ 	select SYS_SUPPORTS_SH_TMU
+ 
+@@ -55,7 +57,8 @@ config ARCH_EMEV2
+ 
+ config ARCH_R7S72100
+ 	bool "RZ/A1H (R7S72100)"
+-	select PM_GENERIC_DOMAINS if PM
++	select PM
++	select PM_GENERIC_DOMAINS
+ 	select SYS_SUPPORTS_SH_MTU2
+ 
+ config ARCH_R8A73A4
 -- 
-2.7.0
+1.9.1
 
