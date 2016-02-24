@@ -1,67 +1,52 @@
-From: Ganapatrao Kulkarni <gkulkarni@caviumnetworks.com>
-Date: Tue, 02 Feb 2016 10:21:21 +0000
-Subject: [PATCH v10 6/8] arm64, mm, numa: Adding numa balancing support for arm64.
-Message-Id: <1454407763-1017-7-git-send-email-gkulkarni@caviumnetworks.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 24 Feb 2016 08:43:23 +0000
+Subject: [PATCH] drivers: sh: Restore legacy clock domain on SuperH platforms
+Message-Id: <1456303403-22803-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1454407763-1017-1-git-send-email-gkulkarni@caviumnetworks.com>
-In-Reply-To: <1454407763-1017-1-git-send-email-gkulkarni@caviumnetworks.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org, linux-pci@vger.kernel.org, linux-ia64@vger.kernel.org, linux-metag@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-arch@vger.kernel.org, Will.Deacon@arm.com, catalin.marinas@arm.com, robh+dt@kernel.org, mark.rutland@arm.com, grant.likely@linaro.org, leif.lindholm@linaro.org, rfranz@cavium.com, ard.biesheuvel@linaro.org, msalter@redhat.com, steve.capper@linaro.org, hanjun.guo@linaro.org, al.stone@linaro.org, arnd@arndb.de, pawel.moll@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, rjw@rjwysocki.net, lenb@kernel.org, marc.zyngier@arm.com, lorenzo.pieralisi@arm.com, bhelgaas@google.com, tony.luck@intel.com, fenghua.yu@intel.com, james.hog
-Cc: gpkulkarni@gmail.com
+To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Hans Verkuil <hverkuil@xs4all.nl>, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-enabled numa balancing for arm64 platforms.
-added pte, pmd protnone helpers for use by automatic NUMA balancing.
+CONFIG_ARCH_SHMOBILE is not only enabled for Renesas ARM platforms
+(which are DT based and multi-platform), but also on a select set of
+Renesas SuperH platforms (SH7722/SH7723/SH7724/SH7343/SH7366). Hence
+since commit 0ba58de231066e47 ("drivers: sh: Get rid of
+CONFIG_ARCH_SHMOBILE_MULTI"), the legacy clock domain is no longer
+installed on these SuperH platforms, and module clocks may not be
+enabled when needed, leading to driver failures.
 
-Reviewed-by: Robert Richter <rrichter@cavium.com>
-Signed-off-by: Ganapatrao Kulkarni <gkulkarni@caviumnetworks.com>
+To fix this, add an additional check for CONFIG_OF.
+
+Fixes: 0ba58de231066e47 ("drivers: sh: Get rid of CONFIG_ARCH_SHMOBILE_MULTI").
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm64/Kconfig               |  1 +
- arch/arm64/include/asm/pgtable.h | 18 ++++++++++++++++++
- 2 files changed, 19 insertions(+)
+Verified by looking at the resulting assembler output.
+Not run-tested due to lack of hardware.
 
-diff --git a/arch/arm64/Kconfig b/arch/arm64/Kconfig
-index fcf3950..8a7c02a 100644
---- a/arch/arm64/Kconfig
-+++ b/arch/arm64/Kconfig
-@@ -11,6 +11,7 @@ config ARM64
- 	select ARCH_HAS_TICK_BROADCAST if GENERIC_CLOCKEVENTS_BROADCAST
- 	select ARCH_USE_CMPXCHG_LOCKREF
- 	select ARCH_SUPPORTS_ATOMIC_RMW
-+	select ARCH_SUPPORTS_NUMA_BALANCING if NUMA
- 	select ARCH_WANT_OPTIONAL_GPIOLIB
- 	select ARCH_WANT_COMPAT_IPC_PARSE_VERSION
- 	select ARCH_WANT_FRAME_POINTERS
-diff --git a/arch/arm64/include/asm/pgtable.h b/arch/arm64/include/asm/pgtable.h
-index 2d545d7a..24ce546 100644
---- a/arch/arm64/include/asm/pgtable.h
-+++ b/arch/arm64/include/asm/pgtable.h
-@@ -347,6 +347,24 @@ static inline pgprot_t mk_sect_prot(pgprot_t prot)
- 	return __pgprot(pgprot_val(prot) & ~PTE_TABLE_BIT);
- }
+This is meant to be applied to stable (v4.4 and up), and to whatever
+tree the original commit was backported to.
+
+I didn't just change the test to ARCH_RENESAS, as that symbol does not
+exist in v4.4.
+---
+ drivers/sh/pm_runtime.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/sh/pm_runtime.c b/drivers/sh/pm_runtime.c
+index 91a003011acfacb2..a9bac3bf20de14e5 100644
+--- a/drivers/sh/pm_runtime.c
++++ b/drivers/sh/pm_runtime.c
+@@ -34,7 +34,7 @@ static struct pm_clk_notifier_block platform_bus_notifier = {
  
-+#ifdef CONFIG_NUMA_BALANCING
-+
-+/*
-+ * These work without NUMA balancing but the kernel does not care. See the
-+ * comment in include/asm-generic/pgtable.h
-+ */
-+static inline int pte_protnone(pte_t pte)
-+{
-+	return ((pte_val(pte) & (PTE_VALID | PTE_PROT_NONE)) = PTE_PROT_NONE);
-+}
-+
-+static inline int pmd_protnone(pmd_t pmd)
-+{
-+	return pte_protnone(pmd_pte(pmd));
-+}
-+
-+#endif /* CONFIG_NUMA_BALANCING */
-+
- /*
-  * THP definitions.
-  */
+ static int __init sh_pm_runtime_init(void)
+ {
+-	if (IS_ENABLED(CONFIG_ARCH_SHMOBILE)) {
++	if (IS_ENABLED(CONFIG_OF) && IS_ENABLED(CONFIG_ARCH_SHMOBILE)) {
+ 		if (!of_find_compatible_node(NULL, NULL,
+ 					     "renesas,cpg-mstp-clocks"))
+ 			return 0;
 -- 
-1.8.1.4
+1.9.1
 
