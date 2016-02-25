@@ -1,740 +1,557 @@
-From: Ganapatrao Kulkarni <gkulkarni@caviumnetworks.com>
-Date: Tue, 02 Feb 2016 10:21:16 +0000
-Subject: [PATCH v10 1/8] arm64, numa: adding numa support for arm64 platforms.
-Message-Id: <1454407763-1017-2-git-send-email-gkulkarni@caviumnetworks.com>
+From: Yinghai Lu <yinghai@kernel.org>
+Date: Thu, 25 Feb 2016 02:12:48 +0000
+Subject: [PATCH v10 57/59] PCI: Introduce resource_disabled()
+Message-Id: <1456366370-28995-58-git-send-email-yinghai@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1454407763-1017-1-git-send-email-gkulkarni@caviumnetworks.com>
-In-Reply-To: <1454407763-1017-1-git-send-email-gkulkarni@caviumnetworks.com>
+References: <1456366370-28995-1-git-send-email-yinghai@kernel.org>
+In-Reply-To: <1456366370-28995-1-git-send-email-yinghai@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org, linux-pci@vger.kernel.org, linux-ia64@vger.kernel.org, linux-metag@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-arch@vger.kernel.org, Will.Deacon@arm.com, catalin.marinas@arm.com, robh+dt@kernel.org, mark.rutland@arm.com, grant.likely@linaro.org, leif.lindholm@linaro.org, rfranz@cavium.com, ard.biesheuvel@linaro.org, msalter@redhat.com, steve.capper@linaro.org, hanjun.guo@linaro.org, al.stone@linaro.org, arnd@arndb.de, pawel.moll@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, rjw@rjwysocki.net, lenb@kernel.org, marc.zyngier@arm.com, lorenzo.pieralisi@arm.com, bhelgaas@google.com, tony.luck@intel.com, fenghua.yu@intel.com, james.hog
-Cc: gpkulkarni@gmail.com
+To: Bjorn Helgaas <bhelgaas@google.com>, David Miller <davem@davemloft.net>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Wei Yang <weiyang@linux.vnet.ibm.com>, TJ <linux@iam.tj>, Yijing Wang <wangyijing@huawei.com>, Khalid Aziz <khalid.aziz@oracle.com>
+Cc: linux-pci@vger.kernel.org, linux-kernel@vger.kernel.org, Yinghai Lu <yinghai@kernel.org>, linux-alpha@vger.kernel.org, linux-ia64@vger.kernel.org, linux-am33-list@redhat.com, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, iommu@lists.linux-foundation.org, linux-sh@vger.kernel.org
 
-Adding numa support for arm64 based platforms.
-This patch adds by default the dummy numa node and
-maps all memory and cpus to node 0.
-using this patch, numa can be simulated on single node arm64 platforms.
+Current is using !flags, and we are going to use
+IORESOURCE_DISABLED instead of clearing resource flags.
 
-Tested-by: Shannon Zhao <shannon.zhao@linaro.org>
-Reviewed-by: Robert Richter <rrichter@cavium.com>
-Signed-off-by: Ganapatrao Kulkarni <gkulkarni@caviumnetworks.com>
+Let's convert all !flags to helper function resource_disabled().
+resource_disabled will check !flags and IORESOURCE_DISABLED both.
+
+Cc: linux-alpha@vger.kernel.org
+Cc: linux-ia64@vger.kernel.org
+Cc: linux-am33-list@redhat.com
+Cc: linuxppc-dev@lists.ozlabs.org
+Cc: linux-s390@vger.kernel.org
+Cc: sparclinux@vger.kernel.org
+Cc: linux-pci@vger.kernel.org
+Cc: linux-xtensa@linux-xtensa.org
+Cc: iommu@lists.linux-foundation.org
+Cc: linux-sh@vger.kernel.org
+Signed-off-by: Yinghai Lu <yinghai@kernel.org>
+Acked-by: Michael Ellerman <mpe@ellerman.id.au>
 ---
- arch/arm64/Kconfig                |  25 +++
- arch/arm64/include/asm/mmzone.h   |  12 ++
- arch/arm64/include/asm/numa.h     |  43 +++++
- arch/arm64/include/asm/topology.h |  10 +
- arch/arm64/kernel/pci.c           |  10 +
- arch/arm64/kernel/setup.c         |   4 +
- arch/arm64/kernel/smp.c           |   2 +
- arch/arm64/mm/Makefile            |   1 +
- arch/arm64/mm/init.c              |  34 +++-
- arch/arm64/mm/mmu.c               |   1 +
- arch/arm64/mm/numa.c              | 387 ++++++++++++++++++++++++++++++++++++++
- 11 files changed, 524 insertions(+), 5 deletions(-)
- create mode 100644 arch/arm64/include/asm/mmzone.h
- create mode 100644 arch/arm64/include/asm/numa.h
- create mode 100644 arch/arm64/mm/numa.c
+ arch/alpha/kernel/pci.c                   |  2 +-
+ arch/ia64/pci/pci.c                       |  4 ++--
+ arch/microblaze/pci/pci-common.c          | 15 ++++++++-------
+ arch/mn10300/unit-asb2305/pci-asb2305.c   |  4 ++--
+ arch/mn10300/unit-asb2305/pci.c           |  4 ++--
+ arch/powerpc/kernel/pci-common.c          | 16 +++++++++-------
+ arch/powerpc/platforms/powernv/pci-ioda.c | 12 ++++++------
+ arch/s390/pci/pci.c                       |  2 +-
+ arch/sparc/kernel/pci.c                   |  2 +-
+ arch/x86/pci/i386.c                       |  4 ++--
+ arch/xtensa/kernel/pci.c                  |  4 ++--
+ drivers/iommu/intel-iommu.c               |  3 ++-
+ drivers/pci/host/pcie-rcar.c              |  2 +-
+ drivers/pci/iov.c                         |  2 +-
+ drivers/pci/probe.c                       |  2 +-
+ drivers/pci/quirks.c                      |  4 ++--
+ drivers/pci/rom.c                         |  2 +-
+ drivers/pci/setup-bus.c                   |  8 ++++----
+ drivers/pci/setup-res.c                   |  2 +-
+ include/linux/ioport.h                    |  4 ++++
+ 20 files changed, 53 insertions(+), 45 deletions(-)
 
-diff --git a/arch/arm64/Kconfig b/arch/arm64/Kconfig
-index 8cc6228..fcf3950 100644
---- a/arch/arm64/Kconfig
-+++ b/arch/arm64/Kconfig
-@@ -74,6 +74,7 @@ config ARM64
- 	select HAVE_HW_BREAKPOINT if PERF_EVENTS
- 	select HAVE_IRQ_TIME_ACCOUNTING
- 	select HAVE_MEMBLOCK
-+	select HAVE_MEMBLOCK_NODE_MAP if NUMA
- 	select HAVE_PATA_PLATFORM
- 	select HAVE_PERF_EVENTS
- 	select HAVE_PERF_REGS
-@@ -534,6 +535,30 @@ config HOTPLUG_CPU
- 	  Say Y here to experiment with turning CPUs off and on.  CPUs
- 	  can be controlled through /sys/devices/system/cpu.
+diff --git a/arch/alpha/kernel/pci.c b/arch/alpha/kernel/pci.c
+index 5f387ee..c89c8ef 100644
+--- a/arch/alpha/kernel/pci.c
++++ b/arch/alpha/kernel/pci.c
+@@ -282,7 +282,7 @@ pcibios_claim_one_bus(struct pci_bus *b)
+ 		for (i = 0; i < PCI_NUM_RESOURCES; i++) {
+ 			struct resource *r = &dev->resource[i];
  
-+# Common NUMA Features
-+config NUMA
-+	bool "Numa Memory Allocation and Scheduler Support"
-+	depends on SMP
-+	help
-+	  Enable NUMA (Non Uniform Memory Access) support.
-+
-+	  The kernel will try to allocate memory used by a CPU on the
-+	  local memory of the CPU and add some more
-+	  NUMA awareness to the kernel.
-+
-+config NODES_SHIFT
-+	int "Maximum NUMA Nodes (as a power of 2)"
-+	range 1 10
-+	default "2"
-+	depends on NEED_MULTIPLE_NODES
-+	help
-+	  Specify the maximum number of NUMA Nodes available on the target
-+	  system.  Increases memory reserved to accommodate various tables.
-+
-+config USE_PERCPU_NUMA_NODE_ID
-+	def_bool y
-+	depends on NUMA
-+
- source kernel/Kconfig.preempt
- source kernel/Kconfig.hz
+-			if (r->parent || !r->start || !r->flags)
++			if (r->parent || !r->start || resource_disabled(r))
+ 				continue;
+ 			if (pci_has_flag(PCI_PROBE_ONLY) ||
+ 			    (r->flags & IORESOURCE_PCI_FIXED)) {
+diff --git a/arch/ia64/pci/pci.c b/arch/ia64/pci/pci.c
+index 8f6ac2f..f00373f 100644
+--- a/arch/ia64/pci/pci.c
++++ b/arch/ia64/pci/pci.c
+@@ -333,7 +333,7 @@ void pcibios_fixup_device_resources(struct pci_dev *dev)
+ 	for (idx = 0; idx < PCI_BRIDGE_RESOURCES; idx++) {
+ 		struct resource *r = &dev->resource[idx];
  
-diff --git a/arch/arm64/include/asm/mmzone.h b/arch/arm64/include/asm/mmzone.h
-new file mode 100644
-index 0000000..a0de9e6
---- /dev/null
-+++ b/arch/arm64/include/asm/mmzone.h
-@@ -0,0 +1,12 @@
-+#ifndef __ASM_MMZONE_H
-+#define __ASM_MMZONE_H
-+
-+#ifdef CONFIG_NUMA
-+
-+#include <asm/numa.h>
-+
-+extern struct pglist_data *node_data[];
-+#define NODE_DATA(nid)		(node_data[(nid)])
-+
-+#endif /* CONFIG_NUMA */
-+#endif /* __ASM_MMZONE_H */
-diff --git a/arch/arm64/include/asm/numa.h b/arch/arm64/include/asm/numa.h
-new file mode 100644
-index 0000000..574267f
---- /dev/null
-+++ b/arch/arm64/include/asm/numa.h
-@@ -0,0 +1,43 @@
-+#ifndef __ASM_NUMA_H
-+#define __ASM_NUMA_H
-+
-+#include <asm/topology.h>
-+
-+#ifdef CONFIG_NUMA
-+
-+/* currently, arm64 implements flat NUMA topology */
-+#define parent_node(node)	(node)
-+
-+int __node_distance(int from, int to);
-+#define node_distance(a, b) __node_distance(a, b)
-+
-+extern nodemask_t numa_nodes_parsed __initdata;
-+
-+/* Mappings between node number and cpus on that node. */
-+extern cpumask_var_t node_to_cpumask_map[MAX_NUMNODES];
-+void numa_clear_node(unsigned int cpu);
-+
-+#ifdef CONFIG_DEBUG_PER_CPU_MAPS
-+const struct cpumask *cpumask_of_node(int node);
-+#else
-+/* Returns a pointer to the cpumask of CPUs on Node 'node'. */
-+static inline const struct cpumask *cpumask_of_node(int node)
-+{
-+	return node_to_cpumask_map[node];
-+}
-+#endif
-+
-+void __init arm64_numa_init(void);
-+int __init numa_add_memblk(int nodeid, u64 start, u64 end);
-+void __init numa_set_distance(int from, int to, int distance);
-+void __init numa_free_distance(void);
-+void numa_store_cpu_info(unsigned int cpu);
-+
-+#else	/* CONFIG_NUMA */
-+
-+static inline void numa_store_cpu_info(unsigned int cpu) { }
-+static inline void arm64_numa_init(void) { }
-+
-+#endif	/* CONFIG_NUMA */
-+
-+#endif	/* __ASM_NUMA_H */
-diff --git a/arch/arm64/include/asm/topology.h b/arch/arm64/include/asm/topology.h
-index a3e9d6f..8b57339 100644
---- a/arch/arm64/include/asm/topology.h
-+++ b/arch/arm64/include/asm/topology.h
-@@ -22,6 +22,16 @@ void init_cpu_topology(void);
- void store_cpu_topology(unsigned int cpuid);
- const struct cpumask *cpu_coregroup_mask(int cpu);
+-		if (!r->flags || r->parent || !r->start)
++		if (resource_disabled(r) || r->parent || !r->start)
+ 			continue;
  
-+#ifdef CONFIG_NUMA
-+
-+struct pci_bus;
-+int pcibus_to_node(struct pci_bus *bus);
-+#define cpumask_of_pcibus(bus)	(pcibus_to_node(bus) = -1 ?		\
-+				 cpu_all_mask :				\
-+				 cpumask_of_node(pcibus_to_node(bus)))
-+
-+#endif /* CONFIG_NUMA */
-+
- #include <asm-generic/topology.h>
+ 		pci_claim_resource(dev, idx);
+@@ -351,7 +351,7 @@ static void pcibios_fixup_bridge_resources(struct pci_dev *dev)
+ 	for (idx = PCI_BRIDGE_RESOURCES; idx < PCI_NUM_RESOURCES; idx++) {
+ 		struct resource *r = &dev->resource[idx];
  
- #endif /* _ASM_ARM_TOPOLOGY_H */
-diff --git a/arch/arm64/kernel/pci.c b/arch/arm64/kernel/pci.c
-index b3d098b..65e6b7d 100644
---- a/arch/arm64/kernel/pci.c
-+++ b/arch/arm64/kernel/pci.c
-@@ -76,6 +76,16 @@ int raw_pci_write(unsigned int domain, unsigned int bus,
- 	return -ENXIO;
- }
+-		if (!r->flags || r->parent || !r->start)
++		if (resource_disabled(r) || r->parent || !r->start)
+ 			continue;
  
-+#ifdef CONFIG_NUMA
-+
-+int pcibus_to_node(struct pci_bus *bus)
-+{
-+	return dev_to_node(&bus->dev);
-+}
-+EXPORT_SYMBOL(pcibus_to_node);
-+
-+#endif
-+
- #ifdef CONFIG_ACPI
- /* Root bridge scanning */
- struct pci_bus *pci_acpi_scan_root(struct acpi_pci_root *root)
-diff --git a/arch/arm64/kernel/setup.c b/arch/arm64/kernel/setup.c
-index 8119479..d9b9761 100644
---- a/arch/arm64/kernel/setup.c
-+++ b/arch/arm64/kernel/setup.c
-@@ -53,6 +53,7 @@
- #include <asm/cpufeature.h>
- #include <asm/cpu_ops.h>
- #include <asm/kasan.h>
-+#include <asm/numa.h>
- #include <asm/sections.h>
- #include <asm/setup.h>
- #include <asm/smp_plat.h>
-@@ -372,6 +373,9 @@ static int __init topology_init(void)
- {
+ 		pci_claim_bridge_resource(dev, idx);
+diff --git a/arch/microblaze/pci/pci-common.c b/arch/microblaze/pci/pci-common.c
+index 09b1af6..c123d3c 100644
+--- a/arch/microblaze/pci/pci-common.c
++++ b/arch/microblaze/pci/pci-common.c
+@@ -705,7 +705,7 @@ static void pcibios_fixup_resources(struct pci_dev *dev)
+ 	}
+ 	for (i = 0; i < DEVICE_COUNT_RESOURCE; i++) {
+ 		struct resource *res = dev->resource + i;
+-		if (!res->flags)
++		if (resource_disabled(res))
+ 			continue;
+ 		if (res->start = 0) {
+ 			pr_debug("PCI:%s Resource %d %016llx-%016llx [%x]",
+@@ -806,7 +806,7 @@ static void pcibios_fixup_bridge(struct pci_bus *bus)
+ 	pci_bus_for_each_resource(bus, res, i) {
+ 		if (!res)
+ 			continue;
+-		if (!res->flags)
++		if (resource_disabled(res))
+ 			continue;
+ 		if (i >= 3 && bus->self->transparent)
+ 			continue;
+@@ -985,7 +985,7 @@ static void pcibios_allocate_bus_resources(struct pci_bus *bus)
+ 		 pci_domain_nr(bus), bus->number);
+ 
+ 	pci_bus_for_each_resource(bus, res, i) {
+-		if (!res || !res->flags
++		if (!res || resource_disabled(res)
+ 		    || res->start > res->end || res->parent)
+ 			continue;
+ 		if (bus->parent = NULL)
+@@ -1087,7 +1087,8 @@ static void __init pcibios_allocate_resources(int pass)
+ 			r = &dev->resource[idx];
+ 			if (r->parent)		/* Already allocated */
+ 				continue;
+-			if (!r->flags || (r->flags & IORESOURCE_UNSET))
++			if (resource_disabled(r) ||
++			    (r->flags & IORESOURCE_UNSET))
+ 				continue;	/* Not assigned at all */
+ 			/* We only allocate ROMs on pass 1 just in case they
+ 			 * have been screwed up by firmware
+@@ -1218,7 +1219,7 @@ void pcibios_claim_one_bus(struct pci_bus *bus)
+ 		for (i = 0; i < PCI_NUM_RESOURCES; i++) {
+ 			struct resource *r = &dev->resource[i];
+ 
+-			if (r->parent || !r->start || !r->flags)
++			if (r->parent || !r->start || resource_disabled(r))
+ 				continue;
+ 
+ 			pr_debug("PCI: Claiming %s: ", pci_name(dev));
+@@ -1278,7 +1279,7 @@ static void pcibios_setup_phb_resources(struct pci_controller *hose,
+ 	res->start = (res->start + io_offset) & 0xffffffffu;
+ 	res->end = (res->end + io_offset) & 0xffffffffu;
+ 
+-	if (!res->flags) {
++	if (resource_disabled(res)) {
+ 		pr_warn("PCI: I/O resource not set for host ");
+ 		pr_cont("bridge %s (domain %d)\n",
+ 			hose->dn->full_name, hose->global_number);
+@@ -1298,7 +1299,7 @@ static void pcibios_setup_phb_resources(struct pci_controller *hose,
+ 	/* Hookup PHB Memory resources */
+ 	for (i = 0; i < 3; ++i) {
+ 		res = &hose->mem_resources[i];
+-		if (!res->flags) {
++		if (resource_disabled(res)) {
+ 			if (i > 0)
+ 				continue;
+ 			pr_err("PCI: Memory resource 0 not set for ");
+diff --git a/arch/mn10300/unit-asb2305/pci-asb2305.c b/arch/mn10300/unit-asb2305/pci-asb2305.c
+index b7ab837..7e70e51 100644
+--- a/arch/mn10300/unit-asb2305/pci-asb2305.c
++++ b/arch/mn10300/unit-asb2305/pci-asb2305.c
+@@ -103,7 +103,7 @@ static void __init pcibios_allocate_bus_resources(struct list_head *bus_list)
+ 			     idx < PCI_NUM_RESOURCES;
+ 			     idx++) {
+ 				r = &dev->resource[idx];
+-				if (!r->flags)
++				if (resource_disabled(r))
+ 					continue;
+ 				if (!r->start ||
+ 				    pci_claim_bridge_resource(dev, idx) < 0) {
+@@ -188,7 +188,7 @@ static int __init pcibios_assign_resources(void)
+ 	   addresses. */
+ 	for_each_pci_dev(dev) {
+ 		r = &dev->resource[PCI_ROM_RESOURCE];
+-		if (!r->flags || !r->start)
++		if (resource_disabled(r) || !r->start)
+ 			continue;
+ 		if (pci_claim_resource(dev, PCI_ROM_RESOURCE) < 0) {
+ 			r->end -= r->start;
+diff --git a/arch/mn10300/unit-asb2305/pci.c b/arch/mn10300/unit-asb2305/pci.c
+index 3dfe2d3..ad77b18 100644
+--- a/arch/mn10300/unit-asb2305/pci.c
++++ b/arch/mn10300/unit-asb2305/pci.c
+@@ -291,7 +291,7 @@ static void pcibios_fixup_device_resources(struct pci_dev *dev)
+ 	for (idx = 0; idx < PCI_BRIDGE_RESOURCES; idx++) {
+ 		struct resource *r = &dev->resource[idx];
+ 
+-		if (!r->flags || r->parent || !r->start)
++		if (resource_disabled(r) || r->parent || !r->start)
+ 			continue;
+ 
+ 		pci_claim_resource(dev, idx);
+@@ -308,7 +308,7 @@ static void pcibios_fixup_bridge_resources(struct pci_dev *dev)
+ 	for (idx = PCI_BRIDGE_RESOURCES; idx < PCI_NUM_RESOURCES; idx++) {
+ 		struct resource *r = &dev->resource[idx];
+ 
+-		if (!r->flags || r->parent || !r->start)
++		if (resource_disabled(r) || r->parent || !r->start)
+ 			continue;
+ 
+ 		pci_claim_bridge_resource(dev, idx);
+diff --git a/arch/powerpc/kernel/pci-common.c b/arch/powerpc/kernel/pci-common.c
+index 2a7f4fd..94d11f9 100644
+--- a/arch/powerpc/kernel/pci-common.c
++++ b/arch/powerpc/kernel/pci-common.c
+@@ -811,7 +811,7 @@ static void pcibios_fixup_resources(struct pci_dev *dev)
+ 	for (i = 0; i < DEVICE_COUNT_RESOURCE; i++) {
+ 		struct resource *res = dev->resource + i;
+ 		struct pci_bus_region reg;
+-		if (!res->flags)
++		if (resource_disabled(res))
+ 			continue;
+ 
+ 		/* If we're going to re-assign everything, we mark all resources
+@@ -920,7 +920,7 @@ static void pcibios_fixup_bridge(struct pci_bus *bus)
+ 	struct pci_dev *dev = bus->self;
+ 
+ 	pci_bus_for_each_resource(bus, res, i) {
+-		if (!res || !res->flags)
++		if (!res || resource_disabled(res))
+ 			continue;
+ 		if (i >= 3 && bus->self->transparent)
+ 			continue;
+@@ -1161,7 +1161,8 @@ static void pcibios_allocate_bus_resources(struct pci_bus *bus)
+ 		 pci_domain_nr(bus), bus->number);
+ 
+ 	pci_bus_for_each_resource(bus, res, i) {
+-		if (!res || !res->flags || res->start > res->end || res->parent)
++		if (!res || resource_disabled(res) ||
++		    res->start > res->end || res->parent)
+ 			continue;
+ 
+ 		/* If the resource was left unset at this point, we clear it */
+@@ -1256,7 +1257,8 @@ static void __init pcibios_allocate_resources(int pass)
+ 			r = &dev->resource[idx];
+ 			if (r->parent)		/* Already allocated */
+ 				continue;
+-			if (!r->flags || (r->flags & IORESOURCE_UNSET))
++			if (resource_disabled(r) ||
++			    (r->flags & IORESOURCE_UNSET))
+ 				continue;	/* Not assigned at all */
+ 			/* We only allocate ROMs on pass 1 just in case they
+ 			 * have been screwed up by firmware
+@@ -1394,7 +1396,7 @@ void pcibios_claim_one_bus(struct pci_bus *bus)
+ 		for (i = 0; i < PCI_NUM_RESOURCES; i++) {
+ 			struct resource *r = &dev->resource[i];
+ 
+-			if (r->parent || !r->start || !r->flags)
++			if (r->parent || !r->start || resource_disabled(r))
+ 				continue;
+ 
+ 			pr_debug("PCI: Claiming %s: Resource %d: %pR\n",
+@@ -1475,7 +1477,7 @@ static void pcibios_setup_phb_resources(struct pci_controller *hose,
+ 	/* Hookup PHB IO resource */
+ 	res = &hose->io_resource;
+ 
+-	if (!res->flags) {
++	if (resource_disabled(res)) {
+ 		pr_info("PCI: I/O resource not set for host"
+ 		       " bridge %s (domain %d)\n",
+ 		       hose->dn->full_name, hose->global_number);
+@@ -1490,7 +1492,7 @@ static void pcibios_setup_phb_resources(struct pci_controller *hose,
+ 	/* Hookup PHB Memory resources */
+ 	for (i = 0; i < 3; ++i) {
+ 		res = &hose->mem_resources[i];
+-		if (!res->flags) {
++		if (resource_disabled(res)) {
+ 			if (i = 0)
+ 				printk(KERN_ERR "PCI: Memory resource 0 not set for "
+ 				       "host bridge %s (domain %d)\n",
+diff --git a/arch/powerpc/platforms/powernv/pci-ioda.c b/arch/powerpc/platforms/powernv/pci-ioda.c
+index f90dc04..e8f26b8 100644
+--- a/arch/powerpc/platforms/powernv/pci-ioda.c
++++ b/arch/powerpc/platforms/powernv/pci-ioda.c
+@@ -869,7 +869,7 @@ static int pnv_pci_vf_resource_shift(struct pci_dev *dev, int offset)
+ 	num_vfs = pdn->num_vfs;
+ 	for (i = 0; i < PCI_SRIOV_NUM_BARS; i++) {
+ 		res = &dev->resource[i + PCI_IOV_RESOURCES];
+-		if (!res->flags || !res->parent)
++		if (resource_disabled(res) || !res->parent)
+ 			continue;
+ 
+ 		if (!pnv_pci_is_mem_pref_64(res->flags))
+@@ -900,7 +900,7 @@ static int pnv_pci_vf_resource_shift(struct pci_dev *dev, int offset)
+ 	 */
+ 	for (i = 0; i < PCI_SRIOV_NUM_BARS; i++) {
+ 		res = &dev->resource[i + PCI_IOV_RESOURCES];
+-		if (!res->flags || !res->parent)
++		if (resource_disabled(res) || !res->parent)
+ 			continue;
+ 
+ 		if (!pnv_pci_is_mem_pref_64(res->flags))
+@@ -1260,7 +1260,7 @@ static int pnv_pci_vf_assign_m64(struct pci_dev *pdev, u16 num_vfs)
+ 
+ 	for (i = 0; i < PCI_SRIOV_NUM_BARS; i++) {
+ 		res = &pdev->resource[i + PCI_IOV_RESOURCES];
+-		if (!res->flags || !res->parent)
++		if (resource_disabled(res) || !res->parent)
+ 			continue;
+ 
+ 		if (!pnv_pci_is_mem_pref_64(res->flags))
+@@ -2874,7 +2874,7 @@ static void pnv_pci_ioda_fixup_iov_resources(struct pci_dev *pdev)
+ 
+ 	for (i = 0; i < PCI_SRIOV_NUM_BARS; i++) {
+ 		res = &pdev->resource[i + PCI_IOV_RESOURCES];
+-		if (!res->flags || res->parent)
++		if (resource_disabled(res) || res->parent)
+ 			continue;
+ 		if (!pnv_pci_is_mem_pref_64(res->flags)) {
+ 			dev_warn(&pdev->dev, " non M64 VF BAR%d: %pR\n",
+@@ -2896,7 +2896,7 @@ static void pnv_pci_ioda_fixup_iov_resources(struct pci_dev *pdev)
+ 
+ 	for (i = 0; i < PCI_SRIOV_NUM_BARS; i++) {
+ 		res = &pdev->resource[i + PCI_IOV_RESOURCES];
+-		if (!res->flags || res->parent)
++		if (resource_disabled(res) || res->parent)
+ 			continue;
+ 		if (!pnv_pci_is_mem_pref_64(res->flags)) {
+ 			dev_warn(&pdev->dev, "Skipping expanding VF BAR%d: %pR\n",
+@@ -2937,7 +2937,7 @@ static void pnv_ioda_setup_pe_seg(struct pci_controller *hose,
+ 	BUG_ON(!(pe->flags & (PNV_IODA_PE_BUS | PNV_IODA_PE_BUS_ALL)));
+ 
+ 	pci_bus_for_each_resource(pe->pbus, res, i) {
+-		if (!res || !res->flags ||
++		if (!res || resource_disabled(res) ||
+ 		    res->start > res->end)
+ 			continue;
+ 
+diff --git a/arch/s390/pci/pci.c b/arch/s390/pci/pci.c
+index 8f19c8f..47239ed 100644
+--- a/arch/s390/pci/pci.c
++++ b/arch/s390/pci/pci.c
+@@ -647,7 +647,7 @@ int pcibios_add_device(struct pci_dev *pdev)
+ 
+ 	for (i = 0; i < PCI_BAR_COUNT; i++) {
+ 		res = &pdev->resource[i];
+-		if (res->parent || !res->flags)
++		if (res->parent || resource_disabled(res))
+ 			continue;
+ 		pci_claim_resource(pdev, i);
+ 	}
+diff --git a/arch/sparc/kernel/pci.c b/arch/sparc/kernel/pci.c
+index 36a0dfb..afc4720 100644
+--- a/arch/sparc/kernel/pci.c
++++ b/arch/sparc/kernel/pci.c
+@@ -631,7 +631,7 @@ static void pci_claim_bus_resources(struct pci_bus *bus)
+ 		for (i = 0; i < PCI_NUM_RESOURCES; i++) {
+ 			struct resource *r = &dev->resource[i];
+ 
+-			if (r->parent || !r->start || !r->flags)
++			if (r->parent || !r->start || resource_disabled(r))
+ 				continue;
+ 
+ 			if (ofpci_verbose)
+diff --git a/arch/x86/pci/i386.c b/arch/x86/pci/i386.c
+index 2df7723..dcd5beb 100644
+--- a/arch/x86/pci/i386.c
++++ b/arch/x86/pci/i386.c
+@@ -223,7 +223,7 @@ static void pcibios_allocate_bridge_resources(struct pci_dev *dev)
+ 
+ 	for (idx = PCI_BRIDGE_RESOURCES; idx < PCI_NUM_RESOURCES; idx++) {
+ 		r = &dev->resource[idx];
+-		if (!r->flags)
++		if (resource_disabled(r))
+ 			continue;
+ 		if (r->parent)	/* Already allocated */
+ 			continue;
+@@ -352,7 +352,7 @@ static void pcibios_allocate_dev_rom_resource(struct pci_dev *dev)
+ 	 * addresses.
+ 	 */
+ 	r = &dev->resource[PCI_ROM_RESOURCE];
+-	if (!r->flags || !r->start)
++	if (resource_disabled(r) || !r->start)
+ 		return;
+ 	if (r->parent) /* Already allocated */
+ 		return;
+diff --git a/arch/xtensa/kernel/pci.c b/arch/xtensa/kernel/pci.c
+index b848cc3..f34d061 100644
+--- a/arch/xtensa/kernel/pci.c
++++ b/arch/xtensa/kernel/pci.c
+@@ -142,7 +142,7 @@ static void __init pci_controller_apertures(struct pci_controller *pci_ctrl,
+ 
+ 	io_offset = (unsigned long)pci_ctrl->io_space.base;
+ 	res = &pci_ctrl->io_resource;
+-	if (!res->flags) {
++	if (resource_disabled(res)) {
+ 		if (io_offset)
+ 			printk (KERN_ERR "I/O resource not set for host"
+ 				" bridge %d\n", pci_ctrl->index);
+@@ -156,7 +156,7 @@ static void __init pci_controller_apertures(struct pci_controller *pci_ctrl,
+ 
+ 	for (i = 0; i < 3; i++) {
+ 		res = &pci_ctrl->mem_resources[i];
+-		if (!res->flags) {
++		if (resource_disabled(res)) {
+ 			if (i > 0)
+ 				continue;
+ 			printk(KERN_ERR "Memory resource not set for "
+diff --git a/drivers/iommu/intel-iommu.c b/drivers/iommu/intel-iommu.c
+index 986a53e..a134841 100644
+--- a/drivers/iommu/intel-iommu.c
++++ b/drivers/iommu/intel-iommu.c
+@@ -1825,7 +1825,8 @@ static int dmar_init_reserved_ranges(void)
+ 
+ 		for (i = 0; i < PCI_NUM_RESOURCES; i++) {
+ 			r = &pdev->resource[i];
+-			if (!r->flags || !(r->flags & IORESOURCE_MEM))
++			if (resource_disabled(r) ||
++			    !(r->flags & IORESOURCE_MEM))
+ 				continue;
+ 			iova = reserve_iova(&reserved_iova_list,
+ 					    IOVA_PFN(r->start),
+diff --git a/drivers/pci/host/pcie-rcar.c b/drivers/pci/host/pcie-rcar.c
+index 4edb518..b2c7d43 100644
+--- a/drivers/pci/host/pcie-rcar.c
++++ b/drivers/pci/host/pcie-rcar.c
+@@ -361,7 +361,7 @@ static int rcar_pcie_setup(struct list_head *resource, struct rcar_pcie *pci)
+ 	resource_list_for_each_entry(win, &pci->resources) {
+ 		struct resource *res = win->res;
+ 
+-		if (!res->flags)
++		if (resource_disabled(res))
+ 			continue;
+ 
+ 		switch (resource_type(res)) {
+diff --git a/drivers/pci/iov.c b/drivers/pci/iov.c
+index 31f31d4..7f60fdc 100644
+--- a/drivers/pci/iov.c
++++ b/drivers/pci/iov.c
+@@ -438,7 +438,7 @@ found:
+ 		else
+ 			bar64 = __pci_read_base(dev, pci_bar_unknown, res,
+ 						pos + PCI_SRIOV_BAR + i * 4);
+-		if (!res->flags)
++		if (resource_disabled(res))
+ 			continue;
+ 		if (resource_size(res) & (PAGE_SIZE - 1)) {
+ 			rc = -EIO;
+diff --git a/drivers/pci/probe.c b/drivers/pci/probe.c
+index bcda915..563b784 100644
+--- a/drivers/pci/probe.c
++++ b/drivers/pci/probe.c
+@@ -2267,7 +2267,7 @@ void pci_bus_release_busn_res(struct pci_bus *b)
+ 	struct resource *res = &b->busn_res;
+ 	int ret;
+ 
+-	if (!res->flags || !res->parent)
++	if (resource_disabled(res) || !res->parent)
+ 		return;
+ 
+ 	ret = release_resource(res);
+diff --git a/drivers/pci/quirks.c b/drivers/pci/quirks.c
+index 8d1f75f..7bc1f97 100644
+--- a/drivers/pci/quirks.c
++++ b/drivers/pci/quirks.c
+@@ -348,7 +348,7 @@ static void quirk_bar_fixed(struct pci_dev *dev)
+ 	for (i = 0; i < PCI_STD_RESOURCE_END; i++) {
+ 		struct resource *r = &dev->resource[i];
+ 
+-		if (!r->start || !r->flags)
++		if (!r->start || resource_disabled(r))
+ 			continue;
+ 		r->flags |= IORESOURCE_PCI_FIXED;
+ 	}
+@@ -362,7 +362,7 @@ static void quirk_allocate_fixed(struct pci_dev *dev)
+ 	for (i = 0; i < PCI_NUM_RESOURCES; i++) {
+ 		struct resource *r = &dev->resource[i];
+ 
+-		if (r->parent ||
++		if (r->parent || resource_disabled(r) ||
+ 		    !(r->flags & IORESOURCE_PCI_FIXED) ||
+ 		    !(r->flags & (IORESOURCE_IO | IORESOURCE_MEM)))
+ 			continue;
+diff --git a/drivers/pci/rom.c b/drivers/pci/rom.c
+index 9eaca39..0542c40 100644
+--- a/drivers/pci/rom.c
++++ b/drivers/pci/rom.c
+@@ -28,7 +28,7 @@ int pci_enable_rom(struct pci_dev *pdev)
+ 	struct pci_bus_region region;
+ 	u32 rom_addr;
+ 
+-	if (!res->flags)
++	if (resource_disabled(res))
+ 		return -1;
+ 
+ 	pcibios_resource_to_bus(pdev->bus, &region, res);
+diff --git a/drivers/pci/setup-bus.c b/drivers/pci/setup-bus.c
+index ff4c5c4..dd764c4 100644
+--- a/drivers/pci/setup-bus.c
++++ b/drivers/pci/setup-bus.c
+@@ -223,7 +223,7 @@ static void pdev_assign_resources_prepare(struct pci_dev *dev,
+ 		if (r->flags & IORESOURCE_PCI_FIXED)
+ 			continue;
+ 
+-		if (!(r->flags) || r->parent)
++		if (resource_disabled(r) || r->parent)
+ 			continue;
+ 
+ 		r_align = __pci_resource_alignment(dev, r, realloc_head);
+@@ -319,7 +319,7 @@ static void reassign_resources_sorted(struct list_head *realloc_head,
+ 	list_for_each_entry_safe(add_res, tmp, realloc_head, list) {
+ 		res = add_res->res;
+ 		/* skip resource that has been reset */
+-		if (!res->flags)
++		if (resource_disabled(res))
+ 			goto out;
+ 
+ 		/* skip this resource if not found in head list */
+@@ -2168,7 +2168,7 @@ static void pci_bus_dump_res(struct pci_bus *bus)
  	int i;
  
-+	for_each_online_node(i)
-+		register_one_node(i);
-+
- 	for_each_possible_cpu(i) {
- 		struct cpu *cpu = &per_cpu(cpu_data.cpu, i);
- 		cpu->hotpluggable = 1;
-diff --git a/arch/arm64/kernel/smp.c b/arch/arm64/kernel/smp.c
-index b1adc51..d6e7d6a 100644
---- a/arch/arm64/kernel/smp.c
-+++ b/arch/arm64/kernel/smp.c
-@@ -45,6 +45,7 @@
- #include <asm/cputype.h>
- #include <asm/cpu_ops.h>
- #include <asm/mmu_context.h>
-+#include <asm/numa.h>
- #include <asm/pgtable.h>
- #include <asm/pgalloc.h>
- #include <asm/processor.h>
-@@ -125,6 +126,7 @@ int __cpu_up(unsigned int cpu, struct task_struct *idle)
- static void smp_store_cpu_info(unsigned int cpuid)
- {
- 	store_cpu_topology(cpuid);
-+	numa_store_cpu_info(cpuid);
+ 	pci_bus_for_each_resource(bus, res, i) {
+-		if (!res || !res->end || !res->flags)
++		if (!res || !res->end || resource_disabled(res))
+ 			continue;
+ 
+ 		dev_printk(KERN_DEBUG, &bus->dev, "resource %d %pR\n", i, res);
+@@ -2251,7 +2251,7 @@ static int iov_resources_unassigned(struct pci_dev *dev, void *data)
+ 		struct pci_bus_region region;
+ 
+ 		/* Not assigned or rejected by kernel? */
+-		if (!r->flags)
++		if (resource_disabled(r))
+ 			continue;
+ 
+ 		pcibios_resource_to_bus(dev->bus, &region, r);
+diff --git a/drivers/pci/setup-res.c b/drivers/pci/setup-res.c
+index c401cfd..b196fcd 100644
+--- a/drivers/pci/setup-res.c
++++ b/drivers/pci/setup-res.c
+@@ -45,7 +45,7 @@ void pci_update_resource(struct pci_dev *dev, int resno)
+ 	 * Ignore resources for unimplemented BARs and unused resource slots
+ 	 * for 64 bit BARs.
+ 	 */
+-	if (!res->flags)
++	if (resource_disabled(res))
+ 		return;
+ 
+ 	if (res->flags & IORESOURCE_UNSET)
+diff --git a/include/linux/ioport.h b/include/linux/ioport.h
+index 26b0a08..d148512 100644
+--- a/include/linux/ioport.h
++++ b/include/linux/ioport.h
+@@ -180,6 +180,10 @@ static inline bool resource_contains(struct resource *r1, struct resource *r2)
+ 	return r1->start <= r2->start && r1->end >= r2->end;
  }
  
- /*
-diff --git a/arch/arm64/mm/Makefile b/arch/arm64/mm/Makefile
-index 57f57fd..54bb209 100644
---- a/arch/arm64/mm/Makefile
-+++ b/arch/arm64/mm/Makefile
-@@ -4,6 +4,7 @@ obj-y				:= dma-mapping.o extable.o fault.o init.o \
- 				   context.o proc.o pageattr.o
- obj-$(CONFIG_HUGETLB_PAGE)	+= hugetlbpage.o
- obj-$(CONFIG_ARM64_PTDUMP)	+= dump.o
-+obj-$(CONFIG_NUMA)		+= numa.o
++static inline bool resource_disabled(struct resource *r)
++{
++	return !r->flags || (r->flags & IORESOURCE_DISABLED);
++}
  
- obj-$(CONFIG_KASAN)		+= kasan_init.o
- KASAN_SANITIZE_kasan_init.o	:= n
-diff --git a/arch/arm64/mm/init.c b/arch/arm64/mm/init.c
-index f3b061e..c39c670 100644
---- a/arch/arm64/mm/init.c
-+++ b/arch/arm64/mm/init.c
-@@ -37,6 +37,7 @@
- 
- #include <asm/fixmap.h>
- #include <asm/memory.h>
-+#include <asm/numa.h>
- #include <asm/sections.h>
- #include <asm/setup.h>
- #include <asm/sizes.h>
-@@ -77,6 +78,21 @@ static phys_addr_t __init max_zone_dma_phys(void)
- 	return min(offset + (1ULL << 32), memblock_end_of_DRAM());
- }
- 
-+#ifdef CONFIG_NUMA
-+
-+static void __init zone_sizes_init(unsigned long min, unsigned long max)
-+{
-+	unsigned long max_zone_pfns[MAX_NR_ZONES]  = {0};
-+
-+	if (IS_ENABLED(CONFIG_ZONE_DMA))
-+		max_zone_pfns[ZONE_DMA] = PFN_DOWN(max_zone_dma_phys());
-+	max_zone_pfns[ZONE_NORMAL] = max;
-+
-+	free_area_init_nodes(max_zone_pfns);
-+}
-+
-+#else
-+
- static void __init zone_sizes_init(unsigned long min, unsigned long max)
- {
- 	struct memblock_region *reg;
-@@ -117,6 +133,8 @@ static void __init zone_sizes_init(unsigned long min, unsigned long max)
- 	free_area_init_node(0, zone_size, min, zhole_size);
- }
- 
-+#endif /* CONFIG_NUMA */
-+
- #ifdef CONFIG_HAVE_ARCH_PFN_VALID
- int pfn_valid(unsigned long pfn)
- {
-@@ -133,10 +151,15 @@ static void __init arm64_memory_present(void)
- static void __init arm64_memory_present(void)
- {
- 	struct memblock_region *reg;
-+	int nid = 0;
- 
--	for_each_memblock(memory, reg)
--		memory_present(0, memblock_region_memory_base_pfn(reg),
--			       memblock_region_memory_end_pfn(reg));
-+	for_each_memblock(memory, reg) {
-+#ifdef CONFIG_NUMA
-+		nid = reg->nid;
-+#endif
-+		memory_present(nid, memblock_region_memory_base_pfn(reg),
-+				memblock_region_memory_end_pfn(reg));
-+	}
- }
- #endif
- 
-@@ -181,7 +204,6 @@ void __init arm64_memblock_init(void)
- 	dma_contiguous_reserve(arm64_dma_phys_limit);
- 
- 	memblock_allow_resize();
--	memblock_dump_all();
- }
- 
- void __init bootmem_init(void)
-@@ -193,6 +215,9 @@ void __init bootmem_init(void)
- 
- 	early_memtest(min << PAGE_SHIFT, max << PAGE_SHIFT);
- 
-+	max_pfn = max_low_pfn = max;
-+
-+	arm64_numa_init();
- 	/*
- 	 * Sparsemem tries to allocate bootmem in memory_present(), so must be
- 	 * done after the fixed reservations.
-@@ -203,7 +228,6 @@ void __init bootmem_init(void)
- 	zone_sizes_init(min, max);
- 
- 	high_memory = __va((max << PAGE_SHIFT) - 1) + 1;
--	max_pfn = max_low_pfn = max;
- }
- 
- #ifndef CONFIG_SPARSEMEM_VMEMMAP
-diff --git a/arch/arm64/mm/mmu.c b/arch/arm64/mm/mmu.c
-index 58faeaa..44e3854 100644
---- a/arch/arm64/mm/mmu.c
-+++ b/arch/arm64/mm/mmu.c
-@@ -463,6 +463,7 @@ void __init paging_init(void)
- 	zero_page = early_alloc(PAGE_SIZE);
- 
- 	bootmem_init();
-+	memblock_dump_all();
- 
- 	empty_zero_page = virt_to_page(zero_page);
- 
-diff --git a/arch/arm64/mm/numa.c b/arch/arm64/mm/numa.c
-new file mode 100644
-index 0000000..60f19a2
---- /dev/null
-+++ b/arch/arm64/mm/numa.c
-@@ -0,0 +1,387 @@
-+/*
-+ * NUMA support, based on the x86 implementation.
-+ *
-+ * Copyright (C) 2015 Cavium Inc.
-+ * Author: Ganapatrao Kulkarni <gkulkarni@cavium.com>
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License version 2 as
-+ * published by the Free Software Foundation.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
-+ */
-+
-+#include <linux/bootmem.h>
-+#include <linux/memblock.h>
-+#include <linux/module.h>
-+
-+struct pglist_data *node_data[MAX_NUMNODES] __read_mostly;
-+EXPORT_SYMBOL(node_data);
-+nodemask_t numa_nodes_parsed __initdata;
-+static int cpu_to_node_map[NR_CPUS] = { [0 ... NR_CPUS-1] = NUMA_NO_NODE };
-+
-+static int numa_off;
-+static int numa_distance_cnt;
-+static u8 *numa_distance;
-+
-+static __init int numa_parse_early_param(char *opt)
-+{
-+	if (!opt)
-+		return -EINVAL;
-+	if (!strncmp(opt, "off", 3)) {
-+		pr_info("%s\n", "NUMA turned off");
-+		numa_off = 1;
-+	}
-+	return 0;
-+}
-+early_param("numa", numa_parse_early_param);
-+
-+cpumask_var_t node_to_cpumask_map[MAX_NUMNODES];
-+EXPORT_SYMBOL(node_to_cpumask_map);
-+
-+#ifdef CONFIG_DEBUG_PER_CPU_MAPS
-+
-+/*
-+ * Returns a pointer to the bitmask of CPUs on Node 'node'.
-+ */
-+const struct cpumask *cpumask_of_node(int node)
-+{
-+	if (WARN_ON(node >= nr_node_ids))
-+		return cpu_none_mask;
-+
-+	if (WARN_ON(node_to_cpumask_map[node] = NULL))
-+		return cpu_online_mask;
-+
-+	return node_to_cpumask_map[node];
-+}
-+EXPORT_SYMBOL(cpumask_of_node);
-+
-+#endif
-+
-+static void map_cpu_to_node(unsigned int cpu, int nid)
-+{
-+	set_cpu_numa_node(cpu, nid);
-+	if (nid >= 0)
-+		cpumask_set_cpu(cpu, node_to_cpumask_map[nid]);
-+}
-+
-+static void unmap_cpu_to_node(unsigned int cpu)
-+{
-+	int nid = cpu_to_node(cpu);
-+
-+	if (nid >= 0)
-+		cpumask_clear_cpu(cpu, node_to_cpumask_map[nid]);
-+	set_cpu_numa_node(cpu, NUMA_NO_NODE);
-+}
-+
-+void numa_clear_node(unsigned int cpu)
-+{
-+	unmap_cpu_to_node(cpu);
-+}
-+
-+/*
-+ * Allocate node_to_cpumask_map based on number of available nodes
-+ * Requires node_possible_map to be valid.
-+ *
-+ * Note: cpumask_of_node() is not valid until after this is done.
-+ * (Use CONFIG_DEBUG_PER_CPU_MAPS to check this.)
-+ */
-+static void __init setup_node_to_cpumask_map(void)
-+{
-+	unsigned int cpu;
-+	int node;
-+
-+	/* setup nr_node_ids if not done yet */
-+	if (nr_node_ids = MAX_NUMNODES)
-+		setup_nr_node_ids();
-+
-+	/* allocate and clear the mapping */
-+	for (node = 0; node < nr_node_ids; node++) {
-+		alloc_bootmem_cpumask_var(&node_to_cpumask_map[node]);
-+		cpumask_clear(node_to_cpumask_map[node]);
-+	}
-+
-+	for_each_possible_cpu(cpu)
-+		set_cpu_numa_node(cpu, NUMA_NO_NODE);
-+
-+	/* cpumask_of_node() will now work */
-+	pr_debug("NUMA: Node to cpumask map for %d nodes\n", nr_node_ids);
-+}
-+
-+/*
-+ *  Set the cpu to node and mem mapping
-+ */
-+void numa_store_cpu_info(unsigned int cpu)
-+{
-+	map_cpu_to_node(cpu, numa_off ? 0 : cpu_to_node_map[cpu]);
-+}
-+
-+/**
-+ * numa_add_memblk - Set node id to memblk
-+ * @nid: NUMA node ID of the new memblk
-+ * @start: Start address of the new memblk
-+ * @size:  Size of the new memblk
-+ *
-+ * RETURNS:
-+ * 0 on success, -errno on failure.
-+ */
-+int __init numa_add_memblk(int nid, u64 start, u64 size)
-+{
-+	int ret;
-+
-+	ret = memblock_set_node(start, size, &memblock.memory, nid);
-+	if (ret < 0) {
-+		pr_err("NUMA: memblock [0x%llx - 0x%llx] failed to add on node %d\n",
-+			start, (start + size - 1), nid);
-+		return ret;
-+	}
-+
-+	node_set(nid, numa_nodes_parsed);
-+	pr_info("NUMA: Adding memblock [0x%llx - 0x%llx] on node %d\n",
-+			start, (start + size - 1), nid);
-+	return ret;
-+}
-+EXPORT_SYMBOL(numa_add_memblk);
-+
-+/**
-+ * Initialize NODE_DATA for a node on the local memory
-+ */
-+static void __init setup_node_data(int nid, u64 start_pfn, u64 end_pfn)
-+{
-+	const size_t nd_size = roundup(sizeof(pg_data_t), SMP_CACHE_BYTES);
-+	u64 nd_pa;
-+	void *nd;
-+	int tnid;
-+
-+	pr_info("NUMA: Initmem setup node %d [mem %#010Lx-%#010Lx]\n",
-+			nid, start_pfn << PAGE_SHIFT,
-+			(end_pfn << PAGE_SHIFT) - 1);
-+
-+	nd_pa = memblock_alloc_try_nid(nd_size, SMP_CACHE_BYTES, nid);
-+	nd = __va(nd_pa);
-+
-+	/* report and initialize */
-+	pr_info("NUMA: NODE_DATA [mem %#010Lx-%#010Lx]\n",
-+		nd_pa, nd_pa + nd_size - 1);
-+	tnid = early_pfn_to_nid(nd_pa >> PAGE_SHIFT);
-+	if (tnid != nid)
-+		pr_info("NUMA: NODE_DATA(%d) on node %d\n", nid, tnid);
-+
-+	node_data[nid] = nd;
-+	memset(NODE_DATA(nid), 0, sizeof(pg_data_t));
-+	NODE_DATA(nid)->node_id = nid;
-+	NODE_DATA(nid)->node_start_pfn = start_pfn;
-+	NODE_DATA(nid)->node_spanned_pages = end_pfn - start_pfn;
-+}
-+
-+/**
-+ * numa_free_distance
-+ *
-+ * The current table is freed.
-+ */
-+void __init numa_free_distance(void)
-+{
-+	size_t size;
-+
-+	if (!numa_distance)
-+		return;
-+
-+	size = numa_distance_cnt * numa_distance_cnt *
-+		sizeof(numa_distance[0]);
-+
-+	memblock_free(__pa(numa_distance), size);
-+	numa_distance_cnt = 0;
-+	numa_distance = NULL;
-+}
-+
-+/**
-+ *
-+ * Create a new NUMA distance table.
-+ *
-+ */
-+static int __init numa_alloc_distance(void)
-+{
-+	size_t size;
-+	u64 phys;
-+	int i, j;
-+
-+	size = nr_node_ids * nr_node_ids * sizeof(numa_distance[0]);
-+	phys = memblock_find_in_range(0, PFN_PHYS(max_pfn),
-+				      size, PAGE_SIZE);
-+	if (WARN_ON(!phys))
-+		return -ENOMEM;
-+
-+	memblock_reserve(phys, size);
-+
-+	numa_distance = __va(phys);
-+	numa_distance_cnt = nr_node_ids;
-+
-+	/* fill with the default distances */
-+	for (i = 0; i < numa_distance_cnt; i++)
-+		for (j = 0; j < numa_distance_cnt; j++)
-+			numa_distance[i * numa_distance_cnt + j] = i = j ?
-+				LOCAL_DISTANCE : REMOTE_DISTANCE;
-+
-+	pr_debug("NUMA: Initialized distance table, cnt=%d\n",
-+			numa_distance_cnt);
-+
-+	return 0;
-+}
-+
-+/**
-+ * numa_set_distance - Set inter node NUMA distance from node to node.
-+ * @from: the 'from' node to set distance
-+ * @to: the 'to'  node to set distance
-+ * @distance: NUMA distance
-+ *
-+ * Set the distance from node @from to @to to @distance.
-+ * If distance table doesn't exist, a warning is printed.
-+ *
-+ * If @from or @to is higher than the highest known node or lower than zero
-+ * or @distance doesn't make sense, the call is ignored.
-+ *
-+ */
-+void __init numa_set_distance(int from, int to, int distance)
-+{
-+	if (!numa_distance) {
-+		pr_warn_once("NUMA: Warning: distance table not allocated yet\n");
-+		return;
-+	}
-+
-+	if (from >= numa_distance_cnt || to >= numa_distance_cnt ||
-+			from < 0 || to < 0) {
-+		pr_warn_once("NUMA: Warning: node ids are out of bound, from=%d to=%d distance=%d\n",
-+			    from, to, distance);
-+		return;
-+	}
-+
-+	if ((u8)distance != distance ||
-+	    (from = to && distance != LOCAL_DISTANCE)) {
-+		pr_warn_once("NUMA: Warning: invalid distance parameter, from=%d to=%d distance=%d\n",
-+			     from, to, distance);
-+		return;
-+	}
-+
-+	numa_distance[from * numa_distance_cnt + to] = distance;
-+}
-+EXPORT_SYMBOL(numa_set_distance);
-+
-+/**
-+ * Return NUMA distance @from to @to
-+ */
-+int __node_distance(int from, int to)
-+{
-+	if (from >= numa_distance_cnt || to >= numa_distance_cnt)
-+		return from = to ? LOCAL_DISTANCE : REMOTE_DISTANCE;
-+	return numa_distance[from * numa_distance_cnt + to];
-+}
-+EXPORT_SYMBOL(__node_distance);
-+
-+static int __init numa_register_nodes(void)
-+{
-+	int nid;
-+	struct memblock_region *mblk;
-+
-+	/* Check that valid nid is set to memblks */
-+	for_each_memblock(memory, mblk)
-+		if (mblk->nid = NUMA_NO_NODE || mblk->nid >= MAX_NUMNODES) {
-+			pr_warn("NUMA: Warning: invalid memblk node %d [mem %#010Lx-%#010Lx]\n",
-+				mblk->nid, mblk->base, mblk->base + mblk->size - 1);
-+			return -EINVAL;
-+		}
-+
-+	/* Finally register nodes. */
-+	for_each_node_mask(nid, numa_nodes_parsed) {
-+		unsigned long start_pfn, end_pfn;
-+
-+		get_pfn_range_for_nid(nid, &start_pfn, &end_pfn);
-+		setup_node_data(nid, start_pfn, end_pfn);
-+		node_set_online(nid);
-+	}
-+
-+	/* Setup online nodes to actual nodes*/
-+	node_possible_map = numa_nodes_parsed;
-+
-+	return 0;
-+}
-+
-+static int __init numa_init(int (*init_func)(void))
-+{
-+	int ret;
-+
-+	nodes_clear(numa_nodes_parsed);
-+	nodes_clear(node_possible_map);
-+	nodes_clear(node_online_map);
-+	numa_free_distance();
-+
-+	ret = init_func();
-+	if (ret < 0)
-+		return ret;
-+
-+	if (nodes_empty(numa_nodes_parsed))
-+		return -EINVAL;
-+
-+	ret = numa_register_nodes();
-+	if (ret < 0)
-+		return ret;
-+
-+	ret = numa_alloc_distance();
-+	if (ret < 0)
-+		return ret;
-+
-+	setup_node_to_cpumask_map();
-+
-+	/* init boot processor */
-+	cpu_to_node_map[0] = 0;
-+	map_cpu_to_node(0, 0);
-+
-+	return 0;
-+}
-+
-+/**
-+ * dummy_numa_init - Fallback dummy NUMA init
-+ *
-+ * Used if there's no underlying NUMA architecture, NUMA initialization
-+ * fails, or NUMA is disabled on the command line.
-+ *
-+ * Must online at least one node (node 0) and add memory blocks that cover all
-+ * allowed memory. It is unlikely that this function fails.
-+ */
-+static int __init dummy_numa_init(void)
-+{
-+	int ret;
-+	struct memblock_region *mblk;
-+
-+	pr_info("%s\n", "No NUMA configuration found");
-+	pr_info("NUMA: Faking a node at [mem %#018Lx-%#018Lx]\n",
-+	       0LLU, PFN_PHYS(max_pfn) - 1);
-+
-+	for_each_memblock(memory, mblk) {
-+		ret = numa_add_memblk(0, mblk->base, mblk->size);
-+		if (!ret)
-+			continue;
-+
-+		pr_err("NUMA init failed\n");
-+		return ret;
-+	}
-+
-+	numa_off = 1;
-+	return 0;
-+}
-+
-+/**
-+ * arm64_numa_init - Initialize NUMA
-+ *
-+ * Try each configured NUMA initialization method until one succeeds.  The
-+ * last fallback is dummy single node config encomapssing whole memory.
-+ */
-+void __init arm64_numa_init(void)
-+{
-+	numa_init(dummy_numa_init);
-+}
+ /* Convenience shorthand with allocation */
+ #define request_region(start,n,name)		__request_region(&ioport_resource, (start), (n), (name), 0)
 -- 
-1.8.1.4
+1.8.4.5
 
