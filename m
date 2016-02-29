@@ -1,65 +1,67 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 16 Feb 2016 15:31:51 +0000
-Subject: [PATCH 3/4] drivers: sh: Stop using the legacy clock domain on ARM
-Message-Id: <1455636712-3040-4-git-send-email-geert+renesas@glider.be>
+From: Michal Hocko <mhocko@kernel.org>
+Date: Mon, 29 Feb 2016 12:58:20 +0000
+Subject: [PATCH 06/11] s390, rwsem: provide __down_write_killable
+Message-Id: <1456750705-7141-7-git-send-email-mhocko@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1455636712-3040-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1455636712-3040-1-git-send-email-geert+renesas@glider.be>
+References: <1456750705-7141-1-git-send-email-mhocko@kernel.org>
+In-Reply-To: <1456750705-7141-1-git-send-email-mhocko@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: LKML <linux-kernel@vger.kernel.org>
+Cc: Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@redhat.com>, Thomas Gleixner <tglx@linutronix.de>, "H. Peter Anvin" <hpa@zytor.com>, "David S. Miller" <davem@davemloft.net>, Tony Luck <tony.luck@intel.com>, Andrew Morton <akpm@linux-foundation.org>, Chris Zankel <chris@zankel.net>, Max Filippov <jcmvbkbc@gmail.com>, x86@kernel.org, linux-alpha@vger.kernel.org, linux-ia64@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-arch@vger.kernel.org, Michal Hocko <mhocko@suse.com>
 
-Now CONFIG_PM and CONFIG_PM_GENERIC_DOMAINS are enabled unconditionally
-for Renesas ARM-based SoCs, the legacy clock domain is no longer used on
-these SoCs.
-Remove the related support code, and stop entering drivers/sh/ on ARM.
+From: Michal Hocko <mhocko@suse.com>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Introduce ___down_write for the fast path and reuse it for __down_write
+resp. __down_write_killable each using the respective generic slow path
+(rwsem_down_write_failed resp. rwsem_down_write_failed_killable).
+
+Signed-off-by: Michal Hocko <mhocko@suse.com>
 ---
-Notes:
-  - This does break booting R-Car Gen2 boards using pre-v4.3 DTSes that
-    don't have power-domains properties,
-  - This may unbreak SuperH-based ARCH_SHMOBILE platforms, which were
-    probably broken since v4.4 by commit 0ba58de231066e47 ("drivers: sh:
-    Get rid of CONFIG_ARCH_SHMOBILE_MULTI").
----
- drivers/Makefile        | 1 -
- drivers/sh/pm_runtime.c | 9 ---------
- 2 files changed, 10 deletions(-)
+ arch/s390/include/asm/rwsem.h | 19 +++++++++++++++++--
+ 1 file changed, 17 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/Makefile b/drivers/Makefile
-index 8f5d076baeb0e832..6afdb78e21382538 100644
---- a/drivers/Makefile
-+++ b/drivers/Makefile
-@@ -127,7 +127,6 @@ obj-$(CONFIG_SGI_SN)		+= sn/
- obj-y				+= firmware/
- obj-$(CONFIG_CRYPTO)		+= crypto/
- obj-$(CONFIG_SUPERH)		+= sh/
--obj-$(CONFIG_ARCH_SHMOBILE)	+= sh/
- ifndef CONFIG_ARCH_USES_GETTIMEOFFSET
- obj-y				+= clocksource/
- endif
-diff --git a/drivers/sh/pm_runtime.c b/drivers/sh/pm_runtime.c
-index 91a003011acfacb2..c887ecdaf19b7c10 100644
---- a/drivers/sh/pm_runtime.c
-+++ b/drivers/sh/pm_runtime.c
-@@ -34,15 +34,6 @@ static struct pm_clk_notifier_block platform_bus_notifier = {
- 
- static int __init sh_pm_runtime_init(void)
+diff --git a/arch/s390/include/asm/rwsem.h b/arch/s390/include/asm/rwsem.h
+index 8e52e72f3efc..8e7b2b7e10f3 100644
+--- a/arch/s390/include/asm/rwsem.h
++++ b/arch/s390/include/asm/rwsem.h
+@@ -90,7 +90,7 @@ static inline int __down_read_trylock(struct rw_semaphore *sem)
+ /*
+  * lock for writing
+  */
+-static inline void __down_write(struct rw_semaphore *sem)
++static inline long ___down_write(struct rw_semaphore *sem)
  {
--	if (IS_ENABLED(CONFIG_ARCH_SHMOBILE)) {
--		if (!of_find_compatible_node(NULL, NULL,
--					     "renesas,cpg-mstp-clocks"))
--			return 0;
--		if (IS_ENABLED(CONFIG_PM_GENERIC_DOMAINS_OF) &&
--		    of_find_node_with_property(NULL, "#power-domain-cells"))
--			return 0;
--	}
--
- 	pm_clk_add_notifier(&platform_bus_type, &platform_bus_notifier);
- 	return 0;
+ 	signed long old, new, tmp;
+ 
+@@ -104,10 +104,25 @@ static inline void __down_write(struct rw_semaphore *sem)
+ 		: "=&d" (old), "=&d" (new), "=Q" (sem->count)
+ 		: "Q" (sem->count), "m" (tmp)
+ 		: "cc", "memory");
+-	if (old != 0)
++
++	return old;
++}
++
++static inline void __down_write(struct rw_semaphore *sem)
++{
++	if (___down_write(sem))
+ 		rwsem_down_write_failed(sem);
  }
+ 
++static inline int __down_write_killable(struct rw_semaphore *sem)
++{
++	if (___down_write(sem))
++		if (IS_ERR(rwsem_down_write_failed_killable(sem)))
++			return -EINTR;
++
++	return 0;
++}
++
+ /*
+  * trylock for writing -- returns 1 if successful, 0 if contention
+  */
 -- 
-1.9.1
+2.7.0
 
