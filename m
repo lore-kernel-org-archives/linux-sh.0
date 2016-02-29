@@ -1,10 +1,10 @@
 From: Michal Hocko <mhocko@kernel.org>
-Date: Tue, 02 Feb 2016 20:19:29 +0000
-Subject: [RFC 12/12] locking, rwsem: provide down_write_killable
-Message-Id: <1454444369-2146-13-git-send-email-mhocko@kernel.org>
+Date: Mon, 29 Feb 2016 12:58:19 +0000
+Subject: [PATCH 05/11] ia64, rwsem: provide __down_write_killable
+Message-Id: <1456750705-7141-6-git-send-email-mhocko@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1454444369-2146-1-git-send-email-mhocko@kernel.org>
-In-Reply-To: <1454444369-2146-1-git-send-email-mhocko@kernel.org>
+References: <1456750705-7141-1-git-send-email-mhocko@kernel.org>
+In-Reply-To: <1456750705-7141-1-git-send-email-mhocko@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -13,93 +13,58 @@ Cc: Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@redhat.com>, Thoma
 
 From: Michal Hocko <mhocko@suse.com>
 
-Now that all the architectures implement the necessary glue code
-we can introduce down_write_killable. The only difference wrt. regular
-down_write is that the slow path waits in TASK_KILLABLE state and the
-interruption by the fatal signal is reported as -EINTR to the caller.
+Introduce ___down_write for the fast path and reuse it for __down_write
+resp. __down_write_killable each using the respective generic slow path
+(rwsem_down_write_failed resp. rwsem_down_write_failed_killable).
 
 Signed-off-by: Michal Hocko <mhocko@suse.com>
 ---
- include/linux/lockdep.h | 15 +++++++++++++++
- include/linux/rwsem.h   |  1 +
- kernel/locking/rwsem.c  | 19 +++++++++++++++++++
- 3 files changed, 35 insertions(+)
+ arch/ia64/include/asm/rwsem.h | 22 +++++++++++++++++++---
+ 1 file changed, 19 insertions(+), 3 deletions(-)
 
-diff --git a/include/linux/lockdep.h b/include/linux/lockdep.h
-index c57e424d914b..f6bd57c0784b 100644
---- a/include/linux/lockdep.h
-+++ b/include/linux/lockdep.h
-@@ -446,6 +446,18 @@ do {								\
- 	lock_acquired(&(_lock)->dep_map, _RET_IP_);			\
- } while (0)
- 
-+#define LOCK_CONTENDED_RETURN(_lock, try, lock)			\
-+({								\
-+	int ____err = 0;					\
-+	if (!try(_lock)) {					\
-+		lock_contended(&(_lock)->dep_map, _RET_IP_);	\
-+		____err = lock(_lock);				\
-+	}							\
-+	if (!____err)						\
-+		lock_acquired(&(_lock)->dep_map, _RET_IP_);	\
-+	____err;						\
-+})
-+
- #else /* CONFIG_LOCK_STAT */
- 
- #define lock_contended(lockdep_map, ip) do {} while (0)
-@@ -454,6 +466,9 @@ do {								\
- #define LOCK_CONTENDED(_lock, try, lock) \
- 	lock(_lock)
- 
-+#define LOCK_CONTENDED_RETURN(_lock, try, lock) \
-+	lock(_lock)
-+
- #endif /* CONFIG_LOCK_STAT */
- 
- #ifdef CONFIG_LOCKDEP
-diff --git a/include/linux/rwsem.h b/include/linux/rwsem.h
-index 7d7ae029dac5..d1c12d160ace 100644
---- a/include/linux/rwsem.h
-+++ b/include/linux/rwsem.h
-@@ -118,6 +118,7 @@ extern int down_read_trylock(struct rw_semaphore *sem);
+diff --git a/arch/ia64/include/asm/rwsem.h b/arch/ia64/include/asm/rwsem.h
+index 3027e7516d85..5e78cb40d9df 100644
+--- a/arch/ia64/include/asm/rwsem.h
++++ b/arch/ia64/include/asm/rwsem.h
+@@ -49,8 +49,8 @@ __down_read (struct rw_semaphore *sem)
+ /*
   * lock for writing
   */
- extern void down_write(struct rw_semaphore *sem);
-+extern int __must_check down_write_killable(struct rw_semaphore *sem);
+-static inline void
+-__down_write (struct rw_semaphore *sem)
++static inline long
++___down_write (struct rw_semaphore *sem)
+ {
+ 	long old, new;
  
- /*
-  * trylock for writing -- returns 1 if successful, 0 if contention
-diff --git a/kernel/locking/rwsem.c b/kernel/locking/rwsem.c
-index 205be0ce34de..c817216c1615 100644
---- a/kernel/locking/rwsem.c
-+++ b/kernel/locking/rwsem.c
-@@ -55,6 +55,25 @@ void __sched down_write(struct rw_semaphore *sem)
- EXPORT_SYMBOL(down_write);
+@@ -59,10 +59,26 @@ __down_write (struct rw_semaphore *sem)
+ 		new = old + RWSEM_ACTIVE_WRITE_BIAS;
+ 	} while (cmpxchg_acq(&sem->count, old, new) != old);
  
- /*
-+ * lock for writing
-+ */
-+int __sched down_write_killable(struct rw_semaphore *sem)
+-	if (old != 0)
++	return old;
++}
++
++static inline void
++__down_write (struct rw_semaphore *sem)
 +{
-+	might_sleep();
-+	rwsem_acquire(&sem->dep_map, 0, 0, _RET_IP_);
++	if (___down_write(sem))
+ 		rwsem_down_write_failed(sem);
+ }
+ 
++static inline int
++__down_write_killable (struct rw_semaphore *sem)
++{
++	if (___down_write(sem))
++		if (IS_ERR(rwsem_down_write_failed_killable(sem)))
++			return -EINTR;
 +
-+	if (LOCK_CONTENDED_RETURN(sem, __down_write_trylock, __down_write_killable)) {
-+		rwsem_release(&sem->dep_map, 1, _RET_IP_);
-+		return -EINTR;
-+	}
-+
-+	rwsem_set_owner(sem);
 +	return 0;
 +}
 +
-+EXPORT_SYMBOL(down_write_killable);
-+
-+/*
-  * trylock for writing -- returns 1 if successful, 0 if contention
+ /*
+  * unlock after reading
   */
- int down_write_trylock(struct rw_semaphore *sem)
 -- 
 2.7.0
 
