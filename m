@@ -1,60 +1,105 @@
-From: Ingo Molnar <mingo@kernel.org>
-Date: Wed, 17 Feb 2016 09:45:10 +0000
-Subject: Re: [PATCH v3 0/2] Consolidate redundant register/stack access code
-Message-Id: <20160217094510.GA27144@gmail.com>
+From: Michal Hocko <mhocko@kernel.org>
+Date: Mon, 29 Feb 2016 12:58:25 +0000
+Subject: [PATCH 11/11] locking, rwsem: provide down_write_killable
+Message-Id: <1456750705-7141-12-git-send-email-mhocko@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1454996337-7935-1-git-send-email-dave.long@linaro.org>
- <1455010600.13384.3.camel@ellerman.id.au>
- <20160209094526.GB25268@gmail.com> <56BA5226.3090105@linaro.org>
-In-Reply-To: <56BA5226.3090105@linaro.org>
+References: <1456750705-7141-1-git-send-email-mhocko@kernel.org>
+In-Reply-To: <1456750705-7141-1-git-send-email-mhocko@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: LKML <linux-kernel@vger.kernel.org>
+Cc: Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@redhat.com>, Thomas Gleixner <tglx@linutronix.de>, "H. Peter Anvin" <hpa@zytor.com>, "David S. Miller" <davem@davemloft.net>, Tony Luck <tony.luck@intel.com>, Andrew Morton <akpm@linux-foundation.org>, Chris Zankel <chris@zankel.net>, Max Filippov <jcmvbkbc@gmail.com>, x86@kernel.org, linux-alpha@vger.kernel.org, linux-ia64@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-arch@vger.kernel.org, Michal Hocko <mhocko@suse.com>
 
+From: Michal Hocko <mhocko@suse.com>
 
-* David Long <dave.long@linaro.org> wrote:
+Now that all the architectures implement the necessary glue code
+we can introduce down_write_killable. The only difference wrt. regular
+down_write is that the slow path waits in TASK_KILLABLE state and the
+interruption by the fatal signal is reported as -EINTR to the caller.
 
-> On 02/09/2016 04:45 AM, Ingo Molnar wrote:
-> >
-> >* Michael Ellerman <mpe@ellerman.id.au> wrote:
-> >
-> >>On Tue, 2016-02-09 at 00:38 -0500, David Long wrote:
-> >>
-> >>>From: "David A. Long" <dave.long@linaro.org>
-> >>>
-> >>>Move duplicate and functionally equivalent code for accessing registers
-> >>>and stack (CONFIG_HAVE_REGS_AND_STACK_ACCESS_API) from arch subdirs into
-> >>>common kernel files.
-> >>>
-> >>>I'm sending this out again (with updated distribution list) because v2
-> >>>just never got pulled in, even though I don't think there were any
-> >>>outstanding issues.
-> >>
-> >>A big cross arch patch like this would often get taken by Andrew Morton, but
-> >>AFAICS you didn't CC him - so I just added him, perhaps he'll pick it up for
-> >>us :D
-> >
-> >The other problem is that the second patch is commingling changes to 6 separate
-> >architectures:
-> >
-> >  16 files changed, 106 insertions(+), 343 deletions(-)
-> >
-> >that should probably be 6 separate patches. Easier to review, easier to bisect to,
-> >easier to revert, etc.
-> >
-> >Thanks,
-> >
-> >	Ingo
-> >
-> 
-> I see your point but I'm not sure it could have been broken into separate 
-> successive patches that would each build for all architectures.
+Signed-off-by: Michal Hocko <mhocko@suse.com>
+---
+ include/linux/lockdep.h | 15 +++++++++++++++
+ include/linux/rwsem.h   |  1 +
+ kernel/locking/rwsem.c  | 19 +++++++++++++++++++
+ 3 files changed, 35 insertions(+)
 
-Why? AFAICS all the functionality appears to be conditional on 
-CONFIG_HAVE_REGS_AND_STACK_ACCESS_API, so it ought to build standalone as well, on 
-a per arch basis, as long as the core kernel patch is applied first.
+diff --git a/include/linux/lockdep.h b/include/linux/lockdep.h
+index d026b190c530..accfe56d8c51 100644
+--- a/include/linux/lockdep.h
++++ b/include/linux/lockdep.h
+@@ -444,6 +444,18 @@ do {								\
+ 	lock_acquired(&(_lock)->dep_map, _RET_IP_);			\
+ } while (0)
+ 
++#define LOCK_CONTENDED_RETURN(_lock, try, lock)			\
++({								\
++	int ____err = 0;					\
++	if (!try(_lock)) {					\
++		lock_contended(&(_lock)->dep_map, _RET_IP_);	\
++		____err = lock(_lock);				\
++	}							\
++	if (!____err)						\
++		lock_acquired(&(_lock)->dep_map, _RET_IP_);	\
++	____err;						\
++})
++
+ #else /* CONFIG_LOCK_STAT */
+ 
+ #define lock_contended(lockdep_map, ip) do {} while (0)
+@@ -452,6 +464,9 @@ do {								\
+ #define LOCK_CONTENDED(_lock, try, lock) \
+ 	lock(_lock)
+ 
++#define LOCK_CONTENDED_RETURN(_lock, try, lock) \
++	lock(_lock)
++
+ #endif /* CONFIG_LOCK_STAT */
+ 
+ #ifdef CONFIG_LOCKDEP
+diff --git a/include/linux/rwsem.h b/include/linux/rwsem.h
+index 7d7ae029dac5..d1c12d160ace 100644
+--- a/include/linux/rwsem.h
++++ b/include/linux/rwsem.h
+@@ -118,6 +118,7 @@ extern int down_read_trylock(struct rw_semaphore *sem);
+  * lock for writing
+  */
+ extern void down_write(struct rw_semaphore *sem);
++extern int __must_check down_write_killable(struct rw_semaphore *sem);
+ 
+ /*
+  * trylock for writing -- returns 1 if successful, 0 if contention
+diff --git a/kernel/locking/rwsem.c b/kernel/locking/rwsem.c
+index 205be0ce34de..c817216c1615 100644
+--- a/kernel/locking/rwsem.c
++++ b/kernel/locking/rwsem.c
+@@ -55,6 +55,25 @@ void __sched down_write(struct rw_semaphore *sem)
+ EXPORT_SYMBOL(down_write);
+ 
+ /*
++ * lock for writing
++ */
++int __sched down_write_killable(struct rw_semaphore *sem)
++{
++	might_sleep();
++	rwsem_acquire(&sem->dep_map, 0, 0, _RET_IP_);
++
++	if (LOCK_CONTENDED_RETURN(sem, __down_write_trylock, __down_write_killable)) {
++		rwsem_release(&sem->dep_map, 1, _RET_IP_);
++		return -EINTR;
++	}
++
++	rwsem_set_owner(sem);
++	return 0;
++}
++
++EXPORT_SYMBOL(down_write_killable);
++
++/*
+  * trylock for writing -- returns 1 if successful, 0 if contention
+  */
+ int down_write_trylock(struct rw_semaphore *sem)
+-- 
+2.7.0
 
-Thanks,
-
-	Ingo
