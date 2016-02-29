@@ -1,54 +1,50 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 16 Feb 2016 15:31:50 +0000
-Subject: [PATCH 2/4] arm64: renesas: Enable PM and PM_GENERIC_DOMAINS for SoCs with PM Domains
-Message-Id: <1455636712-3040-3-git-send-email-geert+renesas@glider.be>
+From: Michal Hocko <mhocko@kernel.org>
+Date: Mon, 29 Feb 2016 12:58:23 +0000
+Subject: [PATCH 09/11] xtensa, rwsem: provide __down_write_killable
+Message-Id: <1456750705-7141-10-git-send-email-mhocko@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1455636712-3040-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1455636712-3040-1-git-send-email-geert+renesas@glider.be>
+References: <1456750705-7141-1-git-send-email-mhocko@kernel.org>
+In-Reply-To: <1456750705-7141-1-git-send-email-mhocko@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-renesas-soc@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: LKML <linux-kernel@vger.kernel.org>
+Cc: Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@redhat.com>, Thomas Gleixner <tglx@linutronix.de>, "H. Peter Anvin" <hpa@zytor.com>, "David S. Miller" <davem@davemloft.net>, Tony Luck <tony.luck@intel.com>, Andrew Morton <akpm@linux-foundation.org>, Chris Zankel <chris@zankel.net>, Max Filippov <jcmvbkbc@gmail.com>, x86@kernel.org, linux-alpha@vger.kernel.org, linux-ia64@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-arch@vger.kernel.org, Michal Hocko <mhocko@suse.com>
 
-All supported Renesas ARM64 SoCs have clock and power domains. To ensure
-proper operation of on-SoC modules, module clocks must be ungated, and
-power domains must be powered up when needed.
+From: Michal Hocko <mhocko@suse.com>
 
-Currently the user can choose to build a kernel with power management
-enabled or disabled:
-  - If CONFIG_PM=y, power domains and/or module clocks are handled
-    dynamically by Runtime PM and the generic power domain.
-  - If CONFIG_PM=n, power domains are assumed to be powered up by reset
-    state or by the boot loader, and module clocks are handled by the
-    legacy clock domain on driver (un)bind.
-    The latter is implemented using a platform bus notifier, which
-    applies not only to all on-SoC devices, but to all platform devices
-    present in the system.
+which uses the same fast path as __down_write except it falls back to
+rwsem_down_write_failed_killable slow path and return -EINTR if killed.
 
-To remove the dependency on implicit assumptions, and to get rid of the
-peculiarities of the legacy clock domain, enable CONFIG_PM and
-CONFIG_PM_GENERIC_DOMAINS unconditionally.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Michal Hocko <mhocko@suse.com>
 ---
- arch/arm64/Kconfig.platforms | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ arch/xtensa/include/asm/rwsem.h | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
 
-diff --git a/arch/arm64/Kconfig.platforms b/arch/arm64/Kconfig.platforms
-index 21074f674bdeb707..2c0caac053e8c12a 100644
---- a/arch/arm64/Kconfig.platforms
-+++ b/arch/arm64/Kconfig.platforms
-@@ -76,7 +76,8 @@ config ARCH_RENESAS
- 	bool "Renesas SoC Platforms"
- 	select ARCH_SHMOBILE
- 	select PINCTRL
--	select PM_GENERIC_DOMAINS if PM
-+	select PM
-+	select PM_GENERIC_DOMAINS
- 	help
- 	  This enables support for the ARMv8 based Renesas SoCs.
+diff --git a/arch/xtensa/include/asm/rwsem.h b/arch/xtensa/include/asm/rwsem.h
+index 593483f6e1ff..6283823b8040 100644
+--- a/arch/xtensa/include/asm/rwsem.h
++++ b/arch/xtensa/include/asm/rwsem.h
+@@ -59,6 +59,19 @@ static inline void __down_write(struct rw_semaphore *sem)
+ 		rwsem_down_write_failed(sem);
+ }
  
++static inline int __down_write_killable(struct rw_semaphore *sem)
++{
++	int tmp;
++
++	tmp = atomic_add_return(RWSEM_ACTIVE_WRITE_BIAS,
++				(atomic_t *)(&sem->count));
++	if (tmp != RWSEM_ACTIVE_WRITE_BIAS)
++		if (IS_ERR(rwsem_down_write_failed_killable(sem)))
++			return -EINTR;
++
++	return 0;
++}
++
+ static inline int __down_write_trylock(struct rw_semaphore *sem)
+ {
+ 	int tmp;
 -- 
-1.9.1
+2.7.0
 
