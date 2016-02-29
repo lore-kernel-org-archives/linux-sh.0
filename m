@@ -1,53 +1,177 @@
-From: Ulf Hansson <ulf.hansson@linaro.org>
-Date: Fri, 05 Feb 2016 17:34:23 +0000
-Subject: Re: [bug] kernel panic if writting data to mmc after suspendding
-Message-Id: <CAPDyKFqf-DEdkBXVd82W1r9t=Kb0y95trGFVLgf5JmQQpvJc=g@mail.gmail.com>
+From: Michal Hocko <mhocko@kernel.org>
+Date: Mon, 29 Feb 2016 12:58:16 +0000
+Subject: [PATCH 02/11] locking, rwsem: drop explicit memory barriers
+Message-Id: <1456750705-7141-3-git-send-email-mhocko@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <566A21D2.4080009@jinso.co.jp>
-	<566E2AC0.8060800@jinso.co.jp>
-	<CAMuHMdWU0WVBiWSsLti=KSidFk198k_3CAiNm=iGLtmw4wQOgw@mail.gmail.com>
-	<CAPDyKFomFTn7iX2kSXFVqstjEWpezNOB-B_DdFFRBWi9upUrpg@mail.gmail.com>
-	<5678C081.5090001@jinso.co.jp>
-	<56B2A0C1.9050808@jinso.co.jp>
-	<CAPDyKFoWt2Xt1xHsGSfyzxX_kvNVSn5Y1rRbZ8Mc8sWOjhX+bw@mail.gmail.com>
-In-Reply-To: <CAPDyKFoWt2Xt1xHsGSfyzxX_kvNVSn5Y1rRbZ8Mc8sWOjhX+bw@mail.gmail.com>
+References: <1456750705-7141-1-git-send-email-mhocko@kernel.org>
+In-Reply-To: <1456750705-7141-1-git-send-email-mhocko@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Nguyen Viet Dung <nv-dung@jinso.co.jp>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Linux MMC List <linux-mmc@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "ltsi-dev@lists.linuxfoundation.org" <ltsi-dev@lists.linuxfoundation.org>, =?UTF-8?B?U2ltb24g44GV44KT?= <simon@horms.net>, Geert Uytterhoeven <geert+renesas@glider.be>, "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>, Hisao Munakata <hisao.munakata.vt@renesas.com>
+To: LKML <linux-kernel@vger.kernel.org>
+Cc: Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@redhat.com>, Thomas Gleixner <tglx@linutronix.de>, "H. Peter Anvin" <hpa@zytor.com>, "David S. Miller" <davem@davemloft.net>, Tony Luck <tony.luck@intel.com>, Andrew Morton <akpm@linux-foundation.org>, Chris Zankel <chris@zankel.net>, Max Filippov <jcmvbkbc@gmail.com>, x86@kernel.org, linux-alpha@vger.kernel.org, linux-ia64@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-arch@vger.kernel.org, Michal Hocko <mhocko@suse.com>
 
-On 4 February 2016 at 09:26, Ulf Hansson <ulf.hansson@linaro.org> wrote:
-> On 4 February 2016 at 01:52, Nguyen Viet Dung <nv-dung@jinso.co.jp> wrote:
->> Hi Ulf
->>
->> I want to test this problem withc your patch.
->> Please sent pacthset for me.
->> I have checked below link but detail of patch haven't.
->
-> Sorry for the delay. I haven't been able to rebase my patchset yet.
->
-> Give me another couple of days, then I will post a new version.
+From: Michal Hocko <mhocko@suse.com>
 
-Hi again,
+sh and xtensa seem to be the only architectures which use explicit
+memory barriers for rw_semaphore operations even though they are not
+really needed because there is the full memory barrier is always implied
+by atomic_{inc,dec,add,sub}_return resp. cmpxchg. Remove them.
 
-I did a quick retry in re-basing my patches, but realized that it
-requires quite some work.
+Signed-off-by: Michal Hocko <mhocko@suse.com>
+---
+ arch/sh/include/asm/rwsem.h     | 14 ++------------
+ arch/xtensa/include/asm/rwsem.h | 14 ++------------
+ 2 files changed, 4 insertions(+), 24 deletions(-)
 
-With a quite small effort I did manage to improve the code in
-->probe() and in ->set_ios(), related to runtime PM and clock
-management. I will post these patches after the weekend, but
-unfortunate I doubt these will fix the problem you reported here.
-Although, please help and test them.
+diff --git a/arch/sh/include/asm/rwsem.h b/arch/sh/include/asm/rwsem.h
+index a5104bebd1eb..f6c951c7a875 100644
+--- a/arch/sh/include/asm/rwsem.h
++++ b/arch/sh/include/asm/rwsem.h
+@@ -24,9 +24,7 @@
+  */
+ static inline void __down_read(struct rw_semaphore *sem)
+ {
+-	if (atomic_inc_return((atomic_t *)(&sem->count)) > 0)
+-		smp_wmb();
+-	else
++	if (atomic_inc_return((atomic_t *)(&sem->count)) <= 0)
+ 		rwsem_down_read_failed(sem);
+ }
+ 
+@@ -37,7 +35,6 @@ static inline int __down_read_trylock(struct rw_semaphore *sem)
+ 	while ((tmp = sem->count) >= 0) {
+ 		if (tmp = cmpxchg(&sem->count, tmp,
+ 				   tmp + RWSEM_ACTIVE_READ_BIAS)) {
+-			smp_wmb();
+ 			return 1;
+ 		}
+ 	}
+@@ -53,9 +50,7 @@ static inline void __down_write(struct rw_semaphore *sem)
+ 
+ 	tmp = atomic_add_return(RWSEM_ACTIVE_WRITE_BIAS,
+ 				(atomic_t *)(&sem->count));
+-	if (tmp = RWSEM_ACTIVE_WRITE_BIAS)
+-		smp_wmb();
+-	else
++	if (tmp != RWSEM_ACTIVE_WRITE_BIAS)
+ 		rwsem_down_write_failed(sem);
+ }
+ 
+@@ -65,7 +60,6 @@ static inline int __down_write_trylock(struct rw_semaphore *sem)
+ 
+ 	tmp = cmpxchg(&sem->count, RWSEM_UNLOCKED_VALUE,
+ 		      RWSEM_ACTIVE_WRITE_BIAS);
+-	smp_wmb();
+ 	return tmp = RWSEM_UNLOCKED_VALUE;
+ }
+ 
+@@ -76,7 +70,6 @@ static inline void __up_read(struct rw_semaphore *sem)
+ {
+ 	int tmp;
+ 
+-	smp_wmb();
+ 	tmp = atomic_dec_return((atomic_t *)(&sem->count));
+ 	if (tmp < -1 && (tmp & RWSEM_ACTIVE_MASK) = 0)
+ 		rwsem_wake(sem);
+@@ -87,7 +80,6 @@ static inline void __up_read(struct rw_semaphore *sem)
+  */
+ static inline void __up_write(struct rw_semaphore *sem)
+ {
+-	smp_wmb();
+ 	if (atomic_sub_return(RWSEM_ACTIVE_WRITE_BIAS,
+ 			      (atomic_t *)(&sem->count)) < 0)
+ 		rwsem_wake(sem);
+@@ -108,7 +100,6 @@ static inline void __downgrade_write(struct rw_semaphore *sem)
+ {
+ 	int tmp;
+ 
+-	smp_wmb();
+ 	tmp = atomic_add_return(-RWSEM_WAITING_BIAS, (atomic_t *)(&sem->count));
+ 	if (tmp < 0)
+ 		rwsem_downgrade_wake(sem);
+@@ -119,7 +110,6 @@ static inline void __downgrade_write(struct rw_semaphore *sem)
+  */
+ static inline int rwsem_atomic_update(int delta, struct rw_semaphore *sem)
+ {
+-	smp_mb();
+ 	return atomic_add_return(delta, (atomic_t *)(&sem->count));
+ }
+ 
+diff --git a/arch/xtensa/include/asm/rwsem.h b/arch/xtensa/include/asm/rwsem.h
+index 249619e7e7f2..593483f6e1ff 100644
+--- a/arch/xtensa/include/asm/rwsem.h
++++ b/arch/xtensa/include/asm/rwsem.h
+@@ -29,9 +29,7 @@
+  */
+ static inline void __down_read(struct rw_semaphore *sem)
+ {
+-	if (atomic_add_return(1,(atomic_t *)(&sem->count)) > 0)
+-		smp_wmb();
+-	else
++	if (atomic_add_return(1,(atomic_t *)(&sem->count)) <= 0)
+ 		rwsem_down_read_failed(sem);
+ }
+ 
+@@ -42,7 +40,6 @@ static inline int __down_read_trylock(struct rw_semaphore *sem)
+ 	while ((tmp = sem->count) >= 0) {
+ 		if (tmp = cmpxchg(&sem->count, tmp,
+ 				   tmp + RWSEM_ACTIVE_READ_BIAS)) {
+-			smp_wmb();
+ 			return 1;
+ 		}
+ 	}
+@@ -58,9 +55,7 @@ static inline void __down_write(struct rw_semaphore *sem)
+ 
+ 	tmp = atomic_add_return(RWSEM_ACTIVE_WRITE_BIAS,
+ 				(atomic_t *)(&sem->count));
+-	if (tmp = RWSEM_ACTIVE_WRITE_BIAS)
+-		smp_wmb();
+-	else
++	if (tmp != RWSEM_ACTIVE_WRITE_BIAS)
+ 		rwsem_down_write_failed(sem);
+ }
+ 
+@@ -70,7 +65,6 @@ static inline int __down_write_trylock(struct rw_semaphore *sem)
+ 
+ 	tmp = cmpxchg(&sem->count, RWSEM_UNLOCKED_VALUE,
+ 		      RWSEM_ACTIVE_WRITE_BIAS);
+-	smp_wmb();
+ 	return tmp = RWSEM_UNLOCKED_VALUE;
+ }
+ 
+@@ -81,7 +75,6 @@ static inline void __up_read(struct rw_semaphore *sem)
+ {
+ 	int tmp;
+ 
+-	smp_wmb();
+ 	tmp = atomic_sub_return(1,(atomic_t *)(&sem->count));
+ 	if (tmp < -1 && (tmp & RWSEM_ACTIVE_MASK) = 0)
+ 		rwsem_wake(sem);
+@@ -92,7 +85,6 @@ static inline void __up_read(struct rw_semaphore *sem)
+  */
+ static inline void __up_write(struct rw_semaphore *sem)
+ {
+-	smp_wmb();
+ 	if (atomic_sub_return(RWSEM_ACTIVE_WRITE_BIAS,
+ 			      (atomic_t *)(&sem->count)) < 0)
+ 		rwsem_wake(sem);
+@@ -113,7 +105,6 @@ static inline void __downgrade_write(struct rw_semaphore *sem)
+ {
+ 	int tmp;
+ 
+-	smp_wmb();
+ 	tmp = atomic_add_return(-RWSEM_WAITING_BIAS, (atomic_t *)(&sem->count));
+ 	if (tmp < 0)
+ 		rwsem_downgrade_wake(sem);
+@@ -124,7 +115,6 @@ static inline void __downgrade_write(struct rw_semaphore *sem)
+  */
+ static inline int rwsem_atomic_update(int delta, struct rw_semaphore *sem)
+ {
+-	smp_mb();
+ 	return atomic_add_return(delta, (atomic_t *)(&sem->count));
+ }
+ 
+-- 
+2.7.0
 
-To fix the problem properly, one should probable re-write the locking
-and the state machine code in the driver, because it's rather messy
-and has likely problems.
-As a quick fix, one could validate pointers before accessing them in
-the sh_mmcif_irqt() function, because that's not done currently.
-
-So to be clear, this is all can help with currently. I wish I could
-help more, but I have limited bandwidth and no HW to test on. :-)
-
-Kind regards
-Uffe
