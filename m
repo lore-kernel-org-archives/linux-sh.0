@@ -1,52 +1,67 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 01 Mar 2016 11:31:09 +0000
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Tue, 01 Mar 2016 13:49:45 +0000
 Subject: Re: [RFC v4 0/4] watchdog: add driver for RWDT watchdog
-Message-Id: <CAMuHMdVjRaKSCP5XV1aH5d1k+GBwA7-W1ahhRNFTwPxpiTmNSg@mail.gmail.com>
+Message-Id: <20160301134945.GB1514@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="CdrF4e02JqNVZeln"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1452287553-18895-1-git-send-email-wsa@the-dreams.de>
 In-Reply-To: <1452287553-18895-1-git-send-email-wsa@the-dreams.de>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Wolfram,
 
-On Thu, Jan 14, 2016 at 6:32 PM, Geert Uytterhoeven
-<geert@linux-m68k.org> wrote:
-> On Fri, Jan 8, 2016 at 10:12 PM, Wolfram Sang <wsa@the-dreams.de> wrote:
->> So, here is my newest version of the RWDT watchdog driver. Changes since last RFC:
->>
->> * added binding docs
->> * removed 'timeout' module parameter in favor of dt setting 'timeout-sec'
->>   (The Gen3 BSP did this using an incremental patch)
->> * added comment about this driver and Gen2 HW issues
->> * rebased to renesas-drivers-2016-01-05-v4.4-rc8
->> * use min_t() instead of min()
->>
->> I tested this on Lager with my hacky patches enabling RWDT in UP mode. For this
->> series, I picked and updated the integration patches for Gen3 from the BSP.
->> Note that this driver also needs a RESET module driver to work on Gen3. Since
->> we don't have that yet (couldn't even find it in the BSP), it is untested on
->> Gen3. Since it works on Gen2 and the datasheet doesn't specify any difference,
->> my proposal would be that I mark this task as done and leave the integration
->> with the reset module to the core group. If any problems with this driver show
->> up, I'll be there, of course. Would that be okay with the core group?
->
-> Just wondering: can't you test it on Gen3 the same way as on Gen2?
-> Or does the firmware interfere?
+--CdrF4e02JqNVZeln
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Have you tried this on Gen3?
 
-Thanks!
+> >> I tested this on Lager with my hacky patches enabling RWDT in UP mode.=
+ For this
+> >> series, I picked and updated the integration patches for Gen3 from the=
+ BSP.
+> >> Note that this driver also needs a RESET module driver to work on Gen3=
+=2E Since
+> >> we don't have that yet (couldn't even find it in the BSP), it is untes=
+ted on
+> >> Gen3. Since it works on Gen2 and the datasheet doesn't specify any dif=
+ference,
+> >> my proposal would be that I mark this task as done and leave the integ=
+ration
+> >> with the reset module to the core group. If any problems with this dri=
+ver show
+> >> up, I'll be there, of course. Would that be okay with the core group?
+> >
+> > Just wondering: can't you test it on Gen3 the same way as on Gen2?
+> > Or does the firmware interfere?
+>=20
+> Have you tried this on Gen3?
 
-Gr{oetje,eeting}s,
+I tried clearing the bit in WDTRSTCR like with Gen2, but without success
+:( I heard that Ben Dooks tried as well and did not succeed. I was
+hoping that the new BSP might bring some light into this since they
+patched my RWDT driver, so I assume they got it to work.
 
-                        Geert
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+--CdrF4e02JqNVZeln
+Content-Type: application/pgp-signature; name="signature.asc"
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBAgAGBQJW1Z35AAoJEBQN5MwUoCm2lmkQAI5yb/H3qMJTfyspSCE0tQ6C
+BM/e4e/E8ipF1ZyPprcl6CxM83XM4qtQlJdt3RIovqzpM+odTCZZm3xEK7SYQ8t5
++a8OUTyZoWndqCbsxMS06mj8ih8e4Y2sOm2cnYyHPZnKDcO4F2LFiVKwqrvdZOOu
+gE2FTMvAlNIxzSzbDmFWeriOOCWphGwbb1dmOL9VkdwBPx1PWo0tSTLfkSGvuXz3
+8GLMkwjoLyU1et2LKZ+8w7K4QM8wCEAz2icFkyh8dXT4ISjF6IzIxSlr8dhy3deZ
+DKXRlR0lv3Mk0EiQDax+ZCxrzz8cSgIRjqjBZkgKdFNh3Go71lz28KK4I/xAcRt0
+DzKsDOdeDsIjbZ9bPPZZfWiGBow/sgra0uHI3Vp+s4On9TIXydCMmWD2Io39hM9n
+O9w70V2Lk8nBmnRWspH7SdqeHYB6t0Xv+XIjJ8TVe+M6baITegbQD1k+z8PEOFXt
+CXBA+mJjhdYW7kj2lj15g5BT3pohqZEhxbjmwEetsYGNSpxT2ajkGpcBriCXI5nv
+qjkhVIr8hBeGGZx9SsLmaUkmk0CPn4MnqdyJd9iDo7Q0pEU7oZT/2JD4KfTIJ24B
+7uG/C5KOT1cs7Y+ahMqG/1ZxYsYA0Tdm1IfYie18lQrLtt6I6xEJ29Ym4u1dENrY
+FKnLJlTsdgow6CH3GC7b
+=gzeK
+-----END PGP SIGNATURE-----
+
+--CdrF4e02JqNVZeln--
