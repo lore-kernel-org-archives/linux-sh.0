@@ -1,78 +1,74 @@
-From: Petr Mladek <pmladek@suse.com>
-Date: Wed, 30 Mar 2016 15:53:27 +0000
-Subject: [PATCH v4 2/5] printk/nmi: use IRQ work only when ready
-Message-Id: <1459353210-20260-3-git-send-email-pmladek@suse.com>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Tue, 01 Mar 2016 17:00:02 +0000
+Subject: [PATCH 6/6] rtc: generic: remove get_rtc_time/set_rtc_time wrappers
+Message-Id: <1456851608-3374907-7-git-send-email-arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1459353210-20260-1-git-send-email-pmladek@suse.com>
-In-Reply-To: <1459353210-20260-1-git-send-email-pmladek@suse.com>
+References: <1456851608-3374907-1-git-send-email-arnd@arndb.de>
+In-Reply-To: <1456851608-3374907-1-git-send-email-arnd@arndb.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-NMIs could happen at any time.  This patch makes sure that the safe
-printk() in NMI will schedule IRQ work only when the related structs are
-initialized.
+All architectures using this driver are now converted to
+provide their own operations, so this one can be turned
+into a trivial stub driver relying on its platform data.
 
-All pending messages are flushed when the IRQ work is being initialized.
-
-Signed-off-by: Petr Mladek <pmladek@suse.com>
-Cc: Jan Kara <jack@suse.cz>
-Cc: Peter Zijlstra <peterz@infradead.org>
-Cc: Steven Rostedt <rostedt@goodmis.org>
-Cc: Russell King <rmk+kernel@arm.linux.org.uk>
-Cc: Daniel Thompson <daniel.thompson@linaro.org>
-Cc: Jiri Kosina <jkosina@suse.com>
-Cc: Ingo Molnar <mingo@redhat.com>
-Cc: Thomas Gleixner <tglx@linutronix.de>
-Cc: Ralf Baechle <ralf@linux-mips.org>
-Cc: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-Cc: Martin Schwidefsky <schwidefsky@de.ibm.com>
-Cc: David Miller <davem@davemloft.net>
-Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
 ---
- kernel/printk/nmi.c | 13 ++++++++++++-
- 1 file changed, 12 insertions(+), 1 deletion(-)
+ drivers/rtc/rtc-generic.c | 36 +-----------------------------------
+ 1 file changed, 1 insertion(+), 35 deletions(-)
 
-diff --git a/kernel/printk/nmi.c b/kernel/printk/nmi.c
-index 479e0764203c..303cf0d15e57 100644
---- a/kernel/printk/nmi.c
-+++ b/kernel/printk/nmi.c
-@@ -38,6 +38,7 @@
-  * were handled or when IRQs are blocked.
-  */
- DEFINE_PER_CPU(printk_func_t, printk_func) = vprintk_default;
-+static int printk_nmi_irq_ready;
+diff --git a/drivers/rtc/rtc-generic.c b/drivers/rtc/rtc-generic.c
+index d726c6aa96a8..1bf5d2347928 100644
+--- a/drivers/rtc/rtc-generic.c
++++ b/drivers/rtc/rtc-generic.c
+@@ -9,44 +9,10 @@
+ #include <linux/platform_device.h>
+ #include <linux/rtc.h>
  
- #define NMI_LOG_BUF_LEN (4096 - sizeof(atomic_t) - sizeof(struct irq_work))
+-#if defined(CONFIG_M68K) || defined(CONFIG_PARISC) || \
+-    defined(CONFIG_PPC) || defined(CONFIG_SUPERH32)
+-#include <asm/rtc.h>
+-
+-static int generic_get_time(struct device *dev, struct rtc_time *tm)
+-{
+-	unsigned int ret = get_rtc_time(tm);
+-
+-	if (ret & RTC_BATT_BAD)
+-		return -EOPNOTSUPP;
+-
+-	return rtc_valid_tm(tm);
+-}
+-
+-static int generic_set_time(struct device *dev, struct rtc_time *tm)
+-{
+-	if (set_rtc_time(tm) < 0)
+-		return -EOPNOTSUPP;
+-
+-	return 0;
+-}
+-
+-static const struct rtc_class_ops generic_rtc_ops = {
+-	.read_time = generic_get_time,
+-	.set_time = generic_set_time,
+-};
+-#else
+-#define generic_rtc_ops *(struct rtc_class_ops*)NULL
+-#endif
+-
+ static int __init generic_rtc_probe(struct platform_device *dev)
+ {
+ 	struct rtc_device *rtc;
+-	const struct rtc_class_ops *ops;
+-
+-	ops = dev_get_platdata(&dev->dev);
+-	if (!ops)
+-		ops = &generic_rtc_ops;
++	const struct rtc_class_ops *ops = dev_get_platdata(&dev->dev);
  
-@@ -84,8 +85,11 @@ again:
- 		goto again;
- 
- 	/* Get flushed in a more safe context. */
--	if (add)
-+	if (add && printk_nmi_irq_ready) {
-+		/* Make sure that IRQ work is really initialized. */
-+		smp_rmb();
- 		irq_work_queue(&s->work);
-+	}
- 
- 	return add;
- }
-@@ -195,6 +199,13 @@ void __init printk_nmi_init(void)
- 
- 		init_irq_work(&s->work, __printk_nmi_flush);
- 	}
-+
-+	/* Make sure that IRQ works are initialized before enabling. */
-+	smp_wmb();
-+	printk_nmi_irq_ready = 1;
-+
-+	/* Flush pending messages that did not have scheduled IRQ works. */
-+	printk_nmi_flush();
- }
- 
- void printk_nmi_enter(void)
+ 	rtc = devm_rtc_device_register(&dev->dev, "rtc-generic",
+ 					ops, THIS_MODULE);
 -- 
-1.8.5.6
+2.7.0
 
