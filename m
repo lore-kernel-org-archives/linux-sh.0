@@ -1,49 +1,21 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 17 Mar 2016 13:47:27 +0000
-Subject: [PATCH/RFC 3/5] serial: sh-sci: Always set TIOCM_CTS in .get_mctrl() callback
-Message-Id: <1458222449-12324-4-git-send-email-geert+renesas@glider.be>
+From: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+Date: Tue, 01 Mar 2016 16:52:02 +0000
+Subject: =?utf-8?Q?=D0=9A=D0=9B=D0=98=D0=95=D0=9D=D0=A2=D0=A1=D0?= =?utf-8?Q?=9A=D0=98=D0=95_=D0=91=D0=90=D0=
+Message-Id: <B44FFB2462B6995A8683CA758191192C@vger.kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1458222449-12324-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1458222449-12324-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>, Peter Hurley <peter@hurleysoftware.com>, Magnus Damm <magnus.damm@gmail.com>
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-serial@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: linux-sh@vger.kernel.org
 
-Documentation/serial/driver clearly states:
+КЛИЕНТСКИЕ БАЗЫ!
 
-    If the port does not support CTS, DCD or DSR, the driver should
-    indicate that the signal is permanently active.
-
-Hence always set TIOCM_CTS, as we currently don't look at the CTS
-hardware line state at all.
-
-FWIW, this fixes the transmit path when hardware-assisted flow control
-is enabled, and userspace enables CRTSCTS.
-The receive path is still broken, as RTS is never asserted.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- drivers/tty/serial/sh-sci.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
-
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 0130feb069aee02f..135f836642ab1c5a 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -1835,9 +1835,9 @@ static unsigned int sci_get_mctrl(struct uart_port *port)
- {
- 	/*
- 	 * CTS/RTS is handled in hardware when supported, while nothing
--	 * else is wired up. Keep it simple and simply assert DSR/CAR.
-+	 * else is wired up. Keep it simple and simply assert CTS/DSR/CAR.
- 	 */
--	return TIOCM_DSR | TIOCM_CAR;
-+	return TIOCM_CTS | TIOCM_DSR | TIOCM_CAR;
- }
- 
- static void sci_break_ctl(struct uart_port *port, int break_state)
--- 
-1.9.1
-
+Соберем для Вас по интернет базу данных потенциальных клиентов 
+для Вашего Бизнеса!
+Много! Быстро! Недорого! 
+Узнайте об этом подробнее по 
+Тел: +79133913837
+Viber: +79133913837
+Whatsapp: +79133913837
+Skype: prodawez389
+Email: vavdeev17@gmail.com
