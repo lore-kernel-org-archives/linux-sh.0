@@ -1,40 +1,28 @@
-From: Dmitry Torokhov <dmitry.torokhov@gmail.com>
-Date: Fri, 04 Mar 2016 19:22:01 +0000
-Subject: Re: [PATCH v2] Input: sh_keysc - Remove dependency on SUPERH
-Message-Id: <20160304192201.GC17145@dtor-ws>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Tue, 01 Mar 2016 16:59:56 +0000
+Subject: [PATCH 0/6] rtc: generic: follow up for COMPILE_TEST
+Message-Id: <1456851608-3374907-1-git-send-email-arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1456966425-14664-1-git-send-email-horms+renesas@verge.net.au>
- <CAMuHMdWdeZkjk++5kpPLH6vHvz=ZAPqFp8z9od+Y-=R1W8HCxA@mail.gmail.com>
-In-Reply-To: <CAMuHMdWdeZkjk++5kpPLH6vHvz=ZAPqFp8z9od+Y-=R1W8HCxA@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Simon Horman <horms+renesas@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, "linux-input@vger.kernel.org" <linux-input@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, linux-renesas-soc@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Mar 03, 2016 at 09:11:18AM +0100, Geert Uytterhoeven wrote:
-> On Thu, Mar 3, 2016 at 1:53 AM, Simon Horman <horms+renesas@verge.net.au> wrote:
-> > A dependency on ARCH_SHMOBILE seems to be the best option for sh_keysc:
-> >
-> > * For Super H based SoCs: sh_keysc is used on SH_MIGOR, SH_ECOVEC, SH_KFR2R09,
-> >   SH_7722_SOLUTION_ENGINE, and SH_7724_SOLUTION_ENGINE, which depend on
-> >   either CPU_SUBTYPE_SH7722 or CPU_SUBTYPE_SH7724, and both select
-> >   ARCH_SHMOBILE.
-> >
-> > * For ARM Based SoCs: Since the removal of legacy (non-multiplatform) support
-> >   this driver has not been used by any Renesas ARM based SoCs. The Renesas
-> >   ARM based SoCs currently select ARCH_SHMOBILE, however, it is planned
-> >   that this will no longer be the case.
-> >
-> > This is part of an ongoing process to migrate from ARCH_SHMOBILE to
-> > ARCH_RENESAS the motivation for which being that RENESAS seems to be a more
-> > appropriate name than SHMOBILE for the majority of Renesas ARM based SoCs.
-> >
-> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> 
-> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Today's linux-next kernel allowed building the rtc-generic
+driver (and most other rtc drivers) on all architectures,
+but this caused some errors on architectures without asm/rtc.h.
 
-Applied, thank you.
+This series reworks that driver to avoid the dependency,
+and simplifies all four implementations. My first approach
+was to split the driver into four separate drivers, but
+that didn't feel right when three of them have their own
+multiplexors.
 
--- 
-Dmitry
+The first five patches can be applied independent of one other,
+while patch 6 is optional and can be applied when all others
+are merged. Alternatively, they can all go in through the
+rtc tree. I compile-tested only the powerpc and sh targets for
+which I happened to have cross-compilers installed.
+
+	Arnd
+
