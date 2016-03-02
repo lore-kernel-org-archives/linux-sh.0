@@ -1,177 +1,161 @@
-From: Michal Hocko <mhocko@kernel.org>
-Date: Tue, 02 Feb 2016 20:19:19 +0000
-Subject: [RFC 02/12] locking, rwsem: drop explicit memory barriers
-Message-Id: <1454444369-2146-3-git-send-email-mhocko@kernel.org>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Wed, 02 Mar 2016 18:16:01 +0000
+Subject: Re: [PATCH/RFC v6 net-next] ravb: Add dma queue interrupt support
+Message-Id: <CAH1o70JpRZAKSSPGe6MYfw0OGSaC9d7jDd9D71mn9bxLSy3qtQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1454444369-2146-1-git-send-email-mhocko@kernel.org>
-In-Reply-To: <1454444369-2146-1-git-send-email-mhocko@kernel.org>
+References: <1456674078-1316-1-git-send-email-ykaneko0929@gmail.com>
+	<56D4AA63.6030203@cogentembedded.com>
+In-Reply-To: <56D4AA63.6030203@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: LKML <linux-kernel@vger.kernel.org>
-Cc: Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@redhat.com>, Thomas Gleixner <tglx@linutronix.de>, "H. Peter Anvin" <hpa@zytor.com>, "David S. Miller" <davem@davemloft.net>, Tony Luck <tony.luck@intel.com>, Andrew Morton <akpm@linux-foundation.org>, Chris Zankel <chris@zankel.net>, Max Filippov <jcmvbkbc@gmail.com>, x86@kernel.org, linux-alpha@vger.kernel.org, linux-ia64@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-arch@vger.kernel.org, Michal Hocko <mhocko@suse.com>
+To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Cc: netdev@vger.kernel.org, "David S. Miller" <davem@davemloft.net>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-renesas-soc@vger.kernel.org, Linux-sh list <linux-sh@vger.kernel.org>
 
-From: Michal Hocko <mhocko@suse.com>
+2016-03-01 5:30 GMT+09:00 Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>:
+> Hello.
+>
+>
+> On 02/28/2016 06:41 PM, Yoshihiro Kaneko wrote:
+>
+>> From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+>>
+>> This patch supports the following interrupts.
+>>
+>> - One interrupt for multiple (timestamp, error, gPTP)
+>> - One interrupt for emac
+>> - Four interrupts for dma queue (best effort rx/tx, network control rx/tx)
+>>
+>> This patch improve efficiency of the interrupt handler by adding the
+>> interrupt handler corresponding to each interrupt source described
+>> above. Additionally, it reduces the number of times of the access to
+>> EthernetAVB IF.
+>> Also this patch prevent this driver depends on the whim of a boot loader.
+>>
+>> [ykaneko0929@gmail.com: define bit names of registers]
+>> [ykaneko0929@gmail.com: add comment for gen3 only registers]
+>> [ykaneko0929@gmail.com: fix coding style]
+>> [ykaneko0929@gmail.com: update changelog]
+>> [ykaneko0929@gmail.com: gen3: fix initialization of interrupts]
+>> [ykaneko0929@gmail.com: gen3: fix clearing interrupts]
+>> [ykaneko0929@gmail.com: gen3: add helper function for request_irq()]
+>> [ykaneko0929@gmail.com: gen3: remove IRQF_SHARED flag for request_irq()]
+>> [ykaneko0929@gmail.com: revert ravb_close() and ravb_ptp_stop()]
+>> [ykaneko0929@gmail.com: avoid calling free_irq() to non-hooked interrupts]
+>> [ykaneko0929@gmail.com: make NC/BE interrupt handler a function]
+>> [ykaneko0929@gmail.com: make timestamp interrupt handler a function]
+>> [ykaneko0929@gmail.com: timestamp interrupt is handled in multiple
+>>   interrupt handler instead of dma queue interrupt handler]
+>> Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+>> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+>
+>
+>    OK, you are very close now! Just a few comments...
+>
+> [...]
+>>
+>> diff --git a/drivers/net/ethernet/renesas/ravb_main.c
+>> b/drivers/net/ethernet/renesas/ravb_main.c
+>> index c936682..22ef65d 100644
+>> --- a/drivers/net/ethernet/renesas/ravb_main.c
+>> +++ b/drivers/net/ethernet/renesas/ravb_main.c
+>
+> [...]
+>>
+>> @@ -697,6 +726,47 @@ static void ravb_error_interrupt(struct net_device
+>> *ndev)
+>>         }
+>>   }
+>>
+>> +static bool ravb_queue_interrupt(struct net_device *ndev, int q,
+>> +                                u32 ris0, u32 *ric0, u32 tis, u32 *tic)
+>> +{
+>> +       struct ravb_private *priv = netdev_priv(ndev);
+>> +
+>
+>
+>    Perhaps it makes sense to read the RI[CS]0/TI[CS] here instead of passing
+> them (by reference)?
 
-sh and xtensa seem to be the only architectures which use explicit
-memory barriers for rw_semaphore operations even though they are not
-really needed because there is the full memory barrier is always implied
-by atomic_{inc,dec,add,sub}_return resp. cmpxchg. Remove them.
+OK, I will do.
 
-Signed-off-by: Michal Hocko <mhocko@suse.com>
----
- arch/sh/include/asm/rwsem.h     | 14 ++------------
- arch/xtensa/include/asm/rwsem.h | 14 ++------------
- 2 files changed, 4 insertions(+), 24 deletions(-)
+>
+> [...]
+>
+>> @@ -714,42 +784,21 @@ static irqreturn_t ravb_interrupt(int irq, void
+>> *dev_id)
+>>                 u32 ric0 = ravb_read(ndev, RIC0);
+>>                 u32 tis  = ravb_read(ndev, TIS);
+>>                 u32 tic  = ravb_read(ndev, TIC);
+>> -               int q;
+>>
+>>                 /* Timestamp updated */
+>> -               if (tis & TIS_TFUF) {
+>> -                       ravb_write(ndev, ~TIS_TFUF, TIS);
+>> -                       ravb_get_tx_tstamp(ndev);
+>> +               if (ravb_timestamp_interrupt(ndev, tis))
+>>                         result = IRQ_HANDLED;
+>> -               }
+>>
+>>                 /* Network control and best effort queue RX/TX */
+>> -               for (q = RAVB_NC; q >= RAVB_BE; q--) {
+>> -                       if (((ris0 & ric0) & BIT(q)) ||
+>> -                           ((tis  & tic)  & BIT(q))) {
+>> -                               if (napi_schedule_prep(&priv->napi[q])) {
+>> -                                       /* Mask RX and TX interrupts */
+>> -                                       ric0 &= ~BIT(q);
+>> -                                       tic &= ~BIT(q);
+>> -                                       ravb_write(ndev, ric0, RIC0);
+>> -                                       ravb_write(ndev, tic, TIC);
+>> -                                       __napi_schedule(&priv->napi[q]);
+>> -                               } else {
+>> -                                       netdev_warn(ndev,
+>> -                                                   "ignoring interrupt,
+>> rx status 0x%08x, rx mask 0x%08x,\n",
+>> -                                                   ris0, ric0);
+>> -                                       netdev_warn(ndev,
+>> -                                                   "
+>> tx status 0x%08x, tx mask 0x%08x.\n",
+>> -                                                   tis, tic);
+>> -                               }
+>> -                               result = IRQ_HANDLED;
+>> -                       }
+>> -               }
+>> +               if (ravb_queue_interrupt(ndev, RAVB_NC, ris0, &ric0, tis,
+>> &tic))
+>> +                       result = IRQ_HANDLED;
+>> +               if (ravb_queue_interrupt(ndev, RAVB_BE, ris0, &ric0, tis,
+>> &tic))
+>> +                       result = IRQ_HANDLED;
+>
+>
+>    Hmm, perhaps unrolling wasn't such a great idea... we can't use || here
+> as it would be short-circuited. :-(
+>
+> [...]
+>>
+>> +static irqreturn_t ravb_rx_tx_interrupt(int irq, void *dev_id, int
+>> ravb_queue)
+>
+>
+>    Please, please shorten this 'ravb_queue'...
 
-diff --git a/arch/sh/include/asm/rwsem.h b/arch/sh/include/asm/rwsem.h
-index a5104bebd1eb..f6c951c7a875 100644
---- a/arch/sh/include/asm/rwsem.h
-+++ b/arch/sh/include/asm/rwsem.h
-@@ -24,9 +24,7 @@
-  */
- static inline void __down_read(struct rw_semaphore *sem)
- {
--	if (atomic_inc_return((atomic_t *)(&sem->count)) > 0)
--		smp_wmb();
--	else
-+	if (atomic_inc_return((atomic_t *)(&sem->count)) <= 0)
- 		rwsem_down_read_failed(sem);
- }
- 
-@@ -37,7 +35,6 @@ static inline int __down_read_trylock(struct rw_semaphore *sem)
- 	while ((tmp = sem->count) >= 0) {
- 		if (tmp = cmpxchg(&sem->count, tmp,
- 				   tmp + RWSEM_ACTIVE_READ_BIAS)) {
--			smp_wmb();
- 			return 1;
- 		}
- 	}
-@@ -53,9 +50,7 @@ static inline void __down_write(struct rw_semaphore *sem)
- 
- 	tmp = atomic_add_return(RWSEM_ACTIVE_WRITE_BIAS,
- 				(atomic_t *)(&sem->count));
--	if (tmp = RWSEM_ACTIVE_WRITE_BIAS)
--		smp_wmb();
--	else
-+	if (tmp != RWSEM_ACTIVE_WRITE_BIAS)
- 		rwsem_down_write_failed(sem);
- }
- 
-@@ -65,7 +60,6 @@ static inline int __down_write_trylock(struct rw_semaphore *sem)
- 
- 	tmp = cmpxchg(&sem->count, RWSEM_UNLOCKED_VALUE,
- 		      RWSEM_ACTIVE_WRITE_BIAS);
--	smp_wmb();
- 	return tmp = RWSEM_UNLOCKED_VALUE;
- }
- 
-@@ -76,7 +70,6 @@ static inline void __up_read(struct rw_semaphore *sem)
- {
- 	int tmp;
- 
--	smp_wmb();
- 	tmp = atomic_dec_return((atomic_t *)(&sem->count));
- 	if (tmp < -1 && (tmp & RWSEM_ACTIVE_MASK) = 0)
- 		rwsem_wake(sem);
-@@ -87,7 +80,6 @@ static inline void __up_read(struct rw_semaphore *sem)
-  */
- static inline void __up_write(struct rw_semaphore *sem)
- {
--	smp_wmb();
- 	if (atomic_sub_return(RWSEM_ACTIVE_WRITE_BIAS,
- 			      (atomic_t *)(&sem->count)) < 0)
- 		rwsem_wake(sem);
-@@ -108,7 +100,6 @@ static inline void __downgrade_write(struct rw_semaphore *sem)
- {
- 	int tmp;
- 
--	smp_wmb();
- 	tmp = atomic_add_return(-RWSEM_WAITING_BIAS, (atomic_t *)(&sem->count));
- 	if (tmp < 0)
- 		rwsem_downgrade_wake(sem);
-@@ -119,7 +110,6 @@ static inline void __downgrade_write(struct rw_semaphore *sem)
-  */
- static inline int rwsem_atomic_update(int delta, struct rw_semaphore *sem)
- {
--	smp_mb();
- 	return atomic_add_return(delta, (atomic_t *)(&sem->count));
- }
- 
-diff --git a/arch/xtensa/include/asm/rwsem.h b/arch/xtensa/include/asm/rwsem.h
-index 249619e7e7f2..593483f6e1ff 100644
---- a/arch/xtensa/include/asm/rwsem.h
-+++ b/arch/xtensa/include/asm/rwsem.h
-@@ -29,9 +29,7 @@
-  */
- static inline void __down_read(struct rw_semaphore *sem)
- {
--	if (atomic_add_return(1,(atomic_t *)(&sem->count)) > 0)
--		smp_wmb();
--	else
-+	if (atomic_add_return(1,(atomic_t *)(&sem->count)) <= 0)
- 		rwsem_down_read_failed(sem);
- }
- 
-@@ -42,7 +40,6 @@ static inline int __down_read_trylock(struct rw_semaphore *sem)
- 	while ((tmp = sem->count) >= 0) {
- 		if (tmp = cmpxchg(&sem->count, tmp,
- 				   tmp + RWSEM_ACTIVE_READ_BIAS)) {
--			smp_wmb();
- 			return 1;
- 		}
- 	}
-@@ -58,9 +55,7 @@ static inline void __down_write(struct rw_semaphore *sem)
- 
- 	tmp = atomic_add_return(RWSEM_ACTIVE_WRITE_BIAS,
- 				(atomic_t *)(&sem->count));
--	if (tmp = RWSEM_ACTIVE_WRITE_BIAS)
--		smp_wmb();
--	else
-+	if (tmp != RWSEM_ACTIVE_WRITE_BIAS)
- 		rwsem_down_write_failed(sem);
- }
- 
-@@ -70,7 +65,6 @@ static inline int __down_write_trylock(struct rw_semaphore *sem)
- 
- 	tmp = cmpxchg(&sem->count, RWSEM_UNLOCKED_VALUE,
- 		      RWSEM_ACTIVE_WRITE_BIAS);
--	smp_wmb();
- 	return tmp = RWSEM_UNLOCKED_VALUE;
- }
- 
-@@ -81,7 +75,6 @@ static inline void __up_read(struct rw_semaphore *sem)
- {
- 	int tmp;
- 
--	smp_wmb();
- 	tmp = atomic_sub_return(1,(atomic_t *)(&sem->count));
- 	if (tmp < -1 && (tmp & RWSEM_ACTIVE_MASK) = 0)
- 		rwsem_wake(sem);
-@@ -92,7 +85,6 @@ static inline void __up_read(struct rw_semaphore *sem)
-  */
- static inline void __up_write(struct rw_semaphore *sem)
- {
--	smp_wmb();
- 	if (atomic_sub_return(RWSEM_ACTIVE_WRITE_BIAS,
- 			      (atomic_t *)(&sem->count)) < 0)
- 		rwsem_wake(sem);
-@@ -113,7 +105,6 @@ static inline void __downgrade_write(struct rw_semaphore *sem)
- {
- 	int tmp;
- 
--	smp_wmb();
- 	tmp = atomic_add_return(-RWSEM_WAITING_BIAS, (atomic_t *)(&sem->count));
- 	if (tmp < 0)
- 		rwsem_downgrade_wake(sem);
-@@ -124,7 +115,6 @@ static inline void __downgrade_write(struct rw_semaphore *sem)
-  */
- static inline int rwsem_atomic_update(int delta, struct rw_semaphore *sem)
- {
--	smp_mb();
- 	return atomic_add_return(delta, (atomic_t *)(&sem->count));
- }
- 
--- 
-2.7.0
+I will fix it.
 
+>    Also, would make sense to rename it to ravb_dma_interrupt()...
+
+I have renamed it from ravb_dmaq_interrupt() in this version as you
+suggested in the previous review. Did you not mean it?
+
+>
+> [...]
+>
+>    Unfortunately, I still can't do a full gen2 regression testing as both
+> Alt and Porter boards don't work with the recent kernel due to AVB_MDIO
+> stuck at 1... But perhaps such testing isn't even necessary.
+>
+> MBR, Sergei
+>
+
+Thanks,
+kaneko
