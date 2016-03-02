@@ -1,49 +1,187 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 01 Mar 2016 11:28:53 +0000
-Subject: Re: [RFC PATCH 0/3] Add PCIe to r8a7795 & Salvator-X
-Message-Id: <CAMuHMdXPGEBovCssGEw=77gSWuB74Yg4QJWrH5cMvy0w9VsWFg@mail.gmail.com>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Wed, 02 Mar 2016 18:32:57 +0000
+Subject: Re: [PATCH/RFC v5 net-next] ravb: Add dma queue interrupt support
+Message-Id: <CAH1o70+pr_KGg43TpOf80nraZXC+DGuXE-W5Lo-xLE3CasKe_A@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1446484121-26682-1-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1446484121-26682-1-git-send-email-phil.edworthy@renesas.com>
+References: <1455478769-16084-1-git-send-email-ykaneko0929@gmail.com>
+	<56CA0A68.2020709@cogentembedded.com>
+	<CAH1o70+=4s6wueSWpCcMfx+D-CMpU2p5fYVM_CoO2h2_G7bCHA@mail.gmail.com>
+	<56D4B02F.7030803@cogentembedded.com>
+In-Reply-To: <56D4B02F.7030803@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Cc: netdev@vger.kernel.org, "David S. Miller" <davem@davemloft.net>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-renesas-soc@vger.kernel.org, Linux-sh list <linux-sh@vger.kernel.org>
 
-Hi Phil,
-
-On Mon, Nov 2, 2015 at 6:08 PM, Phil Edworthy <phil.edworthy@renesas.com> wrote:
-> These patches are needed to get PCIe working on the Salvator-X board, see
-> https://lkml.org/lkml/2015/11/2/445.
+2016-03-01 5:55 GMT+09:00 Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>:
+> On 02/28/2016 05:13 PM, Yoshihiro Kaneko wrote:
 >
-> They depend on the cpg-mssr driver and other patches so are on top of
-> git://git.kernel.org/pub/scm/linux/kernel/git/geert/renesas-drivers.git
-> renesas-drivers-2015-10-27-v4.3-rc7
+>>>> From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+>>>>
+>>>> This patch supports the following interrupts.
+>>>>
+>>>> - One interrupt for multiple (error, gPTP)
+>>>> - One interrupt for emac
+>>>> - Four interrupts for dma queue (best effort rx/tx, network control
+>>>> rx/tx)
+>>>>
+>>>> This patch improve efficiency of the interrupt handler by adding the
+>>>> interrupt handler corresponding to each interrupt source described
+>>>> above. Additionally, it reduces the number of times of the access to
+>>>> EthernetAVB IF.
+>>>> Also this patch prevent this driver depends on the whim of a boot
+>>>> loader.
+>>>>
+>>>> [ykaneko0929@gmail.com: define bit names of registers]
+>>>> [ykaneko0929@gmail.com: add comment for gen3 only registers]
+>>>> [ykaneko0929@gmail.com: fix coding style]
+>>>> [ykaneko0929@gmail.com: update changelog]
+>>>> [ykaneko0929@gmail.com: gen3: fix initialization of interrupts]
+>>>> [ykaneko0929@gmail.com: gen3: fix clearing interrupts]
+>>>> [ykaneko0929@gmail.com: gen3: add helper function for request_irq()]
+>>>> [ykaneko0929@gmail.com: revert ravb_close() and ravb_ptp_stop()]
+>>>> [ykaneko0929@gmail.com: avoid calling free_irq() to non-hooked
+>>>> interrupts]
+>>>> [ykaneko0929@gmail.com: make NC/BE interrupt handler a function]
+>>>> Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+>>>> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+>>>
+>>>
+>>>
+>>> [...]
+>>>
+>>>> diff --git a/drivers/net/ethernet/renesas/ravb_main.c
+>>>> b/drivers/net/ethernet/renesas/ravb_main.c
+>>>> index c936682..1bec71e 100644
+>>>> --- a/drivers/net/ethernet/renesas/ravb_main.c
+>>>> +++ b/drivers/net/ethernet/renesas/ravb_main.c
+>>>
+>>>
+>>> [...]
+>>>>
+>>>>
+>>>> @@ -697,6 +726,39 @@ static void ravb_error_interrupt(struct net_device
+>>>> *ndev)
+>>>>          }
+>>>>    }
+>>>>
+>>>> +static int ravb_nc_be_interrupt(struct net_device *ndev, int
+>>>> ravb_queue,
+>>>
+>>>
+>>>
+>>>     I'd call this function e.g. ravb_queue_interrupt(). And make it
+>>> return
+>>> 'bool' or even 'irqreturn_t' directly. And I'd suggest a shorter name for
+>>> the 'ravb_queue' parameter, like 'queue' or even 'q'...
+>>
+>>
+>> Agreed.
+>>
+>>>
+>>>> +                               u32 ris0, u32 *ric0, u32 tis, u32 *tic)
+>>>
+>>>
+>>>
+>>>     You don't seem to need 'ric0' and 'tic' past the call sites, so no
+>>> real
+>>> need to pass them by reference.
+>>
+>>
+>> When Rx/Tx interrupt for NC and BE is issued at the same time,
+>> this function is called twice (for NC, BE) from ravb_interrupt.
+>> The interrupt mask of NC set in the first call will be reset in the next
+>> call for BE. So it is necessary to keep the modified value of "ric0" and
+>> "tic".
 >
-> Phil Edworthy (3):
->   clk: shmobile: r8a7795: Add PCIe clocks
->   arm64: renesas: r8a7795: Add PCIe nodes
->   arm64: dts: r8a7795: enable PCIe on Salvator-X
 >
->  arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 12 +++++
->  arch/arm64/boot/dts/renesas/r8a7795.dtsi           | 60 +++++++++++++++++++++-
->  drivers/clk/shmobile/clk-r8a7795-cpg-mssr.c        |  2 +
->  3 files changed, 73 insertions(+), 1 deletion(-)
+>    OK, but we still can simplify this by reading these registers right in
+> ravb_queue_interrupt()...
 
-Do you plan to update and repost this series?
+OK.
 
-Simon still has it in topic/r8a7795-pcie, and I still include it in
-renesas-drivers, but it became a bit rusty.
+>
+>
+> [...]
+>>>>
+>>>> @@ -725,31 +787,15 @@ static irqreturn_t ravb_interrupt(int irq, void
+>>>> *dev_id)
+>>>>
+>>>>                  /* Network control and best effort queue RX/TX */
+>>>>                  for (q = RAVB_NC; q >= RAVB_BE; q--) {
+>>>> -                       if (((ris0 & ric0) & BIT(q)) ||
+>>>> -                           ((tis  & tic)  & BIT(q))) {
+>>>> -                               if (napi_schedule_prep(&priv->napi[q]))
+>>>> {
+>>>> -                                       /* Mask RX and TX interrupts */
+>>>> -                                       ric0 &= ~BIT(q);
+>>>> -                                       tic &= ~BIT(q);
+>>>> -                                       ravb_write(ndev, ric0, RIC0);
+>>>> -                                       ravb_write(ndev, tic, TIC);
+>>>> -                                       __napi_schedule(&priv->napi[q]);
+>>>> -                               } else {
+>>>> -                                       netdev_warn(ndev,
+>>>> -                                                   "ignoring interrupt,
+>>>> rx status 0x%08x, rx mask 0x%08x,\n",
+>>>> -                                                   ris0, ric0);
+>>>> -                                       netdev_warn(ndev,
+>>>> -                                                   "
+>>>> tx status 0x%08x, tx mask 0x%08x.\n",
+>>>> -                                                   tis, tic);
+>>>> -                               }
+>>>> +                       if (ravb_nc_be_interrupt(ndev, q, ris0, &ric0,
+>>>> tis,
+>>>> +                                                &tic))
+>>>>                                  result = IRQ_HANDLED;
+>>>> -                       }
+>>>>                  }
+>>>
+>>>
+>>>
+>>>     Unroll this *for* loop please...
+>
+>
+>> OK.
+>
+>
+>    It was a bad idea actually, sorry...
 
-Thanks!
+OK, I will revert this part.
+(But I think it is not that bad...)
 
-Gr{oetje,eeting}s,
+>
+> [...]
+>>>>
+>>>> @@ -767,6 +813,73 @@ static irqreturn_t ravb_interrupt(int irq, void
+>
+> [...]
+>>>>
+>>>> +static irqreturn_t ravb_dmaq_interrupt(int irq, void *dev_id, int
+>>>> ravb_queue)
+>>>
+>>>
+>>>
+>>>     Perhaps, ravb_rx_tx_interrupt()?
+>>
+>>
+>> Agreed.
+>
+>
+>    And we still have ravb_dma_interrupt() unused, right?
 
-                        Geert
+Do you mean that there is an unused "ravb_dma_interrupt()" in this version?
+I probably be misunderstanding something.
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+>
+> [...]
+>
+>> Thanks,
+>> kaneko
+>
+>
+> MBR, Sergei
+>
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+Thanks,
+kaneko
