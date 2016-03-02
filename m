@@ -1,43 +1,44 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Wed, 02 Mar 2016 09:05:18 +0000
+From: Andreas Schwab <schwab@linux-m68k.org>
+Date: Wed, 02 Mar 2016 09:28:40 +0000
 Subject: Re: [PATCH 1/6] rtc: generic: allow building on all architectures
-Message-Id: <1620536.OtjnSSLgCT@wuerfel>
+Message-Id: <mvmwpplns8n.fsf@hawking.suse.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1456851608-3374907-1-git-send-email-arnd@arndb.de>
  <1456851608-3374907-2-git-send-email-arnd@arndb.de>
  <CAMuHMdW5+jZ1n9WnCwBrGSGjUa8ziNTTqf-H15EFTQC_iwnw+Q@mail.gmail.com>
 In-Reply-To: <CAMuHMdW5+jZ1n9WnCwBrGSGjUa8ziNTTqf-H15EFTQC_iwnw+Q@mail.gmail.com>
+ (Geert Uytterhoeven's message of "Wed, 2 Mar 2016 09:57:27 +0100")
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wednesday 02 March 2016 09:57:27 Geert Uytterhoeven wrote:
-> > @@ -33,13 +35,21 @@ static const struct rtc_class_ops generic_rtc_ops = {
-> >         .read_time = generic_get_time,
-> >         .set_time = generic_set_time,
-> >  };
-> > +#else
-> > +#define generic_rtc_ops *(struct rtc_class_ops*)NULL
-> > +#endif
-> >
-> >  static int __init generic_rtc_probe(struct platform_device *dev)
-> >  {
-> >         struct rtc_device *rtc;
-> > +       const struct rtc_class_ops *ops;
-> > +
-> > +       ops = dev_get_platdata(&dev->dev);
-> > +       if (!ops)
-> > +               ops = &generic_rtc_ops;
-> 
+Geert Uytterhoeven <geert@linux-m68k.org> writes:
+
+>> +#else
+>> +#define generic_rtc_ops *(struct rtc_class_ops*)NULL
+>> +#endif
+>>
+>>  static int __init generic_rtc_probe(struct platform_device *dev)
+>>  {
+>>         struct rtc_device *rtc;
+>> +       const struct rtc_class_ops *ops;
+>> +
+>> +       ops = dev_get_platdata(&dev->dev);
+>> +       if (!ops)
+>> +               ops = &generic_rtc_ops;
+>
 > I hope no compiler version treats "&*(struct rtc_class_ops*)NULL" as
 > undefined behavior?
 
-It's a bit odd, but I think it's syntactically correct C, and not
-much too different from 
+Yes, that is guaranteed, the operations cancel each other (6.5.3.2#3: If
+the operand is the result of a unary * operator, neither that operator
+nor the & operator is evaluated and the result is as if both were
+omitted).
 
-#define offsetof(TYPE, MEMBER)  ((size_t)&((TYPE *)0)->MEMBER)
+Andreas.
 
-is it? My last patch gets rid of it again.
-
-	Arnd
+-- 
+Andreas Schwab, schwab@linux-m68k.org
+GPG Key fingerprint = 58CA 54C7 6D53 942B 1756  01D3 44D5 214B 8276 4ED5
+"And now for something completely different."
