@@ -1,36 +1,56 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Tue, 01 Mar 2016 20:31:09 +0000
-Subject: Re: [PATCH 3/6] powerpc: rtc: provide rtc_class_ops directly
-Message-Id: <43764978.ST0U01oqaW@wuerfel>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Thu, 03 Mar 2016 01:32:32 +0000
+Subject: RE: [PATCH] usb: renesas_usbhs: gadget: fix giveback status code in usbhsg_pipe_disable()
+Message-Id: <SG2PR06MB0919679AA901C81EE08F6C20D8BD0@SG2PR06MB0919.apcprd06.prod.outlook.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201603020228.jios50eU%fengguang.wu@intel.com>
-In-Reply-To: <201603020228.jios50eU%fengguang.wu@intel.com>
+References: <1451042763-4648-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+In-Reply-To: <1451042763-4648-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Wednesday 02 March 2016 02:37:14 kbuild test robot wrote:
-> [auto build test ERROR on abelloni/rtc-next]
-> [also build test ERROR on v4.5-rc6 next-20160301]
-> [if your patch is applied to the wrong git tree, please drop us a note to help improving the system]
-> 
-> url:    https://github.com/0day-ci/linux/commits/Arnd-Bergmann/rtc-generic-follow-up-for-COMPILE_TEST/20160302-011032
-> base:   https://git.kernel.org/pub/scm/linux/kernel/git/abelloni/linux.git rtc-next
-> config: powerpc-allnoconfig (attached as .config)
-> reproduce:
->         wget https://git.kernel.org/cgit/linux/kernel/git/wfg/lkp-tests.git/plain/sbin/make.cross -O ~/bin/make.cross
->         chmod +x ~/bin/make.cross
->         # save the attached .config to linux build tree
->         make.cross ARCH=powerpc 
-> 
-> All errors (new ones prefixed by >>):
-> 
->    arch/powerpc/kernel/built-in.o: In function `rtc_generic_get_time':
-> >> time.c:(.text+0x4c58): undefined reference to `rtc_valid_tm'
-> 
+Hi Felipe,
 
-I fixed up the powerpc and parisc patches now, will resend them
-after getting some feedback on the overall approach.
+Oops, I completely forgot this patch.
+Would you review this patch? Or should I resend it?
+I confirmed that this patch could be applied on your latest testing/fixes branch.
 
-	Arnd
+Best regards,
+Yoshihiro Shimoda
+
+> -----Original Message-----
+> From: Yoshihiro Shimoda
+> Sent: Friday, December 25, 2015 8:26 PM
+> To: gregkh@linuxfoundation.org; balbi@ti.com
+> Cc: linux-usb@vger.kernel.org; linux-sh@vger.kernel.org; Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+> Subject: [PATCH] usb: renesas_usbhs: gadget: fix giveback status code in usbhsg_pipe_disable()
+> 
+> A udc driver should set the giveback status to -ESHUTDOWN in
+> usb_ep_disable(). Otherwise, a gadget driver (e.g. g_serial) might
+> request next data wrongly and it is possible to cause kernel panic.
+> 
+> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+> ---
+>  This patch is based on Felipe's usb.git / testing/fixes branch.
+>  (commit id = 5072cfc40a80cea3749fd3413b3896630d8c787e)
+> 
+>  drivers/usb/renesas_usbhs/mod_gadget.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> diff --git a/drivers/usb/renesas_usbhs/mod_gadget.c b/drivers/usb/renesas_usbhs/mod_gadget.c
+> index 657f967..664b263 100644
+> --- a/drivers/usb/renesas_usbhs/mod_gadget.c
+> +++ b/drivers/usb/renesas_usbhs/mod_gadget.c
+> @@ -561,7 +561,7 @@ static int usbhsg_pipe_disable(struct usbhsg_uep *uep)
+>  		if (!pkt)
+>  			break;
+> 
+> -		usbhsg_queue_pop(uep, usbhsg_pkt_to_ureq(pkt), -ECONNRESET);
+> +		usbhsg_queue_pop(uep, usbhsg_pkt_to_ureq(pkt), -ESHUTDOWN);
+>  	}
+> 
+>  	usbhs_pipe_disable(pipe);
+> --
+> 1.9.1
+
