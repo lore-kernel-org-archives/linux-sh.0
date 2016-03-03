@@ -1,54 +1,44 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 03 Mar 2016 00:53:45 +0000
-Subject: [PATCH v2] Input: sh_keysc - Remove dependency on SUPERH
-Message-Id: <1456966425-14664-1-git-send-email-horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 03 Mar 2016 08:11:18 +0000
+Subject: Re: [PATCH v2] Input: sh_keysc - Remove dependency on SUPERH
+Message-Id: <CAMuHMdWdeZkjk++5kpPLH6vHvz=ZAPqFp8z9od+Y-=R1W8HCxA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1456966425-14664-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1456966425-14664-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Dmitry Torokhov <dmitry.torokhov@gmail.com>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Magnus Damm <magnus.damm@gmail.com>, linux-input@vger.kernel.org, linux-sh@vger.kernel.org, linux-renesas-soc@vger.kernel.org, Simon Horman <horms+renesas@verge.net.au>
+To: Simon Horman <horms+renesas@verge.net.au>
+Cc: Dmitry Torokhov <dmitry.torokhov@gmail.com>, Magnus Damm <magnus.damm@gmail.com>, "linux-input@vger.kernel.org" <linux-input@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, linux-renesas-soc@vger.kernel.org
 
-A dependency on ARCH_SHMOBILE seems to be the best option for sh_keysc:
+On Thu, Mar 3, 2016 at 1:53 AM, Simon Horman <horms+renesas@verge.net.au> wrote:
+> A dependency on ARCH_SHMOBILE seems to be the best option for sh_keysc:
+>
+> * For Super H based SoCs: sh_keysc is used on SH_MIGOR, SH_ECOVEC, SH_KFR2R09,
+>   SH_7722_SOLUTION_ENGINE, and SH_7724_SOLUTION_ENGINE, which depend on
+>   either CPU_SUBTYPE_SH7722 or CPU_SUBTYPE_SH7724, and both select
+>   ARCH_SHMOBILE.
+>
+> * For ARM Based SoCs: Since the removal of legacy (non-multiplatform) support
+>   this driver has not been used by any Renesas ARM based SoCs. The Renesas
+>   ARM based SoCs currently select ARCH_SHMOBILE, however, it is planned
+>   that this will no longer be the case.
+>
+> This is part of an ongoing process to migrate from ARCH_SHMOBILE to
+> ARCH_RENESAS the motivation for which being that RENESAS seems to be a more
+> appropriate name than SHMOBILE for the majority of Renesas ARM based SoCs.
+>
+> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-* For Super H based SoCs: sh_keysc is used on SH_MIGOR, SH_ECOVEC, SH_KFR2R09,
-  SH_7722_SOLUTION_ENGINE, and SH_7724_SOLUTION_ENGINE, which depend on
-  either CPU_SUBTYPE_SH7722 or CPU_SUBTYPE_SH7724, and both select
-  ARCH_SHMOBILE.
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-* For ARM Based SoCs: Since the removal of legacy (non-multiplatform) support
-  this driver has not been used by any Renesas ARM based SoCs. The Renesas
-  ARM based SoCs currently select ARCH_SHMOBILE, however, it is planned
-  that this will no longer be the case.
+Gr{oetje,eeting}s,
 
-This is part of an ongoing process to migrate from ARCH_SHMOBILE to
-ARCH_RENESAS the motivation for which being that RENESAS seems to be a more
-appropriate name than SHMOBILE for the majority of Renesas ARM based SoCs.
+                        Geert
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
-Based on v4.5-rc1
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-v2
-* Drop dependency on SUPERH rather than the dependency on ARCH_SHMOBILE
-  as suggested by Geert Uytterhoeven
----
- drivers/input/keyboard/Kconfig | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/drivers/input/keyboard/Kconfig b/drivers/input/keyboard/Kconfig
-index ddd8148d51d7..509608c95994 100644
---- a/drivers/input/keyboard/Kconfig
-+++ b/drivers/input/keyboard/Kconfig
-@@ -560,7 +560,7 @@ config KEYBOARD_SUNKBD
- 
- config KEYBOARD_SH_KEYSC
- 	tristate "SuperH KEYSC keypad support"
--	depends on SUPERH || ARCH_SHMOBILE || COMPILE_TEST
-+	depends on ARCH_SHMOBILE || COMPILE_TEST
- 	help
- 	  Say Y here if you want to use a keypad attached to the KEYSC block
- 	  on SuperH processors such as sh7722 and sh7343.
--- 
-2.1.4
-
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
