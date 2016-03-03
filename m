@@ -1,7 +1,7 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 02 Mar 2016 08:25:54 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 03 Mar 2016 00:07:13 +0000
 Subject: Re: [PATCH] drivers: sh: Use ARCH_RENESAS
-Message-Id: <CAMuHMdX_9TA+GngiQ=3LWwWGXtzNy5oo7_9j5pX6P29rihPfog@mail.gmail.com>
+Message-Id: <20160303000713.GC23040@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1456882987-4502-1-git-send-email-horms+renesas@verge.net.au>
 In-Reply-To: <1456882987-4502-1-git-send-email-horms+renesas@verge.net.au>
@@ -10,57 +10,62 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Simon,
+On Wed, Mar 02, 2016 at 09:25:54AM +0100, Geert Uytterhoeven wrote:
+> Hi Simon,
+> 
+> On Wed, Mar 2, 2016 at 2:43 AM, Simon Horman <horms+renesas@verge.net.au> wrote:
+> > Make use of ARCH_RENESAS in place of ARCH_SHMOBILE.
+> >
+> > This is part of an ongoing process to migrate from ARCH_SHMOBILE to
+> > ARCH_RENESAS the motivation for which being that RENESAS seems to be a more
+> > appropriate name than SHMOBILE for the majority of Renesas ARM based SoCs.
+> >
+> > ARCH_RENESAS should cover all cases where both CONFIG_OF and
+> > ARCH_SHMOBILE are enabled.
+> >
+> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+> 
+> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> 
+> If you intend to drop ARCH_SHMOBILE from arch/arm/mach-shmobile/Kconfig before
+> dropping the whole "if (...) { ... }" block below" (cfr. "drivers: sh: Stop
+> using the legacy clock domain on ARM",
+> http://www.spinics.net/lists/linux-renesas-soc/msg00869.html).
 
-On Wed, Mar 2, 2016 at 2:43 AM, Simon Horman <horms+renesas@verge.net.au> wrote:
-> Make use of ARCH_RENESAS in place of ARCH_SHMOBILE.
->
-> This is part of an ongoing process to migrate from ARCH_SHMOBILE to
-> ARCH_RENESAS the motivation for which being that RENESAS seems to be a more
-> appropriate name than SHMOBILE for the majority of Renesas ARM based SoCs.
->
-> ARCH_RENESAS should cover all cases where both CONFIG_OF and
-> ARCH_SHMOBILE are enabled.
->
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+At this point that is my intention.
 
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> Note that the SH-people may resurrect (a variant of) the block when they start
+> migrating to DT and CCF.
 
-If you intend to drop ARCH_SHMOBILE from arch/arm/mach-shmobile/Kconfig before
-dropping the whole "if (...) { ... }" block below" (cfr. "drivers: sh: Stop
-using the legacy clock domain on ARM",
-http://www.spinics.net/lists/linux-renesas-soc/msg00869.html).
+Yes, I considered that too.
 
-Note that the SH-people may resurrect (a variant of) the block when they start
-migrating to DT and CCF.
-
-> ---
->  drivers/sh/pm_runtime.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
->
->  Based on v4.5-rc6
->
-> diff --git a/drivers/sh/pm_runtime.c b/drivers/sh/pm_runtime.c
-> index a9bac3bf20de..aa2ce227e3eb 100644
-> --- a/drivers/sh/pm_runtime.c
-> +++ b/drivers/sh/pm_runtime.c
-> @@ -34,7 +34,7 @@ static struct pm_clk_notifier_block platform_bus_notifier = {
->
->  static int __init sh_pm_runtime_init(void)
->  {
-> -       if (IS_ENABLED(CONFIG_OF) && IS_ENABLED(CONFIG_ARCH_SHMOBILE)) {
-> +       if (IS_ENABLED(CONFIG_ARCH_RENESAS)) {
->                 if (!of_find_compatible_node(NULL, NULL,
->                                              "renesas,cpg-mstp-clocks"))
->                         return 0;
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+> > ---
+> >  drivers/sh/pm_runtime.c | 2 +-
+> >  1 file changed, 1 insertion(+), 1 deletion(-)
+> >
+> >  Based on v4.5-rc6
+> >
+> > diff --git a/drivers/sh/pm_runtime.c b/drivers/sh/pm_runtime.c
+> > index a9bac3bf20de..aa2ce227e3eb 100644
+> > --- a/drivers/sh/pm_runtime.c
+> > +++ b/drivers/sh/pm_runtime.c
+> > @@ -34,7 +34,7 @@ static struct pm_clk_notifier_block platform_bus_notifier = {
+> >
+> >  static int __init sh_pm_runtime_init(void)
+> >  {
+> > -       if (IS_ENABLED(CONFIG_OF) && IS_ENABLED(CONFIG_ARCH_SHMOBILE)) {
+> > +       if (IS_ENABLED(CONFIG_ARCH_RENESAS)) {
+> >                 if (!of_find_compatible_node(NULL, NULL,
+> >                                              "renesas,cpg-mstp-clocks"))
+> >                         return 0;
+> 
+> Gr{oetje,eeting}s,
+> 
+>                         Geert
+> 
+> --
+> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+> 
+> In personal conversations with technical people, I call myself a hacker. But
+> when I'm talking to journalists I just say "programmer" or something like that.
+>                                 -- Linus Torvalds
