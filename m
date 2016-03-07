@@ -1,80 +1,72 @@
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Tue, 08 Mar 2016 17:18:07 +0000
-Subject: Re: [PATCH/RFC v6 net-next] ravb: Add dma queue interrupt support
-Message-Id: <CAH1o70JGx5AWOyke2AU5DwFvi58TzKbAGVJP7XbXZC2VAJHoOA@mail.gmail.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 07 Mar 2016 09:01:09 +0000
+Subject: Re: Build regressions/improvements in v4.5-rc7
+Message-Id: <CAMuHMdWe9bTjp-qmTJc9=n9-iP-qH8-O0jafiRD3-y_EtT=WvA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1456674078-1316-1-git-send-email-ykaneko0929@gmail.com>
-In-Reply-To: <1456674078-1316-1-git-send-email-ykaneko0929@gmail.com>
+References: <1457340934-23042-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1457340934-23042-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org
-Cc: "David S. Miller" <davem@davemloft.net>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-renesas-soc@vger.kernel.org, Linux-sh list <linux-sh@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Sergei-san,
+On Mon, Mar 7, 2016 at 9:55 AM, Geert Uytterhoeven <geert@linux-m68k.org> wrote:
+> JFYI, when comparing v4.5-rc7[1] to v4.5-rc6[3], the summaries are:
+>   - build errors: +8/-7
+  + error: debugfs.c: undefined reference to `clk_round_rate':  =>
+.text+0x11b9e0)
 
-2016-02-29 0:41 GMT+09:00 Yoshihiro Kaneko <ykaneko0929@gmail.com>:
+arm-randconfig
 
-[snip]
+While looking for more context, I noticed another regression that fell through
+the cracks of my script:
 
-> +static bool ravb_timestamp_interrupt(struct net_device *ndev, u32 tis)
-> +{
+    arch/arm/kernel/head.o: In function `stext':
+    (.head.text+0x40): undefined reference to `CONFIG_PHYS_OFFSET'
+    drivers/built-in.o: In function `v4l2_clk_set_rate':
+    debugfs.c:(.text+0x11b9e0): undefined reference to `clk_round_rate'
 
-I'd like to read TIS here like ravb_queue_interrupt().
+  + error: misc.c: undefined reference to `ftrace_likely_update':  =>
+.text+0x714), .text+0x94c), .text+0x3b8), .text+0xc10)
 
+sh-randconfig
 
-> +       if (tis & TIS_TFUF) {
-> +               ravb_write(ndev, ~TIS_TFUF, TIS);
-> +               ravb_get_tx_tstamp(ndev);
-> +               return true;
-> +       }
-> +       return false;
-> +}
+    arch/sh/boot/compressed/misc.o: In function `lzo1x_decompress_safe':
+    misc.c:(.text+0x3b8): undefined reference to `ftrace_likely_update'
+    misc.c:(.text+0x714): undefined reference to `ftrace_likely_update'
+    misc.c:(.text+0x94c): undefined reference to `ftrace_likely_update'
+    arch/sh/boot/compressed/misc.o: In function `unlzo.constprop.2':
+    misc.c:(.text+0xc10): undefined reference to `ftrace_likely_update'
 
-[snip]
+  + /tmp/cc52LvuK.s: Error: can't resolve `_start' {*UND* section} -
+`L0^A' {.text section}:  => 41, 403
+  + /tmp/ccHfoDA4.s: Error: can't resolve `_start' {*UND* section} -
+`L0^A' {.text section}:  => 43
+  + /tmp/cch1r0UQ.s: Error: can't resolve `_start' {*UND* section} -
+`L0^A' {.text section}:  => 49, 378
+  + /tmp/ccoHdFI8.s: Error: can't resolve `_start' {*UND* section} -
+`L0^A' {.text section}:  => 43
 
-> +/* Timestamp/Error/gPTP interrupt handler */
-> +static irqreturn_t ravb_multi_interrupt(int irq, void *dev_id)
-> +{
-> +       struct net_device *ndev = dev_id;
-> +       struct ravb_private *priv = netdev_priv(ndev);
-> +       irqreturn_t result = IRQ_NONE;
-> +       u32 iss, tis;
-> +
-> +       spin_lock(&priv->lock);
-> +       /* Get interrupt status */
-> +       iss = ravb_read(ndev, ISS);
-> +
-> +       /* Timestamp updated */
-> +       if (iss & ISS_TFUS) {
-> +               tis  = ravb_read(ndev, TIS);
-> +               if (ravb_timestamp_interrupt(ndev, tis))
-> +                       result = IRQ_HANDLED;
-> +       }
-> +
-> +       /* Error status summary */
-> +       if (iss & ISS_ES) {
-> +               ravb_error_interrupt(ndev);
-> +               result = IRQ_HANDLED;
-> +       }
-> +
-> +       /* gPTP interrupt status summary */
-> +       if (iss & ISS_CGIS)
-> +               result = ravb_ptp_interrupt(ndev);
+mips-allnoconfig
+bigsur_defconfig
+malta_defconfig
+cavium_octeon_defconfig
 
-This assignment overwrites the result above.
-How about this?
-    if ((iss & ISS_CGIS) && ravb_ptp_interrupt(ndev) = IRQ_HANDLED)
-            result = IRQ_HANDLED;
+Not really new, but it would be great if the MIPS people could get this
+fixed for the final release.
 
+Thanks!
 
-> +
-> +       mmiowb();
-> +       spin_unlock(&priv->lock);
-> +       return result;
-> +}
-[snip]
+> [1] http://kisskb.ellerman.id.au/kisskb/head/10011/ (all 262 configs)
+> [3] http://kisskb.ellerman.id.au/kisskb/head/9974/ (all 262 configs)
 
+Gr{oetje,eeting}s,
 
-Thanks,
-kaneko
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
