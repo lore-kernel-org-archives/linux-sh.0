@@ -1,105 +1,65 @@
-From: Rich Felker <dalias@libc.org>
-Date: Wed, 23 Mar 2016 16:41:06 +0000
-Subject: Re: Fixing SH cache assumptions
-Message-Id: <20160323164106.GN21636@brightrain.aerifal.cx>
+From: Ingo Molnar <mingo@kernel.org>
+Date: Wed, 09 Mar 2016 12:18:50 +0000
+Subject: Re: [RFC 0/12] introduce down_write_killable for rw_semaphore
+Message-Id: <20160309121850.GA14915@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20160322211905.GA11781@brightrain.aerifal.cx>
-In-Reply-To: <20160322211905.GA11781@brightrain.aerifal.cx>
+References: <1454444369-2146-1-git-send-email-mhocko@kernel.org>
+In-Reply-To: <1454444369-2146-1-git-send-email-mhocko@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Michal Hocko <mhocko@kernel.org>
+Cc: LKML <linux-kernel@vger.kernel.org>, Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@redhat.com>, Thomas Gleixner <tglx@linutronix.de>, "H. Peter Anvin" <hpa@zytor.com>, "David S. Miller" <davem@davemloft.net>, Tony Luck <tony.luck@intel.com>, Andrew Morton <akpm@linux-foundation.org>, Chris Zankel <chris@zankel.net>, Max Filippov <jcmvbkbc@gmail.com>, x86@kernel.org, linux-alpha@vger.kernel.org, linux-ia64@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-arch@vger.kernel.org, Linus Torvalds <torvalds@linux-foundation.org>, Peter Zijlstra <a.p.zijlstra@chello.nl>
 
-On Wed, Mar 23, 2016 at 12:08:51AM -0500, Rob Landley wrote:
-> On 03/22/2016 04:19 PM, Rich Felker wrote:
-> > Currently arch/sh has a hard-coded assumption that the cache is
-> > virtually indexed (and virtually tagged, from what I can tell), and
-> > thus needs to account for pages that may alias. While this is correct
-> > for SH3/4, it's wrong for anything NOMMU (since there are no virtual
-> > addresses, only physical) and the only reason SH2 works at all is
-> > because its small cache size (256 lines * 16 bytes per line) matches
-> > the page size, yielding an alias_mask of 0. If the cache were any
-> > larger (like it is on J2) then the alias avoidance logic would kick in
-> > and lead to calling kmap_coherent (which is BUG() on NOMMU) and
-> > possibly other incorrect or suboptimal behavior.
-> > 
-> > I've avoided the issue so far on J2 simply by lying that the cache is
-> > small, but this needs a proper fix. It would be easy to just #ifndef
-> > out the logic that sets up alias_mask and shm_align_mask on NOMMU, but
-> > I think it would be better to somehow represent the cache indexing in
-> > the cache_info struct or elsewhere. In case the future J4 has a
-> > physically indexed cache (which is my hope), such an approach should
-> > naturally work for it with no further modifications.
-> 
-> Wikipedia[citation needed] is under the impression that physically
-> indexed caches are not a happy thing on systems with MMU:
-> 
-> https://en.wikipedia.org/wiki/CPU_cache#Address_translation
-> 
-> (I so want search anchors. Instead of #Address_translation, if I could
-> add $PIPT it could jump you right where you needed to go. But no,
-> mozilla never did that and chrome apparently hasn't thought of it.)
 
-The information there is kind of, well, "dated" IMO. Most modern
-systems (esp. x86 and ARM) with MMU use PIPT caches, because the
-disadvantages of virtual indexing are pretty big:
+* Michal Hocko <mhocko@kernel.org> wrote:
 
-- Without ASIDs, you have to flush the TLB at every context switch.
-  ASIDs partly solve this problem but have limitations/problems of
-  their own.
+> Hi,
+>
+> the following patchset implements a killable variant of write lock for 
+> rw_semaphore. My usecase is to turn as many mmap_sem write users to use a 
+> killable variant which will be helpful for the oom_reaper [1] to asynchronously 
+> tear down the oom victim address space which requires mmap_sem for read. This 
+> will reduce a likelihood of OOM livelocks caused by oom victim being stuck on a 
+> lock or other resource which prevents it to reach its exit path and release the 
+> memory. [...]
 
-- With virtual tagging and indexing, memory that's mapped into
-  multiple processes, like shared libraries, will get cached multiple
-  times, unless it's mapped at the same location or the same location,
-  which is hard to guarantee and precludes ASLR.
+So I'm a tiny bit concerned about this arguments.
 
-- With physical tagging and virtual indexing, the problem isn't quite
-  as bad, but to ensure the same physical memory doesn't get cached
-  multiple times (waste for RO memory, breaks coherency for RW memory)
-  you have to use alignment larger (possibly much larger) than the
-  page size; this is the page aliasing avoidance I was talking about.
+AFAICS killability here just makes existing system calls more interruptible - 
+right? In that sense that's not really a livelock scenario: it just takes shorter 
+time for resources to be released.
 
-I'm not an expert on the hardware side of things, but my understanding
-is that implementing fast PIPT cache is a solved problem and shouldn't
-really require anything more than a low-latency MMU.
+If a livelock is possible (where resources are never released) then I'd like to 
+see a specific example of such a livelock.
 
-Also, in order for your MMU to allow arbitrary mappings, rather than
-having certain virtual ranges (like SH P0/P1/P2/P3/P4 zones) with
-special meanings, then I don't see how you can save latency by using
-virtual indexing instead of physical, since it's not determined
-whether an address is cacheable until after the MMU resolves what it
-maps to.
+You have the other patch-set:
 
-> This sounds like something nommu systems do. Are any other nommu systems
-> currently device tree enabled? (Blackfish? Coldfire? Is any of the
-> Cortex-M stuff actually merged in-tree yet?)
+   [PATCH 0/18] change mmap_sem taken for write killable
 
-On a NOMMU system there's no such thing as a virtual/physical
-distinction. Virtual addresses "are" (or map linearly to) physical
-addresses and there's no multiple-mapping of the same memory at
-different virtual pages.
+that makes use of down_write_killable(), and there you argue:
 
-> > Any preferences for how I do this? Just add a type field to cache_info
-> > and make the default VIVT for existing models?
-> 
-> It sounds like a device tree issue. How would you represent it there?
+ [...] this is a follow up work for oom_reaper [1]. As the async OOM killing 
+ depends on oom_sem for read we would really appreciate if a holder for write 
+ stood in the way. This patchset is changing many of down_write calls to be 
+ killable to help those cases when the writer is blocked and waiting for readers 
+ to release the lock and so help __oom_reap_task to process the oom victim.
 
-Even if the value for the property comes from the DT, it needs to be
-stored in the kernel's data structures at runtime; that's what I was
-asking about. But this is another good question. For legacy SH
-cpus/socs, should the cache properties be implied by the cpu node's
-"compatible" string, or should we require the DT provide them all? I
-think "renesas,sh4-* cpu has VIPT cache" is a fairly reasonable
-assumption to go in the kernel's handling of the cpu type, while sizes
-(which might vary by subtype/soc?) _could_ go in the DT, but I think
-they're actually detectable (and currently detected) via probing the
-sh4 cache controller registers, and probing should probably be
-preferred over DT-provided values. On the other hand, for J2 where the
-cache could easily be changed or swapped out independently of the cpu,
-it makes sense for all the properties to come from the DT.
+there seems to be a misunderstanding: if a writer is blocked waiting for readers 
+then no new readers are allowed - the writer will get its turn the moment all 
+existing readers drop the lock.
 
-BTW this document looks helpful explaining SH4 cache architecture:
+So there's no livelock scenario - it's "only" about latencies.
 
-http://www.stlinux.com/node/512
+And once we realize that it's about latencies (assuming I'm right!), not about 
+correctness per se, I'm wondering whether it would be a good idea to introduce 
+down_write_interruptible(), instead of down_write_killable().
 
-Rich
+I'd love various processes to quit faster on Ctrl-C as well, not just on kill -9!
+
+This would also test the new code paths a lot better: kill -9 is a lot rarer than 
+regular interruption.
+
+Thanks,
+
+	Ingo
