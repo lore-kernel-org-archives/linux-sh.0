@@ -1,7 +1,7 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 02 Mar 2016 00:20:55 +0000
+From: David Hildenbrand <dahi@linux.vnet.ibm.com>
+Date: Fri, 11 Mar 2016 11:06:22 +0000
 Subject: Re: sh7724 regression: commit 8222dbe21e79338de92d5e1956cd1e3994cc9f93
-Message-Id: <20160302002055.GF17986@verge.net.au>
+Message-Id: <20160311120622.2bca2f0f@thinkpad-w530>
 List-Id: <linux-sh.vger.kernel.org>
 References: <CAMuHMdWR0RZhGrX4qW+fHwOYxAXffNinUdhrL=SZsMn5BUKoeA@mail.gmail.com>
 In-Reply-To: <CAMuHMdWR0RZhGrX4qW+fHwOYxAXffNinUdhrL=SZsMn5BUKoeA@mail.gmail.com>
@@ -10,51 +10,25 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-[CC Super H maintainers: Sato-san and Rich Felker]
 
-On Mon, Feb 29, 2016 at 12:03:38PM +0100, David Hildenbrand wrote:
-> > On 02/29/2016 09:24 AM, David Hildenbrand wrote:
-> > >> On 02/27/2016 03:28 PM, John Paul Adrian Glaubitz wrote:  
-> > >>> Hi Hans!
-> > >>>
-> > >>> On 02/27/2016 03:20 PM, Geert Uytterhoeven wrote:    
-> > >>>>> I noticed that 4.1 was ok and v4.2 wasn't, so I did a git bisect and ended up with
-> > >>>>> commit 8222dbe21e79338de92d5e1956cd1e3994cc9f93 (sched/preempt, mm/fault: Decouple
-> > >>>>> preemption from the page fault logic) as the culprit.    
-> > >>>
-> > >>> If you like, please report this the kernel bug tracker and set
-> > >>> "Hardware" to "SuperH". This way we are able to keep track of
-> > >>> the issue.
-> > >>>
-> > >>> I think Yoshinori Sato and Rich Felker will have a look at this.
-> > >>>
-> > >>> Adrian
-> > >>>     
-> > >>
-> > >> Done: https://bugzilla.kernel.org/show_bug.cgi?id3321
-> > >>
-> > >> Regards,
-> > >>
-> > >> 	Hans
-> > >>  
+> > > That fixes it for me:
 > > > 
-> > > Looks like the code then requires to not be allowed to sleep/preempt in these
-> > > sections (just like kmap_atomic, or kmap_coherent on mips).
+> > > Tested-by: Hans Verkuil <hans.verkuil@cisco.com>
 > > > 
-> > > So the fix should be simple as (untested):  
+> > > BTW, your patch is garbled and I had to manually make the change (not a big
+> > > deal for a simple change like this).
+> > >   
 > > 
-> > That fixes it for me:
+> > Thanks for testing. I just copy-pasted the patch, so this was somehow
+> > expected :)
 > > 
-> > Tested-by: Hans Verkuil <hans.verkuil@cisco.com>
+> > @maintainers, how to proceed with this? Shall I send that patch again directly
+> > to the linux-sh list?
 > > 
-> > BTW, your patch is garbled and I had to manually make the change (not a big
-> > deal for a simple change like this).
-> > 
+> > David  
 > 
-> Thanks for testing. I just copy-pasted the patch, so this was somehow
-> expected :)
-> 
-> @maintainers, how to proceed with this? Shall I send that patch again directly
-> to the linux-sh list?
-> 
-> David
+
+How to proceed with this patch? Anyone?
+
+David
+
