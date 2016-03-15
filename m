@@ -1,127 +1,152 @@
-From: James Hogan <james.hogan@imgtec.com>
-Date: Tue, 08 Mar 2016 14:35:32 +0000
-Subject: Re: Build regressions/improvements in v4.5-rc7
-Message-Id: <20160308143532.GN31414@jhogan-linux.le.imgtec.org>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="prC3/KjdfqNV7evK"
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 15 Mar 2016 04:21:55 +0000
+Subject: [PATCH v2 02/04] iommu/ipmmu-vmsa: Rework interrupt code and use bitmap for context
+Message-Id: <20160315042155.22103.74587.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1457340934-23042-1-git-send-email-geert@linux-m68k.org>
- <CAMuHMdWe9bTjp-qmTJc9=n9-iP-qH8-O0jafiRD3-y_EtT=WvA@mail.gmail.com>
-In-Reply-To: <CAMuHMdWe9bTjp-qmTJc9=n9-iP-qH8-O0jafiRD3-y_EtT=WvA@mail.gmail.com>
-To: linux-arm-kernel@lists.infradead.org
+References: <20160315042136.22103.26570.sendpatchset@little-apple>
+In-Reply-To: <20160315042136.22103.26570.sendpatchset@little-apple>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: laurent.pinchart+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org, geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, horms+renesas-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org
 
---prC3/KjdfqNV7evK
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Hi,
+Introduce a bitmap for context handing and convert the
+interrupt routine to go handle all registered contexts.
 
-On Mon, Mar 07, 2016 at 10:01:09AM +0100, Geert Uytterhoeven wrote:
-> On Mon, Mar 7, 2016 at 9:55 AM, Geert Uytterhoeven <geert@linux-m68k.org>=
- wrote:
-> > JFYI, when comparing v4.5-rc7[1] to v4.5-rc6[3], the summaries are:
-> >   - build errors: +8/-7
->   + error: debugfs.c: undefined reference to `clk_round_rate':  =3D>
-> .text+0x11b9e0)
->=20
-> arm-randconfig
->=20
-> While looking for more context, I noticed another regression that fell th=
-rough
-> the cracks of my script:
->=20
->     arch/arm/kernel/head.o: In function `stext':
->     (.head.text+0x40): undefined reference to `CONFIG_PHYS_OFFSET'
->     drivers/built-in.o: In function `v4l2_clk_set_rate':
->     debugfs.c:(.text+0x11b9e0): undefined reference to `clk_round_rate'
->=20
->   + error: misc.c: undefined reference to `ftrace_likely_update':  =3D>
-> .text+0x714), .text+0x94c), .text+0x3b8), .text+0xc10)
->=20
-> sh-randconfig
->=20
->     arch/sh/boot/compressed/misc.o: In function `lzo1x_decompress_safe':
->     misc.c:(.text+0x3b8): undefined reference to `ftrace_likely_update'
->     misc.c:(.text+0x714): undefined reference to `ftrace_likely_update'
->     misc.c:(.text+0x94c): undefined reference to `ftrace_likely_update'
->     arch/sh/boot/compressed/misc.o: In function `unlzo.constprop.2':
->     misc.c:(.text+0xc10): undefined reference to `ftrace_likely_update'
->=20
->   + /tmp/cc52LvuK.s: Error: can't resolve `_start' {*UND* section} -
-> `L0^A' {.text section}:  =3D> 41, 403
->   + /tmp/ccHfoDA4.s: Error: can't resolve `_start' {*UND* section} -
-> `L0^A' {.text section}:  =3D> 43
->   + /tmp/cch1r0UQ.s: Error: can't resolve `_start' {*UND* section} -
-> `L0^A' {.text section}:  =3D> 49, 378
->   + /tmp/ccoHdFI8.s: Error: can't resolve `_start' {*UND* section} -
-> `L0^A' {.text section}:  =3D> 43
->=20
-> mips-allnoconfig
-> bigsur_defconfig
-> malta_defconfig
-> cavium_octeon_defconfig
->=20
-> Not really new, but it would be great if the MIPS people could get this
-> fixed for the final release.
+At this point the number of contexts are still limited.
 
-This would appear to be related to the ld version check for VDSO
-failing.
+Also remove the use of the ARM specific mapping variable
+from ipmmu_irq() to allow compile on ARM64.
 
-awk: /home/kisskb/slave/src/scripts/ld-version.sh: line 4: regular expressi=
-on compile failed (missing '(')
-=2E*)
-/bin/sh: 1: [: -lt: unexpected operator
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
 
-I.e. this line:
-gsub(".*)", "");
+ Changes since V1: (Thanks to Laurent for feedback!)
+ - Use simple find_first_zero()/set_bit()/clear_bit() for context management.
+ - For allocation rely on spinlock held when calling ipmmu_domain_init_context()
+ - For test/free use atomic bitops
+ - Return IRQ_HANDLED if any of the contexts generated interrupts
 
-appears to be trying to turn e.g. "GNU ld (Gentoo 2.25.1 p1.1) 2.25.1"
-into " 2.25.1", so perhaps the bracket should be escaped. What version
-of awk is it using? (GNU Awk 4.0.2 works for me).
+ drivers/iommu/ipmmu-vmsa.c |   47 ++++++++++++++++++++++++++++++++------------
+ 1 file changed, 35 insertions(+), 12 deletions(-)
 
-Can somebody experiencing this please try:
-${CROSS_COMPILE}ld --version | ./scripts/ld-version.sh
-
-with the following patch, to see if it helps.
-
-Thanks
-James
-
-diff --git a/scripts/ld-version.sh b/scripts/ld-version.sh
-index 198580d245e0..1659b409ef10 100755
---- a/scripts/ld-version.sh
-+++ b/scripts/ld-version.sh
-@@ -1,7 +1,7 @@
- #!/usr/bin/awk -f
- # extract linker version number from stdin and turn into single number
- 	{
--	gsub(".*)", "");
-+	gsub(".*\\)", "");
- 	split($1,a, ".");
- 	print a[1]*10000000 + a[2]*100000 + a[3]*10000 + a[4]*100 + a[5];
- 	exit
-
---prC3/KjdfqNV7evK
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iQIcBAEBCAAGBQJW3uM0AAoJEGwLaZPeOHZ6qBIP/A1o8LERtDSh4DcTXe9DLPG8
-g2sWejK+8zzFdM6OK15MfRiK7qv5N1fq97l8STYJiY+Yhs5lWGxLe1A/eVYHhvB/
-99ExqRUgRZMJoiFiO2FBV/Z0eu60EkK4BSMrM02nmIu9kIrBTwSfO/MDa59NcqX5
-udnudur3IOXT1ccExENU+jrrBSC4z/VCqcpF0QbRvBIgHjFpeKzY9yIOQFjzC/9v
-m55DQt+SZFD6eUnH/ybeAFNSG9K8nA6jaTjrxHauCOovFBrAacxO17iZAWzG/qE1
-yV69bZiBTK2365gzlWaURNDUmVO25sUUvsvOkaQd7+mqfUUVZSwF6B8BGOHySw96
-92ivhLDdamHvRLiRm8XjucJ9sVl3HaSfLRHxorFy7AKad3CqwG8oetlwWK6jSS9F
-ky0iCWjz6YPFpX5pei0+mpAE5o9d6hofskAvFRy34/PiRkt3Q5VAM2ie9pItCBNn
-+qETmGssDaiIyvsOmG8aK2tFUaI4e2VgpKT42nRFpI/yCF8Y4euk+avag/JcX/Dw
-B0AAyI/L3HPr5yb2o8JN4v8D6HRWR8NOWd31P5/0oWb766dKV11WW8YrC30Pzq4L
-MqrbVqPN2kH4q9Fxsnkx2M2klW+qQsnjWyt0jWzga9LtZKZs18QZbQgWTU7vhw5w
-SDO6OJo6hnA4RWNM8OjO
-=a5rQ
------END PGP SIGNATURE-----
-
---prC3/KjdfqNV7evK--
+--- 0003/drivers/iommu/ipmmu-vmsa.c
++++ work/drivers/iommu/ipmmu-vmsa.c	2016-03-15 12:42:18.940513000 +0900
+@@ -8,6 +8,7 @@
+  * the Free Software Foundation; version 2 of the License.
+  */
+ 
++#include <linux/bitmap.h>
+ #include <linux/delay.h>
+ #include <linux/dma-mapping.h>
+ #include <linux/err.h>
+@@ -26,12 +27,16 @@
+ 
+ #include "io-pgtable.h"
+ 
++#define IPMMU_CTX_MAX 1
++
+ struct ipmmu_vmsa_device {
+ 	struct device *dev;
+ 	void __iomem *base;
+ 	struct list_head list;
+ 
+ 	unsigned int num_utlbs;
++	DECLARE_BITMAP(ctx, IPMMU_CTX_MAX);
++	struct ipmmu_vmsa_domain *domains[IPMMU_CTX_MAX];
+ 
+ 	struct dma_iommu_mapping *mapping;
+ };
+@@ -296,6 +301,7 @@ static struct iommu_gather_ops ipmmu_gat
+ static int ipmmu_domain_init_context(struct ipmmu_vmsa_domain *domain)
+ {
+ 	u64 ttbr;
++	int ret;
+ 
+ 	/*
+ 	 * Allocate the page table operations.
+@@ -325,10 +331,17 @@ static int ipmmu_domain_init_context(str
+ 		return -EINVAL;
+ 
+ 	/*
+-	 * TODO: When adding support for multiple contexts, find an unused
+-	 * context.
++	 * Find an unused context.
+ 	 */
+-	domain->context_id = 0;
++	ret = find_first_zero_bit(domain->mmu->ctx, IPMMU_CTX_MAX);
++	if (ret = IPMMU_CTX_MAX) {
++		free_io_pgtable_ops(domain->iop);
++		return -EBUSY;
++	}
++
++	domain->context_id = ret;
++	domain->mmu->domains[ret] = domain;
++	set_bit(ret, domain->mmu->ctx);
+ 
+ 	/* TTBR0 */
+ 	ttbr = domain->cfg.arm_lpae_s1_cfg.ttbr[0];
+@@ -372,6 +385,8 @@ static int ipmmu_domain_init_context(str
+ 
+ static void ipmmu_domain_destroy_context(struct ipmmu_vmsa_domain *domain)
+ {
++	clear_bit(domain->context_id, domain->mmu->ctx);
++
+ 	/*
+ 	 * Disable the context. Flush the TLB as required when modifying the
+ 	 * context registers.
+@@ -389,10 +404,15 @@ static void ipmmu_domain_destroy_context
+ static irqreturn_t ipmmu_domain_irq(struct ipmmu_vmsa_domain *domain)
+ {
+ 	const u32 err_mask = IMSTR_MHIT | IMSTR_ABORT | IMSTR_PF | IMSTR_TF;
+-	struct ipmmu_vmsa_device *mmu = domain->mmu;
++	struct ipmmu_vmsa_device *mmu;
+ 	u32 status;
+ 	u32 iova;
+ 
++	if (!domain)
++		return IRQ_NONE;
++
++	mmu = domain->mmu;
++
+ 	status = ipmmu_ctx_read(domain, IMSTR);
+ 	if (!(status & err_mask))
+ 		return IRQ_NONE;
+@@ -437,16 +457,18 @@ static irqreturn_t ipmmu_domain_irq(stru
+ static irqreturn_t ipmmu_irq(int irq, void *dev)
+ {
+ 	struct ipmmu_vmsa_device *mmu = dev;
+-	struct iommu_domain *io_domain;
+-	struct ipmmu_vmsa_domain *domain;
+-
+-	if (!mmu->mapping)
+-		return IRQ_NONE;
++	irqreturn_t status = IRQ_NONE;
++	unsigned int i;
+ 
+-	io_domain = mmu->mapping->domain;
+-	domain = to_vmsa_domain(io_domain);
++	/* Check interrupts for all active contexts */
++	for (i = 0; i < IPMMU_CTX_MAX; i++) {
++		if (!test_bit(i, mmu->ctx))
++			continue;
++		if (ipmmu_domain_irq(mmu->domains[i]) = IRQ_HANDLED)
++			status = IRQ_HANDLED;
++	}
+ 
+-	return ipmmu_domain_irq(domain);
++	return status;
+ }
+ 
+ /* -----------------------------------------------------------------------------
+@@ -774,6 +796,7 @@ static int ipmmu_probe(struct platform_d
+ 
+ 	mmu->dev = &pdev->dev;
+ 	mmu->num_utlbs = 32;
++	bitmap_zero(mmu->ctx, IPMMU_CTX_MAX);
+ 
+ 	/* Map I/O memory and request IRQ. */
+ 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
