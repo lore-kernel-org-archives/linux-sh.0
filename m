@@ -1,244 +1,170 @@
-From: "zhaoxiu.zeng" <zhaoxiu.zeng@gmail.com>
-Date: Sun, 27 Mar 2016 04:02:26 +0000
-Subject: [PATCH 02/31] Include generic parity.h in some architectures' bitops.h
-Message-Id: <56F75B52.5070805@gmail.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 15 Mar 2016 02:36:32 +0000
+Subject: Re: [PATCH 04/06] iommu/ipmmu-vmsa: Rework interrupt code and use bitmap for context
+Message-Id: <CANqRtoTEhxuiOk4frUyLA3uPa9eqcMoF-AE__qY85U14g3=hrw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1458788612-4367-1-git-send-email-zhaoxiu.zeng@gmail.com>
-In-Reply-To: <1458788612-4367-1-git-send-email-zhaoxiu.zeng@gmail.com>
+References: <20151215120212.26216.61530.sendpatchset@little-apple>
+	<20151215120249.26216.25148.sendpatchset@little-apple>
+	<2341043.PcEjBaApc7@avalon>
+In-Reply-To: <2341043.PcEjBaApc7@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Cc: iommu@lists.linux-foundation.org, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Geert Uytterhoeven <geert+renesas@glider.be>, SH-Linux <linux-sh@vger.kernel.org>, joro <joro@8bytes.org>, linux-kernel <linux-kernel@vger.kernel.org>, Simon Horman <horms+renesas@verge.net.au>
 
-From: Zeng Zhaoxiu <zhaoxiu.zeng@gmail.com>
+Hi Laurent,
 
-Use the generic version.
+On Tue, Dec 29, 2015 at 9:14 AM, Laurent Pinchart
+<laurent.pinchart@ideasonboard.com> wrote:
+> Hi Magnus,
+>
+> Thank you for the patch.
 
-Signed-off-by: Zeng Zhaoxiu <zhaoxiu.zeng@gmail.com>
----
- arch/arc/include/asm/bitops.h      | 1 +
- arch/arm/include/asm/bitops.h      | 1 +
- arch/arm64/include/asm/bitops.h    | 1 +
- arch/c6x/include/asm/bitops.h      | 1 +
- arch/cris/include/asm/bitops.h     | 1 +
- arch/frv/include/asm/bitops.h      | 1 +
- arch/h8300/include/asm/bitops.h    | 1 +
- arch/hexagon/include/asm/bitops.h  | 1 +
- arch/m32r/include/asm/bitops.h     | 1 +
- arch/m68k/include/asm/bitops.h     | 1 +
- arch/metag/include/asm/bitops.h    | 1 +
- arch/mn10300/include/asm/bitops.h  | 1 +
- arch/openrisc/include/asm/bitops.h | 1 +
- arch/parisc/include/asm/bitops.h   | 1 +
- arch/s390/include/asm/bitops.h     | 1 +
- arch/sh/include/asm/bitops.h       | 1 +
- arch/xtensa/include/asm/bitops.h   | 1 +
- 17 files changed, 17 insertions(+)
+Thanks for your feedback!
 
-diff --git a/arch/arc/include/asm/bitops.h b/arch/arc/include/asm/bitops.h
-index 0352fb8..7967e47 100644
---- a/arch/arc/include/asm/bitops.h
-+++ b/arch/arc/include/asm/bitops.h
-@@ -370,6 +370,7 @@ static inline __attribute__ ((const)) int __ffs(unsigned long x)
- #define ffz(x)	__ffs(~(x))
- 
- #include <asm-generic/bitops/hweight.h>
-+#include <asm-generic/bitops/parity.h>
- #include <asm-generic/bitops/fls64.h>
- #include <asm-generic/bitops/sched.h>
- #include <asm-generic/bitops/lock.h>
-diff --git a/arch/arm/include/asm/bitops.h b/arch/arm/include/asm/bitops.h
-index e943e6c..99f28a6 100644
---- a/arch/arm/include/asm/bitops.h
-+++ b/arch/arm/include/asm/bitops.h
-@@ -313,6 +313,7 @@ static inline unsigned long __ffs(unsigned long x)
- 
- #include <asm-generic/bitops/sched.h>
- #include <asm-generic/bitops/hweight.h>
-+#include <asm-generic/bitops/parity.h>
- #include <asm-generic/bitops/lock.h>
- 
- #ifdef __ARMEB__
-diff --git a/arch/arm64/include/asm/bitops.h b/arch/arm64/include/asm/bitops.h
-index 9c19594..eac4965 100644
---- a/arch/arm64/include/asm/bitops.h
-+++ b/arch/arm64/include/asm/bitops.h
-@@ -44,6 +44,7 @@ extern int test_and_change_bit(int nr, volatile unsigned long *p);
- 
- #include <asm-generic/bitops/sched.h>
- #include <asm-generic/bitops/hweight.h>
-+#include <asm-generic/bitops/parity.h>
- #include <asm-generic/bitops/lock.h>
- 
- #include <asm-generic/bitops/non-atomic.h>
-diff --git a/arch/c6x/include/asm/bitops.h b/arch/c6x/include/asm/bitops.h
-index f0ab012..94eb0d1 100644
---- a/arch/c6x/include/asm/bitops.h
-+++ b/arch/c6x/include/asm/bitops.h
-@@ -87,6 +87,7 @@ static inline int ffs(int x)
- 
- #include <asm-generic/bitops/sched.h>
- #include <asm-generic/bitops/hweight.h>
-+#include <asm-generic/bitops/parity.h>
- #include <asm-generic/bitops/lock.h>
- 
- #include <asm-generic/bitops/atomic.h>
-diff --git a/arch/cris/include/asm/bitops.h b/arch/cris/include/asm/bitops.h
-index 8062cb5..06bc246 100644
---- a/arch/cris/include/asm/bitops.h
-+++ b/arch/cris/include/asm/bitops.h
-@@ -36,6 +36,7 @@
- #include <asm-generic/bitops/__fls.h>
- #include <asm-generic/bitops/fls64.h>
- #include <asm-generic/bitops/hweight.h>
-+#include <asm-generic/bitops/parity.h>
- #include <asm-generic/bitops/find.h>
- #include <asm-generic/bitops/lock.h>
- 
-diff --git a/arch/frv/include/asm/bitops.h b/arch/frv/include/asm/bitops.h
-index 0df8e95..f2a7ee8 100644
---- a/arch/frv/include/asm/bitops.h
-+++ b/arch/frv/include/asm/bitops.h
-@@ -314,6 +314,7 @@ int __ilog2_u64(u64 n)
- 
- #include <asm-generic/bitops/sched.h>
- #include <asm-generic/bitops/hweight.h>
-+#include <asm-generic/bitops/parity.h>
- #include <asm-generic/bitops/lock.h>
- 
- #include <asm-generic/bitops/le.h>
-diff --git a/arch/h8300/include/asm/bitops.h b/arch/h8300/include/asm/bitops.h
-index 05999ab..e392db2 100644
---- a/arch/h8300/include/asm/bitops.h
-+++ b/arch/h8300/include/asm/bitops.h
-@@ -172,6 +172,7 @@ static inline unsigned long __ffs(unsigned long word)
- #include <asm-generic/bitops/find.h>
- #include <asm-generic/bitops/sched.h>
- #include <asm-generic/bitops/hweight.h>
-+#include <asm-generic/bitops/parity.h>
- #include <asm-generic/bitops/lock.h>
- #include <asm-generic/bitops/le.h>
- #include <asm-generic/bitops/ext2-atomic.h>
-diff --git a/arch/hexagon/include/asm/bitops.h b/arch/hexagon/include/asm/bitops.h
-index 5e4a59b..2df614e 100644
---- a/arch/hexagon/include/asm/bitops.h
-+++ b/arch/hexagon/include/asm/bitops.h
-@@ -290,6 +290,7 @@ static inline unsigned long __fls(unsigned long word)
- #include <asm-generic/bitops/fls64.h>
- #include <asm-generic/bitops/sched.h>
- #include <asm-generic/bitops/hweight.h>
-+#include <asm-generic/bitops/parity.h>
- 
- #include <asm-generic/bitops/le.h>
- #include <asm-generic/bitops/ext2-atomic.h>
-diff --git a/arch/m32r/include/asm/bitops.h b/arch/m32r/include/asm/bitops.h
-index 86ba2b4..e3cf46b 100644
---- a/arch/m32r/include/asm/bitops.h
-+++ b/arch/m32r/include/asm/bitops.h
-@@ -259,6 +259,7 @@ static __inline__ int test_and_change_bit(int nr, volatile void * addr)
- #include <asm-generic/bitops/find.h>
- #include <asm-generic/bitops/ffs.h>
- #include <asm-generic/bitops/hweight.h>
-+#include <asm-generic/bitops/parity.h>
- #include <asm-generic/bitops/lock.h>
- 
- #endif /* __KERNEL__ */
-diff --git a/arch/m68k/include/asm/bitops.h b/arch/m68k/include/asm/bitops.h
-index b4a9b0d..fd673ea 100644
---- a/arch/m68k/include/asm/bitops.h
-+++ b/arch/m68k/include/asm/bitops.h
-@@ -519,6 +519,7 @@ static inline int __fls(int x)
- #include <asm-generic/bitops/fls64.h>
- #include <asm-generic/bitops/sched.h>
- #include <asm-generic/bitops/hweight.h>
-+#include <asm-generic/bitops/parity.h>
- #include <asm-generic/bitops/lock.h>
- #endif /* __KERNEL__ */
- 
-diff --git a/arch/metag/include/asm/bitops.h b/arch/metag/include/asm/bitops.h
-index 2671134..ad13087 100644
---- a/arch/metag/include/asm/bitops.h
-+++ b/arch/metag/include/asm/bitops.h
-@@ -118,6 +118,7 @@ static inline int test_and_change_bit(unsigned int bit,
- #include <asm-generic/bitops/__fls.h>
- #include <asm-generic/bitops/fls64.h>
- #include <asm-generic/bitops/hweight.h>
-+#include <asm-generic/bitops/parity.h>
- #include <asm-generic/bitops/lock.h>
- #include <asm-generic/bitops/sched.h>
- #include <asm-generic/bitops/le.h>
-diff --git a/arch/mn10300/include/asm/bitops.h b/arch/mn10300/include/asm/bitops.h
-index fe6f8e2..60761b7 100644
---- a/arch/mn10300/include/asm/bitops.h
-+++ b/arch/mn10300/include/asm/bitops.h
-@@ -225,6 +225,7 @@ int ffs(int x)
- #include <asm-generic/bitops/find.h>
- #include <asm-generic/bitops/sched.h>
- #include <asm-generic/bitops/hweight.h>
-+#include <asm-generic/bitops/parity.h>
- #include <asm-generic/bitops/ext2-atomic-setbit.h>
- #include <asm-generic/bitops/le.h>
- 
-diff --git a/arch/openrisc/include/asm/bitops.h b/arch/openrisc/include/asm/bitops.h
-index 3003cda..8c97642 100644
---- a/arch/openrisc/include/asm/bitops.h
-+++ b/arch/openrisc/include/asm/bitops.h
-@@ -43,6 +43,7 @@
- #include <asm-generic/bitops/sched.h>
- #include <asm/bitops/ffs.h>
- #include <asm-generic/bitops/hweight.h>
-+#include <asm-generic/bitops/parity.h>
- #include <asm-generic/bitops/lock.h>
- 
- #include <asm-generic/bitops/atomic.h>
-diff --git a/arch/parisc/include/asm/bitops.h b/arch/parisc/include/asm/bitops.h
-index 3f9406d..867ba10 100644
---- a/arch/parisc/include/asm/bitops.h
-+++ b/arch/parisc/include/asm/bitops.h
-@@ -211,6 +211,7 @@ static __inline__ int fls(int x)
- #include <asm-generic/bitops/__fls.h>
- #include <asm-generic/bitops/fls64.h>
- #include <asm-generic/bitops/hweight.h>
-+#include <asm-generic/bitops/parity.h>
- #include <asm-generic/bitops/lock.h>
- #include <asm-generic/bitops/sched.h>
- 
-diff --git a/arch/s390/include/asm/bitops.h b/arch/s390/include/asm/bitops.h
-index 8043f10..198eead 100644
---- a/arch/s390/include/asm/bitops.h
-+++ b/arch/s390/include/asm/bitops.h
-@@ -460,6 +460,7 @@ static inline int fls(int word)
- #include <asm-generic/bitops/ffz.h>
- #include <asm-generic/bitops/find.h>
- #include <asm-generic/bitops/hweight.h>
-+#include <asm-generic/bitops/parity.h>
- #include <asm-generic/bitops/sched.h>
- #include <asm-generic/bitops/le.h>
- #include <asm-generic/bitops/ext2-atomic-setbit.h>
-diff --git a/arch/sh/include/asm/bitops.h b/arch/sh/include/asm/bitops.h
-index fc8e652..4bf0c35 100644
---- a/arch/sh/include/asm/bitops.h
-+++ b/arch/sh/include/asm/bitops.h
-@@ -86,6 +86,7 @@ static inline unsigned long ffz(unsigned long word)
- #include <asm-generic/bitops/find.h>
- #include <asm-generic/bitops/ffs.h>
- #include <asm-generic/bitops/hweight.h>
-+#include <asm-generic/bitops/parity.h>
- #include <asm-generic/bitops/lock.h>
- #include <asm-generic/bitops/sched.h>
- #include <asm-generic/bitops/le.h>
-diff --git a/arch/xtensa/include/asm/bitops.h b/arch/xtensa/include/asm/bitops.h
-index 3f44fa2..981fa83 100644
---- a/arch/xtensa/include/asm/bitops.h
-+++ b/arch/xtensa/include/asm/bitops.h
-@@ -229,6 +229,7 @@ test_and_change_bit(unsigned int bit, volatile unsigned long *p)
- #include <asm-generic/bitops/ext2-atomic-setbit.h>
- 
- #include <asm-generic/bitops/hweight.h>
-+#include <asm-generic/bitops/parity.h>
- #include <asm-generic/bitops/lock.h>
- #include <asm-generic/bitops/sched.h>
- 
--- 
-2.5.5
+> On Tuesday 15 December 2015 21:02:49 Magnus Damm wrote:
+>> From: Magnus Damm <damm+renesas@opensource.se>
+>>
+>> Introduce a bitmap for context handing and convert the
+>> interrupt routine to go handle all registered contexts.
+>>
+>> At this point the number of contexts are still limited.
+>
+> That's all nice, but without seeing support for multiple contexts it's hard to
+> tell if the implementation is correct for multiple context purpose.
+>
+>> The purpose of this patch is to remove the use of the
+>> ARM specific mapping variable from ipmmu_irq().
+>
+> Why do you want to do that ?
 
+The purpose of this series is to be able to use the IPMMU driver on
+other architectures than 32-bit ARM. The main goal is to use the
+driver on 64-bit ARM where the mapping variable does not exist.
+
+>> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+>> ---
+>>
+>>  drivers/iommu/ipmmu-vmsa.c |   37 ++++++++++++++++++++++++++-----------
+>>  1 file changed, 26 insertions(+), 11 deletions(-)
+>>
+>> --- 0007/drivers/iommu/ipmmu-vmsa.c
+>> +++ work/drivers/iommu/ipmmu-vmsa.c   2015-12-15 13:14:35.540513000 +0900
+>> @@ -8,6 +8,7 @@
+>>   * the Free Software Foundation; version 2 of the License.
+>>   */
+>>
+>> +#include <linux/bitmap.h>
+>>  #include <linux/delay.h>
+>>  #include <linux/dma-mapping.h>
+>>  #include <linux/err.h>
+>> @@ -26,12 +27,16 @@
+>>
+>>  #include "io-pgtable.h"
+>>
+>> +#define IPMMU_CTX_MAX 1
+>> +
+>>  struct ipmmu_vmsa_device {
+>>       struct device *dev;
+>>       void __iomem *base;
+>>       struct list_head list;
+>>
+>>       unsigned int num_utlbs;
+>> +     DECLARE_BITMAP(ctx, IPMMU_CTX_MAX);
+>
+> We have up to 4 context on Gen2 and 8 on Gen3, a bitmap might be slightly
+> overkill.
+
+Maybe so, but I'd rather use something standard than rolling my own.
+Can you think of a better data structure?
+
+>> +     struct ipmmu_vmsa_domain *domains[IPMMU_CTX_MAX];
+>>
+>>       struct dma_iommu_mapping *mapping;
+>>  };
+>> @@ -319,6 +324,7 @@ static struct iommu_gather_ops ipmmu_gat
+>>  static int ipmmu_domain_init_context(struct ipmmu_vmsa_domain *domain)
+>>  {
+>>       phys_addr_t ttbr;
+>> +     int ret;
+>>
+>>       /*
+>>        * Allocate the page table operations.
+>> @@ -348,10 +354,16 @@ static int ipmmu_domain_init_context(str
+>>               return -EINVAL;
+>>
+>>       /*
+>> -      * TODO: When adding support for multiple contexts, find an unused
+>> -      * context.
+>> +      * Find an unused context.
+>
+> We need to support multiple devices per context or we will very soon run out
+> of contexts. How to pick a proper context is a topic that needs to be
+> researched, I believe IOMMU groups might come into play.
+
+The experimental 64-bit ARM patches for this driver (on top of this
+series) that I've posted makes use of IOMMU groups.
+
+>>        */
+>> -     domain->context_id = 0;
+>> +     ret = bitmap_find_free_region(domain->mmu->ctx, IPMMU_CTX_MAX, 0);
+>> +     if (ret < 0) {
+>> +             free_io_pgtable_ops(domain->iop);
+>> +             return ret;
+>> +     }
+>> +
+>> +     domain->context_id = ret;
+>> +     domain->mmu->domains[ret] = domain;
+>
+> This requires locking to protect against races with the interrupt handler.
+
+Hm, it seems that I mistakenly assumed that bitmap_find_free_region()
+was built on top of atomic set_bit() and managed the bitmap in an
+atomic way. I believe you are correct that locking is needed. Will
+fix.
+
+>>
+>>       /* TTBR0 */
+>>       ttbr = domain->cfg.arm_lpae_s1_cfg.ttbr[0];
+>> @@ -395,6 +407,8 @@ static int ipmmu_domain_init_context(str
+>>
+>>  static void ipmmu_domain_destroy_context(struct ipmmu_vmsa_domain *domain)
+>>  {
+>> +     bitmap_release_region(domain->mmu->ctx, domain->context_id, 0);
+>> +
+>>       /*
+>>        * Disable the context. Flush the TLB as required when modifying the
+>>        * context registers.
+>> @@ -460,16 +474,16 @@ static irqreturn_t ipmmu_domain_irq(stru
+>>  static irqreturn_t ipmmu_irq(int irq, void *dev)
+>>  {
+>>       struct ipmmu_vmsa_device *mmu = dev;
+>> -     struct iommu_domain *io_domain;
+>> -     struct ipmmu_vmsa_domain *domain;
+>> -
+>> -     if (!mmu->mapping)
+>> -             return IRQ_NONE;
+>> +     irqreturn_t status = IRQ_NONE;
+>> +     unsigned int k;
+>
+> i is a perfectly fine loop counter :-)
+>
+>> -     io_domain = mmu->mapping->domain;
+>> -     domain = to_vmsa_domain(io_domain);
+>> +     /* Check interrupts for all active contexts */
+>> +     for (k = find_first_bit(mmu->ctx, IPMMU_CTX_MAX);
+>> +          k < IPMMU_CTX_MAX && status = IRQ_NONE;
+>> +          k = find_next_bit(mmu->ctx, IPMMU_CTX_MAX, k))
+>
+> You can just loop over mmu->domains and skip NULL entries.
+
+You are right, that may be easier!
+
+>> +             status = ipmmu_domain_irq(mmu->domains[k]);
+>
+> Only the status of the last domain is taken into account.
+
+Will fix, thanks!
+
+/ magnus
