@@ -1,59 +1,49 @@
-From: Andrew Morton <akpm@linux-foundation.org>
-Date: Thu, 17 Mar 2016 19:35:27 +0000
-Subject: Re: [PATCH v2 1/5] printk/nmi: Generic solution for safe printk in NMI
-Message-Id: <20160317123527.6346bce3284509849d061eaa@linux-foundation.org>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 17 Mar 2016 13:47:27 +0000
+Subject: [PATCH/RFC 3/5] serial: sh-sci: Always set TIOCM_CTS in .get_mctrl() callback
+Message-Id: <1458222449-12324-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1448622572-16900-2-git-send-email-pmladek@suse.com>
- <201511271919.aEZuZKNe%fengguang.wu@intel.com>
- <20151127153804.GC2648@pathway.suse.cz>
- <alpine.LNX.2.00.1512020022460.32500@pobox.suse.cz>
- <20151204165744.GD20935@pathway.suse.cz>
-In-Reply-To: <20151204165744.GD20935@pathway.suse.cz>
+References: <1458222449-12324-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1458222449-12324-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>, Peter Hurley <peter@hurleysoftware.com>, Magnus Damm <magnus.damm@gmail.com>
+Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-serial@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Fri, 4 Dec 2015 17:57:44 +0100 Petr Mladek <pmladek@suse.com> wrote:
+Documentation/serial/driver clearly states:
 
-> On Wed 2015-12-02 00:24:49, Jiri Kosina wrote:
-> > On Fri, 27 Nov 2015, Petr Mladek wrote:
-> > 
-> > > MN10300 has its own implementation for entering and exiting NMI 
-> > > handlers. It does not call nmi_enter() and nmi_exit(). Please, find 
-> > > below an updated patch that adds printk_nmi_enter() and 
-> > > printk_nmi_exit() to the custom entry points. Then we could add HAVE_NMI 
-> > > to arch/mn10300/Kconfig and avoid the above warning.
-> > 
-> > Hmm, so what exactly would go wrong if MN10300 (whatever that architecture 
-> > is) would call nmi_enter() and nmi_exit() at the places where it's 
-> > starting and finishing NMI handler?
-> > 
-> > >From a cursory look, it seems like most (if not all) of the things called 
-> > from nmi_{enter,exit}() would be nops there anyway.
-> 
-> Good point. Max mentioned in the other main that the NMI handler
-> should follow the NMI ruler. I do not why it could not work.
-> In fact, it might improve things, e.g. nmi_enter() blocks
-> recursive NMIs.
-> 
-> I think that it will move it into a separate patch, thought.
-> 
+    If the port does not support CTS, DCD or DSR, the driver should
+    indicate that the signal is permanently active.
 
-I've sort of lost the plot on this patchset.
+Hence always set TIOCM_CTS, as we currently don't look at the CTS
+hardware line state at all.
 
-I know Daniel had concerns (resolved?).  Sergey lost the ability to
-perform backtraces and has a proposed fix ("printk/nmi: restore
-printk_func in nmi_panic") but that wasn't fully resolved and I didn't
-merge anything.  I'm not sure what Jan's thinking is on it all.
+FWIW, this fixes the transmit path when hardware-assisted flow control
+is enabled, and userspace enables CRTSCTS.
+The receive path is still broken, as RTS is never asserted.
 
-So... I'll retain 
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ drivers/tty/serial/sh-sci.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-printk-nmi-generic-solution-for-safe-printk-in-nmi.patch
-printk-nmi-use-irq-work-only-when-ready.patch
-printk-nmi-warn-when-some-message-has-been-lost-in-nmi-context.patch
-printk-nmi-increase-the-size-of-nmi-buffer-and-make-it-configurable.patch
-
-in -mm for now.  Perhaps I should drop them all and we start again
-after -rc1?
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 0130feb069aee02f..135f836642ab1c5a 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1835,9 +1835,9 @@ static unsigned int sci_get_mctrl(struct uart_port *port)
+ {
+ 	/*
+ 	 * CTS/RTS is handled in hardware when supported, while nothing
+-	 * else is wired up. Keep it simple and simply assert DSR/CAR.
++	 * else is wired up. Keep it simple and simply assert CTS/DSR/CAR.
+ 	 */
+-	return TIOCM_DSR | TIOCM_CAR;
++	return TIOCM_CTS | TIOCM_DSR | TIOCM_CAR;
+ }
+ 
+ static void sci_break_ctl(struct uart_port *port, int break_state)
+-- 
+1.9.1
 
