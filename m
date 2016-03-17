@@ -1,34 +1,74 @@
-From: Alexandre Belloni <alexandre.belloni@free-electrons.com>
-Date: Thu, 10 Mar 2016 04:34:12 +0000
-Subject: Re: [PATCH 4/6] parisc: rtc: provide rtc_class_ops directly
-Message-Id: <20160310043412.GC9868@piout.net>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 17 Mar 2016 13:47:29 +0000
+Subject: [PATCH/RFC 5/5] serial: sh-sci: Replace SCIx_HAVE_RTSCTS by standard UPF_HARD_FLOW
+Message-Id: <1458222449-12324-6-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1456851608-3374907-1-git-send-email-arnd@arndb.de>
- <1456851608-3374907-5-git-send-email-arnd@arndb.de>
-In-Reply-To: <1456851608-3374907-5-git-send-email-arnd@arndb.de>
+References: <1458222449-12324-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1458222449-12324-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>, Peter Hurley <peter@hurleysoftware.com>, Magnus Damm <magnus.damm@gmail.com>
+Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-serial@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On 01/03/2016 at 18:00:00 +0100, Arnd Bergmann wrote :
-> -	pdev = platform_device_register_simple("rtc-generic", -1, NULL, 0);
-> +	pdev = platform_device_register_data(NULL, "rtc-generic", -1,
-> +					     &rtc_generic_ops,
-> +					     sizeof(rtc_generic_ops));
-> +
-> +
+Replace the custom SCIx_HAVE_RTSCTS flag in the
+plat_sci_port.capabilities field by the standard UPF_HARD_FLOW flag in
+the uart_port.flags and plat_sci_port.flags fields.
+Remove the now unused plat_sci_port.capabilities field.
+Legacy pllatform data can enable UPF_HARD_FLOW in plat_sci_port.flags.
 
-spurious blank line
+Note that currently nothing sets the SCIx_HAVE_RTSCTS flag.
 
->  	return PTR_ERR_OR_ZERO(pdev);
->  }
->  device_initcall(rtc_init);
-> -- 
-> 2.7.0
-> 
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ drivers/tty/serial/sh-sci.c | 4 ++--
+ include/linux/serial_sci.h  | 6 ------
+ 2 files changed, 2 insertions(+), 8 deletions(-)
 
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 6897100ed5197df3..51b436e2334c3efc 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -720,7 +720,7 @@ static void sci_init_pins(struct uart_port *port, unsigned int cflag)
+ 	if (!reg->size)
+ 		return;
+ 
+-	if ((s->cfg->capabilities & SCIx_HAVE_RTSCTS) &&
++	if ((port->flags & UPF_HARD_FLOW) &&
+ 	    ((!(cflag & CRTSCTS)))) {
+ 		unsigned short status;
+ 
+@@ -2247,7 +2247,7 @@ done:
+ 	if (reg->size) {
+ 		unsigned short ctrl = serial_port_in(port, SCFCR);
+ 
+-		if (s->cfg->capabilities & SCIx_HAVE_RTSCTS) {
++		if (port->flags & UPF_HARD_FLOW) {
+ 			if (termios->c_cflag & CRTSCTS)
+ 				ctrl |= SCFCR_MCE;
+ 			else
+diff --git a/include/linux/serial_sci.h b/include/linux/serial_sci.h
+index 9f2bfd0557429ac3..95640ee68462190f 100644
+--- a/include/linux/serial_sci.h
++++ b/include/linux/serial_sci.h
+@@ -48,17 +48,11 @@ struct plat_sci_port_ops {
+ };
+ 
+ /*
+- * Port-specific capabilities
+- */
+-#define SCIx_HAVE_RTSCTS	BIT(0)
+-
+-/*
+  * Platform device specific platform_data struct
+  */
+ struct plat_sci_port {
+ 	unsigned int	type;			/* SCI / SCIF / IRDA / HSCIF */
+ 	upf_t		flags;			/* UPF_* flags */
+-	unsigned long	capabilities;		/* Port features/capabilities */
+ 
+ 	unsigned int	sampling_rate;
+ 	unsigned int	scscr;			/* SCSCR initialization */
 -- 
-Alexandre Belloni, Free Electrons
-Embedded Linux, Kernel and Android engineering
-http://free-electrons.com
+1.9.1
+
