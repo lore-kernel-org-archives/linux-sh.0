@@ -1,101 +1,287 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 16 Mar 2016 05:36:21 +0000
-Subject: Re: [PATCH 2/3] arm64: dts: r8a7795: Add Cortex-A57 CPU cores
-Message-Id: <20160316053621.GA24138@verge.net.au>
+From: Rich Felker <dalias@libc.org>
+Date: Thu, 17 Mar 2016 23:09:37 +0000
+Subject: [PATCH 1/7] sh: add support for J-Core J2 processor
+Message-Id: <b8864269082ee9e5dcc079865340de70711b3272.1461880061.git.dalias@libc.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1449236333-4410-1-git-send-email-dirk.behme@gmail.com>
- <1449236333-4410-2-git-send-email-dirk.behme@gmail.com>
- <20151211230751.GD6496@verge.net.au>
- <CANqRtoSeibffbaoVGV7Y_gyuXxCOu+1PmRf3imQ8OKhV6VoAMQ@mail.gmail.com>
- <566FD3EE.8040908@gmail.com> <20160316011901.GB23687@verge.net.au>
- <56E8D6C6.2000306@rvc.renesas.com>
-In-Reply-To: <56E8D6C6.2000306@rvc.renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Wed, Mar 16, 2016 at 10:45:10AM +0700, Khiem Nguyen wrote:
-> Hi Simon, Dirk, Magnus,
-> 
-> On 3/16/2016 8:19 AM, Simon Horman wrote:
-> >Hi Dirk,
-> >
-> >On Tue, Dec 15, 2015 at 09:48:46AM +0100, Dirk Behme wrote:
-> >>On 15.12.2015 09:38, Magnus Damm wrote:
-> >>>Hi Simon,
-> >>>
-> >>>On Sat, Dec 12, 2015 at 8:07 AM, Simon Horman <horms@verge.net.au> wrote:
-> >>>>On Fri, Dec 04, 2015 at 02:38:52PM +0100, Dirk Behme wrote:
-> >>>>>From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
-> >>>>>
-> >>>>>Add Cortex-A57 CPU cores to r8a7795 SoC for a total of 4 x Cortex-A57.
-> >>>>>
-> >>>>>Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
-> >>>>>Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
-> >>>>>Sigend-off-by: Dirk Behme <dirk.behme@gmail.com>
-> >>>>
-> >>>>Thanks, I have queued this up for v4.5.
-> >>>
-> >>>Thanks. May I ask if CPU hotplug is known to work?
-> >>
-> >>
-> >>I didn't test that.
-> >
-> >As a follow-up I am wondering if you subsequently observed CPU hotplug
-> >working. My recent testing on v4.5 indicates that it isn't working in my
-> >environment. It would be quite valuable to know if it has ever been known
-> >to work.
-> >
-> >>>Also, which version
-> >>>of the boot loader stack is required?
-> 
-> Yes. CPUHotplug will be supported in boot loader stack released by Dec 2015
-> and later.
+Signed-off-by: Rich Felker <dalias@libc.org>
+---
+ arch/sh/Kconfig                 |  8 ++++++
+ arch/sh/Makefile                |  1 +
+ arch/sh/include/asm/processor.h |  2 +-
+ arch/sh/kernel/cpu/init.c       | 40 +++++++++++++++++++++++++++-
+ arch/sh/kernel/cpu/proc.c       |  1 +
+ arch/sh/kernel/cpu/sh2/entry.S  |  5 ++++
+ arch/sh/kernel/cpu/sh2/probe.c  | 11 ++++++++
+ arch/sh/mm/Makefile             |  3 ++-
+ arch/sh/mm/cache-j2.c           | 58 +++++++++++++++++++++++++++++++++++++++++
+ arch/sh/mm/cache.c              |  6 ++++-
+ 10 files changed, 131 insertions(+), 4 deletions(-)
+ create mode 100644 arch/sh/mm/cache-j2.c
 
-Thanks, that sounds positive.
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index 4fa5894..efb0af4 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -182,6 +182,10 @@ config CPU_SH2A
+ 	select CPU_SH2
+ 	select UNCACHED_MAPPING
+ 
++config CPU_J2
++	bool
++	select CPU_SH2
++
+ config CPU_SH3
+ 	bool
+ 	select CPU_HAS_INTEVT
+@@ -248,6 +252,10 @@ config CPU_SUBTYPE_SH7619
+ 	select CPU_SH2
+ 	select SYS_SUPPORTS_SH_CMT
+ 
++config CPU_SUBTYPE_J2
++	bool "Support J2 processor"
++	select CPU_J2
++
+ # SH-2A Processor Support
+ 
+ config CPU_SUBTYPE_SH7201
+diff --git a/arch/sh/Makefile b/arch/sh/Makefile
+index 3b2c8b4..0047666 100644
+--- a/arch/sh/Makefile
++++ b/arch/sh/Makefile
+@@ -31,6 +31,7 @@ isa-y					:= $(isa-y)-up
+ endif
+ 
+ cflags-$(CONFIG_CPU_SH2)		:= $(call cc-option,-m2,)
++cflags-$(CONFIG_CPU_J2)			:= $(call cc-option,-mj2,)
+ cflags-$(CONFIG_CPU_SH2A)		+= $(call cc-option,-m2a,) \
+ 					   $(call cc-option,-m2a-nofpu,) \
+ 					   $(call cc-option,-m4-nofpu,)
+diff --git a/arch/sh/include/asm/processor.h b/arch/sh/include/asm/processor.h
+index 1506897..f9a0994 100644
+--- a/arch/sh/include/asm/processor.h
++++ b/arch/sh/include/asm/processor.h
+@@ -15,7 +15,7 @@
+  */
+ enum cpu_type {
+ 	/* SH-2 types */
+-	CPU_SH7619,
++	CPU_SH7619, CPU_J2,
+ 
+ 	/* SH-2A types */
+ 	CPU_SH7201, CPU_SH7203, CPU_SH7206, CPU_SH7263, CPU_SH7264, CPU_SH7269,
+diff --git a/arch/sh/kernel/cpu/init.c b/arch/sh/kernel/cpu/init.c
+index bfd9e27..9de52b9 100644
+--- a/arch/sh/kernel/cpu/init.c
++++ b/arch/sh/kernel/cpu/init.c
+@@ -14,6 +14,10 @@
+ #include <linux/kernel.h>
+ #include <linux/mm.h>
+ #include <linux/log2.h>
++#include <linux/of_fdt.h>
++#include <linux/libfdt.h>
++#include <linux/smp.h>
++#include <linux/cpumask.h>
+ #include <asm/mmu_context.h>
+ #include <asm/processor.h>
+ #include <asm/uaccess.h>
+@@ -106,7 +110,41 @@ void __attribute__ ((weak)) l2_cache_init(void)
+ /*
+  * Generic first-level cache init
+  */
+-#ifdef CONFIG_SUPERH32
++#if defined(CONFIG_CPU_J2)
++extern u32 j2_ccr_base, j2_ccr_cpu_offset;
++static int __init scan_cache(unsigned long node, const char *uname,
++			     int depth, void *data)
++{
++	const __be32 *prop;
++
++	if (!of_flat_dt_is_compatible(node, "jcore,cache"))
++		return 0;
++
++	j2_ccr_base = of_flat_dt_translate_address(node);
++
++	prop = fdt_getprop(initial_boot_params, node, "cpu-offset", NULL);
++	if (prop)
++		j2_ccr_cpu_offset = dt_mem_next_cell(1, &prop);
++
++	return 1;
++}
++static void __ref cache_init(void)
++{
++	static int done = 0;
++
++	/* Avoid calling an __init function on secondary cpus. */
++	if (!done) {
++		of_scan_flat_dt(scan_cache, NULL);
++		done = 1;
++	}
++
++	if (!j2_ccr_base)
++		return;
++
++	__raw_writel(0x80000303,
++		     j2_ccr_base + hard_smp_processor_id() * j2_ccr_cpu_offset);
++}
++#elif defined(CONFIG_SUPERH32)
+ static void cache_init(void)
+ {
+ 	unsigned long ccr, flags;
+diff --git a/arch/sh/kernel/cpu/proc.c b/arch/sh/kernel/cpu/proc.c
+index 9e6624c..4df4b28 100644
+--- a/arch/sh/kernel/cpu/proc.c
++++ b/arch/sh/kernel/cpu/proc.c
+@@ -27,6 +27,7 @@ static const char *cpu_name[] = {
+ 	[CPU_MXG]	= "MX-G",	[CPU_SH7723]	= "SH7723",
+ 	[CPU_SH7366]	= "SH7366",	[CPU_SH7724]	= "SH7724",
+ 	[CPU_SH7372]	= "SH7372",	[CPU_SH7734]	= "SH7734",
++	[CPU_J2]	= "J2",
+ 	[CPU_SH_NONE]	= "Unknown"
+ };
+ 
+diff --git a/arch/sh/kernel/cpu/sh2/entry.S b/arch/sh/kernel/cpu/sh2/entry.S
+index a150595..354f344 100644
+--- a/arch/sh/kernel/cpu/sh2/entry.S
++++ b/arch/sh/kernel/cpu/sh2/entry.S
+@@ -147,6 +147,11 @@ ENTRY(exception_handler)
+ 	mov	#31,r8
+ 	cmp/hs	r8,r9
+ 	bt	trap_entry	! 64 > vec >= 31  is trap
++	mov	#16,r8
++#ifdef CONFIG_CPU_J2
++	cmp/hs	r8,r9
++	bt	interrupt_entry	! 31 > vec >= 16 is interrupt
++#endif
+ 
+ 	mov.l	4f,r8
+ 	mov	r9,r4
+diff --git a/arch/sh/kernel/cpu/sh2/probe.c b/arch/sh/kernel/cpu/sh2/probe.c
+index 6c687ae..d8dbb81 100644
+--- a/arch/sh/kernel/cpu/sh2/probe.c
++++ b/arch/sh/kernel/cpu/sh2/probe.c
+@@ -24,10 +24,21 @@ void cpu_probe(void)
+ 	boot_cpu_data.dcache.linesz		= L1_CACHE_BYTES;
+ 	boot_cpu_data.dcache.flags		= 0;
+ #endif
++
++#if defined(CONFIG_CPU_J2)
++	boot_cpu_data.type			= CPU_J2;
++	/* FIXME: cache properties should come from device tree. */
++	boot_cpu_data.dcache.ways		= 1;
++	boot_cpu_data.dcache.sets		= 256;
++	boot_cpu_data.dcache.entry_shift	= 5;
++	boot_cpu_data.dcache.linesz		= 32;
++	boot_cpu_data.dcache.flags		= 0;
++#else
+ 	/*
+ 	 * SH-2 doesn't have separate caches
+ 	 */
+ 	boot_cpu_data.dcache.flags |= SH_CACHE_COMBINED;
++#endif
+ 	boot_cpu_data.icache = boot_cpu_data.dcache;
+ 	boot_cpu_data.family = CPU_FAMILY_SH2;
+ }
+diff --git a/arch/sh/mm/Makefile b/arch/sh/mm/Makefile
+index cee6b99..92c3bd9 100644
+--- a/arch/sh/mm/Makefile
++++ b/arch/sh/mm/Makefile
+@@ -4,7 +4,8 @@
+ 
+ obj-y			:= alignment.o cache.o init.o consistent.o mmap.o
+ 
+-cacheops-$(CONFIG_CPU_SH2)		:= cache-sh2.o
++cacheops-$(CONFIG_CPU_J2)		:= cache-j2.o
++cacheops-$(CONFIG_CPU_SUBTYPE_SH7619)	:= cache-sh2.o
+ cacheops-$(CONFIG_CPU_SH2A)		:= cache-sh2a.o
+ cacheops-$(CONFIG_CPU_SH3)		:= cache-sh3.o
+ cacheops-$(CONFIG_CPU_SH4)		:= cache-sh4.o flush-sh4.o
+diff --git a/arch/sh/mm/cache-j2.c b/arch/sh/mm/cache-j2.c
+new file mode 100644
+index 0000000..893119a
+--- /dev/null
++++ b/arch/sh/mm/cache-j2.c
+@@ -0,0 +1,58 @@
++/*
++ * arch/sh/mm/cache-j2.c
++ *
++ * Copyright (C) 2015 SEI
++ *
++ * Released under the terms of the GNU GPL v2.0.
++ */
++
++#include <linux/init.h>
++#include <linux/mm.h>
++#include <linux/cpumask.h>
++
++#include <asm/cache.h>
++#include <asm/addrspace.h>
++#include <asm/processor.h>
++#include <asm/cacheflush.h>
++#include <asm/io.h>
++
++u32 j2_ccr_base, j2_ccr_cpu_offset;
++
++static void j2_flush_icache(void *args)
++{
++	unsigned cpu;
++	for_each_possible_cpu(cpu)
++		__raw_writel(0x80000103, j2_ccr_base + cpu*j2_ccr_cpu_offset);
++}
++
++static void j2_flush_dcache(void *args)
++{
++	unsigned cpu;
++	for_each_possible_cpu(cpu)
++		__raw_writel(0x80000203, j2_ccr_base + cpu*j2_ccr_cpu_offset);
++}
++
++static void j2_flush_both(void *args)
++{
++	unsigned cpu;
++	for_each_possible_cpu(cpu)
++		__raw_writel(0x80000303, j2_ccr_base + cpu*j2_ccr_cpu_offset);
++}
++
++void __init j2_cache_init(void)
++{
++	if (!j2_ccr_base)
++		return;
++
++	local_flush_cache_all = j2_flush_both;
++	local_flush_cache_mm = j2_flush_both;
++	local_flush_cache_dup_mm = j2_flush_both;
++	local_flush_cache_page = j2_flush_both;
++	local_flush_cache_range = j2_flush_both;
++	local_flush_dcache_page = j2_flush_dcache;
++	local_flush_icache_range = j2_flush_icache;
++	local_flush_icache_page = j2_flush_icache;
++	local_flush_cache_sigtramp = j2_flush_icache;
++
++	pr_info("Initial J2 CCR is %.8x\n", __raw_readl(j2_ccr_base));
++}
+diff --git a/arch/sh/mm/cache.c b/arch/sh/mm/cache.c
+index 776d664..70cc52f 100644
+--- a/arch/sh/mm/cache.c
++++ b/arch/sh/mm/cache.c
+@@ -309,7 +309,11 @@ void __init cpu_cache_init(void)
+ 	if (unlikely(cache_disabled))
+ 		goto skip;
+ 
+-	if (boot_cpu_data.family = CPU_FAMILY_SH2) {
++	if (boot_cpu_data.type = CPU_J2) {
++		extern void __weak j2_cache_init(void);
++
++		j2_cache_init();
++	} else if (boot_cpu_data.family = CPU_FAMILY_SH2) {
+ 		extern void __weak sh2_cache_init(void);
+ 
+ 		sh2_cache_init();
+-- 
+2.8.1
 
-As Dec 2015 has already passed I wonder if a boot loader stack that
-supports CPU Hotplug is currently available. Perhaps internally?
-If so I think it would be good to verify v4.5.
 
-> >>I've the U-Boot / boot loader stack from BSP v3.0.2 on the board. I haven't
-> >>tested v3.0.3, yet.
-> >
-> >For reference my environment is as follows:
-> >
-> >
-> >     NOTICE:  BL2: R-Car H3 Loader Rev.1.0.1
-> >     NOTICE:  BL2: DDR1600(rev.0.10)
-> >     NOTICE:  BL2: DRAM Split is 4ch
-> >     NOTICE:  BL2: QoS is Gfx Oriented(rev.0.24A)
-> >     NOTICE:  BL2: v1.1(release):41099f4
-> >     NOTICE:  BL2: Built : 11:47:26, Nov 19 2015
-> >     NOTICE:  BL2: Normal boot
-> >     NOTICE:  BL2: memdrv_block_read dst=0xe630e0b0 src=0x8180000 len6(0x24)
-> >     NOTICE:  BL2: memdrv_block_read dst=0x43f00000 src=0x8180400 len072(0xc00)
-> >     NOTICE:  BL2: memdrv_block_read dst=0x44000000 src=0x81c0000 lene536(0x10000)
-> >     NOTICE:  BL2: memdrv_block_read dst=0x44100000 src=0x8200000 lenR4288(0x80000)
-> >     NOTICE:  BL2: memdrv_block_read dst=0x49000000 src=0x8640000 len48576(0x100000)
-> >
-> >     U-Boot 2015.04 (Nov 19 2015 - 11:47:49)
-> >
-> >     CPU: Renesas Electronics CPU rev 1.0
-> >     Board: Salvator-X
-> >     DRAM:  896 MiB
-> >     MMC:   sh-sdhi: 0, sh-sdhi: 1, sh-sdhi: 2
-> >     In:    serial
-> >     Out:   serial
-> >     Err:   serial
-> >     Net:   ravb
-> >--
-> >To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> >the body of a message to majordomo@vger.kernel.org
-> >More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> >
-> 
-> 
-> -- 
-> Best regards,
-> KHIEM Nguyen
-> 
