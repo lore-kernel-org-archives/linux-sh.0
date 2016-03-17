@@ -1,72 +1,90 @@
 From: Rich Felker <dalias@libc.org>
-Date: Thu, 17 Mar 2016 20:22:22 +0000
-Subject: Re: [GIT PULL] arch/sh updates for 4.6
-Message-Id: <20160317202222.GJ21636@brightrain.aerifal.cx>
+Date: Thu, 17 Mar 2016 22:04:53 +0000
+Subject: [GIT PULL] arch/sh updates for 4.6
+Message-Id: <20160317220453.GA889@brightrain.aerifal.cx>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20160317180253.GA24679@brightrain.aerifal.cx>
 In-Reply-To: <20160317180253.GA24679@brightrain.aerifal.cx>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: Linux-sh list <linux-sh@vger.kernel.org>, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert@linux-m68k.org>, Stephen Rothwell <sfr@canb.auug.org.au>, Yoshinori Sato <ysato@users.sourceforge.jp>
 
-On Thu, Mar 17, 2016 at 03:19:19PM -0400, Rich Felker wrote:
-> On Thu, Mar 17, 2016 at 07:52:32PM +0100, Geert Uytterhoeven wrote:
-> > Hi Rich,
-> > 
-> > On Thu, Mar 17, 2016 at 7:02 PM, Rich Felker <dalias@libc.org> wrote:
-> > > These are the updates Sato-san and I have for arch/sh in this merge
-> > > window. Aside from some small fixes and cleanup they set the stage for
-> > > J2 support (by adding framework for boards described by device tree),
-> > > which should only minimally touch existing files when it's added.
-> > 
-> > Thanks for preparing this!
-> > 
-> > > Could you pull these changes and send them upstream for 4.6, or let me
-> > > know if there are problems (like stupid mistakes I made in preparing
-> > > the branch) or if I should send the request directly to Linus? Rob
-> > > suggested I might go through you this first time since I'm new to
-> > > maintainer workflow and the repo (on libc.org) is temporary pending
-> > > getting it setup on kernel.org.
-> > 
-> > It mostly looks fine to me.
-> > 
-> > I have only one real comment: if you apply a patch from someone else, you
-> > should add your own Signed-off-by line (use the "-s" option of "git am").
-> > As your for-4.6 branch is based on current v4.5, it won't do much harm to
-> > "rebase -i" it to add the missing SoB-lines.
-> 
-> Should I do that for the ones from Sato-san too even though we're both
-> listed as maintainers? The only ones I did not touch with my own SoB
-> were pulled from his tree.
+Linus,
 
-I'm just going ahead and doing them all. I'll send the updated pull
-request to Linus with an explanation of why it's not signed and see
-what he says.
+Please pull these arch/sh changes for 4.6. They include minor
+cleanups, a fix for a crash that likely affects all sh models with
+MMU, and introduction of a framework for boards described by device
+tree, which sets the stage for future J2 support.
 
-> > After the release of v4.6-rc1, you may want to prepare a "for-next" branch
-> > where you commit patches that are meant for the next (v4.7) kernel version,
-> > and inform Stephen Rothwell (CCed, as he may have more advice).
-> > Then your "for-next" branch will be part of "linux-next", and will receive more
-> > testing. Actually it may be a good idea to create a "for-next" branch now,
-> > identical to "sh-for-4.6", let it be included in "linux-next" for a few days,
-> > and send the pull request to Linus afterwards. That would catch accidentally
-> > introduced breakage.
-> 
-> OK, I can do that. I don't anticipate any breakage since I haven't
-> touched other archs but it can't hurt to check.
-
-One question on this -- my understanding is that, unlike normal
-branches intended to be pulled by others, for-next is okay to
-rebase/force-push basically at any time. Is that right? I've setup a
-for-next branch at:
-
-git://git.libc.org/linux-sh for-next
-
-It's currently aligned with the updated sh-for-4.6 branch (and the old
-one renamed to sh-for-4.6-old1 in case anyone wants to compare).
-
-Stephen, does that work for you to pull from into linux-next? Anything
-else I need to do on my end?
+Using git.libc.org for the sh tree is only temporary until we get one
+setup on kernel.org, which is pending getting signatures on my key. I
+hope to resolve that at ELC next month. Let me know if there's
+anything you'd like me to do in the mean time to establish some
+alternate basis of trust for these commits; hopefully it's less of an
+issue being that they're not touching anything but a previously
+unmaintained arch.
 
 Rich
+
+
+
+--
+
+The following changes since commit b562e44f507e863c6792946e4e1b1449fbbac85d:
+
+  Linux 4.5 (2016-03-13 21:28:54 -0700)
+
+are available in the git repository at:
+
+  git://git.libc.org/linux-sh sh-for-4.6
+
+for you to fetch changes up to b15d53d009558d14c4f394a6d1fa2039c7f45c43:
+
+  sched/preempt, sh: kmap_coherent relies on disabled preemption (2016-03-17 19:46:14 +0000)
+
+----------------------------------------------------------------
+David Hildenbrand (1):
+      sched/preempt, sh: kmap_coherent relies on disabled preemption
+
+Rich Felker (5):
+      sh: provide unified syscall trap compatible with all SH models
+      sh: make MMU-specific SMP code conditional on CONFIG_MMU
+      sh: remove arch-specific localtimer and use generic one
+      sh: add device tree support and generic board using device tree
+      sh: add SMP method selection to device tree pseudo-board
+
+Stephen Boyd (1):
+      sh: Use generic clkdev.h header
+
+Yoshinori Sato (2):
+      sh: Disable trace for kernel uncompressing.
+      sh: New gcc support
+
+ Documentation/devicetree/booting-without-of.txt |  13 ++
+ arch/sh/Kconfig                                 |   1 +
+ arch/sh/boards/Kconfig                          |  15 ++
+ arch/sh/boards/Makefile                         |   2 +
+ arch/sh/boards/of-generic.c                     | 196 ++++++++++++++++++++++++
+ arch/sh/boot/compressed/Makefile                |   2 +-
+ arch/sh/include/asm/Kbuild                      |   1 +
+ arch/sh/include/asm/clkdev.h                    |  33 ----
+ arch/sh/include/asm/smp.h                       |  10 ++
+ arch/sh/kernel/Makefile                         |   1 -
+ arch/sh/kernel/cpu/sh2/entry.S                  |   8 +-
+ arch/sh/kernel/cpu/sh2a/entry.S                 |   8 +-
+ arch/sh/kernel/entry-common.S                   |  21 ++-
+ arch/sh/kernel/head_32.S                        |  13 ++
+ arch/sh/kernel/localtimer.c                     |  60 --------
+ arch/sh/kernel/setup.c                          |  27 ++++
+ arch/sh/kernel/sh_ksyms_32.c                    |   3 +
+ arch/sh/kernel/smp.c                            |  24 +--
+ arch/sh/lib/ashlsi3.S                           |  35 +++--
+ arch/sh/lib/ashrsi3.S                           |  33 ++--
+ arch/sh/lib/lshrsi3.S                           |  34 ++--
+ arch/sh/mm/kmap.c                               |   2 +
+ 22 files changed, 397 insertions(+), 145 deletions(-)
+ create mode 100644 arch/sh/boards/of-generic.c
+ delete mode 100644 arch/sh/include/asm/clkdev.h
+ delete mode 100644 arch/sh/kernel/localtimer.c
