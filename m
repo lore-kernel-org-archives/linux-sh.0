@@ -1,183 +1,157 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 17 Mar 2016 09:56:11 +0000
-Subject: Re: [PATCH v2 02/04] iommu/ipmmu-vmsa: Rework interrupt code and use bitmap for context
-Message-Id: <1686102.s8m2vfSUhC@avalon>
+From: Rich Felker <dalias@libc.org>
+Date: Thu, 17 Mar 2016 23:12:12 +0000
+Subject: [PATCH v5 2/2] irqchip: add J-Core AIC driver
+Message-Id: <83d2b655baaaa387203a0432f0b52c1deb9d64e4.1469688756.git.dalias@libc.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20160315042136.22103.26570.sendpatchset@little-apple>
-	<20160315042155.22103.74587.sendpatchset@little-apple>
-In-Reply-To: <20160315042155.22103.74587.sendpatchset@little-apple>
+References: <cover.1469688756.git.dalias@libc.org>
+In-Reply-To: <cover.1469688756.git.dalias@libc.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: laurent.pinchart+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org, geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, horms+renesas-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org
+To: linux-kernel@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Thomas Gleixner <tglx@linutronix.de>, Jason Cooper <jason@lakedaemon.net>, Marc Zyngier <marc.zyngier@arm.com>, Rob Herring <robh+dt@kernel.org>, Mark Rutland <mark.rutland@arm.com>
 
-Hi Magnus,
+There are two versions of the J-Core interrupt controller in use, aic1
+which generates interrupts with programmable priorities, but only
+supports 8 irq lines and maps them to cpu traps in the range 17 to 24,
+and aic2 which uses traps in the range 64-127 and supports up to 128
+irqs, with priorities dependent on the interrupt number. The Linux
+driver does not make use of priorities anyway.
 
-Thank you for the patch.
+For simplicity, there is no aic1-specific logic in the driver beyond
+setting the priority register, which is necessary for interrupts to
+work at all. Eventually aic1 will likely be phased out, but it's
+currently in use in deployments and all released bitstream binaries.
 
-On Tuesday 15 March 2016 13:21:55 Magnus Damm wrote:
-> From: Magnus Damm <damm+renesas@opensource.se>
-> 
-> Introduce a bitmap for context handing and convert the
-> interrupt routine to go handle all registered contexts.
-> 
-> At this point the number of contexts are still limited.
-> 
-> Also remove the use of the ARM specific mapping variable
-> from ipmmu_irq() to allow compile on ARM64.
-> 
-> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-> ---
-> 
-> Changes since V1: (Thanks to Laurent for feedback!)
-> - Use simple find_first_zero()/set_bit()/clear_bit() for context
->   management.
-> - For allocation rely on spinlock held when calling
->   ipmmu_domain_init_context()
+Signed-off-by: Rich Felker <dalias@libc.org>
+---
+ drivers/irqchip/Kconfig         |  6 +++
+ drivers/irqchip/Makefile        |  1 +
+ drivers/irqchip/irq-jcore-aic.c | 86 +++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 93 insertions(+)
+ create mode 100644 drivers/irqchip/irq-jcore-aic.c
 
-I'm afraid this is still racy. That spinlock belongs to the domain, and we 
-have multiple domains. You need to add a new lock in the ipmmu_vmsa_device 
-structure.
-
-> - For test/free use atomic bitops
-> - Return IRQ_HANDLED if any of the contexts generated interrupts
-> 
-> drivers/iommu/ipmmu-vmsa.c |   47 +++++++++++++++++++++++++++++------------
-> 1 file changed, 35 insertions(+), 12 deletions(-)
-> 
-> --- 0003/drivers/iommu/ipmmu-vmsa.c
-> +++ work/drivers/iommu/ipmmu-vmsa.c	2016-03-15 12:42:18.940513000 +0900
-> @@ -8,6 +8,7 @@
->   * the Free Software Foundation; version 2 of the License.
->   */
-> 
-> +#include <linux/bitmap.h>
->  #include <linux/delay.h>
->  #include <linux/dma-mapping.h>
->  #include <linux/err.h>
-> @@ -26,12 +27,16 @@
-> 
->  #include "io-pgtable.h"
-> 
-> +#define IPMMU_CTX_MAX 1
-> +
->  struct ipmmu_vmsa_device {
->  	struct device *dev;
->  	void __iomem *base;
->  	struct list_head list;
-> 
->  	unsigned int num_utlbs;
-> +	DECLARE_BITMAP(ctx, IPMMU_CTX_MAX);
-> +	struct ipmmu_vmsa_domain *domains[IPMMU_CTX_MAX];
-> 
->  	struct dma_iommu_mapping *mapping;
->  };
-> @@ -296,6 +301,7 @@ static struct iommu_gather_ops ipmmu_gat
->  static int ipmmu_domain_init_context(struct ipmmu_vmsa_domain *domain)
->  {
->  	u64 ttbr;
-> +	int ret;
-> 
->  	/*
->  	 * Allocate the page table operations.
-> @@ -325,10 +331,17 @@ static int ipmmu_domain_init_context(str
->  		return -EINVAL;
-> 
->  	/*
-> -	 * TODO: When adding support for multiple contexts, find an unused
-> -	 * context.
-> +	 * Find an unused context.
->  	 */
-> -	domain->context_id = 0;
-> +	ret = find_first_zero_bit(domain->mmu->ctx, IPMMU_CTX_MAX);
-> +	if (ret = IPMMU_CTX_MAX) {
-> +		free_io_pgtable_ops(domain->iop);
-> +		return -EBUSY;
-> +	}
-> +
-> +	domain->context_id = ret;
-> +	domain->mmu->domains[ret] = domain;
-> +	set_bit(ret, domain->mmu->ctx);
-> 
->  	/* TTBR0 */
->  	ttbr = domain->cfg.arm_lpae_s1_cfg.ttbr[0];
-> @@ -372,6 +385,8 @@ static int ipmmu_domain_init_context(str
-> 
->  static void ipmmu_domain_destroy_context(struct ipmmu_vmsa_domain *domain)
->  {
-> +	clear_bit(domain->context_id, domain->mmu->ctx);
-> +
->  	/*
->  	 * Disable the context. Flush the TLB as required when modifying the
->  	 * context registers.
-> @@ -389,10 +404,15 @@ static void ipmmu_domain_destroy_context
->  static irqreturn_t ipmmu_domain_irq(struct ipmmu_vmsa_domain *domain)
->  {
->  	const u32 err_mask = IMSTR_MHIT | IMSTR_ABORT | IMSTR_PF | IMSTR_TF;
-> -	struct ipmmu_vmsa_device *mmu = domain->mmu;
-> +	struct ipmmu_vmsa_device *mmu;
->  	u32 status;
->  	u32 iova;
-> 
-> +	if (!domain)
-> +		return IRQ_NONE;
-
-Can this happen, as you test for the corresponding context bit before calling 
-this function ?
-
-> +
-> +	mmu = domain->mmu;
-> +
->  	status = ipmmu_ctx_read(domain, IMSTR);
->  	if (!(status & err_mask))
->  		return IRQ_NONE;
-> @@ -437,16 +457,18 @@ static irqreturn_t ipmmu_domain_irq(stru
->  static irqreturn_t ipmmu_irq(int irq, void *dev)
->  {
->  	struct ipmmu_vmsa_device *mmu = dev;
-> -	struct iommu_domain *io_domain;
-> -	struct ipmmu_vmsa_domain *domain;
-> -
-> -	if (!mmu->mapping)
-> -		return IRQ_NONE;
-> +	irqreturn_t status = IRQ_NONE;
-> +	unsigned int i;
-> 
-> -	io_domain = mmu->mapping->domain;
-> -	domain = to_vmsa_domain(io_domain);
-> +	/* Check interrupts for all active contexts */
-
-Nitpicking, could you add a period at the end of the sentence to match the 
-existing comment style ?
-
-> +	for (i = 0; i < IPMMU_CTX_MAX; i++) {
-> +		if (!test_bit(i, mmu->ctx))
-
-test_bit() isn't atomic. Let's use explicit locking in every location where 
-the contexts bitmap is accessed in a racy way.
-
-> +			continue;
-> +		if (ipmmu_domain_irq(mmu->domains[i]) = IRQ_HANDLED)
-> +			status = IRQ_HANDLED;
-> +	}
-> 
-> -	return ipmmu_domain_irq(domain);
-> +	return status;
->  }
-> 
->  /* ------------------------------------------------------------------------
-> @@ -774,6 +796,7 @@ static int ipmmu_probe(struct platform_d
-> 
->  	mmu->dev = &pdev->dev;
->  	mmu->num_utlbs = 32;
-> +	bitmap_zero(mmu->ctx, IPMMU_CTX_MAX);
-> 
->  	/* Map I/O memory and request IRQ. */
->  	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-
+diff --git a/drivers/irqchip/Kconfig b/drivers/irqchip/Kconfig
+index fa33c50..fe58177 100644
+--- a/drivers/irqchip/Kconfig
++++ b/drivers/irqchip/Kconfig
+@@ -150,6 +150,12 @@ config PIC32_EVIC
+ 	select GENERIC_IRQ_CHIP
+ 	select IRQ_DOMAIN
+ 
++config JCORE_AIC
++	bool "J-Core integrated AIC"
++	select IRQ_DOMAIN
++	help
++	  Support for the J-Core integrated AIC.
++
+ config RENESAS_INTC_IRQPIN
+ 	bool
+ 	select IRQ_DOMAIN
+diff --git a/drivers/irqchip/Makefile b/drivers/irqchip/Makefile
+index 38853a1..5b1a2fa 100644
+--- a/drivers/irqchip/Makefile
++++ b/drivers/irqchip/Makefile
+@@ -39,6 +39,7 @@ obj-$(CONFIG_I8259)			+= irq-i8259.o
+ obj-$(CONFIG_IMGPDC_IRQ)		+= irq-imgpdc.o
+ obj-$(CONFIG_IRQ_MIPS_CPU)		+= irq-mips-cpu.o
+ obj-$(CONFIG_SIRF_IRQ)			+= irq-sirfsoc.o
++obj-$(CONFIG_JCORE_AIC)			+= irq-jcore-aic.o
+ obj-$(CONFIG_RENESAS_INTC_IRQPIN)	+= irq-renesas-intc-irqpin.o
+ obj-$(CONFIG_RENESAS_IRQC)		+= irq-renesas-irqc.o
+ obj-$(CONFIG_VERSATILE_FPGA_IRQ)	+= irq-versatile-fpga.o
+diff --git a/drivers/irqchip/irq-jcore-aic.c b/drivers/irqchip/irq-jcore-aic.c
+new file mode 100644
+index 0000000..c61b023
+--- /dev/null
++++ b/drivers/irqchip/irq-jcore-aic.c
+@@ -0,0 +1,86 @@
++/*
++ * J-Core SoC AIC driver
++ *
++ * Copyright (C) 2015-2016 Smart Energy Instruments, Inc.
++ *
++ * This file is subject to the terms and conditions of the GNU General Public
++ * License.  See the file "COPYING" in the main directory of this archive
++ * for more details.
++ */
++
++#include <linux/irq.h>
++#include <linux/io.h>
++#include <linux/irqchip.h>
++#include <linux/irqdomain.h>
++#include <linux/cpu.h>
++#include <linux/of.h>
++#include <linux/of_address.h>
++#include <linux/of_irq.h>
++
++#define AIC1_INTPRI 8
++
++static struct aic_data {
++	struct irq_chip chip;
++	struct irq_domain *domain;
++	struct notifier_block nb;
++} aic_data;
++
++static int aic_irqdomain_map(struct irq_domain *d, unsigned int irq, irq_hw_number_t hwirq)
++{
++	struct aic_data *aic = d->host_data;
++
++	irq_set_chip_data(irq, aic);
++	irq_set_chip_and_handler(irq, &aic->chip, handle_simple_irq);
++	irq_set_probe(irq);
++
++	return 0;
++}
++
++static const struct irq_domain_ops aic_irqdomain_ops = {
++	.map = aic_irqdomain_map,
++	.xlate = irq_domain_xlate_onecell,
++};
++
++static void noop(struct irq_data *data)
++{
++}
++
++int __init aic_irq_of_init(struct device_node *node, struct device_node *parent)
++{
++	struct aic_data *aic = &aic_data;
++	unsigned min_irq = 64;
++
++	pr_info("Initializing J-Core AIC\n");
++
++	/* Only the AIC1 needs priority initialization in order to receive
++	 * interrupts, but the DT may declare a newer AIC as being
++	 * fallback-compatible with AIC1, so use incompatibility with AIC2
++	 * as the condition for actually being AIC1 and needing setup. */
++	if (!of_device_is_compatible(node, "jcore,aic2")) {
++		unsigned cpu;
++		for_each_present_cpu(cpu) {
++			void __iomem *base = of_iomap(node, cpu);
++			if (!base) {
++				pr_err("Unable to map AIC for cpu %u\n", cpu);
++				return -ENOMEM;
++			}
++			pr_info("Local AIC1 enable for cpu %u at %p\n",
++				cpu, base + AIC1_INTPRI);
++			__raw_writel(0xffffffff, base + AIC1_INTPRI);
++			iounmap(base);
++		}
++		min_irq = 16;
++	}
++
++	aic->chip.name = "AIC";
++	aic->chip.irq_mask = noop;
++	aic->chip.irq_unmask = noop;
++
++	aic->domain = irq_domain_add_linear(node, 128, &aic_irqdomain_ops, aic);
++	irq_create_strict_mappings(aic->domain, min_irq, min_irq, 128-min_irq);
++
++	return 0;
++}
++
++IRQCHIP_DECLARE(jcore_aic2, "jcore,aic2", aic_irq_of_init);
++IRQCHIP_DECLARE(jcore_aic1, "jcore,aic1", aic_irq_of_init);
 -- 
-Regards,
-
-Laurent Pinchart
+2.8.1
 
