@@ -1,33 +1,42 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 29 Mar 2016 06:46:32 +0000
-Subject: Re: Build regressions/improvements in v4.6-rc1
-Message-Id: <CAMuHMdURaU0s4H9AzX+8moGWseBRaqfx8svksWzOQyK9TS7LMA@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 17 Mar 2016 13:47:25 +0000
+Subject: [PATCH/RFC 1/5] serial: sh-sci: Update DT binding documentation for GPIO modem lines
+Message-Id: <1458222449-12324-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <CAMuHMdXx80zs5VoA_aYc_wMn37O=fa6oXk-ovteHq0hGQYUUzg@mail.gmail.com>
-	<CAMuHMdW3dfhZVT0e4tiqsbEPjYYA_hGUXQer1bQDeF2Gbs4WJg@mail.gmail.com>
-	<20160328215923.GG11812@dastard>
-	<20160328224710.GC5822@birch.djwong.org>
-In-Reply-To: <20160328224710.GC5822@birch.djwong.org>
+References: <1458222449-12324-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1458222449-12324-1-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "Darrick J. Wong" <darrick.wong@oracle.com>
-Cc: Rich Felker <dalias@libc.org>, Cris <linux-cris-kernel@axis.com>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, xfs@oss.sgi.com
+To: Greg Kroah-Hartman <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, Jiri Slaby <jslaby-IBi9RG/b67k@public.gmane.org>, Peter Hurley <peter-WaGBZJeGNqdsbIuE7sb01tBPR1lH4CV8@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: Laurent Pinchart <laurent.pinchart+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Yoshinori Sato <ysato-Rn4VEauK+AKRv+LV9MX5uooqe+aC9MnS@public.gmane.org>, linux-serial-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-renesas-soc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Tue, Mar 29, 2016 at 12:47 AM, Darrick J. Wong
-<darrick.wong@oracle.com> wrote:
-> (No idea if it fixes fixes cris, but it passes the six arches that I can
-> actually test on (x86/power/arm)).  The downside is that it does nothing about
+Amend the DT bindings for the Renesas SCI driver to allow describing
+optional GPIO-controlled modem lines, which can be used where dedicated
+modem lines are not available.
 
-https://www.kernel.org/pub/tools/crosstool/
+The property naming is dictated by the SERIAL_MCTRL_GPIO helpers.
 
-Gr{oetje,eeting}s,
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: devicetree@vger.kernel.org
+---
+ Documentation/devicetree/bindings/serial/renesas,sci-serial.txt | 3 +++
+ 1 file changed, 3 insertions(+)
 
-                        Geert
+diff --git a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+index 528c3b90f23cb04b..f8d7b36742967163 100644
+--- a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
++++ b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+@@ -76,6 +76,9 @@ Optional properties:
+   - dmas: Must contain a list of two references to DMA specifiers, one for
+ 	  transmission, and one for reception.
+   - dma-names: Must contain a list of two DMA names, "tx" and "rx".
++  - {cts,dsr,dcd,rng,rts,dtr,out1,out2}-gpios: Must contain a GPIO specifier,
++    referring to the GPIO pin to be used as the UART's CTS, DSR, DCD, RNG, RTS,
++    DTR, OUT1, or OUT2 line.
+ 
+ Example:
+ 	aliases {
+-- 
+1.9.1
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
