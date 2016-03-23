@@ -1,7 +1,7 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 23 Mar 2016 10:05:42 +0000
+From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Date: Wed, 23 Mar 2016 10:11:04 +0000
 Subject: Re: Availability of SH hardware?
-Message-Id: <CANqRtoTF0_GnCw7+6qE3-vNLds1cauN_cMwHajKDoSpcrPjNeA@mail.gmail.com>
+Message-Id: <56F26BB8.4050708@physik.fu-berlin.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20160317032441.GA22517@brightrain.aerifal.cx>
 In-Reply-To: <20160317032441.GA22517@brightrain.aerifal.cx>
@@ -10,42 +10,43 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Rich,
+On 03/23/2016 11:05 AM, Magnus Damm wrote:
+> I have a couple of old SH boards that I can hook up to remote access
+> for you if that would help. Probably sh775x-based ones and maybe also
+> something with sh2a. Need to go through my old boxes in the attic to
+> find more detail. =)
 
-On Thu, Mar 17, 2016 at 12:24 PM, Rich Felker <dalias@libc.org> wrote:
-> One of my goals in taking on maintainership of arch/sh is to gradually
-> replace all of the hard-coded legacy board/subtype support with device
-> tree based board descriptions, and clean up the related board support
-> infrastructure in arch/sh to be more in line with how things are done
-> on other archs these days. However the ability to make and test these
-> changes depends on having some actual hardware to work with.
->
-> I'm working on the J-Core (currently J2) open hardware revival of the
-> SH architecture and don't have any original SH hardware (except
-> perhaps embedded in old appliances). Does anyone have pointers (direct
-> add-to-cart'able links) to where SH dev boards are still available, or
-> even better, any old hardware lying around that's not being used that
-> you'd be willing to donate?
->
-> I'm especially interested in getting an SH-X3 board since it seems to
-> be the only model with existing SMP support, and moving it over to
-> device tree would eliminate the need for keeping around the
-> non-device-tree SMP register_smp_ops and cross-core cache invalidation
-> infrastructure, which are low-hanging fruit for refactoring/cleanup.
-> But really anything would be great to have.
+I think it would be much better for actual kernel development to have
+physical access to the hardware. And if your SH boards are gaining
+dust in your attic anyway, why not send them out to support the
+new SH kernel maintainers?
 
-I have a couple of old SH boards that I can hook up to remote access
-for you if that would help. Probably sh775x-based ones and maybe also
-something with sh2a. Need to go through my old boxes in the attic to
-find more detail. =)
+> As for SH-X3, I recall seeing that board IRL at some point on the desk
+> next to me, but it was pretty rare even at that time so I highly doubt
+> you will have any luck finding it or any SMP capable SH SoC.
 
-As for SH-X3, I recall seeing that board IRL at some point on the desk
-next to me, but it was pretty rare even at that time so I highly doubt
-you will have any luck finding it or any SMP capable SH SoC.
+You can buy dual-core SH4 systems in Japan:
 
-In the mean time, does the sh4 target in QEMU work in system emulator
-mode? I recall user space emulation could run busybox at least.
+> http://www.apnet.co.jp/product/superh/ap-sh4ad-0a.html
 
-Cheers,
+With 460 USD a bit expensive though.
 
-/ magnus
+> In the mean time, does the sh4 target in QEMU work in system emulator
+> mode? I recall user space emulation could run busybox at least.
+
+Well, in that case qemu-system would actually the better choice as
+it allows to boot the kernel. And, yeah, that should work, too.
+
+But, again, Rich should have real SH hardware for kernel development
+which is why I am donating him a LANDISK system which I am buying in
+Japan. I have great interest to get kernel support for SH back
+in shape and I am therefore happy to support anyone who wants to
+work on that.
+
+Adrian
+
+-- 
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer - glaubitz@debian.org
+`. `'   Freie Universitaet Berlin - glaubitz@physik.fu-berlin.de
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
