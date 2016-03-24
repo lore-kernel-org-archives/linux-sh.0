@@ -1,7 +1,7 @@
-From: Yoshinori Sato <ysato@users.sourceforge.jp>
-Date: Thu, 24 Mar 2016 11:40:15 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 24 Mar 2016 21:18:56 +0000
 Subject: Re: Availability of SH hardware?
-Message-Id: <87wpos9k9s.wl-ysato@users.sourceforge.jp>
+Message-Id: <CANqRtoT8C1iaWb5T+z8KXaJgvQMQ1WLPVAaKX4VJCc1J+CDiSg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20160317032441.GA22517@brightrain.aerifal.cx>
 In-Reply-To: <20160317032441.GA22517@brightrain.aerifal.cx>
@@ -10,39 +10,26 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Thu, 17 Mar 2016 12:24:41 +0900,
-Rich Felker wrote:
-> 
-> One of my goals in taking on maintainership of arch/sh is to gradually
-> replace all of the hard-coded legacy board/subtype support with device
-> tree based board descriptions, and clean up the related board support
-> infrastructure in arch/sh to be more in line with how things are done
-> on other archs these days. However the ability to make and test these
-> changes depends on having some actual hardware to work with.
-> 
-> I'm working on the J-Core (currently J2) open hardware revival of the
-> SH architecture and don't have any original SH hardware (except
-> perhaps embedded in old appliances). Does anyone have pointers (direct
-> add-to-cart'able links) to where SH dev boards are still available, or
-> even better, any old hardware lying around that's not being used that
-> you'd be willing to donate?
-> 
-> I'm especially interested in getting an SH-X3 board since it seems to
-> be the only model with existing SMP support, and moving it over to
-> device tree would eliminate the need for keeping around the
-> non-device-tree SMP register_smp_ops and cross-core cache invalidation
-> infrastructure, which are low-hanging fruit for refactoring/cleanup.
-> But really anything would be great to have.
-> 
-> Rich
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+On Thu, Mar 24, 2016 at 6:01 PM, John Paul Adrian Glaubitz
+<glaubitz@physik.fu-berlin.de> wrote:
+> On 03/24/2016 09:50 AM, Magnus Damm wrote:
+>> I recall hearing that Dreamcast hardware was historically used for
+>> some SH development. Can't be that difficult to find such hardware,
+>> however I highly doubt that the boot process is very convenient.
+>> Hardware wise Dreamcast probably contains something like sh775x so it
+>> should be similar to whatever is in QEMU.
+>
+> The Dreamcast has just 16 MiB of RAM. On the other hand, the LANDISK
+> NAS device I have acquired for Rich in Japan comes with 64 MiB RAM
+> and a SH7751 CPU running at 266 MHz. And people have used these devices
+> in the past to run Debian.
 
-I got HDL-U (aka LANDISK). And setup latest u-boot / kernel.
-So we can testing real SH4 hardware.
+Indeed 64 MiB is better than 16MiB. It is also still simple to handle
+from a software perspective with the fixed virtual-to-physical memory
+windows used by the SH architecture. For more than 256 MiB of RAM some
+32-bit extensions were added, perhaps combined with the PMB hardware
+unit unless I remember incorrectly. Those 32-bit extensions are not
+available on older SoCs like sh7751 but on later generations like
+sh7785 and probably sh7786 as well.
 
--- 
-Yoshinori Sato
-<ysato@users.sourceforge.jp>
+/ magnus
