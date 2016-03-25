@@ -1,7 +1,7 @@
 From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Date: Fri, 25 Mar 2016 22:51:33 +0000
+Date: Fri, 25 Mar 2016 23:02:51 +0000
 Subject: Re: Availability of SH hardware?
-Message-Id: <56F5C0F5.4080809@physik.fu-berlin.de>
+Message-Id: <56F5C39B.2090004@physik.fu-berlin.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20160317032441.GA22517@brightrain.aerifal.cx>
 In-Reply-To: <20160317032441.GA22517@brightrain.aerifal.cx>
@@ -10,29 +10,22 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On 03/25/2016 11:42 PM, Rich Felker wrote:
-> This sounds really interesting. Do you know what cpu model it actually
-> has? I tried to lookup SH7105 and it seems to be a model of SH2, which
-> would not run Debian and almost certainly would not go up to 600 MHz.
+On 03/25/2016 11:51 PM, John Paul Adrian Glaubitz wrote:
+> On 03/25/2016 11:42 PM, Rich Felker wrote:
+>> This sounds really interesting. Do you know what cpu model it actually
+>> has? I tried to lookup SH7105 and it seems to be a model of SH2, which
+>> would not run Debian and almost certainly would not go up to 600 MHz.
 
-Another post on a Taiwanese forum shows the SoC without the heat sink:
+Here's a kernel tree for this SoC:
 
-> http://digiland.tw/viewtopic.php?id71
+> https://github.com/suzuke/kernel-pdk7105
 
-This photo shows the type number of the SoC to be ST-9150:
+And this Chinese page has some info on running Debian:
 
->
-http://www.st.com/web/catalog/mmc/FM128/SC1401/PF250067?sc=internet/imag_video/product/250067.jsp
+> https://sites.google.com/site/debiansh4/home
 
-Which is specified to contain an ST-40-300 core with 450 MHz:
-
->
-http://www.st.com/st-web-ui/static/active/en/resource/technical/document/data_brief/CD00258048.pdf
-
-And the ST-40-300 is claimed to be sh4a-compatible (page 33):
-
->
-http://www.st.com/st-web-ui/static/active/en/resource/technical/document/reference_manual/CD17182230.pdf
+Apparently the name is not "SH-7105" but "ST-7105" and "ST-9150"
+could be a newer version of the SoC.
 
 Adrian
 
