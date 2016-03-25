@@ -1,7 +1,7 @@
 From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Date: Fri, 25 Mar 2016 11:12:55 +0000
+Date: Fri, 25 Mar 2016 11:19:09 +0000
 Subject: Re: Availability of SH hardware?
-Message-Id: <56F51D37.1010608@physik.fu-berlin.de>
+Message-Id: <56F51EAD.3020307@physik.fu-berlin.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20160317032441.GA22517@brightrain.aerifal.cx>
 In-Reply-To: <20160317032441.GA22517@brightrain.aerifal.cx>
@@ -10,27 +10,25 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On 03/25/2016 03:04 AM, Rob Landley wrote:
-> You can find dreamcasts, but the problem is the specific dreamcast
-> peripherals (there was a "dreamcast keyboard") stopped being
-> manufactured 20 years ago, and were no longer even available on ebay
-> when I checked.
+Hi Yoshinori!
 
-Well, don't look on eBay, look on Amazon. There are plenty of offers
-with new-old-stock Dreamcast keyboards and mice. I bought both for
-a very low price off Amazon a few months ago. I just checked Amazon
-Germany and there are still offers.
+On 03/24/2016 12:40 PM, Yoshinori Sato wrote:
+> I got HDL-U (aka LANDISK). And setup latest u-boot / kernel.
+> So we can testing real SH4 hardware.
 
-What's more of a concern is getting the necessary broadband adapter
-for the Dreamcast. Those are very hard to get outside Japan but
-in Japan it's less of a problem which is generally true for any
-SuperH hardware.
+That's great to hear. Then you can help Rich setting up his LANDISK
+device once he receives his from Japan. It will be mailed in the
+following days, I already bought it off Yahoo Auction Japan:
 
-The cheapest and easiest obtainable hardware are the LANDISK devices
-sold by IODATA in Japan. Those sell for around 20-50 Euros on Yahoo
-Auction Japan and have been reported to work fine with Debian.
+> http://page15.auctions.yahoo.co.jp/jp/auction/t464640538
+
+Would probably also be a good idea to write everything related
+to the LANDISK into the Debian Wiki which already has a section
+for SH4 [1].
 
 Adrian
+
+> [1] https://wiki.debian.org/SH4/
 
 -- 
  .''`.  John Paul Adrian Glaubitz
