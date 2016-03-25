@@ -1,7 +1,7 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 24 Mar 2016 23:52:34 +0000
+From: Rob Landley <rob@landley.net>
+Date: Fri, 25 Mar 2016 01:54:13 +0000
 Subject: Re: Availability of SH hardware?
-Message-Id: <CANqRtoTJhEqZF9x27CgugcejD8V5bLENuK9nqnFknjmOnhEV0Q@mail.gmail.com>
+Message-Id: <56F49A45.2040408@landley.net>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20160317032441.GA22517@brightrain.aerifal.cx>
 In-Reply-To: <20160317032441.GA22517@brightrain.aerifal.cx>
@@ -10,51 +10,51 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Fri, Mar 25, 2016 at 7:00 AM, Rich Felker <dalias@libc.org> wrote:
-> On Fri, Mar 25, 2016 at 06:18:56AM +0900, Magnus Damm wrote:
->> On Thu, Mar 24, 2016 at 6:01 PM, John Paul Adrian Glaubitz
->> <glaubitz@physik.fu-berlin.de> wrote:
->> > On 03/24/2016 09:50 AM, Magnus Damm wrote:
->> >> I recall hearing that Dreamcast hardware was historically used for
->> >> some SH development. Can't be that difficult to find such hardware,
->> >> however I highly doubt that the boot process is very convenient.
->> >> Hardware wise Dreamcast probably contains something like sh775x so it
->> >> should be similar to whatever is in QEMU.
->> >
->> > The Dreamcast has just 16 MiB of RAM. On the other hand, the LANDISK
->> > NAS device I have acquired for Rich in Japan comes with 64 MiB RAM
->> > and a SH7751 CPU running at 266 MHz. And people have used these devices
->> > in the past to run Debian.
+
+
+On 03/23/2016 05:05 AM, Magnus Damm wrote:
+> Hi Rich,
+> 
+> On Thu, Mar 17, 2016 at 12:24 PM, Rich Felker <dalias@libc.org> wrote:
+>> One of my goals in taking on maintainership of arch/sh is to gradually
+>> replace all of the hard-coded legacy board/subtype support with device
+>> tree based board descriptions, and clean up the related board support
+>> infrastructure in arch/sh to be more in line with how things are done
+>> on other archs these days. However the ability to make and test these
+>> changes depends on having some actual hardware to work with.
 >>
->> Indeed 64 MiB is better than 16MiB. It is also still simple to handle
->> from a software perspective with the fixed virtual-to-physical memory
->> windows used by the SH architecture. For more than 256 MiB of RAM some
->> 32-bit extensions were added, perhaps combined with the PMB hardware
->> unit unless I remember incorrectly. Those 32-bit extensions are not
->> available on older SoCs like sh7751 but on later generations like
->> sh7785 and probably sh7786 as well.
->
-> I've been reading the documentation and trying to figure out the MMU
-> and PMB stuff for SH4, and it seems the PMB is only relevant to
-> extending the amount of virtual address space that can be remapped to
-> different physical addresses, and only for kernelspace (userspace has
-> no access to the P1 and P2 ranges it maps). The 32-bit physical memory
-> extension is separate from what I can tell, and just uses the upper 3
-> bits of the TLB registers which were previously reserved. Does this
-> sound correct?
+>> I'm working on the J-Core (currently J2) open hardware revival of the
+>> SH architecture and don't have any original SH hardware (except
+>> perhaps embedded in old appliances). Does anyone have pointers (direct
+>> add-to-cart'able links) to where SH dev boards are still available, or
+>> even better, any old hardware lying around that's not being used that
+>> you'd be willing to donate?
+>>
+>> I'm especially interested in getting an SH-X3 board since it seems to
+>> be the only model with existing SMP support, and moving it over to
+>> device tree would eliminate the need for keeping around the
+>> non-device-tree SMP register_smp_ops and cross-core cache invalidation
+>> infrastructure, which are low-hanging fruit for refactoring/cleanup.
+>> But really anything would be great to have.
+> 
+> I have a couple of old SH boards that I can hook up to remote access
+> for you if that would help. Probably sh775x-based ones and maybe also
+> something with sh2a. Need to go through my old boxes in the attic to
+> find more detail. =)
+> 
+> As for SH-X3, I recall seeing that board IRL at some point on the desk
+> next to me, but it was pretty rare even at that time so I highly doubt
+> you will have any luck finding it or any SMP capable SH SoC.
+> 
+> In the mean time, does the sh4 target in QEMU work in system emulator
+> mode? I recall user space emulation could run busybox at least.
 
-Sounds about right. It may be that the PMB is only used during early
-boot to allow access of more than 29 bits of physical memory for
-instance before the MMU is turned on. But depending on memory model
-and protection requirements it may make sense to map in as much as
-possible of lowmem into the virtual space using the PMB to take the
-load of the MMU.
+Sure, I have prebuilt system images for that even.
 
-As you've figured out, the PMB hardware allows virtual -> physical
-remapping of larger contiguous areas. It exist both for the SH CPU
-core and also as part of various IOMMU variants. I believe the former
-cannot generate any traps or interrupts while the latter is able to.
-So no on-demand paging or other fancy stuff like protection that user
-space would like to have.
+  http://landley.net/aboriginal/bin/system-image-sh4.tar.gz
 
-/ magnus
+Most recently tested with the 4.3 kernel, I think?
+
+Rob
+
+Rob
