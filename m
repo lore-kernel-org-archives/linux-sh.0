@@ -1,31 +1,25 @@
-From: Yoshinori Sato <ysato@users.sourceforge.jp>
-Date: Mon, 07 Mar 2016 13:50:02 +0000
-Subject: [PATCH] sh: Disable trace for kernel uncompressing.
-Message-Id: <1457358603-9579-1-git-send-email-ysato@users.sourceforge.jp>
+From: rogerkaase@arcor.de
+Date: Sat, 26 Mar 2016 23:30:10 +0000
+Subject: winning Alert !!contact davidcarolm@yahoo.com.hk
+Message-Id: <134339893.620871.1459035010021.JavaMail.ngmail@webmail08.arcor-online.net>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: info@web.net
 
-Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
----
- arch/sh/boot/compressed/Makefile | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Attention:
+We are donating to you 1,500,000 GBP, from David and Carol Martin =A333mill=
+ion lottery, won January 2016
+To confirm this kindly click on
+http://www.ibtimes.co.uk/lotto-winners-david-carol-martin-want-blast-into-s=
+pace-after-buying-new-shoes-1537851
 
-diff --git a/arch/sh/boot/compressed/Makefile b/arch/sh/boot/compressed/Makefile
-index 23bc849..6df826e 100644
---- a/arch/sh/boot/compressed/Makefile
-+++ b/arch/sh/boot/compressed/Makefile
-@@ -48,7 +48,7 @@ ifeq ($(BITS),64)
- 	lib1funcs-dir 	:= $(addsuffix $(BITS), $(lib1funcs-dir))
- endif
- 
--KBUILD_CFLAGS += -I$(lib1funcs-dir)
-+KBUILD_CFLAGS += -I$(lib1funcs-dir) -DDISABLE_BRANCH_PROFILING
- 
- $(addprefix $(obj)/,$(lib1funcs-y)): $(obj)/%: $(lib1funcs-dir)/% FORCE
- 	$(call cmd,shipped)
--- 
-2.7.0
-
+Please provide the following information
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D*Full Name:
+*Telephone Number:
+*Age:
+*Country:
+reply to us on
+davidcarolm@yahoo.com.hk
