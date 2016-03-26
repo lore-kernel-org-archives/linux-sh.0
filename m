@@ -1,73 +1,129 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Thu, 31 Mar 2016 22:48:38 +0000
-Subject: Re: [PATCH v3 09/11] i2c: rcar: revoke START request early
-Message-Id: <20160331224838.GA7381@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="7AUc2qLy4jB3hD7Z"
+From: Rich Felker <dalias@libc.org>
+Date: Sat, 26 Mar 2016 01:47:12 +0000
+Subject: [PATCH] sh: add support for linking a builtin device tree blob in the kernel
+Message-Id: <20160326014711.GA29106@brightrain.aerifal.cx>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447948611-2615-1-git-send-email-wsa@the-dreams.de>
- <1447948611-2615-10-git-send-email-wsa@the-dreams.de>
- <56FD9080.4090203@cogentembedded.com>
-In-Reply-To: <56FD9080.4090203@cogentembedded.com>
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, "stable@vger.kernel.org" <stable@vger.kernel.org>, "linux-renesas-soc@vger.kernel.org" <linux-renesas-soc@vger.kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
+Signed-off-by: Rich Felker <dalias@libc.org>
+---
 
---7AUc2qLy4jB3hD7Z
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+I'd like to add this patch to the new device tree support to ease the
+transition to device tree on legacy hardware where replacing the
+bootloader with a new one that can pass a DTB may be extra work. Since
+I'm not familiar with this kind of build system change, though, I'd
+like some feedback on whether I'm doing it right.
 
-On Fri, Apr 01, 2016 at 12:02:56AM +0300, Sergei Shtylyov wrote:
-> Hello.
->=20
-> On 11/19/2015 06:56 PM, Wolfram Sang wrote:
->=20
-> >From: Wolfram Sang <wsa+renesas@sang-engineering.com>
-> >
-> >If we don't clear START generation as soon as possible, it may cause
-> >another message to be generated, e.g. when receiving NACK in address
-> >phase. To keep the race window as small as possible, we clear it right
-> >at the beginning of the interrupt. We don't need any checks since we
-> >always want to stop START and STOP generation on the next occasion after
-> >we started it.
-> >
-> >This patch improves the situation but sadly does not completely fix it.
-> >It is still to be researched if we can do better given this HW design.
-> >
-> >Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
->=20
->    Thanks for a great work, Wolfram!
->    We need this patch in -stable kernels. The R-Car audio just doesn't wo=
-rk
-> without it...
+ arch/sh/Kconfig             | 20 ++++++++++++++++++++
+ arch/sh/Makefile            |  2 ++
+ arch/sh/boards/of-generic.c | 15 ++++++++++++---
+ arch/sh/boot/dts/Makefile   |  3 +++
+ arch/sh/kernel/setup.c      |  4 ++++
+ 5 files changed, 41 insertions(+), 3 deletions(-)
+ create mode 100644 arch/sh/boot/dts/Makefile
 
-Really only this patch? IIRC my tests showed that if you don't remove
-the spinlocks (patch 4), the interrupt latency will already be too high
-again. In any case, you'd need to do some careful backporting to rip
-this out of the whole refactoring series. But maybe you did that already
-and have good experiences?
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index 9dec535..b6db094 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -755,6 +755,26 @@ endmenu
+ 
+ menu "Boot options"
+ 
++config USE_BUILTIN_DTB
++	bool "Use builtin DTB"
++	default n
++	depends on SH_DEVICE_TREE
++	help
++	  Link a device tree blob for particular hardware into the kernel,
++	  suppressing use of the DTB pointer provided by the bootloader.
++	  This option should only be used with legacy bootloaders that are
++	  not capable of providing a DTB to the kernel, or for experimental
++	  hardware without stable device tree bindings.
++
++config BUILTIN_DTB_SOURCE
++	string "Source file for builtin DTB"
++	default ""
++	depends on USE_BUILTIN_DTB
++	help
++	  Base name (without suffix, relative to arch/sh/boot/dts) for the
++	  a DTS file that will be used to produce the DTB linked into the
++	  kernel.
++
+ config ZERO_PAGE_OFFSET
+ 	hex
+ 	default "0x00010000" if PAGE_SIZE_64KB || SH_RTS7751R2D || \
+diff --git a/arch/sh/Makefile b/arch/sh/Makefile
+index 3566a759..0047666 100644
+--- a/arch/sh/Makefile
++++ b/arch/sh/Makefile
+@@ -131,6 +131,8 @@ head-y	:= arch/sh/kernel/head_$(BITS).o
+ core-y				+= arch/sh/kernel/ arch/sh/mm/ arch/sh/boards/
+ core-$(CONFIG_SH_FPU_EMU)	+= arch/sh/math-emu/
+ 
++core-$(CONFIG_USE_BUILTIN_DTB)	+= arch/sh/boot/dts/
++
+ # Mach groups
+ machdir-$(CONFIG_SOLUTION_ENGINE)		+= mach-se
+ machdir-$(CONFIG_SH_HP6XX)			+= mach-hp6xx
+diff --git a/arch/sh/boards/of-generic.c b/arch/sh/boards/of-generic.c
+index bf3a166..57d45dc 100644
+--- a/arch/sh/boards/of-generic.c
++++ b/arch/sh/boards/of-generic.c
+@@ -126,13 +126,22 @@ static void __init sh_of_time_init(void)
+ 
+ static void __init sh_of_setup(char **cmdline_p)
+ {
++	struct device_node *root;
++
++#ifdef CONFIG_USE_BUILTIN_DTB
++	unflatten_and_copy_device_tree();
++#else
+ 	unflatten_device_tree();
++#endif
+ 
+ 	board_time_init = sh_of_time_init;
+ 
+-	sh_mv.mv_name = of_flat_dt_get_machine_name();
+-	if (!sh_mv.mv_name)
+-		sh_mv.mv_name = "Unknown SH model";
++	sh_mv.mv_name = "Unknown SH model";
++	root = of_find_node_by_path("/");
++	if (root) {
++		of_property_read_string(root, "model", &sh_mv.mv_name);
++		of_node_put(root);
++	}
+ 
+ 	sh_of_smp_probe();
+ }
+diff --git a/arch/sh/boot/dts/Makefile b/arch/sh/boot/dts/Makefile
+new file mode 100644
+index 0000000..e5ce3a0
+--- /dev/null
++++ b/arch/sh/boot/dts/Makefile
+@@ -0,0 +1,3 @@
++obj-$(CONFIG_USE_BUILTIN_DTB) += $(patsubst "%",%,$(CONFIG_BUILTIN_DTB_SOURCE)).dtb.o
++
++clean-files := *.dtb.S
+diff --git a/arch/sh/kernel/setup.c b/arch/sh/kernel/setup.c
+index efb60ce..ec7c99f 100644
+--- a/arch/sh/kernel/setup.c
++++ b/arch/sh/kernel/setup.c
+@@ -251,7 +251,11 @@ void __ref sh_fdt_init(phys_addr_t dt_phys)
+ 	/* Avoid calling an __init function on secondary cpus. */
+ 	if (done) return;
+ 
++#ifdef CONFIG_USE_BUILTIN_DTB
++	dt_virt = __dtb_start;
++#else
+ 	dt_virt = phys_to_virt(dt_phys);
++#endif
+ 
+ 	if (!dt_virt || !early_init_dt_scan(dt_virt)) {
+ 		pr_crit("Error: invalid device tree blob"
+-- 
+2.7.0
 
-
---7AUc2qLy4jB3hD7Z
-Content-Type: application/pgp-signature; name="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBAgAGBQJW/alGAAoJEBQN5MwUoCm2aDYQAIphQ8sj8xqYciN2AVn74F8u
-h0Sj73iPs5sKbkvO7lDYCrZCk89spGMTNEXkHAs6CPOUe5wTGKjnaBhiwQu7Z7AW
-JmCcNbxgdjCmJbo0b7jUVqHSGlBx9TC6kOoyIgG/MiQaMPOWZZ0F2QfquPybDWJM
-1fC2XVzi6mKxVDbCWUHunTf7p12v9JAemdNxnHmdTxs9xE+tA54zU/KMlkVFmkBv
-KMSflwLno6Um1XrTpOA5C9eOwnLRfcGIgrC9FVEXV5RgsPPUjvgzLq/dTtfhKADM
-nPxObX7oEt5czR/tJAGnlyCM1Ja7Y1MYqG7eE9LuSlXhoLGEL8VOEMX5Z/yUcfQM
-F7b31zBM+/0IccM5z4J1UTV5hmrsfu91FfGz0OW/SfAJgveRcPKmx3rsZj+czt/y
-I466MgFsrk86+Iln8lmjY8K9BUd3zh8/V1IajJYAx/ayPd+JKn/yBhUU2YVp/xfK
-JlIODSgb0hllPYhbN3TwR/8RGi90T3EZ3+RlMqdM8RgUIx3N+5RndHRPehm66WMl
-X8bVE8wViHYWnByIe60yIO25/bFy7yc1zw61pl+MYUIZ+xL+j8aQBT1fk2g15uv0
-bpXKBSuiv2gpJxs3lArPTH4gyYXf3rTrlV4DKMXU39m2V4yZX9gGXAdxfr85ZLqa
-qlnAJjWnTL00OuBL8TwS
-=wTsX
------END PGP SIGNATURE-----
-
---7AUc2qLy4jB3hD7Z--
