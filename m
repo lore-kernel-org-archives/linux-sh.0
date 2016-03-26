@@ -1,7 +1,7 @@
 From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Date: Fri, 25 Mar 2016 23:02:51 +0000
+Date: Sat, 26 Mar 2016 09:29:38 +0000
 Subject: Re: Availability of SH hardware?
-Message-Id: <56F5C39B.2090004@physik.fu-berlin.de>
+Message-Id: <56F65682.7070204@physik.fu-berlin.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20160317032441.GA22517@brightrain.aerifal.cx>
 In-Reply-To: <20160317032441.GA22517@brightrain.aerifal.cx>
@@ -10,22 +10,21 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On 03/25/2016 11:51 PM, John Paul Adrian Glaubitz wrote:
-> On 03/25/2016 11:42 PM, Rich Felker wrote:
->> This sounds really interesting. Do you know what cpu model it actually
->> has? I tried to lookup SH7105 and it seems to be a model of SH2, which
->> would not run Debian and almost certainly would not go up to 600 MHz.
+On 03/25/2016 09:31 PM, John Paul Adrian Glaubitz wrote:
+> I will get in touch with him. Maybe he can help us acquire multiple
+> boxes from Taiwan for little money.
 
-Here's a kernel tree for this SoC:
+Ok, he got back to me and he pointed me to an auction site in Taiwan.
 
-> https://github.com/suzuke/kernel-pdk7105
+Those things are extremely cheap:
 
-And this Chinese page has some info on running Debian:
+> http://goods.ruten.com.tw/item/show?21507494565008
 
-> https://sites.google.com/site/debiansh4/home
+This one sells for 499 NTD (New Taiwan Dollar) which is just 15 USD.
+Now, I just need to convince the Debian guy from Taiwan to buy these
+for us.
 
-Apparently the name is not "SH-7105" but "ST-7105" and "ST-9150"
-could be a newer version of the SoC.
+Did I mention that I recently just went to Taiwan? If I had only known.
 
 Adrian
 
