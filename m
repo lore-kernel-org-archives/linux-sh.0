@@ -1,29 +1,46 @@
-From: Rich Felker <dalias@libc.org>
-Date: Tue, 22 Mar 2016 20:51:58 +0000
-Subject: Re: FROZEN transition in hotplug notifier
-Message-Id: <20160322205158.GF21636@brightrain.aerifal.cx>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Sun, 27 Mar 2016 12:43:24 +0000
+Subject: Re: Build regressions/improvements in v4.6-rc1
+Message-Id: <CAMuHMdW3dfhZVT0e4tiqsbEPjYYA_hGUXQer1bQDeF2Gbs4WJg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <alpine.DEB.2.11.1603221817270.30089@hypnos>
-In-Reply-To: <alpine.DEB.2.11.1603221817270.30089@hypnos>
+References: <CAMuHMdXx80zs5VoA_aYc_wMn37O=fa6oXk-ovteHq0hGQYUUzg@mail.gmail.com>
+In-Reply-To: <CAMuHMdXx80zs5VoA_aYc_wMn37O=fa6oXk-ovteHq0hGQYUUzg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+Cc: Linux-sh list <linux-sh@vger.kernel.org>, Rich Felker <dalias@libc.org>, Cris <linux-cris-kernel@axis.com>, xfs@oss.sgi.com
 
-On Tue, Mar 22, 2016 at 06:20:48PM +0100, Anna-Maria Gleixner wrote:
-> Hi,
-> 
-> the hotplug notifier in arch/sh/kernel/cpu/sh4a/smp-shx3.c doesn't
-> handle the corresponding FROZEN transitions. Is there a reason for it?
+On Sun, Mar 27, 2016 at 2:39 PM, Geert Uytterhoeven
+<geert@linux-m68k.org> wrote:
+> Below is the list of build error/warning regressions/improvements in
+> v4.6-rc1[1] compared to v4.5[2].
+>
+> Summarized:
+>   - build errors: +9/-6
 
-Hi,
+> [1] http://kisskb.ellerman.id.au/kisskb/head/10114/ (all 262 configs)
+> [2] http://kisskb.ellerman.id.au/kisskb/head/10047/ (all 262 configs)
 
-Is this an issue you're hitting or just something you noticed reading
-the source? Not that this affects the validity of your observation,
-but I have no idea where to get SH-X3 hardware, whether anyone is
-actually using it, and whether such transitions make sense as
-something that can actually happen on the hardware. I'm hoping to pick
-up more legacy SH hardware and documentation to be able to check out
-things like this.
+> 9 error regressions:
+>   + /home/kisskb/slave/src/fs/xfs/xfs_ondisk.h: error: call to
+> '__compiletime_assert_79' declared with attribute error: XFS:
+> sizeof(xfs_attr_shortform_t) is wrong, expected 8:  => 79:2
 
-Rich
+cris-allyesconfig, cris-allmodconfig
+
+>   + error: smp-shx3.c: undefined reference to `local_timer_setup':  =>
+> .text+0xadec)
+
+shx3_defconfig
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
