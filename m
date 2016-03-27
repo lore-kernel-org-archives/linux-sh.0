@@ -1,92 +1,244 @@
-From: Petr Mladek <pmladek@suse.com>
-Date: Wed, 30 Mar 2016 15:53:29 +0000
-Subject: [PATCH v4 4/5] printk/nmi: increase the size of NMI buffer and make it configurable
-Message-Id: <1459353210-20260-5-git-send-email-pmladek@suse.com>
+From: "zhaoxiu.zeng" <zhaoxiu.zeng@gmail.com>
+Date: Sun, 27 Mar 2016 04:02:26 +0000
+Subject: [PATCH 02/31] Include generic parity.h in some architectures' bitops.h
+Message-Id: <56F75B52.5070805@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1459353210-20260-1-git-send-email-pmladek@suse.com>
-In-Reply-To: <1459353210-20260-1-git-send-email-pmladek@suse.com>
+References: <1458788612-4367-1-git-send-email-zhaoxiu.zeng@gmail.com>
+In-Reply-To: <1458788612-4367-1-git-send-email-zhaoxiu.zeng@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Testing has shown that the backtrace sometimes does not fit into the 4kB
-temporary buffer that is used in NMI context.  The warnings are gone when
-I double the temporary buffer size.
+From: Zeng Zhaoxiu <zhaoxiu.zeng@gmail.com>
 
-This patch doubles the buffer size and makes it configurable.
+Use the generic version.
 
-Note that this problem existed even in the x86-specific implementation
-that was added by the commit a9edc8809328 ("x86/nmi: Perform a safe NMI
-stack trace on all CPUs").  Nobody noticed it because it did not print any
-warnings.
-
-Signed-off-by: Petr Mladek <pmladek@suse.com>
-Cc: Jan Kara <jack@suse.cz>
-Cc: Peter Zijlstra <peterz@infradead.org>
-Cc: Steven Rostedt <rostedt@goodmis.org>
-Cc: Russell King <rmk+kernel@arm.linux.org.uk>
-Cc: Daniel Thompson <daniel.thompson@linaro.org>
-Cc: Jiri Kosina <jkosina@suse.com>
-Cc: Ingo Molnar <mingo@redhat.com>
-Cc: Thomas Gleixner <tglx@linutronix.de>
-Cc: Ralf Baechle <ralf@linux-mips.org>
-Cc: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-Cc: Martin Schwidefsky <schwidefsky@de.ibm.com>
-Cc: David Miller <davem@davemloft.net>
-Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+Signed-off-by: Zeng Zhaoxiu <zhaoxiu.zeng@gmail.com>
 ---
- init/Kconfig        | 22 ++++++++++++++++++++++
- kernel/printk/nmi.c |  3 ++-
- 2 files changed, 24 insertions(+), 1 deletion(-)
+ arch/arc/include/asm/bitops.h      | 1 +
+ arch/arm/include/asm/bitops.h      | 1 +
+ arch/arm64/include/asm/bitops.h    | 1 +
+ arch/c6x/include/asm/bitops.h      | 1 +
+ arch/cris/include/asm/bitops.h     | 1 +
+ arch/frv/include/asm/bitops.h      | 1 +
+ arch/h8300/include/asm/bitops.h    | 1 +
+ arch/hexagon/include/asm/bitops.h  | 1 +
+ arch/m32r/include/asm/bitops.h     | 1 +
+ arch/m68k/include/asm/bitops.h     | 1 +
+ arch/metag/include/asm/bitops.h    | 1 +
+ arch/mn10300/include/asm/bitops.h  | 1 +
+ arch/openrisc/include/asm/bitops.h | 1 +
+ arch/parisc/include/asm/bitops.h   | 1 +
+ arch/s390/include/asm/bitops.h     | 1 +
+ arch/sh/include/asm/bitops.h       | 1 +
+ arch/xtensa/include/asm/bitops.h   | 1 +
+ 17 files changed, 17 insertions(+)
 
-diff --git a/init/Kconfig b/init/Kconfig
-index fd10deeefc22..1c9be9396a4a 100644
---- a/init/Kconfig
-+++ b/init/Kconfig
-@@ -861,6 +861,28 @@ config LOG_CPU_MAX_BUF_SHIFT
- 		     13 =>   8 KB for each CPU
- 		     12 =>   4 KB for each CPU
+diff --git a/arch/arc/include/asm/bitops.h b/arch/arc/include/asm/bitops.h
+index 0352fb8..7967e47 100644
+--- a/arch/arc/include/asm/bitops.h
++++ b/arch/arc/include/asm/bitops.h
+@@ -370,6 +370,7 @@ static inline __attribute__ ((const)) int __ffs(unsigned long x)
+ #define ffz(x)	__ffs(~(x))
  
-+config NMI_LOG_BUF_SHIFT
-+	int "Temporary per-CPU NMI log buffer size (12 => 4KB, 13 => 8KB)"
-+	range 10 21
-+	default 13
-+	depends on PRINTK_NMI
-+	help
-+	  Select the size of a per-CPU buffer where NMI messages are temporary
-+	  stored. They are copied to the main log buffer in a safe context
-+	  to avoid a deadlock. The value defines the size as a power of 2.
-+
-+	  NMI messages are rare and limited. The largest one is when
-+	  a backtrace is printed. It usually fits into 4KB. Select
-+	  8KB if you want to be on the safe side.
-+
-+	  Examples:
-+		     17 => 128 KB for each CPU
-+		     16 =>  64 KB for each CPU
-+		     15 =>  32 KB for each CPU
-+		     14 =>  16 KB for each CPU
-+		     13 =>   8 KB for each CPU
-+		     12 =>   4 KB for each CPU
-+
- #
- # Architectures with an unreliable sched_clock() should select this:
- #
-diff --git a/kernel/printk/nmi.c b/kernel/printk/nmi.c
-index 572f94922230..bf08557d7e3d 100644
---- a/kernel/printk/nmi.c
-+++ b/kernel/printk/nmi.c
-@@ -41,7 +41,8 @@ DEFINE_PER_CPU(printk_func_t, printk_func) = vprintk_default;
- static int printk_nmi_irq_ready;
- atomic_t nmi_message_lost;
+ #include <asm-generic/bitops/hweight.h>
++#include <asm-generic/bitops/parity.h>
+ #include <asm-generic/bitops/fls64.h>
+ #include <asm-generic/bitops/sched.h>
+ #include <asm-generic/bitops/lock.h>
+diff --git a/arch/arm/include/asm/bitops.h b/arch/arm/include/asm/bitops.h
+index e943e6c..99f28a6 100644
+--- a/arch/arm/include/asm/bitops.h
++++ b/arch/arm/include/asm/bitops.h
+@@ -313,6 +313,7 @@ static inline unsigned long __ffs(unsigned long x)
  
--#define NMI_LOG_BUF_LEN (4096 - sizeof(atomic_t) - sizeof(struct irq_work))
-+#define NMI_LOG_BUF_LEN ((1 << CONFIG_NMI_LOG_BUF_SHIFT) -		\
-+			 sizeof(atomic_t) - sizeof(struct irq_work))
+ #include <asm-generic/bitops/sched.h>
+ #include <asm-generic/bitops/hweight.h>
++#include <asm-generic/bitops/parity.h>
+ #include <asm-generic/bitops/lock.h>
  
- struct nmi_seq_buf {
- 	atomic_t		len;	/* length of written data */
+ #ifdef __ARMEB__
+diff --git a/arch/arm64/include/asm/bitops.h b/arch/arm64/include/asm/bitops.h
+index 9c19594..eac4965 100644
+--- a/arch/arm64/include/asm/bitops.h
++++ b/arch/arm64/include/asm/bitops.h
+@@ -44,6 +44,7 @@ extern int test_and_change_bit(int nr, volatile unsigned long *p);
+ 
+ #include <asm-generic/bitops/sched.h>
+ #include <asm-generic/bitops/hweight.h>
++#include <asm-generic/bitops/parity.h>
+ #include <asm-generic/bitops/lock.h>
+ 
+ #include <asm-generic/bitops/non-atomic.h>
+diff --git a/arch/c6x/include/asm/bitops.h b/arch/c6x/include/asm/bitops.h
+index f0ab012..94eb0d1 100644
+--- a/arch/c6x/include/asm/bitops.h
++++ b/arch/c6x/include/asm/bitops.h
+@@ -87,6 +87,7 @@ static inline int ffs(int x)
+ 
+ #include <asm-generic/bitops/sched.h>
+ #include <asm-generic/bitops/hweight.h>
++#include <asm-generic/bitops/parity.h>
+ #include <asm-generic/bitops/lock.h>
+ 
+ #include <asm-generic/bitops/atomic.h>
+diff --git a/arch/cris/include/asm/bitops.h b/arch/cris/include/asm/bitops.h
+index 8062cb5..06bc246 100644
+--- a/arch/cris/include/asm/bitops.h
++++ b/arch/cris/include/asm/bitops.h
+@@ -36,6 +36,7 @@
+ #include <asm-generic/bitops/__fls.h>
+ #include <asm-generic/bitops/fls64.h>
+ #include <asm-generic/bitops/hweight.h>
++#include <asm-generic/bitops/parity.h>
+ #include <asm-generic/bitops/find.h>
+ #include <asm-generic/bitops/lock.h>
+ 
+diff --git a/arch/frv/include/asm/bitops.h b/arch/frv/include/asm/bitops.h
+index 0df8e95..f2a7ee8 100644
+--- a/arch/frv/include/asm/bitops.h
++++ b/arch/frv/include/asm/bitops.h
+@@ -314,6 +314,7 @@ int __ilog2_u64(u64 n)
+ 
+ #include <asm-generic/bitops/sched.h>
+ #include <asm-generic/bitops/hweight.h>
++#include <asm-generic/bitops/parity.h>
+ #include <asm-generic/bitops/lock.h>
+ 
+ #include <asm-generic/bitops/le.h>
+diff --git a/arch/h8300/include/asm/bitops.h b/arch/h8300/include/asm/bitops.h
+index 05999ab..e392db2 100644
+--- a/arch/h8300/include/asm/bitops.h
++++ b/arch/h8300/include/asm/bitops.h
+@@ -172,6 +172,7 @@ static inline unsigned long __ffs(unsigned long word)
+ #include <asm-generic/bitops/find.h>
+ #include <asm-generic/bitops/sched.h>
+ #include <asm-generic/bitops/hweight.h>
++#include <asm-generic/bitops/parity.h>
+ #include <asm-generic/bitops/lock.h>
+ #include <asm-generic/bitops/le.h>
+ #include <asm-generic/bitops/ext2-atomic.h>
+diff --git a/arch/hexagon/include/asm/bitops.h b/arch/hexagon/include/asm/bitops.h
+index 5e4a59b..2df614e 100644
+--- a/arch/hexagon/include/asm/bitops.h
++++ b/arch/hexagon/include/asm/bitops.h
+@@ -290,6 +290,7 @@ static inline unsigned long __fls(unsigned long word)
+ #include <asm-generic/bitops/fls64.h>
+ #include <asm-generic/bitops/sched.h>
+ #include <asm-generic/bitops/hweight.h>
++#include <asm-generic/bitops/parity.h>
+ 
+ #include <asm-generic/bitops/le.h>
+ #include <asm-generic/bitops/ext2-atomic.h>
+diff --git a/arch/m32r/include/asm/bitops.h b/arch/m32r/include/asm/bitops.h
+index 86ba2b4..e3cf46b 100644
+--- a/arch/m32r/include/asm/bitops.h
++++ b/arch/m32r/include/asm/bitops.h
+@@ -259,6 +259,7 @@ static __inline__ int test_and_change_bit(int nr, volatile void * addr)
+ #include <asm-generic/bitops/find.h>
+ #include <asm-generic/bitops/ffs.h>
+ #include <asm-generic/bitops/hweight.h>
++#include <asm-generic/bitops/parity.h>
+ #include <asm-generic/bitops/lock.h>
+ 
+ #endif /* __KERNEL__ */
+diff --git a/arch/m68k/include/asm/bitops.h b/arch/m68k/include/asm/bitops.h
+index b4a9b0d..fd673ea 100644
+--- a/arch/m68k/include/asm/bitops.h
++++ b/arch/m68k/include/asm/bitops.h
+@@ -519,6 +519,7 @@ static inline int __fls(int x)
+ #include <asm-generic/bitops/fls64.h>
+ #include <asm-generic/bitops/sched.h>
+ #include <asm-generic/bitops/hweight.h>
++#include <asm-generic/bitops/parity.h>
+ #include <asm-generic/bitops/lock.h>
+ #endif /* __KERNEL__ */
+ 
+diff --git a/arch/metag/include/asm/bitops.h b/arch/metag/include/asm/bitops.h
+index 2671134..ad13087 100644
+--- a/arch/metag/include/asm/bitops.h
++++ b/arch/metag/include/asm/bitops.h
+@@ -118,6 +118,7 @@ static inline int test_and_change_bit(unsigned int bit,
+ #include <asm-generic/bitops/__fls.h>
+ #include <asm-generic/bitops/fls64.h>
+ #include <asm-generic/bitops/hweight.h>
++#include <asm-generic/bitops/parity.h>
+ #include <asm-generic/bitops/lock.h>
+ #include <asm-generic/bitops/sched.h>
+ #include <asm-generic/bitops/le.h>
+diff --git a/arch/mn10300/include/asm/bitops.h b/arch/mn10300/include/asm/bitops.h
+index fe6f8e2..60761b7 100644
+--- a/arch/mn10300/include/asm/bitops.h
++++ b/arch/mn10300/include/asm/bitops.h
+@@ -225,6 +225,7 @@ int ffs(int x)
+ #include <asm-generic/bitops/find.h>
+ #include <asm-generic/bitops/sched.h>
+ #include <asm-generic/bitops/hweight.h>
++#include <asm-generic/bitops/parity.h>
+ #include <asm-generic/bitops/ext2-atomic-setbit.h>
+ #include <asm-generic/bitops/le.h>
+ 
+diff --git a/arch/openrisc/include/asm/bitops.h b/arch/openrisc/include/asm/bitops.h
+index 3003cda..8c97642 100644
+--- a/arch/openrisc/include/asm/bitops.h
++++ b/arch/openrisc/include/asm/bitops.h
+@@ -43,6 +43,7 @@
+ #include <asm-generic/bitops/sched.h>
+ #include <asm/bitops/ffs.h>
+ #include <asm-generic/bitops/hweight.h>
++#include <asm-generic/bitops/parity.h>
+ #include <asm-generic/bitops/lock.h>
+ 
+ #include <asm-generic/bitops/atomic.h>
+diff --git a/arch/parisc/include/asm/bitops.h b/arch/parisc/include/asm/bitops.h
+index 3f9406d..867ba10 100644
+--- a/arch/parisc/include/asm/bitops.h
++++ b/arch/parisc/include/asm/bitops.h
+@@ -211,6 +211,7 @@ static __inline__ int fls(int x)
+ #include <asm-generic/bitops/__fls.h>
+ #include <asm-generic/bitops/fls64.h>
+ #include <asm-generic/bitops/hweight.h>
++#include <asm-generic/bitops/parity.h>
+ #include <asm-generic/bitops/lock.h>
+ #include <asm-generic/bitops/sched.h>
+ 
+diff --git a/arch/s390/include/asm/bitops.h b/arch/s390/include/asm/bitops.h
+index 8043f10..198eead 100644
+--- a/arch/s390/include/asm/bitops.h
++++ b/arch/s390/include/asm/bitops.h
+@@ -460,6 +460,7 @@ static inline int fls(int word)
+ #include <asm-generic/bitops/ffz.h>
+ #include <asm-generic/bitops/find.h>
+ #include <asm-generic/bitops/hweight.h>
++#include <asm-generic/bitops/parity.h>
+ #include <asm-generic/bitops/sched.h>
+ #include <asm-generic/bitops/le.h>
+ #include <asm-generic/bitops/ext2-atomic-setbit.h>
+diff --git a/arch/sh/include/asm/bitops.h b/arch/sh/include/asm/bitops.h
+index fc8e652..4bf0c35 100644
+--- a/arch/sh/include/asm/bitops.h
++++ b/arch/sh/include/asm/bitops.h
+@@ -86,6 +86,7 @@ static inline unsigned long ffz(unsigned long word)
+ #include <asm-generic/bitops/find.h>
+ #include <asm-generic/bitops/ffs.h>
+ #include <asm-generic/bitops/hweight.h>
++#include <asm-generic/bitops/parity.h>
+ #include <asm-generic/bitops/lock.h>
+ #include <asm-generic/bitops/sched.h>
+ #include <asm-generic/bitops/le.h>
+diff --git a/arch/xtensa/include/asm/bitops.h b/arch/xtensa/include/asm/bitops.h
+index 3f44fa2..981fa83 100644
+--- a/arch/xtensa/include/asm/bitops.h
++++ b/arch/xtensa/include/asm/bitops.h
+@@ -229,6 +229,7 @@ test_and_change_bit(unsigned int bit, volatile unsigned long *p)
+ #include <asm-generic/bitops/ext2-atomic-setbit.h>
+ 
+ #include <asm-generic/bitops/hweight.h>
++#include <asm-generic/bitops/parity.h>
+ #include <asm-generic/bitops/lock.h>
+ #include <asm-generic/bitops/sched.h>
+ 
 -- 
-1.8.5.6
+2.5.5
 
