@@ -1,60 +1,117 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 17 Mar 2016 13:47:24 +0000
-Subject: [PATCH/RFC 0/5] serial: sh-sci: Hardware Flow Control Updates
-Message-Id: <1458222449-12324-1-git-send-email-geert+renesas@glider.be>
+From: Petr Mladek <pmladek@suse.com>
+Date: Wed, 30 Mar 2016 15:53:25 +0000
+Subject: [PATCH v4 0/5] Cleaning printk stuff in NMI context
+Message-Id: <1459353210-20260-1-git-send-email-pmladek@suse.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>, Peter Hurley <peter@hurleysoftware.com>, Magnus Damm <magnus.damm@gmail.com>
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-serial@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arm-kernel@lists.infradead.org
 
-	Hi all,
+This patch set generalizes the already existing solution for
+printing NMI messages. The main idea comes from Peter Zijlstra.
 
-This RFC patch series contains updates to the Renesas SCI UART driver,
-related to hardware flow control:
-  - Device Tree binding updates for GPIO-controlled modem lines, and for
-    dedicated RTS/CTS modem lines,
-  - Driver support for GPIO-controlled modem lines, using the
-    SERIAL_MCTRL_GPIO helpers,
-  - Some preparations for fixing hardware-assisted flow control using
-    the dedicated RTS/CTS modem lines later.
+v4 adds one more patch that flushes NNI buffers when the system
+is panicing. Otherwise, it is almost the same as the last version
+in the -mm tree, see changes below for more details
 
-This was tested on r8a7791/koelsch, using UART and GPIO pins on expansion
-connectors (I've pushed a few more DT overlays for testing to the
-topic/renesas-overlays branch of
-https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git)
+There is a trivial conflict with Sergey's v8 of async printk,
+see http://thread.gmane.org/gmane.linux.kernel/2183611
+In short, we must handle console in vprintk_emit() neither in sched
+nor in nmi. Therefore we need the line
 
-Testing for regressions on platforms without DT and/or GPIOLIB support
-(SuperH) would be appreciated.
-Compile-tested on ecovec24_defconfig(GPIOLIB=y) and se7780_defconfig
-(GPIOLIB=n).
+	if (!in_sched && !deferred_console_in_nmi()) {
 
-Thanks for your comments!
 
-Geert Uytterhoeven (5):
-  serial: sh-sci: Update DT binding documentation for GPIO modem lines
-  serial: sh-sci: Update DT binding documentation for dedicated RTS/CTS
-  serial: sh-sci: Always set TIOCM_CTS in .get_mctrl() callback
-  serial: sh-sci: Add support for GPIO-controlled modem lines
-  serial: sh-sci: Replace SCIx_HAVE_RTSCTS by standard UPF_HARD_FLOW
+There are move conflicts with the nmi_backtrace improvements
+from Chris Metcalf, see
+ http://marc.info/?l=linux-kernel&m5866814901740&w=2
+Feel free to ask me to resolve them.
 
- .../bindings/serial/renesas,sci-serial.txt         |  8 +++++
- drivers/tty/serial/Kconfig                         |  1 +
- drivers/tty/serial/sh-sci.c                        | 41 +++++++++++++++++++---
- include/linux/serial_sci.h                         |  6 ----
- 4 files changed, 46 insertions(+), 10 deletions(-)
+
+Changes against v3:
+
+  + merged all small changes from -mm tree, including commit
+    descriptions
+
+  + disabled interrupts when taking the read_lock in __printk_nmi_flush();
+    printk_nmi_flush() might be called from any context; reported
+    by lockdep
+
+  + never introduce NEED_PRINTK_NMI; in -mm tree was introduced
+    in 1st patch and removed in the 4th one
+
+  + flush NMI buffers when the system goes down (new 5th patch);
+    addresses Daniel's concerns
+
+
+Changes against v2:
+
+  + fixed compilation problems reported by 0-day build robot
+
+  + MN10300 and Xtensa architectures will get handled separately
+
+  + dropped the patch that printed NMI messages directly when Oops
+    in progress; it made the solution less reliable
+
+  + made the size of the buffer configurable; use real numbers
+    instead of PAGE_SIZE
+
+
+Changes against v1:
+
+  + rebased on top of 4.4-rc2; there the old implementation was
+    moved to lib/nmi_backtrace.c and used also on arm; I hope that
+    I got the arm side correctly; I was not able to test on arm :-(
+
+  + defined HAVE_NMI on arm for !CPU_V7M instead of !CPU_V7;
+    handle_fiq_as_nmi() is called from entry-armv.S that
+    is compiled when !CPU_V7M
+
+  + defined HAVE_NMI also on mips; it calls nmi_enter() and
+    seems to have real NMIs (or am I wrong?)
+
+  + serialized backtraces when printing directly
+    (oops_in_progress)
+
+
+Petr Mladek (5):
+  printk/nmi: generic solution for safe printk in NMI
+  printk/nmi: use IRQ work only when ready
+  printk/nmi: warn when some message has been lost in NMI context
+  printk/nmi: increase the size of NMI buffer and make it configurable
+  printk/nmi: flush NMI messages on the system panic
+
+ arch/Kconfig                  |   4 +
+ arch/arm/Kconfig              |   1 +
+ arch/arm/kernel/smp.c         |   2 +
+ arch/avr32/Kconfig            |   1 +
+ arch/blackfin/Kconfig         |   1 +
+ arch/cris/Kconfig             |   1 +
+ arch/mips/Kconfig             |   1 +
+ arch/powerpc/Kconfig          |   1 +
+ arch/s390/Kconfig             |   1 +
+ arch/sh/Kconfig               |   1 +
+ arch/sparc/Kconfig            |   1 +
+ arch/tile/Kconfig             |   1 +
+ arch/x86/Kconfig              |   1 +
+ arch/x86/kernel/apic/hw_nmi.c |   1 -
+ include/linux/hardirq.h       |   2 +
+ include/linux/percpu.h        |   3 -
+ include/linux/printk.h        |  16 ++-
+ init/Kconfig                  |  27 +++++
+ init/main.c                   |   1 +
+ kernel/kexec_core.c           |   1 +
+ kernel/panic.c                |   6 +-
+ kernel/printk/Makefile        |   1 +
+ kernel/printk/internal.h      |  57 ++++++++++
+ kernel/printk/nmi.c           | 258 ++++++++++++++++++++++++++++++++++++++++++
+ kernel/printk/printk.c        |  43 +++----
+ lib/nmi_backtrace.c           |  89 +--------------
+ 26 files changed, 411 insertions(+), 111 deletions(-)
+ create mode 100644 kernel/printk/internal.h
+ create mode 100644 kernel/printk/nmi.c
 
 -- 
-1.9.1
+1.8.5.6
 
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
