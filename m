@@ -1,40 +1,23 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Thu, 03 Mar 2016 09:33:26 +0000
-Subject: RE: [PATCH] usb: renesas_usbhs: gadget: fix giveback status code in usbhsg_pipe_disable()
-Message-Id: <SG2PR06MB0919361A4A677B3DDD4CAFC9D8BD0@SG2PR06MB0919.apcprd06.prod.outlook.com>
+From: Peter Zijlstra <peterz@infradead.org>
+Date: Wed, 30 Mar 2016 13:32:17 +0000
+Subject: Re: [PATCH 0/11] introduce down_write_killable for rw_semaphore
+Message-Id: <20160330133217.GV3408@twins.programming.kicks-ass.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1451042763-4648-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1451042763-4648-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+References: <1456750705-7141-1-git-send-email-mhocko@kernel.org>
+In-Reply-To: <1456750705-7141-1-git-send-email-mhocko@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Michal Hocko <mhocko@kernel.org>
+Cc: LKML <linux-kernel@vger.kernel.org>, Ingo Molnar <mingo@redhat.com>, Thomas Gleixner <tglx@linutronix.de>, "H. Peter Anvin" <hpa@zytor.com>, "David S. Miller" <davem@davemloft.net>, Tony Luck <tony.luck@intel.com>, Andrew Morton <akpm@linux-foundation.org>, Chris Zankel <chris@zankel.net>, Max Filippov <jcmvbkbc@gmail.com>, x86@kernel.org, linux-alpha@vger.kernel.org, linux-ia64@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-arch@vger.kernel.org
 
-Hi Felipe,
+On Mon, Feb 29, 2016 at 01:58:14PM +0100, Michal Hocko wrote:
+> I have tested on x86 with OOM situations with high mmap_sem contention
+> (basically many parallel page faults racing with many parallel mmap/munmap
+> tight loops) so the waiters for the write locks are routinely interrupted
+> by SIGKILL.
 
-> From: Felipe Balbi [mailto:balbi@kernel.org]
-> Sent: Thursday, March 03, 2016 6:22 PM
-> 
-> Hi Yoshihiro,
-> 
-> Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com> writes:
-> > [ text/plain ]
-> > Hi Felipe,
-> >
-> > Oops, I completely forgot this patch.
-> > Would you review this patch? Or should I resend it?
-> > I confirmed that this patch could be applied on your latest
-> > testing/fixes branch.
-> 
-> I don't seem to have the original patch in my inbox. Would you mind
-> resending ?
+Aside from the one niggle (as per the other email) they look good to me
+and I would take them through the tip/locking tree.
 
-Sure. I will resend this patch soon.
-
-Best regards,
-Yoshihiro Shimoda
-
-> Thanks
-> 
-> --
-> balbi
+Thanks!
