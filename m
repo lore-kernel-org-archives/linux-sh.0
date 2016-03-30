@@ -1,166 +1,198 @@
-From: Rich Felker <dalias@libc.org>
-Date: Thu, 17 Mar 2016 23:12:12 +0000
-Subject: [PATCH v6 2/2] irqchip: add J-Core AIC driver
-Message-Id: <c3b89ef74aaa6477575dbe2d410eb1d182503243.1470186529.git.dalias@libc.org>
+From: Petr Mladek <pmladek@suse.com>
+Date: Wed, 30 Mar 2016 15:53:30 +0000
+Subject: [PATCH v4 5/5] printk/nmi: flush NMI messages on the system panic
+Message-Id: <1459353210-20260-6-git-send-email-pmladek@suse.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1470186529.git.dalias@libc.org>
-In-Reply-To: <cover.1470186529.git.dalias-8zAoT0mYgF4@public.gmane.org>
+References: <1459353210-20260-1-git-send-email-pmladek@suse.com>
+In-Reply-To: <1459353210-20260-1-git-send-email-pmladek@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Jason Cooper <jason-NLaQJdtUoK4Be96aLqz0jA@public.gmane.org>, Marc Zyngier <marc.zyngier-5wv7dgnIgG8@public.gmane.org>, Rob Herring <robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Mark Rutland <mark.rutland-5wv7dgnIgG8@public.gmane.org>
+To: linux-arm-kernel@lists.infradead.org
 
-There are two versions of the J-Core interrupt controller in use, aic1
-which generates interrupts with programmable priorities, but only
-supports 8 irq lines and maps them to cpu traps in the range 17 to 24,
-and aic2 which uses traps in the range 64-127 and supports up to 128
-irqs, with priorities dependent on the interrupt number. The Linux
-driver does not make use of priorities anyway.
+In NMI context, printk() messages are stored into per-CPU buffers to avoid
+a possible deadlock.  They are normally flushed to the main ring buffer via
+an IRQ work.  But the work is never called when the system calls panic() in
+the very same NMI handler.
 
-For simplicity, there is no aic1-specific logic in the driver beyond
-setting the priority register, which is necessary for interrupts to
-work at all. Eventually aic1 will likely be phased out, but it's
-currently in use in deployments and all released bitstream binaries.
+This patch tries to flush NMI buffers before the crash dump is generated.
+In this case it does not risk a double release and bails out when the
+logbuf_lock is already taken.  The aim is to get the messages into the main
+ring buffer when possible.  It makes them better accessible in the vmcore.
 
-Signed-off-by: Rich Felker <dalias@libc.org>
+Then the patch tries to flush the buffers second time when other CPUs are
+down.  It might be more aggressive and reset logbuf_lock. The aim is to
+get the messages available for the consequent kmsg_dump() and
+console_flush_on_panic() calls.
+
+The patch causes vprintk_emit() to be called even in NMI context again. But
+we do not want to call consoles in this case.  They might use internal
+locks and we could not prevent a deadlock easily.  We only want to have the
+messages in the main ring buffer for crash dump and kmsg_dump().  The
+consoles are explicitly called later by console_flush_on_panic().
+
+Signed-off-by: Petr Mladek <pmladek@suse.com>
 ---
- drivers/irqchip/Kconfig         |  7 +++
- drivers/irqchip/Makefile        |  1 +
- drivers/irqchip/irq-jcore-aic.c | 94 +++++++++++++++++++++++++++++++++++++++++
- 3 files changed, 102 insertions(+)
- create mode 100644 drivers/irqchip/irq-jcore-aic.c
+ include/linux/printk.h   |  4 ++++
+ kernel/kexec_core.c      |  1 +
+ kernel/panic.c           |  6 +++++-
+ kernel/printk/internal.h |  2 ++
+ kernel/printk/nmi.c      | 35 +++++++++++++++++++++++++++++++++++
+ kernel/printk/printk.c   | 14 +++++++++++---
+ 6 files changed, 58 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/irqchip/Kconfig b/drivers/irqchip/Kconfig
-index 5495a5b..ab84ce3 100644
---- a/drivers/irqchip/Kconfig
-+++ b/drivers/irqchip/Kconfig
-@@ -156,6 +156,13 @@ config PIC32_EVIC
- 	select GENERIC_IRQ_CHIP
- 	select IRQ_DOMAIN
+diff --git a/include/linux/printk.h b/include/linux/printk.h
+index 51dd6b824fe2..2da06c2a63c3 100644
+--- a/include/linux/printk.h
++++ b/include/linux/printk.h
+@@ -123,15 +123,19 @@ void early_printk(const char *s, ...) { }
+ #endif
  
-+config JCORE_AIC
-+	bool "J-Core integrated AIC"
-+	depends on OF && (SUPERH || COMPILE_TEST)
-+	select IRQ_DOMAIN
-+	help
-+	  Support for the J-Core integrated AIC.
+ #ifdef CONFIG_PRINTK_NMI
++#define deferred_console_in_nmi() in_nmi()
+ extern void printk_nmi_init(void);
+ extern void printk_nmi_enter(void);
+ extern void printk_nmi_exit(void);
+ extern void printk_nmi_flush(void);
++extern void printk_nmi_flush_on_panic(void);
+ #else
++#define deferred_console_in_nmi() 0
+ static inline void printk_nmi_init(void) { }
+ static inline void printk_nmi_enter(void) { }
+ static inline void printk_nmi_exit(void) { }
+ static inline void printk_nmi_flush(void) { }
++static inline void printk_nmi_flush_on_panic(void) { }
+ #endif /* PRINTK_NMI */
+ 
+ #ifdef CONFIG_PRINTK
+diff --git a/kernel/kexec_core.c b/kernel/kexec_core.c
+index 8d34308ea449..1dc3fe8495e0 100644
+--- a/kernel/kexec_core.c
++++ b/kernel/kexec_core.c
+@@ -893,6 +893,7 @@ void crash_kexec(struct pt_regs *regs)
+ 	old_cpu = atomic_cmpxchg(&panic_cpu, PANIC_CPU_INVALID, this_cpu);
+ 	if (old_cpu = PANIC_CPU_INVALID) {
+ 		/* This is the 1st CPU which comes here, so go ahead. */
++		printk_nmi_flush_on_panic();
+ 		__crash_kexec(regs);
+ 
+ 		/*
+diff --git a/kernel/panic.c b/kernel/panic.c
+index 535c96510a44..8aa74497cc5a 100644
+--- a/kernel/panic.c
++++ b/kernel/panic.c
+@@ -160,8 +160,10 @@ void panic(const char *fmt, ...)
+ 	 *
+ 	 * Bypass the panic_cpu check and call __crash_kexec directly.
+ 	 */
+-	if (!crash_kexec_post_notifiers)
++	if (!crash_kexec_post_notifiers) {
++		printk_nmi_flush_on_panic();
+ 		__crash_kexec(NULL);
++	}
+ 
+ 	/*
+ 	 * Note smp_send_stop is the usual smp shutdown function, which
+@@ -176,6 +178,8 @@ void panic(const char *fmt, ...)
+ 	 */
+ 	atomic_notifier_call_chain(&panic_notifier_list, 0, buf);
+ 
++	/* Call flush even twice. It tries harder with a single online CPU */
++	printk_nmi_flush_on_panic();
+ 	kmsg_dump(KMSG_DUMP_PANIC);
+ 
+ 	/*
+diff --git a/kernel/printk/internal.h b/kernel/printk/internal.h
+index 341bedccc065..7fd2838fa417 100644
+--- a/kernel/printk/internal.h
++++ b/kernel/printk/internal.h
+@@ -22,6 +22,8 @@ int __printf(1, 0) vprintk_default(const char *fmt, va_list args);
+ 
+ #ifdef CONFIG_PRINTK_NMI
+ 
++extern raw_spinlock_t logbuf_lock;
 +
- config RENESAS_INTC_IRQPIN
- 	bool
- 	select IRQ_DOMAIN
-diff --git a/drivers/irqchip/Makefile b/drivers/irqchip/Makefile
-index 4c203b6..ee7e3ca 100644
---- a/drivers/irqchip/Makefile
-+++ b/drivers/irqchip/Makefile
-@@ -40,6 +40,7 @@ obj-$(CONFIG_I8259)			+= irq-i8259.o
- obj-$(CONFIG_IMGPDC_IRQ)		+= irq-imgpdc.o
- obj-$(CONFIG_IRQ_MIPS_CPU)		+= irq-mips-cpu.o
- obj-$(CONFIG_SIRF_IRQ)			+= irq-sirfsoc.o
-+obj-$(CONFIG_JCORE_AIC)			+= irq-jcore-aic.o
- obj-$(CONFIG_RENESAS_INTC_IRQPIN)	+= irq-renesas-intc-irqpin.o
- obj-$(CONFIG_RENESAS_IRQC)		+= irq-renesas-irqc.o
- obj-$(CONFIG_VERSATILE_FPGA_IRQ)	+= irq-versatile-fpga.o
-diff --git a/drivers/irqchip/irq-jcore-aic.c b/drivers/irqchip/irq-jcore-aic.c
-new file mode 100644
-index 0000000..5e5e3bb
---- /dev/null
-+++ b/drivers/irqchip/irq-jcore-aic.c
-@@ -0,0 +1,94 @@
-+/*
-+ * J-Core SoC AIC driver
+ /*
+  * printk() could not take logbuf_lock in NMI context. Instead,
+  * it temporary stores the strings into a per-CPU buffer.
+diff --git a/kernel/printk/nmi.c b/kernel/printk/nmi.c
+index bf08557d7e3d..69b0c67ca2b2 100644
+--- a/kernel/printk/nmi.c
++++ b/kernel/printk/nmi.c
+@@ -194,6 +194,41 @@ void printk_nmi_flush(void)
+ 		__printk_nmi_flush(&per_cpu(nmi_print_seq, cpu).work);
+ }
+ 
++/**
++ * printk_nmi_flush_on_panic - flush all per-cpu nmi buffers when the system
++ *	goes down.
 + *
-+ * Copyright (C) 2015-2016 Smart Energy Instruments, Inc.
++ * Similar to printk_nmi_flush() but it can be called even in NMI context when
++ * the system goes down. It does the best effort to get NMI messages into
++ * the main ring buffer.
 + *
-+ * This file is subject to the terms and conditions of the GNU General Public
-+ * License.  See the file "COPYING" in the main directory of this archive
-+ * for more details.
++ * Note that it could try harder when there is only one CPU online.
 + */
-+
-+#include <linux/irq.h>
-+#include <linux/io.h>
-+#include <linux/irqchip.h>
-+#include <linux/irqdomain.h>
-+#include <linux/cpu.h>
-+#include <linux/of.h>
-+#include <linux/of_address.h>
-+#include <linux/of_irq.h>
-+
-+#define JCORE_AIC_MAX_HWIRQ	127
-+#define JCORE_AIC1_MIN_HWIRQ	16
-+#define JCORE_AIC2_MIN_HWIRQ	64
-+
-+#define JCORE_AIC1_INTPRI_REG	8
-+
-+static struct irq_chip jcore_aic;
-+
-+static int jcore_aic_irqdomain_map(struct irq_domain *d, unsigned int irq,
-+				   irq_hw_number_t hwirq)
++void printk_nmi_flush_on_panic(void)
 +{
-+	struct irq_chip *aic = d->host_data;
++	if (in_nmi()) {
++		/*
++		 * Make sure that we could access the main ring buffer.
++		 * Do not risk a double release when more CPUs are up.
++		 */
++		if (raw_spin_is_locked(&logbuf_lock)) {
++			if (num_online_cpus() > 1)
++				return;
 +
-+	irq_set_chip_and_handler(irq, aic, handle_simple_irq);
-+
-+	return 0;
-+}
-+
-+static const struct irq_domain_ops jcore_aic_irqdomain_ops = {
-+	.map = jcore_aic_irqdomain_map,
-+	.xlate = irq_domain_xlate_onecell,
-+};
-+
-+static void noop(struct irq_data *data)
-+{
-+}
-+
-+int __init aic_irq_of_init(struct device_node *node, struct device_node *parent)
-+{
-+	unsigned min_irq = JCORE_AIC2_MIN_HWIRQ;
-+	unsigned dom_sz = JCORE_AIC_MAX_HWIRQ+1;
-+	struct irq_domain *domain;
-+
-+	pr_info("Initializing J-Core AIC\n");
-+
-+	/* AIC1 needs priority initialization to receive interrupts. */
-+	if (of_device_is_compatible(node, "jcore,aic1")) {
-+		unsigned cpu;
-+
-+		for_each_present_cpu(cpu) {
-+			void __iomem *base = of_iomap(node, cpu);
-+
-+			if (!base) {
-+				pr_err("Unable to map AIC for cpu %u\n", cpu);
-+				return -ENOMEM;
-+			}
-+			__raw_writel(0xffffffff, base + JCORE_AIC1_INTPRI_REG);
-+			iounmap(base);
++			debug_locks_off();
++			raw_spin_lock_init(&logbuf_lock);
 +		}
-+		min_irq = JCORE_AIC1_MIN_HWIRQ;
++
++		/*
++		 * Flush the messages using the default printk handler
++		 * to store them into the main ring buffer.
++		 */
++		this_cpu_write(printk_func, vprintk_default);
 +	}
 +
-+	/*
-+	 * The irq chip framework requires either mask/unmask or enable/disable
-+	 * function pointers to be provided, but the hardware does not have any
-+	 * such mechanism; the only interrupt masking is at the cpu level and
-+	 * it affects all interrupts. We provide dummy mask/unmask. The hardware
-+	 * handles all interrupt control and clears pending status when the cpu
-+	 * accepts the interrupt.
-+	 */
-+	jcore_aic.irq_mask = noop;
-+	jcore_aic.irq_unmask = noop;
-+	jcore_aic.name = "AIC";
-+
-+	domain = irq_domain_add_linear(node, dom_sz, &jcore_aic_irqdomain_ops,
-+				       &jcore_aic);
-+	if (!domain)
-+		return -ENOMEM;
-+	irq_create_strict_mappings(domain, min_irq, min_irq, dom_sz - min_irq);
-+
-+	return 0;
++	printk_nmi_flush();
 +}
 +
-+IRQCHIP_DECLARE(jcore_aic2, "jcore,aic2", aic_irq_of_init);
-+IRQCHIP_DECLARE(jcore_aic1, "jcore,aic1", aic_irq_of_init);
+ void __init printk_nmi_init(void)
+ {
+ 	int cpu;
+diff --git a/kernel/printk/printk.c b/kernel/printk/printk.c
+index e38579d730f4..bf84df2eb3b6 100644
+--- a/kernel/printk/printk.c
++++ b/kernel/printk/printk.c
+@@ -245,7 +245,7 @@ __packed __aligned(4)
+  * within the scheduler's rq lock. It must be released before calling
+  * console_unlock() or anything else that might wake up a process.
+  */
+-static DEFINE_RAW_SPINLOCK(logbuf_lock);
++DEFINE_RAW_SPINLOCK(logbuf_lock);
+ 
+ #ifdef CONFIG_PRINTK
+ DECLARE_WAIT_QUEUE_HEAD(log_wait);
+@@ -1764,8 +1764,16 @@ asmlinkage int vprintk_emit(int facility, int level,
+ 	lockdep_on();
+ 	local_irq_restore(flags);
+ 
+-	/* If called from the scheduler, we can not call up(). */
+-	if (!in_sched) {
++	/*
++	 * Console calls must be deferred when called from the scheduler.
++	 *
++	 * Many architectures never call vprintk_emit() in NMI context,
++	 * see vprintk_nmi(). The only exception is when the NMI buffers
++	 * are flushed on panic. In this case, the consoles are called
++	 * later explicitly only when crashdump does not work, see
++	 * console_flush_on_panic().
++	 */
++	if (!in_sched && !deferred_console_in_nmi()) {
+ 		lockdep_off();
+ 		/*
+ 		 * Try to acquire and then immediately release the console
 -- 
-2.8.1
+1.8.5.6
 
