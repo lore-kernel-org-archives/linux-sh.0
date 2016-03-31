@@ -1,112 +1,73 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 31 Mar 2016 21:02:56 +0000
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Thu, 31 Mar 2016 22:48:38 +0000
 Subject: Re: [PATCH v3 09/11] i2c: rcar: revoke START request early
-Message-Id: <56FD9080.4090203@cogentembedded.com>
+Message-Id: <20160331224838.GA7381@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="7AUc2qLy4jB3hD7Z"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1447948611-2615-1-git-send-email-wsa@the-dreams.de>
  <1447948611-2615-10-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1447948611-2615-10-git-send-email-wsa@the-dreams.de>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Wolfram Sang <wsa@the-dreams.de>, linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, "stable@vger.kernel.org" <stable@vger.kernel.org>, "linux-renesas-soc@vger.kernel.org" <linux-renesas-soc@vger.kernel.org>
+ <56FD9080.4090203@cogentembedded.com>
+In-Reply-To: <56FD9080.4090203@cogentembedded.com>
+To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Cc: linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, "stable@vger.kernel.org" <stable@vger.kernel.org>, "linux-renesas-soc@vger.kernel.org" <linux-renesas-soc@vger.kernel.org>
 
-Hello.
 
-On 11/19/2015 06:56 PM, Wolfram Sang wrote:
+--7AUc2qLy4jB3hD7Z
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-> From: Wolfram Sang <wsa+renesas@sang-engineering.com>
->
-> If we don't clear START generation as soon as possible, it may cause
-> another message to be generated, e.g. when receiving NACK in address
-> phase. To keep the race window as small as possible, we clear it right
-> at the beginning of the interrupt. We don't need any checks since we
-> always want to stop START and STOP generation on the next occasion after
-> we started it.
->
-> This patch improves the situation but sadly does not completely fix it.
-> It is still to be researched if we can do better given this HW design.
->
-> Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+On Fri, Apr 01, 2016 at 12:02:56AM +0300, Sergei Shtylyov wrote:
+> Hello.
+>=20
+> On 11/19/2015 06:56 PM, Wolfram Sang wrote:
+>=20
+> >From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+> >
+> >If we don't clear START generation as soon as possible, it may cause
+> >another message to be generated, e.g. when receiving NACK in address
+> >phase. To keep the race window as small as possible, we clear it right
+> >at the beginning of the interrupt. We don't need any checks since we
+> >always want to stop START and STOP generation on the next occasion after
+> >we started it.
+> >
+> >This patch improves the situation but sadly does not completely fix it.
+> >It is still to be researched if we can do better given this HW design.
+> >
+> >Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+>=20
+>    Thanks for a great work, Wolfram!
+>    We need this patch in -stable kernels. The R-Car audio just doesn't wo=
+rk
+> without it...
 
-    Thanks for a great work, Wolfram!
-    We need this patch in -stable kernels. The R-Car audio just doesn't work 
-without it...
+Really only this patch? IIRC my tests showed that if you don't remove
+the spinlocks (patch 4), the interrupt latency will already be too high
+again. In any case, you'd need to do some careful backporting to rip
+this out of the whole refactoring series. But maybe you did that already
+and have good experiences?
 
-> ---
->   drivers/i2c/busses/i2c-rcar.c | 23 +++++++----------------
->   1 file changed, 7 insertions(+), 16 deletions(-)
->
-> diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
-> index f237b4fc5b5e55..40979130200935 100644
-> --- a/drivers/i2c/busses/i2c-rcar.c
-> +++ b/drivers/i2c/busses/i2c-rcar.c
-> @@ -83,6 +83,7 @@
->
->   #define RCAR_BUS_PHASE_START	(MDBS | MIE | ESG)
->   #define RCAR_BUS_PHASE_DATA	(MDBS | MIE)
-> +#define RCAR_BUS_MASK_DATA	(~(ESG | FSB) & 0xFF)
->   #define RCAR_BUS_PHASE_STOP	(MDBS | MIE | FSB)
->
->   #define RCAR_IRQ_SEND	(MNR | MAL | MST | MAT | MDE)
-> @@ -289,13 +290,6 @@ static void rcar_i2c_irq_send(struct rcar_i2c_priv *priv, u32 msr)
->   	if (!(msr & MDE))
->   		return;
->
-> -	/*
-> -	 * If address transfer phase finished,
-> -	 * goto data phase.
-> -	 */
-> -	if (msr & MAT)
-> -		rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_DATA);
-> -
->   	if (priv->pos < msg->len) {
->   		/*
->   		 * Prepare next data to ICRXTX register.
-> @@ -345,11 +339,7 @@ static void rcar_i2c_irq_recv(struct rcar_i2c_priv *priv, u32 msr)
->   		return;
->
->   	if (msr & MAT) {
-> -		/*
-> -		 * Address transfer phase finished,
-> -		 * but, there is no data at this point.
-> -		 * Do nothing.
-> -		 */
-> +		/* Address transfer phase finished, but no data at this point. */
->   	} else if (priv->pos < msg->len) {
->   		/*
->   		 * get received data
-> @@ -365,8 +355,6 @@ static void rcar_i2c_irq_recv(struct rcar_i2c_priv *priv, u32 msr)
->   	 */
->   	if (priv->pos + 1 >= msg->len)
->   		rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_STOP);
-> -	else
-> -		rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_DATA);
->
->   	if (priv->pos = msg->len && !(priv->flags & ID_LAST_MSG))
->   		rcar_i2c_next_msg(priv);
-> @@ -432,7 +420,11 @@ static bool rcar_i2c_slave_irq(struct rcar_i2c_priv *priv)
->   static irqreturn_t rcar_i2c_irq(int irq, void *ptr)
->   {
->   	struct rcar_i2c_priv *priv = ptr;
-> -	u32 msr;
-> +	u32 msr, val;
-> +
-> +	/* Clear START or STOP as soon as we can */
-> +	val = rcar_i2c_read(priv, ICMCR);
-> +	rcar_i2c_write(priv, ICMCR, val & RCAR_BUS_MASK_DATA);
->
->   	msr = rcar_i2c_read(priv, ICMSR);
->
-> @@ -454,7 +446,6 @@ static irqreturn_t rcar_i2c_irq(int irq, void *ptr)
->   	/* Nack */
->   	if (msr & MNR) {
->   		/* HW automatically sends STOP after received NACK */
-> -		rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_DATA);
->   		rcar_i2c_write(priv, ICMIER, RCAR_IRQ_STOP);
->   		rcar_i2c_flags_set(priv, ID_NACK);
->   		goto out;
 
-MBR, Sergei
+--7AUc2qLy4jB3hD7Z
+Content-Type: application/pgp-signature; name="signature.asc"
 
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBAgAGBQJW/alGAAoJEBQN5MwUoCm2aDYQAIphQ8sj8xqYciN2AVn74F8u
+h0Sj73iPs5sKbkvO7lDYCrZCk89spGMTNEXkHAs6CPOUe5wTGKjnaBhiwQu7Z7AW
+JmCcNbxgdjCmJbo0b7jUVqHSGlBx9TC6kOoyIgG/MiQaMPOWZZ0F2QfquPybDWJM
+1fC2XVzi6mKxVDbCWUHunTf7p12v9JAemdNxnHmdTxs9xE+tA54zU/KMlkVFmkBv
+KMSflwLno6Um1XrTpOA5C9eOwnLRfcGIgrC9FVEXV5RgsPPUjvgzLq/dTtfhKADM
+nPxObX7oEt5czR/tJAGnlyCM1Ja7Y1MYqG7eE9LuSlXhoLGEL8VOEMX5Z/yUcfQM
+F7b31zBM+/0IccM5z4J1UTV5hmrsfu91FfGz0OW/SfAJgveRcPKmx3rsZj+czt/y
+I466MgFsrk86+Iln8lmjY8K9BUd3zh8/V1IajJYAx/ayPd+JKn/yBhUU2YVp/xfK
+JlIODSgb0hllPYhbN3TwR/8RGi90T3EZ3+RlMqdM8RgUIx3N+5RndHRPehm66WMl
+X8bVE8wViHYWnByIe60yIO25/bFy7yc1zw61pl+MYUIZ+xL+j8aQBT1fk2g15uv0
+bpXKBSuiv2gpJxs3lArPTH4gyYXf3rTrlV4DKMXU39m2V4yZX9gGXAdxfr85ZLqa
+qlnAJjWnTL00OuBL8TwS
+=wTsX
+-----END PGP SIGNATURE-----
+
+--7AUc2qLy4jB3hD7Z--
