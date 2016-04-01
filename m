@@ -1,93 +1,67 @@
-From: Petr Mladek <pmladek@suse.com>
-Date: Thu, 21 Apr 2016 11:48:44 +0000
-Subject: [PATCH v5 3/4] printk/nmi: increase the size of NMI buffer and make it configurable
-Message-Id: <1461239325-22779-4-git-send-email-pmladek@suse.com>
+From: Michal Hocko <mhocko@kernel.org>
+Date: Fri, 01 Apr 2016 11:04:50 +0000
+Subject: [PATCH 06/11] s390, rwsem: provide __down_write_killable
+Message-Id: <1459508695-14915-7-git-send-email-mhocko@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1461239325-22779-1-git-send-email-pmladek@suse.com>
-In-Reply-To: <1461239325-22779-1-git-send-email-pmladek@suse.com>
+References: <1459508695-14915-1-git-send-email-mhocko@kernel.org>
+In-Reply-To: <1459508695-14915-1-git-send-email-mhocko@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: LKML <linux-kernel@vger.kernel.org>
+Cc: Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@redhat.com>, Thomas Gleixner <tglx@linutronix.de>, "H. Peter Anvin" <hpa@zytor.com>, "David S. Miller" <davem@davemloft.net>, Tony Luck <tony.luck@intel.com>, Andrew Morton <akpm@linux-foundation.org>, Chris Zankel <chris@zankel.net>, Max Filippov <jcmvbkbc@gmail.com>, x86@kernel.org, linux-alpha@vger.kernel.org, linux-ia64@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-arch@vger.kernel.org, Michal Hocko <mhocko@suse.com>
 
-Testing has shown that the backtrace sometimes does not fit into the 4kB
-temporary buffer that is used in NMI context.  The warnings are gone when
-I double the temporary buffer size.
+From: Michal Hocko <mhocko@suse.com>
 
-This patch doubles the buffer size and makes it configurable.
+Introduce ___down_write for the fast path and reuse it for __down_write
+resp. __down_write_killable each using the respective generic slow path
+(rwsem_down_write_failed resp. rwsem_down_write_failed_killable).
 
-Note that this problem existed even in the x86-specific implementation
-that was added by the commit a9edc8809328 ("x86/nmi: Perform a safe NMI
-stack trace on all CPUs").  Nobody noticed it because it did not print any
-warnings.
-
-Signed-off-by: Petr Mladek <pmladek@suse.com>
-Cc: Jan Kara <jack@suse.cz>
-Cc: Peter Zijlstra <peterz@infradead.org>
-Cc: Steven Rostedt <rostedt@goodmis.org>
-Cc: Russell King <rmk+kernel@arm.linux.org.uk>
-Cc: Daniel Thompson <daniel.thompson@linaro.org>
-Cc: Jiri Kosina <jkosina@suse.com>
-Cc: Ingo Molnar <mingo@redhat.com>
-Cc: Thomas Gleixner <tglx@linutronix.de>
-Cc: Ralf Baechle <ralf@linux-mips.org>
-Cc: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-Cc: Martin Schwidefsky <schwidefsky@de.ibm.com>
-Cc: David Miller <davem@davemloft.net>
-Cc: Daniel Thompson <daniel.thompson@linaro.org>
-Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+Signed-off-by: Michal Hocko <mhocko@suse.com>
 ---
- init/Kconfig        | 22 ++++++++++++++++++++++
- kernel/printk/nmi.c |  3 ++-
- 2 files changed, 24 insertions(+), 1 deletion(-)
+ arch/s390/include/asm/rwsem.h | 19 +++++++++++++++++--
+ 1 file changed, 17 insertions(+), 2 deletions(-)
 
-diff --git a/init/Kconfig b/init/Kconfig
-index 85c7a2bf1ea4..9dfd27394d43 100644
---- a/init/Kconfig
-+++ b/init/Kconfig
-@@ -862,6 +862,28 @@ config LOG_CPU_MAX_BUF_SHIFT
- 		     13 =>   8 KB for each CPU
- 		     12 =>   4 KB for each CPU
+diff --git a/arch/s390/include/asm/rwsem.h b/arch/s390/include/asm/rwsem.h
+index 8e52e72f3efc..8e7b2b7e10f3 100644
+--- a/arch/s390/include/asm/rwsem.h
++++ b/arch/s390/include/asm/rwsem.h
+@@ -90,7 +90,7 @@ static inline int __down_read_trylock(struct rw_semaphore *sem)
+ /*
+  * lock for writing
+  */
+-static inline void __down_write(struct rw_semaphore *sem)
++static inline long ___down_write(struct rw_semaphore *sem)
+ {
+ 	signed long old, new, tmp;
  
-+config NMI_LOG_BUF_SHIFT
-+	int "Temporary per-CPU NMI log buffer size (12 => 4KB, 13 => 8KB)"
-+	range 10 21
-+	default 13
-+	depends on PRINTK_NMI
-+	help
-+	  Select the size of a per-CPU buffer where NMI messages are temporary
-+	  stored. They are copied to the main log buffer in a safe context
-+	  to avoid a deadlock. The value defines the size as a power of 2.
+@@ -104,10 +104,25 @@ static inline void __down_write(struct rw_semaphore *sem)
+ 		: "=&d" (old), "=&d" (new), "=Q" (sem->count)
+ 		: "Q" (sem->count), "m" (tmp)
+ 		: "cc", "memory");
+-	if (old != 0)
 +
-+	  NMI messages are rare and limited. The largest one is when
-+	  a backtrace is printed. It usually fits into 4KB. Select
-+	  8KB if you want to be on the safe side.
++	return old;
++}
 +
-+	  Examples:
-+		     17 => 128 KB for each CPU
-+		     16 =>  64 KB for each CPU
-+		     15 =>  32 KB for each CPU
-+		     14 =>  16 KB for each CPU
-+		     13 =>   8 KB for each CPU
-+		     12 =>   4 KB for each CPU
-+
- #
- # Architectures with an unreliable sched_clock() should select this:
- #
-diff --git a/kernel/printk/nmi.c b/kernel/printk/nmi.c
-index 572f94922230..bf08557d7e3d 100644
---- a/kernel/printk/nmi.c
-+++ b/kernel/printk/nmi.c
-@@ -41,7 +41,8 @@ DEFINE_PER_CPU(printk_func_t, printk_func) = vprintk_default;
- static int printk_nmi_irq_ready;
- atomic_t nmi_message_lost;
++static inline void __down_write(struct rw_semaphore *sem)
++{
++	if (___down_write(sem))
+ 		rwsem_down_write_failed(sem);
+ }
  
--#define NMI_LOG_BUF_LEN (4096 - sizeof(atomic_t) - sizeof(struct irq_work))
-+#define NMI_LOG_BUF_LEN ((1 << CONFIG_NMI_LOG_BUF_SHIFT) -		\
-+			 sizeof(atomic_t) - sizeof(struct irq_work))
- 
- struct nmi_seq_buf {
- 	atomic_t		len;	/* length of written data */
++static inline int __down_write_killable(struct rw_semaphore *sem)
++{
++	if (___down_write(sem))
++		if (IS_ERR(rwsem_down_write_failed_killable(sem)))
++			return -EINTR;
++
++	return 0;
++}
++
+ /*
+  * trylock for writing -- returns 1 if successful, 0 if contention
+  */
 -- 
-1.8.5.6
+2.8.0.rc3
 
