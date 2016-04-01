@@ -1,62 +1,50 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Wed, 06 Apr 2016 09:25:28 +0000
-Subject: [PATCH 0/6] mmc: tmio/sdhi: clean up cruft
-Message-Id: <1459934734-3613-1-git-send-email-wsa@the-dreams.de>
+From: Michal Hocko <mhocko@kernel.org>
+Date: Fri, 01 Apr 2016 11:04:51 +0000
+Subject: [PATCH 07/11] sh, rwsem: provide __down_write_killable
+Message-Id: <1459508695-14915-8-git-send-email-mhocko@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1459508695-14915-1-git-send-email-mhocko@kernel.org>
+In-Reply-To: <1459508695-14915-1-git-send-email-mhocko@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: Wolfram Sang <wsa@the-dreams.de>, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, Simon Horman <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+To: LKML <linux-kernel@vger.kernel.org>
+Cc: Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@redhat.com>, Thomas Gleixner <tglx@linutronix.de>, "H. Peter Anvin" <hpa@zytor.com>, "David S. Miller" <davem@davemloft.net>, Tony Luck <tony.luck@intel.com>, Andrew Morton <akpm@linux-foundation.org>, Chris Zankel <chris@zankel.net>, Max Filippov <jcmvbkbc@gmail.com>, x86@kernel.org, linux-alpha@vger.kernel.org, linux-ia64@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-arch@vger.kernel.org, Michal Hocko <mhocko@suse.com>
 
-Largely due to DT unification, some parts of the code became obsolete. Let's
-remove that, the code is complex enough still:
+From: Michal Hocko <mhocko@suse.com>
 
-* There are no boards anymore with named interrupt support. Drop support for
-  that (patches 2-4)
-* No need anymore for a public mmc/tmio.h header file. Merge it into the
-  private one (patch 5)
+which uses the same fast path as __down_write except it falls back to
+rwsem_down_write_failed_killable slow path and return -EINTR if killed.
 
-Patches 1+6 are small cleanups found on the way :)
+Signed-off-by: Michal Hocko <mhocko@suse.com>
+---
+ arch/sh/include/asm/rwsem.h | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
 
-Based on latest renesas-drivers which is based on v4.6-rc1 with my sdr50
-patches on top. Tested on a Renesas Lager board and build bot is happy, too
-(after finding some issues initially). A branch for testing is here:
-
-git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git renesas/sdhi-uhs
-
-I'd think this should all go via mmc, so an ACK from a sh-maintainer on patch 2
-would be much appreciated.
-
-Please test, comment, apply...
-
-   Wolfram
-
-
-Wolfram Sang (6):
-  mmc: sh_mobile_sdhi: don't use array for DT configs
-  mmc: sh_mobile_sdhi: remove obsolete irq_by_name registration
-  mmc: tmio: remove now unneeded seperate irq handlers
-  mmc: tmio: simplify irq handler
-  mmc: tmio: merge distributed include files
-  mmc: sh_mobile_sdhi: simplify code for voltage switching
-
- arch/sh/boards/board-sh7757lcr.c     |  1 -
- arch/sh/boards/mach-ap325rxa/setup.c |  1 -
- arch/sh/boards/mach-ecovec24/setup.c |  1 -
- arch/sh/boards/mach-kfr2r09/setup.c  |  1 -
- arch/sh/boards/mach-migor/setup.c    |  1 -
- arch/sh/boards/mach-se/7724/setup.c  |  1 -
- drivers/mmc/host/sh_mobile_sdhi.c    | 75 +++++++-----------------------------
- drivers/mmc/host/tmio_mmc.h          | 59 ++++++++++++++++++++++++++--
- drivers/mmc/host/tmio_mmc_dma.c      |  1 -
- drivers/mmc/host/tmio_mmc_pio.c      | 55 +++++---------------------
- include/linux/mmc/sh_mobile_sdhi.h   | 10 -----
- include/linux/mmc/tmio.h             | 73 -----------------------------------
- 12 files changed, 79 insertions(+), 200 deletions(-)
- delete mode 100644 include/linux/mmc/sh_mobile_sdhi.h
- delete mode 100644 include/linux/mmc/tmio.h
-
+diff --git a/arch/sh/include/asm/rwsem.h b/arch/sh/include/asm/rwsem.h
+index f6c951c7a875..8a457b83d2a5 100644
+--- a/arch/sh/include/asm/rwsem.h
++++ b/arch/sh/include/asm/rwsem.h
+@@ -54,6 +54,19 @@ static inline void __down_write(struct rw_semaphore *sem)
+ 		rwsem_down_write_failed(sem);
+ }
+ 
++static inline int __down_write_killable(struct rw_semaphore *sem)
++{
++	int tmp;
++
++	tmp = atomic_add_return(RWSEM_ACTIVE_WRITE_BIAS,
++				(atomic_t *)(&sem->count));
++	if (tmp != RWSEM_ACTIVE_WRITE_BIAS)
++		if (IS_ERR(rwsem_down_write_failed_killable(sem)))
++			return -EINTR;
++
++	return 0;
++}
++
+ static inline int __down_write_trylock(struct rw_semaphore *sem)
+ {
+ 	int tmp;
 -- 
-2.7.0
+2.8.0.rc3
 
