@@ -1,44 +1,50 @@
-From: Rich Felker <dalias@libc.org>
-Date: Fri, 22 Apr 2016 23:29:13 +0000
-Subject: [PATCH 2/7] sh: add AT_HWCAP flag for J-Core cas.l instruction
-Message-Id: <f6b971971962df746873e8f031204b042ae03e14.1461880061.git.dalias@libc.org>
+From: Michal Hocko <mhocko@kernel.org>
+Date: Fri, 01 Apr 2016 11:04:53 +0000
+Subject: [PATCH 09/11] xtensa, rwsem: provide __down_write_killable
+Message-Id: <1459508695-14915-10-git-send-email-mhocko@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1459508695-14915-1-git-send-email-mhocko@kernel.org>
+In-Reply-To: <1459508695-14915-1-git-send-email-mhocko@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: LKML <linux-kernel@vger.kernel.org>
+Cc: Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@redhat.com>, Thomas Gleixner <tglx@linutronix.de>, "H. Peter Anvin" <hpa@zytor.com>, "David S. Miller" <davem@davemloft.net>, Tony Luck <tony.luck@intel.com>, Andrew Morton <akpm@linux-foundation.org>, Chris Zankel <chris@zankel.net>, Max Filippov <jcmvbkbc@gmail.com>, x86@kernel.org, linux-alpha@vger.kernel.org, linux-ia64@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-arch@vger.kernel.org, Michal Hocko <mhocko@suse.com>
 
-Signed-off-by: Rich Felker <dalias@libc.org>
+From: Michal Hocko <mhocko@suse.com>
+
+which uses the same fast path as __down_write except it falls back to
+rwsem_down_write_failed_killable slow path and return -EINTR if killed.
+
+Signed-off-by: Michal Hocko <mhocko@suse.com>
 ---
- arch/sh/include/uapi/asm/cpu-features.h | 1 +
- arch/sh/kernel/cpu/sh2/probe.c          | 2 ++
- 2 files changed, 3 insertions(+)
+ arch/xtensa/include/asm/rwsem.h | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
 
-diff --git a/arch/sh/include/uapi/asm/cpu-features.h b/arch/sh/include/uapi/asm/cpu-features.h
-index 694abe4..2f1bc85 100644
---- a/arch/sh/include/uapi/asm/cpu-features.h
-+++ b/arch/sh/include/uapi/asm/cpu-features.h
-@@ -22,5 +22,6 @@
- #define CPU_HAS_L2_CACHE	0x0080	/* Secondary cache / URAM */
- #define CPU_HAS_OP32		0x0100	/* 32-bit instruction support */
- #define CPU_HAS_PTEAEX		0x0200	/* PTE ASID Extension support */
-+#define CPU_HAS_CAS_L		0x0400	/* cas.l atomic compare-and-swap */
+diff --git a/arch/xtensa/include/asm/rwsem.h b/arch/xtensa/include/asm/rwsem.h
+index 593483f6e1ff..6283823b8040 100644
+--- a/arch/xtensa/include/asm/rwsem.h
++++ b/arch/xtensa/include/asm/rwsem.h
+@@ -59,6 +59,19 @@ static inline void __down_write(struct rw_semaphore *sem)
+ 		rwsem_down_write_failed(sem);
+ }
  
- #endif /* __ASM_SH_CPU_FEATURES_H */
-diff --git a/arch/sh/kernel/cpu/sh2/probe.c b/arch/sh/kernel/cpu/sh2/probe.c
-index d8dbb81..ecf8360 100644
---- a/arch/sh/kernel/cpu/sh2/probe.c
-+++ b/arch/sh/kernel/cpu/sh2/probe.c
-@@ -33,6 +33,8 @@ void cpu_probe(void)
- 	boot_cpu_data.dcache.entry_shift	= 5;
- 	boot_cpu_data.dcache.linesz		= 32;
- 	boot_cpu_data.dcache.flags		= 0;
++static inline int __down_write_killable(struct rw_semaphore *sem)
++{
++	int tmp;
 +
-+	boot_cpu_data.flags |= CPU_HAS_CAS_L;
- #else
- 	/*
- 	 * SH-2 doesn't have separate caches
++	tmp = atomic_add_return(RWSEM_ACTIVE_WRITE_BIAS,
++				(atomic_t *)(&sem->count));
++	if (tmp != RWSEM_ACTIVE_WRITE_BIAS)
++		if (IS_ERR(rwsem_down_write_failed_killable(sem)))
++			return -EINTR;
++
++	return 0;
++}
++
+ static inline int __down_write_trylock(struct rw_semaphore *sem)
+ {
+ 	int tmp;
 -- 
-2.8.1
-
+2.8.0.rc3
 
