@@ -1,57 +1,103 @@
-From: Sergey Senozhatsky <sergey.senozhatsky.work@gmail.com>
-Date: Mon, 04 Apr 2016 04:56:30 +0000
-Subject: Re: [PATCH v4 2/5] printk/nmi: use IRQ work only when ready
-Message-Id: <20160404045629.GF6164@swordfish>
+From: Michal Hocko <mhocko@kernel.org>
+Date: Fri, 01 Apr 2016 11:04:54 +0000
+Subject: [PATCH 10/11] x86, rwsem: provide __down_write_killable
+Message-Id: <1459508695-14915-11-git-send-email-mhocko@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1459353210-20260-1-git-send-email-pmladek@suse.com>
- <1459353210-20260-3-git-send-email-pmladek@suse.com>
-In-Reply-To: <1459353210-20260-3-git-send-email-pmladek@suse.com>
+References: <1459508695-14915-1-git-send-email-mhocko@kernel.org>
+In-Reply-To: <1459508695-14915-1-git-send-email-mhocko@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: LKML <linux-kernel@vger.kernel.org>
+Cc: Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@redhat.com>, Thomas Gleixner <tglx@linutronix.de>, "H. Peter Anvin" <hpa@zytor.com>, "David S. Miller" <davem@davemloft.net>, Tony Luck <tony.luck@intel.com>, Andrew Morton <akpm@linux-foundation.org>, Chris Zankel <chris@zankel.net>, Max Filippov <jcmvbkbc@gmail.com>, x86@kernel.org, linux-alpha@vger.kernel.org, linux-ia64@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-arch@vger.kernel.org, Michal Hocko <mhocko@suse.com>
 
-Hello,
+From: Michal Hocko <mhocko@suse.com>
 
-On (03/30/16 17:53), Petr Mladek wrote:
-> NMIs could happen at any time.  This patch makes sure that the safe
-> printk() in NMI will schedule IRQ work only when the related structs are
-> initialized.
-> 
-> All pending messages are flushed when the IRQ work is being initialized.
+which uses the same fast path as __down_write except it falls back to
+call_rwsem_down_write_failed_killable slow path and return -EINTR if
+killed. To prevent from code duplication extract the skeleton of
+__down_write into a helper macro which just takes the semaphore
+and the slow path function to be called.
 
-so, does this patch 'fix' 0001 (in a way)? shouldn't it then be folded?
-sorry if I'm missing something.
+Signed-off-by: Michal Hocko <mhocko@suse.com>
+---
+ arch/x86/include/asm/rwsem.h | 41 ++++++++++++++++++++++++++++-------------
+ arch/x86/lib/rwsem.S         |  8 ++++++++
+ 2 files changed, 36 insertions(+), 13 deletions(-)
 
-	-ss
+diff --git a/arch/x86/include/asm/rwsem.h b/arch/x86/include/asm/rwsem.h
+index d79a218675bc..4c3d90dbe89a 100644
+--- a/arch/x86/include/asm/rwsem.h
++++ b/arch/x86/include/asm/rwsem.h
+@@ -99,21 +99,36 @@ static inline int __down_read_trylock(struct rw_semaphore *sem)
+ /*
+  * lock for writing
+  */
++#define ____down_write(sem, slow_path)			\
++({							\
++	long tmp;					\
++	struct rw_semaphore* ret = sem;			\
++	asm volatile("# beginning down_write\n\t"	\
++		     LOCK_PREFIX "  xadd      %1,(%2)\n\t"	\
++		     /* adds 0xffff0001, returns the old value */ \
++		     "  test " __ASM_SEL(%w1,%k1) "," __ASM_SEL(%w1,%k1) "\n\t" \
++		     /* was the active mask 0 before? */\
++		     "  jz        1f\n"			\
++		     "  call " slow_path "\n"		\
++		     "1:\n"				\
++		     "# ending down_write"		\
++		     : "+m" (sem->count), "=d" (tmp), "+a" (ret)	\
++		     : "a" (sem), "1" (RWSEM_ACTIVE_WRITE_BIAS) \
++		     : "memory", "cc");			\
++	ret;						\
++})
++
+ static inline void __down_write(struct rw_semaphore *sem)
+ {
+-	long tmp;
+-	asm volatile("# beginning down_write\n\t"
+-		     LOCK_PREFIX "  xadd      %1,(%2)\n\t"
+-		     /* adds 0xffff0001, returns the old value */
+-		     "  test " __ASM_SEL(%w1,%k1) "," __ASM_SEL(%w1,%k1) "\n\t"
+-		     /* was the active mask 0 before? */
+-		     "  jz        1f\n"
+-		     "  call call_rwsem_down_write_failed\n"
+-		     "1:\n"
+-		     "# ending down_write"
+-		     : "+m" (sem->count), "=d" (tmp)
+-		     : "a" (sem), "1" (RWSEM_ACTIVE_WRITE_BIAS)
+-		     : "memory", "cc");
++	____down_write(sem, "call_rwsem_down_write_failed");
++}
++
++static inline int __down_write_killable(struct rw_semaphore *sem)
++{
++	if (IS_ERR(____down_write(sem, "call_rwsem_down_write_failed_killable")))
++		return -EINTR;
++
++	return 0;
+ }
+ 
+ /*
+diff --git a/arch/x86/lib/rwsem.S b/arch/x86/lib/rwsem.S
+index 40027db99140..d1a1397e1fb3 100644
+--- a/arch/x86/lib/rwsem.S
++++ b/arch/x86/lib/rwsem.S
+@@ -101,6 +101,14 @@ ENTRY(call_rwsem_down_write_failed)
+ 	ret
+ ENDPROC(call_rwsem_down_write_failed)
+ 
++ENTRY(call_rwsem_down_write_failed_killable)
++	save_common_regs
++	movq %rax,%rdi
++	call rwsem_down_write_failed_killable
++	restore_common_regs
++	ret
++ENDPROC(call_rwsem_down_write_failed_killable)
++
+ ENTRY(call_rwsem_wake)
+ 	/* do nothing if still outstanding active readers */
+ 	__ASM_HALF_SIZE(dec) %__ASM_HALF_REG(dx)
+-- 
+2.8.0.rc3
 
->  DEFINE_PER_CPU(printk_func_t, printk_func) = vprintk_default;
-> +static int printk_nmi_irq_ready;
->  
->  #define NMI_LOG_BUF_LEN (4096 - sizeof(atomic_t) - sizeof(struct irq_work))
->  
-> @@ -84,8 +85,11 @@ again:
->  		goto again;
->  
->  	/* Get flushed in a more safe context. */
-> -	if (add)
-> +	if (add && printk_nmi_irq_ready) {
-> +		/* Make sure that IRQ work is really initialized. */
-> +		smp_rmb();
->  		irq_work_queue(&s->work);
-> +	}
->  
->  	return add;
->  }
-> @@ -195,6 +199,13 @@ void __init printk_nmi_init(void)
->  
->  		init_irq_work(&s->work, __printk_nmi_flush);
->  	}
-> +
-> +	/* Make sure that IRQ works are initialized before enabling. */
-> +	smp_wmb();
-> +	printk_nmi_irq_ready = 1;
-> +
-> +	/* Flush pending messages that did not have scheduled IRQ works. */
-> +	printk_nmi_flush();
->  }
