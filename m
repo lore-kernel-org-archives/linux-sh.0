@@ -1,58 +1,59 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Wed, 27 Apr 2016 10:34:19 +0000
-Subject: Re: [PATCH v2 1/6] rtc: m68k: provide rtc_class_ops directly
-Message-Id: <4888267.R0sXv0tuDQ@wuerfel>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 01 Apr 2016 19:55:49 +0000
+Subject: Re: [PATCH v3 09/11] i2c: rcar: revoke START request early
+Message-Id: <56FED245.4010503@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1461707551-1337971-1-git-send-email-arnd@arndb.de> <1461707551-1337971-2-git-send-email-arnd@arndb.de> <CAMuHMdXS0JL_weLvjV4+i0ZPj=N+G6Vs1WDE9jffGUWehq5Xzg@mail.gmail.com>
-In-Reply-To: <CAMuHMdXS0JL_weLvjV4+i0ZPj=N+G6Vs1WDE9jffGUWehq5Xzg@mail.gmail.com>
+References: <1447948611-2615-1-git-send-email-wsa@the-dreams.de>
+ <1447948611-2615-10-git-send-email-wsa@the-dreams.de>
+ <56FD9080.4090203@cogentembedded.com> <20160331224838.GA7381@katana>
+In-Reply-To: <20160331224838.GA7381@katana>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Alexandre Belloni <alexandre.belloni@free-electrons.com>, Helge Deller <deller@gmx.de>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Michael Ellerman <mpe@ellerman.id.au>, Rich Felker <dalias@libc.org>, David Howells <dhowells@redhat.com>, alpha <linux-alpha@vger.kernel.org>, Alessandro Zummo <a.zummo@towertech.it>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Parisc List <linux-parisc@vger.kernel.org>, "linuxppc-dev@lists.ozlabs.org" <linuxppc-dev@lists.ozlabs.org>, Linux-sh list <linux-sh@vger.kernel.org>, linux-m68k <linux-m68k@lists.linux-m68k.org>, RTCLINUX <rtc-linux@googlegroups.com>, Linux-Arch <linux-arch@vger.kernel.org>
+To: Wolfram Sang <wsa@the-dreams.de>
+Cc: linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, "stable@vger.kernel.org" <stable@vger.kernel.org>, "linux-renesas-soc@vger.kernel.org" <linux-renesas-soc@vger.kernel.org>
 
-On Wednesday 27 April 2016 09:47:56 Geert Uytterhoeven wrote:
-> > --- a/arch/m68k/kernel/time.c
-> > +++ b/arch/m68k/kernel/time.c
-> > @@ -86,7 +86,24 @@ void read_persistent_clock(struct timespec *ts)
-> >         }
-> >  }
-> >
-> > -#ifdef CONFIG_ARCH_USES_GETTIMEOFFSET
-> > +#if defined(CONFIG_ARCH_USES_GETTIMEOFFSET) && defined(CONFIG_RTC_DRV_GENERIC)
-> 
-> s/defined/IS_ENABLED/ for the modular case.
+Hello.
 
-Thanks, fixed in all three architectures/
+On 04/01/2016 01:48 AM, Wolfram Sang wrote:
 
-> > @@ -95,7 +112,10 @@ static int __init rtc_init(void)
-> >         if (!mach_hwclk)
-> >                 return -ENODEV;
-> >
-> > -       pdev = platform_device_register_simple("rtc-generic", -1, NULL, 0);
-> > +       /* or just call devm_rtc_device_register instead? */
-> 
-> I guess this comment is a bogus leftover? There's no "dev" parameter to
-> pass to devm_rtc_device_register() here.
+>>> From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+>>>
+>>> If we don't clear START generation as soon as possible, it may cause
+>>> another message to be generated, e.g. when receiving NACK in address
+>>> phase. To keep the race window as small as possible, we clear it right
+>>> at the beginning of the interrupt. We don't need any checks since we
+>>> always want to stop START and STOP generation on the next occasion after
+>>> we started it.
+>>>
+>>> This patch improves the situation but sadly does not completely fix it.
+>>> It is still to be researched if we can do better given this HW design.
+>>>
+>>> Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+>>
+>>     Thanks for a great work, Wolfram!
+>>     We need this patch in -stable kernels. The R-Car audio just doesn't work
+>> without it...
 
-Sort of. When I wrote it, I thought that a NULL argument would work,
-and I later found out myself that it doesn't.
+> Really only this patch?
 
-I'll drop the comment there, but there are still a few ways we (probably
-not me, but whoever is interested) could take this further:
+    Well, my "reverse" bisection pointed at it. :-)
 
-- register both the device and the driver here, and call
-  devm_rtc_device_register from the probe function so we can move away
-  from drivers/rtc/rtc-generic.c
+> IIRC my tests showed that if you don't remove
+> the spinlocks (patch 4), the interrupt latency will already be too high
+> again.
 
-- do this separately for mac, mvme147, mvme16x, sun3, q40 and sun3x
+    Thank you for the valuable info!
 
-- move the six implementations into drivers/rtc as standalone drivers.
+> In any case, you'd need to do some careful backporting to rip
+> this out of the whole refactoring series.
 
-One (AFAIK) unsolved problem here is the question of how to handle
-read_boot_clock/read_persistent_clock/update_persistent_clock in this
-case. This is a really odd API that is implemented in various ways
-on a few major architectures, and not at all on others, so it's all
-highly inconsistent.
+    Yes, I've already figured that.
 
-	Arnd
+> But maybe you did that already
+> and have good experiences?
+
+    Not yet, I will report back after more backporting/testing.
+
+MBR, Sergei
+
