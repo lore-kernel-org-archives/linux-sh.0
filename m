@@ -1,126 +1,284 @@
-From: Alexandre Belloni <alexandre.belloni@free-electrons.com>
-Date: Wed, 27 Apr 2016 08:41:31 +0000
-Subject: Re: [PATCH 3/8] char/rtc: remove empty asm/mc146818rtc.h files
-Message-Id: <20160427084131.GH3264@piout.net>
+From: Rich Felker <dalias@libc.org>
+Date: Sun, 03 Apr 2016 05:12:45 +0000
+Subject: [PATCH v4 2/2] spi: add driver for J-Core SPI controller
+Message-Id: <2a46090a5a7c177b7eca83f68406650844423e7f.1469686300.git.dalias@libc.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1461707052-1337718-1-git-send-email-arnd@arndb.de>
- <1461707052-1337718-4-git-send-email-arnd@arndb.de>
-In-Reply-To: <1461707052-1337718-4-git-send-email-arnd@arndb.de>
+References: <cover.1469686300.git.dalias@libc.org>
+In-Reply-To: <cover.1469686300.git.dalias@libc.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Arnd Bergmann <arnd@arndb.de>
-Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, tony.luck@intel.com, geert@linux-m68k.org, jejb@parisc-linux.org, deller@gmx.de, benh@kernel.crashing.org, mpe@ellerman.id.au, dalias@libc.org, dhowells@redhat.com, yasutake.koichi@jp.panasonic.com, rth@twiddle.net, ink@jurassic.park.msu.ru, linux-alpha@vger.kernel.org, x86@kernel.org, a.zummo@towertech.it, linux-kernel@vger.kernel.org, linux-ia64@vger.kernel.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, rtc-linux@googlegroups.com, linux-arch@vger.kernel.org
+To: devicetree@vger.kernel.org, linux-kernel@vger.kernel.org, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Rob Herring <robh+dt@kernel.org>, Mark Rutland <mark.rutland@arm.com>, Mark Brown <broonie@kernel.org>
 
-On 26/04/2016 at 23:44:07 +0200, Arnd Bergmann wrote :
-> Nothing on these architectures ever includes the asm/mc146818rtc.h
-> file, the drivers that used to do this have been fixed long ago,
-> and the remaining users are all PC-specific.
-> 
-> This removes the files for good.
-> 
-> Signed-off-by: Arnd Bergmann <arnd@arndb.de>
-Acked-by: Alexandre Belloni <alexandre.belloni@free-electrons.com>
+The J-Core "spi2" device is a PIO-based SPI master controller. It
+differs from "bitbang" devices in that that it's clocked in hardware
+rather than via soft clock modulation over gpio, and performs
+byte-at-a-time transfers between the cpu and SPI controller.
 
-> ---
->  arch/frv/include/asm/mc146818rtc.h    | 16 ----------------
->  arch/h8300/include/asm/mc146818rtc.h  |  9 ---------
->  arch/ia64/include/asm/mc146818rtc.h   | 10 ----------
->  arch/parisc/include/asm/mc146818rtc.h |  9 ---------
->  arch/sh/include/asm/mc146818rtc.h     |  7 -------
->  5 files changed, 51 deletions(-)
->  delete mode 100644 arch/frv/include/asm/mc146818rtc.h
->  delete mode 100644 arch/h8300/include/asm/mc146818rtc.h
->  delete mode 100644 arch/ia64/include/asm/mc146818rtc.h
->  delete mode 100644 arch/parisc/include/asm/mc146818rtc.h
->  delete mode 100644 arch/sh/include/asm/mc146818rtc.h
-> 
-> diff --git a/arch/frv/include/asm/mc146818rtc.h b/arch/frv/include/asm/mc146818rtc.h
-> deleted file mode 100644
-> index 90dfb7a633d1..000000000000
-> --- a/arch/frv/include/asm/mc146818rtc.h
-> +++ /dev/null
-> @@ -1,16 +0,0 @@
-> -/* mc146818rtc.h: RTC defs
-> - *
-> - * Copyright (C) 2005 Red Hat, Inc. All Rights Reserved.
-> - * Written by David Howells (dhowells@redhat.com)
-> - *
-> - * This program is free software; you can redistribute it and/or
-> - * modify it under the terms of the GNU General Public License
-> - * as published by the Free Software Foundation; either version
-> - * 2 of the License, or (at your option) any later version.
-> - */
-> -
-> -#ifndef _ASM_MC146818RTC_H
-> -#define _ASM_MC146818RTC_H
-> -
-> -
-> -#endif /* _ASM_MC146818RTC_H */
-> diff --git a/arch/h8300/include/asm/mc146818rtc.h b/arch/h8300/include/asm/mc146818rtc.h
-> deleted file mode 100644
-> index ab9d9646d241..000000000000
-> --- a/arch/h8300/include/asm/mc146818rtc.h
-> +++ /dev/null
-> @@ -1,9 +0,0 @@
-> -/*
-> - * Machine dependent access functions for RTC registers.
-> - */
-> -#ifndef _H8300_MC146818RTC_H
-> -#define _H8300_MC146818RTC_H
-> -
-> -/* empty include file to satisfy the include in genrtc.c/ide-geometry.c */
-> -
-> -#endif /* _H8300_MC146818RTC_H */
-> diff --git a/arch/ia64/include/asm/mc146818rtc.h b/arch/ia64/include/asm/mc146818rtc.h
-> deleted file mode 100644
-> index 407787a237ba..000000000000
-> --- a/arch/ia64/include/asm/mc146818rtc.h
-> +++ /dev/null
-> @@ -1,10 +0,0 @@
-> -#ifndef _ASM_IA64_MC146818RTC_H
-> -#define _ASM_IA64_MC146818RTC_H
-> -
-> -/*
-> - * Machine dependent access functions for RTC registers.
-> - */
-> -
-> -/* empty include file to satisfy the include in genrtc.c */
-> -
-> -#endif /* _ASM_IA64_MC146818RTC_H */
-> diff --git a/arch/parisc/include/asm/mc146818rtc.h b/arch/parisc/include/asm/mc146818rtc.h
-> deleted file mode 100644
-> index adf41631449f..000000000000
-> --- a/arch/parisc/include/asm/mc146818rtc.h
-> +++ /dev/null
-> @@ -1,9 +0,0 @@
-> -/*
-> - * Machine dependent access functions for RTC registers.
-> - */
-> -#ifndef _ASM_MC146818RTC_H
-> -#define _ASM_MC146818RTC_H
-> -
-> -/* empty include file to satisfy the include in genrtc.c */
-> -
-> -#endif /* _ASM_MC146818RTC_H */
-> diff --git a/arch/sh/include/asm/mc146818rtc.h b/arch/sh/include/asm/mc146818rtc.h
-> deleted file mode 100644
-> index 0aee96a97330..000000000000
-> --- a/arch/sh/include/asm/mc146818rtc.h
-> +++ /dev/null
-> @@ -1,7 +0,0 @@
-> -/*
-> - * Machine dependent access functions for RTC registers.
-> - */
-> -#ifndef _ASM_MC146818RTC_H
-> -#define _ASM_MC146818RTC_H
-> -
-> -#endif /* _ASM_MC146818RTC_H */
-> -- 
-> 2.7.0
-> 
+This driver will be extended to support future versions of the J-Core
+SPI controller with DMA transfers when they become available.
 
+Signed-off-by: Rich Felker <dalias@libc.org>
+---
+ drivers/spi/Kconfig     |   4 +
+ drivers/spi/Makefile    |   1 +
+ drivers/spi/spi-jcore.c | 220 ++++++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 225 insertions(+)
+ create mode 100644 drivers/spi/spi-jcore.c
+
+diff --git a/drivers/spi/Kconfig b/drivers/spi/Kconfig
+index 4b931ec..630ad7c 100644
+--- a/drivers/spi/Kconfig
++++ b/drivers/spi/Kconfig
+@@ -285,6 +285,10 @@ config SPI_IMX
+ 	  This enables using the Freescale i.MX SPI controllers in master
+ 	  mode.
+ 
++config SPI_JCORE
++	tristate "J-Core SPI Master"
++	depends on OF
++
+ config SPI_LM70_LLP
+ 	tristate "Parallel port adapter for LM70 eval board (DEVELOPMENT)"
+ 	depends on PARPORT
+diff --git a/drivers/spi/Makefile b/drivers/spi/Makefile
+index 3c74d00..7e11fef 100644
+--- a/drivers/spi/Makefile
++++ b/drivers/spi/Makefile
+@@ -46,6 +46,7 @@ obj-$(CONFIG_SPI_FSL_SPI)		+= spi-fsl-spi.o
+ obj-$(CONFIG_SPI_GPIO)			+= spi-gpio.o
+ obj-$(CONFIG_SPI_IMG_SPFI)		+= spi-img-spfi.o
+ obj-$(CONFIG_SPI_IMX)			+= spi-imx.o
++obj-$(CONFIG_SPI_JCORE)			+= spi-jcore.o
+ obj-$(CONFIG_SPI_LM70_LLP)		+= spi-lm70llp.o
+ obj-$(CONFIG_SPI_LP8841_RTC)		+= spi-lp8841-rtc.o
+ obj-$(CONFIG_SPI_MESON_SPIFC)		+= spi-meson-spifc.o
+diff --git a/drivers/spi/spi-jcore.c b/drivers/spi/spi-jcore.c
+new file mode 100644
+index 0000000..7d328e0
+--- /dev/null
++++ b/drivers/spi/spi-jcore.c
+@@ -0,0 +1,220 @@
++/*
++ * J-Core SPI controller driver
++ *
++ * Copyright (C) 2012-2016 Smart Energy Instruments, Inc.
++ *
++ * Current version by Rich Felker
++ * Based loosely on initial version by Oleksandr G Zhadan
++ *
++ */
++#include <linux/init.h>
++#include <linux/interrupt.h>
++#include <linux/errno.h>
++#include <linux/module.h>
++#include <linux/platform_device.h>
++#include <linux/spi/spi.h>
++#include <linux/io.h>
++#include <linux/of.h>
++#include <linux/delay.h>
++
++#define DRV_NAME "jcore_spi"
++
++#define CTRL_REG	0x0
++#define DATA_REG	0x4
++
++#define JCORE_SPI_CTRL_XMIT		0x02
++#define JCORE_SPI_STAT_BUSY		0x02
++#define JCORE_SPI_CTRL_LOOP		0x08
++#define JCORE_SPI_CTRL_CS_BITS		0x15
++
++#define JCORE_SPI_WAIT_RDY_MAX_LOOP	2000000
++
++struct jcore_spi {
++	struct spi_master *master;
++	void __iomem *base;
++	unsigned int cs_reg;
++	unsigned int speed_reg;
++	unsigned int speed_hz;
++	unsigned int clock_freq;
++};
++
++static int jcore_spi_wait(void __iomem *ctrl_reg)
++{
++	unsigned timeout = JCORE_SPI_WAIT_RDY_MAX_LOOP;
++
++	do {
++		if (!(readl(ctrl_reg) & JCORE_SPI_STAT_BUSY))
++			return 0;
++		cpu_relax();
++	} while (--timeout);
++
++	return -EBUSY;
++}
++
++static void jcore_spi_program(struct jcore_spi *hw)
++{
++	void __iomem *ctrl_reg = hw->base + CTRL_REG;
++
++	if (jcore_spi_wait(ctrl_reg))
++		dev_err(hw->master->dev.parent,
++			"timeout waiting to program ctrl reg.\n");
++
++	writel(hw->cs_reg | hw->speed_reg, ctrl_reg);
++}
++
++static void jcore_spi_chipsel(struct spi_device *spi, bool value)
++{
++	struct jcore_spi *hw = spi_master_get_devdata(spi->master);
++	u32 csbit = 1U << (2 * spi->chip_select);
++
++	dev_dbg(hw->master->dev.parent, "chipselect %d\n", spi->chip_select);
++
++	if (value)
++		hw->cs_reg |= csbit;
++	else
++		hw->cs_reg &= ~csbit;
++
++	jcore_spi_program(hw);
++}
++
++static void jcore_spi_baudrate(struct jcore_spi *hw, int speed)
++{
++	if (speed = hw->speed_hz) return;
++	hw->speed_hz = speed;
++	if (speed >= hw->clock_freq/2)
++		hw->speed_reg = 0;
++	else
++		hw->speed_reg = ((hw->clock_freq / 2 / speed) - 1) << 27;
++	jcore_spi_program(hw);
++	dev_dbg(hw->master->dev.parent, "speed=%d reg=0x%x\n",
++		speed, hw->speed_reg);
++}
++
++static int jcore_spi_txrx(struct spi_master *master, struct spi_device *spi,
++			  struct spi_transfer *t)
++{
++	struct jcore_spi *hw = spi_master_get_devdata(master);
++
++	void __iomem *ctrl_reg = hw->base + CTRL_REG;
++	void __iomem *data_reg = hw->base + DATA_REG;
++	u32 xmit;
++
++	/* data buffers */
++	const unsigned char *tx;
++	unsigned char *rx;
++	unsigned int len;
++	unsigned int count;
++
++	jcore_spi_baudrate(hw, t->speed_hz);
++
++	xmit = hw->cs_reg | hw->speed_reg | JCORE_SPI_CTRL_XMIT;
++	tx = t->tx_buf;
++	rx = t->rx_buf;
++	len = t->len;
++
++	for (count = 0; count < len; count++) {
++		if (jcore_spi_wait(ctrl_reg))
++			break;
++
++		writel(tx ? *tx++ : 0, data_reg);
++		writel(xmit, ctrl_reg);
++
++		if (jcore_spi_wait(ctrl_reg))
++			break;
++
++		if (rx)
++			*rx++ = readl(data_reg);
++	}
++
++	spi_finalize_current_transfer(master);
++
++	return count<len ? -EREMOTEIO : 0;
++}
++
++static int jcore_spi_probe(struct platform_device *pdev)
++{
++	struct device_node *node = pdev->dev.of_node;
++	struct jcore_spi *hw;
++	struct spi_master *master;
++	struct resource *res;
++	u32 clock_freq;
++	int err = -ENODEV;
++
++	master = spi_alloc_master(&pdev->dev, sizeof(struct jcore_spi));
++	if (!master)
++		return err;
++
++	/* setup the master state. */
++	master->num_chipselect = 3;
++	master->mode_bits = SPI_CPOL | SPI_CPHA | SPI_CS_HIGH;
++	master->transfer_one = jcore_spi_txrx;
++	master->set_cs = jcore_spi_chipsel;
++	master->dev.of_node = node;
++	master->bus_num = pdev->id;
++
++	hw = spi_master_get_devdata(master);
++	hw->master = master;
++	platform_set_drvdata(pdev, hw);
++
++	/* find and map our resources */
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	if (!res)
++		goto exit_busy;
++	if (!devm_request_mem_region
++	    (&pdev->dev, res->start, resource_size(res), pdev->name))
++		goto exit_busy;
++	hw->base +	    devm_ioremap_nocache(&pdev->dev, res->start, resource_size(res));
++	if (!hw->base)
++		goto exit_busy;
++
++	/* The SPI clock rate controlled via a configurable clock divider
++	 * which is applied to the reference clock. A 50 MHz reference is
++	 * most suitable for obtaining standard SPI clock rates, but some
++	 * designs may have a different reference clock, and the DT must
++	 * make the driver aware so that it can properly program the
++	 * requested rate. If omitted, 50 MHz is assumed. */
++	clock_freq = 50000000;
++	of_property_read_u32(node, "clock-frequency", &clock_freq);
++	hw->clock_freq = clock_freq;
++
++	/* Initialize all CS bits to high. */
++	hw->cs_reg = JCORE_SPI_CTRL_CS_BITS;
++	jcore_spi_baudrate(hw, 400000);
++
++	pdev->dev.dma_mask = 0;
++	/* register our spi controller */
++	err = devm_spi_register_master(&pdev->dev, master);
++	if (err)
++		goto exit;
++	dev_info(&pdev->dev, "base %p, noirq\n", hw->base);
++
++	return 0;
++
++exit_busy:
++	err = -EBUSY;
++exit:
++	platform_set_drvdata(pdev, NULL);
++	spi_master_put(master);
++	return err;
++}
++
++static const struct of_device_id jcore_spi_of_match[] = {
++	{ .compatible = "jcore,spi2" },
++	{},
++};
++
++static struct platform_driver jcore_spi_driver = {
++	.probe = jcore_spi_probe,
++	.driver = {
++		.name = DRV_NAME,
++		.of_match_table = jcore_spi_of_match,
++	},
++};
++
++module_platform_driver(jcore_spi_driver);
++
++MODULE_DESCRIPTION("J-Core SPI driver");
++MODULE_AUTHOR("Rich Felker <dalias@libc.org>");
++MODULE_LICENSE("GPL");
++MODULE_ALIAS("platform:" DRV_NAME);
 -- 
-Alexandre Belloni, Free Electrons
-Embedded Linux, Kernel and Android engineering
-http://free-electrons.com
+2.8.1
+
