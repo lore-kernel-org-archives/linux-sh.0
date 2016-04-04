@@ -1,29 +1,182 @@
-From: Peter Hurley <peter@hurleysoftware.com>
-Date: Fri, 29 Apr 2016 15:38:09 +0000
-Subject: Re: [PATCH v2 03/11] serial: sh-sci: Always set TIOCM_CTS in .get_mctrl() callback
-Message-Id: <57237FE1.8030200@hurleysoftware.com>
+From: Michal Hocko <mhocko@kernel.org>
+Date: Mon, 04 Apr 2016 09:06:39 +0000
+Subject: [PATCH 1/2] xtensa, rwsem: drop superfluous arch specific implementation
+Message-Id: <1459760800-13477-1-git-send-email-mhocko@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1461934714-18681-1-git-send-email-geert+renesas@glider.be>
- <1461934714-18681-4-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1461934714-18681-4-git-send-email-geert+renesas@glider.be>
+References: <20160404090335.GB10272@dhcp22.suse.cz>
+In-Reply-To: <20160404090335.GB10272@dhcp22.suse.cz>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-Cc: Jiri Slaby <jslaby@suse.com>, Magnus Damm <magnus.damm@gmail.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-serial@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: LKML <linux-kernel@vger.kernel.org>
+Cc: Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@redhat.com>, Thomas Gleixner <tglx@linutronix.de>, "H. Peter Anvin" <hpa@zytor.com>, "David S. Miller" <davem@davemloft.net>, Tony Luck <tony.luck@intel.com>, Andrew Morton <akpm@linux-foundation.org>, Chris Zankel <chris@zankel.net>, Max Filippov <jcmvbkbc@gmail.com>, x86@kernel.org, linux-alpha@vger.kernel.org, linux-ia64@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-arch@vger.kernel.org, Michal Hocko <mhocko@suse.com>
 
-On 04/29/2016 05:58 AM, Geert Uytterhoeven wrote:
-> Documentation/serial/driver clearly states:
-> 
->     If the port does not support CTS, DCD or DSR, the driver should
->     indicate that the signal is permanently active.
-> 
-> Hence always set TIOCM_CTS, as we currently don't look at the CTS
-> hardware line state at all.
-> 
-> FWIW, this fixes the transmit path when hardware-assisted flow control
-> is enabled, and userspace enables CRTSCTS.
-> The receive path is still broken, as RTS is never asserted.
+From: Michal Hocko <mhocko@suse.com>
 
-Reviewed-by: Peter Hurley <peter@hurleysoftware.com>
+since "locking, rwsem: drop explicit memory barriers" the arch specific
+code is basically same as the the generic one so we can drop the
+superfluous code.
+
+Suggested-by: Davidlohr Bueso <dave@stgolabs.net>
+Signed-off-by: Michal Hocko <mhocko@suse.com>
+---
+ arch/xtensa/include/asm/Kbuild  |   1 +
+ arch/xtensa/include/asm/rwsem.h | 134 ----------------------------------------
+ 2 files changed, 1 insertion(+), 134 deletions(-)
+ delete mode 100644 arch/xtensa/include/asm/rwsem.h
+
+diff --git a/arch/xtensa/include/asm/Kbuild b/arch/xtensa/include/asm/Kbuild
+index b56855a1382a..28cf4c5d65ef 100644
+--- a/arch/xtensa/include/asm/Kbuild
++++ b/arch/xtensa/include/asm/Kbuild
+@@ -22,6 +22,7 @@ generic-y += mm-arch-hooks.h
+ generic-y += percpu.h
+ generic-y += preempt.h
+ generic-y += resource.h
++generic-y += rwsem.h
+ generic-y += sections.h
+ generic-y += siginfo.h
+ generic-y += statfs.h
+diff --git a/arch/xtensa/include/asm/rwsem.h b/arch/xtensa/include/asm/rwsem.h
+deleted file mode 100644
+index 6283823b8040..000000000000
+--- a/arch/xtensa/include/asm/rwsem.h
++++ /dev/null
+@@ -1,134 +0,0 @@
+-/*
+- * include/asm-xtensa/rwsem.h
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+- *
+- * Largely copied from include/asm-ppc/rwsem.h
+- *
+- * Copyright (C) 2001 - 2005 Tensilica Inc.
+- */
+-
+-#ifndef _XTENSA_RWSEM_H
+-#define _XTENSA_RWSEM_H
+-
+-#ifndef _LINUX_RWSEM_H
+-#error "Please don't include <asm/rwsem.h> directly, use <linux/rwsem.h> instead."
+-#endif
+-
+-#define RWSEM_UNLOCKED_VALUE		0x00000000
+-#define RWSEM_ACTIVE_BIAS		0x00000001
+-#define RWSEM_ACTIVE_MASK		0x0000ffff
+-#define RWSEM_WAITING_BIAS		(-0x00010000)
+-#define RWSEM_ACTIVE_READ_BIAS		RWSEM_ACTIVE_BIAS
+-#define RWSEM_ACTIVE_WRITE_BIAS		(RWSEM_WAITING_BIAS + RWSEM_ACTIVE_BIAS)
+-
+-/*
+- * lock for reading
+- */
+-static inline void __down_read(struct rw_semaphore *sem)
+-{
+-	if (atomic_add_return(1,(atomic_t *)(&sem->count)) <= 0)
+-		rwsem_down_read_failed(sem);
+-}
+-
+-static inline int __down_read_trylock(struct rw_semaphore *sem)
+-{
+-	int tmp;
+-
+-	while ((tmp = sem->count) >= 0) {
+-		if (tmp = cmpxchg(&sem->count, tmp,
+-				   tmp + RWSEM_ACTIVE_READ_BIAS)) {
+-			return 1;
+-		}
+-	}
+-	return 0;
+-}
+-
+-/*
+- * lock for writing
+- */
+-static inline void __down_write(struct rw_semaphore *sem)
+-{
+-	int tmp;
+-
+-	tmp = atomic_add_return(RWSEM_ACTIVE_WRITE_BIAS,
+-				(atomic_t *)(&sem->count));
+-	if (tmp != RWSEM_ACTIVE_WRITE_BIAS)
+-		rwsem_down_write_failed(sem);
+-}
+-
+-static inline int __down_write_killable(struct rw_semaphore *sem)
+-{
+-	int tmp;
+-
+-	tmp = atomic_add_return(RWSEM_ACTIVE_WRITE_BIAS,
+-				(atomic_t *)(&sem->count));
+-	if (tmp != RWSEM_ACTIVE_WRITE_BIAS)
+-		if (IS_ERR(rwsem_down_write_failed_killable(sem)))
+-			return -EINTR;
+-
+-	return 0;
+-}
+-
+-static inline int __down_write_trylock(struct rw_semaphore *sem)
+-{
+-	int tmp;
+-
+-	tmp = cmpxchg(&sem->count, RWSEM_UNLOCKED_VALUE,
+-		      RWSEM_ACTIVE_WRITE_BIAS);
+-	return tmp = RWSEM_UNLOCKED_VALUE;
+-}
+-
+-/*
+- * unlock after reading
+- */
+-static inline void __up_read(struct rw_semaphore *sem)
+-{
+-	int tmp;
+-
+-	tmp = atomic_sub_return(1,(atomic_t *)(&sem->count));
+-	if (tmp < -1 && (tmp & RWSEM_ACTIVE_MASK) = 0)
+-		rwsem_wake(sem);
+-}
+-
+-/*
+- * unlock after writing
+- */
+-static inline void __up_write(struct rw_semaphore *sem)
+-{
+-	if (atomic_sub_return(RWSEM_ACTIVE_WRITE_BIAS,
+-			      (atomic_t *)(&sem->count)) < 0)
+-		rwsem_wake(sem);
+-}
+-
+-/*
+- * implement atomic add functionality
+- */
+-static inline void rwsem_atomic_add(int delta, struct rw_semaphore *sem)
+-{
+-	atomic_add(delta, (atomic_t *)(&sem->count));
+-}
+-
+-/*
+- * downgrade write lock to read lock
+- */
+-static inline void __downgrade_write(struct rw_semaphore *sem)
+-{
+-	int tmp;
+-
+-	tmp = atomic_add_return(-RWSEM_WAITING_BIAS, (atomic_t *)(&sem->count));
+-	if (tmp < 0)
+-		rwsem_downgrade_wake(sem);
+-}
+-
+-/*
+- * implement exchange and add functionality
+- */
+-static inline int rwsem_atomic_update(int delta, struct rw_semaphore *sem)
+-{
+-	return atomic_add_return(delta, (atomic_t *)(&sem->count));
+-}
+-
+-#endif	/* _XTENSA_RWSEM_H */
+-- 
+2.8.0.rc3
 
