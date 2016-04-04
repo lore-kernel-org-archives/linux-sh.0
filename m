@@ -1,36 +1,126 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 28 Apr 2016 08:03:05 +0000
-Subject: Re: [PATCH 2/6] mmc: sh_mobile_sdhi: remove obsolete irq_by_name registration
-Message-Id: <CAMuHMdW=CRZ-EY0+2aq90JYKkYyfLhWt8o=Anpjb9JxD5TDkpw@mail.gmail.com>
+From: Sergey Senozhatsky <sergey.senozhatsky.work@gmail.com>
+Date: Mon, 04 Apr 2016 04:49:28 +0000
+Subject: Re: [PATCH v4 1/5] printk/nmi: generic solution for safe printk in NMI
+Message-Id: <20160404044928.GD6164@swordfish>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1459934734-3613-1-git-send-email-wsa@the-dreams.de>
-	<1459934734-3613-3-git-send-email-wsa@the-dreams.de>
-	<CAPDyKFqixO2EGxdx4ERy=DSTR+KBunrYyfR26+AYN0k5_dVHiw@mail.gmail.com>
-	<20160419093713.GC1521@katana>
-	<20160427225457.GV21636@brightrain.aerifal.cx>
-In-Reply-To: <20160427225457.GV21636@brightrain.aerifal.cx>
+References: <1459353210-20260-1-git-send-email-pmladek@suse.com>
+ <1459353210-20260-2-git-send-email-pmladek@suse.com>
+In-Reply-To: <1459353210-20260-2-git-send-email-pmladek@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Rich Felker <dalias@libc.org>
-Cc: Wolfram Sang <wsa@the-dreams.de>, Ulf Hansson <ulf.hansson@linaro.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-mmc <linux-mmc@vger.kernel.org>, linux-renesas-soc@vger.kernel.org, Linux-sh list <linux-sh@vger.kernel.org>, Simon Horman <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Rich,
+Hello,
 
-On Thu, Apr 28, 2016 at 12:54 AM, Rich Felker <dalias@libc.org> wrote:
-> Hi! Sorry I didn't notice this before. I saw sh_mobile in the subject
-> lines and guessed it was not making changes in arch/sh.
+On (03/30/16 17:53), Petr Mladek wrote:
+[..]
+> @@ -67,10 +67,12 @@ extern void irq_exit(void);
+>  		preempt_count_add(NMI_OFFSET + HARDIRQ_OFFSET);	\
+>  		rcu_nmi_enter();				\
+>  		trace_hardirq_enter();				\
+> +		printk_nmi_enter();				\
+>  	} while (0)
+>  
+>  #define nmi_exit()						\
+>  	do {							\
+> +		printk_nmi_exit();				\
+>  		trace_hardirq_exit();				\
+>  		rcu_nmi_exit();					\
+>  		BUG_ON(!in_nmi());				\
 
-Yeah, it's confusing that "SH-Mobile" was used for both SH (only) and
-ARM (+SH ;-) SoCs.
+isn't it a bit too early to printk_nmi_exit()? rcu_nmi_exit() can
+WARN_ON_ONCE() in 3 places.
 
-Gr{oetje,eeting}s,
+the same goes for printk_nmi_enter(). rcu_nmi_enter() can WARN_ON_ONCE().
 
-                        Geert
+seems that in both cases we can endup having WARN_ON_ONCE() from nmi,
+but with default printk function.
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+> +/*
+> + * Flush data from the associated per_CPU buffer. The function
+> + * can be called either via IRQ work or independently.
+> + */
+> +static void __printk_nmi_flush(struct irq_work *work)
+> +{
+> +	static raw_spinlock_t read_lock > +		__RAW_SPIN_LOCK_INITIALIZER(read_lock);
+> +	struct nmi_seq_buf *s = container_of(work, struct nmi_seq_buf, work);
+> +	unsigned long flags;
+> +	size_t len, size;
+> +	int i, last_i;
+> +
+> +	/*
+> +	 * The lock has two functions. First, one reader has to flush all
+> +	 * available message to make the lockless synchronization with
+> +	 * writers easier. Second, we do not want to mix messages from
+> +	 * different CPUs. This is especially important when printing
+> +	 * a backtrace.
+> +	 */
+> +	raw_spin_lock_irqsave(&read_lock, flags);
+> +
+
+hm... so here we have
+	for (; i < size; i++)
+		printk()
+
+under the spinlock. the thing is that one of printk() can end up
+in console_unlock()->call_console_drivers() loop, iterating there
+long enough to spinlock lockup other CPUs that might want to flush
+NMI buffers (if any), assuming that there are enough printk() (or
+may be a slow serial console) happening concurrently on other CPUs
+to keep the current ->read_lock busy. async printk can help here,
+but user can request sync version of printk.
+
+how about using deferred printk for nmi flush?
+print_nmi_seq_line()->printk_deferred() ?
+
+	-ss
+
+> +	i = 0;
+> +more:
+> +	len = atomic_read(&s->len);
+> +
+> +	/*
+> +	 * This is just a paranoid check that nobody has manipulated
+> +	 * the buffer an unexpected way. If we printed something then
+> +	 * @len must only increase.
+> +	 */
+> +	if (i && i >= len)
+> +		pr_err("printk_nmi_flush: internal error: i=%d >= len=%zu\n",
+> +		       i, len);
+> +
+> +	if (!len)
+> +		goto out; /* Someone else has already flushed the buffer. */
+> +
+> +	/* Make sure that data has been written up to the @len */
+> +	smp_rmb();
+> +
+> +	size = min(len, sizeof(s->buffer));
+> +	last_i = i;
+> +
+> +	/* Print line by line. */
+> +	for (; i < size; i++) {
+> +		if (s->buffer[i] = '\n') {
+> +			print_nmi_seq_line(s, last_i, i);
+> +			last_i = i + 1;
+> +		}
+> +	}
+> +	/* Check if there was a partial line. */
+> +	if (last_i < size) {
+> +		print_nmi_seq_line(s, last_i, size - 1);
+> +		pr_cont("\n");
+> +	}
+> +
+> +	/*
+> +	 * Check that nothing has got added in the meantime and truncate
+> +	 * the buffer. Note that atomic_cmpxchg() is an implicit memory
+> +	 * barrier that makes sure that the data were copied before
+> +	 * updating s->len.
+> +	 */
+> +	if (atomic_cmpxchg(&s->len, len, 0) != len)
+> +		goto more;
+> +
+> +out:
+> +	raw_spin_unlock_irqrestore(&read_lock, flags);
+> +}
