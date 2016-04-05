@@ -1,61 +1,188 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Sun, 03 Apr 2016 13:47:40 +0000
-Subject: Re: [PATCH v3 09/11] i2c: rcar: revoke START request early
-Message-Id: <20160403134740.GA7231@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="y0ulUmNC+osPPQO6"
+From: Masahiro Yamada <yamada.masahiro@socionext.com>
+Date: Tue, 05 Apr 2016 01:51:23 +0000
+Subject: [PATCH v2] clk: let clk_disable() return immediately if clk is NULL or error
+Message-Id: <1459821083-28116-1-git-send-email-yamada.masahiro@socionext.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447948611-2615-10-git-send-email-wsa@the-dreams.de>
- <56FD9080.4090203@cogentembedded.com>
- <20160331224838.GA7381@katana>
- <56FED245.4010503@cogentembedded.com>
- <20160401201415.GA25936@katana>
- <56FEFEC4.6010401@cogentembedded.com>
- <20160402072726.GA1384@katana>
- <56FFC06F.70108@cogentembedded.com>
- <20160403082513.GA1404@katana>
- <57011C30.7020805@cogentembedded.com>
-In-Reply-To: <57011C30.7020805@cogentembedded.com>
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, "stable@vger.kernel.org" <stable@vger.kernel.org>, "linux-renesas-soc@vger.kernel.org" <linux-renesas-soc@vger.kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
+
+The clk_disable() in the common clock framework (drivers/clk/clk.c)
+returns immediately if a given clk is NULL or an error pointer.  It
+allows clock consumers to call clk_disable() without IS_ERR_OR_NULL
+checking if drivers are only used with the common clock framework.
+
+Unfortunately, NULL/error checking is missing from some of non-common
+clk_disable() implementations.  This prevents us from completely
+dropping NULL/error checking from callers.  Let's make it tree-wide
+consistent by adding IS_ERR_OR_NULL(clk) to all callees.
+
+Signed-off-by: Masahiro Yamada <yamada.masahiro@socionext.com>
+Acked-by: Greg Ungerer <gerg@uclinux.org>
+Acked-by: Wan Zongshun <mcuos.com@gmail.com>
+---
+
+Stephen,
+
+This patch has been unapplied for a long time.
+
+Please let me know if there is something wrong with this patch.
+
+Thanks,
 
 
---y0ulUmNC+osPPQO6
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Changes in v2:
+  - Rebase on Linux 4.6-rc1
 
+ arch/arm/mach-ep93xx/clock.c     |  2 +-
+ arch/arm/mach-mmp/clock.c        |  3 +++
+ arch/arm/mach-sa1100/clock.c     | 15 ++++++++-------
+ arch/arm/mach-w90x900/clock.c    |  3 +++
+ arch/blackfin/mach-bf609/clock.c |  3 +++
+ arch/m68k/coldfire/clk.c         |  4 ++++
+ arch/mips/bcm63xx/clk.c          |  3 +++
+ arch/mips/lantiq/clk.c           |  3 +++
+ drivers/sh/clk/core.c            |  2 +-
+ 9 files changed, 29 insertions(+), 9 deletions(-)
 
-> >>    And I still don't feel good about the patch removing the spinlock -=
-- I'm
-> >>not sure it's SMP-safe...
-> >
-> >In what scenario?
->=20
->    I've reviewed the patches once again and it looked like they are safe.
+diff --git a/arch/arm/mach-ep93xx/clock.c b/arch/arm/mach-ep93xx/clock.c
+index 39ef3b6..4e11f7d 100644
+--- a/arch/arm/mach-ep93xx/clock.c
++++ b/arch/arm/mach-ep93xx/clock.c
+@@ -293,7 +293,7 @@ void clk_disable(struct clk *clk)
+ {
+ 	unsigned long flags;
+ 
+-	if (!clk)
++	if (IS_ERR_OR_NULL(clk))
+ 		return;
+ 
+ 	spin_lock_irqsave(&clk_lock, flags);
+diff --git a/arch/arm/mach-mmp/clock.c b/arch/arm/mach-mmp/clock.c
+index ac6633d..39ad3896 100644
+--- a/arch/arm/mach-mmp/clock.c
++++ b/arch/arm/mach-mmp/clock.c
+@@ -67,6 +67,9 @@ void clk_disable(struct clk *clk)
+ {
+ 	unsigned long flags;
+ 
++	if (IS_ERR_OR_NULL(clk))
++		return;
++
+ 	WARN_ON(clk->enabled = 0);
+ 
+ 	spin_lock_irqsave(&clocks_lock, flags);
+diff --git a/arch/arm/mach-sa1100/clock.c b/arch/arm/mach-sa1100/clock.c
+index cbf53bb..ea103fd 100644
+--- a/arch/arm/mach-sa1100/clock.c
++++ b/arch/arm/mach-sa1100/clock.c
+@@ -85,13 +85,14 @@ void clk_disable(struct clk *clk)
+ {
+ 	unsigned long flags;
+ 
+-	if (clk) {
+-		WARN_ON(clk->enabled = 0);
+-		spin_lock_irqsave(&clocks_lock, flags);
+-		if (--clk->enabled = 0)
+-			clk->ops->disable(clk);
+-		spin_unlock_irqrestore(&clocks_lock, flags);
+-	}
++	if (IS_ERR_OR_NULL(clk))
++		return;
++
++	WARN_ON(clk->enabled = 0);
++	spin_lock_irqsave(&clocks_lock, flags);
++	if (--clk->enabled = 0)
++		clk->ops->disable(clk);
++	spin_unlock_irqrestore(&clocks_lock, flags);
+ }
+ EXPORT_SYMBOL(clk_disable);
+ 
+diff --git a/arch/arm/mach-w90x900/clock.c b/arch/arm/mach-w90x900/clock.c
+index 2c371ff..90ec250 100644
+--- a/arch/arm/mach-w90x900/clock.c
++++ b/arch/arm/mach-w90x900/clock.c
+@@ -46,6 +46,9 @@ void clk_disable(struct clk *clk)
+ {
+ 	unsigned long flags;
+ 
++	if (IS_ERR_OR_NULL(clk))
++		return;
++
+ 	WARN_ON(clk->enabled = 0);
+ 
+ 	spin_lock_irqsave(&clocks_lock, flags);
+diff --git a/arch/blackfin/mach-bf609/clock.c b/arch/blackfin/mach-bf609/clock.c
+index 3783058..fed8015 100644
+--- a/arch/blackfin/mach-bf609/clock.c
++++ b/arch/blackfin/mach-bf609/clock.c
+@@ -97,6 +97,9 @@ EXPORT_SYMBOL(clk_enable);
+ 
+ void clk_disable(struct clk *clk)
+ {
++	if (IS_ERR_OR_NULL(clk))
++		return;
++
+ 	if (clk->ops && clk->ops->disable)
+ 		clk->ops->disable(clk);
+ }
+diff --git a/arch/m68k/coldfire/clk.c b/arch/m68k/coldfire/clk.c
+index fddfdcc..eb0e8c1 100644
+--- a/arch/m68k/coldfire/clk.c
++++ b/arch/m68k/coldfire/clk.c
+@@ -101,6 +101,10 @@ EXPORT_SYMBOL(clk_enable);
+ void clk_disable(struct clk *clk)
+ {
+ 	unsigned long flags;
++
++	if (IS_ERR_OR_NULL(clk))
++		return;
++
+ 	spin_lock_irqsave(&clk_lock, flags);
+ 	if ((--clk->enabled = 0) && clk->clk_ops)
+ 		clk->clk_ops->disable(clk);
+diff --git a/arch/mips/bcm63xx/clk.c b/arch/mips/bcm63xx/clk.c
+index 6375652..d6a39bf 100644
+--- a/arch/mips/bcm63xx/clk.c
++++ b/arch/mips/bcm63xx/clk.c
+@@ -326,6 +326,9 @@ EXPORT_SYMBOL(clk_enable);
+ 
+ void clk_disable(struct clk *clk)
+ {
++	if (IS_ERR_OR_NULL(clk))
++		return;
++
+ 	mutex_lock(&clocks_mutex);
+ 	clk_disable_unlocked(clk);
+ 	mutex_unlock(&clocks_mutex);
+diff --git a/arch/mips/lantiq/clk.c b/arch/mips/lantiq/clk.c
+index a0706fd..c8d87b1 100644
+--- a/arch/mips/lantiq/clk.c
++++ b/arch/mips/lantiq/clk.c
+@@ -130,6 +130,9 @@ EXPORT_SYMBOL(clk_enable);
+ 
+ void clk_disable(struct clk *clk)
+ {
++	if (IS_ERR_OR_NULL(clk))
++		return;
++
+ 	if (unlikely(!clk_good(clk)))
+ 		return;
+ 
+diff --git a/drivers/sh/clk/core.c b/drivers/sh/clk/core.c
+index 92863e3..9978fa4 100644
+--- a/drivers/sh/clk/core.c
++++ b/drivers/sh/clk/core.c
+@@ -252,7 +252,7 @@ void clk_disable(struct clk *clk)
+ {
+ 	unsigned long flags;
+ 
+-	if (!clk)
++	if (IS_ERR_OR_NULL(clk))
+ 		return;
+ 
+ 	spin_lock_irqsave(&clock_lock, flags);
+-- 
+1.9.1
 
-Thanks.
-
-
---y0ulUmNC+osPPQO6
-Content-Type: application/pgp-signature; name="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBAgAGBQJXAR78AAoJEBQN5MwUoCm2I1QQAKsVA7Ox0U5X8VOh+q3ETJux
-SoFEUcPoQQ7ODNUKbymn0FjkntGnPnIRdQoCpzJSFoqOSySYKNuGw9aKNE5UioeT
-0qwNnpLIOF7iM5ttM9krXCyFjh/9yxaeUGBVDmgZgy2YgUqcVPwNcOPzi/lasY8F
-qnmJTUwrfHoiAKh+D91jY2ou9v+bBSERyCNUtzMm3UtlXCvaE15xFQVac2uWLsCE
-Hwf+i4lQw/fDzReZTjE6WKucTuu+7yqGBxSQlfqIZ4W30WpJuolMpk4UjaUjaHYX
-Wnt8g62+HrrH493R4c7xkYNRiIEVyO12KvNmwc9ISRSXgEF5r/i80aKTTZBiQVh1
-u69Z6A9JfG0xxf4BUqqpSaFwGVBqxC6YK2J6Vtz0bYTGXKOvw/SvKVadqnBCPW6q
-cbGtQ5HyFmSVN7IwqpxQZ+iaPXOe6PDOTVcdEKqwA9CiMd7BorCJE+sXV0wFQdZc
-ctwFa5pUfusguZMdr8sc4eaJuLtCXRV3kJmHn5b3IAXIeJBAGdNL3BS4u53DgbYZ
-qVQQ1/5JsMEKj3W6yTx+BvdQa3Vy+xH/7et/1sJ9YAxdx9c3NzjXpW50SRdduXqI
-eAVwD4qs9t9n/y0Nbb/psFKH9IW7IyaMP5tB3JZfUCOtOJTNh1Zjxv1D6PM0eCCy
-moJdHqv5atwi9bUxZT7N
-=V6v+
------END PGP SIGNATURE-----
-
---y0ulUmNC+osPPQO6--
