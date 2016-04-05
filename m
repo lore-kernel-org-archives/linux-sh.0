@@ -1,83 +1,268 @@
-From: Petr Mladek <pmladek@suse.com>
-Date: Wed, 20 Apr 2016 13:49:14 +0000
-Subject: Re: [PATCH v4 1/5] printk/nmi: generic solution for safe printk in NMI
-Message-Id: <20160420134914.GK6862@pathway.suse.cz>
+From: Zeng Zhaoxiu <zhaoxiu.zeng@gmail.com>
+Date: Tue, 05 Apr 2016 04:23:23 +0000
+Subject: [PATCH V2 02/30] Include generic parity.h in some architectures' bitops.h
+Message-Id: <57033DBB.6060600@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1459353210-20260-1-git-send-email-pmladek@suse.com>
- <1459353210-20260-2-git-send-email-pmladek@suse.com>
- <20160404044928.GD6164@swordfish>
- <20160404093819.GH1023@pathway.suse.cz>
-In-Reply-To: <20160404093819.GH1023@pathway.suse.cz>
+References: <57031D9D.801@gmail.com>
+In-Reply-To: <57031D9D.801@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon 2016-04-04 11:38:19, Petr Mladek wrote:
-> On Mon 2016-04-04 13:49:28, Sergey Senozhatsky wrote:
-> > Hello,
-> > 
-> > On (03/30/16 17:53), Petr Mladek wrote:
-> > > +/*
-> > > + * Flush data from the associated per_CPU buffer. The function
-> > > + * can be called either via IRQ work or independently.
-> > > + */
-> > > +static void __printk_nmi_flush(struct irq_work *work)
-> > > +{
-> > > +	static raw_spinlock_t read_lock > > > +		__RAW_SPIN_LOCK_INITIALIZER(read_lock);
-> > > +	struct nmi_seq_buf *s = container_of(work, struct nmi_seq_buf, work);
-> > > +	unsigned long flags;
-> > > +	size_t len, size;
-> > > +	int i, last_i;
-> > > +
-> > > +	/*
-> > > +	 * The lock has two functions. First, one reader has to flush all
-> > > +	 * available message to make the lockless synchronization with
-> > > +	 * writers easier. Second, we do not want to mix messages from
-> > > +	 * different CPUs. This is especially important when printing
-> > > +	 * a backtrace.
-> > > +	 */
-> > > +	raw_spin_lock_irqsave(&read_lock, flags);
-> > > +
-> > 
-> > hm... so here we have
-> > 	for (; i < size; i++)
-> > 		printk()
-> > 
-> > under the spinlock. the thing is that one of printk() can end up
-> > in console_unlock()->call_console_drivers() loop, iterating there
-> > long enough to spinlock lockup other CPUs that might want to flush
-> > NMI buffers (if any), assuming that there are enough printk() (or
-> > may be a slow serial console) happening concurrently on other CPUs
-> > to keep the current ->read_lock busy. async printk can help here,
-> > but user can request sync version of printk.
-> 
-> I think that printk() is called on many other locations under
-> a spinlock and they all are waiting for the async printk.
->
-> > how about using deferred printk for nmi flush?
-> > print_nmi_seq_line()->printk_deferred() ?
+From: Zhaoxiu Zeng <zhaoxiu.zeng@gmail.com>
 
-I thought more about it. printk_nmi_flush() is primary called
-via irq work. If we use deferred printk() here we will just delay
-the console stuff to another irq work.
+Use the generic version
+---
+  arch/arc/include/asm/bitops.h      | 1 +
+  arch/arm/include/asm/bitops.h      | 1 +
+  arch/arm64/include/asm/bitops.h    | 1 +
+  arch/avr32/include/asm/bitops.h    | 1 +
+  arch/c6x/include/asm/bitops.h      | 1 +
+  arch/cris/include/asm/bitops.h     | 1 +
+  arch/frv/include/asm/bitops.h      | 1 +
+  arch/h8300/include/asm/bitops.h    | 1 +
+  arch/hexagon/include/asm/bitops.h  | 1 +
+  arch/m32r/include/asm/bitops.h     | 1 +
+  arch/m68k/include/asm/bitops.h     | 1 +
+  arch/metag/include/asm/bitops.h    | 1 +
+  arch/mn10300/include/asm/bitops.h  | 1 +
+  arch/openrisc/include/asm/bitops.h | 1 +
+  arch/parisc/include/asm/bitops.h   | 1 +
+  arch/s390/include/asm/bitops.h     | 1 +
+  arch/sh/include/asm/bitops.h       | 1 +
+  arch/xtensa/include/asm/bitops.h   | 1 +
+  18 files changed, 18 insertions(+)
 
-If we use async printk from your patch set, it will unnecessary
-create another irq work and delay the waking of the printk kthread.
+diff --git a/arch/arc/include/asm/bitops.h b/arch/arc/include/asm/bitops.h
+index 0352fb8..7967e47 100644
+--- a/arch/arc/include/asm/bitops.h
++++ b/arch/arc/include/asm/bitops.h
+@@ -370,6 +370,7 @@ static inline __attribute__ ((const)) int 
+__ffs(unsigned long x)
+  #define ffz(x)    __ffs(~(x))
 
-If anyone forces sync printk, it will not help much. We will still
-call console from the IRQ context and the potential flood of messages
-still might cause a soft lookup.
+  #include <asm-generic/bitops/hweight.h>
++#include <asm-generic/bitops/parity.h>
+  #include <asm-generic/bitops/fls64.h>
+  #include <asm-generic/bitops/sched.h>
+  #include <asm-generic/bitops/lock.h>
+diff --git a/arch/arm/include/asm/bitops.h b/arch/arm/include/asm/bitops.h
+index e943e6c..99f28a6 100644
+--- a/arch/arm/include/asm/bitops.h
++++ b/arch/arm/include/asm/bitops.h
+@@ -313,6 +313,7 @@ static inline unsigned long __ffs(unsigned long x)
 
-Finally, as I already said. This is not different from any other
-printk() call under a spinlock.
+  #include <asm-generic/bitops/sched.h>
+  #include <asm-generic/bitops/hweight.h>
++#include <asm-generic/bitops/parity.h>
+  #include <asm-generic/bitops/lock.h>
 
-After all, I am going to use the normal printk() when flushing
-the NMI buffers.
+  #ifdef __ARMEB__
+diff --git a/arch/arm64/include/asm/bitops.h 
+b/arch/arm64/include/asm/bitops.h
+index 9c19594..eac4965 100644
+--- a/arch/arm64/include/asm/bitops.h
++++ b/arch/arm64/include/asm/bitops.h
+@@ -44,6 +44,7 @@ extern int test_and_change_bit(int nr, volatile 
+unsigned long *p);
 
-The only exception will be when this is called on panic in NMI
-context. In this case, printk_deferred() will do exactly what
-we need.
+  #include <asm-generic/bitops/sched.h>
+  #include <asm-generic/bitops/hweight.h>
++#include <asm-generic/bitops/parity.h>
+  #include <asm-generic/bitops/lock.h>
 
-Best Regards,
-Petr
+  #include <asm-generic/bitops/non-atomic.h>
+diff --git a/arch/avr32/include/asm/bitops.h 
+b/arch/avr32/include/asm/bitops.h
+index 910d537..9f4a2ce 100644
+--- a/arch/avr32/include/asm/bitops.h
++++ b/arch/avr32/include/asm/bitops.h
+@@ -298,6 +298,7 @@ static inline int ffs(unsigned long word)
+  #include <asm-generic/bitops/fls64.h>
+  #include <asm-generic/bitops/sched.h>
+  #include <asm-generic/bitops/hweight.h>
++#include <asm-generic/bitops/parity.h>
+  #include <asm-generic/bitops/lock.h>
+
+  extern unsigned long find_next_zero_bit_le(const void *addr,
+diff --git a/arch/c6x/include/asm/bitops.h b/arch/c6x/include/asm/bitops.h
+index f0ab012..94eb0d1 100644
+--- a/arch/c6x/include/asm/bitops.h
++++ b/arch/c6x/include/asm/bitops.h
+@@ -87,6 +87,7 @@ static inline int ffs(int x)
+
+  #include <asm-generic/bitops/sched.h>
+  #include <asm-generic/bitops/hweight.h>
++#include <asm-generic/bitops/parity.h>
+  #include <asm-generic/bitops/lock.h>
+
+  #include <asm-generic/bitops/atomic.h>
+diff --git a/arch/cris/include/asm/bitops.h b/arch/cris/include/asm/bitops.h
+index 8062cb5..06bc246 100644
+--- a/arch/cris/include/asm/bitops.h
++++ b/arch/cris/include/asm/bitops.h
+@@ -36,6 +36,7 @@
+  #include <asm-generic/bitops/__fls.h>
+  #include <asm-generic/bitops/fls64.h>
+  #include <asm-generic/bitops/hweight.h>
++#include <asm-generic/bitops/parity.h>
+  #include <asm-generic/bitops/find.h>
+  #include <asm-generic/bitops/lock.h>
+
+diff --git a/arch/frv/include/asm/bitops.h b/arch/frv/include/asm/bitops.h
+index 0df8e95..f2a7ee8 100644
+--- a/arch/frv/include/asm/bitops.h
++++ b/arch/frv/include/asm/bitops.h
+@@ -314,6 +314,7 @@ int __ilog2_u64(u64 n)
+
+  #include <asm-generic/bitops/sched.h>
+  #include <asm-generic/bitops/hweight.h>
++#include <asm-generic/bitops/parity.h>
+  #include <asm-generic/bitops/lock.h>
+
+  #include <asm-generic/bitops/le.h>
+diff --git a/arch/h8300/include/asm/bitops.h 
+b/arch/h8300/include/asm/bitops.h
+index 05999ab..e392db2 100644
+--- a/arch/h8300/include/asm/bitops.h
++++ b/arch/h8300/include/asm/bitops.h
+@@ -172,6 +172,7 @@ static inline unsigned long __ffs(unsigned long word)
+  #include <asm-generic/bitops/find.h>
+  #include <asm-generic/bitops/sched.h>
+  #include <asm-generic/bitops/hweight.h>
++#include <asm-generic/bitops/parity.h>
+  #include <asm-generic/bitops/lock.h>
+  #include <asm-generic/bitops/le.h>
+  #include <asm-generic/bitops/ext2-atomic.h>
+diff --git a/arch/hexagon/include/asm/bitops.h 
+b/arch/hexagon/include/asm/bitops.h
+index 5e4a59b..2df614e 100644
+--- a/arch/hexagon/include/asm/bitops.h
++++ b/arch/hexagon/include/asm/bitops.h
+@@ -290,6 +290,7 @@ static inline unsigned long __fls(unsigned long word)
+  #include <asm-generic/bitops/fls64.h>
+  #include <asm-generic/bitops/sched.h>
+  #include <asm-generic/bitops/hweight.h>
++#include <asm-generic/bitops/parity.h>
+
+  #include <asm-generic/bitops/le.h>
+  #include <asm-generic/bitops/ext2-atomic.h>
+diff --git a/arch/m32r/include/asm/bitops.h b/arch/m32r/include/asm/bitops.h
+index 86ba2b4..e3cf46b 100644
+--- a/arch/m32r/include/asm/bitops.h
++++ b/arch/m32r/include/asm/bitops.h
+@@ -259,6 +259,7 @@ static __inline__ int test_and_change_bit(int nr, 
+volatile void * addr)
+  #include <asm-generic/bitops/find.h>
+  #include <asm-generic/bitops/ffs.h>
+  #include <asm-generic/bitops/hweight.h>
++#include <asm-generic/bitops/parity.h>
+  #include <asm-generic/bitops/lock.h>
+
+  #endif /* __KERNEL__ */
+diff --git a/arch/m68k/include/asm/bitops.h b/arch/m68k/include/asm/bitops.h
+index b4a9b0d..fd673ea 100644
+--- a/arch/m68k/include/asm/bitops.h
++++ b/arch/m68k/include/asm/bitops.h
+@@ -519,6 +519,7 @@ static inline int __fls(int x)
+  #include <asm-generic/bitops/fls64.h>
+  #include <asm-generic/bitops/sched.h>
+  #include <asm-generic/bitops/hweight.h>
++#include <asm-generic/bitops/parity.h>
+  #include <asm-generic/bitops/lock.h>
+  #endif /* __KERNEL__ */
+
+diff --git a/arch/metag/include/asm/bitops.h 
+b/arch/metag/include/asm/bitops.h
+index 2671134..ad13087 100644
+--- a/arch/metag/include/asm/bitops.h
++++ b/arch/metag/include/asm/bitops.h
+@@ -118,6 +118,7 @@ static inline int test_and_change_bit(unsigned int bit,
+  #include <asm-generic/bitops/__fls.h>
+  #include <asm-generic/bitops/fls64.h>
+  #include <asm-generic/bitops/hweight.h>
++#include <asm-generic/bitops/parity.h>
+  #include <asm-generic/bitops/lock.h>
+  #include <asm-generic/bitops/sched.h>
+  #include <asm-generic/bitops/le.h>
+diff --git a/arch/mn10300/include/asm/bitops.h 
+b/arch/mn10300/include/asm/bitops.h
+index fe6f8e2..60761b7 100644
+--- a/arch/mn10300/include/asm/bitops.h
++++ b/arch/mn10300/include/asm/bitops.h
+@@ -225,6 +225,7 @@ int ffs(int x)
+  #include <asm-generic/bitops/find.h>
+  #include <asm-generic/bitops/sched.h>
+  #include <asm-generic/bitops/hweight.h>
++#include <asm-generic/bitops/parity.h>
+  #include <asm-generic/bitops/ext2-atomic-setbit.h>
+  #include <asm-generic/bitops/le.h>
+
+diff --git a/arch/openrisc/include/asm/bitops.h 
+b/arch/openrisc/include/asm/bitops.h
+index 3003cda..8c97642 100644
+--- a/arch/openrisc/include/asm/bitops.h
++++ b/arch/openrisc/include/asm/bitops.h
+@@ -43,6 +43,7 @@
+  #include <asm-generic/bitops/sched.h>
+  #include <asm/bitops/ffs.h>
+  #include <asm-generic/bitops/hweight.h>
++#include <asm-generic/bitops/parity.h>
+  #include <asm-generic/bitops/lock.h>
+
+  #include <asm-generic/bitops/atomic.h>
+diff --git a/arch/parisc/include/asm/bitops.h 
+b/arch/parisc/include/asm/bitops.h
+index 3f9406d..867ba10 100644
+--- a/arch/parisc/include/asm/bitops.h
++++ b/arch/parisc/include/asm/bitops.h
+@@ -211,6 +211,7 @@ static __inline__ int fls(int x)
+  #include <asm-generic/bitops/__fls.h>
+  #include <asm-generic/bitops/fls64.h>
+  #include <asm-generic/bitops/hweight.h>
++#include <asm-generic/bitops/parity.h>
+  #include <asm-generic/bitops/lock.h>
+  #include <asm-generic/bitops/sched.h>
+
+diff --git a/arch/s390/include/asm/bitops.h b/arch/s390/include/asm/bitops.h
+index 8043f10..198eead 100644
+--- a/arch/s390/include/asm/bitops.h
++++ b/arch/s390/include/asm/bitops.h
+@@ -460,6 +460,7 @@ static inline int fls(int word)
+  #include <asm-generic/bitops/ffz.h>
+  #include <asm-generic/bitops/find.h>
+  #include <asm-generic/bitops/hweight.h>
++#include <asm-generic/bitops/parity.h>
+  #include <asm-generic/bitops/sched.h>
+  #include <asm-generic/bitops/le.h>
+  #include <asm-generic/bitops/ext2-atomic-setbit.h>
+diff --git a/arch/sh/include/asm/bitops.h b/arch/sh/include/asm/bitops.h
+index fc8e652..4bf0c35 100644
+--- a/arch/sh/include/asm/bitops.h
++++ b/arch/sh/include/asm/bitops.h
+@@ -86,6 +86,7 @@ static inline unsigned long ffz(unsigned long word)
+  #include <asm-generic/bitops/find.h>
+  #include <asm-generic/bitops/ffs.h>
+  #include <asm-generic/bitops/hweight.h>
++#include <asm-generic/bitops/parity.h>
+  #include <asm-generic/bitops/lock.h>
+  #include <asm-generic/bitops/sched.h>
+  #include <asm-generic/bitops/le.h>
+diff --git a/arch/xtensa/include/asm/bitops.h 
+b/arch/xtensa/include/asm/bitops.h
+index 3f44fa2..981fa83 100644
+--- a/arch/xtensa/include/asm/bitops.h
++++ b/arch/xtensa/include/asm/bitops.h
+@@ -229,6 +229,7 @@ test_and_change_bit(unsigned int bit, volatile 
+unsigned long *p)
+  #include <asm-generic/bitops/ext2-atomic-setbit.h>
+
+  #include <asm-generic/bitops/hweight.h>
++#include <asm-generic/bitops/parity.h>
+  #include <asm-generic/bitops/lock.h>
+  #include <asm-generic/bitops/sched.h>
+
+-- 
+2.5.0
+
