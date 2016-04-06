@@ -1,96 +1,56 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 29 Apr 2016 20:00:04 +0000
-Subject: Re: [PATCH v2 08/11] serial: sh-sci: Correct pin initialization on (H)SCIF
-Message-Id: <CAMuHMdWdWfGOa5iK7pFLuQUv14Yp6Oi8jhsHoSfrLDARfwCfQA@mail.gmail.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Wed, 06 Apr 2016 09:25:29 +0000
+Subject: [PATCH 1/6] mmc: sh_mobile_sdhi: don't use array for DT configs
+Message-Id: <1459934734-3613-2-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1461934714-18681-1-git-send-email-geert+renesas@glider.be>
-	<1461934714-18681-9-git-send-email-geert+renesas@glider.be>
-	<572384E9.9060707@hurleysoftware.com>
-In-Reply-To: <572384E9.9060707@hurleysoftware.com>
+References: <1459934734-3613-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1459934734-3613-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Peter Hurley <peter@hurleysoftware.com>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>, Magnus Damm <magnus.damm@gmail.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, "linux-serial@vger.kernel.org" <linux-serial@vger.kernel.org>, linux-renesas-soc@vger.kernel.org, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+To: linux-mmc@vger.kernel.org
+Cc: Wolfram Sang <wsa@the-dreams.de>, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, Simon Horman <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
 
-Hi Peter,
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-On Fri, Apr 29, 2016 at 5:59 PM, Peter Hurley <peter@hurleysoftware.com> wrote:
-> On 04/29/2016 05:58 AM, Geert Uytterhoeven wrote:
->> Correct pin initialization on (H)SCIF:
->>   - RTS must be deasserted (it's active low),
->>   - SCK must be an input, as it may be used as the optional external
->>     clock input.
->>
->> Initial pin configuration must always be done:
->>   - Regardless of the presence of dedicated RTS and CTS pins: if the
->>     register exists, the RTS/CTS bits exist, too,
->>   - Regardless of hardware flow control being enabled or not: RTS must
->>     be deasserted.
->
-> This is always setting RTS active; why?
+We won't access an index based array to get our DT config, but create
+seperate structs instead. So, remove the array which only wastes memory.
 
-No, it deasserts RTS. RTS is active-low, so setting the pin state to 1/high
-(setting the SCSPTR_RTSDT bit), makes RTS inactive.
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+---
+ drivers/mmc/host/sh_mobile_sdhi.c | 12 +++++-------
+ 1 file changed, 5 insertions(+), 7 deletions(-)
 
-Before, the code didn't set the SCSPTR_RTSDT bit, so the pin might have
-been low, i.e. RTS may have been active.
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index cf10f8cca9ee2d..9beee48d2e280d 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -51,10 +51,8 @@ struct sh_mobile_sdhi_of_data {
+ 	unsigned bus_shift;
+ };
+ 
+-static const struct sh_mobile_sdhi_of_data sh_mobile_sdhi_of_cfg[] = {
+-	{
+-		.tmio_flags = TMIO_MMC_HAS_IDLE_WAIT,
+-	},
++static const struct sh_mobile_sdhi_of_data of_default_cfg = {
++	.tmio_flags = TMIO_MMC_HAS_IDLE_WAIT,
+ };
+ 
+ static const struct sh_mobile_sdhi_of_data of_rcar_gen1_compatible = {
+@@ -81,9 +79,9 @@ static const struct sh_mobile_sdhi_of_data of_rcar_gen3_compatible = {
+ static const struct of_device_id sh_mobile_sdhi_of_match[] = {
+ 	{ .compatible = "renesas,sdhi-shmobile" },
+ 	{ .compatible = "renesas,sdhi-sh7372" },
+-	{ .compatible = "renesas,sdhi-sh73a0", .data = &sh_mobile_sdhi_of_cfg[0], },
+-	{ .compatible = "renesas,sdhi-r8a73a4", .data = &sh_mobile_sdhi_of_cfg[0], },
+-	{ .compatible = "renesas,sdhi-r8a7740", .data = &sh_mobile_sdhi_of_cfg[0], },
++	{ .compatible = "renesas,sdhi-sh73a0", .data = &of_default_cfg, },
++	{ .compatible = "renesas,sdhi-r8a73a4", .data = &of_default_cfg, },
++	{ .compatible = "renesas,sdhi-r8a7740", .data = &of_default_cfg, },
+ 	{ .compatible = "renesas,sdhi-r8a7778", .data = &of_rcar_gen1_compatible, },
+ 	{ .compatible = "renesas,sdhi-r8a7779", .data = &of_rcar_gen1_compatible, },
+ 	{ .compatible = "renesas,sdhi-r8a7790", .data = &of_rcar_gen2_compatible, },
+-- 
+2.7.0
 
-> Normally you want to program RTS only in response to ->set_mctrl()
-> from serial core.  For example, this will set RTS active even though
-> baud might be set to B0.
-
-Yes, that's also my understanding.
-
->> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
->> ---
->> v2:
->>   - New.
->> ---
->>  drivers/tty/serial/sh-sci.c | 23 ++++++++---------------
->>  1 file changed, 8 insertions(+), 15 deletions(-)
->>
->> diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
->> index ce7bd165929ea078..c46999f20917964e 100644
->> --- a/drivers/tty/serial/sh-sci.c
->> +++ b/drivers/tty/serial/sh-sci.c
->> @@ -712,21 +712,14 @@ static void sci_init_pins(struct uart_port *port, unsigned int cflag)
->>               return;
->>       }
->>
->> -     /*
->> -      * For the generic path SCSPTR is necessary. Bail out if that's
->> -      * unavailable, too.
->> -      */
->> -     if (!sci_getreg(port, SCSPTR)->size)
->> -             return;
->> -
->> -     if ((s->cfg->capabilities & SCIx_HAVE_RTSCTS) &&
->> -         ((!(cflag & CRTSCTS)))) {
->> -             unsigned short status;
->> -
->> -             status = serial_port_in(port, SCSPTR);
->> -             status &= ~SCSPTR_CTSIO;
->> -             status |= SCSPTR_RTSIO;
->> -             serial_port_out(port, SCSPTR, status); /* Set RTS = 1 */
->> +     if (sci_getreg(port, SCSPTR)->size) {
->> +             u16 status = serial_port_in(port, SCSPTR);
->> +
->> +             /* RTS# is output, driven 1 */
->> +             status |= SCSPTR_RTSIO | SCSPTR_RTSDT;
->> +             /* CTS# and SCK are inputs */
->> +             status &= ~(SCSPTR_CTSIO | SCSPTR_SCKIO);
->> +             serial_port_out(port, SCSPTR, status);
->>       }
->>  }
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
