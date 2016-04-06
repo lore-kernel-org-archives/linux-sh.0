@@ -1,103 +1,70 @@
-From: Michal Hocko <mhocko@kernel.org>
-Date: Fri, 01 Apr 2016 11:04:54 +0000
-Subject: [PATCH 10/11] x86, rwsem: provide __down_write_killable
-Message-Id: <1459508695-14915-11-git-send-email-mhocko@kernel.org>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Wed, 06 Apr 2016 09:25:32 +0000
+Subject: [PATCH 4/6] mmc: tmio: simplify irq handler
+Message-Id: <1459934734-3613-5-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1459508695-14915-1-git-send-email-mhocko@kernel.org>
-In-Reply-To: <1459508695-14915-1-git-send-email-mhocko@kernel.org>
+References: <1459934734-3613-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1459934734-3613-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: LKML <linux-kernel@vger.kernel.org>
-Cc: Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@redhat.com>, Thomas Gleixner <tglx@linutronix.de>, "H. Peter Anvin" <hpa@zytor.com>, "David S. Miller" <davem@davemloft.net>, Tony Luck <tony.luck@intel.com>, Andrew Morton <akpm@linux-foundation.org>, Chris Zankel <chris@zankel.net>, Max Filippov <jcmvbkbc@gmail.com>, x86@kernel.org, linux-alpha@vger.kernel.org, linux-ia64@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-arch@vger.kernel.org, Michal Hocko <mhocko@suse.com>
+To: linux-mmc@vger.kernel.org
+Cc: Wolfram Sang <wsa@the-dreams.de>, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, Simon Horman <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
 
-From: Michal Hocko <mhocko@suse.com>
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-which uses the same fast path as __down_write except it falls back to
-call_rwsem_down_write_failed_killable slow path and return -EINTR if
-killed. To prevent from code duplication extract the skeleton of
-__down_write into a helper macro which just takes the semaphore
-and the slow path function to be called.
+Having just one irq handler again, let's include the 'card_status'
+function in the main handler which is way more readable. Drop a useless
+debug output while here. It should be a dev_dbg in case we ever need it
+again.
 
-Signed-off-by: Michal Hocko <mhocko@suse.com>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 ---
- arch/x86/include/asm/rwsem.h | 41 ++++++++++++++++++++++++++++-------------
- arch/x86/lib/rwsem.S         |  8 ++++++++
- 2 files changed, 36 insertions(+), 13 deletions(-)
+ drivers/mmc/host/tmio_mmc_pio.c | 23 ++++++++---------------
+ 1 file changed, 8 insertions(+), 15 deletions(-)
 
-diff --git a/arch/x86/include/asm/rwsem.h b/arch/x86/include/asm/rwsem.h
-index d79a218675bc..4c3d90dbe89a 100644
---- a/arch/x86/include/asm/rwsem.h
-+++ b/arch/x86/include/asm/rwsem.h
-@@ -99,21 +99,36 @@ static inline int __down_read_trylock(struct rw_semaphore *sem)
- /*
-  * lock for writing
-  */
-+#define ____down_write(sem, slow_path)			\
-+({							\
-+	long tmp;					\
-+	struct rw_semaphore* ret = sem;			\
-+	asm volatile("# beginning down_write\n\t"	\
-+		     LOCK_PREFIX "  xadd      %1,(%2)\n\t"	\
-+		     /* adds 0xffff0001, returns the old value */ \
-+		     "  test " __ASM_SEL(%w1,%k1) "," __ASM_SEL(%w1,%k1) "\n\t" \
-+		     /* was the active mask 0 before? */\
-+		     "  jz        1f\n"			\
-+		     "  call " slow_path "\n"		\
-+		     "1:\n"				\
-+		     "# ending down_write"		\
-+		     : "+m" (sem->count), "=d" (tmp), "+a" (ret)	\
-+		     : "a" (sem), "1" (RWSEM_ACTIVE_WRITE_BIAS) \
-+		     : "memory", "cc");			\
-+	ret;						\
-+})
-+
- static inline void __down_write(struct rw_semaphore *sem)
- {
--	long tmp;
--	asm volatile("# beginning down_write\n\t"
--		     LOCK_PREFIX "  xadd      %1,(%2)\n\t"
--		     /* adds 0xffff0001, returns the old value */
--		     "  test " __ASM_SEL(%w1,%k1) "," __ASM_SEL(%w1,%k1) "\n\t"
--		     /* was the active mask 0 before? */
--		     "  jz        1f\n"
--		     "  call call_rwsem_down_write_failed\n"
--		     "1:\n"
--		     "# ending down_write"
--		     : "+m" (sem->count), "=d" (tmp)
--		     : "a" (sem), "1" (RWSEM_ACTIVE_WRITE_BIAS)
--		     : "memory", "cc");
-+	____down_write(sem, "call_rwsem_down_write_failed");
-+}
-+
-+static inline int __down_write_killable(struct rw_semaphore *sem)
-+{
-+	if (IS_ERR(____down_write(sem, "call_rwsem_down_write_failed_killable")))
-+		return -EINTR;
-+
-+	return 0;
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index a7250a5fa670c5..879e0f5455ef44 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -632,19 +632,6 @@ out:
+ 	spin_unlock(&host->lock);
  }
  
- /*
-diff --git a/arch/x86/lib/rwsem.S b/arch/x86/lib/rwsem.S
-index 40027db99140..d1a1397e1fb3 100644
---- a/arch/x86/lib/rwsem.S
-+++ b/arch/x86/lib/rwsem.S
-@@ -101,6 +101,14 @@ ENTRY(call_rwsem_down_write_failed)
- 	ret
- ENDPROC(call_rwsem_down_write_failed)
+-static void tmio_mmc_card_irq_status(struct tmio_mmc_host *host,
+-				       int *ireg, int *status)
+-{
+-	*status = sd_ctrl_read32(host, CTL_STATUS);
+-	*ireg = *status & TMIO_MASK_IRQ & ~host->sdcard_irq_mask;
+-
+-	pr_debug_status(*status);
+-	pr_debug_status(*ireg);
+-
+-	/* Clear the status except the interrupt status */
+-	sd_ctrl_write32(host, CTL_STATUS, TMIO_MASK_IRQ);
+-}
+-
+ static bool __tmio_mmc_card_detect_irq(struct tmio_mmc_host *host,
+ 				      int ireg, int status)
+ {
+@@ -722,9 +709,15 @@ irqreturn_t tmio_mmc_irq(int irq, void *devid)
+ 	struct tmio_mmc_host *host = devid;
+ 	unsigned int ireg, status;
  
-+ENTRY(call_rwsem_down_write_failed_killable)
-+	save_common_regs
-+	movq %rax,%rdi
-+	call rwsem_down_write_failed_killable
-+	restore_common_regs
-+	ret
-+ENDPROC(call_rwsem_down_write_failed_killable)
+-	pr_debug("MMC IRQ begin\n");
++	status = sd_ctrl_read32(host, CTL_STATUS);
++	ireg = status & TMIO_MASK_IRQ & ~host->sdcard_irq_mask;
 +
- ENTRY(call_rwsem_wake)
- 	/* do nothing if still outstanding active readers */
- 	__ASM_HALF_SIZE(dec) %__ASM_HALF_REG(dx)
++	pr_debug_status(status);
++	pr_debug_status(ireg);
++
++	/* Clear the status except the interrupt status */
++	sd_ctrl_write32(host, CTL_STATUS, TMIO_MASK_IRQ);
+ 
+-	tmio_mmc_card_irq_status(host, &ireg, &status);
+ 	if (__tmio_mmc_card_detect_irq(host, ireg, status))
+ 		return IRQ_HANDLED;
+ 	if (__tmio_mmc_sdcard_irq(host, ireg, status))
 -- 
-2.8.0.rc3
+2.7.0
 
