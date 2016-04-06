@@ -1,67 +1,215 @@
-From: Michal Hocko <mhocko@kernel.org>
-Date: Fri, 01 Apr 2016 11:04:50 +0000
-Subject: [PATCH 06/11] s390, rwsem: provide __down_write_killable
-Message-Id: <1459508695-14915-7-git-send-email-mhocko@kernel.org>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Wed, 06 Apr 2016 09:34:38 +0000
+Subject: [PATCH v2 5/6] mmc: tmio: merge distributed include files
+Message-Id: <1459935278-4181-1-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1459508695-14915-1-git-send-email-mhocko@kernel.org>
-In-Reply-To: <1459508695-14915-1-git-send-email-mhocko@kernel.org>
+References: <1459934734-3613-6-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1459934734-3613-6-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: LKML <linux-kernel@vger.kernel.org>
-Cc: Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@redhat.com>, Thomas Gleixner <tglx@linutronix.de>, "H. Peter Anvin" <hpa@zytor.com>, "David S. Miller" <davem@davemloft.net>, Tony Luck <tony.luck@intel.com>, Andrew Morton <akpm@linux-foundation.org>, Chris Zankel <chris@zankel.net>, Max Filippov <jcmvbkbc@gmail.com>, x86@kernel.org, linux-alpha@vger.kernel.org, linux-ia64@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-arch@vger.kernel.org, Michal Hocko <mhocko@suse.com>
+To: linux-mmc@vger.kernel.org
+Cc: Wolfram Sang <wsa@the-dreams.de>, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, Simon Horman <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
 
-From: Michal Hocko <mhocko@suse.com>
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Introduce ___down_write for the fast path and reuse it for __down_write
-resp. __down_write_killable each using the respective generic slow path
-(rwsem_down_write_failed resp. rwsem_down_write_failed_killable).
+There is no reason to have a public and private header file. Merge them
+into a private one, so looking up symbols is less confusing.
 
-Signed-off-by: Michal Hocko <mhocko@suse.com>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 ---
- arch/s390/include/asm/rwsem.h | 19 +++++++++++++++++--
- 1 file changed, 17 insertions(+), 2 deletions(-)
 
-diff --git a/arch/s390/include/asm/rwsem.h b/arch/s390/include/asm/rwsem.h
-index 8e52e72f3efc..8e7b2b7e10f3 100644
---- a/arch/s390/include/asm/rwsem.h
-+++ b/arch/s390/include/asm/rwsem.h
-@@ -90,7 +90,7 @@ static inline int __down_read_trylock(struct rw_semaphore *sem)
+change since v1: correct authorship. Sorry for the noise.
+
+ drivers/mmc/host/tmio_mmc.h     | 56 ++++++++++++++++++++++++++++++-
+ drivers/mmc/host/tmio_mmc_dma.c |  1 -
+ drivers/mmc/host/tmio_mmc_pio.c |  1 -
+ include/linux/mmc/tmio.h        | 73 -----------------------------------------
+ 4 files changed, 55 insertions(+), 76 deletions(-)
+ delete mode 100644 include/linux/mmc/tmio.h
+
+diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
+index 032188b766defd..439fdad2bad91d 100644
+--- a/drivers/mmc/host/tmio_mmc.h
++++ b/drivers/mmc/host/tmio_mmc.h
+@@ -1,6 +1,8 @@
  /*
-  * lock for writing
-  */
--static inline void __down_write(struct rw_semaphore *sem)
-+static inline long ___down_write(struct rw_semaphore *sem)
- {
- 	signed long old, new, tmp;
+  * linux/drivers/mmc/host/tmio_mmc.h
+  *
++ * Copyright (C) 2016 Sang Engineering, Wolfram Sang
++ * Copyright (C) 2015-16 Renesas Electronics Corporation
+  * Copyright (C) 2007 Ian Molton
+  * Copyright (C) 2004 Ian Molton
+  *
+@@ -18,12 +20,64 @@
  
-@@ -104,10 +104,25 @@ static inline void __down_write(struct rw_semaphore *sem)
- 		: "=&d" (old), "=&d" (new), "=Q" (sem->count)
- 		: "Q" (sem->count), "m" (tmp)
- 		: "cc", "memory");
--	if (old != 0)
-+
-+	return old;
-+}
-+
-+static inline void __down_write(struct rw_semaphore *sem)
-+{
-+	if (___down_write(sem))
- 		rwsem_down_write_failed(sem);
- }
+ #include <linux/dmaengine.h>
+ #include <linux/highmem.h>
+-#include <linux/mmc/tmio.h>
+ #include <linux/mutex.h>
+ #include <linux/pagemap.h>
+ #include <linux/scatterlist.h>
+ #include <linux/spinlock.h>
  
-+static inline int __down_write_killable(struct rw_semaphore *sem)
-+{
-+	if (___down_write(sem))
-+		if (IS_ERR(rwsem_down_write_failed_killable(sem)))
-+			return -EINTR;
++#define CTL_SD_CMD 0x00
++#define CTL_ARG_REG 0x04
++#define CTL_STOP_INTERNAL_ACTION 0x08
++#define CTL_XFER_BLK_COUNT 0xa
++#define CTL_RESPONSE 0x0c
++#define CTL_STATUS 0x1c
++#define CTL_STATUS2 0x1e
++#define CTL_IRQ_MASK 0x20
++#define CTL_SD_CARD_CLK_CTL 0x24
++#define CTL_SD_XFER_LEN 0x26
++#define CTL_SD_MEM_CARD_OPT 0x28
++#define CTL_SD_ERROR_DETAIL_STATUS 0x2c
++#define CTL_SD_DATA_PORT 0x30
++#define CTL_TRANSACTION_CTL 0x34
++#define CTL_SDIO_STATUS 0x36
++#define CTL_SDIO_IRQ_MASK 0x38
++#define CTL_DMA_ENABLE 0xd8
++#define CTL_RESET_SD 0xe0
++#define CTL_VERSION 0xe2
++#define CTL_SDIO_REGS 0x100
++#define CTL_CLK_AND_WAIT_CTL 0x138
++#define CTL_RESET_SDIO 0x1e0
 +
-+	return 0;
-+}
++/* Definitions for values the CTRL_STATUS register can take. */
++#define TMIO_STAT_CMDRESPEND    0x00000001
++#define TMIO_STAT_DATAEND       0x00000004
++#define TMIO_STAT_CARD_REMOVE   0x00000008
++#define TMIO_STAT_CARD_INSERT   0x00000010
++#define TMIO_STAT_SIGSTATE      0x00000020
++#define TMIO_STAT_WRPROTECT     0x00000080
++#define TMIO_STAT_CARD_REMOVE_A 0x00000100
++#define TMIO_STAT_CARD_INSERT_A 0x00000200
++#define TMIO_STAT_SIGSTATE_A    0x00000400
++#define TMIO_STAT_CMD_IDX_ERR   0x00010000
++#define TMIO_STAT_CRCFAIL       0x00020000
++#define TMIO_STAT_STOPBIT_ERR   0x00040000
++#define TMIO_STAT_DATATIMEOUT   0x00080000
++#define TMIO_STAT_RXOVERFLOW    0x00100000
++#define TMIO_STAT_TXUNDERRUN    0x00200000
++#define TMIO_STAT_CMDTIMEOUT    0x00400000
++#define TMIO_STAT_RXRDY         0x01000000
++#define TMIO_STAT_TXRQ          0x02000000
++#define TMIO_STAT_ILL_FUNC      0x20000000
++#define TMIO_STAT_CMD_BUSY      0x40000000
++#define TMIO_STAT_ILL_ACCESS    0x80000000
 +
- /*
-  * trylock for writing -- returns 1 if successful, 0 if contention
-  */
++#define TMIO_STATUS2_DAT0	BIT(7)
++
++#define	CLK_CTL_DIV_MASK	0xff
++#define	CLK_CTL_SCLKEN		BIT(8)
++
++#define TMIO_BBS		512		/* Boot block size */
++
+ /* Definitions for values the CTRL_SDIO_STATUS register can take. */
+ #define TMIO_SDIO_STAT_IOIRQ	0x0001
+ #define TMIO_SDIO_STAT_EXPUB52	0x4000
+diff --git a/drivers/mmc/host/tmio_mmc_dma.c b/drivers/mmc/host/tmio_mmc_dma.c
+index 67543587382312..d1573687515d2c 100644
+--- a/drivers/mmc/host/tmio_mmc_dma.c
++++ b/drivers/mmc/host/tmio_mmc_dma.c
+@@ -15,7 +15,6 @@
+ #include <linux/dmaengine.h>
+ #include <linux/mfd/tmio.h>
+ #include <linux/mmc/host.h>
+-#include <linux/mmc/tmio.h>
+ #include <linux/pagemap.h>
+ #include <linux/scatterlist.h>
+ 
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index 879e0f5455ef44..15e6f6d5a42337 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -39,7 +39,6 @@
+ #include <linux/mmc/host.h>
+ #include <linux/mmc/mmc.h>
+ #include <linux/mmc/slot-gpio.h>
+-#include <linux/mmc/tmio.h>
+ #include <linux/module.h>
+ #include <linux/pagemap.h>
+ #include <linux/platform_device.h>
+diff --git a/include/linux/mmc/tmio.h b/include/linux/mmc/tmio.h
+deleted file mode 100644
+index b2f28e99503383..00000000000000
+--- a/include/linux/mmc/tmio.h
++++ /dev/null
+@@ -1,73 +0,0 @@
+-/*
+- * include/linux/mmc/tmio.h
+- *
+- * Copyright (C) 2016 Sang Engineering, Wolfram Sang
+- * Copyright (C) 2015-16 Renesas Electronics Corporation
+- * Copyright (C) 2007 Ian Molton
+- * Copyright (C) 2004 Ian Molton
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License version 2 as
+- * published by the Free Software Foundation.
+- *
+- * Driver for the MMC / SD / SDIO cell found in:
+- *
+- * TC6393XB TC6391XB TC6387XB T7L66XB ASIC3
+- */
+-#ifndef LINUX_MMC_TMIO_H
+-#define LINUX_MMC_TMIO_H
+-
+-#define CTL_SD_CMD 0x00
+-#define CTL_ARG_REG 0x04
+-#define CTL_STOP_INTERNAL_ACTION 0x08
+-#define CTL_XFER_BLK_COUNT 0xa
+-#define CTL_RESPONSE 0x0c
+-#define CTL_STATUS 0x1c
+-#define CTL_STATUS2 0x1e
+-#define CTL_IRQ_MASK 0x20
+-#define CTL_SD_CARD_CLK_CTL 0x24
+-#define CTL_SD_XFER_LEN 0x26
+-#define CTL_SD_MEM_CARD_OPT 0x28
+-#define CTL_SD_ERROR_DETAIL_STATUS 0x2c
+-#define CTL_SD_DATA_PORT 0x30
+-#define CTL_TRANSACTION_CTL 0x34
+-#define CTL_SDIO_STATUS 0x36
+-#define CTL_SDIO_IRQ_MASK 0x38
+-#define CTL_DMA_ENABLE 0xd8
+-#define CTL_RESET_SD 0xe0
+-#define CTL_VERSION 0xe2
+-#define CTL_SDIO_REGS 0x100
+-#define CTL_CLK_AND_WAIT_CTL 0x138
+-#define CTL_RESET_SDIO 0x1e0
+-
+-/* Definitions for values the CTRL_STATUS register can take. */
+-#define TMIO_STAT_CMDRESPEND    0x00000001
+-#define TMIO_STAT_DATAEND       0x00000004
+-#define TMIO_STAT_CARD_REMOVE   0x00000008
+-#define TMIO_STAT_CARD_INSERT   0x00000010
+-#define TMIO_STAT_SIGSTATE      0x00000020
+-#define TMIO_STAT_WRPROTECT     0x00000080
+-#define TMIO_STAT_CARD_REMOVE_A 0x00000100
+-#define TMIO_STAT_CARD_INSERT_A 0x00000200
+-#define TMIO_STAT_SIGSTATE_A    0x00000400
+-#define TMIO_STAT_CMD_IDX_ERR   0x00010000
+-#define TMIO_STAT_CRCFAIL       0x00020000
+-#define TMIO_STAT_STOPBIT_ERR   0x00040000
+-#define TMIO_STAT_DATATIMEOUT   0x00080000
+-#define TMIO_STAT_RXOVERFLOW    0x00100000
+-#define TMIO_STAT_TXUNDERRUN    0x00200000
+-#define TMIO_STAT_CMDTIMEOUT    0x00400000
+-#define TMIO_STAT_RXRDY         0x01000000
+-#define TMIO_STAT_TXRQ          0x02000000
+-#define TMIO_STAT_ILL_FUNC      0x20000000
+-#define TMIO_STAT_CMD_BUSY      0x40000000
+-#define TMIO_STAT_ILL_ACCESS    0x80000000
+-
+-#define TMIO_STATUS2_DAT0	BIT(7)
+-
+-#define	CLK_CTL_DIV_MASK	0xff
+-#define	CLK_CTL_SCLKEN		BIT(8)
+-
+-#define TMIO_BBS		512		/* Boot block size */
+-
+-#endif /* LINUX_MMC_TMIO_H */
 -- 
-2.8.0.rc3
+2.7.0
 
