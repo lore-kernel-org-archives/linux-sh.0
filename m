@@ -1,165 +1,19 @@
-From: Michal Hocko <mhocko@kernel.org>
-Date: Thu, 07 Apr 2016 15:12:24 +0000
-Subject: [PATCH 04/11] sh, rwsem: drop superfluous arch specific implementation
-Message-Id: <1460041951-22347-5-git-send-email-mhocko@kernel.org>
+From: yolandaa@my-yd-web.net
+Date: Wed, 06 Apr 2016 17:26:30 +0000
+Subject: how are you doing
+Message-Id: <664862.67471.qm@smtp104.biz.mail.gq1.yahoo.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1460041951-22347-1-git-send-email-mhocko@kernel.org>
-In-Reply-To: <1460041951-22347-1-git-send-email-mhocko@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: LKML <linux-kernel@vger.kernel.org>
-Cc: Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@redhat.com>, Thomas Gleixner <tglx@linutronix.de>, "H. Peter Anvin" <hpa@zytor.com>, "David S. Miller" <davem@davemloft.net>, Tony Luck <tony.luck@intel.com>, Andrew Morton <akpm@linux-foundation.org>, Chris Zankel <chris@zankel.net>, Max Filippov <jcmvbkbc@gmail.com>, x86@kernel.org, linux-alpha@vger.kernel.org, linux-ia64@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-arch@vger.kernel.org, Michal Hocko <mhocko@suse.com>
+To: Recipients <yolandaa@my-yd-web.net>
 
-From: Michal Hocko <mhocko@suse.com>
+Hello
 
-since "locking, rwsem: drop explicit memory barriers" the arch specific
-code is basically same as the the generic one so we can drop the
-superfluous code.
+how are you doing i hope you are fine i will like to know more about you
 
-Suggested-by: Davidlohr Bueso <dave@stgolabs.net>
-Signed-off-by: Michal Hocko <mhocko@suse.com>
----
- arch/sh/include/asm/Kbuild  |   1 +
- arch/sh/include/asm/rwsem.h | 117 --------------------------------------------
- 2 files changed, 1 insertion(+), 117 deletions(-)
- delete mode 100644 arch/sh/include/asm/rwsem.h
+writ me back so we can know each other very well
 
-diff --git a/arch/sh/include/asm/Kbuild b/arch/sh/include/asm/Kbuild
-index aac452b26aa8..6d866c7a9b74 100644
---- a/arch/sh/include/asm/Kbuild
-+++ b/arch/sh/include/asm/Kbuild
-@@ -25,6 +25,7 @@ generic-y += percpu.h
- generic-y += poll.h
- generic-y += preempt.h
- generic-y += resource.h
-+generic-y += rwsem.h
- generic-y += sembuf.h
- generic-y += serial.h
- generic-y += shmbuf.h
-diff --git a/arch/sh/include/asm/rwsem.h b/arch/sh/include/asm/rwsem.h
-deleted file mode 100644
-index f6c951c7a875..000000000000
---- a/arch/sh/include/asm/rwsem.h
-+++ /dev/null
-@@ -1,117 +0,0 @@
--/*
-- * include/asm-sh/rwsem.h: R/W semaphores for SH using the stuff
-- * in lib/rwsem.c.
-- */
--
--#ifndef _ASM_SH_RWSEM_H
--#define _ASM_SH_RWSEM_H
--
--#ifndef _LINUX_RWSEM_H
--#error "please don't include asm/rwsem.h directly, use linux/rwsem.h instead"
--#endif
--
--#ifdef __KERNEL__
--
--#define RWSEM_UNLOCKED_VALUE		0x00000000
--#define RWSEM_ACTIVE_BIAS		0x00000001
--#define RWSEM_ACTIVE_MASK		0x0000ffff
--#define RWSEM_WAITING_BIAS		(-0x00010000)
--#define RWSEM_ACTIVE_READ_BIAS		RWSEM_ACTIVE_BIAS
--#define RWSEM_ACTIVE_WRITE_BIAS		(RWSEM_WAITING_BIAS + RWSEM_ACTIVE_BIAS)
--
--/*
-- * lock for reading
-- */
--static inline void __down_read(struct rw_semaphore *sem)
--{
--	if (atomic_inc_return((atomic_t *)(&sem->count)) <= 0)
--		rwsem_down_read_failed(sem);
--}
--
--static inline int __down_read_trylock(struct rw_semaphore *sem)
--{
--	int tmp;
--
--	while ((tmp = sem->count) >= 0) {
--		if (tmp = cmpxchg(&sem->count, tmp,
--				   tmp + RWSEM_ACTIVE_READ_BIAS)) {
--			return 1;
--		}
--	}
--	return 0;
--}
--
--/*
-- * lock for writing
-- */
--static inline void __down_write(struct rw_semaphore *sem)
--{
--	int tmp;
--
--	tmp = atomic_add_return(RWSEM_ACTIVE_WRITE_BIAS,
--				(atomic_t *)(&sem->count));
--	if (tmp != RWSEM_ACTIVE_WRITE_BIAS)
--		rwsem_down_write_failed(sem);
--}
--
--static inline int __down_write_trylock(struct rw_semaphore *sem)
--{
--	int tmp;
--
--	tmp = cmpxchg(&sem->count, RWSEM_UNLOCKED_VALUE,
--		      RWSEM_ACTIVE_WRITE_BIAS);
--	return tmp = RWSEM_UNLOCKED_VALUE;
--}
--
--/*
-- * unlock after reading
-- */
--static inline void __up_read(struct rw_semaphore *sem)
--{
--	int tmp;
--
--	tmp = atomic_dec_return((atomic_t *)(&sem->count));
--	if (tmp < -1 && (tmp & RWSEM_ACTIVE_MASK) = 0)
--		rwsem_wake(sem);
--}
--
--/*
-- * unlock after writing
-- */
--static inline void __up_write(struct rw_semaphore *sem)
--{
--	if (atomic_sub_return(RWSEM_ACTIVE_WRITE_BIAS,
--			      (atomic_t *)(&sem->count)) < 0)
--		rwsem_wake(sem);
--}
--
--/*
-- * implement atomic add functionality
-- */
--static inline void rwsem_atomic_add(int delta, struct rw_semaphore *sem)
--{
--	atomic_add(delta, (atomic_t *)(&sem->count));
--}
--
--/*
-- * downgrade write lock to read lock
-- */
--static inline void __downgrade_write(struct rw_semaphore *sem)
--{
--	int tmp;
--
--	tmp = atomic_add_return(-RWSEM_WAITING_BIAS, (atomic_t *)(&sem->count));
--	if (tmp < 0)
--		rwsem_downgrade_wake(sem);
--}
--
--/*
-- * implement exchange and add functionality
-- */
--static inline int rwsem_atomic_update(int delta, struct rw_semaphore *sem)
--{
--	return atomic_add_return(delta, (atomic_t *)(&sem->count));
--}
--
--#endif /* __KERNEL__ */
--#endif /* _ASM_SH_RWSEM_H */
--- 
-2.8.0.rc3
+am waiting for ur mail  susanyolanda@hotmail.com
 
+thank you 
