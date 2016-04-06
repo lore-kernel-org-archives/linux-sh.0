@@ -1,15 +1,62 @@
-From: =?utf-8?B?5oiR55qE6IGU57O75pa55byP5Zyo?= <admin@ydwd.com>
-Date: Wed, 27 Apr 2016 23:52:11 +0000
-Subject: =?utf-8?B?5oiR55qE6IGU57O75pa55byP5Zyo?=
-Message-Id: <20160428075224136413@ydwd.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Wed, 06 Apr 2016 09:25:28 +0000
+Subject: [PATCH 0/6] mmc: tmio/sdhi: clean up cruft
+Message-Id: <1459934734-3613-1-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-mmc@vger.kernel.org
+Cc: Wolfram Sang <wsa@the-dreams.de>, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, Simon Horman <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
 
-5L2g55qE5pyL5Y+L57uZ5L2g5YiG5Lqr5LqG5LiA5Liq5pSv5LuY5a6d57qi5YyF5Y+j5Luk77ya
-5Yqg576k5pyJ57qi5YyFICAgIOi1tuW/q+aJk+W8gOaUr+S7mOWunUFQUO+8jOi+k+WFpee6ouWM
-heWPo+S7pO+8jOaKoue6ouWMhe+8jOaJi+aFouaXoOOAgg=
+Largely due to DT unification, some parts of the code became obsolete. Let's
+remove that, the code is complex enough still:
 
+* There are no boards anymore with named interrupt support. Drop support for
+  that (patches 2-4)
+* No need anymore for a public mmc/tmio.h header file. Merge it into the
+  private one (patch 5)
+
+Patches 1+6 are small cleanups found on the way :)
+
+Based on latest renesas-drivers which is based on v4.6-rc1 with my sdr50
+patches on top. Tested on a Renesas Lager board and build bot is happy, too
+(after finding some issues initially). A branch for testing is here:
+
+git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git renesas/sdhi-uhs
+
+I'd think this should all go via mmc, so an ACK from a sh-maintainer on patch 2
+would be much appreciated.
+
+Please test, comment, apply...
+
+   Wolfram
+
+
+Wolfram Sang (6):
+  mmc: sh_mobile_sdhi: don't use array for DT configs
+  mmc: sh_mobile_sdhi: remove obsolete irq_by_name registration
+  mmc: tmio: remove now unneeded seperate irq handlers
+  mmc: tmio: simplify irq handler
+  mmc: tmio: merge distributed include files
+  mmc: sh_mobile_sdhi: simplify code for voltage switching
+
+ arch/sh/boards/board-sh7757lcr.c     |  1 -
+ arch/sh/boards/mach-ap325rxa/setup.c |  1 -
+ arch/sh/boards/mach-ecovec24/setup.c |  1 -
+ arch/sh/boards/mach-kfr2r09/setup.c  |  1 -
+ arch/sh/boards/mach-migor/setup.c    |  1 -
+ arch/sh/boards/mach-se/7724/setup.c  |  1 -
+ drivers/mmc/host/sh_mobile_sdhi.c    | 75 +++++++-----------------------------
+ drivers/mmc/host/tmio_mmc.h          | 59 ++++++++++++++++++++++++++--
+ drivers/mmc/host/tmio_mmc_dma.c      |  1 -
+ drivers/mmc/host/tmio_mmc_pio.c      | 55 +++++---------------------
+ include/linux/mmc/sh_mobile_sdhi.h   | 10 -----
+ include/linux/mmc/tmio.h             | 73 -----------------------------------
+ 12 files changed, 79 insertions(+), 200 deletions(-)
+ delete mode 100644 include/linux/mmc/sh_mobile_sdhi.h
+ delete mode 100644 include/linux/mmc/tmio.h
+
+-- 
+2.7.0
 
