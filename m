@@ -1,73 +1,123 @@
-From: Michal Hocko <mhocko@kernel.org>
-Date: Fri, 08 Apr 2016 06:22:50 +0000
-Subject: Re: [PATCH 08/11] ia64, rwsem: provide __down_write_killable
-Message-Id: <20160408062249.GA29820@dhcp22.suse.cz>
+From: Rich Felker <dalias@libc.org>
+Date: Thu, 07 Apr 2016 15:01:53 +0000
+Subject: [PATCH 7/7] sh: add device tree source for J2 FPGA on Mimas v2 board
+Message-Id: <3784a31c12dc9c23c5c497786f503e1acafe64dd.1461880061.git.dalias@libc.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1460041951-22347-1-git-send-email-mhocko@kernel.org>
- <1460041951-22347-9-git-send-email-mhocko@kernel.org>
- <570698B0.8090707@cogentembedded.com>
-In-Reply-To: <570698B0.8090707@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: LKML <linux-kernel@vger.kernel.org>, Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@redhat.com>, Thomas Gleixner <tglx@linutronix.de>, "H. Peter Anvin" <hpa@zytor.com>, "David S. Miller" <davem@davemloft.net>, Tony Luck <tony.luck@intel.com>, Andrew Morton <akpm@linux-foundation.org>, Chris Zankel <chris@zankel.net>, Max Filippov <jcmvbkbc@gmail.com>, x86@kernel.org, linux-alpha@vger.kernel.org, linux-ia64@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-arch@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-On Thu 07-04-16 20:28:16, Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 04/07/2016 06:12 PM, Michal Hocko wrote:
-> 
-> >From: Michal Hocko <mhocko@suse.com>
-> >
-> >Introduce ___down_write for the fast path and reuse it for __down_write
-> >resp. __down_write_killable each using the respective generic slow path
-> >(rwsem_down_write_failed resp. rwsem_down_write_failed_killable).
-> >
-> >Signed-off-by: Michal Hocko <mhocko@suse.com>
-> >---
-> >  arch/ia64/include/asm/rwsem.h | 22 +++++++++++++++++++---
-> >  1 file changed, 19 insertions(+), 3 deletions(-)
-> >
-> >diff --git a/arch/ia64/include/asm/rwsem.h b/arch/ia64/include/asm/rwsem.h
-> >index 3027e7516d85..5e78cb40d9df 100644
-> >--- a/arch/ia64/include/asm/rwsem.h
-> >+++ b/arch/ia64/include/asm/rwsem.h
-> >@@ -49,8 +49,8 @@ __down_read (struct rw_semaphore *sem)
-> >  /*
-> >   * lock for writing
-> >   */
-> >-static inline void
-> >-__down_write (struct rw_semaphore *sem)
-> >+static inline long
-> >+___down_write (struct rw_semaphore *sem)
-> >  {
-> >  	long old, new;
-> >
-> >@@ -59,10 +59,26 @@ __down_write (struct rw_semaphore *sem)
-> >  		new = old + RWSEM_ACTIVE_WRITE_BIAS;
-> >  	} while (cmpxchg_acq(&sem->count, old, new) != old);
-> >
-> >-	if (old != 0)
-> >+	return old;
-> >+}
-> >+
-> >+static inline void
-> >+__down_write (struct rw_semaphore *sem)
-> >+{
-> >+	if (___down_write(sem))
-> >  		rwsem_down_write_failed(sem);
-> >  }
-> >
-> >+static inline int
-> >+__down_write_killable (struct rw_semaphore *sem)
-> 
->    Looks like you haven't run this patch thru scripts/checkpatch.pl. Hint:
-> space before ( isn't allowed.
+Signed-off-by: Rich Felker <dalias@libc.org>
+---
+ arch/sh/boot/dts/j2_mimas_v2.dts | 98 ++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 98 insertions(+)
+ create mode 100755 arch/sh/boot/dts/j2_mimas_v2.dts
 
-I have just kept the original code styling because I didn't feel like
-changing the whole file.
-
+diff --git a/arch/sh/boot/dts/j2_mimas_v2.dts b/arch/sh/boot/dts/j2_mimas_v2.dts
+new file mode 100755
+index 0000000..0d509f9
+--- /dev/null
++++ b/arch/sh/boot/dts/j2_mimas_v2.dts
+@@ -0,0 +1,98 @@
++/dts-v1/;
++
++/ {
++	compatible = "jcore,j2-soc";
++	model = "J2 FPGA SoC on Mimas v2 board";
++
++	#address-cells = <1>;
++	#size-cells = <1>;
++
++	interrupt-parent = <&aic>;
++
++	cpus {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		cpu@0 {
++			device_type = "cpu";
++			compatible = "jcore,j2";
++			reg = < 0 >;
++			clock-frequency = < 50000000 >;
++		};
++	};
++
++	memory@10000000 {
++		device_type = "memory";
++		reg = < 0x10000000 0x4000000 >;
++	};
++
++	chosen {
++		stdout-path = "/soc@abcd0000/serial@100";
++	};
++
++	soc@abcd0000 {
++		compatible = "simple-bus";
++		ranges = <0 0xabcd0000 0x100000>;
++
++		#address-cells = <1>;
++		#size-cells = <1>;
++
++		aic: interrupt-controller {
++			compatible = "jcore,aic1";
++			reg = < 0x200 0x10 >;
++			cpu-offset = < 0x300 >;
++			interrupt-controller;
++			#interrupt-cells = <1>;
++		};
++
++		cache-controller {
++			compatible = "jcore,cache";
++			reg = < 0xc0 4 >;
++			cpu-offset = < 4 >;
++		};
++
++		timer {
++			compatible = "jcore,pit";
++			reg = < 0x200 0x30 >;
++			cpu-offset = < 0x300 >;
++			interrupts = < 0x48 >;
++		};
++
++		ethernet {
++			compatible = "jcore,emac";
++			reg = < 0x10000 0x2000 >;
++			//interrupts = < 0x60 >;
++			interrupts = < 0x11 >;
++		};
++
++		spi {
++			compatible = "jcore,spi2";
++
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			spi-max-frequency = <12500000>;
++
++			reg = < 0x40 0x8 >;
++
++			sdcard@1 {
++				compatible = "mmc-spi-slot";
++				reg = <0>;
++				spi-max-frequency = <12500000>;
++				voltage-ranges = <3200 3400>;
++				mode = <0>;
++			};
++		};
++
++		serial@100 {
++			clock-frequency = <125000000>;
++			compatible = "jcore,uartlite", "xlnx,xps-uartlite-1.00.a";
++			current-speed = <115200>;
++			device_type = "serial";
++			//interrupts = < 0x5d >;
++			interrupts = < 0x12 >;
++			port-number = <0>;
++			reg = < 0x100 0x10 >;
++		};
++	};
++};
 -- 
-Michal Hocko
-SUSE Labs
+2.8.1
+
