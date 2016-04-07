@@ -1,105 +1,66 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Wed, 06 Apr 2016 09:25:31 +0000
-Subject: [PATCH 3/6] mmc: tmio: remove now unneeded seperate irq handlers
-Message-Id: <1459934734-3613-4-git-send-email-wsa@the-dreams.de>
+From: Michal Hocko <mhocko@kernel.org>
+Date: Thu, 07 Apr 2016 15:12:27 +0000
+Subject: [PATCH 07/11] alpha, rwsem: provide __down_write_killable
+Message-Id: <1460041951-22347-8-git-send-email-mhocko@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1459934734-3613-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1459934734-3613-1-git-send-email-wsa@the-dreams.de>
+References: <1460041951-22347-1-git-send-email-mhocko@kernel.org>
+In-Reply-To: <1460041951-22347-1-git-send-email-mhocko@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: Wolfram Sang <wsa@the-dreams.de>, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, Simon Horman <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+To: LKML <linux-kernel@vger.kernel.org>
+Cc: Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@redhat.com>, Thomas Gleixner <tglx@linutronix.de>, "H. Peter Anvin" <hpa@zytor.com>, "David S. Miller" <davem@davemloft.net>, Tony Luck <tony.luck@intel.com>, Andrew Morton <akpm@linux-foundation.org>, Chris Zankel <chris@zankel.net>, Max Filippov <jcmvbkbc@gmail.com>, x86@kernel.org, linux-alpha@vger.kernel.org, linux-ia64@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-arch@vger.kernel.org, Michal Hocko <mhocko@suse.com>
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+From: Michal Hocko <mhocko@suse.com>
 
-We removed installation of seperate handlers previously, so we can also
-remove the seperate handlers.
+Introduce ___down_write for the fast path and reuse it for __down_write
+resp. __down_write_killable each using the respective generic slow path
+(rwsem_down_write_failed resp. rwsem_down_write_failed_killable).
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Michal Hocko <mhocko@suse.com>
 ---
- drivers/mmc/host/tmio_mmc.h     |  3 ---
- drivers/mmc/host/tmio_mmc_pio.c | 31 ++-----------------------------
- 2 files changed, 2 insertions(+), 32 deletions(-)
+ arch/alpha/include/asm/rwsem.h | 18 ++++++++++++++++--
+ 1 file changed, 16 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
-index b1819c74965b47..032188b766defd 100644
---- a/drivers/mmc/host/tmio_mmc.h
-+++ b/drivers/mmc/host/tmio_mmc.h
-@@ -115,9 +115,6 @@ void tmio_mmc_do_data_irq(struct tmio_mmc_host *host);
- void tmio_mmc_enable_mmc_irqs(struct tmio_mmc_host *host, u32 i);
- void tmio_mmc_disable_mmc_irqs(struct tmio_mmc_host *host, u32 i);
- irqreturn_t tmio_mmc_irq(int irq, void *devid);
--irqreturn_t tmio_mmc_sdcard_irq(int irq, void *devid);
--irqreturn_t tmio_mmc_card_detect_irq(int irq, void *devid);
--irqreturn_t tmio_mmc_sdio_irq(int irq, void *devid);
- 
- static inline char *tmio_mmc_kmap_atomic(struct scatterlist *sg,
- 					 unsigned long *flags)
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index 8e2fef7c5e481c..a7250a5fa670c5 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -664,18 +664,6 @@ static bool __tmio_mmc_card_detect_irq(struct tmio_mmc_host *host,
- 	return false;
+diff --git a/arch/alpha/include/asm/rwsem.h b/arch/alpha/include/asm/rwsem.h
+index a83bbea62c67..0131a7058778 100644
+--- a/arch/alpha/include/asm/rwsem.h
++++ b/arch/alpha/include/asm/rwsem.h
+@@ -63,7 +63,7 @@ static inline int __down_read_trylock(struct rw_semaphore *sem)
+ 	return res >= 0 ? 1 : 0;
  }
  
--irqreturn_t tmio_mmc_card_detect_irq(int irq, void *devid)
--{
--	unsigned int ireg, status;
--	struct tmio_mmc_host *host = devid;
--
--	tmio_mmc_card_irq_status(host, &ireg, &status);
--	__tmio_mmc_card_detect_irq(host, ireg, status);
--
--	return IRQ_HANDLED;
--}
--EXPORT_SYMBOL(tmio_mmc_card_detect_irq);
--
- static bool __tmio_mmc_sdcard_irq(struct tmio_mmc_host *host,
- 				 int ireg, int status)
+-static inline void __down_write(struct rw_semaphore *sem)
++static inline long ___down_write(struct rw_semaphore *sem)
  {
-@@ -705,19 +693,7 @@ static bool __tmio_mmc_sdcard_irq(struct tmio_mmc_host *host,
- 	return false;
+ 	long oldcount;
+ #ifndef	CONFIG_SMP
+@@ -83,10 +83,24 @@ static inline void __down_write(struct rw_semaphore *sem)
+ 	:"=&r" (oldcount), "=m" (sem->count), "=&r" (temp)
+ 	:"Ir" (RWSEM_ACTIVE_WRITE_BIAS), "m" (sem->count) : "memory");
+ #endif
+-	if (unlikely(oldcount))
++	return oldcount;
++}
++
++static inline void __down_write(struct rw_semaphore *sem)
++{
++	if (unlikely(___down_write(sem)))
+ 		rwsem_down_write_failed(sem);
  }
  
--irqreturn_t tmio_mmc_sdcard_irq(int irq, void *devid)
--{
--	unsigned int ireg, status;
--	struct tmio_mmc_host *host = devid;
--
--	tmio_mmc_card_irq_status(host, &ireg, &status);
--	__tmio_mmc_sdcard_irq(host, ireg, status);
--
--	return IRQ_HANDLED;
--}
--EXPORT_SYMBOL(tmio_mmc_sdcard_irq);
--
--irqreturn_t tmio_mmc_sdio_irq(int irq, void *devid)
-+static void tmio_mmc_sdio_irq(int irq, void *devid)
- {
- 	struct tmio_mmc_host *host = devid;
- 	struct mmc_host *mmc = host->mmc;
-@@ -726,7 +702,7 @@ irqreturn_t tmio_mmc_sdio_irq(int irq, void *devid)
- 	unsigned int sdio_status;
- 
- 	if (!(pdata->flags & TMIO_MMC_SDIO_IRQ))
--		return IRQ_HANDLED;
-+		return;
- 
- 	status = sd_ctrl_read16(host, CTL_SDIO_STATUS);
- 	ireg = status & TMIO_SDIO_MASK_ALL & ~host->sdcard_irq_mask;
-@@ -739,10 +715,7 @@ irqreturn_t tmio_mmc_sdio_irq(int irq, void *devid)
- 
- 	if (mmc->caps & MMC_CAP_SDIO_IRQ && ireg & TMIO_SDIO_STAT_IOIRQ)
- 		mmc_signal_sdio_irq(mmc);
--
--	return IRQ_HANDLED;
- }
--EXPORT_SYMBOL(tmio_mmc_sdio_irq);
- 
- irqreturn_t tmio_mmc_irq(int irq, void *devid)
- {
++static inline int __down_write_killable(struct rw_semaphore *sem)
++{
++	if (unlikely(___down_write(sem)))
++		if (IS_ERR(rwsem_down_write_failed_killable(sem)))
++			return -EINTR;
++
++	return 0;
++}
++
+ /*
+  * trylock for writing -- returns 1 if successful, 0 if contention
+  */
 -- 
-2.7.0
+2.8.0.rc3
 
