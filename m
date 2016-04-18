@@ -1,68 +1,51 @@
 From: Rich Felker <dalias@libc.org>
-Date: Wed, 27 Apr 2016 00:11:38 +0000
-Subject: [PATCH 6/7] sh: add defconfig for J-Core J2
-Message-Id: <336f96998312319f17ea4b6c3e60a1ccd587cdd7.1461880061.git.dalias@libc.org>
+Date: Mon, 18 Apr 2016 14:15:00 +0000
+Subject: Re: (.init.text+0x270): multiple definition of `plat_irq_setup'
+Message-Id: <20160418141500.GM21636@brightrain.aerifal.cx>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201604181804.JnV4whDJ%fengguang.wu@intel.com>
+In-Reply-To: <201604181804.JnV4whDJ%fengguang.wu@intel.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: kbuild test robot <fengguang.wu@intel.com>
+Cc: kbuild-all@01.org, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
 
-This defconfig is intended not to be specific to a particular board;
-it enables drivers for all currently-supported hardware, and should be
-updated to include additional drivers as they are added.
+On Mon, Apr 18, 2016 at 06:44:06PM +0800, kbuild test robot wrote:
+> Hi Rich,
+> 
+> FYI, the error/warning still remains.
 
-Signed-off-by: Rich Felker <dalias@libc.org>
----
- arch/sh/configs/j2_defconfig | 38 ++++++++++++++++++++++++++++++++++++++
- 1 file changed, 38 insertions(+)
- create mode 100644 arch/sh/configs/j2_defconfig
+I can't find where I got any notification of it before. Thanks for
+bringing it to my attention now though.
 
-diff --git a/arch/sh/configs/j2_defconfig b/arch/sh/configs/j2_defconfig
-new file mode 100644
-index 0000000..fca167f
---- /dev/null
-+++ b/arch/sh/configs/j2_defconfig
-@@ -0,0 +1,38 @@
-+CONFIG_SYSVIPC=y
-+CONFIG_POSIX_MQUEUE=y
-+CONFIG_NO_HZ=y
-+CONFIG_HIGH_RES_TIMERS=y
-+CONFIG_CPU_SUBTYPE_J2=y
-+CONFIG_MEMORY_START=0x10000000
-+CONFIG_MEMORY_SIZE=0x04000000
-+CONFIG_CPU_BIG_ENDIAN=y
-+CONFIG_SH_DEVICE_TREE=y
-+CONFIG_HZ_100=y
-+CONFIG_CMDLINE_OVERWRITE=y
-+CONFIG_CMDLINE="console=ttyUL0 earlycon"
-+CONFIG_BINFMT_ELF_FDPIC=y
-+CONFIG_BINFMT_FLAT=y
-+CONFIG_NET=y
-+CONFIG_UNIX=y
-+CONFIG_INET=y
-+CONFIG_DEVTMPFS=y
-+CONFIG_DEVTMPFS_MOUNT=y
-+CONFIG_NETDEVICES=y
-+CONFIG_SERIAL_UARTLITE=y
-+CONFIG_SERIAL_UARTLITE_CONSOLE=y
-+CONFIG_I2C=y
-+CONFIG_SPI=y
-+CONFIG_SPI_JCORE=y
-+CONFIG_WATCHDOG=y
-+CONFIG_MMC=y
-+CONFIG_MMC_SPI=y
-+CONFIG_CLKSRC_JCORE_PIT=y
-+CONFIG_JCORE_AIC=y
-+CONFIG_EXT4_FS=y
-+CONFIG_VFAT_FS=y
-+CONFIG_FAT_DEFAULT_IOCHARSET="ascii"
-+CONFIG_FAT_DEFAULT_UTF8=y
-+CONFIG_NLS_DEFAULT="utf8"
-+CONFIG_NLS_CODEPAGE_437=y
-+CONFIG_NLS_ASCII=y
-+CONFIG_NLS_UTF8=y
--- 
-2.8.1
+> tree:   https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git master
+> head:   c3b46c73264b03000d1e18b22f5caf63332547c9
+> commit: 7480e0aabd5f9e6c3e3b72ed206e89284e90f11f sh: add device tree support and generic board using device tree
+> date:   5 weeks ago
+> config: sh-allyesconfig (attached as .config)
+> reproduce:
+>         wget https://git.kernel.org/cgit/linux/kernel/git/wfg/lkp-tests.git/plain/sbin/make.cross -O ~/bin/make.cross
+>         chmod +x ~/bin/make.cross
+>         git checkout 7480e0aabd5f9e6c3e3b72ed206e89284e90f11f
+>         # save the attached .config to linux build tree
+>         make.cross ARCH=sh 
+> 
+> All errors (new ones prefixed by >>):
+> 
+>    arch/sh/boards/built-in.o: In function `plat_irq_setup':
+> >> (.init.text+0x270): multiple definition of `plat_irq_setup'
+>    arch/sh/kernel/built-in.o:(.init.text+0x1234): first defined here
+>    arch/sh/boards/built-in.o: In function `arch_init_clk_ops':
+> >> (.init.text+0x254): multiple definition of `arch_init_clk_ops'
+>    arch/sh/kernel/built-in.o:(.init.text+0x12d4): first defined here
 
+OK, the new of-generic board is not tested with any of the existing
+cpu targets and not really usable yet since they don't have device
+tree bindings, but still it shouldn't break the build. I'll see about
+either moving these functions out of of-generic.c or making them weak.
+In the long term (once all legacy board files have been replaced by DT
+files/bindings and have been removed) these functions probably should
+not even exist.
 
+Rich
