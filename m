@@ -1,58 +1,18 @@
-From: Paul Gortmaker <paul.gortmaker@windriver.com>
-Date: Fri, 22 Apr 2016 18:07:00 +0000
-Subject: [PATCH 0/4] sh: fix up modular use in non-modular code
-Message-Id: <1461348424-3896-1-git-send-email-paul.gortmaker@windriver.com>
+From: andreas11@elisaandreas.biz
+Date: Mon, 18 Apr 2016 17:43:38 +0000
+Subject: Greetings!!!
+Message-Id: <962979.90403.qm@smtp106.biz.mail.gq1.yahoo.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Paul Gortmaker <paul.gortmaker@windriver.com>, linux-sh@vger.kernel.org, Rich Felker <dalias@libc.org>, Yoshinori Sato <ysato@users.sourceforge.jp>
+Content-Type: text/plain; charset="windows-1252"
+Content-Transfer-Encoding: quoted-printable
+To: "Mr. Eric" <andreas11@elisaandreas.biz>
 
-For anyone new to the underlying goal of this cleanup, we are trying to
-make kernel code consistent with the Makefiles/Kconfigs that control them.
-
-This means not using modular functions/macros for code that can never
-be built as a module.  Some of the other downfalls this leads to are:
-
- (1) it is easy to accidentally write unused module_exit and remove code
- (2) it can be misleading when reading the source, thinking it can be
-     modular when the Makefile and/or Kconfig prohibit it
- (3) it requires the include of the module.h header file which in turn
-     includes nearly everything else, thus adding to CPP overhead.
- (4) it gets copied/replicated into other drivers and spreads like weeds.
-
-Three of the four commits here are completely trivial with zero runtime
-impact whatsoever.  The fourth has a deletion of a ".remove" function
-and as we've done elsewhere, we block the sysfs ability to reach in and
-manually execute that function, since there isn't a sane use case for
-which doing that makes sense.
-
-Build tested on today's linux-next ; full build fails on duplicate syms
-from OF generic board, but that is a known and reported issue elsewhere;
-it has nothing to do with the changes here.
-
-Paul
---
-
-Cc: linux-sh@vger.kernel.org
-Cc: Paul Gortmaker <paul.gortmaker@windriver.com>
-Cc: Rich Felker <dalias@libc.org>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-
-
-Paul Gortmaker (4):
-  sh: make time.c explicitly non-modular
-  sh: make mm/asids-debugfs explicitly non-modular
-  sh: make board-secureedge5410 explicitly non-modular
-  sh: make heartbeat driver explicitly non-modular
-
- arch/sh/boards/board-secureedge5410.c |  3 +--
- arch/sh/drivers/heartbeat.c           | 32 +++-----------------------------
- arch/sh/kernel/time.c                 |  3 +--
- arch/sh/mm/asids-debugfs.c            |  5 +----
- 4 files changed, 6 insertions(+), 37 deletions(-)
-
--- 
-2.8.0
-
+Hi, how are you? My name is J Eric Denials, External Financial Auditor at L=
+loyds Banking Group plc., London. It is a pleasure to contact you at this t=
+ime through this medium. I have a cool and legitimate deal to do with you a=
+s you're a foreigner, it will be mutually beneficial to both. If you=E2=80=
+=99re interested, urgently, get back to me for more explanation about the d=
+eal.
+Regards
+Eric
