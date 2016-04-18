@@ -1,12 +1,14 @@
-From: andreas11@elisaandreas.biz
-Date: Mon, 18 Apr 2016 17:43:38 +0000
+From: andreas122@elisaandreas.biz
+Date: Mon, 18 Apr 2016 20:12:16 +0000
 Subject: Greetings!!!
-Message-Id: <962979.90403.qm@smtp106.biz.mail.gq1.yahoo.com>
+Message-Id: <828729.35773.qm@smtp105.biz.mail.ne1.yahoo.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <962979.90403.qm@smtp106.biz.mail.gq1.yahoo.com>
+In-Reply-To: <962979.90403.qm@smtp106.biz.mail.gq1.yahoo.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="windows-1252"
 Content-Transfer-Encoding: quoted-printable
-To: "Mr. Eric" <andreas11@elisaandreas.biz>
+To: "Mr. Eric" <andreas122@elisaandreas.biz>
 
 Hi, how are you? My name is J Eric Denials, External Financial Auditor at L=
 loyds Banking Group plc., London. It is a pleasure to contact you at this t=
