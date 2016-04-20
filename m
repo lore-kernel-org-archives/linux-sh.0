@@ -1,32 +1,44 @@
-From: Sergey Senozhatsky <sergey.senozhatsky.work@gmail.com>
-Date: Mon, 04 Apr 2016 04:52:00 +0000
-Subject: Re: [PATCH v4 5/5] printk/nmi: flush NMI messages on the system panic
-Message-Id: <20160404045200.GE6164@swordfish>
+From: Pan Xinhui <xinhui@linux.vnet.ibm.com>
+Date: Wed, 20 Apr 2016 06:41:00 +0000
+Subject: [PATCH V2]sh: cmpxchg: fix a  bit shift bug in big_endian os
+Message-Id: <5717247C.7080002@linux.vnet.ibm.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1459353210-20260-6-git-send-email-pmladek@suse.com>
- <201603310000.dKufp7mg%fengguang.wu@intel.com>
- <20160331123657.GN5522@pathway.suse.cz>
-In-Reply-To: <20160331123657.GN5522@pathway.suse.cz>
+References: <5715D72D.7060501@linux.vnet.ibm.com>
+In-Reply-To: <5715D72D.7060501@linux.vnet.ibm.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@vger.kernel.org
+Cc: ysato@users.sourceforge.jp, dalias@libc.org, mst@redhat.com, peterz@infradead.org, linux-sh@vger.kernel.org
 
-Hello,
+From: Pan Xinhui <xinhui.pan@linux.vnet.ibm.com>
 
-On (03/31/16 14:36), Petr Mladek wrote:
-[..]
->  #ifdef CONFIG_PRINTK_NMI
-> +#define deferred_console_in_nmi() in_nmi()
->  #else
-> +#define deferred_console_in_nmi() 0
-[..]
-> +	if (!in_sched && !deferred_console_in_nmi()) {
->  		lockdep_off();
->  		/*
->  		 * Try to acquire and then immediately release the console
+Correct bitoff in big endian OS.
+Current code works correctly for 1 byte but not for 2 bytes.
 
-or use SCHED level for nmi messages instead of defining deferred_console_in_nmi()?
-so !in_sched will work for both SCHED and NMI messages.
+Fixes: 3226aad81aa6 ("sh: support 1 and 2 byte xchg")
+Signed-off-by: Pan Xinhui <xinhui.pan@linux.vnet.ibm.com>
+Acked-by: Michael S. Tsirkin <mst@redhat.com>
+---
+changes from V1:
+	just add some patch comments. no code changes.
+---
+ arch/sh/include/asm/cmpxchg-xchg.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-	-ss
+diff --git a/arch/sh/include/asm/cmpxchg-xchg.h b/arch/sh/include/asm/cmpxchg-xchg.h
+index 7219719..1e881f5 100644
+--- a/arch/sh/include/asm/cmpxchg-xchg.h
++++ b/arch/sh/include/asm/cmpxchg-xchg.h
+@@ -21,7 +21,7 @@ static inline u32 __xchg_cmpxchg(volatile void *ptr, u32 x, int size)
+ 	int off = (unsigned long)ptr % sizeof(u32);
+ 	volatile u32 *p = ptr - off;
+ #ifdef __BIG_ENDIAN
+-	int bitoff = (sizeof(u32) - 1 - off) * BITS_PER_BYTE;
++	int bitoff = (sizeof(u32) - size - off) * BITS_PER_BYTE;
+ #else
+ 	int bitoff = off * BITS_PER_BYTE;
+ #endif
+-- 
+1.9.1 
+
