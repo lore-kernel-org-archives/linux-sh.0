@@ -1,86 +1,93 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Tue, 26 Apr 2016 21:52:28 +0000
-Subject: [PATCH v2 3/6] rtc: powerpc: provide rtc_class_ops directly
-Message-Id: <1461707551-1337971-4-git-send-email-arnd@arndb.de>
+From: Petr Mladek <pmladek@suse.com>
+Date: Thu, 21 Apr 2016 11:48:44 +0000
+Subject: [PATCH v5 3/4] printk/nmi: increase the size of NMI buffer and make it configurable
+Message-Id: <1461239325-22779-4-git-send-email-pmladek@suse.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1461707551-1337971-1-git-send-email-arnd@arndb.de>
-In-Reply-To: <1461707551-1337971-1-git-send-email-arnd@arndb.de>
+References: <1461239325-22779-1-git-send-email-pmladek@suse.com>
+In-Reply-To: <1461239325-22779-1-git-send-email-pmladek@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Alexandre Belloni <alexandre.belloni@free-electrons.com>
-Cc: Arnd Bergmann <arnd@arndb.de>, geert@linux-m68k.org, deller@gmx.de, benh@kernel.crashing.org, mpe@ellerman.id.au, dalias@libc.org, dhowells@redhat.com, linux-alpha@vger.kernel.org, a.zummo@towertech.it, linux-kernel@vger.kernel.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, linux-m68k@lists.linux-m68k.org, rtc-linux@googlegroups.com, linux-arch@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The rtc-generic driver provides an architecture specific
-wrapper on top of the generic rtc_class_ops abstraction,
-and powerpc has another abstraction on top, which is a bit
-silly.
+Testing has shown that the backtrace sometimes does not fit into the 4kB
+temporary buffer that is used in NMI context.  The warnings are gone when
+I double the temporary buffer size.
 
-This changes the powerpc rtc-generic device to provide its
-rtc_class_ops directly, to reduce the number of layers
-by one.
+This patch doubles the buffer size and makes it configurable.
 
-Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+Note that this problem existed even in the x86-specific implementation
+that was added by the commit a9edc8809328 ("x86/nmi: Perform a safe NMI
+stack trace on all CPUs").  Nobody noticed it because it did not print any
+warnings.
+
+Signed-off-by: Petr Mladek <pmladek@suse.com>
+Cc: Jan Kara <jack@suse.cz>
+Cc: Peter Zijlstra <peterz@infradead.org>
+Cc: Steven Rostedt <rostedt@goodmis.org>
+Cc: Russell King <rmk+kernel@arm.linux.org.uk>
+Cc: Daniel Thompson <daniel.thompson@linaro.org>
+Cc: Jiri Kosina <jkosina@suse.com>
+Cc: Ingo Molnar <mingo@redhat.com>
+Cc: Thomas Gleixner <tglx@linutronix.de>
+Cc: Ralf Baechle <ralf@linux-mips.org>
+Cc: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+Cc: Martin Schwidefsky <schwidefsky@de.ibm.com>
+Cc: David Miller <davem@davemloft.net>
+Cc: Daniel Thompson <daniel.thompson@linaro.org>
+Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
 ---
- arch/powerpc/kernel/time.c | 29 ++++++++++++++++++++++++++++-
- 1 file changed, 28 insertions(+), 1 deletion(-)
+ init/Kconfig        | 22 ++++++++++++++++++++++
+ kernel/printk/nmi.c |  3 ++-
+ 2 files changed, 24 insertions(+), 1 deletion(-)
 
-diff --git a/arch/powerpc/kernel/time.c b/arch/powerpc/kernel/time.c
-index 3ed9a5a21d77..aeac4d9591f9 100644
---- a/arch/powerpc/kernel/time.c
-+++ b/arch/powerpc/kernel/time.c
-@@ -56,6 +56,7 @@
- #include <linux/irq_work.h>
- #include <linux/clk-provider.h>
- #include <linux/suspend.h>
-+#include <linux/rtc.h>
- #include <asm/trace.h>
+diff --git a/init/Kconfig b/init/Kconfig
+index 85c7a2bf1ea4..9dfd27394d43 100644
+--- a/init/Kconfig
++++ b/init/Kconfig
+@@ -862,6 +862,28 @@ config LOG_CPU_MAX_BUF_SHIFT
+ 		     13 =>   8 KB for each CPU
+ 		     12 =>   4 KB for each CPU
  
- #include <asm/io.h>
-@@ -1081,6 +1082,29 @@ void calibrate_delay(void)
- 	loops_per_jiffy = tb_ticks_per_jiffy;
- }
++config NMI_LOG_BUF_SHIFT
++	int "Temporary per-CPU NMI log buffer size (12 => 4KB, 13 => 8KB)"
++	range 10 21
++	default 13
++	depends on PRINTK_NMI
++	help
++	  Select the size of a per-CPU buffer where NMI messages are temporary
++	  stored. They are copied to the main log buffer in a safe context
++	  to avoid a deadlock. The value defines the size as a power of 2.
++
++	  NMI messages are rare and limited. The largest one is when
++	  a backtrace is printed. It usually fits into 4KB. Select
++	  8KB if you want to be on the safe side.
++
++	  Examples:
++		     17 => 128 KB for each CPU
++		     16 =>  64 KB for each CPU
++		     15 =>  32 KB for each CPU
++		     14 =>  16 KB for each CPU
++		     13 =>   8 KB for each CPU
++		     12 =>   4 KB for each CPU
++
+ #
+ # Architectures with an unreliable sched_clock() should select this:
+ #
+diff --git a/kernel/printk/nmi.c b/kernel/printk/nmi.c
+index 572f94922230..bf08557d7e3d 100644
+--- a/kernel/printk/nmi.c
++++ b/kernel/printk/nmi.c
+@@ -41,7 +41,8 @@ DEFINE_PER_CPU(printk_func_t, printk_func) = vprintk_default;
+ static int printk_nmi_irq_ready;
+ atomic_t nmi_message_lost;
  
-+#ifdef CONFIG_RTC_DRV_GENERIC
-+static int rtc_generic_get_time(struct device *dev, struct rtc_time *tm)
-+{
-+	ppc_md.get_rtc_time(tm);
-+	return rtc_valid_tm(tm);
-+}
-+
-+static int rtc_generic_set_time(struct device *dev, struct rtc_time *tm)
-+{
-+	if (!ppc_md.set_rtc_time)
-+		return -EOPNOTSUPP;
-+
-+	if (ppc_md.set_rtc_time(tm) < 0)
-+		return -EOPNOTSUPP;
-+
-+	return 0;
-+}
-+
-+static const struct rtc_class_ops rtc_generic_ops = {
-+	.read_time = rtc_generic_get_time,
-+	.set_time = rtc_generic_set_time,
-+};
-+
- static int __init rtc_init(void)
- {
- 	struct platform_device *pdev;
-@@ -1088,9 +1112,12 @@ static int __init rtc_init(void)
- 	if (!ppc_md.get_rtc_time)
- 		return -ENODEV;
+-#define NMI_LOG_BUF_LEN (4096 - sizeof(atomic_t) - sizeof(struct irq_work))
++#define NMI_LOG_BUF_LEN ((1 << CONFIG_NMI_LOG_BUF_SHIFT) -		\
++			 sizeof(atomic_t) - sizeof(struct irq_work))
  
--	pdev = platform_device_register_simple("rtc-generic", -1, NULL, 0);
-+	pdev = platform_device_register_data(NULL, "rtc-generic", -1,
-+					     &rtc_generic_ops,
-+					     sizeof(rtc_generic_ops));
- 
- 	return PTR_ERR_OR_ZERO(pdev);
- }
- 
- device_initcall(rtc_init);
-+#endif
+ struct nmi_seq_buf {
+ 	atomic_t		len;	/* length of written data */
 -- 
-2.7.0
+1.8.5.6
 
