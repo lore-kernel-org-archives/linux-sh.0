@@ -1,70 +1,120 @@
-From: "Paul E. McKenney" <paulmck@linux.vnet.ibm.com>
-Date: Thu, 14 Apr 2016 21:40:54 +0000
-Subject: Re: [PATCH] documentation: Add disclaimer
-Message-Id: <20160414214054.GB31866@linux.vnet.ibm.com>
+From: Petr Mladek <pmladek@suse.com>
+Date: Thu, 21 Apr 2016 11:48:41 +0000
+Subject: [PATCH v5 0/4] Cleaning printk stuff in NMI context
+Message-Id: <1461239325-22779-1-git-send-email-pmladek@suse.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20160114120445.GB15828@arm.com>
- <56980145.5030901@imgtec.com>
- <20160114204827.GE3818@linux.vnet.ibm.com>
- <56981212.7050301@imgtec.com>
- <20160114222046.GH3818@linux.vnet.ibm.com>
- <20160126102402.GE6357@twins.programming.kicks-ass.net>
- <20160126103200.GI6375@twins.programming.kicks-ass.net>
- <20160126110053.GA21553@arm.com>
- <20160126201143.GV4503@linux.vnet.ibm.com>
- <15882.1453906627@warthog.procyon.org.uk>
-In-Reply-To: <15882.1453906627-S6HVgzuS8uM4Awkfq6JHfwNdhmdF6hFW@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Peter Zijlstra <peterz-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>, Will Deacon <will.deacon-5wv7dgnIgG8@public.gmane.org>, Leonid Yegoshin <Leonid.Yegoshin-1AXoQHu6uovQT0dZR+AlfA@public.gmane.org>, "Michael S. Tsirkin" <mst-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>, linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Cooper <andrew.cooper3-Sxgqhf6Nn4DQT0dZR+AlfA@public.gmane.org>, Russell King - ARM Linux <linux-lFZ/pmaqli7XmaaqVzeoHQ@public.gmane.org>, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Stefano Stabellini <stefano.stabellini-mvvWK6WmYclDPfheJLI6IQ@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Joe Perches <joe-6d6DIl74uiNBDgjK7y7TUQ@public.gmane.org>, David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>, linux-ia64-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linuxppc-dev-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org, linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sparclinux-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, linux-metag-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mips-6z/3iImG2C8G8FEW9MqTrA@public.gmane.org, x86-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, user-mode-linux-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Jan 27, 2016 at 02:57:07PM +0000, David Howells wrote:
-> Peter Zijlstra <peterz@infradead.org> wrote:
-> 
-> > +=====
-> > +DISCLAIMER
-> > +=====
-> > +
-> > +This document is not a specification; it is intentionally (for the sake of
-> > +brevity) and unintentionally (due to being human) incomplete. This document is
-> > +meant as a guide to using the various memory barriers provided by Linux, but
-> > +in case of any doubt (and there are many) please ask.
-> > +
-> > +I repeat, this document is not a specification of what Linux expects from
-> > +hardware.
-> 
-> The purpose of this document is twofold:
-> 
->  (1) to specify the minimum functionality that one can rely on for any
->      particular barrier, and
-> 
->  (2) to provide a guide as to how to use the barriers that are available.
-> 
-> Note that an architecture can provide more than the minimum requirement for
-> any particular barrier, but if the barrier provides less than that, it is
-> incorrect.
-> 
-> Note also that it is possible that a barrier may be a no-op for an
-> architecture because the way that arch works renders an explicit barrier
-> unnecessary in that case.
-> 
-> > +
-> 
-> Can you bung an extra blank line in here if you have to redo this at all?
+This patch set generalizes the already existing solution for
+printing NMI messages. The main idea comes from Peter Zijlstra.
 
-Done as part of your patch.  Again, apologies for the delay.
+v5 adds changes suggested by Sergey Senozhatsky. It should not longer
+conflict with his async printk patchset.
 
-							Thanx, Paul
+There are some conflicts with the nmi_backtrace improvements
+from Chris Metcalf, see
+https://lkml.kernel.org/g/<1459877208-15119-1-git-send-email-cmetcalf@mellanox.com>
+Feel free to ask me to resolve them.
 
-> > +====
-> > +CONTENTS
-> > +====
-> >  
-> >   (*) Abstract memory access model.
-> >  
-> 
-> David
-> 
+
+Changes against v4:
+
+  + merged 2nd patch into the 1st one to do not break bisection
+
+  + set vprintk_nmi() early in nmi_enter() and set vprintk_default()
+    later in nmi_exit() to make sure that all NMI messages are printed
+    to the temporary ring buffer
+
+  + used printk_deferred() when flushing the temporary buffers
+    on panic in NMI; we do not longer need to touch vprintk_emit()
+    and define the ugly macro deferred_console_in_nmi().
+
+
+Changes against v3:
+
+  + merged all small changes from -mm tree, including commit
+    descriptions
+
+  + disabled interrupts when taking the read_lock in __printk_nmi_flush();
+    printk_nmi_flush() might be called from any context; reported
+    by lockdep
+
+  + never introduce NEED_PRINTK_NMI; in -mm tree was introduced
+    in 1st patch and removed in the 4th one
+
+  + flush NMI buffers when the system goes down (new 5th patch);
+    addresses Daniel's concerns
+
+
+Changes against v2:
+
+  + fixed compilation problems reported by 0-day build robot
+
+  + MN10300 and Xtensa architectures will get handled separately
+
+  + dropped the patch that printed NMI messages directly when Oops
+    in progress; it made the solution less reliable
+
+  + made the size of the buffer configurable; use real numbers
+    instead of PAGE_SIZE
+
+
+Changes against v1:
+
+  + rebased on top of 4.4-rc2; there the old implementation was
+    moved to lib/nmi_backtrace.c and used also on arm; I hope that
+    I got the arm side correctly; I was not able to test on arm :-(
+
+  + defined HAVE_NMI on arm for !CPU_V7M instead of !CPU_V7;
+    handle_fiq_as_nmi() is called from entry-armv.S that
+    is compiled when !CPU_V7M
+
+  + defined HAVE_NMI also on mips; it calls nmi_enter() and
+    seems to have real NMIs (or am I wrong?)
+
+  + serialized backtraces when printing directly
+    (oops_in_progress)
+
+
+Petr Mladek (4):
+  printk/nmi: generic solution for safe printk in NMI
+  printk/nmi: warn when some message has been lost in NMI context
+  printk/nmi: increase the size of NMI buffer and make it configurable
+  printk/nmi: flush NMI messages on the system panic
+
+ arch/Kconfig                  |   4 +
+ arch/arm/Kconfig              |   1 +
+ arch/arm/kernel/smp.c         |   2 +
+ arch/avr32/Kconfig            |   1 +
+ arch/blackfin/Kconfig         |   1 +
+ arch/cris/Kconfig             |   1 +
+ arch/mips/Kconfig             |   1 +
+ arch/powerpc/Kconfig          |   1 +
+ arch/s390/Kconfig             |   1 +
+ arch/sh/Kconfig               |   1 +
+ arch/sparc/Kconfig            |   1 +
+ arch/tile/Kconfig             |   1 +
+ arch/x86/Kconfig              |   1 +
+ arch/x86/kernel/apic/hw_nmi.c |   1 -
+ include/linux/hardirq.h       |   2 +
+ include/linux/percpu.h        |   3 -
+ include/linux/printk.h        |  14 ++-
+ init/Kconfig                  |  27 +++++
+ init/main.c                   |   1 +
+ kernel/kexec_core.c           |   1 +
+ kernel/panic.c                |   6 +-
+ kernel/printk/Makefile        |   1 +
+ kernel/printk/internal.h      |  57 +++++++++
+ kernel/printk/nmi.c           | 260 ++++++++++++++++++++++++++++++++++++++++++
+ kernel/printk/printk.c        |  31 ++---
+ lib/nmi_backtrace.c           |  89 +--------------
+ 26 files changed, 401 insertions(+), 109 deletions(-)
+ create mode 100644 kernel/printk/internal.h
+ create mode 100644 kernel/printk/nmi.c
+
+-- 
+1.8.5.6
 
