@@ -1,57 +1,60 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 29 Apr 2016 12:58:32 +0000
-Subject: [PATCH v2 09/11] serial: sh-sci: Add pin initialization for SCIFA/SCIFB
-Message-Id: <1461934714-18681-10-git-send-email-geert+renesas@glider.be>
+From: Paul Gortmaker <paul.gortmaker@windriver.com>
+Date: Fri, 22 Apr 2016 18:07:03 +0000
+Subject: [PATCH 3/4] sh: make board-secureedge5410 explicitly non-modular
+Message-Id: <1461348424-3896-4-git-send-email-paul.gortmaker@windriver.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1461934714-18681-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1461934714-18681-1-git-send-email-geert+renesas@glider.be>
+References: <1461348424-3896-1-git-send-email-paul.gortmaker@windriver.com>
+In-Reply-To: <1461348424-3896-1-git-send-email-paul.gortmaker@windriver.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>, Peter Hurley <peter@hurleysoftware.com>
-Cc: Magnus Damm <magnus.damm@gmail.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-serial@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-kernel@vger.kernel.org
+Cc: Paul Gortmaker <paul.gortmaker@windriver.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
 
-Before, the driver relied on initialization by the boot loader, or by
-implicit reset state.
+The Kconfig currently controlling compilation of this code is:
 
-Note that unlike on (H)SCIF, the RTS/CTS bits exist only if dedicated
-RTS/CTS pins are available, which depends on the SoC and UART instance.
+config SH_SECUREEDGE5410
+        bool "SecureEdge5410"
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+...meaning that it currently is not being built as a module by anyone.
+
+Lets remove the couple traces of modularity so that when reading the
+driver there is no doubt it is builtin-only.
+
+Since module_init translates to device_initcall in the non-modular
+case, the init ordering remains unchanged with this commit.
+
+We don't replace module.h with init.h since the file already has that.
+
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+Cc: linux-sh@vger.kernel.org
+Signed-off-by: Paul Gortmaker <paul.gortmaker@windriver.com>
 ---
-v2:
-  - New.
----
- drivers/tty/serial/sh-sci.c | 16 +++++++++++++++-
- 1 file changed, 15 insertions(+), 1 deletion(-)
+ arch/sh/boards/board-secureedge5410.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index c46999f20917964e..b9d027af0f3e71f6 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -712,7 +712,21 @@ static void sci_init_pins(struct uart_port *port, unsigned int cflag)
- 		return;
- 	}
+diff --git a/arch/sh/boards/board-secureedge5410.c b/arch/sh/boards/board-secureedge5410.c
+index 98b36205aa7b..97ec67ffec2b 100644
+--- a/arch/sh/boards/board-secureedge5410.c
++++ b/arch/sh/boards/board-secureedge5410.c
+@@ -14,7 +14,6 @@
+ #include <linux/interrupt.h>
+ #include <linux/timer.h>
+ #include <linux/delay.h>
+-#include <linux/module.h>
+ #include <linux/sched.h>
+ #include <asm/machvec.h>
+ #include <mach/secureedge5410.h>
+@@ -49,7 +48,7 @@ static int __init eraseconfig_init(void)
+ 				irq);
+ 	return 0;
+ }
+-module_init(eraseconfig_init);
++device_initcall(eraseconfig_init);
  
--	if (sci_getreg(port, SCSPTR)->size) {
-+	if (port->type = PORT_SCIFA || port->type = PORT_SCIFB) {
-+		u16 ctrl = serial_port_in(port, SCPCR);
-+
-+		/* Enable RXD and TXD pin functions */
-+		ctrl &= ~(SCPCR_RXDC | SCPCR_TXDC);
-+		if (to_sci_port(port)->cfg->capabilities & SCIx_HAVE_RTSCTS) {
-+			/* RTS# is output, driven 1 */
-+			ctrl |= SCPCR_RTSC;
-+			serial_port_out(port, SCPDR,
-+				serial_port_in(port, SCPDR) | SCPDR_RTSD);
-+			/* Enable CTS# pin function */
-+			ctrl &= ~SCPCR_CTSC;
-+		}
-+		serial_port_out(port, SCPCR, ctrl);
-+	} else if (sci_getreg(port, SCSPTR)->size) {
- 		u16 status = serial_port_in(port, SCSPTR);
- 
- 		/* RTS# is output, driven 1 */
+ /*
+  * Initialize IRQ setting
 -- 
-1.9.1
+2.8.0
 
