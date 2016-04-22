@@ -1,215 +1,100 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Wed, 06 Apr 2016 09:34:38 +0000
-Subject: [PATCH v2 5/6] mmc: tmio: merge distributed include files
-Message-Id: <1459935278-4181-1-git-send-email-wsa@the-dreams.de>
+From: Paul Gortmaker <paul.gortmaker@windriver.com>
+Date: Fri, 22 Apr 2016 18:07:04 +0000
+Subject: [PATCH 4/4] sh: make heartbeat driver explicitly non-modular
+Message-Id: <1461348424-3896-5-git-send-email-paul.gortmaker@windriver.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1459934734-3613-6-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1459934734-3613-6-git-send-email-wsa@the-dreams.de>
+References: <1461348424-3896-1-git-send-email-paul.gortmaker@windriver.com>
+In-Reply-To: <1461348424-3896-1-git-send-email-paul.gortmaker@windriver.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: Wolfram Sang <wsa@the-dreams.de>, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, Simon Horman <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+To: linux-kernel@vger.kernel.org
+Cc: Paul Gortmaker <paul.gortmaker@windriver.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+The Kconfig for this driver is currently:
 
-There is no reason to have a public and private header file. Merge them
-into a private one, so looking up symbols is less confusing.
+config HEARTBEAT
+        bool "Heartbeat LED"
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+...meaning that it currently is not being built as a module by anyone.
+Lets remove the modular code that is essentially orphaned, so that
+when reading the driver there is no doubt it is builtin-only.
+
+Since module_init translates to device_initcall in the non-modular
+case, the init ordering remains unchanged with this commit.
+
+We explicitly disallow a driver unbind, since that doesn't have a
+sensible use case anyway, and it allows us to drop the ".remove"
+code for non-modular drivers.
+
+We also delete the MODULE_LICENSE tag etc. since all that information
+is already contained at the top of the file in the comments.
+
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+Cc: linux-sh@vger.kernel.org
+Signed-off-by: Paul Gortmaker <paul.gortmaker@windriver.com>
 ---
+ arch/sh/drivers/heartbeat.c | 32 +++-----------------------------
+ 1 file changed, 3 insertions(+), 29 deletions(-)
 
-change since v1: correct authorship. Sorry for the noise.
-
- drivers/mmc/host/tmio_mmc.h     | 56 ++++++++++++++++++++++++++++++-
- drivers/mmc/host/tmio_mmc_dma.c |  1 -
- drivers/mmc/host/tmio_mmc_pio.c |  1 -
- include/linux/mmc/tmio.h        | 73 -----------------------------------------
- 4 files changed, 55 insertions(+), 76 deletions(-)
- delete mode 100644 include/linux/mmc/tmio.h
-
-diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
-index 032188b766defd..439fdad2bad91d 100644
---- a/drivers/mmc/host/tmio_mmc.h
-+++ b/drivers/mmc/host/tmio_mmc.h
-@@ -1,6 +1,8 @@
- /*
-  * linux/drivers/mmc/host/tmio_mmc.h
-  *
-+ * Copyright (C) 2016 Sang Engineering, Wolfram Sang
-+ * Copyright (C) 2015-16 Renesas Electronics Corporation
-  * Copyright (C) 2007 Ian Molton
-  * Copyright (C) 2004 Ian Molton
-  *
-@@ -18,12 +20,64 @@
- 
- #include <linux/dmaengine.h>
- #include <linux/highmem.h>
--#include <linux/mmc/tmio.h>
- #include <linux/mutex.h>
- #include <linux/pagemap.h>
- #include <linux/scatterlist.h>
- #include <linux/spinlock.h>
- 
-+#define CTL_SD_CMD 0x00
-+#define CTL_ARG_REG 0x04
-+#define CTL_STOP_INTERNAL_ACTION 0x08
-+#define CTL_XFER_BLK_COUNT 0xa
-+#define CTL_RESPONSE 0x0c
-+#define CTL_STATUS 0x1c
-+#define CTL_STATUS2 0x1e
-+#define CTL_IRQ_MASK 0x20
-+#define CTL_SD_CARD_CLK_CTL 0x24
-+#define CTL_SD_XFER_LEN 0x26
-+#define CTL_SD_MEM_CARD_OPT 0x28
-+#define CTL_SD_ERROR_DETAIL_STATUS 0x2c
-+#define CTL_SD_DATA_PORT 0x30
-+#define CTL_TRANSACTION_CTL 0x34
-+#define CTL_SDIO_STATUS 0x36
-+#define CTL_SDIO_IRQ_MASK 0x38
-+#define CTL_DMA_ENABLE 0xd8
-+#define CTL_RESET_SD 0xe0
-+#define CTL_VERSION 0xe2
-+#define CTL_SDIO_REGS 0x100
-+#define CTL_CLK_AND_WAIT_CTL 0x138
-+#define CTL_RESET_SDIO 0x1e0
-+
-+/* Definitions for values the CTRL_STATUS register can take. */
-+#define TMIO_STAT_CMDRESPEND    0x00000001
-+#define TMIO_STAT_DATAEND       0x00000004
-+#define TMIO_STAT_CARD_REMOVE   0x00000008
-+#define TMIO_STAT_CARD_INSERT   0x00000010
-+#define TMIO_STAT_SIGSTATE      0x00000020
-+#define TMIO_STAT_WRPROTECT     0x00000080
-+#define TMIO_STAT_CARD_REMOVE_A 0x00000100
-+#define TMIO_STAT_CARD_INSERT_A 0x00000200
-+#define TMIO_STAT_SIGSTATE_A    0x00000400
-+#define TMIO_STAT_CMD_IDX_ERR   0x00010000
-+#define TMIO_STAT_CRCFAIL       0x00020000
-+#define TMIO_STAT_STOPBIT_ERR   0x00040000
-+#define TMIO_STAT_DATATIMEOUT   0x00080000
-+#define TMIO_STAT_RXOVERFLOW    0x00100000
-+#define TMIO_STAT_TXUNDERRUN    0x00200000
-+#define TMIO_STAT_CMDTIMEOUT    0x00400000
-+#define TMIO_STAT_RXRDY         0x01000000
-+#define TMIO_STAT_TXRQ          0x02000000
-+#define TMIO_STAT_ILL_FUNC      0x20000000
-+#define TMIO_STAT_CMD_BUSY      0x40000000
-+#define TMIO_STAT_ILL_ACCESS    0x80000000
-+
-+#define TMIO_STATUS2_DAT0	BIT(7)
-+
-+#define	CLK_CTL_DIV_MASK	0xff
-+#define	CLK_CTL_SCLKEN		BIT(8)
-+
-+#define TMIO_BBS		512		/* Boot block size */
-+
- /* Definitions for values the CTRL_SDIO_STATUS register can take. */
- #define TMIO_SDIO_STAT_IOIRQ	0x0001
- #define TMIO_SDIO_STAT_EXPUB52	0x4000
-diff --git a/drivers/mmc/host/tmio_mmc_dma.c b/drivers/mmc/host/tmio_mmc_dma.c
-index 67543587382312..d1573687515d2c 100644
---- a/drivers/mmc/host/tmio_mmc_dma.c
-+++ b/drivers/mmc/host/tmio_mmc_dma.c
-@@ -15,7 +15,6 @@
- #include <linux/dmaengine.h>
- #include <linux/mfd/tmio.h>
- #include <linux/mmc/host.h>
--#include <linux/mmc/tmio.h>
- #include <linux/pagemap.h>
- #include <linux/scatterlist.h>
- 
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index 879e0f5455ef44..15e6f6d5a42337 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -39,7 +39,6 @@
- #include <linux/mmc/host.h>
- #include <linux/mmc/mmc.h>
- #include <linux/mmc/slot-gpio.h>
--#include <linux/mmc/tmio.h>
- #include <linux/module.h>
- #include <linux/pagemap.h>
+diff --git a/arch/sh/drivers/heartbeat.c b/arch/sh/drivers/heartbeat.c
+index 7efc9c354fc7..49bace446a1a 100644
+--- a/arch/sh/drivers/heartbeat.c
++++ b/arch/sh/drivers/heartbeat.c
+@@ -19,7 +19,6 @@
+  * for more details.
+  */
+ #include <linux/init.h>
+-#include <linux/module.h>
  #include <linux/platform_device.h>
-diff --git a/include/linux/mmc/tmio.h b/include/linux/mmc/tmio.h
-deleted file mode 100644
-index b2f28e99503383..00000000000000
---- a/include/linux/mmc/tmio.h
-+++ /dev/null
-@@ -1,73 +0,0 @@
--/*
-- * include/linux/mmc/tmio.h
-- *
-- * Copyright (C) 2016 Sang Engineering, Wolfram Sang
-- * Copyright (C) 2015-16 Renesas Electronics Corporation
-- * Copyright (C) 2007 Ian Molton
-- * Copyright (C) 2004 Ian Molton
-- *
-- * This program is free software; you can redistribute it and/or modify
-- * it under the terms of the GNU General Public License version 2 as
-- * published by the Free Software Foundation.
-- *
-- * Driver for the MMC / SD / SDIO cell found in:
-- *
-- * TC6393XB TC6391XB TC6387XB T7L66XB ASIC3
-- */
--#ifndef LINUX_MMC_TMIO_H
--#define LINUX_MMC_TMIO_H
+ #include <linux/sched.h>
+ #include <linux/timer.h>
+@@ -139,26 +138,11 @@ static int heartbeat_drv_probe(struct platform_device *pdev)
+ 	return mod_timer(&hd->timer, jiffies + 1);
+ }
+ 
+-static int heartbeat_drv_remove(struct platform_device *pdev)
+-{
+-	struct heartbeat_data *hd = platform_get_drvdata(pdev);
 -
--#define CTL_SD_CMD 0x00
--#define CTL_ARG_REG 0x04
--#define CTL_STOP_INTERNAL_ACTION 0x08
--#define CTL_XFER_BLK_COUNT 0xa
--#define CTL_RESPONSE 0x0c
--#define CTL_STATUS 0x1c
--#define CTL_STATUS2 0x1e
--#define CTL_IRQ_MASK 0x20
--#define CTL_SD_CARD_CLK_CTL 0x24
--#define CTL_SD_XFER_LEN 0x26
--#define CTL_SD_MEM_CARD_OPT 0x28
--#define CTL_SD_ERROR_DETAIL_STATUS 0x2c
--#define CTL_SD_DATA_PORT 0x30
--#define CTL_TRANSACTION_CTL 0x34
--#define CTL_SDIO_STATUS 0x36
--#define CTL_SDIO_IRQ_MASK 0x38
--#define CTL_DMA_ENABLE 0xd8
--#define CTL_RESET_SD 0xe0
--#define CTL_VERSION 0xe2
--#define CTL_SDIO_REGS 0x100
--#define CTL_CLK_AND_WAIT_CTL 0x138
--#define CTL_RESET_SDIO 0x1e0
+-	del_timer_sync(&hd->timer);
+-	iounmap(hd->base);
 -
--/* Definitions for values the CTRL_STATUS register can take. */
--#define TMIO_STAT_CMDRESPEND    0x00000001
--#define TMIO_STAT_DATAEND       0x00000004
--#define TMIO_STAT_CARD_REMOVE   0x00000008
--#define TMIO_STAT_CARD_INSERT   0x00000010
--#define TMIO_STAT_SIGSTATE      0x00000020
--#define TMIO_STAT_WRPROTECT     0x00000080
--#define TMIO_STAT_CARD_REMOVE_A 0x00000100
--#define TMIO_STAT_CARD_INSERT_A 0x00000200
--#define TMIO_STAT_SIGSTATE_A    0x00000400
--#define TMIO_STAT_CMD_IDX_ERR   0x00010000
--#define TMIO_STAT_CRCFAIL       0x00020000
--#define TMIO_STAT_STOPBIT_ERR   0x00040000
--#define TMIO_STAT_DATATIMEOUT   0x00080000
--#define TMIO_STAT_RXOVERFLOW    0x00100000
--#define TMIO_STAT_TXUNDERRUN    0x00200000
--#define TMIO_STAT_CMDTIMEOUT    0x00400000
--#define TMIO_STAT_RXRDY         0x01000000
--#define TMIO_STAT_TXRQ          0x02000000
--#define TMIO_STAT_ILL_FUNC      0x20000000
--#define TMIO_STAT_CMD_BUSY      0x40000000
--#define TMIO_STAT_ILL_ACCESS    0x80000000
+-	platform_set_drvdata(pdev, NULL);
 -
--#define TMIO_STATUS2_DAT0	BIT(7)
+-	if (!pdev->dev.platform_data)
+-		kfree(hd);
 -
--#define	CLK_CTL_DIV_MASK	0xff
--#define	CLK_CTL_SCLKEN		BIT(8)
+-	return 0;
+-}
 -
--#define TMIO_BBS		512		/* Boot block size */
+ static struct platform_driver heartbeat_driver = {
+ 	.probe		= heartbeat_drv_probe,
+-	.remove		= heartbeat_drv_remove,
+ 	.driver		= {
+-		.name	= DRV_NAME,
++		.name			= DRV_NAME,
++		.suppress_bind_attrs	= true,
+ 	},
+ };
+ 
+@@ -167,14 +151,4 @@ static int __init heartbeat_init(void)
+ 	printk(KERN_NOTICE DRV_NAME ": version %s loaded\n", DRV_VERSION);
+ 	return platform_driver_register(&heartbeat_driver);
+ }
 -
--#endif /* LINUX_MMC_TMIO_H */
+-static void __exit heartbeat_exit(void)
+-{
+-	platform_driver_unregister(&heartbeat_driver);
+-}
+-module_init(heartbeat_init);
+-module_exit(heartbeat_exit);
+-
+-MODULE_VERSION(DRV_VERSION);
+-MODULE_AUTHOR("Paul Mundt");
+-MODULE_LICENSE("GPL v2");
++device_initcall(heartbeat_init);
 -- 
-2.7.0
+2.8.0
 
