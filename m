@@ -1,38 +1,58 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Thu, 28 Apr 2016 09:39:56 +0000
-Subject: Re: [PATCH v3 13/16] char/genrtc: remove powerpc support
-Message-Id: <2182936.7ADRRgWoa5@wuerfel>
+From: Paul Gortmaker <paul.gortmaker@windriver.com>
+Date: Fri, 22 Apr 2016 18:07:00 +0000
+Subject: [PATCH 0/4] sh: fix up modular use in non-modular code
+Message-Id: <1461348424-3896-1-git-send-email-paul.gortmaker@windriver.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1461796470-1291527-1-git-send-email-arnd@arndb.de> <1461796470-1291527-14-git-send-email-arnd@arndb.de> <CAMuHMdUhydMDeQ=ciVFgjBcjnCD_q2qU0F0gUP28U9=EcH2ZRQ@mail.gmail.com>
-In-Reply-To: <CAMuHMdUhydMDeQ=ciVFgjBcjnCD_q2qU0F0gUP28U9=EcH2ZRQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Alexandre Belloni <alexandre.belloni@free-electrons.com>, Helge Deller <deller@gmx.de>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Michael Ellerman <mpe@ellerman.id.au>, Rich Felker <dalias@libc.org>, David Howells <dhowells@redhat.com>, alpha <linux-alpha@vger.kernel.org>, Alessandro Zummo <a.zummo@towertech.it>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Parisc List <linux-parisc@vger.kernel.org>, "linuxppc-dev@lists.ozlabs.org" <linuxppc-dev@lists.ozlabs.org>, Linux-sh list <linux-sh@vger.kernel.org>, linux-m68k <linux-m68k@lists.linux-m68k.org>, RTCLINUX <rtc-linux@googlegroups.com>, Linux-Arch <linux-arch@vger.kernel.org>
+To: linux-kernel@vger.kernel.org
+Cc: Paul Gortmaker <paul.gortmaker@windriver.com>, linux-sh@vger.kernel.org, Rich Felker <dalias@libc.org>, Yoshinori Sato <ysato@users.sourceforge.jp>
 
-On Thursday 28 April 2016 09:25:25 Geert Uytterhoeven wrote:
-> On Thu, Apr 28, 2016 at 12:34 AM, Arnd Bergmann <arnd@arndb.de> wrote:
-> > --- a/arch/powerpc/platforms/Kconfig
-> > +++ b/arch/powerpc/platforms/Kconfig
-> > @@ -321,6 +321,17 @@ config OF_RTC
-> >           Uses information from the OF or flattened device tree to instantiate
-> >           platform devices for direct mapped RTC chips like the DS1742 or DS1743.
-> >
-> > +config GEN_RTC
-> > +       bool "Use the platform RTC operations from user space"
-> > +       select RTC_CLASS
-> > +       select RTC_DRV_GENERIC
-> > +       help
-> > +         This option provides backwards compatibility with the old gen_rtc.ko
-> > +         module that was traditionally used for old PowerPC machines.
-> > +         Platforms should migrate to enabling the RTC_DRV_GENERIC by hand
-> > +         replacing changing their get_rtc_time/set_rtc_time callbacks with
-> 
-> Drop "changing".
-> 
-> 
+For anyone new to the underlying goal of this cleanup, we are trying to
+make kernel code consistent with the Makefiles/Kconfigs that control them.
 
-done, thanks!
+This means not using modular functions/macros for code that can never
+be built as a module.  Some of the other downfalls this leads to are:
 
-	Arnd
+ (1) it is easy to accidentally write unused module_exit and remove code
+ (2) it can be misleading when reading the source, thinking it can be
+     modular when the Makefile and/or Kconfig prohibit it
+ (3) it requires the include of the module.h header file which in turn
+     includes nearly everything else, thus adding to CPP overhead.
+ (4) it gets copied/replicated into other drivers and spreads like weeds.
+
+Three of the four commits here are completely trivial with zero runtime
+impact whatsoever.  The fourth has a deletion of a ".remove" function
+and as we've done elsewhere, we block the sysfs ability to reach in and
+manually execute that function, since there isn't a sane use case for
+which doing that makes sense.
+
+Build tested on today's linux-next ; full build fails on duplicate syms
+from OF generic board, but that is a known and reported issue elsewhere;
+it has nothing to do with the changes here.
+
+Paul
+--
+
+Cc: linux-sh@vger.kernel.org
+Cc: Paul Gortmaker <paul.gortmaker@windriver.com>
+Cc: Rich Felker <dalias@libc.org>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+
+
+Paul Gortmaker (4):
+  sh: make time.c explicitly non-modular
+  sh: make mm/asids-debugfs explicitly non-modular
+  sh: make board-secureedge5410 explicitly non-modular
+  sh: make heartbeat driver explicitly non-modular
+
+ arch/sh/boards/board-secureedge5410.c |  3 +--
+ arch/sh/drivers/heartbeat.c           | 32 +++-----------------------------
+ arch/sh/kernel/time.c                 |  3 +--
+ arch/sh/mm/asids-debugfs.c            |  5 +----
+ 4 files changed, 6 insertions(+), 37 deletions(-)
+
+-- 
+2.8.0
+
