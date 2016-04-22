@@ -1,36 +1,44 @@
-From: Yoshinori Sato <ysato@users.sourceforge.jp>
-Date: Wed, 27 Apr 2016 15:49:13 +0000
-Subject: [PATCH] sh-sci: SysRq support on EARLYCON
-Message-Id: <1461772153-6785-1-git-send-email-ysato@users.sourceforge.jp>
+From: Rich Felker <dalias@libc.org>
+Date: Fri, 22 Apr 2016 23:29:13 +0000
+Subject: [PATCH 2/7] sh: add AT_HWCAP flag for J-Core cas.l instruction
+Message-Id: <f6b971971962df746873e8f031204b042ae03e14.1461880061.git.dalias@libc.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+To: linux-sh@vger.kernel.org
 
-Add missing flag condition.
-
-Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
+Signed-off-by: Rich Felker <dalias@libc.org>
 ---
- drivers/tty/serial/sh-sci.c | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+ arch/sh/include/uapi/asm/cpu-features.h | 1 +
+ arch/sh/kernel/cpu/sh2/probe.c          | 2 ++
+ 2 files changed, 3 insertions(+)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 0130feb..5a73620 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -18,7 +18,9 @@
-  * License.  See the file "COPYING" in the main directory of this archive
-  * for more details.
-  */
--#if defined(CONFIG_SERIAL_SH_SCI_CONSOLE) && defined(CONFIG_MAGIC_SYSRQ)
-+#if (defined(CONFIG_SERIAL_SH_SCI_CONSOLE) || \
-+     defined(CONFIG_SERIAL_SH_SCI_EARLYCON)) && \
-+	defined(CONFIG_MAGIC_SYSRQ)
- #define SUPPORT_SYSRQ
- #endif
+diff --git a/arch/sh/include/uapi/asm/cpu-features.h b/arch/sh/include/uapi/asm/cpu-features.h
+index 694abe4..2f1bc85 100644
+--- a/arch/sh/include/uapi/asm/cpu-features.h
++++ b/arch/sh/include/uapi/asm/cpu-features.h
+@@ -22,5 +22,6 @@
+ #define CPU_HAS_L2_CACHE	0x0080	/* Secondary cache / URAM */
+ #define CPU_HAS_OP32		0x0100	/* 32-bit instruction support */
+ #define CPU_HAS_PTEAEX		0x0200	/* PTE ASID Extension support */
++#define CPU_HAS_CAS_L		0x0400	/* cas.l atomic compare-and-swap */
  
+ #endif /* __ASM_SH_CPU_FEATURES_H */
+diff --git a/arch/sh/kernel/cpu/sh2/probe.c b/arch/sh/kernel/cpu/sh2/probe.c
+index d8dbb81..ecf8360 100644
+--- a/arch/sh/kernel/cpu/sh2/probe.c
++++ b/arch/sh/kernel/cpu/sh2/probe.c
+@@ -33,6 +33,8 @@ void cpu_probe(void)
+ 	boot_cpu_data.dcache.entry_shift	= 5;
+ 	boot_cpu_data.dcache.linesz		= 32;
+ 	boot_cpu_data.dcache.flags		= 0;
++
++	boot_cpu_data.flags |= CPU_HAS_CAS_L;
+ #else
+ 	/*
+ 	 * SH-2 doesn't have separate caches
 -- 
-2.7.0
+2.8.1
+
 
