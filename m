@@ -1,50 +1,81 @@
-From: Michal Hocko <mhocko@kernel.org>
-Date: Fri, 01 Apr 2016 11:04:51 +0000
-Subject: [PATCH 07/11] sh, rwsem: provide __down_write_killable
-Message-Id: <1459508695-14915-8-git-send-email-mhocko@kernel.org>
+From: Rich Felker <dalias@libc.org>
+Date: Tue, 26 Apr 2016 01:14:31 +0000
+Subject: [PATCH] sh: make sigcontext definition consistent across fpu/nofpu models
+Message-Id: <20160426011431.GA3752@brightrain.aerifal.cx>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1459508695-14915-1-git-send-email-mhocko@kernel.org>
-In-Reply-To: <1459508695-14915-1-git-send-email-mhocko@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: LKML <linux-kernel@vger.kernel.org>
-Cc: Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@redhat.com>, Thomas Gleixner <tglx@linutronix.de>, "H. Peter Anvin" <hpa@zytor.com>, "David S. Miller" <davem@davemloft.net>, Tony Luck <tony.luck@intel.com>, Andrew Morton <akpm@linux-foundation.org>, Chris Zankel <chris@zankel.net>, Max Filippov <jcmvbkbc@gmail.com>, x86@kernel.org, linux-alpha@vger.kernel.org, linux-ia64@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-arch@vger.kernel.org, Michal Hocko <mhocko@suse.com>
+To: linux-sh@vger.kernel.org
 
-From: Michal Hocko <mhocko@suse.com>
+Up until now, the SH version of the sigcontext structure, and thus
+mcontext_t/ucontext_t, varied depending on the cpu model the kernel
+was built to run on. SH-4 (including SH-4A) and SH-2A used the form
+with space for FPU registers, and everything else used a form that
+omitted them.
 
-which uses the same fast path as __down_write except it falls back to
-rwsem_down_write_failed_killable slow path and return -EINTR if killed.
+From a userspace perspective, however, the structure layout must be
+fixed for a given ABI. Traditionally glibc and uClibc used the form
+with space for FPU registers only when __SH4__ (which implies FPU;
+__SH4_NOFPU__ is the predefined macro for SH-4 but with no-FPU ABI)
+was defined. As a result:
 
-Signed-off-by: Michal Hocko <mhocko@suse.com>
+- SH-4 no-FPU programs never matched kernel sigcontext.
+
+- SH-3 programs did not match kernel sigcontext if run on SH-4,
+  despite an apparent intent that they be compatible.
+
+- SH-2 and SH-2A programs (using uClibc) did not match kernel
+  sigcontext if run on SH-2A.
+
+The mismatch might seem inconsequential because it occurs at the end
+of the sigcontext structure, but sigcontext is embedded as uc_mcontext
+in ucontext_t, where it is followed by uc_sigmask, an important member
+for signal handlers to have access to. In particular, access to
+uc_sigmask is necessary for a correct implementation of thread
+cancellation.
+
+It would be possible to retain support for both sigcontext ABIs via a
+personality mechanism, but since many configurations were already
+broken and nobody noticed, and since there are very few if any users
+of legacy no-FPU models anymore, I have opted to just remove the
+variation and always include space for the FPU registers in
+sigcontext. This was proposed and discussed on a thread "SH sigcontext
+ABI is broken" cross-posted to linux-sh, libc-alpha, and musl libc
+lists in June 2015, and no objections were raised.
+
+Signed-off-by: Rich Felker <dalias@libc.org>
 ---
- arch/sh/include/asm/rwsem.h | 13 +++++++++++++
- 1 file changed, 13 insertions(+)
 
-diff --git a/arch/sh/include/asm/rwsem.h b/arch/sh/include/asm/rwsem.h
-index f6c951c7a875..8a457b83d2a5 100644
---- a/arch/sh/include/asm/rwsem.h
-+++ b/arch/sh/include/asm/rwsem.h
-@@ -54,6 +54,19 @@ static inline void __down_write(struct rw_semaphore *sem)
- 		rwsem_down_write_failed(sem);
- }
+This was discussed last year and there were no objections I'm aware
+of. I plan to include this in the official patch series for J2 support
+and push it in the next (4.7) merge window. Please speak now if you
+have a strong reason for wanting this handled differently.
+
+ arch/sh/include/uapi/asm/sigcontext.h | 3 ---
+ 1 file changed, 3 deletions(-)
+
+diff --git a/arch/sh/include/uapi/asm/sigcontext.h b/arch/sh/include/uapi/asm/sigcontext.h
+index 8ce1435..faa5d08 100644
+--- a/arch/sh/include/uapi/asm/sigcontext.h
++++ b/arch/sh/include/uapi/asm/sigcontext.h
+@@ -25,8 +25,6 @@ struct sigcontext {
+ 	unsigned long sc_mach;
+ 	unsigned long sc_macl;
  
-+static inline int __down_write_killable(struct rw_semaphore *sem)
-+{
-+	int tmp;
-+
-+	tmp = atomic_add_return(RWSEM_ACTIVE_WRITE_BIAS,
-+				(atomic_t *)(&sem->count));
-+	if (tmp != RWSEM_ACTIVE_WRITE_BIAS)
-+		if (IS_ERR(rwsem_down_write_failed_killable(sem)))
-+			return -EINTR;
-+
-+	return 0;
-+}
-+
- static inline int __down_write_trylock(struct rw_semaphore *sem)
- {
- 	int tmp;
+-#if defined(__SH4__) || defined(CONFIG_CPU_SH4) || \
+-    defined(__SH2A__) || defined(CONFIG_CPU_SH2A)
+ 	/* FPU registers */
+ 	unsigned long sc_fpregs[16];
+ 	unsigned long sc_xfpregs[16];
+@@ -34,7 +32,6 @@ struct sigcontext {
+ 	unsigned int sc_fpul;
+ 	unsigned int sc_ownedfp;
+ #endif
+-#endif
+ };
+ 
+ #endif /* __ASM_SH_SIGCONTEXT_H */
 -- 
-2.8.0.rc3
+2.8.1
 
