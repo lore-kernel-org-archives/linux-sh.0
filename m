@@ -1,48 +1,89 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 29 Apr 2016 12:58:24 +0000
-Subject: [PATCH v2 01/11] serial: sh-sci: Update DT binding documentation for GPIO modem lines
-Message-Id: <1461934714-18681-2-git-send-email-geert+renesas@glider.be>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Tue, 26 Apr 2016 21:44:09 +0000
+Subject: [PATCH 5/8] char/genrtc: powerpc: use asm-generic/rtc.h
+Message-Id: <1461707052-1337718-6-git-send-email-arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1461934714-18681-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1461934714-18681-1-git-send-email-geert+renesas@glider.be>
+References: <1461707052-1337718-1-git-send-email-arnd@arndb.de>
+In-Reply-To: <1461707052-1337718-1-git-send-email-arnd@arndb.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>, Peter Hurley <peter@hurleysoftware.com>
-Cc: Magnus Damm <magnus.damm@gmail.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-serial@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>, devicetree@vger.kernel.org
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Cc: Arnd Bergmann <arnd@arndb.de>, tony.luck@intel.com, geert@linux-m68k.org, jejb@parisc-linux.org, deller@gmx.de, benh@kernel.crashing.org, mpe@ellerman.id.au, dalias@libc.org, dhowells@redhat.com, yasutake.koichi@jp.panasonic.com, rth@twiddle.net, ink@jurassic.park.msu.ru, linux-alpha@vger.kernel.org, x86@kernel.org, a.zummo@towertech.it, alexandre.belloni@free-electrons.com, linux-kernel@vger.kernel.org, linux-ia64@vger.kernel.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, rtc-linux@googlegroups.com, linux-arch@vger.kernel.org
 
-Amend the DT bindings for the Renesas SCI driver to allow describing
-optional GPIO-controlled modem lines, which can be used where dedicated
-modem lines are not available.
+The asm-generic/rtc.h header can now be included by
+architectures that provide their own set_rtc_time/get_rtc_time
+macros, letting us remove most of the common contents in
+the powerpc implementation.
 
-The property naming is dictated by the Generic Serial DT Bindings.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Rob Herring <robh@kernel.org>
-Cc: devicetree@vger.kernel.org
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
 ---
-v2:
-  - Add Acked-by,
-  - Drop RFC status,
-  - Refer to the Generic Serial DT Bindings,
-  - Drop out[12]-gpios.
----
- Documentation/devicetree/bindings/serial/renesas,sci-serial.txt | 2 ++
- 1 file changed, 2 insertions(+)
+ arch/powerpc/include/asm/rtc.h | 36 +++++-------------------------------
+ 1 file changed, 5 insertions(+), 31 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
-index 528c3b90f23cb04b..997baeaa869baa6f 100644
---- a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
-+++ b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
-@@ -76,6 +76,8 @@ Optional properties:
-   - dmas: Must contain a list of two references to DMA specifiers, one for
- 	  transmission, and one for reception.
-   - dma-names: Must contain a list of two DMA names, "tx" and "rx".
-+  - {cts,dsr,dcd,rng,rts,dtr}-gpios: Specify GPIOs for modem lines, cfr. the
-+    generic serial DT bindings in serial.txt.
+diff --git a/arch/powerpc/include/asm/rtc.h b/arch/powerpc/include/asm/rtc.h
+index f5802926b6c0..c6659582bd1e 100644
+--- a/arch/powerpc/include/asm/rtc.h
++++ b/arch/powerpc/include/asm/rtc.h
+@@ -26,23 +26,14 @@
  
- Example:
- 	aliases {
+ #ifdef __KERNEL__
+ 
+-#include <linux/rtc.h>
++#define get_rtc_time powerpc_get_rtc_time
++#define set_rtc_time powerpc_set_rtc_time
++#include <asm-generic/rtc.h>
+ 
+ #include <asm/machdep.h>
+ #include <asm/time.h>
+ 
+-#define RTC_PIE 0x40		/* periodic interrupt enable */
+-#define RTC_AIE 0x20		/* alarm interrupt enable */
+-#define RTC_UIE 0x10		/* update-finished interrupt enable */
+-
+-/* some dummy definitions */
+-#define RTC_BATT_BAD 0x100	/* battery bad */
+-#define RTC_SQWE 0x08		/* enable square-wave output */
+-#define RTC_DM_BINARY 0x04	/* all time/date values are BCD if clear */
+-#define RTC_24H 0x02		/* 24 hour mode - else hours bit 7 means pm */
+-#define RTC_DST_EN 0x01	        /* auto switch DST - works f. USA only */
+-
+-static inline unsigned int get_rtc_time(struct rtc_time *time)
++static inline unsigned int powerpc_get_rtc_time(struct rtc_time *time)
+ {
+ 	if (ppc_md.get_rtc_time)
+ 		ppc_md.get_rtc_time(time);
+@@ -50,29 +41,12 @@ static inline unsigned int get_rtc_time(struct rtc_time *time)
+ }
+ 
+ /* Set the current date and time in the real time clock. */
+-static inline int set_rtc_time(struct rtc_time *time)
++static inline int powerpc_set_rtc_time(struct rtc_time *time)
+ {
+ 	if (ppc_md.set_rtc_time)
+ 		return ppc_md.set_rtc_time(time);
+ 	return -EINVAL;
+ }
+ 
+-static inline unsigned int get_rtc_ss(void)
+-{
+-	struct rtc_time h;
+-
+-	get_rtc_time(&h);
+-	return h.tm_sec;
+-}
+-
+-static inline int get_rtc_pll(struct rtc_pll_info *pll)
+-{
+-	return -EINVAL;
+-}
+-static inline int set_rtc_pll(struct rtc_pll_info *pll)
+-{
+-	return -EINVAL;
+-}
+-
+ #endif /* __KERNEL__ */
+ #endif /* __ASM_POWERPC_RTC_H__ */
 -- 
-1.9.1
+2.7.0
 
