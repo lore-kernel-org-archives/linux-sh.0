@@ -1,26 +1,44 @@
 From: Arnd Bergmann <arnd@arndb.de>
-Date: Wed, 27 Apr 2016 09:59:45 +0000
-Subject: Re: [PATCH 4/8] char/rtc: move mc146818rtc code out of asm-generic/rtc.h
-Message-Id: <13463932.UFUngJV7ZH@wuerfel>
+Date: Tue, 26 Apr 2016 21:44:05 +0000
+Subject: [PATCH 1/8] char/rtc: replace blacklist with whitelist
+Message-Id: <1461707052-1337718-2-git-send-email-arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1461707052-1337718-1-git-send-email-arnd@arndb.de> <1461707052-1337718-5-git-send-email-arnd@arndb.de> <20160427084707.GI3264@piout.net>
-In-Reply-To: <20160427084707.GI3264@piout.net>
+References: <1461707052-1337718-1-git-send-email-arnd@arndb.de>
+In-Reply-To: <1461707052-1337718-1-git-send-email-arnd@arndb.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linuxppc-dev@lists.ozlabs.org
-Cc: Alexandre Belloni <alexandre.belloni@free-electrons.com>, dalias@libc.org, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, dhowells@redhat.com, linux-arch@vger.kernel.org, deller@gmx.de, x86@kernel.org, jejb@parisc-linux.org, geert@linux-m68k.org, rtc-linux@googlegroups.com, ink@jurassic.park.msu.ru, rth@twiddle.net, a.zummo@towertech.it, tony.luck@intel.com, linux-parisc@vger.kernel.org, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, linux-kernel@vger.kernel.org, linux-alpha@vger.kernel.org, yasutake.koichi@jp.panasonic.com
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Cc: Arnd Bergmann <arnd@arndb.de>, tony.luck@intel.com, geert@linux-m68k.org, jejb@parisc-linux.org, deller@gmx.de, benh@kernel.crashing.org, mpe@ellerman.id.au, dalias@libc.org, dhowells@redhat.com, yasutake.koichi@jp.panasonic.com, rth@twiddle.net, ink@jurassic.park.msu.ru, linux-alpha@vger.kernel.org, x86@kernel.org, a.zummo@towertech.it, alexandre.belloni@free-electrons.com, linux-kernel@vger.kernel.org, linux-ia64@vger.kernel.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, rtc-linux@googlegroups.com, linux-arch@vger.kernel.org
 
-On Wednesday 27 April 2016 11:29:12 Alexandre Belloni wrote:
-> The subject should be:
-> rtc: cmos: move mc146818rtc code out of asm-generic/rtc.h
+Every new architecture has to add itself to the growing list of those
+that do not support the legacy PC RTC driver.
 
-Good point, the functions are only used by rtc-cmos, not the old
-drivers/char/rtc.c.
+This replaces the long list of architectures that don't support it
+with a shorter list of those that do.
+
+The list is taken from those architectures that have a non-empty
+asm/mc146818rtc.h header file and were not explicitly blacklisted.
+
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+---
+ drivers/char/Kconfig | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/drivers/char/Kconfig b/drivers/char/Kconfig
+index 3ec0766ed5e9..66b5d48f409a 100644
+--- a/drivers/char/Kconfig
++++ b/drivers/char/Kconfig
+@@ -279,8 +279,7 @@ if RTC_LIB=n
  
-> Else, you can add:
-> Acked-by: Alexandre Belloni <alexandre.belloni@free-electrons.com>
+ config RTC
+ 	tristate "Enhanced Real Time Clock Support (legacy PC RTC driver)"
+-	depends on !PPC && !PARISC && !IA64 && !M68K && !SPARC && !FRV \
+-			&& !ARM && !SUPERH && !S390 && !AVR32 && !BLACKFIN && !UML
++	depends on ALPHA || (MIPS && MACH_LOONGSON64) || MN10300 || X86
+ 	---help---
+ 	  If you say Y here and create a character special file /dev/rtc with
+ 	  major number 10 and minor number 135 using mknod ("man mknod"), you
+-- 
+2.7.0
 
-Thanks.
-
-	Arnd
