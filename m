@@ -1,50 +1,89 @@
-From: Michal Hocko <mhocko@kernel.org>
-Date: Fri, 01 Apr 2016 11:04:53 +0000
-Subject: [PATCH 09/11] xtensa, rwsem: provide __down_write_killable
-Message-Id: <1459508695-14915-10-git-send-email-mhocko@kernel.org>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Tue, 26 Apr 2016 21:52:30 +0000
+Subject: [PATCH v2 5/6] rtc: sh: provide rtc_class_ops directly
+Message-Id: <1461707551-1337971-6-git-send-email-arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1459508695-14915-1-git-send-email-mhocko@kernel.org>
-In-Reply-To: <1459508695-14915-1-git-send-email-mhocko@kernel.org>
+References: <1461707551-1337971-1-git-send-email-arnd@arndb.de>
+In-Reply-To: <1461707551-1337971-1-git-send-email-arnd@arndb.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: LKML <linux-kernel@vger.kernel.org>
-Cc: Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@redhat.com>, Thomas Gleixner <tglx@linutronix.de>, "H. Peter Anvin" <hpa@zytor.com>, "David S. Miller" <davem@davemloft.net>, Tony Luck <tony.luck@intel.com>, Andrew Morton <akpm@linux-foundation.org>, Chris Zankel <chris@zankel.net>, Max Filippov <jcmvbkbc@gmail.com>, x86@kernel.org, linux-alpha@vger.kernel.org, linux-ia64@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-arch@vger.kernel.org, Michal Hocko <mhocko@suse.com>
+To: Alexandre Belloni <alexandre.belloni@free-electrons.com>
+Cc: Arnd Bergmann <arnd@arndb.de>, geert@linux-m68k.org, deller@gmx.de, benh@kernel.crashing.org, mpe@ellerman.id.au, dalias@libc.org, dhowells@redhat.com, linux-alpha@vger.kernel.org, a.zummo@towertech.it, linux-kernel@vger.kernel.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, linux-m68k@lists.linux-m68k.org, rtc-linux@googlegroups.com, linux-arch@vger.kernel.org
 
-From: Michal Hocko <mhocko@suse.com>
+The rtc-generic driver provides an architecture specific
+wrapper on top of the generic rtc_class_ops abstraction,
+and on sh, that goes through another indirection using
+the rtc_sh_get_time/rtc_sh_set_time functions.
 
-which uses the same fast path as __down_write except it falls back to
-rwsem_down_write_failed_killable slow path and return -EINTR if killed.
+This changes the sh rtc-generic device to provide its
+rtc_class_ops directly, skipping one of the abstraction
+levels.
 
-Signed-off-by: Michal Hocko <mhocko@suse.com>
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
 ---
- arch/xtensa/include/asm/rwsem.h | 13 +++++++++++++
- 1 file changed, 13 insertions(+)
+ arch/sh/kernel/time.c | 32 +++++++++++++++++++-------------
+ 1 file changed, 19 insertions(+), 13 deletions(-)
 
-diff --git a/arch/xtensa/include/asm/rwsem.h b/arch/xtensa/include/asm/rwsem.h
-index 593483f6e1ff..6283823b8040 100644
---- a/arch/xtensa/include/asm/rwsem.h
-+++ b/arch/xtensa/include/asm/rwsem.h
-@@ -59,6 +59,19 @@ static inline void __down_write(struct rw_semaphore *sem)
- 		rwsem_down_write_failed(sem);
+diff --git a/arch/sh/kernel/time.c b/arch/sh/kernel/time.c
+index d6d0a986c6e9..92cd676970d9 100644
+--- a/arch/sh/kernel/time.c
++++ b/arch/sh/kernel/time.c
+@@ -50,27 +50,30 @@ int update_persistent_clock(struct timespec now)
  }
+ #endif
  
-+static inline int __down_write_killable(struct rw_semaphore *sem)
-+{
-+	int tmp;
-+
-+	tmp = atomic_add_return(RWSEM_ACTIVE_WRITE_BIAS,
-+				(atomic_t *)(&sem->count));
-+	if (tmp != RWSEM_ACTIVE_WRITE_BIAS)
-+		if (IS_ERR(rwsem_down_write_failed_killable(sem)))
-+			return -EINTR;
+-unsigned int get_rtc_time(struct rtc_time *tm)
++static int rtc_generic_get_time(struct device *dev, struct rtc_time *tm)
+ {
+-	if (rtc_sh_get_time != null_rtc_get_time) {
+-		struct timespec tv;
++	struct timespec tv;
+ 
+-		rtc_sh_get_time(&tv);
+-		rtc_time_to_tm(tv.tv_sec, tm);
+-	}
+-
+-	return RTC_24H;
++	rtc_sh_get_time(&tv);
++	rtc_time_to_tm(tv.tv_sec, tm);
++	return 0;
+ }
+-EXPORT_SYMBOL(get_rtc_time);
+ 
+-int set_rtc_time(struct rtc_time *tm)
++static int rtc_generic_set_time(struct device *dev, struct rtc_time *tm)
+ {
+ 	unsigned long secs;
+ 
+ 	rtc_tm_to_time(tm, &secs);
+-	return rtc_sh_set_time(secs);
++	if (!rtc_sh_set_time || rtc_sh_set_time(secs) < 0)
++		return -EOPNOTSUPP;
 +
 +	return 0;
-+}
+ }
+-EXPORT_SYMBOL(set_rtc_time);
 +
- static inline int __down_write_trylock(struct rw_semaphore *sem)
++static const struct rtc_class_ops rtc_generic_ops = {
++	.read_time = rtc_generic_get_time,
++	.set_time = rtc_generic_set_time,
++};
+ 
+ static int __init rtc_generic_init(void)
  {
- 	int tmp;
+@@ -79,7 +82,10 @@ static int __init rtc_generic_init(void)
+ 	if (rtc_sh_get_time = null_rtc_get_time)
+ 		return -ENODEV;
+ 
+-	pdev = platform_device_register_simple("rtc-generic", -1, NULL, 0);
++	pdev = platform_device_register_data(NULL, "rtc-generic", -1,
++					     &rtc_generic_ops,
++					     sizeof(rtc_generic_ops));
++
+ 
+ 	return PTR_ERR_OR_ZERO(pdev);
+ }
 -- 
-2.8.0.rc3
+2.7.0
 
