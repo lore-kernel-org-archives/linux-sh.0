@@ -1,25 +1,72 @@
-From: Peter Hurley <peter@hurleysoftware.com>
-Date: Fri, 29 Apr 2016 15:39:07 +0000
-Subject: Re: [PATCH v2 04/11] serial: sh-sci: Add support for GPIO-controlled modem lines
-Message-Id: <5723801B.90205@hurleysoftware.com>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Tue, 26 Apr 2016 21:52:26 +0000
+Subject: [PATCH v2 1/6] rtc: m68k: provide rtc_class_ops directly
+Message-Id: <1461707551-1337971-2-git-send-email-arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1461934714-18681-1-git-send-email-geert+renesas@glider.be>
- <1461934714-18681-5-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1461934714-18681-5-git-send-email-geert+renesas@glider.be>
+References: <1461707551-1337971-1-git-send-email-arnd@arndb.de>
+In-Reply-To: <1461707551-1337971-1-git-send-email-arnd@arndb.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-Cc: Jiri Slaby <jslaby@suse.com>, Magnus Damm <magnus.damm@gmail.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-serial@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Alexandre Belloni <alexandre.belloni@free-electrons.com>
+Cc: Arnd Bergmann <arnd@arndb.de>, geert@linux-m68k.org, deller@gmx.de, benh@kernel.crashing.org, mpe@ellerman.id.au, dalias@libc.org, dhowells@redhat.com, linux-alpha@vger.kernel.org, a.zummo@towertech.it, linux-kernel@vger.kernel.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, linux-m68k@lists.linux-m68k.org, rtc-linux@googlegroups.com, linux-arch@vger.kernel.org
 
-On 04/29/2016 05:58 AM, Geert Uytterhoeven wrote:
-> Enhance the Renesas SCI UART driver to add support for GPIO-controlled
-> modem lines (CTS, DSR, DCD, RNG, RTS, DTR), using the serial_mctrl_gpio
-> helpers.
-> 
-> GPIO-controlled modem lines can be used when dedicated modem lines are
-> not available. Invalid configurations specifying both GPIO RTS/CTS and
-> dedicated RTS/CTS are rejected.
+The rtc-generic driver provides an architecture specific
+wrapper on top of the generic rtc_class_ops abstraction,
+and m68k has another abstraction on top, which is a bit
+silly.
 
-Reviewed-by: Peter Hurley <peter@hurleysoftware.com>
+This changes the m68k rtc-generic device to provide its
+rtc_class_ops directly, to reduce the number of layers
+by one.
+
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+---
+ arch/m68k/kernel/time.c | 24 ++++++++++++++++++++++--
+ 1 file changed, 22 insertions(+), 2 deletions(-)
+
+diff --git a/arch/m68k/kernel/time.c b/arch/m68k/kernel/time.c
+index 3857737e3958..fe35890feede 100644
+--- a/arch/m68k/kernel/time.c
++++ b/arch/m68k/kernel/time.c
+@@ -86,7 +86,24 @@ void read_persistent_clock(struct timespec *ts)
+ 	}
+ }
+ 
+-#ifdef CONFIG_ARCH_USES_GETTIMEOFFSET
++#if defined(CONFIG_ARCH_USES_GETTIMEOFFSET) && defined(CONFIG_RTC_DRV_GENERIC)
++static int rtc_generic_get_time(struct device *dev, struct rtc_time *tm)
++{
++	mach_hwclk(0, tm);
++	return rtc_valid_tm(tm);
++}
++
++static int rtc_generic_set_time(struct device *dev, struct rtc_time *tm)
++{
++	if (mach_hwclk(1, tm) < 0)
++		return -EOPNOTSUPP;
++	return 0;
++}
++
++static const struct rtc_class_ops generic_rtc_ops = {
++	.read_time = rtc_generic_get_time,
++	.set_time = rtc_generic_set_time,
++};
+ 
+ static int __init rtc_init(void)
+ {
+@@ -95,7 +112,10 @@ static int __init rtc_init(void)
+ 	if (!mach_hwclk)
+ 		return -ENODEV;
+ 
+-	pdev = platform_device_register_simple("rtc-generic", -1, NULL, 0);
++	/* or just call devm_rtc_device_register instead? */
++	pdev = platform_device_register_data(NULL, "rtc-generic", -1,
++					     &generic_rtc_ops,
++					     sizeof(generic_rtc_ops));
+ 	return PTR_ERR_OR_ZERO(pdev);
+ }
+ 
+-- 
+2.7.0
 
