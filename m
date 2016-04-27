@@ -1,75 +1,68 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Wed, 27 Apr 2016 22:34:20 +0000
-Subject: [PATCH v3 06/16] char/genrtc: remove mn10300 support
-Message-Id: <1461796470-1291527-7-git-send-email-arnd@arndb.de>
+From: Rich Felker <dalias@libc.org>
+Date: Wed, 27 Apr 2016 00:11:38 +0000
+Subject: [PATCH 6/7] sh: add defconfig for J-Core J2
+Message-Id: <336f96998312319f17ea4b6c3e60a1ccd587cdd7.1461880061.git.dalias@libc.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1461796470-1291527-1-git-send-email-arnd@arndb.de>
-In-Reply-To: <1461796470-1291527-1-git-send-email-arnd@arndb.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Alexandre Belloni <alexandre.belloni@free-electrons.com>
-Cc: Arnd Bergmann <arnd@arndb.de>, geert@linux-m68k.org, deller@gmx.de, benh@kernel.crashing.org, mpe@ellerman.id.au, dalias@libc.org, dhowells@redhat.com, linux-alpha@vger.kernel.org, a.zummo@towertech.it, linux-kernel@vger.kernel.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, linux-m68k@lists.linux-m68k.org, rtc-linux@googlegroups.com, linux-arch@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-The genrtc driver serves no purpose on mn10300 because it drives the
-same hardware as the original rtc.c driver, and the newer rtc-generic.c
-or rtc-cmos.c drivers on architectures that use the asm-generic/rtc.h
-header.
+This defconfig is intended not to be specific to a particular board;
+it enables drivers for all currently-supported hardware, and should be
+updated to include additional drivers as they are added.
 
-I assume it was initially only added for completeness when the
-mn10300 port was done, but the older rtc.c driver was always used
-instead.
-
-We can also stop include asm-generic/rtc.h now, because we
-just call mc146818_set_time() directly.
-
-It would be nice to change the architecture to use the rtc-cmos driver
-next, and remove support for the old rtc driver as well.
-
-Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Rich Felker <dalias@libc.org>
 ---
- arch/mn10300/include/asm/rtc.h | 2 --
- arch/mn10300/kernel/rtc.c      | 2 +-
- drivers/char/Kconfig           | 2 +-
- 3 files changed, 2 insertions(+), 4 deletions(-)
+ arch/sh/configs/j2_defconfig | 38 ++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 38 insertions(+)
+ create mode 100644 arch/sh/configs/j2_defconfig
 
-diff --git a/arch/mn10300/include/asm/rtc.h b/arch/mn10300/include/asm/rtc.h
-index 6c14bb1d0d9b..07dc87656197 100644
---- a/arch/mn10300/include/asm/rtc.h
-+++ b/arch/mn10300/include/asm/rtc.h
-@@ -25,6 +25,4 @@ static inline void calibrate_clock(void)
- 
- #endif /* !CONFIG_MN10300_RTC */
- 
--#include <asm-generic/rtc.h>
--
- #endif /* _ASM_RTC_H */
-diff --git a/arch/mn10300/kernel/rtc.c b/arch/mn10300/kernel/rtc.c
-index 48d7058b3295..77e0be4d92ea 100644
---- a/arch/mn10300/kernel/rtc.c
-+++ b/arch/mn10300/kernel/rtc.c
-@@ -27,7 +27,7 @@ void read_persistent_clock(struct timespec *ts)
- {
- 	struct rtc_time tm;
- 
--	get_rtc_time(&tm);
-+	mc146818_set_time(&tm);
- 
- 	ts->tv_nsec = 0;
- 	ts->tv_sec = mktime(tm.tm_year, tm.tm_mon, tm.tm_mday,
-diff --git a/drivers/char/Kconfig b/drivers/char/Kconfig
-index 697510325b1d..d17ed90ebc82 100644
---- a/drivers/char/Kconfig
-+++ b/drivers/char/Kconfig
-@@ -328,7 +328,7 @@ config JS_RTC
- config GEN_RTC
- 	tristate "Generic /dev/rtc emulation"
- 	depends on RTC!=y
--	depends on M68K || MN10300 || PARISC || PPC
-+	depends on M68K || PARISC || PPC
- 	---help---
- 	  If you say Y here and create a character special file /dev/rtc with
- 	  major number 10 and minor number 135 using mknod ("man mknod"), you
+diff --git a/arch/sh/configs/j2_defconfig b/arch/sh/configs/j2_defconfig
+new file mode 100644
+index 0000000..fca167f
+--- /dev/null
++++ b/arch/sh/configs/j2_defconfig
+@@ -0,0 +1,38 @@
++CONFIG_SYSVIPC=y
++CONFIG_POSIX_MQUEUE=y
++CONFIG_NO_HZ=y
++CONFIG_HIGH_RES_TIMERS=y
++CONFIG_CPU_SUBTYPE_J2=y
++CONFIG_MEMORY_START=0x10000000
++CONFIG_MEMORY_SIZE=0x04000000
++CONFIG_CPU_BIG_ENDIAN=y
++CONFIG_SH_DEVICE_TREE=y
++CONFIG_HZ_100=y
++CONFIG_CMDLINE_OVERWRITE=y
++CONFIG_CMDLINE="console=ttyUL0 earlycon"
++CONFIG_BINFMT_ELF_FDPIC=y
++CONFIG_BINFMT_FLAT=y
++CONFIG_NET=y
++CONFIG_UNIX=y
++CONFIG_INET=y
++CONFIG_DEVTMPFS=y
++CONFIG_DEVTMPFS_MOUNT=y
++CONFIG_NETDEVICES=y
++CONFIG_SERIAL_UARTLITE=y
++CONFIG_SERIAL_UARTLITE_CONSOLE=y
++CONFIG_I2C=y
++CONFIG_SPI=y
++CONFIG_SPI_JCORE=y
++CONFIG_WATCHDOG=y
++CONFIG_MMC=y
++CONFIG_MMC_SPI=y
++CONFIG_CLKSRC_JCORE_PIT=y
++CONFIG_JCORE_AIC=y
++CONFIG_EXT4_FS=y
++CONFIG_VFAT_FS=y
++CONFIG_FAT_DEFAULT_IOCHARSET="ascii"
++CONFIG_FAT_DEFAULT_UTF8=y
++CONFIG_NLS_DEFAULT="utf8"
++CONFIG_NLS_CODEPAGE_437=y
++CONFIG_NLS_ASCII=y
++CONFIG_NLS_UTF8=y
 -- 
-2.7.0
+2.8.1
+
 
