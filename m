@@ -1,70 +1,58 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 27 Apr 2016 07:47:56 +0000
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Wed, 27 Apr 2016 10:34:19 +0000
 Subject: Re: [PATCH v2 1/6] rtc: m68k: provide rtc_class_ops directly
-Message-Id: <CAMuHMdXS0JL_weLvjV4+i0ZPj=N+G6Vs1WDE9jffGUWehq5Xzg@mail.gmail.com>
+Message-Id: <4888267.R0sXv0tuDQ@wuerfel>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1461707551-1337971-1-git-send-email-arnd@arndb.de>
-	<1461707551-1337971-2-git-send-email-arnd@arndb.de>
-In-Reply-To: <1461707551-1337971-2-git-send-email-arnd@arndb.de>
+References: <1461707551-1337971-1-git-send-email-arnd@arndb.de> <1461707551-1337971-2-git-send-email-arnd@arndb.de> <CAMuHMdXS0JL_weLvjV4+i0ZPj=N+G6Vs1WDE9jffGUWehq5Xzg@mail.gmail.com>
+In-Reply-To: <CAMuHMdXS0JL_weLvjV4+i0ZPj=N+G6Vs1WDE9jffGUWehq5Xzg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Arnd Bergmann <arnd@arndb.de>
+To: Geert Uytterhoeven <geert@linux-m68k.org>
 Cc: Alexandre Belloni <alexandre.belloni@free-electrons.com>, Helge Deller <deller@gmx.de>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Michael Ellerman <mpe@ellerman.id.au>, Rich Felker <dalias@libc.org>, David Howells <dhowells@redhat.com>, alpha <linux-alpha@vger.kernel.org>, Alessandro Zummo <a.zummo@towertech.it>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Parisc List <linux-parisc@vger.kernel.org>, "linuxppc-dev@lists.ozlabs.org" <linuxppc-dev@lists.ozlabs.org>, Linux-sh list <linux-sh@vger.kernel.org>, linux-m68k <linux-m68k@lists.linux-m68k.org>, RTCLINUX <rtc-linux@googlegroups.com>, Linux-Arch <linux-arch@vger.kernel.org>
 
-Hi Arnd,
+On Wednesday 27 April 2016 09:47:56 Geert Uytterhoeven wrote:
+> > --- a/arch/m68k/kernel/time.c
+> > +++ b/arch/m68k/kernel/time.c
+> > @@ -86,7 +86,24 @@ void read_persistent_clock(struct timespec *ts)
+> >         }
+> >  }
+> >
+> > -#ifdef CONFIG_ARCH_USES_GETTIMEOFFSET
+> > +#if defined(CONFIG_ARCH_USES_GETTIMEOFFSET) && defined(CONFIG_RTC_DRV_GENERIC)
+> 
+> s/defined/IS_ENABLED/ for the modular case.
 
-On Tue, Apr 26, 2016 at 11:52 PM, Arnd Bergmann <arnd@arndb.de> wrote:
-> The rtc-generic driver provides an architecture specific
-> wrapper on top of the generic rtc_class_ops abstraction,
-> and m68k has another abstraction on top, which is a bit
-> silly.
->
-> This changes the m68k rtc-generic device to provide its
-> rtc_class_ops directly, to reduce the number of layers
-> by one.
->
-> Signed-off-by: Arnd Bergmann <arnd@arndb.de>
-> ---
->  arch/m68k/kernel/time.c | 24 ++++++++++++++++++++++--
->  1 file changed, 22 insertions(+), 2 deletions(-)
->
-> diff --git a/arch/m68k/kernel/time.c b/arch/m68k/kernel/time.c
-> index 3857737e3958..fe35890feede 100644
-> --- a/arch/m68k/kernel/time.c
-> +++ b/arch/m68k/kernel/time.c
-> @@ -86,7 +86,24 @@ void read_persistent_clock(struct timespec *ts)
->         }
->  }
->
-> -#ifdef CONFIG_ARCH_USES_GETTIMEOFFSET
-> +#if defined(CONFIG_ARCH_USES_GETTIMEOFFSET) && defined(CONFIG_RTC_DRV_GENERIC)
+Thanks, fixed in all three architectures/
 
-s/defined/IS_ENABLED/ for the modular case.
+> > @@ -95,7 +112,10 @@ static int __init rtc_init(void)
+> >         if (!mach_hwclk)
+> >                 return -ENODEV;
+> >
+> > -       pdev = platform_device_register_simple("rtc-generic", -1, NULL, 0);
+> > +       /* or just call devm_rtc_device_register instead? */
+> 
+> I guess this comment is a bogus leftover? There's no "dev" parameter to
+> pass to devm_rtc_device_register() here.
 
-> @@ -95,7 +112,10 @@ static int __init rtc_init(void)
->         if (!mach_hwclk)
->                 return -ENODEV;
->
-> -       pdev = platform_device_register_simple("rtc-generic", -1, NULL, 0);
-> +       /* or just call devm_rtc_device_register instead? */
+Sort of. When I wrote it, I thought that a NULL argument would work,
+and I later found out myself that it doesn't.
 
-I guess this comment is a bogus leftover? There's no "dev" parameter to
-pass to devm_rtc_device_register() here.
+I'll drop the comment there, but there are still a few ways we (probably
+not me, but whoever is interested) could take this further:
 
-> +       pdev = platform_device_register_data(NULL, "rtc-generic", -1,
-> +                                            &generic_rtc_ops,
-> +                                            sizeof(generic_rtc_ops));
->         return PTR_ERR_OR_ZERO(pdev);
->  }
+- register both the device and the driver here, and call
+  devm_rtc_device_register from the probe function so we can move away
+  from drivers/rtc/rtc-generic.c
 
-Gr{oetje,eeting}s,
+- do this separately for mac, mvme147, mvme16x, sun3, q40 and sun3x
 
-                        Geert
+- move the six implementations into drivers/rtc as standalone drivers.
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+One (AFAIK) unsolved problem here is the question of how to handle
+read_boot_clock/read_persistent_clock/update_persistent_clock in this
+case. This is a really odd API that is implemented in various ways
+on a few major architectures, and not at all on others, so it's all
+highly inconsistent.
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+	Arnd
