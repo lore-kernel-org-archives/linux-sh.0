@@ -1,51 +1,100 @@
-From: Russell King - ARM Linux <linux@arm.linux.org.uk>
-Date: Wed, 27 Apr 2016 09:31:45 +0000
-Subject: Re: [PATCH v5 1/4] printk/nmi: generic solution for safe printk in NMI
-Message-Id: <20160427093145.GJ19428@n2100.arm.linux.org.uk>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Wed, 27 Apr 2016 22:34:26 +0000
+Subject: [PATCH v3 12/16] rtc: powerpc: provide rtc_class_ops directly
+Message-Id: <1461796470-1291527-13-git-send-email-arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1461239325-22779-1-git-send-email-pmladek@suse.com>
- <1461239325-22779-2-git-send-email-pmladek@suse.com>
-In-Reply-To: <1461239325-22779-2-git-send-email-pmladek@suse.com>
+References: <1461796470-1291527-1-git-send-email-arnd@arndb.de>
+In-Reply-To: <1461796470-1291527-1-git-send-email-arnd@arndb.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Alexandre Belloni <alexandre.belloni@free-electrons.com>
+Cc: Arnd Bergmann <arnd@arndb.de>, geert@linux-m68k.org, deller@gmx.de, benh@kernel.crashing.org, mpe@ellerman.id.au, dalias@libc.org, dhowells@redhat.com, linux-alpha@vger.kernel.org, a.zummo@towertech.it, linux-kernel@vger.kernel.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, linux-m68k@lists.linux-m68k.org, rtc-linux@googlegroups.com, linux-arch@vger.kernel.org
 
-On Thu, Apr 21, 2016 at 01:48:42PM +0200, Petr Mladek wrote:
-> diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
-> index cdfa6c2b7626..259543ec6dc9 100644
-> --- a/arch/arm/Kconfig
-> +++ b/arch/arm/Kconfig
-> @@ -66,6 +66,7 @@ config ARM
->  	select HAVE_KRETPROBES if (HAVE_KPROBES)
->  	select HAVE_MEMBLOCK
->  	select HAVE_MOD_ARCH_SPECIFIC
-> +	select HAVE_NMI
->  	select HAVE_OPROFILE if (HAVE_PERF_EVENTS)
->  	select HAVE_OPTPROBES if !THUMB2_KERNEL
->  	select HAVE_PERF_EVENTS
-> diff --git a/arch/arm/kernel/smp.c b/arch/arm/kernel/smp.c
-> index baee70267f29..df90bc59bfce 100644
-> --- a/arch/arm/kernel/smp.c
-> +++ b/arch/arm/kernel/smp.c
-> @@ -644,9 +644,11 @@ void handle_IPI(int ipinr, struct pt_regs *regs)
->  		break;
->  
->  	case IPI_CPU_BACKTRACE:
-> +		printk_nmi_enter();
->  		irq_enter();
->  		nmi_cpu_backtrace(regs);
->  		irq_exit();
-> +		printk_nmi_exit();
->  		break;
->  
->  	default:
+The rtc-generic driver provides an architecture specific
+wrapper on top of the generic rtc_class_ops abstraction,
+and powerpc has another abstraction on top, which is a bit
+silly.
 
-For the above,
+This changes the powerpc rtc-generic device to provide its
+rtc_class_ops directly, to reduce the number of layers
+by one.
 
-Acked-by: Russell King <rmk+kernel@arm.linux.org.uk>
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+---
+ arch/powerpc/kernel/time.c | 29 ++++++++++++++++++++++++++++-
+ drivers/rtc/rtc-generic.c  |  2 +-
+ 2 files changed, 29 insertions(+), 2 deletions(-)
 
+diff --git a/arch/powerpc/kernel/time.c b/arch/powerpc/kernel/time.c
+index 3ed9a5a21d77..7a482a7f4d8d 100644
+--- a/arch/powerpc/kernel/time.c
++++ b/arch/powerpc/kernel/time.c
+@@ -56,6 +56,7 @@
+ #include <linux/irq_work.h>
+ #include <linux/clk-provider.h>
+ #include <linux/suspend.h>
++#include <linux/rtc.h>
+ #include <asm/trace.h>
+ 
+ #include <asm/io.h>
+@@ -1081,6 +1082,29 @@ void calibrate_delay(void)
+ 	loops_per_jiffy = tb_ticks_per_jiffy;
+ }
+ 
++#if IS_ENABLED(CONFIG_RTC_DRV_GENERIC)
++static int rtc_generic_get_time(struct device *dev, struct rtc_time *tm)
++{
++	ppc_md.get_rtc_time(tm);
++	return rtc_valid_tm(tm);
++}
++
++static int rtc_generic_set_time(struct device *dev, struct rtc_time *tm)
++{
++	if (!ppc_md.set_rtc_time)
++		return -EOPNOTSUPP;
++
++	if (ppc_md.set_rtc_time(tm) < 0)
++		return -EOPNOTSUPP;
++
++	return 0;
++}
++
++static const struct rtc_class_ops rtc_generic_ops = {
++	.read_time = rtc_generic_get_time,
++	.set_time = rtc_generic_set_time,
++};
++
+ static int __init rtc_init(void)
+ {
+ 	struct platform_device *pdev;
+@@ -1088,9 +1112,12 @@ static int __init rtc_init(void)
+ 	if (!ppc_md.get_rtc_time)
+ 		return -ENODEV;
+ 
+-	pdev = platform_device_register_simple("rtc-generic", -1, NULL, 0);
++	pdev = platform_device_register_data(NULL, "rtc-generic", -1,
++					     &rtc_generic_ops,
++					     sizeof(rtc_generic_ops));
+ 
+ 	return PTR_ERR_OR_ZERO(pdev);
+ }
+ 
+ device_initcall(rtc_init);
++#endif
+diff --git a/drivers/rtc/rtc-generic.c b/drivers/rtc/rtc-generic.c
+index 5c82bae73b9c..efcb9833cac8 100644
+--- a/drivers/rtc/rtc-generic.c
++++ b/drivers/rtc/rtc-generic.c
+@@ -9,7 +9,7 @@
+ #include <linux/platform_device.h>
+ #include <linux/rtc.h>
+ 
+-#if defined(CONFIG_PPC)
++#if 0
+ #include <asm/rtc.h>
+ 
+ static int generic_get_time(struct device *dev, struct rtc_time *tm)
 -- 
-RMK's Patch system: http://www.arm.linux.org.uk/developer/patches/
-FTTC broadband for 0.8mile line: currently at 9.6Mbps down 400kbps up
-according to speedtest.net.
+2.7.0
+
