@@ -1,41 +1,66 @@
-From: Michal Marek <mmarek@suse.cz>
-Date: Wed, 20 Apr 2016 08:38:17 +0000
-Subject: Re: [PATCH] kbuild: delete unnecessary "@:"
-Message-Id: <20160420083817.GE15339@pobox.suse.cz>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Wed, 27 Apr 2016 22:34:19 +0000
+Subject: [PATCH v3 05/16] char/genrtc: remove alpha support
+Message-Id: <1461796470-1291527-6-git-send-email-arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1459422856-31754-1-git-send-email-yamada.masahiro@socionext.com>
-In-Reply-To: <1459422856-31754-1-git-send-email-yamada.masahiro@socionext.com>
+References: <1461796470-1291527-1-git-send-email-arnd@arndb.de>
+In-Reply-To: <1461796470-1291527-1-git-send-email-arnd@arndb.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Alexandre Belloni <alexandre.belloni@free-electrons.com>
+Cc: Arnd Bergmann <arnd@arndb.de>, geert@linux-m68k.org, deller@gmx.de, benh@kernel.crashing.org, mpe@ellerman.id.au, dalias@libc.org, dhowells@redhat.com, linux-alpha@vger.kernel.org, a.zummo@towertech.it, linux-kernel@vger.kernel.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, linux-m68k@lists.linux-m68k.org, rtc-linux@googlegroups.com, linux-arch@vger.kernel.org
 
-On Thu, Mar 31, 2016 at 08:14:16PM +0900, Masahiro Yamada wrote:
-> Since commit 2aedcd098a94 ('kbuild: suppress annoying "... is up to
-> date." message'), $(call if_changed,...) is evaluated to "@:"
-> when there is nothing to do.
-> 
-> We no longer need to add "@:" after $(call if_changed,...) to
-> suppress "... is up to date." message.
-> 
-> Signed-off-by: Masahiro Yamada <yamada.masahiro@socionext.com>
-> ---
-> 
->  arch/arm/boot/Makefile                  | 1 -
->  arch/arm/boot/bootp/Makefile            | 1 -
->  arch/h8300/boot/compressed/Makefile     | 1 -
->  arch/m32r/boot/compressed/Makefile      | 1 -
->  arch/mn10300/boot/compressed/Makefile   | 1 -
->  arch/nios2/boot/compressed/Makefile     | 1 -
->  arch/s390/boot/compressed/Makefile      | 1 -
->  arch/sh/boot/compressed/Makefile        | 1 -
->  arch/sh/boot/romimage/Makefile          | 1 -
->  arch/unicore32/boot/compressed/Makefile | 1 -
->  arch/x86/boot/compressed/Makefile       | 1 -
->  arch/x86/purgatory/Makefile             | 2 --
->  arch/x86/realmode/rm/Makefile           | 1 -
->  13 files changed, 14 deletions(-)
+The genrtc driver serves no purpose on Alpha because it drives the
+same hardware as the original rtc.c driver, and the newer rtc-generic.c
+or rtc-cmos.c drivers on architectures that use the asm-generic/rtc.h
+header.
 
-Applied to kbuild.git#kbuild, thanks.
+The defconfig uses CONFIG_RTC=y, so this driver is not used by default.
+At one point it was used to abstract a quirk for the "Marvel" platform,
+but it does not do this any more after the code was moved into yet
+another driver in arch/alpha/kernel/rtc.c.
 
-Michal
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+---
+ arch/alpha/include/asm/rtc.h    | 1 -
+ arch/alpha/kernel/core_marvel.c | 1 -
+ drivers/char/Kconfig            | 2 +-
+ 3 files changed, 1 insertion(+), 3 deletions(-)
+ delete mode 100644 arch/alpha/include/asm/rtc.h
+
+diff --git a/arch/alpha/include/asm/rtc.h b/arch/alpha/include/asm/rtc.h
+deleted file mode 100644
+index f71c3b0ed360..000000000000
+--- a/arch/alpha/include/asm/rtc.h
++++ /dev/null
+@@ -1 +0,0 @@
+-#include <asm-generic/rtc.h>
+diff --git a/arch/alpha/kernel/core_marvel.c b/arch/alpha/kernel/core_marvel.c
+index 53dd2f1a53aa..d5f0580746a5 100644
+--- a/arch/alpha/kernel/core_marvel.c
++++ b/arch/alpha/kernel/core_marvel.c
+@@ -24,7 +24,6 @@
+ #include <asm/gct.h>
+ #include <asm/pgalloc.h>
+ #include <asm/tlbflush.h>
+-#include <asm/rtc.h>
+ #include <asm/vga.h>
+ 
+ #include "proto.h"
+diff --git a/drivers/char/Kconfig b/drivers/char/Kconfig
+index 9bdb629fbaae..697510325b1d 100644
+--- a/drivers/char/Kconfig
++++ b/drivers/char/Kconfig
+@@ -328,7 +328,7 @@ config JS_RTC
+ config GEN_RTC
+ 	tristate "Generic /dev/rtc emulation"
+ 	depends on RTC!=y
+-	depends on ALPHA || M68K || MN10300 || PARISC || PPC
++	depends on M68K || MN10300 || PARISC || PPC
+ 	---help---
+ 	  If you say Y here and create a character special file /dev/rtc with
+ 	  major number 10 and minor number 135 using mknod ("man mknod"), you
+-- 
+2.7.0
+
