@@ -1,42 +1,70 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 29 Apr 2016 12:58:34 +0000
-Subject: [PATCH v2 11/11] serial: sh-sci: Add DT support for dedicated RTS/CTS
-Message-Id: <1461934714-18681-12-git-send-email-geert+renesas@glider.be>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Wed, 27 Apr 2016 22:34:24 +0000
+Subject: [PATCH v3 10/16] rtc: m68k: provide ioctl for q40
+Message-Id: <1461796470-1291527-11-git-send-email-arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1461934714-18681-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1461934714-18681-1-git-send-email-geert+renesas@glider.be>
+References: <1461796470-1291527-1-git-send-email-arnd@arndb.de>
+In-Reply-To: <1461796470-1291527-1-git-send-email-arnd@arndb.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>, Peter Hurley <peter@hurleysoftware.com>
-Cc: Magnus Damm <magnus.damm@gmail.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-serial@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Alexandre Belloni <alexandre.belloni@free-electrons.com>
+Cc: Arnd Bergmann <arnd@arndb.de>, geert@linux-m68k.org, deller@gmx.de, benh@kernel.crashing.org, mpe@ellerman.id.au, dalias@libc.org, dhowells@redhat.com, linux-alpha@vger.kernel.org, a.zummo@towertech.it, linux-kernel@vger.kernel.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, linux-m68k@lists.linux-m68k.org, rtc-linux@googlegroups.com, linux-arch@vger.kernel.org
 
-Add support for indicating the availability of dedicated lines for
-RTS/CTS hardware flow control, using the standard "uart-has-rtscts" DT
-property.
+The q40 platform is the only machine in the kernel that provides
+RTC_PLL_GET/RTC_PLL_SET ioctl commands in its rtc through the
+mach_get_rtc_pll/mach_set_rtc_pll callbacks.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+However, this currenctly works only in the old-style genrtc
+driver, not the (somewhat) modern rtc-generic driver replacing
+it. This adds an ioctl implementation to the m68k generic_rtc_ops
+in order to let both drivers provide the same API.
+
+After this, we should be able to remove support for genrtc
+from the m68k architecture.
+
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
 ---
-v2:
-  - New.
----
- drivers/tty/serial/sh-sci.c | 3 +++
- 1 file changed, 3 insertions(+)
+ arch/m68k/kernel/time.c | 25 +++++++++++++++++++++++++
+ 1 file changed, 25 insertions(+)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 02b240a02dc6a593..d9cb0d70fceef07d 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -2999,6 +2999,9 @@ sci_parse_dt(struct platform_device *pdev, unsigned int *dev_id)
- 	p->regtype = SCI_OF_REGTYPE(match->data);
- 	p->scscr = SCSCR_RE | SCSCR_TE;
- 
-+	if (of_find_property(np, "uart-has-rtscts", NULL))
-+		p->capabilities |= SCIx_HAVE_RTSCTS;
-+
- 	return p;
+diff --git a/arch/m68k/kernel/time.c b/arch/m68k/kernel/time.c
+index 80e024a10115..465423c07a92 100644
+--- a/arch/m68k/kernel/time.c
++++ b/arch/m68k/kernel/time.c
+@@ -100,7 +100,32 @@ static int rtc_generic_set_time(struct device *dev, struct rtc_time *tm)
+ 	return 0;
  }
  
++static int rtc_ioctl(struct device *dev, unsigned int cmd, unsigned long arg)
++{
++	struct rtc_pll_info pll;
++	struct rtc_pll_info __user *argp = (void __user *)arg;
++
++	switch (cmd) {
++	case RTC_PLL_GET:
++		if (!mach_get_rtc_pll || mach_get_rtc_pll(&pll))
++			return -EINVAL;
++		return copy_to_user(argp, &pll, sizeof pll) ? -EFAULT : 0;
++
++	case RTC_PLL_SET:
++		if (!mach_set_rtc_pll)
++			return -EINVAL;
++		if (!capable(CAP_SYS_TIME))
++			return -EACCES;
++		if (copy_from_user(&pll, argp, sizeof(pll)))
++			return -EFAULT;
++		return mach_set_rtc_pll(&pll);
++	}
++
++	return -ENOIOCTLCMD;
++}
++
+ static const struct rtc_class_ops generic_rtc_ops = {
++	.ioctl = rtc_ioctl,
+ 	.read_time = rtc_generic_get_time,
+ 	.set_time = rtc_generic_set_time,
+ };
 -- 
-1.9.1
+2.7.0
 
