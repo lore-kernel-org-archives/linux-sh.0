@@ -1,179 +1,107 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 29 Apr 2016 12:58:33 +0000
-Subject: [PATCH v2 10/11] serial: sh-sci: Fix support for hardware-assisted RTS/CTS
-Message-Id: <1461934714-18681-11-git-send-email-geert+renesas@glider.be>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Wed, 27 Apr 2016 22:34:21 +0000
+Subject: [PATCH v3 07/16] rtc: parisc: provide rtc_class_ops directly
+Message-Id: <1461796470-1291527-8-git-send-email-arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1461934714-18681-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1461934714-18681-1-git-send-email-geert+renesas@glider.be>
+References: <1461796470-1291527-1-git-send-email-arnd@arndb.de>
+In-Reply-To: <1461796470-1291527-1-git-send-email-arnd@arndb.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>, Peter Hurley <peter@hurleysoftware.com>
-Cc: Magnus Damm <magnus.damm@gmail.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-serial@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Alexandre Belloni <alexandre.belloni@free-electrons.com>
+Cc: Arnd Bergmann <arnd@arndb.de>, geert@linux-m68k.org, deller@gmx.de, benh@kernel.crashing.org, mpe@ellerman.id.au, dalias@libc.org, dhowells@redhat.com, linux-alpha@vger.kernel.org, a.zummo@towertech.it, linux-kernel@vger.kernel.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, linux-m68k@lists.linux-m68k.org, rtc-linux@googlegroups.com, linux-arch@vger.kernel.org
 
-The existing support for hardware-assisted RTS/CTS is rudimentary and
-doesn't work.
+The rtc-generic driver provides an architecture specific
+wrapper on top of the generic rtc_class_ops abstraction,
+and on pa-risc, that is implemented using an open-coded
+version of rtc_time_to_tm/rtc_tm_to_time.
 
-Add support for hardware-assisted RTS/CTS hardware flow control for the
-(H)SCIF, SCIFA, and SCIFB variants.
+This changes the parisc rtc-generic device to provide its
+rtc_class_ops directly, using the normal helper functions,
+which makes this y2038 safe (on 32-bit) and simplifies
+the implementation.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
 ---
-v2:
-  - New.
----
- drivers/tty/serial/sh-sci.c | 90 +++++++++++++++++++++++++++++++++++++++++----
- 1 file changed, 83 insertions(+), 7 deletions(-)
+ arch/parisc/kernel/time.c | 36 +++++++++++++++++++++++++++++++++++-
+ drivers/rtc/rtc-generic.c |  3 +--
+ 2 files changed, 36 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index b9d027af0f3e71f6..02b240a02dc6a593 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -141,6 +141,8 @@ struct sci_port {
- 	struct timer_list		rx_timer;
- 	unsigned int			rx_timeout;
- #endif
-+
-+	bool autorts;
- };
- 
- #define SCI_NPORTS CONFIG_SERIAL_SH_SCI_NR_UARTS
-@@ -1811,6 +1813,46 @@ static unsigned int sci_tx_empty(struct uart_port *port)
- 	return (status & SCxSR_TEND(port)) && !in_tx_fifo ? TIOCSER_TEMT : 0;
+diff --git a/arch/parisc/kernel/time.c b/arch/parisc/kernel/time.c
+index 58dd6801f5be..744878789752 100644
+--- a/arch/parisc/kernel/time.c
++++ b/arch/parisc/kernel/time.c
+@@ -12,6 +12,7 @@
+  */
+ #include <linux/errno.h>
+ #include <linux/module.h>
++#include <linux/rtc.h>
+ #include <linux/sched.h>
+ #include <linux/kernel.h>
+ #include <linux/param.h>
+@@ -248,14 +249,47 @@ void __init start_cpu_itimer(void)
+ 	per_cpu(cpu_data, cpu).it_value = next_tick;
  }
  
-+static void sci_set_rts(struct uart_port *port, bool state)
++#if IS_ENABLED(CONFIG_RTC_DRV_GENERIC)
++static int rtc_generic_get_time(struct device *dev, struct rtc_time *tm)
 +{
-+	if (port->type = PORT_SCIFA || port->type = PORT_SCIFB) {
-+		u16 data = serial_port_in(port, SCPDR);
++	struct pdc_tod tod_data;
 +
-+		/* Active low */
-+		if (state)
-+			data &= ~SCPDR_RTSD;
-+		else
-+			data |= SCPDR_RTSD;
-+		serial_port_out(port, SCPDR, data);
++	memset(tm, 0, sizeof(*tm));
++	if (pdc_tod_read(&tod_data) < 0)
++		return -EOPNOTSUPP;
 +
-+		/* RTS# is output */
-+		serial_port_out(port, SCPCR,
-+				serial_port_in(port, SCPCR) | SCPCR_RTSC);
-+	} else if (sci_getreg(port, SCSPTR)->size) {
-+		u16 ctrl = serial_port_in(port, SCSPTR);
-+
-+		/* Active low */
-+		if (state)
-+			ctrl &= ~SCSPTR_RTSDT;
-+		else
-+			ctrl |= SCSPTR_RTSDT;
-+		serial_port_out(port, SCSPTR, ctrl);
-+	}
++	/* we treat tod_sec as unsigned, so this can work until year 2106 */
++	rtc_time64_to_tm(tod_data.tod_sec, tm);
++	return rtc_valid_tm(tm);
 +}
 +
-+static bool sci_get_cts(struct uart_port *port)
++static int rtc_generic_set_time(struct device *dev, struct rtc_time *tm)
 +{
-+	if (port->type = PORT_SCIFA || port->type = PORT_SCIFB) {
-+		/* Active low */
-+		return !(serial_port_in(port, SCPDR) & SCPDR_CTSD);
-+	} else if (sci_getreg(port, SCSPTR)->size) {
-+		/* Active low */
-+		return !(serial_port_in(port, SCSPTR) & SCSPTR_CTSDT);
-+	}
++	time64_t secs = rtc_tm_to_time64(tm);
 +
-+	return true;
++	if (pdc_tod_set(secs, 0) < 0)
++		return -EOPNOTSUPP;
++
++	return 0;
 +}
 +
- /*
-  * Modem control is a bit of a mixed bag for SCI(F) ports. Generally
-  * CTS/RTS is supported in hardware by at least one port and controlled
-@@ -1841,6 +1883,31 @@ static void sci_set_mctrl(struct uart_port *port, unsigned int mctrl)
- 	}
++static const struct rtc_class_ops rtc_generic_ops = {
++	.read_time = rtc_generic_get_time,
++	.set_time = rtc_generic_set_time,
++};
++
+ static int __init rtc_init(void)
+ {
+ 	struct platform_device *pdev;
  
- 	mctrl_gpio_set(s->gpios, mctrl);
+-	pdev = platform_device_register_simple("rtc-generic", -1, NULL, 0);
++	pdev = platform_device_register_data(NULL, "rtc-generic", -1,
++					     &rtc_generic_ops,
++					     sizeof(rtc_generic_ops));
 +
-+	if (!(s->cfg->capabilities & SCIx_HAVE_RTSCTS))
-+		return;
-+
-+	if (!(mctrl & TIOCM_RTS)) {
-+		/* Disable Auto RTS */
-+		serial_port_out(port, SCFCR,
-+				serial_port_in(port, SCFCR) & ~SCFCR_MCE);
-+
-+		/* Clear RTS */
-+		sci_set_rts(port, 0);
-+	} else if (s->autorts) {
-+		if (port->type = PORT_SCIFA || port->type = PORT_SCIFB) {
-+			/* Enable RTS# pin function */
-+			serial_port_out(port, SCPCR,
-+				serial_port_in(port, SCPCR) & ~SCPCR_RTSC);
-+		}
-+
-+		/* Enable Auto RTS */
-+		serial_port_out(port, SCFCR,
-+				serial_port_in(port, SCFCR) | SCFCR_MCE);
-+	} else {
-+		/* Set RTS */
-+		sci_set_rts(port, 1);
-+	}
+ 	return PTR_ERR_OR_ZERO(pdev);
  }
+ device_initcall(rtc_init);
++#endif
  
- static unsigned int sci_get_mctrl(struct uart_port *port)
-@@ -1853,10 +1920,14 @@ static unsigned int sci_get_mctrl(struct uart_port *port)
+ void read_persistent_clock(struct timespec *ts)
+ {
+diff --git a/drivers/rtc/rtc-generic.c b/drivers/rtc/rtc-generic.c
+index 3958e87a05fa..92b5e02a3750 100644
+--- a/drivers/rtc/rtc-generic.c
++++ b/drivers/rtc/rtc-generic.c
+@@ -9,8 +9,7 @@
+ #include <linux/platform_device.h>
+ #include <linux/rtc.h>
  
- 	/*
- 	 * CTS/RTS is handled in hardware when supported, while nothing
--	 * else is wired up. Keep it simple and simply assert CTS/DSR/CAR.
-+	 * else is wired up.
- 	 */
--	if (IS_ERR_OR_NULL(mctrl_gpio_to_gpiod(gpios, UART_GPIO_CTS)))
-+	if (s->autorts) {
-+		if (sci_get_cts(port))
-+			mctrl |= TIOCM_CTS;
-+	} else if (IS_ERR_OR_NULL(mctrl_gpio_to_gpiod(gpios, UART_GPIO_CTS))) {
- 		mctrl |= TIOCM_CTS;
-+	}
- 	if (IS_ERR_OR_NULL(mctrl_gpio_to_gpiod(gpios, UART_GPIO_DSR)))
- 		mctrl |= TIOCM_DSR;
- 	if (IS_ERR_OR_NULL(mctrl_gpio_to_gpiod(gpios, UART_GPIO_DCD)))
-@@ -1927,6 +1998,7 @@ static void sci_shutdown(struct uart_port *port)
+-#if defined(CONFIG_M68K) || defined(CONFIG_PARISC) || \
+-    defined(CONFIG_PPC)
++#if defined(CONFIG_M68K) || defined(CONFIG_PPC)
+ #include <asm/rtc.h>
  
- 	dev_dbg(port->dev, "%s(%d)\n", __func__, port->line);
- 
-+	s->autorts = false;
- 	mctrl_gpio_disable_ms(to_sci_port(port)->gpios);
- 
- 	spin_lock_irqsave(&port->lock, flags);
-@@ -2248,15 +2320,18 @@ done:
- 
- 	sci_init_pins(port, termios->c_cflag);
- 
-+	port->status &= ~UPSTAT_AUTOCTS;
-+	s->autorts = false;
- 	reg = sci_getreg(port, SCFCR);
- 	if (reg->size) {
- 		unsigned short ctrl = serial_port_in(port, SCFCR);
- 
--		if (s->cfg->capabilities & SCIx_HAVE_RTSCTS) {
--			if (termios->c_cflag & CRTSCTS)
--				ctrl |= SCFCR_MCE;
--			else
--				ctrl &= ~SCFCR_MCE;
-+		if ((port->flags & UPF_HARD_FLOW) &&
-+		    (termios->c_cflag & CRTSCTS)) {
-+			/* There is no CTS interrupt to restart the hardware */
-+			port->status |= UPSTAT_AUTOCTS;
-+			/* MCE is enabled when RTS is raised */
-+			s->autorts = true;
- 		}
- 
- 		/*
-@@ -2958,6 +3033,7 @@ static int sci_probe_single(struct platform_device *dev,
- 			dev_err(&dev->dev, "Conflicting RTS/CTS config\n");
- 			return -EINVAL;
- 		}
-+		sciport->port.flags |= UPF_HARD_FLOW;
- 	}
- 
- 	ret = uart_add_one_port(&sci_uart_driver, &sciport->port);
+ static int generic_get_time(struct device *dev, struct rtc_time *tm)
 -- 
-1.9.1
+2.7.0
 
