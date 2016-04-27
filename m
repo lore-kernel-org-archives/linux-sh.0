@@ -1,56 +1,259 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Tue, 26 Apr 2016 15:47:54 +0000
+From: Rich Felker <dalias@libc.org>
+Date: Wed, 27 Apr 2016 22:54:57 +0000
 Subject: Re: [PATCH 2/6] mmc: sh_mobile_sdhi: remove obsolete irq_by_name registration
-Message-Id: <20160426154754.GA2943@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="RnlQjJ0d97Da+TV1"
+Message-Id: <20160427225457.GV21636@brightrain.aerifal.cx>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1459934734-3613-1-git-send-email-wsa@the-dreams.de>
  <1459934734-3613-3-git-send-email-wsa@the-dreams.de>
  <CAPDyKFqixO2EGxdx4ERy=DSTR+KBunrYyfR26+AYN0k5_dVHiw@mail.gmail.com>
-In-Reply-To: <CAPDyKFqixO2EGxdx4ERy=DSTR+KBunrYyfR26+AYN0k5_dVHiw@mail.gmail.com>
-To: Ulf Hansson <ulf.hansson@linaro.org>
-Cc: linux-mmc <linux-mmc@vger.kernel.org>, linux-renesas-soc@vger.kernel.org, Linux-sh list <linux-sh@vger.kernel.org>, Simon Horman <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+ <20160419093713.GC1521@katana>
+In-Reply-To: <20160419093713.GC1521@katana>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Wolfram Sang <wsa@the-dreams.de>
+Cc: Ulf Hansson <ulf.hansson@linaro.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-mmc <linux-mmc@vger.kernel.org>, linux-renesas-soc@vger.kernel.org, Linux-sh list <linux-sh@vger.kernel.org>, Simon Horman <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+
+On Tue, Apr 19, 2016 at 11:37:13AM +0200, Wolfram Sang wrote:
+> On Mon, Apr 18, 2016 at 10:21:41AM +0200, Ulf Hansson wrote:
+> > On 6 April 2016 at 11:25, Wolfram Sang <wsa@the-dreams.de> wrote:
+> > > From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+> > >
+> > > There is no user left in the kernel, so this code can be removed.
+> > > (Legacy, non-DT sh_mobile boards have been removed a while ago.) The
+> > > diff looks more complicated than it is: The if-block for multiplexed isr
+> > > is now the main code path, the rest is removed. A number of sh boards
+> > > included the now deleted include file without needing it. Remove that,
+> > > too.
+> > >
+> > > Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+> > > ---
+> > >  arch/sh/boards/board-sh7757lcr.c     |  1 -
+> > >  arch/sh/boards/mach-ap325rxa/setup.c |  1 -
+> > >  arch/sh/boards/mach-ecovec24/setup.c |  1 -
+> > >  arch/sh/boards/mach-kfr2r09/setup.c  |  1 -
+> > >  arch/sh/boards/mach-migor/setup.c    |  1 -
+> > >  arch/sh/boards/mach-se/7724/setup.c  |  1 -
+> > >  drivers/mmc/host/sh_mobile_sdhi.c    | 57 +++++-------------------------------
+> > >  include/linux/mmc/sh_mobile_sdhi.h   | 10 -------
+> > >  8 files changed, 8 insertions(+), 65 deletions(-)
+> > >  delete mode 100644 include/linux/mmc/sh_mobile_sdhi.h
+> > 
+> > Hi Wolfram,
+> > 
+> > I need and ack from the Superh arch maintainer to apply this one.
+> > 
+> > It seems like you didn't include them on "to/cc" list, perhaps repost!?
+> 
+> I hoped adding the sh-list will be enough. Adding them to this mail
+> explicitly now, maybe this will do?
+> 
+> @SH-maintainers: some SH board files include a file with platform_data
+> they are not really using. Since I want to remove the platform_data
+> file, I remove inclusion of this file. That's all to it. Build bot was
+> happy, too.
+
+Hi! Sorry I didn't notice this before. I saw sh_mobile in the subject
+lines and guessed it was not making changes in arch/sh.
+
+I don't have any of the affected boards to test, but as long as
+they're not actually using the include file you're removing, I don't
+see any harm. It's my intent to remove all of these board files full
+of platform devices as soon as we get working device tree bindings for
+everything, anyway. So,
+
+Acked-by: Rich Felker <dalias@libc.org>
+
+Sato-san, do you have any objections?
+
+Rich
 
 
---RnlQjJ0d97Da+TV1
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+> > > diff --git a/arch/sh/boards/board-sh7757lcr.c b/arch/sh/boards/board-sh7757lcr.c
+> > > index 324599bfad1420..0104c8199c48fe 100644
+> > > --- a/arch/sh/boards/board-sh7757lcr.c
+> > > +++ b/arch/sh/boards/board-sh7757lcr.c
+> > > @@ -20,7 +20,6 @@
+> > >  #include <linux/mfd/tmio.h>
+> > >  #include <linux/mmc/host.h>
+> > >  #include <linux/mmc/sh_mmcif.h>
+> > > -#include <linux/mmc/sh_mobile_sdhi.h>
+> > >  #include <linux/sh_eth.h>
+> > >  #include <linux/sh_intc.h>
+> > >  #include <linux/usb/renesas_usbhs.h>
+> > > diff --git a/arch/sh/boards/mach-ap325rxa/setup.c b/arch/sh/boards/mach-ap325rxa/setup.c
+> > > index 62c3b81300ed28..de8393cb7313bc 100644
+> > > --- a/arch/sh/boards/mach-ap325rxa/setup.c
+> > > +++ b/arch/sh/boards/mach-ap325rxa/setup.c
+> > > @@ -15,7 +15,6 @@
+> > >  #include <linux/interrupt.h>
+> > >  #include <linux/platform_device.h>
+> > >  #include <linux/mmc/host.h>
+> > > -#include <linux/mmc/sh_mobile_sdhi.h>
+> > >  #include <linux/mtd/physmap.h>
+> > >  #include <linux/mtd/sh_flctl.h>
+> > >  #include <linux/mfd/tmio.h>
+> > > diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
+> > > index a9c0c07386fddd..6d612792f6b8ec 100644
+> > > --- a/arch/sh/boards/mach-ecovec24/setup.c
+> > > +++ b/arch/sh/boards/mach-ecovec24/setup.c
+> > > @@ -13,7 +13,6 @@
+> > >  #include <linux/platform_device.h>
+> > >  #include <linux/mmc/host.h>
+> > >  #include <linux/mmc/sh_mmcif.h>
+> > > -#include <linux/mmc/sh_mobile_sdhi.h>
+> > >  #include <linux/mtd/physmap.h>
+> > >  #include <linux/mfd/tmio.h>
+> > >  #include <linux/gpio.h>
+> > > diff --git a/arch/sh/boards/mach-kfr2r09/setup.c b/arch/sh/boards/mach-kfr2r09/setup.c
+> > > index 6bd9230e64e300..5deb2d82f19f78 100644
+> > > --- a/arch/sh/boards/mach-kfr2r09/setup.c
+> > > +++ b/arch/sh/boards/mach-kfr2r09/setup.c
+> > > @@ -11,7 +11,6 @@
+> > >  #include <linux/platform_device.h>
+> > >  #include <linux/interrupt.h>
+> > >  #include <linux/mmc/host.h>
+> > > -#include <linux/mmc/sh_mobile_sdhi.h>
+> > >  #include <linux/mfd/tmio.h>
+> > >  #include <linux/mtd/physmap.h>
+> > >  #include <linux/mtd/onenand.h>
+> > > diff --git a/arch/sh/boards/mach-migor/setup.c b/arch/sh/boards/mach-migor/setup.c
+> > > index 7a04da3efce402..5de60a77eaa1ab 100644
+> > > --- a/arch/sh/boards/mach-migor/setup.c
+> > > +++ b/arch/sh/boards/mach-migor/setup.c
+> > > @@ -13,7 +13,6 @@
+> > >  #include <linux/input.h>
+> > >  #include <linux/input/sh_keysc.h>
+> > >  #include <linux/mmc/host.h>
+> > > -#include <linux/mmc/sh_mobile_sdhi.h>
+> > >  #include <linux/mtd/physmap.h>
+> > >  #include <linux/mfd/tmio.h>
+> > >  #include <linux/mtd/nand.h>
+> > > diff --git a/arch/sh/boards/mach-se/7724/setup.c b/arch/sh/boards/mach-se/7724/setup.c
+> > > index e0e1df136642cd..f1fecd395679ae 100644
+> > > --- a/arch/sh/boards/mach-se/7724/setup.c
+> > > +++ b/arch/sh/boards/mach-se/7724/setup.c
+> > > @@ -15,7 +15,6 @@
+> > >  #include <linux/interrupt.h>
+> > >  #include <linux/platform_device.h>
+> > >  #include <linux/mmc/host.h>
+> > > -#include <linux/mmc/sh_mobile_sdhi.h>
+> > >  #include <linux/mfd/tmio.h>
+> > >  #include <linux/mtd/physmap.h>
+> > >  #include <linux/delay.h>
+> > > diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+> > > index 9beee48d2e280d..51d8dbd5b06a3e 100644
+> > > --- a/drivers/mmc/host/sh_mobile_sdhi.c
+> > > +++ b/drivers/mmc/host/sh_mobile_sdhi.c
+> > > @@ -28,7 +28,6 @@
+> > >  #include <linux/of_device.h>
+> > >  #include <linux/platform_device.h>
+> > >  #include <linux/mmc/host.h>
+> > > -#include <linux/mmc/sh_mobile_sdhi.h>
+> > >  #include <linux/mfd/tmio.h>
+> > >  #include <linux/sh_dma.h>
+> > >  #include <linux/delay.h>
+> > > @@ -315,7 +314,6 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+> > >         struct tmio_mmc_host *host;
+> > >         struct resource *res;
+> > >         int irq, ret, i = 0;
+> > > -       bool multiplexed_isr = true;
+> > >         struct tmio_mmc_dma *dma_priv;
+> > >
+> > >         res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+> > > @@ -405,62 +403,23 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+> > >         if (ret < 0)
+> > >                 goto efree;
+> > >
+> > > -       /*
+> > > -        * Allow one or more specific (named) ISRs or
+> > > -        * one or more multiplexed (un-named) ISRs.
+> > > -        */
+> > > -
+> > > -       irq = platform_get_irq_byname(pdev, SH_MOBILE_SDHI_IRQ_CARD_DETECT);
+> > > -       if (irq >= 0) {
+> > > -               multiplexed_isr = false;
+> > > -               ret = devm_request_irq(&pdev->dev, irq, tmio_mmc_card_detect_irq, 0,
+> > > +       while (1) {
+> > > +               irq = platform_get_irq(pdev, i);
+> > > +               if (irq < 0)
+> > > +                       break;
+> > > +               i++;
+> > > +               ret = devm_request_irq(&pdev->dev, irq, tmio_mmc_irq, 0,
+> > >                                   dev_name(&pdev->dev), host);
+> > >                 if (ret)
+> > >                         goto eirq;
+> > >         }
+> > >
+> > > -       irq = platform_get_irq_byname(pdev, SH_MOBILE_SDHI_IRQ_SDIO);
+> > > -       if (irq >= 0) {
+> > > -               multiplexed_isr = false;
+> > > -               ret = devm_request_irq(&pdev->dev, irq, tmio_mmc_sdio_irq, 0,
+> > > -                                 dev_name(&pdev->dev), host);
+> > > -               if (ret)
+> > > -                       goto eirq;
+> > > -       }
+> > > -
+> > > -       irq = platform_get_irq_byname(pdev, SH_MOBILE_SDHI_IRQ_SDCARD);
+> > > -       if (irq >= 0) {
+> > > -               multiplexed_isr = false;
+> > > -               ret = devm_request_irq(&pdev->dev, irq, tmio_mmc_sdcard_irq, 0,
+> > > -                                 dev_name(&pdev->dev), host);
+> > > -               if (ret)
+> > > -                       goto eirq;
+> > > -       } else if (!multiplexed_isr) {
+> > > -               dev_err(&pdev->dev,
+> > > -                       "Principal SD-card IRQ is missing among named interrupts\n");
+> > > +       /* There must be at least one IRQ source */
+> > > +       if (!i) {
+> > >                 ret = irq;
+> > >                 goto eirq;
+> > >         }
+> > >
+> > > -       if (multiplexed_isr) {
+> > > -               while (1) {
+> > > -                       irq = platform_get_irq(pdev, i);
+> > > -                       if (irq < 0)
+> > > -                               break;
+> > > -                       i++;
+> > > -                       ret = devm_request_irq(&pdev->dev, irq, tmio_mmc_irq, 0,
+> > > -                                         dev_name(&pdev->dev), host);
+> > > -                       if (ret)
+> > > -                               goto eirq;
+> > > -               }
+> > > -
+> > > -               /* There must be at least one IRQ source */
+> > > -               if (!i) {
+> > > -                       ret = irq;
+> > > -                       goto eirq;
+> > > -               }
+> > > -       }
+> > > -
+> > >         dev_info(&pdev->dev, "%s base at 0x%08lx max clock rate %u MHz\n",
+> > >                  mmc_hostname(host->mmc), (unsigned long)
+> > >                  (platform_get_resource(pdev, IORESOURCE_MEM, 0)->start),
+> > > diff --git a/include/linux/mmc/sh_mobile_sdhi.h b/include/linux/mmc/sh_mobile_sdhi.h
+> > > deleted file mode 100644
+> > > index 95d6f0314a7ded..00000000000000
+> > > --- a/include/linux/mmc/sh_mobile_sdhi.h
+> > > +++ /dev/null
+> > > @@ -1,10 +0,0 @@
+> > > -#ifndef LINUX_MMC_SH_MOBILE_SDHI_H
+> > > -#define LINUX_MMC_SH_MOBILE_SDHI_H
+> > > -
+> > > -#include <linux/types.h>
+> > > -
+> > > -#define SH_MOBILE_SDHI_IRQ_CARD_DETECT "card_detect"
+> > > -#define SH_MOBILE_SDHI_IRQ_SDCARD      "sdcard"
+> > > -#define SH_MOBILE_SDHI_IRQ_SDIO                "sdio"
+> > > -
+> > > -#endif /* LINUX_MMC_SH_MOBILE_SDHI_H */
+> > > --
+> > > 2.7.0
+> > >
+> > > --
+> > > To unsubscribe from this list: send the line "unsubscribe linux-mmc" in
+> > > the body of a message to majordomo@vger.kernel.org
+> > > More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
 
-> I need and ack from the Superh arch maintainer to apply this one.
->=20
-> It seems like you didn't include them on "to/cc" list, perhaps repost!?
-
-Nothing happened...
-
-So, I'll repost the series without the removal of the include file and
-not touching SH boards. It will be your realm only then.
-
-I'll repost the SH relevant parts as a seperate patch to the SH list, so
-this can have then its own timeframe.
-
-
---RnlQjJ0d97Da+TV1
-Content-Type: application/pgp-signature; name="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBAgAGBQJXH42qAAoJEBQN5MwUoCm29KUP/3fmryHJgKn3XBqHGuM7jbc6
-A6kdr7ceU9+zL+mVaXGs31STxfXS91fsknx0dyzUZC3jjE95464QcWZL/WEuoqHo
-ioyJndEHhnL0fK6s6ahZc5zD+o1I1rIrTIfs7BQTFwO6EtQS+4m/tmAZy5s8NrGF
-yVMOVkz7p308KJJCidpi4XWs3kxad+v969E4K+doVjVA2yP48ZX5IHGQHEqUITHW
-Rnpw7WP1nkLSGxbtbpBPjsV9Bkxu3vNZQs3ooydoLsZI/jGfvqtmSjPOKr0gjcZg
-NQ9dIzzMGzMftEO9k4tjW5ltpqIRnmNFRRHkPOnHxSzQCoBNL6t/Fg8ET1XHrhUe
-4Sz1gP+DqFiFJkpe6p+radjnRcssSx4IlCRqW14KV/k8PFtyOhNwsfskIv8wGjxZ
-zNmi2QDGf/2UScq2tBHMqnVzsuURgTK7Grw1bpHX3k+KKdHBo6ySZqYUcIDp4nhf
-N28A9SV57Xt/LHENLXRBgQsWGCpYtnxhzPq3I1xsijfOEofP5usOt6fofq6fPIhp
-spusvrG/JBMDWS4aRiPSNvD/SaQQGi1MJwM/iy1snHxO835puV6L3hk9APaATrBC
-O33Ak8pWFXSkmlI3HuJ5U6lP+c7gAbNhqZDS/Kjmqs+/LuFAzNHLK3axDjJirFPG
-VUfRyhqZkXbOSI00MiZx
-=FxlG
------END PGP SIGNATURE-----
-
---RnlQjJ0d97Da+TV1--
