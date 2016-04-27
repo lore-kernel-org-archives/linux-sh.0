@@ -1,49 +1,75 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 29 Apr 2016 12:58:25 +0000
-Subject: [PATCH v2 02/11] serial: sh-sci: Update DT binding documentation for dedicated RTS/CTS
-Message-Id: <1461934714-18681-3-git-send-email-geert+renesas@glider.be>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Wed, 27 Apr 2016 22:34:20 +0000
+Subject: [PATCH v3 06/16] char/genrtc: remove mn10300 support
+Message-Id: <1461796470-1291527-7-git-send-email-arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1461934714-18681-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1461934714-18681-1-git-send-email-geert+renesas@glider.be>
+References: <1461796470-1291527-1-git-send-email-arnd@arndb.de>
+In-Reply-To: <1461796470-1291527-1-git-send-email-arnd@arndb.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>, Peter Hurley <peter@hurleysoftware.com>
-Cc: Magnus Damm <magnus.damm@gmail.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-serial@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>, devicetree@vger.kernel.org
+To: Alexandre Belloni <alexandre.belloni@free-electrons.com>
+Cc: Arnd Bergmann <arnd@arndb.de>, geert@linux-m68k.org, deller@gmx.de, benh@kernel.crashing.org, mpe@ellerman.id.au, dalias@libc.org, dhowells@redhat.com, linux-alpha@vger.kernel.org, a.zummo@towertech.it, linux-kernel@vger.kernel.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, linux-m68k@lists.linux-m68k.org, rtc-linux@googlegroups.com, linux-arch@vger.kernel.org
 
-Some Renesas SCIF UARTs have dedicated lines for RTS/CTS hardware flow
-control.  Whether these lines exist depends on SoC and UART instance
-inside the SoC.  Whether these lines can be used for hardware flow
-control depends on board wiring.
+The genrtc driver serves no purpose on mn10300 because it drives the
+same hardware as the original rtc.c driver, and the newer rtc-generic.c
+or rtc-cmos.c drivers on architectures that use the asm-generic/rtc.h
+header.
 
-Amend the DT bindings with an optional property to indicate that RTS/CTS
-hardware flow control lines exist, and can be used as such, according to
-the Generic Serial DT Bindings.
+I assume it was initially only added for completeness when the
+mn10300 port was done, but the older rtc.c driver was always used
+instead.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: devicetree@vger.kernel.org
+We can also stop include asm-generic/rtc.h now, because we
+just call mc146818_set_time() directly.
+
+It would be nice to change the architecture to use the rtc-cmos driver
+next, and remove support for the old rtc driver as well.
+
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
 ---
-v2:
-  - Drop RFC status,
-  - Use "uart-has-rtscts" instead of "renesas,uart-has-rtscts",
-  - Refer to the Generic Serial DT Bindings.
----
- Documentation/devicetree/bindings/serial/renesas,sci-serial.txt | 2 ++
- 1 file changed, 2 insertions(+)
+ arch/mn10300/include/asm/rtc.h | 2 --
+ arch/mn10300/kernel/rtc.c      | 2 +-
+ drivers/char/Kconfig           | 2 +-
+ 3 files changed, 2 insertions(+), 4 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
-index 997baeaa869baa6f..7a0e15053db97481 100644
---- a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
-+++ b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
-@@ -78,6 +78,8 @@ Optional properties:
-   - dma-names: Must contain a list of two DMA names, "tx" and "rx".
-   - {cts,dsr,dcd,rng,rts,dtr}-gpios: Specify GPIOs for modem lines, cfr. the
-     generic serial DT bindings in serial.txt.
-+  - uart-has-rtscts: Indicates dedicated lines for RTS/CTS hardware flow
-+    control, cfr. the generic serial DT bindings in serial.txt.
+diff --git a/arch/mn10300/include/asm/rtc.h b/arch/mn10300/include/asm/rtc.h
+index 6c14bb1d0d9b..07dc87656197 100644
+--- a/arch/mn10300/include/asm/rtc.h
++++ b/arch/mn10300/include/asm/rtc.h
+@@ -25,6 +25,4 @@ static inline void calibrate_clock(void)
  
- Example:
- 	aliases {
+ #endif /* !CONFIG_MN10300_RTC */
+ 
+-#include <asm-generic/rtc.h>
+-
+ #endif /* _ASM_RTC_H */
+diff --git a/arch/mn10300/kernel/rtc.c b/arch/mn10300/kernel/rtc.c
+index 48d7058b3295..77e0be4d92ea 100644
+--- a/arch/mn10300/kernel/rtc.c
++++ b/arch/mn10300/kernel/rtc.c
+@@ -27,7 +27,7 @@ void read_persistent_clock(struct timespec *ts)
+ {
+ 	struct rtc_time tm;
+ 
+-	get_rtc_time(&tm);
++	mc146818_set_time(&tm);
+ 
+ 	ts->tv_nsec = 0;
+ 	ts->tv_sec = mktime(tm.tm_year, tm.tm_mon, tm.tm_mday,
+diff --git a/drivers/char/Kconfig b/drivers/char/Kconfig
+index 697510325b1d..d17ed90ebc82 100644
+--- a/drivers/char/Kconfig
++++ b/drivers/char/Kconfig
+@@ -328,7 +328,7 @@ config JS_RTC
+ config GEN_RTC
+ 	tristate "Generic /dev/rtc emulation"
+ 	depends on RTC!=y
+-	depends on M68K || MN10300 || PARISC || PPC
++	depends on M68K || PARISC || PPC
+ 	---help---
+ 	  If you say Y here and create a character special file /dev/rtc with
+ 	  major number 10 and minor number 135 using mknod ("man mknod"), you
 -- 
-1.9.1
+2.7.0
 
