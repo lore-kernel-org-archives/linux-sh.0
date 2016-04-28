@@ -1,60 +1,36 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Thu, 28 Apr 2016 06:19:35 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 28 Apr 2016 08:03:05 +0000
 Subject: Re: [PATCH 2/6] mmc: sh_mobile_sdhi: remove obsolete irq_by_name registration
-Message-Id: <20160428061935.GA1613@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="C7zPtVaVf+AK4Oqc"
+Message-Id: <CAMuHMdW=CRZ-EY0+2aq90JYKkYyfLhWt8o=Anpjb9JxD5TDkpw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1459934734-3613-1-git-send-email-wsa@the-dreams.de>
- <1459934734-3613-3-git-send-email-wsa@the-dreams.de>
- <CAPDyKFqixO2EGxdx4ERy=DSTR+KBunrYyfR26+AYN0k5_dVHiw@mail.gmail.com>
- <20160419093713.GC1521@katana>
- <20160427225457.GV21636@brightrain.aerifal.cx>
+	<1459934734-3613-3-git-send-email-wsa@the-dreams.de>
+	<CAPDyKFqixO2EGxdx4ERy=DSTR+KBunrYyfR26+AYN0k5_dVHiw@mail.gmail.com>
+	<20160419093713.GC1521@katana>
+	<20160427225457.GV21636@brightrain.aerifal.cx>
 In-Reply-To: <20160427225457.GV21636@brightrain.aerifal.cx>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: Rich Felker <dalias@libc.org>
-Cc: Ulf Hansson <ulf.hansson@linaro.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-mmc <linux-mmc@vger.kernel.org>, linux-renesas-soc@vger.kernel.org, Linux-sh list <linux-sh@vger.kernel.org>, Simon Horman <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Cc: Wolfram Sang <wsa@the-dreams.de>, Ulf Hansson <ulf.hansson@linaro.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-mmc <linux-mmc@vger.kernel.org>, linux-renesas-soc@vger.kernel.org, Linux-sh list <linux-sh@vger.kernel.org>, Simon Horman <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
 
+Hi Rich,
 
---C7zPtVaVf+AK4Oqc
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+On Thu, Apr 28, 2016 at 12:54 AM, Rich Felker <dalias@libc.org> wrote:
+> Hi! Sorry I didn't notice this before. I saw sh_mobile in the subject
+> lines and guessed it was not making changes in arch/sh.
 
+Yeah, it's confusing that "SH-Mobile" was used for both SH (only) and
+ARM (+SH ;-) SoCs.
 
-> I don't have any of the affected boards to test, but as long as
-> they're not actually using the include file you're removing, I don't
-> see any harm. It's my intent to remove all of these board files full
-> of platform devices as soon as we get working device tree bindings for
-> everything, anyway. So,
->=20
-> Acked-by: Rich Felker <dalias@libc.org>
+Gr{oetje,eeting}s,
 
-Thanks! Ulf already applied a version with the SH specific bits factored
-out. I'll send out a seperate patch for this right now. To make things
-easier for all, I assume your acks will extend to this new patch as well.
+                        Geert
 
-Thanks again...
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-
---C7zPtVaVf+AK4Oqc
-Content-Type: application/pgp-signature; name="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBAgAGBQJXIat3AAoJEBQN5MwUoCm209YP/3Ax2ueLgbhybn6pYhjCYfuO
-qx8xYVvIbhrWNlKCxMqrTvWqLpo+3/w0+vpNQHIr9EwENrSUCaZVpXk5B49oShl5
-79QHGwpKi9ZsdQwcsLqat9ueIDJDuIKP33hBzN4kl6ztFXJN0hhHEjkcjVm9CSC+
-Of2yrTG25ciBNEuq4fAjfaJnVBQgrqXqsZaUMzPzYUaxmNYBp3f3ycfc796w+Jbr
-kuuIVbZxxoBmS5xulJVBQo2B5fxF9/Kl12pKHjCcIOjGlMCdUmd7cEfmoCai6Vfn
-/9TKACSUEQRPDcHbF/vj35QNBlDWtb4PNniOZ8Uy4U9c9ZwAaOz2rZiJPJZCEV+J
-tnG6LxPTWhf10dsq8/KIgsBk6IwHM7T7Ey7ZjnF/7kO1G8VlvZFml8iXUPfsPaua
-cb+eGN9AMBwrp8yaiQszM8gWWByDnl3hvzCTOuGapds0ZNPEfmNQerSwggZoKSvE
-vcMDEz6XfRq/6TjIesZAZlWVmJ9BvTk9oUV1iVG3PTBksAJvkwI63g5xaHQiq3sV
-80CHt+5EwltlztUXVehbpCapAXzk66ka8llqvhMxS26rwur5y4KjzRcaYGMRtTG4
-wuJldtqxFz12eTlFjVCXqTNNAXGGystNsl8z4M+MkzOO9MmCz4C2/WyDceGFjuQb
-JY7uJXL37Nl7fk0i6wAH
-=G8F9
------END PGP SIGNATURE-----
-
---C7zPtVaVf+AK4Oqc--
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
