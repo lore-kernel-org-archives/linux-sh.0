@@ -1,57 +1,63 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 04 Apr 2016 13:55:39 +0000
-Subject: Re: [PATCH] drivers: sh: Use ARCH_RENESAS
-Message-Id: <CAMuHMdVTCYEyBxqBd7e8PyyT3xkA6vvoT1fj-YcFFeONQxCZ+A@mail.gmail.com>
+From: Rich Felker <dalias@libc.org>
+Date: Thu, 28 Apr 2016 21:47:41 +0000
+Subject: [PATCH 0/7] J-core J2 cpu and SoC peripherals support
+Message-Id: <cover.1461880061.git.dalias@libc.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1456882987-4502-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1456882987-4502-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Rich,
+The following patchset adds support for the J-core J2, an open-source
+VHDL reimplementation of the SH-2 ISA, and drivers for the associated
+SoC devices (interrupt controller, clocksource, and SPI).
 
-On Mon, Mar 28, 2016 at 3:16 PM, Rich Felker <dalias@libc.org> wrote:
-> On Wed, Mar 02, 2016 at 09:25:54AM +0100, Geert Uytterhoeven wrote:
->> On Wed, Mar 2, 2016 at 2:43 AM, Simon Horman <horms+renesas@verge.net.au> wrote:
->> > Make use of ARCH_RENESAS in place of ARCH_SHMOBILE.
->> >
->> > This is part of an ongoing process to migrate from ARCH_SHMOBILE to
->> > ARCH_RENESAS the motivation for which being that RENESAS seems to be a more
->> > appropriate name than SHMOBILE for the majority of Renesas ARM based SoCs.
->> >
->> > ARCH_RENESAS should cover all cases where both CONFIG_OF and
->> > ARCH_SHMOBILE are enabled.
->> >
->> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
->>
->> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
->>
->> If you intend to drop ARCH_SHMOBILE from arch/arm/mach-shmobile/Kconfig before
->> dropping the whole "if (...) { ... }" block below" (cfr. "drivers: sh: Stop
->> using the legacy clock domain on ARM",
->> http://www.spinics.net/lists/linux-renesas-soc/msg00869.html).
->>
->> Note that the SH-people may resurrect (a variant of) the block when they start
->> migrating to DT and CCF.
->
-> I can't say for sure at this point, but I think instead of searching
-> for a node by compatible I would want to represent the relationship
-> between the nodes semantically in the device tree. We can address that
-> when we get there, though. If we're stuck with device-provided device
-> trees that don't fully represent the relationships we might have to
-> keep kludges for searching.
+This version is posted for review, discussion, and testing. Before
+merge it needs at least official assignment (and documentation) of
+device tree bindings. Feedback on other improvements that could be
+made is welcome too, especially if there are places where the
+motivation is not clear and better commit messages or comments could
+clarify.
 
-Great. That's indeed the best approach to follow.
+Rich Felker (7):
+  sh: add support for J-Core J2 processor
+  sh: add AT_HWCAP flag for J-Core cas.l instruction
+  irqchip: add J-Core AIC driver
+  clocksource: add J-Core PIT/RTC driver
+  spi: add driver for J-Core SPI controller
+  sh: add defconfig for J-Core J2
+  sh: add device tree source for J2 FPGA on Mimas v2 board
 
-Gr{oetje,eeting}s,
+ arch/sh/Kconfig                         |   8 +
+ arch/sh/Makefile                        |   1 +
+ arch/sh/boot/dts/j2_mimas_v2.dts        |  98 ++++++++++++
+ arch/sh/configs/j2_defconfig            |  38 +++++
+ arch/sh/include/asm/processor.h         |   2 +-
+ arch/sh/include/uapi/asm/cpu-features.h |   1 +
+ arch/sh/kernel/cpu/init.c               |  40 ++++-
+ arch/sh/kernel/cpu/proc.c               |   1 +
+ arch/sh/kernel/cpu/sh2/entry.S          |   5 +
+ arch/sh/kernel/cpu/sh2/probe.c          |  13 ++
+ arch/sh/mm/Makefile                     |   3 +-
+ arch/sh/mm/cache-j2.c                   |  58 +++++++
+ arch/sh/mm/cache.c                      |   6 +-
+ drivers/clocksource/Kconfig             |   4 +
+ drivers/clocksource/Makefile            |   2 +
+ drivers/clocksource/jcore-pit.c         | 176 +++++++++++++++++++++
+ drivers/irqchip/Kconfig                 |   6 +
+ drivers/irqchip/Makefile                |   1 +
+ drivers/irqchip/irq-jcore-aic.c         |  95 ++++++++++++
+ drivers/spi/Kconfig                     |   4 +
+ drivers/spi/Makefile                    |   1 +
+ drivers/spi/spi-jcore.c                 | 266 ++++++++++++++++++++++++++++++++
+ 22 files changed, 825 insertions(+), 4 deletions(-)
+ create mode 100755 arch/sh/boot/dts/j2_mimas_v2.dts
+ create mode 100644 arch/sh/configs/j2_defconfig
+ create mode 100644 arch/sh/mm/cache-j2.c
+ create mode 100644 drivers/clocksource/jcore-pit.c
+ create mode 100644 drivers/irqchip/irq-jcore-aic.c
+ create mode 100644 drivers/spi/spi-jcore.c
 
-                        Geert
+-- 
+2.8.1
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
