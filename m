@@ -1,300 +1,413 @@
-From: Rich Felker <dalias@libc.org>
-Date: Sun, 03 Apr 2016 05:12:45 +0000
-Subject: [PATCH v5 2/2] spi: add driver for J-Core SPI controller
-Message-Id: <a452a1588abbfb1f69390a6b882ea27a449b2391.1470187592.git.dalias@libc.org>
+From: zengzhaoxiu@163.com
+Date: Thu, 28 Apr 2016 11:43:42 +0000
+Subject: [patch V3] lib: GCD: add binary GCD algorithm
+Message-Id: <1461843824-19853-1-git-send-email-zengzhaoxiu@163.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1470187592.git.dalias@libc.org>
-In-Reply-To: <cover.1470187592.git.dalias-8zAoT0mYgF4@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Rob Herring <robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Mark Rutland <mark.rutland-5wv7dgnIgG8@public.gmane.org>
+To: linux-arm-kernel@lists.infradead.org
 
-The J-Core "spi2" device is a PIO-based SPI master controller. It
-differs from "bitbang" devices in that that it's clocked in hardware
-rather than via soft clock modulation over gpio, and performs
-byte-at-a-time transfers between the cpu and SPI controller.
+From: Zhaoxiu Zeng <zhaoxiu.zeng@gmail.com>
 
-This driver will be extended to support future versions of the J-Core
-SPI controller with DMA transfers when they become available.
+Because some architectures (alpha, armv6, etc.) don't provide hardware division,
+the mod operation is slow! Binary GCD algorithm uses simple arithmetic operations,
+it replaces division with arithmetic shifts, comparisons, and subtractions.
 
-Signed-off-by: Rich Felker <dalias@libc.org>
+I have compiled successfully with x86_64_defconfig and i386_defconfig.
+
+Changes to V2:
+- Add a new Kconfig variable CPU_NO_EFFICIENT_FFS
+- Separate into two versions by CPU_NO_EFFICIENT_FFS
+- Return directly from the loop, rather than using break().
+- Use "r &= -r" mostly because it's clearer.
+- Improve a little bit in even/odd version
+
+Changes to V1:
+- Don't touch Kconfig, remove the Euclidean algorithm implementation
+- Don't use the "even-odd" variant
+- Use __ffs if the CPU has efficient __ffs
+
+Signed-off-by: Zhaoxiu Zeng <zhaoxiu.zeng@gmail.com>
+Signed-off-by: George Spelvin <linux@horizon.com>
 ---
- drivers/spi/Kconfig     |   7 ++
- drivers/spi/Makefile    |   1 +
- drivers/spi/spi-jcore.c | 232 ++++++++++++++++++++++++++++++++++++++++++++++++
- 3 files changed, 240 insertions(+)
- create mode 100644 drivers/spi/spi-jcore.c
+ arch/Kconfig                         |  3 ++
+ arch/alpha/Kconfig                   |  1 +
+ arch/arm/mm/Kconfig                  |  3 ++
+ arch/h8300/Kconfig                   |  1 +
+ arch/m32r/Kconfig                    |  1 +
+ arch/m68k/Kconfig.cpu                | 11 ++++++
+ arch/metag/Kconfig                   |  1 +
+ arch/microblaze/Kconfig              |  1 +
+ arch/mips/include/asm/cpu-features.h |  3 ++
+ arch/nios2/Kconfig                   |  1 +
+ arch/openrisc/Kconfig                |  1 +
+ arch/parisc/Kconfig                  |  1 +
+ arch/score/Kconfig                   |  1 +
+ arch/sh/Kconfig                      |  1 +
+ arch/sparc/Kconfig                   |  1 +
+ lib/gcd.c                            | 66 +++++++++++++++++++++++++++++++-----
+ 16 files changed, 88 insertions(+), 9 deletions(-)
 
-diff --git a/drivers/spi/Kconfig b/drivers/spi/Kconfig
-index d6fb8d4..1abb3d7 100644
---- a/drivers/spi/Kconfig
-+++ b/drivers/spi/Kconfig
-@@ -285,6 +285,13 @@ config SPI_IMX
- 	  This enables using the Freescale i.MX SPI controllers in master
- 	  mode.
+diff --git a/arch/Kconfig b/arch/Kconfig
+index 81869a5..275f17d 100644
+--- a/arch/Kconfig
++++ b/arch/Kconfig
+@@ -638,4 +638,7 @@ config COMPAT_OLD_SIGACTION
+ config ARCH_NO_COHERENT_DMA_MMAP
+ 	bool
  
-+config SPI_JCORE
-+	tristate "J-Core SPI Master"
-+	depends on OF && (SUPERH || COMPILE_TEST)
-+	help
-+	  This enables support for the SPI master controller in the J-Core
-+	  synthesizable, open source SoC.
++config CPU_NO_EFFICIENT_FFS
++	def_bool n
 +
- config SPI_LM70_LLP
- 	tristate "Parallel port adapter for LM70 eval board (DEVELOPMENT)"
- 	depends on PARPORT
-diff --git a/drivers/spi/Makefile b/drivers/spi/Makefile
-index 185367e..8715fec 100644
---- a/drivers/spi/Makefile
-+++ b/drivers/spi/Makefile
-@@ -46,6 +46,7 @@ obj-$(CONFIG_SPI_FSL_SPI)		+= spi-fsl-spi.o
- obj-$(CONFIG_SPI_GPIO)			+= spi-gpio.o
- obj-$(CONFIG_SPI_IMG_SPFI)		+= spi-img-spfi.o
- obj-$(CONFIG_SPI_IMX)			+= spi-imx.o
-+obj-$(CONFIG_SPI_JCORE)			+= spi-jcore.o
- obj-$(CONFIG_SPI_LM70_LLP)		+= spi-lm70llp.o
- obj-$(CONFIG_SPI_LP8841_RTC)		+= spi-lp8841-rtc.o
- obj-$(CONFIG_SPI_MESON_SPIFC)		+= spi-meson-spifc.o
-diff --git a/drivers/spi/spi-jcore.c b/drivers/spi/spi-jcore.c
-new file mode 100644
-index 0000000..7d2044a
---- /dev/null
-+++ b/drivers/spi/spi-jcore.c
-@@ -0,0 +1,232 @@
+ source "kernel/gcov/Kconfig"
+diff --git a/arch/alpha/Kconfig b/arch/alpha/Kconfig
+index 9d8a858..44e6f05 100644
+--- a/arch/alpha/Kconfig
++++ b/arch/alpha/Kconfig
+@@ -27,6 +27,7 @@ config ALPHA
+ 	select MODULES_USE_ELF_RELA
+ 	select ODD_RT_SIGACTION
+ 	select OLD_SIGSUSPEND
++	select CPU_NO_EFFICIENT_FFS if !ALPHA_EV67
+ 	help
+ 	  The Alpha is a 64-bit general-purpose processor designed and
+ 	  marketed by the Digital Equipment Corporation of blessed memory,
+diff --git a/arch/arm/mm/Kconfig b/arch/arm/mm/Kconfig
+index 5534766..cb569b6 100644
+--- a/arch/arm/mm/Kconfig
++++ b/arch/arm/mm/Kconfig
+@@ -421,18 +421,21 @@ config CPU_32v3
+ 	select CPU_USE_DOMAINS if MMU
+ 	select NEED_KUSER_HELPERS
+ 	select TLS_REG_EMUL if SMP || !MMU
++	select CPU_NO_EFFICIENT_FFS
+ 
+ config CPU_32v4
+ 	bool
+ 	select CPU_USE_DOMAINS if MMU
+ 	select NEED_KUSER_HELPERS
+ 	select TLS_REG_EMUL if SMP || !MMU
++	select CPU_NO_EFFICIENT_FFS
+ 
+ config CPU_32v4T
+ 	bool
+ 	select CPU_USE_DOMAINS if MMU
+ 	select NEED_KUSER_HELPERS
+ 	select TLS_REG_EMUL if SMP || !MMU
++	select CPU_NO_EFFICIENT_FFS
+ 
+ config CPU_32v5
+ 	bool
+diff --git a/arch/h8300/Kconfig b/arch/h8300/Kconfig
+index 986ea84..aa232de 100644
+--- a/arch/h8300/Kconfig
++++ b/arch/h8300/Kconfig
+@@ -20,6 +20,7 @@ config H8300
+ 	select HAVE_KERNEL_GZIP
+ 	select HAVE_KERNEL_LZO
+ 	select HAVE_ARCH_KGDB
++	select CPU_NO_EFFICIENT_FFS
+ 
+ config RWSEM_GENERIC_SPINLOCK
+ 	def_bool y
+diff --git a/arch/m32r/Kconfig b/arch/m32r/Kconfig
+index c82b292..3cc8498 100644
+--- a/arch/m32r/Kconfig
++++ b/arch/m32r/Kconfig
+@@ -17,6 +17,7 @@ config M32R
+ 	select ARCH_USES_GETTIMEOFFSET
+ 	select MODULES_USE_ELF_RELA
+ 	select HAVE_DEBUG_STACKOVERFLOW
++	select CPU_NO_EFFICIENT_FFS
+ 
+ config SBUS
+ 	bool
+diff --git a/arch/m68k/Kconfig.cpu b/arch/m68k/Kconfig.cpu
+index 0dfcf12..0b6efe8 100644
+--- a/arch/m68k/Kconfig.cpu
++++ b/arch/m68k/Kconfig.cpu
+@@ -40,6 +40,7 @@ config M68000
+ 	select CPU_HAS_NO_MULDIV64
+ 	select CPU_HAS_NO_UNALIGNED
+ 	select GENERIC_CSUM
++	select CPU_NO_EFFICIENT_FFS
+ 	help
+ 	  The Freescale (was Motorola) 68000 CPU is the first generation of
+ 	  the well known M68K family of processors. The CPU core as well as
+@@ -51,6 +52,7 @@ config MCPU32
+ 	bool
+ 	select CPU_HAS_NO_BITFIELDS
+ 	select CPU_HAS_NO_UNALIGNED
++	select CPU_NO_EFFICIENT_FFS
+ 	help
+ 	  The Freescale (was then Motorola) CPU32 is a CPU core that is
+ 	  based on the 68020 processor. For the most part it is used in
+@@ -130,6 +132,7 @@ config M5206
+ 	depends on !MMU
+ 	select COLDFIRE_SW_A7
+ 	select HAVE_MBAR
++	select CPU_NO_EFFICIENT_FFS
+ 	help
+ 	  Motorola ColdFire 5206 processor support.
+ 
+@@ -138,6 +141,7 @@ config M5206e
+ 	depends on !MMU
+ 	select COLDFIRE_SW_A7
+ 	select HAVE_MBAR
++	select CPU_NO_EFFICIENT_FFS
+ 	help
+ 	  Motorola ColdFire 5206e processor support.
+ 
+@@ -163,6 +167,7 @@ config M5249
+ 	depends on !MMU
+ 	select COLDFIRE_SW_A7
+ 	select HAVE_MBAR
++	select CPU_NO_EFFICIENT_FFS
+ 	help
+ 	  Motorola ColdFire 5249 processor support.
+ 
+@@ -171,6 +176,7 @@ config M525x
+ 	depends on !MMU
+ 	select COLDFIRE_SW_A7
+ 	select HAVE_MBAR
++	select CPU_NO_EFFICIENT_FFS
+ 	help
+ 	  Freescale (Motorola) Coldfire 5251/5253 processor support.
+ 
+@@ -189,6 +195,7 @@ config M5272
+ 	depends on !MMU
+ 	select COLDFIRE_SW_A7
+ 	select HAVE_MBAR
++	select CPU_NO_EFFICIENT_FFS
+ 	help
+ 	  Motorola ColdFire 5272 processor support.
+ 
+@@ -217,6 +224,7 @@ config M5307
+ 	select COLDFIRE_SW_A7
+ 	select HAVE_CACHE_CB
+ 	select HAVE_MBAR
++	select CPU_NO_EFFICIENT_FFS
+ 	help
+ 	  Motorola ColdFire 5307 processor support.
+ 
+@@ -242,6 +250,7 @@ config M5407
+ 	select COLDFIRE_SW_A7
+ 	select HAVE_CACHE_CB
+ 	select HAVE_MBAR
++	select CPU_NO_EFFICIENT_FFS
+ 	help
+ 	  Motorola ColdFire 5407 processor support.
+ 
+@@ -251,6 +260,7 @@ config M547x
+ 	select MMU_COLDFIRE if MMU
+ 	select HAVE_CACHE_CB
+ 	select HAVE_MBAR
++	select CPU_NO_EFFICIENT_FFS
+ 	help
+ 	  Freescale ColdFire 5470/5471/5472/5473/5474/5475 processor support.
+ 
+@@ -260,6 +270,7 @@ config M548x
+ 	select M54xx
+ 	select HAVE_CACHE_CB
+ 	select HAVE_MBAR
++	select CPU_NO_EFFICIENT_FFS
+ 	help
+ 	  Freescale ColdFire 5480/5481/5482/5483/5484/5485 processor support.
+ 
+diff --git a/arch/metag/Kconfig b/arch/metag/Kconfig
+index a0fa88d..2ac2de6 100644
+--- a/arch/metag/Kconfig
++++ b/arch/metag/Kconfig
+@@ -29,6 +29,7 @@ config METAG
+ 	select OF
+ 	select OF_EARLY_FLATTREE
+ 	select SPARSE_IRQ
++	select CPU_NO_EFFICIENT_FFS
+ 
+ config STACKTRACE_SUPPORT
+ 	def_bool y
+diff --git a/arch/microblaze/Kconfig b/arch/microblaze/Kconfig
+index 3d793b5..f17c3a4 100644
+--- a/arch/microblaze/Kconfig
++++ b/arch/microblaze/Kconfig
+@@ -32,6 +32,7 @@ config MICROBLAZE
+ 	select OF_EARLY_FLATTREE
+ 	select TRACING_SUPPORT
+ 	select VIRT_TO_BUS
++	select CPU_NO_EFFICIENT_FFS
+ 
+ config SWAP
+ 	def_bool n
+diff --git a/arch/mips/include/asm/cpu-features.h b/arch/mips/include/asm/cpu-features.h
+index eeec8c8..fd4ae7d 100644
+--- a/arch/mips/include/asm/cpu-features.h
++++ b/arch/mips/include/asm/cpu-features.h
+@@ -288,6 +288,9 @@
+ #ifndef cpu_has_clo_clz
+ #define cpu_has_clo_clz	cpu_has_mips_r
+ #endif
++#if !cpu_has_clo_clz
++#define CONFIG_CPU_NO_EFFICIENT_FFS 1
++#endif
+ 
+ /*
+  * MIPS32 R2, MIPS64 R2, Loongson 3A and Octeon have WSBH.
+diff --git a/arch/nios2/Kconfig b/arch/nios2/Kconfig
+index 4375554..f10bd2c 100644
+--- a/arch/nios2/Kconfig
++++ b/arch/nios2/Kconfig
+@@ -16,6 +16,7 @@ config NIOS2
+ 	select SOC_BUS
+ 	select SPARSE_IRQ
+ 	select USB_ARCH_HAS_HCD if USB_SUPPORT
++	select CPU_NO_EFFICIENT_FFS
+ 
+ config GENERIC_CSUM
+ 	def_bool y
+diff --git a/arch/openrisc/Kconfig b/arch/openrisc/Kconfig
+index e118c02..142cb05 100644
+--- a/arch/openrisc/Kconfig
++++ b/arch/openrisc/Kconfig
+@@ -25,6 +25,7 @@ config OPENRISC
+ 	select MODULES_USE_ELF_RELA
+ 	select HAVE_DEBUG_STACKOVERFLOW
+ 	select OR1K_PIC
++	select CPU_NO_EFFICIENT_FFS if !OPENRISC_HAVE_INST_FF1
+ 
+ config MMU
+ 	def_bool y
+diff --git a/arch/parisc/Kconfig b/arch/parisc/Kconfig
+index 88cfaa8..3d498a6 100644
+--- a/arch/parisc/Kconfig
++++ b/arch/parisc/Kconfig
+@@ -32,6 +32,7 @@ config PARISC
+ 	select HAVE_ARCH_AUDITSYSCALL
+ 	select HAVE_ARCH_SECCOMP_FILTER
+ 	select ARCH_NO_COHERENT_DMA_MMAP
++	select CPU_NO_EFFICIENT_FFS
+ 
+ 	help
+ 	  The PA-RISC microprocessor is designed by Hewlett-Packard and used
+diff --git a/arch/score/Kconfig b/arch/score/Kconfig
+index 366e1b5..507d631 100644
+--- a/arch/score/Kconfig
++++ b/arch/score/Kconfig
+@@ -14,6 +14,7 @@ config SCORE
+ 	select VIRT_TO_BUS
+ 	select MODULES_USE_ELF_REL
+ 	select CLONE_BACKWARDS
++	select CPU_NO_EFFICIENT_FFS
+ 
+ choice
+ 	prompt "System type"
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index 7ed20fc..56cf5e5 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -44,6 +44,7 @@ config SUPERH
+ 	select OLD_SIGSUSPEND
+ 	select OLD_SIGACTION
+ 	select HAVE_ARCH_AUDITSYSCALL
++	select CPU_NO_EFFICIENT_FFS
+ 	help
+ 	  The SuperH is a RISC processor targeted for use in embedded systems
+ 	  and consumer electronics; it was also used in the Sega Dreamcast
+diff --git a/arch/sparc/Kconfig b/arch/sparc/Kconfig
+index 57ffaf2..ca675ed 100644
+--- a/arch/sparc/Kconfig
++++ b/arch/sparc/Kconfig
+@@ -42,6 +42,7 @@ config SPARC
+ 	select ODD_RT_SIGACTION
+ 	select OLD_SIGSUSPEND
+ 	select ARCH_HAS_SG_CHAIN
++	select CPU_NO_EFFICIENT_FFS
+ 
+ config SPARC32
+ 	def_bool !64BIT
+diff --git a/lib/gcd.c b/lib/gcd.c
+index 3657f12..eba7d4e 100644
+--- a/lib/gcd.c
++++ b/lib/gcd.c
+@@ -2,20 +2,68 @@
+ #include <linux/gcd.h>
+ #include <linux/export.h>
+ 
+-/* Greatest common divisor */
 +/*
-+ * J-Core SPI controller driver
++ * This implements the binary GCD algorithm. (Often attributed to Stein,
++ * but as Knuth has noted, appears a first-century Chinese math text.)
 + *
-+ * Copyright (C) 2012-2016 Smart Energy Instruments, Inc.
-+ *
-+ * Current version by Rich Felker
-+ * Based loosely on initial version by Oleksandr G Zhadan
-+ *
++ * This is faster than the division-based algorithm even on x86, which
++ * has decent hardware division.
 + */
-+#include <linux/init.h>
-+#include <linux/interrupt.h>
-+#include <linux/errno.h>
-+#include <linux/module.h>
-+#include <linux/platform_device.h>
-+#include <linux/spi/spi.h>
-+#include <linux/clk.h>
-+#include <linux/err.h>
-+#include <linux/io.h>
-+#include <linux/of.h>
-+#include <linux/delay.h>
 +
-+#define DRV_NAME	"jcore_spi"
++#if !defined(CONFIG_CPU_NO_EFFICIENT_FFS)
 +
-+#define CTRL_REG	0x0
-+#define DATA_REG	0x4
++/* If __ffs is available, the even/odd algorithm benchmarks slower. */
+ unsigned long gcd(unsigned long a, unsigned long b)
+ {
+-	unsigned long r;
++	unsigned long r = a | b;
 +
-+#define JCORE_SPI_CTRL_XMIT		0x02
-+#define JCORE_SPI_STAT_BUSY		0x02
-+#define JCORE_SPI_CTRL_LOOP		0x08
-+#define JCORE_SPI_CTRL_CS_BITS		0x15
-+
-+#define JCORE_SPI_WAIT_RDY_MAX_LOOP	2000000
-+
-+struct jcore_spi {
-+	struct spi_master *master;
-+	void __iomem *base;
-+	unsigned int cs_reg;
-+	unsigned int speed_reg;
-+	unsigned int speed_hz;
-+	unsigned int clock_freq;
-+};
-+
-+static int jcore_spi_wait(void __iomem *ctrl_reg)
-+{
-+	unsigned timeout = JCORE_SPI_WAIT_RDY_MAX_LOOP;
-+
-+	do {
-+		if (!(readl(ctrl_reg) & JCORE_SPI_STAT_BUSY))
-+			return 0;
-+		cpu_relax();
-+	} while (--timeout);
-+
-+	return -EBUSY;
++	if (!a || !b)
++		return r;
+ 
+-	if (a < b)
+-		swap(a, b);
++	b >>= __ffs(b);
+ 
+-	if (!b)
+-		return a;
+-	while ((r = a % b) != 0) {
+-		a = b;
+-		b = r;
++	for (;;) {
++		a >>= __ffs(a);
++		if (a = b)
++			return a << __ffs(r);
++		if (a < b)
++			swap(a, b);
++		a -= b;
+ 	}
 +}
 +
-+static void jcore_spi_program(struct jcore_spi *hw)
++#else
++
++/* If normalization is done by loops, the even/odd algorithm is a win. */
++unsigned long gcd(unsigned long a, unsigned long b)
 +{
-+	void __iomem *ctrl_reg = hw->base + CTRL_REG;
++	unsigned long r = a | b;
 +
-+	if (jcore_spi_wait(ctrl_reg))
-+		dev_err(hw->master->dev.parent,
-+			"timeout waiting to program ctrl reg.\n");
++	if (!a || !b)
++		return r;
 +
-+	writel(hw->cs_reg | hw->speed_reg, ctrl_reg);
-+}
++	/* Isolate lsbit of r */
++	r &= -r;
 +
-+static void jcore_spi_chipsel(struct spi_device *spi, bool value)
-+{
-+	struct jcore_spi *hw = spi_master_get_devdata(spi->master);
-+	u32 csbit = 1U << (2 * spi->chip_select);
++	while (!(a & r))
++		a >>= 1;
++	while (!(b & r))
++		b >>= 1;
 +
-+	dev_dbg(hw->master->dev.parent, "chipselect %d\n", spi->chip_select);
++	while (a != b) {
++		if (a < b)
++			swap(a, b);
++		a -= b;
 +
-+	if (value)
-+		hw->cs_reg |= csbit;
-+	else
-+		hw->cs_reg &= ~csbit;
-+
-+	jcore_spi_program(hw);
-+}
-+
-+static void jcore_spi_baudrate(struct jcore_spi *hw, int speed)
-+{
-+	if (speed = hw->speed_hz) return;
-+	hw->speed_hz = speed;
-+	if (speed >= hw->clock_freq / 2)
-+		hw->speed_reg = 0;
-+	else
-+		hw->speed_reg = ((hw->clock_freq / 2 / speed) - 1) << 27;
-+	jcore_spi_program(hw);
-+	dev_dbg(hw->master->dev.parent, "speed=%d reg=0x%x\n",
-+		speed, hw->speed_reg);
-+}
-+
-+static int jcore_spi_txrx(struct spi_master *master, struct spi_device *spi,
-+			  struct spi_transfer *t)
-+{
-+	struct jcore_spi *hw = spi_master_get_devdata(master);
-+
-+	void __iomem *ctrl_reg = hw->base + CTRL_REG;
-+	void __iomem *data_reg = hw->base + DATA_REG;
-+	u32 xmit;
-+
-+	/* data buffers */
-+	const unsigned char *tx;
-+	unsigned char *rx;
-+	unsigned int len;
-+	unsigned int count;
-+
-+	jcore_spi_baudrate(hw, t->speed_hz);
-+
-+	xmit = hw->cs_reg | hw->speed_reg | JCORE_SPI_CTRL_XMIT;
-+	tx = t->tx_buf;
-+	rx = t->rx_buf;
-+	len = t->len;
-+
-+	for (count = 0; count < len; count++) {
-+		if (jcore_spi_wait(ctrl_reg))
-+			break;
-+
-+		writel(tx ? *tx++ : 0, data_reg);
-+		writel(xmit, ctrl_reg);
-+
-+		if (jcore_spi_wait(ctrl_reg))
-+			break;
-+
-+		if (rx)
-+			*rx++ = readl(data_reg);
++		a >>= 1;
++		if (a & r)
++			a += b;
++		do a >>= 1; while (!(a & r));
 +	}
 +
-+	spi_finalize_current_transfer(master);
+ 	return b;
+ }
 +
-+	if (count < len)
-+		return -EREMOTEIO;
++#endif
 +
-+	return 0;
-+}
-+
-+static int jcore_spi_probe(struct platform_device *pdev)
-+{
-+	struct device_node *node = pdev->dev.of_node;
-+	struct jcore_spi *hw;
-+	struct spi_master *master;
-+	struct resource *res;
-+	u32 clock_freq;
-+	struct clk *clk;
-+	int err = -ENODEV;
-+
-+	master = spi_alloc_master(&pdev->dev, sizeof(struct jcore_spi));
-+	if (!master)
-+		return err;
-+
-+	/* Setup the master state. */
-+	master->num_chipselect = 3;
-+	master->mode_bits = SPI_CPOL | SPI_CPHA | SPI_CS_HIGH;
-+	master->transfer_one = jcore_spi_txrx;
-+	master->set_cs = jcore_spi_chipsel;
-+	master->dev.of_node = node;
-+	master->bus_num = pdev->id;
-+
-+	hw = spi_master_get_devdata(master);
-+	hw->master = master;
-+	platform_set_drvdata(pdev, hw);
-+
-+	/* Find and map our resources */
-+	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-+	if (!res)
-+		goto exit_busy;
-+	if (!devm_request_mem_region(&pdev->dev, res->start,
-+				     resource_size(res), pdev->name))
-+		goto exit_busy;
-+	hw->base = devm_ioremap_nocache(&pdev->dev, res->start,
-+					resource_size(res));
-+	if (!hw->base)
-+		goto exit_busy;
-+
-+	/*
-+	 * The SPI clock rate controlled via a configurable clock divider
-+	 * which is applied to the reference clock. A 50 MHz reference is
-+	 * most suitable for obtaining standard SPI clock rates, but some
-+	 * designs may have a different reference clock, and the DT must
-+	 * make the driver aware so that it can properly program the
-+	 * requested rate. If the clock is omitted, 50 MHz is assumed.
-+	 */
-+	clock_freq = 50000000;
-+	clk = devm_clk_get(&pdev->dev, "ref_clk");
-+	if (!IS_ERR_OR_NULL(clk)) {
-+		if (clk_enable(clk) = 0)
-+			clock_freq = clk_get_rate(clk);
-+		else
-+			dev_warn(&pdev->dev, "could not enable ref_clk\n");
-+	}
-+	hw->clock_freq = clock_freq;
-+
-+	/* Initialize all CS bits to high. */
-+	hw->cs_reg = JCORE_SPI_CTRL_CS_BITS;
-+	jcore_spi_baudrate(hw, 400000);
-+
-+	/* Register our spi controller */
-+	err = devm_spi_register_master(&pdev->dev, master);
-+	if (err)
-+		goto exit;
-+
-+	return 0;
-+
-+exit_busy:
-+	err = -EBUSY;
-+exit:
-+	platform_set_drvdata(pdev, NULL);
-+	spi_master_put(master);
-+	return err;
-+}
-+
-+static const struct of_device_id jcore_spi_of_match[] = {
-+	{ .compatible = "jcore,spi2" },
-+	{},
-+};
-+
-+static struct platform_driver jcore_spi_driver = {
-+	.probe = jcore_spi_probe,
-+	.driver = {
-+		.name = DRV_NAME,
-+		.of_match_table = jcore_spi_of_match,
-+	},
-+};
-+
-+module_platform_driver(jcore_spi_driver);
-+
-+MODULE_DESCRIPTION("J-Core SPI driver");
-+MODULE_AUTHOR("Rich Felker <dalias@libc.org>");
-+MODULE_LICENSE("GPL");
-+MODULE_ALIAS("platform:" DRV_NAME);
+ EXPORT_SYMBOL_GPL(gcd);
 -- 
-2.8.1
+2.5.0
+
 
