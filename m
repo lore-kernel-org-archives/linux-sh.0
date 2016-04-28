@@ -1,43 +1,28 @@
-From: Sam Ravnborg <sam@ravnborg.org>
-Date: Thu, 28 Apr 2016 19:54:06 +0000
-Subject: Re: [patch V3] lib: GCD: add binary GCD algorithm
-Message-Id: <20160428195326.GB29802@ravnborg.org>
+From: Rich Felker <dalias@libc.org>
+Date: Thu, 28 Apr 2016 20:37:06 +0000
+Subject: Removing SH-5 support
+Message-Id: <20160428203705.GA29613@brightrain.aerifal.cx>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1461843824-19853-1-git-send-email-zengzhaoxiu@163.com>
- <20160428164856.10120.qmail@ns.horizon.com>
-In-Reply-To: <20160428164856.10120.qmail@ns.horizon.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-> __ffs on the available architectures:
-> 	Alpha: sometimes (CONFIG_ALPHA_EV6, CONFIG_ALPHA_EV67)
-> 	ARC: sometimes (!CONFIG_ISA_ARCOMPACT)
-> 	ARM: sometimes (V5+)
-> 	ARM64: NO, could be written using RBIT and CLZ
-> 	AVR: yes
-> 	Blackfin: NO, could be written using hweight()
-> 	C6x: yes
-> 	CRIS: NO
-> 	FR-V: yes
-> 	H8300: NO
-> 	Hexagon: yes
-> 	IA64: yes
-> 	M32R: NO
-> 	M68k: sometimes
-> 	MetaG: NO
-> 	Microblaze: NO
-> 	MIPS: sometimes
-> 	MN10300: yes
-> 	OpenRISC: NO
-> 	PA-RISC: NO?  Interesting code, but I think it's a net loss.
-> 	PowerPC: yes
-> 	S390: sometimes (CONFIG_HAVE_MARCH_Z9_109_FEATURES)
-> 	Score: NO
-> 	SH: NO
-> 	SPARC: NO
-SPARC: sparc64: YES, sparc32: NO
-Patch needs to be updated to refelct this.
+GCC's sh target maintainers have finally removed support for SH-5 from
+trunk:
 
-	Sam
+https://gcc.gnu.org/viewcvs/gcc?limit_changes=0&view=revision&revision#5544
+
+It's probably been broken for a long time, and the associated clutter
+was hindering development progress on SH-2/3/4 targets which are
+actually supported.
+
+In light of this change, which leaves us with no future toolchain
+support for SH-5, and the lack of any interest in SH-5 from users or
+developers, I'd like to remove SH-5 support from the kernel too. This
+should streamline the existing code and make it easier to modernize
+the arch/sh tree.
+
+Any objections?
+
+Rich
