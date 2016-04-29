@@ -1,70 +1,57 @@
-From: Michal Hocko <mhocko@kernel.org>
-Date: Fri, 01 Apr 2016 11:04:49 +0000
-Subject: [PATCH 05/11] ia64, rwsem: provide __down_write_killable
-Message-Id: <1459508695-14915-6-git-send-email-mhocko@kernel.org>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 29 Apr 2016 12:58:32 +0000
+Subject: [PATCH v2 09/11] serial: sh-sci: Add pin initialization for SCIFA/SCIFB
+Message-Id: <1461934714-18681-10-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1459508695-14915-1-git-send-email-mhocko@kernel.org>
-In-Reply-To: <1459508695-14915-1-git-send-email-mhocko@kernel.org>
+References: <1461934714-18681-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1461934714-18681-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: LKML <linux-kernel@vger.kernel.org>
-Cc: Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@redhat.com>, Thomas Gleixner <tglx@linutronix.de>, "H. Peter Anvin" <hpa@zytor.com>, "David S. Miller" <davem@davemloft.net>, Tony Luck <tony.luck@intel.com>, Andrew Morton <akpm@linux-foundation.org>, Chris Zankel <chris@zankel.net>, Max Filippov <jcmvbkbc@gmail.com>, x86@kernel.org, linux-alpha@vger.kernel.org, linux-ia64@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-arch@vger.kernel.org, Michal Hocko <mhocko@suse.com>
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>, Peter Hurley <peter@hurleysoftware.com>
+Cc: Magnus Damm <magnus.damm@gmail.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-serial@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Michal Hocko <mhocko@suse.com>
+Before, the driver relied on initialization by the boot loader, or by
+implicit reset state.
 
-Introduce ___down_write for the fast path and reuse it for __down_write
-resp. __down_write_killable each using the respective generic slow path
-(rwsem_down_write_failed resp. rwsem_down_write_failed_killable).
+Note that unlike on (H)SCIF, the RTS/CTS bits exist only if dedicated
+RTS/CTS pins are available, which depends on the SoC and UART instance.
 
-Signed-off-by: Michal Hocko <mhocko@suse.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/ia64/include/asm/rwsem.h | 22 +++++++++++++++++++---
- 1 file changed, 19 insertions(+), 3 deletions(-)
+v2:
+  - New.
+---
+ drivers/tty/serial/sh-sci.c | 16 +++++++++++++++-
+ 1 file changed, 15 insertions(+), 1 deletion(-)
 
-diff --git a/arch/ia64/include/asm/rwsem.h b/arch/ia64/include/asm/rwsem.h
-index 3027e7516d85..5e78cb40d9df 100644
---- a/arch/ia64/include/asm/rwsem.h
-+++ b/arch/ia64/include/asm/rwsem.h
-@@ -49,8 +49,8 @@ __down_read (struct rw_semaphore *sem)
- /*
-  * lock for writing
-  */
--static inline void
--__down_write (struct rw_semaphore *sem)
-+static inline long
-+___down_write (struct rw_semaphore *sem)
- {
- 	long old, new;
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index c46999f20917964e..b9d027af0f3e71f6 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -712,7 +712,21 @@ static void sci_init_pins(struct uart_port *port, unsigned int cflag)
+ 		return;
+ 	}
  
-@@ -59,10 +59,26 @@ __down_write (struct rw_semaphore *sem)
- 		new = old + RWSEM_ACTIVE_WRITE_BIAS;
- 	} while (cmpxchg_acq(&sem->count, old, new) != old);
+-	if (sci_getreg(port, SCSPTR)->size) {
++	if (port->type = PORT_SCIFA || port->type = PORT_SCIFB) {
++		u16 ctrl = serial_port_in(port, SCPCR);
++
++		/* Enable RXD and TXD pin functions */
++		ctrl &= ~(SCPCR_RXDC | SCPCR_TXDC);
++		if (to_sci_port(port)->cfg->capabilities & SCIx_HAVE_RTSCTS) {
++			/* RTS# is output, driven 1 */
++			ctrl |= SCPCR_RTSC;
++			serial_port_out(port, SCPDR,
++				serial_port_in(port, SCPDR) | SCPDR_RTSD);
++			/* Enable CTS# pin function */
++			ctrl &= ~SCPCR_CTSC;
++		}
++		serial_port_out(port, SCPCR, ctrl);
++	} else if (sci_getreg(port, SCSPTR)->size) {
+ 		u16 status = serial_port_in(port, SCSPTR);
  
--	if (old != 0)
-+	return old;
-+}
-+
-+static inline void
-+__down_write (struct rw_semaphore *sem)
-+{
-+	if (___down_write(sem))
- 		rwsem_down_write_failed(sem);
- }
- 
-+static inline int
-+__down_write_killable (struct rw_semaphore *sem)
-+{
-+	if (___down_write(sem))
-+		if (IS_ERR(rwsem_down_write_failed_killable(sem)))
-+			return -EINTR;
-+
-+	return 0;
-+}
-+
- /*
-  * unlock after reading
-  */
+ 		/* RTS# is output, driven 1 */
 -- 
-2.8.0.rc3
+1.9.1
 
