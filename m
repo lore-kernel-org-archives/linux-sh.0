@@ -1,107 +1,49 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Wed, 27 Apr 2016 22:34:21 +0000
-Subject: [PATCH v3 07/16] rtc: parisc: provide rtc_class_ops directly
-Message-Id: <1461796470-1291527-8-git-send-email-arnd@arndb.de>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 29 Apr 2016 12:58:25 +0000
+Subject: [PATCH v2 02/11] serial: sh-sci: Update DT binding documentation for dedicated RTS/CTS
+Message-Id: <1461934714-18681-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1461796470-1291527-1-git-send-email-arnd@arndb.de>
-In-Reply-To: <1461796470-1291527-1-git-send-email-arnd@arndb.de>
+References: <1461934714-18681-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1461934714-18681-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Alexandre Belloni <alexandre.belloni@free-electrons.com>
-Cc: Arnd Bergmann <arnd@arndb.de>, geert@linux-m68k.org, deller@gmx.de, benh@kernel.crashing.org, mpe@ellerman.id.au, dalias@libc.org, dhowells@redhat.com, linux-alpha@vger.kernel.org, a.zummo@towertech.it, linux-kernel@vger.kernel.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, linux-m68k@lists.linux-m68k.org, rtc-linux@googlegroups.com, linux-arch@vger.kernel.org
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>, Peter Hurley <peter@hurleysoftware.com>
+Cc: Magnus Damm <magnus.damm@gmail.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-serial@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>, devicetree@vger.kernel.org
 
-The rtc-generic driver provides an architecture specific
-wrapper on top of the generic rtc_class_ops abstraction,
-and on pa-risc, that is implemented using an open-coded
-version of rtc_time_to_tm/rtc_tm_to_time.
+Some Renesas SCIF UARTs have dedicated lines for RTS/CTS hardware flow
+control.  Whether these lines exist depends on SoC and UART instance
+inside the SoC.  Whether these lines can be used for hardware flow
+control depends on board wiring.
 
-This changes the parisc rtc-generic device to provide its
-rtc_class_ops directly, using the normal helper functions,
-which makes this y2038 safe (on 32-bit) and simplifies
-the implementation.
+Amend the DT bindings with an optional property to indicate that RTS/CTS
+hardware flow control lines exist, and can be used as such, according to
+the Generic Serial DT Bindings.
 
-Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: devicetree@vger.kernel.org
 ---
- arch/parisc/kernel/time.c | 36 +++++++++++++++++++++++++++++++++++-
- drivers/rtc/rtc-generic.c |  3 +--
- 2 files changed, 36 insertions(+), 3 deletions(-)
+v2:
+  - Drop RFC status,
+  - Use "uart-has-rtscts" instead of "renesas,uart-has-rtscts",
+  - Refer to the Generic Serial DT Bindings.
+---
+ Documentation/devicetree/bindings/serial/renesas,sci-serial.txt | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/arch/parisc/kernel/time.c b/arch/parisc/kernel/time.c
-index 58dd6801f5be..744878789752 100644
---- a/arch/parisc/kernel/time.c
-+++ b/arch/parisc/kernel/time.c
-@@ -12,6 +12,7 @@
-  */
- #include <linux/errno.h>
- #include <linux/module.h>
-+#include <linux/rtc.h>
- #include <linux/sched.h>
- #include <linux/kernel.h>
- #include <linux/param.h>
-@@ -248,14 +249,47 @@ void __init start_cpu_itimer(void)
- 	per_cpu(cpu_data, cpu).it_value = next_tick;
- }
+diff --git a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+index 997baeaa869baa6f..7a0e15053db97481 100644
+--- a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
++++ b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+@@ -78,6 +78,8 @@ Optional properties:
+   - dma-names: Must contain a list of two DMA names, "tx" and "rx".
+   - {cts,dsr,dcd,rng,rts,dtr}-gpios: Specify GPIOs for modem lines, cfr. the
+     generic serial DT bindings in serial.txt.
++  - uart-has-rtscts: Indicates dedicated lines for RTS/CTS hardware flow
++    control, cfr. the generic serial DT bindings in serial.txt.
  
-+#if IS_ENABLED(CONFIG_RTC_DRV_GENERIC)
-+static int rtc_generic_get_time(struct device *dev, struct rtc_time *tm)
-+{
-+	struct pdc_tod tod_data;
-+
-+	memset(tm, 0, sizeof(*tm));
-+	if (pdc_tod_read(&tod_data) < 0)
-+		return -EOPNOTSUPP;
-+
-+	/* we treat tod_sec as unsigned, so this can work until year 2106 */
-+	rtc_time64_to_tm(tod_data.tod_sec, tm);
-+	return rtc_valid_tm(tm);
-+}
-+
-+static int rtc_generic_set_time(struct device *dev, struct rtc_time *tm)
-+{
-+	time64_t secs = rtc_tm_to_time64(tm);
-+
-+	if (pdc_tod_set(secs, 0) < 0)
-+		return -EOPNOTSUPP;
-+
-+	return 0;
-+}
-+
-+static const struct rtc_class_ops rtc_generic_ops = {
-+	.read_time = rtc_generic_get_time,
-+	.set_time = rtc_generic_set_time,
-+};
-+
- static int __init rtc_init(void)
- {
- 	struct platform_device *pdev;
- 
--	pdev = platform_device_register_simple("rtc-generic", -1, NULL, 0);
-+	pdev = platform_device_register_data(NULL, "rtc-generic", -1,
-+					     &rtc_generic_ops,
-+					     sizeof(rtc_generic_ops));
-+
- 	return PTR_ERR_OR_ZERO(pdev);
- }
- device_initcall(rtc_init);
-+#endif
- 
- void read_persistent_clock(struct timespec *ts)
- {
-diff --git a/drivers/rtc/rtc-generic.c b/drivers/rtc/rtc-generic.c
-index 3958e87a05fa..92b5e02a3750 100644
---- a/drivers/rtc/rtc-generic.c
-+++ b/drivers/rtc/rtc-generic.c
-@@ -9,8 +9,7 @@
- #include <linux/platform_device.h>
- #include <linux/rtc.h>
- 
--#if defined(CONFIG_M68K) || defined(CONFIG_PARISC) || \
--    defined(CONFIG_PPC)
-+#if defined(CONFIG_M68K) || defined(CONFIG_PPC)
- #include <asm/rtc.h>
- 
- static int generic_get_time(struct device *dev, struct rtc_time *tm)
+ Example:
+ 	aliases {
 -- 
-2.7.0
+1.9.1
 
