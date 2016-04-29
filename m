@@ -1,21 +1,57 @@
-From: Peter Hurley <peter@hurleysoftware.com>
-Date: Fri, 29 Apr 2016 15:41:10 +0000
-Subject: Re: [PATCH v2 06/11] serial: sh-sci: Add more Serial Port Register documentation
-Message-Id: <57238096.6000802@hurleysoftware.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 29 Apr 2016 12:58:30 +0000
+Subject: [PATCH v2 07/11] serial: sh-sci: Add more Serial Port Control/Data Register documentation
+Message-Id: <1461934714-18681-8-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1461934714-18681-1-git-send-email-geert+renesas@glider.be>
- <1461934714-18681-7-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1461934714-18681-7-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1461934714-18681-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-Cc: Jiri Slaby <jslaby@suse.com>, Magnus Damm <magnus.damm@gmail.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-serial@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>, Peter Hurley <peter@hurleysoftware.com>
+Cc: Magnus Damm <magnus.damm@gmail.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-serial@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On 04/29/2016 05:58 AM, Geert Uytterhoeven wrote:
-> Improve documentation for the (H)SCIF Serial Port Register:
->   - Make it clear the RTS and CTS lines are active-low,
->   - Document the bits related to the serial port's clock pin.
+Improve documentation for the SCIFA/SCIFB Serial Port Control and Data
+Registers:
+  - State clearly that the RTS and CTS lines are active-low,
+  - Document the bits related to the serial port's SCK, RXD, and TXD
+    pins.
 
-Reviewed-by: Peter Hurley <peter@hurleysoftware.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+v2:
+  - New.
+---
+ drivers/tty/serial/sh-sci.h | 14 ++++++++++----
+ 1 file changed, 10 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/tty/serial/sh-sci.h b/drivers/tty/serial/sh-sci.h
+index 85a2b81ba0a845e5..e7d2bc692a581e9e 100644
+--- a/drivers/tty/serial/sh-sci.h
++++ b/drivers/tty/serial/sh-sci.h
+@@ -121,12 +121,18 @@ enum {
+ #define HSCIF_SRE	BIT(15)	/* Sampling Rate Register Enable */
+ 
+ /* SCPCR (Serial Port Control Register), SCIFA/SCIFB only */
+-#define SCPCR_RTSC	BIT(4)	/* Serial Port RTS Pin / Output Pin */
+-#define SCPCR_CTSC	BIT(3)	/* Serial Port CTS Pin / Input Pin */
++#define SCPCR_RTSC	BIT(4)	/* Serial Port RTS# Pin / Output Pin */
++#define SCPCR_CTSC	BIT(3)	/* Serial Port CTS# Pin / Input Pin */
++#define SCPCR_SCKC	BIT(2)	/* Serial Port SCK Pin / Output Pin */
++#define SCPCR_RXDC	BIT(1)	/* Serial Port RXD Pin / Input Pin */
++#define SCPCR_TXDC	BIT(0)	/* Serial Port TXD Pin / Output Pin */
+ 
+ /* SCPDR (Serial Port Data Register), SCIFA/SCIFB only */
+-#define SCPDR_RTSD	BIT(4)	/* Serial Port RTS Output Pin Data */
+-#define SCPDR_CTSD	BIT(3)	/* Serial Port CTS Input Pin Data */
++#define SCPDR_RTSD	BIT(4)	/* Serial Port RTS# Output Pin Data */
++#define SCPDR_CTSD	BIT(3)	/* Serial Port CTS# Input Pin Data */
++#define SCPDR_SCKD	BIT(2)	/* Serial Port SCK Output Pin Data */
++#define SCPDR_RXDD	BIT(1)	/* Serial Port RXD Input Pin Data */
++#define SCPDR_TXDD	BIT(0)	/* Serial Port TXD Output Pin Data */
+ 
+ /*
+  * BRG Clock Select Register (Some SCIF and HSCIF)
+-- 
+1.9.1
 
