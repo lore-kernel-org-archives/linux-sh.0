@@ -1,7 +1,7 @@
 From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 29 Apr 2016 06:42:15 +0000
+Date: Fri, 29 Apr 2016 06:48:35 +0000
 Subject: Re: [PATCH 1/7] sh: add support for J-Core J2 processor
-Message-Id: <CAMuHMdXM-15324RDfrfEc0M9st+wuc6_FZKizdTBLS-Lx+REFw@mail.gmail.com>
+Message-Id: <CAMuHMdV8u9G5kG5fJV3thxYdrbpwLOASB2FrzDn6AnEH_S0UXg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <b8864269082ee9e5dcc079865340de70711b3272.1461880061.git.dalias@libc.org>
 In-Reply-To: <b8864269082ee9e5dcc079865340de70711b3272.1461880061.git.dalias@libc.org>
@@ -10,28 +10,18 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Fri, Apr 29, 2016 at 2:36 AM, Rich Felker <dalias@libc.org> wrote:
-> On Thu, Apr 28, 2016 at 07:12:19PM -0500, Rob Landley wrote:
->> On 03/17/2016 06:09 PM, Rich Felker wrote:
->> > Signed-off-by: Rich Felker <dalias@libc.org>
->>
->> This came through dated March 17, and thunderbird "the dumbest mail
->> client ever, except all the other ones" doesn't let me _not_ sort my
->> mailboxes anymore, so the closest I can get is sorting by date.
->>
->> Translation: this stuff got bured way back in the history and I had to
->> open the mbox file in vi just to confirm that it was a recent post and
->> not historical.
->>
->> I take it your new "git format-patch | formail" workflow has a downside? :)
->
-> Sorry about that. The same should happen with git send-email though,
-> no? Sorry I'm not used to the tools for sending patch series as mail
-> threads rather than attachments. I can strip Date headers in the
-> future and let them get regenerated, but a good MUA should sort by
-> date received, not the sender's date headers.
+On Fri, Mar 18, 2016 at 12:09 AM, Rich Felker <dalias@libc.org> wrote:
+> --- /dev/null
+> +++ b/arch/sh/mm/cache-j2.c
+> @@ -0,0 +1,58 @@
+> +/*
+> + * arch/sh/mm/cache-j2.c
+> + *
+> + * Copyright (C) 2015 SEI
 
-git-send-email doesn't fake dates from commits.
+"Smart Energy Instruments, Inc.", like in some other files?
+
+Too many entities are called "SEI"...
 
 Gr{oetje,eeting}s,
 
