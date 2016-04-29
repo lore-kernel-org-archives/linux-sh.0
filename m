@@ -1,29 +1,52 @@
-From: Russell King - ARM Linux <linux@arm.linux.org.uk>
-Date: Wed, 27 Apr 2016 09:34:38 +0000
-Subject: Re: [PATCH v5 2/4] printk/nmi: warn when some message has been lost in NMI context
-Message-Id: <20160427093438.GK19428@n2100.arm.linux.org.uk>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 29 Apr 2016 12:58:26 +0000
+Subject: [PATCH v2 03/11] serial: sh-sci: Always set TIOCM_CTS in .get_mctrl() callback
+Message-Id: <1461934714-18681-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1461239325-22779-1-git-send-email-pmladek@suse.com>
- <1461239325-22779-3-git-send-email-pmladek@suse.com>
-In-Reply-To: <1461239325-22779-3-git-send-email-pmladek@suse.com>
+References: <1461934714-18681-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1461934714-18681-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>, Peter Hurley <peter@hurleysoftware.com>
+Cc: Magnus Damm <magnus.damm@gmail.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-serial@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Thu, Apr 21, 2016 at 01:48:43PM +0200, Petr Mladek wrote:
-> @@ -64,8 +65,10 @@ static int vprintk_nmi(const char *fmt, va_list args)
->  again:
->  	len = atomic_read(&s->len);
->  
-> -	if (len >= sizeof(s->buffer))
-> +	if (len >= sizeof(s->buffer)) {
-> +		atomic_inc(&nmi_message_lost);
+Documentation/serial/driver clearly states:
 
-This should be fine - I think its reasonable to expect that no one is
-using a spinlock implementation for their atomic ops for this...
+    If the port does not support CTS, DCD or DSR, the driver should
+    indicate that the signal is permanently active.
 
+Hence always set TIOCM_CTS, as we currently don't look at the CTS
+hardware line state at all.
+
+FWIW, this fixes the transmit path when hardware-assisted flow control
+is enabled, and userspace enables CRTSCTS.
+The receive path is still broken, as RTS is never asserted.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+v2:
+  - Drop RFC status.
+---
+ drivers/tty/serial/sh-sci.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 0130feb069aee02f..135f836642ab1c5a 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1835,9 +1835,9 @@ static unsigned int sci_get_mctrl(struct uart_port *port)
+ {
+ 	/*
+ 	 * CTS/RTS is handled in hardware when supported, while nothing
+-	 * else is wired up. Keep it simple and simply assert DSR/CAR.
++	 * else is wired up. Keep it simple and simply assert CTS/DSR/CAR.
+ 	 */
+-	return TIOCM_DSR | TIOCM_CAR;
++	return TIOCM_CTS | TIOCM_DSR | TIOCM_CAR;
+ }
+ 
+ static void sci_break_ctl(struct uart_port *port, int break_state)
 -- 
-RMK's Patch system: http://www.arm.linux.org.uk/developer/patches/
-FTTC broadband for 0.8mile line: currently at 9.6Mbps down 400kbps up
-according to speedtest.net.
+1.9.1
+
