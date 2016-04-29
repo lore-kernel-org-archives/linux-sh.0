@@ -1,49 +1,21 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 29 Apr 2016 12:58:29 +0000
-Subject: [PATCH v2 06/11] serial: sh-sci: Add more Serial Port Register documentation
-Message-Id: <1461934714-18681-7-git-send-email-geert+renesas@glider.be>
+From: Peter Hurley <peter@hurleysoftware.com>
+Date: Fri, 29 Apr 2016 15:41:10 +0000
+Subject: Re: [PATCH v2 06/11] serial: sh-sci: Add more Serial Port Register documentation
+Message-Id: <57238096.6000802@hurleysoftware.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1461934714-18681-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1461934714-18681-1-git-send-email-geert+renesas@glider.be>
+ <1461934714-18681-7-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1461934714-18681-7-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>, Peter Hurley <peter@hurleysoftware.com>
-Cc: Magnus Damm <magnus.damm@gmail.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-serial@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Geert Uytterhoeven <geert+renesas@glider.be>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Cc: Jiri Slaby <jslaby@suse.com>, Magnus Damm <magnus.damm@gmail.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-serial@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Improve documentation for the (H)SCIF Serial Port Register:
-  - Make it clear the RTS and CTS lines are active-low,
-  - Document the bits related to the serial port's clock pin.
+On 04/29/2016 05:58 AM, Geert Uytterhoeven wrote:
+> Improve documentation for the (H)SCIF Serial Port Register:
+>   - Make it clear the RTS and CTS lines are active-low,
+>   - Document the bits related to the serial port's clock pin.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
-v2:
-  - New.
----
- drivers/tty/serial/sh-sci.h | 10 ++++++----
- 1 file changed, 6 insertions(+), 4 deletions(-)
-
-diff --git a/drivers/tty/serial/sh-sci.h b/drivers/tty/serial/sh-sci.h
-index 7a4fa185b93ef307..85a2b81ba0a845e5 100644
---- a/drivers/tty/serial/sh-sci.h
-+++ b/drivers/tty/serial/sh-sci.h
-@@ -108,10 +108,12 @@ enum {
- #define SCLSR_ORER	BIT(0)	/* Overrun Error */
- 
- /* SCSPTR (Serial Port Register), optional */
--#define SCSPTR_RTSIO	BIT(7)	/* Serial Port RTS Pin Input/Output */
--#define SCSPTR_RTSDT	BIT(6)	/* Serial Port RTS Pin Data */
--#define SCSPTR_CTSIO	BIT(5)	/* Serial Port CTS Pin Input/Output */
--#define SCSPTR_CTSDT	BIT(4)	/* Serial Port CTS Pin Data */
-+#define SCSPTR_RTSIO	BIT(7)	/* Serial Port RTS# Pin Input/Output */
-+#define SCSPTR_RTSDT	BIT(6)	/* Serial Port RTS# Pin Data */
-+#define SCSPTR_CTSIO	BIT(5)	/* Serial Port CTS# Pin Input/Output */
-+#define SCSPTR_CTSDT	BIT(4)	/* Serial Port CTS# Pin Data */
-+#define SCSPTR_SCKIO	BIT(3)	/* Serial Port Clock Pin Input/Output */
-+#define SCSPTR_SCKDT	BIT(2)	/* Serial Port Clock Pin Data */
- #define SCSPTR_SPB2IO	BIT(1)	/* Serial Port Break Input/Output */
- #define SCSPTR_SPB2DT	BIT(0)	/* Serial Port Break Data */
- 
--- 
-1.9.1
+Reviewed-by: Peter Hurley <peter@hurleysoftware.com>
 
