@@ -1,175 +1,128 @@
 From: Yoshinori Sato <ysato@users.sourceforge.jp>
-Date: Sun, 01 May 2016 04:59:19 +0000
-Subject: [PATCH 09/12] sh: Add I/O DATA HDL-U support drivers.
-Message-Id: <1462078763-27135-10-git-send-email-ysato@users.sourceforge.jp>
+Date: Sun, 01 May 2016 05:08:35 +0000
+Subject: [PATCH RESEND 11/12] sh: I/O DATA HDL-U defconfig (DT mode)
+Message-Id: <1462079316-27771-12-git-send-email-ysato@users.sourceforge.jp>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1462079316-27771-1-git-send-email-ysato@users.sourceforge.jp>
+In-Reply-To: <1462079316-27771-1-git-send-email-ysato@users.sourceforge.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-
-PCI host fixup and external interrupt controller.
+To: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
 
 Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
 ---
- .../interrupt-controller/iodata-landisk.txt        | 28 +++++++++
- drivers/irqchip/irq-io-landisk.c                   | 71 ++++++++++++++++++++++
- drivers/pci/host/pci-sh7751.c                      | 25 ++++++++
- 3 files changed, 124 insertions(+)
- create mode 100644 Documentation/devicetree/bindings/interrupt-controller/iodata-landisk.txt
- create mode 100644 drivers/irqchip/irq-io-landisk.c
+ arch/sh/configs/landisk-dt_defconfig | 100 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 100 insertions(+)
+ create mode 100644 arch/sh/configs/landisk-dt_defconfig
 
-diff --git a/Documentation/devicetree/bindings/interrupt-controller/iodata-landisk.txt b/Documentation/devicetree/bindings/interrupt-controller/iodata-landisk.txt
+diff --git a/arch/sh/configs/landisk-dt_defconfig b/arch/sh/configs/landisk-dt_defconfig
 new file mode 100644
-index 0000000..09c2841
+index 0000000..aa52fdb
 --- /dev/null
-+++ b/Documentation/devicetree/bindings/interrupt-controller/iodata-landisk.txt
-@@ -0,0 +1,28 @@
-+DT bindings for the I/O DATA HDL-U interrupt controler
-+
-+Required properties:
-+
-+  - compatible: has to be "iodata,landisk-intc".
-+
-+  - reg: Base address and length of interrupt controller register.
-+
-+  - interrupt-controller: Identifies the node as an interrupt controller.
-+
-+  - #interrupt-cells: has to be <2>: an interrupt index and flags, as defined
-+    in interrupts.txt in this directory.
-+
-+  - interrupt-map: Interrupt mapping on parent controler.
-+
-+Example
-+-------
-+
-+	cpldintc: cpld@b0000000 {
-+		compatible = "iodata,landisk-intc";
-+		#interrupt-cells = <2>;
-+		interrupt-controller;
-+		reg = <0xb0000000 8>;
-+		interrupt-map=<0 &shintc 0 0>, <1 &shintc 1 0>,
-+		              <2 &shintc 2 0>, <3 &shintc 3 0>,
-+		              <4 &shintc 4 0>, <5 &shintc 5 0>,
-+		              <6 &shintc 6 0>, <7 &shintc 7 0>;
-+	};
-diff --git a/drivers/irqchip/irq-io-landisk.c b/drivers/irqchip/irq-io-landisk.c
-new file mode 100644
-index 0000000..c351925
---- /dev/null
-+++ b/drivers/irqchip/irq-io-landisk.c
-@@ -0,0 +1,71 @@
-+/*
-+ * IO-DATA LANDISK CPLD IRQ driver
-+ *
-+ * Copyright 2016 Yoshinori Sato <ysato@users.sourceforge.jp>
-+ */
-+
-+#include <linux/init.h>
-+#include <linux/irq.h>
-+#include <linux/irqchip.h>
-+#include <linux/irqdomain.h>
-+#include <linux/of_address.h>
-+#include <linux/of_irq.h>
-+#include <linux/io.h>
-+
-+static void landisk_mask_irq(struct irq_data *data)
-+{
-+	u8 mask = __raw_readb(data->chip_data + 5);
-+
-+	mask &= !(1 << (data->irq - 5));
-+	__raw_writeb(mask, data->chip_data + 5);
-+}
-+
-+static void landisk_unmask_irq(struct irq_data *data)
-+{
-+	u8 mask = __raw_readb(data->chip_data + 5);
-+
-+	mask |= (1 << (data->irq - 5));
-+	__raw_writeb(mask, data->chip_data + 5);
-+}
-+
-+static struct irq_chip cpld_irq_chip = {
-+	.name		= "LANDISK-CPLD",
-+	.irq_unmask	= landisk_unmask_irq,
-+	.irq_mask	= landisk_mask_irq,
-+};
-+
-+static int cpld_map(struct irq_domain *d, unsigned int virq,
-+		    irq_hw_number_t hw_irq_num)
-+{
-+	irq_set_chip_and_handler(virq, &cpld_irq_chip,
-+				 handle_simple_irq);
-+	irq_set_chip_data(virq, d->host_data);
-+
-+	return 0;
-+}
-+
-+static struct irq_domain_ops irq_ops = {
-+	.xlate	= irq_domain_xlate_twocell,
-+	.map	= cpld_map,
-+};
-+
-+static int __init landisk_intc_of_init(struct device_node *intc,
-+				    struct device_node *parent)
-+{
-+	struct irq_domain *domain, *pdomain;
-+	int num_irqpin;
-+	void *baseaddr;
-+
-+	baseaddr = of_iomap(intc, 0);
-+	pdomain = irq_find_host(parent);
-+	of_get_property(intc, "interrupt-map", &num_irqpin);
-+	num_irqpin /= sizeof(u32) * 3;
-+	domain = irq_domain_create_hierarchy(pdomain, 0, num_irqpin,
-+					     of_node_to_fwnode(intc),
-+					     &irq_ops, baseaddr);
-+	BUG_ON(!domain);
-+	irq_domain_associate_many(domain, 0, 0, 8);
-+	return 0;
-+}
-+
-+IRQCHIP_DECLARE(cpld_intc, "iodata,landisk-intc", landisk_intc_of_init);
-diff --git a/drivers/pci/host/pci-sh7751.c b/drivers/pci/host/pci-sh7751.c
-index fd6548b..3fa0da5 100644
---- a/drivers/pci/host/pci-sh7751.c
-+++ b/drivers/pci/host/pci-sh7751.c
-@@ -26,10 +26,35 @@ DEFINE_RAW_SPINLOCK(pci_config_lock);
-  * PCIC fixups
-  */
- 
-+#define PCIMCR_MRSET 0x40000000
-+#define PCIMCR_RFSH  0x00000004
-+
-+static void __init landisk_fixup(void __iomem *pci_reg_base, void __iomem *bcr)
-+{
-+	unsigned long bcr1, mcr;
-+
-+	bcr1 = __raw_readl(bcr + SH7751_BCR1);
-+	bcr1 |= 0x00080000;	/* Enable Bit 19 BREQEN, set PCIC to slave */
-+	pcic_writel(bcr1, SH4_PCIBCR1);
-+
-+	mcr = __raw_readl(bcr + SH7751_MCR);
-+	mcr &= (~PCIMCR_MRSET) & (~PCIMCR_RFSH);
-+	pcic_writel(mcr, SH4_PCIMCR);
-+
-+	pcic_writel(0x0c000000, SH7751_PCICONF5);
-+	pcic_writel(0xd0000000, SH7751_PCICONF6);
-+	pcic_writel(0x0c000000, SH4_PCILAR0);
-+	pcic_writel(0x00000000, SH4_PCILAR1);
-+}
-+
- static __initconst const struct fixups {
- 	char *compatible;
- 	void (*fixup)(void __iomem *, void __iomem *);
- } fixup_list[] = {
-+	{
-+		.compatible = "iodata,landisk",
-+		.fixup = landisk_fixup,
-+	},
- };
- 
- static __init void pcic_fixups(struct device_node *np,
++++ b/arch/sh/configs/landisk-dt_defconfig
+@@ -0,0 +1,100 @@
++CONFIG_SYSVIPC=y
++# CONFIG_FHANDLE is not set
++CONFIG_LOG_BUF_SHIFT
++CONFIG_CGROUPS=y
++CONFIG_NAMESPACES=y
++# CONFIG_UTS_NS is not set
++# CONFIG_IPC_NS is not set
++# CONFIG_PID_NS is not set
++# CONFIG_NET_NS is not set
++CONFIG_EXPERT=y
++CONFIG_SYSCTL_SYSCALL=y
++CONFIG_SLAB=y
++CONFIG_MODULES=y
++CONFIG_MODULE_UNLOAD=y
++CONFIG_MODULE_FORCE_UNLOAD=y
++# CONFIG_BLK_DEV_BSG is not set
++CONFIG_CPU_SUBTYPE_SH7751R=y
++CONFIG_MEMORY_START=0x0c000000
++CONFIG_FLATMEM_MANUAL=y
++CONFIG_SH_DEVICE_TREE=y
++CONFIG_SH_PCLK_FREQ3333333
++CONFIG_HEARTBEAT=y
++CONFIG_KEXEC=y
++CONFIG_PCI=y
++CONFIG_PCI_SH7751=y
++CONFIG_PCCARD=y
++CONFIG_YENTA=y
++CONFIG_NET=y
++CONFIG_PACKET=y
++CONFIG_UNIX=y
++CONFIG_INET=y
++CONFIG_IP_PNP=y
++CONFIG_IP_PNP_BOOTP=y
++# CONFIG_IPV6 is not set
++CONFIG_NETFILTER=y
++# CONFIG_WIRELESS is not set
++CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
++CONFIG_DEVTMPFS=y
++CONFIG_BLK_DEV_LOOP=y
++CONFIG_BLK_DEV_RAM=y
++CONFIG_BLK_DEV_SD=y
++CONFIG_ATA=y
++CONFIG_PATA_ARTOP=y
++CONFIG_NETDEVICES=y
++CONFIG_8139CP=y
++# CONFIG_WLAN is not set
++# CONFIG_INPUT_MOUSEDEV is not set
++# CONFIG_INPUT_KEYBOARD is not set
++# CONFIG_INPUT_MOUSE is not set
++# CONFIG_SERIO is not set
++CONFIG_SERIAL_SH_SCI=y
++CONFIG_SERIAL_SH_SCI_EARLYCON=y
++# CONFIG_HW_RANDOM is not set
++# CONFIG_HWMON is not set
++CONFIG_HID_A4TECH=m
++CONFIG_HID_APPLE=m
++CONFIG_HID_BELKIN=m
++CONFIG_HID_CHERRY=m
++CONFIG_HID_CHICONY=m
++CONFIG_HID_CYPRESS=m
++CONFIG_HID_EZKEY=m
++CONFIG_HID_GYRATION=m
++CONFIG_HID_KENSINGTON=y
++CONFIG_HID_LOGITECH=m
++CONFIG_HID_MICROSOFT=m
++CONFIG_HID_MONTEREY=m
++CONFIG_HID_PANTHERLORD=m
++CONFIG_HID_PETALYNX=m
++CONFIG_HID_SAMSUNG=m
++CONFIG_HID_SUNPLUS=m
++# CONFIG_USB_SUPPORT is not set
++CONFIG_COMMON_CLK_SH7750=y
++# CONFIG_IOMMU_SUPPORT is not set
++CONFIG_EXT2_FS=y
++CONFIG_EXT3_FS=y
++CONFIG_AUTOFS4_FS=y
++CONFIG_ISO9660_FS=m
++CONFIG_MSDOS_FS=y
++CONFIG_VFAT_FS=y
++CONFIG_NTFS_FS=m
++CONFIG_NTFS_RW=y
++CONFIG_TMPFS=y
++CONFIG_ROMFS_FS=y
++CONFIG_UFS_FS=m
++CONFIG_NFS_FS=y
++CONFIG_NFS_SWAP=y
++CONFIG_ROOT_NFS=y
++CONFIG_NLS_CODEPAGE_437=y
++CONFIG_NLS_CODEPAGE_932=y
++CONFIG_DEBUG_INFO=y
++CONFIG_MAGIC_SYSRQ=y
++CONFIG_LOCKUP_DETECTOR=y
++CONFIG_BOOTPARAM_SOFTLOCKUP_PANIC=y
++CONFIG_BOOTPARAM_HUNG_TASK_PANIC=y
++CONFIG_WQ_WATCHDOG=y
++CONFIG_PANIC_ON_OOPS=y
++CONFIG_PANIC_TIMEOUT=1
++CONFIG_LOCK_STAT=y
++# CONFIG_FTRACE is not set
++CONFIG_CRC_T10DIF=y
 -- 
 2.7.0
 
