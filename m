@@ -1,94 +1,178 @@
-From: Zhaoxiu Zeng <zengzhaoxiu@163.com>
-Date: Sun, 08 May 2016 12:52:52 +0000
-Subject: Re: [patch V4] lib: GCD: Use binary GCD algorithm instead of Euclidean
-Message-Id: <042bae7f-51d6-93e8-549d-a38bcb4c9cf5@163.com>
+From: Yoshinori Sato <ysato@users.sourceforge.jp>
+Date: Sun, 01 May 2016 05:08:34 +0000
+Subject: [PATCH RESEND 10/12] sh: I/O DATA HDL-U (aka landisk) support dts
+Message-Id: <1462079316-27771-11-git-send-email-ysato@users.sourceforge.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20160507084129.7284.qmail@ns.horizon.com>
-In-Reply-To: <20160507084129.7284.qmail@ns.horizon.com>
+References: <1462079316-27771-1-git-send-email-ysato@users.sourceforge.jp>
+In-Reply-To: <1462079316-27771-1-git-send-email-ysato@users.sourceforge.jp>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: devicetree@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
 
-=D4=DA 2016/5/7 16:41, George Spelvin =D0=B4=B5=C0:
-> Nothing critical, but a bit of kibitzing.
-> (That is slang in the Yiddish language for a person
-> who offers annoying and unwanted advice.)
->
->> The binary GCD algorithm is based on the following facts:
->> 	1. If a and b are all evens, then gcd(a,b) =3D 2 * gcd(a/2, b/2)
->> 	2. If a is even and b is odd, then gcd(a,b) =3D gcd(a/2, b)
->> 	3. If a and b are all odds, then gcd(a,b) =3D gcd((a-b)/2, b) =3D gcd((=
-a+b)/2, b)
-> 1) "even" and "odd" are adjectives.  In English, adjectives to not have
->    plural suffixes.  Thus, "they are even" or "they are odd".
-> 2) Although "all" is not exactly wrong, it sounds odd.  Since there are
->    exactly two of them it's clearer to say "both".
->
-> If I also rephrase the last line to fit into 80 columns, you get:
->
->   The binary GCD algorithm is based on the following facts:
-> - 	1. If a and b are all evens, then gcd(a,b) =3D 2 * gcd(a/2, b/2)
-> + 	1. If a and b are both even, then gcd(a,b) =3D 2 * gcd(a/2, b/2)
->  	2. If a is even and b is odd, then gcd(a,b) =3D gcd(a/2, b)
-> -	3. If a and b are all odds, then gcd(a,b) =3D gcd((a-b)/2, b) =3D gcd((=
-a+b)/2, b)
-> +	3. If both are odd, then gcd(a,b) =3D gcd((a-b)/2, b) =3D gcd((a+b)/2, =
-b)
->
-> 3) Negative config options are always confusing.
->
-> Would it be better to call it CONFIG_INEFFICIEBNT_FFS, or even simpler
-> CONFIG_SLOW_FFS?
->
-> Also, you're allowed to add "help" to a non-interactive config option,
-> and some documentation might be useful.
-> E.g.
->
-> +config CPU_SLOW_FFS
-> +	def_bool n
-> +	help
-> +	  If n, the CPU supports a fast __ffs (__builtin_ctz) operation,
-> +	  either directly or via a short code sequence using a count
-> +	  leading zeros or population count instruction.  If y, the
-> +	  operation is emulated by slower software, such as an unrolled
-> +	  binary search.
-> +
-> +	  This is purely an optimization option; the kernel
-> +	  will function correctly regardless of how it is set.
-> +
+Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
+---
+ arch/sh/boot/dts/landisk.dts | 150 +++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 150 insertions(+)
+ create mode 100644 arch/sh/boot/dts/landisk.dts
 
-Thanks a lot.
-
-> Your benchmark code doesn't have to have a separate code path if
-> __x86_64__; rdtsc works on 32-bit code just as well.  paths.  And the
-> way you subtract the end and start times is unnecessarily complicated.
-> The C language guarantees that unsigned arithmetic simply wraps modulo
-> 2^bits as expected.
-
-rdsc works on x86, the other path is prepared for other architectures.
-
-> Here are some more timings, with the same flags as your tests:
->
-> First, 32 bit code:
-> 		gcd0	gcd1	gcd2	gcd3	gcd4
-> Ivy Bridge	3156	1192	1740	1160	1640	PASS
-> AMD Phenom	7150	2564	2348	2975	2843	PASS
-> Core 2		4176	2592	4164	2604	3900	PASS
-> Pentium 4	11492	4784	7632	4852	6452	PASS
->
-> And 64-bit (longer times becuase the inputs are larger):
-> Ivy Bridge	10636	2496	3500	2432	3360	PASS
-> AMD Phenom	19482	4058	6030	5001	6845	PASS
->
-> Looking at those, I'm not sure how much better the gcd3/4 versions are
-> than gcd1/2.  The difference seems pretty minor and sometimes negative.
->
-
-The worst case of binary GCD is that one number is power of 2,
-for example a is 0xffffffff (0xcccccccc for the "even/odd" variant) and b i=
-s 1.
-
-The gcd3/4 versions can handle this properly.
-
+diff --git a/arch/sh/boot/dts/landisk.dts b/arch/sh/boot/dts/landisk.dts
+new file mode 100644
+index 0000000..a994d19
+--- /dev/null
++++ b/arch/sh/boot/dts/landisk.dts
+@@ -0,0 +1,150 @@
++#include <dt-bindings/interrupt-controller/sh_intc.h>
++
++/dts-v1/;
++/ {
++	model = "I/O DATA HDL-U";
++	compatible = "iodata,hdl-u";
++	#address-cells = <1>;
++	#size-cells = <1>;
++	interrupt-parent = <&shintc>;
++	chosen {
++		stdout-path = &sci1;
++		bootargs = "console=ttySC1,115200";
++	};
++	aliases {
++		serial0 = &sci0;
++		serial1 = &sci1;
++	};
++
++	oclk: oscillator {
++                #clock-cells = <0>;
++                compatible = "fixed-clock";
++                clock-frequency = <22222222>;
++        };
++        pllclk: pllclk {
++                compatible = "renesas,sh7750-pll-clock";
++                clocks = <&oclk>;
++                #clock-cells = <0>;
++		renesas,mult = <12>;
++                reg = <0xffc00000 2>, <0xffc00008 4>;
++        };
++        iclk: iclk {
++                compatible = "renesas,sh7750-div-clock";
++                clocks = <&pllclk>;
++                #clock-cells = <0>;
++                reg = <0xffc00000 2>;
++		renesas,offset = <6>;
++		clock-output-names = "ick";
++        };
++        bclk: bclk {
++                compatible = "renesas,sh7750-div-clock";
++                clocks = <&pllclk>;
++                #clock-cells = <0>;
++                reg = <0xffc00000 2>;
++		renesas,offset = <3>;
++		clock-output-names = "bck";
++        };
++        fclk: fclk {
++                compatible = "renesas,sh7750-div-clock";
++                clocks = <&pllclk>;
++                #clock-cells = <0>;
++                reg = <0xffc00000 2>;
++		renesas,offset = <0>;
++		clock-output-names = "fck";
++        };
++	cpus {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		cpu@0 {
++		      compatible = "renesas,sh4", "renesas,sh";
++		      clock-frequency = <266666666>;
++		};
++	};
++	memory@0c000000 {
++		device_type = "memory";
++		reg = <0x0c000000 0x4000000>;
++	};
++ 	shintc: interrupt-controller@ffd00000 {
++		compatible = "renesas,sh7751-intc";
++		#interrupt-cells = <2>;
++		#address-cells = <1>;
++		#size-cells = <1>;
++		interrupt-controller;
++		reg = <0xffd00000 14>, <0xfe080000 128>;
++		 
++	};
++	cpldintc: cpld@b0000000 {
++		compatible = "iodata,landisk-intc";
++		#interrupt-cells = <2>;
++		interrupt-controller;
++		reg = <0xb0000000 8>;
++		interrupt-map=<0 &shintc 0 0>, <1 &shintc 1 0>,
++		              <2 &shintc 2 0>, <3 &shintc 3 0>,
++		              <4 &shintc 4 0>, <5 &shintc 5 0>,
++		              <6 &shintc 6 0>, <7 &shintc 7 0>;
++	};
++	sci0: serial@ffe00000 {
++		compatible = "renesas,scif";
++		reg = <0xffe00000 0x20>;
++		interrupts = <evt2irq(0x4e0) 0
++		              evt2irq(0x500) 0
++		              evt2irq(0x520) 0
++		              evt2irq(0x540) 0>;
++		clocks = <&fclk>;
++		clock-names = "fck";
++	};
++	sci1: serial@ffe80000 {
++		compatible = "renesas,scif";
++		reg = <0xffe80000 0x100>;
++		interrupts = <evt2irq(0x700) 0
++			      evt2irq(0x720) 0
++			      evt2irq(0x760) 0
++			      evt2irq(0x740) 0>;
++		clocks = <&fclk>;
++		clock-names = "fck";
++	};
++	tmu: timer@ffd80008 {
++	 	compatible = "renesas,tmu";
++		reg = <0xffd80000 12>;
++		interrupts = <evt2irq(0x400) 0
++			      evt2irq(0x420) 0
++			      evt2irq(0x440) 0>;
++		clocks = <&fclk>;
++		clock-names = "fck";
++		renesas,channels-mask = <0x03>;
++	};
++
++	pci: pci-controller@fe200000 {
++		compatible = "renesas,sh7751-pci", "iodata,landisk";
++		device_type = "pci";
++		bus-range = <0 0>;
++		#address-cells = <2>;
++		#size-cells = <1>;
++		ranges = <0x02000000 0x00000000 0xfd000000 0xfd000000 0x00000000 0x01000000>,
++		         <0x01000000 0x00000000 0xfe240000 0x00000000 0x00000000 0x00040000>;
++		reg = <0xfe200000 0x0400>,
++		      <0x0c000000 0x04000000>,
++		      <0xff800000 0x0030>;
++		#interrupt-cells = <1>;
++		interrupt-map-mask = <0x1800 0 7>;
++		interrupt-map = <0x0000 0 1 &cpldintc evt2irq(0x2a0) 0
++		                 0x0000 0 2 &cpldintc evt2irq(0x2c0) 0
++		                 0x0000 0 3 &cpldintc evt2irq(0x2e0) 0
++		                 0x0000 0 4 &cpldintc evt2irq(0x300) 0
++
++		                 0x0800 0 1 &cpldintc evt2irq(0x2c0) 0
++		                 0x0800 0 2 &cpldintc evt2irq(0x2e0) 0
++		                 0x0800 0 3 &cpldintc evt2irq(0x300) 0
++		                 0x0800 0 4 &cpldintc evt2irq(0x2a0) 0
++
++		                 0x1000 0 1 &cpldintc evt2irq(0x2e0) 0
++		                 0x1000 0 2 &cpldintc evt2irq(0x300) 0
++		                 0x1000 0 3 &cpldintc evt2irq(0x2a0) 0
++		                 0x1000 0 4 &cpldintc evt2irq(0x2c0) 0
++
++		                 0x1800 0 1 &cpldintc evt2irq(0x300) 0
++		                 0x1800 0 2 &cpldintc evt2irq(0x2a0) 0
++		                 0x1800 0 3 &cpldintc evt2irq(0x2c0) 0
++		                 0x1800 0 4 &cpldintc evt2irq(0x2e0) 0>;
++	};
++};
+-- 
+2.7.0
 
