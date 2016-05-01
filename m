@@ -1,178 +1,208 @@
 From: Yoshinori Sato <ysato@users.sourceforge.jp>
-Date: Sun, 01 May 2016 04:59:20 +0000
-Subject: [PATCH 10/12] sh: I/O DATA HDL-U (aka landisk) support dts
-Message-Id: <1462078763-27135-11-git-send-email-ysato@users.sourceforge.jp>
+Date: Sun, 01 May 2016 05:08:26 +0000
+Subject: [PATCH RESEND 02/12] sh: Config update for OF mode
+Message-Id: <1462079316-27771-3-git-send-email-ysato@users.sourceforge.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1462078763-27135-1-git-send-email-ysato@users.sourceforge.jp>
-In-Reply-To: <1462078763-27135-1-git-send-email-ysato@users.sourceforge.jp>
+References: <1462079316-27771-1-git-send-email-ysato@users.sourceforge.jp>
+In-Reply-To: <1462079316-27771-1-git-send-email-ysato@users.sourceforge.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: devicetree@vger.kernel.org, linux-sh@vger.kernel.org, linux-kerel@vger.kernel.org
+To: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+
+DeviceTreee support is use liner IRQ.
+And use generic function (clock / io / IRQ).
 
 Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
 ---
- arch/sh/boot/dts/landisk.dts | 150 +++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 150 insertions(+)
- create mode 100644 arch/sh/boot/dts/landisk.dts
+ arch/sh/Kconfig             | 26 +++++++++++++++++++++++---
+ arch/sh/boards/Kconfig      |  4 ++++
+ arch/sh/drivers/Makefile    |  2 ++
+ arch/sh/include/asm/io.h    |  6 ++++++
+ arch/sh/kernel/cpu/Makefile |  8 ++++++--
+ arch/sh/kernel/cpu/clock.c  |  9 ++++++---
+ drivers/sh/Makefile         |  2 ++
+ 7 files changed, 49 insertions(+), 8 deletions(-)
 
-diff --git a/arch/sh/boot/dts/landisk.dts b/arch/sh/boot/dts/landisk.dts
-new file mode 100644
-index 0000000..a994d19
---- /dev/null
-+++ b/arch/sh/boot/dts/landisk.dts
-@@ -0,0 +1,150 @@
-+#include <dt-bindings/interrupt-controller/sh_intc.h>
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index 7ed20fc..d4177ba 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -28,7 +28,7 @@ config SUPERH
+ 	select ARCH_WANT_IPC_PARSE_VERSION
+ 	select HAVE_SYSCALL_TRACEPOINTS
+ 	select HAVE_REGS_AND_STACK_ACCESS_API
+-	select MAY_HAVE_SPARSE_IRQ
++	select MAY_HAVE_SPARSE_IRQ if !SH_DEVICE_TREE
+ 	select IRQ_FORCED_THREADING
+ 	select RTC_LIB
+ 	select GENERIC_ATOMIC64
+@@ -66,7 +66,7 @@ config SUPERH32
+ 	select HAVE_MIXED_BREAKPOINTS_REGS
+ 	select PERF_EVENTS
+ 	select ARCH_HIBERNATION_POSSIBLE if MMU
+-	select SPARSE_IRQ
++	select SPARSE_IRQ if !SH_DEVICE_TREE
+ 	select HAVE_CC_STACKPROTECTOR
+ 
+ config SUPERH64
+@@ -745,6 +745,26 @@ endmenu
+ 
+ menu "Boot options"
+ 
++config USE_BUILTIN_DTB
++	bool "Use builtin DTB"
++	default n
++	depends on SH_DEVICE_TREE
++	help
++	  Link a device tree blob for particular hardware into the kernel,
++	  suppressing use of the DTB pointer provided by the bootloader.
++	  This option should only be used with legacy bootloaders that are
++	  not capable of providing a DTB to the kernel, or for experimental
++	  hardware without stable device tree bindings.
 +
-+/dts-v1/;
-+/ {
-+	model = "I/O DATA HDL-U";
-+	compatible = "iodata,hdl-u";
-+	#address-cells = <1>;
-+	#size-cells = <1>;
-+	interrupt-parent = <&shintc>;
-+	chosen {
-+		stdout-path = &sci1;
-+		bootargs = "console=ttySC1,115200";
-+	};
-+	aliases {
-+		serial0 = &sci0;
-+		serial1 = &sci1;
-+	};
++config BUILTIN_DTB_SOURCE
++	string "Source file for builtin DTB"
++	default ""
++	depends on USE_BUILTIN_DTB
++	help
++	  Base name (without suffix, relative to arch/sh/boot/dts) for the
++	  a DTS file that will be used to produce the DTB linked into the
++	  kernel.
 +
-+	oclk: oscillator {
-+                #clock-cells = <0>;
-+                compatible = "fixed-clock";
-+                clock-frequency = <22222222>;
-+        };
-+        pllclk: pllclk {
-+                compatible = "renesas,sh7750-pll-clock";
-+                clocks = <&oclk>;
-+                #clock-cells = <0>;
-+		renesas,mult = <12>;
-+                reg = <0xffc00000 2>, <0xffc00008 4>;
-+        };
-+        iclk: iclk {
-+                compatible = "renesas,sh7750-div-clock";
-+                clocks = <&pllclk>;
-+                #clock-cells = <0>;
-+                reg = <0xffc00000 2>;
-+		renesas,offset = <6>;
-+		clock-output-names = "ick";
-+        };
-+        bclk: bclk {
-+                compatible = "renesas,sh7750-div-clock";
-+                clocks = <&pllclk>;
-+                #clock-cells = <0>;
-+                reg = <0xffc00000 2>;
-+		renesas,offset = <3>;
-+		clock-output-names = "bck";
-+        };
-+        fclk: fclk {
-+                compatible = "renesas,sh7750-div-clock";
-+                clocks = <&pllclk>;
-+                #clock-cells = <0>;
-+                reg = <0xffc00000 2>;
-+		renesas,offset = <0>;
-+		clock-output-names = "fck";
-+        };
-+	cpus {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		cpu@0 {
-+		      compatible = "renesas,sh4", "renesas,sh";
-+		      clock-frequency = <266666666>;
-+		};
-+	};
-+	memory@0c000000 {
-+		device_type = "memory";
-+		reg = <0x0c000000 0x4000000>;
-+	};
-+ 	shintc: interrupt-controller@ffd00000 {
-+		compatible = "renesas,sh7751-intc";
-+		#interrupt-cells = <2>;
-+		#address-cells = <1>;
-+		#size-cells = <1>;
-+		interrupt-controller;
-+		reg = <0xffd00000 14>, <0xfe080000 128>;
-+		 
-+	};
-+	cpldintc: cpld@b0000000 {
-+		compatible = "iodata,landisk-intc";
-+		#interrupt-cells = <2>;
-+		interrupt-controller;
-+		reg = <0xb0000000 8>;
-+		interrupt-map=<0 &shintc 0 0>, <1 &shintc 1 0>,
-+		              <2 &shintc 2 0>, <3 &shintc 3 0>,
-+		              <4 &shintc 4 0>, <5 &shintc 5 0>,
-+		              <6 &shintc 6 0>, <7 &shintc 7 0>;
-+	};
-+	sci0: serial@ffe00000 {
-+		compatible = "renesas,scif";
-+		reg = <0xffe00000 0x20>;
-+		interrupts = <evt2irq(0x4e0) 0
-+		              evt2irq(0x500) 0
-+		              evt2irq(0x520) 0
-+		              evt2irq(0x540) 0>;
-+		clocks = <&fclk>;
-+		clock-names = "fck";
-+	};
-+	sci1: serial@ffe80000 {
-+		compatible = "renesas,scif";
-+		reg = <0xffe80000 0x100>;
-+		interrupts = <evt2irq(0x700) 0
-+			      evt2irq(0x720) 0
-+			      evt2irq(0x760) 0
-+			      evt2irq(0x740) 0>;
-+		clocks = <&fclk>;
-+		clock-names = "fck";
-+	};
-+	tmu: timer@ffd80008 {
-+	 	compatible = "renesas,tmu";
-+		reg = <0xffd80000 12>;
-+		interrupts = <evt2irq(0x400) 0
-+			      evt2irq(0x420) 0
-+			      evt2irq(0x440) 0>;
-+		clocks = <&fclk>;
-+		clock-names = "fck";
-+		renesas,channels-mask = <0x03>;
-+	};
+ config ZERO_PAGE_OFFSET
+ 	hex
+ 	default "0x00010000" if PAGE_SIZE_64KB || SH_RTS7751R2D || \
+@@ -839,7 +859,7 @@ config PCI
+ 	depends on SYS_SUPPORTS_PCI
+ 	select PCI_DOMAINS
+ 	select GENERIC_PCI_IOMAP
+-	select NO_GENERIC_PCI_IOPORT_MAP
++	select NO_GENERIC_PCI_IOPORT_MAP if !SH_DEVICE_TREE
+ 	help
+ 	  Find out whether you have a PCI motherboard. PCI is the name of a
+ 	  bus system, i.e. the way the CPU talks to the other stuff inside
+diff --git a/arch/sh/boards/Kconfig b/arch/sh/boards/Kconfig
+index 5e52d53..98f884e 100644
+--- a/arch/sh/boards/Kconfig
++++ b/arch/sh/boards/Kconfig
+@@ -12,6 +12,10 @@ config SH_DEVICE_TREE
+ 	select OF_EARLY_FLATTREE
+ 	select CLKSRC_OF
+ 	select GENERIC_CALIBRATE_DELAY
++	select COMMON_CLK
++	select GENERIC_IOMAP
++	select GENERIC_IRQ_CHIP
++	select SYS_SUPPORTS_PCI
+ 	help
+ 	  Select Board Described by Device Tree to build a kernel that
+ 	  does not hard-code any board-specific knowledge but instead uses
+diff --git a/arch/sh/drivers/Makefile b/arch/sh/drivers/Makefile
+index e13f06b..382e86f 100644
+--- a/arch/sh/drivers/Makefile
++++ b/arch/sh/drivers/Makefile
+@@ -4,7 +4,9 @@
+ 
+ obj-y		+= dma/
+ 
++ifndef CONFIG_SH_DEVICE_TREE
+ obj-$(CONFIG_PCI)		+= pci/
++endif
+ obj-$(CONFIG_SUPERHYWAY)	+= superhyway/
+ obj-$(CONFIG_PUSH_SWITCH)	+= push-switch.o
+ obj-$(CONFIG_HEARTBEAT)		+= heartbeat.o
+diff --git a/arch/sh/include/asm/io.h b/arch/sh/include/asm/io.h
+index 3280a6b..df62a9f 100644
+--- a/arch/sh/include/asm/io.h
++++ b/arch/sh/include/asm/io.h
+@@ -387,6 +387,12 @@ static inline int iounmap_fixed(void __iomem *addr) { return -EINVAL; }
+ int valid_phys_addr_range(phys_addr_t addr, size_t size);
+ int valid_mmap_phys_addr_range(unsigned long pfn, size_t size);
+ 
++#define PCI_IOBASE	0xfe240000UL
 +
-+	pci: pci-controller@fe200000 {
-+		compatible = "renesas,sh7751-pci", "iodata,landisk";
-+		device_type = "pci";
-+		bus-range = <0 0>;
-+		#address-cells = <2>;
-+		#size-cells = <1>;
-+		ranges = <0x02000000 0x00000000 0xfd000000 0xfd000000 0x00000000 0x01000000>,
-+		         <0x01000000 0x00000000 0xfe240000 0x00000000 0x00000000 0x00040000>;
-+		reg = <0xfe200000 0x0400>,
-+		      <0x0c000000 0x04000000>,
-+		      <0xff800000 0x0030>;
-+		#interrupt-cells = <1>;
-+		interrupt-map-mask = <0x1800 0 7>;
-+		interrupt-map = <0x0000 0 1 &cpldintc evt2irq(0x2a0) 0
-+		                 0x0000 0 2 &cpldintc evt2irq(0x2c0) 0
-+		                 0x0000 0 3 &cpldintc evt2irq(0x2e0) 0
-+		                 0x0000 0 4 &cpldintc evt2irq(0x300) 0
-+
-+		                 0x0800 0 1 &cpldintc evt2irq(0x2c0) 0
-+		                 0x0800 0 2 &cpldintc evt2irq(0x2e0) 0
-+		                 0x0800 0 3 &cpldintc evt2irq(0x300) 0
-+		                 0x0800 0 4 &cpldintc evt2irq(0x2a0) 0
-+
-+		                 0x1000 0 1 &cpldintc evt2irq(0x2e0) 0
-+		                 0x1000 0 2 &cpldintc evt2irq(0x300) 0
-+		                 0x1000 0 3 &cpldintc evt2irq(0x2a0) 0
-+		                 0x1000 0 4 &cpldintc evt2irq(0x2c0) 0
-+
-+		                 0x1800 0 1 &cpldintc evt2irq(0x300) 0
-+		                 0x1800 0 2 &cpldintc evt2irq(0x2a0) 0
-+		                 0x1800 0 3 &cpldintc evt2irq(0x2c0) 0
-+		                 0x1800 0 4 &cpldintc evt2irq(0x2e0) 0>;
-+	};
-+};
++#define HAVE_ARCH_PIO_SIZE
++#define PIO_OFFSET	PCI_IOBASE
++#define PIO_MASK	0x3ffffUL
++#define PIO_RESERVED	0x40000UL
+ #endif /* __KERNEL__ */
+ 
+ #endif /* __ASM_SH_IO_H */
+diff --git a/arch/sh/kernel/cpu/Makefile b/arch/sh/kernel/cpu/Makefile
+index accc7ca..22ad0ee 100644
+--- a/arch/sh/kernel/cpu/Makefile
++++ b/arch/sh/kernel/cpu/Makefile
+@@ -16,6 +16,10 @@ obj-$(CONFIG_ARCH_SHMOBILE)	+= shmobile/
+ # Common interfaces.
+ 
+ obj-$(CONFIG_SH_ADC)		+= adc.o
++ifndef CONFIG_COMMON_CLK
+ obj-$(CONFIG_SH_CLK_CPG_LEGACY)	+= clock-cpg.o
+-
+-obj-y	+= irq/ init.o clock.o fpu.o pfc.o proc.o
++endif
++ifndef CONFIG_GENERIC_IRQ_CHIP
++obj-y	+= irq/
++endif
++obj-y	+= init.o clock.o fpu.o pfc.o proc.o
+diff --git a/arch/sh/kernel/cpu/clock.c b/arch/sh/kernel/cpu/clock.c
+index 4187cf4..856a05c 100644
+--- a/arch/sh/kernel/cpu/clock.c
++++ b/arch/sh/kernel/cpu/clock.c
+@@ -17,19 +17,21 @@
+ #include <linux/kernel.h>
+ #include <linux/init.h>
+ #include <linux/clk.h>
++#include <linux/of.h>
+ #include <asm/clock.h>
+ #include <asm/machvec.h>
+ 
+ int __init clk_init(void)
+ {
+-	int ret;
++	int ret = 0;
+ 
++#ifndef CONFIG_COMMON_CLK
+ 	ret = arch_clk_init();
+ 	if (unlikely(ret)) {
+ 		pr_err("%s: CPU clock registration failed.\n", __func__);
+ 		return ret;
+ 	}
+-
++#endif
+ 	if (sh_mv.mv_clk_init) {
+ 		ret = sh_mv.mv_clk_init();
+ 		if (unlikely(ret)) {
+@@ -39,12 +41,13 @@ int __init clk_init(void)
+ 		}
+ 	}
+ 
++#ifndef CONFIG_COMMON_CLK
+ 	/* Kick the child clocks.. */
+ 	recalculate_root_clocks();
+ 
+ 	/* Enable the necessary init clocks */
+ 	clk_enable_init_clocks();
+-
++#endif
+ 	return ret;
+ }
+ 
+diff --git a/drivers/sh/Makefile b/drivers/sh/Makefile
+index 114203f..e7888ea 100644
+--- a/drivers/sh/Makefile
++++ b/drivers/sh/Makefile
+@@ -1,7 +1,9 @@
+ #
+ # Makefile for the SuperH specific drivers.
+ #
++ifneq ($(CONFIG_RENESAS_SH_INTC),y)
+ obj-$(CONFIG_SH_INTC)			+= intc/
++endif
+ ifneq ($(CONFIG_COMMON_CLK),y)
+ obj-$(CONFIG_HAVE_CLK)			+= clk/
+ endif
 -- 
 2.7.0
 
