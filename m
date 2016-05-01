@@ -1,56 +1,38 @@
-From: Rich Felker <dalias@libc.org>
-Date: Tue, 17 May 2016 23:18:29 +0000
-Subject: [PATCH v6 1/2] of: add J-Core interrupt controller bindings
-Message-Id: <c8aae4597153595cf965efe96422f699639c9d51.1470186529.git.dalias@libc.org>
+From: Yoshinori Sato <ysato@users.sourceforge.jp>
+Date: Sun, 01 May 2016 04:59:22 +0000
+Subject: [PATCH 12/12] of: Add sh support
+Message-Id: <1462078763-27135-13-git-send-email-ysato@users.sourceforge.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1470186529.git.dalias@libc.org>
-In-Reply-To: <cover.1470186529.git.dalias@libc.org>
+References: <1462078763-27135-1-git-send-email-ysato@users.sourceforge.jp>
+In-Reply-To: <1462078763-27135-1-git-send-email-ysato@users.sourceforge.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org
-Cc: Thomas Gleixner <tglx@linutronix.de>, Jason Cooper <jason@lakedaemon.net>, Marc Zyngier <marc.zyngier@arm.com>, Rob Herring <robh+dt@kernel.org>, Mark Rutland <mark.rutland@arm.com>
+To: devicetree@vger.kernel.org, linux-sh@vger.kernel.org, linux-kerel@vger.kernel.org
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
 
-Signed-off-by: Rich Felker <dalias@libc.org>
-Acked-by: Rob Herring <robh@kernel.org>
+sh fdt access in VA. But memory reservation use PA.
+So sh need convert to PA.
+
+Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
 ---
- .../bindings/interrupt-controller/jcore,aic.txt    | 26 ++++++++++++++++++++++
- 1 file changed, 26 insertions(+)
- create mode 100644 Documentation/devicetree/bindings/interrupt-controller/jcore,aic.txt
+ drivers/of/fdt.c | 3 +++
+ 1 file changed, 3 insertions(+)
 
-diff --git a/Documentation/devicetree/bindings/interrupt-controller/jcore,aic.txt b/Documentation/devicetree/bindings/interrupt-controller/jcore,aic.txt
-new file mode 100644
-index 0000000..ee2ad36
---- /dev/null
-+++ b/Documentation/devicetree/bindings/interrupt-controller/jcore,aic.txt
-@@ -0,0 +1,26 @@
-+J-Core Advanced Interrupt Controller
-+
-+Required properties:
-+
-+- compatible: Should be "jcore,aic1" for the (obsolete) first-generation aic
-+  with 8 interrupt lines with programmable priorities, or "jcore,aic2" for
-+  the "aic2" core with 64 interrupts.
-+
-+- reg: Memory region(s) for configuration. For SMP, there should be one
-+  region per cpu, indexed by the sequential, zero-based hardware cpu
-+  number.
-+
-+- interrupt-controller: Identifies the node as an interrupt controller
-+
-+- #interrupt-cells: Specifies the number of cells needed to encode an
-+  interrupt source. The value shall be 1.
-+
-+
-+Example:
-+
-+aic: interrupt-controller@200 {
-+	compatible = "jcore,aic2";
-+	reg = < 0x200 0x30 0x500 0x30 >;
-+	interrupt-controller;
-+	#interrupt-cells = <1>;
-+};
+diff --git a/drivers/of/fdt.c b/drivers/of/fdt.c
+index 3349d2a..fb357be 100644
+--- a/drivers/of/fdt.c
++++ b/drivers/of/fdt.c
+@@ -593,6 +593,9 @@ void __init early_init_fdt_scan_reserved_mem(void)
+ 		fdt_get_mem_rsv(initial_boot_params, n, &base, &size);
+ 		if (!size)
+ 			break;
++#ifdef CONFIG_SUPERH
++		base = virt_to_phys(base);
++#endif
+ 		early_init_dt_reserve_memory_arch(base, size, 0);
+ 	}
+ 
 -- 
-2.8.1
-
+2.7.0
 
