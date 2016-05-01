@@ -1,174 +1,56 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Mon, 30 May 2016 18:57:51 +0000
-Subject: [PATCH v4 03/16] char/genrtc: x86: remove remnants of asm/rtc.h
-Message-Id: <1464634684-1248135-4-git-send-email-arnd@arndb.de>
+From: Yoshinori Sato <ysato@users.sourceforge.jp>
+Date: Sun, 01 May 2016 04:59:13 +0000
+Subject: [PATCH 03/12] sh: Disable board specific code in OF mode
+Message-Id: <1462078763-27135-4-git-send-email-ysato@users.sourceforge.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1464634684-1248135-1-git-send-email-arnd@arndb.de>
-In-Reply-To: <1464634684-1248135-1-git-send-email-arnd-r2nGTMty4D4@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Alexandre Belloni <alexandre.belloni-wi1+55ScJUtKEb57/3fJTNBPR1lH4CV8@public.gmane.org>
-Cc: Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>, geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org, gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org, deller-Mmb7MZpHnFY@public.gmane.org, benh-XVmvHMARGAS8U2dJNN8I7kB+6BGkLq7r@public.gmane.org, mpe-Gsx/Oe8HsFggBc27wqDAHg@public.gmane.org, dalias-8zAoT0mYgF4@public.gmane.org, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-alpha-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, a.zummo-BfzFCNDTiLLj+vYz1yj4TQ@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-parisc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linuxppc-dev-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-m68k-cunTk1MwBs8S/qaLPR03pWD2FQJk+8+b@public.gmane.org, rtc-linux-/JYPxA39Uh5TLH3MbocFFw@public.gmane.org, linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: linux-sh@vger.kernel.org
 
-Commit 3195ef59cb42 ("x86: Do full rtc synchronization with ntp") had
-the side-effect of unconditionally enabling the RTC_LIB symbol on x86,
-which in turn disables the selection of the CONFIG_RTC and
-CONFIG_GEN_RTC drivers that contain a two older implementations of
-the CONFIG_RTC_DRV_CMOS driver.
+Board specific code conflict on of-generic.
 
-This removes x86 from the list for genrtc, and changes all references
-to the asm/rtc.h header to instead point to the interfaces
-from linux/mc146818rtc.h.
-
-Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
 ---
- arch/x86/include/asm/rtc.h   | 1 -
- arch/x86/kernel/hpet.c       | 3 +--
- arch/x86/kernel/rtc.c        | 3 +--
- arch/x86/platform/efi/efi.c  | 1 -
- drivers/acpi/acpi_cmos_rtc.c | 2 +-
- drivers/base/power/trace.c   | 6 +++---
- drivers/char/Kconfig         | 2 +-
- drivers/rtc/rtc-mrst.c       | 2 +-
- 8 files changed, 8 insertions(+), 12 deletions(-)
- delete mode 100644 arch/x86/include/asm/rtc.h
+ arch/sh/Makefile | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
 
-diff --git a/arch/x86/include/asm/rtc.h b/arch/x86/include/asm/rtc.h
-deleted file mode 100644
-index f71c3b0ed360..000000000000
---- a/arch/x86/include/asm/rtc.h
-+++ /dev/null
-@@ -1 +0,0 @@
--#include <asm-generic/rtc.h>
-diff --git a/arch/x86/kernel/hpet.c b/arch/x86/kernel/hpet.c
-index f112af7aa62e..357900aad62c 100644
---- a/arch/x86/kernel/hpet.c
-+++ b/arch/x86/kernel/hpet.c
-@@ -1020,7 +1020,6 @@ void hpet_disable(void)
-  */
- #include <linux/mc146818rtc.h>
- #include <linux/rtc.h>
--#include <asm/rtc.h>
+diff --git a/arch/sh/Makefile b/arch/sh/Makefile
+index bf5b3f5..8ff943b 100644
+--- a/arch/sh/Makefile
++++ b/arch/sh/Makefile
+@@ -130,6 +130,9 @@ head-y	:= arch/sh/kernel/head_$(BITS).o
+ core-y				+= arch/sh/kernel/ arch/sh/mm/ arch/sh/boards/
+ core-$(CONFIG_SH_FPU_EMU)	+= arch/sh/math-emu/
  
- #define DEFAULT_RTC_INT_FREQ	64
- #define DEFAULT_RTC_SHIFT	6
-@@ -1244,7 +1243,7 @@ irqreturn_t hpet_rtc_interrupt(int irq, void *dev_id)
- 	memset(&curr_time, 0, sizeof(struct rtc_time));
++core-$(CONFIG_USE_BUILTIN_DTB)	+= arch/sh/boot/dts/
++
++ifneq ($(CONFIG_SH_DEVICE_TREE),y)
+ # Mach groups
+ machdir-$(CONFIG_SOLUTION_ENGINE)		+= mach-se
+ machdir-$(CONFIG_SH_HP6XX)			+= mach-hp6xx
+@@ -150,6 +153,7 @@ machdir-$(CONFIG_SH_LANDISK)			+= mach-landisk
+ machdir-$(CONFIG_SH_LBOX_RE2)			+= mach-lboxre2
+ machdir-$(CONFIG_SH_CAYMAN)			+= mach-cayman
+ machdir-$(CONFIG_SH_RSK)			+= mach-rsk
++endif
  
- 	if (hpet_rtc_flags & (RTC_UIE | RTC_AIE))
--		get_rtc_time(&curr_time);
-+		mc146818_set_time(&curr_time);
+ ifneq ($(machdir-y),)
+ core-y	+= $(addprefix arch/sh/boards/, \
+@@ -222,6 +226,13 @@ archclean:
+ 	$(Q)$(MAKE) $(clean)=$(boot)
+ 	$(Q)$(MAKE) $(clean)=arch/sh/kernel/vsyscall
  
- 	if (hpet_rtc_flags & RTC_UIE &&
- 	    curr_time.tm_sec != hpet_prev_update_sec) {
-diff --git a/arch/x86/kernel/rtc.c b/arch/x86/kernel/rtc.c
-index eceaa082ec3f..79c6311cd912 100644
---- a/arch/x86/kernel/rtc.c
-+++ b/arch/x86/kernel/rtc.c
-@@ -13,7 +13,6 @@
- #include <asm/x86_init.h>
- #include <asm/time.h>
- #include <asm/intel-mid.h>
--#include <asm/rtc.h>
- #include <asm/setup.h>
- 
- #ifdef CONFIG_X86_32
-@@ -47,7 +46,7 @@ int mach_set_rtc_mmss(const struct timespec *now)
- 
- 	rtc_time_to_tm(nowtime, &tm);
- 	if (!rtc_valid_tm(&tm)) {
--		retval = set_rtc_time(&tm);
-+		retval = mc146818_set_time(&tm);
- 		if (retval)
- 			printk(KERN_ERR "%s: RTC write failed with error %d\n",
- 			       __func__, retval);
-diff --git a/arch/x86/platform/efi/efi.c b/arch/x86/platform/efi/efi.c
-index f93545e7dc54..56400d03409f 100644
---- a/arch/x86/platform/efi/efi.c
-+++ b/arch/x86/platform/efi/efi.c
-@@ -51,7 +51,6 @@
- #include <asm/cacheflush.h>
- #include <asm/tlbflush.h>
- #include <asm/x86_init.h>
--#include <asm/rtc.h>
- #include <asm/uv/uv.h>
- 
- static struct efi efi_phys __initdata;
-diff --git a/drivers/acpi/acpi_cmos_rtc.c b/drivers/acpi/acpi_cmos_rtc.c
-index 81dc75033f15..0980a133916f 100644
---- a/drivers/acpi/acpi_cmos_rtc.c
-+++ b/drivers/acpi/acpi_cmos_rtc.c
-@@ -14,7 +14,7 @@
- #include <linux/err.h>
- #include <linux/kernel.h>
- #include <linux/module.h>
--#include <asm-generic/rtc.h>
-+#include <linux/mc146818rtc.h>
- 
- #include "internal.h"
- 
-diff --git a/drivers/base/power/trace.c b/drivers/base/power/trace.c
-index a6975795e7f3..efec10b49d59 100644
---- a/drivers/base/power/trace.c
-+++ b/drivers/base/power/trace.c
-@@ -11,7 +11,7 @@
- #include <linux/export.h>
- #include <linux/rtc.h>
- 
--#include <asm/rtc.h>
-+#include <linux/mc146818rtc.h>
- 
- #include "power.h"
- 
-@@ -103,7 +103,7 @@ static int set_magic_time(unsigned int user, unsigned int file, unsigned int dev
- 	n /= 24;
- 	time.tm_min = (n % 20) * 3;
- 	n /= 20;
--	set_rtc_time(&time);
-+	mc146818_set_time(&time);
- 	return n ? -1 : 0;
- }
- 
-@@ -112,7 +112,7 @@ static unsigned int read_magic_time(void)
- 	struct rtc_time time;
- 	unsigned int val;
- 
--	get_rtc_time(&time);
-+	mc146818_get_time(&time);
- 	pr_info("RTC time: %2d:%02d:%02d, date: %02d/%02d/%02d\n",
- 		time.tm_hour, time.tm_min, time.tm_sec,
- 		time.tm_mon + 1, time.tm_mday, time.tm_year % 100);
-diff --git a/drivers/char/Kconfig b/drivers/char/Kconfig
-index 601f64fcc890..31b5861649ee 100644
---- a/drivers/char/Kconfig
-+++ b/drivers/char/Kconfig
-@@ -328,7 +328,7 @@ config JS_RTC
- config GEN_RTC
- 	tristate "Generic /dev/rtc emulation"
- 	depends on RTC!=y
--	depends on ALPHA || M68K || MN10300 || PARISC || PPC || X86
-+	depends on ALPHA || M68K || MN10300 || PARISC || PPC
- 	---help---
- 	  If you say Y here and create a character special file /dev/rtc with
- 	  major number 10 and minor number 135 using mknod ("man mknod"), you
-diff --git a/drivers/rtc/rtc-mrst.c b/drivers/rtc/rtc-mrst.c
-index 0094d9bdd1e6..fe840c0edfef 100644
---- a/drivers/rtc/rtc-mrst.c
-+++ b/drivers/rtc/rtc-mrst.c
-@@ -32,11 +32,11 @@
- #include <linux/interrupt.h>
- #include <linux/spinlock.h>
- #include <linux/kernel.h>
-+#include <linux/mc146818rtc.h>
- #include <linux/module.h>
- #include <linux/init.h>
- #include <linux/sfi.h>
- 
--#include <asm-generic/rtc.h>
- #include <asm/intel_scu_ipc.h>
- #include <asm/intel-mid.h>
- #include <asm/intel_mid_vrtc.h>
++%.dtb %.dtb.S %.dtb.o: | scripts
++	$(Q)$(MAKE) $(build)=arch/sh/boot/dts arch/sh/boot/dts/$@
++
++PHONY += dtbs
++dtbs: scripts
++	$(Q)$(MAKE) $(build)=arch/sh/boot/dts
++
+ define archhelp
+ 	@echo '  zImage 	           - Compressed kernel image'
+ 	@echo '  romImage	           - Compressed ROM image, if supported'
 -- 
 2.7.0
 
