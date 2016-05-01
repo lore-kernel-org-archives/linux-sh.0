@@ -1,71 +1,33 @@
-From: Rich Felker <dalias@libc.org>
-Date: Wed, 25 May 2016 05:43:03 +0000
-Subject: [PATCH v3 11/12] sh: add defconfig for J-Core J2
-Message-Id: <8cfc7e24fefa8c9c3111f7cfb907e59789f93ab9.1464148904.git.dalias@libc.org>
+From: Yoshinori Sato <ysato@users.sourceforge.jp>
+Date: Sun, 01 May 2016 04:59:11 +0000
+Subject: [PATCH 01/12] sh: Fix typo
+Message-Id: <1462078763-27135-2-git-send-email-ysato@users.sourceforge.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1464148904.git.dalias@libc.org>
-In-Reply-To: <cover.1464148904.git.dalias@libc.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
-Cc: Rich Felker <dalias@libc.org>, Yoshinori Sato <ysato@users.sourceforge.jp>
+To: linux-sh@vger.kernel.org
 
-This defconfig is intended not to be specific to a particular board;
-it enables drivers for all currently-supported hardware, and should be
-updated to include additional drivers as they are added.
+BL is 1 in this time.
 
-Signed-off-by: Rich Felker <dalias@libc.org>
+Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
 ---
- arch/sh/configs/j2_defconfig | 38 ++++++++++++++++++++++++++++++++++++++
- 1 file changed, 38 insertions(+)
- create mode 100644 arch/sh/configs/j2_defconfig
+ arch/sh/kernel/head_32.S | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/sh/configs/j2_defconfig b/arch/sh/configs/j2_defconfig
-new file mode 100644
-index 0000000..fca167f
---- /dev/null
-+++ b/arch/sh/configs/j2_defconfig
-@@ -0,0 +1,38 @@
-+CONFIG_SYSVIPC=y
-+CONFIG_POSIX_MQUEUE=y
-+CONFIG_NO_HZ=y
-+CONFIG_HIGH_RES_TIMERS=y
-+CONFIG_CPU_SUBTYPE_J2=y
-+CONFIG_MEMORY_START=0x10000000
-+CONFIG_MEMORY_SIZE=0x04000000
-+CONFIG_CPU_BIG_ENDIAN=y
-+CONFIG_SH_DEVICE_TREE=y
-+CONFIG_HZ_100=y
-+CONFIG_CMDLINE_OVERWRITE=y
-+CONFIG_CMDLINE="console=ttyUL0 earlycon"
-+CONFIG_BINFMT_ELF_FDPIC=y
-+CONFIG_BINFMT_FLAT=y
-+CONFIG_NET=y
-+CONFIG_UNIX=y
-+CONFIG_INET=y
-+CONFIG_DEVTMPFS=y
-+CONFIG_DEVTMPFS_MOUNT=y
-+CONFIG_NETDEVICES=y
-+CONFIG_SERIAL_UARTLITE=y
-+CONFIG_SERIAL_UARTLITE_CONSOLE=y
-+CONFIG_I2C=y
-+CONFIG_SPI=y
-+CONFIG_SPI_JCORE=y
-+CONFIG_WATCHDOG=y
-+CONFIG_MMC=y
-+CONFIG_MMC_SPI=y
-+CONFIG_CLKSRC_JCORE_PIT=y
-+CONFIG_JCORE_AIC=y
-+CONFIG_EXT4_FS=y
-+CONFIG_VFAT_FS=y
-+CONFIG_FAT_DEFAULT_IOCHARSET="ascii"
-+CONFIG_FAT_DEFAULT_UTF8=y
-+CONFIG_NLS_DEFAULT="utf8"
-+CONFIG_NLS_CODEPAGE_437=y
-+CONFIG_NLS_ASCII=y
-+CONFIG_NLS_UTF8=y
+diff --git a/arch/sh/kernel/head_32.S b/arch/sh/kernel/head_32.S
+index 974bc15..14da954 100644
+--- a/arch/sh/kernel/head_32.S
++++ b/arch/sh/kernel/head_32.S
+@@ -59,7 +59,7 @@ ENTRY(empty_zero_page)
+  */
+ ENTRY(_stext)
+ 	!			Initialize Status Register
+-	mov.l	1f, r0		! MD=1, RB=0, BL=0, IMASK=0xF
++	mov.l	1f, r0		! MD=1, RB=0, BL=1, IMASK=0xF
+ 	ldc	r0, sr
+ 	!			Initialize global interrupt mask
+ #ifdef CONFIG_CPU_HAS_SR_RB
 -- 
-2.8.1
-
+2.7.0
 
