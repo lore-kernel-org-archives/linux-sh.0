@@ -1,118 +1,36 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Mon, 30 May 2016 18:57:49 +0000
-Subject: [PATCH v4 01/16] rtc: cmos: remove empty asm/mc146818rtc.h files
-Message-Id: <1464634684-1248135-2-git-send-email-arnd@arndb.de>
+From: Rob Herring <robh@kernel.org>
+Date: Tue, 03 May 2016 18:01:57 +0000
+Subject: Re: [PATCH v2 02/11] serial: sh-sci: Update DT binding documentation for dedicated RTS/CTS
+Message-Id: <20160503180156.GA3536@rob-hp-laptop>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1464634684-1248135-1-git-send-email-arnd@arndb.de>
-In-Reply-To: <1464634684-1248135-1-git-send-email-arnd-r2nGTMty4D4@public.gmane.org>
+References: <1461934714-18681-1-git-send-email-geert+renesas@glider.be>
+ <1461934714-18681-3-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1461934714-18681-3-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Alexandre Belloni <alexandre.belloni-wi1+55ScJUtKEb57/3fJTNBPR1lH4CV8@public.gmane.org>
-Cc: Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>, geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org, gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org, deller-Mmb7MZpHnFY@public.gmane.org, benh-XVmvHMARGAS8U2dJNN8I7kB+6BGkLq7r@public.gmane.org, mpe-Gsx/Oe8HsFggBc27wqDAHg@public.gmane.org, dalias-8zAoT0mYgF4@public.gmane.org, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-alpha-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, a.zummo-BfzFCNDTiLLj+vYz1yj4TQ@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-parisc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linuxppc-dev-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-m68k-cunTk1MwBs8S/qaLPR03pWD2FQJk+8+b@public.gmane.org, rtc-linux-/JYPxA39Uh5TLH3MbocFFw@public.gmane.org, linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>, Peter Hurley <peter@hurleysoftware.com>, Magnus Damm <magnus.damm@gmail.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-serial@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, devicetree@vger.kernel.org
 
-Nothing on these architectures ever includes the asm/mc146818rtc.h
-file, the drivers that used to do this have been fixed long ago,
-and the remaining users are all PC-specific.
+On Fri, Apr 29, 2016 at 02:58:25PM +0200, Geert Uytterhoeven wrote:
+> Some Renesas SCIF UARTs have dedicated lines for RTS/CTS hardware flow
+> control.  Whether these lines exist depends on SoC and UART instance
+> inside the SoC.  Whether these lines can be used for hardware flow
+> control depends on board wiring.
+> 
+> Amend the DT bindings with an optional property to indicate that RTS/CTS
+> hardware flow control lines exist, and can be used as such, according to
+> the Generic Serial DT Bindings.
+> 
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> Cc: devicetree@vger.kernel.org
+> ---
+> v2:
+>   - Drop RFC status,
+>   - Use "uart-has-rtscts" instead of "renesas,uart-has-rtscts",
+>   - Refer to the Generic Serial DT Bindings.
+> ---
+>  Documentation/devicetree/bindings/serial/renesas,sci-serial.txt | 2 ++
+>  1 file changed, 2 insertions(+)
 
-This removes the files for good.
-
-Signed-off-by: Arnd Bergmann <arnd@arndb.de>
-Acked-by: Alexandre Belloni <alexandre.belloni@free-electrons.com>
----
- arch/frv/include/asm/mc146818rtc.h    | 16 ----------------
- arch/h8300/include/asm/mc146818rtc.h  |  9 ---------
- arch/ia64/include/asm/mc146818rtc.h   | 10 ----------
- arch/parisc/include/asm/mc146818rtc.h |  9 ---------
- arch/sh/include/asm/mc146818rtc.h     |  7 -------
- 5 files changed, 51 deletions(-)
- delete mode 100644 arch/frv/include/asm/mc146818rtc.h
- delete mode 100644 arch/h8300/include/asm/mc146818rtc.h
- delete mode 100644 arch/ia64/include/asm/mc146818rtc.h
- delete mode 100644 arch/parisc/include/asm/mc146818rtc.h
- delete mode 100644 arch/sh/include/asm/mc146818rtc.h
-
-diff --git a/arch/frv/include/asm/mc146818rtc.h b/arch/frv/include/asm/mc146818rtc.h
-deleted file mode 100644
-index 90dfb7a633d1..000000000000
---- a/arch/frv/include/asm/mc146818rtc.h
-+++ /dev/null
-@@ -1,16 +0,0 @@
--/* mc146818rtc.h: RTC defs
-- *
-- * Copyright (C) 2005 Red Hat, Inc. All Rights Reserved.
-- * Written by David Howells (dhowells@redhat.com)
-- *
-- * This program is free software; you can redistribute it and/or
-- * modify it under the terms of the GNU General Public License
-- * as published by the Free Software Foundation; either version
-- * 2 of the License, or (at your option) any later version.
-- */
--
--#ifndef _ASM_MC146818RTC_H
--#define _ASM_MC146818RTC_H
--
--
--#endif /* _ASM_MC146818RTC_H */
-diff --git a/arch/h8300/include/asm/mc146818rtc.h b/arch/h8300/include/asm/mc146818rtc.h
-deleted file mode 100644
-index ab9d9646d241..000000000000
---- a/arch/h8300/include/asm/mc146818rtc.h
-+++ /dev/null
-@@ -1,9 +0,0 @@
--/*
-- * Machine dependent access functions for RTC registers.
-- */
--#ifndef _H8300_MC146818RTC_H
--#define _H8300_MC146818RTC_H
--
--/* empty include file to satisfy the include in genrtc.c/ide-geometry.c */
--
--#endif /* _H8300_MC146818RTC_H */
-diff --git a/arch/ia64/include/asm/mc146818rtc.h b/arch/ia64/include/asm/mc146818rtc.h
-deleted file mode 100644
-index 407787a237ba..000000000000
---- a/arch/ia64/include/asm/mc146818rtc.h
-+++ /dev/null
-@@ -1,10 +0,0 @@
--#ifndef _ASM_IA64_MC146818RTC_H
--#define _ASM_IA64_MC146818RTC_H
--
--/*
-- * Machine dependent access functions for RTC registers.
-- */
--
--/* empty include file to satisfy the include in genrtc.c */
--
--#endif /* _ASM_IA64_MC146818RTC_H */
-diff --git a/arch/parisc/include/asm/mc146818rtc.h b/arch/parisc/include/asm/mc146818rtc.h
-deleted file mode 100644
-index adf41631449f..000000000000
---- a/arch/parisc/include/asm/mc146818rtc.h
-+++ /dev/null
-@@ -1,9 +0,0 @@
--/*
-- * Machine dependent access functions for RTC registers.
-- */
--#ifndef _ASM_MC146818RTC_H
--#define _ASM_MC146818RTC_H
--
--/* empty include file to satisfy the include in genrtc.c */
--
--#endif /* _ASM_MC146818RTC_H */
-diff --git a/arch/sh/include/asm/mc146818rtc.h b/arch/sh/include/asm/mc146818rtc.h
-deleted file mode 100644
-index 0aee96a97330..000000000000
---- a/arch/sh/include/asm/mc146818rtc.h
-+++ /dev/null
-@@ -1,7 +0,0 @@
--/*
-- * Machine dependent access functions for RTC registers.
-- */
--#ifndef _ASM_MC146818RTC_H
--#define _ASM_MC146818RTC_H
--
--#endif /* _ASM_MC146818RTC_H */
--- 
-2.7.0
-
+Acked-by: Rob Herring <robh@kernel.org>
