@@ -1,174 +1,175 @@
-From: Rich Felker <dalias@libc.org>
-Date: Wed, 25 May 2016 05:43:03 +0000
-Subject: [PATCH v3 08/12] irqchip: add J-Core AIC driver
-Message-Id: <05a5be0a4f1471272dcdd2259e4d97642ee43759.1464148904.git.dalias@libc.org>
+From: Martin Townsend <mtownsend1973@gmail.com>
+Date: Thu, 05 May 2016 10:36:18 +0000
+Subject: SH7760 IRL Interrupt level 15 not working for SMSC 91C111
+Message-Id: <CABatt_yELUqBkEC+RDz0u=r=BR1XbjDbj5bC9ccJGtJyjX7Lqw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1464148904.git.dalias@libc.org>
-In-Reply-To: <cover.1464148904.git.dalias@libc.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
-Cc: Jason Cooper <jason@lakedaemon.net>, Marc Zyngier <marc.zyngier@arm.com>, Thomas Gleixner <tglx@linutronix.de>
+To: linux-sh@vger.kernel.org
 
-There are two versions of the J-Core interrupt controller in use, aic1
-which generates interrupts with programmable priorities, but only
-supports 8 irq lines and maps them to cpu traps in the range 17 to 24,
-and aic2 which uses traps in the range 64-127 and supports up to 128
-irqs, with priorities dependent on the interrupt number. The Linux
-driver does not make use of priorities anyway.
+Hi,
 
-For simplicity, there is no aic1-specific logic in the driver beyond
-setting the priority register, which is necessary for interrupts to
-work at all. Eventually aic1 will likely be phased out, but it's
-currently in use in deployments and all released bitstream binaries.
+I'm trying to get the interrupt working for the LAN91C111 on our
+board.  It has a SH7760 core and the documentation says the interrupt
+is using IRL code of 15 (the highest priority).  The SH7760 HW manual
+states that this is an INTEVT code of H'200.  In my board support
+source file I'm using the following:
 
-Signed-off-by: Rich Felker <dalias@libc.org>
----
+/*
+ * SMSC LAN91C111 Ethernet Platform Data
+ */
+static struct smc91x_platdata smc91x_info = {
+    .flags = SMC91X_USE_16BIT | IORESOURCE_IRQ_LOWLEVEL,
+};
 
-This version fixes a missing "static" reported in the previous
-version of the patch. I missed Marc Zyngier's reply to the v2 when
-preparing the v3 patch series, but I'm still not sure exactly what, if
-any, changes should come out of that discussion, and they'll probably
-mostly in the area of comments or changelog.
+static struct resource smc91x_resources[] = {
+    DEFINE_RES_MEM_NAMED(HICONECT_ETHERNET_BASE, HICONECT_ETHERNET_IOLEN,
+                 "smc91x-memory"),
+    DEFINE_RES_IRQ_NAMED(evt2irq(0x200), "smc91x-irq"),
+};
 
- drivers/irqchip/Kconfig         |  6 +++
- drivers/irqchip/Makefile        |  1 +
- drivers/irqchip/irq-jcore-aic.c | 95 +++++++++++++++++++++++++++++++++++++++++
- 3 files changed, 102 insertions(+)
- create mode 100644 drivers/irqchip/irq-jcore-aic.c
+static struct platform_device smc91x_device = {
+    .name        = "smc91x",
+    .id        = -1,
+    .num_resources    = ARRAY_SIZE(smc91x_resources),
+    .resource    = smc91x_resources,
 
-diff --git a/drivers/irqchip/Kconfig b/drivers/irqchip/Kconfig
-index 3e12479..3cb37d6 100644
---- a/drivers/irqchip/Kconfig
-+++ b/drivers/irqchip/Kconfig
-@@ -149,6 +149,12 @@ config PIC32_EVIC
- 	select GENERIC_IRQ_CHIP
- 	select IRQ_DOMAIN
- 
-+config JCORE_AIC
-+	bool "J-Core integrated AIC"
-+	select IRQ_DOMAIN
-+	help
-+	  Support for the J-Core integrated AIC.
-+
- config RENESAS_INTC_IRQPIN
- 	bool
- 	select IRQ_DOMAIN
-diff --git a/drivers/irqchip/Makefile b/drivers/irqchip/Makefile
-index b03cfcb..5a1f1bf 100644
---- a/drivers/irqchip/Makefile
-+++ b/drivers/irqchip/Makefile
-@@ -37,6 +37,7 @@ obj-$(CONFIG_I8259)			+= irq-i8259.o
- obj-$(CONFIG_IMGPDC_IRQ)		+= irq-imgpdc.o
- obj-$(CONFIG_IRQ_MIPS_CPU)		+= irq-mips-cpu.o
- obj-$(CONFIG_SIRF_IRQ)			+= irq-sirfsoc.o
-+obj-$(CONFIG_JCORE_AIC)			+= irq-jcore-aic.o
- obj-$(CONFIG_RENESAS_INTC_IRQPIN)	+= irq-renesas-intc-irqpin.o
- obj-$(CONFIG_RENESAS_IRQC)		+= irq-renesas-irqc.o
- obj-$(CONFIG_VERSATILE_FPGA_IRQ)	+= irq-versatile-fpga.o
-diff --git a/drivers/irqchip/irq-jcore-aic.c b/drivers/irqchip/irq-jcore-aic.c
-new file mode 100644
-index 0000000..1348cdb
---- /dev/null
-+++ b/drivers/irqchip/irq-jcore-aic.c
-@@ -0,0 +1,95 @@
-+/*
-+ * J-Core SoC AIC driver
-+ *
-+ * Copyright (C) 2015-2016 Smart Energy Instruments, Inc.
-+ *
-+ * This file is subject to the terms and conditions of the GNU General Public
-+ * License.  See the file "COPYING" in the main directory of this archive
-+ * for more details.
-+ */
-+
-+#include <linux/irq.h>
-+#include <linux/io.h>
-+#include <linux/irqchip.h>
-+#include <linux/irqdomain.h>
-+#include <linux/module.h>
-+#include <linux/cpu.h>
-+#include <linux/of.h>
-+#include <linux/of_address.h>
-+#include <linux/of_irq.h>
-+
-+#define AIC1_INTPRI 8
-+
-+static struct aic_data {
-+	unsigned char __iomem *base;
-+	u32 cpu_offset;
-+	struct irq_chip chip;
-+	struct irq_domain *domain;
-+	struct notifier_block nb;
-+} aic_data;
-+
-+static int aic_irqdomain_map(struct irq_domain *d, unsigned int irq, irq_hw_number_t hwirq)
-+{
-+	struct aic_data *aic = d->host_data;
-+
-+	irq_set_chip_data(irq, aic);
-+	irq_set_chip_and_handler(irq, &aic->chip, handle_simple_irq);
-+	irq_set_probe(irq);
-+
-+	return 0;
-+}
-+
-+static const struct irq_domain_ops aic_irqdomain_ops = {
-+	.map = aic_irqdomain_map,
-+	.xlate = irq_domain_xlate_onecell,
-+};
-+
-+static void noop(struct irq_data *data)
-+{
-+}
-+
-+static void aic1_localenable(struct aic_data *aic)
-+{
-+	unsigned cpu = smp_processor_id();
-+	pr_info("Local AIC enable on cpu %u\n", cpu);
-+	writel(0xffffffff, aic->base + cpu * aic->cpu_offset + AIC1_INTPRI);
-+}
-+
-+static int aic1_cpu_notify(struct notifier_block *self, unsigned long action, void *hcpu)
-+{
-+	switch (action & ~CPU_TASKS_FROZEN) {
-+	case CPU_STARTING:
-+		aic1_localenable(container_of(self, struct aic_data, nb));
-+		break;
-+	}
-+	return NOTIFY_OK;
-+}
-+
-+int __init aic_irq_of_init(struct device_node *node, struct device_node *parent)
-+{
-+	struct aic_data *aic = &aic_data;
-+
-+	aic->base = of_iomap(node, 0);
-+	of_property_read_u32(node, "cpu-offset", &aic->cpu_offset);
-+
-+	pr_info("Initializing J-Core AIC at %p\n", aic->base);
-+
-+	if (of_device_is_compatible(node, "jcore,aic1")) {
-+		/* For aic1, need to enabled zero-priority-by-default irqs */
-+		aic->nb.notifier_call = aic1_cpu_notify;
-+		register_cpu_notifier(&aic->nb);
-+		aic1_localenable(aic);
-+	}
-+
-+	aic->chip.name = node->name;
-+	aic->chip.irq_mask = noop;
-+	aic->chip.irq_unmask = noop;
-+
-+	aic->domain = irq_domain_add_linear(node, 128, &aic_irqdomain_ops, aic);
-+	irq_create_strict_mappings(aic->domain, 16, 16, 112);
-+
-+	return 0;
-+}
-+
-+IRQCHIP_DECLARE(jcore_aic2, "jcore,aic2", aic_irq_of_init);
-+IRQCHIP_DECLARE(jcore_aic1, "jcore,aic1", aic_irq_of_init);
--- 
-2.8.1
+    .dev = {
+        .platform_data    = &smc91x_info,
+    },
+};
 
+I've enabled the SMSC91x Ethernet Driver but it always fails to request the IRQ.
+I see that the evt2irq(0x200) gives me an IRQ number of 0 which makes
+sense as the IRL0 to IRL3 will all be 0 for IRL interrupt priority 15.
+The SMSC91x driver fails if the irq number is 0 so I fixed this
 
+//    if (ndev->irq <= 0) {
+    if (ndev->irq < 0) {
+        printk(KERN_ERR "[%s]: platform_get_irq failed %d\n",
+            CARDNAME, ndev->irq);
+        ret = -ENODEV;
+        goto out_release_io;
+    }
+but I get a null pointer exception on the following line in the driver
+irq_get_irq_data(ndev->irq)
+so it looks like there is no IRQ desc setup for 0 and looking back in
+the log I see (I've added my own debug to see what IRQ desc are being
+inserted.
+
+[    0.000000] NR_IRQS:8 nr_irqs:8 0
+[    0.000000] intc: Registered controller 'sh7760' with 59 IRQs
+[    0.000000] XXXXXXXXXXXXXXX: irq_insert_desc 32
+[    0.000000] intc_register_irq 5 32
+[    0.000000] XXXXXXXXXXXXXXX: irq_insert_desc 33
+[    0.000000] intc_register_irq 6 33
+[    0.000000] XXXXXXXXXXXXXXX: irq_insert_desc 34
+[    0.000000] intc_register_irq 7 34
+[    0.000000] XXXXXXXXXXXXXXX: irq_insert_desc 35
+[    0.000000] XXXXXXXXXXXXXXX: irq_insert_desc 36
+[    0.000000] XXXXXXXXXXXXXXX: irq_insert_desc 37
+[    0.000000] XXXXXXXXXXXXXXX: irq_insert_desc 44
+[    0.000000] XXXXXXXXXXXXXXX: irq_insert_desc 45
+[    0.000000] XXXXXXXXXXXXXXX: irq_insert_desc 46
+[    0.000000] XXXXXXXXXXXXXXX: irq_insert_desc 47
+[    0.000000] XXXXXXXXXXXXXXX: irq_insert_desc 38
+[    0.000000] XXXXXXXXXXXXXXX: irq_insert_desc 48
+[    0.000000] intc_register_irq 8 48
+[    0.000000] XXXXXXXXXXXXXXX: irq_insert_desc 49
+[    0.000000] intc_register_irq 9 49
+[    0.000000] XXXXXXXXXXXXXXX: irq_insert_desc 50
+[    0.000000] intc_register_irq 10 50
+[    0.000000] XXXXXXXXXXXXXXX: irq_insert_desc 51
+[    0.000000] XXXXXXXXXXXXXXX: irq_insert_desc 56
+[    0.000000] intc_register_irq 12 56
+[    0.000000] XXXXXXXXXXXXXXX: irq_insert_desc 57
+[    0.000000] intc_register_irq 13 57
+[    0.000000] XXXXXXXXXXXXXXX: irq_insert_desc 58
+[    0.000000] intc_register_irq 14 58
+[    0.000000] XXXXXXXXXXXXXXX: irq_insert_desc 59
+[    0.000000] intc_register_irq 15 59
+[    0.000000] XXXXXXXXXXXXXXX: irq_insert_desc 60
+[    0.000000] intc_register_irq 16 60
+[    0.000000] XXXXXXXXXXXXXXX: irq_insert_desc 61
+[    0.000000] intc_register_irq 17 61
+[    0.000000] XXXXXXXXXXXXXXX: irq_insert_desc 62
+[    0.000000] intc_register_irq 18 62
+[    0.000000] XXXXXXXXXXXXXXX: irq_insert_desc 63
+[    0.000000] intc_register_irq 19 63
+[    0.000000] XXXXXXXXXXXXXXX: irq_insert_desc 64
+[    0.000000] intc_register_irq 20 64
+[    0.000000] XXXXXXXXXXXXXXX: irq_insert_desc 65
+[    0.000000] intc_register_irq 21 65
+[    0.000000] XXXXXXXXXXXXXXX: irq_insert_desc 68
+[    0.000000] intc_register_irq 22 68
+[    0.000000] XXXXXXXXXXXXXXX: irq_insert_desc 69
+[    0.000000] intc_register_irq 23 69
+[    0.000000] XXXXXXXXXXXXXXX: irq_insert_desc 70
+[    0.000000] intc_register_irq 24 70
+[    0.000000] XXXXXXXXXXXXXXX: irq_insert_desc 52
+[    0.000000] intc_register_irq 25 52
+[    0.000000] XXXXXXXXXXXXXXX: irq_insert_desc 53
+[    0.000000] intc_register_irq 26 53
+[    0.000000] XXXXXXXXXXXXXXX: irq_insert_desc 54
+[    0.000000] intc_register_irq 27 54
+[    0.000000] XXXXXXXXXXXXXXX: irq_insert_desc 55
+[    0.000000] intc_register_irq 28 55
+[    0.000000] XXXXXXXXXXXXXXX: irq_insert_desc 72
+[    0.000000] intc_register_irq 29 72
+[    0.000000] XXXXXXXXXXXXXXX: irq_insert_desc 73
+[    0.000000] intc_register_irq 30 73
+[    0.000000] XXXXXXXXXXXXXXX: irq_insert_desc 74
+[    0.000000] intc_register_irq 31 74
+[    0.000000] XXXXXXXXXXXXXXX: irq_insert_desc 75
+[    0.000000] intc_register_irq 32 75
+[    0.000000] XXXXXXXXXXXXXXX: irq_insert_desc 76
+[    0.000000] intc_register_irq 33 76
+[    0.000000] XXXXXXXXXXXXXXX: irq_insert_desc 77
+[    0.000000] intc_register_irq 34 77
+[    0.000000] XXXXXXXXXXXXXXX: irq_insert_desc 78
+[    0.000000] intc_register_irq 35 78
+[    0.000000] XXXXXXXXXXXXXXX: irq_insert_desc 79
+[    0.000000] intc_register_irq 36 79
+[    0.000000] XXXXXXXXXXXXXXX: irq_insert_desc 80
+[    0.000000] intc_register_irq 37 80
+[    0.000000] XXXXXXXXXXXXXXX: irq_insert_desc 81
+[    0.000000] intc_register_irq 38 81
+[    0.000000] XXXXXXXXXXXXXXX: irq_insert_desc 82
+[    0.000000] intc_register_irq 39 82
+[    0.000000] XXXXXXXXXXXXXXX: irq_insert_desc 83
+[    0.000000] intc_register_irq 40 83
+[    0.000000] XXXXXXXXXXXXXXX: irq_insert_desc 84
+[    0.000000] intc_register_irq 41 84
+[    0.000000] XXXXXXXXXXXXXXX: irq_insert_desc 88
+[    0.000000] intc_register_irq 42 88
+[    0.000000] XXXXXXXXXXXXXXX: irq_insert_desc 89
+[    0.000000] intc_register_irq 43 89
+[    0.000000] XXXXXXXXXXXXXXX: irq_insert_desc 90
+[    0.000000] intc_register_irq 44 90
+[    0.000000] XXXXXXXXXXXXXXX: irq_insert_desc 91
+[    0.000000] intc_register_irq 45 91
+[    0.000000] XXXXXXXXXXXXXXX: irq_insert_desc 100
+[    0.000000] intc_register_irq 46 100
+[    0.000000] XXXXXXXXXXXXXXX: irq_insert_desc 108
+[    0.000000] intc_register_irq 47 108
+[    0.000000] XXXXXXXXXXXXXXX: irq_insert_desc 109
+[    0.000000] intc_register_irq 48 109
+[    0.000000] intc_register_irq 49 16
+[    0.000000] XXXXXXXXXXXXXXX: irq_insert_desc 17
+[    0.000000] intc_register_irq 50 17
+[    0.000000] XXXXXXXXXXXXXXX: irq_insert_desc 18
+[    0.000000] intc_register_irq 51 18
+[    0.000000] XXXXXXXXXXXXXXX: irq_insert_desc 19
+[    0.000000] XXXXXXXXXXXXXXX: irq_insert_desc 27
+[    0.000000] intc_register_irq 52 27
+[    0.000000] XXXXXXXXXXXXXXX: irq_insert_desc 28
+[    0.000000] intc_register_irq 53 28
+[    0.000000] XXXXXXXXXXXXXXX: irq_insert_desc 29
+[    0.000000] hiconect_sh7760_init_irq
+
+Is there something I should be doing to get IRL level encoded
+interrupts working for SH7760?  I'm using a 4.1 Kernel.
+
+Many Thanks,
+Martin.
