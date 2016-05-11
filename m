@@ -1,285 +1,259 @@
-From: Rich Felker <dalias@libc.org>
-Date: Tue, 24 May 2016 02:25:05 +0000
-Subject: Re: [PATCH v2 09/12] clocksource: add J-Core PIT/RTC driver
-Message-Id: <20160524022505.GI21636@brightrain.aerifal.cx>
+From: zengzhaoxiu@163.com
+Date: Wed, 11 May 2016 09:06:17 +0000
+Subject: [patch V4 02/31] bitops: Include generic parity.h in some architectures' bitops.h
+Message-Id: <1462957641-24241-1-git-send-email-zengzhaoxiu@163.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1463708766.git.dalias@libc.org>
- <e8d3578861cfe2362e65f3f92d80ccae001c6b16.1463708766.git.dalias@libc.org>
- <20160520140156.GC6863@linaro.org>
- <20160521031515.GZ21636@brightrain.aerifal.cx>
- <20160523203235.GD6863@linaro.org>
-In-Reply-To: <20160523203235.GD6863@linaro.org>
+References: <1462955158-28394-1-git-send-email-zengzhaoxiu@163.com>
+In-Reply-To: <1462955158-28394-1-git-send-email-zengzhaoxiu@163.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Daniel Lezcano <daniel.lezcano@linaro.org>
-Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Thomas Gleixner <tglx@linutronix.de>
+To: linux-arm-kernel@lists.infradead.org
 
-On Mon, May 23, 2016 at 10:32:35PM +0200, Daniel Lezcano wrote:
-> On Fri, May 20, 2016 at 11:15:16PM -0400, Rich Felker wrote:
-> > On Fri, May 20, 2016 at 04:01:56PM +0200, Daniel Lezcano wrote:
-> > > On Fri, May 20, 2016 at 02:53:04AM +0000, Rich Felker wrote:
-> > > > Signed-off-by: Rich Felker <dalias@libc.org>
-> > > > ---
-> > > 
-> > > Hi Rich,
-> > > 
-> > > please add a nice changelog describing how works the timer.
-> > 
-> > OK. Do you prefer this in changelog, comments in the source, or both?
-> 
-> I prefer a [detailed] description of the timer in the changelog or the file 
-> header. As the timer is trivial for now, I don't see the benefit of adding 
-> too much comments in the code.
+From: Zhaoxiu Zeng <zhaoxiu.zeng@gmail.com>
 
-OK, my question was just changelog (commit message) vs block comment
-in file header. I tend to prefer commit messages because they're
-linked to a point in time and don't run the risk of getting out of
-sync with the file contents as changes are made, but I can do
-whichever you prefer.
+Simply use the generic version.
 
-BTW if we get this in a form you're ok with, can you ack it to be
-pulled as part of my tree (sh arch) or do you want it to go through
-your channel to upstream?
+Signed-off-by: Zhaoxiu Zeng <zhaoxiu.zeng@gmail.com>
+Acked-by: Hans-Christian Noren Egtvedt <egtvedt@samfundet.no> [for avr32]
+---
+ arch/arc/include/asm/bitops.h      | 1 +
+ arch/arm/include/asm/bitops.h      | 1 +
+ arch/arm64/include/asm/bitops.h    | 1 +
+ arch/avr32/include/asm/bitops.h    | 1 +
+ arch/c6x/include/asm/bitops.h      | 1 +
+ arch/cris/include/asm/bitops.h     | 1 +
+ arch/frv/include/asm/bitops.h      | 1 +
+ arch/h8300/include/asm/bitops.h    | 1 +
+ arch/hexagon/include/asm/bitops.h  | 1 +
+ arch/m32r/include/asm/bitops.h     | 1 +
+ arch/m68k/include/asm/bitops.h     | 1 +
+ arch/metag/include/asm/bitops.h    | 1 +
+ arch/mn10300/include/asm/bitops.h  | 1 +
+ arch/openrisc/include/asm/bitops.h | 1 +
+ arch/parisc/include/asm/bitops.h   | 1 +
+ arch/s390/include/asm/bitops.h     | 1 +
+ arch/sh/include/asm/bitops.h       | 1 +
+ arch/xtensa/include/asm/bitops.h   | 1 +
+ 18 files changed, 18 insertions(+)
 
-> > > Let the platform's Kconfig to select the timer. Beside, check the timer 
-> > > compiles correctly on other platform (eg. x86) for compilation test 
-> > > coverage.
-> > 
-> > So the prompt would not even appear unless COMPILE_TEST is selected? 
-> 
-> Correct.
-> 
-> > I don't mind doing it that way if this is the established best practice.
-> > For clocksource/clockevent, the system isn't even usable without it,
-> > so there's little harm in having CONFIG_CPU_J2 select CLKSRC_JCORE_PIT
-> > for the user. On the other hand, some of the drivers like the SPI
-> > master, (future) EMAC, etc. are things you might want to be able to
-> > turn off to build a size-optimized kernel for a system that doesn't
-> > need (or doesn't even have) them, so this approach does not seem to
-> > make sense for other such drivers.
-> > 
-> > My main theoretical concern here is what happens if someone uses the
-> > J2 cpu core with completely different SoC peripherals hooked up to it,
-> > and doesn't want to be forced to build the jcore-pit driver. Is this
-> > type of thing an issue people have thought about and reached a
-> > canonical solution to?
-> 
-> In this case it is the SoC's Kconfig which is in charge of setting the right 
-> parameter not the CPU's Kconfig option. This is what we find in the ARM 
-> configs file where the ARMv7 is the "CPU" but the SoC is different.
+diff --git a/arch/arc/include/asm/bitops.h b/arch/arc/include/asm/bitops.h
+index 0352fb8..7967e47 100644
+--- a/arch/arc/include/asm/bitops.h
++++ b/arch/arc/include/asm/bitops.h
+@@ -370,6 +370,7 @@ static inline __attribute__ ((const)) int __ffs(unsigned long x)
+ #define ffz(x)	__ffs(~(x))
+ 
+ #include <asm-generic/bitops/hweight.h>
++#include <asm-generic/bitops/parity.h>
+ #include <asm-generic/bitops/fls64.h>
+ #include <asm-generic/bitops/sched.h>
+ #include <asm-generic/bitops/lock.h>
+diff --git a/arch/arm/include/asm/bitops.h b/arch/arm/include/asm/bitops.h
+index e943e6c..99f28a6 100644
+--- a/arch/arm/include/asm/bitops.h
++++ b/arch/arm/include/asm/bitops.h
+@@ -313,6 +313,7 @@ static inline unsigned long __ffs(unsigned long x)
+ 
+ #include <asm-generic/bitops/sched.h>
+ #include <asm-generic/bitops/hweight.h>
++#include <asm-generic/bitops/parity.h>
+ #include <asm-generic/bitops/lock.h>
+ 
+ #ifdef __ARMEB__
+diff --git a/arch/arm64/include/asm/bitops.h b/arch/arm64/include/asm/bitops.h
+index 9c19594..eac4965 100644
+--- a/arch/arm64/include/asm/bitops.h
++++ b/arch/arm64/include/asm/bitops.h
+@@ -44,6 +44,7 @@ extern int test_and_change_bit(int nr, volatile unsigned long *p);
+ 
+ #include <asm-generic/bitops/sched.h>
+ #include <asm-generic/bitops/hweight.h>
++#include <asm-generic/bitops/parity.h>
+ #include <asm-generic/bitops/lock.h>
+ 
+ #include <asm-generic/bitops/non-atomic.h>
+diff --git a/arch/avr32/include/asm/bitops.h b/arch/avr32/include/asm/bitops.h
+index 910d537..9f4a2ce 100644
+--- a/arch/avr32/include/asm/bitops.h
++++ b/arch/avr32/include/asm/bitops.h
+@@ -298,6 +298,7 @@ static inline int ffs(unsigned long word)
+ #include <asm-generic/bitops/fls64.h>
+ #include <asm-generic/bitops/sched.h>
+ #include <asm-generic/bitops/hweight.h>
++#include <asm-generic/bitops/parity.h>
+ #include <asm-generic/bitops/lock.h>
+ 
+ extern unsigned long find_next_zero_bit_le(const void *addr,
+diff --git a/arch/c6x/include/asm/bitops.h b/arch/c6x/include/asm/bitops.h
+index f0ab012..94eb0d1 100644
+--- a/arch/c6x/include/asm/bitops.h
++++ b/arch/c6x/include/asm/bitops.h
+@@ -87,6 +87,7 @@ static inline int ffs(int x)
+ 
+ #include <asm-generic/bitops/sched.h>
+ #include <asm-generic/bitops/hweight.h>
++#include <asm-generic/bitops/parity.h>
+ #include <asm-generic/bitops/lock.h>
+ 
+ #include <asm-generic/bitops/atomic.h>
+diff --git a/arch/cris/include/asm/bitops.h b/arch/cris/include/asm/bitops.h
+index 8062cb5..06bc246 100644
+--- a/arch/cris/include/asm/bitops.h
++++ b/arch/cris/include/asm/bitops.h
+@@ -36,6 +36,7 @@
+ #include <asm-generic/bitops/__fls.h>
+ #include <asm-generic/bitops/fls64.h>
+ #include <asm-generic/bitops/hweight.h>
++#include <asm-generic/bitops/parity.h>
+ #include <asm-generic/bitops/find.h>
+ #include <asm-generic/bitops/lock.h>
+ 
+diff --git a/arch/frv/include/asm/bitops.h b/arch/frv/include/asm/bitops.h
+index 0df8e95..f2a7ee8 100644
+--- a/arch/frv/include/asm/bitops.h
++++ b/arch/frv/include/asm/bitops.h
+@@ -314,6 +314,7 @@ int __ilog2_u64(u64 n)
+ 
+ #include <asm-generic/bitops/sched.h>
+ #include <asm-generic/bitops/hweight.h>
++#include <asm-generic/bitops/parity.h>
+ #include <asm-generic/bitops/lock.h>
+ 
+ #include <asm-generic/bitops/le.h>
+diff --git a/arch/h8300/include/asm/bitops.h b/arch/h8300/include/asm/bitops.h
+index 05999ab..e392db2 100644
+--- a/arch/h8300/include/asm/bitops.h
++++ b/arch/h8300/include/asm/bitops.h
+@@ -172,6 +172,7 @@ static inline unsigned long __ffs(unsigned long word)
+ #include <asm-generic/bitops/find.h>
+ #include <asm-generic/bitops/sched.h>
+ #include <asm-generic/bitops/hweight.h>
++#include <asm-generic/bitops/parity.h>
+ #include <asm-generic/bitops/lock.h>
+ #include <asm-generic/bitops/le.h>
+ #include <asm-generic/bitops/ext2-atomic.h>
+diff --git a/arch/hexagon/include/asm/bitops.h b/arch/hexagon/include/asm/bitops.h
+index 5e4a59b..2df614e 100644
+--- a/arch/hexagon/include/asm/bitops.h
++++ b/arch/hexagon/include/asm/bitops.h
+@@ -290,6 +290,7 @@ static inline unsigned long __fls(unsigned long word)
+ #include <asm-generic/bitops/fls64.h>
+ #include <asm-generic/bitops/sched.h>
+ #include <asm-generic/bitops/hweight.h>
++#include <asm-generic/bitops/parity.h>
+ 
+ #include <asm-generic/bitops/le.h>
+ #include <asm-generic/bitops/ext2-atomic.h>
+diff --git a/arch/m32r/include/asm/bitops.h b/arch/m32r/include/asm/bitops.h
+index 86ba2b4..e3cf46b 100644
+--- a/arch/m32r/include/asm/bitops.h
++++ b/arch/m32r/include/asm/bitops.h
+@@ -259,6 +259,7 @@ static __inline__ int test_and_change_bit(int nr, volatile void * addr)
+ #include <asm-generic/bitops/find.h>
+ #include <asm-generic/bitops/ffs.h>
+ #include <asm-generic/bitops/hweight.h>
++#include <asm-generic/bitops/parity.h>
+ #include <asm-generic/bitops/lock.h>
+ 
+ #endif /* __KERNEL__ */
+diff --git a/arch/m68k/include/asm/bitops.h b/arch/m68k/include/asm/bitops.h
+index b4a9b0d..fd673ea 100644
+--- a/arch/m68k/include/asm/bitops.h
++++ b/arch/m68k/include/asm/bitops.h
+@@ -519,6 +519,7 @@ static inline int __fls(int x)
+ #include <asm-generic/bitops/fls64.h>
+ #include <asm-generic/bitops/sched.h>
+ #include <asm-generic/bitops/hweight.h>
++#include <asm-generic/bitops/parity.h>
+ #include <asm-generic/bitops/lock.h>
+ #endif /* __KERNEL__ */
+ 
+diff --git a/arch/metag/include/asm/bitops.h b/arch/metag/include/asm/bitops.h
+index 2671134..ad13087 100644
+--- a/arch/metag/include/asm/bitops.h
++++ b/arch/metag/include/asm/bitops.h
+@@ -118,6 +118,7 @@ static inline int test_and_change_bit(unsigned int bit,
+ #include <asm-generic/bitops/__fls.h>
+ #include <asm-generic/bitops/fls64.h>
+ #include <asm-generic/bitops/hweight.h>
++#include <asm-generic/bitops/parity.h>
+ #include <asm-generic/bitops/lock.h>
+ #include <asm-generic/bitops/sched.h>
+ #include <asm-generic/bitops/le.h>
+diff --git a/arch/mn10300/include/asm/bitops.h b/arch/mn10300/include/asm/bitops.h
+index fe6f8e2..60761b7 100644
+--- a/arch/mn10300/include/asm/bitops.h
++++ b/arch/mn10300/include/asm/bitops.h
+@@ -225,6 +225,7 @@ int ffs(int x)
+ #include <asm-generic/bitops/find.h>
+ #include <asm-generic/bitops/sched.h>
+ #include <asm-generic/bitops/hweight.h>
++#include <asm-generic/bitops/parity.h>
+ #include <asm-generic/bitops/ext2-atomic-setbit.h>
+ #include <asm-generic/bitops/le.h>
+ 
+diff --git a/arch/openrisc/include/asm/bitops.h b/arch/openrisc/include/asm/bitops.h
+index 3003cda..8c97642 100644
+--- a/arch/openrisc/include/asm/bitops.h
++++ b/arch/openrisc/include/asm/bitops.h
+@@ -43,6 +43,7 @@
+ #include <asm-generic/bitops/sched.h>
+ #include <asm/bitops/ffs.h>
+ #include <asm-generic/bitops/hweight.h>
++#include <asm-generic/bitops/parity.h>
+ #include <asm-generic/bitops/lock.h>
+ 
+ #include <asm-generic/bitops/atomic.h>
+diff --git a/arch/parisc/include/asm/bitops.h b/arch/parisc/include/asm/bitops.h
+index 3f9406d..867ba10 100644
+--- a/arch/parisc/include/asm/bitops.h
++++ b/arch/parisc/include/asm/bitops.h
+@@ -211,6 +211,7 @@ static __inline__ int fls(int x)
+ #include <asm-generic/bitops/__fls.h>
+ #include <asm-generic/bitops/fls64.h>
+ #include <asm-generic/bitops/hweight.h>
++#include <asm-generic/bitops/parity.h>
+ #include <asm-generic/bitops/lock.h>
+ #include <asm-generic/bitops/sched.h>
+ 
+diff --git a/arch/s390/include/asm/bitops.h b/arch/s390/include/asm/bitops.h
+index 8043f10..198eead 100644
+--- a/arch/s390/include/asm/bitops.h
++++ b/arch/s390/include/asm/bitops.h
+@@ -460,6 +460,7 @@ static inline int fls(int word)
+ #include <asm-generic/bitops/ffz.h>
+ #include <asm-generic/bitops/find.h>
+ #include <asm-generic/bitops/hweight.h>
++#include <asm-generic/bitops/parity.h>
+ #include <asm-generic/bitops/sched.h>
+ #include <asm-generic/bitops/le.h>
+ #include <asm-generic/bitops/ext2-atomic-setbit.h>
+diff --git a/arch/sh/include/asm/bitops.h b/arch/sh/include/asm/bitops.h
+index fc8e652..4bf0c35 100644
+--- a/arch/sh/include/asm/bitops.h
++++ b/arch/sh/include/asm/bitops.h
+@@ -86,6 +86,7 @@ static inline unsigned long ffz(unsigned long word)
+ #include <asm-generic/bitops/find.h>
+ #include <asm-generic/bitops/ffs.h>
+ #include <asm-generic/bitops/hweight.h>
++#include <asm-generic/bitops/parity.h>
+ #include <asm-generic/bitops/lock.h>
+ #include <asm-generic/bitops/sched.h>
+ #include <asm-generic/bitops/le.h>
+diff --git a/arch/xtensa/include/asm/bitops.h b/arch/xtensa/include/asm/bitops.h
+index 3f44fa2..981fa83 100644
+--- a/arch/xtensa/include/asm/bitops.h
++++ b/arch/xtensa/include/asm/bitops.h
+@@ -229,6 +229,7 @@ test_and_change_bit(unsigned int bit, volatile unsigned long *p)
+ #include <asm-generic/bitops/ext2-atomic-setbit.h>
+ 
+ #include <asm-generic/bitops/hweight.h>
++#include <asm-generic/bitops/parity.h>
+ #include <asm-generic/bitops/lock.h>
+ #include <asm-generic/bitops/sched.h>
+ 
+-- 
+2.7.4
 
-My intent in overhauling arch/sh to device tree is not to have
-SoC-specific kernels, but to be able to make a single kernel that
-works on any SoC with matching cpu isa. Not being able to select the
-drivers needed without they getting implicitly selected via a
-SoC-specific Kconfig option rather undermines that.
 
-It's certainly plausible to have a user-configurable arch/sh Kconfig
-option "Include J-Core SoC drivers" that selects all of the SoC
-peripheral drivers, but that doesn't seem like the proper modern way
-of doing things...
-
-> But if these timers are local to the CPU, there is a good chance nobody will 
-> change that as they are the most efficient and certainly well fitted for 
-> power management. I believe the timer supposed to work as the broadcast 
-> timer is more subject to change.
-> 
-> IMO, some clarifications about the CPU design and these timers may be 
-> needed. If the local timers are specified as part of the CPU, then 
-> CONFIG_CPU_J2 => CONFIG_JCORE_PIT, otherwise CONFIG_SOC_J2_BASED => 
-> CONFIG_CPU_J2 [+ CONFIG_JCORE_PIT].
-
-In our hw abstraction, almost nothing is considered "part of the cpu".
-Even things like the "L1" cache controller are modelled as DT nodes.
-This makes it possible to do custom stripped-down SoCs etc. or to
-experiment with completely different designs for one or more
-components while reusing everything else.
-
-> > > > +/*
-> > > > + * J-Core SoC PIT/RTC driver
-> > > 
-> > > Is it really RTC ? :)
-> > 
-> > That's the name used in the hardware. It's a settable clock counting
-> > seconds/nanoseconds and it's the most appropriate thing the hardware
-> > has for a clocksource device. The old kernel patches that existed when
-> > I took over were not using it and instead used jiffies and a PIT
-> > register that returned ns since the last timer interrupt, which is now
-> > unused (that approach precluded dyntick).
-> 
-> Ok, just for clarification. From Linux, a RTC is different from a 
-> clocksource. The former is backed up with a battery, relies almost always on 
-> a quartz and populates /dev/rtc, the latter is based on a clock (which can 
-> vary) and is volatile. Naming it RTC is confusing as it is a clocksource 
-> (and RTC falls under drivers/rtc).
-
-Yes, I'll try to come up with a name that's less confusing in a Linux
-context but still makes sense with the hardware source.
-
-> > > Is there any documentation 
-> > > describing this hardware I can refer to ?
-> > 
-> > There's the vhdl source. I'm not sure what else is publicly available
-> > right now; I'll check on it for you.
-> 
-> Great, thank you.
-> 
-> [ ... ]
-> 
-> > > s/1000000000/NSEC_PER_SEC/
-> > 
-> > OK.
-> > 
-> > > > +}
-> > > 
-> > > Do you really, really, want to use the 64bits ? There is no real benefit and 
-> > > it has a significant overhead. The impact on a j-core could be really not 
-> > > negligible IMHO.
-> > 
-> > With just 32-bit, there's no way the cpu could sleep more than 4
-> > seconds without time desynchronization. 
-> 
-> What do you mean by time 'desynchronization' ?
-
-What I meant was that, if you sleep (no timer interrupts) for 10s, and
-the clocksource count is 32-bit, then after waking up you can't
-distinguish between the following 3 cases:
-
-- 10s elapsed
-- 5.705032704s elapsed
-- 1.410065408s elapsed
-
-Note that you can't just cheat by knowing how long you programmed the
-clock event device to sleep for, because another interrupt can be what
-wakes the cpu up from sleeping. So it seems like 32-bit clocksource
-precludes long sleeps.
-
-Like I said, though, I don't think the kernel even tries to do them
-now, so it's probably a non-issue at least in the short term.
-
-> What I meant is to create simple and trivial functions, like foo_set, 
-> foo_enable, foo_disable, ... so we can call them from set_periodic, 
-> set_next_event, ...
-
-OK.
-
-> > > I don't see enable_percpu_irq / disable_percpu_irq in this driver.
-> > 
-> > I was unable to get the percpu irq framework to work correctly with my
-> > driver for the interrupt controller. Looking at some other irqchip
-> > drivers now, it seems they have to call irq_set_percpu_devid from the
-> > domain mapping function (or somewhere) exactly once, but I don't see
-> > any good way to know whether to do this. In principle at the hw level
-> > all irqs are percpu, but most peripherals' irq lines are only wired to
-> > cpu0.
-> 
-> Mmh, that may need further investigation.
-
-Yeah. It's really confusing to me. The kernel's percpu irq stuff seems
-like it has a strong assumption that an irq being percpu or not is a
-property of the interrupt controller hardware rather than how it's
-configured for the device attached to the irq. But it works fine
-without using that layer in practice, just using normal percpu storage
-allocation and the percpu irq flag and/or flags to request a hard irq
-handler rather than tasklet or whatever (so that the handler
-necessarily runs on the cpu the irq was delivered to).
-
-> Does the j2core-stable kernel work 
-> on the numato ?
-
-Which kernel are you calling j2core-stable? With the patch series
-under discussion right now, it works on the numato. You need at least
-the config options from j2_defconfig and the SD card you boot from
-needs both the vmlinux and a dt.dtb built from j2_mimas_v2.dts (also
-provided in this patch series). Future versions of the FPGA bitstream
-(once the DT bindings are approved) will include the DTB in the boot
-rom and won't need a dt.dtb on the SD card.
-
-> > > > +	return 0;
-> > > > +}
-> > > > +
-> > > > +static int pit_cpu_notify(struct notifier_block *self, unsigned long action, void *hcpu)
-> > > > +{
-> > > > +	switch (action & ~CPU_TASKS_FROZEN) {
-> > > > +	case CPU_STARTING:
-> > > > +		pit_local_init(this_cpu_ptr(pit_percpu));
-> > > > +		break;
-> > > > +	}
-> > > 
-> > > DYING is missing.
-> > 
-> > Does it need to unregister the device?
-> 
-> No. In case of SMP (which I understood it is not yet ready), we should 
-> enable/disable percpu irq. And thinking beyond for power management, if the 
-> timer does not belong to cpu power domain, the local timer should be powered 
-> down (like the exynos_mct). May be it goes too far, but it is for the 
-> record.
-> 
-> At least, disable percpu irq should be added but the percpu API seems to not 
-> work and SMP does not exists yet, so let's forget this for the moment.
-
-SMP has been working fine for several months on SEI's commercial
-hardware using J2, and on the prototype Turtle boards we just got. The
-main reasons I've held off from including SMP in this patch series are
-that it's a bit more invasive in otherwise-unrelated arch/sh files,
-and that it doesn't really make sense to put something in the upstream
-kernel when there's no publicly available hardware that you can use it
-on.
-
-> > > > +	clocksource_register_hz(&rtc_csd, 1000000000);
-> > > 
-> > > I suggest the rate to be passed through the DT.
-> > 
-> > Normally I would agree, the units of the hw registers are seconds and
-> > nanoseconds. I don't see any circumstance under which it would make
-> > sense to change the value here without a different hw register
-> > interface.
-> 
-> Isn't it possible the clock provider could be different for the timer on 
-> different SoC ?
-
-What I'm saying is that the 3 registers being read to produce the
-counter are nominally seconds-hi, seconds-lo, and nanoseconds. While I
-see how clocksource base could be considered a parameter that can vary
-if there were just one hw register that was the counter, I don't see
-how anything but NSEC_PER_SEC makes sense as a base with this register
-interface.
-
-> > > > +	hwirq = irq_get_irq_data(pit_irq)->hwirq;
-> > > > +	enable_val = (1<<26) | ((hwirq&0x3c)<<18) | (hwirq<<12);
-> > > 
-> > > Can you explain? (and replace litterals by macros).
-> > 
-> > Since the PIT is actually integrated with the interrupt controller in
-> > the hardware, it's not tied to a fixed IRQ; it's programmable. However
-> > I don't know any way to represent "driver can use any irq it wants but
-> > should avoid sharing" in the DT, so I opted to have the DT just assign
-> > one. 
-> 
-> Sorry, I don't get the point. IIUC, the timers have private IRQ lines,
-> why can't they describe their own IRQs even they are the same number ?
-> 
-> > The above code programs it. Bit 26 is the actual enable bit, and
-> > the actual hw irq number (which conceptually need not match the virq
-> > number, although it does) gets programmed in a way thats compatible
-> > with the programmable interrupt priority stuff aic1 did (generating an
-> > appropriate priority matching what you'd get with aic2). I have
-> > unpolished specs from one of our hw engineers that I could review and
-> > see if this could be simplified/clarified.
-> 
-> Ok. I am not 100% sure but I think there is a glitch with the code above. I 
-> suspect something is missing in the irq driver.
-
-I don't follow. The code is working as-is. All it does is program the
-PIT to generate the interrupt that the DT says it generates, and to
-generate it on a nonzero priority. I'll break down the computation
-into a form that makes sense, though.
-
-At this point I'm about done with the changes you requested short of
-using the percpu irq stuff (that doesn't seem to work), as well as
-changes requested by reviewers of the other patches in the series.
-I'll post a v3 patchset after reviewing it all tomorrow.
-
-Rich
