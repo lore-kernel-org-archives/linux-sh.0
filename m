@@ -1,37 +1,55 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Mon, 30 May 2016 18:58:03 +0000
-Subject: [PATCH v4 15/16] char/genrtc: remove asm-generic/rtc.h from mips
-Message-Id: <1464634684-1248135-16-git-send-email-arnd@arndb.de>
+From: Rich Felker <dalias@libc.org>
+Date: Tue, 17 May 2016 23:18:29 +0000
+Subject: [PATCH v5 1/2] of: add J-Core interrupt controller bindings
+Message-Id: <1ca2ecb9445cf3a3d252ab89122a9b5c6dbb5491.1469688756.git.dalias@libc.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1464634684-1248135-1-git-send-email-arnd@arndb.de>
-In-Reply-To: <1464634684-1248135-1-git-send-email-arnd-r2nGTMty4D4@public.gmane.org>
+References: <cover.1469688756.git.dalias@libc.org>
+In-Reply-To: <cover.1469688756.git.dalias-8zAoT0mYgF4@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Alexandre Belloni <alexandre.belloni-wi1+55ScJUtKEb57/3fJTNBPR1lH4CV8@public.gmane.org>
-Cc: Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>, geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org, gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org, deller-Mmb7MZpHnFY@public.gmane.org, benh-XVmvHMARGAS8U2dJNN8I7kB+6BGkLq7r@public.gmane.org, mpe-Gsx/Oe8HsFggBc27wqDAHg@public.gmane.org, dalias-8zAoT0mYgF4@public.gmane.org, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-alpha-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, a.zummo-BfzFCNDTiLLj+vYz1yj4TQ@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-parisc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linuxppc-dev-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-m68k-cunTk1MwBs8S/qaLPR03pWD2FQJk+8+b@public.gmane.org, rtc-linux-/JYPxA39Uh5TLH3MbocFFw@public.gmane.org, linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Jason Cooper <jason-NLaQJdtUoK4Be96aLqz0jA@public.gmane.org>, Marc Zyngier <marc.zyngier-5wv7dgnIgG8@public.gmane.org>, Rob Herring <robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Mark Rutland <mark.rutland-5wv7dgnIgG8@public.gmane.org>
 
-arch/mips/sni/time.c includes asm-generic/rtc.h for no apparent reason,
-and it works fine without that header, so lets remove the inclusion
-in preparation of deleting the file.
-
-Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Rich Felker <dalias@libc.org>
 ---
- arch/mips/sni/time.c | 1 -
- 1 file changed, 1 deletion(-)
+ .../bindings/interrupt-controller/jcore,aic.txt    | 26 ++++++++++++++++++++++
+ 1 file changed, 26 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/interrupt-controller/jcore,aic.txt
 
-diff --git a/arch/mips/sni/time.c b/arch/mips/sni/time.c
-index fb4b3520cdc6..7ee14f41fc25 100644
---- a/arch/mips/sni/time.c
-+++ b/arch/mips/sni/time.c
-@@ -8,7 +8,6 @@
- 
- #include <asm/sni.h>
- #include <asm/time.h>
--#include <asm-generic/rtc.h>
- 
- #define SNI_CLOCK_TICK_RATE	3686400
- #define SNI_COUNTER2_DIV	64
+diff --git a/Documentation/devicetree/bindings/interrupt-controller/jcore,aic.txt b/Documentation/devicetree/bindings/interrupt-controller/jcore,aic.txt
+new file mode 100644
+index 0000000..ee2ad36
+--- /dev/null
++++ b/Documentation/devicetree/bindings/interrupt-controller/jcore,aic.txt
+@@ -0,0 +1,26 @@
++J-Core Advanced Interrupt Controller
++
++Required properties:
++
++- compatible: Should be "jcore,aic1" for the (obsolete) first-generation aic
++  with 8 interrupt lines with programmable priorities, or "jcore,aic2" for
++  the "aic2" core with 64 interrupts.
++
++- reg: Memory region(s) for configuration. For SMP, there should be one
++  region per cpu, indexed by the sequential, zero-based hardware cpu
++  number.
++
++- interrupt-controller: Identifies the node as an interrupt controller
++
++- #interrupt-cells: Specifies the number of cells needed to encode an
++  interrupt source. The value shall be 1.
++
++
++Example:
++
++aic: interrupt-controller@200 {
++	compatible = "jcore,aic2";
++	reg = < 0x200 0x30 0x500 0x30 >;
++	interrupt-controller;
++	#interrupt-cells = <1>;
++};
 -- 
-2.7.0
+2.8.1
+
 
