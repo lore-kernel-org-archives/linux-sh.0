@@ -1,24 +1,59 @@
-From: Rob Herring <robh@kernel.org>
-Date: Mon, 23 May 2016 20:49:23 +0000
-Subject: Re: [PATCH v2 01/12] of: add vendor prefix for J-Core
-Message-Id: <20160523204923.GA20778@rob-hp-laptop>
+From: Rich Felker <dalias@libc.org>
+Date: Tue, 17 May 2016 23:19:25 +0000
+Subject: [PATCH v4 1/2] of: add J-Core SPI master bindings
+Message-Id: <9813bf559ad89ca6fecc438d9176d634bbc122a0.1469686300.git.dalias@libc.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1463708766.git.dalias@libc.org>
- <b6d33800300bde8f1d9a7b88a715d741548fad4a.1463708766.git.dalias@libc.org>
-In-Reply-To: <b6d33800300bde8f1d9a7b88a715d741548fad4a.1463708766.git.dalias@libc.org>
+References: <cover.1469686300.git.dalias@libc.org>
+In-Reply-To: <cover.1469686300.git.dalias@libc.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Rich Felker <dalias@libc.org>
-Cc: devicetree@vger.kernel.org, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Ian Campbell <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>, Mark Rutland <mark.rutland@arm.com>, Pawel Moll <pawel.moll@arm.com>
+To: devicetree@vger.kernel.org, linux-kernel@vger.kernel.org, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Rob Herring <robh+dt@kernel.org>, Mark Rutland <mark.rutland@arm.com>, Mark Brown <broonie@kernel.org>
 
-On Fri, May 20, 2016 at 02:53:03AM +0000, Rich Felker wrote:
-> The J-Core project (j-core.org) produces open source cpu and SoC
-> peripheral cores synthesizable as FPGA bitstreams or ASICs.
-> 
-> Signed-off-by: Rich Felker <dalias@libc.org>
-> ---
->  Documentation/devicetree/bindings/vendor-prefixes.txt | 1 +
->  1 file changed, 1 insertion(+)
+Signed-off-by: Rich Felker <dalias@libc.org>
+---
+ .../devicetree/bindings/spi/jcore,spi.txt          | 30 ++++++++++++++++++++++
+ 1 file changed, 30 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/spi/jcore,spi.txt
 
-Acked-by: Rob Herring <robh@kernel.org>
+diff --git a/Documentation/devicetree/bindings/spi/jcore,spi.txt b/Documentation/devicetree/bindings/spi/jcore,spi.txt
+new file mode 100644
+index 0000000..815106d
+--- /dev/null
++++ b/Documentation/devicetree/bindings/spi/jcore,spi.txt
+@@ -0,0 +1,30 @@
++J-Core SPI master
++
++Required properties:
++
++- compatible: Must be "jcore,spi2".
++
++- reg: Memory region for registers.
++
++- #address-cells: Must be 1.
++
++- #size-cells: Must be 0.
++
++Optional properties:
++
++- clock-frequency: Specifies an input clock frequency relative to
++  which the SPI clock speed must be programmed. Necessary only if
++  the input clock rate is something other than 50 MHz.
++
++See spi-bus.txt for additional properties not specific to this device.
++
++Example:
++
++spi@40 {
++	compatible = "jcore,spi2";
++	#address-cells = <1>;
++	#size-cells = <0>;
++	reg = <0x40 0x8>;
++	spi-max-frequency = <25000000>;
++	clock-frequency = <50000000>;
++}
+-- 
+2.8.1
+
+
