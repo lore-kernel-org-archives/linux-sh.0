@@ -1,34 +1,56 @@
-From: Anna-Maria Gleixner <anna-maria@linutronix.de>
-Date: Tue, 24 May 2016 13:19:35 +0000
-Subject: [PATCH] sh: smp: Add missing FROZEN hotplug notifier transitions
-Message-Id: <1464095975-56587-1-git-send-email-anna-maria@linutronix.de>
+From: Rich Felker <dalias@libc.org>
+Date: Tue, 17 May 2016 23:18:29 +0000
+Subject: [PATCH v6 1/2] of: add J-Core interrupt controller bindings
+Message-Id: <c8aae4597153595cf965efe96422f699639c9d51.1470186529.git.dalias@libc.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1470186529.git.dalias@libc.org>
+In-Reply-To: <cover.1470186529.git.dalias@libc.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: rt@linutronix.de, Anna-Maria Gleixner <anna-maria@linutronix.de>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Thomas Gleixner <tglx@linutronix.de>, Jason Cooper <jason@lakedaemon.net>, Marc Zyngier <marc.zyngier@arm.com>, Rob Herring <robh+dt@kernel.org>, Mark Rutland <mark.rutland@arm.com>
 
-The corresponding FROZEN hotplug notifier transitions used on
-suspend/resume are ignored. Therefore the switch case action argument
-is masked with the frozen hotplug notifier transition mask.
-
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: Rich Felker <dalias@libc.org>
-Cc: linux-sh@vger.kernel.org
-Signed-off-by: Anna-Maria Gleixner <anna-maria@linutronix.de>
+Signed-off-by: Rich Felker <dalias@libc.org>
+Acked-by: Rob Herring <robh@kernel.org>
 ---
- arch/sh/kernel/cpu/sh4a/smp-shx3.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ .../bindings/interrupt-controller/jcore,aic.txt    | 26 ++++++++++++++++++++++
+ 1 file changed, 26 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/interrupt-controller/jcore,aic.txt
 
---- a/arch/sh/kernel/cpu/sh4a/smp-shx3.c
-+++ b/arch/sh/kernel/cpu/sh4a/smp-shx3.c
-@@ -127,7 +127,7 @@ shx3_cpu_callback(struct notifier_block
- {
- 	unsigned int cpu = (unsigned int)hcpu;
- 
--	switch (action) {
-+	switch (action & ~CPU_TASKS_FROZEN) {
- 	case CPU_UP_PREPARE:
- 		shx3_update_boot_vector(cpu);
- 		break;
+diff --git a/Documentation/devicetree/bindings/interrupt-controller/jcore,aic.txt b/Documentation/devicetree/bindings/interrupt-controller/jcore,aic.txt
+new file mode 100644
+index 0000000..ee2ad36
+--- /dev/null
++++ b/Documentation/devicetree/bindings/interrupt-controller/jcore,aic.txt
+@@ -0,0 +1,26 @@
++J-Core Advanced Interrupt Controller
++
++Required properties:
++
++- compatible: Should be "jcore,aic1" for the (obsolete) first-generation aic
++  with 8 interrupt lines with programmable priorities, or "jcore,aic2" for
++  the "aic2" core with 64 interrupts.
++
++- reg: Memory region(s) for configuration. For SMP, there should be one
++  region per cpu, indexed by the sequential, zero-based hardware cpu
++  number.
++
++- interrupt-controller: Identifies the node as an interrupt controller
++
++- #interrupt-cells: Specifies the number of cells needed to encode an
++  interrupt source. The value shall be 1.
++
++
++Example:
++
++aic: interrupt-controller@200 {
++	compatible = "jcore,aic2";
++	reg = < 0x200 0x30 0x500 0x30 >;
++	interrupt-controller;
++	#interrupt-cells = <1>;
++};
+-- 
+2.8.1
+
+
