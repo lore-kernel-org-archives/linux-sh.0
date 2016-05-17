@@ -1,43 +1,53 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Fri, 27 May 2016 11:27:31 +0000
-Subject: Re: [PATCH v3 10/12] spi: add driver for J-Core SPI controller
-Message-Id: <20160527112731.GG16172@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="dMyqICaxQaaUjrCL"
+From: Rich Felker <dalias@libc.org>
+Date: Tue, 17 May 2016 23:18:58 +0000
+Subject: [PATCH v6 1/2] of: add J-Core timer bindings
+Message-Id: <5e1d4f3346f69bdd9d840c8b5a855c1f93ff93f6.1470183518.git.dalias@libc.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1464148904.git.dalias@libc.org>
- <00b31c4d09c340bd69fd4bbbc0ea06371aecc502.1464148904.git.dalias@libc.org>
- <20160525101708.GS8206@sirena.org.uk>
- <20160527011621.GA10893@brightrain.aerifal.cx>
-In-Reply-To: <20160527011621.GA10893@brightrain.aerifal.cx>
-To: Rich Felker <dalias@libc.org>
-Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, linux-spi@vger.kernel.org
+References: <cover.1470183518.git.dalias@libc.org>
+In-Reply-To: <cover.1470183518.git.dalias@libc.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: devicetree@vger.kernel.org, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Rob Herring <robh+dt@kernel.org>, Mark Rutland <mark.rutland@arm.com>, Daniel Lezcano <daniel.lezcano@linaro.org>, Thomas Gleixner <tglx@linutronix.de>
+
+Signed-off-by: Rich Felker <dalias@libc.org>
+---
+ .../devicetree/bindings/timer/jcore,pit.txt        | 24 ++++++++++++++++++++++
+ 1 file changed, 24 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/timer/jcore,pit.txt
+
+diff --git a/Documentation/devicetree/bindings/timer/jcore,pit.txt b/Documentation/devicetree/bindings/timer/jcore,pit.txt
+new file mode 100644
+index 0000000..af5dd35
+--- /dev/null
++++ b/Documentation/devicetree/bindings/timer/jcore,pit.txt
+@@ -0,0 +1,24 @@
++J-Core Programmable Interval Timer and Clocksource
++
++Required properties:
++
++- compatible: Must be "jcore,pit".
++
++- reg: Memory region(s) for timer/clocksource registers. For SMP,
++  there should be one region per cpu, indexed by the sequential,
++  zero-based hardware cpu number.
++
++- interrupts: An interrupt to assign for the timer. The actual pit
++  core is integrated with the aic and allows the timer interrupt
++  assignment to be programmed by software, but this property is
++  required in order to reserve an interrupt number that doesn't
++  conflict with other devices.
++
++
++Example:
++
++timer@200 {
++	compatible = "jcore,pit";
++	reg = < 0x200 0x30 0x500 0x30 >;
++	interrupts = < 0x48 >;
++};
+-- 
+2.8.1
 
 
---dMyqICaxQaaUjrCL
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-
-On Thu, May 26, 2016 at 09:16:21PM -0400, Rich Felker wrote:
-
-> Would you prefer I continue to submit this driver with new versions of
-> the patch series, or separate it out for further review on its own?
-
-It would be clearer to submit it separately.
-
---dMyqICaxQaaUjrCL
-Content-Type: application/pgp-signature; name="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iQEcBAEBCAAGBQJXSC8hAAoJECTWi3JdVIfQvB0H/i6frYqmNXePufWeECe9f2Qd
-n/o3WeS7OiQnuwXgyjss+SfApCi6FcbozQH6OsbGHSiYqw5jJK7gYnriLh854RI8
-PzfCSkBlskYe4o9WIE7yfFKJ522wJIvG0ykayPWCLxQX+4ySbLDzHeN3Mb79nE/D
-2N1QilL5jfCgBWP+pknH+JOwy/wUZkeU/ZEMUTOsX5XmldBzLeg6BeMkqrM4lA00
-byklA2CcmT/NsilFJINDApodf8Idpe9048Gr79i1VyzxK50v6eowqgk7Trf7lng3
-0N5/QlvM7TwKCBcIXIZXJrJ79PvxqrQEL9LHcYuZPysH7i6BXSpqJNQkBrEJwjk=
-=JxnH
------END PGP SIGNATURE-----
-
---dMyqICaxQaaUjrCL--
