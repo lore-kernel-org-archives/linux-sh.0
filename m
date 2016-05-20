@@ -1,92 +1,244 @@
-From: Mark Rutland <mark.rutland@arm.com>
-Date: Thu, 26 May 2016 10:39:30 +0000
-Subject: Re: [PATCH v3 12/12] sh: add device tree source for J2 FPGA on Mimas v2  board
-Message-Id: <20160526103930.GC32186@leverpostej>
+From: Rich Felker <dalias@libc.org>
+Date: Fri, 20 May 2016 02:53:04 +0000
+Subject: [PATCH v2 09/12] clocksource: add J-Core PIT/RTC driver
+Message-Id: <e8d3578861cfe2362e65f3f92d80ccae001c6b16.1463708766.git.dalias@libc.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1464148904.git.dalias@libc.org>
- <3d6f6fd6d674942a6446b0a14d9877017c53eb2f.1464148904.git.dalias@libc.org>
- <20160525103349.GH1337@leverpostej>
- <20160525231525.GV21636@brightrain.aerifal.cx>
-In-Reply-To: <20160525231525.GV21636@brightrain.aerifal.cx>
+References: <cover.1463708766.git.dalias@libc.org>
+In-Reply-To: <cover.1463708766.git.dalias@libc.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Rich Felker <dalias@libc.org>
-Cc: devicetree@vger.kernel.org, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Ian Campbell <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>, Pawel Moll <pawel.moll@arm.com>, Rob Herring <robh+dt@kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>
+To: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Daniel Lezcano <daniel.lezcano@linaro.org>, Thomas Gleixner <tglx@linutronix.de>
 
-On Wed, May 25, 2016 at 07:15:25PM -0400, Rich Felker wrote:
-> On Wed, May 25, 2016 at 11:33:50AM +0100, Mark Rutland wrote:
-> > On Wed, May 25, 2016 at 05:43:03AM +0000, Rich Felker wrote:
-> > > Signed-off-by: Rich Felker <dalias@libc.org>
-> > > ---
-> > >  arch/sh/boot/dts/j2_mimas_v2.dts | 87 ++++++++++++++++++++++++++++++++++++++++
-> > >  1 file changed, 87 insertions(+)
-> > >  create mode 100755 arch/sh/boot/dts/j2_mimas_v2.dts
-> > > 
-> > > diff --git a/arch/sh/boot/dts/j2_mimas_v2.dts b/arch/sh/boot/dts/j2_mimas_v2.dts
-> > > new file mode 100755
-> > > index 0000000..4a66cda
-> > > --- /dev/null
-> > > +++ b/arch/sh/boot/dts/j2_mimas_v2.dts
-> > > @@ -0,0 +1,87 @@
-> > > +/dts-v1/;
-> > > +
-> > > +/ {
-> > > +	compatible = "jcore,j2-soc";
-> > > +	model = "J2 FPGA SoC on Mimas v2 board";
-> > > +
-> > > +	#address-cells = <1>;
-> > > +	#size-cells = <1>;
-> > > +
-> > > +	interrupt-parent = <&aic>;
-> > > +
-> > > +	cpus {
-> > > +		#address-cells = <1>;
-> > > +		#size-cells = <0>;
-> > > +
-> > > +		cpu@0 {
-> > > +			device_type = "cpu";
-> > > +			compatible = "jcore,j2";
-> > > +			reg = < 0 >;
-> > > +			clock-frequency = < 50000000 >;
-> > 
-> > Nit: please remove the spacing around the '<' and '>' here. If nothing
-> > else, it's inconsistent with the rest of this file.
-> > 
-> > > +		};
-> > > +	};
-> > > +
-> > > +	memory@10000000 {
-> > > +		device_type = "memory";
-> > > +		reg = < 0x10000000 0x4000000 >;
-> > > +	};
-> > 
-> > Likewise.
-> 
-> OK, I'll change both of these.
-> 
-> > > +
-> > > +	chosen {
-> > > +		stdout-path = "/soc@abcd0000/serial@100";
-> > > +	};
-> > 
-> > Please use a label for the serial node, have an alias, and describe the
-> > pre-configured rate per the stdout-path binding, e.g.
-> 
-> Per Documentation/devicetree/bindings/xilinx.txt, current-speed is a
-> required property for "xlnx,xps-uartlite-1.00.a". Note that uartlite
-> does not actually have a programmable baud rate; the property is
-> instead being used to describe the hardware-provided rate.
+Signed-off-by: Rich Felker <dalias@libc.org>
+---
+My previous post of the patch series accidentally omitted omitted
+Cc'ing of subsystem maintainers for the necessary clocksource,
+irqchip, and spi drivers. Please ack if this looks ok because I want
+to get it merged as part of the arch/sh pull request for 4.7.
 
-Ah, ok. I was not aware of this.
+ drivers/clocksource/Kconfig     |   9 ++
+ drivers/clocksource/Makefile    |   1 +
+ drivers/clocksource/jcore-pit.c | 176 ++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 186 insertions(+)
+ create mode 100644 drivers/clocksource/jcore-pit.c
 
-> BTW our uartlite is not actually derived from Xilinx's IP core, just
-> interface-compatible with it, so I'd actually like to add a
-> "jcore,uartlite" binding too in order to express this, with
-> "xlnx,xps-uartlite-1.00.a" as the fallback compatible-tag. I'll
-> propose that as a separate patch later.
+diff --git a/drivers/clocksource/Kconfig b/drivers/clocksource/Kconfig
+index c346be6..a29fd31 100644
+--- a/drivers/clocksource/Kconfig
++++ b/drivers/clocksource/Kconfig
+@@ -297,6 +297,15 @@ config SYS_SUPPORTS_SH_TMU
+ config SYS_SUPPORTS_EM_STI
+         bool
+ 
++config CLKSRC_JCORE_PIT
++	bool "J-Core integrated PIT/RTC"
++	depends on GENERIC_CLOCKEVENTS
++	depends on HAS_IOMEM
++	help
++	  This enables build of clocksource and clockevent driver for
++	  the integrated PIT/RTC in the J-Core synthesizable, open source
++	  SoC.
++
+ config SH_TIMER_CMT
+ 	bool "Renesas CMT timer driver" if COMPILE_TEST
+ 	depends on GENERIC_CLOCKEVENTS
+diff --git a/drivers/clocksource/Makefile b/drivers/clocksource/Makefile
+index dc2b899..d825fcf 100644
+--- a/drivers/clocksource/Makefile
++++ b/drivers/clocksource/Makefile
+@@ -5,6 +5,7 @@ obj-$(CONFIG_ATMEL_TCB_CLKSRC)	+= tcb_clksrc.o
+ obj-$(CONFIG_X86_PM_TIMER)	+= acpi_pm.o
+ obj-$(CONFIG_SCx200HR_TIMER)	+= scx200_hrt.o
+ obj-$(CONFIG_CS5535_CLOCK_EVENT_SRC)	+= cs5535-clockevt.o
++obj-$(CONFIG_CLKSRC_JCORE_PIT)		+= jcore-pit.o
+ obj-$(CONFIG_SH_TIMER_CMT)	+= sh_cmt.o
+ obj-$(CONFIG_SH_TIMER_MTU2)	+= sh_mtu2.o
+ obj-$(CONFIG_SH_TIMER_TMU)	+= sh_tmu.o
+diff --git a/drivers/clocksource/jcore-pit.c b/drivers/clocksource/jcore-pit.c
+new file mode 100644
+index 0000000..a4fde51
+--- /dev/null
++++ b/drivers/clocksource/jcore-pit.c
+@@ -0,0 +1,176 @@
++/*
++ * J-Core SoC PIT/RTC driver
++ *
++ * Copyright (C) 2015-2016 Smart Energy Instruments, Inc.
++ *
++ * This file is subject to the terms and conditions of the GNU General Public
++ * License.  See the file "COPYING" in the main directory of this archive
++ * for more details.
++ */
++
++#include <linux/sched.h>
++#include <linux/kernel.h>
++#include <linux/param.h>
++#include <linux/interrupt.h>
++#include <linux/profile.h>
++#include <linux/init.h>
++#include <linux/irq.h>
++#include <linux/device.h>
++#include <linux/module.h>
++#include <linux/clockchips.h>
++#include <linux/clocksource.h>
++#include <linux/cpu.h>
++#include <linux/of_address.h>
++#include <linux/of_irq.h>
++#include <linux/irqchip.h>
++#include <asm/io.h>
++#include <asm/irq.h>
++#include <asm/rtc.h>
++
++static unsigned char __iomem *pit_base;
++static int pit_irq;
++static u32 percpu_offset;
++static u32 enable_val;
++
++static struct clock_event_device __percpu *pit_percpu;
++
++#define REG_PITEN 0x00
++#define REG_THROT 0x10
++#define REG_COUNT 0x14
++#define REG_BUSPD 0x18
++#define REG_SECHI 0x20
++#define REG_SECLO 0x24
++#define REG_NSEC  0x28
++
++static cycle_t rtc_read(struct clocksource *cs)
++{
++	u32 sechi, seclo, nsec, sechi0, seclo0;
++
++	sechi = __raw_readl(pit_base + REG_SECHI);
++	seclo = __raw_readl(pit_base + REG_SECLO);
++	do {
++		sechi0 = sechi;
++		seclo0 = seclo;
++		nsec  = __raw_readl(pit_base + REG_NSEC);
++		sechi = __raw_readl(pit_base + REG_SECHI);
++		seclo = __raw_readl(pit_base + REG_SECLO);
++	} while (sechi0 != sechi || seclo0 != seclo);
++
++	return ((u64)sechi << 32 | seclo) * 1000000000 + nsec;
++}
++
++struct clocksource rtc_csd = {
++	.name = "rtc",
++	.rating = 400,
++	.read = rtc_read,
++	.mult = 1,
++	.shift = 0,
++	.mask = CLOCKSOURCE_MASK(64),
++	.flags = CLOCK_SOURCE_IS_CONTINUOUS,
++};
++
++static int pit_disable(struct clock_event_device *ced)
++{
++	unsigned cpu = smp_processor_id();
++	writel(0, pit_base + percpu_offset*cpu + REG_PITEN);
++	return 0;
++}
++
++static int pit_set(unsigned long delta, struct clock_event_device *ced)
++{
++	unsigned cpu = smp_processor_id();
++
++	pit_disable(ced);
++
++	writel(delta, pit_base + percpu_offset*cpu + REG_THROT);
++	writel(enable_val, pit_base + percpu_offset*cpu + REG_PITEN);
++
++	return 0;
++}
++
++static int pit_set_periodic(struct clock_event_device *ced)
++{
++	unsigned cpu = smp_processor_id();
++	unsigned long per = readl(pit_base + percpu_offset*cpu + REG_BUSPD);
++
++	return pit_set(DIV_ROUND_CLOSEST(1000000000, HZ*per), ced);
++}
++
++static int pit_local_init(struct clock_event_device *ced)
++{
++	unsigned cpu = smp_processor_id();
++	unsigned long per = readl(pit_base + percpu_offset*cpu + REG_BUSPD);
++
++	pr_info("Local PIT init on cpu %u\n", cpu);
++
++	ced->name = "pit";
++	ced->features = CLOCK_EVT_FEAT_PERIODIC | CLOCK_EVT_FEAT_ONESHOT
++		| CLOCK_EVT_FEAT_PERCPU;
++	ced->cpumask = cpumask_of(cpu);
++	ced->rating = 400;
++	ced->irq = pit_irq;
++	ced->set_state_shutdown = pit_disable;
++	ced->set_state_periodic = pit_set_periodic;
++	ced->set_state_oneshot = pit_disable;
++	ced->set_next_event = pit_set;
++
++	clockevents_config_and_register(ced, DIV_ROUND_CLOSEST(1000000000, per),
++	                                1, 0xffffffff);
++
++	pit_set_periodic(ced);
++
++	return 0;
++}
++
++static int pit_cpu_notify(struct notifier_block *self, unsigned long action, void *hcpu)
++{
++	switch (action & ~CPU_TASKS_FROZEN) {
++	case CPU_STARTING:
++		pit_local_init(this_cpu_ptr(pit_percpu));
++		break;
++	}
++	return NOTIFY_OK;
++}
++
++static struct notifier_block pit_cpu_nb = {
++	.notifier_call = pit_cpu_notify,
++};
++
++static irqreturn_t timer_interrupt(int irq, void *dev_id)
++{
++	struct clock_event_device *ced = this_cpu_ptr(dev_id);
++
++	if (clockevent_state_oneshot(ced)) pit_disable(ced);
++
++	ced->event_handler(ced);
++
++	return IRQ_HANDLED;
++}
++
++static void __init pit_init(struct device_node *node)
++{
++	unsigned long hwirq;
++	int err;
++
++	pit_base = of_iomap(node, 0);
++	pit_irq = irq_of_parse_and_map(node, 0);
++	of_property_read_u32(node, "cpu-offset", &percpu_offset);
++
++	pr_info("Initializing J-Core PIT at %p IRQ %d\n", pit_base, pit_irq);
++
++	clocksource_register_hz(&rtc_csd, 1000000000);
++
++	pit_percpu = alloc_percpu(struct clock_event_device);
++	register_cpu_notifier(&pit_cpu_nb);
++
++	err = request_irq(pit_irq, timer_interrupt,
++		IRQF_TIMER | IRQF_PERCPU, "pit", pit_percpu);
++	if (err) pr_err("pit irq request failed: %d\n", err);
++
++	hwirq = irq_get_irq_data(pit_irq)->hwirq;
++	enable_val = (1<<26) | ((hwirq&0x3c)<<18) | (hwirq<<12);
++
++	pit_local_init(this_cpu_ptr(pit_percpu));
++}
++
++CLOCKSOURCE_OF_DECLARE(jcore_pit, "jcore,pit", pit_init);
+-- 
+2.8.1
 
-Please do.
 
-Thanks,
-Mark.
