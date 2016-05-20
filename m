@@ -1,47 +1,75 @@
 From: Rich Felker <dalias@libc.org>
-Date: Wed, 25 May 2016 05:43:03 +0000
-Subject: [PATCH v3 07/12] sh: add AT_HWCAP flag for J-Core cas.l instruction
-Message-Id: <da5c649c7c4a2b47431d34f00b94e48d89fb2880.1464148904.git.dalias@libc.org>
+Date: Fri, 20 May 2016 02:53:03 +0000
+Subject: [PATCH v2 00/12] J-core J2 cpu and SoC peripherals support
+Message-Id: <cover.1463708766.git.dalias@libc.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1464148904.git.dalias@libc.org>
-In-Reply-To: <cover.1464148904.git.dalias@libc.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
-Cc: Rich Felker <dalias@libc.org>, Yoshinori Sato <ysato@users.sourceforge.jp>
+To: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org
 
-Signed-off-by: Rich Felker <dalias@libc.org>
----
- arch/sh/include/uapi/asm/cpu-features.h | 1 +
- arch/sh/kernel/cpu/sh2/probe.c          | 2 ++
- 2 files changed, 3 insertions(+)
+The following patchset adds support for the J-core J2, an open-source
+VHDL reimplementation of the SH-2 ISA, and drivers for the associated
+SoC devices (interrupt controller, clocksource, and SPI).
 
-diff --git a/arch/sh/include/uapi/asm/cpu-features.h b/arch/sh/include/uapi/asm/cpu-features.h
-index 694abe4..2f1bc85 100644
---- a/arch/sh/include/uapi/asm/cpu-features.h
-+++ b/arch/sh/include/uapi/asm/cpu-features.h
-@@ -22,5 +22,6 @@
- #define CPU_HAS_L2_CACHE	0x0080	/* Secondary cache / URAM */
- #define CPU_HAS_OP32		0x0100	/* 32-bit instruction support */
- #define CPU_HAS_PTEAEX		0x0200	/* PTE ASID Extension support */
-+#define CPU_HAS_CAS_L		0x0400	/* cas.l atomic compare-and-swap */
- 
- #endif /* __ASM_SH_CPU_FEATURES_H */
-diff --git a/arch/sh/kernel/cpu/sh2/probe.c b/arch/sh/kernel/cpu/sh2/probe.c
-index 3dd8187..665fcfb 100644
---- a/arch/sh/kernel/cpu/sh2/probe.c
-+++ b/arch/sh/kernel/cpu/sh2/probe.c
-@@ -54,6 +54,8 @@ void __ref cpu_probe(void)
- 	boot_cpu_data.dcache.entry_shift	= 5;
- 	boot_cpu_data.dcache.linesz		= 32;
- 	boot_cpu_data.dcache.flags		= 0;
-+
-+	boot_cpu_data.flags |= CPU_HAS_CAS_L;
- #else
- 	/*
- 	 * SH-2 doesn't have separate caches
+As arch/sh co-maintainer my intent is to have this merged for 4.7, but
+I realized my previous post of the patch series omitted device tree
+bindings and omitted Cc'ing of subsystem maintainers for the necessary
+clocksource, irqchip, and spi drivers.
+
+Rich Felker (12):
+  of: add vendor prefix for J-Core
+  of: add J-Core cpu bindings
+  of: add J-Core interrupt controller bindings
+  of: add J-Core timer bindings
+  of: add J-Core SPI master bindings
+  sh: add support for J-Core J2 processor
+  sh: add AT_HWCAP flag for J-Core cas.l instruction
+  irqchip: add J-Core AIC driver
+  clocksource: add J-Core PIT/RTC driver
+  spi: add driver for J-Core SPI controller
+  sh: add defconfig for J-Core J2
+  sh: add device tree source for J2 FPGA on Mimas v2 board
+
+ .../bindings/interrupt-controller/jcore,aic.txt    |  28 +++
+ Documentation/devicetree/bindings/jcore/cpus.txt   |  91 +++++++
+ .../devicetree/bindings/spi/jcore,spi.txt          |  23 ++
+ .../devicetree/bindings/timer/jcore,pit.txt        |  28 +++
+ .../devicetree/bindings/vendor-prefixes.txt        |   1 +
+ arch/sh/Kconfig                                    |   8 +
+ arch/sh/Makefile                                   |   1 +
+ arch/sh/boot/dts/j2_mimas_v2.dts                   |  87 +++++++
+ arch/sh/configs/j2_defconfig                       |  38 +++
+ arch/sh/include/asm/processor.h                    |   2 +-
+ arch/sh/include/uapi/asm/cpu-features.h            |   1 +
+ arch/sh/kernel/cpu/init.c                          |   2 +-
+ arch/sh/kernel/cpu/proc.c                          |   1 +
+ arch/sh/kernel/cpu/sh2/entry.S                     |   5 +
+ arch/sh/kernel/cpu/sh2/probe.c                     |  36 ++-
+ arch/sh/mm/Makefile                                |   3 +-
+ arch/sh/mm/cache-j2.c                              |  58 +++++
+ arch/sh/mm/cache.c                                 |   6 +-
+ drivers/clocksource/Kconfig                        |   9 +
+ drivers/clocksource/Makefile                       |   1 +
+ drivers/clocksource/jcore-pit.c                    | 176 ++++++++++++++
+ drivers/irqchip/Kconfig                            |   6 +
+ drivers/irqchip/Makefile                           |   1 +
+ drivers/irqchip/irq-jcore-aic.c                    |  95 ++++++++
+ drivers/spi/Kconfig                                |   4 +
+ drivers/spi/Makefile                               |   1 +
+ drivers/spi/spi-jcore.c                            | 266 +++++++++++++++++++++
+ 27 files changed, 973 insertions(+), 5 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/interrupt-controller/jcore,aic.txt
+ create mode 100644 Documentation/devicetree/bindings/jcore/cpus.txt
+ create mode 100644 Documentation/devicetree/bindings/spi/jcore,spi.txt
+ create mode 100644 Documentation/devicetree/bindings/timer/jcore,pit.txt
+ create mode 100755 arch/sh/boot/dts/j2_mimas_v2.dts
+ create mode 100644 arch/sh/configs/j2_defconfig
+ create mode 100644 arch/sh/mm/cache-j2.c
+ create mode 100644 drivers/clocksource/jcore-pit.c
+ create mode 100644 drivers/irqchip/irq-jcore-aic.c
+ create mode 100644 drivers/spi/spi-jcore.c
+
 -- 
 2.8.1
-
 
