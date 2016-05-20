@@ -1,377 +1,282 @@
 From: Rich Felker <dalias@libc.org>
-Date: Wed, 25 May 2016 05:43:03 +0000
-Subject: [PATCH v3 09/12] clocksource: add J-Core timer/clocksource driver
-Message-Id: <b0def86d101d631e1b5529b42aa1bb41da546a03.1464148904.git.dalias@libc.org>
+Date: Fri, 20 May 2016 02:53:04 +0000
+Subject: [PATCH v2 06/12] sh: add support for J-Core J2 processor
+Message-Id: <4e405c44d2f963c5baefe6cb881c3425fb7db1dd.1463708766.git.dalias@libc.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1464148904.git.dalias@libc.org>
-In-Reply-To: <cover.1464148904.git.dalias@libc.org>
+References: <cover.1463708766.git.dalias@libc.org>
+In-Reply-To: <cover.1463708766.git.dalias@libc.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
-Cc: Daniel Lezcano <daniel.lezcano@linaro.org>, Thomas Gleixner <tglx@linutronix.de>
-
-At the hardware level, the J-Core PIT is integrated with the interrupt
-controller, but it is represented as its own device and has an
-independent programming interface. It provides a 12-bit countdown
-timer, which is not presently used, and a periodic timer. The interval
-length for the latter is programmable via a 32-bit throttle register
-whose units are determined by a bus-period register. The periodic
-timer is used to implement both periodic and oneshot clock event
-modes; in oneshot mode the interrupt handler simply disables the timer
-as soon as it fires.
-
-Despite its device tree node representing an interrupt for the PIT,
-the actual irq generated is programmable, not hard-wired. The driver
-is responsible for programming the PIT to generate the hardware irq
-number that the DT assigns to it.
-
-On SMP configurations, J-Core provides cpu-local instances of the PIT;
-no broadcast timer is needed. This driver supports the creation of the
-necessary per-cpu clock_event_device instances. The code has been
-tested and works on SMP, but will not be usable without additional
-J-Core SMP-support patches and appropriate hardware capable of running
-SMP.
-
-A nanosecond-resolution clocksource is provided using the J-Core "RTC"
-registers, which give a 64-bit seconds count and 32-bit nanoseconds.
-The driver converts these to a 64-bit nanoseconds count.
+Cc: Rich Felker <dalias@libc.org>, Yoshinori Sato <ysato@users.sourceforge.jp>
 
 Signed-off-by: Rich Felker <dalias@libc.org>
 ---
+This revision of the patch is less invasive than the previous one,
+moving J2-specific cache init from  arch/sh/kernel/cpu/init.c to
+arch/sh/kernel/cpu/sh2/probe.c. Unnecessary variable cpu-offset for
+CCR register has also been removed.
 
-This driver has undergone significant changes based on feedback from
-Daniel Lezcano. I've split out helper functions, eliminated the
-repeated percpu offset computations, properly mapped each percpu base,
-used container_of instead of static storage for driver data, added
-comments for enable_val setup, removed confusing use of "RTC" name,
-removed excess includes, used the "jcore_" prefix in naming
-identifiers, and made error handling more extensive.
+ arch/sh/Kconfig                 |  8 ++++++
+ arch/sh/Makefile                |  1 +
+ arch/sh/include/asm/processor.h |  2 +-
+ arch/sh/kernel/cpu/init.c       |  2 +-
+ arch/sh/kernel/cpu/proc.c       |  1 +
+ arch/sh/kernel/cpu/sh2/entry.S  |  5 ++++
+ arch/sh/kernel/cpu/sh2/probe.c  | 34 +++++++++++++++++++++++-
+ arch/sh/mm/Makefile             |  3 ++-
+ arch/sh/mm/cache-j2.c           | 58 +++++++++++++++++++++++++++++++++++++++++
+ arch/sh/mm/cache.c              |  6 ++++-
+ 10 files changed, 115 insertions(+), 5 deletions(-)
+ create mode 100644 arch/sh/mm/cache-j2.c
 
- drivers/clocksource/Kconfig     |   8 ++
- drivers/clocksource/Makefile    |   1 +
- drivers/clocksource/jcore-pit.c | 282 ++++++++++++++++++++++++++++++++++++++++
- 3 files changed, 291 insertions(+)
- create mode 100644 drivers/clocksource/jcore-pit.c
-
-diff --git a/drivers/clocksource/Kconfig b/drivers/clocksource/Kconfig
-index c346be6..7bd39d2 100644
---- a/drivers/clocksource/Kconfig
-+++ b/drivers/clocksource/Kconfig
-@@ -297,6 +297,14 @@ config SYS_SUPPORTS_SH_TMU
- config SYS_SUPPORTS_EM_STI
-         bool
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index 4fa5894..efb0af4 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -182,6 +182,10 @@ config CPU_SH2A
+ 	select CPU_SH2
+ 	select UNCACHED_MAPPING
  
-+config CLKSRC_JCORE_PIT
-+	bool "J-Core PIT timer driver"
-+	depends on GENERIC_CLOCKEVENTS
-+	depends on HAS_IOMEM
-+	help
-+	  This enables build of clocksource and clockevent driver for
-+	  the integrated PIT in the J-Core synthesizable, open source SoC.
++config CPU_J2
++	bool
++	select CPU_SH2
 +
- config SH_TIMER_CMT
- 	bool "Renesas CMT timer driver" if COMPILE_TEST
- 	depends on GENERIC_CLOCKEVENTS
-diff --git a/drivers/clocksource/Makefile b/drivers/clocksource/Makefile
-index dc2b899..d825fcf 100644
---- a/drivers/clocksource/Makefile
-+++ b/drivers/clocksource/Makefile
-@@ -5,6 +5,7 @@ obj-$(CONFIG_ATMEL_TCB_CLKSRC)	+= tcb_clksrc.o
- obj-$(CONFIG_X86_PM_TIMER)	+= acpi_pm.o
- obj-$(CONFIG_SCx200HR_TIMER)	+= scx200_hrt.o
- obj-$(CONFIG_CS5535_CLOCK_EVENT_SRC)	+= cs5535-clockevt.o
-+obj-$(CONFIG_CLKSRC_JCORE_PIT)		+= jcore-pit.o
- obj-$(CONFIG_SH_TIMER_CMT)	+= sh_cmt.o
- obj-$(CONFIG_SH_TIMER_MTU2)	+= sh_mtu2.o
- obj-$(CONFIG_SH_TIMER_TMU)	+= sh_tmu.o
-diff --git a/drivers/clocksource/jcore-pit.c b/drivers/clocksource/jcore-pit.c
+ config CPU_SH3
+ 	bool
+ 	select CPU_HAS_INTEVT
+@@ -248,6 +252,10 @@ config CPU_SUBTYPE_SH7619
+ 	select CPU_SH2
+ 	select SYS_SUPPORTS_SH_CMT
+ 
++config CPU_SUBTYPE_J2
++	bool "Support J2 processor"
++	select CPU_J2
++
+ # SH-2A Processor Support
+ 
+ config CPU_SUBTYPE_SH7201
+diff --git a/arch/sh/Makefile b/arch/sh/Makefile
+index 3b2c8b4..0047666 100644
+--- a/arch/sh/Makefile
++++ b/arch/sh/Makefile
+@@ -31,6 +31,7 @@ isa-y					:= $(isa-y)-up
+ endif
+ 
+ cflags-$(CONFIG_CPU_SH2)		:= $(call cc-option,-m2,)
++cflags-$(CONFIG_CPU_J2)			:= $(call cc-option,-mj2,)
+ cflags-$(CONFIG_CPU_SH2A)		+= $(call cc-option,-m2a,) \
+ 					   $(call cc-option,-m2a-nofpu,) \
+ 					   $(call cc-option,-m4-nofpu,)
+diff --git a/arch/sh/include/asm/processor.h b/arch/sh/include/asm/processor.h
+index 1506897..f9a0994 100644
+--- a/arch/sh/include/asm/processor.h
++++ b/arch/sh/include/asm/processor.h
+@@ -15,7 +15,7 @@
+  */
+ enum cpu_type {
+ 	/* SH-2 types */
+-	CPU_SH7619,
++	CPU_SH7619, CPU_J2,
+ 
+ 	/* SH-2A types */
+ 	CPU_SH7201, CPU_SH7203, CPU_SH7206, CPU_SH7263, CPU_SH7264, CPU_SH7269,
+diff --git a/arch/sh/kernel/cpu/init.c b/arch/sh/kernel/cpu/init.c
+index bfd9e27..c8b3be1 100644
+--- a/arch/sh/kernel/cpu/init.c
++++ b/arch/sh/kernel/cpu/init.c
+@@ -106,7 +106,7 @@ void __attribute__ ((weak)) l2_cache_init(void)
+ /*
+  * Generic first-level cache init
+  */
+-#ifdef CONFIG_SUPERH32
++#if defined(CONFIG_SUPERH32) && !defined(CONFIG_CPU_J2)
+ static void cache_init(void)
+ {
+ 	unsigned long ccr, flags;
+diff --git a/arch/sh/kernel/cpu/proc.c b/arch/sh/kernel/cpu/proc.c
+index 9e6624c..4df4b28 100644
+--- a/arch/sh/kernel/cpu/proc.c
++++ b/arch/sh/kernel/cpu/proc.c
+@@ -27,6 +27,7 @@ static const char *cpu_name[] = {
+ 	[CPU_MXG]	= "MX-G",	[CPU_SH7723]	= "SH7723",
+ 	[CPU_SH7366]	= "SH7366",	[CPU_SH7724]	= "SH7724",
+ 	[CPU_SH7372]	= "SH7372",	[CPU_SH7734]	= "SH7734",
++	[CPU_J2]	= "J2",
+ 	[CPU_SH_NONE]	= "Unknown"
+ };
+ 
+diff --git a/arch/sh/kernel/cpu/sh2/entry.S b/arch/sh/kernel/cpu/sh2/entry.S
+index a150595..354f344 100644
+--- a/arch/sh/kernel/cpu/sh2/entry.S
++++ b/arch/sh/kernel/cpu/sh2/entry.S
+@@ -147,6 +147,11 @@ ENTRY(exception_handler)
+ 	mov	#31,r8
+ 	cmp/hs	r8,r9
+ 	bt	trap_entry	! 64 > vec >= 31  is trap
++	mov	#16,r8
++#ifdef CONFIG_CPU_J2
++	cmp/hs	r8,r9
++	bt	interrupt_entry	! 31 > vec >= 16 is interrupt
++#endif
+ 
+ 	mov.l	4f,r8
+ 	mov	r9,r4
+diff --git a/arch/sh/kernel/cpu/sh2/probe.c b/arch/sh/kernel/cpu/sh2/probe.c
+index 6c687ae..3dd8187 100644
+--- a/arch/sh/kernel/cpu/sh2/probe.c
++++ b/arch/sh/kernel/cpu/sh2/probe.c
+@@ -10,10 +10,27 @@
+  * for more details.
+  */
+ #include <linux/init.h>
++#include <linux/of_fdt.h>
++#include <linux/smp.h>
++#include <linux/io.h>
+ #include <asm/processor.h>
+ #include <asm/cache.h>
+ 
+-void cpu_probe(void)
++#if defined(CONFIG_CPU_J2)
++extern u32 j2_ccr_base;
++static int __init scan_cache(unsigned long node, const char *uname,
++			     int depth, void *data)
++{
++	if (!of_flat_dt_is_compatible(node, "jcore,cache"))
++		return 0;
++
++	j2_ccr_base = of_flat_dt_translate_address(node);
++
++	return 1;
++}
++#endif
++
++void __ref cpu_probe(void)
+ {
+ #if defined(CONFIG_CPU_SUBTYPE_SH7619)
+ 	boot_cpu_data.type			= CPU_SH7619;
+@@ -24,10 +41,25 @@ void cpu_probe(void)
+ 	boot_cpu_data.dcache.linesz		= L1_CACHE_BYTES;
+ 	boot_cpu_data.dcache.flags		= 0;
+ #endif
++
++#if defined(CONFIG_CPU_J2)
++	unsigned cpu = hard_smp_processor_id();
++	if (cpu = 0) of_scan_flat_dt(scan_cache, NULL);
++	if (j2_ccr_base) __raw_writel(0x80000303, j2_ccr_base + 4*cpu);
++	if (cpu != 0) return;
++	boot_cpu_data.type			= CPU_J2;
++	/* FIXME: cache properties should come from device tree. */
++	boot_cpu_data.dcache.ways		= 1;
++	boot_cpu_data.dcache.sets		= 256;
++	boot_cpu_data.dcache.entry_shift	= 5;
++	boot_cpu_data.dcache.linesz		= 32;
++	boot_cpu_data.dcache.flags		= 0;
++#else
+ 	/*
+ 	 * SH-2 doesn't have separate caches
+ 	 */
+ 	boot_cpu_data.dcache.flags |= SH_CACHE_COMBINED;
++#endif
+ 	boot_cpu_data.icache = boot_cpu_data.dcache;
+ 	boot_cpu_data.family = CPU_FAMILY_SH2;
+ }
+diff --git a/arch/sh/mm/Makefile b/arch/sh/mm/Makefile
+index cee6b99..92c3bd9 100644
+--- a/arch/sh/mm/Makefile
++++ b/arch/sh/mm/Makefile
+@@ -4,7 +4,8 @@
+ 
+ obj-y			:= alignment.o cache.o init.o consistent.o mmap.o
+ 
+-cacheops-$(CONFIG_CPU_SH2)		:= cache-sh2.o
++cacheops-$(CONFIG_CPU_J2)		:= cache-j2.o
++cacheops-$(CONFIG_CPU_SUBTYPE_SH7619)	:= cache-sh2.o
+ cacheops-$(CONFIG_CPU_SH2A)		:= cache-sh2a.o
+ cacheops-$(CONFIG_CPU_SH3)		:= cache-sh3.o
+ cacheops-$(CONFIG_CPU_SH4)		:= cache-sh4.o flush-sh4.o
+diff --git a/arch/sh/mm/cache-j2.c b/arch/sh/mm/cache-j2.c
 new file mode 100644
-index 0000000..dd78fcd
+index 0000000..baf36d3
 --- /dev/null
-+++ b/drivers/clocksource/jcore-pit.c
-@@ -0,0 +1,282 @@
++++ b/arch/sh/mm/cache-j2.c
+@@ -0,0 +1,58 @@
 +/*
-+ * J-Core SoC PIT/clocksource driver
++ * arch/sh/mm/cache-j2.c
 + *
-+ * Copyright (C) 2015-2016 Smart Energy Instruments, Inc.
++ * Copyright (C) 2015 SEI
 + *
-+ * This file is subject to the terms and conditions of the GNU General Public
-+ * License.  See the file "COPYING" in the main directory of this archive
-+ * for more details.
++ * Released under the terms of the GNU GPL v2.0.
 + */
 +
-+#include <linux/kernel.h>
-+#include <linux/slab.h>
-+#include <linux/interrupt.h>
-+#include <linux/clockchips.h>
-+#include <linux/clocksource.h>
-+#include <linux/cpu.h>
-+#include <linux/of_address.h>
-+#include <linux/of_irq.h>
++#include <linux/init.h>
++#include <linux/mm.h>
++#include <linux/cpumask.h>
 +
-+#define PIT_IRQ_SHIFT 12
-+#define PIT_PRIO_SHIFT 20
-+#define PIT_ENABLE_SHIFT 26
-+#define PIT_IRQ_MASK 0x3f
-+#define PIT_PRIO_MASK 0xf
++#include <asm/cache.h>
++#include <asm/addrspace.h>
++#include <asm/processor.h>
++#include <asm/cacheflush.h>
++#include <asm/io.h>
 +
-+#define REG_PITEN 0x00
-+#define REG_THROT 0x10
-+#define REG_COUNT 0x14
-+#define REG_BUSPD 0x18
-+#define REG_SECHI 0x20
-+#define REG_SECLO 0x24
-+#define REG_NSEC  0x28
++u32 j2_ccr_base;
 +
-+struct jcore_clocksource {
-+	struct clocksource cs;
-+	__iomem void *base;
-+};
-+
-+struct jcore_pit {
-+	struct clock_event_device ced;
-+	__iomem void *base;
-+	unsigned long periodic_delta;
++static void j2_flush_icache(void *args)
++{
 +	unsigned cpu;
-+	phys_addr_t paddr;
-+	resource_size_t psize;
-+	u32 enable_val;
-+};
-+
-+struct jcore_pit_nb {
-+	struct notifier_block nb;
-+	struct jcore_pit __percpu *pit_percpu;
-+};
-+
-+static cycle_t jcore_clocksource_read(struct clocksource *cs)
-+{
-+	__iomem void *base +		container_of(cs, struct jcore_clocksource, cs)->base;
-+	u32 sechi, seclo, nsec, sechi0, seclo0;
-+
-+	sechi = __raw_readl(base + REG_SECHI);
-+	seclo = __raw_readl(base + REG_SECLO);
-+	do {
-+		sechi0 = sechi;
-+		seclo0 = seclo;
-+		nsec  = __raw_readl(base + REG_NSEC);
-+		sechi = __raw_readl(base + REG_SECHI);
-+		seclo = __raw_readl(base + REG_SECLO);
-+	} while (sechi0 != sechi || seclo0 != seclo);
-+
-+	return ((u64)sechi << 32 | seclo) * NSEC_PER_SEC + nsec;
++	for_each_possible_cpu(cpu)
++		__raw_writel(0x80000103, j2_ccr_base + 4*cpu);
 +}
 +
-+static int jcore_pit_disable(struct jcore_pit *pit)
++static void j2_flush_dcache(void *args)
 +{
-+	__raw_writel(0, pit->base + REG_PITEN);
-+	return 0;
-+}
-+
-+static int jcore_pit_set(unsigned long delta, struct jcore_pit *pit)
-+{
-+	jcore_pit_disable(pit);
-+	__raw_writel(delta, pit->base + REG_THROT);
-+	__raw_writel(pit->enable_val, pit->base + REG_PITEN);
-+	return 0;
-+}
-+
-+static int jcore_pit_set_state_shutdown(struct clock_event_device *ced)
-+{
-+	struct jcore_pit *pit = container_of(ced, struct jcore_pit, ced);
-+	return jcore_pit_disable(pit);
-+}
-+
-+static int jcore_pit_set_state_oneshot(struct clock_event_device *ced)
-+{
-+	struct jcore_pit *pit = container_of(ced, struct jcore_pit, ced);
-+	return jcore_pit_disable(pit);
-+}
-+
-+static int jcore_pit_set_state_periodic(struct clock_event_device *ced)
-+{
-+	struct jcore_pit *pit = container_of(ced, struct jcore_pit, ced);
-+	return jcore_pit_set(pit->periodic_delta, pit);
-+}
-+
-+static int jcore_pit_set_next_event(unsigned long delta,
-+				    struct clock_event_device *ced)
-+{
-+	struct jcore_pit *pit = container_of(ced, struct jcore_pit, ced);
-+	return jcore_pit_set(delta, pit);
-+}
-+
-+static int jcore_pit_local_init(struct jcore_pit *pit)
-+{
-+	unsigned buspd;
-+
-+	pr_info("Local J-Core PIT init on cpu %u\n", pit->cpu);
-+
-+	pit->base = ioremap(pit->paddr, pit->psize);
-+	if (!pit->base)
-+		return -ENOMEM;
-+
-+	buspd = __raw_readl(pit->base + REG_BUSPD);
-+	pit->periodic_delta = DIV_ROUND_CLOSEST(NSEC_PER_SEC, HZ*buspd);
-+
-+	clockevents_config_and_register(&pit->ced,
-+					DIV_ROUND_CLOSEST(NSEC_PER_SEC, buspd),
-+	                                1, 0xffffffff);
-+
-+	return 0;
-+}
-+
-+static int jcore_pit_cpu_notify(struct notifier_block *self,
-+				unsigned long action, void *hcpu)
-+{
-+	struct jcore_pit_nb *nb = container_of(self, struct jcore_pit_nb, nb);
-+	switch (action & ~CPU_TASKS_FROZEN) {
-+	case CPU_STARTING:
-+		jcore_pit_local_init(this_cpu_ptr(nb->pit_percpu));
-+		break;
-+	}
-+	return NOTIFY_OK;
-+}
-+
-+static irqreturn_t timer_interrupt(int irq, void *dev_id)
-+{
-+	struct jcore_pit *pit = this_cpu_ptr(dev_id);
-+
-+	if (clockevent_state_oneshot(&pit->ced))
-+		jcore_pit_disable(pit);
-+
-+	pit->ced.event_handler(&pit->ced);
-+
-+	return IRQ_HANDLED;
-+}
-+
-+static void __init jcore_pit_init(struct device_node *node)
-+{
-+	int err;
-+	__iomem void *pit_base;
-+	unsigned pit_irq;
-+	u32 percpu_offset = 0;
 +	unsigned cpu;
-+	struct resource res;
-+	struct jcore_pit_nb *nb = 0;
-+	struct jcore_clocksource *cs = 0;
-+	struct jcore_pit __percpu *pit_percpu = 0;
-+	unsigned long hwirq;
-+	u32 irqprio, enable_val;
-+
-+	pit_base = of_iomap(node, 0);
-+	if (!pit_base) {
-+		pr_err("Error: Cannot map base address for J-Core PIT\n");
-+		goto out;
-+	}
-+
-+	pit_irq = irq_of_parse_and_map(node, 0);
-+	if (!pit_irq) {
-+		pr_err("Error: J-Core PIT has no IRQ\n");
-+		goto out;
-+	}
-+
-+	of_address_to_resource(node, 0, &res);
-+	of_property_read_u32(node, "cpu-offset", &percpu_offset);
-+
-+	pr_info("Initializing J-Core PIT at %p IRQ %d\n", pit_base, pit_irq);
-+
-+	cs = kzalloc(sizeof *cs, GFP_KERNEL);
-+	if (!cs) {
-+		pr_err("Failed to allocate memory for clocksource\n");
-+		goto out;
-+	}
-+
-+	cs->base = pit_base;
-+	cs->cs.name = "jcore_pit_cs";
-+	cs->cs.rating = 400;
-+	cs->cs.read = jcore_clocksource_read;
-+	cs->cs.mult = 1;
-+	cs->cs.shift = 0;
-+	cs->cs.mask = CLOCKSOURCE_MASK(64);
-+	cs->cs.flags = CLOCK_SOURCE_IS_CONTINUOUS;
-+
-+	err = clocksource_register_hz(&cs->cs, NSEC_PER_SEC);
-+	if (err) {
-+		pr_err("Error registering clocksource device: %d\n", err);
-+		goto out;
-+	}
-+
-+	pit_percpu = alloc_percpu(struct jcore_pit);
-+	if (!pit_percpu) {
-+		pr_err("Failed to allocate memory for clock event device\n");
-+		goto out;
-+	}
-+
-+	for_each_possible_cpu(cpu) {
-+		struct jcore_pit *pit = per_cpu_ptr(pit_percpu, cpu);
-+
-+		pit->ced.name = "jcore_pit";
-+		pit->ced.features = CLOCK_EVT_FEAT_PERIODIC
-+				  | CLOCK_EVT_FEAT_ONESHOT
-+				  | CLOCK_EVT_FEAT_PERCPU;
-+		pit->ced.cpumask = cpumask_of(cpu);
-+		pit->ced.rating = 400;
-+		pit->ced.irq = pit_irq;
-+		pit->ced.set_state_shutdown = jcore_pit_set_state_shutdown;
-+		pit->ced.set_state_periodic = jcore_pit_set_state_periodic;
-+		pit->ced.set_state_oneshot = jcore_pit_set_state_oneshot;
-+		pit->ced.set_next_event = jcore_pit_set_next_event;
-+
-+		pit->paddr = res.start;
-+		pit->psize = resource_size(&res);
-+		res.start += percpu_offset;
-+
-+		pit->cpu = cpu;
-+	}
-+
-+	nb = kzalloc(sizeof *nb, GFP_KERNEL);
-+	if (!nb) {
-+		pr_err("Failed to allocate memory for J-Core PIT notifier\n");
-+		goto out;
-+	}
-+
-+	nb->pit_percpu = pit_percpu;
-+	nb->nb.notifier_call = jcore_pit_cpu_notify;
-+	err = register_cpu_notifier(&nb->nb);
-+	if (err) {
-+		pr_err("Error registering J-Core PIT notifier: %d\n", err);
-+		goto out;
-+	}
-+
-+	err = request_irq(pit_irq, timer_interrupt,
-+		IRQF_TIMER | IRQF_PERCPU, "jcore_pit", pit_percpu);
-+	if (err) {
-+		pr_err("pit irq request failed: %d\n", err);
-+		goto out;
-+	}
-+
-+	/* The J-Core PIT is not hard-wired to a particular IRQ, but
-+	 * integrated with the interrupt controller such that the IRQ it
-+	 * generates is programmable. The programming interface has a
-+	 * legacy field which was an interrupt priority for AIC1, but
-+	 * which is OR'd onto bits 2-5 of the generated IRQ number when
-+	 * used with J-Core AIC2, so set it to match these bits. */
-+	hwirq = irq_get_irq_data(pit_irq)->hwirq;
-+	irqprio = (hwirq >> 2) & PIT_PRIO_MASK;
-+	enable_val = (1U << PIT_ENABLE_SHIFT)
-+		   | (hwirq << PIT_IRQ_SHIFT)
-+		   | (irqprio << PIT_PRIO_SHIFT);
-+
-+	for_each_possible_cpu(cpu) {
-+		struct jcore_pit *pit = per_cpu_ptr(pit_percpu, cpu);
-+		pit->enable_val = enable_val;
-+	}
-+
-+	jcore_pit_local_init(this_cpu_ptr(pit_percpu));
-+
-+	return;
-+
-+out:
-+	pr_err("Could not initialize J-Core PIT driver\n");
++	for_each_possible_cpu(cpu)
++		__raw_writel(0x80000203, j2_ccr_base + 4*cpu);
 +}
 +
-+CLOCKSOURCE_OF_DECLARE(jcore_pit, "jcore,pit", jcore_pit_init);
++static void j2_flush_both(void *args)
++{
++	unsigned cpu;
++	for_each_possible_cpu(cpu)
++		__raw_writel(0x80000303, j2_ccr_base + 4*cpu);
++}
++
++void __init j2_cache_init(void)
++{
++	if (!j2_ccr_base)
++		return;
++
++	local_flush_cache_all = j2_flush_both;
++	local_flush_cache_mm = j2_flush_both;
++	local_flush_cache_dup_mm = j2_flush_both;
++	local_flush_cache_page = j2_flush_both;
++	local_flush_cache_range = j2_flush_both;
++	local_flush_dcache_page = j2_flush_dcache;
++	local_flush_icache_range = j2_flush_icache;
++	local_flush_icache_page = j2_flush_icache;
++	local_flush_cache_sigtramp = j2_flush_icache;
++
++	pr_info("Initial J2 CCR is %.8x\n", __raw_readl(j2_ccr_base));
++}
+diff --git a/arch/sh/mm/cache.c b/arch/sh/mm/cache.c
+index 776d664..70cc52f 100644
+--- a/arch/sh/mm/cache.c
++++ b/arch/sh/mm/cache.c
+@@ -309,7 +309,11 @@ void __init cpu_cache_init(void)
+ 	if (unlikely(cache_disabled))
+ 		goto skip;
+ 
+-	if (boot_cpu_data.family = CPU_FAMILY_SH2) {
++	if (boot_cpu_data.type = CPU_J2) {
++		extern void __weak j2_cache_init(void);
++
++		j2_cache_init();
++	} else if (boot_cpu_data.family = CPU_FAMILY_SH2) {
+ 		extern void __weak sh2_cache_init(void);
+ 
+ 		sh2_cache_init();
 -- 
 2.8.1
 
