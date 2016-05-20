@@ -1,57 +1,40 @@
-From: Rich Felker <dalias@libc.org>
-Date: Fri, 20 May 2016 02:53:04 +0000
-Subject: [PATCH v2 04/12] of: add J-Core timer bindings
-Message-Id: <3460e061e18c6355407b585a8394b8da8cbd9fc8.1463708766.git.dalias@libc.org>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 20 May 2016 08:03:16 +0000
+Subject: Re: [PATCH v2 04/12] of: add J-Core timer bindings
+Message-Id: <CAMuHMdUDy7A6On1emuuu5vndJWBRECBspZNiY_-xfgn+AO+_nw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1463708766.git.dalias@libc.org>
-In-Reply-To: <cover.1463708766.git.dalias@libc.org>
+	<3460e061e18c6355407b585a8394b8da8cbd9fc8.1463708766.git.dalias@libc.org>
+In-Reply-To: <3460e061e18c6355407b585a8394b8da8cbd9fc8.1463708766.git.dalias@libc.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: devicetree@vger.kernel.org, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
-Cc: Ian Campbell <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>, Mark Rutland <mark.rutland@arm.com>, Pawel Moll <pawel.moll@arm.com>, Rob Herring <robh+dt@kernel.org>
+To: Rich Felker <dalias@libc.org>
+Cc: "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Ian Campbell <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>, Mark Rutland <mark.rutland@arm.com>, Pawel Moll <pawel.moll@arm.com>, Rob Herring <robh+dt@kernel.org>
 
-Signed-off-by: Rich Felker <dalias@libc.org>
----
- .../devicetree/bindings/timer/jcore,pit.txt        | 28 ++++++++++++++++++++++
- 1 file changed, 28 insertions(+)
- create mode 100644 Documentation/devicetree/bindings/timer/jcore,pit.txt
+On Fri, May 20, 2016 at 4:53 AM, Rich Felker <dalias@libc.org> wrote:
+> +++ b/Documentation/devicetree/bindings/timer/jcore,pit.txt
+> @@ -0,0 +1,28 @@
 
-diff --git a/Documentation/devicetree/bindings/timer/jcore,pit.txt b/Documentation/devicetree/bindings/timer/jcore,pit.txt
-new file mode 100644
-index 0000000..d53759a
---- /dev/null
-+++ b/Documentation/devicetree/bindings/timer/jcore,pit.txt
-@@ -0,0 +1,28 @@
-+J-Core Programmable Interval Timer and Realtime Clock
-+
-+Required properties:
-+
-+- compatible: Must be "jcore,pit".
-+
-+- reg: Memory region for timer/rtc registers.
-+
-+- interrupts: An interrupt to assign for the timer. The actual pit
-+  core is integrated with the aic and allows the timer interrupt
-+  assignment to be programmed by software, but this property is
-+  required in order to reserve an interrupt number that doesn't
-+  conflict with other devices.
-+
-+Optional properties:
-+
-+- cpu-offset: For SMP, the per-cpu offset to the local timer
-+  programming memory range.
-+
-+
-+Example:
-+
-+timer {
-+	compatible = "jcore,pit";
-+	reg = < 0x200 0x30 >;
-+	cpu-offset = < 0x300 >;
-+	interrupts = < 0x48 >;
-+};
--- 
-2.8.1
+> +Example:
+> +
+> +timer {
 
+timer@200
 
+> +       compatible = "jcore,pit";
+> +       reg = < 0x200 0x30 >;
+> +       cpu-offset = < 0x300 >;
+> +       interrupts = < 0x48 >;
+> +};
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
