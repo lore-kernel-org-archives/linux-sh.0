@@ -1,60 +1,73 @@
-From: Paul Gortmaker <paul.gortmaker@windriver.com>
-Date: Fri, 22 Apr 2016 18:07:03 +0000
-Subject: [PATCH 3/4] sh: make board-secureedge5410 explicitly non-modular
-Message-Id: <1461348424-3896-4-git-send-email-paul.gortmaker@windriver.com>
+From: Martin Townsend <mtownsend1973@gmail.com>
+Date: Fri, 20 May 2016 14:49:04 +0000
+Subject: SH7760
+Message-Id: <CABatt_wtci8+eCcbVJ3FgJ=wv-JTHKN-9Xy+1rXGf-iix=5txQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1461348424-3896-1-git-send-email-paul.gortmaker@windriver.com>
-In-Reply-To: <1461348424-3896-1-git-send-email-paul.gortmaker@windriver.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Paul Gortmaker <paul.gortmaker@windriver.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-The Kconfig currently controlling compilation of this code is:
+Hi,
 
-config SH_SECUREEDGE5410
-        bool "SecureEdge5410"
+Is the USB interface on the SH7760 compatible with the OHCI driver in
+the 4.1 linux kernel.
 
-...meaning that it currently is not being built as a module by anyone.
+I've setup the platform as follows:
 
-Lets remove the couple traces of modularity so that when reading the
-driver there is no doubt it is builtin-only.
+#define USB_IRQ evt2irq(0xa00)
+#define SH7760_USB_BASE 0xFE340000
+#define SH7760_USB_IOLEN 0x58
 
-Since module_init translates to device_initcall in the non-modular
-case, the init ordering remains unchanged with this commit.
+static struct usb_ohci_pdata usb_ohci_pdata;
 
-We don't replace module.h with init.h since the file already has that.
+static struct resource sh7760_usb_resources[] = {
+DEFINE_RES_MEM_NAMED(SH7760_USB_BASE, SH7760_USB_IOLEN,
+    "sh7760-usb-memory"),
+DEFINE_RES_IRQ_NAMED(USB_IRQ, "sh7760-usb-irq"),
+};
 
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: Rich Felker <dalias@libc.org>
-Cc: linux-sh@vger.kernel.org
-Signed-off-by: Paul Gortmaker <paul.gortmaker@windriver.com>
----
- arch/sh/boards/board-secureedge5410.c | 3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
+static struct platform_device sh7760_usb_host_device = {
+.name = "ohci-platform",
+.id = -1,
+.dev = {
+.dma_mask = NULL, /*  not use dma */
+.coherent_dma_mask = 0xffffffff,
+.platform_data = &usb_ohci_pdata,
+},
+.num_resources = ARRAY_SIZE(sh7760_usb_resources),
+.resource = sh7760_usb_resources,
+};
 
-diff --git a/arch/sh/boards/board-secureedge5410.c b/arch/sh/boards/board-secureedge5410.c
-index 98b36205aa7b..97ec67ffec2b 100644
---- a/arch/sh/boards/board-secureedge5410.c
-+++ b/arch/sh/boards/board-secureedge5410.c
-@@ -14,7 +14,6 @@
- #include <linux/interrupt.h>
- #include <linux/timer.h>
- #include <linux/delay.h>
--#include <linux/module.h>
- #include <linux/sched.h>
- #include <asm/machvec.h>
- #include <mach/secureedge5410.h>
-@@ -49,7 +48,7 @@ static int __init eraseconfig_init(void)
- 				irq);
- 	return 0;
- }
--module_init(eraseconfig_init);
-+device_initcall(eraseconfig_init);
- 
- /*
-  * Initialize IRQ setting
--- 
-2.8.0
+enabled the OHCI driver
+CONFIG_USB_OHCI_LITTLE_ENDIAN=y
+CONFIG_USB_SUPPORT=y
+CONFIG_USB_COMMON=y
+CONFIG_USB_ARCH_HAS_HCD=y
+CONFIG_USB=y
+CONFIG_USB_ANNOUNCE_NEW_DEVICES=y
+CONFIG_USB_OHCI_HCD=y
+CONFIG_USB_OHCI_SH=y
+CONFIG_USB_OHCI_HCD_PLATFORM=y
 
+Setup PCF
+/* Setup Port H Pull-Up Control Register:- Pull Ups on PH7 to PH3 */
+__raw_writeb(0xF8, PHPUPR);
+
+/* Setup Port H Control Register so that USB Peripheral Module is set */
+__raw_writew(0x4000, PHCR);
+__raw_writeb(0x00, PHDR);
+
+
+but I get the following error:
+
+[    3.600000] usb 1-1: new full-speed USB device number 2 using ohci-platform
+[    3.872000] ohci-platform ohci-platform: frame counter not updating; disabled
+[    3.872000] ohci-platform ohci-platform: HC died; cleaning up
+
+
+Any ideas as to what I'm missing?  I know the hardware is fine as I
+have a 2.6 kernel running that uses a SH7760 specific OHCI driver.
+
+Many Thanks,
+Martin.
