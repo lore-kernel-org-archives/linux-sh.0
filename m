@@ -1,28 +1,49 @@
-From: Afzal Mohammed <afzal.mohd.ma@gmail.com>
-Date: Fri, 27 May 2016 11:51:35 +0000
-Subject: Re: [PATCH v3 02/12] of: add J-Core cpu bindings
-Message-Id: <20160527115110.GA6365@afzalpc>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 20 May 2016 07:50:53 +0000
+Subject: [PATCH v2 0/2] ARM/arm64: renesas: Stop using drivers/sh/
+Message-Id: <1463730655-16199-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1464148904.git.dalias@libc.org>
- <39ad5c69533ef537e6ab0426efc057f9064ee581.1464148904.git.dalias@libc.org>
- <20160525102214.GF1337@leverpostej>
- <20160525230407.GT21636@brightrain.aerifal.cx>
- <57476E22.6010000@landley.net>
-In-Reply-To: <57476E22.6010000-VoJi6FS/r0vR7s880joybQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Rob Landley <rob-VoJi6FS/r0vR7s880joybQ@public.gmane.org>
-Cc: Rich Felker <dalias-8zAoT0mYgF4@public.gmane.org>, Mark Rutland <mark.rutland-5wv7dgnIgG8@public.gmane.org>, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Ian Campbell <ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org>, Kumar Gala <galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org>, Pawel Moll <pawel.moll-5wv7dgnIgG8@public.gmane.org>, Rob Herring <robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Hi,
+	Hi Simon, Magnus,
 
-On Thu, May 26, 2016 at 04:44:02PM -0500, Rob Landley wrote:
+Now CONFIG_PM and CONFIG_PM_GENERIC_DOMAINS are enabled unconditionally
+for Renesas ARM-based SoCs, the legacy clock domain is no longer used on
+these SoCs, and we can return drivers/sh/ to SuperH.
 
-> As far as I know, we're the first nommu SMP implementation in Linux.
+Both patches were extracted from series "[PATCH 0/4] Enable PM and
+PM_GENERIC_DOMAINS for SoCs with PM Domains", and updated, hence the
+v2.
 
-According to hearsay, thou shall be called Buzz Aldrin, Blackfin is
-Neil Armstrong.
+Note that this does break booting R-Car Gen2 boards using pre-v4.3 DTSes
+that don't have power-domains properties, as this relied on the legacy
+clock domain.
 
-Regards
-afzal
+Thanks!
+
+Geert Uytterhoeven (2):
+  drivers: sh: Stop using the legacy clock domain on ARM
+  MAINTAINERS: Drop drivers/sh/ for Renesas ARM
+
+ MAINTAINERS             | 1 -
+ drivers/Makefile        | 1 -
+ drivers/sh/pm_runtime.c | 9 ---------
+ 3 files changed, 11 deletions(-)
+
+-- 
+1.9.1
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
