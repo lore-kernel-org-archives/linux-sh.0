@@ -1,90 +1,37 @@
-From: Yoshinori Sato <ysato@users.sourceforge.jp>
-Date: Tue, 10 May 2016 07:28:23 +0000
-Subject: Re: [PATCH RESEND 03/12] sh: Disable board specific code in OF mode
-Message-Id: <87eg9ape20.wl-ysato@users.sourceforge.jp>
+From: Rich Felker <dalias@libc.org>
+Date: Fri, 20 May 2016 02:53:03 +0000
+Subject: [PATCH v2 01/12] of: add vendor prefix for J-Core
+Message-Id: <b6d33800300bde8f1d9a7b88a715d741548fad4a.1463708766.git.dalias@libc.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1462079316-27771-1-git-send-email-ysato@users.sourceforge.jp>
-	<1462079316-27771-4-git-send-email-ysato@users.sourceforge.jp>
-	<20160504024941.GN21636@brightrain.aerifal.cx>
-In-Reply-To: <20160504024941.GN21636@brightrain.aerifal.cx>
+References: <cover.1463708766.git.dalias@libc.org>
+In-Reply-To: <cover.1463708766.git.dalias-8zAoT0mYgF4@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Rich Felker <dalias@libc.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Ian Campbell <ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org>, Kumar Gala <galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org>, Mark Rutland <mark.rutland-5wv7dgnIgG8@public.gmane.org>, Pawel Moll <pawel.moll-5wv7dgnIgG8@public.gmane.org>, Rob Herring <robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 
-Sorry too late reply.
+The J-Core project (j-core.org) produces open source cpu and SoC
+peripheral cores synthesizable as FPGA bitstreams or ASICs.
 
-On Wed, 04 May 2016 11:49:41 +0900,
-Rich Felker wrote:
-> 
-> On Sun, May 01, 2016 at 02:08:27PM +0900, Yoshinori Sato wrote:
-> > Board specific code conflict on of-generic.
-> > 
-> > Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
-> > ---
-> >  arch/sh/Makefile | 11 +++++++++++
-> >  1 file changed, 11 insertions(+)
-> > 
-> > diff --git a/arch/sh/Makefile b/arch/sh/Makefile
-> > index bf5b3f5..8ff943b 100644
-> > --- a/arch/sh/Makefile
-> > +++ b/arch/sh/Makefile
-> > @@ -130,6 +130,9 @@ head-y	:= arch/sh/kernel/head_$(BITS).o
-> >  core-y				+= arch/sh/kernel/ arch/sh/mm/ arch/sh/boards/
-> >  core-$(CONFIG_SH_FPU_EMU)	+= arch/sh/math-emu/
-> >  
-> > +core-$(CONFIG_USE_BUILTIN_DTB)	+= arch/sh/boot/dts/
-> > +
-> 
-> It looks like you inadvertently mixed the builtin-dtb patch with this
-> commit. Is yours based on the builtin-dtb patch I posted to the list
-> or a different approach?
+Signed-off-by: Rich Felker <dalias@libc.org>
+---
+ Documentation/devicetree/bindings/vendor-prefixes.txt | 1 +
+ 1 file changed, 1 insertion(+)
 
-Oh sorry.
-It changes same. I mistake origin version.
-
-> > +ifneq ($(CONFIG_SH_DEVICE_TREE),y)
-> >  # Mach groups
-> >  machdir-$(CONFIG_SOLUTION_ENGINE)		+= mach-se
-> >  machdir-$(CONFIG_SH_HP6XX)			+= mach-hp6xx
-> > @@ -150,6 +153,7 @@ machdir-$(CONFIG_SH_LANDISK)			+= mach-landisk
-> >  machdir-$(CONFIG_SH_LBOX_RE2)			+= mach-lboxre2
-> >  machdir-$(CONFIG_SH_CAYMAN)			+= mach-cayman
-> >  machdir-$(CONFIG_SH_RSK)			+= mach-rsk
-> > +endif
-> 
-> Is this actually necessary? I thought SH_DEVICE_TREE was mutually
-> exclusive with board-specific configs at the Kconfig level. If not, it
-> should probably be handled that way rather than with logic like this
-> in the Makefile.
-
-Hmm.
-I think Kconfig level exclsive more better.
-
-> 
-> >  ifneq ($(machdir-y),)
-> >  core-y	+= $(addprefix arch/sh/boards/, \
-> > @@ -222,6 +226,13 @@ archclean:
-> >  	$(Q)$(MAKE) $(clean)=$(boot)
-> >  	$(Q)$(MAKE) $(clean)=arch/sh/kernel/vsyscall
-> >  
-> > +%.dtb %.dtb.S %.dtb.o: | scripts
-> > +	$(Q)$(MAKE) $(build)=arch/sh/boot/dts arch/sh/boot/dts/$@
-> > +
-> > +PHONY += dtbs
-> > +dtbs: scripts
-> > +	$(Q)$(MAKE) $(build)=arch/sh/boot/dts
-> > +
-> >  define archhelp
-> >  	@echo '  zImage 	           - Compressed kernel image'
-> >  	@echo '  romImage	           - Compressed ROM image, if supported'
-> > -- 
-> 
-> More builtin-dtb stuff.
-> 
-> Rich
-
+diff --git a/Documentation/devicetree/bindings/vendor-prefixes.txt b/Documentation/devicetree/bindings/vendor-prefixes.txt
+index 86740d4..9c070b8 100644
+--- a/Documentation/devicetree/bindings/vendor-prefixes.txt
++++ b/Documentation/devicetree/bindings/vendor-prefixes.txt
+@@ -126,6 +126,7 @@ invensense	InvenSense Inc.
+ isee	ISEE 2007 S.L.
+ isil	Intersil
+ issi	Integrated Silicon Solutions Inc.
++jcore	J-Core.org
+ jedec	JEDEC Solid State Technology Association
+ karo	Ka-Ro electronics GmbH
+ keymile	Keymile GmbH
 -- 
-Yoshinori Sato
-<ysato@users.sourceforge.jp>
+2.8.1
+
+
