@@ -1,40 +1,31 @@
-From: Yoshinori Sato <ysato@users.sourceforge.jp>
-Date: Sun, 01 May 2016 04:59:14 +0000
-Subject: [PATCH 04/12] sh: Drop CPU specific setup on OF mode
-Message-Id: <1462078763-27135-5-git-send-email-ysato@users.sourceforge.jp>
+From: Andrea Gelmini <andrea.gelmini@gelma.net>
+Date: Sat, 21 May 2016 12:09:52 +0000
+Subject: [PATCH 0255/1529] Fix typo
+Message-Id: <20160521120952.13362-1-andrea.gelmini@gelma.net>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-CPU specific set conflict of-generic.
-
-Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
+Signed-off-by: Andrea Gelmini <andrea.gelmini@gelma.net>
 ---
- arch/sh/kernel/cpu/sh4/Makefile | 2 ++
- 1 file changed, 2 insertions(+)
+ arch/sh/mm/cache-sh5.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/sh/kernel/cpu/sh4/Makefile b/arch/sh/kernel/cpu/sh4/Makefile
-index 3a1dbc7..b822c0c 100644
---- a/arch/sh/kernel/cpu/sh4/Makefile
-+++ b/arch/sh/kernel/cpu/sh4/Makefile
-@@ -14,6 +14,7 @@ perf-$(CONFIG_CPU_SUBTYPE_SH7750)	:= perf_event.o
- perf-$(CONFIG_CPU_SUBTYPE_SH7750S)	:= perf_event.o
- perf-$(CONFIG_CPU_SUBTYPE_SH7091)	:= perf_event.o
- 
-+ifndef CONFIG_OF
- # CPU subtype setup
- obj-$(CONFIG_CPU_SUBTYPE_SH7750)	+= setup-sh7750.o
- obj-$(CONFIG_CPU_SUBTYPE_SH7750R)	+= setup-sh7750.o
-@@ -31,6 +32,7 @@ endif
- 
- # Additional clocks by subtype
- clock-$(CONFIG_CPU_SUBTYPE_SH4_202)	+= clock-sh4-202.o
-+endif
- 
- obj-y					+= $(clock-y)
- obj-$(CONFIG_PERF_EVENTS)		+= $(perf-y)
+diff --git a/arch/sh/mm/cache-sh5.c b/arch/sh/mm/cache-sh5.c
+index d1bffbc..5380089 100644
+--- a/arch/sh/mm/cache-sh5.c
++++ b/arch/sh/mm/cache-sh5.c
+@@ -259,7 +259,7 @@ static void inline sh64_dcache_purge_sets(int sets_to_purge_base, int n_sets)
+ 		 * Do one alloco which hits the required set per cache
+ 		 * way.  For write-back mode, this will purge the #ways
+ 		 * resident lines.  There's little point unrolling this
+-		 * loop because the allocos stall more if they're too
++		 * loop because the allocs stall more if they're too
+ 		 * close together.
+ 		 */
+ 		eaddr1 = eaddr0 + cpu_data->dcache.way_size *
 -- 
-2.7.0
+2.8.2.534.g1f66975
 
