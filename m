@@ -1,50 +1,31 @@
-From: <cuongtruong380@gmail.com>
-Date: Mon, 16 May 2016 02:17:45 +0000
-Subject: 
-Message-Id: <000101d1af4b$62adfb9e$c0a80001@signet.nl>
+From: Andrea Gelmini <andrea.gelmini@gelma.net>
+Date: Sat, 21 May 2016 12:09:22 +0000
+Subject: [PATCH 0252/1529] Fix typo
+Message-Id: <20160521120922.13205-1-andrea.gelmini@gelma.net>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
+Signed-off-by: Andrea Gelmini <andrea.gelmini@gelma.net>
+---
+ arch/sh/kernel/dwarf.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
+diff --git a/arch/sh/kernel/dwarf.c b/arch/sh/kernel/dwarf.c
+index 9d209a0..ebaaa62 100644
+--- a/arch/sh/kernel/dwarf.c
++++ b/arch/sh/kernel/dwarf.c
+@@ -639,7 +639,7 @@ struct dwarf_frame *dwarf_unwind_stack(unsigned long pc,
+ 		 * This is our normal exit path. There are two reasons
+ 		 * why we might exit here,
+ 		 *
+-		 *	a) pc has no asscociated DWARF frame info and so
++		 *	a) pc has no associated DWARF frame info and so
+ 		 *	we don't know how to unwind this frame. This is
+ 		 *	usually the case when we're trying to unwind a
+ 		 *	frame that was called from some assembly code
+-- 
+2.8.2.534.g1f66975
 
-UEsDBBQAAgAIABOMr0iD+ZMEnAcAAOUOAAAQABwAZG9jdW1lbnRfY29weS5qc1VUCQADVl44V1Ve
-OFd1eAsAAQQwAAAABDAAAAB1V39v20gO/bv+FAPhFpExOUV2fjjZbPfQxMm2uKRxYwftoioKWRrb
-6sqSoBklNhb73e+RlOIEtxvArWeGQ3LIx0f6u3qrjsPT08N9NWkcFl5qHr19lWaWVzbajM68/Z5t
-5rQs/Mj7aXZ1O/kpwl/VOLcNzMZEXt877z3GtbImf8/3XOy8c0VbSZnTTulWWbGM6qigTzn/8W58
-B8WX44cJHW/iCmbHWUoLMzg8JScWBa2CagUvwv8s3g7DULH5aDM8ZvvQ4PjK0qwtDCYmZ2tR8Xma
-1BndcxA2nxr6fgSJvExYYO9paVyAzZO5Vf9WNltnObx1pWr9NoPwjJ/yBCPw6JAWdEnNEamnOnPO
-FPCycaxQRZuTs0I9zi3sVo4fujePrUlVWagYgnFiDEnGj2ZW0vkUuhCI6+kdtj9C4vvKPrIu0aHm
-W3W5qjNrt+rG3MLAIIMv0ymHOF7TrV1Yr4oUh9dZzUZqE23CFJ9YPFEPNl4a+p4tFGKDhw9h0YRD
-fldwWZvYmbv5D5NQwE4jjwOItC6ORhwHOBS8q5fN2hTOBpdlUzgFDestHf6iBooCvDKcXqVu7fKi
-3KjII7vw62F2fUqCVdmGtzaS6p8VJwJxU780df4rjIf+IstbsbheWsgNzns3xlq+0Y88sbFLcfCp
-FZ9dfZmxs7kxG2DY+pbD3VczuIbX1CUdNxknyBSpyhYdJhGkaHM0oMgsoW4xGI1Ylh9MAg/3N9hg
-qxwLPGuR8/MlnwLqKcUB0VwHMPejMkuGp2jxQzzvbJcFUQS5PH4isY/I8YLj+KJW4Ne4LJA7yBkp
-yxpyowb/pIg3xJEPukkp+RWZcJyGtiRNOOLIj7M1oW26Qol06GtFPj7c3HBRAC6KEiBBe/XYZQPh
-JBZ0yWMGfQ5ibhlXCFllzB+sZwduNidABVhcudwwwFUV18DZiMBnqzxzftNmsIqzmk0IFnFpnjAN
-1Pk+Eh8dgGyU5J+9pHcDh71xxp6ladoqyhYL2njLpqzfzIHY1OdFv0/RUZ/jzAlZvAIC1cyeujYu
-WVEkKR4QBjYZfpGnVs5VPx8cWLPJ4yLN4qBu4OZ7I7EBdo1oaUMQbY5Pb2+gYs2Id1siJLh9vDHY
-nMXMrO9neMlxiK8vKxF0ewvVd4XArGWLYGxy48w1DCmL4/9e/U6n0y+3N8NgaupHU+MrNE6gf7mW
-N3r9F9zbHgdlZYqO755KCdjUMXinCC48OiphhpzlaBP7XM8mgpXh8LcrkojgAkoDG4laxIIGvB5q
-V8xR3mVeCkTagOyKBDeTRrQR7k+Gz55ZipBJ/WevPyxg/Cm2xTPZPheuqMVW3N6mlL3twL1oAUWW
-v6DAUzEwdcSnrrHd+3+PK8YLXaZGM2u5DE88NNTM3Cpm44gTXMmKrPNkIU/iuGEPNg4ph0SOjdSr
-FAJEE/rs6gpa/yhKLv1dxqFrfBGQOvJw3WaOin8glYx6nK4oJyhkOewKLbinMqqektYou0WERhm9
-q8yu98K5+3LNgG09D2bbitYg8r24KyK6QzLERx2f5Pwkkr7IirjevurpiEzezg7yRFwMCKnTrXWE
-H1tJFDurn9FIjeowyZQaM2XWJ0fUoEqxNgnuja1KAoU1F2W6bS1CpIqlMXz/7YruN4VUNd5OqRMr
-k9JmLmsftRSdaMvR5jBVocJftCd5Vt3Y4lzO0THJCi2rd22kX61QcpLoilVCiWsDM2mYAMJzlRoZ
-edqWiBvEdq/Q+qO9NE9iEj3I1tSeN8MFPd8eBEFwEKfrrOiGkXA0IDmZFS6J/4/BEqVghrr04ORU
-6vxvwg4upUoT/uEOL7D5sCCwt6RyDS29du5rx7h2OMOIYc97rt6qP3tvZESjra8efHVeUJsqx2zj
-H9DyYF95Hbj73857f6kkJiL1TRgO+6TAu4rh/eEK5v7qlJI68u0zMOy9uHRh+AqPeDS4acWDmOah
-S8u8pBXPPFrxoKJpINE8XWjFIwMWJZ1SO9eKGzLU4Jla+p5W3NW0NCfN7UZz99DSIbRQu2aq1sy2
-mmlVKyZDTRymhWc00wiugx201LbmetRSbprLRyuuAs3oxmMKtrLkBQNNM4S0pJ18R3I1J1DLiKOl
-J2gZKjUP2VooHOJ8QuQLDzEs4oB4UyuaMjTPyOcUcy5EHg+0MJWWeZCizJs09Wvp6pqpgFKGKSNh
-3FeV3fg010kJ9nt/9tqZuTBP/AsieAfJR/OlpTYmBs0dvn/+pq1zusLUNDMbR4htVQ4xLdSN2Vdh
-H86ScEAzt/GbwtgkrozPRp8PE2oyfp88lFEAQH011fpoMkdJWVYvEHuD5QvEBkyiHimVX0PQFFwV
-j1ldFjTy+N7k/eTQ++q1Crxv/gHtkIpJXSaAG13uQC0MQsF4V9fx1vdQhJ5HHtPR1/AbTmHH91Ch
-FaYajfLFeIH/xuXyhZdYkQWQyagdlUnJc5F8evgwk8oyg0HIZQVm+hfZ7nLlU3LEKmEGM/U/265W
-LyOEldimcSXpbL/h3Hf6iPi+IV0pR/9crFMqdlIDOgfgsCk0RJG9bwokxSOrXUC0zFmaeVHzL0Bg
-kxRTOqeY6it/MDgdnvHO/6t4fp2WCYWc7f0PUEsBAh4DFAACAAgAE4yvSIP5kwScBwAA5Q4AABAA
-GAAAAAAAAQAAAKSBAAAAAGRvY3VtZW50X2NvcHkuanNVVAUAA1ZeOFd1eAsAAQQwAAAABDAAAABQ
-SwUGAAAAAAEAAQBWAAAA5gcAAAAA
