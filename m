@@ -1,43 +1,31 @@
-From: Yoshinori Sato <ysato@users.sourceforge.jp>
-Date: Sun, 01 May 2016 05:08:28 +0000
-Subject: [PATCH RESEND 04/12] sh: Drop CPU specific setup on OF mode
-Message-Id: <1462079316-27771-5-git-send-email-ysato@users.sourceforge.jp>
+From: Andrea Gelmini <andrea.gelmini@gelma.net>
+Date: Sat, 21 May 2016 12:09:44 +0000
+Subject: [PATCH 0254/1529] Fix typo
+Message-Id: <20160521120944.13307-1-andrea.gelmini@gelma.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1462079316-27771-1-git-send-email-ysato@users.sourceforge.jp>
-In-Reply-To: <1462079316-27771-1-git-send-email-ysato@users.sourceforge.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+To: linux-sh@vger.kernel.org
 
-CPU specific set conflict of-generic.
-
-Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
+Signed-off-by: Andrea Gelmini <andrea.gelmini@gelma.net>
 ---
- arch/sh/kernel/cpu/sh4/Makefile | 2 ++
- 1 file changed, 2 insertions(+)
+ arch/sh/lib64/copy_user_memcpy.S | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/sh/kernel/cpu/sh4/Makefile b/arch/sh/kernel/cpu/sh4/Makefile
-index 3a1dbc7..b822c0c 100644
---- a/arch/sh/kernel/cpu/sh4/Makefile
-+++ b/arch/sh/kernel/cpu/sh4/Makefile
-@@ -14,6 +14,7 @@ perf-$(CONFIG_CPU_SUBTYPE_SH7750)	:= perf_event.o
- perf-$(CONFIG_CPU_SUBTYPE_SH7750S)	:= perf_event.o
- perf-$(CONFIG_CPU_SUBTYPE_SH7091)	:= perf_event.o
+diff --git a/arch/sh/lib64/copy_user_memcpy.S b/arch/sh/lib64/copy_user_memcpy.S
+index 49aeabe..f964aa3 100644
+--- a/arch/sh/lib64/copy_user_memcpy.S
++++ b/arch/sh/lib64/copy_user_memcpy.S
+@@ -46,7 +46,7 @@
  
-+ifndef CONFIG_OF
- # CPU subtype setup
- obj-$(CONFIG_CPU_SUBTYPE_SH7750)	+= setup-sh7750.o
- obj-$(CONFIG_CPU_SUBTYPE_SH7750R)	+= setup-sh7750.o
-@@ -31,6 +32,7 @@ endif
+ */
  
- # Additional clocks by subtype
- clock-$(CONFIG_CPU_SUBTYPE_SH4_202)	+= clock-sh4-202.o
-+endif
- 
- obj-y					+= $(clock-y)
- obj-$(CONFIG_PERF_EVENTS)		+= $(perf-y)
+-/* NOTE : Prefetches removed and allocos guarded by synco to avoid TAKum03020
++/* NOTE : Prefetches removed and allocs guarded by synco to avoid TAKum03020
+  * erratum.  The first two prefetches are nop-ed out to avoid upsetting the
+  * instruction counts used in the jump address calculation.
+  * */
 -- 
-2.7.0
+2.8.2.534.g1f66975
 
