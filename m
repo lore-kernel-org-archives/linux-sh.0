@@ -1,49 +1,32 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 20 May 2016 07:50:53 +0000
-Subject: [PATCH v2 0/2] ARM/arm64: renesas: Stop using drivers/sh/
-Message-Id: <1463730655-16199-1-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 23 May 2016 00:41:13 +0000
+Subject: Re: [PATCH v2 0/2] ARM/arm64: renesas: Stop using drivers/sh/
+Message-Id: <20160523004112.GE25562@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1463730655-16199-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1463730655-16199-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org
 
-	Hi Simon, Magnus,
+On Fri, May 20, 2016 at 09:50:53AM +0200, Geert Uytterhoeven wrote:
+> 	Hi Simon, Magnus,
+> 
+> Now CONFIG_PM and CONFIG_PM_GENERIC_DOMAINS are enabled unconditionally
+> for Renesas ARM-based SoCs, the legacy clock domain is no longer used on
+> these SoCs, and we can return drivers/sh/ to SuperH.
+> 
+> Both patches were extracted from series "[PATCH 0/4] Enable PM and
+> PM_GENERIC_DOMAINS for SoCs with PM Domains", and updated, hence the
+> v2.
+> 
+> Note that this does break booting R-Car Gen2 boards using pre-v4.3 DTSes
+> that don't have power-domains properties, as this relied on the legacy
+> clock domain.
+> 
+> Thanks!
 
-Now CONFIG_PM and CONFIG_PM_GENERIC_DOMAINS are enabled unconditionally
-for Renesas ARM-based SoCs, the legacy clock domain is no longer used on
-these SoCs, and we can return drivers/sh/ to SuperH.
-
-Both patches were extracted from series "[PATCH 0/4] Enable PM and
-PM_GENERIC_DOMAINS for SoCs with PM Domains", and updated, hence the
-v2.
-
-Note that this does break booting R-Car Gen2 boards using pre-v4.3 DTSes
-that don't have power-domains properties, as this relied on the legacy
-clock domain.
-
-Thanks!
-
-Geert Uytterhoeven (2):
-  drivers: sh: Stop using the legacy clock domain on ARM
-  MAINTAINERS: Drop drivers/sh/ for Renesas ARM
-
- MAINTAINERS             | 1 -
- drivers/Makefile        | 1 -
- drivers/sh/pm_runtime.c | 9 ---------
- 3 files changed, 11 deletions(-)
-
--- 
-1.9.1
-
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
+Thanks, I have queued this up for v4.8 which should give it a good
+amount of time to sit in next.
