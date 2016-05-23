@@ -1,41 +1,62 @@
-From: Rich Felker <dalias@libc.org>
-Date: Sat, 21 May 2016 19:17:39 +0000
+From: Rob Herring <robh@kernel.org>
+Date: Mon, 23 May 2016 20:53:20 +0000
 Subject: Re: [PATCH v2 03/12] of: add J-Core interrupt controller bindings
-Message-Id: <20160521191739.GB21636@brightrain.aerifal.cx>
+Message-Id: <20160523205320.GA21655@rob-hp-laptop>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1463708766.git.dalias@libc.org>
  <2bdca4260d5bb2b3820e4309e2ba445c4c7bfbf6.1463708766.git.dalias@libc.org>
- <CAMuHMdVs9=8BGwmCBuYch2abJBnCLKoEx7i3EMghW3UUjXc7dA@mail.gmail.com>
- <20160520223456.GV21636@brightrain.aerifal.cx>
- <CAMuHMdUxQQt7E_mFscKh3t5ewTs=gKkV3OjZnK+Xq6AkbGZGyQ@mail.gmail.com>
-In-Reply-To: <CAMuHMdUxQQt7E_mFscKh3t5ewTs=gKkV3OjZnK+Xq6AkbGZGyQ@mail.gmail.com>
+In-Reply-To: <2bdca4260d5bb2b3820e4309e2ba445c4c7bfbf6.1463708766.git.dalias@libc.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Ian Campbell <ijc+devicetree@hellion.org.uk>, Jason Cooper <jason@lakedaemon.net>, Kumar Gala <galak@codeaurora.org>, Marc Zyngier <marc.zyngier@arm.com>, Mark Rutland <mark.rutland@arm.com>, Pawel Moll <pawel.moll@arm.com>, Rob Herring <robh+dt@kernel.org>, Thomas Gleixner <tglx@linutronix.de>
+To: Rich Felker <dalias@libc.org>
+Cc: devicetree@vger.kernel.org, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Ian Campbell <ijc+devicetree@hellion.org.uk>, Jason Cooper <jason@lakedaemon.net>, Kumar Gala <galak@codeaurora.org>, Marc Zyngier <marc.zyngier@arm.com>, Mark Rutland <mark.rutland@arm.com>, Pawel Moll <pawel.moll@arm.com>, Thomas Gleixner <tglx@linutronix.de>
 
-On Sat, May 21, 2016 at 08:07:54PM +0200, Geert Uytterhoeven wrote:
-> On Sat, May 21, 2016 at 12:34 AM, Rich Felker <dalias@libc.org> wrote:
-> > On Fri, May 20, 2016 at 10:04:26AM +0200, Geert Uytterhoeven wrote:
-> >> On Fri, May 20, 2016 at 4:53 AM, Rich Felker <dalias@libc.org> wrote:
-> >> > +Additional properties required for aic1:
-> >> > +
-> >> > +- reg : Memory region for configuration.
-> >> > +
-> >> > +- cpu-offset : For SMP, the offset to the per-cpu memory region for
-> >> > +  configuration, to be scaled by the cpu number.
-> >>
-> >> Does cpu-offset apply to aic1 only?
-> >
-> > The current kernel driver doesn't have any reason to _need_ cpu-offset
-> > for aic2, but since there are registers there that a driver (even a
-> > non-Linux one) may want to use, I think it makes sense that it should
-> > be present in the bindings.
+On Fri, May 20, 2016 at 02:53:04AM +0000, Rich Felker wrote:
+> Signed-off-by: Rich Felker <dalias@libc.org>
+> ---
+>  .../bindings/interrupt-controller/jcore,aic.txt    | 28 ++++++++++++++++++++++
+>  1 file changed, 28 insertions(+)
+>  create mode 100644 Documentation/devicetree/bindings/interrupt-controller/jcore,aic.txt
 > 
-> Hence the "for aic1" should be dropped?
+> diff --git a/Documentation/devicetree/bindings/interrupt-controller/jcore,aic.txt b/Documentation/devicetree/bindings/interrupt-controller/jcore,aic.txt
+> new file mode 100644
+> index 0000000..dc9fde8
+> --- /dev/null
+> +++ b/Documentation/devicetree/bindings/interrupt-controller/jcore,aic.txt
+> @@ -0,0 +1,28 @@
+> +J-Core Advanced Interrupt Controller
+> +
+> +Required properties:
+> +
+> +- compatible : Should be "jcore,aic1" for the (obsolete) first-generation aic
+> +  with 8 interrupt lines with programmable priorities, or "jcore,aic2" for
+> +  the "aic2" core with 64 interrupts.
+> +
+> +- interrupt-controller : Identifies the node as an interrupt controller
+> +
+> +- #interrupt-cells : Specifies the number of cells needed to encode an
+> +  interrupt source. The value shall be 1.
 
-Yes, I've fixed that locally. Moved reg to required and cpu-offset
-to optional but needed for smp.
+No level/edge support? Need 2 cells if so.
 
-Rich
+> +
+> +Additional properties required for aic1:
+> +
+> +- reg : Memory region for configuration.
+> +
+> +- cpu-offset : For SMP, the offset to the per-cpu memory region for
+> +  configuration, to be scaled by the cpu number.
+> +
+> +
+> +Example:
+> +
+> +aic: interrupt-controller {
+> +	compatible = "jcore,aic2";
+> +	interrupt-controller;
+> +	#interrupt-cells = <1>;
+> +};
+> -- 
+> 2.8.1
+> 
+> 
