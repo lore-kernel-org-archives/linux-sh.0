@@ -1,61 +1,119 @@
 From: Rich Felker <dalias@libc.org>
-Date: Wed, 25 May 2016 02:25:33 +0000
-Subject: Re: [PATCH v2 03/12] of: add J-Core interrupt controller bindings
-Message-Id: <20160525022533.GO21636@brightrain.aerifal.cx>
+Date: Wed, 25 May 2016 05:43:03 +0000
+Subject: [PATCH v3 02/12] of: add J-Core cpu bindings
+Message-Id: <39ad5c69533ef537e6ab0426efc057f9064ee581.1464148904.git.dalias@libc.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1463708766.git.dalias@libc.org>
- <2bdca4260d5bb2b3820e4309e2ba445c4c7bfbf6.1463708766.git.dalias@libc.org>
- <20160523205320.GA21655@rob-hp-laptop>
- <20160523211342.GG21636@brightrain.aerifal.cx>
- <57440C45.5040105@arm.com>
-In-Reply-To: <57440C45.5040105-5wv7dgnIgG8@public.gmane.org>
+References: <cover.1464148904.git.dalias@libc.org>
+In-Reply-To: <cover.1464148904.git.dalias@libc.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Marc Zyngier <marc.zyngier-5wv7dgnIgG8@public.gmane.org>
-Cc: Rob Herring <robh-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Ian Campbell <ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org>, Jason Cooper <jason-NLaQJdtUoK4Be96aLqz0jA@public.gmane.org>, Kumar Gala <galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org>, Mark Rutland <mark.rutland-5wv7dgnIgG8@public.gmane.org>, Pawel Moll <pawel.moll-5wv7dgnIgG8@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>
+To: devicetree@vger.kernel.org, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Ian Campbell <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>, Mark Rutland <mark.rutland@arm.com>, Pawel Moll <pawel.moll@arm.com>, Rob Herring <robh+dt@kernel.org>
 
-On Tue, May 24, 2016 at 09:09:41AM +0100, Marc Zyngier wrote:
-> On 23/05/16 22:13, Rich Felker wrote:
-> > On Mon, May 23, 2016 at 03:53:20PM -0500, Rob Herring wrote:
-> >> On Fri, May 20, 2016 at 02:53:04AM +0000, Rich Felker wrote:
-> >>> Signed-off-by: Rich Felker <dalias@libc.org>
-> >>> ---
-> >>>  .../bindings/interrupt-controller/jcore,aic.txt    | 28 ++++++++++++++++++++++
-> >>>  1 file changed, 28 insertions(+)
-> >>>  create mode 100644 Documentation/devicetree/bindings/interrupt-controller/jcore,aic.txt
-> >>>
-> >>> diff --git a/Documentation/devicetree/bindings/interrupt-controller/jcore,aic.txt b/Documentation/devicetree/bindings/interrupt-controller/jcore,aic.txt
-> >>> new file mode 100644
-> >>> index 0000000..dc9fde8
-> >>> --- /dev/null
-> >>> +++ b/Documentation/devicetree/bindings/interrupt-controller/jcore,aic.txt
-> >>> @@ -0,0 +1,28 @@
-> >>> +J-Core Advanced Interrupt Controller
-> >>> +
-> >>> +Required properties:
-> >>> +
-> >>> +- compatible : Should be "jcore,aic1" for the (obsolete) first-generation aic
-> >>> +  with 8 interrupt lines with programmable priorities, or "jcore,aic2" for
-> >>> +  the "aic2" core with 64 interrupts.
-> >>> +
-> >>> +- interrupt-controller : Identifies the node as an interrupt controller
-> >>> +
-> >>> +- #interrupt-cells : Specifies the number of cells needed to encode an
-> >>> +  interrupt source. The value shall be 1.
-> >>
-> >> No level/edge support? Need 2 cells if so.
-> > 
-> > No, all the logic is in hardware. From the software side you just need
-> > handle_simple_irq or equivalent.
-> 
-> Not even an EOI?
+Signed-off-by: Rich Felker <dalias@libc.org>
+---
+ Documentation/devicetree/bindings/jcore/cpus.txt | 92 ++++++++++++++++++++++++
+ 1 file changed, 92 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/jcore/cpus.txt
 
-What I mean is that there is no ack/eoi interface. While I haven't
-worked directly on the relevant vhdl, my understanding is that the aic
-clears the pending status of an interrupt atomically with acceptance
-of the interrupt by the cpu.
+diff --git a/Documentation/devicetree/bindings/jcore/cpus.txt b/Documentation/devicetree/bindings/jcore/cpus.txt
+new file mode 100644
+index 0000000..9d77ec1
+--- /dev/null
++++ b/Documentation/devicetree/bindings/jcore/cpus.txt
+@@ -0,0 +1,92 @@
++=========+J-Core cpu bindings
++=========+
++The J-Core processors are open source CPU cores that can be built as FPGA
++soft cores or ASICs. The device tree is also responsible for describing the
++cache controls and, for SMP configurations, all details of the SMP method,
++as documented below.
++
++
++---------------------
++Top-level "cpus" node
++---------------------
++
++Required properties:
++
++- #address-cells: Must be 1.
++
++- #size-cells: Must be 0.
++
++Optional properties:
++
++- enable-method: Required only for SMP systems. If present, must be
++  "jcore,spin-table".
++
++
++--------------------
++Individual cpu nodes
++--------------------
++
++Required properties:
++
++- device_type: Must be "cpu".
++
++- compatible: Must be "jcore,j2".
++
++- reg: Must be 0 on uniprocessor systems, or the sequential, zero-based
++  hardware cpu id on SMP systems.
++
++Optional properties:
++
++- clock-frequency: Clock frequency of the cpu in Hz.
++
++- cpu-release-addr: Necessary only for secondary processors on SMP systems
++  using the "jcore,spin-table" enable method. If present, must consist of
++  two cells containing physical addresses. The first cell contains an
++  address which, when written, unblocks the secondary cpu. The second cell
++  contains an address from which the cpu will read its initial program
++  counter when unblocked.
++
++
++---------------------
++Cache controller node
++---------------------
++
++Required properties:
++
++- compatible: Must be "jcore,cache".
++
++- reg: A memory range for the cache controller registers.
++
++
++--------
++IPI node
++--------
++
++Device trees for SMP systems must have an IPI node representing the mechanism
++used for inter-processor interrupt generation.
++
++Required properties:
++
++- compatible: Must be "jcore,ipi-controller".
++
++- reg: A memory range used to IPI generation.
++
++- interrupts: An irq on which IPI will be received.
++
++
++----------
++CPUID node
++----------
++
++Device trees for SMP systems must have a CPUID node representing the mechanism
++used to identify the current processor on which execution is taking place.
++
++Required properties:
++
++- compatible: Must be "jcore,cpuid-mmio".
++
++- reg: A memory range containing a single 32-bit mmio register which produces
++  the current cpu id (matching the "reg" property of the cpu performing the
++  read) when read.
+-- 
+2.8.1
 
-Do you have any more specific questions I can try to answer?
 
-Rich
