@@ -1,59 +1,71 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Wed, 25 May 2016 09:54:44 +0000
+From: Rich Felker <dalias@libc.org>
+Date: Wed, 25 May 2016 22:24:41 +0000
 Subject: Re: [PATCH v3 00/12] J-core J2 cpu and SoC peripherals support
-Message-Id: <20160525095444.GR8206@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="4CyH/NlNBqvsUTYP"
+Message-Id: <20160525222441.GS21636@brightrain.aerifal.cx>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1464148904.git.dalias@libc.org>
-In-Reply-To: <cover.1464148904.git.dalias-8zAoT0mYgF4@public.gmane.org>
-To: Rich Felker <dalias-8zAoT0mYgF4@public.gmane.org>
-Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Jason Cooper <jason-NLaQJdtUoK4Be96aLqz0jA@public.gmane.org>, Marc Zyngier <marc.zyngier-5wv7dgnIgG8@public.gmane.org>, Daniel Lezcano <daniel.lezcano-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>
+ <20160525095444.GR8206@sirena.org.uk>
+In-Reply-To: <20160525095444.GR8206@sirena.org.uk>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Mark Brown <broonie@kernel.org>
+Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, linux-spi@vger.kernel.org, devicetree@vger.kernel.org, Thomas Gleixner <tglx@linutronix.de>, Jason Cooper <jason@lakedaemon.net>, Marc Zyngier <marc.zyngier@arm.com>, Daniel Lezcano <daniel.lezcano@linaro.org>
 
+On Wed, May 25, 2016 at 10:54:44AM +0100, Mark Brown wrote:
+> On Wed, May 25, 2016 at 05:43:02AM +0000, Rich Felker wrote:
+> 
+> > As arch/sh co-maintainer my intent is to include as much as possible
+> > in my pull request for the linux-sh tree. If there are parts outside
+> > of arch/sh that can be included in this, please let me know. I'm not
+> 
+> Do *not* include the SPI driver, you shouldn't be including any drivers
+> unless it's been explicitly discussed with the subsystem maintainers.
 
---4CyH/NlNBqvsUTYP
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+See the "please let me know". I thought this was plenty clear that I
+was asking for permission for including things outside of arch/sh, and
+that short of getting an ack, the default permission is no. You also
+snipped the part of my message that mentioned the specific subsystems
+I was asking about (which were non-SPI because you already made quite
+a point about not taking the SPI driver):
 
-On Wed, May 25, 2016 at 05:43:02AM +0000, Rich Felker wrote:
+> > clear yet on what the right path to upstream is for the clocksource
+> > and irq drivers that are currently only useful/interesting for one
+> > arch, or for the DT binding patches. Even if some drivers are delayed
+> > [...]
 
-> As arch/sh co-maintainer my intent is to include as much as possible
-> in my pull request for the linux-sh tree. If there are parts outside
-> of arch/sh that can be included in this, please let me know. I'm not
+> Quite aside from the fact that like Geert says drivers are expected to
+> go through the subsystem trees to repeat what I said last time it wasn't
+> posted until after the merge window and we're now a few days before the
+> end of the merge window and a new version is being posted.  The
+> turnaround times you are demanding on review are unreasonable - people
+> get busy, have holidays and so on - and you really need to pay attention
+> to what people are telling you about the process or you're just going to
+> annoy people.
 
-Do *not* include the SPI driver, you shouldn't be including any drivers
-unless it's been explicitly discussed with the subsystem maintainers.
+If you can't review and ack the code on short notice, that's fine;
+just say so. There's no need to be overerly hostile about it. I've
+gotten arch/sh patches during the merge window before and I try to be
+polite with the contributor and ask if there's something seriously
+broken that would be improved by my making an effort to check it at
+the last minute, or it if can happily wait until next time.
 
-Quite aside from the fact that like Geert says drivers are expected to
-go through the subsystem trees to repeat what I said last time it wasn't
-posted until after the merge window and we're now a few days before the
-end of the merge window and a new version is being posted.  The
-turnaround times you are demanding on review are unreasonable - people
-get busy, have holidays and so on - and you really need to pay attention
-to what people are telling you about the process or you're just going to
-annoy people.
+Being that the driver in question here is for a new platform that was
+not previously supported upstream and has zero chance of breaking
+anything else, and that its inclusion would be a big plus for users of
+the platform, I don't see any reason for you making such a big deal
+out of it unless enforcing policy for its own sake makes you feel
+good, but I have better things to do than argue about it.
 
-> arch, or for the DT binding patches. Even if some drivers are delayed
-> going upstream, I would really like to get DT bindings acked and
-> ideally merged, because we want to go ahead with moving the DTB into
-> J2 boot rom where it belongs, and that should only happen with stable
+> > arch, or for the DT binding patches. Even if some drivers are delayed
+> > going upstream, I would really like to get DT bindings acked and
+> > ideally merged, because we want to go ahead with moving the DTB into
+> > J2 boot rom where it belongs, and that should only happen with stable
+> 
+> If you want people to review DT bindings you're going to need to submit
+> them.
 
-If you want people to review DT bindings you're going to need to submit
-them.
+I have, twice now, and I Cc'd the the linux-spi list too on v3 for the
+spi binding. Rob Herring acked it.
 
---4CyH/NlNBqvsUTYP
-Content-Type: application/pgp-signature; name="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iQEcBAEBCAAGBQJXRXZjAAoJECTWi3JdVIfQzHAH/iyYklTNVi/562dQ1XS+R/Xv
-77ugl6A3S/Gs+2Gs89eDdVoNdF/eVR1u3dD6/1+Cqq7rUqdlMLBHdhkdkUbnU/7H
-0ebnMcOoNVdbeAx69JOubypNptpzxJZlTCzaoTnSs00CIquJzR3Vq7kXtpPnZF0d
-eZ9IJki/N0CfnGa6N4jmQ8QMFUY4seIaa79AvaOak62lQ+dS7Ggwrsyf1ZHP6hOJ
-ll2atmPkLJPFnwJMDDE9CTIkZEZ3jFle2w0l81FMMUdYxlr5RDVsQxxzbsL2hovN
-Q7K7N4kDJydhGww2GKbnxvCg1UidNQ2noyOAqbH6X5wT3IcVJ2TV6MmXLG7vg+o=
-=COyp
------END PGP SIGNATURE-----
-
---4CyH/NlNBqvsUTYP--
+Rich
