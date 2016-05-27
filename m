@@ -1,36 +1,43 @@
-From: Rich Felker <dalias@libc.org>
-Date: Fri, 27 May 2016 01:16:21 +0000
+From: Mark Brown <broonie@kernel.org>
+Date: Fri, 27 May 2016 11:27:31 +0000
 Subject: Re: [PATCH v3 10/12] spi: add driver for J-Core SPI controller
-Message-Id: <20160527011621.GA10893@brightrain.aerifal.cx>
+Message-Id: <20160527112731.GG16172@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="dMyqICaxQaaUjrCL"
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1464148904.git.dalias@libc.org>
  <00b31c4d09c340bd69fd4bbbc0ea06371aecc502.1464148904.git.dalias@libc.org>
  <20160525101708.GS8206@sirena.org.uk>
-In-Reply-To: <20160525101708.GS8206@sirena.org.uk>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
+ <20160527011621.GA10893@brightrain.aerifal.cx>
+In-Reply-To: <20160527011621.GA10893@brightrain.aerifal.cx>
+To: Rich Felker <dalias@libc.org>
 Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, linux-spi@vger.kernel.org
 
-On Wed, May 25, 2016 at 11:17:08AM +0100, Mark Brown wrote:
-> On Wed, May 25, 2016 at 05:43:03AM +0000, Rich Felker wrote:
-> 
-> > changes based on ml discussion of the v2 patch. The chipselect change
-> > has not been made yet, except for rewriting the current logic to be
-> > more clear. If the decision is that it's needed, I can do it easily,
-> > but it needs testing still.
-> 
-> You need to fix that, it's not good to just decide to ignore review
-> comments.  It is astonishing that you are doing this while expecting to
-> bypass the normal process for merging things.  I'm not going to look at
-> this version, please ensure you have addressed all the feedback from the
-> previous review before any new version you submit.
 
-I've made and tested a change that looks like what you want, with the
-hw->csReg's chipselect bits set initially high in the probe function,
-and only the requested bit being modified by the chipselect function.
-Would you prefer I continue to submit this driver with new versions of
-the patch series, or separate it out for further review on its own?
+--dMyqICaxQaaUjrCL
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-Rich
+On Thu, May 26, 2016 at 09:16:21PM -0400, Rich Felker wrote:
+
+> Would you prefer I continue to submit this driver with new versions of
+> the patch series, or separate it out for further review on its own?
+
+It would be clearer to submit it separately.
+
+--dMyqICaxQaaUjrCL
+Content-Type: application/pgp-signature; name="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iQEcBAEBCAAGBQJXSC8hAAoJECTWi3JdVIfQvB0H/i6frYqmNXePufWeECe9f2Qd
+n/o3WeS7OiQnuwXgyjss+SfApCi6FcbozQH6OsbGHSiYqw5jJK7gYnriLh854RI8
+PzfCSkBlskYe4o9WIE7yfFKJ522wJIvG0ykayPWCLxQX+4ySbLDzHeN3Mb79nE/D
+2N1QilL5jfCgBWP+pknH+JOwy/wUZkeU/ZEMUTOsX5XmldBzLeg6BeMkqrM4lA00
+byklA2CcmT/NsilFJINDApodf8Idpe9048Gr79i1VyzxK50v6eowqgk7Trf7lng3
+0N5/QlvM7TwKCBcIXIZXJrJ79PvxqrQEL9LHcYuZPysH7i6BXSpqJNQkBrEJwjk=
+=JxnH
+-----END PGP SIGNATURE-----
+
+--dMyqICaxQaaUjrCL--
