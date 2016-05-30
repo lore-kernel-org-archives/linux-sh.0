@@ -1,54 +1,118 @@
-From: Rich Felker <dalias@libc.org>
-Date: Tue, 17 May 2016 23:18:58 +0000
-Subject: [PATCH v5 1/2] of: add J-Core timer bindings
-Message-Id: <afa8eaaebc9216e83e542e9bcad8fa1dd659d489.1469688975.git.dalias@libc.org>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Mon, 30 May 2016 18:57:49 +0000
+Subject: [PATCH v4 01/16] rtc: cmos: remove empty asm/mc146818rtc.h files
+Message-Id: <1464634684-1248135-2-git-send-email-arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1469688975.git.dalias@libc.org>
-In-Reply-To: <cover.1469688975.git.dalias@libc.org>
+References: <1464634684-1248135-1-git-send-email-arnd@arndb.de>
+In-Reply-To: <1464634684-1248135-1-git-send-email-arnd-r2nGTMty4D4@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: devicetree@vger.kernel.org, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
-Cc: Rob Herring <robh+dt@kernel.org>, Mark Rutland <mark.rutland@arm.com>, Daniel Lezcano <daniel.lezcano@linaro.org>, Thomas Gleixner <tglx@linutronix.de>
+To: Alexandre Belloni <alexandre.belloni-wi1+55ScJUtKEb57/3fJTNBPR1lH4CV8@public.gmane.org>
+Cc: Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>, geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org, gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org, deller-Mmb7MZpHnFY@public.gmane.org, benh-XVmvHMARGAS8U2dJNN8I7kB+6BGkLq7r@public.gmane.org, mpe-Gsx/Oe8HsFggBc27wqDAHg@public.gmane.org, dalias-8zAoT0mYgF4@public.gmane.org, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-alpha-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, a.zummo-BfzFCNDTiLLj+vYz1yj4TQ@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-parisc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linuxppc-dev-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-m68k-cunTk1MwBs8S/qaLPR03pWD2FQJk+8+b@public.gmane.org, rtc-linux-/JYPxA39Uh5TLH3MbocFFw@public.gmane.org, linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Signed-off-by: Rich Felker <dalias@libc.org>
+Nothing on these architectures ever includes the asm/mc146818rtc.h
+file, the drivers that used to do this have been fixed long ago,
+and the remaining users are all PC-specific.
+
+This removes the files for good.
+
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+Acked-by: Alexandre Belloni <alexandre.belloni@free-electrons.com>
 ---
- .../devicetree/bindings/timer/jcore,pit.txt        | 25 ++++++++++++++++++++++
- 1 file changed, 25 insertions(+)
- create mode 100644 Documentation/devicetree/bindings/timer/jcore,pit.txt
+ arch/frv/include/asm/mc146818rtc.h    | 16 ----------------
+ arch/h8300/include/asm/mc146818rtc.h  |  9 ---------
+ arch/ia64/include/asm/mc146818rtc.h   | 10 ----------
+ arch/parisc/include/asm/mc146818rtc.h |  9 ---------
+ arch/sh/include/asm/mc146818rtc.h     |  7 -------
+ 5 files changed, 51 deletions(-)
+ delete mode 100644 arch/frv/include/asm/mc146818rtc.h
+ delete mode 100644 arch/h8300/include/asm/mc146818rtc.h
+ delete mode 100644 arch/ia64/include/asm/mc146818rtc.h
+ delete mode 100644 arch/parisc/include/asm/mc146818rtc.h
+ delete mode 100644 arch/sh/include/asm/mc146818rtc.h
 
-diff --git a/Documentation/devicetree/bindings/timer/jcore,pit.txt b/Documentation/devicetree/bindings/timer/jcore,pit.txt
-new file mode 100644
-index 0000000..0f42af4
---- /dev/null
-+++ b/Documentation/devicetree/bindings/timer/jcore,pit.txt
-@@ -0,0 +1,25 @@
-+J-Core Programmable Interval Timer and Clocksource
-+
-+Required properties:
-+
-+- compatible: Must be "jcore,pit".
-+
-+- reg: Memory region(s) for timer/clocksource registers. For SMP,
-+  there should be one region per cpu, indexed by the sequential,
-+  zero-based hardware cpu number (which is also the logical cpu
-+  number).
-+
-+- interrupts: An interrupt to assign for the timer. The actual pit
-+  core is integrated with the aic and allows the timer interrupt
-+  assignment to be programmed by software, but this property is
-+  required in order to reserve an interrupt number that doesn't
-+  conflict with other devices.
-+
-+
-+Example:
-+
-+timer@200 {
-+	compatible = "jcore,pit";
-+	reg = < 0x200 0x30 0x500 0x30 >;
-+	interrupts = < 0x48 >;
-+};
+diff --git a/arch/frv/include/asm/mc146818rtc.h b/arch/frv/include/asm/mc146818rtc.h
+deleted file mode 100644
+index 90dfb7a633d1..000000000000
+--- a/arch/frv/include/asm/mc146818rtc.h
++++ /dev/null
+@@ -1,16 +0,0 @@
+-/* mc146818rtc.h: RTC defs
+- *
+- * Copyright (C) 2005 Red Hat, Inc. All Rights Reserved.
+- * Written by David Howells (dhowells@redhat.com)
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License
+- * as published by the Free Software Foundation; either version
+- * 2 of the License, or (at your option) any later version.
+- */
+-
+-#ifndef _ASM_MC146818RTC_H
+-#define _ASM_MC146818RTC_H
+-
+-
+-#endif /* _ASM_MC146818RTC_H */
+diff --git a/arch/h8300/include/asm/mc146818rtc.h b/arch/h8300/include/asm/mc146818rtc.h
+deleted file mode 100644
+index ab9d9646d241..000000000000
+--- a/arch/h8300/include/asm/mc146818rtc.h
++++ /dev/null
+@@ -1,9 +0,0 @@
+-/*
+- * Machine dependent access functions for RTC registers.
+- */
+-#ifndef _H8300_MC146818RTC_H
+-#define _H8300_MC146818RTC_H
+-
+-/* empty include file to satisfy the include in genrtc.c/ide-geometry.c */
+-
+-#endif /* _H8300_MC146818RTC_H */
+diff --git a/arch/ia64/include/asm/mc146818rtc.h b/arch/ia64/include/asm/mc146818rtc.h
+deleted file mode 100644
+index 407787a237ba..000000000000
+--- a/arch/ia64/include/asm/mc146818rtc.h
++++ /dev/null
+@@ -1,10 +0,0 @@
+-#ifndef _ASM_IA64_MC146818RTC_H
+-#define _ASM_IA64_MC146818RTC_H
+-
+-/*
+- * Machine dependent access functions for RTC registers.
+- */
+-
+-/* empty include file to satisfy the include in genrtc.c */
+-
+-#endif /* _ASM_IA64_MC146818RTC_H */
+diff --git a/arch/parisc/include/asm/mc146818rtc.h b/arch/parisc/include/asm/mc146818rtc.h
+deleted file mode 100644
+index adf41631449f..000000000000
+--- a/arch/parisc/include/asm/mc146818rtc.h
++++ /dev/null
+@@ -1,9 +0,0 @@
+-/*
+- * Machine dependent access functions for RTC registers.
+- */
+-#ifndef _ASM_MC146818RTC_H
+-#define _ASM_MC146818RTC_H
+-
+-/* empty include file to satisfy the include in genrtc.c */
+-
+-#endif /* _ASM_MC146818RTC_H */
+diff --git a/arch/sh/include/asm/mc146818rtc.h b/arch/sh/include/asm/mc146818rtc.h
+deleted file mode 100644
+index 0aee96a97330..000000000000
+--- a/arch/sh/include/asm/mc146818rtc.h
++++ /dev/null
+@@ -1,7 +0,0 @@
+-/*
+- * Machine dependent access functions for RTC registers.
+- */
+-#ifndef _ASM_MC146818RTC_H
+-#define _ASM_MC146818RTC_H
+-
+-#endif /* _ASM_MC146818RTC_H */
 -- 
-2.8.1
-
+2.7.0
 
