@@ -1,31 +1,101 @@
-From: Andrea Gelmini <andrea.gelmini@gelma.net>
-Date: Sat, 21 May 2016 12:09:22 +0000
-Subject: [PATCH 0252/1529] Fix typo
-Message-Id: <20160521120922.13205-1-andrea.gelmini@gelma.net>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Mon, 30 May 2016 18:57:54 +0000
+Subject: [PATCH v4 06/16] char/genrtc: remove mn10300 support
+Message-Id: <1464634684-1248135-7-git-send-email-arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1464634684-1248135-1-git-send-email-arnd@arndb.de>
+In-Reply-To: <1464634684-1248135-1-git-send-email-arnd-r2nGTMty4D4@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Alexandre Belloni <alexandre.belloni-wi1+55ScJUtKEb57/3fJTNBPR1lH4CV8@public.gmane.org>
+Cc: Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>, geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org, gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org, deller-Mmb7MZpHnFY@public.gmane.org, benh-XVmvHMARGAS8U2dJNN8I7kB+6BGkLq7r@public.gmane.org, mpe-Gsx/Oe8HsFggBc27wqDAHg@public.gmane.org, dalias-8zAoT0mYgF4@public.gmane.org, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-alpha-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, a.zummo-BfzFCNDTiLLj+vYz1yj4TQ@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-parisc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linuxppc-dev-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-m68k-cunTk1MwBs8S/qaLPR03pWD2FQJk+8+b@public.gmane.org, rtc-linux-/JYPxA39Uh5TLH3MbocFFw@public.gmane.org, linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Signed-off-by: Andrea Gelmini <andrea.gelmini@gelma.net>
+The genrtc driver serves no purpose on mn10300 because it drives the
+same hardware as the original rtc.c driver, and the newer rtc-generic.c
+or rtc-cmos.c drivers on architectures that use the asm-generic/rtc.h
+header.
+
+I assume it was initially only added for completeness when the
+mn10300 port was done, but the older rtc.c driver was always used
+instead.
+
+We can also stop include asm-generic/rtc.h now, because we
+just call mc146818_set_time() directly.
+
+It would be nice to change the architecture to use the rtc-cmos driver
+next, and remove support for the old rtc driver as well.
+
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
 ---
- arch/sh/kernel/dwarf.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/mn10300/include/asm/rtc.h          | 2 --
+ arch/mn10300/kernel/rtc.c               | 2 +-
+ arch/mn10300/proc-mn103e010/proc-init.c | 1 +
+ arch/mn10300/proc-mn2ws0050/proc-init.c | 1 +
+ drivers/char/Kconfig                    | 2 +-
+ 5 files changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/arch/sh/kernel/dwarf.c b/arch/sh/kernel/dwarf.c
-index 9d209a0..ebaaa62 100644
---- a/arch/sh/kernel/dwarf.c
-+++ b/arch/sh/kernel/dwarf.c
-@@ -639,7 +639,7 @@ struct dwarf_frame *dwarf_unwind_stack(unsigned long pc,
- 		 * This is our normal exit path. There are two reasons
- 		 * why we might exit here,
- 		 *
--		 *	a) pc has no asscociated DWARF frame info and so
-+		 *	a) pc has no associated DWARF frame info and so
- 		 *	we don't know how to unwind this frame. This is
- 		 *	usually the case when we're trying to unwind a
- 		 *	frame that was called from some assembly code
+diff --git a/arch/mn10300/include/asm/rtc.h b/arch/mn10300/include/asm/rtc.h
+index 6c14bb1d0d9b..07dc87656197 100644
+--- a/arch/mn10300/include/asm/rtc.h
++++ b/arch/mn10300/include/asm/rtc.h
+@@ -25,6 +25,4 @@ static inline void calibrate_clock(void)
+ 
+ #endif /* !CONFIG_MN10300_RTC */
+ 
+-#include <asm-generic/rtc.h>
+-
+ #endif /* _ASM_RTC_H */
+diff --git a/arch/mn10300/kernel/rtc.c b/arch/mn10300/kernel/rtc.c
+index 48d7058b3295..77e0be4d92ea 100644
+--- a/arch/mn10300/kernel/rtc.c
++++ b/arch/mn10300/kernel/rtc.c
+@@ -27,7 +27,7 @@ void read_persistent_clock(struct timespec *ts)
+ {
+ 	struct rtc_time tm;
+ 
+-	get_rtc_time(&tm);
++	mc146818_set_time(&tm);
+ 
+ 	ts->tv_nsec = 0;
+ 	ts->tv_sec = mktime(tm.tm_year, tm.tm_mon, tm.tm_mday,
+diff --git a/arch/mn10300/proc-mn103e010/proc-init.c b/arch/mn10300/proc-mn103e010/proc-init.c
+index 27b97980dca4..d4dcb0c56b35 100644
+--- a/arch/mn10300/proc-mn103e010/proc-init.c
++++ b/arch/mn10300/proc-mn103e010/proc-init.c
+@@ -9,6 +9,7 @@
+  * 2 of the Licence, or (at your option) any later version.
+  */
+ #include <linux/kernel.h>
++#include <asm/cacheflush.h>
+ #include <asm/fpu.h>
+ #include <asm/rtc.h>
+ #include <asm/busctl-regs.h>
+diff --git a/arch/mn10300/proc-mn2ws0050/proc-init.c b/arch/mn10300/proc-mn2ws0050/proc-init.c
+index ee6d03dbc8d8..950cc8dbb284 100644
+--- a/arch/mn10300/proc-mn2ws0050/proc-init.c
++++ b/arch/mn10300/proc-mn2ws0050/proc-init.c
+@@ -14,6 +14,7 @@
+ #include <linux/delay.h>
+ #include <linux/interrupt.h>
+ 
++#include <asm/cacheflush.h>
+ #include <asm/processor.h>
+ #include <asm/uaccess.h>
+ #include <asm/io.h>
+diff --git a/drivers/char/Kconfig b/drivers/char/Kconfig
+index e3f2f3e293e5..1d9e3063373b 100644
+--- a/drivers/char/Kconfig
++++ b/drivers/char/Kconfig
+@@ -328,7 +328,7 @@ config JS_RTC
+ config GEN_RTC
+ 	tristate "Generic /dev/rtc emulation"
+ 	depends on RTC!=y
+-	depends on M68K || MN10300 || PARISC || PPC
++	depends on M68K || PARISC || PPC
+ 	---help---
+ 	  If you say Y here and create a character special file /dev/rtc with
+ 	  major number 10 and minor number 135 using mknod ("man mknod"), you
 -- 
-2.8.2.534.g1f66975
+2.7.0
 
