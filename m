@@ -1,92 +1,43 @@
-From: Yoshinori Sato <ysato@users.sourceforge.jp>
-Date: Tue, 10 May 2016 07:43:29 +0000
-Subject: Re: [PATCH RESEND 10/12] sh: I/O DATA HDL-U (aka landisk) support dts
-Message-Id: <87d1oupdcu.wl-ysato@users.sourceforge.jp>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 30 May 2016 07:34:07 +0000
+Subject: Re: Build regressions/improvements in v4.7-rc1
+Message-Id: <CAMuHMdVvK9h2MLVAeB3n8G6hfKJU1Rma2_uVYBTqsFxnRv2YsA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1462079316-27771-1-git-send-email-ysato@users.sourceforge.jp>
-	<1462079316-27771-11-git-send-email-ysato@users.sourceforge.jp>
-	<20160504032757.GP21636@brightrain.aerifal.cx>
-In-Reply-To: <20160504032757.GP21636@brightrain.aerifal.cx>
+References: <1464593333-10283-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1464593333-10283-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Rich Felker <dalias@libc.org>
-Cc: devicetree@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+Cc: "linuxppc-dev@lists.ozlabs.org" <linuxppc-dev@lists.ozlabs.org>, Linux-sh list <linux-sh@vger.kernel.org>
 
-On Wed, 04 May 2016 12:27:57 +0900,
-Rich Felker wrote:
-> 
-> On Sun, May 01, 2016 at 02:08:34PM +0900, Yoshinori Sato wrote:
-> > Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
-> > ---
-> >  arch/sh/boot/dts/landisk.dts | 150 +++++++++++++++++++++++++++++++++++++++++++
-> >  1 file changed, 150 insertions(+)
-> >  create mode 100644 arch/sh/boot/dts/landisk.dts
-> > 
-> > diff --git a/arch/sh/boot/dts/landisk.dts b/arch/sh/boot/dts/landisk.dts
-> > new file mode 100644
-> > index 0000000..a994d19
-> > --- /dev/null
-> > +++ b/arch/sh/boot/dts/landisk.dts
-> > @@ -0,0 +1,150 @@
-> > +#include <dt-bindings/interrupt-controller/sh_intc.h>
-> > +
-> > +/dts-v1/;
-> > +/ {
-> > +	model = "I/O DATA HDL-U";
-> > +	compatible = "iodata,hdl-u";
-> > +	#address-cells = <1>;
-> > +	#size-cells = <1>;
-> > +	interrupt-parent = <&shintc>;
-> > +	chosen {
-> > +		stdout-path = &sci1;
-> > +		bootargs = "console=ttySC1,115200";
-> > +	};
-> > +	aliases {
-> > +		serial0 = &sci0;
-> > +		serial1 = &sci1;
-> > +	};
-> > +
-> > +	oclk: oscillator {
-> > +                #clock-cells = <0>;
-> > +                compatible = "fixed-clock";
-> > +                clock-frequency = <22222222>;
-> > +        };
-> > +        pllclk: pllclk {
-> > +                compatible = "renesas,sh7750-pll-clock";
-> > +                clocks = <&oclk>;
-> > +                #clock-cells = <0>;
-> > +		renesas,mult = <12>;
-> > +                reg = <0xffc00000 2>, <0xffc00008 4>;
-> 
-> You have inconsistent mixes of tabs and spaces here and in several
-> other places.
+On Mon, May 30, 2016 at 9:28 AM, Geert Uytterhoeven
+<geert@linux-m68k.org> wrote:
+>   + /home/kisskb/slave/src/arch/powerpc/include/asm/nohash/64/pgalloc.h: error: implicit declaration of function 'pte_fragment_fre' [-Werror=implicit-function-declaration]/home/kisskb/slave/src/arch/powerpc/mm/pgtable.c: At top level::  => 175:2
+>   + /home/kisskb/slave/src/arch/powerpc/include/asm/nohash/64/pgalloc.h: error: implicit declaration of function 'pte_fragment_fre' [-Werror=implicit-function-declaration]:  => 175:2
+>   + /home/kisskb/slave/src/arch/powerpc/kernel/pci_dn.c: error: 'struct pci_dn' has no member named 'edev':  => 272:8
+>   + /home/kisskb/slave/src/arch/powerpc/kernel/pci_dn.c: error: dereferencing pointer to incomplete type:  => 215:7
+>   + /home/kisskb/slave/src/arch/powerpc/kernel/pci_dn.c: error: implicit declaration of function 'eeh_dev_init' [-Werror=implicit-function-declaration]:  => 212:3
+>   + /home/kisskb/slave/src/arch/powerpc/mm/init_64.c: error: 'PUD_TABLE_SIZE' undeclared (first use in this function):  => 90:18
 
-OK.
+powerpc-randconfig
 
-> > +	cpus {
-> > +		#address-cells = <1>;
-> > +		#size-cells = <0>;
-> > +		cpu@0 {
-> > +		      compatible = "renesas,sh4", "renesas,sh";
-> > +		      clock-frequency = <266666666>;
-> > +		};
-> > +	};
-> 
-> Do you have in mind a scenario where the plain "renesas,sh"
-> fallback-compatible tag makes sense? Linux (or any kernel or baremetal
-> app) can't treat all sh as the same because the trap mechanism is
-> different for sh1/2 and sh3/4. Declaring that it's sh3-compatible
-> might make sense but I still doubt it has much practical usefulness.
+>   + /home/kisskb/slave/src/arch/sh/kernel/setup.c: error: implicit declaration of function 'early_init_dt_scan' [-Werror=implicit-function-declaration]:  => 256:2
 
-Yes. sh2 and sh3/4 exception handling is very different.
-It so difficult unified binary.
-I think there are no advantages that individual CPU is defined
-here so much.
-It doesn't make the sense so much.
+sh-randconfig
 
-> Rich
+>   + error: fou6.c: undefined reference to `ip6_tnl_encap_add_ops':  => .init.text+0x4b0f), .init.text+0x4b24)
+>   + error: fou6.c: undefined reference to `ip6_tnl_encap_del_ops':  => .exit.text+0x438), .init.text+0x4b39), .exit.text+0x447)
 
--- 
-Yoshinori Sato
-<ysato@users.sourceforge.jp>
+i386-randconfig (fix from Arnd just applied by DaveM).
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
