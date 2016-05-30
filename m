@@ -1,222 +1,174 @@
-From: Yoshinori Sato <ysato@users.sourceforge.jp>
-Date: Sun, 01 May 2016 04:59:18 +0000
-Subject: [PATCH 08/12] intc: sh: Renesas Super H INTC driver
-Message-Id: <1462078763-27135-9-git-send-email-ysato@users.sourceforge.jp>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Mon, 30 May 2016 18:57:51 +0000
+Subject: [PATCH v4 03/16] char/genrtc: x86: remove remnants of asm/rtc.h
+Message-Id: <1464634684-1248135-4-git-send-email-arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1464634684-1248135-1-git-send-email-arnd@arndb.de>
+In-Reply-To: <1464634684-1248135-1-git-send-email-arnd-r2nGTMty4D4@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Alexandre Belloni <alexandre.belloni-wi1+55ScJUtKEb57/3fJTNBPR1lH4CV8@public.gmane.org>
+Cc: Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>, geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org, gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org, deller-Mmb7MZpHnFY@public.gmane.org, benh-XVmvHMARGAS8U2dJNN8I7kB+6BGkLq7r@public.gmane.org, mpe-Gsx/Oe8HsFggBc27wqDAHg@public.gmane.org, dalias-8zAoT0mYgF4@public.gmane.org, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-alpha-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, a.zummo-BfzFCNDTiLLj+vYz1yj4TQ@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-parisc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linuxppc-dev-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-m68k-cunTk1MwBs8S/qaLPR03pWD2FQJk+8+b@public.gmane.org, rtc-linux-/JYPxA39Uh5TLH3MbocFFw@public.gmane.org, linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-SuperH IPR based driver.
+Commit 3195ef59cb42 ("x86: Do full rtc synchronization with ntp") had
+the side-effect of unconditionally enabling the RTC_LIB symbol on x86,
+which in turn disables the selection of the CONFIG_RTC and
+CONFIG_GEN_RTC drivers that contain a two older implementations of
+the CONFIG_RTC_DRV_CMOS driver.
 
-Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
+This removes x86 from the list for genrtc, and changes all references
+to the asm/rtc.h header to instead point to the interfaces
+from linux/mc146818rtc.h.
+
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
 ---
- .../interrupt-controller/renesas,sh7751-intc.txt   |  25 ++++
- drivers/irqchip/Kconfig                            |   5 +
- drivers/irqchip/Makefile                           |   1 +
- drivers/irqchip/irq-renesas-shipr.c                | 138 +++++++++++++++++++++
- 4 files changed, 169 insertions(+)
- create mode 100644 Documentation/devicetree/bindings/interrupt-controller/renesas,sh7751-intc.txt
- create mode 100644 drivers/irqchip/irq-renesas-shipr.c
+ arch/x86/include/asm/rtc.h   | 1 -
+ arch/x86/kernel/hpet.c       | 3 +--
+ arch/x86/kernel/rtc.c        | 3 +--
+ arch/x86/platform/efi/efi.c  | 1 -
+ drivers/acpi/acpi_cmos_rtc.c | 2 +-
+ drivers/base/power/trace.c   | 6 +++---
+ drivers/char/Kconfig         | 2 +-
+ drivers/rtc/rtc-mrst.c       | 2 +-
+ 8 files changed, 8 insertions(+), 12 deletions(-)
+ delete mode 100644 arch/x86/include/asm/rtc.h
 
-diff --git a/Documentation/devicetree/bindings/interrupt-controller/renesas,sh7751-intc.txt b/Documentation/devicetree/bindings/interrupt-controller/renesas,sh7751-intc.txt
-new file mode 100644
-index 0000000..6d9bf6c
---- /dev/null
-+++ b/Documentation/devicetree/bindings/interrupt-controller/renesas,sh7751-intc.txt
-@@ -0,0 +1,25 @@
-+DT bindings for the SH7751 interrupt controller
-+
-+Required properties:
-+
-+  - compatible: has to be "renesas,sh7751-intc".
-+
-+  - reg: Base address and length of interrupt controller register
-+         and extend register.
-+
-+  - interrupt-controller: Identifies the node as an interrupt controller.
-+
-+  - #interrupt-cells: has to be <2>: an interrupt index and flags, as defined
-+    in interrupts.txt in this directory.
-+
-+Example
-+-------
-+
-+ 	shintc: interrupt-controller@ffd00000 {
-+		compatible = "renesas,sh7751-intc";
-+		#interrupt-cells = <2>;
-+		#address-cells = <1>;
-+		#size-cells = <1>;
-+		interrupt-controller;
-+		reg = <0xffd00000 14>, <0xfe080000 128>;
-+	};
-diff --git a/drivers/irqchip/Kconfig b/drivers/irqchip/Kconfig
-index 3e12479..273f19d 100644
---- a/drivers/irqchip/Kconfig
-+++ b/drivers/irqchip/Kconfig
-@@ -244,3 +244,8 @@ config IRQ_MXS
- config MVEBU_ODMI
- 	bool
- 	select GENERIC_MSI_IRQ_DOMAIN
-+
-+config RENESAS_SH_INTC
-+	def_bool y if SH_DEVICE_TREE
-+	select IRQ_DOMAIN
-+	select IRQ_DOMAIN_HIERARCHY
-diff --git a/drivers/irqchip/Makefile b/drivers/irqchip/Makefile
-index b03cfcb..3f9fc5c 100644
---- a/drivers/irqchip/Makefile
-+++ b/drivers/irqchip/Makefile
-@@ -65,3 +65,4 @@ obj-$(CONFIG_INGENIC_IRQ)		+= irq-ingenic.o
- obj-$(CONFIG_IMX_GPCV2)			+= irq-imx-gpcv2.o
- obj-$(CONFIG_PIC32_EVIC)		+= irq-pic32-evic.o
- obj-$(CONFIG_MVEBU_ODMI)		+= irq-mvebu-odmi.o
-+obj-$(CONFIG_RENESAS_SH_INTC)		+= irq-renesas-shipr.o irq-io-landisk.o
-diff --git a/drivers/irqchip/irq-renesas-shipr.c b/drivers/irqchip/irq-renesas-shipr.c
-new file mode 100644
-index 0000000..67cce6a
---- /dev/null
-+++ b/drivers/irqchip/irq-renesas-shipr.c
-@@ -0,0 +1,138 @@
-+/*
-+ * SH IPR-INTC interrupt contoller driver
-+ *
-+ * Copyright 2016 Yoshinori Sato <ysato@users.sourceforge.jp>
-+ */
-+
-+#include <linux/irq.h>
-+#include <linux/irqchip.h>
-+#include <linux/of_address.h>
-+#include <linux/of_irq.h>
-+#include <linux/of.h>
-+#include <asm/io.h>
-+
-+static struct sh7751_intc_regs {
-+	void *icr;
-+	void *ipr;
-+	void *intpri00;
-+	void *intreq00;
-+	void *intmsk00;
-+	void *intmskclr00;
-+} sh7751_regs;
-+
-+static const unsigned int ipr_table[] = {
-+	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, /* 0 - 7 */
-+	0x41, 0xff, 0xff, 0x40, 0xff, 0xff, 0xff, 0xff, /* 8 - 15 */
-+	0x03, 0x02, 0x01, 0x01, 0x00, 0x00, 0x00, 0x11, /* 16 - 23 */
-+	0x11, 0x11, 0x11, 0x13, 0x12, 0x12, 0xff, 0xff, /* 24 - 31 */
-+	0x30, 0x33, 0x32, 0x32, 0x32, 0x32, 0x32, 0x21, /* 32 - 39 */
-+	0x21, 0x21, 0x21, 0x21, 0x32, 0x32, 0x32, 0x32, /* 40 - 47 */
-+	0xff, 0xff, 0xff, 0x40, 0xff, 0xff, 0xff, 0xff, /* 48 - 55 */
-+	0xff, 0xff, 0xff, 0x40, 0xff, 0xff, 0xff, 0xff, /* 56 - 63 */
-+};
-+
-+static const unsigned int pri_table[] = {
-+	0, 4, 4, 4, 4, 4, 4, 4,
-+	8, 32, 32, 32, 12, 32, 32, 32,
-+};
-+
-+static void sh_disable_irq(struct irq_data *data)
-+{
-+	int pos;
-+	unsigned int addr;
-+	unsigned long pri;
-+	int irq = data->irq;
-+	struct sh7751_intc_regs *reg = data->chip_data;
-+
-+	if (irq < 64) {
-+		if (ipr_table[irq] != 0xff) {
-+			addr = (ipr_table[irq] & 0xf0) >> 2;
-+			pos = (ipr_table[irq] & 0x0f) << 4;
-+			pri = ~(0x000f << pos);
-+			pri &= __raw_readw(reg->ipr + addr);
-+			__raw_writew(pri, reg->ipr + addr);
-+		}
-+	} else {
-+		if (pri_table[irq - 64] < 32) {
-+			pos = pri_table[irq - 64];
-+			pri = ~(0x000f << pos);
-+			pri &= __raw_readw(reg->intpri00);
-+			__raw_writew(pri, reg->intpri00);
-+		}
-+	}
-+}
-+
-+static void sh_enable_irq(struct irq_data *data)
-+{
-+	int pos;
-+	unsigned int addr;
-+	unsigned long pri;
-+	int irq = data->irq;
-+	struct sh7751_intc_regs *reg = data->chip_data;
-+
-+	if (irq < 64) {
-+		if (ipr_table[irq] != 0xff) {
-+			addr = (ipr_table[irq] & 0xf0) >> 2;
-+			pos = (ipr_table[irq] & 0x0f) * 4;
-+			pri = ~(0x000f << pos);
-+			pri &= __raw_readw(reg->ipr + addr);
-+			pri |= 1 << pos;
-+			__raw_writew(pri, reg->ipr + addr);
-+		}
-+	} else {
-+		if (pri_table[irq - 64] < 32) {
-+			pos = pri_table[irq - 64];
-+			pri = ~(0x000f << pos);
-+			pri &= __raw_readw(reg->intpri00);
-+			pri |= 1 << pos;
-+			__raw_writew(pri, reg->intpri00);
-+		}
-+	}
-+}
-+
-+struct irq_chip sh_irq_chip = {
-+	.name		= "SH-IPR",
-+	.irq_unmask	= sh_enable_irq,
-+	.irq_mask	= sh_disable_irq,
-+};
-+
-+static __init int irq_map(struct irq_domain *h, unsigned int virq,
-+			  irq_hw_number_t hw_irq_num)
-+{
-+	irq_set_chip_and_handler(virq, &sh_irq_chip, handle_level_irq);
-+	irq_get_irq_data(virq)->chip_data = h->host_data;
-+	irq_modify_status(virq, IRQ_NOREQUEST, IRQ_NOPROBE);
-+
-+	return 0;
-+}
-+
-+static struct irq_domain_ops irq_ops = {
-+       .map    = irq_map,
-+       .xlate  = irq_domain_xlate_onecell,
-+};
-+
-+static int __init sh_intc_of_init(struct device_node *intc,
-+				  struct device_node *parent)
-+{
-+	struct irq_domain *domain;
-+	void *intc_baseaddr;
-+	void *intc_baseaddr2;
-+
-+	intc_baseaddr = of_iomap(intc, 0);
-+	intc_baseaddr2 = of_iomap(intc, 1);
-+	BUG_ON(!intc_baseaddr);
-+
-+	sh7751_regs.icr = intc_baseaddr;
-+	sh7751_regs.ipr = intc_baseaddr + 4;
-+	sh7751_regs.intpri00 = intc_baseaddr2;
-+	sh7751_regs.intreq00 = intc_baseaddr2 + 0x20;
-+	sh7751_regs.intmsk00 = intc_baseaddr2 + 0x40;
-+	sh7751_regs.intmskclr00 = intc_baseaddr2 + 0x60;
-+
-+	domain = irq_domain_add_linear(intc, NR_IRQS, &irq_ops, &sh7751_regs);
-+	BUG_ON(!domain);
-+	irq_set_default_host(domain);
-+	return 0;
-+}
-+
-+IRQCHIP_DECLARE(sh_7751_intc, "renesas,sh7751-intc", sh_intc_of_init);
+diff --git a/arch/x86/include/asm/rtc.h b/arch/x86/include/asm/rtc.h
+deleted file mode 100644
+index f71c3b0ed360..000000000000
+--- a/arch/x86/include/asm/rtc.h
++++ /dev/null
+@@ -1 +0,0 @@
+-#include <asm-generic/rtc.h>
+diff --git a/arch/x86/kernel/hpet.c b/arch/x86/kernel/hpet.c
+index f112af7aa62e..357900aad62c 100644
+--- a/arch/x86/kernel/hpet.c
++++ b/arch/x86/kernel/hpet.c
+@@ -1020,7 +1020,6 @@ void hpet_disable(void)
+  */
+ #include <linux/mc146818rtc.h>
+ #include <linux/rtc.h>
+-#include <asm/rtc.h>
+ 
+ #define DEFAULT_RTC_INT_FREQ	64
+ #define DEFAULT_RTC_SHIFT	6
+@@ -1244,7 +1243,7 @@ irqreturn_t hpet_rtc_interrupt(int irq, void *dev_id)
+ 	memset(&curr_time, 0, sizeof(struct rtc_time));
+ 
+ 	if (hpet_rtc_flags & (RTC_UIE | RTC_AIE))
+-		get_rtc_time(&curr_time);
++		mc146818_set_time(&curr_time);
+ 
+ 	if (hpet_rtc_flags & RTC_UIE &&
+ 	    curr_time.tm_sec != hpet_prev_update_sec) {
+diff --git a/arch/x86/kernel/rtc.c b/arch/x86/kernel/rtc.c
+index eceaa082ec3f..79c6311cd912 100644
+--- a/arch/x86/kernel/rtc.c
++++ b/arch/x86/kernel/rtc.c
+@@ -13,7 +13,6 @@
+ #include <asm/x86_init.h>
+ #include <asm/time.h>
+ #include <asm/intel-mid.h>
+-#include <asm/rtc.h>
+ #include <asm/setup.h>
+ 
+ #ifdef CONFIG_X86_32
+@@ -47,7 +46,7 @@ int mach_set_rtc_mmss(const struct timespec *now)
+ 
+ 	rtc_time_to_tm(nowtime, &tm);
+ 	if (!rtc_valid_tm(&tm)) {
+-		retval = set_rtc_time(&tm);
++		retval = mc146818_set_time(&tm);
+ 		if (retval)
+ 			printk(KERN_ERR "%s: RTC write failed with error %d\n",
+ 			       __func__, retval);
+diff --git a/arch/x86/platform/efi/efi.c b/arch/x86/platform/efi/efi.c
+index f93545e7dc54..56400d03409f 100644
+--- a/arch/x86/platform/efi/efi.c
++++ b/arch/x86/platform/efi/efi.c
+@@ -51,7 +51,6 @@
+ #include <asm/cacheflush.h>
+ #include <asm/tlbflush.h>
+ #include <asm/x86_init.h>
+-#include <asm/rtc.h>
+ #include <asm/uv/uv.h>
+ 
+ static struct efi efi_phys __initdata;
+diff --git a/drivers/acpi/acpi_cmos_rtc.c b/drivers/acpi/acpi_cmos_rtc.c
+index 81dc75033f15..0980a133916f 100644
+--- a/drivers/acpi/acpi_cmos_rtc.c
++++ b/drivers/acpi/acpi_cmos_rtc.c
+@@ -14,7 +14,7 @@
+ #include <linux/err.h>
+ #include <linux/kernel.h>
+ #include <linux/module.h>
+-#include <asm-generic/rtc.h>
++#include <linux/mc146818rtc.h>
+ 
+ #include "internal.h"
+ 
+diff --git a/drivers/base/power/trace.c b/drivers/base/power/trace.c
+index a6975795e7f3..efec10b49d59 100644
+--- a/drivers/base/power/trace.c
++++ b/drivers/base/power/trace.c
+@@ -11,7 +11,7 @@
+ #include <linux/export.h>
+ #include <linux/rtc.h>
+ 
+-#include <asm/rtc.h>
++#include <linux/mc146818rtc.h>
+ 
+ #include "power.h"
+ 
+@@ -103,7 +103,7 @@ static int set_magic_time(unsigned int user, unsigned int file, unsigned int dev
+ 	n /= 24;
+ 	time.tm_min = (n % 20) * 3;
+ 	n /= 20;
+-	set_rtc_time(&time);
++	mc146818_set_time(&time);
+ 	return n ? -1 : 0;
+ }
+ 
+@@ -112,7 +112,7 @@ static unsigned int read_magic_time(void)
+ 	struct rtc_time time;
+ 	unsigned int val;
+ 
+-	get_rtc_time(&time);
++	mc146818_get_time(&time);
+ 	pr_info("RTC time: %2d:%02d:%02d, date: %02d/%02d/%02d\n",
+ 		time.tm_hour, time.tm_min, time.tm_sec,
+ 		time.tm_mon + 1, time.tm_mday, time.tm_year % 100);
+diff --git a/drivers/char/Kconfig b/drivers/char/Kconfig
+index 601f64fcc890..31b5861649ee 100644
+--- a/drivers/char/Kconfig
++++ b/drivers/char/Kconfig
+@@ -328,7 +328,7 @@ config JS_RTC
+ config GEN_RTC
+ 	tristate "Generic /dev/rtc emulation"
+ 	depends on RTC!=y
+-	depends on ALPHA || M68K || MN10300 || PARISC || PPC || X86
++	depends on ALPHA || M68K || MN10300 || PARISC || PPC
+ 	---help---
+ 	  If you say Y here and create a character special file /dev/rtc with
+ 	  major number 10 and minor number 135 using mknod ("man mknod"), you
+diff --git a/drivers/rtc/rtc-mrst.c b/drivers/rtc/rtc-mrst.c
+index 0094d9bdd1e6..fe840c0edfef 100644
+--- a/drivers/rtc/rtc-mrst.c
++++ b/drivers/rtc/rtc-mrst.c
+@@ -32,11 +32,11 @@
+ #include <linux/interrupt.h>
+ #include <linux/spinlock.h>
+ #include <linux/kernel.h>
++#include <linux/mc146818rtc.h>
+ #include <linux/module.h>
+ #include <linux/init.h>
+ #include <linux/sfi.h>
+ 
+-#include <asm-generic/rtc.h>
+ #include <asm/intel_scu_ipc.h>
+ #include <asm/intel-mid.h>
+ #include <asm/intel_mid_vrtc.h>
 -- 
 2.7.0
 
