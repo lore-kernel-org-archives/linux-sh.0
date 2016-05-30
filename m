@@ -1,128 +1,85 @@
-From: Yoshinori Sato <ysato@users.sourceforge.jp>
-Date: Sun, 01 May 2016 05:08:35 +0000
-Subject: [PATCH RESEND 11/12] sh: I/O DATA HDL-U defconfig (DT mode)
-Message-Id: <1462079316-27771-12-git-send-email-ysato@users.sourceforge.jp>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Mon, 30 May 2016 18:57:57 +0000
+Subject: [PATCH v4 09/16] rtc: m68k: provide rtc_class_ops directly
+Message-Id: <1464634684-1248135-10-git-send-email-arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1462079316-27771-1-git-send-email-ysato@users.sourceforge.jp>
-In-Reply-To: <1462079316-27771-1-git-send-email-ysato@users.sourceforge.jp>
+References: <1464634684-1248135-1-git-send-email-arnd@arndb.de>
+In-Reply-To: <1464634684-1248135-1-git-send-email-arnd-r2nGTMty4D4@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+To: Alexandre Belloni <alexandre.belloni-wi1+55ScJUtKEb57/3fJTNBPR1lH4CV8@public.gmane.org>
+Cc: Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>, geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org, gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org, deller-Mmb7MZpHnFY@public.gmane.org, benh-XVmvHMARGAS8U2dJNN8I7kB+6BGkLq7r@public.gmane.org, mpe-Gsx/Oe8HsFggBc27wqDAHg@public.gmane.org, dalias-8zAoT0mYgF4@public.gmane.org, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-alpha-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, a.zummo-BfzFCNDTiLLj+vYz1yj4TQ@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-parisc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linuxppc-dev-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-m68k-cunTk1MwBs8S/qaLPR03pWD2FQJk+8+b@public.gmane.org, rtc-linux-/JYPxA39Uh5TLH3MbocFFw@public.gmane.org, linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
+The rtc-generic driver provides an architecture specific
+wrapper on top of the generic rtc_class_ops abstraction,
+and m68k has another abstraction on top, which is a bit
+silly.
+
+This changes the m68k rtc-generic device to provide its
+rtc_class_ops directly, to reduce the number of layers
+by one.
+
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
 ---
- arch/sh/configs/landisk-dt_defconfig | 100 +++++++++++++++++++++++++++++++++++
- 1 file changed, 100 insertions(+)
- create mode 100644 arch/sh/configs/landisk-dt_defconfig
+ arch/m68k/kernel/time.c   | 23 +++++++++++++++++++++--
+ drivers/rtc/rtc-generic.c |  2 +-
+ 2 files changed, 22 insertions(+), 3 deletions(-)
 
-diff --git a/arch/sh/configs/landisk-dt_defconfig b/arch/sh/configs/landisk-dt_defconfig
-new file mode 100644
-index 0000000..aa52fdb
---- /dev/null
-+++ b/arch/sh/configs/landisk-dt_defconfig
-@@ -0,0 +1,100 @@
-+CONFIG_SYSVIPC=y
-+# CONFIG_FHANDLE is not set
-+CONFIG_LOG_BUF_SHIFT
-+CONFIG_CGROUPS=y
-+CONFIG_NAMESPACES=y
-+# CONFIG_UTS_NS is not set
-+# CONFIG_IPC_NS is not set
-+# CONFIG_PID_NS is not set
-+# CONFIG_NET_NS is not set
-+CONFIG_EXPERT=y
-+CONFIG_SYSCTL_SYSCALL=y
-+CONFIG_SLAB=y
-+CONFIG_MODULES=y
-+CONFIG_MODULE_UNLOAD=y
-+CONFIG_MODULE_FORCE_UNLOAD=y
-+# CONFIG_BLK_DEV_BSG is not set
-+CONFIG_CPU_SUBTYPE_SH7751R=y
-+CONFIG_MEMORY_START=0x0c000000
-+CONFIG_FLATMEM_MANUAL=y
-+CONFIG_SH_DEVICE_TREE=y
-+CONFIG_SH_PCLK_FREQ3333333
-+CONFIG_HEARTBEAT=y
-+CONFIG_KEXEC=y
-+CONFIG_PCI=y
-+CONFIG_PCI_SH7751=y
-+CONFIG_PCCARD=y
-+CONFIG_YENTA=y
-+CONFIG_NET=y
-+CONFIG_PACKET=y
-+CONFIG_UNIX=y
-+CONFIG_INET=y
-+CONFIG_IP_PNP=y
-+CONFIG_IP_PNP_BOOTP=y
-+# CONFIG_IPV6 is not set
-+CONFIG_NETFILTER=y
-+# CONFIG_WIRELESS is not set
-+CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
-+CONFIG_DEVTMPFS=y
-+CONFIG_BLK_DEV_LOOP=y
-+CONFIG_BLK_DEV_RAM=y
-+CONFIG_BLK_DEV_SD=y
-+CONFIG_ATA=y
-+CONFIG_PATA_ARTOP=y
-+CONFIG_NETDEVICES=y
-+CONFIG_8139CP=y
-+# CONFIG_WLAN is not set
-+# CONFIG_INPUT_MOUSEDEV is not set
-+# CONFIG_INPUT_KEYBOARD is not set
-+# CONFIG_INPUT_MOUSE is not set
-+# CONFIG_SERIO is not set
-+CONFIG_SERIAL_SH_SCI=y
-+CONFIG_SERIAL_SH_SCI_EARLYCON=y
-+# CONFIG_HW_RANDOM is not set
-+# CONFIG_HWMON is not set
-+CONFIG_HID_A4TECH=m
-+CONFIG_HID_APPLE=m
-+CONFIG_HID_BELKIN=m
-+CONFIG_HID_CHERRY=m
-+CONFIG_HID_CHICONY=m
-+CONFIG_HID_CYPRESS=m
-+CONFIG_HID_EZKEY=m
-+CONFIG_HID_GYRATION=m
-+CONFIG_HID_KENSINGTON=y
-+CONFIG_HID_LOGITECH=m
-+CONFIG_HID_MICROSOFT=m
-+CONFIG_HID_MONTEREY=m
-+CONFIG_HID_PANTHERLORD=m
-+CONFIG_HID_PETALYNX=m
-+CONFIG_HID_SAMSUNG=m
-+CONFIG_HID_SUNPLUS=m
-+# CONFIG_USB_SUPPORT is not set
-+CONFIG_COMMON_CLK_SH7750=y
-+# CONFIG_IOMMU_SUPPORT is not set
-+CONFIG_EXT2_FS=y
-+CONFIG_EXT3_FS=y
-+CONFIG_AUTOFS4_FS=y
-+CONFIG_ISO9660_FS=m
-+CONFIG_MSDOS_FS=y
-+CONFIG_VFAT_FS=y
-+CONFIG_NTFS_FS=m
-+CONFIG_NTFS_RW=y
-+CONFIG_TMPFS=y
-+CONFIG_ROMFS_FS=y
-+CONFIG_UFS_FS=m
-+CONFIG_NFS_FS=y
-+CONFIG_NFS_SWAP=y
-+CONFIG_ROOT_NFS=y
-+CONFIG_NLS_CODEPAGE_437=y
-+CONFIG_NLS_CODEPAGE_932=y
-+CONFIG_DEBUG_INFO=y
-+CONFIG_MAGIC_SYSRQ=y
-+CONFIG_LOCKUP_DETECTOR=y
-+CONFIG_BOOTPARAM_SOFTLOCKUP_PANIC=y
-+CONFIG_BOOTPARAM_HUNG_TASK_PANIC=y
-+CONFIG_WQ_WATCHDOG=y
-+CONFIG_PANIC_ON_OOPS=y
-+CONFIG_PANIC_TIMEOUT=1
-+CONFIG_LOCK_STAT=y
-+# CONFIG_FTRACE is not set
-+CONFIG_CRC_T10DIF=y
+diff --git a/arch/m68k/kernel/time.c b/arch/m68k/kernel/time.c
+index 3857737e3958..bd6417d38d5a 100644
+--- a/arch/m68k/kernel/time.c
++++ b/arch/m68k/kernel/time.c
+@@ -86,7 +86,24 @@ void read_persistent_clock(struct timespec *ts)
+ 	}
+ }
+ 
+-#ifdef CONFIG_ARCH_USES_GETTIMEOFFSET
++#if defined(CONFIG_ARCH_USES_GETTIMEOFFSET) && IS_ENABLED(CONFIG_RTC_DRV_GENERIC)
++static int rtc_generic_get_time(struct device *dev, struct rtc_time *tm)
++{
++	mach_hwclk(0, tm);
++	return rtc_valid_tm(tm);
++}
++
++static int rtc_generic_set_time(struct device *dev, struct rtc_time *tm)
++{
++	if (mach_hwclk(1, tm) < 0)
++		return -EOPNOTSUPP;
++	return 0;
++}
++
++static const struct rtc_class_ops generic_rtc_ops = {
++	.read_time = rtc_generic_get_time,
++	.set_time = rtc_generic_set_time,
++};
+ 
+ static int __init rtc_init(void)
+ {
+@@ -95,7 +112,9 @@ static int __init rtc_init(void)
+ 	if (!mach_hwclk)
+ 		return -ENODEV;
+ 
+-	pdev = platform_device_register_simple("rtc-generic", -1, NULL, 0);
++	pdev = platform_device_register_data(NULL, "rtc-generic", -1,
++					     &generic_rtc_ops,
++					     sizeof(generic_rtc_ops));
+ 	return PTR_ERR_OR_ZERO(pdev);
+ }
+ 
+diff --git a/drivers/rtc/rtc-generic.c b/drivers/rtc/rtc-generic.c
+index 92b5e02a3750..5c82bae73b9c 100644
+--- a/drivers/rtc/rtc-generic.c
++++ b/drivers/rtc/rtc-generic.c
+@@ -9,7 +9,7 @@
+ #include <linux/platform_device.h>
+ #include <linux/rtc.h>
+ 
+-#if defined(CONFIG_M68K) || defined(CONFIG_PPC)
++#if defined(CONFIG_PPC)
+ #include <asm/rtc.h>
+ 
+ static int generic_get_time(struct device *dev, struct rtc_time *tm)
 -- 
 2.7.0
 
