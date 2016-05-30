@@ -1,74 +1,178 @@
 From: Arnd Bergmann <arnd@arndb.de>
-Date: Tue, 03 May 2016 10:29:21 +0000
-Subject: Re: [PATCH v3 12/16] rtc: powerpc: provide rtc_class_ops directly
-Message-Id: <3723014.RkUgaFBZte@wuerfel>
+Date: Mon, 30 May 2016 18:57:56 +0000
+Subject: [PATCH v4 08/16] char/genrtc: remove parisc support
+Message-Id: <1464634684-1248135-9-git-send-email-arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1461796470-1291527-1-git-send-email-arnd@arndb.de> <1461796470-1291527-13-git-send-email-arnd@arndb.de> <1462248309.12788.4.camel@ellerman.id.au>
-In-Reply-To: <1462248309.12788.4.camel@ellerman.id.au>
+References: <1464634684-1248135-1-git-send-email-arnd@arndb.de>
+In-Reply-To: <1464634684-1248135-1-git-send-email-arnd-r2nGTMty4D4@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Michael Ellerman <mpe@ellerman.id.au>
-Cc: Alexandre Belloni <alexandre.belloni@free-electrons.com>, geert@linux-m68k.org, deller@gmx.de, benh@kernel.crashing.org, dalias@libc.org, dhowells@redhat.com, linux-alpha@vger.kernel.org, a.zummo@towertech.it, linux-kernel@vger.kernel.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, linux-m68k@lists.linux-m68k.org, rtc-linux@googlegroups.com, linux-arch@vger.kernel.org
+To: Alexandre Belloni <alexandre.belloni-wi1+55ScJUtKEb57/3fJTNBPR1lH4CV8@public.gmane.org>
+Cc: Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>, geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org, gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org, deller-Mmb7MZpHnFY@public.gmane.org, benh-XVmvHMARGAS8U2dJNN8I7kB+6BGkLq7r@public.gmane.org, mpe-Gsx/Oe8HsFggBc27wqDAHg@public.gmane.org, dalias-8zAoT0mYgF4@public.gmane.org, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-alpha-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, a.zummo-BfzFCNDTiLLj+vYz1yj4TQ@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-parisc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linuxppc-dev-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-m68k-cunTk1MwBs8S/qaLPR03pWD2FQJk+8+b@public.gmane.org, rtc-linux-/JYPxA39Uh5TLH3MbocFFw@public.gmane.org, linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Tuesday 03 May 2016 14:05:09 Michael Ellerman wrote:
-> On Thu, 2016-04-28 at 00:34 +0200, Arnd Bergmann wrote:
-> 
-> > The rtc-generic driver provides an architecture specific
-> > wrapper on top of the generic rtc_class_ops abstraction,
-> > and powerpc has another abstraction on top, which is a bit
-> > silly.
-> > 
-> > This changes the powerpc rtc-generic device to provide its
-> > rtc_class_ops directly, to reduce the number of layers
-> > by one.
-> > 
-> > Signed-off-by: Arnd Bergmann <arnd@arndb.de>
-> > ---
-> >  arch/powerpc/kernel/time.c | 29 ++++++++++++++++++++++++++++-
-> >  drivers/rtc/rtc-generic.c  |  2 +-
-> >  2 files changed, 29 insertions(+), 2 deletions(-)
-> 
-> If this hits linux-next it will go through my automated boot testing, which
-> hopefully would be sufficient to catch any bugs in this patch, cross fingers.
-> 
-> I don't know jack about all the layers of RTC mess, so my ack is basically
-> worthless here. But if you like you can have one anyway 
-> 
-> Acked-by: Michael Ellerman <mpe@ellerman.id.au>
+This architecture selects RTC_CLASS unconditionally, so the GEN_RTC
+has not worked here for a long time.
 
-Thanks!
+Now we can remove both the asm/rtc.h header and the Kconfig dependency
+for CONFIG_GEN_RTC.
 
-The main thing that could use testing here is for patch 12/16 to see if
-/sbin/hwclock can still read and write the time on a machine that
-uses one of the genrtc backends on powerpc, this includes
-rtas_get_rtc_time, mpc8xx_get_rtc_time, maple_get_rtc_time,
-ps3_get_rtc_time and pmac_get_rtc_time. Testing on a pSeries with rtas
-should be sufficient, and if I made a mistake, it probably fails
-spectacularly.
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+---
+ arch/parisc/include/asm/rtc.h | 131 ------------------------------------------
+ drivers/char/Kconfig          |   2 +-
+ 2 files changed, 1 insertion(+), 132 deletions(-)
+ delete mode 100644 arch/parisc/include/asm/rtc.h
 
-Just for reference, if anyone ever wants to clean this up further on
-powerpc to remove all of the rtc handling from architecture code,
-it has gotten easier after my series:
+diff --git a/arch/parisc/include/asm/rtc.h b/arch/parisc/include/asm/rtc.h
+deleted file mode 100644
+index 099d641a42c2..000000000000
+--- a/arch/parisc/include/asm/rtc.h
++++ /dev/null
+@@ -1,131 +0,0 @@
+-/* 
+- * include/asm-parisc/rtc.h
+- *
+- * Copyright 2002 Randolph CHung <tausq@debian.org>
+- *
+- * Based on: include/asm-ppc/rtc.h and the genrtc driver in the
+- * 2.4 parisc linux tree
+- */
+-
+-#ifndef __ASM_RTC_H__
+-#define __ASM_RTC_H__
+-
+-#ifdef __KERNEL__
+-
+-#include <linux/rtc.h>
+-
+-#include <asm/pdc.h>
+-
+-#define SECS_PER_HOUR   (60 * 60)
+-#define SECS_PER_DAY    (SECS_PER_HOUR * 24)
+-
+-
+-#define RTC_PIE 0x40		/* periodic interrupt enable */
+-#define RTC_AIE 0x20		/* alarm interrupt enable */
+-#define RTC_UIE 0x10		/* update-finished interrupt enable */
+-
+-#define RTC_BATT_BAD 0x100	/* battery bad */
+-
+-/* some dummy definitions */
+-#define RTC_SQWE 0x08		/* enable square-wave output */
+-#define RTC_DM_BINARY 0x04	/* all time/date values are BCD if clear */
+-#define RTC_24H 0x02		/* 24 hour mode - else hours bit 7 means pm */
+-#define RTC_DST_EN 0x01	        /* auto switch DST - works f. USA only */
+-
+-# define __isleap(year) \
+-  ((year) % 4 = 0 && ((year) % 100 != 0 || (year) % 400 = 0))
+-
+-/* How many days come before each month (0-12).  */
+-static const unsigned short int __mon_yday[2][13] -{
+-	/* Normal years.  */
+-	{ 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365 },
+-	/* Leap years.  */
+-	{ 0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366 }
+-};
+-
+-static inline unsigned int get_rtc_time(struct rtc_time *wtime)
+-{
+-	struct pdc_tod tod_data;
+-	long int days, rem, y;
+-	const unsigned short int *ip;
+-
+-	memset(wtime, 0, sizeof(*wtime));
+-	if (pdc_tod_read(&tod_data) < 0)
+-		return RTC_24H | RTC_BATT_BAD;
+-
+-	// most of the remainder of this function is:
+-//	Copyright (C) 1991, 1993, 1997, 1998 Free Software Foundation, Inc.
+-//	This was originally a part of the GNU C Library.
+-//      It is distributed under the GPL, and was swiped from offtime.c
+-
+-
+-	days = tod_data.tod_sec / SECS_PER_DAY;
+-	rem = tod_data.tod_sec % SECS_PER_DAY;
+-
+-	wtime->tm_hour = rem / SECS_PER_HOUR;
+-	rem %= SECS_PER_HOUR;
+-	wtime->tm_min = rem / 60;
+-	wtime->tm_sec = rem % 60;
+-
+-	y = 1970;
+-
+-#define DIV(a, b) ((a) / (b) - ((a) % (b) < 0))
+-#define LEAPS_THRU_END_OF(y) (DIV (y, 4) - DIV (y, 100) + DIV (y, 400))
+-
+-	while (days < 0 || days >= (__isleap (y) ? 366 : 365))
+-	{
+-		/* Guess a corrected year, assuming 365 days per year.  */
+-		long int yg = y + days / 365 - (days % 365 < 0);
+-
+-		/* Adjust DAYS and Y to match the guessed year.  */
+-		days -= ((yg - y) * 365
+-			 + LEAPS_THRU_END_OF (yg - 1)
+-			 - LEAPS_THRU_END_OF (y - 1));
+-		y = yg;
+-	}
+-	wtime->tm_year = y - 1900;
+-
+-	ip = __mon_yday[__isleap(y)];
+-	for (y = 11; days < (long int) ip[y]; --y)
+-		continue;
+-	days -= ip[y];
+-	wtime->tm_mon = y;
+-	wtime->tm_mday = days + 1;
+-
+-	return RTC_24H;
+-}
+-
+-static int set_rtc_time(struct rtc_time *wtime)
+-{
+-	u_int32_t secs;
+-
+-	secs = mktime(wtime->tm_year + 1900, wtime->tm_mon + 1, wtime->tm_mday, 
+-		      wtime->tm_hour, wtime->tm_min, wtime->tm_sec);
+-
+-	if(pdc_tod_set(secs, 0) < 0)
+-		return -1;
+-	else
+-		return 0;
+-
+-}
+-
+-static inline unsigned int get_rtc_ss(void)
+-{
+-	struct rtc_time h;
+-
+-	get_rtc_time(&h);
+-	return h.tm_sec;
+-}
+-
+-static inline int get_rtc_pll(struct rtc_pll_info *pll)
+-{
+-	return -EINVAL;
+-}
+-static inline int set_rtc_pll(struct rtc_pll_info *pll)
+-{
+-	return -EINVAL;
+-}
+-
+-#endif /* __KERNEL__ */
+-#endif /* __ASM_RTC_H__ */
+diff --git a/drivers/char/Kconfig b/drivers/char/Kconfig
+index 1d9e3063373b..074bc394e31b 100644
+--- a/drivers/char/Kconfig
++++ b/drivers/char/Kconfig
+@@ -328,7 +328,7 @@ config JS_RTC
+ config GEN_RTC
+ 	tristate "Generic /dev/rtc emulation"
+ 	depends on RTC!=y
+-	depends on M68K || PARISC || PPC
++	depends on M68K || PPC
+ 	---help---
+ 	  If you say Y here and create a character special file /dev/rtc with
+ 	  major number 10 and minor number 135 using mknod ("man mknod"), you
+-- 
+2.7.0
 
-- The update_persistent_clock() and read_persistent_clock() callbacks
-  are now unnecessary: as long as the RTC driver is built into the
-  kernel, drivers/rtc/hctosys.c takes care of setting the initial
-  time (otherwise user space has to do it), and the other users
-  (ntp and suspend/resume) will work fine whenever an rtc driver
-  is loaded. Obviously you will want to test the kernel better after
-  removing the two functions.
-
-- Once they are gone, the only users of the ppc_md.{get,set}_rtc_time
-  callbacks are in the "const struct rtc_class_ops rtc_generic_ops".
-  You can move them into the five files implementing those callbacks
-  and call the functions directly to get rid of the function pointers.
-
-- Lastly, after that is done, you basically have five independent
-  rtc device drivers that can get moved to drivers/rtc and converted
-  into regular platform drivers. Instead of registering the fake
-  "rtc-generic" device, you then register the one that is actually
-  there like arch/powerpc/sysdev/rtc_cmos_setup.c already does, or
-  use the one that gets created from DT.
-
-	Arnd
