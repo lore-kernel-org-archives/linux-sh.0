@@ -1,38 +1,37 @@
-From: Yoshinori Sato <ysato@users.sourceforge.jp>
-Date: Sun, 01 May 2016 04:59:22 +0000
-Subject: [PATCH 12/12] of: Add sh support
-Message-Id: <1462078763-27135-13-git-send-email-ysato@users.sourceforge.jp>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Mon, 30 May 2016 18:58:03 +0000
+Subject: [PATCH v4 15/16] char/genrtc: remove asm-generic/rtc.h from mips
+Message-Id: <1464634684-1248135-16-git-send-email-arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1462078763-27135-1-git-send-email-ysato@users.sourceforge.jp>
-In-Reply-To: <1462078763-27135-1-git-send-email-ysato@users.sourceforge.jp>
+References: <1464634684-1248135-1-git-send-email-arnd@arndb.de>
+In-Reply-To: <1464634684-1248135-1-git-send-email-arnd-r2nGTMty4D4@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: devicetree@vger.kernel.org, linux-sh@vger.kernel.org, linux-kerel@vger.kernel.org
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+To: Alexandre Belloni <alexandre.belloni-wi1+55ScJUtKEb57/3fJTNBPR1lH4CV8@public.gmane.org>
+Cc: Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>, geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org, gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org, deller-Mmb7MZpHnFY@public.gmane.org, benh-XVmvHMARGAS8U2dJNN8I7kB+6BGkLq7r@public.gmane.org, mpe-Gsx/Oe8HsFggBc27wqDAHg@public.gmane.org, dalias-8zAoT0mYgF4@public.gmane.org, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-alpha-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, a.zummo-BfzFCNDTiLLj+vYz1yj4TQ@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-parisc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linuxppc-dev-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-m68k-cunTk1MwBs8S/qaLPR03pWD2FQJk+8+b@public.gmane.org, rtc-linux-/JYPxA39Uh5TLH3MbocFFw@public.gmane.org, linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-sh fdt access in VA. But memory reservation use PA.
-So sh need convert to PA.
+arch/mips/sni/time.c includes asm-generic/rtc.h for no apparent reason,
+and it works fine without that header, so lets remove the inclusion
+in preparation of deleting the file.
 
-Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
 ---
- drivers/of/fdt.c | 3 +++
- 1 file changed, 3 insertions(+)
+ arch/mips/sni/time.c | 1 -
+ 1 file changed, 1 deletion(-)
 
-diff --git a/drivers/of/fdt.c b/drivers/of/fdt.c
-index 3349d2a..fb357be 100644
---- a/drivers/of/fdt.c
-+++ b/drivers/of/fdt.c
-@@ -593,6 +593,9 @@ void __init early_init_fdt_scan_reserved_mem(void)
- 		fdt_get_mem_rsv(initial_boot_params, n, &base, &size);
- 		if (!size)
- 			break;
-+#ifdef CONFIG_SUPERH
-+		base = virt_to_phys(base);
-+#endif
- 		early_init_dt_reserve_memory_arch(base, size, 0);
- 	}
+diff --git a/arch/mips/sni/time.c b/arch/mips/sni/time.c
+index fb4b3520cdc6..7ee14f41fc25 100644
+--- a/arch/mips/sni/time.c
++++ b/arch/mips/sni/time.c
+@@ -8,7 +8,6 @@
  
+ #include <asm/sni.h>
+ #include <asm/time.h>
+-#include <asm-generic/rtc.h>
+ 
+ #define SNI_CLOCK_TICK_RATE	3686400
+ #define SNI_COUNTER2_DIV	64
 -- 
 2.7.0
 
