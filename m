@@ -1,20 +1,29 @@
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Date: Wed, 29 Jun 2016 13:43:53 +0000
-Subject: Re: [PATCH v4 19/22] sh: IO-DATA HDL-U (a,k.a landisk) IRQCHIP driver
-Message-Id: <e9c9754b-a251-8ce4-efbc-0e7bece3df57@physik.fu-berlin.de>
+From: Rich Felker <dalias@libc.org>
+Date: Wed, 01 Jun 2016 22:18:02 +0000
+Subject: Re: Build regressions/improvements in v4.7-rc1
+Message-Id: <20160601221801.GF10893@brightrain.aerifal.cx>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1467207667-15768-1-git-send-email-ysato@users.sourceforge.jp>
- <1467207667-15768-20-git-send-email-ysato@users.sourceforge.jp>
-In-Reply-To: <1467207667-15768-20-git-send-email-ysato@users.sourceforge.jp>
+References: <1464593333-10283-1-git-send-email-geert@linux-m68k.org>
+ <CAMuHMdVvK9h2MLVAeB3n8G6hfKJU1Rma2_uVYBTqsFxnRv2YsA@mail.gmail.com>
+In-Reply-To: <CAMuHMdVvK9h2MLVAeB3n8G6hfKJU1Rma2_uVYBTqsFxnRv2YsA@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshinori Sato <ysato@users.sourceforge.jp>, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "linuxppc-dev@lists.ozlabs.org" <linuxppc-dev@lists.ozlabs.org>, Linux-sh list <linux-sh@vger.kernel.org>
 
-Could you fix the typo "a,k.a" => "a.k.a."?
+On Mon, May 30, 2016 at 09:34:07AM +0200, Geert Uytterhoeven wrote:
+> >   + /home/kisskb/slave/src/arch/sh/kernel/setup.c: error: implicit declaration of function 'early_init_dt_scan' [-Werror=implicit-function-declaration]:  => 256:2
+> 
+> sh-randconfig
 
--- 
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer - glaubitz@debian.org
-`. `'   Freie Universitaet Berlin - glaubitz@physik.fu-berlin.de
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+Nice find. I think I'm incorrectly checking for CONFIG_OF in places
+that should actually be checking for CONFIG_OF_FLATTREE. Does that
+look right to you? Nothing breaks in actual configurations that make
+sense now, only if you enable OF manually without selecting
+SH_DEVICE_TREE as your board.
+
+If you can confirm that my assessment is correct I'll include a fix in
+my (now-late) pull request.
+
+Rich
