@@ -1,7 +1,7 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 03 Jun 2016 10:00:02 +0000
-Subject: [PATCH v3 02/11] serial: sh-sci: Update DT binding documentation for dedicated RTS/CTS
-Message-Id: <1464948011-377-3-git-send-email-geert+renesas@glider.be>
+Date: Fri, 03 Jun 2016 10:00:09 +0000
+Subject: [PATCH v3 09/11] serial: sh-sci: Add pin initialization for SCIFA/SCIFB
+Message-Id: <1464948011-377-10-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1464948011-377-1-git-send-email-geert+renesas@glider.be>
 In-Reply-To: <1464948011-377-1-git-send-email-geert+renesas@glider.be>
@@ -9,45 +9,52 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>, Peter Hurley <peter@hurleysoftware.com>
-Cc: Magnus Damm <magnus.damm@gmail.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-serial@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>, devicetree@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-serial@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Some Renesas SCIF UARTs have dedicated lines for RTS/CTS hardware flow
-control.  Whether these lines exist depends on SoC and UART instance
-inside the SoC.  Whether these lines can be used for hardware flow
-control depends on board wiring.
+Before, the driver relied on initialization by the boot loader, or by
+implicit reset state.
 
-Amend the DT bindings with an optional property to indicate that RTS/CTS
-hardware flow control lines exist, and can be used as such, according to
-the Generic Serial DT Bindings.
+Note that unlike on (H)SCIF, the RTS/CTS bits exist only if dedicated
+RTS/CTS pins are available, which depends on the SoC and UART instance.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Rob Herring <robh@kernel.org>
-Cc: devicetree@vger.kernel.org
 ---
 v3:
-  - Add Acked-by,
+  - No changes,
 
 v2:
-  - Drop RFC status,
-  - Use "uart-has-rtscts" instead of "renesas,uart-has-rtscts",
-  - Refer to the Generic Serial DT Bindings.
+  - New.
 ---
- Documentation/devicetree/bindings/serial/renesas,sci-serial.txt | 2 ++
- 1 file changed, 2 insertions(+)
+ drivers/tty/serial/sh-sci.c | 16 +++++++++++++++-
+ 1 file changed, 15 insertions(+), 1 deletion(-)
 
-diff --git a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
-index 997baeaa869baa6f..7a0e15053db97481 100644
---- a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
-+++ b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
-@@ -78,6 +78,8 @@ Optional properties:
-   - dma-names: Must contain a list of two DMA names, "tx" and "rx".
-   - {cts,dsr,dcd,rng,rts,dtr}-gpios: Specify GPIOs for modem lines, cfr. the
-     generic serial DT bindings in serial.txt.
-+  - uart-has-rtscts: Indicates dedicated lines for RTS/CTS hardware flow
-+    control, cfr. the generic serial DT bindings in serial.txt.
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index c46999f20917964e..b9d027af0f3e71f6 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -712,7 +712,21 @@ static void sci_init_pins(struct uart_port *port, unsigned int cflag)
+ 		return;
+ 	}
  
- Example:
- 	aliases {
+-	if (sci_getreg(port, SCSPTR)->size) {
++	if (port->type = PORT_SCIFA || port->type = PORT_SCIFB) {
++		u16 ctrl = serial_port_in(port, SCPCR);
++
++		/* Enable RXD and TXD pin functions */
++		ctrl &= ~(SCPCR_RXDC | SCPCR_TXDC);
++		if (to_sci_port(port)->cfg->capabilities & SCIx_HAVE_RTSCTS) {
++			/* RTS# is output, driven 1 */
++			ctrl |= SCPCR_RTSC;
++			serial_port_out(port, SCPDR,
++				serial_port_in(port, SCPDR) | SCPDR_RTSD);
++			/* Enable CTS# pin function */
++			ctrl &= ~SCPCR_CTSC;
++		}
++		serial_port_out(port, SCPCR, ctrl);
++	} else if (sci_getreg(port, SCSPTR)->size) {
+ 		u16 status = serial_port_in(port, SCSPTR);
+ 
+ 		/* RTS# is output, driven 1 */
 -- 
 1.9.1
 
