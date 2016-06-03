@@ -1,7 +1,7 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 03 Jun 2016 10:00:09 +0000
-Subject: [PATCH v3 09/11] serial: sh-sci: Add pin initialization for SCIFA/SCIFB
-Message-Id: <1464948011-377-10-git-send-email-geert+renesas@glider.be>
+Date: Fri, 03 Jun 2016 10:00:06 +0000
+Subject: [PATCH v3 06/11] serial: sh-sci: Add more Serial Port Register documentation
+Message-Id: <1464948011-377-7-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1464948011-377-1-git-send-email-geert+renesas@glider.be>
 In-Reply-To: <1464948011-377-1-git-send-email-geert+renesas@glider.be>
@@ -11,50 +11,43 @@ Content-Transfer-Encoding: 7bit
 To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>, Peter Hurley <peter@hurleysoftware.com>
 Cc: Magnus Damm <magnus.damm@gmail.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-serial@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Before, the driver relied on initialization by the boot loader, or by
-implicit reset state.
-
-Note that unlike on (H)SCIF, the RTS/CTS bits exist only if dedicated
-RTS/CTS pins are available, which depends on the SoC and UART instance.
+Improve documentation for the (H)SCIF Serial Port Register:
+  - Make it clear the RTS and CTS lines are active-low,
+  - Document the bits related to the serial port's clock pin.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reviewed-by: Peter Hurley <peter@hurleysoftware.com>
 ---
 v3:
-  - No changes,
+  - Add Reviewed-by,
 
 v2:
   - New.
 ---
- drivers/tty/serial/sh-sci.c | 16 +++++++++++++++-
- 1 file changed, 15 insertions(+), 1 deletion(-)
+ drivers/tty/serial/sh-sci.h | 10 ++++++----
+ 1 file changed, 6 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index c46999f20917964e..b9d027af0f3e71f6 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -712,7 +712,21 @@ static void sci_init_pins(struct uart_port *port, unsigned int cflag)
- 		return;
- 	}
+diff --git a/drivers/tty/serial/sh-sci.h b/drivers/tty/serial/sh-sci.h
+index 7a4fa185b93ef307..85a2b81ba0a845e5 100644
+--- a/drivers/tty/serial/sh-sci.h
++++ b/drivers/tty/serial/sh-sci.h
+@@ -108,10 +108,12 @@ enum {
+ #define SCLSR_ORER	BIT(0)	/* Overrun Error */
  
--	if (sci_getreg(port, SCSPTR)->size) {
-+	if (port->type = PORT_SCIFA || port->type = PORT_SCIFB) {
-+		u16 ctrl = serial_port_in(port, SCPCR);
-+
-+		/* Enable RXD and TXD pin functions */
-+		ctrl &= ~(SCPCR_RXDC | SCPCR_TXDC);
-+		if (to_sci_port(port)->cfg->capabilities & SCIx_HAVE_RTSCTS) {
-+			/* RTS# is output, driven 1 */
-+			ctrl |= SCPCR_RTSC;
-+			serial_port_out(port, SCPDR,
-+				serial_port_in(port, SCPDR) | SCPDR_RTSD);
-+			/* Enable CTS# pin function */
-+			ctrl &= ~SCPCR_CTSC;
-+		}
-+		serial_port_out(port, SCPCR, ctrl);
-+	} else if (sci_getreg(port, SCSPTR)->size) {
- 		u16 status = serial_port_in(port, SCSPTR);
+ /* SCSPTR (Serial Port Register), optional */
+-#define SCSPTR_RTSIO	BIT(7)	/* Serial Port RTS Pin Input/Output */
+-#define SCSPTR_RTSDT	BIT(6)	/* Serial Port RTS Pin Data */
+-#define SCSPTR_CTSIO	BIT(5)	/* Serial Port CTS Pin Input/Output */
+-#define SCSPTR_CTSDT	BIT(4)	/* Serial Port CTS Pin Data */
++#define SCSPTR_RTSIO	BIT(7)	/* Serial Port RTS# Pin Input/Output */
++#define SCSPTR_RTSDT	BIT(6)	/* Serial Port RTS# Pin Data */
++#define SCSPTR_CTSIO	BIT(5)	/* Serial Port CTS# Pin Input/Output */
++#define SCSPTR_CTSDT	BIT(4)	/* Serial Port CTS# Pin Data */
++#define SCSPTR_SCKIO	BIT(3)	/* Serial Port Clock Pin Input/Output */
++#define SCSPTR_SCKDT	BIT(2)	/* Serial Port Clock Pin Data */
+ #define SCSPTR_SPB2IO	BIT(1)	/* Serial Port Break Input/Output */
+ #define SCSPTR_SPB2DT	BIT(0)	/* Serial Port Break Data */
  
- 		/* RTS# is output, driven 1 */
 -- 
 1.9.1
 
