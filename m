@@ -1,36 +1,56 @@
-From: Yoshinori Sato <ysato@users.sourceforge.jp>
-Date: Wed, 29 Jun 2016 13:40:54 +0000
-Subject: [PATCH v4 09/22] sh: Use GENERIC_IOMAP on device tree mode
-Message-Id: <1467207667-15768-10-git-send-email-ysato@users.sourceforge.jp>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 03 Jun 2016 10:00:03 +0000
+Subject: [PATCH v3 03/11] serial: sh-sci: Always set TIOCM_CTS in .get_mctrl() callback
+Message-Id: <1464948011-377-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1467207667-15768-1-git-send-email-ysato@users.sourceforge.jp>
-In-Reply-To: <1467207667-15768-1-git-send-email-ysato@users.sourceforge.jp>
+References: <1464948011-377-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1464948011-377-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>, Peter Hurley <peter@hurleysoftware.com>
+Cc: Magnus Damm <magnus.damm@gmail.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-serial@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Changes v4
-none
+Documentation/serial/driver clearly states:
 
-Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
+    If the port does not support CTS, DCD or DSR, the driver should
+    indicate that the signal is permanently active.
+
+Hence always set TIOCM_CTS, as we currently don't look at the CTS
+hardware line state at all.
+
+FWIW, this fixes the transmit path when hardware-assisted flow control
+is enabled, and userspace enables CRTSCTS.
+The receive path is still broken, as RTS is never asserted.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reviewed-by: Peter Hurley <peter@hurleysoftware.com>
 ---
- arch/sh/boards/Kconfig | 1 +
- 1 file changed, 1 insertion(+)
+v3:
+  - Add Reviewed-by,
 
-diff --git a/arch/sh/boards/Kconfig b/arch/sh/boards/Kconfig
-index 5e52d53..9e4ccd0 100644
---- a/arch/sh/boards/Kconfig
-+++ b/arch/sh/boards/Kconfig
-@@ -12,6 +12,7 @@ config SH_DEVICE_TREE
- 	select OF_EARLY_FLATTREE
- 	select CLKSRC_OF
- 	select GENERIC_CALIBRATE_DELAY
-+	select GENERIC_IOMAP
- 	help
- 	  Select Board Described by Device Tree to build a kernel that
- 	  does not hard-code any board-specific knowledge but instead uses
+v2:
+  - Drop RFC status.
+---
+ drivers/tty/serial/sh-sci.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 0130feb069aee02f..135f836642ab1c5a 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1835,9 +1835,9 @@ static unsigned int sci_get_mctrl(struct uart_port *port)
+ {
+ 	/*
+ 	 * CTS/RTS is handled in hardware when supported, while nothing
+-	 * else is wired up. Keep it simple and simply assert DSR/CAR.
++	 * else is wired up. Keep it simple and simply assert CTS/DSR/CAR.
+ 	 */
+-	return TIOCM_DSR | TIOCM_CAR;
++	return TIOCM_CTS | TIOCM_DSR | TIOCM_CAR;
+ }
+ 
+ static void sci_break_ctl(struct uart_port *port, int break_state)
 -- 
-2.7.0
+1.9.1
 
