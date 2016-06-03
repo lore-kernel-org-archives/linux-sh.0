@@ -1,53 +1,45 @@
-From: "Paul E. McKenney" <paulmck@linux.vnet.ibm.com>
-Date: Fri, 10 Jun 2016 16:39:41 +0000
-Subject: Re: [RFC 10/12] x86, rwsem: simplify __down_write
-Message-Id: <20160610163941.GC3868@linux.vnet.ibm.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 03 Jun 2016 10:00:11 +0000
+Subject: [PATCH v3 11/11] serial: sh-sci: Add DT support for dedicated RTS/CTS
+Message-Id: <1464948011-377-12-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20160603223417.GB3892@twins.programming.kicks-ass.net>
- <1454444369-2146-1-git-send-email-mhocko@kernel.org>
- <1454444369-2146-11-git-send-email-mhocko@kernel.org>
- <20160203081016.GD32652@gmail.com>
- <20160603161339.GC3693@twins.programming.kicks-ass.net>
- <29355.1465483258@warthog.procyon.org.uk>
- <20160609173640.GX30154@twins.programming.kicks-ass.net>
-In-Reply-To: <20160609173640.GX30154@twins.programming.kicks-ass.net>
+References: <1464948011-377-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1464948011-377-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Peter Zijlstra <peterz@infradead.org>
-Cc: David Howells <dhowells@redhat.com>, Ingo Molnar <mingo@kernel.org>, Michal Hocko <mhocko@kernel.org>, LKML <linux-kernel@vger.kernel.org>, Ingo Molnar <mingo@redhat.com>, Thomas Gleixner <tglx@linutronix.de>, "H. Peter Anvin" <hpa@zytor.com>, "David S. Miller" <davem@davemloft.net>, Tony Luck <tony.luck@intel.com>, Andrew Morton <akpm@linux-foundation.org>, Chris Zankel <chris@zankel.net>, Max Filippov <jcmvbkbc@gmail.com>, x86@kernel.org, linux-alpha@vger.kernel.org, linux-ia64@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-arch@vger.kernel.org, Michal Hocko <mhocko@suse.com>, Linus Torvalds <torvalds@linux-foundation.org>, Jason Low <jason.low2@hpe.com>
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>, Peter Hurley <peter@hurleysoftware.com>
+Cc: Magnus Damm <magnus.damm@gmail.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-serial@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Thu, Jun 09, 2016 at 07:36:40PM +0200, Peter Zijlstra wrote:
-> On Thu, Jun 09, 2016 at 03:40:58PM +0100, David Howells wrote:
-> > Peter Zijlstra <peterz@infradead.org> wrote:
-> > 
-> > > Blergh; so looking at more asm there's still a few tricks we cannot do.
-> > > So while overall size is down, some paths do end up more expensive. (It
-> > > typically boils down to creative use of condition flags, which is very
-> > > hard in C)
-> > 
-> > It can be done using ISO __atomic_fetch_add() and suchlike.
-> 
-> (ISO-C11, ISO as such is a bad abbreviation I think)
-> 
-> Maybe, but we're almost there with __GCC_ASM_FLAG_OUTPUTS__.
-> 
-> atomic_long_add_negative() can be made to do inc;j(n)s for __down_read.
-> 
-> the try_cmpxchg family you wanted to add independent from the ISO-C11
-> bits can do the cmpxchg-j(n)z for __down_{read,write}_trylock.
-> 
-> That only leaves us wanting an atomic_long_fetch_add_negative() for
-> __up_{read,write}().
-> 
-> Although I suppose, for this to be of use for our weakly ordered
-> friends, we need _relaxed versions of all that (so that _acquire and
-> _release variants are generated).
+Add support for indicating the availability of dedicated lines for
+RTS/CTS hardware flow control, using the standard "uart-has-rtscts" DT
+property.
 
-Historically, the compilers have won this sort of contest over the
-long term.  That said, there is nothing quite like raising the bar for
-them to help them generate decent code.  So, David and Peter, I am behind
-both of you 100%.  ;-)
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+v3:
+  - No changes,
 
-							Thanx, Paul
+v2:
+  - New.
+---
+ drivers/tty/serial/sh-sci.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 02b240a02dc6a593..d9cb0d70fceef07d 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -2999,6 +2999,9 @@ sci_parse_dt(struct platform_device *pdev, unsigned int *dev_id)
+ 	p->regtype = SCI_OF_REGTYPE(match->data);
+ 	p->scscr = SCSCR_RE | SCSCR_TE;
+ 
++	if (of_find_property(np, "uart-has-rtscts", NULL))
++		p->capabilities |= SCIx_HAVE_RTSCTS;
++
+ 	return p;
+ }
+ 
+-- 
+1.9.1
 
