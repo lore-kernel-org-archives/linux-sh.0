@@ -1,46 +1,61 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 24 Jun 2016 14:59:15 +0000
-Subject: [PATCH v2 3/4] serial: sh-sci: Clear RX, error, and break flags during reset
-Message-Id: <1466780356-12623-4-git-send-email-geert+renesas@glider.be>
+Date: Fri, 03 Jun 2016 10:00:07 +0000
+Subject: [PATCH v3 07/11] serial: sh-sci: Add more Serial Port Control/Data Register documentation
+Message-Id: <1464948011-377-8-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1466780356-12623-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1466780356-12623-1-git-send-email-geert+renesas@glider.be>
+References: <1464948011-377-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1464948011-377-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
-Cc: Magnus Damm <damm+renesas@opensource.se>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, linux-serial@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, uclinux-h8-devel@lists.sourceforge.jp, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>, Peter Hurley <peter@hurleysoftware.com>
+Cc: Magnus Damm <magnus.damm@gmail.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-serial@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Setting the FIFO reset bits is not sufficient to reset the RX FIFO.
-After this the status register's RDF flag bit may still be set, causing
-the reception of one stale byte of data.
-
-To fix this, clear all status flag bits related to reception, error, and
-break handling, cfr. the initialization flowchart in the datasheet.
+Improve documentation for the SCIFA/SCIFB Serial Port Control and Data
+Registers:
+  - State clearly that the RTS and CTS lines are active-low,
+  - Document the bits related to the serial port's SCK, RXD, and TXD
+    pins.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reviewed-by: Peter Hurley <peter@hurleysoftware.com>
 ---
-v2:
-  - No changes.
----
- drivers/tty/serial/sh-sci.c | 4 ++++
- 1 file changed, 4 insertions(+)
+v3:
+  - Add Reviewed-by,
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index eecace576c3b758f..0a2be5d293220e08 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -2055,6 +2055,10 @@ static void sci_reset(struct uart_port *port)
- 	reg = sci_getreg(port, SCFCR);
- 	if (reg->size)
- 		serial_port_out(port, SCFCR, SCFCR_RFRST | SCFCR_TFRST);
-+
-+	sci_clear_SCxSR(port,
-+			SCxSR_RDxF_CLEAR(port) & SCxSR_ERROR_CLEAR(port) &
-+			SCxSR_BREAK_CLEAR(port));
- }
+v2:
+  - New.
+---
+ drivers/tty/serial/sh-sci.h | 14 ++++++++++----
+ 1 file changed, 10 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/tty/serial/sh-sci.h b/drivers/tty/serial/sh-sci.h
+index 85a2b81ba0a845e5..e7d2bc692a581e9e 100644
+--- a/drivers/tty/serial/sh-sci.h
++++ b/drivers/tty/serial/sh-sci.h
+@@ -121,12 +121,18 @@ enum {
+ #define HSCIF_SRE	BIT(15)	/* Sampling Rate Register Enable */
  
- static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
+ /* SCPCR (Serial Port Control Register), SCIFA/SCIFB only */
+-#define SCPCR_RTSC	BIT(4)	/* Serial Port RTS Pin / Output Pin */
+-#define SCPCR_CTSC	BIT(3)	/* Serial Port CTS Pin / Input Pin */
++#define SCPCR_RTSC	BIT(4)	/* Serial Port RTS# Pin / Output Pin */
++#define SCPCR_CTSC	BIT(3)	/* Serial Port CTS# Pin / Input Pin */
++#define SCPCR_SCKC	BIT(2)	/* Serial Port SCK Pin / Output Pin */
++#define SCPCR_RXDC	BIT(1)	/* Serial Port RXD Pin / Input Pin */
++#define SCPCR_TXDC	BIT(0)	/* Serial Port TXD Pin / Output Pin */
+ 
+ /* SCPDR (Serial Port Data Register), SCIFA/SCIFB only */
+-#define SCPDR_RTSD	BIT(4)	/* Serial Port RTS Output Pin Data */
+-#define SCPDR_CTSD	BIT(3)	/* Serial Port CTS Input Pin Data */
++#define SCPDR_RTSD	BIT(4)	/* Serial Port RTS# Output Pin Data */
++#define SCPDR_CTSD	BIT(3)	/* Serial Port CTS# Input Pin Data */
++#define SCPDR_SCKD	BIT(2)	/* Serial Port SCK Output Pin Data */
++#define SCPDR_RXDD	BIT(1)	/* Serial Port RXD Input Pin Data */
++#define SCPDR_TXDD	BIT(0)	/* Serial Port TXD Output Pin Data */
+ 
+ /*
+  * BRG Clock Select Register (Some SCIF and HSCIF)
 -- 
 1.9.1
 
