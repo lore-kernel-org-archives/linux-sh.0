@@ -1,46 +1,38 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 13 Jun 2016 08:05:57 +0000
-Subject: Re: [PATCH v2 10/17] sh: convert generic drivers framework
-Message-Id: <CAMuHMdWMreEye+jLeXkKgh8Qthq4E28OSg2KkE7siWf7F42+=A@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 08 Jun 2016 10:05:09 +0000
+Subject: Re: [PATCH 1/6] dma: rcar-dma: add wait after stopping dma engine
+Message-Id: <87twh4huif.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1465714475-24111-1-git-send-email-ysato@users.sourceforge.jp> <1465714475-24111-11-git-send-email-ysato@users.sourceforge.jp>
-In-Reply-To: <1465714475-24111-11-git-send-email-ysato@users.sourceforge.jp>
+References: <1443559488-2416-2-git-send-email-hamzahfrq.sub@gmail.com>
+In-Reply-To: <1443559488-2416-2-git-send-email-hamzahfrq.sub@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, linux-clk <linux-clk@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-On Sun, Jun 12, 2016 at 8:54 AM, Yoshinori Sato
-<ysato@users.sourceforge.jp> wrote:
-> index 0000000..89e28d8
-> --- /dev/null
-> +++ b/drivers/clk/sh/Kconfig
-> @@ -0,0 +1,2 @@
-> +config COMMON_CLK_SH7750
-> +       bool "Clcok driver for SH7750/SH7751"
 
-Clock
+Hi Laurent
+# add Niklas
 
-> diff --git a/drivers/clk/sh/Makefile b/drivers/clk/sh/Makefile
-> new file mode 100644
-> index 0000000..468eb9d
-> --- /dev/null
-> +++ b/drivers/clk/sh/Makefile
-> @@ -0,0 +1,2 @@
-> +obj-y += clk-shdiv.o
-> +obj-$(CONFIG_COMMON_CLK_SH7750) += clk-sh7750.o
-> \ No newline at end of file
+Sorry for my suport late response.
+Thanks Niklas for reminder
 
-Please add the newline.
+> (With a question for Morimoto-san below)
+(snip)
+> > >> +     } while (++i < NR_READS_TO_WAIT);
+> > > 
+> > > How long does the DMA engine typically need to stop ? Is there a safe
+> > > upper bound ?
+> > 
+> > I have tested it many times. The highest number of retries was 3 which
+> > occurred not very frequently. Normally it is 1-2
+> 
+> Morimoto-san, could you check with the hardware team if there's a worst case 
+> guarantee regarding how long the channel could take to stop ?
 
-Gr{oetje,eeting}s,
+You need to wait maximum 0.7ms for it.
+both for Gen2/Gen3.
+In worst case, it needs 8 request times.
+If 1 request is 20,000 cycle
 
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+	20,000cycle x 8request x [4ns/cylce] = 640,000ns > 700us
