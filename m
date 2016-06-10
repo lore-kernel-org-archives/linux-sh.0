@@ -1,40 +1,43 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sun, 12 Jun 2016 11:32:52 +0000
-Subject: Re: [PATCH v2 05/17] sh: command line passing chosen/bootargs in devicetree
-Message-Id: <9def6543-5185-0248-72fd-67c6dae3b962@cogentembedded.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 10 Jun 2016 09:58:19 +0000
+Subject: [PATCH] pinctrl: sh-pfc: sh7757: Fix duplicate initializer in GPIO pinmux data
+Message-Id: <1465552699-5990-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1465714475-24111-1-git-send-email-ysato@users.sourceforge.jp>
- <1465714475-24111-6-git-send-email-ysato@users.sourceforge.jp>
-In-Reply-To: <1465714475-24111-6-git-send-email-ysato@users.sourceforge.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Cc: Linus Walleij <linus.walleij@linaro.org>, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On 6/12/2016 9:54 AM, Yoshinori Sato wrote:
+With C=1:
 
-> Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
-> ---
->  arch/sh/kernel/setup.c | 7 +++++++
->  1 file changed, 7 insertions(+)
->
-> diff --git a/arch/sh/kernel/setup.c b/arch/sh/kernel/setup.c
-> index 8e3b099..d97de16 100644
-> --- a/arch/sh/kernel/setup.c
-> +++ b/arch/sh/kernel/setup.c
-> @@ -280,6 +280,8 @@ void __init setup_arch(char **cmdline_p)
->  #endif
->  	enable_mmu();
->
-> +
+    drivers/pinctrl/sh-pfc/pfc-sh7757.c:1613:9: warning: Initializer entry defined twice
+    drivers/pinctrl/sh-pfc/pfc-sh7757.c:1628:9:   also defined here
 
-    Another empty line hardly needed here.
+Remove the duplicate initializer to fix this.
 
-> +#ifndef CONFIG_OF
->  	ROOT_DEV = old_decode_dev(ORIG_ROOT_DEV);
->
->  	printk(KERN_NOTICE "Boot params:\n"
-[...]
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+Based on the comment near the definition of A16_MARK, which states A16
+belongs to the "PTV" section.
 
-MBR, Sergei
+I do not have a sh7757 datasheet.
+---
+ drivers/pinctrl/sh-pfc/pfc-sh7757.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7757.c b/drivers/pinctrl/sh-pfc/pfc-sh7757.c
+index 0555a1fe076ed353..6d8c31caefc105e0 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7757.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7757.c
+@@ -1625,7 +1625,6 @@ static const struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(VBIOS_CS),
+ 
+ 	/* PTW (mobule: LBSC, EVC, SCIF) */
+-	GPIO_FN(A16),
+ 	GPIO_FN(A15),
+ 	GPIO_FN(A14),
+ 	GPIO_FN(A13),
+-- 
+1.9.1
 
