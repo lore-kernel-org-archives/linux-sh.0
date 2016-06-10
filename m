@@ -1,172 +1,200 @@
-From: Yoshinori Sato <ysato@users.sourceforge.jp>
-Date: Wed, 29 Jun 2016 13:40:59 +0000
-Subject: [PATCH v4 14/22] sh: SH7751 core dtsi
-Message-Id: <1467207667-15768-15-git-send-email-ysato@users.sourceforge.jp>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 10 Jun 2016 10:05:02 +0000
+Subject: [PATCH 2/3] pinctrl: sh-pfc: Improve core and user API separation
+Message-Id: <1465553103-6345-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1467207667-15768-1-git-send-email-ysato@users.sourceforge.jp>
-In-Reply-To: <1467207667-15768-1-git-send-email-ysato@users.sourceforge.jp>
+References: <1465553103-6345-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1465553103-6345-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: devicetree@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Cc: Linus Walleij <linus.walleij@linaro.org>, Ben Dooks <ben.dooks@codethink.co.uk>, Laxman Dewangan <ldewangan@nvidia.com>, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-SH7751 core and internal peripheral define.
+The Renesas Pin Function Controller uses two header files:
+  - sh_pfc.h, for use by both core code and SoC-specific drivers,
+  - core.h, for internal use by the core code only.
 
-Changes v4
-- remove unneeded #address-cells and #size-cells
-- add missing dt-binding link
+Several SoC-specific drivers include core.h, as they need the sh_pfc
+structure, which is passed explicitly to the various SoC-specific
+callbacks, and used there.
 
-Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
+Hence move its definition from core.h to sh_pfc.h, and remove the
+inclusion of core.h from all SoC-specific files.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/sh/boot/dts/include/dt-bindings               |  1 +
- arch/sh/boot/dts/sh7751.dtsi                       | 83 ++++++++++++++++++++++
- include/dt-bindings/clock/renesas-sh7750.h         | 26 +++++++
- include/dt-bindings/interrupt-controller/sh_intc.h |  2 +
- 4 files changed, 112 insertions(+)
- create mode 120000 arch/sh/boot/dts/include/dt-bindings
- create mode 100644 arch/sh/boot/dts/sh7751.dtsi
- create mode 100644 include/dt-bindings/clock/renesas-sh7750.h
- create mode 100644 include/dt-bindings/interrupt-controller/sh_intc.h
+ drivers/pinctrl/sh-pfc/core.h        | 33 ---------------------------------
+ drivers/pinctrl/sh-pfc/pfc-r8a73a4.c |  1 -
+ drivers/pinctrl/sh-pfc/pfc-r8a7740.c |  1 -
+ drivers/pinctrl/sh-pfc/pfc-r8a7778.c |  2 +-
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c |  1 -
+ drivers/pinctrl/sh-pfc/pfc-r8a7791.c |  1 -
+ drivers/pinctrl/sh-pfc/sh_pfc.h      | 30 +++++++++++++++++++++++++++++-
+ 7 files changed, 30 insertions(+), 39 deletions(-)
 
-diff --git a/arch/sh/boot/dts/include/dt-bindings b/arch/sh/boot/dts/include/dt-bindings
-new file mode 120000
-index 0000000..08c00e4
---- /dev/null
-+++ b/arch/sh/boot/dts/include/dt-bindings
-@@ -0,0 +1 @@
-+../../../../../include/dt-bindings
-\ No newline at end of file
-diff --git a/arch/sh/boot/dts/sh7751.dtsi b/arch/sh/boot/dts/sh7751.dtsi
-new file mode 100644
-index 0000000..79a2ee7
---- /dev/null
-+++ b/arch/sh/boot/dts/sh7751.dtsi
-@@ -0,0 +1,83 @@
-+/*
-+ * Device Tree Source for the SH7751
-+ *
-+ * Copyright (C) 2016 Yoshinori Sato
-+ */
+diff --git a/drivers/pinctrl/sh-pfc/core.h b/drivers/pinctrl/sh-pfc/core.h
+index 539ec7dc0b644dbe..9dde6ea5e28f3a1b 100644
+--- a/drivers/pinctrl/sh-pfc/core.h
++++ b/drivers/pinctrl/sh-pfc/core.h
+@@ -10,48 +10,15 @@
+ #ifndef __SH_PFC_CORE_H__
+ #define __SH_PFC_CORE_H__
+ 
+-#include <linux/compiler.h>
+-#include <linux/spinlock.h>
+ #include <linux/types.h>
+ 
+ #include "sh_pfc.h"
+ 
+-struct sh_pfc_window {
+-	phys_addr_t phys;
+-	void __iomem *virt;
+-	unsigned long size;
+-};
+-
+-struct sh_pfc_chip;
+-struct sh_pfc_pinctrl;
+-
+ struct sh_pfc_pin_range {
+ 	u16 start;
+ 	u16 end;
+ };
+ 
+-struct sh_pfc {
+-	struct device *dev;
+-	const struct sh_pfc_soc_info *info;
+-	spinlock_t lock;
+-
+-	unsigned int num_windows;
+-	struct sh_pfc_window *windows;
+-	unsigned int num_irqs;
+-	unsigned int *irqs;
+-
+-	struct sh_pfc_pin_range *ranges;
+-	unsigned int nr_ranges;
+-
+-	unsigned int nr_gpio_pins;
+-
+-	struct sh_pfc_chip *gpio;
+-#ifdef CONFIG_SUPERH
+-	struct sh_pfc_chip *func;
+-#endif
+-
+-};
+-
+ int sh_pfc_register_gpiochip(struct sh_pfc *pfc);
+ int sh_pfc_unregister_gpiochip(struct sh_pfc *pfc);
+ 
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c b/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c
+index d9d9228b15faf6f3..ff5655dee67e5649 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c
+@@ -21,7 +21,6 @@
+ #include <linux/kernel.h>
+ #include <linux/pinctrl/pinconf-generic.h>
+ 
+-#include "core.h"
+ #include "sh_pfc.h"
+ 
+ #define CPU_ALL_PORT(fn, pfx, sfx)					\
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+index 7f7c8a6e76e88f29..35f436bcb849185a 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+@@ -22,7 +22,6 @@
+ #include <linux/kernel.h>
+ #include <linux/pinctrl/pinconf-generic.h>
+ 
+-#include "core.h"
+ #include "sh_pfc.h"
+ 
+ #define CPU_ALL_PORT(fn, pfx, sfx)					\
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
+index 411d0887ba19bae6..18ef7042b3d1b047 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
+@@ -23,7 +23,7 @@
+ #include <linux/io.h>
+ #include <linux/kernel.h>
+ #include <linux/pinctrl/pinconf-generic.h>
+-#include "core.h"
 +
-+#include <dt-bindings/interrupt-controller/sh_intc.h>
-+#include <dt-bindings/clock/renesas-sh7750.h>
+ #include "sh_pfc.h"
+ 
+ #define PORT_GP_PUP_1(bank, pin, fn, sfx)	\
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+index 1537a0779399772f..b769c05480da681e 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+@@ -24,7 +24,6 @@
+ #include <linux/io.h>
+ #include <linux/kernel.h>
+ 
+-#include "core.h"
+ #include "sh_pfc.h"
+ 
+ /*
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7791.c b/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
+index 01abbd5b4e49a783..0c1a60c9a844c7ee 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
+@@ -11,7 +11,6 @@
+ 
+ #include <linux/kernel.h>
+ 
+-#include "core.h"
+ #include "sh_pfc.h"
+ 
+ #define CPU_ALL_PORT(fn, sfx)						\
+diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
+index 332d379b302cba70..5732752667e2654a 100644
+--- a/drivers/pinctrl/sh-pfc/sh_pfc.h
++++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
+@@ -13,6 +13,7 @@
+ 
+ #include <linux/bug.h>
+ #include <linux/pinctrl/pinconf-generic.h>
++#include <linux/spinlock.h>
+ #include <linux/stringify.h>
+ 
+ enum {
+@@ -182,7 +183,34 @@ struct pinmux_range {
+ 	u16 force;
+ };
+ 
+-struct sh_pfc;
++struct sh_pfc_window {
++	phys_addr_t phys;
++	void __iomem *virt;
++	unsigned long size;
++};
 +
-+/ {
-+	oclk: oscillator {
-+                #clock-cells = <0>;
-+                compatible = "fixed-clock";
-+                clock-frequency = <0>;
-+        };
-+	cpg: cpg@ffc00000 {
-+                compatible = "renesas,sh7750-cpg";
-+                clocks = <&oclk>;
-+                #clock-cells = <1>;
-+		renesas,mult = <12>;
-+                reg = <0xffc00000 32>, <0xfe0a0000 16>;
-+        };
-+	cpus {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		cpu@0 {
-+		      compatible = "renesas,sh4", "renesas,sh";
-+		      clock-frequency = <266666666>;
-+		};
-+	};
-+	shintc: interrupt-controller@ffd00000 {
-+		compatible = "renesas,sh7751-intc";
-+		#interrupt-cells = <2>;
-+		interrupt-controller;
-+		reg = <0xffd00000 14>, <0xfe080000 128>;
++struct sh_pfc_pin_range;
 +
-+	};
-+	sci0: serial@ffe00000 {
-+		compatible = "renesas,sci";
-+		reg = <0xffe00000 0x20>;
-+		interrupts = <evt2irq(0x4e0) 0>,
-+		             <evt2irq(0x500) 0>,
-+		             <evt2irq(0x540) 0>,
-+		             <evt2irq(0x520) 0>;
-+		clocks = <&cpg SH7750_CLK_SCI>;
-+		clock-names = "fck";
-+		status = "disabled";
-+	};
-+	sci1: serial@ffe80000 {
-+		compatible = "renesas,scif";
-+		reg = <0xffe80000 0x100>;
-+		interrupts = <evt2irq(0x700) 0>,
-+			     <evt2irq(0x720) 0>,
-+			     <evt2irq(0x760) 0>,
-+			     <evt2irq(0x740) 0>;
-+		clocks = <&cpg SH7750_CLK_SCIF>;
-+		clock-names = "fck";
-+		status = "disabled";
-+	};
-+	tmu: timer@ffd80000 {
-+		compatible = "renesas,tmu";
-+		reg = <0xffd80000 12>;
-+		interrupts = <evt2irq(0x400) 0>,
-+			     <evt2irq(0x420) 0>,
-+			     <evt2irq(0x440) 0>;
-+		clocks = <&cpg SH7750_CLK_TMU0>;
-+		clock-names = "fck";
-+		renesas,channels-mask = <0x03>;
-+	};
-+	pci: pci-controller@fe200000 {
-+		compatible = "renesas,sh7751-pci";
-+		device_type = "pci";
-+		bus-range = <0 0>;
-+		#address-cells = <2>;
-+		#size-cells = <1>;
-+		ranges = <0x02000000 0x00000000 0xfd000000 0xfd000000 0x00000000 0x01000000>,
-+		         <0x01000000 0x00000000 0xfe240000 0x00000000 0x00000000 0x00040000>;
-+		reg = <0xfe200000 0x0400>, <0xff800000 0x0030>;
-+		#interrupt-cells = <1>;
-+		interrupt-map-mask = <0x1800 0 7>;
-+		status = "disabled";
-+	};
-+}; 
-\ No newline at end of file
-diff --git a/include/dt-bindings/clock/renesas-sh7750.h b/include/dt-bindings/clock/renesas-sh7750.h
-new file mode 100644
-index 0000000..546c0b1
---- /dev/null
-+++ b/include/dt-bindings/clock/renesas-sh7750.h
-@@ -0,0 +1,26 @@
-+/*
-+ * Copyright (C) 2016 Yoshinori Sato
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; either version 2 of the License, or
-+ * (at your option) any later version.
-+ */
-+#ifndef __DT_BINDINGS_CLOCK_RENESAS_SH7750_H__
-+#define __DT_BINDINGS_CLOCK_RENESAS_SH7750_H__
++struct sh_pfc {
++	struct device *dev;
++	const struct sh_pfc_soc_info *info;
++	spinlock_t lock;
 +
-+#define SH7750_CLK_SCI	0
-+#define SH7750_CLK_RTC	1
-+#define SH7750_CLK_TMU0	2
-+#define SH7750_CLK_TMU1	3
-+#define SH7750_CLK_TMU2	4
-+#define SH7750_CLK_SCIF	5
-+#define SH7750_CLK_DMAC	6
-+#define SH7750_CLK_UBC	7
-+#define SH7750_CLK_SQ	8
-+#define SH7750_CLK_INTC 9
-+#define SH7750_CLK_TMU3	10
-+#define SH7750_CLK_TMU4	11
-+#define SH7750_CLK_PCIC	12
++	unsigned int num_windows;
++	struct sh_pfc_window *windows;
++	unsigned int num_irqs;
++	unsigned int *irqs;
 +
-+#endif /* __DT_BINDINGS_CLOCK_RENESAS_CPG_MSSR_H__ */
-diff --git a/include/dt-bindings/interrupt-controller/sh_intc.h b/include/dt-bindings/interrupt-controller/sh_intc.h
-new file mode 100644
-index 0000000..8c9dcdc
---- /dev/null
-+++ b/include/dt-bindings/interrupt-controller/sh_intc.h
-@@ -0,0 +1,2 @@
-+#define evt2irq(evt)		(((evt) >> 5) - 16)
-+#define irq2evt(irq)		(((irq) + 16) << 5)
++	struct sh_pfc_pin_range *ranges;
++	unsigned int nr_ranges;
++
++	unsigned int nr_gpio_pins;
++
++	struct sh_pfc_chip *gpio;
++#ifdef CONFIG_SUPERH
++	struct sh_pfc_chip *func;
++#endif
++};
+ 
+ struct sh_pfc_soc_operations {
+ 	int (*init)(struct sh_pfc *pfc);
 -- 
-2.7.0
+1.9.1
 
