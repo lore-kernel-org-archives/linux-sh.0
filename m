@@ -1,75 +1,114 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 24 Jun 2016 14:59:12 +0000
-Subject: [PATCH v2 0/4] serial: sh-sci: FIFO initialization fixes
-Message-Id: <1466780356-12623-1-git-send-email-geert+renesas@glider.be>
+Date: Fri, 10 Jun 2016 10:05:03 +0000
+Subject: [PATCH 3/3] pinctrl: sh-pfc: Convert to devm_gpiochip_add_data()
+Message-Id: <1465553103-6345-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1465553103-6345-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1465553103-6345-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
-Cc: Magnus Damm <damm+renesas@opensource.se>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, linux-serial@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, uclinux-h8-devel@lists.sourceforge.jp, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Cc: Linus Walleij <linus.walleij@linaro.org>, Ben Dooks <ben.dooks@codethink.co.uk>, Laxman Dewangan <ldewangan@nvidia.com>, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-	Hi Greg, Jiri,
+This allows to remove the .remove() callback, and all functions and data
+it needed for its own bookkeeping.
 
-When opening a Renesas SCIF serial port after it has been used before,
-stale data may be read.  This has been observed on R-Car Gen2 and R-Car
-Gen3, with all SCIF variants present (SCIF, SCIFA, SCIFB, and HSCIF). It
-is much more likely to happen when DMA is enabled, although it has been
-seen with PIO, too.
+Suggested-by: Laxman Dewangan <ldewangan@nvidia.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ drivers/pinctrl/sh-pfc/core.c   | 10 ----------
+ drivers/pinctrl/sh-pfc/core.h   |  1 -
+ drivers/pinctrl/sh-pfc/gpio.c   | 13 +------------
+ drivers/pinctrl/sh-pfc/sh_pfc.h |  3 ---
+ 4 files changed, 1 insertion(+), 26 deletions(-)
 
-There are actually two reasons why stale data is received:
-  1. Transfers are started, or are still activated, before the FIFO is
-     reset, causing one or more (up to the RX FIFO size) stale bytes
-     (fixed by patches 1 and 2),
-  2. FIFO reset lacked clearing the RDF flag, causing one byte of stale
-     data (fixed by patch 3).
-While at it, patch 4 adds the missing clearing of two other flags in the
-initialization sequence on (H)SCIF.
-
-While the issue can be reproduced using subsequent runs of sertest[1],
-I wrote a new test program, fifotest[2], to trigger it more easily.
-More detailed test information can be found on the eLinux wiki[3].
-
-I have verified that this series fixes the issue on SCIF, SCIFA, SCIFB,
-and HSCIF, on R-Car Gen2 (r8a7791/koelsch) and R-Car Gen3
-(r8a7795/salvator-x).
-Basic regression testing has been done with SCIFA on sh73a0/kzm9g.
-Regression testing on other variants (notably SCI) would be appreciated.
-
-Changes compared to v1:
-  - Do not clear clock source bits, since the serial console relies on
-    them, as reported by Shimoda-san.
-
-This series applies against both v4.6 and next-20160526.
-For testing, it's also available in a topic branch at
-https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git/log/?h=topic/scif-fifo-v2.
-
-Please apply, thanks!
-
-[1] https://github.com/geertu/sertest
-[2] https://github.com/geertu/fifotest
-[3] http://elinux.org/Tests:SCIF-FIFO
-
-Geert Uytterhoeven (4):
-  serial: sh-sci: Do not start transfers from sci_startup()
-  serial: sh-sci: Stop transfers in sci_shutdown()
-  serial: sh-sci: Clear RX, error, and break flags during reset
-  serial: sh-sci: Clear (H)SCIF timeout and overrun during reset
-
- drivers/tty/serial/sh-sci.c | 20 ++++++++++++++------
- drivers/tty/serial/sh-sci.h |  1 +
- 2 files changed, 15 insertions(+), 6 deletions(-)
-
+diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
+index 9b9cee06ec59aad3..a3b82041b6a22b13 100644
+--- a/drivers/pinctrl/sh-pfc/core.c
++++ b/drivers/pinctrl/sh-pfc/core.c
+@@ -598,15 +598,6 @@ static int sh_pfc_probe(struct platform_device *pdev)
+ 	return 0;
+ }
+ 
+-static int sh_pfc_remove(struct platform_device *pdev)
+-{
+-#ifdef CONFIG_PINCTRL_SH_PFC_GPIO
+-	sh_pfc_unregister_gpiochip(platform_get_drvdata(pdev));
+-#endif
+-
+-	return 0;
+-}
+-
+ static const struct platform_device_id sh_pfc_id_table[] = {
+ #ifdef CONFIG_PINCTRL_PFC_SH7203
+ 	{ "pfc-sh7203", (kernel_ulong_t)&sh7203_pinmux_info },
+@@ -650,7 +641,6 @@ static const struct platform_device_id sh_pfc_id_table[] = {
+ 
+ static struct platform_driver sh_pfc_driver = {
+ 	.probe		= sh_pfc_probe,
+-	.remove		= sh_pfc_remove,
+ 	.id_table	= sh_pfc_id_table,
+ 	.driver		= {
+ 		.name	= DRV_NAME,
+diff --git a/drivers/pinctrl/sh-pfc/core.h b/drivers/pinctrl/sh-pfc/core.h
+index 9dde6ea5e28f3a1b..0bbdea5849f41713 100644
+--- a/drivers/pinctrl/sh-pfc/core.h
++++ b/drivers/pinctrl/sh-pfc/core.h
+@@ -20,7 +20,6 @@ struct sh_pfc_pin_range {
+ };
+ 
+ int sh_pfc_register_gpiochip(struct sh_pfc *pfc);
+-int sh_pfc_unregister_gpiochip(struct sh_pfc *pfc);
+ 
+ int sh_pfc_register_pinctrl(struct sh_pfc *pfc);
+ 
+diff --git a/drivers/pinctrl/sh-pfc/gpio.c b/drivers/pinctrl/sh-pfc/gpio.c
+index 97dff6a09ff08115..6b5422766f13d7f8 100644
+--- a/drivers/pinctrl/sh-pfc/gpio.c
++++ b/drivers/pinctrl/sh-pfc/gpio.c
+@@ -318,7 +318,7 @@ sh_pfc_add_gpiochip(struct sh_pfc *pfc, int(*setup)(struct sh_pfc_chip *),
+ 	if (ret < 0)
+ 		return ERR_PTR(ret);
+ 
+-	ret = gpiochip_add_data(&chip->gpio_chip, chip);
++	ret = devm_gpiochip_add_data(pfc->dev, &chip->gpio_chip, chip);
+ 	if (unlikely(ret < 0))
+ 		return ERR_PTR(ret);
+ 
+@@ -399,18 +399,7 @@ int sh_pfc_register_gpiochip(struct sh_pfc *pfc)
+ 	chip = sh_pfc_add_gpiochip(pfc, gpio_function_setup, NULL);
+ 	if (IS_ERR(chip))
+ 		return PTR_ERR(chip);
+-
+-	pfc->func = chip;
+ #endif /* CONFIG_SUPERH */
+ 
+ 	return 0;
+ }
+-
+-int sh_pfc_unregister_gpiochip(struct sh_pfc *pfc)
+-{
+-	gpiochip_remove(&pfc->gpio->gpio_chip);
+-#ifdef CONFIG_SUPERH
+-	gpiochip_remove(&pfc->func->gpio_chip);
+-#endif
+-	return 0;
+-}
+diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
+index 5732752667e2654a..5e966c09434d969c 100644
+--- a/drivers/pinctrl/sh-pfc/sh_pfc.h
++++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
+@@ -207,9 +207,6 @@ struct sh_pfc {
+ 	unsigned int nr_gpio_pins;
+ 
+ 	struct sh_pfc_chip *gpio;
+-#ifdef CONFIG_SUPERH
+-	struct sh_pfc_chip *func;
+-#endif
+ };
+ 
+ struct sh_pfc_soc_operations {
 -- 
 1.9.1
 
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
