@@ -1,52 +1,52 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 10 Jun 2016 12:48:32 +0000
-Subject: Re: [PATCH 2/3] pinctrl: sh-pfc: Improve core and user API separation
-Message-Id: <CAMuHMdXWoYv5Yu56L-Kzu8gJ1HJEQ++qud-yDEfwoanJKiGu6g@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 10 Jun 2016 10:05:00 +0000
+Subject: [PATCH 0/3] pinctrl: sh-pfc: Cleanups
+Message-Id: <1465553103-6345-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1465553103-6345-1-git-send-email-geert+renesas@glider.be>
- <1465553103-6345-3-git-send-email-geert+renesas@glider.be> <4919239.TD95LLyWB6@avalon>
-In-Reply-To: <4919239.TD95LLyWB6@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Linus Walleij <linus.walleij@linaro.org>, Ben Dooks <ben.dooks@codethink.co.uk>, Laxman Dewangan <ldewangan@nvidia.com>, linux-renesas-soc@vger.kernel.org, Linux-sh list <linux-sh@vger.kernel.org>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>
+Cc: Linus Walleij <linus.walleij@linaro.org>, Ben Dooks <ben.dooks@codethink.co.uk>, Laxman Dewangan <ldewangan@nvidia.com>, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Hi Laurent,
+	Hi,
 
-On Fri, Jun 10, 2016 at 2:16 PM, Laurent Pinchart
-<laurent.pinchart@ideasonboard.com> wrote:
-> On Friday 10 Jun 2016 12:05:02 Geert Uytterhoeven wrote:
->> The Renesas Pin Function Controller uses two header files:
->>   - sh_pfc.h, for use by both core code and SoC-specific drivers,
->>   - core.h, for internal use by the core code only.
->>
->> Several SoC-specific drivers include core.h, as they need the sh_pfc
->> structure, which is passed explicitly to the various SoC-specific
->> callbacks, and used there.
->>
->> Hence move its definition from core.h to sh_pfc.h, and remove the
->> inclusion of core.h from all SoC-specific files.
->
-> The idea behind sh_pfc.h is to store all structures and macros needed by the
-> SoC drivers to define SoC data, in order to keep core.h clean. It you move
+This series contains various cleanups for the Renesas Pin Function
+Controller driver subsystem.
 
-So should there be 3 includes:
-  1. structures and macros needed by the SoC drivers to define SoC data,
-  2. internal API,
-  3. API for users (SoC-specific drivers)?
+This has been tested on r8a7791/koelsch, and compile-tested for other
+ARM and SH platforms.
 
-> most of core.h to sh_pfc.h I'd rather merge the two files.
+I plan to queue this in sh-pfc-for-v4.8.
 
-That's the other option...
+Thanks for your comments!
+
+Geert Uytterhoeven (3):
+  pinctrl: sh-pfc: Move SoC-specific forward declarations to sh_pfc.h
+  pinctrl: sh-pfc: Improve core and user separation
+  pinctrl: sh-pfc: Convert to devm_gpiochip_add_data()
+
+ drivers/pinctrl/sh-pfc/core.c        | 10 -------
+ drivers/pinctrl/sh-pfc/core.h        | 58 ------------------------------------
+ drivers/pinctrl/sh-pfc/gpio.c        | 13 +-------
+ drivers/pinctrl/sh-pfc/pfc-r8a73a4.c |  1 -
+ drivers/pinctrl/sh-pfc/pfc-r8a7740.c |  1 -
+ drivers/pinctrl/sh-pfc/pfc-r8a7778.c |  2 +-
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c |  1 -
+ drivers/pinctrl/sh-pfc/pfc-r8a7791.c |  1 -
+ drivers/pinctrl/sh-pfc/sh_pfc.h      | 51 ++++++++++++++++++++++++++++++-
+ 9 files changed, 52 insertions(+), 86 deletions(-)
+
+-- 
+1.9.1
 
 Gr{oetje,eeting}s,
 
-                        Geert
+						Geert
 
 --
 Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
 In personal conversations with technical people, I call myself a hacker. But
 when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+							    -- Linus Torvalds
