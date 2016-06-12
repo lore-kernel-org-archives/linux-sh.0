@@ -1,60 +1,178 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 28 Jun 2016 07:55:57 +0000
-Subject: Re: [PATCH v3 12/19] sh: irqchip: SH7751 IRQCHIP Driver
-Message-Id: <CAMuHMdXSm14n+KFLfDtL7nOD8JbkC2GwHKr9HUJz09o6cH70+g@mail.gmail.com>
+From: Yoshinori Sato <ysato@users.sourceforge.jp>
+Date: Sun, 12 Jun 2016 06:54:34 +0000
+Subject: [PATCH v2 16/17] sh: I/O DATA HDL-U (a.k.a. landisk) Device Tree
+Message-Id: <1465714475-24111-17-git-send-email-ysato@users.sourceforge.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1467095795-5082-1-git-send-email-ysato@users.sourceforge.jp> <1467095795-5082-13-git-send-email-ysato@users.sourceforge.jp>
-In-Reply-To: <1467095795-5082-13-git-send-email-ysato@users.sourceforge.jp>
+References: <1465714475-24111-1-git-send-email-ysato@users.sourceforge.jp>
+In-Reply-To: <1465714475-24111-1-git-send-email-ysato@users.sourceforge.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
+To: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, devicetree@vger.kernel.org
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
 
-Hi Sato-san,
+Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
+---
+ arch/sh/boot/dts/landisk.dts | 150 +++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 150 insertions(+)
+ create mode 100644 arch/sh/boot/dts/landisk.dts
 
-On Tue, Jun 28, 2016 at 8:36 AM, Yoshinori Sato
-<ysato@users.sourceforge.jp> wrote:
-> index 0000000..2bc6f22f
-> --- /dev/null
-> +++ b/Documentation/devicetree/bindings/interrupt-controller/renesas,sh7751-intc.txt
-> @@ -0,0 +1,25 @@
-> +DT bindings for the SH7751 interrupt controller
-> +
-> +Required properties:
-> +
-> +  - compatible: has to be "renesas,sh7751-intc".
-> +
-> +  - reg: Base address and length of interrupt controller register
-> +         and extend register.
-> +
-> +  - interrupt-controller: Identifies the node as an interrupt controller.
-> +
-> +  - #interrupt-cells: has to be <2>: an interrupt index and flags, as defined
-> +    in interrupts.txt in this directory.
-> +
-> +Example
-> +-------
-> +
-> +       shintc: interrupt-controller@ffd00000 {
-> +               compatible = "renesas,sh7751-intc";
-> +               #interrupt-cells = <2>;
-> +               #address-cells = <1>;
-> +               #size-cells = <1>;
+diff --git a/arch/sh/boot/dts/landisk.dts b/arch/sh/boot/dts/landisk.dts
+new file mode 100644
+index 0000000..23396a0
+--- /dev/null
++++ b/arch/sh/boot/dts/landisk.dts
+@@ -0,0 +1,150 @@
++#include <dt-bindings/interrupt-controller/sh_intc.h>
++
++/dts-v1/;
++/ {
++	model = "I/O DATA HDL-U";
++	compatible = "iodata,hdl-u";
++	#address-cells = <1>;
++	#size-cells = <1>;
++	interrupt-parent = <&shintc>;
++	chosen {
++		stdout-path = &sci1;
++		bootargs = "console=ttySC1,115200";
++	};
++	aliases {
++		serial0 = &sci0;
++		serial1 = &sci1;
++	};
++
++	oclk: oscillator {
++                #clock-cells = <0>;
++                compatible = "fixed-clock";
++                clock-frequency = <22222222>;
++        };
++        pllclk: pllclk {
++                compatible = "renesas,sh7750-pll-clock";
++                clocks = <&oclk>;
++                #clock-cells = <0>;
++		renesas,mult = <12>;
++                reg = <0xffc00000 2>, <0xffc00008 4>;
++        };
++        iclk: iclk {
++                compatible = "renesas,sh7750-div-clock";
++                clocks = <&pllclk>;
++                #clock-cells = <0>;
++                reg = <0xffc00000 2>;
++		renesas,offset = <6>;
++		clock-output-names = "ick";
++        };
++        bclk: bclk {
++                compatible = "renesas,sh7750-div-clock";
++                clocks = <&pllclk>;
++                #clock-cells = <0>;
++                reg = <0xffc00000 2>;
++		renesas,offset = <3>;
++		clock-output-names = "bck";
++        };
++        fclk: fclk {
++                compatible = "renesas,sh7750-div-clock";
++                clocks = <&pllclk>;
++                #clock-cells = <0>;
++                reg = <0xffc00000 2>;
++		renesas,offset = <0>;
++		clock-output-names = "fck";
++        };
++	cpus {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		cpu@0 {
++		      compatible = "renesas,sh4", "renesas,sh";
++		      clock-frequency = <266666666>;
++		};
++	};
++	memory@0c000000 {
++		device_type = "memory";
++		reg = <0x0c000000 0x4000000>;
++	};
++	shintc: interrupt-controller@ffd00000 {
++		compatible = "renesas,sh7751-intc";
++		#interrupt-cells = <2>;
++		#address-cells = <1>;
++		#size-cells = <1>;
++		interrupt-controller;
++		reg = <0xffd00000 14>, <0xfe080000 128>;
++
++	};
++	cpldintc: cpld@b0000000 {
++		compatible = "iodata,landisk-intc";
++		#interrupt-cells = <2>;
++		interrupt-controller;
++		reg = <0xb0000000 8>;
++		interrupt-map=<0 &shintc 0 0>, <1 &shintc 1 0>,
++		              <2 &shintc 2 0>, <3 &shintc 3 0>,
++		              <4 &shintc 4 0>, <5 &shintc 5 0>,
++		              <6 &shintc 6 0>, <7 &shintc 7 0>;
++	};
++	sci0: serial@ffe00000 {
++		compatible = "renesas,scif";
++		reg = <0xffe00000 0x20>;
++		interrupts = <evt2irq(0x4e0) 0
++		              evt2irq(0x500) 0
++		              evt2irq(0x540) 0
++		              evt2irq(0x520) 0>;
++		clocks = <&fclk>;
++		clock-names = "fck";
++	};
++	sci1: serial@ffe80000 {
++		compatible = "renesas,scif";
++		reg = <0xffe80000 0x100>;
++		interrupts = <evt2irq(0x700) 0
++			      evt2irq(0x720) 0
++			      evt2irq(0x760) 0
++			      evt2irq(0x740) 0>;
++		clocks = <&fclk>;
++		clock-names = "fck";
++	};
++	tmu: timer@ffd80000 {
++		compatible = "renesas,tmu";
++		reg = <0xffd80000 12>;
++		interrupts = <evt2irq(0x400) 0
++			      evt2irq(0x420) 0
++			      evt2irq(0x440) 0>;
++		clocks = <&fclk>;
++		clock-names = "fck";
++		renesas,channels-mask = <0x03>;
++	};
++
++	pci: pci-controller@fe200000 {
++		compatible = "renesas,sh7751-pci", "iodata,landisk";
++		device_type = "pci";
++		bus-range = <0 0>;
++		#address-cells = <2>;
++		#size-cells = <1>;
++		ranges = <0x02000000 0x00000000 0xfd000000 0xfd000000 0x00000000 0x01000000>,
++		         <0x01000000 0x00000000 0xfe240000 0x00000000 0x00000000 0x00040000>;
++		reg = <0xfe200000 0x0400>,
++		      <0x0c000000 0x04000000>,
++		      <0xff800000 0x0030>;
++		#interrupt-cells = <1>;
++		interrupt-map-mask = <0x1800 0 7>;
++		interrupt-map = <0x0000 0 1 &cpldintc evt2irq(0x2a0) 0
++		                 0x0000 0 2 &cpldintc evt2irq(0x2c0) 0
++		                 0x0000 0 3 &cpldintc evt2irq(0x2e0) 0
++		                 0x0000 0 4 &cpldintc evt2irq(0x300) 0
++
++		                 0x0800 0 1 &cpldintc evt2irq(0x2c0) 0
++		                 0x0800 0 2 &cpldintc evt2irq(0x2e0) 0
++		                 0x0800 0 3 &cpldintc evt2irq(0x300) 0
++		                 0x0800 0 4 &cpldintc evt2irq(0x2a0) 0
++
++		                 0x1000 0 1 &cpldintc evt2irq(0x2e0) 0
++		                 0x1000 0 2 &cpldintc evt2irq(0x300) 0
++		                 0x1000 0 3 &cpldintc evt2irq(0x2a0) 0
++		                 0x1000 0 4 &cpldintc evt2irq(0x2c0) 0
++
++		                 0x1800 0 1 &cpldintc evt2irq(0x300) 0
++		                 0x1800 0 2 &cpldintc evt2irq(0x2a0) 0
++		                 0x1800 0 3 &cpldintc evt2irq(0x2c0) 0
++		                 0x1800 0 4 &cpldintc evt2irq(0x2e0) 0>;
++	};
++};
+-- 
+2.7.0
 
-Why do you need #address-cells and #size-cells?
-
-> +               interrupt-controller;
-> +               reg = <0xffd00000 14>, <0xfe080000 128>;
-> +       };
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
