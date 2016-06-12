@@ -1,47 +1,51 @@
-From: Yoshinori Sato <ysato@users.sourceforge.jp>
-Date: Sun, 12 Jun 2016 06:54:25 +0000
-Subject: [PATCH v2 07/17] sh: Passing FDT address on zImage
-Message-Id: <1465714475-24111-8-git-send-email-ysato@users.sourceforge.jp>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sun, 12 Jun 2016 11:38:46 +0000
+Subject: Re: [PATCH v2 07/17] sh: Passing FDT address on zImage
+Message-Id: <0e0cfaed-6109-c98f-02b8-99d9199ef2db@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1465714475-24111-1-git-send-email-ysato@users.sourceforge.jp>
-In-Reply-To: <1465714475-24111-1-git-send-email-ysato@users.sourceforge.jp>
+ <1465714475-24111-8-git-send-email-ysato@users.sourceforge.jp>
+In-Reply-To: <1465714475-24111-8-git-send-email-ysato@users.sourceforge.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
----
- arch/sh/boot/compressed/head_32.S | 5 +++--
- 1 file changed, 3 insertions(+), 2 deletions(-)
+On 6/12/2016 9:54 AM, Yoshinori Sato wrote:
 
-diff --git a/arch/sh/boot/compressed/head_32.S b/arch/sh/boot/compressed/head_32.S
-index 3e15032..ef70454 100644
---- a/arch/sh/boot/compressed/head_32.S
-+++ b/arch/sh/boot/compressed/head_32.S
-@@ -11,10 +11,11 @@
- 
- 	.global	startup
- startup:
-+	/* Save FDT address */
-+	mov	r4, r13
- 	/* Load initial status register */
- 	mov.l   init_sr, r1
- 	ldc     r1, sr
--
- 	/* Move myself to proper location if necessary */
- 	mova	1f, r0
- 	mov.l	1f, r2
-@@ -83,7 +84,7 @@ l1:
- 	/* Jump to the start of the decompressed kernel */
- 	mov.l	kernel_start_addr, r0
- 	jmp	@r0
--	nop
-+	  mov	r13,r4
- 	
- 	.align	2
- bss_start_addr:
--- 
-2.7.0
+> Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
+> ---
+>  arch/sh/boot/compressed/head_32.S | 5 +++--
+>  1 file changed, 3 insertions(+), 2 deletions(-)
+>
+> diff --git a/arch/sh/boot/compressed/head_32.S b/arch/sh/boot/compressed/head_32.S
+> index 3e15032..ef70454 100644
+> --- a/arch/sh/boot/compressed/head_32.S
+> +++ b/arch/sh/boot/compressed/head_32.S
+> @@ -11,10 +11,11 @@
+>
+>  	.global	startup
+>  startup:
+> +	/* Save FDT address */
+> +	mov	r4, r13
+>  	/* Load initial status register */
+>  	mov.l   init_sr, r1
+>  	ldc     r1, sr
+> -
+>  	/* Move myself to proper location if necessary */
+>  	mova	1f, r0
+>  	mov.l	1f, r2
+> @@ -83,7 +84,7 @@ l1:
+>  	/* Jump to the start of the decompressed kernel */
+>  	mov.l	kernel_start_addr, r0
+>  	jmp	@r0
+> -	nop
+> +	  mov	r13,r4
+
+    Forgot a space after comma?
+    Is it a delay slot BTW (judging by extra indentation)?
+
+[...]
+
+MBR, Sergei
 
