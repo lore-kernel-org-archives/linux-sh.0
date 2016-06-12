@@ -1,57 +1,62 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 24 Jun 2016 14:59:16 +0000
-Subject: [PATCH v2 4/4] serial: sh-sci: Clear (H)SCIF timeout and overrun during reset
-Message-Id: <1466780356-12623-5-git-send-email-geert+renesas@glider.be>
+From: Yoshinori Sato <ysato@users.sourceforge.jp>
+Date: Sun, 12 Jun 2016 06:54:26 +0000
+Subject: [PATCH v2 08/17] sh: Disable board specific code on device tree mode
+Message-Id: <1465714475-24111-9-git-send-email-ysato@users.sourceforge.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1466780356-12623-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1466780356-12623-1-git-send-email-geert+renesas@glider.be>
+References: <1465714475-24111-1-git-send-email-ysato@users.sourceforge.jp>
+In-Reply-To: <1465714475-24111-1-git-send-email-ysato@users.sourceforge.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
-Cc: Magnus Damm <damm+renesas@opensource.se>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, linux-serial@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, uclinux-h8-devel@lists.sourceforge.jp, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
 
-Add the missing timeout bit definition for (H)SCIF.
-Clear the timeout and overrun flag bits during UART reset, cfr. the
-initialization flowchart in the datasheet.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
 ---
-v2:
-  - No changes.
----
- drivers/tty/serial/sh-sci.c | 5 +++++
- drivers/tty/serial/sh-sci.h | 1 +
- 2 files changed, 6 insertions(+)
+ arch/sh/Makefile                | 2 ++
+ arch/sh/kernel/cpu/sh4/Makefile | 2 ++
+ 2 files changed, 4 insertions(+)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 0a2be5d293220e08..cf2a7903d2f0270b 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -2059,6 +2059,11 @@ static void sci_reset(struct uart_port *port)
- 	sci_clear_SCxSR(port,
- 			SCxSR_RDxF_CLEAR(port) & SCxSR_ERROR_CLEAR(port) &
- 			SCxSR_BREAK_CLEAR(port));
-+	if (sci_getreg(port, SCLSR)->size) {
-+		status = serial_port_in(port, SCLSR);
-+		status &= ~(SCLSR_TO | SCLSR_ORER);
-+		serial_port_out(port, SCLSR, status);
-+	}
- }
+diff --git a/arch/sh/Makefile b/arch/sh/Makefile
+index 3b2c8b4..8adffa8 100644
+--- a/arch/sh/Makefile
++++ b/arch/sh/Makefile
+@@ -132,6 +132,7 @@ core-$(CONFIG_SH_FPU_EMU)	+= arch/sh/math-emu/
  
- static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
-diff --git a/drivers/tty/serial/sh-sci.h b/drivers/tty/serial/sh-sci.h
-index 7a4fa185b93ef307..c590418d2a40d78b 100644
---- a/drivers/tty/serial/sh-sci.h
-+++ b/drivers/tty/serial/sh-sci.h
-@@ -105,6 +105,7 @@ enum {
- #define SCFCR_LOOP	BIT(0)	/* Loopback Test */
+ core-$(CONFIG_USE_BUILTIN_DTB)	+= arch/sh/boot/dts/
  
- /* SCLSR (Line Status Register) on (H)SCIF */
-+#define SCLSR_TO	BIT(2)	/* Timeout */
- #define SCLSR_ORER	BIT(0)	/* Overrun Error */
++ifneq ($(CONFIG_SH_DEVICE_TREE),y)
+ # Mach groups
+ machdir-$(CONFIG_SOLUTION_ENGINE)		+= mach-se
+ machdir-$(CONFIG_SH_HP6XX)			+= mach-hp6xx
+@@ -152,6 +153,7 @@ machdir-$(CONFIG_SH_LANDISK)			+= mach-landisk
+ machdir-$(CONFIG_SH_LBOX_RE2)			+= mach-lboxre2
+ machdir-$(CONFIG_SH_CAYMAN)			+= mach-cayman
+ machdir-$(CONFIG_SH_RSK)			+= mach-rsk
++endif
  
- /* SCSPTR (Serial Port Register), optional */
+ ifneq ($(machdir-y),)
+ core-y	+= $(addprefix arch/sh/boards/, \
+diff --git a/arch/sh/kernel/cpu/sh4/Makefile b/arch/sh/kernel/cpu/sh4/Makefile
+index 3a1dbc7..b822c0c 100644
+--- a/arch/sh/kernel/cpu/sh4/Makefile
++++ b/arch/sh/kernel/cpu/sh4/Makefile
+@@ -14,6 +14,7 @@ perf-$(CONFIG_CPU_SUBTYPE_SH7750)	:= perf_event.o
+ perf-$(CONFIG_CPU_SUBTYPE_SH7750S)	:= perf_event.o
+ perf-$(CONFIG_CPU_SUBTYPE_SH7091)	:= perf_event.o
+ 
++ifndef CONFIG_OF
+ # CPU subtype setup
+ obj-$(CONFIG_CPU_SUBTYPE_SH7750)	+= setup-sh7750.o
+ obj-$(CONFIG_CPU_SUBTYPE_SH7750R)	+= setup-sh7750.o
+@@ -31,6 +32,7 @@ endif
+ 
+ # Additional clocks by subtype
+ clock-$(CONFIG_CPU_SUBTYPE_SH4_202)	+= clock-sh4-202.o
++endif
+ 
+ obj-y					+= $(clock-y)
+ obj-$(CONFIG_PERF_EVENTS)		+= $(perf-y)
 -- 
-1.9.1
+2.7.0
 
