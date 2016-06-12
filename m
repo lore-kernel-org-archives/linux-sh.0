@@ -1,114 +1,36 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 10 Jun 2016 10:05:03 +0000
-Subject: [PATCH 3/3] pinctrl: sh-pfc: Convert to devm_gpiochip_add_data()
-Message-Id: <1465553103-6345-4-git-send-email-geert+renesas@glider.be>
+From: Yoshinori Sato <ysato@users.sourceforge.jp>
+Date: Sun, 12 Jun 2016 06:54:22 +0000
+Subject: [PATCH v2 04/17] sh: Use P1SEGADDR
+Message-Id: <1465714475-24111-5-git-send-email-ysato@users.sourceforge.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1465553103-6345-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1465553103-6345-1-git-send-email-geert+renesas@glider.be>
+References: <1465714475-24111-1-git-send-email-ysato@users.sourceforge.jp>
+In-Reply-To: <1465714475-24111-1-git-send-email-ysato@users.sourceforge.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Linus Walleij <linus.walleij@linaro.org>, Ben Dooks <ben.dooks@codethink.co.uk>, Laxman Dewangan <ldewangan@nvidia.com>, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
 
-This allows to remove the .remove() callback, and all functions and data
-it needed for its own bookkeeping.
+FDT address is P1SEG. So not virtual address.
 
-Suggested-by: Laxman Dewangan <ldewangan@nvidia.com>
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
 ---
- drivers/pinctrl/sh-pfc/core.c   | 10 ----------
- drivers/pinctrl/sh-pfc/core.h   |  1 -
- drivers/pinctrl/sh-pfc/gpio.c   | 13 +------------
- drivers/pinctrl/sh-pfc/sh_pfc.h |  3 ---
- 4 files changed, 1 insertion(+), 26 deletions(-)
+ arch/sh/kernel/setup.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
-index 9b9cee06ec59aad3..a3b82041b6a22b13 100644
---- a/drivers/pinctrl/sh-pfc/core.c
-+++ b/drivers/pinctrl/sh-pfc/core.c
-@@ -598,15 +598,6 @@ static int sh_pfc_probe(struct platform_device *pdev)
- 	return 0;
- }
+diff --git a/arch/sh/kernel/setup.c b/arch/sh/kernel/setup.c
+index 86f2792..8e3b099 100644
+--- a/arch/sh/kernel/setup.c
++++ b/arch/sh/kernel/setup.c
+@@ -254,7 +254,7 @@ void __ref sh_fdt_init(phys_addr_t dt_phys)
+ #ifdef CONFIG_USE_BUILTIN_DTB
+ 	dt_virt = __dtb_start;
+ #else
+-	dt_virt = phys_to_virt(dt_phys);
++	dt_virt = (void *)P1SEGADDR(dt_phys);
+ #endif
  
--static int sh_pfc_remove(struct platform_device *pdev)
--{
--#ifdef CONFIG_PINCTRL_SH_PFC_GPIO
--	sh_pfc_unregister_gpiochip(platform_get_drvdata(pdev));
--#endif
--
--	return 0;
--}
--
- static const struct platform_device_id sh_pfc_id_table[] = {
- #ifdef CONFIG_PINCTRL_PFC_SH7203
- 	{ "pfc-sh7203", (kernel_ulong_t)&sh7203_pinmux_info },
-@@ -650,7 +641,6 @@ static const struct platform_device_id sh_pfc_id_table[] = {
- 
- static struct platform_driver sh_pfc_driver = {
- 	.probe		= sh_pfc_probe,
--	.remove		= sh_pfc_remove,
- 	.id_table	= sh_pfc_id_table,
- 	.driver		= {
- 		.name	= DRV_NAME,
-diff --git a/drivers/pinctrl/sh-pfc/core.h b/drivers/pinctrl/sh-pfc/core.h
-index 9dde6ea5e28f3a1b..0bbdea5849f41713 100644
---- a/drivers/pinctrl/sh-pfc/core.h
-+++ b/drivers/pinctrl/sh-pfc/core.h
-@@ -20,7 +20,6 @@ struct sh_pfc_pin_range {
- };
- 
- int sh_pfc_register_gpiochip(struct sh_pfc *pfc);
--int sh_pfc_unregister_gpiochip(struct sh_pfc *pfc);
- 
- int sh_pfc_register_pinctrl(struct sh_pfc *pfc);
- 
-diff --git a/drivers/pinctrl/sh-pfc/gpio.c b/drivers/pinctrl/sh-pfc/gpio.c
-index 97dff6a09ff08115..6b5422766f13d7f8 100644
---- a/drivers/pinctrl/sh-pfc/gpio.c
-+++ b/drivers/pinctrl/sh-pfc/gpio.c
-@@ -318,7 +318,7 @@ sh_pfc_add_gpiochip(struct sh_pfc *pfc, int(*setup)(struct sh_pfc_chip *),
- 	if (ret < 0)
- 		return ERR_PTR(ret);
- 
--	ret = gpiochip_add_data(&chip->gpio_chip, chip);
-+	ret = devm_gpiochip_add_data(pfc->dev, &chip->gpio_chip, chip);
- 	if (unlikely(ret < 0))
- 		return ERR_PTR(ret);
- 
-@@ -399,18 +399,7 @@ int sh_pfc_register_gpiochip(struct sh_pfc *pfc)
- 	chip = sh_pfc_add_gpiochip(pfc, gpio_function_setup, NULL);
- 	if (IS_ERR(chip))
- 		return PTR_ERR(chip);
--
--	pfc->func = chip;
- #endif /* CONFIG_SUPERH */
- 
- 	return 0;
- }
--
--int sh_pfc_unregister_gpiochip(struct sh_pfc *pfc)
--{
--	gpiochip_remove(&pfc->gpio->gpio_chip);
--#ifdef CONFIG_SUPERH
--	gpiochip_remove(&pfc->func->gpio_chip);
--#endif
--	return 0;
--}
-diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
-index 5732752667e2654a..5e966c09434d969c 100644
---- a/drivers/pinctrl/sh-pfc/sh_pfc.h
-+++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
-@@ -207,9 +207,6 @@ struct sh_pfc {
- 	unsigned int nr_gpio_pins;
- 
- 	struct sh_pfc_chip *gpio;
--#ifdef CONFIG_SUPERH
--	struct sh_pfc_chip *func;
--#endif
- };
- 
- struct sh_pfc_soc_operations {
+ 	if (!dt_virt || !early_init_dt_scan(dt_virt)) {
 -- 
-1.9.1
+2.7.0
 
