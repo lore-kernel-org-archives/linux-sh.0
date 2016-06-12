@@ -1,7 +1,7 @@
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Date: Sun, 12 Jun 2016 10:11:46 +0000
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sun, 12 Jun 2016 11:03:08 +0000
 Subject: Re: [PATCH] sh: system call wire up
-Message-Id: <58572267-434f-afad-ab62-bed617a87052@physik.fu-berlin.de>
+Message-Id: <c02814b1-15cf-0c3e-b301-a4189e0df3f5@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1465664789-3976-1-git-send-email-ysato@users.sourceforge.jp>
 In-Reply-To: <1465664789-3976-1-git-send-email-ysato@users.sourceforge.jp>
@@ -10,15 +10,64 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On 06/12/2016 11:54 AM, Yoshinori Sato wrote:
-> It automaticaly generate.
+Hello.
 
-Interesting. What tool did you use to automatically generate the syscall table?
+On 6/11/2016 8:06 PM, Yoshinori Sato wrote:
 
-Adrian
+> Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
 
--- 
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer - glaubitz@debian.org
-`. `'   Freie Universitaet Berlin - glaubitz@physik.fu-berlin.de
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+[...]
+>  #endif /* __ASM_SH_UNISTD_64_H */
+> diff --git a/arch/sh/kernel/syscalls_32.S b/arch/sh/kernel/syscalls_32.S
+> index 734234b..f03a16b 100644
+> --- a/arch/sh/kernel/syscalls_32.S
+> +++ b/arch/sh/kernel/syscalls_32.S
+> @@ -386,3 +386,17 @@ ENTRY(sys_call_table)
+>  	.long sys_process_vm_writev
+>  	.long sys_kcmp
+>  	.long sys_finit_module
+> +	.long sys_sched_getattr
+> +	.long sys_sched_getattr		/* 370 */
+
+    Not sys_sched_setattr?
+
+> +	.long sys_renameat2
+> +	.long sys_seccomp
+> +	.long sys_getrandom
+> +	.long sys_memfd_create
+> +	.long sys_bpf			/* 375 */
+> +	.long sys_execveat
+> +	.long sys_userfaultfd
+> +	.long sys_membarrier
+> +	.long sys_mlock2
+> +	.long sys_copy_file_range	/* 380 */
+> +	.long sys_preadv2
+> +	.long sys_pwritev2
+> diff --git a/arch/sh/kernel/syscalls_64.S b/arch/sh/kernel/syscalls_64.S
+> index 579fcb9..7e79252 100644
+> --- a/arch/sh/kernel/syscalls_64.S
+> +++ b/arch/sh/kernel/syscalls_64.S
+> @@ -406,3 +406,17 @@ sys_call_table:
+>  	.long sys_process_vm_writev
+>  	.long sys_kcmp
+>  	.long sys_finit_module
+> +	.long sys_sched_getattr		/* 380 */
+> +	.long sys_sched_getattr
+
+    Not sys_sched_setattr?
+
+> +	.long sys_renameat2
+> +	.long sys_seccomp
+> +	.long sys_getrandom
+> +	.long sys_memfd_create		/* 385 */
+> +	.long sys_bpf
+> +	.long sys_execveat
+> +	.long sys_userfaultfd
+> +	.long sys_membarrier
+> +	.long sys_mlock2		/* 390 */
+> +	.long sys_copy_file_range
+> +	.long sys_preadv2
+> +	.long sys_pwritev2
+
+MBR, Serei
+
