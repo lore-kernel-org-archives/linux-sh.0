@@ -1,15 +1,18 @@
 From: Yoshinori Sato <ysato@users.sourceforge.jp>
-Date: Sun, 12 Jun 2016 06:54:35 +0000
+Date: Sun, 12 Jun 2016 07:44:14 +0000
 Subject: [PATCH v2 17/17] sh: landisk CPLD interrupt controller driver
-Message-Id: <1465714475-24111-18-git-send-email-ysato@users.sourceforge.jp>
+Message-Id: <1465717454-7606-1-git-send-email-ysato@users.sourceforge.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1465714475-24111-1-git-send-email-ysato@users.sourceforge.jp>
-In-Reply-To: <1465714475-24111-1-git-send-email-ysato-Rn4VEauK+AKRv+LV9MX5uooqe+aC9MnS@public.gmane.org>
+References: <1465714475-24111-18-git-send-email-ysato@users.sourceforge.jp>
+In-Reply-To: <1465714475-24111-18-git-send-email-ysato@users.sourceforge.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Yoshinori Sato <ysato-Rn4VEauK+AKRv+LV9MX5uooqe+aC9MnS@public.gmane.org>
+To: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, devicetree@vger.kernel.org
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+
+Sorry. I send old patches.
+Please ignore previous files.
 
 Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
 ---
@@ -55,7 +58,7 @@ index 0000000..d398538
 +	};
 diff --git a/drivers/irqchip/irq-io-landisk.c b/drivers/irqchip/irq-io-landisk.c
 new file mode 100644
-index 0000000..973c4fb
+index 0000000..7db20d6
 --- /dev/null
 +++ b/drivers/irqchip/irq-io-landisk.c
 @@ -0,0 +1,72 @@
@@ -125,7 +128,7 @@ index 0000000..973c4fb
 +					     of_node_to_fwnode(intc),
 +					     &irq_ops, baseaddr);
 +	if (!domain)
-+		panic"%s: unable to create IRQ domain\n", intc->full_name);
++		panic("%s: unable to create IRQ domain\n", intc->full_name);
 +	irq_domain_associate_many(domain, 0, 0, 8);
 +	return 0;
 +}
