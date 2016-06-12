@@ -1,29 +1,33 @@
-From: Rob Landley <rob@landley.net>
-Date: Wed, 15 Jun 2016 13:57:23 +0000
-Subject: Re: Nice talk on J-Core - free SH reimplementation
-Message-Id: <57615EC3.2010103@landley.net>
+From: Yoshinori Sato <ysato@users.sourceforge.jp>
+Date: Sun, 12 Jun 2016 06:54:27 +0000
+Subject: [PATCH v2 09/17] sh: Use GENERIC_IOMAP on device tree mode
+Message-Id: <1465714475-24111-10-git-send-email-ysato@users.sourceforge.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <3cd6e624-dae8-bee6-a4cc-295571fc663f@physik.fu-berlin.de>
-In-Reply-To: <3cd6e624-dae8-bee6-a4cc-295571fc663f@physik.fu-berlin.de>
+References: <1465714475-24111-1-git-send-email-ysato@users.sourceforge.jp>
+In-Reply-To: <1465714475-24111-1-git-send-email-ysato@users.sourceforge.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
 
-On 06/12/2016 05:22 PM, John Paul Adrian Glaubitz wrote:
-> Hi!
-> 
-> Here's a nice talk for everyone interested in J-Core, the free and open source
-> reimplementation of the SuperH architecture:
-> 
->> https://www.youtube.com/watch?v=lZGHbMS882w
-> 
-> Adrian
+Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
+---
+ arch/sh/boards/Kconfig | 1 +
+ 1 file changed, 1 insertion(+)
 
-We've collected all the talks we've given so far into a page at
-http://j-core.org/talks
-
-But yeah, that's the most interesting one so far. :)
-
-Rob
+diff --git a/arch/sh/boards/Kconfig b/arch/sh/boards/Kconfig
+index 5e52d53..9e4ccd0 100644
+--- a/arch/sh/boards/Kconfig
++++ b/arch/sh/boards/Kconfig
+@@ -12,6 +12,7 @@ config SH_DEVICE_TREE
+ 	select OF_EARLY_FLATTREE
+ 	select CLKSRC_OF
+ 	select GENERIC_CALIBRATE_DELAY
++	select GENERIC_IOMAP
+ 	help
+ 	  Select Board Described by Device Tree to build a kernel that
+ 	  does not hard-code any board-specific knowledge but instead uses
+-- 
+2.7.0
 
