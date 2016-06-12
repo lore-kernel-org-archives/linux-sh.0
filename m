@@ -1,122 +1,136 @@
 From: Yoshinori Sato <ysato@users.sourceforge.jp>
-Date: Tue, 28 Jun 2016 06:49:46 +0000
-Subject: [PATCH v2] sh: system call wire up
-Message-Id: <1467096586-24124-1-git-send-email-ysato@users.sourceforge.jp>
+Date: Sun, 12 Jun 2016 06:54:35 +0000
+Subject: [PATCH v2 17/17] sh: landisk CPLD interrupt controller driver
+Message-Id: <1465714475-24111-18-git-send-email-ysato@users.sourceforge.jp>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1465714475-24111-1-git-send-email-ysato@users.sourceforge.jp>
+In-Reply-To: <1465714475-24111-1-git-send-email-ysato-Rn4VEauK+AKRv+LV9MX5uooqe+aC9MnS@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-
-Changes v2
-- fix typo.
+To: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Yoshinori Sato <ysato-Rn4VEauK+AKRv+LV9MX5uooqe+aC9MnS@public.gmane.org>
 
 Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
 ---
- arch/sh/include/uapi/asm/unistd_32.h | 16 +++++++++++++++-
- arch/sh/include/uapi/asm/unistd_64.h | 16 +++++++++++++++-
- arch/sh/kernel/syscalls_32.S         | 14 ++++++++++++++
- arch/sh/kernel/syscalls_64.S         | 14 ++++++++++++++
- 4 files changed, 58 insertions(+), 2 deletions(-)
+ .../interrupt-controller/iodata-landisk.txt        | 28 +++++++++
+ drivers/irqchip/irq-io-landisk.c                   | 72 ++++++++++++++++++++++
+ 2 files changed, 100 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/interrupt-controller/iodata-landisk.txt
+ create mode 100644 drivers/irqchip/irq-io-landisk.c
 
-diff --git a/arch/sh/include/uapi/asm/unistd_32.h b/arch/sh/include/uapi/asm/unistd_32.h
-index d13a1d6..c801bde 100644
---- a/arch/sh/include/uapi/asm/unistd_32.h
-+++ b/arch/sh/include/uapi/asm/unistd_32.h
-@@ -380,7 +380,21 @@
- #define __NR_process_vm_writev	366
- #define __NR_kcmp		367
- #define __NR_finit_module	368
-+#define __NR_sched_getattr	369
-+#define __NR_sched_setattr	370
-+#define __NR_renameat2		371
-+#define __NR_seccomp		372
-+#define __NR_getrandom		373
-+#define __NR_memfd_create	374
-+#define __NR_bpf		375
-+#define __NR_execveat		376
-+#define __NR_userfaultfd	377
-+#define __NR_membarrier		378
-+#define __NR_mlock2		379
-+#define __NR_copy_file_range	380
-+#define __NR_preadv2		381
-+#define __NR_pwritev2		382
- 
--#define NR_syscalls 369
-+#define NR_syscalls 383
- 
- #endif /* __ASM_SH_UNISTD_32_H */
-diff --git a/arch/sh/include/uapi/asm/unistd_64.h b/arch/sh/include/uapi/asm/unistd_64.h
-index 47ebd5b..ce0cb35 100644
---- a/arch/sh/include/uapi/asm/unistd_64.h
-+++ b/arch/sh/include/uapi/asm/unistd_64.h
-@@ -400,7 +400,21 @@
- #define __NR_process_vm_writev	377
- #define __NR_kcmp		378
- #define __NR_finit_module	379
-+#define __NR_sched_getattr	380
-+#define __NR_sched_setattr	381
-+#define __NR_renameat2		382
-+#define __NR_seccomp		383
-+#define __NR_getrandom		384
-+#define __NR_memfd_create	385
-+#define __NR_bpf		386
-+#define __NR_execveat		387
-+#define __NR_userfaultfd	388
-+#define __NR_membarrier		389
-+#define __NR_mlock2		390
-+#define __NR_copy_file_range	391
-+#define __NR_preadv2		392
-+#define __NR_pwritev2		393
- 
--#define NR_syscalls 380
-+#define NR_syscalls 394
- 
- #endif /* __ASM_SH_UNISTD_64_H */
-diff --git a/arch/sh/kernel/syscalls_32.S b/arch/sh/kernel/syscalls_32.S
-index 734234b..254bc22 100644
---- a/arch/sh/kernel/syscalls_32.S
-+++ b/arch/sh/kernel/syscalls_32.S
-@@ -386,3 +386,17 @@ ENTRY(sys_call_table)
- 	.long sys_process_vm_writev
- 	.long sys_kcmp
- 	.long sys_finit_module
-+	.long sys_sched_getattr
-+	.long sys_sched_setattr		/* 370 */
-+	.long sys_renameat2
-+	.long sys_seccomp
-+	.long sys_getrandom
-+	.long sys_memfd_create
-+	.long sys_bpf			/* 375 */
-+	.long sys_execveat
-+	.long sys_userfaultfd
-+	.long sys_membarrier
-+	.long sys_mlock2
-+	.long sys_copy_file_range	/* 380 */
-+	.long sys_preadv2
-+	.long sys_pwritev2
-diff --git a/arch/sh/kernel/syscalls_64.S b/arch/sh/kernel/syscalls_64.S
-index 579fcb9..d6a27f7 100644
---- a/arch/sh/kernel/syscalls_64.S
-+++ b/arch/sh/kernel/syscalls_64.S
-@@ -406,3 +406,17 @@ sys_call_table:
- 	.long sys_process_vm_writev
- 	.long sys_kcmp
- 	.long sys_finit_module
-+	.long sys_sched_getattr		/* 380 */
-+	.long sys_sched_setattr
-+	.long sys_renameat2
-+	.long sys_seccomp
-+	.long sys_getrandom
-+	.long sys_memfd_create		/* 385 */
-+	.long sys_bpf
-+	.long sys_execveat
-+	.long sys_userfaultfd
-+	.long sys_membarrier
-+	.long sys_mlock2		/* 390 */
-+	.long sys_copy_file_range
-+	.long sys_preadv2
-+	.long sys_pwritev2
+diff --git a/Documentation/devicetree/bindings/interrupt-controller/iodata-landisk.txt b/Documentation/devicetree/bindings/interrupt-controller/iodata-landisk.txt
+new file mode 100644
+index 0000000..d398538
+--- /dev/null
++++ b/Documentation/devicetree/bindings/interrupt-controller/iodata-landisk.txt
+@@ -0,0 +1,28 @@
++DT bindings for the I/O DATA HDL-U interrupt controller
++
++Required properties:
++
++  - compatible: has to be "iodata,landisk-intc".
++
++  - reg: Base address and length of interrupt controller register.
++
++  - interrupt-controller: Identifies the node as an interrupt controller.
++
++  - #interrupt-cells: has to be <2>: an interrupt index and flags, as defined
++    in interrupts.txt in this directory.
++
++  - interrupt-map: Interrupt mapping on parent controller.
++
++Example
++-------
++
++	cpldintc: cpld@b0000000 {
++		compatible = "iodata,landisk-intc";
++		#interrupt-cells = <2>;
++		interrupt-controller;
++		reg = <0xb0000000 8>;
++		interrupt-map=<0 &shintc 0 0>, <1 &shintc 1 0>,
++		              <2 &shintc 2 0>, <3 &shintc 3 0>,
++		              <4 &shintc 4 0>, <5 &shintc 5 0>,
++		              <6 &shintc 6 0>, <7 &shintc 7 0>;
++	};
+diff --git a/drivers/irqchip/irq-io-landisk.c b/drivers/irqchip/irq-io-landisk.c
+new file mode 100644
+index 0000000..973c4fb
+--- /dev/null
++++ b/drivers/irqchip/irq-io-landisk.c
+@@ -0,0 +1,72 @@
++/*
++ * IO-DATA LANDISK CPLD IRQ driver
++ *
++ * Copyright 2016 Yoshinori Sato <ysato@users.sourceforge.jp>
++ */
++
++#include <linux/init.h>
++#include <linux/irq.h>
++#include <linux/irqchip.h>
++#include <linux/irqdomain.h>
++#include <linux/of_address.h>
++#include <linux/of_irq.h>
++#include <linux/io.h>
++
++static void landisk_mask_irq(struct irq_data *data)
++{
++	u8 mask = __raw_readb(data->chip_data + 5);
++
++	mask &= !(1 << (data->irq - 5));
++	__raw_writeb(mask, data->chip_data + 5);
++}
++
++static void landisk_unmask_irq(struct irq_data *data)
++{
++	u8 mask = __raw_readb(data->chip_data + 5);
++
++	mask |= (1 << (data->irq - 5));
++	__raw_writeb(mask, data->chip_data + 5);
++}
++
++static struct irq_chip cpld_irq_chip = {
++	.name		= "LANDISK-CPLD",
++	.irq_unmask	= landisk_unmask_irq,
++	.irq_mask	= landisk_mask_irq,
++};
++
++static int cpld_map(struct irq_domain *d, unsigned int virq,
++		    irq_hw_number_t hw_irq_num)
++{
++	irq_set_chip_and_handler(virq, &cpld_irq_chip,
++				 handle_simple_irq);
++	irq_set_chip_data(virq, d->host_data);
++
++	return 0;
++}
++
++static struct irq_domain_ops irq_ops = {
++	.xlate	= irq_domain_xlate_twocell,
++	.map	= cpld_map,
++};
++
++static int __init landisk_intc_of_init(struct device_node *intc,
++				    struct device_node *parent)
++{
++	struct irq_domain *domain, *pdomain;
++	int num_irqpin;
++	void *baseaddr;
++
++	baseaddr = of_iomap(intc, 0);
++	pdomain = irq_find_host(parent);
++	of_get_property(intc, "interrupt-map", &num_irqpin);
++	num_irqpin /= sizeof(u32) * 3;
++	domain = irq_domain_create_hierarchy(pdomain, 0, num_irqpin,
++					     of_node_to_fwnode(intc),
++					     &irq_ops, baseaddr);
++	if (!domain)
++		panic"%s: unable to create IRQ domain\n", intc->full_name);
++	irq_domain_associate_many(domain, 0, 0, 8);
++	return 0;
++}
++
++IRQCHIP_DECLARE(cpld_intc, "iodata,landisk-intc", landisk_intc_of_init);
 -- 
 2.7.0
 
