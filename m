@@ -1,50 +1,50 @@
 From: Yoshinori Sato <ysato@users.sourceforge.jp>
-Date: Wed, 29 Jun 2016 13:40:48 +0000
-Subject: [PATCH v4 03/22] sh: set preset_lpj
-Message-Id: <1467207667-15768-4-git-send-email-ysato@users.sourceforge.jp>
+Date: Sun, 12 Jun 2016 06:54:24 +0000
+Subject: [PATCH v2 06/17] sh: FDT address save before bank change
+Message-Id: <1465714475-24111-7-git-send-email-ysato@users.sourceforge.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1467207667-15768-1-git-send-email-ysato@users.sourceforge.jp>
-In-Reply-To: <1467207667-15768-1-git-send-email-ysato@users.sourceforge.jp>
+References: <1465714475-24111-1-git-send-email-ysato@users.sourceforge.jp>
+In-Reply-To: <1465714475-24111-1-git-send-email-ysato@users.sourceforge.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
 
-Generic callibrate delay required this value.
-
-Changes v4
-none
+SH3/4 have register bank of R0-R7.
+Preset FDT address assigned bank depend on boot loader.
+Before setting a bank because we don't depend on a boot loader, it's evacuated.
 
 Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
 ---
- arch/sh/boards/of-generic.c | 6 ++++++
- 1 file changed, 6 insertions(+)
+ arch/sh/kernel/head_32.S | 7 +++----
+ 1 file changed, 3 insertions(+), 4 deletions(-)
 
-diff --git a/arch/sh/boards/of-generic.c b/arch/sh/boards/of-generic.c
-index 3db4294..2d3cda3 100644
---- a/arch/sh/boards/of-generic.c
-+++ b/arch/sh/boards/of-generic.c
-@@ -128,6 +128,8 @@ static void __init sh_of_time_init(void)
- static void __init sh_of_setup(char **cmdline_p)
- {
- 	struct device_node *root;
-+	struct device_node *cpu;
-+	u32 freq;
+diff --git a/arch/sh/kernel/head_32.S b/arch/sh/kernel/head_32.S
+index 974bc15..fbf5f84 100644
+--- a/arch/sh/kernel/head_32.S
++++ b/arch/sh/kernel/head_32.S
+@@ -58,6 +58,9 @@ ENTRY(empty_zero_page)
+  *
+  */
+ ENTRY(_stext)
++#ifdef CONFIG_OF
++	mov	r4, r12		! Store device tree blob pointer in r12
++#endif
+ 	!			Initialize Status Register
+ 	mov.l	1f, r0		! MD=1, RB=0, BL=0, IMASK=0xF
+ 	ldc	r0, sr
+@@ -67,10 +70,6 @@ ENTRY(_stext)
+ 	ldc	r0, r6_bank
+ #endif
  
- 	board_time_init = sh_of_time_init;
- 
-@@ -139,6 +141,10 @@ static void __init sh_of_setup(char **cmdline_p)
- 	}
- 
- 	sh_of_smp_probe();
-+
-+	cpu = of_find_node_by_name(NULL, "cpu");
-+	if (!of_property_read_u32(cpu, "clock-frequency", &freq))
-+		preset_lpj = freq / CONFIG_HZ / 2;
- }
- 
- static int sh_of_irq_demux(int irq)
+-#ifdef CONFIG_OF
+-	mov	r4, r12		! Store device tree blob pointer in r12
+-#endif
+-	
+ 	/*
+ 	 * Prefetch if possible to reduce cache miss penalty.
+ 	 *
 -- 
 2.7.0
 
