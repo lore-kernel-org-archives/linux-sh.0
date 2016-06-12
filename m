@@ -1,53 +1,96 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 03 Jun 2016 10:00:06 +0000
-Subject: [PATCH v3 06/11] serial: sh-sci: Add more Serial Port Register documentation
-Message-Id: <1464948011-377-7-git-send-email-geert+renesas@glider.be>
+From: Yoshinori Sato <ysato@users.sourceforge.jp>
+Date: Sun, 12 Jun 2016 06:54:18 +0000
+Subject: [PATCH v2 00/17] sh: LANDISK convert to device tree
+Message-Id: <1465714475-24111-1-git-send-email-ysato@users.sourceforge.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1464948011-377-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1464948011-377-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>, Peter Hurley <peter@hurleysoftware.com>
-Cc: Magnus Damm <magnus.damm@gmail.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-serial@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
 
-Improve documentation for the (H)SCIF Serial Port Register:
-  - Make it clear the RTS and CTS lines are active-low,
-  - Document the bits related to the serial port's clock pin.
+SH get devicetree support. But it not working on existing H/W.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Reviewed-by: Peter Hurley <peter@hurleysoftware.com>
----
-v3:
-  - Add Reviewed-by,
+IO-DATA HDL-U (aka landisk) currentry supported.
+This H/W like SH7751 evalution board. It's a best to use this as a
+change base H/W.
 
-v2:
-  - New.
----
- drivers/tty/serial/sh-sci.h | 10 ++++++----
- 1 file changed, 6 insertions(+), 4 deletions(-)
+Changes V2
+- split DeviceTree suppoty update.
+- PCI driver update.
+- Some cleanup.
 
-diff --git a/drivers/tty/serial/sh-sci.h b/drivers/tty/serial/sh-sci.h
-index 7a4fa185b93ef307..85a2b81ba0a845e5 100644
---- a/drivers/tty/serial/sh-sci.h
-+++ b/drivers/tty/serial/sh-sci.h
-@@ -108,10 +108,12 @@ enum {
- #define SCLSR_ORER	BIT(0)	/* Overrun Error */
- 
- /* SCSPTR (Serial Port Register), optional */
--#define SCSPTR_RTSIO	BIT(7)	/* Serial Port RTS Pin Input/Output */
--#define SCSPTR_RTSDT	BIT(6)	/* Serial Port RTS Pin Data */
--#define SCSPTR_CTSIO	BIT(5)	/* Serial Port CTS Pin Input/Output */
--#define SCSPTR_CTSDT	BIT(4)	/* Serial Port CTS Pin Data */
-+#define SCSPTR_RTSIO	BIT(7)	/* Serial Port RTS# Pin Input/Output */
-+#define SCSPTR_RTSDT	BIT(6)	/* Serial Port RTS# Pin Data */
-+#define SCSPTR_CTSIO	BIT(5)	/* Serial Port CTS# Pin Input/Output */
-+#define SCSPTR_CTSDT	BIT(4)	/* Serial Port CTS# Pin Data */
-+#define SCSPTR_SCKIO	BIT(3)	/* Serial Port Clock Pin Input/Output */
-+#define SCSPTR_SCKDT	BIT(2)	/* Serial Port Clock Pin Data */
- #define SCSPTR_SPB2IO	BIT(1)	/* Serial Port Break Input/Output */
- #define SCSPTR_SPB2DT	BIT(0)	/* Serial Port Break Data */
- 
+Yoshinori Sato (17):
+  sh: Add sh-specific early_init_dt_reserve_memory_arch
+  sh: More early unflatten device tree
+  sh: set preset_lpj
+  sh: Use P1SEGADDR
+  sh: command line passing chosen/bootargs in devicetree
+  sh: FDT address save before bank change
+  sh: Passing FDT address on zImage
+  sh: Disable board specific code on device tree mode
+  sh: Use GENERIC_IOMAP on device tree mode
+  sh: convert generic drivers framework
+  sh: SH7750/51 clock driver
+  sh: Add PCI host bridge driver for SH7751
+  sh: Add PCI definetion
+  sh: SH3/4 Generic IRQCHIP driever
+  sh: SH-INTC helper files
+  sh: I/O DATA HDL-U (a.k.a. landisk) Device Tree
+  sh: landisk CPLD interrupt controller driver
+
+ .../bindings/clock/renesas,sh7750-div-clock.txt    |  27 ++
+ .../bindings/clock/renesas,sh7750-pll-clock.txt    |  26 ++
+ .../interrupt-controller/iodata-landisk.txt        |  28 ++
+ .../interrupt-controller/renesas,sh7751-intc.txt   |  25 ++
+ .../devicetree/bindings/pci/sh7751-pci.txt         |  51 +++
+ arch/sh/Kconfig                                    |   6 +-
+ arch/sh/Makefile                                   |   2 +
+ arch/sh/boards/Kconfig                             |   4 +
+ arch/sh/boards/of-generic.c                        |  24 +-
+ arch/sh/boot/compressed/head_32.S                  |   5 +-
+ arch/sh/boot/dts/include/dt-bindings               |   1 +
+ arch/sh/boot/dts/landisk.dts                       | 150 +++++++
+ arch/sh/drivers/Makefile                           |   2 +
+ arch/sh/include/asm/io.h                           |   6 +
+ arch/sh/kernel/cpu/Makefile                        |   8 +-
+ arch/sh/kernel/cpu/clock.c                         |   6 +-
+ arch/sh/kernel/cpu/sh4/Makefile                    |   2 +
+ arch/sh/kernel/head_32.S                           |   7 +-
+ arch/sh/kernel/setup.c                             |  16 +-
+ drivers/clk/Kconfig                                |   1 +
+ drivers/clk/Makefile                               |   3 +-
+ drivers/clk/sh/Kconfig                             |   2 +
+ drivers/clk/sh/Makefile                            |   2 +
+ drivers/clk/sh/clk-sh7750.c                        | 240 +++++++++++
+ drivers/clk/sh/clk-shdiv.c                         | 344 ++++++++++++++++
+ drivers/clk/sh/clk-shdiv.h                         |  16 +
+ drivers/irqchip/Kconfig                            |   5 +
+ drivers/irqchip/Makefile                           |   1 +
+ drivers/irqchip/irq-io-landisk.c                   |  72 ++++
+ drivers/irqchip/irq-renesas-sh7751.c               | 141 +++++++
+ drivers/pci/host/Kconfig                           |   7 +
+ drivers/pci/host/Makefile                          |   1 +
+ drivers/pci/host/pci-sh7751.c                      | 443 +++++++++++++++++++++
+ include/dt-bindings/interrupt-controller/sh_intc.h |   2 +
+ 34 files changed, 1656 insertions(+), 20 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/clock/renesas,sh7750-div-clock.txt
+ create mode 100644 Documentation/devicetree/bindings/clock/renesas,sh7750-pll-clock.txt
+ create mode 100644 Documentation/devicetree/bindings/interrupt-controller/iodata-landisk.txt
+ create mode 100644 Documentation/devicetree/bindings/interrupt-controller/renesas,sh7751-intc.txt
+ create mode 100644 Documentation/devicetree/bindings/pci/sh7751-pci.txt
+ create mode 120000 arch/sh/boot/dts/include/dt-bindings
+ create mode 100644 arch/sh/boot/dts/landisk.dts
+ create mode 100644 drivers/clk/sh/Kconfig
+ create mode 100644 drivers/clk/sh/Makefile
+ create mode 100644 drivers/clk/sh/clk-sh7750.c
+ create mode 100644 drivers/clk/sh/clk-shdiv.c
+ create mode 100644 drivers/clk/sh/clk-shdiv.h
+ create mode 100644 drivers/irqchip/irq-io-landisk.c
+ create mode 100644 drivers/irqchip/irq-renesas-sh7751.c
+ create mode 100644 drivers/pci/host/pci-sh7751.c
+ create mode 100644 include/dt-bindings/interrupt-controller/sh_intc.h
+
 -- 
-1.9.1
+2.7.0
 
