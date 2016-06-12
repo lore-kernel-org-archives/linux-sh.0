@@ -1,15 +1,18 @@
 From: Yoshinori Sato <ysato@users.sourceforge.jp>
-Date: Sun, 12 Jun 2016 06:54:32 +0000
+Date: Sun, 12 Jun 2016 07:43:46 +0000
 Subject: [PATCH v2 14/17] sh: SH3/4 Generic IRQCHIP driever
-Message-Id: <1465714475-24111-15-git-send-email-ysato@users.sourceforge.jp>
+Message-Id: <1465717426-7520-1-git-send-email-ysato@users.sourceforge.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1465714475-24111-1-git-send-email-ysato@users.sourceforge.jp>
-In-Reply-To: <1465714475-24111-1-git-send-email-ysato@users.sourceforge.jp>
+References: <1465714475-24111-15-git-send-email-ysato@users.sourceforge.jp>
+In-Reply-To: <1465714475-24111-15-git-send-email-ysato@users.sourceforge.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, devicetree@vger.kernel.org
 Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+
+Sorry. I send old patches.
+Please ignore previous files.
 
 IPR based IRQ chip driver.
 
@@ -123,7 +126,7 @@ index b03cfcb..dac7e90 100644
 +obj-$(CONFIG_RENESAS_SH_INTC)	+= irq-renesas-sh7751.o irq-io-landisk.o
 diff --git a/drivers/irqchip/irq-renesas-sh7751.c b/drivers/irqchip/irq-renesas-sh7751.c
 new file mode 100644
-index 0000000..ea7002a
+index 0000000..1710978
 --- /dev/null
 +++ b/drivers/irqchip/irq-renesas-sh7751.c
 @@ -0,0 +1,141 @@
@@ -138,7 +141,7 @@ index 0000000..ea7002a
 +#include <linux/of_address.h>
 +#include <linux/of_irq.h>
 +#include <linux/of.h>
-+#include <linxu/io.h>
++#include <linux/io.h>
 +
 +static struct sh7751_intc_regs {
 +	void *icr;
