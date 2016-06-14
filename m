@@ -1,38 +1,70 @@
-From: Rich Felker <dalias@libc.org>
-Date: Wed, 01 Jun 2016 22:28:09 +0000
-Subject: Re: Build regressions/improvements in v4.7-rc1
-Message-Id: <20160601222809.GG10893@brightrain.aerifal.cx>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 14 Jun 2016 14:01:52 +0000
+Subject: Re: [PATCH 05/13] ARM: shmobile: genmai dts: Update console parameters
+Message-Id: <CAMuHMdU9p8-7BXwT8EwTQDZ1fFt=O0jRV5fqU3V987uaVUtVgA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1464593333-10283-1-git-send-email-geert@linux-m68k.org>
- <CAMuHMdVvK9h2MLVAeB3n8G6hfKJU1Rma2_uVYBTqsFxnRv2YsA@mail.gmail.com>
- <20160601221801.GF10893@brightrain.aerifal.cx>
-In-Reply-To: <20160601221801.GF10893@brightrain.aerifal.cx>
+References: <1449597258-32623-1-git-send-email-geert+renesas@glider.be>
+ <1449597258-32623-6-git-send-email-geert+renesas@glider.be>
+ <20151210070434.GB17682@verge.net.au>
+In-Reply-To: <20151210070434.GB17682@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Jun 01, 2016 at 06:18:02PM -0400, Rich Felker wrote:
-> On Mon, May 30, 2016 at 09:34:07AM +0200, Geert Uytterhoeven wrote:
-> > >   + /home/kisskb/slave/src/arch/sh/kernel/setup.c: error: implicit declaration of function 'early_init_dt_scan' [-Werror=implicit-function-declaration]:  => 256:2
-> > 
-> > sh-randconfig
-> 
-> Nice find. I think I'm incorrectly checking for CONFIG_OF in places
-> that should actually be checking for CONFIG_OF_FLATTREE. Does that
-> look right to you? Nothing breaks in actual configurations that make
-> sense now, only if you enable OF manually without selecting
-> SH_DEVICE_TREE as your board.
-> 
-> If you can confirm that my assessment is correct I'll include a fix in
-> my (now-late) pull request.
+On Thu, Dec 10, 2015 at 8:04 AM, Simon Horman <horms@verge.net.au> wrote:
+> On Tue, Dec 08, 2015 at 06:54:10PM +0100, Geert Uytterhoeven wrote:
+>> Change the console alias to "serial0", for consistency with other
+>> boards (the first unlabeled serial port is always called "serial0").
+>> Add serial port config to chosen/stdout-path.
+>>
+>> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+>> ---
+>>  arch/arm/boot/dts/r7s72100-genmai.dts | 4 ++--
+>>  1 file changed, 2 insertions(+), 2 deletions(-)
+>>
+>> diff --git a/arch/arm/boot/dts/r7s72100-genmai.dts b/arch/arm/boot/dts/r7s72100-genmai.dts
+>> index a9da7a89fc4ba65a..47533c2c419e164d 100644
+>> --- a/arch/arm/boot/dts/r7s72100-genmai.dts
+>> +++ b/arch/arm/boot/dts/r7s72100-genmai.dts
+>> @@ -17,12 +17,12 @@
+>>       compatible = "renesas,genmai", "renesas,r7s72100";
+>>
+>>       aliases {
+>> -             serial2 = &scif2;
+>> +             serial0 = &scif2;
+>>       };
+>>
+>>       chosen {
+>>               bootargs = "ignore_loglevel rw root=/dev/nfs ip=dhcp";
+>> -             stdout-path = &scif2;
+>> +             stdout-path = "serial0:115200n8";
+>>       };
+>>
+>>       memory {
+>
+> As noted elsewhere the serial2 -> serial0 portion of
+> this patch seems to result in no console.
+>
+> I am wary about that change as it is user-space visible
+> but I didn't expect it to also have an impact on the kernel console.
+>
+> In case it helps anyone now or in the future the output with earlyprintk
+> follows.
+>
+> -- after with early printk --
 
-BTW it seems a bigger version of the same issue affects my J2 support
-patch series: CONFIG_CPU_J2 enables code that performs an early FDT
-scan to obtain cache information, so it needs to select OF and
-OF_FLATTREE to avoid build errors. Eventually none of this will matter
-once we drop legacy support and make it so SUPERH implies OF and
-OF_EARLY_FLATTREE.
+> [    0.000000] Kernel command line: console=ttySC2,115200 root=/dev/nfs rw ip=dhcp ignore_loglevel earlyprintk=sh-sci.2,115200
 
-Rich
+Got you! Stale "bootargs" environment variable overriding the console.
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
