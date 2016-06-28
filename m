@@ -1,120 +1,50 @@
 From: Yoshinori Sato <ysato@users.sourceforge.jp>
-Date: Wed, 29 Jun 2016 13:40:55 +0000
-Subject: [PATCH v4 10/22] sh: Add board specific initialize of of-generic
-Message-Id: <1467207667-15768-11-git-send-email-ysato@users.sourceforge.jp>
+Date: Tue, 28 Jun 2016 06:36:33 +0000
+Subject: [PATCH v3 17/19] sh: Add separate DTB build rule
+Message-Id: <1467095795-5082-18-git-send-email-ysato@users.sourceforge.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1467207667-15768-1-git-send-email-ysato@users.sourceforge.jp>
-In-Reply-To: <1467207667-15768-1-git-send-email-ysato@users.sourceforge.jp>
+References: <1467095795-5082-1-git-send-email-ysato@users.sourceforge.jp>
+In-Reply-To: <1467095795-5082-1-git-send-email-ysato@users.sourceforge.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
 
-Changes v4
-none
-
 Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
 ---
- arch/sh/boards/of-generic.c | 64 +++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 64 insertions(+)
+ arch/sh/Makefile          | 7 +++++++
+ arch/sh/boot/dts/Makefile | 2 ++
+ 2 files changed, 9 insertions(+)
 
-diff --git a/arch/sh/boards/of-generic.c b/arch/sh/boards/of-generic.c
-index 2d3cda3..709006a 100644
---- a/arch/sh/boards/of-generic.c
-+++ b/arch/sh/boards/of-generic.c
-@@ -16,9 +16,15 @@
- #include <linux/irqchip.h>
- #include <linux/clk-provider.h>
- #include <linux/memblock.h>
-+#include <linux/sm501-regs.h>
- #include <asm/machvec.h>
- #include <asm/rtc.h>
+diff --git a/arch/sh/Makefile b/arch/sh/Makefile
+index 8adffa8..a44e630 100644
+--- a/arch/sh/Makefile
++++ b/arch/sh/Makefile
+@@ -189,6 +189,13 @@ drivers-$(CONFIG_OPROFILE)	+= arch/sh/oprofile/
  
-+struct model_setup {
-+	char *name;
-+	void (*fn)(void);
-+};
-+
- #ifdef CONFIG_SMP
+ boot := arch/sh/boot
  
- static void dummy_smp_setup(void)
-@@ -125,10 +131,61 @@ static void __init sh_of_time_init(void)
- 	clocksource_probe();
- }
++%.dtb %.dtb.S %.dtb.o: | scripts
++	$(Q)$(MAKE) $(build)=arch/sh/boot/dts arch/sh/boot/dts/$@
++
++PHONY += dtbs
++dtbs: scripts
++	$(Q)$(MAKE) $(build)=arch/sh/boot/dts
++
+ cflags-y	+= $(foreach d, $(cpuincdir-y), -Iarch/sh/include/$(d)) \
+ 		   $(foreach d, $(machdir-y), -Iarch/sh/include/$(d))
  
-+#define PA_LED		0xb0000001	/* LED Control Register */
-+#define PA_SHUTDOWN	0xb0000003	/* Shutdown Control Register */
-+static void landisk_power_off(void)
-+{
-+	__raw_writeb(0x01, PA_SHUTDOWN);
-+}
-+
-+static void __init landisk_setup(void)
-+{
-+	/* LED ON */
-+	__raw_writeb(__raw_readb(PA_LED) | 0x03, PA_LED);
-+	pm_power_off = landisk_power_off;
-+}
-+
-+#define PA_POWOFF	0xa4000030	/* Board Power OFF control */
-+#define PA_OUTPORT	0xa4000036	/* LED control */
-+static void rts7751r2d_power_off(void)
-+{
-+	__raw_writew(0x0001, PA_POWOFF);
-+}
-+
-+static void __init r2dplus_setup(void)
-+{
-+	void __iomem *sm501_reg;
-+
-+	__raw_writew(0x0000, PA_OUTPORT);
-+	pm_power_off = rts7751r2d_power_off;
-+
-+	/* sm501 dram configuration:
-+	 * ColSizeX = 11 - External Memory Column Size: 256 words.
-+	 * APX = 1 - External Memory Active to Pre-Charge Delay: 7 clocks.
-+	 * RstX = 1 - External Memory Reset: Normal.
-+	 * Rfsh = 1 - Local Memory Refresh to Command Delay: 12 clocks.
-+	 * BwC =  1 - Local Memory Block Write Cycle Time: 2 clocks.
-+	 * BwP =  1 - Local Memory Block Write to Pre-Charge Delay: 1 clock.
-+	 * AP = 1 - Internal Memory Active to Pre-Charge Delay: 7 clocks.
-+	 * Rst = 1 - Internal Memory Reset: Normal.
-+	 * RA = 1 - Internal Memory Remain in Active State: Do not remain.
-+	 */
-+
-+	sm501_reg = (void __iomem *)0xb3e00000 + SM501_DRAM_CONTROL;
-+	writel(readl(sm501_reg) | 0x00f107c0, sm501_reg);
-+}
-+
-+static const struct model_setup model_setup_table[] __initconst = {
-+	{ .name = "I/O DATA HDL-U", .fn = landisk_setup, },
-+	{ .name = "Renesas RTS7751R2D+", .fn = r2dplus_setup, },
-+	{},
-+};
-+
- static void __init sh_of_setup(char **cmdline_p)
- {
- 	struct device_node *root;
- 	struct device_node *cpu;
-+	const struct model_setup *setup;
- 	u32 freq;
+diff --git a/arch/sh/boot/dts/Makefile b/arch/sh/boot/dts/Makefile
+index e5ce3a0..38fdc38 100644
+--- a/arch/sh/boot/dts/Makefile
++++ b/arch/sh/boot/dts/Makefile
+@@ -1,3 +1,5 @@
+ obj-$(CONFIG_USE_BUILTIN_DTB) += $(patsubst "%",%,$(CONFIG_BUILTIN_DTB_SOURCE)).dtb.o
  
- 	board_time_init = sh_of_time_init;
-@@ -145,6 +202,13 @@ static void __init sh_of_setup(char **cmdline_p)
- 	cpu = of_find_node_by_name(NULL, "cpu");
- 	if (!of_property_read_u32(cpu, "clock-frequency", &freq))
- 		preset_lpj = freq / CONFIG_HZ / 2;
-+
-+	for (setup = model_setup_table; setup->name; setup++) {
-+		if (strcmp(setup->name, sh_mv.mv_name) = 0) {
-+			setup->fn();
-+			break;
-+		}
-+	}
- }
- 
- static int sh_of_irq_demux(int irq)
++dtstree		:= $(srctree)/$(src)
+ clean-files := *.dtb.S
++always	    := $(dtb-y)
 -- 
 2.7.0
 
