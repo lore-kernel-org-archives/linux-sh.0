@@ -1,93 +1,115 @@
-From: Yoshinori Sato <ysato@users.sourceforge.jp>
-Date: Thu, 02 Jun 2016 06:54:35 +0000
-Subject: Re: [PATCH 0/4] sh: fix up modular use in non-modular code
-Message-Id: <87bn3kcc7o.wl-ysato@users.sourceforge.jp>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 29 Jun 2016 23:58:32 +0000
+Subject: Re: Rcar Gen2: DU: Bootlogs Error and show image error
+Message-Id: <1528572.t4akQ1HVCM@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1461348424-3896-1-git-send-email-paul.gortmaker@windriver.com>
-	<20160526164557.GJ27984@windriver.com>
-	<20160526165334.GY21636@brightrain.aerifal.cx>
-In-Reply-To: <20160526165334.GY21636@brightrain.aerifal.cx>
+References: <564ECE30.9000206@jinso.co.jp>
+In-Reply-To: <564ECE30.9000206@jinso.co.jp>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Rich Felker <dalias@libc.org>
-Cc: Paul Gortmaker <paul.gortmaker@windriver.com>, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: linux-sh@vger.kernel.org
 
-On Fri, 27 May 2016 01:53:34 +0900,
-Rich Felker wrote:
+Hello Hiep-san,
+
+On Tuesday 28 Jun 2016 10:19:20 Hiep Cao Minh wrote:
+> Hi Laurent-san
 > 
-> On Thu, May 26, 2016 at 12:45:57PM -0400, Paul Gortmaker wrote:
-> > [[PATCH 0/4] sh: fix up modular use in non-modular code] On 22/04/2016 (Fri 14:07) Paul Gortmaker wrote:
+> Sorry to bother you again!
+> I would like to confirm the fixed patch for this issue on Lager.
+> I have retested it on Lager(Rcar-H2), The issue still happens at the
+> Linux upstream version v4.7-rc2
+> Have you released the fixed patch?
+> Please tell me the version and test method if you have already released it.
+> I resent the damage image when displaying it on the HDMI screen.
+
+I'm currently traveling and have only taken my H3 board with me, so I don't 
+have access to Lager. I'll be back home on the 5th of July and then test this. 
+Sorry for the delay.
+
+> On 12/17/2015 03:37 PM, Cao Minh Hiep wrote:
+> > Hello Laurent-san
 > > 
-> > > For anyone new to the underlying goal of this cleanup, we are trying to
-> > > make kernel code consistent with the Makefiles/Kconfigs that control them.
+> > On 2015年12月14日 04:45, Laurent Pinchart wrote:
+> >> Hello Cao Minh-san,
+> >> 
+> >> (this is a bit of a stupid question, and I apologize for that, but
+> >> what is the
+> >> proper way to address you, Cao-san, Cao Minh-san, Hiep-san, or
+> >> something else
+> >> ?)
 > > 
-> > Ping -- wondering if there are any issues here, or if I can expect these
-> > to be merged upstream in the merge window.  I didn't see them loop
-> > around via the linux-next tree but I wasn't sure if arch/sh has a repo
-> > for linux-next.
-> 
-> I don't have experience with the affected code, but it looks ok unless
-> any of these "should" be modular and Kconfig was just wrong to
-> disallow it.
-> 
-> Sato-san, do you have an opinion on these? Should I go ahead and just
-> merge them?
-
-It looks no problem.
-I think can merge it.
-
-> Rich
-> 
-> > > This means not using modular functions/macros for code that can never
-> > > be built as a module.  Some of the other downfalls this leads to are:
-> > > 
-> > >  (1) it is easy to accidentally write unused module_exit and remove code
-> > >  (2) it can be misleading when reading the source, thinking it can be
-> > >      modular when the Makefile and/or Kconfig prohibit it
-> > >  (3) it requires the include of the module.h header file which in turn
-> > >      includes nearly everything else, thus adding to CPP overhead.
-> > >  (4) it gets copied/replicated into other drivers and spreads like weeds.
-> > > 
-> > > Three of the four commits here are completely trivial with zero runtime
-> > > impact whatsoever.  The fourth has a deletion of a ".remove" function
-> > > and as we've done elsewhere, we block the sysfs ability to reach in and
-> > > manually execute that function, since there isn't a sane use case for
-> > > which doing that makes sense.
-> > > 
-> > > Build tested on today's linux-next ; full build fails on duplicate syms
-> > > from OF generic board, but that is a known and reported issue elsewhere;
-> > > it has nothing to do with the changes here.
-> > > 
-> > > Paul
-> > > --
-> > > 
-> > > Cc: linux-sh@vger.kernel.org
-> > > Cc: Paul Gortmaker <paul.gortmaker@windriver.com>
-> > > Cc: Rich Felker <dalias@libc.org>
-> > > Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-> > > 
-> > > 
-> > > Paul Gortmaker (4):
-> > >   sh: make time.c explicitly non-modular
-> > >   sh: make mm/asids-debugfs explicitly non-modular
-> > >   sh: make board-secureedge5410 explicitly non-modular
-> > >   sh: make heartbeat driver explicitly non-modular
-> > > 
-> > >  arch/sh/boards/board-secureedge5410.c |  3 +--
-> > >  arch/sh/drivers/heartbeat.c           | 32 +++-----------------------------
-> > >  arch/sh/kernel/time.c                 |  3 +--
-> > >  arch/sh/mm/asids-debugfs.c            |  5 +----
-> > >  4 files changed, 6 insertions(+), 37 deletions(-)
-> > > 
-> > > -- 
-> > > 2.8.0
-> > > 
-> > --
-> > To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> > the body of a message to majordomo@vger.kernel.org
-> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> > No problems! :) , Hiep is my name! Every one calls me Hiep,
+> > 
+> >> On Thursday 10 December 2015 10:43:18 Cao Minh Hiep wrote:
+> >>>>>> Yes, CONFIG_DRM_I2C_ADV7511=y has already enabled in default
+> >>>>>> config at
+> >>>>>> v4.4-rc2.
+> >>>>>> I also have enabled CONFIG_DRM_SHMOBILE and CONFIG_FB_SH_MOBILE_HDMI
+> >>>>>> then test.
+> >>>>>> But It has nothing change.
+> >>>>>> Is there other configuration or reason could we think?
+> >>>>> 
+> >>>>> Does this problem happen on your board?
+> >>>>> If not, Could you please send me your config file?.
+> >>>> 
+> >>>> Sorry for the delay, I wanted to retry on my Koelsch board before
+> >>>> replying.
+> >>>> 
+> >>>> The probe deferral error (-517) you're seeing is normal, it comes
+> >>>> from the
+> >>>> DU being probed before its dependencies. Probe is deferred and
+> >>>> retried,
+> >>>> and finally succeeds as shown by
+> >>>> 
+> >>>> [drm] Initialized rcar-du 1.0.0 20130110 on minor 0
+> >>>> 
+> >>>> With a stock v4.4-rc2 kernel I get the same result, and I can then
+> >>>> use the
+> >>>> HDMI output without any issue with the modetest application.
+> >>>> 
+> >>>> I've attached the kernel configuration I used for testing, just in
+> >>>> case.
+> >>> 
+> >>> Thanks, I have changed our HDMI display device(Old one -> other
+> >>> newer one),
+> >>> and then I could show a image on the display successfully. This test is
+> >>> on Koelsch board.
+> >>> But I found that, before showing the image on HDMI display,
+> >>> I have to enable CONFIG_FRAMEBUFFER_CONSOLE =y or
+> >>> run a command something like "fbset -xres 640 -yres 480 -laced 0", in
+> >>> order to clear the first screen.
+> >>> 
+> >>> On Lager, with the same test method, I could show a image on RGB
+> >>> display
+> >>> very well,
+> >>> but when I showed image on HDMI display, The image showed on display
+> >>> looks bad as attached picture.
+> >>> The attached picture: HDMI-Display-image-showed-from-Lager.jpg
+> >>> 
+> >>> Please have a look and show me what i have to do!
+> >> 
+> >> I'll try to reproduce that. Could you please send me the image file
+> >> and the
+> >> exact test procedure ?
+> > 
+> > I tested on v4.4-rc2 on Lager board.
+> > 
+> > CONFIG_DRM_RCAR_HDMI=y
+> > CONFIG_DRM_I2C_ADV7511=y
+> > VIDEO_ADV7511=y
+> > CONFIG_FRAMEBUFFER_CONSOLE =y
+> > 
+> > I used the Morimoto-san's bmap tool to show image file.
+> > ./bmap /dev/fb0 ./picture.bmp
+> > 
+> > I attach bmap file and the image file "picture.bmp".
+> > 
+> > Regards,
+> > Jinso/Hiep.
 
 -- 
-Yoshinori Sato
-<ysato@users.sourceforge.jp>
+Regards,
+
+Laurent Pinchart
+
