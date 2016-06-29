@@ -1,47 +1,36 @@
 From: Yoshinori Sato <ysato@users.sourceforge.jp>
-Date: Sun, 12 Jun 2016 06:54:21 +0000
-Subject: [PATCH v2 03/17] sh: set preset_lpj
-Message-Id: <1465714475-24111-4-git-send-email-ysato@users.sourceforge.jp>
+Date: Wed, 29 Jun 2016 13:40:54 +0000
+Subject: [PATCH v4 09/22] sh: Use GENERIC_IOMAP on device tree mode
+Message-Id: <1467207667-15768-10-git-send-email-ysato@users.sourceforge.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1465714475-24111-1-git-send-email-ysato@users.sourceforge.jp>
-In-Reply-To: <1465714475-24111-1-git-send-email-ysato@users.sourceforge.jp>
+References: <1467207667-15768-1-git-send-email-ysato@users.sourceforge.jp>
+In-Reply-To: <1467207667-15768-1-git-send-email-ysato@users.sourceforge.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
 
-Generic callibrate delay required this value.
+Changes v4
+none
 
 Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
 ---
- arch/sh/boards/of-generic.c | 6 ++++++
- 1 file changed, 6 insertions(+)
+ arch/sh/boards/Kconfig | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/sh/boards/of-generic.c b/arch/sh/boards/of-generic.c
-index d24bc02..e2b4d98 100644
---- a/arch/sh/boards/of-generic.c
-+++ b/arch/sh/boards/of-generic.c
-@@ -128,6 +128,8 @@ static void __init sh_of_time_init(void)
- static void __init sh_of_setup(char **cmdline_p)
- {
- 	struct device_node *root;
-+	struct device_node *cpu;
-+	u32 freq;
- 
- 	board_time_init = sh_of_time_init;
- 
-@@ -139,6 +141,10 @@ static void __init sh_of_setup(char **cmdline_p)
- 	}
- 
- 	sh_of_smp_probe();
-+
-+	cpu = of_find_node_by_name(NULL, "cpu");
-+	if (!of_property_read_u32(cpu, "clock-frequency", &freq))
-+		preset_lpj = freq / CONFIG_HZ / 2;
- }
- 
- static int sh_of_irq_demux(int irq)
+diff --git a/arch/sh/boards/Kconfig b/arch/sh/boards/Kconfig
+index 5e52d53..9e4ccd0 100644
+--- a/arch/sh/boards/Kconfig
++++ b/arch/sh/boards/Kconfig
+@@ -12,6 +12,7 @@ config SH_DEVICE_TREE
+ 	select OF_EARLY_FLATTREE
+ 	select CLKSRC_OF
+ 	select GENERIC_CALIBRATE_DELAY
++	select GENERIC_IOMAP
+ 	help
+ 	  Select Board Described by Device Tree to build a kernel that
+ 	  does not hard-code any board-specific knowledge but instead uses
 -- 
 2.7.0
 
