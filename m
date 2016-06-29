@@ -1,50 +1,50 @@
 From: Yoshinori Sato <ysato@users.sourceforge.jp>
-Date: Sun, 12 Jun 2016 06:54:24 +0000
-Subject: [PATCH v2 06/17] sh: FDT address save before bank change
-Message-Id: <1465714475-24111-7-git-send-email-ysato@users.sourceforge.jp>
+Date: Wed, 29 Jun 2016 13:40:52 +0000
+Subject: [PATCH v4 07/22] sh: Passing FDT address on zImage
+Message-Id: <1467207667-15768-8-git-send-email-ysato@users.sourceforge.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1465714475-24111-1-git-send-email-ysato@users.sourceforge.jp>
-In-Reply-To: <1465714475-24111-1-git-send-email-ysato@users.sourceforge.jp>
+References: <1467207667-15768-1-git-send-email-ysato@users.sourceforge.jp>
+In-Reply-To: <1467207667-15768-1-git-send-email-ysato@users.sourceforge.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
 
-SH3/4 have register bank of R0-R7.
-Preset FDT address assigned bank depend on boot loader.
-Before setting a bank because we don't depend on a boot loader, it's evacuated.
+Changes v4
+none
 
 Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
 ---
- arch/sh/kernel/head_32.S | 7 +++----
- 1 file changed, 3 insertions(+), 4 deletions(-)
+ arch/sh/boot/compressed/head_32.S | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
 
-diff --git a/arch/sh/kernel/head_32.S b/arch/sh/kernel/head_32.S
-index 974bc15..fbf5f84 100644
---- a/arch/sh/kernel/head_32.S
-+++ b/arch/sh/kernel/head_32.S
-@@ -58,6 +58,9 @@ ENTRY(empty_zero_page)
-  *
-  */
- ENTRY(_stext)
-+#ifdef CONFIG_OF
-+	mov	r4, r12		! Store device tree blob pointer in r12
-+#endif
- 	!			Initialize Status Register
- 	mov.l	1f, r0		! MD=1, RB=0, BL=0, IMASK=0xF
- 	ldc	r0, sr
-@@ -67,10 +70,6 @@ ENTRY(_stext)
- 	ldc	r0, r6_bank
- #endif
+diff --git a/arch/sh/boot/compressed/head_32.S b/arch/sh/boot/compressed/head_32.S
+index 3e15032..a980c48 100644
+--- a/arch/sh/boot/compressed/head_32.S
++++ b/arch/sh/boot/compressed/head_32.S
+@@ -11,10 +11,11 @@
  
--#ifdef CONFIG_OF
--	mov	r4, r12		! Store device tree blob pointer in r12
--#endif
--	
- 	/*
- 	 * Prefetch if possible to reduce cache miss penalty.
- 	 *
+ 	.global	startup
+ startup:
++	/* Save FDT address */
++	mov	r4, r13
+ 	/* Load initial status register */
+ 	mov.l   init_sr, r1
+ 	ldc     r1, sr
+-
+ 	/* Move myself to proper location if necessary */
+ 	mova	1f, r0
+ 	mov.l	1f, r2
+@@ -83,7 +84,7 @@ l1:
+ 	/* Jump to the start of the decompressed kernel */
+ 	mov.l	kernel_start_addr, r0
+ 	jmp	@r0
+-	nop
++	 mov	r13,r4
+ 	
+ 	.align	2
+ bss_start_addr:
 -- 
 2.7.0
 
