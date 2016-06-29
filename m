@@ -1,87 +1,89 @@
-From: Krzysztof Kozlowski <k.kozlowski@samsung.com>
-Date: Thu, 30 Jun 2016 08:26:05 +0000
-Subject: [PATCH v5 38/44] sh: dma-mapping: Use unsigned long for dma_attrs
-Message-Id: <1467275171-6298-38-git-send-email-k.kozlowski@samsung.com>
+From: Yoshinori Sato <ysato@users.sourceforge.jp>
+Date: Wed, 29 Jun 2016 13:41:01 +0000
+Subject: [PATCH v4 16/22] pci: pci_config_window move to linux/pci.h
+Message-Id: <1467207667-15768-17-git-send-email-ysato@users.sourceforge.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1467275019-30789-1-git-send-email-k.kozlowski@samsung.com>
- <1467275171-6298-1-git-send-email-k.kozlowski@samsung.com>
-In-Reply-To: <1467275171-6298-1-git-send-email-k.kozlowski@samsung.com>
+References: <1467207667-15768-1-git-send-email-ysato@users.sourceforge.jp>
+In-Reply-To: <1467207667-15768-1-git-send-email-ysato@users.sourceforge.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: linux-kernel@vger.kernel.org, hch@infradead.org, Krzysztof Kozlowski <k.kozlowski@samsung.com>, Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
+To: linux-pci@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
 
-Split out subsystem specific changes for easier reviews. This will be
-squashed with main commit.
+Chanegs v4
+none
 
-Signed-off-by: Krzysztof Kozlowski <k.kozlowski@samsung.com>
+Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
 ---
- arch/sh/include/asm/dma-mapping.h | 4 ++--
- arch/sh/kernel/dma-nommu.c        | 4 ++--
- arch/sh/mm/consistent.c           | 4 ++--
- 3 files changed, 6 insertions(+), 6 deletions(-)
+ drivers/pci/ecam.h  | 17 +----------------
+ include/linux/pci.h | 18 ++++++++++++++++++
+ 2 files changed, 19 insertions(+), 16 deletions(-)
 
-diff --git a/arch/sh/include/asm/dma-mapping.h b/arch/sh/include/asm/dma-mapping.h
-index e11cf0c8206b..0052ad40e86d 100644
---- a/arch/sh/include/asm/dma-mapping.h
-+++ b/arch/sh/include/asm/dma-mapping.h
-@@ -17,9 +17,9 @@ void dma_cache_sync(struct device *dev, void *vaddr, size_t size,
- /* arch/sh/mm/consistent.c */
- extern void *dma_generic_alloc_coherent(struct device *dev, size_t size,
- 					dma_addr_t *dma_addr, gfp_t flag,
--					struct dma_attrs *attrs);
-+					unsigned long attrs);
- extern void dma_generic_free_coherent(struct device *dev, size_t size,
- 				      void *vaddr, dma_addr_t dma_handle,
--				      struct dma_attrs *attrs);
-+				      unsigned long attrs);
+diff --git a/drivers/pci/ecam.h b/drivers/pci/ecam.h
+index 9878beb..f110091 100644
+--- a/drivers/pci/ecam.h
++++ b/drivers/pci/ecam.h
+@@ -18,6 +18,7 @@
  
- #endif /* __ASM_SH_DMA_MAPPING_H */
-diff --git a/arch/sh/kernel/dma-nommu.c b/arch/sh/kernel/dma-nommu.c
-index 5b0bfcda6d0b..eadb669a7329 100644
---- a/arch/sh/kernel/dma-nommu.c
-+++ b/arch/sh/kernel/dma-nommu.c
-@@ -13,7 +13,7 @@
- static dma_addr_t nommu_map_page(struct device *dev, struct page *page,
- 				 unsigned long offset, size_t size,
- 				 enum dma_data_direction dir,
--				 struct dma_attrs *attrs)
-+				 unsigned long attrs)
- {
- 	dma_addr_t addr = page_to_phys(page) + offset;
+ #include <linux/kernel.h>
+ #include <linux/platform_device.h>
++#include <linux/pci.h>
  
-@@ -25,7 +25,7 @@ static dma_addr_t nommu_map_page(struct device *dev, struct page *page,
+ /*
+  * struct to hold pci ops and bus shift of the config window
+@@ -31,22 +32,6 @@ struct pci_ecam_ops {
+ 						struct pci_config_window *);
+ };
  
- static int nommu_map_sg(struct device *dev, struct scatterlist *sg,
- 			int nents, enum dma_data_direction dir,
--			struct dma_attrs *attrs)
-+			unsigned long attrs)
- {
- 	struct scatterlist *s;
- 	int i;
-diff --git a/arch/sh/mm/consistent.c b/arch/sh/mm/consistent.c
-index b81d9dbf9fef..92b6976fde59 100644
---- a/arch/sh/mm/consistent.c
-+++ b/arch/sh/mm/consistent.c
-@@ -34,7 +34,7 @@ fs_initcall(dma_init);
+-/*
+- * struct to hold the mappings of a config space window. This
+- * is expected to be used as sysdata for PCI controllers that
+- * use ECAM.
+- */
+-struct pci_config_window {
+-	struct resource			res;
+-	struct resource			busr;
+-	void				*priv;
+-	struct pci_ecam_ops		*ops;
+-	union {
+-		void __iomem		*win;	/* 64-bit single mapping */
+-		void __iomem		**winp; /* 32-bit per-bus mapping */
+-	};
+-};
+-
+ /* create and free pci_config_window */
+ struct pci_config_window *pci_ecam_create(struct device *dev,
+ 		struct resource *cfgres, struct resource *busr,
+diff --git a/include/linux/pci.h b/include/linux/pci.h
+index b67e4df..398896f 100644
+--- a/include/linux/pci.h
++++ b/include/linux/pci.h
+@@ -2026,6 +2026,24 @@ static inline bool pci_ari_enabled(struct pci_bus *bus)
+ 	return bus->self && bus->self->ari_enabled;
+ }
  
- void *dma_generic_alloc_coherent(struct device *dev, size_t size,
- 				 dma_addr_t *dma_handle, gfp_t gfp,
--				 struct dma_attrs *attrs)
-+				 unsigned long attrs)
- {
- 	void *ret, *ret_nocache;
- 	int order = get_order(size);
-@@ -66,7 +66,7 @@ void *dma_generic_alloc_coherent(struct device *dev, size_t size,
++/*
++ * struct to hold the mappings of a config space window. This
++ * is expected to be used as sysdata for PCI controllers that
++ * use ECAM.
++ */
++struct pci_ecam_ops;
++
++struct pci_config_window {
++	struct resource			res;
++	struct resource			busr;
++	void				*priv;
++	struct pci_ecam_ops		*ops;
++	union {
++		void __iomem		*win;	/* 64-bit single mapping */
++		void __iomem		**winp; /* 32-bit per-bus mapping */
++	};
++};
++
+ /* provide the legacy pci_dma_* API */
+ #include <linux/pci-dma-compat.h>
  
- void dma_generic_free_coherent(struct device *dev, size_t size,
- 			       void *vaddr, dma_addr_t dma_handle,
--			       struct dma_attrs *attrs)
-+			       unsigned long attrs)
- {
- 	int order = get_order(size);
- 	unsigned long pfn = dma_handle >> PAGE_SHIFT;
 -- 
-1.9.1
+2.7.0
 
