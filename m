@@ -1,50 +1,54 @@
 From: Yoshinori Sato <ysato@users.sourceforge.jp>
-Date: Tue, 28 Jun 2016 06:36:33 +0000
-Subject: [PATCH v3 17/19] sh: Add separate DTB build rule
-Message-Id: <1467095795-5082-18-git-send-email-ysato@users.sourceforge.jp>
+Date: Wed, 29 Jun 2016 13:40:46 +0000
+Subject: [PATCH v4 01/22] sh: Add sh-specific early_init_dt_reserve_memory_arch
+Message-Id: <1467207667-15768-2-git-send-email-ysato@users.sourceforge.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1467095795-5082-1-git-send-email-ysato@users.sourceforge.jp>
-In-Reply-To: <1467095795-5082-1-git-send-email-ysato@users.sourceforge.jp>
+References: <1467207667-15768-1-git-send-email-ysato@users.sourceforge.jp>
+In-Reply-To: <1467207667-15768-1-git-send-email-ysato@users.sourceforge.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
 
+sh used P1 address space in early device tree.
+So need convert P1 to physical address before reserve memory.
+
+Changes v4
+none
+
 Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
 ---
- arch/sh/Makefile          | 7 +++++++
- arch/sh/boot/dts/Makefile | 2 ++
- 2 files changed, 9 insertions(+)
+ arch/sh/boards/of-generic.c | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
 
-diff --git a/arch/sh/Makefile b/arch/sh/Makefile
-index 8adffa8..a44e630 100644
---- a/arch/sh/Makefile
-+++ b/arch/sh/Makefile
-@@ -189,6 +189,13 @@ drivers-$(CONFIG_OPROFILE)	+= arch/sh/oprofile/
+diff --git a/arch/sh/boards/of-generic.c b/arch/sh/boards/of-generic.c
+index 57d45dc..8dbf978 100644
+--- a/arch/sh/boards/of-generic.c
++++ b/arch/sh/boards/of-generic.c
+@@ -15,6 +15,7 @@
+ #include <linux/clocksource.h>
+ #include <linux/irqchip.h>
+ #include <linux/clk-provider.h>
++#include <linux/memblock.h>
+ #include <asm/machvec.h>
+ #include <asm/rtc.h>
  
- boot := arch/sh/boot
- 
-+%.dtb %.dtb.S %.dtb.o: | scripts
-+	$(Q)$(MAKE) $(build)=arch/sh/boot/dts arch/sh/boot/dts/$@
+@@ -203,3 +204,14 @@ static int __init sh_of_device_init(void)
+ 	return 0;
+ }
+ arch_initcall_sync(sh_of_device_init);
 +
-+PHONY += dtbs
-+dtbs: scripts
-+	$(Q)$(MAKE) $(build)=arch/sh/boot/dts
++int __init early_init_dt_reserve_memory_arch(phys_addr_t base,
++					     phys_addr_t size, bool nomap)
++{
++	if (nomap)
++		return memblock_remove(base, size);
 +
- cflags-y	+= $(foreach d, $(cpuincdir-y), -Iarch/sh/include/$(d)) \
- 		   $(foreach d, $(machdir-y), -Iarch/sh/include/$(d))
- 
-diff --git a/arch/sh/boot/dts/Makefile b/arch/sh/boot/dts/Makefile
-index e5ce3a0..38fdc38 100644
---- a/arch/sh/boot/dts/Makefile
-+++ b/arch/sh/boot/dts/Makefile
-@@ -1,3 +1,5 @@
- obj-$(CONFIG_USE_BUILTIN_DTB) += $(patsubst "%",%,$(CONFIG_BUILTIN_DTB_SOURCE)).dtb.o
- 
-+dtstree		:= $(srctree)/$(src)
- clean-files := *.dtb.S
-+always	    := $(dtb-y)
++	if (base >= P1SEG)
++		base &= ~P1SEG;
++	return memblock_reserve(base, size);
++}
 -- 
 2.7.0
 
