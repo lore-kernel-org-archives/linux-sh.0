@@ -1,86 +1,65 @@
-From: Krzysztof Kozlowski <k.kozlowski@samsung.com>
-Date: Fri, 10 Jun 2016 10:11:55 +0000
-Subject: [PATCH v4 38/44] sh: dma-mapping: Use unsigned long for dma_attrs
-Message-Id: <1465553521-27303-39-git-send-email-k.kozlowski@samsung.com>
+From: Yoshinori Sato <ysato@users.sourceforge.jp>
+Date: Wed, 29 Jun 2016 13:40:53 +0000
+Subject: [PATCH v4 08/22] sh: Disable board specific code on device tree mode
+Message-Id: <1467207667-15768-9-git-send-email-ysato@users.sourceforge.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1465553521-27303-1-git-send-email-k.kozlowski@samsung.com>
-In-Reply-To: <1465553521-27303-1-git-send-email-k.kozlowski@samsung.com>
+References: <1467207667-15768-1-git-send-email-ysato@users.sourceforge.jp>
+In-Reply-To: <1467207667-15768-1-git-send-email-ysato@users.sourceforge.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: hch@infradead.org, Krzysztof Kozlowski <k.kozlowski@samsung.com>, Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Max Filippov <jcmvbkbc@gmail.com>, Valentin Rothberg <valentinrothberg@gmail.com>, Guenter Roeck <linux@roeck-us.net>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
 
-Split out subsystem specific changes for easier reviews. This will be
-squashed with main commit.
+Changes v4
+none
 
-Signed-off-by: Krzysztof Kozlowski <k.kozlowski@samsung.com>
+Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
 ---
- arch/sh/include/asm/dma-mapping.h | 4 ++--
- arch/sh/kernel/dma-nommu.c        | 4 ++--
- arch/sh/mm/consistent.c           | 4 ++--
- 3 files changed, 6 insertions(+), 6 deletions(-)
+ arch/sh/Makefile                | 2 ++
+ arch/sh/kernel/cpu/sh4/Makefile | 2 ++
+ 2 files changed, 4 insertions(+)
 
-diff --git a/arch/sh/include/asm/dma-mapping.h b/arch/sh/include/asm/dma-mapping.h
-index e11cf0c8206b..0052ad40e86d 100644
---- a/arch/sh/include/asm/dma-mapping.h
-+++ b/arch/sh/include/asm/dma-mapping.h
-@@ -17,9 +17,9 @@ void dma_cache_sync(struct device *dev, void *vaddr, size_t size,
- /* arch/sh/mm/consistent.c */
- extern void *dma_generic_alloc_coherent(struct device *dev, size_t size,
- 					dma_addr_t *dma_addr, gfp_t flag,
--					struct dma_attrs *attrs);
-+					unsigned long attrs);
- extern void dma_generic_free_coherent(struct device *dev, size_t size,
- 				      void *vaddr, dma_addr_t dma_handle,
--				      struct dma_attrs *attrs);
-+				      unsigned long attrs);
+diff --git a/arch/sh/Makefile b/arch/sh/Makefile
+index 3b2c8b4..8adffa8 100644
+--- a/arch/sh/Makefile
++++ b/arch/sh/Makefile
+@@ -132,6 +132,7 @@ core-$(CONFIG_SH_FPU_EMU)	+= arch/sh/math-emu/
  
- #endif /* __ASM_SH_DMA_MAPPING_H */
-diff --git a/arch/sh/kernel/dma-nommu.c b/arch/sh/kernel/dma-nommu.c
-index 5b0bfcda6d0b..eadb669a7329 100644
---- a/arch/sh/kernel/dma-nommu.c
-+++ b/arch/sh/kernel/dma-nommu.c
-@@ -13,7 +13,7 @@
- static dma_addr_t nommu_map_page(struct device *dev, struct page *page,
- 				 unsigned long offset, size_t size,
- 				 enum dma_data_direction dir,
--				 struct dma_attrs *attrs)
-+				 unsigned long attrs)
- {
- 	dma_addr_t addr = page_to_phys(page) + offset;
+ core-$(CONFIG_USE_BUILTIN_DTB)	+= arch/sh/boot/dts/
  
-@@ -25,7 +25,7 @@ static dma_addr_t nommu_map_page(struct device *dev, struct page *page,
++ifneq ($(CONFIG_SH_DEVICE_TREE),y)
+ # Mach groups
+ machdir-$(CONFIG_SOLUTION_ENGINE)		+= mach-se
+ machdir-$(CONFIG_SH_HP6XX)			+= mach-hp6xx
+@@ -152,6 +153,7 @@ machdir-$(CONFIG_SH_LANDISK)			+= mach-landisk
+ machdir-$(CONFIG_SH_LBOX_RE2)			+= mach-lboxre2
+ machdir-$(CONFIG_SH_CAYMAN)			+= mach-cayman
+ machdir-$(CONFIG_SH_RSK)			+= mach-rsk
++endif
  
- static int nommu_map_sg(struct device *dev, struct scatterlist *sg,
- 			int nents, enum dma_data_direction dir,
--			struct dma_attrs *attrs)
-+			unsigned long attrs)
- {
- 	struct scatterlist *s;
- 	int i;
-diff --git a/arch/sh/mm/consistent.c b/arch/sh/mm/consistent.c
-index b81d9dbf9fef..92b6976fde59 100644
---- a/arch/sh/mm/consistent.c
-+++ b/arch/sh/mm/consistent.c
-@@ -34,7 +34,7 @@ fs_initcall(dma_init);
+ ifneq ($(machdir-y),)
+ core-y	+= $(addprefix arch/sh/boards/, \
+diff --git a/arch/sh/kernel/cpu/sh4/Makefile b/arch/sh/kernel/cpu/sh4/Makefile
+index 3a1dbc7..b822c0c 100644
+--- a/arch/sh/kernel/cpu/sh4/Makefile
++++ b/arch/sh/kernel/cpu/sh4/Makefile
+@@ -14,6 +14,7 @@ perf-$(CONFIG_CPU_SUBTYPE_SH7750)	:= perf_event.o
+ perf-$(CONFIG_CPU_SUBTYPE_SH7750S)	:= perf_event.o
+ perf-$(CONFIG_CPU_SUBTYPE_SH7091)	:= perf_event.o
  
- void *dma_generic_alloc_coherent(struct device *dev, size_t size,
- 				 dma_addr_t *dma_handle, gfp_t gfp,
--				 struct dma_attrs *attrs)
-+				 unsigned long attrs)
- {
- 	void *ret, *ret_nocache;
- 	int order = get_order(size);
-@@ -66,7 +66,7 @@ void *dma_generic_alloc_coherent(struct device *dev, size_t size,
++ifndef CONFIG_OF
+ # CPU subtype setup
+ obj-$(CONFIG_CPU_SUBTYPE_SH7750)	+= setup-sh7750.o
+ obj-$(CONFIG_CPU_SUBTYPE_SH7750R)	+= setup-sh7750.o
+@@ -31,6 +32,7 @@ endif
  
- void dma_generic_free_coherent(struct device *dev, size_t size,
- 			       void *vaddr, dma_addr_t dma_handle,
--			       struct dma_attrs *attrs)
-+			       unsigned long attrs)
- {
- 	int order = get_order(size);
- 	unsigned long pfn = dma_handle >> PAGE_SHIFT;
+ # Additional clocks by subtype
+ clock-$(CONFIG_CPU_SUBTYPE_SH4_202)	+= clock-sh4-202.o
++endif
+ 
+ obj-y					+= $(clock-y)
+ obj-$(CONFIG_PERF_EVENTS)		+= $(perf-y)
 -- 
-1.9.1
+2.7.0
 
