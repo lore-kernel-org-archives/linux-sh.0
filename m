@@ -1,85 +1,87 @@
-From: Yoshinori Sato <ysato@users.sourceforge.jp>
-Date: Tue, 28 Jun 2016 07:22:58 +0000
-Subject: [PATCH] sh-sci: Separate sci_port on earlycon
-Message-Id: <1467098578-10364-1-git-send-email-ysato@users.sourceforge.jp>
+From: Krzysztof Kozlowski <k.kozlowski@samsung.com>
+Date: Thu, 30 Jun 2016 08:26:05 +0000
+Subject: [PATCH v5 38/44] sh: dma-mapping: Use unsigned long for dma_attrs
+Message-Id: <1467275171-6298-38-git-send-email-k.kozlowski@samsung.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1467275019-30789-1-git-send-email-k.kozlowski@samsung.com>
+ <1467275171-6298-1-git-send-email-k.kozlowski@samsung.com>
+In-Reply-To: <1467275171-6298-1-git-send-email-k.kozlowski@samsung.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org, linux-renesas-soc@vger.kernel.org
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: linux-kernel@vger.kernel.org, hch@infradead.org, Krzysztof Kozlowski <k.kozlowski@samsung.com>, Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
 
-sci0 and earlycon use same sci_port.
-So earlycon dead after sci0 initialize.
+Split out subsystem specific changes for easier reviews. This will be
+squashed with main commit.
 
-This fix assign separate sci_port for earlycon.
-
-Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
+Signed-off-by: Krzysztof Kozlowski <k.kozlowski@samsung.com>
 ---
- drivers/tty/serial/sh-sci.c | 24 +++++++++++++++---------
- 1 file changed, 15 insertions(+), 9 deletions(-)
+ arch/sh/include/asm/dma-mapping.h | 4 ++--
+ arch/sh/kernel/dma-nommu.c        | 4 ++--
+ arch/sh/mm/consistent.c           | 4 ++--
+ 3 files changed, 6 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 5a73620..210c95e 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -146,6 +146,8 @@ struct sci_port {
- #define SCI_NPORTS CONFIG_SERIAL_SH_SCI_NR_UARTS
+diff --git a/arch/sh/include/asm/dma-mapping.h b/arch/sh/include/asm/dma-mapping.h
+index e11cf0c8206b..0052ad40e86d 100644
+--- a/arch/sh/include/asm/dma-mapping.h
++++ b/arch/sh/include/asm/dma-mapping.h
+@@ -17,9 +17,9 @@ void dma_cache_sync(struct device *dev, void *vaddr, size_t size,
+ /* arch/sh/mm/consistent.c */
+ extern void *dma_generic_alloc_coherent(struct device *dev, size_t size,
+ 					dma_addr_t *dma_addr, gfp_t flag,
+-					struct dma_attrs *attrs);
++					unsigned long attrs);
+ extern void dma_generic_free_coherent(struct device *dev, size_t size,
+ 				      void *vaddr, dma_addr_t dma_handle,
+-				      struct dma_attrs *attrs);
++				      unsigned long attrs);
  
- static struct sci_port sci_ports[SCI_NPORTS];
-+#define EARLY_INDEX 256
-+static struct sci_port earlycon_port;
- static struct uart_driver sci_uart_driver;
- 
- static inline struct sci_port *
-@@ -2510,7 +2512,6 @@ static int sci_init_single(struct platform_device *dev,
- 	int ret;
- 
- 	sci_port->cfg	= p;
--
- 	port->ops	= &sci_uart_ops;
- 	port->iotype	= UPIO_MEM;
- 	port->line	= index;
-@@ -2668,12 +2669,16 @@ static void serial_console_putchar(struct uart_port *port, int ch)
- static void serial_console_write(struct console *co, const char *s,
- 				 unsigned count)
+ #endif /* __ASM_SH_DMA_MAPPING_H */
+diff --git a/arch/sh/kernel/dma-nommu.c b/arch/sh/kernel/dma-nommu.c
+index 5b0bfcda6d0b..eadb669a7329 100644
+--- a/arch/sh/kernel/dma-nommu.c
++++ b/arch/sh/kernel/dma-nommu.c
+@@ -13,7 +13,7 @@
+ static dma_addr_t nommu_map_page(struct device *dev, struct page *page,
+ 				 unsigned long offset, size_t size,
+ 				 enum dma_data_direction dir,
+-				 struct dma_attrs *attrs)
++				 unsigned long attrs)
  {
--	struct sci_port *sci_port = &sci_ports[co->index];
--	struct uart_port *port = &sci_port->port;
-+	struct sci_port *sci_port;
-+	struct uart_port *port;
- 	unsigned short bits, ctrl, ctrl_temp;
- 	unsigned long flags;
- 	int locked = 1;
+ 	dma_addr_t addr = page_to_phys(page) + offset;
  
-+	sci_port = (co->index != EARLY_INDEX) ? 
-+		&sci_ports[co->index] :  &earlycon_port;
-+	port = &sci_port->port;
-+
- 	local_irq_save(flags);
- #if defined(SUPPORT_SYSRQ)
- 	if (port->sysrq)
-@@ -3036,13 +3041,14 @@ static int __init early_console_setup(struct earlycon_device *device,
- 	device->port.serial_in = sci_serial_in;
- 	device->port.serial_out	= sci_serial_out;
- 	device->port.type = type;
--	memcpy(&sci_ports[0].port, &device->port, sizeof(struct uart_port));
--	sci_ports[0].cfg = &port_cfg;
--	sci_ports[0].cfg->type = type;
--	sci_probe_regmap(sci_ports[0].cfg);
--	port_cfg.scscr = sci_serial_in(&sci_ports[0].port, SCSCR) |
-+	device->con->index = EARLY_INDEX;
-+	memcpy(&earlycon_port.port, &device->port, sizeof(struct uart_port));
-+	earlycon_port.cfg = &port_cfg;
-+	earlycon_port.cfg->type = type;
-+	sci_probe_regmap(earlycon_port.cfg);
-+	port_cfg.scscr = sci_serial_in(&earlycon_port.port, SCSCR) |
- 			 SCSCR_RE | SCSCR_TE;
--	sci_serial_out(&sci_ports[0].port, SCSCR, port_cfg.scscr);
-+	sci_serial_out(&earlycon_port.port, SCSCR, port_cfg.scscr);
+@@ -25,7 +25,7 @@ static dma_addr_t nommu_map_page(struct device *dev, struct page *page,
  
- 	device->con->write = serial_console_write;
- 	return 0;
+ static int nommu_map_sg(struct device *dev, struct scatterlist *sg,
+ 			int nents, enum dma_data_direction dir,
+-			struct dma_attrs *attrs)
++			unsigned long attrs)
+ {
+ 	struct scatterlist *s;
+ 	int i;
+diff --git a/arch/sh/mm/consistent.c b/arch/sh/mm/consistent.c
+index b81d9dbf9fef..92b6976fde59 100644
+--- a/arch/sh/mm/consistent.c
++++ b/arch/sh/mm/consistent.c
+@@ -34,7 +34,7 @@ fs_initcall(dma_init);
+ 
+ void *dma_generic_alloc_coherent(struct device *dev, size_t size,
+ 				 dma_addr_t *dma_handle, gfp_t gfp,
+-				 struct dma_attrs *attrs)
++				 unsigned long attrs)
+ {
+ 	void *ret, *ret_nocache;
+ 	int order = get_order(size);
+@@ -66,7 +66,7 @@ void *dma_generic_alloc_coherent(struct device *dev, size_t size,
+ 
+ void dma_generic_free_coherent(struct device *dev, size_t size,
+ 			       void *vaddr, dma_addr_t dma_handle,
+-			       struct dma_attrs *attrs)
++			       unsigned long attrs)
+ {
+ 	int order = get_order(size);
+ 	unsigned long pfn = dma_handle >> PAGE_SHIFT;
 -- 
-2.7.0
+1.9.1
 
