@@ -1,59 +1,23 @@
-From: Rich Felker <dalias@libc.org>
-Date: Thu, 14 Jul 2016 22:18:08 +0000
-Subject: Re: [PATCH v3 04/12] of: add J-Core timer bindings
-Message-Id: <20160714221808.GP15995@brightrain.aerifal.cx>
+From: Rob Herring <robh@kernel.org>
+Date: Fri, 01 Jul 2016 01:53:13 +0000
+Subject: Re: [PATCH v4 21/22] sh: Renesas RTS7751R2Dplus (a,k.a R2Dplus) IRQCHIP Driver
+Message-Id: <20160701015313.GA31508@rob-hp-laptop>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1464148904.git.dalias@libc.org>
- <5341dfbb085d5647ebb6fe4390ca329b63e0e03d.1464148904.git.dalias@libc.org>
- <20160601135852.GA17217@rob-hp-laptop>
- <20160601175307.GC10893@brightrain.aerifal.cx>
- <CAL_JsqJYyvdc06v2+R=Wnmkk-cO7ZFq=7uGOhPxXdL0UfEu-iA@mail.gmail.com>
- <20160602013407.GA12184@brightrain.aerifal.cx>
- <20160602224425.GA15163@rob-hp-laptop>
- <20160623211608.GA10893@brightrain.aerifal.cx>
-In-Reply-To: <20160623211608.GA10893@brightrain.aerifal.cx>
+References: <1467207667-15768-1-git-send-email-ysato@users.sourceforge.jp>
+ <1467207667-15768-22-git-send-email-ysato@users.sourceforge.jp>
+In-Reply-To: <1467207667-15768-22-git-send-email-ysato@users.sourceforge.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Rob Herring <robh@kernel.org>
-Cc: "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, SH-Linux <linux-sh@vger.kernel.org>, Ian Campbell <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>, Mark Rutland <mark.rutland@arm.com>, Pawel Moll <pawel.moll@arm.com>
+To: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: devicetree@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-On Thu, Jun 23, 2016 at 05:16:08PM -0400, Rich Felker wrote:
-> On Thu, Jun 02, 2016 at 05:44:25PM -0500, Rob Herring wrote:
-> > > > > In theory it would even be possible to just require a DT node per
-> > > > > cpulocal timer, but I didn't see a good way to make the bindings
-> > > > > represent the relationship to cpus or to make the driver handle irqs
-> > > > > correctly for such a setup, so I'd need a viable proposal for how that
-> > > > > could be done to even consider such an approach.
-> > > > 
-> > > > Yeah, there's not really a standard way to map per cpu blocks to cpus.
-> > > > We could, but doesn't really seem necessary here.
-> > > > 
-> > > > For the irqs, percpu irqs doesn't help you?
-> > > 
-> > > What I mean is that, if there were a separate device node and driver
-> > > instance per cpu, they'd all want to register the same irq just to
-> > > handle it on their own cpu, so we'd have a lot of spurious handlers
-> > > running. The right way to model this, I think, would be as a virtual
-> > > irqchip that's the irq parent of all the timer nodes, and that
-> > > multiplexes the real irq to one virq per cpu (where the current cpu id
-> > > becomes the irq number in its irq domain). But that's a lot of virtual
-> > > infrastructure just for the sake of modelling each percpu timer as its
-> > > own DT node and I don't think it makes sense to do it that way.
-> > 
-> > I would have thought your interrupt controller did all this. On the ARM 
-> > GIC for example, you have the same irq number but there is a per cpu 
-> > interface and really N (= # cpus) physical irq lines.
-> 
-> I've looked at the ARM GIC code and bindings and I don't see where the
-> per-cpu interrupt interfaces are modelled with multiple interrupt
-> controller nodes or irq domains. It looks to me like it just uses a
-> single interrupt controller/domain with percpu irq. Does that match
-> your understanding?
+On Wed, Jun 29, 2016 at 10:41:06PM +0900, Yoshinori Sato wrote:
+> Changes v4
+> - split patch.
+> - remove unneeded #address
 
-Ping.
+Actually, I think #address-cells is supposed to be set for 
+interrupt-map. It defines the size of the first field.
 
-I want to submit this again for the upcoming merge window and need to
-know whether you still want me to pursue different approaches.
-
-Rich
+Rob
