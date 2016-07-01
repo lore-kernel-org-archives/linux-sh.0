@@ -1,49 +1,53 @@
-From: Mark Rutland <mark.rutland@arm.com>
-Date: Thu, 28 Jul 2016 14:02:37 +0000
-Subject: Re: [PATCH v4 2/2] irqchip: add J-Core AIC driver
-Message-Id: <20160728140236.GC5881@leverpostej>
+From: Rob Herring <robh@kernel.org>
+Date: Fri, 01 Jul 2016 01:48:53 +0000
+Subject: Re: [PATCH v4 19/22] sh: IO-DATA HDL-U (a,k.a landisk) IRQCHIP driver
+Message-Id: <20160701014853.GA29009@rob-hp-laptop>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1469595860.git.dalias@libc.org>
- <862a5642f4a30f062171bbc14fe95a729eab8ba2.1469595861.git.dalias@libc.org>
- <20160727101235.GC12880@leverpostej>
- <20160727130606.GA15995@brightrain.aerifal.cx>
- <20160727132252.GB17195@leverpostej>
- <20160727170709.GC15995@brightrain.aerifal.cx>
- <20160727173152.GH17195@leverpostej>
- <20160727230124.GE15995@brightrain.aerifal.cx>
-In-Reply-To: <20160727230124.GE15995-C3MtFaGISjmo6RMmaWD+6Sb1p8zYI1N1@public.gmane.org>
+References: <1467207667-15768-1-git-send-email-ysato@users.sourceforge.jp>
+ <1467207667-15768-20-git-send-email-ysato@users.sourceforge.jp>
+In-Reply-To: <1467207667-15768-20-git-send-email-ysato@users.sourceforge.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Rich Felker <dalias-8zAoT0mYgF4@public.gmane.org>
-Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Jason Cooper <jason-NLaQJdtUoK4Be96aLqz0jA@public.gmane.org>, Marc Zyngier <marc.zyngier-5wv7dgnIgG8@public.gmane.org>, Rob Herring <robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>
+To: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: devicetree@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-On Wed, Jul 27, 2016 at 07:01:24PM -0400, Rich Felker wrote:
-> On Wed, Jul 27, 2016 at 06:31:52PM +0100, Mark Rutland wrote:
-
-> > IIUC, that means you *could* implement per-irq masking by having the
-> > CPU's mask value set to 0, and flipping the priority of an IRQ between 0
-> > and 1 to disable/enable.
-> > 
-> > Though from your prior comments it sounds like for AIC2 writes to the
-> > MMIO priority registers are ignored, so that would not work for AIC2?
+On Wed, Jun 29, 2016 at 10:41:04PM +0900, Yoshinori Sato wrote:
+> Changes v4
+> - split patches
+> - remove unneeded line
+> - example update
 > 
-> Right. The register with 8 4-bit fields only made sense for the setup
-> with 8 irq lines with variable priority; the aic2 has 64 lines with
-> static priorities.
+> Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
+> ---
+>  .../interrupt-controller/iodata-landisk.txt        | 31 ++++++++++
+>  drivers/irqchip/Makefile                           |  2 +-
+>  drivers/irqchip/irq-io-landisk.c                   | 72 ++++++++++++++++++++++
+>  3 files changed, 104 insertions(+), 1 deletion(-)
+>  create mode 100644 Documentation/devicetree/bindings/interrupt-controller/iodata-landisk.txt
+>  create mode 100644 drivers/irqchip/irq-io-landisk.c
+> 
+> diff --git a/Documentation/devicetree/bindings/interrupt-controller/iodata-landisk.txt b/Documentation/devicetree/bindings/interrupt-controller/iodata-landisk.txt
+> new file mode 100644
+> index 0000000..cf461dc
+> --- /dev/null
+> +++ b/Documentation/devicetree/bindings/interrupt-controller/iodata-landisk.txt
+> @@ -0,0 +1,31 @@
+> +DT bindings for the I/O DATA HDL-U interrupt controller
+> +
+> +Required properties:
+> +
+> +  - compatible: has to be "iodata,landisk-intc".
+> +
+> +  - reg: Base address and length of interrupt controller register.
+> +
+> +  - interrupt-controller: Identifies the node as an interrupt controller.
+> +
+> +  - #interrupt-cells: has to be <1>: an interrupt index.
+> +
+> +  - interrupt-map: Interrupt mapping on parent controller.
 
-Thinking about this a little further, this is a good argument for the
-"jcore,aic1" *not* being a valid fallback entry in an AIC2 compatible
-list. Anything wanting to rely on this behaviour of AIC1 would be broken
-on AIC2.
+interrupt-controller and interrupt-map are supposed to be mutually 
+exclusive, so you should probably drop interrupt-controller.
 
-That being the case, no DT should have "jcore,aic1" for an AIC2 node,
-and we can explciitly check for the AIC1 string for AIC1-specific
-initialisation code (though regardless, it's worht a comment).
-
-A further curiosity: what static priority values for AIC2 apply to
-interrupts? Does it apply 0xf (or some over value) uniformly, or can
-AIC2 interrupts potentially have varied priorities?
-
-Thanks,
-Mark.
+Rob
