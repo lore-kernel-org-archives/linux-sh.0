@@ -1,36 +1,113 @@
-From: Andy Lutomirski <luto@amacapital.net>
-Date: Tue, 12 Jul 2016 23:01:23 +0000
-Subject: Re: [PATCH v5 18/32] signal: Consolidate {TS,TLF}_RESTORE_SIGMASK code
-Message-Id: <CALCETrXN3Jd=8TOsHejVNQj8ef4KH-GYzW8rD6ounq=ZX9TT5A@mail.gmail.com>
+From: Paul Gortmaker <paul.gortmaker@windriver.com>
+Date: Sat, 02 Jul 2016 23:40:18 +0000
+Subject: Re: [PATCH 0/4] sh: fix up modular use in non-modular code
+Message-Id: <20160702234018.GU26134@windriver.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1468270393.git.luto@kernel.org> <dc84a1b979d800049bfd0629ed9380238cba2807.1468270393.git.luto@kernel.org>
- <CAMzpN2j2F9gQCRGmzVb0LjQT9mmU9m=HRG2Vbf-g79+i57dvdg@mail.gmail.com>
-In-Reply-To: <CAMzpN2j2F9gQCRGmzVb0LjQT9mmU9m=HRG2Vbf-g79+i57dvdg@mail.gmail.com>
+References: <1461348424-3896-1-git-send-email-paul.gortmaker@windriver.com>
+ <20160526164557.GJ27984@windriver.com>
+ <20160526165334.GY21636@brightrain.aerifal.cx>
+ <87bn3kcc7o.wl-ysato@users.sourceforge.jp>
+In-Reply-To: <87bn3kcc7o.wl-ysato@users.sourceforge.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Brian Gerst <brgerst@gmail.com>
-Cc: Andy Lutomirski <luto@kernel.org>, the arch/x86 maintainers <x86@kernel.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, linux-arch <linux-arch@vger.kernel.org>, Borislav Petkov <bp@alien8.de>, Nadav Amit <nadav.amit@gmail.com>, Kees Cook <keescook@chromium.org>, "kernel-hardening@lists.openwall.com" <kernel-hardening@lists.openwall.com>, Linus Torvalds <torvalds@linux-foundation.org>, Josh Poimboeuf <jpoimboe@redhat.com>, Jann Horn <jann@thejh.net>, Heiko Carstens <heiko.carstens@de.ibm.com>, Richard Henderson <rth@twiddle.net>, Ivan Kokshaysky <ink@jurassic.park.msu.ru>, Matt Turner <mattst88@gmail.com>, Tony Luck <tony.luck@intel.com>, Fenghua Yu <fenghua.yu@intel.com>, Michal Simek <monstr@monstr.eu>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Michael Ellerman <mpe@ellerman.id.au>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, "David S. Miller" <davem@davemloft.net>, Chris Metcalf <cmetcalf@mellanox.com>, Peter Zijlstra <peterz@infradead.org>, Borislav Petkov <bp@suse.de>, Dmitry Safonov <dsafonov@virtuozzo.com>, Andrew Morton <akpm@linux-foundation.org>, linux-alpha@vger.kernel.org, "linux-ia64@vger.kernel.org" <linux-ia64@vger.kernel.org>, linuxppc-dev@lists.ozlabs.org, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, sparclinux@vger.kernel.org
+To: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
 
-On Tue, Jul 12, 2016 at 4:57 AM, Brian Gerst <brgerst@gmail.com> wrote:
-> On Mon, Jul 11, 2016 at 4:53 PM, Andy Lutomirski <luto@kernel.org> wrote:
->> In general, there's no need for the "restore sigmask" flag to live in
->> ti->flags.  alpha, ia64, microblaze, powerpc, sh, sparc (64-bit only),
->> tile, and x86 use essentially identical alternative implementations,
->> placing the flag in ti->status.
->>
->> Replace those optimized implementations with an equally good common
->> implementation that stores it in a bitfield in struct task_struct
->> and drop the custom implementations.
->>
->> Additional architectures can opt in by removing their
->> TIF_RESTORE_SIGMASK defines.
->
-> There is a small typo in the subject, should be "signal: Consolidate
-> {TS,TIF}_RESTORE_SIGMASK code"
+[Re: [PATCH 0/4] sh: fix up modular use in non-modular code] On 02/06/2016 (Thu 15:54) Yoshinori Sato wrote:
 
-I really did mean "TLF" -- it's a powerpc-ism.  This patch doesn't
-affect TIF_RESTORE_SIGMASK on architectures that have that flag,
-although it makes it much easier for them to get rid of it.
+> On Fri, 27 May 2016 01:53:34 +0900,
+> Rich Felker wrote:
+> > 
+> > On Thu, May 26, 2016 at 12:45:57PM -0400, Paul Gortmaker wrote:
+> > > [[PATCH 0/4] sh: fix up modular use in non-modular code] On 22/04/2016 (Fri 14:07) Paul Gortmaker wrote:
+> > > 
+> > > > For anyone new to the underlying goal of this cleanup, we are trying to
+> > > > make kernel code consistent with the Makefiles/Kconfigs that control them.
+> > > 
+> > > Ping -- wondering if there are any issues here, or if I can expect these
+> > > to be merged upstream in the merge window.  I didn't see them loop
+> > > around via the linux-next tree but I wasn't sure if arch/sh has a repo
+> > > for linux-next.
+> > 
+> > I don't have experience with the affected code, but it looks ok unless
+> > any of these "should" be modular and Kconfig was just wrong to
+> > disallow it.
+> > 
+> > Sato-san, do you have an opinion on these? Should I go ahead and just
+> > merge them?
+> 
+> It looks no problem.
+> I think can merge it.
 
---Andy
+Just checking in a month later; my queue that I test regularly against
+the linux-next tree still has these:
+
+sh-make-heartbeat-driver-explicitly-non-modular.patch
+sh-make-board-secureedge5410.c-explicitly-non-m.patch
+sh-make-mm-asids-debugfs-explicitly-non-modular.patch
+sh-make-time.c-explicitly-non-modular.patch
+
+Apologies in advance if you have a sh queue that is pending but for some
+reason is not fed into the nightly linux-next tree generation.  If so,
+let me know and I won't worry about looking for these until merge window.
+
+Thanks,
+Paul.
+--
+
+> 
+> > Rich
+> > 
+> > > > This means not using modular functions/macros for code that can never
+> > > > be built as a module.  Some of the other downfalls this leads to are:
+> > > > 
+> > > >  (1) it is easy to accidentally write unused module_exit and remove code
+> > > >  (2) it can be misleading when reading the source, thinking it can be
+> > > >      modular when the Makefile and/or Kconfig prohibit it
+> > > >  (3) it requires the include of the module.h header file which in turn
+> > > >      includes nearly everything else, thus adding to CPP overhead.
+> > > >  (4) it gets copied/replicated into other drivers and spreads like weeds.
+> > > > 
+> > > > Three of the four commits here are completely trivial with zero runtime
+> > > > impact whatsoever.  The fourth has a deletion of a ".remove" function
+> > > > and as we've done elsewhere, we block the sysfs ability to reach in and
+> > > > manually execute that function, since there isn't a sane use case for
+> > > > which doing that makes sense.
+> > > > 
+> > > > Build tested on today's linux-next ; full build fails on duplicate syms
+> > > > from OF generic board, but that is a known and reported issue elsewhere;
+> > > > it has nothing to do with the changes here.
+> > > > 
+> > > > Paul
+> > > > --
+> > > > 
+> > > > Cc: linux-sh@vger.kernel.org
+> > > > Cc: Paul Gortmaker <paul.gortmaker@windriver.com>
+> > > > Cc: Rich Felker <dalias@libc.org>
+> > > > Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+> > > > 
+> > > > 
+> > > > Paul Gortmaker (4):
+> > > >   sh: make time.c explicitly non-modular
+> > > >   sh: make mm/asids-debugfs explicitly non-modular
+> > > >   sh: make board-secureedge5410 explicitly non-modular
+> > > >   sh: make heartbeat driver explicitly non-modular
+> > > > 
+> > > >  arch/sh/boards/board-secureedge5410.c |  3 +--
+> > > >  arch/sh/drivers/heartbeat.c           | 32 +++-----------------------------
+> > > >  arch/sh/kernel/time.c                 |  3 +--
+> > > >  arch/sh/mm/asids-debugfs.c            |  5 +----
+> > > >  4 files changed, 6 insertions(+), 37 deletions(-)
+> > > > 
+> > > > -- 
+> > > > 2.8.0
+> > > > 
+> > > --
+> > > To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> > > the body of a message to majordomo@vger.kernel.org
+> > > More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+> -- 
+> Yoshinori Sato
+> <ysato@users.sourceforge.jp>
