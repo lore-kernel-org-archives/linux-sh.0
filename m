@@ -1,59 +1,89 @@
 From: Yoshinori Sato <ysato@users.sourceforge.jp>
-Date: Sun, 03 Jul 2016 16:46:22 +0000
-Subject: [PATCH v5 02/22] sh: More early unflatten device tree
-Message-Id: <1467564402-2649-3-git-send-email-ysato@users.sourceforge.jp>
+Date: Sun, 03 Jul 2016 16:46:36 +0000
+Subject: [PATCH v5 16/22] pci: pci_config_window move to linux/pci.h
+Message-Id: <1467564402-2649-17-git-send-email-ysato@users.sourceforge.jp>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1467564402-2649-1-git-send-email-ysato@users.sourceforge.jp>
 In-Reply-To: <1467564402-2649-1-git-send-email-ysato@users.sourceforge.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-pci@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
 
-unflatten required MMU disabled.
+Chanegs v4
+none
 
 Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
 ---
- arch/sh/boards/of-generic.c | 6 ------
- arch/sh/kernel/setup.c      | 7 +++++++
- 2 files changed, 7 insertions(+), 6 deletions(-)
+ drivers/pci/ecam.h  | 17 +----------------
+ include/linux/pci.h | 18 ++++++++++++++++++
+ 2 files changed, 19 insertions(+), 16 deletions(-)
 
-diff --git a/arch/sh/boards/of-generic.c b/arch/sh/boards/of-generic.c
-index 8dbf978..3db4294 100644
---- a/arch/sh/boards/of-generic.c
-+++ b/arch/sh/boards/of-generic.c
-@@ -129,12 +129,6 @@ static void __init sh_of_setup(char **cmdline_p)
- {
- 	struct device_node *root;
+diff --git a/drivers/pci/ecam.h b/drivers/pci/ecam.h
+index 9878beb..f110091 100644
+--- a/drivers/pci/ecam.h
++++ b/drivers/pci/ecam.h
+@@ -18,6 +18,7 @@
  
--#ifdef CONFIG_USE_BUILTIN_DTB
--	unflatten_and_copy_device_tree();
--#else
--	unflatten_device_tree();
--#endif
+ #include <linux/kernel.h>
+ #include <linux/platform_device.h>
++#include <linux/pci.h>
+ 
+ /*
+  * struct to hold pci ops and bus shift of the config window
+@@ -31,22 +32,6 @@ struct pci_ecam_ops {
+ 						struct pci_config_window *);
+ };
+ 
+-/*
+- * struct to hold the mappings of a config space window. This
+- * is expected to be used as sysdata for PCI controllers that
+- * use ECAM.
+- */
+-struct pci_config_window {
+-	struct resource			res;
+-	struct resource			busr;
+-	void				*priv;
+-	struct pci_ecam_ops		*ops;
+-	union {
+-		void __iomem		*win;	/* 64-bit single mapping */
+-		void __iomem		**winp; /* 32-bit per-bus mapping */
+-	};
+-};
 -
- 	board_time_init = sh_of_time_init;
+ /* create and free pci_config_window */
+ struct pci_config_window *pci_ecam_create(struct device *dev,
+ 		struct resource *cfgres, struct resource *busr,
+diff --git a/include/linux/pci.h b/include/linux/pci.h
+index b67e4df..398896f 100644
+--- a/include/linux/pci.h
++++ b/include/linux/pci.h
+@@ -2026,6 +2026,24 @@ static inline bool pci_ari_enabled(struct pci_bus *bus)
+ 	return bus->self && bus->self->ari_enabled;
+ }
  
- 	sh_mv.mv_name = "Unknown SH model";
-diff --git a/arch/sh/kernel/setup.c b/arch/sh/kernel/setup.c
-index 5b9eb70..86f2792 100644
---- a/arch/sh/kernel/setup.c
-+++ b/arch/sh/kernel/setup.c
-@@ -271,6 +271,13 @@ void __ref sh_fdt_init(phys_addr_t dt_phys)
++/*
++ * struct to hold the mappings of a config space window. This
++ * is expected to be used as sysdata for PCI controllers that
++ * use ECAM.
++ */
++struct pci_ecam_ops;
++
++struct pci_config_window {
++	struct resource			res;
++	struct resource			busr;
++	void				*priv;
++	struct pci_ecam_ops		*ops;
++	union {
++		void __iomem		*win;	/* 64-bit single mapping */
++		void __iomem		**winp; /* 32-bit per-bus mapping */
++	};
++};
++
+ /* provide the legacy pci_dma_* API */
+ #include <linux/pci-dma-compat.h>
  
- void __init setup_arch(char **cmdline_p)
- {
-+#ifdef CONFIG_OF
-+#ifdef CONFIG_USE_BUILTIN_DTB
-+	unflatten_and_copy_device_tree();
-+#else
-+	unflatten_device_tree();
-+#endif
-+#endif
- 	enable_mmu();
- 
- 	ROOT_DEV = old_decode_dev(ORIG_ROOT_DEV);
 -- 
 2.7.0
 
