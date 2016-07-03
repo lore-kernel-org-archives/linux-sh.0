@@ -1,7 +1,7 @@
 From: Yoshinori Sato <ysato@users.sourceforge.jp>
-Date: Sun, 03 Jul 2016 16:46:28 +0000
-Subject: [PATCH v5 08/22] sh: Disable board specific code on device tree mode
-Message-Id: <1467564402-2649-9-git-send-email-ysato@users.sourceforge.jp>
+Date: Sun, 03 Jul 2016 16:46:25 +0000
+Subject: [PATCH v5 05/22] sh: command line passing chosen/bootargs in devicetree
+Message-Id: <1467564402-2649-6-git-send-email-ysato@users.sourceforge.jp>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1467564402-2649-1-git-send-email-ysato@users.sourceforge.jp>
 In-Reply-To: <1467564402-2649-1-git-send-email-ysato@users.sourceforge.jp>
@@ -13,50 +13,43 @@ Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
 
 Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
 ---
- arch/sh/Makefile                | 2 ++
- arch/sh/kernel/cpu/sh4/Makefile | 2 ++
- 2 files changed, 4 insertions(+)
+ arch/sh/kernel/setup.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
-diff --git a/arch/sh/Makefile b/arch/sh/Makefile
-index 3b2c8b4..8adffa8 100644
---- a/arch/sh/Makefile
-+++ b/arch/sh/Makefile
-@@ -132,6 +132,7 @@ core-$(CONFIG_SH_FPU_EMU)	+= arch/sh/math-emu/
+diff --git a/arch/sh/kernel/setup.c b/arch/sh/kernel/setup.c
+index 8e3b099..bdf57e5 100644
+--- a/arch/sh/kernel/setup.c
++++ b/arch/sh/kernel/setup.c
+@@ -280,6 +280,7 @@ void __init setup_arch(char **cmdline_p)
+ #endif
+ 	enable_mmu();
  
- core-$(CONFIG_USE_BUILTIN_DTB)	+= arch/sh/boot/dts/
++#ifndef CONFIG_OF
+ 	ROOT_DEV = old_decode_dev(ORIG_ROOT_DEV);
  
-+ifneq ($(CONFIG_SH_DEVICE_TREE),y)
- # Mach groups
- machdir-$(CONFIG_SOLUTION_ENGINE)		+= mach-se
- machdir-$(CONFIG_SH_HP6XX)			+= mach-hp6xx
-@@ -152,6 +153,7 @@ machdir-$(CONFIG_SH_LANDISK)			+= mach-landisk
- machdir-$(CONFIG_SH_LBOX_RE2)			+= mach-lboxre2
- machdir-$(CONFIG_SH_CAYMAN)			+= mach-cayman
- machdir-$(CONFIG_SH_RSK)			+= mach-rsk
-+endif
+ 	printk(KERN_NOTICE "Boot params:\n"
+@@ -301,6 +302,7 @@ void __init setup_arch(char **cmdline_p)
  
- ifneq ($(machdir-y),)
- core-y	+= $(addprefix arch/sh/boards/, \
-diff --git a/arch/sh/kernel/cpu/sh4/Makefile b/arch/sh/kernel/cpu/sh4/Makefile
-index 3a1dbc7..b822c0c 100644
---- a/arch/sh/kernel/cpu/sh4/Makefile
-+++ b/arch/sh/kernel/cpu/sh4/Makefile
-@@ -14,6 +14,7 @@ perf-$(CONFIG_CPU_SUBTYPE_SH7750)	:= perf_event.o
- perf-$(CONFIG_CPU_SUBTYPE_SH7750S)	:= perf_event.o
- perf-$(CONFIG_CPU_SUBTYPE_SH7091)	:= perf_event.o
+ 	if (!MOUNT_ROOT_RDONLY)
+ 		root_mountflags &= ~MS_RDONLY;
++#endif
+ 	init_mm.start_code = (unsigned long) _text;
+ 	init_mm.end_code = (unsigned long) _etext;
+ 	init_mm.end_data = (unsigned long) _edata;
+@@ -323,9 +325,13 @@ void __init setup_arch(char **cmdline_p)
+ #endif
+ #endif
  
-+ifndef CONFIG_OF
- # CPU subtype setup
- obj-$(CONFIG_CPU_SUBTYPE_SH7750)	+= setup-sh7750.o
- obj-$(CONFIG_CPU_SUBTYPE_SH7750R)	+= setup-sh7750.o
-@@ -31,6 +32,7 @@ endif
++#if !defined(CONFIG_OF) || defined(CONFIG_USE_BUILTIN_DTB)
+ 	/* Save unparsed command line copy for /proc/cmdline */
+ 	memcpy(boot_command_line, command_line, COMMAND_LINE_SIZE);
+ 	*cmdline_p = command_line;
++#else
++	*cmdline_p = boot_command_line;
++#endif
  
- # Additional clocks by subtype
- clock-$(CONFIG_CPU_SUBTYPE_SH4_202)	+= clock-sh4-202.o
-+endif
+ 	parse_early_param();
  
- obj-y					+= $(clock-y)
- obj-$(CONFIG_PERF_EVENTS)		+= $(perf-y)
 -- 
 2.7.0
 
