@@ -1,241 +1,173 @@
-From: Krzysztof Kozlowski <k.kozlowski@samsung.com>
-Date: Wed, 13 Jul 2016 08:39:27 +0000
-Subject: [PATCH v6 00/46] dma-mapping: Use unsigned long for dma_attrs
-Message-Id: <1468399167-28083-1-git-send-email-k.kozlowski@samsung.com>
+From: Yoshinori Sato <ysato@users.sourceforge.jp>
+Date: Sun, 03 Jul 2016 16:46:41 +0000
+Subject: [PATCH v5 21/22] sh: Renesas RTS7751R2Dplus (a.k.a R2Dplus) IRQCHIP Driver
+Message-Id: <1467564402-2649-22-git-send-email-ysato@users.sourceforge.jp>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1467564402-2649-1-git-send-email-ysato@users.sourceforge.jp>
+In-Reply-To: <1467564402-2649-1-git-send-email-ysato@users.sourceforge.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: linux-mips-6z/3iImG2C8G8FEW9MqTrA@public.gmane.org, Krzysztof Kozlowski <k.kozlowski-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>, linux-ia64-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-doc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-pci-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-fbdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dri-devel-PD4FTy7X32lNgt0PjOBp9y5qC8QIuHrW@public.gmane.org, sparclinux-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-samsung-soc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-c6x-dev-jPsnJVOj+W6hPH1hqNUYSQ@public.gmane.org, linux-rdma-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-hexagon-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, linux-rockchip-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, nouveau-PD4FTy7X32lNgt0PjOBp9y5qC8QIuHrW@public.gmane.org, xen-devel-GuqFBffKawtpuQazS67q72D2FQJk+8+b@public.gmane.org, linux-snps-arc-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, linux-media-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-xtensa-PjhNF2WwrV/0Sa2dR60CXw@public.gmane.org, Bartlomiej Zolnierkiewicz <b.zolnierkie-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>, linux-arm-msm-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-m68k-cunTk1MwBs8S/qaLPR03pWD2FQJk+8+b@public.gmane.org, linux-mediatek-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, linux-omap-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-metag-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-arm-kernel-IAPFreCvJWM7uuMidbF8XWGXanvQGlWp@public.gmane.org
+To: devicetree@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
 
-Hi,
+Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
+---
+ .../interrupt-controller/renesas-r2dplus.txt       | 38 ++++++++++
+ drivers/irqchip/Makefile                           |  2 +-
+ drivers/irqchip/irq-renesas-r2dplus.c              | 88 ++++++++++++++++++++++
+ 3 files changed, 127 insertions(+), 1 deletion(-)
+ create mode 100644 Documentation/devicetree/bindings/interrupt-controller/renesas-r2dplus.txt
+ create mode 100644 drivers/irqchip/irq-renesas-r2dplus.c
 
-The fifth version of this patchset was merged by Andrew Morton
-few days ago.  It was rebased on v4.7-rc5 so it missed some ongoing
-changes.
-
-This is just rebase on next-20160713.
-
-
-For easier testing the patchset is available here:
-repo:   https://github.com/krzk/linux
-branch: for-next/dma-attrs-const-v6
-
-
-Changes since v5
-========
-1. New patches:
-   1/46:  [media] mtk-vcodec: Remove unused dma_attrs
-   44/46: remoteproc: qcom: Use unsigned long for dma_attrs
-2. 19/46: rebased on next, some more changes inside
-3. Added accumulated acks: Marek Szyprowski, Richard Kuo,
-   Konrad Rzeszutek Wilk, Daniel Vetter and Joerg Roedel.
-
-
-Changes since v4
-========
-1. Collect some acks. Still need more.
-2. Minor fixes pointed by Robin Murphy.
-3. Applied changes from Bart Van Assche's comment.
-4. More tests and builds (using https://www.kernel.org/pub/tools/crosstool/).
-
-
-Changes since v3
-========
-1. Collect some acks.
-2. Drop wrong patch 1/45 ("powerpc: dma-mapping: Don't hard-code
-   the value of DMA_ATTR_WEAK_ORDERING").
-3. Minor fix pointed out by Michael Ellerman.
-
-
-Changes since v2
-========
-1. Follow Christoph Hellwig's comments (don't use BIT add
-   documentation, remove dma_get_attr).
-
-
-Rationale
-====The dma-mapping core and the implementations do not change the
-DMA attributes passed by pointer.  Thus the pointer can point to const
-data.  However the attributes do not have to be a bitfield. Instead
-unsigned long will do fine:
-
-1. This is just simpler.  Both in terms of reading the code and setting
-   attributes.  Instead of initializing local attributes on the stack
-   and passing pointer to it to dma_set_attr(), just set the bits.
-
-2. It brings safeness and checking for const correctness because the
-   attributes are passed by value.
-
-
-Best regards,
-Krzysztof
-
-
-Krzysztof Kozlowski (46):
-  [media] mtk-vcodec: Remove unused dma_attrs
-  dma-mapping: Use unsigned long for dma_attrs
-  alpha: dma-mapping: Use unsigned long for dma_attrs
-  arc: dma-mapping: Use unsigned long for dma_attrs
-  ARM: dma-mapping: Use unsigned long for dma_attrs
-  arm64: dma-mapping: Use unsigned long for dma_attrs
-  avr32: dma-mapping: Use unsigned long for dma_attrs
-  blackfin: dma-mapping: Use unsigned long for dma_attrs
-  c6x: dma-mapping: Use unsigned long for dma_attrs
-  cris: dma-mapping: Use unsigned long for dma_attrs
-  frv: dma-mapping: Use unsigned long for dma_attrs
-  drm/exynos: dma-mapping: Use unsigned long for dma_attrs
-  drm/mediatek: dma-mapping: Use unsigned long for dma_attrs
-  drm/msm: dma-mapping: Use unsigned long for dma_attrs
-  drm/nouveau: dma-mapping: Use unsigned long for dma_attrs
-  drm/rockship: dma-mapping: Use unsigned long for dma_attrs
-  infiniband: dma-mapping: Use unsigned long for dma_attrs
-  iommu: dma-mapping: Use unsigned long for dma_attrs
-  [media] dma-mapping: Use unsigned long for dma_attrs
-  xen: dma-mapping: Use unsigned long for dma_attrs
-  swiotlb: dma-mapping: Use unsigned long for dma_attrs
-  powerpc: dma-mapping: Use unsigned long for dma_attrs
-  video: dma-mapping: Use unsigned long for dma_attrs
-  x86: dma-mapping: Use unsigned long for dma_attrs
-  iommu: intel: dma-mapping: Use unsigned long for dma_attrs
-  h8300: dma-mapping: Use unsigned long for dma_attrs
-  hexagon: dma-mapping: Use unsigned long for dma_attrs
-  ia64: dma-mapping: Use unsigned long for dma_attrs
-  m68k: dma-mapping: Use unsigned long for dma_attrs
-  metag: dma-mapping: Use unsigned long for dma_attrs
-  microblaze: dma-mapping: Use unsigned long for dma_attrs
-  mips: dma-mapping: Use unsigned long for dma_attrs
-  mn10300: dma-mapping: Use unsigned long for dma_attrs
-  nios2: dma-mapping: Use unsigned long for dma_attrs
-  openrisc: dma-mapping: Use unsigned long for dma_attrs
-  parisc: dma-mapping: Use unsigned long for dma_attrs
-  misc: mic: dma-mapping: Use unsigned long for dma_attrs
-  s390: dma-mapping: Use unsigned long for dma_attrs
-  sh: dma-mapping: Use unsigned long for dma_attrs
-  sparc: dma-mapping: Use unsigned long for dma_attrs
-  tile: dma-mapping: Use unsigned long for dma_attrs
-  unicore32: dma-mapping: Use unsigned long for dma_attrs
-  xtensa: dma-mapping: Use unsigned long for dma_attrs
-  remoteproc: qcom: Use unsigned long for dma_attrs
-  dma-mapping: Remove dma_get_attr
-  dma-mapping: Document the DMA attributes next to the declaration
-
- Documentation/DMA-API.txt                          |  33 +++---
- Documentation/DMA-attributes.txt                   |   2 +-
- arch/alpha/include/asm/dma-mapping.h               |   2 -
- arch/alpha/kernel/pci-noop.c                       |   2 +-
- arch/alpha/kernel/pci_iommu.c                      |  12 +-
- arch/arc/mm/dma.c                                  |  12 +-
- arch/arm/common/dmabounce.c                        |   4 +-
- arch/arm/include/asm/dma-mapping.h                 |  13 +--
- arch/arm/include/asm/xen/page-coherent.h           |  16 +--
- arch/arm/mm/dma-mapping.c                          | 117 +++++++++----------
- arch/arm/xen/mm.c                                  |   8 +-
- arch/arm64/mm/dma-mapping.c                        |  66 +++++------
- arch/avr32/mm/dma-coherent.c                       |  12 +-
- arch/blackfin/kernel/dma-mapping.c                 |   8 +-
- arch/c6x/include/asm/dma-mapping.h                 |   4 +-
- arch/c6x/kernel/dma.c                              |   9 +-
- arch/c6x/mm/dma-coherent.c                         |   4 +-
- arch/cris/arch-v32/drivers/pci/dma.c               |   9 +-
- arch/frv/mb93090-mb00/pci-dma-nommu.c              |   8 +-
- arch/frv/mb93090-mb00/pci-dma.c                    |   9 +-
- arch/h8300/kernel/dma.c                            |   8 +-
- arch/hexagon/include/asm/dma-mapping.h             |   1 -
- arch/hexagon/kernel/dma.c                          |   8 +-
- arch/ia64/hp/common/sba_iommu.c                    |  22 ++--
- arch/ia64/include/asm/machvec.h                    |   1 -
- arch/ia64/kernel/pci-swiotlb.c                     |   4 +-
- arch/ia64/sn/pci/pci_dma.c                         |  22 ++--
- arch/m68k/kernel/dma.c                             |  12 +-
- arch/metag/kernel/dma.c                            |  16 +--
- arch/microblaze/include/asm/dma-mapping.h          |   1 -
- arch/microblaze/kernel/dma.c                       |  12 +-
- arch/mips/cavium-octeon/dma-octeon.c               |   8 +-
- arch/mips/loongson64/common/dma-swiotlb.c          |  10 +-
- arch/mips/mm/dma-default.c                         |  20 ++--
- arch/mips/netlogic/common/nlm-dma.c                |   4 +-
- arch/mn10300/mm/dma-alloc.c                        |   8 +-
- arch/nios2/mm/dma-mapping.c                        |  12 +-
- arch/openrisc/kernel/dma.c                         |  21 ++--
- arch/parisc/kernel/pci-dma.c                       |  18 +--
- arch/powerpc/include/asm/dma-mapping.h             |   7 +-
- arch/powerpc/include/asm/iommu.h                   |  10 +-
- arch/powerpc/kernel/dma-iommu.c                    |  12 +-
- arch/powerpc/kernel/dma.c                          |  18 +--
- arch/powerpc/kernel/ibmebus.c                      |  12 +-
- arch/powerpc/kernel/iommu.c                        |  12 +-
- arch/powerpc/kernel/vio.c                          |  12 +-
- arch/powerpc/platforms/cell/iommu.c                |  28 ++---
- arch/powerpc/platforms/pasemi/iommu.c              |   2 +-
- arch/powerpc/platforms/powernv/npu-dma.c           |   8 +-
- arch/powerpc/platforms/powernv/pci-ioda.c          |   4 +-
- arch/powerpc/platforms/powernv/pci.c               |   2 +-
- arch/powerpc/platforms/powernv/pci.h               |   2 +-
- arch/powerpc/platforms/ps3/system-bus.c            |  18 +--
- arch/powerpc/platforms/pseries/iommu.c             |   6 +-
- arch/powerpc/sysdev/dart_iommu.c                   |   2 +-
- arch/s390/include/asm/dma-mapping.h                |   1 -
- arch/s390/pci/pci_dma.c                            |  23 ++--
- arch/sh/include/asm/dma-mapping.h                  |   4 +-
- arch/sh/kernel/dma-nommu.c                         |   4 +-
- arch/sh/mm/consistent.c                            |   4 +-
- arch/sparc/kernel/iommu.c                          |  12 +-
- arch/sparc/kernel/ioport.c                         |  24 ++--
- arch/sparc/kernel/pci_sun4v.c                      |  12 +-
- arch/tile/kernel/pci-dma.c                         |  28 ++---
- arch/unicore32/mm/dma-swiotlb.c                    |   4 +-
- arch/x86/include/asm/dma-mapping.h                 |   5 +-
- arch/x86/include/asm/swiotlb.h                     |   4 +-
- arch/x86/include/asm/xen/page-coherent.h           |   9 +-
- arch/x86/kernel/amd_gart_64.c                      |  20 ++--
- arch/x86/kernel/pci-calgary_64.c                   |  14 +--
- arch/x86/kernel/pci-dma.c                          |   4 +-
- arch/x86/kernel/pci-nommu.c                        |   4 +-
- arch/x86/kernel/pci-swiotlb.c                      |   4 +-
- arch/x86/pci/sta2x11-fixup.c                       |   2 +-
- arch/x86/pci/vmd.c                                 |  16 +--
- arch/xtensa/kernel/pci-dma.c                       |  12 +-
- drivers/gpu/drm/exynos/exynos_drm_fbdev.c          |   2 +-
- drivers/gpu/drm/exynos/exynos_drm_g2d.c            |  12 +-
- drivers/gpu/drm/exynos/exynos_drm_gem.c            |  20 ++--
- drivers/gpu/drm/exynos/exynos_drm_gem.h            |   2 +-
- drivers/gpu/drm/mediatek/mtk_drm_gem.c             |  13 +--
- drivers/gpu/drm/mediatek/mtk_drm_gem.h             |   2 +-
- drivers/gpu/drm/msm/msm_drv.c                      |  13 +--
- .../gpu/drm/nouveau/nvkm/subdev/instmem/gk20a.c    |  13 +--
- drivers/gpu/drm/rockchip/rockchip_drm_gem.c        |  17 ++-
- drivers/gpu/drm/rockchip/rockchip_drm_gem.h        |   2 +-
- drivers/infiniband/core/umem.c                     |   7 +-
- drivers/iommu/amd_iommu.c                          |  12 +-
- drivers/iommu/dma-iommu.c                          |   8 +-
- drivers/iommu/intel-iommu.c                        |  12 +-
- .../media/platform/mtk-vcodec/mtk_vcodec_enc_drv.c |   4 -
- drivers/media/platform/sti/bdisp/bdisp-hw.c        |  26 ++---
- drivers/media/v4l2-core/videobuf2-dma-contig.c     |  28 ++---
- drivers/media/v4l2-core/videobuf2-dma-sg.c         |  21 +---
- drivers/media/v4l2-core/videobuf2-vmalloc.c        |   2 +-
- drivers/misc/mic/host/mic_boot.c                   |  20 ++--
- drivers/parisc/ccio-dma.c                          |  16 +--
- drivers/parisc/sba_iommu.c                         |  16 +--
- drivers/remoteproc/qcom_q6v5_pil.c                 |   7 +-
- drivers/video/fbdev/omap2/omapfb/omapfb-main.c     |  12 +-
- drivers/video/fbdev/omap2/omapfb/omapfb.h          |   3 +-
- drivers/xen/swiotlb-xen.c                          |  14 +--
- include/linux/dma-attrs.h                          |  71 ------------
- include/linux/dma-iommu.h                          |   6 +-
- include/linux/dma-mapping.h                        | 128 ++++++++++++++-------
- include/linux/swiotlb.h                            |  10 +-
- include/media/videobuf2-core.h                     |   6 +-
- include/media/videobuf2-dma-contig.h               |   2 -
- include/rdma/ib_verbs.h                            |   8 +-
- include/xen/swiotlb-xen.h                          |  12 +-
- lib/dma-noop.c                                     |   9 +-
- lib/swiotlb.c                                      |  13 ++-
- 112 files changed, 694 insertions(+), 798 deletions(-)
- delete mode 100644 include/linux/dma-attrs.h
-
+diff --git a/Documentation/devicetree/bindings/interrupt-controller/renesas-r2dplus.txt b/Documentation/devicetree/bindings/interrupt-controller/renesas-r2dplus.txt
+new file mode 100644
+index 0000000..5b74da4
+--- /dev/null
++++ b/Documentation/devicetree/bindings/interrupt-controller/renesas-r2dplus.txt
+@@ -0,0 +1,38 @@
++DT bindings for the Renesas R0P751RLC0011RL (R2Dplus) interrupt controller
++
++Required properties:
++
++  - compatible: has to be "renesas,r2dplus-intc".
++
++  - reg: Base address and length of interrupt controller register.
++
++  - #interrupt-cells: has to be <1>: an interrupt index.
++
++  - #address-cells: has to be <0>
++
++  - interrupt-map: Interrupt mapping on parent controller.
++
++Example
++-------
++
++	fpgaintc: fpga@a4000000 {
++		compatible = "renesas,r2dplus-intc";
++		#interrupt-cells = <1>;
++		#address-cells = <0>;
++		reg = <0xa4000000 0x40>;
++		interrupt-map=<0 &shintc evt2irq(0x200)>,
++		              <1 &shintc evt2irq(0x220)>,
++		              <2 &shintc evt2irq(0x240)>,
++			      <3 &shintc evt2irq(0x260)>,
++		              <4 &shintc evt2irq(0x280)>,
++			      <5 &shintc evt2irq(0x2a0)>,
++		              <6 &shintc evt2irq(0x2c0)>,
++			      <7 &shintc evt2irq(0x2e0)>,
++		              <8 &shintc evt2irq(0x300)>,
++		              <9 &shintc evt2irq(0x320)>,
++			      <10 &shintc evt2irq(0x340)>,
++		              <11 &shintc evt2irq(0x360)>,
++			      <12 &shintc evt2irq(0x380)>,
++		              <13 &shintc evt2irq(0x3a0)>,
++			      <14 &shintc evt2irq(0x3c0)>,
++	};
+diff --git a/drivers/irqchip/Makefile b/drivers/irqchip/Makefile
+index 5e225cf..1e0f1c3 100644
+--- a/drivers/irqchip/Makefile
++++ b/drivers/irqchip/Makefile
+@@ -69,4 +69,4 @@ obj-$(CONFIG_PIC32_EVIC)		+= irq-pic32-evic.o
+ obj-$(CONFIG_MVEBU_ODMI)		+= irq-mvebu-odmi.o
+ obj-$(CONFIG_LS_SCFG_MSI)		+= irq-ls-scfg-msi.o
+ obj-$(CONFIG_EZNPS_GIC)			+= irq-eznps.o
+-obj-$(CONFIG_RENESAS_SH_INTC)		+= irq-renesas-sh7751.o irq-io-landisk.o
++obj-$(CONFIG_RENESAS_SH_INTC)		+= irq-renesas-sh7751.o irq-io-landisk.o irq-renesas-r2dplus.o
+diff --git a/drivers/irqchip/irq-renesas-r2dplus.c b/drivers/irqchip/irq-renesas-r2dplus.c
+new file mode 100644
+index 0000000..3f80775
+--- /dev/null
++++ b/drivers/irqchip/irq-renesas-r2dplus.c
+@@ -0,0 +1,88 @@
++/*
++ * Renesas RTS7751R2D+ FPGA IRQ driver
++ *
++ * Copyright 2016 Yoshinori Sato <ysato@users.sourceforge.jp>
++ */
++
++#include <linux/init.h>
++#include <linux/irq.h>
++#include <linux/irqchip.h>
++#include <linux/irqdomain.h>
++#include <linux/of_address.h>
++#include <linux/of_irq.h>
++#include <linux/io.h>
++
++static const u16 mask_bit[] = {
++	BIT(11),
++	BIT(9),
++	BIT(8),
++	BIT(12),
++	BIT(10),
++	BIT(6),
++	BIT(5),
++	BIT(4),
++	BIT(7),
++	BIT(14),
++	BIT(13),
++	BIT(0),
++	BIT(15),
++};
++
++static void r2dplus_mask_irq(struct irq_data *data)
++{
++	u16 mask = __raw_readw(data->chip_data);
++
++	mask &= ~mask_bit[data->irq];
++	__raw_writew(mask, data->chip_data);
++}
++
++static void r2dplus_unmask_irq(struct irq_data *data)
++{
++	u16 mask = __raw_readw(data->chip_data);
++
++	mask |= mask_bit[data->irq];
++	__raw_writew(mask, data->chip_data);
++}
++
++static struct irq_chip fpga_irq_chip = {
++	.name		= "R2DPLUS-FPGA",
++	.irq_unmask	= r2dplus_unmask_irq,
++	.irq_mask	= r2dplus_mask_irq,
++};
++
++static int fpga_map(struct irq_domain *d, unsigned int virq,
++		    irq_hw_number_t hw_irq_num)
++{
++	irq_set_chip_and_handler(virq, &fpga_irq_chip,
++				 handle_simple_irq);
++	irq_set_chip_data(virq, d->host_data);
++
++	return 0;
++}
++
++static struct irq_domain_ops irq_ops = {
++	.xlate	= irq_domain_xlate_onecell,
++	.map	= fpga_map,
++};
++
++static int __init r2dplus_intc_of_init(struct device_node *intc,
++				    struct device_node *parent)
++{
++	struct irq_domain *domain, *pdomain;
++	int num_irqpin;
++	void *baseaddr;
++
++	baseaddr = of_iomap(intc, 0);
++	pdomain = irq_find_host(parent);
++	of_get_property(intc, "interrupt-map", &num_irqpin);
++	num_irqpin /= sizeof(u32) * 3;
++	domain = irq_domain_create_hierarchy(pdomain, 0, num_irqpin,
++					     of_node_to_fwnode(intc),
++					     &irq_ops, baseaddr);
++	if (!domain)
++		panic("%s: unable to create IRQ domain\n", intc->full_name);
++	irq_domain_associate_many(domain, 0, 0, 16);
++	return 0;
++}
++
++IRQCHIP_DECLARE(cpld_intc, "renesas,r2dplus-intc", r2dplus_intc_of_init);
 -- 
-1.9.1
+2.7.0
 
