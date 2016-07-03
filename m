@@ -1,87 +1,62 @@
-From: "Luis R. Rodriguez" <mcgrof@kernel.org>
-Date: Fri, 22 Jul 2016 21:24:37 +0000
-Subject: [RFC v3 03/13] scripts/module-common.lds: enable generation
-Message-Id: <1469222687-1600-4-git-send-email-mcgrof@kernel.org>
+From: Yoshinori Sato <ysato@users.sourceforge.jp>
+Date: Sun, 03 Jul 2016 16:46:28 +0000
+Subject: [PATCH v5 08/22] sh: Disable board specific code on device tree mode
+Message-Id: <1467564402-2649-9-git-send-email-ysato@users.sourceforge.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1469222687-1600-1-git-send-email-mcgrof@kernel.org>
-In-Reply-To: <1469222687-1600-1-git-send-email-mcgrof@kernel.org>
+References: <1467564402-2649-1-git-send-email-ysato@users.sourceforge.jp>
+In-Reply-To: <1467564402-2649-1-git-send-email-ysato@users.sourceforge.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: hpa@zytor.com, tglx@linutronix.de, mingo@redhat.com, bp@alien8.de, linux@arm.linux.org.uk, mhiramat@kernel.org, masami.hiramatsu.pt@hitachi.com, jbaron@akamai.com, heiko.carstens@de.ibm.com, ananth@linux.vnet.ibm.com, anil.s.keshavamurthy@intel.com, davem@davemloft.net, realmz6@gmail.com
-Cc: x86@kernel.org, luto@amacapital.net, keescook@chromium.org, torvalds@linux-foundation.org, gregkh@linuxfoundation.org, rusty@rustcorp.com.au, gnomes@lxorguk.ukuu.org.uk, alan@linux.intel.com, dwmw2@infradead.org, arnd@arndb.de, ming.lei@canonical.com, linux-arch@vger.kernel.org, benh@kernel.crashing.org, ananth@in.ibm.com, pebolle@tiscali.nl, fontana@sharpeleven.org, ciaran.farrell@suse.com, christopher.denicolo@suse.com, david.vrabel@citrix.com, konrad.wilk@oracle.com, mcb30@ipxe.org, jgross@suse.com, andrew.cooper3@citrix.com, andriy.shevchenko@linux.intel.com, paul.gortmaker@windriver.com, xen-devel@lists.xensource.com, ak@linux.intel.com, pali.rohar@gmail.com, dvhart@infradead.org, platform-driver-x86@vger.kernel.org, mmarek@suse.com, linux@rasmusvillemoes.dk, jkosina@suse.cz, korea.drzix@gmail.com, linux-kbuild@vger.kernel.org, tony.luck@intel.com, akpm@linux-foun
+To: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
 
-scripts/module-common.lds is currently pretty static, in the
-future this may change and we will want access to kernel macros
-to help expands certain areas. To get access to use macros we
-need to generate module-common.lds from module-common.lds.S, for
-now though only enable the generation. We'll later expand on this
-as needed.
-
-Since this file is now generated add it to .gitignore.
-
-v3: new to this series
-
-Signed-off-by: Luis R. Rodriguez <mcgrof@kernel.org>
+Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
 ---
- .gitignore                                         | 2 ++
- Makefile                                           | 6 +++++-
- scripts/Makefile.modpost                           | 2 +-
- scripts/{module-common.lds => module-common.lds.S} | 0
- 4 files changed, 8 insertions(+), 2 deletions(-)
- rename scripts/{module-common.lds => module-common.lds.S} (100%)
+ arch/sh/Makefile                | 2 ++
+ arch/sh/kernel/cpu/sh4/Makefile | 2 ++
+ 2 files changed, 4 insertions(+)
 
-diff --git a/.gitignore b/.gitignore
-index 2be25f771bd8..14a94d939a6f 100644
---- a/.gitignore
-+++ b/.gitignore
-@@ -113,3 +113,5 @@ all.config
+diff --git a/arch/sh/Makefile b/arch/sh/Makefile
+index 3b2c8b4..8adffa8 100644
+--- a/arch/sh/Makefile
++++ b/arch/sh/Makefile
+@@ -132,6 +132,7 @@ core-$(CONFIG_SH_FPU_EMU)	+= arch/sh/math-emu/
  
- # Kdevelop4
- *.kdev4
-+
-+scripts/module-common.lds
-diff --git a/Makefile b/Makefile
-index caa33e007a8c..c56cca906769 100644
---- a/Makefile
-+++ b/Makefile
-@@ -408,6 +408,10 @@ KBUILD_AFLAGS_MODULE  := -DMODULE
- KBUILD_CFLAGS_MODULE  := -DMODULE
- KBUILD_LDFLAGS_MODULE := -T $(srctree)/scripts/module-common.lds
+ core-$(CONFIG_USE_BUILTIN_DTB)	+= arch/sh/boot/dts/
  
-+$(srctree)/scripts/module-common.lds: $(srctree)/scripts/module-common.lds.S
-+	$(Q)$(CC) $(CFLAGS) $(INCLUDES) $(LINUXINCLUDE) -E -P \
-+		-D__ASSEMBLY__ -DLINKER_SCRIPT -o $@ $<
-+
- # Read KERNELRELEASE from include/config/kernel.release (if it exists)
- KERNELRELEASE = $(shell cat include/config/kernel.release 2> /dev/null)
- KERNELVERSION = $(VERSION)$(if $(PATCHLEVEL),.$(PATCHLEVEL)$(if $(SUBLEVEL),.$(SUBLEVEL)))$(EXTRAVERSION)
-@@ -1178,7 +1182,7 @@ all: modules
- # using awk while concatenating to the final file.
++ifneq ($(CONFIG_SH_DEVICE_TREE),y)
+ # Mach groups
+ machdir-$(CONFIG_SOLUTION_ENGINE)		+= mach-se
+ machdir-$(CONFIG_SH_HP6XX)			+= mach-hp6xx
+@@ -152,6 +153,7 @@ machdir-$(CONFIG_SH_LANDISK)			+= mach-landisk
+ machdir-$(CONFIG_SH_LBOX_RE2)			+= mach-lboxre2
+ machdir-$(CONFIG_SH_CAYMAN)			+= mach-cayman
+ machdir-$(CONFIG_SH_RSK)			+= mach-rsk
++endif
  
- PHONY += modules
--modules: $(vmlinux-dirs) $(if $(KBUILD_BUILTIN),vmlinux) modules.builtin
-+modules: $(srctree)/scripts/module-common.lds $(vmlinux-dirs) $(if $(KBUILD_BUILTIN),vmlinux) modules.builtin
- 	$(Q)$(AWK) '!x[$$0]++' $(vmlinux-dirs:%=$(objtree)/%/modules.order) > $(objtree)/modules.order
- 	@$(kecho) '  Building modules, stage 2.';
- 	$(Q)$(MAKE) -f $(srctree)/scripts/Makefile.modpost
-diff --git a/scripts/Makefile.modpost b/scripts/Makefile.modpost
-index 1366a94b6c39..2d8aff7735d6 100644
---- a/scripts/Makefile.modpost
-+++ b/scripts/Makefile.modpost
-@@ -121,7 +121,7 @@ quiet_cmd_ld_ko_o = LD [M]  $@
-                              $(KBUILD_LDFLAGS_MODULE) $(LDFLAGS_MODULE) \
-                              -o $@ $(filter-out FORCE,$^)
+ ifneq ($(machdir-y),)
+ core-y	+= $(addprefix arch/sh/boards/, \
+diff --git a/arch/sh/kernel/cpu/sh4/Makefile b/arch/sh/kernel/cpu/sh4/Makefile
+index 3a1dbc7..b822c0c 100644
+--- a/arch/sh/kernel/cpu/sh4/Makefile
++++ b/arch/sh/kernel/cpu/sh4/Makefile
+@@ -14,6 +14,7 @@ perf-$(CONFIG_CPU_SUBTYPE_SH7750)	:= perf_event.o
+ perf-$(CONFIG_CPU_SUBTYPE_SH7750S)	:= perf_event.o
+ perf-$(CONFIG_CPU_SUBTYPE_SH7091)	:= perf_event.o
  
--$(modules): %.ko :%.o %.mod.o FORCE
-+$(modules): %.ko : $(srctree)/scripts/module-common.lds %.o %.mod.o FORCE
- 	$(call if_changed,ld_ko_o)
++ifndef CONFIG_OF
+ # CPU subtype setup
+ obj-$(CONFIG_CPU_SUBTYPE_SH7750)	+= setup-sh7750.o
+ obj-$(CONFIG_CPU_SUBTYPE_SH7750R)	+= setup-sh7750.o
+@@ -31,6 +32,7 @@ endif
  
- targets += $(modules)
-diff --git a/scripts/module-common.lds b/scripts/module-common.lds.S
-similarity index 100%
-rename from scripts/module-common.lds
-rename to scripts/module-common.lds.S
+ # Additional clocks by subtype
+ clock-$(CONFIG_CPU_SUBTYPE_SH4_202)	+= clock-sh4-202.o
++endif
+ 
+ obj-y					+= $(clock-y)
+ obj-$(CONFIG_PERF_EVENTS)		+= $(perf-y)
 -- 
-2.8.4
+2.7.0
 
