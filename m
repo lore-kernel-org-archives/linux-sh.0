@@ -1,39 +1,47 @@
-From: Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>
-Date: Fri, 08 Jul 2016 16:43:43 +0000
-Subject: [PATCH] sh: sdk7786_defconfig: disable IDE subsystem
-Message-Id: <1467996225-25498-4-git-send-email-b.zolnierkie@samsung.com>
+From: Yoshinori Sato <ysato@users.sourceforge.jp>
+Date: Sun, 03 Jul 2016 16:46:23 +0000
+Subject: [PATCH v5 03/22] sh: set preset_lpj
+Message-Id: <1467564402-2649-4-git-send-email-ysato@users.sourceforge.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1467996225-25498-1-git-send-email-b.zolnierkie@samsung.com>
-In-Reply-To: <1467996225-25498-1-git-send-email-b.zolnierkie@samsung.com>
+References: <1467564402-2649-1-git-send-email-ysato@users.sourceforge.jp>
+In-Reply-To: <1467564402-2649-1-git-send-email-ysato@users.sourceforge.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
-Cc: linux-ide@vger.kernel.org, linux-kernel@vger.kernel.org, b.zolnierkie@samsung.com
+To: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
 
-This patch disables deprecated IDE subsystem in sdk7786_defconfig
-(this config already enables pata_platform host driver which
-supersedes ide_platform one).
+Generic callibrate delay required this value.
 
-Signed-off-by: Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>
+Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
 ---
- arch/sh/configs/sdk7786_defconfig | 3 ---
- 1 file changed, 3 deletions(-)
+ arch/sh/boards/of-generic.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
-diff --git a/arch/sh/configs/sdk7786_defconfig b/arch/sh/configs/sdk7786_defconfig
-index 280695c..10123c8 100644
---- a/arch/sh/configs/sdk7786_defconfig
-+++ b/arch/sh/configs/sdk7786_defconfig
-@@ -120,9 +120,6 @@ CONFIG_BLK_DEV_LOOP=y
- CONFIG_BLK_DEV_CRYPTOLOOP=y
- CONFIG_BLK_DEV_RAM=y
- # CONFIG_MISC_DEVICES is not set
--CONFIG_IDE=y
--CONFIG_BLK_DEV_IDECD=y
--CONFIG_BLK_DEV_PLATFORM=y
- CONFIG_BLK_DEV_SD=y
- CONFIG_BLK_DEV_SR=y
- CONFIG_SCSI_MULTI_LUN=y
+diff --git a/arch/sh/boards/of-generic.c b/arch/sh/boards/of-generic.c
+index 3db4294..2d3cda3 100644
+--- a/arch/sh/boards/of-generic.c
++++ b/arch/sh/boards/of-generic.c
+@@ -128,6 +128,8 @@ static void __init sh_of_time_init(void)
+ static void __init sh_of_setup(char **cmdline_p)
+ {
+ 	struct device_node *root;
++	struct device_node *cpu;
++	u32 freq;
+ 
+ 	board_time_init = sh_of_time_init;
+ 
+@@ -139,6 +141,10 @@ static void __init sh_of_setup(char **cmdline_p)
+ 	}
+ 
+ 	sh_of_smp_probe();
++
++	cpu = of_find_node_by_name(NULL, "cpu");
++	if (!of_property_read_u32(cpu, "clock-frequency", &freq))
++		preset_lpj = freq / CONFIG_HZ / 2;
+ }
+ 
+ static int sh_of_irq_demux(int irq)
 -- 
-1.9.1
+2.7.0
 
