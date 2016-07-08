@@ -1,50 +1,38 @@
-From: Yoshinori Sato <ysato@users.sourceforge.jp>
-Date: Sun, 03 Jul 2016 16:46:26 +0000
-Subject: [PATCH v5 06/22] sh: FDT address save before bank change
-Message-Id: <1467564402-2649-7-git-send-email-ysato@users.sourceforge.jp>
+From: Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>
+Date: Fri, 08 Jul 2016 16:43:41 +0000
+Subject: [PATCH] sh: microdev_defconfig: disable IDE subsystem
+Message-Id: <1467996225-25498-2-git-send-email-b.zolnierkie@samsung.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1467564402-2649-1-git-send-email-ysato@users.sourceforge.jp>
-In-Reply-To: <1467564402-2649-1-git-send-email-ysato@users.sourceforge.jp>
+References: <1467996225-25498-1-git-send-email-b.zolnierkie@samsung.com>
+In-Reply-To: <1467996225-25498-1-git-send-email-b.zolnierkie@samsung.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+To: linux-sh@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+Cc: linux-ide@vger.kernel.org, linux-kernel@vger.kernel.org, b.zolnierkie@samsung.com
 
-SH3/4 have register bank of R0-R7.
-Preset FDT address assigned bank depend on boot loader.
-Before setting a bank because we don't depend on a boot loader, it's evacuated.
+This patch disables deprecated IDE subsystem in microdev_defconfig
+(no IDE host drivers are selected in this config so there is no
+valid reason to enable IDE subsystem itself).
 
-Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
+Signed-off-by: Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>
 ---
- arch/sh/kernel/head_32.S | 7 +++----
- 1 file changed, 3 insertions(+), 4 deletions(-)
+ arch/sh/configs/microdev_defconfig | 2 --
+ 1 file changed, 2 deletions(-)
 
-diff --git a/arch/sh/kernel/head_32.S b/arch/sh/kernel/head_32.S
-index 974bc15..ef44fe8 100644
---- a/arch/sh/kernel/head_32.S
-+++ b/arch/sh/kernel/head_32.S
-@@ -58,6 +58,9 @@ ENTRY(empty_zero_page)
-  *
-  */
- ENTRY(_stext)
-+#ifdef CONFIG_OF
-+	mov	r4, r12		! Store device tree blob pointer
-+#endif
- 	!			Initialize Status Register
- 	mov.l	1f, r0		! MD=1, RB=0, BL=0, IMASK=0xF
- 	ldc	r0, sr
-@@ -67,10 +70,6 @@ ENTRY(_stext)
- 	ldc	r0, r6_bank
- #endif
- 
--#ifdef CONFIG_OF
--	mov	r4, r12		! Store device tree blob pointer in r12
--#endif
--	
- 	/*
- 	 * Prefetch if possible to reduce cache miss penalty.
- 	 *
+diff --git a/arch/sh/configs/microdev_defconfig b/arch/sh/configs/microdev_defconfig
+index f1d2e1b..1c4bcbd 100644
+--- a/arch/sh/configs/microdev_defconfig
++++ b/arch/sh/configs/microdev_defconfig
+@@ -24,8 +24,6 @@ CONFIG_IP_PNP=y
+ CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
+ # CONFIG_FW_LOADER is not set
+ CONFIG_BLK_DEV_RAM=y
+-CONFIG_IDE=y
+-CONFIG_BLK_DEV_IDECD=y
+ CONFIG_NETDEVICES=y
+ CONFIG_NET_ETHERNET=y
+ CONFIG_SMC91X=y
 -- 
-2.7.0
+1.9.1
 
