@@ -1,72 +1,63 @@
-From: "Luis R. Rodriguez" <mcgrof@kernel.org>
-Date: Fri, 22 Jul 2016 21:24:35 +0000
-Subject: [RFC v3 01/13] x86: remove LTO_REFERENCE_INITCALL()
-Message-Id: <1469222687-1600-2-git-send-email-mcgrof@kernel.org>
+From: Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>
+Date: Fri, 08 Jul 2016 16:43:42 +0000
+Subject: [RFT PATCH] sh: sdk7780_defconfig: convert to use libata PATA drivers
+Message-Id: <1467996225-25498-3-git-send-email-b.zolnierkie@samsung.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1469222687-1600-1-git-send-email-mcgrof@kernel.org>
-In-Reply-To: <1469222687-1600-1-git-send-email-mcgrof@kernel.org>
+References: <1467996225-25498-1-git-send-email-b.zolnierkie@samsung.com>
+In-Reply-To: <1467996225-25498-1-git-send-email-b.zolnierkie@samsung.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: hpa@zytor.com, tglx@linutronix.de, mingo@redhat.com, bp@alien8.de, linux@arm.linux.org.uk, mhiramat@kernel.org, masami.hiramatsu.pt@hitachi.com, jbaron@akamai.com, heiko.carstens@de.ibm.com, ananth@linux.vnet.ibm.com, anil.s.keshavamurthy@intel.com, davem@davemloft.net, realmz6@gmail.com
-Cc: x86@kernel.org, luto@amacapital.net, keescook@chromium.org, torvalds@linux-foundation.org, gregkh@linuxfoundation.org, rusty@rustcorp.com.au, gnomes@lxorguk.ukuu.org.uk, alan@linux.intel.com, dwmw2@infradead.org, arnd@arndb.de, ming.lei@canonical.com, linux-arch@vger.kernel.org, benh@kernel.crashing.org, ananth@in.ibm.com, pebolle@tiscali.nl, fontana@sharpeleven.org, ciaran.farrell@suse.com, christopher.denicolo@suse.com, david.vrabel@citrix.com, konrad.wilk@oracle.com, mcb30@ipxe.org, jgross@suse.com, andrew.cooper3@citrix.com, andriy.shevchenko@linux.intel.com, paul.gortmaker@windriver.com, xen-devel@lists.xensource.com, ak@linux.intel.com, pali.rohar@gmail.com, dvhart@infradead.org, platform-driver-x86@vger.kernel.org, mmarek@suse.com, linux@rasmusvillemoes.dk, jkosina@suse.cz, korea.drzix@gmail.com, linux-kbuild@vger.kernel.org, tony.luck@intel.com, akpm@linux-foun
+To: linux-sh@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+Cc: linux-ide@vger.kernel.org, linux-kernel@vger.kernel.org, b.zolnierkie@samsung.com
 
-The setup for LTO never made it upstream, and although this has
-some users, this is now really old stuff for a gcc 4.7 LTO problem.
-We know that at least LTO_REFERENCE_INITCALL() work around can
-be removed if LTO is not supported on v4.7 anymore.
+IDE subsystem has been deprecated since 2009 and the majority
+(if not all) of Linux distributions have switched to use
+libata for ATA support exclusively.  However there are still
+some users (mostly old or/and embedded non-x86 systems) that
+have not converted from using IDE subsystem to libata PATA
+drivers.  This doesn't seem to be good thing in the long-term
+for Linux as while there is less and less PATA systems left
+in use:
 
-As per Andi the DISABLE_LTO and LTO_CFLAGS are still neeeded though.
+* testing efforts are divided between two subsystems
 
-v3: added to this series, removing LTO_REFERENCE_INITCALL()
-    justifies that other future similar macros do not need
-    a respective LTO_REFERENCE_INITCALL() on them therefore
-    simplifying new code.
+* having duplicate drivers for same hardware confuses users
 
-Acked-by: Andi Kleen <ak@linux.intel.com>
-Signed-off-by: Luis R. Rodriguez <mcgrof@kernel.org>
+This patch converts sdk7780_defconfig to use libata PATA
+drivers.
+
+Signed-off-by: Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>
 ---
- include/linux/init.h | 20 +-------------------
- 1 file changed, 1 insertion(+), 19 deletions(-)
+Build tested only.
+If you have affected hardware please test.  Thank you.
 
-diff --git a/include/linux/init.h b/include/linux/init.h
-index 1e5c131d5c9a..aa662ad80d9c 100644
---- a/include/linux/init.h
-+++ b/include/linux/init.h
-@@ -151,23 +151,6 @@ extern bool initcall_debug;
- 
- #ifndef __ASSEMBLY__
- 
--#ifdef CONFIG_LTO
--/* Work around a LTO gcc problem: when there is no reference to a variable
-- * in a module it will be moved to the end of the program. This causes
-- * reordering of initcalls which the kernel does not like.
-- * Add a dummy reference function to avoid this. The function is
-- * deleted by the linker.
-- */
--#define LTO_REFERENCE_INITCALL(x) \
--	; /* yes this is needed */			\
--	static __used __exit void *reference_##x(void)	\
--	{						\
--		return &x;				\
--	}
--#else
--#define LTO_REFERENCE_INITCALL(x)
--#endif
--
- /* initcalls are now grouped by functionality into separate 
-  * subsections. Ordering inside the subsections is determined
-  * by link order. 
-@@ -180,8 +163,7 @@ extern bool initcall_debug;
- 
- #define __define_initcall(fn, id) \
- 	static initcall_t __initcall_##fn##id __used \
--	__attribute__((__section__(".initcall" #id ".init"))) = fn; \
--	LTO_REFERENCE_INITCALL(__initcall_##fn##id)
-+	__attribute__((__section__(".initcall" #id ".init"))) = fn;
- 
- /*
-  * Early initcalls run before initializing SMP.
+ arch/sh/configs/sdk7780_defconfig | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
+
+diff --git a/arch/sh/configs/sdk7780_defconfig b/arch/sh/configs/sdk7780_defconfig
+index bbd4c22..4baa4a7 100644
+--- a/arch/sh/configs/sdk7780_defconfig
++++ b/arch/sh/configs/sdk7780_defconfig
+@@ -48,16 +48,14 @@ CONFIG_PARPORT=y
+ CONFIG_BLK_DEV_LOOP=y
+ CONFIG_BLK_DEV_RAM=y
+ # CONFIG_MISC_DEVICES is not set
+-CONFIG_IDE=y
+-CONFIG_BLK_DEV_IDECD=y
+-CONFIG_BLK_DEV_PLATFORM=y
+-CONFIG_BLK_DEV_GENERIC=y
+ CONFIG_BLK_DEV_SD=y
+ CONFIG_BLK_DEV_SR=y
+ CONFIG_CHR_DEV_SG=y
+ CONFIG_SCSI_SPI_ATTRS=y
+ CONFIG_SCSI_FC_ATTRS=y
+ CONFIG_ATA=y
++CONFIG_PATA_PLATFORM=y
++CONFIG_ATA_GENERIC=y
+ CONFIG_MD=y
+ CONFIG_BLK_DEV_DM=y
+ CONFIG_NETDEVICES=y
 -- 
-2.8.4
+1.9.1
 
