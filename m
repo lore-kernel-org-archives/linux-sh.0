@@ -1,49 +1,39 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 25 Jul 2016 02:29:37 +0000
-Subject: [GIT PULL] SH Drivers Updates for v4.8
-Message-Id: <cover.1469413328.git.horms+renesas@verge.net.au>
+From: Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>
+Date: Fri, 08 Jul 2016 16:43:43 +0000
+Subject: [PATCH] sh: sdk7786_defconfig: disable IDE subsystem
+Message-Id: <1467996225-25498-4-git-send-email-b.zolnierkie@samsung.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1467996225-25498-1-git-send-email-b.zolnierkie@samsung.com>
+In-Reply-To: <1467996225-25498-1-git-send-email-b.zolnierkie@samsung.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: linux-renesas-soc@vger.kernel.org, linux-kernel@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, Simon Horman <horms+renesas@verge.net.au>
+To: linux-sh@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+Cc: linux-ide@vger.kernel.org, linux-kernel@vger.kernel.org, b.zolnierkie@samsung.com
 
-Hi Linus,
+This patch disables deprecated IDE subsystem in sdk7786_defconfig
+(this config already enables pata_platform host driver which
+supersedes ide_platform one).
 
-Please consider these SH drivers updates for v4.8.
+Signed-off-by: Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>
+---
+ arch/sh/configs/sdk7786_defconfig | 3 ---
+ 1 file changed, 3 deletions(-)
 
-I expect this to be my last pull request for these drivers as
-it removes usage of them from Renesas ARM Based SoCs and my
-co-maintenance of them.
+diff --git a/arch/sh/configs/sdk7786_defconfig b/arch/sh/configs/sdk7786_defconfig
+index 280695c..10123c8 100644
+--- a/arch/sh/configs/sdk7786_defconfig
++++ b/arch/sh/configs/sdk7786_defconfig
+@@ -120,9 +120,6 @@ CONFIG_BLK_DEV_LOOP=y
+ CONFIG_BLK_DEV_CRYPTOLOOP=y
+ CONFIG_BLK_DEV_RAM=y
+ # CONFIG_MISC_DEVICES is not set
+-CONFIG_IDE=y
+-CONFIG_BLK_DEV_IDECD=y
+-CONFIG_BLK_DEV_PLATFORM=y
+ CONFIG_BLK_DEV_SD=y
+ CONFIG_BLK_DEV_SR=y
+ CONFIG_SCSI_MULTI_LUN=y
+-- 
+1.9.1
 
-The drivers are still used by some SH SoCs and listed under SUPERH
-in the MAINTAINERS file.
-
-
-The following changes since commit 1a695a905c18548062509178b98bc91e67510864:
-
-  Linux 4.7-rc1 (2016-05-29 09:29:24 -0700)
-
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-sh-drivers-for-v4.8
-
-for you to fetch changes up to 3fd0498b842f2932558797ec297dc30f6eb5cec0:
-
-  MAINTAINERS: Drop drivers/sh/ for Renesas ARM (2016-05-30 09:41:39 +0900)
-
-----------------------------------------------------------------
-SH Drivers Updates for v4.8
-
-* Drop us of SH Drivers on Renesas ARM Based SoCs
-
-----------------------------------------------------------------
-Geert Uytterhoeven (2):
-      drivers: sh: Stop using the legacy clock domain on ARM
-      MAINTAINERS: Drop drivers/sh/ for Renesas ARM
-
- MAINTAINERS             | 1 -
- drivers/Makefile        | 1 -
- drivers/sh/pm_runtime.c | 9 ---------
- 3 files changed, 11 deletions(-)
