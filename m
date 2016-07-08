@@ -1,22 +1,37 @@
-From: Rob Herring <robh@kernel.org>
-Date: Fri, 29 Jul 2016 20:45:52 +0000
-Subject: Re: [PATCH v5 1/2] of: add J-Core interrupt controller bindings
-Message-Id: <20160729204552.GA9546@rob-hp-laptop>
+From: Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>
+Date: Fri, 08 Jul 2016 16:43:44 +0000
+Subject: [PATCH] sh: se7750_defconfig: disable IDE subsystem
+Message-Id: <1467996225-25498-5-git-send-email-b.zolnierkie@samsung.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1469688756.git.dalias@libc.org>
- <1ca2ecb9445cf3a3d252ab89122a9b5c6dbb5491.1469688756.git.dalias@libc.org>
-In-Reply-To: <1ca2ecb9445cf3a3d252ab89122a9b5c6dbb5491.1469688756.git.dalias@libc.org>
+References: <1467996225-25498-1-git-send-email-b.zolnierkie@samsung.com>
+In-Reply-To: <1467996225-25498-1-git-send-email-b.zolnierkie@samsung.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Rich Felker <dalias@libc.org>
-Cc: linux-kernel@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Thomas Gleixner <tglx@linutronix.de>, Jason Cooper <jason@lakedaemon.net>, Marc Zyngier <marc.zyngier@arm.com>, Mark Rutland <mark.rutland@arm.com>
+To: linux-sh@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+Cc: linux-ide@vger.kernel.org, linux-kernel@vger.kernel.org, b.zolnierkie@samsung.com
 
-On Tue, May 17, 2016 at 11:18:29PM +0000, Rich Felker wrote:
-> Signed-off-by: Rich Felker <dalias@libc.org>
-> ---
->  .../bindings/interrupt-controller/jcore,aic.txt    | 26 ++++++++++++++++++++++
->  1 file changed, 26 insertions(+)
->  create mode 100644 Documentation/devicetree/bindings/interrupt-controller/jcore,aic.txt
+This patch disables deprecated IDE subsystem in se7750_defconfig
+(no IDE host drivers are selected in this config so there is no
+valid reason to enable IDE subsystem itself).
 
-Acked-by: Rob Herring <robh@kernel.org>
+Signed-off-by: Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>
+---
+ arch/sh/configs/se7750_defconfig | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/arch/sh/configs/se7750_defconfig b/arch/sh/configs/se7750_defconfig
+index 912c985..88b81b7 100644
+--- a/arch/sh/configs/se7750_defconfig
++++ b/arch/sh/configs/se7750_defconfig
+@@ -34,7 +34,6 @@ CONFIG_MTD_BLOCK=y
+ CONFIG_MTD_CFI=y
+ CONFIG_MTD_CFI_AMDSTD=y
+ CONFIG_MTD_ROM=y
+-CONFIG_IDE=y
+ CONFIG_SCSI=y
+ CONFIG_NETDEVICES=y
+ CONFIG_NET_ETHERNET=y
+-- 
+1.9.1
+
