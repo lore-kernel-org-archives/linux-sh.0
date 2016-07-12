@@ -1,1086 +1,250 @@
-From: Yoshinori Sato <ysato@users.sourceforge.jp>
-Date: Wed, 06 Jul 2016 16:17:44 +0000
-Subject: Re: [PATCH v5 15/22] sh: Move common PCI stuff to arch/sh/kernel
-Message-Id: <871t36n3kn.wl-ysato@users.sourceforge.jp>
+From: Daniel Vetter <daniel@ffwll.ch>
+Date: Tue, 12 Jul 2016 12:16:25 +0000
+Subject: Re: [PATCH v5 00/44] dma-mapping: Use unsigned long for dma_attrs
+Message-Id: <20160712121625.GP23520@phenom.ffwll.local>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1467564402-2649-1-git-send-email-ysato@users.sourceforge.jp>
-	<1467564402-2649-16-git-send-email-ysato@users.sourceforge.jp>
-	<20160704015512.GP15995@brightrain.aerifal.cx>
-In-Reply-To: <20160704015512.GP15995@brightrain.aerifal.cx>
+References: <1467275019-30789-1-git-send-email-k.kozlowski@samsung.com>
+In-Reply-To: <1467275019-30789-1-git-send-email-k.kozlowski-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Rich Felker <dalias@libc.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Krzysztof Kozlowski <k.kozlowski-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>
+Cc: linux-mips-6z/3iImG2C8G8FEW9MqTrA@public.gmane.org, linux-fbdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-ia64-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-doc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-pci-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dri-devel-PD4FTy7X32lNgt0PjOBp9y5qC8QIuHrW@public.gmane.org, sparclinux-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-samsung-soc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-c6x-dev-jPsnJVOj+W6hPH1hqNUYSQ@public.gmane.org, linux-rdma-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-hexagon-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, linux-rockchip-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, nouveau-PD4FTy7X32lNgt0PjOBp9y5qC8QIuHrW@public.gmane.org, xen-devel-GuqFBffKawtpuQazS67q72D2FQJk+8+b@public.gmane.org, linux-snps-arc-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, linux-media-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-xtensa-PjhNF2WwrV/0Sa2dR60CXw@public.gmane.org, Bartlomiej Zolnierkiewicz <b.zolnierkie-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>, linux-arm-msm-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-m68k-cunTk1MwBs8S/qaLPR03pWD2FQJk+8+b@public.gmane.org, linux-mediatek-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, linux-omap-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-metag-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, linux-cris-kernel-VrBV9hrLPhE@public.gmane.org, linux-parisc@vg
 
-On Mon, 04 Jul 2016 10:55:12 +0900,
-Rich Felker wrote:
+On Thu, Jun 30, 2016 at 10:23:39AM +0200, Krzysztof Kozlowski wrote:
+> Hi,
 > 
-> On Mon, Jul 04, 2016 at 01:46:35AM +0900, Yoshinori Sato wrote:
-> > Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
-> > ---
-> >  arch/sh/drivers/pci/Makefile |   2 -
-> >  arch/sh/drivers/pci/common.c | 162 --------------------
-> >  arch/sh/drivers/pci/pci.c    | 320 ----------------------------------------
-> >  arch/sh/kernel/Makefile      |   2 +
-> >  arch/sh/kernel/pci-common.c  | 162 ++++++++++++++++++++
-> >  arch/sh/kernel/pci.c         | 342 +++++++++++++++++++++++++++++++++++++++++++
-> >  6 files changed, 506 insertions(+), 484 deletions(-)
-> >  delete mode 100644 arch/sh/drivers/pci/common.c
-> >  delete mode 100644 arch/sh/drivers/pci/pci.c
-> >  create mode 100644 arch/sh/kernel/pci-common.c
-> >  create mode 100644 arch/sh/kernel/pci.c
-> > 
-> > diff --git a/arch/sh/drivers/pci/Makefile b/arch/sh/drivers/pci/Makefile
-> > index 82f0a33..fffbede 100644
-> > --- a/arch/sh/drivers/pci/Makefile
-> > +++ b/arch/sh/drivers/pci/Makefile
-> > @@ -1,8 +1,6 @@
-> >  #
-> >  # Makefile for the PCI specific kernel interface routines under Linux.
-> >  #
-> > -obj-y					+= common.o pci.o
-> > -
-> >  obj-$(CONFIG_CPU_SUBTYPE_SH7751)	+= pci-sh7751.o ops-sh4.o
-> >  obj-$(CONFIG_CPU_SUBTYPE_SH7751R)	+= pci-sh7751.o ops-sh4.o
-> >  obj-$(CONFIG_CPU_SUBTYPE_SH7763)	+= pci-sh7780.o ops-sh4.o
-> > diff --git a/arch/sh/drivers/pci/common.c b/arch/sh/drivers/pci/common.c
-> > deleted file mode 100644
-> > index dbf1381..0000000
-> > --- a/arch/sh/drivers/pci/common.c
-> > +++ /dev/null
-> > @@ -1,162 +0,0 @@
-> > -#include <linux/pci.h>
-> > -#include <linux/interrupt.h>
-> > -#include <linux/timer.h>
-> > -#include <linux/kernel.h>
-> > -
-> > -/*
-> > - * These functions are used early on before PCI scanning is done
-> > - * and all of the pci_dev and pci_bus structures have been created.
-> > - */
-> > -static struct pci_dev *fake_pci_dev(struct pci_channel *hose,
-> > -	int top_bus, int busnr, int devfn)
-> > -{
-> > -	static struct pci_dev dev;
-> > -	static struct pci_bus bus;
-> > -
-> > -	dev.bus = &bus;
-> > -	dev.sysdata = hose;
-> > -	dev.devfn = devfn;
-> > -	bus.number = busnr;
-> > -	bus.sysdata = hose;
-> > -	bus.ops = hose->pci_ops;
-> > -
-> > -	if(busnr != top_bus)
-> > -		/* Fake a parent bus structure. */
-> > -		bus.parent = &bus;
-> > -	else
-> > -		bus.parent = NULL;
-> > -
-> > -	return &dev;
-> > -}
-> > -
-> > -#define EARLY_PCI_OP(rw, size, type)					\
-> > -int __init early_##rw##_config_##size(struct pci_channel *hose,		\
-> > -	int top_bus, int bus, int devfn, int offset, type value)	\
-> > -{									\
-> > -	return pci_##rw##_config_##size(				\
-> > -		fake_pci_dev(hose, top_bus, bus, devfn),		\
-> > -		offset, value);						\
-> > -}
-> > -
-> > -EARLY_PCI_OP(read, byte, u8 *)
-> > -EARLY_PCI_OP(read, word, u16 *)
-> > -EARLY_PCI_OP(read, dword, u32 *)
-> > -EARLY_PCI_OP(write, byte, u8)
-> > -EARLY_PCI_OP(write, word, u16)
-> > -EARLY_PCI_OP(write, dword, u32)
-> > -
-> > -int __init pci_is_66mhz_capable(struct pci_channel *hose,
-> > -				int top_bus, int current_bus)
-> > -{
-> > -	u32 pci_devfn;
-> > -	unsigned short vid;
-> > -	int cap66 = -1;
-> > -	u16 stat;
-> > -
-> > -	printk(KERN_INFO "PCI: Checking 66MHz capabilities...\n");
-> > -
-> > -	for (pci_devfn = 0; pci_devfn < 0xff; pci_devfn++) {
-> > -		if (PCI_FUNC(pci_devfn))
-> > -			continue;
-> > -		if (early_read_config_word(hose, top_bus, current_bus,
-> > -					   pci_devfn, PCI_VENDOR_ID, &vid) !> > -		    PCIBIOS_SUCCESSFUL)
-> > -			continue;
-> > -		if (vid = 0xffff)
-> > -			continue;
-> > -
-> > -		/* check 66MHz capability */
-> > -		if (cap66 < 0)
-> > -			cap66 = 1;
-> > -		if (cap66) {
-> > -			early_read_config_word(hose, top_bus, current_bus,
-> > -					       pci_devfn, PCI_STATUS, &stat);
-> > -			if (!(stat & PCI_STATUS_66MHZ)) {
-> > -				printk(KERN_DEBUG
-> > -				       "PCI: %02x:%02x not 66MHz capable.\n",
-> > -				       current_bus, pci_devfn);
-> > -				cap66 = 0;
-> > -				break;
-> > -			}
-> > -		}
-> > -	}
-> > -
-> > -	return cap66 > 0;
-> > -}
-> > -
-> > -static void pcibios_enable_err(unsigned long __data)
-> > -{
-> > -	struct pci_channel *hose = (struct pci_channel *)__data;
-> > -
-> > -	del_timer(&hose->err_timer);
-> > -	printk(KERN_DEBUG "PCI: re-enabling error IRQ.\n");
-> > -	enable_irq(hose->err_irq);
-> > -}
-> > -
-> > -static void pcibios_enable_serr(unsigned long __data)
-> > -{
-> > -	struct pci_channel *hose = (struct pci_channel *)__data;
-> > -
-> > -	del_timer(&hose->serr_timer);
-> > -	printk(KERN_DEBUG "PCI: re-enabling system error IRQ.\n");
-> > -	enable_irq(hose->serr_irq);
-> > -}
-> > -
-> > -void pcibios_enable_timers(struct pci_channel *hose)
-> > -{
-> > -	if (hose->err_irq) {
-> > -		init_timer(&hose->err_timer);
-> > -		hose->err_timer.data = (unsigned long)hose;
-> > -		hose->err_timer.function = pcibios_enable_err;
-> > -	}
-> > -
-> > -	if (hose->serr_irq) {
-> > -		init_timer(&hose->serr_timer);
-> > -		hose->serr_timer.data = (unsigned long)hose;
-> > -		hose->serr_timer.function = pcibios_enable_serr;
-> > -	}
-> > -}
-> > -
-> > -/*
-> > - * A simple handler for the regular PCI status errors, called from IRQ
-> > - * context.
-> > - */
-> > -unsigned int pcibios_handle_status_errors(unsigned long addr,
-> > -					  unsigned int status,
-> > -					  struct pci_channel *hose)
-> > -{
-> > -	unsigned int cmd = 0;
-> > -
-> > -	if (status & PCI_STATUS_REC_MASTER_ABORT) {
-> > -		printk(KERN_DEBUG "PCI: master abort, pc=0x%08lx\n", addr);
-> > -		cmd |= PCI_STATUS_REC_MASTER_ABORT;
-> > -	}
-> > -
-> > -	if (status & PCI_STATUS_REC_TARGET_ABORT) {
-> > -		printk(KERN_DEBUG "PCI: target abort: ");
-> > -		pcibios_report_status(PCI_STATUS_REC_TARGET_ABORT |
-> > -				      PCI_STATUS_SIG_TARGET_ABORT |
-> > -				      PCI_STATUS_REC_MASTER_ABORT, 1);
-> > -		printk("\n");
-> > -
-> > -		cmd |= PCI_STATUS_REC_TARGET_ABORT;
-> > -	}
-> > -
-> > -	if (status & (PCI_STATUS_PARITY | PCI_STATUS_DETECTED_PARITY)) {
-> > -		printk(KERN_DEBUG "PCI: parity error detected: ");
-> > -		pcibios_report_status(PCI_STATUS_PARITY |
-> > -				      PCI_STATUS_DETECTED_PARITY, 1);
-> > -		printk("\n");
-> > -
-> > -		cmd |= PCI_STATUS_PARITY | PCI_STATUS_DETECTED_PARITY;
-> > -
-> > -		/* Now back off of the IRQ for awhile */
-> > -		if (hose->err_irq) {
-> > -			disable_irq_nosync(hose->err_irq);
-> > -			hose->err_timer.expires = jiffies + HZ;
-> > -			add_timer(&hose->err_timer);
-> > -		}
-> > -	}
-> > -
-> > -	return cmd;
-> > -}
-> > diff --git a/arch/sh/drivers/pci/pci.c b/arch/sh/drivers/pci/pci.c
-> > deleted file mode 100644
-> > index d5462b7..0000000
-> > --- a/arch/sh/drivers/pci/pci.c
-> > +++ /dev/null
-> > @@ -1,320 +0,0 @@
-> > -/*
-> > - * New-style PCI core.
-> > - *
-> > - * Copyright (c) 2004 - 2009  Paul Mundt
-> > - * Copyright (c) 2002  M. R. Brown
-> > - *
-> > - * Modelled after arch/mips/pci/pci.c:
-> > - *  Copyright (C) 2003, 04 Ralf Baechle (ralf@linux-mips.org)
-> > - *
-> > - * This file is subject to the terms and conditions of the GNU General Public
-> > - * License.  See the file "COPYING" in the main directory of this archive
-> > - * for more details.
-> > - */
-> > -#include <linux/kernel.h>
-> > -#include <linux/mm.h>
-> > -#include <linux/pci.h>
-> > -#include <linux/init.h>
-> > -#include <linux/types.h>
-> > -#include <linux/dma-debug.h>
-> > -#include <linux/io.h>
-> > -#include <linux/mutex.h>
-> > -#include <linux/spinlock.h>
-> > -#include <linux/export.h>
-> > -
-> > -unsigned long PCIBIOS_MIN_IO = 0x0000;
-> > -unsigned long PCIBIOS_MIN_MEM = 0;
-> > -
-> > -/*
-> > - * The PCI controller list.
-> > - */
-> > -static struct pci_channel *hose_head, **hose_tail = &hose_head;
-> > -
-> > -static int pci_initialized;
-> > -
-> > -static void pcibios_scanbus(struct pci_channel *hose)
-> > -{
-> > -	static int next_busno;
-> > -	static int need_domain_info;
-> > -	LIST_HEAD(resources);
-> > -	struct resource *res;
-> > -	resource_size_t offset;
-> > -	int i;
-> > -	struct pci_bus *bus;
-> > -
-> > -	for (i = 0; i < hose->nr_resources; i++) {
-> > -		res = hose->resources + i;
-> > -		offset = 0;
-> > -		if (res->flags & IORESOURCE_IO)
-> > -			offset = hose->io_offset;
-> > -		else if (res->flags & IORESOURCE_MEM)
-> > -			offset = hose->mem_offset;
-> > -		pci_add_resource_offset(&resources, res, offset);
-> > -	}
-> > -
-> > -	bus = pci_scan_root_bus(NULL, next_busno, hose->pci_ops, hose,
-> > -				&resources);
-> > -	hose->bus = bus;
-> > -
-> > -	need_domain_info = need_domain_info || hose->index;
-> > -	hose->need_domain_info = need_domain_info;
-> > -
-> > -	if (!bus) {
-> > -		pci_free_resource_list(&resources);
-> > -		return;
-> > -	}
-> > -
-> > -	next_busno = bus->busn_res.end + 1;
-> > -	/* Don't allow 8-bit bus number overflow inside the hose -
-> > -	   reserve some space for bridges. */
-> > -	if (next_busno > 224) {
-> > -		next_busno = 0;
-> > -		need_domain_info = 1;
-> > -	}
-> > -
-> > -	pci_bus_size_bridges(bus);
-> > -	pci_bus_assign_resources(bus);
-> > -	pci_bus_add_devices(bus);
-> > -}
-> > -
-> > -/*
-> > - * This interrupt-safe spinlock protects all accesses to PCI
-> > - * configuration space.
-> > - */
-> > -DEFINE_RAW_SPINLOCK(pci_config_lock);
-> > -static DEFINE_MUTEX(pci_scan_mutex);
-> > -
-> > -int register_pci_controller(struct pci_channel *hose)
-> > -{
-> > -	int i;
-> > -
-> > -	for (i = 0; i < hose->nr_resources; i++) {
-> > -		struct resource *res = hose->resources + i;
-> > -
-> > -		if (res->flags & IORESOURCE_IO) {
-> > -			if (request_resource(&ioport_resource, res) < 0)
-> > -				goto out;
-> > -		} else {
-> > -			if (request_resource(&iomem_resource, res) < 0)
-> > -				goto out;
-> > -		}
-> > -	}
-> > -
-> > -	*hose_tail = hose;
-> > -	hose_tail = &hose->next;
-> > -
-> > -	/*
-> > -	 * Do not panic here but later - this might happen before console init.
-> > -	 */
-> > -	if (!hose->io_map_base) {
-> > -		printk(KERN_WARNING
-> > -		       "registering PCI controller with io_map_base unset\n");
-> > -	}
-> > -
-> > -	/*
-> > -	 * Setup the ERR/PERR and SERR timers, if available.
-> > -	 */
-> > -	pcibios_enable_timers(hose);
-> > -
-> > -	/*
-> > -	 * Scan the bus if it is register after the PCI subsystem
-> > -	 * initialization.
-> > -	 */
-> > -	if (pci_initialized) {
-> > -		mutex_lock(&pci_scan_mutex);
-> > -		pcibios_scanbus(hose);
-> > -		mutex_unlock(&pci_scan_mutex);
-> > -	}
-> > -
-> > -	return 0;
-> > -
-> > -out:
-> > -	for (--i; i >= 0; i--)
-> > -		release_resource(&hose->resources[i]);
-> > -
-> > -	printk(KERN_WARNING "Skipping PCI bus scan due to resource conflict\n");
-> > -	return -1;
-> > -}
-> > -
-> > -static int __init pcibios_init(void)
-> > -{
-> > -	struct pci_channel *hose;
-> > -
-> > -	/* Scan all of the recorded PCI controllers.  */
-> > -	for (hose = hose_head; hose; hose = hose->next)
-> > -		pcibios_scanbus(hose);
-> > -
-> > -	pci_fixup_irqs(pci_common_swizzle, pcibios_map_platform_irq);
-> > -
-> > -	dma_debug_add_bus(&pci_bus_type);
-> > -
-> > -	pci_initialized = 1;
-> > -
-> > -	return 0;
-> > -}
-> > -subsys_initcall(pcibios_init);
-> > -
-> > -/*
-> > - *  Called after each bus is probed, but before its children
-> > - *  are examined.
-> > - */
-> > -void pcibios_fixup_bus(struct pci_bus *bus)
-> > -{
-> > -}
-> > -
-> > -/*
-> > - * We need to avoid collisions with `mirrored' VGA ports
-> > - * and other strange ISA hardware, so we always want the
-> > - * addresses to be allocated in the 0x000-0x0ff region
-> > - * modulo 0x400.
-> > - */
-> > -resource_size_t pcibios_align_resource(void *data, const struct resource *res,
-> > -				resource_size_t size, resource_size_t align)
-> > -{
-> > -	struct pci_dev *dev = data;
-> > -	struct pci_channel *hose = dev->sysdata;
-> > -	resource_size_t start = res->start;
-> > -
-> > -	if (res->flags & IORESOURCE_IO) {
-> > -		if (start < PCIBIOS_MIN_IO + hose->resources[0].start)
-> > -			start = PCIBIOS_MIN_IO + hose->resources[0].start;
-> > -
-> > -		/*
-> > -                 * Put everything into 0x00-0xff region modulo 0x400.
-> > -		 */
-> > -		if (start & 0x300)
-> > -			start = (start + 0x3ff) & ~0x3ff;
-> > -	}
-> > -
-> > -	return start;
-> > -}
-> > -
-> > -static void __init
-> > -pcibios_bus_report_status_early(struct pci_channel *hose,
-> > -				int top_bus, int current_bus,
-> > -				unsigned int status_mask, int warn)
-> > -{
-> > -	unsigned int pci_devfn;
-> > -	u16 status;
-> > -	int ret;
-> > -
-> > -	for (pci_devfn = 0; pci_devfn < 0xff; pci_devfn++) {
-> > -		if (PCI_FUNC(pci_devfn))
-> > -			continue;
-> > -		ret = early_read_config_word(hose, top_bus, current_bus,
-> > -					     pci_devfn, PCI_STATUS, &status);
-> > -		if (ret != PCIBIOS_SUCCESSFUL)
-> > -			continue;
-> > -		if (status = 0xffff)
-> > -			continue;
-> > -
-> > -		early_write_config_word(hose, top_bus, current_bus,
-> > -					pci_devfn, PCI_STATUS,
-> > -					status & status_mask);
-> > -		if (warn)
-> > -			printk("(%02x:%02x: %04X) ", current_bus,
-> > -			       pci_devfn, status);
-> > -	}
-> > -}
-> > -
-> > -/*
-> > - * We can't use pci_find_device() here since we are
-> > - * called from interrupt context.
-> > - */
-> > -static void __init_refok
-> > -pcibios_bus_report_status(struct pci_bus *bus, unsigned int status_mask,
-> > -			  int warn)
-> > -{
-> > -	struct pci_dev *dev;
-> > -
-> > -	list_for_each_entry(dev, &bus->devices, bus_list) {
-> > -		u16 status;
-> > -
-> > -		/*
-> > -		 * ignore host bridge - we handle
-> > -		 * that separately
-> > -		 */
-> > -		if (dev->bus->number = 0 && dev->devfn = 0)
-> > -			continue;
-> > -
-> > -		pci_read_config_word(dev, PCI_STATUS, &status);
-> > -		if (status = 0xffff)
-> > -			continue;
-> > -
-> > -		if ((status & status_mask) = 0)
-> > -			continue;
-> > -
-> > -		/* clear the status errors */
-> > -		pci_write_config_word(dev, PCI_STATUS, status & status_mask);
-> > -
-> > -		if (warn)
-> > -			printk("(%s: %04X) ", pci_name(dev), status);
-> > -	}
-> > -
-> > -	list_for_each_entry(dev, &bus->devices, bus_list)
-> > -		if (dev->subordinate)
-> > -			pcibios_bus_report_status(dev->subordinate, status_mask, warn);
-> > -}
-> > -
-> > -void __init_refok pcibios_report_status(unsigned int status_mask, int warn)
-> > -{
-> > -	struct pci_channel *hose;
-> > -
-> > -	for (hose = hose_head; hose; hose = hose->next) {
-> > -		if (unlikely(!hose->bus))
-> > -			pcibios_bus_report_status_early(hose, hose_head->index,
-> > -					hose->index, status_mask, warn);
-> > -		else
-> > -			pcibios_bus_report_status(hose->bus, status_mask, warn);
-> > -	}
-> > -}
-> > -
-> > -int pci_mmap_page_range(struct pci_dev *dev, struct vm_area_struct *vma,
-> > -			enum pci_mmap_state mmap_state, int write_combine)
-> > -{
-> > -	/*
-> > -	 * I/O space can be accessed via normal processor loads and stores on
-> > -	 * this platform but for now we elect not to do this and portable
-> > -	 * drivers should not do this anyway.
-> > -	 */
-> > -	if (mmap_state = pci_mmap_io)
-> > -		return -EINVAL;
-> > -
-> > -	/*
-> > -	 * Ignore write-combine; for now only return uncached mappings.
-> > -	 */
-> > -	vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
-> > -
-> > -	return remap_pfn_range(vma, vma->vm_start, vma->vm_pgoff,
-> > -			       vma->vm_end - vma->vm_start,
-> > -			       vma->vm_page_prot);
-> > -}
-> > -
-> > -#ifndef CONFIG_GENERIC_IOMAP
-> > -
-> > -void __iomem *__pci_ioport_map(struct pci_dev *dev,
-> > -			       unsigned long port, unsigned int nr)
-> > -{
-> > -	struct pci_channel *chan = dev->sysdata;
-> > -
-> > -	if (unlikely(!chan->io_map_base)) {
-> > -		chan->io_map_base = sh_io_port_base;
-> > -
-> > -		if (pci_domains_supported)
-> > -			panic("To avoid data corruption io_map_base MUST be "
-> > -			      "set with multiple PCI domains.");
-> > -	}
-> > -
-> > -	return (void __iomem *)(chan->io_map_base + port);
-> > -}
-> > -
-> > -void pci_iounmap(struct pci_dev *dev, void __iomem *addr)
-> > -{
-> > -	iounmap(addr);
-> > -}
-> > -EXPORT_SYMBOL(pci_iounmap);
-> > -
-> > -#endif /* CONFIG_GENERIC_IOMAP */
-> > -
-> > -EXPORT_SYMBOL(PCIBIOS_MIN_IO);
-> > -EXPORT_SYMBOL(PCIBIOS_MIN_MEM);
-> > diff --git a/arch/sh/kernel/Makefile b/arch/sh/kernel/Makefile
-> > index 09040fd..a9a54c2 100644
-> > --- a/arch/sh/kernel/Makefile
-> > +++ b/arch/sh/kernel/Makefile
-> > @@ -46,5 +46,7 @@ obj-$(CONFIG_DWARF_UNWINDER)	+= dwarf.o
-> >  obj-$(CONFIG_PERF_EVENTS)	+= perf_event.o perf_callchain.o
-> >  
-> >  obj-$(CONFIG_HAVE_HW_BREAKPOINT)		+= hw_breakpoint.o
-> > +obj-$(CONFIG_PCI)		+= pci.o pci-common.o
-> >  
-> >  ccflags-y := -Werror
-> > +CFLAGS_pci.o := -O0
-> > diff --git a/arch/sh/kernel/pci-common.c b/arch/sh/kernel/pci-common.c
-> > new file mode 100644
-> > index 0000000..dbf1381
-> > --- /dev/null
-> > +++ b/arch/sh/kernel/pci-common.c
-> > @@ -0,0 +1,162 @@
-> > +#include <linux/pci.h>
-> > +#include <linux/interrupt.h>
-> > +#include <linux/timer.h>
-> > +#include <linux/kernel.h>
-> > +
-> > +/*
-> > + * These functions are used early on before PCI scanning is done
-> > + * and all of the pci_dev and pci_bus structures have been created.
-> > + */
-> > +static struct pci_dev *fake_pci_dev(struct pci_channel *hose,
-> > +	int top_bus, int busnr, int devfn)
-> > +{
-> > +	static struct pci_dev dev;
-> > +	static struct pci_bus bus;
-> > +
-> > +	dev.bus = &bus;
-> > +	dev.sysdata = hose;
-> > +	dev.devfn = devfn;
-> > +	bus.number = busnr;
-> > +	bus.sysdata = hose;
-> > +	bus.ops = hose->pci_ops;
-> > +
-> > +	if(busnr != top_bus)
-> > +		/* Fake a parent bus structure. */
-> > +		bus.parent = &bus;
-> > +	else
-> > +		bus.parent = NULL;
-> > +
-> > +	return &dev;
-> > +}
-> > +
-> > +#define EARLY_PCI_OP(rw, size, type)					\
-> > +int __init early_##rw##_config_##size(struct pci_channel *hose,		\
-> > +	int top_bus, int bus, int devfn, int offset, type value)	\
-> > +{									\
-> > +	return pci_##rw##_config_##size(				\
-> > +		fake_pci_dev(hose, top_bus, bus, devfn),		\
-> > +		offset, value);						\
-> > +}
-> > +
-> > +EARLY_PCI_OP(read, byte, u8 *)
-> > +EARLY_PCI_OP(read, word, u16 *)
-> > +EARLY_PCI_OP(read, dword, u32 *)
-> > +EARLY_PCI_OP(write, byte, u8)
-> > +EARLY_PCI_OP(write, word, u16)
-> > +EARLY_PCI_OP(write, dword, u32)
-> > +
-> > +int __init pci_is_66mhz_capable(struct pci_channel *hose,
-> > +				int top_bus, int current_bus)
-> > +{
-> > +	u32 pci_devfn;
-> > +	unsigned short vid;
-> > +	int cap66 = -1;
-> > +	u16 stat;
-> > +
-> > +	printk(KERN_INFO "PCI: Checking 66MHz capabilities...\n");
-> > +
-> > +	for (pci_devfn = 0; pci_devfn < 0xff; pci_devfn++) {
-> > +		if (PCI_FUNC(pci_devfn))
-> > +			continue;
-> > +		if (early_read_config_word(hose, top_bus, current_bus,
-> > +					   pci_devfn, PCI_VENDOR_ID, &vid) !> > +		    PCIBIOS_SUCCESSFUL)
-> > +			continue;
-> > +		if (vid = 0xffff)
-> > +			continue;
-> > +
-> > +		/* check 66MHz capability */
-> > +		if (cap66 < 0)
-> > +			cap66 = 1;
-> > +		if (cap66) {
-> > +			early_read_config_word(hose, top_bus, current_bus,
-> > +					       pci_devfn, PCI_STATUS, &stat);
-> > +			if (!(stat & PCI_STATUS_66MHZ)) {
-> > +				printk(KERN_DEBUG
-> > +				       "PCI: %02x:%02x not 66MHz capable.\n",
-> > +				       current_bus, pci_devfn);
-> > +				cap66 = 0;
-> > +				break;
-> > +			}
-> > +		}
-> > +	}
-> > +
-> > +	return cap66 > 0;
-> > +}
-> > +
-> > +static void pcibios_enable_err(unsigned long __data)
-> > +{
-> > +	struct pci_channel *hose = (struct pci_channel *)__data;
-> > +
-> > +	del_timer(&hose->err_timer);
-> > +	printk(KERN_DEBUG "PCI: re-enabling error IRQ.\n");
-> > +	enable_irq(hose->err_irq);
-> > +}
-> > +
-> > +static void pcibios_enable_serr(unsigned long __data)
-> > +{
-> > +	struct pci_channel *hose = (struct pci_channel *)__data;
-> > +
-> > +	del_timer(&hose->serr_timer);
-> > +	printk(KERN_DEBUG "PCI: re-enabling system error IRQ.\n");
-> > +	enable_irq(hose->serr_irq);
-> > +}
-> > +
-> > +void pcibios_enable_timers(struct pci_channel *hose)
-> > +{
-> > +	if (hose->err_irq) {
-> > +		init_timer(&hose->err_timer);
-> > +		hose->err_timer.data = (unsigned long)hose;
-> > +		hose->err_timer.function = pcibios_enable_err;
-> > +	}
-> > +
-> > +	if (hose->serr_irq) {
-> > +		init_timer(&hose->serr_timer);
-> > +		hose->serr_timer.data = (unsigned long)hose;
-> > +		hose->serr_timer.function = pcibios_enable_serr;
-> > +	}
-> > +}
-> > +
-> > +/*
-> > + * A simple handler for the regular PCI status errors, called from IRQ
-> > + * context.
-> > + */
-> > +unsigned int pcibios_handle_status_errors(unsigned long addr,
-> > +					  unsigned int status,
-> > +					  struct pci_channel *hose)
-> > +{
-> > +	unsigned int cmd = 0;
-> > +
-> > +	if (status & PCI_STATUS_REC_MASTER_ABORT) {
-> > +		printk(KERN_DEBUG "PCI: master abort, pc=0x%08lx\n", addr);
-> > +		cmd |= PCI_STATUS_REC_MASTER_ABORT;
-> > +	}
-> > +
-> > +	if (status & PCI_STATUS_REC_TARGET_ABORT) {
-> > +		printk(KERN_DEBUG "PCI: target abort: ");
-> > +		pcibios_report_status(PCI_STATUS_REC_TARGET_ABORT |
-> > +				      PCI_STATUS_SIG_TARGET_ABORT |
-> > +				      PCI_STATUS_REC_MASTER_ABORT, 1);
-> > +		printk("\n");
-> > +
-> > +		cmd |= PCI_STATUS_REC_TARGET_ABORT;
-> > +	}
-> > +
-> > +	if (status & (PCI_STATUS_PARITY | PCI_STATUS_DETECTED_PARITY)) {
-> > +		printk(KERN_DEBUG "PCI: parity error detected: ");
-> > +		pcibios_report_status(PCI_STATUS_PARITY |
-> > +				      PCI_STATUS_DETECTED_PARITY, 1);
-> > +		printk("\n");
-> > +
-> > +		cmd |= PCI_STATUS_PARITY | PCI_STATUS_DETECTED_PARITY;
-> > +
-> > +		/* Now back off of the IRQ for awhile */
-> > +		if (hose->err_irq) {
-> > +			disable_irq_nosync(hose->err_irq);
-> > +			hose->err_timer.expires = jiffies + HZ;
-> > +			add_timer(&hose->err_timer);
-> > +		}
-> > +	}
-> > +
-> > +	return cmd;
-> > +}
-> > diff --git a/arch/sh/kernel/pci.c b/arch/sh/kernel/pci.c
-> > new file mode 100644
-> > index 0000000..9cf0ba4
-> > --- /dev/null
-> > +++ b/arch/sh/kernel/pci.c
-> > @@ -0,0 +1,342 @@
-> > +/*
-> > + * New-style PCI core.
-> > + *
-> > + * Copyright (c) 2004 - 2009  Paul Mundt
-> > + * Copyright (c) 2002  M. R. Brown
-> > + *
-> > + * Modelled after arch/mips/pci/pci.c:
-> > + *  Copyright (C) 2003, 04 Ralf Baechle (ralf@linux-mips.org)
-> > + *
-> > + * This file is subject to the terms and conditions of the GNU General Public
-> > + * License.  See the file "COPYING" in the main directory of this archive
-> > + * for more details.
-> > + */
-> > +#include <linux/kernel.h>
-> > +#include <linux/mm.h>
-> > +#include <linux/pci.h>
-> > +#include <linux/init.h>
-> > +#include <linux/types.h>
-> > +#include <linux/dma-debug.h>
-> > +#include <linux/io.h>
-> > +#include <linux/mutex.h>
-> > +#include <linux/spinlock.h>
-> > +#include <linux/export.h>
-> > +
-> > +unsigned long PCIBIOS_MIN_IO = 0x0000;
-> > +unsigned long PCIBIOS_MIN_MEM = 0;
-> > +
-> > +/*
-> > + * The PCI controller list.
-> > + */
-> > +static struct pci_channel *hose_head, **hose_tail = &hose_head;
-> > +
-> > +static int pci_initialized;
-> > +
-> > +static void pcibios_scanbus(struct pci_channel *hose)
-> > +{
-> > +	static int next_busno;
-> > +	static int need_domain_info;
-> > +	LIST_HEAD(resources);
-> > +	struct resource *res;
-> > +	resource_size_t offset;
-> > +	int i;
-> > +	struct pci_bus *bus;
-> > +
-> > +	for (i = 0; i < hose->nr_resources; i++) {
-> > +		res = hose->resources + i;
-> > +		offset = 0;
-> > +		if (res->flags & IORESOURCE_IO)
-> > +			offset = hose->io_offset;
-> > +		else if (res->flags & IORESOURCE_MEM)
-> > +			offset = hose->mem_offset;
-> > +		pci_add_resource_offset(&resources, res, offset);
-> > +	}
-> > +
-> > +	bus = pci_scan_root_bus(NULL, next_busno, hose->pci_ops, hose,
-> > +				&resources);
-> > +	hose->bus = bus;
-> > +
-> > +	need_domain_info = need_domain_info || hose->index;
-> > +	hose->need_domain_info = need_domain_info;
-> > +
-> > +	if (!bus) {
-> > +		pci_free_resource_list(&resources);
-> > +		return;
-> > +	}
-> > +
-> > +	next_busno = bus->busn_res.end + 1;
-> > +	/* Don't allow 8-bit bus number overflow inside the hose -
-> > +	   reserve some space for bridges. */
-> > +	if (next_busno > 224) {
-> > +		next_busno = 0;
-> > +		need_domain_info = 1;
-> > +	}
-> > +
-> > +	pci_bus_size_bridges(bus);
-> > +	pci_bus_assign_resources(bus);
-> > +	pci_bus_add_devices(bus);
-> > +}
-> > +
-> > +/*
-> > + * This interrupt-safe spinlock protects all accesses to PCI
-> > + * configuration space.
-> > + */
-> > +DEFINE_RAW_SPINLOCK(pci_config_lock);
-> > +static DEFINE_MUTEX(pci_scan_mutex);
-> > +
-> > +int register_pci_controller(struct pci_channel *hose)
-> > +{
-> > +	int i;
-> > +
-> > +	for (i = 0; i < hose->nr_resources; i++) {
-> > +		struct resource *res = hose->resources + i;
-> > +
-> > +		if (res->flags & IORESOURCE_IO) {
-> > +			if (request_resource(&ioport_resource, res) < 0)
-> > +				goto out;
-> > +		} else {
-> > +			if (request_resource(&iomem_resource, res) < 0)
-> > +				goto out;
-> > +		}
-> > +	}
-> > +
-> > +	*hose_tail = hose;
-> > +	hose_tail = &hose->next;
-> > +
-> > +	/*
-> > +	 * Do not panic here but later - this might happen before console init.
-> > +	 */
-> > +	if (!hose->io_map_base) {
-> > +		printk(KERN_WARNING
-> > +		       "registering PCI controller with io_map_base unset\n");
-> > +	}
-> > +
-> > +	/*
-> > +	 * Setup the ERR/PERR and SERR timers, if available.
-> > +	 */
-> > +	pcibios_enable_timers(hose);
-> > +
-> > +	/*
-> > +	 * Scan the bus if it is register after the PCI subsystem
-> > +	 * initialization.
-> > +	 */
-> > +	if (pci_initialized) {
-> > +		mutex_lock(&pci_scan_mutex);
-> > +		pcibios_scanbus(hose);
-> > +		mutex_unlock(&pci_scan_mutex);
-> > +	}
-> > +
-> > +	return 0;
-> > +
-> > +out:
-> > +	for (--i; i >= 0; i--)
-> > +		release_resource(&hose->resources[i]);
-> > +
-> > +	printk(KERN_WARNING "Skipping PCI bus scan due to resource conflict\n");
-> > +	return -1;
-> > +}
-> > +
-> > +#ifndef CONFIG_SH_DEVICE_TREE
-> > +static int __init pcibios_init(void)
-> > +{
-> > +	struct pci_channel *hose;
-> > +
-> > +	/* Scan all of the recorded PCI controllers.  */
-> > +	for (hose = hose_head; hose; hose = hose->next)
-> > +		pcibios_scanbus(hose);
-> > +
-> > +	pci_fixup_irqs(pci_common_swizzle, pcibios_map_platform_irq);
-> > +
-> > +	dma_debug_add_bus(&pci_bus_type);
-> > +
-> > +	pci_initialized = 1;
-> > +
-> > +	return 0;
-> > +}
-> > +subsys_initcall(pcibios_init);
-> > +#endif
-> > +
-> > +/*
-> > + *  Called after each bus is probed, but before its children
-> > + *  are examined.
-> > + */
-> > +void pcibios_fixup_bus(struct pci_bus *bus)
-> > +{
-> > +}
-> > +
-> > +#ifndef CONFIG_SH_DEVICE_TREE
-> > +/*
-> > + * We need to avoid collisions with `mirrored' VGA ports
-> > + * and other strange ISA hardware, so we always want the
-> > + * addresses to be allocated in the 0x000-0x0ff region
-> > + * modulo 0x400.
-> > + */
-> > +resource_size_t pcibios_align_resource(void *data, const struct resource *res,
-> > +				resource_size_t size, resource_size_t align)
-> > +{
-> > +	struct pci_dev *dev = data;
-> > +	struct pci_channel *hose = dev->sysdata;
-> > +	resource_size_t start = res->start;
-> > +
-> > +	if (res->flags & IORESOURCE_IO) {
-> > +		if (start < PCIBIOS_MIN_IO + hose->resources[0].start)
-> > +			start = PCIBIOS_MIN_IO + hose->resources[0].start;
-> > +
-> > +		/*
-> > +                 * Put everything into 0x00-0xff region modulo 0x400.
-> > +		 */
-> > +		if (start & 0x300)
-> > +			start = (start + 0x3ff) & ~0x3ff;
-> > +	}
-> > +
-> > +	return start;
-> > +}
-> > +#else
-> > +typedef resource_size_t (*align_resource_fn)(struct pci_dev *dev,
-> > +					     const struct resource *res,
-> > +					     resource_size_t start,
-> > +					     resource_size_t size,
-> > +					     resource_size_t align);
-> > +
-> > +resource_size_t pcibios_align_resource(void *data, const struct resource *res,
-> > +				resource_size_t size, resource_size_t align)
-> > +{
-> > +	resource_size_t start = res->start;
-> > +	struct pci_dev *dev = data;
-> > +	struct pci_config_window *cfg = dev->sysdata;
-> > +	align_resource_fn fn;
-> > +
-> > +	fn = (align_resource_fn)(cfg->priv);
-> > +	return fn(dev, res, start, size, align);
-> > +}
-> > +#endif
-> > +
-> > +static void __init
-> > +pcibios_bus_report_status_early(struct pci_channel *hose,
-> > +				int top_bus, int current_bus,
-> > +				unsigned int status_mask, int warn)
-> > +{
-> > +	unsigned int pci_devfn;
-> > +	u16 status;
-> > +	int ret;
-> > +
-> > +	for (pci_devfn = 0; pci_devfn < 0xff; pci_devfn++) {
-> > +		if (PCI_FUNC(pci_devfn))
-> > +			continue;
-> > +		ret = early_read_config_word(hose, top_bus, current_bus,
-> > +					     pci_devfn, PCI_STATUS, &status);
-> > +		if (ret != PCIBIOS_SUCCESSFUL)
-> > +			continue;
-> > +		if (status = 0xffff)
-> > +			continue;
-> > +
-> > +		early_write_config_word(hose, top_bus, current_bus,
-> > +					pci_devfn, PCI_STATUS,
-> > +					status & status_mask);
-> > +		if (warn)
-> > +			printk("(%02x:%02x: %04X) ", current_bus,
-> > +			       pci_devfn, status);
-> > +	}
-> > +}
-> > +
-> > +/*
-> > + * We can't use pci_find_device() here since we are
-> > + * called from interrupt context.
-> > + */
-> > +static void __init_refok
-> > +pcibios_bus_report_status(struct pci_bus *bus, unsigned int status_mask,
-> > +			  int warn)
-> > +{
-> > +	struct pci_dev *dev;
-> > +
-> > +	list_for_each_entry(dev, &bus->devices, bus_list) {
-> > +		u16 status;
-> > +
-> > +		/*
-> > +		 * ignore host bridge - we handle
-> > +		 * that separately
-> > +		 */
-> > +		if (dev->bus->number = 0 && dev->devfn = 0)
-> > +			continue;
-> > +
-> > +		pci_read_config_word(dev, PCI_STATUS, &status);
-> > +		if (status = 0xffff)
-> > +			continue;
-> > +
-> > +		if ((status & status_mask) = 0)
-> > +			continue;
-> > +
-> > +		/* clear the status errors */
-> > +		pci_write_config_word(dev, PCI_STATUS, status & status_mask);
-> > +
-> > +		if (warn)
-> > +			printk("(%s: %04X) ", pci_name(dev), status);
-> > +	}
-> > +
-> > +	list_for_each_entry(dev, &bus->devices, bus_list)
-> > +		if (dev->subordinate)
-> > +			pcibios_bus_report_status(dev->subordinate, status_mask, warn);
-> > +}
-> > +
-> > +void __init_refok pcibios_report_status(unsigned int status_mask, int warn)
-> > +{
-> > +	struct pci_channel *hose;
-> > +
-> > +	for (hose = hose_head; hose; hose = hose->next) {
-> > +		if (unlikely(!hose->bus))
-> > +			pcibios_bus_report_status_early(hose, hose_head->index,
-> > +					hose->index, status_mask, warn);
-> > +		else
-> > +			pcibios_bus_report_status(hose->bus, status_mask, warn);
-> > +	}
-> > +}
-> > +
-> > +int pci_mmap_page_range(struct pci_dev *dev, struct vm_area_struct *vma,
-> > +			enum pci_mmap_state mmap_state, int write_combine)
-> > +{
-> > +	/*
-> > +	 * I/O space can be accessed via normal processor loads and stores on
-> > +	 * this platform but for now we elect not to do this and portable
-> > +	 * drivers should not do this anyway.
-> > +	 */
-> > +	if (mmap_state = pci_mmap_io)
-> > +		return -EINVAL;
-> > +
-> > +	/*
-> > +	 * Ignore write-combine; for now only return uncached mappings.
-> > +	 */
-> > +	vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
-> > +
-> > +	return remap_pfn_range(vma, vma->vm_start, vma->vm_pgoff,
-> > +			       vma->vm_end - vma->vm_start,
-> > +			       vma->vm_page_prot);
-> > +}
-> > +
-> > +#ifndef CONFIG_GENERIC_IOMAP
-> > +
-> > +void __iomem *__pci_ioport_map(struct pci_dev *dev,
-> > +			       unsigned long port, unsigned int nr)
-> > +{
-> > +	struct pci_channel *chan = dev->sysdata;
-> > +
-> > +	if (unlikely(!chan->io_map_base)) {
-> > +		chan->io_map_base = sh_io_port_base;
-> > +
-> > +		if (pci_domains_supported)
-> > +			panic("To avoid data corruption io_map_base MUST be "
-> > +			      "set with multiple PCI domains.");
-> > +	}
-> > +
-> > +	return (void __iomem *)(chan->io_map_base + port);
-> > +}
-> > +
-> > +void pci_iounmap(struct pci_dev *dev, void __iomem *addr)
-> > +{
-> > +	iounmap(addr);
-> > +}
-> > +EXPORT_SYMBOL(pci_iounmap);
-> > +
-> > +#endif /* CONFIG_GENERIC_IOMAP */
-> > +
-> > +EXPORT_SYMBOL(PCIBIOS_MIN_IO);
-> > +EXPORT_SYMBOL(PCIBIOS_MIN_MEM);
-> > -- 
-> > 2.7.0
-> > 
-> > --
 > 
-> Is this code specific to particular PCI bus hardware on Renesas SH
-> systems? If so it probably should be kept as a driver file rather than
-> in arch/sh/kernel core, but I don't actually see a lot of code that
-> looks hardware-specific. If there's not actually much or anything
-> hardware-specific about it, could we perhaps unify it with other PCI
-> bus support code outside or arch/sh?
+> This is fifth approach for replacing struct dma_attrs with unsigned
+> long.
 > 
-> Rich
+> The main patch (1/44) doing the change is split into many subpatches
+> for easier review (2-42).  They should be squashed together when
+> applying.
 
-Yes. Common PCI framework required this functions.
-I think put arch/sh/kernel is more better.
+For all the drm driver patches:
+
+Acked-by: Daniel Vetter <daniel.vetter@ffwll.ch>
+
+Should I pull these in through drm-misc, or do you prefer to merge them
+through a special topic branch (with everything else) instead on your own?
+-Daniel
+
+> 
+> 
+> Rebased on v4.7-rc5.
+> 
+> For easier testing the patchset is available here:
+> repo:   https://github.com/krzk/linux
+> branch: for-next/dma-attrs-const-v5
+> 
+> 
+> Changes since v4
+> ========
+> 1. Collect some acks. Still need more.
+> 2. Minor fixes pointed by Robin Murphy.
+> 3. Applied changes from Bart Van Assche's comment.
+> 4. More tests and builds (using https://www.kernel.org/pub/tools/crosstool/).
+> 
+> 
+> Changes since v3
+> ========
+> 1. Collect some acks.
+> 2. Drop wrong patch 1/45 ("powerpc: dma-mapping: Don't hard-code
+>    the value of DMA_ATTR_WEAK_ORDERING").
+> 3. Minor fix pointed out by Michael Ellerman.
+> 
+> 
+> Changes since v2
+> ========
+> 1. Follow Christoph Hellwig's comments (don't use BIT add
+>    documentation, remove dma_get_attr).
+> 
+> 
+> Rationale
+> ====> The dma-mapping core and the implementations do not change the
+> DMA attributes passed by pointer.  Thus the pointer can point to const
+> data.  However the attributes do not have to be a bitfield. Instead
+> unsigned long will do fine:
+> 
+> 1. This is just simpler.  Both in terms of reading the code and setting
+>    attributes.  Instead of initializing local attributes on the stack
+>    and passing pointer to it to dma_set_attr(), just set the bits.
+> 
+> 2. It brings safeness and checking for const correctness because the
+>    attributes are passed by value.
+> 
+> 
+> Best regards,
+> Krzysztof
+> 
+> 
+> Krzysztof Kozlowski (44):
+>   dma-mapping: Use unsigned long for dma_attrs
+>   alpha: dma-mapping: Use unsigned long for dma_attrs
+>   arc: dma-mapping: Use unsigned long for dma_attrs
+>   ARM: dma-mapping: Use unsigned long for dma_attrs
+>   arm64: dma-mapping: Use unsigned long for dma_attrs
+>   avr32: dma-mapping: Use unsigned long for dma_attrs
+>   blackfin: dma-mapping: Use unsigned long for dma_attrs
+>   c6x: dma-mapping: Use unsigned long for dma_attrs
+>   cris: dma-mapping: Use unsigned long for dma_attrs
+>   frv: dma-mapping: Use unsigned long for dma_attrs
+>   drm/exynos: dma-mapping: Use unsigned long for dma_attrs
+>   drm/mediatek: dma-mapping: Use unsigned long for dma_attrs
+>   drm/msm: dma-mapping: Use unsigned long for dma_attrs
+>   drm/nouveau: dma-mapping: Use unsigned long for dma_attrs
+>   drm/rockship: dma-mapping: Use unsigned long for dma_attrs
+>   infiniband: dma-mapping: Use unsigned long for dma_attrs
+>   iommu: dma-mapping: Use unsigned long for dma_attrs
+>   [media] dma-mapping: Use unsigned long for dma_attrs
+>   xen: dma-mapping: Use unsigned long for dma_attrs
+>   swiotlb: dma-mapping: Use unsigned long for dma_attrs
+>   powerpc: dma-mapping: Use unsigned long for dma_attrs
+>   video: dma-mapping: Use unsigned long for dma_attrs
+>   x86: dma-mapping: Use unsigned long for dma_attrs
+>   iommu: intel: dma-mapping: Use unsigned long for dma_attrs
+>   h8300: dma-mapping: Use unsigned long for dma_attrs
+>   hexagon: dma-mapping: Use unsigned long for dma_attrs
+>   ia64: dma-mapping: Use unsigned long for dma_attrs
+>   m68k: dma-mapping: Use unsigned long for dma_attrs
+>   metag: dma-mapping: Use unsigned long for dma_attrs
+>   microblaze: dma-mapping: Use unsigned long for dma_attrs
+>   mips: dma-mapping: Use unsigned long for dma_attrs
+>   mn10300: dma-mapping: Use unsigned long for dma_attrs
+>   nios2: dma-mapping: Use unsigned long for dma_attrs
+>   openrisc: dma-mapping: Use unsigned long for dma_attrs
+>   parisc: dma-mapping: Use unsigned long for dma_attrs
+>   misc: mic: dma-mapping: Use unsigned long for dma_attrs
+>   s390: dma-mapping: Use unsigned long for dma_attrs
+>   sh: dma-mapping: Use unsigned long for dma_attrs
+>   sparc: dma-mapping: Use unsigned long for dma_attrs
+>   tile: dma-mapping: Use unsigned long for dma_attrs
+>   unicore32: dma-mapping: Use unsigned long for dma_attrs
+>   xtensa: dma-mapping: Use unsigned long for dma_attrs
+>   dma-mapping: Remove dma_get_attr
+>   dma-mapping: Document the DMA attributes next to the declaration
+> 
+>  Documentation/DMA-API.txt                          |  33 +++---
+>  Documentation/DMA-attributes.txt                   |   2 +-
+>  arch/alpha/include/asm/dma-mapping.h               |   2 -
+>  arch/alpha/kernel/pci-noop.c                       |   2 +-
+>  arch/alpha/kernel/pci_iommu.c                      |  12 +-
+>  arch/arc/mm/dma.c                                  |  12 +-
+>  arch/arm/common/dmabounce.c                        |   4 +-
+>  arch/arm/include/asm/dma-mapping.h                 |  13 +--
+>  arch/arm/include/asm/xen/page-coherent.h           |  16 +--
+>  arch/arm/mm/dma-mapping.c                          | 117 +++++++++----------
+>  arch/arm/xen/mm.c                                  |   8 +-
+>  arch/arm64/mm/dma-mapping.c                        |  66 +++++------
+>  arch/avr32/mm/dma-coherent.c                       |  12 +-
+>  arch/blackfin/kernel/dma-mapping.c                 |   8 +-
+>  arch/c6x/include/asm/dma-mapping.h                 |   4 +-
+>  arch/c6x/kernel/dma.c                              |   9 +-
+>  arch/c6x/mm/dma-coherent.c                         |   4 +-
+>  arch/cris/arch-v32/drivers/pci/dma.c               |   9 +-
+>  arch/frv/mb93090-mb00/pci-dma-nommu.c              |   8 +-
+>  arch/frv/mb93090-mb00/pci-dma.c                    |   9 +-
+>  arch/h8300/kernel/dma.c                            |   8 +-
+>  arch/hexagon/include/asm/dma-mapping.h             |   1 -
+>  arch/hexagon/kernel/dma.c                          |   8 +-
+>  arch/ia64/hp/common/sba_iommu.c                    |  22 ++--
+>  arch/ia64/include/asm/machvec.h                    |   1 -
+>  arch/ia64/kernel/pci-swiotlb.c                     |   4 +-
+>  arch/ia64/sn/pci/pci_dma.c                         |  22 ++--
+>  arch/m68k/kernel/dma.c                             |  12 +-
+>  arch/metag/kernel/dma.c                            |  16 +--
+>  arch/microblaze/include/asm/dma-mapping.h          |   1 -
+>  arch/microblaze/kernel/dma.c                       |  12 +-
+>  arch/mips/cavium-octeon/dma-octeon.c               |   8 +-
+>  arch/mips/loongson64/common/dma-swiotlb.c          |  10 +-
+>  arch/mips/mm/dma-default.c                         |  20 ++--
+>  arch/mips/netlogic/common/nlm-dma.c                |   4 +-
+>  arch/mn10300/mm/dma-alloc.c                        |   8 +-
+>  arch/nios2/mm/dma-mapping.c                        |  12 +-
+>  arch/openrisc/kernel/dma.c                         |  21 ++--
+>  arch/parisc/kernel/pci-dma.c                       |  18 +--
+>  arch/powerpc/include/asm/dma-mapping.h             |   7 +-
+>  arch/powerpc/include/asm/iommu.h                   |  10 +-
+>  arch/powerpc/kernel/dma-iommu.c                    |  12 +-
+>  arch/powerpc/kernel/dma.c                          |  18 +--
+>  arch/powerpc/kernel/ibmebus.c                      |  12 +-
+>  arch/powerpc/kernel/iommu.c                        |  12 +-
+>  arch/powerpc/kernel/vio.c                          |  12 +-
+>  arch/powerpc/platforms/cell/iommu.c                |  28 ++---
+>  arch/powerpc/platforms/pasemi/iommu.c              |   2 +-
+>  arch/powerpc/platforms/powernv/npu-dma.c           |   8 +-
+>  arch/powerpc/platforms/powernv/pci-ioda.c          |   4 +-
+>  arch/powerpc/platforms/powernv/pci.c               |   2 +-
+>  arch/powerpc/platforms/powernv/pci.h               |   2 +-
+>  arch/powerpc/platforms/ps3/system-bus.c            |  18 +--
+>  arch/powerpc/platforms/pseries/iommu.c             |   6 +-
+>  arch/powerpc/sysdev/dart_iommu.c                   |   2 +-
+>  arch/s390/include/asm/dma-mapping.h                |   1 -
+>  arch/s390/pci/pci_dma.c                            |  23 ++--
+>  arch/sh/include/asm/dma-mapping.h                  |   4 +-
+>  arch/sh/kernel/dma-nommu.c                         |   4 +-
+>  arch/sh/mm/consistent.c                            |   4 +-
+>  arch/sparc/kernel/iommu.c                          |  12 +-
+>  arch/sparc/kernel/ioport.c                         |  24 ++--
+>  arch/sparc/kernel/pci_sun4v.c                      |  12 +-
+>  arch/tile/kernel/pci-dma.c                         |  28 ++---
+>  arch/unicore32/mm/dma-swiotlb.c                    |   4 +-
+>  arch/x86/include/asm/dma-mapping.h                 |   5 +-
+>  arch/x86/include/asm/swiotlb.h                     |   4 +-
+>  arch/x86/include/asm/xen/page-coherent.h           |   9 +-
+>  arch/x86/kernel/amd_gart_64.c                      |  20 ++--
+>  arch/x86/kernel/pci-calgary_64.c                   |  14 +--
+>  arch/x86/kernel/pci-dma.c                          |   4 +-
+>  arch/x86/kernel/pci-nommu.c                        |   4 +-
+>  arch/x86/kernel/pci-swiotlb.c                      |   4 +-
+>  arch/x86/pci/sta2x11-fixup.c                       |   2 +-
+>  arch/x86/pci/vmd.c                                 |  16 +--
+>  arch/xtensa/kernel/pci-dma.c                       |  12 +-
+>  drivers/gpu/drm/exynos/exynos_drm_fbdev.c          |   2 +-
+>  drivers/gpu/drm/exynos/exynos_drm_g2d.c            |  12 +-
+>  drivers/gpu/drm/exynos/exynos_drm_gem.c            |  20 ++--
+>  drivers/gpu/drm/exynos/exynos_drm_gem.h            |   2 +-
+>  drivers/gpu/drm/mediatek/mtk_drm_gem.c             |  13 +--
+>  drivers/gpu/drm/mediatek/mtk_drm_gem.h             |   2 +-
+>  drivers/gpu/drm/msm/msm_drv.c                      |  13 +--
+>  .../gpu/drm/nouveau/nvkm/subdev/instmem/gk20a.c    |  13 +--
+>  drivers/gpu/drm/rockchip/rockchip_drm_gem.c        |  17 ++-
+>  drivers/gpu/drm/rockchip/rockchip_drm_gem.h        |   2 +-
+>  drivers/infiniband/core/umem.c                     |   7 +-
+>  drivers/iommu/amd_iommu.c                          |  12 +-
+>  drivers/iommu/dma-iommu.c                          |   8 +-
+>  drivers/iommu/intel-iommu.c                        |  12 +-
+>  drivers/media/platform/sti/bdisp/bdisp-hw.c        |  26 ++---
+>  drivers/media/v4l2-core/videobuf2-dma-contig.c     |  30 ++---
+>  drivers/media/v4l2-core/videobuf2-dma-sg.c         |  19 +--
+>  drivers/misc/mic/host/mic_boot.c                   |  20 ++--
+>  drivers/parisc/ccio-dma.c                          |  16 +--
+>  drivers/parisc/sba_iommu.c                         |  16 +--
+>  drivers/video/fbdev/omap2/omapfb/omapfb-main.c     |  12 +-
+>  drivers/video/fbdev/omap2/omapfb/omapfb.h          |   3 +-
+>  drivers/xen/swiotlb-xen.c                          |  14 +--
+>  include/linux/dma-attrs.h                          |  71 ------------
+>  include/linux/dma-iommu.h                          |   6 +-
+>  include/linux/dma-mapping.h                        | 128 ++++++++++++++-------
+>  include/linux/swiotlb.h                            |  10 +-
+>  include/media/videobuf2-dma-contig.h               |   7 +-
+>  include/rdma/ib_verbs.h                            |   8 +-
+>  include/xen/swiotlb-xen.h                          |  12 +-
+>  lib/dma-noop.c                                     |   9 +-
+>  lib/swiotlb.c                                      |  13 ++-
+>  108 files changed, 689 insertions(+), 789 deletions(-)
+>  delete mode 100644 include/linux/dma-attrs.h
+> 
+> -- 
+> 1.9.1
+> 
+> _______________________________________________
+> dri-devel mailing list
+> dri-devel@lists.freedesktop.org
+> https://lists.freedesktop.org/mailman/listinfo/dri-devel
 
 -- 
-Yoshinori Sato
-<ysato@users.sourceforge.jp>
+Daniel Vetter
+Software Engineer, Intel Corporation
+http://blog.ffwll.ch
