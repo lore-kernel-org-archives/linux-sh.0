@@ -1,47 +1,93 @@
-From: Rich Felker <dalias@libc.org>
-Date: Wed, 27 Jul 2016 05:31:12 +0000
-Subject: Re: [PATCH v3 01/12] of: add vendor prefix for J-Core
-Message-Id: <20160727053112.GY15995@brightrain.aerifal.cx>
+From: Anna-Maria Gleixner <anna-maria@linutronix.de>
+Date: Wed, 13 Jul 2016 17:16:23 +0000
+Subject: [patch V2 21/67] sh/perf: Convert the hotplug notifiers to state machine callbacks
+Message-Id: <20160713153334.597790464@linutronix.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1464148904.git.dalias@libc.org>
- <b6d33800300bde8f1d9a7b88a715d741548fad4a.1464148904.git.dalias@libc.org>
- <CAL_JsqKWq-DBQMWof6hyh0_sS4OPOP7afJXYdaWTiqf15MpKAg@mail.gmail.com>
-In-Reply-To: <CAL_JsqKWq-DBQMWof6hyh0_sS4OPOP7afJXYdaWTiqf15MpKAg@mail.gmail.com>
+References: <20160713153219.128052238@linutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Rob Herring <robh+dt@kernel.org>
-Cc: "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, SH-Linux <linux-sh@vger.kernel.org>, Ian Campbell <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>, Mark Rutland <mark.rutland@arm.com>, Pawel Moll <pawel.moll@arm.com>
+To: LKML <linux-kernel@vger.kernel.org>
+Cc: Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@kernel.org>, Thomas Gleixner <tglx@linutronix.de>, rt@linutronix.de, Sebastian Andrzej Siewior <bigeasy@linutronix.de>, Alexander Shishkin <alexander.shishkin@linux.intel.com>, Arnaldo Carvalho de Melo <acme@kernel.org>, Linus Torvalds <torvalds@linux-foundation.org>, Rich Felker <dalias@libc.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh@vger.kernel.org, Anna-Maria Gleixner <anna-maria@linutronix.de>
 
-On Wed, May 25, 2016 at 08:18:06AM -0500, Rob Herring wrote:
-> On Wed, May 25, 2016 at 12:43 AM, Rich Felker <dalias@libc.org> wrote:
-> > The J-Core project (j-core.org) produces open source cpu and SoC
-> > peripheral cores synthesizable as FPGA bitstreams or ASICs.
-> >
-> > Signed-off-by: Rich Felker <dalias@libc.org>
-> 
-> Please add acks when posting subsequent versions.
-> 
-> > ---
-> >  Documentation/devicetree/bindings/vendor-prefixes.txt | 1 +
-> >  1 file changed, 1 insertion(+)
-> >
-> > diff --git a/Documentation/devicetree/bindings/vendor-prefixes.txt b/Documentation/devicetree/bindings/vendor-prefixes.txt
-> > index 86740d4..9c070b8 100644
-> > --- a/Documentation/devicetree/bindings/vendor-prefixes.txt
-> > +++ b/Documentation/devicetree/bindings/vendor-prefixes.txt
-> > @@ -126,6 +126,7 @@ invensense  InvenSense Inc.
-> >  isee   ISEE 2007 S.L.
-> >  isil   Intersil
-> >  issi   Integrated Silicon Solutions Inc.
-> > +jcore  J-Core.org
-> >  jedec  JEDEC Solid State Technology Association
-> >  karo   Ka-Ro electronics GmbH
-> >  keymile        Keymile GmbH
-> > --
-> > 2.8.1
+From: Thomas Gleixner <tglx@linutronix.de>
 
-Since this was previously acked, can I include it in my tree for
-upstreaming? Or do you want me to submit the patch again?
+Install the callbacks via the state machine and let the core invoke
+the callbacks on the already online CPUs.
 
-Rich
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Reviewed-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Cc: Alexander Shishkin <alexander.shishkin@linux.intel.com>
+Cc: Arnaldo Carvalho de Melo <acme@kernel.org>
+Cc: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: Peter Zijlstra <peterz@infradead.org>
+Cc: Rich Felker <dalias@libc.org>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: linux-sh@vger.kernel.org
+Signed-off-by: Anna-Maria Gleixner <anna-maria@linutronix.de>
+---
+ arch/sh/kernel/perf_event.c | 23 ++++-------------------
+ include/linux/cpuhotplug.h  |  1 +
+ 2 files changed, 5 insertions(+), 19 deletions(-)
+
+diff --git a/arch/sh/kernel/perf_event.c b/arch/sh/kernel/perf_event.c
+index 4dca183..ba3269a 100644
+--- a/arch/sh/kernel/perf_event.c
++++ b/arch/sh/kernel/perf_event.c
+@@ -352,28 +352,12 @@ static struct pmu pmu = {
+ 	.read		= sh_pmu_read,
+ };
+ 
+-static void sh_pmu_setup(int cpu)
++static int sh_pmu_prepare_cpu(unsigned int cpu)
+ {
+ 	struct cpu_hw_events *cpuhw = &per_cpu(cpu_hw_events, cpu);
+ 
+ 	memset(cpuhw, 0, sizeof(struct cpu_hw_events));
+-}
+-
+-static int
+-sh_pmu_notifier(struct notifier_block *self, unsigned long action, void *hcpu)
+-{
+-	unsigned int cpu = (long)hcpu;
+-
+-	switch (action & ~CPU_TASKS_FROZEN) {
+-	case CPU_UP_PREPARE:
+-		sh_pmu_setup(cpu);
+-		break;
+-
+-	default:
+-		break;
+-	}
+-
+-	return NOTIFY_OK;
++	return 0;
+ }
+ 
+ int register_sh_pmu(struct sh_pmu *_pmu)
+@@ -394,6 +378,7 @@ int register_sh_pmu(struct sh_pmu *_pmu)
+ 	WARN_ON(_pmu->num_events > MAX_HWEVENTS);
+ 
+ 	perf_pmu_register(&pmu, "cpu", PERF_TYPE_RAW);
+-	perf_cpu_notifier(sh_pmu_notifier);
++	cpuhp_setup_state(CPUHP_PERF_SUPERH, "PERF_SUPERH", sh_pmu_prepare_cpu,
++			  NULL);
+ 	return 0;
+ }
+diff --git a/include/linux/cpuhotplug.h b/include/linux/cpuhotplug.h
+index fea6666..16ab417 100644
+--- a/include/linux/cpuhotplug.h
++++ b/include/linux/cpuhotplug.h
+@@ -11,6 +11,7 @@ enum cpuhp_state {
+ 	CPUHP_PERF_X86_RAPL_PREP,
+ 	CPUHP_PERF_BFIN,
+ 	CPUHP_PERF_POWER,
++	CPUHP_PERF_SUPERH,
+ 	CPUHP_NOTIFY_PREPARE,
+ 	CPUHP_BRINGUP_CPU,
+ 	CPUHP_AP_IDLE_DEAD,
+-- 
+2.8.1
+
+
+
