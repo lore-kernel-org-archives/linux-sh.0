@@ -1,65 +1,59 @@
-From: Pali =?utf-8?q?Roh=C3=A1r?= <pali.rohar@gmail.com>
-Date: Fri, 22 Jul 2016 21:31:13 +0000
-Subject: Re: [RFC v3 02/13] dell-smo8800: include uaccess.h
-Message-Id: <201607222331.13782@pali>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="nextPart4953421.kYRFz50e9n"
+From: Rich Felker <dalias@libc.org>
+Date: Thu, 14 Jul 2016 22:18:08 +0000
+Subject: Re: [PATCH v3 04/12] of: add J-Core timer bindings
+Message-Id: <20160714221808.GP15995@brightrain.aerifal.cx>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1469222687-1600-1-git-send-email-mcgrof@kernel.org> <1469222687-1600-3-git-send-email-mcgrof@kernel.org>
-In-Reply-To: <1469222687-1600-3-git-send-email-mcgrof@kernel.org>
-To: "Luis R. Rodriguez" <mcgrof@kernel.org>
-Cc: hpa@zytor.com, tglx@linutronix.de, mingo@redhat.com, bp@alien8.de, linux@arm.linux.org.uk, mhiramat@kernel.org, masami.hiramatsu.pt@hitachi.com, jbaron@akamai.com, heiko.carstens@de.ibm.com, ananth@linux.vnet.ibm.com, anil.s.keshavamurthy@intel.com, davem@davemloft.net, realmz6@gmail.com, x86@kernel.org, luto@amacapital.net, keescook@chromium.org, torvalds@linux-foundation.org, gregkh@linuxfoundation.org, rusty@rustcorp.com.au, gnomes@lxorguk.ukuu.org.uk, alan@linux.intel.com, dwmw2@infradead.org, arnd@arndb.de, ming.lei@canonical.com, linux-arch@vger.kernel.org, benh@kernel.crashing.org, ananth@in.ibm.com, pebolle@tiscali.nl, fontana@sharpeleven.org, ciaran.farrell@suse.com, christopher.denicolo@suse.com, david.vrabel@citrix.com, konrad.wilk@oracle.com, mcb30@ipxe.org, jgross@suse.com, andrew.cooper3@citrix.com, andriy.shevchenko@linux.intel.com, paul.gortmaker@windri
+References: <cover.1464148904.git.dalias@libc.org>
+ <5341dfbb085d5647ebb6fe4390ca329b63e0e03d.1464148904.git.dalias@libc.org>
+ <20160601135852.GA17217@rob-hp-laptop>
+ <20160601175307.GC10893@brightrain.aerifal.cx>
+ <CAL_JsqJYyvdc06v2+R=Wnmkk-cO7ZFq=7uGOhPxXdL0UfEu-iA@mail.gmail.com>
+ <20160602013407.GA12184@brightrain.aerifal.cx>
+ <20160602224425.GA15163@rob-hp-laptop>
+ <20160623211608.GA10893@brightrain.aerifal.cx>
+In-Reply-To: <20160623211608.GA10893@brightrain.aerifal.cx>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Rob Herring <robh@kernel.org>
+Cc: "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, SH-Linux <linux-sh@vger.kernel.org>, Ian Campbell <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>, Mark Rutland <mark.rutland@arm.com>, Pawel Moll <pawel.moll@arm.com>
 
---nextPart4953421.kYRFz50e9n
-Content-Type: Text/Plain;
-  charset="utf-8"
-Content-Transfer-Encoding: quoted-printable
+On Thu, Jun 23, 2016 at 05:16:08PM -0400, Rich Felker wrote:
+> On Thu, Jun 02, 2016 at 05:44:25PM -0500, Rob Herring wrote:
+> > > > > In theory it would even be possible to just require a DT node per
+> > > > > cpulocal timer, but I didn't see a good way to make the bindings
+> > > > > represent the relationship to cpus or to make the driver handle irqs
+> > > > > correctly for such a setup, so I'd need a viable proposal for how that
+> > > > > could be done to even consider such an approach.
+> > > > 
+> > > > Yeah, there's not really a standard way to map per cpu blocks to cpus.
+> > > > We could, but doesn't really seem necessary here.
+> > > > 
+> > > > For the irqs, percpu irqs doesn't help you?
+> > > 
+> > > What I mean is that, if there were a separate device node and driver
+> > > instance per cpu, they'd all want to register the same irq just to
+> > > handle it on their own cpu, so we'd have a lot of spurious handlers
+> > > running. The right way to model this, I think, would be as a virtual
+> > > irqchip that's the irq parent of all the timer nodes, and that
+> > > multiplexes the real irq to one virq per cpu (where the current cpu id
+> > > becomes the irq number in its irq domain). But that's a lot of virtual
+> > > infrastructure just for the sake of modelling each percpu timer as its
+> > > own DT node and I don't think it makes sense to do it that way.
+> > 
+> > I would have thought your interrupt controller did all this. On the ARM 
+> > GIC for example, you have the same irq number but there is a per cpu 
+> > interface and really N (= # cpus) physical irq lines.
+> 
+> I've looked at the ARM GIC code and bindings and I don't see where the
+> per-cpu interrupt interfaces are modelled with multiple interrupt
+> controller nodes or irq domains. It looks to me like it just uses a
+> single interrupt controller/domain with percpu irq. Does that match
+> your understanding?
 
-On Friday 22 July 2016 23:24:36 Luis R. Rodriguez wrote:
-> sections.h is currently included and it provides dell-smo8800
-> with what it needs, an upcoming change will decouple uaccess.h
-> from sections.h. This driver needs to explicitly require uaccess.h
-> before this change.
->=20
-> v3: new to this series -- needed due to collateral of the split of
->     old linker tables from tables.h into 3 files: sections.h,
-> ranges.h and tables.h
->=20
-> Signed-off-by: Luis R. Rodriguez <mcgrof@kernel.org>
-> ---
->  drivers/platform/x86/dell-smo8800.c | 1 +
->  1 file changed, 1 insertion(+)
->=20
-> diff --git a/drivers/platform/x86/dell-smo8800.c
-> b/drivers/platform/x86/dell-smo8800.c index
-> 0aec4fd4c48e..37e646034ef8 100644
-> --- a/drivers/platform/x86/dell-smo8800.c
-> +++ b/drivers/platform/x86/dell-smo8800.c
-> @@ -24,6 +24,7 @@
->  #include <linux/acpi.h>
->  #include <linux/interrupt.h>
->  #include <linux/miscdevice.h>
-> +#include <linux/uaccess.h>
->=20
->  struct smo8800_device {
->  	u32 irq;                     /* acpi device irq */
+Ping.
 
-This is trivial change for dell-smo8800, so you can add my Reviewed-by.
+I want to submit this again for the upcoming merge window and need to
+know whether you still want me to pursue different approaches.
 
-=2D-=20
-Pali Roh=C3=A1r
-pali.rohar@gmail.com
-
---nextPart4953421.kYRFz50e9n
-Content-Type: application/pgp-signature; name=signature.asc 
-Content-Description: This is a digitally signed message part.
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-
-iEYEABECAAYFAleSkKEACgkQi/DJPQPkQ1KRqACeJoiicMAtg5mWEsbI9WpYvU9d
-QYMAoJ96BAKaU28QRw5Ps8Hfd3PpDCE8
-=ej6H
------END PGP SIGNATURE-----
-
---nextPart4953421.kYRFz50e9n--
+Rich
