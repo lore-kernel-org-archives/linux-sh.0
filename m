@@ -1,203 +1,154 @@
-From: Rich Felker <dalias@libc.org>
-Date: Fri, 15 Jul 2016 01:27:50 +0000
-Subject: Re: [PATCH v3 08/12] irqchip: add J-Core AIC driver
-Message-Id: <20160715012750.GQ15995@brightrain.aerifal.cx>
+From: Jiri Slaby <jslaby@suse.cz>
+Date: Fri, 15 Jul 2016 08:17:56 +0000
+Subject: [PATCH 5/5] frv, mn10300, s390, sh: remove empty vga.h
+Message-Id: <20160715081756.24048-5-jslaby@suse.cz>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1464148904.git.dalias@libc.org>
- <05a5be0a4f1471272dcdd2259e4d97642ee43759.1464148904.git.dalias@libc.org>
-In-Reply-To: <05a5be0a4f1471272dcdd2259e4d97642ee43759.1464148904.git.dalias@libc.org>
+References: <20160715081756.24048-1-jslaby@suse.cz>
+In-Reply-To: <20160715081756.24048-1-jslaby@suse.cz>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
-Cc: Jason Cooper <jason@lakedaemon.net>, Marc Zyngier <marc.zyngier@arm.com>, Thomas Gleixner <tglx@linutronix.de>, Daniel Lezcano <daniel.lezcano@linaro.org>
+To: akpm@linux-foundation.org
+Cc: linux-kernel@vger.kernel.org, Jiri Slaby <jslaby@suse.cz>, David Howells <dhowells@redhat.com>, Martin Schwidefsky <schwidefsky@de.ibm.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-am33-list@redhat.com, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org
 
-On Wed, May 25, 2016 at 05:43:03AM +0000, Rich Felker wrote:
-> There are two versions of the J-Core interrupt controller in use, aic1
-> which generates interrupts with programmable priorities, but only
-> supports 8 irq lines and maps them to cpu traps in the range 17 to 24,
-> and aic2 which uses traps in the range 64-127 and supports up to 128
-> irqs, with priorities dependent on the interrupt number. The Linux
-> driver does not make use of priorities anyway.
-> 
-> For simplicity, there is no aic1-specific logic in the driver beyond
-> setting the priority register, which is necessary for interrupts to
-> work at all. Eventually aic1 will likely be phased out, but it's
-> currently in use in deployments and all released bitstream binaries.
+Provided the architectures do not need any special handling (they seem
+not to support vga at all, actually), there is no need to have an
+empty vga.h. Let them refer to the generic one instead.
 
-Any comments on changes I should make in resubmitting this for the 4.8
-merge window? I could somewhat restrict the possible irqs, but aic1
-allows the pit to be programmed to generate any trap number you want,
-despite the hard-wired interrupts being limited to the range 17-24.
+Signed-off-by: Jiri Slaby <jslaby@suse.cz>
+Cc: David Howells <dhowells@redhat.com>
+Cc: Martin Schwidefsky <schwidefsky@de.ibm.com>
+Cc: Heiko Carstens <heiko.carstens@de.ibm.com>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+Cc: linux-am33-list@redhat.com
+Cc: linux-s390@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
+---
+ arch/frv/include/asm/Kbuild     |  1 +
+ arch/frv/include/asm/vga.h      | 17 -----------------
+ arch/mn10300/include/asm/Kbuild |  1 +
+ arch/mn10300/include/asm/vga.h  | 17 -----------------
+ arch/s390/include/asm/Kbuild    |  1 +
+ arch/s390/include/asm/vga.h     |  6 ------
+ arch/sh/include/asm/Kbuild      |  1 +
+ arch/sh/include/asm/vga.h       |  6 ------
+ 8 files changed, 4 insertions(+), 46 deletions(-)
+ delete mode 100644 arch/frv/include/asm/vga.h
+ delete mode 100644 arch/mn10300/include/asm/vga.h
+ delete mode 100644 arch/s390/include/asm/vga.h
+ delete mode 100644 arch/sh/include/asm/vga.h
 
-It might make sense to do something to allow percpu irq requests, but
-I couldn't figure out how to make them work and the current timer
-driver (that needs per-cpu irq delivery) just requests its irq through
-normal request_irq and lets the hardware do the right thing.
+diff --git a/arch/frv/include/asm/Kbuild b/arch/frv/include/asm/Kbuild
+index 1fa084cf1a43..d1a5c16a2e0f 100644
+--- a/arch/frv/include/asm/Kbuild
++++ b/arch/frv/include/asm/Kbuild
+@@ -7,4 +7,5 @@ generic-y += mcs_spinlock.h
+ generic-y += mm-arch-hooks.h
+ generic-y += preempt.h
+ generic-y += trace_clock.h
++generic-y += vga.h
+ generic-y += word-at-a-time.h
+diff --git a/arch/frv/include/asm/vga.h b/arch/frv/include/asm/vga.h
+deleted file mode 100644
+index a702c800a229..000000000000
+--- a/arch/frv/include/asm/vga.h
++++ /dev/null
+@@ -1,17 +0,0 @@
+-/* vga.h: VGA register stuff
+- *
+- * Copyright (C) 2006 Red Hat, Inc. All Rights Reserved.
+- * Written by David Howells (dhowells@redhat.com)
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License
+- * as published by the Free Software Foundation; either version
+- * 2 of the License, or (at your option) any later version.
+- */
+-
+-#ifndef _ASM_VGA_H
+-#define _ASM_VGA_H
+-
+-
+-
+-#endif /* _ASM_VGA_H */
+diff --git a/arch/mn10300/include/asm/Kbuild b/arch/mn10300/include/asm/Kbuild
+index 1c8dd0f5cd5d..ee06fceabde0 100644
+--- a/arch/mn10300/include/asm/Kbuild
++++ b/arch/mn10300/include/asm/Kbuild
+@@ -9,4 +9,5 @@ generic-y += mm-arch-hooks.h
+ generic-y += preempt.h
+ generic-y += sections.h
+ generic-y += trace_clock.h
++generic-y += vga.h
+ generic-y += word-at-a-time.h
+diff --git a/arch/mn10300/include/asm/vga.h b/arch/mn10300/include/asm/vga.h
+deleted file mode 100644
+index 0163e50a3459..000000000000
+--- a/arch/mn10300/include/asm/vga.h
++++ /dev/null
+@@ -1,17 +0,0 @@
+-/* MN10300 VGA register definitions
+- *
+- * Copyright (C) 2007 Red Hat, Inc. All Rights Reserved.
+- * Written by David Howells (dhowells@redhat.com)
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public Licence
+- * as published by the Free Software Foundation; either version
+- * 2 of the Licence, or (at your option) any later version.
+- */
+-
+-#ifndef _ASM_VGA_H
+-#define _ASM_VGA_H
+-
+-
+-
+-#endif /* _ASM_VGA_H */
+diff --git a/arch/s390/include/asm/Kbuild b/arch/s390/include/asm/Kbuild
+index 9043d2e1e2ae..3ac3936e46e3 100644
+--- a/arch/s390/include/asm/Kbuild
++++ b/arch/s390/include/asm/Kbuild
+@@ -6,4 +6,5 @@ generic-y += mcs_spinlock.h
+ generic-y += mm-arch-hooks.h
+ generic-y += preempt.h
+ generic-y += trace_clock.h
++generic-y += vga.h
+ generic-y += word-at-a-time.h
+diff --git a/arch/s390/include/asm/vga.h b/arch/s390/include/asm/vga.h
+deleted file mode 100644
+index d375526c261f..000000000000
+--- a/arch/s390/include/asm/vga.h
++++ /dev/null
+@@ -1,6 +0,0 @@
+-#ifndef _ASM_S390_VGA_H
+-#define _ASM_S390_VGA_H
+-
+-/* Avoid compile errors due to missing asm/vga.h */
+-
+-#endif /* _ASM_S390_VGA_H */
+diff --git a/arch/sh/include/asm/Kbuild b/arch/sh/include/asm/Kbuild
+index 751c3373a92c..5b8bfba7522d 100644
+--- a/arch/sh/include/asm/Kbuild
++++ b/arch/sh/include/asm/Kbuild
+@@ -38,4 +38,5 @@ generic-y += termbits.h
+ generic-y += termios.h
+ generic-y += trace_clock.h
+ generic-y += ucontext.h
++generic-y += vga.h
+ generic-y += xor.h
+diff --git a/arch/sh/include/asm/vga.h b/arch/sh/include/asm/vga.h
+deleted file mode 100644
+index 06a5de8ace1a..000000000000
+--- a/arch/sh/include/asm/vga.h
++++ /dev/null
+@@ -1,6 +0,0 @@
+-#ifndef __ASM_SH_VGA_H
+-#define __ASM_SH_VGA_H
+-
+-/* Stupid drivers. */
+-
+-#endif /* __ASM_SH_VGA_H */
+-- 
+2.9.1
 
-One possible change would be allowing non-identity mapping between
-hardware irq numbers (cpu trap numbers) and virqs, but then some
-facility for setting up a mapping/dispatch function in do_IRQ is
-needed.
-
-Since the driver (and aic device) currently depends to some extent on
-SH arch trap numbers and how the SH irq entry point passes them on
-(identity mapping), should this driver just go in arch/sh/drivers
-rather than drivers/irqchip?
-
-Rich
-
-
-> Signed-off-by: Rich Felker <dalias@libc.org>
-> ---
-> 
-> This version fixes a missing "static" reported in the previous
-> version of the patch. I missed Marc Zyngier's reply to the v2 when
-> preparing the v3 patch series, but I'm still not sure exactly what, if
-> any, changes should come out of that discussion, and they'll probably
-> mostly in the area of comments or changelog.
-> 
->  drivers/irqchip/Kconfig         |  6 +++
->  drivers/irqchip/Makefile        |  1 +
->  drivers/irqchip/irq-jcore-aic.c | 95 +++++++++++++++++++++++++++++++++++++++++
->  3 files changed, 102 insertions(+)
->  create mode 100644 drivers/irqchip/irq-jcore-aic.c
-> 
-> diff --git a/drivers/irqchip/Kconfig b/drivers/irqchip/Kconfig
-> index 3e12479..3cb37d6 100644
-> --- a/drivers/irqchip/Kconfig
-> +++ b/drivers/irqchip/Kconfig
-> @@ -149,6 +149,12 @@ config PIC32_EVIC
->  	select GENERIC_IRQ_CHIP
->  	select IRQ_DOMAIN
->  
-> +config JCORE_AIC
-> +	bool "J-Core integrated AIC"
-> +	select IRQ_DOMAIN
-> +	help
-> +	  Support for the J-Core integrated AIC.
-> +
->  config RENESAS_INTC_IRQPIN
->  	bool
->  	select IRQ_DOMAIN
-> diff --git a/drivers/irqchip/Makefile b/drivers/irqchip/Makefile
-> index b03cfcb..5a1f1bf 100644
-> --- a/drivers/irqchip/Makefile
-> +++ b/drivers/irqchip/Makefile
-> @@ -37,6 +37,7 @@ obj-$(CONFIG_I8259)			+= irq-i8259.o
->  obj-$(CONFIG_IMGPDC_IRQ)		+= irq-imgpdc.o
->  obj-$(CONFIG_IRQ_MIPS_CPU)		+= irq-mips-cpu.o
->  obj-$(CONFIG_SIRF_IRQ)			+= irq-sirfsoc.o
-> +obj-$(CONFIG_JCORE_AIC)			+= irq-jcore-aic.o
->  obj-$(CONFIG_RENESAS_INTC_IRQPIN)	+= irq-renesas-intc-irqpin.o
->  obj-$(CONFIG_RENESAS_IRQC)		+= irq-renesas-irqc.o
->  obj-$(CONFIG_VERSATILE_FPGA_IRQ)	+= irq-versatile-fpga.o
-> diff --git a/drivers/irqchip/irq-jcore-aic.c b/drivers/irqchip/irq-jcore-aic.c
-> new file mode 100644
-> index 0000000..1348cdb
-> --- /dev/null
-> +++ b/drivers/irqchip/irq-jcore-aic.c
-> @@ -0,0 +1,95 @@
-> +/*
-> + * J-Core SoC AIC driver
-> + *
-> + * Copyright (C) 2015-2016 Smart Energy Instruments, Inc.
-> + *
-> + * This file is subject to the terms and conditions of the GNU General Public
-> + * License.  See the file "COPYING" in the main directory of this archive
-> + * for more details.
-> + */
-> +
-> +#include <linux/irq.h>
-> +#include <linux/io.h>
-> +#include <linux/irqchip.h>
-> +#include <linux/irqdomain.h>
-> +#include <linux/module.h>
-> +#include <linux/cpu.h>
-> +#include <linux/of.h>
-> +#include <linux/of_address.h>
-> +#include <linux/of_irq.h>
-> +
-> +#define AIC1_INTPRI 8
-> +
-> +static struct aic_data {
-> +	unsigned char __iomem *base;
-> +	u32 cpu_offset;
-> +	struct irq_chip chip;
-> +	struct irq_domain *domain;
-> +	struct notifier_block nb;
-> +} aic_data;
-> +
-> +static int aic_irqdomain_map(struct irq_domain *d, unsigned int irq, irq_hw_number_t hwirq)
-> +{
-> +	struct aic_data *aic = d->host_data;
-> +
-> +	irq_set_chip_data(irq, aic);
-> +	irq_set_chip_and_handler(irq, &aic->chip, handle_simple_irq);
-> +	irq_set_probe(irq);
-> +
-> +	return 0;
-> +}
-> +
-> +static const struct irq_domain_ops aic_irqdomain_ops = {
-> +	.map = aic_irqdomain_map,
-> +	.xlate = irq_domain_xlate_onecell,
-> +};
-> +
-> +static void noop(struct irq_data *data)
-> +{
-> +}
-> +
-> +static void aic1_localenable(struct aic_data *aic)
-> +{
-> +	unsigned cpu = smp_processor_id();
-> +	pr_info("Local AIC enable on cpu %u\n", cpu);
-> +	writel(0xffffffff, aic->base + cpu * aic->cpu_offset + AIC1_INTPRI);
-> +}
-> +
-> +static int aic1_cpu_notify(struct notifier_block *self, unsigned long action, void *hcpu)
-> +{
-> +	switch (action & ~CPU_TASKS_FROZEN) {
-> +	case CPU_STARTING:
-> +		aic1_localenable(container_of(self, struct aic_data, nb));
-> +		break;
-> +	}
-> +	return NOTIFY_OK;
-> +}
-> +
-> +int __init aic_irq_of_init(struct device_node *node, struct device_node *parent)
-> +{
-> +	struct aic_data *aic = &aic_data;
-> +
-> +	aic->base = of_iomap(node, 0);
-> +	of_property_read_u32(node, "cpu-offset", &aic->cpu_offset);
-> +
-> +	pr_info("Initializing J-Core AIC at %p\n", aic->base);
-> +
-> +	if (of_device_is_compatible(node, "jcore,aic1")) {
-> +		/* For aic1, need to enabled zero-priority-by-default irqs */
-> +		aic->nb.notifier_call = aic1_cpu_notify;
-> +		register_cpu_notifier(&aic->nb);
-> +		aic1_localenable(aic);
-> +	}
-> +
-> +	aic->chip.name = node->name;
-> +	aic->chip.irq_mask = noop;
-> +	aic->chip.irq_unmask = noop;
-> +
-> +	aic->domain = irq_domain_add_linear(node, 128, &aic_irqdomain_ops, aic);
-> +	irq_create_strict_mappings(aic->domain, 16, 16, 112);
-> +
-> +	return 0;
-> +}
-> +
-> +IRQCHIP_DECLARE(jcore_aic2, "jcore,aic2", aic_irq_of_init);
-> +IRQCHIP_DECLARE(jcore_aic1, "jcore,aic1", aic_irq_of_init);
-> -- 
-> 2.8.1
-> 
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
