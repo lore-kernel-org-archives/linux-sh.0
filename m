@@ -1,157 +1,203 @@
-From: "Luis R. Rodriguez" <mcgrof@kernel.org>
-Date: Fri, 22 Jul 2016 21:24:43 +0000
-Subject: [RFC v3 09/13] firmware: port built-in section to linker table
-Message-Id: <1469222687-1600-10-git-send-email-mcgrof@kernel.org>
+From: Rich Felker <dalias@libc.org>
+Date: Fri, 15 Jul 2016 01:27:50 +0000
+Subject: Re: [PATCH v3 08/12] irqchip: add J-Core AIC driver
+Message-Id: <20160715012750.GQ15995@brightrain.aerifal.cx>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1469222687-1600-1-git-send-email-mcgrof@kernel.org>
-In-Reply-To: <1469222687-1600-1-git-send-email-mcgrof@kernel.org>
+References: <cover.1464148904.git.dalias@libc.org>
+ <05a5be0a4f1471272dcdd2259e4d97642ee43759.1464148904.git.dalias@libc.org>
+In-Reply-To: <05a5be0a4f1471272dcdd2259e4d97642ee43759.1464148904.git.dalias@libc.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: hpa@zytor.com, tglx@linutronix.de, mingo@redhat.com, bp@alien8.de, linux@arm.linux.org.uk, mhiramat@kernel.org, masami.hiramatsu.pt@hitachi.com, jbaron@akamai.com, heiko.carstens@de.ibm.com, ananth@linux.vnet.ibm.com, anil.s.keshavamurthy@intel.com, davem@davemloft.net, realmz6@gmail.com
-Cc: x86@kernel.org, luto@amacapital.net, keescook@chromium.org, torvalds@linux-foundation.org, gregkh@linuxfoundation.org, rusty@rustcorp.com.au, gnomes@lxorguk.ukuu.org.uk, alan@linux.intel.com, dwmw2@infradead.org, arnd@arndb.de, ming.lei@canonical.com, linux-arch@vger.kernel.org, benh@kernel.crashing.org, ananth@in.ibm.com, pebolle@tiscali.nl, fontana@sharpeleven.org, ciaran.farrell@suse.com, christopher.denicolo@suse.com, david.vrabel@citrix.com, konrad.wilk@oracle.com, mcb30@ipxe.org, jgross@suse.com, andrew.cooper3@citrix.com, andriy.shevchenko@linux.intel.com, paul.gortmaker@windriver.com, xen-devel@lists.xensource.com, ak@linux.intel.com, pali.rohar@gmail.com, dvhart@infradead.org, platform-driver-x86@vger.kernel.org, mmarek@suse.com, linux@rasmusvillemoes.dk, jkosina@suse.cz, korea.drzix@gmail.com, linux-kbuild@vger.kernel.org, tony.luck@intel.com, akpm@linux-foun
+To: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Jason Cooper <jason@lakedaemon.net>, Marc Zyngier <marc.zyngier@arm.com>, Thomas Gleixner <tglx@linutronix.de>, Daniel Lezcano <daniel.lezcano@linaro.org>
 
-This ports built-in firmware to use linker tables,
-this replaces the custom section solution with a
-generic solution.
+On Wed, May 25, 2016 at 05:43:03AM +0000, Rich Felker wrote:
+> There are two versions of the J-Core interrupt controller in use, aic1
+> which generates interrupts with programmable priorities, but only
+> supports 8 irq lines and maps them to cpu traps in the range 17 to 24,
+> and aic2 which uses traps in the range 64-127 and supports up to 128
+> irqs, with priorities dependent on the interrupt number. The Linux
+> driver does not make use of priorities anyway.
+> 
+> For simplicity, there is no aic1-specific logic in the driver beyond
+> setting the priority register, which is necessary for interrupts to
+> work at all. Eventually aic1 will likely be phased out, but it's
+> currently in use in deployments and all released bitstream binaries.
 
-This also demos the use of the .rodata (SECTION_RO)
-linker tables.
+Any comments on changes I should make in resubmitting this for the 4.8
+merge window? I could somewhat restrict the possible irqs, but aic1
+allows the pit to be programmed to generate any trap number you want,
+despite the hard-wired interrupts being limited to the range 17-24.
 
-Tested with 0 built-in firmware, 1 and 2 built-in
-firmwares successfully.
+It might make sense to do something to allow percpu irq requests, but
+I couldn't figure out how to make them work and the current timer
+driver (that needs per-cpu irq delivery) just requests its irq through
+normal request_irq and lets the hardware do the right thing.
 
-v3:
-o explicitly include tables.h as we no longer include
-  tables.h from sections.h
+One possible change would be allowing non-identity mapping between
+hardware irq numbers (cpu trap numbers) and virqs, but then some
+facility for setting up a mapping/dispatch function in do_IRQ is
+needed.
 
-o use new section_tbl_asmtype() helper on firmware/Makefile
-  to enable having to unfold things on our own.
+Since the driver (and aic device) currently depends to some extent on
+SH arch trap numbers and how the SH irq entry point passes them on
+(identity mapping), should this driver just go in arch/sh/drivers
+rather than drivers/irqchip?
 
-v2: introduced this file in this version of the series
+Rich
 
-Signed-off-by: Luis R. Rodriguez <mcgrof@kernel.org>
----
- arch/x86/kernel/cpu/microcode/core.c |  8 ++++----
- drivers/base/firmware_class.c        | 12 ++++++------
- firmware/Makefile                    |  4 +++-
- include/asm-generic/vmlinux.lds.h    |  7 -------
- 4 files changed, 13 insertions(+), 18 deletions(-)
 
-diff --git a/arch/x86/kernel/cpu/microcode/core.c b/arch/x86/kernel/cpu/microcode/core.c
-index df04b2d033f6..3e7c08d99601 100644
---- a/arch/x86/kernel/cpu/microcode/core.c
-+++ b/arch/x86/kernel/cpu/microcode/core.c
-@@ -31,6 +31,7 @@
- #include <linux/cpu.h>
- #include <linux/fs.h>
- #include <linux/mm.h>
-+#include <linux/tables.h>
- 
- #include <asm/microcode_intel.h>
- #include <asm/cpu_device_id.h>
-@@ -91,15 +92,14 @@ static bool __init check_loader_disabled_bsp(void)
- 	return *res;
- }
- 
--extern struct builtin_fw __start_builtin_fw[];
--extern struct builtin_fw __end_builtin_fw[];
-+DECLARE_LINKTABLE_RO(struct builtin_fw, builtin_fw);
- 
- bool get_builtin_firmware(struct cpio_data *cd, const char *name)
- {
- #ifdef CONFIG_FW_LOADER
--	struct builtin_fw *b_fw;
-+	const struct builtin_fw *b_fw;
- 
--	for (b_fw = __start_builtin_fw; b_fw != __end_builtin_fw; b_fw++) {
-+	LINKTABLE_FOR_EACH(b_fw, builtin_fw) {
- 		if (!strcmp(name, b_fw->name)) {
- 			cd->size = b_fw->size;
- 			cd->data = b_fw->data;
-diff --git a/drivers/base/firmware_class.c b/drivers/base/firmware_class.c
-index 22d1760a4278..8fbf03c3e4c2 100644
---- a/drivers/base/firmware_class.c
-+++ b/drivers/base/firmware_class.c
-@@ -30,6 +30,7 @@
- #include <linux/syscore_ops.h>
- #include <linux/reboot.h>
- #include <linux/security.h>
-+#include <linux/tables.h>
- 
- #include <generated/utsrelease.h>
- 
-@@ -43,15 +44,14 @@ MODULE_LICENSE("GPL");
- 
- #ifdef CONFIG_FW_LOADER
- 
--extern struct builtin_fw __start_builtin_fw[];
--extern struct builtin_fw __end_builtin_fw[];
-+DEFINE_LINKTABLE_RO(struct builtin_fw, builtin_fw);
- 
- static bool fw_get_builtin_firmware(struct firmware *fw, const char *name,
- 				    void *buf, size_t size)
- {
--	struct builtin_fw *b_fw;
-+	const struct builtin_fw *b_fw;
- 
--	for (b_fw = __start_builtin_fw; b_fw != __end_builtin_fw; b_fw++) {
-+	LINKTABLE_FOR_EACH(b_fw, builtin_fw) {
- 		if (strcmp(name, b_fw->name) = 0) {
- 			fw->size = b_fw->size;
- 			fw->data = b_fw->data;
-@@ -67,9 +67,9 @@ static bool fw_get_builtin_firmware(struct firmware *fw, const char *name,
- 
- static bool fw_is_builtin_firmware(const struct firmware *fw)
- {
--	struct builtin_fw *b_fw;
-+	const struct builtin_fw *b_fw;
- 
--	for (b_fw = __start_builtin_fw; b_fw != __end_builtin_fw; b_fw++)
-+	LINKTABLE_FOR_EACH(b_fw, builtin_fw)
- 		if (fw->data = b_fw->data)
- 			return true;
- 
-diff --git a/firmware/Makefile b/firmware/Makefile
-index fa3e81c2a97b..32304a227f09 100644
---- a/firmware/Makefile
-+++ b/firmware/Makefile
-@@ -155,6 +155,8 @@ quiet_cmd_fwbin = MK_FW   $@
- 		  ASM_ALIGN=$(if $(CONFIG_64BIT),3,2);			     \
- 		  PROGBITS=$(if $(CONFIG_ARM),%,@)progbits;		     \
- 		  echo "/* Generated by firmware/Makefile */"		> $@;\
-+		  echo "\#include <asm/sections.h>"			>>$@;\
-+		  echo "\#include <asm/tables.h>"			>>$@;\
- 		  echo "    .section .rodata"				>>$@;\
- 		  echo "    .p2align $${ASM_ALIGN}"			>>$@;\
- 		  echo "_fw_$${FWSTR}_bin:"				>>$@;\
-@@ -164,7 +166,7 @@ quiet_cmd_fwbin = MK_FW   $@
- 		  echo "    .p2align $${ASM_ALIGN}"			>>$@;\
- 		  echo "_fw_$${FWSTR}_name:"				>>$@;\
- 		  echo "    .string \"$$FWNAME\""			>>$@;\
--		  echo "    .section .builtin_fw,\"a\",$${PROGBITS}"	>>$@;\
-+		  echo "    section_tbl_asmtype(SECTION_RODATA, builtin_fw, SECTION_ORDER_ANY, a,$${PROGBITS})"	>>$@;\
- 		  echo "    .p2align $${ASM_ALIGN}"			>>$@;\
- 		  echo "    $${ASM_WORD} _fw_$${FWSTR}_name"		>>$@;\
- 		  echo "    $${ASM_WORD} _fw_$${FWSTR}_bin"		>>$@;\
-diff --git a/include/asm-generic/vmlinux.lds.h b/include/asm-generic/vmlinux.lds.h
-index b3a9cd7bc947..8e31a4454841 100644
---- a/include/asm-generic/vmlinux.lds.h
-+++ b/include/asm-generic/vmlinux.lds.h
-@@ -313,13 +313,6 @@
- 		VMLINUX_SYMBOL(__end_pci_fixups_suspend_late) = .;	\
- 	}								\
- 									\
--	/* Built-in firmware blobs */					\
--	.builtin_fw        : AT(ADDR(.builtin_fw) - LOAD_OFFSET) {	\
--		VMLINUX_SYMBOL(__start_builtin_fw) = .;			\
--		*(.builtin_fw)						\
--		VMLINUX_SYMBOL(__end_builtin_fw) = .;			\
--	}								\
--									\
- 	TRACEDATA							\
- 									\
- 	/* Kernel symbol table: Normal symbols */			\
--- 
-2.8.4
-
+> Signed-off-by: Rich Felker <dalias@libc.org>
+> ---
+> 
+> This version fixes a missing "static" reported in the previous
+> version of the patch. I missed Marc Zyngier's reply to the v2 when
+> preparing the v3 patch series, but I'm still not sure exactly what, if
+> any, changes should come out of that discussion, and they'll probably
+> mostly in the area of comments or changelog.
+> 
+>  drivers/irqchip/Kconfig         |  6 +++
+>  drivers/irqchip/Makefile        |  1 +
+>  drivers/irqchip/irq-jcore-aic.c | 95 +++++++++++++++++++++++++++++++++++++++++
+>  3 files changed, 102 insertions(+)
+>  create mode 100644 drivers/irqchip/irq-jcore-aic.c
+> 
+> diff --git a/drivers/irqchip/Kconfig b/drivers/irqchip/Kconfig
+> index 3e12479..3cb37d6 100644
+> --- a/drivers/irqchip/Kconfig
+> +++ b/drivers/irqchip/Kconfig
+> @@ -149,6 +149,12 @@ config PIC32_EVIC
+>  	select GENERIC_IRQ_CHIP
+>  	select IRQ_DOMAIN
+>  
+> +config JCORE_AIC
+> +	bool "J-Core integrated AIC"
+> +	select IRQ_DOMAIN
+> +	help
+> +	  Support for the J-Core integrated AIC.
+> +
+>  config RENESAS_INTC_IRQPIN
+>  	bool
+>  	select IRQ_DOMAIN
+> diff --git a/drivers/irqchip/Makefile b/drivers/irqchip/Makefile
+> index b03cfcb..5a1f1bf 100644
+> --- a/drivers/irqchip/Makefile
+> +++ b/drivers/irqchip/Makefile
+> @@ -37,6 +37,7 @@ obj-$(CONFIG_I8259)			+= irq-i8259.o
+>  obj-$(CONFIG_IMGPDC_IRQ)		+= irq-imgpdc.o
+>  obj-$(CONFIG_IRQ_MIPS_CPU)		+= irq-mips-cpu.o
+>  obj-$(CONFIG_SIRF_IRQ)			+= irq-sirfsoc.o
+> +obj-$(CONFIG_JCORE_AIC)			+= irq-jcore-aic.o
+>  obj-$(CONFIG_RENESAS_INTC_IRQPIN)	+= irq-renesas-intc-irqpin.o
+>  obj-$(CONFIG_RENESAS_IRQC)		+= irq-renesas-irqc.o
+>  obj-$(CONFIG_VERSATILE_FPGA_IRQ)	+= irq-versatile-fpga.o
+> diff --git a/drivers/irqchip/irq-jcore-aic.c b/drivers/irqchip/irq-jcore-aic.c
+> new file mode 100644
+> index 0000000..1348cdb
+> --- /dev/null
+> +++ b/drivers/irqchip/irq-jcore-aic.c
+> @@ -0,0 +1,95 @@
+> +/*
+> + * J-Core SoC AIC driver
+> + *
+> + * Copyright (C) 2015-2016 Smart Energy Instruments, Inc.
+> + *
+> + * This file is subject to the terms and conditions of the GNU General Public
+> + * License.  See the file "COPYING" in the main directory of this archive
+> + * for more details.
+> + */
+> +
+> +#include <linux/irq.h>
+> +#include <linux/io.h>
+> +#include <linux/irqchip.h>
+> +#include <linux/irqdomain.h>
+> +#include <linux/module.h>
+> +#include <linux/cpu.h>
+> +#include <linux/of.h>
+> +#include <linux/of_address.h>
+> +#include <linux/of_irq.h>
+> +
+> +#define AIC1_INTPRI 8
+> +
+> +static struct aic_data {
+> +	unsigned char __iomem *base;
+> +	u32 cpu_offset;
+> +	struct irq_chip chip;
+> +	struct irq_domain *domain;
+> +	struct notifier_block nb;
+> +} aic_data;
+> +
+> +static int aic_irqdomain_map(struct irq_domain *d, unsigned int irq, irq_hw_number_t hwirq)
+> +{
+> +	struct aic_data *aic = d->host_data;
+> +
+> +	irq_set_chip_data(irq, aic);
+> +	irq_set_chip_and_handler(irq, &aic->chip, handle_simple_irq);
+> +	irq_set_probe(irq);
+> +
+> +	return 0;
+> +}
+> +
+> +static const struct irq_domain_ops aic_irqdomain_ops = {
+> +	.map = aic_irqdomain_map,
+> +	.xlate = irq_domain_xlate_onecell,
+> +};
+> +
+> +static void noop(struct irq_data *data)
+> +{
+> +}
+> +
+> +static void aic1_localenable(struct aic_data *aic)
+> +{
+> +	unsigned cpu = smp_processor_id();
+> +	pr_info("Local AIC enable on cpu %u\n", cpu);
+> +	writel(0xffffffff, aic->base + cpu * aic->cpu_offset + AIC1_INTPRI);
+> +}
+> +
+> +static int aic1_cpu_notify(struct notifier_block *self, unsigned long action, void *hcpu)
+> +{
+> +	switch (action & ~CPU_TASKS_FROZEN) {
+> +	case CPU_STARTING:
+> +		aic1_localenable(container_of(self, struct aic_data, nb));
+> +		break;
+> +	}
+> +	return NOTIFY_OK;
+> +}
+> +
+> +int __init aic_irq_of_init(struct device_node *node, struct device_node *parent)
+> +{
+> +	struct aic_data *aic = &aic_data;
+> +
+> +	aic->base = of_iomap(node, 0);
+> +	of_property_read_u32(node, "cpu-offset", &aic->cpu_offset);
+> +
+> +	pr_info("Initializing J-Core AIC at %p\n", aic->base);
+> +
+> +	if (of_device_is_compatible(node, "jcore,aic1")) {
+> +		/* For aic1, need to enabled zero-priority-by-default irqs */
+> +		aic->nb.notifier_call = aic1_cpu_notify;
+> +		register_cpu_notifier(&aic->nb);
+> +		aic1_localenable(aic);
+> +	}
+> +
+> +	aic->chip.name = node->name;
+> +	aic->chip.irq_mask = noop;
+> +	aic->chip.irq_unmask = noop;
+> +
+> +	aic->domain = irq_domain_add_linear(node, 128, &aic_irqdomain_ops, aic);
+> +	irq_create_strict_mappings(aic->domain, 16, 16, 112);
+> +
+> +	return 0;
+> +}
+> +
+> +IRQCHIP_DECLARE(jcore_aic2, "jcore,aic2", aic_irq_of_init);
+> +IRQCHIP_DECLARE(jcore_aic1, "jcore,aic1", aic_irq_of_init);
+> -- 
+> 2.8.1
+> 
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
