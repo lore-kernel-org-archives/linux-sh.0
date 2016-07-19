@@ -1,64 +1,66 @@
-From: Rich Felker <dalias@libc.org>
-Date: Sun, 31 Jul 2016 16:08:07 +0000
-Subject: Re: [PATCH v5 2/2] clocksource: add J-Core timer/clocksource driver
-Message-Id: <20160731160807.GP15995@brightrain.aerifal.cx>
+From: SF Markus Elfring <elfring@users.sourceforge.net>
+Date: Tue, 19 Jul 2016 16:20:30 +0000
+Subject: Re: [PATCH] sh-DWARF: Delete unnecessary checks before the function call "mempool_destroy"
+Message-Id: <8876165d-9a23-c837-cdb1-bcf60fa058a8@users.sourceforge.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1469688975.git.dalias@libc.org>
- <ed156509aed631486decf1828acb4f0afa61dd31.1469688975.git.dalias@libc.org>
- <alpine.DEB.2.11.1607281515330.19896@nanos>
- <20160728200047.GL15995@brightrain.aerifal.cx>
- <20160728201844.GM15995@brightrain.aerifal.cx>
-In-Reply-To: <20160728201844.GM15995@brightrain.aerifal.cx>
+References: <5307CAA2.8060406@users.sourceforge.net>
+ <alpine.DEB.2.02.1402212321410.2043@localhost6.localdomain6>
+ <530A086E.8010901@users.sourceforge.net>
+ <alpine.DEB.2.02.1402231635510.1985@localhost6.localdomain6>
+ <530A72AA.3000601@users.sourceforge.net>
+ <alpine.DEB.2.02.1402240658210.2090@localhost6.localdomain6>
+ <530B5FB6.6010207@users.sourceforge.net>
+ <alpine.DEB.2.10.1402241710370.2074@hadrien>
+ <530C5E18.1020800@users.sourceforge.net>
+ <alpine.DEB.2.10.1402251014170.2080@hadrien>
+ <530CD2C4.4050903@users.sourceforge.net>
+ <alpine.DEB.2.10.1402251840450.7035@hadrien>
+ <530CF8FF.8080600@users.sourceforge.net>
+ <alpine.DEB.2.02.1402252117150.2047@localhost6.localdomain6>
+ <530DD06F.4090703@users.sourceforge.net>
+ <alpine.DEB.2.02.1402262129250.2221@localhost6.localdomain6>
+ <5317A59D.4@users.sourceforge.net> <564985B7.3080806@users.sourceforge.net>
+In-Reply-To: <564985B7.3080806@users.sourceforge.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Thomas Gleixner <tglx@linutronix.de>
-Cc: devicetree@vger.kernel.org, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Rob Herring <robh+dt@kernel.org>, Mark Rutland <mark.rutland@arm.com>, Daniel Lezcano <daniel.lezcano@linaro.org>
+To: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, David Rientjes <rientjes@google.com>
+Cc: kernel-janitors@vger.kernel.org, Julia Lawall <julia.lawall@lip6.fr>
 
-On Thu, Jul 28, 2016 at 04:18:44PM -0400, Rich Felker wrote:
-> On Thu, Jul 28, 2016 at 04:00:47PM -0400, Rich Felker wrote:
-> > On Thu, Jul 28, 2016 at 04:44:05PM +0200, Thomas Gleixner wrote:
-> > > > +static int jcore_pit_cpu_notify(struct notifier_block *self,
-> > > > +			unsigned long action, void *hcpu)
-> > > > +{
-> > > > +	struct jcore_pit_nb *nb = container_of(self, struct jcore_pit_nb, nb);
-> > > > +	switch (action & ~CPU_TASKS_FROZEN) {
-> > > > +	case CPU_STARTING:
-> > > > +		jcore_pit_local_init(this_cpu_ptr(nb->pit_percpu));
-> > > > +		break;
-> > > > +	}
-> > > > +	return NOTIFY_OK;
-> > > 
-> > > Please convert this to the new state machine model of cpu
-> > > hotplug. CPU_STARTING will be gone very soon. Here is an example:
-> > > 
-> > > http://git.kernel.org/cgit/linux/kernel/git/tip/tip.git/commit/?h=smp/hotplug&id~86e8bd8dd67649d176e08d8dfb90039f0a1e98
-> > 
-> > Trying this change now and I'm getting hangs inside
-> > cpuhp_invoke_ap_callback between wake_up_process and
-> > wait_for_completion. I suspect it's not possible to run a scheduled
-> > task yet because there's no timer yet, or something like that. Do I
-> > need further infrastructure from tip that's not upstream yet in order
-> > to test this? I just rebased on linus/master and still have the same
-> > problem, but none of the other driver changes are in Linus's tree yet.
-> > Following the other drivers in tip (again, I don't have any of these
-> > in my tree), I put the new state between CPUHP_AP_SCHED_STARTING and
-> > CPUHP_AP_NOTIFY_STARTING; is this correct?
+> From: Markus Elfring <elfring@users.sourceforge.net>
+> Date: Mon, 16 Nov 2015 08:20:36 +0100
 > 
-> I think it's this bug where the fix is not yet in Linus's tree:
+> The mempool_destroy() function tests whether its argument is NULL
+> and then returns immediately. Thus the test around the calls is not needed.
 > 
-> http://git.kernel.org/cgit/linux/kernel/git/tip/tip.git/commit/kernel/cpu.c?h=smp/hotplug&idj4e24518c8a10f78f44da219835239cb5aca90d
+> This issue was detected by using the Coccinelle software.
 > 
-> Cherry-picking that made it work. FWIW, it's really hard to do
-> development on top of new infrastructure that's not yet working in any
-> tree that's intended for others to pull, but I made it work and I'll
-> have a new version of the patch for you soon.
+> Signed-off-by: Markus Elfring <elfring@users.sourceforge.net>
+> ---
+>  arch/sh/kernel/dwarf.c | 6 ++----
+>  1 file changed, 2 insertions(+), 4 deletions(-)
+> 
+> diff --git a/arch/sh/kernel/dwarf.c b/arch/sh/kernel/dwarf.c
+> index 9d209a0..e1d751a 100644
+> --- a/arch/sh/kernel/dwarf.c
+> +++ b/arch/sh/kernel/dwarf.c
+> @@ -1009,10 +1009,8 @@ static void __init dwarf_unwinder_cleanup(void)
+>  	rbtree_postorder_for_each_entry_safe(cie, next_cie, &cie_root, node)
+>  		kfree(cie);
+>  
+> -	if (dwarf_reg_pool)
+> -		mempool_destroy(dwarf_reg_pool);
+> -	if (dwarf_frame_pool)
+> -		mempool_destroy(dwarf_frame_pool);
+> +	mempool_destroy(dwarf_reg_pool);
+> +	mempool_destroy(dwarf_frame_pool);
+>  	kmem_cache_destroy(dwarf_reg_cachep);
+>  	kmem_cache_destroy(dwarf_frame_cachep);
+>  }
+> 
 
-I hit some more snags with rcu_sched stalls that I thought were my
-fault, but it looks like it's actually something in the linus/master I
-had to rebase on (I've tagged the revision locally in case this is
-something we need to track later). They happen equally with or without
-my latest changes for the notify_nb -> cpuhp transition and other
-requested changes to the pit driver.
+How do you think about to integrate this update suggestion
+into another source code repository?
 
-Rich
+Regards,
+Markus
