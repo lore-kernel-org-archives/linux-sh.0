@@ -1,113 +1,42 @@
-From: Paul Gortmaker <paul.gortmaker@windriver.com>
-Date: Sat, 02 Jul 2016 23:40:18 +0000
-Subject: Re: [PATCH 0/4] sh: fix up modular use in non-modular code
-Message-Id: <20160702234018.GU26134@windriver.com>
+From: "Luis R. Rodriguez" <mcgrof@kernel.org>
+Date: Fri, 22 Jul 2016 21:24:36 +0000
+Subject: [RFC v3 02/13] dell-smo8800: include uaccess.h
+Message-Id: <1469222687-1600-3-git-send-email-mcgrof@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1461348424-3896-1-git-send-email-paul.gortmaker@windriver.com>
- <20160526164557.GJ27984@windriver.com>
- <20160526165334.GY21636@brightrain.aerifal.cx>
- <87bn3kcc7o.wl-ysato@users.sourceforge.jp>
-In-Reply-To: <87bn3kcc7o.wl-ysato@users.sourceforge.jp>
+References: <1469222687-1600-1-git-send-email-mcgrof@kernel.org>
+In-Reply-To: <1469222687-1600-1-git-send-email-mcgrof@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: Rich Felker <dalias@libc.org>, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
+To: hpa@zytor.com, tglx@linutronix.de, mingo@redhat.com, bp@alien8.de, linux@arm.linux.org.uk, mhiramat@kernel.org, masami.hiramatsu.pt@hitachi.com, jbaron@akamai.com, heiko.carstens@de.ibm.com, ananth@linux.vnet.ibm.com, anil.s.keshavamurthy@intel.com, davem@davemloft.net, realmz6@gmail.com
+Cc: x86@kernel.org, luto@amacapital.net, keescook@chromium.org, torvalds@linux-foundation.org, gregkh@linuxfoundation.org, rusty@rustcorp.com.au, gnomes@lxorguk.ukuu.org.uk, alan@linux.intel.com, dwmw2@infradead.org, arnd@arndb.de, ming.lei@canonical.com, linux-arch@vger.kernel.org, benh@kernel.crashing.org, ananth@in.ibm.com, pebolle@tiscali.nl, fontana@sharpeleven.org, ciaran.farrell@suse.com, christopher.denicolo@suse.com, david.vrabel@citrix.com, konrad.wilk@oracle.com, mcb30@ipxe.org, jgross@suse.com, andrew.cooper3@citrix.com, andriy.shevchenko@linux.intel.com, paul.gortmaker@windriver.com, xen-devel@lists.xensource.com, ak@linux.intel.com, pali.rohar@gmail.com, dvhart@infradead.org, platform-driver-x86@vger.kernel.org, mmarek@suse.com, linux@rasmusvillemoes.dk, jkosina@suse.cz, korea.drzix@gmail.com, linux-kbuild@vger.kernel.org, tony.luck@intel.com, akpm@linux-foun
 
-[Re: [PATCH 0/4] sh: fix up modular use in non-modular code] On 02/06/2016 (Thu 15:54) Yoshinori Sato wrote:
+sections.h is currently included and it provides dell-smo8800
+with what it needs, an upcoming change will decouple uaccess.h
+from sections.h. This driver needs to explicitly require uaccess.h
+before this change.
 
-> On Fri, 27 May 2016 01:53:34 +0900,
-> Rich Felker wrote:
-> > 
-> > On Thu, May 26, 2016 at 12:45:57PM -0400, Paul Gortmaker wrote:
-> > > [[PATCH 0/4] sh: fix up modular use in non-modular code] On 22/04/2016 (Fri 14:07) Paul Gortmaker wrote:
-> > > 
-> > > > For anyone new to the underlying goal of this cleanup, we are trying to
-> > > > make kernel code consistent with the Makefiles/Kconfigs that control them.
-> > > 
-> > > Ping -- wondering if there are any issues here, or if I can expect these
-> > > to be merged upstream in the merge window.  I didn't see them loop
-> > > around via the linux-next tree but I wasn't sure if arch/sh has a repo
-> > > for linux-next.
-> > 
-> > I don't have experience with the affected code, but it looks ok unless
-> > any of these "should" be modular and Kconfig was just wrong to
-> > disallow it.
-> > 
-> > Sato-san, do you have an opinion on these? Should I go ahead and just
-> > merge them?
-> 
-> It looks no problem.
-> I think can merge it.
+v3: new to this series -- needed due to collateral of the split of
+    old linker tables from tables.h into 3 files: sections.h, ranges.h
+    and tables.h
 
-Just checking in a month later; my queue that I test regularly against
-the linux-next tree still has these:
+Signed-off-by: Luis R. Rodriguez <mcgrof@kernel.org>
+---
+ drivers/platform/x86/dell-smo8800.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-sh-make-heartbeat-driver-explicitly-non-modular.patch
-sh-make-board-secureedge5410.c-explicitly-non-m.patch
-sh-make-mm-asids-debugfs-explicitly-non-modular.patch
-sh-make-time.c-explicitly-non-modular.patch
+diff --git a/drivers/platform/x86/dell-smo8800.c b/drivers/platform/x86/dell-smo8800.c
+index 0aec4fd4c48e..37e646034ef8 100644
+--- a/drivers/platform/x86/dell-smo8800.c
++++ b/drivers/platform/x86/dell-smo8800.c
+@@ -24,6 +24,7 @@
+ #include <linux/acpi.h>
+ #include <linux/interrupt.h>
+ #include <linux/miscdevice.h>
++#include <linux/uaccess.h>
+ 
+ struct smo8800_device {
+ 	u32 irq;                     /* acpi device irq */
+-- 
+2.8.4
 
-Apologies in advance if you have a sh queue that is pending but for some
-reason is not fed into the nightly linux-next tree generation.  If so,
-let me know and I won't worry about looking for these until merge window.
-
-Thanks,
-Paul.
---
-
-> 
-> > Rich
-> > 
-> > > > This means not using modular functions/macros for code that can never
-> > > > be built as a module.  Some of the other downfalls this leads to are:
-> > > > 
-> > > >  (1) it is easy to accidentally write unused module_exit and remove code
-> > > >  (2) it can be misleading when reading the source, thinking it can be
-> > > >      modular when the Makefile and/or Kconfig prohibit it
-> > > >  (3) it requires the include of the module.h header file which in turn
-> > > >      includes nearly everything else, thus adding to CPP overhead.
-> > > >  (4) it gets copied/replicated into other drivers and spreads like weeds.
-> > > > 
-> > > > Three of the four commits here are completely trivial with zero runtime
-> > > > impact whatsoever.  The fourth has a deletion of a ".remove" function
-> > > > and as we've done elsewhere, we block the sysfs ability to reach in and
-> > > > manually execute that function, since there isn't a sane use case for
-> > > > which doing that makes sense.
-> > > > 
-> > > > Build tested on today's linux-next ; full build fails on duplicate syms
-> > > > from OF generic board, but that is a known and reported issue elsewhere;
-> > > > it has nothing to do with the changes here.
-> > > > 
-> > > > Paul
-> > > > --
-> > > > 
-> > > > Cc: linux-sh@vger.kernel.org
-> > > > Cc: Paul Gortmaker <paul.gortmaker@windriver.com>
-> > > > Cc: Rich Felker <dalias@libc.org>
-> > > > Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-> > > > 
-> > > > 
-> > > > Paul Gortmaker (4):
-> > > >   sh: make time.c explicitly non-modular
-> > > >   sh: make mm/asids-debugfs explicitly non-modular
-> > > >   sh: make board-secureedge5410 explicitly non-modular
-> > > >   sh: make heartbeat driver explicitly non-modular
-> > > > 
-> > > >  arch/sh/boards/board-secureedge5410.c |  3 +--
-> > > >  arch/sh/drivers/heartbeat.c           | 32 +++-----------------------------
-> > > >  arch/sh/kernel/time.c                 |  3 +--
-> > > >  arch/sh/mm/asids-debugfs.c            |  5 +----
-> > > >  4 files changed, 6 insertions(+), 37 deletions(-)
-> > > > 
-> > > > -- 
-> > > > 2.8.0
-> > > > 
-> > > --
-> > > To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> > > the body of a message to majordomo@vger.kernel.org
-> > > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-> -- 
-> Yoshinori Sato
-> <ysato@users.sourceforge.jp>
