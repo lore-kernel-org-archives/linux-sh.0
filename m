@@ -1,66 +1,72 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 25 Jul 2016 02:29:38 +0000
-Subject: [PATCH 1/2] drivers: sh: Stop using the legacy clock domain on ARM
-Message-Id: <4c6d7e228968bdc238ae7213d919f34b7838fe59.1469413328.git.horms+renesas@verge.net.au>
+From: "Luis R. Rodriguez" <mcgrof@kernel.org>
+Date: Fri, 22 Jul 2016 21:24:35 +0000
+Subject: [RFC v3 01/13] x86: remove LTO_REFERENCE_INITCALL()
+Message-Id: <1469222687-1600-2-git-send-email-mcgrof@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1469413328.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1469413328.git.horms+renesas@verge.net.au>
+References: <1469222687-1600-1-git-send-email-mcgrof@kernel.org>
+In-Reply-To: <1469222687-1600-1-git-send-email-mcgrof@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: linux-renesas-soc@vger.kernel.org, linux-kernel@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>, Simon Horman <horms+renesas@verge.net.au>
+To: hpa@zytor.com, tglx@linutronix.de, mingo@redhat.com, bp@alien8.de, linux@arm.linux.org.uk, mhiramat@kernel.org, masami.hiramatsu.pt@hitachi.com, jbaron@akamai.com, heiko.carstens@de.ibm.com, ananth@linux.vnet.ibm.com, anil.s.keshavamurthy@intel.com, davem@davemloft.net, realmz6@gmail.com
+Cc: x86@kernel.org, luto@amacapital.net, keescook@chromium.org, torvalds@linux-foundation.org, gregkh@linuxfoundation.org, rusty@rustcorp.com.au, gnomes@lxorguk.ukuu.org.uk, alan@linux.intel.com, dwmw2@infradead.org, arnd@arndb.de, ming.lei@canonical.com, linux-arch@vger.kernel.org, benh@kernel.crashing.org, ananth@in.ibm.com, pebolle@tiscali.nl, fontana@sharpeleven.org, ciaran.farrell@suse.com, christopher.denicolo@suse.com, david.vrabel@citrix.com, konrad.wilk@oracle.com, mcb30@ipxe.org, jgross@suse.com, andrew.cooper3@citrix.com, andriy.shevchenko@linux.intel.com, paul.gortmaker@windriver.com, xen-devel@lists.xensource.com, ak@linux.intel.com, pali.rohar@gmail.com, dvhart@infradead.org, platform-driver-x86@vger.kernel.org, mmarek@suse.com, linux@rasmusvillemoes.dk, jkosina@suse.cz, korea.drzix@gmail.com, linux-kbuild@vger.kernel.org, tony.luck@intel.com, akpm@linux-foun
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+The setup for LTO never made it upstream, and although this has
+some users, this is now really old stuff for a gcc 4.7 LTO problem.
+We know that at least LTO_REFERENCE_INITCALL() work around can
+be removed if LTO is not supported on v4.7 anymore.
 
-Since commits 71d076ceb245f0d9 ("ARM: shmobile: Enable PM and
-PM_GENERIC_DOMAINS for SoCs with PM Domains") and 2ee98234b88174f2
-("arm64: renesas: Enable PM and PM_GENERIC_DOMAINS for SoCs with PM
-Domains"), CONFIG_PM and CONFIG_PM_GENERIC_DOMAINS are enabled
-unconditionally for Renesas ARM-based SoCs. Hence the legacy clock
-domain is no longer used on these SoCs.
+As per Andi the DISABLE_LTO and LTO_CFLAGS are still neeeded though.
 
-Remove the related support code, and stop entering drivers/sh/ on ARM.
+v3: added to this series, removing LTO_REFERENCE_INITCALL()
+    justifies that other future similar macros do not need
+    a respective LTO_REFERENCE_INITCALL() on them therefore
+    simplifying new code.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Acked-by: Andi Kleen <ak@linux.intel.com>
+Signed-off-by: Luis R. Rodriguez <mcgrof@kernel.org>
 ---
- drivers/Makefile        | 1 -
- drivers/sh/pm_runtime.c | 9 ---------
- 2 files changed, 10 deletions(-)
+ include/linux/init.h | 20 +-------------------
+ 1 file changed, 1 insertion(+), 19 deletions(-)
 
-diff --git a/drivers/Makefile b/drivers/Makefile
-index 0b6f3d60193d..a7187b999c5e 100644
---- a/drivers/Makefile
-+++ b/drivers/Makefile
-@@ -128,7 +128,6 @@ obj-$(CONFIG_SGI_SN)		+= sn/
- obj-y				+= firmware/
- obj-$(CONFIG_CRYPTO)		+= crypto/
- obj-$(CONFIG_SUPERH)		+= sh/
--obj-$(CONFIG_ARCH_SHMOBILE)	+= sh/
- ifndef CONFIG_ARCH_USES_GETTIMEOFFSET
- obj-y				+= clocksource/
- endif
-diff --git a/drivers/sh/pm_runtime.c b/drivers/sh/pm_runtime.c
-index a9bac3bf20de..c887ecdaf19b 100644
---- a/drivers/sh/pm_runtime.c
-+++ b/drivers/sh/pm_runtime.c
-@@ -34,15 +34,6 @@ static struct pm_clk_notifier_block platform_bus_notifier = {
+diff --git a/include/linux/init.h b/include/linux/init.h
+index 1e5c131d5c9a..aa662ad80d9c 100644
+--- a/include/linux/init.h
++++ b/include/linux/init.h
+@@ -151,23 +151,6 @@ extern bool initcall_debug;
  
- static int __init sh_pm_runtime_init(void)
- {
--	if (IS_ENABLED(CONFIG_OF) && IS_ENABLED(CONFIG_ARCH_SHMOBILE)) {
--		if (!of_find_compatible_node(NULL, NULL,
--					     "renesas,cpg-mstp-clocks"))
--			return 0;
--		if (IS_ENABLED(CONFIG_PM_GENERIC_DOMAINS_OF) &&
--		    of_find_node_with_property(NULL, "#power-domain-cells"))
--			return 0;
+ #ifndef __ASSEMBLY__
+ 
+-#ifdef CONFIG_LTO
+-/* Work around a LTO gcc problem: when there is no reference to a variable
+- * in a module it will be moved to the end of the program. This causes
+- * reordering of initcalls which the kernel does not like.
+- * Add a dummy reference function to avoid this. The function is
+- * deleted by the linker.
+- */
+-#define LTO_REFERENCE_INITCALL(x) \
+-	; /* yes this is needed */			\
+-	static __used __exit void *reference_##x(void)	\
+-	{						\
+-		return &x;				\
 -	}
+-#else
+-#define LTO_REFERENCE_INITCALL(x)
+-#endif
 -
- 	pm_clk_add_notifier(&platform_bus_type, &platform_bus_notifier);
- 	return 0;
- }
+ /* initcalls are now grouped by functionality into separate 
+  * subsections. Ordering inside the subsections is determined
+  * by link order. 
+@@ -180,8 +163,7 @@ extern bool initcall_debug;
+ 
+ #define __define_initcall(fn, id) \
+ 	static initcall_t __initcall_##fn##id __used \
+-	__attribute__((__section__(".initcall" #id ".init"))) = fn; \
+-	LTO_REFERENCE_INITCALL(__initcall_##fn##id)
++	__attribute__((__section__(".initcall" #id ".init"))) = fn;
+ 
+ /*
+  * Early initcalls run before initializing SMP.
 -- 
-2.7.0.rc3.207.g0ac5344
+2.8.4
 
