@@ -1,137 +1,147 @@
-From: Yoshinori Sato <ysato@users.sourceforge.jp>
-Date: Wed, 06 Jul 2016 14:27:44 +0000
-Subject: Re: [PATCH v5 10/22] sh: Add board specific initialize of of-generic
-Message-Id: <8737nmn8nz.wl-ysato@users.sourceforge.jp>
+From: "Luis R. Rodriguez" <mcgrof@kernel.org>
+Date: Fri, 22 Jul 2016 21:24:45 +0000
+Subject: [RFC v3 11/13] dynamic_debug: port to use linker tables
+Message-Id: <1469222687-1600-12-git-send-email-mcgrof@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1467564402-2649-1-git-send-email-ysato@users.sourceforge.jp>
-	<1467564402-2649-11-git-send-email-ysato@users.sourceforge.jp>
-	<20160704013557.GN15995@brightrain.aerifal.cx>
-In-Reply-To: <20160704013557.GN15995@brightrain.aerifal.cx>
+References: <1469222687-1600-1-git-send-email-mcgrof@kernel.org>
+In-Reply-To: <1469222687-1600-1-git-send-email-mcgrof@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Rich Felker <dalias@libc.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: hpa@zytor.com, tglx@linutronix.de, mingo@redhat.com, bp@alien8.de, linux@arm.linux.org.uk, mhiramat@kernel.org, masami.hiramatsu.pt@hitachi.com, jbaron@akamai.com, heiko.carstens@de.ibm.com, ananth@linux.vnet.ibm.com, anil.s.keshavamurthy@intel.com, davem@davemloft.net, realmz6@gmail.com
+Cc: x86@kernel.org, luto@amacapital.net, keescook@chromium.org, torvalds@linux-foundation.org, gregkh@linuxfoundation.org, rusty@rustcorp.com.au, gnomes@lxorguk.ukuu.org.uk, alan@linux.intel.com, dwmw2@infradead.org, arnd@arndb.de, ming.lei@canonical.com, linux-arch@vger.kernel.org, benh@kernel.crashing.org, ananth@in.ibm.com, pebolle@tiscali.nl, fontana@sharpeleven.org, ciaran.farrell@suse.com, christopher.denicolo@suse.com, david.vrabel@citrix.com, konrad.wilk@oracle.com, mcb30@ipxe.org, jgross@suse.com, andrew.cooper3@citrix.com, andriy.shevchenko@linux.intel.com, paul.gortmaker@windriver.com, xen-devel@lists.xensource.com, ak@linux.intel.com, pali.rohar@gmail.com, dvhart@infradead.org, platform-driver-x86@vger.kernel.org, mmarek@suse.com, linux@rasmusvillemoes.dk, jkosina@suse.cz, korea.drzix@gmail.com, linux-kbuild@vger.kernel.org, tony.luck@intel.com, akpm@linux-foun
 
-On Mon, 04 Jul 2016 10:35:57 +0900,
-Rich Felker wrote:
-> 
-> On Mon, Jul 04, 2016 at 01:46:30AM +0900, Yoshinori Sato wrote:
-> > Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
-> > ---
-> >  arch/sh/boards/of-generic.c | 64 +++++++++++++++++++++++++++++++++++++++++++++
-> >  1 file changed, 64 insertions(+)
-> > 
-> > diff --git a/arch/sh/boards/of-generic.c b/arch/sh/boards/of-generic.c
-> > index 2d3cda3..4038682 100644
-> > --- a/arch/sh/boards/of-generic.c
-> > +++ b/arch/sh/boards/of-generic.c
-> > @@ -16,9 +16,15 @@
-> >  #include <linux/irqchip.h>
-> >  #include <linux/clk-provider.h>
-> >  #include <linux/memblock.h>
-> > +#include <linux/sm501-regs.h>
-> >  #include <asm/machvec.h>
-> >  #include <asm/rtc.h>
-> >  
-> > +struct model_setup {
-> > +	char *name;
-> > +	void (*fn)(void);
-> > +};
-> > +
-> >  #ifdef CONFIG_SMP
-> >  
-> >  static void dummy_smp_setup(void)
-> > @@ -125,10 +131,61 @@ static void __init sh_of_time_init(void)
-> >  	clocksource_probe();
-> >  }
-> >  
-> > +#define PA_LED		0xb0000001	/* LED Control Register */
-> > +#define PA_SHUTDOWN	0xb0000003	/* Shutdown Control Register */
-> > +static void landisk_power_off(void)
-> > +{
-> > +	__raw_writeb(0x01, PA_SHUTDOWN);
-> > +}
-> > +
-> > +static void __init landisk_setup(void)
-> > +{
-> > +	/* LED ON */
-> > +	__raw_writeb(__raw_readb(PA_LED) | 0x03, PA_LED);
-> > +	pm_power_off = landisk_power_off;
-> > +}
-> > +
-> > +#define PA_POWOFF	0xa4000030	/* Board Power OFF control */
-> > +#define PA_OUTPORT	0xa4000036	/* LED control */
-> > +static void rts7751r2d_power_off(void)
-> > +{
-> > +	__raw_writew(0x0001, PA_POWOFF);
-> > +}
-> > +
-> > +static void __init r2dplus_setup(void)
-> > +{
-> > +	void __iomem *sm501_reg;
-> > +
-> > +	__raw_writew(0x0000, PA_OUTPORT);
-> > +	pm_power_off = rts7751r2d_power_off;
-> > +
-> > +	/* sm501 dram configuration:
-> > +	 * ColSizeX = 11 - External Memory Column Size: 256 words.
-> > +	 * APX = 1 - External Memory Active to Pre-Charge Delay: 7 clocks.
-> > +	 * RstX = 1 - External Memory Reset: Normal.
-> > +	 * Rfsh = 1 - Local Memory Refresh to Command Delay: 12 clocks.
-> > +	 * BwC =  1 - Local Memory Block Write Cycle Time: 2 clocks.
-> > +	 * BwP =  1 - Local Memory Block Write to Pre-Charge Delay: 1 clock.
-> > +	 * AP = 1 - Internal Memory Active to Pre-Charge Delay: 7 clocks.
-> > +	 * Rst = 1 - Internal Memory Reset: Normal.
-> > +	 * RA = 1 - Internal Memory Remain in Active State: Do not remain.
-> > +	 */
-> > +
-> > +	sm501_reg = (void __iomem *)0xb3e00000 + SM501_DRAM_CONTROL;
-> > +	writel(readl(sm501_reg) | 0x00f107c0, sm501_reg);
-> > +}
-> > +
-> > +static const struct model_setup model_setup_table[] __initconst = {
-> > +	{ .name = "iodata,HDL-U", .fn = landisk_setup, },
-> > +	{ .name = "renesas,RTS7751R2D+", .fn = r2dplus_setup, },
-> > +	{},
-> > +};
-> > +
-> >  static void __init sh_of_setup(char **cmdline_p)
-> >  {
-> >  	struct device_node *root;
-> >  	struct device_node *cpu;
-> > +	const struct model_setup *setup;
-> >  	u32 freq;
-> >  
-> >  	board_time_init = sh_of_time_init;
-> > @@ -145,6 +202,13 @@ static void __init sh_of_setup(char **cmdline_p)
-> >  	cpu = of_find_node_by_name(NULL, "cpu");
-> >  	if (!of_property_read_u32(cpu, "clock-frequency", &freq))
-> >  		preset_lpj = freq / CONFIG_HZ / 2;
-> > +
-> > +	for (setup = model_setup_table; setup->name; setup++) {
-> > +		if (strcmp(setup->name, sh_mv.mv_name) = 0) {
-> > +			setup->fn();
-> > +			break;
-> > +		}
-> > +	}
-> >  }
-> >  
-> >  static int sh_of_irq_demux(int irq)
-> > -- 
-> 
-> I think all of this code should be in appropriate driver files, not
-> of-generic.c. Much of it looks like it should be pm (power management)
-> drivers for which I'd assume there's an existing framework. I'm not
-> sure about the DRAM control. For the LED I think there's an LED GPIO
-> framework already too that would be appropriate and that probably
-> only needs appropriate nodes in the DT, not even any code.
-> 
-> Rich
+This removes the custom vmlinux.lds.h hacks and uses
+the generalized solution for .data (SECTION_DATA)
+entries.
 
-OK.
-I'll separate code.
+This is much more potential for further fine tuning here
+though in the future. For instance, linker tables enable
+an extra postfix for order level annotations, this could
+easily be used as the KBUILD_MODNAME and with a bit of
+linker table changes we may be able to get a direct O(1)
+count of the entries for that KBUILD_MODNAME: it would
+just be a count on the number of entries for the given
+order level. This should help make dynamic_debug_init()
+cleaner and also reduce the amount of time it takes at
+boot time. Instead of iterating over each print until we
+have all for a KBUILD_MODNAME, we'd instead directly
+operate on each KBUILD_MODNAME directly.
 
+Tested dynamic debug with dyndbg query ana debugfs control
+and it works as expected, for both built-in code and modules.
+
+v3: added modular support
+v2: introduced this patch into the series
+
+Signed-off-by: Luis R. Rodriguez <mcgrof@kernel.org>
+---
+ include/asm-generic/vmlinux.lds.h |  5 -----
+ include/linux/dynamic_debug.h     |  5 +++--
+ lib/dynamic_debug.c               | 13 ++++++-------
+ scripts/module-common.lds.S       |  1 +
+ 4 files changed, 10 insertions(+), 14 deletions(-)
+
+diff --git a/include/asm-generic/vmlinux.lds.h b/include/asm-generic/vmlinux.lds.h
+index e186432a82e6..8048242b6a76 100644
+--- a/include/asm-generic/vmlinux.lds.h
++++ b/include/asm-generic/vmlinux.lds.h
+@@ -209,11 +209,6 @@
+ 	*(.data.unlikely)						\
+ 	STRUCT_ALIGN();							\
+ 	*(__tracepoints)						\
+-	/* implement dynamic printk debug */				\
+-	. = ALIGN(8);							\
+-	VMLINUX_SYMBOL(__start___verbose) = .;                          \
+-	*(__verbose)                                                    \
+-	VMLINUX_SYMBOL(__stop___verbose) = .;				\
+ 	LIKELY_PROFILE()		       				\
+ 	BRANCH_PROFILE()						\
+ 	TRACE_PRINTKS()							\
+diff --git a/include/linux/dynamic_debug.h b/include/linux/dynamic_debug.h
+index 546d68057e3b..a52618a77b09 100644
+--- a/include/linux/dynamic_debug.h
++++ b/include/linux/dynamic_debug.h
+@@ -4,6 +4,7 @@
+ #if defined(CC_HAVE_ASM_GOTO) && defined(CONFIG_JUMP_LABEL)
+ #include <linux/jump_label.h>
+ #endif
++#include <linux/tables.h>
+ 
+ /*
+  * An instance of this structure is created in a special
+@@ -50,6 +51,7 @@ int ddebug_add_module(struct _ddebug *tab, unsigned int n,
+ 				const char *modname);
+ 
+ #if defined(CONFIG_DYNAMIC_DEBUG)
++DECLARE_LINKTABLE(struct _ddebug, __verbose);
+ extern int ddebug_remove_module(const char *mod_name);
+ extern __printf(2, 3)
+ void __dynamic_pr_debug(struct _ddebug *descriptor, const char *fmt, ...);
+@@ -71,8 +73,7 @@ void __dynamic_netdev_dbg(struct _ddebug *descriptor,
+ 			  const char *fmt, ...);
+ 
+ #define DEFINE_DYNAMIC_DEBUG_METADATA_KEY(name, fmt, key, init)	\
+-	static struct _ddebug  __aligned(8)			\
+-	__attribute__((section("__verbose"))) name = {		\
++	static LINKTABLE(__verbose, SECTION_ORDER_ANY) name = {	\
+ 		.modname = KBUILD_MODNAME,			\
+ 		.function = __func__,				\
+ 		.filename = __FILE__,				\
+diff --git a/lib/dynamic_debug.c b/lib/dynamic_debug.c
+index da796e2dc4f5..f0060c84c654 100644
+--- a/lib/dynamic_debug.c
++++ b/lib/dynamic_debug.c
+@@ -37,8 +37,7 @@
+ #include <linux/device.h>
+ #include <linux/netdevice.h>
+ 
+-extern struct _ddebug __start___verbose[];
+-extern struct _ddebug __stop___verbose[];
++DEFINE_LINKTABLE(struct _ddebug, __verbose);
+ 
+ struct ddebug_table {
+ 	struct list_head link;
+@@ -978,14 +977,14 @@ static int __init dynamic_debug_init(void)
+ 	int n = 0, entries = 0, modct = 0;
+ 	int verbose_bytes = 0;
+ 
+-	if (__start___verbose = __stop___verbose) {
+-		pr_warn("_ddebug table is empty in a CONFIG_DYNAMIC_DEBUG build\n");
++	if (LINUX_SECTION_EMPTY(__verbose)) {
++		pr_warn("dynamic debug linker table empty on CONFIG_DYNAMIC_DEBUG build\n");
+ 		return 1;
+ 	}
+-	iter = __start___verbose;
++	iter = LINUX_SECTION_START(__verbose);
+ 	modname = iter->modname;
+ 	iter_start = iter;
+-	for (; iter < __stop___verbose; iter++) {
++	LINKTABLE_FOR_EACH(iter, __verbose) {
+ 		entries++;
+ 		verbose_bytes += strlen(iter->modname) + strlen(iter->function)
+ 			+ strlen(iter->filename) + strlen(iter->format);
+@@ -1008,7 +1007,7 @@ static int __init dynamic_debug_init(void)
+ 	ddebug_init_success = 1;
+ 	vpr_info("%d modules, %d entries and %d bytes in ddebug tables, %d bytes in (readonly) verbose section\n",
+ 		 modct, entries, (int)(modct * sizeof(struct ddebug_table)),
+-		 verbose_bytes + (int)(__stop___verbose - __start___verbose));
++		 verbose_bytes + (int)(LINUX_SECTION_SIZE(__verbose)));
+ 
+ 	/* apply ddebug_query boot param, dont unload tables on err */
+ 	if (ddebug_setup_string[0] != '\0') {
+diff --git a/scripts/module-common.lds.S b/scripts/module-common.lds.S
+index d51140103ece..fec57aa5f4f1 100644
+--- a/scripts/module-common.lds.S
++++ b/scripts/module-common.lds.S
+@@ -21,6 +21,7 @@ SECTIONS {
+ 	__kcrctab_unused_gpl	0 : { *(SORT(___kcrctab_unused_gpl+*)) }
+ 	__kcrctab_gpl_future	0 : { *(SORT(___kcrctab_gpl_future+*)) }
+ 	__jump_table		0 : { *(SORT(SECTION_TBL(SECTION_DATA, __jump_table, *))) }
++	__verbose		0 : { *(SORT(SECTION_TBL(SECTION_DATA, __verbose, *))) }
+ 
+ 	. = ALIGN(8);
+ 	.init_array		0 : { *(SORT(.init_array.*)) *(.init_array) }
 -- 
-Yoshinori Sato
-<ysato@users.sourceforge.jp>
+2.8.4
+
