@@ -1,37 +1,66 @@
-From: Rich Felker <dalias@libc.org>
-Date: Thu, 28 Jul 2016 06:11:40 +0000
-Subject: [PATCH v4 0/2] J-Core SPI controller support
-Message-Id: <cover.1469686300.git.dalias@libc.org>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 25 Jul 2016 02:29:38 +0000
+Subject: [PATCH 1/2] drivers: sh: Stop using the legacy clock domain on ARM
+Message-Id: <4c6d7e228968bdc238ae7213d919f34b7838fe59.1469413328.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1469413328.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1469413328.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Rob Herring <robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Mark Rutland <mark.rutland-5wv7dgnIgG8@public.gmane.org>, Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: linux-renesas-soc@vger.kernel.org, linux-kernel@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>, Simon Horman <horms+renesas@verge.net.au>
 
-This driver is used with the J2, an open-source VHDL reimplementation
-of SH-2. I've split it out from the main J-Core support patches going
-upstream through my own linux-sh tree. Changes since the v3 should
-include everything requested by Mark Brown in previous review (mainly
-the chipsel changes I failed to make before), plus significant cleanup
-(removal of unused macros and other cruft) and refactoring to
-eliminate duplicate code.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Rich
+Since commits 71d076ceb245f0d9 ("ARM: shmobile: Enable PM and
+PM_GENERIC_DOMAINS for SoCs with PM Domains") and 2ee98234b88174f2
+("arm64: renesas: Enable PM and PM_GENERIC_DOMAINS for SoCs with PM
+Domains"), CONFIG_PM and CONFIG_PM_GENERIC_DOMAINS are enabled
+unconditionally for Renesas ARM-based SoCs. Hence the legacy clock
+domain is no longer used on these SoCs.
 
+Remove the related support code, and stop entering drivers/sh/ on ARM.
 
-Rich Felker (2):
-  of: add J-Core SPI master bindings
-  spi: add driver for J-Core SPI controller
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ drivers/Makefile        | 1 -
+ drivers/sh/pm_runtime.c | 9 ---------
+ 2 files changed, 10 deletions(-)
 
- .../devicetree/bindings/spi/jcore,spi.txt          |  30 +++
- drivers/spi/Kconfig                                |   4 +
- drivers/spi/Makefile                               |   1 +
- drivers/spi/spi-jcore.c                            | 220 +++++++++++++++++++++
- 4 files changed, 255 insertions(+)
- create mode 100644 Documentation/devicetree/bindings/spi/jcore,spi.txt
- create mode 100644 drivers/spi/spi-jcore.c
-
+diff --git a/drivers/Makefile b/drivers/Makefile
+index 0b6f3d60193d..a7187b999c5e 100644
+--- a/drivers/Makefile
++++ b/drivers/Makefile
+@@ -128,7 +128,6 @@ obj-$(CONFIG_SGI_SN)		+= sn/
+ obj-y				+= firmware/
+ obj-$(CONFIG_CRYPTO)		+= crypto/
+ obj-$(CONFIG_SUPERH)		+= sh/
+-obj-$(CONFIG_ARCH_SHMOBILE)	+= sh/
+ ifndef CONFIG_ARCH_USES_GETTIMEOFFSET
+ obj-y				+= clocksource/
+ endif
+diff --git a/drivers/sh/pm_runtime.c b/drivers/sh/pm_runtime.c
+index a9bac3bf20de..c887ecdaf19b 100644
+--- a/drivers/sh/pm_runtime.c
++++ b/drivers/sh/pm_runtime.c
+@@ -34,15 +34,6 @@ static struct pm_clk_notifier_block platform_bus_notifier = {
+ 
+ static int __init sh_pm_runtime_init(void)
+ {
+-	if (IS_ENABLED(CONFIG_OF) && IS_ENABLED(CONFIG_ARCH_SHMOBILE)) {
+-		if (!of_find_compatible_node(NULL, NULL,
+-					     "renesas,cpg-mstp-clocks"))
+-			return 0;
+-		if (IS_ENABLED(CONFIG_PM_GENERIC_DOMAINS_OF) &&
+-		    of_find_node_with_property(NULL, "#power-domain-cells"))
+-			return 0;
+-	}
+-
+ 	pm_clk_add_notifier(&platform_bus_type, &platform_bus_notifier);
+ 	return 0;
+ }
 -- 
-2.8.1
+2.7.0.rc3.207.g0ac5344
 
