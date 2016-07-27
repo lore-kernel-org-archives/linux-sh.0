@@ -1,534 +1,150 @@
-From: Bjorn Helgaas <helgaas@kernel.org>
-Date: Fri, 22 Jul 2016 22:59:21 +0000
-Subject: Re: [PATCH v6 12/22] sh: Add PCI host bridge driver for SH7751
-Message-Id: <20160722225921.GD32142@localhost>
+From: Rich Felker <dalias@libc.org>
+Date: Wed, 27 Jul 2016 05:35:09 +0000
+Subject: [PATCH v4 2/2] irqchip: add J-Core AIC driver
+Message-Id: <862a5642f4a30f062171bbc14fe95a729eab8ba2.1469595861.git.dalias@libc.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1467564402-2649-1-git-send-email-ysato@users.sourceforge.jp>
- <1467564402-2649-13-git-send-email-ysato@users.sourceforge.jp>
-In-Reply-To: <1467564402-2649-13-git-send-email-ysato-Rn4VEauK+AKRv+LV9MX5uooqe+aC9MnS@public.gmane.org>
+References: <cover.1469595860.git.dalias@libc.org>
+In-Reply-To: <cover.1469595860.git.dalias@libc.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshinori Sato <ysato-Rn4VEauK+AKRv+LV9MX5uooqe+aC9MnS@public.gmane.org>
-Cc: devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-pci-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org
+Cc: Jason Cooper <jason@lakedaemon.net>, Marc Zyngier <marc.zyngier@arm.com>, Mark Rutland <mark.rutland@arm.com>, Rob Herring <robh+dt@kernel.org>, Thomas Gleixner <tglx@linutronix.de>
 
-On Mon, Jul 04, 2016 at 01:46:32AM +0900, Yoshinori Sato wrote:
-> This is an alternative SH7751 PCI driver.
-> Existing driver (arch/sh/drivers/pci/pci-sh7751) uses SH specific interface.
-> But this driver uses common PCI interface. It is more modern and generic.
+There are two versions of the J-Core interrupt controller in use, aic1
+which generates interrupts with programmable priorities, but only
+supports 8 irq lines and maps them to cpu traps in the range 17 to 24,
+and aic2 which uses traps in the range 64-127 and supports up to 128
+irqs, with priorities dependent on the interrupt number. The Linux
+driver does not make use of priorities anyway.
 
-I'd like some details here about why we want this new driver.  Will
-the old one be removed?  How should a user choose which one to use?
+For simplicity, there is no aic1-specific logic in the driver beyond
+setting the priority register, which is necessary for interrupts to
+work at all. Eventually aic1 will likely be phased out, but it's
+currently in use in deployments and all released bitstream binaries.
 
-> Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
-> ---
->  .../devicetree/bindings/pci/sh7751-pci.txt         |  37 +++
->  arch/sh/boards/Kconfig                             |   1 +
->  arch/sh/drivers/Makefile                           |   2 +
->  drivers/pci/host/Kconfig                           |   7 +
->  drivers/pci/host/Makefile                          |   1 +
->  drivers/pci/host/pci-sh7751.c                      | 327 +++++++++++++++++++++
->  6 files changed, 375 insertions(+)
->  create mode 100644 Documentation/devicetree/bindings/pci/sh7751-pci.txt
->  create mode 100644 drivers/pci/host/pci-sh7751.c
+Signed-off-by: Rich Felker <dalias@libc.org>
+---
+ drivers/irqchip/Kconfig         |  6 ++++
+ drivers/irqchip/Makefile        |  1 +
+ drivers/irqchip/irq-jcore-aic.c | 79 +++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 86 insertions(+)
+ create mode 100644 drivers/irqchip/irq-jcore-aic.c
 
-How do you plan to merge this?  It looks like part of a large series,
-and I've only seen a few pieces of it.  The ones you've posted to
-linux-pci seem mostly OK.  I have a few minor comments below, but
-after you fix those and write some text for the changelogs, I can ack
-them and you can merge them along with the rest of the series.
+diff --git a/drivers/irqchip/Kconfig b/drivers/irqchip/Kconfig
+index fa33c50..fe58177 100644
+--- a/drivers/irqchip/Kconfig
++++ b/drivers/irqchip/Kconfig
+@@ -150,6 +150,12 @@ config PIC32_EVIC
+ 	select GENERIC_IRQ_CHIP
+ 	select IRQ_DOMAIN
+ 
++config JCORE_AIC
++	bool "J-Core integrated AIC"
++	select IRQ_DOMAIN
++	help
++	  Support for the J-Core integrated AIC.
++
+ config RENESAS_INTC_IRQPIN
+ 	bool
+ 	select IRQ_DOMAIN
+diff --git a/drivers/irqchip/Makefile b/drivers/irqchip/Makefile
+index 38853a1..5b1a2fa 100644
+--- a/drivers/irqchip/Makefile
++++ b/drivers/irqchip/Makefile
+@@ -39,6 +39,7 @@ obj-$(CONFIG_I8259)			+= irq-i8259.o
+ obj-$(CONFIG_IMGPDC_IRQ)		+= irq-imgpdc.o
+ obj-$(CONFIG_IRQ_MIPS_CPU)		+= irq-mips-cpu.o
+ obj-$(CONFIG_SIRF_IRQ)			+= irq-sirfsoc.o
++obj-$(CONFIG_JCORE_AIC)			+= irq-jcore-aic.o
+ obj-$(CONFIG_RENESAS_INTC_IRQPIN)	+= irq-renesas-intc-irqpin.o
+ obj-$(CONFIG_RENESAS_IRQC)		+= irq-renesas-irqc.o
+ obj-$(CONFIG_VERSATILE_FPGA_IRQ)	+= irq-versatile-fpga.o
+diff --git a/drivers/irqchip/irq-jcore-aic.c b/drivers/irqchip/irq-jcore-aic.c
+new file mode 100644
+index 0000000..7b3b30e
+--- /dev/null
++++ b/drivers/irqchip/irq-jcore-aic.c
+@@ -0,0 +1,79 @@
++/*
++ * J-Core SoC AIC driver
++ *
++ * Copyright (C) 2015-2016 Smart Energy Instruments, Inc.
++ *
++ * This file is subject to the terms and conditions of the GNU General Public
++ * License.  See the file "COPYING" in the main directory of this archive
++ * for more details.
++ */
++
++#include <linux/irq.h>
++#include <linux/io.h>
++#include <linux/irqchip.h>
++#include <linux/irqdomain.h>
++#include <linux/cpu.h>
++#include <linux/of.h>
++#include <linux/of_address.h>
++#include <linux/of_irq.h>
++
++#define AIC1_INTPRI 8
++
++static struct aic_data {
++	struct irq_chip chip;
++	struct irq_domain *domain;
++	struct notifier_block nb;
++} aic_data;
++
++static int aic_irqdomain_map(struct irq_domain *d, unsigned int irq, irq_hw_number_t hwirq)
++{
++	struct aic_data *aic = d->host_data;
++
++	irq_set_chip_data(irq, aic);
++	irq_set_chip_and_handler(irq, &aic->chip, handle_simple_irq);
++	irq_set_probe(irq);
++
++	return 0;
++}
++
++static const struct irq_domain_ops aic_irqdomain_ops = {
++	.map = aic_irqdomain_map,
++	.xlate = irq_domain_xlate_onecell,
++};
++
++static void noop(struct irq_data *data)
++{
++}
++
++int __init aic_irq_of_init(struct device_node *node, struct device_node *parent)
++{
++	struct aic_data *aic = &aic_data;
++	unsigned min_irq = 64;
++
++	pr_info("Initializing J-Core AIC\n");
++
++	if (!of_device_is_compatible(node, "jcore,aic2")) {
++		unsigned cpu;
++		for_each_possible_cpu(cpu) {
++			void __iomem *base = of_iomap(node, cpu);
++			if (!base)
++				continue;
++			pr_info("Local AIC1 enable for cpu %u at %p\n",
++				cpu, base + AIC1_INTPRI);
++			__raw_writel(0xffffffff, base + AIC1_INTPRI);
++		}
++		min_irq = 16;
++	}
++
++	aic->chip.name = node->name;
++	aic->chip.irq_mask = noop;
++	aic->chip.irq_unmask = noop;
++
++	aic->domain = irq_domain_add_linear(node, 128, &aic_irqdomain_ops, aic);
++	irq_create_strict_mappings(aic->domain, min_irq, min_irq, 128-min_irq);
++
++	return 0;
++}
++
++IRQCHIP_DECLARE(jcore_aic2, "jcore,aic2", aic_irq_of_init);
++IRQCHIP_DECLARE(jcore_aic1, "jcore,aic1", aic_irq_of_init);
+-- 
+2.8.1
 
-Bjorn
-
-> diff --git a/Documentation/devicetree/bindings/pci/sh7751-pci.txt b/Documentation/devicetree/bindings/pci/sh7751-pci.txt
-> new file mode 100644
-> index 0000000..2df9af6
-> --- /dev/null
-> +++ b/Documentation/devicetree/bindings/pci/sh7751-pci.txt
-> @@ -0,0 +1,37 @@
-> +* Renesas SH7751 PCI host interfaces
-> +
-> +Required properties:
-> +  - compatible: "renesas,sh7751-pci" is required.
-> +    And board specific compatible if fixup required.
-> +  - reg: contain two entries.
-> +        first entry: PCI controller register base address and length.
-> +        second entry: BUS controller register base address and length.
-> +  - #address-cells: set to <2>
-> +  - #size-cells: set to <1>
-> +  - bus-range: PCI bus numbers covered
-> +  - device_type: set to "pci"
-> +  - ranges: ranges for the PCI memory and I/O regions.
-> +  - interrupt-map-mask and interrupt-map: standard PCI properties
-> +	to define the mapping of the PCI interface to interrupt
-> +	numbers.
-> +
-> +Example:
-> +	pci: pci-controller@fe200000 {
-> +		compatible = "renesas,sh7751-pci", "iodata,landisk";
-> +		device_type = "pci";
-> +		bus-range = <0 0>;
-> +		#address-cells = <2>;
-> +		#size-cells = <1>;
-> +		ranges = <0x02000000 0x00000000 0xfd000000 0xfd000000 0x00000000 0x01000000>,
-> +		         <0x01000000 0x00000000 0xfe240000 0x00000000 0x00000000 0x00040000>;
-> +		reg = <0xfe200000 0x0400>,
-> +		      <0xff800000 0x0030>;
-> +		#interrupt-cells = <1>;
-> +		interrupt-map-mask = <0x1800 0 7>;
-> +		interrupt-map = <0x0000 0 1 &cpldintc 0 0>,
-> +		                <0x0800 0 1 &cpldintc 1 0>,
-> +		                <0x1000 0 1 &cpldintc 2 0>,
-> +		                <0x1800 0 1 &cpldintc 3 0>,
-> +		                <0x1800 0 2 &cpldintc 0 0>;
-> +	};
-> +};
-> diff --git a/arch/sh/boards/Kconfig b/arch/sh/boards/Kconfig
-> index b6ff9df..cfde921 100644
-> --- a/arch/sh/boards/Kconfig
-> +++ b/arch/sh/boards/Kconfig
-> @@ -14,6 +14,7 @@ config SH_DEVICE_TREE
->  	select GENERIC_CALIBRATE_DELAY
->  	select GENERIC_IOMAP
->  	select COMMON_CLK
-> +	select SYS_SUPPORTS_PCI
->  	help
->  	  Select Board Described by Device Tree to build a kernel that
->  	  does not hard-code any board-specific knowledge but instead uses
-> diff --git a/arch/sh/drivers/Makefile b/arch/sh/drivers/Makefile
-> index e13f06b..382e86f 100644
-> --- a/arch/sh/drivers/Makefile
-> +++ b/arch/sh/drivers/Makefile
-> @@ -4,7 +4,9 @@
->  
->  obj-y		+= dma/
->  
-> +ifndef CONFIG_SH_DEVICE_TREE
->  obj-$(CONFIG_PCI)		+= pci/
-> +endif
->  obj-$(CONFIG_SUPERHYWAY)	+= superhyway/
->  obj-$(CONFIG_PUSH_SWITCH)	+= push-switch.o
->  obj-$(CONFIG_HEARTBEAT)		+= heartbeat.o
-> diff --git a/drivers/pci/host/Kconfig b/drivers/pci/host/Kconfig
-> index 5d2374e..df60505 100644
-> --- a/drivers/pci/host/Kconfig
-> +++ b/drivers/pci/host/Kconfig
-> @@ -245,4 +245,11 @@ config PCIE_ARMADA_8K
->  	  Designware hardware and therefore the driver re-uses the
->  	  Designware core functions to implement the driver.
->  
-> +config PCI_SH7751
-> +	bool "Renesas SH7751 On-Chip PCI controller"
-> +	depends on OF && SUPERH
-> +	select PCI_HOST_COMMON
-> +	help
-> +	  Say Y here if you want PCI support on SH7751.
-> +
->  endmenu
-> diff --git a/drivers/pci/host/Makefile b/drivers/pci/host/Makefile
-> index 9c8698e..4681e49 100644
-> --- a/drivers/pci/host/Makefile
-> +++ b/drivers/pci/host/Makefile
-> @@ -29,3 +29,4 @@ obj-$(CONFIG_PCIE_QCOM) += pcie-qcom.o
->  obj-$(CONFIG_PCI_HOST_THUNDER_ECAM) += pci-thunder-ecam.o
->  obj-$(CONFIG_PCI_HOST_THUNDER_PEM) += pci-thunder-pem.o
->  obj-$(CONFIG_PCIE_ARMADA_8K) += pcie-armada8k.o
-> +obj-$(CONFIG_PCI_SH7751) += pci-sh7751.o
-> diff --git a/drivers/pci/host/pci-sh7751.c b/drivers/pci/host/pci-sh7751.c
-> new file mode 100644
-> index 0000000..21601f1
-> --- /dev/null
-> +++ b/drivers/pci/host/pci-sh7751.c
-> @@ -0,0 +1,327 @@
-> +/*
-> + * SH7751 PCI driver
-> + * Copyright (C) 2016 Yoshinori Sato
-> + */
-> +
-> +#include <linux/kernel.h>
-> +#include <linux/module.h>
-> +#include <linux/of_address.h>
-> +#include <linux/of_pci.h>
-> +#include <linux/of_platform.h>
-> +#include <linux/pci.h>
-> +#include <linux/platform_device.h>
-> +#include <linux/io.h>
-> +#include "../ecam.h"
-> +
-> +#define SH7751_PCICONF1            0x4           /* PCI Config Reg 1 */
-> +#define SH7751_PCICONF4            0x10          /* PCI Config Reg 4 */
-> +#define SH7751_PCICONF5            0x14          /* PCI Config Reg 5 */
-> +#define SH7751_PCICONF6            0x18          /* PCI Config Reg 6 */
-> +#define SH4_PCICR		0x100		/* PCI Control Register */
-> +  #define SH4_PCICR_PREFIX	  0xA5000000	/* CR prefix for write */
-
-Follow the indentation style of include/uapi/linux/pci_regs.h,
-drivers/pci/host/pcie-rcar.c, drivers/pci/host/pci-mvebu.c, etc.:
-
-#define SH4_PCICR            0x100
-#define  SH4_PCICR_PREFIX     0xA5000000
-
-> +  #define SH4_PCICR_FTO		  BIT(10)	/* TRDY/IRDY Enable */
-> +  #define SH4_PCICR_TRSB	  BIT(9)	/* Target Read Single */
-> +  #define SH4_PCICR_BSWP	  BIT(8)	/* Target Byte Swap */
-> +  #define SH4_PCICR_PLUP	  BIT(7)	/* Enable PCI Pullup */
-
-The above are unused and can be omitted.
-
-> +  #define SH4_PCICR_ARBM	  BIT(6)	/* PCI Arbitration Mode */
-> +#define SH4_PCICR_MD		  (BIT(4) | BIT(5))	/* MD9 and MD10 status */
-
-Indentation error (should match other fields above).  Also, unused, so
-can just be omitted.
-
-> +  #define SH4_PCICR_SERR	  BIT(3)	/* SERR output assert */
-> +  #define SH4_PCICR_INTA	  BIT(2)	/* INTA output assert */
-> +  #define SH4_PCICR_PRST	  BIT(1)	/* PCI Reset Assert */
-
-Above are unused.
-
-> +  #define SH4_PCICR_CFIN	  BIT(0)	/* Central Fun. Init Done */
-> +#define SH4_PCILSR0		0x104		/* PCI Local Space Register0 */
-> +#define SH4_PCILSR1		0x108		/* PCI Local Space Register1 */
-
-Unused.
-
-> +#define SH4_PCILAR0		0x10C		/* PCI Local Addr Register1 */
-> +#define SH4_PCILAR1		0x110		/* PCI Local Addr Register1 */
-> +#define SH4_PCIINTM		0x118		/* PCI Interrupt Mask */
-> +  #define SH4_PCIINTM_TTADIM	  BIT(14)	/* Target-target abort interrupt */
-> +  #define SH4_PCIINTM_TMTOIM	  BIT(9)	/* Target retry timeout */
-> +  #define SH4_PCIINTM_MDEIM	  BIT(8)	/* Master function disable error */
-> +  #define SH4_PCIINTM_APEDIM	  BIT(7)	/* Address parity error detection */
-> +  #define SH4_PCIINTM_SDIM	  BIT(6)	/* SERR detection */
-> +  #define SH4_PCIINTM_DPEITWM	  BIT(5)	/* Data parity error for target write */
-> +  #define SH4_PCIINTM_PEDITRM	  BIT(4)	/* PERR detection for target read */
-> +  #define SH4_PCIINTM_TADIMM	  BIT(3)	/* Target abort for master */
-> +  #define SH4_PCIINTM_MADIMM	  BIT(2)	/* Master abort for master */
-> +  #define SH4_PCIINTM_MWPDIM	  BIT(1)	/* Master write data parity error */
-> +  #define SH4_PCIINTM_MRDPEIM	  BIT(0)	/* Master read data parity error */
-
-Field names are unused.  You do write 0xc3ff to SH4_PCIINTM, but it's
-a pain to match that up with these definitions.  Either write out the
-masks here, e.g., "#define SH4_PCIINTM_MRDPEIM 0x00000001", or build
-up the SH4_PCIINTM from these definitions, or both.
-
-> +#define SH4_PCIAINTM            0x134		/* Arbiter Int. Mask Register */
-> +#define SH4_PCIPAR		0x1C0		/* PIO Address Register */
-> +  #define SH4_PCIPAR_CFGEN	  0x80000000	/* Configuration Enable */
-> +  #define SH4_PCIPAR_BUSNO	  0x00FF0000	/* Config. Bus Number */
-> +  #define SH4_PCIPAR_DEVNO	  0x0000FF00	/* Config. Device Number */
-> +  #define SH4_PCIPAR_REGAD	  0x000000FC	/* Register Address Number */
-
-Field names unused.  At least SH4_PCIPAR_CFGEN *could* be used in
-CONFIG_CMD() below.
-
-> +#define SH4_PCIPINT		0x1CC		/* Power Mgmnt Int. Register */
-> +  #define SH4_PCIPINT_D3	  0x00000002	/* D3 Pwr Mgmt. Interrupt */
-> +  #define SH4_PCIPINT_D0	  0x00000001	/* D0 Pwr Mgmt. Interrupt */
-> +#define SH4_PCICLKR		0x1D4		/* Clock Ctrl. Register */
-> +/* For definitions of BCR, MCR see ... */
-
-See ... what?
-
-> +#define SH4_PCIBCR1		0x1E0		/* Memory BCR1 Register */
-> +  #define SH4_PCIMBR0		SH4_PCIBCR1
-
-Unused.
-
-> +#define SH4_PCIBCR2		0x1E4		/* Memory BCR2 Register */
-> +  #define SH4_PCIMBMR0		SH4_PCIBCR2
-
-Unused.
-
-> +#define SH4_PCIWCR1		0x1E8		/* Wait Control 1 Register */
-> +#define SH4_PCIWCR2		0x1EC		/* Wait Control 2 Register */
-> +#define SH4_PCIWCR3		0x1F0		/* Wait Control 3 Register */
-> +  #define SH4_PCIMBR2		SH4_PCIWCR3
-
-Unused.
-
-> +#define SH4_PCIMCR		0x1F4		/* Memory Control Register */
-> +#define SH4_PCIPDR		0x220		/* Port IO Data Register */
-> +
-> +/* Platform Specific Values */
-> +#define SH7751_VENDOR_ID             0x1054
-> +#define SH7751_DEVICE_ID             0x3505
-> +#define SH7751R_DEVICE_ID            0x350e
-> +
-> +/* Memory Control Registers */
-> +#define SH7751_BCR1                0x0000    /* Memory BCR1 Register */
-> +#define SH7751_BCR2                0x0004    /* Memory BCR2 Register */
-> +#define SH7751_BCR3                0x0050    /* Memory BCR3 Register */
-
-Unused.
-
-> +#define SH7751_WCR1                0x0008    /* Wait Control 1 Register */
-> +#define SH7751_WCR2                0x000C    /* Wait Control 2 Register */
-> +#define SH7751_WCR3                0x0010    /* Wait Control 3 Register */
-> +#define SH7751_MCR                 0x0014    /* Memory Control Register */
-> +
-> +#define pcic_writel(val, reg) iowrite32(val, pci_reg_base + (reg))
-> +#define pcic_readl(reg) ioread32(pci_reg_base + (reg))
-> +
-> +/*
-> + * PCIC fixups
-> + */
-> +
-> +#define PCIMCR_MRSET 0x40000000
-> +#define PCIMCR_RFSH  0x00000004
-> +
-> +static void __init landisk_fixup(void __iomem *pci_reg_base, void __iomem *bcr)
-> +{
-> +	unsigned long bcr1, mcr;
-> +
-> +	bcr1 = ioread32(bcr + SH7751_BCR1);
-> +	bcr1 |= 0x00080000;	/* Enable Bit 19 BREQEN, set PCIC to slave */
-> +	pcic_writel(bcr1, SH4_PCIBCR1);
-> +
-> +	mcr = ioread32(bcr + SH7751_MCR);
-> +	mcr &= (~PCIMCR_MRSET) & (~PCIMCR_RFSH);
-> +	pcic_writel(mcr, SH4_PCIMCR);
-> +
-> +	pcic_writel(0x0c000000, PCI_BASE_ADDRESS_1);
-> +	pcic_writel(0xd0000000, PCI_BASE_ADDRESS_2);
-> +	pcic_writel(0x0c000000, SH4_PCILAR0);
-> +	pcic_writel(0x00000000, SH4_PCILAR1);
-> +}
-> +
-> +static void __init r2dplus_fixup(void __iomem *pci_reg_base, void __iomem *bcr)
-> +{
-> +	unsigned long bcr1, mcr;
-> +
-> +	bcr1 = ioread32(bcr + SH7751_BCR1);
-> +	bcr1 |= 0x40080000;	/* Enable Bit 19 BREQEN, set PCIC to slave */
-> +	pcic_writel(bcr1, SH4_PCIBCR1);
-> +
-> +	/* Enable all interrupts, so we known what to fix */
-> +	pcic_writel(0x0000c3ff, SH4_PCIINTM);
-> +	pcic_writel(0x0000380f, SH4_PCIAINTM);
-> +
-> +	pcic_writel(0xfb900047, SH7751_PCICONF1);
-> +	pcic_writel(0xab000001, SH7751_PCICONF4);
-> +
-> +	mcr = ioread32(bcr + SH7751_MCR);
-> +	mcr &= (~PCIMCR_MRSET) & (~PCIMCR_RFSH);
-> +	pcic_writel(mcr, SH4_PCIMCR);
-> +
-> +	pcic_writel(0x0c000000, SH7751_PCICONF5);
-> +	pcic_writel(0xd0000000, SH7751_PCICONF6);
-> +	pcic_writel(0x0c000000, SH4_PCILAR0);
-> +	pcic_writel(0x00000000, SH4_PCILAR1);
-> +}
-> +
-> +/*
-> + * Direct access to PCI hardware...
-> + */
-> +#define CONFIG_CMD(bus, devfn, where) \
-> +	(0x80000000 | (bus->number << 16) | (devfn << 8) | (where & ~3))
-> +
-> +/*
-> + * Functions for accessing PCI configuration space with type 1 accesses
-> + */
-> +static void __iomem *sh7751_map_bus(struct pci_bus *bus,
-> +				   unsigned int devfn, int where)
-> +{
-> +	struct pci_config_window *cfg = bus->sysdata;
-> +	void __iomem *pci_reg_base = (void __iomem *)cfg->res.start;
-> +
-> +	pcic_writel(CONFIG_CMD(bus, devfn, where), SH4_PCIPAR);
-> +	return pci_reg_base + SH4_PCIPDR;
-> +}
-> +
-> +static const struct of_device_id fixup_of_match[] = {
-> +	{ .compatible = "iodata,landisk-pci", .data = landisk_fixup, },
-> +	{ .compatible = "renesas,r2dplus-pci", .data = r2dplus_fixup, },
-> +	{ },
-> +};
-> +
-> +static const struct of_device_id sh7751_pci_of_match[] = {
-> +	{ .compatible = "renesas,sh7751-pci", },
-> +	{ },
-> +};
-> +MODULE_DEVICE_TABLE(of, sh7751_pci_of_match);
-> +
-> +static resource_size_t sh7751_align_resource(struct pci_dev *dev,
-> +					     const struct resource *res,
-> +					     resource_size_t start,
-> +					     resource_size_t size,
-> +					     resource_size_t align)
-> +{
-> +	if (res->flags & IORESOURCE_IO) {
-> +		if (start < PCIBIOS_MIN_IO + 0x1000)
-> +			start = PCIBIOS_MIN_IO + 0x1000;
-> +
-> +		/*
-> +		 * Put everything into 0x00-0xff region modulo 0x400.
-> +		 */
-> +		if (start & 0x300)
-> +			start = (start + 0x3ff) & ~0x3ff;
-> +	}
-> +
-> +	return start;
-> +}
-> +
-> +static void __init set_pci_bcr(void __iomem *pci_reg_base,
-> +			       void __iomem *bcr,
-> +			       unsigned int area)
-> +{
-> +	unsigned long word;
-> +
-> +	word = ioread32(bcr + SH7751_BCR1);
-> +	/* check BCR for SDRAM in area */
-> +	if (((word >> area) & 1) = 0) {
-> +		pr_info("PCI: Area %d is not configured for SDRAM. BCR1=0x%lx\n",
-> +			area, word);
-
-Use dev_info() so we can associate the message with a device and driver.
-
-> +		return;
-> +	}
-> +	pcic_writel(word, SH4_PCIBCR1);
-> +
-> +	word = ioread16(bcr + SH7751_BCR2);
-> +	/* check BCR2 for 32bit SDRAM interface*/
-> +	if (((word >> (area << 1)) & 0x3) != 0x3) {
-> +		pr_info("PCI: Area %d is not 32 bit SDRAM. BCR2=0x%lx\n",
-> +			area, word);
-
-dev_info()
-
-> +		return;
-> +	}
-> +	pcic_writel(word, SH4_PCIBCR2);
-> +}
-> +
-> +static __init int sh7751_cfg_init(struct device *dev,
-> +				  struct pci_config_window *cfg)
-> +{
-> +	cfg->priv = sh7751_align_resource;
-> +	return 0;
-> +}
-> +
-> +static struct pci_ecam_ops ecm_ops __initdata = {
-> +	.init	= sh7751_cfg_init,
-> +	.pci_ops = {
-> +		.read	= pci_generic_config_read32,
-> +		.write	= pci_generic_config_write32,
-> +		.map_bus	= sh7751_map_bus,
-> +	}
-> +};
-> +
-> +static __init int sh7751_pci_probe(struct platform_device *pdev)
-> +{
-> +	struct resource *res;
-> +	u32 id;
-> +	u32 reg, word;
-> +	void __iomem *pci_reg_base;
-> +	void __iomem *bcr;
-> +	const struct of_device_id *match;
-> +	void (*fixup_fn)(void __iomem *pci_reg_base, void __iomem *bcr);
-> +
-> +	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-> +	pci_reg_base = ioremap(res->start, resource_size(res));
-> +	if (IS_ERR(pci_reg_base))
-> +		return PTR_ERR(pci_reg_base);
-> +
-> +	res = platform_get_resource(pdev, IORESOURCE_MEM, 1);
-> +	bcr = ioremap(res->start, resource_size(res));
-> +	if (IS_ERR(bcr))
-> +		return PTR_ERR(bcr);
-> +
-> +	/* check for SH7751/SH7751R hardware */
-> +	id = pcic_readl(PCI_VENDOR_ID);
-> +	if (id != ((SH7751_DEVICE_ID << 16) | SH7751_VENDOR_ID) &&
-> +	    id != ((SH7751R_DEVICE_ID << 16) | SH7751_VENDOR_ID)) {
-> +		pr_warn("PCI: This is not an SH7751(R)\n");
-
-dev_warn()
-
-> +		return -ENODEV;
-> +	}
-> +	dev_info(&pdev->dev, "PCI core found at %pR\n",
-> +		pci_reg_base);
-> +
-> +	/* Set the BCRs to enable PCI access */
-> +	reg = ioread32(bcr);
-> +	reg |= 0x80000;
-> +	iowrite32(reg, bcr);
-> +
-> +	/* Turn the clocks back on (not done in reset)*/
-> +	pcic_writel(0, SH4_PCICLKR);
-> +	/* Clear Powerdown IRQs (not done in reset) */
-> +	word = SH4_PCIPINT_D3 | SH4_PCIPINT_D0;
-> +	pcic_writel(word, SH4_PCIPINT);
-> +
-> +	/* set the command/status bits to:
-> +	 * Wait Cycle Control + Parity Enable + Bus Master +
-> +	 * Mem space enable
-> +	 */
-
-Multi-line comment style is:
-
-  /*
-   * set the command/...
-   * ...
-   */
-
-> +	word = PCI_COMMAND_WAIT | PCI_COMMAND_PARITY |
-> +	       PCI_COMMAND_MASTER | PCI_COMMAND_MEMORY;
-> +	pcic_writel(word, PCI_COMMAND);
-> +
-> +	/* define this host as the host bridge */
-> +	word = PCI_BASE_CLASS_BRIDGE << 24;
-> +	pcic_writel(word, PCI_CLASS_REVISION);
-> +
-> +	/* Set IO and Mem windows to local address
-> +	 * Make PCI and local address the same for easy 1 to 1 mapping
-> +	 */
-> +	word = memory_end - memory_start - 1;
-> +	pcic_writel(word, SH4_PCILSR0);
-> +	/* Set the values on window 0 PCI config registers */
-> +	word = P2SEGADDR(__pa(memory_start));
-> +	pcic_writel(word, SH4_PCILAR0);
-> +	pcic_writel(word, PCI_BASE_ADDRESS_1);
-> +
-> +	set_pci_bcr(pci_reg_base, bcr, (__pa(memory_start) >> 27) & 0x07);
-> +
-> +	/* configure the wait control registers */
-> +	word = ioread32(bcr + SH7751_WCR1);
-> +	pcic_writel(word, SH4_PCIWCR1);
-> +	word = ioread32(bcr + SH7751_WCR2);
-> +	pcic_writel(word, SH4_PCIWCR2);
-> +	word = ioread32(bcr + SH7751_WCR3);
-> +	pcic_writel(word, SH4_PCIWCR3);
-> +	word = ioread32(bcr + SH7751_MCR);
-> +	pcic_writel(word, SH4_PCIMCR);
-> +
-> +	match = of_match_node(fixup_of_match, pdev->dev.of_node);
-> +	if (match) {
-> +		fixup_fn = match->data;
-> +		fixup_fn(pci_reg_base, bcr);
-> +	}
-> +	/*
-> +	 * SH7751 init done, set central function init complete
-> +	 * use round robin mode to stop a device starving/overruning
-> +	 */
-> +	word = SH4_PCICR_PREFIX | SH4_PCICR_CFIN | SH4_PCICR_ARBM;
-> +	pcic_writel(word, SH4_PCICR);
-> +
-> +	return pci_host_common_probe(pdev, &ecm_ops);
-> +}
-> +
-> +static __refdata struct platform_driver sh7751_pci_driver = {
-> +	.driver = {
-> +		.name = "sh7751-pci",
-> +		.of_match_table = sh7751_pci_of_match,
-> +		.suppress_bind_attrs = true,
-> +	},
-> +	.probe = sh7751_pci_probe,
-> +};
-> +builtin_platform_driver(sh7751_pci_driver);
-> -- 
-> 2.7.0
-> 
