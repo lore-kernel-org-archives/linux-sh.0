@@ -1,52 +1,100 @@
-From: Mark Rutland <mark.rutland@arm.com>
-Date: Wed, 27 Jul 2016 13:27:54 +0000
+From: Rich Felker <dalias@libc.org>
+Date: Wed, 27 Jul 2016 17:07:09 +0000
 Subject: Re: [PATCH v4 2/2] irqchip: add J-Core AIC driver
-Message-Id: <20160727132753.GC17195@leverpostej>
+Message-Id: <20160727170709.GC15995@brightrain.aerifal.cx>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1469595860.git.dalias@libc.org>
  <862a5642f4a30f062171bbc14fe95a729eab8ba2.1469595861.git.dalias@libc.org>
- <20160727101537.GD12880@leverpostej>
- <20160727130821.GB15995@brightrain.aerifal.cx>
-In-Reply-To: <20160727130821.GB15995@brightrain.aerifal.cx>
+ <20160727101235.GC12880@leverpostej>
+ <20160727130606.GA15995@brightrain.aerifal.cx>
+ <20160727132252.GB17195@leverpostej>
+In-Reply-To: <20160727132252.GB17195@leverpostej>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Rich Felker <dalias@libc.org>
+To: Mark Rutland <mark.rutland@arm.com>
 Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Jason Cooper <jason@lakedaemon.net>, Marc Zyngier <marc.zyngier@arm.com>, Rob Herring <robh+dt@kernel.org>, Thomas Gleixner <tglx@linutronix.de>
 
-On Wed, Jul 27, 2016 at 09:08:21AM -0400, Rich Felker wrote:
-> On Wed, Jul 27, 2016 at 11:15:38AM +0100, Mark Rutland wrote:
-> > On Wed, Jul 27, 2016 at 05:35:09AM +0000, Rich Felker wrote:
-> > > For simplicity, there is no aic1-specific logic in the driver beyond
-> > > setting the priority register, which is necessary for interrupts to
-> > > work at all. Eventually aic1 will likely be phased out, but it's
-> > > currently in use in deployments and all released bitstream binaries.
+On Wed, Jul 27, 2016 at 02:22:52PM +0100, Mark Rutland wrote:
+> On Wed, Jul 27, 2016 at 09:06:06AM -0400, Rich Felker wrote:
+> > On Wed, Jul 27, 2016 at 11:12:36AM +0100, Mark Rutland wrote:
+> > > On Wed, Jul 27, 2016 at 05:35:09AM +0000, Rich Felker wrote:
+> > > > +int __init aic_irq_of_init(struct device_node *node, struct device_node *parent)
+> > > > +{
+> > > > +	struct aic_data *aic = &aic_data;
+> > > > +	unsigned min_irq = 64;
+> > > > +
+> > > > +	pr_info("Initializing J-Core AIC\n");
+> > > > +
+> > > > +	if (!of_device_is_compatible(node, "jcore,aic2")) {
+> > > > +		unsigned cpu;
+> > > > +		for_each_possible_cpu(cpu) {
+> > > > +			void __iomem *base = of_iomap(node, cpu);
+> > > > +			if (!base)
+> > > > +				continue;
+> > > 
+> > > This sounds like it would be a critical error.
+> > > 
+> > > It would be best to at least pr_warn() if you can't map a CPU's AI
+> > > interface.
 > > 
-> > [...]
-> > 
-> > > +	if (!of_device_is_compatible(node, "jcore,aic2")) {
-> > 
-> > If this is only meant to run for AIC1, it would be better to check for
-> > the "jcore,aic1" compatible string explicitly.
-> > 
-> > While that shouldn't matter much currently, it better matches the intent
-> > described in the commit message, and avoids surprises and/or churn in
-> > future if you have AIC3+.
+> > It's looping over possible cpus (per the kernel configuration for max
+> > cpus) so it's expected that a system with fewer cpus will also have
+> > fewer reg ranges for the aic. This is not an error. If you think
+> > there's a different/better way I should write this code, I'm open to
+> > suggestions.
 > 
-> My intent in doing this was to support a DT that might claim an aic2
-> is aic1-compatible as a fallback "compatible" property. The hardware
-> is designed such that this works (ignoring the spurious writes to
-> unused prio registers) as long as the DT still has the right irq
-> numbers for attached devices.
+> In your arch code, set possible cpus based on the DT, before
+> initialising irqchips. i.e. mark any CPUs not in the DT as not possible.
+> 
+> That will also net you savings in other areas (e.g. per-cpu maps not
+> having to be allocated for CPUs which don't exist).
 
-Ok.
+Should it be done for possible or just present? I think the existing
+code already sets both possible and present true if and only if they
+have cpu nodes, so it should work as-is with either.
 
-If the HW ignores it, what's the cost of those one-off spurious writes?
-If it's not noticeable, you could allow the kernel to perform them
-regardless.
+> Otherwise, you're missing real error cases, e.g. two CPUs with only one
+> AIC region.
 
-Otherwise, please add a comment above the check, explaining why we do
-the check this way around.
+Sure, but do invalid DTBs need to be a diagnosable error? An invalid
+DTB can clearly cause the system to blow up arbitrarily badly with
+wrong memory regions, etc.
 
-Thanks,
-Mark.
+> > > > +	aic->chip.irq_mask = noop;
+> > > > +	aic->chip.irq_unmask = noop;
+> > > 
+> > > If the core code wants to mask IRQs, how do you handle that? Can you
+> > > mask your CPU traps?
+> > 
+> > There's a global imask in the cpu that masks all interrupts that's
+> > used in the trap entry point, spinlocks, etc. already. This is a cpu
+> > standard feature and not logically part of the AIC.
+> 
+> Just to check, is that a single bit that masks all IRQs, or is there a
+> mark per-IRQ?
+
+It's actually a 4-bit priority mask that masks all interrupts with
+priority <= the configured value, but Linux has no use for interrupt
+priorities and the kernel just sets the value to 0 or 15 for allowing
+or blocking interrupts
+
+> > My understanding is that the kernel already keeps a logical mask of
+> > disabled irqs in addition to mask/disable at the irqchip level so
+> > there's a fairly fast path for ignoring/holding (potentially spurious)
+> > irqs while they're supposed to be disabled and deferring them until
+> > they're enabled again.
+> 
+> While we can ignore suprious IRQs, there are cases where that's
+> insufficient (e.g. screaming interrupts, suspend).
+> 
+> Can your CPU mask IRQs individually?
+
+No. If there's SoC hardware needing that capability it would need to
+be added, but I suspect off-SoC hardware generating interrupts might
+want to use a secondary chained interrupt controller anyway, which
+might have different functionality.
+
+Rich
+
+
