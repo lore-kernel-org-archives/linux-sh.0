@@ -1,37 +1,47 @@
-From: Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>
-Date: Fri, 08 Jul 2016 16:43:44 +0000
-Subject: [PATCH] sh: se7750_defconfig: disable IDE subsystem
-Message-Id: <1467996225-25498-5-git-send-email-b.zolnierkie@samsung.com>
+From: Rich Felker <dalias@libc.org>
+Date: Wed, 27 Jul 2016 05:31:12 +0000
+Subject: Re: [PATCH v3 01/12] of: add vendor prefix for J-Core
+Message-Id: <20160727053112.GY15995@brightrain.aerifal.cx>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1467996225-25498-1-git-send-email-b.zolnierkie@samsung.com>
-In-Reply-To: <1467996225-25498-1-git-send-email-b.zolnierkie@samsung.com>
+References: <cover.1464148904.git.dalias@libc.org>
+ <b6d33800300bde8f1d9a7b88a715d741548fad4a.1464148904.git.dalias@libc.org>
+ <CAL_JsqKWq-DBQMWof6hyh0_sS4OPOP7afJXYdaWTiqf15MpKAg@mail.gmail.com>
+In-Reply-To: <CAL_JsqKWq-DBQMWof6hyh0_sS4OPOP7afJXYdaWTiqf15MpKAg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
-Cc: linux-ide@vger.kernel.org, linux-kernel@vger.kernel.org, b.zolnierkie@samsung.com
+To: Rob Herring <robh+dt@kernel.org>
+Cc: "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, SH-Linux <linux-sh@vger.kernel.org>, Ian Campbell <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>, Mark Rutland <mark.rutland@arm.com>, Pawel Moll <pawel.moll@arm.com>
 
-This patch disables deprecated IDE subsystem in se7750_defconfig
-(no IDE host drivers are selected in this config so there is no
-valid reason to enable IDE subsystem itself).
+On Wed, May 25, 2016 at 08:18:06AM -0500, Rob Herring wrote:
+> On Wed, May 25, 2016 at 12:43 AM, Rich Felker <dalias@libc.org> wrote:
+> > The J-Core project (j-core.org) produces open source cpu and SoC
+> > peripheral cores synthesizable as FPGA bitstreams or ASICs.
+> >
+> > Signed-off-by: Rich Felker <dalias@libc.org>
+> 
+> Please add acks when posting subsequent versions.
+> 
+> > ---
+> >  Documentation/devicetree/bindings/vendor-prefixes.txt | 1 +
+> >  1 file changed, 1 insertion(+)
+> >
+> > diff --git a/Documentation/devicetree/bindings/vendor-prefixes.txt b/Documentation/devicetree/bindings/vendor-prefixes.txt
+> > index 86740d4..9c070b8 100644
+> > --- a/Documentation/devicetree/bindings/vendor-prefixes.txt
+> > +++ b/Documentation/devicetree/bindings/vendor-prefixes.txt
+> > @@ -126,6 +126,7 @@ invensense  InvenSense Inc.
+> >  isee   ISEE 2007 S.L.
+> >  isil   Intersil
+> >  issi   Integrated Silicon Solutions Inc.
+> > +jcore  J-Core.org
+> >  jedec  JEDEC Solid State Technology Association
+> >  karo   Ka-Ro electronics GmbH
+> >  keymile        Keymile GmbH
+> > --
+> > 2.8.1
 
-Signed-off-by: Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>
----
- arch/sh/configs/se7750_defconfig | 1 -
- 1 file changed, 1 deletion(-)
+Since this was previously acked, can I include it in my tree for
+upstreaming? Or do you want me to submit the patch again?
 
-diff --git a/arch/sh/configs/se7750_defconfig b/arch/sh/configs/se7750_defconfig
-index 912c985..88b81b7 100644
---- a/arch/sh/configs/se7750_defconfig
-+++ b/arch/sh/configs/se7750_defconfig
-@@ -34,7 +34,6 @@ CONFIG_MTD_BLOCK=y
- CONFIG_MTD_CFI=y
- CONFIG_MTD_CFI_AMDSTD=y
- CONFIG_MTD_ROM=y
--CONFIG_IDE=y
- CONFIG_SCSI=y
- CONFIG_NETDEVICES=y
- CONFIG_NET_ETHERNET=y
--- 
-1.9.1
-
+Rich
