@@ -1,63 +1,83 @@
-From: "Luis R. Rodriguez" <mcgrof@kernel.org>
-Date: Wed, 27 Jul 2016 22:46:09 +0000
-Subject: Re: [RFC v3 00/13] linux: generalize sections, ranges and linker tables
-Message-Id: <20160727224609.GO5537@wotan.suse.de>
+From: Mark Brown <broonie@kernel.org>
+Date: Thu, 28 Jul 2016 19:11:53 +0000
+Subject: Re: [PATCH v4 2/2] spi: add driver for J-Core SPI controller
+Message-Id: <20160728191153.GL11806@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="Epi5nlKhkk4Kf+ga"
 List-Id: <linux-sh.vger.kernel.org>
-References: <1469222687-1600-1-git-send-email-mcgrof@kernel.org>
- <20160725223229.7de71264e9e6ec8d635ee785@kernel.org>
-In-Reply-To: <20160725223229.7de71264e9e6ec8d635ee785@kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Masami Hiramatsu <mhiramat@kernel.org>
-Cc: "Luis R. Rodriguez" <mcgrof@kernel.org>, hpa@zytor.com, tglx@linutronix.de, mingo@redhat.com, bp@alien8.de, linux@arm.linux.org.uk, masami.hiramatsu.pt@hitachi.com, jbaron@akamai.com, heiko.carstens@de.ibm.com, ananth@linux.vnet.ibm.com, anil.s.keshavamurthy@intel.com, davem@davemloft.net, realmz6@gmail.com, x86@kernel.org, luto@amacapital.net, keescook@chromium.org, torvalds@linux-foundation.org, gregkh@linuxfoundation.org, rusty@rustcorp.com.au, gnomes@lxorguk.ukuu.org.uk, alan@linux.intel.com, dwmw2@infradead.org, arnd@arndb.de, ming.lei@canonical.com, linux-arch@vger.kernel.org, benh@kernel.crashing.org, ananth@in.ibm.com, pebolle@tiscali.nl, fontana@sharpeleven.org, ciaran.farrell@suse.com, christopher.denicolo@suse.com, david.vrabel@citrix.com, konrad.wilk@oracle.com, mcb30@ipxe.org, jgross@suse.com, andrew.cooper3@citrix.com, andriy.shevchenko@linux.intel.com
+References: <cover.1469686300.git.dalias@libc.org>
+ <2a46090a5a7c177b7eca83f68406650844423e7f.1469686300.git.dalias@libc.org>
+In-Reply-To: <2a46090a5a7c177b7eca83f68406650844423e7f.1469686300.git.dalias@libc.org>
+To: Rich Felker <dalias@libc.org>
+Cc: devicetree@vger.kernel.org, linux-kernel@vger.kernel.org, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, Rob Herring <robh+dt@kernel.org>, Mark Rutland <mark.rutland@arm.com>
 
-On Mon, Jul 25, 2016 at 10:32:29PM +0900, Masami Hiramatsu wrote:
-> Hi Luis,
-> 
-> On Fri, 22 Jul 2016 14:24:34 -0700
-> "Luis R. Rodriguez" <mcgrof@kernel.org> wrote:
-> 
-> > This RFC v3 builds off the last RFC v2 series [0] for adding linker tables.
-> > The largest amount of work here was to take Russell King's feedback on
-> > using linker table for kprobes text not being appropriate -- and providing
-> > another lightweight API for simple section ranges: read-only stitched pieces
-> > of executable code. This required also generalizing common building blocks
-> > for both linker tables and section ranges, these building blocks are defined
-> > now in include/linux/sections.h and asm-generic/section.h. The other last thing
-> > decided was to not support sub-sections. In the hunt for this I could think of
-> > anything that really required this, and if it was needed it did not seem
-> > impossible to port over to avoid its use. Please let me know if there are valid
-> > uses cases for sub-sections.
-> > 
-> > Other significant effort here was to provide a set of common assembly helpers
-> > which could be used across architectures, this starts off some of this work
-> > for generic helpers which carve out and define custom Linux sections.
-> > 
-> > Lastly, this now also goes with two ports which required module support when
-> > using linker tables: jump labels, and dynamic debug support. A few
-> > extensions have been made to the original series in order to provide
-> > support for that.
-> > 
-> > Since kprobes actually had both a linker table and a section range the
-> > patch that dealt with kprobes is now split off in two patches, one
-> > that deals with its linker table and another for its section ranges.
-> > 
-> > More elaborate uses for linker tables are possible, I'll hold off on any
-> > of this type of work until at least the basic building blocks are fleshed
-> > out. To review how this work came about, and more elaborate uses being
-> > evaluated check out the userspace linker-tables mockup solution [1].
-> > Hopefully most of the possible bikeshedding was already dealt with through
-> > that tree. Thanks to hpa for tons of feedback.
-> 
-> Great! so table and ranges completely replace the old-style(add-hoc)
-> _kprobe and NOKPROBE_SYMBOL() implementation, good job! :)
 
-Indeed, thanks! In reality this is generalizing custom section hacks, but also
-making them much more powerful due to the fact that we sort now at link time,
-this buys us better than O(1) sort for code where dependencies can be spelled
-out in code, it also expands on the semantics available to us for order
-levels -- so we're no longer restricted to 7 levels for built-in code -- and
-order levels can be subject/subsystem specific.
+--Epi5nlKhkk4Kf+ga
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-  Luis
+On Sun, Apr 03, 2016 at 05:12:45AM +0000, Rich Felker wrote:
+
+> +config SPI_JCORE
+> +	tristate "J-Core SPI Master"
+> +	depends on OF
+> +
+
+An architecture or SoC dependency with || COMPILE_TEST would be useful
+for avoiding cluttering Kconfig for other users.  Though as this is in a
+FPGA it's perhaps likely people will pick this up for other FPGAs so
+perhaps a comment to that effect if it seems likely.
+
+> +static void jcore_spi_baudrate(struct jcore_spi *hw, int speed)
+> +{
+> +	if (speed == hw->speed_hz) return;
+> +	hw->speed_hz = speed;
+> +	if (speed >= hw->clock_freq/2)
+
+Coding style, spaces around /.
+
+> +	return count<len ? -EREMOTEIO : 0;
+
+Again here, and please also write this as a normal if statement so it's
+easier to read.
+
+> +	/* The SPI clock rate controlled via a configurable clock divider
+> +	 * which is applied to the reference clock. A 50 MHz reference is
+> +	 * most suitable for obtaining standard SPI clock rates, but some
+> +	 * designs may have a different reference clock, and the DT must
+> +	 * make the driver aware so that it can properly program the
+> +	 * requested rate. If omitted, 50 MHz is assumed. */
+> +	clock_freq = 50000000;
+> +	of_property_read_u32(node, "clock-frequency", &clock_freq);
+> +	hw->clock_freq = clock_freq;
+
+Why are you not using the clock API for this?  Just require a clock and
+use clk_get_rate() to find out what rate it is.
+
+> +	pdev->dev.dma_mask = 0;
+
+Why are we doing this?  There's no DMA code...
+
+> +	dev_info(&pdev->dev, "base %p, noirq\n", hw->base);
+
+This is just adding noise to the boot, just remove it - it's useful to
+log information we get from the silicon but things like the base address
+don't really add anything and end up cluttering (and slowing) the boot
+when everything does it.
+
+--Epi5nlKhkk4Kf+ga
+Content-Type: application/pgp-signature; name="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iQEcBAEBCAAGBQJXmlj4AAoJECTWi3JdVIfQy5QH/35g8/6zlsdIcQujUaCJiXiO
+2zojNTrkofTDrfsHQCT7/5Pp82Q9Dze1XZ3LmAEFLg/mWgJX5VZA89WYBEAw/Jkf
+dEpLBN/FfnnLJH60ReZf80nytfbKIidLm8gpfjrGZ+KNM1UTACOrN5kkwvdJHk+t
+7jQZJ5M/rOu++CFKBmMIE3zXk81GkbPe1OBs8/S0/phTUFEah7GxaJ8i6iK5cECM
+du+mzvYU2D9oiPC4rFeQw3Tcigmm4GmYItsqq3ePYxJBuEB0nHrU3+xFbFvw1OgR
+rMfZjDHM0KWFdZaxozl4UxqbC0RWE8+cbzmjhglxe54BjvDjh59wzhRhfH/uXYk=
+=1y9J
+-----END PGP SIGNATURE-----
+
+--Epi5nlKhkk4Kf+ga--
