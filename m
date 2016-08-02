@@ -1,13 +1,13 @@
-From: Homeland Security <katygiuseppe@alice.it>
-Date: Thu, 04 Aug 2016 07:51:04 +0000
-Subject: I`ma banker.
-Message-Id: <1565488c2b7.katygiuseppe@alice.it>
+From: varainhoitoelimen <akishino@ufpr.br>
+Date: Tue, 02 Aug 2016 22:04:49 +0000
+Subject: nopea Lainat
+Message-Id: <20160802213559.B7171DC605D@zimbra2.bawaslu.go.id>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: Recipients <akishino-i1oeJEPGGWo@public.gmane.org>
 
-I`ma banker. I want to transfer an abandoned USD5.5Million to your bank Account 
-for us to share it 40% for you while 60% for me. Contact me in my mail 
-mrclif_ail@yahoo.com for more details.
+Apply for a loan at 2% reply to this Email for more Info
+
+Hae lainaa 2% vastausta t=E4h=E4n viestiin lis=E4tietoja
