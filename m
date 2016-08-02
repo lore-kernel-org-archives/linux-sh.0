@@ -1,9 +1,7 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Mon, 01 Aug 2016 18:12:45 +0000
+From: Rich Felker <dalias@libc.org>
+Date: Tue, 02 Aug 2016 01:45:32 +0000
 Subject: Re: [PATCH v4 2/2] spi: add driver for J-Core SPI controller
-Message-Id: <20160801181245.GZ10376@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="j+Rb494BzBd9643b"
+Message-Id: <20160802014531.GS15995@brightrain.aerifal.cx>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1469686300.git.dalias@libc.org>
  <2a46090a5a7c177b7eca83f68406650844423e7f.1469686300.git.dalias@libc.org>
@@ -11,41 +9,38 @@ References: <cover.1469686300.git.dalias@libc.org>
  <20160728194045.GK15995@brightrain.aerifal.cx>
  <20160728195125.GN11806@sirena.org.uk>
  <20160730033441.GO15995@brightrain.aerifal.cx>
-In-Reply-To: <20160730033441.GO15995@brightrain.aerifal.cx>
-To: Rich Felker <dalias@libc.org>
-Cc: devicetree@vger.kernel.org, linux-kernel@vger.kernel.org, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, Rob Herring <robh+dt@kernel.org>, Mark Rutland <mark.rutland@arm.com>, Yoshinori Sato <ysato@users.sourceforge.jp>
+ <20160801181245.GZ10376@sirena.org.uk>
+In-Reply-To: <20160801181245.GZ10376-GFdadSzt00ze9xe1eoZjHA@public.gmane.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Rob Herring <robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Mark Rutland <mark.rutland-5wv7dgnIgG8@public.gmane.org>, Yoshinori Sato <ysato-Rn4VEauK+AKRv+LV9MX5uooqe+aC9MnS@public.gmane.org>
 
+On Mon, Aug 01, 2016 at 07:12:45PM +0100, Mark Brown wrote:
+> On Fri, Jul 29, 2016 at 11:34:41PM -0400, Rich Felker wrote:
+> 
+> > I was able to get it working via the clk api and I'll include support
+> > for this in the next version of the patch, but to actually use it
+> > depends on changing arch/sh to use the common clk framework; otherwise
+> > there's no way to provide a suitable clk in the DT and have
+> > [devm_]clk_get actually pick it up. Should I keep around the option of
+> > using clock-frequency too? That would be most convenient.
+> 
+> It sounds like at the minute the devices all have one frequency anyway
+> in which case just having a default frequency in there that you fall
+> back to if you get -ENOENT from a failed clock lookup might be enough?
 
---j+Rb494BzBd9643b
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Yes. 50 MHz is the natural default frequency, but I found out at the
+last minute from the hardware engineers that clocking the current SoC
+up to 62.5 MHz (for faster cpu) will require the SPI timing to be
+programmed based on the faster reference clock. This messes up the
+ability to get optimal SD card transfer rates, so we'll probably end
+up having a real 50 MHz clock for the SPI anyway, but I thought it was
+important to be able to handle this issue in the DT binding anyway.
 
-On Fri, Jul 29, 2016 at 11:34:41PM -0400, Rich Felker wrote:
+Since it's not an immediate need right now anyway I'll drop the
+clock-frequency property proposal and just use the more general clocks
+approach you suggested.
 
-> I was able to get it working via the clk api and I'll include support
-> for this in the next version of the patch, but to actually use it
-> depends on changing arch/sh to use the common clk framework; otherwise
-> there's no way to provide a suitable clk in the DT and have
-> [devm_]clk_get actually pick it up. Should I keep around the option of
-> using clock-frequency too? That would be most convenient.
-
-It sounds like at the minute the devices all have one frequency anyway
-in which case just having a default frequency in there that you fall
-back to if you get -ENOENT from a failed clock lookup might be enough?
-
---j+Rb494BzBd9643b
-Content-Type: application/pgp-signature; name="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iQEcBAEBCAAGBQJXn5EcAAoJECTWi3JdVIfQBIwH/iNPu2AxYU0oEIYk3n5UVMvR
-mR5548bNX7JboYJX5rlwnlLqirN0emD1BR+5WDRx1JIieqDf6PbO6yRw7FWjUw/n
-NhjfMiX3IhaQWqGwNjNKXP4DhNjIqA9535ouwEMmS7hh+in8PTeMTY9Ixut/aX9R
-xHdLQO/pfM/F7QDPUB05ODIq6CrpP6SFNFD/dPQWiBSa+H8ZfhYf5XvpQHEdKVNO
-2uU+U3IGoIIEO6YL3pOGRxuwr+OFBUIo539wCv8v2FWhNL1i6mFfeLLCnfNWGV7t
-nCDPIrjYYe4bASU7pQV8M0kasqI10ilTGXJJbQP+eWglaoqXkZBanxKwN0HogrA=
-=8TC0
------END PGP SIGNATURE-----
-
---j+Rb494BzBd9643b--
+Rich
