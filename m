@@ -1,13 +1,15 @@
 From: Rich Felker <dalias@libc.org>
-Date: Wed, 03 Aug 2016 00:18:38 +0000
+Date: Thu, 04 Aug 2016 04:30:37 +0000
 Subject: [PATCH v6 0/2] J-Core timer support
-Message-Id: <cover.1470183518.git.dalias@libc.org>
+Message-Id: <cover.147018b3518.git.dalias@libc.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1470183518.git.dalias@libc.org>
+In-Reply-To: <cover.1470183518.git.dalias@libc.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: devicetree@vger.kernel.org, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
-Cc: Rob Herring <robh+dt@kernel.org>, Mark Rutland <mark.rutland@arm.com>, Daniel Lezcano <daniel.lezcano@linaro.org>, Thomas Gleixner <tglx@linutronix.de>
+To: devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Rob Herring <robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Mark Rutland <mark.rutland-5wv7dgnIgG8@public.gmane.org>, Daniel Lezcano <daniel.lezcano-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>
 
 Updated to include changes requested by Thomas Gleixner. Aside from
 minor style improvements, the main changes are moving from the old cpu
