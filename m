@@ -1,8 +1,10 @@
 From: Rich Felker <dalias@libc.org>
-Date: Wed, 03 Aug 2016 01:26:32 +0000
+Date: Thu, 04 Aug 2016 04:30:37 +0000
 Subject: [PATCH v5 0/2] J-Core SPI controller support
-Message-Id: <cover.1470187592.git.dalias@libc.org>
+Message-Id: <cover.147018b7592.git.dalias@libc.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1470187592.git.dalias@libc.org>
+In-Reply-To: <cover.1470187592.git.dalias@libc.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
