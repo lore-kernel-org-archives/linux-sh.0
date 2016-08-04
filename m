@@ -1,325 +1,166 @@
-From: mcgrof@kernel.org
-Date: Fri, 19 Aug 2016 21:34:06 +0000
-Subject: [PATCH v4 08/16] kbuild: enable option to force compile force-obj-y and force-lib-y
-Message-Id: <1471642454-5679-9-git-send-email-mcgrof@kernel.org>
+From: Rich Felker <dalias@libc.org>
+Date: Thu, 04 Aug 2016 04:30:37 +0000
+Subject: [PATCH v6 2/2] irqchip: add J-Core AIC driver
+Message-Id: <c3b89ef74aaa6477575dbe2d410eb1d182503243.147018b6529.git.dalias@libc.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1471642454-5679-1-git-send-email-mcgrof@kernel.org>
-In-Reply-To: <1471642454-5679-1-git-send-email-mcgrof@kernel.org>
+References: <cover.147018b6529.git.dalias@libc.org>
+In-Reply-To: <cover.147018b6529.git.dalias@libc.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: hpa@zytor.com, tglx@linutronix.de, mingo@redhat.com, jpoimboe@redhat.com, bp@alien8.de, linux@arm.linux.org.uk, mhiramat@kernel.org, masami.hiramatsu.pt@hitachi.com, jbaron@akamai.com, heiko.carstens@de.ibm.com, ananth@linux.vnet.ibm.com, anil.s.keshavamurthy@intel.com, davem@davemloft.net, realmz6@gmail.com
-Cc: x86@kernel.org, luto@amacapital.net, keescook@chromium.org, torvalds@linux-foundation.org, gregkh@linuxfoundation.org, rusty@rustcorp.com.au, gnomes@lxorguk.ukuu.org.uk, alan@linux.intel.com, dwmw2@infradead.org, arnd@arndb.de, ming.lei@canonical.com, linux-arch@vger.kernel.org, benh@kernel.crashing.org, ananth@in.ibm.com, pebolle@tiscali.nl, fontana@sharpeleven.org, david.vrabel@citrix.com, konrad.wilk@oracle.com, mcb30@ipxe.org, jgross@suse.com, andrew.cooper3@citrix.com, andriy.shevchenko@linux.intel.com, paul.gortmaker@windriver.com, xen-devel@lists.xensource.com, ak@linux.intel.com, pali.rohar@gmail.com, dvhart@infradead.org, platform-driver-x86@vger.kernel.org, mmarek@suse.com, linux@rasmusvillemoes.dk, jkosina@suse.cz, korea.drzix@gmail.com, linux-kbuild@vger.kernel.org, ton
+To: linux-kernel@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Thomas Gleixner <tglx@linutronix.de>, Jason Cooper <jason@lakedaemon.net>, Marc Zyngier <marc.zyngier@arm.com>, Rob Herring <robh+dt@kernel.org>, Mark Rutland <mark.rutland@arm.com>
 
-From: "Luis R. Rodriguez" <mcgrof@kernel.org>
+There are two versions of the J-Core interrupt controller in use, aic1
+which generates interrupts with programmable priorities, but only
+supports 8 irq lines and maps them to cpu traps in the range 17 to 24,
+and aic2 which uses traps in the range 64-127 and supports up to 128
+irqs, with priorities dependent on the interrupt number. The Linux
+driver does not make use of priorities anyway.
 
-Linux provides a rich array of features, enabling each feature
-however increases the size of the kernel and there are many
-features which users often want disabled. The traditional
-solution to this problem is for each feature to have its own
-Kconfig symbol, followed by a series of #ifdef statements
-in C code and header files, allowing the feature to be compiled
-only when desirable. As the variability of Linux increases build
-tests can and are often done with random kernel configurations,
-allyesconfig, and allmodconfig to help find code issues. This
-however doesn't catch all errors and as a consequence code that
-is typically not enabled often can suffer from bit-rot over time.
+For simplicity, there is no aic1-specific logic in the driver beyond
+setting the priority register, which is necessary for interrupts to
+work at all. Eventually aic1 will likely be phased out, but it's
+currently in use in deployments and all released bitstream binaries.
 
-An alternative approach for subsystems, which refer to as the 'build-all
-link-selectively philosophy' is to keep the Kconfig symbols, replace
-the #ifdef approach by having each feature implemented it its own C file,
-and force compilation for all features to avoid the code bit-rot problem.
-With this strategy only features that are enabled via Kconfig get
-linked into the kernel, so the forced compilation has no size impact
-on the kernel. The practice of having each feature implemented in its own
-C file is already prevalent in many subsystems, however #ifdefs are still
-typically required during feature initialization. For instance in:
-
-  #ifdef CONFIG_FOO
-  foo_init();
-  #endif
-
-We cannot remove the #ifdef and leave foo_init() as we'd either
-need to always enable the feature or add a respective #ifdef in a
-foo.h which makes foo_init() do nothing when CONFIG_FOO is disabled.
-
-Linker tables enable lifting the requirement to use of #ifdefs during
-initialization. With linker tables initialization sequences can instead
-be aggregated into a custom ELF section at link time, during run time
-the table can be iterated over and each init sequence enabled can be called.
-A feature's init routine is only added to a table when its respective
-Kconfig symbols has been enabled and therefore linked in. Linker tables
-enable subsystems to completely do away with #ifdefs if one is comfortable
-in accepting all subsystem's feature's structural size implications.
-
-Subsystems which want to follow the 'build-all link-selectively
-philosophy' still need a way to easily express and annotate that they
-wish for all code to always be compiled to help avoid code bit rot,
-as such two new targets force-obj-y and force-lib-y are provided to
-help with this. Its not fair to require everyone to force compilation
-of all features of a subsystem though, so as a compromise, the new
-targets only force compilation when CONFIG_BUILD_AVOID_BITROT is
-enabled.
-
-Only built-in features are supported at the moment. Module support
-is expected to be added after a generic solution to add linker
-tables to modules more easily is developed.
-
-v4: this patch was added to this series, it was split off from the
-    linker tables addition due to the confusion over the code bit
-    rot alternatives that are possible with linker tables.
-
-Signed-off-by: Luis R. Rodriguez <mcgrof@kernel.org>
+Signed-off-by: Rich Felker <dalias@libc.org>
 ---
- Documentation/kbuild/makefiles.txt       | 36 ++++++++++++++++
- Documentation/sections/linker-tables.rst | 15 +++++++
- include/linux/tables.h                   | 71 ++++++++++++++++++++++++++++++++
- init/Kconfig                             | 22 ++++++++++
- scripts/Makefile.build                   |  7 ++--
- scripts/Makefile.lib                     | 11 +++++
- 6 files changed, 159 insertions(+), 3 deletions(-)
+ drivers/irqchip/Kconfig         |  7 +++
+ drivers/irqchip/Makefile        |  1 +
+ drivers/irqchip/irq-jcore-aic.c | 94 +++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 102 insertions(+)
+ create mode 100644 drivers/irqchip/irq-jcore-aic.c
 
-diff --git a/Documentation/kbuild/makefiles.txt b/Documentation/kbuild/makefiles.txt
-index 385a5ef41c17..01c260913f5c 100644
---- a/Documentation/kbuild/makefiles.txt
-+++ b/Documentation/kbuild/makefiles.txt
-@@ -1089,6 +1089,42 @@ When kbuild executes, the following steps are followed (roughly):
- 	In this example, extra-y is used to list object files that
- 	shall be built, but shall not be linked as part of built-in.o.
+diff --git a/drivers/irqchip/Kconfig b/drivers/irqchip/Kconfig
+index 5495a5b..ab84ce3 100644
+--- a/drivers/irqchip/Kconfig
++++ b/drivers/irqchip/Kconfig
+@@ -156,6 +156,13 @@ config PIC32_EVIC
+ 	select GENERIC_IRQ_CHIP
+ 	select IRQ_DOMAIN
  
-+    force-obj-y force-lib-y
-+
-+	When CONFIG_BUILD_AVOID_BITROT is enabled using these targets for your
-+	kconfig symbols forces compilation of the associated objects if the
-+	kconfig's symbol's dependencies are met, the objects however are only
-+	linked into to the kernel if and only if the kconfig symbol was
-+	enabled. If CONFIG_BUILD_AVOID_BITROT is disabled the force-obj-y and
-+	force-lib-y targets are functionally equilvalent to obj-y and lib-y
-+	respectively.
-+
-+	Using force-obj-y and force-lib-y are part of a code architecture and
-+	build philosophy further enabled by linker tables, for more details
-+	refer to the documention in include/linux/tables.h, refer to the
-+	sections:
-+
-+		o The code bit-rot problem
-+		o The build-all selective-link philosophy
-+		o Avoiding the code bit-rot problem with linker tables
-+		o Linker table module support
-+
-+	Modules support is expected to be enhanced in the future, so for now
-+	only built-in features are supported.
-+
-+	Example use:
-+
-+		force-obj-$(CONFIG_FEATURE_FOO) += foo.o
-+
-+	An alternative to using force-obj-y, is to use extra-y followed by the
-+	respective obj-y:
-+
-+		extra-y += foo.o
-+		obj-$(CONFIG_FEATURE_FOO) += foo.o
-+
-+	Using force-obj-y and force-lib-y can be used to help annotate the
-+	targets follow the 'build-all selective-link philosophy' further
-+	enabled by linker tables.
- 
- --- 6.7 Commands useful for building a boot image
- 
-diff --git a/Documentation/sections/linker-tables.rst b/Documentation/sections/linker-tables.rst
-index df11c632dca7..e425c5cd36d6 100644
---- a/Documentation/sections/linker-tables.rst
-+++ b/Documentation/sections/linker-tables.rst
-@@ -30,6 +30,21 @@ How linker tables simplify initialization code
- .. kernel-doc:: include/linux/tables.h
-    :doc: How linker tables simplify initialization code
- 
-+The code bit-rot problem
-+------------------------
-+.. kernel-doc:: include/linux/tables.h
-+   :doc: The code bit-rot problem
-+
-+The build-all selective-link philosophy
-+---------------------------------------
-+.. kernel-doc:: include/linux/tables.h
-+   :doc: The build-all selective-link philosophy
-+
-+Avoiding the code bit-rot problem with linker tables
-+----------------------------------------------------
-+.. kernel-doc:: include/linux/tables.h
-+   :doc: Avoiding the code bit-rot problem with linker tables
-+
- Using linker tables in Linux
- ==============
- 
-diff --git a/include/linux/tables.h b/include/linux/tables.h
-index 423827eafb52..bf8fae7f9246 100644
---- a/include/linux/tables.h
-+++ b/include/linux/tables.h
-@@ -169,6 +169,77 @@
-  */
- 
- /**
-+ * DOC: The code bit-rot problem
-+ *
-+ * Linux provides a rich array of features, enabling each feature
-+ * however increases the size of the kernel and there are many
-+ * features which users often want disabled. The traditional
-+ * solution to this problem is for each feature to have its own
-+ * Kconfig symbol, followed by a series of #ifdef statements
-+ * in C code and header files, allowing the feature to be compiled
-+ * only when desirable. As the variability of Linux increases build
-+ * tests can and are often done with random kernel configurations,
-+ * allyesconfig, and allmodconfig to help find code issues. This
-+ * however doesn't catch all errors and as a consequence code that
-+ * is typically not enabled often can suffer from bit-rot over time.
-+ */
-+
-+/**
-+ * DOC: The build-all selective-link philosophy
-+ *
-+ * A code architecture philosophy to help avoid code bit-rot consists
-+ * of using Kconfig symbols for each subsystem feature, replace all #ifdefs
-+ * by instead having each feature implemented it its own C file, and force
-+ * compilation for all features. Only features that are enabled get linked in,
-+ * the forced compilation therefore has no size impact on the final result of
-+ * the kernel. The practice of having each feature implemented in its own C
-+ * file is already prevalent in many subsystems, however #ifdefs are still
-+ * typically required during feature initialization. For instance in::
-+ *
-+ *	#ifdef CONFIG_FOO
-+ *	foo_init();
-+ *	#endif
-+ *
-+ * We cannot remove the #ifdef and leave foo_init() as we'd either
-+ * need to always enable the feature or add a respective #ifdef in a
-+ * foo.h which makes foo_init() do nothing when ``CONFIG_FOO`` is disabled.
-+ */
-+
-+/**
-+ * DOC: Avoiding the code bit-rot problem with linker tables
-+ *
-+ * Linker tables can be used to further help avoid the code bit-rot problem
-+ * when embracing the 'build-all selective-link philosophy' by lifting the
-+ * requirement to use of #ifdefs during initialization. With linker tables
-+ * initialization sequences can be aggregated into a custom ELF section at
-+ * link time, during run time the table can be iterated over and each init
-+ * sequence enabled can be called. A feature's init routine is only added to a
-+ * table when its respective Kconfig symbols has been enabled and therefore
-+ * linked in. Linker tables enable subsystems to completely do away with
-+ * #ifdefs if one is comfortable in accepting all subsystem's feature's
-+ * structural size implications.
-+ *
-+ * To further help with this the Linux build system supports two special
-+ * targets, ``force-obj-y`` and ``force-lib-y``. A subsystem which wants to
-+ * follow the 'build-all selective-link philosophy' can use these targets for a
-+ * feature's kconfig symbol. Using these targets will always require
-+ * compilation of the kconfig's objects if the kconfig symbol's dependencies
-+ * are met but only link the objects into the kernel, and therefore enable the
-+ * feature, if and only if the kconfig symbol has been enabled.
-+ *
-+ * Not all users or build systems may want to opt-in to compile all objects
-+ * following the 'build-all selective-link philosophy', as such the targets
-+ * ``force-obj-y`` and ``force-lib-y`` only force compilation when the kconfig
-+ * symbol ``CONFIG_BUILD_AVOID_BITROT`` has been enabled. Disabling this feature
-+ * makes ``force-obj-y`` and ``force-lib-y`` functionally equivalent to
-+ * ``obj-y`` and ``lib-y`` respectively.
-+ *
-+ * Example use::
-+ *
-+ * 	force-obj-$(CONFIG_FEATURE_FOO) += foo.o
-+ */
-+
-+/**
-  * DOC: Linker table module support
-  *
-  * Modules can use linker tables, however the linker table definition
-diff --git a/init/Kconfig b/init/Kconfig
-index cac3f096050d..ef09e83b9196 100644
---- a/init/Kconfig
-+++ b/init/Kconfig
-@@ -53,6 +53,28 @@ config CROSS_COMPILE
- 	  need to set this unless you want the configured kernel build
- 	  directory to select the cross-compiler automatically.
- 
-+config BUILD_AVOID_BITROT
-+	bool "Enable force building of force-obj-y and force-lib-y"
-+	default n
++config JCORE_AIC
++	bool "J-Core integrated AIC"
++	depends on OF && (SUPERH || COMPILE_TEST)
++	select IRQ_DOMAIN
 +	help
-+	  When enabled objects under the force-obj-y and force-lib-y targets
-+	  using a Kconfig symbol will be forced to compile if the Kconfig
-+	  symbol's dependencies are met but only linked into the kernel if
-+	  the Kconfig symbol is enabled. If a Kconfig symbol on a force-obj-y
-+	  or force-lib-y target is disabled, it will be compiled but not linked
-+	  into the kernel.
++	  Support for the J-Core integrated AIC.
 +
-+	  The force-obj-y and force-lib-y targets can be used by subsystems
-+	  which wish to want to follow the 'build-all selective-link philosophy'
-+	  documented under include/linux/tables.h.
+ config RENESAS_INTC_IRQPIN
+ 	bool
+ 	select IRQ_DOMAIN
+diff --git a/drivers/irqchip/Makefile b/drivers/irqchip/Makefile
+index 4c203b6..ee7e3ca 100644
+--- a/drivers/irqchip/Makefile
++++ b/drivers/irqchip/Makefile
+@@ -40,6 +40,7 @@ obj-$(CONFIG_I8259)			+= irq-i8259.o
+ obj-$(CONFIG_IMGPDC_IRQ)		+= irq-imgpdc.o
+ obj-$(CONFIG_IRQ_MIPS_CPU)		+= irq-mips-cpu.o
+ obj-$(CONFIG_SIRF_IRQ)			+= irq-sirfsoc.o
++obj-$(CONFIG_JCORE_AIC)			+= irq-jcore-aic.o
+ obj-$(CONFIG_RENESAS_INTC_IRQPIN)	+= irq-renesas-intc-irqpin.o
+ obj-$(CONFIG_RENESAS_IRQC)		+= irq-renesas-irqc.o
+ obj-$(CONFIG_VERSATILE_FPGA_IRQ)	+= irq-versatile-fpga.o
+diff --git a/drivers/irqchip/irq-jcore-aic.c b/drivers/irqchip/irq-jcore-aic.c
+new file mode 100644
+index 0000000..5e5e3bb
+--- /dev/null
++++ b/drivers/irqchip/irq-jcore-aic.c
+@@ -0,0 +1,94 @@
++/*
++ * J-Core SoC AIC driver
++ *
++ * Copyright (C) 2015-2016 Smart Energy Instruments, Inc.
++ *
++ * This file is subject to the terms and conditions of the GNU General Public
++ * License.  See the file "COPYING" in the main directory of this archive
++ * for more details.
++ */
 +
-+	  Say Y if you have a decent build machine and would like to help test
-+	  building code for more subsystems. Say N if you do you not have a
-+	  good build machine or only want to compile what you've enabled for
-+	  your kernel.
++#include <linux/irq.h>
++#include <linux/io.h>
++#include <linux/irqchip.h>
++#include <linux/irqdomain.h>
++#include <linux/cpu.h>
++#include <linux/of.h>
++#include <linux/of_address.h>
++#include <linux/of_irq.h>
 +
-+	  Enabling this option never increases the size of your kernel.
++#define JCORE_AIC_MAX_HWIRQ	127
++#define JCORE_AIC1_MIN_HWIRQ	16
++#define JCORE_AIC2_MIN_HWIRQ	64
 +
- config COMPILE_TEST
- 	bool "Compile also drivers which will not load"
- 	depends on !UML
-diff --git a/scripts/Makefile.build b/scripts/Makefile.build
-index cd9bf22bb027..cc2c7241d193 100644
---- a/scripts/Makefile.build
-+++ b/scripts/Makefile.build
-@@ -92,7 +92,8 @@ modorder-target := $(obj)/modules.order
- 
- # We keep a list of all modules in $(MODVERDIR)
- 
--__build: $(if $(KBUILD_BUILTIN),$(builtin-target) $(lib-target) $(extra-y)) \
-+__build: $(if $(KBUILD_BUILTIN),$(builtin-target) $(lib-target) $(extra-y) \
-+				$(force-obj-y)) \
- 	 $(if $(KBUILD_MODULES),$(obj-m) $(modorder-target)) \
- 	 $(subdir-ym) $(always)
- 	@:
-@@ -326,8 +327,8 @@ cmd_as_o_S       = $(CC) $(a_flags) -c -o $@ $<
- $(obj)/%.o: $(src)/%.S $(objtool_obj) FORCE
- 	$(call if_changed_rule,as_o_S)
- 
--targets += $(real-objs-y) $(real-objs-m) $(lib-y)
--targets += $(extra-y) $(MAKECMDGOALS) $(always)
-+targets += $(real-objs-y) $(real-objs-m) $(lib-y) $(force-lib-y)
-+targets += $(extra-y) $(force-obj-y) $(MAKECMDGOALS) $(always)
- 
- # Linker scripts preprocessor (.lds.S -> .lds)
- # ---------------------------------------------------------------------------
-diff --git a/scripts/Makefile.lib b/scripts/Makefile.lib
-index 0a07f9014944..d1cb0cfdf1bf 100644
---- a/scripts/Makefile.lib
-+++ b/scripts/Makefile.lib
-@@ -12,6 +12,15 @@ export KBUILD_SUBDIR_CCFLAGS := $(KBUILD_SUBDIR_CCFLAGS) $(subdir-ccflags-y)
- # Figure out what we need to build from the various variables
- # ===================================== 
-+ifeq ($(CONFIG_BUILD_AVOID_BITROT),y)
-+extra-y += $(force-obj-) $(force-lib-)
-+endif
++#define JCORE_AIC1_INTPRI_REG	8
 +
-+obj-m += $(force-obj-m)
-+obj-y += $(force-obj-y)
-+lib-m += $(force-lib-m)
-+lib-y += $(force-lib-y)
++static struct irq_chip jcore_aic;
 +
- # When an object is listed to be built compiled-in and modular,
- # only build the compiled-in version
- 
-@@ -72,6 +81,8 @@ real-objs-m := $(foreach m, $(obj-m), $(if $(strip $($(m:.o=-objs)) $($(m:.o=-y)
- # Add subdir path
- 
- extra-y		:= $(addprefix $(obj)/,$(extra-y))
-+force-obj-y		:= $(addprefix $(obj)/,$(force-obj-y))
-+force-obj-m		:= $(addprefix $(obj)/,$(force-obj-m))
- always		:= $(addprefix $(obj)/,$(always))
- targets		:= $(addprefix $(obj)/,$(targets))
- modorder	:= $(addprefix $(obj)/,$(modorder))
++static int jcore_aic_irqdomain_map(struct irq_domain *d, unsigned int irq,
++				   irq_hw_number_t hwirq)
++{
++	struct irq_chip *aic = d->host_data;
++
++	irq_set_chip_and_handler(irq, aic, handle_simple_irq);
++
++	return 0;
++}
++
++static const struct irq_domain_ops jcore_aic_irqdomain_ops = {
++	.map = jcore_aic_irqdomain_map,
++	.xlate = irq_domain_xlate_onecell,
++};
++
++static void noop(struct irq_data *data)
++{
++}
++
++int __init aic_irq_of_init(struct device_node *node, struct device_node *parent)
++{
++	unsigned min_irq = JCORE_AIC2_MIN_HWIRQ;
++	unsigned dom_sz = JCORE_AIC_MAX_HWIRQ+1;
++	struct irq_domain *domain;
++
++	pr_info("Initializing J-Core AIC\n");
++
++	/* AIC1 needs priority initialization to receive interrupts. */
++	if (of_device_is_compatible(node, "jcore,aic1")) {
++		unsigned cpu;
++
++		for_each_present_cpu(cpu) {
++			void __iomem *base = of_iomap(node, cpu);
++
++			if (!base) {
++				pr_err("Unable to map AIC for cpu %u\n", cpu);
++				return -ENOMEM;
++			}
++			__raw_writel(0xffffffff, base + JCORE_AIC1_INTPRI_REG);
++			iounmap(base);
++		}
++		min_irq = JCORE_AIC1_MIN_HWIRQ;
++	}
++
++	/*
++	 * The irq chip framework requires either mask/unmask or enable/disable
++	 * function pointers to be provided, but the hardware does not have any
++	 * such mechanism; the only interrupt masking is at the cpu level and
++	 * it affects all interrupts. We provide dummy mask/unmask. The hardware
++	 * handles all interrupt control and clears pending status when the cpu
++	 * accepts the interrupt.
++	 */
++	jcore_aic.irq_mask = noop;
++	jcore_aic.irq_unmask = noop;
++	jcore_aic.name = "AIC";
++
++	domain = irq_domain_add_linear(node, dom_sz, &jcore_aic_irqdomain_ops,
++				       &jcore_aic);
++	if (!domain)
++		return -ENOMEM;
++	irq_create_strict_mappings(domain, min_irq, min_irq, dom_sz - min_irq);
++
++	return 0;
++}
++
++IRQCHIP_DECLARE(jcore_aic2, "jcore,aic2", aic_irq_of_init);
++IRQCHIP_DECLARE(jcore_aic1, "jcore,aic1", aic_irq_of_init);
 -- 
-2.9.2
+2.8.1
 
