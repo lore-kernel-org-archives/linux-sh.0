@@ -1,45 +1,63 @@
-From: mcgrof@kernel.org
-Date: Fri, 19 Aug 2016 21:34:07 +0000
-Subject: [PATCH v4 09/16] firmware/Makefile: force recompilation if makefile changes
-Message-Id: <1471642454-5679-10-git-send-email-mcgrof@kernel.org>
+From: Rich Felker <dalias@libc.org>
+Date: Thu, 04 Aug 2016 04:30:37 +0000
+Subject: [PATCH v5 1/2] of: add J-Core SPI master bindings
+Message-Id: <bc53c38fe100bd17b278dfb214eefea323a3ac4a.147018b7592.git.dalias@libc.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1471642454-5679-1-git-send-email-mcgrof@kernel.org>
-In-Reply-To: <1471642454-5679-1-git-send-email-mcgrof@kernel.org>
+References: <cover.147018b7592.git.dalias@libc.org>
+In-Reply-To: <cover.147018b7592.git.dalias-8zAoT0mYgF4@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: hpa@zytor.com, tglx@linutronix.de, mingo@redhat.com, jpoimboe@redhat.com, bp@alien8.de, linux@arm.linux.org.uk, mhiramat@kernel.org, masami.hiramatsu.pt@hitachi.com, jbaron@akamai.com, heiko.carstens@de.ibm.com, ananth@linux.vnet.ibm.com, anil.s.keshavamurthy@intel.com, davem@davemloft.net, realmz6@gmail.com
-Cc: x86@kernel.org, luto@amacapital.net, keescook@chromium.org, torvalds@linux-foundation.org, gregkh@linuxfoundation.org, rusty@rustcorp.com.au, gnomes@lxorguk.ukuu.org.uk, alan@linux.intel.com, dwmw2@infradead.org, arnd@arndb.de, ming.lei@canonical.com, linux-arch@vger.kernel.org, benh@kernel.crashing.org, ananth@in.ibm.com, pebolle@tiscali.nl, fontana@sharpeleven.org, david.vrabel@citrix.com, konrad.wilk@oracle.com, mcb30@ipxe.org, jgross@suse.com, andrew.cooper3@citrix.com, andriy.shevchenko@linux.intel.com, paul.gortmaker@windriver.com, xen-devel@lists.xensource.com, ak@linux.intel.com, pali.rohar@gmail.com, dvhart@infradead.org, platform-driver-x86@vger.kernel.org, mmarek@suse.com, linux@rasmusvillemoes.dk, jkosina@suse.cz, korea.drzix@gmail.com, linux-kbuild@vger.kernel.org, ton
+To: linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Rob Herring <robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Mark Rutland <mark.rutland-5wv7dgnIgG8@public.gmane.org>
 
-From: "Luis R. Rodriguez" <mcgrof@kernel.org>
-
-If you modify the target asm we currently do not force the
-recompilation of the firmware files. The target asm is in
-the firmware/Makefile, peg this file as a dependency to
-require re-compilation of firmware targets when the asm
-changes.
-
-v3: introduced in this series
-
-Signed-off-by: Luis R. Rodriguez <mcgrof@kernel.org>
+Signed-off-by: Rich Felker <dalias@libc.org>
 ---
- firmware/Makefile | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ .../devicetree/bindings/spi/jcore,spi.txt          | 34 ++++++++++++++++++++++
+ 1 file changed, 34 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/spi/jcore,spi.txt
 
-diff --git a/firmware/Makefile b/firmware/Makefile
-index e297e1b52636..fa3e81c2a97b 100644
---- a/firmware/Makefile
-+++ b/firmware/Makefile
-@@ -176,7 +176,8 @@ quiet_cmd_fwbin = MK_FW   $@
- wordsize_deps := $(wildcard include/config/64bit.h include/config/32bit.h \
- 		include/config/ppc32.h include/config/ppc64.h \
- 		include/config/superh32.h include/config/superh64.h \
--		include/config/x86_32.h include/config/x86_64.h)
-+		include/config/x86_32.h include/config/x86_64.h \
-+		firmware/Makefile)
- 
- $(patsubst %,$(obj)/%.gen.S, $(fw-shipped-y)): %: $(wordsize_deps)
- 	$(call cmd,fwbin,$(patsubst %.gen.S,%,$@))
+diff --git a/Documentation/devicetree/bindings/spi/jcore,spi.txt b/Documentation/devicetree/bindings/spi/jcore,spi.txt
+new file mode 100644
+index 0000000..93936d1
+--- /dev/null
++++ b/Documentation/devicetree/bindings/spi/jcore,spi.txt
+@@ -0,0 +1,34 @@
++J-Core SPI master
++
++Required properties:
++
++- compatible: Must be "jcore,spi2".
++
++- reg: Memory region for registers.
++
++- #address-cells: Must be 1.
++
++- #size-cells: Must be 0.
++
++Optional properties:
++
++- clocks: If a phandle named "ref_clk" is present, SPI clock speed
++  programming is relative to the frequency of the indicated clock.
++  Necessary only if the input clock rate is something other than a
++  fixed 50 MHz.
++
++- clock-names: Clock names, one for each phandle in clocks.
++
++See spi-bus.txt for additional properties not specific to this device.
++
++Example:
++
++spi@40 {
++	compatible = "jcore,spi2";
++	#address-cells = <1>;
++	#size-cells = <0>;
++	reg = <0x40 0x8>;
++	spi-max-frequency = <25000000>;
++	clocks = <&bus_clk>;
++	clock-names = "ref_clk";
++}
 -- 
-2.9.2
+2.8.1
+
 
