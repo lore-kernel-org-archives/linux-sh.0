@@ -1,13 +1,15 @@
 From: Rich Felker <dalias@libc.org>
-Date: Wed, 03 Aug 2016 01:08:49 +0000
+Date: Thu, 04 Aug 2016 04:30:36 +0000
 Subject: [PATCH v6 0/2] J-Core interrupt controller support
-Message-Id: <cover.1470186529.git.dalias@libc.org>
+Message-Id: <cover.147018b6529.git.dalias@libc.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1470186529.git.dalias@libc.org>
+In-Reply-To: <cover.1470186529.git.dalias@libc.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Jason Cooper <jason-NLaQJdtUoK4Be96aLqz0jA@public.gmane.org>, Marc Zyngier <marc.zyngier-5wv7dgnIgG8@public.gmane.org>, Rob Herring <robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Mark Rutland <mark.rutland-5wv7dgnIgG8@public.gmane.org>
+To: linux-kernel@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Thomas Gleixner <tglx@linutronix.de>, Jason Cooper <jason@lakedaemon.net>, Marc Zyngier <marc.zyngier@arm.com>, Rob Herring <robh+dt@kernel.org>, Mark Rutland <mark.rutland@arm.com>
 
 Updated based on feedback from Thomas Gleixner. Removal of unnecessary
 data allowed some simplification. Magic numbers have been replaced
