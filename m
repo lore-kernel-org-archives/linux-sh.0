@@ -1,44 +1,65 @@
-From: Rob Landley <rob@landley.net>
-Date: Tue, 02 Aug 2016 18:11:36 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 04 Aug 2016 13:05:16 +0000
 Subject: Re: [PATCH v4 2/2] spi: add driver for J-Core SPI controller
-Message-Id: <1a9993f5-2c3c-20dc-1b50-5af1f05468c4@landley.net>
+Message-Id: <CAMuHMdURxKP_U649yWPtmyQBh+zasUBDYcK5YKD0eL4MuXVs0A@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1469686300.git.dalias@libc.org>
- <2a46090a5a7c177b7eca83f68406650844423e7f.1469686300.git.dalias@libc.org>
- <20160728191153.GL11806@sirena.org.uk>
- <20160728194045.GK15995@brightrain.aerifal.cx>
- <20160728195125.GN11806@sirena.org.uk>
- <20160730033441.GO15995@brightrain.aerifal.cx>
- <20160801181245.GZ10376@sirena.org.uk>
- <20160802014531.GS15995@brightrain.aerifal.cx>
-In-Reply-To: <20160802014531.GS15995-C3MtFaGISjmo6RMmaWD+6Sb1p8zYI1N1@public.gmane.org>
+References: <cover.1469686300.git.dalias@libc.org> <2a46090a5a7c177b7eca83f68406650844423e7f.1469686300.git.dalias@libc.org>
+ <20160728191153.GL11806@sirena.org.uk> <20160728194045.GK15995@brightrain.aerifal.cx>
+ <20160728195125.GN11806@sirena.org.uk> <20160730033441.GO15995@brightrain.aerifal.cx>
+In-Reply-To: <20160730033441.GO15995-C3MtFaGISjmo6RMmaWD+6Sb1p8zYI1N1@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Rich Felker <dalias-8zAoT0mYgF4@public.gmane.org>, Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, j-core-ZxQK9KuXmn0dnm+yROfE0A@public.gmane.org, Rob Herring <robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Mark Rutland <mark.rutland-5wv7dgnIgG8@public.gmane.org>, Yoshinori Sato <ysato-Rn4VEauK+AKRv+LV9MX5uooqe+aC9MnS@public.gmane.org>
+To: Rich Felker <dalias-8zAoT0mYgF4@public.gmane.org>
+Cc: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, linux-spi <linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Rob Herring <robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Mark Rutland <mark.rutland-5wv7dgnIgG8@public.gmane.org>, Yoshinori Sato <ysato-Rn4VEauK+AKRv+LV9MX5uooqe+aC9MnS@public.gmane.org>
 
-On 08/01/2016 08:45 PM, Rich Felker wrote:
-> Yes. 50 MHz is the natural default frequency, but I found out at the
-> last minute from the hardware engineers that clocking the current SoC
-> up to 62.5 MHz (for faster cpu) will require the SPI timing to be
-> programmed based on the faster reference clock. This messes up the
-> ability to get optimal SD card transfer rates, so we'll probably end
-> up having a real 50 MHz clock for the SPI anyway, but I thought it was
-> important to be able to handle this issue in the DT binding anyway.
+Hi Rich,
 
-For those of you following along at home, the first open source VHDL
-release of http://j-core.org runs at 33 mhz on Spartan 6 FPGAs, the
-second at 50mhz on the same hardware, and you'd think the third would be
-66mhz as the chip continues to be optimized, but one of the new I/O
-busses requires a multiple of 12.5 mhz and they didn't want to add a
-clock domain crossing thing for it, hence 62.5 mhz.
+On Sat, Jul 30, 2016 at 5:34 AM, Rich Felker <dalias@libc.org> wrote:
+> On Thu, Jul 28, 2016 at 08:51:25PM +0100, Mark Brown wrote:
+>> On Thu, Jul 28, 2016 at 03:40:45PM -0400, Rich Felker wrote:
+>> > On Thu, Jul 28, 2016 at 08:11:53PM +0100, Mark Brown wrote:
+>> > > Why are you not using the clock API for this?  Just require a clock and
+>> > > use clk_get_rate() to find out what rate it is.
+>>
+>> > I thought about that but I'm not familiar with it. I can try to figure
+>> > it out quickly and test that approach; don't see any reason it
+>> > shouldn't work. Would you insist on having full support for
+>> > enabling/disabling the clk when it's in use, or would you be happy
+>> > with treating it as a fixed clock that's always-on for now and
+>> > possibly extending it with more functionality later if there's ever
+>> > hardware where that's relevant/helpful?
+>>
+>> It's fine to just enable it at startup and leave it on, though the
+>> runtime PM ops are trivial and you can set auto_runtime_pm to have the
+>> core do the gets and puts.
+>
+> I was able to get it working via the clk api and I'll include support
+> for this in the next version of the patch, but to actually use it
+> depends on changing arch/sh to use the common clk framework; otherwise
+> there's no way to provide a suitable clk in the DT and have
+> [devm_]clk_get actually pick it up. Should I keep around the option of
+> using clock-frequency too? That would be most convenient.
+>
+> I do have a pending patch from Sato-san to switch arch/sh over to CCF
+> but it's part of a series and I don't think it's ready to merge. I may
+> be able to merge just a minimal, safe subset that won't break legacy
+> non-DT configurations, though.
 
-Earlier it was easy to get everything to work off a single master clock,
-but as we add more peripherals to the SOC and speed things up stuff's
-likely to change. (Development is ongoing, and we have a public
-http://j-core.org/roadmap.html out through 2019. It you're waiting for
-stuff to stop changing before getting basic board support in that runs
-on existing releases, it's might be a while.)
+I think you can use non-CCF clocks with DT, if you register them first.
+Cfr. the clk_names[] array and shmobile_clk_workaround() function in
+v3.18:arch/arm/mach-shmobile/board-koelsch-reference.c and
+v3.18:arch/arm/mach-shmobile/clock.c
 
-Rob
+Or was that the other way around?
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
