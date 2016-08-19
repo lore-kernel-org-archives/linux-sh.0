@@ -1,39 +1,47 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 08 Aug 2016 20:06:27 +0000
-Subject: Re: Build regressions/improvements in v4.8-rc1
-Message-Id: <CAMuHMdX+=Qof7za_KYXpNhUgAQDvkLDXri3j=M7dp7bgeww-QQ@mail.gmail.com>
+From: mcgrof@kernel.org
+Date: Fri, 19 Aug 2016 21:32:54 +0000
+Subject: [PATCH v4 05/16] xtensa: skip adding literal when SORT() is used
+Message-Id: <1471642385-5629-6-git-send-email-mcgrof@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <alpine.DEB.2.10.1608081032130.9359@ayla.of.borg>
- <CAMuHMdW_fPP5dyOtRC98gh1kG-zuW_KxV7vAME_7b8Z-U10N_g@mail.gmail.com>
- <20160808143139.GW15995@brightrain.aerifal.cx> <CAMuHMdWKXTdxa451_E11zmmsW5ZzCQ=z4qMnp-ZLGSZmfGB5VQ@mail.gmail.com>
- <20160808162204.GX15995@brightrain.aerifal.cx> <87shufi47l.fsf@linux-m68k.org>
-In-Reply-To: <87shufi47l.fsf@linux-m68k.org>
+References: <1471642385-5629-1-git-send-email-mcgrof@kernel.org>
+In-Reply-To: <1471642385-5629-1-git-send-email-mcgrof@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andreas Schwab <schwab@linux-m68k.org>
-Cc: Rich Felker <dalias@libc.org>, Linux Kernel Development <linux-kernel@vger.kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Linux-sh list <linux-sh@vger.kernel.org>
+To: hpa@zytor.com, tglx@linutronix.de, mingo@redhat.com, jpoimboe@redhat.com, bp@alien8.de, linux@arm.linux.org.uk, mhiramat@kernel.org, masami.hiramatsu.pt@hitachi.com, jbaron@akamai.com, heiko.carstens@de.ibm.com, ananth@linux.vnet.ibm.com, anil.s.keshavamurthy@intel.com, davem@davemloft.net, realmz6@gmail.com
+Cc: gnomes@lxorguk.ukuu.org.uk, linux-ia64@vger.kernel.org, jkosina@suse.cz, benh@kernel.crashing.org, ming.lei@canonical.com, linux@rasmusvillemoes.dk, platform-driver-x86@vger.kernel.org, James.Bottomley@HansenPartnership.com, paul.gortmaker@windriver.com, paulus@samba.org, sparclinux@vger.kernel.org, mchehab@osg.samsung.com, linux-arch@vger.kernel.org, markus.heiser@darmarit.de, xen-devel@lists.xensource.com, msalter@redhat.com, linux-sh@vger.kernel.org, mpe@ellerman.id.au, x86@kernel.org, fontana@sharpeleven.org, linux-arm-kernel@lists.infradead.org, catalin.marinas@arm.com, dvhart@infradead.org, dwmw2@infradead.org, linux-xtensa@linux-xtensa.org, pali.rohar@gmail.com, keescook@chromium.org, arnd@arndb.de, jani.nikula@intel.com, will.deacon@arm.com, rusty@rustcorp.com.au, rostedt@goodmis.org, acme@redhat.com, ak@linux.intel.com, andriy.shevchenko@linux.intel.com, mcb30@ip
 
-On Mon, Aug 8, 2016 at 7:02 PM, Andreas Schwab <schwab@linux-m68k.org> wrote:
-> On Mo, Aug 08 2016, Rich Felker <dalias@libc.org> wrote:
->
->> Users should leave builtin-DTB off, but allyesconfig turns it on.
->
-> Perhaps you could inverse the meaning of the config so that y means
-> builtin-DTB off?
+From: "Luis R. Rodriguez" <mcgrof@kernel.org>
 
-That's one option,
+When SORT(foo.*) is used the current sed replacements add
+SORT(foo.literal foo.*), this breaks linking. Avoid adding
+literals for SORT globs, if needed, these need to be added
+manually.
 
-The other one is to ignore it if CONFIG_BUILTIN_DTB_SOURCE is an
-empty string. A bit similar to CONFIG_CMDLINE on ARM.
+Signed-off-by: Luis R. Rodriguez <mcgrof@kernel.org>
+---
+ arch/xtensa/kernel/Makefile | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
-Gr{oetje,eeting}s,
+diff --git a/arch/xtensa/kernel/Makefile b/arch/xtensa/kernel/Makefile
+index c31f5d5afc7d..8180850ed147 100644
+--- a/arch/xtensa/kernel/Makefile
++++ b/arch/xtensa/kernel/Makefile
+@@ -29,10 +29,10 @@ AFLAGS_mxhead.o += -mtext-section-literals
+ #
+ # Replicate rules in scripts/Makefile.build
+ 
+-sed-y = -e ':a; s/\*(\([^)]*\)\.text\.unlikely/*(\1.literal.unlikely .{text}.unlikely/; ta; ' \
+-	-e ':b; s/\*(\([^)]*\)\.text\(\.[a-z]*\)/*(\1.{text}\2.literal .{text}\2/; tb; ' \
+-	-e ':c; s/\*(\([^)]*\)\(\.[a-z]*it\|\.ref\)\.text/*(\1\2.literal \2.{text}/; tc; ' \
+-	-e ':d; s/\*(\([^)]\+ \|\)\.text/*(\1.literal .{text}/; td; ' \
++sed-y = -e ':a; s/\*(\([^)SORT]*\)\.text\.unlikely/*(\1.literal.unlikely .{text}.unlikely/; ta; ' \
++	-e ':b; s/\*(\([^)SORT]*\)\.text\(\.[a-z]*\)/*(\1.{text}\2.literal .{text}\2/; tb; ' \
++	-e ':c; s/\*(\([^SORT)]*\)\(\.[a-z]*it\|\.ref\)\.text/*(\1\2.literal \2.{text}/; tc; ' \
++	-e ':d; s/\*(\([^SORT)]\+ \|\)\.text/*(\1.literal .{text}/; td; ' \
+ 	-e 's/\.{text}/.text/g'
+ 
+ quiet_cmd__cpp_lds_S = LDS     $@
+-- 
+2.9.2
 
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
