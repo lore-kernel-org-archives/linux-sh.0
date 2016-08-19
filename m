@@ -1,285 +1,200 @@
-From: "Luis R. Rodriguez" <mcgrof@kernel.org>
-Date: Fri, 22 Jul 2016 21:24:38 +0000
-Subject: [RFC v3 04/13] sections.h: guard against asm and linker script
-Message-Id: <1469222687-1600-5-git-send-email-mcgrof@kernel.org>
+From: mcgrof@kernel.org
+Date: Fri, 19 Aug 2016 21:41:08 +0000
+Subject: [PATCH v1 0/7] tools: add linker table userspace sandbox
+Message-Id: <1471642875-5957-1-git-send-email-mcgrof@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1469222687-1600-1-git-send-email-mcgrof@kernel.org>
-In-Reply-To: <1469222687-1600-1-git-send-email-mcgrof@kernel.org>
+References: <1471642454-5679-1-git-send-email-mcgrof@kernel.org>
+In-Reply-To: <1471642454-5679-1-git-send-email-mcgrof@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: hpa@zytor.com, tglx@linutronix.de, mingo@redhat.com, bp@alien8.de, linux@arm.linux.org.uk, mhiramat@kernel.org, masami.hiramatsu.pt@hitachi.com, jbaron@akamai.com, heiko.carstens@de.ibm.com, ananth@linux.vnet.ibm.com, anil.s.keshavamurthy@intel.com, davem@davemloft.net, realmz6@gmail.com
-Cc: x86@kernel.org, luto@amacapital.net, keescook@chromium.org, torvalds@linux-foundation.org, gregkh@linuxfoundation.org, rusty@rustcorp.com.au, gnomes@lxorguk.ukuu.org.uk, alan@linux.intel.com, dwmw2@infradead.org, arnd@arndb.de, ming.lei@canonical.com, linux-arch@vger.kernel.org, benh@kernel.crashing.org, ananth@in.ibm.com, pebolle@tiscali.nl, fontana@sharpeleven.org, ciaran.farrell@suse.com, christopher.denicolo@suse.com, david.vrabel@citrix.com, konrad.wilk@oracle.com, mcb30@ipxe.org, jgross@suse.com, andrew.cooper3@citrix.com, andriy.shevchenko@linux.intel.com, paul.gortmaker@windriver.com, xen-devel@lists.xensource.com, ak@linux.intel.com, pali.rohar@gmail.com, dvhart@infradead.org, platform-driver-x86@vger.kernel.org, mmarek@suse.com, linux@rasmusvillemoes.dk, jkosina@suse.cz, korea.drzix@gmail.com, linux-kbuild@vger.kernel.org, tony.luck@intel.com, akpm@linux-foun
+To: acme@redhat.com, hpa@zytor.com, tglx@linutronix.de, mingo@redhat.com, jpoimboe@redhat.com, bp@alien8.de, linux@arm.linux.org.uk, mhiramat@kernel.org, masami.hiramatsu.pt@hitachi.com, jbaron@akamai.com, heiko.carstens@de.ibm.com, ananth@linux.vnet.ibm.com, anil.s.keshavamurthy@intel.com, davem@davemloft.net, realmz6@gmail.com
+Cc: x86@kernel.org, luto@amacapital.net, keescook@chromium.org, torvalds@linux-foundation.org, gregkh@linuxfoundation.org, rusty@rustcorp.com.au, gnomes@lxorguk.ukuu.org.uk, alan@linux.intel.com, dwmw2@infradead.org, arnd@arndb.de, ming.lei@canonical.com, linux-arch@vger.kernel.org, benh@kernel.crashing.org, ananth@in.ibm.com, pebolle@tiscali.nl, fontana@sharpeleven.org, david.vrabel@citrix.com, konrad.wilk@oracle.com, mcb30@ipxe.org, jgross@suse.com, andrew.cooper3@citrix.com, andriy.shevchenko@linux.intel.com, paul.gortmaker@windriver.com, xen-devel@lists.xensource.com, ak@linux.intel.com, pali.rohar@gmail.com, dvhart@infradead.org, platform-driver-x86@vger.kernel.org, mmarek@suse.com, linux@rasmusvillemoes.dk, jkosina@suse.cz, korea.drzix@gmail.com, linux-kbuild@vger.kernel.org, ton
 
-We'll later add some generic helpers for use in the linker scripts
-and some generic asm code for all architectures. To do that we'll
-first need to guard against linker script and asm code.
+From: "Luis R. Rodriguez" <mcgrof@kernel.org>
 
-On x86 uaccess.h has a struct which is used as part of a section,
-move that to sections.h as we otherwise have no need for uaccess.h
-on sections.h
+The original v3 series for linker tables made reference only to
+an external repository userspace sandbox application, however
+Boris noted it'd be difficult ot keep this in sync with the
+kernel so advised to consider integrate with the kernel. I've
+taken steps in this direction.
 
-v3: new to this series, needed due to the collateral of the split of
-    tables.h into 3 files: tables.h, ranges.h and sections.h, the
-    need to guard sections.h is due to the fact that sections.h is
-    already included and expanded considerably in certain architectures.
+A bit of prepping is done to help make use of the tools/include
+and tools/arch/$(ARCH)/include/asm directories. For now the tool
+only supports x86_64, however quite a bit of work was done to
+help make it work with a cross compiler, and try to make as
+architecture agnostic as possible. Adding suppor for another 
+architecture should not require much work, mosty just generating
+a userspace custom linker script, modifying it for linker tables,
+section ranges, and finally testing this with its toolchain.
 
-Signed-off-by: Luis R. Rodriguez <mcgrof@kernel.org>
----
- arch/arm/include/asm/sections.h      |  2 ++
- arch/blackfin/include/asm/sections.h |  4 ++++
- arch/ia64/include/asm/sections.h     |  7 +++++--
- arch/powerpc/include/asm/sections.h  | 11 ++++++-----
- arch/sh/include/asm/sections.h       |  2 ++
- arch/sparc/include/asm/sections.h    |  4 ++++
- arch/tile/include/asm/sections.h     |  4 ++++
- arch/x86/include/asm/sections.h      | 23 ++++++++++++++++++++++-
- arch/x86/include/asm/uaccess.h       | 18 +-----------------
- include/asm-generic/sections.h       |  4 ++++
- 10 files changed, 54 insertions(+), 25 deletions(-)
+This is being submitted separately than the patches which adds
+linker table support into the kernel. This should be considered
+only if that gets merged.
 
-diff --git a/arch/arm/include/asm/sections.h b/arch/arm/include/asm/sections.h
-index 803bbf2b20b8..21830b9b3b6b 100644
---- a/arch/arm/include/asm/sections.h
-+++ b/arch/arm/include/asm/sections.h
-@@ -3,6 +3,8 @@
- 
- #include <asm-generic/sections.h>
- 
-+#if defined(__KERNEL__) && !defined(__ASSEMBLER__) && !defined(__ASSEMBLY__)
- extern char _exiprom[];
-+#endif /* defined(__KERNEL__) && !defined(__ASSEMBLER__) && !defined(__ASSEMBLY__) */
- 
- #endif	/* _ASM_ARM_SECTIONS_H */
-diff --git a/arch/blackfin/include/asm/sections.h b/arch/blackfin/include/asm/sections.h
-index fbd408475725..d2abd7a585dd 100644
---- a/arch/blackfin/include/asm/sections.h
-+++ b/arch/blackfin/include/asm/sections.h
-@@ -7,6 +7,8 @@
- #ifndef _BLACKFIN_SECTIONS_H
- #define _BLACKFIN_SECTIONS_H
- 
-+#if defined(__KERNEL__) && !defined(__ASSEMBLER__) && !defined(__ASSEMBLY__)
-+
- /* only used when MTD_UCLINUX */
- extern unsigned long memory_mtd_start, memory_mtd_end, mtd_size;
- 
-@@ -62,6 +64,8 @@ static inline int arch_is_kernel_data(unsigned long addr)
- }
- #define arch_is_kernel_data(addr) arch_is_kernel_data(addr)
- 
-+#endif /* defined(__KERNEL__) && !defined(__ASSEMBLER__) && !defined(__ASSEMBLY__) */
-+
- #include <asm-generic/sections.h>
- 
- #endif
-diff --git a/arch/ia64/include/asm/sections.h b/arch/ia64/include/asm/sections.h
-index 2ab2003698ef..3318e3916122 100644
---- a/arch/ia64/include/asm/sections.h
-+++ b/arch/ia64/include/asm/sections.h
-@@ -6,9 +6,12 @@
-  *	David Mosberger-Tang <davidm@hpl.hp.com>
-  */
- 
-+#include <asm-generic/sections.h>
-+
-+#if defined(__KERNEL__) && !defined(__ASSEMBLER__) && !defined(__ASSEMBLY__)
-+
- #include <linux/elf.h>
- #include <linux/uaccess.h>
--#include <asm-generic/sections.h>
- 
- extern char __phys_per_cpu_start[];
- #ifdef	CONFIG_SMP
-@@ -37,6 +40,6 @@ static inline void *dereference_function_descriptor(void *ptr)
- 	return ptr;
- }
- 
-+#endif /* defined(__KERNEL__) && !defined(__ASSEMBLER__) && !defined(__ASSEMBLY__) */
- 
- #endif /* _ASM_IA64_SECTIONS_H */
--
-diff --git a/arch/powerpc/include/asm/sections.h b/arch/powerpc/include/asm/sections.h
-index 7dc006b58369..f226b5bcd27c 100644
---- a/arch/powerpc/include/asm/sections.h
-+++ b/arch/powerpc/include/asm/sections.h
-@@ -1,11 +1,12 @@
- #ifndef _ASM_POWERPC_SECTIONS_H
- #define _ASM_POWERPC_SECTIONS_H
--#ifdef __KERNEL__
- 
--#include <linux/elf.h>
--#include <linux/uaccess.h>
- #include <asm-generic/sections.h>
- 
-+#if defined(__KERNEL__) && !defined(__ASSEMBLER__) && !defined(__ASSEMBLY__)
-+
-+#include <linux/elf.h>
-+#include <linux/uaccess.h>
- #ifdef __powerpc64__
- 
- extern char __start_interrupts[];
-@@ -75,7 +76,7 @@ static inline void *dereference_function_descriptor(void *ptr)
- }
- #endif /* PPC64_ELF_ABI_v1 */
- 
--#endif
-+#endif /* __powerpc64__ */
-+#endif /* defined(__KERNEL__) && !defined(__ASSEMBLER__) && !defined(__ASSEMBLY__) */
- 
--#endif /* __KERNEL__ */
- #endif	/* _ASM_POWERPC_SECTIONS_H */
-diff --git a/arch/sh/include/asm/sections.h b/arch/sh/include/asm/sections.h
-index 7a99e6af6372..ad4f9cbd861d 100644
---- a/arch/sh/include/asm/sections.h
-+++ b/arch/sh/include/asm/sections.h
-@@ -3,9 +3,11 @@
- 
- #include <asm-generic/sections.h>
- 
-+#if defined(__KERNEL__) && !defined(__ASSEMBLER__) && !defined(__ASSEMBLY__)
- extern long __machvec_start, __machvec_end;
- extern char __uncached_start, __uncached_end;
- extern char __start_eh_frame[], __stop_eh_frame[];
-+#endif /* defined(__KERNEL__) && !defined(__ASSEMBLER__) && !defined(__ASSEMBLY__) */
- 
- #endif /* __ASM_SH_SECTIONS_H */
- 
-diff --git a/arch/sparc/include/asm/sections.h b/arch/sparc/include/asm/sections.h
-index f300d1a9b2b6..b07a2380863e 100644
---- a/arch/sparc/include/asm/sections.h
-+++ b/arch/sparc/include/asm/sections.h
-@@ -4,10 +4,14 @@
- /* nothing to see, move along */
- #include <asm-generic/sections.h>
- 
-+#if defined(__KERNEL__) && !defined(__ASSEMBLER__) && !defined(__ASSEMBLY__)
-+
- /* sparc entry point */
- extern char _start[];
- 
- extern char __leon_1insn_patch[];
- extern char __leon_1insn_patch_end[];
- 
-+#endif /* defined(__KERNEL__) && !defined(__ASSEMBLER__) && !defined(__ASSEMBLY__) */
-+
- #endif
-diff --git a/arch/tile/include/asm/sections.h b/arch/tile/include/asm/sections.h
-index 86a746243dc8..f9cce7c6d8ba 100644
---- a/arch/tile/include/asm/sections.h
-+++ b/arch/tile/include/asm/sections.h
-@@ -19,6 +19,8 @@
- 
- #include <asm-generic/sections.h>
- 
-+#if defined(__KERNEL__) && !defined(__ASSEMBLER__) && !defined(__ASSEMBLY__)
-+
- /* Write-once data is writable only till the end of initialization. */
- extern char __w1data_begin[], __w1data_end[];
- 
-@@ -44,4 +46,6 @@ static inline int arch_is_kernel_data(unsigned long addr)
- 		addr < (unsigned long)_end;
- }
- 
-+#endif /* defined(__KERNEL__) && !defined(__ASSEMBLER__) && !defined(__ASSEMBLY__) */
-+
- #endif /* _ASM_TILE_SECTIONS_H */
-diff --git a/arch/x86/include/asm/sections.h b/arch/x86/include/asm/sections.h
-index 13b6cdd0af57..84c7044c82bf 100644
---- a/arch/x86/include/asm/sections.h
-+++ b/arch/x86/include/asm/sections.h
-@@ -2,13 +2,34 @@
- #define _ASM_X86_SECTIONS_H
- 
- #include <asm-generic/sections.h>
--#include <asm/uaccess.h>
-+
-+#if defined(__KERNEL__) && !defined(__ASSEMBLER__) && !defined(__ASSEMBLY__)
- 
- extern char __brk_base[], __brk_limit[];
-+
-+/*
-+ * The exception table consists of triples of addresses relative to the
-+ * exception table entry itself. The first address is of an instruction
-+ * that is allowed to fault, the second is the target at which the program
-+ * should continue. The third is a handler function to deal with the fault
-+ * caused by the instruction in the first field.
-+ *
-+ * All the routines below use bits of fixup code that are out of line
-+ * with the main instruction path.  This means when everything is well,
-+ * we don't even have to jump over them.  Further, they do not intrude
-+ * on our cache or tlb entries.
-+ */
-+
-+struct exception_table_entry {
-+	int insn, fixup, handler;
-+};
-+
- extern struct exception_table_entry __stop___ex_table[];
- 
- #if defined(CONFIG_X86_64)
- extern char __end_rodata_hpage_align[];
- #endif
- 
-+#endif /* defined(__KERNEL__) && !defined(__ASSEMBLER__) && !defined(__ASSEMBLY__) */
-+
- #endif	/* _ASM_X86_SECTIONS_H */
-diff --git a/arch/x86/include/asm/uaccess.h b/arch/x86/include/asm/uaccess.h
-index a2f253c091e3..d661f28e4e00 100644
---- a/arch/x86/include/asm/uaccess.h
-+++ b/arch/x86/include/asm/uaccess.h
-@@ -8,6 +8,7 @@
- #include <linux/kasan-checks.h>
- #include <linux/thread_info.h>
- #include <linux/string.h>
-+#include <asm/sections.h>
- #include <asm/asm.h>
- #include <asm/page.h>
- #include <asm/smap.h>
-@@ -90,23 +91,6 @@ static inline bool __chk_range_not_ok(unsigned long addr, unsigned long size, un
- #define access_ok(type, addr, size) \
- 	likely(!__range_not_ok(addr, size, user_addr_max()))
- 
--/*
-- * The exception table consists of triples of addresses relative to the
-- * exception table entry itself. The first address is of an instruction
-- * that is allowed to fault, the second is the target at which the program
-- * should continue. The third is a handler function to deal with the fault
-- * caused by the instruction in the first field.
-- *
-- * All the routines below use bits of fixup code that are out of line
-- * with the main instruction path.  This means when everything is well,
-- * we don't even have to jump over them.  Further, they do not intrude
-- * on our cache or tlb entries.
-- */
--
--struct exception_table_entry {
--	int insn, fixup, handler;
--};
--
- #define ARCH_HAS_RELATIVE_EXTABLE
- 
- #define swap_ex_entry_fixup(a, b, tmp, delta)			\
-diff --git a/include/asm-generic/sections.h b/include/asm-generic/sections.h
-index af0254c09424..efd51e70a8db 100644
---- a/include/asm-generic/sections.h
-+++ b/include/asm-generic/sections.h
-@@ -1,6 +1,8 @@
- #ifndef _ASM_GENERIC_SECTIONS_H_
- #define _ASM_GENERIC_SECTIONS_H_
- 
-+#if defined(__KERNEL__) && !defined(__ASSEMBLER__) && !defined(__ASSEMBLY__)
-+
- /* References to section boundaries */
- 
- #include <linux/compiler.h>
-@@ -128,4 +130,6 @@ static inline bool init_section_intersects(void *virt, size_t size)
- 	return memory_intersects(__init_begin, __init_end, virt, size);
- }
- 
-+#endif /* defined(__KERNEL__) && !defined(__ASSEMBLER__) && !defined(__ASSEMBLY__) */
-+
- #endif /* _ASM_GENERIC_SECTIONS_H_ */
+If you'd like this in git-form, you can get it on the 20160819-linker-table-v4  
+branch of my linux-next tree on kernel.org, this also includes the series of    
+that introduces linker tables into the kernel:
+                                                                                
+https://git.kernel.org/cgit/linux/kernel/git/mcgrof/linux-next.git/log/?h 160819-linker-table-v4
+
+Please let me know if there are any issue or questions.
+
+Luis R. Rodriguez (7):
+  tools: add a userspace tools bug.h
+  tools: add a basic tools printk.h
+  tools: add init.h for tools
+  tools: add __used and enable to override
+  tools: expand export.h with VMLINUX_SYMBOL()
+  tools: add __section() to compiler.h
+  tools: add userspace linker table sandbox
+
+ Documentation/sections/linker-tables.rst           |   4 +-
+ MAINTAINERS                                        |   1 +
+ include/linux/tables.h                             |   5 +-
+ tools/Makefile                                     |   3 +-
+ .../arch/x86/include/generated/asm/section-core.h  |   1 +
+ tools/arch/x86/include/generated/ranges.h          |   1 +
+ tools/arch/x86/include/generated/tables.h          |   1 +
+ tools/include/asm-generic/bug.h                    |  24 +
+ tools/include/asm-generic/ranges.h                 | 103 ++++
+ tools/include/asm-generic/section-core.h           | 341 +++++++++++
+ tools/include/asm-generic/tables.h                 |  50 ++
+ tools/include/linux/bug.h                          |   6 +
+ tools/include/linux/compiler.h                     |   8 +
+ tools/include/linux/export.h                       |  22 +
+ tools/include/linux/init.h                         |   9 +
+ tools/include/linux/kernel.h                       |   3 +
+ tools/include/linux/printk.h                       |  14 +
+ tools/include/linux/ranges.h                       | 128 ++++
+ tools/include/linux/sections.h                     | 111 ++++
+ tools/include/linux/string.h                       |   1 +
+ tools/include/linux/tables.h                       | 664 +++++++++++++++++++++
+ tools/linker-tables/.gitignore                     |   2 +
+ tools/linker-tables/Makefile                       | 184 ++++++
+ tools/linker-tables/README                         | 114 ++++
+ tools/linker-tables/arch/x86/include/asm/asm.h     |  17 +
+ tools/linker-tables/arch/x86/include/asm/boot.h    |   1 +
+ .../linker-tables/arch/x86/include/asm/bootparam.h |  32 +
+ tools/linker-tables/arch/x86/include/asm/kprobes.h |   7 +
+ .../linker-tables/arch/x86/include/asm/ps_const.h  |  21 +
+ tools/linker-tables/arch/x86/include/asm/ranges.h  |   6 +
+ .../arch/x86/include/asm/section-core.h            |   1 +
+ tools/linker-tables/arch/x86/include/asm/setup.h   |   6 +
+ tools/linker-tables/arch/x86/include/asm/tables.h  |   6 +
+ tools/linker-tables/arch/x86/include/asm/x86.h     |   4 +
+ .../arch/x86/include/asm/x86_init_fn.h             | 169 ++++++
+ tools/linker-tables/arch/x86/kernel/alpha.c        |   9 +
+ tools/linker-tables/arch/x86/kernel/alternative.c  |  31 +
+ tools/linker-tables/arch/x86/kernel/beta.c         |   9 +
+ tools/linker-tables/arch/x86/kernel/head64.c       |  58 ++
+ tools/linker-tables/arch/x86/kernel/init.c         |  42 ++
+ tools/linker-tables/arch/x86/kernel/kasan.c        |  10 +
+ tools/linker-tables/arch/x86/kernel/kprobes.c      |  51 ++
+ tools/linker-tables/arch/x86/kernel/vmlinux.lds.S  | 273 +++++++++
+ tools/linker-tables/arch/x86/mm/init.c             |  10 +
+ tools/linker-tables/arch/x86/xen/init.c            |  13 +
+ tools/linker-tables/drivers/acme.c                 |  32 +
+ tools/linker-tables/drivers/synth/common.c         |  16 +
+ tools/linker-tables/drivers/synth/common.h         |   2 +
+ tools/linker-tables/drivers/synth/main.c           |  35 ++
+ tools/linker-tables/drivers/synth/or.S             |  39 ++
+ tools/linker-tables/drivers/synth/synth.h          |   2 +
+ tools/linker-tables/drivers/xen-driver.c           |  11 +
+ .../include/asm-generic/arch_init_fn.h             |  50 ++
+ tools/linker-tables/include/asm-generic/kprobes.h  |  26 +
+ tools/linker-tables/include/linux/bitops.h         |   6 +
+ tools/linker-tables/include/linux/init.h           |  40 ++
+ tools/linker-tables/include/linux/kasan.h          |   5 +
+ tools/linker-tables/include/linux/kprobes.h        |  11 +
+ tools/linker-tables/include/linux/module.h         |  14 +
+ tools/linker-tables/include/linux/mutex.h          |  17 +
+ tools/linker-tables/include/linux/pci.h            |   7 +
+ tools/linker-tables/include/linux/ps_const.h       |  46 ++
+ tools/linker-tables/include/linux/sched.h          |   9 +
+ tools/linker-tables/include/linux/spinlock.h       |  13 +
+ tools/linker-tables/include/linux/start_kernel.h   |   1 +
+ tools/linker-tables/include/linux/types.h          |  13 +
+ tools/linker-tables/include/linux/workqueue.h      |  51 ++
+ tools/linker-tables/include/xen/xen.h              |   4 +
+ tools/linker-tables/kernel/locking/mutex.c         |  28 +
+ tools/linker-tables/kernel/locking/spinlock.c      |  26 +
+ tools/linker-tables/kernel/main.c                  |  32 +
+ tools/linker-tables/kernel/workqueue.c             |  43 ++
+ tools/linker-tables/lib/string.c                   |  26 +
+ tools/linker-tables/main.c                         |  20 +
+ tools/linker-tables/pci-quirks.c                   |  13 +
+ tools/linker-tables/pci.c                          |  29 +
+ 76 files changed, 3238 insertions(+), 5 deletions(-)
+ create mode 100644 tools/arch/x86/include/generated/asm/section-core.h
+ create mode 100644 tools/arch/x86/include/generated/ranges.h
+ create mode 100644 tools/arch/x86/include/generated/tables.h
+ create mode 100644 tools/include/asm-generic/bug.h
+ create mode 100644 tools/include/asm-generic/ranges.h
+ create mode 100644 tools/include/asm-generic/section-core.h
+ create mode 100644 tools/include/asm-generic/tables.h
+ create mode 100644 tools/include/linux/bug.h
+ create mode 100644 tools/include/linux/init.h
+ create mode 100644 tools/include/linux/printk.h
+ create mode 100644 tools/include/linux/ranges.h
+ create mode 100644 tools/include/linux/sections.h
+ create mode 100644 tools/include/linux/tables.h
+ create mode 100644 tools/linker-tables/.gitignore
+ create mode 100644 tools/linker-tables/Makefile
+ create mode 100644 tools/linker-tables/README
+ create mode 100644 tools/linker-tables/arch/x86/include/asm/asm.h
+ create mode 100644 tools/linker-tables/arch/x86/include/asm/boot.h
+ create mode 100644 tools/linker-tables/arch/x86/include/asm/bootparam.h
+ create mode 100644 tools/linker-tables/arch/x86/include/asm/kprobes.h
+ create mode 100644 tools/linker-tables/arch/x86/include/asm/ps_const.h
+ create mode 100644 tools/linker-tables/arch/x86/include/asm/ranges.h
+ create mode 100644 tools/linker-tables/arch/x86/include/asm/section-core.h
+ create mode 100644 tools/linker-tables/arch/x86/include/asm/setup.h
+ create mode 100644 tools/linker-tables/arch/x86/include/asm/tables.h
+ create mode 100644 tools/linker-tables/arch/x86/include/asm/x86.h
+ create mode 100644 tools/linker-tables/arch/x86/include/asm/x86_init_fn.h
+ create mode 100644 tools/linker-tables/arch/x86/kernel/alpha.c
+ create mode 100644 tools/linker-tables/arch/x86/kernel/alternative.c
+ create mode 100644 tools/linker-tables/arch/x86/kernel/beta.c
+ create mode 100644 tools/linker-tables/arch/x86/kernel/head64.c
+ create mode 100644 tools/linker-tables/arch/x86/kernel/init.c
+ create mode 100644 tools/linker-tables/arch/x86/kernel/kasan.c
+ create mode 100644 tools/linker-tables/arch/x86/kernel/kprobes.c
+ create mode 100644 tools/linker-tables/arch/x86/kernel/vmlinux.lds.S
+ create mode 100644 tools/linker-tables/arch/x86/mm/init.c
+ create mode 100644 tools/linker-tables/arch/x86/xen/init.c
+ create mode 100644 tools/linker-tables/drivers/acme.c
+ create mode 100644 tools/linker-tables/drivers/synth/common.c
+ create mode 100644 tools/linker-tables/drivers/synth/common.h
+ create mode 100644 tools/linker-tables/drivers/synth/main.c
+ create mode 100644 tools/linker-tables/drivers/synth/or.S
+ create mode 100644 tools/linker-tables/drivers/synth/synth.h
+ create mode 100644 tools/linker-tables/drivers/xen-driver.c
+ create mode 100644 tools/linker-tables/include/asm-generic/arch_init_fn.h
+ create mode 100644 tools/linker-tables/include/asm-generic/kprobes.h
+ create mode 100644 tools/linker-tables/include/linux/bitops.h
+ create mode 100644 tools/linker-tables/include/linux/init.h
+ create mode 100644 tools/linker-tables/include/linux/kasan.h
+ create mode 100644 tools/linker-tables/include/linux/kprobes.h
+ create mode 100644 tools/linker-tables/include/linux/module.h
+ create mode 100644 tools/linker-tables/include/linux/mutex.h
+ create mode 100644 tools/linker-tables/include/linux/pci.h
+ create mode 100644 tools/linker-tables/include/linux/ps_const.h
+ create mode 100644 tools/linker-tables/include/linux/sched.h
+ create mode 100644 tools/linker-tables/include/linux/spinlock.h
+ create mode 100644 tools/linker-tables/include/linux/start_kernel.h
+ create mode 100644 tools/linker-tables/include/linux/types.h
+ create mode 100644 tools/linker-tables/include/linux/workqueue.h
+ create mode 100644 tools/linker-tables/include/xen/xen.h
+ create mode 100644 tools/linker-tables/kernel/locking/mutex.c
+ create mode 100644 tools/linker-tables/kernel/locking/spinlock.c
+ create mode 100644 tools/linker-tables/kernel/main.c
+ create mode 100644 tools/linker-tables/kernel/workqueue.c
+ create mode 100644 tools/linker-tables/lib/string.c
+ create mode 100644 tools/linker-tables/main.c
+ create mode 100644 tools/linker-tables/pci-quirks.c
+ create mode 100644 tools/linker-tables/pci.c
+
 -- 
-2.8.4
+2.9.2
 
