@@ -1,176 +1,74 @@
-From: "Luis R. Rodriguez" <mcgrof@kernel.org>
-Date: Sat, 13 Aug 2016 17:54:08 +0000
-Subject: Re: [RFC v3 07/13] tables.h: add linker table support
-Message-Id: <20160813175408.GG3296@wotan.suse.de>
+From: mcgrof@kernel.org
+Date: Fri, 19 Aug 2016 21:32:50 +0000
+Subject: [PATCH v4 01/16] x86: remove LTO_REFERENCE_INITCALL()
+Message-Id: <1471642385-5629-2-git-send-email-mcgrof@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20160812035129.GA3296@wotan.suse.de>
- <20160812052303.GB12013@nazgul.tnic>
- <20160812065011.GB3296@wotan.suse.de>
- <20160812072507.GC12013@nazgul.tnic>
- <20160812152805.GD3296@wotan.suse.de>
- <20160812155121.GB13315@nazgul.tnic>
- <20160812170451.GE3296@wotan.suse.de>
- <20160812202334.GA10199@kroah.com>
- <20160812220042.GF3296@wotan.suse.de>
- <20160813104616.GA16348@kroah.com>
-In-Reply-To: <20160813104616.GA16348@kroah.com>
+References: <1471642385-5629-1-git-send-email-mcgrof@kernel.org>
+In-Reply-To: <1471642385-5629-1-git-send-email-mcgrof@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg KH <gregkh@linuxfoundation.org>
-Cc: gnomes@lxorguk.ukuu.org.uk, linux-ia64@vger.kernel.org, jkosina@suse.cz, benh@kernel.crashing.org, ming.lei@canonical.com, heiko.carstens@de.ibm.com, platform-driver-x86@vger.kernel.org, paul.gortmaker@windriver.com, hpa@zytor.com, masami.hiramatsu.pt@hitachi.com, linux-arch@vger.kernel.org, sparclinux@vger.kernel.org, xen-devel@lists.xensource.com, linux@arm.linux.org.uk, linux-sh@vger.kernel.org, will.deacon@arm.com, korea.drzix@gmail.com, x86@kernel.org, anil.s.keshavamurthy@intel.com, fontana@sharpeleven.org, mingo@redhat.com, linux-arm-kernel@lists.infradead.org, catalin.marinas@arm.com, dvhart@infradead.org, david.vrabel@citrix.com, pali.rohar@gmail.com, keescook@chromium.org, arnd@arndb.de, realmz6@gmail.com, linux@rasmusvillemoes.dk, rusty@rustcorp.com.au, rostedt@goodmis.org, christopher.denicolo@suse.com, jbaron@akamai.com, ananth@linux.vnet.ibm.com, Borislav
+To: hpa@zytor.com, tglx@linutronix.de, mingo@redhat.com, jpoimboe@redhat.com, bp@alien8.de, linux@arm.linux.org.uk, mhiramat@kernel.org, masami.hiramatsu.pt@hitachi.com, jbaron@akamai.com, heiko.carstens@de.ibm.com, ananth@linux.vnet.ibm.com, anil.s.keshavamurthy@intel.com, davem@davemloft.net, realmz6@gmail.com
+Cc: gnomes@lxorguk.ukuu.org.uk, linux-ia64@vger.kernel.org, jkosina@suse.cz, benh@kernel.crashing.org, ming.lei@canonical.com, linux@rasmusvillemoes.dk, platform-driver-x86@vger.kernel.org, James.Bottomley@HansenPartnership.com, paul.gortmaker@windriver.com, paulus@samba.org, sparclinux@vger.kernel.org, mchehab@osg.samsung.com, linux-arch@vger.kernel.org, markus.heiser@darmarit.de, xen-devel@lists.xensource.com, msalter@redhat.com, linux-sh@vger.kernel.org, mpe@ellerman.id.au, x86@kernel.org, fontana@sharpeleven.org, linux-arm-kernel@lists.infradead.org, catalin.marinas@arm.com, dvhart@infradead.org, dwmw2@infradead.org, linux-xtensa@linux-xtensa.org, pali.rohar@gmail.com, keescook@chromium.org, arnd@arndb.de, jani.nikula@intel.com, will.deacon@arm.com, rusty@rustcorp.com.au, rostedt@goodmis.org, acme@redhat.com, ak@linux.intel.com, andriy.shevchenko@linux.intel.com, mcb30@ip
 
-On Sat, Aug 13, 2016 at 12:46:16PM +0200, Greg KH wrote:
-> On Sat, Aug 13, 2016 at 12:00:42AM +0200, Luis R. Rodriguez wrote:
-> > On Fri, Aug 12, 2016 at 10:23:34PM +0200, Greg KH wrote:
-> > > On Fri, Aug 12, 2016 at 07:04:52PM +0200, Luis R. Rodriguez wrote:
-> > > > Alright, how's this new description:
-> > > > 
-> > > > diff --git a/init/Kconfig b/init/Kconfig
-> > > > index cac3f096050d..73e4890c24c4 100644
-> > > > --- a/init/Kconfig
-> > > > +++ b/init/Kconfig
-> > > > @@ -53,6 +53,34 @@ config CROSS_COMPILE
-> > > >  	  need to set this unless you want the configured kernel build
-> > > >  	  directory to select the cross-compiler automatically.
-> > > >  
-> > > > +config BUILD_AVOID_BITROT
-> > > > +	bool "Always force building specially annotated targets"
-> > > > +	default n
-> > > > +	help
-> > > > +	  If enabled then the the special table-* Makefile targets will always
-> > > > +	  be forced to be compiled even if their respective CONFIG_ option has
-> > > > +	  been disabled, but its objects will only be linked in if the same
-> > > > +	  respective CONFIG_ option has been enabled. This helps avoid code
-> > > > +	  bit rot issues, use for these targets should be carefully considred
-> > > > +	  by maintainers. You can safely enable this option at the expense of
-> > > > +	  increasing compile time. Enabling this option helps avoid code bit
-> > > > +	  rot by taking advantage of the facilities provided and enabled by
-> > > > +	  using linker tables documented under:
-> > > 
-> > > As a kernel developer I have _no_ idea what this is trying to say at
-> > > all, sorry.
-> > 
-> > Hmm, wow OK, sorry, and I thought I was being too verbose...
-> 
-> All of your good explainations and detail need to go into the text
-> itself.  Responding to my questions is wonderful, but is not going to
-> help anyone out who sees the config option for the first time, unless
-> you change the text there.
+From: "Luis R. Rodriguez" <mcgrof@kernel.org>
 
-Sure.
+The setup for LTO never made it upstream, and although this has
+some users, this is now really old stuff for a gcc 4.7 LTO problem.
+We know that at least LTO_REFERENCE_INITCALL() work around can
+be removed if LTO is not supported on v4.7 anymore.
 
-> > OK so first, linker tables allow for the ability to help simplify initialization
-> > sequences so that you no longer have to add the respective static inline in
-> > header files to do nothing, instead you simply get your init routine for your
-> > feature pegged into the linker table or not at link time. If enabling your
-> > feature does not require structural changes, you could then safely enable
-> > compiling this feature all the time, and only allow linking when the feature
-> > was enabled. We don't have an easy way to express this in our build system,
-> > the new targets added lets you accomplish this.
-> 
-> I still don't understand, sorry.
-> 
-> As a kernel developer, why do I care about this?  Who should care about
-> this, a driver developer, subsystem developer, someone adding a syscall,
-> an arch subsystem developer?
+As per Andi the DISABLE_LTO and LTO_CFLAGS are still neeeded though.
 
-I'll try to explain this more.
+v3: added to this series, removing LTO_REFERENCE_INITCALL()
+    justifies that other future similar macros do not need
+    a respective LTO_REFERENCE_INITCALL() on them therefore
+    simplifying new code.
 
-> > > What is a "specially annotated target"?
-> > 
-> > The ones listed below, table-obj-y and table-lib-y
-> 
-> circular logic doesn't work :)
-> 
-> > > Who is forcing it to be built?
-> > 
-> > It would be up to maintainers for each subsystem/feature to decide if they want
-> > to use the new targets or not within their subsystem.
-> 
-> Ok, as a maintainer of a subsystem, I still have no idea what any of
-> this means.  But maybe I'm just don't understand kernel subsystem
-> development...
+Acked-by: Andi Kleen <ak@linux.intel.com>
+Signed-off-by: Luis R. Rodriguez <mcgrof@kernel.org>
+---
+ include/linux/init.h | 20 +-------------------
+ 1 file changed, 1 insertion(+), 19 deletions(-)
 
-Jeesh, OK, will give it one more go.
+diff --git a/include/linux/init.h b/include/linux/init.h
+index 1e5c131d5c9a..aa662ad80d9c 100644
+--- a/include/linux/init.h
++++ b/include/linux/init.h
+@@ -151,23 +151,6 @@ extern bool initcall_debug;
+ 
+ #ifndef __ASSEMBLY__
+ 
+-#ifdef CONFIG_LTO
+-/* Work around a LTO gcc problem: when there is no reference to a variable
+- * in a module it will be moved to the end of the program. This causes
+- * reordering of initcalls which the kernel does not like.
+- * Add a dummy reference function to avoid this. The function is
+- * deleted by the linker.
+- */
+-#define LTO_REFERENCE_INITCALL(x) \
+-	; /* yes this is needed */			\
+-	static __used __exit void *reference_##x(void)	\
+-	{						\
+-		return &x;				\
+-	}
+-#else
+-#define LTO_REFERENCE_INITCALL(x)
+-#endif
+-
+ /* initcalls are now grouped by functionality into separate 
+  * subsections. Ordering inside the subsections is determined
+  * by link order. 
+@@ -180,8 +163,7 @@ extern bool initcall_debug;
+ 
+ #define __define_initcall(fn, id) \
+ 	static initcall_t __initcall_##fn##id __used \
+-	__attribute__((__section__(".initcall" #id ".init"))) = fn; \
+-	LTO_REFERENCE_INITCALL(__initcall_##fn##id)
++	__attribute__((__section__(".initcall" #id ".init"))) = fn;
+ 
+ /*
+  * Early initcalls run before initializing SMP.
+-- 
+2.9.2
 
-> > > What does it mean if it isn't built?
-> > 
-> > If you have CONFIG_BUILD_AVOID_BITROT enabled and some code using the special
-> > targets do not get built it means the dependencies it has were not met.
-> 
-> What "dependencies"?
-
-Will elaborate.
-
-> > > > +
-> > > > +	  include/linux/tables.h
-> > > > +
-> > > > +	  The special targets supported are:
-> > > > +
-> > > > +	    o table-obj-y
-> > > > +	    o table-lib-y
-> > > 
-> > > What does this mean to me as a developer?
-> > 
-> > It mean you can count on a bit more build test coverage by
-> > CONFIG_BUILD_AVOID_BITROT users. Using table-obj-y is functionally
-> > equivalent to doing:
-> > 
-> > extra-y += foo.o
-> > obj-y += foo.o
-> 
-> Ok, but why change this?  What's the advantage?  Are you going to now go
-> and change all locations of the above in the tree to the table-
-> versions?  If not, why is this needed?
-
-Hell no, the gain here is clear annotation of when this practice is used.
-Linker table use could make this practice more prevalent.
-
-> > The above new targets are just short hand annotations for the same.  We could
-> > actually use another shorthand prefix other than table-, however linker tables
-> > help making more of these type of targets possible. For instance, on initialiation
-> > sequences you no longer have to add each line for each feature onto a set routine,
-> > rather you just get the initialization routine linked in or not. This lets us avoid
-> > cluttering C code and header code with #idefs, and as a side consequences also
-> > allows more targets to be compiled without implicating functionality.
-> > 
-> > As a developer you should take care to to use table-obj-y, or table-lib-y only if
-> > you are certain the target does not require structural changes.
-> 
-> How am I supposed to be "certain"?
-
-Compile testing is one easy way, but better yet understanding the code is
-best. The structural change complication was one consideration that came
-to mind.
-
-> > > What does it mean to a user
-> > > who wants to figure out if it should be enabled or not?
-> > 
-> > It depends on their build system capability and their goals. If they wish
-> > to be able to report build bugs and have a decent build system they can
-> > enable this. Otherwise they should disable it.
-> 
-> Why is this differnent from CONFIG_TEST build option we have today (or
-> whatever it's called...)
-
-We could fold it under that, sure.
-
-> Anyway, again, I have no idea what this is, nor how I should use it.
-> And if I am the audience for this type of config option, well, perhaps
-> it needs to be rethought...
-
-Alright, I'll rip all this code bit rot things out into its own separate
-patch for Kbuild changes, documentation, etc, and see if this helps. Otherwise
-we can evaluate if we should just drop it. Keep in mind that iPXE actually
-used it for this purpose and enabled it tree wide, since I knew it would
-likely not be a popular option for some I figured an optional build target
-would be better. The rest is up to me to try to explain then how and why some
-folks might want this. Linker tables just make it an easier practice to
-use due to the simplication of code from #ifdef statements on Kconfig
-symbols.
-
-I'll address all this then separately in my next respin. It will be its own
-separate patch.
-
-  Luis
