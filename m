@@ -1,7 +1,7 @@
 From: mcgrof@kernel.org
-Date: Fri, 19 Aug 2016 21:41:10 +0000
-Subject: [PATCH v1 2/7] tools: add a basic tools printk.h
-Message-Id: <1471642875-5957-3-git-send-email-mcgrof@kernel.org>
+Date: Fri, 19 Aug 2016 21:41:13 +0000
+Subject: [PATCH v1 5/7] tools: expand export.h with VMLINUX_SYMBOL()
+Message-Id: <1471642875-5957-6-git-send-email-mcgrof@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1471642454-5679-1-git-send-email-mcgrof@kernel.org>
  <1471642875-5957-1-git-send-email-mcgrof@kernel.org>
@@ -14,49 +14,46 @@ Cc: x86@kernel.org, luto@amacapital.net, keescook@chromium.org, torvalds@linux-f
 
 From: "Luis R. Rodriguez" <mcgrof@kernel.org>
 
-This will be used later by the userspace linker-tables sandbox.
-Since upstream kernel.h includes printk.h mimic this so we can
-match and replicate C code as-is on userspace sandbox tools.
+This will be used later by the linker-table userspace sandbox.
 
 Signed-off-by: Luis R. Rodriguez <mcgrof@kernel.org>
 ---
- tools/include/linux/kernel.h |  1 +
- tools/include/linux/printk.h | 14 ++++++++++++++
- 2 files changed, 15 insertions(+)
- create mode 100644 tools/include/linux/printk.h
+ tools/include/linux/export.h | 22 ++++++++++++++++++++++
+ 1 file changed, 22 insertions(+)
 
-diff --git a/tools/include/linux/kernel.h b/tools/include/linux/kernel.h
-index 3d385a6d4fc1..afdf760bf35c 100644
---- a/tools/include/linux/kernel.h
-+++ b/tools/include/linux/kernel.h
-@@ -6,6 +6,7 @@
- #include <assert.h>
+diff --git a/tools/include/linux/export.h b/tools/include/linux/export.h
+index d07e586b9ba0..cb7d6b490e08 100644
+--- a/tools/include/linux/export.h
++++ b/tools/include/linux/export.h
+@@ -1,6 +1,28 @@
+ #ifndef _TOOLS_LINUX_EXPORT_H_
+ #define _TOOLS_LINUX_EXPORT_H_
  
- #include <linux/bug.h>
-+#include <linux/printk.h>
- 
- #define DIV_ROUND_UP(n,d) (((n) + (d) - 1) / (d))
- 
-diff --git a/tools/include/linux/printk.h b/tools/include/linux/printk.h
-new file mode 100644
-index 000000000000..7e34e9c817e8
---- /dev/null
-+++ b/tools/include/linux/printk.h
-@@ -0,0 +1,14 @@
-+#ifndef __TOOLS_KERNEL_PRINTK__
-+#define __TOOLS_KERNEL_PRINTK__
++/*
++ * Export symbols from the kernel to modules.  Forked from module.h
++ * to reduce the amount of pointless cruft we feed to gcc when only
++ * exporting a simple symbol or two.
++ *
++ * Try not to add #includes here.  It slows compilation and makes kernel
++ * hackers place grumpy comments in header files.
++ */
 +
-+#include <stdio.h>
-+
-+#ifndef pr_fmt
-+#define pr_fmt(fmt)	fmt
++/* Some toolchains use a `_' prefix for all user symbols. */
++#ifdef CONFIG_HAVE_UNDERSCORE_SYMBOL_PREFIX
++#define __VMLINUX_SYMBOL(x) _##x
++#define __VMLINUX_SYMBOL_STR(x) "_" #x
++#else
++#define __VMLINUX_SYMBOL(x) x
++#define __VMLINUX_SYMBOL_STR(x) #x
 +#endif
 +
-+#define pr_info(fmt, ...)	printf(pr_fmt(fmt), ##__VA_ARGS__)
-+#define pr_err(fmt, ...)	printf(pr_fmt(fmt), ##__VA_ARGS__)
-+#define pr_debug(fmt, ...)	printf(pr_fmt(fmt), ##__VA_ARGS__)
++/* Indirect, so macros are expanded before pasting. */
++#define VMLINUX_SYMBOL(x) __VMLINUX_SYMBOL(x)
++#define VMLINUX_SYMBOL_STR(x) __VMLINUX_SYMBOL_STR(x)
 +
-+#endif /* __TOOLS_KERNEL_PRINTK__ */
+ #define EXPORT_SYMBOL(sym)
+ #define EXPORT_SYMBOL_GPL(sym)
+ #define EXPORT_SYMBOL_GPL_FUTURE(sym)
 -- 
 2.9.2
 
