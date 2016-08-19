@@ -1,137 +1,157 @@
-From: Rich Felker <dalias@libc.org>
-Date: Fri, 05 Aug 2016 22:42:19 +0000
-Subject: [GIT PULL] arch/sh updates for 4.8
-Message-Id: <20160805224219.GA13141@brightrain.aerifal.cx>
+From: mcgrof@kernel.org
+Date: Fri, 19 Aug 2016 21:34:14 +0000
+Subject: [PATCH v4 16/16] kprobes: port blacklist kprobes to linker table
+Message-Id: <1471642454-5679-17-git-send-email-mcgrof@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1471642454-5679-1-git-send-email-mcgrof@kernel.org>
+In-Reply-To: <1471642454-5679-1-git-send-email-mcgrof@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: Linux-sh list <linux-sh@vger.kernel.org>, linux-kernel@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>
+To: hpa@zytor.com, tglx@linutronix.de, mingo@redhat.com, jpoimboe@redhat.com, bp@alien8.de, linux@arm.linux.org.uk, mhiramat@kernel.org, masami.hiramatsu.pt@hitachi.com, jbaron@akamai.com, heiko.carstens@de.ibm.com, ananth@linux.vnet.ibm.com, anil.s.keshavamurthy@intel.com, davem@davemloft.net, realmz6@gmail.com
+Cc: x86@kernel.org, luto@amacapital.net, keescook@chromium.org, torvalds@linux-foundation.org, gregkh@linuxfoundation.org, rusty@rustcorp.com.au, gnomes@lxorguk.ukuu.org.uk, alan@linux.intel.com, dwmw2@infradead.org, arnd@arndb.de, ming.lei@canonical.com, linux-arch@vger.kernel.org, benh@kernel.crashing.org, ananth@in.ibm.com, pebolle@tiscali.nl, fontana@sharpeleven.org, david.vrabel@citrix.com, konrad.wilk@oracle.com, mcb30@ipxe.org, jgross@suse.com, andrew.cooper3@citrix.com, andriy.shevchenko@linux.intel.com, paul.gortmaker@windriver.com, xen-devel@lists.xensource.com, ak@linux.intel.com, pali.rohar@gmail.com, dvhart@infradead.org, platform-driver-x86@vger.kernel.org, mmarek@suse.com, linux@rasmusvillemoes.dk, jkosina@suse.cz, korea.drzix@gmail.com, linux-kbuild@vger.kernel.org, ton
 
-Hi Linus,
+From: "Luis R. Rodriguez" <mcgrof@kernel.org>
 
-Please pull these changes for arch/sh. They're based off a commit in
-your current tree to resolve conflicts with 726328d92a
-(locking/spinlock, arch: Update and fix spin_unlock_wait()
-implementations). The J-Core arch support is included here but to be
-usable it needs drivers that are waiting on approval/inclusion from
-their subsystem maintainers.
+kprobe makes use of two sections, the one dealing with the actual
+kprobes was recently ported using the standard section range API.
+The blacklist functionality of kprobes is still using a custom
+section and declaring its custom section using the linker script
+as follows:
 
-Rich
+type  Linux-section custom section name  begin                    end
+table .init.data    _kprobe_blacklist    __start_kprobe_blacklist __stop_kprobe_blacklist
 
+This ports the _kprobe_blacklist custom section to the standard
+Linux linker table API allowing us remove all the custom blacklist
+kprobe section declarations from the linker script.
 
+This has been tested by trying to register a kprobe on a blacklisted
+symbol (these are declared with NOKPROBE_SYMBOL()), and confirms that
+this fails to work as expected. This was tested with:
 
+ # insmod samples/kprobes/kprobe_example.ko symbol="get_kprobe"
 
---
+This fails to load as expected with:
 
-The following changes since commit 7f155c702677d057d03b192ce652311de5434697:
+insmod: ERROR: could not insert module samples/kprobes/kprobe_example.ko: Invalid parameters
 
-  Merge tag 'nfs-for-4.8-1' of git://git.linux-nfs.org/projects/trondmy/linux-nfs (2016-07-30 16:33:25 -0700)
+v3: this patch was introduced in this series
 
-are available in the git repository at:
+Acked-by: Masami Hiramatsu <mhiramat@kernel.org>
+Signed-off-by: Luis R. Rodriguez <mcgrof@kernel.org>
+---
+ include/asm-generic/kprobes.h     |  4 ++--
+ include/asm-generic/vmlinux.lds.h | 10 ----------
+ include/linux/kprobes.h           |  2 ++
+ kernel/kprobes.c                  | 11 ++++-------
+ 4 files changed, 8 insertions(+), 19 deletions(-)
 
-  git://git.libc.org/linux-sh tags/sh-for-4.8
+diff --git a/include/asm-generic/kprobes.h b/include/asm-generic/kprobes.h
+index 7b986f4b7ccd..23a49a4c7a38 100644
+--- a/include/asm-generic/kprobes.h
++++ b/include/asm-generic/kprobes.h
+@@ -3,14 +3,14 @@
+ 
+ #if defined(__KERNEL__) && !defined(__ASSEMBLY__)
+ #ifdef CONFIG_KPROBES
++#include <linux/tables.h>
+ #include <asm/ranges.h>
+ /*
+  * Blacklist ganerating macro. Specify functions which is not probed
+  * by using this macro.
+  */
+ # define __NOKPROBE_SYMBOL(fname)				\
+-static unsigned long __used					\
+-	__attribute__((__section__("_kprobe_blacklist")))	\
++static LINKTABLE_INIT_DATA(_kprobe_blacklist, all)		\
+ 	_kbl_addr_##fname = (unsigned long)fname;
+ # define NOKPROBE_SYMBOL(fname)	__NOKPROBE_SYMBOL(fname)
+ /* Use this to forbid a kprobes attach on very low level functions */
+diff --git a/include/asm-generic/vmlinux.lds.h b/include/asm-generic/vmlinux.lds.h
+index f2444d82d02a..47ef04de9958 100644
+--- a/include/asm-generic/vmlinux.lds.h
++++ b/include/asm-generic/vmlinux.lds.h
+@@ -114,15 +114,6 @@
+ #define BRANCH_PROFILE()
+ #endif
+ 
+-#ifdef CONFIG_KPROBES
+-#define KPROBE_BLACKLIST()	. = ALIGN(8);				      \
+-				VMLINUX_SYMBOL(__start_kprobe_blacklist) = .; \
+-				*(_kprobe_blacklist)			      \
+-				VMLINUX_SYMBOL(__stop_kprobe_blacklist) = .;
+-#else
+-#define KPROBE_BLACKLIST()
+-#endif
+-
+ #ifdef CONFIG_EVENT_TRACING
+ #define FTRACE_EVENTS()	. = ALIGN(8);					\
+ 			VMLINUX_SYMBOL(__start_ftrace_events) = .;	\
+@@ -525,7 +516,6 @@
+ 	*(SECTION_INIT_RODATA)						\
+ 	FTRACE_EVENTS()							\
+ 	TRACE_SYSCALLS()						\
+-	KPROBE_BLACKLIST()						\
+ 	MEM_DISCARD(init.rodata)					\
+ 	CLK_OF_TABLES()							\
+ 	RESERVEDMEM_OF_TABLES()						\
+diff --git a/include/linux/kprobes.h b/include/linux/kprobes.h
+index 445cc6fe7afa..2707820cbb56 100644
+--- a/include/linux/kprobes.h
++++ b/include/linux/kprobes.h
+@@ -44,8 +44,10 @@
+ 
+ #ifdef CONFIG_KPROBES
+ #include <linux/ranges.h>
++#include <linux/tables.h>
+ 
+ DECLARE_SECTION_RANGE(kprobes);
++DECLARE_LINKTABLE(unsigned long, _kprobe_blacklist);
+ 
+ /* kprobe_status settings */
+ #define KPROBE_HIT_ACTIVE	0x00000001
+diff --git a/kernel/kprobes.c b/kernel/kprobes.c
+index 387605682622..4801aa3b4adf 100644
+--- a/kernel/kprobes.c
++++ b/kernel/kprobes.c
+@@ -2053,14 +2053,13 @@ NOKPROBE_SYMBOL(dump_kprobe);
+  * since a kprobe need not necessarily be at the beginning
+  * of a function.
+  */
+-static int __init populate_kprobe_blacklist(unsigned long *start,
+-					     unsigned long *end)
++static int __init populate_kprobe_blacklist(void)
+ {
+ 	unsigned long *iter;
+ 	struct kprobe_blacklist_entry *ent;
+ 	unsigned long entry, offset = 0, size = 0;
+ 
+-	for (iter = start; iter < end; iter++) {
++	LINKTABLE_FOR_EACH(iter, _kprobe_blacklist) {
+ 		entry = arch_deref_entry_point((void *)*iter);
+ 
+ 		if (!kernel_text_address(entry) ||
+@@ -2125,8 +2124,7 @@ static struct notifier_block kprobe_module_nb = {
+ };
+ 
+ /* Markers of _kprobe_blacklist section */
+-extern unsigned long __start_kprobe_blacklist[];
+-extern unsigned long __stop_kprobe_blacklist[];
++DEFINE_LINKTABLE_INIT_DATA(unsigned long, _kprobe_blacklist);
+ 
+ /* Actual kprobes section range */
+ DEFINE_SECTION_RANGE(kprobes, SECTION_TEXT);
+@@ -2143,8 +2141,7 @@ static int __init init_kprobes(void)
+ 		raw_spin_lock_init(&(kretprobe_table_locks[i].lock));
+ 	}
+ 
+-	err = populate_kprobe_blacklist(__start_kprobe_blacklist,
+-					__stop_kprobe_blacklist);
++	err = populate_kprobe_blacklist();
+ 	if (err) {
+ 		pr_err("kprobes: failed to populate blacklist: %d\n", err);
+ 		pr_err("Please take care of using kprobes.\n");
+-- 
+2.9.2
 
-for you to fetch changes up to e61c10e468a42512f5fad74c00b62af5cc19f65f:
-
-  sh: add device tree source for J2 FPGA on Mimas v2 board (2016-08-05 03:38:26 +0000)
-
-----------------------------------------------------------------
-These changes improve device tree support (including builtin DTB), add
-support for the J-Core J2 processor, an open source synthesizable
-reimplementation of the SH-2 ISA, resolve a longstanding sigcontext
-ABI mismatch issue, and fix various bugs including nommu-specific
-issues and minor regressions introduced in 4.6.
-
-----------------------------------------------------------------
-Markus Elfring (1):
-      sh: Delete unnecessary checks before the function call "mempool_destroy"
-
-Pan Xinhui (1):
-      sh: cmpxchg: fix a bit shift bug in big_endian os
-
-Paul Gortmaker (4):
-      sh: make time.c explicitly non-modular
-      sh: make mm/asids-debugfs explicitly non-modular
-      sh: make board-secureedge5410 explicitly non-modular
-      sh: make heartbeat driver explicitly non-modular
-
-Rich Felker (16):
-      sh: add support for linking a builtin device tree blob in the kernel
-      sh: make sigcontext definition consistent across fpu/nofpu models
-      sh: disable aliased page logic on NOMMU models
-      sh: fix futex/robust_list on nommu models
-      sh: allow clocksource drivers to register sched_clock backends
-      sh: fix build regression with CONFIG_OF && !CONFIG_OF_FLATTREE
-      sh: add support for J-Core J2 processor
-      sh: add AT_HWCAP flag for J-Core cas.l instruction
-      sh: add J2 atomics using the cas.l instruction
-      sh: add working futex atomic ops on userspace addresses for smp
-      sh: SMP support for SH2 entry.S
-      sh: add SMP support for J2
-      sh: do not perform IPI-based cache flush except on boards that need it
-      sh: use common clock framework with device tree boards
-      sh: add defconfig for J-Core J2
-      sh: add device tree source for J2 FPGA on Mimas v2 board
-
-Yoshinori Sato (1):
-      sh: system call wire up
-
- arch/sh/Kconfig                         |  34 +++++
- arch/sh/Makefile                        |   3 +
- arch/sh/boards/Kconfig                  |   1 +
- arch/sh/boards/board-secureedge5410.c   |   3 +-
- arch/sh/boards/of-generic.c             |  15 ++-
- arch/sh/boot/dts/Makefile               |   3 +
- arch/sh/boot/dts/j2_mimas_v2.dts        |  96 ++++++++++++++
- arch/sh/configs/j2_defconfig            |  40 ++++++
- arch/sh/drivers/heartbeat.c             |  32 +----
- arch/sh/include/asm/atomic.h            |   8 ++
- arch/sh/include/asm/barrier.h           |   5 +
- arch/sh/include/asm/bitops-cas.h        |  93 +++++++++++++
- arch/sh/include/asm/bitops.h            |   2 +
- arch/sh/include/asm/cmpxchg-cas.h       |  24 ++++
- arch/sh/include/asm/cmpxchg-xchg.h      |   2 +-
- arch/sh/include/asm/cmpxchg.h           |   2 +
- arch/sh/include/asm/futex-cas.h         |  34 +++++
- arch/sh/include/asm/futex-irq.h         |  86 ------------
- arch/sh/include/asm/futex-llsc.h        |  41 ++++++
- arch/sh/include/asm/futex.h             |  97 ++++++++------
- arch/sh/include/asm/processor.h         |   2 +-
- arch/sh/include/asm/spinlock-cas.h      | 117 +++++++++++++++++
- arch/sh/include/asm/spinlock-llsc.h     | 224 ++++++++++++++++++++++++++++++++
- arch/sh/include/asm/spinlock.h          | 222 +------------------------------
- arch/sh/include/uapi/asm/cpu-features.h |   1 +
- arch/sh/include/uapi/asm/sigcontext.h   |   3 -
- arch/sh/include/uapi/asm/unistd_32.h    |  16 ++-
- arch/sh/include/uapi/asm/unistd_64.h    |  16 ++-
- arch/sh/kernel/cpu/clock.c              |   4 +
- arch/sh/kernel/cpu/init.c               |   6 +-
- arch/sh/kernel/cpu/proc.c               |   1 +
- arch/sh/kernel/cpu/sh2/Makefile         |   4 +
- arch/sh/kernel/cpu/sh2/entry.S          |  55 ++++++++
- arch/sh/kernel/cpu/sh2/probe.c          |  39 +++++-
- arch/sh/kernel/cpu/sh2/smp-j2.c         | 139 ++++++++++++++++++++
- arch/sh/kernel/dwarf.c                  |   6 +-
- arch/sh/kernel/head_32.S                |   6 +-
- arch/sh/kernel/setup.c                  |   6 +-
- arch/sh/kernel/syscalls_32.S            |  14 ++
- arch/sh/kernel/syscalls_64.S            |  14 ++
- arch/sh/kernel/time.c                   |   3 +-
- arch/sh/mm/Makefile                     |   3 +-
- arch/sh/mm/asids-debugfs.c              |   5 +-
- arch/sh/mm/cache-j2.c                   |  65 +++++++++
- arch/sh/mm/cache.c                      |  13 +-
- 45 files changed, 1206 insertions(+), 399 deletions(-)
- create mode 100644 arch/sh/boot/dts/Makefile
- create mode 100755 arch/sh/boot/dts/j2_mimas_v2.dts
- create mode 100644 arch/sh/configs/j2_defconfig
- create mode 100644 arch/sh/include/asm/bitops-cas.h
- create mode 100644 arch/sh/include/asm/cmpxchg-cas.h
- create mode 100644 arch/sh/include/asm/futex-cas.h
- create mode 100644 arch/sh/include/asm/futex-llsc.h
- create mode 100644 arch/sh/include/asm/spinlock-cas.h
- create mode 100644 arch/sh/include/asm/spinlock-llsc.h
- create mode 100644 arch/sh/kernel/cpu/sh2/smp-j2.c
- create mode 100644 arch/sh/mm/cache-j2.c
