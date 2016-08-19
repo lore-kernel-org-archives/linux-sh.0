@@ -1,66 +1,46 @@
-From: Rich Felker <dalias@libc.org>
-Date: Thu, 04 Aug 2016 17:03:02 +0000
-Subject: Re: [PATCH v4 2/2] spi: add driver for J-Core SPI controller
-Message-Id: <20160804170301.GJ15995@brightrain.aerifal.cx>
+From: mcgrof@kernel.org
+Date: Fri, 19 Aug 2016 21:32:51 +0000
+Subject: [PATCH v4 02/16] dell-smo8800: include uaccess.h
+Message-Id: <1471642385-5629-3-git-send-email-mcgrof@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1469686300.git.dalias@libc.org>
- <2a46090a5a7c177b7eca83f68406650844423e7f.1469686300.git.dalias@libc.org>
- <20160728191153.GL11806@sirena.org.uk>
- <20160728194045.GK15995@brightrain.aerifal.cx>
- <20160728195125.GN11806@sirena.org.uk>
- <20160730033441.GO15995@brightrain.aerifal.cx>
- <CAMuHMdURxKP_U649yWPtmyQBh+zasUBDYcK5YKD0eL4MuXVs0A@mail.gmail.com>
-In-Reply-To: <CAMuHMdURxKP_U649yWPtmyQBh+zasUBDYcK5YKD0eL4MuXVs0A@mail.gmail.com>
+References: <1471642385-5629-1-git-send-email-mcgrof@kernel.org>
+In-Reply-To: <1471642385-5629-1-git-send-email-mcgrof@kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Mark Brown <broonie@kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, linux-spi <linux-spi@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Rob Herring <robh+dt@kernel.org>, Mark Rutland <mark.rutland@arm.com>, Yoshinori Sato <ysato@users.sourceforge.jp>
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: hpa@zytor.com, tglx@linutronix.de, mingo@redhat.com, jpoimboe@redhat.com, bp@alien8.de, linux@arm.linux.org.uk, mhiramat@kernel.org, masami.hiramatsu.pt@hitachi.com, jbaron@akamai.com, heiko.carstens@de.ibm.com, ananth@linux.vnet.ibm.com, anil.s.keshavamurthy@intel.com, davem@davemloft.net, realmz6@gmail.com
+Cc: gnomes@lxorguk.ukuu.org.uk, linux-ia64@vger.kernel.org, jkosina@suse.cz, benh@kernel.crashing.org, ming.lei@canonical.com, linux@rasmusvillemoes.dk, platform-driver-x86@vger.kernel.org, James.Bottomley@HansenPartnership.com, paul.gortmaker@windriver.com, paulus@samba.org, sparclinux@vger.kernel.org, mchehab@osg.samsung.com, linux-arch@vger.kernel.org, markus.heiser@darmarit.de, xen-devel@lists.xensource.com, msalter@redhat.com, linux-sh@vger.kernel.org, mpe@ellerman.id.au, x86@kernel.org, fontana@sharpeleven.org, linux-arm-kernel@lists.infradead.org, catalin.marinas@arm.com, dvhart@infradead.org, dwmw2@infradead.org, linux-xtensa@linux-xtensa.org, pali.rohar@gmail.com, keescook@chromium.org, arnd@arndb.de, jani.nikula@intel.com, will.deacon@arm.com, rusty@rustcorp.com.au, rostedt@goodmis.org, acme@redhat.com, ak@linux.intel.com, andriy.shevchenko@linux.intel.com, mcb30@ip
 
-On Thu, Aug 04, 2016 at 03:05:16PM +0200, Geert Uytterhoeven wrote:
-> Hi Rich,
-> 
-> On Sat, Jul 30, 2016 at 5:34 AM, Rich Felker <dalias@libc.org> wrote:
-> > On Thu, Jul 28, 2016 at 08:51:25PM +0100, Mark Brown wrote:
-> >> On Thu, Jul 28, 2016 at 03:40:45PM -0400, Rich Felker wrote:
-> >> > On Thu, Jul 28, 2016 at 08:11:53PM +0100, Mark Brown wrote:
-> >> > > Why are you not using the clock API for this?  Just require a clock and
-> >> > > use clk_get_rate() to find out what rate it is.
-> >>
-> >> > I thought about that but I'm not familiar with it. I can try to figure
-> >> > it out quickly and test that approach; don't see any reason it
-> >> > shouldn't work. Would you insist on having full support for
-> >> > enabling/disabling the clk when it's in use, or would you be happy
-> >> > with treating it as a fixed clock that's always-on for now and
-> >> > possibly extending it with more functionality later if there's ever
-> >> > hardware where that's relevant/helpful?
-> >>
-> >> It's fine to just enable it at startup and leave it on, though the
-> >> runtime PM ops are trivial and you can set auto_runtime_pm to have the
-> >> core do the gets and puts.
-> >
-> > I was able to get it working via the clk api and I'll include support
-> > for this in the next version of the patch, but to actually use it
-> > depends on changing arch/sh to use the common clk framework; otherwise
-> > there's no way to provide a suitable clk in the DT and have
-> > [devm_]clk_get actually pick it up. Should I keep around the option of
-> > using clock-frequency too? That would be most convenient.
-> >
-> > I do have a pending patch from Sato-san to switch arch/sh over to CCF
-> > but it's part of a series and I don't think it's ready to merge. I may
-> > be able to merge just a minimal, safe subset that won't break legacy
-> > non-DT configurations, though.
-> 
-> I think you can use non-CCF clocks with DT, if you register them first.
-> Cfr. the clk_names[] array and shmobile_clk_workaround() function in
-> v3.18:arch/arm/mach-shmobile/board-koelsch-reference.c and
-> v3.18:arch/arm/mach-shmobile/clock.c
-> 
-> Or was that the other way around?
+From: "Luis R. Rodriguez" <mcgrof@kernel.org>
 
-You can, but they will only be registered if a board file or
-equivalent registers them. The intent is not to have any board files
-for boards supported through device tree and eventually to remove all
-the board files from arch/sh.
+sections.h is currently included and it provides dell-smo8800
+with what it needs, an upcoming change will decouple uaccess.h
+from sections.h. This driver needs to explicitly require uaccess.h
+before this change.
 
-Rich
+v3: new to this series -- needed due to collateral of the split of
+    old linker tables from tables.h into 3 files: sections.h, ranges.h
+    and tables.h
+
+Reviewed-by: Pali Roh=C3=A1r <pali.rohar@gmail.com>
+Signed-off-by: Luis R. Rodriguez <mcgrof@kernel.org>
+---
+ drivers/platform/x86/dell-smo8800.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/platform/x86/dell-smo8800.c b/drivers/platform/x86/del=
+l-smo8800.c
+index 0aec4fd4c48e..37e646034ef8 100644
+--- a/drivers/platform/x86/dell-smo8800.c
++++ b/drivers/platform/x86/dell-smo8800.c
+@@ -24,6 +24,7 @@
+ #include <linux/acpi.h>
+ #include <linux/interrupt.h>
+ #include <linux/miscdevice.h>
++#include <linux/uaccess.h>
+=20
+ struct smo8800_device {
+ 	u32 irq;                     /* acpi device irq */
+--=20
+2.9.2
+
