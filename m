@@ -1,100 +1,44 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 10 Aug 2016 09:29:23 +0000
-Subject: Re: [PATCH 2/2] net: ethernet: renesas: sh_eth: use new api ethtool_{get|set}_link_ksettings
-Message-Id: <20160810092923.GF6276@verge.net.au>
+From: mcgrof@kernel.org
+Date: Fri, 19 Aug 2016 21:41:11 +0000
+Subject: [PATCH v1 3/7] tools: add init.h for tools
+Message-Id: <1471642875-5957-4-git-send-email-mcgrof@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1470780289-27496-1-git-send-email-tremyfr@gmail.com>
- <1470780289-27496-2-git-send-email-tremyfr@gmail.com>
-In-Reply-To: <1470780289-27496-2-git-send-email-tremyfr@gmail.com>
+References: <1471642454-5679-1-git-send-email-mcgrof@kernel.org>
+ <1471642875-5957-1-git-send-email-mcgrof@kernel.org>
+In-Reply-To: <1471642875-5957-1-git-send-email-mcgrof@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Philippe Reynes <tremyfr@gmail.com>
-Cc: sergei.shtylyov@cogentembedded.com, davem@davemloft.net, geert+renesas@glider.be, andrew@lunn.ch, netdev@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
+To: acme@redhat.com, hpa@zytor.com, tglx@linutronix.de, mingo@redhat.com, jpoimboe@redhat.com, bp@alien8.de, linux@arm.linux.org.uk, mhiramat@kernel.org, masami.hiramatsu.pt@hitachi.com, jbaron@akamai.com, heiko.carstens@de.ibm.com, ananth@linux.vnet.ibm.com, anil.s.keshavamurthy@intel.com, davem@davemloft.net, realmz6@gmail.com
+Cc: x86@kernel.org, luto@amacapital.net, keescook@chromium.org, torvalds@linux-foundation.org, gregkh@linuxfoundation.org, rusty@rustcorp.com.au, gnomes@lxorguk.ukuu.org.uk, alan@linux.intel.com, dwmw2@infradead.org, arnd@arndb.de, ming.lei@canonical.com, linux-arch@vger.kernel.org, benh@kernel.crashing.org, ananth@in.ibm.com, pebolle@tiscali.nl, fontana@sharpeleven.org, david.vrabel@citrix.com, konrad.wilk@oracle.com, mcb30@ipxe.org, jgross@suse.com, andrew.cooper3@citrix.com, andriy.shevchenko@linux.intel.com, paul.gortmaker@windriver.com, xen-devel@lists.xensource.com, ak@linux.intel.com, pali.rohar@gmail.com, dvhart@infradead.org, platform-driver-x86@vger.kernel.org, mmarek@suse.com, linux@rasmusvillemoes.dk, jkosina@suse.cz, korea.drzix@gmail.com, linux-kbuild@vger.kernel.org, ton
 
-[CC linux-sh as some of those boards use this driver]
+From: "Luis R. Rodriguez" <mcgrof@kernel.org>
 
-Hi Phillippe,
+Start off with just __ref -- we enalbe you to override, if you do
+that then you can define your own. The way you'd use this, if you
+do override, is define your own __ref and then use include_next.
 
-On Wed, Aug 10, 2016 at 12:04:49AM +0200, Philippe Reynes wrote:
-> The ethtool api {get|set}_settings is deprecated.
-> We move this driver to new api {get|set}_link_ksettings.
-> 
-> Signed-off-by: Philippe Reynes <tremyfr@gmail.com>
+Signed-off-by: Luis R. Rodriguez <mcgrof@kernel.org>
+---
+ tools/include/linux/init.h | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+ create mode 100644 tools/include/linux/init.h
 
-Thanks this change looks reasonable to me.
-
-I have also tested it as follows on the r8a7790/Lager board and it
-appears to work.
-
-Tested-by: Simon Horman <horms+renesas@verge.net.au>
-
-# ethtool -h | head -1
-ethtool version 3.1
-
-# ethtool -i eth0
-driver: sh-eth
-version:
-firmware-version:
-bus-info: ee700000.ethernet
-supports-statistics: yes
-supports-test: no
-supports-eeprom-access: no
-supports-register-dump: yes
-
-# ethtool eth0
-Settings for eth0:
-        Supported ports: [ TP MII ]
-        Supported link modes:   10baseT/Half 10baseT/Full
-                                100baseT/Half 100baseT/Full
-        Supported pause frame use: Symmetric Receive-only
-        Supports auto-negotiation: Yes
-        Advertised link modes:  10baseT/Half 10baseT/Full
-                                100baseT/Half 100baseT/Full
-        Advertised pause frame use: Symmetric Receive-only
-        Advertised auto-negotiation: Yes
-        Link partner advertised link modes:  10baseT/Half 10baseT/Full
-                                             100baseT/Half 100baseT/Full
-        Link partner advertised pause frame use: No
-        Link partner advertised auto-negotiation: Yes
-        Speed: 100Mb/s
-        Duplex: Full
-        Port: MII
-        PHYAD: 1
-        Transceiver: internal
-        Auto-negotiation: on
-        Current message level: 0x000000cc (204)
-                               link timer rx_err tx_err
-        Link detected: yes
-
-# ethtool -s eth0 speed 10 duplex half
-
---- start kernel messages ---
-[  375.640312] sh-eth ee700000.ethernet eth0: Link is Down
-[  377.360727] sh-eth ee700000.ethernet eth0: Link is Up - 10Mbps/Half - flow control off
---- end kernel messages ---
-
-# ethtool eth0
-Settings for eth0:
-        Supported ports: [ TP MII ]
-        Supported link modes:   10baseT/Half 10baseT/Full 
-                                100baseT/Half 100baseT/Full 
-        Supported pause frame use: Symmetric Receive-only
-        Supports auto-negotiation: Yes
-        Advertised link modes:  10baseT/Half 
-        Advertised pause frame use: No
-        Advertised auto-negotiation: Yes
-        Link partner advertised link modes:  10baseT/Half 10baseT/Full 
-                                             100baseT/Half 100baseT/Full 
-        Link partner advertised pause frame use: No
-        Link partner advertised auto-negotiation: Yes
-        Speed: 10Mb/s
-        Duplex: Half
-        Port: MII
-        PHYAD: 1
-        Transceiver: internal
-        Auto-negotiation: on
-        Current message level: 0x000000cc (204)
-                               link timer rx_err tx_err
-        Link detected: yes
+diff --git a/tools/include/linux/init.h b/tools/include/linux/init.h
+new file mode 100644
+index 000000000000..6d970a360a05
+--- /dev/null
++++ b/tools/include/linux/init.h
+@@ -0,0 +1,9 @@
++#ifndef _TOOLS_LINUX_INIT_H
++#define _TOOLS_LINUX_INIT_H
++
++/* this means you can add your own to fit you own userspace needs */
++#ifndef __ref
++#define __ref
++#endif
++
++#endif /* _TOOLS_LINUX_INIT_H */
+-- 
+2.9.2
 
