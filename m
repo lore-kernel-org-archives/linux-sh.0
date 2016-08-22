@@ -1,38 +1,25 @@
-From: Shawn Lin <shawn.lin@rock-chips.com>
-Date: Mon, 22 Aug 2016 08:38:52 +0000
-Subject: [PATCH] sh: clkfwk: remove unnecessary for failing to alloc mem
-Message-Id: <1471855132-15448-1-git-send-email-shawn.lin@rock-chips.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Mon, 22 Aug 2016 11:04:53 +0000
+Subject: Re: [PATCH] sh: clkfwk: remove unnecessary for failing to alloc mem
+Message-Id: <e1fc8e8b-c2cb-b8f3-8872-4bcf9fe60100@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1471855132-15448-1-git-send-email-shawn.lin@rock-chips.com>
+In-Reply-To: <1471855132-15448-1-git-send-email-shawn.lin@rock-chips.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-kzalloc will print err there, so we don't need this extra one.
+Hello.
 
-Signed-off-by: Shawn Lin <shawn.lin@rock-chips.com>
----
+On 8/22/2016 11:38 AM, Shawn Lin wrote:
 
- drivers/sh/clk/cpg.c | 4 +---
- 1 file changed, 1 insertion(+), 3 deletions(-)
+> kzalloc will print err there, so we don't need this extra one.
 
-diff --git a/drivers/sh/clk/cpg.c b/drivers/sh/clk/cpg.c
-index 7442bc1..7b98937 100644
---- a/drivers/sh/clk/cpg.c
-+++ b/drivers/sh/clk/cpg.c
-@@ -250,10 +250,8 @@ static int __init sh_clk_div_register_ops(struct clk *clks, int nr,
- 
- 	freq_table_size *= (nr_divs + 1);
- 	freq_table = kzalloc(freq_table_size * nr, GFP_KERNEL);
--	if (!freq_table) {
--		pr_err("%s: unable to alloc memory\n", __func__);
-+	if (!freq_table)
- 		return -ENOMEM;
--	}
- 
- 	for (k = 0; !ret && (k < nr); k++) {
- 		clkp = clks + k;
--- 
-2.3.7
+    s/err/error/?
 
+> Signed-off-by: Shawn Lin <shawn.lin@rock-chips.com>
+[...]
+
+MBR, Sergei
 
