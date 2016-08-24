@@ -1,133 +1,76 @@
-From: Rich Felker <dalias@libc.org>
-Date: Wed, 24 Aug 2016 21:44:44 +0000
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Wed, 24 Aug 2016 21:57:08 +0000
 Subject: Re: [PATCH v6 2/2] clocksource: add J-Core timer/clocksource driver
-Message-Id: <20160824214444.GZ15995@brightrain.aerifal.cx>
+Message-Id: <3621664.0azN3a5cxy@wuerfel>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.147018b3518.git.dalias@libc.org>
- <57BDCE5D.2050609@linaro.org>
- <20160824174001.GW15995@brightrain.aerifal.cx>
- <1909939.rYmWMrdImI@wuerfel>
- <20160824205225.GY15995@brightrain.aerifal.cx>
- <20160824212212.GB1775@remoulade>
-In-Reply-To: <20160824212212.GB1775@remoulade>
+References: <cover.147018b3518.git.dalias@libc.org> <20160824212212.GB1775@remoulade> <20160824214444.GZ15995@brightrain.aerifal.cx>
+In-Reply-To: <20160824214444.GZ15995@brightrain.aerifal.cx>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Rutland <mark.rutland-5wv7dgnIgG8@public.gmane.org>
-Cc: Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>, Daniel Lezcano <daniel.lezcano-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Rob Herring <robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Marc Zyngier <Marc.Zyngier-5wv7dgnIgG8@public.gmane.org>
+To: Rich Felker <dalias@libc.org>
+Cc: Mark Rutland <mark.rutland@arm.com>, Daniel Lezcano <daniel.lezcano@linaro.org>, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Rob Herring <robh+dt@kernel.org>, Thomas Gleixner <tglx@linutronix.de>, Marc Zyngier <Marc.Zyngier@arm.com>
 
-On Wed, Aug 24, 2016 at 10:22:13PM +0100, Mark Rutland wrote:
-> On Wed, Aug 24, 2016 at 04:52:26PM -0400, Rich Felker wrote:
-> > On Wed, Aug 24, 2016 at 10:01:08PM +0200, Arnd Bergmann wrote:
-> > > On Wednesday, August 24, 2016 1:40:01 PM CEST Rich Felker wrote:
-> > > > I actually tried multiple times to find good resources on policy for
-> > > > which form to prefer, but didn't have much luck. My understanding is
-> > > > that __raw_writel/__raw_readl always performs a native-endian
-> > > > load/store, whereas writel/readl behavior depends on cpu endianness
-> > > > and whether the arch declares that "pci bus" (that was the term I
-> > > > found in the source, not relevant here) io is endian-swapped or not.
-> > > > Can you give me a better explanation of why we might prefer one form
-> > > > or the other?
-> > > 
-> > > In general, a portable driver should use readl/writel because they
-> > > are defined to have the behavior that x86 provides, which is what
-> > > most developers understand best. Compared to __raw_readl/__raw_writel,
-> > > it guarantees
-> > > 
-> > > - correct endianess (in most cases, exceptions see below)
-> > > - does not leak out of spinlocks
-> > 
-> > Not even normal non-volatile accesses can leak across spinlocks;
-> > they're memory+compiler barriers.
-> 
-> Note that Arnd was talking in general, about cross-architectural guarantees.
-> 
-> Across architectures, not all barriers are equivalent. On some architectures,
-> the barriers used by spinlocks don't necessarily order accesses across
-> disparate memory types (i.e. DRAM and IO), or might not guarantee that the
-> ordering is consistent to observers other than (coherent) CPUs. Hence a
-> portable driver should care about this distinction.
-> 
-> If they're equivalent for you, you may as well use the portably stronger form,
-> as it's less likely to surprise others.
+T24gV2VkbmVzZGF5LCBBdWd1c3QgMjQsIDIwMTYgNTo0NDo0NCBQTSBDRVNUIFJpY2ggRmVsa2Vy
+IHdyb3RlOgo+IE9uIFdlZCwgQXVnIDI0LCAyMDE2IGF0IDEwOjIyOjEzUE0gKzAxMDAsIE1hcmsg
+UnV0bGFuZCB3cm90ZToKPiA+IE9uIFdlZCwgQXVnIDI0LCAyMDE2IGF0IDA0OjUyOjI2UE0gLTA0
+MDAsIFJpY2ggRmVsa2VyIHdyb3RlOgo+ID4gQXMgQXJuZCBhbmQgb3RoZXJzIG1lbnRpb25lZCwg
+dGhlIHZhc3RseSBjb21tb24gY2FzZSBpcyB0aGF0IHRoZSBlbmRpYW5uZXNzIG9mCj4gPiBDUFVz
+IGFuZCBkZXZpY2VzIGlzIG5vdCBmaXhlZCB0byBlYWNoIG90aGVyLCBhbmQgZGV2aWNlcyBhcmUg
+dHlwaWNhbGx5Cj4gPiBsaXR0bGUtZW5kaWFuLgo+IAo+IFNpbmNlIGl0J3Mgbm90IHVzZWQgaW4g
+b3RoZXIgZGVzaWducywgSSBjYW4ndCBzYXkgYW55dGhpbmcgbWVhbmluZ2Z1bAo+IGFib3V0IGhv
+dyBpdCBoeXBvdGhldGljYWxseSBtaWdodCBiZSwgYnV0IHRoZSBpbnRlbnQgb24gYWxsIGN1cnJl
+bnQKPiBhbmQgY3VycmVudGx5LXBsYW5uZWQgc3lzdGVtcyBpcyB0aGF0IDMyLWJpdCBsb2Fkcy9z
+dG9yZXMgYmUgcGVyZm9ybWVkCj4gdXNpbmcgdmFsdWVzIHRoYXQgYXJlIG1lYW5pbmdmdWwgYXMg
+dmFsdWVzIG9uIHRoZSBjcHUsIGkuZS4gd2l0aCBubwo+IGJ5dGUgc3dhcHBpbmcgcmVnYXJkbGVz
+cyBvZiBjcHUgZW5kaWFubmVzcy4gVGhlIGN1cnJlbnQgaGFyZHdhcmUgaXMKPiBkZXNpZ25lZCBh
+cyBiaWctZW5kaWFuLCBhbmQgdGhlIHByb3Bvc2VkIHBhdGNoZXMgZm9yIHN1cHBvcnRpbmcgbGl0
+dGxlCj4gZW5kaWFuIGp1c3QgaW52b2x2ZSBmbGlwcGluZyB0aGUgbG93IGJpdHMgb2YgdGhlIGFk
+ZHJlc3MgZm9yIDE2LSBhbmQKPiA4LWJpdCBhY2Nlc3NlcyAobm90IHJlbGV2YW50IHRvIG1taW8g
+cmVnaXN0ZXJzIHRoYXQgYXJlIG9ubHkKPiBhY2Nlc3NpYmxlIGluIDMyLWJpdCB1bml0cykuCj4K
+PiA+ID4gPiAKPiA+ID4gPiBFeGNlcHRpb25zIHRvIHRoaXMgYXJlOgo+ID4gPiA+IAo+ID4gPiA+
+ICogU29tZSBhcmNoaXRlY3R1cmVzIChlLmcuIFBvd2VyUEMpIHR5cGljYWxseSBydW4gYmlnLWVu
+ZGlhbiBjb2RlLAo+ID4gPiA+ICAgYW5kIGhhcmR3YXJlIGRlc2lnbmVycyBkZWNpZGVkIHRvIG1h
+a2UgdGhlIE1NSU8gcmVnaXN0ZXJzIHRoZQo+ID4gPiA+ICAgc2FtZS4gSW4gdGhpcyBjYXNlLCB5
+b3UgY2FuIGdlbmVyYWxseSB1c2UgaW9yZWFkMzJfYmUvaW93cml0ZTMyX2JlLgo+ID4gPiAKPiA+
+ID4gVGhpcyBpcyBzb21ldGhpbmcgbGlrZSBvdXIgY2FzZSwgYnV0IHRoZSBtbWlvIHJlZ2lzdGVy
+cyBhcmUgYWNjZXNzZWQKPiA+ID4gYXMgMzItYml0IHZhbHVlcyBhbmQgdGhlIGVuZGlhbm5lc3Mg
+ZG9lcyBub3QgY29tZSBpbnRvIHBsYXkuIAo+ID4gCj4gPiBUaGlzIHJlYWxseSBkZXBlbmRzIG9u
+IHlvdSBlbmRpYW5uZXNzIG1vZGVsLCBidXMsIGV0Yy4gVGhlIGFib3ZlIHNvdW5kcyBsaWtlCj4g
+PiBCRTMyIHJhdGhlciB0aGFuIEJFOCwgYXNzdW1pbmcgSSd2ZSB1bmRlcnN0b29kIGNvcnJlY3Rs
+eSwgd2hpY2ggaXMgYW4gdW51c3VhbAo+ID4gY2FzZSBub3dhZGF5cy4KCkNvcnJlY3QsIHdoaWNo
+IGlzIHRoZSBsYXN0IGNhc2UgSSBoYWQgaW4gbXkgbGlzdCwgbm90IHRoZSBmaXJzdCBvbmU6Cgo+
+ID4gPiAqIFNvbWUgKHVzdWFsbHkgdmVyeSBvbGQpIFNvQ3MgaGF2ZSBjb25maWd1cmFibGUgZW5k
+aWFuZXNzLCBidXQKPiA+ID4gICBkb24ndCBhY3R1YWxseSBjaGFuZ2UgdGhlIGJlaGF2aW9yIG9m
+IHRoZSBTb0Mgb3IgdGhlIE1NSU8gZGV2aWNlcywKPiA+ID4gICBidXQgb25seSBmbGlwIHRoZSBh
+ZGRyZXNzIGxpbmVzIG9uIHRoZSBtZW1vcnkgaW50ZXJmYWNlLgo+ID4gPiAgIFRoaXMgaXMgc2lt
+aWxhciB0byB0aGUgcHJldmlvdXMgb25lLCBidXQgaGFzIGFkZGl0aW9uYWwgcHJvYmxlbXMKPiA+
+ID4gICB3aXRoIEZJRk8gcmVnaXN0ZXJzLiBZb3UgZ2VuZXJhbGx5IGNhbm5vdCB1c2UgcG9ydGFi
+bGUgZHJpdmVycwo+ID4gPiAgIGhlcmUuAAoKV2l0aCB5b3VyIGRlc2NyaXB0aW9uIGFib3ZlLCB0
+aGF0IHdvdWxkIHByb2JhYmx5IGJlIGNhbGxlZCBMRTMyLCBnaXZlbgp0aGF0IHRoZSBuYXRpdmUg
+b3JkZXJpbmcgaXMgYmlnLWVuZGlhbiwgYW5kIHRoZSBsaXR0bGUtZW5kaWFuIG1vZGUKaXMgb25s
+eSBhcHByb3hpbWF0ZWQgdXNpbmcgYWRkcmVzcyBtYWdpYy4gQVJNIEJFMzIgbW9kZSAoZS5nLiBv
+biBJWFA0eHgpCmRpZCBpdCB0aGUgb3RoZXIgd2F5IHJvdW5kLgoKPiBJJ20gbm90IGZhbWlsaWFy
+IHdpdGggdGhvc2UgY2xhc3NpZmljYXRpb25zLCBidXQgZnJvbSB3aGF0IEkgY2FuIHRlbGwsCj4g
+QkUzMiBkZXNjcmliZXMgaXQgY29ycmVjdGx5LiBJJ2xsIHNlZSBpZiBJIGNhbiBnZXQgc29tZW9u
+ZSB0byB2ZXJpZnkKPiB0aGlzLiBJcyB0aGVyZSBhIHJlYXNvbiBpdCdzIG5vdCB3aWRlbHkgdXNl
+ZCBhbnltb3JlPyBQZXJoYXBzCj4gc29tZXRoaW5nIHJlbGF0ZWQgdG8gc3VwcG9ydGluZyBtaXNh
+bGlnbmVkIHdvcmQtc2l6ZWQgbG9hZHMvc3RvcmVzPwoKVGhlIG1haW4gcHJvYmxlbSBJIHNlZSBp
+cyB0aGF0IHlvdSBjYW4ndCBlYXNpbHkgdXNlIE1NSU8gcmVnaXN0ZXJzIHRoYXQKYXJlIG5vdCAz
+Mi1iaXQgd2lkZSAtLSB5b3UgZW5kIHVwIGhhdmluZyB0byBmbGlwIG5vdCBqdXN0IHRoZSByZWdp
+c3Rlcgpjb250ZW50cyBidXQgYWxzbyB0aGUgbG93ZXIgYml0cyBvZiB0aGUgYWRkcmVzcyBpbiBv
+cmRlciB0byByZWFjaAp0aGUgcmlnaHQgY29udGVudHMgb2YgdGhlIHJlZ2lzdGVyLgoKSWYgeW91
+IGNhbiBndWFyYW50ZWUgdGhhdCBhbGwgcmVnaXN0ZXJzIGFyZSAzMi1iaXQgd2lkZSwgeW91IGNh
+bgpjcmVhdGUgYSBoZWFkZXIgZmlsZSB3aXRoIHlvdXIgb3duIE1NSU8gYWNjZXNzb3JzIHRoYXQg
+d3JhcCBhcm91bmQKcmVhZGwvd3JpdGUgb3IgaW9yZWFkMzJfYmUvaW93cml0ZTMyX2JlIGRlcGVu
+ZGluZyBvbiB0aGUga2VybmVsCmVuZGlhbmVzcywgYW5kIGRvbid0IHByb3ZpZGUgcmVhZGIvd3Jp
+dGViIG9yIHJlYWR3L3dyaXRldyB3cmFwcGVycy4KCkhvd2V2ZXIsIHdoYXQgZXZlcnlvbmUgZWxz
+ZSBkb2VzIHRoZXNlIGRheXMgaXMgdG8gZmxpcCB0aGUgcmVnaXN0ZXIKdmFsdWVzIGluIGxvYWQv
+c3RvcmUgaW5zdHJ1Y3Rpb25zIHdoZW4gdGhlIG9wcG9zaXRlIGVuZGlhbmVzcyBpcwpzZWxlY3Rl
+ZCwgb3IgdG8gaGF2ZSB0d28gc2V0cyBvZiBsb2FkL3N0b3JlIGluc3RydWN0aW9ucyBhbmQgbGVh
+dmUKaXQgdXAgdG8gdGhlIGNvbXBpbGVyIHRvIHBpY2sgd2hpY2ggb25lIHRvIHVzZSAocHJvYmFi
+bHkgbm90IAphbiBvcHRpb24gZm9yIHlvdSwgc2luY2UgeW91IHVzZSBhbiBleGlzdGluZyBpbnN0
+cnVjdGlvbiBzZXQpLgpJZiB5b3UgZG8gdGhhdCwgYWxsIHBvcnRhYmxlIGRldmljZSBkcml2ZXJz
+IHNob3VsZCB3b3JrIGZpbmUKb24geW91ciBhcmNoaXRlY3R1cmUuCgoJQXJuZA=
 
-*nod* Understood.
 
-> > > - accesses are word-sized, the compiler cannot split them into
-> > >   byte accesses, or merge subsequent accesses into larger words
-> > 
-> > Based on my reading of the code that's also true for the raw ones. At
-> > least GCC interprets volatile as disallowing split/combined
-> > loads/stores when the hardware supports the nominal load/store size,
-> > and this seems to agree with the intent of the C standard that
-> > volatile be usable for memory-mapped devices..
-> > 
-> > > - ordering against dma_map_*/dma_unmap_*/dma_sync_* is maintained
-> > 
-> > Aren't they barriers too?
-> 
-> As above, not all barriers are equivalent. Your architecture may provide
-> stronger (or weaker) guarantees than others.
-
-OK.
-
-> > > The __raw_* accessors are used as building blocks for
-> > > readl/outl/ioread32/ioread32_be/readl_relaxed/... and they can
-> > > usually be used safely on device RAM such as framebuffers but
-> > > not much else in portable code. Some architectures also use the
-> > > __raw_* accessors for MMIO registers, but that code is generally
-> > > not portable.
-> > 
-> > My concern is that, depending on some arcane defines, readl/writel
-> > could start doing byte-reversal of values since the CPU is big-endian.
-> > arch/sh seems to have them defined in such a way that this doesn't
-> > happen, but I was hoping to avoid depending on that. If you think it's
-> > safe to assume they do the right thing, though, I'm okay with it. If
-> > anything breaks when we try a little-endian version of the CPU/SoC
-> > later I can go back and fix it.
-> 
-> I guess this really depends on the expectations you have w.r.t. the endianness
-> of devices vs the endianness of CPUs. If you expect the two to always be
-> matched, please add a comment in the driver to that effect.
-> 
-> As Arnd and others mentioned, the vastly common case is that the endianness of
-> CPUs and devices is not fixed to each other, and devices are typically
-> little-endian.
-
-Since it's not used in other designs, I can't say anything meaningful
-about how it hypothetically might be, but the intent on all current
-and currently-planned systems is that 32-bit loads/stores be performed
-using values that are meaningful as values on the cpu, i.e. with no
-byte swapping regardless of cpu endianness. The current hardware is
-designed as big-endian, and the proposed patches for supporting little
-endian just involve flipping the low bits of the address for 16- and
-8-bit accesses (not relevant to mmio registers that are only
-accessible in 32-bit units).
-
-> > > Endianess is always more complicated than one thinks, and it's
-> > > handled differently across architectures, sometimes because of
-> > > hardware differences, sometimes for historic reasons that differ
-> > > only in the Linux implementation.
-> > > 
-> > > A large majority of devices are fixed to little-endian MMIO
-> > > registers (as recommended by PCI), so that is a good default.
-> > > 
-> > > Exceptions to this are:
-> > > 
-> > > * Some architectures (e.g. PowerPC) typically run big-endian code,
-> > >   and hardware designers decided to make the MMIO registers the
-> > >   same. In this case, you can generally use ioread32_be/iowrite32_be.
-> > 
-> > This is something like our case, but the mmio registers are accessed
-> > as 32-bit values and the endianness does not come into play. 
-> 
-> This really depends on you endianness model, bus, etc. The above sounds like
-> BE32 rather than BE8, assuming I've understood correctly, which is an unusual
-> case nowadays.
-
-I'm not familiar with those classifications, but from what I can tell,
-BE32 describes it correctly. I'll see if I can get someone to verify
-this. Is there a reason it's not widely used anymore? Perhaps
-something related to supporting misaligned word-sized loads/stores?
-
-Rich
