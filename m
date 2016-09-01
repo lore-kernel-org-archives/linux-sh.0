@@ -1,65 +1,71 @@
-From: bd-phuc@jinso.co.jp
-Date: Fri, 09 Sep 2016 11:43:08 +0000
-Subject: [PATCH 2/8] ARM64: dts: r8a7795: Add CMT device to DT
-Message-Id: <1473421394-9745-3-git-send-email-bd-phuc@jinso.co.jp>
+From: Mark Brown <broonie@kernel.org>
+Date: Thu, 01 Sep 2016 20:35:49 +0000
+Subject: Applied "spi: sh-msiof: Use ARCH_SHMOBILE instead of SUPERH" to the spi tree
+Message-Id: <E1bfYiD-00033v-36@debutante>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1473421394-9745-1-git-send-email-bd-phuc@jinso.co.jp>
-In-Reply-To: <1473421394-9745-1-git-send-email-bd-phuc@jinso.co.jp>
+In-Reply-To: <1472636225-27091-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Mark Brown <broonie@kernel.org>Mark Brown <broonie@kernel.org>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, linux-renesas-soc@vger.kernel.org
 
-From: Bui Duc Phuc <bd-phuc@jinso.co.jp>
+The patch
 
-Add the CMT0 and CMT1 counters to the r8a7795 device tree
+   spi: sh-msiof: Use ARCH_SHMOBILE instead of SUPERH
 
-Signed-off-by: Bui Duc Phuc <bd-phuc@jinso.co.jp>
+has been applied to the spi tree at
+
+   git://git.kernel.org/pub/scm/linux/kernel/git/broonie/spi.git 
+
+All being well this means that it will be integrated into the linux-next
+tree (usually sometime in the next 24 hours) and sent to Linus during
+the next merge window (or sooner if it is a bug fix), however if
+problems are discovered then the patch may be dropped or reverted.  
+
+You may get further e-mails resulting from automated or manual testing
+and review of the tree, please engage with people reporting problems and
+send followup patches addressing any issues that are reported if needed.
+
+If any updates are required or you are submitting further changes they
+should be sent as incremental updates against current git, existing
+patches will not be replaced.
+
+Please add any relevant lists and maintainers to the CCs when replying
+to this mail.
+
+Thanks,
+Mark
+
+From 6ffc84dd1590a7af837a23c8d2c405eaa0a7faef Mon Sep 17 00:00:00 2001
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 31 Aug 2016 11:37:05 +0200
+Subject: [PATCH] spi: sh-msiof: Use ARCH_SHMOBILE instead of SUPERH
+
+"spi_sh_msiof" is used on sh7723 and sh7724 only. As all of the above
+select ARCH_SHMOBILE, restrict its driver dependencies from SUPERH to
+ARCH_SHMOBILE.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reviewed-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Mark Brown <broonie@kernel.org>
 ---
- arch/arm64/boot/dts/renesas/r8a7795.dtsi | 30 ++++++++++++++++++++++++++++++
- 1 file changed, 30 insertions(+)
+ drivers/spi/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-index b902356..2333830 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-+++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-@@ -312,6 +312,36 @@
- 					(GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>;
- 		};
+diff --git a/drivers/spi/Kconfig b/drivers/spi/Kconfig
+index d6fb8d4b7786..056e3bada65f 100644
+--- a/drivers/spi/Kconfig
++++ b/drivers/spi/Kconfig
+@@ -549,7 +549,7 @@ config SPI_SC18IS602
+ config SPI_SH_MSIOF
+ 	tristate "SuperH MSIOF SPI controller"
+ 	depends on HAVE_CLK && HAS_DMA
+-	depends on SUPERH || ARCH_RENESAS || COMPILE_TEST
++	depends on ARCH_SHMOBILE || ARCH_RENESAS || COMPILE_TEST
+ 	help
+ 	  SPI driver for SuperH and SH Mobile MSIOF blocks.
  
-+		cmt0: timer@e60f0000 {
-+			compatible = "renesas,cmt-48-gen3";
-+			reg = <0 0xe60f0000 0 0x1004>;
-+			interrupts = <GIC_SPI 142 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 143 IRQ_TYPE_LEVEL_HIGH>;
-+			clocks = <&cpg CPG_MOD 303>;
-+			clock-names = "fck";
-+			power-domains = <&sysc R8A7795_PD_ALWAYS_ON>;
-+
-+			renesas,channels-mask = <0x60>;
-+	         };
-+
-+		cmt1: timer@e6130000 {
-+			compatible = "renesas,cmt-48-gen3";
-+			reg = <0 0xe6130000 0 0x1004>;
-+			interrupts = <GIC_SPI 120 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 121 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 122 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 123 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 124 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 125 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 126 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 127 IRQ_TYPE_LEVEL_HIGH>;
-+			clocks = <&cpg CPG_MOD 302>;
-+			clock-names = "fck";
-+			power-domains = <&sysc R8A7795_PD_ALWAYS_ON>;
-+
-+			renesas,channels-mask = <0xff>;
-+	         };
-+
- 		cpg: clock-controller@e6150000 {
- 			compatible = "renesas,r8a7795-cpg-mssr";
- 			reg = <0 0xe6150000 0 0x1000>;
 -- 
-2.7.4
+2.8.1
 
