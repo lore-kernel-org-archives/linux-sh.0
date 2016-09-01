@@ -1,36 +1,42 @@
-From: Martin Townsend <mtownsend1973@gmail.com>
-Date: Sat, 17 Sep 2016 19:01:51 +0000
-Subject: SH7760 OHCI
-Message-Id: <CABatt_xKQzK341eW9D4jwPu6qv7yv5bsa+w4xbusfqTyJcBt4A@mail.gmail.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 01 Sep 2016 13:42:02 +0000
+Subject: Re: [PATCH] spi: sh-msiof: Use ARCH_SHMOBILE instead of SUPERH
+Message-Id: <20160901134159.GA14300@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1472636225-27091-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1472636225-27091-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Mark Brown <broonie@kernel.org>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, linux-renesas-soc@vger.kernel.org
 
-Hi,
+On Wed, Aug 31, 2016 at 11:37:05AM +0200, Geert Uytterhoeven wrote:
+> "spi_sh_msiof" is used on sh7723 and sh7724 only. As all of the above
+> select ARCH_SHMOBILE, restrict its driver dependencies from SUPERH to
+> ARCH_SHMOBILE.
+> 
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-A while back I was having problems with get the USB Host driver
-working for the SH7760.  I have fixed this problem, it was down to the
-roothub.a register.  So now the OHCI HCD tries to communicate with the
-host controller on the SH7760 but now there are memory issues.
+Reviewed-by: Simon Horman <horms+renesas@verge.net.au>
 
-The SH7760 has 8KB of shared memory that the CPU and Host controller
-must use.  The HCCA must occupy the first 256 bytes so we don't even
-have 2 full page worth.  Then to make matters worse there's an errata
-in the SH7760 hardware manual meaning the last 4 bytes of each page
-cannot be used.
-
-Anyway I tried declaring this region as DMA coherent memory for the
-OHCI device driver but as you can guess it failed when trying to alloc
-a new page for a TD after successfully allocating the only page
-available for the first ED.
-
-Although I can see a way of hacking a memory manager over the shared
-memory region and then putting some ugly hacks in the OHCI code to use
-it I would really like to get this in mainline so I wondered if anyone
-has any ideas how I can make this shared memory work with the current
-OHCI implementation before I do so.
-
-Many Thanks,
-Martin.
+> ---
+>  drivers/spi/Kconfig | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> diff --git a/drivers/spi/Kconfig b/drivers/spi/Kconfig
+> index 5c8e51e96888cc53..96087e9fc998461c 100644
+> --- a/drivers/spi/Kconfig
+> +++ b/drivers/spi/Kconfig
+> @@ -556,7 +556,7 @@ config SPI_SC18IS602
+>  config SPI_SH_MSIOF
+>  	tristate "SuperH MSIOF SPI controller"
+>  	depends on HAVE_CLK && HAS_DMA
+> -	depends on SUPERH || ARCH_RENESAS || COMPILE_TEST
+> +	depends on ARCH_SHMOBILE || ARCH_RENESAS || COMPILE_TEST
+>  	help
+>  	  SPI driver for SuperH and SH Mobile MSIOF blocks.
+>  
+> -- 
+> 1.9.1
+> 
