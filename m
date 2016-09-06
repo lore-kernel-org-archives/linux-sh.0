@@ -1,65 +1,79 @@
-From: bd-phuc@jinso.co.jp
-Date: Fri, 09 Sep 2016 11:43:09 +0000
-Subject: [PATCH 3/8] ARM64: dts: r8a7796: Add CMT device to DT
-Message-Id: <1473421394-9745-4-git-send-email-bd-phuc@jinso.co.jp>
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Tue, 06 Sep 2016 17:04:41 +0000
+Subject: [PATCH 05/21] sh: SH-X3 SMP: Convert to hotplug state machine
+Message-Id: <20160906170457.32393-6-bigeasy@linutronix.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1473421394-9745-1-git-send-email-bd-phuc@jinso.co.jp>
-In-Reply-To: <1473421394-9745-1-git-send-email-bd-phuc@jinso.co.jp>
+References: <20160906170457.32393-1-bigeasy@linutronix.de>
+In-Reply-To: <20160906170457.32393-1-bigeasy@linutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@vger.kernel.org
+Cc: Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@redhat.com>, rt@linutronix.de, tglx@linutronix.de, Sebastian Andrzej Siewior <bigeasy@linutronix.de>, linux-sh@vger.kernel.org
 
-From: Bui Duc Phuc <bd-phuc@jinso.co.jp>
+Install the callbacks via the state machine.
 
-Add the CMT0 and CMT1 counters to the r8a7796 device tree
-
-Signed-off-by: Bui Duc Phuc <bd-phuc@jinso.co.jp>
+Cc: linux-sh@vger.kernel.org
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 ---
- arch/arm64/boot/dts/renesas/r8a7796.dtsi | 30 ++++++++++++++++++++++++++++++
- 1 file changed, 30 insertions(+)
+ arch/sh/kernel/cpu/sh4a/smp-shx3.c | 26 +++++---------------------
+ include/linux/cpuhotplug.h         |  1 +
+ 2 files changed, 6 insertions(+), 21 deletions(-)
 
-diff --git a/arch/arm64/boot/dts/renesas/r8a7796.dtsi b/arch/arm64/boot/dts/renesas/r8a7796.dtsi
-index 1edf824..6f5ce3f 100644
---- a/arch/arm64/boot/dts/renesas/r8a7796.dtsi
-+++ b/arch/arm64/boot/dts/renesas/r8a7796.dtsi
-@@ -98,6 +98,36 @@
- 					(GIC_CPU_MASK_SIMPLE(1) | IRQ_TYPE_LEVEL_LOW)>;
- 		};
+diff --git a/arch/sh/kernel/cpu/sh4a/smp-shx3.c b/arch/sh/kernel/cpu/sh4a/smp-shx3.c
+index 839612c8a0a0..0d3637c494bf 100644
+--- a/arch/sh/kernel/cpu/sh4a/smp-shx3.c
++++ b/arch/sh/kernel/cpu/sh4a/smp-shx3.c
+@@ -122,32 +122,16 @@ static void shx3_update_boot_vector(unsigned int cpu)
+ 	__raw_writel(STBCR_RESET, STBCR_REG(cpu));
+ }
  
-+		cmt0: timer@e60f0000 {
-+			compatible = "renesas,cmt-48-gen3";
-+			reg = <0 0xe60f0000 0 0x1004>;
-+			interrupts = <GIC_SPI 142 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 143 IRQ_TYPE_LEVEL_HIGH>;
-+			clocks = <&cpg CPG_MOD 303>;
-+			clock-names = "fck";
-+			power-domains = <&sysc R8A7796_PD_ALWAYS_ON>;
-+
-+			renesas,channels-mask = <0x60>;
-+	         };
-+
-+		cmt1: timer@e6130000 {
-+			compatible = "renesas,cmt-48-gen3";
-+			reg = <0 0xe6130000 0 0x1004>;
-+			interrupts = <GIC_SPI 120 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 121 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 122 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 123 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 124 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 125 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 126 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 127 IRQ_TYPE_LEVEL_HIGH>;
-+			clocks = <&cpg CPG_MOD 302>;
-+			clock-names = "fck";
-+			power-domains = <&sysc R8A7796_PD_ALWAYS_ON>;
-+
-+			renesas,channels-mask = <0xff>;
-+	         };
-+
- 		wdt0: watchdog@e6020000 {
- 			compatible = "renesas,r8a7796-wdt",
- 				     "renesas,rcar-gen3-wdt";
+-static int
+-shx3_cpu_callback(struct notifier_block *nfb, unsigned long action, void *hcpu)
++static int shx3_cpu_prepare(unsigned int cpu)
+ {
+-	unsigned int cpu = (unsigned int)hcpu;
+-
+-	switch (action) {
+-	case CPU_UP_PREPARE:
+-		shx3_update_boot_vector(cpu);
+-		break;
+-	case CPU_ONLINE:
+-		pr_info("CPU %u is now online\n", cpu);
+-		break;
+-	case CPU_DEAD:
+-		break;
+-	}
+-
+-	return NOTIFY_OK;
++	shx3_update_boot_vector(cpu);
++	return 0;
+ }
+ 
+-static struct notifier_block shx3_cpu_notifier = {
+-	.notifier_call		= shx3_cpu_callback,
+-};
+-
+ static int register_shx3_cpu_notifier(void)
+ {
+-	register_hotcpu_notifier(&shx3_cpu_notifier);
++	cpuhp_setup_state_nocalls(CPUHP_SH_SH3X_PREPARE, "sh/shx3:prepare",
++				  shx3_cpu_prepare, NULL);
+ 	return 0;
+ }
+ late_initcall(register_shx3_cpu_notifier);
+diff --git a/include/linux/cpuhotplug.h b/include/linux/cpuhotplug.h
+index 35859aafbbfc..8dec2a236af3 100644
+--- a/include/linux/cpuhotplug.h
++++ b/include/linux/cpuhotplug.h
+@@ -37,6 +37,7 @@ enum cpuhp_state {
+ 	CPUHP_POWERPC_MMU_CTX_PREPARE,
+ 	CPUHP_NOTIFY_PREPARE,
+ 	CPUHP_ARM_SHMOBILE_SCU_PREPARE,
++	CPUHP_SH_SH3X_PREPARE,
+ 	CPUHP_TIMERS_DEAD,
+ 	CPUHP_BRINGUP_CPU,
+ 	CPUHP_AP_IDLE_DEAD,
 -- 
-2.7.4
+2.9.3
 
