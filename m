@@ -1,31 +1,86 @@
-From: Peter Zijlstra <peterz@infradead.org>
-Date: Mon, 12 Sep 2016 10:48:09 +0000
-Subject: Re: Build regressions/improvements in v4.8-rc6
-Message-Id: <20160912104809.GP10153@twins.programming.kicks-ass.net>
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Tue, 06 Sep 2016 17:04:38 +0000
+Subject: [PATCH 02/21] ARM: shmobile: Convert to hotplug state machine
+Message-Id: <20160906170457.32393-3-bigeasy@linutronix.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1473668530-11348-1-git-send-email-geert@linux-m68k.org>
- <CAMuHMdXScEXTu7LqUngVG4ZyGnTnayvMRvJN1Y5PqG1P=jnY5A@mail.gmail.com>
-In-Reply-To: <CAMuHMdXScEXTu7LqUngVG4ZyGnTnayvMRvJN1Y5PqG1P=jnY5A@mail.gmail.com>
+References: <20160906170457.32393-1-bigeasy@linutronix.de>
+In-Reply-To: <20160906170457.32393-1-bigeasy@linutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Sep 12, 2016 at 10:23:22AM +0200, Geert Uytterhoeven wrote:
-> On Mon, Sep 12, 2016 at 10:22 AM, Geert Uytterhoeven
-> <geert@linux-m68k.org> wrote:
-> > JFYI, when comparing v4.8-rc6[1] to v4.8-rc5[3], the summaries are:
-> >   - build errors: +3/-1
-> 
->   + /home/kisskb/slave/src/arch/sh/include/asm/atomic-llsc.h: error:
-> 'asm' operand has impossible constraints:  => 80:1, 79:1, 73:1, 72:1,
-> 78:1
->   + /home/kisskb/slave/src/arch/sh/include/asm/atomic-llsc.h: error:
-> can't find a register in class 'R0_REGS' while reloading 'asm':  =>
-> 79:1, 73:1, 72:1, 80:1, 78:1
-> 
+Install the callbacks via the state machine.
 
-https://lkml.kernel.org/r/20160905124027.306155176@infradead.org
+Cc: Simon Horman <horms@verge.net.au>
+Cc: Magnus Damm <magnus.damm@gmail.com>
+Cc: linux-arm-kernel@lists.infradead.org
+Cc: linux-sh@vger.kernel.org
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ arch/arm/mach-shmobile/platsmp-scu.c | 26 ++++++++------------------
+ include/linux/cpuhotplug.h           |  1 +
+ 2 files changed, 9 insertions(+), 18 deletions(-)
 
-Should fix that I think, I'll try and get that merged.
+diff --git a/arch/arm/mach-shmobile/platsmp-scu.c b/arch/arm/mach-shmobile/platsmp-scu.c
+index 8d478f1da265..d1ecaf37d142 100644
+--- a/arch/arm/mach-shmobile/platsmp-scu.c
++++ b/arch/arm/mach-shmobile/platsmp-scu.c
+@@ -21,26 +21,14 @@
+ static phys_addr_t shmobile_scu_base_phys;
+ static void __iomem *shmobile_scu_base;
+ 
+-static int shmobile_smp_scu_notifier_call(struct notifier_block *nfb,
+-					  unsigned long action, void *hcpu)
++static int shmobile_scu_cpu_prepare(unsigned int cpu)
+ {
+-	unsigned int cpu = (long)hcpu;
+-
+-	switch (action) {
+-	case CPU_UP_PREPARE:
+-		/* For this particular CPU register SCU SMP boot vector */
+-		shmobile_smp_hook(cpu, virt_to_phys(shmobile_boot_scu),
+-				  shmobile_scu_base_phys);
+-		break;
+-	};
+-
+-	return NOTIFY_OK;
++	/* For this particular CPU register SCU SMP boot vector */
++	shmobile_smp_hook(cpu, virt_to_phys(shmobile_boot_scu),
++			  shmobile_scu_base_phys);
++	return 0;
+ }
+ 
+-static struct notifier_block shmobile_smp_scu_notifier = {
+-	.notifier_call = shmobile_smp_scu_notifier_call,
+-};
+-
+ void __init shmobile_smp_scu_prepare_cpus(phys_addr_t scu_base_phys,
+ 					  unsigned int max_cpus)
+ {
+@@ -54,7 +42,9 @@ void __init shmobile_smp_scu_prepare_cpus(phys_addr_t scu_base_phys,
+ 	scu_power_mode(shmobile_scu_base, SCU_PM_NORMAL);
+ 
+ 	/* Use CPU notifier for reset vector control */
+-	register_cpu_notifier(&shmobile_smp_scu_notifier);
++	cpuhp_setup_state_nocalls(CPUHP_ARM_SHMOBILE_SCU_PREPARE,
++				  "arm/shmobile-scu:prepare",
++				  shmobile_scu_cpu_prepare, NULL);
+ }
+ 
+ #ifdef CONFIG_HOTPLUG_CPU
+diff --git a/include/linux/cpuhotplug.h b/include/linux/cpuhotplug.h
+index 0da071ff36d2..008eed0c0787 100644
+--- a/include/linux/cpuhotplug.h
++++ b/include/linux/cpuhotplug.h
+@@ -35,6 +35,7 @@ enum cpuhp_state {
+ 	CPUHP_POWERPC_PMAC_PREPARE,
+ 	CPUHP_POWERPC_MMU_CTX_PREPARE,
+ 	CPUHP_NOTIFY_PREPARE,
++	CPUHP_ARM_SHMOBILE_SCU_PREPARE,
+ 	CPUHP_TIMERS_DEAD,
+ 	CPUHP_BRINGUP_CPU,
+ 	CPUHP_AP_IDLE_DEAD,
+-- 
+2.9.3
+
