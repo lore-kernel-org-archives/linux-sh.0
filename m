@@ -1,42 +1,65 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 01 Sep 2016 13:42:02 +0000
-Subject: Re: [PATCH] spi: sh-msiof: Use ARCH_SHMOBILE instead of SUPERH
-Message-Id: <20160901134159.GA14300@verge.net.au>
+From: bd-phuc@jinso.co.jp
+Date: Fri, 09 Sep 2016 11:43:08 +0000
+Subject: [PATCH 2/8] ARM64: dts: r8a7795: Add CMT device to DT
+Message-Id: <1473421394-9745-3-git-send-email-bd-phuc@jinso.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1472636225-27091-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1472636225-27091-1-git-send-email-geert+renesas@glider.be>
+References: <1473421394-9745-1-git-send-email-bd-phuc@jinso.co.jp>
+In-Reply-To: <1473421394-9745-1-git-send-email-bd-phuc@jinso.co.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Mark Brown <broonie@kernel.org>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, linux-renesas-soc@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Aug 31, 2016 at 11:37:05AM +0200, Geert Uytterhoeven wrote:
-> "spi_sh_msiof" is used on sh7723 and sh7724 only. As all of the above
-> select ARCH_SHMOBILE, restrict its driver dependencies from SUPERH to
-> ARCH_SHMOBILE.
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Bui Duc Phuc <bd-phuc@jinso.co.jp>
 
-Reviewed-by: Simon Horman <horms+renesas@verge.net.au>
+Add the CMT0 and CMT1 counters to the r8a7795 device tree
 
-> ---
->  drivers/spi/Kconfig | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/drivers/spi/Kconfig b/drivers/spi/Kconfig
-> index 5c8e51e96888cc53..96087e9fc998461c 100644
-> --- a/drivers/spi/Kconfig
-> +++ b/drivers/spi/Kconfig
-> @@ -556,7 +556,7 @@ config SPI_SC18IS602
->  config SPI_SH_MSIOF
->  	tristate "SuperH MSIOF SPI controller"
->  	depends on HAVE_CLK && HAS_DMA
-> -	depends on SUPERH || ARCH_RENESAS || COMPILE_TEST
-> +	depends on ARCH_SHMOBILE || ARCH_RENESAS || COMPILE_TEST
->  	help
->  	  SPI driver for SuperH and SH Mobile MSIOF blocks.
->  
-> -- 
-> 1.9.1
-> 
+Signed-off-by: Bui Duc Phuc <bd-phuc@jinso.co.jp>
+---
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi | 30 ++++++++++++++++++++++++++++++
+ 1 file changed, 30 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index b902356..2333830 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -312,6 +312,36 @@
+ 					(GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>;
+ 		};
+ 
++		cmt0: timer@e60f0000 {
++			compatible = "renesas,cmt-48-gen3";
++			reg = <0 0xe60f0000 0 0x1004>;
++			interrupts = <GIC_SPI 142 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 143 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cpg CPG_MOD 303>;
++			clock-names = "fck";
++			power-domains = <&sysc R8A7795_PD_ALWAYS_ON>;
++
++			renesas,channels-mask = <0x60>;
++	         };
++
++		cmt1: timer@e6130000 {
++			compatible = "renesas,cmt-48-gen3";
++			reg = <0 0xe6130000 0 0x1004>;
++			interrupts = <GIC_SPI 120 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 121 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 122 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 123 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 124 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 125 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 126 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 127 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cpg CPG_MOD 302>;
++			clock-names = "fck";
++			power-domains = <&sysc R8A7795_PD_ALWAYS_ON>;
++
++			renesas,channels-mask = <0xff>;
++	         };
++
+ 		cpg: clock-controller@e6150000 {
+ 			compatible = "renesas,r8a7795-cpg-mssr";
+ 			reg = <0 0xe6150000 0 0x1000>;
+-- 
+2.7.4
+
