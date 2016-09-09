@@ -1,15 +1,65 @@
-From: "Mr.Campbell Neiman" <campbellneiman@att.net>
-Date: Sat, 24 Sep 2016 06:04:11 +0000
-Subject: RE RE
-Message-Id: <31357973f223325c1765277db933474d.squirrel@issotastore.com>
+From: bd-phuc@jinso.co.jp
+Date: Fri, 09 Sep 2016 11:43:09 +0000
+Subject: [PATCH 3/8] ARM64: dts: r8a7796: Add CMT device to DT
+Message-Id: <1473421394-9745-4-git-send-email-bd-phuc@jinso.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1473421394-9745-1-git-send-email-bd-phuc@jinso.co.jp>
+In-Reply-To: <1473421394-9745-1-git-send-email-bd-phuc@jinso.co.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This message is the last notification about U USD14.5 million bearing our
-Name as Beneficiary, all effort to reach you have not be successful,
-Please if you Receive this message kindly respond back stating your Desire
-to make the claim, Reconfirm your full name and age Mr. Mr.Campbell Neiman
+From: Bui Duc Phuc <bd-phuc@jinso.co.jp>
+
+Add the CMT0 and CMT1 counters to the r8a7796 device tree
+
+Signed-off-by: Bui Duc Phuc <bd-phuc@jinso.co.jp>
+---
+ arch/arm64/boot/dts/renesas/r8a7796.dtsi | 30 ++++++++++++++++++++++++++++++
+ 1 file changed, 30 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/renesas/r8a7796.dtsi b/arch/arm64/boot/dts/renesas/r8a7796.dtsi
+index 1edf824..6f5ce3f 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7796.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7796.dtsi
+@@ -98,6 +98,36 @@
+ 					(GIC_CPU_MASK_SIMPLE(1) | IRQ_TYPE_LEVEL_LOW)>;
+ 		};
+ 
++		cmt0: timer@e60f0000 {
++			compatible = "renesas,cmt-48-gen3";
++			reg = <0 0xe60f0000 0 0x1004>;
++			interrupts = <GIC_SPI 142 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 143 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cpg CPG_MOD 303>;
++			clock-names = "fck";
++			power-domains = <&sysc R8A7796_PD_ALWAYS_ON>;
++
++			renesas,channels-mask = <0x60>;
++	         };
++
++		cmt1: timer@e6130000 {
++			compatible = "renesas,cmt-48-gen3";
++			reg = <0 0xe6130000 0 0x1004>;
++			interrupts = <GIC_SPI 120 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 121 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 122 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 123 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 124 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 125 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 126 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 127 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cpg CPG_MOD 302>;
++			clock-names = "fck";
++			power-domains = <&sysc R8A7796_PD_ALWAYS_ON>;
++
++			renesas,channels-mask = <0xff>;
++	         };
++
+ 		wdt0: watchdog@e6020000 {
+ 			compatible = "renesas,r8a7796-wdt",
+ 				     "renesas,rcar-gen3-wdt";
+-- 
+2.7.4
 
