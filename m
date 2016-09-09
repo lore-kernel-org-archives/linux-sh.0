@@ -1,28 +1,27 @@
 From: Bui Duc Phuc <bd-phuc@jinso.co.jp>
-Date: Mon, 12 Sep 2016 14:57:52 +0000
-Subject: Re: [PATCH 4/8] clk: renesas: r8a7795: Add CMT clocks
-Message-Id: <67434527-e3b8-35b4-87ad-2d2da060132d@jinso.co.jp>
+Date: Fri, 09 Sep 2016 03:06:13 +0000
+Subject: Re: [PATCH 7/8] clocksource: Kconfig: Modify CMT config support 64bit
+Message-Id: <fc2f5eb3-7002-5e96-49d4-09577c0c607e@jinso.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1473421394-9745-1-git-send-email-bd-phuc@jinso.co.jp>
- <1473421394-9745-5-git-send-email-bd-phuc@jinso.co.jp>
- <CAMuHMdWkxL9ZSZx0NFk9W-MD7p1v73h0qKJG9Dmz4Av0JuWHjw@mail.gmail.com>
-In-Reply-To: <CAMuHMdWkxL9ZSZx0NFk9W-MD7p1v73h0qKJG9Dmz4Av0JuWHjw@mail.gmail.com>
+ <1473421394-9745-8-git-send-email-bd-phuc@jinso.co.jp>
+ <9b18bc0e-3447-6ab2-3c28-54e54a19dc6f@cogentembedded.com>
+In-Reply-To: <9b18bc0e-3447-6ab2-3c28-54e54a19dc6f@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Dear Geert
+Hi Sergei
 
-Thank you for your review.
+  Thanks for your comment.
 
-> Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+>> +    bool "Renesas CMT timer driver" if ( ARM64 || COMPILE_TEST )
 >
-> (will queue in clk-renesas-for-v4.9)
+>    Parens not needed and the spaces after/before them even less so.
 >
+OK
+I will update in V2
 
--- 
-Regards,
-
+Thanks & best regards.
 Bui Duc Phuc
-
