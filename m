@@ -1,56 +1,36 @@
-From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
-Date: Wed, 07 Sep 2016 13:58:55 +0000
-Subject: Re: [PATCH 02/21] ARM: shmobile: Convert to hotplug state machine
-Message-Id: <20160907135855.wl6jbcucua5pgtac@linutronix.de>
+From: bd-phuc@jinso.co.jp
+Date: Fri, 09 Sep 2016 11:43:14 +0000
+Subject: [PATCH 8/8] ARM64: defconfig: Enable SH_TIMER_CMT config option
+Message-Id: <1473421394-9745-9-git-send-email-bd-phuc@jinso.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20160906170457.32393-1-bigeasy@linutronix.de>
- <20160906170457.32393-3-bigeasy@linutronix.de>
- <CAMuHMdWOZnL1cACUHSK+3T7CYenOci3Jx226cK6C0vq9RssjWw@mail.gmail.com>
-In-Reply-To: <CAMuHMdWOZnL1cACUHSK+3T7CYenOci3Jx226cK6C0vq9RssjWw@mail.gmail.com>
+References: <1473421394-9745-1-git-send-email-bd-phuc@jinso.co.jp>
+In-Reply-To: <1473421394-9745-1-git-send-email-bd-phuc@jinso.co.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On 2016-09-06 20:05:37 [+0200], Geert Uytterhoeven wrote:
-> Hi Sebastian,
-Hi Geert,
+From: Bui Duc Phuc <bd-phuc@jinso.co.jp>
 
-> Please describe why this is desirable.
+Enable SH CMT driver for R-car Gen3 : SH_TIMER_CMT
 
-We have now an old and new infrastructure in place to handle hotplug
-notifications while a CPU goes up and/or down. We want to get rid of the
-old infrastructure and are converting its users away. 
+Signed-off-by: Bui Duc Phuc <bd-phuc@jinso.co.jp>
+---
+ arch/arm64/configs/defconfig | 1 +
+ 1 file changed, 1 insertion(+)
 
-> > diff --git a/include/linux/cpuhotplug.h b/include/linux/cpuhotplug.h
-> > index 0da071ff36d2..008eed0c0787 100644
-> > --- a/include/linux/cpuhotplug.h
-> > +++ b/include/linux/cpuhotplug.h
-> > @@ -35,6 +35,7 @@ enum cpuhp_state {
-> >         CPUHP_POWERPC_PMAC_PREPARE,
-> >         CPUHP_POWERPC_MMU_CTX_PREPARE,
-> >         CPUHP_NOTIFY_PREPARE,
-> > +       CPUHP_ARM_SHMOBILE_SCU_PREPARE,
-> >         CPUHP_TIMERS_DEAD,
-> >         CPUHP_BRINGUP_CPU,
-> >         CPUHP_AP_IDLE_DEAD,
-> 
-> What's the rationale behind adding all these numbers and always
-> iterating over all
-> of them, even though most/all of them cannot be used at the same time
-> (e.g. CPUHP_SH_SH3X_PREPARE is for SuperH, while
->  CPUHP_ARM_SHMOBILE_SCU_PREPARE is for ARM)?
+diff --git a/arch/arm64/configs/defconfig b/arch/arm64/configs/defconfig
+index eadf485..72f892d 100644
+--- a/arch/arm64/configs/defconfig
++++ b/arch/arm64/configs/defconfig
+@@ -3,6 +3,7 @@ CONFIG_POSIX_MQUEUE=y
+ CONFIG_AUDIT=y
+ CONFIG_NO_HZ_IDLE=y
+ CONFIG_HIGH_RES_TIMERS=y
++CONFIG_SH_TIMER_CMT=y
+ CONFIG_BSD_PROCESS_ACCT=y
+ CONFIG_BSD_PROCESS_ACCT_V3=y
+ CONFIG_TASKSTATS=y
+-- 
+2.7.4
 
-PREPARE + STARTING states require static ids. The online callback has
-dynamic allocations of ids since it was assumed that this is the most
-common one.
-We will most likely evaluate the situation once we done and total number
-of IDS are not acceptable.
-
-> 
-> Gr{oetje,eeting}s,
-> 
->                         Geert
-> 
-
-Sebastian
