@@ -1,29 +1,39 @@
-From: Bui Duc Phuc <bd-phuc@jinso.co.jp>
-Date: Mon, 12 Sep 2016 00:25:52 +0000
-Subject: Re: [PATCH 7/8] clocksource: Kconfig: Modify CMT config support 64bit
-Message-Id: <6c81d16a-85de-f49f-af66-7d80f1aa3eb4@jinso.co.jp>
+From: bd-phuc@jinso.co.jp
+Date: Fri, 09 Sep 2016 11:43:11 +0000
+Subject: [PATCH 5/8] clk: renesas: r8a7796: Add CMT clocks
+Message-Id: <1473421394-9745-6-git-send-email-bd-phuc@jinso.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1473421394-9745-1-git-send-email-bd-phuc@jinso.co.jp>
- <1473421394-9745-8-git-send-email-bd-phuc@jinso.co.jp>
- <4193048.IXigyaYqrQ@avalon>
-In-Reply-To: <4193048.IXigyaYqrQ@avalon>
+In-Reply-To: <1473421394-9745-1-git-send-email-bd-phuc@jinso.co.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Laurent
+From: Bui Duc Phuc <bd-phuc@jinso.co.jp>
 
-Thank you for your comments.
-> I think you should instead add
->
-> 	select SH_TIMER_CMT
->
-> to the config ARCH_RENESAS section in arch/arm64/Kconfig.platforms
-I will update in V2.
+This patch adds CMT module clocks for r8a7796 SoC.
 
+Signed-off-by: Bui Duc Phuc <bd-phuc@jinso.co.jp>
+---
+ drivers/clk/renesas/r8a7796-cpg-mssr.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/drivers/clk/renesas/r8a7796-cpg-mssr.c b/drivers/clk/renesas/r8a7796-cpg-mssr.c
+index c84b549..63607bb 100644
+--- a/drivers/clk/renesas/r8a7796-cpg-mssr.c
++++ b/drivers/clk/renesas/r8a7796-cpg-mssr.c
+@@ -97,6 +97,10 @@ static const struct cpg_core_clk r8a7796_core_clks[] __initconst = {
+ };
+ 
+ static const struct mssr_mod_clk r8a7796_mod_clks[] __initconst = {
++	DEF_MOD("cmt3",		 	 300,	R8A7796_CLK_R),
++	DEF_MOD("cmt2",		 	 301,	R8A7796_CLK_R),
++	DEF_MOD("cmt1",		 	 302,	R8A7796_CLK_R),
++	DEF_MOD("cmt0",		 	 303,	R8A7796_CLK_R),
+ 	DEF_MOD("scif2",		 310,	R8A7796_CLK_S3D4),
+ 	DEF_MOD("intc-ap",		 408,	R8A7796_CLK_S3D1),
+ };
 -- 
-Regards,
-
-Bui Duc Phuc
+2.7.4
 
