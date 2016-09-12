@@ -1,34 +1,28 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 12 Sep 2016 08:31:05 +0000
+From: Bui Duc Phuc <bd-phuc@jinso.co.jp>
+Date: Mon, 12 Sep 2016 14:57:52 +0000
 Subject: Re: [PATCH 4/8] clk: renesas: r8a7795: Add CMT clocks
-Message-Id: <CAMuHMdWkxL9ZSZx0NFk9W-MD7p1v73h0qKJG9Dmz4Av0JuWHjw@mail.gmail.com>
+Message-Id: <67434527-e3b8-35b4-87ad-2d2da060132d@jinso.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1473421394-9745-1-git-send-email-bd-phuc@jinso.co.jp>
  <1473421394-9745-5-git-send-email-bd-phuc@jinso.co.jp>
-In-Reply-To: <1473421394-9745-5-git-send-email-bd-phuc@jinso.co.jp>
+ <CAMuHMdWkxL9ZSZx0NFk9W-MD7p1v73h0qKJG9Dmz4Av0JuWHjw@mail.gmail.com>
+In-Reply-To: <CAMuHMdWkxL9ZSZx0NFk9W-MD7p1v73h0qKJG9Dmz4Av0JuWHjw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Sep 9, 2016 at 1:43 PM,  <bd-phuc@jinso.co.jp> wrote:
-> From: Bui Duc Phuc <bd-phuc@jinso.co.jp>
+Dear Geert
+
+Thank you for your review.
+
+> Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
 >
-> This patch adds CMT module clocks for r8a7795 SoC.
+> (will queue in clk-renesas-for-v4.9)
 >
-> Signed-off-by: Bui Duc Phuc <bd-phuc@jinso.co.jp>
 
-Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+-- 
+Regards,
 
-(will queue in clk-renesas-for-v4.9)
+Bui Duc Phuc
 
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
