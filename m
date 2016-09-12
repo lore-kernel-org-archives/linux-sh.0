@@ -1,53 +1,29 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 09 Sep 2016 12:08:45 +0000
+From: Bui Duc Phuc <bd-phuc@jinso.co.jp>
+Date: Mon, 12 Sep 2016 00:25:52 +0000
 Subject: Re: [PATCH 7/8] clocksource: Kconfig: Modify CMT config support 64bit
-Message-Id: <4193048.IXigyaYqrQ@avalon>
+Message-Id: <6c81d16a-85de-f49f-af66-7d80f1aa3eb4@jinso.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1473421394-9745-1-git-send-email-bd-phuc@jinso.co.jp>
  <1473421394-9745-8-git-send-email-bd-phuc@jinso.co.jp>
-In-Reply-To: <1473421394-9745-8-git-send-email-bd-phuc@jinso.co.jp>
+ <4193048.IXigyaYqrQ@avalon>
+In-Reply-To: <4193048.IXigyaYqrQ@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Bui Duc,
+Hi Laurent
 
-Thank you for the patch.
-
-On Friday 09 Sep 2016 20:43:13 bd-phuc@jinso.co.jp wrote:
-> From: Bui Duc Phuc <bd-phuc@jinso.co.jp>
-> 
-> Modify CMT config to support 64bit
-> 
-> Signed-off-by: Bui Duc Phuc <bd-phuc@jinso.co.jp>
-> ---
->  drivers/clocksource/Kconfig | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/drivers/clocksource/Kconfig b/drivers/clocksource/Kconfig
-> index 5677886..62c2bcb 100644
-> --- a/drivers/clocksource/Kconfig
-> +++ b/drivers/clocksource/Kconfig
-> @@ -408,7 +408,7 @@ config SYS_SUPPORTS_EM_STI
->          bool
-> 
->  config SH_TIMER_CMT
-> -	bool "Renesas CMT timer driver" if COMPILE_TEST
-> +	bool "Renesas CMT timer driver" if ( ARM64 || COMPILE_TEST )
-
-I think you should instead add
-
-	select SH_TIMER_CMT
-
-to the config ARCH_RENESAS section in arch/arm64/Kconfig.platforms
-
->  	depends on GENERIC_CLOCKEVENTS
->  	depends on HAS_IOMEM
->  	default SYS_SUPPORTS_SH_CMT
+Thank you for your comments.
+> I think you should instead add
+>
+> 	select SH_TIMER_CMT
+>
+> to the config ARCH_RENESAS section in arch/arm64/Kconfig.platforms
+I will update in V2.
 
 -- 
 Regards,
 
-Laurent Pinchart
+Bui Duc Phuc
 
