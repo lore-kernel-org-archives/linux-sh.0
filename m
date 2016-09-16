@@ -1,7 +1,7 @@
-From: Rich Felker <dalias@libc.org>
-Date: Fri, 16 Sep 2016 21:39:18 +0000
+From: Guenter Roeck <linux@roeck-us.net>
+Date: Fri, 16 Sep 2016 22:47:04 +0000
 Subject: Re: Runtime failure running sh:qemu in -next due to 'sh: fix copy_from_user()'
-Message-Id: <20160916213918.GO15995@brightrain.aerifal.cx>
+Message-Id: <20160916224704.GA21916@roeck-us.net>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20160916191218.GA12104@roeck-us.net>
  <20160916194532.GY2356@ZenIV.linux.org.uk>
@@ -12,7 +12,7 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Al Viro <viro@ZenIV.linux.org.uk>
-Cc: Guenter Roeck <linux@roeck-us.net>, linux-kernel@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh@vger.kernel.org, Rich Felker <dalias@libc.org>
 
 On Fri, Sep 16, 2016 at 10:31:41PM +0100, Al Viro wrote:
 > On Fri, Sep 16, 2016 at 01:59:38PM -0700, Guenter Roeck wrote:
@@ -54,7 +54,19 @@ On Fri, Sep 16, 2016 at 10:31:41PM +0100, Al Viro wrote:
 > all three variants (as it is, with commit reverted and with just that if
 > removed) generate in e.g. sys_utimensat() (fs/utimes.s)
 
-It would be useful to know what compiler version was used to build the
-kernel. I wouldn't be surprised if some are buggy.
+Adding pr_info() just before the "if (unlikely..." fixes the problem.
 
-Rich
+Commenting out the "if (unlikely())" code fixes the problem. 
+
+Using a new variable "unsigned long x" for the return code instead of
+re-using __copy_size fixes the problem.
+
+Replacing "return __copy_size;" with "return __copy_size & 0xffffffff;"
+fixes the problem.
+
+The problem only seems to be seen if the copy size length is odd (more
+specifically, the failing copy always has a length of 25 bytes).
+
+No idea what is going on. Bug in __copy_user() ? Compiler bug ?
+
+Guenter
