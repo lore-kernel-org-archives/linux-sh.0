@@ -1,7 +1,7 @@
 From: Al Viro <viro@ZenIV.linux.org.uk>
-Date: Fri, 16 Sep 2016 19:45:33 +0000
+Date: Fri, 16 Sep 2016 20:03:20 +0000
 Subject: Re: Runtime failure running sh:qemu in -next due to 'sh: fix copy_from_user()'
-Message-Id: <20160916194532.GY2356@ZenIV.linux.org.uk>
+Message-Id: <20160916200320.GZ2356@ZenIV.linux.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20160916191218.GA12104@roeck-us.net>
 In-Reply-To: <20160916191218.GA12104@roeck-us.net>
@@ -15,28 +15,30 @@ On Fri, Sep 16, 2016 at 12:12:18PM -0700, Guenter Roeck wrote:
 > Hi,
 > 
 > I see the following runtime failure when running a 'sh' image with qemu in -next.
-
+> 
+> [ ... ]
+> 
+> sd 0:0:0:0: [sda] Attached SCSI disk
+> EXT2-fs (sda): warning: mounting unchecked fs, running e2fsck is recommended
+> VFS: Mounted root (ext2 filesystem) on device 8:0.
+> Freeing unused kernel memory: 124K (8c48a000 - 8c4a9000)
+> This architecture does not have kernel memory protection.
+> random: fast init done
+> Starting logging: OK
+> usb 1-1: new full-speed USB device number 2 using sm501-usb
+> Initializing random number generator... done.
+> Starting network...
+> ip: OVERRUN: Invalid argument
+> ip: OVERRUN: Bad address
+> ip: OVERRUN: Bad address
+> ip: OVERRUN: Bad address
+> ip: OVERRUN: Bad address
+> [repeats until the test aborts]
+> 
 > Bisect points to commit 6e050503a150 ("sh: fix copy_from_user()"). Bisect log is
 > attached.
 
-Does reverting it recover the thing?
-
-The change in question is
-        if (__copy_size && __access_ok(__copy_from, __copy_size))
--               return __copy_user(to, from, __copy_size);
-+               __copy_size = __copy_user(to, from, __copy_size);
-+
-+       if (unlikely(__copy_size))
-+               memset(to + (n - __copy_size), 0, __copy_size);
- 
-        return __copy_size;
-
-so the only difference is zeroing the tail of destination; return value
-remains the same in all cases (what used to be return foo(); becomes
-__copy_size = foo(); /* operations not modifying __copy_size */
-return __copy_size;) and that memset is 100% legitimate -
-copy_from_user(to, from, n) returning m means that the last m bytes of
-[to .. to + n - 1] have not been copied into and must be zeroed.
-
-If it affects anything at all, we have a serious problem somewhere in the
-caller.
+BTW, could you post your .config and information about your userland?  E.g.
+is that ip(8) a busybox one, etc.  If it's busybox, this smells like EINVAL
+and EFAULT resp. coming from recvmsg() on netlink sockets, with nothing
+extraordinary in iovecs, AFAICS...
