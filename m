@@ -1,43 +1,15 @@
-From: bd-phuc@jinso.co.jp
-Date: Fri, 09 Sep 2016 11:43:06 +0000
-Subject: [PATCH 0/8] clocksource: sh_cmt: Add R-car Gen3 CMT0/1 support
-Message-Id: <1473421394-9745-1-git-send-email-bd-phuc@jinso.co.jp>
+From: "Mr.Campbell Neiman" <campbellneiman@att.net>
+Date: Sat, 24 Sep 2016 06:04:11 +0000
+Subject: RE RE
+Message-Id: <31357973f223325c1765277db933474d.squirrel@issotastore.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Bui Duc Phuc <bd-phuc@jinso.co.jp>
-
-Hi,
-
-These are my first patches which will be added CMT driver for support 
-R-car Gen3 series (r8a7795 and r8a7796).
-Please consider these patches.
-
-Best regards.
-
-Bui Duc Phuc (8):
-  devicetree: binding: R-car Gen3 CMT0 and CMT1 bindings
-  ARM64: dts: r8a7795: Add CMT device to DT
-  ARM64: dts: r8a7796: Add CMT device to DT
-  clk: renesas: r8a7795: Add CMT clocks
-  clk: renesas: r8a7796: Add CMT clocks
-  clocksource: sh_cmt: Support separate R-car Gen3 CMT0/1
-  clocksource: Kconfig: Modify CMT config support 64bit
-  ARM64: defconfig: Enable SH_TIMER_CMT config option
-
- .../devicetree/bindings/timer/renesas,cmt.txt      |  2 ++
- arch/arm64/boot/dts/renesas/r8a7795.dtsi           | 30 ++++++++++++++++++++++
- arch/arm64/boot/dts/renesas/r8a7796.dtsi           | 30 ++++++++++++++++++++++
- arch/arm64/configs/defconfig                       |  1 +
- drivers/clk/renesas/r8a7795-cpg-mssr.c             |  4 +++
- drivers/clk/renesas/r8a7796-cpg-mssr.c             |  4 +++
- drivers/clocksource/Kconfig                        |  2 +-
- drivers/clocksource/sh_cmt.c                       | 21 +++++++++++++--
- 8 files changed, 91 insertions(+), 3 deletions(-)
-
--- 
-2.7.4
+This message is the last notification about U USD14.5 million bearing our
+Name as Beneficiary, all effort to reach you have not be successful,
+Please if you Receive this message kindly respond back stating your Desire
+to make the claim, Reconfirm your full name and age Mr. Mr.Campbell Neiman
 
