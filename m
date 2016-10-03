@@ -1,93 +1,154 @@
-From: "Paul E. McKenney" <paulmck@linux.vnet.ibm.com>
-Date: Thu, 13 Oct 2016 07:30:36 +0000
-Subject: Re: [PATCH] irqchip/jcore: fix lost per-cpu interrupts
-Message-Id: <20161013073036.GO29518@linux.vnet.ibm.com>
+From: Jiri Slaby <jslaby@suse.cz>
+Date: Mon, 03 Oct 2016 09:07:36 +0000
+Subject: [PATCH -resend 6/6] frv, mn10300, s390, sh: remove empty vga.h
+Message-Id: <20161003090736.19926-6-jslaby@suse.cz>
 List-Id: <linux-sh.vger.kernel.org>
-References: <41fc74d0bdea4c0efc269150b78d72b2b26cb38c.1475992312.git.dalias@libc.org>
- <alpine.DEB.2.20.1610091301390.5222@nanos>
- <20161009144715.GB19318@brightrain.aerifal.cx>
- <alpine.DEB.2.20.1610092121460.7166@nanos>
- <20161011152140.GH19318@brightrain.aerifal.cx>
- <alpine.DEB.2.20.1610121015080.5032@nanos>
- <20161012163543.GN19318@brightrain.aerifal.cx>
- <20161012203417.GA8847@linux.vnet.ibm.com>
- <20161012221927.GR19318@brightrain.aerifal.cx>
-In-Reply-To: <20161012221927.GR19318@brightrain.aerifal.cx>
+References: <20161003090736.19926-1-jslaby@suse.cz>
+In-Reply-To: <20161003090736.19926-1-jslaby@suse.cz>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Rich Felker <dalias@libc.org>
-Cc: Thomas Gleixner <tglx@linutronix.de>, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Jason Cooper <jason@lakedaemon.net>, Marc Zyngier <marc.zyngier@arm.com>, Daniel Lezcano <daniel.lezcano@linaro.org>
+To: akpm@linux-foundation.org
+Cc: linux-kernel@vger.kernel.org, Jiri Slaby <jslaby@suse.cz>, David Howells <dhowells@redhat.com>, Martin Schwidefsky <schwidefsky@de.ibm.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-am33-list@redhat.com, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org
 
-On Wed, Oct 12, 2016 at 06:19:27PM -0400, Rich Felker wrote:
-> On Wed, Oct 12, 2016 at 01:34:17PM -0700, Paul E. McKenney wrote:
-> > On Wed, Oct 12, 2016 at 12:35:43PM -0400, Rich Felker wrote:
-> > > On Wed, Oct 12, 2016 at 10:18:02AM +0200, Thomas Gleixner wrote:
-> > > > On Tue, 11 Oct 2016, Rich Felker wrote:
-> > > > > On Sun, Oct 09, 2016 at 09:23:58PM +0200, Thomas Gleixner wrote:
-> > > > > > On Sun, 9 Oct 2016, Rich Felker wrote:
-> > > > > > > On Sun, Oct 09, 2016 at 01:03:10PM +0200, Thomas Gleixner wrote:
-> > > > > > > My preference would just be to keep the branch, but with your improved
-> > > > > > > version that doesn't need a function call:
-> > > > > > > 
-> > > > > > > 	irqd_is_per_cpu(irq_desc_get_irq_data(desc))
-> > > > > > >
-> > > > > > > While there is some overhead testing this condition every time, I can
-> > > > > > > probably come up with several better places to look for a ~10 cycle
-> > > > > > > improvement in the irq code path without imposing new requirements on
-> > > > > > > the DT bindings.
-> > > > > > 
-> > > > > > Fair enough. Your call.
-> > > > > >  
-> > > > > > > As noted in my followup to the clocksource stall thread, there's also
-> > > > > > > a possibility that it might make sense to consider the current
-> > > > > > > behavior of having non-percpu irqs bound to a particular cpu as part
-> > > > > > > of what's required by the compatible tag, in which case
-> > > > > > > handle_percpu_irq or something similar/equivalent might be suitable
-> > > > > > > for both the percpu and non-percpu cases. I don't understand the irq
-> > > > > > > subsystem well enough to insist on that but I think it's worth
-> > > > > > > consideration since it looks like it would improve performance of
-> > > > > > > non-percpu interrupts a bit.
-> > > > > > 
-> > > > > > Well, you can use handle_percpu_irq() for your device interrupts if you
-> > > > > > guarantee at the hardware level that there is no reentrancy. Once you make
-> > > > > > the hardware capable of delivering them on either core the picture changes.
-> > > > > 
-> > > > > One more concern here -- I see that handle_simple_irq is handling the
-> > > > > soft-disable / IRQS_PENDING flag behavior, and irq_check_poll stuff
-> > > > > that's perhaps important too. Since soft-disable is all we have
-> > > > > (there's no hard-disable of interrupts), is this a problem? In other
-> > > > > words, can drivers have an expectation of not receiving interrupts
-> > > > > when the irq is disabled? I would think anything compatible with irq
-> > > > > sharing can't have such an expectation, but perhaps the kernel needs
-> > > > > disabling internally for synchronization at module-unload time or
-> > > > > similar cases?
-> > > > 
-> > > > Sure. A driver would be surprised getting an interrupt when it is disabled,
-> > > > but with your exceptionally well thought out interrupt controller a pending
-> > > > (level) interrupt which is not handled will be reraised forever and just
-> > > > hard lock the machine.
-> > > 
-> > > If you want to criticize the interrupt controller design (not my work
-> > > or under my control) for limitations in the type of hardware that can
-> > > be hooked up to it, that's okay -- this kind of input will actually be
-> > > useful for designing the next iteration of it -- but I don't think
-> > > this specific possibility is a concern.
-> > 
-> > Well, if this scenario does happen, the machine will likely either lock
-> > up silently and hard, give you RCU CPU stall warning messages, or give
-> > you soft-lockup messages.
-> 
-> The same situation can happen with badly-behaved hardware under
-> software interrupt control too if it keeps generating interrupts
-> rapidly (more quickly than the cpu can handle them), unless the kernel
-> has some kind of framework for disabling the interrupt and only
-> reenabling it later via a timer. It's equivalent to a realtime-prio
-> process failing to block/sleep to give lower-priority processes a
-> chance to run.
+Provided the architectures do not need any special handling (they seem
+not to support vga at all, actually), there is no need to have an
+empty vga.h. Let them refer to the generic one instead.
 
-Indeed, there are quite a few scenarios that can lead to silent hard
-lockups, RCU CPU stall warning messages, or soft-lockup messages.
+Signed-off-by: Jiri Slaby <jslaby@suse.cz>
+Cc: David Howells <dhowells@redhat.com>
+Cc: Martin Schwidefsky <schwidefsky@de.ibm.com>
+Cc: Heiko Carstens <heiko.carstens@de.ibm.com>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+Cc: linux-am33-list@redhat.com
+Cc: linux-s390@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
+---
+ arch/frv/include/asm/Kbuild     |  1 +
+ arch/frv/include/asm/vga.h      | 17 -----------------
+ arch/mn10300/include/asm/Kbuild |  1 +
+ arch/mn10300/include/asm/vga.h  | 17 -----------------
+ arch/s390/include/asm/Kbuild    |  1 +
+ arch/s390/include/asm/vga.h     |  6 ------
+ arch/sh/include/asm/Kbuild      |  1 +
+ arch/sh/include/asm/vga.h       |  6 ------
+ 8 files changed, 4 insertions(+), 46 deletions(-)
+ delete mode 100644 arch/frv/include/asm/vga.h
+ delete mode 100644 arch/mn10300/include/asm/vga.h
+ delete mode 100644 arch/s390/include/asm/vga.h
+ delete mode 100644 arch/sh/include/asm/vga.h
 
-							Thanx, Paul
+diff --git a/arch/frv/include/asm/Kbuild b/arch/frv/include/asm/Kbuild
+index 1fa084cf1a43..d1a5c16a2e0f 100644
+--- a/arch/frv/include/asm/Kbuild
++++ b/arch/frv/include/asm/Kbuild
+@@ -7,4 +7,5 @@ generic-y += mcs_spinlock.h
+ generic-y += mm-arch-hooks.h
+ generic-y += preempt.h
+ generic-y += trace_clock.h
++generic-y += vga.h
+ generic-y += word-at-a-time.h
+diff --git a/arch/frv/include/asm/vga.h b/arch/frv/include/asm/vga.h
+deleted file mode 100644
+index a702c800a229..000000000000
+--- a/arch/frv/include/asm/vga.h
++++ /dev/null
+@@ -1,17 +0,0 @@
+-/* vga.h: VGA register stuff
+- *
+- * Copyright (C) 2006 Red Hat, Inc. All Rights Reserved.
+- * Written by David Howells (dhowells@redhat.com)
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License
+- * as published by the Free Software Foundation; either version
+- * 2 of the License, or (at your option) any later version.
+- */
+-
+-#ifndef _ASM_VGA_H
+-#define _ASM_VGA_H
+-
+-
+-
+-#endif /* _ASM_VGA_H */
+diff --git a/arch/mn10300/include/asm/Kbuild b/arch/mn10300/include/asm/Kbuild
+index 1c8dd0f5cd5d..ee06fceabde0 100644
+--- a/arch/mn10300/include/asm/Kbuild
++++ b/arch/mn10300/include/asm/Kbuild
+@@ -9,4 +9,5 @@ generic-y += mm-arch-hooks.h
+ generic-y += preempt.h
+ generic-y += sections.h
+ generic-y += trace_clock.h
++generic-y += vga.h
+ generic-y += word-at-a-time.h
+diff --git a/arch/mn10300/include/asm/vga.h b/arch/mn10300/include/asm/vga.h
+deleted file mode 100644
+index 0163e50a3459..000000000000
+--- a/arch/mn10300/include/asm/vga.h
++++ /dev/null
+@@ -1,17 +0,0 @@
+-/* MN10300 VGA register definitions
+- *
+- * Copyright (C) 2007 Red Hat, Inc. All Rights Reserved.
+- * Written by David Howells (dhowells@redhat.com)
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public Licence
+- * as published by the Free Software Foundation; either version
+- * 2 of the Licence, or (at your option) any later version.
+- */
+-
+-#ifndef _ASM_VGA_H
+-#define _ASM_VGA_H
+-
+-
+-
+-#endif /* _ASM_VGA_H */
+diff --git a/arch/s390/include/asm/Kbuild b/arch/s390/include/asm/Kbuild
+index 20f196b82a6e..fe3442827e61 100644
+--- a/arch/s390/include/asm/Kbuild
++++ b/arch/s390/include/asm/Kbuild
+@@ -7,4 +7,5 @@ generic-y += mcs_spinlock.h
+ generic-y += mm-arch-hooks.h
+ generic-y += preempt.h
+ generic-y += trace_clock.h
++generic-y += vga.h
+ generic-y += word-at-a-time.h
+diff --git a/arch/s390/include/asm/vga.h b/arch/s390/include/asm/vga.h
+deleted file mode 100644
+index d375526c261f..000000000000
+--- a/arch/s390/include/asm/vga.h
++++ /dev/null
+@@ -1,6 +0,0 @@
+-#ifndef _ASM_S390_VGA_H
+-#define _ASM_S390_VGA_H
+-
+-/* Avoid compile errors due to missing asm/vga.h */
+-
+-#endif /* _ASM_S390_VGA_H */
+diff --git a/arch/sh/include/asm/Kbuild b/arch/sh/include/asm/Kbuild
+index 751c3373a92c..5b8bfba7522d 100644
+--- a/arch/sh/include/asm/Kbuild
++++ b/arch/sh/include/asm/Kbuild
+@@ -38,4 +38,5 @@ generic-y += termbits.h
+ generic-y += termios.h
+ generic-y += trace_clock.h
+ generic-y += ucontext.h
++generic-y += vga.h
+ generic-y += xor.h
+diff --git a/arch/sh/include/asm/vga.h b/arch/sh/include/asm/vga.h
+deleted file mode 100644
+index 06a5de8ace1a..000000000000
+--- a/arch/sh/include/asm/vga.h
++++ /dev/null
+@@ -1,6 +0,0 @@
+-#ifndef __ASM_SH_VGA_H
+-#define __ASM_SH_VGA_H
+-
+-/* Stupid drivers. */
+-
+-#endif /* __ASM_SH_VGA_H */
+-- 
+2.10.0
 
