@@ -1,53 +1,121 @@
-From: Rich Felker <dalias@libc.org>
-Date: Thu, 13 Oct 2016 19:48:47 +0000
-Subject: Re: [PATCH v8 2/2] clocksource: add J-Core timer/clocksource driver
-Message-Id: <20161013194847.GX19318@brightrain.aerifal.cx>
+From: Lorenzo Stoakes <lstoakes@gmail.com>
+Date: Thu, 13 Oct 2016 00:20:11 +0000
+Subject: [PATCH 01/10] mm: remove write/force parameters from __get_user_pages_locked()
+Message-Id: <20161013002020.3062-2-lstoakes@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1475990489.git.dalias@libc.org>
- <588ea0a3175fcf5d409ca32249f24760f2f6f839.1475990489.git.dalias@libc.org>
- <20161011181812.GA1697@mai>
- <20161011202850.GK19318@brightrain.aerifal.cx>
- <20161012092711.GC1697@mai>
- <20161012170236.GP19318@brightrain.aerifal.cx>
- <20161012213126.GA1508@mai>
- <20161013192542.GW19318@brightrain.aerifal.cx>
-In-Reply-To: <20161013192542.GW19318-C3MtFaGISjmo6RMmaWD+6Sb1p8zYI1N1@public.gmane.org>
+References: <20161013002020.3062-1-lstoakes@gmail.com>
+In-Reply-To: <20161013002020.3062-1-lstoakes@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Daniel Lezcano <daniel.lezcano-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>
-Cc: devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Rob Herring <robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Mark Rutland <mark.rutland-5wv7dgnIgG8@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, "Paul E. McKenney" <paulmck-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: linux-mm@kvack.org
+Cc: Linus Torvalds <torvalds@linux-foundation.org>, Jan Kara <jack@suse.cz>, Hugh Dickins <hughd@google.com>, Dave Hansen <dave.hansen@linux.intel.com>, Rik van Riel <riel@redhat.com>, Mel Gorman <mgorman@techsingularity.net>, Andrew Morton <akpm@linux-foundation.org>, adi-buildroot-devel@lists.sourceforge.net, ceph-devel@vger.kernel.org, dri-devel@lists.freedesktop.org, intel-gfx@lists.freedesktop.org, kvm@vger.kernel.org, linux-alpha@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-cris-kernel@axis.com, linux-fbdev@vger.kernel.org, linux-fsdevel@vger.kernel.org, linux-ia64@vger.kernel.org, linux-kernel@vger.kernel.org, linux-media@vger.kernel.org, linux-mips@linux-mips.org, linux-rdma@vger.kernel.org, linux-s390@vger.kernel.org, linux-samsung-soc@vger.kernel.org, linux-scsi@vger.kernel.org, linux-security-module@vger.kernel.org, linux-sh@vger.kerne
 
-On Thu, Oct 13, 2016 at 03:25:42PM -0400, Rich Felker wrote:
-> On Wed, Oct 12, 2016 at 11:31:26PM +0200, Daniel Lezcano wrote:
-> > > > --> System Type
-> > > > 
-> > > > That is what you are looking for, a SUPERH config option selecting all the
-> > > > common options and then a JCORE config option adding the different missing
-> > > > bits, namely the CLKSRC_JCORE_PIT.
-> > > 
-> > > We do have something like "system type" in arch/sh, and it's what I'm
-> > > trying to deprecate since it's the switch to select between all the
-> > > hard-coded board files, _or_ device tree.
-> > > 
-> > > Since part of the goal of my DT overhaul is to be able (but not
-> > > forced) to produce kernels that run on a wide range of hardware,
-> > > rather than having a "system type (select one)" option, what about
-> > > individual boolean options like:
-> > > 
-> > > config JCORE_SOC
-> > > 	bool "Support for J-Core SoCs"
-> > > 	select CLKSRC_JCORE_PIT
-> > > 	select JCORE_AIC
-> > > 	...
-> > 
-> > I'm perfectly fine with this.
-> 
-> Does this adequately ensure that dependencies for the clocksource and
-> irq driver are met? If not, what else do I need to do?
+This patch removes the write and force parameters from __get_user_pages_locked()
+to make the use of FOLL_FORCE explicit in callers as use of this flag can result
+in surprising behaviour (and hence bugs) within the mm subsystem.
 
-I've checked and it seems the dependencies are always met for arch/sh,
-at least with device tree enabled (on which JCORE_SOC will depend), so
-it shouldn't matter.
+Signed-off-by: Lorenzo Stoakes <lstoakes@gmail.com>
+---
+ mm/gup.c | 47 +++++++++++++++++++++++++++++++++--------------
+ 1 file changed, 33 insertions(+), 14 deletions(-)
 
-Rich
+diff --git a/mm/gup.c b/mm/gup.c
+index 96b2b2f..ba83942 100644
+--- a/mm/gup.c
++++ b/mm/gup.c
+@@ -729,7 +729,6 @@ static __always_inline long __get_user_pages_locked(struct task_struct *tsk,
+ 						struct mm_struct *mm,
+ 						unsigned long start,
+ 						unsigned long nr_pages,
+-						int write, int force,
+ 						struct page **pages,
+ 						struct vm_area_struct **vmas,
+ 						int *locked, bool notify_drop,
+@@ -747,10 +746,6 @@ static __always_inline long __get_user_pages_locked(struct task_struct *tsk,
+ 
+ 	if (pages)
+ 		flags |= FOLL_GET;
+-	if (write)
+-		flags |= FOLL_WRITE;
+-	if (force)
+-		flags |= FOLL_FORCE;
+ 
+ 	pages_done = 0;
+ 	lock_dropped = false;
+@@ -846,9 +841,15 @@ long get_user_pages_locked(unsigned long start, unsigned long nr_pages,
+ 			   int write, int force, struct page **pages,
+ 			   int *locked)
+ {
++	unsigned int flags = FOLL_TOUCH;
++
++	if (write)
++		flags |= FOLL_WRITE;
++	if (force)
++		flags |= FOLL_FORCE;
++
+ 	return __get_user_pages_locked(current, current->mm, start, nr_pages,
+-				       write, force, pages, NULL, locked, true,
+-				       FOLL_TOUCH);
++				       pages, NULL, locked, true, flags);
+ }
+ EXPORT_SYMBOL(get_user_pages_locked);
+ 
+@@ -869,9 +870,15 @@ __always_inline long __get_user_pages_unlocked(struct task_struct *tsk, struct m
+ {
+ 	long ret;
+ 	int locked = 1;
++
++	if (write)
++		gup_flags |= FOLL_WRITE;
++	if (force)
++		gup_flags |= FOLL_FORCE;
++
+ 	down_read(&mm->mmap_sem);
+-	ret = __get_user_pages_locked(tsk, mm, start, nr_pages, write, force,
+-				      pages, NULL, &locked, false, gup_flags);
++	ret = __get_user_pages_locked(tsk, mm, start, nr_pages, pages, NULL,
++				      &locked, false, gup_flags);
+ 	if (locked)
+ 		up_read(&mm->mmap_sem);
+ 	return ret;
+@@ -963,9 +970,15 @@ long get_user_pages_remote(struct task_struct *tsk, struct mm_struct *mm,
+ 		int write, int force, struct page **pages,
+ 		struct vm_area_struct **vmas)
+ {
+-	return __get_user_pages_locked(tsk, mm, start, nr_pages, write, force,
+-				       pages, vmas, NULL, false,
+-				       FOLL_TOUCH | FOLL_REMOTE);
++	unsigned int flags = FOLL_TOUCH | FOLL_REMOTE;
++
++	if (write)
++		flags |= FOLL_WRITE;
++	if (force)
++		flags |= FOLL_FORCE;
++
++	return __get_user_pages_locked(tsk, mm, start, nr_pages, pages, vmas,
++				       NULL, false, flags);
+ }
+ EXPORT_SYMBOL(get_user_pages_remote);
+ 
+@@ -979,9 +992,15 @@ long get_user_pages(unsigned long start, unsigned long nr_pages,
+ 		int write, int force, struct page **pages,
+ 		struct vm_area_struct **vmas)
+ {
++	unsigned int flags = FOLL_TOUCH;
++
++	if (write)
++		flags |= FOLL_WRITE;
++	if (force)
++		flags |= FOLL_FORCE;
++
+ 	return __get_user_pages_locked(current, current->mm, start, nr_pages,
+-				       write, force, pages, vmas, NULL, false,
+-				       FOLL_TOUCH);
++				       pages, vmas, NULL, false, flags);
+ }
+ EXPORT_SYMBOL(get_user_pages);
+ 
+-- 
+2.10.0
+
