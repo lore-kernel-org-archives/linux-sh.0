@@ -1,45 +1,76 @@
-From: Rich Felker <dalias@libc.org>
-Date: Thu, 20 Oct 2016 18:29:13 +0000
-Subject: Re: [PATCH v9 0/2] J-Core timer support
-Message-Id: <20161020182913.GS19318@brightrain.aerifal.cx>
+From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Date: Fri, 21 Oct 2016 18:16:31 +0000
+Subject: [sh]: glibc file offset problems since 2.24
+Message-Id: <53fb3565-53cc-fa22-403f-b7220a5fa4d4@physik.fu-berlin.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1476393790.git.dalias@libc.org>
- <20161017093013.GA1703@mai>
- <20161020012225.GK19318@brightrain.aerifal.cx>
- <20161020073240.GF1703@mai>
- <20161020151552.GQ19318@brightrain.aerifal.cx>
- <alpine.DEB.2.20.1610201955230.4938@nanos>
-In-Reply-To: <alpine.DEB.2.20.1610201955230.4938@nanos>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Thomas Gleixner <tglx@linutronix.de>
-Cc: Daniel Lezcano <daniel.lezcano@linaro.org>, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Rob Herring <robh+dt@kernel.org>, Mark Rutland <mark.rutland@arm.com>
+To: linux-sh@vger.kernel.org
 
-On Thu, Oct 20, 2016 at 07:56:09PM +0200, Thomas Gleixner wrote:
-> Daniel,
-> 
-> On Thu, 20 Oct 2016, Rich Felker wrote:
-> > On Thu, Oct 20, 2016 at 09:32:40AM +0200, Daniel Lezcano wrote:
-> > > Unfortunately it won't happen. v4.9-rc1 is already out. The driver will be
-> > > in v4.10.
-> > > 
-> > > If you wanted patches merged for v4.9, they should have been merged in the
-> > > downstream tree before v4.8-rc5, so they hit the upstream tree for v4.9's merge
-> > > window.
-> > 
-> > I've been trying to get what's essentially the same patch merged since
-> > before the 4.8 merge window. I would be more understanding if this
-> > were something new that's not upstream, but broken support for the
-> > hardware (that, from a user perspective, is a bug, since they can
-> > select the target but then it doesn't boot) has already been in one
-> > release due to missing core drivers, and the irq patches have already
-> > been merged in this release (post-rc1 even).
-> 
-> It's hardware enablement and not a new feature, so it's fine to merge it
-> now. I'll pick it up later tonight.
+Hi!
 
-Thanks Thomas. Daniel, sorry if my above reply was harsh and thanks
-again for all your help reviewing and getting this upstream.
+We have recently run into a rather odd regression with glibc on Debian/sh4.
+Starting with glibc 2.24, file offsets are apparently wrong which results
+into all weird side effects.
 
-Rich
+One of these effects is that many applications error out with "File too large",
+for example firebird3.0 during build:
+
+sh -x -c "lockfile -1 /<<PKGBUILDDIR>>/gen/Release/firebird/bin/build-db.lock && /<<PKGBUILDDIR>>/gen/Release/firebird/bin/isql -q -i
+/<<PKGBUILDDIR>>/src/dbs/metadata.sql; res=\$?; rm -f /<<PKGBUILDDIR>>/gen/Release/firebird/bin/build-db.lock; exit \$res"
++ lockfile -1 /<<PKGBUILDDIR>>/gen/Release/firebird/bin/build-db.lock
+ERROR: ld.so: object 'libeatmydata.so' from LD_PRELOAD cannot be preloaded (cannot open shared object file): ignored.
++ /<<PKGBUILDDIR>>/gen/Release/firebird/bin/isql -q -i /<<PKGBUILDDIR>>/src/dbs/metadata.sql
+can't format message 17:0 -- message file /usr/lib/sh4-linux-gnu/firebird/3.0/firebird.msg not found
+I/O error during "write" operation for file "/<<PKGBUILDDIR>>/gen/metadata.fdb"
+-Error while trying to write to file
+-File too large
+can't format message 17:120 -- message file /usr/lib/sh4-linux-gnu/firebird/3.0/firebird.msg not found
++ res=1
++ rm -f /<<PKGBUILDDIR>>/gen/Release/firebird/bin/build-db.lock
++ exit 1
+
+Or the systemd-journal:
+
+[   13.088000] systemd-journald[524]: Failed to create new system journal: File too large
+
+Another side effect is that mkfs does not work properly anymore since it writes the superblock
+at an incorrect offset. With a properly working glibc, the superblock is written at an offset
+of 0x400 while with the broken glibc (2.24), the superblock starts at 0x000. As a result,
+it's not possible to create a usable filesystem on affected machines:
+
+root@tirpitz:~> mkfs.ext4 /dev/sda2
+mke2fs 1.43.3 (04-Sep-2016)
+Suggestion: Use Linux kernel >= 3.18 for improved stability of the metadata and journal checksum features.
+Creating filesystem with 16252928 4k blocks and 4063232 inodes
+Filesystem UUID: 7d9bf1ee-a913-45d0-895b-4032020c1f3b
+Superblock backups stored on blocks:
+        32768, 98304, 163840, 229376, 294912, 819200, 884736, 1605632, 2654208,
+        4096000, 7962624, 11239424
+
+Allocating group tables: done
+Writing inode tables: done
+Creating journal (65536 blocks): done
+Writing superblocks and filesystem accounting information: done
+
+root@tirpitz:~> blkid /dev/sda2
+/dev/sda2: PARTUUID="e6077cf7-02"
+root@tirpitz:~> mount /dev/sda2 /srv
+mount: wrong fs type, bad option, bad superblock on /dev/sda2,
+       missing codepage or helper program, or other error
+
+       In some cases useful info is found in syslog - try
+       dmesg | tail or so.
+root@tirpitz:~>
+
+Does anyone have a clue what could be the issue with glibc?
+
+Thanks,
+Adrian
+
+-- 
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer - glaubitz@debian.org
+`. `'   Freie Universitaet Berlin - glaubitz@physik.fu-berlin.de
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
