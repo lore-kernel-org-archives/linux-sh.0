@@ -1,16 +1,51 @@
-From: =?utf-8?B?5Lic6bKc?= <zjwy@cccrec.com>
-Date: Mon, 31 Oct 2016 09:01:15 +0000
-Subject: =?utf-8?B?5Y+MMTHpooTllK7kuJPlnLrlt7Lnu4/lvIDlkK/vvIHkvY7oh7PkupTmipjvvIzlj4zljYHkuIA=?= =?utf-8?B?5
-Message-Id: <1281E142962F4BD369D82EBF6E825A0D@Bpo.tgqfgglco>
+From: Alexander Duyck <alexander.h.duyck@intel.com>
+Date: Mon, 24 Oct 2016 12:06:01 +0000
+Subject: [net-next PATCH RFC 18/26] arch/sh: Add option to skip DMA sync as a part of mapping
+Message-Id: <20161024120601.16276.5500.stgit@ahduyck-blue-test.jf.intel.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20161024115737.16276.71059.stgit@ahduyck-blue-test.jf.intel.com>
+In-Reply-To: <20161024115737.16276.71059.stgit@ahduyck-blue-test.jf.intel.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: netdev@vger.kernel.org, linux-kernel@vger.kernel.org, linux-mm@kvack.org
+Cc: brouer@redhat.com, Rich Felker <dalias@libc.org>, davem@davemloft.net, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh@vger.kernel.org
 
-ICAgICAgICAgICAgICAgIOWPjDEx5rW36YeP5aW96LSn5o+Q5YmN5pud5YWJDQoNCuaPkOWJjeaf
-peeci+WPjDEx5aW96LSn77yM5oqi5YWI5pS26JeP77yM5Y+MMTHlvZPlpKnnq4vljbPkuIvljZXv
-vIzpgb/lhY3mjpLpmJ/ku5jmrL7vvIzkuI3mraLmmK/kupTmipjvvIENCg0K55S16ISR55So5oi3
-5YWl5Y+j77yaaHR0cDovL3MuY2xpY2sudGFvYmFvLmNvbS8wRFBVV1B4DQrmiYvmnLrnlKjmiLfl
-haXlj6PvvJpodHRwOi8vcy5jbGljay50YW9iYW8uY29tL1hRbFVXUHg
+This change allows us to pass DMA_ATTR_SKIP_CPU_SYNC which allows us to
+avoid invoking cache line invalidation if the driver will just handle it
+via a sync_for_cpu or sync_for_device call.
+
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+Cc: linux-sh@vger.kernel.org
+Signed-off-by: Alexander Duyck <alexander.h.duyck@intel.com>
+---
+ arch/sh/kernel/dma-nommu.c |    7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/arch/sh/kernel/dma-nommu.c b/arch/sh/kernel/dma-nommu.c
+index eadb669..47fee3b 100644
+--- a/arch/sh/kernel/dma-nommu.c
++++ b/arch/sh/kernel/dma-nommu.c
+@@ -18,7 +18,9 @@ static dma_addr_t nommu_map_page(struct device *dev, struct page *page,
+ 	dma_addr_t addr = page_to_phys(page) + offset;
+ 
+ 	WARN_ON(size = 0);
+-	dma_cache_sync(dev, page_address(page) + offset, size, dir);
++
++	if (!(attrs & DMA_ATTR_SKIP_CPU_SYNC))
++		dma_cache_sync(dev, page_address(page) + offset, size, dir);
+ 
+ 	return addr;
+ }
+@@ -35,7 +37,8 @@ static int nommu_map_sg(struct device *dev, struct scatterlist *sg,
+ 	for_each_sg(sg, s, nents, i) {
+ 		BUG_ON(!sg_page(s));
+ 
+-		dma_cache_sync(dev, sg_virt(s), s->length, dir);
++		if (!(attrs & DMA_ATTR_SKIP_CPU_SYNC))
++			dma_cache_sync(dev, sg_virt(s), s->length, dir);
+ 
+ 		s->dma_address = sg_phys(s);
+ 		s->dma_length = s->length;
 
