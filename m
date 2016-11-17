@@ -1,86 +1,252 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 30 Nov 2016 09:55:23 +0000
-Subject: Re: [PATCH/RFC linux-mtd] mtd: sh_flctl: Remove sh7372 and device tree support
-Message-Id: <20161130095520.GB2336@verge.net.au>
+From: Sudeep Holla <sudeep.holla@arm.com>
+Date: Thu, 17 Nov 2016 11:50:50 +0000
+Subject: [RFC PATCH] of: base: add support to get machine model name
+Message-Id: <1479383450-19183-1-git-send-email-sudeep.holla@arm.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1480059181-29355-1-git-send-email-horms+renesas@verge.net.au>
- <20161129170949.GZ1555@brightrain.aerifal.cx>
- <CAMuHMdUnaXbG-4GFB0BcTpYjcKHh8xA3Z0Z5CwiHJqCT-QhBJA@mail.gmail.com>
- <20161129174445.GA1555@brightrain.aerifal.cx>
-In-Reply-To: <20161129174445.GA1555@brightrain.aerifal.cx>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Rich Felker <dalias@libc.org>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Boris Brezillon <boris.brezillon@free-electrons.com>, Richard Weinberger <richard@nod.at>, David Woodhouse <dwmw2@infradead.org>, Brian Norris <computersforpeace@gmail.com>, Marek Vasut <marek.vasut@gmail.com>, Cyrille Pitchen <cyrille.pitchen@atmel.com>, Matthias Brugger <matthias.bgg@gmail.com>, MTD Maling List <linux-mtd@lists.infradead.org>, Linux-Renesas <linux-renesas-soc@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Nov 29, 2016 at 12:44:45PM -0500, Rich Felker wrote:
-> On Tue, Nov 29, 2016 at 06:23:38PM +0100, Geert Uytterhoeven wrote:
-> > Hi Rich,
-> > 
-> > On Tue, Nov 29, 2016 at 6:09 PM, Rich Felker <dalias@libc.org> wrote:
-> > > On Fri, Nov 25, 2016 at 08:33:01AM +0100, Simon Horman wrote:
-> > >> Commit edf4100906044225 ("ARM: shmobile: sh7372 dtsi: Remove Legacy file")
-> > >> removed the sh7272 SoC from the kernel in v4.1.
-> > >>
-> > >> This patch removes support for the sh7272 SoC from the sh_flctl driver.
-> > >> As that SoC was the only user of device tree support also remove that
-> > >> from the driver.
-> > >>
-> > >> In essence it reverts commit 7c8f680e96ed ("mtd: sh_flctl: Add device tree
-> > >> support"). This commit may be used as a reference for re-adding device
-> > >> tree support to this driver if a need for it is found in future.
-> > >>
-> > >> This commit has been build-testesd against the ap325rxa_defconfig.
-> > >> I do not have access to the hardware to perform run-time testing
-> > >> on that board which appears to be the only remaining user of this driver.
-> > >> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> > >> ---
-> > >>  .../devicetree/bindings/mtd/flctl-nand.txt         | 49 ---------------
-> > >>  drivers/mtd/nand/sh_flctl.c                        | 70 +++-------------------
-> > >>  2 files changed, 8 insertions(+), 111 deletions(-)
-> > >>  delete mode 100644 Documentation/devicetree/bindings/mtd/flctl-nand.txt
-> > >
-> > > While I'm not the maintainer for this (and I'm not clear that the
-> > > linux-sh list even should have been cc'd; it seems to be shmobile arm
-> > > soc stuff rather than sh arch) I think this is a bad change. If the
-> > > driver is completely unused, it should just be removed, but if there
-> > 
-> > Its sole remaining in-kernel user is arch/sh/boards/mach-ap325rxa/setup.c.
-> 
-> If indeed there's a user in arch/sh, it makes even more sense not to
-> remove it. arch/sh/boards/* is intended to be removed with only DT
-> support remaining, once drivers have DT support. :-)
+Currently platforms/drivers needing to get the machine model name are
+replicating the same snippet of code. In some case, the OF reference
+counting is either missing or incorrect.
 
-I think we can trivially bring and end to speculation on the presence of a
-user in arch/sh:
+This patch adds support to read the machine model name either using
+the "model" or the "compatible" property in the device tree root node.
 
-$ make kernelrelease
-4.9.0-rc7
-$ grep -r sh_flctl arch/sh/
-arch/sh/boards/mach-ap325rxa/setup.c:#include <linux/mtd/sh_flctl.h>
-arch/sh/boards/mach-ap325rxa/setup.c:static struct sh_flctl_platform_data nand_flash_data = {
-arch/sh/boards/mach-ap325rxa/setup.c:   .name           = "sh_flctl",
+Signed-off-by: Sudeep Holla <sudeep.holla@arm.com>
+---
+ arch/arm/mach-imx/cpu.c           |  4 +---
+ arch/arm/mach-mxs/mach-mxs.c      |  3 +--
+ arch/mips/cavium-octeon/setup.c   | 12 ++----------
+ arch/mips/generic/proc.c          | 15 +++------------
+ arch/sh/boards/of-generic.c       |  6 +-----
+ drivers/of/base.c                 | 34 ++++++++++++++++++++++++++++++++++
+ drivers/soc/fsl/guts.c            |  3 +--
+ drivers/soc/renesas/renesas-soc.c |  4 +---
+ include/linux/of.h                |  6 ++++++
+ 9 files changed, 50 insertions(+), 37 deletions(-)
 
-> > > are remaining users that are still using legacy platform device
-> > > bindings, they should gradually be transitioned to device tree, and
-> > > having the device tree support still present makes it easier to do
-> > > that.
-> > 
-> > Enjoy converting ap325rxa to DT ;-)
-> 
-> Not sure if that's expected to be worse than the rest of it and if it
-> makes sense to convert or just remove. But I don't think changes that
-> put us farther away from DT-only make sense.
-> 
-> > > Removing the *bindings* is even worse, as these are a permanent
-> > > interface between hardware/firmware and software.
-> > 
-> > While it is a permanent interface, it is only a git revert away...
-> 
-> Indeed, but one that requires coordination between subsystem
-> maintainers to get it back in a working state.
+Hi,
 
-For now I think it would be best if this thread served to document that
-sh7372 support should be removed either when another user of the bindings
-is added or when DT support is removed from the driver.
+While trying to fix a simple build warning(as below) in -next for fsl/guts.c,
+I came across this code duplication in multiple places.
+
+WARNING: modpost: Found 1 section mismatch(es).
+To see full details build your kernel with:
+'make CONFIG_DEBUG_SECTION_MISMATCH=y'
+
+With CONFIG_DEBUG_SECTION_MISMATCH enabled, the details are reported:
+
+WARNING: vmlinux.o(.text+0x55d014): Section mismatch in reference from the
+function fsl_guts_probe() to the function
+.init.text:of_flat_dt_get_machine_name()
+The function fsl_guts_probe() references
+the function __init of_flat_dt_get_machine_name().
+This is often because fsl_guts_probe lacks a __init
+annotation or the annotation of of_flat_dt_get_machine_name is wrong.
+
+I can split the patch if needed if people are OK with the idea.
+
+Regards,
+Sudeep
+
+diff --git a/arch/arm/mach-imx/cpu.c b/arch/arm/mach-imx/cpu.c
+index b3347d32349f..846f40008752 100644
+--- a/arch/arm/mach-imx/cpu.c
++++ b/arch/arm/mach-imx/cpu.c
+@@ -85,9 +85,7 @@ struct device * __init imx_soc_device_init(void)
+
+ 	soc_dev_attr->family = "Freescale i.MX";
+
+-	root = of_find_node_by_path("/");
+-	ret = of_property_read_string(root, "model", &soc_dev_attr->machine);
+-	of_node_put(root);
++	ret = of_machine_get_model_name(&soc_dev_attr->machine);
+ 	if (ret)
+ 		goto free_soc;
+
+diff --git a/arch/arm/mach-mxs/mach-mxs.c b/arch/arm/mach-mxs/mach-mxs.c
+index e4f21086b42b..ed9af3a894f0 100644
+--- a/arch/arm/mach-mxs/mach-mxs.c
++++ b/arch/arm/mach-mxs/mach-mxs.c
+@@ -391,8 +391,7 @@ static void __init mxs_machine_init(void)
+ 	if (!soc_dev_attr)
+ 		return;
+
+-	root = of_find_node_by_path("/");
+-	ret = of_property_read_string(root, "model", &soc_dev_attr->machine);
++	ret = of_machine_get_model_name(&soc_dev_attr->machine);
+ 	if (ret)
+ 		return;
+
+diff --git a/arch/mips/cavium-octeon/setup.c b/arch/mips/cavium-octeon/setup.c
+index 9a2db1c013d9..2e2b1b5befa4 100644
+--- a/arch/mips/cavium-octeon/setup.c
++++ b/arch/mips/cavium-octeon/setup.c
+@@ -498,16 +498,8 @@ static void __init init_octeon_system_type(void)
+ 	char const *board_type;
+
+ 	board_type = cvmx_board_type_to_string(octeon_bootinfo->board_type);
+-	if (board_type = NULL) {
+-		struct device_node *root;
+-		int ret;
+-
+-		root = of_find_node_by_path("/");
+-		ret = of_property_read_string(root, "model", &board_type);
+-		of_node_put(root);
+-		if (ret)
+-			board_type = "Unsupported Board";
+-	}
++	if (!board_type && of_machine_get_model_name(&board_type))
++		board_type = "Unsupported Board";
+
+ 	snprintf(octeon_system_type, sizeof(octeon_system_type), "%s (%s)",
+ 		 board_type, octeon_model_get_string(read_c0_prid()));
+diff --git a/arch/mips/generic/proc.c b/arch/mips/generic/proc.c
+index 42b33250a4a2..f7fc067bf908 100644
+--- a/arch/mips/generic/proc.c
++++ b/arch/mips/generic/proc.c
+@@ -10,20 +10,11 @@
+
+ #include <linux/of.h>
+
+-#include <asm/bootinfo.h>
+-
+ const char *get_system_type(void)
+ {
+ 	const char *str;
+-	int err;
+-
+-	err = of_property_read_string(of_root, "model", &str);
+-	if (!err)
+-		return str;
+-
+-	err = of_property_read_string_index(of_root, "compatible", 0, &str);
+-	if (!err)
+-		return str;
+
+-	return "Unknown";
++	if (of_machine_get_model_name(&str))
++		return "Unknown";
++	return str;
+ }
+diff --git a/arch/sh/boards/of-generic.c b/arch/sh/boards/of-generic.c
+index 1fb6d5714bae..938a14499298 100644
+--- a/arch/sh/boards/of-generic.c
++++ b/arch/sh/boards/of-generic.c
+@@ -135,11 +135,7 @@ static void __init sh_of_setup(char **cmdline_p)
+ 	board_time_init = sh_of_time_init;
+
+ 	sh_mv.mv_name = "Unknown SH model";
+-	root = of_find_node_by_path("/");
+-	if (root) {
+-		of_property_read_string(root, "model", &sh_mv.mv_name);
+-		of_node_put(root);
+-	}
++	of_machine_get_model_name(&sh_mv.mv_name);
+
+ 	sh_of_smp_probe();
+ }
+diff --git a/drivers/of/base.c b/drivers/of/base.c
+index a0bccb54a9bd..752cb8eefd6e 100644
+--- a/drivers/of/base.c
++++ b/drivers/of/base.c
+@@ -546,6 +546,40 @@ int of_machine_is_compatible(const char *compat)
+ EXPORT_SYMBOL(of_machine_is_compatible);
+
+ /**
++ * of_machine_get_model_name - Find and read the model name or the compatible
++ *		value for the machine.
++ * @model:	pointer to null terminated return string, modified only if
++ *		return value is 0.
++ *
++ * Returns a string containing either the model name or the compatible value
++ * of the machine if found, else return error.
++ *
++ * Search for a machine model name or the compatible if model name is missing
++ * in a device tree node and retrieve a null terminated string value (pointer
++ * to data, not a copy). Returns 0 on success, -EINVAL if root of the device
++ * tree is not found and other error returned by of_property_read_string on
++ * failure.
++ */
++int of_machine_get_model_name(const char **model)
++{
++	int error;
++	struct device_node *root;
++
++	root = of_find_node_by_path("/");
++	if (!root)
++		return -EINVAL;
++
++	error = of_property_read_string(root, "model", model);
++	if (error)
++		error = of_property_read_string_index(root, "compatible",
++						      0, model);
++	of_node_put(root);
++
++	return error;
++}
++EXPORT_SYMBOL(of_machine_get_model_name);
++
++/**
+  *  __of_device_is_available - check if a device is available for use
+  *
+  *  @device: Node to check for availability, with locks already held
+diff --git a/drivers/soc/fsl/guts.c b/drivers/soc/fsl/guts.c
+index 0ac88263c2d7..94aef0465451 100644
+--- a/drivers/soc/fsl/guts.c
++++ b/drivers/soc/fsl/guts.c
+@@ -152,8 +152,7 @@ static int fsl_guts_probe(struct platform_device *pdev)
+ 		return PTR_ERR(guts->regs);
+
+ 	/* Register soc device */
+-	machine = of_flat_dt_get_machine_name();
+-	if (machine)
++	if (!of_machine_get_model_name(&machine))
+ 		soc_dev_attr.machine = devm_kstrdup(dev, machine, GFP_KERNEL);
+
+ 	svr = fsl_guts_get_svr();
+diff --git a/drivers/soc/renesas/renesas-soc.c b/drivers/soc/renesas/renesas-soc.c
+index 330960312296..d9a119073de5 100644
+--- a/drivers/soc/renesas/renesas-soc.c
++++ b/drivers/soc/renesas/renesas-soc.c
+@@ -228,9 +228,7 @@ static int __init renesas_soc_init(void)
+ 	if (!soc_dev_attr)
+ 		return -ENOMEM;
+
+-	np = of_find_node_by_path("/");
+-	of_property_read_string(np, "model", &soc_dev_attr->machine);
+-	of_node_put(np);
++	of_machine_get_model_name(&soc_dev_attr->machine);
+
+ 	soc_dev_attr->family = kstrdup_const(family->name, GFP_KERNEL);
+ 	soc_dev_attr->soc_id = kstrdup_const(strchr(match->compatible, ',') + 1,
+diff --git a/include/linux/of.h b/include/linux/of.h
+index d72f01009297..13fc66531f1b 100644
+--- a/include/linux/of.h
++++ b/include/linux/of.h
+@@ -367,6 +367,7 @@ extern int of_alias_get_id(struct device_node *np, const char *stem);
+ extern int of_alias_get_highest_id(const char *stem);
+
+ extern int of_machine_is_compatible(const char *compat);
++extern int of_machine_get_model_name(const char **model);
+
+ extern int of_add_property(struct device_node *np, struct property *prop);
+ extern int of_remove_property(struct device_node *np, struct property *prop);
+@@ -788,6 +789,11 @@ static inline int of_machine_is_compatible(const char *compat)
+ 	return 0;
+ }
+
++static inline int of_machine_get_model_name(const char **model)
++{
++	return -EINVAL;
++}
++
+ static inline bool of_console_check(const struct device_node *dn, const char *name, int index)
+ {
+ 	return false;
+--
+2.7.4
+
