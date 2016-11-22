@@ -1,47 +1,61 @@
-From: Sudeep Holla <sudeep.holla@arm.com>
-Date: Thu, 17 Nov 2016 14:16:39 +0000
-Subject: Re: [RFC PATCH] of: base: add support to get machine model name
-Message-Id: <d4839046-49f6-b375-fc64-acf64b450540@arm.com>
+From: Michal Marek <mmarek@suse.com>
+Date: Tue, 22 Nov 2016 21:34:32 +0000
+Subject: [PATCH 4/6] sh: Use full path in KBUILD_IMAGE definition
+Message-Id: <20161122213434.14788-4-mmarek@suse.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1479383450-19183-1-git-send-email-sudeep.holla@arm.com>
- <3670336.mMHByOpDl4@wuerfel> <622ddcbc-69b9-98f2-51f3-e256764ecb93@arm.com>
- <2202339.ajrKjCY7Ro@wuerfel>
-In-Reply-To: <2202339.ajrKjCY7Ro@wuerfel>
+References: <20161122213434.14788-1-mmarek@suse.com>
+In-Reply-To: <20161122213434.14788-1-mmarek@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kbuild@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
 
+The KBUILD_IMAGE variable is used by the rpm and deb-pkg targets, which
+expect it to point to the image file in the build directory. The
+builddeb script has a workaround for architectures which only provide
+the basename, but let's provide a clean interface for packaging tools.
 
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+Cc: linux-sh@vger.kernel.org
+Signed-off-by: Michal Marek <mmarek@suse.com>
+---
+ arch/sh/Makefile | 7 +++----
+ 1 file changed, 3 insertions(+), 4 deletions(-)
 
-On 17/11/16 14:13, Arnd Bergmann wrote:
-> On Thursday, November 17, 2016 2:08:30 PM CET Sudeep Holla wrote:
->> On 17/11/16 13:50, Arnd Bergmann wrote:
->>> On Thursday, November 17, 2016 11:50:50 AM CET Sudeep Holla wrote:
->>>> Currently platforms/drivers needing to get the machine model name are
->>>> replicating the same snippet of code. In some case, the OF reference
->>>> counting is either missing or incorrect.
->>>>
->>>> This patch adds support to read the machine model name either using
->>>> the "model" or the "compatible" property in the device tree root node.
->>>>
->>>> Signed-off-by: Sudeep Holla <sudeep.holla@arm.com>
->>>
->>> I like the idea. One small comment:
->>>
->>
->> Thanks. I prefer it as single patch but it can't be applied to any tree.
->> Any suggestions on handling this patch to fix the warning in -next ?
->>
-> The patch that causes the warning is currently in the mmc tree, and I
-> don't think it would be good to have your entire patch in there too.
->
-> It's probably best to just fix the warning there now by adding another
-> open-coded copy of that function, and then apply your patch on top
-> for v4.11.
-
-Sure, that's much simpler to deal with for now.
-
+diff --git a/arch/sh/Makefile b/arch/sh/Makefile
+index 336f33a419d9..280bbff12102 100644
+--- a/arch/sh/Makefile
++++ b/arch/sh/Makefile
+@@ -94,7 +94,8 @@ defaultimage-$(CONFIG_SH_7206_SOLUTION_ENGINE)	:= vmlinux
+ defaultimage-$(CONFIG_SH_7619_SOLUTION_ENGINE)	:= vmlinux
+ 
+ # Set some sensible Kbuild defaults
+-KBUILD_IMAGE		:= $(defaultimage-y)
++boot := arch/sh/boot
++KBUILD_IMAGE		:= $(boot)/$(defaultimage-y)
+ 
+ #
+ # Choosing incompatible machines durings configuration will result in
+@@ -186,8 +187,6 @@ cpuincdir-y			+= cpu-common	# Must be last
+ drivers-y			+= arch/sh/drivers/
+ drivers-$(CONFIG_OPROFILE)	+= arch/sh/oprofile/
+ 
+-boot := arch/sh/boot
+-
+ cflags-y	+= $(foreach d, $(cpuincdir-y), -Iarch/sh/include/$(d)) \
+ 		   $(foreach d, $(machdir-y), -Iarch/sh/include/$(d))
+ 
+@@ -211,7 +210,7 @@ BOOT_TARGETS = uImage uImage.bz2 uImage.gz uImage.lzma uImage.xz uImage.lzo \
+ 	       romImage
+ PHONY += $(BOOT_TARGETS)
+ 
+-all: $(KBUILD_IMAGE)
++all: $(notdir $(KBUILD_IMAGE))
+ 
+ $(BOOT_TARGETS): vmlinux
+ 	$(Q)$(MAKE) $(build)=$(boot) $(boot)/$@
 -- 
-Regards,
-Sudeep
+2.10.0
+
