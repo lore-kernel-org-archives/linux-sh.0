@@ -1,51 +1,43 @@
-From: Alexander Duyck <alexander.h.duyck@intel.com>
-Date: Wed, 02 Nov 2016 11:15:27 +0000
-Subject: [mm PATCH v2 19/26] arch/sh: Add option to skip DMA sync as a part of mapping
-Message-Id: <20161102111524.79519.9840.stgit@ahduyck-blue-test.jf.intel.com>
+From: <jenkinc@dearbornschools.org>
+Date: Sun, 27 Nov 2016 07:18:10 +0000
+Subject: 
+Message-Id: <148023109016.593.12296033541519915991@entelnet.bo>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20161102111031.79519.14741.stgit@ahduyck-blue-test.jf.intel.com>
-In-Reply-To: <20161102111031.79519.14741.stgit@ahduyck-blue-test.jf.intel.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mm@kvack.org, akpm@linux-foundation.org
-Cc: netdev@vger.kernel.org, Rich Felker <dalias@libc.org>, linux-kernel@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-This change allows us to pass DMA_ATTR_SKIP_CPU_SYNC which allows us to
-avoid invoking cache line invalidation if the driver will just handle it
-via a sync_for_cpu or sync_for_device call.
-
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: Rich Felker <dalias@libc.org>
-Cc: linux-sh@vger.kernel.org
-Signed-off-by: Alexander Duyck <alexander.h.duyck@intel.com>
----
- arch/sh/kernel/dma-nommu.c |    7 +++++--
- 1 file changed, 5 insertions(+), 2 deletions(-)
-
-diff --git a/arch/sh/kernel/dma-nommu.c b/arch/sh/kernel/dma-nommu.c
-index eadb669..47fee3b 100644
---- a/arch/sh/kernel/dma-nommu.c
-+++ b/arch/sh/kernel/dma-nommu.c
-@@ -18,7 +18,9 @@ static dma_addr_t nommu_map_page(struct device *dev, struct page *page,
- 	dma_addr_t addr = page_to_phys(page) + offset;
- 
- 	WARN_ON(size = 0);
--	dma_cache_sync(dev, page_address(page) + offset, size, dir);
-+
-+	if (!(attrs & DMA_ATTR_SKIP_CPU_SYNC))
-+		dma_cache_sync(dev, page_address(page) + offset, size, dir);
- 
- 	return addr;
- }
-@@ -35,7 +37,8 @@ static int nommu_map_sg(struct device *dev, struct scatterlist *sg,
- 	for_each_sg(sg, s, nents, i) {
- 		BUG_ON(!sg_page(s));
- 
--		dma_cache_sync(dev, sg_virt(s), s->length, dir);
-+		if (!(attrs & DMA_ATTR_SKIP_CPU_SYNC))
-+			dma_cache_sync(dev, sg_virt(s), s->length, dir);
- 
- 		s->dma_address = sg_phys(s);
- 		s->dma_length = s->length;
-
+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
+AAQAAAAAUEsFBgAAAAABAAEASwAAANsGAAAAAA=
