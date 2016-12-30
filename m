@@ -1,51 +1,87 @@
-From: Alexander Duyck <alexander.h.duyck@intel.com>
-Date: Thu, 10 Nov 2016 11:35:39 +0000
-Subject: [mm PATCH v3 16/23] arch/sh: Add option to skip DMA sync as a part of mapping
-Message-Id: <20161110113539.76501.6539.stgit@ahduyck-blue-test.jf.intel.com>
+From: Ulf Hansson <ulf.hansson@linaro.org>
+Date: Fri, 30 Dec 2016 12:47:14 +0000
+Subject: [PATCH 01/21] sh: sh7724: Don't use a public mmc header for MMC_PROGRESS*
+Message-Id: <1483102054-1752-2-git-send-email-ulf.hansson@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20161110113027.76501.63030.stgit@ahduyck-blue-test.jf.intel.com>
-In-Reply-To: <20161110113027.76501.63030.stgit@ahduyck-blue-test.jf.intel.com>
+References: <1483102054-1752-1-git-send-email-ulf.hansson@linaro.org>
+In-Reply-To: <1483102054-1752-1-git-send-email-ulf.hansson@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mm@kvack.org, akpm@linux-foundation.org
-Cc: netdev@vger.kernel.org, Rich Felker <dalias@libc.org>, linux-kernel@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh@vger.kernel.org
+To: linux-mmc@vger.kernel.org, Ulf Hansson <ulf.hansson@linaro.org>
+Cc: Jaehoon Chung <jh80.chung@samsung.com>, Adrian Hunter <adrian.hunter@intel.com>, Linus Walleij <linus.walleij@linaro.org>, linux-sh@vger.kernel.org, Simon Horman <horms@verge.net.au>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
 
-This change allows us to pass DMA_ATTR_SKIP_CPU_SYNC which allows us to
-avoid invoking cache line invalidation if the driver will just handle it
-via a sync_for_cpu or sync_for_device call.
+The enum that specifies the MMC_PROGRESS* types, is a sh mmcif specific
+thing and has no relevance in a public mmc header. Currently it's used only
+by the sh romImage MMCIF boot, so let's instead define the enum in there
+and rename the types to MMCIF_* to show this.
 
+Cc: linux-sh@vger.kernel.org
+Cc: Simon Horman <horms@verge.net.au>
 Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
 Cc: Rich Felker <dalias@libc.org>
-Cc: linux-sh@vger.kernel.org
-Signed-off-by: Alexander Duyck <alexander.h.duyck@intel.com>
+Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
 ---
- arch/sh/kernel/dma-nommu.c |    7 +++++--
- 1 file changed, 5 insertions(+), 2 deletions(-)
+ arch/sh/boot/romimage/mmcif-sh7724.c | 16 +++++++++++-----
+ 1 file changed, 11 insertions(+), 5 deletions(-)
 
-diff --git a/arch/sh/kernel/dma-nommu.c b/arch/sh/kernel/dma-nommu.c
-index eadb669..47fee3b 100644
---- a/arch/sh/kernel/dma-nommu.c
-+++ b/arch/sh/kernel/dma-nommu.c
-@@ -18,7 +18,9 @@ static dma_addr_t nommu_map_page(struct device *dev, struct page *page,
- 	dma_addr_t addr = page_to_phys(page) + offset;
+diff --git a/arch/sh/boot/romimage/mmcif-sh7724.c b/arch/sh/boot/romimage/mmcif-sh7724.c
+index 16b1225..6595b6b4 100644
+--- a/arch/sh/boot/romimage/mmcif-sh7724.c
++++ b/arch/sh/boot/romimage/mmcif-sh7724.c
+@@ -9,7 +9,6 @@
+  */
  
- 	WARN_ON(size = 0);
--	dma_cache_sync(dev, page_address(page) + offset, size, dir);
+ #include <linux/mmc/sh_mmcif.h>
+-#include <linux/mmc/boot.h>
+ #include <mach/romimage.h>
+ 
+ #define MMCIF_BASE      (void __iomem *)0xa4ca0000
+@@ -22,6 +21,13 @@
+ #define HIZCRC		0xa405015c
+ #define DRVCRA		0xa405018a
+ 
++enum {
++	MMCIF_PROGRESS_ENTER,
++	MMCIF_PROGRESS_INIT,
++	MMCIF_PROGRESS_LOAD,
++	MMCIF_PROGRESS_DONE
++};
 +
-+	if (!(attrs & DMA_ATTR_SKIP_CPU_SYNC))
-+		dma_cache_sync(dev, page_address(page) + offset, size, dir);
+ /* SH7724 specific MMCIF loader
+  *
+  * loads the romImage from an MMC card starting from block 512
+@@ -30,7 +36,7 @@
+  */
+ asmlinkage void mmcif_loader(unsigned char *buf, unsigned long no_bytes)
+ {
+-	mmcif_update_progress(MMC_PROGRESS_ENTER);
++	mmcif_update_progress(MMCIF_PROGRESS_ENTER);
  
- 	return addr;
+ 	/* enable clock to the MMCIF hardware block */
+ 	__raw_writel(__raw_readl(MSTPCR2) & ~0x20000000, MSTPCR2);
+@@ -53,12 +59,12 @@ asmlinkage void mmcif_loader(unsigned char *buf, unsigned long no_bytes)
+ 	/* high drive capability for MMC pins */
+ 	__raw_writew(__raw_readw(DRVCRA) | 0x3000, DRVCRA);
+ 
+-	mmcif_update_progress(MMC_PROGRESS_INIT);
++	mmcif_update_progress(MMCIF_PROGRESS_INIT);
+ 
+ 	/* setup MMCIF hardware */
+ 	sh_mmcif_boot_init(MMCIF_BASE);
+ 
+-	mmcif_update_progress(MMC_PROGRESS_LOAD);
++	mmcif_update_progress(MMCIF_PROGRESS_LOAD);
+ 
+ 	/* load kernel via MMCIF interface */
+ 	sh_mmcif_boot_do_read(MMCIF_BASE, 512,
+@@ -68,5 +74,5 @@ asmlinkage void mmcif_loader(unsigned char *buf, unsigned long no_bytes)
+ 	/* disable clock to the MMCIF hardware block */
+ 	__raw_writel(__raw_readl(MSTPCR2) | 0x20000000, MSTPCR2);
+ 
+-	mmcif_update_progress(MMC_PROGRESS_DONE);
++	mmcif_update_progress(MMCIF_PROGRESS_DONE);
  }
-@@ -35,7 +37,8 @@ static int nommu_map_sg(struct device *dev, struct scatterlist *sg,
- 	for_each_sg(sg, s, nents, i) {
- 		BUG_ON(!sg_page(s));
- 
--		dma_cache_sync(dev, sg_virt(s), s->length, dir);
-+		if (!(attrs & DMA_ATTR_SKIP_CPU_SYNC))
-+			dma_cache_sync(dev, sg_virt(s), s->length, dir);
- 
- 		s->dma_address = sg_phys(s);
- 		s->dma_length = s->length;
+-- 
+1.9.1
 
