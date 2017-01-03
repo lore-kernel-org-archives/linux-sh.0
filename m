@@ -1,84 +1,179 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 06 Jan 2017 10:51:12 +0000
-Subject: Re: [PATCH 15/19] serial: sh-sci: Extend sci_port_params with more port parameters
-Message-Id: <CAMuHMdU=Ky9_EJACTjvKmQfpyEX5eEj14jQ1n3sz+Dk7dEzf9Q@mail.gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 03 Jan 2017 23:06:25 +0000
+Subject: [PATCH 05/19] sh: sh726[49]: Don't set sh-sci pdata scscr TOIE bit
+Message-Id: <20170103230639.19660-6-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20170103230639.19660-1-laurent.pinchart+renesas@ideasonboard.com> <20170103230639.19660-16-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <20170103230639.19660-16-laurent.pinchart+renesas@ideasonboard.com>
+References: <20170103230639.19660-1-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <20170103230639.19660-1-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Cc: Linux-Renesas <linux-renesas-soc@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-serial@vger.kernel.org" <linux-serial@vger.kernel.org>, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-renesas-soc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, linux-serial@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Hi Laurent,
+The SCIF ports on sh7264 and sh7269 don't support the TOIE bit according
+to the datasheets.
 
-On Wed, Jan 4, 2017 at 12:06 AM, Laurent Pinchart
-<laurent.pinchart+renesas@ideasonboard.com> wrote:
-> The fifo size, overrun register and mask, sampling rate mask and error
-> mask all depend on the port type only and don't need to be computed at
-> runtime. Add them to the sci_port_parameters structure.
->
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/sh/kernel/cpu/sh2a/setup-sh7264.c | 16 ++++++++--------
+ arch/sh/kernel/cpu/sh2a/setup-sh7269.c | 16 ++++++++--------
+ 2 files changed, 16 insertions(+), 16 deletions(-)
 
-Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+diff --git a/arch/sh/kernel/cpu/sh2a/setup-sh7264.c b/arch/sh/kernel/cpu/sh2a/setup-sh7264.c
+index f111c20177ea..aebaa7a4da46 100644
+--- a/arch/sh/kernel/cpu/sh2a/setup-sh7264.c
++++ b/arch/sh/kernel/cpu/sh2a/setup-sh7264.c
+@@ -227,7 +227,7 @@ static DECLARE_INTC_DESC(intc_desc, "sh7264", vectors, groups,
+ 
+ static struct plat_sci_port scif0_platform_data = {
+ 	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_REIE | SCSCR_TOIE,
++	.scscr		= SCSCR_REIE,
+ 	.type		= PORT_SCIF,
+ 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,
+ };
+@@ -252,7 +252,7 @@ static struct platform_device scif0_device = {
+ 
+ static struct plat_sci_port scif1_platform_data = {
+ 	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_REIE | SCSCR_TOIE,
++	.scscr		= SCSCR_REIE,
+ 	.type		= PORT_SCIF,
+ 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,
+ };
+@@ -277,7 +277,7 @@ static struct platform_device scif1_device = {
+ 
+ static struct plat_sci_port scif2_platform_data = {
+ 	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_REIE | SCSCR_TOIE,
++	.scscr		= SCSCR_REIE,
+ 	.type		= PORT_SCIF,
+ 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,
+ };
+@@ -302,7 +302,7 @@ static struct platform_device scif2_device = {
+ 
+ static struct plat_sci_port scif3_platform_data = {
+ 	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_REIE | SCSCR_TOIE,
++	.scscr		= SCSCR_REIE,
+ 	.type		= PORT_SCIF,
+ 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,
+ };
+@@ -327,7 +327,7 @@ static struct platform_device scif3_device = {
+ 
+ static struct plat_sci_port scif4_platform_data = {
+ 	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_REIE | SCSCR_TOIE,
++	.scscr		= SCSCR_REIE,
+ 	.type		= PORT_SCIF,
+ 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,
+ };
+@@ -352,7 +352,7 @@ static struct platform_device scif4_device = {
+ 
+ static struct plat_sci_port scif5_platform_data = {
+ 	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_REIE | SCSCR_TOIE,
++	.scscr		= SCSCR_REIE,
+ 	.type		= PORT_SCIF,
+ 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,
+ };
+@@ -377,7 +377,7 @@ static struct platform_device scif5_device = {
+ 
+ static struct plat_sci_port scif6_platform_data = {
+ 	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_REIE | SCSCR_TOIE,
++	.scscr		= SCSCR_REIE,
+ 	.type		= PORT_SCIF,
+ 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,
+ };
+@@ -402,7 +402,7 @@ static struct platform_device scif6_device = {
+ 
+ static struct plat_sci_port scif7_platform_data = {
+ 	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_REIE | SCSCR_TOIE,
++	.scscr		= SCSCR_REIE,
+ 	.type		= PORT_SCIF,
+ 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,
+ };
+diff --git a/arch/sh/kernel/cpu/sh2a/setup-sh7269.c b/arch/sh/kernel/cpu/sh2a/setup-sh7269.c
+index b3445e59841a..6d7ac07b4e54 100644
+--- a/arch/sh/kernel/cpu/sh2a/setup-sh7269.c
++++ b/arch/sh/kernel/cpu/sh2a/setup-sh7269.c
+@@ -249,7 +249,7 @@ static DECLARE_INTC_DESC(intc_desc, "sh7269", vectors, groups,
+ 
+ static struct plat_sci_port scif0_platform_data = {
+ 	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_REIE | SCSCR_TOIE,
++	.scscr		= SCSCR_REIE,
+ 	.type		= PORT_SCIF,
+ 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,
+ };
+@@ -274,7 +274,7 @@ static struct platform_device scif0_device = {
+ 
+ static struct plat_sci_port scif1_platform_data = {
+ 	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_REIE | SCSCR_TOIE,
++	.scscr		= SCSCR_REIE,
+ 	.type		= PORT_SCIF,
+ 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,
+ };
+@@ -299,7 +299,7 @@ static struct platform_device scif1_device = {
+ 
+ static struct plat_sci_port scif2_platform_data = {
+ 	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_REIE | SCSCR_TOIE,
++	.scscr		= SCSCR_REIE,
+ 	.type		= PORT_SCIF,
+ 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,
+ };
+@@ -324,7 +324,7 @@ static struct platform_device scif2_device = {
+ 
+ static struct plat_sci_port scif3_platform_data = {
+ 	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_REIE | SCSCR_TOIE,
++	.scscr		= SCSCR_REIE,
+ 	.type		= PORT_SCIF,
+ 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,
+ };
+@@ -349,7 +349,7 @@ static struct platform_device scif3_device = {
+ 
+ static struct plat_sci_port scif4_platform_data = {
+ 	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_REIE | SCSCR_TOIE,
++	.scscr		= SCSCR_REIE,
+ 	.type		= PORT_SCIF,
+ 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,
+ };
+@@ -374,7 +374,7 @@ static struct platform_device scif4_device = {
+ 
+ static struct plat_sci_port scif5_platform_data = {
+ 	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_REIE | SCSCR_TOIE,
++	.scscr		= SCSCR_REIE,
+ 	.type		= PORT_SCIF,
+ 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,
+ };
+@@ -399,7 +399,7 @@ static struct platform_device scif5_device = {
+ 
+ static struct plat_sci_port scif6_platform_data = {
+ 	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_REIE | SCSCR_TOIE,
++	.scscr		= SCSCR_REIE,
+ 	.type		= PORT_SCIF,
+ 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,
+ };
+@@ -424,7 +424,7 @@ static struct platform_device scif6_device = {
+ 
+ static struct plat_sci_port scif7_platform_data = {
+ 	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_REIE | SCSCR_TOIE,
++	.scscr		= SCSCR_REIE,
+ 	.type		= PORT_SCIF,
+ 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,
+ };
+-- 
+Regards,
 
-> --- a/drivers/tty/serial/sh-sci.c
-> +++ b/drivers/tty/serial/sh-sci.c
-> @@ -107,6 +107,12 @@ struct plat_sci_reg {
->
->  struct sci_port_params {
->         const struct plat_sci_reg regs[SCIx_NR_REGS];
-> +       unsigned int fifosize;
-> +       unsigned int overrun_reg;
-> +       unsigned int overrun_mask;
-> +       unsigned int sampling_rate_mask;
-> +       unsigned int error_mask;
-> +       unsigned int error_clear;
->  };
->
->  struct sci_port {
+Laurent Pinchart
 
-
-> @@ -2649,29 +2687,10 @@ static int sci_init_single(struct platform_device *dev,
->         sci_port->break_timer.function = sci_break_timer;
->         init_timer(&sci_port->break_timer);
->
-> -       /*
-> -        * Establish some sensible defaults for the error detection.
-> -        */
-> -       if (p->type = PORT_SCI) {
-> -               sci_port->error_mask = SCI_DEFAULT_ERROR_MASK;
-> -               sci_port->error_clear = SCI_ERROR_CLEAR;
-> -       } else {
-> -               sci_port->error_mask = SCIF_DEFAULT_ERROR_MASK;
-> -               sci_port->error_clear = SCIF_ERROR_CLEAR;
-> -       }
-> -
-> -       /*
-> -        * Make the error mask inclusive of overrun detection, if
-> -        * supported.
-> -        */
-> -       if (sci_port->overrun_reg = SCxSR) {
-> -               sci_port->error_mask |= sci_port->overrun_mask;
-> -               sci_port->error_clear &= ~sci_port->overrun_mask;
-> -       }
-> -
->         port->type              = p->type;
->         port->flags             = UPF_FIXED_PORT | UPF_BOOT_AUTOCONF | p->flags;
->         port->regshift          = p->regshift;
-> +       port->fifosize          = sci_port->params->fifosize;
-
-You still need this assignment because you didn't convert a handfull
-remaining users of port->fifosize to params->fifosize?
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
