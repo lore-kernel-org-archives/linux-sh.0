@@ -1,48 +1,55 @@
-From: Krzysztof Kozlowski <krzk@kernel.org>
-Date: Thu, 05 Jan 2017 18:32:42 +0000
-Subject: Re: [PATCH] cpufreq: Remove CONFIG_CPU_FREQ_STAT_DETAILS config option
-Message-Id: <20170105183242.cwyymvr37mdqb6mj@kozik-lap>
+From: "Luis R. Rodriguez" <mcgrof@kernel.org>
+Date: Tue, 03 Jan 2017 21:27:44 +0000
+Subject: Re: [PATCH v5 09/14] jump_label: port __jump_table to linker tables
+Message-Id: <20170103212744.GF13946@wotan.suse.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <d4299228a500a889c2b4b9e305674f3d1ea9ae06.1483604760.git.viresh.kumar@linaro.org>
-In-Reply-To: <d4299228a500a889c2b4b9e305674f3d1ea9ae06.1483604760.git.viresh.kumar@linaro.org>
+References: <1471642454-5679-1-git-send-email-mcgrof@kernel.org>
+ <20161222023811.21246-1-mcgrof@kernel.org>
+ <20161222023811.21246-10-mcgrof@kernel.org>
+ <1482415702.9552.125.camel@linux.intel.com>
+In-Reply-To: <1482415702.9552.125.camel@linux.intel.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1254"
-Content-Transfer-Encoding: base64
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+Cc: gnomes@lxorguk.ukuu.org.uk, dalias@libc.org, linux-ia64@vger.kernel.org, jkosina@suse.cz, benh@kernel.crashing.org, ming.lei@canonical.com, heiko.carstens@de.ibm.com, platform-driver-x86@vger.kernel.org, James.Bottomley@HansenPartnership.com, paul.gortmaker@windriver.com, paulus@samba.org, mpe@ellerman.id.au, hpa@zytor.com, masami.hiramatsu.pt@hitachi.com, wangnan0@huawei.com, mchehab@osg.samsung.com, linux-arch@vger.kernel.org, markus.heiser@darmarit.de, sparclinux@vger.kernel.org, xen-devel@lists.xensource.com, linux@arm.linux.org.uk, linux-sh@vger.kernel.org, will.deacon@arm.com, korea.drzix@gmail.com, x86@kernel.org, anil.s.keshavamurthy@intel.com, fontana@sharpeleven.org, mingo@redhat.com, dsahern@gmail.com, linux-arm-kernel@lists.infradead.org, catalin.marinas@arm.com, dvhart@infradead.org, dwmw2@infradead.org, linux@roeck-us.net, david.vrabel@citrix.com, linux-xte
 
-T24gVGh1LCBKYW4gMDUsIDIwMTcgYXQgMDE6NTc6NDFQTSArMDUzMCwgVmlyZXNoIEt1bWFyIHdy
-b3RlOgo+IFRoaXMgZG9lc24ndCBoYXZlIGFueSBiZW5lZml0IGFwYXJ0IGZyb20gc2F2aW5nIGEg
-c21hbGwgYW1vdW50IG9mIG1lbW9yeQo+IHdoZW4gaXQgaXMgZGlzYWJsZWQuIFRoZSBpZmRlZiBo
-YWNrZXJ5IGluIHRoZSBjb2RlIG1ha2VzIGl0IGRpcnR5Cj4gdW5uZWNlc3NhcmlseS4KPiAKPiBD
-bGVhbiBpdCB1cCBieSByZW1vdmluZyB0aGUgS2NvbmZpZyBvcHRpb24gY29tcGxldGVseS4gRmV3
-IGRlZmNvbmZpZ3MKPiBhcmUgYWxzbyB1cGRhdGVkIGFuZCBDT05GSUdfQ1BVX0ZSRVFfU1RBVF9E
-RVRBSUxTIGlzIHJlcGxhY2VkIHdpdGgKPiBDT05GSUdfQ1BVX0ZSRVFfU1RBVCBub3cgaW4gdGhl
-bSwgYXMgdXNlcnMgd2FudGVkIHN0YXRzIHRvIGJlIGVuYWJsZWQuCj4gCj4gU2lnbmVkLW9mZi1i
-eTogVmlyZXNoIEt1bWFyIDx2aXJlc2gua3VtYXJAbGluYXJvLm9yZz4KPiAtLS0KPiAgYXJjaC9h
-cm0vY29uZmlncy9leHlub3NfZGVmY29uZmlnICAgICAgICAgfCAgMiArLQo+ICBhcmNoL2FybS9j
-b25maWdzL211bHRpX3Y1X2RlZmNvbmZpZyAgICAgICB8ICAyICstCj4gIGFyY2gvYXJtL2NvbmZp
-Z3MvbXVsdGlfdjdfZGVmY29uZmlnICAgICAgIHwgIDIgKy0KPiAgYXJjaC9hcm0vY29uZmlncy9t
-dmVidV92NV9kZWZjb25maWcgICAgICAgfCAgMiArLQo+ICBhcmNoL2FybS9jb25maWdzL3B4YV9k
-ZWZjb25maWcgICAgICAgICAgICB8ICAyICstCj4gIGFyY2gvYXJtL2NvbmZpZ3Mvc2htb2JpbGVf
-ZGVmY29uZmlnICAgICAgIHwgIDIgKy0KPiAgYXJjaC9taXBzL2NvbmZpZ3MvbGVtb3RlMmZfZGVm
-Y29uZmlnICAgICAgfCAgMSAtCj4gIGFyY2gvcG93ZXJwYy9jb25maWdzL3BwYzZ4eF9kZWZjb25m
-aWcgICAgIHwgIDEgLQo+ICBhcmNoL3NoL2NvbmZpZ3Mvc2g3Nzg1bGNyXzMyYml0X2RlZmNvbmZp
-ZyB8ICAyICstCj4gIGRyaXZlcnMvY3B1ZnJlcS9LY29uZmlnICAgICAgICAgICAgICAgICAgIHwg
-IDggLS0tLS0tLS0KPiAgZHJpdmVycy9jcHVmcmVxL2NwdWZyZXFfc3RhdHMuYyAgICAgICAgICAg
-fCAxNCAtLS0tLS0tLS0tLS0tLQo+ICAxMSBmaWxlcyBjaGFuZ2VkLCA3IGluc2VydGlvbnMoKyks
-IDMxIGRlbGV0aW9ucygtKQo+IAo+IGRpZmYgLS1naXQgYS9hcmNoL2FybS9jb25maWdzL2V4eW5v
-c19kZWZjb25maWcgYi9hcmNoL2FybS9jb25maWdzL2V4eW5vc19kZWZjb25maWcKPiBpbmRleCA3
-OWM0MTVjMzNmNjkuLjgwOWYwYmYzMDQyYSAxMDA2NDQKPiAtLS0gYS9hcmNoL2FybS9jb25maWdz
-L2V4eW5vc19kZWZjb25maWcKPiArKysgYi9hcmNoL2FybS9jb25maWdzL2V4eW5vc19kZWZjb25m
-aWcKPiBAQCAtMjQsNyArMjQsNyBAQCBDT05GSUdfQVJNX0FQUEVOREVEX0RUQj15Cj4gIENPTkZJ
-R19BUk1fQVRBR19EVEJfQ09NUEFUPXkKPiAgQ09ORklHX0NNRExJTkU9InJvb3Q9L2Rldi9yYW0w
-IHJ3IHJhbWRpc2uBOTIgaW5pdHJkPTB4NDEwMDAwMDAsOE0gY29uc29sZT10dHlTQUMxLDExNTIw
-MCBpbml0PS9saW51eHJjIG1lbSU2TSIKPiAgQ09ORklHX0NQVV9GUkVRPXkKPiAtQ09ORklHX0NQ
-VV9GUkVRX1NUQVRfREVUQUlMUz15Cj4gK0NPTkZJR19DUFVfRlJFUV9TVEFUPXkKPiAgQ09ORklH
-X0NQVV9GUkVRX0RFRkFVTFRfR09WX09OREVNQU5EPXkKPiAgQ09ORklHX0NQVV9GUkVRX0dPVl9Q
-T1dFUlNBVkU9bQo+ICBDT05GSUdfQ1BVX0ZSRVFfR09WX1VTRVJTUEFDRT1tCgpGb3IgRXh5bm9z
-OgpBY2tlZC1ieTogS3J6eXN6dG9mIEtvemxvd3NraSA8a3J6a0BrZXJuZWwub3JnPgoKQmVzdCBy
-ZWdhcmRzLApLcnp5c3p0b2YKCi0tClRvIHVuc3Vic2NyaWJlIGZyb20gdGhpcyBsaXN0OiBzZW5k
-IHRoZSBsaW5lICJ1bnN1YnNjcmliZSBsaW51eC1zaCIgaW4KdGhlIGJvZHkgb2YgYSBtZXNzYWdl
-IHRvIG1ham9yZG9tb0B2Z2VyLmtlcm5lbC5vcmcKTW9yZSBtYWpvcmRvbW8gaW5mbyBhdCAgaHR0
-cDovL3ZnZXIua2VybmVsLm9yZy9tYWpvcmRvbW8taW5mby5odG1s
+On Thu, Dec 22, 2016 at 04:08:22PM +0200, Andy Shevchenko wrote:
+> On Wed, 2016-12-21 at 18:38 -0800, Luis R. Rodriguez wrote:
+> > Move the __jump_table from the a custom section solution
+> > to a generic solution, this avoiding extra vmlinux.lds.h
+> > customizations.
+> >=20
+> > This also demos the use of the .data linker table and of
+> > the shared asm call push_section_tbl().
+> >=20
+>=20
+> > =A0{
+> > =A0	asm_volatile_goto("1:\n\t"
+> > =A0		=A0WASM(nop) "\n\t"
+> > -		=A0".pushsection __jump_table,=A0=A0\"aw\"\n\t"
+> > +		=A0push_section_tbl_any(.data, __jump_table, aw)
+> > =A0		=A0".word 1b, %l[l_yes], %c0\n\t"
+> > =A0		=A0".popsection\n\t"
+> > =A0		=A0: :=A0=A0"i" (&((char *)key)[branch]) :=A0=A0: l_yes);
+> > @@ -26,7 +28,7 @@ static __always_inline bool
+> > arch_static_branch_jump(struct static_key *key, bool
+> > =A0{
+> > =A0	asm_volatile_goto("1:\n\t"
+> > =A0		=A0WASM(b) " %l[l_yes]\n\t"
+> > -		=A0".pushsection __jump_table,=A0=A0\"aw\"\n\t"
+> > +		=A0push_section_tbl_any(.data, __jump_table, aw)
+> > =A0		=A0".word 1b, %l[l_yes], %c0\n\t"
+> > =A0		=A0".popsection\n\t"
+>=20
+> Does it make sense to introduce something like
+>=20
+> #define pop_section_tbl ".popsection\n\t"
+> #define pop_section_tbl_any pop_section_tbl
+
+Absolutely ! However this would be an evolution, and I would much
+prefer to add this later as an atomic step later to enable other
+users to also be using this shared macro. I did not have an immediate
+need for a pop_section_tbl() macro as its not section specific.
+
+  Luis
