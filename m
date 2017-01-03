@@ -1,141 +1,269 @@
-From: Russell King - ARM Linux <linux@armlinux.org.uk>
-Date: Fri, 13 Jan 2017 17:06:10 +0000
-Subject: Re: [PATCH v3 1/8] arm: put types.h in uapi
-Message-Id: <20170113170610.GV14217@n2100.armlinux.org.uk>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 03 Jan 2017 23:06:37 +0000
+Subject: [PATCH 17/19] serial: sh-sci: Remove manual break debouncing
+Message-Id: <20170103230639.19660-18-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <3131144.4Ej3KFWRbz@wuerfel>
- <1484304406-10820-1-git-send-email-nicolas.dichtel@6wind.com>
- <1484304406-10820-2-git-send-email-nicolas.dichtel@6wind.com>
-In-Reply-To: <1484304406-10820-2-git-send-email-nicolas.dichtel@6wind.com>
+References: <20170103230639.19660-1-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <20170103230639.19660-1-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Nicolas Dichtel <nicolas.dichtel@6wind.com>
-Cc: linux-mips@linux-mips.org, alsa-devel@alsa-project.org, linux-ia64@vger.kernel.org, linux-doc@vger.kernel.org, airlied@linux.ie, daniel.vetter@ffwll.ch, linux-fbdev@vger.kernel.org, dri-devel@lists.freedesktop.org, linux-mtd@lists.infradead.org, sparclinux@vger.kernel.org, linux-arch@vger.kernel.org, linux-s390@vger.kernel.org, linux-am33-list@redhat.com, linux-c6x-dev@linux-c6x.org, linux-rdma@vger.kernel.org, linux-hexagon@vger.kernel.org, linux-sh@vger.kernel.org, hch@infradead.org, coreteam@netfilter.org, msalter@redhat.com, fcoe-devel@open-fcoe.org, xen-devel@lists.xenproject.org, linux-snps-arc@lists.infradead.org, linux-media@vger.kernel.org, uclinux-h8-devel@lists.sourceforge.jp, linux-xtensa@linux-xtensa.org, arnd@arndb.de, linux-kbuild@vger.kernel.org, adi-buildroot-devel@lists.sourceforge.net, linux-raid@vger.kernel.org, linux-m68k@lists.linux-m68k.org, openri
+To: linux-renesas-soc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, linux-serial@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Fri, Jan 13, 2017 at 11:46:39AM +0100, Nicolas Dichtel wrote:
-> This header file is exported, thus move it to uapi.
+The sh-sci driver implements manual break debouncing for a few SH
+platforms by reading the value of the RX pin port register. This feature
+is optional and the driver considers all negative or zero values of the
+platform data port_reg field as invalid. As the four platforms that set
+the field to a register address all use an address higher than
+0x7fffffff, the driver will always consider the value as invalid and
+never perform debouncing. The feature is unused, remove it.
 
-I'm taking this patch, but with the following commit log:
+Debouncing could be implemented properly in the future using the pinctrl
+and GPIO APIs if desired.
 
-  Due to the way kbuild works, this header was unintentionally exported
-  back in 2013 when it was created, despite it not being in a uapi/
-  directory.  This is very non-intuitive behaviour by Kbuild.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/tty/serial/sh-sci.c | 124 +++-----------------------------------------
+ include/linux/serial_sci.h  |   5 --
+ 2 files changed, 7 insertions(+), 122 deletions(-)
 
-  However, we've had this include exported to userland for almost four
-  years, and searching google for "ARM types.h __UINTPTR_TYPE__" gives
-  no hint that anyone has complained about it.  So, let's make it
-  officially exported in this state.
-
-If anyone has any objections, they better shout sooner rather than
-later.
-
-> 
-> Signed-off-by: Nicolas Dichtel <nicolas.dichtel@6wind.com>
-> ---
->  arch/arm/include/asm/types.h      | 40 ---------------------------------------
->  arch/arm/include/uapi/asm/types.h | 40 +++++++++++++++++++++++++++++++++++++++
->  2 files changed, 40 insertions(+), 40 deletions(-)
->  delete mode 100644 arch/arm/include/asm/types.h
->  create mode 100644 arch/arm/include/uapi/asm/types.h
-> 
-> diff --git a/arch/arm/include/asm/types.h b/arch/arm/include/asm/types.h
-> deleted file mode 100644
-> index a53cdb8f068c..000000000000
-> --- a/arch/arm/include/asm/types.h
-> +++ /dev/null
-> @@ -1,40 +0,0 @@
-> -#ifndef _ASM_TYPES_H
-> -#define _ASM_TYPES_H
-> -
-> -#include <asm-generic/int-ll64.h>
-> -
-> -/*
-> - * The C99 types uintXX_t that are usually defined in 'stdint.h' are not as
-> - * unambiguous on ARM as you would expect. For the types below, there is a
-> - * difference on ARM between GCC built for bare metal ARM, GCC built for glibc
-> - * and the kernel itself, which results in build errors if you try to build with
-> - * -ffreestanding and include 'stdint.h' (such as when you include 'arm_neon.h'
-> - * in order to use NEON intrinsics)
-> - *
-> - * As the typedefs for these types in 'stdint.h' are based on builtin defines
-> - * supplied by GCC, we can tweak these to align with the kernel's idea of those
-> - * types, so 'linux/types.h' and 'stdint.h' can be safely included from the same
-> - * source file (provided that -ffreestanding is used).
-> - *
-> - *                    int32_t         uint32_t               uintptr_t
-> - * bare metal GCC     long            unsigned long          unsigned int
-> - * glibc GCC          int             unsigned int           unsigned int
-> - * kernel             int             unsigned int           unsigned long
-> - */
-> -
-> -#ifdef __INT32_TYPE__
-> -#undef __INT32_TYPE__
-> -#define __INT32_TYPE__		int
-> -#endif
-> -
-> -#ifdef __UINT32_TYPE__
-> -#undef __UINT32_TYPE__
-> -#define __UINT32_TYPE__	unsigned int
-> -#endif
-> -
-> -#ifdef __UINTPTR_TYPE__
-> -#undef __UINTPTR_TYPE__
-> -#define __UINTPTR_TYPE__	unsigned long
-> -#endif
-> -
-> -#endif /* _ASM_TYPES_H */
-> diff --git a/arch/arm/include/uapi/asm/types.h b/arch/arm/include/uapi/asm/types.h
-> new file mode 100644
-> index 000000000000..9435a42f575e
-> --- /dev/null
-> +++ b/arch/arm/include/uapi/asm/types.h
-> @@ -0,0 +1,40 @@
-> +#ifndef _UAPI_ASM_TYPES_H
-> +#define _UAPI_ASM_TYPES_H
-> +
-> +#include <asm-generic/int-ll64.h>
-> +
-> +/*
-> + * The C99 types uintXX_t that are usually defined in 'stdint.h' are not as
-> + * unambiguous on ARM as you would expect. For the types below, there is a
-> + * difference on ARM between GCC built for bare metal ARM, GCC built for glibc
-> + * and the kernel itself, which results in build errors if you try to build with
-> + * -ffreestanding and include 'stdint.h' (such as when you include 'arm_neon.h'
-> + * in order to use NEON intrinsics)
-> + *
-> + * As the typedefs for these types in 'stdint.h' are based on builtin defines
-> + * supplied by GCC, we can tweak these to align with the kernel's idea of those
-> + * types, so 'linux/types.h' and 'stdint.h' can be safely included from the same
-> + * source file (provided that -ffreestanding is used).
-> + *
-> + *                    int32_t         uint32_t               uintptr_t
-> + * bare metal GCC     long            unsigned long          unsigned int
-> + * glibc GCC          int             unsigned int           unsigned int
-> + * kernel             int             unsigned int           unsigned long
-> + */
-> +
-> +#ifdef __INT32_TYPE__
-> +#undef __INT32_TYPE__
-> +#define __INT32_TYPE__		int
-> +#endif
-> +
-> +#ifdef __UINT32_TYPE__
-> +#undef __UINT32_TYPE__
-> +#define __UINT32_TYPE__	unsigned int
-> +#endif
-> +
-> +#ifdef __UINTPTR_TYPE__
-> +#undef __UINTPTR_TYPE__
-> +#define __UINTPTR_TYPE__	unsigned long
-> +#endif
-> +
-> +#endif /* _UAPI_ASM_TYPES_H */
-> -- 
-> 2.8.1
-> 
-
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 671b6068c58b..1f3025f2d21d 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -125,10 +125,6 @@ struct sci_port {
+ 	resource_size_t		reg_size;
+ 	struct mctrl_gpios	*gpios;
+ 
+-	/* Break timer */
+-	struct timer_list	break_timer;
+-	int			break_flag;
+-
+ 	/* Clocks */
+ 	struct clk		*clks[SCI_NUM_CLKS];
+ 	unsigned long		clk_rates[SCI_NUM_CLKS];
+@@ -518,14 +514,6 @@ static void sci_port_disable(struct sci_port *sci_port)
+ 	if (!sci_port->port.dev)
+ 		return;
+ 
+-	/* Cancel the break timer to ensure that the timer handler will not try
+-	 * to access the hardware with clocks and power disabled. Reset the
+-	 * break flag to make the break debouncing state machine ready for the
+-	 * next break.
+-	 */
+-	del_timer_sync(&sci_port->break_timer);
+-	sci_port->break_flag = 0;
+-
+ 	for (i = SCI_NUM_CLKS; i-- > 0; )
+ 		clk_disable_unprepare(sci_port->clks[i]);
+ 
+@@ -752,20 +740,6 @@ static int sci_rxfill(struct uart_port *port)
+ 	return (serial_port_in(port, SCxSR) & SCxSR_RDxF(port)) != 0;
+ }
+ 
+-/*
+- * SCI helper for checking the state of the muxed port/RXD pins.
+- */
+-static inline int sci_rxd_in(struct uart_port *port)
+-{
+-	struct sci_port *s = to_sci_port(port);
+-
+-	if (s->cfg->port_reg <= 0)
+-		return 1;
+-
+-	/* Cast for ARM damage */
+-	return !!__raw_readb((void __iomem *)(uintptr_t)s->cfg->port_reg);
+-}
+-
+ /* ********************************************************************** *
+  *                   the interrupt related routines                       *
+  * ********************************************************************** */
+@@ -833,7 +807,6 @@ static void sci_transmit_chars(struct uart_port *port)
+ 
+ static void sci_receive_chars(struct uart_port *port)
+ {
+-	struct sci_port *sci_port = to_sci_port(port);
+ 	struct tty_port *tport = &port->state->port;
+ 	int i, count, copied = 0;
+ 	unsigned short status;
+@@ -853,8 +826,7 @@ static void sci_receive_chars(struct uart_port *port)
+ 
+ 		if (port->type = PORT_SCI) {
+ 			char c = serial_port_in(port, SCxRDR);
+-			if (uart_handle_sysrq_char(port, c) ||
+-			    sci_port->break_flag)
++			if (uart_handle_sysrq_char(port, c))
+ 				count = 0;
+ 			else
+ 				tty_insert_flip_char(tport, c, TTY_NORMAL);
+@@ -863,25 +835,6 @@ static void sci_receive_chars(struct uart_port *port)
+ 				char c = serial_port_in(port, SCxRDR);
+ 
+ 				status = serial_port_in(port, SCxSR);
+-#if defined(CONFIG_CPU_SH3)
+-				/* Skip "chars" during break */
+-				if (sci_port->break_flag) {
+-					if ((c = 0) &&
+-					    (status & SCxSR_FER(port))) {
+-						count--; i--;
+-						continue;
+-					}
+-
+-					/* Nonzero => end-of-break */
+-					dev_dbg(port->dev, "debounce<%02x>\n", c);
+-					sci_port->break_flag = 0;
+-
+-					if (STEPFN(c)) {
+-						count--; i--;
+-						continue;
+-					}
+-				}
+-#endif /* CONFIG_CPU_SH3 */
+ 				if (uart_handle_sysrq_char(port, c)) {
+ 					count--; i--;
+ 					continue;
+@@ -919,37 +872,6 @@ static void sci_receive_chars(struct uart_port *port)
+ 	}
+ }
+ 
+-#define SCI_BREAK_JIFFIES (HZ/20)
+-
+-/*
+- * The sci generates interrupts during the break,
+- * 1 per millisecond or so during the break period, for 9600 baud.
+- * So dont bother disabling interrupts.
+- * But dont want more than 1 break event.
+- * Use a kernel timer to periodically poll the rx line until
+- * the break is finished.
+- */
+-static inline void sci_schedule_break_timer(struct sci_port *port)
+-{
+-	mod_timer(&port->break_timer, jiffies + SCI_BREAK_JIFFIES);
+-}
+-
+-/* Ensure that two consecutive samples find the break over. */
+-static void sci_break_timer(unsigned long data)
+-{
+-	struct sci_port *port = (struct sci_port *)data;
+-
+-	if (sci_rxd_in(&port->port) = 0) {
+-		port->break_flag = 1;
+-		sci_schedule_break_timer(port);
+-	} else if (port->break_flag = 1) {
+-		/* break is over. */
+-		port->break_flag = 2;
+-		sci_schedule_break_timer(port);
+-	} else
+-		port->break_flag = 0;
+-}
+-
+ static int sci_handle_errors(struct uart_port *port)
+ {
+ 	int copied = 0;
+@@ -969,35 +891,13 @@ static int sci_handle_errors(struct uart_port *port)
+ 	}
+ 
+ 	if (status & SCxSR_FER(port)) {
+-		if (sci_rxd_in(port) = 0) {
+-			/* Notify of BREAK */
+-			struct sci_port *sci_port = to_sci_port(port);
+-
+-			if (!sci_port->break_flag) {
+-				port->icount.brk++;
+-
+-				sci_port->break_flag = 1;
+-				sci_schedule_break_timer(sci_port);
+-
+-				/* Do sysrq handling. */
+-				if (uart_handle_break(port))
+-					return 0;
+-
+-				dev_dbg(port->dev, "BREAK detected\n");
+-
+-				if (tty_insert_flip_char(tport, 0, TTY_BREAK))
+-					copied++;
+-			}
+-
+-		} else {
+-			/* frame error */
+-			port->icount.frame++;
++		/* frame error */
++		port->icount.frame++;
+ 
+-			if (tty_insert_flip_char(tport, 0, TTY_FRAME))
+-				copied++;
++		if (tty_insert_flip_char(tport, 0, TTY_FRAME))
++			copied++;
+ 
+-			dev_notice(port->dev, "frame error\n");
+-		}
++		dev_notice(port->dev, "frame error\n");
+ 	}
+ 
+ 	if (status & SCxSR_PER(port)) {
+@@ -1050,17 +950,11 @@ static int sci_handle_breaks(struct uart_port *port)
+ 	int copied = 0;
+ 	unsigned short status = serial_port_in(port, SCxSR);
+ 	struct tty_port *tport = &port->state->port;
+-	struct sci_port *s = to_sci_port(port);
+ 
+ 	if (uart_handle_break(port))
+ 		return 0;
+ 
+-	if (!s->break_flag && status & SCxSR_BRK(port)) {
+-#if defined(CONFIG_CPU_SH3)
+-		/* Debounce break */
+-		s->break_flag = 1;
+-#endif
+-
++	if (status & SCxSR_BRK(port)) {
+ 		port->icount.brk++;
+ 
+ 		/* Notify of BREAK */
+@@ -2676,10 +2570,6 @@ static int sci_init_single(struct platform_device *dev,
+ 		pm_runtime_enable(&dev->dev);
+ 	}
+ 
+-	sci_port->break_timer.data = (unsigned long)sci_port;
+-	sci_port->break_timer.function = sci_break_timer;
+-	init_timer(&sci_port->break_timer);
+-
+ 	port->type		= p->type;
+ 	port->flags		= UPF_FIXED_PORT | UPF_BOOT_AUTOCONF | p->flags;
+ 	port->regshift		= p->regshift;
+diff --git a/include/linux/serial_sci.h b/include/linux/serial_sci.h
+index 1a894c47bfc0..b4419931bf4c 100644
+--- a/include/linux/serial_sci.h
++++ b/include/linux/serial_sci.h
+@@ -9,8 +9,6 @@
+  * Generic header for SuperH (H)SCI(F) (used by sh/sh64 and related parts)
+  */
+ 
+-#define SCIx_NOT_SUPPORTED	(-1)
+-
+ /* Serial Control Register (@ = not supported by all parts) */
+ #define SCSCR_TIE	BIT(7)	/* Transmit Interrupt Enable */
+ #define SCSCR_RIE	BIT(6)	/* Receive Interrupt Enable */
+@@ -41,8 +39,6 @@ enum {
+ 	SCIx_NR_REGTYPES,
+ };
+ 
+-struct device;
+-
+ struct plat_sci_port_ops {
+ 	void (*init_pins)(struct uart_port *, unsigned int cflag);
+ };
+@@ -66,7 +62,6 @@ struct plat_sci_port {
+ 	/*
+ 	 * Platform overrides if necessary, defaults otherwise.
+ 	 */
+-	int		port_reg;
+ 	unsigned char	regshift;
+ 	unsigned char	regtype;
+ 
 -- 
-RMK's Patch system: http://www.armlinux.org.uk/developer/patches/
-FTTC broadband for 0.8mile line: currently at 9.6Mbps down 400kbps up
-according to speedtest.net.
+Regards,
+
+Laurent Pinchart
+
