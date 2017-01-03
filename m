@@ -1,30 +1,72 @@
-From: Greg KH <gregkh@linuxfoundation.org>
-Date: Thu, 19 Jan 2017 11:09:02 +0000
-Subject: Re: [PATCH v7 01/14] generic-sections: add section core helpers
-Message-Id: <20170119110902.GH28024@kroah.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 03 Jan 2017 23:06:21 +0000
+Subject: [PATCH 01/19] serial: sh-sci: Set the SCSCR TE and RE bits in the driver
+Message-Id: <20170103230639.19660-2-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20170109145833.11502-1-mcgrof@kernel.org>
- <20170115211057.17167-1-mcgrof@kernel.org>
- <20170115211057.17167-2-mcgrof@kernel.org>
-In-Reply-To: <20170115211057.17167-2-mcgrof@kernel.org>
+References: <20170103230639.19660-1-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <20170103230639.19660-1-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "Luis R. Rodriguez" <mcgrof@kernel.org>
-Cc: bp@alien8.de, bp@suse.de, hpa@zytor.com, acme@redhat.com, tglx@linutronix.de, mingo@redhat.com, jpoimboe@redhat.com, npiggin@gmail.com, mhiramat@kernel.org, masami.hiramatsu.pt@hitachi.com, jbaron@akamai.com, heiko.carstens@de.ibm.com, ananth@linux.vnet.ibm.com, anil.s.keshavamurthy@intel.com, davem@davemloft.net, realmz6@gmail.com, dalias@libc.org, linux@arm.linux.org.uk, x86@kernel.org, luto@amacapital.net, keescook@chromium.org, linux@roeck-us.net, torvalds@linux-foundation.org, rusty@rustcorp.com.au, gnomes@lxorguk.ukuu.org.uk, alan@linux.intel.com, dwmw2@infradead.org, arnd@arndb.de, ming.lei@canonical.com, linux-arch@vger.kernel.org, benh@kernel.crashing.org, pebolle@tiscali.nl, fontana@sharpeleven.org, david.vrabel@citrix.com, konrad.wilk@oracle.com, mcb30@ipxe.org
+To: linux-renesas-soc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, linux-serial@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Sun, Jan 15, 2017 at 01:10:44PM -0800, Luis R. Rodriguez wrote:
-> Linux makes extensive use of custom ELF header sections,
-> documentation for these are well scattered. Unify this
-> documentation in a central place and provide helpers to
-> build custom Linux sections.
-> 
-> This also generalizes sections code to enable avoiding
+The Transmit Enable and Receive Enable bits are set in the scscr field
+of all instances of the sh-sci platform data. Set them in the driver
+directly to prepare for their removal from platform data.
 
-When you say "also" in a changelog, that's a huge flag you need to split
-this up.  There's no reason the documentation for elf header sections
-has to be in the same patch as code.  Please break it up.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/tty/serial/sh-sci.c | 13 +++++++------
+ 1 file changed, 7 insertions(+), 6 deletions(-)
 
-thanks,
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 91e7dddbf72c..1e573611719e 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -2341,7 +2341,8 @@ static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
+ 		serial_port_out(port, SCFCR, ctrl);
+ 	}
+ 
+-	scr_val |= s->cfg->scscr & ~(SCSCR_CKE1 | SCSCR_CKE0);
++	scr_val |= SCSCR_RE | SCSCR_TE |
++		   (s->cfg->scscr & ~(SCSCR_CKE1 | SCSCR_CKE0));
+ 	dev_dbg(port->dev, "SCSCR 0x%x\n", scr_val);
+ 	serial_port_out(port, SCSCR, scr_val);
+ 	if ((srr + 1 = 5) &&
+@@ -2791,7 +2792,8 @@ static void serial_console_write(struct console *co, const char *s,
+ 
+ 	/* first save SCSCR then disable interrupts, keep clock source */
+ 	ctrl = serial_port_in(port, SCSCR);
+-	ctrl_temp = (sci_port->cfg->scscr & ~(SCSCR_CKE1 | SCSCR_CKE0)) |
++	ctrl_temp = SCSCR_RE | SCSCR_TE |
++		    (sci_port->cfg->scscr & ~(SCSCR_CKE1 | SCSCR_CKE0)) |
+ 		    (ctrl & (SCSCR_CKE1 | SCSCR_CKE0));
+ 	serial_port_out(port, SCSCR, ctrl_temp);
+ 
+@@ -2994,7 +2996,6 @@ sci_parse_dt(struct platform_device *pdev, unsigned int *dev_id)
+ 	p->flags = UPF_IOREMAP | UPF_BOOT_AUTOCONF;
+ 	p->type = SCI_OF_TYPE(match->data);
+ 	p->regtype = SCI_OF_REGTYPE(match->data);
+-	p->scscr = SCSCR_RE | SCSCR_TE;
+ 
+ 	if (of_find_property(np, "uart-has-rtscts", NULL))
+ 		p->capabilities |= SCIx_HAVE_RTSCTS;
+@@ -3162,9 +3163,9 @@ static int __init early_console_setup(struct earlycon_device *device,
+ 	sci_ports[0].cfg = &port_cfg;
+ 	sci_ports[0].cfg->type = type;
+ 	sci_probe_regmap(sci_ports[0].cfg);
+-	port_cfg.scscr = sci_serial_in(&sci_ports[0].port, SCSCR) |
+-			 SCSCR_RE | SCSCR_TE;
+-	sci_serial_out(&sci_ports[0].port, SCSCR, port_cfg.scscr);
++	port_cfg.scscr = sci_serial_in(&sci_ports[0].port, SCSCR);
++	sci_serial_out(&sci_ports[0].port, SCSCR,
++		       SCSCR_RE | SCSCR_TE | port_cfg.scscr);
+ 
+ 	device->con->write = serial_console_write;
+ 	return 0;
+-- 
+Regards,
 
-greg k-h
+Laurent Pinchart
+
