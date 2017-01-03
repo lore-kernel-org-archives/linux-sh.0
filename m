@@ -1,35 +1,172 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 06 Jan 2017 10:13:19 +0000
-Subject: Re: [PATCH 05/19] sh: sh726[49]: Don't set sh-sci pdata scscr TOIE bit
-Message-Id: <CAMuHMdXGUubnTjaHQChM8nY94A1eyni_-V5U1kWJg3n0VJHx4Q@mail.gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 03 Jan 2017 23:06:34 +0000
+Subject: [PATCH 14/19] serial: sh-sci: Constify platform data
+Message-Id: <20170103230639.19660-15-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20170103230639.19660-1-laurent.pinchart+renesas@ideasonboard.com> <20170103230639.19660-6-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <20170103230639.19660-6-laurent.pinchart+renesas@ideasonboard.com>
+References: <20170103230639.19660-1-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <20170103230639.19660-1-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Cc: Linux-Renesas <linux-renesas-soc@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-serial@vger.kernel.org" <linux-serial@vger.kernel.org>, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-renesas-soc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, linux-serial@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Wed, Jan 4, 2017 at 12:06 AM, Laurent Pinchart
-<laurent.pinchart+renesas@ideasonboard.com> wrote:
-> The SCIF ports on sh7264 and sh7269 don't support the TOIE bit according
-> to the datasheets.
->
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+The driver modifies platform data for internal purpose only. Fix that
+and make the platform data structure const.
 
-Looks OK for sh7269
-I don't have a sh7264 datasheet, so let's trust you on that ;-)
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/tty/serial/sh-sci.c | 97 +++++++++++++++++++++++----------------------
+ 1 file changed, 49 insertions(+), 48 deletions(-)
 
-Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index be86f78a5c02..285d0c726ca3 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -114,7 +114,7 @@ struct sci_port {
+ 
+ 	/* Platform configuration */
+ 	const struct sci_port_params *params;
+-	struct plat_sci_port	*cfg;
++	const struct plat_sci_port *cfg;
+ 	unsigned int		overrun_reg;
+ 	unsigned int		overrun_mask;
+ 	unsigned int		error_mask;
+@@ -421,41 +421,6 @@ static void sci_serial_out(struct uart_port *p, int offset, int value)
+ 		WARN(1, "Invalid register access\n");
+ }
+ 
+-static int sci_probe_regmap(struct plat_sci_port *cfg)
+-{
+-	switch (cfg->type) {
+-	case PORT_SCI:
+-		cfg->regtype = SCIx_SCI_REGTYPE;
+-		break;
+-	case PORT_IRDA:
+-		cfg->regtype = SCIx_IRDA_REGTYPE;
+-		break;
+-	case PORT_SCIFA:
+-		cfg->regtype = SCIx_SCIFA_REGTYPE;
+-		break;
+-	case PORT_SCIFB:
+-		cfg->regtype = SCIx_SCIFB_REGTYPE;
+-		break;
+-	case PORT_SCIF:
+-		/*
+-		 * The SH-4 is a bit of a misnomer here, although that's
+-		 * where this particular port layout originated. This
+-		 * configuration (or some slight variation thereof)
+-		 * remains the dominant model for all SCIFs.
+-		 */
+-		cfg->regtype = SCIx_SH4_SCIF_REGTYPE;
+-		break;
+-	case PORT_HSCIF:
+-		cfg->regtype = SCIx_HSCIF_REGTYPE;
+-		break;
+-	default:
+-		pr_err("Can't probe register map for given port\n");
+-		return -EINVAL;
+-	}
+-
+-	return 0;
+-}
+-
+ static void sci_port_enable(struct sci_port *sci_port)
+ {
+ 	unsigned int i;
+@@ -2540,9 +2505,50 @@ static int sci_init_clocks(struct sci_port *sci_port, struct device *dev)
+ 	return 0;
+ }
+ 
++static const struct sci_port_params *
++sci_probe_regmap(const struct plat_sci_port *cfg)
++{
++	unsigned int regtype;
++
++	if (cfg->regtype != SCIx_PROBE_REGTYPE)
++		return &sci_port_params[cfg->regtype];
++
++	switch (cfg->type) {
++	case PORT_SCI:
++		regtype = SCIx_SCI_REGTYPE;
++		break;
++	case PORT_IRDA:
++		regtype = SCIx_IRDA_REGTYPE;
++		break;
++	case PORT_SCIFA:
++		regtype = SCIx_SCIFA_REGTYPE;
++		break;
++	case PORT_SCIFB:
++		regtype = SCIx_SCIFB_REGTYPE;
++		break;
++	case PORT_SCIF:
++		/*
++		 * The SH-4 is a bit of a misnomer here, although that's
++		 * where this particular port layout originated. This
++		 * configuration (or some slight variation thereof)
++		 * remains the dominant model for all SCIFs.
++		 */
++		regtype = SCIx_SH4_SCIF_REGTYPE;
++		break;
++	case PORT_HSCIF:
++		regtype = SCIx_HSCIF_REGTYPE;
++		break;
++	default:
++		pr_err("Can't probe register map for given port\n");
++		return NULL;
++	}
++
++	return &sci_port_params[regtype];
++}
++
+ static int sci_init_single(struct platform_device *dev,
+ 			   struct sci_port *sci_port, unsigned int index,
+-			   struct plat_sci_port *p, bool early)
++			   const struct plat_sci_port *p, bool early)
+ {
+ 	struct uart_port *port = &sci_port->port;
+ 	const struct resource *res;
+@@ -2579,13 +2585,9 @@ static int sci_init_single(struct platform_device *dev,
+ 		sci_port->irqs[3] = sci_port->irqs[0];
+ 	}
+ 
+-	if (p->regtype = SCIx_PROBE_REGTYPE) {
+-		ret = sci_probe_regmap(p);
+-		if (unlikely(ret))
+-			return ret;
+-	}
+-
+-	sci_port->params = &sci_port_params[p->regtype];
++	sci_port->params = sci_probe_regmap(p);
++	if (unlikely(sci_port->params = NULL))
++		return -EINVAL;
+ 
+ 	switch (p->type) {
+ 	case PORT_SCIFB:
+@@ -2805,7 +2807,7 @@ static char early_serial_buf[32];
+ 
+ static int sci_probe_earlyprintk(struct platform_device *pdev)
+ {
+-	struct plat_sci_port *cfg = dev_get_platdata(&pdev->dev);
++	const struct plat_sci_port *cfg = dev_get_platdata(&pdev->dev);
+ 
+ 	if (early_serial_console.data)
+ 		return -EEXIST;
+@@ -3096,10 +3098,9 @@ static int __init early_console_setup(struct earlycon_device *device,
+ 	device->port.serial_out	= sci_serial_out;
+ 	device->port.type = type;
+ 	memcpy(&sci_ports[0].port, &device->port, sizeof(struct uart_port));
++	port_cfg.type = type;
+ 	sci_ports[0].cfg = &port_cfg;
+-	sci_ports[0].cfg->type = type;
+-	sci_probe_regmap(sci_ports[0].cfg);
+-	sci_ports[0].params = &sci_port_params[sci_ports[0].cfg->regtype];
++	sci_ports[0].params = sci_probe_regmap(&port_cfg);
+ 	port_cfg.scscr = sci_serial_in(&sci_ports[0].port, SCSCR);
+ 	sci_serial_out(&sci_ports[0].port, SCSCR,
+ 		       SCSCR_RE | SCSCR_TE | port_cfg.scscr);
+-- 
+Regards,
 
-Gr{oetje,eeting}s,
+Laurent Pinchart
 
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
