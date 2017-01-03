@@ -1,32 +1,45 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 06 Jan 2017 10:36:03 +0000
-Subject: Re: [PATCH 14/19] serial: sh-sci: Constify platform data
-Message-Id: <CAMuHMdWaxq_yV3cQiPO3Z9y9azAvSak4HgRU4d8uEHJyawAwQA@mail.gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 03 Jan 2017 23:06:28 +0000
+Subject: [PATCH 08/19] sh: sh3: sh770x: Fix platform data for the IRDA serial port
+Message-Id: <20170103230639.19660-9-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20170103230639.19660-1-laurent.pinchart+renesas@ideasonboard.com> <20170103230639.19660-15-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <20170103230639.19660-15-laurent.pinchart+renesas@ideasonboard.com>
+References: <20170103230639.19660-1-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <20170103230639.19660-1-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Cc: Linux-Renesas <linux-renesas-soc@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-serial@vger.kernel.org" <linux-serial@vger.kernel.org>, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-renesas-soc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, linux-serial@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Wed, Jan 4, 2017 at 12:06 AM, Laurent Pinchart
-<laurent.pinchart+renesas@ideasonboard.com> wrote:
-> The driver modifies platform data for internal purpose only. Fix that
-> and make the platform data structure const.
->
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Even though most of its registers are 8-bit wide, the IRDA has two
+16-bit registers that make it a 16-bit peripheral and not a 8-bit
+peripheral with addresses shifted by one. Fix the memory resource size
+and the platform data regshift value.
 
-Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/sh/kernel/cpu/sh3/setup-sh770x.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
-Gr{oetje,eeting}s,
+diff --git a/arch/sh/kernel/cpu/sh3/setup-sh770x.c b/arch/sh/kernel/cpu/sh3/setup-sh770x.c
+index e1e54258b822..084a91e6027e 100644
+--- a/arch/sh/kernel/cpu/sh3/setup-sh770x.c
++++ b/arch/sh/kernel/cpu/sh3/setup-sh770x.c
+@@ -157,11 +157,10 @@ static struct platform_device scif1_device = {
+ static struct plat_sci_port scif2_platform_data = {
+ 	.type		= PORT_IRDA,
+ 	.ops		= &sh770x_sci_port_ops,
+-	.regshift	= 1,
+ };
+ 
+ static struct resource scif2_resources[] = {
+-	DEFINE_RES_MEM(0xa4000140, 0x10),
++	DEFINE_RES_MEM(0xa4000140, 0x20),
+ 	DEFINE_RES_IRQ(evt2irq(0x880)),
+ };
+ 
+-- 
+Regards,
 
-                        Geert
+Laurent Pinchart
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
