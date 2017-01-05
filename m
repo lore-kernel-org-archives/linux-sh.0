@@ -1,63 +1,48 @@
-From: Chanwoo Choi <cw00.choi@samsung.com>
-Date: Thu, 05 Jan 2017 10:12:29 +0000
+From: Krzysztof Kozlowski <krzk@kernel.org>
+Date: Thu, 05 Jan 2017 18:32:42 +0000
 Subject: Re: [PATCH] cpufreq: Remove CONFIG_CPU_FREQ_STAT_DETAILS config option
-Message-Id: <586E1C0D.20102@samsung.com>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="Boundary_(ID_Cj19Agd5eCCBWYTkjpMRIw)"
+Message-Id: <20170105183242.cwyymvr37mdqb6mj@kozik-lap>
 List-Id: <linux-sh.vger.kernel.org>
-References: <CGME20170105082939epcas4p4b494945ce55c949dc7a030ebf9dbdd4c@epcas4p4.samsung.com>
- <d4299228a500a889c2b4b9e305674f3d1ea9ae06.1483604760.git.viresh.kumar@linaro.org>
+References: <d4299228a500a889c2b4b9e305674f3d1ea9ae06.1483604760.git.viresh.kumar@linaro.org>
 In-Reply-To: <d4299228a500a889c2b4b9e305674f3d1ea9ae06.1483604760.git.viresh.kumar@linaro.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="windows-1254"
+Content-Transfer-Encoding: base64
 To: linux-arm-kernel@lists.infradead.org
 
-This is a multi-part message in MIME format.
-
---Boundary_(ID_Cj19Agd5eCCBWYTkjpMRIw)
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-
-Hi Viresh,
-
-On 2017년 01월 05일 17:27, Viresh Kumar wrote:
-> This doesn't have any benefit apart from saving a small amount of memory
-> when it is disabled. The ifdef hackery in the code makes it dirty
-> unnecessarily.
-> 
-> Clean it up by removing the Kconfig option completely. Few defconfigs
-> are also updated and CONFIG_CPU_FREQ_STAT_DETAILS is replaced with
-> CONFIG_CPU_FREQ_STAT now in them, as users wanted stats to be enabled.
-> 
-> Signed-off-by: Viresh Kumar <viresh.kumar@linaro.org>
-> ---
->  arch/arm/configs/exynos_defconfig         |  2 +-
->  arch/arm/configs/multi_v5_defconfig       |  2 +-
->  arch/arm/configs/multi_v7_defconfig       |  2 +-
->  arch/arm/configs/mvebu_v5_defconfig       |  2 +-
->  arch/arm/configs/pxa_defconfig            |  2 +-
->  arch/arm/configs/shmobile_defconfig       |  2 +-
->  arch/mips/configs/lemote2f_defconfig      |  1 -
->  arch/powerpc/configs/ppc6xx_defconfig     |  1 -
->  arch/sh/configs/sh7785lcr_32bit_defconfig |  2 +-
->  drivers/cpufreq/Kconfig                   |  8 --------
->  drivers/cpufreq/cpufreq_stats.c           | 14 --------------
->  11 files changed, 7 insertions(+), 31 deletions(-)
-
-
-I agree. Looks good to me.
-Reviewed-by: Chanwoo Choi <cw00.choi@samsung.com>
-
-[snip]
-
--- 
-Best Regards,
-Chanwoo Choi
-Samsung Electronics
-
---Boundary_(ID_Cj19Agd5eCCBWYTkjpMRIw)
-Content-type: text/x-vcard; CHARSET=EUC-KR; name=cw00_choi.vcf
-Content-transfer-encoding: base64
-Content-disposition: attachment; filename=cw00_choi.vcf
-
-bnVsbA0K
-
---Boundary_(ID_Cj19Agd5eCCBWYTkjpMRIw)--
+T24gVGh1LCBKYW4gMDUsIDIwMTcgYXQgMDE6NTc6NDFQTSArMDUzMCwgVmlyZXNoIEt1bWFyIHdy
+b3RlOgo+IFRoaXMgZG9lc24ndCBoYXZlIGFueSBiZW5lZml0IGFwYXJ0IGZyb20gc2F2aW5nIGEg
+c21hbGwgYW1vdW50IG9mIG1lbW9yeQo+IHdoZW4gaXQgaXMgZGlzYWJsZWQuIFRoZSBpZmRlZiBo
+YWNrZXJ5IGluIHRoZSBjb2RlIG1ha2VzIGl0IGRpcnR5Cj4gdW5uZWNlc3NhcmlseS4KPiAKPiBD
+bGVhbiBpdCB1cCBieSByZW1vdmluZyB0aGUgS2NvbmZpZyBvcHRpb24gY29tcGxldGVseS4gRmV3
+IGRlZmNvbmZpZ3MKPiBhcmUgYWxzbyB1cGRhdGVkIGFuZCBDT05GSUdfQ1BVX0ZSRVFfU1RBVF9E
+RVRBSUxTIGlzIHJlcGxhY2VkIHdpdGgKPiBDT05GSUdfQ1BVX0ZSRVFfU1RBVCBub3cgaW4gdGhl
+bSwgYXMgdXNlcnMgd2FudGVkIHN0YXRzIHRvIGJlIGVuYWJsZWQuCj4gCj4gU2lnbmVkLW9mZi1i
+eTogVmlyZXNoIEt1bWFyIDx2aXJlc2gua3VtYXJAbGluYXJvLm9yZz4KPiAtLS0KPiAgYXJjaC9h
+cm0vY29uZmlncy9leHlub3NfZGVmY29uZmlnICAgICAgICAgfCAgMiArLQo+ICBhcmNoL2FybS9j
+b25maWdzL211bHRpX3Y1X2RlZmNvbmZpZyAgICAgICB8ICAyICstCj4gIGFyY2gvYXJtL2NvbmZp
+Z3MvbXVsdGlfdjdfZGVmY29uZmlnICAgICAgIHwgIDIgKy0KPiAgYXJjaC9hcm0vY29uZmlncy9t
+dmVidV92NV9kZWZjb25maWcgICAgICAgfCAgMiArLQo+ICBhcmNoL2FybS9jb25maWdzL3B4YV9k
+ZWZjb25maWcgICAgICAgICAgICB8ICAyICstCj4gIGFyY2gvYXJtL2NvbmZpZ3Mvc2htb2JpbGVf
+ZGVmY29uZmlnICAgICAgIHwgIDIgKy0KPiAgYXJjaC9taXBzL2NvbmZpZ3MvbGVtb3RlMmZfZGVm
+Y29uZmlnICAgICAgfCAgMSAtCj4gIGFyY2gvcG93ZXJwYy9jb25maWdzL3BwYzZ4eF9kZWZjb25m
+aWcgICAgIHwgIDEgLQo+ICBhcmNoL3NoL2NvbmZpZ3Mvc2g3Nzg1bGNyXzMyYml0X2RlZmNvbmZp
+ZyB8ICAyICstCj4gIGRyaXZlcnMvY3B1ZnJlcS9LY29uZmlnICAgICAgICAgICAgICAgICAgIHwg
+IDggLS0tLS0tLS0KPiAgZHJpdmVycy9jcHVmcmVxL2NwdWZyZXFfc3RhdHMuYyAgICAgICAgICAg
+fCAxNCAtLS0tLS0tLS0tLS0tLQo+ICAxMSBmaWxlcyBjaGFuZ2VkLCA3IGluc2VydGlvbnMoKyks
+IDMxIGRlbGV0aW9ucygtKQo+IAo+IGRpZmYgLS1naXQgYS9hcmNoL2FybS9jb25maWdzL2V4eW5v
+c19kZWZjb25maWcgYi9hcmNoL2FybS9jb25maWdzL2V4eW5vc19kZWZjb25maWcKPiBpbmRleCA3
+OWM0MTVjMzNmNjkuLjgwOWYwYmYzMDQyYSAxMDA2NDQKPiAtLS0gYS9hcmNoL2FybS9jb25maWdz
+L2V4eW5vc19kZWZjb25maWcKPiArKysgYi9hcmNoL2FybS9jb25maWdzL2V4eW5vc19kZWZjb25m
+aWcKPiBAQCAtMjQsNyArMjQsNyBAQCBDT05GSUdfQVJNX0FQUEVOREVEX0RUQj15Cj4gIENPTkZJ
+R19BUk1fQVRBR19EVEJfQ09NUEFUPXkKPiAgQ09ORklHX0NNRExJTkU9InJvb3Q9L2Rldi9yYW0w
+IHJ3IHJhbWRpc2uBOTIgaW5pdHJkPTB4NDEwMDAwMDAsOE0gY29uc29sZT10dHlTQUMxLDExNTIw
+MCBpbml0PS9saW51eHJjIG1lbSU2TSIKPiAgQ09ORklHX0NQVV9GUkVRPXkKPiAtQ09ORklHX0NQ
+VV9GUkVRX1NUQVRfREVUQUlMUz15Cj4gK0NPTkZJR19DUFVfRlJFUV9TVEFUPXkKPiAgQ09ORklH
+X0NQVV9GUkVRX0RFRkFVTFRfR09WX09OREVNQU5EPXkKPiAgQ09ORklHX0NQVV9GUkVRX0dPVl9Q
+T1dFUlNBVkU9bQo+ICBDT05GSUdfQ1BVX0ZSRVFfR09WX1VTRVJTUEFDRT1tCgpGb3IgRXh5bm9z
+OgpBY2tlZC1ieTogS3J6eXN6dG9mIEtvemxvd3NraSA8a3J6a0BrZXJuZWwub3JnPgoKQmVzdCBy
+ZWdhcmRzLApLcnp5c3p0b2YKCi0tClRvIHVuc3Vic2NyaWJlIGZyb20gdGhpcyBsaXN0OiBzZW5k
+IHRoZSBsaW5lICJ1bnN1YnNjcmliZSBsaW51eC1zaCIgaW4KdGhlIGJvZHkgb2YgYSBtZXNzYWdl
+IHRvIG1ham9yZG9tb0B2Z2VyLmtlcm5lbC5vcmcKTW9yZSBtYWpvcmRvbW8gaW5mbyBhdCAgaHR0
+cDovL3ZnZXIua2VybmVsLm9yZy9tYWpvcmRvbW8taW5mby5odG1s
