@@ -1,63 +1,33 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 03 Jan 2017 23:06:30 +0000
-Subject: [PATCH 10/19] sh: Don't set the sh-sci platform data scscr CKE0 bit
-Message-Id: <20170103230639.19660-11-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 06 Jan 2017 10:23:00 +0000
+Subject: Re: [PATCH 10/19] sh: Don't set the sh-sci platform data scscr CKE0 bit
+Message-Id: <CAMuHMdVmFyx8OM+cO8w0+3RYvRj9_+2yZRpj8eaXsPGRF-n-DQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20170103230639.19660-1-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <20170103230639.19660-1-laurent.pinchart+renesas@ideasonboard.com>
+References: <20170103230639.19660-1-laurent.pinchart+renesas@ideasonboard.com> <20170103230639.19660-11-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <20170103230639.19660-11-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-renesas-soc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, linux-serial@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: Linux-Renesas <linux-renesas-soc@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-serial@vger.kernel.org" <linux-serial@vger.kernel.org>, Geert Uytterhoeven <geert+renesas@glider.be>
 
-The bit is only set by platforms that also set the CKE1 but, in which
-case its value is ignored by the device. Don't set it, this simplifies
-platform data and only leaves the CKE1 bit to be handled.
+On Wed, Jan 4, 2017 at 12:06 AM, Laurent Pinchart
+<laurent.pinchart+renesas@ideasonboard.com> wrote:
+> The bit is only set by platforms that also set the CKE1 but, in which
+> case its value is ignored by the device. Don't set it, this simplifies
+> platform data and only leaves the CKE1 bit to be handled.
+>
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- arch/sh/kernel/cpu/sh3/setup-sh7705.c | 2 +-
- arch/sh/kernel/cpu/sh3/setup-sh7710.c | 4 ++--
- 2 files changed, 3 insertions(+), 3 deletions(-)
+Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-diff --git a/arch/sh/kernel/cpu/sh3/setup-sh7705.c b/arch/sh/kernel/cpu/sh3/setup-sh7705.c
-index a60edd8f3db7..f6e392e0d27e 100644
---- a/arch/sh/kernel/cpu/sh3/setup-sh7705.c
-+++ b/arch/sh/kernel/cpu/sh3/setup-sh7705.c
-@@ -70,7 +70,7 @@ static DECLARE_INTC_DESC(intc_desc, "sh7705", vectors, NULL,
- 			 NULL, prio_registers, NULL);
- 
- static struct plat_sci_port scif0_platform_data = {
--	.scscr		= SCSCR_CKE1 | SCSCR_CKE0,
-+	.scscr		= SCSCR_CKE1,
- 	.type		= PORT_SCIF,
- 	.ops		= &sh770x_sci_port_ops,
- 	.regtype	= SCIx_SH7705_SCIF_REGTYPE,
-diff --git a/arch/sh/kernel/cpu/sh3/setup-sh7710.c b/arch/sh/kernel/cpu/sh3/setup-sh7710.c
-index ac2a0aabcec5..ea52410b430d 100644
---- a/arch/sh/kernel/cpu/sh3/setup-sh7710.c
-+++ b/arch/sh/kernel/cpu/sh3/setup-sh7710.c
-@@ -98,7 +98,7 @@ static struct platform_device rtc_device = {
- };
- 
- static struct plat_sci_port scif0_platform_data = {
--	.scscr		= SCSCR_REIE | SCSCR_CKE1 | SCSCR_CKE0,
-+	.scscr		= SCSCR_REIE | SCSCR_CKE1,
- 	.type		= PORT_SCIF,
- };
- 
-@@ -118,7 +118,7 @@ static struct platform_device scif0_device = {
- };
- 
- static struct plat_sci_port scif1_platform_data = {
--	.scscr		= SCSCR_REIE | SCSCR_CKE1 | SCSCR_CKE0,
-+	.scscr		= SCSCR_REIE | SCSCR_CKE1,
- 	.type		= PORT_SCIF,
- };
- 
--- 
-Regards,
+Gr{oetje,eeting}s,
 
-Laurent Pinchart
+                        Geert
 
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
