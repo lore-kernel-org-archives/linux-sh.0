@@ -1,105 +1,33 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 03 Jan 2017 23:06:36 +0000
-Subject: [PATCH 16/19] serial: sh-sci: Remove the platform data dma slave rx/tx channel IDs
-Message-Id: <20170103230639.19660-17-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 06 Jan 2017 10:53:37 +0000
+Subject: Re: [PATCH 16/19] serial: sh-sci: Remove the platform data dma slave rx/tx channel IDs
+Message-Id: <CAMuHMdVnLTSnEZ0_953Q-LYmXu5mcQ-qEz=O=wfO7+ifsB4w2w@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20170103230639.19660-1-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <20170103230639.19660-1-laurent.pinchart+renesas@ideasonboard.com>
+References: <20170103230639.19660-1-laurent.pinchart+renesas@ideasonboard.com> <20170103230639.19660-17-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <20170103230639.19660-17-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-renesas-soc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, linux-serial@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: Linux-Renesas <linux-renesas-soc@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-serial@vger.kernel.org" <linux-serial@vger.kernel.org>, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Only SH platforms still use platform data for the sh-sci, and none of
-them declare DMA channels connected to the SCI. Remove the corresponding
-platform data fields and simplify the driver accordingly.
+On Wed, Jan 4, 2017 at 12:06 AM, Laurent Pinchart
+<laurent.pinchart+renesas@ideasonboard.com> wrote:
+> Only SH platforms still use platform data for the sh-sci, and none of
+> them declare DMA channels connected to the SCI. Remove the corresponding
+> platform data fields and simplify the driver accordingly.
+>
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- drivers/tty/serial/sh-sci.c | 23 ++++++-----------------
- include/linux/serial_sci.h  |  3 ---
- 2 files changed, 6 insertions(+), 20 deletions(-)
+Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 010422ae88ff..671b6068c58b 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -1388,20 +1388,14 @@ static void rx_timer_fn(unsigned long arg)
- }
- 
- static struct dma_chan *sci_request_dma_chan(struct uart_port *port,
--					     enum dma_transfer_direction dir,
--					     unsigned int id)
-+					     enum dma_transfer_direction dir)
- {
--	dma_cap_mask_t mask;
- 	struct dma_chan *chan;
- 	struct dma_slave_config cfg;
- 	int ret;
- 
--	dma_cap_zero(mask);
--	dma_cap_set(DMA_SLAVE, mask);
--
--	chan = dma_request_slave_channel_compat(mask, shdma_chan_filter,
--					(void *)(unsigned long)id, port->dev,
--					dir = DMA_MEM_TO_DEV ? "tx" : "rx");
-+	chan = dma_request_slave_channel(port->dev,
-+					 dir = DMA_MEM_TO_DEV ? "tx" : "rx");
- 	if (!chan) {
- 		dev_warn(port->dev,
- 			 "dma_request_slave_channel_compat failed\n");
-@@ -1437,12 +1431,11 @@ static void sci_request_dma(struct uart_port *port)
- 
- 	dev_dbg(port->dev, "%s: port %d\n", __func__, port->line);
- 
--	if (!port->dev->of_node &&
--	    (s->cfg->dma_slave_tx <= 0 || s->cfg->dma_slave_rx <= 0))
-+	if (!port->dev->of_node)
- 		return;
- 
- 	s->cookie_tx = -EINVAL;
--	chan = sci_request_dma_chan(port, DMA_MEM_TO_DEV, s->cfg->dma_slave_tx);
-+	chan = sci_request_dma_chan(port, DMA_MEM_TO_DEV);
- 	dev_dbg(port->dev, "%s: TX: got channel %p\n", __func__, chan);
- 	if (chan) {
- 		s->chan_tx = chan;
-@@ -1464,7 +1457,7 @@ static void sci_request_dma(struct uart_port *port)
- 		INIT_WORK(&s->work_tx, work_fn_tx);
- 	}
- 
--	chan = sci_request_dma_chan(port, DMA_DEV_TO_MEM, s->cfg->dma_slave_rx);
-+	chan = sci_request_dma_chan(port, DMA_DEV_TO_MEM);
- 	dev_dbg(port->dev, "%s: RX: got channel %p\n", __func__, chan);
- 	if (chan) {
- 		unsigned int i;
-@@ -2705,10 +2698,6 @@ static int sci_init_single(struct platform_device *dev,
- 	port->serial_in		= sci_serial_in;
- 	port->serial_out	= sci_serial_out;
- 
--	if (p->dma_slave_tx > 0 && p->dma_slave_rx > 0)
--		dev_dbg(port->dev, "DMA tx %d, rx %d\n",
--			p->dma_slave_tx, p->dma_slave_rx);
--
- 	return 0;
- }
- 
-diff --git a/include/linux/serial_sci.h b/include/linux/serial_sci.h
-index 9f2bfd055742..1a894c47bfc0 100644
---- a/include/linux/serial_sci.h
-+++ b/include/linux/serial_sci.h
-@@ -71,9 +71,6 @@ struct plat_sci_port {
- 	unsigned char	regtype;
- 
- 	struct plat_sci_port_ops	*ops;
--
--	unsigned int	dma_slave_tx;
--	unsigned int	dma_slave_rx;
- };
- 
- #endif /* __LINUX_SERIAL_SCI_H */
--- 
-Regards,
+Gr{oetje,eeting}s,
 
-Laurent Pinchart
+                        Geert
 
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
