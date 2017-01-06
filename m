@@ -1,34 +1,51 @@
-From: Borislav Petkov <bp@suse.de>
-Date: Wed, 18 Jan 2017 11:29:51 +0000
-Subject: Re: [PATCH v7 02/14] xtensa: skip adding literal when SORT() is used
-Message-Id: <20170118112951.62drjsk264rhe5lj@pd.tnic>
+From: Nicolas Dichtel <nicolas.dichtel@6wind.com>
+Date: Fri, 06 Jan 2017 09:43:55 +0000
+Subject: [PATCH v2 3/7] nios2: put setup.h in uapi
+Message-Id: <1483695839-18660-4-git-send-email-nicolas.dichtel@6wind.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20170109145833.11502-1-mcgrof@kernel.org>
- <20170115211057.17167-1-mcgrof@kernel.org>
- <20170115211057.17167-3-mcgrof@kernel.org>
-In-Reply-To: <20170115211057.17167-3-mcgrof@kernel.org>
+References: <bf83da6b-01ef-bf44-b3e1-ca6fc5636818@6wind.com>
+ <1483695839-18660-1-git-send-email-nicolas.dichtel@6wind.com>
+In-Reply-To: <1483695839-18660-1-git-send-email-nicolas.dichtel@6wind.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: "Luis R. Rodriguez" <mcgrof@kernel.org>
-Cc: gnomes@lxorguk.ukuu.org.uk, dalias@libc.org, linux-ia64@vger.kernel.org, jkosina@suse.cz, benh@kernel.crashing.org, ming.lei@canonical.com, heiko.carstens@de.ibm.com, platform-driver-x86@vger.kernel.org, James.Bottomley@HansenPartnership.com, paul.gortmaker@windriver.com, paulus@samba.org, mpe@ellerman.id.au, hpa@zytor.com, masami.hiramatsu.pt@hitachi.com, wangnan0@huawei.com, mchehab@osg.samsung.com, linux-arch@vger.kernel.org, markus.heiser@darmarit.de, sparclinux@vger.kernel.org, xen-devel@lists.xensource.com, linux@arm.linux.org.uk, linux-sh@vger.kernel.org, will.deacon@arm.com, korea.drzix@gmail.com, x86@kernel.org, anil.s.keshavamurthy@intel.com, fontana@sharpeleven.org, mingo@redhat.com, dsahern@gmail.com, linux-arm-kernel@lists.infradead.org, catalin.marinas@arm.com, dvhart@infradead.org, dwmw2@infradead.org, linux@roeck-us.net, david.vrabel@citrix.com, linux-xte
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: arnd@arndb.de
+Cc: linux-mips@linux-mips.org, alsa-devel@alsa-project.org, linux-ia64@vger.kernel.org, linux-doc@vger.kernel.org, airlied@linux.ie, linux-fbdev@vger.kernel.org, dri-devel@lists.freedesktop.org, linux-mtd@lists.infradead.org, sparclinux@vger.kernel.org, linux-arch@vger.kernel.org, linux-s390@vger.kernel.org, linux-am33-list@redhat.com, linux-c6x-dev@linux-c6x.org, linux-rdma@vger.kernel.org, linux-hexagon@vger.kernel.org, linux-sh@vger.kernel.org, coreteam@netfilter.org, fcoe-devel@open-fcoe.org, xen-devel@lists.xenproject.org, linux-snps-arc@lists.infradead.org, linux-media@vger.kernel.org, uclinux-h8-devel@lists.sourceforge.jp, linux-xtensa@linux-xtensa.org, linux-kbuild@vger.kernel.org, adi-buildroot-devel@lists.sourceforge.net, linux-raid@vger.kernel.org, linux-m68k@lists.linux-m68k.org, openrisc@lists.librecores.org, Nicolas Dichtel <nicolas.dichtel@6wind.com>linux-me
 
-On Sun, Jan 15, 2017 at 01:10:45PM -0800, Luis R. Rodriguez wrote:
-> When SORT(foo.*) is used the current sed replacements add
-> SORT(foo.literal foo.*), this breaks linking. Avoid adding
-> literals for SORT globs, if needed, these need to be added
-> manually.
+This header file is exported, thus move it to uapi.
 
-Please rewrite this commit message by breaking into separate sentences,
-adding punctuation, etc.
+Signed-off-by: Nicolas Dichtel <nicolas.dichtel@6wind.com>
+---
+ arch/nios2/include/asm/setup.h      | 2 +-
+ arch/nios2/include/uapi/asm/setup.h | 6 ++++++
+ 2 files changed, 7 insertions(+), 1 deletion(-)
+ create mode 100644 arch/nios2/include/uapi/asm/setup.h
 
-Also, "the current sed replacements add" sounds really strange and makes
-me wonder what do you mean. What are "sed replacements"? I think you
-mean the "sed regex adds" from looking at the diff.
-
+diff --git a/arch/nios2/include/asm/setup.h b/arch/nios2/include/asm/setup.h
+index dcbf8cf1a344..d49e9e91bf55 100644
+--- a/arch/nios2/include/asm/setup.h
++++ b/arch/nios2/include/asm/setup.h
+@@ -19,7 +19,7 @@
+ #ifndef _ASM_NIOS2_SETUP_H
+ #define _ASM_NIOS2_SETUP_H
+ 
+-#include <asm-generic/setup.h>
++#include <uapi/asm/setup.h>
+ 
+ #ifndef __ASSEMBLY__
+ #ifdef __KERNEL__
+diff --git a/arch/nios2/include/uapi/asm/setup.h b/arch/nios2/include/uapi/asm/setup.h
+new file mode 100644
+index 000000000000..8d8285997ba8
+--- /dev/null
++++ b/arch/nios2/include/uapi/asm/setup.h
+@@ -0,0 +1,6 @@
++#ifndef _UAPI_ASM_NIOS2_SETUP_H
++#define _UAPI_ASM_NIOS2_SETUP_H
++
++#include <asm-generic/setup.h>
++
++#endif /* _UAPI_ASM_NIOS2_SETUP_H */
 -- 
-Regards/Gruss,
-    Boris.
+2.8.1
 
-SUSE Linux GmbH, GF: Felix Imendörffer, Jane Smithard, Graham Norton, HRB 21284 (AG Nürnberg)
--- 
