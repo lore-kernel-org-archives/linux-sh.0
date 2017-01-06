@@ -1,72 +1,33 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 03 Jan 2017 23:06:21 +0000
-Subject: [PATCH 01/19] serial: sh-sci: Set the SCSCR TE and RE bits in the driver
-Message-Id: <20170103230639.19660-2-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 06 Jan 2017 10:11:00 +0000
+Subject: Re: [PATCH 01/19] serial: sh-sci: Set the SCSCR TE and RE bits in the driver
+Message-Id: <CAMuHMdXi42wjmgBAdAkn2AuGKP_YSFz0ZLiotA-e6_5Bmn3D7w@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20170103230639.19660-1-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <20170103230639.19660-1-laurent.pinchart+renesas@ideasonboard.com>
+References: <20170103230639.19660-1-laurent.pinchart+renesas@ideasonboard.com> <20170103230639.19660-2-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <20170103230639.19660-2-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-renesas-soc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, linux-serial@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: Linux-Renesas <linux-renesas-soc@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-serial@vger.kernel.org" <linux-serial@vger.kernel.org>, Geert Uytterhoeven <geert+renesas@glider.be>
 
-The Transmit Enable and Receive Enable bits are set in the scscr field
-of all instances of the sh-sci platform data. Set them in the driver
-directly to prepare for their removal from platform data.
+On Wed, Jan 4, 2017 at 12:06 AM, Laurent Pinchart
+<laurent.pinchart+renesas@ideasonboard.com> wrote:
+> The Transmit Enable and Receive Enable bits are set in the scscr field
+> of all instances of the sh-sci platform data. Set them in the driver
+> directly to prepare for their removal from platform data.
+>
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- drivers/tty/serial/sh-sci.c | 13 +++++++------
- 1 file changed, 7 insertions(+), 6 deletions(-)
+Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 91e7dddbf72c..1e573611719e 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -2341,7 +2341,8 @@ static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
- 		serial_port_out(port, SCFCR, ctrl);
- 	}
- 
--	scr_val |= s->cfg->scscr & ~(SCSCR_CKE1 | SCSCR_CKE0);
-+	scr_val |= SCSCR_RE | SCSCR_TE |
-+		   (s->cfg->scscr & ~(SCSCR_CKE1 | SCSCR_CKE0));
- 	dev_dbg(port->dev, "SCSCR 0x%x\n", scr_val);
- 	serial_port_out(port, SCSCR, scr_val);
- 	if ((srr + 1 = 5) &&
-@@ -2791,7 +2792,8 @@ static void serial_console_write(struct console *co, const char *s,
- 
- 	/* first save SCSCR then disable interrupts, keep clock source */
- 	ctrl = serial_port_in(port, SCSCR);
--	ctrl_temp = (sci_port->cfg->scscr & ~(SCSCR_CKE1 | SCSCR_CKE0)) |
-+	ctrl_temp = SCSCR_RE | SCSCR_TE |
-+		    (sci_port->cfg->scscr & ~(SCSCR_CKE1 | SCSCR_CKE0)) |
- 		    (ctrl & (SCSCR_CKE1 | SCSCR_CKE0));
- 	serial_port_out(port, SCSCR, ctrl_temp);
- 
-@@ -2994,7 +2996,6 @@ sci_parse_dt(struct platform_device *pdev, unsigned int *dev_id)
- 	p->flags = UPF_IOREMAP | UPF_BOOT_AUTOCONF;
- 	p->type = SCI_OF_TYPE(match->data);
- 	p->regtype = SCI_OF_REGTYPE(match->data);
--	p->scscr = SCSCR_RE | SCSCR_TE;
- 
- 	if (of_find_property(np, "uart-has-rtscts", NULL))
- 		p->capabilities |= SCIx_HAVE_RTSCTS;
-@@ -3162,9 +3163,9 @@ static int __init early_console_setup(struct earlycon_device *device,
- 	sci_ports[0].cfg = &port_cfg;
- 	sci_ports[0].cfg->type = type;
- 	sci_probe_regmap(sci_ports[0].cfg);
--	port_cfg.scscr = sci_serial_in(&sci_ports[0].port, SCSCR) |
--			 SCSCR_RE | SCSCR_TE;
--	sci_serial_out(&sci_ports[0].port, SCSCR, port_cfg.scscr);
-+	port_cfg.scscr = sci_serial_in(&sci_ports[0].port, SCSCR);
-+	sci_serial_out(&sci_ports[0].port, SCSCR,
-+		       SCSCR_RE | SCSCR_TE | port_cfg.scscr);
- 
- 	device->con->write = serial_console_write;
- 	return 0;
--- 
-Regards,
+Gr{oetje,eeting}s,
 
-Laurent Pinchart
+                        Geert
 
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
