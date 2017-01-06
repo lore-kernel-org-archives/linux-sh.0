@@ -1,67 +1,56 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 03 Jan 2017 23:06:31 +0000
-Subject: [PATCH 11/19] sh: Don't set the sh-sci platform data REIE bit when not implemented
-Message-Id: <20170103230639.19660-12-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 06 Jan 2017 10:27:05 +0000
+Subject: Re: [PATCH 11/19] sh: Don't set the sh-sci platform data REIE bit when not implemented
+Message-Id: <CAMuHMdVz9FCjTOBExbA3J32xiS03enUtCXwouHfDwM4r2o-ehw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20170103230639.19660-1-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <20170103230639.19660-1-laurent.pinchart+renesas@ideasonboard.com>
+References: <20170103230639.19660-1-laurent.pinchart+renesas@ideasonboard.com> <20170103230639.19660-12-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <20170103230639.19660-12-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-renesas-soc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, linux-serial@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: Linux-Renesas <linux-renesas-soc@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-serial@vger.kernel.org" <linux-serial@vger.kernel.org>, Geert Uytterhoeven <geert+renesas@glider.be>
 
-According to the datasheets, the sh7760 SIM and sh7723 SCIFA instances
-don't implement the REIE bit. Don't set it in platform data.
+Hi Laurent,
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- arch/sh/kernel/cpu/sh4/setup-sh7760.c  | 1 -
- arch/sh/kernel/cpu/sh4a/setup-sh7723.c | 3 ---
- 2 files changed, 4 deletions(-)
+On Wed, Jan 4, 2017 at 12:06 AM, Laurent Pinchart
+<laurent.pinchart+renesas@ideasonboard.com> wrote:
+> According to the datasheets, the sh7760 SIM and sh7723 SCIFA instances
+> don't implement the REIE bit. Don't set it in platform data.
+>
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-diff --git a/arch/sh/kernel/cpu/sh4/setup-sh7760.c b/arch/sh/kernel/cpu/sh4/setup-sh7760.c
-index 6dbcbf1621aa..e51fe1734e13 100644
---- a/arch/sh/kernel/cpu/sh4/setup-sh7760.c
-+++ b/arch/sh/kernel/cpu/sh4/setup-sh7760.c
-@@ -200,7 +200,6 @@ static struct platform_device scif2_device = {
- };
- 
- static struct plat_sci_port scif3_platform_data = {
--	.scscr		= SCSCR_REIE,
- 	/*
- 	 * This is actually a SIM card module serial port, based on an SCI with
- 	 * additional registers. The sh-sci driver doesn't support the SIM port
-diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7723.c b/arch/sh/kernel/cpu/sh4a/setup-sh7723.c
-index 6c5cb234aa33..1c1b3c469831 100644
---- a/arch/sh/kernel/cpu/sh4a/setup-sh7723.c
-+++ b/arch/sh/kernel/cpu/sh4a/setup-sh7723.c
-@@ -86,7 +86,6 @@ static struct platform_device scif2_device = {
- };
- 
- static struct plat_sci_port scif3_platform_data = {
--	.scscr		= SCSCR_REIE,
- 	.sampling_rate	= 8,
- 	.type           = PORT_SCIFA,
- };
-@@ -107,7 +106,6 @@ static struct platform_device scif3_device = {
- };
- 
- static struct plat_sci_port scif4_platform_data = {
--	.scscr		= SCSCR_REIE,
- 	.sampling_rate	= 8,
- 	.type           = PORT_SCIFA,
- };
-@@ -128,7 +126,6 @@ static struct platform_device scif4_device = {
- };
- 
- static struct plat_sci_port scif5_platform_data = {
--	.scscr		= SCSCR_REIE,
- 	.sampling_rate	= 8,
- 	.type           = PORT_SCIFA,
- };
--- 
-Regards,
+Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Laurent Pinchart
+> ---
+>  arch/sh/kernel/cpu/sh4/setup-sh7760.c  | 1 -
+>  arch/sh/kernel/cpu/sh4a/setup-sh7723.c | 3 ---
+>  2 files changed, 4 deletions(-)
+>
+> diff --git a/arch/sh/kernel/cpu/sh4/setup-sh7760.c b/arch/sh/kernel/cpu/sh4/setup-sh7760.c
+> index 6dbcbf1621aa..e51fe1734e13 100644
+> --- a/arch/sh/kernel/cpu/sh4/setup-sh7760.c
+> +++ b/arch/sh/kernel/cpu/sh4/setup-sh7760.c
+> @@ -200,7 +200,6 @@ static struct platform_device scif2_device = {
+>  };
+>
+>  static struct plat_sci_port scif3_platform_data = {
+> -       .scscr          = SCSCR_REIE,
 
+Note that this bit does have a function (WAIT_IE --- Enables wait error
+interrupt (SIMERI) requests), so this may impact behavior.
+
+>         /*
+>          * This is actually a SIM card module serial port, based on an SCI with
+>          * additional registers. The sh-sci driver doesn't support the SIM port
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
