@@ -1,174 +1,85 @@
-From: "Luis R. Rodriguez" <mcgrof@kernel.org>
-Date: Sun, 15 Jan 2017 21:10:50 +0000
-Subject: [PATCH v7 07/14] firmware: port built-in section to linker table
-Message-Id: <20170115211057.17167-8-mcgrof@kernel.org>
+From: Nicolas Dichtel <nicolas.dichtel@6wind.com>
+Date: Fri, 06 Jan 2017 09:43:57 +0000
+Subject: [PATCH v2 5/7] Makefile.headersinst: cleanup input files
+Message-Id: <1483695839-18660-6-git-send-email-nicolas.dichtel@6wind.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20170109145833.11502-1-mcgrof@kernel.org>
- <20170115211057.17167-1-mcgrof@kernel.org>
-In-Reply-To: <20170115211057.17167-1-mcgrof@kernel.org>
+References: <bf83da6b-01ef-bf44-b3e1-ca6fc5636818@6wind.com>
+ <1483695839-18660-1-git-send-email-nicolas.dichtel@6wind.com>
+In-Reply-To: <1483695839-18660-1-git-send-email-nicolas.dichtel@6wind.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: bp@alien8.de, bp@suse.de, hpa@zytor.com, acme@redhat.com, tglx@linutronix.de, mingo@redhat.com, jpoimboe@redhat.com, npiggin@gmail.com, mhiramat@kernel.org, masami.hiramatsu.pt@hitachi.com, jbaron@akamai.com, heiko.carstens@de.ibm.com, ananth@linux.vnet.ibm.com, anil.s.keshavamurthy@intel.com, davem@davemloft.net, realmz6@gmail.com, dalias@libc.org, linux@arm.linux.org.uk
-Cc: x86@kernel.org, luto@amacapital.net, keescook@chromium.org, linux@roeck-us.net, torvalds@linux-foundation.org, gregkh@linuxfoundation.org, rusty@rustcorp.com.au, gnomes@lxorguk.ukuu.org.uk, alan@linux.intel.com, dwmw2@infradead.org, arnd@arndb.de, ming.lei@canonical.com, linux-arch@vger.kernel.org, benh@kernel.crashing.org, pebolle@tiscali.nl, fontana@sharpeleven.org, david.vrabel@citrix.com, konrad.wilk@oracle.com, mcb30@ipxe.org, jgross@suse.com, andrew.cooper3@citrix.com, andriy.shevchenko@linux.intel.com, paul.gortmaker@windriver.com, xen-devel@lists.xensource.com, ak@linux.intel.com, pali.rohar@gmail.com, dvhart@infradead.org, platform-driver-x86@vger.kernel.org, mmarek@suse.com, linux@rasmusvillemoes.dk, jkosina@suse.cz, korea.drzix@gmail.com, linux-kbuild@vger.kernel
+To: arnd@arndb.de
+Cc: linux-mips@linux-mips.org, alsa-devel@alsa-project.org, linux-ia64@vger.kernel.org, linux-doc@vger.kernel.org, airlied@linux.ie, linux-fbdev@vger.kernel.org, dri-devel@lists.freedesktop.org, linux-mtd@lists.infradead.org, sparclinux@vger.kernel.org, linux-arch@vger.kernel.org, linux-s390@vger.kernel.org, linux-am33-list@redhat.com, linux-c6x-dev@linux-c6x.org, linux-rdma@vger.kernel.org, linux-hexagon@vger.kernel.org, linux-sh@vger.kernel.org, coreteam@netfilter.org, fcoe-devel@open-fcoe.org, xen-devel@lists.xenproject.org, linux-snps-arc@lists.infradead.org, linux-media@vger.kernel.org, uclinux-h8-devel@lists.sourceforge.jp, linux-xtensa@linux-xtensa.org, linux-kbuild@vger.kernel.org, adi-buildroot-devel@lists.sourceforge.net, linux-raid@vger.kernel.org, linux-m68k@lists.linux-m68k.org, openrisc@lists.librecores.org, Nicolas Dichtel <nicolas.dichtel@6wind.com>linux-me
 
-This ports built-in firmware to use linker tables,
-this replaces the custom section solution with a
-generic solution.
+After the last four patches, all exported headers are under uapi/, thus
+input-files2 are not needed anymore.
+The side effect is that input-files1-name is exactly header-y.
 
-This also demos the use of the .rodata linker table.
+Note also that unput-files3-name is genhdr-y.
 
-Tested with 0 built-in firmware, 1 and 2 built-in
-firmwares successfully.
-
-v6: rename table macro as suggested by Andy Shevchenko
-
-v5:
-
-o since we dropped SECTION_ORDER_ANY, use 'any' order level explicitly
-
-v4:
-
-o work around c6x toolchain bug by using SECTION_TBL_RO
-
-o fix compilation on blackfin
-
-v3:
-o explicitly include tables.h as we no longer include
-  tables.h from sections.h
-
-o use new section_tbl_asmtype() helper on firmware/Makefile
-  to enable having to unfold things on our own.
-
-v2: introduced this file in this version of the series
-
-Cc: Barry Song <barry.song@analog.com>
-Cc: Mike Frysinger <vapier@gentoo.org>
-Cc: Steven Miao <realmz6@gmail.com>
-Cc: Michael Matz <matz@suse.de>
-Cc: Guenter Roeck <linux@roeck-us.net>
-Cc: Fengguang Wu <fengguang.wu@intel.com>
-Signed-off-by: Luis R. Rodriguez <mcgrof@kernel.org>
+Signed-off-by: Nicolas Dichtel <nicolas.dichtel@6wind.com>
 ---
- arch/x86/kernel/cpu/microcode/core.c |  8 ++++----
- drivers/base/firmware_class.c        | 12 ++++++------
- firmware/Makefile                    |  3 ++-
- include/asm-generic/vmlinux.lds.h    |  7 -------
- 4 files changed, 12 insertions(+), 18 deletions(-)
+ scripts/Makefile.headersinst | 34 +++++++++++-----------------------
+ 1 file changed, 11 insertions(+), 23 deletions(-)
 
-diff --git a/arch/x86/kernel/cpu/microcode/core.c b/arch/x86/kernel/cpu/microcode/core.c
-index 2af69d27da62..2c5004343b45 100644
---- a/arch/x86/kernel/cpu/microcode/core.c
-+++ b/arch/x86/kernel/cpu/microcode/core.c
-@@ -31,6 +31,7 @@
- #include <linux/cpu.h>
- #include <linux/fs.h>
- #include <linux/mm.h>
-+#include <linux/tables.h>
+diff --git a/scripts/Makefile.headersinst b/scripts/Makefile.headersinst
+index 1106d6ca3a38..3e20d03432d2 100644
+--- a/scripts/Makefile.headersinst
++++ b/scripts/Makefile.headersinst
+@@ -40,31 +40,20 @@ wrapper-files := $(filter $(header-y), $(generic-y))
+ srcdir        := $(srctree)/$(obj)
+ gendir        := $(objtree)/$(gen)
  
- #include <asm/microcode_intel.h>
- #include <asm/cpu_device_id.h>
-@@ -110,15 +111,14 @@ static bool __init check_loader_disabled_bsp(void)
- 	return *res;
- }
+-oldsrcdir     := $(srctree)/$(subst /uapi,,$(obj))
+-
+ # all headers files for this dir
+ header-y      := $(filter-out $(generic-y), $(header-y))
+ all-files     := $(header-y) $(genhdr-y) $(wrapper-files)
+ output-files  := $(addprefix $(installdir)/, $(all-files))
  
--extern struct builtin_fw __start_builtin_fw[];
--extern struct builtin_fw __end_builtin_fw[];
-+DECLARE_LINKTABLE_RO(struct builtin_fw, builtin_fw);
+-input-files1  := $(foreach hdr, $(header-y), \
+-		   $(if $(wildcard $(srcdir)/$(hdr)), \
+-			$(wildcard $(srcdir)/$(hdr))) \
+-		   )
+-input-files1-name := $(notdir $(input-files1))
+-input-files2  := $(foreach hdr, $(header-y), \
+-		   $(if  $(wildcard $(srcdir)/$(hdr)),, \
+-			$(if $(wildcard $(oldsrcdir)/$(hdr)), \
+-				$(wildcard $(oldsrcdir)/$(hdr)), \
+-				$(error Missing UAPI file $(srcdir)/$(hdr))) \
+-		   ))
+-input-files2-name := $(notdir $(input-files2))
+-input-files3  := $(foreach hdr, $(genhdr-y), \
+-		   $(if	$(wildcard $(gendir)/$(hdr)), \
+-			$(wildcard $(gendir)/$(hdr)), \
+-			$(error Missing generated UAPI file $(gendir)/$(hdr)) \
+-		   ))
+-input-files3-name := $(notdir $(input-files3))
++# Check that all expected files exist
++$(foreach hdr, $(header-y), \
++  $(if $(wildcard $(srcdir)/$(hdr)),, \
++       $(error Missing UAPI file $(srcdir)/$(hdr)) \
++   ))
++$(foreach hdr, $(genhdr-y), \
++  $(if	$(wildcard $(gendir)/$(hdr)),, \
++       $(error Missing generated UAPI file $(gendir)/$(hdr)) \
++  ))
  
- bool get_builtin_firmware(struct cpio_data *cd, const char *name)
- {
- #ifdef CONFIG_FW_LOADER
--	struct builtin_fw *b_fw;
-+	const struct builtin_fw *b_fw;
- 
--	for (b_fw = __start_builtin_fw; b_fw != __end_builtin_fw; b_fw++) {
-+	linktable_for_each(b_fw, builtin_fw) {
- 		if (!strcmp(name, b_fw->name)) {
- 			cd->size = b_fw->size;
- 			cd->data = b_fw->data;
-diff --git a/drivers/base/firmware_class.c b/drivers/base/firmware_class.c
-index 4497d263209f..b9ac348e8d33 100644
---- a/drivers/base/firmware_class.c
-+++ b/drivers/base/firmware_class.c
-@@ -31,6 +31,7 @@
- #include <linux/reboot.h>
- #include <linux/security.h>
- #include <linux/swait.h>
-+#include <linux/tables.h>
- 
- #include <generated/utsrelease.h>
- 
-@@ -44,15 +45,14 @@ MODULE_LICENSE("GPL");
- 
- #ifdef CONFIG_FW_LOADER
- 
--extern struct builtin_fw __start_builtin_fw[];
--extern struct builtin_fw __end_builtin_fw[];
-+DEFINE_LINKTABLE_RO(struct builtin_fw, builtin_fw);
- 
- static bool fw_get_builtin_firmware(struct firmware *fw, const char *name,
- 				    void *buf, size_t size)
- {
--	struct builtin_fw *b_fw;
-+	const struct builtin_fw *b_fw;
- 
--	for (b_fw = __start_builtin_fw; b_fw != __end_builtin_fw; b_fw++) {
-+	linktable_for_each(b_fw, builtin_fw) {
- 		if (strcmp(name, b_fw->name) = 0) {
- 			fw->size = b_fw->size;
- 			fw->data = b_fw->data;
-@@ -68,9 +68,9 @@ static bool fw_get_builtin_firmware(struct firmware *fw, const char *name,
- 
- static bool fw_is_builtin_firmware(const struct firmware *fw)
- {
--	struct builtin_fw *b_fw;
-+	const struct builtin_fw *b_fw;
- 
--	for (b_fw = __start_builtin_fw; b_fw != __end_builtin_fw; b_fw++)
-+	linktable_for_each(b_fw, builtin_fw)
- 		if (fw->data = b_fw->data)
- 			return true;
- 
-diff --git a/firmware/Makefile b/firmware/Makefile
-index fa3e81c2a97b..9c8cae144ede 100644
---- a/firmware/Makefile
-+++ b/firmware/Makefile
-@@ -155,6 +155,7 @@ quiet_cmd_fwbin = MK_FW   $@
- 		  ASM_ALIGN=$(if $(CONFIG_64BIT),3,2);			     \
- 		  PROGBITS=$(if $(CONFIG_ARM),%,@)progbits;		     \
- 		  echo "/* Generated by firmware/Makefile */"		> $@;\
-+		  echo "\#include <asm/tables.h>"			>>$@;\
- 		  echo "    .section .rodata"				>>$@;\
- 		  echo "    .p2align $${ASM_ALIGN}"			>>$@;\
- 		  echo "_fw_$${FWSTR}_bin:"				>>$@;\
-@@ -164,7 +165,7 @@ quiet_cmd_fwbin = MK_FW   $@
- 		  echo "    .p2align $${ASM_ALIGN}"			>>$@;\
- 		  echo "_fw_$${FWSTR}_name:"				>>$@;\
- 		  echo "    .string \"$$FWNAME\""			>>$@;\
--		  echo "    .section .builtin_fw,\"a\",$${PROGBITS}"	>>$@;\
-+		  echo "    set_section_tbl_type(SECTION_TBL_RO, builtin_fw, any, a,$${PROGBITS})" >>$@;\
- 		  echo "    .p2align $${ASM_ALIGN}"			>>$@;\
- 		  echo "    $${ASM_WORD} _fw_$${FWSTR}_name"		>>$@;\
- 		  echo "    $${ASM_WORD} _fw_$${FWSTR}_bin"		>>$@;\
-diff --git a/include/asm-generic/vmlinux.lds.h b/include/asm-generic/vmlinux.lds.h
-index ce1e9a310ada..8a5325d75932 100644
---- a/include/asm-generic/vmlinux.lds.h
-+++ b/include/asm-generic/vmlinux.lds.h
-@@ -324,13 +324,6 @@
- 		VMLINUX_SYMBOL(__end_pci_fixups_suspend_late) = .;	\
- 	}								\
- 									\
--	/* Built-in firmware blobs */					\
--	.builtin_fw        : AT(ADDR(.builtin_fw) - LOAD_OFFSET) {	\
--		VMLINUX_SYMBOL(__start_builtin_fw) = .;			\
--		KEEP(*(.builtin_fw))					\
--		VMLINUX_SYMBOL(__end_builtin_fw) = .;			\
--	}								\
--									\
- 	TRACEDATA							\
- 									\
- 	/* Kernel symbol table: Normal symbols */			\
+ # Work out what needs to be removed
+ oldheaders    := $(patsubst $(installdir)/%,%,$(wildcard $(installdir)/*.h))
+@@ -78,9 +67,8 @@ printdir = $(patsubst $(INSTALL_HDR_PATH)/%/,%,$(dir $@))
+ quiet_cmd_install = INSTALL $(printdir) ($(words $(all-files))\
+                             file$(if $(word 2, $(all-files)),s))
+       cmd_install = \
+-        $(CONFIG_SHELL) $< $(installdir) $(srcdir) $(input-files1-name); \
+-        $(CONFIG_SHELL) $< $(installdir) $(oldsrcdir) $(input-files2-name); \
+-        $(CONFIG_SHELL) $< $(installdir) $(gendir) $(input-files3-name); \
++        $(CONFIG_SHELL) $< $(installdir) $(srcdir) $(header-y); \
++        $(CONFIG_SHELL) $< $(installdir) $(gendir) $(genhdr-y); \
+         for F in $(wrapper-files); do                                   \
+                 echo "\#include <asm-generic/$$F>" > $(installdir)/$$F;    \
+         done;                                                           \
 -- 
-2.11.0
+2.8.1
 
