@@ -1,180 +1,105 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 11 Jan 2017 14:43:27 +0000
-Subject: [PATCH v2 05/18] sh: sh726[49]: Don't set sh-sci pdata scscr TOIE bit
-Message-Id: <20170111144340.29074-6-laurent.pinchart+renesas@ideasonboard.com>
+From: Paul Gortmaker <paul.gortmaker@windriver.com>
+Date: Mon, 09 Jan 2017 20:40:08 +0000
+Subject: [PATCH 08/10] sh: migrate exception table users off module.h and onto extable.h
+Message-Id: <20170109204010.5047-9-paul.gortmaker@windriver.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20170111144340.29074-1-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <20170111144340.29074-1-laurent.pinchart+renesas@ideasonboard.com>
+References: <20170109204010.5047-1-paul.gortmaker@windriver.com>
+In-Reply-To: <20170109204010.5047-1-paul.gortmaker@windriver.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-renesas-soc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, linux-serial@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org
+Cc: Paul Gortmaker <paul.gortmaker@windriver.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
 
-The SCIF ports on sh7264 and sh7269 don't support the TOIE bit according
-to the datasheets.
+These files were only including module.h for exception table
+related functions.  We've now separated that content out into its
+own file "extable.h" so now move over to that and avoid all the
+extra header content in module.h that we don't really need to compile
+these files.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+One uses "print_modules" so that prevents us removing module.h in
+that case, however.
+
+We also delete a duplicate prototype that doesn't need to exist, as
+it duplicates content in extable.h
+
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+Cc: linux-sh@vger.kernel.org
+Signed-off-by: Paul Gortmaker <paul.gortmaker@windriver.com>
 ---
- arch/sh/kernel/cpu/sh2a/setup-sh7264.c | 16 ++++++++--------
- arch/sh/kernel/cpu/sh2a/setup-sh7269.c | 16 ++++++++--------
- 2 files changed, 16 insertions(+), 16 deletions(-)
+ arch/sh/include/asm/uaccess.h | 1 -
+ arch/sh/kernel/kprobes.c      | 2 +-
+ arch/sh/kernel/traps.c        | 3 ++-
+ arch/sh/mm/extable_32.c       | 2 +-
+ arch/sh/mm/extable_64.c       | 2 +-
+ 5 files changed, 5 insertions(+), 5 deletions(-)
 
-diff --git a/arch/sh/kernel/cpu/sh2a/setup-sh7264.c b/arch/sh/kernel/cpu/sh2a/setup-sh7264.c
-index f111c20177ea..aebaa7a4da46 100644
---- a/arch/sh/kernel/cpu/sh2a/setup-sh7264.c
-+++ b/arch/sh/kernel/cpu/sh2a/setup-sh7264.c
-@@ -227,7 +227,7 @@ static DECLARE_INTC_DESC(intc_desc, "sh7264", vectors, groups,
+diff --git a/arch/sh/include/asm/uaccess.h b/arch/sh/include/asm/uaccess.h
+index a38d0c7b818f..c4f0fee812c3 100644
+--- a/arch/sh/include/asm/uaccess.h
++++ b/arch/sh/include/asm/uaccess.h
+@@ -192,7 +192,6 @@ struct exception_table_entry {
+ #endif
  
- static struct plat_sci_port scif0_platform_data = {
- 	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_REIE | SCSCR_TOIE,
-+	.scscr		= SCSCR_REIE,
- 	.type		= PORT_SCIF,
- 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,
- };
-@@ -252,7 +252,7 @@ static struct platform_device scif0_device = {
+ int fixup_exception(struct pt_regs *regs);
+-const struct exception_table_entry *search_exception_tables(unsigned long addr);
  
- static struct plat_sci_port scif1_platform_data = {
- 	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_REIE | SCSCR_TOIE,
-+	.scscr		= SCSCR_REIE,
- 	.type		= PORT_SCIF,
- 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,
- };
-@@ -277,7 +277,7 @@ static struct platform_device scif1_device = {
+ extern void *set_exception_table_vec(unsigned int vec, void *handler);
  
- static struct plat_sci_port scif2_platform_data = {
- 	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_REIE | SCSCR_TOIE,
-+	.scscr		= SCSCR_REIE,
- 	.type		= PORT_SCIF,
- 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,
- };
-@@ -302,7 +302,7 @@ static struct platform_device scif2_device = {
+diff --git a/arch/sh/kernel/kprobes.c b/arch/sh/kernel/kprobes.c
+index 1653ff64b103..52a5e11247d1 100644
+--- a/arch/sh/kernel/kprobes.c
++++ b/arch/sh/kernel/kprobes.c
+@@ -9,7 +9,7 @@
+  * for more details.
+  */
+ #include <linux/kprobes.h>
+-#include <linux/module.h>
++#include <linux/extable.h>
+ #include <linux/ptrace.h>
+ #include <linux/preempt.h>
+ #include <linux/kdebug.h>
+diff --git a/arch/sh/kernel/traps.c b/arch/sh/kernel/traps.c
+index dfdad72c61ca..9513fa7840aa 100644
+--- a/arch/sh/kernel/traps.c
++++ b/arch/sh/kernel/traps.c
+@@ -8,7 +8,8 @@
+ #include <linux/hardirq.h>
+ #include <linux/kernel.h>
+ #include <linux/kexec.h>
+-#include <linux/module.h>
++#include <linux/extable.h>
++#include <linux/module.h>	/* print_modules */
+ #include <asm/unwinder.h>
+ #include <asm/traps.h>
  
- static struct plat_sci_port scif3_platform_data = {
- 	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_REIE | SCSCR_TOIE,
-+	.scscr		= SCSCR_REIE,
- 	.type		= PORT_SCIF,
- 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,
- };
-@@ -327,7 +327,7 @@ static struct platform_device scif3_device = {
+diff --git a/arch/sh/mm/extable_32.c b/arch/sh/mm/extable_32.c
+index 9cfcbb5848e4..24a75d315dcb 100644
+--- a/arch/sh/mm/extable_32.c
++++ b/arch/sh/mm/extable_32.c
+@@ -4,7 +4,7 @@
+  *   linux/arch/i386/mm/extable.c
+  */
  
- static struct plat_sci_port scif4_platform_data = {
- 	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_REIE | SCSCR_TOIE,
-+	.scscr		= SCSCR_REIE,
- 	.type		= PORT_SCIF,
- 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,
- };
-@@ -352,7 +352,7 @@ static struct platform_device scif4_device = {
+-#include <linux/module.h>
++#include <linux/extable.h>
+ #include <linux/uaccess.h>
  
- static struct plat_sci_port scif5_platform_data = {
- 	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_REIE | SCSCR_TOIE,
-+	.scscr		= SCSCR_REIE,
- 	.type		= PORT_SCIF,
- 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,
- };
-@@ -377,7 +377,7 @@ static struct platform_device scif5_device = {
+ int fixup_exception(struct pt_regs *regs)
+diff --git a/arch/sh/mm/extable_64.c b/arch/sh/mm/extable_64.c
+index 96edaff8c983..b90cdfad2c78 100644
+--- a/arch/sh/mm/extable_64.c
++++ b/arch/sh/mm/extable_64.c
+@@ -11,7 +11,7 @@
+  * for more details.
+  */
+ #include <linux/rwsem.h>
+-#include <linux/module.h>
++#include <linux/extable.h>
+ #include <linux/uaccess.h>
  
- static struct plat_sci_port scif6_platform_data = {
- 	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_REIE | SCSCR_TOIE,
-+	.scscr		= SCSCR_REIE,
- 	.type		= PORT_SCIF,
- 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,
- };
-@@ -402,7 +402,7 @@ static struct platform_device scif6_device = {
- 
- static struct plat_sci_port scif7_platform_data = {
- 	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_REIE | SCSCR_TOIE,
-+	.scscr		= SCSCR_REIE,
- 	.type		= PORT_SCIF,
- 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,
- };
-diff --git a/arch/sh/kernel/cpu/sh2a/setup-sh7269.c b/arch/sh/kernel/cpu/sh2a/setup-sh7269.c
-index b3445e59841a..6d7ac07b4e54 100644
---- a/arch/sh/kernel/cpu/sh2a/setup-sh7269.c
-+++ b/arch/sh/kernel/cpu/sh2a/setup-sh7269.c
-@@ -249,7 +249,7 @@ static DECLARE_INTC_DESC(intc_desc, "sh7269", vectors, groups,
- 
- static struct plat_sci_port scif0_platform_data = {
- 	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_REIE | SCSCR_TOIE,
-+	.scscr		= SCSCR_REIE,
- 	.type		= PORT_SCIF,
- 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,
- };
-@@ -274,7 +274,7 @@ static struct platform_device scif0_device = {
- 
- static struct plat_sci_port scif1_platform_data = {
- 	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_REIE | SCSCR_TOIE,
-+	.scscr		= SCSCR_REIE,
- 	.type		= PORT_SCIF,
- 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,
- };
-@@ -299,7 +299,7 @@ static struct platform_device scif1_device = {
- 
- static struct plat_sci_port scif2_platform_data = {
- 	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_REIE | SCSCR_TOIE,
-+	.scscr		= SCSCR_REIE,
- 	.type		= PORT_SCIF,
- 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,
- };
-@@ -324,7 +324,7 @@ static struct platform_device scif2_device = {
- 
- static struct plat_sci_port scif3_platform_data = {
- 	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_REIE | SCSCR_TOIE,
-+	.scscr		= SCSCR_REIE,
- 	.type		= PORT_SCIF,
- 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,
- };
-@@ -349,7 +349,7 @@ static struct platform_device scif3_device = {
- 
- static struct plat_sci_port scif4_platform_data = {
- 	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_REIE | SCSCR_TOIE,
-+	.scscr		= SCSCR_REIE,
- 	.type		= PORT_SCIF,
- 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,
- };
-@@ -374,7 +374,7 @@ static struct platform_device scif4_device = {
- 
- static struct plat_sci_port scif5_platform_data = {
- 	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_REIE | SCSCR_TOIE,
-+	.scscr		= SCSCR_REIE,
- 	.type		= PORT_SCIF,
- 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,
- };
-@@ -399,7 +399,7 @@ static struct platform_device scif5_device = {
- 
- static struct plat_sci_port scif6_platform_data = {
- 	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_REIE | SCSCR_TOIE,
-+	.scscr		= SCSCR_REIE,
- 	.type		= PORT_SCIF,
- 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,
- };
-@@ -424,7 +424,7 @@ static struct platform_device scif6_device = {
- 
- static struct plat_sci_port scif7_platform_data = {
- 	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_REIE | SCSCR_TOIE,
-+	.scscr		= SCSCR_REIE,
- 	.type		= PORT_SCIF,
- 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,
- };
+ extern unsigned long copy_user_memcpy, copy_user_memcpy_end;
 -- 
-Regards,
-
-Laurent Pinchart
+2.11.0
 
