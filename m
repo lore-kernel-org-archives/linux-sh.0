@@ -1,87 +1,88 @@
-From: Nicolas Dichtel <nicolas.dichtel@6wind.com>
-Date: Fri, 06 Jan 2017 09:43:58 +0000
-Subject: [PATCH v2 6/7] Makefile.headersinst: remove destination-y option
-Message-Id: <1483695839-18660-7-git-send-email-nicolas.dichtel@6wind.com>
+From: "Luis R. Rodriguez" <mcgrof@kernel.org>
+Date: Mon, 09 Jan 2017 15:02:44 +0000
+Subject: [PATCH v3 1/6] tools: add a userspace tools bug.h
+Message-Id: <20170109150249.11667-2-mcgrof@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <bf83da6b-01ef-bf44-b3e1-ca6fc5636818@6wind.com>
- <1483695839-18660-1-git-send-email-nicolas.dichtel@6wind.com>
-In-Reply-To: <1483695839-18660-1-git-send-email-nicolas.dichtel@6wind.com>
+References: <20161222023958.21306-1-mcgrof@kernel.org>
+ <20170109150249.11667-1-mcgrof@kernel.org>
+In-Reply-To: <20170109150249.11667-1-mcgrof@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: arnd@arndb.de
-Cc: linux-mips@linux-mips.org, alsa-devel@alsa-project.org, linux-ia64@vger.kernel.org, linux-doc@vger.kernel.org, airlied@linux.ie, linux-fbdev@vger.kernel.org, dri-devel@lists.freedesktop.org, linux-mtd@lists.infradead.org, sparclinux@vger.kernel.org, linux-arch@vger.kernel.org, linux-s390@vger.kernel.org, linux-am33-list@redhat.com, linux-c6x-dev@linux-c6x.org, linux-rdma@vger.kernel.org, linux-hexagon@vger.kernel.org, linux-sh@vger.kernel.org, coreteam@netfilter.org, fcoe-devel@open-fcoe.org, xen-devel@lists.xenproject.org, linux-snps-arc@lists.infradead.org, linux-media@vger.kernel.org, uclinux-h8-devel@lists.sourceforge.jp, linux-xtensa@linux-xtensa.org, linux-kbuild@vger.kernel.org, adi-buildroot-devel@lists.sourceforge.net, linux-raid@vger.kernel.org, linux-m68k@lists.linux-m68k.org, openrisc@lists.librecores.org, Nicolas Dichtel <nicolas.dichtel@6wind.com>linux-me
+To: hpa@zytor.com, acme@redhat.com, tglx@linutronix.de, mingo@redhat.com, jpoimboe@redhat.com, bp@alien8.de, npiggin@gmail.com, mhiramat@kernel.org, masami.hiramatsu.pt@hitachi.com, jbaron@akamai.com, heiko.carstens@de.ibm.com, ananth@linux.vnet.ibm.com, anil.s.keshavamurthy@intel.com, davem@davemloft.net, realmz6@gmail.com, dalias@libc.org, linux@arm.linux.org.uk
+Cc: x86@kernel.org, luto@amacapital.net, keescook@chromium.org, linux@roeck-us.net, torvalds@linux-foundation.org, gregkh@linuxfoundation.org, rusty@rustcorp.com.au, gnomes@lxorguk.ukuu.org.uk, alan@linux.intel.com, dwmw2@infradead.org, arnd@arndb.de, ming.lei@canonical.com, linux-arch@vger.kernel.org, benh@kernel.crashing.org, pebolle@tiscali.nl, fontana@sharpeleven.org, david.vrabel@citrix.com, konrad.wilk@oracle.com, mcb30@ipxe.org, jgross@suse.com, andrew.cooper3@citrix.com, andriy.shevchenko@linux.intel.com, paul.gortmaker@windriver.com, xen-devel@lists.xensource.com, ak@linux.intel.com, pali.rohar@gmail.com, dvhart@infradead.org, platform-driver-x86@vger.kernel.org, mmarek@suse.com, linux@rasmusvillemoes.dk, jkosina@suse.cz, korea.drzix@gmail.com, linux-kbuild@vger.kernel
 
-This option was added in commit c7bb349e7c25 ("kbuild: introduce destination-y
-for exported headers") but never used in-tree.
+This will be used later by the userspace linker-tables sandbox.
+As a convenience, include bug.h on kernel.h -- this is not done
+on upstream kernel.h, however most header files do include bug.h
+eventually, if we were to only add the ones that need it we'd
+need to copy a lot of headers to tools for the ony purpose of
+includeing bug.h. This simplifies that.
 
-Signed-off-by: Nicolas Dichtel <nicolas.dichtel@6wind.com>
+Signed-off-by: Luis R. Rodriguez <mcgrof@kernel.org>
 ---
- Documentation/kbuild/makefiles.txt | 23 ++++-------------------
- scripts/Makefile.headersinst       |  2 +-
- 2 files changed, 5 insertions(+), 20 deletions(-)
+ tools/include/asm-generic/bug.h | 24 ++++++++++++++++++++++++
+ tools/include/linux/bug.h       |  6 ++++++
+ tools/include/linux/kernel.h    |  2 ++
+ 3 files changed, 32 insertions(+)
+ create mode 100644 tools/include/asm-generic/bug.h
+ create mode 100644 tools/include/linux/bug.h
 
-diff --git a/Documentation/kbuild/makefiles.txt b/Documentation/kbuild/makefiles.txt
-index 9b9c4797fc55..37b525d329ae 100644
---- a/Documentation/kbuild/makefiles.txt
-+++ b/Documentation/kbuild/makefiles.txt
-@@ -46,9 +46,8 @@ This document describes the Linux kernel Makefiles.
- 	== 7 Kbuild syntax for exported headers
- 		--- 7.1 header-y
- 		--- 7.2 genhdr-y
--		--- 7.3 destination-y
--		--- 7.4 generic-y
--		--- 7.5 generated-y
-+		--- 7.3 generic-y
-+		--- 7.4 generated-y
+diff --git a/tools/include/asm-generic/bug.h b/tools/include/asm-generic/bug.h
+new file mode 100644
+index 000000000000..7b0f48b60dbe
+--- /dev/null
++++ b/tools/include/asm-generic/bug.h
+@@ -0,0 +1,24 @@
++#ifndef __TOOLS_ASM_GENERIC_BUG
++#define __TOOLS_ASM_GENERIC_BUG
++
++#include <stdio.h>
++#include <stdlib.h>
++
++#define BUG() do {										\
++	fprintf(stderr, "----------------------------------------------------------\n");	\
++	fprintf (stderr, "BUG on %s at %s: %i\n", __func__, __FILE__, __LINE__);		\
++	abort();										\
++}												\
++while (0)
++
++#define BUG_ON(cond) do { if (cond) BUG(); } while (0)
++
++#define WARN_ON(__test) do {									\
++	if (__test) {										\
++		fprintf(stderr, "----------------------------------------------------------\n");\
++		fprintf (stderr, "WARN_ON on %s at %s: %i\n", __func__, __FILE__, __LINE__);	\
++	}											\
++}												\
++while (0)
++
++#endif /* __TOOLS_ASM_GENERIC_BUG */
+diff --git a/tools/include/linux/bug.h b/tools/include/linux/bug.h
+new file mode 100644
+index 000000000000..9be515b40b5c
+--- /dev/null
++++ b/tools/include/linux/bug.h
+@@ -0,0 +1,6 @@
++#ifndef _TOOLS_LINUX_BUG_H
++#define _TOOLS_LINUX_BUG_H
++
++#include <asm-generic/bug.h>
++
++#endif /* _TOOLS_LINUX_BUG_H */
+diff --git a/tools/include/linux/kernel.h b/tools/include/linux/kernel.h
+index 28607db02bd3..3d385a6d4fc1 100644
+--- a/tools/include/linux/kernel.h
++++ b/tools/include/linux/kernel.h
+@@ -5,6 +5,8 @@
+ #include <stddef.h>
+ #include <assert.h>
  
- 	== 8 Kbuild Variables
- 	== 9 Makefile language
-@@ -1295,21 +1294,7 @@ See subsequent chapter for the syntax of the Kbuild file.
- 			#include/linux/Kbuild
- 			genhdr-y += version.h
++#include <linux/bug.h>
++
+ #define DIV_ROUND_UP(n,d) (((n) + (d) - 1) / (d))
  
--	--- 7.3 destination-y
--
--	When an architecture has a set of exported headers that needs to be
--	exported to a different directory destination-y is used.
--	destination-y specifies the destination directory for all exported
--	headers in the file where it is present.
--
--		Example:
--			#arch/xtensa/platforms/s6105/include/platform/Kbuild
--			destination-y := include/linux
--
--	In the example above all exported headers in the Kbuild file
--	will be located in the directory "include/linux" when exported.
--
--	--- 7.4 generic-y
-+	--- 7.3 generic-y
- 
- 	If an architecture uses a verbatim copy of a header from
- 	include/asm-generic then this is listed in the file
-@@ -1336,7 +1321,7 @@ See subsequent chapter for the syntax of the Kbuild file.
- 		Example: termios.h
- 			#include <asm-generic/termios.h>
- 
--	--- 7.5 generated-y
-+	--- 7.4 generated-y
- 
- 	If an architecture generates other header files alongside generic-y
- 	wrappers, and not included in genhdr-y, then generated-y specifies
-diff --git a/scripts/Makefile.headersinst b/scripts/Makefile.headersinst
-index 3e20d03432d2..876b42cfede4 100644
---- a/scripts/Makefile.headersinst
-+++ b/scripts/Makefile.headersinst
-@@ -14,7 +14,7 @@ kbuild-file := $(srctree)/$(obj)/Kbuild
- include $(kbuild-file)
- 
- # called may set destination dir (when installing to asm/)
--_dst := $(if $(destination-y),$(destination-y),$(if $(dst),$(dst),$(obj)))
-+_dst := $(if $(dst),$(dst),$(obj))
- 
- old-kbuild-file := $(srctree)/$(subst uapi/,,$(obj))/Kbuild
- ifneq ($(wildcard $(old-kbuild-file)),)
+ #define PERF_ALIGN(x, a)	__PERF_ALIGN_MASK(x, (typeof(x))(a)-1)
 -- 
-2.8.1
+2.11.0
 
