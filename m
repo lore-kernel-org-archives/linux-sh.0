@@ -1,34 +1,68 @@
-From: Joyes Dadi <"YD."@biscuit.ocn.ne.jp>
-Date: Mon, 23 Jan 2017 14:07:54 +0000
-Subject: Urgent Please,,
-Message-Id: <1307460608.25784291.1485180474314.JavaMail.root@biscuit.ocn.ne.jp>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 11 Jan 2017 14:43:31 +0000
+Subject: [PATCH v2 09/18] sh: Don't set the sh-sci platform data REIE bit when not implemented
+Message-Id: <20170111144340.29074-10-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20170111144340.29074-1-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <20170111144340.29074-1-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sctp@vger.kernel.org
+To: linux-renesas-soc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, linux-serial@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Good Day Dear,
+According to the datasheets, the sh7760 SIM and sh7723 SCIFA instances
+don't implement the REIE bit. Don't set it in platform data.
 
-My name is Ms. Joyes Dadi, I am glad you are reading this letter and I hope
-we will start our communication and I know that this message will look strange,
-surprising and probably unbelievable to you, but it is the reality. I want to
-make a donation of money to you.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/sh/kernel/cpu/sh4/setup-sh7760.c  | 1 -
+ arch/sh/kernel/cpu/sh4a/setup-sh7723.c | 3 ---
+ 2 files changed, 4 deletions(-)
 
-I contact you by the will of God. I am a firm German woman specialized in
-mining gold and diamonds in Africa. But now, I'm very sick of a cancer. My
-husband died in an accident two years ago with our two children and now I have
-cancer of the esophagus that damaged almost all the cells in my system/agencies
-and I'll die soon according to my doctor.
+diff --git a/arch/sh/kernel/cpu/sh4/setup-sh7760.c b/arch/sh/kernel/cpu/sh4/setup-sh7760.c
+index 641b85865a63..0c0cdfc69dcc 100644
+--- a/arch/sh/kernel/cpu/sh4/setup-sh7760.c
++++ b/arch/sh/kernel/cpu/sh4/setup-sh7760.c
+@@ -200,7 +200,6 @@ static struct platform_device scif2_device = {
+ };
+ 
+ static struct plat_sci_port scif3_platform_data = {
+-	.scscr		= SCSCR_REIE,
+ 	.type		= PORT_SCI,
+ 	.regshift	= 2,
+ };
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7723.c b/arch/sh/kernel/cpu/sh4a/setup-sh7723.c
+index 6c5cb234aa33..1c1b3c469831 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7723.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7723.c
+@@ -86,7 +86,6 @@ static struct platform_device scif2_device = {
+ };
+ 
+ static struct plat_sci_port scif3_platform_data = {
+-	.scscr		= SCSCR_REIE,
+ 	.sampling_rate	= 8,
+ 	.type           = PORT_SCIFA,
+ };
+@@ -107,7 +106,6 @@ static struct platform_device scif3_device = {
+ };
+ 
+ static struct plat_sci_port scif4_platform_data = {
+-	.scscr		= SCSCR_REIE,
+ 	.sampling_rate	= 8,
+ 	.type           = PORT_SCIFA,
+ };
+@@ -128,7 +126,6 @@ static struct platform_device scif4_device = {
+ };
+ 
+ static struct plat_sci_port scif5_platform_data = {
+-	.scscr		= SCSCR_REIE,
+ 	.sampling_rate	= 8,
+ 	.type           = PORT_SCIFA,
+ };
+-- 
+Regards,
 
-My most concern now is, we grew up in the orphanage and were married in
-orphanage. If I die this deposited fund will soon be left alone in the hand of
-the bank, and I do want to it that  way. Please, if you can be reliable and
-sincere to accept my humble proposal; I have (10.5Millions Euro) in a fixed
-deposit account; I will order the Bank to transfer the money into your account
-in your country immediately, and then you will take the fund to  your country
-and invest it to the orphanage homes Please, answer as quickly as possible.
+Laurent Pinchart
 
-God bless you.
-Ms. Joyes Dadi
-Email: joyesdadi767@citromail.hu
