@@ -1,35 +1,64 @@
-From: "Luis R. Rodriguez" <mcgrof@kernel.org>
-Date: Mon, 09 Jan 2017 15:02:48 +0000
-Subject: [PATCH v3 5/6] tools: add __section() to compiler.h
-Message-Id: <20170109150249.11667-6-mcgrof@kernel.org>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 11 Jan 2017 14:43:30 +0000
+Subject: [PATCH v2 08/18] sh: Don't set the sh-sci platform data scscr CKE0 bit
+Message-Id: <20170111144340.29074-9-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20161222023958.21306-1-mcgrof@kernel.org>
- <20170109150249.11667-1-mcgrof@kernel.org>
-In-Reply-To: <20170109150249.11667-1-mcgrof@kernel.org>
+References: <20170111144340.29074-1-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <20170111144340.29074-1-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: hpa@zytor.com, acme@redhat.com, tglx@linutronix.de, mingo@redhat.com, jpoimboe@redhat.com, bp@alien8.de, npiggin@gmail.com, mhiramat@kernel.org, masami.hiramatsu.pt@hitachi.com, jbaron@akamai.com, heiko.carstens@de.ibm.com, ananth@linux.vnet.ibm.com, anil.s.keshavamurthy@intel.com, davem@davemloft.net, realmz6@gmail.com, dalias@libc.org, linux@arm.linux.org.uk
-Cc: x86@kernel.org, luto@amacapital.net, keescook@chromium.org, linux@roeck-us.net, torvalds@linux-foundation.org, gregkh@linuxfoundation.org, rusty@rustcorp.com.au, gnomes@lxorguk.ukuu.org.uk, alan@linux.intel.com, dwmw2@infradead.org, arnd@arndb.de, ming.lei@canonical.com, linux-arch@vger.kernel.org, benh@kernel.crashing.org, pebolle@tiscali.nl, fontana@sharpeleven.org, david.vrabel@citrix.com, konrad.wilk@oracle.com, mcb30@ipxe.org, jgross@suse.com, andrew.cooper3@citrix.com, andriy.shevchenko@linux.intel.com, paul.gortmaker@windriver.com, xen-devel@lists.xensource.com, ak@linux.intel.com, pali.rohar@gmail.com, dvhart@infradead.org, platform-driver-x86@vger.kernel.org, mmarek@suse.com, linux@rasmusvillemoes.dk, jkosina@suse.cz, korea.drzix@gmail.com, linux-kbuild@vger.kernel
+To: linux-renesas-soc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, linux-serial@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-This will be used later by the userspace linker table.
+The bit is only set by platforms that also set the CKE1 but, in which
+case its value is ignored by the device. Don't set it, this simplifies
+platform data and only leaves the CKE1 bit to be handled.
 
-Signed-off-by: Luis R. Rodriguez <mcgrof@kernel.org>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- tools/include/linux/compiler.h | 2 ++
- 1 file changed, 2 insertions(+)
+ arch/sh/kernel/cpu/sh3/setup-sh7705.c | 2 +-
+ arch/sh/kernel/cpu/sh3/setup-sh7710.c | 4 ++--
+ 2 files changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/tools/include/linux/compiler.h b/tools/include/linux/compiler.h
-index 556c991de212..6321265df00a 100644
---- a/tools/include/linux/compiler.h
-+++ b/tools/include/linux/compiler.h
-@@ -132,4 +132,6 @@ static __always_inline void __write_once_size(volatile void *p, void *res, int s
- #define WRITE_ONCE(x, val) \
- 	({ union { typeof(x) __val; char __c[1]; } __u = { .__val = (val) }; __write_once_size(&(x), __u.__c, sizeof(x)); __u.__val; })
+diff --git a/arch/sh/kernel/cpu/sh3/setup-sh7705.c b/arch/sh/kernel/cpu/sh3/setup-sh7705.c
+index a60edd8f3db7..f6e392e0d27e 100644
+--- a/arch/sh/kernel/cpu/sh3/setup-sh7705.c
++++ b/arch/sh/kernel/cpu/sh3/setup-sh7705.c
+@@ -70,7 +70,7 @@ static DECLARE_INTC_DESC(intc_desc, "sh7705", vectors, NULL,
+ 			 NULL, prio_registers, NULL);
  
-+#define __section(S)	__attribute__ ((__section__(#S)))
-+
- #endif /* _TOOLS_LINUX_COMPILER_H */
+ static struct plat_sci_port scif0_platform_data = {
+-	.scscr		= SCSCR_CKE1 | SCSCR_CKE0,
++	.scscr		= SCSCR_CKE1,
+ 	.type		= PORT_SCIF,
+ 	.ops		= &sh770x_sci_port_ops,
+ 	.regtype	= SCIx_SH7705_SCIF_REGTYPE,
+diff --git a/arch/sh/kernel/cpu/sh3/setup-sh7710.c b/arch/sh/kernel/cpu/sh3/setup-sh7710.c
+index ac2a0aabcec5..ea52410b430d 100644
+--- a/arch/sh/kernel/cpu/sh3/setup-sh7710.c
++++ b/arch/sh/kernel/cpu/sh3/setup-sh7710.c
+@@ -98,7 +98,7 @@ static struct platform_device rtc_device = {
+ };
+ 
+ static struct plat_sci_port scif0_platform_data = {
+-	.scscr		= SCSCR_REIE | SCSCR_CKE1 | SCSCR_CKE0,
++	.scscr		= SCSCR_REIE | SCSCR_CKE1,
+ 	.type		= PORT_SCIF,
+ };
+ 
+@@ -118,7 +118,7 @@ static struct platform_device scif0_device = {
+ };
+ 
+ static struct plat_sci_port scif1_platform_data = {
+-	.scscr		= SCSCR_REIE | SCSCR_CKE1 | SCSCR_CKE0,
++	.scscr		= SCSCR_REIE | SCSCR_CKE1,
+ 	.type		= PORT_SCIF,
+ };
+ 
 -- 
-2.11.0
+Regards,
+
+Laurent Pinchart
 
