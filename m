@@ -1,47 +1,73 @@
-From: Greg KH <greg@kroah.com>
-Date: Wed, 11 Jan 2017 10:43:30 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 11 Jan 2017 11:03:29 +0000
 Subject: Re: [PATCH 00/19] sh-sci: Platform data simplification
-Message-Id: <20170111104330.GA26128@kroah.com>
+Message-Id: <1559791.UE8yXL4Pxn@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20170103230639.19660-1-laurent.pinchart+renesas@ideasonboard.com>
- <20170111080437.GA24055@kroah.com>
- <CAMuHMdU1EqrSXrBsgej0r1TqUYn2QQd3v5RqxOs73iG3YeSG0g@mail.gmail.com>
-In-Reply-To: <CAMuHMdU1EqrSXrBsgej0r1TqUYn2QQd3v5RqxOs73iG3YeSG0g@mail.gmail.com>
+References: <20170103230639.19660-1-laurent.pinchart+renesas@ideasonboard.com> <20170111080437.GA24055@kroah.com>
+In-Reply-To: <20170111080437.GA24055@kroah.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Linux-Renesas <linux-renesas-soc@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-serial@vger.kernel.org" <linux-serial@vger.kernel.org>, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Greg KH <greg@kroah.com>
+Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, linux-serial@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Wed, Jan 11, 2017 at 11:38:15AM +0100, Geert Uytterhoeven wrote:
-> Hi Greg,
-> 
-> On Wed, Jan 11, 2017 at 9:04 AM, Greg KH <greg@kroah.com> wrote:
-> > On Wed, Jan 04, 2017 at 01:06:20AM +0200, Laurent Pinchart wrote:
-> >> Most of the patches in this series have been sitting in my development tree
-> >> for three years now. While rebasing all my development branches I decided it
-> >> was time to send them out in case they're considered useful. I've then thrown
-> >> a few additional patches in to move the driver further in the right direction
-> >> (or at least the direction I consider right).
-> >>
-> >> The idea behind this series is to move towards removal of the sh-sci platform
-> >> data. This won't be possible until SH platforms move to DT (and I won't hold
-> >> my breath), but we can get rid of most of the platform data fields already and
-> >> cleanup the sh-sci driver at the same time.
-> 
+Hi Greg,
+
+On Wednesday 11 Jan 2017 09:04:37 Greg KH wrote:
+> On Wed, Jan 04, 2017 at 01:06:20AM +0200, Laurent Pinchart wrote:
+> > Hello,
+> > 
+> > Most of the patches in this series have been sitting in my development
+> > tree for three years now. While rebasing all my development branches I
+> > decided it was time to send them out in case they're considered useful.
+> > I've then thrown a few additional patches in to move the driver further in
+> > the right direction (or at least the direction I consider right).
+> > 
+> > The idea behind this series is to move towards removal of the sh-sci
+> > platform data. This won't be possible until SH platforms move to DT (and
+> > I won't hold my breath), but we can get rid of most of the platform data
+> > fields already and cleanup the sh-sci driver at the same time.
+> > 
+> > The series already removes the capabilities, port_reg, regshift,
+> > dma_slave_tx and dma_slave_rx fields. We should be able to go further:
+> > 
+> > - The flags field is only used by sh5 to set UPF_IOREMAP. It should be
+> >   possible to find another way to determine in the driver whether to
+> >   ioremap the registers.
+> > 
+> > - The sampling_rate field is only used by sh7723 and sh7724 to override
+> >   the value hardcoded in the driver, even though the datasheets of those
+> >   SoCs don't mention any restriction. This might not be needed and should
+> >   be investigated.
+> > 
+> > - The scscr REIE bit should be possible to compute in the driver, as it's
+> >   set for all SCIF ports except SCIx_SH3_SCIF_REGTYPE,
+> >   SCIx_SH7705_SCIF_REGTYPE,
+> >   and the sh7343 SCIx_SH4_SCIF_REGTYPE. The latter will be trickier to
+> >   handle.
 > >
-> > I've merged patches 1, 2, 12, 13, 14, 15, 16, 17, and 18 in my tty tree.
-> >
-> > If I should take any others there as well, please let me know.
+> > - Now that we have support for baud rate generators and externel clocks,
+> >   the scscr CKE1 bit should be computed in the driver in all cases.
+> > 
+> > - The scscr TOIE bit doesn't seem to follow a clear rule, but given that
+> >   it's the last scscr bit to handle I'm sure we'll find something :-)
+> > 
+> > - It might make sense to merge the type and regtype fields in a single
+> >   type.
+> > 
+> > Finally, it might be time to drop support for the SH platforms that would
+> > get in the way of sh-sci cleanup.
 > 
-> As reported by the kbuild test robot, patch 17 ("serial: sh-sci: Remove
-> manual break debouncing") depends on patch 7 ("sh: Don't set sh-sci
-> port_reg").
+> I've merged patches 1, 2, 12, 13, 14, 15, 16, 17, and 18 in my tty tree.
+> 
+> If I should take any others there as well, please let me know.
 
-Ugh, ok, I can't take all of these.
+The other patches are needed, otherwise you'll break compilation of arch/sh/. 
+I'm waiting for an ack from Geert on two patches and I'll then repost the 
+whole series.
 
-What do you all suggest?
+-- 
+Regards,
 
-thanks,
+Laurent Pinchart
 
-greg k-h
