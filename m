@@ -1,140 +1,180 @@
-From: Nicolas Dichtel <nicolas.dichtel@6wind.com>
-Date: Fri, 13 Jan 2017 10:46:46 +0000
-Subject: [PATCH v3 8/8] uapi: export all arch specifics directories
-Message-Id: <1484304406-10820-9-git-send-email-nicolas.dichtel@6wind.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 11 Jan 2017 14:43:27 +0000
+Subject: [PATCH v2 05/18] sh: sh726[49]: Don't set sh-sci pdata scscr TOIE bit
+Message-Id: <20170111144340.29074-6-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <3131144.4Ej3KFWRbz@wuerfel>
- <1484304406-10820-1-git-send-email-nicolas.dichtel@6wind.com>
-In-Reply-To: <1484304406-10820-1-git-send-email-nicolas.dichtel@6wind.com>
+References: <20170111144340.29074-1-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <20170111144340.29074-1-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: arnd@arndb.de
-Cc: linux-mips@linux-mips.org, alsa-devel@alsa-project.org, linux-ia64@vger.kernel.org, linux-doc@vger.kernel.org, airlied@linux.ie, daniel.vetter@ffwll.ch, linux-fbdev@vger.kernel.org, dri-devel@lists.freedesktop.org, linux-mtd@lists.infradead.org, sparclinux@vger.kernel.org, linux-arch@vger.kernel.org, linux-s390@vger.kernel.org, linux-am33-list@redhat.com, linux-c6x-dev@linux-c6x.org, linux-rdma@vger.kernel.org, linux-hexagon@vger.kernel.org, linux-sh@vger.kernel.org, linux@armlinux.org.uk, hch@infradead.org, coreteam@netfilter.org, msalter@redhat.com, fcoe-devel@open-fcoe.org, xen-devel@lists.xenproject.org, linux-snps-arc@lists.infradead.org, linux-media@vger.kernel.org, uclinux-h8-devel@lists.sourceforge.jp, linux-xtensa@linux-xtensa.org, linux-kbuild@vger.kernel.org, adi-buildroot-devel@lists.sourceforge.net, linux-raid@vger.kernel.org, linux-m68k@lists.linux-m68k.org
+To: linux-renesas-soc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, linux-serial@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-This patch removes the need of subdir-y. Now all files/directories under
-arch/<arch>/include/uapi/ are exported.
+The SCIF ports on sh7264 and sh7269 don't support the TOIE bit according
+to the datasheets.
 
-The only change for userland is the layout of the command 'make
-headers_install_all': directories asm-<arch> are replaced by arch-<arch>/.
-Those new directories contains all files/directories of the specified arch.
-
-Note that only cris and tile have more directories than only asm:
- - arch-v[10|32] for cris;
- - arch for tile.
-
-Signed-off-by: Nicolas Dichtel <nicolas.dichtel@6wind.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- Documentation/kbuild/makefiles.txt | 15 +--------------
- Makefile                           |  4 ++--
- arch/cris/include/uapi/asm/Kbuild  |  3 ---
- arch/tile/include/uapi/asm/Kbuild  |  2 --
- scripts/Makefile.headersinst       |  3 +--
- 5 files changed, 4 insertions(+), 23 deletions(-)
+ arch/sh/kernel/cpu/sh2a/setup-sh7264.c | 16 ++++++++--------
+ arch/sh/kernel/cpu/sh2a/setup-sh7269.c | 16 ++++++++--------
+ 2 files changed, 16 insertions(+), 16 deletions(-)
 
-diff --git a/Documentation/kbuild/makefiles.txt b/Documentation/kbuild/makefiles.txt
-index 51c072049e45..87a3d7d86776 100644
---- a/Documentation/kbuild/makefiles.txt
-+++ b/Documentation/kbuild/makefiles.txt
-@@ -48,7 +48,6 @@ This document describes the Linux kernel Makefiles.
- 		--- 7.2 genhdr-y
- 		--- 7.3 generic-y
- 		--- 7.4 generated-y
--		--- 7.5 subdir-y
+diff --git a/arch/sh/kernel/cpu/sh2a/setup-sh7264.c b/arch/sh/kernel/cpu/sh2a/setup-sh7264.c
+index f111c20177ea..aebaa7a4da46 100644
+--- a/arch/sh/kernel/cpu/sh2a/setup-sh7264.c
++++ b/arch/sh/kernel/cpu/sh2a/setup-sh7264.c
+@@ -227,7 +227,7 @@ static DECLARE_INTC_DESC(intc_desc, "sh7264", vectors, groups,
  
- 	== 8 Kbuild Variables
- 	== 9 Makefile language
-@@ -1264,7 +1263,7 @@ The pre-processing does:
- - drop all sections that are kernel internal (guarded by ifdef __KERNEL__)
+ static struct plat_sci_port scif0_platform_data = {
+ 	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_REIE | SCSCR_TOIE,
++	.scscr		= SCSCR_REIE,
+ 	.type		= PORT_SCIF,
+ 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,
+ };
+@@ -252,7 +252,7 @@ static struct platform_device scif0_device = {
  
- All headers under include/uapi/, include/generated/uapi/,
--arch/<arch>/include/uapi/asm/ and arch/<arch>/include/generated/uapi/asm/
-+arch/<arch>/include/uapi/ and arch/<arch>/include/generated/uapi/
- are exported.
+ static struct plat_sci_port scif1_platform_data = {
+ 	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_REIE | SCSCR_TOIE,
++	.scscr		= SCSCR_REIE,
+ 	.type		= PORT_SCIF,
+ 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,
+ };
+@@ -277,7 +277,7 @@ static struct platform_device scif1_device = {
  
- A Kbuild file may be defined under arch/<arch>/include/uapi/asm/ and
-@@ -1331,18 +1330,6 @@ See subsequent chapter for the syntax of the Kbuild file.
- 			#arch/x86/include/asm/Kbuild
- 			generated-y += syscalls_32.h
+ static struct plat_sci_port scif2_platform_data = {
+ 	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_REIE | SCSCR_TOIE,
++	.scscr		= SCSCR_REIE,
+ 	.type		= PORT_SCIF,
+ 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,
+ };
+@@ -302,7 +302,7 @@ static struct platform_device scif2_device = {
  
--	--- 7.5 subdir-y
--
--	subdir-y may be used to specify a subdirectory to be exported.
--
--		Example:
--			#arch/cris/include/uapi/asm/Kbuild
--			subdir-y += ../arch-v10/arch/
--			subdir-y += ../arch-v32/arch/
--
--	The convention is to list one subdir per line and
--	preferably in alphabetic order.
--
- == 8 Kbuild Variables
+ static struct plat_sci_port scif3_platform_data = {
+ 	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_REIE | SCSCR_TOIE,
++	.scscr		= SCSCR_REIE,
+ 	.type		= PORT_SCIF,
+ 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,
+ };
+@@ -327,7 +327,7 @@ static struct platform_device scif3_device = {
  
- The top Makefile exports the following variables:
-diff --git a/Makefile b/Makefile
-index 5f1a84735ff6..a35098157b69 100644
---- a/Makefile
-+++ b/Makefile
-@@ -1126,7 +1126,7 @@ firmware_install:
- export INSTALL_HDR_PATH = $(objtree)/usr
+ static struct plat_sci_port scif4_platform_data = {
+ 	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_REIE | SCSCR_TOIE,
++	.scscr		= SCSCR_REIE,
+ 	.type		= PORT_SCIF,
+ 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,
+ };
+@@ -352,7 +352,7 @@ static struct platform_device scif4_device = {
  
- # If we do an all arch process set dst to asm-$(hdr-arch)
--hdr-dst = $(if $(KBUILD_HEADERS), dst=include/asm-$(hdr-arch), dst=include/asm)
-+hdr-dst = $(if $(KBUILD_HEADERS), dst=include/arch-$(hdr-arch), dst=include)
+ static struct plat_sci_port scif5_platform_data = {
+ 	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_REIE | SCSCR_TOIE,
++	.scscr		= SCSCR_REIE,
+ 	.type		= PORT_SCIF,
+ 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,
+ };
+@@ -377,7 +377,7 @@ static struct platform_device scif5_device = {
  
- PHONY += archheaders
- archheaders:
-@@ -1147,7 +1147,7 @@ headers_install: __headers
- 	$(if $(wildcard $(srctree)/arch/$(hdr-arch)/include/uapi/asm/Kbuild),, \
- 	  $(error Headers not exportable for the $(SRCARCH) architecture))
- 	$(Q)$(MAKE) $(hdr-inst)=include/uapi
--	$(Q)$(MAKE) $(hdr-inst)=arch/$(hdr-arch)/include/uapi/asm $(hdr-dst)
-+	$(Q)$(MAKE) $(hdr-inst)=arch/$(hdr-arch)/include/uapi $(hdr-dst)
+ static struct plat_sci_port scif6_platform_data = {
+ 	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_REIE | SCSCR_TOIE,
++	.scscr		= SCSCR_REIE,
+ 	.type		= PORT_SCIF,
+ 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,
+ };
+@@ -402,7 +402,7 @@ static struct platform_device scif6_device = {
  
- PHONY += headers_check_all
- headers_check_all: headers_install_all
-diff --git a/arch/cris/include/uapi/asm/Kbuild b/arch/cris/include/uapi/asm/Kbuild
-index d0c5471856e0..b15bf6bc0e94 100644
---- a/arch/cris/include/uapi/asm/Kbuild
-+++ b/arch/cris/include/uapi/asm/Kbuild
-@@ -1,5 +1,2 @@
- # UAPI Header export list
- include include/uapi/asm-generic/Kbuild.asm
--
--subdir-y += ../arch-v10/arch/
--subdir-y += ../arch-v32/arch/
-diff --git a/arch/tile/include/uapi/asm/Kbuild b/arch/tile/include/uapi/asm/Kbuild
-index e0a50111e07f..0c74c3c5ebfa 100644
---- a/arch/tile/include/uapi/asm/Kbuild
-+++ b/arch/tile/include/uapi/asm/Kbuild
-@@ -2,5 +2,3 @@
- include include/uapi/asm-generic/Kbuild.asm
+ static struct plat_sci_port scif7_platform_data = {
+ 	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_REIE | SCSCR_TOIE,
++	.scscr		= SCSCR_REIE,
+ 	.type		= PORT_SCIF,
+ 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,
+ };
+diff --git a/arch/sh/kernel/cpu/sh2a/setup-sh7269.c b/arch/sh/kernel/cpu/sh2a/setup-sh7269.c
+index b3445e59841a..6d7ac07b4e54 100644
+--- a/arch/sh/kernel/cpu/sh2a/setup-sh7269.c
++++ b/arch/sh/kernel/cpu/sh2a/setup-sh7269.c
+@@ -249,7 +249,7 @@ static DECLARE_INTC_DESC(intc_desc, "sh7269", vectors, groups,
  
- generic-y += ucontext.h
--
--subdir-y += ../arch
-diff --git a/scripts/Makefile.headersinst b/scripts/Makefile.headersinst
-index 16ac3e71050e..cafaca2d9a23 100644
---- a/scripts/Makefile.headersinst
-+++ b/scripts/Makefile.headersinst
-@@ -2,7 +2,7 @@
- # Installing headers
- #
- # All headers under include/uapi, include/generated/uapi,
--# arch/<arch>/include/uapi/asm and arch/<arch>/include/generated/uapi/asm are
-+# arch/<arch>/include/uapi and arch/<arch>/include/generated/uapi are
- # exported.
- # They are preprocessed to remove __KERNEL__ section of the file.
- #
-@@ -28,7 +28,6 @@ include scripts/Kbuild.include
- installdir    := $(INSTALL_HDR_PATH)/$(subst uapi/,,$(_dst))
+ static struct plat_sci_port scif0_platform_data = {
+ 	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_REIE | SCSCR_TOIE,
++	.scscr		= SCSCR_REIE,
+ 	.type		= PORT_SCIF,
+ 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,
+ };
+@@ -274,7 +274,7 @@ static struct platform_device scif0_device = {
  
- subdirs       := $(patsubst $(srctree)/$(obj)/%/.,%,$(wildcard $(srctree)/$(obj)/*/.))
--subdirs       += $(subdir-y)
- header-files  := $(notdir $(wildcard $(srctree)/$(obj)/*.h))
- header-files  += $(notdir $(wildcard $(srctree)/$(obj)/*.agh))
- genhdr-files  := $(notdir $(wildcard $(srctree)/$(gen)/*.h))
+ static struct plat_sci_port scif1_platform_data = {
+ 	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_REIE | SCSCR_TOIE,
++	.scscr		= SCSCR_REIE,
+ 	.type		= PORT_SCIF,
+ 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,
+ };
+@@ -299,7 +299,7 @@ static struct platform_device scif1_device = {
+ 
+ static struct plat_sci_port scif2_platform_data = {
+ 	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_REIE | SCSCR_TOIE,
++	.scscr		= SCSCR_REIE,
+ 	.type		= PORT_SCIF,
+ 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,
+ };
+@@ -324,7 +324,7 @@ static struct platform_device scif2_device = {
+ 
+ static struct plat_sci_port scif3_platform_data = {
+ 	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_REIE | SCSCR_TOIE,
++	.scscr		= SCSCR_REIE,
+ 	.type		= PORT_SCIF,
+ 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,
+ };
+@@ -349,7 +349,7 @@ static struct platform_device scif3_device = {
+ 
+ static struct plat_sci_port scif4_platform_data = {
+ 	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_REIE | SCSCR_TOIE,
++	.scscr		= SCSCR_REIE,
+ 	.type		= PORT_SCIF,
+ 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,
+ };
+@@ -374,7 +374,7 @@ static struct platform_device scif4_device = {
+ 
+ static struct plat_sci_port scif5_platform_data = {
+ 	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_REIE | SCSCR_TOIE,
++	.scscr		= SCSCR_REIE,
+ 	.type		= PORT_SCIF,
+ 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,
+ };
+@@ -399,7 +399,7 @@ static struct platform_device scif5_device = {
+ 
+ static struct plat_sci_port scif6_platform_data = {
+ 	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_REIE | SCSCR_TOIE,
++	.scscr		= SCSCR_REIE,
+ 	.type		= PORT_SCIF,
+ 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,
+ };
+@@ -424,7 +424,7 @@ static struct platform_device scif6_device = {
+ 
+ static struct plat_sci_port scif7_platform_data = {
+ 	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_REIE | SCSCR_TOIE,
++	.scscr		= SCSCR_REIE,
+ 	.type		= PORT_SCIF,
+ 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,
+ };
 -- 
-2.8.1
+Regards,
+
+Laurent Pinchart
 
