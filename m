@@ -1,115 +1,104 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 11 Jan 2017 14:43:22 +0000
-Subject: [PATCH v2 00/18] sh-sci: Platform data simplification
-Message-Id: <20170111144340.29074-1-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 11 Jan 2017 14:43:37 +0000
+Subject: [PATCH v2 15/18] serial: sh-sci: Remove the platform data dma slave rx/tx channel IDs
+Message-Id: <20170111144340.29074-16-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20170111144340.29074-1-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <20170111144340.29074-1-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-renesas-soc@vger.kernel.org
 Cc: linux-sh@vger.kernel.org, linux-serial@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Hello,
+Only SH platforms still use platform data for the sh-sci, and none of
+them declare DMA channels connected to the SCI. Remove the corresponding
+platform data fields and simplify the driver accordingly.
 
-This is the second version of the sh-sci platform data simplification patch
-series, now with all acks collected and ready to be merged. Greg, could you
-take the whole series through your tree ? The arch/sh/ patches should not
-cause any conflict as they only touch legacy platforms that have got very
-little attention recently (no patch in 2016, a single patch in 2015, five
-patches in 2014).
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ drivers/tty/serial/sh-sci.c | 23 ++++++-----------------
+ include/linux/serial_sci.h  |  3 ---
+ 2 files changed, 6 insertions(+), 20 deletions(-)
 
-Most of the patches in this series have been sitting in my development tree
-for three years now. While rebasing all my development branches I decided it
-was time to send them out in case they're considered useful. I've then thrown
-a few additional patches in to move the driver further in the right direction
-(or at least the direction I consider right).
-
-The idea behind this series is to move towards removal of the sh-sci platform
-data. This won't be possible until SH platforms move to DT (and I won't hold
-my breath), but we can get rid of most of the platform data fields already and
-cleanup the sh-sci driver at the same time.
-
-The series already removes the capabilities, port_reg, regshift, dma_slave_tx
-and dma_slave_rx fields. We should be able to go further:
-
-- The flags field is only used by sh5 to set UPF_IOREMAP. It should be
-  possible to find another way to determine in the driver whether to ioremap
-  the registers.
-
-- The sampling_rate field is only used by sh7723 and sh7724 to override the
-  value hardcoded in the driver, even though the datasheets of those SoCs
-  don't mention any restriction. This might not be needed and should be
-  investigated.
-
-- The scscr REIE bit should be possible to compute in the driver, as it's set
-  for all SCIF ports except SCIx_SH3_SCIF_REGTYPE, SCIx_SH7705_SCIF_REGTYPE,
-  and the sh7343 SCIx_SH4_SCIF_REGTYPE. The latter will be trickier to handle.
-
-- Now that we have support for baud rate generators and externel clocks, the
-  scscr CKE1 bit should be computed in the driver in all cases.
-
-- The scscr TOIE bit doesn't seem to follow a clear rule, but given that it's
-  the last scscr bit to handle I'm sure we'll find something 
-
-- It might make sense to merge the type and regtype fields in a single type.
-
-Finally, it might be time to drop support for the SH platforms that would get
-in the way of sh-sci cleanup.
-
-Laurent Pinchart (18):
-  serial: sh-sci: Set the SCSCR TE and RE bits in the driver
-  serial: sh-sci: Don't rely on platform data flags when not needed
-  sh: Don't set sh-sci pdata scscr TE and RE bits
-  sh: Don't set sh-sci pdata scscr TIE and RIE bits
-  sh: sh726[49]: Don't set sh-sci pdata scscr TOIE bit
-  sh: Don't set the sh-sci pdata UPF_BOOT_AUTOCONF flags
-  sh: Don't set sh-sci port_reg
-  sh: Don't set the sh-sci platform data scscr CKE0 bit
-  sh: Don't set the sh-sci platform data REIE bit when not implemented
-  serial: sh-sci: Fix register offsets for the IRDA serial port
-  serial: sh-sci: Remove initialization of zero fields in
-    sci_port_params
-  serial: sh-sci: Replace regmap array with port parameters
-  serial: sh-sci: Constify platform data
-  serial: sh-sci: Extend sci_port_params with more port parameters
-  serial: sh-sci: Remove the platform data dma slave rx/tx channel IDs
-  serial: sh-sci: Remove manual break debouncing
-  serial: sh-sci: Remove unused platform data capabilities field
-  serial: sh-sci: Compute the regshift value for SCI ports
-
- arch/sh/kernel/cpu/sh2/setup-sh7619.c  |   9 +-
- arch/sh/kernel/cpu/sh2a/setup-mxg.c    |   3 +-
- arch/sh/kernel/cpu/sh2a/setup-sh7201.c |  24 +-
- arch/sh/kernel/cpu/sh2a/setup-sh7203.c |  16 +-
- arch/sh/kernel/cpu/sh2a/setup-sh7206.c |  12 +-
- arch/sh/kernel/cpu/sh2a/setup-sh7264.c |  32 +-
- arch/sh/kernel/cpu/sh2a/setup-sh7269.c |  32 +-
- arch/sh/kernel/cpu/sh3/setup-sh7705.c  |   6 +-
- arch/sh/kernel/cpu/sh3/setup-sh770x.c  |  10 -
- arch/sh/kernel/cpu/sh3/setup-sh7710.c  |   8 +-
- arch/sh/kernel/cpu/sh3/setup-sh7720.c  |   4 -
- arch/sh/kernel/cpu/sh4/setup-sh4-202.c |   3 +-
- arch/sh/kernel/cpu/sh4/setup-sh7750.c  |   9 +-
- arch/sh/kernel/cpu/sh4/setup-sh7760.c  |  21 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7343.c |  12 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7366.c |   4 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7722.c |   9 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7723.c |  21 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7724.c |  21 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7734.c |  18 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7757.c |   9 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7763.c |   9 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7770.c |  30 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7780.c |   6 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7785.c |  18 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7786.c |  18 +-
- arch/sh/kernel/cpu/sh4a/setup-shx3.c   |   9 +-
- arch/sh/kernel/cpu/sh5/setup-sh5.c     |   4 +-
- drivers/tty/serial/sh-sci.c            | 831 ++++++++++++++-------------------
- drivers/tty/serial/sh-sci.h            |   4 +-
- include/linux/serial_sci.h             |  15 -
- 31 files changed, 448 insertions(+), 779 deletions(-)
-
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 3bbb7b4b2f19..fcedb96fe324 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1387,20 +1387,14 @@ static void rx_timer_fn(unsigned long arg)
+ }
+ 
+ static struct dma_chan *sci_request_dma_chan(struct uart_port *port,
+-					     enum dma_transfer_direction dir,
+-					     unsigned int id)
++					     enum dma_transfer_direction dir)
+ {
+-	dma_cap_mask_t mask;
+ 	struct dma_chan *chan;
+ 	struct dma_slave_config cfg;
+ 	int ret;
+ 
+-	dma_cap_zero(mask);
+-	dma_cap_set(DMA_SLAVE, mask);
+-
+-	chan = dma_request_slave_channel_compat(mask, shdma_chan_filter,
+-					(void *)(unsigned long)id, port->dev,
+-					dir = DMA_MEM_TO_DEV ? "tx" : "rx");
++	chan = dma_request_slave_channel(port->dev,
++					 dir = DMA_MEM_TO_DEV ? "tx" : "rx");
+ 	if (!chan) {
+ 		dev_warn(port->dev,
+ 			 "dma_request_slave_channel_compat failed\n");
+@@ -1436,12 +1430,11 @@ static void sci_request_dma(struct uart_port *port)
+ 
+ 	dev_dbg(port->dev, "%s: port %d\n", __func__, port->line);
+ 
+-	if (!port->dev->of_node &&
+-	    (s->cfg->dma_slave_tx <= 0 || s->cfg->dma_slave_rx <= 0))
++	if (!port->dev->of_node)
+ 		return;
+ 
+ 	s->cookie_tx = -EINVAL;
+-	chan = sci_request_dma_chan(port, DMA_MEM_TO_DEV, s->cfg->dma_slave_tx);
++	chan = sci_request_dma_chan(port, DMA_MEM_TO_DEV);
+ 	dev_dbg(port->dev, "%s: TX: got channel %p\n", __func__, chan);
+ 	if (chan) {
+ 		s->chan_tx = chan;
+@@ -1463,7 +1456,7 @@ static void sci_request_dma(struct uart_port *port)
+ 		INIT_WORK(&s->work_tx, work_fn_tx);
+ 	}
+ 
+-	chan = sci_request_dma_chan(port, DMA_DEV_TO_MEM, s->cfg->dma_slave_rx);
++	chan = sci_request_dma_chan(port, DMA_DEV_TO_MEM);
+ 	dev_dbg(port->dev, "%s: RX: got channel %p\n", __func__, chan);
+ 	if (chan) {
+ 		unsigned int i;
+@@ -2704,10 +2697,6 @@ static int sci_init_single(struct platform_device *dev,
+ 	port->serial_in		= sci_serial_in;
+ 	port->serial_out	= sci_serial_out;
+ 
+-	if (p->dma_slave_tx > 0 && p->dma_slave_rx > 0)
+-		dev_dbg(port->dev, "DMA tx %d, rx %d\n",
+-			p->dma_slave_tx, p->dma_slave_rx);
+-
+ 	return 0;
+ }
+ 
+diff --git a/include/linux/serial_sci.h b/include/linux/serial_sci.h
+index 9f2bfd055742..1a894c47bfc0 100644
+--- a/include/linux/serial_sci.h
++++ b/include/linux/serial_sci.h
+@@ -71,9 +71,6 @@ struct plat_sci_port {
+ 	unsigned char	regtype;
+ 
+ 	struct plat_sci_port_ops	*ops;
+-
+-	unsigned int	dma_slave_tx;
+-	unsigned int	dma_slave_rx;
+ };
+ 
+ #endif /* __LINUX_SERIAL_SCI_H */
 -- 
 Regards,
 
