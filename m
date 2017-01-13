@@ -1,188 +1,87 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 11 Jan 2017 14:43:29 +0000
-Subject: [PATCH v2 07/18] sh: Don't set sh-sci port_reg
-Message-Id: <20170111144340.29074-8-laurent.pinchart+renesas@ideasonboard.com>
+From: Nicolas Dichtel <nicolas.dichtel@6wind.com>
+Date: Fri, 13 Jan 2017 10:46:44 +0000
+Subject: [PATCH v3 6/8] Makefile.headersinst: remove destination-y option
+Message-Id: <1484304406-10820-7-git-send-email-nicolas.dichtel@6wind.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20170111144340.29074-1-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <20170111144340.29074-1-laurent.pinchart+renesas@ideasonboard.com>
+References: <3131144.4Ej3KFWRbz@wuerfel>
+ <1484304406-10820-1-git-send-email-nicolas.dichtel@6wind.com>
+In-Reply-To: <1484304406-10820-1-git-send-email-nicolas.dichtel@6wind.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-renesas-soc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, linux-serial@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: arnd@arndb.de
+Cc: linux-mips@linux-mips.org, alsa-devel@alsa-project.org, linux-ia64@vger.kernel.org, linux-doc@vger.kernel.org, airlied@linux.ie, daniel.vetter@ffwll.ch, linux-fbdev@vger.kernel.org, dri-devel@lists.freedesktop.org, linux-mtd@lists.infradead.org, sparclinux@vger.kernel.org, linux-arch@vger.kernel.org, linux-s390@vger.kernel.org, linux-am33-list@redhat.com, linux-c6x-dev@linux-c6x.org, linux-rdma@vger.kernel.org, linux-hexagon@vger.kernel.org, linux-sh@vger.kernel.org, linux@armlinux.org.uk, hch@infradead.org, coreteam@netfilter.org, msalter@redhat.com, fcoe-devel@open-fcoe.org, xen-devel@lists.xenproject.org, linux-snps-arc@lists.infradead.org, linux-media@vger.kernel.org, uclinux-h8-devel@lists.sourceforge.jp, linux-xtensa@linux-xtensa.org, linux-kbuild@vger.kernel.org, adi-buildroot-devel@lists.sourceforge.net, linux-raid@vger.kernel.org, linux-m68k@lists.linux-m68k.org
 
-The driver considers all negative or zero values of the port_reg field
-as invalid. The four platforms that set the field to a register address
-all use an address higher than 0x7fffffff, which is thus considered by
-the driver as invalid. The feature is thus never used, remove it.
+This option was added in commit c7bb349e7c25 ("kbuild: introduce destination-y
+for exported headers") but never used in-tree.
 
-The feature could be implemented properly in the future using the
-pinctrl and GPIO APIs if desired.
-
-While at it, don't set the field to SCIx_NOT_SUPPORTED (-1) either,
-leaving it unset leads to the same result. This will allow removing the
-SCIx_NOT_SUPPORTED macro.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Nicolas Dichtel <nicolas.dichtel@6wind.com>
 ---
- arch/sh/kernel/cpu/sh3/setup-sh770x.c  | 2 --
- arch/sh/kernel/cpu/sh4/setup-sh7750.c  | 1 -
- arch/sh/kernel/cpu/sh4a/setup-sh7366.c | 1 -
- arch/sh/kernel/cpu/sh4a/setup-sh7723.c | 6 ------
- arch/sh/kernel/cpu/sh4a/setup-sh7724.c | 6 ------
- 5 files changed, 16 deletions(-)
+ Documentation/kbuild/makefiles.txt | 23 ++++-------------------
+ scripts/Makefile.headersinst       |  2 +-
+ 2 files changed, 5 insertions(+), 20 deletions(-)
 
-diff --git a/arch/sh/kernel/cpu/sh3/setup-sh770x.c b/arch/sh/kernel/cpu/sh3/setup-sh770x.c
-index e64fe24d860c..e1e54258b822 100644
---- a/arch/sh/kernel/cpu/sh3/setup-sh770x.c
-+++ b/arch/sh/kernel/cpu/sh3/setup-sh770x.c
-@@ -109,7 +109,6 @@ static struct platform_device rtc_device = {
- };
+diff --git a/Documentation/kbuild/makefiles.txt b/Documentation/kbuild/makefiles.txt
+index 9b9c4797fc55..37b525d329ae 100644
+--- a/Documentation/kbuild/makefiles.txt
++++ b/Documentation/kbuild/makefiles.txt
+@@ -46,9 +46,8 @@ This document describes the Linux kernel Makefiles.
+ 	== 7 Kbuild syntax for exported headers
+ 		--- 7.1 header-y
+ 		--- 7.2 genhdr-y
+-		--- 7.3 destination-y
+-		--- 7.4 generic-y
+-		--- 7.5 generated-y
++		--- 7.3 generic-y
++		--- 7.4 generated-y
  
- static struct plat_sci_port scif0_platform_data = {
--	.port_reg	= 0xa4000136,
- 	.type		= PORT_SCI,
- 	.ops		= &sh770x_sci_port_ops,
- 	.regshift	= 1,
-@@ -156,7 +155,6 @@ static struct platform_device scif1_device = {
- #if defined(CONFIG_CPU_SUBTYPE_SH7707) || \
-     defined(CONFIG_CPU_SUBTYPE_SH7709)
- static struct plat_sci_port scif2_platform_data = {
--	.port_reg	= SCIx_NOT_SUPPORTED,
- 	.type		= PORT_IRDA,
- 	.ops		= &sh770x_sci_port_ops,
- 	.regshift	= 1,
-diff --git a/arch/sh/kernel/cpu/sh4/setup-sh7750.c b/arch/sh/kernel/cpu/sh4/setup-sh7750.c
-index f693f122a286..d98a55416306 100644
---- a/arch/sh/kernel/cpu/sh4/setup-sh7750.c
-+++ b/arch/sh/kernel/cpu/sh4/setup-sh7750.c
-@@ -38,7 +38,6 @@ static struct platform_device rtc_device = {
- };
+ 	== 8 Kbuild Variables
+ 	== 9 Makefile language
+@@ -1295,21 +1294,7 @@ See subsequent chapter for the syntax of the Kbuild file.
+ 			#include/linux/Kbuild
+ 			genhdr-y += version.h
  
- static struct plat_sci_port sci_platform_data = {
--	.port_reg	= 0xffe0001C,
- 	.type		= PORT_SCI,
- 	.regshift	= 2,
- };
-diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7366.c b/arch/sh/kernel/cpu/sh4a/setup-sh7366.c
-index 3fc1a3ab634e..646918713d9a 100644
---- a/arch/sh/kernel/cpu/sh4a/setup-sh7366.c
-+++ b/arch/sh/kernel/cpu/sh4a/setup-sh7366.c
-@@ -20,7 +20,6 @@
- #include <asm/clock.h>
+-	--- 7.3 destination-y
+-
+-	When an architecture has a set of exported headers that needs to be
+-	exported to a different directory destination-y is used.
+-	destination-y specifies the destination directory for all exported
+-	headers in the file where it is present.
+-
+-		Example:
+-			#arch/xtensa/platforms/s6105/include/platform/Kbuild
+-			destination-y := include/linux
+-
+-	In the example above all exported headers in the Kbuild file
+-	will be located in the directory "include/linux" when exported.
+-
+-	--- 7.4 generic-y
++	--- 7.3 generic-y
  
- static struct plat_sci_port scif0_platform_data = {
--	.port_reg	= 0xa405013e,
- 	.scscr		= SCSCR_REIE,
- 	.type		= PORT_SCIF,
- };
-diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7723.c b/arch/sh/kernel/cpu/sh4a/setup-sh7723.c
-index 9f47ec950af8..6c5cb234aa33 100644
---- a/arch/sh/kernel/cpu/sh4a/setup-sh7723.c
-+++ b/arch/sh/kernel/cpu/sh4a/setup-sh7723.c
-@@ -23,7 +23,6 @@
+ 	If an architecture uses a verbatim copy of a header from
+ 	include/asm-generic then this is listed in the file
+@@ -1336,7 +1321,7 @@ See subsequent chapter for the syntax of the Kbuild file.
+ 		Example: termios.h
+ 			#include <asm-generic/termios.h>
  
- /* Serial */
- static struct plat_sci_port scif0_platform_data = {
--	.port_reg	= 0xa4050160,
- 	.scscr		= SCSCR_REIE,
- 	.type           = PORT_SCIF,
- 	.regtype	= SCIx_SH4_SCIF_NO_SCSPTR_REGTYPE,
-@@ -45,7 +44,6 @@ static struct platform_device scif0_device = {
- };
+-	--- 7.5 generated-y
++	--- 7.4 generated-y
  
- static struct plat_sci_port scif1_platform_data = {
--	.port_reg	= SCIx_NOT_SUPPORTED,
- 	.scscr		= SCSCR_REIE,
- 	.type           = PORT_SCIF,
- 	.regtype	= SCIx_SH4_SCIF_NO_SCSPTR_REGTYPE,
-@@ -67,7 +65,6 @@ static struct platform_device scif1_device = {
- };
+ 	If an architecture generates other header files alongside generic-y
+ 	wrappers, and not included in genhdr-y, then generated-y specifies
+diff --git a/scripts/Makefile.headersinst b/scripts/Makefile.headersinst
+index 3e20d03432d2..876b42cfede4 100644
+--- a/scripts/Makefile.headersinst
++++ b/scripts/Makefile.headersinst
+@@ -14,7 +14,7 @@ kbuild-file := $(srctree)/$(obj)/Kbuild
+ include $(kbuild-file)
  
- static struct plat_sci_port scif2_platform_data = {
--	.port_reg	= SCIx_NOT_SUPPORTED,
- 	.scscr		= SCSCR_REIE,
- 	.type           = PORT_SCIF,
- 	.regtype	= SCIx_SH4_SCIF_NO_SCSPTR_REGTYPE,
-@@ -89,7 +86,6 @@ static struct platform_device scif2_device = {
- };
+ # called may set destination dir (when installing to asm/)
+-_dst := $(if $(destination-y),$(destination-y),$(if $(dst),$(dst),$(obj)))
++_dst := $(if $(dst),$(dst),$(obj))
  
- static struct plat_sci_port scif3_platform_data = {
--	.port_reg	= SCIx_NOT_SUPPORTED,
- 	.scscr		= SCSCR_REIE,
- 	.sampling_rate	= 8,
- 	.type           = PORT_SCIFA,
-@@ -111,7 +107,6 @@ static struct platform_device scif3_device = {
- };
- 
- static struct plat_sci_port scif4_platform_data = {
--	.port_reg	= SCIx_NOT_SUPPORTED,
- 	.scscr		= SCSCR_REIE,
- 	.sampling_rate	= 8,
- 	.type           = PORT_SCIFA,
-@@ -133,7 +128,6 @@ static struct platform_device scif4_device = {
- };
- 
- static struct plat_sci_port scif5_platform_data = {
--	.port_reg	= SCIx_NOT_SUPPORTED,
- 	.scscr		= SCSCR_REIE,
- 	.sampling_rate	= 8,
- 	.type           = PORT_SCIFA,
-diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7724.c b/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
-index 3ce55884c787..c20258b18775 100644
---- a/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
-+++ b/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
-@@ -290,7 +290,6 @@ static struct platform_device dma1_device = {
- 
- /* Serial */
- static struct plat_sci_port scif0_platform_data = {
--	.port_reg	= SCIx_NOT_SUPPORTED,
- 	.scscr		= SCSCR_REIE,
- 	.type           = PORT_SCIF,
- 	.regtype	= SCIx_SH4_SCIF_NO_SCSPTR_REGTYPE,
-@@ -312,7 +311,6 @@ static struct platform_device scif0_device = {
- };
- 
- static struct plat_sci_port scif1_platform_data = {
--	.port_reg	= SCIx_NOT_SUPPORTED,
- 	.scscr		= SCSCR_REIE,
- 	.type           = PORT_SCIF,
- 	.regtype	= SCIx_SH4_SCIF_NO_SCSPTR_REGTYPE,
-@@ -334,7 +332,6 @@ static struct platform_device scif1_device = {
- };
- 
- static struct plat_sci_port scif2_platform_data = {
--	.port_reg	= SCIx_NOT_SUPPORTED,
- 	.scscr		= SCSCR_REIE,
- 	.type           = PORT_SCIF,
- 	.regtype	= SCIx_SH4_SCIF_NO_SCSPTR_REGTYPE,
-@@ -356,7 +353,6 @@ static struct platform_device scif2_device = {
- };
- 
- static struct plat_sci_port scif3_platform_data = {
--	.port_reg	= SCIx_NOT_SUPPORTED,
- 	.sampling_rate	= 8,
- 	.type           = PORT_SCIFA,
- };
-@@ -377,7 +373,6 @@ static struct platform_device scif3_device = {
- };
- 
- static struct plat_sci_port scif4_platform_data = {
--	.port_reg	= SCIx_NOT_SUPPORTED,
- 	.sampling_rate	= 8,
- 	.type           = PORT_SCIFA,
- };
-@@ -398,7 +393,6 @@ static struct platform_device scif4_device = {
- };
- 
- static struct plat_sci_port scif5_platform_data = {
--	.port_reg	= SCIx_NOT_SUPPORTED,
- 	.sampling_rate	= 8,
- 	.type           = PORT_SCIFA,
- };
+ old-kbuild-file := $(srctree)/$(subst uapi/,,$(obj))/Kbuild
+ ifneq ($(wildcard $(old-kbuild-file)),)
 -- 
-Regards,
-
-Laurent Pinchart
+2.8.1
 
