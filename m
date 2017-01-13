@@ -1,53 +1,35 @@
-From: Greg KH <gregkh@linuxfoundation.org>
-Date: Thu, 19 Jan 2017 11:11:50 +0000
-Subject: Re: [PATCH v7 03/14] ranges.h: add helpers to build and identify Linux section ranges
-Message-Id: <20170119111150.GI28024@kroah.com>
+From: Nicolas Dichtel <nicolas.dichtel@6wind.com>
+Date: Fri, 13 Jan 2017 10:46:42 +0000
+Subject: [PATCH v3 4/8] x86: stop exporting msr-index.h to userland
+Message-Id: <1484304406-10820-5-git-send-email-nicolas.dichtel@6wind.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20170109145833.11502-1-mcgrof@kernel.org>
- <20170115211057.17167-1-mcgrof@kernel.org>
- <20170115211057.17167-4-mcgrof@kernel.org>
-In-Reply-To: <20170115211057.17167-4-mcgrof@kernel.org>
+References: <3131144.4Ej3KFWRbz@wuerfel>
+ <1484304406-10820-1-git-send-email-nicolas.dichtel@6wind.com>
+In-Reply-To: <1484304406-10820-1-git-send-email-nicolas.dichtel@6wind.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "Luis R. Rodriguez" <mcgrof@kernel.org>
-Cc: bp@alien8.de, bp@suse.de, hpa@zytor.com, acme@redhat.com, tglx@linutronix.de, mingo@redhat.com, jpoimboe@redhat.com, npiggin@gmail.com, mhiramat@kernel.org, masami.hiramatsu.pt@hitachi.com, jbaron@akamai.com, heiko.carstens@de.ibm.com, ananth@linux.vnet.ibm.com, anil.s.keshavamurthy@intel.com, davem@davemloft.net, realmz6@gmail.com, dalias@libc.org, linux@arm.linux.org.uk, x86@kernel.org, luto@amacapital.net, keescook@chromium.org, linux@roeck-us.net, torvalds@linux-foundation.org, rusty@rustcorp.com.au, gnomes@lxorguk.ukuu.org.uk, alan@linux.intel.com, dwmw2@infradead.org, arnd@arndb.de, ming.lei@canonical.com, linux-arch@vger.kernel.org, benh@kernel.crashing.org, pebolle@tiscali.nl, fontana@sharpeleven.org, david.vrabel@citrix.com, konrad.wilk@oracle.com, mcb30@ipxe.org
+To: arnd@arndb.de
+Cc: mmarek@suse.com, linux-kbuild@vger.kernel.org, linux-doc@vger.kernel.org, linux-kernel@vger.kernel.org, linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org, adi-buildroot-devel@lists.sourceforge.net, linux-c6x-dev@linux-c6x.org, linux-cris-kernel@axis.com, uclinux-h8-devel@lists.sourceforge.jp, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-metag@vger.kernel.org, linux-mips@linux-mips.org, linux-am33-list@redhat.com, nios2-dev@lists.rocketboards.org, openrisc@lists.librecores.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-arch@vger.kernel.
 
-On Sun, Jan 15, 2017 at 01:10:46PM -0800, Luis R. Rodriguez wrote:
-> Section ranges are on one of the types of custom sections
-> types used in Linux.
+Suggested-by: Borislav Petkov <bp@alien8.de>
+Signed-off-by: Nicolas Dichtel <nicolas.dichtel@6wind.com>
+---
+ arch/x86/include/uapi/asm/Kbuild | 1 -
+ 1 file changed, 1 deletion(-)
 
-Argh, come on, proof-read your changelog text please!
+diff --git a/arch/x86/include/uapi/asm/Kbuild b/arch/x86/include/uapi/asm/Kbuild
+index 3dec769cadf7..1c532b3f18ea 100644
+--- a/arch/x86/include/uapi/asm/Kbuild
++++ b/arch/x86/include/uapi/asm/Kbuild
+@@ -27,7 +27,6 @@ header-y += ldt.h
+ header-y += mce.h
+ header-y += mman.h
+ header-y += msgbuf.h
+-header-y += msr-index.h
+ header-y += msr.h
+ header-y += mtrr.h
+ header-y += param.h
+-- 
+2.8.1
 
-> This provides a series of helpers for
-> defining them and using them. Most importantly this also
-> enables us to avoid modifying the linker script when we
-> add a new section range.
-
-Also pick a line width and stick to it!
-
-> It turns out a lot of custom sections are actually section ranges,
-> and these are typically spelled out in their architecture specific
-> asm/sections.h file -- we enable architectures to override what asm
-> is used for section ranges but start by default trusting the
-> asm-generic version all around.
-> 
-> Although typically you will not want to have section ranges ordered
-> we must use SORT() on vmlinux.lds.S for section ranges to enable us
-> to extend a section range without modifying the linker script. To
-> accomplish this we use a special order string for the first element of a
-> section range -- the empty string "" (refer to __SECTION_RANGE_BEGIN()),
-> then "~" for the last element (refer to __SECTION_RANGE_BEGIN()). If
-> you use the "any" order for elements in between and use SORT() you end
-> up keeping any added element in between and a reference to the
-> beginning and end of the section range without requiring custom linker
-> script modifications. Specific order annotations are also supported
-> to help construct synthetic functions, a demo for which will be provided
-> later.
-
-Again, split your documentation from your coding changes to make it
-easier to review one or the other.
-
-thanks,
-
-greg k-h
