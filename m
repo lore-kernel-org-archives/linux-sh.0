@@ -1,69 +1,119 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 11 Jan 2017 12:31:49 +0000
-Subject: Re: [PATCH v1.1 08/19] serial: sh-sci: Fix register offsets for the IRDA serial port
-Message-Id: <CAMuHMdXfucrNPx7fLODROHTpbTuhpK+GzkLC-SGs_SSmZeMiyA@mail.gmail.com>
+From: Nicolas Dichtel <nicolas.dichtel@6wind.com>
+Date: Fri, 13 Jan 2017 10:46:39 +0000
+Subject: [PATCH v3 1/8] arm: put types.h in uapi
+Message-Id: <1484304406-10820-2-git-send-email-nicolas.dichtel@6wind.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <CAMuHMdVzm4D=Pdd6PoGzXUoO8Va4g1Y5KncaRS19PnSeGUn9Gw@mail.gmail.com>
- <20170106115235.3919-1-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <20170106115235.3919-1-laurent.pinchart+renesas@ideasonboard.com>
+References: <3131144.4Ej3KFWRbz@wuerfel>
+ <1484304406-10820-1-git-send-email-nicolas.dichtel@6wind.com>
+In-Reply-To: <1484304406-10820-1-git-send-email-nicolas.dichtel@6wind.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Cc: Linux-Renesas <linux-renesas-soc@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-serial@vger.kernel.org" <linux-serial@vger.kernel.org>, Geert Uytterhoeven <geert+renesas@glider.be>
+To: arnd@arndb.de
+Cc: mmarek@suse.com, linux-kbuild@vger.kernel.org, linux-doc@vger.kernel.org, linux-kernel@vger.kernel.org, linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org, adi-buildroot-devel@lists.sourceforge.net, linux-c6x-dev@linux-c6x.org, linux-cris-kernel@axis.com, uclinux-h8-devel@lists.sourceforge.jp, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-metag@vger.kernel.org, linux-mips@linux-mips.org, linux-am33-list@redhat.com, nios2-dev@lists.rocketboards.org, openrisc@lists.librecores.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-arch@vger.kernel.
 
-Hi Laurent,
+This header file is exported, thus move it to uapi.
 
-On Fri, Jan 6, 2017 at 12:52 PM, Laurent Pinchart
-<laurent.pinchart+renesas@ideasonboard.com> wrote:
-> Even though most of its registers are 8-bit wide, the IRDA has two
-> 16-bit registers that make it a 16-bit peripheral and not a 8-bit
-> peripheral with addresses shifted by one. Fix the registers offset in
-> the driver and the platform data regshift value.
->
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Nicolas Dichtel <nicolas.dichtel@6wind.com>
+---
+ arch/arm/include/asm/types.h      | 40 ---------------------------------------
+ arch/arm/include/uapi/asm/types.h | 40 +++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 40 insertions(+), 40 deletions(-)
+ delete mode 100644 arch/arm/include/asm/types.h
+ create mode 100644 arch/arm/include/uapi/asm/types.h
 
-> --- a/drivers/tty/serial/sh-sci.c
-> +++ b/drivers/tty/serial/sh-sci.c
-> @@ -193,18 +193,17 @@ static const struct plat_sci_reg sci_regmap[SCIx_NR_REGTYPES][SCIx_NR_REGS] = {
->         },
->
->         /*
-> -        * Common definitions for legacy IrDA ports, dependent on
-> -        * regshift value.
-> +        * Common definitions for legacy IrDA ports.
->          */
->         [SCIx_IRDA_REGTYPE] = {
->                 [SCSMR]         = { 0x00,  8 },
-> -               [SCBRR]         = { 0x01,  8 },
-> -               [SCSCR]         = { 0x02,  8 },
-> -               [SCxTDR]        = { 0x03,  8 },
-> -               [SCxSR]         = { 0x04,  8 },
-> -               [SCxRDR]        = { 0x05,  8 },
-> -               [SCFCR]         = { 0x06,  8 },
-> -               [SCFDR]         = { 0x07, 16 },
-> +               [SCBRR]         = { 0x02,  8 },
-> +               [SCSCR]         = { 0x04,  8 },
-> +               [SCxTDR]        = { 0x06,  8 },
-> +               [SCxSR]         = { 0x08,  8 },
+diff --git a/arch/arm/include/asm/types.h b/arch/arm/include/asm/types.h
+deleted file mode 100644
+index a53cdb8f068c..000000000000
+--- a/arch/arm/include/asm/types.h
++++ /dev/null
+@@ -1,40 +0,0 @@
+-#ifndef _ASM_TYPES_H
+-#define _ASM_TYPES_H
+-
+-#include <asm-generic/int-ll64.h>
+-
+-/*
+- * The C99 types uintXX_t that are usually defined in 'stdint.h' are not as
+- * unambiguous on ARM as you would expect. For the types below, there is a
+- * difference on ARM between GCC built for bare metal ARM, GCC built for glibc
+- * and the kernel itself, which results in build errors if you try to build with
+- * -ffreestanding and include 'stdint.h' (such as when you include 'arm_neon.h'
+- * in order to use NEON intrinsics)
+- *
+- * As the typedefs for these types in 'stdint.h' are based on builtin defines
+- * supplied by GCC, we can tweak these to align with the kernel's idea of those
+- * types, so 'linux/types.h' and 'stdint.h' can be safely included from the same
+- * source file (provided that -ffreestanding is used).
+- *
+- *                    int32_t         uint32_t               uintptr_t
+- * bare metal GCC     long            unsigned long          unsigned int
+- * glibc GCC          int             unsigned int           unsigned int
+- * kernel             int             unsigned int           unsigned long
+- */
+-
+-#ifdef __INT32_TYPE__
+-#undef __INT32_TYPE__
+-#define __INT32_TYPE__		int
+-#endif
+-
+-#ifdef __UINT32_TYPE__
+-#undef __UINT32_TYPE__
+-#define __UINT32_TYPE__	unsigned int
+-#endif
+-
+-#ifdef __UINTPTR_TYPE__
+-#undef __UINTPTR_TYPE__
+-#define __UINTPTR_TYPE__	unsigned long
+-#endif
+-
+-#endif /* _ASM_TYPES_H */
+diff --git a/arch/arm/include/uapi/asm/types.h b/arch/arm/include/uapi/asm/types.h
+new file mode 100644
+index 000000000000..9435a42f575e
+--- /dev/null
++++ b/arch/arm/include/uapi/asm/types.h
+@@ -0,0 +1,40 @@
++#ifndef _UAPI_ASM_TYPES_H
++#define _UAPI_ASM_TYPES_H
++
++#include <asm-generic/int-ll64.h>
++
++/*
++ * The C99 types uintXX_t that are usually defined in 'stdint.h' are not as
++ * unambiguous on ARM as you would expect. For the types below, there is a
++ * difference on ARM between GCC built for bare metal ARM, GCC built for glibc
++ * and the kernel itself, which results in build errors if you try to build with
++ * -ffreestanding and include 'stdint.h' (such as when you include 'arm_neon.h'
++ * in order to use NEON intrinsics)
++ *
++ * As the typedefs for these types in 'stdint.h' are based on builtin defines
++ * supplied by GCC, we can tweak these to align with the kernel's idea of those
++ * types, so 'linux/types.h' and 'stdint.h' can be safely included from the same
++ * source file (provided that -ffreestanding is used).
++ *
++ *                    int32_t         uint32_t               uintptr_t
++ * bare metal GCC     long            unsigned long          unsigned int
++ * glibc GCC          int             unsigned int           unsigned int
++ * kernel             int             unsigned int           unsigned long
++ */
++
++#ifdef __INT32_TYPE__
++#undef __INT32_TYPE__
++#define __INT32_TYPE__		int
++#endif
++
++#ifdef __UINT32_TYPE__
++#undef __UINT32_TYPE__
++#define __UINT32_TYPE__	unsigned int
++#endif
++
++#ifdef __UINTPTR_TYPE__
++#undef __UINTPTR_TYPE__
++#define __UINTPTR_TYPE__	unsigned long
++#endif
++
++#endif /* _UAPI_ASM_TYPES_H */
+-- 
+2.8.1
 
-SCSCR is a 16-bit register. You did have that correct in v1 of patch 19.
-
-If you fix that:
-
-Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
-
-> +               [SCxRDR]        = { 0x0a,  8 },
-> +               [SCFCR]         = { 0x0c,  8 },
-> +               [SCFDR]         = { 0x0e, 16 },
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
