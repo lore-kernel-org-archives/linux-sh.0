@@ -1,40 +1,80 @@
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Date: Tue, 31 Jan 2017 20:47:12 +0000
-Subject: Re: Bug#576242: gdb: Please support Renesas SH(sh4)
-Message-Id: <6213a6af-ce59-52b1-9880-1849c2fa8d57@physik.fu-berlin.de>
+From: SF Markus Elfring <elfring@users.sourceforge.net>
+Date: Fri, 13 Jan 2017 09:48:08 +0000
+Subject: [PATCH 1/3] sh/intc: Use kcalloc() in register_intc_controller()
+Message-Id: <6f6f99f6-26f0-d002-ca85-d974d71aa518@users.sourceforge.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <c184d5b5-4ec4-96e8-70f0-3ea61ce480db@physik.fu-berlin.de>
-In-Reply-To: <c184d5b5-4ec4-96e8-70f0-3ea61ce480db@physik.fu-berlin.de>
+References: <4d37c4d8-d28b-bd98-968b-f544d6a213eb@users.sourceforge.net>
+In-Reply-To: <4d37c4d8-d28b-bd98-968b-f544d6a213eb@users.sourceforge.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org, Rich Felker <dalias@libc.org>, Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: LKML <linux-kernel@vger.kernel.org>, kernel-janitors@vger.kernel.org
 
-On 01/31/2017 09:41 PM, Rob Landley wrote:
-> I asked the j-core engineers in Japan if they knew him, but the name
-> didn't ring any bells. (Jeff Dionne might know, but he's busy at
-> Distributech this week.)
+From: Markus Elfring <elfring@users.sourceforge.net>
+Date: Fri, 13 Jan 2017 10:04:38 +0100
 
-I asked Yutaka Niibe and he knows him back from Hitachi and he said, he
-still has a channel to contact him. He promised to try to reach out to
-him and ask for the copyright assignment.
+Multiplications for the size determination of memory allocations
+indicated that array data structures should be processed.
+Thus use the corresponding function "kcalloc".
 
-Yutaka was involved hiring all the developers for Hitachi/Renesas back
-then when they started porting Linux to the architecture, that's why
-he knows most of the people involved. He also got me in touch with
-Renesas in Tokyo who sent me the last SH-7724 Evoboard they had in
-stock ;).
+This issue was detected by using the Coccinelle software.
 
-As for the copyright assignment, Yutaka told me that as far as he
-remembers, assigning copyrights to an external entity wasn't possible
-back then which is why it didn't happen in this case. But since Hitachi
-is no longer involved, it will hopefully no problem for Yoshii-san
-to do the copyright assignment.
+Signed-off-by: Markus Elfring <elfring@users.sourceforge.net>
+---
+ drivers/sh/intc/core.c | 14 ++++++++------
+ 1 file changed, 8 insertions(+), 6 deletions(-)
 
-Adrian
-
+diff --git a/drivers/sh/intc/core.c b/drivers/sh/intc/core.c
+index 8e72bcbd3d6d..27817a8466f1 100644
+--- a/drivers/sh/intc/core.c
++++ b/drivers/sh/intc/core.c
+@@ -203,7 +203,8 @@ int __init register_intc_controller(struct intc_desc *desc)
+ 
+ 	if (desc->num_resources) {
+ 		d->nr_windows = desc->num_resources;
+-		d->window = kzalloc(d->nr_windows * sizeof(*d->window),
++		d->window = kcalloc(d->nr_windows,
++				    sizeof(*d->window),
+ 				    GFP_NOWAIT);
+ 		if (!d->window)
+ 			goto err1;
+@@ -229,13 +230,12 @@ int __init register_intc_controller(struct intc_desc *desc)
+ 	d->nr_reg += hw->sense_regs ? hw->nr_sense_regs : 0;
+ 	d->nr_reg += hw->ack_regs ? hw->nr_ack_regs : 0;
+ 	d->nr_reg += hw->subgroups ? hw->nr_subgroups : 0;
+-
+-	d->reg = kzalloc(d->nr_reg * sizeof(*d->reg), GFP_NOWAIT);
++	d->reg = kcalloc(d->nr_reg, sizeof(*d->reg), GFP_NOWAIT);
+ 	if (!d->reg)
+ 		goto err2;
+ 
+ #ifdef CONFIG_SMP
+-	d->smp = kzalloc(d->nr_reg * sizeof(*d->smp), GFP_NOWAIT);
++	d->smp = kcalloc(d->nr_reg, sizeof(*d->smp), GFP_NOWAIT);
+ 	if (!d->smp)
+ 		goto err3;
+ #endif
+@@ -253,7 +253,8 @@ int __init register_intc_controller(struct intc_desc *desc)
+ 	}
+ 
+ 	if (hw->prio_regs) {
+-		d->prio = kzalloc(hw->nr_vectors * sizeof(*d->prio),
++		d->prio = kcalloc(hw->nr_vectors,
++				  sizeof(*d->prio),
+ 				  GFP_NOWAIT);
+ 		if (!d->prio)
+ 			goto err4;
+@@ -269,7 +270,8 @@ int __init register_intc_controller(struct intc_desc *desc)
+ 	}
+ 
+ 	if (hw->sense_regs) {
+-		d->sense = kzalloc(hw->nr_vectors * sizeof(*d->sense),
++		d->sense = kcalloc(hw->nr_vectors,
++				   sizeof(*d->sense),
+ 				   GFP_NOWAIT);
+ 		if (!d->sense)
+ 			goto err5;
 -- 
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer - glaubitz@debian.org
-`. `'   Freie Universitaet Berlin - glaubitz@physik.fu-berlin.de
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+2.11.0
+
