@@ -1,33 +1,35 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 06 Jan 2017 10:23:00 +0000
-Subject: Re: [PATCH 10/19] sh: Don't set the sh-sci platform data scscr CKE0 bit
-Message-Id: <CAMuHMdVmFyx8OM+cO8w0+3RYvRj9_+2yZRpj8eaXsPGRF-n-DQ@mail.gmail.com>
+From: Nicolas Dichtel <nicolas.dichtel@6wind.com>
+Date: Fri, 13 Jan 2017 10:46:41 +0000
+Subject: [PATCH v3 3/8] nios2: put setup.h in uapi
+Message-Id: <1484304406-10820-4-git-send-email-nicolas.dichtel@6wind.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20170103230639.19660-1-laurent.pinchart+renesas@ideasonboard.com> <20170103230639.19660-11-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <20170103230639.19660-11-laurent.pinchart+renesas@ideasonboard.com>
+References: <3131144.4Ej3KFWRbz@wuerfel>
+ <1484304406-10820-1-git-send-email-nicolas.dichtel@6wind.com>
+In-Reply-To: <1484304406-10820-1-git-send-email-nicolas.dichtel@6wind.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Cc: Linux-Renesas <linux-renesas-soc@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-serial@vger.kernel.org" <linux-serial@vger.kernel.org>, Geert Uytterhoeven <geert+renesas@glider.be>
+To: arnd@arndb.de
+Cc: mmarek@suse.com, linux-kbuild@vger.kernel.org, linux-doc@vger.kernel.org, linux-kernel@vger.kernel.org, linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org, adi-buildroot-devel@lists.sourceforge.net, linux-c6x-dev@linux-c6x.org, linux-cris-kernel@axis.com, uclinux-h8-devel@lists.sourceforge.jp, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-metag@vger.kernel.org, linux-mips@linux-mips.org, linux-am33-list@redhat.com, nios2-dev@lists.rocketboards.org, openrisc@lists.librecores.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-arch@vger.kernel.
 
-On Wed, Jan 4, 2017 at 12:06 AM, Laurent Pinchart
-<laurent.pinchart+renesas@ideasonboard.com> wrote:
-> The bit is only set by platforms that also set the CKE1 but, in which
-> case its value is ignored by the device. Don't set it, this simplifies
-> platform data and only leaves the CKE1 bit to be handled.
->
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+This header file is exported, but from a userland pov, it's just a wrapper
+to asm-generic/setup.h.
 
-Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Nicolas Dichtel <nicolas.dichtel@6wind.com>
+---
+ arch/nios2/include/uapi/asm/Kbuild | 1 +
+ 1 file changed, 1 insertion(+)
 
-Gr{oetje,eeting}s,
+diff --git a/arch/nios2/include/uapi/asm/Kbuild b/arch/nios2/include/uapi/asm/Kbuild
+index e0bb972a50d7..69c965304146 100644
+--- a/arch/nios2/include/uapi/asm/Kbuild
++++ b/arch/nios2/include/uapi/asm/Kbuild
+@@ -2,4 +2,5 @@ include include/uapi/asm-generic/Kbuild.asm
+ 
+ header-y += elf.h
+ 
++generic-y += setup.h
+ generic-y += ucontext.h
+-- 
+2.8.1
 
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
