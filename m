@@ -1,50 +1,44 @@
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Date: Mon, 16 Jan 2017 14:40:44 +0000
-Subject: Re: Resolving glibc namespace conflicts with R0..Rn
-Message-Id: <f48128c6-86f6-f460-4aa1-57ccacb09ebd@physik.fu-berlin.de>
+From: "Luis R. Rodriguez" <mcgrof@kernel.org>
+Date: Sun, 15 Jan 2017 21:10:49 +0000
+Subject: [PATCH v7 06/14] firmware/Makefile: force recompilation if makefile changes
+Message-Id: <20170115211057.17167-7-mcgrof@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <e35765d0-5daa-7289-4d35-0b416013494c@physik.fu-berlin.de>
-In-Reply-To: <e35765d0-5daa-7289-4d35-0b416013494c@physik.fu-berlin.de>
+References: <20170109145833.11502-1-mcgrof@kernel.org>
+ <20170115211057.17167-1-mcgrof@kernel.org>
+In-Reply-To: <20170115211057.17167-1-mcgrof@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: bp@alien8.de, bp@suse.de, hpa@zytor.com, acme@redhat.com, tglx@linutronix.de, mingo@redhat.com, jpoimboe@redhat.com, npiggin@gmail.com, mhiramat@kernel.org, masami.hiramatsu.pt@hitachi.com, jbaron@akamai.com, heiko.carstens@de.ibm.com, ananth@linux.vnet.ibm.com, anil.s.keshavamurthy@intel.com, davem@davemloft.net, realmz6@gmail.com, dalias@libc.org, linux@arm.linux.org.uk
+Cc: x86@kernel.org, luto@amacapital.net, keescook@chromium.org, linux@roeck-us.net, torvalds@linux-foundation.org, gregkh@linuxfoundation.org, rusty@rustcorp.com.au, gnomes@lxorguk.ukuu.org.uk, alan@linux.intel.com, dwmw2@infradead.org, arnd@arndb.de, ming.lei@canonical.com, linux-arch@vger.kernel.org, benh@kernel.crashing.org, pebolle@tiscali.nl, fontana@sharpeleven.org, david.vrabel@citrix.com, konrad.wilk@oracle.com, mcb30@ipxe.org, jgross@suse.com, andrew.cooper3@citrix.com, andriy.shevchenko@linux.intel.com, paul.gortmaker@windriver.com, xen-devel@lists.xensource.com, ak@linux.intel.com, pali.rohar@gmail.com, dvhart@infradead.org, platform-driver-x86@vger.kernel.org, mmarek@suse.com, linux@rasmusvillemoes.dk, jkosina@suse.cz, korea.drzix@gmail.com, linux-kbuild@vger.kernel
 
-On 01/16/2017 03:36 PM, Rich Felker wrote:
->> Apparently, the only big user which would suffer breakage would be gdb but since
->> there is currently not official SH support in gdb anyway, I think we're good
->> to go.
-> 
-> I'm fine with this change. Apparently we don't have the plain Rn
-> macros on musl at all, perhaps for this very reason.
+If you modify the target asm we currently do not force the
+recompilation of the firmware files. The target asm is in
+the firmware/Makefile, peg this file as a dependency to
+require re-compilation of firmware targets when the asm
+changes.
 
-Ok, great. I have already opened a bug report for that:
+v3: introduced in this series
 
-> https://sourceware.org/bugzilla/show_bug.cgi?id!053
+Signed-off-by: Luis R. Rodriguez <mcgrof@kernel.org>
+---
+ firmware/Makefile | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-I can build a package with the registers renamed to test it.
-
-> Of course what I'd like even better is to get rid of the REG_* macros
-> too except in the case where the application explicitly requests them.
-> A similar issue hit us recently for x86 due to g++ auto-defining
-> _GNU_SOURCE and subtle differences in how we defined the REG_* macros:
-> 
-> http://www.openwall.com/lists/musl/2017/01/03/7
-> 
-> Exposing junk like this made sense when you only got it by including
-> sys/ucontext.h, but not now that signal.h is expected to expose
-> ucontext_t. And unfortunately it's not just macros but types used in
-> the definition of ucontext_t that are namespace-polluting. So I don't
-> see any really good outs without breaking compatibility with stuff.
-> musl exposes opaque fake mcontext_t when _BSD_SOURCE and _GNU_SOURCE
-> are off, but in practice one or both is usually on...
-
-I agree. But I guess that would require a more involved discussion :).
-
-Adrian
-
+diff --git a/firmware/Makefile b/firmware/Makefile
+index e297e1b52636..fa3e81c2a97b 100644
+--- a/firmware/Makefile
++++ b/firmware/Makefile
+@@ -176,7 +176,8 @@ quiet_cmd_fwbin = MK_FW   $@
+ wordsize_deps := $(wildcard include/config/64bit.h include/config/32bit.h \
+ 		include/config/ppc32.h include/config/ppc64.h \
+ 		include/config/superh32.h include/config/superh64.h \
+-		include/config/x86_32.h include/config/x86_64.h)
++		include/config/x86_32.h include/config/x86_64.h \
++		firmware/Makefile)
+ 
+ $(patsubst %,$(obj)/%.gen.S, $(fw-shipped-y)): %: $(wordsize_deps)
+ 	$(call cmd,fwbin,$(patsubst %.gen.S,%,$@))
 -- 
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer - glaubitz@debian.org
-`. `'   Freie Universitaet Berlin - glaubitz@physik.fu-berlin.de
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+2.11.0
+
