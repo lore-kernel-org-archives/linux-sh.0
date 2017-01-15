@@ -1,85 +1,165 @@
-From: Nicolas Dichtel <nicolas.dichtel@6wind.com>
-Date: Fri, 13 Jan 2017 10:46:43 +0000
-Subject: [PATCH v3 5/8] Makefile.headersinst: cleanup input files
-Message-Id: <1484304406-10820-6-git-send-email-nicolas.dichtel@6wind.com>
+From: "Luis R. Rodriguez" <mcgrof@kernel.org>
+Date: Sun, 15 Jan 2017 21:10:53 +0000
+Subject: [PATCH v7 10/14] dynamic_debug: port to use linker tables
+Message-Id: <20170115211057.17167-11-mcgrof@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <3131144.4Ej3KFWRbz@wuerfel>
- <1484304406-10820-1-git-send-email-nicolas.dichtel@6wind.com>
-In-Reply-To: <1484304406-10820-1-git-send-email-nicolas.dichtel@6wind.com>
+References: <20170109145833.11502-1-mcgrof@kernel.org>
+ <20170115211057.17167-1-mcgrof@kernel.org>
+In-Reply-To: <20170115211057.17167-1-mcgrof@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: arnd@arndb.de
-Cc: mmarek@suse.com, linux-kbuild@vger.kernel.org, linux-doc@vger.kernel.org, linux-kernel@vger.kernel.org, linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org, adi-buildroot-devel@lists.sourceforge.net, linux-c6x-dev@linux-c6x.org, linux-cris-kernel@axis.com, uclinux-h8-devel@lists.sourceforge.jp, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-metag@vger.kernel.org, linux-mips@linux-mips.org, linux-am33-list@redhat.com, nios2-dev@lists.rocketboards.org, openrisc@lists.librecores.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-arch@vger.kernel.
+To: bp@alien8.de, bp@suse.de, hpa@zytor.com, acme@redhat.com, tglx@linutronix.de, mingo@redhat.com, jpoimboe@redhat.com, npiggin@gmail.com, mhiramat@kernel.org, masami.hiramatsu.pt@hitachi.com, jbaron@akamai.com, heiko.carstens@de.ibm.com, ananth@linux.vnet.ibm.com, anil.s.keshavamurthy@intel.com, davem@davemloft.net, realmz6@gmail.com, dalias@libc.org, linux@arm.linux.org.uk
+Cc: x86@kernel.org, luto@amacapital.net, keescook@chromium.org, linux@roeck-us.net, torvalds@linux-foundation.org, gregkh@linuxfoundation.org, rusty@rustcorp.com.au, gnomes@lxorguk.ukuu.org.uk, alan@linux.intel.com, dwmw2@infradead.org, arnd@arndb.de, ming.lei@canonical.com, linux-arch@vger.kernel.org, benh@kernel.crashing.org, pebolle@tiscali.nl, fontana@sharpeleven.org, david.vrabel@citrix.com, konrad.wilk@oracle.com, mcb30@ipxe.org, jgross@suse.com, andrew.cooper3@citrix.com, andriy.shevchenko@linux.intel.com, paul.gortmaker@windriver.com, xen-devel@lists.xensource.com, ak@linux.intel.com, pali.rohar@gmail.com, dvhart@infradead.org, platform-driver-x86@vger.kernel.org, mmarek@suse.com, linux@rasmusvillemoes.dk, jkosina@suse.cz, korea.drzix@gmail.com, linux-kbuild@vger.kernel
 
-After the last four patches, all exported headers are under uapi/, thus
-input-files2 are not needed anymore.
-The side effect is that input-files1-name is exactly header-y.
+This removes the custom vmlinux.lds.h hacks and uses
+the generalized solution for .data entries.
 
-Note also that input-files3-name is genhdr-y.
+There is much more potential for further fine tuning here
+in the future though. For instance, linker tables enable
+an extra postfix for order level annotations, this could
+easily be used as the KBUILD_MODNAME and with a bit of
+linker table changes we may be able to get a direct O(1)
+count of the entries for that KBUILD_MODNAME: it would
+just be a count on the number of entries for the given
+order level. This should help make dynamic_debug_init()
+cleaner and also reduce the amount of time it takes at
+boot time. Instead of iterating over each print until we
+have all for a KBUILD_MODNAME, we'd instead directly
+operate on each KBUILD_MODNAME directly. We can work on
+this later to make this change easier to review.
 
-Signed-off-by: Nicolas Dichtel <nicolas.dichtel@6wind.com>
+Tested dynamic debug with dyndbg query and debugfs control
+and it works as expected, for both built-in code and modules.
+
+v6: rename table macro as suggested by Andy Shevchenko
+
+v5:
+
+o Use ..tbl instead of .tbl as suggested by Nicholas Piggin.
+  This is the typical way to avoid clash with compiler generated
+  section.
+
+o Replace section macros with section names,
+  use LINKTABLE_EMPTY(), LINKTABLE_START()
+
+v4: fix compilation on blackfin
+v3: added modular support
+v2: introduced this patch into the series
+
+Cc: Barry Song <barry.song@analog.com>
+Cc: Mike Frysinger <vapier@gentoo.org>
+Cc: Steven Miao <realmz6@gmail.com>
+Cc: Michael Matz <matz@suse.de>
+Cc: Guenter Roeck <linux@roeck-us.net>
+Cc: Fengguang Wu <fengguang.wu@intel.com>
+Signed-off-by: Luis R. Rodriguez <mcgrof@kernel.org>
 ---
- scripts/Makefile.headersinst | 34 +++++++++++-----------------------
- 1 file changed, 11 insertions(+), 23 deletions(-)
+ include/asm-generic/vmlinux.lds.h |  4 ----
+ include/linux/dynamic_debug.h     |  5 +++--
+ lib/dynamic_debug.c               | 13 ++++++-------
+ scripts/module-common.lds         |  1 +
+ 4 files changed, 10 insertions(+), 13 deletions(-)
 
-diff --git a/scripts/Makefile.headersinst b/scripts/Makefile.headersinst
-index 1106d6ca3a38..3e20d03432d2 100644
---- a/scripts/Makefile.headersinst
-+++ b/scripts/Makefile.headersinst
-@@ -40,31 +40,20 @@ wrapper-files := $(filter $(header-y), $(generic-y))
- srcdir        := $(srctree)/$(obj)
- gendir        := $(objtree)/$(gen)
+diff --git a/include/asm-generic/vmlinux.lds.h b/include/asm-generic/vmlinux.lds.h
+index 887d844f0406..37b99537d5a9 100644
+--- a/include/asm-generic/vmlinux.lds.h
++++ b/include/asm-generic/vmlinux.lds.h
+@@ -216,10 +216,6 @@
+ 	*(.data.unlikely)						\
+ 	STRUCT_ALIGN();							\
+ 	*(__tracepoints)						\
+-	. = ALIGN(8);							\
+-	VMLINUX_SYMBOL(__start___verbose) = .;                          \
+-	KEEP(*(__verbose))                                              \
+-	VMLINUX_SYMBOL(__stop___verbose) = .;				\
+ 	LIKELY_PROFILE()		       				\
+ 	BRANCH_PROFILE()						\
+ 	TRACE_PRINTKS()							\
+diff --git a/include/linux/dynamic_debug.h b/include/linux/dynamic_debug.h
+index 546d68057e3b..a52618a77b09 100644
+--- a/include/linux/dynamic_debug.h
++++ b/include/linux/dynamic_debug.h
+@@ -4,6 +4,7 @@
+ #if defined(CC_HAVE_ASM_GOTO) && defined(CONFIG_JUMP_LABEL)
+ #include <linux/jump_label.h>
+ #endif
++#include <linux/tables.h>
  
--oldsrcdir     := $(srctree)/$(subst /uapi,,$(obj))
--
- # all headers files for this dir
- header-y      := $(filter-out $(generic-y), $(header-y))
- all-files     := $(header-y) $(genhdr-y) $(wrapper-files)
- output-files  := $(addprefix $(installdir)/, $(all-files))
+ /*
+  * An instance of this structure is created in a special
+@@ -50,6 +51,7 @@ int ddebug_add_module(struct _ddebug *tab, unsigned int n,
+ 				const char *modname);
  
--input-files1  := $(foreach hdr, $(header-y), \
--		   $(if $(wildcard $(srcdir)/$(hdr)), \
--			$(wildcard $(srcdir)/$(hdr))) \
--		   )
--input-files1-name := $(notdir $(input-files1))
--input-files2  := $(foreach hdr, $(header-y), \
--		   $(if  $(wildcard $(srcdir)/$(hdr)),, \
--			$(if $(wildcard $(oldsrcdir)/$(hdr)), \
--				$(wildcard $(oldsrcdir)/$(hdr)), \
--				$(error Missing UAPI file $(srcdir)/$(hdr))) \
--		   ))
--input-files2-name := $(notdir $(input-files2))
--input-files3  := $(foreach hdr, $(genhdr-y), \
--		   $(if	$(wildcard $(gendir)/$(hdr)), \
--			$(wildcard $(gendir)/$(hdr)), \
--			$(error Missing generated UAPI file $(gendir)/$(hdr)) \
--		   ))
--input-files3-name := $(notdir $(input-files3))
-+# Check that all expected files exist
-+$(foreach hdr, $(header-y), \
-+  $(if $(wildcard $(srcdir)/$(hdr)),, \
-+       $(error Missing UAPI file $(srcdir)/$(hdr)) \
-+   ))
-+$(foreach hdr, $(genhdr-y), \
-+  $(if	$(wildcard $(gendir)/$(hdr)),, \
-+       $(error Missing generated UAPI file $(gendir)/$(hdr)) \
-+  ))
+ #if defined(CONFIG_DYNAMIC_DEBUG)
++DECLARE_LINKTABLE(struct _ddebug, __verbose);
+ extern int ddebug_remove_module(const char *mod_name);
+ extern __printf(2, 3)
+ void __dynamic_pr_debug(struct _ddebug *descriptor, const char *fmt, ...);
+@@ -71,8 +73,7 @@ void __dynamic_netdev_dbg(struct _ddebug *descriptor,
+ 			  const char *fmt, ...);
  
- # Work out what needs to be removed
- oldheaders    := $(patsubst $(installdir)/%,%,$(wildcard $(installdir)/*.h))
-@@ -78,9 +67,8 @@ printdir = $(patsubst $(INSTALL_HDR_PATH)/%/,%,$(dir $@))
- quiet_cmd_install = INSTALL $(printdir) ($(words $(all-files))\
-                             file$(if $(word 2, $(all-files)),s))
-       cmd_install = \
--        $(CONFIG_SHELL) $< $(installdir) $(srcdir) $(input-files1-name); \
--        $(CONFIG_SHELL) $< $(installdir) $(oldsrcdir) $(input-files2-name); \
--        $(CONFIG_SHELL) $< $(installdir) $(gendir) $(input-files3-name); \
-+        $(CONFIG_SHELL) $< $(installdir) $(srcdir) $(header-y); \
-+        $(CONFIG_SHELL) $< $(installdir) $(gendir) $(genhdr-y); \
-         for F in $(wrapper-files); do                                   \
-                 echo "\#include <asm-generic/$$F>" > $(installdir)/$$F;    \
-         done;                                                           \
+ #define DEFINE_DYNAMIC_DEBUG_METADATA_KEY(name, fmt, key, init)	\
+-	static struct _ddebug  __aligned(8)			\
+-	__attribute__((section("__verbose"))) name = {		\
++	static LINKTABLE(__verbose, SECTION_ORDER_ANY) name = {	\
+ 		.modname = KBUILD_MODNAME,			\
+ 		.function = __func__,				\
+ 		.filename = __FILE__,				\
+diff --git a/lib/dynamic_debug.c b/lib/dynamic_debug.c
+index da796e2dc4f5..27a335e3b1f3 100644
+--- a/lib/dynamic_debug.c
++++ b/lib/dynamic_debug.c
+@@ -37,8 +37,7 @@
+ #include <linux/device.h>
+ #include <linux/netdevice.h>
+ 
+-extern struct _ddebug __start___verbose[];
+-extern struct _ddebug __stop___verbose[];
++DEFINE_LINKTABLE(struct _ddebug, __verbose);
+ 
+ struct ddebug_table {
+ 	struct list_head link;
+@@ -978,14 +977,14 @@ static int __init dynamic_debug_init(void)
+ 	int n = 0, entries = 0, modct = 0;
+ 	int verbose_bytes = 0;
+ 
+-	if (__start___verbose = __stop___verbose) {
+-		pr_warn("_ddebug table is empty in a CONFIG_DYNAMIC_DEBUG build\n");
++	if (LINKTABLE_EMPTY(__verbose)) {
++		pr_warn("dynamic debug linker table empty on CONFIG_DYNAMIC_DEBUG build\n");
+ 		return 1;
+ 	}
+-	iter = __start___verbose;
++	iter = LINKTABLE_START(__verbose);
+ 	modname = iter->modname;
+ 	iter_start = iter;
+-	for (; iter < __stop___verbose; iter++) {
++	linktable_for_each(iter, __verbose) {
+ 		entries++;
+ 		verbose_bytes += strlen(iter->modname) + strlen(iter->function)
+ 			+ strlen(iter->filename) + strlen(iter->format);
+@@ -1008,7 +1007,7 @@ static int __init dynamic_debug_init(void)
+ 	ddebug_init_success = 1;
+ 	vpr_info("%d modules, %d entries and %d bytes in ddebug tables, %d bytes in (readonly) verbose section\n",
+ 		 modct, entries, (int)(modct * sizeof(struct ddebug_table)),
+-		 verbose_bytes + (int)(__stop___verbose - __start___verbose));
++		 verbose_bytes + (int)(LINKTABLE_SIZE(__verbose)));
+ 
+ 	/* apply ddebug_query boot param, dont unload tables on err */
+ 	if (ddebug_setup_string[0] != '\0') {
+diff --git a/scripts/module-common.lds b/scripts/module-common.lds
+index db0e724556c5..25755d458f09 100644
+--- a/scripts/module-common.lds
++++ b/scripts/module-common.lds
+@@ -17,6 +17,7 @@ SECTIONS {
+ 	__kcrctab_unused_gpl	0 : { *(SORT(___kcrctab_unused_gpl+*)) }
+ 	__kcrctab_gpl_future	0 : { *(SORT(___kcrctab_gpl_future+*)) }
+ 	__jump_table		0 : { *(SORT(.data..tbl.__jump_table.*)) }
++	__verbose		0 : { *(SORT(.data..tbl.__verbose.*)) }
+ 
+ 	. = ALIGN(8);
+ 	.init_array		0 : { *(SORT(.init_array.*)) *(.init_array) }
 -- 
-2.8.1
+2.11.0
 
