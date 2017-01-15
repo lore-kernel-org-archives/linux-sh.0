@@ -1,22 +1,42 @@
-From: Tobias Klauser <tklauser@distanz.ch>
-Date: Fri, 13 Jan 2017 10:55:50 +0000
-Subject: Re: [PATCH v3 3/8] nios2: put setup.h in uapi
-Message-Id: <20170113105550.GD1201@distanz.ch>
+From: "Luis R. Rodriguez" <mcgrof@kernel.org>
+Date: Sun, 15 Jan 2017 21:12:11 +0000
+Subject: [PATCH v4 2/6] tools: add init.h for tools
+Message-Id: <20170115211215.17216-3-mcgrof@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <3131144.4Ej3KFWRbz@wuerfel>
- <1484304406-10820-1-git-send-email-nicolas.dichtel@6wind.com>
- <1484304406-10820-4-git-send-email-nicolas.dichtel@6wind.com>
-In-Reply-To: <1484304406-10820-4-git-send-email-nicolas.dichtel@6wind.com>
+References: <20170109150249.11667-1-mcgrof@kernel.org>
+ <20170115211215.17216-1-mcgrof@kernel.org>
+In-Reply-To: <20170115211215.17216-1-mcgrof@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Nicolas Dichtel <nicolas.dichtel@6wind.com>
-Cc: arnd@arndb.de, mmarek@suse.com, linux-kbuild@vger.kernel.org, linux-doc@vger.kernel.org, linux-kernel@vger.kernel.org, linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org, adi-buildroot-devel@lists.sourceforge.net, linux-c6x-dev@linux-c6x.org, linux-cris-kernel@axis.com, uclinux-h8-devel@lists.sourceforge.jp, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-metag@vger.kernel.org, linux-mips@linux-mips.org, linux-am33-list@redhat.com, nios2-dev@lists.rocketboards.org, openrisc@lists.librecores.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.orglinux-ar
+To: bp@alien8.de, bp@suse.de, hpa@zytor.com, acme@redhat.com, tglx@linutronix.de, mingo@redhat.com, jpoimboe@redhat.com, npiggin@gmail.com, mhiramat@kernel.org, masami.hiramatsu.pt@hitachi.com, jbaron@akamai.com, heiko.carstens@de.ibm.com, ananth@linux.vnet.ibm.com, anil.s.keshavamurthy@intel.com, davem@davemloft.net, realmz6@gmail.com, dalias@libc.org, linux@arm.linux.org.uk
+Cc: x86@kernel.org, luto@amacapital.net, keescook@chromium.org, linux@roeck-us.net, torvalds@linux-foundation.org, gregkh@linuxfoundation.org, rusty@rustcorp.com.au, gnomes@lxorguk.ukuu.org.uk, alan@linux.intel.com, dwmw2@infradead.org, arnd@arndb.de, ming.lei@canonical.com, linux-arch@vger.kernel.org, benh@kernel.crashing.org, pebolle@tiscali.nl, fontana@sharpeleven.org, david.vrabel@citrix.com, konrad.wilk@oracle.com, mcb30@ipxe.org, jgross@suse.com, andrew.cooper3@citrix.com, andriy.shevchenko@linux.intel.com, paul.gortmaker@windriver.com, xen-devel@lists.xensource.com, ak@linux.intel.com, pali.rohar@gmail.com, dvhart@infradead.org, platform-driver-x86@vger.kernel.org, mmarek@suse.com, linux@rasmusvillemoes.dk, jkosina@suse.cz, korea.drzix@gmail.com, linux-kbuild@vger.kernel
 
-On 2017-01-13 at 11:46:41 +0100, Nicolas Dichtel <nicolas.dichtel@6wind.com> wrote:
-> This header file is exported, but from a userland pov, it's just a wrapper
-> to asm-generic/setup.h.
-> 
-> Signed-off-by: Nicolas Dichtel <nicolas.dichtel@6wind.com>
+Start off with just __ref -- we enalbe you to override, if you do
+that then you can define your own. The way you'd use this, if you
+do override, is define your own __ref and then use include_next.
 
-Reviewed-by: Tobias Klauser <tklauser@distanz.ch>
+Signed-off-by: Luis R. Rodriguez <mcgrof@kernel.org>
+---
+ tools/include/linux/init.h | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+ create mode 100644 tools/include/linux/init.h
+
+diff --git a/tools/include/linux/init.h b/tools/include/linux/init.h
+new file mode 100644
+index 000000000000..6d970a360a05
+--- /dev/null
++++ b/tools/include/linux/init.h
+@@ -0,0 +1,9 @@
++#ifndef _TOOLS_LINUX_INIT_H
++#define _TOOLS_LINUX_INIT_H
++
++/* this means you can add your own to fit you own userspace needs */
++#ifndef __ref
++#define __ref
++#endif
++
++#endif /* _TOOLS_LINUX_INIT_H */
+-- 
+2.11.0
+
