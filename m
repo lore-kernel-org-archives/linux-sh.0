@@ -1,174 +1,214 @@
 From: "Luis R. Rodriguez" <mcgrof@kernel.org>
-Date: Mon, 09 Jan 2017 14:58:25 +0000
-Subject: [PATCH v6 07/14] firmware: port built-in section to linker table
-Message-Id: <20170109145833.11502-8-mcgrof@kernel.org>
+Date: Sun, 15 Jan 2017 21:10:43 +0000
+Subject: [PATCH v7 00/14] linux: generalize sections, ranges and linker tables
+Message-Id: <20170115211057.17167-1-mcgrof@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20161222023811.21246-1-mcgrof@kernel.org>
- <20170109145833.11502-1-mcgrof@kernel.org>
+References: <20170109145833.11502-1-mcgrof@kernel.org>
 In-Reply-To: <20170109145833.11502-1-mcgrof@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: hpa@zytor.com, acme@redhat.com, tglx@linutronix.de, mingo@redhat.com, jpoimboe@redhat.com, bp@alien8.de, npiggin@gmail.com, mhiramat@kernel.org, masami.hiramatsu.pt@hitachi.com, jbaron@akamai.com, heiko.carstens@de.ibm.com, ananth@linux.vnet.ibm.com, anil.s.keshavamurthy@intel.com, davem@davemloft.net, realmz6@gmail.com, dalias@libc.org, linux@arm.linux.org.uk
-Cc: gnomes@lxorguk.ukuu.org.uk, linux-ia64@vger.kernel.org, jkosina@suse.cz, benh@kernel.crashing.org, ming.lei@canonical.com, linux@rasmusvillemoes.dk, platform-driver-x86@vger.kernel.org, James.Bottomley@HansenPartnership.com, paul.gortmaker@windriver.com, paulus@samba.org, sparclinux@vger.kernel.org, wangnan0@huawei.com, Michael Matz <matz@suse.de>, Barry Song <barry.song@analog.com>, mchehab@osg.samsung.com, linux-arch@vger.kernel.org, markus.heiser@darmarit.de, xen-devel@lists.xensource.com, msalter@redhat.com, linux-sh@vger.kernel.org, mpe@ellerman.id.au, joro@8bytes.org, x86@kernel.org, fontana@sharpeleven.org, dsahern@gmail.com, linux-arm-kernel@lists.infradead.org, catalin.marinas@arm.com, dvhart@infradead.org, dwmw2@infradead.org, linux@roeck-us.net, linux-xtensa@linux-xtensa.org, pali.rohar@gmail.com, Mike Frysinger <vapier@gentoo.org>, keescook@chromium.org
+To: bp@alien8.de, bp@suse.de, hpa@zytor.com, acme@redhat.com, tglx@linutronix.de, mingo@redhat.com, jpoimboe@redhat.com, npiggin@gmail.com, mhiramat@kernel.org, masami.hiramatsu.pt@hitachi.com, jbaron@akamai.com, heiko.carstens@de.ibm.com, ananth@linux.vnet.ibm.com, anil.s.keshavamurthy@intel.com, davem@davemloft.net, realmz6@gmail.com, dalias@libc.org, linux@arm.linux.org.uk
+Cc: x86@kernel.org, luto@amacapital.net, keescook@chromium.org, linux@roeck-us.net, torvalds@linux-foundation.org, gregkh@linuxfoundation.org, rusty@rustcorp.com.au, gnomes@lxorguk.ukuu.org.uk, alan@linux.intel.com, dwmw2@infradead.org, arnd@arndb.de, ming.lei@canonical.com, linux-arch@vger.kernel.org, benh@kernel.crashing.org, pebolle@tiscali.nl, fontana@sharpeleven.org, david.vrabel@citrix.com, konrad.wilk@oracle.com, mcb30@ipxe.org, jgross@suse.com, andrew.cooper3@citrix.com, andriy.shevchenko@linux.intel.com, paul.gortmaker@windriver.com, xen-devel@lists.xensource.com, ak@linux.intel.com, pali.rohar@gmail.com, dvhart@infradead.org, platform-driver-x86@vger.kernel.org, mmarek@suse.com, linux@rasmusvillemoes.dk, jkosina@suse.cz, korea.drzix@gmail.com, linux-kbuild@vger.kernel
 
-This ports built-in firmware to use linker tables,
-this replaces the custom section solution with a
-generic solution.
+This v7 addresses spelling / minor checkpatch complaints, as requested.
+checkpatch still complains but the remaining complaints are not valid for
+the code in question.
 
-This also demos the use of the .rodata linker table.
+A respective userspace sandbox for the kernel's tools/ follows this series.
+A branch based on linux-next tag next-20170113 is available [0], if you use that
+you should drop the last patch, that is used to force 0-day to test the
+linker table test driver enabled on all architectures.
 
-Tested with 0 built-in firmware, 1 and 2 built-in
-firmwares successfully.
+Even though the changes made are minor I've re-tested this on all archs again,
+and all is good.
 
-v6: rename table macro as suggested by Andy Shevchenko
+[0] https://git.kernel.org/cgit/linux/kernel/git/mcgrof/linux-next.git/log/?h 170113-linker-tables-v7-try2
 
-v5:
+Luis R. Rodriguez (14):
+  generic-sections: add section core helpers
+  xtensa: skip adding literal when SORT() is used
+  ranges.h: add helpers to build and identify Linux section ranges
+  tables.h: add linker table support
+  kbuild: enable option to force compile force-obj-y and force-lib-y
+  firmware/Makefile: force recompilation if makefile changes
+  firmware: port built-in section to linker table
+  jump_label: move guard #endif down where it belongs
+  jump_label: port __jump_table to linker tables
+  dynamic_debug: port to use linker tables
+  kprobes: move kprobe declarations to asm-generic/kprobes.h
+  kprobes: port .kprobes.text to section range
+  kprobes: port blacklist kprobes to linker table
+  lib: add linker tables test driver
 
-o since we dropped SECTION_ORDER_ANY, use 'any' order level explicitly
+ Documentation/index.rst                   |   1 +
+ Documentation/kbuild/makefiles.txt        |  36 ++
+ Documentation/sections/background.rst     | 105 ++++
+ Documentation/sections/conf.py            |   4 +
+ Documentation/sections/index.rst          |  19 +
+ Documentation/sections/linker-tables.rst  | 227 +++++++++
+ Documentation/sections/ranges.rst         |  74 +++
+ Documentation/sections/section-core.rst   | 153 ++++++
+ MAINTAINERS                               |  33 ++
+ arch/alpha/include/asm/Kbuild             |   4 +
+ arch/arc/include/asm/Kbuild               |   3 +
+ arch/arc/include/asm/kprobes.h            |   6 +-
+ arch/arc/kernel/vmlinux.lds.S             |   1 -
+ arch/arm/include/asm/Kbuild               |   3 +
+ arch/arm/include/asm/jump_label.h         |   6 +-
+ arch/arm/include/asm/kprobes.h            |   4 +
+ arch/arm/kernel/entry-armv.S              |   3 +-
+ arch/arm/kernel/vmlinux-xip.lds.S         |   1 -
+ arch/arm/kernel/vmlinux.lds.S             |   1 -
+ arch/arm/probes/decode.h                  |   1 +
+ arch/arm64/include/asm/Kbuild             |   3 +
+ arch/arm64/include/asm/jump_label.h       |   6 +-
+ arch/arm64/include/asm/kprobes.h          |   4 +
+ arch/arm64/kernel/armv8_deprecated.c      |   1 +
+ arch/arm64/kernel/insn.c                  |   1 +
+ arch/arm64/kernel/probes/decode-insn.h    |   2 +
+ arch/arm64/kernel/probes/kprobes.c        |   4 +-
+ arch/arm64/kernel/vmlinux.lds.S           |   1 -
+ arch/avr32/include/asm/Kbuild             |   3 +
+ arch/avr32/include/asm/kprobes.h          |   7 +-
+ arch/avr32/kernel/entry-avr32b.S          |  13 +-
+ arch/avr32/kernel/vmlinux.lds.S           |   1 -
+ arch/blackfin/include/asm/Kbuild          |   4 +
+ arch/blackfin/kernel/vmlinux.lds.S        |   1 -
+ arch/c6x/include/asm/Kbuild               |   3 +
+ arch/c6x/include/asm/tables.h             |  26 +
+ arch/c6x/kernel/vmlinux.lds.S             |   1 -
+ arch/cris/include/asm/Kbuild              |   4 +
+ arch/frv/include/asm/Kbuild               |   4 +
+ arch/h8300/include/asm/Kbuild             |   4 +
+ arch/hexagon/include/asm/Kbuild           |   4 +
+ arch/hexagon/kernel/vmlinux.lds.S         |   1 -
+ arch/ia64/include/asm/Kbuild              |   3 +
+ arch/ia64/include/asm/kprobes.h           |  12 +-
+ arch/ia64/kernel/jprobes.S                |   3 +-
+ arch/ia64/kernel/vmlinux.lds.S            |   1 -
+ arch/ia64/lib/flush.S                     |   6 +-
+ arch/m32r/include/asm/Kbuild              |   4 +
+ arch/m68k/include/asm/Kbuild              |   4 +
+ arch/metag/include/asm/Kbuild             |   4 +
+ arch/metag/kernel/vmlinux.lds.S           |   1 -
+ arch/microblaze/include/asm/Kbuild        |   4 +
+ arch/microblaze/kernel/vmlinux.lds.S      |   1 -
+ arch/mips/include/asm/Kbuild              |   3 +
+ arch/mips/include/asm/jump_label.h        |   6 +-
+ arch/mips/include/asm/kprobes.h           |   6 +-
+ arch/mips/kernel/vmlinux.lds.S            |   1 -
+ arch/mn10300/include/asm/Kbuild           |   3 +
+ arch/mn10300/include/asm/kprobes.h        |   7 +-
+ arch/mn10300/kernel/vmlinux.lds.S         |   1 -
+ arch/nios2/include/asm/Kbuild             |   4 +
+ arch/nios2/kernel/vmlinux.lds.S           |   1 -
+ arch/openrisc/include/asm/Kbuild          |   4 +
+ arch/openrisc/kernel/vmlinux.lds.S        |   1 -
+ arch/parisc/include/asm/Kbuild            |   4 +
+ arch/parisc/kernel/vmlinux.lds.S          |   1 -
+ arch/powerpc/include/asm/Kbuild           |   3 +
+ arch/powerpc/include/asm/jump_label.h     |   8 +-
+ arch/powerpc/include/asm/kprobes.h        |   3 +
+ arch/powerpc/include/asm/ppc_asm.h        |   3 +-
+ arch/powerpc/kernel/vmlinux.lds.S         |   3 +-
+ arch/s390/include/asm/Kbuild              |   3 +
+ arch/s390/include/asm/jump_label.h        |   6 +-
+ arch/s390/include/asm/kprobes.h           |   7 +-
+ arch/s390/kernel/entry.S                  |   5 +-
+ arch/s390/kernel/kprobes.c                |   6 +-
+ arch/s390/kernel/mcount.S                 |   3 +-
+ arch/s390/kernel/vmlinux.lds.S            |   1 -
+ arch/score/include/asm/Kbuild             |   4 +
+ arch/score/kernel/vmlinux.lds.S           |   1 -
+ arch/sh/include/asm/Kbuild                |   3 +
+ arch/sh/include/asm/kprobes.h             |   5 +-
+ arch/sh/kernel/vmlinux.lds.S              |   1 -
+ arch/sparc/include/asm/Kbuild             |   3 +
+ arch/sparc/include/asm/jump_label.h       |   6 +-
+ arch/sparc/include/asm/kprobes.h          |  10 +-
+ arch/sparc/kernel/vmlinux.lds.S           |   1 -
+ arch/sparc/mm/ultra.S                     |   3 +-
+ arch/tile/include/asm/Kbuild              |   3 +
+ arch/tile/include/asm/jump_label.h        |   5 +-
+ arch/tile/include/asm/kprobes.h           |   6 +-
+ arch/tile/kernel/vmlinux.lds.S            |   1 -
+ arch/um/include/asm/Kbuild                |   4 +
+ arch/unicore32/include/asm/Kbuild         |   3 +
+ arch/unicore32/include/asm/section-core.h |  19 +
+ arch/x86/include/asm/Kbuild               |   3 +
+ arch/x86/include/asm/asm.h                |   4 +-
+ arch/x86/include/asm/jump_label.h         |  10 +-
+ arch/x86/include/asm/kprobes.h            |   9 +-
+ arch/x86/kernel/cpu/microcode/core.c      |   8 +-
+ arch/x86/kernel/kprobes/core.c            |  11 +-
+ arch/x86/kernel/vmlinux.lds.S             |   1 -
+ arch/x86/tools/relocs.c                   |   4 +
+ arch/xtensa/include/asm/Kbuild            |   4 +
+ arch/xtensa/kernel/Makefile               |   8 +-
+ drivers/base/firmware_class.c             |  12 +-
+ firmware/Makefile                         |   6 +-
+ include/asm-generic/kprobes.h             |  26 +
+ include/asm-generic/ranges.h              |  93 ++++
+ include/asm-generic/section-core.h        | 348 +++++++++++++
+ include/asm-generic/sections.h            |   4 +-
+ include/asm-generic/tables.h              |  48 ++
+ include/asm-generic/vmlinux.lds.h         |  47 +-
+ include/linux/compiler.h                  |   8 -
+ include/linux/dynamic_debug.h             |   5 +-
+ include/linux/init.h                      |  89 +++-
+ include/linux/jump_label.h                |   8 +-
+ include/linux/kprobes.h                   |  24 +-
+ include/linux/ranges.h                    | 183 +++++++
+ include/linux/sections.h                  |  87 ++++
+ include/linux/tables.h                    | 683 +++++++++++++++++++++++++
+ init/Kconfig                              |  22 +
+ kernel/jump_label.c                       |  17 +-
+ kernel/kprobes.c                          |  17 +-
+ lib/Kconfig.debug                         |   6 +
+ lib/Makefile                              |   1 +
+ lib/dynamic_debug.c                       |  13 +-
+ lib/test_linktables/Makefile              |  13 +
+ lib/test_linktables/test-linktables-00.c  |  27 +
+ lib/test_linktables/test-linktables-01.c  |  27 +
+ lib/test_linktables/test-linktables-02.c  |  27 +
+ lib/test_linktables/test-linktables-03.c  |  27 +
+ lib/test_linktables/test-linktables-04.c  |  27 +
+ lib/test_linktables/test-linktables.c     | 801 ++++++++++++++++++++++++++++++
+ lib/test_linktables/test-linktables.h     |  48 ++
+ scripts/Makefile.build                    |   7 +-
+ scripts/Makefile.clean                    |   2 +
+ scripts/Makefile.lib                      |  11 +
+ scripts/mod/modpost.c                     |   2 +-
+ scripts/module-common.lds                 |   2 +
+ scripts/recordmcount.c                    |   2 +-
+ scripts/recordmcount.pl                   |   2 +-
+ tools/objtool/special.c                   |   2 +-
+ 143 files changed, 3633 insertions(+), 200 deletions(-)
+ create mode 100644 Documentation/sections/background.rst
+ create mode 100644 Documentation/sections/conf.py
+ create mode 100644 Documentation/sections/index.rst
+ create mode 100644 Documentation/sections/linker-tables.rst
+ create mode 100644 Documentation/sections/ranges.rst
+ create mode 100644 Documentation/sections/section-core.rst
+ create mode 100644 arch/c6x/include/asm/tables.h
+ create mode 100644 arch/unicore32/include/asm/section-core.h
+ create mode 100644 include/asm-generic/kprobes.h
+ create mode 100644 include/asm-generic/ranges.h
+ create mode 100644 include/asm-generic/section-core.h
+ create mode 100644 include/asm-generic/tables.h
+ create mode 100644 include/linux/ranges.h
+ create mode 100644 include/linux/sections.h
+ create mode 100644 include/linux/tables.h
+ create mode 100644 lib/test_linktables/Makefile
+ create mode 100644 lib/test_linktables/test-linktables-00.c
+ create mode 100644 lib/test_linktables/test-linktables-01.c
+ create mode 100644 lib/test_linktables/test-linktables-02.c
+ create mode 100644 lib/test_linktables/test-linktables-03.c
+ create mode 100644 lib/test_linktables/test-linktables-04.c
+ create mode 100644 lib/test_linktables/test-linktables.c
+ create mode 100644 lib/test_linktables/test-linktables.h
 
-v4:
-
-o work around c6x toolchain bug by using SECTION_TBL_RO
-
-o fix compilation on blackfin
-
-v3:
-o explicitly include tables.h as we no longer include
-  tables.h from sections.h
-
-o use new section_tbl_asmtype() helper on firmware/Makefile
-  to enable having to unfold things on our own.
-
-v2: introduced this file in this version of the series
-
-Cc: Barry Song <barry.song@analog.com>
-Cc: Mike Frysinger <vapier@gentoo.org>
-Cc: Steven Miao <realmz6@gmail.com>
-Cc: Michael Matz <matz@suse.de>
-Cc: Guenter Roeck <linux@roeck-us.net>
-Cc: Fengguang Wu <fengguang.wu@intel.com>
-Signed-off-by: Luis R. Rodriguez <mcgrof@kernel.org>
----
- arch/x86/kernel/cpu/microcode/core.c |  8 ++++----
- drivers/base/firmware_class.c        | 12 ++++++------
- firmware/Makefile                    |  3 ++-
- include/asm-generic/vmlinux.lds.h    |  7 -------
- 4 files changed, 12 insertions(+), 18 deletions(-)
-
-diff --git a/arch/x86/kernel/cpu/microcode/core.c b/arch/x86/kernel/cpu/microcode/core.c
-index 2af69d27da62..2c5004343b45 100644
---- a/arch/x86/kernel/cpu/microcode/core.c
-+++ b/arch/x86/kernel/cpu/microcode/core.c
-@@ -31,6 +31,7 @@
- #include <linux/cpu.h>
- #include <linux/fs.h>
- #include <linux/mm.h>
-+#include <linux/tables.h>
- 
- #include <asm/microcode_intel.h>
- #include <asm/cpu_device_id.h>
-@@ -110,15 +111,14 @@ static bool __init check_loader_disabled_bsp(void)
- 	return *res;
- }
- 
--extern struct builtin_fw __start_builtin_fw[];
--extern struct builtin_fw __end_builtin_fw[];
-+DECLARE_LINKTABLE_RO(struct builtin_fw, builtin_fw);
- 
- bool get_builtin_firmware(struct cpio_data *cd, const char *name)
- {
- #ifdef CONFIG_FW_LOADER
--	struct builtin_fw *b_fw;
-+	const struct builtin_fw *b_fw;
- 
--	for (b_fw = __start_builtin_fw; b_fw != __end_builtin_fw; b_fw++) {
-+	linktable_for_each(b_fw, builtin_fw) {
- 		if (!strcmp(name, b_fw->name)) {
- 			cd->size = b_fw->size;
- 			cd->data = b_fw->data;
-diff --git a/drivers/base/firmware_class.c b/drivers/base/firmware_class.c
-index 4497d263209f..b9ac348e8d33 100644
---- a/drivers/base/firmware_class.c
-+++ b/drivers/base/firmware_class.c
-@@ -31,6 +31,7 @@
- #include <linux/reboot.h>
- #include <linux/security.h>
- #include <linux/swait.h>
-+#include <linux/tables.h>
- 
- #include <generated/utsrelease.h>
- 
-@@ -44,15 +45,14 @@ MODULE_LICENSE("GPL");
- 
- #ifdef CONFIG_FW_LOADER
- 
--extern struct builtin_fw __start_builtin_fw[];
--extern struct builtin_fw __end_builtin_fw[];
-+DEFINE_LINKTABLE_RO(struct builtin_fw, builtin_fw);
- 
- static bool fw_get_builtin_firmware(struct firmware *fw, const char *name,
- 				    void *buf, size_t size)
- {
--	struct builtin_fw *b_fw;
-+	const struct builtin_fw *b_fw;
- 
--	for (b_fw = __start_builtin_fw; b_fw != __end_builtin_fw; b_fw++) {
-+	linktable_for_each(b_fw, builtin_fw) {
- 		if (strcmp(name, b_fw->name) = 0) {
- 			fw->size = b_fw->size;
- 			fw->data = b_fw->data;
-@@ -68,9 +68,9 @@ static bool fw_get_builtin_firmware(struct firmware *fw, const char *name,
- 
- static bool fw_is_builtin_firmware(const struct firmware *fw)
- {
--	struct builtin_fw *b_fw;
-+	const struct builtin_fw *b_fw;
- 
--	for (b_fw = __start_builtin_fw; b_fw != __end_builtin_fw; b_fw++)
-+	linktable_for_each(b_fw, builtin_fw)
- 		if (fw->data = b_fw->data)
- 			return true;
- 
-diff --git a/firmware/Makefile b/firmware/Makefile
-index fa3e81c2a97b..9c8cae144ede 100644
---- a/firmware/Makefile
-+++ b/firmware/Makefile
-@@ -155,6 +155,7 @@ quiet_cmd_fwbin = MK_FW   $@
- 		  ASM_ALIGN=$(if $(CONFIG_64BIT),3,2);			     \
- 		  PROGBITS=$(if $(CONFIG_ARM),%,@)progbits;		     \
- 		  echo "/* Generated by firmware/Makefile */"		> $@;\
-+		  echo "\#include <asm/tables.h>"			>>$@;\
- 		  echo "    .section .rodata"				>>$@;\
- 		  echo "    .p2align $${ASM_ALIGN}"			>>$@;\
- 		  echo "_fw_$${FWSTR}_bin:"				>>$@;\
-@@ -164,7 +165,7 @@ quiet_cmd_fwbin = MK_FW   $@
- 		  echo "    .p2align $${ASM_ALIGN}"			>>$@;\
- 		  echo "_fw_$${FWSTR}_name:"				>>$@;\
- 		  echo "    .string \"$$FWNAME\""			>>$@;\
--		  echo "    .section .builtin_fw,\"a\",$${PROGBITS}"	>>$@;\
-+		  echo "    set_section_tbl_type(SECTION_TBL_RO, builtin_fw, any, a,$${PROGBITS})" >>$@;\
- 		  echo "    .p2align $${ASM_ALIGN}"			>>$@;\
- 		  echo "    $${ASM_WORD} _fw_$${FWSTR}_name"		>>$@;\
- 		  echo "    $${ASM_WORD} _fw_$${FWSTR}_bin"		>>$@;\
-diff --git a/include/asm-generic/vmlinux.lds.h b/include/asm-generic/vmlinux.lds.h
-index ce1e9a310ada..8a5325d75932 100644
---- a/include/asm-generic/vmlinux.lds.h
-+++ b/include/asm-generic/vmlinux.lds.h
-@@ -324,13 +324,6 @@
- 		VMLINUX_SYMBOL(__end_pci_fixups_suspend_late) = .;	\
- 	}								\
- 									\
--	/* Built-in firmware blobs */					\
--	.builtin_fw        : AT(ADDR(.builtin_fw) - LOAD_OFFSET) {	\
--		VMLINUX_SYMBOL(__start_builtin_fw) = .;			\
--		KEEP(*(.builtin_fw))					\
--		VMLINUX_SYMBOL(__end_builtin_fw) = .;			\
--	}								\
--									\
- 	TRACEDATA							\
- 									\
- 	/* Kernel symbol table: Normal symbols */			\
 -- 
 2.11.0
 
