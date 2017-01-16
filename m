@@ -1,8 +1,10 @@
 From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Date: Sun, 15 Jan 2017 12:21:49 +0000
-Subject: Resolving glibc namespace conflicts with R0..Rn
-Message-Id: <e35765d0-5daa-7289-4d35-0b416013494c@physik.fu-berlin.de>
+Date: Mon, 16 Jan 2017 12:44:10 +0000
+Subject: Re: Resolving glibc namespace conflicts with R0..Rn
+Message-Id: <f51998ea-5098-82c1-ed40-60c91af0345f@physik.fu-berlin.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <e35765d0-5daa-7289-4d35-0b416013494c@physik.fu-berlin.de>
+In-Reply-To: <e35765d0-5daa-7289-4d35-0b416013494c@physik.fu-berlin.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -10,22 +12,23 @@ To: linux-sh@vger.kernel.org
 
 Hi!
 
-We're currently running into a name conflict issue when building Firefox on sh4
-with the R0..Rn register names. Apparently, there have been several packages which
-were affected by this issue with the result that glibc upstream decided to resolve
-this issue on ARM by renaming Rn to REG_Rn [1]. The discussion in the Firefox bugtracker
-regarding the issue can be followed here [2].
+On 01/16/2017 01:42 PM, Oleg Endo wrote:
+> Not sure why I ended up as the primary recipient of the message, but
+> anyway ...
 
-Would it be possible to make this change in glibc on SH as well?
+That's just by accident, I added SH people in no particular order :).
 
-Apparently, the only big user which would suffer breakage would be gdb but since
-there is currently not official SH support in gdb anyway, I think we're good
-to go.
+>> Would it be possible to make this change in glibc on SH as well?
+> 
+> I'm sorry, but I'm afraid I won't be much of a help here.  I haven't
+> been involved in glibc at all and at the moment, I'm too busy with
+> other things.  
 
+No problem. I'm just trying to gather opinions on how to proceed
+and if making the proposed change would cause any issues.
+
+Thanks,
 Adrian
-
-> [1] https://sourceware.org/ml/libc-ports/2011-12/msg00032.html
-> [2] https://bugzilla.mozilla.org/show_bug.cgi?id29194#c15
 
 -- 
  .''`.  John Paul Adrian Glaubitz
