@@ -1,55 +1,29 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 06 Jan 2017 10:57:48 +0000
-Subject: Re: [PATCH 17/19] serial: sh-sci: Remove manual break debouncing
-Message-Id: <CAMuHMdVw+1n=yNm7mDhDmdgShKQ5Ef74=k-i+kgaDL8VKBuqCg@mail.gmail.com>
+From: Steve Kowalik <steven@wedontsleep.org>
+Date: Thu, 19 Jan 2017 22:06:41 +0000
+Subject: [PATCH 0/1] Documentation: convert sh interfaces to RST
+Message-Id: <1484863602-27393-1-git-send-email-steven@wedontsleep.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20170103230639.19660-1-laurent.pinchart+renesas@ideasonboard.com> <20170103230639.19660-18-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <20170103230639.19660-18-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Cc: Linux-Renesas <linux-renesas-soc@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-serial@vger.kernel.org" <linux-serial@vger.kernel.org>, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-sh@vger.kernel.org
 
-On Wed, Jan 4, 2017 at 12:06 AM, Laurent Pinchart
-<laurent.pinchart+renesas@ideasonboard.com> wrote:
-> The sh-sci driver implements manual break debouncing for a few SH
-> platforms by reading the value of the RX pin port register. This feature
-> is optional and the driver considers all negative or zero values of the
-> platform data port_reg field as invalid. As the four platforms that set
-> the field to a register address all use an address higher than
-> 0x7fffffff, the driver will always consider the value as invalid and
-> never perform debouncing. The feature is unused, remove it.
->
-> Debouncing could be implemented properly in the future using the pinctrl
-> and GPIO APIs if desired.
->
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Hi,
 
-Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+The following patch converts the SuperH interfaces DocBook into RST,
+however, I've not added it to the toctree, since I'm not 100% clear
+where it best fits.
 
-> --- a/include/linux/serial_sci.h
-> +++ b/include/linux/serial_sci.h
+Steve Kowalik (1):
+  Documentation: convert sh interfaces to RST
 
-> @@ -41,8 +39,6 @@ enum {
->         SCIx_NR_REGTYPES,
->  };
->
-> -struct device;
-> -
+ Documentation/DocBook/Makefile  |   2 +-
+ Documentation/DocBook/sh.tmpl   | 105 ----------------------------------------
+ Documentation/sh/interfaces.rst |  59 ++++++++++++++++++++++
+ 3 files changed, 60 insertions(+), 106 deletions(-)
+ delete mode 100644 Documentation/DocBook/sh.tmpl
+ create mode 100644 Documentation/sh/interfaces.rst
 
-<ignore_me>
-Unrelated change (missed in commit 937bb6e4c676 ("serial: sh-sci: don't
-filter on DMA device, use only channel ID")
-</ignore_me>
+-- 
+2.7.4
 
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
