@@ -1,24 +1,39 @@
-From: Greg KH <gregkh@linuxfoundation.org>
-Date: Thu, 19 Jan 2017 11:04:40 +0000
-Subject: Re: [PATCH v4 5/6] tools: add __section() to compiler.h
-Message-Id: <20170119110440.GF28024@kroah.com>
+From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Date: Mon, 30 Jan 2017 11:21:38 +0000
+Subject: Re: Bug#576242: gdb: Please support Renesas SH(sh4)
+Message-Id: <c184d5b5-4ec4-96e8-70f0-3ea61ce480db@physik.fu-berlin.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20170109150249.11667-1-mcgrof@kernel.org>
- <20170115211215.17216-1-mcgrof@kernel.org>
- <20170115211215.17216-6-mcgrof@kernel.org>
-In-Reply-To: <20170115211215.17216-6-mcgrof@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "Luis R. Rodriguez" <mcgrof@kernel.org>
-Cc: bp@alien8.de, bp@suse.de, hpa@zytor.com, acme@redhat.com, tglx@linutronix.de, mingo@redhat.com, jpoimboe@redhat.com, npiggin@gmail.com, mhiramat@kernel.org, masami.hiramatsu.pt@hitachi.com, jbaron@akamai.com, heiko.carstens@de.ibm.com, ananth@linux.vnet.ibm.com, anil.s.keshavamurthy@intel.com, davem@davemloft.net, realmz6@gmail.com, dalias@libc.org, linux@arm.linux.org.uk, x86@kernel.org, luto@amacapital.net, keescook@chromium.org, linux@roeck-us.net, torvalds@linux-foundation.org, rusty@rustcorp.com.au, gnomes@lxorguk.ukuu.org.uk, alan@linux.intel.com, dwmw2@infradead.org, arnd@arndb.de, ming.lei@canonical.com, linux-arch@vger.kernel.org, benh@kernel.crashing.org, pebolle@tiscali.nl, fontana@sharpeleven.org, david.vrabel@citrix.com, konrad.wilk@oracle.com, mcb30@ipxe.org
+To: linux-sh@vger.kernel.org
 
-On Sun, Jan 15, 2017 at 01:12:14PM -0800, Luis R. Rodriguez wrote:
-> This will be used later by the userspace linker table.
+Hi!
 
-same comment as the last time you used this sentence as a changelog
-text...
+We're currently working on improving SuperH support in Debian and Linux
+in general since the architecture is currently being redeveloped as an
+open source architecture called J-Core [1]. J-Core supports the SH-2
+instruction set only, but it's expected to extend to SH-3 and SH-4
+in the future. Hence, having working native SH support for gdb on Linux
+would be very desirable.
 
-thanks,
+>  * Tom Tromey <tromey@redhat.com> pointed out that any significant
+>    contributors would need to sign copyright assignment papers, since
+>    the patch is far from trivial.  Otherwise, GNU won't merge it, and it
+>    will bitrot constantly.
+>    <http://www.cygwin.com/ml/gdb-patches/2011-11/msg00499.html>
 
-greg k-h
+This would actually the first and most important thing to do. I have
+tried contacting Takashi YOSHII but so far I had no success. One that
+could help would be Nobuhiro Iwamatsu, so I put him in CC. There is
+also Yutaka Niibe whom we can ask.
+
+Adrian
+
+> [1] http://j-core.org/
+
+-- 
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer - glaubitz@debian.org
+`. `'   Freie Universitaet Berlin - glaubitz@physik.fu-berlin.de
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
