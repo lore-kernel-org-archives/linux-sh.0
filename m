@@ -1,51 +1,1350 @@
-From: Joe Perches <joe@perches.com>
-Date: Thu, 23 Feb 2017 17:53:41 +0000
-Subject: Re: [PATCH 00/35] treewide trivial patches converting pr_warning to pr_warn
-Message-Id: <1487872421.14159.38.camel@perches.com>
+From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Date: Tue, 07 Feb 2017 20:51:05 +0000
+Subject: Re: Bug#576242: gdb: Please support Renesas SH(sh4)
+Message-Id: <fe5a5446-d4c0-0e0c-ad48-e2114946912d@physik.fu-berlin.de>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="------------893FB9A7F821F3C67CB17F7C"
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1487314666.git.joe@perches.com>
- <CAL_JsqLTaq-QLTqfyDO8EVJYpgeUx1e4J0Fo2NvfFWqVoiVedQ@mail.gmail.com>
- <1487870304.14159.29.camel@perches.com>
- <CACvgo50LUm5VSn_F=Dh8kL5zCPpCQDoCyUEL=Z+=1+6hJpfTaw@mail.gmail.com>
-In-Reply-To: <CACvgo50LUm5VSn_F=Dh8kL5zCPpCQDoCyUEL=Z+=1+6hJpfTaw@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+References: <c184d5b5-4ec4-96e8-70f0-3ea61ce480db@physik.fu-berlin.de>
+In-Reply-To: <c184d5b5-4ec4-96e8-70f0-3ea61ce480db@physik.fu-berlin.de>
+To: linux-sh@vger.kernel.org
+
+This is a multi-part message in MIME format.
+--------------893FB9A7F821F3C67CB17F7C
+Content-Type: text/plain; charset=utf-8
 Content-Transfer-Encoding: 7bit
-To: Emil Velikov <emil.l.velikov@gmail.com>
-Cc: "linux-fbdev@vger.kernel.org" <linux-fbdev@vger.kernel.org>, linux-ia64@vger.kernel.org, SH-Linux <linux-sh@vger.kernel.org>, Alexander Shishkin <alexander.shishkin@linux.intel.com>, ML nouveau <nouveau@lists.freedesktop.org>, Linux-ALSA <alsa-devel@alsa-project.org>, dri-devel <dri-devel@lists.freedesktop.org>, "open list:VIRTIO GPU DRIVER" <virtualization@lists.linux-foundation.org>, "linux-ide@vger.kernel.org" <linux-ide@vger.kernel.org>, "linux-mtd@lists.infradead.org" <linux-mtd@lists.infradead.org>, sparclinux@vger.kernel.org, drbd-dev@lists.linbit.com, Rob Herring <robh@kernel.org>, linux-omap <linux-omap@vger.kernel.org>, linux-scsi@vger.kernel.org, Richard Weinberger <richard@nod.at>, tboot-devel@lists.sourceforge.net, amd-gfx mailing list <amd-gfx@lists.freedesktop.org>, "linux-acpi@vger.kernel.org" <linux-acpi@vger.kernel.org>, sfi-devel@simplefirmware.org
 
-On Thu, 2017-02-23 at 17:41 +0000, Emil Velikov wrote:
-> On 23 February 2017 at 17:18, Joe Perches <joe@perches.com> wrote:
-> > On Thu, 2017-02-23 at 09:28 -0600, Rob Herring wrote:
-> > > On Fri, Feb 17, 2017 at 1:11 AM, Joe Perches <joe@perches.com> wrote:
-> > > > There are ~4300 uses of pr_warn and ~250 uses of the older
-> > > > pr_warning in the kernel source tree.
-> > > > 
-> > > > Make the use of pr_warn consistent across all kernel files.
-> > > > 
-> > > > This excludes all files in tools/ as there is a separate
-> > > > define pr_warning for that directory tree and pr_warn is
-> > > > not used in tools/.
-> > > > 
-> > > > Done with 'sed s/\bpr_warning\b/pr_warn/' and some emacsing.
-> > 
-> > []
-> > > Where's the removal of pr_warning so we don't have more sneak in?
-> > 
-> > After all of these actually get applied,
-> > and maybe a cycle or two later, one would
-> > get sent.
-> > 
-> 
-> By which point you'll get a few reincarnation of it. So you'll have to
-> do the same exercise again :-(
+Hi!
 
-Maybe to one or two files.  Not a big deal.
+I have ported Yoshii-san's code to GDB 7.12, attaching an updated
+patch. A git repository with my linux-sh branch can be found in [1].
 
-> I guess the question is - are you expecting to get the series merged
-> all together/via one tree ?
+Yutaka Niibe has already reached out to Renesas in Japan and is trying to
+get into touch with Yoshii-san, this might take a while though. However,
+I have talked with someone at the FSFE knowledgeable with open source
+licenses and it looks like we actually don't need the copyright assignment
+at all.
 
-No.  The only person that could do that effectively is Linus.
+If we needed the copyright assignment, we'd probably need it from Renesas
+anyway and not from Yoshii-san directly as he wrote the patch while working
+for Renesas who consequently are the copyright owners. And since Renesas
+already submitted their SH code to gcc, I assume they also already assigned
+the FSF copyright assignment (if that's actually needed).
 
-> If not, your plan is perfectly reasonable.
+More updates coming soon.
 
+Thanks,
+Adrian
+
+> [1] https://github.com/glaubitz/binutils-gdb/tree/linux-sh
+
+-- 
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer - glaubitz@debian.org
+`. `'   Freie Universitaet Berlin - glaubitz@physik.fu-berlin.de
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+
+--------------893FB9A7F821F3C67CB17F7C
+Content-Type: text/x-patch;
+ name="sh-linux-native-support.patch"
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment;
+ filename="sh-linux-native-support.patch"
+
+Description: Add native support for Linux SH
+Author: Takashi Yoshii <takasi-y@ops.dti.ne.jp>
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Last-Update: 2017-02-07
+
+--- gdb-7.12.orig/gdb/Makefile.in
++++ gdb-7.12/gdb/Makefile.in
+@@ -1750,6 +1750,7 @@ ALLDEPFILES = \
+ 	score-tdep.c \
+ 	ser-go32.c ser-pipe.c ser-tcp.c ser-mingw.c \
+ 	sh-tdep.c sh64-tdep.c shnbsd-tdep.c shnbsd-nat.c \
++	sh-linux-nat.c sh-linux-tdep.c \
+ 	sol2-tdep.c \
+ 	solib-svr4.c \
+ 	sparc-linux-nat.c sparc-linux-tdep.c \
+--- /dev/null
++++ gdb-7.12/gdb/config/sh/linux.mh
+@@ -0,0 +1,14 @@
++# Host: Renesas Super-H running GNU/Linux
++
++NAT_FILE= nm-linux.h
++NATDEPFILES= inf-ptrace.o fork-child.o \
++	sh-linux-nat.o \
++	proc-service.o linux-thread-db.o \
++	linux-nat.o linux-osdata.o linux-fork.o linux-procfs.o linux-ptrace.o \
++	linux-personality.o \
++	linux-waitpid.o linux-namespaces.o
++NAT_CDEPS = $(srcdir)/proc-service.list
++
++# The dynamically loaded libthread_db needs access to symbols in the
++# gdb executable.
++LOADLIBES = -ldl $(RDYNAMIC)
+--- /dev/null
++++ gdb-7.12/gdb/config/sh/nm-linux.h
+@@ -0,0 +1,54 @@
++/* Native-dependent definitions for SuperH running Linux, for GDB.
++   Copyright 2004 Free Software Foundation, Inc.
++
++   This file is part of GDB.
++
++   This program is free software; you can redistribute it and/or modify
++   it under the terms of the GNU General Public License as published by
++   the Free Software Foundation; either version 2 of the License, or
++   (at your option) any later version.
++
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU General Public License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with this program; if not, write to the Free Software
++   Foundation, Inc., 59 Temple Place - Suite 330,
++   Boston, MA 02111-1307, USA.  */
++
++#ifndef NM_LINUX_H
++#define NM_LINUX_H
++
++/* Get generic Linux native definitions.  */
++#include "config/nm-linux.h"
++/* Support for the user area.  */
++
++/* Return the size of the user struct.  */
++extern int kernel_u_size (void);
++#define KERNEL_U_SIZE kernel_u_size()
++
++/* This is the amount to substract from u.u_ar0 to get the offset in
++   the core file of the register values.  */
++#define KERNEL_U_ADDR 0
++
++#define U_REGS_OFFSET 0
++
++extern CORE_ADDR register_u_addr (CORE_ADDR blockend, int regnum);
++#define REGISTER_U_ADDR(addr, blockend, regnum) \
++  (addr) = register_u_addr (blockend, regnum)
++
++/* Override copies of {fetch,store}_inferior_registers in `infptrace.c'.  */
++#define FETCH_INFERIOR_REGISTERS
++
++/* Nevertheless, define CANNOT_{FETCH,STORE}_REGISTER, because we
++   might fall back on the code `infptrace.c' (well a copy of that code
++   in `sh-linux-nat.c' for now) and we can access only the
++   general-purpose registers in that way.  */
++extern int cannot_fetch_register (int regno);
++extern int cannot_store_register (int regno);
++#define CANNOT_FETCH_REGISTER(regno) cannot_fetch_register (regno)
++#define CANNOT_STORE_REGISTER(regno) cannot_store_register (regno)
++
++#endif /* NM_LINUX_H */
+--- /dev/null
++++ gdb-7.12/gdb/config/sh/xm-linux.h
+@@ -0,0 +1,32 @@
++/* Native support for GNU/Linux, for GDB, the GNU debugger.
++   Copyright (C) 2000 Free Software Foundation, Inc.
++
++This file is part of GDB.
++
++This program is free software; you can redistribute it and/or modify
++it under the terms of the GNU General Public License as published by
++the Free Software Foundation; either version 2 of the License, or
++(at your option) any later version.
++
++This program is distributed in the hope that it will be useful,
++but WITHOUT ANY WARRANTY; without even the implied warranty of
++MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++GNU General Public License for more details.
++
++You should have received a copy of the GNU General Public License
++along with this program; if not, write to the Free Software
++Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.  */
++
++#ifndef XM_LINUX_H
++#define XM_LINUX_H
++
++#define HOST_BYTE_ORDER LITTLE_ENDIAN
++
++#define HAVE_TERMIOS
++
++#define NEED_POSIX_SETPGID
++
++/* Need R_OK etc, but USG isn't defined.  */
++#include <unistd.h>
++
++#endif	/* #ifndef XM_LINUX_H */
+--- gdb-7.12.orig/gdb/configure.host
++++ gdb-7.12/gdb/configure.host
+@@ -149,6 +149,7 @@ powerpc*-*-linux*)	gdb_host=linux ;;
+ 
+ s390*-*-linux*)		gdb_host=linux ;;
+ 
++sh*-*-linux*)		gdb_host=linux ;;
+ sh*-*-netbsdelf* | sh*-*-knetbsd*-gnu)
+ 			gdb_host=nbsd ;;
+ sh*-*-openbsd*)		gdb_host=nbsd ;;
+--- /dev/null
++++ gdb-7.12/gdb/sh-linux-nat.c
+@@ -0,0 +1,268 @@
++/* Low level SH interface to ptrace, for GDB when running native.
++   Copyright (C) 2002, 2004 Free Software Foundation, Inc.
++
++This file is part of GDB.
++
++This program is free software; you can redistribute it and/or modify
++it under the terms of the GNU General Public License as published by
++the Free Software Foundation; either version 2 of the License, or
++(at your option) any later version.
++
++This program is distributed in the hope that it will be useful,
++but WITHOUT ANY WARRANTY; without even the implied warranty of
++MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++GNU General Public License for more details.
++
++You should have received a copy of the GNU General Public License
++along with this program; if not, write to the Free Software
++Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.  */
++
++#include "defs.h"
++#include "inferior.h"
++#include "gdbcore.h"
++#include "regcache.h"
++#include "linux-nat.h"
++#include "target.h"
++#include "arch-utils.h"
++
++#include "gdb_assert.h"
++#include <sys/ptrace.h>
++#include <sys/user.h>
++#include <sys/procfs.h>
++#include <asm/ptrace.h>
++
++/* Prototypes for supply_gregset etc. */
++#include "gregset.h"
++#include "sh-tdep.h"
++
++/* Defines ps_err_e, struct ps_prochandle.  */
++#include "gdb_proc_service.h"
++
++//#include <asm/elf.h>
++
++#define SH_LINUX_NUM_REGS	40
++/* This table must line up with REGISTER_NAME in "sh-tdep.c".  */
++static const int regmap[] =
++{
++  /* general registers 0-15 */
++  REG_REG0   , REG_REG0+1 , REG_REG0+2 , REG_REG0+3,
++  REG_REG0+4 , REG_REG0+5 , REG_REG0+6 , REG_REG0+7,
++  REG_REG0+8 , REG_REG0+9 , REG_REG0+10, REG_REG0+11,
++  REG_REG0+12, REG_REG0+13, REG_REG0+14, REG_REG0+15,
++  /* 16 - 22 */
++  REG_PC, REG_PR, REG_GBR, -1, REG_MACH, REG_MACL, REG_SR,
++  /* 23, 24 */
++  REG_FPUL, REG_FPSCR,
++  /* floating point registers 25 - 40 */
++  REG_FPREG0   , REG_FPREG0+1 , REG_FPREG0+2 , REG_FPREG0+3 ,
++  REG_FPREG0+4 , REG_FPREG0+5 , REG_FPREG0+6 , REG_FPREG0+7 ,
++  REG_FPREG0+8 , REG_FPREG0+9 , REG_FPREG0+10, REG_FPREG0+11,
++  REG_FPREG0+12, REG_FPREG0+13, REG_FPREG0+14, REG_FPREG0+15,
++};
++
++CORE_ADDR
++register_u_addr (CORE_ADDR blockend, int regnum)
++{
++  if (regnum < 0 || regnum >= sizeof regmap/sizeof regmap[0])
++    return (CORE_ADDR)-1;
++  return (blockend + 4 * regmap[regnum]);
++}
++
++
++/* Return the address in the core dump or inferior of register REGNO.
++   BLOCKEND is the address of the end of the user structure.  */
++
++CORE_ADDR
++register_addr (int regno, CORE_ADDR blockend)
++{
++  CORE_ADDR addr;
++
++  if (regno < 0 || regno >= SH_LINUX_NUM_REGS) {
++    internal_error (__FILE__, __LINE__,
++		  _("Got request for bad register number %d."), regno);
++  }
++
++  REGISTER_U_ADDR (addr, blockend, regno);
++
++  return addr;
++}
++
++/* Fetch one register.  */
++
++static void
++fetch_register (struct regcache *regcache, int tid, int regno)
++{
++  int val;
++
++  if (cannot_fetch_register (regno))
++    {
++      regcache_raw_supply (regcache, regno, NULL);
++      return;
++    }
++
++  errno = 0;
++  val = ptrace (PTRACE_PEEKUSER, tid, register_addr (regno, 0), 0);
++  if (errno != 0)
++    perror_with_name (_("Couldn't get registers"));
++
++  regcache_raw_supply (regcache, regno, &val);
++}
++
++/* Store one register. */
++
++static void
++store_register (struct regcache *regcache, int tid, int regno)
++{
++  int val;
++
++  if (cannot_store_register (regno))
++    return;
++
++  errno = 0;
++  regcache_raw_collect (regcache, regno, &val);
++  ptrace (PTRACE_POKEUSER, tid, register_addr (regno, 0), val);
++  if (errno != 0)
++    perror_with_name (_("Couldn't write registers"));
++}
++
++/* Transfering the general-purpose registers between GDB, inferiors
++   and core files.  */
++
++/* Fill GDB's register array with the general-purpose register values
++   in *GREGSETP.  */
++
++void
++supply_gregset (struct regcache *regcache, const elf_gregset_t *gregsetp)
++{
++  elf_greg_t *regp = (elf_greg_t *) gregsetp;
++  int i;
++
++  for (i = 0; i < 23; i++)
++    if (regmap[i] == -1)
++      regcache_raw_supply (regcache, i, NULL);
++    else
++      regcache_raw_supply (regcache, i, (char *) (regp + regmap[i]));
++}
++
++/* Fill register REGNO (if it is a general-purpose register) in
++   *GREGSETPS with the value in GDB's register array.  If REGNO is -1,
++   do this for all registers.  */
++
++void
++fill_gregset (const struct regcache *regcache, elf_gregset_t *gregsetp, int regno)
++{
++  elf_greg_t *regp = (elf_greg_t *) gregsetp;
++  int i;
++
++  for (i = 0; i < 23; i++)
++    if (regmap[i] != -1 && (regno == -1 || regno == i))
++      regcache_raw_collect (regcache, i, (char *) (regp + regmap[i]));
++}
++
++/* Transfering floating-point registers between GDB, inferiors and cores.  */
++
++/* Fill GDB's register array with the floating-point register values in
++   *FPREGSETP.  */
++
++void
++supply_fpregset (struct regcache *regcache, const elf_fpregset_t *fpregsetp)
++{
++  int i;
++  long *regp = (long *)fpregsetp;
++
++  for (i = 0; i < 16; i++)
++    regcache_raw_supply (regcache, 25 + i, (char *) (regp + i));
++  regcache_raw_supply (regcache, FPUL_REGNUM, (char *) (regp + REG_FPUL - REG_FPREG0));
++  regcache_raw_supply (regcache, FPSCR_REGNUM, (char *) (regp + REG_FPSCR - REG_FPREG0));
++}
++
++/* Fill register REGNO (if it is a floating-point register) in
++   *FPREGSETP with the value in GDB's register array.  If REGNO is -1,
++   do this for all registers.  */
++
++void
++fill_fpregset (const struct regcache *regcache, elf_fpregset_t *fpregsetp, int regno)
++{
++  int i;
++  long *regp = (long *)fpregsetp;
++
++  for (i = 0; i < 16; i++)
++    if ((regno == -1) || (regno == i))
++      regcache_raw_collect (regcache, 25 + i, (char *) (regp + i));
++  if ((regno == -1) || regno == FPSCR_REGNUM)
++    regcache_raw_collect (regcache, FPSCR_REGNUM, (char *) (regp + REG_FPSCR - REG_FPREG0));
++  if ((regno == -1) || regno == FPUL_REGNUM)
++    regcache_raw_collect (regcache, FPUL_REGNUM, (char *) (regp + REG_FPUL - REG_FPREG0));
++}
++
++/* Transferring arbitrary registers between GDB and inferior.  */
++
++/* Check if register REGNO in the child process is accessible.
++   If we are accessing registers directly via the U area, only the
++   general-purpose registers are available.
++   All registers should be accessible if we have GETREGS support.  */
++   
++int
++cannot_fetch_register (int regno)
++{
++  return (regno < 0 || regno >= sizeof regmap / sizeof regmap[0] || regmap[regno] == -1);
++}
++
++int
++cannot_store_register (int regno)
++{
++  return (regno < 0 || regno >= sizeof regmap / sizeof regmap[0] || regmap[regno] == -1);
++}
++
++/* Fetch register values from the inferior.
++   If REGNO is negative, do this for all registers.
++   Otherwise, REGNO specifies which register (so we can save time). */
++
++static void
++sh_linux_fetch_inferior_registers (struct target_ops *ops, struct regcache *regcache, int regno)
++{
++  int i;
++  int tid;
++
++  /* GNU/Linux LWP ID's are process ID's.  */
++  if ((tid = ptid_get_lwp (inferior_ptid)) == 0)
++    tid = ptid_get_pid (inferior_ptid);	/* Not a threaded program.  */
++
++  for (i = 0; i < SH_LINUX_NUM_REGS; i++)
++    if (regno == -1 || regno == i)
++      fetch_register (regcache, tid, i);
++}
++/* Store our register values back into the inferior.
++   If REGNO is negative, do this for all registers.
++   Otherwise, REGNO specifies which register (so we can save time).  */
++
++static void
++sh_linux_store_inferior_registers (struct target_ops *ops, struct regcache *regcache, int regno)
++{
++  int i;
++  int tid;
++
++  /* GNU/Linux LWP ID's are process ID's.  */
++  if ((tid = ptid_get_lwp (inferior_ptid)) == 0)
++    tid = ptid_get_pid (inferior_ptid);	/* Not a threaded program.  */
++
++  for (i = 0; i < SH_LINUX_NUM_REGS; i++)
++    if (regno == -1 || regno == i)
++      store_register (regcache, tid, i);
++}
++
++void
++_initialize_sh_linux_nat (void)
++{
++  struct target_ops *t;
++
++  /* Fill in the generic GNU/Linux methods.  */
++  t = linux_target ();
++
++  /* Add our register access methods.  */
++  t->to_fetch_registers = sh_linux_fetch_inferior_registers;
++  t->to_store_registers = sh_linux_store_inferior_registers;
++
++  /* Register the target.  */
++  linux_nat_add_target (t);
++}
+--- gdb-7.12.orig/gdb/sh-linux-tdep.c
++++ gdb-7.12/gdb/sh-linux-tdep.c
+@@ -18,14 +18,36 @@
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+ 
+ #include "defs.h"
++#include "gdbcore.h"
++#include "frame.h"
++#include "frame-base.h"
++#include "frame-unwind.h"
++#include "dwarf2-frame.h"
++#include "value.h"
++#include "regcache.h"
++#include "inferior.h"
+ #include "osabi.h"
+ 
++#include "reggroups.h"
++#include "arch-utils.h"
++#include "floatformat.h"
+ #include "solib-svr4.h"
+ #include "symtab.h"
++#include "command.h"
++#include "gdb_assert.h"
+ 
+ #include "trad-frame.h"
+ #include "tramp-frame.h"
+ 
++#include <sys/ptrace.h>
++#include <sys/types.h>
++#include <sys/param.h>
++#include <sys/user.h>
++#include <sys/syscall.h>
++
++#include <asm/ptrace.h>
++
++#include "regset.h"
+ #include "glibc-tdep.h"
+ #include "sh-tdep.h"
+ #include "linux-tdep.h"
+@@ -180,11 +202,505 @@ static struct tramp_frame sh_linux_rt_si
+   sh_linux_rt_sigreturn_init
+ };
+ 
++/* Recognizing signal handler frames.  */
++
++/* GNU/Linux has two flavors of signals.  Normal signal handlers, and
++   "realtime" (RT) signals.  The RT signals can provide additional
++   information to the signal handler if the SA_SIGINFO flag is set
++   when establishing a signal handler using `sigaction'.  It is not
++   unlikely that future versions of GNU/Linux will support SA_SIGINFO
++   for normal signals too.  */
++
++/* When the SH Linux kernel calls a signal handler and the
++   SA_RESTORER flag isn't set, the return address points to a bit of
++   code on the stack.  This function returns whether the PC appears to
++   be within this bit of code.
++
++   The instruction sequence for normal signals is
++       mov.w  1f,r3
++       trapa  #16
++       or     r0, r0
++       or     r0, r0
++       or     r0, r0
++       or     r0, r0
++       or     r0, r0
++    1: .word  __NR_sigreturn
++   or 0x9305 0xc310 0x200b 0x200b 0x200b 0x200b 0x200b 0x0077.
++
++   Checking for the code sequence should be somewhat reliable, because
++   the effect is to call the system call sigreturn.  This is unlikely
++   to occur anywhere other than a signal trampoline.
++
++   It kind of sucks that we have to read memory from the process in
++   order to identify a signal trampoline, but there doesn't seem to be
++   any other way.  The PC_IN_SIGTRAMP macro in tm-linux.h arranges to
++   only call us if no function name could be identified, which should
++   be the case since the code is on the stack.
++
++   Detection of signal trampolines for handlers that set the
++   SA_RESTORER flag is in general not possible.  Unfortunately this is
++   what the GNU C Library has been doing for quite some time now.
++   However, as of version 2.1.2, the GNU C Library uses signal
++   trampolines (named __restore and __restore_rt) that are identical
++   to the ones used by the kernel.  Therefore, these trampolines are
++   supported too.  */
++
++#define MOVW(n)	 (0x9300|((n)-2))	/* Move mem word at PC+n to R3 */
++#define TRAP16	 0xc310			/* Syscall w/no args (NR in R3) */
++#define OR_R0_R0 0x200b			/* or r0,r0 (insert to avoid hardware bug) */
++
++#define LINUX_SIGTRAMP_INSN0	MOVW(7)		/* Move mem word at PC+7 to R3 */
++#define LINUX_SIGTRAMP_INSN1	TRAP16		/* Syscall w/no args (NR in R3) */
++#define LINUX_SIGTRAMP_INSN2	OR_R0_R0	/* or r0,r0 (insert to avoid hardware bug) */
++
++static const unsigned short linux_sigtramp_code[] =
++{
++  LINUX_SIGTRAMP_INSN0,
++  LINUX_SIGTRAMP_INSN1,
++  LINUX_SIGTRAMP_INSN2,
++  LINUX_SIGTRAMP_INSN2,
++  LINUX_SIGTRAMP_INSN2,
++  LINUX_SIGTRAMP_INSN2,
++  LINUX_SIGTRAMP_INSN2,
++  __NR_sigreturn
++};
++
++#define LINUX_SIGTRAMP_LEN (sizeof linux_sigtramp_code)
++
++/* If PC is in a sigtramp routine, return the address of the start of
++   the routine.  Otherwise, return 0.  */
++
++static CORE_ADDR
++sh_linux_sigtramp_start (struct frame_info *next_frame)
++{
++  CORE_ADDR pc = get_frame_pc (next_frame);
++  gdb_byte buf[LINUX_SIGTRAMP_LEN];
++
++  /* We only recognize a signal trampoline if PC is at the start of
++     one of the three instructions.  We optimize for finding the PC at
++     the start, as will be the case when the trampoline is not the
++     first frame on the stack.  We assume that in the case where the
++     PC is not at the start of the instruction sequence, there will be
++     a few trailing readable bytes on the stack.  */
++
++  if (!safe_frame_unwind_memory (next_frame, pc, buf, LINUX_SIGTRAMP_LEN))
++    return 0;
++
++  if (buf[0] != LINUX_SIGTRAMP_INSN0)
++    {
++      if (buf[0] != LINUX_SIGTRAMP_INSN1)
++        return 0;
++
++      pc -= 2;
++
++      if (!safe_frame_unwind_memory (next_frame, pc, buf, LINUX_SIGTRAMP_LEN))
++	return 0;
++    }
++
++  if (memcmp (buf, linux_sigtramp_code, LINUX_SIGTRAMP_LEN) != 0)
++    return 0;
++
++  return pc;
++}
++
++/* This function does the same for RT signals.  Here the instruction
++   sequence is
++       mov.w  1f,r3
++       trapa  #16
++       or     r0, r0
++       or     r0, r0
++       or     r0, r0
++       or     r0, r0
++       or     r0, r0
++    1: .word  __NR_rt_sigreturn
++   or 0x9305 0xc310 0x200b 0x200b 0x200b 0x200b 0x200b 0x00ad.
++
++   The effect is to call the system call rt_sigreturn.  */
++
++#define LINUX_RT_SIGTRAMP_INSN0		MOVW(7)		/* Move mem word at PC+7 to R3 */
++#define LINUX_RT_SIGTRAMP_INSN1		TRAP16		/* Syscall w/no args (NR in R3) */
++#define LINUX_RT_SIGTRAMP_INSN2		OR_R0_R0	/* or r0,r0 (insert to avoid hardware bug) */
++
++static const unsigned short linux_rt_sigtramp_code[] =
++{
++  LINUX_RT_SIGTRAMP_INSN0,
++  LINUX_RT_SIGTRAMP_INSN1,
++  LINUX_RT_SIGTRAMP_INSN2,
++  LINUX_RT_SIGTRAMP_INSN2,
++  LINUX_RT_SIGTRAMP_INSN2,
++  LINUX_RT_SIGTRAMP_INSN2,
++  LINUX_RT_SIGTRAMP_INSN2,
++  __NR_rt_sigreturn
++};
++
++#define LINUX_RT_SIGTRAMP_LEN (sizeof linux_rt_sigtramp_code)
++
++/* If PC is in a RT sigtramp routine, return the address of the start
++   of the routine.  Otherwise, return 0.  */
++
++static CORE_ADDR
++sh_linux_rt_sigtramp_start (struct frame_info *next_frame)
++{
++  CORE_ADDR pc = get_frame_pc (next_frame);
++  gdb_byte buf[LINUX_RT_SIGTRAMP_LEN];
++
++  /* We only recognize a signal trampoline if PC is at the start of
++     one of the two instructions.  We optimize for finding the PC at
++     the start, as will be the case when the trampoline is not the
++     first frame on the stack.  We assume that in the case where the
++     PC is not at the start of the instruction sequence, there will be
++     a few trailing readable bytes on the stack.  */
++
++  if (!safe_frame_unwind_memory (next_frame, pc, buf, LINUX_RT_SIGTRAMP_LEN))
++    return 0;
++
++  if (buf[0] != LINUX_RT_SIGTRAMP_INSN0)
++    {
++      if (buf[0] != LINUX_RT_SIGTRAMP_INSN1)
++	return 0;
++
++      pc -= 2;
++
++      if (!safe_frame_unwind_memory (next_frame, pc, buf,
++				     LINUX_RT_SIGTRAMP_LEN))
++	return 0;
++    }
++
++  if (memcmp (buf, linux_rt_sigtramp_code, LINUX_RT_SIGTRAMP_LEN) != 0)
++    return 0;
++
++  return pc;
++}
++
++/* Return whether PC is in a GNU/Linux sigtramp routine.  */
++
++static int
++sh_linux_sigtramp_p (struct frame_info *this_frame)
++{
++  CORE_ADDR pc = get_frame_pc (this_frame);
++  const char *name;
++
++  find_pc_partial_function (pc, &name, NULL, NULL);
++
++  /* If we have NAME, we can optimize the search.  The trampolines are
++     named __restore and __restore_rt.  However, they aren't dynamically
++     exported from the shared C library, so the trampoline may appear to
++     be part of the preceding function.  This should always be sigaction,
++     __sigaction, or __libc_sigaction (all aliases to the same function).  */
++  if (name == NULL || strstr (name, "sigaction") != NULL)
++    return (sh_linux_sigtramp_start (this_frame) != 0
++	    || sh_linux_rt_sigtramp_start (this_frame) != 0);
++
++  return (strcmp ("__restore", name) == 0
++	  || strcmp ("__restore_rt", name) == 0);
++}
++
++/* Offset to struct sigcontext in ucontext, from <asm/ucontext.h>.  */
++#define SH_LINUX_UCONTEXT_SIGCONTEXT_OFFSET 12
++
++
++/* Assuming NEXT_FRAME is a frame following a GNU/Linux sigtramp
++   routine, return the address of the associated sigcontext structure.  */
++
++static CORE_ADDR
++sh_linux_sigcontext_addr (struct frame_info *this_frame)
++{
++  CORE_ADDR pc;
++  CORE_ADDR sp;
++
++  sp = get_frame_register_unsigned (this_frame, SP_REGNUM);
++
++  pc = sh_linux_sigtramp_start (this_frame);
++  if (pc)
++    {
++      return sp;
++    }
++
++  pc = sh_linux_rt_sigtramp_start (this_frame);
++  if (pc)
++    {
++      CORE_ADDR ucontext_addr;
++
++      /* The sigcontext structure is part of the user context.  A
++	 pointer to the user context is passed as the third argument
++	 to the signal handler.  */
++      ucontext_addr = get_frame_register_unsigned (this_frame, ARG0_REGNUM+2);
++      return ucontext_addr + SH_LINUX_UCONTEXT_SIGCONTEXT_OFFSET;
++    }
++
++  error ("Couldn't recognize signal trampoline.");
++  return 0;
++}
++
++/* Signal trampolines.  */
++extern struct sh_frame_cache *sh_alloc_frame_cache (void);
++
++static struct sh_frame_cache *
++sh_linux_sigtramp_frame_cache (struct frame_info *this_frame, void **this_cache)
++{
++  struct sh_frame_cache *cache;
++  struct gdbarch_tdep *tdep = gdbarch_tdep (get_current_arch ());
++  CORE_ADDR sigcontext_addr;
++
++  if (*this_cache)
++    return (struct sh_frame_cache *) *this_cache;
++
++  cache = sh_alloc_frame_cache ();
++
++  cache->base = get_frame_register_unsigned (this_frame, SP_REGNUM);
++  sigcontext_addr = tdep->sigcontext_addr (this_frame);
++  if (tdep->sc_reg_offset)
++    {
++      int i;
++
++      gdb_assert (tdep->sc_num_regs <= SH_NUM_REGS);
++
++      for (i = 0; i < tdep->sc_num_regs; i++)
++	if (tdep->sc_reg_offset[i] != -1)
++	  cache->saved_regs[i] = sigcontext_addr + tdep->sc_reg_offset[i];
++    }
++
++  *this_cache = cache;
++  return cache;
++}
++
++static void
++sh_linux_sigtramp_frame_this_id (struct frame_info *this_frame, void **this_cache,
++			     struct frame_id *this_id)
++{
++  struct sh_frame_cache *cache =
++    sh_linux_sigtramp_frame_cache (this_frame, this_cache);
++
++  (*this_id) = frame_id_build (cache->base + 64, cache->pc);
++}
++
++extern struct value * sh_frame_prev_register (struct frame_info *this_frame, void **this_cache, int regnum);
++static struct value *
++sh_linux_sigtramp_frame_prev_register (struct frame_info *this_frame,
++				   void **this_cache, int regnum)
++{
++  sh_linux_sigtramp_frame_cache (this_frame, this_cache);
++
++  return sh_frame_prev_register (this_frame, this_cache, regnum);
++}
++
++static int
++sh_linux_sigtramp_frame_sniffer (const struct frame_unwind *self,
++				 struct frame_info *this_frame,
++				 void **this_prologue_cache)
++{
++  struct gdbarch_tdep *tdep = gdbarch_tdep (get_frame_arch (this_frame));
++
++  /* We shouldn't even bother if we don't have a sigcontext_addr
++     handler.  */
++  if (tdep->sigcontext_addr == NULL)
++    return 0;
++
++  if (tdep->sigtramp_p != NULL)
++    {
++      if (tdep->sigtramp_p (this_frame))
++	return 1;
++    }
++
++  return 0;
++}
++
++static const struct frame_unwind sh_linux_sigtramp_frame_unwind =
++{
++  SIGTRAMP_FRAME,
++  default_frame_unwind_stop_reason,
++  sh_linux_sigtramp_frame_this_id,
++  sh_linux_sigtramp_frame_prev_register,
++  NULL,
++  sh_linux_sigtramp_frame_sniffer
++};
++
++/* Supply register REGNUM from the buffer specified by GREGS and LEN
++   in the general-purpose register set REGSET to register cache
++   REGCACHE.  If REGNUM is -1, do this for all registers in REGSET.  */
++
++void
++sh_linux_supply_gregset (const struct regset *regset, struct regcache *regcache,
++		     int regnum, const void *gregs, size_t len)
++{
++  struct gdbarch *gdbarch = get_regcache_arch (regcache);
++  struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
++  const gdb_byte *regs = (const gdb_byte *) gregs;
++  int i;
++
++  gdb_assert (len == tdep->sizeof_gregset);
++
++  for (i = 0; i < tdep->gregset_num_regs; i++)
++    {
++      if ((regnum == i || regnum == -1)
++	  && tdep->gregset_reg_offset[i] != -1)
++	regcache_raw_supply (regcache, i, regs + tdep->gregset_reg_offset[i]);
++    }
++}
++
++/* Collect register REGNUM from the register cache REGCACHE and store
++   it in the buffer specified by GREGS and LEN as described by the
++   general-purpose register set REGSET.  If REGNUM is -1, do this for
++   all registers in REGSET.  */
++
++void
++sh_linux_collect_gregset (const struct regset *regset,
++		      const struct regcache *regcache,
++		      int regnum, void *gregs, size_t len)
++{
++  struct gdbarch *gdbarch = get_regcache_arch (regcache);
++  struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
++  gdb_byte *regs = (gdb_byte *) gregs;
++  int i;
++
++  gdb_assert (len == tdep->sizeof_gregset);
++
++  for (i = 0; i < tdep->gregset_num_regs; i++)
++    {
++      if ((regnum == i || regnum == -1)
++	  && tdep->gregset_reg_offset[i] != -1)
++	regcache_raw_collect (regcache, i, regs + tdep->gregset_reg_offset[i]);
++    }
++}
++
++/* Supply register REGNUM from the buffer specified by FPREGS and LEN
++   in the floating-point register set REGSET to register cache
++   REGCACHE.  If REGNUM is -1, do this for all registers in REGSET.  */
++
++static void
++sh_linux_supply_fpregset (const struct regset *regset, struct regcache *regcache,
++		      int regnum, const void *fpregs, size_t len)
++{
++  struct gdbarch *gdbarch = get_regcache_arch (regcache);
++  struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
++  const gdb_byte *regs = (const gdb_byte *) fpregs;
++  int i;
++
++  gdb_assert (len == tdep->sizeof_fpregset);
++  for (i = 0; i < 16; i++)
++    {
++      if (regnum == i+25 || regnum == -1)
++	regcache_raw_supply (regcache, i+25, regs + i*4);
++    }
++  if (regnum == FPSCR_REGNUM || regnum == -1)
++    regcache_raw_supply (regcache, FPSCR_REGNUM, regs + 32*4);
++  if (regnum == FPUL_REGNUM || regnum == -1)
++    regcache_raw_supply (regcache, FPUL_REGNUM, regs + 33*4);
++}
++
++/* Collect register REGNUM from the register cache REGCACHE and store
++   it in the buffer specified by FPREGS and LEN as described by the
++   floating-point register set REGSET.  If REGNUM is -1, do this for
++   all registers in REGSET.  */
++
++static void
++sh_linux_collect_fpregset (const struct regset *regset,
++		       const struct regcache *regcache,
++		       int regnum, void *fpregs, size_t len)
++{
++  struct gdbarch *gdbarch = get_regcache_arch (regcache);
++  struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
++  gdb_byte *regs = (gdb_byte *) fpregs;
++  int i;
++
++  gdb_assert (len == tdep->sizeof_fpregset);
++  for (i = 0; i < 16; i++)
++    {
++      if (regnum == i+25 || regnum == -1)
++	regcache_raw_collect (regcache, i+25, regs + i*4);
++    }
++  if (regnum == FPSCR_REGNUM || regnum == -1)
++    regcache_raw_collect (regcache, FPSCR_REGNUM, regs + 32*4);
++  if (regnum == FPUL_REGNUM || regnum == -1)
++    regcache_raw_collect (regcache, FPUL_REGNUM, regs + 33*4);
++}
++
++static const struct regset sh_linux_gregset =
++  {
++    NULL, sh_linux_supply_gregset, sh_linux_collect_gregset
++  };
++
++static const struct regset sh_linux_fpregset =
++  {
++    NULL, sh_linux_supply_fpregset, sh_linux_collect_fpregset
++  };
++
++/* Iterate over core file register note sections.  */
++
++static void
++sh_linux_iterate_over_regset_sections (struct gdbarch *gdbarch,
++					 iterate_over_regset_sections_cb *cb,
++					 void *cb_data,
++					 const struct regcache *regcache)
++{
++  struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
++  cb (".reg", tdep->sizeof_gregset, &sh_linux_gregset, NULL, cb_data);
++  cb (".reg2", tdep->sizeof_fpregset, &sh_linux_fpregset, NULL, cb_data);
++}
++
++/* The register sets used in GNU/Linux ELF core-dumps are identical to
++   the register sets in `struct user' that are used for a.out
++   core-dumps.  These are also used by ptrace(2).  The corresponding
++   types are `elf_gregset_t' for the general-purpose registers (with
++   `elf_greg_t' the type of a single GP register) and `elf_fpregset_t'
++   for the floating-point registers.
++
++   Those types used to be available under the names `gregset_t' and
++   `fpregset_t' too, and GDB used those names in the past.  But those
++   names are now used for the register sets used in the `mcontext_t'
++   type, which have a different size and layout.  */
++
++/* Mapping between the general-purpose registers in `struct user'
++   format and GDB's register cache layout.  */
++
++/* From <sys/reg.h>.  */
++static int sh_linux_gregset_reg_offset[] =
++{
++ 0,	4,	8,	12,	16,	20,	24,	28,
++ 32,	36,	40,	44,	48,	52,	56,	60,
++
++ REG_PC*4,   REG_PR*4,   REG_GBR*4,  -1,
++ REG_MACH*4, REG_MACL*4, REG_SR*4,
++};
++
++/* Mapping between the general-purpose registers in `struct
++   sigcontext' format and GDB's register cache layout.  */
++
++/* From <asm/sigcontext.h>.  */
++static int sh_linux_sc_reg_offset[] =
++{
++ 4,	8,	12,	16,	20,	24,	28,	32,
++ 36,	40,	44,	48,	52,	56,	60,	64,
++ 68,	72,	80,	-1,
++ 84,	88,	76
++};
++
++
+ static void
+ sh_linux_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
+ {
++  struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
++  bfd abfd;
++
+   linux_init_abi (info, gdbarch);
+ 
++  tdep->gregset_reg_offset = sh_linux_gregset_reg_offset;
++  tdep->gregset_num_regs = ARRAY_SIZE (sh_linux_gregset_reg_offset);
++  tdep->sizeof_gregset = 23 * 4;
++
++  tdep->jb_pc_offset = 32;     /* From <bits/setjmp.h>.  */
++
++  tdep->sigtramp_p = sh_linux_sigtramp_p;
++  tdep->sigcontext_addr = sh_linux_sigcontext_addr;
++  tdep->sc_reg_offset = sh_linux_sc_reg_offset;
++  tdep->sc_num_regs = ARRAY_SIZE (sh_linux_sc_reg_offset);
++
++  frame_unwind_append_unwinder(gdbarch, &sh_linux_sigtramp_frame_unwind);
++
++  /* Core file support. */
++  set_gdbarch_iterate_over_regset_sections
++    (gdbarch, sh_linux_iterate_over_regset_sections);
++
+   /* GNU/Linux uses SVR4-style shared libraries.  */
+   set_gdbarch_skip_trampoline_code (gdbarch, find_solib_trampoline_target);
+   set_solib_svr4_fetch_link_map_offsets
+--- gdb-7.12.orig/gdb/sh-tdep.c
++++ gdb-7.12/gdb/sh-tdep.c
+@@ -21,6 +21,9 @@
+    sac@cygnus.com.  */
+ 
+ #include "defs.h"
++#include "arch-utils.h"
++#include "command.h"
++#include "dummy-frame.h"
+ #include "frame.h"
+ #include "frame-base.h"
+ #include "frame-unwind.h"
+@@ -35,6 +38,7 @@
+ #include "arch-utils.h"
+ #include "floatformat.h"
+ #include "regcache.h"
++#include "regset.h"
+ #include "doublest.h"
+ #include "osabi.h"
+ #include "reggroups.h"
+@@ -67,23 +71,6 @@ static const char *const sh_cc_enum[] =
+ 
+ static const char *sh_active_calling_convention = sh_cc_gcc;
+ 
+-#define SH_NUM_REGS 67
+-
+-struct sh_frame_cache
+-{
+-  /* Base address.  */
+-  CORE_ADDR base;
+-  LONGEST sp_offset;
+-  CORE_ADDR pc;
+-
+-  /* Flag showing that a frame has been created in the prologue code.  */
+-  int uses_fp;
+-
+-  /* Saved registers.  */
+-  CORE_ADDR saved_regs[SH_NUM_REGS];
+-  CORE_ADDR saved_sp;
+-};
+-
+ static int
+ sh_is_renesas_calling_convention (struct type *func_type)
+ {
+@@ -1043,7 +1030,7 @@ sh_treat_as_flt_p (struct type *type)
+     return 0;
+   /* Otherwise if the type of that member is float, the whole type is
+      treated as float.  */
+-  if (TYPE_CODE (TYPE_FIELD_TYPE (type, 0)) == TYPE_CODE_FLT)
++  if (TYPE_CODE (check_typedef (TYPE_FIELD_TYPE (type, 0))) == TYPE_CODE_FLT)
+     return 1;
+   /* Otherwise it's not treated as float.  */
+   return 0;
+@@ -1093,7 +1080,7 @@ sh_push_dummy_call_fpu (struct gdbarch *
+      in four registers available.  Loop thru args from first to last.  */
+   for (argnum = 0; argnum < nargs; argnum++)
+     {
+-      type = value_type (args[argnum]);
++      type = check_typedef (value_type (args[argnum]));
+       len = TYPE_LENGTH (type);
+       val = sh_justify_value_in_reg (gdbarch, args[argnum], len);
+ 
+@@ -1819,7 +1806,7 @@ sh_dwarf2_frame_init_reg (struct gdbarch
+     reg->how = DWARF2_FRAME_REG_UNDEFINED;
+ }
+ 
+-static struct sh_frame_cache *
++struct sh_frame_cache *
+ sh_alloc_frame_cache (void)
+ {
+   struct sh_frame_cache *cache;
+@@ -1846,7 +1833,7 @@ sh_alloc_frame_cache (void)
+   return cache;
+ }
+ 
+-static struct sh_frame_cache *
++struct sh_frame_cache *
+ sh_frame_cache (struct frame_info *this_frame, void **this_cache)
+ {
+   struct gdbarch *gdbarch = get_frame_arch (this_frame);
+@@ -1913,9 +1900,9 @@ sh_frame_cache (struct frame_info *this_
+   return cache;
+ }
+ 
+-static struct value *
+-sh_frame_prev_register (struct frame_info *this_frame,
+-			void **this_cache, int regnum)
++struct value *
++sh_frame_prev_register (struct frame_info *this_frame, void **this_cache,
++			int regnum)
+ {
+   struct gdbarch *gdbarch = get_frame_arch (this_frame);
+   struct sh_frame_cache *cache = sh_frame_cache (this_frame, this_cache);
+@@ -1929,7 +1916,7 @@ sh_frame_prev_register (struct frame_inf
+      the current frame.  Frob regnum so that we pull the value from
+      the correct place.  */
+   if (regnum == gdbarch_pc_regnum (gdbarch))
+-    regnum = PR_REGNUM;
++    regnum = PR_REGNUM; /* XXX: really? */
+ 
+   if (regnum < SH_NUM_REGS && cache->saved_regs[regnum] != -1)
+     return frame_unwind_got_memory (this_frame, regnum,
+@@ -2238,8 +2225,8 @@ sh_return_in_first_hidden_param_p (struc
+ static struct gdbarch *
+ sh_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
+ {
+-  struct gdbarch *gdbarch;
+   struct gdbarch_tdep *tdep;
++  struct gdbarch *gdbarch;
+ 
+   /* SH5 is handled entirely in sh64-tdep.c.  */
+   if (info.bfd_arch_info->mach == bfd_mach_sh5)
+@@ -2255,6 +2242,18 @@ sh_gdbarch_init (struct gdbarch_info inf
+   tdep = XCNEW (struct gdbarch_tdep);
+   gdbarch = gdbarch_alloc (&info, tdep);
+ 
++  /* General-purpose registers.  */
++  tdep->gregset = NULL;
++  tdep->gregset_reg_offset = NULL;
++  tdep->gregset_num_regs = 23;
++  tdep->sizeof_gregset = 0;
++
++  /* Floating-point registers.  */
++  tdep->fpregset = NULL;
++  tdep->sizeof_fpregset = 34*4;
++
++  tdep->jb_pc_offset = -1;
++
+   set_gdbarch_short_bit (gdbarch, 2 * TARGET_CHAR_BIT);
+   set_gdbarch_int_bit (gdbarch, 4 * TARGET_CHAR_BIT);
+   set_gdbarch_long_bit (gdbarch, 4 * TARGET_CHAR_BIT);
+@@ -2405,10 +2404,11 @@ sh_gdbarch_init (struct gdbarch_info inf
+       break;
+     }
+ 
++  dwarf2_append_unwinders (gdbarch);
++
+   /* Hook in ABI-specific overrides, if they have been registered.  */
+   gdbarch_init_osabi (info, gdbarch);
+ 
+-  dwarf2_append_unwinders (gdbarch);
+   frame_unwind_append_unwinder (gdbarch, &sh_stub_unwind);
+   frame_unwind_append_unwinder (gdbarch, &sh_frame_unwind);
+ 
+--- gdb-7.12.orig/gdb/sh-tdep.h
++++ gdb-7.12/gdb/sh-tdep.h
+@@ -21,6 +21,12 @@
+ 
+ /* Contributed by Steve Chamberlain sac@cygnus.com.  */
+ 
++struct frame_info;
++struct gdbarch;
++struct reggroup;
++struct regset;
++struct regcache;
++
+ /* Registers for all SH variants.  Used also by sh3-rom.c.  */
+ enum
+   {
+@@ -29,6 +35,7 @@ enum
+     ARG0_REGNUM = 4,
+     ARGLAST_REGNUM = 7,
+     FP_REGNUM = 14,
++    SP_REGNUM = 15,
+     PC_REGNUM = 16,
+     PR_REGNUM = 17,
+     GBR_REGNUM = 18,
+@@ -82,6 +89,25 @@ enum
+     FV_LAST_REGNUM = 79
+   };
+ 
++#define SH_NUM_REGS 67
++
++struct sh_frame_cache
++{
++  /* Base address.  */
++  CORE_ADDR base;
++  LONGEST sp_offset;
++  CORE_ADDR pc;
++
++  /* Flag showing that a frame has been created in the prologue code. */
++  int uses_fp;
++
++  /* Saved registers.  */
++  CORE_ADDR saved_regs[SH_NUM_REGS];
++  CORE_ADDR saved_sp;
++};
++
++extern struct sh_frame_cache *sh_frame_cache (struct frame_info *next_frame, void **this_cache);
++
+ /* This structure describes a register in a core-file.  */
+ struct sh_corefile_regmap
+ {
+@@ -89,18 +115,41 @@ struct sh_corefile_regmap
+   unsigned int offset;
+ };
+ 
++/* sh architecture specific information.  */
+ struct gdbarch_tdep
+ {
++  /* General-purpose registers.  */
++  struct regset *gregset;
++  int *gregset_reg_offset;
++  int gregset_num_regs;
++  size_t sizeof_gregset;
++
++  /* Floating-point registers.  */
++  struct regset *fpregset;
++  size_t sizeof_fpregset;
++
++  /* Offset of saved PC in jmp_buf.  */
++  int jb_pc_offset;
++
++  /* Detect sigtramp.  */
++  int (*sigtramp_p) (struct frame_info *);
++
++  /* Get address of sigcontext for sigtramp.  */
++  CORE_ADDR (*sigcontext_addr) (struct frame_info *);
++
++  /* Offset of registers in `struct sigcontext'.  */
++  int *sc_reg_offset;
++  int sc_num_regs;
++
+   /* Non-NULL when debugging from a core file.  Provides the offset
+      where each general-purpose register is stored inside the associated
+      core file section.  */
+   struct sh_corefile_regmap *core_gregmap;
+-  int sizeof_gregset;
++
+   /* Non-NULL when debugging from a core file and when FP registers are
+      available.  Provides the offset where each FP register is stored
+      inside the associated core file section.  */
+   struct sh_corefile_regmap *core_fpregmap;
+-  int sizeof_fpregset;
+ };
+ 
+ extern const struct regset sh_corefile_gregset;
+--- gdb-7.12.orig/gdb/testsuite/gdb.asm/asm-source.exp
++++ gdb-7.12/gdb/testsuite/gdb.asm/asm-source.exp
+@@ -116,6 +116,11 @@ switch -glob -- [istarget] {
+             append link-flags " -m elf32ppc"
+         }
+     }
++    "sh*-linux*" {
++        set asm-arch sh-linux
++        set asm-flags "-I${srcdir}/${subdir} -I${objdir}/${subdir}"
++	set debug-flags "-gdwarf-2"
++    }
+     "sh*-*-*" {
+         set asm-arch sh
+ 	set debug-flags "-gdwarf-2"
+--- /dev/null
++++ gdb-7.12/gdb/testsuite/gdb.asm/sh-linux.inc
+@@ -0,0 +1,78 @@
++# You'll find a bunch of nop opcodes in the below macros.  They are
++# there to keep the code correctly aligned.  Be careful to maintain
++# them when changing the code.
++
++	comment "subroutine declare"
++	.purgem gdbasm_declare
++	.macro gdbasm_declare name
++	.align	1
++	.global	\name
++\name:
++	.endm
++
++	comment "subroutine prologue"
++	.macro gdbasm_enter
++	mov.l   r14,@-r15
++	sts.l   pr,@-r15
++	mov     r15,r14
++	nop
++	.endm
++
++	comment "subroutine epilogue"
++	.macro gdbasm_leave
++	mov     r14,r15
++	lds.l   @r15+,pr
++	mov.l   @r15+,r14
++	rts
++	nop
++	nop
++	.endm
++
++	comment "subroutine end"
++	.purgem gdbasm_end
++	.macro gdbasm_end name
++	.size   \name, .-_foo1
++	.align	1
++	.endm
++
++	comment "subroutine call"
++	.macro gdbasm_call subr
++	mov.l   .Lconst\@,r1
++	bra	.Lafterconst\@
++	nop
++	.align	2
++.Lconst\@:
++	.long	\subr
++.Lafterconst\@:
++	jsr	@r1
++	nop
++	.endm
++
++	.macro gdbasm_several_nops
++	nop
++	nop
++	nop
++	nop
++	.endm
++
++	comment "exit (0)"
++	.macro gdbasm_exit0
++	sleep
++	nop
++	.endm
++
++	comment "crt0 startup"
++	.macro gdbasm_startup
++	mov	#0,r14
++	.endm
++
++	comment "Declare a data variable"
++	.purgem gdbasm_datavar
++	.macro gdbasm_datavar name value
++	.data
++	.align 2
++	.type	\name, @object
++	.size	\name, 4
++\name:
++	.long	\value
++	.endm
+--- gdb-7.12.orig/gdb/testsuite/gdb.asm/sh.inc
++++ gdb-7.12/gdb/testsuite/gdb.asm/sh.inc
+@@ -40,9 +40,8 @@
+ 	mov.l   .Lconst\@,r1
+ 	bra	.Lafterconst\@
+ 	nop
+-	nop
+-.Lconst\@:
+ 	.align	2
++.Lconst\@:
+ 	.long	\subr
+ 	.align	1
+ .Lafterconst\@:
+
+--------------893FB9A7F821F3C67CB17F7C--
