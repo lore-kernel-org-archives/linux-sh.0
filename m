@@ -1,97 +1,73 @@
-From: Steve Kowalik <steven@wedontsleep.org>
-Date: Fri, 24 Feb 2017 07:38:38 +0000
-Subject: [PATCH 2/2] Documentation: Add arch-guide documentation
-Message-Id: <1487921918-25203-3-git-send-email-steven@wedontsleep.org>
+From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Date: Fri, 10 Feb 2017 21:06:13 +0000
+Subject: Re: RFC: Add native support for Linux SH
+Message-Id: <171f95c6-3834-0575-ae17-4c7c511f2b15@physik.fu-berlin.de>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Add the new SuperH interfaces RST into the documentation tree by adding
-a new arch-guide.
+Forgot to CC some relevant people and lists.
 
-Signed-off-by: Steve Kowalik <steven@wedontsleep.org>
----
- Documentation/00-INDEX             |  2 ++
- Documentation/arch-guide/conf.py   | 10 ++++++++++
- Documentation/arch-guide/index.rst | 14 ++++++++++++++
- Documentation/index.rst            | 11 +++++++++++
- 4 files changed, 37 insertions(+)
- create mode 100644 Documentation/arch-guide/conf.py
- create mode 100644 Documentation/arch-guide/index.rst
+On 02/10/2017 09:55 PM, John Paul Adrian Glaubitz wrote:
+> Hi!
+> 
+> I have picked up an old patch which was posted to this mailing list
+> in 2011 [1] which adds native GDB support for Linux SuperH (SH).
+> 
+> Since this patch was never merged for various reasons, it gained
+> dust and needed some work to be usable with current versions of
+> GDB again.
+> 
+> I have taken the patch and forward-ported it to the current version
+> of GDB from git master. I have tested it on my SH7785LCR SuperH
+> hardware on Debian unstable and I was able to debug simple C
+> programs. I have not thoroughly tested the functionality, however.
+> 
+> With this post, I would like to ask for some feedback on how to
+> proceed with this patch. The original author of the patch is
+> Takashi Yoshii who wrote it while working at Renesas Electronics
+> in Japan.
+> 
+> Back in 2011, one of the major show-stoppers why the patch was
+> not merged was apparently the missing FSF copyright assignment
+> by the author [2]. However, since Yoshii-san was working for
+> Renesas back then, I think the copyright assignment would have
+> to be signed by them and not him personally. And since Renesas
+> has already contributed various SuperH code to various FSF
+> projects like gcc and binutils, I'd assume that the necessary
+> FSF copyright assignment has already been signed.
+> 
+> I have also asked Yutaka Niibe (CC'ed) to try to get into touch
+> with Takashi Yoshii through his old connections at Renesas, in
+> case we would need some input from Yoshii-san's side.
+> 
+> As for the technical part: I'm happy to take any feedback and
+> improve the patch so it has reached the necessary quality to
+> be able to get merged into GDB mainline.
+> 
+> Having native GDB support for Linux SH has become relevant
+> again since the SuperH architecture is currently being
+> redeveloped as the J-Core open source architecture [3].
+> 
+> Thanks,
+> Adrian
+> 
+>> [1] http://www.cygwin.com/ml/gdb-patches/2011-11/msg00490.html
+>> [2] http://www.cygwin.com/ml/gdb-patches/2011-11/msg00499.html
+>> [3] http://j-core.org/
+> 
+> --
+>  .''`.  John Paul Adrian Glaubitz
+> : :' :  Debian Developer - glaubitz@debian.org
+> `. `'   Freie Universitaet Berlin - glaubitz@physik.fu-berlin.de
+>   `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+> 
 
-diff --git a/Documentation/00-INDEX b/Documentation/00-INDEX
-index c8a8eb1..64625d0 100644
---- a/Documentation/00-INDEX
-+++ b/Documentation/00-INDEX
-@@ -60,6 +60,8 @@ admin-guide/
- 	- info related to Linux users and system admins.
- aoe/
- 	- description of AoE (ATA over Ethernet) along with config examples.
-+arch-guide/
-+   - info related to architecture-specific code.
- arm/
- 	- directory with info about Linux on the ARM architecture.
- arm64/
-diff --git a/Documentation/arch-guide/conf.py b/Documentation/arch-guide/conf.py
-new file mode 100644
-index 0000000..2ac424b
---- /dev/null
-+++ b/Documentation/arch-guide/conf.py
-@@ -0,0 +1,10 @@
-+# -*- coding: utf-8; mode: python -*-
-+
-+project = 'Linux Kernel architecture-specific Documentation'
-+
-+tags.add("subproject")
-+
-+latex_documents = [
-+    ('index', 'Linux Kernel architecture-specific Documentation',
-+     'The kernel development community', 'manual'),
-+]
-diff --git a/Documentation/arch-guide/index.rst b/Documentation/arch-guide/index.rst
-new file mode 100644
-index 0000000..1db4658
---- /dev/null
-+++ b/Documentation/arch-guide/index.rst
-@@ -0,0 +1,14 @@
-+The Linux kernel architecture-specific documentation
-+==========================
-+
-+The following is a collection of architecture-specific documentation for the
-+different architectures that the kernel supports.
-+
-+SuperH
-+------
-+
-+.. toctree::
-+   :maxdepth: 1
-+
-+   ../sh/interfaces.rst
-+
-diff --git a/Documentation/index.rst b/Documentation/index.rst
-index f6e641a..6b3f570 100644
---- a/Documentation/index.rst
-+++ b/Documentation/index.rst
-@@ -60,6 +60,17 @@ needed).
-    sound/index
-    crypto/index
- 
-+Architecture-specific documentation
-+-----------------------------------
-+
-+These documents get into the details of architecture-specific code or
-+interfaces.
-+
-+.. toctree::
-+   :maxdepth: 2
-+
-+   arch-guide/index
-+
- Korean translations
- -------------------
- 
+
 -- 
-2.7.4
-
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer - glaubitz@debian.org
+`. `'   Freie Universitaet Berlin - glaubitz@physik.fu-berlin.de
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
