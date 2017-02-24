@@ -1,213 +1,97 @@
 From: Steve Kowalik <steven@wedontsleep.org>
-Date: Fri, 24 Feb 2017 07:38:37 +0000
-Subject: [PATCH 1/2] Documentation: convert sh interfaces to RST
-Message-Id: <1487921918-25203-2-git-send-email-steven@wedontsleep.org>
+Date: Fri, 24 Feb 2017 07:38:38 +0000
+Subject: [PATCH 2/2] Documentation: Add arch-guide documentation
+Message-Id: <1487921918-25203-3-git-send-email-steven@wedontsleep.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Convert the SuperH interfaces DocBook to RST.
+Add the new SuperH interfaces RST into the documentation tree by adding
+a new arch-guide.
 
 Signed-off-by: Steve Kowalik <steven@wedontsleep.org>
 ---
- Documentation/DocBook/Makefile  |   2 +-
- Documentation/DocBook/sh.tmpl   | 105 ----------------------------------------
- Documentation/sh/interfaces.rst |  63 ++++++++++++++++++++++++
- 3 files changed, 64 insertions(+), 106 deletions(-)
- delete mode 100644 Documentation/DocBook/sh.tmpl
- create mode 100644 Documentation/sh/interfaces.rst
+ Documentation/00-INDEX             |  2 ++
+ Documentation/arch-guide/conf.py   | 10 ++++++++++
+ Documentation/arch-guide/index.rst | 14 ++++++++++++++
+ Documentation/index.rst            | 11 +++++++++++
+ 4 files changed, 37 insertions(+)
+ create mode 100644 Documentation/arch-guide/conf.py
+ create mode 100644 Documentation/arch-guide/index.rst
 
-diff --git a/Documentation/DocBook/Makefile b/Documentation/DocBook/Makefile
-index 60a17b7..a295eb2 100644
---- a/Documentation/DocBook/Makefile
-+++ b/Documentation/DocBook/Makefile
-@@ -12,7 +12,7 @@ DOCBOOKS := z8530book.xml  \
- 	    kernel-api.xml filesystems.xml lsm.xml kgdb.xml \
- 	    gadget.xml libata.xml mtdnand.xml librs.xml rapidio.xml \
- 	    genericirq.xml s390-drivers.xml scsi.xml \
--	    sh.xml regulator.xml w1.xml \
-+	    regulator.xml w1.xml \
- 	    writing_musb_glue_layer.xml
- 
- ifeq ($(DOCBOOKS),)
-diff --git a/Documentation/DocBook/sh.tmpl b/Documentation/DocBook/sh.tmpl
-deleted file mode 100644
-index 4a38f60..0000000
---- a/Documentation/DocBook/sh.tmpl
-+++ /dev/null
-@@ -1,105 +0,0 @@
--<?xml version="1.0" encoding="UTF-8"?>
--<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.1.2//EN"
--	"http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd" []>
--
--<book id="sh-drivers">
-- <bookinfo>
--  <title>SuperH Interfaces Guide</title>
--  
--  <authorgroup>
--   <author>
--    <firstname>Paul</firstname>
--    <surname>Mundt</surname>
--    <affiliation>
--     <address>
--      <email>lethal@linux-sh.org</email>
--     </address>
--    </affiliation>
--   </author>
--  </authorgroup>
--
--  <copyright>
--   <year>2008-2010</year>
--   <holder>Paul Mundt</holder>
--  </copyright>
--  <copyright>
--   <year>2008-2010</year>
--   <holder>Renesas Technology Corp.</holder>
--  </copyright>
--  <copyright>
--   <year>2010</year>
--   <holder>Renesas Electronics Corp.</holder>
--  </copyright>
--
--  <legalnotice>
--   <para>
--     This documentation is free software; you can redistribute
--     it and/or modify it under the terms of the GNU General Public
--     License version 2 as published by the Free Software Foundation.
--   </para>
--      
--   <para>
--     This program is distributed in the hope that it will be
--     useful, but WITHOUT ANY WARRANTY; without even the implied
--     warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
--     See the GNU General Public License for more details.
--   </para>
--      
--   <para>
--     You should have received a copy of the GNU General Public
--     License along with this program; if not, write to the Free
--     Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
--     MA 02111-1307 USA
--   </para>
--      
--   <para>
--     For more details see the file COPYING in the source
--     distribution of Linux.
--   </para>
--  </legalnotice>
-- </bookinfo>
--
--<toc></toc>
--
--  <chapter id="mm">
--    <title>Memory Management</title>
--    <sect1 id="sh4">
--    <title>SH-4</title>
--      <sect2 id="sq">
--        <title>Store Queue API</title>
--!Earch/sh/kernel/cpu/sh4/sq.c
--      </sect2>
--    </sect1>
--    <sect1 id="sh5">
--      <title>SH-5</title>
--      <sect2 id="tlb">
--	<title>TLB Interfaces</title>
--!Iarch/sh/mm/tlb-sh5.c
--!Iarch/sh/include/asm/tlb_64.h
--      </sect2>
--    </sect1>
--  </chapter>
--  <chapter id="mach">
--    <title>Machine Specific Interfaces</title>
--    <sect1 id="dreamcast">
--      <title>mach-dreamcast</title>
--!Iarch/sh/boards/mach-dreamcast/rtc.c
--    </sect1>
--    <sect1 id="x3proto">
--      <title>mach-x3proto</title>
--!Earch/sh/boards/mach-x3proto/ilsel.c
--    </sect1>
--  </chapter>
--  <chapter id="busses">
--    <title>Busses</title>
--    <sect1 id="superhyway">
--      <title>SuperHyway</title>
--!Edrivers/sh/superhyway/superhyway.c
--    </sect1>
--
--    <sect1 id="maple">
--      <title>Maple</title>
--!Edrivers/sh/maple/maple.c
--    </sect1>
--  </chapter>
--</book>
-diff --git a/Documentation/sh/interfaces.rst b/Documentation/sh/interfaces.rst
+diff --git a/Documentation/00-INDEX b/Documentation/00-INDEX
+index c8a8eb1..64625d0 100644
+--- a/Documentation/00-INDEX
++++ b/Documentation/00-INDEX
+@@ -60,6 +60,8 @@ admin-guide/
+ 	- info related to Linux users and system admins.
+ aoe/
+ 	- description of AoE (ATA over Ethernet) along with config examples.
++arch-guide/
++   - info related to architecture-specific code.
+ arm/
+ 	- directory with info about Linux on the ARM architecture.
+ arm64/
+diff --git a/Documentation/arch-guide/conf.py b/Documentation/arch-guide/conf.py
 new file mode 100644
-index 0000000..85078d4
+index 0000000..2ac424b
 --- /dev/null
-+++ b/Documentation/sh/interfaces.rst
-@@ -0,0 +1,63 @@
-+.. Copyright 2008-2010 Paul Mundt
-+.. Copyright 2008-2010 Renasas Technology Corp.
-+.. Copyright 2010 Renasas Electronics Corp.
++++ b/Documentation/arch-guide/conf.py
+@@ -0,0 +1,10 @@
++# -*- coding: utf-8; mode: python -*-
 +
-+===========+SuperH Interfaces Guide
-+===========+
-+:Author: Paul Mundt
++project = 'Linux Kernel architecture-specific Documentation'
 +
-+Memory Management
-+========+
-+SH-4
-+----
++tags.add("subproject")
 +
-+Store Queue API
-+~~~~~~~~~~~~~~~
++latex_documents = [
++    ('index', 'Linux Kernel architecture-specific Documentation',
++     'The kernel development community', 'manual'),
++]
+diff --git a/Documentation/arch-guide/index.rst b/Documentation/arch-guide/index.rst
+new file mode 100644
+index 0000000..1db4658
+--- /dev/null
++++ b/Documentation/arch-guide/index.rst
+@@ -0,0 +1,14 @@
++The Linux kernel architecture-specific documentation
++==========================
 +
-+.. kernel-doc:: arch/sh/kernel/cpu/sh4/sq.c
-+   :export:
++The following is a collection of architecture-specific documentation for the
++different architectures that the kernel supports.
 +
-+SH-5
-+----
++SuperH
++------
 +
-+TLB Interfaces
-+~~~~~~~~~~~~~~
++.. toctree::
++   :maxdepth: 1
 +
-+.. kernel-doc:: arch/sh/mm/tlb-sh5.c
-+   :internal:
++   ../sh/interfaces.rst
 +
-+.. kernel-doc:: arch/sh/include/asm/tlb_64.h
-+   :internal:
+diff --git a/Documentation/index.rst b/Documentation/index.rst
+index f6e641a..6b3f570 100644
+--- a/Documentation/index.rst
++++ b/Documentation/index.rst
+@@ -60,6 +60,17 @@ needed).
+    sound/index
+    crypto/index
+ 
++Architecture-specific documentation
++-----------------------------------
 +
-+Machine Specific Interfaces
-+=============+
-+mach-dreamcast
-+--------------
++These documents get into the details of architecture-specific code or
++interfaces.
 +
-+.. kernel-doc:: arch/sh/boards/mach-dreamcast/rtc.c
-+   :internal:
++.. toctree::
++   :maxdepth: 2
 +
-+mach-x3proto
-+------------
++   arch-guide/index
 +
-+.. kernel-doc:: arch/sh/boards/mach-x3proto/ilsel.c
-+   :export:
-+
-+Busses
-+===
-+
-+SuperHyway
-+----------
-+
-+.. kernel-doc:: drivers/sh/superhyway/superhyway.c
-+   :export:
-+
-+Maple
-+-----
-+
-+.. kernel-doc:: drivers/sh/maple/maple.c
-+   :export:
+ Korean translations
+ -------------------
+ 
 -- 
 2.7.4
 
