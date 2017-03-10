@@ -1,55 +1,60 @@
-From: "H. Peter Anvin" <hpa@zytor.com>
-Date: Thu, 09 Mar 2017 04:36:30 +0000
-Subject: Re: [PATCH 1/3] futex: remove duplicated code
-Message-Id: <201703090437.v294b0RE021699@mail.zytor.com>
+From: Nobuhiro Iwamatsu <iwamatsu@nigauri.org>
+Date: Fri, 10 Mar 2017 01:22:15 +0000
+Subject: Re: Bug#576242: gdb: Please support Renesas SH(sh4)
+Message-Id: <CABMQnV+cktRaimWkg7ro6JWGnsbLSyxTeyu=OT0XvsfpdYnFeg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20170303122712.13353-1-jslaby@suse.cz> <20170304130550.GT21222@n2100.armlinux.org.uk> <23e5808b-2a20-518d-b49a-4d95dd23cfde@landley.net>
-In-Reply-To: <23e5808b-2a20-518d-b49a-4d95dd23cfde@landley.net>
+References: <c184d5b5-4ec4-96e8-70f0-3ea61ce480db@physik.fu-berlin.de>
+In-Reply-To: <c184d5b5-4ec4-96e8-70f0-3ea61ce480db@physik.fu-berlin.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Rob Landley <rob@landley.net>, Russell King - ARM Linux <linux@armlinux.org.uk>, Jiri Slaby <jslaby@suse.cz>
-Cc: akpm@linux-foundation.org, linux-kernel@vger.kernel.org, Richard Henderson <rth@twiddle.net>, Ivan Kokshaysky <ink@jurassic.park.msu.ru>, Matt Turner <mattst88@gmail.com>, Vineet Gupta <vgupta@synopsys.com>, Catalin Marinas <catalin.marinas@arm.com>, Will Deacon <will.deacon@arm.com>, Richard Kuo <rkuo@codeaurora.org>, Tony Luck <tony.luck@intel.com>, Fenghua Yu <fenghua.yu@intel.com>, Michal Simek <monstr@monstr.eu>, Ralf Baechle <ralf@linux-mips.org>, Jonas Bonn <jonas@southpole.se>, Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>, Stafford Horne <shorne@gmail.com>, "James E.J. Bottomley" <jejb@parisc-linux.org>, Helge Deller <deller@gmx.de>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Michael Ellerman <mpe@ellerman.id.au>, Martin Schwidefsky <schwidefsky@de.ibm.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, "David S. Miller" <davem@davemloft.net>, Chris.Metcalf@zytor.com
+To: linux-sh@vger.kernel.org
 
-<cmetcalf@mellanox.com>,Thomas Gleixner <tglx@linutronix.de>,Ingo Molnar <mingo@redhat.com>,Chris Zankel <chris@zankel.net>,Max Filippov <jcmvbkbc@gmail.com>,Arnd Bergmann <arnd@arndb.de>,x86@kernel.org,linux-alpha@vger.kernel.org,linux-snps-arc@lists.infradead.org,linux-arm-kernel@lists.infradead.org,linux-hexagon@vger.kernel.org,linux-ia64@vger.kernel.org,linux-mips@linux-mips.org,openrisc@lists.librecores.org,linux-parisc@vger.kernel.org,linuxppc-dev@lists.ozlabs.org,linux-s390@vger.kernel.org,linux-sh@vger.kernel.org,sparclinux@vger.kernel.org,linux-xtensa@linux-xtensa.org,linux-arch@vger.kernel.org
-From: hpa@zytor.com
-Message-ID: <83324528-AAA1-4BED-B0C7-48426ECBA261@zytor.com>
+Hi,
 
-On March 8, 2017 8:16:49 PM PST, Rob Landley <rob@landley.net> wrote:
->On 03/04/2017 07:05 AM, Russell King - ARM Linux wrote:
->> On Fri, Mar 03, 2017 at 01:27:10PM +0100, Jiri Slaby wrote:
->>> diff --git a/kernel/futex.c b/kernel/futex.c
->>> index b687cb22301c..c5ff9850952f 100644
->>> --- a/kernel/futex.c
->>> +++ b/kernel/futex.c
->>> @@ -1457,6 +1457,42 @@ futex_wake(u32 __user *uaddr, unsigned int
->flags, int nr_wake, u32 bitset)
->>>  	return ret;
->>>  }
->>>  
->>> +static int futex_atomic_op_inuser(int encoded_op, u32 __user
->*uaddr)
->>> +{
->>> +	int op = (encoded_op >> 28) & 7;
->>> +	int cmp = (encoded_op >> 24) & 15;
->>> +	int oparg = (encoded_op << 8) >> 20;
->>> +	int cmparg = (encoded_op << 20) >> 20;
->> 
->> Hmm.  oparg and cmparg look like they're doing these shifts to get
->sign
->> extension of the 12-bit values by assuming that "int" is 32-bit -
->> probably worth a comment, or for safety, they should be "s32" so it's
->> not dependent on the bit-width of "int".
->
->I thought Linux depended on the LP64 standard for all architectures?
->
->Standard: http://www.unix.org/whitepapers/64bit.html
->Rationale: http://www.unix.org/version2/whatsnew/lp64_wp.html
->
->So int has a defined bit width (32) on linux?
->
->Rob
+Sorry, replay was late.
 
-Linux is ILP32 on 32-bit architectures and LP64 on 64-bit architectures, but that doesn't inherently make this stuff clear.
+Takashi already leaved from Renesas, he is working other company.
+I am contacting him now, I am planning to ask him about this matter.
+
+Best regards,
+  Nobuhiro
+
+2017-02-08 5:51 GMT+09:00 John Paul Adrian Glaubitz
+<glaubitz@physik.fu-berlin.de>:
+> Hi!
+>
+> I have ported Yoshii-san's code to GDB 7.12, attaching an updated
+> patch. A git repository with my linux-sh branch can be found in [1].
+>
+> Yutaka Niibe has already reached out to Renesas in Japan and is trying to
+> get into touch with Yoshii-san, this might take a while though. However,
+> I have talked with someone at the FSFE knowledgeable with open source
+> licenses and it looks like we actually don't need the copyright assignment
+> at all.
+>
+> If we needed the copyright assignment, we'd probably need it from Renesas
+> anyway and not from Yoshii-san directly as he wrote the patch while working
+> for Renesas who consequently are the copyright owners. And since Renesas
+> already submitted their SH code to gcc, I assume they also already assigned
+> the FSF copyright assignment (if that's actually needed).
+>
+> More updates coming soon.
+>
+> Thanks,
+> Adrian
+>
+>> [1] https://github.com/glaubitz/binutils-gdb/tree/linux-sh
+>
+> --
+>  .''`.  John Paul Adrian Glaubitz
+> : :' :  Debian Developer - glaubitz@debian.org
+> `. `'   Freie Universitaet Berlin - glaubitz@physik.fu-berlin.de
+>   `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+
+
+
 -- 
-Sent from my Android device with K-9 Mail. Please excuse my brevity.
+Nobuhiro Iwamatsu
+   iwamatsu at {nigauri.org / debian.org}
+   GPG ID: 40AD1FA6
