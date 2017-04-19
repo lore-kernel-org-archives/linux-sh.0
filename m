@@ -1,37 +1,19 @@
-From: "Ms. Katherine" <ulia@distral.ro>
-Date: Mon, 24 Apr 2017 18:52:13 +0000
-Subject: EXTREMELY IMPORTANT
-Message-Id: <20170424185220.509A651B3352@mail.distral.ro>
+From: Rob Landley <rob@landley.net>
+Date: Wed, 19 Apr 2017 09:17:46 +0000
+Subject: Why CONFIG_VSYSCALL?
+Message-Id: <c606d524-8c8f-edd3-ea52-e8b3071cc8a2@landley.net>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: Recipients <ulia@distral.ro>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
-Dear Beloved, Sorry for the inconvenience, I am getting in touch with you r=
-egarding an extremely important and urgent matter, Please I need your urgen=
-t assistance and idea to finish up a project (Orphanage Home) Due to my hea=
-lth condition, Everything is available to finish up the project, All I need=
- is your idea and trust.
+In arch/sh/mm/Kconfig there's a VSYSCALL config option. Other
+architectures don't, so why does sh? (I see x86 added the ability to
+_disable_ some vsyscall stuff in 2014, under CONFIG_EXPERT, although
+that might just be some backwards compatibility code.)
 
-Sehr geehrte Geliebte, traurig f=FCr die Unannehmlichkeiten, ich bin in Kon=
-takt mit Ihnen =FCber eine =E4u=DFerst wichtige und dringende Angelegenheit=
-, Bitte brauche ich Ihre dringende Hilfe und Idee, um ein Projekt zu beende=
-n (Orphanage Home) Wegen meines Gesundheitszustandes ist alles verf=FCgbar =
-Beenden Sie das Projekt, Alles was ich brauche ist Ihre Idee und Vertrauen.
+I'm wondering why arch/sh is the only one that has a CONFIG_VSYSCALL you
+need to enable to get the standard feature.
 
-Please contact me for more details.
-Contact Email: kathrynnmison@gmail.com
-
-Thanks
-
----
-This email has been checked for viruses by Avast antivirus software.
-https://www.avast.com/antivirus
-
-
---=20
-This message has been scanned for viruses and
-dangerous content by MailScanner, and is
-believed to be clean.
-
+Rob
