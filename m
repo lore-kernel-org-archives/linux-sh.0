@@ -1,37 +1,47 @@
-From: Rich Felker <dalias@libc.org>
-Date: Tue, 25 Apr 2017 01:23:43 +0000
-Subject: Re: Commit 18e8cf159177 broke qemu-system-sh4 serial input.
-Message-Id: <20170425012343.GS17319@brightrain.aerifal.cx>
+From: Peter Zijlstra <peterz@infradead.org>
+Date: Wed, 19 Apr 2017 17:21:39 +0000
+Subject: Re: [PATCH v5 1/4] printk/nmi: generic solution for safe printk in NMI
+Message-Id: <20170419172139.hipylcdsarhvnsby@hirez.programming.kicks-ass.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <41d6bb75-5be0-c563-0569-ea37aab58f1e@landley.net>
- <CAMuHMdWtBHTBCNo2-oO2Zv7O8McypcaEMh+_8DD+D1T7GTxAzw@mail.gmail.com>
- <f27afb36-f75c-0a03-dca2-8f318265f520@physik.fu-berlin.de>
-In-Reply-To: <f27afb36-f75c-0a03-dca2-8f318265f520@physik.fu-berlin.de>
+References: <1461239325-22779-1-git-send-email-pmladek@suse.com>
+ <1461239325-22779-2-git-send-email-pmladek@suse.com>
+ <20170419131341.76bc7634@gandalf.local.home>
+In-Reply-To: <20170419131341.76bc7634@gandalf.local.home>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Rob Landley <rob@landley.net>, Linux-sh list <linux-sh@vger.kernel.org>, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>, Geert Uytterhoeven <geert+renesas@glider.be>, Linux-Renesas <linux-renesas-soc@vger.kernel.org>, "linux-serial@vger.kernel.org" <linux-serial@vger.kernel.org>
+Content-Type: text/plain; charset="windows-1252"
+Content-Transfer-Encoding: quoted-printable
+To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Apr 21, 2017 at 09:50:39AM +0200, John Paul Adrian Glaubitz wrote:
-> On 04/21/2017 09:26 AM, Geert Uytterhoeven wrote:
-> > Does anyone have access to real hardware to try?
-> > Adrian: does it work on your LANDISK, which also has SH7751R?
-> 
-> I can give it a try but that will take a few days since I am currently
-> not at home where my LANDISK boxes are. I also had issues with the
-> IDE driver in the past but Sato-san gave me some tips regarding it.
-> 
-> However, Rich also has a LANDISK device that I donated for him, so if his
-> hardware is currently ready to use, he could give it a try.
+On Wed, Apr 19, 2017 at 01:13:41PM -0400, Steven Rostedt wrote:
+> On Thu, 21 Apr 2016 13:48:42 +0200
+> Petr Mladek <pmladek@suse.com> wrote:
+>=20
+> > printk() takes some locks and could not be used a safe way in NMI conte=
+xt.
+>=20
+> I just found a problem with this solution. It kills ftrace dumps from
+> NMI context :-(
+>=20
+> [ 1295.168495]    <...>-67423  10dNh1 382171111us : do_raw_spin_lock <-_r=
+aw_spin_lock
+> [ 1295.168495]    <...>-67423  10dNh1 382171111us : sched_stat_runtime: c=
+omm=CC1 pidg423 runtime=96858 [ns] vruntime=11924198270 [ns]
+> [ 1295.168496]    <...>-67423  10dNh1 382171111us : lock_acquire: fffffff=
+f81c5c940 read rcu_read_lock
+> [ 1295.168497]
+> [ 1295.168498] Lost 4890096 message(s)!
+> [ 1296.805063] ---[ end Kernel panic - not syncing: Hard LOCKUP
+> [ 1296.811553] unchecked MSR access error: WRMSR to 0x83f (tried to write=
+ 0x00000000000000f6) at rIP: 0xffffffff81046fc7 (native_apic_msr_write+0x27=
+/0x40)
+> [ 1296.811553] Call Trace:
+> [ 1296.811553]  <NMI>
+>=20
+> I was hoping to see a cause of a hard lockup by enabling
+> ftrace_dump_on_oops. But as NMIs now have a very small buffer that
+> gets flushed, we need to find a new way to print out the full ftrace
+> buffer over serial.
+>=20
+> Thoughts?
 
-Presently my LANDISK is in storage along with lots of other stuff due
-to fire, but as far as I know it was not damaged. However I never got
-directions for how to install a new kernel and point the bootloader at
-it. It'll probably be another couple months before I get to moving
-back in and unpacking everything from storage, but if you or anyone
-else can get me the info between now and then on how to install new
-kernel rather than just dd'ing a whole disk image, I'll follow up as
-soon as I can.
-
-Rich
+early_printk ;-)
