@@ -1,33 +1,48 @@
-From: Masahiro Yamada <yamada.masahiro@socionext.com>
-Date: Mon, 20 Mar 2017 13:54:43 +0000
-Subject: Re: [PATCH 4/6] sh: Use full path in KBUILD_IMAGE definition
-Message-Id: <CAK7LNATZMNLe6zwhAcfj=F3+jEBYYXV3VKzpL5++puevziS8cQ@mail.gmail.com>
+From: Rob Landley <rob@landley.net>
+Date: Fri, 21 Apr 2017 06:21:48 +0000
+Subject: Commit 18e8cf159177 broke qemu-system-sh4 serial input.
+Message-Id: <41d6bb75-5be0-c563-0569-ea37aab58f1e@landley.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20161122213434.14788-1-mmarek@suse.com> <20161122213434.14788-4-mmarek@suse.com>
-In-Reply-To: <20161122213434.14788-4-mmarek@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Michal Marek <mmarek@suse.com>
-Cc: Linux Kbuild mailing list <linux-kbuild@vger.kernel.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-2016-11-23 6:34 GMT+09:00 Michal Marek <mmarek@suse.com>:
-> The KBUILD_IMAGE variable is used by the rpm and deb-pkg targets, which
-> expect it to point to the image file in the build directory. The
-> builddeb script has a workaround for architectures which only provide
-> the basename, but let's provide a clean interface for packaging tools.
->
-> Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-> Cc: Rich Felker <dalias@libc.org>
-> Cc: linux-sh@vger.kernel.org
-> Signed-off-by: Michal Marek <mmarek@suse.com>
+In 4.11-rc7 the qemu serial console hangs after the first character you
+type. To reproduce, configure linux with this mini.config:
 
+CONFIG_CPU_SUBTYPE_SH7751R=y
+CONFIG_MMU=y
+CONFIG_MEMORY_START=0x0c000000
+CONFIG_VSYSCALL=y
+CONFIG_SH_FPU=y
+CONFIG_SH_RTS7751R2D=y
+CONFIG_RTS7751R2D_PLUS=y
+CONFIG_SERIAL_SH_SCI=y
+CONFIG_SERIAL_SH_SCI_CONSOLE=y
+CONFIG_EARLY_PRINTK=y
+CONFIG_BLK_DEV_INITRD=y"
+CONFIG_RD_GZIP=y
+CONFIG_BINFMT_ELF=y
+CONFIG_BINFMT_SCRIPT=y
+CONFIG_MISC_FILESYSTEMS=y
+CONFIG_DEVTMPFS=y
 
+Using "make ARCH=sh allnoconfig KCONFIG_ALLCONFIG=mini.conf", then build
+the result, then boot under qemu using the following command line:
 
-Applied to linux-kbuild/misc.  Thanks!
+qemu-system-sh4 -M r2d -monitor null -serial null -serial stdio
+-nographic -no-reboot -append "panic=1 HOST=sh4 console=ttySC1 noiotrap"
+-kernel zImage -initrd sh4-linux-musl-root.cpio.gz
 
+You'll need a simple cpio.gz initramfs (I built one using
+https://github.com/landley/mkroot and the musl-cross-make cross
+compiler, the cpio.gz is ~450k or I'd attach it here).
 
+I bisected it to commit 18e8cf159177 back in February. If you do this
+with the revision _before_ that commit, typing "ls -l" and hitting enter
+works fine. Afterwards you get an "l" and then it hangs. (If type enough
+it'll eventually deal a burst of characters all at once, and then hang
+again.)
 
--- 
-Best Regards
-Masahiro Yamada
+Rob
