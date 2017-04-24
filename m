@@ -1,15 +1,37 @@
-From: "Mr.Jerry Smith" <laszlo.cserhalmi@forsterkozpont.hu>
-Date: Fri, 21 Apr 2017 17:12:02 +0000
-Subject: 
-Message-Id: <1871422775.4812085.1492794722822.JavaMail.zimbra@forsterkozpont.hu>
+From: "Ms. Katherine" <ulia@distral.ro>
+Date: Mon, 24 Apr 2017 18:52:13 +0000
+Subject: EXTREMELY IMPORTANT
+Message-Id: <20170424185220.509A651B3352@mail.distral.ro>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: Recipients <ulia@distral.ro>
+
+Dear Beloved, Sorry for the inconvenience, I am getting in touch with you r=
+egarding an extremely important and urgent matter, Please I need your urgen=
+t assistance and idea to finish up a project (Orphanage Home) Due to my hea=
+lth condition, Everything is available to finish up the project, All I need=
+ is your idea and trust.
+
+Sehr geehrte Geliebte, traurig f=FCr die Unannehmlichkeiten, ich bin in Kon=
+takt mit Ihnen =FCber eine =E4u=DFerst wichtige und dringende Angelegenheit=
+, Bitte brauche ich Ihre dringende Hilfe und Idee, um ein Projekt zu beende=
+n (Orphanage Home) Wegen meines Gesundheitszustandes ist alles verf=FCgbar =
+Beenden Sie das Projekt, Alles was ich brauche ist Ihre Idee und Vertrauen.
+
+Please contact me for more details.
+Contact Email: kathrynnmison@gmail.com
+
+Thanks
+
+---
+This email has been checked for viruses by Avast antivirus software.
+https://www.avast.com/antivirus
 
 
-
-We Give Out Loans At 3% Interest Rate And We Offer Loans From $5,000 To $50,000,000.00, Are You Looking To Buy A House Car Or Company Or Start Up A Truck Company or Buy A Truck Or Personal Loans Or Business Loan, Email Us At jerryfunds11@inbox.lv  With Amount Needed And Phone Number.
-
+--=20
+This message has been scanned for viruses and
+dangerous content by MailScanner, and is
+believed to be clean.
 
