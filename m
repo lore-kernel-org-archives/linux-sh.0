@@ -1,39 +1,33 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 11 May 2017 08:03:33 +0000
-Subject: [PATCH v2 4/4] sh: sh7269: Remove nonexistent GPIO_PH[0-7] to fix pinctrl registration
-Message-Id: <1494489813-27321-5-git-send-email-geert+renesas@glider.be>
+Date: Tue, 09 May 2017 14:11:57 +0000
+Subject: [PATCH 4/4] [RFC] sh: sh7269: Remove nonexistent GPIO_PH[0-7] to fix pinctrl registration
+Message-Id: <1494339117-31221-5-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1494489813-27321-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1494489813-27321-1-git-send-email-geert+renesas@glider.be>
+References: <1494339117-31221-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1494339117-31221-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
-Cc: Magnus Damm <magnus.damm@gmail.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, linux-sh@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Magnus Damm <magnus.damm@gmail.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Phil Edworthy <phil.edworthy@renesas.com>
+Cc: linux-sh@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
 Pinmux_pins[] is initialized through PINMUX_GPIO(), using designated
 array initializers, where the GPIO_* enums serve as indices.
 If enum values are defined, but never used, pinmux_pins[] contains
 (zero-filled) holes.  Such entries are treated as pin zero, which was
-registered before, thus leading to pinctrl registration failures, as
-seen on sh7722:
+registered before, thus leading to pinctrl registration failures:
 
-    sh-pfc pfc-sh7722: pin 0 already registered
-    sh-pfc pfc-sh7722: error during pin registration
-    sh-pfc pfc-sh7722: could not register: -22
-    sh-pfc: probe of pfc-sh7722 failed with error -22
+    sh-pfc pfc-sh7269: pin 0 already registered
+    sh-pfc pfc-sh7269: error during pin registration
+    sh-pfc pfc-sh7269: could not register: -22
+    sh-pfc: probe of pfc-sh7269 failed with error -22
 
 Remove GPIO_PH[0-7] from the enum to fix this.
 
 Fixes: ef0fa5331a73e479 ("sh: Add pinmux for sh7269")
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
 Untested due to lack of hardware.
-
-v2:
-  - Replace fake error messages by reference to sh7722,
-  - Add Reviewed-by.
 ---
  arch/sh/include/cpu-sh2a/cpu/sh7269.h | 4 +---
  1 file changed, 1 insertion(+), 3 deletions(-)
