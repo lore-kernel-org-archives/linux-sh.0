@@ -1,40 +1,81 @@
-From: SF Markus Elfring <elfring@users.sourceforge.net>
-Date: Tue, 16 May 2017 17:30:19 +0000
-Subject: [PATCH 1/2] sh-clk: Improve a size determination in sh_clk_fsidiv_register()
-Message-Id: <8eaa3790-ae29-72ce-9750-28f5c6e01e85@users.sourceforge.net>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 09 May 2017 14:11:55 +0000
+Subject: [PATCH 2/4] [RFC] sh: sh7757: Remove nonexistent GPIO_PT[JLNQ]7_RESV to fix pinctrl registration
+Message-Id: <1494339117-31221-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <db01c452-5817-db62-bbde-c4c5cd232a3a@users.sourceforge.net>
-In-Reply-To: <db01c452-5817-db62-bbde-c4c5cd232a3a@users.sourceforge.net>
+References: <1494339117-31221-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1494339117-31221-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org, Rich Felker <dalias@libc.org>, Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: LKML <linux-kernel@vger.kernel.org>, kernel-janitors@vger.kernel.org
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Magnus Damm <magnus.damm@gmail.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Phil Edworthy <phil.edworthy@renesas.com>
+Cc: linux-sh@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Markus Elfring <elfring@users.sourceforge.net>
-Date: Tue, 16 May 2017 18:42:22 +0200
+Commit 3810e96056ffddf6 ("sh: modify pinmux for SH7757 2nd cut") renamed
+GPIO_PT[JLNQ]7 to GPIO_PT[JLNQ]7_RESV, and removed the existing users
+from the pinmux_pins[] array.
 
-Replace the specification of a data structure by a pointer dereference
-as the parameter for the operator "sizeof" to make the corresponding size
-determination a bit safer according to the Linux coding style convention.
+However, pinmux_pins[] is initialized through PINMUX_GPIO(), using
+designated array initializers, where the GPIO_* enums serve as indices.
+Hence entries were not really removed, but replaced by (zero-filled)
+holes.  Such entries are treated as pin zero, which was registered
+before, thus leading to initialization failures:
 
-Signed-off-by: Markus Elfring <elfring@users.sourceforge.net>
+    sh-pfc pfc-sh7757: pin 0 already registered
+    sh-pfc pfc-sh7757: error during pin registration
+    sh-pfc pfc-sh7757: could not register: -22
+    sh-pfc: probe of pfc-sh7757 failed with error -22
+
+Remove GPIO_PT[JLNQ]7_RESV from the enum to fix this.
+
+Fixes: 3810e96056ffddf6 ("sh: modify pinmux for SH7757 2nd cut")
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/sh/clk/cpg.c | 3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
+Untested due to lack of hardware and datasheet.
+---
+ arch/sh/include/cpu-sh4/cpu/sh7757.h | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/sh/clk/cpg.c b/drivers/sh/clk/cpg.c
-index 7442bc130055..f23464bbeb7c 100644
---- a/drivers/sh/clk/cpg.c
-+++ b/drivers/sh/clk/cpg.c
-@@ -470,6 +470,5 @@ int __init sh_clk_fsidiv_register(struct clk *clks, int nr)
- 	int i;
+diff --git a/arch/sh/include/cpu-sh4/cpu/sh7757.h b/arch/sh/include/cpu-sh4/cpu/sh7757.h
+index 5340f3bc1863c389..b40fb541e72a78ae 100644
+--- a/arch/sh/include/cpu-sh4/cpu/sh7757.h
++++ b/arch/sh/include/cpu-sh4/cpu/sh7757.h
+@@ -40,7 +40,7 @@ enum {
  
- 	for (i = 0; i < nr; i++) {
--
--		map = kzalloc(sizeof(struct clk_mapping), GFP_KERNEL);
-+		map = kzalloc(sizeof(*map), GFP_KERNEL);
- 		if (!map) {
+ 	/* PTJ */
+ 	GPIO_PTJ0, GPIO_PTJ1, GPIO_PTJ2, GPIO_PTJ3,
+-	GPIO_PTJ4, GPIO_PTJ5, GPIO_PTJ6, GPIO_PTJ7_RESV,
++	GPIO_PTJ4, GPIO_PTJ5, GPIO_PTJ6,
+ 
+ 	/* PTK */
+ 	GPIO_PTK0, GPIO_PTK1, GPIO_PTK2, GPIO_PTK3,
+@@ -48,7 +48,7 @@ enum {
+ 
+ 	/* PTL */
+ 	GPIO_PTL0, GPIO_PTL1, GPIO_PTL2, GPIO_PTL3,
+-	GPIO_PTL4, GPIO_PTL5, GPIO_PTL6, GPIO_PTL7_RESV,
++	GPIO_PTL4, GPIO_PTL5, GPIO_PTL6,
+ 
+ 	/* PTM */
+ 	GPIO_PTM0, GPIO_PTM1, GPIO_PTM2, GPIO_PTM3,
+@@ -56,7 +56,7 @@ enum {
+ 
+ 	/* PTN */
+ 	GPIO_PTN0, GPIO_PTN1, GPIO_PTN2, GPIO_PTN3,
+-	GPIO_PTN4, GPIO_PTN5, GPIO_PTN6, GPIO_PTN7_RESV,
++	GPIO_PTN4, GPIO_PTN5, GPIO_PTN6,
+ 
+ 	/* PTO */
+ 	GPIO_PTO0, GPIO_PTO1, GPIO_PTO2, GPIO_PTO3,
+@@ -68,7 +68,7 @@ enum {
+ 
+ 	/* PTQ */
+ 	GPIO_PTQ0, GPIO_PTQ1, GPIO_PTQ2, GPIO_PTQ3,
+-	GPIO_PTQ4, GPIO_PTQ5, GPIO_PTQ6, GPIO_PTQ7_RESV,
++	GPIO_PTQ4, GPIO_PTQ5, GPIO_PTQ6,
+ 
+ 	/* PTR */
+ 	GPIO_PTR0, GPIO_PTR1, GPIO_PTR2, GPIO_PTR3,
 -- 
-2.13.0
+2.7.4
 
