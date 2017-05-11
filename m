@@ -1,359 +1,87 @@
-From: Palmer Dabbelt <palmer@dabbelt.com>
-Date: Tue, 23 May 2017 22:05:44 +0000
-Subject: [PATCH 5/7] score: Use lib/{ashldi3,ashrdi3,cmpdi2,lshrdi3,ucmpdi2}.c
-Message-Id: <20170523220546.16758-6-palmer@dabbelt.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 11 May 2017 08:03:31 +0000
+Subject: [PATCH v2 2/4] sh: sh7757: Remove nonexistent GPIO_PT[JLNQ]7_RESV to fix pinctrl registration
+Message-Id: <1494489813-27321-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20170523220546.16758-1-palmer@dabbelt.com>
-In-Reply-To: <20170523220546.16758-1-palmer@dabbelt.com>
+References: <1494489813-27321-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1494489813-27321-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: monstr@monstr.eu, ralf@linux-mips.org, liqin.linux@gmail.com, lennox.wu@gmail.com, ysato@users.sourceforge.jp, dalias@libc.org, davem@davemloft.net, linux-mips@linux-mips.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, geert@linux-m68k.org, linux-kernel@vger.kernel.org, linux-arch@vger.kernel.org
-Cc: Palmer Dabbelt <palmer@dabbelt.com>
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+Cc: Magnus Damm <magnus.damm@gmail.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, linux-sh@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-These files are functionally identical to the shared copies that I
-recently added.
+Commit 3810e96056ffddf6 ("sh: modify pinmux for SH7757 2nd cut") renamed
+GPIO_PT[JLNQ]7 to GPIO_PT[JLNQ]7_RESV, and removed the existing users
+from the pinmux_pins[] array.
 
-Signed-off-by: Palmer Dabbelt <palmer@dabbelt.com>
+However, pinmux_pins[] is initialized through PINMUX_GPIO(), using
+designated array initializers, where the GPIO_* enums serve as indices.
+Hence entries were not really removed, but replaced by (zero-filled)
+holes.  Such entries are treated as pin zero, which was registered
+before, thus leading to pinctrl registration failures, as seen on
+sh7722:
+
+    sh-pfc pfc-sh7722: pin 0 already registered
+    sh-pfc pfc-sh7722: error during pin registration
+    sh-pfc pfc-sh7722: could not register: -22
+    sh-pfc: probe of pfc-sh7722 failed with error -22
+
+Remove GPIO_PT[JLNQ]7_RESV from the enum to fix this.
+
+Fixes: 3810e96056ffddf6 ("sh: modify pinmux for SH7757 2nd cut")
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- arch/score/Kconfig       |  5 +++++
- arch/score/lib/Makefile  |  3 ---
- arch/score/lib/ashldi3.c | 46 ----------------------------------------------
- arch/score/lib/ashrdi3.c | 48 ------------------------------------------------
- arch/score/lib/cmpdi2.c  | 44 --------------------------------------------
- arch/score/lib/libgcc.h  | 37 -------------------------------------
- arch/score/lib/lshrdi3.c | 47 -----------------------------------------------
- arch/score/lib/ucmpdi2.c | 38 --------------------------------------
- 8 files changed, 5 insertions(+), 263 deletions(-)
- delete mode 100644 arch/score/lib/ashldi3.c
- delete mode 100644 arch/score/lib/ashrdi3.c
- delete mode 100644 arch/score/lib/cmpdi2.c
- delete mode 100644 arch/score/lib/libgcc.h
- delete mode 100644 arch/score/lib/lshrdi3.c
- delete mode 100644 arch/score/lib/ucmpdi2.c
+Untested due to lack of hardware and datasheet.
 
-diff --git a/arch/score/Kconfig b/arch/score/Kconfig
-index 507d63181389..5959a981061c 100644
---- a/arch/score/Kconfig
-+++ b/arch/score/Kconfig
-@@ -15,6 +15,11 @@ config SCORE
- 	select MODULES_USE_ELF_REL
- 	select CLONE_BACKWARDS
- 	select CPU_NO_EFFICIENT_FFS
-+	select LIB_ASHLDI3
-+	select LIB_ASHRDI3
-+	select LIB_CMPDI2
-+	select LIB_LSHRDI3
-+	select LIB_UCMPDI2
+v2:
+  - Replace fake error messages by reference to sh7722,
+  - Add Reviewed-by.
+---
+ arch/sh/include/cpu-sh4/cpu/sh7757.h | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/arch/sh/include/cpu-sh4/cpu/sh7757.h b/arch/sh/include/cpu-sh4/cpu/sh7757.h
+index 5340f3bc1863c389..b40fb541e72a78ae 100644
+--- a/arch/sh/include/cpu-sh4/cpu/sh7757.h
++++ b/arch/sh/include/cpu-sh4/cpu/sh7757.h
+@@ -40,7 +40,7 @@ enum {
  
- choice
- 	prompt "System type"
-diff --git a/arch/score/lib/Makefile b/arch/score/lib/Makefile
-index 553e30e81faf..ea3f3aba8c71 100644
---- a/arch/score/lib/Makefile
-+++ b/arch/score/lib/Makefile
-@@ -3,6 +3,3 @@
- #
+ 	/* PTJ */
+ 	GPIO_PTJ0, GPIO_PTJ1, GPIO_PTJ2, GPIO_PTJ3,
+-	GPIO_PTJ4, GPIO_PTJ5, GPIO_PTJ6, GPIO_PTJ7_RESV,
++	GPIO_PTJ4, GPIO_PTJ5, GPIO_PTJ6,
  
- lib-y += string.o checksum.o checksum_copy.o
--
--# libgcc-style stuff needed in the kernel
--obj-y += ashldi3.o ashrdi3.o cmpdi2.o lshrdi3.o ucmpdi2.o
-diff --git a/arch/score/lib/ashldi3.c b/arch/score/lib/ashldi3.c
-deleted file mode 100644
-index 15691a910431..000000000000
---- a/arch/score/lib/ashldi3.c
-+++ /dev/null
-@@ -1,46 +0,0 @@
--/*
-- * arch/score/lib/ashldi3.c
-- *
-- * This program is free software; you can redistribute it and/or modify
-- * it under the terms of the GNU General Public License as published by
-- * the Free Software Foundation; either version 2 of the License, or
-- * (at your option) any later version.
-- *
-- * This program is distributed in the hope that it will be useful,
-- * but WITHOUT ANY WARRANTY; without even the implied warranty of
-- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-- * GNU General Public License for more details.
-- *
-- * You should have received a copy of the GNU General Public License
-- * along with this program; if not, see the file COPYING, or write
-- * to the Free Software Foundation, Inc.,
-- * 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-- */
--
--#include <linux/module.h>
--#include "libgcc.h"
--
--long long __ashldi3(long long u, word_type b)
--{
--	DWunion uu, w;
--	word_type bm;
--
--	if (b = 0)
--		return u;
--
--	uu.ll = u;
--	bm = 32 - b;
--
--	if (bm <= 0) {
--		w.s.low = 0;
--		w.s.high = (unsigned int) uu.s.low << -bm;
--	} else {
--		const unsigned int carries = (unsigned int) uu.s.low >> bm;
--
--		w.s.low = (unsigned int) uu.s.low << b;
--		w.s.high = ((unsigned int) uu.s.high << b) | carries;
--	}
--
--	return w.ll;
--}
--EXPORT_SYMBOL(__ashldi3);
-diff --git a/arch/score/lib/ashrdi3.c b/arch/score/lib/ashrdi3.c
-deleted file mode 100644
-index d9814a5d8d30..000000000000
---- a/arch/score/lib/ashrdi3.c
-+++ /dev/null
-@@ -1,48 +0,0 @@
--/*
-- * arch/score/lib/ashrdi3.c
-- *
-- * This program is free software; you can redistribute it and/or modify
-- * it under the terms of the GNU General Public License as published by
-- * the Free Software Foundation; either version 2 of the License, or
-- * (at your option) any later version.
-- *
-- * This program is distributed in the hope that it will be useful,
-- * but WITHOUT ANY WARRANTY; without even the implied warranty of
-- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-- * GNU General Public License for more details.
-- *
-- * You should have received a copy of the GNU General Public License
-- * along with this program; if not, see the file COPYING, or write
-- * to the Free Software Foundation, Inc.,
-- * 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-- */
--
--#include <linux/module.h>
--#include "libgcc.h"
--
--long long __ashrdi3(long long u, word_type b)
--{
--	DWunion uu, w;
--	word_type bm;
--
--	if (b = 0)
--		return u;
--
--	uu.ll = u;
--	bm = 32 - b;
--
--	if (bm <= 0) {
--		/* w.s.high = 1..1 or 0..0 */
--		w.s.high -		    uu.s.high >> 31;
--		w.s.low = uu.s.high >> -bm;
--	} else {
--		const unsigned int carries = (unsigned int) uu.s.high << bm;
--
--		w.s.high = uu.s.high >> b;
--		w.s.low = ((unsigned int) uu.s.low >> b) | carries;
--	}
--
--	return w.ll;
--}
--EXPORT_SYMBOL(__ashrdi3);
-diff --git a/arch/score/lib/cmpdi2.c b/arch/score/lib/cmpdi2.c
-deleted file mode 100644
-index 1ed5290c66ed..000000000000
---- a/arch/score/lib/cmpdi2.c
-+++ /dev/null
-@@ -1,44 +0,0 @@
--/*
-- * arch/score/lib/cmpdi2.c
-- *
-- * This program is free software; you can redistribute it and/or modify
-- * it under the terms of the GNU General Public License as published by
-- * the Free Software Foundation; either version 2 of the License, or
-- * (at your option) any later version.
-- *
-- * This program is distributed in the hope that it will be useful,
-- * but WITHOUT ANY WARRANTY; without even the implied warranty of
-- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-- * GNU General Public License for more details.
-- *
-- * You should have received a copy of the GNU General Public License
-- * along with this program; if not, see the file COPYING, or write
-- * to the Free Software Foundation, Inc.,
-- * 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-- */
--
--#include <linux/module.h>
--#include "libgcc.h"
--
--word_type __cmpdi2(long long a, long long b)
--{
--	const DWunion au = {
--		.ll = a
--	};
--	const DWunion bu = {
--		.ll = b
--	};
--
--	if (au.s.high < bu.s.high)
--		return 0;
--	else if (au.s.high > bu.s.high)
--		return 2;
--
--	if ((unsigned int) au.s.low < (unsigned int) bu.s.low)
--		return 0;
--	else if ((unsigned int) au.s.low > (unsigned int) bu.s.low)
--		return 2;
--
--	return 1;
--}
--EXPORT_SYMBOL(__cmpdi2);
-diff --git a/arch/score/lib/libgcc.h b/arch/score/lib/libgcc.h
-deleted file mode 100644
-index 0f12543d9f31..000000000000
---- a/arch/score/lib/libgcc.h
-+++ /dev/null
-@@ -1,37 +0,0 @@
--/*
-- * arch/score/lib/libgcc.h
-- *
-- * This program is free software; you can redistribute it and/or modify
-- * it under the terms of the GNU General Public License as published by
-- * the Free Software Foundation; either version 2 of the License, or
-- * (at your option) any later version.
-- *
-- * This program is distributed in the hope that it will be useful,
-- * but WITHOUT ANY WARRANTY; without even the implied warranty of
-- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-- * GNU General Public License for more details.
-- *
-- * You should have received a copy of the GNU General Public License
-- * along with this program; if not, see the file COPYING, or write
-- * to the Free Software Foundation, Inc.,
-- * 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-- */
--
--
--#ifndef __ASM_LIBGCC_H
--#define __ASM_LIBGCC_H
--
--#include <asm/byteorder.h>
--
--typedef int word_type __attribute__((mode(__word__)));
--
--struct DWstruct {
--	int low, high;
--};
--
--typedef union {
--	struct DWstruct s;
--	long long ll;
--} DWunion;
--
--#endif /* __ASM_LIBGCC_H */
-diff --git a/arch/score/lib/lshrdi3.c b/arch/score/lib/lshrdi3.c
-deleted file mode 100644
-index ce21175fd791..000000000000
---- a/arch/score/lib/lshrdi3.c
-+++ /dev/null
-@@ -1,47 +0,0 @@
--/*
-- * arch/score/lib/lshrdi3.c
-- *
-- * This program is free software; you can redistribute it and/or modify
-- * it under the terms of the GNU General Public License as published by
-- * the Free Software Foundation; either version 2 of the License, or
-- * (at your option) any later version.
-- *
-- * This program is distributed in the hope that it will be useful,
-- * but WITHOUT ANY WARRANTY; without even the implied warranty of
-- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-- * GNU General Public License for more details.
-- *
-- * You should have received a copy of the GNU General Public License
-- * along with this program; if not, see the file COPYING, or write
-- * to the Free Software Foundation, Inc.,
-- * 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-- */
--
--
--#include <linux/module.h>
--#include "libgcc.h"
--
--long long __lshrdi3(long long u, word_type b)
--{
--	DWunion uu, w;
--	word_type bm;
--
--	if (b = 0)
--		return u;
--
--	uu.ll = u;
--	bm = 32 - b;
--
--	if (bm <= 0) {
--		w.s.high = 0;
--		w.s.low = (unsigned int) uu.s.high >> -bm;
--	} else {
--		const unsigned int carries = (unsigned int) uu.s.high << bm;
--
--		w.s.high = (unsigned int) uu.s.high >> b;
--		w.s.low = ((unsigned int) uu.s.low >> b) | carries;
--	}
--
--	return w.ll;
--}
--EXPORT_SYMBOL(__lshrdi3);
-diff --git a/arch/score/lib/ucmpdi2.c b/arch/score/lib/ucmpdi2.c
-deleted file mode 100644
-index b15241e0b079..000000000000
---- a/arch/score/lib/ucmpdi2.c
-+++ /dev/null
-@@ -1,38 +0,0 @@
--/*
-- * arch/score/lib/ucmpdi2.c
-- *
-- * This program is free software; you can redistribute it and/or modify
-- * it under the terms of the GNU General Public License as published by
-- * the Free Software Foundation; either version 2 of the License, or
-- * (at your option) any later version.
-- *
-- * This program is distributed in the hope that it will be useful,
-- * but WITHOUT ANY WARRANTY; without even the implied warranty of
-- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-- * GNU General Public License for more details.
-- *
-- * You should have received a copy of the GNU General Public License
-- * along with this program; if not, see the file COPYING, or write
-- * to the Free Software Foundation, Inc.,
-- * 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-- */
--
--#include <linux/module.h>
--#include "libgcc.h"
--
--word_type __ucmpdi2(unsigned long long a, unsigned long long b)
--{
--	const DWunion au = {.ll = a};
--	const DWunion bu = {.ll = b};
--
--	if ((unsigned int) au.s.high < (unsigned int) bu.s.high)
--		return 0;
--	else if ((unsigned int) au.s.high > (unsigned int) bu.s.high)
--		return 2;
--	if ((unsigned int) au.s.low < (unsigned int) bu.s.low)
--		return 0;
--	else if ((unsigned int) au.s.low > (unsigned int) bu.s.low)
--		return 2;
--	return 1;
--}
--EXPORT_SYMBOL(__ucmpdi2);
+ 	/* PTK */
+ 	GPIO_PTK0, GPIO_PTK1, GPIO_PTK2, GPIO_PTK3,
+@@ -48,7 +48,7 @@ enum {
+ 
+ 	/* PTL */
+ 	GPIO_PTL0, GPIO_PTL1, GPIO_PTL2, GPIO_PTL3,
+-	GPIO_PTL4, GPIO_PTL5, GPIO_PTL6, GPIO_PTL7_RESV,
++	GPIO_PTL4, GPIO_PTL5, GPIO_PTL6,
+ 
+ 	/* PTM */
+ 	GPIO_PTM0, GPIO_PTM1, GPIO_PTM2, GPIO_PTM3,
+@@ -56,7 +56,7 @@ enum {
+ 
+ 	/* PTN */
+ 	GPIO_PTN0, GPIO_PTN1, GPIO_PTN2, GPIO_PTN3,
+-	GPIO_PTN4, GPIO_PTN5, GPIO_PTN6, GPIO_PTN7_RESV,
++	GPIO_PTN4, GPIO_PTN5, GPIO_PTN6,
+ 
+ 	/* PTO */
+ 	GPIO_PTO0, GPIO_PTO1, GPIO_PTO2, GPIO_PTO3,
+@@ -68,7 +68,7 @@ enum {
+ 
+ 	/* PTQ */
+ 	GPIO_PTQ0, GPIO_PTQ1, GPIO_PTQ2, GPIO_PTQ3,
+-	GPIO_PTQ4, GPIO_PTQ5, GPIO_PTQ6, GPIO_PTQ7_RESV,
++	GPIO_PTQ4, GPIO_PTQ5, GPIO_PTQ6,
+ 
+ 	/* PTR */
+ 	GPIO_PTR0, GPIO_PTR1, GPIO_PTR2, GPIO_PTR3,
 -- 
-2.13.0
+2.7.4
 
