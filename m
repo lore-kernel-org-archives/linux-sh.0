@@ -1,270 +1,58 @@
-From: Mauro Carvalho Chehab <mchehab@s-opensource.com>
-Date: Tue, 16 May 2017 12:16:32 +0000
-Subject: [PATCH v2 40/53] docs-rst: convert sh book to ReST
-Message-Id: <bffac837f3a385e08e9252e9089dc98741743f25.1494935649.git.mchehab@s-opensource.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 11 May 2017 08:03:33 +0000
+Subject: [PATCH v2 4/4] sh: sh7269: Remove nonexistent GPIO_PH[0-7] to fix pinctrl registration
+Message-Id: <1494489813-27321-5-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1494935649.git.mchehab@s-opensource.com>
-In-Reply-To: <cover.1494935649.git.mchehab@s-opensource.com>
+References: <1494489813-27321-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1494489813-27321-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux Doc Mailing List <linux-doc@vger.kernel.org>
-Cc: Mauro Carvalho Chehab <mchehab@s-opensource.com>, Mauro Carvalho Chehab <mchehab@infradead.org>, linux-kernel@vger.kernel.org, Jonathan Corbet <corbet@lwn.net>, David Woodhouse <dwmw2@infradead.org>, Brian Norris <computersforpeace@gmail.com>, Boris Brezillon <boris.brezillon@free-electrons.com>, Marek Vasut <marek.vasut@gmail.com>, Richard Weinberger <richard@nod.at>, Cyrille Pitchen <cyrille.pitchen@atmel.com>, linux-mtd@lists.infradead.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Jani Nikula <jani.nikula@intel.com>, "Herton R. Krzesinski" <herton@redhat.com>, Markus Heiser <markus.heiser@darmarit.de>, linux-sh@vger.kernel.org
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+Cc: Magnus Damm <magnus.damm@gmail.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, linux-sh@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Use pandoc to convert documentation to ReST by calling
-Documentation/sphinx/tmplcvt script.
+Pinmux_pins[] is initialized through PINMUX_GPIO(), using designated
+array initializers, where the GPIO_* enums serve as indices.
+If enum values are defined, but never used, pinmux_pins[] contains
+(zero-filled) holes.  Such entries are treated as pin zero, which was
+registered before, thus leading to pinctrl registration failures, as
+seen on sh7722:
 
-Signed-off-by: Mauro Carvalho Chehab <mchehab@s-opensource.com>
+    sh-pfc pfc-sh7722: pin 0 already registered
+    sh-pfc pfc-sh7722: error during pin registration
+    sh-pfc pfc-sh7722: could not register: -22
+    sh-pfc: probe of pfc-sh7722 failed with error -22
+
+Remove GPIO_PH[0-7] from the enum to fix this.
+
+Fixes: ef0fa5331a73e479 ("sh: Add pinmux for sh7269")
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- Documentation/DocBook/Makefile |   4 +-
- Documentation/DocBook/sh.tmpl  | 105 -----------------------------------------
- Documentation/conf.py          |   2 +
- Documentation/index.rst        |  11 +++++
- Documentation/sh/conf.py       |  10 ++++
- Documentation/sh/index.rst     |  59 +++++++++++++++++++++++
- 6 files changed, 83 insertions(+), 108 deletions(-)
- delete mode 100644 Documentation/DocBook/sh.tmpl
- create mode 100644 Documentation/sh/conf.py
- create mode 100644 Documentation/sh/index.rst
+Untested due to lack of hardware.
 
-diff --git a/Documentation/DocBook/Makefile b/Documentation/DocBook/Makefile
-index 226e5e9fc801..efba7f980895 100644
---- a/Documentation/DocBook/Makefile
-+++ b/Documentation/DocBook/Makefile
-@@ -6,9 +6,7 @@
- # To add a new book the only step required is to add the book to the
- # list of DOCBOOKS.
+v2:
+  - Replace fake error messages by reference to sh7722,
+  - Add Reviewed-by.
+---
+ arch/sh/include/cpu-sh2a/cpu/sh7269.h | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+
+diff --git a/arch/sh/include/cpu-sh2a/cpu/sh7269.h b/arch/sh/include/cpu-sh2a/cpu/sh7269.h
+index 2a0ca8780f0d8c34..13c495a9fc0007b4 100644
+--- a/arch/sh/include/cpu-sh2a/cpu/sh7269.h
++++ b/arch/sh/include/cpu-sh2a/cpu/sh7269.h
+@@ -45,9 +45,7 @@ enum {
+ 	GPIO_PG7, GPIO_PG6, GPIO_PG5, GPIO_PG4,
+ 	GPIO_PG3, GPIO_PG2, GPIO_PG1, GPIO_PG0,
  
--DOCBOOKS := \
--	    lsm.xml \
--	    sh.xml
-+DOCBOOKS := lsm.xml
+-	/* Port H */
+-	GPIO_PH7, GPIO_PH6, GPIO_PH5, GPIO_PH4,
+-	GPIO_PH3, GPIO_PH2, GPIO_PH1, GPIO_PH0,
++	/* Port H - Port H does not have a Data Register */
  
- ifeq ($(DOCBOOKS),)
+ 	/* Port I - not on device */
  
-diff --git a/Documentation/DocBook/sh.tmpl b/Documentation/DocBook/sh.tmpl
-deleted file mode 100644
-index 4a38f604fa66..000000000000
---- a/Documentation/DocBook/sh.tmpl
-+++ /dev/null
-@@ -1,105 +0,0 @@
--<?xml version="1.0" encoding="UTF-8"?>
--<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.1.2//EN"
--	"http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd" []>
--
--<book id="sh-drivers">
-- <bookinfo>
--  <title>SuperH Interfaces Guide</title>
--  
--  <authorgroup>
--   <author>
--    <firstname>Paul</firstname>
--    <surname>Mundt</surname>
--    <affiliation>
--     <address>
--      <email>lethal@linux-sh.org</email>
--     </address>
--    </affiliation>
--   </author>
--  </authorgroup>
--
--  <copyright>
--   <year>2008-2010</year>
--   <holder>Paul Mundt</holder>
--  </copyright>
--  <copyright>
--   <year>2008-2010</year>
--   <holder>Renesas Technology Corp.</holder>
--  </copyright>
--  <copyright>
--   <year>2010</year>
--   <holder>Renesas Electronics Corp.</holder>
--  </copyright>
--
--  <legalnotice>
--   <para>
--     This documentation is free software; you can redistribute
--     it and/or modify it under the terms of the GNU General Public
--     License version 2 as published by the Free Software Foundation.
--   </para>
--      
--   <para>
--     This program is distributed in the hope that it will be
--     useful, but WITHOUT ANY WARRANTY; without even the implied
--     warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
--     See the GNU General Public License for more details.
--   </para>
--      
--   <para>
--     You should have received a copy of the GNU General Public
--     License along with this program; if not, write to the Free
--     Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
--     MA 02111-1307 USA
--   </para>
--      
--   <para>
--     For more details see the file COPYING in the source
--     distribution of Linux.
--   </para>
--  </legalnotice>
-- </bookinfo>
--
--<toc></toc>
--
--  <chapter id="mm">
--    <title>Memory Management</title>
--    <sect1 id="sh4">
--    <title>SH-4</title>
--      <sect2 id="sq">
--        <title>Store Queue API</title>
--!Earch/sh/kernel/cpu/sh4/sq.c
--      </sect2>
--    </sect1>
--    <sect1 id="sh5">
--      <title>SH-5</title>
--      <sect2 id="tlb">
--	<title>TLB Interfaces</title>
--!Iarch/sh/mm/tlb-sh5.c
--!Iarch/sh/include/asm/tlb_64.h
--      </sect2>
--    </sect1>
--  </chapter>
--  <chapter id="mach">
--    <title>Machine Specific Interfaces</title>
--    <sect1 id="dreamcast">
--      <title>mach-dreamcast</title>
--!Iarch/sh/boards/mach-dreamcast/rtc.c
--    </sect1>
--    <sect1 id="x3proto">
--      <title>mach-x3proto</title>
--!Earch/sh/boards/mach-x3proto/ilsel.c
--    </sect1>
--  </chapter>
--  <chapter id="busses">
--    <title>Busses</title>
--    <sect1 id="superhyway">
--      <title>SuperHyway</title>
--!Edrivers/sh/superhyway/superhyway.c
--    </sect1>
--
--    <sect1 id="maple">
--      <title>Maple</title>
--!Edrivers/sh/maple/maple.c
--    </sect1>
--  </chapter>
--</book>
-diff --git a/Documentation/conf.py b/Documentation/conf.py
-index dfe14f7525d0..77d47bb1df1d 100644
---- a/Documentation/conf.py
-+++ b/Documentation/conf.py
-@@ -375,6 +375,8 @@ latex_documents = [
-      'The kernel development community', 'manual'),
-     ('security/index', 'security.tex', 'The kernel security subsystem manual',
-      'The kernel development community', 'manual'),
-+    ('sh/index', 'sh.tex', 'SuperH architecture implementation manual',
-+     'The kernel development community', 'manual'),
-     ('sound/index', 'sound.tex', 'Linux Sound Subsystem Documentation',
-      'The kernel development community', 'manual'),
-     ('userspace-api/index', 'userspace-api.tex', 'The Linux kernel user-space API guide',
-diff --git a/Documentation/index.rst b/Documentation/index.rst
-index 25c4da41da6b..e9017bb3a6ce 100644
---- a/Documentation/index.rst
-+++ b/Documentation/index.rst
-@@ -76,6 +76,17 @@ needed).
-    crypto/index
-    filesystems/index
- 
-+Architecture-specific documentation
-+-----------------------------------
-+
-+These books provide programming details about architecture-specific
-+implementation.
-+
-+.. toctree::
-+   :maxdepth: 2
-+
-+   sh/index
-+
- Korean translations
- -------------------
- 
-diff --git a/Documentation/sh/conf.py b/Documentation/sh/conf.py
-new file mode 100644
-index 000000000000..1eb684a13ac8
---- /dev/null
-+++ b/Documentation/sh/conf.py
-@@ -0,0 +1,10 @@
-+# -*- coding: utf-8; mode: python -*-
-+
-+project = "SuperH architecture implementation manual"
-+
-+tags.add("subproject")
-+
-+latex_documents = [
-+    ('index', 'sh.tex', project,
-+     'The kernel development community', 'manual'),
-+]
-diff --git a/Documentation/sh/index.rst b/Documentation/sh/index.rst
-new file mode 100644
-index 000000000000..bc8db7ba894a
---- /dev/null
-+++ b/Documentation/sh/index.rst
-@@ -0,0 +1,59 @@
-+===========+SuperH Interfaces Guide
-+===========+
-+:Author: Paul Mundt
-+
-+Memory Management
-+========+
-+SH-4
-+----
-+
-+Store Queue API
-+~~~~~~~~~~~~~~~
-+
-+.. kernel-doc:: arch/sh/kernel/cpu/sh4/sq.c
-+   :export:
-+
-+SH-5
-+----
-+
-+TLB Interfaces
-+~~~~~~~~~~~~~~
-+
-+.. kernel-doc:: arch/sh/mm/tlb-sh5.c
-+   :internal:
-+
-+.. kernel-doc:: arch/sh/include/asm/tlb_64.h
-+   :internal:
-+
-+Machine Specific Interfaces
-+=============+
-+mach-dreamcast
-+--------------
-+
-+.. kernel-doc:: arch/sh/boards/mach-dreamcast/rtc.c
-+   :internal:
-+
-+mach-x3proto
-+------------
-+
-+.. kernel-doc:: arch/sh/boards/mach-x3proto/ilsel.c
-+   :export:
-+
-+Busses
-+===
-+
-+SuperHyway
-+----------
-+
-+.. kernel-doc:: drivers/sh/superhyway/superhyway.c
-+   :export:
-+
-+Maple
-+-----
-+
-+.. kernel-doc:: drivers/sh/maple/maple.c
-+   :export:
 -- 
-2.9.3
+2.7.4
 
