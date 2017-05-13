@@ -1,64 +1,81 @@
-From: jmondi <jacopo@jmondi.org>
-Date: Wed, 10 May 2017 07:31:52 +0000
-Subject: Re: [PATCH 1/4] sh: sh7722: Remove nonexistent GPIO_PTQ7 to fix pinctrl registration
-Message-Id: <20170510073152.GA10602@w540>
+From: Mauro Carvalho Chehab <mchehab@s-opensource.com>
+Date: Sat, 13 May 2017 11:10:53 +0000
+Subject: [PATCH 0/5] Convert more books to ReST
+Message-Id: <cover.1494672881.git.mchehab@s-opensource.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1494339117-31221-1-git-send-email-geert+renesas@glider.be>
- <1494339117-31221-2-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1494339117-31221-2-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Magnus Damm <magnus.damm@gmail.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Phil Edworthy <phil.edworthy@renesas.com>, linux-sh@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-gpio@vger.kernel.org
+To: Linux Doc Mailing List <linux-doc@vger.kernel.org>
+Cc: Mauro Carvalho Chehab <mchehab@s-opensource.com>, Mauro Carvalho Chehab <mchehab@infradead.org>, linux-kernel@vger.kernel.org, Jonathan Corbet <corbet@lwn.net>, Richard Weinberger <richard@nod.at>, linux-mtd@lists.infradead.org, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Brian Norris <computersforpeace@gmail.com>, Jani Nikula <jani.nikula@intel.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Markus Heiser <markus.heiser@darmarit.de>, Cyrille Pitchen <cyrille.pitchen@atmel.com>, "Herton R. Krzesinski" <herton@redhat.com>, Boris Brezillon <boris.brezillon@free-electrons.com>, Marek Vasut <marek.vasut@gmail.com>, Sebastian Andrzej Siewior <bigeasy@linutronix.de>, linux-sh@vger.kernel.org, Takashi Iwai <tiwai@suse.de>, David Woodhouse <dwmw2@infradead.org>, Rich Felker <dalias@libc.org>, Silvio Fricke <silvio.fricke@gmail.com>, sayli karnik <karniksayli1995@gmail.com>, linux-security-module@vger.kernel.org
 
-Hi Geert,
+This patch series convert the following books to ReST:
+	- librs
+	- mtdnand
+	- sh
 
-On Tue, May 09, 2017 at 04:11:54PM +0200, Geert Uytterhoeven wrote:
-> On sh7722/Migo-R, pinctrl registration fails with:
->
->     sh-pfc pfc-sh7722: pin 0 already registered
->     sh-pfc pfc-sh7722: error during pin registration
->     sh-pfc pfc-sh7722: could not register: -22
->     sh-pfc: probe of pfc-sh7722 failed with error -22
->
-> pinmux_pins[] is initialized through PINMUX_GPIO(), using designated
-> array initializers, where the GPIO_* enums serve as indices.
-> As GPIO_PTQ7 is defined in the enum, but never used, pinmux_pins[]
-> contains a (zero-filled) hole. Hence this entry is treated as pin zero,
-> which was registered before, and initialization fails.
->
-> According to the datasheet, port PTQ7 does not exist. Hence remove
-> GPIO_PTQ7 from the enum to fix this.
->
-> Fixes: 8d7b5b0af7e070b9 ("sh: Add sh7722 pinmux code")
-> Reported-by: Magnus Damm <magnus.damm@gmail.com>
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+And it is based on my previous series of conversion patches.
 
-Tested-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
+After this series, there will be just one DocBook pending conversion:
+	- lsm (Linux Security Modules)
 
-Thank you
-   j
+This book is very outdated: no changes since the Kernel moved 
+to git, in 2005 (except for a minor editorial fix in 2008).
 
-> ---
-> Tested on sh7722/Migo-R.
-> ---
->  arch/sh/include/cpu-sh4/cpu/sh7722.h | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
->
-> diff --git a/arch/sh/include/cpu-sh4/cpu/sh7722.h b/arch/sh/include/cpu-sh4/cpu/sh7722.h
-> index 3bb74e534d0f8ca4..78961ab78a5a9c83 100644
-> --- a/arch/sh/include/cpu-sh4/cpu/sh7722.h
-> +++ b/arch/sh/include/cpu-sh4/cpu/sh7722.h
-> @@ -67,7 +67,7 @@ enum {
->  	GPIO_PTN3, GPIO_PTN2, GPIO_PTN1, GPIO_PTN0,
->
->  	/* PTQ */
-> -	GPIO_PTQ7, GPIO_PTQ6, GPIO_PTQ5, GPIO_PTQ4,
-> +	GPIO_PTQ6, GPIO_PTQ5, GPIO_PTQ4,
->  	GPIO_PTQ3, GPIO_PTQ2, GPIO_PTQ1, GPIO_PTQ0,
->
->  	/* PTR */
-> --
-> 2.7.4
->
+I took a look on the described API: it doesn't seem to be describing
+the current security implementation.
+
+The best here is if someone that works with LSM to convert it to
+ReST with:
+	$ Documentation/sphinx/tmplcvt Documentation/DocBook/lsm.tmpl lsm.rst
+
+And fix the document to produce something that reflects the current
+implementation. If nobody is interested, then maybe we could just
+drop it.
+
+-
+
+This patch series is based on my past 00/36 patch series, applied on
+the top of docs tree (next branch).
+
+The full patch series is on this tree is at:
+
+   https://git.linuxtv.org//mchehab/experimental.git/log/?h=docbook
+
+And the HTML output at:
+
+  http://www.infradead.org/~mchehab/kernel_docs/
+  https://mchehab.fedorapeople.org/kernel_docs/ 
+
+Mauro Carvalho Chehab (5):
+  docs-rst: convert librs book to ReST
+  docs-rst: convert mtdnand book to ReST
+  mtdnand.rst: Fix some typos and group the "::" with previous line
+  mtd: adjust kernel-docs to avoid Sphinx/kerneldoc warnings
+  docs-rst: convert sh book to ReST
+
+ Documentation/DocBook/Makefile       |    5 +-
+ Documentation/DocBook/librs.tmpl     |  289 --------
+ Documentation/DocBook/mtdnand.tmpl   | 1291 ----------------------------------
+ Documentation/DocBook/sh.tmpl        |  105 ---
+ Documentation/conf.py                |    2 +
+ Documentation/core-api/index.rst     |    1 +
+ Documentation/core-api/librs.rst     |  212 ++++++
+ Documentation/driver-api/index.rst   |    1 +
+ Documentation/driver-api/mtdnand.rst | 1007 ++++++++++++++++++++++++++
+ Documentation/index.rst              |   11 +
+ Documentation/sh/index.rst           |   59 ++
+ drivers/mtd/nand/nand_base.c         |    7 +-
+ include/linux/mtd/nand.h             |    2 +-
+ 13 files changed, 1300 insertions(+), 1692 deletions(-)
+ delete mode 100644 Documentation/DocBook/librs.tmpl
+ delete mode 100644 Documentation/DocBook/mtdnand.tmpl
+ delete mode 100644 Documentation/DocBook/sh.tmpl
+ create mode 100644 Documentation/core-api/librs.rst
+ create mode 100644 Documentation/driver-api/mtdnand.rst
+ create mode 100644 Documentation/sh/index.rst
+
+-- 
+2.9.3
+
+
