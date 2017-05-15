@@ -1,32 +1,31 @@
-From: riel@redhat.com
-Date: Wed, 24 May 2017 15:57:46 +0000
-Subject: [PATCH v2 0/5] stackprotector: ascii armor the stack canary
-Message-Id: <20170524155751.424-1-riel@redhat.com>
+From: Rob Landley <rob@landley.net>
+Date: Mon, 15 May 2017 02:46:07 +0000
+Subject: QEMU serial still broken in -rc1.
+Message-Id: <cdec4797-afe1-11f8-f926-fb5d356da625@landley.net>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: danielmicay@gmail.com, tytso@mit.edu, keescook@chromium.org, hpa@zytor.com, luto@amacapital.net, mingo@kernel.org, x86@kernel.org, linux-arm-kernel@lists.infradead.org, catalin.marinas@arm.com, linux-sh@vger.kernel.org, ysato@users.sourceforge.jp, kernel-hardening@lists.openwall.com
+To: linux-sh@vger.kernel.org
 
-Zero out the first byte of the stack canary value on 64 bit systems,
-in order to mitigate unterminated C string overflows.
+I refer to the previous thread, which is still the case:
 
-The null byte both prevents C string functions from reading the
-canary, and from writing it if the canary value were guessed or
-obtained through some other means.
-    
-Reducing the entropy by 8 bits is acceptable on 64-bit systems,
-which will still have 56 bits of entropy left, but not on 32
-bit systems, so the "ascii armor" canary is only implemented on
-64-bit systems.
+http://www.spinics.net/lists/linux-sh/msg51190.html
 
-Inspired by the "ascii armor" code in execshield and Daniel Micay's
-linux-hardened tree.
+I poked at QEMU's internals to see if there was an easy way to fiddle
+with stuff, but A) ttySC1 appears to be the only serial type the board
+emulates, B) the ttySC0 instance is broken, dunno why.
 
-Also see https://github.com/thestinger/linux-hardened/
+More context from years in the QEMU mines:
 
-v2:
- - improve changelogs
- - address Ingo's coding style comments
+http://lists.gnu.org/archive/html/qemu-devel/2009-02/msg00825.html
 
+http://lists.gnu.org/archive/html/qemu-devel/2010-03/msg00976.html
+
+http://lists.gnu.org/archive/html/qemu-devel/2014-09/msg00207.html
+
+As you can see from the fact the 2014 bug is still there in qemu, asking
+QEMU to fix anything is basically shouting into a hole. (Although if
+other people want to add their voices maybe it'll work better.)
+
+Rob
