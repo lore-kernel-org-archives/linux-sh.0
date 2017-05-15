@@ -1,96 +1,29 @@
-From: Boris Brezillon <boris.brezillon@free-electrons.com>
-Date: Mon, 15 May 2017 12:09:12 +0000
+From: Jonathan Corbet <corbet@lwn.net>
+Date: Mon, 15 May 2017 17:15:19 +0000
 Subject: Re: [PATCH 0/5] Convert more books to ReST
-Message-Id: <20170515140912.100c9cac@bbrezillon>
+Message-Id: <20170515111519.7bbb449b@lwn.net>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1494672881.git.mchehab@s-opensource.com>
-In-Reply-To: <cover.1494672881.git.mchehab@s-opensource.com>
+ <20170515140912.100c9cac@bbrezillon>
+In-Reply-To: <20170515140912.100c9cac@bbrezillon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mauro Carvalho Chehab <mchehab@s-opensource.com>
-Cc: Linux Doc Mailing List <linux-doc@vger.kernel.org>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, Takashi Iwai <tiwai@suse.de>, Sebastian Andrzej Siewior <bigeasy@linutronix.de>, "Herton R. Krzesinski" <herton@redhat.com>, linux-mtd@lists.infradead.org, Cyrille Pitchen <cyrille.pitchen@atmel.com>, Markus Heiser <markus.heiser@darmarit.de>, Yoshinori Sato <ysato@users.sourceforge.jp>, Jonathan Corbet <corbet@lwn.net>, Richard Weinberger <richard@nod.at>, Marek Vasut <marek.vasut@gmail.com>, sayli karnik <karniksayli1995@gmail.com>, Jani Nikula <jani.nikula@intel.com>, Mauro Carvalho Chehab <mchehab@infradead.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, linux-kernel@vger.kernel.org, linux-security-module@vger.kernel.org, Silvio Fricke <silvio.fricke@gmail.com>, Brian Norris <computersforpeace@gmail.com>, David Woodhouse <dwmw2@infradead.org>
+To: Boris Brezillon <boris.brezillon@free-electrons.com>
+Cc: Mauro Carvalho Chehab <mchehab@s-opensource.com>, Linux Doc Mailing List <linux-doc@vger.kernel.org>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, Takashi Iwai <tiwai@suse.de>, Sebastian Andrzej Siewior <bigeasy@linutronix.de>, "Herton R. Krzesinski" <herton@redhat.com>, linux-mtd@lists.infradead.org, Cyrille Pitchen <cyrille.pitchen@atmel.com>, Markus Heiser <markus.heiser@darmarit.de>, Yoshinori Sato <ysato@users.sourceforge.jp>, Richard Weinberger <richard@nod.at>, Marek Vasut <marek.vasut@gmail.com>, sayli karnik <karniksayli1995@gmail.com>, Jani Nikula <jani.nikula@intel.com>, Mauro Carvalho Chehab <mchehab@infradead.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, linux-kernel@vger.kernel.org, linux-security-module@vger.kernel.org, Silvio Fricke <silvio.fricke@gmail.com>, Brian Norris <computersforpeace@gmail.com>, David Woodhouse <dwmw2@infradead.org>
 
-On Sat, 13 May 2017 08:10:53 -0300
-Mauro Carvalho Chehab <mchehab@s-opensource.com> wrote:
+On Mon, 15 May 2017 14:09:12 +0200
+Boris Brezillon <boris.brezillon@free-electrons.com> wrote:
 
-> This patch series convert the following books to ReST:
-> 	- librs
-> 	- mtdnand
-> 	- sh
+> >   mtd: adjust kernel-docs to avoid Sphinx/kerneldoc warnings  
 > 
-> And it is based on my previous series of conversion patches.
-> 
-> After this series, there will be just one DocBook pending conversion:
-> 	- lsm (Linux Security Modules)
-> 
-> This book is very outdated: no changes since the Kernel moved 
-> to git, in 2005 (except for a minor editorial fix in 2008).
-> 
-> I took a look on the described API: it doesn't seem to be describing
-> the current security implementation.
-> 
-> The best here is if someone that works with LSM to convert it to
-> ReST with:
-> 	$ Documentation/sphinx/tmplcvt Documentation/DocBook/lsm.tmpl lsm.rst
-> 
-> And fix the document to produce something that reflects the current
-> implementation. If nobody is interested, then maybe we could just
-> drop it.
-> 
-> -
-> 
-> This patch series is based on my past 00/36 patch series, applied on
-> the top of docs tree (next branch).
-> 
-> The full patch series is on this tree is at:
-> 
->    https://git.linuxtv.org//mchehab/experimental.git/log/?h=docbook
-> 
-> And the HTML output at:
-> 
->   http://www.infradead.org/~mchehab/kernel_docs/
->   https://mchehab.fedorapeople.org/kernel_docs/ 
-> 
-> Mauro Carvalho Chehab (5):
->   docs-rst: convert librs book to ReST
->   docs-rst: convert mtdnand book to ReST
->   mtdnand.rst: Fix some typos and group the "::" with previous line
+> Not sure how you plan to merge these changes, but if it goes through
+> a single tree I'll probably need an immutable topic branch, because I
+> plan to change a few things in nand_base.c nand.h for the next release.
 
-MTD maintainers did not receive the above patch. Can you Cc us the
-whole series next time.
+docs-next doesn't rebase, so there shouldn't be trouble there.  But we
+could also just separate this patch into two pieces.  I suspect we could
+live with a couple of warnings for a period during the 4.13 merge window
+without too much pain...
 
-BTW, I had a look at your branch and it seems the typo you're fixing is
-actually not a type. Flags are *OR-ed* (with the | operator) to form a
-valid combination of flags.
-
->   mtd: adjust kernel-docs to avoid Sphinx/kerneldoc warnings
-
-Not sure how you plan to merge these changes, but if it goes through
-a single tree I'll probably need an immutable topic branch, because I
-plan to change a few things in nand_base.c nand.h for the next release.
-
->   docs-rst: convert sh book to ReST
-> 
->  Documentation/DocBook/Makefile       |    5 +-
->  Documentation/DocBook/librs.tmpl     |  289 --------
->  Documentation/DocBook/mtdnand.tmpl   | 1291 ----------------------------------
->  Documentation/DocBook/sh.tmpl        |  105 ---
->  Documentation/conf.py                |    2 +
->  Documentation/core-api/index.rst     |    1 +
->  Documentation/core-api/librs.rst     |  212 ++++++
->  Documentation/driver-api/index.rst   |    1 +
->  Documentation/driver-api/mtdnand.rst | 1007 ++++++++++++++++++++++++++
->  Documentation/index.rst              |   11 +
->  Documentation/sh/index.rst           |   59 ++
->  drivers/mtd/nand/nand_base.c         |    7 +-
->  include/linux/mtd/nand.h             |    2 +-
->  13 files changed, 1300 insertions(+), 1692 deletions(-)
->  delete mode 100644 Documentation/DocBook/librs.tmpl
->  delete mode 100644 Documentation/DocBook/mtdnand.tmpl
->  delete mode 100644 Documentation/DocBook/sh.tmpl
->  create mode 100644 Documentation/core-api/librs.rst
->  create mode 100644 Documentation/driver-api/mtdnand.rst
->  create mode 100644 Documentation/sh/index.rst
-> 
-
+jon
