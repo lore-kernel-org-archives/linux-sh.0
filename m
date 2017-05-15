@@ -1,7 +1,7 @@
 From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Date: Mon, 15 May 2017 05:11:18 +0000
+Date: Mon, 15 May 2017 05:13:29 +0000
 Subject: Re: QEMU serial still broken in -rc1.
-Message-Id: <eeef85f2-7102-7e53-f93c-62c07dfe11a9@physik.fu-berlin.de>
+Message-Id: <c0bd7496-6cb9-e147-6061-27fa21774571@physik.fu-berlin.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cdec4797-afe1-11f8-f926-fb5d356da625@landley.net>
 In-Reply-To: <cdec4797-afe1-11f8-f926-fb5d356da625@landley.net>
@@ -10,19 +10,15 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On 05/15/2017 04:46 AM, Rob Landley wrote:
-> As you can see from the fact the 2014 bug is still there in qemu, asking
-> QEMU to fix anything is basically shouting into a hole. (Although if
-> other people want to add their voices maybe it'll work better.)
+On 05/15/2017 07:11 AM, John Paul Adrian Glaubitz wrote:
+> They do fix bugs but they often take some time to work through the
+> patch queue because they usually get a larger number of patches [1].
 
-Did you actually file a bug report in the QEMU tracker? I don't quite have
-this experience with QEMU. They do fix bugs but they often take some time
-to work through the patch queue because they usually get a larger number
-of patches [1].
+Oh, and Aurelien Jarno has pushed a larger number of SH-related fixes [1].
 
 Adrian
 
-> [1] https://patchwork.ozlabs.org/project/qemu-devel/list/
+> [1] https://patchwork.ozlabs.org/patch/761962/
 
 -- 
  .''`.  John Paul Adrian Glaubitz
