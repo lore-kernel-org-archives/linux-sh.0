@@ -1,13 +1,13 @@
 From: Rob Landley <rob@landley.net>
-Date: Mon, 15 May 2017 18:16:37 +0000
+Date: Mon, 15 May 2017 18:17:22 +0000
 Subject: Re: QEMU serial still broken in -rc1.
-Message-Id: <8f03278a-6769-30e4-20c7-a13416cfe06e@landley.net>
+Message-Id: <93cfad25-187a-3a19-604c-fe4b99b9e87d@landley.net>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cdec4797-afe1-11f8-f926-fb5d356da625@landley.net>
 In-Reply-To: <cdec4797-afe1-11f8-f926-fb5d356da625@landley.net>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
 To: linux-sh@vger.kernel.org
 
 On 05/15/2017 12:13 AM, John Paul Adrian Glaubitz wrote:
@@ -16,14 +16,20 @@ On 05/15/2017 12:13 AM, John Paul Adrian Glaubitz wrote:
 >> patch queue because they usually get a larger number of patches [1].
 > 
 > Oh, and Aurelien Jarno has pushed a larger number of SH-related fixes [1].
-> 
-> Adrian
-> 
->> [1] https://patchwork.ozlabs.org/patch/761962/
 
-Hmmm, I should poke him about attempting to get j-core SOC support and
-sh2 cpu emulation working. And the whole "qemu-system-sh4" naming when
-there's sh2 and sh3... (Also, why does QEMU _not_ support the -kernel
-vmlinux ELF loader on all boards? In theory that's reasonably generic...)
+My attempts to re-test hit:
+
+cd ~/qemu/qemu && git clean -fdx && git checkout -f && git pull &&
+./configure && make
+...
+  CC      hw/core/loader-fit.o
+hw/core/loader-fit.c: In function ‘fit_image_addr’:
+hw/core/loader-fit.c:105:32: error: ‘fdt32_t’ undeclared (first use in
+this function)
+         *addr = fdt32_to_cpu(*(fdt32_t *)prop);
+
+I'll let you know if it fixes anything when the tree starts building again.
+
+Thanks,
 
 Rob
