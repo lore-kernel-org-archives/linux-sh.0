@@ -1,41 +1,61 @@
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Date: Wed, 17 May 2017 09:04:03 +0000
-Subject: Re: Bug#576242: gdb: Please support Renesas SH(sh4)
-Message-Id: <e7407757-9995-bc72-12a1-81ec2bdd3a91@physik.fu-berlin.de>
+From: riel@redhat.com
+Date: Fri, 19 May 2017 21:26:32 +0000
+Subject: [PATCH 1/5] random,stackprotect: introduce get_random_canary function
+Message-Id: <20170519212636.30440-2-riel@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <c184d5b5-4ec4-96e8-70f0-3ea61ce480db@physik.fu-berlin.de>
-In-Reply-To: <c184d5b5-4ec4-96e8-70f0-3ea61ce480db@physik.fu-berlin.de>
+References: <20170519212636.30440-1-riel@redhat.com>
+In-Reply-To: <20170519212636.30440-1-riel@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hello!
+From: Rik van Riel <riel@redhat.com>
 
-On 03/10/2017 04:16 AM, Nobuhiro Iwamatsu wrote:
-> I add Takashi's  to this thread.
-> I contacted to Takashi, and talked about this problem.
-> He said I would reply on this matter.
-> Would you please wait for his reply?
+Introduce the get_random_canary function, which provides a random
+unsigned long canary value with the first byte zeroed out on 64
+bit architectures, in order to mitigate non-terminated C string
+overflows.
 
-Has there been any progress on this issue?
+Inspired by the "ascii armor" code in the old execshield patches,
+and the current PaX/grsecurity code base.
 
-Please note that if we wait too long, merging the patch becomes
-more difficult over the time as the upstream source progress.
+Signed-off-by: Rik van Riel <riel@redhat.com>
+---
+ include/linux/random.h | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
 
-I'm currently rebasing the patch from time to time to make
-sure it remains mergable [1].
-
-Please don't let this take forever. Signing the FSF copyright
-assignment can be done quickly and Takashi just needs to do
-it to clear the path.
-
-Adrian
-
-> [1] https://github.com/glaubitz/binutils-gdb/tree/linux-sh
-
+diff --git a/include/linux/random.h b/include/linux/random.h
+index ed5c3838780d..765a992c6774 100644
+--- a/include/linux/random.h
++++ b/include/linux/random.h
+@@ -57,6 +57,26 @@ static inline unsigned long get_random_long(void)
+ #endif
+ }
+ 
++/*
++ * On 64 bit architectures, protect against non-terminated C string overflows
++ * by zeroing out the first byte of the canary; this leaves 56 bits of entropy.
++ */
++#ifdef CONFIG_64BIT
++#ifdef __LITTLE_ENDIAN
++#define CANARY_MASK 0xffffffffffffff00UL
++#else /* big endian 64 bits */
++#define CANARY_MASK 0x00ffffffffffffffUL
++#endif
++#else /* 32 bits */
++#define CANARY_MASK 0xffffffffUL
++#endif
++static inline unsigned long get_random_canary(void)
++{
++	unsigned long val = get_random_long();
++
++	return val & CANARY_MASK;
++}
++
+ unsigned long randomize_page(unsigned long start, unsigned long range);
+ 
+ u32 prandom_u32(void);
 -- 
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer - glaubitz@debian.org
-`. `'   Freie Universitaet Berlin - glaubitz@physik.fu-berlin.de
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+2.9.3
+
