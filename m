@@ -1,51 +1,60 @@
-From: SF Markus Elfring <elfring@users.sourceforge.net>
-Date: Tue, 16 May 2017 17:31:20 +0000
-Subject: [PATCH 2/2] sh-clk: Delete an error message for a failed memory allocation in two functions
-Message-Id: <ba6c79d1-1d60-b20b-94b4-e9c31a80dd90@users.sourceforge.net>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Sun, 21 May 2017 20:40:08 +0000
+Subject: [PATCH 0/4] input: move include files out of include/linux/i2c
+Message-Id: <20170521204013.6623-1-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <db01c452-5817-db62-bbde-c4c5cd232a3a@users.sourceforge.net>
-In-Reply-To: <db01c452-5817-db62-bbde-c4c5cd232a3a@users.sourceforge.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org, Rich Felker <dalias@libc.org>, Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: LKML <linux-kernel@vger.kernel.org>, kernel-janitors@vger.kernel.org, Wolfram Sang <wsa@the-dreams.de>
+To: linux-i2c@vger.kernel.org
+Cc: Wolfram Sang <wsa@the-dreams.de>, linux-input@vger.kernel.org, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
 
-From: Markus Elfring <elfring@users.sourceforge.net>
-Date: Tue, 16 May 2017 19:05:36 +0200
+It doesn't make sense to use include/linux/i2c for client drivers which may in
+fact rather be hwmon or input or whatever devices. As a result, I want to
+deprecate include/linux/i2c for good. This series moves the include files to a
+better location, for the input subsystem to include/linux/input. If you prefer
+include/linux/platform_data, because that is what most of the moved include
+files contain, let me know. Note that some files don't seem to have upstream
+users in board code, so they maybe could even be removed? I didn't check for
+that now, but I did it for one i2c master driver recently. So, it may be
+possible.
 
-Omit an extra message for a memory allocation failure in these functions.
+I prefer the series to go upstream via the subsystem tree; if you prefer that I
+take it via I2C, just let me know.
 
-This issue was detected by using the Coccinelle software.
+No runtime testing because of no HW, but buildbot is happy with this series at
+least. A branch can be found here:
 
-Link: http://events.linuxfoundation.org/sites/events/files/slides/LCJ16-Refactor_Strings-WSang_0.pdf
-Signed-off-by: Markus Elfring <elfring@users.sourceforge.net>
----
- drivers/sh/clk/cpg.c | 8 ++------
- 1 file changed, 2 insertions(+), 6 deletions(-)
+git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git i2c/platform_data
 
-diff --git a/drivers/sh/clk/cpg.c b/drivers/sh/clk/cpg.c
-index f23464bbeb7c..b3afe5c4fa3b 100644
---- a/drivers/sh/clk/cpg.c
-+++ b/drivers/sh/clk/cpg.c
-@@ -253,7 +253,5 @@ static int __init sh_clk_div_register_ops(struct clk *clks, int nr,
--	if (!freq_table) {
--		pr_err("%s: unable to alloc memory\n", __func__);
-+	if (!freq_table)
- 		return -ENOMEM;
--	}
- 
- 	for (k = 0; !ret && (k < nr); k++) {
- 		clkp = clks + k;
-@@ -474,7 +472,5 @@ int __init sh_clk_fsidiv_register(struct clk *clks, int nr)
--		if (!map) {
--			pr_err("%s: unable to alloc memory\n", __func__);
-+		if (!map)
- 			return -ENOMEM;
--		}
- 
- 		/* clks[i].enable_reg came from SH_CLK_FSIDIV() */
- 		map->phys		= (phys_addr_t)clks[i].enable_reg;
+Thanks and kind regards,
+
+   Wolfram
+
+
+Wolfram Sang (4):
+  input: lm8323: move header file out of I2C realm
+  input: mcs: move header file out of I2C realm
+  input: mms114: move header file out of I2C realm
+  input: tsc2007: move header file out of I2C realm
+
+ arch/sh/boards/mach-ecovec24/setup.c     | 2 +-
+ drivers/input/keyboard/lm8323.c          | 2 +-
+ drivers/input/keyboard/mcs_touchkey.c    | 2 +-
+ drivers/input/touchscreen/mcs5000_ts.c   | 2 +-
+ drivers/input/touchscreen/mms114.c       | 2 +-
+ drivers/input/touchscreen/tsc2007_core.c | 2 +-
+ drivers/mfd/timberdale.c                 | 2 +-
+ include/linux/{i2c => input}/lm8323.h    | 0
+ include/linux/{i2c => input}/mcs.h       | 0
+ include/linux/{i2c => input}/mms114.h    | 0
+ include/linux/{i2c => input}/tsc2007.h   | 2 +-
+ 11 files changed, 8 insertions(+), 8 deletions(-)
+ rename include/linux/{i2c => input}/lm8323.h (100%)
+ rename include/linux/{i2c => input}/mcs.h (100%)
+ rename include/linux/{i2c => input}/mms114.h (100%)
+ rename include/linux/{i2c => input}/tsc2007.h (95%)
+
 -- 
-2.13.0
+2.11.0
 
