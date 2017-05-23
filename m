@@ -1,43 +1,34 @@
-From: Krzysztof Kozlowski <krzk@kernel.org>
-Date: Wed, 31 May 2017 08:24:57 +0000
-Subject: Re: [PATCH 6/7] clocksource: Rename CLKSRC_OF to TIMER_OF
-Message-Id: <CAJKOXPc54UKCBr_8jqUE+5_YHbwEWOv=YRz0zR-ymaXaiGUHyw@mail.gmail.com>
+From: Palmer Dabbelt <palmer@dabbelt.com>
+Date: Tue, 23 May 2017 22:05:39 +0000
+Subject: Unify the various copies of libgcc into lib
+Message-Id: <20170523220546.16758-1-palmer@dabbelt.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1495879129-28109-1-git-send-email-daniel.lezcano@linaro.org> <1495879129-28109-6-git-send-email-daniel.lezcano@linaro.org>
-In-Reply-To: <1495879129-28109-6-git-send-email-daniel.lezcano@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Daniel Lezcano <daniel.lezcano@linaro.org>
-Cc: tglx@linutronix.de, linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org, Russell King <linux@armlinux.org.uk>, Florian Fainelli <f.fainelli@gmail.com>, Ray Jui <rjui@broadcom.com>, Scott Branden <sbranden@broadcom.com>, "maintainer:BROADCOM BCM281XX/BCM11XXX/BCM216XX ARM ARCHITE..." <bcm-kernel-feedback-list@broadcom.com>, Alexander Shiyan <shc_work@mail.ru>, Shawn Guo <shawnguo@kernel.org>, Sascha Hauer <kernel@pengutronix.de>, Fabio Estevam <fabio.estevam@nxp.com>, Kukjin Kim <kgene@kernel.org>, Javier Martinez Canillas <javier@osg.samsung.com>, Catalin Marinas <catalin.marinas@arm.com>, Will Deacon <will.deacon@arm.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Michal Simek <monstr@monstr.eu>, John Crispin <john@phrozen.org>
+To: monstr@monstr.eu, ralf@linux-mips.org, liqin.linux@gmail.com, lennox.wu@gmail.com, ysato@users.sourceforge.jp, dalias@libc.org, davem@davemloft.net, linux-mips@linux-mips.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, geert@linux-m68k.org, linux-kernel@vger.kernel.org, linux-arch@vger.kernel.org
 
-On Sat, May 27, 2017 at 11:58 AM, Daniel Lezcano
-<daniel.lezcano@linaro.org> wrote:
-> The config option name is now renamed to 'TIMER_OF' for consistency with
-> the CLOCKSOURCE_OF_DECLARE => TIMER_OF_DECLARE change.
->
-> Signed-off-by: Daniel Lezcano <daniel.lezcano@linaro.org>
-> ---
->  arch/arm/Kconfig                        | 10 +++---
->  arch/arm/mach-bcm/Kconfig               |  2 +-
->  arch/arm/mach-clps711x/Kconfig          |  2 +-
->  arch/arm/mach-imx/epit.c                |  2 +-
->  arch/arm/mach-s3c24xx/Kconfig           |  2 +-
->  arch/arm/mach-s3c64xx/Kconfig           |  2 +-
->  arch/arm64/Kconfig.platforms            |  4 +--
->  arch/h8300/Kconfig                      |  2 +-
->  arch/microblaze/Kconfig                 |  2 +-
->  arch/mips/ralink/Kconfig                |  2 +-
->  arch/nios2/Kconfig                      |  2 +-
->  arch/sh/boards/Kconfig                  |  2 +-
->  drivers/clocksource/Kconfig             | 60 ++++++++++++++++-----------------
->  drivers/clocksource/Makefile            |  2 +-
->  drivers/clocksource/clksrc-probe.c      | 55 ------------------------------
->  drivers/clocksource/clps711x-timer.c    |  2 +-
->  drivers/clocksource/samsung_pwm_timer.c |  2 +-
+I'm in the process of submitting the RISC-V Linux port, and someone noticed
+that we were adding copies of some libgcc emulation routines that were the same
+as some of the other ports.  This prompted me to go through and check all the
+ports for libgcc.h and to merge the versions that were functionally identical.
 
-For s3c24xx, s3c64xx and samsung_pwm_timer:
-Acked-by: Krzysztof Kozlowski <krzk@kernel.org>
+The only difference in libgcc.h was that there was a #define for little vs big
+endian.  The differences in the emulation routines were all just whitespace.
 
-Best regards,
-Krzysztof
+This patch set comes in two parts:
+
+ * Patch 1 adds new copies of all the C files copied from libgcc, as well as
+   moving libgcc.h to include/lib (that's a new folder, which probably means
+   it's the wrong place to put it, but I couldn't find anything better).  There
+   are Kconfig entries for each of these library functions so architectures can
+   select them one at a time.
+
+ * The rest of the patches convert each architecture over to the new system.
+
+Unless I screwed something up, this patch set shouldn't actually change any
+functionality.  Unfortunately I don't actually have all these cross compilers
+setup so I can't actually test any of this, but I did convert the RISC-V port
+over to using this system and it appears to be OK there so at least this isn't
+completely broken.
+
