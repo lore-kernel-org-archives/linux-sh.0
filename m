@@ -1,66 +1,359 @@
-From: <cuongtruong380@gmail.com>
-Date: Wed, 24 May 2017 03:09:45 +0000
-Subject: 
-Message-Id: <149559538597.31455.13020605739716144236@ruscomp.net>
+From: Palmer Dabbelt <palmer@dabbelt.com>
+Date: Tue, 23 May 2017 22:05:44 +0000
+Subject: [PATCH 5/7] score: Use lib/{ashldi3,ashrdi3,cmpdi2,lshrdi3,ucmpdi2}.c
+Message-Id: <20170523220546.16758-6-palmer@dabbelt.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20170523220546.16758-1-palmer@dabbelt.com>
+In-Reply-To: <20170523220546.16758-1-palmer@dabbelt.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: monstr@monstr.eu, ralf@linux-mips.org, liqin.linux@gmail.com, lennox.wu@gmail.com, ysato@users.sourceforge.jp, dalias@libc.org, davem@davemloft.net, linux-mips@linux-mips.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, geert@linux-m68k.org, linux-kernel@vger.kernel.org, linux-arch@vger.kernel.org
+Cc: Palmer Dabbelt <palmer@dabbelt.com>
 
-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
+These files are functionally identical to the shared copies that I
+recently added.
+
+Signed-off-by: Palmer Dabbelt <palmer@dabbelt.com>
+---
+ arch/score/Kconfig       |  5 +++++
+ arch/score/lib/Makefile  |  3 ---
+ arch/score/lib/ashldi3.c | 46 ----------------------------------------------
+ arch/score/lib/ashrdi3.c | 48 ------------------------------------------------
+ arch/score/lib/cmpdi2.c  | 44 --------------------------------------------
+ arch/score/lib/libgcc.h  | 37 -------------------------------------
+ arch/score/lib/lshrdi3.c | 47 -----------------------------------------------
+ arch/score/lib/ucmpdi2.c | 38 --------------------------------------
+ 8 files changed, 5 insertions(+), 263 deletions(-)
+ delete mode 100644 arch/score/lib/ashldi3.c
+ delete mode 100644 arch/score/lib/ashrdi3.c
+ delete mode 100644 arch/score/lib/cmpdi2.c
+ delete mode 100644 arch/score/lib/libgcc.h
+ delete mode 100644 arch/score/lib/lshrdi3.c
+ delete mode 100644 arch/score/lib/ucmpdi2.c
+
+diff --git a/arch/score/Kconfig b/arch/score/Kconfig
+index 507d63181389..5959a981061c 100644
+--- a/arch/score/Kconfig
++++ b/arch/score/Kconfig
+@@ -15,6 +15,11 @@ config SCORE
+ 	select MODULES_USE_ELF_REL
+ 	select CLONE_BACKWARDS
+ 	select CPU_NO_EFFICIENT_FFS
++	select LIB_ASHLDI3
++	select LIB_ASHRDI3
++	select LIB_CMPDI2
++	select LIB_LSHRDI3
++	select LIB_UCMPDI2
+ 
+ choice
+ 	prompt "System type"
+diff --git a/arch/score/lib/Makefile b/arch/score/lib/Makefile
+index 553e30e81faf..ea3f3aba8c71 100644
+--- a/arch/score/lib/Makefile
++++ b/arch/score/lib/Makefile
+@@ -3,6 +3,3 @@
+ #
+ 
+ lib-y += string.o checksum.o checksum_copy.o
+-
+-# libgcc-style stuff needed in the kernel
+-obj-y += ashldi3.o ashrdi3.o cmpdi2.o lshrdi3.o ucmpdi2.o
+diff --git a/arch/score/lib/ashldi3.c b/arch/score/lib/ashldi3.c
+deleted file mode 100644
+index 15691a910431..000000000000
+--- a/arch/score/lib/ashldi3.c
++++ /dev/null
+@@ -1,46 +0,0 @@
+-/*
+- * arch/score/lib/ashldi3.c
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation; either version 2 of the License, or
+- * (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, see the file COPYING, or write
+- * to the Free Software Foundation, Inc.,
+- * 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+- */
+-
+-#include <linux/module.h>
+-#include "libgcc.h"
+-
+-long long __ashldi3(long long u, word_type b)
+-{
+-	DWunion uu, w;
+-	word_type bm;
+-
+-	if (b = 0)
+-		return u;
+-
+-	uu.ll = u;
+-	bm = 32 - b;
+-
+-	if (bm <= 0) {
+-		w.s.low = 0;
+-		w.s.high = (unsigned int) uu.s.low << -bm;
+-	} else {
+-		const unsigned int carries = (unsigned int) uu.s.low >> bm;
+-
+-		w.s.low = (unsigned int) uu.s.low << b;
+-		w.s.high = ((unsigned int) uu.s.high << b) | carries;
+-	}
+-
+-	return w.ll;
+-}
+-EXPORT_SYMBOL(__ashldi3);
+diff --git a/arch/score/lib/ashrdi3.c b/arch/score/lib/ashrdi3.c
+deleted file mode 100644
+index d9814a5d8d30..000000000000
+--- a/arch/score/lib/ashrdi3.c
++++ /dev/null
+@@ -1,48 +0,0 @@
+-/*
+- * arch/score/lib/ashrdi3.c
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation; either version 2 of the License, or
+- * (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, see the file COPYING, or write
+- * to the Free Software Foundation, Inc.,
+- * 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+- */
+-
+-#include <linux/module.h>
+-#include "libgcc.h"
+-
+-long long __ashrdi3(long long u, word_type b)
+-{
+-	DWunion uu, w;
+-	word_type bm;
+-
+-	if (b = 0)
+-		return u;
+-
+-	uu.ll = u;
+-	bm = 32 - b;
+-
+-	if (bm <= 0) {
+-		/* w.s.high = 1..1 or 0..0 */
+-		w.s.high -		    uu.s.high >> 31;
+-		w.s.low = uu.s.high >> -bm;
+-	} else {
+-		const unsigned int carries = (unsigned int) uu.s.high << bm;
+-
+-		w.s.high = uu.s.high >> b;
+-		w.s.low = ((unsigned int) uu.s.low >> b) | carries;
+-	}
+-
+-	return w.ll;
+-}
+-EXPORT_SYMBOL(__ashrdi3);
+diff --git a/arch/score/lib/cmpdi2.c b/arch/score/lib/cmpdi2.c
+deleted file mode 100644
+index 1ed5290c66ed..000000000000
+--- a/arch/score/lib/cmpdi2.c
++++ /dev/null
+@@ -1,44 +0,0 @@
+-/*
+- * arch/score/lib/cmpdi2.c
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation; either version 2 of the License, or
+- * (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, see the file COPYING, or write
+- * to the Free Software Foundation, Inc.,
+- * 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+- */
+-
+-#include <linux/module.h>
+-#include "libgcc.h"
+-
+-word_type __cmpdi2(long long a, long long b)
+-{
+-	const DWunion au = {
+-		.ll = a
+-	};
+-	const DWunion bu = {
+-		.ll = b
+-	};
+-
+-	if (au.s.high < bu.s.high)
+-		return 0;
+-	else if (au.s.high > bu.s.high)
+-		return 2;
+-
+-	if ((unsigned int) au.s.low < (unsigned int) bu.s.low)
+-		return 0;
+-	else if ((unsigned int) au.s.low > (unsigned int) bu.s.low)
+-		return 2;
+-
+-	return 1;
+-}
+-EXPORT_SYMBOL(__cmpdi2);
+diff --git a/arch/score/lib/libgcc.h b/arch/score/lib/libgcc.h
+deleted file mode 100644
+index 0f12543d9f31..000000000000
+--- a/arch/score/lib/libgcc.h
++++ /dev/null
+@@ -1,37 +0,0 @@
+-/*
+- * arch/score/lib/libgcc.h
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation; either version 2 of the License, or
+- * (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, see the file COPYING, or write
+- * to the Free Software Foundation, Inc.,
+- * 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+- */
+-
+-
+-#ifndef __ASM_LIBGCC_H
+-#define __ASM_LIBGCC_H
+-
+-#include <asm/byteorder.h>
+-
+-typedef int word_type __attribute__((mode(__word__)));
+-
+-struct DWstruct {
+-	int low, high;
+-};
+-
+-typedef union {
+-	struct DWstruct s;
+-	long long ll;
+-} DWunion;
+-
+-#endif /* __ASM_LIBGCC_H */
+diff --git a/arch/score/lib/lshrdi3.c b/arch/score/lib/lshrdi3.c
+deleted file mode 100644
+index ce21175fd791..000000000000
+--- a/arch/score/lib/lshrdi3.c
++++ /dev/null
+@@ -1,47 +0,0 @@
+-/*
+- * arch/score/lib/lshrdi3.c
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation; either version 2 of the License, or
+- * (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, see the file COPYING, or write
+- * to the Free Software Foundation, Inc.,
+- * 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+- */
+-
+-
+-#include <linux/module.h>
+-#include "libgcc.h"
+-
+-long long __lshrdi3(long long u, word_type b)
+-{
+-	DWunion uu, w;
+-	word_type bm;
+-
+-	if (b = 0)
+-		return u;
+-
+-	uu.ll = u;
+-	bm = 32 - b;
+-
+-	if (bm <= 0) {
+-		w.s.high = 0;
+-		w.s.low = (unsigned int) uu.s.high >> -bm;
+-	} else {
+-		const unsigned int carries = (unsigned int) uu.s.high << bm;
+-
+-		w.s.high = (unsigned int) uu.s.high >> b;
+-		w.s.low = ((unsigned int) uu.s.low >> b) | carries;
+-	}
+-
+-	return w.ll;
+-}
+-EXPORT_SYMBOL(__lshrdi3);
+diff --git a/arch/score/lib/ucmpdi2.c b/arch/score/lib/ucmpdi2.c
+deleted file mode 100644
+index b15241e0b079..000000000000
+--- a/arch/score/lib/ucmpdi2.c
++++ /dev/null
+@@ -1,38 +0,0 @@
+-/*
+- * arch/score/lib/ucmpdi2.c
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation; either version 2 of the License, or
+- * (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, see the file COPYING, or write
+- * to the Free Software Foundation, Inc.,
+- * 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+- */
+-
+-#include <linux/module.h>
+-#include "libgcc.h"
+-
+-word_type __ucmpdi2(unsigned long long a, unsigned long long b)
+-{
+-	const DWunion au = {.ll = a};
+-	const DWunion bu = {.ll = b};
+-
+-	if ((unsigned int) au.s.high < (unsigned int) bu.s.high)
+-		return 0;
+-	else if ((unsigned int) au.s.high > (unsigned int) bu.s.high)
+-		return 2;
+-	if ((unsigned int) au.s.low < (unsigned int) bu.s.low)
+-		return 0;
+-	else if ((unsigned int) au.s.low > (unsigned int) bu.s.low)
+-		return 2;
+-	return 1;
+-}
+-EXPORT_SYMBOL(__ucmpdi2);
+-- 
+2.13.0
+
