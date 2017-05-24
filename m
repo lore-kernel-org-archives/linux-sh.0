@@ -1,11 +1,32 @@
-From: <knappenwien@hotmail.com>
-Date: Fri, 07 Apr 2017 19:50:05 +0000
-Subject: 55590 linux-sh
-Message-Id: <149159460527.19121.17568533907208277508@ip-176-31-188.eu>
+From: riel@redhat.com
+Date: Wed, 24 May 2017 15:57:46 +0000
+Subject: [PATCH v2 0/5] stackprotector: ascii armor the stack canary
+Message-Id: <20170524155751.424-1-riel@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: danielmicay@gmail.com, tytso@mit.edu, keescook@chromium.org, hpa@zytor.com, luto@amacapital.net, mingo@kernel.org, x86@kernel.org, linux-arm-kernel@lists.infradead.org, catalin.marinas@arm.com, linux-sh@vger.kernel.org, ysato@users.sourceforge.jp, kernel-hardening@lists.openwall.com
 
-File 'attachments/hqcrypt.zip' not found
+Zero out the first byte of the stack canary value on 64 bit systems,
+in order to mitigate unterminated C string overflows.
+
+The null byte both prevents C string functions from reading the
+canary, and from writing it if the canary value were guessed or
+obtained through some other means.
+    
+Reducing the entropy by 8 bits is acceptable on 64-bit systems,
+which will still have 56 bits of entropy left, but not on 32
+bit systems, so the "ascii armor" canary is only implemented on
+64-bit systems.
+
+Inspired by the "ascii armor" code in execshield and Daniel Micay's
+linux-hardened tree.
+
+Also see https://github.com/thestinger/linux-hardened/
+
+v2:
+ - improve changelogs
+ - address Ingo's coding style comments
+
