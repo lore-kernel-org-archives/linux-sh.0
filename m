@@ -1,52 +1,66 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 09 May 2017 14:11:57 +0000
-Subject: [PATCH 4/4] [RFC] sh: sh7269: Remove nonexistent GPIO_PH[0-7] to fix pinctrl registration
-Message-Id: <1494339117-31221-5-git-send-email-geert+renesas@glider.be>
+From: <cuongtruong380@gmail.com>
+Date: Wed, 24 May 2017 03:09:45 +0000
+Subject: 
+Message-Id: <149559538597.31455.13020605739716144236@ruscomp.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1494339117-31221-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1494339117-31221-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Magnus Damm <magnus.damm@gmail.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Phil Edworthy <phil.edworthy@renesas.com>
-Cc: linux-sh@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-sh@vger.kernel.org
 
-Pinmux_pins[] is initialized through PINMUX_GPIO(), using designated
-array initializers, where the GPIO_* enums serve as indices.
-If enum values are defined, but never used, pinmux_pins[] contains
-(zero-filled) holes.  Such entries are treated as pin zero, which was
-registered before, thus leading to pinctrl registration failures:
-
-    sh-pfc pfc-sh7269: pin 0 already registered
-    sh-pfc pfc-sh7269: error during pin registration
-    sh-pfc pfc-sh7269: could not register: -22
-    sh-pfc: probe of pfc-sh7269 failed with error -22
-
-Remove GPIO_PH[0-7] from the enum to fix this.
-
-Fixes: ef0fa5331a73e479 ("sh: Add pinmux for sh7269")
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
-Untested due to lack of hardware.
----
- arch/sh/include/cpu-sh2a/cpu/sh7269.h | 4 +---
- 1 file changed, 1 insertion(+), 3 deletions(-)
-
-diff --git a/arch/sh/include/cpu-sh2a/cpu/sh7269.h b/arch/sh/include/cpu-sh2a/cpu/sh7269.h
-index 2a0ca8780f0d8c34..13c495a9fc0007b4 100644
---- a/arch/sh/include/cpu-sh2a/cpu/sh7269.h
-+++ b/arch/sh/include/cpu-sh2a/cpu/sh7269.h
-@@ -45,9 +45,7 @@ enum {
- 	GPIO_PG7, GPIO_PG6, GPIO_PG5, GPIO_PG4,
- 	GPIO_PG3, GPIO_PG2, GPIO_PG1, GPIO_PG0,
- 
--	/* Port H */
--	GPIO_PH7, GPIO_PH6, GPIO_PH5, GPIO_PH4,
--	GPIO_PH3, GPIO_PH2, GPIO_PH1, GPIO_PH0,
-+	/* Port H - Port H does not have a Data Register */
- 
- 	/* Port I - not on device */
- 
--- 
-2.7.4
-
+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
