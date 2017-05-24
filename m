@@ -1,7 +1,7 @@
-From: riel@redhat.com
-Date: Wed, 24 May 2017 15:57:51 +0000
+From: Rik van Riel <riel@redhat.com>
+Date: Wed, 24 May 2017 16:34:46 +0000
 Subject: [PATCH 5/5] sh64: ascii armor the sh64 boot init stack canary
-Message-Id: <20170524155751.424-6-riel@redhat.com>
+Message-Id: <20170524123446.78510066@annuminas.surriel.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20170524155751.424-1-riel@redhat.com>
 In-Reply-To: <20170524155751.424-1-riel@redhat.com>
@@ -10,8 +10,6 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-kernel@vger.kernel.org
 Cc: danielmicay@gmail.com, tytso@mit.edu, keescook@chromium.org, hpa@zytor.com, luto@amacapital.net, mingo@kernel.org, x86@kernel.org, linux-arm-kernel@lists.infradead.org, catalin.marinas@arm.com, linux-sh@vger.kernel.org, ysato@users.sourceforge.jp, kernel-hardening@lists.openwall.com
-
-From: Rik van Riel <riel@redhat.com>
 
 Use the ascii-armor canary to prevent unterminated C string overflows
 from being able to successfully overwrite the canary, even if they
@@ -36,6 +34,4 @@ index d9df3a76847c..141515a43b78 100644
  
  	current->stack_canary = canary;
  	__stack_chk_guard = current->stack_canary;
--- 
-2.9.3
 
