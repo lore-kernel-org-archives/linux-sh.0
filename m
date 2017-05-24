@@ -1,42 +1,54 @@
-From: riel@redhat.com
-Date: Wed, 24 May 2017 15:57:48 +0000
-Subject: [PATCH 2/5] fork,random: use get_random_canary to set tsk->stack_canary
-Message-Id: <20170524155751.424-3-riel@redhat.com>
+From: Kees Cook <keescook@google.com>
+Date: Wed, 24 May 2017 16:16:01 +0000
+Subject: Re: [PATCH 2/5] fork,random: use get_random_canary to set tsk->stack_canary
+Message-Id: <CAGXu5jKQGiAcLe-6yWuqgZMQSFkO=zUR40G0=Th=qWxV+4Y+wA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20170524155751.424-1-riel@redhat.com>
-In-Reply-To: <20170524155751.424-1-riel@redhat.com>
+References: <20170524155751.424-1-riel@redhat.com> <20170524155751.424-3-riel@redhat.com>
+In-Reply-To: <20170524155751.424-3-riel@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: danielmicay@gmail.com, tytso@mit.edu, keescook@chromium.org, hpa@zytor.com, luto@amacapital.net, mingo@kernel.org, x86@kernel.org, linux-arm-kernel@lists.infradead.org, catalin.marinas@arm.com, linux-sh@vger.kernel.org, ysato@users.sourceforge.jp, kernel-hardening@lists.openwall.com
+To: Rik van Riel <riel@redhat.com>, Andrew Morton <akpm@linux-foundation.org>
+Cc: LKML <linux-kernel@vger.kernel.org>, Daniel Micay <danielmicay@gmail.com>, Ted Ts'o <tytso@mit.edu>, "H. Peter Anvin" <hpa@zytor.com>, Andy Lutomirski <luto@amacapital.net>, Ingo Molnar <mingo@kernel.org>, "x86@kernel.org" <x86@kernel.org>, "linux-arm-kernel@lists.infradead.org" <linux-arm-kernel@lists.infradead.org>, Catalin Marinas <catalin.marinas@arm.com>, linux-sh <linux-sh@vger.kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, "kernel-hardening@lists.openwall.com" <kernel-hardening@lists.openwall.com>
 
-From: Rik van Riel <riel@redhat.com>
+On Wed, May 24, 2017 at 8:57 AM,  <riel@redhat.com> wrote:
+> From: Rik van Riel <riel@redhat.com>
+>
+> Use the ascii-armor canary to prevent unterminated C string overflows
+> from being able to successfully overwrite the canary, even if they
+> somehow obtain the canary value.
+>
+> Inspired by execshield ascii-armor and Daniel Micay's linux-hardened tree.
+>
+> Signed-off-by: Rik van Riel <riel@redhat.com>
 
-Use the ascii-armor canary to prevent unterminated C string overflows
-from being able to successfully overwrite the canary, even if they
-somehow obtain the canary value.
+Acked-by: Kees Cook <keescook@chromium.org>
 
-Inspired by execshield ascii-armor and Daniel Micay's linux-hardened tree.
+-Kees
 
-Signed-off-by: Rik van Riel <riel@redhat.com>
----
- kernel/fork.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+> ---
+>  kernel/fork.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+>
+> diff --git a/kernel/fork.c b/kernel/fork.c
+> index aa1076c5e4a9..b3591e9250a8 100644
+> --- a/kernel/fork.c
+> +++ b/kernel/fork.c
+> @@ -560,7 +560,7 @@ static struct task_struct *dup_task_struct(struct task_struct *orig, int node)
+>         set_task_stack_end_magic(tsk);
+>
+>  #ifdef CONFIG_CC_STACKPROTECTOR
+> -       tsk->stack_canary = get_random_long();
+> +       tsk->stack_canary = get_random_canary();
+>  #endif
+>
+>         /*
+> --
+> 2.9.3
+>
 
-diff --git a/kernel/fork.c b/kernel/fork.c
-index aa1076c5e4a9..b3591e9250a8 100644
---- a/kernel/fork.c
-+++ b/kernel/fork.c
-@@ -560,7 +560,7 @@ static struct task_struct *dup_task_struct(struct task_struct *orig, int node)
- 	set_task_stack_end_magic(tsk);
- 
- #ifdef CONFIG_CC_STACKPROTECTOR
--	tsk->stack_canary = get_random_long();
-+	tsk->stack_canary = get_random_canary();
- #endif
- 
- 	/*
+
+
 -- 
-2.9.3
-
+Kees Cook
+Pixel Security
