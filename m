@@ -1,14 +1,15 @@
 From: riel@redhat.com
-Date: Fri, 19 May 2017 21:26:35 +0000
+Date: Wed, 24 May 2017 15:57:50 +0000
 Subject: [PATCH 4/5] arm64: ascii armor the arm64 boot init stack canary
-Message-Id: <20170519212636.30440-5-riel@redhat.com>
+Message-Id: <20170524155751.424-5-riel@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20170519212636.30440-1-riel@redhat.com>
-In-Reply-To: <20170519212636.30440-1-riel@redhat.com>
+References: <20170524155751.424-1-riel@redhat.com>
+In-Reply-To: <20170524155751.424-1-riel@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@vger.kernel.org
+Cc: danielmicay@gmail.com, tytso@mit.edu, keescook@chromium.org, hpa@zytor.com, luto@amacapital.net, mingo@kernel.org, x86@kernel.org, linux-arm-kernel@lists.infradead.org, catalin.marinas@arm.com, linux-sh@vger.kernel.org, ysato@users.sourceforge.jp, kernel-hardening@lists.openwall.com
 
 From: Rik van Riel <riel@redhat.com>
 
@@ -16,7 +17,7 @@ Use the ascii-armor canary to prevent unterminated C string overflows
 from being able to successfully overwrite the canary, even if they
 somehow obtain the canary value.
 
-Inspired by execshield ascii-armor and PaX/grsecurity.
+Inspired by execshield ascii-armor and Daniel Micay's linux-hardened tree.
 
 Signed-off-by: Rik van Riel <riel@redhat.com>
 ---
