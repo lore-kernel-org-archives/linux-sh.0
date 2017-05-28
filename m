@@ -1,44 +1,26 @@
-From: Daniel Lezcano <daniel.lezcano@linaro.org>
-Date: Sun, 28 May 2017 09:18:40 +0000
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Sun, 28 May 2017 13:52:27 +0000
 Subject: Re: [PATCH 6/7] clocksource: Rename CLKSRC_OF to TIMER_OF
-Message-Id: <3bea2d43-e582-5b62-03df-3557028cc4b8@linaro.org>
+Message-Id: <CACRpkda5za9vPJAsvD0FfgWLNep0hLpbhSZyuMgrT6QEGYQ-yA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1495879129-28109-1-git-send-email-daniel.lezcano@linaro.org>
- <1495879129-28109-6-git-send-email-daniel.lezcano@linaro.org>
- <20170528030058.GC4528@dragon>
-In-Reply-To: <20170528030058.GC4528@dragon>
+References: <1495879129-28109-1-git-send-email-daniel.lezcano@linaro.org> <1495879129-28109-6-git-send-email-daniel.lezcano@linaro.org>
+In-Reply-To: <1495879129-28109-6-git-send-email-daniel.lezcano@linaro.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
-To: Shawn Guo <shawnguo@kernel.org>
-Cc: tglx@linutronix.de, linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org, Russell King <linux@armlinux.org.uk>, Florian Fainelli <f.fainelli@gmail.com>, Ray Jui <rjui@broadcom.com>, Scott Branden <sbranden@broadcom.com>, "maintainer:BROADCOM BCM281XX/BCM11XXX/BCM216XX ARM ARCHITE..." <bcm-kernel-feedback-list@broadcom.com>, Alexander Shiyan <shc_work@mail.ru>, Sascha Hauer <kernel@pengutronix.de>, Fabio Estevam <fabio.estevam@nxp.com>, Kukjin Kim <kgene@kernel.org>, Krzysztof Kozlowski <krzk@kernel.org>, Javier Martinez Canillas <javier@osg.samsung.com>, Catalin Marinas <catalin.marinas@arm.com>, Will Deacon <will.deacon@arm.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Michal Simek <monstr@monstr.eu>, John Crispin <john@phrozen.o>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Daniel Lezcano <daniel.lezcano@linaro.org>
+Cc: Thomas Gleixner <tglx@linutronix.de>, "linux-arm-kernel@lists.infradead.org" <linux-arm-kernel@lists.infradead.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Russell King <linux@armlinux.org.uk>, Florian Fainelli <f.fainelli@gmail.com>, Ray Jui <rjui@broadcom.com>, Scott Branden <sbranden@broadcom.com>, "maintainer:BROADCOM BCM281XX/BCM11XXX/BCM216XX ARM ARCHITE..." <bcm-kernel-feedback-list@broadcom.com>, Alexander Shiyan <shc_work@mail.ru>, Shawn Guo <shawnguo@kernel.org>, Sascha Hauer <kernel@pengutronix.de>, Fabio Estevam <fabio.estevam@nxp.com>, Kukjin Kim <kgene@kernel.org>, Krzysztof Kozlowski <krzk@kernel.org>, Javier Martinez Canillas <javier@osg.samsung.com>, Catalin Marinas <catalin.marinas@arm.com>, Will
 
-On 28/05/2017 05:00, Shawn Guo wrote:
-> On Sat, May 27, 2017 at 11:58:47AM +0200, Daniel Lezcano wrote:
->> diff --git a/arch/arm/mach-imx/epit.c b/arch/arm/mach-imx/epit.c
->> index fb9a73a..4a4d2e2 100644
->> --- a/arch/arm/mach-imx/epit.c
->> +++ b/arch/arm/mach-imx/epit.c
->> @@ -39,7 +39,7 @@
->>  #define EPITCR_OM_TOGGLE		(1 << 22)
->>  #define EPITCR_OM_CLEAR			(2 << 22)
->>  #define EPITCR_OM_SET			(3 << 22)
->> -#define EPITCR_CLKSRC_OFF		(0 << 24)
->> +#define EPITCR_TIMER_OFF		(0 << 24)
->>  #define EPITCR_CLKSRC_PERIPHERAL	(1 << 24)
->>  #define EPITCR_CLKSRC_REF_HIGH		(1 << 24)
->>  #define EPITCR_CLKSRC_REF_LOW		(3 << 24)
->=20
-> I do not think this change should be there.
+On Sat, May 27, 2017 at 11:58 AM, Daniel Lezcano
+<daniel.lezcano@linaro.org> wrote:
 
-Right. Thanks!
+> The config option name is now renamed to 'TIMER_OF' for consistency with
+> the CLOCKSOURCE_OF_DECLARE => TIMER_OF_DECLARE change.
+>
+> Signed-off-by: Daniel Lezcano <daniel.lezcano@linaro.org>
 
+After fixing the offset thing found by Shawn:
+Reviewed-by: Linus Walleij <linus.walleij@linaro.org>
 
---=20
- <http://www.linaro.org/> Linaro.org =E2=94=82 Open source software for ARM=
- SoCs
-
-Follow Linaro:  <http://www.facebook.com/pages/Linaro> Facebook |
-<http://twitter.com/#!/linaroorg> Twitter |
-<http://www.linaro.org/linaro-blog/> Blog
-
+Yours,
+Linus Walleij
