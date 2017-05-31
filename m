@@ -1,7 +1,7 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Sun, 28 May 2017 13:52:27 +0000
+From: Krzysztof Kozlowski <krzk@kernel.org>
+Date: Wed, 31 May 2017 08:24:57 +0000
 Subject: Re: [PATCH 6/7] clocksource: Rename CLKSRC_OF to TIMER_OF
-Message-Id: <CACRpkda5za9vPJAsvD0FfgWLNep0hLpbhSZyuMgrT6QEGYQ-yA@mail.gmail.com>
+Message-Id: <CAJKOXPc54UKCBr_8jqUE+5_YHbwEWOv=YRz0zR-ymaXaiGUHyw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1495879129-28109-1-git-send-email-daniel.lezcano@linaro.org> <1495879129-28109-6-git-send-email-daniel.lezcano@linaro.org>
 In-Reply-To: <1495879129-28109-6-git-send-email-daniel.lezcano@linaro.org>
@@ -9,18 +9,35 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Daniel Lezcano <daniel.lezcano@linaro.org>
-Cc: Thomas Gleixner <tglx@linutronix.de>, "linux-arm-kernel@lists.infradead.org" <linux-arm-kernel@lists.infradead.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Russell King <linux@armlinux.org.uk>, Florian Fainelli <f.fainelli@gmail.com>, Ray Jui <rjui@broadcom.com>, Scott Branden <sbranden@broadcom.com>, "maintainer:BROADCOM BCM281XX/BCM11XXX/BCM216XX ARM ARCHITE..." <bcm-kernel-feedback-list@broadcom.com>, Alexander Shiyan <shc_work@mail.ru>, Shawn Guo <shawnguo@kernel.org>, Sascha Hauer <kernel@pengutronix.de>, Fabio Estevam <fabio.estevam@nxp.com>, Kukjin Kim <kgene@kernel.org>, Krzysztof Kozlowski <krzk@kernel.org>, Javier Martinez Canillas <javier@osg.samsung.com>, Catalin Marinas <catalin.marinas@arm.com>, Will
+Cc: tglx@linutronix.de, linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org, Russell King <linux@armlinux.org.uk>, Florian Fainelli <f.fainelli@gmail.com>, Ray Jui <rjui@broadcom.com>, Scott Branden <sbranden@broadcom.com>, "maintainer:BROADCOM BCM281XX/BCM11XXX/BCM216XX ARM ARCHITE..." <bcm-kernel-feedback-list@broadcom.com>, Alexander Shiyan <shc_work@mail.ru>, Shawn Guo <shawnguo@kernel.org>, Sascha Hauer <kernel@pengutronix.de>, Fabio Estevam <fabio.estevam@nxp.com>, Kukjin Kim <kgene@kernel.org>, Javier Martinez Canillas <javier@osg.samsung.com>, Catalin Marinas <catalin.marinas@arm.com>, Will Deacon <will.deacon@arm.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Michal Simek <monstr@monstr.eu>, John Crispin <john@phrozen.org>
 
 On Sat, May 27, 2017 at 11:58 AM, Daniel Lezcano
 <daniel.lezcano@linaro.org> wrote:
-
 > The config option name is now renamed to 'TIMER_OF' for consistency with
 > the CLOCKSOURCE_OF_DECLARE => TIMER_OF_DECLARE change.
 >
 > Signed-off-by: Daniel Lezcano <daniel.lezcano@linaro.org>
+> ---
+>  arch/arm/Kconfig                        | 10 +++---
+>  arch/arm/mach-bcm/Kconfig               |  2 +-
+>  arch/arm/mach-clps711x/Kconfig          |  2 +-
+>  arch/arm/mach-imx/epit.c                |  2 +-
+>  arch/arm/mach-s3c24xx/Kconfig           |  2 +-
+>  arch/arm/mach-s3c64xx/Kconfig           |  2 +-
+>  arch/arm64/Kconfig.platforms            |  4 +--
+>  arch/h8300/Kconfig                      |  2 +-
+>  arch/microblaze/Kconfig                 |  2 +-
+>  arch/mips/ralink/Kconfig                |  2 +-
+>  arch/nios2/Kconfig                      |  2 +-
+>  arch/sh/boards/Kconfig                  |  2 +-
+>  drivers/clocksource/Kconfig             | 60 ++++++++++++++++-----------------
+>  drivers/clocksource/Makefile            |  2 +-
+>  drivers/clocksource/clksrc-probe.c      | 55 ------------------------------
+>  drivers/clocksource/clps711x-timer.c    |  2 +-
+>  drivers/clocksource/samsung_pwm_timer.c |  2 +-
 
-After fixing the offset thing found by Shawn:
-Reviewed-by: Linus Walleij <linus.walleij@linaro.org>
+For s3c24xx, s3c64xx and samsung_pwm_timer:
+Acked-by: Krzysztof Kozlowski <krzk@kernel.org>
 
-Yours,
-Linus Walleij
+Best regards,
+Krzysztof
