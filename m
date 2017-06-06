@@ -1,82 +1,106 @@
-From: Steven Rostedt <rostedt@goodmis.org>
-Date: Mon, 26 Jun 2017 22:17:49 +0000
-Subject: [PATCH] sh/ftrace: Remove only user of ftrace_arch_read_dyn_info()
-Message-Id: <20170626181749.2ce954d1@gandalf.local.home>
+From: Palmer Dabbelt <palmer@dabbelt.com>
+Date: Tue, 06 Jun 2017 19:10:18 +0000
+Subject: [PATCH 2/7] m32r: Use lib/ucmpdi2.c
+Message-Id: <20170606191023.24581-3-palmer@dabbelt.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20170523220546.16758-1-palmer@dabbelt.com>
+ <20170606191023.24581-1-palmer@dabbelt.com>
+In-Reply-To: <20170606191023.24581-1-palmer@dabbelt.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
-Cc: linux-sh@vger.kernel.org, LKML <linux-kernel@vger.kernel.org>
+To: monstr@monstr.eu, ralf@linux-mips.org, liqin.linux@gmail.com, lennox.wu@gmail.com, ysato@users.sourceforge.jp, dalias@libc.org, davem@davemloft.net, linux-mips@linux-mips.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, geert@linux-m68k.org, linux-kernel@vger.kernel.org, linux-arch@vger.kernel.org
+Cc: Palmer Dabbelt <palmer@dabbelt.com>
 
+These files are functionally identical to the shared copies that I
+recently added.
 
-I noticed that there's only one user of ftrace_arch_read_dyn_info().
-That was used a while ago during the NMI updating in x86, and superh
-copied it to implement its version of handling NMIs during
-stop_machine().
-
-But that is a debug feature, and this code hasn't been touched since
-2009. Also, x86 no longer does the ftrace updates with stop_machine()
-and instead uses breakpoints. If superh needs to modify its code, it
-should implement the breakpoint conversion, and remove stop_machine().
-Which also gets rid of the NMI issue.
-
-Anyway, I want to nuke ftrace_arch_read_dyn_info() and this gets rid of
-the one user, which is for an arch that shouldn't need it anymore.
-
-Signed-off-by: Steven Rostedt <rostedt@goodmis.org>
+Signed-off-by: Palmer Dabbelt <palmer@dabbelt.com>
+Reviewed-by: Geert Uytterhoeven <geert@linux-m68k.org>
 ---
+ arch/m32r/Kconfig       |  1 +
+ arch/m32r/lib/Makefile  |  3 +--
+ arch/m32r/lib/libgcc.h  | 23 -----------------------
+ arch/m32r/lib/ucmpdi2.c | 17 -----------------
+ 4 files changed, 2 insertions(+), 42 deletions(-)
+ delete mode 100644 arch/m32r/lib/libgcc.h
+ delete mode 100644 arch/m32r/lib/ucmpdi2.c
 
-[ With acks from the SUPERH maintainers, I can pull this through
-  my own tree. ]
-
-diff --git a/arch/sh/kernel/ftrace.c b/arch/sh/kernel/ftrace.c
-index 5378397..d18724d 100644
---- a/arch/sh/kernel/ftrace.c
-+++ b/arch/sh/kernel/ftrace.c
-@@ -96,19 +96,6 @@ static int mod_code_status;		/* holds return value of text write */
- static void *mod_code_ip;		/* holds the IP to write to */
- static void *mod_code_newcode;		/* holds the text to write to the IP */
+diff --git a/arch/m32r/Kconfig b/arch/m32r/Kconfig
+index 95474460b367..756d68d4f4e1 100644
+--- a/arch/m32r/Kconfig
++++ b/arch/m32r/Kconfig
+@@ -19,6 +19,7 @@ config M32R
+ 	select HAVE_DEBUG_STACKOVERFLOW
+ 	select CPU_NO_EFFICIENT_FFS
+ 	select DMA_NOOP_OPS
++	select GENERIC_UCMPDI3
  
--static unsigned nmi_wait_count;
--static atomic_t nmi_update_count = ATOMIC_INIT(0);
+ config SBUS
+ 	bool
+diff --git a/arch/m32r/lib/Makefile b/arch/m32r/lib/Makefile
+index 5889eb9610b5..0a753a833bbf 100644
+--- a/arch/m32r/lib/Makefile
++++ b/arch/m32r/lib/Makefile
+@@ -3,5 +3,4 @@
+ #
+ 
+ lib-y  := checksum.o ashxdi3.o memset.o memcpy.o \
+-	  delay.o strlen.o usercopy.o csum_partial_copy.o \
+-	  ucmpdi2.o
++	  delay.o strlen.o usercopy.o csum_partial_copy.o
+diff --git a/arch/m32r/lib/libgcc.h b/arch/m32r/lib/libgcc.h
+deleted file mode 100644
+index 267aa435bc35..000000000000
+--- a/arch/m32r/lib/libgcc.h
++++ /dev/null
+@@ -1,23 +0,0 @@
+-#ifndef __ASM_LIBGCC_H
+-#define __ASM_LIBGCC_H
 -
--int ftrace_arch_read_dyn_info(char *buf, int size)
+-#include <asm/byteorder.h>
+-
+-#ifdef __BIG_ENDIAN
+-struct DWstruct {
+-	int high, low;
+-};
+-#elif defined(__LITTLE_ENDIAN)
+-struct DWstruct {
+-	int low, high;
+-};
+-#else
+-#error I feel sick.
+-#endif
+-
+-typedef union {
+-	struct DWstruct s;
+-	long long ll;
+-} DWunion;
+-
+-#endif /* __ASM_LIBGCC_H */
+diff --git a/arch/m32r/lib/ucmpdi2.c b/arch/m32r/lib/ucmpdi2.c
+deleted file mode 100644
+index 9d3c682c89b5..000000000000
+--- a/arch/m32r/lib/ucmpdi2.c
++++ /dev/null
+@@ -1,17 +0,0 @@
+-#include "libgcc.h"
+-
+-int __ucmpdi2(unsigned long long a, unsigned long long b)
 -{
--	int r;
+-	const DWunion au = {.ll = a};
+-	const DWunion bu = {.ll = b};
 -
--	r = snprintf(buf, size, "%u %u",
--		     nmi_wait_count,
--		     atomic_read(&nmi_update_count));
--	return r;
+-	if ((unsigned int)au.s.high < (unsigned int)bu.s.high)
+-		return 0;
+-	else if ((unsigned int)au.s.high > (unsigned int)bu.s.high)
+-		return 2;
+-	if ((unsigned int)au.s.low < (unsigned int)bu.s.low)
+-		return 0;
+-	else if ((unsigned int)au.s.low > (unsigned int)bu.s.low)
+-		return 2;
+-	return 1;
 -}
--
- static void clear_mod_flag(void)
- {
- 	int old = atomic_read(&nmi_running);
-@@ -144,7 +131,6 @@ void arch_ftrace_nmi_enter(void)
- 	if (atomic_inc_return(&nmi_running) & MOD_CODE_WRITE_FLAG) {
- 		smp_rmb();
- 		ftrace_mod_code();
--		atomic_inc(&nmi_update_count);
- 	}
- 	/* Must have previous changes seen before executions */
- 	smp_mb();
-@@ -165,8 +151,6 @@ static void wait_for_nmi_and_set_mod_flag(void)
- 	do {
- 		cpu_relax();
- 	} while (atomic_cmpxchg(&nmi_running, 0, MOD_CODE_WRITE_FLAG));
--
--	nmi_wait_count++;
- }
- 
- static void wait_for_nmi(void)
-@@ -177,8 +161,6 @@ static void wait_for_nmi(void)
- 	do {
- 		cpu_relax();
- 	} while (atomic_read(&nmi_running));
--
--	nmi_wait_count++;
- }
- 
- static int
+-- 
+2.13.0
+
