@@ -1,123 +1,278 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Fri, 16 Jun 2017 18:10:38 +0000
-Subject: [PATCH 23/44] x86/calgary: implement ->mapping_error
-Message-Id: <20170616181059.19206-24-hch@lst.de>
+From: Palmer Dabbelt <palmer@dabbelt.com>
+Date: Tue, 06 Jun 2017 19:10:23 +0000
+Subject: [PATCH 7/7] MIPS: Use generic libgcc intrinsics
+Message-Id: <20170606191023.24581-8-palmer@dabbelt.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20170616181059.19206-1-hch@lst.de>
-In-Reply-To: <20170616181059.19206-1-hch@lst.de>
+References: <20170523220546.16758-1-palmer@dabbelt.com>
+ <20170606191023.24581-1-palmer@dabbelt.com>
+In-Reply-To: <20170606191023.24581-1-palmer@dabbelt.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: x86@kernel.org, linux-arm-kernel@lists.infradead.org, xen-devel@lists.xenproject.org, linux-c6x-dev@linux-c6x.org, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-mips@linux-mips.org, openrisc@lists.librecores.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, dmaengine@vger.kernel.org, linux-tegra@vger.kernel.org, dri-devel@lists.freedesktop.org, linux-samsung-soc@vger.kernel.org, iommu@lists.linux-foundation.org, netdev@vger.kernel.org
-Cc: linux-kernel@vger.kernel.org
+To: monstr@monstr.eu, ralf@linux-mips.org, liqin.linux@gmail.com, lennox.wu@gmail.com, ysato@users.sourceforge.jp, dalias@libc.org, davem@davemloft.net, linux-mips@linux-mips.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, geert@linux-m68k.org, linux-kernel@vger.kernel.org, linux-arch@vger.kernel.org
+Cc: Palmer Dabbelt <palmer@dabbelt.com>, Matt Redfearn <matt.redfearn@imgtec.com>
 
-DMA_ERROR_CODE is going to go away, so don't rely on it.
+These routines in arch/mips/lib/ are functionally identical to those
+recently added to lib/ so remove them and select the generic ones.
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
+Signed-off-by: Matt Redfearn <matt.redfearn@imgtec.com>
+Signed-off-by: Palmer Dabbelt <palmer@dabbelt.com>
 ---
- arch/x86/kernel/pci-calgary_64.c | 24 ++++++++++++++++--------
- 1 file changed, 16 insertions(+), 8 deletions(-)
+ arch/mips/Kconfig                  |  5 +++++
+ arch/mips/boot/compressed/Makefile |  4 +++-
+ arch/mips/lib/Makefile             |  2 +-
+ arch/mips/lib/ashldi3.c            | 29 -----------------------------
+ arch/mips/lib/ashrdi3.c            | 31 -------------------------------
+ arch/mips/lib/cmpdi2.c             | 27 ---------------------------
+ arch/mips/lib/libgcc.h             | 25 -------------------------
+ arch/mips/lib/lshrdi3.c            | 29 -----------------------------
+ arch/mips/lib/ucmpdi2.c            | 21 ---------------------
+ 9 files changed, 9 insertions(+), 164 deletions(-)
+ delete mode 100644 arch/mips/lib/ashldi3.c
+ delete mode 100644 arch/mips/lib/ashrdi3.c
+ delete mode 100644 arch/mips/lib/cmpdi2.c
+ delete mode 100644 arch/mips/lib/libgcc.h
+ delete mode 100644 arch/mips/lib/lshrdi3.c
+ delete mode 100644 arch/mips/lib/ucmpdi2.c
 
-diff --git a/arch/x86/kernel/pci-calgary_64.c b/arch/x86/kernel/pci-calgary_64.c
-index fda7867046d0..e75b490f2b0b 100644
---- a/arch/x86/kernel/pci-calgary_64.c
-+++ b/arch/x86/kernel/pci-calgary_64.c
-@@ -50,6 +50,8 @@
- #include <asm/x86_init.h>
- #include <asm/iommu_table.h>
+diff --git a/arch/mips/Kconfig b/arch/mips/Kconfig
+index 2828ecde133d..25713699ef1d 100644
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -70,6 +70,11 @@ config MIPS
+ 	select HAVE_EXIT_THREAD
+ 	select HAVE_REGS_AND_STACK_ACCESS_API
+ 	select HAVE_COPY_THREAD_TLS
++	select GENERIC_ASHLDI3
++	select GENERIC_ASHRDI3
++	select GENERIC_CMPDI2
++	select GENERIC_LSHRDI3
++	select GENERIC_UCMPDI2
  
-+#define CALGARY_MAPPING_ERROR	0
-+
- #ifdef CONFIG_CALGARY_IOMMU_ENABLED_BY_DEFAULT
- int use_calgary __read_mostly = 1;
- #else
-@@ -252,7 +254,7 @@ static unsigned long iommu_range_alloc(struct device *dev,
- 			if (panic_on_overflow)
- 				panic("Calgary: fix the allocator.\n");
- 			else
--				return DMA_ERROR_CODE;
-+				return CALGARY_MAPPING_ERROR;
- 		}
- 	}
+ menu "Machine selection"
  
-@@ -272,10 +274,10 @@ static dma_addr_t iommu_alloc(struct device *dev, struct iommu_table *tbl,
+diff --git a/arch/mips/boot/compressed/Makefile b/arch/mips/boot/compressed/Makefile
+index c675eece389a..83cc738fb7af 100644
+--- a/arch/mips/boot/compressed/Makefile
++++ b/arch/mips/boot/compressed/Makefile
+@@ -48,7 +48,9 @@ vmlinuzobjs-$(CONFIG_KERNEL_XZ) += $(obj)/ashldi3.o $(obj)/bswapsi.o
  
- 	entry = iommu_range_alloc(dev, tbl, npages);
+ extra-y += ashldi3.c bswapsi.c
+ $(obj)/ashldi3.o $(obj)/bswapsi.o: KBUILD_CFLAGS += -I$(srctree)/arch/mips/lib
+-$(obj)/ashldi3.c $(obj)/bswapsi.c: $(obj)/%.c: $(srctree)/arch/mips/lib/%.c
++$(obj)/ashldi3.c $(obj)/%.c: $(srctree)/lib/%.c
++	$(call cmd,shipped)
++$(obj)/bswapsi.c: $(obj)/%.c: $(srctree)/arch/mips/lib/%.c
+ 	$(call cmd,shipped)
  
--	if (unlikely(entry = DMA_ERROR_CODE)) {
-+	if (unlikely(entry = CALGARY_MAPPING_ERROR)) {
- 		pr_warn("failed to allocate %u pages in iommu %p\n",
- 			npages, tbl);
--		return DMA_ERROR_CODE;
-+		return CALGARY_MAPPING_ERROR;
- 	}
+ targets := $(notdir $(vmlinuzobjs-y))
+diff --git a/arch/mips/lib/Makefile b/arch/mips/lib/Makefile
+index 0344e575f522..814e739d6f86 100644
+--- a/arch/mips/lib/Makefile
++++ b/arch/mips/lib/Makefile
+@@ -15,4 +15,4 @@ obj-$(CONFIG_CPU_R3000)		+= r3k_dump_tlb.o
+ obj-$(CONFIG_CPU_TX39XX)	+= r3k_dump_tlb.o
  
- 	/* set the return dma address */
-@@ -295,7 +297,7 @@ static void iommu_free(struct iommu_table *tbl, dma_addr_t dma_addr,
- 	unsigned long flags;
- 
- 	/* were we called with bad_dma_address? */
--	badend = DMA_ERROR_CODE + (EMERGENCY_PAGES * PAGE_SIZE);
-+	badend = CALGARY_MAPPING_ERROR + (EMERGENCY_PAGES * PAGE_SIZE);
- 	if (unlikely(dma_addr < badend)) {
- 		WARN(1, KERN_ERR "Calgary: driver tried unmapping bad DMA "
- 		       "address 0x%Lx\n", dma_addr);
-@@ -380,7 +382,7 @@ static int calgary_map_sg(struct device *dev, struct scatterlist *sg,
- 		npages = iommu_num_pages(vaddr, s->length, PAGE_SIZE);
- 
- 		entry = iommu_range_alloc(dev, tbl, npages);
--		if (entry = DMA_ERROR_CODE) {
-+		if (entry = CALGARY_MAPPING_ERROR) {
- 			/* makes sure unmap knows to stop */
- 			s->dma_length = 0;
- 			goto error;
-@@ -398,7 +400,7 @@ static int calgary_map_sg(struct device *dev, struct scatterlist *sg,
- error:
- 	calgary_unmap_sg(dev, sg, nelems, dir, 0);
- 	for_each_sg(sg, s, nelems, i) {
--		sg->dma_address = DMA_ERROR_CODE;
-+		sg->dma_address = CALGARY_MAPPING_ERROR;
- 		sg->dma_length = 0;
- 	}
- 	return 0;
-@@ -453,7 +455,7 @@ static void* calgary_alloc_coherent(struct device *dev, size_t size,
- 
- 	/* set up tces to cover the allocated range */
- 	mapping = iommu_alloc(dev, tbl, ret, npages, DMA_BIDIRECTIONAL);
--	if (mapping = DMA_ERROR_CODE)
-+	if (mapping = CALGARY_MAPPING_ERROR)
- 		goto free;
- 	*dma_handle = mapping;
- 	return ret;
-@@ -478,6 +480,11 @@ static void calgary_free_coherent(struct device *dev, size_t size,
- 	free_pages((unsigned long)vaddr, get_order(size));
- }
- 
-+static int calgary_mapping_error(struct device *dev, dma_addr_t dma_addr)
-+{
-+	return dma_addr = CALGARY_MAPPING_ERROR;
-+}
-+
- static const struct dma_map_ops calgary_dma_ops = {
- 	.alloc = calgary_alloc_coherent,
- 	.free = calgary_free_coherent,
-@@ -485,6 +492,7 @@ static const struct dma_map_ops calgary_dma_ops = {
- 	.unmap_sg = calgary_unmap_sg,
- 	.map_page = calgary_map_page,
- 	.unmap_page = calgary_unmap_page,
-+	.mapping_error = calgary_mapping_error,
- };
- 
- static inline void __iomem * busno_to_bbar(unsigned char num)
-@@ -732,7 +740,7 @@ static void __init calgary_reserve_regions(struct pci_dev *dev)
- 	struct iommu_table *tbl = pci_iommu(dev->bus);
- 
- 	/* reserve EMERGENCY_PAGES from bad_dma_address and up */
--	iommu_range_reserve(tbl, DMA_ERROR_CODE, EMERGENCY_PAGES);
-+	iommu_range_reserve(tbl, CALGARY_MAPPING_ERROR, EMERGENCY_PAGES);
- 
- 	/* avoid the BIOS/VGA first 640KB-1MB region */
- 	/* for CalIOC2 - avoid the entire first MB */
+ # libgcc-style stuff needed in the kernel
+-obj-y += ashldi3.o ashrdi3.o bswapsi.o bswapdi.o cmpdi2.o lshrdi3.o ucmpdi2.o
++obj-y += bswapsi.o bswapdi.o
+diff --git a/arch/mips/lib/ashldi3.c b/arch/mips/lib/ashldi3.c
+deleted file mode 100644
+index c3e22053d13e..000000000000
+--- a/arch/mips/lib/ashldi3.c
++++ /dev/null
+@@ -1,29 +0,0 @@
+-#include <linux/export.h>
+-
+-#include "libgcc.h"
+-
+-long long notrace __ashldi3(long long u, word_type b)
+-{
+-	DWunion uu, w;
+-	word_type bm;
+-
+-	if (b = 0)
+-		return u;
+-
+-	uu.ll = u;
+-	bm = 32 - b;
+-
+-	if (bm <= 0) {
+-		w.s.low = 0;
+-		w.s.high = (unsigned int) uu.s.low << -bm;
+-	} else {
+-		const unsigned int carries = (unsigned int) uu.s.low >> bm;
+-
+-		w.s.low = (unsigned int) uu.s.low << b;
+-		w.s.high = ((unsigned int) uu.s.high << b) | carries;
+-	}
+-
+-	return w.ll;
+-}
+-
+-EXPORT_SYMBOL(__ashldi3);
+diff --git a/arch/mips/lib/ashrdi3.c b/arch/mips/lib/ashrdi3.c
+deleted file mode 100644
+index 17456024873d..000000000000
+--- a/arch/mips/lib/ashrdi3.c
++++ /dev/null
+@@ -1,31 +0,0 @@
+-#include <linux/export.h>
+-
+-#include "libgcc.h"
+-
+-long long notrace __ashrdi3(long long u, word_type b)
+-{
+-	DWunion uu, w;
+-	word_type bm;
+-
+-	if (b = 0)
+-		return u;
+-
+-	uu.ll = u;
+-	bm = 32 - b;
+-
+-	if (bm <= 0) {
+-		/* w.s.high = 1..1 or 0..0 */
+-		w.s.high -		    uu.s.high >> 31;
+-		w.s.low = uu.s.high >> -bm;
+-	} else {
+-		const unsigned int carries = (unsigned int) uu.s.high << bm;
+-
+-		w.s.high = uu.s.high >> b;
+-		w.s.low = ((unsigned int) uu.s.low >> b) | carries;
+-	}
+-
+-	return w.ll;
+-}
+-
+-EXPORT_SYMBOL(__ashrdi3);
+diff --git a/arch/mips/lib/cmpdi2.c b/arch/mips/lib/cmpdi2.c
+deleted file mode 100644
+index 9d849d8743c9..000000000000
+--- a/arch/mips/lib/cmpdi2.c
++++ /dev/null
+@@ -1,27 +0,0 @@
+-#include <linux/export.h>
+-
+-#include "libgcc.h"
+-
+-word_type notrace __cmpdi2(long long a, long long b)
+-{
+-	const DWunion au = {
+-		.ll = a
+-	};
+-	const DWunion bu = {
+-		.ll = b
+-	};
+-
+-	if (au.s.high < bu.s.high)
+-		return 0;
+-	else if (au.s.high > bu.s.high)
+-		return 2;
+-
+-	if ((unsigned int) au.s.low < (unsigned int) bu.s.low)
+-		return 0;
+-	else if ((unsigned int) au.s.low > (unsigned int) bu.s.low)
+-		return 2;
+-
+-	return 1;
+-}
+-
+-EXPORT_SYMBOL(__cmpdi2);
+diff --git a/arch/mips/lib/libgcc.h b/arch/mips/lib/libgcc.h
+deleted file mode 100644
+index 05909d58e2fe..000000000000
+--- a/arch/mips/lib/libgcc.h
++++ /dev/null
+@@ -1,25 +0,0 @@
+-#ifndef __ASM_LIBGCC_H
+-#define __ASM_LIBGCC_H
+-
+-#include <asm/byteorder.h>
+-
+-typedef int word_type __attribute__ ((mode (__word__)));
+-
+-#ifdef __BIG_ENDIAN
+-struct DWstruct {
+-	int high, low;
+-};
+-#elif defined(__LITTLE_ENDIAN)
+-struct DWstruct {
+-	int low, high;
+-};
+-#else
+-#error I feel sick.
+-#endif
+-
+-typedef union {
+-	struct DWstruct s;
+-	long long ll;
+-} DWunion;
+-
+-#endif /* __ASM_LIBGCC_H */
+diff --git a/arch/mips/lib/lshrdi3.c b/arch/mips/lib/lshrdi3.c
+deleted file mode 100644
+index 221167c1be55..000000000000
+--- a/arch/mips/lib/lshrdi3.c
++++ /dev/null
+@@ -1,29 +0,0 @@
+-#include <linux/export.h>
+-
+-#include "libgcc.h"
+-
+-long long notrace __lshrdi3(long long u, word_type b)
+-{
+-	DWunion uu, w;
+-	word_type bm;
+-
+-	if (b = 0)
+-		return u;
+-
+-	uu.ll = u;
+-	bm = 32 - b;
+-
+-	if (bm <= 0) {
+-		w.s.high = 0;
+-		w.s.low = (unsigned int) uu.s.high >> -bm;
+-	} else {
+-		const unsigned int carries = (unsigned int) uu.s.high << bm;
+-
+-		w.s.high = (unsigned int) uu.s.high >> b;
+-		w.s.low = ((unsigned int) uu.s.low >> b) | carries;
+-	}
+-
+-	return w.ll;
+-}
+-
+-EXPORT_SYMBOL(__lshrdi3);
+diff --git a/arch/mips/lib/ucmpdi2.c b/arch/mips/lib/ucmpdi2.c
+deleted file mode 100644
+index 08067fa538f2..000000000000
+--- a/arch/mips/lib/ucmpdi2.c
++++ /dev/null
+@@ -1,21 +0,0 @@
+-#include <linux/export.h>
+-
+-#include "libgcc.h"
+-
+-word_type notrace __ucmpdi2(unsigned long long a, unsigned long long b)
+-{
+-	const DWunion au = {.ll = a};
+-	const DWunion bu = {.ll = b};
+-
+-	if ((unsigned int) au.s.high < (unsigned int) bu.s.high)
+-		return 0;
+-	else if ((unsigned int) au.s.high > (unsigned int) bu.s.high)
+-		return 2;
+-	if ((unsigned int) au.s.low < (unsigned int) bu.s.low)
+-		return 0;
+-	else if ((unsigned int) au.s.low > (unsigned int) bu.s.low)
+-		return 2;
+-	return 1;
+-}
+-
+-EXPORT_SYMBOL(__ucmpdi2);
 -- 
-2.11.0
+2.13.0
 
