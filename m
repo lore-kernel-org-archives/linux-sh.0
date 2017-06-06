@@ -1,109 +1,331 @@
-From: Rob Landley <rob@landley.net>
-Date: Thu, 15 Jun 2017 18:00:02 +0000
-Subject: Re: QEMU serial still broken in -rc1.
-Message-Id: <115593de-e961-af5b-3647-ca6a3cdfda7a@landley.net>
+From: Palmer Dabbelt <palmer@dabbelt.com>
+Date: Tue, 06 Jun 2017 19:10:19 +0000
+Subject: [PATCH 3/7] microblaze: Use libgcc files from lib/
+Message-Id: <20170606191023.24581-4-palmer@dabbelt.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cdec4797-afe1-11f8-f926-fb5d356da625@landley.net>
-In-Reply-To: <cdec4797-afe1-11f8-f926-fb5d356da625@landley.net>
+References: <20170523220546.16758-1-palmer@dabbelt.com>
+ <20170606191023.24581-1-palmer@dabbelt.com>
+In-Reply-To: <20170606191023.24581-1-palmer@dabbelt.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: monstr@monstr.eu, ralf@linux-mips.org, liqin.linux@gmail.com, lennox.wu@gmail.com, ysato@users.sourceforge.jp, dalias@libc.org, davem@davemloft.net, linux-mips@linux-mips.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, geert@linux-m68k.org, linux-kernel@vger.kernel.org, linux-arch@vger.kernel.org
+Cc: Palmer Dabbelt <palmer@dabbelt.com>
 
-On 06/15/2017 01:26 AM, Geert Uytterhoeven wrote:
-> Hi Rob,
-> 
-> On Thu, Jun 15, 2017 at 3:07 AM, Rob Landley <rob@landley.net> wrote:
->> On 06/14/2017 08:48 AM, John Paul Adrian Glaubitz wrote:
->>> On Sun, May 14, 2017 at 09:46:07PM -0500, Rob Landley wrote:
->>>> I refer to the previous thread, which is still the case:
->>>>
->>>> http://www.spinics.net/lists/linux-sh/msg51190.html
->>>>
->>>> I poked at QEMU's internals to see if there was an easy way to fiddle
->>>> with stuff, but A) ttySC1 appears to be the only serial type the board
->>>> emulates, B) the ttySC0 instance is broken, dunno why.
->>>
->>> I gave it a try myself now and I can't get the emulated machine to
->>> boot or show any output over the serial console.
->>>
->>> It hangs here:
->>>
->>> root@nofan:~/sh4-system> qemu-system-sh4 -M r2d -m 1000M -drive file=sh4-system.img,format=qcow2 -nographic -append "root=/dev/sda1 rw console=ttySC0 earlyprintk=sh-sci.1" -kernel vmlinux-3.18.0-trunk-sh7751r
->>> long read to SH7750_WCR1_A7 (0x000000001f800008) ignored
->>> long read to SH7750_WCR2_A7 (0x000000001f80000c) ignored
->>> long read to SH7750_WCR3_A7 (0x000000001f800010) ignored
->>> long read to SH7750_MCR_A7 (0x000000001f800014) ignored
->>> long read to SH7750_MCR_A7 (0x000000001f800014) ignored
->>>
->>> Any ideas?
->>
->> By default qemu-system-sh4 outputs to the broken first serial port
->> (which Linux apparently has no driver for) instead of the second serial
->> port that Linux does have a driver for. I have no idea why it does that,
->> but you have to add extra command line options to work around it:
-> 
-> The first serial port is a SCI, which should be supported by the sh-sci
-> driver, too.
-> 
-> Perhaps the issue is that using the first port as a serial console depends
-> on the bootloader initializing it?
-> Does it work as a normal serial port from userspace?
+These files are functionally identical to the shared copies that I
+recently added.
 
-I've never gotten any output from it (despite trying every couple years
-since
-https://lists.nongnu.org/archive/html/qemu-devel/2009-02/msg00825.html
-). The most recent interaction I had with them was
-https://lists.nongnu.org/archive/html/qemu-devel/2017-05/msg04425.html
-where they doubled down on it.
+Signed-off-by: Palmer Dabbelt <palmer@dabbelt.com>
+Reviewed-by: Geert Uytterhoeven <geert@linux-m68k.org>
+---
+ arch/microblaze/Kconfig       |  6 +++++
+ arch/microblaze/lib/Makefile  |  3 +--
+ arch/microblaze/lib/ashldi3.c | 28 ---------------------
+ arch/microblaze/lib/ashrdi3.c | 30 -----------------------
+ arch/microblaze/lib/cmpdi2.c  | 26 --------------------
+ arch/microblaze/lib/libgcc.h  | 32 ------------------------
+ arch/microblaze/lib/lshrdi3.c | 28 ---------------------
+ arch/microblaze/lib/muldi3.c  | 57 -------------------------------------------
+ arch/microblaze/lib/ucmpdi2.c | 20 ---------------
+ 9 files changed, 7 insertions(+), 223 deletions(-)
+ delete mode 100644 arch/microblaze/lib/ashldi3.c
+ delete mode 100644 arch/microblaze/lib/ashrdi3.c
+ delete mode 100644 arch/microblaze/lib/cmpdi2.c
+ delete mode 100644 arch/microblaze/lib/libgcc.h
+ delete mode 100644 arch/microblaze/lib/lshrdi3.c
+ delete mode 100644 arch/microblaze/lib/muldi3.c
+ delete mode 100644 arch/microblaze/lib/ucmpdi2.c
 
-The very first submission of qemu-system-sh4 said "Use these options to
-get the serial ports right":
+diff --git a/arch/microblaze/Kconfig b/arch/microblaze/Kconfig
+index 85885a501dce..833487c17996 100644
+--- a/arch/microblaze/Kconfig
++++ b/arch/microblaze/Kconfig
+@@ -34,6 +34,12 @@ config MICROBLAZE
+ 	select TRACING_SUPPORT
+ 	select VIRT_TO_BUS
+ 	select CPU_NO_EFFICIENT_FFS
++	select GENERIC_ASHLDI3
++	select GENERIC_ASHRDI3
++	select GENERIC_CMPDI2
++	select GENERIC_LSHRDI3
++	select GENERIC_MULDI3
++	select GENERIC_UCMPDI3
+ 
+ config SWAP
+ 	def_bool n
+diff --git a/arch/microblaze/lib/Makefile b/arch/microblaze/lib/Makefile
+index 70c7ae6a3fb5..c9a4d537e2fd 100644
+--- a/arch/microblaze/lib/Makefile
++++ b/arch/microblaze/lib/Makefile
+@@ -19,5 +19,4 @@ endif
+ lib-y += uaccess_old.o
+ 
+ # libgcc-style stuff needed in the kernel
+-obj-y += ashldi3.o ashrdi3.o cmpdi2.o divsi3.o lshrdi3.o modsi3.o
+-obj-y += muldi3.o mulsi3.o ucmpdi2.o udivsi3.o umodsi3.o
++obj-y += divsi3.o modsi3.o mulsi3.o udivsi3.o umodsi3.o
+diff --git a/arch/microblaze/lib/ashldi3.c b/arch/microblaze/lib/ashldi3.c
+deleted file mode 100644
+index 1af904cd972d..000000000000
+--- a/arch/microblaze/lib/ashldi3.c
++++ /dev/null
+@@ -1,28 +0,0 @@
+-#include <linux/export.h>
+-
+-#include "libgcc.h"
+-
+-long long __ashldi3(long long u, word_type b)
+-{
+-	DWunion uu, w;
+-	word_type bm;
+-
+-	if (b = 0)
+-		return u;
+-
+-	uu.ll = u;
+-	bm = 32 - b;
+-
+-	if (bm <= 0) {
+-		w.s.low = 0;
+-		w.s.high = (unsigned int) uu.s.low << -bm;
+-	} else {
+-		const unsigned int carries = (unsigned int) uu.s.low >> bm;
+-
+-		w.s.low = (unsigned int) uu.s.low << b;
+-		w.s.high = ((unsigned int) uu.s.high << b) | carries;
+-	}
+-
+-	return w.ll;
+-}
+-EXPORT_SYMBOL(__ashldi3);
+diff --git a/arch/microblaze/lib/ashrdi3.c b/arch/microblaze/lib/ashrdi3.c
+deleted file mode 100644
+index 32c334c05d04..000000000000
+--- a/arch/microblaze/lib/ashrdi3.c
++++ /dev/null
+@@ -1,30 +0,0 @@
+-#include <linux/export.h>
+-
+-#include "libgcc.h"
+-
+-long long __ashrdi3(long long u, word_type b)
+-{
+-	DWunion uu, w;
+-	word_type bm;
+-
+-	if (b = 0)
+-		return u;
+-
+-	uu.ll = u;
+-	bm = 32 - b;
+-
+-	if (bm <= 0) {
+-		/* w.s.high = 1..1 or 0..0 */
+-		w.s.high -		    uu.s.high >> 31;
+-		w.s.low = uu.s.high >> -bm;
+-	} else {
+-		const unsigned int carries = (unsigned int) uu.s.high << bm;
+-
+-		w.s.high = uu.s.high >> b;
+-		w.s.low = ((unsigned int) uu.s.low >> b) | carries;
+-	}
+-
+-	return w.ll;
+-}
+-EXPORT_SYMBOL(__ashrdi3);
+diff --git a/arch/microblaze/lib/cmpdi2.c b/arch/microblaze/lib/cmpdi2.c
+deleted file mode 100644
+index 67abc9ac1bd4..000000000000
+--- a/arch/microblaze/lib/cmpdi2.c
++++ /dev/null
+@@ -1,26 +0,0 @@
+-#include <linux/export.h>
+-
+-#include "libgcc.h"
+-
+-word_type __cmpdi2(long long a, long long b)
+-{
+-	const DWunion au = {
+-		.ll = a
+-	};
+-	const DWunion bu = {
+-		.ll = b
+-	};
+-
+-	if (au.s.high < bu.s.high)
+-		return 0;
+-	else if (au.s.high > bu.s.high)
+-		return 2;
+-
+-	if ((unsigned int) au.s.low < (unsigned int) bu.s.low)
+-		return 0;
+-	else if ((unsigned int) au.s.low > (unsigned int) bu.s.low)
+-		return 2;
+-
+-	return 1;
+-}
+-EXPORT_SYMBOL(__cmpdi2);
+diff --git a/arch/microblaze/lib/libgcc.h b/arch/microblaze/lib/libgcc.h
+deleted file mode 100644
+index ab077ef7e14b..000000000000
+--- a/arch/microblaze/lib/libgcc.h
++++ /dev/null
+@@ -1,32 +0,0 @@
+-#ifndef __ASM_LIBGCC_H
+-#define __ASM_LIBGCC_H
+-
+-#include <asm/byteorder.h>
+-
+-typedef int word_type __attribute__ ((mode (__word__)));
+-
+-#ifdef __BIG_ENDIAN
+-struct DWstruct {
+-	int high, low;
+-};
+-#elif defined(__LITTLE_ENDIAN)
+-struct DWstruct {
+-	int low, high;
+-};
+-#else
+-#error I feel sick.
+-#endif
+-
+-typedef union {
+-	struct DWstruct s;
+-	long long ll;
+-} DWunion;
+-
+-extern long long __ashldi3(long long u, word_type b);
+-extern long long __ashrdi3(long long u, word_type b);
+-extern word_type __cmpdi2(long long a, long long b);
+-extern long long __lshrdi3(long long u, word_type b);
+-extern long long __muldi3(long long u, long long v);
+-extern word_type __ucmpdi2(unsigned long long a, unsigned long long b);
+-
+-#endif /* __ASM_LIBGCC_H */
+diff --git a/arch/microblaze/lib/lshrdi3.c b/arch/microblaze/lib/lshrdi3.c
+deleted file mode 100644
+index adcb253f11c8..000000000000
+--- a/arch/microblaze/lib/lshrdi3.c
++++ /dev/null
+@@ -1,28 +0,0 @@
+-#include <linux/export.h>
+-
+-#include "libgcc.h"
+-
+-long long __lshrdi3(long long u, word_type b)
+-{
+-	DWunion uu, w;
+-	word_type bm;
+-
+-	if (b = 0)
+-		return u;
+-
+-	uu.ll = u;
+-	bm = 32 - b;
+-
+-	if (bm <= 0) {
+-		w.s.high = 0;
+-		w.s.low = (unsigned int) uu.s.high >> -bm;
+-	} else {
+-		const unsigned int carries = (unsigned int) uu.s.high << bm;
+-
+-		w.s.high = (unsigned int) uu.s.high >> b;
+-		w.s.low = ((unsigned int) uu.s.low >> b) | carries;
+-	}
+-
+-	return w.ll;
+-}
+-EXPORT_SYMBOL(__lshrdi3);
+diff --git a/arch/microblaze/lib/muldi3.c b/arch/microblaze/lib/muldi3.c
+deleted file mode 100644
+index a3f9a03acdcd..000000000000
+--- a/arch/microblaze/lib/muldi3.c
++++ /dev/null
+@@ -1,57 +0,0 @@
+-#include <linux/export.h>
+-
+-#include "libgcc.h"
+-
+-#define W_TYPE_SIZE 32
+-
+-#define __ll_B ((unsigned long) 1 << (W_TYPE_SIZE / 2))
+-#define __ll_lowpart(t) ((unsigned long) (t) & (__ll_B - 1))
+-#define __ll_highpart(t) ((unsigned long) (t) >> (W_TYPE_SIZE / 2))
+-
+-/* If we still don't have umul_ppmm, define it using plain C.  */
+-#if !defined(umul_ppmm)
+-#define umul_ppmm(w1, w0, u, v)						\
+-	do {								\
+-		unsigned long __x0, __x1, __x2, __x3;			\
+-		unsigned short __ul, __vl, __uh, __vh;			\
+-									\
+-		__ul = __ll_lowpart(u);					\
+-		__uh = __ll_highpart(u);				\
+-		__vl = __ll_lowpart(v);					\
+-		__vh = __ll_highpart(v);				\
+-									\
+-		__x0 = (unsigned long) __ul * __vl;			\
+-		__x1 = (unsigned long) __ul * __vh;			\
+-		__x2 = (unsigned long) __uh * __vl;			\
+-		__x3 = (unsigned long) __uh * __vh;			\
+-									\
+-		__x1 += __ll_highpart(__x0); /* this can't give carry */\
+-		__x1 += __x2; /* but this indeed can */			\
+-		if (__x1 < __x2) /* did we get it? */			\
+-		__x3 += __ll_B; /* yes, add it in the proper pos */	\
+-									\
+-		(w1) = __x3 + __ll_highpart(__x1);			\
+-		(w0) = __ll_lowpart(__x1) * __ll_B + __ll_lowpart(__x0);\
+-	} while (0)
+-#endif
+-
+-#if !defined(__umulsidi3)
+-#define __umulsidi3(u, v) ({				\
+-	DWunion __w;					\
+-	umul_ppmm(__w.s.high, __w.s.low, u, v);		\
+-	__w.ll;						\
+-	})
+-#endif
+-
+-long long __muldi3(long long u, long long v)
+-{
+-	const DWunion uu = {.ll = u};
+-	const DWunion vv = {.ll = v};
+-	DWunion w = {.ll = __umulsidi3(uu.s.low, vv.s.low)};
+-
+-	w.s.high += ((unsigned long) uu.s.low * (unsigned long) vv.s.high
+-		+ (unsigned long) uu.s.high * (unsigned long) vv.s.low);
+-
+-	return w.ll;
+-}
+-EXPORT_SYMBOL(__muldi3);
+diff --git a/arch/microblaze/lib/ucmpdi2.c b/arch/microblaze/lib/ucmpdi2.c
+deleted file mode 100644
+index d05f1585121c..000000000000
+--- a/arch/microblaze/lib/ucmpdi2.c
++++ /dev/null
+@@ -1,20 +0,0 @@
+-#include <linux/export.h>
+-
+-#include "libgcc.h"
+-
+-word_type __ucmpdi2(unsigned long long a, unsigned long long b)
+-{
+-	const DWunion au = {.ll = a};
+-	const DWunion bu = {.ll = b};
+-
+-	if ((unsigned int) au.s.high < (unsigned int) bu.s.high)
+-		return 0;
+-	else if ((unsigned int) au.s.high > (unsigned int) bu.s.high)
+-		return 2;
+-	if ((unsigned int) au.s.low < (unsigned int) bu.s.low)
+-		return 0;
+-	else if ((unsigned int) au.s.low > (unsigned int) bu.s.low)
+-		return 2;
+-	return 1;
+-}
+-EXPORT_SYMBOL(__ucmpdi2);
+-- 
+2.13.0
 
-https://lists.nongnu.org/archive/html/qemu-devel/2007-09/msg00530.html
-
-Here's one of my periodic attempts at trying the other one:
-
-http://lists.gnu.org/archive/html/qemu-devel/2010-03/msg00976.html
-http://lists.gnu.org/archive/html/qemu-devel/2010-03/msg01005.html
-
-If you can get it to work, I'd love to drop that strangeness. It's never
-worked with Linux in the history of qemu, that I'm aware of.
-
-The relevant serial init plumbing in qemu/hw/sh4/sh7750.c is:
-
-    sh_serial_init(sysmem, 0x1fe00000,
-                   0, s->periph_freq, serial_hds[0],
-                   s->intc.irqs[SCI1_ERI],
-                   s->intc.irqs[SCI1_RXI],
-                   s->intc.irqs[SCI1_TXI],
-                   s->intc.irqs[SCI1_TEI],
-                   NULL);
-    sh_serial_init(sysmem, 0x1fe80000,
-                   SH_SERIAL_FEAT_SCIF,
-                   s->periph_freq, serial_hds[1],
-                   s->intc.irqs[SCIF_ERI],
-                   s->intc.irqs[SCIF_RXI],
-                   s->intc.irqs[SCIF_TXI],
-                   NULL,
-                   s->intc.irqs[SCIF_BRI]);
-
-Although there's also this bit in r2d.c:
-
-    qdev_prop_set_ptr(dev, "chr-state", serial_hds[2]);
-
-Which is just confusing because I didn't think there was a third serial
-port? (MAX_SERIAL_PORTS is 4 in include/sysemu/sysemu.h so it's not
-overflowing anything, it's just... weird. I found much of the qemu code
-impenetrable even before they decided libglib was a good idea...)
-
-At the moment what I'd _really_ like is for -M virt to work on the sh
-arch instead of being arm-only. But I haven't even figured out how to
-get the Linux kernel ELF loader to apply generically. (Half the
-architectures can boot from vmlinux. The other half can't. There is no
-obvious reason for this, but after about 6 hours down the rathole of
-trying to make it work, it went back on the todo list. Let's see, that
-would have been back around
-https://lists.nongnu.org/archive/html/qemu-devel/2011-05/msg00678.html)
-
-Rob
