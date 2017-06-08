@@ -1,60 +1,61 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Sun, 21 May 2017 20:40:08 +0000
-Subject: [PATCH 0/4] input: move include files out of include/linux/i2c
-Message-Id: <20170521204013.6623-1-wsa@the-dreams.de>
+From: Christoph Hellwig <hch@lst.de>
+Date: Thu, 08 Jun 2017 13:25:41 +0000
+Subject: [PATCH 16/44] arm64: remove DMA_ERROR_CODE
+Message-Id: <20170608132609.32662-17-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20170608132609.32662-1-hch@lst.de>
+In-Reply-To: <20170608132609.32662-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: Wolfram Sang <wsa@the-dreams.de>, linux-input@vger.kernel.org, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
+To: x86@kernel.org, linux-arm-kernel@lists.infradead.org, xen-devel@lists.xenproject.org, linux-c6x-dev@linux-c6x.org, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-mips@linux-mips.org, openrisc@lists.librecores.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, dmaengine@vger.kernel.org, linux-tegra@vger.kernel.org, dri-devel@lists.freedesktop.org, linux-samsung-soc@vger.kernel.org, iommu@lists.linux-foundation.org, netdev@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org
 
-It doesn't make sense to use include/linux/i2c for client drivers which may in
-fact rather be hwmon or input or whatever devices. As a result, I want to
-deprecate include/linux/i2c for good. This series moves the include files to a
-better location, for the input subsystem to include/linux/input. If you prefer
-include/linux/platform_data, because that is what most of the moved include
-files contain, let me know. Note that some files don't seem to have upstream
-users in board code, so they maybe could even be removed? I didn't check for
-that now, but I did it for one i2c master driver recently. So, it may be
-possible.
+The dma alloc interface returns an error by return NULL, and the
+mapping interfaces rely on the mapping_error method, which the dummy
+ops already implement correctly.
 
-I prefer the series to go upstream via the subsystem tree; if you prefer that I
-take it via I2C, just let me know.
+Thus remove the DMA_ERROR_CODE define.
 
-No runtime testing because of no HW, but buildbot is happy with this series at
-least. A branch can be found here:
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+---
+ arch/arm64/include/asm/dma-mapping.h | 1 -
+ arch/arm64/mm/dma-mapping.c          | 3 +--
+ 2 files changed, 1 insertion(+), 3 deletions(-)
 
-git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git i2c/platform_data
-
-Thanks and kind regards,
-
-   Wolfram
-
-
-Wolfram Sang (4):
-  input: lm8323: move header file out of I2C realm
-  input: mcs: move header file out of I2C realm
-  input: mms114: move header file out of I2C realm
-  input: tsc2007: move header file out of I2C realm
-
- arch/sh/boards/mach-ecovec24/setup.c     | 2 +-
- drivers/input/keyboard/lm8323.c          | 2 +-
- drivers/input/keyboard/mcs_touchkey.c    | 2 +-
- drivers/input/touchscreen/mcs5000_ts.c   | 2 +-
- drivers/input/touchscreen/mms114.c       | 2 +-
- drivers/input/touchscreen/tsc2007_core.c | 2 +-
- drivers/mfd/timberdale.c                 | 2 +-
- include/linux/{i2c => input}/lm8323.h    | 0
- include/linux/{i2c => input}/mcs.h       | 0
- include/linux/{i2c => input}/mms114.h    | 0
- include/linux/{i2c => input}/tsc2007.h   | 2 +-
- 11 files changed, 8 insertions(+), 8 deletions(-)
- rename include/linux/{i2c => input}/lm8323.h (100%)
- rename include/linux/{i2c => input}/mcs.h (100%)
- rename include/linux/{i2c => input}/mms114.h (100%)
- rename include/linux/{i2c => input}/tsc2007.h (95%)
-
+diff --git a/arch/arm64/include/asm/dma-mapping.h b/arch/arm64/include/asm/dma-mapping.h
+index 5392dbeffa45..cf8fc8f05580 100644
+--- a/arch/arm64/include/asm/dma-mapping.h
++++ b/arch/arm64/include/asm/dma-mapping.h
+@@ -24,7 +24,6 @@
+ #include <xen/xen.h>
+ #include <asm/xen/hypervisor.h>
+ 
+-#define DMA_ERROR_CODE	(~(dma_addr_t)0)
+ extern const struct dma_map_ops dummy_dma_ops;
+ 
+ static inline const struct dma_map_ops *get_arch_dma_ops(struct bus_type *bus)
+diff --git a/arch/arm64/mm/dma-mapping.c b/arch/arm64/mm/dma-mapping.c
+index 3216e098c058..147fbb907a2f 100644
+--- a/arch/arm64/mm/dma-mapping.c
++++ b/arch/arm64/mm/dma-mapping.c
+@@ -184,7 +184,6 @@ static void *__dma_alloc(struct device *dev, size_t size,
+ no_map:
+ 	__dma_free_coherent(dev, size, ptr, *dma_handle, attrs);
+ no_mem:
+-	*dma_handle = DMA_ERROR_CODE;
+ 	return NULL;
+ }
+ 
+@@ -487,7 +486,7 @@ static dma_addr_t __dummy_map_page(struct device *dev, struct page *page,
+ 				   enum dma_data_direction dir,
+ 				   unsigned long attrs)
+ {
+-	return DMA_ERROR_CODE;
++	return 0;
+ }
+ 
+ static void __dummy_unmap_page(struct device *dev, dma_addr_t dev_addr,
 -- 
 2.11.0
 
