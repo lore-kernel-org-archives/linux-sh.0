@@ -1,79 +1,51 @@
-From: Rob Landley <rob@landley.net>
-Date: Wed, 21 Jun 2017 22:09:06 +0000
-Subject: Re: [PATCH 3/5] sh: thin archives fix linking
-Message-Id: <7a1286aa-b656-7b71-2628-9093156143ff@landley.net>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="------------456D35A4F606E4BE60E3CBC6"
+From: Christoph Hellwig <hch@lst.de>
+Date: Thu, 08 Jun 2017 13:25:54 +0000
+Subject: [PATCH 29/44] dma-noop: remove dma_supported and mapping_error methods
+Message-Id: <20170608132609.32662-30-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20170609052417.561-1-npiggin@gmail.com>
- <20170609052417.561-4-npiggin@gmail.com>
- <CAK7LNARFQ0bLEYOgEKd+0oULevSxRqwFu_VSLn89gn_XBo+-uQ@mail.gmail.com>
-In-Reply-To: <CAK7LNARFQ0bLEYOgEKd+0oULevSxRqwFu_VSLn89gn_XBo+-uQ@mail.gmail.com>
-To: Masahiro Yamada <yamada.masahiro@socionext.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh@vger.kernel.org, Rich Felker <dalias@libc.org>
-Cc: Linux Kbuild mailing list <linux-kbuild@vger.kernel.org>, Michal Marek <mmarek@suse.com>, Linus Torvalds <torvalds@linux-foundation.org>, Stephen Rothwell <sfr@canb.auug.org.au>, Nicholas Piggin <npiggin@gmail.com>, linux-arch <linux-arch@vger.kernel.org>
-
-This is a multi-part message in MIME format.
---------------456D35A4F606E4BE60E3CBC6
-Content-Type: text/plain; charset=utf-8
+References: <20170608132609.32662-1-hch@lst.de>
+In-Reply-To: <20170608132609.32662-1-hch@lst.de>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
+To: x86@kernel.org, linux-arm-kernel@lists.infradead.org, xen-devel@lists.xenproject.org, linux-c6x-dev@linux-c6x.org, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-mips@linux-mips.org, openrisc@lists.librecores.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, dmaengine@vger.kernel.org, linux-tegra@vger.kernel.org, dri-devel@lists.freedesktop.org, linux-samsung-soc@vger.kernel.org, iommu@lists.linux-foundation.org, netdev@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org
 
-On 06/19/2017 01:19 AM, Masahiro Yamada wrote:
-> 2017-06-09 14:24 GMT+09:00 Nicholas Piggin <npiggin@gmail.com>:
->> The VDSO symbols can't be linked into built-in.o when building with
->> thin archives, so change this to linking them into the final link.
->>
->> Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
->> Cc: Rich Felker <dalias@libc.org>
->> Cc: linux-sh@vger.kernel.org
->> Signed-off-by: Nicholas Piggin <npiggin@gmail.com>
->> ---
-> 
-> SH maintainers, any comments for this patch?
-> 
-> 
-> I confirmed this patch solved the build error,
-> but I do not have access to any SH hardware.
+These just duplicate the default behavior if no method is provided.
 
-You can build and boot the kernel under qemu for several architectures
-(including sh4) by following the instructions on:
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+---
+ lib/dma-noop.c | 12 ------------
+ 1 file changed, 12 deletions(-)
 
-  https://github.com/landley/mkroot
+diff --git a/lib/dma-noop.c b/lib/dma-noop.c
+index de26c8b68f34..643a074f139d 100644
+--- a/lib/dma-noop.c
++++ b/lib/dma-noop.c
+@@ -54,23 +54,11 @@ static int dma_noop_map_sg(struct device *dev, struct scatterlist *sgl, int nent
+ 	return nents;
+ }
+ 
+-static int dma_noop_mapping_error(struct device *dev, dma_addr_t dma_addr)
+-{
+-	return 0;
+-}
+-
+-static int dma_noop_supported(struct device *dev, u64 mask)
+-{
+-	return 1;
+-}
+-
+ const struct dma_map_ops dma_noop_ops = {
+ 	.alloc			= dma_noop_alloc,
+ 	.free			= dma_noop_free,
+ 	.map_page		= dma_noop_map_page,
+ 	.map_sg			= dma_noop_map_sg,
+-	.mapping_error		= dma_noop_mapping_error,
+-	.dma_supported		= dma_noop_supported,
+ };
+ 
+ EXPORT_SYMBOL(dma_noop_ops);
+-- 
+2.11.0
 
-I believe I last built -rc6?
-
-You may need the attached patch to fix the serial port issue from:
-
-  https://www.spinics.net/lists/linux-serial/msg26085.html
-
-Which is still there because the kernel guys don't care that they broke
-qemu, and the qemu guys are still using old kernel versions that work
-fine. My patch just reverts the kernel change (which enabled hardware
-buffer logic qemu doesn't implement).
-
-Rob
-
-
-
-
---------------456D35A4F606E4BE60E3CBC6
-Content-Type: text/x-diff;
- name="qemu-sh4.patch"
-Content-Transfer-Encoding: 7bit
-Content-Disposition: attachment;
- filename="qemu-sh4.patch"
-
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 71707e8..a798def 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -2193,7 +2193,7 @@ static void sci_reset(struct uart_port *port)
- 			setup_timer(&s->rx_fifo_timer, rx_fifo_timer_fn,
- 				    (unsigned long)s);
- 		} else {
--			if (port->type == PORT_SCIFA ||
-+			if (1 || port->type == PORT_SCIFA ||
- 			    port->type == PORT_SCIFB)
- 				scif_set_rtrg(port, 1);
- 			else
-
---------------456D35A4F606E4BE60E3CBC6--
