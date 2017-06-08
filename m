@@ -1,60 +1,71 @@
-From: Chris Packham <chris.packham@alliedtelesis.co.nz>
-Date: Fri, 30 Jun 2017 00:54:03 +0000
-Subject: [PATCH 1/6] sh: sh7785lcr: add GPIO lookup table for i2c controller reset
-Message-Id: <20170630005408.23968-2-chris.packham@alliedtelesis.co.nz>
+From: Christoph Hellwig <hch@lst.de>
+Date: Thu, 08 Jun 2017 13:25:52 +0000
+Subject: [PATCH 27/44] sparc: remove leon_dma_ops
+Message-Id: <20170608132609.32662-28-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20170630005408.23968-1-chris.packham@alliedtelesis.co.nz>
-In-Reply-To: <20170630005408.23968-1-chris.packham@alliedtelesis.co.nz>
+References: <20170608132609.32662-1-hch@lst.de>
+In-Reply-To: <20170608132609.32662-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: wsa@the-dreams.de, andy.shevchenko@gmail.com, linux-i2c@vger.kernel.org
-Cc: ysato@users.sourceforge.jp, linux-sh@vger.kernel.org, Chris Packham <chris.packham@alliedtelesis.co.nz>, Rich Felker <dalias@libc.org>, linux-kernel@vger.kernel.org
+To: x86@kernel.org, linux-arm-kernel@lists.infradead.org, xen-devel@lists.xenproject.org, linux-c6x-dev@linux-c6x.org, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-mips@linux-mips.org, openrisc@lists.librecores.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, dmaengine@vger.kernel.org, linux-tegra@vger.kernel.org, dri-devel@lists.freedesktop.org, linux-samsung-soc@vger.kernel.org, iommu@lists.linux-foundation.org, netdev@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org
 
-Define the GPIO connected to the PCA9564 using a GPIO lookup table. This
-will allow the i2c-pca-platform driver to use the device managed APIs to
-lookup the gpio instead of using platform_data.
+We can just use pci32_dma_ops.
 
-Signed-off-by: Chris Packham <chris.packham@alliedtelesis.co.nz>
+Btw, given that leon is 32-bit and appears to be PCI based, do even need
+the special case for it in get_arch_dma_ops at all?
+
+Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- arch/sh/boards/board-sh7785lcr.c | 10 ++++++++++
- 1 file changed, 10 insertions(+)
+ arch/sparc/include/asm/dma-mapping.h | 3 +--
+ arch/sparc/kernel/ioport.c           | 5 +----
+ 2 files changed, 2 insertions(+), 6 deletions(-)
 
-diff --git a/arch/sh/boards/board-sh7785lcr.c b/arch/sh/boards/board-sh7785lcr.c
-index 2c4771ee84cd..4c321d0da945 100644
---- a/arch/sh/boards/board-sh7785lcr.c
-+++ b/arch/sh/boards/board-sh7785lcr.c
-@@ -25,6 +25,7 @@
- #include <linux/io.h>
- #include <linux/clk.h>
- #include <linux/errno.h>
-+#include <linux/gpio/machine.h>
- #include <mach/sh7785lcr.h>
- #include <cpu/sh7785.h>
- #include <asm/heartbeat.h>
-@@ -243,6 +244,14 @@ static struct resource i2c_resources[] = {
- 	},
- };
- 
-+static struct gpiod_lookup_table i2c_gpio_table = {
-+	.dev_id = "i2c.0",
-+	.table = {
-+		GPIO_LOOKUP("pfc-sh7757", 0, "reset-gpios", GPIO_ACTIVE_LOW),
-+		{ },
-+	},
-+};
-+
- static struct i2c_pca9564_pf_platform_data i2c_platform_data = {
- 	.gpio			= 0,
- 	.i2c_clock_speed	= I2C_PCA_CON_330kHz,
-@@ -283,6 +292,7 @@ static int __init sh7785lcr_devices_setup(void)
- 		i2c_device.num_resources = ARRAY_SIZE(i2c_proto_resources);
- 	}
- 
-+	gpiod_add_lookup(&i2c_gpio_table);
- 	return platform_add_devices(sh7785lcr_devices,
- 				    ARRAY_SIZE(sh7785lcr_devices));
+diff --git a/arch/sparc/include/asm/dma-mapping.h b/arch/sparc/include/asm/dma-mapping.h
+index b8e8dfcd065d..98da9f92c318 100644
+--- a/arch/sparc/include/asm/dma-mapping.h
++++ b/arch/sparc/include/asm/dma-mapping.h
+@@ -17,7 +17,6 @@ static inline void dma_cache_sync(struct device *dev, void *vaddr, size_t size,
  }
+ 
+ extern const struct dma_map_ops *dma_ops;
+-extern const struct dma_map_ops *leon_dma_ops;
+ extern const struct dma_map_ops pci32_dma_ops;
+ 
+ extern struct bus_type pci_bus_type;
+@@ -26,7 +25,7 @@ static inline const struct dma_map_ops *get_arch_dma_ops(struct bus_type *bus)
+ {
+ #ifdef CONFIG_SPARC_LEON
+ 	if (sparc_cpu_model = sparc_leon)
+-		return leon_dma_ops;
++		return &pci32_dma_ops;
+ #endif
+ #if defined(CONFIG_SPARC32) && defined(CONFIG_PCI)
+ 	if (bus = &pci_bus_type)
+diff --git a/arch/sparc/kernel/ioport.c b/arch/sparc/kernel/ioport.c
+index cf20033a1458..dd081d557609 100644
+--- a/arch/sparc/kernel/ioport.c
++++ b/arch/sparc/kernel/ioport.c
+@@ -637,6 +637,7 @@ static void pci32_sync_sg_for_device(struct device *device, struct scatterlist *
+ 	}
+ }
+ 
++/* note: leon re-uses pci32_dma_ops */
+ const struct dma_map_ops pci32_dma_ops = {
+ 	.alloc			= pci32_alloc_coherent,
+ 	.free			= pci32_free_coherent,
+@@ -651,10 +652,6 @@ const struct dma_map_ops pci32_dma_ops = {
+ };
+ EXPORT_SYMBOL(pci32_dma_ops);
+ 
+-/* leon re-uses pci32_dma_ops */
+-const struct dma_map_ops *leon_dma_ops = &pci32_dma_ops;
+-EXPORT_SYMBOL(leon_dma_ops);
+-
+ const struct dma_map_ops *dma_ops = &sbus_dma_ops;
+ EXPORT_SYMBOL(dma_ops);
+ 
 -- 
-2.13.0
+2.11.0
 
