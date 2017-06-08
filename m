@@ -1,37 +1,84 @@
-From: Palmer Dabbelt <palmer@dabbelt.com>
-Date: Mon, 26 Jun 2017 20:27:55 +0000
-Subject: Re: [PATCH] pci: Add and use PCI_GENERIC_SETUP Kconfig entry
-Message-Id: <20170626202756.22220-1-palmer@dabbelt.com>
+From: Christoph Hellwig <hch@lst.de>
+Date: Thu, 08 Jun 2017 13:25:51 +0000
+Subject: [PATCH 26/44] dma-mapping: remove DMA_ERROR_CODE
+Message-Id: <20170608132609.32662-27-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <CAMuHMdXSrfbSX2de2q35Hj6vQwi+sr23M1LEg82JL+FyLq4OJw@mail.gmail.com>
-In-Reply-To: <CAMuHMdXSrfbSX2de2q35Hj6vQwi+sr23M1LEg82JL+FyLq4OJw@mail.gmail.com>
+References: <20170608132609.32662-1-hch@lst.de>
+In-Reply-To: <20170608132609.32662-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: rth@twiddle.net
+To: x86@kernel.org, linux-arm-kernel@lists.infradead.org, xen-devel@lists.xenproject.org, linux-c6x-dev@linux-c6x.org, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-mips@linux-mips.org, openrisc@lists.librecores.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, dmaengine@vger.kernel.org, linux-tegra@vger.kernel.org, dri-devel@lists.freedesktop.org, linux-samsung-soc@vger.kernel.org, iommu@lists.linux-foundation.org, netdev@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org
 
->On Mon, Jun 26, 2017 at 7:39 AM, kbuild test robot <lkp@intel.com> wrote:
->> [auto build test WARNING on linus/master]
->> [also build test WARNING on v4.12-rc6]
->> [cannot apply to next-20170623]
->> [if your patch is applied to the wrong git tree, please drop us a note to help improve the system]
->>
->> url:    https://github.com/0day-ci/linux/commits/Palmer-Dabbelt/pci-Add-and-use-PCI_GENERIC_SETUP-Kconfig-entry/20170626-043558
->> config: m68k-allnoconfig (attached as .config)
->> compiler: m68k-linux-gcc (GCC) 4.9.0
->> reproduce:
->>         wget https://raw.githubusercontent.com/01org/lkp-tests/master/sbin/make.cross -O ~/bin/make.cross
->>         chmod +x ~/bin/make.cross
->>         # save the attached .config to linux build tree
->>         make.cross ARCH=m68k
->>
->> All warnings (new ones prefixed by >>):
->>
->> warning: (M68K) selects PCI_GENERIC_SETUP which has unmet direct dependencies (MMU)
->
->I can't seem to find this dependency of PCI_GENERIC_SETUP on MMU?
+And update the documentation - dma_mapping_error has been supported
+everywhere for a long time.
 
-It looks like M68K only includes the PCI Kconfig entry when MMU is enabled.  I
-moved the select around a bit and it builds the config that was failing for me.
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+---
+ Documentation/DMA-API-HOWTO.txt | 31 +++++--------------------------
+ include/linux/dma-mapping.h     |  5 -----
+ 2 files changed, 5 insertions(+), 31 deletions(-)
 
-The updated patch is threaded.
+diff --git a/Documentation/DMA-API-HOWTO.txt b/Documentation/DMA-API-HOWTO.txt
+index 979228bc9035..4ed388356898 100644
+--- a/Documentation/DMA-API-HOWTO.txt
++++ b/Documentation/DMA-API-HOWTO.txt
+@@ -550,32 +550,11 @@ and to unmap it:
+ 	dma_unmap_single(dev, dma_handle, size, direction);
+ 
+ You should call dma_mapping_error() as dma_map_single() could fail and return
+-error. Not all DMA implementations support the dma_mapping_error() interface.
+-However, it is a good practice to call dma_mapping_error() interface, which
+-will invoke the generic mapping error check interface. Doing so will ensure
+-that the mapping code will work correctly on all DMA implementations without
+-any dependency on the specifics of the underlying implementation. Using the
+-returned address without checking for errors could result in failures ranging
+-from panics to silent data corruption. A couple of examples of incorrect ways
+-to check for errors that make assumptions about the underlying DMA
+-implementation are as follows and these are applicable to dma_map_page() as
+-well.
+-
+-Incorrect example 1:
+-	dma_addr_t dma_handle;
+-
+-	dma_handle = dma_map_single(dev, addr, size, direction);
+-	if ((dma_handle & 0xffff != 0) || (dma_handle >= 0x1000000)) {
+-		goto map_error;
+-	}
+-
+-Incorrect example 2:
+-	dma_addr_t dma_handle;
+-
+-	dma_handle = dma_map_single(dev, addr, size, direction);
+-	if (dma_handle = DMA_ERROR_CODE) {
+-		goto map_error;
+-	}
++error.  Doing so will ensure that the mapping code will work correctly on all
++DMA implementations without any dependency on the specifics of the underlying
++implementation. Using the returned address without checking for errors could
++result in failures ranging from panics to silent data corruption.  The same
++applies to dma_map_page() as well.
+ 
+ You should call dma_unmap_single() when the DMA activity is finished, e.g.,
+ from the interrupt which told you that the DMA transfer is done.
+diff --git a/include/linux/dma-mapping.h b/include/linux/dma-mapping.h
+index 4f3eecedca2d..a57875309bfd 100644
+--- a/include/linux/dma-mapping.h
++++ b/include/linux/dma-mapping.h
+@@ -546,12 +546,7 @@ static inline int dma_mapping_error(struct device *dev, dma_addr_t dma_addr)
+ 
+ 	if (get_dma_ops(dev)->mapping_error)
+ 		return get_dma_ops(dev)->mapping_error(dev, dma_addr);
+-
+-#ifdef DMA_ERROR_CODE
+-	return dma_addr = DMA_ERROR_CODE;
+-#else
+ 	return 0;
+-#endif
+ }
+ 
+ #ifndef HAVE_ARCH_DMA_SUPPORTED
+-- 
+2.11.0
+
