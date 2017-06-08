@@ -1,38 +1,61 @@
-From: Palmer Dabbelt <palmer@dabbelt.com>
-Date: Tue, 06 Jun 2017 19:10:16 +0000
-Subject: Unify the various copies of libgcc into lib v2
-Message-Id: <20170606191023.24581-1-palmer@dabbelt.com>
+From: Christoph Hellwig <hch@lst.de>
+Date: Thu, 08 Jun 2017 13:26:08 +0000
+Subject: [PATCH 43/44] dma-mapping: remove the set_dma_mask method
+Message-Id: <20170608132609.32662-44-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20170523220546.16758-1-palmer@dabbelt.com>
-In-Reply-To: <20170523220546.16758-1-palmer@dabbelt.com>
+References: <20170608132609.32662-1-hch@lst.de>
+In-Reply-To: <20170608132609.32662-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: monstr@monstr.eu, ralf@linux-mips.org, liqin.linux@gmail.com, lennox.wu@gmail.com, ysato@users.sourceforge.jp, dalias@libc.org, davem@davemloft.net, linux-mips@linux-mips.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, geert@linux-m68k.org, linux-kernel@vger.kernel.org, linux-arch@vger.kernel.org
+To: x86@kernel.org, linux-arm-kernel@lists.infradead.org, xen-devel@lists.xenproject.org, linux-c6x-dev@linux-c6x.org, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-mips@linux-mips.org, openrisc@lists.librecores.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, dmaengine@vger.kernel.org, linux-tegra@vger.kernel.org, dri-devel@lists.freedesktop.org, linux-samsung-soc@vger.kernel.org, iommu@lists.linux-foundation.org, netdev@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org
 
-Thanks to everyone who responded to my original patch set.  I believe I've
-responded to everyone's comments.  There have been a handful of changes since
-the original patch set:
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+---
+ arch/powerpc/kernel/dma.c   | 4 ----
+ include/linux/dma-mapping.h | 6 ------
+ 2 files changed, 10 deletions(-)
 
- * The Kconfig names for the routines are now GENERIC_* instead of LIB_*.  This
-   matches the existing generic implementation Kconfig names.
- * Tracing is disabled, which matches the MIPS behavior and seems correct
-   globally.
- * I've cross compiled this to make sure it builds, and fixed all the build
-   errors I found.
- * The MIPS patches actually do what they say in the commit message.
+diff --git a/arch/powerpc/kernel/dma.c b/arch/powerpc/kernel/dma.c
+index 41c749586bd2..466c9f07b288 100644
+--- a/arch/powerpc/kernel/dma.c
++++ b/arch/powerpc/kernel/dma.c
+@@ -316,10 +316,6 @@ EXPORT_SYMBOL(dma_set_coherent_mask);
+ 
+ int __dma_set_mask(struct device *dev, u64 dma_mask)
+ {
+-	const struct dma_map_ops *dma_ops = get_dma_ops(dev);
+-
+-	if ((dma_ops != NULL) && (dma_ops->set_dma_mask != NULL))
+-		return dma_ops->set_dma_mask(dev, dma_mask);
+ 	if (!dev->dma_mask || !dma_supported(dev, dma_mask))
+ 		return -EIO;
+ 	*dev->dma_mask = dma_mask;
+diff --git a/include/linux/dma-mapping.h b/include/linux/dma-mapping.h
+index 3e5908656226..527f2ed8c645 100644
+--- a/include/linux/dma-mapping.h
++++ b/include/linux/dma-mapping.h
+@@ -127,7 +127,6 @@ struct dma_map_ops {
+ 				   enum dma_data_direction dir);
+ 	int (*mapping_error)(struct device *dev, dma_addr_t dma_addr);
+ 	int (*dma_supported)(struct device *dev, u64 mask);
+-	int (*set_dma_mask)(struct device *dev, u64 mask);
+ #ifdef ARCH_HAS_DMA_GET_REQUIRED_MASK
+ 	u64 (*get_required_mask)(struct device *dev);
+ #endif
+@@ -563,11 +562,6 @@ static inline int dma_supported(struct device *dev, u64 mask)
+ #ifndef HAVE_ARCH_DMA_SET_MASK
+ static inline int dma_set_mask(struct device *dev, u64 mask)
+ {
+-	const struct dma_map_ops *ops = get_dma_ops(dev);
+-
+-	if (ops->set_dma_mask)
+-		return ops->set_dma_mask(dev, mask);
+-
+ 	if (!dev->dma_mask || !dma_supported(dev, mask))
+ 		return -EIO;
+ 	*dev->dma_mask = mask;
+-- 
+2.11.0
 
-I don't know of any remaining problems with this patch set, so hopefully it's
-ready to get merged.  I'll be including patch 1 in our RISC-V submissions, but
-as I'm somewhat new to this I don't have a tree that anyone pulls from yet.
-
-If everyone is happy with this patch set then I'd be willing to use this as a
-first attempt to get patches upstream myself.
-
-[PATCH 1/7] lib: Add shared copies of some GCC library routines
-[PATCH 2/7] m32r: Use lib/ucmpdi2.c
-[PATCH 3/7] microblaze: Use libgcc files from lib/
-[PATCH 4/7] score: Use lib/{ashldi3,ashrdi3,cmpdi2,lshrdi3,ucmpdi2}.c
-[PATCH 5/7] sh: Use lib/ashldi3,ashrdi3,lshrdi3}.c
-[PATCH 6/7] sparc: Use lib/{cmpdi2,ucmpdi2}.c
-[PATCH 7/7] MIPS: Use generic libgcc intrinsics
