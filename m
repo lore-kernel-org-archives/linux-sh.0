@@ -1,48 +1,36 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Fri, 02 Jun 2017 10:04:55 +0000
-Subject: Re: [PATCH v2 1/1] tty: add TIOCGPTPEER ioctl
-Message-Id: <CAK8P3a2Q5CwofO96fXyjTVqmm23UKZjd+mOopnvKr_TusLxXpQ@mail.gmail.com>
+From: Christoph Hellwig <hch@lst.de>
+Date: Thu, 08 Jun 2017 13:25:39 +0000
+Subject: [PATCH 14/44] sh: remove DMA_ERROR_CODE
+Message-Id: <20170608132609.32662-15-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20170602084858.4299-1-asarai@suse.de> <20170602084858.4299-2-asarai@suse.de>
-In-Reply-To: <20170602084858.4299-2-asarai@suse.de>
+References: <20170608132609.32662-1-hch@lst.de>
+In-Reply-To: <20170608132609.32662-1-hch-jcswGhMUV9g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Aleksa Sarai <asarai@suse.de>
-Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, linux-alpha@vger.kernel.org, "open list:RALINK MIPS ARCHITECTURE" <linux-mips@linux-mips.org>, Parisc List <linux-parisc@vger.kernel.org>, linuxppc-dev <linuxppc-dev@lists.ozlabs.org>, linux-sh@vger.kernel.org, sparclinux <sparclinux@vger.kernel.org>, linux-xtensa@linux-xtensa.org, linux-arch <linux-arch@vger.kernel.org>, Christian Brauner <christian.brauner@ubuntu.com>, Valentin Rothberg <vrothberg@suse.com>
+To: x86-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, xen-devel-GuqFBffKawtpuQazS67q72D2FQJk+8+b@public.gmane.org, linux-c6x-dev-jPsnJVOj+W6hPH1hqNUYSQ@public.gmane.org, linux-hexagon-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-ia64-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mips-6z/3iImG2C8G8FEW9MqTrA@public.gmane.org, openrisc-cunTk1MwBs9a3B2Vnqf2dGD2FQJk+8+b@public.gmane.org, linuxppc-dev-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org, linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sparclinux-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-xtensa-PjhNF2WwrV/0Sa2dR60CXw@public.gmane.org, dmaengine-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-tegra-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dri-devel-PD4FTy7X32lNgt0PjOBp9y5qC8QIuHrW@public.gmane.org, linux-samsung-soc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Fri, Jun 2, 2017 at 10:48 AM, Aleksa Sarai <asarai@suse.de> wrote:
-> When opening the slave end of a PTY, it is not possible for userspace to
-> safely ensure that /dev/pts/$num is actually a slave (in cases where the
-> mount namespace in which devpts was mounted is controlled by an
-> untrusted process). In addition, there are several unresolvable
-> race conditions if userspace were to attempt to detect attacks through
-> stat(2) and other similar methods [in addition it is not clear how
-> userspace could detect attacks involving FUSE].
->
-> Resolve this by providing an interface for userpace to safely open the
-> "peer" end of a PTY file descriptor by using the dentry cached by
-> devpts. Since it is not possible to have an open master PTY without
-> having its slave exposed in /dev/pts this interface is safe. This
-> interface currently does not provide a way to get the master pty (since
-> it is not clear whether such an interface is safe or even useful).
+sh does not return errors for dma_map_page.
 
-This should be added to the compat ioctls as well. There are two ways
-of doing this:
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+---
+ arch/sh/include/asm/dma-mapping.h | 2 --
+ 1 file changed, 2 deletions(-)
 
-a) like the other ioctls handled by pty_unix98_ioctl(), add it to the
-list in fs/compat_ioctl.c, and check that the list is still up-to-date with
-the current driver (someone else may have missed one)
+diff --git a/arch/sh/include/asm/dma-mapping.h b/arch/sh/include/asm/dma-mapping.h
+index d99008af5f73..9b06be07db4d 100644
+--- a/arch/sh/include/asm/dma-mapping.h
++++ b/arch/sh/include/asm/dma-mapping.h
+@@ -9,8 +9,6 @@ static inline const struct dma_map_ops *get_arch_dma_ops(struct bus_type *bus)
+ 	return dma_ops;
+ }
+ 
+-#define DMA_ERROR_CODE 0
+-
+ void dma_cache_sync(struct device *dev, void *vaddr, size_t size,
+ 		    enum dma_data_direction dir);
+ 
+-- 
+2.11.0
 
-b) remove all compat handling for ioctls that are specific to
-pty_unix98_ioctl() and pty_bsd_ioctl() from fs/compat_ioctl.c
-and add compat_ioctl callback pointers to master_pty_ops_bsd
-and ptm_unix98_ops, pointing to the respective ioctl handlers.
-
-I would recommend b) as it avoids the problem in the future,
-but it is a little more upfront work, and should be done as a
-separate preparation patch.
-All the ioctls here are compatible between 32-bit and 64-bit
-user space, so no special translation is needed.
-
-      Arnd
