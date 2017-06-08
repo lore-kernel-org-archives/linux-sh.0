@@ -1,49 +1,36 @@
-From: Palmer Dabbelt <palmer@dabbelt.com>
-Date: Sat, 03 Jun 2017 02:18:08 +0000
-Subject: Re: [PATCH 4/7] mips: Use lib/{ashldi3,ashrdi3,cmpdi2,lshrdi3,ucmpdi2}.c
-Message-Id: <mhng-fc1d65cf-1943-4c73-8fae-b13ee8349d2f@palmer-si-x1c4>
+From: Christoph Hellwig <hch@lst.de>
+Date: Thu, 08 Jun 2017 13:25:25 +0000
+Subject: clean up and modularize arch dma_mapping interface
+Message-Id: <20170608132609.32662-1-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <a870bfb8-a1c8-220e-460c-baa03b3fd554@imgtec.com>
-In-Reply-To: <a870bfb8-a1c8-220e-460c-baa03b3fd554@imgtec.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: matt.redfearn@imgtec.com
-Cc: monstr@monstr.eu, ralf@linux-mips.org, liqin.linux@gmail.com, lennox.wu@gmail.com, ysato@users.sourceforge.jp, dalias@libc.org, davem@davemloft.net, linux-mips@linux-mips.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, geert@linux-m68k.org, linux-kernel@vger.kernel.org, linux-arch@vger.kernel.org
+To: x86@kernel.org, linux-arm-kernel@lists.infradead.org, xen-devel@lists.xenproject.org, linux-c6x-dev@linux-c6x.org, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-mips@linux-mips.org, openrisc@lists.librecores.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, dmaengine@vger.kernel.org, linux-tegra@vger.kernel.org, dri-devel@lists.freedesktop.org, linux-samsung-soc@vger.kernel.org, iommu@lists.linux-foundation.org, netdev@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org
 
-On Wed, 24 May 2017 02:01:39 PDT (-0700), matt.redfearn@imgtec.com wrote:
-> Hi Palmer,
-> This patch doesn't quite match the subject, since it only removes the
-> mips specific implementation of __ucmpdi2. The following patch removes
-> all of the intrinsics that you added to lib/ from arch/mips/lib. I've
-> built & boot tested this on a MIPS pistachio platform.
-> Note that this patch will require rebasing on linux-next, since it will
-> conflict with other changes in arch/mips/Kconfig
->
-> Thanks,
-> Matt
->
-> [PATCH] MIPS: Use generic libgcc intrinsics
->
-> These routines in arch/mips/lib/ are functionally identical to those
-> recently added to lib/ so remove them and select the generic ones.
->
-> Signed-off-by: Matt Redfearn <matt.redfearn@imgtec.com>
-> ---
->   arch/mips/Kconfig       |  5 +++++
->   arch/mips/lib/Makefile  |  2 +-
->   arch/mips/lib/ashldi3.c | 29 -----------------------------
->   arch/mips/lib/ashrdi3.c | 31 -------------------------------
->   arch/mips/lib/cmpdi2.c  | 27 ---------------------------
->   arch/mips/lib/libgcc.h  | 25 -------------------------
->   arch/mips/lib/lshrdi3.c | 29 -----------------------------
->   arch/mips/lib/ucmpdi2.c | 21 ---------------------
->   8 files changed, 6 insertions(+), 163 deletions(-)
->   delete mode 100644 arch/mips/lib/ashldi3.c
->   delete mode 100644 arch/mips/lib/ashrdi3.c
->   delete mode 100644 arch/mips/lib/cmpdi2.c
->   delete mode 100644 arch/mips/lib/libgcc.h
->   delete mode 100644 arch/mips/lib/lshrdi3.c
->   delete mode 100644 arch/mips/lib/ucmpdi2.c
+Hi all,
 
-Sorry about that, I'll take your version and submit a v2.
+for a while we have a generic implementation of the dma mapping routines
+that call into per-arch or per-device operations.  But right now there
+still are various bits in the interfaces where don't clearly operate
+on these ops.  This series tries to clean up a lot of those (but not all
+yet, but the series is big enough).  It gets rid of the DMA_ERROR_CODE
+way of signaling failures of the mapping routines from the
+implementations to the generic code (and cleans up various drivers that
+were incorrectly using it), and gets rid of the ->set_dma_mask routine
+in favor of relying on the ->dma_capable method that can be used in
+the same way, but which requires less code duplication.
+
+Btw, we don't seem to have a tree every-growing amount of common dma
+mapping code, and given that I have a fair amount of all over the tree
+work in that area in my plate I'd like to start one.  Any good reason
+to that?  Anyone willing to volunteer as co maintainer?
+
+The whole series is also available in git:
+
+    git://git.infradead.org/users/hch/misc.git dma-map
+
+Gitweb:
+
+    http://git.infradead.org/users/hch/misc.git/shortlog/refs/heads/dma-map
