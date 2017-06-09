@@ -1,84 +1,124 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Fri, 16 Jun 2017 18:10:41 +0000
-Subject: [PATCH 26/44] dma-mapping: remove DMA_ERROR_CODE
-Message-Id: <20170616181059.19206-27-hch@lst.de>
+From: <gregkh@linuxfoundation.org>
+Date: Fri, 09 Jun 2017 09:01:03 +0000
+Subject: patch "sh: superhyway: use dev_groups and not dev_attrs for bus_type" added to driver-core-testing
+Message-Id: <149699886331247@kroah.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20170616181059.19206-1-hch@lst.de>
-In-Reply-To: <20170616181059.19206-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: x86@kernel.org, linux-arm-kernel@lists.infradead.org, xen-devel@lists.xenproject.org, linux-c6x-dev@linux-c6x.org, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-mips@linux-mips.org, openrisc@lists.librecores.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, dmaengine@vger.kernel.org, linux-tegra@vger.kernel.org, dri-devel@lists.freedesktop.org, linux-samsung-soc@vger.kernel.org, iommu@lists.linux-foundation.org, netdev@vger.kernel.org
-Cc: linux-kernel@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-And update the documentation - dma_mapping_error has been supported
-everywhere for a long time.
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
+This is a note to let you know that I've just added the patch titled
+
+    sh: superhyway: use dev_groups and not dev_attrs for bus_type
+
+to my driver-core git tree which can be found at
+    git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/driver-core.git
+in the driver-core-testing branch.
+
+The patch will show up in the next release of the linux-next tree
+(usually sometime within the next 24 hours during the week.)
+
+The patch will be merged to the driver-core-next branch sometime soon,
+after it passes testing, and the merge window is open.
+
+If you have any questions about this process, please let me know.
+
+
+From 9f4ac349bd60ef463450a00aa5e19c67f5ad12e2 Mon Sep 17 00:00:00 2001
+From: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Date: Tue, 6 Jun 2017 14:17:02 +0200
+Subject: sh: superhyway: use dev_groups and not dev_attrs for bus_type
+
+The dev_attrs field has long been "depreciated" and is finally being
+removed, so move the driver to use the "correct" dev_groups field
+instead for struct bus_type.
+
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Cc: <linux-sh@vger.kernel.org>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 ---
- Documentation/DMA-API-HOWTO.txt | 31 +++++--------------------------
- include/linux/dma-mapping.h     |  5 -----
- 2 files changed, 5 insertions(+), 31 deletions(-)
+ drivers/sh/superhyway/superhyway-sysfs.c | 29 +++++++++++++++++++----------
+ drivers/sh/superhyway/superhyway.c       |  2 +-
+ include/linux/superhyway.h               |  2 +-
+ 3 files changed, 21 insertions(+), 12 deletions(-)
 
-diff --git a/Documentation/DMA-API-HOWTO.txt b/Documentation/DMA-API-HOWTO.txt
-index 979228bc9035..4ed388356898 100644
---- a/Documentation/DMA-API-HOWTO.txt
-+++ b/Documentation/DMA-API-HOWTO.txt
-@@ -550,32 +550,11 @@ and to unmap it:
- 	dma_unmap_single(dev, dma_handle, size, direction);
+diff --git a/drivers/sh/superhyway/superhyway-sysfs.c b/drivers/sh/superhyway/superhyway-sysfs.c
+index 55434330867b..774f31b564f8 100644
+--- a/drivers/sh/superhyway/superhyway-sysfs.c
++++ b/drivers/sh/superhyway/superhyway-sysfs.c
+@@ -19,7 +19,8 @@ static ssize_t name##_show(struct device *dev, struct device_attribute *attr, ch
+ {									\
+ 	struct superhyway_device *s = to_superhyway_device(dev);	\
+ 	return sprintf(buf, fmt, s->field);				\
+-}
++}									\
++static DEVICE_ATTR_RO(name);
  
- You should call dma_mapping_error() as dma_map_single() could fail and return
--error. Not all DMA implementations support the dma_mapping_error() interface.
--However, it is a good practice to call dma_mapping_error() interface, which
--will invoke the generic mapping error check interface. Doing so will ensure
--that the mapping code will work correctly on all DMA implementations without
--any dependency on the specifics of the underlying implementation. Using the
--returned address without checking for errors could result in failures ranging
--from panics to silent data corruption. A couple of examples of incorrect ways
--to check for errors that make assumptions about the underlying DMA
--implementation are as follows and these are applicable to dma_map_page() as
--well.
--
--Incorrect example 1:
--	dma_addr_t dma_handle;
--
--	dma_handle = dma_map_single(dev, addr, size, direction);
--	if ((dma_handle & 0xffff != 0) || (dma_handle >= 0x1000000)) {
--		goto map_error;
--	}
--
--Incorrect example 2:
--	dma_addr_t dma_handle;
--
--	dma_handle = dma_map_single(dev, addr, size, direction);
--	if (dma_handle = DMA_ERROR_CODE) {
--		goto map_error;
--	}
-+error.  Doing so will ensure that the mapping code will work correctly on all
-+DMA implementations without any dependency on the specifics of the underlying
-+implementation. Using the returned address without checking for errors could
-+result in failures ranging from panics to silent data corruption.  The same
-+applies to dma_map_page() as well.
+ /* VCR flags */
+ superhyway_ro_attr(perr_flags, "0x%02x\n", vcr.perr_flags);
+@@ -32,14 +33,22 @@ superhyway_ro_attr(top_mb, "0x%02x\n", vcr.top_mb);
+ /* Misc */
+ superhyway_ro_attr(resource, "0x%08lx\n", resource[0].start);
  
- You should call dma_unmap_single() when the DMA activity is finished, e.g.,
- from the interrupt which told you that the DMA transfer is done.
-diff --git a/include/linux/dma-mapping.h b/include/linux/dma-mapping.h
-index 4f3eecedca2d..a57875309bfd 100644
---- a/include/linux/dma-mapping.h
-+++ b/include/linux/dma-mapping.h
-@@ -546,12 +546,7 @@ static inline int dma_mapping_error(struct device *dev, dma_addr_t dma_addr)
+-struct device_attribute superhyway_dev_attrs[] = {
+-	__ATTR_RO(perr_flags),
+-	__ATTR_RO(merr_flags),
+-	__ATTR_RO(mod_vers),
+-	__ATTR_RO(mod_id),
+-	__ATTR_RO(bot_mb),
+-	__ATTR_RO(top_mb),
+-	__ATTR_RO(resource),
+-	__ATTR_NULL,
++static struct attribute *superhyway_dev_attrs[] = {
++	&dev_attr_perr_flags.attr,
++	&dev_attr_merr_flags.attr,
++	&dev_attr_mod_vers.attr,
++	&dev_attr_mod_id.attr,
++	&dev_attr_bot_mb.attr,
++	&dev_attr_top_mb.attr,
++	&dev_attr_resource.attr,
++	NULL,
+ };
  
- 	if (get_dma_ops(dev)->mapping_error)
- 		return get_dma_ops(dev)->mapping_error(dev, dma_addr);
--
--#ifdef DMA_ERROR_CODE
--	return dma_addr = DMA_ERROR_CODE;
--#else
- 	return 0;
--#endif
- }
++static const struct attribute_group superhyway_dev_group = {
++	.attrs = superhyway_dev_attrs,
++};
++
++const struct attribute_group *superhyway_dev_groups[] = {
++	&superhyway_dev_group,
++	NULL,
++};
+diff --git a/drivers/sh/superhyway/superhyway.c b/drivers/sh/superhyway/superhyway.c
+index bb1fb7712134..348836b90605 100644
+--- a/drivers/sh/superhyway/superhyway.c
++++ b/drivers/sh/superhyway/superhyway.c
+@@ -209,7 +209,7 @@ struct bus_type superhyway_bus_type = {
+ 	.name		= "superhyway",
+ 	.match		= superhyway_bus_match,
+ #ifdef CONFIG_SYSFS
+-	.dev_attrs	= superhyway_dev_attrs,
++	.dev_groups	= superhyway_dev_groups,
+ #endif
+ 	.probe		= superhyway_device_probe,
+ 	.remove		= superhyway_device_remove,
+diff --git a/include/linux/superhyway.h b/include/linux/superhyway.h
+index 17ea468fa362..8d3376775813 100644
+--- a/include/linux/superhyway.h
++++ b/include/linux/superhyway.h
+@@ -101,7 +101,7 @@ int superhyway_add_device(unsigned long base, struct superhyway_device *, struct
+ int superhyway_add_devices(struct superhyway_bus *bus, struct superhyway_device **devices, int nr_devices);
  
- #ifndef HAVE_ARCH_DMA_SUPPORTED
+ /* drivers/sh/superhyway/superhyway-sysfs.c */
+-extern struct device_attribute superhyway_dev_attrs[];
++extern const struct attribute_group *superhyway_dev_groups[];
+ 
+ #endif /* __LINUX_SUPERHYWAY_H */
+ 
 -- 
-2.11.0
+2.13.1
+
 
