@@ -1,36 +1,61 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Fri, 16 Jun 2017 18:10:25 +0000
-Subject: [PATCH 10/44] ia64: remove DMA_ERROR_CODE
-Message-Id: <20170616181059.19206-11-hch@lst.de>
+From: Nicholas Piggin <npiggin@gmail.com>
+Date: Fri, 09 Jun 2017 05:24:15 +0000
+Subject: [PATCH 3/5] sh: thin archives fix linking
+Message-Id: <20170609052417.561-4-npiggin@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20170616181059.19206-1-hch@lst.de>
-In-Reply-To: <20170616181059.19206-1-hch@lst.de>
+References: <20170609052417.561-1-npiggin@gmail.com>
+In-Reply-To: <20170609052417.561-1-npiggin@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: x86@kernel.org, linux-arm-kernel@lists.infradead.org, xen-devel@lists.xenproject.org, linux-c6x-dev@linux-c6x.org, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-mips@linux-mips.org, openrisc@lists.librecores.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, dmaengine@vger.kernel.org, linux-tegra@vger.kernel.org, dri-devel@lists.freedesktop.org, linux-samsung-soc@vger.kernel.org, iommu@lists.linux-foundation.org, netdev@vger.kernel.org
-Cc: linux-kernel@vger.kernel.org
+To: linux-kbuild@vger.kernel.org, linux-arch@vger.kernel.org
+Cc: Nicholas Piggin <npiggin@gmail.com>, Masahiro Yamada <yamada.masahiro@socionext.com>, Michal Marek <mmarek@suse.com>, Linus Torvalds <torvalds@linux-foundation.org>, Stephen Rothwell <sfr@canb.auug.org.au>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
 
-All ia64 dma_mapping_ops instances already have a mapping_error member.
+The VDSO symbols can't be linked into built-in.o when building with
+thin archives, so change this to linking them into the final link.
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+Cc: linux-sh@vger.kernel.org
+Signed-off-by: Nicholas Piggin <npiggin@gmail.com>
 ---
- arch/ia64/include/asm/dma-mapping.h | 2 --
- 1 file changed, 2 deletions(-)
 
-diff --git a/arch/ia64/include/asm/dma-mapping.h b/arch/ia64/include/asm/dma-mapping.h
-index 73ec3c6f4cfe..3ce5ab4339f3 100644
---- a/arch/ia64/include/asm/dma-mapping.h
-+++ b/arch/ia64/include/asm/dma-mapping.h
-@@ -12,8 +12,6 @@
+Arch maintainers please give an ack if we can take this through
+the kbuild tree.
+
+Thanks,
+Nick
+
+ arch/sh/Makefile                 | 2 ++
+ arch/sh/kernel/vsyscall/Makefile | 2 --
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/sh/Makefile b/arch/sh/Makefile
+index 280bbff12102..a907366f0352 100644
+--- a/arch/sh/Makefile
++++ b/arch/sh/Makefile
+@@ -97,6 +97,8 @@ defaultimage-$(CONFIG_SH_7619_SOLUTION_ENGINE)	:= vmlinux
+ boot := arch/sh/boot
+ KBUILD_IMAGE		:= $(boot)/$(defaultimage-y)
  
- #define ARCH_HAS_DMA_GET_REQUIRED_MASK
++LDFLAGS_vmlinux		+= -R arch/sh/kernel/vsyscall/vsyscall-syms.o
++
+ #
+ # Choosing incompatible machines durings configuration will result in
+ # error messages during linking.
+diff --git a/arch/sh/kernel/vsyscall/Makefile b/arch/sh/kernel/vsyscall/Makefile
+index 8f0ea5fc835c..b82d13eb8d30 100644
+--- a/arch/sh/kernel/vsyscall/Makefile
++++ b/arch/sh/kernel/vsyscall/Makefile
+@@ -27,8 +27,6 @@ $(obj)/vsyscall-%.so: $(src)/vsyscall.lds $(obj)/vsyscall-%.o FORCE
+ # table and layout of the linked DSO.  With ld -R we can then refer to
+ # these symbols in the kernel code rather than hand-coded addresses.
+ extra-y += vsyscall-syms.o
+-$(obj)/built-in.o: $(obj)/vsyscall-syms.o
+-$(obj)/built-in.o: ld_flags += -R $(obj)/vsyscall-syms.o
  
--#define DMA_ERROR_CODE 0
--
- extern const struct dma_map_ops *dma_ops;
- extern struct ia64_machine_vector ia64_mv;
- extern void set_iommu_machvec(void);
+ SYSCFLAGS_vsyscall-syms.o = -r
+ $(obj)/vsyscall-syms.o: $(src)/vsyscall.lds \
 -- 
 2.11.0
 
