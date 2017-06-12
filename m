@@ -1,33 +1,105 @@
-From: Aleksa Sarai <asarai@suse.de>
-Date: Sat, 03 Jun 2017 14:15:13 +0000
-Subject: [PATCH v4 0/2] tty: add TIOCGPTPEER ioctl
-Message-Id: <20170603141515.9529-1-asarai@suse.de>
+From: Masahiro Yamada <yamada.masahiro@socionext.com>
+Date: Mon, 12 Jun 2017 03:27:14 +0000
+Subject: [PATCH 20/27] sh: move generic-y of exported headers to uapi/asm/Kbuild
+Message-Id: <1497238041-7011-21-git-send-email-yamada.masahiro@socionext.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1497238041-7011-1-git-send-email-yamada.masahiro@socionext.com>
+In-Reply-To: <1497238041-7011-1-git-send-email-yamada.masahiro@socionext.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>, Arnd Bergmann <arnd@arndb.de>
-Cc: linux-kernel@vger.kernel.org, linux-alpha@vger.kernel.org, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-arch@vger.kernel.org, Christian Brauner <christian.brauner@ubuntu.com>, Valentin Rothberg <vrothberg@suse.com>, Aleksa Sarai <asarai@suse.de>
+To: linux-kbuild@vger.kernel.org, linux-arch <linux-arch@vger.kernel.org>
+Cc: Masahiro Yamada <yamada.masahiro@socionext.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
 
-Changes in v4:
-  * Dropped an accidental change to Makefile.
+Since commit fcc8487d477a ("uapi: export all headers under uapi
+directories"), all (and only) headers under uapi directories are
+exported, but asm-generic wrappers are still exceptions.
 
-Aleksa Sarai (2):
-  tty: add compat_ioctl callbacks
-  tty: add TIOCGPTPEER ioctl
+scripts/Makefile.headersinst still need to deal with old-kbuild-file
+for headers listed in arch/*/include/asm/Kbuild, but actually exported.
 
- arch/alpha/include/uapi/asm/ioctls.h   |  1 +
- arch/mips/include/uapi/asm/ioctls.h    |  1 +
- arch/parisc/include/uapi/asm/ioctls.h  |  1 +
- arch/powerpc/include/uapi/asm/ioctls.h |  1 +
- arch/sh/include/uapi/asm/ioctls.h      |  1 +
- arch/sparc/include/uapi/asm/ioctls.h   |  3 +-
- arch/xtensa/include/uapi/asm/ioctls.h  |  1 +
- drivers/tty/pty.c                      | 93 ++++++++++++++++++++++++++++++++--
- fs/compat_ioctl.c                      |  6 ---
- include/uapi/asm-generic/ioctls.h      |  1 +
- 10 files changed, 98 insertions(+), 11 deletions(-)
+As the last work to finish de-coupling the uapi from kernel headers,
+move generic-y of exported headers to uapi/asm/Kbuild.
 
+Signed-off-by: Masahiro Yamada <yamada.masahiro@socionext.com>
+---
+
+ arch/sh/include/asm/Kbuild      | 20 --------------------
+ arch/sh/include/uapi/asm/Kbuild | 20 ++++++++++++++++++++
+ 2 files changed, 20 insertions(+), 20 deletions(-)
+
+diff --git a/arch/sh/include/asm/Kbuild b/arch/sh/include/asm/Kbuild
+index cf2a75063b53..1a6f9c39feef 100644
+--- a/arch/sh/include/asm/Kbuild
++++ b/arch/sh/include/asm/Kbuild
+@@ -1,40 +1,20 @@
+-
+-generic-y += bitsperlong.h
+ generic-y += clkdev.h
+ generic-y += current.h
+ generic-y += delay.h
+ generic-y += div64.h
+ generic-y += emergency-restart.h
+-generic-y += errno.h
+ generic-y += exec.h
+-generic-y += fcntl.h
+-generic-y += ioctl.h
+-generic-y += ipcbuf.h
+ generic-y += irq_regs.h
+ generic-y += irq_work.h
+-generic-y += kvm_para.h
+ generic-y += local.h
+ generic-y += local64.h
+ generic-y += mcs_spinlock.h
+ generic-y += mm-arch-hooks.h
+-generic-y += mman.h
+-generic-y += msgbuf.h
+-generic-y += param.h
+ generic-y += parport.h
+ generic-y += percpu.h
+-generic-y += poll.h
+ generic-y += preempt.h
+-generic-y += resource.h
+ generic-y += rwsem.h
+-generic-y += sembuf.h
+ generic-y += serial.h
+-generic-y += shmbuf.h
+-generic-y += siginfo.h
+ generic-y += sizes.h
+-generic-y += socket.h
+-generic-y += statfs.h
+-generic-y += termbits.h
+-generic-y += termios.h
+ generic-y += trace_clock.h
+-generic-y += ucontext.h
+ generic-y += xor.h
+diff --git a/arch/sh/include/uapi/asm/Kbuild b/arch/sh/include/uapi/asm/Kbuild
+index b15bf6bc0e94..e28531333efa 100644
+--- a/arch/sh/include/uapi/asm/Kbuild
++++ b/arch/sh/include/uapi/asm/Kbuild
+@@ -1,2 +1,22 @@
+ # UAPI Header export list
+ include include/uapi/asm-generic/Kbuild.asm
++
++generic-y += bitsperlong.h
++generic-y += errno.h
++generic-y += fcntl.h
++generic-y += ioctl.h
++generic-y += ipcbuf.h
++generic-y += kvm_para.h
++generic-y += mman.h
++generic-y += msgbuf.h
++generic-y += param.h
++generic-y += poll.h
++generic-y += resource.h
++generic-y += sembuf.h
++generic-y += shmbuf.h
++generic-y += siginfo.h
++generic-y += socket.h
++generic-y += statfs.h
++generic-y += termbits.h
++generic-y += termios.h
++generic-y += ucontext.h
 -- 
-2.13.0
+2.7.4
 
