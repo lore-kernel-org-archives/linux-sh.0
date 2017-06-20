@@ -1,67 +1,38 @@
-From: "Paul E. McKenney" <paulmck@linux.vnet.ibm.com>
-Date: Fri, 30 Jun 2017 00:01:31 +0000
-Subject: [PATCH RFC 23/26] sh: Remove spin_unlock_wait() arch-specific definitions
-Message-Id: <1498780894-8253-23-git-send-email-paulmck@linux.vnet.ibm.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 20 Jun 2017 07:42:04 +0000
+Subject: Re: Build regressions/improvements in v4.12-rc6
+Message-Id: <CAMuHMdVR_Xysupx3u0PXgiRJJP1DLfw+1rXGZzpi8DF4KJGFzw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20170629235918.GA6445@linux.vnet.ibm.com>
-In-Reply-To: <20170629235918.GA6445@linux.vnet.ibm.com>
+References: <1497944373-26837-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1497944373-26837-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: netfilter-devel@vger.kernel.org, netdev@vger.kernel.org, oleg@redhat.com, akpm@linux-foundation.org, mingo@redhat.com, dave@stgolabs.net, manfred@colorfullife.com, tj@kernel.org, arnd@arndb.de, linux-arch@vger.kernel.org, will.deacon@arm.com, peterz@infradead.org, stern@rowland.harvard.edu, parri.andrea@gmail.com, torvalds@linux-foundation.org, "Paul E. McKenney" <paulmck@linux.vnet.ibm.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
+To: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+Cc: Linux-sh list <linux-sh@vger.kernel.org>
 
-There is no agreed-upon definition of spin_unlock_wait()'s semantics,
-and it appears that all callers could do just as well with a lock/unlock
-pair.  This commit therefore removes the underlying arch-specific
-arch_spin_unlock_wait().
+On Tue, Jun 20, 2017 at 9:39 AM, Geert Uytterhoeven
+<geert@linux-m68k.org> wrote:
+> JFYI, when comparing v4.12-rc6[1] to v4.12-rc5[3], the summaries are:
+>   - build errors: +4/-
 
-Signed-off-by: Paul E. McKenney <paulmck@linux.vnet.ibm.com>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: Rich Felker <dalias@libc.org>
-Cc: <linux-sh@vger.kernel.org>
-Cc: Will Deacon <will.deacon@arm.com>
-Cc: Peter Zijlstra <peterz@infradead.org>
-Cc: Alan Stern <stern@rowland.harvard.edu>
-Cc: Andrea Parri <parri.andrea@gmail.com>
-Cc: Linus Torvalds <torvalds@linux-foundation.org>
----
- arch/sh/include/asm/spinlock-cas.h  | 5 -----
- arch/sh/include/asm/spinlock-llsc.h | 5 -----
- 2 files changed, 10 deletions(-)
+  + /home/kisskb/slave/src/arch/sh/boards/mach-sh03/setup.c: error:
+implicit declaration of function 'ioremap_prot'
+[-Werror=implicit-function-declaration]:  => 85:2
 
-diff --git a/arch/sh/include/asm/spinlock-cas.h b/arch/sh/include/asm/spinlock-cas.h
-index c46e8cc7b515..5ed7dbbd94ff 100644
---- a/arch/sh/include/asm/spinlock-cas.h
-+++ b/arch/sh/include/asm/spinlock-cas.h
-@@ -29,11 +29,6 @@ static inline unsigned __sl_cas(volatile unsigned *p, unsigned old, unsigned new
- #define arch_spin_is_locked(x)		((x)->lock <= 0)
- #define arch_spin_lock_flags(lock, flags) arch_spin_lock(lock)
- 
--static inline void arch_spin_unlock_wait(arch_spinlock_t *lock)
--{
--	smp_cond_load_acquire(&lock->lock, VAL > 0);
--}
--
- static inline void arch_spin_lock(arch_spinlock_t *lock)
- {
- 	while (!__sl_cas(&lock->lock, 1, 0));
-diff --git a/arch/sh/include/asm/spinlock-llsc.h b/arch/sh/include/asm/spinlock-llsc.h
-index cec78143fa83..f77263aae760 100644
---- a/arch/sh/include/asm/spinlock-llsc.h
-+++ b/arch/sh/include/asm/spinlock-llsc.h
-@@ -21,11 +21,6 @@
- #define arch_spin_is_locked(x)		((x)->lock <= 0)
- #define arch_spin_lock_flags(lock, flags) arch_spin_lock(lock)
- 
--static inline void arch_spin_unlock_wait(arch_spinlock_t *lock)
--{
--	smp_cond_load_acquire(&lock->lock, VAL > 0);
--}
--
- /*
-  * Simple spin lock operations.  There are two variants, one clears IRQ's
-  * on the local processor, one does not.
--- 
-2.5.2
+sh-randconfig
 
+  + error: "__udivdi3" [fs/ufs/ufs.ko] undefined!:  => N/A
+
+Lots of 32-bit platforms
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
