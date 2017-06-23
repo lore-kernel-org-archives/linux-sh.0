@@ -1,69 +1,194 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Fri, 16 Jun 2017 18:10:42 +0000
-Subject: [PATCH 27/44] sparc: remove leon_dma_ops
-Message-Id: <20170616181059.19206-28-hch@lst.de>
+From: Palmer Dabbelt <palmer@dabbelt.com>
+Date: Fri, 23 Jun 2017 21:45:38 +0000
+Subject: [PATCH] pci:  Add and use PCI_GENERIC_SETUP Kconfig entry
+Message-Id: <20170623214538.25967-1-palmer@dabbelt.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20170616181059.19206-1-hch@lst.de>
-In-Reply-To: <20170616181059.19206-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: x86@kernel.org, linux-arm-kernel@lists.infradead.org, xen-devel@lists.xenproject.org, linux-c6x-dev@linux-c6x.org, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-mips@linux-mips.org, openrisc@lists.librecores.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, dmaengine@vger.kernel.org, linux-tegra@vger.kernel.org, dri-devel@lists.freedesktop.org, linux-samsung-soc@vger.kernel.org, iommu@lists.linux-foundation.org, netdev@vger.kernel.org
-Cc: linux-kernel@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-We can just use pci32_dma_ops directly.
+We wanted to add RISC-V to the list of architectures that used the
+generic PCI setup-irq.o inside the Makefile and it was suggested that
+instead we define a Kconfig entry and use that.
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
-Acked-by: David S. Miller <davem@davemloft.net>
+I've done very minimal testing on this: I just checked to see that
+an aarch64 defconfig still build setup-irq.o with the patch applied.
+The intention is that this patch doesn't change the behavior of any
+build.
+
+Signed-off-by: Palmer Dabbelt <palmer@dabbelt.com>
 ---
- arch/sparc/include/asm/dma-mapping.h | 3 +--
- arch/sparc/kernel/ioport.c           | 5 +----
- 2 files changed, 2 insertions(+), 6 deletions(-)
+ arch/alpha/Kconfig     |  1 +
+ arch/arc/Kconfig       |  1 +
+ arch/arm/Kconfig       |  1 +
+ arch/arm64/Kconfig     |  1 +
+ arch/m68k/Kconfig      |  1 +
+ arch/mips/Kconfig      |  1 +
+ arch/sh/Kconfig        |  1 +
+ arch/sparc/Kconfig     |  1 +
+ arch/tile/Kconfig      |  1 +
+ arch/unicore32/Kconfig |  1 +
+ drivers/pci/Kconfig    |  3 +++
+ drivers/pci/Makefile   | 11 +----------
+ 12 files changed, 14 insertions(+), 10 deletions(-)
 
-diff --git a/arch/sparc/include/asm/dma-mapping.h b/arch/sparc/include/asm/dma-mapping.h
-index b8e8dfcd065d..98da9f92c318 100644
---- a/arch/sparc/include/asm/dma-mapping.h
-+++ b/arch/sparc/include/asm/dma-mapping.h
-@@ -17,7 +17,6 @@ static inline void dma_cache_sync(struct device *dev, void *vaddr, size_t size,
- }
+diff --git a/arch/alpha/Kconfig b/arch/alpha/Kconfig
+index 0e49d39ea74a..30f4e711f681 100644
+--- a/arch/alpha/Kconfig
++++ b/arch/alpha/Kconfig
+@@ -26,6 +26,7 @@ config ALPHA
+ 	select ODD_RT_SIGACTION
+ 	select OLD_SIGSUSPEND
+ 	select CPU_NO_EFFICIENT_FFS if !ALPHA_EV67
++	select PCI_GENERIC_SETUP
+ 	help
+ 	  The Alpha is a 64-bit general-purpose processor designed and
+ 	  marketed by the Digital Equipment Corporation of blessed memory,
+diff --git a/arch/arc/Kconfig b/arch/arc/Kconfig
+index a5459698f0ee..dd1f64858118 100644
+--- a/arch/arc/Kconfig
++++ b/arch/arc/Kconfig
+@@ -44,6 +44,7 @@ config ARC
+ 	select HAVE_GENERIC_DMA_COHERENT
+ 	select HAVE_KERNEL_GZIP
+ 	select HAVE_KERNEL_LZMA
++	select PCI_GENERIC_SETUP
  
- extern const struct dma_map_ops *dma_ops;
--extern const struct dma_map_ops *leon_dma_ops;
- extern const struct dma_map_ops pci32_dma_ops;
+ config MIGHT_HAVE_PCI
+ 	bool
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index 4c1a35f15838..86872246951c 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -96,6 +96,7 @@ config ARM
+ 	select PERF_USE_VMALLOC
+ 	select RTC_LIB
+ 	select SYS_SUPPORTS_APM_EMULATION
++	select PCI_GENERIC_SETUP
+ 	# Above selects are sorted alphabetically; please add new ones
+ 	# according to that.  Thanks.
+ 	help
+diff --git a/arch/arm64/Kconfig b/arch/arm64/Kconfig
+index b2024db225a9..6c684d8c8816 100644
+--- a/arch/arm64/Kconfig
++++ b/arch/arm64/Kconfig
+@@ -115,6 +115,7 @@ config ARM64
+ 	select SPARSE_IRQ
+ 	select SYSCTL_EXCEPTION_TRACE
+ 	select THREAD_INFO_IN_TASK
++	select PCI_GENERIC_SETUP
+ 	help
+ 	  ARM 64-bit (AArch64) Linux support.
  
- extern struct bus_type pci_bus_type;
-@@ -26,7 +25,7 @@ static inline const struct dma_map_ops *get_arch_dma_ops(struct bus_type *bus)
- {
- #ifdef CONFIG_SPARC_LEON
- 	if (sparc_cpu_model = sparc_leon)
--		return leon_dma_ops;
-+		return &pci32_dma_ops;
- #endif
- #if defined(CONFIG_SPARC32) && defined(CONFIG_PCI)
- 	if (bus = &pci_bus_type)
-diff --git a/arch/sparc/kernel/ioport.c b/arch/sparc/kernel/ioport.c
-index cf20033a1458..dd081d557609 100644
---- a/arch/sparc/kernel/ioport.c
-+++ b/arch/sparc/kernel/ioport.c
-@@ -637,6 +637,7 @@ static void pci32_sync_sg_for_device(struct device *device, struct scatterlist *
- 	}
- }
+diff --git a/arch/m68k/Kconfig b/arch/m68k/Kconfig
+index d140206d5d29..c16214344f1c 100644
+--- a/arch/m68k/Kconfig
++++ b/arch/m68k/Kconfig
+@@ -22,6 +22,7 @@ config M68K
+ 	select MODULES_USE_ELF_RELA
+ 	select OLD_SIGSUSPEND3
+ 	select OLD_SIGACTION
++	select PCI_GENERIC_SETUP
  
-+/* note: leon re-uses pci32_dma_ops */
- const struct dma_map_ops pci32_dma_ops = {
- 	.alloc			= pci32_alloc_coherent,
- 	.free			= pci32_free_coherent,
-@@ -651,10 +652,6 @@ const struct dma_map_ops pci32_dma_ops = {
- };
- EXPORT_SYMBOL(pci32_dma_ops);
+ config RWSEM_GENERIC_SPINLOCK
+ 	bool
+diff --git a/arch/mips/Kconfig b/arch/mips/Kconfig
+index 2828ecde133d..474a7c710686 100644
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -70,6 +70,7 @@ config MIPS
+ 	select HAVE_EXIT_THREAD
+ 	select HAVE_REGS_AND_STACK_ACCESS_API
+ 	select HAVE_COPY_THREAD_TLS
++	select PCI_GENERIC_SETUP
  
--/* leon re-uses pci32_dma_ops */
--const struct dma_map_ops *leon_dma_ops = &pci32_dma_ops;
--EXPORT_SYMBOL(leon_dma_ops);
--
- const struct dma_map_ops *dma_ops = &sbus_dma_ops;
- EXPORT_SYMBOL(dma_ops);
+ menu "Machine selection"
  
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index ee086958b2b2..90a98ac526fb 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -48,6 +48,7 @@ config SUPERH
+ 	select HAVE_ARCH_AUDITSYSCALL
+ 	select HAVE_FUTEX_CMPXCHG if FUTEX
+ 	select HAVE_NMI
++	select PCI_GENERIC_SETUP
+ 	help
+ 	  The SuperH is a RISC processor targeted for use in embedded systems
+ 	  and consumer electronics; it was also used in the Sega Dreamcast
+diff --git a/arch/sparc/Kconfig b/arch/sparc/Kconfig
+index 5639c9fe5b55..24cea64104bd 100644
+--- a/arch/sparc/Kconfig
++++ b/arch/sparc/Kconfig
+@@ -424,6 +424,7 @@ config SPARC_LEON
+ 	depends on SPARC32
+ 	select USB_EHCI_BIG_ENDIAN_MMIO
+ 	select USB_EHCI_BIG_ENDIAN_DESC
++	select PCI_GENERIC_SETUP
+ 	---help---
+ 	  If you say Y here if you are running on a SPARC-LEON processor.
+ 	  The LEON processor is a synthesizable VHDL model of the
+diff --git a/arch/tile/Kconfig b/arch/tile/Kconfig
+index 4583c0320059..6679af85a882 100644
+--- a/arch/tile/Kconfig
++++ b/arch/tile/Kconfig
+@@ -33,6 +33,7 @@ config TILE
+ 	select USER_STACKTRACE_SUPPORT
+ 	select USE_PMC if PERF_EVENTS
+ 	select VIRT_TO_BUS
++	select PCI_GENERIC_SETUP
+ 
+ config MMU
+ 	def_bool y
+diff --git a/arch/unicore32/Kconfig b/arch/unicore32/Kconfig
+index 0769066929c6..162a7d3def0c 100644
+--- a/arch/unicore32/Kconfig
++++ b/arch/unicore32/Kconfig
+@@ -18,6 +18,7 @@ config UNICORE32
+ 	select ARCH_WANT_FRAME_POINTERS
+ 	select GENERIC_IOMAP
+ 	select MODULES_USE_ELF_REL
++	select PCI_GENERIC_SETUP
+ 	help
+ 	  UniCore-32 is 32-bit Instruction Set Architecture,
+ 	  including a series of low-power-consumption RISC chip
+diff --git a/drivers/pci/Kconfig b/drivers/pci/Kconfig
+index e0cacb7b8563..658c9f95ab3f 100644
+--- a/drivers/pci/Kconfig
++++ b/drivers/pci/Kconfig
+@@ -131,6 +131,9 @@ config PCI_HYPERV
+           The PCI device frontend driver allows the kernel to import arbitrary
+           PCI devices from a PCI backend to support PCI driver domains.
+ 
++config PCI_GENERIC_SETUP
++	def_bool n
++
+ source "drivers/pci/hotplug/Kconfig"
+ source "drivers/pci/dwc/Kconfig"
+ source "drivers/pci/host/Kconfig"
+diff --git a/drivers/pci/Makefile b/drivers/pci/Makefile
+index 462c1f5f5546..26f4710c88ec 100644
+--- a/drivers/pci/Makefile
++++ b/drivers/pci/Makefile
+@@ -31,16 +31,7 @@ obj-$(CONFIG_PCI_IOV) += iov.o
+ #
+ # Some architectures use the generic PCI setup functions
+ #
+-obj-$(CONFIG_ALPHA) += setup-irq.o
+-obj-$(CONFIG_ARC) += setup-irq.o
+-obj-$(CONFIG_ARM) += setup-irq.o
+-obj-$(CONFIG_ARM64) += setup-irq.o
+-obj-$(CONFIG_UNICORE32) += setup-irq.o
+-obj-$(CONFIG_SUPERH) += setup-irq.o
+-obj-$(CONFIG_MIPS) += setup-irq.o
+-obj-$(CONFIG_TILE) += setup-irq.o
+-obj-$(CONFIG_SPARC_LEON) += setup-irq.o
+-obj-$(CONFIG_M68K) += setup-irq.o
++obj-$(CONFIG_PCI_GENERIC_SETUP) += setup-irq.o
+ 
+ #
+ # ACPI Related PCI FW Functions
 -- 
-2.11.0
+2.13.0
 
