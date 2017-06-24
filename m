@@ -1,105 +1,50 @@
-From: Masahiro Yamada <yamada.masahiro@socionext.com>
-Date: Mon, 12 Jun 2017 03:27:14 +0000
-Subject: [PATCH 20/27] sh: move generic-y of exported headers to uapi/asm/Kbuild
-Message-Id: <1497238041-7011-21-git-send-email-yamada.masahiro@socionext.com>
+From: Palmer Dabbelt <palmer@dabbelt.com>
+Date: Sat, 24 Jun 2017 01:50:44 +0000
+Subject: [PATCH 3/3] arc: kernel/pcibios.c is empty, delete it
+Message-Id: <20170624015044.16746-4-palmer@dabbelt.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1497238041-7011-1-git-send-email-yamada.masahiro@socionext.com>
-In-Reply-To: <1497238041-7011-1-git-send-email-yamada.masahiro@socionext.com>
+References: <20170624015044.16746-1-palmer@dabbelt.com>
+In-Reply-To: <20170624015044.16746-1-palmer@dabbelt.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kbuild@vger.kernel.org, linux-arch <linux-arch@vger.kernel.org>
-Cc: Masahiro Yamada <yamada.masahiro@socionext.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-pci@vger.kernel.org
+Cc: linux-snps-arc@lists.infradead.org
 
-Since commit fcc8487d477a ("uapi: export all headers under uapi
-directories"), all (and only) headers under uapi directories are
-exported, but asm-generic wrappers are still exceptions.
-
-scripts/Makefile.headersinst still need to deal with old-kbuild-file
-for headers listed in arch/*/include/asm/Kbuild, but actually exported.
-
-As the last work to finish de-coupling the uapi from kernel headers,
-move generic-y of exported headers to uapi/asm/Kbuild.
-
-Signed-off-by: Masahiro Yamada <yamada.masahiro@socionext.com>
+Signed-off-by: Palmer Dabbelt <palmer@dabbelt.com>
 ---
+ arch/arc/kernel/Makefile  | 1 -
+ arch/arc/kernel/pcibios.c | 9 ---------
+ 2 files changed, 10 deletions(-)
+ delete mode 100644 arch/arc/kernel/pcibios.c
 
- arch/sh/include/asm/Kbuild      | 20 --------------------
- arch/sh/include/uapi/asm/Kbuild | 20 ++++++++++++++++++++
- 2 files changed, 20 insertions(+), 20 deletions(-)
-
-diff --git a/arch/sh/include/asm/Kbuild b/arch/sh/include/asm/Kbuild
-index cf2a75063b53..1a6f9c39feef 100644
---- a/arch/sh/include/asm/Kbuild
-+++ b/arch/sh/include/asm/Kbuild
-@@ -1,40 +1,20 @@
+diff --git a/arch/arc/kernel/Makefile b/arch/arc/kernel/Makefile
+index 8942c5c3b4c5..2dc5f4296d44 100644
+--- a/arch/arc/kernel/Makefile
++++ b/arch/arc/kernel/Makefile
+@@ -12,7 +12,6 @@ obj-y	:= arcksyms.o setup.o irq.o reset.o ptrace.o process.o devtree.o
+ obj-y	+= signal.o traps.o sys.o troubleshoot.o stacktrace.o disasm.o
+ obj-$(CONFIG_ISA_ARCOMPACT)		+= entry-compact.o intc-compact.o
+ obj-$(CONFIG_ISA_ARCV2)			+= entry-arcv2.o intc-arcv2.o
+-obj-$(CONFIG_PCI)  			+= pcibios.o
+ 
+ obj-$(CONFIG_MODULES)			+= arcksyms.o module.o
+ obj-$(CONFIG_SMP) 			+= smp.o
+diff --git a/arch/arc/kernel/pcibios.c b/arch/arc/kernel/pcibios.c
+deleted file mode 100644
+index 05aba5a7b5d2..000000000000
+--- a/arch/arc/kernel/pcibios.c
++++ /dev/null
+@@ -1,9 +0,0 @@
+-/*
+- * Copyright (C) 2014-2015 Synopsys, Inc. (www.synopsys.com)
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License version 2 as
+- * published by the Free Software Foundation.
+- */
 -
--generic-y += bitsperlong.h
- generic-y += clkdev.h
- generic-y += current.h
- generic-y += delay.h
- generic-y += div64.h
- generic-y += emergency-restart.h
--generic-y += errno.h
- generic-y += exec.h
--generic-y += fcntl.h
--generic-y += ioctl.h
--generic-y += ipcbuf.h
- generic-y += irq_regs.h
- generic-y += irq_work.h
--generic-y += kvm_para.h
- generic-y += local.h
- generic-y += local64.h
- generic-y += mcs_spinlock.h
- generic-y += mm-arch-hooks.h
--generic-y += mman.h
--generic-y += msgbuf.h
--generic-y += param.h
- generic-y += parport.h
- generic-y += percpu.h
--generic-y += poll.h
- generic-y += preempt.h
--generic-y += resource.h
- generic-y += rwsem.h
--generic-y += sembuf.h
- generic-y += serial.h
--generic-y += shmbuf.h
--generic-y += siginfo.h
- generic-y += sizes.h
--generic-y += socket.h
--generic-y += statfs.h
--generic-y += termbits.h
--generic-y += termios.h
- generic-y += trace_clock.h
--generic-y += ucontext.h
- generic-y += xor.h
-diff --git a/arch/sh/include/uapi/asm/Kbuild b/arch/sh/include/uapi/asm/Kbuild
-index b15bf6bc0e94..e28531333efa 100644
---- a/arch/sh/include/uapi/asm/Kbuild
-+++ b/arch/sh/include/uapi/asm/Kbuild
-@@ -1,2 +1,22 @@
- # UAPI Header export list
- include include/uapi/asm-generic/Kbuild.asm
-+
-+generic-y += bitsperlong.h
-+generic-y += errno.h
-+generic-y += fcntl.h
-+generic-y += ioctl.h
-+generic-y += ipcbuf.h
-+generic-y += kvm_para.h
-+generic-y += mman.h
-+generic-y += msgbuf.h
-+generic-y += param.h
-+generic-y += poll.h
-+generic-y += resource.h
-+generic-y += sembuf.h
-+generic-y += shmbuf.h
-+generic-y += siginfo.h
-+generic-y += socket.h
-+generic-y += statfs.h
-+generic-y += termbits.h
-+generic-y += termios.h
-+generic-y += ucontext.h
+-#include <linux/pci.h>
 -- 
-2.7.4
+2.13.0
 
