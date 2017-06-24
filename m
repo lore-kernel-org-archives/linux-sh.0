@@ -1,36 +1,26 @@
-From: Aleksa Sarai <asarai@suse.de>
-Date: Sat, 03 Jun 2017 13:51:09 +0000
-Subject: [PATCH v3 0/2] tty: add TIOCGPTPEER ioctl
-Message-Id: <20170603135111.5444-1-asarai@suse.de>
+From: Palmer Dabbelt <palmer@dabbelt.com>
+Date: Sat, 24 Jun 2017 01:50:41 +0000
+Subject: pci: Add generic pcibios_{fixup_bus,align_resource}
+Message-Id: <20170624015044.16746-1-palmer@dabbelt.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>, Arnd Bergmann <arnd@arndb.de>
-Cc: linux-kernel@vger.kernel.org, linux-alpha@vger.kernel.org, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-arch@vger.kernel.org, Christian Brauner <christian.brauner@ubuntu.com>, Valentin Rothberg <vrothberg@suse.com>, Aleksa Sarai <asarai@suse.de>
+To: linux-pci@vger.kernel.org
+Cc: linux-snps-arc@lists.infradead.org
 
-Changes in v3:
-  * Defined a compat_ioctl callback for all pty ioctls, since they are
-    all 32-bit and 64-bit compatible.
-  * Made TIOCGPTPEER support 32-bit userspace.
+While upstreaming the RISC-V port, it was pointed out that multiple
+architectures have copied the mostly empty versions of at least one of these
+functions.  This defines weakly bound versions of the common functions and
+removes the now obselete functions from other ports.
 
-Aleksa Sarai (2):
-  tty: add compat_ioctl callbacks
-  tty: add TIOCGPTPEER ioctl
+This has been split out from the RISC-V submission so we can decouple all these
+generic changes from our port review process.  There's some discussion on an
+earlier version of the patch here
 
- Makefile                               |  1 +
- arch/alpha/include/uapi/asm/ioctls.h   |  1 +
- arch/mips/include/uapi/asm/ioctls.h    |  1 +
- arch/parisc/include/uapi/asm/ioctls.h  |  1 +
- arch/powerpc/include/uapi/asm/ioctls.h |  1 +
- arch/sh/include/uapi/asm/ioctls.h      |  1 +
- arch/sparc/include/uapi/asm/ioctls.h   |  3 +-
- arch/xtensa/include/uapi/asm/ioctls.h  |  1 +
- drivers/tty/pty.c                      | 93 ++++++++++++++++++++++++++++++++--
- fs/compat_ioctl.c                      |  6 ---
- include/uapi/asm-generic/ioctls.h      |  1 +
- 11 files changed, 99 insertions(+), 11 deletions(-)
+  https://lkml.org/lkml/2017/6/6/998
 
--- 
-2.13.0
+but I'm afraid a lot of this is really out of my wheelhouse (and I'm pretty
+slammed trying to get the RISC-V port in better shape), so I'm afraid I'm not
+going to be able to perform the full cleanup suggested.
 
