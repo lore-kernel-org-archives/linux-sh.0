@@ -1,93 +1,70 @@
-From: Steven Rostedt <rostedt@goodmis.org>
-Date: Fri, 30 Jun 2017 00:38:38 +0000
-Subject: [for-next][PATCH 07/12] sh/ftrace: Remove only user of ftrace_arch_read_dyn_info()
-Message-Id: <20170630004022.682713479@goodmis.org>
+From: <cuongtruong380@gmail.com>
+Date: Tue, 27 Jun 2017 14:10:56 +0000
+Subject: 
+Message-Id: <149857265615.12492.9736814684898200502@izhnt.ru>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20170630003831.946074263@goodmis.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Ingo Molnar <mingo@kernel.org>, Andrew Morton <akpm@linux-foundation.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-From: Steven Rostedt <rostedt@goodmis.org>
-
-I noticed that there's only one user of ftrace_arch_read_dyn_info().
-That was used a while ago during the NMI updating in x86, and superh
-copied it to implement its version of handling NMIs during
-stop_machine().
-
-But that is a debug feature, and this code hasn't been touched since
-2009. Also, x86 no longer does the ftrace updates with stop_machine()
-and instead uses breakpoints. If superh needs to modify its code, it
-should implement the breakpoint conversion, and remove stop_machine().
-Which also gets rid of the NMI issue.
-
-Anyway, I want to nuke ftrace_arch_read_dyn_info() and this gets rid of
-the one user, which is for an arch that shouldn't need it anymore.
-
-Link: http://lkml.kernel.org/r/20170626181749.2ce954d1@gandalf.local.home
-
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: Rich Felker <dalias@libc.org>
-Cc: linux-sh@vger.kernel.org
-Signed-off-by: Steven Rostedt <rostedt@goodmis.org>
-Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
----
- arch/sh/kernel/ftrace.c | 18 ------------------
- 1 file changed, 18 deletions(-)
-
-diff --git a/arch/sh/kernel/ftrace.c b/arch/sh/kernel/ftrace.c
-index 53783978162e..d18724d186f3 100644
---- a/arch/sh/kernel/ftrace.c
-+++ b/arch/sh/kernel/ftrace.c
-@@ -96,19 +96,6 @@ static int mod_code_status;		/* holds return value of text write */
- static void *mod_code_ip;		/* holds the IP to write to */
- static void *mod_code_newcode;		/* holds the text to write to the IP */
- 
--static unsigned nmi_wait_count;
--static atomic_t nmi_update_count = ATOMIC_INIT(0);
--
--int ftrace_arch_read_dyn_info(char *buf, int size)
--{
--	int r;
--
--	r = snprintf(buf, size, "%u %u",
--		     nmi_wait_count,
--		     atomic_read(&nmi_update_count));
--	return r;
--}
--
- static void clear_mod_flag(void)
- {
- 	int old = atomic_read(&nmi_running);
-@@ -144,7 +131,6 @@ void arch_ftrace_nmi_enter(void)
- 	if (atomic_inc_return(&nmi_running) & MOD_CODE_WRITE_FLAG) {
- 		smp_rmb();
- 		ftrace_mod_code();
--		atomic_inc(&nmi_update_count);
- 	}
- 	/* Must have previous changes seen before executions */
- 	smp_mb();
-@@ -165,8 +151,6 @@ static void wait_for_nmi_and_set_mod_flag(void)
- 	do {
- 		cpu_relax();
- 	} while (atomic_cmpxchg(&nmi_running, 0, MOD_CODE_WRITE_FLAG));
--
--	nmi_wait_count++;
- }
- 
- static void wait_for_nmi(void)
-@@ -177,8 +161,6 @@ static void wait_for_nmi(void)
- 	do {
- 		cpu_relax();
- 	} while (atomic_read(&nmi_running));
--
--	nmi_wait_count++;
- }
- 
- static int
--- 
-2.10.2
-
-
+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
+AQBOAAAAywwAAAAA
