@@ -1,24 +1,93 @@
-From: Julian Smith <sinara_group@126.com>
-Date: Mon, 26 Jun 2017 21:52:32 +0000
-Subject: Product Inquiry
-Message-Id: <20170626215232.0D2B22CE75@mail.dealer.com>
+From: Steven Rostedt <rostedt@goodmis.org>
+Date: Fri, 30 Jun 2017 00:38:38 +0000
+Subject: [for-next][PATCH 07/12] sh/ftrace: Remove only user of ftrace_arch_read_dyn_info()
+Message-Id: <20170630004022.682713479@goodmis.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20170630003831.946074263@goodmis.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: Ingo Molnar <mingo@kernel.org>, Andrew Morton <akpm@linux-foundation.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
 
-Hello, 
+From: Steven Rostedt <rostedt@goodmis.org>
 
-My name is Ms Julian Smith and i am from Sinara Group Co.
-We are glad to know about your company from the web and we are interested in
-your products.Please send us your Latest catalog and price list for our
-trial order. 
+I noticed that there's only one user of ftrace_arch_read_dyn_info().
+That was used a while ago during the NMI updating in x86, and superh
+copied it to implement its version of handling NMIs during
+stop_machine().
 
-Julian Smith, 
-Purchasing Manager
-Sinara Group Co.
-7 Krasnogo Znameni Ave.
-Vladivostok,690106,Ukraine
+But that is a debug feature, and this code hasn't been touched since
+2009. Also, x86 no longer does the ftrace updates with stop_machine()
+and instead uses breakpoints. If superh needs to modify its code, it
+should implement the breakpoint conversion, and remove stop_machine().
+Which also gets rid of the NMI issue.
+
+Anyway, I want to nuke ftrace_arch_read_dyn_info() and this gets rid of
+the one user, which is for an arch that shouldn't need it anymore.
+
+Link: http://lkml.kernel.org/r/20170626181749.2ce954d1@gandalf.local.home
+
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+Cc: linux-sh@vger.kernel.org
+Signed-off-by: Steven Rostedt <rostedt@goodmis.org>
+Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
+---
+ arch/sh/kernel/ftrace.c | 18 ------------------
+ 1 file changed, 18 deletions(-)
+
+diff --git a/arch/sh/kernel/ftrace.c b/arch/sh/kernel/ftrace.c
+index 53783978162e..d18724d186f3 100644
+--- a/arch/sh/kernel/ftrace.c
++++ b/arch/sh/kernel/ftrace.c
+@@ -96,19 +96,6 @@ static int mod_code_status;		/* holds return value of text write */
+ static void *mod_code_ip;		/* holds the IP to write to */
+ static void *mod_code_newcode;		/* holds the text to write to the IP */
+ 
+-static unsigned nmi_wait_count;
+-static atomic_t nmi_update_count = ATOMIC_INIT(0);
+-
+-int ftrace_arch_read_dyn_info(char *buf, int size)
+-{
+-	int r;
+-
+-	r = snprintf(buf, size, "%u %u",
+-		     nmi_wait_count,
+-		     atomic_read(&nmi_update_count));
+-	return r;
+-}
+-
+ static void clear_mod_flag(void)
+ {
+ 	int old = atomic_read(&nmi_running);
+@@ -144,7 +131,6 @@ void arch_ftrace_nmi_enter(void)
+ 	if (atomic_inc_return(&nmi_running) & MOD_CODE_WRITE_FLAG) {
+ 		smp_rmb();
+ 		ftrace_mod_code();
+-		atomic_inc(&nmi_update_count);
+ 	}
+ 	/* Must have previous changes seen before executions */
+ 	smp_mb();
+@@ -165,8 +151,6 @@ static void wait_for_nmi_and_set_mod_flag(void)
+ 	do {
+ 		cpu_relax();
+ 	} while (atomic_cmpxchg(&nmi_running, 0, MOD_CODE_WRITE_FLAG));
+-
+-	nmi_wait_count++;
+ }
+ 
+ static void wait_for_nmi(void)
+@@ -177,8 +161,6 @@ static void wait_for_nmi(void)
+ 	do {
+ 		cpu_relax();
+ 	} while (atomic_read(&nmi_running));
+-
+-	nmi_wait_count++;
+ }
+ 
+ static int
+-- 
+2.10.2
 
 
