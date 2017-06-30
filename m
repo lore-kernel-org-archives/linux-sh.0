@@ -1,50 +1,67 @@
-From: Palmer Dabbelt <palmer@dabbelt.com>
-Date: Sat, 24 Jun 2017 01:50:44 +0000
-Subject: [PATCH 3/3] arc: kernel/pcibios.c is empty, delete it
-Message-Id: <20170624015044.16746-4-palmer@dabbelt.com>
+From: "Paul E. McKenney" <paulmck@linux.vnet.ibm.com>
+Date: Fri, 30 Jun 2017 00:01:31 +0000
+Subject: [PATCH RFC 23/26] sh: Remove spin_unlock_wait() arch-specific definitions
+Message-Id: <1498780894-8253-23-git-send-email-paulmck@linux.vnet.ibm.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20170624015044.16746-1-palmer@dabbelt.com>
-In-Reply-To: <20170624015044.16746-1-palmer@dabbelt.com>
+References: <20170629235918.GA6445@linux.vnet.ibm.com>
+In-Reply-To: <20170629235918.GA6445@linux.vnet.ibm.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-pci@vger.kernel.org
-Cc: linux-snps-arc@lists.infradead.org
+To: linux-kernel@vger.kernel.org
+Cc: netfilter-devel@vger.kernel.org, netdev@vger.kernel.org, oleg@redhat.com, akpm@linux-foundation.org, mingo@redhat.com, dave@stgolabs.net, manfred@colorfullife.com, tj@kernel.org, arnd@arndb.de, linux-arch@vger.kernel.org, will.deacon@arm.com, peterz@infradead.org, stern@rowland.harvard.edu, parri.andrea@gmail.com, torvalds@linux-foundation.org, "Paul E. McKenney" <paulmck@linux.vnet.ibm.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
 
-Signed-off-by: Palmer Dabbelt <palmer@dabbelt.com>
+There is no agreed-upon definition of spin_unlock_wait()'s semantics,
+and it appears that all callers could do just as well with a lock/unlock
+pair.  This commit therefore removes the underlying arch-specific
+arch_spin_unlock_wait().
+
+Signed-off-by: Paul E. McKenney <paulmck@linux.vnet.ibm.com>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+Cc: <linux-sh@vger.kernel.org>
+Cc: Will Deacon <will.deacon@arm.com>
+Cc: Peter Zijlstra <peterz@infradead.org>
+Cc: Alan Stern <stern@rowland.harvard.edu>
+Cc: Andrea Parri <parri.andrea@gmail.com>
+Cc: Linus Torvalds <torvalds@linux-foundation.org>
 ---
- arch/arc/kernel/Makefile  | 1 -
- arch/arc/kernel/pcibios.c | 9 ---------
+ arch/sh/include/asm/spinlock-cas.h  | 5 -----
+ arch/sh/include/asm/spinlock-llsc.h | 5 -----
  2 files changed, 10 deletions(-)
- delete mode 100644 arch/arc/kernel/pcibios.c
 
-diff --git a/arch/arc/kernel/Makefile b/arch/arc/kernel/Makefile
-index 8942c5c3b4c5..2dc5f4296d44 100644
---- a/arch/arc/kernel/Makefile
-+++ b/arch/arc/kernel/Makefile
-@@ -12,7 +12,6 @@ obj-y	:= arcksyms.o setup.o irq.o reset.o ptrace.o process.o devtree.o
- obj-y	+= signal.o traps.o sys.o troubleshoot.o stacktrace.o disasm.o
- obj-$(CONFIG_ISA_ARCOMPACT)		+= entry-compact.o intc-compact.o
- obj-$(CONFIG_ISA_ARCV2)			+= entry-arcv2.o intc-arcv2.o
--obj-$(CONFIG_PCI)  			+= pcibios.o
+diff --git a/arch/sh/include/asm/spinlock-cas.h b/arch/sh/include/asm/spinlock-cas.h
+index c46e8cc7b515..5ed7dbbd94ff 100644
+--- a/arch/sh/include/asm/spinlock-cas.h
++++ b/arch/sh/include/asm/spinlock-cas.h
+@@ -29,11 +29,6 @@ static inline unsigned __sl_cas(volatile unsigned *p, unsigned old, unsigned new
+ #define arch_spin_is_locked(x)		((x)->lock <= 0)
+ #define arch_spin_lock_flags(lock, flags) arch_spin_lock(lock)
  
- obj-$(CONFIG_MODULES)			+= arcksyms.o module.o
- obj-$(CONFIG_SMP) 			+= smp.o
-diff --git a/arch/arc/kernel/pcibios.c b/arch/arc/kernel/pcibios.c
-deleted file mode 100644
-index 05aba5a7b5d2..000000000000
---- a/arch/arc/kernel/pcibios.c
-+++ /dev/null
-@@ -1,9 +0,0 @@
--/*
-- * Copyright (C) 2014-2015 Synopsys, Inc. (www.synopsys.com)
-- *
-- * This program is free software; you can redistribute it and/or modify
-- * it under the terms of the GNU General Public License version 2 as
-- * published by the Free Software Foundation.
-- */
+-static inline void arch_spin_unlock_wait(arch_spinlock_t *lock)
+-{
+-	smp_cond_load_acquire(&lock->lock, VAL > 0);
+-}
 -
--#include <linux/pci.h>
+ static inline void arch_spin_lock(arch_spinlock_t *lock)
+ {
+ 	while (!__sl_cas(&lock->lock, 1, 0));
+diff --git a/arch/sh/include/asm/spinlock-llsc.h b/arch/sh/include/asm/spinlock-llsc.h
+index cec78143fa83..f77263aae760 100644
+--- a/arch/sh/include/asm/spinlock-llsc.h
++++ b/arch/sh/include/asm/spinlock-llsc.h
+@@ -21,11 +21,6 @@
+ #define arch_spin_is_locked(x)		((x)->lock <= 0)
+ #define arch_spin_lock_flags(lock, flags) arch_spin_lock(lock)
+ 
+-static inline void arch_spin_unlock_wait(arch_spinlock_t *lock)
+-{
+-	smp_cond_load_acquire(&lock->lock, VAL > 0);
+-}
+-
+ /*
+  * Simple spin lock operations.  There are two variants, one clears IRQ's
+  * on the local processor, one does not.
 -- 
-2.13.0
+2.5.2
 
