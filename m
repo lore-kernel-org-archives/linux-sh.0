@@ -1,25 +1,34 @@
-From: Christoph Hellwig <hch@infradead.org>
-Date: Sun, 18 Jun 2017 07:09:25 +0000
-Subject: Re: [PATCH 03/44] dmaengine: ioat: don't use DMA_ERROR_CODE
-Message-Id: <20170618070925.GA18526@infradead.org>
+From: Chris Packham <chris.packham@alliedtelesis.co.nz>
+Date: Fri, 30 Jun 2017 00:54:02 +0000
+Subject: [PATCH 0/6] i2c: pca-platform: additional improvements
+Message-Id: <20170630005408.23968-1-chris.packham@alliedtelesis.co.nz>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20170616181059.19206-1-hch@lst.de>
- <20170616181059.19206-4-hch@lst.de>
- <CAKgT0UdxrimWrxNVsLMQ9G6ABBJZwfWHTcP18qqd4rT0Fa-KWg@mail.gmail.com>
-In-Reply-To: <CAKgT0UdxrimWrxNVsLMQ9G6ABBJZwfWHTcP18qqd4rT0Fa-KWg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Alexander Duyck <alexander.duyck@gmail.com>
-Cc: Christoph Hellwig <hch@lst.de>, the arch/x86 maintainers <x86@kernel.org>, linux-arm-kernel@lists.infradead.org, xen-devel@lists.xenproject.org, linux-c6x-dev@linux-c6x.org, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-mips@linux-mips.org, openrisc@lists.librecores.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, dmaengine@vger.kernel.org, linux-tegra@vger.kernel.org, dri-devel@lists.freedesktop.org, linux-samsung-soc@vger.kernel.org, "open list:INTEL IOMMU (VT-d)" <iommu@lists.linux-foundation.org>, Netdev <netdev@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+To: wsa@the-dreams.de, andy.shevchenko@gmail.com, linux-i2c@vger.kernel.org
+Cc: ysato@users.sourceforge.jp, linux-sh@vger.kernel.org, Chris Packham <chris.packham@alliedtelesis.co.nz>
 
-On Fri, Jun 16, 2017 at 01:40:24PM -0700, Alexander Duyck wrote:
-> dma_unmap_page on dest_dma if "op = IOAT_OP_XOR"? Odds are it is what
-> the compiler is already generating and will save a few lines of code
-> so what you end up with is something like:
+This series addresses some of the points identified by Andy. The series is
+based on top of i2c/for-next.
 
-Honestly wanted to touch the code as little as possible :)  If we want
-to make it prettier and more readable it needs to be refactored.
+I haven't got a working sh4 toolchain so I haven't been able to compile test
+patch 1/1.
 
-If you're interested I can take a stab at that, but I'd like to keep
-it out of this already giant series.
+Chris Packham (6):
+  sh: sh7785lcr: add GPIO lookup table for i2c controller reset
+  i2c: pca-platform: correctly set algo_data.reset_chip
+  i2c: pca-platform: propagate error from i2c_pca_add_numbered_bus
+  i2c: pca-platform: unconditionally use devm_gpiod_get_optional
+  i2c: pca-platform: use device_property_read_u32
+  i2c: pca-platform: drop gpio from platform data
+
+ arch/blackfin/mach-bf561/boards/acvilon.c |  1 -
+ arch/sh/boards/board-sh7785lcr.c          | 11 +++++++-
+ drivers/i2c/busses/i2c-pca-platform.c     | 42 +++++++++++--------------------
+ include/linux/i2c-pca-platform.h          |  3 ---
+ 4 files changed, 25 insertions(+), 32 deletions(-)
+
+-- 
+2.13.0
+
