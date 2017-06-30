@@ -1,70 +1,81 @@
-From: <cuongtruong380@gmail.com>
-Date: Tue, 27 Jun 2017 14:10:56 +0000
-Subject: 
-Message-Id: <149857265615.12492.9736814684898200502@izhnt.ru>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 30 Jun 2017 08:10:15 +0000
+Subject: Re: [PATCH v2 0/4] sh: sh7722/sh7757i/sh7264/sh7269: Fix pinctrl registration
+Message-Id: <CAMuHMdXMA7Ux2yiYUrPMGKKJ2AxTLwHOYbnKQHYRwjaSY5+Z7w@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1494489813-27321-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1494489813-27321-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Rich Felker <dalias@libc.org>, Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Magnus Damm <magnus.damm@gmail.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Linux-sh list <linux-sh@vger.kernel.org>, Linux-Renesas <linux-renesas-soc@vger.kernel.org>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>
 
-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
-AQBOAAAAywwAAAAA
+Hi Rich, Sato-san,
+
+On Thu, May 11, 2017 at 10:03 AM, Geert Uytterhoeven
+<geert+renesas@glider.be> wrote:
+> Magnus reported that on sh7722/Migo-R, pinctrl registration fails with:
+>
+>     sh-pfc pfc-sh7722: pin 0 already registered
+>     sh-pfc pfc-sh7722: error during pin registration
+>     sh-pfc pfc-sh7722: could not register: -22
+>     sh-pfc: probe of pfc-sh7722 failed with error -22
+>
+> pinmux_pins[] is initialized through PINMUX_GPIO(), using designated
+> array initializers, where the GPIO_* enums serve as indices.
+> Apparently GPIO_PTQ7 was defined in the enum, but never used.
+> If enum values are defined, but never used, pinmux_pins[] contains
+> (zero-filled) holes.  Hence such entries are treated as pin zero, which
+> was registered before, and pinctrl registration fails.
+>
+> I can't see how this ever worked, as at the time of commit f5e25ae52feff2dc
+> ("sh-pfc: Add sh7722 pinmux support"), pinmux_gpios[] in
+> drivers/pinctrl/sh-pfc/pfc-sh7722.c already had the hole, and
+> drivers/pinctrl/core.c already had the check.
+>
+> Some scripting revealed a few more broken drivers:
+>   - sh7757 has four holes, due to nonexistent GPIO_PT[JLNQ]7_RESV.
+>   - sh7264 and sh7269 define GPIO_PH[0-7], but don't use it with
+>     PINMUX_GPIO().
+>
+> Patch 1 fixes the issue on sh7722, and was tested.
+> Patches 3-4 should fix the issue on the other 3 SoCs, but was untested due
+> to lack of hardware.
+>
+> Changes compared to v1:
+>   - Replace fake error messages by references to sh7722,
+>   - Add Reviewed-by, Tested-by.
+>
+> Thanks for applying!
+>
+> Geert Uytterhoeven (4):
+>   sh: sh7722: Remove nonexistent GPIO_PTQ7 to fix pinctrl registration
+>   sh: sh7757: Remove nonexistent GPIO_PT[JLNQ]7_RESV to fix pinctrl
+>     registration
+>   sh: sh7264: Remove nonexistent GPIO_PH[0-7] to fix pinctrl
+>     registration
+>   sh: sh7269: Remove nonexistent GPIO_PH[0-7] to fix pinctrl
+>     registration
+>
+>  arch/sh/include/cpu-sh2a/cpu/sh7264.h | 4 +---
+>  arch/sh/include/cpu-sh2a/cpu/sh7269.h | 4 +---
+>  arch/sh/include/cpu-sh4/cpu/sh7722.h  | 2 +-
+>  arch/sh/include/cpu-sh4/cpu/sh7757.h  | 8 ++++----
+>  4 files changed, 7 insertions(+), 11 deletions(-)
+
+Are these patches planned for inclusion in v4.13?
+I don't see them in next-2016.
+
+Thanks!
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
