@@ -1,81 +1,65 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 30 Jun 2017 08:10:15 +0000
-Subject: Re: [PATCH v2 0/4] sh: sh7722/sh7757i/sh7264/sh7269: Fix pinctrl registration
-Message-Id: <CAMuHMdXMA7Ux2yiYUrPMGKKJ2AxTLwHOYbnKQHYRwjaSY5+Z7w@mail.gmail.com>
+From: Chris Packham <chris.packham@alliedtelesis.co.nz>
+Date: Fri, 30 Jun 2017 00:54:06 +0000
+Subject: [PATCH 4/6] i2c: pca-platform: unconditionally use devm_gpiod_get_optional
+Message-Id: <20170630005408.23968-5-chris.packham@alliedtelesis.co.nz>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1494489813-27321-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1494489813-27321-1-git-send-email-geert+renesas@glider.be>
+References: <20170630005408.23968-1-chris.packham@alliedtelesis.co.nz>
+In-Reply-To: <20170630005408.23968-1-chris.packham@alliedtelesis.co.nz>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Rich Felker <dalias@libc.org>, Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: Magnus Damm <magnus.damm@gmail.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Linux-sh list <linux-sh@vger.kernel.org>, Linux-Renesas <linux-renesas-soc@vger.kernel.org>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>
+To: wsa@the-dreams.de, andy.shevchenko@gmail.com, linux-i2c@vger.kernel.org
+Cc: ysato@users.sourceforge.jp, linux-sh@vger.kernel.org, Chris Packham <chris.packham@alliedtelesis.co.nz>, linux-kernel@vger.kernel.org
 
-Hi Rich, Sato-san,
+Allow for the reset-gpios property to be defined in the device tree
+or via a GPIO lookup table.
 
-On Thu, May 11, 2017 at 10:03 AM, Geert Uytterhoeven
-<geert+renesas@glider.be> wrote:
-> Magnus reported that on sh7722/Migo-R, pinctrl registration fails with:
->
->     sh-pfc pfc-sh7722: pin 0 already registered
->     sh-pfc pfc-sh7722: error during pin registration
->     sh-pfc pfc-sh7722: could not register: -22
->     sh-pfc: probe of pfc-sh7722 failed with error -22
->
-> pinmux_pins[] is initialized through PINMUX_GPIO(), using designated
-> array initializers, where the GPIO_* enums serve as indices.
-> Apparently GPIO_PTQ7 was defined in the enum, but never used.
-> If enum values are defined, but never used, pinmux_pins[] contains
-> (zero-filled) holes.  Hence such entries are treated as pin zero, which
-> was registered before, and pinctrl registration fails.
->
-> I can't see how this ever worked, as at the time of commit f5e25ae52feff2dc
-> ("sh-pfc: Add sh7722 pinmux support"), pinmux_gpios[] in
-> drivers/pinctrl/sh-pfc/pfc-sh7722.c already had the hole, and
-> drivers/pinctrl/core.c already had the check.
->
-> Some scripting revealed a few more broken drivers:
->   - sh7757 has four holes, due to nonexistent GPIO_PT[JLNQ]7_RESV.
->   - sh7264 and sh7269 define GPIO_PH[0-7], but don't use it with
->     PINMUX_GPIO().
->
-> Patch 1 fixes the issue on sh7722, and was tested.
-> Patches 3-4 should fix the issue on the other 3 SoCs, but was untested due
-> to lack of hardware.
->
-> Changes compared to v1:
->   - Replace fake error messages by references to sh7722,
->   - Add Reviewed-by, Tested-by.
->
-> Thanks for applying!
->
-> Geert Uytterhoeven (4):
->   sh: sh7722: Remove nonexistent GPIO_PTQ7 to fix pinctrl registration
->   sh: sh7757: Remove nonexistent GPIO_PT[JLNQ]7_RESV to fix pinctrl
->     registration
->   sh: sh7264: Remove nonexistent GPIO_PH[0-7] to fix pinctrl
->     registration
->   sh: sh7269: Remove nonexistent GPIO_PH[0-7] to fix pinctrl
->     registration
->
->  arch/sh/include/cpu-sh2a/cpu/sh7264.h | 4 +---
->  arch/sh/include/cpu-sh2a/cpu/sh7269.h | 4 +---
->  arch/sh/include/cpu-sh4/cpu/sh7722.h  | 2 +-
->  arch/sh/include/cpu-sh4/cpu/sh7757.h  | 8 ++++----
->  4 files changed, 7 insertions(+), 11 deletions(-)
+Signed-off-by: Chris Packham <chris.packham@alliedtelesis.co.nz>
+---
+ drivers/i2c/busses/i2c-pca-platform.c | 21 ++++-----------------
+ 1 file changed, 4 insertions(+), 17 deletions(-)
 
-Are these patches planned for inclusion in v4.13?
-I don't see them in next-2016.
+diff --git a/drivers/i2c/busses/i2c-pca-platform.c b/drivers/i2c/busses/i2c-pca-platform.c
+index 853a2abedb05..1e3c247de8f8 100644
+--- a/drivers/i2c/busses/i2c-pca-platform.c
++++ b/drivers/i2c/busses/i2c-pca-platform.c
+@@ -176,32 +176,19 @@ static int i2c_pca_pf_probe(struct platform_device *pdev)
+ 	if (platform_data) {
+ 		i2c->adap.timeout = platform_data->timeout;
+ 		i2c->algo_data.i2c_clock = platform_data->i2c_clock_speed;
+-		if (gpio_is_valid(platform_data->gpio)) {
+-			ret = devm_gpio_request_one(&pdev->dev,
+-						    platform_data->gpio,
+-						    GPIOF_ACTIVE_LOW,
+-						    i2c->adap.name);
+-			if (ret = 0) {
+-				i2c->gpio = gpio_to_desc(platform_data->gpio);
+-				gpiod_direction_output(i2c->gpio, 0);
+-			} else {
+-				dev_warn(&pdev->dev, "Registering gpio failed!\n");
+-				i2c->gpio = NULL;
+-			}
+-		}
+ 	} else if (np) {
+ 		i2c->adap.timeout = HZ;
+-		i2c->gpio = devm_gpiod_get_optional(&pdev->dev, "reset-gpios", GPIOD_OUT_LOW);
+-		if (IS_ERR(i2c->gpio))
+-			return PTR_ERR(i2c->gpio);
+ 		of_property_read_u32_index(np, "clock-frequency", 0,
+ 					   &i2c->algo_data.i2c_clock);
+ 	} else {
+ 		i2c->adap.timeout = HZ;
+ 		i2c->algo_data.i2c_clock = 59000;
+-		i2c->gpio = NULL;
+ 	}
+ 
++	i2c->gpio = devm_gpiod_get_optional(&pdev->dev, "reset-gpios", GPIOD_OUT_LOW);
++	if (IS_ERR(i2c->gpio))
++		return PTR_ERR(i2c->gpio);
++
+ 	i2c->algo_data.data = i2c;
+ 	i2c->algo_data.wait_for_completion = i2c_pca_pf_waitforcompletion;
+ 	if (i2c->gpio)
+-- 
+2.13.0
 
-Thanks!
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
