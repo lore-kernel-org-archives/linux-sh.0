@@ -1,57 +1,60 @@
-From: Aleksa Sarai <asarai@suse.de>
-Date: Fri, 09 Jun 2017 10:24:30 +0000
-Subject: Re: [PATCH v4 2/2] tty: add TIOCGPTPEER ioctl
-Message-Id: <f3587aca-0d84-1ca7-cfb0-830e536410c2@suse.de>
+From: Chris Packham <chris.packham@alliedtelesis.co.nz>
+Date: Fri, 30 Jun 2017 00:54:03 +0000
+Subject: [PATCH 1/6] sh: sh7785lcr: add GPIO lookup table for i2c controller reset
+Message-Id: <20170630005408.23968-2-chris.packham@alliedtelesis.co.nz>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20170603141515.9529-1-asarai@suse.de>
- <20170603141515.9529-3-asarai@suse.de> <20170609092659.GA26933@kroah.com>
- <44c2b6c7-63ee-5c7f-cc77-5e1bcd69eea4@suse.de>
- <20170609100442.GA1405@kroah.com>
-In-Reply-To: <20170609100442.GA1405@kroah.com>
+References: <20170630005408.23968-1-chris.packham@alliedtelesis.co.nz>
+In-Reply-To: <20170630005408.23968-1-chris.packham@alliedtelesis.co.nz>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-Cc: Jiri Slaby <jslaby@suse.com>, Arnd Bergmann <arnd@arndb.de>, linux-kernel@vger.kernel.org, linux-alpha@vger.kernel.org, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-arch@vger.kernel.org, Christian Brauner <christian.brauner@ubuntu.com>, Valentin Rothberg <vrothberg@suse.com>
+To: wsa@the-dreams.de, andy.shevchenko@gmail.com, linux-i2c@vger.kernel.org
+Cc: ysato@users.sourceforge.jp, linux-sh@vger.kernel.org, Chris Packham <chris.packham@alliedtelesis.co.nz>, Rich Felker <dalias@libc.org>, linux-kernel@vger.kernel.org
 
->>>> When opening the slave end of a PTY, it is not possible for userspace to
->>>> safely ensure that /dev/pts/$num is actually a slave (in cases where the
->>>> mount namespace in which devpts was mounted is controlled by an
->>>> untrusted process). In addition, there are several unresolvable
->>>> race conditions if userspace were to attempt to detect attacks through
->>>> stat(2) and other similar methods [in addition it is not clear how
->>>> userspace could detect attacks involving FUSE].
->>>>
->>>> Resolve this by providing an interface for userpace to safely open the
->>>> "peer" end of a PTY file descriptor by using the dentry cached by
->>>> devpts. Since it is not possible to have an open master PTY without
->>>> having its slave exposed in /dev/pts this interface is safe. This
->>>> interface currently does not provide a way to get the master pty (since
->>>> it is not clear whether such an interface is safe or even useful).
->>>>
->>>> Cc: Christian Brauner <christian.brauner@ubuntu.com>
->>>> Cc: Valentin Rothberg <vrothberg@suse.com>
->>>> Signed-off-by: Aleksa Sarai <asarai@suse.de>
->>>
->>> Is this going to be documented anywhere?  Is there a man page update
->>> that also goes along with this?
->>
->> I will add one, I didn't know where the man-pages project is hosted / where
->> patches get pushed? What is the ML?
-> 
->  From the MAINTAINERS file:
->    MAN-PAGES: MANUAL PAGES FOR LINUX -- Sections 2, 3, 4, 5, and 7
->    M:      Michael Kerrisk <mtk.manpages@gmail.com>
->    W:      http://www.kernel.org/doc/man-pages
->    L:      linux-man@vger.kernel.org
->    S:      Maintained
+Define the GPIO connected to the PCA9564 using a GPIO lookup table. This
+will allow the i2c-pca-platform driver to use the device managed APIs to
+lookup the gpio instead of using platform_data.
 
-Ah, should've looked there first!
+Signed-off-by: Chris Packham <chris.packham@alliedtelesis.co.nz>
+---
+ arch/sh/boards/board-sh7785lcr.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
-Thanks Greg, I'll send it over the weekend.
-
+diff --git a/arch/sh/boards/board-sh7785lcr.c b/arch/sh/boards/board-sh7785lcr.c
+index 2c4771ee84cd..4c321d0da945 100644
+--- a/arch/sh/boards/board-sh7785lcr.c
++++ b/arch/sh/boards/board-sh7785lcr.c
+@@ -25,6 +25,7 @@
+ #include <linux/io.h>
+ #include <linux/clk.h>
+ #include <linux/errno.h>
++#include <linux/gpio/machine.h>
+ #include <mach/sh7785lcr.h>
+ #include <cpu/sh7785.h>
+ #include <asm/heartbeat.h>
+@@ -243,6 +244,14 @@ static struct resource i2c_resources[] = {
+ 	},
+ };
+ 
++static struct gpiod_lookup_table i2c_gpio_table = {
++	.dev_id = "i2c.0",
++	.table = {
++		GPIO_LOOKUP("pfc-sh7757", 0, "reset-gpios", GPIO_ACTIVE_LOW),
++		{ },
++	},
++};
++
+ static struct i2c_pca9564_pf_platform_data i2c_platform_data = {
+ 	.gpio			= 0,
+ 	.i2c_clock_speed	= I2C_PCA_CON_330kHz,
+@@ -283,6 +292,7 @@ static int __init sh7785lcr_devices_setup(void)
+ 		i2c_device.num_resources = ARRAY_SIZE(i2c_proto_resources);
+ 	}
+ 
++	gpiod_add_lookup(&i2c_gpio_table);
+ 	return platform_add_devices(sh7785lcr_devices,
+ 				    ARRAY_SIZE(sh7785lcr_devices));
+ }
 -- 
-Aleksa Sarai
-Software Engineer (Containers)
-SUSE Linux GmbH
-https://www.cyphar.com/
+2.13.0
+
