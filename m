@@ -1,51 +1,51 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Tue, 04 Jul 2017 14:04:42 +0000
-Subject: Re: [PATCH 3/6] i2c: pca-platform: propagate error from i2c_pca_add_numbered_bus
-Message-Id: <20170704140442.vzksexlldzet2clt@ninjato>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="2wpn74yjgxteyive"
+From: Chris Packham <Chris.Packham@alliedtelesis.co.nz>
+Date: Sun, 02 Jul 2017 21:51:44 +0000
+Subject: Re: [PATCH 5/6] i2c: pca-platform: use device_property_read_u32
+Message-Id: <942893991cc34410bf1515a6a970c5c2@svr-chch-ex1.atlnz.lc>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20170630005408.23968-1-chris.packham@alliedtelesis.co.nz>
- <20170630005408.23968-4-chris.packham@alliedtelesis.co.nz>
-In-Reply-To: <20170630005408.23968-4-chris.packham@alliedtelesis.co.nz>
-To: Chris Packham <chris.packham@alliedtelesis.co.nz>
-Cc: andy.shevchenko@gmail.com, linux-i2c@vger.kernel.org, ysato@users.sourceforge.jp, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+ <20170630005408.23968-6-chris.packham@alliedtelesis.co.nz>
+ <CAHp75Vc+6WGFiJifEExjv3jSFsy+ORGtRoDPmv31sSFN=zkHMg@mail.gmail.com>
+ <20170630090354.6s6ahpjhis7ptbfg@ninjato>
+ <CAHp75Ve1daNFe4PLAMpqMudE9d+Ss2JpeZ=Sy5x5ij99gAVs_w@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Andy Shevchenko <andy.shevchenko@gmail.com>, Wolfram Sang <wsa@the-dreams.de>
+Cc: linux-i2c <linux-i2c@vger.kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Linux-SH <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
 
+On 30/06/17 22:56, Andy Shevchenko wrote:
+> On Fri, Jun 30, 2017 at 12:03 PM, Wolfram Sang <wsa@the-dreams.de> wrote:
+>>
+>>>> -               i2c->algo_data.i2c_clock = 59000;
+>>>> +               ret = device_property_read_u32(&pdev->dev, "clock-frequency",
+>>>> +                                              &i2c->algo_data.i2c_clock);
+>>>> +               if (ret)
+>>>> +                       i2c->algo_data.i2c_clock = 59000;
+>>>
+>>> My idea is to get rid of legacy platform data completely.
+>>> That's why I suggested device_* in the first place.
+>>>
+>>> In similar way like you did with GPIO lookup table, you may use
+>>> PROPERTY_ENTRY*() macros in the board files.
+>>>
+>>> Does it make sense?
+>>
+>> Frankly, I am not a big fan of converting board files if we cannot test
+>> the changes.
+> 
+> So, if no one is using that old boards, should we really take care
+> more than just compile test?
+> 
+> P.S. Legacy platform data makes a burden of development nowadays.
+> Built-in device properties API (as a part of Unified Device
+> Properties) is exactly for getting rid of legacy stuff and make things
+> much cleaner.
 
---2wpn74yjgxteyive
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+We could probably go with an approach of making the device properties 
+the default which would suit the new style and leave the platform_data 
+to override things if it is present.
 
-On Fri, Jun 30, 2017 at 12:54:05PM +1200, Chris Packham wrote:
-> Rather than returning -ENODEV if i2c_pca_add_numbered_bus() fails,
-> propagate the error to aid debugging.
->=20
-> Signed-off-by: Chris Packham <chris.packham@alliedtelesis.co.nz>
+If/when the older platforms go away we can drop struct 
+i2c_pca9564_pf_platform_data.
 
-Easy one and nice to have. Will be in this merge window.
-
-Applied to for-next, thanks!
-
-
---2wpn74yjgxteyive
-Content-Type: application/pgp-signature; name="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQIzBAABCAAdFiEEOZGx6rniZ1Gk92RdFA3kzBSgKbYFAllboHoACgkQFA3kzBSg
-KbY0sA/+JzoEYP4GkhS/blCYDnxdEiMGnzYZMqC+9JDbocq+O4xAr5S0UY+ySvRf
-5FtroXyMQ/EKd2PIc5SazWqZO+mVUYqRt2qIEhzw57+fQy6VehjUnSP+jdg6YgEy
-uqSgFh3bglpKOHYf5OTm8oiwWo9ZubZNgnfFdhn5OMrMPdBGA7spnUhG+bwKjha2
-6lVq8PLzmzuQImck6bZcxBtqadbjBp//U7lIGkLQU3+GJxaRGFps3qdNxsOHqYGm
-n3hsQCnhMH7/ESy87vgbrchnrsgSjW6qDb1/ATVC6hk+qsFt0JQM/DlHNg1PrTQ+
-N0VNcqWELmt7zjLkm6v3Hz8q9q+0l7d+J+zt2NYYC7vNXrG2fNGA4bqcqwz3wrbm
-HeDjqzyICz7aF2oe/3QsUZOFx44zEyKrA88ecfFxbywPWTKl07ihuJ/IgwLepEby
-rtnp2GkC+lK5dfBbgUw8WTI2IHsNsX8bMbO4wJmDXQ5zOw8kNu6z8p84s7XKuQgD
-85aCHV2oqc/0BDCDjqDPx5PK1axhpUrg2Ge0K+loq3ww2oBB5KJB/YoUSu/YVTp3
-MGaT/Btc93aKKACtK9Zwa5GCn+ejpCUw0SpAlGM/xCToFGKtWXy0ycvzfdtfcZYl
-bpQfx1Qa9eCnIr0KOwRYWImrRqeMoTgVrL6pvpmSM+2mfPxord4=
-=KFH+
------END PGP SIGNATURE-----
-
---2wpn74yjgxteyive--
