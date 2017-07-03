@@ -1,72 +1,73 @@
-From: Frank Rowand <frowand.list@gmail.com>
-Date: Fri, 21 Jul 2017 21:04:51 +0000
-Subject: Re: [PATCH] of: provide of_n_{addr,size}_cells wrappers for !CONFIG_OF
-Message-Id: <59726C73.6000000@gmail.com>
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Mon, 03 Jul 2017 10:18:28 +0000
+Subject: Re: [PATCH 1/1] futex: remove duplicated code and fix UB
+Message-Id: <alpine.DEB.2.20.1707031211120.2188@nanos>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20170721202012.3360244-1-arnd@arndb.de>
-In-Reply-To: <20170721202012.3360244-1-arnd@arndb.de>
+References: <20170621115318.2781-1-jslaby@suse.cz>
+ <alpine.DEB.2.20.1706230017520.2221@nanos>
+ <80af8d81-4522-de2d-8289-1ab46565505a@suse.cz>
+In-Reply-To: <80af8d81-4522-de2d-8289-1ab46565505a@suse.cz>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Arnd Bergmann <arnd@arndb.de>, Rob Herring <robh+dt@kernel.org>
-Cc: devicetree@vger.kernel.org, Grant Likely <grant.likely@linaro.org>, Lucas Stach <l.stach@pengutronix.de>, Bjorn Helgaas <bhelgaas@google.com>, Magnus Damm <damm@opensource.se>, Geert Uytterhoeven <geert@linux-m68k.org>, Ben Dooks <ben.dooks@codethink.co.uk>, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org, Sakari Ailus <sakari.ailus@linux.intel.com>, Sudeep Holla <sudeep.holla@arm.com>, "Rafael J. Wysocki" <rafael.j.wysocki@intel.com>, Kieran Bingham <kieran.bingham+renesas@ideasonboard.com>, Alan Tull <atull@opensource.altera.com>, Geert Uytterhoeven <geert+renesas@glider.be>, Richard Fitzgerald <rf@opensource.wolfsonmicro.com>, linux-kernel@vger.kernel.org
+To: Jiri Slaby <jslaby@suse.cz>
+Cc: linux-mips@linux-mips.org, Rich Felker <dalias@libc.org>, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, peterz@infradead.org, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Will Deacon <will.deacon@arm.com>, Max Filippov <jcmvbkbc@gmail.com>, Paul Mackerras <paulus@samba.org>, "H. Peter Anvin" <hpa@zytor.com>, sparclinux@vger.kernel.org, Jonas Bonn <jonas@southpole.se>, linux-s390@vger.kernel.org, linux-arch@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-hexagon@vger.kernel.org, Helge Deller <deller@gmx.de>, x86@kernel.org, "James E.J. Bottomley" <jejb@parisc-linux.org>, mingo@redhat.com, Catalin Marinas <catalin.marinas@arm.com>, dvhart@infradead.org, Matt Turner <mattst88@gmail.com>, linux-snps-arc@lists.infradead.org, Fenghua Yu <fenghua.yu@intel.com>, Arnd Bergmann <arnd@arndb.de>, linux-xtensa@linux-xtensa.org
 
-On 07/21/17 13:19, Arnd Bergmann wrote:
-> The pci-rcar driver is enabled for compile tests, and this has
-> now shown that the driver cannot build without CONFIG_OF,
-> following the inclusion of f8f2fe7355fb "PCI: rcar: Use new OF
-> interrupt mapping when possible":
+On Mon, 26 Jun 2017, Jiri Slaby wrote:
+> On 06/23/2017, 09:51 AM, Thomas Gleixner wrote:
+> > On Wed, 21 Jun 2017, Jiri Slaby wrote:
+> >> diff --git a/arch/arm64/include/asm/futex.h b/arch/arm64/include/asm/futex.h
+> >> index f32b42e8725d..5bb2fd4674e7 100644
+> >> --- a/arch/arm64/include/asm/futex.h
+> >> +++ b/arch/arm64/include/asm/futex.h
+> >> @@ -48,20 +48,10 @@ do {									\
+> >>  } while (0)
+> >>  
+> >>  static inline int
+> >> -futex_atomic_op_inuser(unsigned int encoded_op, u32 __user *uaddr)
+> > 
+> > That unsigned int seems to be a change from the arm64 tree in next. It's
+> > not upstream and it'll cause a (easy to resolve) conflict.
 > 
-> ../drivers/pci/host/pcie-rcar.c: In function 'pci_dma_range_parser_init':
-> ../drivers/pci/host/pcie-rcar.c:856:2: error: implicit declaration of function 'of_n_addr_cells' [-Werror=implicit-function-declaration]
->   parser->pna = of_n_addr_cells(node);
->   ^
-> As pointed out by Ben Dooks and Geert Uytterhoeven, this is actually
-> supposed to build fine, which we can achieve if we make the
-> declaration of of_irq_parse_and_map_pci conditional on CONFIG_OF
-> and provide an empty inline function otherwise, as we do for
-> a lot of other of interfaces.
-> 
-> This lets us build the rcar_pci driver again without CONFIG_OF
-> for build testing. All platforms using this driver select OF,
-> so this doesn't change anything for the users.
-> 
-> Signed-off-by: Arnd Bergmann <arnd@arndb.de>
-> Cc: devicetree@vger.kernel.org
-> Cc: Rob Herring <robh+dt@kernel.org>
-> Cc: Grant Likely <grant.likely@linaro.org>
-> Cc: Lucas Stach <l.stach@pengutronix.de>
-> Cc: Bjorn Helgaas <bhelgaas@google.com>
-> Cc: Magnus Damm <damm@opensource.se>
-> Cc: Geert Uytterhoeven <geert@linux-m68k.org>
-> Cc: Ben Dooks <ben.dooks@codethink.co.uk>
-> Cc: linux-pci@vger.kernel.org
-> Cc: linux-sh@vger.kernel.org
-> 
-> ---
-> I originally sent the patch in 2014 when things initially broke
-> and then forgot about while it was applied in my randconfig patch
-> stack. I sent it again in 2016 without replay.
-> 
-> It's still broken and I think this is the correct fix.
-> ---
->  include/linux/of.h | 3 +++
->  1 file changed, 3 insertions(+)
-> 
-> diff --git a/include/linux/of.h b/include/linux/of.h
-> index 4a8a70916237..1efdbe53136c 100644
-> --- a/include/linux/of.h
-> +++ b/include/linux/of.h
-> @@ -735,6 +735,9 @@ static inline struct device_node *of_get_cpu_node(int cpu,
->  	return NULL;
->  }
->  
-> +static inline int of_n_addr_cells(struct device_node *np) { return 0; }
-> +static inline int of_n_size_cells(struct device_node *np) { return 0; }
-> +
->  static inline int of_property_read_u64(const struct device_node *np,
->  				       const char *propname, u64 *out_value)
->  {
-> 
+> Ugh, I thought the arm64 is in upstream already. Note that this patch
+> just takes what is in this arm64 fix and makes it effective for all
+> architectures. So I will wait with v2 until it merges upstream.
 
-Reviewed-by: Frank Rowand <frank.rowand@sony.com>
+Ok.
+
+> > Yes, we probably can't change that anymore, but at least we should make it
+> > very explicit and add a comment to that effect.
+> 
+> Something like this or do you want a comment yet?
+>         unsigned int op =         (encoded_op & 0x70000000) >> 28;
+>         unsigned int cmp =        (encoded_op & 0x0f000000) >> 24;
+>         int oparg = sign_extend32((encoded_op & 0x00fff000) >> 12, 12);
+>         int cmparg = sign_extend32(encoded_op & 0x00000fff, 12);
+
+Yes, that makes sense.
+
+There is also the issue with the shift. See this thread for further
+reference:
+
+  http://lkml.kernel.org/r/alpine.DEB.2.20.1706282353190.1890@nanos
+
+The gist is:
+
+  "Anything using a shift value < 0 or > 31 will get crap as a
+   result. Rightfully so because it's just undefined.
+
+   Yes I know that the insanity of user space is unlimited, but anything
+   attempting this is so broken that we cannot break it further by making
+   that shift arg unsigned and actually limit it to 0-31"
+
+So we should make that case explicit as well.
+
+        if (encoded_op & (FUTEX_OP_OPARG_SHIFT << 28)) {
+		if (oparg < 0 || oparg > 31)
+			return -EINVAL;
+                oparg = 1 << oparg;
+	}
+
+Thanks,
+
+	tglx
