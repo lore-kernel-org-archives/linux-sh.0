@@ -1,65 +1,57 @@
-From: Chris Packham <chris.packham@alliedtelesis.co.nz>
-Date: Wed, 05 Jul 2017 10:13:58 +0000
-Subject: [PATCH v2 4/4] i2c: pca-platform: drop gpio from platform data
-Message-Id: <20170705101358.17458-5-chris.packham@alliedtelesis.co.nz>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Tue, 04 Jul 2017 14:03:34 +0000
+Subject: Re: [PATCH 2/6] i2c: pca-platform: correctly set algo_data.reset_chip
+Message-Id: <20170704140333.iahb7udd22ph6awk@ninjato>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="5thzgr52ilotzhge"
 List-Id: <linux-sh.vger.kernel.org>
-References: <20170705101358.17458-1-chris.packham@alliedtelesis.co.nz>
-In-Reply-To: <20170705101358.17458-1-chris.packham@alliedtelesis.co.nz>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: wsa@the-dreams.de, ysato@users.sourceforge.jp, linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org
-Cc: linux-kernel@vger.kernel.org, Chris Packham <chris.packham@alliedtelesis.co.nz>, Steven Miao <realmz6@gmail.com>, Rich Felker <dalias@libc.org>, adi-buildroot-devel@lists.sourceforge.net
+References: <20170630005408.23968-1-chris.packham@alliedtelesis.co.nz>
+ <20170630005408.23968-3-chris.packham@alliedtelesis.co.nz>
+In-Reply-To: <20170630005408.23968-3-chris.packham@alliedtelesis.co.nz>
+To: Chris Packham <chris.packham@alliedtelesis.co.nz>
+Cc: andy.shevchenko@gmail.com, linux-i2c@vger.kernel.org, ysato@users.sourceforge.jp, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Now that the i2c-pca-plaform driver is using the device managed API for
-gpios there is no need for the reset gpio to be specified via
-i2c_pca9564_pf_platform_data.
 
-Signed-off-by: Chris Packham <chris.packham@alliedtelesis.co.nz>
----
- arch/blackfin/mach-bf561/boards/acvilon.c | 1 -
- arch/sh/boards/board-sh7785lcr.c          | 1 -
- include/linux/i2c-pca-platform.h          | 3 ---
- 3 files changed, 5 deletions(-)
+--5thzgr52ilotzhge
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-diff --git a/arch/blackfin/mach-bf561/boards/acvilon.c b/arch/blackfin/mach-bf561/boards/acvilon.c
-index 37f8f25a1347..192404318a36 100644
---- a/arch/blackfin/mach-bf561/boards/acvilon.c
-+++ b/arch/blackfin/mach-bf561/boards/acvilon.c
-@@ -112,7 +112,6 @@ static struct resource bfin_i2c_pca_resources[] = {
- };
- 
- struct i2c_pca9564_pf_platform_data pca9564_platform_data = {
--	.gpio = -1,
- 	.i2c_clock_speed = 330000,
- 	.timeout = HZ,
- };
-diff --git a/arch/sh/boards/board-sh7785lcr.c b/arch/sh/boards/board-sh7785lcr.c
-index caec1ebffb09..d7d232dea33e 100644
---- a/arch/sh/boards/board-sh7785lcr.c
-+++ b/arch/sh/boards/board-sh7785lcr.c
-@@ -253,7 +253,6 @@ static struct gpiod_lookup_table i2c_gpio_table = {
- };
- 
- static struct i2c_pca9564_pf_platform_data i2c_platform_data = {
--	.gpio			= 0,
- 	.i2c_clock_speed	= I2C_PCA_CON_330kHz,
- 	.timeout		= HZ,
- };
-diff --git a/include/linux/i2c-pca-platform.h b/include/linux/i2c-pca-platform.h
-index aba33759dec4..6331eaef9352 100644
---- a/include/linux/i2c-pca-platform.h
-+++ b/include/linux/i2c-pca-platform.h
-@@ -2,9 +2,6 @@
- #define I2C_PCA9564_PLATFORM_H
- 
- struct i2c_pca9564_pf_platform_data {
--	int gpio;		/* pin to reset chip. driver will work when
--				 * not supplied (negative value), but it
--				 * cannot exit some error conditions then */
- 	int i2c_clock_speed;	/* values are defined in linux/i2c-algo-pca.h */
- 	int timeout;		/* timeout in jiffies */
- };
--- 
-2.13.0
+On Fri, Jun 30, 2017 at 12:54:04PM +1200, Chris Packham wrote:
+> When device tree support was added the setting of algo_data.reset_chip
+> was moved. There were two problems with this. The first being that
+> i2c_pca_pf_resetchip was only used if platform data was provided. The
+> second that it was unconditionally overridden with
+> i2c_pca_pf_dummyreset. Ensure that however the reset gpio is defined the
+> correct reset_chip function is used.
+>=20
+> Fixes: commit 4cc7229daa46 ("i2c: pca-platform: switch to struct gpio_des=
+c")
+> Signed-off-by: Chris Packham <chris.packham@alliedtelesis.co.nz>
 
+It's a bugfix, so I'll include it in this merge window.
+
+Applied to for-next, thanks!
+
+
+--5thzgr52ilotzhge
+Content-Type: application/pgp-signature; name="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQIzBAABCAAdFiEEOZGx6rniZ1Gk92RdFA3kzBSgKbYFAllboDUACgkQFA3kzBSg
+KbbtPw//XQD0e7td5ohv5+ktnC70xdPFz34LrefB7y6Z34FRDvjbp1PSQirQy8Ap
+cobMfdHksEQ0CDTMcdDYBsD8ijpEpr03JOVWEPjE1eFvUnea56MSl/z41Bzdnx4a
+QT4iNZWfBz9GdcP7CFlUGMXoAwkHpTeyJu2S2wpe/9rgJDYDDGUAuhX8DSKNL5QV
+nSuQ3KtcGNANnB/bR5sj7TrV5/ZtGSCrTdNapi3uKOPW4M3YRp9XftmDXwAkeEgv
+0uNLwKdG+ac4LOWLFZyNIa8R4OUgwrc7OlOVbLDXFkQECfjBcA+0aXZtIgbz8R2f
+C1Ggf00dXwIHpVjsPEw1JwcYBbcPsoiEEul1djz12+UF5sgc56f36xrIEcurkIDY
+rAWGVSItKBSnlXepF8OMKR+bn3ZlXBiSyAgKpkhRdG6Zy7iIdMeLnScKL1i5wwLr
+vCKVUsyq+ZL/RT13iFt7S9LwQaBxNGLwkjg1nWltEK6jWYeaBrknHSOl5WXMfCH9
+DandR8XPW7Tioh4v64+kykc6b1wzN40xMquN1m+DLz6rvFIq7ZkmxNWqhFvhorO2
+a/yjoppWySaV3nrVtpijZUWc1ort6ZpnMcFyC2Xh/GzarUXx1lL5Fb0YRN6YbcPR
+IAbea74GUMOWbAXjfiInGDu15TQuXNEX/BglYLoMlJfwDrwal3Y=
+=Iz2L
+-----END PGP SIGNATURE-----
+
+--5thzgr52ilotzhge--
