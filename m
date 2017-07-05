@@ -1,60 +1,65 @@
-From: Joe Perches <joe@perches.com>
-Date: Wed, 05 Jul 2017 20:02:09 +0000
-Subject: [PATCH 00/18] treewide: Move storage class before return type
-Message-Id: <cover.1499284835.git.joe@perches.com>
+From: Chris Packham <chris.packham@alliedtelesis.co.nz>
+Date: Wed, 05 Jul 2017 10:13:58 +0000
+Subject: [PATCH v2 4/4] i2c: pca-platform: drop gpio from platform data
+Message-Id: <20170705101358.17458-5-chris.packham@alliedtelesis.co.nz>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20170705101358.17458-1-chris.packham@alliedtelesis.co.nz>
+In-Reply-To: <20170705101358.17458-1-chris.packham@alliedtelesis.co.nz>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm@linux-foundation.org>, kvm@vger.kernel.org, linux-arm-kernel@lists.infradead.org, kvmarm@lists.cs.columbia.edu, linux-m68k@lists.linux-m68k.org, linux-efi@vger.kernel.org, linux-s390@vger.kernel.org, linux-serial@vger.kernel.org, linux-ia64@vger.kernel.org, linux-usb@vger.kernel.org, linux-fbdev@vger.kernel.org, linux-omap@vger.kernel.org, alsa-devel@alsa-project.org
-Cc: linux-mips@linux-mips.org, linux-kernel@vger.kernel.org, linux-cris-kernel@axis.com, linux-sh@vger.kernel.org
+To: wsa@the-dreams.de, ysato@users.sourceforge.jp, linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org, Chris Packham <chris.packham@alliedtelesis.co.nz>, Steven Miao <realmz6@gmail.com>, Rich Felker <dalias@libc.org>, adi-buildroot-devel@lists.sourceforge.net
 
-Move the inline/asmlinkage keywords before the return types
-Add a checkpatch test for this too.
+Now that the i2c-pca-plaform driver is using the device managed API for
+gpios there is no need for the reset gpio to be specified via
+i2c_pca9564_pf_platform_data.
 
-Joe Perches (18):
-  checkpatch: improve the STORAGE_CLASS test
-  ARM: KVM: Move asmlinkage before type
-  ARM: HP Jornada 7XX: Move inline before return type
-  CRIS: gpio: Move inline before return type
-  FRV: tlbflush: Move asmlinkage before return type
-  ia64: Move inline before return type
-  ia64: sn: pci: Move inline before type
-  m68k: coldfire: Move inline before return type
-  MIPS: SMP: Move asmlinkage before return type
-  sh: Move inline before return type
-  x86/efi: Move asmlinkage before return type
-  drivers: s390: Move static and inline before return type
-  drivers: tty: serial: Move inline before return type
-  USB: serial: safe_serial: Move __inline__ before return type
-  video: fbdev: intelfb: Move inline before return type
-  video: fbdev: omap: Move inline before return type
-  ARM: samsung: usb-ohci: Move inline before return type
-  ALSA: opl4: Move inline before return type
+Signed-off-by: Chris Packham <chris.packham@alliedtelesis.co.nz>
+---
+ arch/blackfin/mach-bf561/boards/acvilon.c | 1 -
+ arch/sh/boards/board-sh7785lcr.c          | 1 -
+ include/linux/i2c-pca-platform.h          | 3 ---
+ 3 files changed, 5 deletions(-)
 
- arch/arm/include/asm/kvm_hyp.h                 |  8 ++++----
- arch/arm/mach-sa1100/jornada720_ssp.c          |  2 +-
- arch/cris/arch-v10/drivers/gpio.c              |  4 ++--
- arch/frv/include/asm/tlbflush.h                |  8 ++++----
- arch/ia64/kernel/mca.c                         |  2 +-
- arch/ia64/sn/pci/pcibr/pcibr_ate.c             |  2 +-
- arch/ia64/sn/pci/tioce_provider.c              |  4 ++--
- arch/m68k/coldfire/intc-simr.c                 |  4 ++--
- arch/mips/include/asm/smp.h                    |  2 +-
- arch/sh/mm/cache-sh5.c                         |  2 +-
- arch/x86/include/asm/efi.h                     |  4 ++--
- drivers/s390/net/ctcm_main.c                   |  2 +-
- drivers/s390/net/qeth_l3_main.c                |  2 +-
- drivers/tty/serial/ioc3_serial.c               |  4 ++--
- drivers/tty/serial/ioc4_serial.c               |  4 ++--
- drivers/usb/serial/safe_serial.c               |  2 +-
- drivers/video/fbdev/intelfb/intelfbdrv.c       |  2 +-
- drivers/video/fbdev/omap/lcdc.c                |  6 +++---
- include/linux/platform_data/usb-ohci-s3c2410.h |  2 +-
- scripts/checkpatch.pl                          | 12 ++++++++++--
- sound/drivers/opl4/opl4_lib.c                  |  2 +-
- 21 files changed, 44 insertions(+), 36 deletions(-)
-
+diff --git a/arch/blackfin/mach-bf561/boards/acvilon.c b/arch/blackfin/mach-bf561/boards/acvilon.c
+index 37f8f25a1347..192404318a36 100644
+--- a/arch/blackfin/mach-bf561/boards/acvilon.c
++++ b/arch/blackfin/mach-bf561/boards/acvilon.c
+@@ -112,7 +112,6 @@ static struct resource bfin_i2c_pca_resources[] = {
+ };
+ 
+ struct i2c_pca9564_pf_platform_data pca9564_platform_data = {
+-	.gpio = -1,
+ 	.i2c_clock_speed = 330000,
+ 	.timeout = HZ,
+ };
+diff --git a/arch/sh/boards/board-sh7785lcr.c b/arch/sh/boards/board-sh7785lcr.c
+index caec1ebffb09..d7d232dea33e 100644
+--- a/arch/sh/boards/board-sh7785lcr.c
++++ b/arch/sh/boards/board-sh7785lcr.c
+@@ -253,7 +253,6 @@ static struct gpiod_lookup_table i2c_gpio_table = {
+ };
+ 
+ static struct i2c_pca9564_pf_platform_data i2c_platform_data = {
+-	.gpio			= 0,
+ 	.i2c_clock_speed	= I2C_PCA_CON_330kHz,
+ 	.timeout		= HZ,
+ };
+diff --git a/include/linux/i2c-pca-platform.h b/include/linux/i2c-pca-platform.h
+index aba33759dec4..6331eaef9352 100644
+--- a/include/linux/i2c-pca-platform.h
++++ b/include/linux/i2c-pca-platform.h
+@@ -2,9 +2,6 @@
+ #define I2C_PCA9564_PLATFORM_H
+ 
+ struct i2c_pca9564_pf_platform_data {
+-	int gpio;		/* pin to reset chip. driver will work when
+-				 * not supplied (negative value), but it
+-				 * cannot exit some error conditions then */
+ 	int i2c_clock_speed;	/* values are defined in linux/i2c-algo-pca.h */
+ 	int timeout;		/* timeout in jiffies */
+ };
 -- 
-2.10.0.rc2.1.g053435c
+2.13.0
 
