@@ -1,63 +1,60 @@
-From: Chris Packham <chris.packham@alliedtelesis.co.nz>
-Date: Wed, 05 Jul 2017 10:13:55 +0000
-Subject: [PATCH v2 1/4] sh: sh7785lcr: add GPIO lookup table for i2c controller reset
-Message-Id: <20170705101358.17458-2-chris.packham@alliedtelesis.co.nz>
+From: Joe Perches <joe@perches.com>
+Date: Wed, 05 Jul 2017 20:02:09 +0000
+Subject: [PATCH 00/18] treewide: Move storage class before return type
+Message-Id: <cover.1499284835.git.joe@perches.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20170705101358.17458-1-chris.packham@alliedtelesis.co.nz>
-In-Reply-To: <20170705101358.17458-1-chris.packham@alliedtelesis.co.nz>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: wsa@the-dreams.de, ysato@users.sourceforge.jp, linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org
-Cc: linux-kernel@vger.kernel.org, Chris Packham <chris.packham@alliedtelesis.co.nz>, Rich Felker <dalias@libc.org>
+To: Andrew Morton <akpm@linux-foundation.org>, kvm@vger.kernel.org, linux-arm-kernel@lists.infradead.org, kvmarm@lists.cs.columbia.edu, linux-m68k@lists.linux-m68k.org, linux-efi@vger.kernel.org, linux-s390@vger.kernel.org, linux-serial@vger.kernel.org, linux-ia64@vger.kernel.org, linux-usb@vger.kernel.org, linux-fbdev@vger.kernel.org, linux-omap@vger.kernel.org, alsa-devel@alsa-project.org
+Cc: linux-mips@linux-mips.org, linux-kernel@vger.kernel.org, linux-cris-kernel@axis.com, linux-sh@vger.kernel.org
 
-Define the GPIO connected to the PCA9564 using a GPIO lookup table. This
-will allow the i2c-pca-platform driver to use the device managed APIs to
-lookup the gpio instead of using platform_data.
+Move the inline/asmlinkage keywords before the return types
+Add a checkpatch test for this too.
 
-Signed-off-by: Chris Packham <chris.packham@alliedtelesis.co.nz>
----
-Changes in v2:
-- use correct API (gpio_add_lookup_table) and compile test.
+Joe Perches (18):
+  checkpatch: improve the STORAGE_CLASS test
+  ARM: KVM: Move asmlinkage before type
+  ARM: HP Jornada 7XX: Move inline before return type
+  CRIS: gpio: Move inline before return type
+  FRV: tlbflush: Move asmlinkage before return type
+  ia64: Move inline before return type
+  ia64: sn: pci: Move inline before type
+  m68k: coldfire: Move inline before return type
+  MIPS: SMP: Move asmlinkage before return type
+  sh: Move inline before return type
+  x86/efi: Move asmlinkage before return type
+  drivers: s390: Move static and inline before return type
+  drivers: tty: serial: Move inline before return type
+  USB: serial: safe_serial: Move __inline__ before return type
+  video: fbdev: intelfb: Move inline before return type
+  video: fbdev: omap: Move inline before return type
+  ARM: samsung: usb-ohci: Move inline before return type
+  ALSA: opl4: Move inline before return type
 
- arch/sh/boards/board-sh7785lcr.c | 10 ++++++++++
- 1 file changed, 10 insertions(+)
+ arch/arm/include/asm/kvm_hyp.h                 |  8 ++++----
+ arch/arm/mach-sa1100/jornada720_ssp.c          |  2 +-
+ arch/cris/arch-v10/drivers/gpio.c              |  4 ++--
+ arch/frv/include/asm/tlbflush.h                |  8 ++++----
+ arch/ia64/kernel/mca.c                         |  2 +-
+ arch/ia64/sn/pci/pcibr/pcibr_ate.c             |  2 +-
+ arch/ia64/sn/pci/tioce_provider.c              |  4 ++--
+ arch/m68k/coldfire/intc-simr.c                 |  4 ++--
+ arch/mips/include/asm/smp.h                    |  2 +-
+ arch/sh/mm/cache-sh5.c                         |  2 +-
+ arch/x86/include/asm/efi.h                     |  4 ++--
+ drivers/s390/net/ctcm_main.c                   |  2 +-
+ drivers/s390/net/qeth_l3_main.c                |  2 +-
+ drivers/tty/serial/ioc3_serial.c               |  4 ++--
+ drivers/tty/serial/ioc4_serial.c               |  4 ++--
+ drivers/usb/serial/safe_serial.c               |  2 +-
+ drivers/video/fbdev/intelfb/intelfbdrv.c       |  2 +-
+ drivers/video/fbdev/omap/lcdc.c                |  6 +++---
+ include/linux/platform_data/usb-ohci-s3c2410.h |  2 +-
+ scripts/checkpatch.pl                          | 12 ++++++++++--
+ sound/drivers/opl4/opl4_lib.c                  |  2 +-
+ 21 files changed, 44 insertions(+), 36 deletions(-)
 
-diff --git a/arch/sh/boards/board-sh7785lcr.c b/arch/sh/boards/board-sh7785lcr.c
-index 2c4771ee84cd..caec1ebffb09 100644
---- a/arch/sh/boards/board-sh7785lcr.c
-+++ b/arch/sh/boards/board-sh7785lcr.c
-@@ -25,6 +25,7 @@
- #include <linux/io.h>
- #include <linux/clk.h>
- #include <linux/errno.h>
-+#include <linux/gpio/machine.h>
- #include <mach/sh7785lcr.h>
- #include <cpu/sh7785.h>
- #include <asm/heartbeat.h>
-@@ -243,6 +244,14 @@ static struct resource i2c_resources[] = {
- 	},
- };
- 
-+static struct gpiod_lookup_table i2c_gpio_table = {
-+	.dev_id = "i2c.0",
-+	.table = {
-+		GPIO_LOOKUP("pfc-sh7757", 0, "reset-gpios", GPIO_ACTIVE_LOW),
-+		{ },
-+	},
-+};
-+
- static struct i2c_pca9564_pf_platform_data i2c_platform_data = {
- 	.gpio			= 0,
- 	.i2c_clock_speed	= I2C_PCA_CON_330kHz,
-@@ -283,6 +292,7 @@ static int __init sh7785lcr_devices_setup(void)
- 		i2c_device.num_resources = ARRAY_SIZE(i2c_proto_resources);
- 	}
- 
-+	gpiod_add_lookup_table(&i2c_gpio_table);
- 	return platform_add_devices(sh7785lcr_devices,
- 				    ARRAY_SIZE(sh7785lcr_devices));
- }
 -- 
-2.13.0
+2.10.0.rc2.1.g053435c
 
