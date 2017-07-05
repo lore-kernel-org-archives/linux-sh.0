@@ -1,59 +1,36 @@
-From: Chris Packham <chris.packham@alliedtelesis.co.nz>
-Date: Wed, 05 Jul 2017 10:13:57 +0000
-Subject: [PATCH v2 3/4] i2c: pca-platform: use device_property_read_u32
-Message-Id: <20170705101358.17458-4-chris.packham@alliedtelesis.co.nz>
+From: Joe Perches <joe@perches.com>
+Date: Wed, 05 Jul 2017 20:02:19 +0000
+Subject: [PATCH 10/18] sh: Move inline before return type
+Message-Id: <f81bb2a67a97b1fd8b6ea99bd350d8a0f6864fb1.1499284835.git.joe@perches.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20170705101358.17458-1-chris.packham@alliedtelesis.co.nz>
-In-Reply-To: <20170705101358.17458-1-chris.packham@alliedtelesis.co.nz>
+References: <cover.1499284835.git.joe@perches.com>
+In-Reply-To: <cover.1499284835.git.joe@perches.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: wsa@the-dreams.de, ysato@users.sourceforge.jp, linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org
-Cc: linux-kernel@vger.kernel.org, Chris Packham <chris.packham@alliedtelesis.co.nz>
+To: Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
 
-Use device_property_read_u32 instead of of_property_read_u32_index to
-lookup the "clock-frequency" property.
+Make the code like the rest of the kernel.
 
-Signed-off-by: Chris Packham <chris.packham@alliedtelesis.co.nz>
+Signed-off-by: Joe Perches <joe@perches.com>
 ---
-Changes in v2:
-- move call to device_property_read_u32 to above platform_data usage.
-  This allows the device property/device tree to go first and
-  platform_data (if present) can override things. Eventually when all
-  the platforms using this driver are converted to either use device
-  properties or a device tree then the platform_data can simply be
-  deleted.
+ arch/sh/mm/cache-sh5.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
- drivers/i2c/busses/i2c-pca-platform.c | 13 ++++++-------
- 1 file changed, 6 insertions(+), 7 deletions(-)
-
-diff --git a/drivers/i2c/busses/i2c-pca-platform.c b/drivers/i2c/busses/i2c-pca-platform.c
-index b90193d09d4b..bc2707ffd409 100644
---- a/drivers/i2c/busses/i2c-pca-platform.c
-+++ b/drivers/i2c/busses/i2c-pca-platform.c
-@@ -177,16 +177,15 @@ static int i2c_pca_pf_probe(struct platform_device *pdev)
- 	if (IS_ERR(i2c->gpio))
- 		return PTR_ERR(i2c->gpio);
+diff --git a/arch/sh/mm/cache-sh5.c b/arch/sh/mm/cache-sh5.c
+index d94dadedf74f..445b5e69b73c 100644
+--- a/arch/sh/mm/cache-sh5.c
++++ b/arch/sh/mm/cache-sh5.c
+@@ -234,7 +234,7 @@ static void sh64_icache_inv_current_user_range(unsigned long start, unsigned lon
+ #define DUMMY_ALLOCO_AREA_SIZE ((L1_CACHE_BYTES << 10) + (1024 * 4))
+ static unsigned char dummy_alloco_area[DUMMY_ALLOCO_AREA_SIZE] __cacheline_aligned = { 0, };
  
-+	i2c->adap.timeout = HZ;
-+	ret = device_property_read_u32(&pdev->dev, "clock-frequency",
-+				       &i2c->algo_data.i2c_clock);
-+	if (ret)
-+		i2c->algo_data.i2c_clock = 59000;
-+
- 	if (platform_data) {
- 		i2c->adap.timeout = platform_data->timeout;
- 		i2c->algo_data.i2c_clock = platform_data->i2c_clock_speed;
--	} else if (np) {
--		i2c->adap.timeout = HZ;
--		of_property_read_u32_index(np, "clock-frequency", 0,
--					   &i2c->algo_data.i2c_clock);
--	} else {
--		i2c->adap.timeout = HZ;
--		i2c->algo_data.i2c_clock = 59000;
- 	}
- 
- 	i2c->algo_data.data = i2c;
+-static void inline sh64_dcache_purge_sets(int sets_to_purge_base, int n_sets)
++static inline void sh64_dcache_purge_sets(int sets_to_purge_base, int n_sets)
+ {
+ 	/* Purge all ways in a particular block of sets, specified by the base
+ 	   set number and number of sets.  Can handle wrap-around, if that's
 -- 
-2.13.0
+2.10.0.rc2.1.g053435c
 
