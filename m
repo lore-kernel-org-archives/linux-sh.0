@@ -1,36 +1,63 @@
-From: Joe Perches <joe@perches.com>
-Date: Wed, 05 Jul 2017 20:02:19 +0000
-Subject: [PATCH 10/18] sh: Move inline before return type
-Message-Id: <f81bb2a67a97b1fd8b6ea99bd350d8a0f6864fb1.1499284835.git.joe@perches.com>
+From: Chris Packham <chris.packham@alliedtelesis.co.nz>
+Date: Wed, 05 Jul 2017 10:13:55 +0000
+Subject: [PATCH v2 1/4] sh: sh7785lcr: add GPIO lookup table for i2c controller reset
+Message-Id: <20170705101358.17458-2-chris.packham@alliedtelesis.co.nz>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1499284835.git.joe@perches.com>
-In-Reply-To: <cover.1499284835.git.joe@perches.com>
+References: <20170705101358.17458-1-chris.packham@alliedtelesis.co.nz>
+In-Reply-To: <20170705101358.17458-1-chris.packham@alliedtelesis.co.nz>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
+To: wsa@the-dreams.de, ysato@users.sourceforge.jp, linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org, Chris Packham <chris.packham@alliedtelesis.co.nz>, Rich Felker <dalias@libc.org>
 
-Make the code like the rest of the kernel.
+Define the GPIO connected to the PCA9564 using a GPIO lookup table. This
+will allow the i2c-pca-platform driver to use the device managed APIs to
+lookup the gpio instead of using platform_data.
 
-Signed-off-by: Joe Perches <joe@perches.com>
+Signed-off-by: Chris Packham <chris.packham@alliedtelesis.co.nz>
 ---
- arch/sh/mm/cache-sh5.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Changes in v2:
+- use correct API (gpio_add_lookup_table) and compile test.
 
-diff --git a/arch/sh/mm/cache-sh5.c b/arch/sh/mm/cache-sh5.c
-index d94dadedf74f..445b5e69b73c 100644
---- a/arch/sh/mm/cache-sh5.c
-+++ b/arch/sh/mm/cache-sh5.c
-@@ -234,7 +234,7 @@ static void sh64_icache_inv_current_user_range(unsigned long start, unsigned lon
- #define DUMMY_ALLOCO_AREA_SIZE ((L1_CACHE_BYTES << 10) + (1024 * 4))
- static unsigned char dummy_alloco_area[DUMMY_ALLOCO_AREA_SIZE] __cacheline_aligned = { 0, };
+ arch/sh/boards/board-sh7785lcr.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/arch/sh/boards/board-sh7785lcr.c b/arch/sh/boards/board-sh7785lcr.c
+index 2c4771ee84cd..caec1ebffb09 100644
+--- a/arch/sh/boards/board-sh7785lcr.c
++++ b/arch/sh/boards/board-sh7785lcr.c
+@@ -25,6 +25,7 @@
+ #include <linux/io.h>
+ #include <linux/clk.h>
+ #include <linux/errno.h>
++#include <linux/gpio/machine.h>
+ #include <mach/sh7785lcr.h>
+ #include <cpu/sh7785.h>
+ #include <asm/heartbeat.h>
+@@ -243,6 +244,14 @@ static struct resource i2c_resources[] = {
+ 	},
+ };
  
--static void inline sh64_dcache_purge_sets(int sets_to_purge_base, int n_sets)
-+static inline void sh64_dcache_purge_sets(int sets_to_purge_base, int n_sets)
- {
- 	/* Purge all ways in a particular block of sets, specified by the base
- 	   set number and number of sets.  Can handle wrap-around, if that's
++static struct gpiod_lookup_table i2c_gpio_table = {
++	.dev_id = "i2c.0",
++	.table = {
++		GPIO_LOOKUP("pfc-sh7757", 0, "reset-gpios", GPIO_ACTIVE_LOW),
++		{ },
++	},
++};
++
+ static struct i2c_pca9564_pf_platform_data i2c_platform_data = {
+ 	.gpio			= 0,
+ 	.i2c_clock_speed	= I2C_PCA_CON_330kHz,
+@@ -283,6 +292,7 @@ static int __init sh7785lcr_devices_setup(void)
+ 		i2c_device.num_resources = ARRAY_SIZE(i2c_proto_resources);
+ 	}
+ 
++	gpiod_add_lookup_table(&i2c_gpio_table);
+ 	return platform_add_devices(sh7785lcr_devices,
+ 				    ARRAY_SIZE(sh7785lcr_devices));
+ }
 -- 
-2.10.0.rc2.1.g053435c
+2.13.0
 
