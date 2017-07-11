@@ -1,144 +1,70 @@
-From: Minchan Kim <minchan@kernel.org>
-Date: Fri, 28 Jul 2017 15:12:24 +0000
-Subject: Re: [PATCH 2/3] mm: fix MADV_[FREE|DONTNEED] TLB flush miss problem
-Message-Id: <20170728151224.GA24201@bbox>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 11 Jul 2017 06:59:11 +0000
+Subject: Re: [PATCH 9/9] ARM: multi_v7_defconfig: Enable DMA for Renesas serial ports
+Message-Id: <CAMuHMdXb1yAgw4AVvheYhPV=V9HeDCW2NdvhJWzoSz8i-mM3TQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1501224112-23656-1-git-send-email-minchan@kernel.org>
- <1501224112-23656-3-git-send-email-minchan@kernel.org>
- <20170728084634.foo3wjhsyydml6yj@techsingularity.net>
-In-Reply-To: <20170728084634.foo3wjhsyydml6yj@techsingularity.net>
+References: <1499693302-25120-1-git-send-email-geert+renesas@glider.be>
+ <1499693302-25120-10-git-send-email-geert+renesas@glider.be>
+ <CANqRtoSi8x7zqwV3Gp_n0dBe4Uw6LDRvC1Lheu+GrLZNYuxAHw@mail.gmail.com>
+In-Reply-To: <CANqRtoSi8x7zqwV3Gp_n0dBe4Uw6LDRvC1Lheu+GrLZNYuxAHw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mel Gorman <mgorman@techsingularity.net>
-Cc: Andrew Morton <akpm@linux-foundation.org>, kernel-team <kernel-team@lge.com>, linux-mm@kvack.org, linux-kernel@vger.kernel.org, Rik van Riel <riel@redhat.com>, Ingo Molnar <mingo@redhat.com>, x86@kernel.org, Russell King <linux@armlinux.org.uk>, linux-arm-kernel@lists.infradead.org, Tony Luck <tony.luck@intel.com>, linux-ia64@vger.kernel.org, Martin Schwidefsky <schwidefsky@de.ibm.com>, "David S. Miller" <davem@davemloft.net>, Heiko Carstens <heiko.carstens@de.ibm.com>, linux-s390@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh@vger.kernel.org, Jeff Dike <jdike@addtoit.com>, user-mode-linux-devel@lists.sourceforge.net, linux-arch@vger.kernel.org, Nadav Amit <nadav.amit@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Jul 28, 2017 at 09:46:34AM +0100, Mel Gorman wrote:
-> On Fri, Jul 28, 2017 at 03:41:51PM +0900, Minchan Kim wrote:
-> > Nadav reported parallel MADV_DONTNEED on same range has a stale TLB
-> > problem and Mel fixed it[1] and found same problem on MADV_FREE[2].
-> > 
-> > Quote from Mel Gorman
-> > 
-> > "The race in question is CPU 0 running madv_free and updating some PTEs
-> > while CPU 1 is also running madv_free and looking at the same PTEs.
-> > CPU 1 may have writable TLB entries for a page but fail the pte_dirty
-> > check (because CPU 0 has updated it already) and potentially fail to flush.
-> > Hence, when madv_free on CPU 1 returns, there are still potentially writable
-> > TLB entries and the underlying PTE is still present so that a subsequent write
-> > does not necessarily propagate the dirty bit to the underlying PTE any more.
-> > Reclaim at some unknown time at the future may then see that the PTE is still
-> > clean and discard the page even though a write has happened in the meantime.
-> > I think this is possible but I could have missed some protection in madv_free
-> > that prevents it happening."
-> > 
-> > This patch aims for solving both problems all at once and is ready for
-> > other problem with KSM, MADV_FREE and soft-dirty story[3].
-> > 
-> > TLB batch API(tlb_[gather|finish]_mmu] uses [set|clear]_tlb_flush_pending
-> > and mmu_tlb_flush_pending so that when tlb_finish_mmu is called, we can catch
-> > there are parallel threads going on. In that case, flush TLB to prevent
-> > for user to access memory via stale TLB entry although it fail to gather
-> > pte entry.
-> > 
-> > I confiremd this patch works with [4] test program Nadav gave so this patch
-> > supersedes "mm: Always flush VMA ranges affected by zap_page_range v2"
-> > in current mmotm.
-> > 
-> > NOTE:
-> > This patch modifies arch-specific TLB gathering interface(x86, ia64,
-> > s390, sh, um). It seems most of architecture are straightforward but s390
-> > need to be careful because tlb_flush_mmu works only if mm->context.flush_mm
-> > is set to non-zero which happens only a pte entry really is cleared by
-> > ptep_get_and_clear and friends. However, this problem never changes the
-> > pte entries but need to flush to prevent memory access from stale tlb.
-> > 
-> > Any thoughts?
-> > 
-> 
-> The cc list is somewhat ..... extensive, given the topic. Trim it if
-> there is another version.
+Hi Magnus,
 
-Most of them are maintainers and mailling list for each architecures
-I am changing. I'm not sure what I can trim. As you said it's rather
-extensive, I will trim mailing list for each arch but keep maintainers
-and linux-arch.
+On Tue, Jul 11, 2017 at 5:38 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
+> On Mon, Jul 10, 2017 at 10:28 PM, Geert Uytterhoeven
+> <geert+renesas@glider.be> wrote:
+>> DMA for (H)SCIF(A|B) serial ports on Renesas R-Car Gen2 and RZ/G1 SoCs
+>> is considered stable, hence enable it by default.
+>>
+>> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+>> ---
+>>  arch/arm/configs/multi_v7_defconfig | 1 +
+>>  1 file changed, 1 insertion(+)
+>>
+>> diff --git a/arch/arm/configs/multi_v7_defconfig b/arch/arm/configs/multi_v7_defconfig
+>> index ea2075d8e185f7aa..072a455008df9751 100644
+>> --- a/arch/arm/configs/multi_v7_defconfig
+>> +++ b/arch/arm/configs/multi_v7_defconfig
+>> @@ -330,6 +330,7 @@ CONFIG_SERIAL_IMX_CONSOLE=y
+>>  CONFIG_SERIAL_SH_SCI=y
+>>  CONFIG_SERIAL_SH_SCI_NR_UARTS 
+>>  CONFIG_SERIAL_SH_SCI_CONSOLE=y
+>> +CONFIG_SERIAL_SH_SCI_DMA=y
+>>  CONFIG_SERIAL_MSM=y
+>>  CONFIG_SERIAL_MSM_CONSOLE=y
+>>  CONFIG_SERIAL_VT8500=y
+>
+> Thanks, FWIW I'm very happy to see DMA enabled for the SCIF driver in mainline.
+>
+> Since enabling DMA Engine still keeps PIO support around I wonder why
+> we need this Kconfig at all - other drivers seem to get by without
+> this kind of thing?
+> So in my opinion it would also be nice to get rid of SERIAL_SH_SCI_DMA
+> completely and reducing the number of special per-driver Kconfig
+> entries.
 
-> 
-> > index 3f2eb76243e3..8c26961f0503 100644
-> > --- a/arch/arm/include/asm/tlb.h
-> > +++ b/arch/arm/include/asm/tlb.h
-> > @@ -163,13 +163,26 @@ tlb_gather_mmu(struct mmu_gather *tlb, struct mm_struct *mm, unsigned long start
-> >  #ifdef CONFIG_HAVE_RCU_TABLE_FREE
-> >  	tlb->batch = NULL;
-> >  #endif
-> > +	set_tlb_flush_pending(tlb->mm);
-> >  }
-> >  
-> >  static inline void
-> >  tlb_finish_mmu(struct mmu_gather *tlb, unsigned long start, unsigned long end)
-> >  {
-> > -	tlb_flush_mmu(tlb);
-> > +	/*
-> > +	 * If there are parallel threads are doing PTE changes on same range
-> > +	 * under non-exclusive lock(e.g., mmap_sem read-side) but defer TLB
-> > +	 * flush by batching, a thread has stable TLB entry can fail to flush
-> > +	 * the TLB by observing pte_none|!pte_dirty, for example so flush TLB
-> > +	 * if we detect parallel PTE batching threads.
-> > +	 */
-> > +	if (mm_tlb_flush_pending(tlb->mm, false) > 1) {
-> > +		tlb->range_start = start;
-> > +		tlb->range_end = end;
-> > +	}
-> >  
-> > +	tlb_flush_mmu(tlb);
-> > +	clear_tlb_flush_pending(tlb->mm);
-> >  	/* keep the page table cache within bounds */
-> >  	check_pgt_cache();
-> >  
-> 
-> mm_tlb_flush_pending shouldn't be taking a barrier specific arg. I expect
-> this to change in the future and cause a conflict. At least I think in
-> this context, it's the conditional barrier stuff.
-> 
+In general, I would agree, and remove the option at the blimp of an eye.
+However, this driver is shared with H8/300 and SuperH.  While both could use
+DMA (but it's not supported by Linux yet), I don't know if they are willing to
+live with the increased static and dynamic memory footprint of SH_SCI DMA
+support.
 
-Yub. I saw your comment to Nadav so I expect you want mm_tlb_flush_pending
-be called under pte lock. However, I will use it out of pte lock where
-tlb_finish_mmu, however, in that case, atomic op and barrier
-to prevent compiler reordering between tlb flush and atomic_read
-in mm_tlb_flush_pending are enough to work.
+Whether we want to hide the option (and default to y if ARCH_RENESAS, i.e.
+ARM) is another question.  Note that that wouldn't reduce code maintainability,
+as the #ifdefs would be kept, and it would prevent building and testing
+with/without DMA on ARM.
 
-> That aside, it's very unfortunate that the return value of
-> mm_tlb_flush_pending really matters. Knowing why 1 is magic there requires
-> knowledge of the internals on a per-arch basis which is a bit nuts.
-> Consider renaming this to mm_tlb_flush_parallel() to return true if there
-> is a nr_pending > 1 with comments explaining why. I don't think any of
-> the callers expect a nr_pending of 0 ever. That removes some knowledge of
-> the specifics.
+Gr{oetje,eeting}s,
 
-Okay. If you are not strong against, I prefer mm_tlb_flush_nested
-which returns true if nr_pending > 1.
+                        Geert
 
-> 
-> The arch-specific changes to tlb_gather_mmu are almost all identical.
-> It's a little tricky to split the arch layer and core mm to have all
-> the set/clear of mm_tlb_flush_pending handled by the core mm.  It's not
-> required but it would be preferred. The set one is obvious. rename
-> tlb_gather_mmu to arch_tlb_gather_mmu (including the generic implementation)
-> and create a tlb_gather_mmu alias that calls arch_tlb_gather_mmu and
-> set_tlb_flush_pending.
-> 
-> The clear is not as straight-forward but can be done by creating a new
-> arch helper that handles this hunk on a per-arch basis
-> 
-> > +     if (mm_tlb_flush_pending(tlb->mm, false) > 1) {
-> > +             tlb->start = start;
-> > +             tlb->end = end;
-> > +     }
-> 
-> It'll be churn initially but it means any different handling in the TLB
-> batching area will be mostly a core concern.
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-Fair enough. I will respin next week.
-Thanks for the review, Mel.
-
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
