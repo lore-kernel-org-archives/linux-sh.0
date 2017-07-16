@@ -1,69 +1,40 @@
-From: Chris Packham <chris.packham@alliedtelesis.co.nz>
-Date: Wed, 05 Jul 2017 10:13:56 +0000
-Subject: [PATCH v2 2/4] i2c: pca-platform: unconditionally use devm_gpiod_get_optional
-Message-Id: <20170705101358.17458-3-chris.packham@alliedtelesis.co.nz>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Sun, 16 Jul 2017 18:28:19 +0000
+Subject: Re: Build regressions/improvements in v4.13-rc1
+Message-Id: <CAMuHMdVe_kb4jBBXNpNUFk8ey4zo_w4y2NQ0xKeH4NXkUDN+UA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20170705101358.17458-1-chris.packham@alliedtelesis.co.nz>
-In-Reply-To: <20170705101358.17458-1-chris.packham@alliedtelesis.co.nz>
+References: <1500229392-30817-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1500229392-30817-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: wsa@the-dreams.de, ysato@users.sourceforge.jp, linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org
-Cc: linux-kernel@vger.kernel.org, Chris Packham <chris.packham@alliedtelesis.co.nz>
+To: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+Cc: Linux-sh list <linux-sh@vger.kernel.org>
 
-Allow for the reset-gpios property to be defined in the device tree
-or via a GPIO lookup table.
+On Sun, Jul 16, 2017 at 8:23 PM, Geert Uytterhoeven
+<geert@linux-m68k.org> wrote:
+> Below is the list of build error/warning regressions/improvements in
+> v4.13-rc1[1] compared to v4.12[2].
+>
+> Summarized:
+>   - build errors: +2/-
 
-Signed-off-by: Chris Packham <chris.packham@alliedtelesis.co.nz>
----
-Changes in v2:
-- move call up above platform_data usage
+> [1] http://kisskb.ellerman.id.au/kisskb/head/5771a8c08880cdca3bfb4a3fc6d309d6bba20877/ (all 267 configs)
+> [2] http://kisskb.ellerman.id.au/kisskb/head/6f7da290413ba713f0cdd9ff1a2a9bb129ef4f6c/ (all 267 configs)
 
- drivers/i2c/busses/i2c-pca-platform.c | 21 ++++-----------------
- 1 file changed, 4 insertions(+), 17 deletions(-)
+> 2 error regressions:
+>   + /home/kisskb/slave/src/arch/sh/mm/cache-sh4.c: error: 'cached_to_uncached' undeclared (first use in this function):  => 99:17
+>   + /home/kisskb/slave/src/arch/sh/mm/cache-sh4.c: error: implicit declaration of function 'cpu_context' [-Werror=implicit-function-declaration]:  => 192:2
 
-diff --git a/drivers/i2c/busses/i2c-pca-platform.c b/drivers/i2c/busses/i2c-pca-platform.c
-index 853a2abedb05..b90193d09d4b 100644
---- a/drivers/i2c/busses/i2c-pca-platform.c
-+++ b/drivers/i2c/busses/i2c-pca-platform.c
-@@ -173,33 +173,20 @@ static int i2c_pca_pf_probe(struct platform_device *pdev)
- 	i2c->adap.dev.parent = &pdev->dev;
- 	i2c->adap.dev.of_node = np;
- 
-+	i2c->gpio = devm_gpiod_get_optional(&pdev->dev, "reset-gpios", GPIOD_OUT_LOW);
-+	if (IS_ERR(i2c->gpio))
-+		return PTR_ERR(i2c->gpio);
-+
- 	if (platform_data) {
- 		i2c->adap.timeout = platform_data->timeout;
- 		i2c->algo_data.i2c_clock = platform_data->i2c_clock_speed;
--		if (gpio_is_valid(platform_data->gpio)) {
--			ret = devm_gpio_request_one(&pdev->dev,
--						    platform_data->gpio,
--						    GPIOF_ACTIVE_LOW,
--						    i2c->adap.name);
--			if (ret = 0) {
--				i2c->gpio = gpio_to_desc(platform_data->gpio);
--				gpiod_direction_output(i2c->gpio, 0);
--			} else {
--				dev_warn(&pdev->dev, "Registering gpio failed!\n");
--				i2c->gpio = NULL;
--			}
--		}
- 	} else if (np) {
- 		i2c->adap.timeout = HZ;
--		i2c->gpio = devm_gpiod_get_optional(&pdev->dev, "reset-gpios", GPIOD_OUT_LOW);
--		if (IS_ERR(i2c->gpio))
--			return PTR_ERR(i2c->gpio);
- 		of_property_read_u32_index(np, "clock-frequency", 0,
- 					   &i2c->algo_data.i2c_clock);
- 	} else {
- 		i2c->adap.timeout = HZ;
- 		i2c->algo_data.i2c_clock = 59000;
--		i2c->gpio = NULL;
- 	}
- 
- 	i2c->algo_data.data = i2c;
--- 
-2.13.0
+sh4-randconfig, nothing new, pops up once in a while.
 
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
