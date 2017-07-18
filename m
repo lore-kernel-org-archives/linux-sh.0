@@ -1,59 +1,46 @@
-From: <david.jones@epikfoto.com>
-Date: Sat, 29 Jul 2017 00:36:47 +0000
-Subject: 
-Message-Id: <150128860730.22237.7007588833254922050@naclick.com.br>
+From: "Mrs.Meliana Trump" <ugochukwuonuorah12@gmail.com>
+Date: Tue, 18 Jul 2017 14:24:53 +0000
+Subject: Attention To me and get back to me urgent
+Message-Id: <CAOYsR4hfz2d52khW4AfuD1=vcXCDM7z18SBkgtTCuHGeZVr_Og@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-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
+Attention:Beneficiary
+
+I am  Meliana Trump, and I am writing to inform you about your Bank
+Check Draft brought back 16/07/2017 by the United Embassy Mr John
+Moore from the government of Benin Republic in the white house
+Washington DC been mandated to be deliver to your home address once
+you reconfirm it with the one we have here with us to avoid wrong
+delivery of your check draft Eighteen million united states dollars
+$18,000,000,00usd that was assigned to be delivered to your humble
+home address by Honorable president Donald Trump the president of this
+great country this week by a delivery agent Mr John Moore
+
+Also reconfirm your details for the check delivery by filling the form
+below and send it immediately to our mrs.melianatrump@yahoo.com  in
+for verification and for prompt collection of your fund.
+
+Fill The Form Below:
+
+1. Residential Address :
+2. Next of Kin :
+3. Mobile Number:
+4. Fax Number :
+5. Occupation :
+6. Sex :
+7. Age :
+8. Nationality :
+9. Country :
+10. Marital Status :
+
+
+Accept my hearty congratulation again!
+
+Yours Sincerely,
+MRS MELIANA TRUMP
+FIRST_LADY
+1600 Pennsylvania Ave NW, Washington, DC 20500, United States
