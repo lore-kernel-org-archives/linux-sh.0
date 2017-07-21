@@ -1,57 +1,66 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Tue, 04 Jul 2017 14:03:34 +0000
-Subject: Re: [PATCH 2/6] i2c: pca-platform: correctly set algo_data.reset_chip
-Message-Id: <20170704140333.iahb7udd22ph6awk@ninjato>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="5thzgr52ilotzhge"
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Fri, 21 Jul 2017 21:09:50 +0000
+Subject: [PATCH v2] of: provide of_n_{addr,size}_cells wrappers for !CONFIG_OF
+Message-Id: <20170721211000.3382004-1-arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20170630005408.23968-1-chris.packham@alliedtelesis.co.nz>
- <20170630005408.23968-3-chris.packham@alliedtelesis.co.nz>
-In-Reply-To: <20170630005408.23968-3-chris.packham@alliedtelesis.co.nz>
-To: Chris Packham <chris.packham@alliedtelesis.co.nz>
-Cc: andy.shevchenko@gmail.com, linux-i2c@vger.kernel.org, ysato@users.sourceforge.jp, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Rob Herring <robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Frank Rowand <frowand.list-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>, Bjorn Helgaas <bhelgaas-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Magnus Damm <damm-yzvPICuk2ACczHhG9Qg4qA@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Ben Dooks <ben.dooks-4yDnlxn2s6sWdaTGBSpHTA@public.gmane.org>, linux-pci-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Sakari Ailus <sakari.ailus-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>, Kieran Bingham <kieran.bingham+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>, Mika Westerberg <mika.westerberg-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>, Sudeep Holla <sudeep.holla-5wv7dgnIgG8@public.gmane.org>, Richard Fitzgerald <rf-yzvPICuk2AATkU/dhu1WVueM+bqZidxxQQ4Iyu8u01E@public.gmane.org>, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
+The pci-rcar driver is enabled for compile tests, and this has
+shown that the driver cannot build without CONFIG_OF:
 
---5thzgr52ilotzhge
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+drivers/pci/host/pcie-rcar.c: In function 'pci_dma_range_parser_init':
+drivers/pci/host/pcie-rcar.c:1039:2: error: implicit declaration of function 'of_n_addr_cells' [-Werror=implicit-function-declaration]
+  parser->pna = of_n_addr_cells(node);
+  ^
+As pointed out by Ben Dooks and Geert Uytterhoeven, this is actually
+supposed to build fine, which we can achieve if we make the
+declaration of of_irq_parse_and_map_pci conditional on CONFIG_OF
+and provide an empty inline function otherwise, as we do for
+a lot of other of interfaces.
 
-On Fri, Jun 30, 2017 at 12:54:04PM +1200, Chris Packham wrote:
-> When device tree support was added the setting of algo_data.reset_chip
-> was moved. There were two problems with this. The first being that
-> i2c_pca_pf_resetchip was only used if platform data was provided. The
-> second that it was unconditionally overridden with
-> i2c_pca_pf_dummyreset. Ensure that however the reset gpio is defined the
-> correct reset_chip function is used.
->=20
-> Fixes: commit 4cc7229daa46 ("i2c: pca-platform: switch to struct gpio_des=
-c")
-> Signed-off-by: Chris Packham <chris.packham@alliedtelesis.co.nz>
+This lets us build the rcar_pci driver again without CONFIG_OF
+for build testing. All platforms using this driver select OF,
+so this doesn't change anything for the users.
 
-It's a bugfix, so I'll include it in this merge window.
+Cc: Bjorn Helgaas <bhelgaas@google.com>
+Cc: Magnus Damm <damm@opensource.se>
+Cc: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: Ben Dooks <ben.dooks@codethink.co.uk>
+Cc: linux-pci@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reviewed-by: Frank Rowand <frank.rowand@sony.com>
+Fixes: c25da4778803 ("PCI: rcar: Add Renesas R-Car PCIe driver")
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+---
+I originally sent the patch in 2014 when things initially broke
+and then forgot about while it was applied in my randconfig patch
+stack. I sent it again in 2016 without reply.
 
-Applied to for-next, thanks!
+It's still broken and I think this is the correct fix.
+v2: modify changelog as Geert suggested.
 
+ include/linux/of.h | 3 +++
+ 1 file changed, 3 insertions(+)
 
---5thzgr52ilotzhge
-Content-Type: application/pgp-signature; name="signature.asc"
+diff --git a/include/linux/of.h b/include/linux/of.h
+index 4a8a70916237..1efdbe53136c 100644
+--- a/include/linux/of.h
++++ b/include/linux/of.h
+@@ -735,6 +735,9 @@ static inline struct device_node *of_get_cpu_node(int cpu,
+ 	return NULL;
+ }
+ 
++static inline int of_n_addr_cells(struct device_node *np) { return 0; }
++static inline int of_n_size_cells(struct device_node *np) { return 0; }
++
+ static inline int of_property_read_u64(const struct device_node *np,
+ 				       const char *propname, u64 *out_value)
+ {
+-- 
+2.9.0
 
------BEGIN PGP SIGNATURE-----
-
-iQIzBAABCAAdFiEEOZGx6rniZ1Gk92RdFA3kzBSgKbYFAllboDUACgkQFA3kzBSg
-KbbtPw//XQD0e7td5ohv5+ktnC70xdPFz34LrefB7y6Z34FRDvjbp1PSQirQy8Ap
-cobMfdHksEQ0CDTMcdDYBsD8ijpEpr03JOVWEPjE1eFvUnea56MSl/z41Bzdnx4a
-QT4iNZWfBz9GdcP7CFlUGMXoAwkHpTeyJu2S2wpe/9rgJDYDDGUAuhX8DSKNL5QV
-nSuQ3KtcGNANnB/bR5sj7TrV5/ZtGSCrTdNapi3uKOPW4M3YRp9XftmDXwAkeEgv
-0uNLwKdG+ac4LOWLFZyNIa8R4OUgwrc7OlOVbLDXFkQECfjBcA+0aXZtIgbz8R2f
-C1Ggf00dXwIHpVjsPEw1JwcYBbcPsoiEEul1djz12+UF5sgc56f36xrIEcurkIDY
-rAWGVSItKBSnlXepF8OMKR+bn3ZlXBiSyAgKpkhRdG6Zy7iIdMeLnScKL1i5wwLr
-vCKVUsyq+ZL/RT13iFt7S9LwQaBxNGLwkjg1nWltEK6jWYeaBrknHSOl5WXMfCH9
-DandR8XPW7Tioh4v64+kykc6b1wzN40xMquN1m+DLz6rvFIq7ZkmxNWqhFvhorO2
-a/yjoppWySaV3nrVtpijZUWc1ort6ZpnMcFyC2Xh/GzarUXx1lL5Fb0YRN6YbcPR
-IAbea74GUMOWbAXjfiInGDu15TQuXNEX/BglYLoMlJfwDrwal3Y=
-=Iz2L
------END PGP SIGNATURE-----
-
---5thzgr52ilotzhge--
