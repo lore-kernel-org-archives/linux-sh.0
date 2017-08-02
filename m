@@ -1,47 +1,37 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Sun, 27 Aug 2017 16:10:27 +0000
-Subject: [PATCH 07/12] mn10300: make dma_cache_sync a no-op
-Message-Id: <20170827161032.22772-8-hch@lst.de>
+From: Bjorn Helgaas <helgaas@kernel.org>
+Date: Wed, 02 Aug 2017 20:00:31 +0000
+Subject: Re: pci: Add generic pcibios_{fixup_bus,align_resource}
+Message-Id: <20170802200031.GD20308@bhelgaas-glaptop.roam.corp.google.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20170827161032.22772-1-hch@lst.de>
-In-Reply-To: <20170827161032.22772-1-hch@lst.de>
+References: <20170624015044.16746-1-palmer@dabbelt.com>
+In-Reply-To: <20170624015044.16746-1-palmer@dabbelt.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: iommu@lists.linux-foundation.org
-Cc: Marek Szyprowski <m.szyprowski@samsung.com>, Robin Murphy <robin.murphy@arm.com>, Michal Simek <monstr@monstr.eu>, David Howells <dhowells@redhat.com>, Guan Xuetao <gxt@mprc.pku.edu.cn>, Chris Zankel <chris@zankel.net>, Max Filippov <jcmvbkbc@gmail.com>, x86@kernel.org, linux-mips@linux-mips.org, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-xtensa@linux-xtensa.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Palmer Dabbelt <palmer@dabbelt.com>
+Cc: linux-pci@vger.kernel.org, linux-kernel@vger.kernel.org, bhelgaas@google.com, hch@infradead.org, Arnd Bergmann <arnd@arndb.de>, linux-snps-arc@lists.infradead.org, linux-cris-kernel@axis.com, linux-ia64@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org
 
-mn10300 does not implement DMA_ATTR_NON_CONSISTENT allocations, so it
-doesn't make any sense to do any work in dma_cache_sync given that it must
-be a no-op when dma_alloc_attrs returns coherent memory.
+On Fri, Jun 23, 2017 at 06:50:41PM -0700, Palmer Dabbelt wrote:
+> While upstreaming the RISC-V port, it was pointed out that multiple
+> architectures have copied the mostly empty versions of at least one of these
+> functions.  This defines weakly bound versions of the common functions and
+> removes the now obselete functions from other ports.
+> 
+> This has been split out from the RISC-V submission so we can decouple all these
+> generic changes from our port review process.  There's some discussion on an
+> earlier version of the patch here
+> 
+>   https://lkml.org/lkml/2017/6/6/998
+> 
+> but I'm afraid a lot of this is really out of my wheelhouse (and I'm pretty
+> slammed trying to get the RISC-V port in better shape), so I'm afraid I'm not
+> going to be able to perform the full cleanup suggested.
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
----
- arch/mn10300/include/asm/dma-mapping.h | 4 ----
- 1 file changed, 4 deletions(-)
+Applied to pci/resource for v4.14, thanks!
 
-diff --git a/arch/mn10300/include/asm/dma-mapping.h b/arch/mn10300/include/asm/dma-mapping.h
-index 737ef574b3ea..dc24163b190f 100644
---- a/arch/mn10300/include/asm/dma-mapping.h
-+++ b/arch/mn10300/include/asm/dma-mapping.h
-@@ -11,9 +11,6 @@
- #ifndef _ASM_DMA_MAPPING_H
- #define _ASM_DMA_MAPPING_H
- 
--#include <asm/cache.h>
--#include <asm/io.h>
--
- extern const struct dma_map_ops mn10300_dma_ops;
- 
- static inline const struct dma_map_ops *get_arch_dma_ops(struct bus_type *bus)
-@@ -25,7 +22,6 @@ static inline
- void dma_cache_sync(void *vaddr, size_t size,
- 		    enum dma_data_direction direction)
- {
--	mn10300_dcache_flush_inv();
- }
- 
- #endif
--- 
-2.11.0
+There's room for future improvement, e.g., using per-host callbacks,
+etc., but I think this is a clear improvement as-is.
 
+There's some folklore about the evils of weak symbols, but I don't
+know the details.  It would be useful to have them codified somewhere
+in Documentation/ or near the __weak definition.
