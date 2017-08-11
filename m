@@ -1,77 +1,60 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Sun, 27 Aug 2017 16:10:30 +0000
-Subject: [PATCH 10/12] xtensa: make dma_cache_sync a no-op
-Message-Id: <20170827161032.22772-11-hch@lst.de>
+From: <knappenwien@hotmail.com>
+Date: Fri, 11 Aug 2017 21:16:17 +0000
+Subject: 
+Message-Id: <150248617783.2727.15869203763820935161@tolcom.ru>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20170827161032.22772-1-hch@lst.de>
-In-Reply-To: <20170827161032.22772-1-hch-jcswGhMUV9g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: Chris Zankel <chris-YvXeqwSYzG2sTnJN9+BGXg@public.gmane.org>, Michal Simek <monstr-pSz03upnqPeHXe+LvDLADg@public.gmane.org>, linux-ia64-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mips-6z/3iImG2C8G8FEW9MqTrA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linuxppc-dev-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org, linux-xtensa-PjhNF2WwrV/0Sa2dR60CXw@public.gmane.org, x86-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Max Filippov <jcmvbkbc-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Guan Xuetao <gxt-TG0Ac1+ktVePQbnJrJN+5g@public.gmane.org>
+To: linux-sh@vger.kernel.org
 
-xtensa does not implement DMA_ATTR_NON_CONSISTENT allocations, so it
-doesn't make any sense to do any work in dma_cache_sync given that it
-must be a no-op when dma_alloc_attrs returns coherent memory.
-
-Signed-off-by: Christoph Hellwig <hch@lst.de>
----
- arch/xtensa/include/asm/dma-mapping.h |  6 ++++--
- arch/xtensa/kernel/pci-dma.c          | 23 -----------------------
- 2 files changed, 4 insertions(+), 25 deletions(-)
-
-diff --git a/arch/xtensa/include/asm/dma-mapping.h b/arch/xtensa/include/asm/dma-mapping.h
-index 269738dc9d1d..353e0314d6ba 100644
---- a/arch/xtensa/include/asm/dma-mapping.h
-+++ b/arch/xtensa/include/asm/dma-mapping.h
-@@ -23,8 +23,10 @@ static inline const struct dma_map_ops *get_arch_dma_ops(struct bus_type *bus)
- 	return &xtensa_dma_map_ops;
- }
- 
--void dma_cache_sync(struct device *dev, void *vaddr, size_t size,
--		    enum dma_data_direction direction);
-+static inline void dma_cache_sync(struct device *dev, void *vaddr, size_t size,
-+		    enum dma_data_direction direction)
-+{
-+}
- 
- static inline dma_addr_t phys_to_dma(struct device *dev, phys_addr_t paddr)
- {
-diff --git a/arch/xtensa/kernel/pci-dma.c b/arch/xtensa/kernel/pci-dma.c
-index cec86a1c2acc..623720a11143 100644
---- a/arch/xtensa/kernel/pci-dma.c
-+++ b/arch/xtensa/kernel/pci-dma.c
-@@ -26,29 +26,6 @@
- #include <asm/cacheflush.h>
- #include <asm/io.h>
- 
--void dma_cache_sync(struct device *dev, void *vaddr, size_t size,
--		    enum dma_data_direction dir)
--{
--	switch (dir) {
--	case DMA_BIDIRECTIONAL:
--		__flush_invalidate_dcache_range((unsigned long)vaddr, size);
--		break;
--
--	case DMA_FROM_DEVICE:
--		__invalidate_dcache_range((unsigned long)vaddr, size);
--		break;
--
--	case DMA_TO_DEVICE:
--		__flush_dcache_range((unsigned long)vaddr, size);
--		break;
--
--	case DMA_NONE:
--		BUG();
--		break;
--	}
--}
--EXPORT_SYMBOL(dma_cache_sync);
--
- static void do_cache_op(dma_addr_t dma_handle, size_t size,
- 			void (*fn)(unsigned long, unsigned long))
- {
--- 
-2.11.0
-
+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
