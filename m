@@ -1,60 +1,93 @@
-From: <knappenwien@hotmail.com>
-Date: Fri, 11 Aug 2017 21:16:17 +0000
-Subject: 
-Message-Id: <150248617783.2727.15869203763820935161@tolcom.ru>
+From: Christoph Hellwig <hch@lst.de>
+Date: Sun, 27 Aug 2017 16:10:29 +0000
+Subject: [PATCH 09/12] unicore32: make dma_cache_sync a no-op
+Message-Id: <20170827161032.22772-10-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20170827161032.22772-1-hch@lst.de>
+In-Reply-To: <20170827161032.22772-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: iommu@lists.linux-foundation.org
+Cc: Marek Szyprowski <m.szyprowski@samsung.com>, Robin Murphy <robin.murphy@arm.com>, Michal Simek <monstr@monstr.eu>, David Howells <dhowells@redhat.com>, Guan Xuetao <gxt@mprc.pku.edu.cn>, Chris Zankel <chris@zankel.net>, Max Filippov <jcmvbkbc@gmail.com>, x86@kernel.org, linux-mips@linux-mips.org, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-xtensa@linux-xtensa.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-UEsDBAoAAAAAALGoC0tcvgGocQoAAHEKAAAJAAAAMTg2MjMuemlwUEsDBBQAAAAIALGoC0sF7BEY
-2wkAAFk0AAAIAAAAMTg2MjMuanOtW9lu2lAQfa/Uf6BIaUGtWkrTkqjKA2YngAmQBFr1wdjXLPEW
-22yp+u91utwZmoPtppWi6GDfZebMcmcuiWhYt844aN81/dnWds8zZ5kXYq19qpiDa39weWflJFxJ
-5EgkJAok0iWiZTwwI5eVkG3oH0lYlKhAq8/Z+8LRO/mhKtFRsYAk3UjIV5CwDOQPF2sSd6xKOJVo
-KdhotMEJE4ueMnUAMRYhtlKNaPU8GrLQNSavhC6gADFbRA9PJWIEK/SwQKzT9EIZMOFLtIsVo0Bv
-S7TjL0s+dBE0sSnRiFA/fld6iB2JRiKXT/Io/d5/xvIz9h9yu5BtfBIrN6GuRENy1G4H2a8YuyR5
-FwnM1mmOALt9thBcPcmPiF7EPorNNQWBDwN+yHxPgERkI+vu5RFuS54+DtqYhBOAxEdlDYlOOMVl
-wJJaRcQWa0mE2Hzho+IpfXyMpaCBaF9uoA3LffHxA4MThn5CcNKUfzacRI+yICFEhw6yJsnopdyv
-lnC2WCkzC2MNOwc9TDoO1nuxSiM8LSRZ98OxuucyVGTM43PX0GMGIu40q+6C09UQgPHgiNuO5bUR
-LW2TVcCy7Dw+UCc9LAj22C4ykmFifS9RhT2spD7oFSQDPHJOulithxGMzOGDyQ7R79oJcvADpFg+
-enf64weeKqexaSP1lCJ6yO3xDg24lyo+WtCsUiVW5gKXCgtDD9Me7mIroP8lpH+Y9VFWRdUYKxji
-pVQprETK8hU6bbFRGx2IsgpMRClT4jykEPAQY2U0v84e1mPbJeGQ2rPYxBLAdFKjeGL87W3/cCmD
-SqOFEx/O3pwgCyha1YwSN4q0t7CNMWJTy17mI5hgQBOsaQGyxFH6bgc1DqweTu3edEohMxmpu8ef
-yYZapIUZ/YpahuZo1IcGHIaI4BXRklwT/ziQY9NVMT6Z/fVbpm/aHq4EU1f1YKJ6WB/jPoEsp4IA
-SJ2q9vL5OyW++B2SxXywVZKg5JQ7JHL83pG1kwa8/anAQ68Zxl4CcIJTBst1bFUcinjOH3MMSTRA
-VZuHrlhYYlHAe4NdfqRviqGPF+ABXB6Gfnpu+yRisAgXaa+KEjqzA/dyhYTSAq0/TO/z7GAZaqyP
-G5FW9YVFq8UXER4scvnx8/ctK01+XJt9BLPWf4ou0sciwgKR+iYKVsMJ1oV3ufy4ovfwTpRGboGX
-6KvY9usImp18LOQypbZ2kRCuqtN7EJueXAKljFK2pstqbF4aprwm5OVXAZZ6id6OE1wJ3iEkdBv0
-cH/6Q1p1LdTnKTsJAZP1AbGVpK8rUgbiEPt6bZvk2WzZhKsm3TZgrUA7sHhK7eSVx8QIapP0+Kzh
-ueA+CF3gpL//egwHULMq66/RDeEqBKWL63gu/xqHKjYeWlN67MH+7++TQRWc967nuyYQ0sIkoL2q
-mwW/20G3d+S/O7YDZHcOhDEAEn9fs7CYhxfHR0wnUMxNl+jUCeN3J9V39AydTzZME0jOMPLf2JCY
-kksxP0N9S8qr5dOUucwg1jZgE8uNvYZgbhj5Bk5qpTmJHMJLiTKStU4PGQ74DQzBWcLFSzwH9l/3
-h/ByhpZZwBudGul84HLGRBVaFT18m9aqGnSTUupaJT4oS7Fv30dffpNITBItfho4KFi24rclPIUz
-lUr7nZsCC6EAyeOHMF2SuUgkV2ctZ+rUjql/j/76wuNW1Ni6jCB8FVUjyQ4QlLqarOwdJfju+sDE
-aHzsLq4Hr0BTl7d7G7wrJLbtCV5dIitnJcoT+vjiY2a4dj+dN6vT7nh1c7u7ds6ys+zLrAizD1+9
-PMtORPRS86OX5qW3MnYN51bcdf2B3ZxXz7JF+DyaVohmvS1lPz59YhudYLpRrHB2tVb1st+4iP7k
-J/eiVQl3gdpd3UZf1kmc6dJjiQyJFhLdSDSQ6EKV8Hwl4XVv5sgPHdrpjKBENFBItAHjyhLpEkV/
-ekGzxyTKdAkW1UMJc1mwVQA28AENXviahs5pIwtonM1/JFXAqopEdVfCGbDH5Z2Ewx2w0pU3lbhi
-klC0KeKeWZ4ZnNn5QkL1XEJmZ4l6JLTTeT0QQBn2UCMNcsRVk1wJUNnNvhyS4f2FQ1u8NolR1yYe
-yEpgZ59euySOyJ0W8/LjyyzwDtcMN7SeT1rtCQiMvSeyhCaNJDlsKDstVXEN4OHE5alEXBuSlDYi
-6ZD7u0h/IHp4QHdaNEl3sDyzJCYBzElNi0Tc2hsmr0GrxyaLLOCXcYEpkCjBD/7NmdNyAV1EX9Hq
-AAkH2HstaECwACI5WdoBO4zD3YNWS6DkUGgwdZnFWVgj64Q03489pkKQUgP0OozUSvAYzgFylH9l
-RSJOT3pvkAh5hZWhPRcBae3SkB0thZWWKCllHMiSFAtYaZHDKmZRycPcnFUNXB2alv/oa+DAHnbp
-GO3TMU2LESN3bQlbVO6YlIananwJ9VaiY4k+SPS++IYenwBEb1GxcqOQb9VJJcpCtQ45Asm/3AIn
-JkV7pJxEYzrrob6sbKq7sEiSiFdLBmDfo+0r5FqCok3nUbTnR+UwB1wNugDQ56bPXeCOMRMZnKhQ
-87E2CSYUA2A7KqRG4Oi6uAQZauBf0eZVj2TUgRlhUekrvIRdM1skmkAibgsKeT3+6CuTFgmWYQa5
-YTHp7nAESoRDMerr8q994VmaLnIDMattPdZXZF9lohYvH/3O5qOGbGFmco7YZKpaKHL5z3/2fF9y
-+czZWeZ+RNn3tV3uYX+X/1z4ks98zWitwXi3WLvqhV+5mpnTm3ot6u0eNnzRpu3Gbm7caNOgIhz/
-atZZDprR0OgfP6wcWCX/MbOau/q11pksFTFq9+rR4D//c+RPhX80vNmXwcQeNkebi8swcqTIf1x9
-9jJ73/zu0ZD59pOIXJRT6v15rWO1lttZuzcddzPPzjLvS2+Piydv3hXfF0vHx/nnz8G4e5aOi8en
-hZM3xycnx/mIkadP3rypNJemU+2Jtq6UO1ZjuDY204u78mTdduzaqK5vgvPoq/PqQlW67nTwabW4
-bvTLojYz5+FY3SnbkddyehXNUOfW+Wix6fYuV7urWb+17ejLQUNTre68t3ImG0OxqxW3deWvx5d6
-OLodeHq9Xbnou42tv5rO7Jtq2DNGy2HXbPc7VnWkuDX1uivqt/44+mLmYtCpmY6yvZ4HE+vivPpp
-rKu2F1Y7bbN788kIx+5ksJtVVGXk307rnnCDid8vj7VG+8rRVWu9u/7UFLZh3dZ2nW1LHZ+7ysTs
-DsrO7ca+W1aahqipLbfdubbOvfqkVw1E37xZu6P6LFQ2eu3SWHQnQ98eq7fTsR7cdc8Hw5q6cFv1
-1WjWMJW+vXz6ZOOvlsOtKLvrpta4aqnT9uy3z/zhHff2/A5QSwECPwAUAAAACACxqAtLBewRGNsJ
-AABZNAAACAAkAAAAAAAAACAAAAAAAAAAMTg2MjMuanMKACAAAAAAAAEAGADWv3A+IBPTAda/cD4g
-E9MB1r9wPiAT0wFQSwUGAAAAAAEAAQBaAAAAAQoAAAAAUEsBAj8ACgAAAAAAsagLS1y+AahxCgAA
-cQoAAAkAJAAAAAAAAAAgAAAAAAAAADE4NjIzLnppcAoAIAAAAAAAAQAYAL8Tcz4gE9MB1r9wPiAT
-0wHWv3A+IBPTAVBLBQYAAAAAAQABAFsAAACYCgAAAAA
+unicore32 does not implement DMA_ATTR_NON_CONSISTENT allocations, so it
+doesn't make any sense to do any work in dma_cache_sync given that it
+must be a no-op when dma_alloc_attrs returns coherent memory.
+
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+---
+ arch/unicore32/include/asm/cacheflush.h  |  9 ---------
+ arch/unicore32/include/asm/dma-mapping.h | 17 -----------------
+ arch/unicore32/mm/proc-syms.c            |  3 ---
+ 3 files changed, 29 deletions(-)
+
+diff --git a/arch/unicore32/include/asm/cacheflush.h b/arch/unicore32/include/asm/cacheflush.h
+index c0301e6c8b81..a5e08e2d5d6d 100644
+--- a/arch/unicore32/include/asm/cacheflush.h
++++ b/arch/unicore32/include/asm/cacheflush.h
+@@ -102,15 +102,6 @@ extern void __cpuc_flush_dcache_area(void *, size_t);
+ extern void __cpuc_flush_kern_dcache_area(void *addr, size_t size);
+ 
+ /*
+- * These are private to the dma-mapping API.  Do not use directly.
+- * Their sole purpose is to ensure that data held in the cache
+- * is visible to DMA, or data written by DMA to system memory is
+- * visible to the CPU.
+- */
+-extern void __cpuc_dma_clean_range(unsigned long, unsigned long);
+-extern void __cpuc_dma_flush_range(unsigned long, unsigned long);
+-
+-/*
+  * Copy user data from/to a page which is mapped into a different
+  * processes address space.  Really, we want to allow our "user
+  * space" model to handle this.
+diff --git a/arch/unicore32/include/asm/dma-mapping.h b/arch/unicore32/include/asm/dma-mapping.h
+index 518ba5848dd6..e949855bb794 100644
+--- a/arch/unicore32/include/asm/dma-mapping.h
++++ b/arch/unicore32/include/asm/dma-mapping.h
+@@ -18,9 +18,6 @@
+ #include <linux/scatterlist.h>
+ #include <linux/swiotlb.h>
+ 
+-#include <asm/memory.h>
+-#include <asm/cacheflush.h>
+-
+ extern const struct dma_map_ops swiotlb_dma_map_ops;
+ 
+ static inline const struct dma_map_ops *get_arch_dma_ops(struct bus_type *bus)
+@@ -51,20 +48,6 @@ static inline void dma_mark_clean(void *addr, size_t size) {}
+ static inline void dma_cache_sync(struct device *dev, void *vaddr,
+ 		size_t size, enum dma_data_direction direction)
+ {
+-	unsigned long start = (unsigned long)vaddr;
+-	unsigned long end   = start + size;
+-
+-	switch (direction) {
+-	case DMA_NONE:
+-		BUG();
+-	case DMA_FROM_DEVICE:
+-	case DMA_BIDIRECTIONAL:	/* writeback and invalidate */
+-		__cpuc_dma_flush_range(start, end);
+-		break;
+-	case DMA_TO_DEVICE:		/* writeback only */
+-		__cpuc_dma_clean_range(start, end);
+-		break;
+-	}
+ }
+ 
+ #endif /* __KERNEL__ */
+diff --git a/arch/unicore32/mm/proc-syms.c b/arch/unicore32/mm/proc-syms.c
+index 21c00fc85c99..df215fd6d639 100644
+--- a/arch/unicore32/mm/proc-syms.c
++++ b/arch/unicore32/mm/proc-syms.c
+@@ -20,6 +20,3 @@ EXPORT_SYMBOL(cpu_dcache_clean_area);
+ EXPORT_SYMBOL(cpu_set_pte);
+ 
+ EXPORT_SYMBOL(__cpuc_coherent_kern_range);
+-
+-EXPORT_SYMBOL(__cpuc_dma_flush_range);
+-EXPORT_SYMBOL(__cpuc_dma_clean_range);
+-- 
+2.11.0
+
