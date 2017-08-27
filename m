@@ -1,172 +1,180 @@
-From: Ben Hutchings <ben@decadent.org.uk>
-Date: Sat, 19 Aug 2017 21:31:10 +0000
-Subject: [PATCH] sh: Do not use hyphen in exported variable names
-Message-Id: <20170819213109.GJ18698@decadent.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="wA9WyeW1yVBM2Q32"
+From: Christoph Hellwig <hch@lst.de>
+Date: Sun, 27 Aug 2017 16:10:31 +0000
+Subject: [PATCH 11/12] sh: make dma_cache_sync a no-op
+Message-Id: <20170827161032.22772-12-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-To: linux-sh@vger.kernel.org
+References: <20170827161032.22772-1-hch@lst.de>
+In-Reply-To: <20170827161032.22772-1-hch@lst.de>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: iommu@lists.linux-foundation.org
+Cc: Marek Szyprowski <m.szyprowski@samsung.com>, Robin Murphy <robin.murphy@arm.com>, Michal Simek <monstr@monstr.eu>, David Howells <dhowells@redhat.com>, Guan Xuetao <gxt@mprc.pku.edu.cn>, Chris Zankel <chris@zankel.net>, Max Filippov <jcmvbkbc@gmail.com>, x86@kernel.org, linux-mips@linux-mips.org, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-xtensa@linux-xtensa.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
+sh does not implement DMA_ATTR_NON_CONSISTENT allocations, so it doesn't
+make any sense to do any work in dma_cache_sync given that it
+must be a no-op when dma_alloc_attrs returns coherent memory.
 
---wA9WyeW1yVBM2Q32
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+On the other hand sh uses dma_cache_sync internally in the dma_ops
+implementation and for the maple bus that does not use the DMA API,
+so a the old functionality for dma_cache_sync is still provided under
+the name sh_sync_dma_for_device, and without the redundant dev
+argument.  While at it two of the syncing dma_ops also go the proper
+_for_device postfix.
 
-arch/sh/Makefile defines and exports ld-bfd to be used by
-arch/sh/boot/Makefile and arch/sh/boot/compressed/Makefile.  Similarly
-arch/sh/boot/Makefile defines and exports suffix-y to be used by
-arch/sh/boot/compressed/Makefile.  However some shells, including
-dash, will not pass through environment variables whose name includes
-a hyphen.  Usually GNU make does not use a shell to recurse, but if
-e.g. $(srctree) contains '~' it will use a shell here.
-
-Rename these variables to ld_bfd and suffix_y.
-
-References: https://buildd.debian.org/status/fetch.php?pkg=3Dlinux&arch=3Ds=
-h4&ver=3D4.13%7Erc5-1%7Eexp1&stamp=3D1502943967&raw=3D0
-Fixes: ef9b542fce00 ("sh: bzip2/lzma uImage support.")
-Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
+Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- arch/sh/Makefile                 | 10 +++++-----
- arch/sh/boot/Makefile            | 16 ++++++++--------
- arch/sh/boot/compressed/Makefile |  6 +++---
- arch/sh/boot/romimage/Makefile   |  4 ++--
- 4 files changed, 18 insertions(+), 18 deletions(-)
+ arch/sh/include/asm/dma-mapping.h |  9 +++++++--
+ arch/sh/kernel/dma-nommu.c        | 17 +++++++++--------
+ arch/sh/mm/consistent.c           |  6 +++---
+ drivers/sh/maple/maple.c          |  5 ++---
+ 4 files changed, 21 insertions(+), 16 deletions(-)
 
-diff --git a/arch/sh/Makefile b/arch/sh/Makefile
-index 280bbff12102..496525557b60 100644
---- a/arch/sh/Makefile
-+++ b/arch/sh/Makefile
-@@ -116,16 +116,16 @@ KBUILD_DEFCONFIG	:=3D cayman_defconfig
- endif
-=20
- ifdef CONFIG_CPU_LITTLE_ENDIAN
--ld-bfd			:=3D elf32-$(UTS_MACHINE)-linux
--LDFLAGS_vmlinux		+=3D --defsym jiffies=3Djiffies_64 --oformat $(ld-bfd)
-+ld_bfd			:=3D elf32-$(UTS_MACHINE)-linux
-+LDFLAGS_vmlinux		+=3D --defsym jiffies=3Djiffies_64 --oformat $(ld_bfd)
- LDFLAGS			+=3D -EL
- else
--ld-bfd			:=3D elf32-$(UTS_MACHINE)big-linux
--LDFLAGS_vmlinux		+=3D --defsym jiffies=3Djiffies_64+4 --oformat $(ld-bfd)
-+ld_bfd			:=3D elf32-$(UTS_MACHINE)big-linux
-+LDFLAGS_vmlinux		+=3D --defsym jiffies=3Djiffies_64+4 --oformat $(ld_bfd)
- LDFLAGS			+=3D -EB
- endif
-=20
--export ld-bfd BITS
-+export ld_bfd BITS
-=20
- head-y	:=3D arch/sh/kernel/head_$(BITS).o
-=20
-diff --git a/arch/sh/boot/Makefile b/arch/sh/boot/Makefile
-index 58592dfa5cb6..296b25474395 100644
---- a/arch/sh/boot/Makefile
-+++ b/arch/sh/boot/Makefile
-@@ -19,12 +19,12 @@ CONFIG_ZERO_PAGE_OFFSET	?=3D 0x00001000
- CONFIG_ENTRY_OFFSET	?=3D 0x00001000
- CONFIG_PHYSICAL_START	?=3D $(CONFIG_MEMORY_START)
-=20
--suffix-y :=3D bin
--suffix-$(CONFIG_KERNEL_GZIP)	:=3D gz
--suffix-$(CONFIG_KERNEL_BZIP2)	:=3D bz2
--suffix-$(CONFIG_KERNEL_LZMA)	:=3D lzma
--suffix-$(CONFIG_KERNEL_XZ)	:=3D xz
--suffix-$(CONFIG_KERNEL_LZO)	:=3D lzo
-+suffix_y :=3D bin
-+suffix_$(CONFIG_KERNEL_GZIP)	:=3D gz
-+suffix_$(CONFIG_KERNEL_BZIP2)	:=3D bz2
-+suffix_$(CONFIG_KERNEL_LZMA)	:=3D lzma
-+suffix_$(CONFIG_KERNEL_XZ)	:=3D xz
-+suffix_$(CONFIG_KERNEL_LZO)	:=3D lzo
-=20
- targets :=3D zImage vmlinux.srec romImage uImage uImage.srec uImage.gz \
- 	   uImage.bz2 uImage.lzma uImage.xz uImage.lzo uImage.bin
-@@ -106,10 +106,10 @@ OBJCOPYFLAGS_uImage.srec :=3D -I binary -O srec
- $(obj)/uImage.srec: $(obj)/uImage
- 	$(call if_changed,objcopy)
-=20
--$(obj)/uImage: $(obj)/uImage.$(suffix-y)
-+$(obj)/uImage: $(obj)/uImage.$(suffix_y)
- 	@ln -sf $(notdir $<) $@
- 	@echo '  Image $@ is ready'
-=20
- export CONFIG_PAGE_OFFSET CONFIG_MEMORY_START CONFIG_BOOT_LINK_OFFSET \
-        CONFIG_PHYSICAL_START CONFIG_ZERO_PAGE_OFFSET CONFIG_ENTRY_OFFSET \
--       KERNEL_MEMORY suffix-y
-+       KERNEL_MEMORY suffix_y
-diff --git a/arch/sh/boot/compressed/Makefile b/arch/sh/boot/compressed/Mak=
-efile
-index c4c47ea9fa94..40fcc3d1a9c0 100644
---- a/arch/sh/boot/compressed/Makefile
-+++ b/arch/sh/boot/compressed/Makefile
-@@ -32,7 +32,7 @@ ORIG_CFLAGS :=3D $(KBUILD_CFLAGS)
- KBUILD_CFLAGS =3D $(subst -pg, , $(ORIG_CFLAGS))
- endif
-=20
--LDFLAGS_vmlinux :=3D --oformat $(ld-bfd) -Ttext $(IMAGE_OFFSET) -e startup=
- \
-+LDFLAGS_vmlinux :=3D --oformat $(ld_bfd) -Ttext $(IMAGE_OFFSET) -e startup=
- \
- 		   -T $(obj)/../../kernel/vmlinux.lds
-=20
- #
-@@ -74,7 +74,7 @@ $(obj)/vmlinux.bin.lzo: $(vmlinux.bin.all-y) FORCE
-=20
- OBJCOPYFLAGS +=3D -R .empty_zero_page
-=20
--LDFLAGS_piggy.o :=3D -r --format binary --oformat $(ld-bfd) -T
-+LDFLAGS_piggy.o :=3D -r --format binary --oformat $(ld_bfd) -T
-=20
--$(obj)/piggy.o: $(obj)/vmlinux.scr $(obj)/vmlinux.bin.$(suffix-y) FORCE
-+$(obj)/piggy.o: $(obj)/vmlinux.scr $(obj)/vmlinux.bin.$(suffix_y) FORCE
- 	$(call if_changed,ld)
-diff --git a/arch/sh/boot/romimage/Makefile b/arch/sh/boot/romimage/Makefile
-index 43c41191de5d..8002c3ee2cac 100644
---- a/arch/sh/boot/romimage/Makefile
-+++ b/arch/sh/boot/romimage/Makefile
-@@ -12,7 +12,7 @@ mmcif-obj-$(CONFIG_CPU_SUBTYPE_SH7724)	:=3D $(obj)/mmcif-=
-sh7724.o
- load-$(CONFIG_ROMIMAGE_MMCIF)		:=3D $(mmcif-load-y)
- obj-$(CONFIG_ROMIMAGE_MMCIF)		:=3D $(mmcif-obj-y)
-=20
--LDFLAGS_vmlinux :=3D --oformat $(ld-bfd) -Ttext $(load-y) -e romstart \
-+LDFLAGS_vmlinux :=3D --oformat $(ld_bfd) -Ttext $(load-y) -e romstart \
- 		   -T $(obj)/../../kernel/vmlinux.lds
-=20
- $(obj)/vmlinux: $(obj)/head.o $(obj-y) $(obj)/piggy.o FORCE
-@@ -23,7 +23,7 @@ OBJCOPYFLAGS +=3D -j .empty_zero_page
- $(obj)/zeropage.bin: vmlinux FORCE
- 	$(call if_changed,objcopy)
-=20
--LDFLAGS_piggy.o :=3D -r --format binary --oformat $(ld-bfd) -T
-+LDFLAGS_piggy.o :=3D -r --format binary --oformat $(ld_bfd) -T
-=20
- $(obj)/piggy.o: $(obj)/vmlinux.scr $(obj)/zeropage.bin arch/sh/boot/zImage=
- FORCE
- 	$(call if_changed,ld)
+diff --git a/arch/sh/include/asm/dma-mapping.h b/arch/sh/include/asm/dma-mapping.h
+index 9b06be07db4d..b46194ecef17 100644
+--- a/arch/sh/include/asm/dma-mapping.h
++++ b/arch/sh/include/asm/dma-mapping.h
+@@ -9,8 +9,10 @@ static inline const struct dma_map_ops *get_arch_dma_ops(struct bus_type *bus)
+ 	return dma_ops;
+ }
+ 
+-void dma_cache_sync(struct device *dev, void *vaddr, size_t size,
+-		    enum dma_data_direction dir);
++static inline void dma_cache_sync(struct device *dev, void *vaddr, size_t size,
++		    enum dma_data_direction dir)
++{
++}
+ 
+ /* arch/sh/mm/consistent.c */
+ extern void *dma_generic_alloc_coherent(struct device *dev, size_t size,
+@@ -20,4 +22,7 @@ extern void dma_generic_free_coherent(struct device *dev, size_t size,
+ 				      void *vaddr, dma_addr_t dma_handle,
+ 				      unsigned long attrs);
+ 
++void sh_sync_dma_for_device(void *vaddr, size_t size,
++	    enum dma_data_direction dir);
++
+ #endif /* __ASM_SH_DMA_MAPPING_H */
+diff --git a/arch/sh/kernel/dma-nommu.c b/arch/sh/kernel/dma-nommu.c
+index d24c707b2181..62b485107eae 100644
+--- a/arch/sh/kernel/dma-nommu.c
++++ b/arch/sh/kernel/dma-nommu.c
+@@ -9,6 +9,7 @@
+  */
+ #include <linux/dma-mapping.h>
+ #include <linux/io.h>
++#include <asm/cacheflush.h>
+ 
+ static dma_addr_t nommu_map_page(struct device *dev, struct page *page,
+ 				 unsigned long offset, size_t size,
+@@ -20,7 +21,7 @@ static dma_addr_t nommu_map_page(struct device *dev, struct page *page,
+ 	WARN_ON(size = 0);
+ 
+ 	if (!(attrs & DMA_ATTR_SKIP_CPU_SYNC))
+-		dma_cache_sync(dev, page_address(page) + offset, size, dir);
++		sh_sync_dma_for_device(page_address(page) + offset, size, dir);
+ 
+ 	return addr;
+ }
+@@ -38,7 +39,7 @@ static int nommu_map_sg(struct device *dev, struct scatterlist *sg,
+ 		BUG_ON(!sg_page(s));
+ 
+ 		if (!(attrs & DMA_ATTR_SKIP_CPU_SYNC))
+-			dma_cache_sync(dev, sg_virt(s), s->length, dir);
++			sh_sync_dma_for_device(sg_virt(s), s->length, dir);
+ 
+ 		s->dma_address = sg_phys(s);
+ 		s->dma_length = s->length;
+@@ -48,20 +49,20 @@ static int nommu_map_sg(struct device *dev, struct scatterlist *sg,
+ }
+ 
+ #ifdef CONFIG_DMA_NONCOHERENT
+-static void nommu_sync_single(struct device *dev, dma_addr_t addr,
++static void nommu_sync_single_for_device(struct device *dev, dma_addr_t addr,
+ 			      size_t size, enum dma_data_direction dir)
+ {
+-	dma_cache_sync(dev, phys_to_virt(addr), size, dir);
++	sh_sync_dma_for_device(phys_to_virt(addr), size, dir);
+ }
+ 
+-static void nommu_sync_sg(struct device *dev, struct scatterlist *sg,
++static void nommu_sync_sg_for_device(struct device *dev, struct scatterlist *sg,
+ 			  int nelems, enum dma_data_direction dir)
+ {
+ 	struct scatterlist *s;
+ 	int i;
+ 
+ 	for_each_sg(sg, s, nelems, i)
+-		dma_cache_sync(dev, sg_virt(s), s->length, dir);
++		sh_sync_dma_for_device(sg_virt(s), s->length, dir);
+ }
+ #endif
+ 
+@@ -71,8 +72,8 @@ const struct dma_map_ops nommu_dma_ops = {
+ 	.map_page		= nommu_map_page,
+ 	.map_sg			= nommu_map_sg,
+ #ifdef CONFIG_DMA_NONCOHERENT
+-	.sync_single_for_device	= nommu_sync_single,
+-	.sync_sg_for_device	= nommu_sync_sg,
++	.sync_single_for_device	= nommu_sync_single_for_device,
++	.sync_sg_for_device	= nommu_sync_sg_for_device,
+ #endif
+ 	.is_phys		= 1,
+ };
+diff --git a/arch/sh/mm/consistent.c b/arch/sh/mm/consistent.c
+index d1275adfa0ef..6ea3aab508f2 100644
+--- a/arch/sh/mm/consistent.c
++++ b/arch/sh/mm/consistent.c
+@@ -49,7 +49,7 @@ void *dma_generic_alloc_coherent(struct device *dev, size_t size,
+ 	 * Pages from the page allocator may have data present in
+ 	 * cache. So flush the cache before using uncached memory.
+ 	 */
+-	dma_cache_sync(dev, ret, size, DMA_BIDIRECTIONAL);
++	sh_sync_dma_for_device(ret, size, DMA_BIDIRECTIONAL);
+ 
+ 	ret_nocache = (void __force *)ioremap_nocache(virt_to_phys(ret), size);
+ 	if (!ret_nocache) {
+@@ -78,7 +78,7 @@ void dma_generic_free_coherent(struct device *dev, size_t size,
+ 	iounmap(vaddr);
+ }
+ 
+-void dma_cache_sync(struct device *dev, void *vaddr, size_t size,
++void sh_sync_dma_for_device(void *vaddr, size_t size,
+ 		    enum dma_data_direction direction)
+ {
+ 	void *addr;
+@@ -100,7 +100,7 @@ void dma_cache_sync(struct device *dev, void *vaddr, size_t size,
+ 		BUG();
+ 	}
+ }
+-EXPORT_SYMBOL(dma_cache_sync);
++EXPORT_SYMBOL(sh_sync_dma_for_device);
+ 
+ static int __init memchunk_setup(char *str)
+ {
+diff --git a/drivers/sh/maple/maple.c b/drivers/sh/maple/maple.c
+index bec81c2404f7..7525039d812c 100644
+--- a/drivers/sh/maple/maple.c
++++ b/drivers/sh/maple/maple.c
+@@ -300,7 +300,7 @@ static void maple_send(void)
+ 	mutex_unlock(&maple_wlist_lock);
+ 	if (maple_packets > 0) {
+ 		for (i = 0; i < (1 << MAPLE_DMA_PAGES); i++)
+-			dma_cache_sync(0, maple_sendbuf + i * PAGE_SIZE,
++			sh_sync_dma_for_device(maple_sendbuf + i * PAGE_SIZE,
+ 				       PAGE_SIZE, DMA_BIDIRECTIONAL);
+ 	}
+ 
+@@ -642,8 +642,7 @@ static void maple_dma_handler(struct work_struct *work)
+ 		list_for_each_entry_safe(mq, nmq, &maple_sentq, list) {
+ 			mdev = mq->dev;
+ 			recvbuf = mq->recvbuf->buf;
+-			dma_cache_sync(&mdev->dev, recvbuf, 0x400,
+-				DMA_FROM_DEVICE);
++			sh_sync_dma_for_device(recvbuf, 0x400, DMA_FROM_DEVICE);
+ 			code = recvbuf[0];
+ 			kfree(mq->sendbuf);
+ 			list_del_init(&mq->list);
+-- 
+2.11.0
 
---wA9WyeW1yVBM2Q32
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIVAwUBWZiuHee/yOyVhhEJAQq8qRAAjgBjKbu9PJ3gf42QYnmbeMUZq0HbT9Li
-NQfOImAk2pJTzveGe71n/VLTNSxpdqz0QI9s0tLnNzO88o4Ccerzlp1y9HWasApI
-F9ymkc7KRTQ8epDYdjFc1+oNGXnKiyDRWD0s6Cmtx/HD/9RyqMeEBUC+cCYJLVUL
-dq8Rj4F/D/MgYYCx+/zI+qNx7QwbsbFM/3mxJI/7KyKdJevigZTaYGzwMOFezqLE
-Ep/UPsy1hSQP8SjucwEZ/oZXn40ahroioZqc7c//cQPrzSebjYfI71/i0+hIDJyC
-/VjtZgWJbW9QQrQEf4rnZJ79evZqRLLddJGCveTI1tvbypYwvUSC0X2l+Oo6L7vC
-Rnq2hy3SgoFnHHYEqbQKsVNMU72mdnzX1pDxL0KqENTfQiCfxf4tr4QjuQ+aI33X
-Rg+zxCxvmI4v03fXAJN3nFQ/gKjk5lZWPGLY0VxrFPDMU6+gdtwwokY5IMlq+Rzz
-jOkX3XsLrcGSqdMRi5AV6ENX59HqcX/tC64Do0hi/LbyZV+F3V2eorz64BiRfCUa
-E9XwEzNaAKNTann8U39OTpOd8YSNOImmNBZifmJ6ZwsGtib/wsi1MY7M5ceBzfCx
-Dea55mMeGWmHhaAXXeSaAC7A66I5K2C5n0TvMfeSwOztPxicEa61TryfxVzum6FK
-i2DEhjkJ3xM=
-=HjCB
------END PGP SIGNATURE-----
-
---wA9WyeW1yVBM2Q32--
