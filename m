@@ -1,82 +1,41 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 14 Aug 2017 12:53:53 +0000
-Subject: Re: [PATCH v2 0/4] sh: sh7722/sh7757i/sh7264/sh7269: Fix pinctrl registration
-Message-Id: <CAMuHMdUQJ38mtsrgY2HJ83RsnCtWRB6dCU=d5RfA3Eq1Q_oQfA@mail.gmail.com>
+From: Christoph Hellwig <hch@lst.de>
+Date: Sun, 27 Aug 2017 16:10:25 +0000
+Subject: [PATCH 05/12] ia64: make dma_cache_sync a no-op
+Message-Id: <20170827161032.22772-6-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1494489813-27321-1-git-send-email-geert+renesas@glider.be> <CAMuHMdXMA7Ux2yiYUrPMGKKJ2AxTLwHOYbnKQHYRwjaSY5+Z7w@mail.gmail.com>
-In-Reply-To: <CAMuHMdXMA7Ux2yiYUrPMGKKJ2AxTLwHOYbnKQHYRwjaSY5+Z7w@mail.gmail.com>
+References: <20170827161032.22772-1-hch@lst.de>
+In-Reply-To: <20170827161032.22772-1-hch-jcswGhMUV9g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Rich Felker <dalias@libc.org>, Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: Magnus Damm <magnus.damm@gmail.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Linux-sh list <linux-sh@vger.kernel.org>, Linux-Renesas <linux-renesas-soc@vger.kernel.org>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>
+To: iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: Chris Zankel <chris-YvXeqwSYzG2sTnJN9+BGXg@public.gmane.org>, Michal Simek <monstr-pSz03upnqPeHXe+LvDLADg@public.gmane.org>, linux-ia64-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mips-6z/3iImG2C8G8FEW9MqTrA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linuxppc-dev-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org, linux-xtensa-PjhNF2WwrV/0Sa2dR60CXw@public.gmane.org, x86-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Max Filippov <jcmvbkbc-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Guan Xuetao <gxt-TG0Ac1+ktVePQbnJrJN+5g@public.gmane.org>
 
-On Fri, Jun 30, 2017 at 10:10 AM, Geert Uytterhoeven
-<geert@linux-m68k.org> wrote:
-> On Thu, May 11, 2017 at 10:03 AM, Geert Uytterhoeven
-> <geert+renesas@glider.be> wrote:
->> Magnus reported that on sh7722/Migo-R, pinctrl registration fails with:
->>
->>     sh-pfc pfc-sh7722: pin 0 already registered
->>     sh-pfc pfc-sh7722: error during pin registration
->>     sh-pfc pfc-sh7722: could not register: -22
->>     sh-pfc: probe of pfc-sh7722 failed with error -22
->>
->> pinmux_pins[] is initialized through PINMUX_GPIO(), using designated
->> array initializers, where the GPIO_* enums serve as indices.
->> Apparently GPIO_PTQ7 was defined in the enum, but never used.
->> If enum values are defined, but never used, pinmux_pins[] contains
->> (zero-filled) holes.  Hence such entries are treated as pin zero, which
->> was registered before, and pinctrl registration fails.
->>
->> I can't see how this ever worked, as at the time of commit f5e25ae52feff2dc
->> ("sh-pfc: Add sh7722 pinmux support"), pinmux_gpios[] in
->> drivers/pinctrl/sh-pfc/pfc-sh7722.c already had the hole, and
->> drivers/pinctrl/core.c already had the check.
->>
->> Some scripting revealed a few more broken drivers:
->>   - sh7757 has four holes, due to nonexistent GPIO_PT[JLNQ]7_RESV.
->>   - sh7264 and sh7269 define GPIO_PH[0-7], but don't use it with
->>     PINMUX_GPIO().
->>
->> Patch 1 fixes the issue on sh7722, and was tested.
->> Patches 3-4 should fix the issue on the other 3 SoCs, but was untested due
->> to lack of hardware.
->>
->> Changes compared to v1:
->>   - Replace fake error messages by references to sh7722,
->>   - Add Reviewed-by, Tested-by.
->>
->> Thanks for applying!
->>
->> Geert Uytterhoeven (4):
->>   sh: sh7722: Remove nonexistent GPIO_PTQ7 to fix pinctrl registration
->>   sh: sh7757: Remove nonexistent GPIO_PT[JLNQ]7_RESV to fix pinctrl
->>     registration
->>   sh: sh7264: Remove nonexistent GPIO_PH[0-7] to fix pinctrl
->>     registration
->>   sh: sh7269: Remove nonexistent GPIO_PH[0-7] to fix pinctrl
->>     registration
->>
->>  arch/sh/include/cpu-sh2a/cpu/sh7264.h | 4 +---
->>  arch/sh/include/cpu-sh2a/cpu/sh7269.h | 4 +---
->>  arch/sh/include/cpu-sh4/cpu/sh7722.h  | 2 +-
->>  arch/sh/include/cpu-sh4/cpu/sh7757.h  | 8 ++++----
->>  4 files changed, 7 insertions(+), 11 deletions(-)
->
-> Are these patches planned for inclusion in v4.13?
-> I don't see them in next-2016.
+ia64 does not implement DMA_ATTR_NON_CONSISTENT allocations, so it doesn't
+make any sense to do any work in dma_cache_sync given that it must be a
+no-op when dma_alloc_attrs returns coherent memory.
 
-In v4.14, perhaps?
-I don't see them in next-20170811...
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+---
+ arch/ia64/include/asm/dma-mapping.h | 5 -----
+ 1 file changed, 5 deletions(-)
 
-Gr{oetje,eeting}s,
+diff --git a/arch/ia64/include/asm/dma-mapping.h b/arch/ia64/include/asm/dma-mapping.h
+index 3ce5ab4339f3..99dfc1aa9d3c 100644
+--- a/arch/ia64/include/asm/dma-mapping.h
++++ b/arch/ia64/include/asm/dma-mapping.h
+@@ -48,11 +48,6 @@ static inline void
+ dma_cache_sync (struct device *dev, void *vaddr, size_t size,
+ 	enum dma_data_direction dir)
+ {
+-	/*
+-	 * IA-64 is cache-coherent, so this is mostly a no-op.  However, we do need to
+-	 * ensure that dma_cache_sync() enforces order, hence the mb().
+-	 */
+-	mb();
+ }
+ 
+ #endif /* _ASM_IA64_DMA_MAPPING_H */
+-- 
+2.11.0
 
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
