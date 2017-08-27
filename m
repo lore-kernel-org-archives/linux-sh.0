@@ -1,73 +1,37 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 10 Aug 2017 08:25:32 +0000
-Subject: Re: [PATCH] ARM:dts:armadillo800eva: Add console parametters
-Message-Id: <CAMuHMdWoCd85ROYjTn5Q023Re+sYW+B4TRRvZBt9bLBAkNHMbQ@mail.gmail.com>
+From: Christoph Hellwig <hch@lst.de>
+Date: Sun, 27 Aug 2017 16:10:24 +0000
+Subject: [PATCH 04/12] x86: make dma_cache_sync a no-op
+Message-Id: <20170827161032.22772-5-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1502027702-4366-1-git-send-email-phucduc.bui@gmail.com>
- <1502027702-4366-2-git-send-email-phucduc.bui@gmail.com>
- <20170807075920.GD7175@verge.net.au>
- <CAABR9nHUuSw7m6BCBxDs28YtppHxwHNQR5f06H0n8xcXKx7gCw@mail.gmail.com>
- <87o9rnyhhh.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87o9rnyhhh.wl%kuninori.morimoto.gx@renesas.com>
+References: <20170827161032.22772-1-hch@lst.de>
+In-Reply-To: <20170827161032.22772-1-hch-jcswGhMUV9g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: Chris Zankel <chris-YvXeqwSYzG2sTnJN9+BGXg@public.gmane.org>, Michal Simek <monstr-pSz03upnqPeHXe+LvDLADg@public.gmane.org>, linux-ia64-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mips-6z/3iImG2C8G8FEW9MqTrA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linuxppc-dev-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org, linux-xtensa-PjhNF2WwrV/0Sa2dR60CXw@public.gmane.org, x86-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Max Filippov <jcmvbkbc-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Guan Xuetao <gxt-TG0Ac1+ktVePQbnJrJN+5g@public.gmane.org>, Christoph Hellwig <hch-jcswGhMUV9g@public.gmane.org>
 
-Hi Morimoto-san, Phuc-san,
+x86 does not implement DMA_ATTR_NON_CONSISTENT allocations, so it doesn't
+make any sense to do any work in dma_cache_sync given that it must be a
+no-op when dma_alloc_attrs returns coherent memory.
 
-On Thu, Aug 10, 2017 at 10:12 AM, Kuninori Morimoto
-<kuninori.morimoto.gx@renesas.com> wrote:
->>     >       chosen {
->>     > -             bootargs = "earlyprintk ignore_loglevel root=/dev/nfs ip=dhcp rw";
->>     > +             bootargs = "console=tty0 console=ttySC0,115200 earlyprintk
->>     > +                             ignore_loglevel root=/dev/nfs ip=dhcp rw";
->>     >               stdout-path = "serial0:115200n8";
->>     >       };
->>
->>     Hi,
->>
->>     this feels wrong. My understanding is that stdout-path should be enough
->>     to get the console.
-> (snip)
->> Thank you for your comment.
->> Before creating this patch, I have a patch reference of you and Geert.
->> https://patchwork.kernel.org/patch/5184001/
->
-> I think he want to say here is that it needs "console=" which
-> is indicated by Geert on https://patchwork.kernel.org/patch/5184001/
->
->         "Note that we have to keep the "console=ttySC1" parameter in
->         chosen/bootargs, ..."
+Signed-off-by: Christoph Hellwig <hch@lst.de
+---
+ arch/x86/include/asm/dma-mapping.h | 1 -
+ 1 file changed, 1 deletion(-)
 
-        "... else we only get console messages on tty0, and because
-        this DTS is shared between legacy and multi-platform."
+diff --git a/arch/x86/include/asm/dma-mapping.h b/arch/x86/include/asm/dma-mapping.h
+index 398c79889f5c..04877267ad18 100644
+--- a/arch/x86/include/asm/dma-mapping.h
++++ b/arch/x86/include/asm/dma-mapping.h
+@@ -70,7 +70,6 @@ static inline void
+ dma_cache_sync(struct device *dev, void *vaddr, size_t size,
+ 	enum dma_data_direction dir)
+ {
+-	flush_write_buffers();
+ }
+ 
+ static inline unsigned long dma_alloc_coherent_mask(struct device *dev,
+-- 
+2.11.0
 
-That was needed at the time of commit 2c32622c3f3f9c7e ("ARM:
-shmobile: armadillo800eva dts: Add chosen/stdout-path").
-
-Due to generic DT/console updates later, the "console=" parameters were
-no longer needed, cfr. commit 1403e38b829acdad ("ARM: dts: armadillo800eva:
-Update console parameters").
-
-> I don't have armadillo800eva anymore, so I can't test this patch.
-> But according to Phuc-san, there is not command prompt after boot
-> without this patch.
-
-I'm quite sure I do get console output on both ttyS0 and tty0 with the current
-kernel (can't test right now due to board farm move/restructuring).
-
-For a userspace prompt, I guess Phuc-san uses /dev/console as the console
-device in e.g. /etc/inittab (or an equivalent)? If you want a prompt on tty0,
-you better specify /dev/tty0 instead of /dev/console.
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
