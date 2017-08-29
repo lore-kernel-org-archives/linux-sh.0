@@ -1,36 +1,18 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sun, 13 Aug 2017 19:07:39 +0000
-Subject: [PATCH] serial: sh-sci: use of_property_read_bool()
-Message-Id: <20170813190811.352748420@cogentembedded.com>
+From: Julian Smith <sinara_group@126.com>
+Date: Tue, 29 Aug 2017 00:59:09 +0000
+Subject: Inquiry 28-08-2017
+Message-Id: <20170829005909.E64C293814@mail.dealer.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "\"open list:SERIAL DRIVERS\"" <linux-serial@vger.kernel.org>
-Cc: linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+To: linux-sh@vger.kernel.org
 
-Use more compact of_property_read_bool() call for a boolean property
-instead  of of_find_property() call in sci_parse_dt().
+Hello,
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+My name is Ms Julian Smith and i am from Sinara Group Co.,LTD in Russia..We are glad to know about your company from the web and we are interested in your products.Please send us your Latest catalog and price list for our trial order
 
----
-This patch is against the 'tty-next' branch of GregKH's 'tty.git' repo.
+Julian Smith,
+Purchasing Manager
 
- drivers/tty/serial/sh-sci.c |    3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
-
-Index: tty/drivers/tty/serial/sh-sci.c
-=================================--- tty.orig/drivers/tty/serial/sh-sci.c
-+++ tty/drivers/tty/serial/sh-sci.c
-@@ -3073,8 +3073,7 @@ static struct plat_sci_port *sci_parse_d
- 	p->type = SCI_OF_TYPE(match->data);
- 	p->regtype = SCI_OF_REGTYPE(match->data);
- 
--	if (of_find_property(np, "uart-has-rtscts", NULL))
--		sp->has_rtscts = true;
-+	sp->has_rtscts = of_property_read_bool(np, "uart-has-rtscts");
- 
- 	return p;
- }
 
