@@ -1,46 +1,58 @@
-From: Dou Liyang <douly.fnst@cn.fujitsu.com>
-Date: Fri, 01 Sep 2017 02:56:36 +0000
-Subject: [PATCH v2 4/7] sh/numa: Remove the unused parent_node() macro
-Message-Id: <1504234599-29533-5-git-send-email-douly.fnst@cn.fujitsu.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 12 Sep 2017 08:40:56 +0000
+Subject: [PATCH v2 resend 3/4] sh: sh7264: Remove nonexistent GPIO_PH[0-7] to fix pinctrl registration
+Message-Id: <1505205657-18012-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1504234599-29533-1-git-send-email-douly.fnst@cn.fujitsu.com>
-In-Reply-To: <1504234599-29533-1-git-send-email-douly.fnst@cn.fujitsu.com>
+References: <1505205657-18012-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1505205657-18012-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: akpm@linux-foundation.org, linux-kernel@vger.kernel.org
-Cc: Dou Liyang <douly.fnst@cn.fujitsu.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Magnus Damm <magnus.damm@gmail.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, linux-sh@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-gpio@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Commit a7be6e5a7f8d ("mm: drop useless local parameters of
-__register_one_node()") removes the last user of parent_node().
+Pinmux_pins[] is initialized through PINMUX_GPIO(), using designated
+array initializers, where the GPIO_* enums serve as indices.
+If enum values are defined, but never used, pinmux_pins[] contains
+(zero-filled) holes.  Such entries are treated as pin zero, which was
+registered before, thus leading to pinctrl registration failures, as
+seen on sh7722:
 
-The parent_node() macro in SUPERH platform is unnecessary.
+    sh-pfc pfc-sh7722: pin 0 already registered
+    sh-pfc pfc-sh7722: error during pin registration
+    sh-pfc pfc-sh7722: could not register: -22
+    sh-pfc: probe of pfc-sh7722 failed with error -22
 
-Remove it for cleanup.
+Remove GPIO_PH[0-7] from the enum to fix this.
 
-Reported-by: Michael Ellerman <mpe@ellerman.id.au>
-Signed-off-by: Dou Liyang <douly.fnst@cn.fujitsu.com>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: Rich Felker <dalias@libc.org>
-Cc: linux-sh@vger.kernel.org
+Fixes: 41797f75486d8ca3 ("sh: Add pinmux for sh7264")
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- arch/sh/include/asm/topology.h | 1 -
- 1 file changed, 1 deletion(-)
+Untested due to lack of hardware.
 
-diff --git a/arch/sh/include/asm/topology.h b/arch/sh/include/asm/topology.h
-index 358e3f5..6931f50 100644
---- a/arch/sh/include/asm/topology.h
-+++ b/arch/sh/include/asm/topology.h
-@@ -4,7 +4,6 @@
- #ifdef CONFIG_NUMA
+v2:
+  - Replace fake error messages by reference to sh7722,
+  - Add Reviewed-by.
+---
+ arch/sh/include/cpu-sh2a/cpu/sh7264.h | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+
+diff --git a/arch/sh/include/cpu-sh2a/cpu/sh7264.h b/arch/sh/include/cpu-sh2a/cpu/sh7264.h
+index 4d1ef6d74bd6050c..2ae0e938b657a109 100644
+--- a/arch/sh/include/cpu-sh2a/cpu/sh7264.h
++++ b/arch/sh/include/cpu-sh2a/cpu/sh7264.h
+@@ -43,9 +43,7 @@ enum {
+ 	GPIO_PG7, GPIO_PG6, GPIO_PG5, GPIO_PG4,
+ 	GPIO_PG3, GPIO_PG2, GPIO_PG1, GPIO_PG0,
  
- #define cpu_to_node(cpu)	((void)(cpu),0)
--#define parent_node(node)	((void)(node),0)
+-	/* Port H */
+-	GPIO_PH7, GPIO_PH6, GPIO_PH5, GPIO_PH4,
+-	GPIO_PH3, GPIO_PH2, GPIO_PH1, GPIO_PH0,
++	/* Port H - Port H does not have a Data Register */
  
- #define cpumask_of_node(node)	((void)node, cpu_online_mask)
+ 	/* Port I - not on device */
  
 -- 
-2.5.5
-
-
+2.7.4
 
