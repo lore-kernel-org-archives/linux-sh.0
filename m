@@ -1,26 +1,79 @@
-From: Vineet Gupta <Vineet.Gupta1@synopsys.com>
-Date: Fri, 22 Sep 2017 16:16:24 +0000
-Subject: Re: [PATCH] arch: remove unused *_segments() macros/functions
-Message-Id: <9d3545c5-367c-da94-bbbf-b260ef4bf2d8@synopsys.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 12 Sep 2017 08:40:53 +0000
+Subject: [PATCH v2 resend 0/4] sh: sh7722/sh7757i/sh7264/sh7269: Fix pinctrl registration
+Message-Id: <1505205657-18012-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20170922074242.20868-1-tklauser@distanz.ch>
-In-Reply-To: <20170922074242.20868-1-tklauser-93Khv+1bN0NyDzI6CaY1VQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Tobias Klauser <tklauser-93Khv+1bN0NyDzI6CaY1VQ@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-xtensa-PjhNF2WwrV/0Sa2dR60CXw@public.gmane.org, linux-am33-list-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-c6x-dev-jPsnJVOj+W6hPH1hqNUYSQ@public.gmane.org, user-mode-linux-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, linux-snps-arc-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, linux-metag-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Magnus Damm <magnus.damm@gmail.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, linux-sh@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-gpio@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On 09/22/2017 12:42 AM, Tobias Klauser wrote:
-> Some architectures define the no-op macros/functions copy_segments,
-> release_segments and forget_segments. These are used nowhere in the
-> tree, so removed them.
-> 
-> Signed-off-by: Tobias Klauser <tklauser@distanz.ch>
-> ---
->   arch/arc/include/asm/processor.h        |  3 ---
+	Hi Andrew,
 
-Acked-by: Vineet Gupta <vgupta@synopsys.com>   [for arch/arc]
+I'm resending this to you due to unresponsiveness from the SuperH
+maintainers (v2 sent before on May 11, pinged on June 30 and August 14).
 
-Thx,
--Vineet
+Magnus Damm reported that on sh7722/Migo-R, pinctrl registration fails
+with:
+
+    sh-pfc pfc-sh7722: pin 0 already registered
+    sh-pfc pfc-sh7722: error during pin registration
+    sh-pfc pfc-sh7722: could not register: -22
+    sh-pfc: probe of pfc-sh7722 failed with error -22
+
+pinmux_pins[] is initialized through PINMUX_GPIO(), using designated
+array initializers, where the GPIO_* enums serve as indices.
+Apparently GPIO_PTQ7 was defined in the enum, but never used.
+If enum values are defined, but never used, pinmux_pins[] contains
+(zero-filled) holes.  Hence such entries are treated as pin zero, which
+was registered before, and pinctrl registration fails.
+
+I can't see how this ever worked, as at the time of commit f5e25ae52feff2dc
+("sh-pfc: Add sh7722 pinmux support"), pinmux_gpios[] in
+drivers/pinctrl/sh-pfc/pfc-sh7722.c already had the hole, and
+drivers/pinctrl/core.c already had the check.
+
+Some scripting revealed a few more broken drivers:
+  - sh7757 has four holes, due to nonexistent GPIO_PT[JLNQ]7_RESV.
+  - sh7264 and sh7269 define GPIO_PH[0-7], but don't use it with
+    PINMUX_GPIO().
+
+Patch 1 fixes the issue on sh7722, and was tested.
+Patches 3-4 should fix the issue on the other 3 SoCs, but was untested due
+to lack of hardware.
+
+Changes compared to v1:
+  - Replace fake error messages by references to sh7722,
+  - Add Reviewed-by, Tested-by.
+
+Thanks for applying!
+
+Geert Uytterhoeven (4):
+  sh: sh7722: Remove nonexistent GPIO_PTQ7 to fix pinctrl registration
+  sh: sh7757: Remove nonexistent GPIO_PT[JLNQ]7_RESV to fix pinctrl
+    registration
+  sh: sh7264: Remove nonexistent GPIO_PH[0-7] to fix pinctrl
+    registration
+  sh: sh7269: Remove nonexistent GPIO_PH[0-7] to fix pinctrl
+    registration
+
+ arch/sh/include/cpu-sh2a/cpu/sh7264.h | 4 +---
+ arch/sh/include/cpu-sh2a/cpu/sh7269.h | 4 +---
+ arch/sh/include/cpu-sh4/cpu/sh7722.h  | 2 +-
+ arch/sh/include/cpu-sh4/cpu/sh7757.h  | 8 ++++----
+ 4 files changed, 7 insertions(+), 11 deletions(-)
+
+-- 
+2.7.4
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
