@@ -1,7 +1,7 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 12 Sep 2017 08:40:56 +0000
-Subject: [PATCH v2 resend 3/4] sh: sh7264: Remove nonexistent GPIO_PH[0-7] to fix pinctrl registration
-Message-Id: <1505205657-18012-4-git-send-email-geert+renesas@glider.be>
+Date: Tue, 12 Sep 2017 08:40:54 +0000
+Subject: [PATCH v2 resend 1/4] sh: sh7722: Remove nonexistent GPIO_PTQ7 to fix pinctrl registration
+Message-Id: <1505205657-18012-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1505205657-18012-1-git-send-email-geert+renesas@glider.be>
 In-Reply-To: <1505205657-18012-1-git-send-email-geert+renesas@glider.be>
@@ -11,48 +11,49 @@ Content-Transfer-Encoding: 7bit
 To: Andrew Morton <akpm@linux-foundation.org>
 Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Magnus Damm <magnus.damm@gmail.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, linux-sh@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-gpio@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Pinmux_pins[] is initialized through PINMUX_GPIO(), using designated
-array initializers, where the GPIO_* enums serve as indices.
-If enum values are defined, but never used, pinmux_pins[] contains
-(zero-filled) holes.  Such entries are treated as pin zero, which was
-registered before, thus leading to pinctrl registration failures, as
-seen on sh7722:
+On sh7722/Migo-R, pinctrl registration fails with:
 
     sh-pfc pfc-sh7722: pin 0 already registered
     sh-pfc pfc-sh7722: error during pin registration
     sh-pfc pfc-sh7722: could not register: -22
     sh-pfc: probe of pfc-sh7722 failed with error -22
 
-Remove GPIO_PH[0-7] from the enum to fix this.
+pinmux_pins[] is initialized through PINMUX_GPIO(), using designated
+array initializers, where the GPIO_* enums serve as indices.
+As GPIO_PTQ7 is defined in the enum, but never used, pinmux_pins[]
+contains a (zero-filled) hole. Hence this entry is treated as pin zero,
+which was registered before, and pinctrl registration fails.
 
-Fixes: 41797f75486d8ca3 ("sh: Add pinmux for sh7264")
+According to the datasheet, port PTQ7 does not exist. Hence remove
+GPIO_PTQ7 from the enum to fix this.
+
+Fixes: 8d7b5b0af7e070b9 ("sh: Add sh7722 pinmux code")
+Reported-by: Magnus Damm <magnus.damm@gmail.com>
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Tested-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
 ---
-Untested due to lack of hardware.
+Tested on sh7722/Migo-R.
 
 v2:
-  - Replace fake error messages by reference to sh7722,
-  - Add Reviewed-by.
+  - Add Reviewed-by, Tested-by.
 ---
- arch/sh/include/cpu-sh2a/cpu/sh7264.h | 4 +---
- 1 file changed, 1 insertion(+), 3 deletions(-)
+ arch/sh/include/cpu-sh4/cpu/sh7722.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/sh/include/cpu-sh2a/cpu/sh7264.h b/arch/sh/include/cpu-sh2a/cpu/sh7264.h
-index 4d1ef6d74bd6050c..2ae0e938b657a109 100644
---- a/arch/sh/include/cpu-sh2a/cpu/sh7264.h
-+++ b/arch/sh/include/cpu-sh2a/cpu/sh7264.h
-@@ -43,9 +43,7 @@ enum {
- 	GPIO_PG7, GPIO_PG6, GPIO_PG5, GPIO_PG4,
- 	GPIO_PG3, GPIO_PG2, GPIO_PG1, GPIO_PG0,
+diff --git a/arch/sh/include/cpu-sh4/cpu/sh7722.h b/arch/sh/include/cpu-sh4/cpu/sh7722.h
+index 3bb74e534d0f8ca4..78961ab78a5a9c83 100644
+--- a/arch/sh/include/cpu-sh4/cpu/sh7722.h
++++ b/arch/sh/include/cpu-sh4/cpu/sh7722.h
+@@ -67,7 +67,7 @@ enum {
+ 	GPIO_PTN3, GPIO_PTN2, GPIO_PTN1, GPIO_PTN0,
  
--	/* Port H */
--	GPIO_PH7, GPIO_PH6, GPIO_PH5, GPIO_PH4,
--	GPIO_PH3, GPIO_PH2, GPIO_PH1, GPIO_PH0,
-+	/* Port H - Port H does not have a Data Register */
+ 	/* PTQ */
+-	GPIO_PTQ7, GPIO_PTQ6, GPIO_PTQ5, GPIO_PTQ4,
++	GPIO_PTQ6, GPIO_PTQ5, GPIO_PTQ4,
+ 	GPIO_PTQ3, GPIO_PTQ2, GPIO_PTQ1, GPIO_PTQ0,
  
- 	/* Port I - not on device */
- 
+ 	/* PTR */
 -- 
 2.7.4
 
