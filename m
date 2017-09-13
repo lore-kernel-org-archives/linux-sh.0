@@ -1,42 +1,31 @@
 From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 19 Sep 2017 08:31:01 +0000
-Subject: Re: [PATCH v2 resend 0/4] sh: sh7722/sh7757i/sh7264/sh7269: Fix pinctrl registration
-Message-Id: <CAMuHMdXwq_X2iqQHQRxzHVf+prAkDELjm2RzH_NS6h6-HcqFOA@mail.gmail.com>
+Date: Wed, 13 Sep 2017 07:47:55 +0000
+Subject: Re: sh: sh7758 User land programs crash with SIGBUS.
+Message-Id: <CAMuHMdWVRfdOeWGdCS=OZ9t1mOuZqXpxN3xidG=q18vCtuKAgA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1505205657-18012-1-git-send-email-geert+renesas@glider.be> <CACRpkdYfbUvpLSZnTan+P5pBYKomEK0gEaQor8YjtxE9Y2riSg@mail.gmail.com>
-In-Reply-To: <CACRpkdYfbUvpLSZnTan+P5pBYKomEK0gEaQor8YjtxE9Y2riSg@mail.gmail.com>
+References: <bac7196cecbb43159feaaf1fc1605767@AUSX13MPC101.AMER.DELL.COM>
+In-Reply-To: <bac7196cecbb43159feaaf1fc1605767@AUSX13MPC101.AMER.DELL.COM>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Walleij <linus.walleij@linaro.org>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Andrew Morton <akpm@linux-foundation.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Magnus Damm <magnus.damm@gmail.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Linux-Renesas <linux-renesas-soc@vger.kernel.org>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+To: Prashanth.Giri@dell.com
+Cc: Linux-Renesas <linux-renesas-soc@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
 
-Hi Linus,
+CC linux-sh
 
-On Tue, Sep 19, 2017 at 10:19 AM, Linus Walleij
-<linus.walleij@linaro.org> wrote:
-> On Tue, Sep 12, 2017 at 10:40 AM, Geert Uytterhoeven
-> <geert+renesas@glider.be> wrote:
->> I'm resending this to you due to unresponsiveness from the SuperH
->> maintainers (v2 sent before on May 11, pinged on June 30 and August 14).
+On Wed, Sep 13, 2017 at 12:00 AM,  <Prashanth.Giri@dell.com> wrote:
+> Hi,
 >
-> I'm happy to take this into the pinctrl tree if need be.
+> I am trying to port from 3.4.11 kernel to 3.10.107 based on my sh7757/58 processor hardware and running into some odd behavior with user land applications. I pretty much got the kernel up and running but some of the applications in user land won't launch and are crashing with the below messages in dmesg.
 >
-> It is pinctrl related so it makes sense to carry it there if SH
-> maintainers are not responding.
+> <5>Fixing up unaligned userspace access in "aim" pid=28533 pc=0x3b142492 ins=0x6252
+> <5>Sending SIGBUS to "aim" pid=28533 due to unaligned access (PC 3b142492 PR 296167e4) ins=0x6252
+> <5>Sending SIGBUS to "pm" pid=28741 due to unaligned access (PC 58b2e409 PR 297b0118) ins=0x8dc1
+> <5>Sending SIGBUS to "pm" pid=28741 due to unaligned access (PC 3b142492 PR 296ce7e4) ins=0x6252
 >
-> Just send a separate pull request and indicate if it needs to
-> go in for fixes or devel.
-
-In the mean time, Andrew took it (thanks!), so it's now in linux-next.
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+> Some of the older posts in the mailing lists pointed out to I/D cache issues, I tried disabling the cache altogether in a hope to root cause the issue, but still got the same responses. For some reason I believe the loader is loading these programs into odd addresses. I am clueless as to where to look for the possible issue. Is there any obvious settings that I am missing from the board/cpu setup ?
+>
+> Any expert help and guidance is really appreciated.
+>
+> Thanks,
+> Prashanth
