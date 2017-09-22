@@ -1,57 +1,44 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 12 Sep 2017 08:40:57 +0000
-Subject: [PATCH v2 resend 4/4] sh: sh7269: Remove nonexistent GPIO_PH[0-7] to fix pinctrl registration
-Message-Id: <1505205657-18012-5-git-send-email-geert+renesas@glider.be>
+From: Allen Pais <allen.lkml@gmail.com>
+Date: Fri, 22 Sep 2017 11:56:11 +0000
+Subject: [PATCH 2/2] sh: pci: use setup_timer() helper.
+Message-Id: <1506081360-6555-2-git-send-email-allen.lkml@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1505205657-18012-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1505205657-18012-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Magnus Damm <magnus.damm@gmail.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, linux-sh@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-gpio@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-sh@vger.kernel.org
 
-Pinmux_pins[] is initialized through PINMUX_GPIO(), using designated
-array initializers, where the GPIO_* enums serve as indices.
-If enum values are defined, but never used, pinmux_pins[] contains
-(zero-filled) holes.  Such entries are treated as pin zero, which was
-registered before, thus leading to pinctrl registration failures, as
-seen on sh7722:
+   Use setup_timer function instead of initializing timer with the
+   function and data fields.
 
-    sh-pfc pfc-sh7722: pin 0 already registered
-    sh-pfc pfc-sh7722: error during pin registration
-    sh-pfc pfc-sh7722: could not register: -22
-    sh-pfc: probe of pfc-sh7722 failed with error -22
-
-Remove GPIO_PH[0-7] from the enum to fix this.
-
-Fixes: ef0fa5331a73e479 ("sh: Add pinmux for sh7269")
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Allen Pais <allen.lkml@gmail.com>
 ---
-Untested due to lack of hardware.
+ arch/sh/drivers/pci/common.c | 10 ++++------
+ 1 file changed, 4 insertions(+), 6 deletions(-)
 
-v2:
-  - Replace fake error messages by reference to sh7722,
-  - Add Reviewed-by.
----
- arch/sh/include/cpu-sh2a/cpu/sh7269.h | 4 +---
- 1 file changed, 1 insertion(+), 3 deletions(-)
-
-diff --git a/arch/sh/include/cpu-sh2a/cpu/sh7269.h b/arch/sh/include/cpu-sh2a/cpu/sh7269.h
-index 2a0ca8780f0d8c34..13c495a9fc0007b4 100644
---- a/arch/sh/include/cpu-sh2a/cpu/sh7269.h
-+++ b/arch/sh/include/cpu-sh2a/cpu/sh7269.h
-@@ -45,9 +45,7 @@ enum {
- 	GPIO_PG7, GPIO_PG6, GPIO_PG5, GPIO_PG4,
- 	GPIO_PG3, GPIO_PG2, GPIO_PG1, GPIO_PG0,
+diff --git a/arch/sh/drivers/pci/common.c b/arch/sh/drivers/pci/common.c
+index dbf1381..5f4b3a8 100644
+--- a/arch/sh/drivers/pci/common.c
++++ b/arch/sh/drivers/pci/common.c
+@@ -105,15 +105,13 @@ static void pcibios_enable_serr(unsigned long __data)
+ void pcibios_enable_timers(struct pci_channel *hose)
+ {
+ 	if (hose->err_irq) {
+-		init_timer(&hose->err_timer);
+-		hose->err_timer.data = (unsigned long)hose;
+-		hose->err_timer.function = pcibios_enable_err;
++		setup_timer(&hose->err_timer, pcibios_enable_err,
++			    (unsigned long)hose);
+ 	}
  
--	/* Port H */
--	GPIO_PH7, GPIO_PH6, GPIO_PH5, GPIO_PH4,
--	GPIO_PH3, GPIO_PH2, GPIO_PH1, GPIO_PH0,
-+	/* Port H - Port H does not have a Data Register */
- 
- 	/* Port I - not on device */
+ 	if (hose->serr_irq) {
+-		init_timer(&hose->serr_timer);
+-		hose->serr_timer.data = (unsigned long)hose;
+-		hose->serr_timer.function = pcibios_enable_serr;
++		setup_timer(&hose->serr_timer, pcibios_enable_serr,
++			    (unsigned long)hose);
+ 	}
+ }
  
 -- 
 2.7.4
