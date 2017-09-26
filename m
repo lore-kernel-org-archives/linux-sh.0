@@ -1,7 +1,7 @@
-From: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
-Date: Tue, 26 Sep 2017 12:52:57 +0000
+From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Date: Tue, 26 Sep 2017 12:55:44 +0000
 Subject: Re: Bug report: kernel BUG at arch/sh/kernel/dwarf.c:547!
-Message-Id: <20170926145257.66f6596c@windsurf.lan>
+Message-Id: <36a20075-d0ce-e52e-4b8d-9f737f51691c@physik.fu-berlin.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20170926142902.36e9539e@windsurf.lan>
 In-Reply-To: <20170926142902.36e9539e@windsurf.lan>
@@ -10,42 +10,34 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hello,
-
-On Tue, 26 Sep 2017 14:36:42 +0200, John Paul Adrian Glaubitz wrote:
-
-> On 09/26/2017 02:29 PM, Thomas Petazzoni wrote:
-> > I'm using Linux 4.13 on a big endian SH4A system,  
+On 09/26/2017 02:52 PM, Thomas Petazzoni wrote:
+>> May I ask what kind of hardware you are using? I'm still looking for
+>> new/used SH4 boards to add additional buildd resources in Debian.
 > 
-> Wow, that's the first time I hear someone use SuperH in Big-Endian mode.
+> It's a custom platform using the SH7786 SoC. Sadly, this is clearly not
+> a HW platform that I can provide to help Debian having more build
+> resources.
 
-Hehe, yes, I know, it's pretty uncommon. The hardware platform I'm
-using was not running Linux... until now. And the big endian choice is
-made at the HW level, so it's not trivial to change it to little endian.
+I assume this is some custom hardware used for automotive or industrial
+applications?
 
-> May I ask what kind of hardware you are using? I'm still looking for
-> new/used SH4 boards to add additional buildd resources in Debian.
+>> I think it might be a better idea to report this issue to the kernel
+>> bugzilla [1] so your bug report doesn't get lost. SuperH can now be
+>> selected as the target architecture, too.
+> 
+> I thought about this, but I'm not sure the SH maintainers are actively
+> looking at the kernel bug tracker.
+> 
+> Let's see if Rich and/or Yoshinori have some feedback about my issue.
 
-It's a custom platform using the SH7786 SoC. Sadly, this is clearly not
-a HW platform that I can provide to help Debian having more build
-resources.
+Yoshinori is currently not active in kernel development but from what
+I have heard, he was planning to return soonish. In any case, I just
+want to avoid that your issue gets lost on the mailing lists.
 
-> > You'll find below the full kernel panic log. You'll also notice that
-> > the layout of the kernel panic message is really weird, with many
-> > newlines all over the place, which probably is another bug.  
-> I think it might be a better idea to report this issue to the kernel
-> bugzilla [1] so your bug report doesn't get lost. SuperH can now be
-> selected as the target architecture, too.
+Adrian
 
-I thought about this, but I'm not sure the SH maintainers are actively
-looking at the kernel bug tracker.
-
-Let's see if Rich and/or Yoshinori have some feedback about my issue.
-
-Best regards,
-
-Thomas
 -- 
-Thomas Petazzoni, CTO, Free Electrons
-Embedded Linux and Kernel engineering
-http://free-electrons.com
+  .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer - glaubitz@debian.org
+`. `'   Freie Universitaet Berlin - glaubitz@physik.fu-berlin.de
+   `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
