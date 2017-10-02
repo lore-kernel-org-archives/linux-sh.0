@@ -1,77 +1,106 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Tue, 03 Oct 2017 10:43:09 +0000
-Subject: [PATCH 09/11] xtensa: make dma_cache_sync a no-op
-Message-Id: <20171003104311.10058-10-hch@lst.de>
+From: Kees Cook <keescook@chromium.org>
+Date: Mon, 02 Oct 2017 19:20:07 +0000
+Subject: [PATCH 3/3] Makefile: Introduce CONFIG_CC_STACKPROTECTOR_AUTO
+Message-Id: <1506972007-80614-4-git-send-email-keescook@chromium.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20171003104311.10058-1-hch@lst.de>
-In-Reply-To: <20171003104311.10058-1-hch-jcswGhMUV9g@public.gmane.org>
+References: <1506972007-80614-1-git-send-email-keescook@chromium.org>
+In-Reply-To: <1506972007-80614-1-git-send-email-keescook@chromium.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: Chris Zankel <chris-YvXeqwSYzG2sTnJN9+BGXg@public.gmane.org>, Michal Simek <monstr-pSz03upnqPeHXe+LvDLADg@public.gmane.org>, linux-ia64-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mips-6z/3iImG2C8G8FEW9MqTrA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linuxppc-dev-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org, linux-xtensa-PjhNF2WwrV/0Sa2dR60CXw@public.gmane.org, x86-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Max Filippov <jcmvbkbc-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Guan Xuetao <gxt-TG0Ac1+ktVePQbnJrJN+5g@public.gmane.org>
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: Kees Cook <keescook@chromium.org>, Masahiro Yamada <yamada.masahiro@socionext.com>, Michal Marek <mmarek@suse.com>, Ingo Molnar <mingo@kernel.org>, Laura Abbott <labbott@redhat.com>, Nicholas Piggin <npiggin@gmail.com>, linux-kbuild@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, "David S. Miller" <davem@davemloft.net>, Al Viro <viro@zeniv.linux.org.uk>, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, kernel-hardening@lists.openwall.com
 
-xtensa does not implement DMA_ATTR_NON_CONSISTENT allocations, so it
-doesn't make any sense to do any work in dma_cache_sync given that it
-must be a no-op when dma_alloc_attrs returns coherent memory.
+Nearly all modern compilers support a stack-protector option, and nearly
+all modern distributions enable the kernel stack-protector, so enabling
+this by default in kernel builds would make sense. However, Kconfig does
+not have knowledge of available compiler features, so it isn't safe to
+force on, as this would unconditionally break builds for the compilers
+or architectures that don't have support. Instead, this introduces a new
+option, CONFIG_CC_STACKPROTECTOR_AUTO, which attempts to discover the best
+possible stack-protector available, and will allow builds to proceed even
+if the compiler doesn't support any stack-protector.
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
+This option is made the default so that kernels built with modern
+compilers will be protected-by-default against stack buffer overflows,
+avoiding things like the recent BlueBorne attack. Selection of a specific
+stack-protector option remains available, including disabling it.
+
+Cc: Masahiro Yamada <yamada.masahiro@socionext.com>
+Cc: Michal Marek <mmarek@suse.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>
+Cc: Ingo Molnar <mingo@kernel.org>
+Cc: Laura Abbott <labbott@redhat.com>
+Cc: Nicholas Piggin <npiggin@gmail.com>
+Cc: linux-kbuild@vger.kernel.org
+Signed-off-by: Kees Cook <keescook@chromium.org>
 ---
- arch/xtensa/include/asm/dma-mapping.h |  6 ++++--
- arch/xtensa/kernel/pci-dma.c          | 23 -----------------------
- 2 files changed, 4 insertions(+), 25 deletions(-)
+ Makefile     | 11 +++++++++++
+ arch/Kconfig |  8 +++++++-
+ 2 files changed, 18 insertions(+), 1 deletion(-)
 
-diff --git a/arch/xtensa/include/asm/dma-mapping.h b/arch/xtensa/include/asm/dma-mapping.h
-index 269738dc9d1d..353e0314d6ba 100644
---- a/arch/xtensa/include/asm/dma-mapping.h
-+++ b/arch/xtensa/include/asm/dma-mapping.h
-@@ -23,8 +23,10 @@ static inline const struct dma_map_ops *get_arch_dma_ops(struct bus_type *bus)
- 	return &xtensa_dma_map_ops;
- }
+diff --git a/Makefile b/Makefile
+index e122a9cf0399..9bd334b35003 100644
+--- a/Makefile
++++ b/Makefile
+@@ -676,6 +676,10 @@ endif
+ # This selects the stack protector compiler flag. Testing it is delayed
+ # until after .config has been reprocessed, in the prepare-compiler-check
+ # target.
++ifdef CONFIG_CC_STACKPROTECTOR_AUTO
++  stackp-flag := $(call cc-option,-fstack-protector-strong,$(call cc-option,-fstack-protector))
++  stackp-name := AUTO
++else
+ ifdef CONFIG_CC_STACKPROTECTOR_REGULAR
+   stackp-flag := -fstack-protector
+   stackp-name := REGULAR
+@@ -688,6 +692,7 @@ else
+   stackp-flag := $(call cc-option, -fno-stack-protector)
+ endif
+ endif
++endif
+ ifdef stackp-name
+   # If the stack protector has been selected, inform the rest of the build.
+   KBUILD_CFLAGS += -DCONFIG_CC_STACKPROTECTOR
+@@ -1084,6 +1089,12 @@ PHONY += prepare-compiler-check
+ prepare-compiler-check: FORCE
+ # Make sure compiler supports requested stack protector flag.
+ ifdef stackp-name
++  # Warn about CONFIG_CC_STACKPROTECTOR_AUTO having found no option.
++  ifeq ($(stackp-flag),)
++	@echo CONFIG_CC_STACKPROTECTOR_$(stackp-name): \
++		  Compiler does not support any known stack-protector >&2
++  endif
++  # Fail if specifically requested stack protector is missing.
+   ifeq ($(call cc-option, $(stackp-flag)),)
+ 	@echo Cannot use CONFIG_CC_STACKPROTECTOR_$(stackp-name): \
+ 		  $(stackp-flag) not supported by compiler >&2 && exit 1
+diff --git a/arch/Kconfig b/arch/Kconfig
+index 7007c1bfa79c..cd2676ff5d5d 100644
+--- a/arch/Kconfig
++++ b/arch/Kconfig
+@@ -526,7 +526,7 @@ config HAVE_CC_STACKPROTECTOR
+ choice
+ 	prompt "Stack Protector buffer overflow detection"
+ 	depends on HAVE_CC_STACKPROTECTOR
+-	default CC_STACKPROTECTOR_NONE
++	default CC_STACKPROTECTOR_AUTO
+ 	help
+ 	  This option turns on the "stack-protector" GCC feature. This
+ 	  feature puts, at the beginning of functions, a canary value on
+@@ -573,6 +573,12 @@ config CC_STACKPROTECTOR_STRONG
+ 	  about 20% of all kernel functions, which increases the kernel code
+ 	  size by about 2%.
  
--void dma_cache_sync(struct device *dev, void *vaddr, size_t size,
--		    enum dma_data_direction direction);
-+static inline void dma_cache_sync(struct device *dev, void *vaddr, size_t size,
-+		    enum dma_data_direction direction)
-+{
-+}
++config CC_STACKPROTECTOR_AUTO
++	bool "Automatic"
++	help
++	  If the compiler supports it, the best available stack-protector
++	  option will be chosen.
++
+ endchoice
  
- static inline dma_addr_t phys_to_dma(struct device *dev, phys_addr_t paddr)
- {
-diff --git a/arch/xtensa/kernel/pci-dma.c b/arch/xtensa/kernel/pci-dma.c
-index cec86a1c2acc..623720a11143 100644
---- a/arch/xtensa/kernel/pci-dma.c
-+++ b/arch/xtensa/kernel/pci-dma.c
-@@ -26,29 +26,6 @@
- #include <asm/cacheflush.h>
- #include <asm/io.h>
- 
--void dma_cache_sync(struct device *dev, void *vaddr, size_t size,
--		    enum dma_data_direction dir)
--{
--	switch (dir) {
--	case DMA_BIDIRECTIONAL:
--		__flush_invalidate_dcache_range((unsigned long)vaddr, size);
--		break;
--
--	case DMA_FROM_DEVICE:
--		__invalidate_dcache_range((unsigned long)vaddr, size);
--		break;
--
--	case DMA_TO_DEVICE:
--		__flush_dcache_range((unsigned long)vaddr, size);
--		break;
--
--	case DMA_NONE:
--		BUG();
--		break;
--	}
--}
--EXPORT_SYMBOL(dma_cache_sync);
--
- static void do_cache_op(dma_addr_t dma_handle, size_t size,
- 			void (*fn)(unsigned long, unsigned long))
- {
+ config THIN_ARCHIVES
 -- 
-2.14.1
+2.7.4
 
