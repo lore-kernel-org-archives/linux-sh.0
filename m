@@ -1,52 +1,38 @@
-From: Luc Van Oostenryck <luc.vanoostenryck@gmail.com>
-Date: Tue, 31 Oct 2017 17:22:20 +0000
-Subject: [PATCH] sh: pass machine size to sparse
-Message-Id: <20171031172220.10186-1-luc.vanoostenryck@gmail.com>
+From: Christoph Hellwig <hch@lst.de>
+Date: Tue, 03 Oct 2017 10:43:07 +0000
+Subject: [PATCH 07/11] powerpc: make dma_cache_sync a no-op
+Message-Id: <20171003104311.10058-8-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20171003104311.10058-1-hch@lst.de>
+In-Reply-To: <20171003104311.10058-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: iommu@lists.linux-foundation.org
+Cc: Marek Szyprowski <m.szyprowski@samsung.com>, Robin Murphy <robin.murphy@arm.com>, Michal Simek <monstr@monstr.eu>, David Howells <dhowells@redhat.com>, Guan Xuetao <gxt@mprc.pku.edu.cn>, Chris Zankel <chris@zankel.net>, Max Filippov <jcmvbkbc@gmail.com>, x86@kernel.org, linux-mips@linux-mips.org, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-xtensa@linux-xtensa.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-By default, sparse assumes a 64bit machine when compiled on x86-64
-and 32bit when compiled on anything else.
+powerpc does not implement DMA_ATTR_NON_CONSISTENT allocations, so it
+doesn't make any sense to do any work in dma_cache_sync given that it
+must be a no-op when dma_alloc_attrs returns coherent memory.
 
-This can of course create all sort of problems, like issuing false
-warnings like: 'constant ... is so big it is unsigned long long'
-or 'shift too big (32) for type unsigned long' when the architecture
-is 64bit while sparse was compiled on a 32bit machine, or worse,
-to not emit legitimate warnings in the reverse situation.
-
-Fix this by passing to sparse the appropriate -m32/-m64 flag
-
-To: Yoshinori Sato <ysato@users.sourceforge.jp>
-To: Rich Felker <dalias@libc.org>
-CC: linux-sh@vger.kernel.org
-Signed-off-by: Luc Van Oostenryck <luc.vanoostenryck@gmail.com>
+Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- arch/sh/Makefile | 2 ++
- 1 file changed, 2 insertions(+)
+ arch/powerpc/include/asm/dma-mapping.h | 2 --
+ 1 file changed, 2 deletions(-)
 
-diff --git a/arch/sh/Makefile b/arch/sh/Makefile
-index 93639dd5e..f68918660 100644
---- a/arch/sh/Makefile
-+++ b/arch/sh/Makefile
-@@ -106,6 +106,7 @@ UTS_MACHINE		:= sh
- BITS			:= 32
- LDFLAGS_vmlinux		+= -e _stext
- KBUILD_DEFCONFIG	:= shx3_defconfig
-+CHECKFLAGS		+= -m32
- else
- UTS_MACHINE		:= sh64
- BITS			:= 64
-@@ -113,6 +114,7 @@ LDFLAGS_vmlinux		+= --defsym phys_stext=_stext-$(CONFIG_PAGE_OFFSET) \
- 			   --defsym phys_stext_shmedia=phys_stext+1 \
- 			   -e phys_stext_shmedia
- KBUILD_DEFCONFIG	:= cayman_defconfig
-+CHECKFLAGS		+= -m64
- endif
+diff --git a/arch/powerpc/include/asm/dma-mapping.h b/arch/powerpc/include/asm/dma-mapping.h
+index eaece3d3e225..320846442bfb 100644
+--- a/arch/powerpc/include/asm/dma-mapping.h
++++ b/arch/powerpc/include/asm/dma-mapping.h
+@@ -144,8 +144,6 @@ static inline phys_addr_t dma_to_phys(struct device *dev, dma_addr_t daddr)
+ static inline void dma_cache_sync(struct device *dev, void *vaddr, size_t size,
+ 		enum dma_data_direction direction)
+ {
+-	BUG_ON(direction = DMA_NONE);
+-	__dma_sync(vaddr, size, (int)direction);
+ }
  
- ifdef CONFIG_CPU_LITTLE_ENDIAN
+ #endif /* __KERNEL__ */
 -- 
-2.14.0
+2.14.1
 
