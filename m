@@ -1,41 +1,41 @@
-From: Christophe LEROY <christophe.leroy@c-s.fr>
-Date: Wed, 04 Oct 2017 08:29:13 +0000
-Subject: Re: [PATCH 07/11] powerpc: make dma_cache_sync a no-op
-Message-Id: <fd0ccac1-51dc-1eff-f1ac-63f9df282de2@c-s.fr>
+From: Christoph Hellwig <hch@lst.de>
+Date: Tue, 03 Oct 2017 10:43:04 +0000
+Subject: [PATCH 04/11] ia64: make dma_cache_sync a no-op
+Message-Id: <20171003104311.10058-5-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20171003104311.10058-1-hch@lst.de>
- <20171003104311.10058-8-hch@lst.de>
- <670a0571-1a36-51a3-db52-64bc61184c35@c-s.fr> <20171003114330.GA24592@lst.de>
-In-Reply-To: <20171003114330.GA24592@lst.de>
+In-Reply-To: <20171003104311.10058-1-hch-jcswGhMUV9g@public.gmane.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: Christoph Hellwig <hch@lst.de>
-Cc: iommu@lists.linux-foundation.org, Chris Zankel <chris@zankel.net>, Michal Simek <monstr@monstr.eu>, linux-ia64@vger.kernel.org, linux-mips@linux-mips.org, linux-sh@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-xtensa@linux-xtensa.org, x86@kernel.org, linux-kernel@vger.kernel.org, David Howells <dhowells@redhat.com>, Max Filippov <jcmvbkbc@gmail.com>, Guan Xuetao <gxt@mprc.pku.edu.cn>, Robin Murphy <robin.murphy@arm.com>, Marek Szyprowski <m.szyprowski@samsung.com>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: Chris Zankel <chris-YvXeqwSYzG2sTnJN9+BGXg@public.gmane.org>, Michal Simek <monstr-pSz03upnqPeHXe+LvDLADg@public.gmane.org>, linux-ia64-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mips-6z/3iImG2C8G8FEW9MqTrA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linuxppc-dev-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org, linux-xtensa-PjhNF2WwrV/0Sa2dR60CXw@public.gmane.org, x86-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Max Filippov <jcmvbkbc-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Guan Xuetao <gxt-TG0Ac1+ktVePQbnJrJN+5g@public.gmane.org>
 
+ia64 does not implement DMA_ATTR_NON_CONSISTENT allocations, so it doesn't
+make any sense to do any work in dma_cache_sync given that it must be a
+no-op when dma_alloc_attrs returns coherent memory.
 
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+---
+ arch/ia64/include/asm/dma-mapping.h | 5 -----
+ 1 file changed, 5 deletions(-)
 
-Le 03/10/2017 à 13:43, Christoph Hellwig a écrit :
-> On Tue, Oct 03, 2017 at 01:24:57PM +0200, Christophe LEROY wrote:
->>> powerpc does not implement DMA_ATTR_NON_CONSISTENT allocations, so it
->>> doesn't make any sense to do any work in dma_cache_sync given that it
->>> must be a no-op when dma_alloc_attrs returns coherent memory.
->> What about arch/powerpc/mm/dma-noncoherent.c ?
->>
->> Powerpc 8xx doesn't have coherent memory.
-> 
-> It doesn't implement the DMA_ATTR_NON_CONSISTENT interface either,
-> so if it really doesn't have a way to provide dma coherent allocation
-> (although the code in __dma_alloc_coherent suggests it does provide
-> dma coherent allocations) I have no idea how it could ever have
-> worked.
-> 
+diff --git a/arch/ia64/include/asm/dma-mapping.h b/arch/ia64/include/asm/dma-mapping.h
+index 3ce5ab4339f3..99dfc1aa9d3c 100644
+--- a/arch/ia64/include/asm/dma-mapping.h
++++ b/arch/ia64/include/asm/dma-mapping.h
+@@ -48,11 +48,6 @@ static inline void
+ dma_cache_sync (struct device *dev, void *vaddr, size_t size,
+ 	enum dma_data_direction dir)
+ {
+-	/*
+-	 * IA-64 is cache-coherent, so this is mostly a no-op.  However, we do need to
+-	 * ensure that dma_cache_sync() enforces order, hence the mb().
+-	 */
+-	mb();
+ }
+ 
+ #endif /* _ASM_IA64_DMA_MAPPING_H */
+-- 
+2.14.1
 
-Yes indeed it provides coherent memory by allocation non cached memory.
-
-And drivers aiming at using non coherent memory do it by using kmalloc() 
-with GFP_DMA then dma_map_single().
-Then they use dma_sync_single_for_xxx(), which calls __dma_sync() on the 
-8xx and is a nop on other powerpcs.
-
-Christophe
