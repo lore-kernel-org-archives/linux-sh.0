@@ -1,52 +1,38 @@
-From: Ingo Molnar <mingo@kernel.org>
-Date: Sat, 07 Oct 2017 08:58:58 +0000
-Subject: Re: [PATCH 0/4] PCI: Cleanup unused stuff
-Message-Id: <20171007085858.hjjowcgm457wo3cg@gmail.com>
+From: Christoph Hellwig <hch@lst.de>
+Date: Tue, 03 Oct 2017 10:43:02 +0000
+Subject: [PATCH 02/11] x86: make dma_cache_sync a no-op
+Message-Id: <20171003104311.10058-3-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20171005201939.18300.25690.stgit@bhelgaas-glaptop.roam.corp.google.com>
-In-Reply-To: <20171005201939.18300.25690.stgit@bhelgaas-glaptop.roam.corp.google.com>
+References: <20171003104311.10058-1-hch@lst.de>
+In-Reply-To: <20171003104311.10058-1-hch-jcswGhMUV9g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Bjorn Helgaas <helgaas@kernel.org>
-Cc: linux-pci@vger.kernel.org, linux-mips@linux-mips.org, Rich Felker <dalias@libc.org>, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, Benjamin Herrenschmidt <benh@kernel.crashing.org>, David Howells <dhowells@redhat.com>, Max Filippov <jcmvbkbc@gmail.com>, Paul Mackerras <paulus@samba.org>, "H. Peter Anvin" <hpa@zytor.com>, sparclinux@vger.kernel.org, Jesper Nilsson <jesper.nilsson@axis.com>, linux-am33-list@redhat.com, Yoshinori Sato <ysato@users.sourceforge.jp>, Michael Ellerman <mpe@ellerman.id.au>, Helge Deller <deller@gmx.de>, x86@kernel.org, "James E.J. Bottomley" <jejb@parisc-linux.org>, Ingo Molnar <mingo@redhat.com>, Matt Turner <mattst88@gmail.com>, Fenghua Yu <fenghua.yu@intel.com>, linux-xtensa@linux-xtensa.org, Mikael Starvik <starvik@axis.com>, Ivan Kokshaysky <ink@jurassic.park.msu.ru>, Thomas Gleixner <tglx@linutronix.de>, Richard Henderson <rth@twiddle.net>, Chris Zankel <chris@zankel.net>, Tony Luck <tony.luck@intel.com>, linux-cris-kernel@axis.com, linux-parisc@vger.kernel.org, Ralf Baechle <ralf@linux-mips.org>, linux-alpha@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, "David S. Miller" <davem@davemloft.net>
+To: iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: Chris Zankel <chris-YvXeqwSYzG2sTnJN9+BGXg@public.gmane.org>, Michal Simek <monstr-pSz03upnqPeHXe+LvDLADg@public.gmane.org>, linux-ia64-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mips-6z/3iImG2C8G8FEW9MqTrA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linuxppc-dev-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org, linux-xtensa-PjhNF2WwrV/0Sa2dR60CXw@public.gmane.org, x86-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Max Filippov <jcmvbkbc-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Guan Xuetao <gxt-TG0Ac1+ktVePQbnJrJN+5g@public.gmane.org>
 
+x86 does not implement DMA_ATTR_NON_CONSISTENT allocations, so it doesn't
+make any sense to do any work in dma_cache_sync given that it must be a
+no-op when dma_alloc_attrs returns coherent memory.
 
-* Bjorn Helgaas <helgaas@kernel.org> wrote:
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+Reviewed-by: Thomas Gleixner <tglx@linutronix.de>
+---
+ arch/x86/include/asm/dma-mapping.h | 1 -
+ 1 file changed, 1 deletion(-)
 
-> Sorry for the long cc list.  These are pretty trivial; they just remove
-> some unnecessary declarations across several arches.
-> 
-> ---
-> 
-> Bjorn Helgaas (4):
->       PCI: Remove redundant pcibios_set_master() declarations
->       PCI: Remove redundant pci_dev, pci_bus, resource declarations
->       PCI: Remove unused declarations
->       alpha/PCI: Make pdev_save_srm_config() static
-> 
-> 
->  arch/alpha/include/asm/pci.h            |    5 -----
->  arch/alpha/kernel/pci.c                 |   11 ++++++++++-
->  arch/alpha/kernel/pci_impl.h            |    8 --------
->  arch/cris/include/asm/pci.h             |    9 ---------
->  arch/frv/include/asm/pci.h              |    4 ----
->  arch/ia64/include/asm/pci.h             |    4 ----
->  arch/mips/include/asm/pci.h             |    4 ----
->  arch/mn10300/include/asm/pci.h          |    4 ----
->  arch/mn10300/unit-asb2305/pci-asb2305.h |    3 ---
->  arch/parisc/include/asm/pci.h           |    8 --------
->  arch/powerpc/include/asm/pci.h          |    2 --
->  arch/sh/include/asm/pci.h               |    4 ----
->  arch/sparc/include/asm/pci_32.h         |    2 --
->  arch/x86/include/asm/pci.h              |    2 --
->  arch/xtensa/include/asm/pci.h           |    2 --
->  15 files changed, 10 insertions(+), 62 deletions(-)
+diff --git a/arch/x86/include/asm/dma-mapping.h b/arch/x86/include/asm/dma-mapping.h
+index 1387dafdba2d..c6d3367be916 100644
+--- a/arch/x86/include/asm/dma-mapping.h
++++ b/arch/x86/include/asm/dma-mapping.h
+@@ -71,7 +71,6 @@ static inline void
+ dma_cache_sync(struct device *dev, void *vaddr, size_t size,
+ 	enum dma_data_direction dir)
+ {
+-	flush_write_buffers();
+ }
+ 
+ static inline unsigned long dma_alloc_coherent_mask(struct device *dev,
+-- 
+2.14.1
 
-Nice cleanups! For the whole series:
-
-  Reviewed-by: Ingo Molnar <mingo@kernel.org>
-
-Thanks,
-
-	Ingo
