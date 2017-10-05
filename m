@@ -1,53 +1,39 @@
-From: Masahiro Yamada <yamada.masahiro@socionext.com>
-Date: Wed, 04 Oct 2017 09:33:55 +0000
-Subject: [PATCH] sh: remove pointless select of KBUILD_DEFCONFIG
-Message-Id: <1507109635-28977-1-git-send-email-yamada.masahiro@socionext.com>
+From: Bjorn Helgaas <helgaas@kernel.org>
+Date: Thu, 05 Oct 2017 20:38:23 +0000
+Subject: [PATCH 0/4] PCI: Cleanup unused stuff
+Message-Id: <20171005201939.18300.25690.stgit@bhelgaas-glaptop.roam.corp.google.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-kbuild@vger.kernel.org, Masahiro Yamada <yamada.masahiro@socionext.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-kernel@vger.kernel.org
+To: linux-pci@vger.kernel.org
+Cc: linux-mips@linux-mips.org, Rich Felker <dalias@libc.org>, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, Benjamin Herrenschmidt <benh@kernel.crashing.org>, David Howells <dhowells@redhat.com>, Max Filippov <jcmvbkbc@gmail.com>, Paul Mackerras <paulus@samba.org>, "H. Peter Anvin" <hpa@zytor.com>, sparclinux@vger.kernel.org, Jesper Nilsson <jesper.nilsson@axis.com>, linux-am33-list@redhat.com, Yoshinori Sato <ysato@users.sourceforge.jp>, Michael Ellerman <mpe@ellerman.id.au>, Helge Deller <deller@gmx.de>, x86@kernel.org, "James E.J. Bottomley" <jejb@parisc-linux.org>, Ingo Molnar <mingo@redhat.com>, Matt Turner <mattst88@gmail.com>, Fenghua Yu <fenghua.yu@intel.com>, linux-xtensa@linux-xtensa.org, Mikael Starvik <starvik@axis.com>, Ivan Kokshaysky <ink@jurassic.park.msu.ru>, Thomas Gleixner <tglx@linutronix.de>, Richard Henderson <rth@twiddle.net>, Chris Zankel <chris@zankel.net>, Tony Luck <tony.luck@intel.com>, linux-cris-kernel@axis.com, linux-parisc@vger.kernel.org, Ralf Baechle <ralf@linux-mips.org>, linux-alpha@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, "David S. Miller" <davem@davemloft.net>
 
-KBUILD_DEFCONFIG := shx3_defconfig
+Sorry for the long cc list.  These are pretty trivial; they just remove
+some unnecessary declarations across several arches.
 
-is never used in a sensible way.  KBUILD_DEFCONFIG specifies the
-defconfig file used by "make defconfig", but CONFIG_SUPERH32 is
-never set when building config targets.
-
-Signed-off-by: Masahiro Yamada <yamada.masahiro@socionext.com>
 ---
 
- arch/sh/Makefile | 3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
+Bjorn Helgaas (4):
+      PCI: Remove redundant pcibios_set_master() declarations
+      PCI: Remove redundant pci_dev, pci_bus, resource declarations
+      PCI: Remove unused declarations
+      alpha/PCI: Make pdev_save_srm_config() static
 
-diff --git a/arch/sh/Makefile b/arch/sh/Makefile
-index 280bbff..c937ec0 100644
---- a/arch/sh/Makefile
-+++ b/arch/sh/Makefile
-@@ -96,6 +96,7 @@ defaultimage-$(CONFIG_SH_7619_SOLUTION_ENGINE)	:= vmlinux
- # Set some sensible Kbuild defaults
- boot := arch/sh/boot
- KBUILD_IMAGE		:= $(boot)/$(defaultimage-y)
-+KBUILD_DEFCONFIG	:= cayman_defconfig
- 
- #
- # Choosing incompatible machines durings configuration will result in
-@@ -105,14 +106,12 @@ ifdef CONFIG_SUPERH32
- UTS_MACHINE		:= sh
- BITS			:= 32
- LDFLAGS_vmlinux		+= -e _stext
--KBUILD_DEFCONFIG	:= shx3_defconfig
- else
- UTS_MACHINE		:= sh64
- BITS			:= 64
- LDFLAGS_vmlinux		+= --defsym phys_stext=_stext-$(CONFIG_PAGE_OFFSET) \
- 			   --defsym phys_stext_shmedia=phys_stext+1 \
- 			   -e phys_stext_shmedia
--KBUILD_DEFCONFIG	:= cayman_defconfig
- endif
- 
- ifdef CONFIG_CPU_LITTLE_ENDIAN
--- 
-2.7.4
 
+ arch/alpha/include/asm/pci.h            |    5 -----
+ arch/alpha/kernel/pci.c                 |   11 ++++++++++-
+ arch/alpha/kernel/pci_impl.h            |    8 --------
+ arch/cris/include/asm/pci.h             |    9 ---------
+ arch/frv/include/asm/pci.h              |    4 ----
+ arch/ia64/include/asm/pci.h             |    4 ----
+ arch/mips/include/asm/pci.h             |    4 ----
+ arch/mn10300/include/asm/pci.h          |    4 ----
+ arch/mn10300/unit-asb2305/pci-asb2305.h |    3 ---
+ arch/parisc/include/asm/pci.h           |    8 --------
+ arch/powerpc/include/asm/pci.h          |    2 --
+ arch/sh/include/asm/pci.h               |    4 ----
+ arch/sparc/include/asm/pci_32.h         |    2 --
+ arch/x86/include/asm/pci.h              |    2 --
+ arch/xtensa/include/asm/pci.h           |    2 --
+ 15 files changed, 10 insertions(+), 62 deletions(-)
