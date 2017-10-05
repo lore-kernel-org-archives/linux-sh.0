@@ -1,7 +1,7 @@
-From: Ingo Molnar <mingo@kernel.org>
-Date: Thu, 05 Oct 2017 07:58:19 +0000
+From: Ralf Baechle <ralf@linux-mips.org>
+Date: Thu, 05 Oct 2017 10:02:53 +0000
 Subject: Re: [PATCH] mm, arch: remove empty_bad_page*
-Message-Id: <20171005075819.nehorwiced7emgfi@gmail.com>
+Message-Id: <20171005100253.GD31821@linux-mips.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20171004150045.30755-1-mhocko@kernel.org>
 In-Reply-To: <20171004150045.30755-1-mhocko@kernel.org>
@@ -9,10 +9,9 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Michal Hocko <mhocko@kernel.org>
-Cc: Andrew Morton <akpm@linux-foundation.org>, LKML <linux-kernel@vger.kernel.org>, Michal Hocko <mhocko@suse.com>, David Howells <dhowells@redhat.com>, Jeff Dike <jdike@addtoit.com>, linux-mips@linux-mips.org, linux-sh@vger.kernel.org, Ralf Baechle <ralf@linux-mips.org>, Richard Weinberger <richard@nod.at>, Rich Felker <dalias@libc.org>, uclinux-h8-devel@lists.sourceforge.jp, Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Andrew Morton <akpm@linux-foundation.org>, LKML <linux-kernel@vger.kernel.org>, Michal Hocko <mhocko@suse.com>, David Howells <dhowells@redhat.com>, Ingo Molnar <mingo@kernel.org>, Jeff Dike <jdike@addtoit.com>, linux-mips@linux-mips.org, linux-sh@vger.kernel.org, Richard Weinberger <richard@nod.at>, Rich Felker <dalias@libc.org>, uclinux-h8-devel@lists.sourceforge.jp, Yoshinori Sato <ysato@users.sourceforge.jp>
 
-
-* Michal Hocko <mhocko@kernel.org> wrote:
+On Wed, Oct 04, 2017 at 05:00:45PM +0200, Michal Hocko wrote:
 
 > From: Michal Hocko <mhocko@suse.com>
 > 
@@ -37,10 +36,14 @@ Cc: Andrew Morton <akpm@linux-foundation.org>, LKML <linux-kernel@vger.kernel.or
 > Cc: <linux-sh@vger.kernel.org>
 > Signed-off-by: Michal Hocko <mhocko@suse.com>
 
-For the x86 bits:
+On MIPS the empty_bad_page_table definition was deleted in 2549fa57708d
+("Small cleanups including deletion of two variables 4k each ...") in the
+MIPS git tree on 2003-07-29, so
 
-Acked-by: Ingo Molnar <mingo@kernel.org>
+Acked-by: Ralf Baechle <ralf@linus-mips.org>
+
+for getting rid of the rest a mere 14 years later.
 
 Thanks,
 
-	Ingo
+  Ralf
