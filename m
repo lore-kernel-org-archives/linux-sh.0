@@ -1,106 +1,77 @@
-From: Kees Cook <keescook@chromium.org>
-Date: Mon, 02 Oct 2017 19:20:07 +0000
-Subject: [PATCH 3/3] Makefile: Introduce CONFIG_CC_STACKPROTECTOR_AUTO
-Message-Id: <1506972007-80614-4-git-send-email-keescook@chromium.org>
+From: Bjorn Helgaas <helgaas@kernel.org>
+Date: Thu, 05 Oct 2017 20:39:06 +0000
+Subject: [PATCH 4/4] alpha/PCI: Make pdev_save_srm_config() static
+Message-Id: <20171005203906.18300.63272.stgit@bhelgaas-glaptop.roam.corp.google.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1506972007-80614-1-git-send-email-keescook@chromium.org>
-In-Reply-To: <1506972007-80614-1-git-send-email-keescook@chromium.org>
+References: <20171005201939.18300.25690.stgit@bhelgaas-glaptop.roam.corp.google.com>
+In-Reply-To: <20171005201939.18300.25690.stgit@bhelgaas-glaptop.roam.corp.google.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: Kees Cook <keescook@chromium.org>, Masahiro Yamada <yamada.masahiro@socionext.com>, Michal Marek <mmarek@suse.com>, Ingo Molnar <mingo@kernel.org>, Laura Abbott <labbott@redhat.com>, Nicholas Piggin <npiggin@gmail.com>, linux-kbuild@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, "David S. Miller" <davem@davemloft.net>, Al Viro <viro@zeniv.linux.org.uk>, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, kernel-hardening@lists.openwall.com
+To: linux-pci@vger.kernel.org
+Cc: linux-mips@linux-mips.org, Rich Felker <dalias@libc.org>, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, Benjamin Herrenschmidt <benh@kernel.crashing.org>, David Howells <dhowells@redhat.com>, Max Filippov <jcmvbkbc@gmail.com>, Paul Mackerras <paulus@samba.org>, "H. Peter Anvin" <hpa@zytor.com>, sparclinux@vger.kernel.org, Jesper Nilsson <jesper.nilsson@axis.com>, linux-am33-list@redhat.com, Yoshinori Sato <ysato@users.sourceforge.jp>, Michael Ellerman <mpe@ellerman.id.au>, Helge Deller <deller@gmx.de>, x86@kernel.org, "James E.J. Bottomley" <jejb@parisc-linux.org>, Ingo Molnar <mingo@redhat.com>, Matt Turner <mattst88@gmail.com>, Fenghua Yu <fenghua.yu@intel.com>, linux-xtensa@linux-xtensa.org, Mikael Starvik <starvik@axis.com>, Ivan Kokshaysky <ink@jurassic.park.msu.ru>, Thomas Gleixner <tglx@linutronix.de>, Richard Henderson <rth@twiddle.net>, Chris Zankel <chris@zankel.net>, Tony Luck <tony.luck@intel.com>, linux-cris-kernel@axis.com, linux-parisc@vger.kernel.org, Ralf Baechle <ralf@linux-mips.org>, linux-alpha@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, "David S. Miller" <davem@davemloft.net>
 
-Nearly all modern compilers support a stack-protector option, and nearly
-all modern distributions enable the kernel stack-protector, so enabling
-this by default in kernel builds would make sense. However, Kconfig does
-not have knowledge of available compiler features, so it isn't safe to
-force on, as this would unconditionally break builds for the compilers
-or architectures that don't have support. Instead, this introduces a new
-option, CONFIG_CC_STACKPROTECTOR_AUTO, which attempts to discover the best
-possible stack-protector available, and will allow builds to proceed even
-if the compiler doesn't support any stack-protector.
+From: Bjorn Helgaas <bhelgaas@google.com>
 
-This option is made the default so that kernels built with modern
-compilers will be protected-by-default against stack buffer overflows,
-avoiding things like the recent BlueBorne attack. Selection of a specific
-stack-protector option remains available, including disabling it.
+pdev_save_srm_config() and struct pdev_srm_saved_conf are only used in
+arch/alpha/kernel/pci.c, so make them static there.
 
-Cc: Masahiro Yamada <yamada.masahiro@socionext.com>
-Cc: Michal Marek <mmarek@suse.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>
-Cc: Ingo Molnar <mingo@kernel.org>
-Cc: Laura Abbott <labbott@redhat.com>
-Cc: Nicholas Piggin <npiggin@gmail.com>
-Cc: linux-kbuild@vger.kernel.org
-Signed-off-by: Kees Cook <keescook@chromium.org>
+Signed-off-by: Bjorn Helgaas <bhelgaas@google.com>
 ---
- Makefile     | 11 +++++++++++
- arch/Kconfig |  8 +++++++-
- 2 files changed, 18 insertions(+), 1 deletion(-)
+ arch/alpha/kernel/pci.c      |   11 ++++++++++-
+ arch/alpha/kernel/pci_impl.h |    8 --------
+ 2 files changed, 10 insertions(+), 9 deletions(-)
 
-diff --git a/Makefile b/Makefile
-index e122a9cf0399..9bd334b35003 100644
---- a/Makefile
-+++ b/Makefile
-@@ -676,6 +676,10 @@ endif
- # This selects the stack protector compiler flag. Testing it is delayed
- # until after .config has been reprocessed, in the prepare-compiler-check
- # target.
-+ifdef CONFIG_CC_STACKPROTECTOR_AUTO
-+  stackp-flag := $(call cc-option,-fstack-protector-strong,$(call cc-option,-fstack-protector))
-+  stackp-name := AUTO
-+else
- ifdef CONFIG_CC_STACKPROTECTOR_REGULAR
-   stackp-flag := -fstack-protector
-   stackp-name := REGULAR
-@@ -688,6 +692,7 @@ else
-   stackp-flag := $(call cc-option, -fno-stack-protector)
- endif
- endif
-+endif
- ifdef stackp-name
-   # If the stack protector has been selected, inform the rest of the build.
-   KBUILD_CFLAGS += -DCONFIG_CC_STACKPROTECTOR
-@@ -1084,6 +1089,12 @@ PHONY += prepare-compiler-check
- prepare-compiler-check: FORCE
- # Make sure compiler supports requested stack protector flag.
- ifdef stackp-name
-+  # Warn about CONFIG_CC_STACKPROTECTOR_AUTO having found no option.
-+  ifeq ($(stackp-flag),)
-+	@echo CONFIG_CC_STACKPROTECTOR_$(stackp-name): \
-+		  Compiler does not support any known stack-protector >&2
-+  endif
-+  # Fail if specifically requested stack protector is missing.
-   ifeq ($(call cc-option, $(stackp-flag)),)
- 	@echo Cannot use CONFIG_CC_STACKPROTECTOR_$(stackp-name): \
- 		  $(stackp-flag) not supported by compiler >&2 && exit 1
-diff --git a/arch/Kconfig b/arch/Kconfig
-index 7007c1bfa79c..cd2676ff5d5d 100644
---- a/arch/Kconfig
-+++ b/arch/Kconfig
-@@ -526,7 +526,7 @@ config HAVE_CC_STACKPROTECTOR
- choice
- 	prompt "Stack Protector buffer overflow detection"
- 	depends on HAVE_CC_STACKPROTECTOR
--	default CC_STACKPROTECTOR_NONE
-+	default CC_STACKPROTECTOR_AUTO
- 	help
- 	  This option turns on the "stack-protector" GCC feature. This
- 	  feature puts, at the beginning of functions, a canary value on
-@@ -573,6 +573,12 @@ config CC_STACKPROTECTOR_STRONG
- 	  about 20% of all kernel functions, which increases the kernel code
- 	  size by about 2%.
+diff --git a/arch/alpha/kernel/pci.c b/arch/alpha/kernel/pci.c
+index 564114eb85e1..16b67621a0d5 100644
+--- a/arch/alpha/kernel/pci.c
++++ b/arch/alpha/kernel/pci.c
+@@ -196,9 +196,16 @@ pcibios_init(void)
+ subsys_initcall(pcibios_init);
  
-+config CC_STACKPROTECTOR_AUTO
-+	bool "Automatic"
-+	help
-+	  If the compiler supports it, the best available stack-protector
-+	  option will be chosen.
+ #ifdef ALPHA_RESTORE_SRM_SETUP
++/* Store PCI device configuration left by SRM here. */
++struct pdev_srm_saved_conf
++{
++	struct pdev_srm_saved_conf *next;
++	struct pci_dev *dev;
++};
 +
- endchoice
+ static struct pdev_srm_saved_conf *srm_saved_configs;
  
- config THIN_ARCHIVES
--- 
-2.7.4
+-void pdev_save_srm_config(struct pci_dev *dev)
++static void pdev_save_srm_config(struct pci_dev *dev)
+ {
+ 	struct pdev_srm_saved_conf *tmp;
+ 	static int printed = 0;
+@@ -238,6 +245,8 @@ pci_restore_srm_config(void)
+ 		pci_restore_state(tmp->dev);
+ 	}
+ }
++#else
++#define pdev_save_srm_config(dev)	do {} while (0)
+ #endif
+ 
+ void pcibios_fixup_bus(struct pci_bus *bus)
+diff --git a/arch/alpha/kernel/pci_impl.h b/arch/alpha/kernel/pci_impl.h
+index 2b0ac429f5eb..65adea0d3d78 100644
+--- a/arch/alpha/kernel/pci_impl.h
++++ b/arch/alpha/kernel/pci_impl.h
+@@ -156,16 +156,8 @@ struct pci_iommu_arena
+ #endif
+ 
+ #ifdef ALPHA_RESTORE_SRM_SETUP
+-/* Store PCI device configuration left by SRM here. */
+-struct pdev_srm_saved_conf
+-{
+-	struct pdev_srm_saved_conf *next;
+-	struct pci_dev *dev;
+-};
+-
+ extern void pci_restore_srm_config(void);
+ #else
+-#define pdev_save_srm_config(dev)	do {} while (0)
+ #define pci_restore_srm_config()	do {} while (0)
+ #endif
+ 
 
