@@ -1,64 +1,87 @@
-From: Kees Cook <keescook@chromium.org>
-Date: Tue, 03 Oct 2017 15:51:12 +0000
-Subject: Re: [kernel-hardening] [PATCH 0/3] Makefile: Introduce CONFIG_CC_STACKPROTECTOR_AUTO
-Message-Id: <CAGXu5jKuGuP4FJVEbWbMfwkoqFvS22d6HpFhqbxcz8vys0yByg@mail.gmail.com>
+From: Bjorn Helgaas <helgaas@kernel.org>
+Date: Thu, 05 Oct 2017 20:38:56 +0000
+Subject: [PATCH 3/4] PCI: Remove unused declarations
+Message-Id: <20171005203856.18300.62381.stgit@bhelgaas-glaptop.roam.corp.google.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1506972007-80614-1-git-send-email-keescook@chromium.org> <20171003100433.GA4931@leverpostej>
-In-Reply-To: <20171003100433.GA4931@leverpostej>
+References: <20171005201939.18300.25690.stgit@bhelgaas-glaptop.roam.corp.google.com>
+In-Reply-To: <20171005201939.18300.25690.stgit@bhelgaas-glaptop.roam.corp.google.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Rutland <mark.rutland@arm.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>, Masahiro Yamada <yamada.masahiro@socionext.com>, Michal Marek <mmarek@suse.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Ingo Molnar <mingo@kernel.org>, "David S. Miller" <davem@davemloft.net>, Nicholas Piggin <npiggin@gmail.com>, Al Viro <viro@zeniv.linux.org.uk>, Laura Abbott <labbott@redhat.com>, linux-kbuild <linux-kbuild@vger.kernel.org>, LKML <linux-kernel@vger.kernel.org>, linux-sh <linux-sh@vger.kernel.org>, "kernel-hardening@lists.openwall.com" <kernel-hardening@lists.openwall.com>
+To: linux-pci@vger.kernel.org
+Cc: linux-mips@linux-mips.org, Rich Felker <dalias@libc.org>, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, Benjamin Herrenschmidt <benh@kernel.crashing.org>, David Howells <dhowells@redhat.com>, Max Filippov <jcmvbkbc@gmail.com>, Paul Mackerras <paulus@samba.org>, "H. Peter Anvin" <hpa@zytor.com>, sparclinux@vger.kernel.org, Jesper Nilsson <jesper.nilsson@axis.com>, linux-am33-list@redhat.com, Yoshinori Sato <ysato@users.sourceforge.jp>, Michael Ellerman <mpe@ellerman.id.au>, Helge Deller <deller@gmx.de>, x86@kernel.org, "James E.J. Bottomley" <jejb@parisc-linux.org>, Ingo Molnar <mingo@redhat.com>, Matt Turner <mattst88@gmail.com>, Fenghua Yu <fenghua.yu@intel.com>, linux-xtensa@linux-xtensa.org, Mikael Starvik <starvik@axis.com>, Ivan Kokshaysky <ink@jurassic.park.msu.ru>, Thomas Gleixner <tglx@linutronix.de>, Richard Henderson <rth@twiddle.net>, Chris Zankel <chris@zankel.net>, Tony Luck <tony.luck@intel.com>, linux-cris-kernel@axis.com, linux-parisc@vger.kernel.org, Ralf Baechle <ralf@linux-mips.org>, linux-alpha@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, "David S. Miller" <davem@davemloft.net>
 
-On Tue, Oct 3, 2017 at 3:04 AM, Mark Rutland <mark.rutland@arm.com> wrote:
-> Hi Kees,
->
-> On Mon, Oct 02, 2017 at 12:20:04PM -0700, Kees Cook wrote:
->> As described in the final patch:
->>
->> Nearly all modern compilers support a stack-protector option, and nearly
->> all modern distributions enable the kernel stack-protector, so enabling
->> this by default in kernel builds would make sense. However, Kconfig does
->> not have knowledge of available compiler features, so it isn't safe to
->> force on, as this would unconditionally break builds for the compilers
->> or architectures that don't have support. Instead, this introduces a new
->> option, CONFIG_CC_STACKPROTECTOR_AUTO, which attempts to discover the best
->> possible stack-protector available, and will allow builds to proceed even
->> if the compiler doesn't support any stack-protector.
->>
->> This option is made the default so that kernels built with modern
->> compilers will be protected-by-default against stack buffer overflows,
->> avoiding things like the recent BlueBorne attack. Selection of a specific
->> stack-protector option remains available, including disabling it.
->
-> I gave this a spin atop of v4.14-rc3 with a few arm64 toolchains I had
-> installed:
->
-> * Linaro 17.08 GCC 7.1    // strong
-> * Linaro 17.05 GCC 6.1    // strong
-> * Linaro 15.08 GCC 5.1    // strong
-> * Linaro 14.09 GCC 4.9    // strong
-> * Linaro 13.06 GCC 4.8    // none
-> * Linaro 13.01 GCC 4.7    // none
->
-> AFAICT, the detection is correct, and arm64 toolchains only gained stack
-> protector support in GCC 4.9. I manually tested GCC 4.8 and 4.7, and
-> got:
->
->   warning: -fstack-protector not supported for this target [enabled by default]
->
-> ... so that looks good to me.
->
-> One thing I noticed was taht even when the build system detects no
-> support for stack-protector, it still passes -DCONFIG_CC_STACKPROTECTOR
-> to the toolchain. Is that expected?
+From: Bjorn Helgaas <bhelgaas@google.com>
 
-Oops, that's a mistake. I had a think-o in the Makefile logic. I will
-send a follow-up to fix it.
+Remove these unused declarations:
 
--Kees
+  pcibios_config_init()              # never defined anywhere
+  pcibios_scan_root()                # only defined by x86
+  pcibios_get_irq_routing_table()    # only defined by x86
+  pcibios_set_irq_routing()          # only defined by x86
 
--- 
-Kees Cook
-Pixel Security
+Signed-off-by: Bjorn Helgaas <bhelgaas@google.com>
+---
+ arch/cris/include/asm/pci.h             |    6 ------
+ arch/ia64/include/asm/pci.h             |    2 --
+ arch/mn10300/unit-asb2305/pci-asb2305.h |    3 ---
+ arch/x86/include/asm/pci.h              |    1 -
+ 4 files changed, 12 deletions(-)
+
+diff --git a/arch/cris/include/asm/pci.h b/arch/cris/include/asm/pci.h
+index 8ea640560a46..141337bf16bc 100644
+--- a/arch/cris/include/asm/pci.h
++++ b/arch/cris/include/asm/pci.h
+@@ -16,12 +16,6 @@
+ 
+ #define PCIBIOS_MIN_CARDBUS_IO	0x4000
+ 
+-void pcibios_config_init(void);
+-struct pci_bus * pcibios_scan_root(int bus);
+-
+-struct irq_routing_table *pcibios_get_irq_routing_table(void);
+-int pcibios_set_irq_routing(struct pci_dev *dev, int pin, int irq);
+-
+ /* Dynamic DMA mapping stuff.
+  * i386 has everything mapped statically.
+  */
+diff --git a/arch/ia64/include/asm/pci.h b/arch/ia64/include/asm/pci.h
+index 8c4b37f6be3d..915531ede6a5 100644
+--- a/arch/ia64/include/asm/pci.h
++++ b/arch/ia64/include/asm/pci.h
+@@ -29,8 +29,6 @@ struct pci_vector_struct {
+ #define PCIBIOS_MIN_IO		0x1000
+ #define PCIBIOS_MIN_MEM		0x10000000
+ 
+-void pcibios_config_init(void);
+-
+ /*
+  * PCI_DMA_BUS_IS_PHYS should be set to 1 if there is _necessarily_ a direct
+  * correspondence between device bus addresses and CPU physical addresses.
+diff --git a/arch/mn10300/unit-asb2305/pci-asb2305.h b/arch/mn10300/unit-asb2305/pci-asb2305.h
+index 96c484b12226..0667f613b023 100644
+--- a/arch/mn10300/unit-asb2305/pci-asb2305.h
++++ b/arch/mn10300/unit-asb2305/pci-asb2305.h
+@@ -30,9 +30,6 @@ extern void pcibios_resource_survey(void);
+ 
+ extern struct pci_ops *pci_root_ops;
+ 
+-extern struct irq_routing_table *pcibios_get_irq_routing_table(void);
+-extern int pcibios_set_irq_routing(struct pci_dev *dev, int pin, int irq);
+-
+ /* pci-irq.c */
+ 
+ struct irq_info {
+diff --git a/arch/x86/include/asm/pci.h b/arch/x86/include/asm/pci.h
+index 645019085bb8..53873a875c01 100644
+--- a/arch/x86/include/asm/pci.h
++++ b/arch/x86/include/asm/pci.h
+@@ -88,7 +88,6 @@ extern unsigned long pci_mem_start;
+ #define PCIBIOS_MIN_CARDBUS_IO	0x4000
+ 
+ extern int pcibios_enabled;
+-void pcibios_config_init(void);
+ void pcibios_scan_root(int bus);
+ 
+ struct irq_routing_table *pcibios_get_irq_routing_table(void);
+
