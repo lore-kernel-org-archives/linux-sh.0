@@ -1,37 +1,41 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Tue, 03 Oct 2017 10:43:03 +0000
-Subject: [PATCH 03/11] frv: make dma_cache_sync a no-op
-Message-Id: <20171003104311.10058-4-hch@lst.de>
+From: Masahiro Yamada <yamada.masahiro@socionext.com>
+Date: Sun, 08 Oct 2017 16:10:10 +0000
+Subject: [PATCH 09/12] sh: intc: replace <linux/radix-tree.h> with <linux/radix-tree-root.h>
+Message-Id: <1507479013-5207-10-git-send-email-yamada.masahiro@socionext.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20171003104311.10058-1-hch@lst.de>
-In-Reply-To: <20171003104311.10058-1-hch-jcswGhMUV9g@public.gmane.org>
+References: <1507479013-5207-1-git-send-email-yamada.masahiro@socionext.com>
+In-Reply-To: <1507479013-5207-1-git-send-email-yamada.masahiro@socionext.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: Chris Zankel <chris-YvXeqwSYzG2sTnJN9+BGXg@public.gmane.org>, Michal Simek <monstr-pSz03upnqPeHXe+LvDLADg@public.gmane.org>, linux-ia64-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mips-6z/3iImG2C8G8FEW9MqTrA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linuxppc-dev-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org, linux-xtensa-PjhNF2WwrV/0Sa2dR60CXw@public.gmane.org, x86-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Max Filippov <jcmvbkbc-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Guan Xuetao <gxt-TG0Ac1+ktVePQbnJrJN+5g@public.gmane.org>
+To: linux-kernel@vger.kernel.org
+Cc: Thomas Gleixner <tglx@linutronix.de>, Andrew Morton <akpm@linux-foundation.org>, Ian Abbott <abbotti@mev.co.uk>, Ingo Molnar <mingo@kernel.org>, Linus Torvalds <torvalds@linux-foundation.org>, Masahiro Yamada <yamada.masahiro@socionext.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
 
-frv does not implement DMA_ATTR_NON_CONSISTENT allocations, so it doesn't
-make any sense to do any work in dma_cache_sync given that it must be a
-no-op when dma_alloc_attrs returns coherent memory.
+This header requires the definition of struct radix_tree_root, but
+does not need to know anything about other radix tree stuff.
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
+Include <linux/radix-tree-root.h> instead of <linux/radix-tree.h> to
+reduce the header dependency.
+
+Signed-off-by: Masahiro Yamada <yamada.masahiro@socionext.com>
 ---
- arch/frv/include/asm/dma-mapping.h | 1 -
- 1 file changed, 1 deletion(-)
 
-diff --git a/arch/frv/include/asm/dma-mapping.h b/arch/frv/include/asm/dma-mapping.h
-index 354900917585..da0e5c9744c4 100644
---- a/arch/frv/include/asm/dma-mapping.h
-+++ b/arch/frv/include/asm/dma-mapping.h
-@@ -18,7 +18,6 @@ static inline
- void dma_cache_sync(struct device *dev, void *vaddr, size_t size,
- 		    enum dma_data_direction direction)
- {
--	flush_write_buffers();
- }
+ drivers/sh/intc/internals.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/sh/intc/internals.h b/drivers/sh/intc/internals.h
+index 6ce7f0d..4021c1c 100644
+--- a/drivers/sh/intc/internals.h
++++ b/drivers/sh/intc/internals.h
+@@ -4,7 +4,7 @@
+ #include <linux/list.h>
+ #include <linux/kernel.h>
+ #include <linux/types.h>
+-#include <linux/radix-tree.h>
++#include <linux/radix-tree-root.h>
+ #include <linux/device.h>
  
- #endif  /* _ASM_DMA_MAPPING_H */
+ #define _INTC_MK(fn, mode, addr_e, addr_d, width, shift) \
 -- 
-2.14.1
+2.7.4
 
