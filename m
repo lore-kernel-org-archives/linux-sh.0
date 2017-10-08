@@ -1,114 +1,99 @@
-From: Masahiro Yamada <yamada.masahiro@socionext.com>
-Date: Sun, 08 Oct 2017 16:10:01 +0000
-Subject: [PATCH 00/12] radix-tree: split out struct radix_tree_root out to <linux/radix-tree-root.h>
-Message-Id: <1507479013-5207-1-git-send-email-yamada.masahiro@socionext.com>
+From: Leon Romanovsky <leonro@mellanox.com>
+Date: Sun, 08 Oct 2017 18:52:33 +0000
+Subject: Re: [PATCH 00/12] radix-tree: split out struct radix_tree_root out to <linux/radix-tree-root.h>
+Message-Id: <20171008185233.GF25829@mtr-leonro.local>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="O9uFcEIpmYvy18ul"
 List-Id: <linux-sh.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Thomas Gleixner <tglx@linutronix.de>, Andrew Morton <akpm@linux-foundation.org>, Ian Abbott <abbotti@mev.co.uk>, Ingo Molnar <mingo@kernel.org>, Linus Torvalds <torvalds@linux-foundation.org>, Masahiro Yamada <yamada.masahiro@socionext.com>, linux-cachefs@redhat.com, linux-sh@vger.kernel.org, Rodrigo Vivi <rodrigo.vivi@intel.com>, dri-devel@lists.freedesktop.org, David Airlie <airlied@linux.ie>, linux-rdma@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Tariq Toukan <tariqt@mellanox.com>, Rich Felker <dalias@libc.org>, Leon Romanovsky <leonro@mellanox.com>, Jani Nikula <jani.nikula@linux.intel.com>, "J. Bruce Fields" <bfields@fieldses.org>, David Howells <dhowells@redhat.com>, intel-gfx@lists.freedesktop.org, Yishai Hadas <yishaih@mella>
+References: <1507479013-5207-1-git-send-email-yamada.masahiro@socionext.com>
+In-Reply-To: <1507479013-5207-1-git-send-email-yamada.masahiro-uWyLwvC0a2jby3iVrkZq2A@public.gmane.org>
+To: Masahiro Yamada <yamada.masahiro-uWyLwvC0a2jby3iVrkZq2A@public.gmane.org>
+Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Ian Abbott <abbotti-GUHe90Wt2aFaa/9Udqfwiw@public.gmane.org>, Ingo Molnar <mingo-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, linux-cachefs-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Rodrigo Vivi <rodrigo.vivi-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, dri-devel-PD4FTy7X32lNgt0PjOBp9y5qC8QIuHrW@public.gmane.org, David Airlie <airlied-cv59FeDIM0c@public.gmane.org>, linux-rdma-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Yoshinori Sato <ysato-Rn4VEauK+AKRv+LV9MX5uooqe+aC9MnS@public.gmane.org>, Tariq Toukan <tariqt-VPRAkNaXOzVWk0Htik3J/w@public.gmane.org>, Rich Felker <dalias-8zAoT0mYgF4@public.gmane.org>, Jani Nikula <jani.nikula-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>, "J. Bruce Fields" <bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, intel-gfx-PD4FTy7X32lNgt0PjOBp9y5qC8QIuHrW@public.gmane.org, Yishai Hadas <yishaih-VPRAkNaXOzVWk0Htik3J/w@public.gmane.org>, Joonas Lahtinen <joonas.lahtinen-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>
 
 
-The motivation of this series is to cut down unnecessary header
-dependency in terms of radix tree.
+--O9uFcEIpmYvy18ul
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-Sub-systems or drivers that use radix-tree for data management
-typically embed struct radix_tree_root in their data structures,
-like this:
+On Mon, Oct 09, 2017 at 01:10:01AM +0900, Masahiro Yamada wrote:
 
-struct foo {
-       ...
+<...>
+>
+> By splitting out the radix_tree_root definition,
+> we can reduce the header file dependency.
+>
+> Reducing the header dependency will help for speeding the kernel
+> build, suppressing unnecessary recompile of objects during
+> git-bisect'ing, etc.
 
-       struct radix_tree_root   foo_tree;
-       ...
-};
+If we judge by the diffstat of this series, there won't be any
+visible change in anything mentioned above.
 
-So, <linux/foo.h> needs to include <linux/radix-tree.h>,
-therefore, users of <linux/foo.h> include a lot of bloat
-from <linux/radix-tree.h>.
+<...>
 
-If you see the definition of radix_tree_root,
+>
+> Masahiro Yamada (12):
+>   radix-tree: replace <linux/spinlock.h> with <linux/spinlock_types.h>
+>   radix-tree: split struct radix_tree_root to <linux/radix-tree-root.h>
+>   irqdomain: replace <linux/radix-tree.h> with <linux/radix-tree-root.h>
+>   writeback: replace <linux/radix-tree.h> with <linux/radix-tree-root.h>
+>   iocontext.h: replace <linux/radix-tree.h> with
+>     <linux/radix-tree-root.h>
+>   fs: replace <linux/radix-tree.h> with <linux/radix-tree-root.h>
+>   blkcg: replace <linux/radix-tree.h> with <linux/radix-tree-root.h>
+>   fscache: include <linux-radix-tree.h>
+>   sh: intc: replace <linux/radix-tree.h> with <linux/radix-tree-root.h>
+>   net/mlx4: replace <linux/radix-tree.h> with <linux/radix-tree-root.h>
+>   net/mlx5: replace <linux/radix-tree.h> with <linux/radix-tree-root.h>
+>   drm/i915: replace <linux/radix-tree.h> with <linux/radix-tree-root.h>
+>
+>  drivers/gpu/drm/i915/i915_gem.c            |  1 +
+>  drivers/gpu/drm/i915/i915_gem_context.c    |  1 +
+>  drivers/gpu/drm/i915/i915_gem_context.h    |  2 +-
+>  drivers/gpu/drm/i915/i915_gem_execbuffer.c |  1 +
+>  drivers/gpu/drm/i915/i915_gem_object.h     |  1 +
+>  drivers/net/ethernet/mellanox/mlx4/cq.c    |  1 +
+>  drivers/net/ethernet/mellanox/mlx4/mlx4.h  |  2 +-
+>  drivers/net/ethernet/mellanox/mlx4/qp.c    |  1 +
+>  drivers/net/ethernet/mellanox/mlx4/srq.c   |  1 +
+>  drivers/sh/intc/internals.h                |  2 +-
+>  include/linux/backing-dev-defs.h           |  2 +-
+>  include/linux/blk-cgroup.h                 |  2 +-
+>  include/linux/fs.h                         |  2 +-
+>  include/linux/fscache.h                    |  1 +
+>  include/linux/iocontext.h                  |  2 +-
+>  include/linux/irqdomain.h                  |  2 +-
+>  include/linux/mlx4/device.h                |  2 +-
+>  include/linux/mlx4/qp.h                    |  1 +
+>  include/linux/mlx5/driver.h                |  2 +-
+>  include/linux/mlx5/qp.h                    |  1 +
+>  include/linux/radix-tree-root.h            | 24 ++++++++++++++++++++++++
+>  include/linux/radix-tree.h                 |  8 ++------
+>  22 files changed, 46 insertions(+), 16 deletions(-)
+>  create mode 100644 include/linux/radix-tree-root.h
+>
+> --
+> 2.7.4
+>
 
-   struct radix_tree_root {
-           gfp_t			gfp_mask;
-	   struct radix_tree_node	__rcu *rnode;
-   };
+--O9uFcEIpmYvy18ul
+Content-Type: application/pgp-signature; name="signature.asc"
 
-it is a very simple structure.
-It only depends on <linux/types.h> for gfp_t and
-<linux/compiler.h> for __rcu.
+-----BEGIN PGP SIGNATURE-----
 
-By splitting out the radix_tree_root definition,
-we can reduce the header file dependency.
+iQIzBAEBCAAdFiEEkhr/r4Op1/04yqaB5GN7iDZyWKcFAlnac/EACgkQ5GN7iDZy
+WKfp7xAAoOGndfBeCCDaUoat2rL4d0CYwVKpSm1S9KaBMPien9InhQ0sQxtSpPvq
+gra5Z2N2gnw+wPQhoQSzpzLyRf7Zx97sBMysgYCgoXdnj6p8HooNPwGa0AEG//c/
+SiBl32z7SpeG7G2n2+8F5lV8AQ6OggWHWiEc1odpQuM50ODhAdFzuxVubALLd6xl
+BeGMSKbs8Vcm7eA/pNjmlzOvZ/w/7ZRBFv6wCFeBPviyBrvvR2oIhqfbs7rmKoUL
+C1Tv4VeQwI1sZRJMfbAHZpQigay/qVen8jOnfn+pTQ8XGKQFa94o6eoet8m/eXIj
+0MIeTNqTSFo8qGXuh7oSlx/5ePB32sp0HCVqPsKVQKiFji5H8f5zA1LORt7o0AkK
+xOGf4xewEmf9C8Pedd3GNuPOXWrjWoaN73TkXfjXevRb4sEBFfwJ3LXta24AT4vl
+AJ1cxMmnOmaVrMH0MaLY89MuqsxAHgbSezSG/AO3T8vXNTLo/4EQMNug6h0Mpt6+
+iSg0GWddjd0rWInaTXlsIawoq47avrKcAsAYccl2m29ny+kxVR9Kff23sOQhLR9Z
+UYDZhle4a4rSByEbpiYQlnLUKEkfrvmUsi65hM2ZYy73FDYkDKUtKH6vjJfs/64/
+2bQh5q+VSeHCr1Psv7pLf+eIjtpbMmBoTYx0xZ894gwhRmI7jMw=
+=Ge7A
+-----END PGP SIGNATURE-----
 
-Reducing the header dependency will help for speeding the kernel
-build, suppressing unnecessary recompile of objects during
-git-bisect'ing, etc.
-
-The patch 1 is a trivial clean-up; it is just here
-to avoid conflict.
-
-The patch 2 is the main part of this series;
-split out struct radix_tree_root.
-
-The rest of the series replace <linux/radix-tree.h>
-with <linux/radix-tree-root.h> where appropriate.
-
-Please review if the idea is OK.
-
-If it is OK, I'd like to know how to apply the series.
-
-Perhaps, the first two for v4.15.  Then, rest of series
-will be sent per-subsystem for v4.16?
-
-Or, can somebody take care of the whole series?
-
-I checked allmodconfig for x86 and arm64.
-I am expecting 0 day testing will check it too.
-
-
-
-Masahiro Yamada (12):
-  radix-tree: replace <linux/spinlock.h> with <linux/spinlock_types.h>
-  radix-tree: split struct radix_tree_root to <linux/radix-tree-root.h>
-  irqdomain: replace <linux/radix-tree.h> with <linux/radix-tree-root.h>
-  writeback: replace <linux/radix-tree.h> with <linux/radix-tree-root.h>
-  iocontext.h: replace <linux/radix-tree.h> with
-    <linux/radix-tree-root.h>
-  fs: replace <linux/radix-tree.h> with <linux/radix-tree-root.h>
-  blkcg: replace <linux/radix-tree.h> with <linux/radix-tree-root.h>
-  fscache: include <linux-radix-tree.h>
-  sh: intc: replace <linux/radix-tree.h> with <linux/radix-tree-root.h>
-  net/mlx4: replace <linux/radix-tree.h> with <linux/radix-tree-root.h>
-  net/mlx5: replace <linux/radix-tree.h> with <linux/radix-tree-root.h>
-  drm/i915: replace <linux/radix-tree.h> with <linux/radix-tree-root.h>
-
- drivers/gpu/drm/i915/i915_gem.c            |  1 +
- drivers/gpu/drm/i915/i915_gem_context.c    |  1 +
- drivers/gpu/drm/i915/i915_gem_context.h    |  2 +-
- drivers/gpu/drm/i915/i915_gem_execbuffer.c |  1 +
- drivers/gpu/drm/i915/i915_gem_object.h     |  1 +
- drivers/net/ethernet/mellanox/mlx4/cq.c    |  1 +
- drivers/net/ethernet/mellanox/mlx4/mlx4.h  |  2 +-
- drivers/net/ethernet/mellanox/mlx4/qp.c    |  1 +
- drivers/net/ethernet/mellanox/mlx4/srq.c   |  1 +
- drivers/sh/intc/internals.h                |  2 +-
- include/linux/backing-dev-defs.h           |  2 +-
- include/linux/blk-cgroup.h                 |  2 +-
- include/linux/fs.h                         |  2 +-
- include/linux/fscache.h                    |  1 +
- include/linux/iocontext.h                  |  2 +-
- include/linux/irqdomain.h                  |  2 +-
- include/linux/mlx4/device.h                |  2 +-
- include/linux/mlx4/qp.h                    |  1 +
- include/linux/mlx5/driver.h                |  2 +-
- include/linux/mlx5/qp.h                    |  1 +
- include/linux/radix-tree-root.h            | 24 ++++++++++++++++++++++++
- include/linux/radix-tree.h                 |  8 ++------
- 22 files changed, 46 insertions(+), 16 deletions(-)
- create mode 100644 include/linux/radix-tree-root.h
-
--- 
-2.7.4
-
+--O9uFcEIpmYvy18ul--
