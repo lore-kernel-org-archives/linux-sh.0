@@ -1,65 +1,114 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Sun, 29 Oct 2017 17:29:18 +0000
-Subject: Re: [PATCH v2 0/4] i2c: pca-platform: additional improvements
-Message-Id: <20171029172918.2xtz2srh2meq45io@ninjato>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="someicsnm7yinxah"
+From: Masahiro Yamada <yamada.masahiro@socionext.com>
+Date: Sun, 08 Oct 2017 16:10:01 +0000
+Subject: [PATCH 00/12] radix-tree: split out struct radix_tree_root out to <linux/radix-tree-root.h>
+Message-Id: <1507479013-5207-1-git-send-email-yamada.masahiro@socionext.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20170705101358.17458-1-chris.packham@alliedtelesis.co.nz>
-In-Reply-To: <20170705101358.17458-1-chris.packham@alliedtelesis.co.nz>
-To: Chris Packham <chris.packham@alliedtelesis.co.nz>
-Cc: ysato@users.sourceforge.jp, linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-kernel@vger.kernel.org
+Cc: Thomas Gleixner <tglx@linutronix.de>, Andrew Morton <akpm@linux-foundation.org>, Ian Abbott <abbotti@mev.co.uk>, Ingo Molnar <mingo@kernel.org>, Linus Torvalds <torvalds@linux-foundation.org>, Masahiro Yamada <yamada.masahiro@socionext.com>, linux-cachefs@redhat.com, linux-sh@vger.kernel.org, Rodrigo Vivi <rodrigo.vivi@intel.com>, dri-devel@lists.freedesktop.org, David Airlie <airlied@linux.ie>, linux-rdma@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Tariq Toukan <tariqt@mellanox.com>, Rich Felker <dalias@libc.org>, Leon Romanovsky <leonro@mellanox.com>, Jani Nikula <jani.nikula@linux.intel.com>, "J. Bruce Fields" <bfields@fieldses.org>, David Howells <dhowells@redhat.com>, intel-gfx@lists.freedesktop.org, Yishai Hadas <yishaih@mella>
 
 
---someicsnm7yinxah
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+The motivation of this series is to cut down unnecessary header
+dependency in terms of radix tree.
 
-On Wed, Jul 05, 2017 at 10:13:54PM +1200, Chris Packham wrote:
-> This series addresses some of the points identified by Andy. The series is
-> based on top of i2c/for-next. 2 of the patches from v1 have already been
-> applied so I've dropped them from this version.
->=20
-> I have compile tested patch 1/1 but I don't have access to sh hardware
-> to actually test the changes on.
->=20
-> Chris Packham (4):
->   sh: sh7785lcr: add GPIO lookup table for i2c controller reset
->   i2c: pca-platform: unconditionally use devm_gpiod_get_optional
->   i2c: pca-platform: use device_property_read_u32
->   i2c: pca-platform: drop gpio from platform data
->=20
->  arch/blackfin/mach-bf561/boards/acvilon.c |  1 -
->  arch/sh/boards/board-sh7785lcr.c          | 11 +++++++++-
->  drivers/i2c/busses/i2c-pca-platform.c     | 34 +++++++++----------------=
-------
->  include/linux/i2c-pca-platform.h          |  3 ---
->  4 files changed, 20 insertions(+), 29 deletions(-)
+Sub-systems or drivers that use radix-tree for data management
+typically embed struct radix_tree_root in their data structures,
+like this:
 
-Series looks good to me, too. I'd need ACKs from the SH maintainers,
-though. Technically, from Blackfin maintainers as well. But I haven't
-heard from them in months, so I could go without that.
+struct foo {
+       ...
+
+       struct radix_tree_root   foo_tree;
+       ...
+};
+
+So, <linux/foo.h> needs to include <linux/radix-tree.h>,
+therefore, users of <linux/foo.h> include a lot of bloat
+from <linux/radix-tree.h>.
+
+If you see the definition of radix_tree_root,
+
+   struct radix_tree_root {
+           gfp_t			gfp_mask;
+	   struct radix_tree_node	__rcu *rnode;
+   };
+
+it is a very simple structure.
+It only depends on <linux/types.h> for gfp_t and
+<linux/compiler.h> for __rcu.
+
+By splitting out the radix_tree_root definition,
+we can reduce the header file dependency.
+
+Reducing the header dependency will help for speeding the kernel
+build, suppressing unnecessary recompile of objects during
+git-bisect'ing, etc.
+
+The patch 1 is a trivial clean-up; it is just here
+to avoid conflict.
+
+The patch 2 is the main part of this series;
+split out struct radix_tree_root.
+
+The rest of the series replace <linux/radix-tree.h>
+with <linux/radix-tree-root.h> where appropriate.
+
+Please review if the idea is OK.
+
+If it is OK, I'd like to know how to apply the series.
+
+Perhaps, the first two for v4.15.  Then, rest of series
+will be sent per-subsystem for v4.16?
+
+Or, can somebody take care of the whole series?
+
+I checked allmodconfig for x86 and arm64.
+I am expecting 0 day testing will check it too.
 
 
---someicsnm7yinxah
-Content-Type: application/pgp-signature; name="signature.asc"
 
------BEGIN PGP SIGNATURE-----
+Masahiro Yamada (12):
+  radix-tree: replace <linux/spinlock.h> with <linux/spinlock_types.h>
+  radix-tree: split struct radix_tree_root to <linux/radix-tree-root.h>
+  irqdomain: replace <linux/radix-tree.h> with <linux/radix-tree-root.h>
+  writeback: replace <linux/radix-tree.h> with <linux/radix-tree-root.h>
+  iocontext.h: replace <linux/radix-tree.h> with
+    <linux/radix-tree-root.h>
+  fs: replace <linux/radix-tree.h> with <linux/radix-tree-root.h>
+  blkcg: replace <linux/radix-tree.h> with <linux/radix-tree-root.h>
+  fscache: include <linux-radix-tree.h>
+  sh: intc: replace <linux/radix-tree.h> with <linux/radix-tree-root.h>
+  net/mlx4: replace <linux/radix-tree.h> with <linux/radix-tree-root.h>
+  net/mlx5: replace <linux/radix-tree.h> with <linux/radix-tree-root.h>
+  drm/i915: replace <linux/radix-tree.h> with <linux/radix-tree-root.h>
 
-iQIzBAABCAAdFiEEOZGx6rniZ1Gk92RdFA3kzBSgKbYFAln2D+oACgkQFA3kzBSg
-KbbVNA/9FeZ+qC/dFF3NXE9GKxWrKm9kACxpfLTWFCCbmVl5wZIgBOqluP5dpozI
-Kl8FCX441SLXCZfm/onCbYFPu6YDuGC+envxRgQ/b51Z0wWFur31o/1EVf6bRHm0
-h/Ot4FIPZBV0gzu6O567fqxnkYdc9nn1rOaE5J3/YewnbxAMJ+XzsLhGR5mZqBgU
-GOva4g4LkqYv2PYN6/RRTcL1haw1ZJ+5b/LpbkfLOoX8B8MOm3eoj9TBS7KCIlFq
-fpxYVGJX1QajunTXVzrDRHyMXbhpfvJucuRkxedoeQPykxKCXajNJuF0WtS00o58
-lrsAfr09hSB2vJdgkRcCGHNzH12DaduVDkztyNC/5HALUhY2sInM/Hp7ZFtBrmR/
-Wu8PMz2M8PStWaHY5Yy3+F9eH3Ay1XHXEsD1chCM6TdhBYEVc9leIGmWmDHbdsBB
-0hXTD3r4ArNE/LEWhhbd8N6RP4lKWiFoEiYY19EAA5jDX5L06VJj7mO20pb+j2fz
-a7Agsp4Tvv6X+ScFXTELfnHjy8X4NxYsv74e/MfKFQhplxxAleoQWWWwwSVUMkYT
-IZkAYiaChGX5T1gLhL5Ew6cfhgHu25GUchKzPIOdh38xf5cgbC26hZ9Clvl5B++g
-HzkVU9x5VGZh592+IjjHhSuS5HM/eIVGLnM4mt2QFBcN/ibaG6g=
-=Zyt6
------END PGP SIGNATURE-----
+ drivers/gpu/drm/i915/i915_gem.c            |  1 +
+ drivers/gpu/drm/i915/i915_gem_context.c    |  1 +
+ drivers/gpu/drm/i915/i915_gem_context.h    |  2 +-
+ drivers/gpu/drm/i915/i915_gem_execbuffer.c |  1 +
+ drivers/gpu/drm/i915/i915_gem_object.h     |  1 +
+ drivers/net/ethernet/mellanox/mlx4/cq.c    |  1 +
+ drivers/net/ethernet/mellanox/mlx4/mlx4.h  |  2 +-
+ drivers/net/ethernet/mellanox/mlx4/qp.c    |  1 +
+ drivers/net/ethernet/mellanox/mlx4/srq.c   |  1 +
+ drivers/sh/intc/internals.h                |  2 +-
+ include/linux/backing-dev-defs.h           |  2 +-
+ include/linux/blk-cgroup.h                 |  2 +-
+ include/linux/fs.h                         |  2 +-
+ include/linux/fscache.h                    |  1 +
+ include/linux/iocontext.h                  |  2 +-
+ include/linux/irqdomain.h                  |  2 +-
+ include/linux/mlx4/device.h                |  2 +-
+ include/linux/mlx4/qp.h                    |  1 +
+ include/linux/mlx5/driver.h                |  2 +-
+ include/linux/mlx5/qp.h                    |  1 +
+ include/linux/radix-tree-root.h            | 24 ++++++++++++++++++++++++
+ include/linux/radix-tree.h                 |  8 ++------
+ 22 files changed, 46 insertions(+), 16 deletions(-)
+ create mode 100644 include/linux/radix-tree-root.h
 
---someicsnm7yinxah--
+-- 
+2.7.4
+
