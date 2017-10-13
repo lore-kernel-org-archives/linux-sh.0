@@ -1,39 +1,66 @@
-From: Thomas Gleixner <tglx@linutronix.de>
-Date: Tue, 03 Oct 2017 20:27:08 +0000
-Subject: RE: [PATCH 02/11] x86: make dma_cache_sync a no-op
-Message-Id: <alpine.DEB.2.20.1710032214370.2278@nanos>
+From: <cuongtruong380@gmail.com>
+Date: Fri, 13 Oct 2017 01:57:02 +0000
+Subject: 
+Message-Id: <150785982212.12040.14604666475579249269@hinet.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20171003104311.10058-1-hch@lst.de>
-	<20171003104311.10058-3-hch@lst.de>
-	<063D6719AE5E284EB5DD2968C1650D6DD0088B73@AcuExch.aculab.com>
-In-Reply-To: <063D6719AE5E284EB5DD2968C1650D6DD0088B73-VkEWCZq2GCInGFn1LkZF6NBPR1lH4CV8@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: David Laight <David.Laight-ZS65k/vG3HxXrIkS9f7CXA@public.gmane.org>
-Cc: Chris Zankel <chris-YvXeqwSYzG2sTnJN9+BGXg@public.gmane.org>, Michal Simek <monstr-pSz03upnqPeHXe+LvDLADg@public.gmane.org>, "x86-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org" <x86-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, "linux-ia64-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-ia64-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "linux-mips-6z/3iImG2C8G8FEW9MqTrA@public.gmane.org" <linux-mips-6z/3iImG2C8G8FEW9MqTrA@public.gmane.org>, "linux-xtensa-PjhNF2WwrV/0Sa2dR60CXw@public.gmane.org" <linux-xtensa-PjhNF2WwrV/0Sa2dR60CXw@public.gmane.org>, "linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Max Filippov <jcmvbkbc-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, "iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Guan Xuetao <gxt-TG0Ac1+ktVePQbnJrJN+5g@public.gmane.org>, "linuxppc-dev-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org" <linuxppc-dev-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org>, 'Christoph Hellwig' <hch-jcswGhMUV9g@public.gmane.org>
+To: linux-sh@vger.kernel.org
 
-On Tue, 3 Oct 2017, David Laight wrote:
-
-> From: Christoph Hellwig
-> > Sent: 03 October 2017 11:43
-> > x86 does not implement DMA_ATTR_NON_CONSISTENT allocations, so it doesn't
-> > make any sense to do any work in dma_cache_sync given that it must be a
-> > no-op when dma_alloc_attrs returns coherent memory.
-> 
-> I believe it is just about possible to require an explicit
-> write flush on x86.
-> ISTR this can happen with something like write combining.
-
-As the changelog says: x86 only implements dma_alloc_coherent() which as
-the name says returns coherent memory, i.e. type WB (write back), which is
-not subject to dma_cache_sync() operations.
-
-If the driver converts that memory to WC (write combine) on its own via
-PAT/MTRR, then it needs to take care of flushing the write buffer on its
-own. It's not convered by this interface.
-
-Thanks,
-
-	tglx
-
+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
