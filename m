@@ -1,72 +1,65 @@
-From: Dou Liyang <douly.fnst@cn.fujitsu.com>
-Date: Fri, 01 Sep 2017 02:56:32 +0000
-Subject: [PATCH v2 0/7] Remove the parent_node() for each arch
-Message-Id: <1504234599-29533-1-git-send-email-douly.fnst@cn.fujitsu.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Sun, 29 Oct 2017 17:29:18 +0000
+Subject: Re: [PATCH v2 0/4] i2c: pca-platform: additional improvements
+Message-Id: <20171029172918.2xtz2srh2meq45io@ninjato>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="someicsnm7yinxah"
 List-Id: <linux-sh.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: akpm@linux-foundation.org, linux-kernel@vger.kernel.org
-Cc: Dou Liyang <douly.fnst@cn.fujitsu.com>, Tony Luck <tony.luck@intel.com>, Fenghua Yu <fenghua.yu@intel.com>, linux-ia64@vger.kernel.org, Ralf Baechle <ralf@linux-mips.org>, James Hogan <james.hogan@imgtec.com>, linux-mips@linux-mips.org, Martin Schwidefsky <schwidefsky@de.ibm.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, Michael Holzheu <holzheu@linux.vnet.ibm.com>, linux-s390@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, "David S. Miller" <davem@davemloft.net>, sparclinux@vger.kernel.org, Chris Metcalf <cmetcalf@mellanox.com>, Arnd Bergmann <arnd@arndb.de>, linux-arch@vger.kernel.org
-
-Changelog:
-
-v1 --> v2:
-   --Remove the patches which have been add to each arch tree individually.
-      [01/11] arm64   ...Has been added to arm64 tree, Queued for 4.14
-      [03/11] metag   ...Has been added to the -mm tree
-      [05/11] powerpc ...Has been added to the powerpc tree
-      [10/11] x86     ...Has been added to the tip sched/core
-
-   --Rebase the remaining patches and repost.
-
-Michael reports the parent_node() will never be invoked since the
-Commit a7be6e5a7f8d ("mm: drop useless local parameters of
-__register_one_node()") removes the last user of it. 
-
-So we start removing it from the topology.h headers for each arch.
-
-Cc: Tony Luck <tony.luck@intel.com>
-Cc: Fenghua Yu <fenghua.yu@intel.com>
-Cc: linux-ia64@vger.kernel.org
-Cc: Ralf Baechle <ralf@linux-mips.org>
-Cc: James Hogan <james.hogan@imgtec.com>
-Cc: linux-mips@linux-mips.org
-Cc: Martin Schwidefsky <schwidefsky@de.ibm.com>
-Cc: Heiko Carstens <heiko.carstens@de.ibm.com>
-Cc: Michael Holzheu <holzheu@linux.vnet.ibm.com>
-Cc: linux-s390@vger.kernel.org
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: Rich Felker <dalias@libc.org>
-Cc: linux-sh@vger.kernel.org
-Cc: "David S. Miller" <davem@davemloft.net>
-Cc: sparclinux@vger.kernel.org
-Cc: Chris Metcalf <cmetcalf@mellanox.com>
-Cc: Arnd Bergmann <arnd@arndb.de>
-Cc: linux-arch@vger.kernel.org
-Cc: akpm@linux-foundation.org
-
-Dou Liyang (7):
-  ia64: topology: Remove the unused parent_node() macro
-  MIPS: numa: Remove the unused parent_node() macro
-  s390/topology: Remove the unused parent_node() macro
-  sh/numa: Remove the unused parent_node() macro
-  sparc64/topology: Remove the unused parent_node() macro
-  tile/topology: Remove the unused parent_node() macro
-  asm-generic: numa: Remove the unused parent_node() macro
-
- arch/ia64/include/asm/topology.h                 | 7 -------
- arch/mips/include/asm/mach-ip27/topology.h       | 1 -
- arch/mips/include/asm/mach-loongson64/topology.h | 1 -
- arch/s390/include/asm/topology.h                 | 6 ------
- arch/sh/include/asm/topology.h                   | 1 -
- arch/sparc/include/asm/topology_64.h             | 2 --
- arch/tile/include/asm/topology.h                 | 6 ------
- include/asm-generic/topology.h                   | 3 ---
- 8 files changed, 27 deletions(-)
-
--- 
-2.5.5
+References: <20170705101358.17458-1-chris.packham@alliedtelesis.co.nz>
+In-Reply-To: <20170705101358.17458-1-chris.packham@alliedtelesis.co.nz>
+To: Chris Packham <chris.packham@alliedtelesis.co.nz>
+Cc: ysato@users.sourceforge.jp, linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
 
+--someicsnm7yinxah
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
+On Wed, Jul 05, 2017 at 10:13:54PM +1200, Chris Packham wrote:
+> This series addresses some of the points identified by Andy. The series is
+> based on top of i2c/for-next. 2 of the patches from v1 have already been
+> applied so I've dropped them from this version.
+>=20
+> I have compile tested patch 1/1 but I don't have access to sh hardware
+> to actually test the changes on.
+>=20
+> Chris Packham (4):
+>   sh: sh7785lcr: add GPIO lookup table for i2c controller reset
+>   i2c: pca-platform: unconditionally use devm_gpiod_get_optional
+>   i2c: pca-platform: use device_property_read_u32
+>   i2c: pca-platform: drop gpio from platform data
+>=20
+>  arch/blackfin/mach-bf561/boards/acvilon.c |  1 -
+>  arch/sh/boards/board-sh7785lcr.c          | 11 +++++++++-
+>  drivers/i2c/busses/i2c-pca-platform.c     | 34 +++++++++----------------=
+------
+>  include/linux/i2c-pca-platform.h          |  3 ---
+>  4 files changed, 20 insertions(+), 29 deletions(-)
+
+Series looks good to me, too. I'd need ACKs from the SH maintainers,
+though. Technically, from Blackfin maintainers as well. But I haven't
+heard from them in months, so I could go without that.
+
+
+--someicsnm7yinxah
+Content-Type: application/pgp-signature; name="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQIzBAABCAAdFiEEOZGx6rniZ1Gk92RdFA3kzBSgKbYFAln2D+oACgkQFA3kzBSg
+KbbVNA/9FeZ+qC/dFF3NXE9GKxWrKm9kACxpfLTWFCCbmVl5wZIgBOqluP5dpozI
+Kl8FCX441SLXCZfm/onCbYFPu6YDuGC+envxRgQ/b51Z0wWFur31o/1EVf6bRHm0
+h/Ot4FIPZBV0gzu6O567fqxnkYdc9nn1rOaE5J3/YewnbxAMJ+XzsLhGR5mZqBgU
+GOva4g4LkqYv2PYN6/RRTcL1haw1ZJ+5b/LpbkfLOoX8B8MOm3eoj9TBS7KCIlFq
+fpxYVGJX1QajunTXVzrDRHyMXbhpfvJucuRkxedoeQPykxKCXajNJuF0WtS00o58
+lrsAfr09hSB2vJdgkRcCGHNzH12DaduVDkztyNC/5HALUhY2sInM/Hp7ZFtBrmR/
+Wu8PMz2M8PStWaHY5Yy3+F9eH3Ay1XHXEsD1chCM6TdhBYEVc9leIGmWmDHbdsBB
+0hXTD3r4ArNE/LEWhhbd8N6RP4lKWiFoEiYY19EAA5jDX5L06VJj7mO20pb+j2fz
+a7Agsp4Tvv6X+ScFXTELfnHjy8X4NxYsv74e/MfKFQhplxxAleoQWWWwwSVUMkYT
+IZkAYiaChGX5T1gLhL5Ew6cfhgHu25GUchKzPIOdh38xf5cgbC26hZ9Clvl5B++g
+HzkVU9x5VGZh592+IjjHhSuS5HM/eIVGLnM4mt2QFBcN/ibaG6g=
+=Zyt6
+-----END PGP SIGNATURE-----
+
+--someicsnm7yinxah--
