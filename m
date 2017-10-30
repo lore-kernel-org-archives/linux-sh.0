@@ -1,54 +1,42 @@
-From: Arvind Yadav <arvind.yadav.cs@gmail.com>
-Date: Mon, 09 Oct 2017 12:27:45 +0000
-Subject: [PATCH] sh: clkfwk: use '"%s:", __func__' instead of function name.
-Message-Id: <6394b165cf42e5f226db8f47589a7e0aff15fee2.1507551115.git.arvind.yadav.cs@gmail.com>
+From: Jacopo Mondi <jacopo+renesas@jmondi.org>
+Date: Mon, 30 Oct 2017 11:27:20 +0000
+Subject: [PATCH] sh: defconfig: Remove NUMA support from Migo-R
+Message-Id: <1509362840-6317-1-git-send-email-jacopo+renesas@jmondi.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: ysato@users.sourceforge.jp, dalias@libc.org
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: ysato@users.sourceforge.jp, dalias@libc.org, geert@linux-m68k.org
+Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-The script "checkpatch.pl" pointed information out like the following.
-WARNING: Prefer using '"%s...", __func__' to using 'sh_clk_init_parent',
-this function's name, in a string.
+Building with CONFIG_NUMA=y prevents Migo-R from booting.
+The system hangs just after kernel is decompressed.
 
-pr_err() strings should end with newlines. Add '\n' to fix this.
+   Image Name:   Linux-4.14.0-rc5-dirty
+   Image Type:   SuperH Linux Kernel Image (gzip compressed)
+   Data Size:    2591143 Bytes =  2.5 MB
+   Load Address: 8c001000
+   Entry Point:  8c002000
+   Verifying Checksum ... OK
+   Uncompressing Kernel Image ... OK
 
-Signed-off-by: Arvind Yadav <arvind.yadav.cs@gmail.com>
+Signed-off-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
 ---
- drivers/sh/clk/cpg.c | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+ arch/sh/configs/migor_defconfig | 1 -
+ 1 file changed, 1 deletion(-)
 
-diff --git a/drivers/sh/clk/cpg.c b/drivers/sh/clk/cpg.c
-index 7442bc1..4b5b2f6 100644
---- a/drivers/sh/clk/cpg.c
-+++ b/drivers/sh/clk/cpg.c
-@@ -217,7 +217,7 @@ static int __init sh_clk_init_parent(struct clk *clk)
- 		return 0;
- 
- 	if (!clk->src_width) {
--		pr_err("sh_clk_init_parent: cannot select parent clock\n");
-+		pr_err("%s: cannot select parent clock\n", __func__);
- 		return -EINVAL;
- 	}
- 
-@@ -225,13 +225,13 @@ static int __init sh_clk_init_parent(struct clk *clk)
- 	val &= (1 << clk->src_width) - 1;
- 
- 	if (val >= clk->parent_num) {
--		pr_err("sh_clk_init_parent: parent table size failed\n");
-+		pr_err("%s: parent table size failed\n", __func__);
- 		return -EINVAL;
- 	}
- 
- 	clk_reparent(clk, clk->parent_table[val]);
- 	if (!clk->parent) {
--		pr_err("sh_clk_init_parent: unable to set parent");
-+		pr_err("%s: unable to set parent\n", __func__);
- 		return -EINVAL;
- 	}
- 
--- 
-1.9.1
+diff --git a/arch/sh/configs/migor_defconfig b/arch/sh/configs/migor_defconfig
+index e04f21b..7510de5 100644
+--- a/arch/sh/configs/migor_defconfig
++++ b/arch/sh/configs/migor_defconfig
+@@ -12,7 +12,6 @@ CONFIG_MODULES=y
+ # CONFIG_BLK_DEV_BSG is not set
+ CONFIG_CPU_SUBTYPE_SH7722=y
+ CONFIG_MEMORY_START=0x0c000000
+-CONFIG_NUMA=y
+ # CONFIG_MIGRATION is not set
+ CONFIG_SH_MIGOR=y
+ # CONFIG_SH_TIMER_CMT is not set
+--
+2.7.4
 
