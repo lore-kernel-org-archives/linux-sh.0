@@ -1,27 +1,52 @@
-From: Greg KH <greg@kroah.com>
-Date: Wed, 04 Oct 2017 17:15:54 +0000
-Subject: Re: [kernel-hardening] Re: [PATCH 2/3] Makefile: Move stackprotector availability out of Kconfig
-Message-Id: <20171004171554.GA10047@kroah.com>
+From: Luc Van Oostenryck <luc.vanoostenryck@gmail.com>
+Date: Tue, 31 Oct 2017 17:22:20 +0000
+Subject: [PATCH] sh: pass machine size to sparse
+Message-Id: <20171031172220.10186-1-luc.vanoostenryck@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1506972007-80614-1-git-send-email-keescook@chromium.org>
- <1506972007-80614-3-git-send-email-keescook@chromium.org>
- <CAK7LNARhoqX0Z--gFEP1xbvcEeg4aDD9rkV0SeUCa3icc1MN8g@mail.gmail.com>
- <20171004151312.GA20938@kroah.com>
- <CAGXu5jKqt=DgMVKS8znL05scbXdxRhgkaf7D5ipYA3Q=csLB5A@mail.gmail.com>
-In-Reply-To: <CAGXu5jKqt=DgMVKS8znL05scbXdxRhgkaf7D5ipYA3Q=csLB5A@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kees Cook <keescook@chromium.org>
-Cc: Masahiro Yamada <yamada.masahiro@socionext.com>, Andrew Morton <akpm@linux-foundation.org>, Michal Marek <mmarek@suse.com>, Ingo Molnar <mingo@kernel.org>, Laura Abbott <labbott@redhat.com>, Nicholas Piggin <npiggin@gmail.com>, Al Viro <viro@zeniv.linux.org.uk>, Linux Kbuild mailing list <linux-kbuild@vger.kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, "David S. Miller" <davem@davemloft.net>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, linux-sh <linux-sh@vger.kernel.org>, "kernel-hardening@lists.openwall.com" <kernel-hardening@lists.openwall.com>, Mark Rutland <mark.rutland@arm.com>
+To: linux-sh@vger.kernel.org
 
-On Wed, Oct 04, 2017 at 09:22:24AM -0700, Kees Cook wrote:
-> Do you want me to send this patch, or should we allow it to fail with
-> the "missing reference" (which may actually be more expressive...) I
-> think the way it is right now is better, but I'm open to either.
+By default, sparse assumes a 64bit machine when compiled on x86-64
+and 32bit when compiled on anything else.
 
-I think the current way is fine.
+This can of course create all sort of problems, like issuing false
+warnings like: 'constant ... is so big it is unsigned long long'
+or 'shift too big (32) for type unsigned long' when the architecture
+is 64bit while sparse was compiled on a 32bit machine, or worse,
+to not emit legitimate warnings in the reverse situation.
 
-And nice work on the patchset.
+Fix this by passing to sparse the appropriate -m32/-m64 flag
 
-greg k-h
+To: Yoshinori Sato <ysato@users.sourceforge.jp>
+To: Rich Felker <dalias@libc.org>
+CC: linux-sh@vger.kernel.org
+Signed-off-by: Luc Van Oostenryck <luc.vanoostenryck@gmail.com>
+---
+ arch/sh/Makefile | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/sh/Makefile b/arch/sh/Makefile
+index 93639dd5e..f68918660 100644
+--- a/arch/sh/Makefile
++++ b/arch/sh/Makefile
+@@ -106,6 +106,7 @@ UTS_MACHINE		:= sh
+ BITS			:= 32
+ LDFLAGS_vmlinux		+= -e _stext
+ KBUILD_DEFCONFIG	:= shx3_defconfig
++CHECKFLAGS		+= -m32
+ else
+ UTS_MACHINE		:= sh64
+ BITS			:= 64
+@@ -113,6 +114,7 @@ LDFLAGS_vmlinux		+= --defsym phys_stext=_stext-$(CONFIG_PAGE_OFFSET) \
+ 			   --defsym phys_stext_shmedia=phys_stext+1 \
+ 			   -e phys_stext_shmedia
+ KBUILD_DEFCONFIG	:= cayman_defconfig
++CHECKFLAGS		+= -m64
+ endif
+ 
+ ifdef CONFIG_CPU_LITTLE_ENDIAN
+-- 
+2.14.0
+
