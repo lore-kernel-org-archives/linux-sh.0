@@ -1,41 +1,46 @@
-From: Masahiro Yamada <yamada.masahiro@socionext.com>
-Date: Sun, 08 Oct 2017 16:10:10 +0000
-Subject: [PATCH 09/12] sh: intc: replace <linux/radix-tree.h> with <linux/radix-tree-root.h>
-Message-Id: <1507479013-5207-10-git-send-email-yamada.masahiro@socionext.com>
+From: Luc Van Oostenryck <luc.vanoostenryck@gmail.com>
+Date: Tue, 31 Oct 2017 17:22:18 +0000
+Subject: [PATCH] sh: pass endianness info to sparse
+Message-Id: <20171031172218.10137-1-luc.vanoostenryck@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1507479013-5207-1-git-send-email-yamada.masahiro@socionext.com>
-In-Reply-To: <1507479013-5207-1-git-send-email-yamada.masahiro@socionext.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Thomas Gleixner <tglx@linutronix.de>, Andrew Morton <akpm@linux-foundation.org>, Ian Abbott <abbotti@mev.co.uk>, Ingo Molnar <mingo@kernel.org>, Linus Torvalds <torvalds@linux-foundation.org>, Masahiro Yamada <yamada.masahiro@socionext.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-This header requires the definition of struct radix_tree_root, but
-does not need to know anything about other radix tree stuff.
+sparse assumes the same endianness as the building machine.
+This is problematic for code which expect __BYTE_ORDER__ being
+correctly predefined by the compiler which sparse can then
+pre-process differently from what gcc would, depending on the
+building machine endianness.
 
-Include <linux/radix-tree-root.h> instead of <linux/radix-tree.h> to
-reduce the header dependency.
+Fix this by letting sparse know about the architecture endianness.
 
-Signed-off-by: Masahiro Yamada <yamada.masahiro@socionext.com>
+To: Yoshinori Sato <ysato@users.sourceforge.jp>
+To: Rich Felker <dalias@libc.org>
+CC: linux-sh@vger.kernel.org
+Signed-off-by: Luc Van Oostenryck <luc.vanoostenryck@gmail.com>
 ---
+ arch/sh/Makefile | 2 ++
+ 1 file changed, 2 insertions(+)
 
- drivers/sh/intc/internals.h | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/drivers/sh/intc/internals.h b/drivers/sh/intc/internals.h
-index 6ce7f0d..4021c1c 100644
---- a/drivers/sh/intc/internals.h
-+++ b/drivers/sh/intc/internals.h
-@@ -4,7 +4,7 @@
- #include <linux/list.h>
- #include <linux/kernel.h>
- #include <linux/types.h>
--#include <linux/radix-tree.h>
-+#include <linux/radix-tree-root.h>
- #include <linux/device.h>
+diff --git a/arch/sh/Makefile b/arch/sh/Makefile
+index 280bbff12..93639dd5e 100644
+--- a/arch/sh/Makefile
++++ b/arch/sh/Makefile
+@@ -119,10 +119,12 @@ ifdef CONFIG_CPU_LITTLE_ENDIAN
+ ld-bfd			:= elf32-$(UTS_MACHINE)-linux
+ LDFLAGS_vmlinux		+= --defsym jiffies=jiffies_64 --oformat $(ld-bfd)
+ LDFLAGS			+= -EL
++CHECKFLAGS		+= -mlittle-endian
+ else
+ ld-bfd			:= elf32-$(UTS_MACHINE)big-linux
+ LDFLAGS_vmlinux		+= --defsym jiffies=jiffies_64+4 --oformat $(ld-bfd)
+ LDFLAGS			+= -EB
++CHECKFLAGS		+= -mbig-endian
+ endif
  
- #define _INTC_MK(fn, mode, addr_e, addr_d, width, shift) \
+ export ld-bfd BITS
 -- 
-2.7.4
+2.14.0
 
