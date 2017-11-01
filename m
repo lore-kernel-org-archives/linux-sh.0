@@ -1,119 +1,75 @@
-From: Jacopo Mondi <jacopo+renesas@jmondi.org>
-Date: Wed, 15 Nov 2017 10:55:53 +0000
-Subject: [PATCH v1 00/10] Renesas Capture Engine Unit (CEU) V4L2 driver
-Message-Id: <1510743363-25798-1-git-send-email-jacopo+renesas@jmondi.org>
+From: Rob Landley <rob@landley.net>
+Date: Wed, 01 Nov 2017 08:58:02 +0000
+Subject: Re: [PATCH 9/9] ARM: multi_v7_defconfig: Enable DMA for Renesas serial ports
+Message-Id: <4defc0d0-5e4b-42f7-3104-84f93e3baf47@landley.net>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1499693302-25120-1-git-send-email-geert+renesas@glider.be>
+ <1499693302-25120-10-git-send-email-geert+renesas@glider.be>
+ <CANqRtoSi8x7zqwV3Gp_n0dBe4Uw6LDRvC1Lheu+GrLZNYuxAHw@mail.gmail.com>
+ <CAMuHMdXb1yAgw4AVvheYhPV=V9HeDCW2NdvhJWzoSz8i-mM3TQ@mail.gmail.com>
+ <CAK8P3a3c68=L=h+nni39BmOb68wno7TuvXuBgOHrEMOrkhdx2g@mail.gmail.com>
+ <CAMuHMdUFnYSxF0grMQ6GB4h7svOeKa-SpPo_2TpTW9Hx+zvrEQ@mail.gmail.com>
+ <95cf2c11-c7db-bdff-7165-282586e08b19@landley.net>
+ <CAMuHMdWW7gbdDY0y2jUVn=ERG1JEWCX=UotQVeyVwhW3fqSHMQ@mail.gmail.com>
+In-Reply-To: <CAMuHMdWW7gbdDY0y2jUVn=ERG1JEWCX=UotQVeyVwhW3fqSHMQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: laurent.pinchart@ideasonboard.com, magnus.damm@gmail.com, geert@glider.be, mchehab@kernel.org, hverkuil@xs4all.nl
-Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>, linux-renesas-soc@vger.kernel.org, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hello,
-   this series implementes a modern V4L2 driver for Renesas Capture Engine
-Unit (CEU). CEU is currently supported by the soc_camera based driver
-drivers/media/platform/soc_camera/sh_mobile_ceu_camera.c
 
-The driver supports capturing images in planar formats (NV12/21 and NV16/61)
-and non-planar YUYV422 format.
 
-It had been tested with OV7670/OV7725 images sensor capturing images at
-different resolutions (VGA and QVGA)
+On 07/11/2017 05:46 AM, Geert Uytterhoeven wrote:
+> Hi Rob,
+> 
+> On Tue, Jul 11, 2017 at 12:37 PM, Rob Landley <rob@landley.net> wrote:
+>> On 07/11/2017 03:59 AM, Geert Uytterhoeven wrote:
+>>> On Tue, Jul 11, 2017 at 10:42 AM, Arnd Bergmann <arnd@arndb.de> wrote:
+>>>> On Tue, Jul 11, 2017 at 8:59 AM, Geert Uytterhoeven
+>>>> <geert@linux-m68k.org> wrote:
+>>>>> On Tue, Jul 11, 2017 at 5:38 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
+>>>>>> On Mon, Jul 10, 2017 at 10:28 PM, Geert Uytterhoeven
+>>>>>> Since enabling DMA Engine still keeps PIO support around I wonder why
+>>>>>> we need this Kconfig at all - other drivers seem to get by without
+>>>>>> this kind of thing?
+>>>>>> So in my opinion it would also be nice to get rid of SERIAL_SH_SCI_DMA
+>>>>>> completely and reducing the number of special per-driver Kconfig
+>>>>>> entries.
+>>>>>
+>>>>> In general, I would agree, and remove the option at the blimp of an eye.
+>>>>> However, this driver is shared with H8/300 and SuperH.  While both could use
+>>>>> DMA (but it's not supported by Linux yet), I don't know if they are willing to
+>>>>> live with the increased static and dynamic memory footprint of SH_SCI DMA
+>>>>> support.
+>>>>
+>>>> One more thing: enabling the DMA support in the console driver generally
+>>>> means you cannot use printk in the DMA driver anywhere that may be called
+>>>> during printk(). Not sure if that is a concern here.
+>>>
+>>> Not anymore, as all of these prints should have been removed/disabled already.
+>>
+>> Last I checked qemu-system-sh4 still doesn't work with current linux
+>> serial driver unless you do:
+>>
+>> --- a/drivers/tty/serial/sh-sci.c
+>> +++ b/drivers/tty/serial/sh-sci.c
+>> @@ -2193,7 +2193,7 @@ static void sci_reset(struct uart_port *port)
+>>                         setup_timer(&s->rx_fifo_timer, rx_fifo_timer_fn,
+>>                                     (unsigned long)s);
+>>                 } else {
+>> -                       if (port->type = PORT_SCIFA ||
+>> +                       if (1 || port->type = PORT_SCIFA ||
+>>                             port->type = PORT_SCIFB)
+>>                                 scif_set_rtrg(port, 1);
+>>                         else
+>>
+>> Does this DMA stuff make that situation worse?
+> 
+> No, SH-SCI DMA is not used on your platform.
+> 
+> Gr{oetje,eeting}s,
 
-The series:
-- Adds a new driver under drivers/media/platform/renesas-ceu.c and a new driver
-  interface under include/media/drv-intf/renesas-ceu.h
-- Adds device tree bindings for renesas-ceu
-- Adds CEU to Renesas RZ/A1 dtsi
-- Ports Migo-R SH4 based platform to make use of the new driver
-- Ports image sensor drivers used by Migo-R (ov772x and tw9910) away from
-  soc_camera
+This issue is still there. QEMU's serial output is borked with the last
+year's worth of vanilla superh kernels.
 
-While this driver aims to replace the existing one, which is the last platform
-driver making use of soc_camera framework, this series does not delete any of
-the existing code, just because there are other SH4 users of the existing
-soc_camera based driver: (mach-ap325rxa, mach-ecovec24, mach-kfr2r09 and
-mach-se/7724)
-
-As I only have access to Migo-R board, I have ported that one first, while all
-other boards can be compile-ported later, once this new driver will eventually
-be accepted mainline.
-
-This series is based on v4.14-rc8 with a few patches applied on top:
-https://www.spinics.net/lists/linux-sh/msg51739.html
-
-These patches are required for mainline Migo-R board and sh_mobile_ceu_camera
-driver to work properly with SH4 architecture on modern kernels, and I have
-based my series on top of them.
-
-A tag with those patches already applied on top of v4.14-rc8 is available at
-git://jmondi.org/linux v4.14-rc8-migor-ceu-base
-
-A note on testing:
-The CEU IP block is found on both Renesas RZ series devices (single core ARM
-platforms) and on older SH4 devices (such as Migo-R).
-I have developed and tested the driver on RZ platforms, specifically on
-GR-Peach with an OV7670 based camera module. More details on:
-https://elinux.org/RZ-A/Boards/GR-PEACH-audiocamerashield
-
-As we aim to replace the soc_camera based driver, I have also tested the
-new one on Migo-R, capturing images from the OV7725 sensor installed on
-that board (I've not been able to test TW9910 video decoder as the sensor does
-not probe on the platform I have access to).
-Hans, as you told me, you have a Migo-R and if you eventually would like to
-give this series a spin on that platform feel free to ping me, as to run a
-modern mainline kernel on SH4 you may need the above mentioned patches and some
-attention to configuration option for SH4.
-
-A note on sensor drivers:
-As I need ov772x and tw9910 driver to be ported away from soc_camera for testing
-on Migo-R, for each of them I have copied the driver first in
-drivers/media/i2c/ from drivers/media/i2c/soc_camera without any modification
-and then removed soc_camera dependencies in a separate commit to ease review.
-As per the soc_camera based CEU platform driver, I have not removed the original
-soc_camera based sensor drivers in this series.
-
-Output of v4l2-compliance is available at:
-https://paste.debian.net/995838/
-I'm slightly confused about what the test application complains for
-TRY_FMT/S_FMT but I judged this good enough for a first submission.
-
-Thanks
-  j
-
-Jacopo Mondi (10):
-  dt-bindings: media: Add Renesas CEU bindings
-  include: media: Add Renesas CEU driver interface
-  v4l: platform: Add Renesas CEU driver
-  ARM: dts: r7s72100: Add Capture Engine Unit (CEU)
-  arch: sh: migor: Use new renesas-ceu camera driver
-  sh: sh7722: Rename CEU clock
-  v4l: i2c: Copy ov772x soc_camera sensor driver
-  media: i2c: ov772x: Remove soc_camera dependencies
-  v4l: i2c: Copy tw9910 soc_camera sensor driver
-  media: i2c: tw9910: Remove soc_camera dependencies
-
- .../devicetree/bindings/media/renesas,ceu.txt      |   87 +
- arch/arm/boot/dts/r7s72100.dtsi                    |   12 +-
- arch/sh/boards/mach-migor/setup.c                  |  164 +-
- arch/sh/kernel/cpu/sh4a/clock-sh7722.c             |    2 +-
- drivers/media/i2c/Kconfig                          |   21 +
- drivers/media/i2c/Makefile                         |    2 +
- drivers/media/i2c/ov772x.c                         | 1156 +++++++++++++
- drivers/media/i2c/tw9910.c                         | 1037 ++++++++++++
- drivers/media/platform/Kconfig                     |    9 +
- drivers/media/platform/Makefile                    |    2 +
- drivers/media/platform/renesas-ceu.c               | 1766 ++++++++++++++++++++
- include/media/drv-intf/renesas-ceu.h               |   23 +
- include/media/i2c/ov772x.h                         |    3 +
- include/media/i2c/tw9910.h                         |    6 +
- 14 files changed, 4199 insertions(+), 91 deletions(-)
- create mode 100644 Documentation/devicetree/bindings/media/renesas,ceu.txt
- create mode 100644 drivers/media/i2c/ov772x.c
- create mode 100644 drivers/media/i2c/tw9910.c
- create mode 100644 drivers/media/platform/renesas-ceu.c
- create mode 100644 include/media/drv-intf/renesas-ceu.h
-
---
-2.7.4
-
+Rob
