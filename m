@@ -1,64 +1,73 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 15 Nov 2017 18:39:18 +0000
-Subject: Re: [PATCH v1 01/10] dt-bindings: media: Add Renesas CEU bindings
-Message-Id: <CAMuHMdVA2iovgrLN6PEWQMLHXJiauGgYuLn1m6xtX1EirZ3oDw@mail.gmail.com>
+From: Masahiro Yamada <yamada.masahiro@socionext.com>
+Date: Thu, 02 Nov 2017 17:40:32 +0000
+Subject: [PATCH] sh: select KBUILD_DEFCONFIG depending on ARCH
+Message-Id: <1509644432-21252-1-git-send-email-yamada.masahiro@socionext.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1510743363-25798-1-git-send-email-jacopo+renesas@jmondi.org>
- <1510743363-25798-2-git-send-email-jacopo+renesas@jmondi.org>
- <CAMuHMdUG6gAEyyC0ANBzmj3KA-940+C7e9Nv_rLkBSjtfeKR1g@mail.gmail.com> <20171115181505.GB6736@w540>
-In-Reply-To: <20171115181505.GB6736@w540>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: jacopo mondi <jacopo@jmondi.org>
-Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Magnus Damm <magnus.damm@gmail.com>, Mauro Carvalho Chehab <mchehab@kernel.org>, Hans Verkuil <hverkuil@xs4all.nl>, Linux-Renesas <linux-renesas-soc@vger.kernel.org>, Linux Media Mailing List <linux-media@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Rob Herring <robh+dt@kernel.org>, Mark Rutland <mark.rutland@arm.com>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, linux-kbuild@vger.kernel.org
+Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Masahiro Yamada <yamada.masahiro@socionext.com>, linux-kernel@vger.kernel.org
 
-Hi Jacopo,
+You can not select KBUILD_DEFCONFIG depending on any CONFIG option
+because include/config/auto.conf is not included when building config
+targets.  So, CONFIG_SUPERH32 is never set during the configuration,
+and cayman_defconfig is chosen.
 
-On Wed, Nov 15, 2017 at 7:15 PM, jacopo mondi <jacopo@jmondi.org> wrote:
-> On Wed, Nov 15, 2017 at 02:07:31PM +0100, Geert Uytterhoeven wrote:
->> On Wed, Nov 15, 2017 at 11:55 AM, Jacopo Mondi
->> <jacopo+renesas@jmondi.org> wrote:
->> > --- /dev/null
->> > +++ b/Documentation/devicetree/bindings/media/renesas,ceu.txt
->> > @@ -0,0 +1,87 @@
->> > +Renesas Capture Engine Unit (CEU)
->> > +----------------------------------------------
->> > +
->> > +The Capture Engine Unit is the image capture interface found on Renesas
->> > +RZ chip series and on SH Mobile ones.
->> > +
->> > +The interface supports a single parallel input with up 8/16bits data bus width.
->>
->> ... with data bus widths up to 8/16 bits?
->>
->> > +
->> > +Required properties:
->> > +- compatible
->> > +       Must be "renesas,renesas-ceu".
->>
->> The double "renesas" part looks odd to me. What about "renesas,ceu"?
->
-> I'm totally open for better "compatible" strings here, so yeah, let's
-> got for the shorter one you proposed...
->
->> Shouldn't you add SoC-specific compatible values like "renesas,r7s72100-ceu",
->> too?
->
-> Well, I actually have no SoC-specific data in the driver, so I don't
-> need SoC specific "compatible" values. But if it's a good practice
-> to have them anyway, I will add those in next spin..
+This commit provides a sensible way to choose shx3/cayman_defconfig.
 
-You don't necessarily need them in the driver, but in the bindings and DTS,
-just in case a difference is discovered later.
+arch/sh/Kconfig sets either SUPERH32 or SUPERH64 depending on ARCH
+environment, like follows:
 
-Gr{oetje,eeting}s,
+  config SUPERH32
+          def_bool ARCH = "sh"
 
-                        Geert
+          ...
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+  config SUPERH64
+          def_bool ARCH = "sh64"
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+It should make sense to choose the default defconfig by ARCH,
+like arch/sparc/Makefile.
+
+Signed-off-by: Masahiro Yamada <yamada.masahiro@socionext.com>
+---
+
+ arch/sh/Makefile | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/arch/sh/Makefile b/arch/sh/Makefile
+index 280bbff..65300193 100644
+--- a/arch/sh/Makefile
++++ b/arch/sh/Makefile
+@@ -15,6 +15,12 @@ ifneq ($(SUBARCH),$(ARCH))
+   endif
+ endif
+ 
++ifeq ($(ARCH),sh)
++KBUILD_DEFCONFIG	:= shx3_defconfig
++else
++KBUILD_DEFCONFIG	:= cayman_defconfig
++endif
++
+ isa-y					:= any
+ isa-$(CONFIG_SH_DSP)			:= sh
+ isa-$(CONFIG_CPU_SH2)			:= sh2
+@@ -105,14 +111,12 @@ ifdef CONFIG_SUPERH32
+ UTS_MACHINE		:= sh
+ BITS			:= 32
+ LDFLAGS_vmlinux		+= -e _stext
+-KBUILD_DEFCONFIG	:= shx3_defconfig
+ else
+ UTS_MACHINE		:= sh64
+ BITS			:= 64
+ LDFLAGS_vmlinux		+= --defsym phys_stext=_stext-$(CONFIG_PAGE_OFFSET) \
+ 			   --defsym phys_stext_shmedia=phys_stext+1 \
+ 			   -e phys_stext_shmedia
+-KBUILD_DEFCONFIG	:= cayman_defconfig
+ endif
+ 
+ ifdef CONFIG_CPU_LITTLE_ENDIAN
+-- 
+2.7.4
+
