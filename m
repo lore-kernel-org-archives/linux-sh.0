@@ -1,29 +1,79 @@
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Date: Mon, 13 Nov 2017 15:57:20 +0000
-Subject: Re: [PATCH] sh: select KBUILD_DEFCONFIG depending on ARCH
-Message-Id: <49c4f436-d58c-d44f-ddce-3a18b38c7d0b@physik.fu-berlin.de>
+From: Masahiro Yamada <yamada.masahiro@socionext.com>
+Date: Thu, 02 Nov 2017 03:09:24 +0000
+Subject: Re: [PATCH] sh: remove pointless select of KBUILD_DEFCONFIG
+Message-Id: <CAK7LNASVPJPv92QdO6wwhAr+o5XsXu6c_vEexjH3KntLArLWaQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1509644432-21252-1-git-send-email-yamada.masahiro@socionext.com>
- <CAK7LNATw7iTKy2VLUd0toiKO7q8SuCTVRdSkhceANHuTPj93hw@mail.gmail.com>
-In-Reply-To: <CAK7LNATw7iTKy2VLUd0toiKO7q8SuCTVRdSkhceANHuTPj93hw@mail.gmail.com>
+References: <1507109635-28977-1-git-send-email-yamada.masahiro@socionext.com>
+In-Reply-To: <1507109635-28977-1-git-send-email-yamada.masahiro@socionext.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Masahiro Yamada <yamada.masahiro@socionext.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Linux-sh list <linux-sh@vger.kernel.org>, Linux Kbuild mailing list <linux-kbuild@vger.kernel.org>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
+To: linux-sh@vger.kernel.org
+Cc: Linux Kbuild mailing list <linux-kbuild@vger.kernel.org>, Masahiro Yamada <yamada.masahiro@socionext.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
 
-On 11/13/2017 04:26 PM, Masahiro Yamada wrote:
->> Signed-off-by: Masahiro Yamada <yamada.masahiro@socionext.com>
-> 
-> 
-> Applied to linux-kbuild/kbuild.
-Thanks for this. The linux-sh maintainers are currently falling behind
-a bit, so I'm glad someone still takes care of these updates.
+SH developers,
 
-Adrian
+No comment?
+
+
+Looks like the SH maintainers are no more picking up any patches.
+
+If nobody takes care of this patch,
+I will apply it to Kbuild tree.
+
+
+
+
+2017-10-04 18:33 GMT+09:00 Masahiro Yamada <yamada.masahiro@socionext.com>:
+> KBUILD_DEFCONFIG := shx3_defconfig
+>
+> is never used in a sensible way.  KBUILD_DEFCONFIG specifies the
+> defconfig file used by "make defconfig", but CONFIG_SUPERH32 is
+> never set when building config targets.
+>
+> Signed-off-by: Masahiro Yamada <yamada.masahiro@socionext.com>
+> ---
+>
+>  arch/sh/Makefile | 3 +--
+>  1 file changed, 1 insertion(+), 2 deletions(-)
+>
+> diff --git a/arch/sh/Makefile b/arch/sh/Makefile
+> index 280bbff..c937ec0 100644
+> --- a/arch/sh/Makefile
+> +++ b/arch/sh/Makefile
+> @@ -96,6 +96,7 @@ defaultimage-$(CONFIG_SH_7619_SOLUTION_ENGINE)        := vmlinux
+>  # Set some sensible Kbuild defaults
+>  boot := arch/sh/boot
+>  KBUILD_IMAGE           := $(boot)/$(defaultimage-y)
+> +KBUILD_DEFCONFIG       := cayman_defconfig
+>
+>  #
+>  # Choosing incompatible machines durings configuration will result in
+> @@ -105,14 +106,12 @@ ifdef CONFIG_SUPERH32
+>  UTS_MACHINE            := sh
+>  BITS                   := 32
+>  LDFLAGS_vmlinux                += -e _stext
+> -KBUILD_DEFCONFIG       := shx3_defconfig
+>  else
+>  UTS_MACHINE            := sh64
+>  BITS                   := 64
+>  LDFLAGS_vmlinux                += --defsym phys_stext=_stext-$(CONFIG_PAGE_OFFSET) \
+>                            --defsym phys_stext_shmedia=phys_stext+1 \
+>                            -e phys_stext_shmedia
+> -KBUILD_DEFCONFIG       := cayman_defconfig
+>  endif
+>
+>  ifdef CONFIG_CPU_LITTLE_ENDIAN
+> --
+> 2.7.4
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-kbuild" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+
 
 -- 
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer - glaubitz@debian.org
-`. `'   Freie Universitaet Berlin - glaubitz@physik.fu-berlin.de
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+Best Regards
+Masahiro Yamada
