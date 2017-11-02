@@ -1,30 +1,20 @@
-From: Masahiro Yamada <yamada.masahiro@socionext.com>
-Date: Thu, 02 Nov 2017 03:09:24 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 02 Nov 2017 09:18:08 +0000
 Subject: Re: [PATCH] sh: remove pointless select of KBUILD_DEFCONFIG
-Message-Id: <CAK7LNASVPJPv92QdO6wwhAr+o5XsXu6c_vEexjH3KntLArLWaQ@mail.gmail.com>
+Message-Id: <CAMuHMdUKdx_f=kH+xg+BEY7VwiUTczqUWtDHOHK52-cLy741iw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1507109635-28977-1-git-send-email-yamada.masahiro@socionext.com>
 In-Reply-To: <1507109635-28977-1-git-send-email-yamada.masahiro@socionext.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: Linux Kbuild mailing list <linux-kbuild@vger.kernel.org>, Masahiro Yamada <yamada.masahiro@socionext.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
+To: Masahiro Yamada <yamada.masahiro@socionext.com>
+Cc: Linux-sh list <linux-sh@vger.kernel.org>, linux-kbuild <linux-kbuild@vger.kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
 
-SH developers,
+Hi Yamada-san,
 
-No comment?
-
-
-Looks like the SH maintainers are no more picking up any patches.
-
-If nobody takes care of this patch,
-I will apply it to Kbuild tree.
-
-
-
-
-2017-10-04 18:33 GMT+09:00 Masahiro Yamada <yamada.masahiro@socionext.com>:
+On Wed, Oct 4, 2017 at 11:33 AM, Masahiro Yamada
+<yamada.masahiro@socionext.com> wrote:
 > KBUILD_DEFCONFIG := shx3_defconfig
 >
 > is never used in a sensible way.  KBUILD_DEFCONFIG specifies the
@@ -46,7 +36,11 @@ I will apply it to Kbuild tree.
 >  boot := arch/sh/boot
 >  KBUILD_IMAGE           := $(boot)/$(defaultimage-y)
 > +KBUILD_DEFCONFIG       := cayman_defconfig
->
+
+cayman_defconfig is a 64-bit defconfig?
+As the big chunk of SH platforms are 32-bit (are there any 64-bit out in
+the wild?), does it make sense to make a 64-bit defconfig the default?
+
 >  #
 >  # Choosing incompatible machines durings configuration will result in
 > @@ -105,14 +106,12 @@ ifdef CONFIG_SUPERH32
@@ -64,16 +58,14 @@ I will apply it to Kbuild tree.
 >  endif
 >
 >  ifdef CONFIG_CPU_LITTLE_ENDIAN
-> --
-> 2.7.4
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-kbuild" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
+Gr{oetje,eeting}s,
 
+                        Geert
 
--- 
-Best Regards
-Masahiro Yamada
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
