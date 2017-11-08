@@ -1,270 +1,122 @@
 From: Jacopo Mondi <jacopo+renesas@jmondi.org>
-Date: Wed, 15 Nov 2017 10:56:03 +0000
-Subject: [PATCH v1 10/10] media: i2c: tw9910: Remove soc_camera dependencies
-Message-Id: <1510743363-25798-11-git-send-email-jacopo+renesas@jmondi.org>
+Date: Wed, 08 Nov 2017 18:05:46 +0000
+Subject: [PATCH] sh: migor: Reserve memory block for CEU
+Message-Id: <1510164346-21134-1-git-send-email-jacopo+renesas@jmondi.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1510743363-25798-1-git-send-email-jacopo+renesas@jmondi.org>
-In-Reply-To: <1510743363-25798-1-git-send-email-jacopo+renesas@jmondi.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: laurent.pinchart@ideasonboard.com, magnus.damm@gmail.com, geert@glider.be, mchehab@kernel.org, hverkuil@xs4all.nl
-Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>, linux-renesas-soc@vger.kernel.org, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: ysato@users.sourceforge.jp, dalias@libc.org, laurent.pinchart@ideasonboard.com
+Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>, linux-sh@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Remove soc_camera framework dependencies from tw9910 sensor driver.
-- Handle clock directly
-- Register async subdevice
-- Add platform specific enable/disable functions
-- Adjust build system
+A memory region for CEU video buffer has to be reserved during machine
+initialization.
 
-This commit does not remove the original soc_camera based driver.
+Originally, it was allocated through DMA API helpers and stored in the
+second IORESOURCE_MEM entry, to be later remapped by the CEU driver with
+a call to 'dma_declare_coherent_memory()'
 
+As Linux does not allow anymore to remap system RAM regions with
+'memremap' function, sh_mobile_ceu driver fails when trying to remap the
+memory area:
+
+WARN_ONCE(1, "memremap attempted on ram %pa size: %#lx\n",
+	  &offset, (unsigned long) size)
+
+from 'memremap()' function in kernel/memremap.c
+
+To avoid hitting that WARN_ONCE() and have memory successfully remapped,
+reserve a region using '.mv_mem_reserve' member of SH's 'struct
+sh_machine_vector' to make sure memory is reserved early enough, and
+removed from the available system RAM.
+
+This is similar to what happens on ARM architecture with
+'arm_memblock_steal()' function.
+
+Suggested-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 Signed-off-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
 ---
- drivers/media/i2c/Kconfig  |  9 ++++++
- drivers/media/i2c/Makefile |  1 +
- drivers/media/i2c/tw9910.c | 80 ++++++++++++++++++++++++++++++++++------------
- include/media/i2c/tw9910.h |  6 ++++
- 4 files changed, 75 insertions(+), 21 deletions(-)
+ arch/sh/boards/mach-migor/setup.c | 28 ++++++++++++++++++++++++++--
+ 1 file changed, 26 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/media/i2c/Kconfig b/drivers/media/i2c/Kconfig
-index ff251ce..bbd77ee 100644
---- a/drivers/media/i2c/Kconfig
-+++ b/drivers/media/i2c/Kconfig
-@@ -415,6 +415,15 @@ config VIDEO_TW9906
- 	  To compile this driver as a module, choose M here: the
- 	  module will be called tw9906.
-
-+config VIDEO_TW9910
-+	tristate "Techwell TW9910 video decoder"
-+	depends on VIDEO_V4L2 && I2C
-+	---help---
-+	  Support for Techwell TW9910 NTSC/PAL/SECAM video decoder.
-+
-+	  To compile this driver as a module, choose M here: the
-+	  module will be called tw9910.
-+
- config VIDEO_VPX3220
- 	tristate "vpx3220a, vpx3216b & vpx3214c video decoders"
- 	depends on VIDEO_V4L2 && I2C
-diff --git a/drivers/media/i2c/Makefile b/drivers/media/i2c/Makefile
-index b2459a1..835784a 100644
---- a/drivers/media/i2c/Makefile
-+++ b/drivers/media/i2c/Makefile
-@@ -48,6 +48,7 @@ obj-$(CONFIG_VIDEO_TVP7002) += tvp7002.o
- obj-$(CONFIG_VIDEO_TW2804) += tw2804.o
- obj-$(CONFIG_VIDEO_TW9903) += tw9903.o
- obj-$(CONFIG_VIDEO_TW9906) += tw9906.o
-+obj-$(CONFIG_VIDEO_TW9910) += tw9910.o
- obj-$(CONFIG_VIDEO_CS3308) += cs3308.o
- obj-$(CONFIG_VIDEO_CS5345) += cs5345.o
- obj-$(CONFIG_VIDEO_CS53L32A) += cs53l32a.o
-diff --git a/drivers/media/i2c/tw9910.c b/drivers/media/i2c/tw9910.c
-index bdb5e0a..f422da2 100644
---- a/drivers/media/i2c/tw9910.c
-+++ b/drivers/media/i2c/tw9910.c
-@@ -16,6 +16,7 @@
-  * published by the Free Software Foundation.
+diff --git a/arch/sh/boards/mach-migor/setup.c b/arch/sh/boards/mach-migor/setup.c
+index 0bcbe58..080627c 100644
+--- a/arch/sh/boards/mach-migor/setup.c
++++ b/arch/sh/boards/mach-migor/setup.c
+@@ -12,6 +12,7 @@
+ #include <linux/interrupt.h>
+ #include <linux/input.h>
+ #include <linux/input/sh_keysc.h>
++#include <linux/memblock.h>
+ #include <linux/mmc/host.h>
+ #include <linux/mtd/physmap.h>
+ #include <linux/mfd/tmio.h>
+@@ -45,6 +46,9 @@
+  * 0x18000000       8GB    8   NAND Flash (K9K8G08U0A)
   */
 
-+#include <linux/clk.h>
- #include <linux/init.h>
- #include <linux/module.h>
- #include <linux/i2c.h>
-@@ -25,9 +26,7 @@
- #include <linux/v4l2-mediabus.h>
- #include <linux/videodev2.h>
-
--#include <media/soc_camera.h>
- #include <media/i2c/tw9910.h>
--#include <media/v4l2-clk.h>
- #include <media/v4l2-subdev.h>
-
- #define GET_ID(val)  ((val & 0xF8) >> 3)
-@@ -228,7 +227,7 @@ struct tw9910_scale_ctrl {
-
- struct tw9910_priv {
- 	struct v4l2_subdev		subdev;
--	struct v4l2_clk			*clk;
-+	struct clk			*clk;
- 	struct tw9910_video_info	*info;
- 	const struct tw9910_scale_ctrl	*scale;
- 	v4l2_std_id			norm;
-@@ -582,13 +581,40 @@ static int tw9910_s_register(struct v4l2_subdev *sd,
- }
- #endif
-
-+static int tw9910_power_on(struct tw9910_priv *priv)
-+{
-+	int ret;
++#define CEU_BUFFER_MEMORY_SIZE		(4 << 20)
++static phys_addr_t ceu_dma_membase;
 +
-+	if (priv->info->platform_enable) {
-+		ret = priv->info->platform_enable();
-+		if (ret)
-+			return ret;
-+	}
-+
-+	if (priv->clk)
-+		return clk_enable(priv->clk);
-+
-+	return 0;
-+}
-+
-+static int tw9910_power_off(struct tw9910_priv *priv)
-+{
-+	if (priv->info->platform_enable)
-+		priv->info->platform_disable();
-+
-+	if (priv->clk)
-+		clk_disable(priv->clk);
-+
-+	return 0;
-+}
-+
- static int tw9910_s_power(struct v4l2_subdev *sd, int on)
- {
- 	struct i2c_client *client = v4l2_get_subdevdata(sd);
--	struct soc_camera_subdev_desc *ssdd = soc_camera_i2c_to_desc(client);
- 	struct tw9910_priv *priv = to_tw9910(client);
-
--	return soc_camera_set_power(&client->dev, ssdd, priv->clk, on);
-+	return on ? tw9910_power_on(priv) :
-+		    tw9910_power_off(priv);
- }
-
- static int tw9910_set_frame(struct v4l2_subdev *sd, u32 *width, u32 *height)
-@@ -614,7 +640,7 @@ static int tw9910_set_frame(struct v4l2_subdev *sd, u32 *width, u32 *height)
- 	 * set bus width
- 	 */
- 	val = 0x00;
--	if (SOCAM_DATAWIDTH_16 = priv->info->buswidth)
-+	if (priv->info->buswidth = TW9910_DATAWIDTH_16)
- 		val = LEN;
-
- 	ret = tw9910_mask_set(client, OPFORM, LEN, val);
-@@ -799,8 +825,8 @@ static int tw9910_video_probe(struct i2c_client *client)
- 	/*
- 	 * tw9910 only use 8 or 16 bit bus width
- 	 */
--	if (SOCAM_DATAWIDTH_16 != priv->info->buswidth &&
--	    SOCAM_DATAWIDTH_8  != priv->info->buswidth) {
-+	if (priv->info->buswidth != TW9910_DATAWIDTH_16 &&
-+	    priv->info->buswidth != TW9910_DATAWIDTH_8) {
- 		dev_err(&client->dev, "bus width error\n");
- 		return -ENODEV;
- 	}
-@@ -859,15 +885,11 @@ static int tw9910_enum_mbus_code(struct v4l2_subdev *sd,
- static int tw9910_g_mbus_config(struct v4l2_subdev *sd,
- 				struct v4l2_mbus_config *cfg)
- {
--	struct i2c_client *client = v4l2_get_subdevdata(sd);
--	struct soc_camera_subdev_desc *ssdd = soc_camera_i2c_to_desc(client);
--
- 	cfg->flags = V4L2_MBUS_PCLK_SAMPLE_RISING | V4L2_MBUS_MASTER |
- 		V4L2_MBUS_VSYNC_ACTIVE_HIGH | V4L2_MBUS_VSYNC_ACTIVE_LOW |
- 		V4L2_MBUS_HSYNC_ACTIVE_HIGH | V4L2_MBUS_HSYNC_ACTIVE_LOW |
- 		V4L2_MBUS_DATA_ACTIVE_HIGH;
- 	cfg->type = V4L2_MBUS_PARALLEL;
--	cfg->flags = soc_camera_apply_board_flags(ssdd, cfg);
-
- 	return 0;
- }
-@@ -876,9 +898,8 @@ static int tw9910_s_mbus_config(struct v4l2_subdev *sd,
- 				const struct v4l2_mbus_config *cfg)
- {
- 	struct i2c_client *client = v4l2_get_subdevdata(sd);
--	struct soc_camera_subdev_desc *ssdd = soc_camera_i2c_to_desc(client);
- 	u8 val = VSSL_VVALID | HSSL_DVALID;
--	unsigned long flags = soc_camera_apply_board_flags(ssdd, cfg);
-+	unsigned long flags = cfg->flags;
-
- 	/*
- 	 * set OUTCTR1
-@@ -935,15 +956,14 @@ static int tw9910_probe(struct i2c_client *client,
- 	struct tw9910_video_info	*info;
- 	struct i2c_adapter		*adapter  		to_i2c_adapter(client->dev.parent);
--	struct soc_camera_subdev_desc	*ssdd = soc_camera_i2c_to_desc(client);
- 	int ret;
-
--	if (!ssdd || !ssdd->drv_priv) {
-+	if (!client->dev.platform_data) {
- 		dev_err(&client->dev, "TW9910: missing platform data!\n");
- 		return -EINVAL;
- 	}
-
--	info = ssdd->drv_priv;
-+	info = client->dev.platform_data;
-
- 	if (!i2c_check_functionality(adapter, I2C_FUNC_SMBUS_BYTE_DATA)) {
- 		dev_err(&client->dev,
-@@ -959,13 +979,27 @@ static int tw9910_probe(struct i2c_client *client,
-
- 	v4l2_i2c_subdev_init(&priv->subdev, client, &tw9910_subdev_ops);
-
--	priv->clk = v4l2_clk_get(&client->dev, "mclk");
--	if (IS_ERR(priv->clk))
-+	priv->clk = clk_get(&client->dev, "mclk");
-+	if (PTR_ERR(priv->clk) = -ENOENT) {
-+		priv->clk = NULL;
-+	} else if (IS_ERR(priv->clk)) {
-+		dev_err(&client->dev, "Unable to get mclk clock\n");
- 		return PTR_ERR(priv->clk);
-+	}
-
- 	ret = tw9910_video_probe(client);
- 	if (ret < 0)
--		v4l2_clk_put(priv->clk);
-+		goto error_put_clk;
-+
-+	ret = v4l2_async_register_subdev(&priv->subdev);
-+	if (ret)
-+		goto error_put_clk;
-+
-+	return ret;
-+
-+error_put_clk:
-+	if (priv->clk)
-+		clk_put(priv->clk);
-
- 	return ret;
- }
-@@ -973,7 +1007,11 @@ static int tw9910_probe(struct i2c_client *client,
- static int tw9910_remove(struct i2c_client *client)
- {
- 	struct tw9910_priv *priv = to_tw9910(client);
--	v4l2_clk_put(priv->clk);
-+
-+	if (priv->clk)
-+		clk_put(priv->clk);
-+	v4l2_device_unregister_subdev(&priv->subdev);
-+
- 	return 0;
- }
-
-diff --git a/include/media/i2c/tw9910.h b/include/media/i2c/tw9910.h
-index 90bcf1f..b80e45c 100644
---- a/include/media/i2c/tw9910.h
-+++ b/include/media/i2c/tw9910.h
-@@ -18,6 +18,9 @@
-
- #include <media/soc_camera.h>
-
-+#define TW9910_DATAWIDTH_8	BIT(0)
-+#define TW9910_DATAWIDTH_16	BIT(1)
-+
- enum tw9910_mpout_pin {
- 	TW9910_MPO_VLOSS,
- 	TW9910_MPO_HLOCK,
-@@ -32,6 +35,9 @@ enum tw9910_mpout_pin {
- struct tw9910_video_info {
- 	unsigned long		buswidth;
- 	enum tw9910_mpout_pin	mpout;
-+
-+	int (*platform_enable)(void);
-+	void (*platform_disable)(void);
+ static struct smc91x_platdata smc91x_info = {
+ 	.flags = SMC91X_USE_16BIT | SMC91X_NOWAIT,
  };
+@@ -501,6 +505,8 @@ extern char migor_sdram_leave_end;
 
+ static int __init migor_devices_setup(void)
+ {
++	struct resource *r = &migor_ceu_device.resource[2];
++
+ 	/* register board specific self-refresh code */
+ 	sh_mobile_register_self_refresh(SUSP_SH_STANDBY | SUSP_SH_SF,
+ 					&migor_sdram_enter_start,
+@@ -632,8 +638,6 @@ static int __init migor_devices_setup(void)
+ #endif
+ 	__raw_writew(__raw_readw(PORT_MSELCRB) | 0x2000, PORT_MSELCRB); /* D15->D8 */
 
+-	platform_resource_setup_memory(&migor_ceu_device, "ceu", 4 << 20);
+-
+ 	/* SIU: Port B */
+ 	gpio_request(GPIO_FN_SIUBOLR, NULL);
+ 	gpio_request(GPIO_FN_SIUBOBT, NULL);
+@@ -647,6 +651,12 @@ static int __init migor_devices_setup(void)
+ 	 */
+ 	__raw_writew(__raw_readw(PORT_MSELCRA) | 1, PORT_MSELCRA);
+
++	/* Setup additional memory resources for Migo-R */
++	r->flags = IORESOURCE_MEM;
++	r->start = ceu_dma_membase;
++	r->end = r->start + CEU_BUFFER_MEMORY_SIZE - 1;
++	r->name = "ceu";
++
+ 	i2c_register_board_info(0, migor_i2c_devices,
+ 				ARRAY_SIZE(migor_i2c_devices));
+
+@@ -665,10 +675,24 @@ static int migor_mode_pins(void)
+ 	return MODE_PIN0 | MODE_PIN1 | MODE_PIN5;
+ }
+
++/* Reserve a portion of memory for CEU buffers */
++static void __init migor_mv_mem_reserve(void)
++{
++	phys_addr_t phys;
++	phys_addr_t size = CEU_BUFFER_MEMORY_SIZE;
++
++	phys = memblock_alloc_base(size, PAGE_SIZE, MEMBLOCK_ALLOC_ANYWHERE);
++	memblock_free(phys, size);
++	memblock_remove(phys, size);
++
++	ceu_dma_membase = phys;
++}
++
+ /*
+  * The Machine Vector
+  */
+ static struct sh_machine_vector mv_migor __initmv = {
+ 	.mv_name		= "Migo-R",
+ 	.mv_mode_pins		= migor_mode_pins,
++	.mv_mem_reserve		= migor_mv_mem_reserve,
+ };
 --
 2.7.4
 
