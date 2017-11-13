@@ -1,67 +1,47 @@
-From: Robin Murphy <robin.murphy@arm.com>
-Date: Wed, 15 Nov 2017 13:38:23 +0000
-Subject: Re: [RFC v2 2/2] base: dma-mapping: Postpone page_to_pfn() on mmap()
-Message-Id: <ea4f2d82-6a27-a7c1-091f-6230cfd988a3@arm.com>
+From: "M,Shakour Rosarita" <hassantara789@gmail.com>
+Date: Mon, 13 Nov 2017 12:08:49 +0000
+Subject: Hello Dear...
+Message-Id: <CAMyxZDGNhOXmC-7Rt7EqUJUYuvRNUAsBsbpds9-aEKzPhLnhmQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1510679286-6988-1-git-send-email-jacopo+renesas@jmondi.org>
- <1510679286-6988-3-git-send-email-jacopo+renesas@jmondi.org>
-In-Reply-To: <1510679286-6988-3-git-send-email-jacopo+renesas@jmondi.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Jacopo Mondi <jacopo+renesas@jmondi.org>, ysato@users.sourceforge.jp, dalias@libc.org, laurent.pinchart@ideasonboard.com, geert@linux-m68k.org
-Cc: linux-renesas-soc@vger.kernel.org, iommu@lists.linux-foundation.org, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="windows-1252"
+Content-Transfer-Encoding: quoted-printable
+To: linux-sh@vger.kernel.org
 
-On 14/11/17 17:08, Jacopo Mondi wrote:
-> On SH4 architecture, with SPARSEMEM memory model, translating page to
-> pfn hangs the CPU. Post-pone translation to pfn after
-> dma_mmap_from_dev_coherent() function call as it succeeds and make page
-> translation not necessary.
-> 
-> This patch was suggested by Laurent Pinchart and he's working to submit
-> a proper fix mainline. Not sending for inclusion at the moment.
+Hello Dear...
 
-Y'know, I think this patch does have some merit by itself - until we 
-know that cpu_addr *doesn't* represent some device-private memory which 
-is not guaranteed to be backed by a struct page, calling virt_to_page() 
-on it is arguably semantically incorrect, even if it might happen to be 
-benign in most cases.
+I know that this message will come to you as a surprise. I hoped that
+you will not expose or betray this trust and confident that I am about
+to repose on you, my name is M, Shakour Rosarita. I am 19 years old
+Girl, female, from Tartu Syria, (never married) 61 kg, white in
+complexion, and I am currently living in the refugee camp here in
+Abidjan Ivory Coast, My late beloved father M,Shakour Hassin was a
+renowned businessman and owner of Natour Petrol Station in Syria, he
+was killed in a stampede riot in Tartu, Syria.
+When I got the news about my parents. I fled to a nearby country
+Jordan before I joined a ferry to Africa and came to Abidjan capital
+city Ivory Coast West Africa find safety here.
+I came in 2015 to Abidjan and I now live in refugee camps here as
+refugees are allowed freely to enter here without, My late father
+deposited (US$6.200.000.00m) My late father kept the money at the bank
+of Africa, I want you to help me transfer the money to your hand so
+that you will help me bring me into your country for my continue
+education.
 
-Robin.
+I sent my pictures here for you to see. Who I am seriously looking for
+a good-person in my life, so I want to hear from you soon and learn
+more about you.
 
-> Suggested-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-> Signed-off-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
-> ---
->   drivers/base/dma-mapping.c | 3 ++-
->   1 file changed, 2 insertions(+), 1 deletion(-)
-> 
-> diff --git a/drivers/base/dma-mapping.c b/drivers/base/dma-mapping.c
-> index e584edd..73d64d3 100644
-> --- a/drivers/base/dma-mapping.c
-> +++ b/drivers/base/dma-mapping.c
-> @@ -227,8 +227,8 @@ int dma_common_mmap(struct device *dev, struct vm_area_struct *vma,
->   #ifndef CONFIG_ARCH_NO_COHERENT_DMA_MMAP
->   	unsigned long user_count = vma_pages(vma);
->   	unsigned long count = PAGE_ALIGN(size) >> PAGE_SHIFT;
-> -	unsigned long pfn = page_to_pfn(virt_to_page(cpu_addr));
->   	unsigned long off = vma->vm_pgoff;
-> +	unsigned long pfn;
-> 
->   	vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
-> 
-> @@ -236,6 +236,7 @@ int dma_common_mmap(struct device *dev, struct vm_area_struct *vma,
->   		return ret;
-> 
->   	if (off < count && user_count <= (count - off)) {
-> +		pfn = page_to_pfn(virt_to_page(cpu_addr));
->   		ret = remap_pfn_range(vma, vma->vm_start,
->   				      pfn + off,
->   				      user_count << PAGE_SHIFT,
-> --
-> 2.7.4
-> 
-> _______________________________________________
-> iommu mailing list
-> iommu@lists.linux-foundation.org
-> https://lists.linuxfoundation.org/mailman/listinfo/iommu
-> 
+I am an open-minded and friendly girl to share a good time with you
+and have fun and enjoy on the go, bird watching, the rest of our
+lives. My Hobbies, tourism books, dance, music, soccer, tennis,
+swimming and cinema.
+I would just think about you, including your dose and doesn=E2=80=99t .I
+believe we will do well together, and live like one family.
+Thank you and God bless you, for you in your promise to help me here,
+looking forward to your reply by the grace of God and have a good day.
+I hope you send me your photos as well? I await your next reply in
+faith please reply through my private email at
+(mshakourrosarita22@gmail.com):
+Thanks.
+Ms Rosarita
