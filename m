@@ -1,33 +1,32 @@
-From: Masahiro Yamada <yamada.masahiro@socionext.com>
-Date: Mon, 13 Nov 2017 10:58:09 +0000
-Subject: [PATCH] sh: decompressor: ignore shipped files
-Message-Id: <1510570689-30737-1-git-send-email-yamada.masahiro@socionext.com>
+From: Jacopo Mondi <jacopo+renesas@jmondi.org>
+Date: Tue, 14 Nov 2017 17:08:04 +0000
+Subject: [PATCH v2 0/2] Migo-R: reserve memory block with memblock APIs
+Message-Id: <1510679286-6988-1-git-send-email-jacopo+renesas@jmondi.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-kbuild@vger.kernel.org, Masahiro Yamada <yamada.masahiro@socionext.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-kernel@vger.kernel.org
+To: ysato@users.sourceforge.jp, dalias@libc.org, laurent.pinchart@ideasonboard.com, geert@linux-m68k.org
+Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>, linux-sh@vger.kernel.org, linux-renesas-soc@vger.kernel.org, iommu@lists.linux-foundation.org, linux-kernel@vger.kernel.org
 
-These files are copied from arch/sh/lib, so should be ignored by git.
+Re-spinn of "[PATCH] sh: migor: Reserve memory block for CEU" with additional
+patch on top to post-pone page_to_pfn() mapping during mmap() on DMA memory.
 
-Signed-off-by: Masahiro Yamada <yamada.masahiro@socionext.com>
----
+Laurent is probably working on a proper fix, so I'm just copying the iommu list
+here to make them aware of the problem on SH4 architecture, but please do not
+consider that patch for inclusion for now.
 
- arch/sh/boot/compressed/.gitignore | 5 +++++
- 1 file changed, 5 insertions(+)
+Thanks
+   j
 
-diff --git a/arch/sh/boot/compressed/.gitignore b/arch/sh/boot/compressed/.gitignore
-index 2374a83..edff113 100644
---- a/arch/sh/boot/compressed/.gitignore
-+++ b/arch/sh/boot/compressed/.gitignore
-@@ -1 +1,6 @@
-+ashiftrt.S
-+ashldi3.c
-+ashlsi3.S
-+ashrsi3.S
-+lshrsi3.S
- vmlinux.bin.*
--- 
+Jacopo Mondi (2):
+  sh: migor: Reserve memory block for CEU
+  base: dma-mapping: Postpone page_to_pfn() on mmap()
+
+ arch/sh/boards/mach-migor/setup.c | 29 +++++++++++++++++++++++++++--
+ drivers/base/dma-mapping.c        |  3 ++-
+ 2 files changed, 29 insertions(+), 3 deletions(-)
+
+--
 2.7.4
 
