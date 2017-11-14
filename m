@@ -1,35 +1,52 @@
-From: Khalid Aziz <khalid.aziz@oracle.com>
-Date: Tue, 14 Nov 2017 14:52:25 +0000
-Subject: Re: linux-next: Tree for Nov 7
-Message-Id: <1510671145.4344.1.camel@oracle.com>
+From: Jacopo Mondi <jacopo+renesas@jmondi.org>
+Date: Tue, 14 Nov 2017 17:08:06 +0000
+Subject: [RFC v2 2/2] base: dma-mapping: Postpone page_to_pfn() on mmap()
+Message-Id: <1510679286-6988-3-git-send-email-jacopo+renesas@jmondi.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20171107162217.382cd754@canb.auug.org.au>
- <CACPK8Xfd4nqkf=Lk3n6+TNHAAi327r0dkUfGypZ3TpR0LqfS4Q@mail.gmail.com>
- <20171108142050.7w3yliulxjeco3b7@dhcp22.suse.cz>
- <20171110123054.5pnefm3mczsfv7bz@dhcp22.suse.cz>
- <CACPK8Xe5uUKEytkRiszdX511b_cYTD-z3X=ZsMcNJ-NOYnXfuQ@mail.gmail.com>
- <20171113092006.cjw2njjukt6limvb@dhcp22.suse.cz>
- <20171113094203.aofz2e7kueitk55y@dhcp22.suse.cz>
- <87lgjawgx1.fsf@concordia.ellerman.id.au>
- <20171113120057.555mvrs4fjq5tyng@dhcp22.suse.cz>
- <87h8txw87w.fsf@concordia.ellerman.id.au>
- <20171114090444.lhrkuywuls26g6lu@dhcp22.suse.cz>
-In-Reply-To: <20171114090444.lhrkuywuls26g6lu@dhcp22.suse.cz>
+References: <1510679286-6988-1-git-send-email-jacopo+renesas@jmondi.org>
+In-Reply-To: <1510679286-6988-1-git-send-email-jacopo+renesas@jmondi.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: ysato@users.sourceforge.jp, dalias@libc.org, laurent.pinchart@ideasonboard.com, geert@linux-m68k.org
+Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>, linux-sh@vger.kernel.org, linux-renesas-soc@vger.kernel.org, iommu@lists.linux-foundation.org, linux-kernel@vger.kernel.org
 
-On Tue, 2017-11-14 at 10:04 +0100, Michal Hocko wrote:
-> If there is a general consensus that this is the preferred way to go,
-> I
-> will post the patch as an RFC to linux-api
-> 
-> [1] http://lkml.kernel.org/r/20171113160637.jhekbdyfpccme3be@dhcp22.s
-> use.cz
+On SH4 architecture, with SPARSEMEM memory model, translating page to
+pfn hangs the CPU. Post-pone translation to pfn after
+dma_mmap_from_dev_coherent() function call as it succeeds and make page
+translation not necessary.
 
-I prefer the new flag. It is cleaner and avoids unintended breakage for
-existing flag.
+This patch was suggested by Laurent Pinchart and he's working to submit
+a proper fix mainline. Not sending for inclusion at the moment.
 
+Suggested-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
+---
+ drivers/base/dma-mapping.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/base/dma-mapping.c b/drivers/base/dma-mapping.c
+index e584edd..73d64d3 100644
+--- a/drivers/base/dma-mapping.c
++++ b/drivers/base/dma-mapping.c
+@@ -227,8 +227,8 @@ int dma_common_mmap(struct device *dev, struct vm_area_struct *vma,
+ #ifndef CONFIG_ARCH_NO_COHERENT_DMA_MMAP
+ 	unsigned long user_count = vma_pages(vma);
+ 	unsigned long count = PAGE_ALIGN(size) >> PAGE_SHIFT;
+-	unsigned long pfn = page_to_pfn(virt_to_page(cpu_addr));
+ 	unsigned long off = vma->vm_pgoff;
++	unsigned long pfn;
+
+ 	vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
+
+@@ -236,6 +236,7 @@ int dma_common_mmap(struct device *dev, struct vm_area_struct *vma,
+ 		return ret;
+
+ 	if (off < count && user_count <= (count - off)) {
++		pfn = page_to_pfn(virt_to_page(cpu_addr));
+ 		ret = remap_pfn_range(vma, vma->vm_start,
+ 				      pfn + off,
+ 				      user_count << PAGE_SHIFT,
 --
-Khalid
+2.7.4
+
