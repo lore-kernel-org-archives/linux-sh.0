@@ -1,7 +1,7 @@
-From: Kieran Bingham <kieran.bingham+renesas@ideasonboard.com>
-Date: Wed, 15 Nov 2017 11:32:51 +0000
+From: Sakari Ailus <sakari.ailus@iki.fi>
+Date: Wed, 15 Nov 2017 12:33:12 +0000
 Subject: Re: [PATCH v1 01/10] dt-bindings: media: Add Renesas CEU bindings
-Message-Id: <8d6fe1c0-f1cd-346e-6277-7e382a57ce98@ideasonboard.com>
+Message-Id: <20171115123312.7fyhlpjsb3mp3ypc@valkosipuli.retiisi.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1510743363-25798-1-git-send-email-jacopo+renesas@jmondi.org>
  <1510743363-25798-2-git-send-email-jacopo+renesas@jmondi.org>
@@ -9,14 +9,14 @@ In-Reply-To: <1510743363-25798-2-git-send-email-jacopo+renesas@jmondi.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Jacopo Mondi <jacopo+renesas@jmondi.org>, laurent.pinchart@ideasonboard.com, magnus.damm@gmail.com, geert@glider.be, mchehab@kernel.org, hverkuil@xs4all.nl
-Cc: linux-renesas-soc@vger.kernel.org, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Jacopo Mondi <jacopo+renesas@jmondi.org>
+Cc: laurent.pinchart@ideasonboard.com, magnus.damm@gmail.com, geert@glider.be, mchehab@kernel.org, hverkuil@xs4all.nl, linux-renesas-soc@vger.kernel.org, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
 Hi Jacopo,
 
-A couple of minor language fixups inline.
+Thanks for the patchset. Please see my comments below.
 
-On 15/11/17 10:55, Jacopo Mondi wrote:
+On Wed, Nov 15, 2017 at 11:55:54AM +0100, Jacopo Mondi wrote:
 > Add bindings documentation for Renesas Capture Engine Unit (CEU).
 > 
 > Signed-off-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
@@ -38,9 +38,6 @@ On 15/11/17 10:55, Jacopo Mondi wrote:
 > +RZ chip series and on SH Mobile ones.
 > +
 > +The interface supports a single parallel input with up 8/16bits data bus width.
-
-s/with up 8/16bits/with either 8 or 16 bits/ ?
-
 > +
 > +Required properties:
 > +- compatible
@@ -55,13 +52,15 @@ s/with up 8/16bits/with either 8 or 16 bits/ ?
 > +CEU supports a single parallel input and should contain a single 'port' subnode
 > +with a single 'endpoint'. Optional endpoint properties applicable to parallel
 > +input bus are described in "video-interfaces.txt".
+
+Could you list which ones they are? For someone not familiar with the
+parallel bus this might not be obvious; also not all hardware can make use
+of every one of these properties.
+
 > +
 > +Example:
 > +
 > +The example describes the connection between the Capture Engine Unit and a
-
-s/and a/and an/
-
 > +OV7670 image sensor sitting on bus i2c1 with an on-board 24Mhz clock.
 > +
 > +ceu: ceu@e8210000 {
@@ -111,6 +110,9 @@ s/and a/and an/
 > +			#clock-cells = <0>;
 > +			clock-frequency = <24000000>;
 > +		};
+
+What's the purpose of the fixed_clk node here?
+
 > +
 > +		port {
 > +			ov7670_out: endpoint {
@@ -124,4 +126,9 @@ s/and a/and an/
 > +			};
 > +		};
 > +	};
-> 
+
+-- 
+Regards,
+
+Sakari Ailus
+e-mail: sakari.ailus@iki.fi
