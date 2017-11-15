@@ -1,46 +1,117 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 30 Nov 2017 13:12:00 +0000
-Subject: [PATCH 3/5] tty: serial: sh-sci: Hide earlycon config question
-Message-Id: <1512047522-16312-4-git-send-email-geert+renesas@glider.be>
+From: Jacopo Mondi <jacopo+renesas@jmondi.org>
+Date: Wed, 15 Nov 2017 10:55:54 +0000
+Subject: [PATCH v1 01/10] dt-bindings: media: Add Renesas CEU bindings
+Message-Id: <1510743363-25798-2-git-send-email-jacopo+renesas@jmondi.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1512047522-16312-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1512047522-16312-1-git-send-email-geert+renesas@glider.be>
+References: <1510743363-25798-1-git-send-email-jacopo+renesas@jmondi.org>
+In-Reply-To: <1510743363-25798-1-git-send-email-jacopo+renesas@jmondi.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
-Cc: Jiri Slaby <jslaby@suse.com>, linux-serial@vger.kernel.org, linux-renesas-soc@vger.kernel.org, uclinux-h8-devel@lists.sourceforge.jp, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: laurent.pinchart@ideasonboard.com, magnus.damm@gmail.com, geert@glider.be, mchehab@kernel.org, hverkuil@xs4all.nl
+Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>, linux-renesas-soc@vger.kernel.org, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Renesas H8/300 and ARM platforms use DT and support earlycon, so most
-users want earlycon support to be enabled.
+Add bindings documentation for Renesas Capture Engine Unit (CEU).
 
-On SuperH platforms, earlycon is not yet supported.
-
-Hence follow the above rationale to configure the default, unless
-CONFIG_EXPERT is enabled.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
 ---
- drivers/tty/serial/Kconfig | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ .../devicetree/bindings/media/renesas,ceu.txt      | 87 ++++++++++++++++++++++
+ 1 file changed, 87 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/media/renesas,ceu.txt
 
-diff --git a/drivers/tty/serial/Kconfig b/drivers/tty/serial/Kconfig
-index 0c75562d620feb82..952a2c6a9da08fdd 100644
---- a/drivers/tty/serial/Kconfig
-+++ b/drivers/tty/serial/Kconfig
-@@ -774,10 +774,11 @@ config SERIAL_SH_SCI_CONSOLE
- 	default y
- 
- config SERIAL_SH_SCI_EARLYCON
--	bool "Support for early console on SuperH SCI(F)"
-+	bool "Support for early console on SuperH SCI(F)" if EXPERT
- 	depends on SERIAL_SH_SCI=y
- 	select SERIAL_CORE_CONSOLE
- 	select SERIAL_EARLYCON
-+	default ARCH_RENESAS || H8300
- 
- config SERIAL_SH_SCI_DMA
- 	bool "DMA support"
+diff --git a/Documentation/devicetree/bindings/media/renesas,ceu.txt b/Documentation/devicetree/bindings/media/renesas,ceu.txt
+new file mode 100644
+index 0000000..a88e9cb
+--- /dev/null
++++ b/Documentation/devicetree/bindings/media/renesas,ceu.txt
+@@ -0,0 +1,87 @@
++Renesas Capture Engine Unit (CEU)
++----------------------------------------------
++
++The Capture Engine Unit is the image capture interface found on Renesas
++RZ chip series and on SH Mobile ones.
++
++The interface supports a single parallel input with up 8/16bits data bus width.
++
++Required properties:
++- compatible
++	Must be "renesas,renesas-ceu".
++- reg
++	Physical address base and size.
++- interrupts
++	The interrupt line number.
++- pinctrl-names, pinctrl-0
++	phandle of pin controller sub-node configuring pins for CEU operations.
++
++CEU supports a single parallel input and should contain a single 'port' subnode
++with a single 'endpoint'. Optional endpoint properties applicable to parallel
++input bus are described in "video-interfaces.txt".
++
++Example:
++
++The example describes the connection between the Capture Engine Unit and a
++OV7670 image sensor sitting on bus i2c1 with an on-board 24Mhz clock.
++
++ceu: ceu@e8210000 {
++	reg = <0xe8210000 0x209c>;
++	compatible = "renesas,renesas-ceu";
++	interrupts = <GIC_SPI 332 IRQ_TYPE_LEVEL_HIGH>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&vio_pins>;
++
++	status = "okay";
++
++	port {
++		ceu_in: endpoint {
++			remote-endpoint = <&ov7670_out>;
++
++			bus-width = <8>;
++			hsync-active = <1>;
++			vsync-active = <1>;
++			pclk-sample = <1>;
++			data-active = <1>;
++		};
++	};
++};
++
++i2c1: i2c@fcfee400 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2c1_pins>;
++
++	status = "okay";
++	clock-frequency = <100000>;
++
++	ov7670: camera@21 {
++		compatible = "ovti,ov7670";
++		reg = <0x21>;
++
++		pinctrl-names = "default";
++		pinctrl-0 = <&vio_pins>;
++
++		reset-gpios = <&port3 11 GPIO_ACTIVE_LOW>;
++		powerdown-gpios = <&port3 12 GPIO_ACTIVE_HIGH>;
++
++		clocks = <&xclk>;
++		clock-names = "xclk";
++
++		xclk: fixed_clk {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-frequency = <24000000>;
++		};
++
++		port {
++			ov7670_out: endpoint {
++				remote-endpoint = <&ceu_in>;
++
++				bus-width = <8>;
++				hsync-active = <1>;
++				vsync-active = <1>;
++				pclk-sample = <1>;
++				data-active = <1>;
++			};
++		};
++	};
 -- 
 2.7.4
 
