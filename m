@@ -1,44 +1,60 @@
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Date: Fri, 17 Nov 2017 17:49:39 +0000
+From: Rich Felker <dalias@libc.org>
+Date: Fri, 17 Nov 2017 19:17:06 +0000
 Subject: Re: [J-core] [PATCH v5 00/22] sh: LANDISK and R2Dplus convert to device tree
-Message-Id: <E7B2D113-C30D-4A32-AFB6-DC91DDADE0E8@physik.fu-berlin.de>
+Message-Id: <20171117191706.GF1627@brightrain.aerifal.cx>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1467564402-2649-1-git-send-email-ysato@users.sourceforge.jp> <c1ec211d-cbe2-1139-edb0-8baa0e7364e8@physik.fu-berlin.de> <8c75b447-fc14-871e-1a04-733132527b65@landley.net>
-In-Reply-To: <8c75b447-fc14-871e-1a04-733132527b65@landley.net>
+References: <1467564402-2649-1-git-send-email-ysato@users.sourceforge.jp>
+ <c1ec211d-cbe2-1139-edb0-8baa0e7364e8@physik.fu-berlin.de>
+ <8c75b447-fc14-871e-1a04-733132527b65@landley.net>
+ <E7B2D113-C30D-4A32-AFB6-DC91DDADE0E8@physik.fu-berlin.de>
+In-Reply-To: <E7B2D113-C30D-4A32-AFB6-DC91DDADE0E8@physik.fu-berlin.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 8bit
-To: Rob Landley <rob@landley.net>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Rich Felker <dalias@libc.org>
+To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc: Rob Landley <rob@landley.net>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-I’ll have a go at this tonight and if the patches still apply fine, I’d just say go for it.
+On Fri, Nov 17, 2017 at 06:49:39PM +0100, John Paul Adrian Glaubitz wrote:
+> I’ll have a go at this tonight and if the patches still apply fine, I’d just say go for it.
 
-> On Nov 17, 2017, at 6:39 PM, Rob Landley <rob@landley.net> wrote:
-> 
->> On 11/17/2017 04:37 AM, John Paul Adrian Glaubitz wrote:
->> Hi there!
->> 
->>> On 07/03/2016 06:46 PM, Yoshinori Sato wrote:
->>> SH get devicetree support. But it not working on existing H/W.
->>> 
->>> IO-DATA HDL-U (aka landisk) currentry supported.
->>> This H/W like SH7751 evalution board. It's a best to use this as a
->>> change base H/W.
->>> RTS7751R2Dplus is QEMU-SH4 target. So easy trying.
->> 
->> This patch series - which would make a huge improvement - is still not
->> applied. It would be very useful to be able to test the device tree
->> implementation with QEMU.
->> 
->> Any of the SH maintainers can apply this?
-> 
-> It's Rich's call, but given that it's _from_ one of the sh maintainers,
-> sounds to me like it can just go in if it still applies? (If there's
-> bugfixes needed they can go in -rc2 or so, after this merge window.)
-> 
-> Given that qemu serial's been broken for 9 months now, I doubt this
-> would make anything worse. (I should really check Cedric's qemu fork to
-> see if he fixed that...)
-> 
-> Rob
+There were significant problems that I don't think were ever
+addressed, including incompatible changes in how boot command line was
+handled and possibly ambiguity about what a physical address means
+(zero based vs based in the zone SH3/4 excludes from MMU mapping) in
+the contract for how the bootloader passes a DTB pointer in to the
+kernel, or something similar.
 
+This is a large part of why I want to get to the point where I can
+build and boot a kernel on the LANDISK -- not being able to test any
+of this is a blocker for moving everything to device tree.
+
+Rich
+
+> > On Nov 17, 2017, at 6:39 PM, Rob Landley <rob@landley.net> wrote:
+> > 
+> >> On 11/17/2017 04:37 AM, John Paul Adrian Glaubitz wrote:
+> >> Hi there!
+> >> 
+> >>> On 07/03/2016 06:46 PM, Yoshinori Sato wrote:
+> >>> SH get devicetree support. But it not working on existing H/W.
+> >>> 
+> >>> IO-DATA HDL-U (aka landisk) currentry supported.
+> >>> This H/W like SH7751 evalution board. It's a best to use this as a
+> >>> change base H/W.
+> >>> RTS7751R2Dplus is QEMU-SH4 target. So easy trying.
+> >> 
+> >> This patch series - which would make a huge improvement - is still not
+> >> applied. It would be very useful to be able to test the device tree
+> >> implementation with QEMU.
+> >> 
+> >> Any of the SH maintainers can apply this?
+> > 
+> > It's Rich's call, but given that it's _from_ one of the sh maintainers,
+> > sounds to me like it can just go in if it still applies? (If there's
+> > bugfixes needed they can go in -rc2 or so, after this merge window.)
+> > 
+> > Given that qemu serial's been broken for 9 months now, I doubt this
+> > would make anything worse. (I should really check Cedric's qemu fork to
+> > see if he fixed that...)
+> > 
+> > Rob
