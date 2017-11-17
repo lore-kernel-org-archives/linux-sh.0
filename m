@@ -1,54 +1,35 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 30 Nov 2017 13:11:57 +0000
-Subject: [PATCH 0/5] tty: serial: sh-sci: Hide driver specific config questions
-Message-Id: <1512047522-16312-1-git-send-email-geert+renesas@glider.be>
+From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Date: Fri, 17 Nov 2017 10:37:55 +0000
+Subject: Re: [PATCH v5 00/22] sh: LANDISK and R2Dplus convert to device tree
+Message-Id: <c1ec211d-cbe2-1139-edb0-8baa0e7364e8@physik.fu-berlin.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1467564402-2649-1-git-send-email-ysato@users.sourceforge.jp>
+In-Reply-To: <1467564402-2649-1-git-send-email-ysato@users.sourceforge.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
-Cc: Jiri Slaby <jslaby@suse.com>, linux-serial@vger.kernel.org, linux-renesas-soc@vger.kernel.org, uclinux-h8-devel@lists.sourceforge.jp, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, j-core@server-01.j-core.org
 
-	Hi Greg, Simon, Magnus, Sato-san, Rich,
+Hi there!
 
-The Renesas (H)SCI(F) driver has several driver-specific config options.
-This may confuse users, and leads to inefficient testing and development.
-E.g. recently a regression was introduced in SCIF DMA support, and
-someone didn't see early con output, both due to the relevant options
-being accidentally disabled.
+On 07/03/2016 06:46 PM, Yoshinori Sato wrote:
+> SH get devicetree support. But it not working on existing H/W.
+> 
+> IO-DATA HDL-U (aka landisk) currentry supported.
+> This H/W like SH7751 evalution board. It's a best to use this as a
+> change base H/W.
+> RTS7751R2Dplus is QEMU-SH4 target. So easy trying.
 
-This patch series is an attempt to stop bothering (H)SCI(F) users with
-several config questions, while providing sensible defaults for these
-options, based on the target platform.  The defaults can still be
-overridden if CONFIG_EXPERT is enabled.
+This patch series - which would make a huge improvement - is still not
+applied. It would be very useful to be able to test the device tree
+implementation with QEMU.
 
-The last patch updates shmobile_defconfig to take into account the
-defaults.  It is marked RFC, as it depends on the first 4 patches to be
-effective, and to avoid feature regressions.
+Any of the SH maintainers can apply this?
 
-Thanks for your comments!
-
-Geert Uytterhoeven (5):
-  tty: serial: sh-sci: Hide number of ports config question
-  tty: serial: sh-sci: Hide serial console config question
-  tty: serial: sh-sci: Hide earlycon config question
-  tty: serial: sh-sci: Hide DMA config question
-  [RFC] ARM: shmobile: defconfig: Disable CONFIG_EMBEDDED
-
- arch/arm/configs/shmobile_defconfig |  6 +-----
- drivers/tty/serial/Kconfig          | 15 ++++++++++-----
- 2 files changed, 11 insertions(+), 10 deletions(-)
+Adrian
 
 -- 
-2.7.4
-
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer - glaubitz@debian.org
+`. `'   Freie Universitaet Berlin - glaubitz@physik.fu-berlin.de
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
