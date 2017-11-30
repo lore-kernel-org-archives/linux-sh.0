@@ -1,49 +1,54 @@
-From: " M,Shakour Rosarita" <hassanamira04@gmail.com>
-Date: Wed, 15 Nov 2017 11:33:00 +0000
-Subject: Hello Dear...
-Message-Id: <CADmkupjYEcBxoBbseCrhGgr=CORKRp8Vc4bWDm+QXPmL0OCQ+Q@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 30 Nov 2017 13:11:57 +0000
+Subject: [PATCH 0/5] tty: serial: sh-sci: Hide driver specific config questions
+Message-Id: <1512047522-16312-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <CAMyxZDGNhOXmC-7Rt7EqUJUYuvRNUAsBsbpds9-aEKzPhLnhmQ@mail.gmail.com>
-In-Reply-To: <CAMyxZDGNhOXmC-7Rt7EqUJUYuvRNUAsBsbpds9-aEKzPhLnhmQ@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+Cc: Jiri Slaby <jslaby@suse.com>, linux-serial@vger.kernel.org, linux-renesas-soc@vger.kernel.org, uclinux-h8-devel@lists.sourceforge.jp, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Hello Dear...
+	Hi Greg, Simon, Magnus, Sato-san, Rich,
 
-I know that this message will come to you as a surprise. I hoped that
-you will not expose or betray this trust and confident that I am about
-to repose on you, my name is M, Shakour Rosarita. I am 19 years old
-Girl, female, from Tartu Syria, (never married) 61 kg, white in
-complexion, and I am currently living in the refugee camp here in
-Abidjan Ivory Coast, My late beloved father M,Shakour Hassin was a
-renowned businessman and owner of Natour Petrol Station in Syria, he
-was killed in a stampede riot in Tartu, Syria.
-When I got the news about my parents. I fled to a nearby country
-Jordan before I joined a ferry to Africa and came to Abidjan capital
-city Ivory Coast West Africa find safety here.
-I came in 2015 to Abidjan and I now live in refugee camps here as
-refugees are allowed freely to enter here without, My late father
-deposited (US$6.200.000.00m) My late father kept the money at the bank
-of Africa, I want you to help me transfer the money to your hand so
-that you will help me bring me into your country for my continue
-education.
+The Renesas (H)SCI(F) driver has several driver-specific config options.
+This may confuse users, and leads to inefficient testing and development.
+E.g. recently a regression was introduced in SCIF DMA support, and
+someone didn't see early con output, both due to the relevant options
+being accidentally disabled.
 
-I sent my pictures here for you to see. Who I am seriously looking for
-a good-person in my life, so I want to hear from you soon and learn
-more about you.
+This patch series is an attempt to stop bothering (H)SCI(F) users with
+several config questions, while providing sensible defaults for these
+options, based on the target platform.  The defaults can still be
+overridden if CONFIG_EXPERT is enabled.
 
-I am an open-minded and friendly girl to share a good time with you
-and have fun and enjoy on the go, bird watching, the rest of our
-lives. My Hobbies, tourism books, dance, music, soccer, tennis,
-swimming and cinema.
-I would just think about you, including your dose and doesn=E2=80=99t .I
-believe we will do well together, and live like one family.
-Thank you and God bless you, for you in your promise to help me here,
-looking forward to your reply by the grace of God and have a good day.
-I hope you send me your photos as well? I await your next reply in
-faith please reply through my private email at
-(mshakourrosarita22@gmail.com):
-Thanks.
-Ms Rosarita
+The last patch updates shmobile_defconfig to take into account the
+defaults.  It is marked RFC, as it depends on the first 4 patches to be
+effective, and to avoid feature regressions.
+
+Thanks for your comments!
+
+Geert Uytterhoeven (5):
+  tty: serial: sh-sci: Hide number of ports config question
+  tty: serial: sh-sci: Hide serial console config question
+  tty: serial: sh-sci: Hide earlycon config question
+  tty: serial: sh-sci: Hide DMA config question
+  [RFC] ARM: shmobile: defconfig: Disable CONFIG_EMBEDDED
+
+ arch/arm/configs/shmobile_defconfig |  6 +-----
+ drivers/tty/serial/Kconfig          | 15 ++++++++++-----
+ 2 files changed, 11 insertions(+), 10 deletions(-)
+
+-- 
+2.7.4
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
