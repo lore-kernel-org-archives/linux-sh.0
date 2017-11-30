@@ -1,65 +1,81 @@
-From: jacopo mondi <jacopo@jmondi.org>
-Date: Fri, 17 Nov 2017 09:15:57 +0000
-Subject: Re: [PATCH v1 06/10] sh: sh7722: Rename CEU clock
-Message-Id: <20171117091557.GD4668@w540>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 30 Nov 2017 13:12:02 +0000
+Subject: [PATCH/RFC 5/5] ARM: shmobile: defconfig: Disable CONFIG_EMBEDDED
+Message-Id: <1512047522-16312-6-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1510743363-25798-1-git-send-email-jacopo+renesas@jmondi.org>
- <1510743363-25798-7-git-send-email-jacopo+renesas@jmondi.org>
- <CAMuHMdVTQpkXLEk9NvG6gEAfo5whiLBjUrRL0X0Y924tcy7OVw@mail.gmail.com>
-In-Reply-To: <CAMuHMdVTQpkXLEk9NvG6gEAfo5whiLBjUrRL0X0Y924tcy7OVw@mail.gmail.com>
+References: <1512047522-16312-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1512047522-16312-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Magnus Damm <magnus.damm@gmail.com>, Mauro Carvalho Chehab <mchehab@kernel.org>, Hans Verkuil <hverkuil@xs4all.nl>, Linux-Renesas <linux-renesas-soc@vger.kernel.org>, Linux Media Mailing List <linux-media@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+Cc: Jiri Slaby <jslaby@suse.com>, linux-serial@vger.kernel.org, linux-renesas-soc@vger.kernel.org, uclinux-h8-devel@lists.sourceforge.jp, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Hi Geert,
+CONFIG_EXPERT exposes too many config options that do not matter for
+development. However, CONFIG_EMBEDDED selects CONFIG_EXPERT, so it
+cannot be disabled.
 
-On Wed, Nov 15, 2017 at 02:13:43PM +0100, Geert Uytterhoeven wrote:
-> Hi Jacopo,
->
-> On Wed, Nov 15, 2017 at 11:55 AM, Jacopo Mondi
-> <jacopo+renesas@jmondi.org> wrote:
-> > Rename CEU clock to match the new platform driver name used in Migo-R.
-> >
-> > There are no other sh7722 based devices Migo-R apart, so we can safely
-> > rename this.
-> >
-> > Signed-off-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
-> > ---
-> >  arch/sh/kernel/cpu/sh4a/clock-sh7722.c | 2 +-
-> >  1 file changed, 1 insertion(+), 1 deletion(-)
-> >
-> > diff --git a/arch/sh/kernel/cpu/sh4a/clock-sh7722.c b/arch/sh/kernel/cpu/sh4a/clock-sh7722.c
-> > index 8f07a1a..d85091e 100644
-> > --- a/arch/sh/kernel/cpu/sh4a/clock-sh7722.c
-> > +++ b/arch/sh/kernel/cpu/sh4a/clock-sh7722.c
-> > @@ -223,7 +223,7 @@ static struct clk_lookup lookups[] = {
-> >         CLKDEV_DEV_ID("sh-vou.0", &mstp_clks[HWBLK_VOU]),
-> >         CLKDEV_CON_ID("jpu0", &mstp_clks[HWBLK_JPU]),
-> >         CLKDEV_CON_ID("beu0", &mstp_clks[HWBLK_BEU]),
-> > -       CLKDEV_DEV_ID("sh_mobile_ceu.0", &mstp_clks[HWBLK_CEU]),
-> > +       CLKDEV_DEV_ID("renesas-ceu.0", &mstp_clks[HWBLK_CEU]),
-> >         CLKDEV_CON_ID("veu0", &mstp_clks[HWBLK_VEU]),
-> >         CLKDEV_CON_ID("vpu0", &mstp_clks[HWBLK_VPU]),
-> >         CLKDEV_DEV_ID("sh_mobile_lcdc_fb.0", &mstp_clks[HWBLK_LCDC]),
->
-> Shouldn't this be merged with "[PATCH v1 05/10] arch: sh: migor: Use new
-> renesas-ceu camera driver", to avoid breaking bisection?
+Hence disable CONFIG_EMBEDDED, and compensate for the loss of
+CONFIG_DEBUG_KERNEL by enabling the latter.
 
-That's a good idea. I will merge these two commits in v2.
+Actual impact:
+  - CONFIG_NAMESPACES=y,
+  - CONFIG_SYSCTL_SYSCALL=n,
+  - CONFIG_SERIAL_SH_SCI_NR_UARTS changed from 20 to 18,
+  - CONFIG_SERIAL_SH_SCI_EARLYCON=y,
+  - Some HID support became enabled,
+  - CONFIG_DEBUG_MEMORY_INIT=y,
 
-Thanks
-   j
+Refresh the result.
 
->
-> Gr{oetje,eeting}s,
->
->                         Geert
->
-> --
-> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
->
-> In personal conversations with technical people, I call myself a hacker. But
-> when I'm talking to journalists I just say "programmer" or something like that.
->                                 -- Linus Torvalds
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/configs/shmobile_defconfig | 6 +-----
+ 1 file changed, 1 insertion(+), 5 deletions(-)
+
+diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
+index 7b4fc01431483f21..41eccc1b6cef7251 100644
+--- a/arch/arm/configs/shmobile_defconfig
++++ b/arch/arm/configs/shmobile_defconfig
+@@ -5,8 +5,6 @@ CONFIG_IKCONFIG_PROC=y
+ CONFIG_CGROUPS=y
+ CONFIG_BLK_DEV_INITRD=y
+ CONFIG_CC_OPTIMIZE_FOR_SIZE=y
+-CONFIG_SYSCTL_SYSCALL=y
+-CONFIG_EMBEDDED=y
+ CONFIG_PERF_EVENTS=y
+ CONFIG_SLAB=y
+ CONFIG_ARCH_RENESAS=y
+@@ -34,7 +32,6 @@ CONFIG_SMP=y
+ CONFIG_SCHED_MC=y
+ CONFIG_HAVE_ARM_ARCH_TIMER=y
+ CONFIG_NR_CPUS=8
+-CONFIG_AEABI=y
+ CONFIG_HIGHMEM=y
+ CONFIG_CMA=y
+ CONFIG_ZBOOT_ROM_TEXT=0x0
+@@ -106,7 +103,6 @@ CONFIG_SERIAL_8250_EM=y
+ CONFIG_SERIAL_SH_SCI=y
+ CONFIG_SERIAL_SH_SCI_NR_UARTS 
+ CONFIG_SERIAL_SH_SCI_CONSOLE=y
+-CONFIG_SERIAL_SH_SCI_DMA=y
+ CONFIG_I2C_CHARDEV=y
+ CONFIG_I2C_MUX=y
+ CONFIG_I2C_DEMUX_PINCTRL=y
+@@ -166,7 +162,6 @@ CONFIG_FB_SH_MOBILE_MERAM=y
+ # CONFIG_BACKLIGHT_GENERIC is not set
+ CONFIG_BACKLIGHT_PWM=y
+ CONFIG_BACKLIGHT_AS3711=y
+-CONFIG_FRAMEBUFFER_CONSOLE=y
+ CONFIG_SOUND=y
+ CONFIG_SND=y
+ CONFIG_SND_SOC=y
+@@ -225,4 +220,5 @@ CONFIG_NLS_ISO8859_1=y
+ CONFIG_PRINTK_TIME=y
+ # CONFIG_ENABLE_WARN_DEPRECATED is not set
+ # CONFIG_ENABLE_MUST_CHECK is not set
++CONFIG_DEBUG_KERNEL=y
+ # CONFIG_ARM_UNWIND is not set
+-- 
+2.7.4
+
