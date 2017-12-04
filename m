@@ -1,37 +1,39 @@
-From: Sergey Senozhatsky <sergey.senozhatsky.work@gmail.com>
-Date: Tue, 12 Dec 2017 02:50:52 +0000
-Subject: Re: [PATCH 11/13] irq debug: do not use print_symbol()
-Message-Id: <20171212025052.GD7798@jagdpanzerIV>
+From: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+Date: Mon, 04 Dec 2017 14:30:49 +0000
+Subject: [PATCH] arch/sh: fix Ethernet clock for SH7786
+Message-Id: <20171204143049.20244-1-thomas.petazzoni@free-electrons.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20171211125025.2270-1-sergey.senozhatsky@gmail.com>
- <20171211125025.2270-12-sergey.senozhatsky@gmail.com>
- <063a776096964e8192c94e38413edbe0@AcuMS.aculab.com>
-In-Reply-To: <063a776096964e8192c94e38413edbe0@AcuMS.aculab.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On (12/11/17 12:55), David Laight wrote:
-> >  kernel/irq/debug.h | 8 +++-----
-> >  1 file changed, 3 insertions(+), 5 deletions(-)
-> > 
-> > diff --git a/kernel/irq/debug.h b/kernel/irq/debug.h
-> > index 17f05ef8f575..5766e15c1160 100644
-> > --- a/kernel/irq/debug.h
-> > +++ b/kernel/irq/debug.h
-> ...
-> > @@ -15,13 +13,13 @@ static inline void print_irq_desc(unsigned int irq, struct irq_desc *desc)
-> >  	printk("irq %d, desc: %p, depth: %d, count: %d, unhandled: %d\n",
-> >  		irq, desc, desc->depth, desc->irq_count, desc->irqs_unhandled);
-> >  	printk("->handle_irq():  %p, ", desc->handle_irq);
-> > -	print_symbol("%s\n", (unsigned long)desc->handle_irq);
-> > +	pr_cont("%pS\n", desc->handle_irq);
-> 
-> Looks like you can (and should) use a single printk() instead of pr_cont.
+The sh_eth driver (used for the Ethernet controller on SH7786) uses
+devm_clk_get(&pdev->dev, NULL) to get its clock. It means that con_id
+= NULL, and therefore a clock lookup made on the con_id doesn't work.
 
-thanks, good point. those pr_cont()-s basically just replicate
-the old behaviour; but it'll be better to get tid of them. will
-follow up shortly.
+In order to make sure that the sh_eth driver is able to find its clock
+on SH7786, we switch from using a con_id to a dev_id in the clock
+lookup table for this SoC.
 
-	-ss
+Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+---
+ arch/sh/kernel/cpu/sh4a/clock-sh7786.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/sh/kernel/cpu/sh4a/clock-sh7786.c b/arch/sh/kernel/cpu/sh4a/clock-sh7786.c
+index ac3dcfe5d303..fa183280a62c 100644
+--- a/arch/sh/kernel/cpu/sh4a/clock-sh7786.c
++++ b/arch/sh/kernel/cpu/sh4a/clock-sh7786.c
+@@ -170,7 +170,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("dmac_11_6_fck", &mstp_clks[MSTP105]),
+ 	CLKDEV_CON_ID("dmac_5_0_fck", &mstp_clks[MSTP104]),
+ 	CLKDEV_CON_ID("du_fck", &mstp_clks[MSTP103]),
+-	CLKDEV_CON_ID("ether_fck", &mstp_clks[MSTP102]),
++	CLKDEV_DEV_ID("sh7786-ether.0", &mstp_clks[MSTP102]),
+ };
+ 
+ int __init arch_clk_init(void)
+-- 
+2.13.6
+
