@@ -1,185 +1,88 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Fri, 29 Dec 2017 08:18:38 +0000
-Subject: [PATCH 34/67] cris: use dma-direct
-Message-Id: <20171229081911.2802-35-hch@lst.de>
+From: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+Date: Mon, 04 Dec 2017 15:09:06 +0000
+Subject: [PATCH 7/8] arch/sh: pcie-sh7786: adjust the memory mapping
+Message-Id: <20171204150907.24345-8-thomas.petazzoni@free-electrons.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20171229081911.2802-1-hch@lst.de>
-In-Reply-To: <20171229081911.2802-1-hch@lst.de>
+References: <20171204150907.24345-1-thomas.petazzoni@free-electrons.com>
+In-Reply-To: <20171204150907.24345-1-thomas.petazzoni@free-electrons.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: iommu@lists.linux-foundation.org
-Cc: linux-mips@linux-mips.org, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, Guan Xuetao <gxt@mprc.pku.edu.cn>, linux-arch@vger.kernel.org, linux-s390@vger.kernel.org, linux-c6x-dev@linux-c6x.org, linux-hexagon@vger.kernel.org, x86@kernel.org, linux-snps-arc@lists.infradead.org, adi-buildroot-devel@lists.sourceforge.net, linux-m68k@lists.linux-m68k.org, patches@groups.riscv.org, linux-metag@vger.kernel.org, linux-arm-kernel@lists.infradead.org, Michal Simek <monstr@monstr.eu>, linux-parisc@vger.kernel.org, linux-cris-kernel@axis.com, linux-kernel@vger.kernel.org, linux-alpha@vger.kernel.org, linuxppc-dev@lists.ozlabs.org
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Bjorn Helgaas <bhelgaas@google.com>, Lorenzo Pieralisi <lorenzo.pieralisi@arm.com>
+Cc: linux-sh@vger.kernel.org, linux-pci@vger.kernel.org, Geert Uytterhoeven <geert@linux-m68k.org>, Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
 
-cris currently has an incomplete direct mapping dma_map_ops implementation
-is PCI support is enabled.  Replace it with the fully feature generic
-dma-direct implementation.
+The code setting up the PCI -> SuperHighway mapping doesn't take into
+account the fact that the address stored in PCIELARx must be aligned
+with the size stored in PCIELAMRx.
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
+For example, when your physical memory starts at 0x0800_0000 (128 MB),
+a size of 64 MB or 128 MB is fine. However, if you have 256 MB of
+memory, it doesn't work because the base address is not aligned on the
+size.
+
+In such situation, we have to round down the base address to make sure
+it is aligned on the size of the area. For for a 0x0800_0000 base
+address with 256 MB of memory, we will round down to 0x0, and extend
+the size of the mapping to 512 MB.
+
+This allows the mapping to work on platforms that have 256 MB of
+RAM. The current setup would only work with 128 MB of RAM or less.
+
+Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
 ---
- arch/cris/Kconfig                       |  4 ++
- arch/cris/arch-v32/drivers/pci/Makefile |  2 +-
- arch/cris/arch-v32/drivers/pci/dma.c    | 78 ---------------------------------
- arch/cris/include/asm/Kbuild            |  1 +
- arch/cris/include/asm/dma-mapping.h     | 20 ---------
- 5 files changed, 6 insertions(+), 99 deletions(-)
- delete mode 100644 arch/cris/arch-v32/drivers/pci/dma.c
- delete mode 100644 arch/cris/include/asm/dma-mapping.h
+ arch/sh/drivers/pci/pcie-sh7786.c | 19 ++++++++++++++-----
+ 1 file changed, 14 insertions(+), 5 deletions(-)
 
-diff --git a/arch/cris/Kconfig b/arch/cris/Kconfig
-index 54d3f426763b..cd5a0865c97f 100644
---- a/arch/cris/Kconfig
-+++ b/arch/cris/Kconfig
-@@ -33,6 +33,9 @@ config GENERIC_CALIBRATE_DELAY
- config NO_IOPORT_MAP
- 	def_bool y if !PCI
+diff --git a/arch/sh/drivers/pci/pcie-sh7786.c b/arch/sh/drivers/pci/pcie-sh7786.c
+index 69da026682ba..224bcad24dca 100644
+--- a/arch/sh/drivers/pci/pcie-sh7786.c
++++ b/arch/sh/drivers/pci/pcie-sh7786.c
+@@ -284,7 +284,7 @@ static int __init pcie_init(struct sh7786_pcie_port *port)
+ {
+ 	struct pci_channel *chan = port->hose;
+ 	unsigned int data;
+-	phys_addr_t memphys;
++	phys_addr_t memstart, memend;
+ 	size_t memsize;
+ 	int ret, i, win;
  
-+config NO_DMA
-+	def_bool y if !PCI
+@@ -339,15 +339,24 @@ static int __init pcie_init(struct sh7786_pcie_port *port)
+ 	data |= (0xff << 16);
+ 	pci_write_reg(chan, data, SH4A_PCIEMACCTLR);
+ 
+-	memphys = __pa(memory_start);
+-	memsize = roundup_pow_of_two(memory_end - memory_start);
++	memstart = __pa(memory_start);
++	memend   = __pa(memory_end);
++	memsize = roundup_pow_of_two(memend - memstart);
 +
- config FORCE_MAX_ZONEORDER
- 	int
- 	default 6
-@@ -72,6 +75,7 @@ config CRIS
- 	select GENERIC_SCHED_CLOCK if ETRAX_ARCH_V32
- 	select HAVE_DEBUG_BUGVERBOSE if ETRAX_ARCH_V32
- 	select HAVE_NMI
-+	select DMA_DIRECT_OPS if PCI
++	/*
++	 * The start address must be aligned on its size. So we round
++	 * it down, and then recalculate the size so that it covers
++	 * the entire memory.
++	 */
++	memstart = ALIGN_DOWN(memstart, memsize);
++	memsize = roundup_pow_of_two(memend - memstart);
  
- config HZ
- 	int
-diff --git a/arch/cris/arch-v32/drivers/pci/Makefile b/arch/cris/arch-v32/drivers/pci/Makefile
-index bff7482f2444..93c8be6170b1 100644
---- a/arch/cris/arch-v32/drivers/pci/Makefile
-+++ b/arch/cris/arch-v32/drivers/pci/Makefile
-@@ -2,4 +2,4 @@
- # Makefile for Etrax cardbus driver
- #
+ 	/*
+ 	 * If there's more than 512MB of memory, we need to roll over to
+ 	 * LAR1/LAMR1.
+ 	 */
+ 	if (memsize > SZ_512M) {
+-		pci_write_reg(chan, memphys + SZ_512M, SH4A_PCIELAR1);
++		pci_write_reg(chan, memstart + SZ_512M, SH4A_PCIELAR1);
+ 		pci_write_reg(chan, ((memsize - SZ_512M) - SZ_256) | 1,
+ 			      SH4A_PCIELAMR1);
+ 		memsize = SZ_512M;
+@@ -363,7 +372,7 @@ static int __init pcie_init(struct sh7786_pcie_port *port)
+ 	 * LAR0/LAMR0 covers up to the first 512MB, which is enough to
+ 	 * cover all of lowmem on most platforms.
+ 	 */
+-	pci_write_reg(chan, memphys, SH4A_PCIELAR0);
++	pci_write_reg(chan, memstart, SH4A_PCIELAR0);
+ 	pci_write_reg(chan, (memsize - SZ_256) | 1, SH4A_PCIELAMR0);
  
--obj-$(CONFIG_ETRAX_CARDBUS)        += bios.o dma.o
-+obj-$(CONFIG_ETRAX_CARDBUS)        += bios.o
-diff --git a/arch/cris/arch-v32/drivers/pci/dma.c b/arch/cris/arch-v32/drivers/pci/dma.c
-deleted file mode 100644
-index c7e3056885d3..000000000000
---- a/arch/cris/arch-v32/drivers/pci/dma.c
-+++ /dev/null
-@@ -1,78 +0,0 @@
--// SPDX-License-Identifier: GPL-2.0
--/*
-- * Dynamic DMA mapping support.
-- *
-- * On cris there is no hardware dynamic DMA address translation,
-- * so consistent alloc/free are merely page allocation/freeing.
-- * The rest of the dynamic DMA mapping interface is implemented
-- * in asm/pci.h.
-- *
-- * Borrowed from i386.
-- */
--
--#include <linux/types.h>
--#include <linux/mm.h>
--#include <linux/string.h>
--#include <linux/pci.h>
--#include <linux/gfp.h>
--#include <asm/io.h>
--
--static void *v32_dma_alloc(struct device *dev, size_t size,
--		dma_addr_t *dma_handle, gfp_t gfp, unsigned long attrs)
--{
--	void *ret;
--
--	if (dev = NULL || (dev->coherent_dma_mask < 0xffffffff))
--		gfp |= GFP_DMA;
--
--	ret = (void *)__get_free_pages(gfp,  get_order(size));
--
--	if (ret != NULL) {
--		memset(ret, 0, size);
--		*dma_handle = virt_to_phys(ret);
--	}
--	return ret;
--}
--
--static void v32_dma_free(struct device *dev, size_t size, void *vaddr,
--		dma_addr_t dma_handle, unsigned long attrs)
--{
--	free_pages((unsigned long)vaddr, get_order(size));
--}
--
--static inline dma_addr_t v32_dma_map_page(struct device *dev,
--		struct page *page, unsigned long offset, size_t size,
--		enum dma_data_direction direction, unsigned long attrs)
--{
--	return page_to_phys(page) + offset;
--}
--
--static inline int v32_dma_map_sg(struct device *dev, struct scatterlist *sg,
--		int nents, enum dma_data_direction direction,
--		unsigned long attrs)
--{
--	printk("Map sg\n");
--	return nents;
--}
--
--static inline int v32_dma_supported(struct device *dev, u64 mask)
--{
--        /*
--         * we fall back to GFP_DMA when the mask isn't all 1s,
--         * so we can't guarantee allocations that must be
--         * within a tighter range than GFP_DMA..
--         */
--        if (mask < 0x00ffffff)
--                return 0;
--	return 1;
--}
--
--const struct dma_map_ops v32_dma_ops = {
--	.alloc			= v32_dma_alloc,
--	.free			= v32_dma_free,
--	.map_page		= v32_dma_map_page,
--	.map_sg                 = v32_dma_map_sg,
--	.dma_supported		= v32_dma_supported,
--	.is_phys		= true,
--};
--EXPORT_SYMBOL(v32_dma_ops);
-diff --git a/arch/cris/include/asm/Kbuild b/arch/cris/include/asm/Kbuild
-index 460349cb147f..8cf45ac30c1b 100644
---- a/arch/cris/include/asm/Kbuild
-+++ b/arch/cris/include/asm/Kbuild
-@@ -5,6 +5,7 @@ generic-y += cmpxchg.h
- generic-y += current.h
- generic-y += device.h
- generic-y += div64.h
-+generic-y += dma-mapping.h
- generic-y += emergency-restart.h
- generic-y += exec.h
- generic-y += extable.h
-diff --git a/arch/cris/include/asm/dma-mapping.h b/arch/cris/include/asm/dma-mapping.h
-deleted file mode 100644
-index 1553bdb30a0c..000000000000
---- a/arch/cris/include/asm/dma-mapping.h
-+++ /dev/null
-@@ -1,20 +0,0 @@
--/* SPDX-License-Identifier: GPL-2.0 */
--#ifndef _ASM_CRIS_DMA_MAPPING_H
--#define _ASM_CRIS_DMA_MAPPING_H
--
--#ifdef CONFIG_PCI
--extern const struct dma_map_ops v32_dma_ops;
--
--static inline const struct dma_map_ops *get_arch_dma_ops(struct bus_type *bus)
--{
--	return &v32_dma_ops;
--}
--#else
--static inline const struct dma_map_ops *get_arch_dma_ops(struct bus_type *bus)
--{
--	BUG();
--	return NULL;
--}
--#endif
--
--#endif
+ 	/* Finish initialization */
 -- 
-2.14.2
+2.13.6
 
