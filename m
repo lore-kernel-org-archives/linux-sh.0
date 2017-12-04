@@ -1,50 +1,54 @@
-From: 55600530@mylife.unisa.ac.za
-Date: Sat, 16 Dec 2017 10:51:10 +0000
-Subject: Hallo mein lieber Freund,
-Message-Id: <DB5PR01MB1383A72003169413ADC098D2BF080@DB5PR01MB1383.eurprd01.prod.exchangelabs.com>
+From: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+Date: Mon, 04 Dec 2017 15:09:00 +0000
+Subject: [PATCH 1/8] arch/sh: add sh7786_mm_sel() function
+Message-Id: <20171204150907.24345-2-thomas.petazzoni@free-electrons.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20171204150907.24345-1-thomas.petazzoni@free-electrons.com>
+In-Reply-To: <20171204150907.24345-1-thomas.petazzoni@free-electrons.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Bjorn Helgaas <bhelgaas@google.com>, Lorenzo Pieralisi <lorenzo.pieralisi@arm.com>
+Cc: linux-sh@vger.kernel.org, linux-pci@vger.kernel.org, Geert Uytterhoeven <geert@linux-m68k.org>, Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
 
-Hallo mein lieber Freund,
+The SH7786 has different physical memory layout configurations,
+configurable through the MMSELR register. The configuration is
+typically defined by the bootloader, so Linux generally doesn't care.
 
-Ich schreibe Ihnen diese Post mit schweren Tr=E4nen In meinen Augen und gro=
-=DFem Kummer in meinem Herzen, Mein Name ist Vera Hollin Kvan, und ich kont=
-aktiere Sie aus meinem Land Indien Ich m=F6chte Ihnen dies sagen, weil ich =
-keine habe andere Option, als Ihnen zu sagen, wie ich ber=FChrt wurde, um S=
-ie zu =F6ffnen, ich heiratete mit Herrn Hollin Kvan, der mit der tunesische=
-n Botschaft in Madrid Spanien f=FCr neun Jahre arbeitete, bevor er im Jahr =
-2005 starb.Wir waren seit elf Jahren ohne eine Kind.
+Except that depending on the configuration, some PCI MEM areas may or
+may not be available. This commit adds a helper function that allows
+to retrieve the current physical memory layout configuration. It will
+be used in a following patch to exclude unusable PCI MEM areas during
+the PCI initialization.
 
-Er starb nach einer kurzen Krankheit, die nur f=FCnf Tage dauerte. Seit sei=
-nem Tod habe ich beschlossen, nicht wieder zu heiraten. Als mein verstorben=
-er Ehemann lebte, deponierte er die Summe von $ 4,850,000.00USD (vier Milli=
-onen achthundertundf=FCnfzigtausend Dollar) in einer Bank hier in Indien. N=
-ew Delhi die Hauptstadt von Indien, derzeit dieses Geld ist immer noch in d=
-er Bank.
+Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+---
+ arch/sh/include/cpu-sh4/cpu/sh7786.h | 7 +++++++
+ 1 file changed, 7 insertions(+)
 
-Er machte dieses Geld f=FCr den Export von Gold aus Madrid Spanien Bergbau-=
-Factary.K=FCrzlich mein Arzt sagte mir, dass ich nicht f=FCr die Dauer von =
-sieben Monaten wegen Krebs Problem dauern w=FCrde. Derjenige, der mich am m=
-eisten st=F6rt, ist meine Schlaganfallkrankheit. Nachdem ich meinen Zustand=
- gekannt habe, habe ich mich entschlossen, Ihnen dieses Geld zu geben, um a=
-uf die weniger privilegierten Leute aufzupassen, Sie werden dieses Geld ver=
-wenden, wie ich hier unterweisen werde.
+diff --git a/arch/sh/include/cpu-sh4/cpu/sh7786.h b/arch/sh/include/cpu-sh4/cpu/sh7786.h
+index 0df09e638f09..96b8cb1f754a 100644
+--- a/arch/sh/include/cpu-sh4/cpu/sh7786.h
++++ b/arch/sh/include/cpu-sh4/cpu/sh7786.h
+@@ -14,6 +14,8 @@
+ #ifndef __CPU_SH7786_H__
+ #define __CPU_SH7786_H__
+ 
++#include <linux/io.h>
++
+ enum {
+ 	/* PA */
+ 	GPIO_PA7, GPIO_PA6, GPIO_PA5, GPIO_PA4,
+@@ -131,4 +133,9 @@ enum {
+ 	GPIO_FN_IRL7, GPIO_FN_IRL6, GPIO_FN_IRL5, GPIO_FN_IRL4,
+ };
+ 
++static inline u32 sh7786_mm_sel(void)
++{
++	return __raw_readl(0xFC400020) & 0x7;
++}
++
+ #endif /* __CPU_SH7786_H__ */
+-- 
+2.13.6
 
-Ich m=F6chte, dass Sie 30 Prozent des gesamten Geldes f=FCr Ihren pers=F6nl=
-ichen Gebrauch verwenden, w=E4hrend 70% des Geldes f=FCr wohlt=E4tige Zweck=
-e, Menschen auf der Stra=DFe und Hilfe f=FCr das Waisenhaus verwendet werde=
-n. Ich bin als Waise aufgewachsen und habe keinen K=F6rper als Familienmitg=
-lied, nur um zu enden, dass das Haus Gottes auch erhalten bleibt. Tue dies,=
- damit Gott meine S=FCnden vergibt und meine Seele annimmt, weil diese Kran=
-kheiten mich so sehr gelitten haben. Sobald ich Ihre Antwort erhalten habe,=
- werde ich Ihnen den Kontakt der Bank hier in Delhi Indien geben und ich we=
-rde auch den Bankmanager anweisen, Ihnen ein Autorit=E4tsschreiben auszuste=
-llen, das Sie als den gegenw=E4rtigen Beg=FCnstigten des Geldes in der Bank=
- beweisen wird, wenn Sie versichern mir, dass Sie entsprechend handeln, wie=
- ich es hier dargelegt habe.
-
-In der Hoffnung, Ihre Antwort zu erhalten.
-Von Vera Hollin kVan
