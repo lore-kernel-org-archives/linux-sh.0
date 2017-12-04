@@ -1,57 +1,67 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Fri, 29 Dec 2017 08:18:52 +0000
-Subject: [PATCH 48/67] swiotlb: rely on dev->coherent_dma_mask
-Message-Id: <20171229081911.2802-49-hch@lst.de>
+From: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+Date: Mon, 04 Dec 2017 15:09:04 +0000
+Subject: [PATCH 5/8] arch/sh: pcie-sh7786: exclude unusable PCI MEM areas
+Message-Id: <20171204150907.24345-6-thomas.petazzoni@free-electrons.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20171229081911.2802-1-hch@lst.de>
-In-Reply-To: <20171229081911.2802-1-hch@lst.de>
+References: <20171204150907.24345-1-thomas.petazzoni@free-electrons.com>
+In-Reply-To: <20171204150907.24345-1-thomas.petazzoni@free-electrons.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: iommu@lists.linux-foundation.org
-Cc: linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org, adi-buildroot-devel@lists.sourceforge.net, linux-c6x-dev@linux-c6x.org, linux-cris-kernel@axis.com, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-metag@vger.kernel.org, Michal Simek <monstr@monstr.eu>, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, patches@groups.riscv.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, Guan Xuetao <gxt@mprc.pku.edu.cn>, x86@kernel.org, linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Bjorn Helgaas <bhelgaas@google.com>, Lorenzo Pieralisi <lorenzo.pieralisi@arm.com>
+Cc: linux-sh@vger.kernel.org, linux-pci@vger.kernel.org, Geert Uytterhoeven <geert@linux-m68k.org>, Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
 
-These days the coherent DMA mask is always set, so don't work around the
-lack of it.
+Depending on the physical memory layout, some PCI MEM areas are not
+usable. According to the SH7786 datasheet, the PCI MEM area from
+1000_0000 to 13FF_FFFF is only usable if the physical memory layout
+(in MMSELR) is 1, 2, 5 or 6. In all other configurations, this PCI MEM
+area is not usable (because it overlaps with DRAM).
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
+Therefore, this commit adjusts the PCI SH7786 initialization to mark
+the relevant PCI resource as IORESOURCE_DISABLED if we can't use it.
+
+Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
 ---
- lib/swiotlb.c | 10 +++-------
- 1 file changed, 3 insertions(+), 7 deletions(-)
+ arch/sh/drivers/pci/pcie-sh7786.c | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
 
-diff --git a/lib/swiotlb.c b/lib/swiotlb.c
-index e0b8980334c3..a14fff30ee9d 100644
---- a/lib/swiotlb.c
-+++ b/lib/swiotlb.c
-@@ -716,15 +716,11 @@ swiotlb_alloc_coherent(struct device *hwdev, size_t size,
- 	dma_addr_t dev_addr;
- 	void *ret;
- 	int order = get_order(size);
--	u64 dma_mask = DMA_BIT_MASK(32);
--
--	if (hwdev && hwdev->coherent_dma_mask)
--		dma_mask = hwdev->coherent_dma_mask;
+diff --git a/arch/sh/drivers/pci/pcie-sh7786.c b/arch/sh/drivers/pci/pcie-sh7786.c
+index c2f877b4ef7e..8d7c328b1899 100644
+--- a/arch/sh/drivers/pci/pcie-sh7786.c
++++ b/arch/sh/drivers/pci/pcie-sh7786.c
+@@ -19,6 +19,7 @@
+ #include <linux/clk.h>
+ #include <linux/sh_clk.h>
+ #include <linux/sh_intc.h>
++#include <cpu/sh7786.h>
+ #include "pcie-sh7786.h"
+ #include <asm/sizes.h>
  
- 	ret = (void *)__get_free_pages(flags, order);
- 	if (ret) {
- 		dev_addr = swiotlb_virt_to_bus(hwdev, ret);
--		if (dev_addr + size - 1 > dma_mask) {
-+		if (dev_addr + size - 1 > hwdev->coherent_dma_mask) {
- 			/*
- 			 * The allocated memory isn't reachable by the device.
- 			 */
-@@ -747,9 +743,9 @@ swiotlb_alloc_coherent(struct device *hwdev, size_t size,
- 		dev_addr = swiotlb_phys_to_dma(hwdev, paddr);
+@@ -511,6 +512,7 @@ static struct sh7786_pcie_hwops sh7786_65nm_pcie_hwops __initdata = {
+ static int __init sh7786_pcie_init(void)
+ {
+ 	struct clk *platclk;
++	u32 mm_sel;
+ 	int i;
  
- 		/* Confirm address can be DMA'd by device */
--		if (dev_addr + size - 1 > dma_mask) {
-+		if (dev_addr + size - 1 > hwdev->coherent_dma_mask) {
- 			printk("hwdev DMA mask = 0x%016Lx, dev_addr = 0x%016Lx\n",
--			       (unsigned long long)dma_mask,
-+			       (unsigned long long)hwdev->coherent_dma_mask,
- 			       (unsigned long long)dev_addr);
+ 	printk(KERN_NOTICE "PCI: Starting initialization.\n");
+@@ -544,6 +546,16 @@ static int __init sh7786_pcie_init(void)
  
- 			/*
+ 	clk_enable(platclk);
+ 
++	mm_sel = sh7786_mm_sel();
++
++	/*
++	 * Depending on the MMSELR register value, the PCIe0 MEM 1
++	 * area may not be available. See Table 13.11 of the SH7786
++	 * datasheet.
++	 */
++	if (mm_sel != 1 && mm_sel != 2 && mm_sel != 5 && mm_sel != 6)
++		sh7786_pci0_resources[2].flags |= IORESOURCE_DISABLED;
++
+ 	printk(KERN_NOTICE "PCI: probing %d ports.\n", nr_ports);
+ 
+ 	for (i = 0; i < nr_ports; i++) {
 -- 
-2.14.2
+2.13.6
 
