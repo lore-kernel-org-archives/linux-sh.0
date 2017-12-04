@@ -1,35 +1,59 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Fri, 29 Dec 2017 08:18:12 +0000
-Subject: [PATCH 08/67] powerpc: remove unused flush_write_buffers definition
-Message-Id: <20171229081911.2802-9-hch@lst.de>
+From: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+Date: Mon, 04 Dec 2017 15:09:02 +0000
+Subject: [PATCH 3/8] arch/sh: pci: don't use disabled resources
+Message-Id: <20171204150907.24345-4-thomas.petazzoni@free-electrons.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20171229081911.2802-1-hch@lst.de>
-In-Reply-To: <20171229081911.2802-1-hch-jcswGhMUV9g@public.gmane.org>
+References: <20171204150907.24345-1-thomas.petazzoni@free-electrons.com>
+In-Reply-To: <20171204150907.24345-1-thomas.petazzoni@free-electrons.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: linux-mips-6z/3iImG2C8G8FEW9MqTrA@public.gmane.org, linux-ia64-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sparclinux-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Guan Xuetao <gxt-TG0Ac1+ktVePQbnJrJN+5g@public.gmane.org>, linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-c6x-dev-jPsnJVOj+W6hPH1hqNUYSQ@public.gmane.org, linux-hexagon-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, x86-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, linux-snps-arc-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, adi-buildroot-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, linux-m68k-cunTk1MwBs8S/qaLPR03pWD2FQJk+8+b@public.gmane.org, patches-q3qR2WxjNRFS9aJRtSZj7A@public.gmane.org, linux-metag-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, Michal Simek <monstr-pSz03upnqPeHXe+LvDLADg@public.gmane.org>, linux-parisc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-cris-kernel-VrBV9hrLPhE@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-alpha-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linuxppc-dev-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Bjorn Helgaas <bhelgaas@google.com>, Lorenzo Pieralisi <lorenzo.pieralisi@arm.com>
+Cc: linux-sh@vger.kernel.org, linux-pci@vger.kernel.org, Geert Uytterhoeven <geert@linux-m68k.org>, Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
+In pcibios_scanbus(), we provide to the PCI core the usable MEM and IO
+regions using pci_add_resource_offset(). We travel through all
+resources available in the "struct pci_channel".
+
+Also, in register_pci_controller(), we travel through all resources to
+request them, making sure they don't conflict with already requested
+resources.
+
+However, some resources may be disabled, in which case they should not
+be requested nor provided to the PCI core.
+
+In the current situation, none of the resources are disabled. However,
+follow-up patches in this series will make some resources disabled,
+making this preliminary change necessary.
+
+Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
 ---
- arch/powerpc/include/asm/dma-mapping.h | 3 ---
- 1 file changed, 3 deletions(-)
+ arch/sh/drivers/pci/pci.c | 5 +++++
+ 1 file changed, 5 insertions(+)
 
-diff --git a/arch/powerpc/include/asm/dma-mapping.h b/arch/powerpc/include/asm/dma-mapping.h
-index 5a6cbe11db6f..592c7f418aa0 100644
---- a/arch/powerpc/include/asm/dma-mapping.h
-+++ b/arch/powerpc/include/asm/dma-mapping.h
-@@ -107,9 +107,6 @@ static inline void set_dma_offset(struct device *dev, dma_addr_t off)
- 		dev->archdata.dma_offset = off;
- }
+diff --git a/arch/sh/drivers/pci/pci.c b/arch/sh/drivers/pci/pci.c
+index 5976a2c8a3e3..e5b7437ab4af 100644
+--- a/arch/sh/drivers/pci/pci.c
++++ b/arch/sh/drivers/pci/pci.c
+@@ -49,6 +49,8 @@ static void pcibios_scanbus(struct pci_channel *hose)
+ 	for (i = 0; i < hose->nr_resources; i++) {
+ 		res = hose->resources + i;
+ 		offset = 0;
++		if (res->flags & IORESOURCE_DISABLED)
++			continue;
+ 		if (res->flags & IORESOURCE_IO)
+ 			offset = hose->io_offset;
+ 		else if (res->flags & IORESOURCE_MEM)
+@@ -102,6 +104,9 @@ int register_pci_controller(struct pci_channel *hose)
+ 	for (i = 0; i < hose->nr_resources; i++) {
+ 		struct resource *res = hose->resources + i;
  
--/* this will be removed soon */
--#define flush_write_buffers()
--
- #define HAVE_ARCH_DMA_SET_MASK 1
- extern int dma_set_mask(struct device *dev, u64 dma_mask);
- 
++		if (res->flags & IORESOURCE_DISABLED)
++			continue;
++
+ 		if (res->flags & IORESOURCE_IO) {
+ 			if (request_resource(&ioport_resource, res) < 0)
+ 				goto out;
 -- 
-2.14.2
+2.13.6
 
