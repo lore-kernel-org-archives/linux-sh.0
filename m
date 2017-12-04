@@ -1,37 +1,142 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Fri, 29 Dec 2017 08:18:16 +0000
-Subject: [PATCH 12/67] s390: remove the unused dma_capable helper
-Message-Id: <20171229081911.2802-13-hch@lst.de>
+From: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+Date: Mon, 04 Dec 2017 15:09:05 +0000
+Subject: [PATCH 6/8] arch/sh: pcie-sh7786: adjust PCI MEM and IO regions
+Message-Id: <20171204150907.24345-7-thomas.petazzoni@free-electrons.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20171229081911.2802-1-hch@lst.de>
-In-Reply-To: <20171229081911.2802-1-hch-jcswGhMUV9g@public.gmane.org>
+References: <20171204150907.24345-1-thomas.petazzoni@free-electrons.com>
+In-Reply-To: <20171204150907.24345-1-thomas.petazzoni@free-electrons.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: linux-mips-6z/3iImG2C8G8FEW9MqTrA@public.gmane.org, linux-ia64-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sparclinux-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Guan Xuetao <gxt-TG0Ac1+ktVePQbnJrJN+5g@public.gmane.org>, linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-c6x-dev-jPsnJVOj+W6hPH1hqNUYSQ@public.gmane.org, linux-hexagon-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, x86-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, linux-snps-arc-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, adi-buildroot-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, linux-m68k-cunTk1MwBs8S/qaLPR03pWD2FQJk+8+b@public.gmane.org, patches-q3qR2WxjNRFS9aJRtSZj7A@public.gmane.org, linux-metag-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, Michal Simek <monstr-pSz03upnqPeHXe+LvDLADg@public.gmane.org>, linux-parisc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-cris-kernel-VrBV9hrLPhE@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-alpha-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linuxppc-dev-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Bjorn Helgaas <bhelgaas@google.com>, Lorenzo Pieralisi <lorenzo.pieralisi@arm.com>
+Cc: linux-sh@vger.kernel.org, linux-pci@vger.kernel.org, Geert Uytterhoeven <geert@linux-m68k.org>, Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
+The current definition of the PCIe IO and MEM resources for SH7786
+doesn't match what the datasheet says. For example, for PCIe0
+0xfe100000 is advertised by the datasheet as a PCI IO region, while
+0xfd000000 is advertised as a PCI MEM region. The code currently
+inverts the two.
+
+The SH4A_PCIEPARL and SH4A_PCIEPTCTLR registers allow to define the
+base address and role of the different regions (including whether it's
+a MEM or IO region). However, practical experience on a SH7786 shows
+that if 0xfe100000 is used for LEL and 0xfd000000 for IO, a PCIe
+device using two MEM BARs cannot be accessed at all. Simply using
+0xfe100000 for IO and 0xfd000000 for MEM makes the PCIe device
+accessible.
+
+It is very likely that this was never seen because there are two other
+PCI MEM region listed in the resources. However, for different
+reasons, none of the two other MEM regions are usable on the specific
+SH7786 platform the problem was encountered. Therefore, the last MEM
+region at 0xfe100000 was used to place the BARs, making the device
+non-functional.
+
+This commit therefore adjusts those PCI MEM and IO resources
+definitions so that they match what the datasheet says. They have only
+been tested with PCIe 0.
+
+Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
 ---
- arch/s390/include/asm/dma-mapping.h | 7 -------
- 1 file changed, 7 deletions(-)
+ arch/sh/drivers/pci/pcie-sh7786.c | 36 ++++++++++++++++++------------------
+ 1 file changed, 18 insertions(+), 18 deletions(-)
 
-diff --git a/arch/s390/include/asm/dma-mapping.h b/arch/s390/include/asm/dma-mapping.h
-index eaf490f9c5bc..2ec7240c1ada 100644
---- a/arch/s390/include/asm/dma-mapping.h
-+++ b/arch/s390/include/asm/dma-mapping.h
-@@ -16,11 +16,4 @@ static inline const struct dma_map_ops *get_arch_dma_ops(struct bus_type *bus)
- 	return &dma_noop_ops;
- }
+diff --git a/arch/sh/drivers/pci/pcie-sh7786.c b/arch/sh/drivers/pci/pcie-sh7786.c
+index 8d7c328b1899..69da026682ba 100644
+--- a/arch/sh/drivers/pci/pcie-sh7786.c
++++ b/arch/sh/drivers/pci/pcie-sh7786.c
+@@ -41,73 +41,73 @@ static struct sh7786_pcie_hwops {
  
--static inline bool dma_capable(struct device *dev, dma_addr_t addr, size_t size)
--{
--	if (!dev->dma_mask)
--		return false;
--	return addr + size - 1 <= *dev->dma_mask;
--}
--
- #endif /* _ASM_S390_DMA_MAPPING_H */
+ static struct resource sh7786_pci0_resources[] = {
+ 	{
+-		.name	= "PCIe0 IO",
++		.name	= "PCIe0 MEM 0",
+ 		.start	= 0xfd000000,
+ 		.end	= 0xfd000000 + SZ_8M - 1,
+-		.flags	= IORESOURCE_IO,
++		.flags	= IORESOURCE_MEM,
+ 	}, {
+-		.name	= "PCIe0 MEM 0",
++		.name	= "PCIe0 MEM 1",
+ 		.start	= 0xc0000000,
+ 		.end	= 0xc0000000 + SZ_512M - 1,
+ 		.flags	= IORESOURCE_MEM | IORESOURCE_MEM_32BIT,
+ 	}, {
+-		.name	= "PCIe0 MEM 1",
++		.name	= "PCIe0 MEM 2",
+ 		.start	= 0x10000000,
+ 		.end	= 0x10000000 + SZ_64M - 1,
+ 		.flags	= IORESOURCE_MEM,
+ 	}, {
+-		.name	= "PCIe0 MEM 2",
++		.name	= "PCIe0 IO",
+ 		.start	= 0xfe100000,
+ 		.end	= 0xfe100000 + SZ_1M - 1,
+-		.flags	= IORESOURCE_MEM,
++		.flags	= IORESOURCE_IO,
+ 	},
+ };
+ 
+ static struct resource sh7786_pci1_resources[] = {
+ 	{
+-		.name	= "PCIe1 IO",
++		.name	= "PCIe1 MEM 0",
+ 		.start	= 0xfd800000,
+ 		.end	= 0xfd800000 + SZ_8M - 1,
+-		.flags	= IORESOURCE_IO,
++		.flags	= IORESOURCE_MEM,
+ 	}, {
+-		.name	= "PCIe1 MEM 0",
++		.name	= "PCIe1 MEM 1",
+ 		.start	= 0xa0000000,
+ 		.end	= 0xa0000000 + SZ_512M - 1,
+ 		.flags	= IORESOURCE_MEM | IORESOURCE_MEM_32BIT,
+ 	}, {
+-		.name	= "PCIe1 MEM 1",
++		.name	= "PCIe1 MEM 2",
+ 		.start	= 0x30000000,
+ 		.end	= 0x30000000 + SZ_256M - 1,
+ 		.flags	= IORESOURCE_MEM | IORESOURCE_MEM_32BIT,
+ 	}, {
+-		.name	= "PCIe1 MEM 2",
++		.name	= "PCIe1 IO",
+ 		.start	= 0xfe300000,
+ 		.end	= 0xfe300000 + SZ_1M - 1,
+-		.flags	= IORESOURCE_MEM,
++		.flags	= IORESOURCE_IO,
+ 	},
+ };
+ 
+ static struct resource sh7786_pci2_resources[] = {
+ 	{
+-		.name	= "PCIe2 IO",
++		.name	= "PCIe2 MEM 0",
+ 		.start	= 0xfc800000,
+ 		.end	= 0xfc800000 + SZ_4M - 1,
+-		.flags	= IORESOURCE_IO,
++		.flags	= IORESOURCE_MEM,
+ 	}, {
+-		.name	= "PCIe2 MEM 0",
++		.name	= "PCIe2 MEM 1",
+ 		.start	= 0x80000000,
+ 		.end	= 0x80000000 + SZ_512M - 1,
+ 		.flags	= IORESOURCE_MEM | IORESOURCE_MEM_32BIT,
+ 	}, {
+-		.name	= "PCIe2 MEM 1",
++		.name	= "PCIe2 MEM 2",
+ 		.start	= 0x20000000,
+ 		.end	= 0x20000000 + SZ_256M - 1,
+ 		.flags	= IORESOURCE_MEM | IORESOURCE_MEM_32BIT,
+ 	}, {
+-		.name	= "PCIe2 MEM 2",
++		.name	= "PCIe2 IO",
+ 		.start	= 0xfcd00000,
+ 		.end	= 0xfcd00000 + SZ_1M - 1,
+-		.flags	= IORESOURCE_MEM,
++		.flags	= IORESOURCE_IO,
+ 	},
+ };
+ 
 -- 
-2.14.2
+2.13.6
 
