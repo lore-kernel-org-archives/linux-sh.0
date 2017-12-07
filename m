@@ -1,170 +1,70 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Sat, 23 Dec 2017 11:39:41 +0000
-Subject: Re: [PATCH v1 03/10] v4l: platform: Add Renesas CEU driver
-Message-Id: <1940300.v7qj8XpMF4@avalon>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Thu, 07 Dec 2017 10:42:05 +0000
+Subject: Re: [PATCH v2 0/4] i2c: pca-platform: additional improvements
+Message-Id: <20171207104205.h5ejivdmtharmdln@ninjato>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="thrxabcroshaxx7e"
 List-Id: <linux-sh.vger.kernel.org>
-References: <1510743363-25798-1-git-send-email-jacopo+renesas@jmondi.org> <12311953.yR0pctoD7P@avalon> <20171222144016.GD29536@w540>
-In-Reply-To: <20171222144016.GD29536@w540>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: jacopo mondi <jacopo@jmondi.org>
-Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>, magnus.damm@gmail.com, geert@glider.be, mchehab@kernel.org, hverkuil@xs4all.nl, linux-renesas-soc@vger.kernel.org, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+References: <20170705101358.17458-1-chris.packham@alliedtelesis.co.nz>
+ <20171029172918.2xtz2srh2meq45io@ninjato>
+In-Reply-To: <20171029172918.2xtz2srh2meq45io@ninjato>
+To: Chris Packham <chris.packham@alliedtelesis.co.nz>, Rich Felker <dalias@libc.org>
+Cc: ysato@users.sourceforge.jp, linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Hi Jacopo,
 
-On Friday, 22 December 2017 16:40:16 EET jacopo mondi wrote:
-> On Fri, Dec 22, 2017 at 02:03:41PM +0200, Laurent Pinchart wrote:
-> > On Thursday, 21 December 2017 18:27:02 EET jacopo mondi wrote:
-> >> On Mon, Dec 18, 2017 at 05:28:43PM +0200, Laurent Pinchart wrote:
-> >>> On Monday, 18 December 2017 14:25:12 EET jacopo mondi wrote:
-> >>>> On Mon, Dec 11, 2017 at 06:15:23PM +0200, Laurent Pinchart wrote:
-> >> 
-> >> [snip]
-> >> 
-> >>>>>> +/**
-> >>>>>> + * ceu_soft_reset() - Software reset the CEU interface
-> >>>>>> + */
-> >>>>>> +static int ceu_soft_reset(struct ceu_device *ceudev)
-> >>>>>> +{
-> >>>>>> +	unsigned int reset_done;
-> >>>>>> +	unsigned int i;
-> >>>>>> +
-> >>>>>> +	ceu_write(ceudev, CEU_CAPSR, CEU_CAPSR_CPKIL);
-> >>>>>> +
-> >>>>>> +	reset_done = 0;
-> >>>>>> +	for (i = 0; i < 1000 && !reset_done; i++) {
-> >>>>>> +		udelay(1);
-> >>>>>> +		if (!(ceu_read(ceudev, CEU_CSTSR) & CEU_CSTRST_CPTON))
-> >>>>>> +			reset_done++;
-> >>>>>> +	}
-> >>>>> 
-> >>>>> How many iterations does this typically require ? Wouldn't a sleep
-> >>>>> be better than a delay ? As far as I can tell the ceu_soft_reset()
-> >>>>> function is only called with interrupts disabled (in interrupt
-> >>>>> context) from ceu_capture() in an error path, and that code should be
-> >>>>> reworked to make it possible to sleep if a reset takes too long.
-> >>>> 
-> >>>> The HW manual does not provide any indication about absolute timings.
-> >>>> I can empirically try and see, but that would just be a hint.
-> >>> 
-> >>> That's why I asked how many iterations it typically takes :-) A hint
-> >>> is enough to start with, preferably on both SH and ARM SoCs.
-> >> 
-> >> I've seen only 0s when printing out how many cycles it takes to clear
-> >> both registers. This means 1usec is enough, therefore I would keep using
-> >> udelay here. Also, I would reduce the attempts to 100 here (or even
-> >> 10), as if a single one is typically enough, 1000 is definitely an
-> >> overkill.
-> > 
-> > I'd go for 10. This being said, please make sure you run tests where the
-> > reset is performed during capture in the middle of a frame, to see if it
-> > changes the number of iterations.
-> 
-> The only way I can think to do this is to stream_on then immediately
-> stream_off before we get the frame and thus casue the interface reset.
-> Any other idea?
+--thrxabcroshaxx7e
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-I think we should test reset of the state machine both during vertical 
-blanking when it's waiting for a frame, and in the middle of the frame. The 
-former should be easy to test by stopping the stream immediately before the 
-sensor starts outputting a frame (if you can disable the HSYNC and/or VSYNC 
-outputs of the sensor it would ensure that the CEU doesn't start receiving 
-data, that could be useful). The latter shouldn't be difficult to test with an 
-appropriate delay from the frame end interrupt to the stream stop.
+On Sun, Oct 29, 2017 at 06:29:18PM +0100, Wolfram Sang wrote:
+> On Wed, Jul 05, 2017 at 10:13:54PM +1200, Chris Packham wrote:
+> > This series addresses some of the points identified by Andy. The series=
+ is
+> > based on top of i2c/for-next. 2 of the patches from v1 have already been
+> > applied so I've dropped them from this version.
+> >=20
+> > I have compile tested patch 1/1 but I don't have access to sh hardware
+> > to actually test the changes on.
+> >=20
+> > Chris Packham (4):
+> >   sh: sh7785lcr: add GPIO lookup table for i2c controller reset
+> >   i2c: pca-platform: unconditionally use devm_gpiod_get_optional
+> >   i2c: pca-platform: use device_property_read_u32
+> >   i2c: pca-platform: drop gpio from platform data
+> >=20
+> >  arch/blackfin/mach-bf561/boards/acvilon.c |  1 -
+> >  arch/sh/boards/board-sh7785lcr.c          | 11 +++++++++-
+> >  drivers/i2c/busses/i2c-pca-platform.c     | 34 +++++++++--------------=
+--------
+> >  include/linux/i2c-pca-platform.h          |  3 ---
+> >  4 files changed, 20 insertions(+), 29 deletions(-)
+>=20
+> Series looks good to me, too. I'd need ACKs from the SH maintainers,
+> though. Technically, from Blackfin maintainers as well. But I haven't
+> heard from them in months, so I could go without that.
 
-> [snip]
-> 
-> >>>>>> +
-> >>>>>> +/**
-> >>>>>> + * ceu_capture() - Trigger start of a capture sequence
-> >>>>>> + *
-> >>>>>> + * Return value doesn't reflect the success/failure to queue the
-> >>>>>> new buffer,
-> >>>>>> + * but rather the status of the previous capture.
-> >>>>>> + */
-> >>>>>> +static int ceu_capture(struct ceu_device *ceudev)
-> >>>>>> +{
-> >>>>>> +	struct v4l2_pix_format_mplane *pix = &ceudev->v4l2_pix;
-> >>>>>> +	dma_addr_t phys_addr_top;
-> >>>>>> +	u32 status;
-> >>>>>> +
-> >>>>>> +	/* Clean interrupt status and re-enable interrupts */
-> >>>>>> +	status = ceu_read(ceudev, CEU_CETCR);
-> >>>>>> +	ceu_write(ceudev, CEU_CEIER,
-> >>>>>> +		  ceu_read(ceudev, CEU_CEIER) & ~CEU_CEIER_MASK);
-> >>>>>> +	ceu_write(ceudev, CEU_CETCR, ~status & CEU_CETCR_MAGIC);
-> >>>>>> +	ceu_write(ceudev, CEU_CEIER, CEU_CEIER_MASK);
-> >>>>> 
-> >>>>> I wonder why there's a need to disable and reenable interrupts here.
-> >>>> 
-> >>>> The original driver clearly said "The hardware is -very- picky about
-> >>>> this sequence" and I got scared and nerver touched this.
-> >>> 
-> >>> How about experimenting to see how the hardware reacts ?
-> >> 
-> >> Turns out this was not needed at all, both on RZ and SH4. I captured
-> >> several images without any issues in both platforms just clearing the
-> >> interrupt state without disabling interrutps.
-> > 
-> > I wonder whether it could cause an issue when interrupts are raised by the
-> > hardware at the same time they are cleared by the driver. That's hard to
-> > test though.
-> > 
-> > What happens when an interrupt source is masked by the CEIER register, is
-> > it still reported by the status CETCR register (obviously without raising
-> > an interrupt to the CPU), or does it not get flagged at all ?
-> 
-> They get flagged, yes, and right now I'm clearing all of them at the
-> beginning of IRQ handler writing ~CEU_CETR_ALL_INT to CETCR.
+Adding Rich Felker to CC...
 
-OK. If they didn't get flagged it would mean that disabling interrupts while 
-clearing the flags could have an influence on what interrupts are flagged. As 
-they get flagged when disabled it should make no difference, so I'm not 
-concerned with this change. You might however want to keep a local patch in 
-one of your trees that disable interrupts to clear the status register, just 
-to remember that it could be a potential issue if we later receive a bug 
-report that could be related to interrupt handling. Or your memory is better 
-than mine and there's no need for a reminder :-)
 
-> >>> Also, I very much dislike the CEU_CETRC_MAGIC mask, but again the old
-> >>>> driver said "Acknoledge magical interrupt sources" and I was afraid
-> >>>> to change it (I can rename it though, to something lioke
-> >>>> CEU_CETCR_ALL_INT because that's what it is, a mask with all available
-> >>>> interrupt source enabled).
-> >>> 
-> >>> I think renaming it is a good idea. Additionally, regardless of
-> >>> whether there is any hidden interrupt source, the datasheet mentions for
-> >>> all reserved bits that "The write  value  should always  be 0". They
-> >>> should read as 0, but masking them would be an additional safeguard.
-> >> 
-> >> The HW manual is a bit confused (and confusing) on this point.
-> >> Yes, there is the statement you have cited here, but there's also
-> >> "to clear only the CPE bit to 0, write H'FFFF FFFE to CETCR" a few
-> >> lines above, which clearly contradicts the "write 0 to reserved bits"
-> >> thing.
-> >> 
-> >> In practice, I'm now writing to 0 only bits to be cleared, and thus
-> >> writing 1s to everything else, reserved included. I haven't seen any
-> >> issue both on RZ and SH4 platforms.
-> 
-> And this is the above "wirting ~CEU_CETR_ALL_INT" to CETCR" I
-> mentioned above.
-> 
-> >>> Also not that on the RZ/A1 platform bit 22 is documented as reserved,
-> >>> so you might want to compute the mask based on the CEU model.
-> >> 
-> >> While I can use the .data pointer of 'of_device_id' for OF based
-> >> devices (RZ) to store the opportune IRQ mask, I'm not sure how to
-> >> do that for platform devices. Can I assume (platform data = SH) in
-> >> you opinion?
-> > 
-> > Yes you can.
-> 
-> Awesome!
+--thrxabcroshaxx7e
+Content-Type: application/pgp-signature; name="signature.asc"
 
--- 
-Regards,
+-----BEGIN PGP SIGNATURE-----
 
-Laurent Pinchart
+iQIzBAABCAAdFiEEOZGx6rniZ1Gk92RdFA3kzBSgKbYFAlopGvkACgkQFA3kzBSg
+KbbVxRAAmNqOVKWSEiAx/PJ5TkFxRgrdBiEcSQLBpqitRpFtWgDJR7EJhUbwt4ux
+5UqzjTS/2QJtmO9GlHONO3ZbKZc/vT0gRJakCxsX8y3TsrA2Qg157muiZPc7JCuU
+q5CzqwU68l+UDgiYJcT3QkGa61T6NOZJ4bF6QOtvdgTOjikGN1PNyQcspnvE0sUV
+D4ash+ufb6PJ/Ensv2gSI9gQrqgizYz6hGTkr/Czh9fsIsJNymX7NQg2KkB5xeNi
+Fn0Z22t+WR4UpV3CiWz5vCpZCwzhkcnP4+b9afXkv/a5D5GZfqAMe4j8ZudVRmG1
+P/+dvnUeA7SVWd5pUHJIH/alsxMdtvCpq+AznrXZecvvP+IKtkYvz2wzsGcSSfMO
+JOkxKzO6WXIl5Z8SCkt8jyQR0NpKpwYvEqt7rx/jUj9KBtpzEKCWYXTHuFKZeZYq
+kLva0yraQdEF5KYGSUV92tuq27po62k0o4BRWI4x/NK4acXTo8XMYF8SvBmVh1US
+EP8ld4xGo+p9iP2BH6GKw24bEZPNT5aM5/alnQ8s1GLXzoVbcJpfoBdS2R8bZ1pI
+78Ghv+Usmm+bV4up+uIaBma6xHyxza3nv2MzUBCgbXkgjupEDgYxM9vXEqZVBFUa
+CNfAKoxm2l0cYiOBflV7oKEN2HmIy8a4eMd/9YX++rZcuqOwK/Q=
+=TFjj
+-----END PGP SIGNATURE-----
 
+--thrxabcroshaxx7e--
