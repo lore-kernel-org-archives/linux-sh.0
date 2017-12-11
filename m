@@ -1,79 +1,143 @@
 From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 11 Dec 2017 14:32:04 +0000
-Subject: Re: [PATCH v1 02/10] include: media: Add Renesas CEU driver interface
-Message-Id: <2289038.W10jS6Ac5K@avalon>
+Date: Mon, 11 Dec 2017 14:24:14 +0000
+Subject: Re: [PATCH v1 01/10] dt-bindings: media: Add Renesas CEU bindings
+Message-Id: <2289037.uBIDySjJLr@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1510743363-25798-1-git-send-email-jacopo+renesas@jmondi.org> <20171115123633.zvkokelhwwyro42y@valkosipuli.retiisi.org.uk> <1534914.aSna2J79oD@avalon>
-In-Reply-To: <1534914.aSna2J79oD@avalon>
+References: <1510743363-25798-1-git-send-email-jacopo+renesas@jmondi.org> <1510743363-25798-2-git-send-email-jacopo+renesas@jmondi.org> <20171115123312.7fyhlpjsb3mp3ypc@valkosipuli.retiisi.org.uk>
+In-Reply-To: <20171115123312.7fyhlpjsb3mp3ypc@valkosipuli.retiisi.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Sakari Ailus <sakari.ailus@iki.fi>
 Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>, magnus.damm@gmail.com, geert@glider.be, mchehab@kernel.org, hverkuil@xs4all.nl, linux-renesas-soc@vger.kernel.org, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Hi Jacopo,
+Hello,
 
-On Monday, 11 December 2017 16:26:27 EET Laurent Pinchart wrote:
-> On Wednesday, 15 November 2017 14:36:33 EET Sakari Ailus wrote:
-> > On Wed, Nov 15, 2017 at 11:55:55AM +0100, Jacopo Mondi wrote:
-> >> Add renesas-ceu header file.
-> >> 
-> >> Do not remove the existing sh_mobile_ceu.h one as long as the original
-> >> driver does not go away.
+On Wednesday, 15 November 2017 14:33:12 EET Sakari Ailus wrote:
+> On Wed, Nov 15, 2017 at 11:55:54AM +0100, Jacopo Mondi wrote:
+> > Add bindings documentation for Renesas Capture Engine Unit (CEU).
 > > 
-> > Hmm. This isn't really not about not removing a file but adding a new one.
-> > Do you really need it outside the driver's own directory?
+> > Signed-off-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
+> > ---
+> > 
+> >  .../devicetree/bindings/media/renesas,ceu.txt      | 87 +++++++++++++++++
+> >  1 file changed, 87 insertions(+)
+> >  create mode 100644
+> >  Documentation/devicetree/bindings/media/renesas,ceu.txt
+> > 
+> > diff --git a/Documentation/devicetree/bindings/media/renesas,ceu.txt
+> > b/Documentation/devicetree/bindings/media/renesas,ceu.txt new file mode
+> > 100644
+> > index 0000000..a88e9cb
+> > --- /dev/null
+> > +++ b/Documentation/devicetree/bindings/media/renesas,ceu.txt
+> > @@ -0,0 +1,87 @@
+> > +Renesas Capture Engine Unit (CEU)
+> > +----------------------------------------------
+> > +
+> > +The Capture Engine Unit is the image capture interface found on Renesas
+> > +RZ chip series and on SH Mobile ones.
+> > +
+> > +The interface supports a single parallel input with up 8/16bits data bus
+> > width.
+> > +
+> > +Required properties:
+> > +- compatible
+> > +	Must be "renesas,renesas-ceu".
+> > +- reg
+> > +	Physical address base and size.
+> > +- interrupts
+> > +	The interrupt line number.
+> > +- pinctrl-names, pinctrl-0
+> > +	phandle of pin controller sub-node configuring pins for CEU operations.
+> > +
+> > +CEU supports a single parallel input and should contain a single 'port'
+> > subnode
+> > +with a single 'endpoint'. Optional endpoint properties applicable to
+> > parallel
+> > +input bus are described in "video-interfaces.txt".
 > 
-> The file defines platform data structures that are needed for arch/sh/.
-> 
-> >> Signed-off-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
-> >> ---
-> >> 
-> >>  include/media/drv-intf/renesas-ceu.h | 23 +++++++++++++++++++++++
-> >>  1 file changed, 23 insertions(+)
-> >>  create mode 100644 include/media/drv-intf/renesas-ceu.h
-> >> 
-> >> diff --git a/include/media/drv-intf/renesas-ceu.h
-> >> b/include/media/drv-intf/renesas-ceu.h new file mode 100644
-> >> index 0000000..f2da78c
-> >> --- /dev/null
-> >> +++ b/include/media/drv-intf/renesas-ceu.h
-> >> @@ -0,0 +1,23 @@
-> >> +// SPDX-License-Identifier: GPL-2.0+
-> >> +#ifndef __ASM_RENESAS_CEU_H__
-> >> +#define __ASM_RENESAS_CEU_H__
-> >> +
-> >> +#include <media/v4l2-mediabus.h>
-> 
-> I don't think you need this.
-> 
-> > > +#define CEU_FLAG_PRIMARY_SENS	BIT(0)
+> Could you list which ones they are? For someone not familiar with the
+> parallel bus this might not be obvious; also not all hardware can make use
+> of every one of these properties.
 
-I forgot to mention that this flag should be renamed as well, but couldn't we 
-get rid of it completely by mandating that the first subdev in the subdevs 
-array should be the primary one ?
+Agreed, you should list the properties here and reference video-interfaces.txt 
+for the detailed description.
 
-> > > +#define CEU_MAX_SENS		2
+> > +
+> > +Example:
+> > +
+> > +The example describes the connection between the Capture Engine Unit and
+> > a
+> > +OV7670 image sensor sitting on bus i2c1 with an on-board 24Mhz clock.
+> > +
+> > +ceu: ceu@e8210000 {
+> > +	reg = <0xe8210000 0x209c>;
+> > +	compatible = "renesas,renesas-ceu";
+> > +	interrupts = <GIC_SPI 332 IRQ_TYPE_LEVEL_HIGH>;
+> > +	pinctrl-names = "default";
+> > +	pinctrl-0 = <&vio_pins>;
+> > +
+> > +	status = "okay";
+> > +
+> > +	port {
+> > +		ceu_in: endpoint {
+> > +			remote-endpoint = <&ov7670_out>;
+> > +
+> > +			bus-width = <8>;
+> > +			hsync-active = <1>;
+> > +			vsync-active = <1>;
+> > +			pclk-sample = <1>;
+> > +			data-active = <1>;
+> > +		};
+> > +	};
+> > +};
+> > +
+> > +i2c1: i2c@fcfee400 {
+> > +	pinctrl-names = "default";
+> > +	pinctrl-0 = <&i2c1_pins>;
+> > +
+> > +	status = "okay";
+> > +	clock-frequency = <100000>;
+> > +
+> > +	ov7670: camera@21 {
+> > +		compatible = "ovti,ov7670";
+> > +		reg = <0x21>;
+> > +
+> > +		pinctrl-names = "default";
+> > +		pinctrl-0 = <&vio_pins>;
+> > +
+> > +		reset-gpios = <&port3 11 GPIO_ACTIVE_LOW>;
+> > +		powerdown-gpios = <&port3 12 GPIO_ACTIVE_HIGH>;
+> > +
+> > +		clocks = <&xclk>;
+> > +		clock-names = "xclk";
+> > +
+> > +		xclk: fixed_clk {
+> > +			compatible = "fixed-clock";
+> > +			#clock-cells = <0>;
+> > +			clock-frequency = <24000000>;
+> > +		};
 > 
-> I assume SENS stands for sensor. As other sources than sensors can be
-> supported (video decoders for instance), I would name this CEU_MAX_SUBDEVS,
-> CEU_MAX_INPUTS or something similar.
-> 
-> >> +
-> >> +struct ceu_async_subdev {
-> >> +	unsigned long flags;
-> >> +	unsigned char bus_width;
-> >> +	unsigned char bus_shift;
-> >> +	unsigned int i2c_adapter_id;
-> >> +	unsigned int i2c_address;
-> >> +};
-> >> +
-> >> +struct ceu_info {
-> >> +	unsigned int num_subdevs;
-> >> +	struct ceu_async_subdev subdevs[CEU_MAX_SENS];
-> >> +};
-> >> +
-> >> +#endif /* __ASM_RENESAS_CEU_H__ */
+> What's the purpose of the fixed_clk node here?
+
+The sensor is clocked by a 24MHz oscillator. The clock isn't provided by the 
+sensor, so it should be located at the root of the device tree, not as a child 
+of the sensor DT node.
+
+> > +
+> > +		port {
+> > +			ov7670_out: endpoint {
+> > +				remote-endpoint = <&ceu_in>;
+> > +
+> > +				bus-width = <8>;
+> > +				hsync-active = <1>;
+> > +				vsync-active = <1>;
+> > +				pclk-sample = <1>;
+> > +				data-active = <1>;
+> > +			};
+> > +		};
+> > +	};
 
 -- 
 Regards,
