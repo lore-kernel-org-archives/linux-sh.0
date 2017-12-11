@@ -1,23 +1,61 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Sat, 30 Dec 2017 10:56:35 +0000
-Subject: Re: consolidate direct dma mapping and swiotlb support
-Message-Id: <20171230105635.GA23696@lst.de>
+From: Sergey Senozhatsky <sergey.senozhatsky.work@gmail.com>
+Date: Mon, 11 Dec 2017 12:50:23 +0000
+Subject: [PATCH 11/13] irq debug: do not use print_symbol()
+Message-Id: <20171211125025.2270-12-sergey.senozhatsky@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20171229081911.2802-1-hch@lst.de>
-	<23fee3bb-61ce-1735-b264-3acc0109c858@arm.com>
-In-Reply-To: <23fee3bb-61ce-1735-b264-3acc0109c858-5wv7dgnIgG8@public.gmane.org>
+References: <20171211125025.2270-1-sergey.senozhatsky@gmail.com>
+In-Reply-To: <20171211125025.2270-1-sergey.senozhatsky@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Vladimir Murzin <vladimir.murzin-5wv7dgnIgG8@public.gmane.org>
-Cc: linux-mips-6z/3iImG2C8G8FEW9MqTrA@public.gmane.org, linux-ia64-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sparclinux-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Guan Xuetao <gxt-TG0Ac1+ktVePQbnJrJN+5g@public.gmane.org>, Christoph Hellwig <hch-jcswGhMUV9g@public.gmane.org>, linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-c6x-dev-jPsnJVOj+W6hPH1hqNUYSQ@public.gmane.org, linux-hexagon-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, x86-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, linux-snps-arc-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, adi-buildroot-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, linux-m68k-cunTk1MwBs8S/qaLPR03pWD2FQJk+8+b@public.gmane.org, patches-q3qR2WxjNRFS9aJRtSZj7A@public.gmane.org, linux-metag-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, Michal Simek <monstr-pSz03upnqPeHXe+LvDLADg@public.gmane.org>, linux-cris-kernel-VrBV9hrLPhE@public.gmane.org, linux-parisc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-alpha-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linuxppc-dev-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Dec 29, 2017 at 10:52:14AM +0000, Vladimir Murzin wrote:
-> Is it available in your dma-mapping.git or somewhere else?
+print_symbol() uses extra stack space to sprintf() symbol
+information and then to feed that buffer to printk()
 
-  git://git.infradead.org/users/hch/misc.git dma-direct
+  char buffer[KSYM_SYMBOL_LEN];
 
-Gitweb:
+  sprint_symbol(buffer, address);
+  printk(fmt, buffer);
 
-  http://git.infradead.org/users/hch/misc.git/shortlog/refs/heads/dma-direct
+Replace print_symbol() with a direct printk("%pS") call.
+
+Signed-off-by: Sergey Senozhatsky <sergey.senozhatsky@gmail.com>
+Cc: Thomas Gleixner <tglx@linutronix.de>
+---
+ kernel/irq/debug.h | 8 +++-----
+ 1 file changed, 3 insertions(+), 5 deletions(-)
+
+diff --git a/kernel/irq/debug.h b/kernel/irq/debug.h
+index 17f05ef8f575..5766e15c1160 100644
+--- a/kernel/irq/debug.h
++++ b/kernel/irq/debug.h
+@@ -3,8 +3,6 @@
+  * Debugging printout:
+  */
+ 
+-#include <linux/kallsyms.h>
+-
+ #define ___P(f) if (desc->status_use_accessors & f) printk("%14s set\n", #f)
+ #define ___PS(f) if (desc->istate & f) printk("%14s set\n", #f)
+ /* FIXME */
+@@ -15,13 +13,13 @@ static inline void print_irq_desc(unsigned int irq, struct irq_desc *desc)
+ 	printk("irq %d, desc: %p, depth: %d, count: %d, unhandled: %d\n",
+ 		irq, desc, desc->depth, desc->irq_count, desc->irqs_unhandled);
+ 	printk("->handle_irq():  %p, ", desc->handle_irq);
+-	print_symbol("%s\n", (unsigned long)desc->handle_irq);
++	pr_cont("%pS\n", desc->handle_irq);
+ 	printk("->irq_data.chip(): %p, ", desc->irq_data.chip);
+-	print_symbol("%s\n", (unsigned long)desc->irq_data.chip);
++	pr_cont("%pS\n", desc->irq_data.chip);
+ 	printk("->action(): %p\n", desc->action);
+ 	if (desc->action) {
+ 		printk("->action->handler(): %p, ", desc->action->handler);
+-		print_symbol("%s\n", (unsigned long)desc->action->handler);
++		pr_cont("%pS\n", desc->action->handler);
+ 	}
+ 
+ 	___P(IRQ_LEVEL);
+-- 
+2.15.1
 
