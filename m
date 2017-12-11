@@ -1,67 +1,55 @@
-From: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
-Date: Mon, 04 Dec 2017 15:09:04 +0000
-Subject: [PATCH 5/8] arch/sh: pcie-sh7786: exclude unusable PCI MEM areas
-Message-Id: <20171204150907.24345-6-thomas.petazzoni@free-electrons.com>
+From: Sergey Senozhatsky <sergey.senozhatsky.work@gmail.com>
+Date: Mon, 11 Dec 2017 12:50:14 +0000
+Subject: [PATCH 02/13] arm64: do not use print_symbol()
+Message-Id: <20171211125025.2270-3-sergey.senozhatsky@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20171204150907.24345-1-thomas.petazzoni@free-electrons.com>
-In-Reply-To: <20171204150907.24345-1-thomas.petazzoni@free-electrons.com>
+References: <20171211125025.2270-1-sergey.senozhatsky@gmail.com>
+In-Reply-To: <20171211125025.2270-1-sergey.senozhatsky@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Bjorn Helgaas <bhelgaas@google.com>, Lorenzo Pieralisi <lorenzo.pieralisi@arm.com>
-Cc: linux-sh@vger.kernel.org, linux-pci@vger.kernel.org, Geert Uytterhoeven <geert@linux-m68k.org>, Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Depending on the physical memory layout, some PCI MEM areas are not
-usable. According to the SH7786 datasheet, the PCI MEM area from
-1000_0000 to 13FF_FFFF is only usable if the physical memory layout
-(in MMSELR) is 1, 2, 5 or 6. In all other configurations, this PCI MEM
-area is not usable (because it overlaps with DRAM).
+print_symbol() uses extra stack space to sprintf() symbol
+information and then to feed that buffer to printk()
 
-Therefore, this commit adjusts the PCI SH7786 initialization to mark
-the relevant PCI resource as IORESOURCE_DISABLED if we can't use it.
+  char buffer[KSYM_SYMBOL_LEN];
 
-Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+  sprint_symbol(buffer, address);
+  printk(fmt, buffer);
+
+Replace print_symbol() with a direct printk("%pS") call.
+
+Signed-off-by: Sergey Senozhatsky <sergey.senozhatsky@gmail.com>
+Cc: Catalin Marinas <catalin.marinas@arm.com>
+Cc: Will Deacon <will.deacon@arm.com>
 ---
- arch/sh/drivers/pci/pcie-sh7786.c | 12 ++++++++++++
- 1 file changed, 12 insertions(+)
+ arch/arm64/kernel/process.c | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
 
-diff --git a/arch/sh/drivers/pci/pcie-sh7786.c b/arch/sh/drivers/pci/pcie-sh7786.c
-index c2f877b4ef7e..8d7c328b1899 100644
---- a/arch/sh/drivers/pci/pcie-sh7786.c
-+++ b/arch/sh/drivers/pci/pcie-sh7786.c
-@@ -19,6 +19,7 @@
- #include <linux/clk.h>
- #include <linux/sh_clk.h>
- #include <linux/sh_intc.h>
-+#include <cpu/sh7786.h>
- #include "pcie-sh7786.h"
- #include <asm/sizes.h>
+diff --git a/arch/arm64/kernel/process.c b/arch/arm64/kernel/process.c
+index 6b7dcf4310ac..44bed43814e2 100644
+--- a/arch/arm64/kernel/process.c
++++ b/arch/arm64/kernel/process.c
+@@ -35,7 +35,6 @@
+ #include <linux/delay.h>
+ #include <linux/reboot.h>
+ #include <linux/interrupt.h>
+-#include <linux/kallsyms.h>
+ #include <linux/init.h>
+ #include <linux/cpu.h>
+ #include <linux/elfcore.h>
+@@ -221,8 +220,8 @@ void __show_regs(struct pt_regs *regs)
  
-@@ -511,6 +512,7 @@ static struct sh7786_pcie_hwops sh7786_65nm_pcie_hwops __initdata = {
- static int __init sh7786_pcie_init(void)
- {
- 	struct clk *platclk;
-+	u32 mm_sel;
- 	int i;
+ 	show_regs_print_info(KERN_DEFAULT);
+ 	print_pstate(regs);
+-	print_symbol("pc : %s\n", regs->pc);
+-	print_symbol("lr : %s\n", lr);
++	printk("pc : %pS\n", (void *)regs->pc);
++	printk("lr : %pS\n", (void *)lr);
+ 	printk("sp : %016llx\n", sp);
  
- 	printk(KERN_NOTICE "PCI: Starting initialization.\n");
-@@ -544,6 +546,16 @@ static int __init sh7786_pcie_init(void)
- 
- 	clk_enable(platclk);
- 
-+	mm_sel = sh7786_mm_sel();
-+
-+	/*
-+	 * Depending on the MMSELR register value, the PCIe0 MEM 1
-+	 * area may not be available. See Table 13.11 of the SH7786
-+	 * datasheet.
-+	 */
-+	if (mm_sel != 1 && mm_sel != 2 && mm_sel != 5 && mm_sel != 6)
-+		sh7786_pci0_resources[2].flags |= IORESOURCE_DISABLED;
-+
- 	printk(KERN_NOTICE "PCI: probing %d ports.\n", nr_ports);
- 
- 	for (i = 0; i < nr_ports; i++) {
+ 	i = top_reg;
 -- 
-2.13.6
+2.15.1
 
