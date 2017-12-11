@@ -1,23 +1,54 @@
-From: Felipe Balbi <felipe.balbi@linux.intel.com>
-Date: Wed, 20 Dec 2017 09:46:06 +0000
-Subject: Re: [-next PATCH 0/4] sysfs and DEVICE_ATTR_<foo>
-Message-Id: <87r2rppw9t.fsf@linux.intel.com>
+From: Sergey Senozhatsky <sergey.senozhatsky.work@gmail.com>
+Date: Mon, 11 Dec 2017 12:50:12 +0000
+Subject: [PATCH 00/13] replace print_symbol() with printk()-s
+Message-Id: <20171211125025.2270-1-sergey.senozhatsky@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1513706701.git.joe@perches.com>
-In-Reply-To: <cover.1513706701.git.joe@perches.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Joe Perches <joe@perches.com>, linux-arm-kernel@lists.infradead.org, linux-acpi@vger.kernel.org, openipmi-developer@lists.sourceforge.net, intel-gfx@lists.freedesktop.org, linuxppc-dev@lists.ozlabs.org, netdev@vger.kernel.org, linux-nvme@lists.infradead.org, platform-driver-x86@vger.kernel.org, linux-s390@vger.kernel.org, esc.storagedev@microsemi.com, linux-scsi@vger.kernel.org, linux-pm@vger.kernel.org, linux-serial@vger.kernel.org, linux-usb@vger.kernel.org, linux-kernel@vger.kernel.org, alsa-devel@alsa-project.org, linux-omap@vger.kernel.org
-Cc: devel@driverdev.osuosl.org, linux-fbdev@vger.kernel.org, linux-sh@vger.kernel.org, dri-devel@lists.freedesktop.org, linux-input@vger.kernel.org, linux-media@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
+	Hello,
 
-Hi,
+	A rather automatic replacement of print_symbol()
+with direct printk() calls. print_symbol() uses extra stack
+buffer (KSYM_SYMBOL_LEN 128 bytes) and, basically, should
+be identical to printk(%pS).
 
-Joe Perches <joe@perches.com> writes:
->  drivers/usb/phy/phy-tahvo.c                        |  2 +-
+	I can't test all of the patches, because I don't
+own any of those exotic arch-s. Sorry for the inconvenience.
 
-Acked-by: Felipe Balbi <felipe.balbi@linux.intel.com>
+Sergey Senozhatsky (13):
+  arm: do not use print_symbol()
+  arm64: do not use print_symbol()
+  c6x: do not use print_symbol()
+  ia64: do not use print_symbol()
+  mn10300: do not use print_symbol()
+  sh: do not use print_symbol()
+  unicore32: do not use print_symbol()
+  x86: do not use print_symbol()
+  drivers: do not use print_symbol()
+  sysfs: do not use print_symbol()
+  irq debug: do not use print_symbol()
+  lib: do not use print_symbol()
+  arc: do not use __print_symbol()
+
+ arch/arc/kernel/stacktrace.c     |  2 +-
+ arch/arm/kernel/process.c        |  5 ++---
+ arch/arm64/kernel/process.c      |  5 ++---
+ arch/c6x/kernel/traps.c          |  4 +---
+ arch/ia64/kernel/process.c       | 10 +++-------
+ arch/mn10300/kernel/traps.c      |  4 +---
+ arch/sh/kernel/process_32.c      |  5 ++---
+ arch/unicore32/kernel/process.c  |  5 ++---
+ arch/x86/kernel/cpu/mcheck/mce.c |  3 +--
+ arch/x86/mm/mmio-mod.c           |  5 ++---
+ drivers/base/core.c              |  5 ++---
+ fs/sysfs/file.c                  |  5 ++---
+ kernel/irq/debug.h               |  8 +++-----
+ lib/smp_processor_id.c           |  3 +--
+ 14 files changed, 25 insertions(+), 44 deletions(-)
 
 -- 
-balbi
+2.15.1
+
