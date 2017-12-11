@@ -1,70 +1,78 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Thu, 07 Dec 2017 10:42:05 +0000
-Subject: Re: [PATCH v2 0/4] i2c: pca-platform: additional improvements
-Message-Id: <20171207104205.h5ejivdmtharmdln@ninjato>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="thrxabcroshaxx7e"
+From: Sergey Senozhatsky <sergey.senozhatsky.work@gmail.com>
+Date: Mon, 11 Dec 2017 12:50:20 +0000
+Subject: [PATCH 08/13] x86: do not use print_symbol()
+Message-Id: <20171211125025.2270-9-sergey.senozhatsky@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20170705101358.17458-1-chris.packham@alliedtelesis.co.nz>
- <20171029172918.2xtz2srh2meq45io@ninjato>
-In-Reply-To: <20171029172918.2xtz2srh2meq45io@ninjato>
-To: Chris Packham <chris.packham@alliedtelesis.co.nz>, Rich Felker <dalias@libc.org>
-Cc: ysato@users.sourceforge.jp, linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+References: <20171211125025.2270-1-sergey.senozhatsky@gmail.com>
+In-Reply-To: <20171211125025.2270-1-sergey.senozhatsky@gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
+print_symbol() uses extra stack space to sprintf() symbol
+information and then to feed that buffer to printk()
 
---thrxabcroshaxx7e
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+  char buffer[KSYM_SYMBOL_LEN];
 
-On Sun, Oct 29, 2017 at 06:29:18PM +0100, Wolfram Sang wrote:
-> On Wed, Jul 05, 2017 at 10:13:54PM +1200, Chris Packham wrote:
-> > This series addresses some of the points identified by Andy. The series=
- is
-> > based on top of i2c/for-next. 2 of the patches from v1 have already been
-> > applied so I've dropped them from this version.
-> >=20
-> > I have compile tested patch 1/1 but I don't have access to sh hardware
-> > to actually test the changes on.
-> >=20
-> > Chris Packham (4):
-> >   sh: sh7785lcr: add GPIO lookup table for i2c controller reset
-> >   i2c: pca-platform: unconditionally use devm_gpiod_get_optional
-> >   i2c: pca-platform: use device_property_read_u32
-> >   i2c: pca-platform: drop gpio from platform data
-> >=20
-> >  arch/blackfin/mach-bf561/boards/acvilon.c |  1 -
-> >  arch/sh/boards/board-sh7785lcr.c          | 11 +++++++++-
-> >  drivers/i2c/busses/i2c-pca-platform.c     | 34 +++++++++--------------=
---------
-> >  include/linux/i2c-pca-platform.h          |  3 ---
-> >  4 files changed, 20 insertions(+), 29 deletions(-)
->=20
-> Series looks good to me, too. I'd need ACKs from the SH maintainers,
-> though. Technically, from Blackfin maintainers as well. But I haven't
-> heard from them in months, so I could go without that.
+  sprint_symbol(buffer, address);
+  printk(fmt, buffer);
 
-Adding Rich Felker to CC...
+Replace print_symbol() with a direct printk("%pS") call.
 
+Signed-off-by: Sergey Senozhatsky <sergey.senozhatsky@gmail.com>
+Cc: Tony Luck <tony.luck@intel.com>
+Cc: Borislav Petkov <bp@alien8.de>
+Cc: Thomas Gleixner <tglx@linutronix.de>
+---
+ arch/x86/kernel/cpu/mcheck/mce.c | 3 +--
+ arch/x86/mm/mmio-mod.c           | 5 ++---
+ 2 files changed, 3 insertions(+), 5 deletions(-)
 
---thrxabcroshaxx7e
-Content-Type: application/pgp-signature; name="signature.asc"
+diff --git a/arch/x86/kernel/cpu/mcheck/mce.c b/arch/x86/kernel/cpu/mcheck/mce.c
+index b1d616d08eee..8ca8f6eb32db 100644
+--- a/arch/x86/kernel/cpu/mcheck/mce.c
++++ b/arch/x86/kernel/cpu/mcheck/mce.c
+@@ -14,7 +14,6 @@
+ #include <linux/capability.h>
+ #include <linux/miscdevice.h>
+ #include <linux/ratelimit.h>
+-#include <linux/kallsyms.h>
+ #include <linux/rcupdate.h>
+ #include <linux/kobject.h>
+ #include <linux/uaccess.h>
+@@ -235,7 +234,7 @@ static void __print_mce(struct mce *m)
+ 			m->cs, m->ip);
+ 
+ 		if (m->cs = __KERNEL_CS)
+-			print_symbol("{%s}", m->ip);
++			pr_cont("{%pS}", (void *)m->ip);
+ 		pr_cont("\n");
+ 	}
+ 
+diff --git a/arch/x86/mm/mmio-mod.c b/arch/x86/mm/mmio-mod.c
+index 4d434ddb75db..2c1ecf4763c4 100644
+--- a/arch/x86/mm/mmio-mod.c
++++ b/arch/x86/mm/mmio-mod.c
+@@ -29,7 +29,6 @@
+ #include <linux/slab.h>
+ #include <linux/uaccess.h>
+ #include <linux/io.h>
+-#include <linux/kallsyms.h>
+ #include <asm/pgtable.h>
+ #include <linux/mmiotrace.h>
+ #include <asm/e820/api.h> /* for ISA_START_ADDRESS */
+@@ -123,8 +122,8 @@ static void die_kmmio_nesting_error(struct pt_regs *regs, unsigned long addr)
+ 	pr_emerg("unexpected fault for address: 0x%08lx, last fault for address: 0x%08lx\n",
+ 		 addr, my_reason->addr);
+ 	print_pte(addr);
+-	print_symbol(KERN_EMERG "faulting IP is at %s\n", regs->ip);
+-	print_symbol(KERN_EMERG "last faulting IP was at %s\n", my_reason->ip);
++	pr_emerg("faulting IP is at %pS\n", (void *)regs->ip);
++	pr_emerg("last faulting IP was at %pS\n", (void *)my_reason->ip);
+ #ifdef __i386__
+ 	pr_emerg("eax: %08lx   ebx: %08lx   ecx: %08lx   edx: %08lx\n",
+ 		 regs->ax, regs->bx, regs->cx, regs->dx);
+-- 
+2.15.1
 
------BEGIN PGP SIGNATURE-----
-
-iQIzBAABCAAdFiEEOZGx6rniZ1Gk92RdFA3kzBSgKbYFAlopGvkACgkQFA3kzBSg
-KbbVxRAAmNqOVKWSEiAx/PJ5TkFxRgrdBiEcSQLBpqitRpFtWgDJR7EJhUbwt4ux
-5UqzjTS/2QJtmO9GlHONO3ZbKZc/vT0gRJakCxsX8y3TsrA2Qg157muiZPc7JCuU
-q5CzqwU68l+UDgiYJcT3QkGa61T6NOZJ4bF6QOtvdgTOjikGN1PNyQcspnvE0sUV
-D4ash+ufb6PJ/Ensv2gSI9gQrqgizYz6hGTkr/Czh9fsIsJNymX7NQg2KkB5xeNi
-Fn0Z22t+WR4UpV3CiWz5vCpZCwzhkcnP4+b9afXkv/a5D5GZfqAMe4j8ZudVRmG1
-P/+dvnUeA7SVWd5pUHJIH/alsxMdtvCpq+AznrXZecvvP+IKtkYvz2wzsGcSSfMO
-JOkxKzO6WXIl5Z8SCkt8jyQR0NpKpwYvEqt7rx/jUj9KBtpzEKCWYXTHuFKZeZYq
-kLva0yraQdEF5KYGSUV92tuq27po62k0o4BRWI4x/NK4acXTo8XMYF8SvBmVh1US
-EP8ld4xGo+p9iP2BH6GKw24bEZPNT5aM5/alnQ8s1GLXzoVbcJpfoBdS2R8bZ1pI
-78Ghv+Usmm+bV4up+uIaBma6xHyxza3nv2MzUBCgbXkgjupEDgYxM9vXEqZVBFUa
-CNfAKoxm2l0cYiOBflV7oKEN2HmIy8a4eMd/9YX++rZcuqOwK/Q=
-=TFjj
------END PGP SIGNATURE-----
-
---thrxabcroshaxx7e--
