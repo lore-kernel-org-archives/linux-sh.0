@@ -1,105 +1,53 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Fri, 29 Dec 2017 08:18:35 +0000
-Subject: [PATCH 31/67] dma-direct: make dma_direct_{alloc,free} available to other implementations
-Message-Id: <20171229081911.2802-32-hch@lst.de>
+From: Sergey Senozhatsky <sergey.senozhatsky.work@gmail.com>
+Date: Mon, 11 Dec 2017 12:50:17 +0000
+Subject: [PATCH 05/13] mn10300: do not use print_symbol()
+Message-Id: <20171211125025.2270-6-sergey.senozhatsky@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20171229081911.2802-1-hch@lst.de>
-In-Reply-To: <20171229081911.2802-1-hch@lst.de>
+References: <20171211125025.2270-1-sergey.senozhatsky@gmail.com>
+In-Reply-To: <20171211125025.2270-1-sergey.senozhatsky@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: iommu@lists.linux-foundation.org
-Cc: linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org, adi-buildroot-devel@lists.sourceforge.net, linux-c6x-dev@linux-c6x.org, linux-cris-kernel@axis.com, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-metag@vger.kernel.org, Michal Simek <monstr@monstr.eu>, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, patches@groups.riscv.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, Guan Xuetao <gxt@mprc.pku.edu.cn>, x86@kernel.org, linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-So that they don't need to indirect through the operation vector.
+print_symbol() uses extra stack space to sprintf() symbol
+information and then to feed that buffer to printk()
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
+  char buffer[KSYM_SYMBOL_LEN];
+
+  sprint_symbol(buffer, address);
+  printk(fmt, buffer);
+
+Replace print_symbol() with a direct printk("%pS") call.
+
+Signed-off-by: Sergey Senozhatsky <sergey.senozhatsky@gmail.com>
+Cc: David Howells <dhowells@redhat.com>
 ---
- arch/arm/mm/dma-mapping-nommu.c | 9 +++------
- include/linux/dma-direct.h      | 5 +++++
- lib/dma-direct.c                | 6 +++---
- 3 files changed, 11 insertions(+), 9 deletions(-)
+ arch/mn10300/kernel/traps.c | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
 
-diff --git a/arch/arm/mm/dma-mapping-nommu.c b/arch/arm/mm/dma-mapping-nommu.c
-index 49e9831dc0f1..b4cf3e4e9d4a 100644
---- a/arch/arm/mm/dma-mapping-nommu.c
-+++ b/arch/arm/mm/dma-mapping-nommu.c
-@@ -11,7 +11,7 @@
+diff --git a/arch/mn10300/kernel/traps.c b/arch/mn10300/kernel/traps.c
+index 800fd0801969..72d1015b2ae7 100644
+--- a/arch/mn10300/kernel/traps.c
++++ b/arch/mn10300/kernel/traps.c
+@@ -22,7 +22,6 @@
+ #include <linux/delay.h>
+ #include <linux/spinlock.h>
+ #include <linux/interrupt.h>
+-#include <linux/kallsyms.h>
+ #include <linux/pci.h>
+ #include <linux/kdebug.h>
+ #include <linux/bug.h>
+@@ -262,8 +261,7 @@ void show_trace(unsigned long *sp)
+ 				raslot = ULONG_MAX;
+ 			else
+ 				printk(" ?");
+-			print_symbol(" %s", addr);
+-			printk("\n");
++			printk(" %pS\n", (void *)addr);
+ 		}
+ 	}
  
- #include <linux/export.h>
- #include <linux/mm.h>
--#include <linux/dma-mapping.h>
-+#include <linux/dma-direct.h>
- #include <linux/scatterlist.h>
- 
- #include <asm/cachetype.h>
-@@ -39,7 +39,6 @@ static void *arm_nommu_dma_alloc(struct device *dev, size_t size,
- 				 unsigned long attrs)
- 
- {
--	const struct dma_map_ops *ops = &dma_direct_ops;
- 	void *ret;
- 
- 	/*
-@@ -48,7 +47,7 @@ static void *arm_nommu_dma_alloc(struct device *dev, size_t size,
- 	 */
- 
- 	if (attrs & DMA_ATTR_NON_CONSISTENT)
--		return ops->alloc(dev, size, dma_handle, gfp, attrs);
-+		return dma_direct_alloc(dev, size, dma_handle, gfp, attrs);
- 
- 	ret = dma_alloc_from_global_coherent(size, dma_handle);
- 
-@@ -70,10 +69,8 @@ static void arm_nommu_dma_free(struct device *dev, size_t size,
- 			       void *cpu_addr, dma_addr_t dma_addr,
- 			       unsigned long attrs)
- {
--	const struct dma_map_ops *ops = &dma_direct_ops;
--
- 	if (attrs & DMA_ATTR_NON_CONSISTENT) {
--		ops->free(dev, size, cpu_addr, dma_addr, attrs);
-+		dma_direct_free(dev, size, cpu_addr, dma_addr, attrs);
- 	} else {
- 		int ret = dma_release_from_global_coherent(get_order(size),
- 							   cpu_addr);
-diff --git a/include/linux/dma-direct.h b/include/linux/dma-direct.h
-index 10e924b7cba7..4788bf0bf683 100644
---- a/include/linux/dma-direct.h
-+++ b/include/linux/dma-direct.h
-@@ -38,4 +38,9 @@ static inline void dma_mark_clean(void *addr, size_t size)
- }
- #endif /* CONFIG_ARCH_HAS_DMA_MARK_CLEAN */
- 
-+void *dma_direct_alloc(struct device *dev, size_t size, dma_addr_t *dma_handle,
-+		gfp_t gfp, unsigned long attrs);
-+void dma_direct_free(struct device *dev, size_t size, void *cpu_addr,
-+		dma_addr_t dma_addr, unsigned long attrs);
-+
- #endif /* _LINUX_DMA_DIRECT_H */
-diff --git a/lib/dma-direct.c b/lib/dma-direct.c
-index f8467cb3d89a..7e913728e099 100644
---- a/lib/dma-direct.c
-+++ b/lib/dma-direct.c
-@@ -33,8 +33,8 @@ static bool dma_coherent_ok(struct device *dev, phys_addr_t phys, size_t size)
- 	return phys_to_dma(dev, phys) + size <= dev->coherent_dma_mask;
- }
- 
--static void *dma_direct_alloc(struct device *dev, size_t size,
--		dma_addr_t *dma_handle, gfp_t gfp, unsigned long attrs)
-+void *dma_direct_alloc(struct device *dev, size_t size, dma_addr_t *dma_handle,
-+		gfp_t gfp, unsigned long attrs)
- {
- 	unsigned int count = PAGE_ALIGN(size) >> PAGE_SHIFT;
- 	int page_order = get_order(size);
-@@ -71,7 +71,7 @@ static void *dma_direct_alloc(struct device *dev, size_t size,
- 	return page_address(page);
- }
- 
--static void dma_direct_free(struct device *dev, size_t size, void *cpu_addr,
-+void dma_direct_free(struct device *dev, size_t size, void *cpu_addr,
- 		dma_addr_t dma_addr, unsigned long attrs)
- {
- 	unsigned int count = PAGE_ALIGN(size) >> PAGE_SHIFT;
 -- 
-2.14.2
+2.15.1
 
