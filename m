@@ -1,30 +1,25 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 11 Dec 2017 16:15:23 +0000
+From: Hans Verkuil <hverkuil@xs4all.nl>
+Date: Wed, 13 Dec 2017 12:03:03 +0000
 Subject: Re: [PATCH v1 03/10] v4l: platform: Add Renesas CEU driver
-Message-Id: <2710170.YbEgzp5Yxe@avalon>
+Message-Id: <db4d1c15-1a6c-7375-b1e1-e780b628ed04@xs4all.nl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1510743363-25798-1-git-send-email-jacopo+renesas@jmondi.org> <1510743363-25798-4-git-send-email-jacopo+renesas@jmondi.org>
+References: <1510743363-25798-1-git-send-email-jacopo+renesas@jmondi.org>
+ <1510743363-25798-4-git-send-email-jacopo+renesas@jmondi.org>
 In-Reply-To: <1510743363-25798-4-git-send-email-jacopo+renesas@jmondi.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Jacopo Mondi <jacopo+renesas@jmondi.org>
-Cc: magnus.damm@gmail.com, geert@glider.be, mchehab@kernel.org, hverkuil@xs4all.nl, linux-renesas-soc@vger.kernel.org, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Jacopo Mondi <jacopo+renesas@jmondi.org>, laurent.pinchart@ideasonboard.com, magnus.damm@gmail.com, geert@glider.be, mchehab@kernel.org
+Cc: linux-renesas-soc@vger.kernel.org, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Hi Jacopo,
-
-Thank you for the patch.
-
-On Wednesday, 15 November 2017 12:55:56 EET Jacopo Mondi wrote:
+On 15/11/17 11:55, Jacopo Mondi wrote:
 > Add driver for Renesas Capture Engine Unit (CEU).
 > 
 > The CEU interface supports capturing 'data' (YUV422) and 'images'
 > (NV[12|21|16|61]).
 > 
 > This driver aims to replace the soc_camera based sh_mobile_ceu one.
-
-s/soc_camera based/soc_camera-based/
-
+> 
 > Tested with ov7670 camera sensor, providing YUYV_2X8 data on Renesas RZ
 > platform GR-Peach.
 > 
@@ -34,14 +29,45 @@ s/soc_camera based/soc_camera-based/
 > ---
 >  drivers/media/platform/Kconfig       |    9 +
 >  drivers/media/platform/Makefile      |    2 +
->  drivers/media/platform/renesas-ceu.c | 1768 +++++++++++++++++++++++++++++++
+>  drivers/media/platform/renesas-ceu.c | 1768 ++++++++++++++++++++++++++++++++++
 >  3 files changed, 1779 insertions(+)
 >  create mode 100644 drivers/media/platform/renesas-ceu.c
-
-[snip]
-
-> diff --git a/drivers/media/platform/renesas-ceu.c
-> b/drivers/media/platform/renesas-ceu.c new file mode 100644
+> 
+> diff --git a/drivers/media/platform/Kconfig b/drivers/media/platform/Kconfig
+> index 3c4f7fa..401caea 100644
+> --- a/drivers/media/platform/Kconfig
+> +++ b/drivers/media/platform/Kconfig
+> @@ -144,6 +144,15 @@ config VIDEO_STM32_DCMI
+>  	  To compile this driver as a module, choose M here: the module
+>  	  will be called stm32-dcmi.
+> 
+> +config VIDEO_RENESAS_CEU
+> +	tristate "Renesas Capture Engine Unit (CEU) driver"
+> +	depends on VIDEO_DEV && VIDEO_V4L2 && HAS_DMA
+> +	depends on ARCH_SHMOBILE || ARCH_R7S72100 || COMPILE_TEST
+> +	select VIDEOBUF2_DMA_CONTIG
+> +	select V4L2_FWNODE
+> +	---help---
+> +	  This is a v4l2 driver for the Renesas CEU Interface
+> +
+>  source "drivers/media/platform/soc_camera/Kconfig"
+>  source "drivers/media/platform/exynos4-is/Kconfig"
+>  source "drivers/media/platform/am437x/Kconfig"
+> diff --git a/drivers/media/platform/Makefile b/drivers/media/platform/Makefile
+> index 327f80a..0d1f02b 100644
+> --- a/drivers/media/platform/Makefile
+> +++ b/drivers/media/platform/Makefile
+> @@ -27,6 +27,8 @@ obj-$(CONFIG_VIDEO_CODA) 		+= coda/
+> 
+>  obj-$(CONFIG_VIDEO_SH_VEU)		+= sh_veu.o
+> 
+> +obj-$(CONFIG_VIDEO_RENESAS_CEU)		+= renesas-ceu.o
+> +
+>  obj-$(CONFIG_VIDEO_MEM2MEM_DEINTERLACE)	+= m2m-deinterlace.o
+> 
+>  obj-$(CONFIG_VIDEO_MUX)			+= video-mux.o
+> diff --git a/drivers/media/platform/renesas-ceu.c b/drivers/media/platform/renesas-ceu.c
+> new file mode 100644
 > index 0000000..aaba3cd
 > --- /dev/null
 > +++ b/drivers/media/platform/renesas-ceu.c
@@ -63,17 +89,105 @@ s/soc_camera based/soc_camera-based/
 > + * it under the terms of the GNU General Public License as published by
 > + * the Free Software Foundation; either version 2 of the License, or
 > + * (at your option) any later version.
-
-You can use an SPDX header instead of a copyright text. Start the file with
-
-// SPDX-License-Identifier: GPL-2.0+
-
-and remove this paragraph.
-
 > + */
-
-[snip]
-
+> +
+> +#include <linux/completion.h>
+> +#include <linux/delay.h>
+> +#include <linux/device.h>
+> +#include <linux/dma-mapping.h>
+> +#include <linux/err.h>
+> +#include <linux/errno.h>
+> +#include <linux/io.h>
+> +#include <linux/init.h>
+> +#include <linux/interrupt.h>
+> +#include <linux/kernel.h>
+> +#include <linux/module.h>
+> +#include <linux/mm.h>
+> +#include <linux/of.h>
+> +#include <linux/of_graph.h>
+> +#include <linux/platform_device.h>
+> +#include <linux/pm_runtime.h>
+> +#include <linux/slab.h>
+> +#include <linux/time.h>
+> +#include <linux/videodev2.h>
+> +
+> +#include <media/v4l2-async.h>
+> +#include <media/v4l2-common.h>
+> +#include <media/v4l2-device.h>
+> +#include <media/v4l2-dev.h>
+> +#include <media/v4l2-fwnode.h>
+> +#include <media/v4l2-ioctl.h>
+> +#include <media/v4l2-image-sizes.h>
+> +#include <media/v4l2-mediabus.h>
+> +#include <media/videobuf2-dma-contig.h>
+> +
+> +#include <media/drv-intf/renesas-ceu.h>
+> +
+> +#define DRIVER_NAME	"renesas-ceu"
+> +
+> +/* ----------------------------------------------------------------------------
+> + * CEU registers offsets and masks
+> + */
+> +#define CEU_CAPSR	0x00 /* Capture start register			*/
+> +#define CEU_CAPCR	0x04 /* Capture control register		*/
+> +#define CEU_CAMCR	0x08 /* Capture interface control register	*/
+> +#define CEU_CAMOR	0x10 /* Capture interface offset register	*/
+> +#define CEU_CAPWR	0x14 /* Capture interface width register	*/
+> +#define CEU_CAIFR	0x18 /* Capture interface input format register */
+> +#define CEU_CRCNTR	0x28 /* CEU register control register		*/
+> +#define CEU_CRCMPR	0x2c /* CEU register forcible control register	*/
+> +#define CEU_CFLCR	0x30 /* Capture filter control register		*/
+> +#define CEU_CFSZR	0x34 /* Capture filter size clip register	*/
+> +#define CEU_CDWDR	0x38 /* Capture destination width register	*/
+> +#define CEU_CDAYR	0x3c /* Capture data address Y register		*/
+> +#define CEU_CDACR	0x40 /* Capture data address C register		*/
+> +#define CEU_CFWCR	0x5c /* Firewall operation control register	*/
+> +#define CEU_CDOCR	0x64 /* Capture data output control register	*/
+> +#define CEU_CEIER	0x70 /* Capture event interrupt enable register	*/
+> +#define CEU_CETCR	0x74 /* Capture event flag clear register	*/
+> +#define CEU_CSTSR	0x7c /* Capture status register			*/
+> +#define CEU_CSRTR	0x80 /* Capture software reset register		*/
+> +
+> +/* Data synchronous fetch mode */
+> +#define CEU_CAMCR_JPEG			BIT(4)
+> +
+> +/* Input components ordering: CEU_CAMCR.DTARY field */
+> +#define CEU_CAMCR_DTARY_8_UYVY		(0x00 << 8)
+> +#define CEU_CAMCR_DTARY_8_VYUY		(0x01 << 8)
+> +#define CEU_CAMCR_DTARY_8_YUYV		(0x02 << 8)
+> +#define CEU_CAMCR_DTARY_8_YVYU		(0x03 << 8)
+> +/* TODO: input components ordering for 16 bits input */
+> +
+> +/* Bus transfer MTU */
+> +#define CEU_CAPCR_BUS_WIDTH256		(0x3 << 20)
+> +
+> +/* Bus width configuration */
+> +#define CEU_CAMCR_DTIF_16BITS		BIT(12)
+> +
+> +/* No downsampling to planar YUV420 in image fetch mode */
+> +#define CEU_CDOCR_NO_DOWSAMPLE		BIT(4)
+> +
+> +/* Swap all input data in 8-bit, 16-bits and 32-bits units (Figure 46.45) */
+> +#define CEU_CDOCR_SWAP_ENDIANNESS	(7)
+> +
+> +/* Capture reset and enable bits */
+> +#define CEU_CAPSR_CPKIL			BIT(16)
+> +#define CEU_CAPSR_CE			BIT(0)
+> +
+> +/* CEU operating flag bit */
+> +#define CEU_CAPCR_CTNCP			BIT(16)
+> +#define CEU_CSTRST_CPTON		BIT(1)
+> +
+> +/* Acknowledge magical interrupt sources */
+> +#define CEU_CETCR_MAGIC			0x0317f313
+> +/* Prohibited register access interrupt bit */
+> +#define CEU_CETCR_IGRW			BIT(4)
+> +/* One-frame capture end interrupt */
+> +#define CEU_CEIER_CPE			BIT(0)
+> +/* VBP error */
+> +#define CEU_CEIER_VBP			BIT(20)
+> +#define CEU_CEIER_MASK			(CEU_CEIER_CPE | CEU_CEIER_VBP)
+> +
 > +/* mbus configuration flags */
 > +#define CEU_BUS_FLAGS (V4L2_MBUS_MASTER		     |  \
 > +			V4L2_MBUS_PCLK_SAMPLE_RISING |	\
@@ -88,7 +202,7 @@ and remove this paragraph.
 > +#define CEU_W_MAX(w)	((w) < CEU_MAX_WIDTH ? (w) : CEU_MAX_WIDTH)
 > +#define CEU_H_MAX(h)	((h) < CEU_MAX_HEIGHT ? (h) : CEU_MAX_HEIGHT)
 > +
-> +/* ------------------------------------------------------------------------
+> +/* ----------------------------------------------------------------------------
 > + * CEU formats
 > + */
 > +
@@ -114,10 +228,6 @@ and remove this paragraph.
 > +
 > +/**
 > + * ceu_buffer - Link vb2 buffer to the list of available buffers
-
-If you use kerneldoc comments please make them compile. You need to document 
-the structure fields and function arguments.
-
 > + */
 > +struct ceu_buffer {
 > +	struct vb2_v4l2_buffer vb;
@@ -177,9 +287,6 @@ the structure fields and function arguments.
 > +	unsigned int		sequence;
 > +
 > +	/* mlock - locks on open/close and vb2 operations */
-
-Lock documentation should usually explain what data is protected by the lock.
-
 > +	struct mutex	mlock;
 > +
 > +	/* lock - lock access to capture buffer queue and active buffer */
@@ -194,7 +301,7 @@ Lock documentation should usually explain what data is protected by the lock.
 > +	return container_of(v4l2_dev, struct ceu_device, v4l2_dev);
 > +}
 > +
-> +/* ------------------------------------------------------------------------
+> +/* ----------------------------------------------------------------------------
 > + * CEU memory output formats
 > + */
 > +
@@ -203,17 +310,10 @@ Lock documentation should usually explain what data is protected by the lock.
 > + *
 > + * @fourcc: memory layout fourcc format code
 > + * @bpp: bit for each pixel stored in memory
-
-Do you mean number of bits ?
-
 > + */
 > +struct ceu_fmt {
 > +	u32	fourcc;
 > +	u8	bpp;
-
-This will take 32 bits anyway due to alignment constraints, I'd make the field 
-an unsigned int.
-
 > +};
 > +
 > +/**
@@ -259,9 +359,6 @@ an unsigned int.
 > +}
 > +
 > +static inline bool ceu_is_fmt_planar(struct v4l2_pix_format_mplane *pix)
-
-No need for the inline keyword, the compiler should be smart enough to decide.
-
 > +{
 > +	switch (pix->pixelformat) {
 > +	case V4L2_PIX_FMT_YUYV:
@@ -274,13 +371,21 @@ No need for the inline keyword, the compiler should be smart enough to decide.
 > +	}
 > +
 > +	return true;
-
-Maybe a default case instead ?
-
 > +}
-
-[snip]
-
+> +
+> +/* ----------------------------------------------------------------------------
+> + * CEU HW operations
+> + */
+> +static void ceu_write(struct ceu_device *priv, unsigned int reg_offs, u32 data)
+> +{
+> +	iowrite32(data, priv->base + reg_offs);
+> +}
+> +
+> +static u32 ceu_read(struct ceu_device *priv, unsigned int reg_offs)
+> +{
+> +	return ioread32(priv->base + reg_offs);
+> +}
+> +
 > +/**
 > + * ceu_soft_reset() - Software reset the CEU interface
 > + */
@@ -297,18 +402,9 @@ Maybe a default case instead ?
 > +		if (!(ceu_read(ceudev, CEU_CSTSR) & CEU_CSTRST_CPTON))
 > +			reset_done++;
 > +	}
-
-How many iterations does this typically require ? Wouldn't a sleep be better 
-than a delay ? As far as I can tell the ceu_soft_reset() function is only 
-called with interrupts disabled (in interrupt context) from ceu_capture() in 
-an error path, and that code should be reworked to make it possible to sleep 
-if a reset takes too long.
-
+> +
 > +	if (!reset_done) {
 > +		v4l2_err(&ceudev->v4l2_dev, "soft reset time out\n");
-
-How about dev_err() instead ?
-
 > +		return -EIO;
 > +	}
 > +
@@ -323,15 +419,14 @@ How about dev_err() instead ?
 > +	return -EIO;
 > +}
 > +
-> +/* ------------------------------------------------------------------------
+> +/* ----------------------------------------------------------------------------
 > + * CEU Capture Operations
 > + */
 > +
 > +/**
 > + * ceu_capture() - Trigger start of a capture sequence
 > + *
-> + * Return value doesn't reflect the success/failure to queue the new
-> buffer,
+> + * Return value doesn't reflect the success/failure to queue the new buffer,
 > + * but rather the status of the previous capture.
 > + */
 > +static int ceu_capture(struct ceu_device *ceudev)
@@ -346,9 +441,6 @@ How about dev_err() instead ?
 > +		  ceu_read(ceudev, CEU_CEIER) & ~CEU_CEIER_MASK);
 > +	ceu_write(ceudev, CEU_CETCR, ~status & CEU_CETCR_MAGIC);
 > +	ceu_write(ceudev, CEU_CEIER, CEU_CEIER_MASK);
-
-I wonder why there's a need to disable and reenable interrupts here.
-
 > +	ceu_write(ceudev, CEU_CAPCR,
 > +		  ceu_read(ceudev, CEU_CAPCR) & ~CEU_CAPCR_CTNCP);
 > +
@@ -398,13 +490,7 @@ I wonder why there's a need to disable and reenable interrupts here.
 > +	if (!vbuf)
 > +		/* Stale interrupt from a released buffer */
 > +		goto out;
-
-Shouldn't you at least clear the interrupt source (done at the beginning of 
-the ceu_capture() function) in this case ? I'd move the handling of the 
-interrupt status from ceu_capture() to here and pass the status to the capture 
-function. Or even handle the status here completely, as status handling isn't 
-needed when ceu_capture() is called from ceu_start_streaming().
-
+> +
 > +	/* Prepare a new 'active' buffer and trigger a new capture */
 > +	buf = vb2_to_ceu(vbuf);
 > +	vbuf->vb2_buf.timestamp = ktime_get_ns();
@@ -426,12 +512,6 @@ needed when ceu_capture() is called from ceu_start_streaming().
 > +	if (!ret) {
 > +		vbuf->field = ceudev->field;
 > +		vbuf->sequence = ceudev->sequence++;
-
-Shouldn't you set the sequence number even when an error occurs ? You should 
-also complete all buffers with VB2_BUF_STATE_ERROR in that case, as 
-ceu_capture() won't start a new capture, otherwise userspace will hang 
-forever.
-
 > +	}
 > +
 > +	vb2_buffer_done(&vbuf->vb2_buf,
@@ -441,12 +521,9 @@ forever.
 > +	spin_unlock(&ceudev->lock);
 > +
 > +	return IRQ_HANDLED;
-
-You shouldn't return IRQ_HANDLED if the IRQ status reported no interrupt.
-
 > +}
 > +
-> +/* ------------------------------------------------------------------------
+> +/* ----------------------------------------------------------------------------
 > + * CEU Videobuf operations
 > + */
 > +
@@ -465,14 +542,8 @@ You shouldn't return IRQ_HANDLED if the IRQ status reported no interrupt.
 > +	case V4L2_PIX_FMT_YUYV:
 > +		pix->num_planes			= 1;
 > +		plane_fmt[0].bytesperline	= pix->width * ceu_fmt->bpp / 8;
-
-Doesn't the driver support configurable stride ?
-
 > +		plane_fmt[0].sizeimage		= pix->height *
 > +						  plane_fmt[0].bytesperline;
-
-Padding at the end of the image should be allowed if requested by userspace.
-
 > +		break;
 > +	case V4L2_PIX_FMT_NV16:
 > +	case V4L2_PIX_FMT_NV61:
@@ -490,9 +561,6 @@ Padding at the end of the image should be allowed if requested by userspace.
 > +		plane_fmt[1].sizeimage		= pix->height * pix->width / 2;
 > +		break;
 > +	default:
-
-Can this happen ? ceu_try_fmt() should have validated the format.
-
 > +		pix->num_planes			= 0;
 > +		v4l2_err(&ceudev->v4l2_dev,
 > +			 "Format 0x%x not supported\n", pix->pixelformat);
@@ -503,15 +571,18 @@ Can this happen ? ceu_try_fmt() should have validated the format.
 > +}
 > +
 > +/*
-> + * ceu_videobuf_setup() - is called to check, whether the driver can accept
-
-s/check,/check/
-
-> the
+> + * ceu_videobuf_setup() - is called to check, whether the driver can accept the
 > + *			  requested number of buffers and to fill in plane sizes
 > + *			  for the current frame format, if required.
 > + */
 > +static int ceu_videobuf_setup(struct vb2_queue *vq, unsigned int *count,
+
+A general request: can you replace all videobuf_ strings by vb2_?
+
+'videobuf' generally refers to the first version of the videobuf framework (and
+in fact, that's what soc_camera originally used), but I'd rather rename it here
+so a grep on videobuf won't hit this driver.
+
 > +			      unsigned int *num_planes, unsigned int sizes[],
 > +			      struct device *alloc_devs[])
 > +{
@@ -521,10 +592,7 @@ s/check,/check/
 > +
 > +	if (!vq->num_buffers)
 > +		ceudev->sequence = 0;
-
-Why do you reset the sequence number here, shouldn't it be done at stream 
-start instead ?
-
+> +
 > +	if (!*count)
 > +		*count = 2;
 > +
@@ -561,10 +629,6 @@ start instead ?
 > +				 "Buffer #%d too small (%lu < %u)\n",
 > +				 vb->index, vb2_plane_size(vb, i),
 > +				 pix->plane_fmt[i].sizeimage);
-
-I wouldn't print an error message, otherwise userspace will have yet another 
-way to flood the kernel log.
-
 > +			goto error;
 > +		}
 > +
@@ -579,9 +643,6 @@ way to flood the kernel log.
 > +
 > +error:
 > +	vb2_buffer_done(vb, VB2_BUF_STATE_ERROR);
-
-You can inline this call, get rid of the error label and the return statement.
-
 > +}
 > +
 > +static int ceu_start_streaming(struct vb2_queue *vq, unsigned int count)
@@ -591,9 +652,7 @@ You can inline this call, get rid of the error label and the return statement.
 > +	struct ceu_buffer *buf;
 > +	unsigned long irqflags;
 > +	int ret = 0;
-
-No need to assign ret to 0.
-
+> +
 > +	ret = v4l2_subdev_call(v4l2_sd, video, s_stream, 1);
 > +	if (ret && ret != -ENOIOCTLCMD) {
 > +		v4l2_err(&ceudev->v4l2_dev,
@@ -605,9 +664,6 @@ No need to assign ret to 0.
 > +	ceudev->sequence = 0;
 > +
 > +	if (ceudev->active) {
-
-Can this happen ?
-
 > +		ret = -EINVAL;
 > +		spin_unlock_irqrestore(&ceudev->lock, irqflags);
 > +		goto error_stop_sensor;
@@ -622,9 +678,6 @@ Can this happen ?
 > +	ret = ceu_capture(ceudev);
 > +	if (ret) {
 > +		spin_unlock_irqrestore(&ceudev->lock, irqflags);
-
-You can move this call out of the error check just after ceu_capture().
-
 > +		goto error_stop_sensor;
 > +	}
 > +
@@ -671,14 +724,18 @@ You can move this call out of the error check just after ceu_capture().
 > +
 > +	ceu_soft_reset(ceudev);
 > +}
-
-[snip]
-
+> +
+> +static const struct vb2_ops ceu_videobuf_ops = {
+> +	.queue_setup	= ceu_videobuf_setup,
+> +	.buf_queue	= ceu_videobuf_queue,
+> +	.wait_prepare	= vb2_ops_wait_prepare,
+> +	.wait_finish	= vb2_ops_wait_finish,
+> +	.start_streaming = ceu_start_streaming,
+> +	.stop_streaming	= ceu_stop_streaming,
+> +};
+> +
 > +/**
-
-Is this really kerneldoc ?
-
-> + * ------------------------------------------------------------------------
+> + * ----------------------------------------------------------------------------
 > + *  CEU bus operations
 > + */
 > +static unsigned int ceu_mbus_config_compatible(
@@ -701,10 +758,6 @@ Is this really kerneldoc ?
 > +		mode = common_flags & (V4L2_MBUS_MASTER | V4L2_MBUS_SLAVE);
 > +		break;
 > +	default:
-
-Can this happen ? You should reject non-parallel sensors at probe time (or 
-subdev bind time).
-
 > +		return 0;
 > +	}
 > +
@@ -712,8 +765,7 @@ subdev bind time).
 > +}
 > +
 > +/**
-> + * ceu_test_mbus_param() - test bus parameters against sensor provided
-> ones.
+> + * ceu_test_mbus_param() - test bus parameters against sensor provided ones.
 > + *
 > + * @return: < 0 for errors
 > + *	    0 if g_mbus_config is not supported,
@@ -729,6 +781,14 @@ subdev bind time).
 > +	int ret;
 > +
 > +	ret = v4l2_subdev_call(sd, video, g_mbus_config, &cfg);
+
+If at all possible, don't call this. This information should just come from
+the device tree.
+
+I want to eventually remove the g/s_mbus_config, so I'd rather not keep it here.
+The soc_camera driver is one of the very few drivers that use it (the other is
+pxa_camera).
+
 > +	if (ret < 0 && ret != -ENOIOCTLCMD)
 > +		return ret;
 > +	else if (ret = -ENOIOCTLCMD)
@@ -739,15 +799,6 @@ subdev bind time).
 > +		return -EINVAL;
 > +
 > +	return common_flags;
-
-This is a legacy of soc_camera that tried to negotiate bus parameters with the 
-source subdevice. We have later established that this isn't a good idea, as 
-there could be components on the board that affect those settings (for 
-instance inverters on the synchronization signals). This is why with DT we 
-specify the bus configuration in endpoints on both sides. You should thus 
-always use the bus configuration provided through DT or platform data and 
-ignore the one reported by the subdev.
-
 > +}
 > +
 > +/**
@@ -757,18 +808,12 @@ ignore the one reported by the subdev.
 > +static int ceu_set_bus_params(struct ceu_device *ceudev)
 > +{
 > +	u32 camcr = 0, cdocr = 0, cfzsr = 0, cdwdr = 0, capwr = 0;
-
-No need to assign a value to cdocr, cfzsr, cdwdr and capwr.
-
 > +	struct v4l2_pix_format_mplane *pix = &ceudev->v4l2_pix;
 > +	struct ceu_subdev *ceu_sd = ceudev->sd;
 > +	struct ceu_mbus_fmt *mbus_fmt = &ceu_sd->mbus_fmt;
 > +	struct v4l2_subdev *v4l2_sd = ceu_sd->v4l2_sd;
 > +	unsigned int mbus_flags = ceu_sd->mbus_flags;
 > +	unsigned long common_flags = CEU_BUS_FLAGS;
-
-No need to assign a value to common_flags.
-
 > +	int ret;
 > +	struct v4l2_mbus_config cfg = {
 > +		.type = V4L2_MBUS_PARALLEL,
@@ -808,11 +853,6 @@ No need to assign a value to common_flags.
 > +
 > +	cfg.flags = common_flags;
 > +	ret = v4l2_subdev_call(v4l2_sd, video, s_mbus_config, &cfg);
-
-For the same reasons described above, don't call .s_mbus_config(), but update 
-the sensor drivers to apply the configuration specified in DT or platform 
-data.
-
 > +	if (ret < 0 && ret != -ENOIOCTLCMD)
 > +		return ret;
 > +
@@ -913,10 +953,7 @@ data.
 > +}
 > +
 > +/**
-
-Is this really kerneldoc ?
-
-> + * ------------------------------------------------------------------------
+> + * ----------------------------------------------------------------------------
 > + *  CEU image formats handling
 > + */
 > +
@@ -925,8 +962,7 @@ Is this really kerneldoc ?
 > + *
 > + * @v4l2_fmt: format to test
 > + */
-> +static int ceu_try_fmt(struct ceu_device *ceudev, struct v4l2_format
-> *v4l2_fmt)
+> +static int ceu_try_fmt(struct ceu_device *ceudev, struct v4l2_format *v4l2_fmt)
 > +{
 > +	struct v4l2_pix_format_mplane *pix = &v4l2_fmt->fmt.pix_mp;
 > +	struct ceu_subdev *ceu_sd = ceudev->sd;
@@ -951,10 +987,6 @@ Is this really kerneldoc ?
 > +		v4l2_err(&ceudev->v4l2_dev,
 > +			 "Pixel format 0x%x not supported, default to NV16\n",
 > +			 pix->pixelformat);
-
-I wouldn't print an error message, otherwise userspace will have yet another 
-way to flood the kernel log.
-
 > +		pix->pixelformat = V4L2_PIX_FMT_NV16;
 > +	}
 > +
@@ -963,9 +995,7 @@ way to flood the kernel log.
 > +	/* CFSZR requires height and width to be 4-pixel aligned */
 > +	v4l_bound_align_image(&pix->width, 2, CEU_MAX_WIDTH, 2,
 > +			      &pix->height, 4, CEU_MAX_HEIGHT, 2, 0);
-
-Then why do you align them to 2 ? :-)
-
+> +
 > +	/*
 > +	 * Set format on sensor sub device: bus format used to produce memory
 > +	 * format is selected at initialization time
@@ -982,19 +1012,9 @@ Then why do you align them to 2 ? :-)
 > +			 "Unable to apply: 0x%x - %ux%u - scale to %ux%u\n",
 > +			 pix->pixelformat, pix->width, pix->height,
 > +			 sd_format.format.width, sd_format.format.height);
-
-This shouldn't print an error message to the kernel log either.
-
 > +		pix->width = sd_format.format.width;
 > +		pix->height = sd_format.format.height;
 > +	}
-
-No need for a conditional assignment, you can just write
-
-	/* The CEU can't scale. */
-	pix->width = sd_format.format.width;
-	pix->height = sd_format.format.height;
-
 > +
 > +	/* Calculate per-plane sizes based on image format */
 > +	v4l2_fill_pix_format_mplane(pix, &sd_format.format);
@@ -1013,8 +1033,7 @@ No need for a conditional assignment, you can just write
 > +/**
 > + * ceu_set_fmt() - Apply the supplied format to both sensor and CEU
 > + */
-> +static int ceu_set_fmt(struct ceu_device *ceudev, struct v4l2_format
-> *v4l2_fmt)
+> +static int ceu_set_fmt(struct ceu_device *ceudev, struct v4l2_format *v4l2_fmt)
 > +{
 > +	struct ceu_subdev *ceu_sd = ceudev->sd;
 > +	struct v4l2_subdev *v4l2_sd = ceu_sd->v4l2_sd;
@@ -1036,10 +1055,6 @@ No need for a conditional assignment, you can just write
 > +	ceudev->v4l2_pix = v4l2_fmt->fmt.pix_mp;
 > +
 > +	ret = ceu_set_bus_params(ceudev);
-
-Do you need to do this here, can't you program the registers once at streamon 
-time only ?
-
 > +	if (ret)
 > +		return ret;
 > +
@@ -1076,9 +1091,7 @@ time only ?
 > +	ret = ceu_try_fmt(ceudev, &v4l2_fmt);
 > +	if (ret)
 > +		return ret;
-
-I would assume the default values not to generate an error.
-
+> +
 > +	ceudev->v4l2_pix = v4l2_fmt.fmt.pix_mp;
 > +
 > +	return 0;
@@ -1095,11 +1108,7 @@ I would assume the default values not to generate an error.
 > + * - YUYV422 if sensor provides YUYV422
 > + *
 > + * TODO: Other YUYV422 permutations throug data fetch sync mode and DTARY
-
-s/throug/through/
-
-> + * TODO: Binary data (eg. JPEG) and raw formats through data fetch sync
-> mode
+> + * TODO: Binary data (eg. JPEG) and raw formats through data fetch sync mode
 > + */
 > +static int ceu_init_formats(struct ceu_device *ceudev)
 > +{
@@ -1185,30 +1194,89 @@ s/throug/through/
 > +}
 > +
 > +/**
-
-Is this really kerneldoc ?
-
-> + * ------------------------------------------------------------------------
+> + * ----------------------------------------------------------------------------
 > + *  Runtime PM Handlers
 > + */
-
-[snip]
-
+> +
 > +/**
-
-Ditto.
-
-> + * ------------------------------------------------------------------------
+> + * ceu_runtime_suspend() - disable capture and interrupts and soft-reset.
+> + *			   Turn sensor power off.
+> + */
+> +static int ceu_runtime_suspend(struct device *dev)
+> +{
+> +	struct ceu_device *ceudev = dev_get_drvdata(dev);
+> +	struct v4l2_subdev *v4l2_sd = ceudev->sd->v4l2_sd;
+> +
+> +	v4l2_subdev_call(v4l2_sd, core, s_power, 0);
+> +
+> +	ceu_write(ceudev, CEU_CEIER, 0);
+> +	ceu_soft_reset(ceudev);
+> +
+> +	return 0;
+> +}
+> +
+> +/**
+> + * ceu_runtime_resume() - soft-reset the interface and turn sensor power on.
+> + */
+> +static int ceu_runtime_resume(struct device *dev)
+> +{
+> +	struct ceu_device *ceudev = dev_get_drvdata(dev);
+> +	struct v4l2_subdev *v4l2_sd = ceudev->sd->v4l2_sd;
+> +
+> +	v4l2_subdev_call(v4l2_sd, core, s_power, 1);
+> +
+> +	ceu_soft_reset(ceudev);
+> +
+> +	return 0;
+> +}
+> +
+> +/**
+> + * ----------------------------------------------------------------------------
 > + *  File Operations
 > + */
-
-[snip]
-
+> +static int ceu_open(struct file *file)
+> +{
+> +	struct ceu_device *ceudev = video_drvdata(file);
+> +	int ret;
+> +
+> +	ret = v4l2_fh_open(file);
+> +	if (ret)
+> +		return ret;
+> +
+> +	mutex_lock(&ceudev->mlock);
+> +	/* Causes soft-reset and sensor power on on first open */
+> +	pm_runtime_get_sync(ceudev->dev);
+> +	mutex_unlock(&ceudev->mlock);
+> +
+> +	return 0;
+> +}
+> +
+> +static int ceu_release(struct file *file)
+> +{
+> +	struct ceu_device *ceudev = video_drvdata(file);
+> +
+> +	vb2_fop_release(file);
+> +
+> +	mutex_lock(&ceudev->mlock);
+> +	/* Causes soft-reset and sensor power down on last close */
+> +	pm_runtime_put(ceudev->dev);
+> +	mutex_unlock(&ceudev->mlock);
+> +
+> +	return 0;
+> +}
+> +
+> +static const struct v4l2_file_operations ceu_fops = {
+> +	.owner			= THIS_MODULE,
+> +	.open			= ceu_open,
+> +	.release		= ceu_release,
+> +	.unlocked_ioctl		= video_ioctl2,
+> +	.read			= vb2_fop_read,
+> +	.mmap			= vb2_fop_mmap,
+> +	.poll			= vb2_fop_poll,
+> +};
+> +
 > +/**
-
-Ditto.
-
-> + * -----------------------------------------------------------------------
+> + * ----------------------------------------------------------------------------
 > + *  Video Device IOCTLs
 > + */
 > +static int ceu_querycap(struct file *file, void *priv,
@@ -1217,29 +1285,70 @@ Ditto.
 > +	strlcpy(cap->card, "Renesas-CEU", sizeof(cap->card));
 > +	strlcpy(cap->driver, DRIVER_NAME, sizeof(cap->driver));
 > +	strlcpy(cap->bus_info, "platform:renesas-ceu", sizeof(cap->bus_info));
-
-Shouldn't this distinguish between multiple instances of the same device ?
-
 > +
 > +	return 0;
 > +}
+> +
+> +static int ceu_enum_fmt_vid_cap(struct file *file, void *priv,
+> +				struct v4l2_fmtdesc *f)
+> +{
+> +	const struct ceu_fmt *fmt;
+> +
+> +	if (f->index >= ARRAY_SIZE(ceu_fmt_list) - 1)
+> +		return -EINVAL;
+> +
+> +	fmt = &ceu_fmt_list[f->index];
+> +	f->pixelformat = fmt->fourcc;
+> +
+> +	return 0;
+> +}
+> +
+> +static int ceu_try_fmt_vid_cap(struct file *file, void *priv,
+> +			       struct v4l2_format *f)
+> +{
+> +	struct ceu_device *ceudev = video_drvdata(file);
+> +
+> +	return ceu_try_fmt(ceudev, f);
+> +}
+> +
+> +static int ceu_s_fmt_vid_cap(struct file *file, void *priv,
+> +			     struct v4l2_format *f)
+> +{
+> +	struct ceu_device *ceudev = video_drvdata(file);
+> +
+> +	if (vb2_is_streaming(&ceudev->vb2_vq))
+> +		return -EBUSY;
+> +
+> +	return ceu_set_fmt(ceudev, f);
+> +}
+> +
+> +static int ceu_g_fmt_vid_cap(struct file *file, void *priv,
+> +			     struct v4l2_format *f)
+> +{
+> +	struct ceu_device *ceudev = video_drvdata(file);
+> +
+> +	if (vb2_is_streaming(&ceudev->vb2_vq))
+> +		return -EBUSY;
 
-[snip]
+Drop this. You can always return the current format. Only *setting* the format
+requires this check.
 
+> +
+> +	f->type	= V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
+> +	f->fmt.pix_mp = ceudev->v4l2_pix;
+> +
+> +	return 0;
+> +}
+> +
 > +static int ceu_enum_input(struct file *file, void *priv,
 > +			  struct v4l2_input *inp)
 > +{
 > +	if (inp->index != 0)
 > +		return -EINVAL;
-
-Doesn't the driver support two inputs ?
-
+> +
 > +	inp->type = V4L2_INPUT_TYPE_CAMERA;
 > +	inp->std = 0;
 > +	strcpy(inp->name, "Camera");
-
-Shouldn't this reflect the name of the input ?
-
 > +
 > +	return 0;
 > +}
@@ -1275,16 +1384,124 @@ Shouldn't this reflect the name of the input ?
 > +	/* now that we're sure we can use the sensor, power off the old one */
 > +	v4l2_subdev_call(ceu_sd_old->v4l2_sd, core, s_power, 0);
 > +	v4l2_subdev_call(ceudev->sd->v4l2_sd, core, s_power, 1);
-
-What if this function is called while streaming ?
-
+> +
 > +	ceudev->sd_index = i;
 > +
 > +	return 0;
 > +}
-
-[snip]
-
+> +
+> +static int ceu_g_parm(struct file *file, void *fh, struct v4l2_streamparm *a)
+> +{
+> +	struct ceu_device *ceudev = video_drvdata(file);
+> +
+> +	if (a->type != V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE)
+> +		return -EINVAL;
+> +
+> +	return v4l2_subdev_call(ceudev->sd->v4l2_sd, video, g_parm, a);
+> +}
+> +
+> +static int ceu_s_parm(struct file *file, void *fh, struct v4l2_streamparm *a)
+> +{
+> +	struct ceu_device *ceudev = video_drvdata(file);
+> +
+> +	if (a->type != V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE)
+> +		return -EINVAL;
+> +
+> +	return v4l2_subdev_call(ceudev->sd->v4l2_sd, video, s_parm, a);
+> +}
+> +
+> +static int ceu_enum_framesizes(struct file *file, void *fh,
+> +			       struct v4l2_frmsizeenum *fsize)
+> +{
+> +	struct ceu_device *ceudev = video_drvdata(file);
+> +	struct ceu_subdev *ceu_sd = ceudev->sd;
+> +	struct v4l2_subdev *v4l2_sd = ceu_sd->v4l2_sd;
+> +	int ret;
+> +
+> +	struct v4l2_subdev_frame_size_enum fse = {
+> +		.code	= ceu_sd->mbus_fmt.mbus_code,
+> +		.index	= fsize->index,
+> +		.which	= V4L2_SUBDEV_FORMAT_ACTIVE,
+> +	};
+> +
+> +	ret = v4l2_subdev_call(v4l2_sd, pad, enum_frame_size,
+> +			       NULL, &fse);
+> +	if (ret)
+> +		return ret;
+> +
+> +	fsize->type = V4L2_FRMSIZE_TYPE_DISCRETE;
+> +	fsize->discrete.width = CEU_W_MAX(fse.max_width);
+> +	fsize->discrete.height = CEU_H_MAX(fse.max_height);
+> +
+> +	return 0;
+> +}
+> +
+> +static int ceu_enum_frameintervals(struct file *file, void *fh,
+> +				   struct v4l2_frmivalenum *fival)
+> +{
+> +	struct ceu_device *ceudev = video_drvdata(file);
+> +	struct ceu_subdev *ceu_sd = ceudev->sd;
+> +	struct v4l2_subdev *v4l2_sd = ceu_sd->v4l2_sd;
+> +	int ret;
+> +
+> +	struct v4l2_subdev_frame_interval_enum fie = {
+> +		.code	= ceu_sd->mbus_fmt.mbus_code,
+> +		.index = fival->index,
+> +		.width = fival->width,
+> +		.height = fival->height,
+> +		.which = V4L2_SUBDEV_FORMAT_ACTIVE,
+> +	};
+> +
+> +	ret = v4l2_subdev_call(v4l2_sd, pad, enum_frame_interval, NULL,
+> +			       &fie);
+> +	if (ret)
+> +		return ret;
+> +
+> +	fival->type = V4L2_FRMIVAL_TYPE_DISCRETE;
+> +	fival->discrete = fie.interval;
+> +
+> +	return 0;
+> +}
+> +
+> +static const struct v4l2_ioctl_ops ceu_ioctl_ops = {
+> +	.vidioc_querycap		= ceu_querycap,
+> +
+> +	.vidioc_enum_fmt_vid_cap_mplane	= ceu_enum_fmt_vid_cap,
+> +	.vidioc_try_fmt_vid_cap_mplane	= ceu_try_fmt_vid_cap,
+> +	.vidioc_s_fmt_vid_cap_mplane	= ceu_s_fmt_vid_cap,
+> +	.vidioc_g_fmt_vid_cap_mplane	= ceu_g_fmt_vid_cap,
+> +
+> +	.vidioc_enum_input		= ceu_enum_input,
+> +	.vidioc_g_input			= ceu_g_input,
+> +	.vidioc_s_input			= ceu_s_input,
+> +
+> +	.vidioc_reqbufs			= vb2_ioctl_reqbufs,
+> +	.vidioc_querybuf		= vb2_ioctl_querybuf,
+> +	.vidioc_qbuf			= vb2_ioctl_qbuf,
+> +	.vidioc_expbuf			= vb2_ioctl_expbuf,
+> +	.vidioc_dqbuf			= vb2_ioctl_dqbuf,
+> +	.vidioc_create_bufs		= vb2_ioctl_create_bufs,
+> +	.vidioc_prepare_buf		= vb2_ioctl_prepare_buf,
+> +	.vidioc_streamon		= vb2_ioctl_streamon,
+> +	.vidioc_streamoff		= vb2_ioctl_streamoff,
+> +
+> +	.vidioc_g_parm			= ceu_g_parm,
+> +	.vidioc_s_parm			= ceu_s_parm,
+> +	.vidioc_enum_framesizes		= ceu_enum_framesizes,
+> +	.vidioc_enum_frameintervals	= ceu_enum_frameintervals,
+> +};
+> +
+> +/**
+> + * ceu_vdev_release() - release CEU video device memory when last reference
+> + *			to this driver is closed
+> + */
+> +void ceu_vdev_release(struct video_device *vdev)
+> +{
+> +	struct ceu_device *ceudev = video_get_drvdata(vdev);
+> +
+> +	kfree(ceudev);
+> +}
+> +
 > +static int ceu_sensor_bound(struct v4l2_async_notifier *notifier,
 > +			    struct v4l2_subdev *v4l2_sd,
 > +			    struct v4l2_async_subdev *asd)
@@ -1297,9 +1514,6 @@ What if this function is called while streaming ?
 > +		v4l2_err(&ceudev->v4l2_dev,
 > +			 "Video device registered before this sub-device.\n");
 > +		return -EBUSY;
-
-Can this happen ?
-
 > +	}
 > +
 > +	/* Assign subdevices in the order they appear */
@@ -1322,7 +1536,7 @@ Can this happen ?
 > +	q->type			= V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
 > +	q->io_modes		= VB2_MMAP | VB2_USERPTR;
 
-No dmabuf ?
+Please add VB2_DMABUF.
 
 > +	q->drv_priv		= ceudev;
 > +	q->ops			= &ceu_videobuf_ops;
@@ -1331,9 +1545,188 @@ No dmabuf ?
 > +	q->timestamp_flags	= V4L2_BUF_FLAG_TIMESTAMP_MONOTONIC;
 > +	q->lock			= &ceudev->mlock;
 > +	q->dev			= ceudev->v4l2_dev.dev;
+> +
+> +	ret = vb2_queue_init(q);
+> +	if (ret)
+> +		return ret;
+> +
+> +	/*
+> +	 * Make sure at least one sensor is primary and use it to initialize
+> +	 * ceu formats
+> +	 */
+> +	if (!ceudev->sd) {
+> +		ceudev->sd = &ceudev->subdevs[0];
+> +		ceudev->sd_index = 0;
+> +	}
+> +
+> +	v4l2_sd = ceudev->sd->v4l2_sd;
+> +
+> +	ret = ceu_init_formats(ceudev);
+> +	if (ret)
+> +		return ret;
+> +
+> +	ret = ceu_set_default_fmt(ceudev);
+> +	if (ret)
+> +		return ret;
+> +
+> +	/* Register the video device */
+> +	strncpy(vdev->name, DRIVER_NAME, strlen(DRIVER_NAME));
+> +	vdev->v4l2_dev		= v4l2_dev;
+> +	vdev->lock		= &ceudev->mlock;
+> +	vdev->queue		= &ceudev->vb2_vq;
+> +	vdev->ctrl_handler	= v4l2_sd->ctrl_handler;
+> +	vdev->fops		= &ceu_fops;
+> +	vdev->ioctl_ops		= &ceu_ioctl_ops;
+> +	vdev->release		= ceu_vdev_release;
+> +	vdev->device_caps	= V4L2_CAP_VIDEO_CAPTURE_MPLANE |
 
-[snip]
+Why MPLANE? It doesn't appear to be needed since there are no multiplane
+(really: multibuffer) pixelformats defined.
 
+> +				  V4L2_CAP_STREAMING;
+> +	video_set_drvdata(vdev, ceudev);
+> +
+> +	ret = video_register_device(vdev, VFL_TYPE_GRABBER, -1);
+> +	if (ret < 0) {
+> +		v4l2_err(vdev->v4l2_dev,
+> +			 "video_register_device failed: %d\n", ret);
+> +		return ret;
+> +	}
+> +
+> +	return 0;
+> +}
+> +
+> +/**
+> + * ceu_parse_init_sd() - Initialize CEU subdevices and async_subdevs in
+> + *			 ceu device. Both DT and platform data parsing use
+> + *			 this routine.
+> + *
+> + * @return 0 for success, -ENOMEM for failure.
+> + */
+> +static int ceu_parse_init_sd(struct ceu_device *ceudev, unsigned int n_sd)
+> +{
+> +	/* Reserve memory for 'n_sd' ceu_subdev descriptors */
+> +	ceudev->subdevs = devm_kcalloc(ceudev->dev, n_sd,
+> +				       sizeof(*ceudev->subdevs), GFP_KERNEL);
+> +	if (!ceudev->subdevs)
+> +		return -ENOMEM;
+> +
+> +	/*
+> +	 * Reserve memory for 'n_sd' pointers to async_subdevices.
+> +	 * ceudev->asds members will point to &ceu_subdev.asd
+> +	 */
+> +	ceudev->asds = devm_kcalloc(ceudev->dev, n_sd,
+> +				    sizeof(*ceudev->asds), GFP_KERNEL);
+> +	if (!ceudev->asds)
+> +		return -ENOMEM;
+> +
+> +	ceudev->sd = NULL;
+> +	ceudev->sd_index = 0;
+> +	ceudev->num_sd = 0;
+> +
+> +	return 0;
+> +}
+> +
+> +/**
+> + * ceu_parse_platform_data() - Initialize async_subdevices using platform
+> + *			       device provided data.
+> + */
+> +static int ceu_parse_platform_data(struct ceu_device *ceudev, void *pdata)
+> +{
+> +	struct ceu_async_subdev *async_sd;
+> +	struct ceu_info *info = pdata;
+> +	struct ceu_subdev *ceu_sd;
+> +	unsigned int i;
+> +	int ret;
+> +
+> +	ret = ceu_parse_init_sd(ceudev, info->num_subdevs);
+> +	if (ret)
+> +		return ret;
+> +
+> +	for (i = 0; i < info->num_subdevs; i++) {
+> +		/* Setup the ceu subdevice and the async subdevice */
+> +		async_sd = &info->subdevs[i];
+> +		ceu_sd = &ceudev->subdevs[i];
+> +
+> +		memset(&ceu_sd->asd, 0, sizeof(ceu_sd->asd));
+> +		INIT_LIST_HEAD(&ceu_sd->asd.list);
+> +
+> +		ceu_sd->mbus_flags	= async_sd->flags;
+> +		ceu_sd->asd.match_type	= V4L2_ASYNC_MATCH_I2C;
+> +		ceu_sd->asd.match.i2c.adapter_id = async_sd->i2c_adapter_id;
+> +		ceu_sd->asd.match.i2c.address = async_sd->i2c_address;
+> +
+> +		ceudev->asds[i] = &ceu_sd->asd;
+> +	}
+> +
+> +	return info->num_subdevs;
+> +}
+> +
+> +/**
+> + * ceu_parse_dt() - Initialize async_subdevs parsing device tree graph
+> + */
+> +static int ceu_parse_dt(struct ceu_device *ceudev)
+> +{
+> +	struct device_node *of = ceudev->dev->of_node;
+> +	struct v4l2_fwnode_endpoint fw_ep;
+> +	struct ceu_subdev *ceu_sd;
+> +	struct device_node *ep;
+> +	unsigned int i;
+> +	int num_ep;
+> +	int ret;
+> +
+> +	num_ep = of_graph_get_endpoint_count(of);
+> +	if (num_ep <= 0)
+> +		return 0;
+> +
+> +	ret = ceu_parse_init_sd(ceudev, num_ep);
+> +	if (ret)
+> +		return ret;
+> +
+> +	for (i = 0; i < num_ep; i++) {
+> +		ep = of_graph_get_endpoint_by_regs(of, 0, i);
+> +		if (!ep) {
+> +			v4l2_err(&ceudev->v4l2_dev,
+> +				 "No subdevice connected on port %u.\n", i);
+> +			ret = -ENODEV;
+> +			goto error_put_node;
+> +		}
+> +
+> +		ret = v4l2_fwnode_endpoint_parse(of_fwnode_handle(ep), &fw_ep);
+> +		if (ret) {
+> +			v4l2_err(&ceudev->v4l2_dev,
+> +				 "Unable to parse endpoint #%u.\n", i);
+> +			goto error_put_node;
+> +		}
+> +
+> +		if (fw_ep.bus_type != V4L2_MBUS_PARALLEL) {
+> +			v4l2_err(&ceudev->v4l2_dev,
+> +				 "Only parallel input supported.\n");
+> +			ret = -EINVAL;
+> +			goto error_put_node;
+> +		}
+> +
+> +		/* Setup the ceu subdevice and the async subdevice */
+> +		ceu_sd = &ceudev->subdevs[i];
+> +		memset(&ceu_sd->asd, 0, sizeof(ceu_sd->asd));
+> +		INIT_LIST_HEAD(&ceu_sd->asd.list);
+> +
+> +		ceu_sd->mbus_flags = fw_ep.bus.parallel.flags;
+> +		ceu_sd->asd.match_type = V4L2_ASYNC_MATCH_FWNODE;
+> +		ceu_sd->asd.match.fwnode.fwnode > +			fwnode_graph_get_remote_port_parent(
+> +					of_fwnode_handle(ep));
+> +
+> +		ceudev->asds[i] = &ceu_sd->asd;
+> +		of_node_put(ep);
+> +	}
+> +
+> +	return num_ep;
+> +
+> +error_put_node:
+> +	of_node_put(ep);
+> +	return ret;
+> +}
+> +
 > +static int ceu_probe(struct platform_device *pdev)
 > +{
 > +	struct device *dev = &pdev->dev;
@@ -1345,22 +1738,11 @@ No dmabuf ?
 > +	int ret;
 > +
 > +	ceudev = kzalloc(sizeof(*ceudev), GFP_KERNEL);
-
-The memory is freed in ceu_vdev_release() as expected, but that will only work 
-if the video device is registered. If the subdevs are never bound, the ceudev 
-memory will be leaked if you unbind the CEU device from its driver. In my 
-opinion this calls for registering the video device at probe time (although 
-Hans disagrees).
-
 > +	if (!ceudev)
 > +		return -ENOMEM;
 > +
 > +	platform_set_drvdata(pdev, ceudev);
 > +	dev_set_drvdata(dev, ceudev);
-
-You don't need the second line, platform_set_drvdata() is a wrapper around 
-dev_set_drvdata().
-
 > +	ceudev->dev = dev;
 > +
 > +	INIT_LIST_HEAD(&ceudev->capture);
@@ -1370,14 +1752,8 @@ dev_set_drvdata().
 > +	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 > +	if (IS_ERR(res))
 > +		return PTR_ERR(res);
-
-No need for error handling here, devm_ioremap_resource() will check the res 
-pointer.
-
+> +
 > +	base = devm_ioremap_resource(dev, res);
-
-You can assign ceudev->base directly and remove the base local variable.
-
 > +	if (IS_ERR(base))
 > +		return PTR_ERR(base);
 > +	ceudev->base = base;
@@ -1418,25 +1794,79 @@ You can assign ceudev->base directly and remove the base local variable.
 > +		goto error_v4l2_unregister;
 > +	} else if (num_sd = 0)
 > +		return 0;
-
-You need braces around the second statement too.
-
-[snip]
-
+> +
+> +	ceudev->notifier.v4l2_dev	= &ceudev->v4l2_dev;
+> +	ceudev->notifier.subdevs	= ceudev->asds;
+> +	ceudev->notifier.num_subdevs	= num_sd;
+> +	ceudev->notifier.bound		= ceu_sensor_bound;
+> +	ceudev->notifier.complete	= ceu_sensor_complete;
+> +	ret = v4l2_async_notifier_register(&ceudev->v4l2_dev,
+> +					   &ceudev->notifier);
+> +	if (ret)
+> +		goto error_v4l2_unregister_notifier;
+> +
+> +	dev_info(dev, "Renesas Capture Engine Unit\n");
+> +
+> +	return 0;
+> +
+> +error_v4l2_unregister_notifier:
+> +	v4l2_async_notifier_unregister(&ceudev->notifier);
+> +error_v4l2_unregister:
+> +	v4l2_device_unregister(&ceudev->v4l2_dev);
+> +error_pm_disable:
+> +	pm_runtime_disable(dev);
+> +
+> +	return ret;
+> +}
+> +
+> +static int ceu_remove(struct platform_device *pdev)
+> +{
+> +	struct ceu_device *ceudev = platform_get_drvdata(pdev);
+> +
+> +	pm_runtime_disable(ceudev->dev);
+> +
+> +	v4l2_async_notifier_unregister(&ceudev->notifier);
+> +
+> +	v4l2_device_unregister(&ceudev->v4l2_dev);
+> +
+> +	video_unregister_device(&ceudev->vdev);
+> +
+> +	return 0;
+> +}
+> +
+> +#if IS_ENABLED(CONFIG_OF)
+> +static const struct of_device_id ceu_of_match[] = {
+> +	{ .compatible = "renesas,renesas-ceu" },
+> +	{ }
+> +};
+> +MODULE_DEVICE_TABLE(of, ceu_of_match);
+> +#endif
+> +
 > +static const struct dev_pm_ops ceu_pm_ops = {
 > +	SET_RUNTIME_PM_OPS(ceu_runtime_suspend,
 > +			   ceu_runtime_resume,
 > +			   NULL)
-
-You'll probably need system PM ops eventually, but for now this isn't a 
-regression so I won't complain too much.
-
 > +};
+> +
+> +static struct platform_driver ceu_driver = {
+> +	.driver		= {
+> +		.name	= DRIVER_NAME,
+> +		.pm	= &ceu_pm_ops,
+> +		.of_match_table = of_match_ptr(ceu_of_match),
+> +	},
+> +	.probe		= ceu_probe,
+> +	.remove		= ceu_remove,
+> +};
+> +
+> +module_platform_driver(ceu_driver);
+> +
+> +MODULE_DESCRIPTION("Renesas CEU camera driver");
+> +MODULE_AUTHOR("Jacopo Mondi <jacopo+renesas@jmondi.org>");
+> +MODULE_LICENSE("GPL");
+> --
+> 2.7.4
+> 
 
-[snip]
-
--- 
 Regards,
 
-Laurent Pinchart
-
+	Hans
