@@ -1,54 +1,50 @@
-From: Sergey Senozhatsky <sergey.senozhatsky.work@gmail.com>
-Date: Mon, 11 Dec 2017 12:50:13 +0000
-Subject: [PATCH 01/13] arm: do not use print_symbol()
-Message-Id: <20171211125025.2270-2-sergey.senozhatsky@gmail.com>
+From: 55600530@mylife.unisa.ac.za
+Date: Sat, 16 Dec 2017 10:51:10 +0000
+Subject: Hallo mein lieber Freund,
+Message-Id: <DB5PR01MB1383A72003169413ADC098D2BF080@DB5PR01MB1383.eurprd01.prod.exchangelabs.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20171211125025.2270-1-sergey.senozhatsky@gmail.com>
-In-Reply-To: <20171211125025.2270-1-sergey.senozhatsky@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: linux-sh@vger.kernel.org
 
-print_symbol() uses extra stack space to sprintf() symbol
-information and then to feed that buffer to printk()
+Hallo mein lieber Freund,
 
-  char buffer[KSYM_SYMBOL_LEN];
+Ich schreibe Ihnen diese Post mit schweren Tr=E4nen In meinen Augen und gro=
+=DFem Kummer in meinem Herzen, Mein Name ist Vera Hollin Kvan, und ich kont=
+aktiere Sie aus meinem Land Indien Ich m=F6chte Ihnen dies sagen, weil ich =
+keine habe andere Option, als Ihnen zu sagen, wie ich ber=FChrt wurde, um S=
+ie zu =F6ffnen, ich heiratete mit Herrn Hollin Kvan, der mit der tunesische=
+n Botschaft in Madrid Spanien f=FCr neun Jahre arbeitete, bevor er im Jahr =
+2005 starb.Wir waren seit elf Jahren ohne eine Kind.
 
-  sprint_symbol(buffer, address);
-  printk(fmt, buffer);
+Er starb nach einer kurzen Krankheit, die nur f=FCnf Tage dauerte. Seit sei=
+nem Tod habe ich beschlossen, nicht wieder zu heiraten. Als mein verstorben=
+er Ehemann lebte, deponierte er die Summe von $ 4,850,000.00USD (vier Milli=
+onen achthundertundf=FCnfzigtausend Dollar) in einer Bank hier in Indien. N=
+ew Delhi die Hauptstadt von Indien, derzeit dieses Geld ist immer noch in d=
+er Bank.
 
-Replace print_symbol() with a direct printk("%pS") call.
+Er machte dieses Geld f=FCr den Export von Gold aus Madrid Spanien Bergbau-=
+Factary.K=FCrzlich mein Arzt sagte mir, dass ich nicht f=FCr die Dauer von =
+sieben Monaten wegen Krebs Problem dauern w=FCrde. Derjenige, der mich am m=
+eisten st=F6rt, ist meine Schlaganfallkrankheit. Nachdem ich meinen Zustand=
+ gekannt habe, habe ich mich entschlossen, Ihnen dieses Geld zu geben, um a=
+uf die weniger privilegierten Leute aufzupassen, Sie werden dieses Geld ver=
+wenden, wie ich hier unterweisen werde.
 
-Signed-off-by: Sergey Senozhatsky <sergey.senozhatsky@gmail.com>
-Cc: Russell King <linux@armlinux.org.uk>
----
- arch/arm/kernel/process.c | 5 ++---
- 1 file changed, 2 insertions(+), 3 deletions(-)
+Ich m=F6chte, dass Sie 30 Prozent des gesamten Geldes f=FCr Ihren pers=F6nl=
+ichen Gebrauch verwenden, w=E4hrend 70% des Geldes f=FCr wohlt=E4tige Zweck=
+e, Menschen auf der Stra=DFe und Hilfe f=FCr das Waisenhaus verwendet werde=
+n. Ich bin als Waise aufgewachsen und habe keinen K=F6rper als Familienmitg=
+lied, nur um zu enden, dass das Haus Gottes auch erhalten bleibt. Tue dies,=
+ damit Gott meine S=FCnden vergibt und meine Seele annimmt, weil diese Kran=
+kheiten mich so sehr gelitten haben. Sobald ich Ihre Antwort erhalten habe,=
+ werde ich Ihnen den Kontakt der Bank hier in Delhi Indien geben und ich we=
+rde auch den Bankmanager anweisen, Ihnen ein Autorit=E4tsschreiben auszuste=
+llen, das Sie als den gegenw=E4rtigen Beg=FCnstigten des Geldes in der Bank=
+ beweisen wird, wenn Sie versichern mir, dass Sie entsprechend handeln, wie=
+ ich es hier dargelegt habe.
 
-diff --git a/arch/arm/kernel/process.c b/arch/arm/kernel/process.c
-index d96714e1858c..db004f6f547a 100644
---- a/arch/arm/kernel/process.c
-+++ b/arch/arm/kernel/process.c
-@@ -21,7 +21,6 @@
- #include <linux/unistd.h>
- #include <linux/user.h>
- #include <linux/interrupt.h>
--#include <linux/kallsyms.h>
- #include <linux/init.h>
- #include <linux/elfcore.h>
- #include <linux/pm.h>
-@@ -121,8 +120,8 @@ void __show_regs(struct pt_regs *regs)
- 
- 	show_regs_print_info(KERN_DEFAULT);
- 
--	print_symbol("PC is at %s\n", instruction_pointer(regs));
--	print_symbol("LR is at %s\n", regs->ARM_lr);
-+	printk("PC is at %pS\n", instruction_pointer(regs));
-+	printk("LR is at %pS\n", (void *)regs->ARM_lr);
- 	printk("pc : [<%08lx>]    lr : [<%08lx>]    psr: %08lx\n",
- 	       regs->ARM_pc, regs->ARM_lr, regs->ARM_cpsr);
- 	printk("sp : %08lx  ip : %08lx  fp : %08lx\n",
--- 
-2.15.1
-
+In der Hoffnung, Ihre Antwort zu erhalten.
+Von Vera Hollin kVan
