@@ -1,146 +1,402 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 11 Dec 2017 14:24:14 +0000
-Subject: Re: [PATCH v1 01/10] dt-bindings: media: Add Renesas CEU bindings
-Message-Id: <2289037.uBIDySjJLr@avalon>
+From: Jacopo Mondi <jacopo+renesas@jmondi.org>
+Date: Thu, 28 Dec 2017 14:01:19 +0000
+Subject: [PATCH v2 7/9] media: i2c: ov772x: Remove soc_camera dependencies
+Message-Id: <1514469681-15602-8-git-send-email-jacopo+renesas@jmondi.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1510743363-25798-1-git-send-email-jacopo+renesas@jmondi.org> <1510743363-25798-2-git-send-email-jacopo+renesas@jmondi.org> <20171115123312.7fyhlpjsb3mp3ypc@valkosipuli.retiisi.org.uk>
-In-Reply-To: <20171115123312.7fyhlpjsb3mp3ypc@valkosipuli.retiisi.org.uk>
+References: <1514469681-15602-1-git-send-email-jacopo+renesas@jmondi.org>
+In-Reply-To: <1514469681-15602-1-git-send-email-jacopo+renesas@jmondi.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sakari Ailus <sakari.ailus@iki.fi>
-Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>, magnus.damm@gmail.com, geert@glider.be, mchehab@kernel.org, hverkuil@xs4all.nl, linux-renesas-soc@vger.kernel.org, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: laurent.pinchart@ideasonboard.com, magnus.damm@gmail.com, geert@glider.be, mchehab@kernel.org, hverkuil@xs4all.nl, robh+dt@kernel.org, mark.rutland@arm.com
+Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>, linux-renesas-soc@vger.kernel.org, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Hello,
+Remove soc_camera framework dependencies from ov772x sensor driver.
+- Handle clock and gpios
+- Register async subdevice
+- Remove soc_camera specific g/s_mbus_config operations
+- Change image format colorspace to SRGB
+- Remove sizes crop from get_selection as driver can't scale
+- Add kernel doc to driver interface header file
+- Adjust build system
 
-On Wednesday, 15 November 2017 14:33:12 EET Sakari Ailus wrote:
-> On Wed, Nov 15, 2017 at 11:55:54AM +0100, Jacopo Mondi wrote:
-> > Add bindings documentation for Renesas Capture Engine Unit (CEU).
-> > 
-> > Signed-off-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
-> > ---
-> > 
-> >  .../devicetree/bindings/media/renesas,ceu.txt      | 87 +++++++++++++++++
-> >  1 file changed, 87 insertions(+)
-> >  create mode 100644
-> >  Documentation/devicetree/bindings/media/renesas,ceu.txt
-> > 
-> > diff --git a/Documentation/devicetree/bindings/media/renesas,ceu.txt
-> > b/Documentation/devicetree/bindings/media/renesas,ceu.txt new file mode
-> > 100644
-> > index 0000000..a88e9cb
-> > --- /dev/null
-> > +++ b/Documentation/devicetree/bindings/media/renesas,ceu.txt
-> > @@ -0,0 +1,87 @@
-> > +Renesas Capture Engine Unit (CEU)
-> > +----------------------------------------------
-> > +
-> > +The Capture Engine Unit is the image capture interface found on Renesas
-> > +RZ chip series and on SH Mobile ones.
-> > +
-> > +The interface supports a single parallel input with up 8/16bits data bus
-> > width.
-> > +
-> > +Required properties:
-> > +- compatible
-> > +	Must be "renesas,renesas-ceu".
-> > +- reg
-> > +	Physical address base and size.
-> > +- interrupts
-> > +	The interrupt line number.
-> > +- pinctrl-names, pinctrl-0
-> > +	phandle of pin controller sub-node configuring pins for CEU operations.
-> > +
-> > +CEU supports a single parallel input and should contain a single 'port'
-> > subnode
-> > +with a single 'endpoint'. Optional endpoint properties applicable to
-> > parallel
-> > +input bus are described in "video-interfaces.txt".
-> 
-> Could you list which ones they are? For someone not familiar with the
-> parallel bus this might not be obvious; also not all hardware can make use
-> of every one of these properties.
+This commit does not remove the original soc_camera based driver as long
+as other platforms depends on soc_camera-based CEU driver.
 
-Agreed, you should list the properties here and reference video-interfaces.txt 
-for the detailed description.
+Signed-off-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
+---
+ drivers/media/i2c/Kconfig  |  11 +++
+ drivers/media/i2c/Makefile |   1 +
+ drivers/media/i2c/ov772x.c | 169 ++++++++++++++++++++++++++++++---------------
+ include/media/i2c/ov772x.h |   8 ++-
+ 4 files changed, 130 insertions(+), 59 deletions(-)
 
-> > +
-> > +Example:
-> > +
-> > +The example describes the connection between the Capture Engine Unit and
-> > a
-> > +OV7670 image sensor sitting on bus i2c1 with an on-board 24Mhz clock.
-> > +
-> > +ceu: ceu@e8210000 {
-> > +	reg = <0xe8210000 0x209c>;
-> > +	compatible = "renesas,renesas-ceu";
-> > +	interrupts = <GIC_SPI 332 IRQ_TYPE_LEVEL_HIGH>;
-> > +	pinctrl-names = "default";
-> > +	pinctrl-0 = <&vio_pins>;
-> > +
-> > +	status = "okay";
-> > +
-> > +	port {
-> > +		ceu_in: endpoint {
-> > +			remote-endpoint = <&ov7670_out>;
-> > +
-> > +			bus-width = <8>;
-> > +			hsync-active = <1>;
-> > +			vsync-active = <1>;
-> > +			pclk-sample = <1>;
-> > +			data-active = <1>;
-> > +		};
-> > +	};
-> > +};
-> > +
-> > +i2c1: i2c@fcfee400 {
-> > +	pinctrl-names = "default";
-> > +	pinctrl-0 = <&i2c1_pins>;
-> > +
-> > +	status = "okay";
-> > +	clock-frequency = <100000>;
-> > +
-> > +	ov7670: camera@21 {
-> > +		compatible = "ovti,ov7670";
-> > +		reg = <0x21>;
-> > +
-> > +		pinctrl-names = "default";
-> > +		pinctrl-0 = <&vio_pins>;
-> > +
-> > +		reset-gpios = <&port3 11 GPIO_ACTIVE_LOW>;
-> > +		powerdown-gpios = <&port3 12 GPIO_ACTIVE_HIGH>;
-> > +
-> > +		clocks = <&xclk>;
-> > +		clock-names = "xclk";
-> > +
-> > +		xclk: fixed_clk {
-> > +			compatible = "fixed-clock";
-> > +			#clock-cells = <0>;
-> > +			clock-frequency = <24000000>;
-> > +		};
-> 
-> What's the purpose of the fixed_clk node here?
-
-The sensor is clocked by a 24MHz oscillator. The clock isn't provided by the 
-sensor, so it should be located at the root of the device tree, not as a child 
-of the sensor DT node.
-
-> > +
-> > +		port {
-> > +			ov7670_out: endpoint {
-> > +				remote-endpoint = <&ceu_in>;
-> > +
-> > +				bus-width = <8>;
-> > +				hsync-active = <1>;
-> > +				vsync-active = <1>;
-> > +				pclk-sample = <1>;
-> > +				data-active = <1>;
-> > +			};
-> > +		};
-> > +	};
-
+diff --git a/drivers/media/i2c/Kconfig b/drivers/media/i2c/Kconfig
+index cb5d7ff..a61d7f4 100644
+--- a/drivers/media/i2c/Kconfig
++++ b/drivers/media/i2c/Kconfig
+@@ -645,6 +645,17 @@ config VIDEO_OV5670
+ 	  To compile this driver as a module, choose M here: the
+ 	  module will be called ov5670.
+ 
++config VIDEO_OV772X
++	tristate "OmniVision OV772x sensor support"
++	depends on I2C && VIDEO_V4L2
++	depends on MEDIA_CAMERA_SUPPORT
++	---help---
++	  This is a Video4Linux2 sensor-level driver for the OmniVision
++	  OV772x camera.
++
++	  To compile this driver as a module, choose M here: the
++	  module will be called ov772x.
++
+ config VIDEO_OV7640
+ 	tristate "OmniVision OV7640 sensor support"
+ 	depends on I2C && VIDEO_V4L2
+diff --git a/drivers/media/i2c/Makefile b/drivers/media/i2c/Makefile
+index 548a9ef..fb99293 100644
+--- a/drivers/media/i2c/Makefile
++++ b/drivers/media/i2c/Makefile
+@@ -66,6 +66,7 @@ obj-$(CONFIG_VIDEO_OV5645) += ov5645.o
+ obj-$(CONFIG_VIDEO_OV5647) += ov5647.o
+ obj-$(CONFIG_VIDEO_OV5670) += ov5670.o
+ obj-$(CONFIG_VIDEO_OV6650) += ov6650.o
++obj-$(CONFIG_VIDEO_OV772X) += ov772x.o
+ obj-$(CONFIG_VIDEO_OV7640) += ov7640.o
+ obj-$(CONFIG_VIDEO_OV7670) += ov7670.o
+ obj-$(CONFIG_VIDEO_OV9650) += ov9650.o
+diff --git a/drivers/media/i2c/ov772x.c b/drivers/media/i2c/ov772x.c
+index 8063835..f7b293f 100644
+--- a/drivers/media/i2c/ov772x.c
++++ b/drivers/media/i2c/ov772x.c
+@@ -1,6 +1,9 @@
++// SPDX-License-Identifier: GPL-2.0+
+ /*
+  * ov772x Camera Driver
+  *
++ * Copyright (C) 2017 Jacopo Mondi <jacopo+renesas@jmondi.org>
++ *
+  * Copyright (C) 2008 Renesas Solutions Corp.
+  * Kuninori Morimoto <morimoto.kuninori@renesas.com>
+  *
+@@ -9,12 +12,10 @@
+  * Copyright 2006-7 Jonathan Corbet <corbet@lwn.net>
+  * Copyright (C) 2008 Magnus Damm
+  * Copyright (C) 2008, Guennadi Liakhovetski <kernel@pengutronix.de>
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License version 2 as
+- * published by the Free Software Foundation.
+  */
+ 
++#include <linux/clk.h>
++#include <linux/gpio/consumer.h>
+ #include <linux/init.h>
+ #include <linux/kernel.h>
+ #include <linux/module.h>
+@@ -25,8 +26,8 @@
+ #include <linux/videodev2.h>
+ 
+ #include <media/i2c/ov772x.h>
+-#include <media/soc_camera.h>
+-#include <media/v4l2-clk.h>
++
++#include <media/v4l2-device.h>
+ #include <media/v4l2-ctrls.h>
+ #include <media/v4l2-subdev.h>
+ #include <media/v4l2-image-sizes.h>
+@@ -393,8 +394,10 @@ struct ov772x_win_size {
+ struct ov772x_priv {
+ 	struct v4l2_subdev                subdev;
+ 	struct v4l2_ctrl_handler	  hdl;
+-	struct v4l2_clk			 *clk;
++	struct clk			 *clk;
+ 	struct ov772x_camera_info        *info;
++	struct gpio_desc		 *pwdn_gpio;
++	struct gpio_desc		 *rstb_gpio;
+ 	const struct ov772x_color_format *cfmt;
+ 	const struct ov772x_win_size     *win;
+ 	unsigned short                    flag_vflip:1;
+@@ -409,7 +412,7 @@ struct ov772x_priv {
+ static const struct ov772x_color_format ov772x_cfmts[] = {
+ 	{
+ 		.code		= MEDIA_BUS_FMT_YUYV8_2X8,
+-		.colorspace	= V4L2_COLORSPACE_JPEG,
++		.colorspace	= V4L2_COLORSPACE_SRGB,
+ 		.dsp3		= 0x0,
+ 		.dsp4		= DSP_OFMT_YUV,
+ 		.com3		= SWAP_YUV,
+@@ -417,7 +420,7 @@ static const struct ov772x_color_format ov772x_cfmts[] = {
+ 	},
+ 	{
+ 		.code		= MEDIA_BUS_FMT_YVYU8_2X8,
+-		.colorspace	= V4L2_COLORSPACE_JPEG,
++		.colorspace	= V4L2_COLORSPACE_SRGB,
+ 		.dsp3		= UV_ON,
+ 		.dsp4		= DSP_OFMT_YUV,
+ 		.com3		= SWAP_YUV,
+@@ -425,7 +428,7 @@ static const struct ov772x_color_format ov772x_cfmts[] = {
+ 	},
+ 	{
+ 		.code		= MEDIA_BUS_FMT_UYVY8_2X8,
+-		.colorspace	= V4L2_COLORSPACE_JPEG,
++		.colorspace	= V4L2_COLORSPACE_SRGB,
+ 		.dsp3		= 0x0,
+ 		.dsp4		= DSP_OFMT_YUV,
+ 		.com3		= 0x0,
+@@ -550,7 +553,7 @@ static int ov772x_reset(struct i2c_client *client)
+ }
+ 
+ /*
+- * soc_camera_ops function
++ * subdev ops
+  */
+ 
+ static int ov772x_s_stream(struct v4l2_subdev *sd, int enable)
+@@ -650,13 +653,63 @@ static int ov772x_s_register(struct v4l2_subdev *sd,
+ }
+ #endif
+ 
++static int ov772x_power_on(struct ov772x_priv *priv)
++{
++	struct i2c_client *client = v4l2_get_subdevdata(&priv->subdev);
++	int ret;
++
++	if (priv->info->xclk_rate)
++		ret = clk_set_rate(priv->clk, priv->info->xclk_rate);
++
++	if (priv->clk) {
++		ret = clk_prepare_enable(priv->clk);
++		if (ret)
++			return ret;
++	}
++
++	if (priv->pwdn_gpio) {
++		gpiod_set_value(priv->pwdn_gpio, 1);
++		usleep_range(500, 1000);
++	}
++
++	/* Reset GPIOs are shared in some platforms. */
++	priv->rstb_gpio = gpiod_get_optional(&client->dev, "rstb",
++					     GPIOD_OUT_LOW);
++	if (IS_ERR(priv->rstb_gpio)) {
++		dev_info(&client->dev, "Unable to get GPIO \"rstb\"");
++		return PTR_ERR(priv->rstb_gpio);
++	}
++
++	if (priv->rstb_gpio) {
++		gpiod_set_value(priv->rstb_gpio, 0);
++		usleep_range(500, 1000);
++		gpiod_set_value(priv->rstb_gpio, 1);
++		usleep_range(500, 1000);
++
++		gpiod_put(priv->rstb_gpio);
++	}
++
++	return 0;
++}
++
++static int ov772x_power_off(struct ov772x_priv *priv)
++{
++	clk_disable_unprepare(priv->clk);
++
++	if (priv->pwdn_gpio) {
++		gpiod_set_value(priv->pwdn_gpio, 0);
++		usleep_range(500, 1000);
++	}
++
++	return 0;
++}
++
+ static int ov772x_s_power(struct v4l2_subdev *sd, int on)
+ {
+-	struct i2c_client *client = v4l2_get_subdevdata(sd);
+-	struct soc_camera_subdev_desc *ssdd = soc_camera_i2c_to_desc(client);
+ 	struct ov772x_priv *priv = to_ov772x(sd);
+ 
+-	return soc_camera_set_power(&client->dev, ssdd, priv->clk, on);
++	return on ? ov772x_power_on(priv) :
++		    ov772x_power_off(priv);
+ }
+ 
+ static const struct ov772x_win_size *ov772x_select_win(u32 width, u32 height)
+@@ -855,24 +908,21 @@ static int ov772x_get_selection(struct v4l2_subdev *sd,
+ 		struct v4l2_subdev_pad_config *cfg,
+ 		struct v4l2_subdev_selection *sel)
+ {
++	struct ov772x_priv *priv = to_ov772x(sd);
++
+ 	if (sel->which != V4L2_SUBDEV_FORMAT_ACTIVE)
+ 		return -EINVAL;
+ 
+-	sel->r.left = 0;
+-	sel->r.top = 0;
+ 	switch (sel->target) {
+ 	case V4L2_SEL_TGT_CROP_BOUNDS:
+ 	case V4L2_SEL_TGT_CROP_DEFAULT:
+-		sel->r.width = OV772X_MAX_WIDTH;
+-		sel->r.height = OV772X_MAX_HEIGHT;
+-		return 0;
+ 	case V4L2_SEL_TGT_CROP:
+-		sel->r.width = VGA_WIDTH;
+-		sel->r.height = VGA_HEIGHT;
+-		return 0;
+-	default:
+-		return -EINVAL;
++		sel->r.width = priv->win->rect.width;
++		sel->r.height = priv->win->rect.height;
++		break;
+ 	}
++
++	return 0;
+ }
+ 
+ static int ov772x_get_fmt(struct v4l2_subdev *sd,
+@@ -997,24 +1047,8 @@ static int ov772x_enum_mbus_code(struct v4l2_subdev *sd,
+ 	return 0;
+ }
+ 
+-static int ov772x_g_mbus_config(struct v4l2_subdev *sd,
+-				struct v4l2_mbus_config *cfg)
+-{
+-	struct i2c_client *client = v4l2_get_subdevdata(sd);
+-	struct soc_camera_subdev_desc *ssdd = soc_camera_i2c_to_desc(client);
+-
+-	cfg->flags = V4L2_MBUS_PCLK_SAMPLE_RISING | V4L2_MBUS_MASTER |
+-		V4L2_MBUS_VSYNC_ACTIVE_HIGH | V4L2_MBUS_HSYNC_ACTIVE_HIGH |
+-		V4L2_MBUS_DATA_ACTIVE_HIGH;
+-	cfg->type = V4L2_MBUS_PARALLEL;
+-	cfg->flags = soc_camera_apply_board_flags(ssdd, cfg);
+-
+-	return 0;
+-}
+-
+ static const struct v4l2_subdev_video_ops ov772x_subdev_video_ops = {
+ 	.s_stream	= ov772x_s_stream,
+-	.g_mbus_config	= ov772x_g_mbus_config,
+ };
+ 
+ static const struct v4l2_subdev_pad_ops ov772x_subdev_pad_ops = {
+@@ -1038,12 +1072,11 @@ static int ov772x_probe(struct i2c_client *client,
+ 			const struct i2c_device_id *did)
+ {
+ 	struct ov772x_priv	*priv;
+-	struct soc_camera_subdev_desc *ssdd = soc_camera_i2c_to_desc(client);
+-	struct i2c_adapter	*adapter = to_i2c_adapter(client->dev.parent);
++	struct i2c_adapter	*adapter = client->adapter;
+ 	int			ret;
+ 
+-	if (!ssdd || !ssdd->drv_priv) {
+-		dev_err(&client->dev, "OV772X: missing platform data!\n");
++	if (!client->dev.platform_data) {
++		dev_err(&client->dev, "Missing OV7725 platform data\n");
+ 		return -EINVAL;
+ 	}
+ 
+@@ -1059,7 +1092,7 @@ static int ov772x_probe(struct i2c_client *client,
+ 	if (!priv)
+ 		return -ENOMEM;
+ 
+-	priv->info = ssdd->drv_priv;
++	priv->info = client->dev.platform_data;
+ 
+ 	v4l2_i2c_subdev_init(&priv->subdev, client, &ov772x_subdev_ops);
+ 	v4l2_ctrl_handler_init(&priv->hdl, 3);
+@@ -1073,22 +1106,42 @@ static int ov772x_probe(struct i2c_client *client,
+ 	if (priv->hdl.error)
+ 		return priv->hdl.error;
+ 
+-	priv->clk = v4l2_clk_get(&client->dev, "mclk");
++	priv->clk = clk_get(&client->dev, "xclk");
+ 	if (IS_ERR(priv->clk)) {
++		dev_err(&client->dev, "Unable to get xclk clock\n");
+ 		ret = PTR_ERR(priv->clk);
+-		goto eclkget;
++		goto error_ctrl_free;
+ 	}
+ 
+-	ret = ov772x_video_probe(priv);
+-	if (ret < 0) {
+-		v4l2_clk_put(priv->clk);
+-eclkget:
+-		v4l2_ctrl_handler_free(&priv->hdl);
+-	} else {
+-		priv->cfmt = &ov772x_cfmts[0];
+-		priv->win = &ov772x_win_sizes[0];
++	priv->pwdn_gpio = gpiod_get_optional(&client->dev, "pwdn",
++					     GPIOD_OUT_LOW);
++	if (IS_ERR(priv->pwdn_gpio)) {
++		dev_info(&client->dev, "Unable to get GPIO \"pwdn\"");
++		ret = PTR_ERR(priv->pwdn_gpio);
++		goto error_clk_put;
+ 	}
+ 
++	ret = ov772x_video_probe(priv);
++	if (ret < 0)
++		goto error_gpio_put;
++
++	priv->cfmt = &ov772x_cfmts[0];
++	priv->win = &ov772x_win_sizes[0];
++
++	ret = v4l2_async_register_subdev(&priv->subdev);
++	if (ret)
++		goto error_gpio_put;
++
++	return 0;
++
++error_gpio_put:
++	if (priv->pwdn_gpio)
++		gpiod_put(priv->pwdn_gpio);
++error_clk_put:
++	clk_put(priv->clk);
++error_ctrl_free:
++	v4l2_ctrl_handler_free(&priv->hdl);
++
+ 	return ret;
+ }
+ 
+@@ -1096,7 +1149,9 @@ static int ov772x_remove(struct i2c_client *client)
+ {
+ 	struct ov772x_priv *priv = to_ov772x(i2c_get_clientdata(client));
+ 
+-	v4l2_clk_put(priv->clk);
++	clk_put(priv->clk);
++	if (priv->pwdn_gpio)
++		gpiod_put(priv->pwdn_gpio);
+ 	v4l2_device_unregister_subdev(&priv->subdev);
+ 	v4l2_ctrl_handler_free(&priv->hdl);
+ 	return 0;
+@@ -1119,6 +1174,6 @@ static struct i2c_driver ov772x_i2c_driver = {
+ 
+ module_i2c_driver(ov772x_i2c_driver);
+ 
+-MODULE_DESCRIPTION("SoC Camera driver for ov772x");
++MODULE_DESCRIPTION("V4L2 driver for OV772x image sensor");
+ MODULE_AUTHOR("Kuninori Morimoto");
+ MODULE_LICENSE("GPL v2");
+diff --git a/include/media/i2c/ov772x.h b/include/media/i2c/ov772x.h
+index 00dbb7c..101f9fe 100644
+--- a/include/media/i2c/ov772x.h
++++ b/include/media/i2c/ov772x.h
+@@ -48,12 +48,16 @@ struct ov772x_edge_ctrl {
+ 	.threshold = (t & OV772X_EDGE_THRESHOLD_MASK),	\
+ }
+ 
+-/*
+- * ov772x camera info
++/**
++ * ov772x_camera_info -	ov772x driver interface structure
++ * @flags:		Sensor configuration flags
++ * @edgectrl:		Sensor edge control
++ * @xclk_rate:		xclk clock frequency (in Hz)
+  */
+ struct ov772x_camera_info {
+ 	unsigned long		flags;
+ 	struct ov772x_edge_ctrl	edgectrl;
++	unsigned int		xclk_rate;
+ };
+ 
+ #endif /* __OV772X_H__ */
 -- 
-Regards,
-
-Laurent Pinchart
+2.7.4
 
