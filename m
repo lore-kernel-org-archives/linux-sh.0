@@ -1,60 +1,53 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 29 Dec 2017 14:12:25 +0000
-Subject: Re: [PATCH 27/67] dma-direct: add dma address sanity checks
-Message-Id: <CAMuHMdWg3PnTXezMCcr3oGf-83-cjvcj4wGiPk7j2pY1Tgzo9Q@mail.gmail.com>
+From: Jacopo Mondi <jacopo+renesas@jmondi.org>
+Date: Thu, 28 Dec 2017 14:01:14 +0000
+Subject: [PATCH v2 2/9] include: media: Add Renesas CEU driver interface
+Message-Id: <1514469681-15602-3-git-send-email-jacopo+renesas@jmondi.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20171229081911.2802-1-hch@lst.de> <20171229081911.2802-28-hch@lst.de>
-In-Reply-To: <20171229081911.2802-28-hch@lst.de>
+References: <1514469681-15602-1-git-send-email-jacopo+renesas@jmondi.org>
+In-Reply-To: <1514469681-15602-1-git-send-email-jacopo+renesas@jmondi.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Christoph Hellwig <hch@lst.de>
-Cc: iommu@lists.linux-foundation.org, Linux MIPS Mailing List <linux-mips@linux-mips.org>, linux-ia64@vger.kernel.org, Linux-sh list <linux-sh@vger.kernel.org>, sparclinux <sparclinux@vger.kernel.org>, Guan Xuetao <gxt@mprc.pku.edu.cn>, Linux-Arch <linux-arch@vger.kernel.org>, linux-s390 <linux-s390@vger.kernel.org>, linux-c6x-dev@linux-c6x.org, "open list:QUALCOMM HEXAGON..." <linux-hexagon@vger.kernel.org>, the arch/x86 maintainers <x86@kernel.org>, arcml <linux-snps-arc@lists.infradead.org>, adi-buildroot-devel@lists.sourceforge.net, linux-m68k <linux-m68k@lists.linux-m68k.org>, patches@groups.riscv.org, "open list:METAG ARCHITECTURE" <linux-metag@vger.kernel.org>, linux-arm-kernel@lists.infradead.org, Michal Simek <monstr@monstr.eu>, Parisc
+To: laurent.pinchart@ideasonboard.com, magnus.damm@gmail.com, geert@glider.be, mchehab@kernel.org, hverkuil@xs4all.nl, robh+dt@kernel.org, mark.rutland@arm.com
+Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>, linux-renesas-soc@vger.kernel.org, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Hi Christoph,
+Add renesas-ceu header file.
 
-On Fri, Dec 29, 2017 at 9:18 AM, Christoph Hellwig <hch@lst.de> wrote:
-> Roughly based on the x86 pci-nommu implementation.
->
-> Signed-off-by: Christoph Hellwig <hch@lst.de>
+Do not remove the existing sh_mobile_ceu.h one as long as the original
+driver does not go away.
 
-Thanks for your patch!
+Signed-off-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
+---
+ include/media/drv-intf/renesas-ceu.h | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
+ create mode 100644 include/media/drv-intf/renesas-ceu.h
 
-> --- a/lib/dma-direct.c
-> +++ b/lib/dma-direct.c
-> @@ -9,6 +9,24 @@
->  #include <linux/scatterlist.h>
->  #include <linux/pfn.h>
->
-> +#define DIRECT_MAPPING_ERROR           0
-> +
-> +static bool
-> +check_addr(struct device *dev, dma_addr_t dma_addr, size_t size,
-> +               const char *caller)
-> +{
-> +       if (unlikely(dev && !dma_capable(dev, dma_addr, size))) {
-> +               if (*dev->dma_mask >= DMA_BIT_MASK(32)) {
-> +                       dev_err(dev,
-> +                               "%s: overflow %llx+%zu of device mask %llx\n",
+diff --git a/include/media/drv-intf/renesas-ceu.h b/include/media/drv-intf/renesas-ceu.h
+new file mode 100644
+index 0000000..7470c3f
+--- /dev/null
++++ b/include/media/drv-intf/renesas-ceu.h
+@@ -0,0 +1,20 @@
++// SPDX-License-Identifier: GPL-2.0+
++#ifndef __ASM_RENESAS_CEU_H__
++#define __ASM_RENESAS_CEU_H__
++
++#define CEU_MAX_SUBDEVS		2
++
++struct ceu_async_subdev {
++	unsigned long flags;
++	unsigned char bus_width;
++	unsigned char bus_shift;
++	unsigned int i2c_adapter_id;
++	unsigned int i2c_address;
++};
++
++struct ceu_info {
++	unsigned int num_subdevs;
++	struct ceu_async_subdev subdevs[CEU_MAX_SUBDEVS];
++};
++
++#endif /* __ASM_RENESAS_CEU_H__ */
+-- 
+2.7.4
 
-Please use "%pad" to format dma_addr_t ...
-
-> +                               caller, (long long)dma_addr, size,
-
-... and use &dma_addr.
-
-> +                               (long long)*dev->dma_mask);
-
-This cast is not needed, as u64 is unsigned long long in kernelspace on
-all architectures.
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
