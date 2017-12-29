@@ -1,1722 +1,549 @@
-From: Jacopo Mondi <jacopo+renesas@jmondi.org>
-Date: Thu, 28 Dec 2017 14:01:15 +0000
-Subject: [PATCH v2 3/9] v4l: platform: Add Renesas CEU driver
-Message-Id: <1514469681-15602-4-git-send-email-jacopo+renesas@jmondi.org>
+From: Christoph Hellwig <hch@lst.de>
+Date: Fri, 29 Dec 2017 08:18:20 +0000
+Subject: [PATCH 16/67] powerpc: rename dma_direct_ to dma_nommu_
+Message-Id: <20171229081911.2802-17-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1514469681-15602-1-git-send-email-jacopo+renesas@jmondi.org>
-In-Reply-To: <1514469681-15602-1-git-send-email-jacopo+renesas@jmondi.org>
+References: <20171229081911.2802-1-hch@lst.de>
+In-Reply-To: <20171229081911.2802-1-hch-jcswGhMUV9g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: laurent.pinchart@ideasonboard.com, magnus.damm@gmail.com, geert@glider.be, mchehab@kernel.org, hverkuil@xs4all.nl, robh+dt@kernel.org, mark.rutland@arm.com
-Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>, linux-renesas-soc@vger.kernel.org, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org
+To: iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: linux-alpha-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-snps-arc-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, adi-buildroot-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, linux-c6x-dev-jPsnJVOj+W6hPH1hqNUYSQ@public.gmane.org, linux-cris-kernel-VrBV9hrLPhE@public.gmane.org, linux-hexagon-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-ia64-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-m68k-cunTk1MwBs8S/qaLPR03pWD2FQJk+8+b@public.gmane.org, linux-metag-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Michal Simek <monstr-pSz03upnqPeHXe+LvDLADg@public.gmane.org>, linux-mips-6z/3iImG2C8G8FEW9MqTrA@public.gmane.org, linux-parisc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linuxppc-dev-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org, patches-q3qR2WxjNRFS9aJRtSZj7A@public.gmane.org, linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sparclinux-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Guan Xuetao <gxt-TG0Ac1+ktVePQbnJrJN+5g@public.gmane.org>, x86-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Add driver for Renesas Capture Engine Unit (CEU).
+We want to use the dma_direct_ namespace for a generic implementation,
+so rename powerpc to the second best choice: dma_nommu_.
 
-The CEU interface supports capturing 'data' (YUV422) and 'images'
-(NV[12|21|16|61]).
-
-This driver aims to replace the soc_camera-based sh_mobile_ceu one.
-
-Tested with ov7670 camera sensor, providing YUYV_2X8 data on Renesas RZ
-platform GR-Peach.
-
-Tested with ov7725 camera sensor on SH4 platform Migo-R.
-
-Signed-off-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
+Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- drivers/media/platform/Kconfig       |    9 +
- drivers/media/platform/Makefile      |    1 +
- drivers/media/platform/renesas-ceu.c | 1652 ++++++++++++++++++++++++++++++++++
- 3 files changed, 1662 insertions(+)
- create mode 100644 drivers/media/platform/renesas-ceu.c
+ arch/powerpc/include/asm/dma-mapping.h    |  8 ++--
+ arch/powerpc/kernel/dma-iommu.c           |  2 +-
+ arch/powerpc/kernel/dma-swiotlb.c         |  6 +--
+ arch/powerpc/kernel/dma.c                 | 68 +++++++++++++++----------------
+ arch/powerpc/kernel/pci-common.c          |  2 +-
+ arch/powerpc/kernel/setup-common.c        |  2 +-
+ arch/powerpc/platforms/cell/iommu.c       | 28 ++++++-------
+ arch/powerpc/platforms/pasemi/iommu.c     |  2 +-
+ arch/powerpc/platforms/pasemi/setup.c     |  2 +-
+ arch/powerpc/platforms/powernv/pci-ioda.c |  4 +-
+ arch/powerpc/platforms/pseries/iommu.c    |  2 +-
+ arch/powerpc/platforms/pseries/vio.c      |  2 +-
+ arch/powerpc/sysdev/dart_iommu.c          |  4 +-
+ arch/powerpc/sysdev/fsl_pci.c             |  2 +-
+ drivers/misc/cxl/vphb.c                   |  2 +-
+ 15 files changed, 68 insertions(+), 68 deletions(-)
 
-diff --git a/drivers/media/platform/Kconfig b/drivers/media/platform/Kconfig
-index fd0c998..fe7bd26 100644
---- a/drivers/media/platform/Kconfig
-+++ b/drivers/media/platform/Kconfig
-@@ -144,6 +144,15 @@ config VIDEO_STM32_DCMI
- 	  To compile this driver as a module, choose M here: the module
- 	  will be called stm32-dcmi.
+diff --git a/arch/powerpc/include/asm/dma-mapping.h b/arch/powerpc/include/asm/dma-mapping.h
+index f6ab51205a85..8fa394520af6 100644
+--- a/arch/powerpc/include/asm/dma-mapping.h
++++ b/arch/powerpc/include/asm/dma-mapping.h
+@@ -19,13 +19,13 @@
+ #include <asm/swiotlb.h>
  
-+config VIDEO_RENESAS_CEU
-+	tristate "Renesas Capture Engine Unit (CEU) driver"
-+	depends on VIDEO_DEV && VIDEO_V4L2 && HAS_DMA
-+	depends on ARCH_SHMOBILE || ARCH_R7S72100 || COMPILE_TEST
-+	select VIDEOBUF2_DMA_CONTIG
-+	select V4L2_FWNODE
-+	---help---
-+	  This is a v4l2 driver for the Renesas CEU Interface
-+
- source "drivers/media/platform/soc_camera/Kconfig"
- source "drivers/media/platform/exynos4-is/Kconfig"
- source "drivers/media/platform/am437x/Kconfig"
-diff --git a/drivers/media/platform/Makefile b/drivers/media/platform/Makefile
-index 003b0bb..6580a6b 100644
---- a/drivers/media/platform/Makefile
-+++ b/drivers/media/platform/Makefile
-@@ -62,6 +62,7 @@ obj-$(CONFIG_VIDEO_SH_VOU)		+= sh_vou.o
- obj-$(CONFIG_SOC_CAMERA)		+= soc_camera/
+ /* Some dma direct funcs must be visible for use in other dma_ops */
+-extern void *__dma_direct_alloc_coherent(struct device *dev, size_t size,
++extern void *__dma_nommu_alloc_coherent(struct device *dev, size_t size,
+ 					 dma_addr_t *dma_handle, gfp_t flag,
+ 					 unsigned long attrs);
+-extern void __dma_direct_free_coherent(struct device *dev, size_t size,
++extern void __dma_nommu_free_coherent(struct device *dev, size_t size,
+ 				       void *vaddr, dma_addr_t dma_handle,
+ 				       unsigned long attrs);
+-extern int dma_direct_mmap_coherent(struct device *dev,
++extern int dma_nommu_mmap_coherent(struct device *dev,
+ 				    struct vm_area_struct *vma,
+ 				    void *cpu_addr, dma_addr_t handle,
+ 				    size_t size, unsigned long attrs);
+@@ -73,7 +73,7 @@ static inline unsigned long device_to_mask(struct device *dev)
+ #ifdef CONFIG_PPC64
+ extern struct dma_map_ops dma_iommu_ops;
+ #endif
+-extern const struct dma_map_ops dma_direct_ops;
++extern const struct dma_map_ops dma_nommu_ops;
  
- obj-$(CONFIG_VIDEO_RCAR_DRIF)		+= rcar_drif.o
-+obj-$(CONFIG_VIDEO_RENESAS_CEU)		+= renesas-ceu.o
- obj-$(CONFIG_VIDEO_RENESAS_FCP) 	+= rcar-fcp.o
- obj-$(CONFIG_VIDEO_RENESAS_FDP1)	+= rcar_fdp1.o
- obj-$(CONFIG_VIDEO_RENESAS_JPU) 	+= rcar_jpu.o
-diff --git a/drivers/media/platform/renesas-ceu.c b/drivers/media/platform/renesas-ceu.c
-new file mode 100644
-index 0000000..76d12f0
---- /dev/null
-+++ b/drivers/media/platform/renesas-ceu.c
-@@ -0,0 +1,1652 @@
-+// SPDX-License-Identifier: GPL-2.0+
-+/*
-+ * V4L2 Driver for Renesas Capture Engine Unit (CEU) interface
-+ * Copyright (C) 2017/18 Jacopo Mondi <jacopo+renesas@jmondi.org>
-+ *
-+ * Based on soc-camera driver "soc_camera/sh_mobile_ceu_camera.c"
-+ * Copyright (C) 2008 Magnus Damm
-+ *
-+ * Based on V4L2 Driver for PXA camera host - "pxa_camera.c",
-+ * Copyright (C) 2006, Sascha Hauer, Pengutronix
-+ * Copyright (C) 2008, Guennadi Liakhovetski <kernel@pengutronix.de>
-+ */
-+
-+#include <linux/delay.h>
-+#include <linux/device.h>
-+#include <linux/dma-mapping.h>
-+#include <linux/err.h>
-+#include <linux/errno.h>
-+#include <linux/io.h>
-+#include <linux/interrupt.h>
-+#include <linux/kernel.h>
-+#include <linux/module.h>
-+#include <linux/mm.h>
-+#include <linux/of.h>
-+#include <linux/of_graph.h>
-+#include <linux/of_device.h>
-+#include <linux/platform_device.h>
-+#include <linux/pm_runtime.h>
-+#include <linux/slab.h>
-+#include <linux/time.h>
-+#include <linux/videodev2.h>
-+
-+#include <media/v4l2-async.h>
-+#include <media/v4l2-common.h>
-+#include <media/v4l2-device.h>
-+#include <media/v4l2-dev.h>
-+#include <media/v4l2-fwnode.h>
-+#include <media/v4l2-ioctl.h>
-+#include <media/v4l2-image-sizes.h>
-+#include <media/v4l2-mediabus.h>
-+#include <media/videobuf2-dma-contig.h>
-+
-+#include <media/drv-intf/renesas-ceu.h>
-+
-+#define DRIVER_NAME	"renesas-ceu"
-+
-+/* CEU registers offsets and masks */
-+#define CEU_CAPSR	0x00 /* Capture start register			*/
-+#define CEU_CAPCR	0x04 /* Capture control register		*/
-+#define CEU_CAMCR	0x08 /* Capture interface control register	*/
-+#define CEU_CAMOR	0x10 /* Capture interface offset register	*/
-+#define CEU_CAPWR	0x14 /* Capture interface width register	*/
-+#define CEU_CAIFR	0x18 /* Capture interface input format register */
-+#define CEU_CRCNTR	0x28 /* CEU register control register		*/
-+#define CEU_CRCMPR	0x2c /* CEU register forcible control register	*/
-+#define CEU_CFLCR	0x30 /* Capture filter control register		*/
-+#define CEU_CFSZR	0x34 /* Capture filter size clip register	*/
-+#define CEU_CDWDR	0x38 /* Capture destination width register	*/
-+#define CEU_CDAYR	0x3c /* Capture data address Y register		*/
-+#define CEU_CDACR	0x40 /* Capture data address C register		*/
-+#define CEU_CFWCR	0x5c /* Firewall operation control register	*/
-+#define CEU_CDOCR	0x64 /* Capture data output control register	*/
-+#define CEU_CEIER	0x70 /* Capture event interrupt enable register	*/
-+#define CEU_CETCR	0x74 /* Capture event flag clear register	*/
-+#define CEU_CSTSR	0x7c /* Capture status register			*/
-+#define CEU_CSRTR	0x80 /* Capture software reset register		*/
-+
-+/* Data synchronous fetch mode */
-+#define CEU_CAMCR_JPEG			BIT(4)
-+
-+/* Input components ordering: CEU_CAMCR.DTARY field */
-+#define CEU_CAMCR_DTARY_8_UYVY		(0x00 << 8)
-+#define CEU_CAMCR_DTARY_8_VYUY		(0x01 << 8)
-+#define CEU_CAMCR_DTARY_8_YUYV		(0x02 << 8)
-+#define CEU_CAMCR_DTARY_8_YVYU		(0x03 << 8)
-+/* TODO: input components ordering for 16 bits input */
-+
-+/* Bus transfer MTU */
-+#define CEU_CAPCR_BUS_WIDTH256		(0x3 << 20)
-+
-+/* Bus width configuration */
-+#define CEU_CAMCR_DTIF_16BITS		BIT(12)
-+
-+/* No downsampling to planar YUV420 in image fetch mode */
-+#define CEU_CDOCR_NO_DOWSAMPLE		BIT(4)
-+
-+/* Swap all input data in 8-bit, 16-bits and 32-bits units (Figure 46.45) */
-+#define CEU_CDOCR_SWAP_ENDIANNESS	(7)
-+
-+/* Capture reset and enable bits */
-+#define CEU_CAPSR_CPKIL			BIT(16)
-+#define CEU_CAPSR_CE			BIT(0)
-+
-+/* CEU operating flag bit */
-+#define CEU_CAPCR_CTNCP			BIT(16)
-+#define CEU_CSTRST_CPTON		BIT(1)
-+
-+/* Platform specific IRQ source flags */
-+#define CEU_CETCR_ALL_IRQS_RZ		0x397f313
-+#define CEU_CETCR_ALL_IRQS_SH4		0x3d7f313
-+
-+/* Prohibited register access interrupt bit */
-+#define CEU_CETCR_IGRW			BIT(4)
-+/* One-frame capture end interrupt */
-+#define CEU_CEIER_CPE			BIT(0)
-+/* VBP error */
-+#define CEU_CEIER_VBP			BIT(20)
-+#define CEU_CEIER_MASK			(CEU_CEIER_CPE | CEU_CEIER_VBP)
-+
-+#define CEU_MAX_WIDTH	2560
-+#define CEU_MAX_HEIGHT	1920
-+#define CEU_W_MAX(w)	((w) < CEU_MAX_WIDTH ? (w) : CEU_MAX_WIDTH)
-+#define CEU_H_MAX(h)	((h) < CEU_MAX_HEIGHT ? (h) : CEU_MAX_HEIGHT)
-+
-+/* CEU formats */
-+
-+/*
-+ * ceu_bus_fmt - describe a 8-bits yuyv format the sensor can produce
-+ *
-+ * @mbus_code: bus format code
-+ * @fmt_order: CEU_CAMCR.DTARY ordering of input components (Y, Cb, Cr)
-+ * @fmt_order_swap: swapped CEU_CAMCR.DTARY ordering of input components
-+ *		    (Y, Cr, Cb)
-+ * @swapped: does Cr appear before Cb?
-+ * @bps: number of bits sent over bus for each sample
-+ * @bpp: number of bits per pixels unit
-+ */
-+struct ceu_mbus_fmt {
-+	u32	mbus_code;
-+	u32	fmt_order;
-+	u32	fmt_order_swap;
-+	bool	swapped;
-+	u8	bps;
-+	u8	bpp;
-+};
-+
-+/*
-+ * ceu_buffer - Link vb2 buffer to the list of available buffers
-+ */
-+struct ceu_buffer {
-+	struct vb2_v4l2_buffer vb;
-+	struct list_head queue;
-+};
-+
-+static inline struct ceu_buffer *vb2_to_ceu(struct vb2_v4l2_buffer *vbuf)
-+{
-+	return container_of(vbuf, struct ceu_buffer, vb);
-+}
-+
-+/*
-+ * ceu_subdev - Wraps v4l2 sub-device and provides async subdevice.
-+ */
-+struct ceu_subdev {
-+	struct v4l2_subdev *v4l2_sd;
-+	struct v4l2_async_subdev asd;
-+
-+	/* per-subdevice mbus configuration options */
-+	unsigned int mbus_flags;
-+	struct ceu_mbus_fmt mbus_fmt;
-+};
-+
-+static struct ceu_subdev *to_ceu_subdev(struct v4l2_async_subdev *asd)
-+{
-+	return container_of(asd, struct ceu_subdev, asd);
-+}
-+
-+/*
-+ * ceu_device - CEU device instance
-+ */
-+struct ceu_device {
-+	struct device		*dev;
-+	struct video_device	vdev;
-+	struct v4l2_device	v4l2_dev;
-+
-+	/* subdevices descriptors */
-+	struct ceu_subdev	*subdevs;
-+	/* the subdevice currently in use */
-+	struct ceu_subdev	*sd;
-+	unsigned int		sd_index;
-+	unsigned int		num_sd;
-+
-+	/* platform specific mask with all IRQ sources flagged */
-+	u32			irq_mask;
-+
-+	/* currently configured field and pixel format */
-+	enum v4l2_field	field;
-+	struct v4l2_pix_format_mplane v4l2_pix;
-+
-+	/* async subdev notification helpers */
-+	struct v4l2_async_notifier notifier;
-+	/* pointers to "struct ceu_subdevice -> asd" */
-+	struct v4l2_async_subdev **asds;
-+
-+	/* vb2 queue, capture buffer list and active buffer pointer */
-+	struct vb2_queue	vb2_vq;
-+	struct list_head	capture;
-+	struct vb2_v4l2_buffer	*active;
-+	unsigned int		sequence;
-+
-+	/* mlock - lock device suspend/resume and videobuf2 operations */
-+	struct mutex	mlock;
-+
-+	/* lock - lock access to capture buffer queue and active buffer */
-+	spinlock_t	lock;
-+
-+	/* base - CEU memory base address */
-+	void __iomem	*base;
-+};
-+
-+static inline struct ceu_device *v4l2_to_ceu(struct v4l2_device *v4l2_dev)
-+{
-+	return container_of(v4l2_dev, struct ceu_device, v4l2_dev);
-+}
-+
-+/* CEU memory output formats */
-+
-+/*
-+ * ceu_fmt - describe a memory output format supported by CEU interface
-+ *
-+ * @fourcc: memory layout fourcc format code
-+ * @bpp: number of bits for each pixel stored in memory
-+ */
-+struct ceu_fmt {
-+	u32	fourcc;
-+	u32	bpp;
-+};
-+
-+/*
-+ * ceu_format_list - List of supported memory output formats
-+ *
-+ * If sensor provides any YUYV bus format, all the following planar memory
-+ * formats are available thanks to CEU re-ordering and sub-sampling
-+ * capabilities.
-+ */
-+static const struct ceu_fmt ceu_fmt_list[] = {
-+	{
-+		.fourcc	= V4L2_PIX_FMT_NV16,
-+		.bpp	= 16,
-+	},
-+	{
-+		.fourcc = V4L2_PIX_FMT_NV61,
-+		.bpp	= 16,
-+	},
-+	{
-+		.fourcc	= V4L2_PIX_FMT_NV12,
-+		.bpp	= 12,
-+	},
-+	{
-+		.fourcc	= V4L2_PIX_FMT_NV21,
-+		.bpp	= 12,
-+	},
-+	{
-+		.fourcc	= V4L2_PIX_FMT_YUYV,
-+		.bpp	= 16,
-+	},
-+};
-+
-+static const struct ceu_fmt *get_ceu_fmt_from_fourcc(unsigned int fourcc)
-+{
-+	const struct ceu_fmt *fmt = &ceu_fmt_list[0];
-+	unsigned int i;
-+
-+	for (i = 0; i < ARRAY_SIZE(ceu_fmt_list); i++, fmt++)
-+		if (fmt->fourcc = fourcc)
-+			return fmt;
-+
-+	return NULL;
-+}
-+
-+static bool ceu_fmt_mplane(struct v4l2_pix_format_mplane *pix)
-+{
-+	switch (pix->pixelformat) {
-+	case V4L2_PIX_FMT_YUYV:
-+		return false;
-+	case V4L2_PIX_FMT_NV16:
-+	case V4L2_PIX_FMT_NV61:
-+	case V4L2_PIX_FMT_NV12:
-+	case V4L2_PIX_FMT_NV21:
-+		return true;
-+	default:
-+		return false;
-+	}
-+}
-+
-+/* CEU HW operations */
-+static void ceu_write(struct ceu_device *priv, unsigned int reg_offs, u32 data)
-+{
-+	iowrite32(data, priv->base + reg_offs);
-+}
-+
-+static u32 ceu_read(struct ceu_device *priv, unsigned int reg_offs)
-+{
-+	return ioread32(priv->base + reg_offs);
-+}
-+
-+/*
-+ * ceu_soft_reset() - Software reset the CEU interface
-+ * @ceu_device: CEU device.
-+ *
-+ * Returns 0 for success, -EIO for error.
-+ */
-+static int ceu_soft_reset(struct ceu_device *ceudev)
-+{
-+	unsigned int i;
-+
-+	ceu_write(ceudev, CEU_CAPSR, CEU_CAPSR_CPKIL);
-+
-+	for (i = 0; i < 100; i++) {
-+		udelay(1);
-+		if (!(ceu_read(ceudev, CEU_CSTSR) & CEU_CSTRST_CPTON))
-+			break;
-+	}
-+
-+	if (i = 100) {
-+		dev_err(ceudev->dev, "soft reset time out\n");
-+		return -EIO;
-+	}
-+
-+	for (i = 0; i < 100; i++) {
-+		udelay(1);
-+		if (!(ceu_read(ceudev, CEU_CAPSR) & CEU_CAPSR_CPKIL))
-+			return 0;
-+	}
-+
-+	/* if we get here, CEU has not reset properly */
-+	return -EIO;
-+}
-+
-+/* CEU Capture Operations */
-+
-+/*
-+ * ceu_hw_config() - Configure CEU interface registers
-+ */
-+static int ceu_hw_config(struct ceu_device *ceudev)
-+{
-+	u32 camcr = 0, cdocr = 0, cfzsr = 0, cdwdr = 0, capwr = 0;
-+	struct v4l2_pix_format_mplane *pix = &ceudev->v4l2_pix;
-+	struct ceu_subdev *ceu_sd = ceudev->sd;
-+	struct ceu_mbus_fmt *mbus_fmt = &ceu_sd->mbus_fmt;
-+	unsigned int mbus_flags = ceu_sd->mbus_flags;
-+
-+	/* Start configuring CEU registers */
-+	ceu_write(ceudev, CEU_CAIFR, 0);
-+	ceu_write(ceudev, CEU_CFWCR, 0);
-+	ceu_write(ceudev, CEU_CRCNTR, 0);
-+	ceu_write(ceudev, CEU_CRCMPR, 0);
-+
-+	/* Set the frame capture period for both image capture and data sync */
-+	capwr = (pix->height << 16) | pix->width * mbus_fmt->bpp / 8;
-+
-+	/*
-+	 * Swap input data endianness by default.
-+	 * In data fetch mode bytes are received in chunks of 8 bytes.
-+	 * D0, D1, D2, D3, D4, D5, D6, D7 (D0 received first)
-+	 * The data is however by default written to memory in reverse order:
-+	 * D7, D6, D5, D4, D3, D2, D1, D0 (D7 written to lowest byte)
-+	 *
-+	 * Use CEU_CDOCR[2:0] to swap data ordering.
-+	 */
-+	cdocr = CEU_CDOCR_SWAP_ENDIANNESS;
-+
-+	/*
-+	 * Configure CAMCR and CDOCR:
-+	 * match input components ordering with memory output format and
-+	 * handle downsampling to YUV420.
-+	 *
-+	 * If the memory output planar format is 'swapped' (Cr before Cb) and
-+	 * input format is not, use the swapped version of CAMCR.DTARY.
-+	 *
-+	 * If the memory output planar format is not 'swapped' (Cb before Cr)
-+	 * and input format is, use the swapped version of CAMCR.DTARY.
-+	 *
-+	 * CEU by default downsample to planar YUV420 (CDCOR[4] = 0).
-+	 * If output is planar YUV422 set CDOCR[4] = 1
-+	 *
-+	 * No downsample for data fetch sync mode.
-+	 */
-+	switch (pix->pixelformat) {
-+	/* data fetch sync mode */
-+	case V4L2_PIX_FMT_YUYV:
-+		/* TODO: handle YUYV permutations through DTARY bits */
-+		camcr	|= CEU_CAMCR_JPEG;
-+		cdocr	|= CEU_CDOCR_NO_DOWSAMPLE;
-+		cfzsr	= (pix->height << 16) | pix->width;
-+		cdwdr	= pix->plane_fmt[0].bytesperline;
-+		break;
-+
-+	/* non-swapped planar image capture mode */
-+	case V4L2_PIX_FMT_NV16:
-+		cdocr	|= CEU_CDOCR_NO_DOWSAMPLE;
-+	case V4L2_PIX_FMT_NV12:
-+		if (mbus_fmt->swapped)
-+			camcr |= mbus_fmt->fmt_order_swap;
-+		else
-+			camcr |= mbus_fmt->fmt_order;
-+
-+		cfzsr	= (pix->height << 16) | pix->width;
-+		cdwdr	= pix->width;
-+		break;
-+
-+	/* swapped planar image capture mode */
-+	case V4L2_PIX_FMT_NV61:
-+		cdocr	|= CEU_CDOCR_NO_DOWSAMPLE;
-+	case V4L2_PIX_FMT_NV21:
-+		if (mbus_fmt->swapped)
-+			camcr |= mbus_fmt->fmt_order;
-+		else
-+			camcr |= mbus_fmt->fmt_order_swap;
-+
-+		cfzsr	= (pix->height << 16) | pix->width;
-+		cdwdr	= pix->width;
-+		break;
-+	}
-+
-+	camcr |= mbus_flags & V4L2_MBUS_VSYNC_ACTIVE_LOW ? 1 << 1 : 0;
-+	camcr |= mbus_flags & V4L2_MBUS_HSYNC_ACTIVE_LOW ? 1 << 0 : 0;
-+
-+	/* TODO: handle 16 bit bus width with DTIF bit in CAMCR */
-+	ceu_write(ceudev, CEU_CAMCR, camcr);
-+	ceu_write(ceudev, CEU_CDOCR, cdocr);
-+	ceu_write(ceudev, CEU_CAPCR, CEU_CAPCR_BUS_WIDTH256);
-+
-+	/*
-+	 * TODO: make CAMOR offsets configurable.
-+	 * CAMOR wants to know the number of blanks between a VS/HS signal
-+	 * and valid data. This value should actually come from the sensor...
-+	 */
-+	ceu_write(ceudev, CEU_CAMOR, 0);
-+
-+	/* TODO: 16 bit bus width require re-calculation of cdwdr and cfzsr */
-+	ceu_write(ceudev, CEU_CAPWR, capwr);
-+	ceu_write(ceudev, CEU_CFSZR, cfzsr);
-+	ceu_write(ceudev, CEU_CDWDR, cdwdr);
-+
-+	return 0;
-+}
-+
-+/*
-+ * ceu_capture() - Trigger start of a capture sequence
-+ *
-+ * Program the CEU DMA registers with addresses where to transfer image data.
-+ */
-+static int ceu_capture(struct ceu_device *ceudev)
-+{
-+	struct v4l2_pix_format_mplane *pix = &ceudev->v4l2_pix;
-+	dma_addr_t phys_addr_top;
-+
-+	phys_addr_top +		vb2_dma_contig_plane_dma_addr(&ceudev->active->vb2_buf, 0);
-+	ceu_write(ceudev, CEU_CDAYR, phys_addr_top);
-+
-+	/* Ignore CbCr plane for non multi-planar image formats. */
-+	if (ceu_fmt_mplane(pix)) {
-+		phys_addr_top +			vb2_dma_contig_plane_dma_addr(&ceudev->active->vb2_buf,
-+						      1);
-+		ceu_write(ceudev, CEU_CDACR, phys_addr_top);
-+	}
-+
-+	/*
-+	 * Trigger new capture start: once for each frame, as we work in
-+	 * one-frame capture mode.
-+	 */
-+	ceu_write(ceudev, CEU_CAPSR, CEU_CAPSR_CE);
-+
-+	return 0;
-+}
-+
-+static irqreturn_t ceu_irq(int irq, void *data)
-+{
-+	struct ceu_device *ceudev = data;
-+	struct vb2_v4l2_buffer *vbuf;
-+	struct ceu_buffer *buf;
-+	u32 status;
-+	int ret = 0;
-+
-+	/* Clean interrupt status. */
-+	status = ceu_read(ceudev, CEU_CETCR);
-+	ceu_write(ceudev, CEU_CETCR, ~ceudev->irq_mask);
-+
-+	/* Unexpected interrupt. */
-+	if (!(status & CEU_CEIER_MASK))
-+		return IRQ_NONE;
-+
-+	spin_lock(&ceudev->lock);
-+
-+	/* Stale interrupt from a released buffer, ignore it. */
-+	vbuf = ceudev->active;
-+	if (!vbuf) {
-+		spin_unlock(&ceudev->lock);
-+		return IRQ_NONE;
-+	}
-+
-+	/*
-+	 * When a VBP interrupt occurs, no capture end interrupt will occur
-+	 * and the image of that frame is not captured correctly.
-+	 */
-+	if (status & CEU_CEIER_VBP) {
-+		dev_err(ceudev->dev,
-+			"VBP interrupt: abort capture\n");
-+		ret = -EINVAL;
-+		goto error_irq_out;
-+	}
-+
-+	/* Prepare to return the 'previous' buffer. */
-+	vbuf->vb2_buf.timestamp = ktime_get_ns();
-+	vbuf->sequence = ceudev->sequence++;
-+	vbuf->field = ceudev->field;
-+
-+	/* Prepare a new 'active' buffer and trigger a new capture. */
-+	if (list_empty(&ceudev->capture))
-+		goto error_irq_out;
-+
-+	buf = list_first_entry(&ceudev->capture, struct ceu_buffer, queue);
-+	list_del(&buf->queue);
-+	ceudev->active = &buf->vb;
-+
-+	ceu_capture(ceudev);
-+
-+	/* Return the 'previous' buffer */
-+	vb2_buffer_done(&vbuf->vb2_buf, VB2_BUF_STATE_DONE);
-+
-+	spin_unlock(&ceudev->lock);
-+
-+	return IRQ_HANDLED;
-+
-+error_irq_out:
-+	/* Return the 'previous' buffer and all queued ones. */
-+	vb2_buffer_done(&vbuf->vb2_buf, ret < 0 ?
-+					VB2_BUF_STATE_ERROR :
-+					VB2_BUF_STATE_DONE);
-+
-+	list_for_each_entry(buf, &ceudev->capture, queue)
-+		vb2_buffer_done(&buf->vb.vb2_buf, VB2_BUF_STATE_ERROR);
-+
-+	spin_unlock(&ceudev->lock);
-+
-+	return IRQ_HANDLED;
-+}
-+
-+/* CEU Videobuf2 operations */
-+
-+static void ceu_update_plane_sizes(struct v4l2_plane_pix_format *plane,
-+				   unsigned int bpl, unsigned int szimage)
-+{
-+	if (plane->bytesperline < bpl)
-+		plane->bytesperline = bpl;
-+	if (plane->sizeimage < szimage)
-+		plane->sizeimage = szimage;
-+}
-+
-+/*
-+ * ceu_calc_plane_sizes() - Fill per-plane 'struct v4l2_plane_pix_format'
-+ *			    information according to the currently configured
-+ *			    pixel format.
-+ * @ceu_device: CEU device.
-+ * @ceu_fmt: Active image format.
-+ * @pix: Pixel format information (store line width and image sizes)
-+ *
-+ * Returns 0 for success.
-+ */
-+static int ceu_calc_plane_sizes(struct ceu_device *ceudev,
-+				const struct ceu_fmt *ceu_fmt,
-+				struct v4l2_pix_format_mplane *pix)
-+{
-+	unsigned int bpl, szimage;
-+
-+	switch (pix->pixelformat) {
-+	case V4L2_PIX_FMT_YUYV:
-+		pix->num_planes	= 1;
-+		bpl		= pix->width * ceu_fmt->bpp / 8;
-+		szimage		= pix->height * bpl;
-+		ceu_update_plane_sizes(&pix->plane_fmt[0], bpl, szimage);
-+		break;
-+
-+	case V4L2_PIX_FMT_NV16:
-+	case V4L2_PIX_FMT_NV61:
-+		pix->num_planes	= 2;
-+		bpl		= pix->width;
-+		szimage		= pix->height * pix->width;
-+		ceu_update_plane_sizes(&pix->plane_fmt[0], bpl, szimage);
-+		ceu_update_plane_sizes(&pix->plane_fmt[1], bpl, szimage);
-+		break;
-+
-+	case V4L2_PIX_FMT_NV12:
-+	case V4L2_PIX_FMT_NV21:
-+		pix->num_planes	= 2;
-+		bpl		= pix->width;
-+		szimage		= pix->height * pix->width;
-+		ceu_update_plane_sizes(&pix->plane_fmt[0], bpl, szimage);
-+		ceu_update_plane_sizes(&pix->plane_fmt[1], bpl, szimage / 2);
-+		break;
-+
-+	default:
-+		pix->num_planes	= 0;
-+		dev_err(ceudev->dev,
-+			"Format 0x%x not supported\n", pix->pixelformat);
-+		return -EINVAL;
-+	}
-+
-+	return 0;
-+}
-+
-+/*
-+ * ceu_vb2_setup() - is called to check whether the driver can accept the
-+ *		     requested number of buffers and to fill in plane sizes
-+ *		     for the current frame format, if required.
-+ */
-+static int ceu_vb2_setup(struct vb2_queue *vq, unsigned int *count,
-+			 unsigned int *num_planes, unsigned int sizes[],
-+			 struct device *alloc_devs[])
-+{
-+	struct ceu_device *ceudev = vb2_get_drv_priv(vq);
-+	struct v4l2_pix_format_mplane *pix = &ceudev->v4l2_pix;
-+	unsigned int i;
-+
-+	if (!*count)
-+		*count = 2;
-+
-+	/* num_planes is set: just check plane sizes */
-+	if (*num_planes) {
-+		for (i = 0; i < pix->num_planes; i++)
-+			if (sizes[i] < pix->plane_fmt[i].sizeimage)
-+				return -EINVAL;
-+
-+		return 0;
-+	}
-+
-+	/* num_planes not set: called from REQBUFS, just set plane sizes */
-+	*num_planes = pix->num_planes;
-+	for (i = 0; i < pix->num_planes; i++)
-+		sizes[i] = pix->plane_fmt[i].sizeimage;
-+
-+	return 0;
-+}
-+
-+static void ceu_vb2_queue(struct vb2_buffer *vb)
-+{
-+	struct ceu_device *ceudev = vb2_get_drv_priv(vb->vb2_queue);
-+	struct vb2_v4l2_buffer *vbuf = to_vb2_v4l2_buffer(vb);
-+	struct v4l2_pix_format_mplane *pix = &ceudev->v4l2_pix;
-+	struct ceu_buffer *buf = vb2_to_ceu(vbuf);
-+	unsigned long irqflags;
-+	unsigned int i;
-+
-+	for (i = 0; i < pix->num_planes; i++) {
-+		if (vb2_plane_size(vb, i) < pix->plane_fmt[i].sizeimage) {
-+			vb2_buffer_done(vb, VB2_BUF_STATE_ERROR);
-+			return;
-+		}
-+
-+		vb2_set_plane_payload(vb, i, pix->plane_fmt[i].sizeimage);
-+	}
-+
-+	spin_lock_irqsave(&ceudev->lock, irqflags);
-+	list_add_tail(&buf->queue, &ceudev->capture);
-+	spin_unlock_irqrestore(&ceudev->lock, irqflags);
-+}
-+
-+static int ceu_start_streaming(struct vb2_queue *vq, unsigned int count)
-+{
-+	struct ceu_device *ceudev = vb2_get_drv_priv(vq);
-+	struct v4l2_subdev *v4l2_sd = ceudev->sd->v4l2_sd;
-+	struct ceu_buffer *buf;
-+	unsigned long irqflags;
-+	int ret;
-+
-+	ret = v4l2_subdev_call(v4l2_sd, video, s_stream, 1);
-+	if (ret && ret != -ENOIOCTLCMD) {
-+		dev_dbg(ceudev->dev,
-+			"Subdevice failed to start streaming: %d\n", ret);
-+		goto error_return_bufs;
-+	}
-+
-+	/* Program the CEU interface according to the CEU image format */
-+	ret = ceu_hw_config(ceudev);
-+	if (ret)
-+		goto error_stop_sensor;
-+
-+	spin_lock_irqsave(&ceudev->lock, irqflags);
-+	ceudev->sequence = 0;
-+
-+	/* Grab the first available buffer and trigger the first capture. */
-+	buf = list_first_entry(&ceudev->capture, struct ceu_buffer,
-+			       queue);
-+	if (!buf) {
-+		spin_unlock_irqrestore(&ceudev->lock, irqflags);
-+		dev_dbg(ceudev->dev,
-+			"No buffer available for capture.\n");
-+		goto error_stop_sensor;
-+	}
-+
-+	list_del(&buf->queue);
-+	ceudev->active = &buf->vb;
-+
-+	/* Clean and program interrupts for first capture. */
-+	ceu_write(ceudev, CEU_CETCR, ~ceudev->irq_mask);
-+	ceu_write(ceudev, CEU_CEIER, CEU_CEIER_MASK);
-+
-+	ceu_capture(ceudev);
-+
-+	spin_unlock_irqrestore(&ceudev->lock, irqflags);
-+
-+	return 0;
-+
-+error_stop_sensor:
-+	v4l2_subdev_call(v4l2_sd, video, s_stream, 0);
-+
-+error_return_bufs:
-+	spin_lock_irqsave(&ceudev->lock, irqflags);
-+	list_for_each_entry(buf, &ceudev->capture, queue)
-+		vb2_buffer_done(&ceudev->active->vb2_buf,
-+				VB2_BUF_STATE_QUEUED);
-+	ceudev->active = NULL;
-+	spin_unlock_irqrestore(&ceudev->lock, irqflags);
-+
-+	return ret;
-+}
-+
-+static void ceu_stop_streaming(struct vb2_queue *vq)
-+{
-+	struct ceu_device *ceudev = vb2_get_drv_priv(vq);
-+	struct v4l2_subdev *v4l2_sd = ceudev->sd->v4l2_sd;
-+	struct ceu_buffer *buf;
-+	unsigned long irqflags;
-+
-+	/* Clean and disable interrupt sources */
-+	ceu_write(ceudev, CEU_CETCR,
-+		  ceu_read(ceudev, CEU_CETCR) & ceudev->irq_mask);
-+	ceu_write(ceudev, CEU_CEIER, CEU_CEIER_MASK);
-+
-+	v4l2_subdev_call(v4l2_sd, video, s_stream, 0);
-+
-+	spin_lock_irqsave(&ceudev->lock, irqflags);
-+	if (ceudev->active) {
-+		vb2_buffer_done(&ceudev->active->vb2_buf,
-+				VB2_BUF_STATE_ERROR);
-+		ceudev->active = NULL;
-+	}
-+
-+	/* Release all queued buffers */
-+	list_for_each_entry(buf, &ceudev->capture, queue)
-+		vb2_buffer_done(&buf->vb.vb2_buf, VB2_BUF_STATE_ERROR);
-+	INIT_LIST_HEAD(&ceudev->capture);
-+
-+	spin_unlock_irqrestore(&ceudev->lock, irqflags);
-+
-+	ceu_soft_reset(ceudev);
-+}
-+
-+static const struct vb2_ops ceu_vb2_ops = {
-+	.queue_setup		= ceu_vb2_setup,
-+	.buf_queue		= ceu_vb2_queue,
-+	.wait_prepare		= vb2_ops_wait_prepare,
-+	.wait_finish		= vb2_ops_wait_finish,
-+	.start_streaming	= ceu_start_streaming,
-+	.stop_streaming		= ceu_stop_streaming,
-+};
-+
-+/* CEU image formats handling */
-+
-+/*
-+ * ceu_try_fmt() - test format on CEU and sensor
-+ * @ceudev: The CEU device.
-+ * @v4l2_fmt: format to test.
-+ *
-+ * Returns 0 for success, < 0 for errors.
-+ */
-+static int ceu_try_fmt(struct ceu_device *ceudev, struct v4l2_format *v4l2_fmt)
-+{
-+	struct ceu_subdev *ceu_sd = ceudev->sd;
-+	struct v4l2_pix_format_mplane *pix = &v4l2_fmt->fmt.pix_mp;
-+	struct v4l2_subdev *v4l2_sd = ceu_sd->v4l2_sd;
-+	struct v4l2_subdev_pad_config pad_cfg;
-+	const struct ceu_fmt *ceu_fmt;
-+	int ret;
-+
-+	struct v4l2_subdev_format sd_format = {
-+		.which = V4L2_SUBDEV_FORMAT_TRY,
-+	};
-+
-+	switch (pix->pixelformat) {
-+	case V4L2_PIX_FMT_YUYV:
-+	case V4L2_PIX_FMT_NV16:
-+	case V4L2_PIX_FMT_NV61:
-+	case V4L2_PIX_FMT_NV12:
-+	case V4L2_PIX_FMT_NV21:
-+		break;
-+
-+	default:
-+		pix->pixelformat = V4L2_PIX_FMT_NV16;
-+	}
-+
-+	ceu_fmt = get_ceu_fmt_from_fourcc(pix->pixelformat);
-+
-+	/* CFSZR requires height and width to be 4-pixel aligned */
-+	v4l_bound_align_image(&pix->width, 2, CEU_MAX_WIDTH, 4,
-+			      &pix->height, 4, CEU_MAX_HEIGHT, 4, 0);
-+
-+	/*
-+	 * Set format on sensor sub device: bus format used to produce memory
-+	 * format is selected at initialization time.
-+	 */
-+	v4l2_fill_mbus_format_mplane(&sd_format.format, pix);
-+	ret = v4l2_subdev_call(v4l2_sd, pad, set_fmt, &pad_cfg, &sd_format);
-+	if (ret)
-+		return ret;
-+
-+	/* Apply sizez returned by sensor as the CEU can't scale */
-+	v4l2_fill_pix_format_mplane(pix, &sd_format.format);
-+
-+	/* Calculate per-plane sizes based on image format */
-+	ret = ceu_calc_plane_sizes(ceudev, ceu_fmt, pix);
-+	if (ret < 0)
-+		return ret;
-+
-+	return 0;
-+}
-+
-+/*
-+ * ceu_set_fmt() - Apply the supplied format to both sensor and CEU
-+ */
-+static int ceu_set_fmt(struct ceu_device *ceudev, struct v4l2_format *v4l2_fmt)
-+{
-+	struct ceu_subdev *ceu_sd = ceudev->sd;
-+	struct v4l2_subdev *v4l2_sd = ceu_sd->v4l2_sd;
-+	int ret;
-+
-+	struct v4l2_subdev_format format = {
-+		.which = V4L2_SUBDEV_FORMAT_ACTIVE,
-+	};
-+
-+	ret = ceu_try_fmt(ceudev, v4l2_fmt);
-+	if (ret)
-+		return ret;
-+
-+	v4l2_fill_mbus_format_mplane(&format.format, &v4l2_fmt->fmt.pix_mp);
-+	ret = v4l2_subdev_call(v4l2_sd, pad, set_fmt, NULL, &format);
-+	if (ret)
-+		return ret;
-+
-+	ceudev->v4l2_pix = v4l2_fmt->fmt.pix_mp;
-+
-+	return 0;
-+}
-+
-+/*
-+ * ceu_set_default_fmt() - Apply default NV16 memory output format with VGA
-+ *			   sizes.
-+ */
-+static int ceu_set_default_fmt(struct ceu_device *ceudev)
-+{
-+	struct v4l2_format v4l2_fmt = {
-+		.type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE,
-+		.fmt.pix_mp = {
-+			.width		= VGA_WIDTH,
-+			.height		= VGA_HEIGHT,
-+			.field		= V4L2_FIELD_NONE,
-+			.pixelformat	= V4L2_PIX_FMT_NV16,
-+			.num_planes	= 2,
-+			.plane_fmt	= {
-+				[0]	= {
-+					.sizeimage = VGA_WIDTH * VGA_HEIGHT * 2,
-+					.bytesperline = VGA_WIDTH * 2,
-+				},
-+				[1]	= {
-+					.sizeimage = VGA_WIDTH * VGA_HEIGHT * 2,
-+					.bytesperline = VGA_WIDTH * 2,
-+				},
-+			},
-+		},
-+	};
-+
-+	ceu_try_fmt(ceudev, &v4l2_fmt);
-+	ceudev->v4l2_pix = v4l2_fmt.fmt.pix_mp;
-+
-+	return 0;
-+}
-+
-+/*
-+ * ceu_init_formats() - Query sensor for supported formats and initialize
-+ *			CEU supported format list
-+ *
-+ * Find out if sensor can produce a permutation of 8-bits YUYV bus format.
-+ * From a single 8-bits YUYV bus format the CEU can produce several memory
-+ * output formats:
-+ * - NV[12|21|16|61] through image fetch mode;
-+ * - YUYV422 if sensor provides YUYV422
-+ *
-+ * TODO: Other YUYV422 permutations through data fetch sync mode and DTARY
-+ * TODO: Binary data (eg. JPEG) and raw formats through data fetch sync mode
-+ */
-+static int ceu_init_formats(struct ceu_device *ceudev)
-+{
-+	struct ceu_subdev *ceu_sd = ceudev->sd;
-+	struct ceu_mbus_fmt *mbus_fmt = &ceu_sd->mbus_fmt;
-+	struct v4l2_subdev *v4l2_sd = ceu_sd->v4l2_sd;
-+	bool yuyv_bus_fmt = false;
-+
-+	struct v4l2_subdev_mbus_code_enum sd_mbus_fmt = {
-+		.which = V4L2_SUBDEV_FORMAT_ACTIVE,
-+		.index = 0,
-+	};
-+
-+	/* Find out if sensor can produce any permutation of 8-bits YUYV422 */
-+	while (!yuyv_bus_fmt &&
-+	       !v4l2_subdev_call(v4l2_sd, pad, enum_mbus_code,
-+				 NULL, &sd_mbus_fmt)) {
-+		switch (sd_mbus_fmt.code) {
-+		case MEDIA_BUS_FMT_YUYV8_2X8:
-+		case MEDIA_BUS_FMT_YVYU8_2X8:
-+		case MEDIA_BUS_FMT_UYVY8_2X8:
-+		case MEDIA_BUS_FMT_VYUY8_2X8:
-+			yuyv_bus_fmt = true;
-+			break;
-+		default:
-+			/*
-+			 * Only support 8-bits YUYV bus formats at the moment;
-+			 *
-+			 * TODO: add support for binary formats (data sync
-+			 * fetch mode).
-+			 */
-+			break;
-+		}
-+
-+		sd_mbus_fmt.index++;
-+	}
-+
-+	if (!yuyv_bus_fmt)
-+		return -ENXIO;
-+
-+	/*
-+	 * Save the first encountered YUYV format as "mbus_fmt" and use it
-+	 * to output all planar YUV422 and YUV420 (NV*) formats to memory as
-+	 * well as for data synch fetch mode (YUYV - YVYU etc. ).
-+	 */
-+	mbus_fmt->mbus_code	= sd_mbus_fmt.code;
-+	mbus_fmt->bps		= 8;
-+
-+	/* Annotate the selected bus format components ordering */
-+	switch (sd_mbus_fmt.code) {
-+	case MEDIA_BUS_FMT_YUYV8_2X8:
-+		mbus_fmt->fmt_order		= CEU_CAMCR_DTARY_8_YUYV;
-+		mbus_fmt->fmt_order_swap	= CEU_CAMCR_DTARY_8_YVYU;
-+		mbus_fmt->swapped		= false;
-+		mbus_fmt->bpp			= 16;
-+		break;
-+
-+	case MEDIA_BUS_FMT_YVYU8_2X8:
-+		mbus_fmt->fmt_order		= CEU_CAMCR_DTARY_8_YVYU;
-+		mbus_fmt->fmt_order_swap	= CEU_CAMCR_DTARY_8_YUYV;
-+		mbus_fmt->swapped		= true;
-+		mbus_fmt->bpp			= 16;
-+		break;
-+
-+	case MEDIA_BUS_FMT_UYVY8_2X8:
-+		mbus_fmt->fmt_order		= CEU_CAMCR_DTARY_8_UYVY;
-+		mbus_fmt->fmt_order_swap	= CEU_CAMCR_DTARY_8_VYUY;
-+		mbus_fmt->swapped		= false;
-+		mbus_fmt->bpp			= 16;
-+		break;
-+
-+	case MEDIA_BUS_FMT_VYUY8_2X8:
-+		mbus_fmt->fmt_order		= CEU_CAMCR_DTARY_8_VYUY;
-+		mbus_fmt->fmt_order_swap	= CEU_CAMCR_DTARY_8_UYVY;
-+		mbus_fmt->swapped		= true;
-+		mbus_fmt->bpp			= 16;
-+		break;
-+	}
-+
-+	ceudev->field = V4L2_FIELD_NONE;
-+
-+	return 0;
-+}
-+
-+/* Runtime PM Handlers */
-+
-+/*
-+ * ceu_runtime_suspend() - disable capture and interrupts and soft-reset.
-+ *			   Turn sensor power off.
-+ */
-+static int ceu_runtime_suspend(struct device *dev)
-+{
-+	struct ceu_device *ceudev = dev_get_drvdata(dev);
-+	struct v4l2_subdev *v4l2_sd = ceudev->sd->v4l2_sd;
-+
-+	v4l2_subdev_call(v4l2_sd, core, s_power, 0);
-+
-+	ceu_write(ceudev, CEU_CEIER, 0);
-+	ceu_soft_reset(ceudev);
-+
-+	return 0;
-+}
-+
-+/*
-+ * ceu_runtime_resume() - soft-reset the interface and turn sensor power on.
-+ */
-+static int ceu_runtime_resume(struct device *dev)
-+{
-+	struct ceu_device *ceudev = dev_get_drvdata(dev);
-+	struct v4l2_subdev *v4l2_sd = ceudev->sd->v4l2_sd;
-+
-+	v4l2_subdev_call(v4l2_sd, core, s_power, 1);
-+
-+	ceu_soft_reset(ceudev);
-+
-+	return 0;
-+}
-+
-+/* File Operations */
-+static int ceu_open(struct file *file)
-+{
-+	struct ceu_device *ceudev = video_drvdata(file);
-+	int ret;
-+
-+	ret = v4l2_fh_open(file);
-+	if (ret)
-+		return ret;
-+
-+	mutex_lock(&ceudev->mlock);
-+	/* Causes soft-reset and sensor power on on first open */
-+	pm_runtime_get_sync(ceudev->dev);
-+	mutex_unlock(&ceudev->mlock);
-+
-+	return 0;
-+}
-+
-+static int ceu_release(struct file *file)
-+{
-+	struct ceu_device *ceudev = video_drvdata(file);
-+
-+	vb2_fop_release(file);
-+
-+	mutex_lock(&ceudev->mlock);
-+	/* Causes soft-reset and sensor power down on last close */
-+	pm_runtime_put(ceudev->dev);
-+	mutex_unlock(&ceudev->mlock);
-+
-+	return 0;
-+}
-+
-+static const struct v4l2_file_operations ceu_fops = {
-+	.owner			= THIS_MODULE,
-+	.open			= ceu_open,
-+	.release		= ceu_release,
-+	.unlocked_ioctl		= video_ioctl2,
-+	.read			= vb2_fop_read,
-+	.mmap			= vb2_fop_mmap,
-+	.poll			= vb2_fop_poll,
-+};
-+
-+/* Video Device IOCTLs */
-+static int ceu_querycap(struct file *file, void *priv,
-+			struct v4l2_capability *cap)
-+{
-+	struct ceu_device *ceudev = video_drvdata(file);
-+
-+	snprintf(cap->card, sizeof(cap->card),
-+		 "Renesas CEU %s", dev_name(ceudev->dev));
-+	strlcpy(cap->driver, DRIVER_NAME, sizeof(cap->driver));
-+	snprintf(cap->bus_info, sizeof(cap->bus_info),
-+		 "platform:renesas-ceu-%s", dev_name(ceudev->dev));
-+
-+	return 0;
-+}
-+
-+static int ceu_enum_fmt_vid_cap(struct file *file, void *priv,
-+				struct v4l2_fmtdesc *f)
-+{
-+	const struct ceu_fmt *fmt;
-+
-+	if (f->index >= ARRAY_SIZE(ceu_fmt_list))
-+		return -EINVAL;
-+
-+	fmt = &ceu_fmt_list[f->index];
-+	f->pixelformat = fmt->fourcc;
-+
-+	return 0;
-+}
-+
-+static int ceu_try_fmt_vid_cap(struct file *file, void *priv,
-+			       struct v4l2_format *f)
-+{
-+	struct ceu_device *ceudev = video_drvdata(file);
-+
-+	return ceu_try_fmt(ceudev, f);
-+}
-+
-+static int ceu_s_fmt_vid_cap(struct file *file, void *priv,
-+			     struct v4l2_format *f)
-+{
-+	struct ceu_device *ceudev = video_drvdata(file);
-+
-+	if (vb2_is_streaming(&ceudev->vb2_vq))
-+		return -EBUSY;
-+
-+	return ceu_set_fmt(ceudev, f);
-+}
-+
-+static int ceu_g_fmt_vid_cap(struct file *file, void *priv,
-+			     struct v4l2_format *f)
-+{
-+	struct ceu_device *ceudev = video_drvdata(file);
-+
-+	f->type	= V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
-+	f->fmt.pix_mp = ceudev->v4l2_pix;
-+
-+	return 0;
-+}
-+
-+static int ceu_enum_input(struct file *file, void *priv,
-+			  struct v4l2_input *inp)
-+{
-+	struct ceu_device *ceudev = video_drvdata(file);
-+	struct ceu_subdev *ceusd;
-+
-+	if (inp->index >= ceudev->num_sd)
-+		return -EINVAL;
-+
-+	ceusd = &ceudev->subdevs[inp->index];
-+
-+	inp->type = V4L2_INPUT_TYPE_CAMERA;
-+	inp->std = 0;
-+	snprintf(inp->name, sizeof(inp->name), "Camera%u: %s",
-+		 inp->index, ceusd->v4l2_sd->name);
-+
-+	return 0;
-+}
-+
-+static int ceu_g_input(struct file *file, void *priv, unsigned int *i)
-+{
-+	struct ceu_device *ceudev = video_drvdata(file);
-+
-+	*i = ceudev->sd_index;
-+
-+	return 0;
-+}
-+
-+static int ceu_s_input(struct file *file, void *priv, unsigned int i)
-+{
-+	struct ceu_device *ceudev = video_drvdata(file);
-+	struct ceu_subdev *ceu_sd_old;
-+	int ret;
-+
-+	if (vb2_is_streaming(&ceudev->vb2_vq))
-+		return -EBUSY;
-+
-+	if (i >= ceudev->num_sd)
-+		return -EINVAL;
-+
-+	ceu_sd_old = ceudev->sd;
-+	ceudev->sd = &ceudev->subdevs[i];
-+
-+	/* Make sure we can generate output image formats. */
-+	ret = ceu_init_formats(ceudev);
-+	if (ret) {
-+		ceudev->sd = ceu_sd_old;
-+		return -EINVAL;
-+	}
-+
-+	/* now that we're sure we can use the sensor, power off the old one */
-+	v4l2_subdev_call(ceu_sd_old->v4l2_sd, core, s_power, 0);
-+	v4l2_subdev_call(ceudev->sd->v4l2_sd, core, s_power, 1);
-+
-+	ceudev->sd_index = i;
-+
-+	return 0;
-+}
-+
-+static int ceu_g_parm(struct file *file, void *fh, struct v4l2_streamparm *a)
-+{
-+	struct ceu_device *ceudev = video_drvdata(file);
-+
-+	if (a->type != V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE)
-+		return -EINVAL;
-+
-+	return v4l2_subdev_call(ceudev->sd->v4l2_sd, video, g_parm, a);
-+}
-+
-+static int ceu_s_parm(struct file *file, void *fh, struct v4l2_streamparm *a)
-+{
-+	struct ceu_device *ceudev = video_drvdata(file);
-+
-+	if (a->type != V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE)
-+		return -EINVAL;
-+
-+	return v4l2_subdev_call(ceudev->sd->v4l2_sd, video, s_parm, a);
-+}
-+
-+static int ceu_enum_framesizes(struct file *file, void *fh,
-+			       struct v4l2_frmsizeenum *fsize)
-+{
-+	struct ceu_device *ceudev = video_drvdata(file);
-+	struct ceu_subdev *ceu_sd = ceudev->sd;
-+	const struct ceu_fmt *ceu_fmt;
-+	struct v4l2_subdev *v4l2_sd = ceu_sd->v4l2_sd;
-+	int ret;
-+
-+	struct v4l2_subdev_frame_size_enum fse = {
-+		.code	= ceu_sd->mbus_fmt.mbus_code,
-+		.index	= fsize->index,
-+		.which	= V4L2_SUBDEV_FORMAT_ACTIVE,
-+	};
-+
-+	/* Just check if user supplied pixel format is supported. */
-+	ceu_fmt = get_ceu_fmt_from_fourcc(fsize->pixel_format);
-+	if (!ceu_fmt)
-+		return -EINVAL;
-+
-+	ret = v4l2_subdev_call(v4l2_sd, pad, enum_frame_size,
-+			       NULL, &fse);
-+	if (ret)
-+		return ret;
-+
-+	fsize->type = V4L2_FRMSIZE_TYPE_DISCRETE;
-+	fsize->discrete.width = CEU_W_MAX(fse.max_width);
-+	fsize->discrete.height = CEU_H_MAX(fse.max_height);
-+
-+	return 0;
-+}
-+
-+static int ceu_enum_frameintervals(struct file *file, void *fh,
-+				   struct v4l2_frmivalenum *fival)
-+{
-+	struct ceu_device *ceudev = video_drvdata(file);
-+	struct ceu_subdev *ceu_sd = ceudev->sd;
-+	const struct ceu_fmt *ceu_fmt;
-+	struct v4l2_subdev *v4l2_sd = ceu_sd->v4l2_sd;
-+	int ret;
-+
-+	struct v4l2_subdev_frame_interval_enum fie = {
-+		.code	= ceu_sd->mbus_fmt.mbus_code,
-+		.index = fival->index,
-+		.width = fival->width,
-+		.height = fival->height,
-+		.which = V4L2_SUBDEV_FORMAT_ACTIVE,
-+	};
-+
-+	/* Just check if user supplied pixel format is supported. */
-+	ceu_fmt = get_ceu_fmt_from_fourcc(fival->pixel_format);
-+	if (!ceu_fmt)
-+		return -EINVAL;
-+
-+	ret = v4l2_subdev_call(v4l2_sd, pad, enum_frame_interval, NULL,
-+			       &fie);
-+	if (ret)
-+		return ret;
-+
-+	fival->type = V4L2_FRMIVAL_TYPE_DISCRETE;
-+	fival->discrete = fie.interval;
-+
-+	return 0;
-+}
-+
-+static const struct v4l2_ioctl_ops ceu_ioctl_ops = {
-+	.vidioc_querycap		= ceu_querycap,
-+
-+	.vidioc_enum_fmt_vid_cap_mplane	= ceu_enum_fmt_vid_cap,
-+	.vidioc_try_fmt_vid_cap_mplane	= ceu_try_fmt_vid_cap,
-+	.vidioc_s_fmt_vid_cap_mplane	= ceu_s_fmt_vid_cap,
-+	.vidioc_g_fmt_vid_cap_mplane	= ceu_g_fmt_vid_cap,
-+
-+	.vidioc_enum_input		= ceu_enum_input,
-+	.vidioc_g_input			= ceu_g_input,
-+	.vidioc_s_input			= ceu_s_input,
-+
-+	.vidioc_reqbufs			= vb2_ioctl_reqbufs,
-+	.vidioc_querybuf		= vb2_ioctl_querybuf,
-+	.vidioc_qbuf			= vb2_ioctl_qbuf,
-+	.vidioc_expbuf			= vb2_ioctl_expbuf,
-+	.vidioc_dqbuf			= vb2_ioctl_dqbuf,
-+	.vidioc_create_bufs		= vb2_ioctl_create_bufs,
-+	.vidioc_prepare_buf		= vb2_ioctl_prepare_buf,
-+	.vidioc_streamon		= vb2_ioctl_streamon,
-+	.vidioc_streamoff		= vb2_ioctl_streamoff,
-+
-+	.vidioc_g_parm			= ceu_g_parm,
-+	.vidioc_s_parm			= ceu_s_parm,
-+	.vidioc_enum_framesizes		= ceu_enum_framesizes,
-+	.vidioc_enum_frameintervals	= ceu_enum_frameintervals,
-+};
-+
-+/*
-+ * ceu_vdev_release() - release CEU video device memory when last reference
-+ *			to this driver is closed
-+ */
-+static void ceu_vdev_release(struct video_device *vdev)
-+{
-+	struct ceu_device *ceudev = video_get_drvdata(vdev);
-+
-+	kfree(ceudev);
-+}
-+
-+static int ceu_notify_bound(struct v4l2_async_notifier *notifier,
-+			    struct v4l2_subdev *v4l2_sd,
-+			    struct v4l2_async_subdev *asd)
-+{
-+	struct v4l2_device *v4l2_dev = notifier->v4l2_dev;
-+	struct ceu_device *ceudev = v4l2_to_ceu(v4l2_dev);
-+	struct ceu_subdev *ceu_sd = to_ceu_subdev(asd);
-+
-+	ceu_sd->v4l2_sd = v4l2_sd;
-+	ceudev->num_sd++;
-+
-+	return 0;
-+}
-+
-+static int ceu_notify_complete(struct v4l2_async_notifier *notifier)
-+{
-+	struct v4l2_device *v4l2_dev = notifier->v4l2_dev;
-+	struct ceu_device *ceudev = v4l2_to_ceu(v4l2_dev);
-+	struct video_device *vdev = &ceudev->vdev;
-+	struct vb2_queue *q = &ceudev->vb2_vq;
-+	struct v4l2_subdev *v4l2_sd;
-+	int ret;
-+
-+	/* Initialize vb2 queue */
-+	q->type			= V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
-+	q->io_modes		= VB2_MMAP | VB2_USERPTR | VB2_DMABUF;
-+	q->drv_priv		= ceudev;
-+	q->ops			= &ceu_vb2_ops;
-+	q->mem_ops		= &vb2_dma_contig_memops;
-+	q->buf_struct_size	= sizeof(struct ceu_buffer);
-+	q->timestamp_flags	= V4L2_BUF_FLAG_TIMESTAMP_MONOTONIC;
-+	q->lock			= &ceudev->mlock;
-+	q->dev			= ceudev->v4l2_dev.dev;
-+
-+	ret = vb2_queue_init(q);
-+	if (ret)
-+		return ret;
-+
-+	/*
-+	 * Make sure at least one sensor is primary and use it to initialize
-+	 * ceu formats
-+	 */
-+	if (!ceudev->sd) {
-+		ceudev->sd = &ceudev->subdevs[0];
-+		ceudev->sd_index = 0;
-+	}
-+
-+	v4l2_sd = ceudev->sd->v4l2_sd;
-+
-+	ret = ceu_init_formats(ceudev);
-+	if (ret)
-+		return ret;
-+
-+	ret = ceu_set_default_fmt(ceudev);
-+	if (ret)
-+		return ret;
-+
-+	/* Register the video device */
-+	strncpy(vdev->name, DRIVER_NAME, strlen(DRIVER_NAME));
-+	vdev->v4l2_dev		= v4l2_dev;
-+	vdev->lock		= &ceudev->mlock;
-+	vdev->queue		= &ceudev->vb2_vq;
-+	vdev->ctrl_handler	= v4l2_sd->ctrl_handler;
-+	vdev->fops		= &ceu_fops;
-+	vdev->ioctl_ops		= &ceu_ioctl_ops;
-+	vdev->release		= ceu_vdev_release;
-+	vdev->device_caps	= V4L2_CAP_VIDEO_CAPTURE_MPLANE |
-+				  V4L2_CAP_STREAMING;
-+	video_set_drvdata(vdev, ceudev);
-+
-+	ret = video_register_device(vdev, VFL_TYPE_GRABBER, -1);
-+	if (ret < 0) {
-+		v4l2_err(vdev->v4l2_dev,
-+			 "video_register_device failed: %d\n", ret);
-+		return ret;
-+	}
-+
-+	return 0;
-+}
-+
-+static const struct v4l2_async_notifier_operations ceu_notify_ops = {
-+	.bound		= ceu_notify_bound,
-+	.complete	= ceu_notify_complete,
-+};
-+
-+/*
-+ * ceu_parse_init_sd() - Initialize CEU subdevices and async_subdevs in
-+ *			 ceu device. Both DT and platform data parsing use
-+ *			 this routine.
-+ *
-+ * @return 0 for success, -ENOMEM for failure.
-+ */
-+static int ceu_parse_init_sd(struct ceu_device *ceudev, unsigned int n_sd)
-+{
-+	/* Reserve memory for 'n_sd' ceu_subdev descriptors */
-+	ceudev->subdevs = devm_kcalloc(ceudev->dev, n_sd,
-+				       sizeof(*ceudev->subdevs), GFP_KERNEL);
-+	if (!ceudev->subdevs)
-+		return -ENOMEM;
-+
-+	/*
-+	 * Reserve memory for 'n_sd' pointers to async_subdevices.
-+	 * ceudev->asds members will point to &ceu_subdev.asd
-+	 */
-+	ceudev->asds = devm_kcalloc(ceudev->dev, n_sd,
-+				    sizeof(*ceudev->asds), GFP_KERNEL);
-+	if (!ceudev->asds)
-+		return -ENOMEM;
-+
-+	ceudev->sd = NULL;
-+	ceudev->sd_index = 0;
-+	ceudev->num_sd = 0;
-+
-+	return 0;
-+}
-+
-+/*
-+ * ceu_parse_platform_data() - Initialize async_subdevices using platform
-+ *			       device provided data.
-+ */
-+static int ceu_parse_platform_data(struct ceu_device *ceudev, void *pdata)
-+{
-+	struct ceu_async_subdev *async_sd;
-+	struct ceu_info *info = pdata;
-+	struct ceu_subdev *ceu_sd;
-+	unsigned int i;
-+	int ret;
-+
-+	if (info->num_subdevs = 0)
-+		return -ENODEV;
-+
-+	ret = ceu_parse_init_sd(ceudev, info->num_subdevs);
-+	if (ret)
-+		return ret;
-+
-+	for (i = 0; i < info->num_subdevs; i++) {
-+		/* Setup the ceu subdevice and the async subdevice */
-+		async_sd = &info->subdevs[i];
-+		ceu_sd = &ceudev->subdevs[i];
-+
-+		memset(&ceu_sd->asd, 0, sizeof(ceu_sd->asd));
-+		INIT_LIST_HEAD(&ceu_sd->asd.list);
-+
-+		ceu_sd->mbus_flags	= async_sd->flags;
-+		ceu_sd->asd.match_type	= V4L2_ASYNC_MATCH_I2C;
-+		ceu_sd->asd.match.i2c.adapter_id = async_sd->i2c_adapter_id;
-+		ceu_sd->asd.match.i2c.address = async_sd->i2c_address;
-+
-+		ceudev->asds[i] = &ceu_sd->asd;
-+	}
-+
-+	return info->num_subdevs;
-+}
-+
-+/*
-+ * ceu_parse_dt() - Initialize async_subdevs parsing device tree graph
-+ */
-+static int ceu_parse_dt(struct ceu_device *ceudev)
-+{
-+	struct device_node *of = ceudev->dev->of_node;
-+	struct v4l2_fwnode_endpoint fw_ep;
-+	struct ceu_subdev *ceu_sd;
-+	struct device_node *ep;
-+	unsigned int i;
-+	int num_ep;
-+	int ret;
-+
-+	num_ep = of_graph_get_endpoint_count(of);
-+	if (!num_ep)
-+		return -ENODEV;
-+
-+	ret = ceu_parse_init_sd(ceudev, num_ep);
-+	if (ret)
-+		return ret;
-+
-+	for (i = 0; i < num_ep; i++) {
-+		ep = of_graph_get_endpoint_by_regs(of, 0, i);
-+		if (!ep) {
-+			dev_err(ceudev->dev,
-+				 "No subdevice connected on port %u.\n", i);
-+			ret = -ENODEV;
-+			goto error_put_node;
-+		}
-+
-+		ret = v4l2_fwnode_endpoint_parse(of_fwnode_handle(ep), &fw_ep);
-+		if (ret) {
-+			dev_err(ceudev->dev,
-+				 "Unable to parse endpoint #%u.\n", i);
-+			goto error_put_node;
-+		}
-+
-+		if (fw_ep.bus_type != V4L2_MBUS_PARALLEL) {
-+			dev_err(ceudev->dev,
-+				 "Only parallel input supported.\n");
-+			ret = -EINVAL;
-+			goto error_put_node;
-+		}
-+
-+		/* Setup the ceu subdevice and the async subdevice */
-+		ceu_sd = &ceudev->subdevs[i];
-+		memset(&ceu_sd->asd, 0, sizeof(ceu_sd->asd));
-+		INIT_LIST_HEAD(&ceu_sd->asd.list);
-+
-+		ceu_sd->mbus_flags = fw_ep.bus.parallel.flags;
-+		ceu_sd->asd.match_type = V4L2_ASYNC_MATCH_FWNODE;
-+		ceu_sd->asd.match.fwnode.fwnode +			fwnode_graph_get_remote_port_parent(
-+					of_fwnode_handle(ep));
-+
-+		ceudev->asds[i] = &ceu_sd->asd;
-+		of_node_put(ep);
-+	}
-+
-+	return num_ep;
-+
-+error_put_node:
-+	of_node_put(ep);
-+	return ret;
-+}
-+
-+struct ceu_data {
-+	u32 irq_mask;
-+} ceu_data_rz = {
-+	.irq_mask = CEU_CETCR_ALL_IRQS_RZ,
-+};
-+
-+#if IS_ENABLED(CONFIG_OF)
-+static const struct of_device_id ceu_of_match[] = {
-+	{ .compatible = "renesas,ceu", .data = &ceu_data_rz },
-+	{ .compatible = "renesas,r7s72100-ceu", .data = &ceu_data_rz },
-+	{ }
-+};
-+MODULE_DEVICE_TABLE(of, ceu_of_match);
-+#endif
-+
-+static int ceu_probe(struct platform_device *pdev)
-+{
-+	struct device *dev = &pdev->dev;
-+	struct ceu_device *ceudev;
-+	struct resource *res;
-+	unsigned int irq;
-+	int num_subdevs;
-+	int ret;
-+
-+	ceudev = kzalloc(sizeof(*ceudev), GFP_KERNEL);
-+	if (!ceudev)
-+		return -ENOMEM;
-+
-+	platform_set_drvdata(pdev, ceudev);
-+	ceudev->dev = dev;
-+
-+	INIT_LIST_HEAD(&ceudev->capture);
-+	spin_lock_init(&ceudev->lock);
-+	mutex_init(&ceudev->mlock);
-+
-+	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-+	ceudev->base = devm_ioremap_resource(dev, res);
-+	if (IS_ERR(ceudev->base))
-+		return PTR_ERR(ceudev->base);
-+
-+	ret = platform_get_irq(pdev, 0);
-+	if (ret < 0) {
-+		dev_err(dev, "failed to get irq: %d\n", ret);
-+		return ret;
-+	}
-+	irq = ret;
-+
-+	ret = devm_request_irq(dev, irq, ceu_irq,
-+			       0, dev_name(dev), ceudev);
-+	if (ret) {
-+		dev_err(&pdev->dev, "Unable to register CEU interrupt.\n");
-+		return ret;
-+	}
-+
-+	pm_suspend_ignore_children(dev, true);
-+	pm_runtime_enable(dev);
-+
-+	ret = v4l2_device_register(dev, &ceudev->v4l2_dev);
-+	if (ret)
-+		goto error_pm_disable;
-+
-+	if (IS_ENABLED(CONFIG_OF) && dev->of_node) {
-+		const struct of_device_id *match +				of_match_device(ceu_of_match, dev);
-+		struct ceu_data *ceu_data = (struct ceu_data *) match->data;
-+
-+		ceudev->irq_mask = ceu_data->irq_mask;
-+		num_subdevs = ceu_parse_dt(ceudev);
-+	} else if (dev->platform_data) {
-+		/* Assume SH4 if booting with platform data. */
-+		ceudev->irq_mask = CEU_CETCR_ALL_IRQS_SH4;
-+		num_subdevs = ceu_parse_platform_data(ceudev,
-+						      dev->platform_data);
-+	} else {
-+		num_subdevs = -EINVAL;
-+	}
-+
-+	if (num_subdevs < 0) {
-+		ret = num_subdevs;
-+		goto error_v4l2_unregister;
-+	}
-+
-+	ceudev->notifier.v4l2_dev	= &ceudev->v4l2_dev;
-+	ceudev->notifier.subdevs	= ceudev->asds;
-+	ceudev->notifier.num_subdevs	= num_subdevs;
-+	ceudev->notifier.ops		= &ceu_notify_ops;
-+	ret = v4l2_async_notifier_register(&ceudev->v4l2_dev,
-+					   &ceudev->notifier);
-+	if (ret)
-+		goto error_v4l2_unregister;
-+
-+	dev_info(dev, "Renesas Capture Engine Unit %s\n", dev_name(dev));
-+
-+	return 0;
-+
-+error_v4l2_unregister:
-+	v4l2_device_unregister(&ceudev->v4l2_dev);
-+error_pm_disable:
-+	pm_runtime_disable(dev);
-+
-+	return ret;
-+}
-+
-+static int ceu_remove(struct platform_device *pdev)
-+{
-+	struct ceu_device *ceudev = platform_get_drvdata(pdev);
-+
-+	pm_runtime_disable(ceudev->dev);
-+
-+	v4l2_async_notifier_unregister(&ceudev->notifier);
-+
-+	v4l2_device_unregister(&ceudev->v4l2_dev);
-+
-+	video_unregister_device(&ceudev->vdev);
-+
-+	return 0;
-+}
-+
-+static const struct dev_pm_ops ceu_pm_ops = {
-+	SET_RUNTIME_PM_OPS(ceu_runtime_suspend,
-+			   ceu_runtime_resume,
-+			   NULL)
-+};
-+
-+static struct platform_driver ceu_driver = {
-+	.driver		= {
-+		.name	= DRIVER_NAME,
-+		.pm	= &ceu_pm_ops,
-+		.of_match_table = of_match_ptr(ceu_of_match),
-+	},
-+	.probe		= ceu_probe,
-+	.remove		= ceu_remove,
-+};
-+
-+module_platform_driver(ceu_driver);
-+
-+MODULE_DESCRIPTION("Renesas CEU camera driver");
-+MODULE_AUTHOR("Jacopo Mondi <jacopo+renesas@jmondi.org>");
-+MODULE_LICENSE("GPL");
+ static inline const struct dma_map_ops *get_arch_dma_ops(struct bus_type *bus)
+ {
+diff --git a/arch/powerpc/kernel/dma-iommu.c b/arch/powerpc/kernel/dma-iommu.c
+index 66f33e7f8d40..f9fe2080ceb9 100644
+--- a/arch/powerpc/kernel/dma-iommu.c
++++ b/arch/powerpc/kernel/dma-iommu.c
+@@ -114,7 +114,7 @@ int dma_iommu_mapping_error(struct device *dev, dma_addr_t dma_addr)
+ struct dma_map_ops dma_iommu_ops = {
+ 	.alloc			= dma_iommu_alloc_coherent,
+ 	.free			= dma_iommu_free_coherent,
+-	.mmap			= dma_direct_mmap_coherent,
++	.mmap			= dma_nommu_mmap_coherent,
+ 	.map_sg			= dma_iommu_map_sg,
+ 	.unmap_sg		= dma_iommu_unmap_sg,
+ 	.dma_supported		= dma_iommu_dma_supported,
+diff --git a/arch/powerpc/kernel/dma-swiotlb.c b/arch/powerpc/kernel/dma-swiotlb.c
+index d0ea7860e02b..f1e99b9cee97 100644
+--- a/arch/powerpc/kernel/dma-swiotlb.c
++++ b/arch/powerpc/kernel/dma-swiotlb.c
+@@ -47,9 +47,9 @@ static u64 swiotlb_powerpc_get_required(struct device *dev)
+  * for everything else.
+  */
+ const struct dma_map_ops swiotlb_dma_ops = {
+-	.alloc = __dma_direct_alloc_coherent,
+-	.free = __dma_direct_free_coherent,
+-	.mmap = dma_direct_mmap_coherent,
++	.alloc = __dma_nommu_alloc_coherent,
++	.free = __dma_nommu_free_coherent,
++	.mmap = dma_nommu_mmap_coherent,
+ 	.map_sg = swiotlb_map_sg_attrs,
+ 	.unmap_sg = swiotlb_unmap_sg_attrs,
+ 	.dma_supported = swiotlb_dma_supported,
+diff --git a/arch/powerpc/kernel/dma.c b/arch/powerpc/kernel/dma.c
+index df0e7bb97ab5..5d49da094a93 100644
+--- a/arch/powerpc/kernel/dma.c
++++ b/arch/powerpc/kernel/dma.c
+@@ -40,7 +40,7 @@ static u64 __maybe_unused get_pfn_limit(struct device *dev)
+ 	return pfn;
+ }
+ 
+-static int dma_direct_dma_supported(struct device *dev, u64 mask)
++static int dma_nommu_dma_supported(struct device *dev, u64 mask)
+ {
+ #ifdef CONFIG_PPC64
+ 	u64 limit = get_dma_offset(dev) + (memblock_end_of_DRAM() - 1);
+@@ -62,7 +62,7 @@ static int dma_direct_dma_supported(struct device *dev, u64 mask)
+ #endif
+ }
+ 
+-void *__dma_direct_alloc_coherent(struct device *dev, size_t size,
++void *__dma_nommu_alloc_coherent(struct device *dev, size_t size,
+ 				  dma_addr_t *dma_handle, gfp_t flag,
+ 				  unsigned long attrs)
+ {
+@@ -119,7 +119,7 @@ void *__dma_direct_alloc_coherent(struct device *dev, size_t size,
+ #endif
+ }
+ 
+-void __dma_direct_free_coherent(struct device *dev, size_t size,
++void __dma_nommu_free_coherent(struct device *dev, size_t size,
+ 				void *vaddr, dma_addr_t dma_handle,
+ 				unsigned long attrs)
+ {
+@@ -130,7 +130,7 @@ void __dma_direct_free_coherent(struct device *dev, size_t size,
+ #endif
+ }
+ 
+-static void *dma_direct_alloc_coherent(struct device *dev, size_t size,
++static void *dma_nommu_alloc_coherent(struct device *dev, size_t size,
+ 				       dma_addr_t *dma_handle, gfp_t flag,
+ 				       unsigned long attrs)
+ {
+@@ -139,8 +139,8 @@ static void *dma_direct_alloc_coherent(struct device *dev, size_t size,
+ 	/* The coherent mask may be smaller than the real mask, check if
+ 	 * we can really use the direct ops
+ 	 */
+-	if (dma_direct_dma_supported(dev, dev->coherent_dma_mask))
+-		return __dma_direct_alloc_coherent(dev, size, dma_handle,
++	if (dma_nommu_dma_supported(dev, dev->coherent_dma_mask))
++		return __dma_nommu_alloc_coherent(dev, size, dma_handle,
+ 						   flag, attrs);
+ 
+ 	/* Ok we can't ... do we have an iommu ? If not, fail */
+@@ -154,15 +154,15 @@ static void *dma_direct_alloc_coherent(struct device *dev, size_t size,
+ 				    dev_to_node(dev));
+ }
+ 
+-static void dma_direct_free_coherent(struct device *dev, size_t size,
++static void dma_nommu_free_coherent(struct device *dev, size_t size,
+ 				     void *vaddr, dma_addr_t dma_handle,
+ 				     unsigned long attrs)
+ {
+ 	struct iommu_table *iommu;
+ 
+-	/* See comments in dma_direct_alloc_coherent() */
+-	if (dma_direct_dma_supported(dev, dev->coherent_dma_mask))
+-		return __dma_direct_free_coherent(dev, size, vaddr, dma_handle,
++	/* See comments in dma_nommu_alloc_coherent() */
++	if (dma_nommu_dma_supported(dev, dev->coherent_dma_mask))
++		return __dma_nommu_free_coherent(dev, size, vaddr, dma_handle,
+ 						  attrs);
+ 	/* Maybe we used an iommu ... */
+ 	iommu = get_iommu_table_base(dev);
+@@ -175,7 +175,7 @@ static void dma_direct_free_coherent(struct device *dev, size_t size,
+ 	iommu_free_coherent(iommu, size, vaddr, dma_handle);
+ }
+ 
+-int dma_direct_mmap_coherent(struct device *dev, struct vm_area_struct *vma,
++int dma_nommu_mmap_coherent(struct device *dev, struct vm_area_struct *vma,
+ 			     void *cpu_addr, dma_addr_t handle, size_t size,
+ 			     unsigned long attrs)
+ {
+@@ -193,7 +193,7 @@ int dma_direct_mmap_coherent(struct device *dev, struct vm_area_struct *vma,
+ 			       vma->vm_page_prot);
+ }
+ 
+-static int dma_direct_map_sg(struct device *dev, struct scatterlist *sgl,
++static int dma_nommu_map_sg(struct device *dev, struct scatterlist *sgl,
+ 			     int nents, enum dma_data_direction direction,
+ 			     unsigned long attrs)
+ {
+@@ -213,13 +213,13 @@ static int dma_direct_map_sg(struct device *dev, struct scatterlist *sgl,
+ 	return nents;
+ }
+ 
+-static void dma_direct_unmap_sg(struct device *dev, struct scatterlist *sg,
++static void dma_nommu_unmap_sg(struct device *dev, struct scatterlist *sg,
+ 				int nents, enum dma_data_direction direction,
+ 				unsigned long attrs)
+ {
+ }
+ 
+-static u64 dma_direct_get_required_mask(struct device *dev)
++static u64 dma_nommu_get_required_mask(struct device *dev)
+ {
+ 	u64 end, mask;
+ 
+@@ -231,7 +231,7 @@ static u64 dma_direct_get_required_mask(struct device *dev)
+ 	return mask;
+ }
+ 
+-static inline dma_addr_t dma_direct_map_page(struct device *dev,
++static inline dma_addr_t dma_nommu_map_page(struct device *dev,
+ 					     struct page *page,
+ 					     unsigned long offset,
+ 					     size_t size,
+@@ -246,7 +246,7 @@ static inline dma_addr_t dma_direct_map_page(struct device *dev,
+ 	return page_to_phys(page) + offset + get_dma_offset(dev);
+ }
+ 
+-static inline void dma_direct_unmap_page(struct device *dev,
++static inline void dma_nommu_unmap_page(struct device *dev,
+ 					 dma_addr_t dma_address,
+ 					 size_t size,
+ 					 enum dma_data_direction direction,
+@@ -255,7 +255,7 @@ static inline void dma_direct_unmap_page(struct device *dev,
+ }
+ 
+ #ifdef CONFIG_NOT_COHERENT_CACHE
+-static inline void dma_direct_sync_sg(struct device *dev,
++static inline void dma_nommu_sync_sg(struct device *dev,
+ 		struct scatterlist *sgl, int nents,
+ 		enum dma_data_direction direction)
+ {
+@@ -266,7 +266,7 @@ static inline void dma_direct_sync_sg(struct device *dev,
+ 		__dma_sync_page(sg_page(sg), sg->offset, sg->length, direction);
+ }
+ 
+-static inline void dma_direct_sync_single(struct device *dev,
++static inline void dma_nommu_sync_single(struct device *dev,
+ 					  dma_addr_t dma_handle, size_t size,
+ 					  enum dma_data_direction direction)
+ {
+@@ -274,25 +274,25 @@ static inline void dma_direct_sync_single(struct device *dev,
+ }
+ #endif
+ 
+-const struct dma_map_ops dma_direct_ops = {
+-	.alloc				= dma_direct_alloc_coherent,
+-	.free				= dma_direct_free_coherent,
+-	.mmap				= dma_direct_mmap_coherent,
+-	.map_sg				= dma_direct_map_sg,
+-	.unmap_sg			= dma_direct_unmap_sg,
+-	.dma_supported			= dma_direct_dma_supported,
+-	.map_page			= dma_direct_map_page,
+-	.unmap_page			= dma_direct_unmap_page,
+-	.get_required_mask		= dma_direct_get_required_mask,
++const struct dma_map_ops dma_nommu_ops = {
++	.alloc				= dma_nommu_alloc_coherent,
++	.free				= dma_nommu_free_coherent,
++	.mmap				= dma_nommu_mmap_coherent,
++	.map_sg				= dma_nommu_map_sg,
++	.unmap_sg			= dma_nommu_unmap_sg,
++	.dma_supported			= dma_nommu_dma_supported,
++	.map_page			= dma_nommu_map_page,
++	.unmap_page			= dma_nommu_unmap_page,
++	.get_required_mask		= dma_nommu_get_required_mask,
+ #ifdef CONFIG_NOT_COHERENT_CACHE
+-	.sync_single_for_cpu 		= dma_direct_sync_single,
+-	.sync_single_for_device 	= dma_direct_sync_single,
+-	.sync_sg_for_cpu 		= dma_direct_sync_sg,
+-	.sync_sg_for_device 		= dma_direct_sync_sg,
++	.sync_single_for_cpu 		= dma_nommu_sync_single,
++	.sync_single_for_device 	= dma_nommu_sync_single,
++	.sync_sg_for_cpu 		= dma_nommu_sync_sg,
++	.sync_sg_for_device 		= dma_nommu_sync_sg,
+ #endif
+ 	.is_phys			= true,
+ };
+-EXPORT_SYMBOL(dma_direct_ops);
++EXPORT_SYMBOL(dma_nommu_ops);
+ 
+ int dma_set_coherent_mask(struct device *dev, u64 mask)
+ {
+@@ -303,7 +303,7 @@ int dma_set_coherent_mask(struct device *dev, u64 mask)
+ 		 * is no dma_op->set_coherent_mask() so we have to do
+ 		 * things the hard way:
+ 		 */
+-		if (get_dma_ops(dev) != &dma_direct_ops ||
++		if (get_dma_ops(dev) != &dma_nommu_ops ||
+ 		    get_iommu_table_base(dev) = NULL ||
+ 		    !dma_iommu_dma_supported(dev, mask))
+ 			return -EIO;
+diff --git a/arch/powerpc/kernel/pci-common.c b/arch/powerpc/kernel/pci-common.c
+index 0ac7aa346c69..590f4d0a6cb1 100644
+--- a/arch/powerpc/kernel/pci-common.c
++++ b/arch/powerpc/kernel/pci-common.c
+@@ -60,7 +60,7 @@ resource_size_t isa_mem_base;
+ EXPORT_SYMBOL(isa_mem_base);
+ 
+ 
+-static const struct dma_map_ops *pci_dma_ops = &dma_direct_ops;
++static const struct dma_map_ops *pci_dma_ops = &dma_nommu_ops;
+ 
+ void set_pci_dma_ops(const struct dma_map_ops *dma_ops)
+ {
+diff --git a/arch/powerpc/kernel/setup-common.c b/arch/powerpc/kernel/setup-common.c
+index 9d213542a48b..9b89df1e71ab 100644
+--- a/arch/powerpc/kernel/setup-common.c
++++ b/arch/powerpc/kernel/setup-common.c
+@@ -791,7 +791,7 @@ void arch_setup_pdev_archdata(struct platform_device *pdev)
+ {
+ 	pdev->archdata.dma_mask = DMA_BIT_MASK(32);
+ 	pdev->dev.dma_mask = &pdev->archdata.dma_mask;
+- 	set_dma_ops(&pdev->dev, &dma_direct_ops);
++ 	set_dma_ops(&pdev->dev, &dma_nommu_ops);
+ }
+ 
+ static __init void print_system_info(void)
+diff --git a/arch/powerpc/platforms/cell/iommu.c b/arch/powerpc/platforms/cell/iommu.c
+index 4b91ad08eefd..12352a58072a 100644
+--- a/arch/powerpc/platforms/cell/iommu.c
++++ b/arch/powerpc/platforms/cell/iommu.c
+@@ -541,7 +541,7 @@ static struct cbe_iommu *cell_iommu_for_node(int nid)
+ 	return NULL;
+ }
+ 
+-static unsigned long cell_dma_direct_offset;
++static unsigned long cell_dma_nommu_offset;
+ 
+ static unsigned long dma_iommu_fixed_base;
+ 
+@@ -580,7 +580,7 @@ static void *dma_fixed_alloc_coherent(struct device *dev, size_t size,
+ 					    device_to_mask(dev), flag,
+ 					    dev_to_node(dev));
+ 	else
+-		return dma_direct_ops.alloc(dev, size, dma_handle, flag,
++		return dma_nommu_ops.alloc(dev, size, dma_handle, flag,
+ 					    attrs);
+ }
+ 
+@@ -592,7 +592,7 @@ static void dma_fixed_free_coherent(struct device *dev, size_t size,
+ 		iommu_free_coherent(cell_get_iommu_table(dev), size, vaddr,
+ 				    dma_handle);
+ 	else
+-		dma_direct_ops.free(dev, size, vaddr, dma_handle, attrs);
++		dma_nommu_ops.free(dev, size, vaddr, dma_handle, attrs);
+ }
+ 
+ static dma_addr_t dma_fixed_map_page(struct device *dev, struct page *page,
+@@ -601,7 +601,7 @@ static dma_addr_t dma_fixed_map_page(struct device *dev, struct page *page,
+ 				     unsigned long attrs)
+ {
+ 	if (iommu_fixed_is_weak = (attrs & DMA_ATTR_WEAK_ORDERING))
+-		return dma_direct_ops.map_page(dev, page, offset, size,
++		return dma_nommu_ops.map_page(dev, page, offset, size,
+ 					       direction, attrs);
+ 	else
+ 		return iommu_map_page(dev, cell_get_iommu_table(dev), page,
+@@ -614,7 +614,7 @@ static void dma_fixed_unmap_page(struct device *dev, dma_addr_t dma_addr,
+ 				 unsigned long attrs)
+ {
+ 	if (iommu_fixed_is_weak = (attrs & DMA_ATTR_WEAK_ORDERING))
+-		dma_direct_ops.unmap_page(dev, dma_addr, size, direction,
++		dma_nommu_ops.unmap_page(dev, dma_addr, size, direction,
+ 					  attrs);
+ 	else
+ 		iommu_unmap_page(cell_get_iommu_table(dev), dma_addr, size,
+@@ -626,7 +626,7 @@ static int dma_fixed_map_sg(struct device *dev, struct scatterlist *sg,
+ 			   unsigned long attrs)
+ {
+ 	if (iommu_fixed_is_weak = (attrs & DMA_ATTR_WEAK_ORDERING))
+-		return dma_direct_ops.map_sg(dev, sg, nents, direction, attrs);
++		return dma_nommu_ops.map_sg(dev, sg, nents, direction, attrs);
+ 	else
+ 		return ppc_iommu_map_sg(dev, cell_get_iommu_table(dev), sg,
+ 					nents, device_to_mask(dev),
+@@ -638,7 +638,7 @@ static void dma_fixed_unmap_sg(struct device *dev, struct scatterlist *sg,
+ 			       unsigned long attrs)
+ {
+ 	if (iommu_fixed_is_weak = (attrs & DMA_ATTR_WEAK_ORDERING))
+-		dma_direct_ops.unmap_sg(dev, sg, nents, direction, attrs);
++		dma_nommu_ops.unmap_sg(dev, sg, nents, direction, attrs);
+ 	else
+ 		ppc_iommu_unmap_sg(cell_get_iommu_table(dev), sg, nents,
+ 				   direction, attrs);
+@@ -661,8 +661,8 @@ static void cell_dma_dev_setup(struct device *dev)
+ {
+ 	if (get_pci_dma_ops() = &dma_iommu_ops)
+ 		set_iommu_table_base(dev, cell_get_iommu_table(dev));
+-	else if (get_pci_dma_ops() = &dma_direct_ops)
+-		set_dma_offset(dev, cell_dma_direct_offset);
++	else if (get_pci_dma_ops() = &dma_nommu_ops)
++		set_dma_offset(dev, cell_dma_nommu_offset);
+ 	else
+ 		BUG();
+ }
+@@ -810,14 +810,14 @@ static int __init cell_iommu_init_disabled(void)
+ 	unsigned long base = 0, size;
+ 
+ 	/* When no iommu is present, we use direct DMA ops */
+-	set_pci_dma_ops(&dma_direct_ops);
++	set_pci_dma_ops(&dma_nommu_ops);
+ 
+ 	/* First make sure all IOC translation is turned off */
+ 	cell_disable_iommus();
+ 
+ 	/* If we have no Axon, we set up the spider DMA magic offset */
+ 	if (of_find_node_by_name(NULL, "axon") = NULL)
+-		cell_dma_direct_offset = SPIDER_DMA_OFFSET;
++		cell_dma_nommu_offset = SPIDER_DMA_OFFSET;
+ 
+ 	/* Now we need to check to see where the memory is mapped
+ 	 * in PCI space. We assume that all busses use the same dma
+@@ -851,13 +851,13 @@ static int __init cell_iommu_init_disabled(void)
+ 		return -ENODEV;
+ 	}
+ 
+-	cell_dma_direct_offset += base;
++	cell_dma_nommu_offset += base;
+ 
+-	if (cell_dma_direct_offset != 0)
++	if (cell_dma_nommu_offset != 0)
+ 		cell_pci_controller_ops.dma_dev_setup = cell_pci_dma_dev_setup;
+ 
+ 	printk("iommu: disabled, direct DMA offset is 0x%lx\n",
+-	       cell_dma_direct_offset);
++	       cell_dma_nommu_offset);
+ 
+ 	return 0;
+ }
+diff --git a/arch/powerpc/platforms/pasemi/iommu.c b/arch/powerpc/platforms/pasemi/iommu.c
+index 7fec04de27fc..78b80cbd9768 100644
+--- a/arch/powerpc/platforms/pasemi/iommu.c
++++ b/arch/powerpc/platforms/pasemi/iommu.c
+@@ -186,7 +186,7 @@ static void pci_dma_dev_setup_pasemi(struct pci_dev *dev)
+ 	 */
+ 	if (dev->vendor = 0x1959 && dev->device = 0xa007 &&
+ 	    !firmware_has_feature(FW_FEATURE_LPAR)) {
+-		dev->dev.dma_ops = &dma_direct_ops;
++		dev->dev.dma_ops = &dma_nommu_ops;
+ 		/*
+ 		 * Set the coherent DMA mask to prevent the iommu
+ 		 * being used unnecessarily
+diff --git a/arch/powerpc/platforms/pasemi/setup.c b/arch/powerpc/platforms/pasemi/setup.c
+index c4a3e93dc324..d0b8ae53660d 100644
+--- a/arch/powerpc/platforms/pasemi/setup.c
++++ b/arch/powerpc/platforms/pasemi/setup.c
+@@ -363,7 +363,7 @@ static int pcmcia_notify(struct notifier_block *nb, unsigned long action,
+ 		return 0;
+ 
+ 	/* We use the direct ops for localbus */
+-	dev->dma_ops = &dma_direct_ops;
++	dev->dma_ops = &dma_nommu_ops;
+ 
+ 	return 0;
+ }
+diff --git a/arch/powerpc/platforms/powernv/pci-ioda.c b/arch/powerpc/platforms/powernv/pci-ioda.c
+index 749055553064..9582aeb1fe4c 100644
+--- a/arch/powerpc/platforms/powernv/pci-ioda.c
++++ b/arch/powerpc/platforms/powernv/pci-ioda.c
+@@ -1850,7 +1850,7 @@ static int pnv_pci_ioda_dma_set_mask(struct pci_dev *pdev, u64 dma_mask)
+ 
+ 	if (bypass) {
+ 		dev_info(&pdev->dev, "Using 64-bit DMA iommu bypass\n");
+-		set_dma_ops(&pdev->dev, &dma_direct_ops);
++		set_dma_ops(&pdev->dev, &dma_nommu_ops);
+ 	} else {
+ 		/*
+ 		 * If the device can't set the TCE bypass bit but still wants
+@@ -1868,7 +1868,7 @@ static int pnv_pci_ioda_dma_set_mask(struct pci_dev *pdev, u64 dma_mask)
+ 				return rc;
+ 			/* 4GB offset bypasses 32-bit space */
+ 			set_dma_offset(&pdev->dev, (1ULL << 32));
+-			set_dma_ops(&pdev->dev, &dma_direct_ops);
++			set_dma_ops(&pdev->dev, &dma_nommu_ops);
+ 		} else if (dma_mask >> 32 && dma_mask != DMA_BIT_MASK(64)) {
+ 			/*
+ 			 * Fail the request if a DMA mask between 32 and 64 bits
+diff --git a/arch/powerpc/platforms/pseries/iommu.c b/arch/powerpc/platforms/pseries/iommu.c
+index 69921f72e2da..eaa11334fc8c 100644
+--- a/arch/powerpc/platforms/pseries/iommu.c
++++ b/arch/powerpc/platforms/pseries/iommu.c
+@@ -1231,7 +1231,7 @@ static int dma_set_mask_pSeriesLP(struct device *dev, u64 dma_mask)
+ 			if (dma_offset != 0) {
+ 				dev_info(dev, "Using 64-bit direct DMA at offset %llx\n", dma_offset);
+ 				set_dma_offset(dev, dma_offset);
+-				set_dma_ops(dev, &dma_direct_ops);
++				set_dma_ops(dev, &dma_nommu_ops);
+ 				ddw_enabled = true;
+ 			}
+ 		}
+diff --git a/arch/powerpc/platforms/pseries/vio.c b/arch/powerpc/platforms/pseries/vio.c
+index d86938260a86..49e04ec19238 100644
+--- a/arch/powerpc/platforms/pseries/vio.c
++++ b/arch/powerpc/platforms/pseries/vio.c
+@@ -618,7 +618,7 @@ static u64 vio_dma_get_required_mask(struct device *dev)
+ static const struct dma_map_ops vio_dma_mapping_ops = {
+ 	.alloc             = vio_dma_iommu_alloc_coherent,
+ 	.free              = vio_dma_iommu_free_coherent,
+-	.mmap		   = dma_direct_mmap_coherent,
++	.mmap		   = dma_nommu_mmap_coherent,
+ 	.map_sg            = vio_dma_iommu_map_sg,
+ 	.unmap_sg          = vio_dma_iommu_unmap_sg,
+ 	.map_page          = vio_dma_iommu_map_page,
+diff --git a/arch/powerpc/sysdev/dart_iommu.c b/arch/powerpc/sysdev/dart_iommu.c
+index 3573d54b2770..a6198d4f0f03 100644
+--- a/arch/powerpc/sysdev/dart_iommu.c
++++ b/arch/powerpc/sysdev/dart_iommu.c
+@@ -402,7 +402,7 @@ static int dart_dma_set_mask(struct device *dev, u64 dma_mask)
+ 	 */
+ 	if (dart_device_on_pcie(dev) && dma_mask >= DMA_BIT_MASK(40)) {
+ 		dev_info(dev, "Using 64-bit DMA iommu bypass\n");
+-		set_dma_ops(dev, &dma_direct_ops);
++		set_dma_ops(dev, &dma_nommu_ops);
+ 	} else {
+ 		dev_info(dev, "Using 32-bit DMA via iommu\n");
+ 		set_dma_ops(dev, &dma_iommu_ops);
+@@ -446,7 +446,7 @@ void __init iommu_init_early_dart(struct pci_controller_ops *controller_ops)
+ 	controller_ops->dma_bus_setup = NULL;
+ 
+ 	/* Setup pci_dma ops */
+-	set_pci_dma_ops(&dma_direct_ops);
++	set_pci_dma_ops(&dma_nommu_ops);
+ }
+ 
+ #ifdef CONFIG_PM
+diff --git a/arch/powerpc/sysdev/fsl_pci.c b/arch/powerpc/sysdev/fsl_pci.c
+index 22d98057f773..e4d0133bbeeb 100644
+--- a/arch/powerpc/sysdev/fsl_pci.c
++++ b/arch/powerpc/sysdev/fsl_pci.c
+@@ -135,7 +135,7 @@ static int fsl_pci_dma_set_mask(struct device *dev, u64 dma_mask)
+ 	 * mapping that allows addressing any RAM address from across PCI.
+ 	 */
+ 	if (dev_is_pci(dev) && dma_mask >= pci64_dma_offset * 2 - 1) {
+-		set_dma_ops(dev, &dma_direct_ops);
++		set_dma_ops(dev, &dma_nommu_ops);
+ 		set_dma_offset(dev, pci64_dma_offset);
+ 	}
+ 
+diff --git a/drivers/misc/cxl/vphb.c b/drivers/misc/cxl/vphb.c
+index 512a4897dbf6..7fd0bdc1436a 100644
+--- a/drivers/misc/cxl/vphb.c
++++ b/drivers/misc/cxl/vphb.c
+@@ -54,7 +54,7 @@ static bool cxl_pci_enable_device_hook(struct pci_dev *dev)
+ 		return false;
+ 	}
+ 
+-	set_dma_ops(&dev->dev, &dma_direct_ops);
++	set_dma_ops(&dev->dev, &dma_nommu_ops);
+ 	set_dma_offset(&dev->dev, PAGE_OFFSET);
+ 
+ 	return _cxl_pci_associate_default_context(dev, afu);
 -- 
-2.7.4
+2.14.2
 
