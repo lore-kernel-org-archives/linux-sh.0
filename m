@@ -1,40 +1,42 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 11 Dec 2017 14:50:24 +0000
-Subject: Re: [PATCH v1 09/10] v4l: i2c: Copy tw9910 soc_camera sensor driver
-Message-Id: <45852136.NkeXGtRUS2@avalon>
+From: Christoph Hellwig <hch@lst.de>
+Date: Fri, 29 Dec 2017 08:18:55 +0000
+Subject: [PATCH 51/67] set_memory.h: provide set_memory_{en,de}crypted stubs
+Message-Id: <20171229081911.2802-52-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1510743363-25798-1-git-send-email-jacopo+renesas@jmondi.org> <1510743363-25798-10-git-send-email-jacopo+renesas@jmondi.org>
-In-Reply-To: <1510743363-25798-10-git-send-email-jacopo+renesas@jmondi.org>
+References: <20171229081911.2802-1-hch@lst.de>
+In-Reply-To: <20171229081911.2802-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Jacopo Mondi <jacopo+renesas@jmondi.org>
-Cc: magnus.damm@gmail.com, geert@glider.be, mchehab@kernel.org, hverkuil@xs4all.nl, linux-renesas-soc@vger.kernel.org, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: iommu@lists.linux-foundation.org
+Cc: linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org, adi-buildroot-devel@lists.sourceforge.net, linux-c6x-dev@linux-c6x.org, linux-cris-kernel@axis.com, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-metag@vger.kernel.org, Michal Simek <monstr@monstr.eu>, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, patches@groups.riscv.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, Guan Xuetao <gxt@mprc.pku.edu.cn>, x86@kernel.org, linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Hi Jacopo,
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+---
+ include/linux/set_memory.h | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
 
-Thank you for the patch.
-
-On Wednesday, 15 November 2017 12:56:02 EET Jacopo Mondi wrote:
-> Copy the soc_camera based driver in v4l2 sensor driver directory.
-> This commit just copies the original file without modifying it.
-
-As for patch 07/10, you might want to explain why you're not patching the 
-Kconfig and Makefile here, that is because you will first convert the driver 
-away from soc-camera in the next commit.
-
-Apart from that,
-
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-
-> Signed-off-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
-> ---
->  drivers/media/i2c/tw9910.c | 999 ++++++++++++++++++++++++++++++++++++++++++
->  1 file changed, 999 insertions(+)
->  create mode 100644 drivers/media/i2c/tw9910.c
-
+diff --git a/include/linux/set_memory.h b/include/linux/set_memory.h
+index e5140648f638..da5178216da5 100644
+--- a/include/linux/set_memory.h
++++ b/include/linux/set_memory.h
+@@ -17,4 +17,16 @@ static inline int set_memory_x(unsigned long addr,  int numpages) { return 0; }
+ static inline int set_memory_nx(unsigned long addr, int numpages) { return 0; }
+ #endif
+ 
++#ifndef CONFIG_ARCH_HAS_MEM_ENCRYPT
++static inline int set_memory_encrypted(unsigned long addr, int numpages)
++{
++	return 0;
++}
++
++static inline int set_memory_decrypted(unsigned long addr, int numpages)
++{
++	return 0;
++}
++#endif /* CONFIG_ARCH_HAS_MEM_ENCRYPT */
++
+ #endif /* _LINUX_SET_MEMORY_H_ */
 -- 
-Regards,
-
-Laurent Pinchart
+2.14.2
 
