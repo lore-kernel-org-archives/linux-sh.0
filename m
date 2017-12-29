@@ -1,363 +1,91 @@
-From: Jacopo Mondi <jacopo+renesas@jmondi.org>
-Date: Thu, 28 Dec 2017 14:01:21 +0000
-Subject: [PATCH v2 9/9] media: i2c: tw9910: Remove soc_camera dependencies
-Message-Id: <1514469681-15602-10-git-send-email-jacopo+renesas@jmondi.org>
+From: Christoph Hellwig <hch@lst.de>
+Date: Fri, 29 Dec 2017 08:18:31 +0000
+Subject: [PATCH 27/67] dma-direct: add dma address sanity checks
+Message-Id: <20171229081911.2802-28-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1514469681-15602-1-git-send-email-jacopo+renesas@jmondi.org>
-In-Reply-To: <1514469681-15602-1-git-send-email-jacopo+renesas@jmondi.org>
+References: <20171229081911.2802-1-hch@lst.de>
+In-Reply-To: <20171229081911.2802-1-hch-jcswGhMUV9g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: laurent.pinchart@ideasonboard.com, magnus.damm@gmail.com, geert@glider.be, mchehab@kernel.org, hverkuil@xs4all.nl, robh+dt@kernel.org, mark.rutland@arm.com
-Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>, linux-renesas-soc@vger.kernel.org, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org
+To: iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: linux-mips-6z/3iImG2C8G8FEW9MqTrA@public.gmane.org, linux-ia64-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sparclinux-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Guan Xuetao <gxt-TG0Ac1+ktVePQbnJrJN+5g@public.gmane.org>, linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-c6x-dev-jPsnJVOj+W6hPH1hqNUYSQ@public.gmane.org, linux-hexagon-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, x86-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, linux-snps-arc-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, adi-buildroot-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, linux-m68k-cunTk1MwBs8S/qaLPR03pWD2FQJk+8+b@public.gmane.org, patches-q3qR2WxjNRFS9aJRtSZj7A@public.gmane.org, linux-metag-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, Michal Simek <monstr-pSz03upnqPeHXe+LvDLADg@public.gmane.org>, linux-parisc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-cris-kernel-VrBV9hrLPhE@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-alpha-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linuxppc-dev-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org
 
-Remove soc_camera framework dependencies from tw9910 sensor driver.
-- Handle clock and gpios
-- Register async subdevice
-- Remove soc_camera specific g/s_mbus_config operations
-- Add kernel doc to driver interface header file
-- Adjust build system
+Roughly based on the x86 pci-nommu implementation.
 
-This commit does not remove the original soc_camera based driver as long
-as other platforms depends on soc_camera-based CEU driver.
-
-Signed-off-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
+Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- drivers/media/i2c/Kconfig  |   9 +++
- drivers/media/i2c/Makefile |   1 +
- drivers/media/i2c/tw9910.c | 158 ++++++++++++++++++++++++++++-----------------
- include/media/i2c/tw9910.h |   9 +++
- 4 files changed, 116 insertions(+), 61 deletions(-)
+ lib/dma-direct.c | 32 +++++++++++++++++++++++++++++++-
+ 1 file changed, 31 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/media/i2c/Kconfig b/drivers/media/i2c/Kconfig
-index a61d7f4..804a1bf 100644
---- a/drivers/media/i2c/Kconfig
-+++ b/drivers/media/i2c/Kconfig
-@@ -423,6 +423,15 @@ config VIDEO_TW9906
- 	  To compile this driver as a module, choose M here: the
- 	  module will be called tw9906.
+diff --git a/lib/dma-direct.c b/lib/dma-direct.c
+index 0e087650e86b..ddd9dcf4e663 100644
+--- a/lib/dma-direct.c
++++ b/lib/dma-direct.c
+@@ -9,6 +9,24 @@
+ #include <linux/scatterlist.h>
+ #include <linux/pfn.h>
  
-+config VIDEO_TW9910
-+	tristate "Techwell TW9910 video decoder"
-+	depends on VIDEO_V4L2 && I2C
-+	---help---
-+	  Support for Techwell TW9910 NTSC/PAL/SECAM video decoder.
++#define DIRECT_MAPPING_ERROR		0
 +
-+	  To compile this driver as a module, choose M here: the
-+	  module will be called tw9910.
-+
- config VIDEO_VPX3220
- 	tristate "vpx3220a, vpx3216b & vpx3214c video decoders"
- 	depends on VIDEO_V4L2 && I2C
-diff --git a/drivers/media/i2c/Makefile b/drivers/media/i2c/Makefile
-index fb99293..e26544f 100644
---- a/drivers/media/i2c/Makefile
-+++ b/drivers/media/i2c/Makefile
-@@ -48,6 +48,7 @@ obj-$(CONFIG_VIDEO_TVP7002) += tvp7002.o
- obj-$(CONFIG_VIDEO_TW2804) += tw2804.o
- obj-$(CONFIG_VIDEO_TW9903) += tw9903.o
- obj-$(CONFIG_VIDEO_TW9906) += tw9906.o
-+obj-$(CONFIG_VIDEO_TW9910) += tw9910.o
- obj-$(CONFIG_VIDEO_CS3308) += cs3308.o
- obj-$(CONFIG_VIDEO_CS5345) += cs5345.o
- obj-$(CONFIG_VIDEO_CS53L32A) += cs53l32a.o
-diff --git a/drivers/media/i2c/tw9910.c b/drivers/media/i2c/tw9910.c
-index bdb5e0a..efbdebe 100644
---- a/drivers/media/i2c/tw9910.c
-+++ b/drivers/media/i2c/tw9910.c
-@@ -1,6 +1,9 @@
-+// SPDX-License-Identifier: GPL-2.0+
- /*
-  * tw9910 Video Driver
-  *
-+ * Copyright (C) 2017 Jacopo Mondi <jacopo+renesas@jmondi.org>
-+ *
-  * Copyright (C) 2008 Renesas Solutions Corp.
-  * Kuninori Morimoto <morimoto.kuninori@renesas.com>
-  *
-@@ -10,12 +13,10 @@
-  * Copyright 2006-7 Jonathan Corbet <corbet@lwn.net>
-  * Copyright (C) 2008 Magnus Damm
-  * Copyright (C) 2008, Guennadi Liakhovetski <kernel@pengutronix.de>
-- *
-- * This program is free software; you can redistribute it and/or modify
-- * it under the terms of the GNU General Public License version 2 as
-- * published by the Free Software Foundation.
-  */
- 
-+#include <linux/clk.h>
-+#include <linux/gpio/consumer.h>
- #include <linux/init.h>
- #include <linux/module.h>
- #include <linux/i2c.h>
-@@ -25,9 +26,7 @@
- #include <linux/v4l2-mediabus.h>
- #include <linux/videodev2.h>
- 
--#include <media/soc_camera.h>
- #include <media/i2c/tw9910.h>
--#include <media/v4l2-clk.h>
- #include <media/v4l2-subdev.h>
- 
- #define GET_ID(val)  ((val & 0xF8) >> 3)
-@@ -228,8 +227,10 @@ struct tw9910_scale_ctrl {
- 
- struct tw9910_priv {
- 	struct v4l2_subdev		subdev;
--	struct v4l2_clk			*clk;
-+	struct clk			*clk;
- 	struct tw9910_video_info	*info;
-+	struct gpio_desc		*pdn_gpio;
-+	struct gpio_desc		*rstb_gpio;
- 	const struct tw9910_scale_ctrl	*scale;
- 	v4l2_std_id			norm;
- 	u32				revision;
-@@ -582,13 +583,61 @@ static int tw9910_s_register(struct v4l2_subdev *sd,
- }
- #endif
- 
-+static int tw9910_power_on(struct tw9910_priv *priv)
++static bool
++check_addr(struct device *dev, dma_addr_t dma_addr, size_t size,
++		const char *caller)
 +{
-+	struct i2c_client *client = v4l2_get_subdevdata(&priv->subdev);
-+	int ret;
-+
-+	if (priv->clk) {
-+		ret = clk_prepare_enable(priv->clk);
-+		if (ret)
-+			return ret;
++	if (unlikely(dev && !dma_capable(dev, dma_addr, size))) {
++		if (*dev->dma_mask >= DMA_BIT_MASK(32)) {
++			dev_err(dev,
++				"%s: overflow %llx+%zu of device mask %llx\n",
++				caller, (long long)dma_addr, size,
++				(long long)*dev->dma_mask);
++		}
++		return false;
 +	}
-+
-+	if (priv->pdn_gpio) {
-+		gpiod_set_value(priv->pdn_gpio, 0);
-+		usleep_range(500, 1000);
-+	}
-+
-+	/* Reset GPIOs are shared in some platforms. */
-+	priv->rstb_gpio = gpiod_get_optional(&client->dev, "rstb",
-+					     GPIOD_OUT_LOW);
-+	if (IS_ERR(priv->rstb_gpio)) {
-+		dev_info(&client->dev, "Unable to get GPIO \"rstb\"");
-+		return PTR_ERR(priv->rstb_gpio);
-+	}
-+
-+	if (priv->rstb_gpio) {
-+		gpiod_set_value(priv->rstb_gpio, 0);
-+		usleep_range(500, 1000);
-+		gpiod_set_value(priv->rstb_gpio, 1);
-+		usleep_range(500, 1000);
-+
-+		gpiod_put(priv->rstb_gpio);
-+	}
-+
-+	return 0;
++	return true;
 +}
 +
-+static int tw9910_power_off(struct tw9910_priv *priv)
+ static void *dma_direct_alloc(struct device *dev, size_t size,
+ 		dma_addr_t *dma_handle, gfp_t gfp, unsigned long attrs)
+ {
+@@ -31,7 +49,11 @@ static dma_addr_t dma_direct_map_page(struct device *dev, struct page *page,
+ 		unsigned long offset, size_t size, enum dma_data_direction dir,
+ 		unsigned long attrs)
+ {
+-	return phys_to_dma(dev, page_to_phys(page)) + offset;
++	dma_addr_t dma_addr = phys_to_dma(dev, page_to_phys(page)) + offset;
++
++	if (!check_addr(dev, dma_addr, size, __func__))
++		return DIRECT_MAPPING_ERROR;
++	return dma_addr;
+ }
+ 
+ static int dma_direct_map_sg(struct device *dev, struct scatterlist *sgl,
+@@ -44,17 +66,25 @@ static int dma_direct_map_sg(struct device *dev, struct scatterlist *sgl,
+ 		BUG_ON(!sg_page(sg));
+ 
+ 		sg_dma_address(sg) = phys_to_dma(dev, sg_phys(sg));
++		if (!check_addr(dev, sg_dma_address(sg), sg->length, __func__))
++			return 0;
+ 		sg_dma_len(sg) = sg->length;
+ 	}
+ 
+ 	return nents;
+ }
+ 
++static int dma_direct_mapping_error(struct device *dev, dma_addr_t dma_addr)
 +{
-+	clk_disable_unprepare(priv->clk);
-+
-+	if (priv->pdn_gpio) {
-+		gpiod_set_value(priv->pdn_gpio, 1);
-+		usleep_range(500, 1000);
-+	}
-+
-+	return 0;
++	return dma_addr = DIRECT_MAPPING_ERROR;
 +}
 +
- static int tw9910_s_power(struct v4l2_subdev *sd, int on)
- {
- 	struct i2c_client *client = v4l2_get_subdevdata(sd);
--	struct soc_camera_subdev_desc *ssdd = soc_camera_i2c_to_desc(client);
- 	struct tw9910_priv *priv = to_tw9910(client);
- 
--	return soc_camera_set_power(&client->dev, ssdd, priv->clk, on);
-+	return on ? tw9910_power_on(priv) :
-+		    tw9910_power_off(priv);
- }
- 
- static int tw9910_set_frame(struct v4l2_subdev *sd, u32 *width, u32 *height)
-@@ -614,7 +663,7 @@ static int tw9910_set_frame(struct v4l2_subdev *sd, u32 *width, u32 *height)
- 	 * set bus width
- 	 */
- 	val = 0x00;
--	if (SOCAM_DATAWIDTH_16 = priv->info->buswidth)
-+	if (priv->info->buswidth = 16)
- 		val = LEN;
- 
- 	ret = tw9910_mask_set(client, OPFORM, LEN, val);
-@@ -799,8 +848,8 @@ static int tw9910_video_probe(struct i2c_client *client)
- 	/*
- 	 * tw9910 only use 8 or 16 bit bus width
- 	 */
--	if (SOCAM_DATAWIDTH_16 != priv->info->buswidth &&
--	    SOCAM_DATAWIDTH_8  != priv->info->buswidth) {
-+	if (priv->info->buswidth != 16 &&
-+	    priv->info->buswidth != 8) {
- 		dev_err(&client->dev, "bus width error\n");
- 		return -ENODEV;
- 	}
-@@ -856,45 +905,6 @@ static int tw9910_enum_mbus_code(struct v4l2_subdev *sd,
- 	return 0;
- }
- 
--static int tw9910_g_mbus_config(struct v4l2_subdev *sd,
--				struct v4l2_mbus_config *cfg)
--{
--	struct i2c_client *client = v4l2_get_subdevdata(sd);
--	struct soc_camera_subdev_desc *ssdd = soc_camera_i2c_to_desc(client);
--
--	cfg->flags = V4L2_MBUS_PCLK_SAMPLE_RISING | V4L2_MBUS_MASTER |
--		V4L2_MBUS_VSYNC_ACTIVE_HIGH | V4L2_MBUS_VSYNC_ACTIVE_LOW |
--		V4L2_MBUS_HSYNC_ACTIVE_HIGH | V4L2_MBUS_HSYNC_ACTIVE_LOW |
--		V4L2_MBUS_DATA_ACTIVE_HIGH;
--	cfg->type = V4L2_MBUS_PARALLEL;
--	cfg->flags = soc_camera_apply_board_flags(ssdd, cfg);
--
--	return 0;
--}
--
--static int tw9910_s_mbus_config(struct v4l2_subdev *sd,
--				const struct v4l2_mbus_config *cfg)
--{
--	struct i2c_client *client = v4l2_get_subdevdata(sd);
--	struct soc_camera_subdev_desc *ssdd = soc_camera_i2c_to_desc(client);
--	u8 val = VSSL_VVALID | HSSL_DVALID;
--	unsigned long flags = soc_camera_apply_board_flags(ssdd, cfg);
--
--	/*
--	 * set OUTCTR1
--	 *
--	 * We use VVALID and DVALID signals to control VSYNC and HSYNC
--	 * outputs, in this mode their polarity is inverted.
--	 */
--	if (flags & V4L2_MBUS_HSYNC_ACTIVE_LOW)
--		val |= HSP_HI;
--
--	if (flags & V4L2_MBUS_VSYNC_ACTIVE_LOW)
--		val |= VSP_HI;
--
--	return i2c_smbus_write_byte_data(client, OUTCTR1, val);
--}
--
- static int tw9910_g_tvnorms(struct v4l2_subdev *sd, v4l2_std_id *norm)
- {
- 	*norm = V4L2_STD_NTSC | V4L2_STD_PAL;
-@@ -905,8 +915,6 @@ static const struct v4l2_subdev_video_ops tw9910_subdev_video_ops = {
- 	.s_std		= tw9910_s_std,
- 	.g_std		= tw9910_g_std,
- 	.s_stream	= tw9910_s_stream,
--	.g_mbus_config	= tw9910_g_mbus_config,
--	.s_mbus_config	= tw9910_s_mbus_config,
- 	.g_tvnorms	= tw9910_g_tvnorms,
+ const struct dma_map_ops dma_direct_ops = {
+ 	.alloc			= dma_direct_alloc,
+ 	.free			= dma_direct_free,
+ 	.map_page		= dma_direct_map_page,
+ 	.map_sg			= dma_direct_map_sg,
++	.mapping_error		= dma_direct_mapping_error,
+ 	.is_phys		= true,
  };
- 
-@@ -935,15 +943,14 @@ static int tw9910_probe(struct i2c_client *client,
- 	struct tw9910_video_info	*info;
- 	struct i2c_adapter		*adapter  		to_i2c_adapter(client->dev.parent);
--	struct soc_camera_subdev_desc	*ssdd = soc_camera_i2c_to_desc(client);
- 	int ret;
- 
--	if (!ssdd || !ssdd->drv_priv) {
-+	if (!client->dev.platform_data) {
- 		dev_err(&client->dev, "TW9910: missing platform data!\n");
- 		return -EINVAL;
- 	}
- 
--	info = ssdd->drv_priv;
-+	info = client->dev.platform_data;
- 
- 	if (!i2c_check_functionality(adapter, I2C_FUNC_SMBUS_BYTE_DATA)) {
- 		dev_err(&client->dev,
-@@ -959,13 +966,37 @@ static int tw9910_probe(struct i2c_client *client,
- 
- 	v4l2_i2c_subdev_init(&priv->subdev, client, &tw9910_subdev_ops);
- 
--	priv->clk = v4l2_clk_get(&client->dev, "mclk");
--	if (IS_ERR(priv->clk))
-+	priv->clk = clk_get(&client->dev, "mclk");
-+	if (PTR_ERR(priv->clk) = -ENOENT) {
-+		priv->clk = NULL;
-+	} else if (IS_ERR(priv->clk)) {
-+		dev_err(&client->dev, "Unable to get mclk clock\n");
- 		return PTR_ERR(priv->clk);
-+	}
-+
-+	priv->pdn_gpio = gpiod_get_optional(&client->dev, "pdn",
-+					    GPIOD_OUT_HIGH);
-+	if (IS_ERR(priv->pdn_gpio)) {
-+		dev_info(&client->dev, "Unable to get GPIO \"pdn\"");
-+		ret = PTR_ERR(priv->pdn_gpio);
-+		goto error_clk_put;
-+	}
- 
- 	ret = tw9910_video_probe(client);
- 	if (ret < 0)
--		v4l2_clk_put(priv->clk);
-+		goto error_gpio_put;
-+
-+	ret = v4l2_async_register_subdev(&priv->subdev);
-+	if (ret)
-+		goto error_gpio_put;
-+
-+	return ret;
-+
-+error_gpio_put:
-+	if (priv->pdn_gpio)
-+		gpiod_put(priv->pdn_gpio);
-+error_clk_put:
-+	clk_put(priv->clk);
- 
- 	return ret;
- }
-@@ -973,7 +1004,12 @@ static int tw9910_probe(struct i2c_client *client,
- static int tw9910_remove(struct i2c_client *client)
- {
- 	struct tw9910_priv *priv = to_tw9910(client);
--	v4l2_clk_put(priv->clk);
-+
-+	if (priv->pdn_gpio)
-+		gpiod_put(priv->pdn_gpio);
-+	clk_put(priv->clk);
-+	v4l2_device_unregister_subdev(&priv->subdev);
-+
- 	return 0;
- }
- 
-@@ -994,6 +1030,6 @@ static struct i2c_driver tw9910_i2c_driver = {
- 
- module_i2c_driver(tw9910_i2c_driver);
- 
--MODULE_DESCRIPTION("SoC Camera driver for tw9910");
-+MODULE_DESCRIPTION("V4L2 driver for TW9910 video decoder");
- MODULE_AUTHOR("Kuninori Morimoto");
- MODULE_LICENSE("GPL v2");
-diff --git a/include/media/i2c/tw9910.h b/include/media/i2c/tw9910.h
-index 90bcf1f..bec8f7b 100644
---- a/include/media/i2c/tw9910.h
-+++ b/include/media/i2c/tw9910.h
-@@ -18,6 +18,9 @@
- 
- #include <media/soc_camera.h>
- 
-+/**
-+ * tw9910_mpout_pin - MPOUT (multi-purpose output) pin functions
-+ */
- enum tw9910_mpout_pin {
- 	TW9910_MPO_VLOSS,
- 	TW9910_MPO_HLOCK,
-@@ -29,6 +32,12 @@ enum tw9910_mpout_pin {
- 	TW9910_MPO_RTCO,
- };
- 
-+/**
-+ * tw9910_video_info -	tw9910 driver interface structure
-+ * @buswidth:		Parallel data bus width (8 or 16).
-+ * @mpout:		Selected function of MPOUT (multi-purpose output) pin.
-+ *			See &enum tw9910_mpout_pin
-+ */
- struct tw9910_video_info {
- 	unsigned long		buswidth;
- 	enum tw9910_mpout_pin	mpout;
+ EXPORT_SYMBOL(dma_direct_ops);
 -- 
-2.7.4
+2.14.2
 
