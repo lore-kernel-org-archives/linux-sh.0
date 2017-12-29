@@ -1,54 +1,35 @@
-From: Sergey Senozhatsky <sergey.senozhatsky.work@gmail.com>
-Date: Mon, 11 Dec 2017 12:50:15 +0000
-Subject: [PATCH 03/13] c6x: do not use print_symbol()
-Message-Id: <20171211125025.2270-4-sergey.senozhatsky@gmail.com>
+From: Christoph Hellwig <hch@lst.de>
+Date: Fri, 29 Dec 2017 08:18:51 +0000
+Subject: [PATCH 47/67] swiotlb: wire up ->dma_supported in swiotlb_dma_ops
+Message-Id: <20171229081911.2802-48-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20171211125025.2270-1-sergey.senozhatsky@gmail.com>
-In-Reply-To: <20171211125025.2270-1-sergey.senozhatsky@gmail.com>
+References: <20171229081911.2802-1-hch@lst.de>
+In-Reply-To: <20171229081911.2802-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: iommu@lists.linux-foundation.org
+Cc: linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org, adi-buildroot-devel@lists.sourceforge.net, linux-c6x-dev@linux-c6x.org, linux-cris-kernel@axis.com, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-metag@vger.kernel.org, Michal Simek <monstr@monstr.eu>, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, patches@groups.riscv.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, Guan Xuetao <gxt@mprc.pku.edu.cn>, x86@kernel.org, linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org
 
-print_symbol() uses extra stack space to sprintf() symbol
-information and then to feed that buffer to printk()
+To properly reject too small DMA masks based on the addressability of the
+bounce buffer.
 
-  char buffer[KSYM_SYMBOL_LEN];
-
-  sprint_symbol(buffer, address);
-  printk(fmt, buffer);
-
-Replace print_symbol() with a direct printk("%pS") call.
-
-Signed-off-by: Sergey Senozhatsky <sergey.senozhatsky@gmail.com>
-Cc: Mark Salter <msalter@redhat.com>
-Cc: Aurelien Jacquiot <jacquiot.aurelien@gmail.com>
+Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- arch/c6x/kernel/traps.c | 4 +---
- 1 file changed, 1 insertion(+), 3 deletions(-)
+ lib/swiotlb.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/c6x/kernel/traps.c b/arch/c6x/kernel/traps.c
-index 09b8a40d5680..4c1d4b84dd2b 100644
---- a/arch/c6x/kernel/traps.c
-+++ b/arch/c6x/kernel/traps.c
-@@ -11,7 +11,6 @@
- #include <linux/module.h>
- #include <linux/ptrace.h>
- #include <linux/sched/debug.h>
--#include <linux/kallsyms.h>
- #include <linux/bug.h>
- 
- #include <asm/soc.h>
-@@ -375,8 +374,7 @@ static void show_trace(unsigned long *stack, unsigned long *endstack)
- 			if (i % 5 = 0)
- 				pr_debug("\n	    ");
- #endif
--			pr_debug(" [<%08lx>]", addr);
--			print_symbol(" %s\n", addr);
-+			pr_debug(" [<%08lx>] %pS\n", addr, (void *)addr);
- 			i++;
- 		}
- 	}
+diff --git a/lib/swiotlb.c b/lib/swiotlb.c
+index 9c100f0173bf..e0b8980334c3 100644
+--- a/lib/swiotlb.c
++++ b/lib/swiotlb.c
+@@ -1125,5 +1125,6 @@ const struct dma_map_ops swiotlb_dma_ops = {
+ 	.unmap_sg		= swiotlb_unmap_sg_attrs,
+ 	.map_page		= swiotlb_map_page,
+ 	.unmap_page		= swiotlb_unmap_page,
++	.dma_supported		= swiotlb_dma_supported,
+ };
+ #endif /* CONFIG_DMA_DIRECT_OPS */
 -- 
-2.15.1
+2.14.2
 
