@@ -1,84 +1,34 @@
 From: Christoph Hellwig <hch@lst.de>
-Date: Fri, 29 Dec 2017 08:18:53 +0000
-Subject: [PATCH 49/67] swiotlb: refactor coherent buffer freeing
-Message-Id: <20171229081911.2802-50-hch@lst.de>
+Date: Fri, 29 Dec 2017 08:18:12 +0000
+Subject: [PATCH 08/67] powerpc: remove unused flush_write_buffers definition
+Message-Id: <20171229081911.2802-9-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20171229081911.2802-1-hch@lst.de>
-In-Reply-To: <20171229081911.2802-1-hch@lst.de>
+In-Reply-To: <20171229081911.2802-1-hch-jcswGhMUV9g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: iommu@lists.linux-foundation.org
-Cc: linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org, adi-buildroot-devel@lists.sourceforge.net, linux-c6x-dev@linux-c6x.org, linux-cris-kernel@axis.com, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-metag@vger.kernel.org, Michal Simek <monstr@monstr.eu>, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, patches@groups.riscv.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, Guan Xuetao <gxt@mprc.pku.edu.cn>, x86@kernel.org, linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org
-
-Factor out a new swiotlb_free_buffer helper that checks if an address
-is allocated from the swiotlb bounce buffer, and if yes frees it.
-
-This allows to simplify the swiotlb_free implemenation that uses
-dma_direct_free to free the non-bounce buffer allocations.
+To: iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: linux-mips-6z/3iImG2C8G8FEW9MqTrA@public.gmane.org, linux-ia64-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sparclinux-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Guan Xuetao <gxt-TG0Ac1+ktVePQbnJrJN+5g@public.gmane.org>, linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-c6x-dev-jPsnJVOj+W6hPH1hqNUYSQ@public.gmane.org, linux-hexagon-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, x86-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, linux-snps-arc-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, adi-buildroot-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, linux-m68k-cunTk1MwBs8S/qaLPR03pWD2FQJk+8+b@public.gmane.org, patches-q3qR2WxjNRFS9aJRtSZj7A@public.gmane.org, linux-metag-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, Michal Simek <monstr-pSz03upnqPeHXe+LvDLADg@public.gmane.org>, linux-parisc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-cris-kernel-VrBV9hrLPhE@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-alpha-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linuxppc-dev-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- lib/swiotlb.c | 35 +++++++++++++++++++++--------------
- 1 file changed, 21 insertions(+), 14 deletions(-)
+ arch/powerpc/include/asm/dma-mapping.h | 3 ---
+ 1 file changed, 3 deletions(-)
 
-diff --git a/lib/swiotlb.c b/lib/swiotlb.c
-index a14fff30ee9d..adb4dd0091fa 100644
---- a/lib/swiotlb.c
-+++ b/lib/swiotlb.c
-@@ -773,22 +773,31 @@ swiotlb_alloc_coherent(struct device *hwdev, size_t size,
+diff --git a/arch/powerpc/include/asm/dma-mapping.h b/arch/powerpc/include/asm/dma-mapping.h
+index 5a6cbe11db6f..592c7f418aa0 100644
+--- a/arch/powerpc/include/asm/dma-mapping.h
++++ b/arch/powerpc/include/asm/dma-mapping.h
+@@ -107,9 +107,6 @@ static inline void set_dma_offset(struct device *dev, dma_addr_t off)
+ 		dev->archdata.dma_offset = off;
  }
- EXPORT_SYMBOL(swiotlb_alloc_coherent);
  
-+static bool swiotlb_free_buffer(struct device *dev, size_t size,
-+		dma_addr_t dma_addr)
-+{
-+	phys_addr_t phys_addr = dma_to_phys(dev, dma_addr);
-+
-+	WARN_ON_ONCE(irqs_disabled());
-+
-+	if (!is_swiotlb_buffer(phys_addr))
-+		return false;
-+
-+	/*
-+	 * DMA_TO_DEVICE to avoid memcpy in swiotlb_tbl_unmap_single.
-+	 * DMA_ATTR_SKIP_CPU_SYNC is optional.
-+	 */
-+	swiotlb_tbl_unmap_single(dev, phys_addr, size, DMA_TO_DEVICE,
-+				 DMA_ATTR_SKIP_CPU_SYNC);
-+	return true;
-+}
-+
- void
- swiotlb_free_coherent(struct device *hwdev, size_t size, void *vaddr,
- 		      dma_addr_t dev_addr)
- {
--	phys_addr_t paddr = dma_to_phys(hwdev, dev_addr);
+-/* this will be removed soon */
+-#define flush_write_buffers()
 -
--	WARN_ON(irqs_disabled());
--	if (!is_swiotlb_buffer(paddr))
-+	if (!swiotlb_free_buffer(hwdev, size, dev_addr))
- 		free_pages((unsigned long)vaddr, get_order(size));
--	else
--		/*
--		 * DMA_TO_DEVICE to avoid memcpy in swiotlb_tbl_unmap_single.
--		 * DMA_ATTR_SKIP_CPU_SYNC is optional.
--		 */
--		swiotlb_tbl_unmap_single(hwdev, paddr, size, DMA_TO_DEVICE,
--					 DMA_ATTR_SKIP_CPU_SYNC);
- }
- EXPORT_SYMBOL(swiotlb_free_coherent);
- 
-@@ -1103,9 +1112,7 @@ void *swiotlb_alloc(struct device *dev, size_t size, dma_addr_t *dma_handle,
- void swiotlb_free(struct device *dev, size_t size, void *vaddr,
- 		dma_addr_t dma_addr, unsigned long attrs)
- {
--	if (is_swiotlb_buffer(dma_to_phys(dev, dma_addr)))
--		swiotlb_free_coherent(dev, size, vaddr, dma_addr);
--	else
-+	if (!swiotlb_free_buffer(dev, size, dma_addr))
- 		dma_direct_free(dev, size, vaddr, dma_addr, attrs);
- }
+ #define HAVE_ARCH_DMA_SET_MASK 1
+ extern int dma_set_mask(struct device *dev, u64 dma_mask);
  
 -- 
 2.14.2
