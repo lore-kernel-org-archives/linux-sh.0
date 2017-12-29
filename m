@@ -1,54 +1,70 @@
-From: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
-Date: Mon, 04 Dec 2017 15:09:03 +0000
-Subject: [PATCH 4/8] arch/sh: pcie-sh7786: mark unavailable PCI resource as disabled
-Message-Id: <20171204150907.24345-5-thomas.petazzoni@free-electrons.com>
+From: Christoph Hellwig <hch@lst.de>
+Date: Fri, 29 Dec 2017 08:18:37 +0000
+Subject: [PATCH 33/67] dma-direct: reject too small dma masks
+Message-Id: <20171229081911.2802-34-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20171204150907.24345-1-thomas.petazzoni@free-electrons.com>
-In-Reply-To: <20171204150907.24345-1-thomas.petazzoni@free-electrons.com>
+References: <20171229081911.2802-1-hch@lst.de>
+In-Reply-To: <20171229081911.2802-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Bjorn Helgaas <bhelgaas@google.com>, Lorenzo Pieralisi <lorenzo.pieralisi@arm.com>
-Cc: linux-sh@vger.kernel.org, linux-pci@vger.kernel.org, Geert Uytterhoeven <geert@linux-m68k.org>, Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+To: iommu@lists.linux-foundation.org
+Cc: linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org, adi-buildroot-devel@lists.sourceforge.net, linux-c6x-dev@linux-c6x.org, linux-cris-kernel@axis.com, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-metag@vger.kernel.org, Michal Simek <monstr@monstr.eu>, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, patches@groups.riscv.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, Guan Xuetao <gxt@mprc.pku.edu.cn>, x86@kernel.org, linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Some PCI MEM resources are marked as IORESOURCE_MEM_32BIT, which means
-they are only usable when the SH core runs in 32-bit mode. In 29-bit
-mode, such memory regions are not usable.
-
-The existing code for SH7786 properly skips such regions when
-configuring the PCIe controller registers. However, because such
-regions are still described in the resource array, the
-pcibios_scanbus() function in the SuperH pci.c will register them to
-the PCI core. Due to this, the PCI core will allocate MEM areas from
-this resource, and assign BARs pointing to this area, even though it's
-unusable.
-
-In order to prevent this from happening, we mark such regions as
-IORESOURCE_DISABLED, which tells the SuperH pci.c pcibios_scanbus()
-function to skip them.
-
-Note that we separate marking the region as disabled from skipping it,
-because other regions will be marked as disabled in follow-up patches.
-
-Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- arch/sh/drivers/pci/pcie-sh7786.c | 3 +++
- 1 file changed, 3 insertions(+)
+ include/linux/dma-direct.h |  1 +
+ lib/dma-direct.c           | 19 +++++++++++++++++++
+ 2 files changed, 20 insertions(+)
 
-diff --git a/arch/sh/drivers/pci/pcie-sh7786.c b/arch/sh/drivers/pci/pcie-sh7786.c
-index 45bbe6927251..c2f877b4ef7e 100644
---- a/arch/sh/drivers/pci/pcie-sh7786.c
-+++ b/arch/sh/drivers/pci/pcie-sh7786.c
-@@ -419,6 +419,9 @@ static int __init pcie_init(struct sh7786_pcie_port *port)
- 		 * mode, so just skip them entirely.
- 		 */
- 		if ((res->flags & IORESOURCE_MEM_32BIT) && __in_29bit_mode())
-+			res->flags |= IORESOURCE_DISABLED;
-+
-+		if (res->flags & IORESOURCE_DISABLED)
- 			continue;
+diff --git a/include/linux/dma-direct.h b/include/linux/dma-direct.h
+index 4788bf0bf683..bcdb1a3e4b1f 100644
+--- a/include/linux/dma-direct.h
++++ b/include/linux/dma-direct.h
+@@ -42,5 +42,6 @@ void *dma_direct_alloc(struct device *dev, size_t size, dma_addr_t *dma_handle,
+ 		gfp_t gfp, unsigned long attrs);
+ void dma_direct_free(struct device *dev, size_t size, void *cpu_addr,
+ 		dma_addr_t dma_addr, unsigned long attrs);
++int dma_direct_supported(struct device *dev, u64 mask);
  
- 		pci_write_reg(chan, 0x00000000, SH4A_PCIEPTCTLR(win));
+ #endif /* _LINUX_DMA_DIRECT_H */
+diff --git a/lib/dma-direct.c b/lib/dma-direct.c
+index 2e9b9494610c..5bb289483efc 100644
+--- a/lib/dma-direct.c
++++ b/lib/dma-direct.c
+@@ -123,6 +123,24 @@ static int dma_direct_map_sg(struct device *dev, struct scatterlist *sgl,
+ 	return nents;
+ }
+ 
++int dma_direct_supported(struct device *dev, u64 mask)
++{
++#ifdef CONFIG_ZONE_DMA
++	if (mask < DMA_BIT_MASK(ARCH_ZONE_DMA_BITS))
++		return 0;
++#else
++	/*
++	 * Because 32-bit DMA masks are so common we expect every architecture
++	 * to be able to satisfy them - either by not supporting more physical
++	 * memory, or by providing a ZONE_DMA32.  If neither is the case, the
++	 * architecture needs to use an IOMMU instead of the direct mapping.
++	 */
++	if (mask < DMA_BIT_MASK(32))
++		return 0;
++#endif
++	return 1;
++}
++
+ static int dma_direct_mapping_error(struct device *dev, dma_addr_t dma_addr)
+ {
+ 	return dma_addr = DIRECT_MAPPING_ERROR;
+@@ -133,6 +151,7 @@ const struct dma_map_ops dma_direct_ops = {
+ 	.free			= dma_direct_free,
+ 	.map_page		= dma_direct_map_page,
+ 	.map_sg			= dma_direct_map_sg,
++	.dma_supported		= dma_direct_supported,
+ 	.mapping_error		= dma_direct_mapping_error,
+ 	.is_phys		= true,
+ };
 -- 
-2.13.6
+2.14.2
 
