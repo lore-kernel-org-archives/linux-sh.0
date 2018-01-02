@@ -1,71 +1,46 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 03 Jan 2018 11:22:18 +0000
-Subject: Re: [PATCH v2 1/9] dt-bindings: media: Add Renesas CEU bindings
-Message-Id: <6187057.jxUe24LMpy@avalon>
+From: jacopo mondi <jacopo@jmondi.org>
+Date: Tue, 02 Jan 2018 09:00:20 +0000
+Subject: Re: [PATCH v2 6/9] v4l: i2c: Copy ov772x soc_camera sensor driver
+Message-Id: <20180102090020.GC4314@w540>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1514469681-15602-1-git-send-email-jacopo+renesas@jmondi.org> <6263435.xWGUCtEJC1@avalon> <20180103084952.GA9493@w540>
-In-Reply-To: <20180103084952.GA9493@w540>
+References: <1514469681-15602-1-git-send-email-jacopo+renesas@jmondi.org>
+ <1514469681-15602-7-git-send-email-jacopo+renesas@jmondi.org>
+ <CAOFm3uEU1ZegJgjUYXVJCTLRROtJ_KJDgf1-KiHdoJSw-5zd3Q@mail.gmail.com>
+In-Reply-To: <CAOFm3uEU1ZegJgjUYXVJCTLRROtJ_KJDgf1-KiHdoJSw-5zd3Q@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: jacopo mondi <jacopo@jmondi.org>
-Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>, magnus.damm@gmail.com, geert@glider.be, mchehab@kernel.org, hverkuil@xs4all.nl, robh+dt@kernel.org, mark.rutland@arm.com, linux-renesas-soc@vger.kernel.org, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Philippe Ombredanne <pombredanne@nexb.com>
+Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Magnus Damm <magnus.damm@gmail.com>, geert@glider.be, Mauro Carvalho Chehab <mchehab@kernel.org>, Hans Verkuil <hverkuil@xs4all.nl>, Rob Herring <robh+dt@kernel.org>, Mark Rutland <mark.rutland@arm.com>, linux-renesas-soc@vger.kernel.org, Linux Media Mailing List <linux-media@vger.kernel.org>, linux-sh@vger.kernel.org, "open list:OPEN FIRMWARE AND FLATTENED DEVICE TREE BINDINGS" <devicetree@vger.kernel.org>, LKML <linux-kernel@vger.kernel.org>
 
-Hi Jacopo,
+Hi Philippe,
+   thanks for the comment,
 
-On Wednesday, 3 January 2018 10:49:52 EET jacopo mondi wrote:
-> On Tue, Jan 02, 2018 at 01:45:30PM +0200, Laurent Pinchart wrote:
-> > On Thursday, 28 December 2017 16:01:13 EET Jacopo Mondi wrote:
-> >> Add bindings documentation for Renesas Capture Engine Unit (CEU).
-> >> 
-> >> Signed-off-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
-> >> ---
-> >> 
-> >>  .../devicetree/bindings/media/renesas,ceu.txt      | 85 +++++++++++++++
-> >>  1 file changed, 85 insertions(+)
-> >>  create mode 100644
-> >>  Documentation/devicetree/bindings/media/renesas,ceu.txt
-> >> 
-> >> diff --git a/Documentation/devicetree/bindings/media/renesas,ceu.txt
-> >> b/Documentation/devicetree/bindings/media/renesas,ceu.txt new file mode
-> >> 100644
-> >> index 0000000..f45628e
-> >> --- /dev/null
-> >> +++ b/Documentation/devicetree/bindings/media/renesas,ceu.txt
-> >> @@ -0,0 +1,85 @@
-> >>+Renesas Capture Engine Unit (CEU)
-> >> +----------------------------------------------
-> >> +
-> >> +The Capture Engine Unit is the image capture interface found on Renesas
-> >> +RZ chip series and on SH Mobile ones.
-> > 
-> > "ones" sound a bit weird. How about "... found in the Renesas SH Mobil and
-> > RZ SoCs." ?
-> > 
-> >> +The interface supports a single parallel input with data bus width up
-> >> to
-> >> +8/16 bits.
-> > 
-> > What do you mean by "up to 8/16 bits" ?
-> 
-> The input bus width can be 8 or 16 bit.
+On Fri, Dec 29, 2017 at 01:47:30PM +0100, Philippe Ombredanne wrote:
+> Jacopo,
+>
+> On Thu, Dec 28, 2017 at 3:01 PM, Jacopo Mondi <jacopo+renesas@jmondi.org> wrote:
+> > Copy the soc_camera based driver in v4l2 sensor driver directory.
+> > This commit just copies the original file without modifying it.
+> > No modification to KConfig and Makefile as soc_camera framework
+> > dependencies need to be removed first in next commit.
+>
+> Do you mind using a simpler SPDX identifier instead of this long
+> legalese boilerplate?
+> This is documented in Thomas doc patches. This applies to your entire
+> patch set of course.
 
-Then how about writing it "The CEU supports a single parallel input with a 
-data bus width of 8 or 16 bits." ?
+Please read the changelogs. In this commit I am just copying the
+already in mainline driver with no code changes. I have gathered all
+of changes in [7/9] (and in [9/9] for tw9910 driver).
 
-> On a general note: I always assumed DT bindings should describe the
-> hardware capabilities. In this case the hardware supports 8 or 16 bits
-> as input width, but the driver only cares about the 8 bits case. Which
-> one should I describe here?
+If you look at those patches, you'll notice I have replaced the
+license text with the SPDX identifier.
 
-You should describe the hardware.
+Thanks
+    j
 
-> I will fix all of yours and Geert's remarks in V3.
-
-[snip]
-
--- 
-Regards,
-
-Laurent Pinchart
-
+> Thanks!
+> --
+> Cordially
+> Philippe Ombredanne
