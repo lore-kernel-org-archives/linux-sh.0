@@ -1,78 +1,48 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Wed, 10 Jan 2018 08:00:18 +0000
-Subject: [PATCH 24/33] dma-direct: use phys_to_dma
-Message-Id: <20180110080027.13879-25-hch@lst.de>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 02 Jan 2018 10:49:48 +0000
+Subject: Re: Build regressions/improvements in v4.15-rc6
+Message-Id: <CAMuHMdXEoMH1=yWSnmDkqiZEyaBeR+DOfzVPvhmAgU2kp2zRRw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180110080027.13879-1-hch@lst.de>
-In-Reply-To: <20180110080027.13879-1-hch@lst.de>
+References: <1514890072-16256-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1514890072-16256-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: iommu@lists.linux-foundation.org
-Cc: Konrad Rzeszutek Wilk <konrad@darnok.org>, linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org, linux-c6x-dev@linux-c6x.org, linux-cris-kernel@axis.com, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-metag@vger.kernel.org, Michal Simek <monstr@monstr.eu>, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, patches@groups.riscv.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, Guan Xuetao <gxt@mprc.pku.edu.cn>, x86@kernel.org, linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
+Cc: Linux-sh list <linux-sh@vger.kernel.org>
 
-This means it uses whatever linear remapping scheme that the architecture
-provides is used in the generic dma_direct ops.
+On Tue, Jan 2, 2018 at 11:47 AM, Geert Uytterhoeven
+<geert@linux-m68k.org> wrote:
+> JFYI, when comparing v4.15-rc6[1] to v4.15-rc5[3], the summaries are:
+>   - build errors: +1/-2
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
-Reviewed-by: Vladimir Murzin <vladimir.murzin@arm.com>
----
- lib/dma-direct.c | 18 +++++++-----------
- 1 file changed, 7 insertions(+), 11 deletions(-)
+  + {standard input}: Error: unknown opcode:  => 4554, 3363, 2025,
+1819, 788, 2605, 2035, 6420, 4224, 1442, 3788, 768, 144, 3386, 2702,
+6299, 3263, 1403, 4629, 1777, 4616, 301, 464, 9439, 7321, 2938, 721,
+4287, 1032, 1984, 5457, 2796, 3891, 448, 8820, 7236, 7554, 4308, 273,
+70, 12519, 4236, 9328, 2876, 1307, 5332, 2254, 3913, 9489, 2337, 7557,
+1027, 4275, 4443, 4444, 6426, 6443, 8558, 11347, 14301, 6223, 9815,
+4327, 1329, 6096, 4571, 2099, 7573, 4034, 1458, 8141, 7666, 41, 5299,
+2863, 4566, 2853, 537, 7540, 6514, 5143, 4535, 2994, 1328, 2599, 5271,
+2714, 4172, 6621, 8955, 4617, 11573, 6478, 1469, 5160, 9075, 7523,
+3207, 1362, 1486, 527, 3007, 3636, 5323, 5272, 774, 21710, 6006, 4710,
+3621, 4556, 1545, 1717, 2493, 4578, 8289, 5020, 1404, 4193, 1515,
+11241, 604, 6572, 6181, 46, 1230, 14340, 5509, 4514, 2074, 4607, 379,
+2716, 1150, 12022, 6053, 866, 10521, 5285, 549, 2239, 1933, 2918,
+2193, 9420
 
-diff --git a/lib/dma-direct.c b/lib/dma-direct.c
-index 0ec3262a3148..12ea9653781b 100644
---- a/lib/dma-direct.c
-+++ b/lib/dma-direct.c
-@@ -1,12 +1,11 @@
- // SPDX-License-Identifier: GPL-2.0
- /*
-- *	lib/dma-noop.c
-- *
-- * DMA operations that map to physical addresses without flushing memory.
-+ * DMA operations that map physical memory directly without using an IOMMU or
-+ * flushing caches.
-  */
- #include <linux/export.h>
- #include <linux/mm.h>
--#include <linux/dma-mapping.h>
-+#include <linux/dma-direct.h>
- #include <linux/scatterlist.h>
- #include <linux/pfn.h>
- 
-@@ -17,7 +16,7 @@ static void *dma_direct_alloc(struct device *dev, size_t size,
- 
- 	ret = (void *)__get_free_pages(gfp, get_order(size));
- 	if (ret)
--		*dma_handle = virt_to_phys(ret) - PFN_PHYS(dev->dma_pfn_offset);
-+		*dma_handle = phys_to_dma(dev, virt_to_phys(ret));
- 
- 	return ret;
- }
-@@ -32,7 +31,7 @@ static dma_addr_t dma_direct_map_page(struct device *dev, struct page *page,
- 		unsigned long offset, size_t size, enum dma_data_direction dir,
- 		unsigned long attrs)
- {
--	return page_to_phys(page) + offset - PFN_PHYS(dev->dma_pfn_offset);
-+	return phys_to_dma(dev, page_to_phys(page)) + offset;
- }
- 
- static int dma_direct_map_sg(struct device *dev, struct scatterlist *sgl,
-@@ -42,12 +41,9 @@ static int dma_direct_map_sg(struct device *dev, struct scatterlist *sgl,
- 	struct scatterlist *sg;
- 
- 	for_each_sg(sgl, sg, nents, i) {
--		dma_addr_t offset = PFN_PHYS(dev->dma_pfn_offset);
--		void *va;
--
- 		BUG_ON(!sg_page(sg));
--		va = sg_virt(sg);
--		sg_dma_address(sg) = (dma_addr_t)virt_to_phys(va) - offset;
-+
-+		sg_dma_address(sg) = phys_to_dma(dev, sg_phys(sg));
- 		sg_dma_len(sg) = sg->length;
- 	}
- 
--- 
-2.14.2
+sh4/sh-randconfig
 
+> [1] http://kisskb.ellerman.id.au/kisskb/head/30a7acd573899fd8b8ac39236eff6468b195ac7d/ (all 270 configs)
+> [3] http://kisskb.ellerman.id.au/kisskb/head/464e1d5f23cca236b930ef068c328a64cab78fb1/ (all 270 configs)
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
