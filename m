@@ -1,104 +1,84 @@
-From: Matthew Wilcox <willy@infradead.org>
-Date: Wed, 17 Jan 2018 20:20:51 +0000
-Subject: [PATCH v6 27/99] page cache: Convert delete_batch to XArray
-Message-Id: <20180117202203.19756-28-willy@infradead.org>
+From: Vladimir Murzin <vladimir.murzin@arm.com>
+Date: Tue, 02 Jan 2018 16:26:27 +0000
+Subject: Re: [PATCH 26/67] dma-direct: use phys_to_dma
+Message-Id: <76092d0d-3e74-9433-5fae-afc512e34b20@arm.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180117202203.19756-1-willy@infradead.org>
-In-Reply-To: <20180117202203.19756-1-willy@infradead.org>
+References: <20171229081911.2802-1-hch@lst.de>
+ <20171229081911.2802-27-hch@lst.de>
+In-Reply-To: <20171229081911.2802-27-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: linux-s390@vger.kernel.org, David Howells <dhowells@redhat.com>, linux-nilfs@vger.kernel.org, Matthew Wilcox <mawilcox@microsoft.com>, linux-sh@vger.kernel.org, intel-gfx@lists.freedesktop.org, linux-usb@vger.kernel.org, linux-remoteproc@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net, linux-xfs@vger.kernel.org, linux-mm@kvack.org, iommu@lists.linux-foundation.org, Stefano Stabellini <sstabellini@kernel.org>, linux-fsdevel@vger.kernel.org, cgroups@vger.kernel.org, Bjorn Andersson <bjorn.andersson@linaro.org>, linux-btrfs@vger.kernel.org
+To: Christoph Hellwig <hch@lst.de>, iommu@lists.linux-foundation.org
+Cc: linux-mips@linux-mips.org, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, Guan Xuetao <gxt@mprc.pku.edu.cn>, linux-arch@vger.kernel.org, linux-s390@vger.kernel.org, linux-c6x-dev@linux-c6x.org, linux-hexagon@vger.kernel.org, x86@kernel.org, linux-snps-arc@lists.infradead.org, adi-buildroot-devel@lists.sourceforge.net, linux-m68k@lists.linux-m68k.org, patches@groups.riscv.org, linux-metag@vger.kernel.org, linux-arm-kernel@lists.infradead.org, Michal Simek <monstr@monstr.eu>, linux-parisc@vger.kernel.org, linux-cris-kernel@axis.com, linux-kernel@vger.kernel.org, linux-alpha@vger.kernel.org, linuxppc-dev@lists.ozlabs.org
 
-From: Matthew Wilcox <mawilcox@microsoft.com>
+On 29/12/17 08:18, Christoph Hellwig wrote:
+> This means it uses whatever linear remapping scheme that the architecture
+> provides is used in the generic dma_direct ops.
+> 
+> Signed-off-by: Christoph Hellwig <hch@lst.de>
+> ---
+>  lib/dma-direct.c | 18 +++++++-----------
+>  1 file changed, 7 insertions(+), 11 deletions(-)
+> 
+> diff --git a/lib/dma-direct.c b/lib/dma-direct.c
+> index 439db40854b7..0e087650e86b 100644
+> --- a/lib/dma-direct.c
+> +++ b/lib/dma-direct.c
+> @@ -1,12 +1,11 @@
+>  // SPDX-License-Identifier: GPL-2.0
+>  /*
+> - *	lib/dma-noop.c
+> - *
+> - * DMA operations that map to physical addresses without flushing memory.
+> + * DMA operations that map physical memory directly without using an IOMMU or
+> + * flushing caches.
+>   */
+>  #include <linux/export.h>
+>  #include <linux/mm.h>
+> -#include <linux/dma-mapping.h>
+> +#include <linux/dma-direct.h>
+>  #include <linux/scatterlist.h>
+>  #include <linux/pfn.h>
+>  
+> @@ -17,7 +16,7 @@ static void *dma_direct_alloc(struct device *dev, size_t size,
+>  
+>  	ret = (void *)__get_free_pages(gfp, get_order(size));
+>  	if (ret)
+> -		*dma_handle = virt_to_phys(ret) - PFN_PHYS(dev->dma_pfn_offset);
+> +		*dma_handle = phys_to_dma(dev, virt_to_phys(ret));
+>  
+>  	return ret;
+>  }
+> @@ -32,7 +31,7 @@ static dma_addr_t dma_direct_map_page(struct device *dev, struct page *page,
+>  		unsigned long offset, size_t size, enum dma_data_direction dir,
+>  		unsigned long attrs)
+>  {
+> -	return page_to_phys(page) + offset - PFN_PHYS(dev->dma_pfn_offset);
+> +	return phys_to_dma(dev, page_to_phys(page)) + offset;
+>  }
+>  
+>  static int dma_direct_map_sg(struct device *dev, struct scatterlist *sgl,
+> @@ -42,12 +41,9 @@ static int dma_direct_map_sg(struct device *dev, struct scatterlist *sgl,
+>  	struct scatterlist *sg;
+>  
+>  	for_each_sg(sgl, sg, nents, i) {
+> -		dma_addr_t offset = PFN_PHYS(dev->dma_pfn_offset);
+> -		void *va;
+> -
+>  		BUG_ON(!sg_page(sg));
+> -		va = sg_virt(sg);
+> -		sg_dma_address(sg) = (dma_addr_t)virt_to_phys(va) - offset;
+> +
+> +		sg_dma_address(sg) = phys_to_dma(dev, sg_phys(sg));
+>  		sg_dma_len(sg) = sg->length;
+>  	}
+>  
+> 
 
-Rename the function from page_cache_tree_delete_batch to just
-page_cache_delete_batch.
+From ARM NOMMU perspective
 
-Signed-off-by: Matthew Wilcox <mawilcox@microsoft.com>
----
- mm/filemap.c | 28 +++++++++++++---------------
- 1 file changed, 13 insertions(+), 15 deletions(-)
+Reviewed-by: Vladimir Murzin <vladimir.murzin@arm.com>
 
-diff --git a/mm/filemap.c b/mm/filemap.c
-index 317a89df1945..d2a0031d61f5 100644
---- a/mm/filemap.c
-+++ b/mm/filemap.c
-@@ -276,7 +276,7 @@ void delete_from_page_cache(struct page *page)
- EXPORT_SYMBOL(delete_from_page_cache);
- 
- /*
-- * page_cache_tree_delete_batch - delete several pages from page cache
-+ * page_cache_delete_batch - delete several pages from page cache
-  * @mapping: the mapping to which pages belong
-  * @pvec: pagevec with pages to delete
-  *
-@@ -289,23 +289,18 @@ EXPORT_SYMBOL(delete_from_page_cache);
-  *
-  * The function expects xa_lock to be held.
-  */
--static void
--page_cache_tree_delete_batch(struct address_space *mapping,
-+static void page_cache_delete_batch(struct address_space *mapping,
- 			     struct pagevec *pvec)
- {
--	struct radix_tree_iter iter;
--	void **slot;
-+	XA_STATE(xas, &mapping->pages, pvec->pages[0]->index);
- 	int total_pages = 0;
- 	int i = 0, tail_pages = 0;
- 	struct page *page;
--	pgoff_t start;
- 
--	start = pvec->pages[0]->index;
--	radix_tree_for_each_slot(slot, &mapping->pages, &iter, start) {
-+	mapping_set_update(&xas, mapping);
-+	xas_for_each(&xas, page, ULONG_MAX) {
- 		if (i >= pagevec_count(pvec) && !tail_pages)
- 			break;
--		page = radix_tree_deref_slot_protected(slot,
--						       &mapping->pages.xa_lock);
- 		if (xa_is_value(page))
- 			continue;
- 		if (!tail_pages) {
-@@ -314,8 +309,11 @@ page_cache_tree_delete_batch(struct address_space *mapping,
- 			 * have our pages locked so they are protected from
- 			 * being removed.
- 			 */
--			if (page != pvec->pages[i])
-+			if (page != pvec->pages[i]) {
-+				VM_BUG_ON_PAGE(page->index >
-+						pvec->pages[i]->index, page);
- 				continue;
-+			}
- 			WARN_ON_ONCE(!PageLocked(page));
- 			if (PageTransHuge(page) && !PageHuge(page))
- 				tail_pages = HPAGE_PMD_NR - 1;
-@@ -326,11 +324,11 @@ page_cache_tree_delete_batch(struct address_space *mapping,
- 			 */
- 			i++;
- 		} else {
-+			VM_BUG_ON_PAGE(page->index + HPAGE_PMD_NR - tail_pages
-+					!= pvec->pages[i]->index, page);
- 			tail_pages--;
- 		}
--		radix_tree_clear_tags(&mapping->pages, iter.node, slot);
--		__radix_tree_replace(&mapping->pages, iter.node, slot, NULL,
--				workingset_lookup_update(mapping));
-+		xas_store(&xas, NULL);
- 		total_pages++;
- 	}
- 	mapping->nrpages -= total_pages;
-@@ -351,7 +349,7 @@ void delete_from_page_cache_batch(struct address_space *mapping,
- 
- 		unaccount_page_cache_page(mapping, pvec->pages[i]);
- 	}
--	page_cache_tree_delete_batch(mapping, pvec);
-+	page_cache_delete_batch(mapping, pvec);
- 	xa_unlock_irqrestore(&mapping->pages, flags);
- 
- 	for (i = 0; i < pagevec_count(pvec); i++)
--- 
-2.15.1
-
+Thanks
+Vladimir
