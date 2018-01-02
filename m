@@ -1,35 +1,48 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Fri, 12 Jan 2018 08:42:02 +0000
-Subject: [PATCH 04/34] powerpc: remove unused flush_write_buffers definition
-Message-Id: <20180112084232.2857-5-hch@lst.de>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Tue, 02 Jan 2018 10:57:51 +0000
+Subject: [PATCH] sh: shut up gcc-8 warnings
+Message-Id: <20180102105805.1688638-1-arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180112084232.2857-1-hch@lst.de>
-In-Reply-To: <20180112084232.2857-1-hch-jcswGhMUV9g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: linux-mips-6z/3iImG2C8G8FEW9MqTrA@public.gmane.org, linux-ia64-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sparclinux-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Guan Xuetao <gxt-TG0Ac1+ktVePQbnJrJN+5g@public.gmane.org>, linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-c6x-dev-jPsnJVOj+W6hPH1hqNUYSQ@public.gmane.org, linux-hexagon-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, x86-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, Konrad Rzeszutek Wilk <konrad-Gq0aWv8utHQdnm+yROfE0A@public.gmane.org>, linux-snps-arc-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, linux-m68k-cunTk1MwBs8S/qaLPR03pWD2FQJk+8+b@public.gmane.org, patches-q3qR2WxjNRFS9aJRtSZj7A@public.gmane.org, linux-metag-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, Michal Simek <monstr-pSz03upnqPeHXe+LvDLADg@public.gmane.org>, linux-parisc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-cris-kernel-VrBV9hrLPhE@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-alpha-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linuxppc-dev-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+Cc: Arnd Bergmann <arnd@arndb.de>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
+Many uses of strncpy() on sh causes  a warning like
+
+arch/sh/include/asm/string_32.h:50:42: warning: array subscript is above array bounds [-Warray-bounds]
+
+This avoids the warning by turning the pointer arithmetic into an
+integer operation that does not get checked the same way.
+
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
 ---
- arch/powerpc/include/asm/dma-mapping.h | 3 ---
- 1 file changed, 3 deletions(-)
+ arch/sh/include/asm/string_32.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/powerpc/include/asm/dma-mapping.h b/arch/powerpc/include/asm/dma-mapping.h
-index 5a6cbe11db6f..592c7f418aa0 100644
---- a/arch/powerpc/include/asm/dma-mapping.h
-+++ b/arch/powerpc/include/asm/dma-mapping.h
-@@ -107,9 +107,6 @@ static inline void set_dma_offset(struct device *dev, dma_addr_t off)
- 		dev->archdata.dma_offset = off;
- }
+diff --git a/arch/sh/include/asm/string_32.h b/arch/sh/include/asm/string_32.h
+index 55f8db6bc1d7..98ddb5bbd3b8 100644
+--- a/arch/sh/include/asm/string_32.h
++++ b/arch/sh/include/asm/string_32.h
+@@ -47,7 +47,7 @@ static inline char *strncpy(char *__dest, const char *__src, size_t __n)
+ 		" add	#1, %0\n"
+ 		"2:"
+ 		: "=r" (__dest), "=r" (__src), "=&z" (__dummy)
+-		: "0" (__dest), "1" (__src), "r" (__src+__n)
++		: "0" (__dest), "1" (__src), "r" ((uintptr_t)__src+__n)
+ 		: "memory", "t");
  
--/* this will be removed soon */
--#define flush_write_buffers()
--
- #define HAVE_ARCH_DMA_SET_MASK 1
- extern int dma_set_mask(struct device *dev, u64 dma_mask);
+ 	return __xdest;
+@@ -105,7 +105,7 @@ static inline int strncmp(const char *__cs, const char *__ct, size_t __n)
+ 		"sub	%3, %2\n"
+ 		"3:"
+ 		:"=r" (__cs), "=r" (__ct), "=&r" (__res), "=&z" (__dummy)
+-		: "0" (__cs), "1" (__ct), "r" (__cs+__n)
++		: "0" (__cs), "1" (__ct), "r" ((uintptr_t)__cs+__n)
+ 		: "t");
  
+ 	return __res;
 -- 
-2.14.2
+2.9.0
 
