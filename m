@@ -1,29 +1,24 @@
 From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 26 Jan 2018 13:56:17 +0000
-Subject: Re: [PATCH v7 00/11] Renesas Capture Engine Unit (CEU) V4L2 driver
-Message-Id: <CAMuHMdXOr52+VBD=0_xjtzPWggi2yRR-SQq3zpry=x2pZzwwJA@mail.gmail.com>
+Date: Tue, 02 Jan 2018 10:38:07 +0000
+Subject: Re: [PATCH 22/67] dma-mapping: clear harmful GFP_* flags in common code
+Message-Id: <CAMuHMdX6+E0tN-qxybQ27DoygpUsWngi8J+Fz6K2WZ=FCCuO_A@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1516974528-11120-1-git-send-email-jacopo+renesas@jmondi.org> <20180126135421.GJ17416@w540>
-In-Reply-To: <20180126135421.GJ17416@w540>
+References: <20171229081911.2802-1-hch@lst.de> <20171229081911.2802-23-hch@lst.de>
+In-Reply-To: <20171229081911.2802-23-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: jacopo mondi <jacopo@jmondi.org>
-Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Magnus Damm <magnus.damm@gmail.com>, Hans Verkuil <hverkuil@xs4all.nl>, Mauro Carvalho Chehab <mchehab@kernel.org>, Fabio Estevam <festevam@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Rob Herring <robh+dt@kernel.org>, Mark Rutland <mark.rutland@arm.com>, Philippe Ombredanne <pombredanne@nexb.com>, Linux-Renesas <linux-renesas-soc@vger.kernel.org>, Linux Media Mailing List <linux-media@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "open list:OPEN FIRMWARE AND FLATTENED DEVICE TREE BINDINGS" <devicetree@vger.kernel.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
+To: Christoph Hellwig <hch@lst.de>
+Cc: iommu@lists.linux-foundation.org, alpha <linux-alpha@vger.kernel.org>, arcml <linux-snps-arc@lists.infradead.org>, linux-arm-kernel@lists.infradead.org, adi-buildroot-devel@lists.sourceforge.net, linux-c6x-dev@linux-c6x.org, Cris <linux-cris-kernel@axis.com>, "open list:QUALCOMM HEXAGON..." <linux-hexagon@vger.kernel.org>, linux-ia64@vger.kernel.org, linux-m68k <linux-m68k@lists.linux-m68k.org>, "open list:METAG ARCHITECTURE" <linux-metag@vger.kernel.org>, Michal Simek <monstr@monstr.eu>, Linux MIPS Mailing List <linux-mips@linux-mips.org>, Parisc List <linux-parisc@vger.kernel.org>, linuxppc-dev@lists.ozlabs.org, patches@groups.riscv.org, linux-s390 <linux-s390@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, sparclinux <sparclinux@vger.kernel.or>
 
-Hi Jacopo,
-
-On Fri, Jan 26, 2018 at 2:54 PM, jacopo mondi <jacopo@jmondi.org> wrote:
-> UUUPS
+On Fri, Dec 29, 2017 at 9:18 AM, Christoph Hellwig <hch@lst.de> wrote:
+> Life the code from x86 so that we behave consistently.  In the future we
+> should probably warn if any of these is set.
 >
-> please ignore this submission as it contains patches from a previous
-> version (you may have noticed some patches in the series reports
-> [xx/09] in the subject).
->
-> I will resend.
+> Signed-off-by: Christoph Hellwig <hch@lst.de>
 
-Good. So there's still time to fix e.g. "RZ/A1-H" to "RZ/A1H" (same
-for M and L).
+For m68k:
+Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
 
 Gr{oetje,eeting}s,
 
