@@ -1,104 +1,121 @@
-From: Hans Verkuil <hverkuil@xs4all.nl>
-Date: Mon, 22 Jan 2018 10:00:50 +0000
-Subject: Re: [PATCH v6 0/9] Renesas Capture Engine Unit (CEU) V4L2 driver
-Message-Id: <2a18ce21-8efd-6182-f626-8f7c7bcaebee@xs4all.nl>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Tue, 02 Jan 2018 15:50:38 +0000
+Subject: Re: [PATCH v2 9/9] media: i2c: tw9910: Remove soc_camera dependencies
+Message-Id: <3834014.tgMKCuKOQE@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1516139101-7835-1-git-send-email-jacopo+renesas@jmondi.org>
- <6fcd22c1-19a5-e0b7-2b00-961e1cd1ebaa@xs4all.nl>
- <20180121174909.GP24926@w540>
-In-Reply-To: <20180121174909.GP24926@w540>
+References: <1514469681-15602-1-git-send-email-jacopo+renesas@jmondi.org> <1514469681-15602-10-git-send-email-jacopo+renesas@jmondi.org>
+In-Reply-To: <1514469681-15602-10-git-send-email-jacopo+renesas@jmondi.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: jacopo mondi <jacopo-AW8dsiIh9cEdnm+yROfE0A@public.gmane.org>
-Cc: Jacopo Mondi <jacopo+renesas-AW8dsiIh9cEdnm+yROfE0A@public.gmane.org>, laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org, magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, geert-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org, mchehab-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, festevam-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, sakari.ailus-X3B1VOXEql0@public.gmane.org, robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, mark.rutland-5wv7dgnIgG8@public.gmane.org, pombredanne-od1rfyK75/E@public.gmane.org, linux-renesas-soc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-media-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Jacopo Mondi <jacopo+renesas@jmondi.org>
+Cc: magnus.damm@gmail.com, geert@glider.be, mchehab@kernel.org, hverkuil@xs4all.nl, robh+dt@kernel.org, mark.rutland@arm.com, linux-renesas-soc@vger.kernel.org, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org
 
-On 21/01/18 18:49, jacopo mondi wrote:
-> Hi Hans,
-> 
-> On Fri, Jan 19, 2018 at 12:26:09PM +0100, Hans Verkuil wrote:
->> Hi Jacopo,
->>
->> On 01/16/18 22:44, Jacopo Mondi wrote:
->>> Hello,
->>>    new version of CEU after Hans' review.
->>>
->>> Added his Acked-by to most patches and closed review comments.
->>> Running v4l2-compliance, I noticed a new failure introduced by the way I now
->>> calculate the plane sizes in set/try_fmt.
->>>
->>> This is the function used to update per-plane bytesperline and sizeimage:
->>>
->>> static void ceu_update_plane_sizes(struct v4l2_plane_pix_format *plane,
->>> 				   unsigned int bpl, unsigned int szimage)
->>> {
->>> 	if (plane->bytesperline < bpl)
->>> 		plane->bytesperline = bpl;
->>> 	if (plane->sizeimage < szimage)
->>> 		plane->sizeimage = szimage;
->>> }
->>>
->>> I'm seeing a failure as v4l2-compliance requires buffers with both bytesperline
->>> and sizeimage set to MAX_INT . Hans, is this expected from v4l2-compliance?
->>> How should I handle this, if that has to be handled by the single drivers?
->>
->> I commented on this in my review of patch 3/9.
-> 
-> Fixed thank you.
-> 
->>
->>>
->>> Apart from that, here it is the output of v4l2-compliance, with the last tests
->>> failing due to the above stated reason, and two errors in try/set format due to
->>> the fact the driver is not setting ycbcr encoding after it receives an invalid
->>
->> Which driver? The CEU driver or the sensor driver? I don't actually see where
->> it fails.
->>
-> 
-> Here it is:
-> 
->                 fail: v4l2-test-formats.cpp(335): ycbcr_enc >= 0xff
->                 fail: v4l2-test-formats.cpp(451): testColorspace(pix_mp.pixelformat, pix_mp.colorspace, pix_mp.ycbcr_enc, pix_mp.quantization)
->                 fail: v4l2-test-formats.cpp(736): Video Capture Multiplanar is valid, but TRY_FMT failed to return a format
->                 test VIDIOC_TRY_FMT: FAIL
->                 fail: v4l2-test-formats.cpp(335): ycbcr_enc >= 0xff
->                 fail: v4l2-test-formats.cpp(451): testColorspace(pix_mp.pixelformat, pix_mp.colorspace, pix_mp.ycbcr_enc, pix_mp.quantization)
->                 fail: v4l2-test-formats.cpp(996): Video Capture Multiplanar is valid, but no S_FMT was implemented
->                 test VIDIOC_S_FMT: FAIL
+Hi Jacopo,
 
-Sorry, I was perhaps confusing. I meant that I couldn't see where in the code
-ycbcr_enc was not overwritten by 0 (which should have happened). You will need
-to debug a bit, I think. It could be a bug in the ceu driver or the sensor driver.
+Thank you for the patch.
 
+On Thursday, 28 December 2017 16:01:21 EET Jacopo Mondi wrote:
+> Remove soc_camera framework dependencies from tw9910 sensor driver.
+> - Handle clock and gpios
+> - Register async subdevice
+> - Remove soc_camera specific g/s_mbus_config operations
+> - Add kernel doc to driver interface header file
+> - Adjust build system
 > 
+> This commit does not remove the original soc_camera based driver as long
+> as other platforms depends on soc_camera-based CEU driver.
 > 
->>> format. I would set those, but I'm not sure what it the correct value and not
->>> all mainline drivers do that.
->>
->> In any case, the default for ycbcr_enc, xfer_func and quantization is 0.
->>
+> Signed-off-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
+> ---
+>  drivers/media/i2c/Kconfig  |   9 +++
+>  drivers/media/i2c/Makefile |   1 +
+>  drivers/media/i2c/tw9910.c | 158 ++++++++++++++++++++++++++---------------
+>  include/media/i2c/tw9910.h |   9 +++
+>  4 files changed, 116 insertions(+), 61 deletions(-)
+
+[snip]
+
+> diff --git a/drivers/media/i2c/tw9910.c b/drivers/media/i2c/tw9910.c
+> index bdb5e0a..efbdebe 100644
+> --- a/drivers/media/i2c/tw9910.c
+> +++ b/drivers/media/i2c/tw9910.c
+
+[snip]
+
+> @@ -799,8 +848,8 @@ static int tw9910_video_probe(struct i2c_client *client)
+> /*
+>  	 * tw9910 only use 8 or 16 bit bus width
+>  	 */
+> -	if (SOCAM_DATAWIDTH_16 != priv->info->buswidth &&
+> -	    SOCAM_DATAWIDTH_8  != priv->info->buswidth) {
+> +	if (priv->info->buswidth != 16 &&
+> +	    priv->info->buswidth != 8) {
+
+No need for a line break.
+
+>  		dev_err(&client->dev, "bus width error\n");
+>  		return -ENODEV;
+>  	}
+
+[snip]
+
+> @@ -959,13 +966,37 @@ static int tw9910_probe(struct i2c_client *client,
 > 
-> Thanks again. I do expect to be the sensor driver to set ycbcr_enc and
-> quantization, but from a very trivial grep on media/i2c/ I see only a
-> few drivers taking care of them (adv7511 and adv7842). What about the
-> others? I assume v4l2-compliance would not fail on them as it does on
-> ov7670, but I don't see where ycbr_enc (and others) are managed.
-
-In most cases these values are initialized to 0 (either a memset or by
-initializing the struct), which is typically all you need for sensor
-drivers. HDMI drivers are more complicated which is why you see explicit
-handling of these fields only there.
-
+>  	v4l2_i2c_subdev_init(&priv->subdev, client, &tw9910_subdev_ops);
 > 
-> Overall, with this addressed, the other issue I mentioned on patch
-> [3/9] on readbuffers clarified and frameinterval handled for ov722x, I
-> hope we're done with this series. Thanks again your continued effort
-> in reviews and guidance.
+> -	priv->clk = v4l2_clk_get(&client->dev, "mclk");
+> -	if (IS_ERR(priv->clk))
+> +	priv->clk = clk_get(&client->dev, "mclk");
 
-My pleasure!
+The clock signal is called XTI (see page 60 of http://www.tecworth.com/
+administrator/upload/200956419240864.pdf). You should add a clock alias as for 
+the ov7725.
 
+> +	if (PTR_ERR(priv->clk) = -ENOENT) {
+> +		priv->clk = NULL;
+> +	} else if (IS_ERR(priv->clk)) {
+> +		dev_err(&client->dev, "Unable to get mclk clock\n");
+>  		return PTR_ERR(priv->clk);
+> +	}
+> +
+> +	priv->pdn_gpio = gpiod_get_optional(&client->dev, "pdn",
+> +					    GPIOD_OUT_HIGH);
+> +	if (IS_ERR(priv->pdn_gpio)) {
+> +		dev_info(&client->dev, "Unable to get GPIO \"pdn\"");
+> +		ret = PTR_ERR(priv->pdn_gpio);
+> +		goto error_clk_put;
+> +	}
+> 
+>  	ret = tw9910_video_probe(client);
+>  	if (ret < 0)
+> -		v4l2_clk_put(priv->clk);
+> +		goto error_gpio_put;
+> +
+> +	ret = v4l2_async_register_subdev(&priv->subdev);
+> +	if (ret)
+> +		goto error_gpio_put;
+> +
+> +	return ret;
+> +
+> +error_gpio_put:
+> +	if (priv->pdn_gpio)
+> +		gpiod_put(priv->pdn_gpio);
+> +error_clk_put:
+> +	clk_put(priv->clk);
+> 
+>  	return ret;
+>  }
+
+[snip]
+
+With these small issues fixed, and the comments to ov7725 that apply to tw9910 
+addressed,
+
+Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+
+-- 
 Regards,
 
-	Hans
+Laurent Pinchart
 
