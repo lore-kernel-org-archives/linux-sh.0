@@ -1,38 +1,60 @@
-From: Robin Murphy <robin.murphy@arm.com>
-Date: Wed, 10 Jan 2018 16:49:58 +0000
-Subject: Re: [PATCH 27/33] dma-direct: use node local allocations for coherent memory
-Message-Id: <3f37ba8d-66fa-80e2-bbe1-77c2a4323d6b@arm.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 03 Jan 2018 20:08:14 +0000
+Subject: [PATCH 1/2] SolutionEngine771x: fix Ether platform data
+Message-Id: <20180103201133.743597164@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180110080027.13879-1-hch@lst.de>
- <20180110080027.13879-28-hch@lst.de>
- <3672aa56-b85c-5d2c-0c0e-709031b0c0a0@arm.com>
- <20180110153017.GD17790@lst.de>
-In-Reply-To: <20180110153017.GD17790@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Christoph Hellwig <hch@lst.de>
-Cc: iommu@lists.linux-foundation.org, linux-mips@linux-mips.org, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, Guan Xuetao <gxt@mprc.pku.edu.cn>, linux-arch@vger.kernel.org, linux-s390@vger.kernel.org, linux-c6x-dev@linux-c6x.org, linux-hexagon@vger.kernel.org, x86@kernel.org, Konrad Rzeszutek Wilk <konrad@darnok.org>, linux-snps-arc@lists.infradead.org, linux-m68k@lists.linux-m68k.org, patches@groups.riscv.org, linux-metag@vger.kernel.org, linux-arm-kernel@lists.infradead.org, Michal Simek <monstr@monstr.eu>, linux-parisc@vger.kernel.org, linux-cris-kernel@axis.com, linux-kernel@vger.kernel.org, linux-alpha@vger.kernel.org, linuxppc-dev@lists.ozlabs.org
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
+Cc: netdev@vger.kernel.org, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-On 10/01/18 15:30, Christoph Hellwig wrote:
-> On Wed, Jan 10, 2018 at 12:06:22PM +0000, Robin Murphy wrote:
->> On 10/01/18 08:00, Christoph Hellwig wrote:
->>> To preserve the x86 behavior.
->>
->> And combined with patch 10/22 of the SWIOTLB refactoring, this means
->> SWIOTLB allocations will also end up NUMA-aware, right? Great, that's what
->> we want on arm64 too :)
-> 
-> Well, only for swiotlb allocations that can be satisfied by
-> dma_direct_alloc.  If we actually have to fall back to the swiotlb
-> buffers there is not node affinity yet.
+The 'sh_eth' driver's probe() method would fail  on the SolutionEngine7710
+board and crash on SolutionEngine7712 board  as the platform code is
+hopelessly behind the driver's platform data --  it passes the PHY address
+instead of 'struct sh_eth_plat_data *'; pass the latter to the driver in
+order to fix the bug...
 
-Yeah, when I looked into it I reached the conclusion that per-node 
-bounce buffers probably weren't worth it - if you have to bounce you've 
-already pretty much lost the performance game, and if the CPU doing the 
-bouncing happens to be on a different node from the device you've 
-certainly lost either way. Per-node CMA zones we definitely *would* 
-like, but that's a future problem (it looks technically feasible without 
-huge infrastructure changes, but fiddly).
+Fixes: 71557a37adb5 ("[netdrvr] sh_eth: Add SH7619 support")
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Robin.
+---
+The patch is against Paul Mundt's 'linux-sh.git' repo, 'sh-latest' branch.
+
+ arch/sh/boards/mach-se/770x/setup.c |    9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
+
+Index: linux/arch/sh/boards/mach-se/770x/setup.c
+=================================--- linux.orig/arch/sh/boards/mach-se/770x/setup.c
++++ linux/arch/sh/boards/mach-se/770x/setup.c
+@@ -115,6 +115,11 @@ static struct platform_device heartbeat_
+ #if defined(CONFIG_CPU_SUBTYPE_SH7710) ||\
+ 	defined(CONFIG_CPU_SUBTYPE_SH7712)
+ /* SH771X Ethernet driver */
++static struct sh_eth_plat_data sh_eth_plat = {
++	.phy = PHY_ID,
++	.phy_interface = PHY_INTERFACE_MODE_MII,
++};
++
+ static struct resource sh_eth0_resources[] = {
+ 	[0] = {
+ 		.start = SH_ETH0_BASE,
+@@ -132,7 +137,7 @@ static struct platform_device sh_eth0_de
+ 	.name = "sh771x-ether",
+ 	.id = 0,
+ 	.dev = {
+-		.platform_data = PHY_ID,
++		.platform_data = &sh_eth_plat,
+ 	},
+ 	.num_resources = ARRAY_SIZE(sh_eth0_resources),
+ 	.resource = sh_eth0_resources,
+@@ -155,7 +160,7 @@ static struct platform_device sh_eth1_de
+ 	.name = "sh771x-ether",
+ 	.id = 1,
+ 	.dev = {
+-		.platform_data = PHY_ID,
++		.platform_data = &sh_eth_plat,
+ 	},
+ 	.num_resources = ARRAY_SIZE(sh_eth1_resources),
+ 	.resource = sh_eth1_resources,
+
