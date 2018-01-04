@@ -1,28 +1,22 @@
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Date: Wed, 17 Jan 2018 21:17:55 +0000
-Subject: Re: [PATCH v6 20/99] ida: Convert to XArray
-Message-Id: <e8c42206-e4d7-dda3-2bb7-2c1faa6ff5be@physik.fu-berlin.de>
+From: Christoph Hellwig <hch@lst.de>
+Date: Thu, 04 Jan 2018 08:45:33 +0000
+Subject: Re: [PATCH 17/67] microblaze: rename dma_direct to dma_microblaze
+Message-Id: <20180104084533.GA3135@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180117202203.19756-21-willy@infradead.org>
-In-Reply-To: <20180117202203.19756-21-willy@infradead.org>
+References: <20171229081911.2802-1-hch@lst.de> <20171229081911.2802-18-hch@lst.de> <CAGRGNgW1qwLcCAvU2Jc=3_7b-0Bu016to3cQUgVsc+ca0No_6g@mail.gmail.com>
+In-Reply-To: <CAGRGNgW1qwLcCAvU2Jc=3_7b-0Bu016to3cQUgVsc+ca0No_6g@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Julian Calaby <julian.calaby@gmail.com>
+Cc: Christoph Hellwig <hch@lst.de>, iommu@lists.linux-foundation.org, linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org, "Mailing List, Arm" <linux-arm-kernel@lists.infradead.org>, adi-buildroot-devel@lists.sourceforge.net, linux-c6x-dev@linux-c6x.org, linux-cris-kernel@axis.com, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-metag@vger.kernel.org, Michal Simek <monstr@monstr.eu>, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, patches@groups.riscv.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux <sparclinux@vger.kernel.org>, Guan Xuetao <gxt@mprc.pku.edu.cn>, x86@kernel.org, linux-arch@vger.kernel.org, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.or>
 
-Hi Matthew!
+On Fri, Dec 29, 2017 at 09:11:56PM +1100, Julian Calaby wrote:
+> Hi Christoph,
+> 
+> On Fri, Dec 29, 2017 at 7:18 PM, Christoph Hellwig <hch@lst.de> wrote:
+> > This frees the dma_direct_* namespace for a generic implementation.
+> 
+> Don't you mean "dma_nommu" not "dma_microblaze" in the subject line?
 
-On 01/17/2018 09:20 PM, Matthew Wilcox wrote:
-> Use the xarray infrstructure like we used the radix tree infrastructure.
-> This lets us get rid of idr_get_free() from the radix tree code.
-
-There's a typo: infrstructure => infratructure
-
-Cheers,
-Adrian
-
--- 
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer - glaubitz@debian.org
-`. `'   Freie Universitaet Berlin - glaubitz@physik.fu-berlin.de
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+Yes, thanks.
