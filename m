@@ -1,110 +1,99 @@
-From: Vladimir Murzin <vladimir.murzin@arm.com>
-Date: Tue, 02 Jan 2018 16:44:21 +0000
-Subject: Re: [PATCH 31/67] dma-direct: make dma_direct_{alloc, free} available to other implementations
-Message-Id: <f7aca03c-e893-d10a-7a28-bb3c9ae47900@arm.com>
+From: Jacopo Mondi <jacopo+renesas@jmondi.org>
+Date: Thu, 04 Jan 2018 16:03:08 +0000
+Subject: [PATCH v3 0/9] Renesas Capture Engine Unit (CEU) V4L2 driver
+Message-Id: <1515081797-17174-1-git-send-email-jacopo+renesas@jmondi.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20171229081911.2802-1-hch@lst.de>
- <20171229081911.2802-32-hch@lst.de>
-In-Reply-To: <20171229081911.2802-32-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Christoph Hellwig <hch@lst.de>, iommu@lists.linux-foundation.org
-Cc: linux-mips@linux-mips.org, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, Guan Xuetao <gxt@mprc.pku.edu.cn>, linux-arch@vger.kernel.org, linux-s390@vger.kernel.org, linux-c6x-dev@linux-c6x.org, linux-hexagon@vger.kernel.org, x86@kernel.org, linux-snps-arc@lists.infradead.org, adi-buildroot-devel@lists.sourceforge.net, linux-m68k@lists.linux-m68k.org, patches@groups.riscv.org, linux-metag@vger.kernel.org, linux-arm-kernel@lists.infradead.org, Michal Simek <monstr@monstr.eu>, linux-parisc@vger.kernel.org, linux-cris-kernel@axis.com, linux-kernel@vger.kernel.org, linux-alpha@vger.kernel.org, linuxppc-dev@lists.ozlabs.org
+To: laurent.pinchart@ideasonboard.com, magnus.damm@gmail.com, geert@glider.be, mchehab@kernel.org, hverkuil@xs4all.nl, festevam@gmail.com, sakari.ailus@iki.fi, robh+dt@kernel.org, mark.rutland@arm.com
+Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>, linux-renesas-soc@vger.kernel.org, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org
 
-On 29/12/17 08:18, Christoph Hellwig wrote:
-> So that they don't need to indirect through the operation vector.
-> 
-> Signed-off-by: Christoph Hellwig <hch@lst.de>
-> ---
->  arch/arm/mm/dma-mapping-nommu.c | 9 +++------
->  include/linux/dma-direct.h      | 5 +++++
->  lib/dma-direct.c                | 6 +++---
->  3 files changed, 11 insertions(+), 9 deletions(-)
-> 
-> diff --git a/arch/arm/mm/dma-mapping-nommu.c b/arch/arm/mm/dma-mapping-nommu.c
-> index 49e9831dc0f1..b4cf3e4e9d4a 100644
-> --- a/arch/arm/mm/dma-mapping-nommu.c
-> +++ b/arch/arm/mm/dma-mapping-nommu.c
-> @@ -11,7 +11,7 @@
->  
->  #include <linux/export.h>
->  #include <linux/mm.h>
-> -#include <linux/dma-mapping.h>
-> +#include <linux/dma-direct.h>
->  #include <linux/scatterlist.h>
->  
->  #include <asm/cachetype.h>
-> @@ -39,7 +39,6 @@ static void *arm_nommu_dma_alloc(struct device *dev, size_t size,
->  				 unsigned long attrs)
->  
->  {
-> -	const struct dma_map_ops *ops = &dma_direct_ops;
->  	void *ret;
->  
->  	/*
-> @@ -48,7 +47,7 @@ static void *arm_nommu_dma_alloc(struct device *dev, size_t size,
->  	 */
->  
->  	if (attrs & DMA_ATTR_NON_CONSISTENT)
-> -		return ops->alloc(dev, size, dma_handle, gfp, attrs);
-> +		return dma_direct_alloc(dev, size, dma_handle, gfp, attrs);
->  
->  	ret = dma_alloc_from_global_coherent(size, dma_handle);
->  
-> @@ -70,10 +69,8 @@ static void arm_nommu_dma_free(struct device *dev, size_t size,
->  			       void *cpu_addr, dma_addr_t dma_addr,
->  			       unsigned long attrs)
->  {
-> -	const struct dma_map_ops *ops = &dma_direct_ops;
-> -
->  	if (attrs & DMA_ATTR_NON_CONSISTENT) {
-> -		ops->free(dev, size, cpu_addr, dma_addr, attrs);
-> +		dma_direct_free(dev, size, cpu_addr, dma_addr, attrs);
->  	} else {
->  		int ret = dma_release_from_global_coherent(get_order(size),
->  							   cpu_addr);
-> diff --git a/include/linux/dma-direct.h b/include/linux/dma-direct.h
-> index 10e924b7cba7..4788bf0bf683 100644
-> --- a/include/linux/dma-direct.h
-> +++ b/include/linux/dma-direct.h
-> @@ -38,4 +38,9 @@ static inline void dma_mark_clean(void *addr, size_t size)
->  }
->  #endif /* CONFIG_ARCH_HAS_DMA_MARK_CLEAN */
->  
-> +void *dma_direct_alloc(struct device *dev, size_t size, dma_addr_t *dma_handle,
-> +		gfp_t gfp, unsigned long attrs);
-> +void dma_direct_free(struct device *dev, size_t size, void *cpu_addr,
-> +		dma_addr_t dma_addr, unsigned long attrs);
-> +
->  #endif /* _LINUX_DMA_DIRECT_H */
-> diff --git a/lib/dma-direct.c b/lib/dma-direct.c
-> index f8467cb3d89a..7e913728e099 100644
-> --- a/lib/dma-direct.c
-> +++ b/lib/dma-direct.c
-> @@ -33,8 +33,8 @@ static bool dma_coherent_ok(struct device *dev, phys_addr_t phys, size_t size)
->  	return phys_to_dma(dev, phys) + size <= dev->coherent_dma_mask;
->  }
->  
-> -static void *dma_direct_alloc(struct device *dev, size_t size,
-> -		dma_addr_t *dma_handle, gfp_t gfp, unsigned long attrs)
-> +void *dma_direct_alloc(struct device *dev, size_t size, dma_addr_t *dma_handle,
-> +		gfp_t gfp, unsigned long attrs)
->  {
->  	unsigned int count = PAGE_ALIGN(size) >> PAGE_SHIFT;
->  	int page_order = get_order(size);
-> @@ -71,7 +71,7 @@ static void *dma_direct_alloc(struct device *dev, size_t size,
->  	return page_address(page);
->  }
->  
-> -static void dma_direct_free(struct device *dev, size_t size, void *cpu_addr,
-> +void dma_direct_free(struct device *dev, size_t size, void *cpu_addr,
->  		dma_addr_t dma_addr, unsigned long attrs)
->  {
->  	unsigned int count = PAGE_ALIGN(size) >> PAGE_SHIFT;
-> 
+Hello everyone,
+    this is the third round for Renesas CEU unit.
 
-Reviewed-by: Vladimir Murzin <vladimir.murzin@arm.com>
+Patch now based on v4.15-rc6, a base tag for testing is available at:
+git://jmondi.org/linux tag:v4.15-rc6-ceu-v3-base for the interested ones.
+
+Just closed review comments received from Laurent, Geert and Fabio on v2,
+not a huge changelog in this iteration, compared to v1->v2 one.
+
+Hopefully we're close to final version, I just would like to hear about
+runtime_pm management, as I have noticed in Sakari's review of other patches
+I may have been using runtime_pm a bit naively in this driver. Just want a
+confirmation this is ok.
+
+Tested on RZ with GR-Peach and ov7670 and SH4 with Migo-R platform with ov7725.
 
 Thanks
-Vladimir
+   j
+
+v2->v3:
+- Improved DT bindings removing standard properties (pinctrl- ones and
+  remote-endpoint) not specific to this driver and improved description of
+  compatible strings
+- Remove ov772x's xlkc_rate property and set clock rate in Migo-R board file
+- Made 'xclk' clock private to ov772x driver in Migo-R board file
+- Change 'rstb' GPIO active output level and changed ov772x and tw9910 drivers
+  accordingly as suggested by Fabio
+- Minor changes in CEU driver to address Laurent's comments
+- Moved Migo-R setup patch to the end of the series to silence 0-day bot
+- Renamed tw9910 clock to 'xti' as per video decoder manual
+- Changed all SPDX identifiers to GPL-2.0 from previous GPL-2.0+
+
+v1->v2:
+ - DT
+ -- Addressed Geert's comments and added clocks for CEU to mstp6 clock source
+ -- Specified supported generic video iterfaces properties in dt-bindings and
+    simplified example
+
+ - CEU driver
+ -- Re-worked interrupt handler, interrupt management, reset(*) and capture
+    start operation
+ -- Re-worked querycap/enum_input/enum_frameintervals to fix some
+    v4l2_compliance failures
+ -- Removed soc_camera legacy operations g/s_mbus_format
+ -- Update to new notifier implementation
+ -- Fixed several comments from Hans, Laurent and Sakari
+
+ - Migo-R
+ -- Register clocks and gpios for sensor drivers in Migo-R setup
+ -- Updated sensors (tw9910 and ov772x) drivers headers and drivers to close
+    remarks from Hans and Laurent:
+ --- Removed platform callbacks and handle clocks and gpios from sensor drivers
+ --- Remove g/s_mbus_config operations
+Jacopo Mondi (9):
+  dt-bindings: media: Add Renesas CEU bindings
+  include: media: Add Renesas CEU driver interface
+  v4l: platform: Add Renesas CEU driver
+  ARM: dts: r7s72100: Add Capture Engine Unit (CEU)
+  v4l: i2c: Copy ov772x soc_camera sensor driver
+  media: i2c: ov772x: Remove soc_camera dependencies
+  v4l: i2c: Copy tw9910 soc_camera sensor driver
+  media: i2c: tw9910: Remove soc_camera dependencies
+  arch: sh: migor: Use new renesas-ceu camera driver
+
+ .../devicetree/bindings/media/renesas,ceu.txt      |   85 +
+ arch/arm/boot/dts/r7s72100.dtsi                    |   15 +-
+ arch/sh/boards/mach-migor/setup.c                  |  225 ++-
+ arch/sh/kernel/cpu/sh4a/clock-sh7722.c             |    2 +-
+ drivers/media/i2c/Kconfig                          |   20 +
+ drivers/media/i2c/Makefile                         |    2 +
+ drivers/media/i2c/ov772x.c                         | 1181 ++++++++++++++
+ drivers/media/i2c/tw9910.c                         | 1039 ++++++++++++
+ drivers/media/platform/Kconfig                     |    9 +
+ drivers/media/platform/Makefile                    |    1 +
+ drivers/media/platform/renesas-ceu.c               | 1649 ++++++++++++++++++++
+ include/media/drv-intf/renesas-ceu.h               |   26 +
+ include/media/i2c/ov772x.h                         |    6 +-
+ include/media/i2c/tw9910.h                         |    9 +
+ 14 files changed, 4138 insertions(+), 131 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/media/renesas,ceu.txt
+ create mode 100644 drivers/media/i2c/ov772x.c
+ create mode 100644 drivers/media/i2c/tw9910.c
+ create mode 100644 drivers/media/platform/renesas-ceu.c
+ create mode 100644 include/media/drv-intf/renesas-ceu.h
+
+--
+2.7.4
+
