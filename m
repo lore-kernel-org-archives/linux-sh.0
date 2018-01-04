@@ -1,14 +1,14 @@
 From: Jacopo Mondi <jacopo+renesas@jmondi.org>
-Date: Fri, 26 Jan 2018 13:55:23 +0000
-Subject: [PATCH v7 04/11] ARM: dts: r7s72100: Add Capture Engine Unit (CEU)
-Message-Id: <1516974930-11713-5-git-send-email-jacopo+renesas@jmondi.org>
+Date: Thu, 04 Jan 2018 16:03:12 +0000
+Subject: [PATCH v3 4/9] ARM: dts: r7s72100: Add Capture Engine Unit (CEU)
+Message-Id: <1515081797-17174-5-git-send-email-jacopo+renesas@jmondi.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1516974930-11713-1-git-send-email-jacopo+renesas@jmondi.org>
-In-Reply-To: <1516974930-11713-1-git-send-email-jacopo+renesas@jmondi.org>
+References: <1515081797-17174-1-git-send-email-jacopo+renesas@jmondi.org>
+In-Reply-To: <1515081797-17174-1-git-send-email-jacopo+renesas@jmondi.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: laurent.pinchart@ideasonboard.com, magnus.damm@gmail.com, geert@glider.be, hverkuil@xs4all.nl, mchehab@kernel.org, festevam@gmail.com, sakari.ailus@iki.fi, robh+dt@kernel.org, mark.rutland@arm.com, pombredanne@nexb.com
+To: laurent.pinchart@ideasonboard.com, magnus.damm@gmail.com, geert@glider.be, mchehab@kernel.org, hverkuil@xs4all.nl, festevam@gmail.com, sakari.ailus@iki.fi, robh+dt@kernel.org, mark.rutland@arm.com
 Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>, linux-renesas-soc@vger.kernel.org, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org
 
 Add Capture Engine Unit (CEU) node to device tree.
@@ -16,7 +16,6 @@ Add Capture Engine Unit (CEU) node to device tree.
 Signed-off-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
 Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
 Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Acked-by: Hans Verkuil <hans.verkuil@cisco.com>
 ---
  arch/arm/boot/dts/r7s72100.dtsi | 15 ++++++++++++---
  1 file changed, 12 insertions(+), 3 deletions(-)
