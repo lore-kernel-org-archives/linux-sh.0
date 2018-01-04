@@ -1,71 +1,115 @@
-From: jacopo mondi <jacopo@jmondi.org>
-Date: Wed, 03 Jan 2018 19:34:15 +0000
-Subject: Re: [PATCH v2 9/9] media: i2c: tw9910: Remove soc_camera dependencies
-Message-Id: <20180103193415.GI9493@w540>
+From: Jacopo Mondi <jacopo+renesas@jmondi.org>
+Date: Thu, 04 Jan 2018 16:03:09 +0000
+Subject: [PATCH v3 1/9] dt-bindings: media: Add Renesas CEU bindings
+Message-Id: <1515081797-17174-2-git-send-email-jacopo+renesas@jmondi.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1514469681-15602-1-git-send-email-jacopo+renesas@jmondi.org>
- <1514469681-15602-10-git-send-email-jacopo+renesas@jmondi.org>
- <CAOMZO5CjrXfzum7JgimGqvnM7kjMyZZdtpEhvYwO-DLnig=uMQ@mail.gmail.com>
- <20180103171347.GF9493@w540>
- <CAOMZO5Biwbwct_vBD3zXyFvFgW00JxVnFoDcQthARVLxdqPYhA@mail.gmail.com>
- <20180103173726.GH9493@w540>
- <CAOMZO5AGEt7pvjLnFN4P19qR28f2d128+80OnJ8SC59-pSgBpA@mail.gmail.com>
-In-Reply-To: <CAOMZO5AGEt7pvjLnFN4P19qR28f2d128+80OnJ8SC59-pSgBpA@mail.gmail.com>
+References: <1515081797-17174-1-git-send-email-jacopo+renesas@jmondi.org>
+In-Reply-To: <1515081797-17174-1-git-send-email-jacopo+renesas@jmondi.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Fabio Estevam <festevam@gmail.com>
-Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Magnus Damm <magnus.damm@gmail.com>, geert@glider.be, Mauro Carvalho Chehab <mchehab@kernel.org>, Hans Verkuil <hverkuil@xs4all.nl>, Rob Herring <robh+dt@kernel.org>, Mark Rutland <mark.rutland@arm.com>, linux-renesas-soc@vger.kernel.org, linux-media <linux-media@vger.kernel.org>, linux-sh@vger.kernel.org, "open list:OPEN FIRMWARE AND FLATTENED DEVICE TREE BINDINGS" <devicetree@vger.kernel.org>, linux-kernel <linux-kernel@vger.kernel.org>
+To: laurent.pinchart@ideasonboard.com, magnus.damm@gmail.com, geert@glider.be, mchehab@kernel.org, hverkuil@xs4all.nl, festevam@gmail.com, sakari.ailus@iki.fi, robh+dt@kernel.org, mark.rutland@arm.com
+Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>, linux-renesas-soc@vger.kernel.org, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Hi Fabio,
+Add bindings documentation for Renesas Capture Engine Unit (CEU).
 
-On Wed, Jan 03, 2018 at 04:14:35PM -0200, Fabio Estevam wrote:
-> On Wed, Jan 3, 2018 at 3:37 PM, jacopo mondi <jacopo@jmondi.org> wrote:
->
-> >> Initially the rest GPIO was doing:
-> >>
-> >> -       gpio_set_value(GPIO_PTT3, 0);
-> >> -       mdelay(10);
-> >> -       gpio_set_value(GPIO_PTT3, 1);
-> >> -       mdelay(10); /* wait to let chip come out of reset */
-> >
-> > And that's what my driver code does :)
->
-> No, on 5/9 you converted the original code to:
->
-> GPIO_LOOKUP("sh7722_pfc", GPIO_PTT3, "rstb", GPIO_ACTIVE_HIGH)
->
-> It should be GPIO_ACTIVE_LOW instead.
->
-> > My point is that if I read the manual and I see an active low gpio (0
-> > is reset state) then the driver code uses it as and active high one (1
-> > is the reset state), that would be weird to me.
->
-> Then on this patch you should do:
->
-> gpiod_set_value(priv->rstb_gpio, 1);  ---> This tells the GPIO to go
-> to its active state (In this case active = logic level 0)
-> usleep_range(500, 1000);
-> gpiod_set_value(priv->rstb_gpio, 0); ---> This tells the GPIO to go to
-> its inactive state (In this case inactive = logic level 1)
->
-> You can also look at Documentation/gpio/consumer.txt where the usage
-> of the gpiod_xxx API is described.
->
-> It seems you are confusing it with the legacy gpio_set_value() API
-> (Documentation/gpio/gpio-legacy.txt)
+Signed-off-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
+---
+ .../devicetree/bindings/media/renesas,ceu.txt      | 85 ++++++++++++++++++++++
+ 1 file changed, 85 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/media/renesas,ceu.txt
 
-It took you 3 email messages, but maybe I finally got it.
+diff --git a/Documentation/devicetree/bindings/media/renesas,ceu.txt b/Documentation/devicetree/bindings/media/renesas,ceu.txt
+new file mode 100644
+index 0000000..a4f3c05
+--- /dev/null
++++ b/Documentation/devicetree/bindings/media/renesas,ceu.txt
+@@ -0,0 +1,85 @@
++Renesas Capture Engine Unit (CEU)
++----------------------------------------------
++
++The Capture Engine Unit is the image capture interface found in the Renesas
++SH Mobile and RZ SoCs.
++
++The interface supports a single parallel input with data bus width of 8 or 16
++bits.
++
++Required properties:
++- compatible: Must be one of the following.
++	- "renesas,r7s72100-ceu" for CEU units found in R7S72100 (RZ/A1) SoCs.
++	- "renesas,ceu" as a generic fallback.
++
++       SH Mobile CPUs do not currently support OF, and they configure their
++	CEU interfaces using platform data. The "compatible" list will be
++	expanded once SH Mobile will be made OF-capable.
++
++- reg: Registers address base and size.
++- interrupts: The interrupt specifier.
++
++The CEU supports a single parallel input and should contain a single 'port'
++subnode with a single 'endpoint'. Connection to input devices are modeled
++according to the video interfaces OF bindings specified in:
++Documentation/devicetree/bindings/media/video-interfaces.txt
++
++Optional endpoint properties applicable to parallel input bus described in
++the above mentioned "video-interfaces.txt" file are supported by this driver:
++
++- hsync-active: Active state of the HSYNC signal, 0/1 for LOW/HIGH respectively.
++- vsync-active: Active state of the VSYNC signal, 0/1 for LOW/HIGH respectively.
++
++Example:
++
++The example describes the connection between the Capture Engine Unit and an
++OV7670 image sensor connected to i2c1 interface.
++
++ceu: ceu@e8210000 {
++	reg = <0xe8210000 0x209c>;
++	compatible = "renesas,ceu";
++	interrupts = <GIC_SPI 332 IRQ_TYPE_LEVEL_HIGH>;
++
++	pinctrl-names = "default";
++	pinctrl-0 = <&vio_pins>;
++
++	status = "okay";
++
++	port {
++		ceu_in: endpoint {
++			remote-endpoint = <&ov7670_out>;
++
++			hsync-active = <1>;
++			vsync-active = <0>;
++		};
++	};
++};
++
++i2c1: i2c@fcfee400 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2c1_pins>;
++
++	status = "okay";
++
++	clock-frequency = <100000>;
++
++	ov7670: camera@21 {
++		compatible = "ovti,ov7670";
++		reg = <0x21>;
++
++		pinctrl-names = "default";
++		pinctrl-0 = <&vio_pins>;
++
++		reset-gpios = <&port3 11 GPIO_ACTIVE_LOW>;
++		powerdown-gpios = <&port3 12 GPIO_ACTIVE_HIGH>;
++
++		port {
++			ov7670_out: endpoint {
++				remote-endpoint = <&ceu_in>;
++
++				hsync-active = <1>;
++				vsync-active = <0>;
++			};
++		};
++	};
++};
+--
+2.7.4
 
-So, 1 and 0 do not actually represent the line level but the active
-or inactive states, that's fine. This seems to me a bit inconsistent with
-the existence of flags like GPIOD_OUT_HIGH/LOW meant to be used at gpiod_get()
-time, where the actual line level has to be used instead, but that's a
-discussion surely not pertinent to this series.
-
-Thanks for your patience.
-    j
-
-
->
-> Hope this helps.
