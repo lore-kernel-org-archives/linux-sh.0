@@ -1,118 +1,61 @@
-From: Konrad Rzeszutek Wilk <konrad@darnok.org>
-Date: Fri, 12 Jan 2018 13:17:28 +0000
-Subject: Re: [PATCH 21/33] dma-mapping: add an arch_dma_supported hook
-Message-Id: <20180112131727.GB26900@localhost.localdomain>
+From: Rich Felker <dalias@libc.org>
+Date: Fri, 05 Jan 2018 21:28:57 +0000
+Subject: Re: [J-core] [PATCH v5 00/22] sh: LANDISK and R2Dplus convert to device tree
+Message-Id: <20180105212857.GR1627@brightrain.aerifal.cx>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180110080027.13879-1-hch@lst.de>
- <20180110080027.13879-22-hch@lst.de>
-In-Reply-To: <20180110080027.13879-22-hch@lst.de>
+References: <1467564402-2649-1-git-send-email-ysato@users.sourceforge.jp>
+ <c1ec211d-cbe2-1139-edb0-8baa0e7364e8@physik.fu-berlin.de>
+ <8c75b447-fc14-871e-1a04-733132527b65@landley.net>
+ <E7B2D113-C30D-4A32-AFB6-DC91DDADE0E8@physik.fu-berlin.de>
+ <20171117191706.GF1627@brightrain.aerifal.cx>
+ <7193aa1b-50e3-11d4-f93d-f567e2e06b8c@physik.fu-berlin.de>
+In-Reply-To: <7193aa1b-50e3-11d4-f93d-f567e2e06b8c@physik.fu-berlin.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Christoph Hellwig <hch@lst.de>
-Cc: iommu@lists.linux-foundation.org, linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org, linux-c6x-dev@linux-c6x.org, linux-cris-kernel@axis.com, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-metag@vger.kernel.org, Michal Simek <monstr@monstr.eu>, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, patches@groups.riscv.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, Guan Xuetao <gxt@mprc.pku.edu.cn>, x86@kernel.org, linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org
+To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc: Rob Landley <rob@landley.net>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-On Wed, Jan 10, 2018 at 09:00:15AM +0100, Christoph Hellwig wrote:
-> To implement the x86 forbid_dac and iommu_sac_force we want an arch hook
-> so that it can apply the global options across all dma_map_ops
-> implementations.
+On Fri, Nov 17, 2017 at 08:54:47PM +0100, John Paul Adrian Glaubitz wrote:
+> On 11/17/2017 08:17 PM, Rich Felker wrote:
+> > There were significant problems that I don't think were ever
+> > addressed, including incompatible changes in how boot command line was
+> > handled and possibly ambiguity about what a physical address means
+> > (zero based vs based in the zone SH3/4 excludes from MMU mapping) in
+> > the contract for how the bootloader passes a DTB pointer in to the
+> > kernel, or something similar.
 > 
-> Signed-off-by: Christoph Hellwig <hch@lst.de>
+> I see, thanks for the heads-up.
+> 
+> > This is a large part of why I want to get to the point where I can
+> > build and boot a kernel on the LANDISK -- not being able to test any
+> > of this is a blocker for moving everything to device tree.
+> 
+> I can actually help you with that. I know what to do to get the kernel
+> to boot on the LANDISK device. I've got everything working except
+> being unable to detect the IDE controller. The attached config builds
+> a kernel which boots with the attached output.
+> 
+> Furthermore, in order to install the kernel, you need to use the
+> cross-LILO version from [1] which allows to install the bootloader
+> on an x86 machine into the SuperH LANDISK image.
+> 
+> Instructions can be found in [2]. A base filesystem can be found in [3].
+> 
+> And I could also send you an USL-5P which is also a LANDISK device,
+> just in a different form-factor.
+> 
+> Adrian
+> 
+> > [1]http://iohack.osdn.jp/kogiidena/debian26/base/landisk-tools-20070612.tgz
+> > [2] https://www.with.de/fw/pub/Computing/PlextorPX-EH/LANDISKdebian.pdf
+> > [3] http://iohack.osdn.jp/kogiidena/debian26/base/
 
-Reviewed-by: Konrad Rzeszutek Wilk <konrad.wilk@oracle.com>
-> ---
->  arch/x86/include/asm/dma-mapping.h |  3 +++
->  arch/x86/kernel/pci-dma.c          | 19 ++++++++++++-------
->  include/linux/dma-mapping.h        | 11 +++++++++++
->  3 files changed, 26 insertions(+), 7 deletions(-)
-> 
-> diff --git a/arch/x86/include/asm/dma-mapping.h b/arch/x86/include/asm/dma-mapping.h
-> index dfdc9357a349..6277c83c0eb1 100644
-> --- a/arch/x86/include/asm/dma-mapping.h
-> +++ b/arch/x86/include/asm/dma-mapping.h
-> @@ -30,6 +30,9 @@ static inline const struct dma_map_ops *get_arch_dma_ops(struct bus_type *bus)
->  	return dma_ops;
->  }
->  
-> +int arch_dma_supported(struct device *dev, u64 mask);
-> +#define arch_dma_supported arch_dma_supported
-> +
->  bool arch_dma_alloc_attrs(struct device **dev, gfp_t *gfp);
->  #define arch_dma_alloc_attrs arch_dma_alloc_attrs
->  
-> diff --git a/arch/x86/kernel/pci-dma.c b/arch/x86/kernel/pci-dma.c
-> index 61a8f1cb3829..df7ab02f959f 100644
-> --- a/arch/x86/kernel/pci-dma.c
-> +++ b/arch/x86/kernel/pci-dma.c
-> @@ -215,7 +215,7 @@ static __init int iommu_setup(char *p)
->  }
->  early_param("iommu", iommu_setup);
->  
-> -int x86_dma_supported(struct device *dev, u64 mask)
-> +int arch_dma_supported(struct device *dev, u64 mask)
->  {
->  #ifdef CONFIG_PCI
->  	if (mask > 0xffffffff && forbid_dac > 0) {
-> @@ -224,12 +224,6 @@ int x86_dma_supported(struct device *dev, u64 mask)
->  	}
->  #endif
->  
-> -	/* Copied from i386. Doesn't make much sense, because it will
-> -	   only work for pci_alloc_coherent.
-> -	   The caller just has to use GFP_DMA in this case. */
-> -	if (mask < DMA_BIT_MASK(24))
-> -		return 0;
-> -
->  	/* Tell the device to use SAC when IOMMU force is on.  This
->  	   allows the driver to use cheaper accesses in some cases.
->  
-> @@ -249,6 +243,17 @@ int x86_dma_supported(struct device *dev, u64 mask)
->  
->  	return 1;
->  }
-> +EXPORT_SYMBOL(arch_dma_supported);
-> +
-> +int x86_dma_supported(struct device *dev, u64 mask)
-> +{
-> +	/* Copied from i386. Doesn't make much sense, because it will
-> +	   only work for pci_alloc_coherent.
-> +	   The caller just has to use GFP_DMA in this case. */
-> +	if (mask < DMA_BIT_MASK(24))
-> +		return 0;
-> +	return 1;
-> +}
->  
->  static int __init pci_iommu_init(void)
->  {
-> diff --git a/include/linux/dma-mapping.h b/include/linux/dma-mapping.h
-> index 88bcb1a8211d..d67742dad904 100644
-> --- a/include/linux/dma-mapping.h
-> +++ b/include/linux/dma-mapping.h
-> @@ -576,6 +576,14 @@ static inline int dma_mapping_error(struct device *dev, dma_addr_t dma_addr)
->  	return 0;
->  }
->  
-> +/*
-> + * This is a hack for the legacy x86 forbid_dac and iommu_sac_force. Please
-> + * don't use this is new code.
-> + */
-> +#ifndef arch_dma_supported
-> +#define arch_dma_supported(dev, mask)	(1)
-> +#endif
-> +
->  static inline void dma_check_mask(struct device *dev, u64 mask)
->  {
->  	if (sme_active() && (mask < (((u64)sme_get_me_mask() << 1) - 1)))
-> @@ -588,6 +596,9 @@ static inline int dma_supported(struct device *dev, u64 mask)
->  
->  	if (!ops)
->  		return 0;
-> +	if (!arch_dma_supported(dev, mask))
-> +		return 0;
-> +
->  	if (!ops->dma_supported)
->  		return 1;
->  	return ops->dma_supported(dev, mask);
-> -- 
-> 2.14.2
-> 
+I'm trying to reproduce this but can't find any documentation for
+cross-LILO in [2], much less any code except possibly the binary
+"lilo.x86" in [1]. Googling cross-lilo isn't finding anything
+meaningful except this thread. Is there anywhere to find source and
+information on what it's doing, or is this going to be something I
+have to reverse-engineer?
+
+Rich
