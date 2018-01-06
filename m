@@ -1,29 +1,44 @@
-From: David Miller <davem@davemloft.net>
-Date: Fri, 05 Jan 2018 18:59:33 +0000
-Subject: Re: [PATCH] sh_eth: fix SH7757 GEther initialization
-Message-Id: <20180105.135933.100390185879161281.davem@davemloft.net>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 06 Jan 2018 21:26:47 +0000
+Subject: [PATCH] sh_eth: fix TXALCR1 offsets
+Message-Id: <20180106212652.818833413@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180104180655.936982989@cogentembedded.com>
-In-Reply-To: <20180104180655.936982989@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: sergei.shtylyov@cogentembedded.com
-Cc: netdev@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org
+To: netdev@vger.kernel.org, linux-renesas-soc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 04 Jan 2018 21:06:49 +0300
+The  TXALCR1 offsets are incorrect in the register offset tables, most
+probably due to copy&paste error.  Luckily, the driver never uses this
+register. :-)
 
-> Renesas  SH7757 has 2 Fast and 2 Gigabit Ether controllers, while the
-> 'sh_eth' driver can only reset and initialize TSU of the first controller
-> pair. Shimoda-san tried to solve that adding the 'needs_init' member to the
-> 'struct sh_eth_plat_data', however the platform code still never sets this
-> flag. I think  that we can infer this information from the 'devno' variable
-> (set  to 'platform_device::id') and reset/init the Ether controller pair
-> only for an even 'devno'; therefore 'sh_eth_plat_data::needs_init' can be
-> removed...
-> 
-> Fixes: 150647fb2c31 ("net: sh_eth: change the condition of initialization")
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Fixes: 4a55530f38e4 ("net: sh_eth: modify the definitions of register")
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Applied and queued up for -stable.
+---
+ drivers/net/ethernet/renesas/sh_eth.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+Index: net/drivers/net/ethernet/renesas/sh_eth.c
+=================================--- net.orig/drivers/net/ethernet/renesas/sh_eth.c
++++ net/drivers/net/ethernet/renesas/sh_eth.c
+@@ -147,7 +147,7 @@ static const u16 sh_eth_offset_gigabit[S
+ 	[FWNLCR0]	= 0x0090,
+ 	[FWALCR0]	= 0x0094,
+ 	[TXNLCR1]	= 0x00a0,
+-	[TXALCR1]	= 0x00a0,
++	[TXALCR1]	= 0x00a4,
+ 	[RXNLCR1]	= 0x00a8,
+ 	[RXALCR1]	= 0x00ac,
+ 	[FWNLCR1]	= 0x00b0,
+@@ -399,7 +399,7 @@ static const u16 sh_eth_offset_fast_sh3_
+ 	[FWNLCR0]	= 0x0090,
+ 	[FWALCR0]	= 0x0094,
+ 	[TXNLCR1]	= 0x00a0,
+-	[TXALCR1]	= 0x00a0,
++	[TXALCR1]	= 0x00a4,
+ 	[RXNLCR1]	= 0x00a8,
+ 	[RXALCR1]	= 0x00ac,
+ 	[FWNLCR1]	= 0x00b0,
+
