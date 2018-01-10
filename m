@@ -1,46 +1,37 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 04 Jan 2018 20:10:30 +0000
-Subject: Re: [PATCH v3 9/9] arch: sh: migor: Use new renesas-ceu camera driver
-Message-Id: <8062486.QngExgQv9j@avalon>
+From: Christoph Hellwig <hch@lst.de>
+Date: Wed, 10 Jan 2018 08:00:13 +0000
+Subject: [PATCH 19/33] dma-mapping: warn when there is no coherent_dma_mask
+Message-Id: <20180110080027.13879-20-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1515081797-17174-1-git-send-email-jacopo+renesas@jmondi.org> <1515081797-17174-10-git-send-email-jacopo+renesas@jmondi.org>
-In-Reply-To: <1515081797-17174-10-git-send-email-jacopo+renesas@jmondi.org>
+References: <20180110080027.13879-1-hch@lst.de>
+In-Reply-To: <20180110080027.13879-1-hch-jcswGhMUV9g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Jacopo Mondi <jacopo+renesas@jmondi.org>
-Cc: magnus.damm@gmail.com, geert@glider.be, mchehab@kernel.org, hverkuil@xs4all.nl, festevam@gmail.com, sakari.ailus@iki.fi, robh+dt@kernel.org, mark.rutland@arm.com, linux-renesas-soc@vger.kernel.org, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org
+To: iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: Konrad Rzeszutek Wilk <konrad-Gq0aWv8utHQdnm+yROfE0A@public.gmane.org>, linux-alpha-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-snps-arc-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, linux-c6x-dev-jPsnJVOj+W6hPH1hqNUYSQ@public.gmane.org, linux-cris-kernel-VrBV9hrLPhE@public.gmane.org, linux-hexagon-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-ia64-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-m68k-cunTk1MwBs8S/qaLPR03pWD2FQJk+8+b@public.gmane.org, linux-metag-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Michal Simek <monstr-pSz03upnqPeHXe+LvDLADg@public.gmane.org>, linux-mips-6z/3iImG2C8G8FEW9MqTrA@public.gmane.org, linux-parisc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linuxppc-dev-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org, patches-q3qR2WxjNRFS9aJRtSZj7A@public.gmane.org, linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sparclinux-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Guan Xuetao <gxt-TG0Ac1+ktVePQbnJrJN+5g@public.gmane.org>, x86-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Hi Jacopo,
+These days all devices should have a DMA coherent mask, and most dma_ops
+implementations rely on that fact.  But just to be sure add an assert to
+ring the warning bell if that is not the case.
 
-Thank you for the patch.
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+---
+ include/linux/dma-mapping.h | 1 +
+ 1 file changed, 1 insertion(+)
 
-On Thursday, 4 January 2018 18:03:17 EET Jacopo Mondi wrote:
-> Migo-R platform uses sh_mobile_ceu camera driver, which is now being
-> replaced by a proper V4L2 camera driver named 'renesas-ceu'.
-> 
-> Move Migo-R platform to use the v4l2 renesas-ceu camera driver
-> interface and get rid of soc_camera defined components used to register
-> sensor drivers and of platform specific enable/disable routines.
-> 
-> Register clock source and GPIOs for sensor drivers, so they can use
-> clock and gpio APIs.
-> 
-> Also, memory for CEU video buffers is now reserved with membocks APIs,
-> and need to be declared as dma_coherent during machine initialization to
-> remove that architecture specific part from CEU driver.
-> 
-> Signed-off-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
-
-Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-
-> ---
->  arch/sh/boards/mach-migor/setup.c      | 225 ++++++++++++++----------------
->  arch/sh/kernel/cpu/sh4a/clock-sh7722.c |   2 +-
->  2 files changed, 101 insertions(+), 126 deletions(-)
-
+diff --git a/include/linux/dma-mapping.h b/include/linux/dma-mapping.h
+index d84951865be7..9f28b2fa329e 100644
+--- a/include/linux/dma-mapping.h
++++ b/include/linux/dma-mapping.h
+@@ -513,6 +513,7 @@ static inline void *dma_alloc_attrs(struct device *dev, size_t size,
+ 	void *cpu_addr;
+ 
+ 	BUG_ON(!ops);
++	WARN_ON_ONCE(!dev->coherent_dma_mask);
+ 
+ 	if (dma_alloc_from_dev_coherent(dev, size, dma_handle, &cpu_addr))
+ 		return cpu_addr;
 -- 
-Regards,
-
-Laurent Pinchart
+2.14.2
 
