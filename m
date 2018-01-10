@@ -1,184 +1,37 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 04 Jan 2018 20:41:40 +0000
-Subject: Re: [PATCH v3 3/9] v4l: platform: Add Renesas CEU driver
-Message-Id: <1661119.HFTSOmjBYx@avalon>
+From: Christoph Hellwig <hch@lst.de>
+Date: Wed, 10 Jan 2018 08:00:03 +0000
+Subject: [PATCH 09/33] dma-mapping: take dma_pfn_offset into account in dma_max_pfn
+Message-Id: <20180110080027.13879-10-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1515081797-17174-1-git-send-email-jacopo+renesas@jmondi.org> <1515081797-17174-4-git-send-email-jacopo+renesas@jmondi.org>
-In-Reply-To: <1515081797-17174-4-git-send-email-jacopo+renesas@jmondi.org>
+References: <20180110080027.13879-1-hch@lst.de>
+In-Reply-To: <20180110080027.13879-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Jacopo Mondi <jacopo+renesas@jmondi.org>
-Cc: magnus.damm@gmail.com, geert@glider.be, mchehab@kernel.org, hverkuil@xs4all.nl, festevam@gmail.com, sakari.ailus@iki.fi, robh+dt@kernel.org, mark.rutland@arm.com, linux-renesas-soc@vger.kernel.org, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org
+To: iommu@lists.linux-foundation.org
+Cc: Konrad Rzeszutek Wilk <konrad@darnok.org>, linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org, linux-c6x-dev@linux-c6x.org, linux-cris-kernel@axis.com, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-metag@vger.kernel.org, Michal Simek <monstr@monstr.eu>, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, patches@groups.riscv.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, Guan Xuetao <gxt@mprc.pku.edu.cn>, x86@kernel.org, linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Hi Jacopo,
+This makes sure the generic version can be used with architectures /
+devices that have a DMA offset in the direct mapping.
 
-Thank you for the patch.
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+---
+ include/linux/dma-mapping.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-On Thursday, 4 January 2018 18:03:11 EET Jacopo Mondi wrote:
-> Add driver for Renesas Capture Engine Unit (CEU).
-> 
-> The CEU interface supports capturing 'data' (YUV422) and 'images'
-> (NV[12|21|16|61]).
-> 
-> This driver aims to replace the soc_camera-based sh_mobile_ceu one.
-> 
-> Tested with ov7670 camera sensor, providing YUYV_2X8 data on Renesas RZ
-> platform GR-Peach.
-> 
-> Tested with ov7725 camera sensor on SH4 platform Migo-R.
-> 
-> Signed-off-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
-> ---
->  drivers/media/platform/Kconfig       |    9 +
->  drivers/media/platform/Makefile      |    1 +
->  drivers/media/platform/renesas-ceu.c | 1649 +++++++++++++++++++++++++++++++
->  3 files changed, 1659 insertions(+)
->  create mode 100644 drivers/media/platform/renesas-ceu.c
-
-[snip]
-
-> diff --git a/drivers/media/platform/renesas-ceu.c
-> b/drivers/media/platform/renesas-ceu.c new file mode 100644
-> index 0000000..a614859
-> --- /dev/null
-> +++ b/drivers/media/platform/renesas-ceu.c
-
-[snip]
-
-> +/*
-> + * struct ceu_data - Platform specific CEU data
-> + * @irq_mask: CETCR mask with all interrupt sources enabled. The mask
-> differs
-> + *	      between SH4 and RZ platforms.
-> + */
-> +struct ceu_data {
-> +	u32 irq_mask;
-> +};
-> +
-> +const struct ceu_data ceu_data_rz = {
-> +	.irq_mask = CEU_CETCR_ALL_IRQS_RZ,
-> +};
-> +
-> +const struct ceu_data ceu_data_sh4 = {
-> +	.irq_mask = CEU_CETCR_ALL_IRQS_SH4,
-> +};
-
-These two can be const.
-
-> +#if IS_ENABLED(CONFIG_OF)
-> +static const struct of_device_id ceu_of_match[] = {
-> +	{ .compatible = "renesas,r7s72100-ceu", .data = &ceu_data_rz },
-> +	{ .compatible = "renesas,ceu", .data = &ceu_data_rz },
-
-Do you need both ? What's your policy for compatible strings ? As far as I 
-understand there's no generic CEU, as the SH4 and RZ versions are not 
-compatible. Should the "renesas,ceu" compatible string then be replaced by 
-"renesas,rz-ceu" and the first entry dropped ?
-
-> +	{ }
-> +};
-> +MODULE_DEVICE_TABLE(of, ceu_of_match);
-> +#endif
-> +
-> +static int ceu_probe(struct platform_device *pdev)
-> +{
-> +	struct device *dev = &pdev->dev;
-> +	const struct ceu_data *ceu_data;
-> +	struct ceu_device *ceudev;
-> +	struct resource *res;
-> +	unsigned int irq;
-> +	int num_subdevs;
-> +	int ret;
-> +
-> +	ceudev = kzalloc(sizeof(*ceudev), GFP_KERNEL);
-> +	if (!ceudev)
-> +		return -ENOMEM;
-> +
-> +	platform_set_drvdata(pdev, ceudev);
-> +	ceudev->dev = dev;
-> +
-> +	INIT_LIST_HEAD(&ceudev->capture);
-> +	spin_lock_init(&ceudev->lock);
-> +	mutex_init(&ceudev->mlock);
-> +
-> +	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-> +	ceudev->base = devm_ioremap_resource(dev, res);
-> +	if (IS_ERR(ceudev->base))
-> +		goto error_free_ceudev;
-> +
-> +	ret = platform_get_irq(pdev, 0);
-> +	if (ret < 0) {
-> +		dev_err(dev, "Failed to request irq: %d\n", ret);
-
-s/request/get/ (it was correct in v2).
-
-> +		goto error_free_ceudev;
-> +	}
-> +	irq = ret;
-> +
-> +	ret = devm_request_irq(dev, irq, ceu_irq,
-> +			       0, dev_name(dev), ceudev);
-> +	if (ret) {
-> +		dev_err(&pdev->dev, "Unable to register CEU interrupt.\n");
-
-s/register/request/ (this is the message that should have been changed).
-
-> +		return ret;
-
-You're leaking ceudev here.
-
-> +	}
-> +
-> +	pm_runtime_enable(dev);
-> +
-> +	ret = v4l2_device_register(dev, &ceudev->v4l2_dev);
-> +	if (ret)
-> +		goto error_pm_disable;
-> +
-> +	if (IS_ENABLED(CONFIG_OF) && dev->of_node) {
-> +		ceu_data = of_match_device(ceu_of_match, dev)->data;
-> +		num_subdevs = ceu_parse_dt(ceudev);
-> +	} else if (dev->platform_data) {
-> +		/* Assume SH4 if booting with platform data. */
-> +		ceu_data = &ceu_data_sh4;
-> +		num_subdevs = ceu_parse_platform_data(ceudev,
-> +						      dev->platform_data);
-> +	} else {
-> +		num_subdevs = -EINVAL;
-> +	}
-> +
-> +	if (num_subdevs < 0) {
-> +		ret = num_subdevs;
-> +		goto error_v4l2_unregister;
-> +	}
-> +	ceudev->irq_mask = ceu_data->irq_mask;
-> +
-> +	ceudev->notifier.v4l2_dev	= &ceudev->v4l2_dev;
-> +	ceudev->notifier.subdevs	= ceudev->asds;
-> +	ceudev->notifier.num_subdevs	= num_subdevs;
-> +	ceudev->notifier.ops		= &ceu_notify_ops;
-> +	ret = v4l2_async_notifier_register(&ceudev->v4l2_dev,
-> +					   &ceudev->notifier);
-> +	if (ret)
-> +		goto error_v4l2_unregister;
-> +
-> +	dev_info(dev, "Renesas Capture Engine Unit %s\n", dev_name(dev));
-> +
-> +	return 0;
-> +
-> +error_v4l2_unregister:
-> +	v4l2_device_unregister(&ceudev->v4l2_dev);
-> +error_pm_disable:
-> +	pm_runtime_disable(dev);
-> +error_free_ceudev:
-> +	kfree(ceudev);
-> +
-> +	return ret;
-> +}
-
+diff --git a/include/linux/dma-mapping.h b/include/linux/dma-mapping.h
+index 81ed9b2d84dc..d84951865be7 100644
+--- a/include/linux/dma-mapping.h
++++ b/include/linux/dma-mapping.h
+@@ -692,7 +692,7 @@ static inline int dma_set_seg_boundary(struct device *dev, unsigned long mask)
+ #ifndef dma_max_pfn
+ static inline unsigned long dma_max_pfn(struct device *dev)
+ {
+-	return *dev->dma_mask >> PAGE_SHIFT;
++	return (*dev->dma_mask >> PAGE_SHIFT) + dev->dma_pfn_offset;
+ }
+ #endif
+ 
 -- 
-Regards,
-
-Laurent Pinchart
+2.14.2
 
