@@ -1,253 +1,80 @@
-From: Matthew Wilcox <willy@infradead.org>
-Date: Wed, 17 Jan 2018 20:20:48 +0000
-Subject: [PATCH v6 24/99] page cache: Add and replace pages using the XArray
-Message-Id: <20180117202203.19756-25-willy@infradead.org>
+From: Christoph Hellwig <hch@lst.de>
+Date: Wed, 10 Jan 2018 08:00:10 +0000
+Subject: [PATCH 16/33] microblaze: remove dma_nommu_dma_supported
+Message-Id: <20180110080027.13879-17-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180117202203.19756-1-willy@infradead.org>
-In-Reply-To: <20180117202203.19756-1-willy@infradead.org>
+References: <20180110080027.13879-1-hch@lst.de>
+In-Reply-To: <20180110080027.13879-1-hch-jcswGhMUV9g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: linux-s390@vger.kernel.org, David Howells <dhowells@redhat.com>, linux-nilfs@vger.kernel.org, Matthew Wilcox <mawilcox@microsoft.com>, linux-sh@vger.kernel.org, intel-gfx@lists.freedesktop.org, linux-usb@vger.kernel.org, linux-remoteproc@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net, linux-xfs@vger.kernel.org, linux-mm@kvack.org, iommu@lists.linux-foundation.org, Stefano Stabellini <sstabellini@kernel.org>, linux-fsdevel@vger.kernel.org, cgroups@vger.kernel.org, Bjorn Andersson <bjorn.andersson@linaro.org>, linux-btrfs@vger.kernel.org
+To: iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: linux-mips-6z/3iImG2C8G8FEW9MqTrA@public.gmane.org, linux-ia64-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sparclinux-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Guan Xuetao <gxt-TG0Ac1+ktVePQbnJrJN+5g@public.gmane.org>, linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-c6x-dev-jPsnJVOj+W6hPH1hqNUYSQ@public.gmane.org, linux-hexagon-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, x86-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, Konrad Rzeszutek Wilk <konrad-Gq0aWv8utHQdnm+yROfE0A@public.gmane.org>, linux-snps-arc-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, linux-m68k-cunTk1MwBs8S/qaLPR03pWD2FQJk+8+b@public.gmane.org, patches-q3qR2WxjNRFS9aJRtSZj7A@public.gmane.org, linux-metag-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, Michal Simek <monstr-pSz03upnqPeHXe+LvDLADg@public.gmane.org>, linux-parisc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-cris-kernel-VrBV9hrLPhE@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-alpha-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linuxppc-dev-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org
 
-From: Matthew Wilcox <mawilcox@microsoft.com>
+Always returning 1 is the same behavior as not supplying a method at all.
 
-Use the XArray APIs to add and replace pages in the page cache.  This
-removes two uses of the radix tree preload API and is significantly
-shorter code.
-
-Signed-off-by: Matthew Wilcox <mawilcox@microsoft.com>
+Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- include/linux/swap.h |   8 ++-
- mm/filemap.c         | 143 ++++++++++++++++++++++-----------------------------
- 2 files changed, 67 insertions(+), 84 deletions(-)
+ arch/microblaze/kernel/dma.c | 6 ------
+ arch/parisc/kernel/pci-dma.c | 7 -------
+ 2 files changed, 13 deletions(-)
 
-diff --git a/include/linux/swap.h b/include/linux/swap.h
-index c2b8128799c1..394957963c4b 100644
---- a/include/linux/swap.h
-+++ b/include/linux/swap.h
-@@ -299,8 +299,12 @@ void *workingset_eviction(struct address_space *mapping, struct page *page);
- bool workingset_refault(void *shadow);
- void workingset_activation(struct page *page);
+diff --git a/arch/microblaze/kernel/dma.c b/arch/microblaze/kernel/dma.c
+index 450803e5731a..b45d8f8967af 100644
+--- a/arch/microblaze/kernel/dma.c
++++ b/arch/microblaze/kernel/dma.c
+@@ -89,11 +89,6 @@ static int dma_nommu_map_sg(struct device *dev, struct scatterlist *sgl,
+ 	return nents;
+ }
  
--/* Do not use directly, use workingset_lookup_update */
--void workingset_update_node(struct radix_tree_node *node);
-+/* Only track the nodes of mappings with shadow entries */
-+void workingset_update_node(struct xa_node *node);
-+#define mapping_set_update(xas, mapping) do {				\
-+	if (!dax_mapping(mapping) && !shmem_mapping(mapping))		\
-+		xas_set_update(xas, workingset_update_node);		\
-+} while (0)
- 
- /* Returns workingset_update_node() if the mapping has shadow entries. */
- #define workingset_lookup_update(mapping)				\
-diff --git a/mm/filemap.c b/mm/filemap.c
-index f1b4480723dd..e6371b551de1 100644
---- a/mm/filemap.c
-+++ b/mm/filemap.c
-@@ -112,35 +112,6 @@
-  *   ->tasklist_lock            (memory_failure, collect_procs_ao)
-  */
- 
--static int page_cache_tree_insert(struct address_space *mapping,
--				  struct page *page, void **shadowp)
+-static int dma_nommu_dma_supported(struct device *dev, u64 mask)
 -{
--	struct radix_tree_node *node;
--	void **slot;
--	int error;
--
--	error = __radix_tree_create(&mapping->pages, page->index, 0,
--				    &node, &slot);
--	if (error)
--		return error;
--	if (*slot) {
--		void *p;
--
--		p = radix_tree_deref_slot_protected(slot,
--						    &mapping->pages.xa_lock);
--		if (!xa_is_value(p))
--			return -EEXIST;
--
--		mapping->nrexceptional--;
--		if (shadowp)
--			*shadowp = p;
--	}
--	__radix_tree_replace(&mapping->pages, node, slot, page,
--			     workingset_lookup_update(mapping));
--	mapping->nrpages++;
--	return 0;
+-	return 1;
 -}
 -
- static void page_cache_tree_delete(struct address_space *mapping,
- 				   struct page *page, void *shadow)
- {
-@@ -776,51 +747,44 @@ EXPORT_SYMBOL(file_write_and_wait_range);
-  * locked.  This function does not add the new page to the LRU, the
-  * caller must do that.
-  *
-- * The remove + add is atomic.  The only way this function can fail is
-- * memory allocation failure.
-+ * The remove + add is atomic.  This function cannot fail.
-  */
- int replace_page_cache_page(struct page *old, struct page *new, gfp_t gfp_mask)
- {
--	int error;
-+	struct address_space *mapping = old->mapping;
-+	void (*freepage)(struct page *) = mapping->a_ops->freepage;
-+	pgoff_t offset = old->index;
-+	XA_STATE(xas, &mapping->pages, offset);
-+	unsigned long flags;
+ static inline dma_addr_t dma_nommu_map_page(struct device *dev,
+ 					     struct page *page,
+ 					     unsigned long offset,
+@@ -209,7 +204,6 @@ const struct dma_map_ops dma_nommu_ops = {
+ 	.free			= dma_nommu_free_coherent,
+ 	.mmap			= dma_nommu_mmap_coherent,
+ 	.map_sg			= dma_nommu_map_sg,
+-	.dma_supported		= dma_nommu_dma_supported,
+ 	.map_page		= dma_nommu_map_page,
+ 	.unmap_page		= dma_nommu_unmap_page,
+ 	.sync_single_for_cpu	= dma_nommu_sync_single_for_cpu,
+diff --git a/arch/parisc/kernel/pci-dma.c b/arch/parisc/kernel/pci-dma.c
+index c0dfd892f70c..91bc0cac03a1 100644
+--- a/arch/parisc/kernel/pci-dma.c
++++ b/arch/parisc/kernel/pci-dma.c
+@@ -75,11 +75,6 @@ void dump_resmap(void)
+ static inline void dump_resmap(void) {;}
+ #endif
  
- 	VM_BUG_ON_PAGE(!PageLocked(old), old);
- 	VM_BUG_ON_PAGE(!PageLocked(new), new);
- 	VM_BUG_ON_PAGE(new->mapping, new);
- 
--	error = radix_tree_preload(gfp_mask & ~__GFP_HIGHMEM);
--	if (!error) {
--		struct address_space *mapping = old->mapping;
--		void (*freepage)(struct page *);
--		unsigned long flags;
+-static int pa11_dma_supported( struct device *dev, u64 mask)
+-{
+-	return 1;
+-}
 -
--		pgoff_t offset = old->index;
--		freepage = mapping->a_ops->freepage;
--
--		get_page(new);
--		new->mapping = mapping;
--		new->index = offset;
-+	get_page(new);
-+	new->mapping = mapping;
-+	new->index = offset;
- 
--		xa_lock_irqsave(&mapping->pages, flags);
--		__delete_from_page_cache(old, NULL);
--		error = page_cache_tree_insert(mapping, new, NULL);
--		BUG_ON(error);
-+	xas_lock_irqsave(&xas, flags);
-+	xas_store(&xas, new);
- 
--		/*
--		 * hugetlb pages do not participate in page cache accounting.
--		 */
--		if (!PageHuge(new))
--			__inc_node_page_state(new, NR_FILE_PAGES);
--		if (PageSwapBacked(new))
--			__inc_node_page_state(new, NR_SHMEM);
--		xa_unlock_irqrestore(&mapping->pages, flags);
--		mem_cgroup_migrate(old, new);
--		radix_tree_preload_end();
--		if (freepage)
--			freepage(old);
--		put_page(old);
--	}
-+	old->mapping = NULL;
-+	/* hugetlb pages do not participate in page cache accounting. */
-+	if (!PageHuge(old))
-+		__dec_node_page_state(new, NR_FILE_PAGES);
-+	if (!PageHuge(new))
-+		__inc_node_page_state(new, NR_FILE_PAGES);
-+	if (PageSwapBacked(old))
-+		__dec_node_page_state(new, NR_SHMEM);
-+	if (PageSwapBacked(new))
-+		__inc_node_page_state(new, NR_SHMEM);
-+	xas_unlock_irqrestore(&xas, flags);
-+	mem_cgroup_migrate(old, new);
-+	if (freepage)
-+		freepage(old);
-+	put_page(old);
- 
--	return error;
-+	return 0;
- }
- EXPORT_SYMBOL_GPL(replace_page_cache_page);
- 
-@@ -829,12 +793,15 @@ static int __add_to_page_cache_locked(struct page *page,
- 				      pgoff_t offset, gfp_t gfp_mask,
- 				      void **shadowp)
- {
-+	XA_STATE(xas, &mapping->pages, offset);
- 	int huge = PageHuge(page);
- 	struct mem_cgroup *memcg;
- 	int error;
-+	void *old;
- 
- 	VM_BUG_ON_PAGE(!PageLocked(page), page);
- 	VM_BUG_ON_PAGE(PageSwapBacked(page), page);
-+	mapping_set_update(&xas, mapping);
- 
- 	if (!huge) {
- 		error = mem_cgroup_try_charge(page, current->mm,
-@@ -843,39 +810,51 @@ static int __add_to_page_cache_locked(struct page *page,
- 			return error;
- 	}
- 
--	error = radix_tree_maybe_preload(gfp_mask & ~__GFP_HIGHMEM);
--	if (error) {
--		if (!huge)
--			mem_cgroup_cancel_charge(page, memcg, false);
--		return error;
--	}
--
- 	get_page(page);
- 	page->mapping = mapping;
- 	page->index = offset;
- 
--	xa_lock_irq(&mapping->pages);
--	error = page_cache_tree_insert(mapping, page, shadowp);
--	radix_tree_preload_end();
--	if (unlikely(error))
--		goto err_insert;
-+	do {
-+		xas_lock_irq(&xas);
-+		old = xas_create(&xas);
-+		if (xas_error(&xas))
-+			goto unlock;
-+		if (xa_is_value(old)) {
-+			mapping->nrexceptional--;
-+			if (shadowp)
-+				*shadowp = old;
-+		} else if (old) {
-+			xas_set_err(&xas, -EEXIST);
-+			goto unlock;
-+		}
-+
-+		xas_store(&xas, page);
-+		mapping->nrpages++;
-+
-+		/*
-+		 * hugetlb pages do not participate in
-+		 * page cache accounting.
-+		 */
-+		if (!huge)
-+			__inc_node_page_state(page, NR_FILE_PAGES);
-+unlock:
-+		xas_unlock_irq(&xas);
-+	} while (xas_nomem(&xas, gfp_mask & ~__GFP_HIGHMEM));
-+
-+	if (xas_error(&xas))
-+		goto error;
- 
--	/* hugetlb pages do not participate in page cache accounting. */
--	if (!huge)
--		__inc_node_page_state(page, NR_FILE_PAGES);
--	xa_unlock_irq(&mapping->pages);
- 	if (!huge)
- 		mem_cgroup_commit_charge(page, memcg, false, false);
- 	trace_mm_filemap_add_to_page_cache(page);
- 	return 0;
--err_insert:
-+error:
- 	page->mapping = NULL;
- 	/* Leave page->index set: truncation relies upon it */
--	xa_unlock_irq(&mapping->pages);
- 	if (!huge)
- 		mem_cgroup_cancel_charge(page, memcg, false);
- 	put_page(page);
--	return error;
-+	return xas_error(&xas);
+ static inline int map_pte_uncached(pte_t * pte,
+ 		unsigned long vaddr,
+ 		unsigned long size, unsigned long *paddr_ptr)
+@@ -579,7 +574,6 @@ static void pa11_dma_cache_sync(struct device *dev, void *vaddr, size_t size,
  }
  
- /**
+ const struct dma_map_ops pcxl_dma_ops = {
+-	.dma_supported =	pa11_dma_supported,
+ 	.alloc =		pa11_dma_alloc,
+ 	.free =			pa11_dma_free,
+ 	.map_page =		pa11_dma_map_page,
+@@ -616,7 +610,6 @@ static void pcx_dma_free(struct device *dev, size_t size, void *vaddr,
+ }
+ 
+ const struct dma_map_ops pcx_dma_ops = {
+-	.dma_supported =	pa11_dma_supported,
+ 	.alloc =		pcx_dma_alloc,
+ 	.free =			pcx_dma_free,
+ 	.map_page =		pa11_dma_map_page,
 -- 
-2.15.1
+2.14.2
 
