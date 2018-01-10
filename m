@@ -1,88 +1,180 @@
-From: Matthew Wilcox <willy@infradead.org>
-Date: Wed, 17 Jan 2018 20:21:25 +0000
-Subject: [PATCH v6 61/99] dax: Convert dax_writeback_one to XArray
-Message-Id: <20180117202203.19756-62-willy@infradead.org>
+From: Christoph Hellwig <hch@lst.de>
+Date: Wed, 10 Jan 2018 08:00:16 +0000
+Subject: [PATCH 22/33] dma-mapping: provide a generic asm/dma-mapping.h
+Message-Id: <20180110080027.13879-23-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180117202203.19756-1-willy@infradead.org>
-In-Reply-To: <20180117202203.19756-1-willy@infradead.org>
+References: <20180110080027.13879-1-hch@lst.de>
+In-Reply-To: <20180110080027.13879-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: linux-s390@vger.kernel.org, David Howells <dhowells@redhat.com>, linux-nilfs@vger.kernel.org, Matthew Wilcox <mawilcox@microsoft.com>, linux-sh@vger.kernel.org, intel-gfx@lists.freedesktop.org, linux-usb@vger.kernel.org, linux-remoteproc@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net, linux-xfs@vger.kernel.org, linux-mm@kvack.org, iommu@lists.linux-foundation.org, Stefano Stabellini <sstabellini@kernel.org>, linux-fsdevel@vger.kernel.org, cgroups@vger.kernel.org, Bjorn Andersson <bjorn.andersson@linaro.org>, linux-btrfs@vger.kernel.org
+To: iommu@lists.linux-foundation.org
+Cc: Konrad Rzeszutek Wilk <konrad@darnok.org>, linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org, linux-c6x-dev@linux-c6x.org, linux-cris-kernel@axis.com, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-metag@vger.kernel.org, Michal Simek <monstr@monstr.eu>, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, patches@groups.riscv.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, Guan Xuetao <gxt@mprc.pku.edu.cn>, x86@kernel.org, linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org
 
-From: Matthew Wilcox <mawilcox@microsoft.com>
+For architectures that just use the generic dma_noop_ops we can provide
+a generic version of dma-mapping.h.
 
-Likewise easy
-
-Signed-off-by: Matthew Wilcox <mawilcox@microsoft.com>
+Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- fs/dax.c | 17 +++++++----------
- 1 file changed, 7 insertions(+), 10 deletions(-)
+ MAINTAINERS                          |  1 +
+ arch/m32r/include/asm/Kbuild         |  1 +
+ arch/m32r/include/asm/dma-mapping.h  | 17 -----------------
+ arch/riscv/include/asm/Kbuild        |  1 +
+ arch/riscv/include/asm/dma-mapping.h | 30 ------------------------------
+ arch/s390/include/asm/Kbuild         |  1 +
+ arch/s390/include/asm/dma-mapping.h  | 17 -----------------
+ include/asm-generic/dma-mapping.h    | 10 ++++++++++
+ 8 files changed, 14 insertions(+), 64 deletions(-)
+ delete mode 100644 arch/m32r/include/asm/dma-mapping.h
+ delete mode 100644 arch/riscv/include/asm/dma-mapping.h
+ delete mode 100644 arch/s390/include/asm/dma-mapping.h
+ create mode 100644 include/asm-generic/dma-mapping.h
 
-diff --git a/fs/dax.c b/fs/dax.c
-index 9a30224da4d6..b66b8c896ed8 100644
---- a/fs/dax.c
-+++ b/fs/dax.c
-@@ -632,8 +632,7 @@ static int dax_writeback_one(struct block_device *bdev,
- 		struct dax_device *dax_dev, struct address_space *mapping,
- 		pgoff_t index, void *entry)
- {
--	struct radix_tree_root *pages = &mapping->pages;
--	XA_STATE(xas, pages, index);
-+	XA_STATE(xas, &mapping->pages, index);
- 	void *entry2, *kaddr;
- 	long ret = 0, id;
- 	sector_t sector;
-@@ -648,7 +647,7 @@ static int dax_writeback_one(struct block_device *bdev,
- 	if (WARN_ON(!xa_is_value(entry)))
- 		return -EIO;
+diff --git a/MAINTAINERS b/MAINTAINERS
+index d2cfdcce1db5..234e642e7149 100644
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -4338,6 +4338,7 @@ F:	lib/dma-noop.c
+ F:	lib/dma-virt.c
+ F:	drivers/base/dma-mapping.c
+ F:	drivers/base/dma-coherent.c
++F:	include/asm-generic/dma-mapping.h
+ F:	include/linux/dma-direct.h
+ F:	include/linux/dma-mapping.h
  
--	xa_lock_irq(&mapping->pages);
-+	xas_lock_irq(&xas);
- 	entry2 = get_unlocked_mapping_entry(&xas);
- 	/* Entry got punched out / reallocated? */
- 	if (!entry2 || WARN_ON_ONCE(!xa_is_value(entry2)))
-@@ -667,7 +666,7 @@ static int dax_writeback_one(struct block_device *bdev,
- 	}
- 
- 	/* Another fsync thread may have already written back this entry */
--	if (!radix_tree_tag_get(pages, index, PAGECACHE_TAG_TOWRITE))
-+	if (!xas_get_tag(&xas, PAGECACHE_TAG_TOWRITE))
- 		goto put_unlocked;
- 	/* Lock the entry to serialize with page faults */
- 	entry = lock_slot(&xas);
-@@ -678,8 +677,8 @@ static int dax_writeback_one(struct block_device *bdev,
- 	 * at the entry only under xa_lock and once they do that they will
- 	 * see the entry locked and wait for it to unlock.
- 	 */
--	radix_tree_tag_clear(pages, index, PAGECACHE_TAG_TOWRITE);
--	xa_unlock_irq(&mapping->pages);
-+	xas_clear_tag(&xas, PAGECACHE_TAG_TOWRITE);
-+	xas_unlock_irq(&xas);
- 
- 	/*
- 	 * Even if dax_writeback_mapping_range() was given a wbc->range_start
-@@ -717,9 +716,7 @@ static int dax_writeback_one(struct block_device *bdev,
- 	 * the pfn mappings are writeprotected and fault waits for mapping
- 	 * entry lock.
- 	 */
--	xa_lock_irq(&mapping->pages);
--	radix_tree_tag_clear(pages, index, PAGECACHE_TAG_DIRTY);
--	xa_unlock_irq(&mapping->pages);
-+	xa_clear_tag(&mapping->pages, index, PAGECACHE_TAG_DIRTY);
- 	trace_dax_writeback_one(mapping->host, index, size >> PAGE_SHIFT);
-  dax_unlock:
- 	dax_read_unlock(id);
-@@ -728,7 +725,7 @@ static int dax_writeback_one(struct block_device *bdev,
- 
-  put_unlocked:
- 	put_unlocked_mapping_entry(&xas, entry2);
--	xa_unlock_irq(&mapping->pages);
-+	xas_unlock_irq(&xas);
- 	return ret;
- }
- 
+diff --git a/arch/m32r/include/asm/Kbuild b/arch/m32r/include/asm/Kbuild
+index 7e11b125c35e..ca83fda8177b 100644
+--- a/arch/m32r/include/asm/Kbuild
++++ b/arch/m32r/include/asm/Kbuild
+@@ -1,5 +1,6 @@
+ generic-y += clkdev.h
+ generic-y += current.h
++generic-y += dma-mapping.h
+ generic-y += exec.h
+ generic-y += extable.h
+ generic-y += irq_work.h
+diff --git a/arch/m32r/include/asm/dma-mapping.h b/arch/m32r/include/asm/dma-mapping.h
+deleted file mode 100644
+index 8967fb659691..000000000000
+--- a/arch/m32r/include/asm/dma-mapping.h
++++ /dev/null
+@@ -1,17 +0,0 @@
+-/* SPDX-License-Identifier: GPL-2.0 */
+-#ifndef _ASM_M32R_DMA_MAPPING_H
+-#define _ASM_M32R_DMA_MAPPING_H
+-
+-#include <linux/kernel.h>
+-#include <linux/types.h>
+-#include <linux/mm.h>
+-#include <linux/scatterlist.h>
+-#include <linux/dma-debug.h>
+-#include <linux/io.h>
+-
+-static inline const struct dma_map_ops *get_arch_dma_ops(struct bus_type *bus)
+-{
+-	return &dma_noop_ops;
+-}
+-
+-#endif /* _ASM_M32R_DMA_MAPPING_H */
+diff --git a/arch/riscv/include/asm/Kbuild b/arch/riscv/include/asm/Kbuild
+index 970460a0b492..197460ccbf21 100644
+--- a/arch/riscv/include/asm/Kbuild
++++ b/arch/riscv/include/asm/Kbuild
+@@ -7,6 +7,7 @@ generic-y += device.h
+ generic-y += div64.h
+ generic-y += dma.h
+ generic-y += dma-contiguous.h
++generic-y += dma-mapping.h
+ generic-y += emergency-restart.h
+ generic-y += errno.h
+ generic-y += exec.h
+diff --git a/arch/riscv/include/asm/dma-mapping.h b/arch/riscv/include/asm/dma-mapping.h
+deleted file mode 100644
+index 73849e2cc761..000000000000
+--- a/arch/riscv/include/asm/dma-mapping.h
++++ /dev/null
+@@ -1,30 +0,0 @@
+-/*
+- * Copyright (C) 2003-2004 Hewlett-Packard Co
+- *	David Mosberger-Tang <davidm@hpl.hp.com>
+- * Copyright (C) 2012 ARM Ltd.
+- * Copyright (C) 2016 SiFive, Inc.
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License version 2 as
+- * published by the Free Software Foundation.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+- */
+-#ifndef __ASM_RISCV_DMA_MAPPING_H
+-#define __ASM_RISCV_DMA_MAPPING_H
+-
+-/* Use ops->dma_mapping_error (if it exists) or assume success */
+-// #undef DMA_ERROR_CODE
+-
+-static inline const struct dma_map_ops *get_arch_dma_ops(struct bus_type *bus)
+-{
+-	return &dma_noop_ops;
+-}
+-
+-#endif	/* __ASM_RISCV_DMA_MAPPING_H */
+diff --git a/arch/s390/include/asm/Kbuild b/arch/s390/include/asm/Kbuild
+index 048450869328..dade72be127b 100644
+--- a/arch/s390/include/asm/Kbuild
++++ b/arch/s390/include/asm/Kbuild
+@@ -4,6 +4,7 @@ generic-y += cacheflush.h
+ generic-y += clkdev.h
+ generic-y += device.h
+ generic-y += dma-contiguous.h
++generic-y += dma-mapping.h
+ generic-y += div64.h
+ generic-y += emergency-restart.h
+ generic-y += export.h
+diff --git a/arch/s390/include/asm/dma-mapping.h b/arch/s390/include/asm/dma-mapping.h
+deleted file mode 100644
+index bdc2455483f6..000000000000
+--- a/arch/s390/include/asm/dma-mapping.h
++++ /dev/null
+@@ -1,17 +0,0 @@
+-/* SPDX-License-Identifier: GPL-2.0 */
+-#ifndef _ASM_S390_DMA_MAPPING_H
+-#define _ASM_S390_DMA_MAPPING_H
+-
+-#include <linux/kernel.h>
+-#include <linux/types.h>
+-#include <linux/mm.h>
+-#include <linux/scatterlist.h>
+-#include <linux/dma-debug.h>
+-#include <linux/io.h>
+-
+-static inline const struct dma_map_ops *get_arch_dma_ops(struct bus_type *bus)
+-{
+-	return &dma_noop_ops;
+-}
+-
+-#endif /* _ASM_S390_DMA_MAPPING_H */
+diff --git a/include/asm-generic/dma-mapping.h b/include/asm-generic/dma-mapping.h
+new file mode 100644
+index 000000000000..164031531d85
+--- /dev/null
++++ b/include/asm-generic/dma-mapping.h
+@@ -0,0 +1,10 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++#ifndef _ASM_GENERIC_DMA_MAPPING_H
++#define _ASM_GENERIC_DMA_MAPPING_H
++
++static inline const struct dma_map_ops *get_arch_dma_ops(struct bus_type *bus)
++{
++	return &dma_noop_ops;
++}
++
++#endif /* _ASM_GENERIC_DMA_MAPPING_H */
 -- 
-2.15.1
+2.14.2
 
