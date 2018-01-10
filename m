@@ -1,100 +1,214 @@
-From: Hans Verkuil <hverkuil@xs4all.nl>
-Date: Sun, 21 Jan 2018 10:18:43 +0000
-Subject: Re: [PATCH v6 6/9] media: i2c: ov772x: Remove soc_camera dependencies
-Message-Id: <8fd4699c-0d51-6cd8-c915-45283b628062@xs4all.nl>
+From: Christoph Hellwig <hch@lst.de>
+Date: Wed, 10 Jan 2018 08:00:14 +0000
+Subject: [PATCH 20/33] dma-mapping: clear harmful GFP_* flags in common code
+Message-Id: <20180110080027.13879-21-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1516139101-7835-1-git-send-email-jacopo+renesas@jmondi.org>
- <00f1dd19-6420-26ab-0529-a97f2b0de682@xs4all.nl>
- <20180119111917.76wosrokgracbdrz@valkosipuli.retiisi.org.uk>
- <2694661.NEH0HeGgLD@avalon> <20180121093117.GK24926@w540>
-In-Reply-To: <20180121093117.GK24926@w540>
+References: <20180110080027.13879-1-hch@lst.de>
+In-Reply-To: <20180110080027.13879-1-hch-jcswGhMUV9g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: jacopo mondi <jacopo@jmondi.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Sakari Ailus <sakari.ailus@iki.fi>, Jacopo Mondi <jacopo+renesas@jmondi.org>, magnus.damm@gmail.com, geert@glider.be, mchehab@kernel.org, festevam@gmail.com, robh+dt@kernel.org, mark.rutland@arm.com, pombredanne@nexb.com, linux-renesas-soc@vger.kernel.org, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org
+To: iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: linux-mips-6z/3iImG2C8G8FEW9MqTrA@public.gmane.org, linux-ia64-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sparclinux-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Guan Xuetao <gxt-TG0Ac1+ktVePQbnJrJN+5g@public.gmane.org>, linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-c6x-dev-jPsnJVOj+W6hPH1hqNUYSQ@public.gmane.org, linux-hexagon-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, x86-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, Konrad Rzeszutek Wilk <konrad-Gq0aWv8utHQdnm+yROfE0A@public.gmane.org>, linux-snps-arc-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, linux-m68k-cunTk1MwBs8S/qaLPR03pWD2FQJk+8+b@public.gmane.org, patches-q3qR2WxjNRFS9aJRtSZj7A@public.gmane.org, linux-metag-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, Michal Simek <monstr-pSz03upnqPeHXe+LvDLADg@public.gmane.org>, linux-parisc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-cris-kernel-VrBV9hrLPhE@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-alpha-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linuxppc-dev-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org
 
-On 21/01/18 10:31, jacopo mondi wrote:
-> Hello Hans, Laurent, Sakari,
-> 
-> On Fri, Jan 19, 2018 at 02:23:21PM +0200, Laurent Pinchart wrote:
->> Hello,
->>
->> On Friday, 19 January 2018 13:19:18 EET Sakari Ailus wrote:
->>> On Fri, Jan 19, 2018 at 11:47:33AM +0100, Hans Verkuil wrote:
->>>> On 01/19/18 11:24, Hans Verkuil wrote:
->>>>> On 01/16/18 22:44, Jacopo Mondi wrote:
->>>>>> Remove soc_camera framework dependencies from ov772x sensor driver.
->>>>>> - Handle clock and gpios
->>>>>> - Register async subdevice
->>>>>> - Remove soc_camera specific g/s_mbus_config operations
->>>>>> - Change image format colorspace from JPEG to SRGB as the two use the
->>>>>>   same colorspace information but JPEG makes assumptions on color
->>>>>>   components quantization that do not apply to the sensor
->>>>>> - Remove sizes crop from get_selection as driver can't scale
->>>>>> - Add kernel doc to driver interface header file
->>>>>> - Adjust build system
->>>>>>
->>>>>> This commit does not remove the original soc_camera based driver as
->>>>>> long as other platforms depends on soc_camera-based CEU driver.
->>>>>>
->>>>>> Signed-off-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
->>>>>> Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
->>>>>
->>>>> Acked-by: Hans Verkuil <hans.verkuil@cisco.com>
->>>>
->>>> Un-acked.
->>>>
->>>> I just noticed that this sensor driver has no enum_frame_interval and
->>>> g/s_parm support. How would a driver ever know the frame rate of the
->>>> sensor without that?
-> 
-> Does it make any difference if I point out that this series hasn't
-> removed any of that code, and the driver was not supporting that
-> already? Or was it handled through soc_camera?
+Lift the code from x86 so that we behave consistently.  In the future we
+should probably warn if any of these is set.
 
-That last question is a good one. Can you check?
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+Acked-by: Jesper Nilsson <jesper.nilsson@axis.com>
+Acked-by: Geert Uytterhoeven <geert@linux-m68k.org> [m68k]
+---
+ arch/cris/arch-v32/drivers/pci/dma.c      | 3 ---
+ arch/h8300/kernel/dma.c                   | 3 ---
+ arch/m68k/kernel/dma.c                    | 2 --
+ arch/mips/cavium-octeon/dma-octeon.c      | 3 ---
+ arch/mips/loongson64/common/dma-swiotlb.c | 3 ---
+ arch/mips/mm/dma-default.c                | 3 ---
+ arch/mips/netlogic/common/nlm-dma.c       | 3 ---
+ arch/mn10300/mm/dma-alloc.c               | 3 ---
+ arch/nios2/mm/dma-mapping.c               | 3 ---
+ arch/powerpc/kernel/dma.c                 | 3 ---
+ arch/x86/kernel/pci-dma.c                 | 2 --
+ include/linux/dma-mapping.h               | 7 +++++++
+ 12 files changed, 7 insertions(+), 31 deletions(-)
 
-There are two sh boards that use this sensor. Are you able to test on one
-of those boards?
+diff --git a/arch/cris/arch-v32/drivers/pci/dma.c b/arch/cris/arch-v32/drivers/pci/dma.c
+index dbbd3816cc0b..8c3802244ef3 100644
+--- a/arch/cris/arch-v32/drivers/pci/dma.c
++++ b/arch/cris/arch-v32/drivers/pci/dma.c
+@@ -22,9 +22,6 @@ static void *v32_dma_alloc(struct device *dev, size_t size,
+ {
+ 	void *ret;
+ 
+-	/* ignore region specifiers */
+-	gfp &= ~(__GFP_DMA | __GFP_HIGHMEM);
+-
+ 	if (dev = NULL || (dev->coherent_dma_mask < 0xffffffff))
+ 		gfp |= GFP_DMA;
+ 
+diff --git a/arch/h8300/kernel/dma.c b/arch/h8300/kernel/dma.c
+index 225dd0a188dc..d44ba5db4ac3 100644
+--- a/arch/h8300/kernel/dma.c
++++ b/arch/h8300/kernel/dma.c
+@@ -16,9 +16,6 @@ static void *dma_alloc(struct device *dev, size_t size,
+ {
+ 	void *ret;
+ 
+-	/* ignore region specifiers */
+-	gfp &= ~(__GFP_DMA | __GFP_HIGHMEM);
+-
+ 	if (dev = NULL || (*dev->dma_mask < 0xffffffff))
+ 		gfp |= GFP_DMA;
+ 	ret = (void *)__get_free_pages(gfp, get_order(size));
+diff --git a/arch/m68k/kernel/dma.c b/arch/m68k/kernel/dma.c
+index 87ef73a93856..c01b9b8f97bf 100644
+--- a/arch/m68k/kernel/dma.c
++++ b/arch/m68k/kernel/dma.c
+@@ -76,8 +76,6 @@ static void *m68k_dma_alloc(struct device *dev, size_t size,
+ 		dma_addr_t *dma_handle, gfp_t gfp, unsigned long attrs)
+ {
+ 	void *ret;
+-	/* ignore region specifiers */
+-	gfp &= ~(__GFP_DMA | __GFP_HIGHMEM);
+ 
+ 	if (dev = NULL || (*dev->dma_mask < 0xffffffff))
+ 		gfp |= GFP_DMA;
+diff --git a/arch/mips/cavium-octeon/dma-octeon.c b/arch/mips/cavium-octeon/dma-octeon.c
+index c64bd87f0b6e..5baf79fce643 100644
+--- a/arch/mips/cavium-octeon/dma-octeon.c
++++ b/arch/mips/cavium-octeon/dma-octeon.c
+@@ -161,9 +161,6 @@ static void *octeon_dma_alloc_coherent(struct device *dev, size_t size,
+ {
+ 	void *ret;
+ 
+-	/* ignore region specifiers */
+-	gfp &= ~(__GFP_DMA | __GFP_DMA32 | __GFP_HIGHMEM);
+-
+ 	if (IS_ENABLED(CONFIG_ZONE_DMA) && dev = NULL)
+ 		gfp |= __GFP_DMA;
+ 	else if (IS_ENABLED(CONFIG_ZONE_DMA) &&
+diff --git a/arch/mips/loongson64/common/dma-swiotlb.c b/arch/mips/loongson64/common/dma-swiotlb.c
+index ef07740cee61..15388c24a504 100644
+--- a/arch/mips/loongson64/common/dma-swiotlb.c
++++ b/arch/mips/loongson64/common/dma-swiotlb.c
+@@ -15,9 +15,6 @@ static void *loongson_dma_alloc_coherent(struct device *dev, size_t size,
+ {
+ 	void *ret;
+ 
+-	/* ignore region specifiers */
+-	gfp &= ~(__GFP_DMA | __GFP_DMA32 | __GFP_HIGHMEM);
+-
+ 	if ((IS_ENABLED(CONFIG_ISA) && dev = NULL) ||
+ 	    (IS_ENABLED(CONFIG_ZONE_DMA) &&
+ 	     dev->coherent_dma_mask < DMA_BIT_MASK(32)))
+diff --git a/arch/mips/mm/dma-default.c b/arch/mips/mm/dma-default.c
+index e3e94d05f0fd..237532e89919 100644
+--- a/arch/mips/mm/dma-default.c
++++ b/arch/mips/mm/dma-default.c
+@@ -93,9 +93,6 @@ static gfp_t massage_gfp_flags(const struct device *dev, gfp_t gfp)
+ {
+ 	gfp_t dma_flag;
+ 
+-	/* ignore region specifiers */
+-	gfp &= ~(__GFP_DMA | __GFP_DMA32 | __GFP_HIGHMEM);
+-
+ #ifdef CONFIG_ISA
+ 	if (dev = NULL)
+ 		dma_flag = __GFP_DMA;
+diff --git a/arch/mips/netlogic/common/nlm-dma.c b/arch/mips/netlogic/common/nlm-dma.c
+index 0ec9d9da6d51..49c975b6aa28 100644
+--- a/arch/mips/netlogic/common/nlm-dma.c
++++ b/arch/mips/netlogic/common/nlm-dma.c
+@@ -47,9 +47,6 @@ static char *nlm_swiotlb;
+ static void *nlm_dma_alloc_coherent(struct device *dev, size_t size,
+ 	dma_addr_t *dma_handle, gfp_t gfp, unsigned long attrs)
+ {
+-	/* ignore region specifiers */
+-	gfp &= ~(__GFP_DMA | __GFP_DMA32 | __GFP_HIGHMEM);
+-
+ #ifdef CONFIG_ZONE_DMA32
+ 	if (dev->coherent_dma_mask <= DMA_BIT_MASK(32))
+ 		gfp |= __GFP_DMA32;
+diff --git a/arch/mn10300/mm/dma-alloc.c b/arch/mn10300/mm/dma-alloc.c
+index 86108d2496b3..e3910d4db102 100644
+--- a/arch/mn10300/mm/dma-alloc.c
++++ b/arch/mn10300/mm/dma-alloc.c
+@@ -37,9 +37,6 @@ static void *mn10300_dma_alloc(struct device *dev, size_t size,
+ 		goto done;
+ 	}
+ 
+-	/* ignore region specifiers */
+-	gfp &= ~(__GFP_DMA | __GFP_HIGHMEM);
+-
+ 	if (dev = NULL || dev->coherent_dma_mask < 0xffffffff)
+ 		gfp |= GFP_DMA;
+ 
+diff --git a/arch/nios2/mm/dma-mapping.c b/arch/nios2/mm/dma-mapping.c
+index 7040c1adbb5e..4be815519dd4 100644
+--- a/arch/nios2/mm/dma-mapping.c
++++ b/arch/nios2/mm/dma-mapping.c
+@@ -63,9 +63,6 @@ static void *nios2_dma_alloc(struct device *dev, size_t size,
+ {
+ 	void *ret;
+ 
+-	/* ignore region specifiers */
+-	gfp &= ~(__GFP_DMA | __GFP_HIGHMEM);
+-
+ 	/* optimized page clearing */
+ 	gfp |= __GFP_ZERO;
+ 
+diff --git a/arch/powerpc/kernel/dma.c b/arch/powerpc/kernel/dma.c
+index 6d5d04ccf3b4..76079841d3d0 100644
+--- a/arch/powerpc/kernel/dma.c
++++ b/arch/powerpc/kernel/dma.c
+@@ -105,9 +105,6 @@ void *__dma_nommu_alloc_coherent(struct device *dev, size_t size,
+ 	};
+ #endif /* CONFIG_FSL_SOC */
+ 
+-	/* ignore region specifiers */
+-	flag  &= ~(__GFP_HIGHMEM);
+-
+ 	page = alloc_pages_node(node, flag, get_order(size));
+ 	if (page = NULL)
+ 		return NULL;
+diff --git a/arch/x86/kernel/pci-dma.c b/arch/x86/kernel/pci-dma.c
+index 8439e6de6156..61a8f1cb3829 100644
+--- a/arch/x86/kernel/pci-dma.c
++++ b/arch/x86/kernel/pci-dma.c
+@@ -87,7 +87,6 @@ void *dma_generic_alloc_coherent(struct device *dev, size_t size,
+ 
+ 	dma_mask = dma_alloc_coherent_mask(dev, flag);
+ 
+-	flag &= ~__GFP_ZERO;
+ again:
+ 	page = NULL;
+ 	/* CMA can be used only in the context which permits sleeping */
+@@ -139,7 +138,6 @@ bool arch_dma_alloc_attrs(struct device **dev, gfp_t *gfp)
+ 	if (!*dev)
+ 		*dev = &x86_dma_fallback_dev;
+ 
+-	*gfp &= ~(__GFP_DMA | __GFP_HIGHMEM | __GFP_DMA32);
+ 	*gfp = dma_alloc_coherent_gfp_flags(*dev, *gfp);
+ 
+ 	if (!is_device_dma_capable(*dev))
+diff --git a/include/linux/dma-mapping.h b/include/linux/dma-mapping.h
+index 9f28b2fa329e..88bcb1a8211d 100644
+--- a/include/linux/dma-mapping.h
++++ b/include/linux/dma-mapping.h
+@@ -518,6 +518,13 @@ static inline void *dma_alloc_attrs(struct device *dev, size_t size,
+ 	if (dma_alloc_from_dev_coherent(dev, size, dma_handle, &cpu_addr))
+ 		return cpu_addr;
+ 
++	/*
++	 * Let the implementation decide on the zone to allocate from, and
++	 * decide on the way of zeroing the memory given that the memory
++	 * returned should always be zeroed.
++	 */
++	flag &= ~(__GFP_DMA | __GFP_DMA32 | __GFP_HIGHMEM | __GFP_ZERO);
++
+ 	if (!arch_dma_alloc_attrs(&dev, &flag))
+ 		return NULL;
+ 	if (!ops->alloc)
+-- 
+2.14.2
 
-There is reversed engineered code for the ox772x here:
-drivers/media/usb/gspca/ov534.c
-
-That appears to handle framerates.
-
-I am very uncomfortable promoting this driver to drivers/media/i2c without
-having functioning frame interval handling. It could be as simple as a single
-fixed framerate, it doesn't have to be fancy. Without it it is basically
-unusable by applications since those typically expect support for this.
-
-Moving it to staging might be another option, with a TODO mentioning this
-missing feature.
-
-> 
->>>
->>> s/_parm/_frame_interval/ ?
->>>
->>> We should have wrappers for this or rather to convert g/s_parm users to
->>> g/s_frame_interval so drivers don't need to implement both.
->>
->> There are two ways to set the frame interval, either explicitly through the
->> s_frame_interval operation, or implicitly through control of the pixel clock,
->> horizontal blanking and vertical blanking (which in turn can be influenced by
->> the exposure time).
->>
->> Having two ways to perform the same operation seems sub-optimal to me, but I
->> could understand if they covered different use cases. As far as I know we
->> don't document the use cases for those methods. What's your opinion on that ?
->>
-> 
-> -If- I have to implement that in this series to have it accepted,
-> please let me know which one of the two is the preferred one :)
-
-g/s_frame_interval. The other is (I think) for highly specialized devices. For
-regular normal sensors I do not think it makes much sense. Certainly not for
-fairly old sensors like this one.
-
-Regards,
-
-	Hans
