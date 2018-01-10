@@ -1,178 +1,36 @@
-From: Matthew Wilcox <willy@infradead.org>
-Date: Wed, 17 Jan 2018 20:20:47 +0000
-Subject: [PATCH v6 23/99] page cache: Add page_cache_range_empty function
-Message-Id: <20180117202203.19756-24-willy@infradead.org>
+From: Christoph Hellwig <hch@lst.de>
+Date: Wed, 10 Jan 2018 07:59:55 +0000
+Subject: [PATCH 01/33] alpha: mark jensen as broken
+Message-Id: <20180110080027.13879-2-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180117202203.19756-1-willy@infradead.org>
-In-Reply-To: <20180117202203.19756-1-willy@infradead.org>
+References: <20180110080027.13879-1-hch@lst.de>
+In-Reply-To: <20180110080027.13879-1-hch-jcswGhMUV9g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: linux-s390@vger.kernel.org, David Howells <dhowells@redhat.com>, linux-nilfs@vger.kernel.org, Matthew Wilcox <mawilcox@microsoft.com>, linux-sh@vger.kernel.org, intel-gfx@lists.freedesktop.org, linux-usb@vger.kernel.org, linux-remoteproc@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net, linux-xfs@vger.kernel.org, linux-mm@kvack.org, iommu@lists.linux-foundation.org, Stefano Stabellini <sstabellini@kernel.org>, linux-fsdevel@vger.kernel.org, cgroups@vger.kernel.org, Bjorn Andersson <bjorn.andersson@linaro.org>, linux-btrfs@vger.kernel.org
+To: iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: linux-mips-6z/3iImG2C8G8FEW9MqTrA@public.gmane.org, linux-ia64-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sparclinux-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Guan Xuetao <gxt-TG0Ac1+ktVePQbnJrJN+5g@public.gmane.org>, linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-c6x-dev-jPsnJVOj+W6hPH1hqNUYSQ@public.gmane.org, linux-hexagon-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, x86-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, Konrad Rzeszutek Wilk <konrad-Gq0aWv8utHQdnm+yROfE0A@public.gmane.org>, linux-snps-arc-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, linux-m68k-cunTk1MwBs8S/qaLPR03pWD2FQJk+8+b@public.gmane.org, patches-q3qR2WxjNRFS9aJRtSZj7A@public.gmane.org, linux-metag-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, Michal Simek <monstr-pSz03upnqPeHXe+LvDLADg@public.gmane.org>, linux-parisc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-cris-kernel-VrBV9hrLPhE@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-alpha-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linuxppc-dev-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org
 
-From: Matthew Wilcox <mawilcox@microsoft.com>
+CONFIG_ALPHA_JENSEN has failed to compile since commit 6aca0503
+("alpha/dma: use common noop dma ops"), so mark it as broken.
 
-btrfs has its own custom function for determining whether the page cache
-has any pages in a particular range.  Move this functionality to the
-page cache, and call it from btrfs.
-
-Signed-off-by: Matthew Wilcox <mawilcox@microsoft.com>
+Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- fs/btrfs/btrfs_inode.h  |  7 ++++-
- fs/btrfs/inode.c        | 70 -------------------------------------------------
- include/linux/pagemap.h |  2 ++
- mm/filemap.c            | 26 ++++++++++++++++++
- 4 files changed, 34 insertions(+), 71 deletions(-)
+ arch/alpha/Kconfig | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index 63f0ccc92a71..a48bd6e0a0bb 100644
---- a/fs/btrfs/btrfs_inode.h
-+++ b/fs/btrfs/btrfs_inode.h
-@@ -365,6 +365,11 @@ static inline void btrfs_print_data_csum_error(struct btrfs_inode *inode,
- 			logical_start, csum, csum_expected, mirror_num);
- }
+diff --git a/arch/alpha/Kconfig b/arch/alpha/Kconfig
+index b31b974a03cb..e96adcbcab41 100644
+--- a/arch/alpha/Kconfig
++++ b/arch/alpha/Kconfig
+@@ -209,6 +209,7 @@ config ALPHA_EIGER
  
--bool btrfs_page_exists_in_range(struct inode *inode, loff_t start, loff_t end);
-+static inline bool btrfs_page_exists_in_range(struct inode *inode,
-+						loff_t start, loff_t end)
-+{
-+	return page_cache_range_empty(inode->i_mapping, start >> PAGE_SHIFT,
-+							end >> PAGE_SHIFT);
-+}
- 
- #endif
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index dbdb5bf6bca1..d7d2c556d5a2 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -7541,76 +7541,6 @@ noinline int can_nocow_extent(struct inode *inode, u64 offset, u64 *len,
- 	return ret;
- }
- 
--bool btrfs_page_exists_in_range(struct inode *inode, loff_t start, loff_t end)
--{
--	struct radix_tree_root *root = &inode->i_mapping->pages;
--	bool found = false;
--	void **pagep = NULL;
--	struct page *page = NULL;
--	unsigned long start_idx;
--	unsigned long end_idx;
--
--	start_idx = start >> PAGE_SHIFT;
--
--	/*
--	 * end is the last byte in the last page.  end = start is legal
--	 */
--	end_idx = end >> PAGE_SHIFT;
--
--	rcu_read_lock();
--
--	/* Most of the code in this while loop is lifted from
--	 * find_get_page.  It's been modified to begin searching from a
--	 * page and return just the first page found in that range.  If the
--	 * found idx is less than or equal to the end idx then we know that
--	 * a page exists.  If no pages are found or if those pages are
--	 * outside of the range then we're fine (yay!) */
--	while (page = NULL &&
--	       radix_tree_gang_lookup_slot(root, &pagep, NULL, start_idx, 1)) {
--		page = radix_tree_deref_slot(pagep);
--		if (unlikely(!page))
--			break;
--
--		if (radix_tree_exception(page)) {
--			if (radix_tree_deref_retry(page)) {
--				page = NULL;
--				continue;
--			}
--			/*
--			 * Otherwise, shmem/tmpfs must be storing a swap entry
--			 * here so return it without attempting to raise page
--			 * count.
--			 */
--			page = NULL;
--			break; /* TODO: Is this relevant for this use case? */
--		}
--
--		if (!page_cache_get_speculative(page)) {
--			page = NULL;
--			continue;
--		}
--
--		/*
--		 * Has the page moved?
--		 * This is part of the lockless pagecache protocol. See
--		 * include/linux/pagemap.h for details.
--		 */
--		if (unlikely(page != *pagep)) {
--			put_page(page);
--			page = NULL;
--		}
--	}
--
--	if (page) {
--		if (page->index <= end_idx)
--			found = true;
--		put_page(page);
--	}
--
--	rcu_read_unlock();
--	return found;
--}
--
- static int lock_extent_direct(struct inode *inode, u64 lockstart, u64 lockend,
- 			      struct extent_state **cached_state, int writing)
- {
-diff --git a/include/linux/pagemap.h b/include/linux/pagemap.h
-index 0db127c3ccac..34d4fa3ad1c5 100644
---- a/include/linux/pagemap.h
-+++ b/include/linux/pagemap.h
-@@ -245,6 +245,8 @@ pgoff_t page_cache_next_gap(struct address_space *mapping,
- 			     pgoff_t index, unsigned long max_scan);
- pgoff_t page_cache_prev_gap(struct address_space *mapping,
- 			     pgoff_t index, unsigned long max_scan);
-+bool page_cache_range_empty(struct address_space *mapping,
-+				pgoff_t index, pgoff_t max);
- 
- #define FGP_ACCESSED		0x00000001
- #define FGP_LOCK		0x00000002
-diff --git a/mm/filemap.c b/mm/filemap.c
-index 146e8ec16ec0..f1b4480723dd 100644
---- a/mm/filemap.c
-+++ b/mm/filemap.c
-@@ -1398,6 +1398,32 @@ pgoff_t page_cache_prev_gap(struct address_space *mapping,
- }
- EXPORT_SYMBOL(page_cache_prev_gap);
- 
-+bool page_cache_range_empty(struct address_space *mapping, pgoff_t index,
-+				pgoff_t max)
-+{
-+	struct page *page;
-+	XA_STATE(xas, &mapping->pages, index);
-+
-+	rcu_read_lock();
-+	do {
-+		page = xas_find(&xas, max);
-+		if (xas_retry(&xas, page))
-+			continue;
-+		/* Shadow entries don't count */
-+		if (xa_is_value(page))
-+			continue;
-+		/*
-+		 * We don't need to try to pin this page; we're about to
-+		 * release the RCU lock anyway.  It is enough to know that
-+		 * there was a page here recently.
-+		 */
-+	} while (0);
-+	rcu_read_unlock();
-+
-+	return page != NULL;
-+}
-+EXPORT_SYMBOL_GPL(page_cache_range_empty);
-+
- /**
-  * find_get_entry - find and get a page cache entry
-  * @mapping: the address_space to search
+ config ALPHA_JENSEN
+ 	bool "Jensen"
++	depends on BROKEN
+ 	help
+ 	  DEC PC 150 AXP (aka Jensen): This is a very old Digital system - one
+ 	  of the first-generation Alpha systems. A number of these systems
 -- 
-2.15.1
+2.14.2
 
