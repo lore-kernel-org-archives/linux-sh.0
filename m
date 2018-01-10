@@ -1,103 +1,279 @@
-From: Jacopo Mondi <jacopo+renesas@jmondi.org>
-Date: Tue, 09 Jan 2018 16:25:22 +0000
-Subject: [PATCH v4 0/9] Renesas Capture Engine Unit (CEU) V4L2 driver
-Message-Id: <1515515131-13760-1-git-send-email-jacopo+renesas@jmondi.org>
+From: Christoph Hellwig <hch@lst.de>
+Date: Wed, 10 Jan 2018 08:00:17 +0000
+Subject: [PATCH 23/33] dma-direct: rename dma_noop to dma_direct
+Message-Id: <20180110080027.13879-24-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20180110080027.13879-1-hch@lst.de>
+In-Reply-To: <20180110080027.13879-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: laurent.pinchart@ideasonboard.com, magnus.damm@gmail.com, geert@glider.be, mchehab@kernel.org, hverkuil@xs4all.nl, festevam@gmail.com, sakari.ailus@iki.fi, robh+dt@kernel.org, mark.rutland@arm.com
-Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>, linux-renesas-soc@vger.kernel.org, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org
+To: iommu@lists.linux-foundation.org
+Cc: Konrad Rzeszutek Wilk <konrad@darnok.org>, linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org, linux-c6x-dev@linux-c6x.org, linux-cris-kernel@axis.com, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-metag@vger.kernel.org, Michal Simek <monstr@monstr.eu>, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, patches@groups.riscv.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, Guan Xuetao <gxt@mprc.pku.edu.cn>, x86@kernel.org, linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Hello,
-   fourth round for Renesas CEU unit.
+The trivial direct mapping implementation already does a virtual to
+physical translation which isn't strictly a noop, and will soon learn
+to do non-direct but linear physical to dma translations through the
+device offset and a few small tricks.  Rename it to a better fitting
+name.
 
-The only notable change compared to v3 is that we have dropped the generic
-fallback compatible string "renesas,ceu" from bindings and CEU driver.
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+Reviewed-by: Vladimir Murzin <vladimir.murzin@arm.com>
+---
+ MAINTAINERS                        |  2 +-
+ arch/arm/Kconfig                   |  2 +-
+ arch/arm/include/asm/dma-mapping.h |  2 +-
+ arch/arm/mm/dma-mapping-nommu.c    |  8 ++++----
+ arch/m32r/Kconfig                  |  2 +-
+ arch/riscv/Kconfig                 |  2 +-
+ arch/s390/Kconfig                  |  2 +-
+ include/asm-generic/dma-mapping.h  |  2 +-
+ include/linux/dma-mapping.h        |  2 +-
+ lib/Kconfig                        |  2 +-
+ lib/Makefile                       |  2 +-
+ lib/{dma-noop.c => dma-direct.c}   | 35 +++++++++++++++--------------------
+ 12 files changed, 29 insertions(+), 34 deletions(-)
+ rename lib/{dma-noop.c => dma-direct.c} (52%)
 
-Apart from that a few minor changes in driver code as reported by Laurent and
-below listed.
-
-Most of the patches now have the Reviewed-by tag, so I hope we're very close
-to merge this.
-
-Thanks
-   j
-
-v3->v4:
-- Drop generic fallback compatible string "renesas,ceu"
-- Addressed Laurent's comments on [3/9]
-  - Fix error messages on irq get/request
-  - Do not leak ceudev if irq_get fails
-  - Make irq_mask a const field
-
-v2->v3:
-- Improved DT bindings removing standard properties (pinctrl- ones and
-  remote-endpoint) not specific to this driver and improved description of
-  compatible strings
-- Remove ov772x's xlkc_rate property and set clock rate in Migo-R board file
-- Made 'xclk' clock private to ov772x driver in Migo-R board file
-- Change 'rstb' GPIO active output level and changed ov772x and tw9910 drivers
-  accordingly as suggested by Fabio
-- Minor changes in CEU driver to address Laurent's comments
-- Moved Migo-R setup patch to the end of the series to silence 0-day bot
-- Renamed tw9910 clock to 'xti' as per video decoder manual
-- Changed all SPDX identifiers to GPL-2.0 from previous GPL-2.0+
-
-v1->v2:
- - DT
- -- Addressed Geert's comments and added clocks for CEU to mstp6 clock source
- -- Specified supported generic video iterfaces properties in dt-bindings and
-    simplified example
-
- - CEU driver
- -- Re-worked interrupt handler, interrupt management, reset(*) and capture
-    start operation
- -- Re-worked querycap/enum_input/enum_frameintervals to fix some
-    v4l2_compliance failures
- -- Removed soc_camera legacy operations g/s_mbus_format
- -- Update to new notifier implementation
- -- Fixed several comments from Hans, Laurent and Sakari
-
- - Migo-R
- -- Register clocks and gpios for sensor drivers in Migo-R setup
- -- Updated sensors (tw9910 and ov772x) drivers headers and drivers to close
-    remarks from Hans and Laurent:
- --- Removed platform callbacks and handle clocks and gpios from sensor drivers
- --- Remove g/s_mbus_config operations
-
-Jacopo Mondi (9):
-  dt-bindings: media: Add Renesas CEU bindings
-  include: media: Add Renesas CEU driver interface
-  v4l: platform: Add Renesas CEU driver
-  ARM: dts: r7s72100: Add Capture Engine Unit (CEU)
-  v4l: i2c: Copy ov772x soc_camera sensor driver
-  media: i2c: ov772x: Remove soc_camera dependencies
-  v4l: i2c: Copy tw9910 soc_camera sensor driver
-  media: i2c: tw9910: Remove soc_camera dependencies
-  arch: sh: migor: Use new renesas-ceu camera driver
-
- .../devicetree/bindings/media/renesas,ceu.txt      |   81 +
- arch/arm/boot/dts/r7s72100.dtsi                    |   15 +-
- arch/sh/boards/mach-migor/setup.c                  |  225 ++-
- arch/sh/kernel/cpu/sh4a/clock-sh7722.c             |    2 +-
- drivers/media/i2c/Kconfig                          |   20 +
- drivers/media/i2c/Makefile                         |    2 +
- drivers/media/i2c/ov772x.c                         | 1181 ++++++++++++++
- drivers/media/i2c/tw9910.c                         | 1039 ++++++++++++
- drivers/media/platform/Kconfig                     |    9 +
- drivers/media/platform/Makefile                    |    1 +
- drivers/media/platform/renesas-ceu.c               | 1648 ++++++++++++++++++++
- include/media/drv-intf/renesas-ceu.h               |   26 +
- include/media/i2c/ov772x.h                         |    6 +-
- include/media/i2c/tw9910.h                         |    9 +
- 14 files changed, 4133 insertions(+), 131 deletions(-)
- create mode 100644 Documentation/devicetree/bindings/media/renesas,ceu.txt
- create mode 100644 drivers/media/i2c/ov772x.c
- create mode 100644 drivers/media/i2c/tw9910.c
- create mode 100644 drivers/media/platform/renesas-ceu.c
- create mode 100644 include/media/drv-intf/renesas-ceu.h
-
---
-2.7.4
+diff --git a/MAINTAINERS b/MAINTAINERS
+index 234e642e7149..2d54e636d625 100644
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -4334,7 +4334,7 @@ T:	git git://git.infradead.org/users/hch/dma-mapping.git
+ W:	http://git.infradead.org/users/hch/dma-mapping.git
+ S:	Supported
+ F:	lib/dma-debug.c
+-F:	lib/dma-noop.c
++F:	lib/dma-direct.c
+ F:	lib/dma-virt.c
+ F:	drivers/base/dma-mapping.c
+ F:	drivers/base/dma-coherent.c
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index 00d889a37965..430a0aa710d6 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -25,7 +25,7 @@ config ARM
+ 	select CLONE_BACKWARDS
+ 	select CPU_PM if (SUSPEND || CPU_IDLE)
+ 	select DCACHE_WORD_ACCESS if HAVE_EFFICIENT_UNALIGNED_ACCESS
+-	select DMA_NOOP_OPS if !MMU
++	select DMA_DIRECT_OPS if !MMU
+ 	select EDAC_SUPPORT
+ 	select EDAC_ATOMIC_SCRUB
+ 	select GENERIC_ALLOCATOR
+diff --git a/arch/arm/include/asm/dma-mapping.h b/arch/arm/include/asm/dma-mapping.h
+index e5d9020c9ee1..8436f6ade57d 100644
+--- a/arch/arm/include/asm/dma-mapping.h
++++ b/arch/arm/include/asm/dma-mapping.h
+@@ -18,7 +18,7 @@ extern const struct dma_map_ops arm_coherent_dma_ops;
+ 
+ static inline const struct dma_map_ops *get_arch_dma_ops(struct bus_type *bus)
+ {
+-	return IS_ENABLED(CONFIG_MMU) ? &arm_dma_ops : &dma_noop_ops;
++	return IS_ENABLED(CONFIG_MMU) ? &arm_dma_ops : &dma_direct_ops;
+ }
+ 
+ #ifdef __arch_page_to_dma
+diff --git a/arch/arm/mm/dma-mapping-nommu.c b/arch/arm/mm/dma-mapping-nommu.c
+index 6db5fc26d154..4d8042521e89 100644
+--- a/arch/arm/mm/dma-mapping-nommu.c
++++ b/arch/arm/mm/dma-mapping-nommu.c
+@@ -22,7 +22,7 @@
+ #include "dma.h"
+ 
+ /*
+- *  dma_noop_ops is used if
++ *  dma_direct_ops is used if
+  *   - MMU/MPU is off
+  *   - cpu is v7m w/o cache support
+  *   - device is coherent
+@@ -39,7 +39,7 @@ static void *arm_nommu_dma_alloc(struct device *dev, size_t size,
+ 				 unsigned long attrs)
+ 
+ {
+-	const struct dma_map_ops *ops = &dma_noop_ops;
++	const struct dma_map_ops *ops = &dma_direct_ops;
+ 	void *ret;
+ 
+ 	/*
+@@ -70,7 +70,7 @@ static void arm_nommu_dma_free(struct device *dev, size_t size,
+ 			       void *cpu_addr, dma_addr_t dma_addr,
+ 			       unsigned long attrs)
+ {
+-	const struct dma_map_ops *ops = &dma_noop_ops;
++	const struct dma_map_ops *ops = &dma_direct_ops;
+ 
+ 	if (attrs & DMA_ATTR_NON_CONSISTENT) {
+ 		ops->free(dev, size, cpu_addr, dma_addr, attrs);
+@@ -213,7 +213,7 @@ EXPORT_SYMBOL(arm_nommu_dma_ops);
+ 
+ static const struct dma_map_ops *arm_nommu_get_dma_map_ops(bool coherent)
+ {
+-	return coherent ? &dma_noop_ops : &arm_nommu_dma_ops;
++	return coherent ? &dma_direct_ops : &arm_nommu_dma_ops;
+ }
+ 
+ void arch_setup_dma_ops(struct device *dev, u64 dma_base, u64 size,
+diff --git a/arch/m32r/Kconfig b/arch/m32r/Kconfig
+index 498398d915c1..dd84ee194579 100644
+--- a/arch/m32r/Kconfig
++++ b/arch/m32r/Kconfig
+@@ -19,7 +19,7 @@ config M32R
+ 	select MODULES_USE_ELF_RELA
+ 	select HAVE_DEBUG_STACKOVERFLOW
+ 	select CPU_NO_EFFICIENT_FFS
+-	select DMA_NOOP_OPS
++	select DMA_DIRECT_OPS
+ 	select ARCH_NO_COHERENT_DMA_MMAP if !MMU
+ 
+ config SBUS
+diff --git a/arch/riscv/Kconfig b/arch/riscv/Kconfig
+index 2c6adf12713a..865e14f50c14 100644
+--- a/arch/riscv/Kconfig
++++ b/arch/riscv/Kconfig
+@@ -83,7 +83,7 @@ config PGTABLE_LEVELS
+ config HAVE_KPROBES
+ 	def_bool n
+ 
+-config DMA_NOOP_OPS
++config DMA_DIRECT_OPS
+ 	def_bool y
+ 
+ menu "Platform type"
+diff --git a/arch/s390/Kconfig b/arch/s390/Kconfig
+index 829c67986db7..9376637229c9 100644
+--- a/arch/s390/Kconfig
++++ b/arch/s390/Kconfig
+@@ -140,7 +140,7 @@ config S390
+ 	select HAVE_DEBUG_KMEMLEAK
+ 	select HAVE_DMA_API_DEBUG
+ 	select HAVE_DMA_CONTIGUOUS
+-	select DMA_NOOP_OPS
++	select DMA_DIRECT_OPS
+ 	select HAVE_DYNAMIC_FTRACE
+ 	select HAVE_DYNAMIC_FTRACE_WITH_REGS
+ 	select HAVE_EFFICIENT_UNALIGNED_ACCESS
+diff --git a/include/asm-generic/dma-mapping.h b/include/asm-generic/dma-mapping.h
+index 164031531d85..880a292d792f 100644
+--- a/include/asm-generic/dma-mapping.h
++++ b/include/asm-generic/dma-mapping.h
+@@ -4,7 +4,7 @@
+ 
+ static inline const struct dma_map_ops *get_arch_dma_ops(struct bus_type *bus)
+ {
+-	return &dma_noop_ops;
++	return &dma_direct_ops;
+ }
+ 
+ #endif /* _ASM_GENERIC_DMA_MAPPING_H */
+diff --git a/include/linux/dma-mapping.h b/include/linux/dma-mapping.h
+index d67742dad904..b626028a3e47 100644
+--- a/include/linux/dma-mapping.h
++++ b/include/linux/dma-mapping.h
+@@ -136,7 +136,7 @@ struct dma_map_ops {
+ 	int is_phys;
+ };
+ 
+-extern const struct dma_map_ops dma_noop_ops;
++extern const struct dma_map_ops dma_direct_ops;
+ extern const struct dma_map_ops dma_virt_ops;
+ 
+ #define DMA_BIT_MASK(n)	(((n) = 64) ? ~0ULL : ((1ULL<<(n))-1))
+diff --git a/lib/Kconfig b/lib/Kconfig
+index c5e84fbcb30b..9d3d649c9dc9 100644
+--- a/lib/Kconfig
++++ b/lib/Kconfig
+@@ -409,7 +409,7 @@ config HAS_DMA
+ 	depends on !NO_DMA
+ 	default y
+ 
+-config DMA_NOOP_OPS
++config DMA_DIRECT_OPS
+ 	bool
+ 	depends on HAS_DMA && (!64BIT || ARCH_DMA_ADDR_T_64BIT)
+ 	default n
+diff --git a/lib/Makefile b/lib/Makefile
+index d11c48ec8ffd..749851abe85a 100644
+--- a/lib/Makefile
++++ b/lib/Makefile
+@@ -28,7 +28,7 @@ lib-y := ctype.o string.o vsprintf.o cmdline.o \
+ 
+ lib-$(CONFIG_MMU) += ioremap.o
+ lib-$(CONFIG_SMP) += cpumask.o
+-lib-$(CONFIG_DMA_NOOP_OPS) += dma-noop.o
++lib-$(CONFIG_DMA_DIRECT_OPS) += dma-direct.o
+ lib-$(CONFIG_DMA_VIRT_OPS) += dma-virt.o
+ 
+ lib-y	+= kobject.o klist.o
+diff --git a/lib/dma-noop.c b/lib/dma-direct.c
+similarity index 52%
+rename from lib/dma-noop.c
+rename to lib/dma-direct.c
+index a10185b0c2d4..0ec3262a3148 100644
+--- a/lib/dma-noop.c
++++ b/lib/dma-direct.c
+@@ -10,9 +10,8 @@
+ #include <linux/scatterlist.h>
+ #include <linux/pfn.h>
+ 
+-static void *dma_noop_alloc(struct device *dev, size_t size,
+-			    dma_addr_t *dma_handle, gfp_t gfp,
+-			    unsigned long attrs)
++static void *dma_direct_alloc(struct device *dev, size_t size,
++		dma_addr_t *dma_handle, gfp_t gfp, unsigned long attrs)
+ {
+ 	void *ret;
+ 
+@@ -23,24 +22,21 @@ static void *dma_noop_alloc(struct device *dev, size_t size,
+ 	return ret;
+ }
+ 
+-static void dma_noop_free(struct device *dev, size_t size,
+-			  void *cpu_addr, dma_addr_t dma_addr,
+-			  unsigned long attrs)
++static void dma_direct_free(struct device *dev, size_t size, void *cpu_addr,
++		dma_addr_t dma_addr, unsigned long attrs)
+ {
+ 	free_pages((unsigned long)cpu_addr, get_order(size));
+ }
+ 
+-static dma_addr_t dma_noop_map_page(struct device *dev, struct page *page,
+-				      unsigned long offset, size_t size,
+-				      enum dma_data_direction dir,
+-				      unsigned long attrs)
++static dma_addr_t dma_direct_map_page(struct device *dev, struct page *page,
++		unsigned long offset, size_t size, enum dma_data_direction dir,
++		unsigned long attrs)
+ {
+ 	return page_to_phys(page) + offset - PFN_PHYS(dev->dma_pfn_offset);
+ }
+ 
+-static int dma_noop_map_sg(struct device *dev, struct scatterlist *sgl, int nents,
+-			     enum dma_data_direction dir,
+-			     unsigned long attrs)
++static int dma_direct_map_sg(struct device *dev, struct scatterlist *sgl,
++		int nents, enum dma_data_direction dir, unsigned long attrs)
+ {
+ 	int i;
+ 	struct scatterlist *sg;
+@@ -58,11 +54,10 @@ static int dma_noop_map_sg(struct device *dev, struct scatterlist *sgl, int nent
+ 	return nents;
+ }
+ 
+-const struct dma_map_ops dma_noop_ops = {
+-	.alloc			= dma_noop_alloc,
+-	.free			= dma_noop_free,
+-	.map_page		= dma_noop_map_page,
+-	.map_sg			= dma_noop_map_sg,
++const struct dma_map_ops dma_direct_ops = {
++	.alloc			= dma_direct_alloc,
++	.free			= dma_direct_free,
++	.map_page		= dma_direct_map_page,
++	.map_sg			= dma_direct_map_sg,
+ };
+-
+-EXPORT_SYMBOL(dma_noop_ops);
++EXPORT_SYMBOL(dma_direct_ops);
+-- 
+2.14.2
 
