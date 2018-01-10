@@ -1,64 +1,70 @@
-From: Hans Verkuil <hverkuil@xs4all.nl>
-Date: Tue, 16 Jan 2018 09:50:05 +0000
-Subject: Re: [PATCH v5 4/9] ARM: dts: r7s72100: Add Capture Engine Unit (CEU)
-Message-Id: <f8f597b6-c58f-3457-c524-2f02715d6473@xs4all.nl>
+From: Christoph Hellwig <hch@lst.de>
+Date: Wed, 10 Jan 2018 08:00:25 +0000
+Subject: [PATCH 31/33] dma-direct: reject too small dma masks
+Message-Id: <20180110080027.13879-32-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1515765849-10345-1-git-send-email-jacopo+renesas@jmondi.org>
- <1515765849-10345-5-git-send-email-jacopo+renesas@jmondi.org>
-In-Reply-To: <1515765849-10345-5-git-send-email-jacopo+renesas@jmondi.org>
+References: <20180110080027.13879-1-hch@lst.de>
+In-Reply-To: <20180110080027.13879-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Jacopo Mondi <jacopo+renesas@jmondi.org>, laurent.pinchart@ideasonboard.com, magnus.damm@gmail.com, geert@glider.be, mchehab@kernel.org, festevam@gmail.com, sakari.ailus@iki.fi, robh+dt@kernel.org, mark.rutland@arm.com, pombredanne@nexb.com
-Cc: linux-renesas-soc@vger.kernel.org, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org
+To: iommu@lists.linux-foundation.org
+Cc: Konrad Rzeszutek Wilk <konrad@darnok.org>, linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org, linux-c6x-dev@linux-c6x.org, linux-cris-kernel@axis.com, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-metag@vger.kernel.org, Michal Simek <monstr@monstr.eu>, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, patches@groups.riscv.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, Guan Xuetao <gxt@mprc.pku.edu.cn>, x86@kernel.org, linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org
 
-On 01/12/2018 03:04 PM, Jacopo Mondi wrote:
-> Add Capture Engine Unit (CEU) node to device tree.
-> 
-> Signed-off-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
-> Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+---
+ include/linux/dma-direct.h |  1 +
+ lib/dma-direct.c           | 19 +++++++++++++++++++
+ 2 files changed, 20 insertions(+)
 
-Acked-by: Hans Verkuil <hans.verkuil@cisco.com>
-
-Regards,
-
-        Hans
-
-> ---
->  arch/arm/boot/dts/r7s72100.dtsi | 15 ++++++++++++---
->  1 file changed, 12 insertions(+), 3 deletions(-)
-> 
-> diff --git a/arch/arm/boot/dts/r7s72100.dtsi b/arch/arm/boot/dts/r7s72100.dtsi
-> index ab9645a..5fe62f9 100644
-> --- a/arch/arm/boot/dts/r7s72100.dtsi
-> +++ b/arch/arm/boot/dts/r7s72100.dtsi
-> @@ -135,9 +135,9 @@
->  			#clock-cells = <1>;
->  			compatible = "renesas,r7s72100-mstp-clocks", "renesas,cpg-mstp-clocks";
->  			reg = <0xfcfe042c 4>;
-> -			clocks = <&p0_clk>;
-> -			clock-indices = <R7S72100_CLK_RTC>;
-> -			clock-output-names = "rtc";
-> +			clocks = <&b_clk>, <&p0_clk>;
-> +			clock-indices = <R7S72100_CLK_CEU R7S72100_CLK_RTC>;
-> +			clock-output-names = "ceu", "rtc";
->  		};
->  
->  		mstp7_clks: mstp7_clks@fcfe0430 {
-> @@ -667,4 +667,13 @@
->  		power-domains = <&cpg_clocks>;
->  		status = "disabled";
->  	};
-> +
-> +	ceu: ceu@e8210000 {
-> +		reg = <0xe8210000 0x3000>;
-> +		compatible = "renesas,r7s72100-ceu";
-> +		interrupts = <GIC_SPI 332 IRQ_TYPE_LEVEL_HIGH>;
-> +		clocks = <&mstp6_clks R7S72100_CLK_CEU>;
-> +		power-domains = <&cpg_clocks>;
-> +		status = "disabled";
-> +	};
->  };
-> 
+diff --git a/include/linux/dma-direct.h b/include/linux/dma-direct.h
+index 4788bf0bf683..bcdb1a3e4b1f 100644
+--- a/include/linux/dma-direct.h
++++ b/include/linux/dma-direct.h
+@@ -42,5 +42,6 @@ void *dma_direct_alloc(struct device *dev, size_t size, dma_addr_t *dma_handle,
+ 		gfp_t gfp, unsigned long attrs);
+ void dma_direct_free(struct device *dev, size_t size, void *cpu_addr,
+ 		dma_addr_t dma_addr, unsigned long attrs);
++int dma_direct_supported(struct device *dev, u64 mask);
+ 
+ #endif /* _LINUX_DMA_DIRECT_H */
+diff --git a/lib/dma-direct.c b/lib/dma-direct.c
+index 784a68dfdbe3..40b1f92f2214 100644
+--- a/lib/dma-direct.c
++++ b/lib/dma-direct.c
+@@ -122,6 +122,24 @@ static int dma_direct_map_sg(struct device *dev, struct scatterlist *sgl,
+ 	return nents;
+ }
+ 
++int dma_direct_supported(struct device *dev, u64 mask)
++{
++#ifdef CONFIG_ZONE_DMA
++	if (mask < DMA_BIT_MASK(ARCH_ZONE_DMA_BITS))
++		return 0;
++#else
++	/*
++	 * Because 32-bit DMA masks are so common we expect every architecture
++	 * to be able to satisfy them - either by not supporting more physical
++	 * memory, or by providing a ZONE_DMA32.  If neither is the case, the
++	 * architecture needs to use an IOMMU instead of the direct mapping.
++	 */
++	if (mask < DMA_BIT_MASK(32))
++		return 0;
++#endif
++	return 1;
++}
++
+ static int dma_direct_mapping_error(struct device *dev, dma_addr_t dma_addr)
+ {
+ 	return dma_addr = DIRECT_MAPPING_ERROR;
+@@ -132,6 +150,7 @@ const struct dma_map_ops dma_direct_ops = {
+ 	.free			= dma_direct_free,
+ 	.map_page		= dma_direct_map_page,
+ 	.map_sg			= dma_direct_map_sg,
++	.dma_supported		= dma_direct_supported,
+ 	.mapping_error		= dma_direct_mapping_error,
+ };
+ EXPORT_SYMBOL(dma_direct_ops);
+-- 
+2.14.2
 
