@@ -1,82 +1,176 @@
-From: Matthew Wilcox <willy@infradead.org>
-Date: Wed, 17 Jan 2018 20:20:49 +0000
-Subject: [PATCH v6 25/99] page cache: Convert page deletion to XArray
-Message-Id: <20180117202203.19756-26-willy@infradead.org>
+From: Christoph Hellwig <hch@lst.de>
+Date: Wed, 10 Jan 2018 08:00:09 +0000
+Subject: [PATCH 15/33] microblaze: rename dma_direct to dma_nommu
+Message-Id: <20180110080027.13879-16-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180117202203.19756-1-willy@infradead.org>
-In-Reply-To: <20180117202203.19756-1-willy-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
+References: <20180110080027.13879-1-hch@lst.de>
+In-Reply-To: <20180110080027.13879-1-hch-jcswGhMUV9g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Matthew Wilcox <mawilcox-0li6OtcxBFHby3iVrkZq2A@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-f2fs-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, linux-nilfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-btrfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-xfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Bjorn Andersson <bjorn.andersson-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, Stefano Stabellini <sstabellini-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-remoteproc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, intel-gfx-PD4FTy7X32lNgt0PjOBp9y5qC8QIuHrW@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: linux-mips-6z/3iImG2C8G8FEW9MqTrA@public.gmane.org, linux-ia64-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sparclinux-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Guan Xuetao <gxt-TG0Ac1+ktVePQbnJrJN+5g@public.gmane.org>, linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-c6x-dev-jPsnJVOj+W6hPH1hqNUYSQ@public.gmane.org, linux-hexagon-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, x86-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, Konrad Rzeszutek Wilk <konrad-Gq0aWv8utHQdnm+yROfE0A@public.gmane.org>, linux-snps-arc-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, linux-m68k-cunTk1MwBs8S/qaLPR03pWD2FQJk+8+b@public.gmane.org, patches-q3qR2WxjNRFS9aJRtSZj7A@public.gmane.org, linux-metag-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, Michal Simek <monstr-pSz03upnqPeHXe+LvDLADg@public.gmane.org>, linux-parisc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-cris-kernel-VrBV9hrLPhE@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-alpha-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linuxppc-dev-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org
 
-From: Matthew Wilcox <mawilcox@microsoft.com>
+This frees the dma_direct_* namespace for a generic implementation.
 
-The code is slightly shorter and simpler.
-
-Signed-off-by: Matthew Wilcox <mawilcox@microsoft.com>
+Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- mm/filemap.c | 30 ++++++++++++++----------------
- 1 file changed, 14 insertions(+), 16 deletions(-)
+ arch/microblaze/include/asm/dma-mapping.h |  4 +--
+ arch/microblaze/kernel/dma.c              | 48 +++++++++++++++----------------
+ 2 files changed, 26 insertions(+), 26 deletions(-)
 
-diff --git a/mm/filemap.c b/mm/filemap.c
-index e6371b551de1..ed30d5310e50 100644
---- a/mm/filemap.c
-+++ b/mm/filemap.c
-@@ -112,30 +112,28 @@
-  *   ->tasklist_lock            (memory_failure, collect_procs_ao)
+diff --git a/arch/microblaze/include/asm/dma-mapping.h b/arch/microblaze/include/asm/dma-mapping.h
+index 6b9ea39405b8..add50c1373bf 100644
+--- a/arch/microblaze/include/asm/dma-mapping.h
++++ b/arch/microblaze/include/asm/dma-mapping.h
+@@ -18,11 +18,11 @@
+ /*
+  * Available generic sets of operations
   */
+-extern const struct dma_map_ops dma_direct_ops;
++extern const struct dma_map_ops dma_nommu_ops;
  
--static void page_cache_tree_delete(struct address_space *mapping,
-+static void page_cache_delete(struct address_space *mapping,
- 				   struct page *page, void *shadow)
+ static inline const struct dma_map_ops *get_arch_dma_ops(struct bus_type *bus)
  {
--	int i, nr;
-+	XA_STATE(xas, &mapping->pages, page->index);
-+	unsigned int i, nr;
- 
--	/* hugetlb pages are represented by one entry in the radix tree */
-+	mapping_set_update(&xas, mapping);
-+
-+	/* hugetlb pages are represented by a single entry in the xarray */
- 	nr = PageHuge(page) ? 1 : hpage_nr_pages(page);
- 
- 	VM_BUG_ON_PAGE(!PageLocked(page), page);
- 	VM_BUG_ON_PAGE(PageTail(page), page);
- 	VM_BUG_ON_PAGE(nr != 1 && shadow, page);
- 
--	for (i = 0; i < nr; i++) {
--		struct radix_tree_node *node;
--		void **slot;
--
--		__radix_tree_lookup(&mapping->pages, page->index + i,
--				    &node, &slot);
--
--		VM_BUG_ON_PAGE(!node && nr != 1, page);
--
--		radix_tree_clear_tags(&mapping->pages, node, slot);
--		__radix_tree_replace(&mapping->pages, node, slot, shadow,
--				workingset_lookup_update(mapping));
-+	i = nr;
-+repeat:
-+	xas_store(&xas, shadow);
-+	xas_init_tags(&xas);
-+	if (--i) {
-+		xas_next(&xas);
-+		goto repeat;
- 	}
- 
- 	page->mapping = NULL;
-@@ -235,7 +233,7 @@ void __delete_from_page_cache(struct page *page, void *shadow)
- 	trace_mm_filemap_delete_from_page_cache(page);
- 
- 	unaccount_page_cache_page(mapping, page);
--	page_cache_tree_delete(mapping, page, shadow);
-+	page_cache_delete(mapping, page, shadow);
+-	return &dma_direct_ops;
++	return &dma_nommu_ops;
  }
  
- static void page_cache_free_page(struct address_space *mapping,
+ #endif	/* _ASM_MICROBLAZE_DMA_MAPPING_H */
+diff --git a/arch/microblaze/kernel/dma.c b/arch/microblaze/kernel/dma.c
+index 990bf9ea0ec6..450803e5731a 100644
+--- a/arch/microblaze/kernel/dma.c
++++ b/arch/microblaze/kernel/dma.c
+@@ -17,7 +17,7 @@
+ 
+ #define NOT_COHERENT_CACHE
+ 
+-static void *dma_direct_alloc_coherent(struct device *dev, size_t size,
++static void *dma_nommu_alloc_coherent(struct device *dev, size_t size,
+ 				       dma_addr_t *dma_handle, gfp_t flag,
+ 				       unsigned long attrs)
+ {
+@@ -42,7 +42,7 @@ static void *dma_direct_alloc_coherent(struct device *dev, size_t size,
+ #endif
+ }
+ 
+-static void dma_direct_free_coherent(struct device *dev, size_t size,
++static void dma_nommu_free_coherent(struct device *dev, size_t size,
+ 				     void *vaddr, dma_addr_t dma_handle,
+ 				     unsigned long attrs)
+ {
+@@ -69,7 +69,7 @@ static inline void __dma_sync(unsigned long paddr,
+ 	}
+ }
+ 
+-static int dma_direct_map_sg(struct device *dev, struct scatterlist *sgl,
++static int dma_nommu_map_sg(struct device *dev, struct scatterlist *sgl,
+ 			     int nents, enum dma_data_direction direction,
+ 			     unsigned long attrs)
+ {
+@@ -89,12 +89,12 @@ static int dma_direct_map_sg(struct device *dev, struct scatterlist *sgl,
+ 	return nents;
+ }
+ 
+-static int dma_direct_dma_supported(struct device *dev, u64 mask)
++static int dma_nommu_dma_supported(struct device *dev, u64 mask)
+ {
+ 	return 1;
+ }
+ 
+-static inline dma_addr_t dma_direct_map_page(struct device *dev,
++static inline dma_addr_t dma_nommu_map_page(struct device *dev,
+ 					     struct page *page,
+ 					     unsigned long offset,
+ 					     size_t size,
+@@ -106,7 +106,7 @@ static inline dma_addr_t dma_direct_map_page(struct device *dev,
+ 	return page_to_phys(page) + offset;
+ }
+ 
+-static inline void dma_direct_unmap_page(struct device *dev,
++static inline void dma_nommu_unmap_page(struct device *dev,
+ 					 dma_addr_t dma_address,
+ 					 size_t size,
+ 					 enum dma_data_direction direction,
+@@ -122,7 +122,7 @@ static inline void dma_direct_unmap_page(struct device *dev,
+ }
+ 
+ static inline void
+-dma_direct_sync_single_for_cpu(struct device *dev,
++dma_nommu_sync_single_for_cpu(struct device *dev,
+ 			       dma_addr_t dma_handle, size_t size,
+ 			       enum dma_data_direction direction)
+ {
+@@ -136,7 +136,7 @@ dma_direct_sync_single_for_cpu(struct device *dev,
+ }
+ 
+ static inline void
+-dma_direct_sync_single_for_device(struct device *dev,
++dma_nommu_sync_single_for_device(struct device *dev,
+ 				  dma_addr_t dma_handle, size_t size,
+ 				  enum dma_data_direction direction)
+ {
+@@ -150,7 +150,7 @@ dma_direct_sync_single_for_device(struct device *dev,
+ }
+ 
+ static inline void
+-dma_direct_sync_sg_for_cpu(struct device *dev,
++dma_nommu_sync_sg_for_cpu(struct device *dev,
+ 			   struct scatterlist *sgl, int nents,
+ 			   enum dma_data_direction direction)
+ {
+@@ -164,7 +164,7 @@ dma_direct_sync_sg_for_cpu(struct device *dev,
+ }
+ 
+ static inline void
+-dma_direct_sync_sg_for_device(struct device *dev,
++dma_nommu_sync_sg_for_device(struct device *dev,
+ 			      struct scatterlist *sgl, int nents,
+ 			      enum dma_data_direction direction)
+ {
+@@ -178,7 +178,7 @@ dma_direct_sync_sg_for_device(struct device *dev,
+ }
+ 
+ static
+-int dma_direct_mmap_coherent(struct device *dev, struct vm_area_struct *vma,
++int dma_nommu_mmap_coherent(struct device *dev, struct vm_area_struct *vma,
+ 			     void *cpu_addr, dma_addr_t handle, size_t size,
+ 			     unsigned long attrs)
+ {
+@@ -204,20 +204,20 @@ int dma_direct_mmap_coherent(struct device *dev, struct vm_area_struct *vma,
+ #endif
+ }
+ 
+-const struct dma_map_ops dma_direct_ops = {
+-	.alloc		= dma_direct_alloc_coherent,
+-	.free		= dma_direct_free_coherent,
+-	.mmap		= dma_direct_mmap_coherent,
+-	.map_sg		= dma_direct_map_sg,
+-	.dma_supported	= dma_direct_dma_supported,
+-	.map_page	= dma_direct_map_page,
+-	.unmap_page	= dma_direct_unmap_page,
+-	.sync_single_for_cpu		= dma_direct_sync_single_for_cpu,
+-	.sync_single_for_device		= dma_direct_sync_single_for_device,
+-	.sync_sg_for_cpu		= dma_direct_sync_sg_for_cpu,
+-	.sync_sg_for_device		= dma_direct_sync_sg_for_device,
++const struct dma_map_ops dma_nommu_ops = {
++	.alloc			= dma_nommu_alloc_coherent,
++	.free			= dma_nommu_free_coherent,
++	.mmap			= dma_nommu_mmap_coherent,
++	.map_sg			= dma_nommu_map_sg,
++	.dma_supported		= dma_nommu_dma_supported,
++	.map_page		= dma_nommu_map_page,
++	.unmap_page		= dma_nommu_unmap_page,
++	.sync_single_for_cpu	= dma_nommu_sync_single_for_cpu,
++	.sync_single_for_device	= dma_nommu_sync_single_for_device,
++	.sync_sg_for_cpu	= dma_nommu_sync_sg_for_cpu,
++	.sync_sg_for_device	= dma_nommu_sync_sg_for_device,
+ };
+-EXPORT_SYMBOL(dma_direct_ops);
++EXPORT_SYMBOL(dma_nommu_ops);
+ 
+ /* Number of entries preallocated for DMA-API debugging */
+ #define PREALLOC_DMA_DEBUG_ENTRIES (1 << 16)
 -- 
-2.15.1
+2.14.2
 
