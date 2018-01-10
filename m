@@ -1,46 +1,37 @@
-From: Jacopo Mondi <jacopo+renesas@jmondi.org>
-Date: Fri, 26 Jan 2018 13:55:30 +0000
-Subject: [PATCH v7 11/11] media: i2c: ov7670: Fully set mbus frame fmt
-Message-Id: <1516974930-11713-12-git-send-email-jacopo+renesas@jmondi.org>
+From: Christoph Hellwig <hch@lst.de>
+Date: Wed, 10 Jan 2018 08:00:02 +0000
+Subject: [PATCH 08/33] s390: remove the unused dma_capable helper
+Message-Id: <20180110080027.13879-9-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1516974930-11713-1-git-send-email-jacopo+renesas@jmondi.org>
-In-Reply-To: <1516974930-11713-1-git-send-email-jacopo+renesas@jmondi.org>
+References: <20180110080027.13879-1-hch@lst.de>
+In-Reply-To: <20180110080027.13879-1-hch-jcswGhMUV9g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: laurent.pinchart@ideasonboard.com, magnus.damm@gmail.com, geert@glider.be, hverkuil@xs4all.nl, mchehab@kernel.org, festevam@gmail.com, sakari.ailus@iki.fi, robh+dt@kernel.org, mark.rutland@arm.com, pombredanne@nexb.com
-Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>, linux-renesas-soc@vger.kernel.org, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org
+To: iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: linux-mips-6z/3iImG2C8G8FEW9MqTrA@public.gmane.org, linux-ia64-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sparclinux-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Guan Xuetao <gxt-TG0Ac1+ktVePQbnJrJN+5g@public.gmane.org>, linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-c6x-dev-jPsnJVOj+W6hPH1hqNUYSQ@public.gmane.org, linux-hexagon-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, x86-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, Konrad Rzeszutek Wilk <konrad-Gq0aWv8utHQdnm+yROfE0A@public.gmane.org>, linux-snps-arc-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, linux-m68k-cunTk1MwBs8S/qaLPR03pWD2FQJk+8+b@public.gmane.org, patches-q3qR2WxjNRFS9aJRtSZj7A@public.gmane.org, linux-metag-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, Michal Simek <monstr-pSz03upnqPeHXe+LvDLADg@public.gmane.org>, linux-parisc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-cris-kernel-VrBV9hrLPhE@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-alpha-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linuxppc-dev-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org
 
-The sensor driver sets mbus format colorspace information and sizes,
-but not ycbcr encoding, quantization and xfer function. When supplied
-with an badly initialized mbus frame format structure, those fields
-need to be set explicitly not to leave them uninitialized. This is
-tested by v4l2-compliance, which supplies a mbus format description
-structure and checks for all fields to be properly set.
-
-Without this commit, v4l2-compliance fails when testing formats with:
-fail: v4l2-test-formats.cpp(335): ycbcr_enc >= 0xff
-
-Signed-off-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
+Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- drivers/media/i2c/ov7670.c | 4 ++++
- 1 file changed, 4 insertions(+)
+ arch/s390/include/asm/dma-mapping.h | 7 -------
+ 1 file changed, 7 deletions(-)
 
-diff --git a/drivers/media/i2c/ov7670.c b/drivers/media/i2c/ov7670.c
-index 25b26d4..61c472e 100644
---- a/drivers/media/i2c/ov7670.c
-+++ b/drivers/media/i2c/ov7670.c
-@@ -996,6 +996,10 @@ static int ov7670_try_fmt_internal(struct v4l2_subdev *sd,
- 	fmt->height = wsize->height;
- 	fmt->colorspace = ov7670_formats[index].colorspace;
+diff --git a/arch/s390/include/asm/dma-mapping.h b/arch/s390/include/asm/dma-mapping.h
+index eaf490f9c5bc..2ec7240c1ada 100644
+--- a/arch/s390/include/asm/dma-mapping.h
++++ b/arch/s390/include/asm/dma-mapping.h
+@@ -16,11 +16,4 @@ static inline const struct dma_map_ops *get_arch_dma_ops(struct bus_type *bus)
+ 	return &dma_noop_ops;
+ }
  
-+	fmt->ycbcr_enc = V4L2_YCBCR_ENC_DEFAULT;
-+	fmt->quantization = V4L2_QUANTIZATION_DEFAULT;
-+	fmt->xfer_func = V4L2_XFER_FUNC_DEFAULT;
-+
- 	info->format = *fmt;
- 
- 	return 0;
+-static inline bool dma_capable(struct device *dev, dma_addr_t addr, size_t size)
+-{
+-	if (!dev->dma_mask)
+-		return false;
+-	return addr + size - 1 <= *dev->dma_mask;
+-}
+-
+ #endif /* _ASM_S390_DMA_MAPPING_H */
 -- 
-2.7.4
+2.14.2
 
