@@ -1,243 +1,38 @@
-From: Matthew Wilcox <willy@infradead.org>
-Date: Wed, 17 Jan 2018 20:21:40 +0000
-Subject: [PATCH v6 76/99] irqdomain: Convert to XArray
-Message-Id: <20180117202203.19756-77-willy@infradead.org>
+From: Christoph Hellwig <hch@lst.de>
+Date: Fri, 12 Jan 2018 08:42:07 +0000
+Subject: [PATCH 09/34] dma-mapping: take dma_pfn_offset into account in dma_max_pfn
+Message-Id: <20180112084232.2857-10-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180117202203.19756-1-willy@infradead.org>
-In-Reply-To: <20180117202203.19756-1-willy@infradead.org>
+References: <20180112084232.2857-1-hch@lst.de>
+In-Reply-To: <20180112084232.2857-1-hch-jcswGhMUV9g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Matthew Wilcox <mawilcox@microsoft.com>, linux-mm@kvack.org, linux-fsdevel@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net, linux-nilfs@vger.kernel.org, linux-btrfs@vger.kernel.org, linux-xfs@vger.kernel.org, linux-usb@vger.kernel.org, Bjorn Andersson <bjorn.andersson@linaro.org>, Stefano Stabellini <sstabellini@kernel.org>, iommu@lists.linux-foundation.org, linux-remoteproc@vger.kernel.org, linux-s390@vger.kernel.org, intel-gfx@lists.freedesktop.org, cgroups@vger.kernel.org, linux-sh@vger.kernel.org, David Howells <dhowells@redhat.com>
+To: iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: linux-mips-6z/3iImG2C8G8FEW9MqTrA@public.gmane.org, linux-ia64-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sparclinux-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Guan Xuetao <gxt-TG0Ac1+ktVePQbnJrJN+5g@public.gmane.org>, linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-c6x-dev-jPsnJVOj+W6hPH1hqNUYSQ@public.gmane.org, linux-hexagon-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, x86-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, Konrad Rzeszutek Wilk <konrad-Gq0aWv8utHQdnm+yROfE0A@public.gmane.org>, linux-snps-arc-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, linux-m68k-cunTk1MwBs8S/qaLPR03pWD2FQJk+8+b@public.gmane.org, patches-q3qR2WxjNRFS9aJRtSZj7A@public.gmane.org, linux-metag-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, Michal Simek <monstr-pSz03upnqPeHXe+LvDLADg@public.gmane.org>, linux-parisc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-cris-kernel-VrBV9hrLPhE@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-alpha-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linuxppc-dev-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org
 
-From: Matthew Wilcox <mawilcox@microsoft.com>
+This makes sure the generic version can be used with architectures /
+devices that have a DMA offset in the direct mapping.
 
-In a non-critical path, irqdomain wants to know how many entries are
-stored in the xarray, so add xa_count().  This is a pretty straightforward
-conversion; mostly just removing now-redundant locking.  The only thing
-of note is just how much simpler irq_domain_fix_revmap() becomes.
-
-Signed-off-by: Matthew Wilcox <mawilcox@microsoft.com>
-Acked-by: Marc Zyngier <marc.zyngier@arm.com>
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+Reviewed-by: Robin Murphy <robin.murphy@arm.com>
 ---
- include/linux/irqdomain.h | 10 ++++------
- include/linux/xarray.h    |  1 +
- kernel/irq/irqdomain.c    | 39 ++++++++++-----------------------------
- lib/xarray.c              | 25 +++++++++++++++++++++++++
- 4 files changed, 40 insertions(+), 35 deletions(-)
+ include/linux/dma-mapping.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/include/linux/irqdomain.h b/include/linux/irqdomain.h
-index 48c7e86bb556..6c69d9141709 100644
---- a/include/linux/irqdomain.h
-+++ b/include/linux/irqdomain.h
-@@ -33,8 +33,7 @@
- #include <linux/types.h>
- #include <linux/irqhandler.h>
- #include <linux/of.h>
--#include <linux/mutex.h>
--#include <linux/radix-tree.h>
-+#include <linux/xarray.h>
- 
- struct device_node;
- struct irq_domain;
-@@ -151,7 +150,7 @@ struct irq_domain_chip_generic;
-  * @revmap_direct_max_irq: The largest hwirq that can be set for controllers that
-  *                         support direct mapping
-  * @revmap_size: Size of the linear map table @linear_revmap[]
-- * @revmap_tree: Radix map tree for hwirqs that don't fit in the linear map
-+ * @revmap_array: hwirqs that don't fit in the linear map
-  * @linear_revmap: Linear table of hwirq->virq reverse mappings
-  */
- struct irq_domain {
-@@ -177,8 +176,7 @@ struct irq_domain {
- 	irq_hw_number_t hwirq_max;
- 	unsigned int revmap_direct_max_irq;
- 	unsigned int revmap_size;
--	struct radix_tree_root revmap_tree;
--	struct mutex revmap_tree_mutex;
-+	struct xarray revmap_array;
- 	unsigned int linear_revmap[];
- };
- 
-@@ -378,7 +376,7 @@ extern void irq_dispose_mapping(unsigned int virq);
-  * This is a fast path alternative to irq_find_mapping() that can be
-  * called directly by irq controller code to save a handful of
-  * instructions. It is always safe to call, but won't find irqs mapped
-- * using the radix tree.
-+ * using the xarray.
-  */
- static inline unsigned int irq_linear_revmap(struct irq_domain *domain,
- 					     irq_hw_number_t hwirq)
-diff --git a/include/linux/xarray.h b/include/linux/xarray.h
-index c3f7405c5517..892288fe9595 100644
---- a/include/linux/xarray.h
-+++ b/include/linux/xarray.h
-@@ -269,6 +269,7 @@ void *xa_find_after(struct xarray *xa, unsigned long *index,
- 		unsigned long max, xa_tag_t) __attribute__((nonnull(2)));
- unsigned int xa_extract(struct xarray *, void **dst, unsigned long start,
- 		unsigned long max, unsigned int n, xa_tag_t);
-+unsigned long xa_count(struct xarray *);
- void xa_destroy(struct xarray *);
- 
- /**
-diff --git a/kernel/irq/irqdomain.c b/kernel/irq/irqdomain.c
-index 62068ad46930..d6da3a8eadd2 100644
---- a/kernel/irq/irqdomain.c
-+++ b/kernel/irq/irqdomain.c
-@@ -114,7 +114,7 @@ EXPORT_SYMBOL_GPL(irq_domain_free_fwnode);
- /**
-  * __irq_domain_add() - Allocate a new irq_domain data structure
-  * @fwnode: firmware node for the interrupt controller
-- * @size: Size of linear map; 0 for radix mapping only
-+ * @size: Size of linear map; 0 for xarray mapping only
-  * @hwirq_max: Maximum number of interrupts supported by controller
-  * @direct_max: Maximum value of direct maps; Use ~0 for no limit; 0 for no
-  *              direct mapping
-@@ -209,8 +209,7 @@ struct irq_domain *__irq_domain_add(struct fwnode_handle *fwnode, int size,
- 	of_node_get(of_node);
- 
- 	/* Fill structure */
--	INIT_RADIX_TREE(&domain->revmap_tree, GFP_KERNEL);
--	mutex_init(&domain->revmap_tree_mutex);
-+	xa_init(&domain->revmap_array);
- 	domain->ops = ops;
- 	domain->host_data = host_data;
- 	domain->hwirq_max = hwirq_max;
-@@ -241,7 +240,7 @@ void irq_domain_remove(struct irq_domain *domain)
- 	mutex_lock(&irq_domain_mutex);
- 	debugfs_remove_domain_dir(domain);
- 
--	WARN_ON(!radix_tree_empty(&domain->revmap_tree));
-+	WARN_ON(!xa_empty(&domain->revmap_array));
- 
- 	list_del(&domain->link);
- 
-@@ -462,9 +461,7 @@ static void irq_domain_clear_mapping(struct irq_domain *domain,
- 	if (hwirq < domain->revmap_size) {
- 		domain->linear_revmap[hwirq] = 0;
- 	} else {
--		mutex_lock(&domain->revmap_tree_mutex);
--		radix_tree_delete(&domain->revmap_tree, hwirq);
--		mutex_unlock(&domain->revmap_tree_mutex);
-+		xa_erase(&domain->revmap_array, hwirq);
- 	}
- }
- 
-@@ -475,9 +472,7 @@ static void irq_domain_set_mapping(struct irq_domain *domain,
- 	if (hwirq < domain->revmap_size) {
- 		domain->linear_revmap[hwirq] = irq_data->irq;
- 	} else {
--		mutex_lock(&domain->revmap_tree_mutex);
--		radix_tree_insert(&domain->revmap_tree, hwirq, irq_data);
--		mutex_unlock(&domain->revmap_tree_mutex);
-+		xa_store(&domain->revmap_array, hwirq, irq_data, GFP_KERNEL);
- 	}
- }
- 
-@@ -585,7 +580,7 @@ EXPORT_SYMBOL_GPL(irq_domain_associate_many);
-  * This routine is used for irq controllers which can choose the hardware
-  * interrupt numbers they generate. In such a case it's simplest to use
-  * the linux irq as the hardware interrupt number. It still uses the linear
-- * or radix tree to store the mapping, but the irq controller can optimize
-+ * or xarray to store the mapping, but the irq controller can optimize
-  * the revmap path by using the hwirq directly.
-  */
- unsigned int irq_create_direct_mapping(struct irq_domain *domain)
-@@ -890,9 +885,7 @@ unsigned int irq_find_mapping(struct irq_domain *domain,
- 	if (hwirq < domain->revmap_size)
- 		return domain->linear_revmap[hwirq];
- 
--	rcu_read_lock();
--	data = radix_tree_lookup(&domain->revmap_tree, hwirq);
--	rcu_read_unlock();
-+	data = xa_load(&domain->revmap_array, hwirq);
- 	return data ? data->irq : 0;
- }
- EXPORT_SYMBOL_GPL(irq_find_mapping);
-@@ -943,8 +936,6 @@ static int virq_debug_show(struct seq_file *m, void *private)
- 	unsigned long flags;
- 	struct irq_desc *desc;
- 	struct irq_domain *domain;
--	struct radix_tree_iter iter;
--	void __rcu **slot;
- 	int i;
- 
- 	seq_printf(m, " %-16s  %-6s  %-10s  %-10s  %s\n",
-@@ -953,7 +944,6 @@ static int virq_debug_show(struct seq_file *m, void *private)
- 	list_for_each_entry(domain, &irq_domain_list, link) {
- 		struct device_node *of_node;
- 		const char *name;
--
- 		int count = 0;
- 
- 		of_node = irq_domain_get_of_node(domain);
-@@ -965,8 +955,7 @@ static int virq_debug_show(struct seq_file *m, void *private)
- 		else
- 			name = "";
- 
--		radix_tree_for_each_slot(slot, &domain->revmap_tree, &iter, 0)
--			count++;
-+		count = xa_count(&domain->revmap_array);
- 		seq_printf(m, "%c%-16s  %6u  %10u  %10u  %s\n",
- 			   domain = irq_default_domain ? '*' : ' ', domain->name,
- 			   domain->revmap_size + count, domain->revmap_size,
-@@ -1452,17 +1441,9 @@ int __irq_domain_alloc_irqs(struct irq_domain *domain, int irq_base,
- /* The irq_data was moved, fix the revmap to refer to the new location */
- static void irq_domain_fix_revmap(struct irq_data *d)
+diff --git a/include/linux/dma-mapping.h b/include/linux/dma-mapping.h
+index 81ed9b2d84dc..d84951865be7 100644
+--- a/include/linux/dma-mapping.h
++++ b/include/linux/dma-mapping.h
+@@ -692,7 +692,7 @@ static inline int dma_set_seg_boundary(struct device *dev, unsigned long mask)
+ #ifndef dma_max_pfn
+ static inline unsigned long dma_max_pfn(struct device *dev)
  {
--	void __rcu **slot;
--
- 	if (d->hwirq < d->domain->revmap_size)
--		return; /* Not using radix tree. */
--
--	/* Fix up the revmap. */
--	mutex_lock(&d->domain->revmap_tree_mutex);
--	slot = radix_tree_lookup_slot(&d->domain->revmap_tree, d->hwirq);
--	if (slot)
--		radix_tree_replace_slot(&d->domain->revmap_tree, slot, d);
--	mutex_unlock(&d->domain->revmap_tree_mutex);
-+		return;
-+	xa_store(&d->domain->revmap_array, d->hwirq, d, GFP_KERNEL);
+-	return *dev->dma_mask >> PAGE_SHIFT;
++	return (*dev->dma_mask >> PAGE_SHIFT) + dev->dma_pfn_offset;
  }
+ #endif
  
- /**
-diff --git a/lib/xarray.c b/lib/xarray.c
-index b4dec8e2d202..62642e5508ee 100644
---- a/lib/xarray.c
-+++ b/lib/xarray.c
-@@ -1625,6 +1625,31 @@ unsigned int xa_extract(struct xarray *xa, void **dst, unsigned long start,
- }
- EXPORT_SYMBOL(xa_extract);
- 
-+/**
-+ * xa_count() - Count the number of present entries in the XArray
-+ * @xa: XArray.
-+ *
-+ * This function walks the XArray counting how many entries are present.
-+ * If every entry in the XArray is full, this function will return 0.  If
-+ * this is a theoretical possibility, check xa_empty() first.
-+ *
-+ * This is a naive implementation; faster implementations are possible.
-+ * If speed is important, consider maintaining a count variable in your
-+ * own data structure.
-+ */
-+unsigned long xa_count(struct xarray *xa)
-+{
-+	XA_STATE(xas, xa, 0);
-+	void *p;
-+	unsigned long count = 0;
-+
-+	xas_for_each(&xas, p, ULONG_MAX)
-+		count++;
-+
-+	return count;
-+}
-+EXPORT_SYMBOL(xa_count);
-+
- /**
-  * xa_destroy() - Free all internal data structures.
-  * @xa: XArray.
 -- 
-2.15.1
+2.14.2
 
