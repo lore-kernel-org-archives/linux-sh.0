@@ -1,60 +1,81 @@
-From: Jacopo Mondi <jacopo+renesas@jmondi.org>
-Date: Tue, 09 Jan 2018 16:25:24 +0000
-Subject: [PATCH v4 2/9] include: media: Add Renesas CEU driver interface
-Message-Id: <1515515131-13760-3-git-send-email-jacopo+renesas@jmondi.org>
+From: Christoph Hellwig <hch@lst.de>
+Date: Fri, 12 Jan 2018 08:42:16 +0000
+Subject: [PATCH 18/34] microblaze: remove the dead !NOT_COHERENT_CACHE dma code
+Message-Id: <20180112084232.2857-19-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1515515131-13760-1-git-send-email-jacopo+renesas@jmondi.org>
-In-Reply-To: <1515515131-13760-1-git-send-email-jacopo+renesas-AW8dsiIh9cEdnm+yROfE0A@public.gmane.org>
+References: <20180112084232.2857-1-hch@lst.de>
+In-Reply-To: <20180112084232.2857-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org, magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, geert-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org, mchehab-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, hverkuil-qWit8jRvyhVmR6Xm/wNWPw@public.gmane.org, festevam-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, sakari.ailus-X3B1VOXEql0@public.gmane.org, robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, mark.rutland-5wv7dgnIgG8@public.gmane.org
-Cc: Jacopo Mondi <jacopo+renesas-AW8dsiIh9cEdnm+yROfE0A@public.gmane.org>, linux-renesas-soc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-media-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: iommu@lists.linux-foundation.org
+Cc: Konrad Rzeszutek Wilk <konrad@darnok.org>, linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org, linux-c6x-dev@linux-c6x.org, linux-cris-kernel@axis.com, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-metag@vger.kernel.org, Michal Simek <monstr@monstr.eu>, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, patches@groups.riscv.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, Guan Xuetao <gxt@mprc.pku.edu.cn>, x86@kernel.org, linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Add renesas-ceu header file.
-
-Do not remove the existing sh_mobile_ceu.h one as long as the original
-driver does not go away.
-
-Signed-off-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
-Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- include/media/drv-intf/renesas-ceu.h | 26 ++++++++++++++++++++++++++
- 1 file changed, 26 insertions(+)
- create mode 100644 include/media/drv-intf/renesas-ceu.h
+ arch/microblaze/kernel/dma.c | 28 ----------------------------
+ 1 file changed, 28 deletions(-)
 
-diff --git a/include/media/drv-intf/renesas-ceu.h b/include/media/drv-intf/renesas-ceu.h
-new file mode 100644
-index 0000000..52841d1
---- /dev/null
-+++ b/include/media/drv-intf/renesas-ceu.h
-@@ -0,0 +1,26 @@
-+// SPDX-License-Identifier: GPL-2.0
-+/*
-+ * renesas-ceu.h - Renesas CEU driver interface
-+ *
-+ * Copyright 2017-2018 Jacopo Mondi <jacopo+renesas@jmondi.org>
-+ */
-+
-+#ifndef __MEDIA_DRV_INTF_RENESAS_CEU_H__
-+#define __MEDIA_DRV_INTF_RENESAS_CEU_H__
-+
-+#define CEU_MAX_SUBDEVS		2
-+
-+struct ceu_async_subdev {
-+	unsigned long flags;
-+	unsigned char bus_width;
-+	unsigned char bus_shift;
-+	unsigned int i2c_adapter_id;
-+	unsigned int i2c_address;
-+};
-+
-+struct ceu_platform_data {
-+	unsigned int num_subdevs;
-+	struct ceu_async_subdev subdevs[CEU_MAX_SUBDEVS];
-+};
-+
-+#endif /* ___MEDIA_DRV_INTF_RENESAS_CEU_H__ */
+diff --git a/arch/microblaze/kernel/dma.c b/arch/microblaze/kernel/dma.c
+index b45d8f8967af..c91e8cef98dd 100644
+--- a/arch/microblaze/kernel/dma.c
++++ b/arch/microblaze/kernel/dma.c
+@@ -15,42 +15,18 @@
+ #include <linux/bug.h>
+ #include <asm/cacheflush.h>
+ 
+-#define NOT_COHERENT_CACHE
+-
+ static void *dma_nommu_alloc_coherent(struct device *dev, size_t size,
+ 				       dma_addr_t *dma_handle, gfp_t flag,
+ 				       unsigned long attrs)
+ {
+-#ifdef NOT_COHERENT_CACHE
+ 	return consistent_alloc(flag, size, dma_handle);
+-#else
+-	void *ret;
+-	struct page *page;
+-	int node = dev_to_node(dev);
+-
+-	/* ignore region specifiers */
+-	flag  &= ~(__GFP_HIGHMEM);
+-
+-	page = alloc_pages_node(node, flag, get_order(size));
+-	if (page = NULL)
+-		return NULL;
+-	ret = page_address(page);
+-	memset(ret, 0, size);
+-	*dma_handle = virt_to_phys(ret);
+-
+-	return ret;
+-#endif
+ }
+ 
+ static void dma_nommu_free_coherent(struct device *dev, size_t size,
+ 				     void *vaddr, dma_addr_t dma_handle,
+ 				     unsigned long attrs)
+ {
+-#ifdef NOT_COHERENT_CACHE
+ 	consistent_free(size, vaddr);
+-#else
+-	free_pages((unsigned long)vaddr, get_order(size));
+-#endif
+ }
+ 
+ static inline void __dma_sync(unsigned long paddr,
+@@ -186,12 +162,8 @@ int dma_nommu_mmap_coherent(struct device *dev, struct vm_area_struct *vma,
+ 	if (off >= count || user_count > (count - off))
+ 		return -ENXIO;
+ 
+-#ifdef NOT_COHERENT_CACHE
+ 	vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
+ 	pfn = consistent_virt_to_pfn(cpu_addr);
+-#else
+-	pfn = virt_to_pfn(cpu_addr);
+-#endif
+ 	return remap_pfn_range(vma, vma->vm_start, pfn + off,
+ 			       vma->vm_end - vma->vm_start, vma->vm_page_prot);
+ #else
 -- 
-2.7.4
+2.14.2
 
