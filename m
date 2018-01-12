@@ -1,226 +1,106 @@
-From: Matthew Wilcox <willy@infradead.org>
-Date: Wed, 17 Jan 2018 20:21:57 +0000
-Subject: [PATCH v6 93/99] f2fs: Convert ino_root to XArray
-Message-Id: <20180117202203.19756-94-willy@infradead.org>
+From: Christoph Hellwig <hch@lst.de>
+Date: Fri, 12 Jan 2018 08:42:29 +0000
+Subject: [PATCH 31/34] dma-direct: make dma_direct_{alloc,free} available to other implementations
+Message-Id: <20180112084232.2857-32-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180117202203.19756-1-willy@infradead.org>
-In-Reply-To: <20180117202203.19756-1-willy-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
+References: <20180112084232.2857-1-hch@lst.de>
+In-Reply-To: <20180112084232.2857-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Matthew Wilcox <mawilcox-0li6OtcxBFHby3iVrkZq2A@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-f2fs-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, linux-nilfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-btrfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-xfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Bjorn Andersson <bjorn.andersson-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, Stefano Stabellini <sstabellini-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-remoteproc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, intel-gfx-PD4FTy7X32lNgt0PjOBp9y5qC8QIuHrW@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: iommu@lists.linux-foundation.org
+Cc: Konrad Rzeszutek Wilk <konrad@darnok.org>, linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org, linux-c6x-dev@linux-c6x.org, linux-cris-kernel@axis.com, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-metag@vger.kernel.org, Michal Simek <monstr@monstr.eu>, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, patches@groups.riscv.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, Guan Xuetao <gxt@mprc.pku.edu.cn>, x86@kernel.org, linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org
 
-From: Matthew Wilcox <mawilcox@microsoft.com>
+So that they don't need to indirect through the operation vector.
 
-I did a fairly major rewrite of __add_ino_entry(); please check carefully.
-Also, we can remove ino_list unless it's important to write out orphan
-inodes in the order they were orphaned.  It may also make more sense to
-combine the array of inode_management structures into a single XArray
-with tags, but that would be a job for someone who understands this
-filesystem better than I do.
-
-Signed-off-by: Matthew Wilcox <mawilcox@microsoft.com>
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+Reviewed-by: Vladimir Murzin <vladimir.murzin@arm.com>
 ---
- fs/f2fs/checkpoint.c | 85 +++++++++++++++++++++++-----------------------------
- fs/f2fs/f2fs.h       |  3 +-
- 2 files changed, 38 insertions(+), 50 deletions(-)
+ arch/arm/mm/dma-mapping-nommu.c | 9 +++------
+ include/linux/dma-direct.h      | 5 +++++
+ lib/dma-direct.c                | 6 +++---
+ 3 files changed, 11 insertions(+), 9 deletions(-)
 
-diff --git a/fs/f2fs/checkpoint.c b/fs/f2fs/checkpoint.c
-index 4aa69bc1c70a..04d69679da13 100644
---- a/fs/f2fs/checkpoint.c
-+++ b/fs/f2fs/checkpoint.c
-@@ -403,33 +403,30 @@ static void __add_ino_entry(struct f2fs_sb_info *sbi, nid_t ino,
- 	struct inode_management *im = &sbi->im[type];
- 	struct ino_entry *e, *tmp;
+diff --git a/arch/arm/mm/dma-mapping-nommu.c b/arch/arm/mm/dma-mapping-nommu.c
+index 4d8042521e89..619f24a42d09 100644
+--- a/arch/arm/mm/dma-mapping-nommu.c
++++ b/arch/arm/mm/dma-mapping-nommu.c
+@@ -11,7 +11,7 @@
  
--	tmp = f2fs_kmem_cache_alloc(ino_entry_slab, GFP_NOFS);
--
--	radix_tree_preload(GFP_NOFS | __GFP_NOFAIL);
--
--	spin_lock(&im->ino_lock);
--	e = radix_tree_lookup(&im->ino_root, ino);
--	if (!e) {
--		e = tmp;
--		if (unlikely(radix_tree_insert(&im->ino_root, ino, e)))
--			f2fs_bug_on(sbi, 1);
--
--		memset(e, 0, sizeof(struct ino_entry));
--		e->ino = ino;
--
--		list_add_tail(&e->list, &im->ino_list);
--		if (type != ORPHAN_INO)
--			im->ino_num++;
-+	xa_lock(&im->ino_root);
-+	e = xa_load(&im->ino_root, ino);
-+	if (e)
-+		goto found;
-+	xa_unlock(&im->ino_root);
-+
-+	tmp = f2fs_kmem_cache_alloc(ino_entry_slab, GFP_NOFS | __GFP_ZERO);
-+	xa_lock(&im->ino_root);
-+	e = __xa_cmpxchg(&im->ino_root, ino, NULL, tmp,
-+						GFP_NOFS | __GFP_NOFAIL);
-+	if (e) {
-+		kmem_cache_free(ino_entry_slab, tmp);
-+		goto found;
- 	}
-+	e = tmp;
+ #include <linux/export.h>
+ #include <linux/mm.h>
+-#include <linux/dma-mapping.h>
++#include <linux/dma-direct.h>
+ #include <linux/scatterlist.h>
  
-+	e->ino = ino;
-+	list_add_tail(&e->list, &im->ino_list);
-+	if (type != ORPHAN_INO)
-+		im->ino_num++;
-+found:
- 	if (type = FLUSH_INO)
- 		f2fs_set_bit(devidx, (char *)&e->dirty_device);
--
--	spin_unlock(&im->ino_lock);
--	radix_tree_preload_end();
--
--	if (e != tmp)
--		kmem_cache_free(ino_entry_slab, tmp);
-+	xa_unlock(&im->ino_root);
- }
+ #include <asm/cachetype.h>
+@@ -39,7 +39,6 @@ static void *arm_nommu_dma_alloc(struct device *dev, size_t size,
+ 				 unsigned long attrs)
  
- static void __remove_ino_entry(struct f2fs_sb_info *sbi, nid_t ino, int type)
-@@ -437,17 +434,14 @@ static void __remove_ino_entry(struct f2fs_sb_info *sbi, nid_t ino, int type)
- 	struct inode_management *im = &sbi->im[type];
- 	struct ino_entry *e;
- 
--	spin_lock(&im->ino_lock);
--	e = radix_tree_lookup(&im->ino_root, ino);
-+	xa_lock(&im->ino_root);
-+	e = __xa_erase(&im->ino_root, ino);
- 	if (e) {
- 		list_del(&e->list);
--		radix_tree_delete(&im->ino_root, ino);
- 		im->ino_num--;
--		spin_unlock(&im->ino_lock);
- 		kmem_cache_free(ino_entry_slab, e);
--		return;
- 	}
--	spin_unlock(&im->ino_lock);
-+	xa_unlock(&im->ino_root);
- }
- 
- void add_ino_entry(struct f2fs_sb_info *sbi, nid_t ino, int type)
-@@ -466,12 +460,8 @@ void remove_ino_entry(struct f2fs_sb_info *sbi, nid_t ino, int type)
- bool exist_written_data(struct f2fs_sb_info *sbi, nid_t ino, int mode)
  {
- 	struct inode_management *im = &sbi->im[mode];
--	struct ino_entry *e;
- 
--	spin_lock(&im->ino_lock);
--	e = radix_tree_lookup(&im->ino_root, ino);
--	spin_unlock(&im->ino_lock);
--	return e ? true : false;
-+	return xa_load(&im->ino_root, ino) ? true : false;
- }
- 
- void release_ino_entry(struct f2fs_sb_info *sbi, bool all)
-@@ -482,14 +472,14 @@ void release_ino_entry(struct f2fs_sb_info *sbi, bool all)
- 	for (i = all ? ORPHAN_INO : APPEND_INO; i < MAX_INO_ENTRY; i++) {
- 		struct inode_management *im = &sbi->im[i];
- 
--		spin_lock(&im->ino_lock);
-+		xa_lock(&im->ino_root);
- 		list_for_each_entry_safe(e, tmp, &im->ino_list, list) {
- 			list_del(&e->list);
--			radix_tree_delete(&im->ino_root, e->ino);
-+			__xa_erase(&im->ino_root, e->ino);
- 			kmem_cache_free(ino_entry_slab, e);
- 			im->ino_num--;
- 		}
--		spin_unlock(&im->ino_lock);
-+		xa_unlock(&im->ino_root);
- 	}
- }
- 
-@@ -506,11 +496,11 @@ bool is_dirty_device(struct f2fs_sb_info *sbi, nid_t ino,
- 	struct ino_entry *e;
- 	bool is_dirty = false;
- 
--	spin_lock(&im->ino_lock);
--	e = radix_tree_lookup(&im->ino_root, ino);
-+	xa_lock(&im->ino_root);
-+	e = xa_load(&im->ino_root, ino);
- 	if (e && f2fs_test_bit(devidx, (char *)&e->dirty_device))
- 		is_dirty = true;
--	spin_unlock(&im->ino_lock);
-+	xa_unlock(&im->ino_root);
- 	return is_dirty;
- }
- 
-@@ -519,11 +509,11 @@ int acquire_orphan_inode(struct f2fs_sb_info *sbi)
- 	struct inode_management *im = &sbi->im[ORPHAN_INO];
- 	int err = 0;
- 
--	spin_lock(&im->ino_lock);
-+	xa_lock(&im->ino_root);
- 
- #ifdef CONFIG_F2FS_FAULT_INJECTION
- 	if (time_to_inject(sbi, FAULT_ORPHAN)) {
--		spin_unlock(&im->ino_lock);
-+		xa_unlock(&im->ino_root);
- 		f2fs_show_injection_info(FAULT_ORPHAN);
- 		return -ENOSPC;
- 	}
-@@ -532,7 +522,7 @@ int acquire_orphan_inode(struct f2fs_sb_info *sbi)
- 		err = -ENOSPC;
- 	else
- 		im->ino_num++;
--	spin_unlock(&im->ino_lock);
-+	xa_unlock(&im->ino_root);
- 
- 	return err;
- }
-@@ -541,10 +531,10 @@ void release_orphan_inode(struct f2fs_sb_info *sbi)
- {
- 	struct inode_management *im = &sbi->im[ORPHAN_INO];
- 
--	spin_lock(&im->ino_lock);
-+	xa_lock(&im->ino_root);
- 	f2fs_bug_on(sbi, im->ino_num = 0);
- 	im->ino_num--;
--	spin_unlock(&im->ino_lock);
-+	xa_unlock(&im->ino_root);
- }
- 
- void add_orphan_inode(struct inode *inode)
-@@ -677,7 +667,7 @@ static void write_orphan_inodes(struct f2fs_sb_info *sbi, block_t start_blk)
- 	orphan_blocks = GET_ORPHAN_BLOCKS(im->ino_num);
+-	const struct dma_map_ops *ops = &dma_direct_ops;
+ 	void *ret;
  
  	/*
--	 * we don't need to do spin_lock(&im->ino_lock) here, since all the
-+	 * we don't need to lock the ino_root here, since all the
- 	 * orphan inode operations are covered under f2fs_lock_op().
- 	 * And, spin_lock should be avoided due to page operations below.
+@@ -48,7 +47,7 @@ static void *arm_nommu_dma_alloc(struct device *dev, size_t size,
  	 */
-@@ -1433,8 +1423,7 @@ void init_ino_entry_info(struct f2fs_sb_info *sbi)
- 	for (i = 0; i < MAX_INO_ENTRY; i++) {
- 		struct inode_management *im = &sbi->im[i];
  
--		INIT_RADIX_TREE(&im->ino_root, GFP_ATOMIC);
--		spin_lock_init(&im->ino_lock);
-+		xa_init(&im->ino_root);
- 		INIT_LIST_HEAD(&im->ino_list);
- 		im->ino_num = 0;
- 	}
-diff --git a/fs/f2fs/f2fs.h b/fs/f2fs/f2fs.h
-index 6abf26c31d01..b3ee784b49bc 100644
---- a/fs/f2fs/f2fs.h
-+++ b/fs/f2fs/f2fs.h
-@@ -994,8 +994,7 @@ enum inode_type {
+ 	if (attrs & DMA_ATTR_NON_CONSISTENT)
+-		return ops->alloc(dev, size, dma_handle, gfp, attrs);
++		return dma_direct_alloc(dev, size, dma_handle, gfp, attrs);
  
- /* for inner inode cache management */
- struct inode_management {
--	struct radix_tree_root ino_root;	/* ino entry array */
--	spinlock_t ino_lock;			/* for ino entry lock */
-+	struct xarray ino_root;			/* ino entry array */
- 	struct list_head ino_list;		/* inode list head */
- 	unsigned long ino_num;			/* number of entries */
- };
+ 	ret = dma_alloc_from_global_coherent(size, dma_handle);
+ 
+@@ -70,10 +69,8 @@ static void arm_nommu_dma_free(struct device *dev, size_t size,
+ 			       void *cpu_addr, dma_addr_t dma_addr,
+ 			       unsigned long attrs)
+ {
+-	const struct dma_map_ops *ops = &dma_direct_ops;
+-
+ 	if (attrs & DMA_ATTR_NON_CONSISTENT) {
+-		ops->free(dev, size, cpu_addr, dma_addr, attrs);
++		dma_direct_free(dev, size, cpu_addr, dma_addr, attrs);
+ 	} else {
+ 		int ret = dma_release_from_global_coherent(get_order(size),
+ 							   cpu_addr);
+diff --git a/include/linux/dma-direct.h b/include/linux/dma-direct.h
+index 10e924b7cba7..4788bf0bf683 100644
+--- a/include/linux/dma-direct.h
++++ b/include/linux/dma-direct.h
+@@ -38,4 +38,9 @@ static inline void dma_mark_clean(void *addr, size_t size)
+ }
+ #endif /* CONFIG_ARCH_HAS_DMA_MARK_CLEAN */
+ 
++void *dma_direct_alloc(struct device *dev, size_t size, dma_addr_t *dma_handle,
++		gfp_t gfp, unsigned long attrs);
++void dma_direct_free(struct device *dev, size_t size, void *cpu_addr,
++		dma_addr_t dma_addr, unsigned long attrs);
++
+ #endif /* _LINUX_DMA_DIRECT_H */
+diff --git a/lib/dma-direct.c b/lib/dma-direct.c
+index 4e43c2bb7f5f..784a68dfdbe3 100644
+--- a/lib/dma-direct.c
++++ b/lib/dma-direct.c
+@@ -40,8 +40,8 @@ static bool dma_coherent_ok(struct device *dev, phys_addr_t phys, size_t size)
+ 	return phys_to_dma(dev, phys) + size - 1 <= dev->coherent_dma_mask;
+ }
+ 
+-static void *dma_direct_alloc(struct device *dev, size_t size,
+-		dma_addr_t *dma_handle, gfp_t gfp, unsigned long attrs)
++void *dma_direct_alloc(struct device *dev, size_t size, dma_addr_t *dma_handle,
++		gfp_t gfp, unsigned long attrs)
+ {
+ 	unsigned int count = PAGE_ALIGN(size) >> PAGE_SHIFT;
+ 	int page_order = get_order(size);
+@@ -84,7 +84,7 @@ static void *dma_direct_alloc(struct device *dev, size_t size,
+ 	return page_address(page);
+ }
+ 
+-static void dma_direct_free(struct device *dev, size_t size, void *cpu_addr,
++void dma_direct_free(struct device *dev, size_t size, void *cpu_addr,
+ 		dma_addr_t dma_addr, unsigned long attrs)
+ {
+ 	unsigned int count = PAGE_ALIGN(size) >> PAGE_SHIFT;
 -- 
-2.15.1
+2.14.2
 
