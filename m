@@ -1,38 +1,47 @@
-From: Ulf Hansson <ulf.hansson@linaro.org>
-Date: Thu, 18 Jan 2018 08:13:21 +0000
-Subject: Re: [PATCH v3 00/16] mmc: tmio: another batch of TMIO MMC fixes and cleanups
-Message-Id: <CAPDyKFp3dPjsEeyrKAbW_duErCS+xYD0K8zhcRPCY65eRNtMqg@mail.gmail.com>
+From: Christoph Hellwig <hch@lst.de>
+Date: Fri, 12 Jan 2018 08:41:58 +0000
+Subject: consolidate direct dma mapping V4
+Message-Id: <20180112084232.2857-1-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1516206496-16612-1-git-send-email-yamada.masahiro@socionext.com>
-In-Reply-To: <1516206496-16612-1-git-send-email-yamada.masahiro@socionext.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Masahiro Yamada <yamada.masahiro@socionext.com>
-Cc: "linux-mmc@vger.kernel.org" <linux-mmc@vger.kernel.org>, Wolfram Sang <wsa+renesas@sang-engineering.com>, Ulf Magnusson <ulfalizer@gmail.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Simon Horman <horms+renesas@verge.net.au>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Linux-Renesas <linux-renesas-soc@vger.kernel.org>, devicetree@vger.kernel.org, Linux-sh list <linux-sh@vger.kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rob Herring <robh@kernel.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Rob Herring <robh+dt@kernel.org>, Lee Jones <lee.jones@linaro.org>, Rich Felker <dalias@libc.org>, Mark Rutland <mark.rutland@arm.com>
+To: iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: linux-mips-6z/3iImG2C8G8FEW9MqTrA@public.gmane.org, linux-ia64-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sparclinux-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Guan Xuetao <gxt-TG0Ac1+ktVePQbnJrJN+5g@public.gmane.org>, linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-c6x-dev-jPsnJVOj+W6hPH1hqNUYSQ@public.gmane.org, linux-hexagon-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, x86-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, Konrad Rzeszutek Wilk <konrad-Gq0aWv8utHQdnm+yROfE0A@public.gmane.org>, linux-snps-arc-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, linux-m68k-cunTk1MwBs8S/qaLPR03pWD2FQJk+8+b@public.gmane.org, patches-q3qR2WxjNRFS9aJRtSZj7A@public.gmane.org, linux-metag-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, Michal Simek <monstr-pSz03upnqPeHXe+LvDLADg@public.gmane.org>, linux-parisc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-cris-kernel-VrBV9hrLPhE@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-alpha-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linuxppc-dev-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org
 
-On 17 January 2018 at 17:28, Masahiro Yamada
-<yamada.masahiro@socionext.com> wrote:
->
-> In the previous batch (https://lkml.org/lkml/2017/11/24/428)
-> I sent 22 patches for TMIO MMC.
->
-> 14 patches were applied, the rest is under discussion.
->
-> This series consists of 16 patches.
->
-> Patch 1-4:  repost from v2.
->             (Wolfram gave Reviewed by, so I moved them to the head)
+Almost every architecture supports a direct dma mapping implementation,
+where no iommu is used and the device dma address is a 1:1 mapping to
+the physical address or has a simple linear offset.  Currently the
+code for this implementation is most duplicated over the architectures,
+and the duplicated again in the swiotlb code, and then duplicated again
+for special cases like the x86 memory encryption DMA ops.
 
-Applied for next.
+This series takes the existing very simple dma-noop dma mapping
+implementation, enhances it with all the x86 features and quirks, and
+creates a common set of architecture hooks for it and the swiotlb code.
 
->
-> Patch 5-11: new patches  (cleanups of WP flag)
+It then switches a number of architectures to this generic
+direct map implemention.
 
-I picked patch5 and patch6, as those seemed trivial. Unless there is a
-rc9, let's aim for 4.17 for the rest.
+Note that for now this only handles architectures that do cache coherent
+DMA, but a similar consolidation for non-coherent architectures is in the
+work for later merge windows.
 
-[...]
+A git tree is also available:
 
-Kind regards
-Uffe
+   git://git.infradead.org/users/hch/misc.git dma-direct.3
+
+Gitweb:
+
+   http://git.infradead.org/users/hch/misc.git/shortlog/refs/heads/dma-direct.3
+
+Changes since V3
+ - new patch to fix an off-by-one in mips dma_capable
+Changes since V2:
+ - fixed a few patch description typos
+ - fixed a few printk formats
+ - fixed an off by one in dma_coherent_ok
+ - add a few Reviewed-by/Acked-by tags.
+ - moved the swiotlb consolidation to a new series
+ - dropped a few patches for now to not overwhelem the x86
+   maintainers.  They will be resubmitted in the next merge window
