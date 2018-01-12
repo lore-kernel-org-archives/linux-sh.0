@@ -1,265 +1,180 @@
-From: Jacopo Mondi <jacopo+renesas@jmondi.org>
-Date: Tue, 30 Jan 2018 09:58:11 +0000
-Subject: [PATCH v8 00/11] Renesas Capture Engine Unit (CEU) V4L2 driver
-Message-Id: <1517306302-27957-1-git-send-email-jacopo+renesas@jmondi.org>
+From: Christoph Hellwig <hch@lst.de>
+Date: Fri, 12 Jan 2018 08:42:21 +0000
+Subject: [PATCH 23/34] dma-mapping: provide a generic asm/dma-mapping.h
+Message-Id: <20180112084232.2857-24-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20180112084232.2857-1-hch@lst.de>
+In-Reply-To: <20180112084232.2857-1-hch-jcswGhMUV9g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org, magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, geert-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org, hverkuil-qWit8jRvyhVmR6Xm/wNWPw@public.gmane.org, mchehab-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, festevam-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, sakari.ailus-X3B1VOXEql0@public.gmane.org, robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, mark.rutland-5wv7dgnIgG8@public.gmane.org, pombredanne-od1rfyK75/E@public.gmane.org
-Cc: Jacopo Mondi <jacopo+renesas-AW8dsiIh9cEdnm+yROfE0A@public.gmane.org>, linux-renesas-soc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-media-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: linux-mips-6z/3iImG2C8G8FEW9MqTrA@public.gmane.org, linux-ia64-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sparclinux-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Guan Xuetao <gxt-TG0Ac1+ktVePQbnJrJN+5g@public.gmane.org>, linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-c6x-dev-jPsnJVOj+W6hPH1hqNUYSQ@public.gmane.org, linux-hexagon-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, x86-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, Konrad Rzeszutek Wilk <konrad-Gq0aWv8utHQdnm+yROfE0A@public.gmane.org>, linux-snps-arc-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, linux-m68k-cunTk1MwBs8S/qaLPR03pWD2FQJk+8+b@public.gmane.org, patches-q3qR2WxjNRFS9aJRtSZj7A@public.gmane.org, linux-metag-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, Michal Simek <monstr-pSz03upnqPeHXe+LvDLADg@public.gmane.org>, linux-parisc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-cris-kernel-VrBV9hrLPhE@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-alpha-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linuxppc-dev-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org
 
-Hello,
-   this 8th round has two minor modifications compared to v7:
+For architectures that just use the generic dma_noop_ops we can provide
+a generic version of dma-mapping.h.
 
-- Fixed Geert's comments on RZ/A1-H/L/M in bindings documentation
-- Calculate the PLL divisor/multiplier to generate the proper pixel clock
-  for ov772x in place of using static tables.
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+---
+ MAINTAINERS                          |  1 +
+ arch/m32r/include/asm/Kbuild         |  1 +
+ arch/m32r/include/asm/dma-mapping.h  | 17 -----------------
+ arch/riscv/include/asm/Kbuild        |  1 +
+ arch/riscv/include/asm/dma-mapping.h | 30 ------------------------------
+ arch/s390/include/asm/Kbuild         |  1 +
+ arch/s390/include/asm/dma-mapping.h  | 17 -----------------
+ include/asm-generic/dma-mapping.h    | 10 ++++++++++
+ 8 files changed, 14 insertions(+), 64 deletions(-)
+ delete mode 100644 arch/m32r/include/asm/dma-mapping.h
+ delete mode 100644 arch/riscv/include/asm/dma-mapping.h
+ delete mode 100644 arch/s390/include/asm/dma-mapping.h
+ create mode 100644 include/asm-generic/dma-mapping.h
 
-Series based on top of Hans':
-[PATCHv2 0/9] media: replace g/s_parm by g/s_frame_interval
-and makes use of newly introduced v4l2_g/s_parm_cap() functions from v4l2-common
-in CEU's g/s_parm() callbacks.
-
-A branch for testing is available at:
-git://jmondi.org/linux ceu/media-tree-parm/base
-with few patches for Migo-R and GR-Peach applied on top of Hans' media-tree/parm
-branch.
-
-Copying from v7 cover letter:
-
-The 2 new patches in the series:
-[11/11] has been added to silence a v4l2-compliance error, and modifies
-ov7670 driver to set all fields of 'struct v4l2_mbus_format' during set_format
-operation, including ycbcr_enc, quantization and xfer_func. As the patch commit
-reports, this suppresses the following v4l2-compliance error:
-fail: v4l2-test-formats.cpp(335): ycbcr_enc >= 0xff
-v8: Did the same for ov772x
-
-[7/11] has been required by Hans to add frame interval handling to ov772x
-driver. As this is quite a big change I kept it in a separate patch to ease
-review, it can eventually be squashed on [6/11] if accepted.
-v8: Calculate PLL divider/multiplier in place of using static tables.
-
-If for TW9910 video decoder the same is required (frame interval handling) I'm
-in favour of moving that driver to staging as it was proposed for ov772x before
-this series.
-
-v4l2-compliance now reports a 0 error count:
-Total: 43, Succeeded: 43, Failed: 0, Warnings: 0
-
-Hans, you asked me to run v4l2-compliance with the -f option, I cannot do
-that on my tiny GR-Peach as with its limited available system memory it cannot
-allocate the number of requested buffers for that test. I can try to tweak that
-if necessary. I won't stress here why I cannot do that on Migo-R, long story
-short, I need a special compiler with DSP support to run anything but the little
-initramfs I have received for SH7722. I've been able to tweak yavta to work and
-test capture and frame rate handling with it, but v4l2-compliance is much more
-complex and I don't think I'll be able run it on that platform.
-
-Below, v4l2-compliance output:
-
--------------------------------------------------------------------------------
-v4l2-compliance SHA   : 20b6624f4bb84353e690d897688fd7ac12d6a881
-
-Driver Info:
-	Driver name   : renesas-ceu
-	Card type     : Renesas CEU e8210000.ceu
-	Bus info      : platform:renesas-ceu-e8210000.c
-	Driver version: 4.15.0
-	Capabilities  : 0x84201000
-		Video Capture Multiplanar
-		Streaming
-		Extended Pix Format
-		Device Capabilities
-	Device Caps   : 0x04201000
-		Video Capture Multiplanar
-		Streaming
-		Extended Pix Format
-
-Compliance test for device /dev/video0 (not using libv4l2):
-
-Required ioctls:
-	test VIDIOC_QUERYCAP: OK
-
-Allow for multiple opens:
-	test second video open: OK
-	test VIDIOC_QUERYCAP: OK
-	test VIDIOC_G/S_PRIORITY: OK
-	test for unlimited opens: OK
-
-Debug ioctls:
-	test VIDIOC_DBG_G/S_REGISTER: OK
-	test VIDIOC_LOG_STATUS: OK (Not Supported)
-
-Input ioctls:
-	test VIDIOC_G/S_TUNER/ENUM_FREQ_BANDS: OK (Not Supported)
-	test VIDIOC_G/S_FREQUENCY: OK (Not Supported)
-	test VIDIOC_S_HW_FREQ_SEEK: OK (Not Supported)
-	test VIDIOC_ENUMAUDIO: OK (Not Supported)
-	test VIDIOC_G/S/ENUMINPUT: OK
-	test VIDIOC_G/S_AUDIO: OK (Not Supported)
-	Inputs: 1 Audio Inputs: 0 Tuners: 0
-
-Output ioctls:
-	test VIDIOC_G/S_MODULATOR: OK (Not Supported)
-	test VIDIOC_G/S_FREQUENCY: OK (Not Supported)
-	test VIDIOC_ENUMAUDOUT: OK (Not Supported)
-	test VIDIOC_G/S/ENUMOUTPUT: OK (Not Supported)
-	test VIDIOC_G/S_AUDOUT: OK (Not Supported)
-	Outputs: 0 Audio Outputs: 0 Modulators: 0
-
-Input/Output configuration ioctls:
-	test VIDIOC_ENUM/G/S/QUERY_STD: OK (Not Supported)
-	test VIDIOC_ENUM/G/S/QUERY_DV_TIMINGS: OK (Not Supported)
-	test VIDIOC_DV_TIMINGS_CAP: OK (Not Supported)
-	test VIDIOC_G/S_EDID: OK (Not Supported)
-
-Test input 0:
-
-	Control ioctls:
-		test VIDIOC_QUERY_EXT_CTRL/QUERYMENU: OK
-		test VIDIOC_QUERYCTRL: OK
-		test VIDIOC_G/S_CTRL: OK
-		test VIDIOC_G/S/TRY_EXT_CTRLS: OK
-		test VIDIOC_(UN)SUBSCRIBE_EVENT/DQEVENT: OK
-		test VIDIOC_G/S_JPEGCOMP: OK (Not Supported)
-		Standard Controls: 12 Private Controls: 0
-
-	Format ioctls:
-		test VIDIOC_ENUM_FMT/FRAMESIZES/FRAMEINTERVALS: OK
-		fail: v4l2-test-formats.cpp(1162): ret && node->has_frmintervals
-		test VIDIOC_G/S_PARM: OK
-		test VIDIOC_G_FBUF: OK (Not Supported)
-		test VIDIOC_G_FMT: OK
-		test VIDIOC_TRY_FMT: OK
-		test VIDIOC_S_FMT: OK
-		test VIDIOC_G_SLICED_VBI_CAP: OK (Not Supported)
-		test Cropping: OK (Not Supported)
-		test Composing: OK (Not Supported)
-		test Scaling: OK (Not Supported)
-
-	Codec ioctls:
-		test VIDIOC_(TRY_)ENCODER_CMD: OK (Not Supported)
-		test VIDIOC_G_ENC_INDEX: OK (Not Supported)
-		test VIDIOC_(TRY_)DECODER_CMD: OK (Not Supported)
-
-	Buffer ioctls:
-		test VIDIOC_REQBUFS/CREATE_BUFS/QUERYBUF: OK
-		test VIDIOC_EXPBUF: OK
-
-Test input 0:
-
-
-Total: 43, Succeeded: 43, Failed: 0, Warnings: 0
--------------------------------------------------------------------------------
-
-v7->v8:
-- Calculate PLL divider/multiplier and do not use static tables
-- Change RZ/A1-H to RZ/A1H (same for L) in bindings documentation
-- Use rounded clock rate in Migo-R board code as SH clk_set_clk()
-  implementation does not perform rounding
-- Set ycbcr_enc and other fields of v4l2_mbus_format for ov772x as patch
-  [11/11] does for ov7670
-
-v6->v7:
-- Add patch to handle ycbr_enc and other fields of v4l2_mbus_format for ov7670
-- Add patch to handle frame interval for ov772x
-- Rebased on Hans' media-tree/parm branch with v4l2_g/s_parm_cap
-- Drop const modifier in CEU releated fields of Migo-R setup.c board file
-  to silence complier warnings.
-
-v5->v6:
-- Add Hans' Acked-by to most patches
-- Fix a bad change in ov772x get_selection
-- Add .buf_prepare callack to CEU and verify plane sizes there
-- Remove VB2_USERPTR from supported io_modes in CEU driver
-- Remove read() fops in CEU driver
-
-v4->v5:
-- Added Rob's and Laurent's Reviewed-by tag to DT bindings
-- Change CEU driver module license to "GPL v2" to match SPDX identifier as
-  suggested by Philippe Ombredanne
-- Make struct ceu_data static as suggested by Laurent and add his
-  Reviewed-by to CEU driver.
-
-v3->v4:
-- Drop generic fallback compatible string "renesas,ceu"
-- Addressed Laurent's comments on [3/9]
-  - Fix error messages on irq get/request
-  - Do not leak ceudev if irq_get fails
-  - Make irq_mask a const field
-
-v2->v3:
-- Improved DT bindings removing standard properties (pinctrl- ones and
-  remote-endpoint) not specific to this driver and improved description of
-  compatible strings
-- Remove ov772x's xlkc_rate property and set clock rate in Migo-R board file
-- Made 'xclk' clock private to ov772x driver in Migo-R board file
-- Change 'rstb' GPIO active output level and changed ov772x and tw9910 drivers
-  accordingly as suggested by Fabio
-- Minor changes in CEU driver to address Laurent's comments
-- Moved Migo-R setup patch to the end of the series to silence 0-day bot
-- Renamed tw9910 clock to 'xti' as per video decoder manual
-- Changed all SPDX identifiers to GPL-2.0 from previous GPL-2.0+
-
-v1->v2:
- - DT
- -- Addressed Geert's comments and added clocks for CEU to mstp6 clock source
- -- Specified supported generic video iterfaces properties in dt-bindings and
-    simplified example
-
- - CEU driver
- -- Re-worked interrupt handler, interrupt management, reset(*) and capture
-    start operation
- -- Re-worked querycap/enum_input/enum_frameintervals to fix some
-    v4l2_compliance failures
- -- Removed soc_camera legacy operations g/s_mbus_format
- -- Update to new notifier implementation
- -- Fixed several comments from Hans, Laurent and Sakari
-
- - Migo-R
- -- Register clocks and gpios for sensor drivers in Migo-R setup
- -- Updated sensors (tw9910 and ov772x) drivers headers and drivers to close
-    remarks from Hans and Laurent:
- --- Removed platform callbacks and handle clocks and gpios from sensor drivers
- --- Remove g/s_mbus_config operations
-
-Jacopo Mondi (11):
-  dt-bindings: media: Add Renesas CEU bindings
-  include: media: Add Renesas CEU driver interface
-  media: platform: Add Renesas CEU driver
-  ARM: dts: r7s72100: Add Capture Engine Unit (CEU)
-  media: i2c: Copy ov772x soc_camera sensor driver
-  media: i2c: ov772x: Remove soc_camera dependencies
-  media: i2c: ov772x: Support frame interval handling
-  media: i2c: Copy tw9910 soc_camera sensor driver
-  media: i2c: tw9910: Remove soc_camera dependencies
-  arch: sh: migor: Use new renesas-ceu camera driver
-  media: i2c: ov7670: Fully set mbus frame fmt
-
- .../devicetree/bindings/media/renesas,ceu.txt      |   81 +
- arch/arm/boot/dts/r7s72100.dtsi                    |   15 +-
- arch/sh/boards/mach-migor/setup.c                  |  225 ++-
- arch/sh/kernel/cpu/sh4a/clock-sh7722.c             |    2 +-
- drivers/media/i2c/Kconfig                          |   20 +
- drivers/media/i2c/Makefile                         |    2 +
- drivers/media/i2c/ov7670.c                         |    4 +
- drivers/media/i2c/ov772x.c                         | 1362 ++++++++++++++++
- drivers/media/i2c/tw9910.c                         | 1039 ++++++++++++
- drivers/media/platform/Kconfig                     |    9 +
- drivers/media/platform/Makefile                    |    1 +
- drivers/media/platform/renesas-ceu.c               | 1661 ++++++++++++++++++++
- include/media/drv-intf/renesas-ceu.h               |   26 +
- include/media/i2c/ov772x.h                         |    6 +-
- include/media/i2c/tw9910.h                         |    9 +
- 15 files changed, 4331 insertions(+), 131 deletions(-)
- create mode 100644 Documentation/devicetree/bindings/media/renesas,ceu.txt
- create mode 100644 drivers/media/i2c/ov772x.c
- create mode 100644 drivers/media/i2c/tw9910.c
- create mode 100644 drivers/media/platform/renesas-ceu.c
- create mode 100644 include/media/drv-intf/renesas-ceu.h
-
---
-2.7.4
+diff --git a/MAINTAINERS b/MAINTAINERS
+index d2cfdcce1db5..234e642e7149 100644
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -4338,6 +4338,7 @@ F:	lib/dma-noop.c
+ F:	lib/dma-virt.c
+ F:	drivers/base/dma-mapping.c
+ F:	drivers/base/dma-coherent.c
++F:	include/asm-generic/dma-mapping.h
+ F:	include/linux/dma-direct.h
+ F:	include/linux/dma-mapping.h
+ 
+diff --git a/arch/m32r/include/asm/Kbuild b/arch/m32r/include/asm/Kbuild
+index 7e11b125c35e..ca83fda8177b 100644
+--- a/arch/m32r/include/asm/Kbuild
++++ b/arch/m32r/include/asm/Kbuild
+@@ -1,5 +1,6 @@
+ generic-y += clkdev.h
+ generic-y += current.h
++generic-y += dma-mapping.h
+ generic-y += exec.h
+ generic-y += extable.h
+ generic-y += irq_work.h
+diff --git a/arch/m32r/include/asm/dma-mapping.h b/arch/m32r/include/asm/dma-mapping.h
+deleted file mode 100644
+index 8967fb659691..000000000000
+--- a/arch/m32r/include/asm/dma-mapping.h
++++ /dev/null
+@@ -1,17 +0,0 @@
+-/* SPDX-License-Identifier: GPL-2.0 */
+-#ifndef _ASM_M32R_DMA_MAPPING_H
+-#define _ASM_M32R_DMA_MAPPING_H
+-
+-#include <linux/kernel.h>
+-#include <linux/types.h>
+-#include <linux/mm.h>
+-#include <linux/scatterlist.h>
+-#include <linux/dma-debug.h>
+-#include <linux/io.h>
+-
+-static inline const struct dma_map_ops *get_arch_dma_ops(struct bus_type *bus)
+-{
+-	return &dma_noop_ops;
+-}
+-
+-#endif /* _ASM_M32R_DMA_MAPPING_H */
+diff --git a/arch/riscv/include/asm/Kbuild b/arch/riscv/include/asm/Kbuild
+index 970460a0b492..197460ccbf21 100644
+--- a/arch/riscv/include/asm/Kbuild
++++ b/arch/riscv/include/asm/Kbuild
+@@ -7,6 +7,7 @@ generic-y += device.h
+ generic-y += div64.h
+ generic-y += dma.h
+ generic-y += dma-contiguous.h
++generic-y += dma-mapping.h
+ generic-y += emergency-restart.h
+ generic-y += errno.h
+ generic-y += exec.h
+diff --git a/arch/riscv/include/asm/dma-mapping.h b/arch/riscv/include/asm/dma-mapping.h
+deleted file mode 100644
+index 73849e2cc761..000000000000
+--- a/arch/riscv/include/asm/dma-mapping.h
++++ /dev/null
+@@ -1,30 +0,0 @@
+-/*
+- * Copyright (C) 2003-2004 Hewlett-Packard Co
+- *	David Mosberger-Tang <davidm@hpl.hp.com>
+- * Copyright (C) 2012 ARM Ltd.
+- * Copyright (C) 2016 SiFive, Inc.
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License version 2 as
+- * published by the Free Software Foundation.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+- */
+-#ifndef __ASM_RISCV_DMA_MAPPING_H
+-#define __ASM_RISCV_DMA_MAPPING_H
+-
+-/* Use ops->dma_mapping_error (if it exists) or assume success */
+-// #undef DMA_ERROR_CODE
+-
+-static inline const struct dma_map_ops *get_arch_dma_ops(struct bus_type *bus)
+-{
+-	return &dma_noop_ops;
+-}
+-
+-#endif	/* __ASM_RISCV_DMA_MAPPING_H */
+diff --git a/arch/s390/include/asm/Kbuild b/arch/s390/include/asm/Kbuild
+index 048450869328..dade72be127b 100644
+--- a/arch/s390/include/asm/Kbuild
++++ b/arch/s390/include/asm/Kbuild
+@@ -4,6 +4,7 @@ generic-y += cacheflush.h
+ generic-y += clkdev.h
+ generic-y += device.h
+ generic-y += dma-contiguous.h
++generic-y += dma-mapping.h
+ generic-y += div64.h
+ generic-y += emergency-restart.h
+ generic-y += export.h
+diff --git a/arch/s390/include/asm/dma-mapping.h b/arch/s390/include/asm/dma-mapping.h
+deleted file mode 100644
+index bdc2455483f6..000000000000
+--- a/arch/s390/include/asm/dma-mapping.h
++++ /dev/null
+@@ -1,17 +0,0 @@
+-/* SPDX-License-Identifier: GPL-2.0 */
+-#ifndef _ASM_S390_DMA_MAPPING_H
+-#define _ASM_S390_DMA_MAPPING_H
+-
+-#include <linux/kernel.h>
+-#include <linux/types.h>
+-#include <linux/mm.h>
+-#include <linux/scatterlist.h>
+-#include <linux/dma-debug.h>
+-#include <linux/io.h>
+-
+-static inline const struct dma_map_ops *get_arch_dma_ops(struct bus_type *bus)
+-{
+-	return &dma_noop_ops;
+-}
+-
+-#endif /* _ASM_S390_DMA_MAPPING_H */
+diff --git a/include/asm-generic/dma-mapping.h b/include/asm-generic/dma-mapping.h
+new file mode 100644
+index 000000000000..164031531d85
+--- /dev/null
++++ b/include/asm-generic/dma-mapping.h
+@@ -0,0 +1,10 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++#ifndef _ASM_GENERIC_DMA_MAPPING_H
++#define _ASM_GENERIC_DMA_MAPPING_H
++
++static inline const struct dma_map_ops *get_arch_dma_ops(struct bus_type *bus)
++{
++	return &dma_noop_ops;
++}
++
++#endif /* _ASM_GENERIC_DMA_MAPPING_H */
+-- 
+2.14.2
 
