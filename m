@@ -1,143 +1,34 @@
-From: Matthew Wilcox <willy@infradead.org>
-Date: Wed, 17 Jan 2018 20:21:51 +0000
-Subject: [PATCH v6 87/99] btrfs: Convert reada_extents to XArray
-Message-Id: <20180117202203.19756-88-willy@infradead.org>
+From: Christoph Hellwig <hch@lst.de>
+Date: Fri, 12 Jan 2018 08:42:01 +0000
+Subject: [PATCH 03/34] m32r: remove unused flush_write_buffers definition
+Message-Id: <20180112084232.2857-4-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180117202203.19756-1-willy@infradead.org>
-In-Reply-To: <20180117202203.19756-1-willy@infradead.org>
+References: <20180112084232.2857-1-hch@lst.de>
+In-Reply-To: <20180112084232.2857-1-hch-jcswGhMUV9g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Matthew Wilcox <mawilcox@microsoft.com>, linux-mm@kvack.org, linux-fsdevel@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net, linux-nilfs@vger.kernel.org, linux-btrfs@vger.kernel.org, linux-xfs@vger.kernel.org, linux-usb@vger.kernel.org, Bjorn Andersson <bjorn.andersson@linaro.org>, Stefano Stabellini <sstabellini@kernel.org>, iommu@lists.linux-foundation.org, linux-remoteproc@vger.kernel.org, linux-s390@vger.kernel.org, intel-gfx@lists.freedesktop.org, cgroups@vger.kernel.org, linux-sh@vger.kernel.org, David Howells <dhowells@redhat.com>
+To: iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: Konrad Rzeszutek Wilk <konrad-Gq0aWv8utHQdnm+yROfE0A@public.gmane.org>, linux-alpha-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-snps-arc-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, linux-c6x-dev-jPsnJVOj+W6hPH1hqNUYSQ@public.gmane.org, linux-cris-kernel-VrBV9hrLPhE@public.gmane.org, linux-hexagon-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-ia64-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-m68k-cunTk1MwBs8S/qaLPR03pWD2FQJk+8+b@public.gmane.org, linux-metag-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Michal Simek <monstr-pSz03upnqPeHXe+LvDLADg@public.gmane.org>, linux-mips-6z/3iImG2C8G8FEW9MqTrA@public.gmane.org, linux-parisc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linuxppc-dev-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org, patches-q3qR2WxjNRFS9aJRtSZj7A@public.gmane.org, linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sparclinux-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Guan Xuetao <gxt-TG0Ac1+ktVePQbnJrJN+5g@public.gmane.org>, x86-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-From: Matthew Wilcox <mawilcox@microsoft.com>
-
-Straightforward conversion.
-
-Signed-off-by: Matthew Wilcox <mawilcox@microsoft.com>
+Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- fs/btrfs/reada.c   | 32 +++++++++++++++++---------------
- fs/btrfs/volumes.c |  2 +-
- fs/btrfs/volumes.h |  2 +-
- 3 files changed, 19 insertions(+), 17 deletions(-)
+ arch/m32r/include/asm/io.h | 2 --
+ 1 file changed, 2 deletions(-)
 
-diff --git a/fs/btrfs/reada.c b/fs/btrfs/reada.c
-index ef8e84ff2012..8100f1565250 100644
---- a/fs/btrfs/reada.c
-+++ b/fs/btrfs/reada.c
-@@ -438,13 +438,14 @@ static struct reada_extent *reada_find_extent(struct btrfs_fs_info *fs_info,
- 			continue;
- 		}
- 		prev_dev = dev;
--		ret = radix_tree_insert(&dev->reada_extents, index, re);
-+		ret = xa_insert(&dev->reada_extents, index, re,
-+					GFP_NOFS & ~__GFP_DIRECT_RECLAIM);
- 		if (ret) {
- 			while (--nzones >= 0) {
- 				dev = re->zones[nzones]->device;
- 				BUG_ON(dev = NULL);
- 				/* ignore whether the entry was inserted */
--				radix_tree_delete(&dev->reada_extents, index);
-+				xa_erase(&dev->reada_extents, index);
- 			}
- 			radix_tree_delete(&fs_info->reada_tree, index);
- 			spin_unlock(&fs_info->reada_lock);
-@@ -504,7 +505,7 @@ static void reada_extent_put(struct btrfs_fs_info *fs_info,
- 	for (i = 0; i < re->nzones; ++i) {
- 		struct reada_zone *zone = re->zones[i];
+diff --git a/arch/m32r/include/asm/io.h b/arch/m32r/include/asm/io.h
+index 1b653bb16f9a..a4272d8f0d9c 100644
+--- a/arch/m32r/include/asm/io.h
++++ b/arch/m32r/include/asm/io.h
+@@ -191,8 +191,6 @@ static inline void _writel(unsigned long l, unsigned long addr)
  
--		radix_tree_delete(&zone->device->reada_extents, index);
-+		xa_erase(&zone->device->reada_extents, index);
- 	}
+ #define mmiowb()
  
- 	spin_unlock(&fs_info->reada_lock);
-@@ -644,6 +645,7 @@ static int reada_start_machine_dev(struct btrfs_device *dev)
- 	int mirror_num = 0;
- 	struct extent_buffer *eb = NULL;
- 	u64 logical;
-+	unsigned long index;
- 	int ret;
- 	int i;
- 
-@@ -660,19 +662,19 @@ static int reada_start_machine_dev(struct btrfs_device *dev)
- 	 * a contiguous block of extents, we could also coagulate them or use
- 	 * plugging to speed things up
- 	 */
--	ret = radix_tree_gang_lookup(&dev->reada_extents, (void **)&re,
--				     dev->reada_next >> PAGE_SHIFT, 1);
--	if (ret = 0 || re->logical > dev->reada_curr_zone->end) {
-+	index = dev->reada_next >> PAGE_SHIFT;
-+	re = xa_find(&dev->reada_extents, &index, ULONG_MAX, XA_PRESENT);
-+	if (!re || re->logical > dev->reada_curr_zone->end) {
- 		ret = reada_pick_zone(dev);
- 		if (!ret) {
- 			spin_unlock(&fs_info->reada_lock);
- 			return 0;
- 		}
--		re = NULL;
--		ret = radix_tree_gang_lookup(&dev->reada_extents, (void **)&re,
--					dev->reada_next >> PAGE_SHIFT, 1);
-+		index = dev->reada_next >> PAGE_SHIFT;
-+		re = xa_find(&dev->reada_extents, &index, ULONG_MAX,
-+								XA_PRESENT);
- 	}
--	if (ret = 0) {
-+	if (!re) {
- 		spin_unlock(&fs_info->reada_lock);
- 		return 0;
- 	}
-@@ -828,11 +830,11 @@ static void dump_devs(struct btrfs_fs_info *fs_info, int all)
- 		cnt = 0;
- 		index = 0;
- 		while (all) {
--			struct reada_extent *re = NULL;
-+			struct reada_extent *re;
- 
--			ret = radix_tree_gang_lookup(&device->reada_extents,
--						     (void **)&re, index, 1);
--			if (ret = 0)
-+			re = xa_find(&device->reada_extents, &index, ULONG_MAX,
-+								XA_PRESENT);
-+			if (!re)
- 				break;
- 			pr_debug("  re: logical %llu size %u empty %d scheduled %d",
- 				re->logical, fs_info->nodesize,
-@@ -848,7 +850,7 @@ static void dump_devs(struct btrfs_fs_info *fs_info, int all)
- 				}
- 			}
- 			pr_cont("\n");
--			index = (re->logical >> PAGE_SHIFT) + 1;
-+			index++;
- 			if (++cnt > 15)
- 				break;
- 		}
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 8e683799b436..304c2ef4c557 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -248,7 +248,7 @@ static struct btrfs_device *__alloc_device(void)
- 	atomic_set(&dev->dev_stats_ccnt, 0);
- 	btrfs_device_data_ordered_init(dev);
- 	xa_init(&dev->reada_zones);
--	INIT_RADIX_TREE(&dev->reada_extents, GFP_NOFS & ~__GFP_DIRECT_RECLAIM);
-+	xa_init(&dev->reada_extents);
- 
- 	return dev;
- }
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index aeabe03d3e44..0e0c04e2613c 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -140,7 +140,7 @@ struct btrfs_device {
- 	u64 reada_next;
- 	struct reada_zone *reada_curr_zone;
- 	struct xarray reada_zones;
--	struct radix_tree_root reada_extents;
-+	struct xarray reada_extents;
- 
- 	/* disk I/O failure stats. For detailed description refer to
- 	 * enum btrfs_dev_stat_values in ioctl.h */
+-#define flush_write_buffers() do { } while (0)  /* M32R_FIXME */
+-
+ static inline void
+ memset_io(volatile void __iomem *addr, unsigned char val, int count)
+ {
 -- 
-2.15.1
+2.14.2
 
