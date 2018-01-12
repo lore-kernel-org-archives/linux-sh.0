@@ -1,43 +1,43 @@
-From: Matthew Wilcox <willy@infradead.org>
-Date: Wed, 17 Jan 2018 20:21:06 +0000
-Subject: [PATCH v6 42/99] shmem: Convert shmem_confirm_swap to XArray
-Message-Id: <20180117202203.19756-43-willy@infradead.org>
+From: "Eric W. Biederman" <ebiederm@xmission.com>
+Date: Fri, 12 Jan 2018 00:59:31 +0000
+Subject: [PATCH 02/11] signal/sh: Ensure si_signo is initialized in do_divide_error
+Message-Id: <20180112005940.23279-2-ebiederm@xmission.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180117202203.19756-1-willy@infradead.org>
-In-Reply-To: <20180117202203.19756-1-willy@infradead.org>
+References: <87373b6ghs.fsf@xmission.com>
+In-Reply-To: <87373b6ghs.fsf@xmission.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-kernel@vger.kernel.org
-Cc: linux-s390@vger.kernel.org, David Howells <dhowells@redhat.com>, linux-nilfs@vger.kernel.org, Matthew Wilcox <mawilcox@microsoft.com>, linux-sh@vger.kernel.org, intel-gfx@lists.freedesktop.org, linux-usb@vger.kernel.org, linux-remoteproc@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net, linux-xfs@vger.kernel.org, linux-mm@kvack.org, iommu@lists.linux-foundation.org, Stefano Stabellini <sstabellini@kernel.org>, linux-fsdevel@vger.kernel.org, cgroups@vger.kernel.org, Bjorn Andersson <bjorn.andersson@linaro.org>, linux-btrfs@vger.kernel.org
+Cc: Al Viro <viro@zeniv.linux.org.uk>, Oleg Nesterov <oleg@redhat.com>, linux-arch@vger.kernel.org, "Eric W. Biederman" <ebiederm@xmission.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, stable@vger.kernel.org
 
-From: Matthew Wilcox <mawilcox@microsoft.com>
+Set si_signo.
 
-xa_load has its own RCU locking, so we can eliminate it here.
-
-Signed-off-by: Matthew Wilcox <mawilcox@microsoft.com>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+Cc: Paul Mundt <lethal@linux-sh.org>
+Cc: linux-sh@vger.kernel.org
+Cc: stable@vger.kernel.org
+Fixes: 0983b31849bb ("sh: Wire up division and address error exceptions on SH-2A.")
+Signed-off-by: "Eric W. Biederman" <ebiederm@xmission.com>
 ---
- mm/shmem.c | 7 +------
- 1 file changed, 1 insertion(+), 6 deletions(-)
+ arch/sh/kernel/traps_32.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/mm/shmem.c b/mm/shmem.c
-index fad6c9e7402e..654f367aca90 100644
---- a/mm/shmem.c
-+++ b/mm/shmem.c
-@@ -348,12 +348,7 @@ static int shmem_xa_replace(struct address_space *mapping,
- static bool shmem_confirm_swap(struct address_space *mapping,
- 			       pgoff_t index, swp_entry_t swap)
- {
--	void *item;
--
--	rcu_read_lock();
--	item = radix_tree_lookup(&mapping->pages, index);
--	rcu_read_unlock();
--	return item = swp_to_radix_entry(swap);
-+	return xa_load(&mapping->pages, index) = swp_to_radix_entry(swap);
- }
+diff --git a/arch/sh/kernel/traps_32.c b/arch/sh/kernel/traps_32.c
+index 57cff00cad17..b3770bb26211 100644
+--- a/arch/sh/kernel/traps_32.c
++++ b/arch/sh/kernel/traps_32.c
+@@ -609,7 +609,8 @@ asmlinkage void do_divide_error(unsigned long r4)
+ 		break;
+ 	}
  
- /*
+-	force_sig_info(SIGFPE, &info, current);
++	info.si_signo = SIGFPE;
++	force_sig_info(info.si_signo, &info, current);
+ }
+ #endif
+ 
 -- 
-2.15.1
+2.14.1
 
