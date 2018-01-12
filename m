@@ -1,240 +1,176 @@
-From: Matthew Wilcox <willy@infradead.org>
-Date: Wed, 17 Jan 2018 20:21:39 +0000
-Subject: [PATCH v6 75/99] md: Convert raid5-cache to XArray
-Message-Id: <20180117202203.19756-76-willy@infradead.org>
+From: Christoph Hellwig <hch@lst.de>
+Date: Fri, 12 Jan 2018 08:42:14 +0000
+Subject: [PATCH 16/34] microblaze: rename dma_direct to dma_nommu
+Message-Id: <20180112084232.2857-17-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180117202203.19756-1-willy@infradead.org>
-In-Reply-To: <20180117202203.19756-1-willy@infradead.org>
+References: <20180112084232.2857-1-hch@lst.de>
+In-Reply-To: <20180112084232.2857-1-hch-jcswGhMUV9g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Matthew Wilcox <mawilcox@microsoft.com>, linux-mm@kvack.org, linux-fsdevel@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net, linux-nilfs@vger.kernel.org, linux-btrfs@vger.kernel.org, linux-xfs@vger.kernel.org, linux-usb@vger.kernel.org, Bjorn Andersson <bjorn.andersson@linaro.org>, Stefano Stabellini <sstabellini@kernel.org>, iommu@lists.linux-foundation.org, linux-remoteproc@vger.kernel.org, linux-s390@vger.kernel.org, intel-gfx@lists.freedesktop.org, cgroups@vger.kernel.org, linux-sh@vger.kernel.org, David Howells <dhowells@redhat.com>
+To: iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: Konrad Rzeszutek Wilk <konrad-Gq0aWv8utHQdnm+yROfE0A@public.gmane.org>, linux-alpha-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-snps-arc-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, linux-c6x-dev-jPsnJVOj+W6hPH1hqNUYSQ@public.gmane.org, linux-cris-kernel-VrBV9hrLPhE@public.gmane.org, linux-hexagon-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-ia64-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-m68k-cunTk1MwBs8S/qaLPR03pWD2FQJk+8+b@public.gmane.org, linux-metag-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Michal Simek <monstr-pSz03upnqPeHXe+LvDLADg@public.gmane.org>, linux-mips-6z/3iImG2C8G8FEW9MqTrA@public.gmane.org, linux-parisc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linuxppc-dev-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org, patches-q3qR2WxjNRFS9aJRtSZj7A@public.gmane.org, linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sparclinux-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Guan Xuetao <gxt-TG0Ac1+ktVePQbnJrJN+5g@public.gmane.org>, x86-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-From: Matthew Wilcox <mawilcox@microsoft.com>
+This frees the dma_direct_* namespace for a generic implementation.
 
-This is the first user of the radix tree I've converted which was
-storing numbers rather than pointers.  I'm fairly pleased with how
-well it came out.  There's less boiler-plate involved than there was
-with the radix tree, so that's a win.  It does use the advanced API,
-and I think that's a signal that there needs to be a separate API for
-using the XArray for only integers.
-
-Signed-off-by: Matthew Wilcox <mawilcox@microsoft.com>
+Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- drivers/md/raid5-cache.c | 119 ++++++++++++++++-------------------------------
- 1 file changed, 40 insertions(+), 79 deletions(-)
+ arch/microblaze/include/asm/dma-mapping.h |  4 +--
+ arch/microblaze/kernel/dma.c              | 48 +++++++++++++++----------------
+ 2 files changed, 26 insertions(+), 26 deletions(-)
 
-diff --git a/drivers/md/raid5-cache.c b/drivers/md/raid5-cache.c
-index 39f31f07ffe9..2c8ad0ed9b48 100644
---- a/drivers/md/raid5-cache.c
-+++ b/drivers/md/raid5-cache.c
-@@ -158,9 +158,8 @@ struct r5l_log {
- 	/* to disable write back during in degraded mode */
- 	struct work_struct disable_writeback_work;
+diff --git a/arch/microblaze/include/asm/dma-mapping.h b/arch/microblaze/include/asm/dma-mapping.h
+index 6b9ea39405b8..add50c1373bf 100644
+--- a/arch/microblaze/include/asm/dma-mapping.h
++++ b/arch/microblaze/include/asm/dma-mapping.h
+@@ -18,11 +18,11 @@
+ /*
+  * Available generic sets of operations
+  */
+-extern const struct dma_map_ops dma_direct_ops;
++extern const struct dma_map_ops dma_nommu_ops;
  
--	/* to for chunk_aligned_read in writeback mode, details below */
--	spinlock_t tree_lock;
--	struct radix_tree_root big_stripe_tree;
-+	/* for chunk_aligned_read in writeback mode, details below */
-+	struct xarray big_stripe;
+ static inline const struct dma_map_ops *get_arch_dma_ops(struct bus_type *bus)
+ {
+-	return &dma_direct_ops;
++	return &dma_nommu_ops;
+ }
+ 
+ #endif	/* _ASM_MICROBLAZE_DMA_MAPPING_H */
+diff --git a/arch/microblaze/kernel/dma.c b/arch/microblaze/kernel/dma.c
+index 990bf9ea0ec6..450803e5731a 100644
+--- a/arch/microblaze/kernel/dma.c
++++ b/arch/microblaze/kernel/dma.c
+@@ -17,7 +17,7 @@
+ 
+ #define NOT_COHERENT_CACHE
+ 
+-static void *dma_direct_alloc_coherent(struct device *dev, size_t size,
++static void *dma_nommu_alloc_coherent(struct device *dev, size_t size,
+ 				       dma_addr_t *dma_handle, gfp_t flag,
+ 				       unsigned long attrs)
+ {
+@@ -42,7 +42,7 @@ static void *dma_direct_alloc_coherent(struct device *dev, size_t size,
+ #endif
+ }
+ 
+-static void dma_direct_free_coherent(struct device *dev, size_t size,
++static void dma_nommu_free_coherent(struct device *dev, size_t size,
+ 				     void *vaddr, dma_addr_t dma_handle,
+ 				     unsigned long attrs)
+ {
+@@ -69,7 +69,7 @@ static inline void __dma_sync(unsigned long paddr,
+ 	}
+ }
+ 
+-static int dma_direct_map_sg(struct device *dev, struct scatterlist *sgl,
++static int dma_nommu_map_sg(struct device *dev, struct scatterlist *sgl,
+ 			     int nents, enum dma_data_direction direction,
+ 			     unsigned long attrs)
+ {
+@@ -89,12 +89,12 @@ static int dma_direct_map_sg(struct device *dev, struct scatterlist *sgl,
+ 	return nents;
+ }
+ 
+-static int dma_direct_dma_supported(struct device *dev, u64 mask)
++static int dma_nommu_dma_supported(struct device *dev, u64 mask)
+ {
+ 	return 1;
+ }
+ 
+-static inline dma_addr_t dma_direct_map_page(struct device *dev,
++static inline dma_addr_t dma_nommu_map_page(struct device *dev,
+ 					     struct page *page,
+ 					     unsigned long offset,
+ 					     size_t size,
+@@ -106,7 +106,7 @@ static inline dma_addr_t dma_direct_map_page(struct device *dev,
+ 	return page_to_phys(page) + offset;
+ }
+ 
+-static inline void dma_direct_unmap_page(struct device *dev,
++static inline void dma_nommu_unmap_page(struct device *dev,
+ 					 dma_addr_t dma_address,
+ 					 size_t size,
+ 					 enum dma_data_direction direction,
+@@ -122,7 +122,7 @@ static inline void dma_direct_unmap_page(struct device *dev,
+ }
+ 
+ static inline void
+-dma_direct_sync_single_for_cpu(struct device *dev,
++dma_nommu_sync_single_for_cpu(struct device *dev,
+ 			       dma_addr_t dma_handle, size_t size,
+ 			       enum dma_data_direction direction)
+ {
+@@ -136,7 +136,7 @@ dma_direct_sync_single_for_cpu(struct device *dev,
+ }
+ 
+ static inline void
+-dma_direct_sync_single_for_device(struct device *dev,
++dma_nommu_sync_single_for_device(struct device *dev,
+ 				  dma_addr_t dma_handle, size_t size,
+ 				  enum dma_data_direction direction)
+ {
+@@ -150,7 +150,7 @@ dma_direct_sync_single_for_device(struct device *dev,
+ }
+ 
+ static inline void
+-dma_direct_sync_sg_for_cpu(struct device *dev,
++dma_nommu_sync_sg_for_cpu(struct device *dev,
+ 			   struct scatterlist *sgl, int nents,
+ 			   enum dma_data_direction direction)
+ {
+@@ -164,7 +164,7 @@ dma_direct_sync_sg_for_cpu(struct device *dev,
+ }
+ 
+ static inline void
+-dma_direct_sync_sg_for_device(struct device *dev,
++dma_nommu_sync_sg_for_device(struct device *dev,
+ 			      struct scatterlist *sgl, int nents,
+ 			      enum dma_data_direction direction)
+ {
+@@ -178,7 +178,7 @@ dma_direct_sync_sg_for_device(struct device *dev,
+ }
+ 
+ static
+-int dma_direct_mmap_coherent(struct device *dev, struct vm_area_struct *vma,
++int dma_nommu_mmap_coherent(struct device *dev, struct vm_area_struct *vma,
+ 			     void *cpu_addr, dma_addr_t handle, size_t size,
+ 			     unsigned long attrs)
+ {
+@@ -204,20 +204,20 @@ int dma_direct_mmap_coherent(struct device *dev, struct vm_area_struct *vma,
+ #endif
+ }
+ 
+-const struct dma_map_ops dma_direct_ops = {
+-	.alloc		= dma_direct_alloc_coherent,
+-	.free		= dma_direct_free_coherent,
+-	.mmap		= dma_direct_mmap_coherent,
+-	.map_sg		= dma_direct_map_sg,
+-	.dma_supported	= dma_direct_dma_supported,
+-	.map_page	= dma_direct_map_page,
+-	.unmap_page	= dma_direct_unmap_page,
+-	.sync_single_for_cpu		= dma_direct_sync_single_for_cpu,
+-	.sync_single_for_device		= dma_direct_sync_single_for_device,
+-	.sync_sg_for_cpu		= dma_direct_sync_sg_for_cpu,
+-	.sync_sg_for_device		= dma_direct_sync_sg_for_device,
++const struct dma_map_ops dma_nommu_ops = {
++	.alloc			= dma_nommu_alloc_coherent,
++	.free			= dma_nommu_free_coherent,
++	.mmap			= dma_nommu_mmap_coherent,
++	.map_sg			= dma_nommu_map_sg,
++	.dma_supported		= dma_nommu_dma_supported,
++	.map_page		= dma_nommu_map_page,
++	.unmap_page		= dma_nommu_unmap_page,
++	.sync_single_for_cpu	= dma_nommu_sync_single_for_cpu,
++	.sync_single_for_device	= dma_nommu_sync_single_for_device,
++	.sync_sg_for_cpu	= dma_nommu_sync_sg_for_cpu,
++	.sync_sg_for_device	= dma_nommu_sync_sg_for_device,
  };
+-EXPORT_SYMBOL(dma_direct_ops);
++EXPORT_SYMBOL(dma_nommu_ops);
  
- /*
-@@ -170,9 +169,8 @@ struct r5l_log {
-  * chunk contains 64 4kB-page, so this chunk contain 64 stripes). For
-  * chunk_aligned_read, these stripes are grouped into one "big_stripe".
-  * For each big_stripe, we count how many stripes of this big_stripe
-- * are in the write back cache. These data are tracked in a radix tree
-- * (big_stripe_tree). We use radix_tree item pointer as the counter.
-- * r5c_tree_index() is used to calculate keys for the radix tree.
-+ * are in the write back cache. This counter is tracked in an xarray
-+ * (big_stripe). r5c_index() is used to calculate the index.
-  *
-  * chunk_aligned_read() calls r5c_big_stripe_cached() to look up
-  * big_stripe of each chunk in the tree. If this big_stripe is in the
-@@ -180,9 +178,9 @@ struct r5l_log {
-  * rcu_read_lock().
-  *
-  * It is necessary to remember whether a stripe is counted in
-- * big_stripe_tree. Instead of adding new flag, we reuses existing flags:
-+ * big_stripe. Instead of adding new flag, we reuses existing flags:
-  * STRIPE_R5C_PARTIAL_STRIPE and STRIPE_R5C_FULL_STRIPE. If either of these
-- * two flags are set, the stripe is counted in big_stripe_tree. This
-+ * two flags are set, the stripe is counted in big_stripe. This
-  * requires moving set_bit(STRIPE_R5C_PARTIAL_STRIPE) to
-  * r5c_try_caching_write(); and moving clear_bit of
-  * STRIPE_R5C_PARTIAL_STRIPE and STRIPE_R5C_FULL_STRIPE to
-@@ -190,23 +188,13 @@ struct r5l_log {
-  */
- 
- /*
-- * radix tree requests lowest 2 bits of data pointer to be 2b'00.
-- * So it is necessary to left shift the counter by 2 bits before using it
-- * as data pointer of the tree.
-- */
--#define R5C_RADIX_COUNT_SHIFT 2
--
--/*
-- * calculate key for big_stripe_tree
-+ * calculate key for big_stripe
-  *
-  * sect: align_bi->bi_iter.bi_sector or sh->sector
-  */
--static inline sector_t r5c_tree_index(struct r5conf *conf,
--				      sector_t sect)
-+static inline sector_t r5c_index(struct r5conf *conf, sector_t sect)
- {
--	sector_t offset;
--
--	offset = sector_div(sect, conf->chunk_sectors);
-+	sector_div(sect, conf->chunk_sectors);
- 	return sect;
- }
- 
-@@ -2646,10 +2634,6 @@ int r5c_try_caching_write(struct r5conf *conf,
- 	int i;
- 	struct r5dev *dev;
- 	int to_cache = 0;
--	void **pslot;
--	sector_t tree_index;
--	int ret;
--	uintptr_t refcount;
- 
- 	BUG_ON(!r5c_is_writeback(log));
- 
-@@ -2697,39 +2681,29 @@ int r5c_try_caching_write(struct r5conf *conf,
- 		}
- 	}
- 
--	/* if the stripe is not counted in big_stripe_tree, add it now */
-+	/* if the stripe is not counted in big_stripe, add it now */
- 	if (!test_bit(STRIPE_R5C_PARTIAL_STRIPE, &sh->state) &&
- 	    !test_bit(STRIPE_R5C_FULL_STRIPE, &sh->state)) {
--		tree_index = r5c_tree_index(conf, sh->sector);
--		spin_lock(&log->tree_lock);
--		pslot = radix_tree_lookup_slot(&log->big_stripe_tree,
--					       tree_index);
--		if (pslot) {
--			refcount = (uintptr_t)radix_tree_deref_slot_protected(
--				pslot, &log->tree_lock) >>
--				R5C_RADIX_COUNT_SHIFT;
--			radix_tree_replace_slot(
--				&log->big_stripe_tree, pslot,
--				(void *)((refcount + 1) << R5C_RADIX_COUNT_SHIFT));
--		} else {
--			/*
--			 * this radix_tree_insert can fail safely, so no
--			 * need to call radix_tree_preload()
--			 */
--			ret = radix_tree_insert(
--				&log->big_stripe_tree, tree_index,
--				(void *)(1 << R5C_RADIX_COUNT_SHIFT));
--			if (ret) {
--				spin_unlock(&log->tree_lock);
--				r5c_make_stripe_write_out(sh);
--				return -EAGAIN;
--			}
-+		XA_STATE(xas, &log->big_stripe, r5c_index(conf, sh->sector));
-+		void *entry;
-+
-+		/* Caller would rather handle failures than supply GFP flags */
-+		xas_lock(&xas);
-+		entry = xas_create(&xas);
-+		if (entry)
-+			entry = xa_mk_value(xa_to_value(entry) + 1);
-+		else
-+			entry = xa_mk_value(1);
-+		xas_store(&xas, entry);
-+		xas_unlock(&xas);
-+		if (xas_error(&xas)) {
-+			r5c_make_stripe_write_out(sh);
-+			return -EAGAIN;
- 		}
--		spin_unlock(&log->tree_lock);
- 
- 		/*
- 		 * set STRIPE_R5C_PARTIAL_STRIPE, this shows the stripe is
--		 * counted in the radix tree
-+		 * counted in big_stripe
- 		 */
- 		set_bit(STRIPE_R5C_PARTIAL_STRIPE, &sh->state);
- 		atomic_inc(&conf->r5c_cached_partial_stripes);
-@@ -2812,9 +2786,6 @@ void r5c_finish_stripe_write_out(struct r5conf *conf,
- 	struct r5l_log *log = conf->log;
- 	int i;
- 	int do_wakeup = 0;
--	sector_t tree_index;
--	void **pslot;
--	uintptr_t refcount;
- 
- 	if (!log || !test_bit(R5_InJournal, &sh->dev[sh->pd_idx].flags))
- 		return;
-@@ -2852,24 +2823,21 @@ void r5c_finish_stripe_write_out(struct r5conf *conf,
- 	atomic_dec(&log->stripe_in_journal_count);
- 	r5c_update_log_state(log);
- 
--	/* stop counting this stripe in big_stripe_tree */
-+	/* stop counting this stripe in big_stripe */
- 	if (test_bit(STRIPE_R5C_PARTIAL_STRIPE, &sh->state) ||
- 	    test_bit(STRIPE_R5C_FULL_STRIPE, &sh->state)) {
--		tree_index = r5c_tree_index(conf, sh->sector);
--		spin_lock(&log->tree_lock);
--		pslot = radix_tree_lookup_slot(&log->big_stripe_tree,
--					       tree_index);
--		BUG_ON(pslot = NULL);
--		refcount = (uintptr_t)radix_tree_deref_slot_protected(
--			pslot, &log->tree_lock) >>
--			R5C_RADIX_COUNT_SHIFT;
--		if (refcount = 1)
--			radix_tree_delete(&log->big_stripe_tree, tree_index);
-+		XA_STATE(xas, &log->big_stripe, r5c_index(conf, sh->sector));
-+		void *entry;
-+
-+		xas_lock(&xas);
-+		entry = xas_load(&xas);
-+		BUG_ON(!entry);
-+		if (entry = xa_mk_value(1))
-+			entry = NULL;
- 		else
--			radix_tree_replace_slot(
--				&log->big_stripe_tree, pslot,
--				(void *)((refcount - 1) << R5C_RADIX_COUNT_SHIFT));
--		spin_unlock(&log->tree_lock);
-+			entry = xa_mk_value(xa_to_value(entry) - 1);
-+		xas_store(&xas, entry);
-+		xas_unlock(&xas);
- 	}
- 
- 	if (test_and_clear_bit(STRIPE_R5C_PARTIAL_STRIPE, &sh->state)) {
-@@ -2949,16 +2917,10 @@ int r5c_cache_data(struct r5l_log *log, struct stripe_head *sh)
- bool r5c_big_stripe_cached(struct r5conf *conf, sector_t sect)
- {
- 	struct r5l_log *log = conf->log;
--	sector_t tree_index;
--	void *slot;
- 
- 	if (!log)
- 		return false;
--
--	WARN_ON_ONCE(!rcu_read_lock_held());
--	tree_index = r5c_tree_index(conf, sect);
--	slot = radix_tree_lookup(&log->big_stripe_tree, tree_index);
--	return slot != NULL;
-+	return xa_load(&log->big_stripe, r5c_index(conf, sect)) != NULL;
- }
- 
- static int r5l_load_log(struct r5l_log *log)
-@@ -3112,8 +3074,7 @@ int r5l_init_log(struct r5conf *conf, struct md_rdev *rdev)
- 	if (!log->meta_pool)
- 		goto out_mempool;
- 
--	spin_lock_init(&log->tree_lock);
--	INIT_RADIX_TREE(&log->big_stripe_tree, GFP_NOWAIT | __GFP_NOWARN);
-+	xa_init(&log->big_stripe);
- 
- 	log->reclaim_thread = md_register_thread(r5l_reclaim_thread,
- 						 log->rdev->mddev, "reclaim");
+ /* Number of entries preallocated for DMA-API debugging */
+ #define PREALLOC_DMA_DEBUG_ENTRIES (1 << 16)
 -- 
-2.15.1
+2.14.2
 
