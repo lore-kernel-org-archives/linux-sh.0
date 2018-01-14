@@ -1,56 +1,77 @@
-From: Philippe Ombredanne <pombredanne@nexb.com>
-Date: Tue, 23 Jan 2018 10:28:00 +0000
-Subject: Re: [PATCH v4 3/9] v4l: platform: Add Renesas CEU driver
-Message-Id: <CAOFm3uGdVkgJ10n=pVKh9h2r7t_UkUS1768tVQLKSaOh8v-buA@mail.gmail.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sun, 14 Jan 2018 17:47:44 +0000
+Subject: [PATCH 2/2] sh_eth: get Ether port # only when needed
+Message-Id: <20180114175203.191929089@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1515515131-13760-1-git-send-email-jacopo+renesas@jmondi.org>
- <1515515131-13760-4-git-send-email-jacopo+renesas@jmondi.org>
- <CAOFm3uGxm3bAHPryMV8+MAFy+45-3Ld7RbKqo1saigzPUZ8mqg@mail.gmail.com> <20180112133857.GE24794@w540>
-In-Reply-To: <20180112133857.GE24794@w540>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: jacopo mondi <jacopo@jmondi.org>
-Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Magnus Damm <magnus.damm@gmail.com>, geert@glider.be, Mauro Carvalho Chehab <mchehab@kernel.org>, Hans Verkuil <hverkuil@xs4all.nl>, Fabio Estevam <festevam@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Rob Herring <robh+dt@kernel.org>, Mark Rutland <mark.rutland@arm.com>, linux-renesas-soc@vger.kernel.org, Linux Media Mailing List <linux-media@vger.kernel.org>, linux-sh@vger.kernel.org, "open list:OPEN FIRMWARE AND FLATTENED DEVICE TREE BINDINGS" <devicetree@vger.kernel.org>, LKML <linux-kernel@vger.kernel.org>
+To: netdev@vger.kernel.org, linux-renesas-soc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-On Fri, Jan 12, 2018 at 2:38 PM, jacopo mondi <jacopo@jmondi.org> wrote:
-> Hi Philippe, Laurent, Geert,
->
-> On Fri, Jan 12, 2018 at 11:36:31AM +0100, Philippe Ombredanne wrote:
->> On Tue, Jan 9, 2018 at 5:25 PM, Jacopo Mondi <jacopo+renesas@jmondi.org> wrote:
->> > Add driver for Renesas Capture Engine Unit (CEU).
->>
->> <snip>
->>
->> > --- /dev/null
->> > +++ b/drivers/media/platform/renesas-ceu.c
->> > @@ -0,0 +1,1648 @@
->> > +// SPDX-License-Identifier: GPL-2.0
->>
->> <snip>
->>
->> > +MODULE_DESCRIPTION("Renesas CEU camera driver");
->> > +MODULE_AUTHOR("Jacopo Mondi <jacopo+renesas@jmondi.org>");
->> > +MODULE_LICENSE("GPL");
->>
->> Jacopo,
->> the MODULE_LICENSE does not match the SPDX tag. Per module.h "GPL"
->> means GPL-2.0 or later ;)
->>
->> It should be instead:
->>
->> > +MODULE_LICENSE("GPL v2");
->>
->> ... to match your
->>
->> > +// SPDX-License-Identifier: GPL-2.0
->
-> I will update this in next v5.
-> Laurent, Geert: I'll keep SPDX identifier to "GPL-2.0" until kernel
-> doc does not get updated.
+The dual-port Ether configurations always have a shared TSU to e.g. pass
+the packets between those  ports.  With the  TSU init. code gathered under
+the single *if*, we now can only get the port # from 'platform_device::id'
+only when we actually  need it  (and not recalculate it each time)...
 
-Thanks. Sorry for the late reply!
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
--- 
-Cordially
-Philippe Ombredanne
+---
+ drivers/net/ethernet/renesas/sh_eth.c |   13 +++++--------
+ 1 file changed, 5 insertions(+), 8 deletions(-)
+
+Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
+=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
++++ net-next/drivers/net/ethernet/renesas/sh_eth.c
+@@ -3125,7 +3125,7 @@ static int sh_eth_drv_probe(struct platf
+ 	const struct platform_device_id *id = platform_get_device_id(pdev);
+ 	struct sh_eth_private *mdp;
+ 	struct net_device *ndev;
+-	int ret, devno;
++	int ret;
+ 
+ 	/* get base addr */
+ 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+@@ -3137,10 +3137,6 @@ static int sh_eth_drv_probe(struct platf
+ 	pm_runtime_enable(&pdev->dev);
+ 	pm_runtime_get_sync(&pdev->dev);
+ 
+-	devno = pdev->id;
+-	if (devno < 0)
+-		devno = 0;
+-
+ 	ret = platform_get_irq(pdev, 0);
+ 	if (ret < 0)
+ 		goto out_release;
+@@ -3223,6 +3219,7 @@ static int sh_eth_drv_probe(struct platf
+ 	}
+ 
+ 	if (mdp->cd->tsu) {
++		int port = pdev->id < 0 ? 0 : pdev->id % 2;
+ 		struct resource *rtsu;
+ 
+ 		rtsu = platform_get_resource(pdev, IORESOURCE_MEM, 1);
+@@ -3234,7 +3231,7 @@ static int sh_eth_drv_probe(struct platf
+ 		/* We can only request the  TSU region  for the first port
+ 		 * of the two  sharing this TSU for the probe to succeed...
+ 		 */
+-		if (devno % 2 = 0 &&
++		if (port = 0 &&
+ 		    !devm_request_mem_region(&pdev->dev, rtsu->start,
+ 					     resource_size(rtsu),
+ 					     dev_name(&pdev->dev))) {
+@@ -3250,11 +3247,11 @@ static int sh_eth_drv_probe(struct platf
+ 			ret = -ENOMEM;
+ 			goto out_release;
+ 		}
+-		mdp->port = devno % 2;
++		mdp->port = port;
+ 		ndev->features = NETIF_F_HW_VLAN_CTAG_FILTER;
+ 
+ 		/* Need to init only the first port of the two sharing a TSU */
+-		if (devno % 2 = 0) {
++		if (port = 0) {
+ 			if (mdp->cd->chip_reset)
+ 				mdp->cd->chip_reset(ndev);
+ 
+
