@@ -1,61 +1,34 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sun, 14 Jan 2018 17:47:43 +0000
-Subject: [PATCH 1/2] sh_eth: gather all TSU init code in one place
-Message-Id: <20180114175159.604307495@cogentembedded.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 15 Jan 2018 08:12:04 +0000
+Subject: Re: [PATCH 1/2] sh_eth: gather all TSU init code in one place
+Message-Id: <CAMuHMdUFhW7LVtVyQ8hFT+8+Us8WV7W2n9B9Zac=yCRNKv3+5Q@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20180114175159.604307495@cogentembedded.com>
+In-Reply-To: <20180114175159.604307495@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org, linux-renesas-soc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Cc: netdev <netdev@vger.kernel.org>, Linux-Renesas <linux-renesas-soc@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
 
-The  sh_eth_cpu_data::chip_reset() method  always resets using ARSTR and
-this register is always located at the start of the  TSU register region.
-Therefore, we can  only call  this method if we know TSU is there and thus
-simplify  the probing code a  bit...
+On Sun, Jan 14, 2018 at 6:47 PM, Sergei Shtylyov
+<sergei.shtylyov@cogentembedded.com> wrote:
+> The  sh_eth_cpu_data::chip_reset() method  always resets using ARSTR and
+> this register is always located at the start of the  TSU register region.
+> Therefore, we can  only call  this method if we know TSU is there and thus
+> simplify  the probing code a  bit...
+>
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
----
- drivers/net/ethernet/renesas/sh_eth.c |   12 +++++-------
- 1 file changed, 5 insertions(+), 7 deletions(-)
+Gr{oetje,eeting}s,
 
-Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
-=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
-+++ net-next/drivers/net/ethernet/renesas/sh_eth.c
-@@ -3222,7 +3222,6 @@ static int sh_eth_drv_probe(struct platf
- 		eth_hw_addr_random(ndev);
- 	}
- 
--	/* ioremap the TSU registers */
- 	if (mdp->cd->tsu) {
- 		struct resource *rtsu;
- 
-@@ -3243,6 +3242,7 @@ static int sh_eth_drv_probe(struct platf
- 			ret = -EBUSY;
- 			goto out_release;
- 		}
-+		/* ioremap the TSU registers */
- 		mdp->tsu_addr = devm_ioremap(&pdev->dev, rtsu->start,
- 					     resource_size(rtsu));
- 		if (!mdp->tsu_addr) {
-@@ -3252,14 +3252,12 @@ static int sh_eth_drv_probe(struct platf
- 		}
- 		mdp->port = devno % 2;
- 		ndev->features = NETIF_F_HW_VLAN_CTAG_FILTER;
--	}
- 
--	/* Need to init only the first port of the two sharing a TSU */
--	if (devno % 2 = 0) {
--		if (mdp->cd->chip_reset)
--			mdp->cd->chip_reset(ndev);
-+		/* Need to init only the first port of the two sharing a TSU */
-+		if (devno % 2 = 0) {
-+			if (mdp->cd->chip_reset)
-+				mdp->cd->chip_reset(ndev);
- 
--		if (mdp->cd->tsu) {
- 			/* TSU init (Init only)*/
- 			sh_eth_tsu_init(mdp);
- 		}
+                        Geert
 
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
