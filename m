@@ -1,7 +1,7 @@
 From: Matthew Wilcox <willy@infradead.org>
-Date: Wed, 17 Jan 2018 20:20:33 +0000
-Subject: [PATCH v6 09/99] xarray: Add xa_get_tag, xa_set_tag and xa_clear_tag
-Message-Id: <20180117202203.19756-10-willy@infradead.org>
+Date: Wed, 17 Jan 2018 20:21:38 +0000
+Subject: [PATCH v6 74/99] usb: Convert xhci-mem to XArray
+Message-Id: <20180117202203.19756-75-willy@infradead.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20180117202203.19756-1-willy@infradead.org>
 In-Reply-To: <20180117202203.19756-1-willy@infradead.org>
@@ -9,386 +9,182 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-kernel@vger.kernel.org
-Cc: linux-s390@vger.kernel.org, David Howells <dhowells@redhat.com>, linux-nilfs@vger.kernel.org, Matthew Wilcox <mawilcox@microsoft.com>, linux-sh@vger.kernel.org, intel-gfx@lists.freedesktop.org, linux-usb@vger.kernel.org, linux-remoteproc@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net, linux-xfs@vger.kernel.org, linux-mm@kvack.org, iommu@lists.linux-foundation.org, Stefano Stabellini <sstabellini@kernel.org>, linux-fsdevel@vger.kernel.org, cgroups@vger.kernel.org, Bjorn Andersson <bjorn.andersson@linaro.org>, linux-btrfs@vger.kernel.org
+Cc: Matthew Wilcox <mawilcox@microsoft.com>, linux-mm@kvack.org, linux-fsdevel@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net, linux-nilfs@vger.kernel.org, linux-btrfs@vger.kernel.org, linux-xfs@vger.kernel.org, linux-usb@vger.kernel.org, Bjorn Andersson <bjorn.andersson@linaro.org>, Stefano Stabellini <sstabellini@kernel.org>, iommu@lists.linux-foundation.org, linux-remoteproc@vger.kernel.org, linux-s390@vger.kernel.org, intel-gfx@lists.freedesktop.org, cgroups@vger.kernel.org, linux-sh@vger.kernel.org, David Howells <dhowells@redhat.com>
 
 From: Matthew Wilcox <mawilcox@microsoft.com>
 
-XArray tags are slightly more strongly typed than the radix tree tags,
-but occupy the same bits.  This commit also adds the xas_ family of tag
-operations, for cases where the caller is already holding the lock, and
-xa_tagged() to ask whether any array member has a particular tag set.
+The XArray API is a slightly better fit for xhci_insert_segment_mapping()
+than the radix tree API was.
 
 Signed-off-by: Matthew Wilcox <mawilcox@microsoft.com>
 ---
- include/linux/xarray.h         |  40 +++++++
- lib/xarray.c                   | 229 +++++++++++++++++++++++++++++++++++++++++
- tools/include/linux/spinlock.h |   6 ++
- 3 files changed, 275 insertions(+)
+ drivers/usb/host/xhci-mem.c | 68 +++++++++++++++++++--------------------------
+ drivers/usb/host/xhci.h     |  6 ++--
+ 2 files changed, 32 insertions(+), 42 deletions(-)
 
-diff --git a/include/linux/xarray.h b/include/linux/xarray.h
-index 54c694e5c33f..ddeb49b8bfc1 100644
---- a/include/linux/xarray.h
-+++ b/include/linux/xarray.h
-@@ -11,6 +11,7 @@
- 
- #include <linux/bug.h>
- #include <linux/compiler.h>
-+#include <linux/gfp.h>
- #include <linux/kconfig.h>
- #include <linux/kernel.h>
- #include <linux/rcupdate.h>
-@@ -141,6 +142,20 @@ static inline int xa_err(void *entry)
- 	return 0;
+diff --git a/drivers/usb/host/xhci-mem.c b/drivers/usb/host/xhci-mem.c
+index 3a29b32a3bd0..a2e15a9abc30 100644
+--- a/drivers/usb/host/xhci-mem.c
++++ b/drivers/usb/host/xhci-mem.c
+@@ -149,70 +149,60 @@ static void xhci_link_rings(struct xhci_hcd *xhci, struct xhci_ring *ring,
  }
- 
-+typedef unsigned __bitwise xa_tag_t;
-+#define XA_TAG_0		((__force xa_tag_t)0U)
-+#define XA_TAG_1		((__force xa_tag_t)1U)
-+#define XA_TAG_2		((__force xa_tag_t)2U)
-+#define XA_PRESENT		((__force xa_tag_t)8U)
-+#define XA_TAG_MAX		XA_TAG_2
-+
-+/*
-+ * Values for xa_flags.  The radix tree stores its GFP flags in the xa_flags,
-+ * and we remain compatible with that.
-+ */
-+#define XA_FLAGS_TAG(tag)	((__force gfp_t)((1U << __GFP_BITS_SHIFT) << \
-+						(__force unsigned)(tag)))
-+
- /**
-  * struct xarray - The anchor of the XArray.
-  * @xa_lock: Lock that protects the contents of the XArray.
-@@ -187,6 +202,9 @@ struct xarray {
- 
- void xa_init_flags(struct xarray *, gfp_t flags);
- void *xa_load(struct xarray *, unsigned long index);
-+bool xa_get_tag(struct xarray *, unsigned long index, xa_tag_t);
-+void xa_set_tag(struct xarray *, unsigned long index, xa_tag_t);
-+void xa_clear_tag(struct xarray *, unsigned long index, xa_tag_t);
- 
- /**
-  * xa_init() - Initialise an empty XArray.
-@@ -199,6 +217,18 @@ static inline void xa_init(struct xarray *xa)
- 	xa_init_flags(xa, 0);
- }
- 
-+/**
-+ * xa_tagged() - Inquire whether any entry in this array has a tag set
-+ * @xa: Array
-+ * @tag: Tag value
-+ *
-+ * Return: %true if any entry has this tag set.
-+ */
-+static inline bool xa_tagged(const struct xarray *xa, xa_tag_t tag)
-+{
-+	return xa->xa_flags & XA_FLAGS_TAG(tag);
-+}
-+
- #define xa_trylock(xa)		spin_trylock(&(xa)->xa_lock)
- #define xa_lock(xa)		spin_lock(&(xa)->xa_lock)
- #define xa_unlock(xa)		spin_unlock(&(xa)->xa_lock)
-@@ -211,6 +241,12 @@ static inline void xa_init(struct xarray *xa)
- #define xa_unlock_irqrestore(xa, flags) \
- 				spin_unlock_irqrestore(&(xa)->xa_lock, flags)
- 
-+/*
-+ * Versions of the normal API which require the caller to hold the xa_lock.
-+ */
-+void __xa_set_tag(struct xarray *, unsigned long index, xa_tag_t);
-+void __xa_clear_tag(struct xarray *, unsigned long index, xa_tag_t);
-+
- /* Everything below here is the Advanced API.  Proceed with caution. */
  
  /*
-@@ -504,6 +540,10 @@ static inline bool xas_retry(struct xa_state *xas, const void *entry)
- 
- void *xas_load(struct xa_state *);
- 
-+bool xas_get_tag(const struct xa_state *, xa_tag_t);
-+void xas_set_tag(const struct xa_state *, xa_tag_t);
-+void xas_clear_tag(const struct xa_state *, xa_tag_t);
-+
- /**
-  * xas_reload() - Refetch an entry from the xarray.
-  * @xas: XArray operation state.
-diff --git a/lib/xarray.c b/lib/xarray.c
-index 83b9c25de415..59b57e6f80de 100644
---- a/lib/xarray.c
-+++ b/lib/xarray.c
-@@ -5,6 +5,7 @@
-  * Author: Matthew Wilcox <mawilcox@microsoft.com>
+- * We need a radix tree for mapping physical addresses of TRBs to which stream
+- * ID they belong to.  We need to do this because the host controller won't tell
++ * We need to map physical addresses of TRBs to the stream ID they belong to.
++ * We need to do this because the host controller won't tell
+  * us which stream ring the TRB came from.  We could store the stream ID in an
+  * event data TRB, but that doesn't help us for the cancellation case, since the
+  * endpoint may stop before it reaches that event data TRB.
+  *
+- * The radix tree maps the upper portion of the TRB DMA address to a ring
++ * The xarray maps the upper portion of the TRB DMA address to a ring
+  * segment that has the same upper portion of DMA addresses.  For example, say I
+  * have segments of size 1KB, that are always 1KB aligned.  A segment may
+  * start at 0x10c91000 and end at 0x10c913f0.  If I use the upper 10 bits, the
+- * key to the stream ID is 0x43244.  I can use the DMA address of the TRB to
+- * pass the radix tree a key to get the right stream ID:
++ * index of the stream ID is 0x43244.  I can use the DMA address of the TRB as
++ * the xarray index to get the right stream ID:
+  *
+  *	0x10c90fff >> 10 = 0x43243
+  *	0x10c912c0 >> 10 = 0x43244
+  *	0x10c91400 >> 10 = 0x43245
+  *
+  * Obviously, only those TRBs with DMA addresses that are within the segment
+- * will make the radix tree return the stream ID for that ring.
++ * will make the xarray return the stream ID for that ring.
+  *
+- * Caveats for the radix tree:
++ * Caveats for the xarray:
+  *
+- * The radix tree uses an unsigned long as a key pair.  On 32-bit systems, an
++ * The xarray uses an unsigned long for the index.  On 32-bit systems, an
+  * unsigned long will be 32-bits; on a 64-bit system an unsigned long will be
+  * 64-bits.  Since we only request 32-bit DMA addresses, we can use that as the
+- * key on 32-bit or 64-bit systems (it would also be fine if we asked for 64-bit
+- * PCI DMA addresses on a 64-bit system).  There might be a problem on 32-bit
+- * extended systems (where the DMA address can be bigger than 32-bits),
++ * index on 32-bit or 64-bit systems (it would also be fine if we asked for
++ * 64-bit PCI DMA addresses on a 64-bit system).  There might be a problem on
++ * 32-bit extended systems (where the DMA address can be bigger than 32-bits),
+  * if we allow the PCI dma mask to be bigger than 32-bits.  So don't do that.
   */
- 
-+#include <linux/bitmap.h>
- #include <linux/export.h>
- #include <linux/xarray.h>
- 
-@@ -24,6 +25,55 @@
-  * @entry refers to something stored in a slot in the xarray
-  */
- 
-+static inline struct xa_node *xa_parent(struct xarray *xa,
-+					const struct xa_node *node)
+-static int xhci_insert_segment_mapping(struct radix_tree_root *trb_address_map,
++
++static unsigned long trb_index(dma_addr_t dma)
 +{
-+	return rcu_dereference_check(node->parent,
-+						lockdep_is_held(&xa->xa_lock));
++	return (unsigned long)(dma >> TRB_SEGMENT_SHIFT);
 +}
 +
-+static inline struct xa_node *xa_parent_locked(struct xarray *xa,
-+					const struct xa_node *node)
-+{
-+	return rcu_dereference_protected(node->parent,
-+						lockdep_is_held(&xa->xa_lock));
-+}
-+
-+static inline void xa_tag_set(struct xarray *xa, xa_tag_t tag)
-+{
-+	if (!(xa->xa_flags & XA_FLAGS_TAG(tag)))
-+		xa->xa_flags |= XA_FLAGS_TAG(tag);
-+}
-+
-+static inline void xa_tag_clear(struct xarray *xa, xa_tag_t tag)
-+{
-+	if (xa->xa_flags & XA_FLAGS_TAG(tag))
-+		xa->xa_flags &= ~(XA_FLAGS_TAG(tag));
-+}
-+
-+static inline bool node_get_tag(const struct xa_node *node, unsigned int offset,
-+				xa_tag_t tag)
-+{
-+	return test_bit(offset, node->tags[(__force unsigned)tag]);
-+}
-+
-+static inline void node_set_tag(struct xa_node *node, unsigned int offset,
-+				xa_tag_t tag)
-+{
-+	__set_bit(offset, node->tags[(__force unsigned)tag]);
-+}
-+
-+static inline void node_clear_tag(struct xa_node *node, unsigned int offset,
-+				xa_tag_t tag)
-+{
-+	__clear_bit(offset, node->tags[(__force unsigned)tag]);
-+}
-+
-+static inline bool node_any_tag(struct xa_node *node, xa_tag_t tag)
-+{
-+	return !bitmap_empty(node->tags[(__force unsigned)tag], XA_CHUNK_SIZE);
-+}
-+
- /* extracts the offset within this node from the index */
- static unsigned int get_offset(unsigned long index, struct xa_node *node)
++static int xhci_insert_segment_mapping(struct xarray *trb_address_map,
+ 		struct xhci_ring *ring,
+ 		struct xhci_segment *seg,
+-		gfp_t mem_flags)
++		gfp_t gfp)
  {
-@@ -118,6 +168,85 @@ void *xas_load(struct xa_state *xas)
+-	unsigned long key;
+-	int ret;
+-
+-	key = (unsigned long)(seg->dma >> TRB_SEGMENT_SHIFT);
+ 	/* Skip any segments that were already added. */
+-	if (radix_tree_lookup(trb_address_map, key))
+-		return 0;
+-
+-	ret = radix_tree_maybe_preload(mem_flags);
+-	if (ret)
+-		return ret;
+-	ret = radix_tree_insert(trb_address_map,
+-			key, ring);
+-	radix_tree_preload_end();
+-	return ret;
++	return xa_err(xa_cmpxchg(trb_address_map, trb_index(seg->dma), NULL,
++								ring, gfp));
  }
- EXPORT_SYMBOL_GPL(xas_load);
  
-+/**
-+ * xas_get_tag() - Returns the state of this tag.
-+ * @xas: XArray operation state.
-+ * @tag: Tag number.
-+ *
-+ * Return: true if the tag is set, false if the tag is clear or @xas
-+ * is in an error state.
-+ */
-+bool xas_get_tag(const struct xa_state *xas, xa_tag_t tag)
-+{
-+	if (xas_invalid(xas))
-+		return false;
-+	if (!xas->xa_node)
-+		return xa_tagged(xas->xa, tag);
-+	return node_get_tag(xas->xa_node, xas->xa_offset, tag);
-+}
-+EXPORT_SYMBOL_GPL(xas_get_tag);
-+
-+/**
-+ * xas_set_tag() - Sets the tag on this entry and its parents.
-+ * @xas: XArray operation state.
-+ * @tag: Tag number.
-+ *
-+ * Sets the specified tag on this entry, and walks up the tree setting it
-+ * on all the ancestor entries.  Does nothing if @xas has not been walked to
-+ * an entry, or is in an error state.
-+ */
-+void xas_set_tag(const struct xa_state *xas, xa_tag_t tag)
-+{
-+	struct xa_node *node = xas->xa_node;
-+	unsigned int offset = xas->xa_offset;
-+
-+	if (xas_invalid(xas))
-+		return;
-+
-+	while (node) {
-+		if (node_get_tag(node, offset, tag))
-+			return;
-+		node_set_tag(node, offset, tag);
-+		offset = node->offset;
-+		node = xa_parent_locked(xas->xa, node);
-+	}
-+
-+	if (!xa_tagged(xas->xa, tag))
-+		xa_tag_set(xas->xa, tag);
-+}
-+EXPORT_SYMBOL_GPL(xas_set_tag);
-+
-+/**
-+ * xas_clear_tag() - Clears the tag on this entry and its parents.
-+ * @xas: XArray operation state.
-+ * @tag: Tag number.
-+ *
-+ * Clears the specified tag on this entry, and walks back to the head
-+ * attempting to clear it on all the ancestor entries.  Does nothing if
-+ * @xas has not been walked to an entry, or is in an error state.
-+ */
-+void xas_clear_tag(const struct xa_state *xas, xa_tag_t tag)
-+{
-+	struct xa_node *node = xas->xa_node;
-+	unsigned int offset = xas->xa_offset;
-+
-+	if (xas_invalid(xas))
-+		return;
-+
-+	while (node) {
-+		node_clear_tag(node, offset, tag);
-+		if (node_any_tag(node, tag))
-+			return;
-+
-+		offset = node->offset;
-+		node = xa_parent_locked(xas->xa, node);
-+	}
-+
-+	if (xa_tagged(xas->xa, tag))
-+		xa_tag_clear(xas->xa, tag);
-+}
-+EXPORT_SYMBOL_GPL(xas_clear_tag);
-+
- /**
-  * xa_init_flags() - Initialise an empty XArray with flags.
-  * @xa: XArray.
-@@ -157,6 +286,106 @@ void *xa_load(struct xarray *xa, unsigned long index)
- }
- EXPORT_SYMBOL(xa_load);
- 
-+/**
-+ * __xa_set_tag() - Set this tag on this entry while locked.
-+ * @xa: XArray.
-+ * @index: Index of entry.
-+ * @tag: Tag number.
-+ *
-+ * Attempting to set a tag on a NULL entry does not succeed.
-+ * This function expects the xa_lock to be held on entry.
-+ */
-+void __xa_set_tag(struct xarray *xa, unsigned long index, xa_tag_t tag)
-+{
-+	XA_STATE(xas, xa, index);
-+	void *entry = xas_load(&xas);
-+
-+	if (entry)
-+		xas_set_tag(&xas, tag);
-+}
-+EXPORT_SYMBOL_GPL(__xa_set_tag);
-+
-+/**
-+ * __xa_clear_tag() - Clear this tag on this entry while locked.
-+ * @xa: XArray.
-+ * @index: Index of entry.
-+ * @tag: Tag number.
-+ *
-+ * This function expects the xa_lock to be held on entry.
-+ */
-+void __xa_clear_tag(struct xarray *xa, unsigned long index, xa_tag_t tag)
-+{
-+	XA_STATE(xas, xa, index);
-+	void *entry = xas_load(&xas);
-+
-+	if (entry)
-+		xas_clear_tag(&xas, tag);
-+}
-+EXPORT_SYMBOL_GPL(__xa_clear_tag);
-+
-+/**
-+ * xa_get_tag() - Inquire whether this tag is set on this entry.
-+ * @xa: XArray.
-+ * @index: Index of entry.
-+ * @tag: Tag number.
-+ *
-+ * This function uses the RCU read lock, so the result may be out of date
-+ * by the time it returns.  If you need the result to be stable, use a lock.
-+ *
-+ * Return: True if the entry at @index has this tag set, false if it doesn't.
-+ */
-+bool xa_get_tag(struct xarray *xa, unsigned long index, xa_tag_t tag)
-+{
-+	XA_STATE(xas, xa, index);
-+	void *entry;
-+
-+	rcu_read_lock();
-+	entry = xas_start(&xas);
-+	while (xas_get_tag(&xas, tag)) {
-+		if (!xa_is_node(entry))
-+			goto found;
-+		entry = xas_descend(&xas, xa_to_node(entry));
-+	}
-+	rcu_read_unlock();
-+	return false;
-+ found:
-+	rcu_read_unlock();
-+	return true;
-+}
-+EXPORT_SYMBOL(xa_get_tag);
-+
-+/**
-+ * xa_set_tag() - Set this tag on this entry.
-+ * @xa: XArray.
-+ * @index: Index of entry.
-+ * @tag: Tag number.
-+ *
-+ * Attempting to set a tag on a NULL entry does not succeed.
-+ */
-+void xa_set_tag(struct xarray *xa, unsigned long index, xa_tag_t tag)
-+{
-+	xa_lock(xa);
-+	__xa_set_tag(xa, index, tag);
-+	xa_unlock(xa);
-+}
-+EXPORT_SYMBOL(xa_set_tag);
-+
-+/**
-+ * xa_clear_tag() - Clear this tag on this entry.
-+ * @xa: XArray.
-+ * @index: Index of entry.
-+ * @tag: Tag number.
-+ *
-+ * Clearing a tag always succeeds.
-+ */
-+void xa_clear_tag(struct xarray *xa, unsigned long index, xa_tag_t tag)
-+{
-+	xa_lock(xa);
-+	__xa_clear_tag(xa, index, tag);
-+	xa_unlock(xa);
-+}
-+EXPORT_SYMBOL(xa_clear_tag);
-+
- #ifdef XA_DEBUG
- void xa_dump_node(const struct xa_node *node)
+-static void xhci_remove_segment_mapping(struct radix_tree_root *trb_address_map,
++static void xhci_remove_segment_mapping(struct xarray *trb_address_map,
+ 		struct xhci_segment *seg)
  {
-diff --git a/tools/include/linux/spinlock.h b/tools/include/linux/spinlock.h
-index 34fed5c38da2..85a009001109 100644
---- a/tools/include/linux/spinlock.h
-+++ b/tools/include/linux/spinlock.h
-@@ -10,6 +10,12 @@
- #define __SPIN_LOCK_UNLOCKED(x)	(pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER
- #define spin_lock_init(x)	pthread_mutex_init(x, NULL);
+-	unsigned long key;
+-
+-	key = (unsigned long)(seg->dma >> TRB_SEGMENT_SHIFT);
+-	if (radix_tree_lookup(trb_address_map, key))
+-		radix_tree_delete(trb_address_map, key);
++	xa_erase(trb_address_map, trb_index(seg->dma));
+ }
  
-+#define spin_lock(x)			pthread_mutex_lock(x)
-+#define spin_unlock(x)			pthread_mutex_unlock(x)
-+#define spin_lock_bh(x)			pthread_mutex_lock(x)
-+#define spin_unlock_bh(x)		pthread_mutex_unlock(x)
-+#define spin_lock_irq(x)		pthread_mutex_lock(x)
-+#define spin_unlock_irq(x)		pthread_mutex_unlock(x)
- #define spin_lock_irqsave(x, f)		(void)f, pthread_mutex_lock(x)
- #define spin_unlock_irqrestore(x, f)	(void)f, pthread_mutex_unlock(x)
+ static int xhci_update_stream_segment_mapping(
+-		struct radix_tree_root *trb_address_map,
++		struct xarray *trb_address_map,
+ 		struct xhci_ring *ring,
+ 		struct xhci_segment *first_seg,
+ 		struct xhci_segment *last_seg,
+@@ -574,8 +564,8 @@ struct xhci_ring *xhci_dma_to_transfer_ring(
+ 		u64 address)
+ {
+ 	if (ep->ep_state & EP_HAS_STREAMS)
+-		return radix_tree_lookup(&ep->stream_info->trb_address_map,
+-				address >> TRB_SEGMENT_SHIFT);
++		return xa_load(&ep->stream_info->trb_address_map,
++				trb_index(address));
+ 	return ep->ring;
+ }
  
+@@ -654,10 +644,10 @@ struct xhci_stream_info *xhci_alloc_stream_info(struct xhci_hcd *xhci,
+ 	if (!stream_info->free_streams_command)
+ 		goto cleanup_ctx;
+ 
+-	INIT_RADIX_TREE(&stream_info->trb_address_map, GFP_ATOMIC);
++	xa_init(&stream_info->trb_address_map);
+ 
+ 	/* Allocate rings for all the streams that the driver will use,
+-	 * and add their segment DMA addresses to the radix tree.
++	 * and add their segment DMA addresses to the map.
+ 	 * Stream 0 is reserved.
+ 	 */
+ 
+@@ -2376,7 +2366,7 @@ int xhci_mem_init(struct xhci_hcd *xhci, gfp_t flags)
+ 	 * Initialize the ring segment pool.  The ring must be a contiguous
+ 	 * structure comprised of TRBs.  The TRBs must be 16 byte aligned,
+ 	 * however, the command ring segment needs 64-byte aligned segments
+-	 * and our use of dma addresses in the trb_address_map radix tree needs
++	 * and our use of dma addresses in the trb_address_map xarray needs
+ 	 * TRB_SEGMENT_SIZE alignment, so we pick the greater alignment need.
+ 	 */
+ 	xhci->segment_pool = dma_pool_create("xHCI ring segments", dev,
+diff --git a/drivers/usb/host/xhci.h b/drivers/usb/host/xhci.h
+index 054ce74524af..e8208a3eee3c 100644
+--- a/drivers/usb/host/xhci.h
++++ b/drivers/usb/host/xhci.h
+@@ -15,7 +15,7 @@
+ #include <linux/usb.h>
+ #include <linux/timer.h>
+ #include <linux/kernel.h>
+-#include <linux/radix-tree.h>
++#include <linux/xarray.h>
+ #include <linux/usb/hcd.h>
+ #include <linux/io-64-nonatomic-lo-hi.h>
+ 
+@@ -837,7 +837,7 @@ struct xhci_stream_info {
+ 	unsigned int			num_stream_ctxs;
+ 	dma_addr_t			ctx_array_dma;
+ 	/* For mapping physical TRB addresses to segments in stream rings */
+-	struct radix_tree_root		trb_address_map;
++	struct xarray			trb_address_map;
+ 	struct xhci_command		*free_streams_command;
+ };
+ 
+@@ -1584,7 +1584,7 @@ struct xhci_ring {
+ 	unsigned int		bounce_buf_len;
+ 	enum xhci_ring_type	type;
+ 	bool			last_td_was_short;
+-	struct radix_tree_root	*trb_address_map;
++	struct xarray		*trb_address_map;
+ };
+ 
+ struct xhci_erst_entry {
 -- 
 2.15.1
 
