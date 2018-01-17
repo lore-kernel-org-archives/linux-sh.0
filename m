@@ -1,7 +1,7 @@
 From: Matthew Wilcox <willy@infradead.org>
-Date: Wed, 17 Jan 2018 20:21:13 +0000
-Subject: [PATCH v6 49/99] shmem: Convert shmem_partial_swap_usage to XArray
-Message-Id: <20180117202203.19756-50-willy@infradead.org>
+Date: Wed, 17 Jan 2018 20:21:09 +0000
+Subject: [PATCH v6 45/99] shmem: Convert shmem_wait_for_pins to XArray
+Message-Id: <20180117202203.19756-46-willy@infradead.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20180117202203.19756-1-willy@infradead.org>
 In-Reply-To: <20180117202203.19756-1-willy@infradead.org>
@@ -9,55 +9,110 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-kernel@vger.kernel.org
-Cc: Matthew Wilcox <mawilcox@microsoft.com>, linux-mm@kvack.org, linux-fsdevel@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net, linux-nilfs@vger.kernel.org, linux-btrfs@vger.kernel.org, linux-xfs@vger.kernel.org, linux-usb@vger.kernel.org, Bjorn Andersson <bjorn.andersson@linaro.org>, Stefano Stabellini <sstabellini@kernel.org>, iommu@lists.linux-foundation.org, linux-remoteproc@vger.kernel.org, linux-s390@vger.kernel.org, intel-gfx@lists.freedesktop.org, cgroups@vger.kernel.org, linux-sh@vger.kernel.org, David Howells <dhowells@redhat.com>
+Cc: linux-s390@vger.kernel.org, David Howells <dhowells@redhat.com>, linux-nilfs@vger.kernel.org, Matthew Wilcox <mawilcox@microsoft.com>, linux-sh@vger.kernel.org, intel-gfx@lists.freedesktop.org, linux-usb@vger.kernel.org, linux-remoteproc@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net, linux-xfs@vger.kernel.org, linux-mm@kvack.org, iommu@lists.linux-foundation.org, Stefano Stabellini <sstabellini@kernel.org>, linux-fsdevel@vger.kernel.org, cgroups@vger.kernel.org, Bjorn Andersson <bjorn.andersson@linaro.org>, linux-btrfs@vger.kernel.org
 
 From: Matthew Wilcox <mawilcox@microsoft.com>
 
-Simpler code because the xarray takes care of things like the limit and
-dereferencing the slot.
+As with shmem_tag_pins(), hold the lock around the entire loop instead
+of acquiring & dropping it for each entry we're going to untag.
 
 Signed-off-by: Matthew Wilcox <mawilcox@microsoft.com>
 ---
- mm/shmem.c | 18 +++---------------
- 1 file changed, 3 insertions(+), 15 deletions(-)
+ mm/shmem.c | 59 ++++++++++++++++++++++++-----------------------------------
+ 1 file changed, 24 insertions(+), 35 deletions(-)
 
 diff --git a/mm/shmem.c b/mm/shmem.c
-index 5a2226e06f8c..4dbcfb436bd1 100644
+index 2f41c7ceea18..e4a2eb1336be 100644
 --- a/mm/shmem.c
 +++ b/mm/shmem.c
-@@ -658,29 +658,17 @@ static int shmem_free_swap(struct address_space *mapping,
- unsigned long shmem_partial_swap_usage(struct address_space *mapping,
- 						pgoff_t start, pgoff_t end)
+@@ -2636,9 +2636,7 @@ static void shmem_tag_pins(struct address_space *mapping)
+  */
+ static int shmem_wait_for_pins(struct address_space *mapping)
  {
 -	struct radix_tree_iter iter;
 -	void **slot;
-+	XA_STATE(xas, &mapping->pages, start);
+-	pgoff_t start;
++	XA_STATE(xas, &mapping->pages, 0);
  	struct page *page;
- 	unsigned long swapped = 0;
+ 	int error, scan;
  
- 	rcu_read_lock();
--
--	radix_tree_for_each_slot(slot, &mapping->pages, &iter, start) {
--		if (iter.index >= end)
--			break;
--
--		page = radix_tree_deref_slot(slot);
--
--		if (radix_tree_deref_retry(page)) {
--			slot = radix_tree_iter_retry(&iter);
--			continue;
--		}
--
-+	xas_for_each(&xas, page, end - 1) {
- 		if (xa_is_value(page))
- 			swapped++;
+@@ -2646,7 +2644,9 @@ static int shmem_wait_for_pins(struct address_space *mapping)
  
- 		if (need_resched()) {
--			slot = radix_tree_iter_resume(slot, &iter);
+ 	error = 0;
+ 	for (scan = 0; scan <= LAST_SCAN; scan++) {
+-		if (!radix_tree_tagged(&mapping->pages, SHMEM_TAG_PINNED))
++		unsigned int tagged = 0;
++
++		if (!xas_tagged(&xas, SHMEM_TAG_PINNED))
+ 			break;
+ 
+ 		if (!scan)
+@@ -2654,45 +2654,34 @@ static int shmem_wait_for_pins(struct address_space *mapping)
+ 		else if (schedule_timeout_killable((HZ << scan) / 200))
+ 			scan = LAST_SCAN;
+ 
+-		start = 0;
+-		rcu_read_lock();
+-		radix_tree_for_each_tagged(slot, &mapping->pages, &iter,
+-					   start, SHMEM_TAG_PINNED) {
+-
+-			page = radix_tree_deref_slot(slot);
+-			if (radix_tree_exception(page)) {
+-				if (radix_tree_deref_retry(page)) {
+-					slot = radix_tree_iter_retry(&iter);
+-					continue;
+-				}
+-
+-				page = NULL;
+-			}
+-
+-			if (page &&
+-			    page_count(page) - page_mapcount(page) != 1) {
+-				if (scan < LAST_SCAN)
+-					goto continue_resched;
+-
++		xas_set(&xas, 0);
++		xas_lock_irq(&xas);
++		xas_for_each_tag(&xas, page, ULONG_MAX, SHMEM_TAG_PINNED) {
++			bool clear = true;
++			if (xa_is_value(page))
++				continue;
++			if (page_count(page) - page_mapcount(page) != 1) {
+ 				/*
+ 				 * On the last scan, we clean up all those tags
+ 				 * we inserted; but make a note that we still
+ 				 * found pages pinned.
+ 				 */
+-				error = -EBUSY;
++				if (scan = LAST_SCAN)
++					error = -EBUSY;
++				else
++					clear = false;
+ 			}
++			if (clear)
++				xas_clear_tag(&xas, SHMEM_TAG_PINNED);
++			if (++tagged % XA_CHECK_SCHED)
++				continue;
+ 
+-			xa_lock_irq(&mapping->pages);
+-			radix_tree_tag_clear(&mapping->pages,
+-					     iter.index, SHMEM_TAG_PINNED);
+-			xa_unlock_irq(&mapping->pages);
+-continue_resched:
+-			if (need_resched()) {
+-				slot = radix_tree_iter_resume(slot, &iter);
+-				cond_resched_rcu();
+-			}
 +			xas_pause(&xas);
- 			cond_resched_rcu();
++			xas_unlock_irq(&xas);
++			cond_resched();
++			xas_lock_irq(&xas);
  		}
+-		rcu_read_unlock();
++		xas_unlock_irq(&xas);
  	}
+ 
+ 	return error;
 -- 
 2.15.1
 
