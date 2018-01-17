@@ -1,257 +1,374 @@
-From: jacopo mondi <jacopo@jmondi.org>
-Date: Tue, 16 Jan 2018 14:02:41 +0000
-Subject: Re: [PATCH v5 6/9] media: i2c: ov772x: Remove soc_camera dependencies
-Message-Id: <20180116140241.GA1943@w540>
+From: Matthew Wilcox <willy@infradead.org>
+Date: Wed, 17 Jan 2018 20:20:24 +0000
+Subject: [PATCH v6 00/99] XArray version 6
+Message-Id: <20180117202203.19756-1-willy@infradead.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1515765849-10345-1-git-send-email-jacopo+renesas@jmondi.org>
- <1515765849-10345-7-git-send-email-jacopo+renesas@jmondi.org>
- <d0249577-ebd5-aa4d-b017-c11fae9c612a@xs4all.nl>
-In-Reply-To: <d0249577-ebd5-aa4d-b017-c11fae9c612a@xs4all.nl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Hans Verkuil <hverkuil@xs4all.nl>
-Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>, laurent.pinchart@ideasonboard.com, magnus.damm@gmail.com, geert@glider.be, mchehab@kernel.org, festevam@gmail.com, sakari.ailus@iki.fi, robh+dt@kernel.org, mark.rutland@arm.com, pombredanne@nexb.com, linux-renesas-soc@vger.kernel.org, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Matthew Wilcox <mawilcox-0li6OtcxBFHby3iVrkZq2A@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-f2fs-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, linux-nilfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-btrfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-xfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Bjorn Andersson <bjorn.andersson-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, Stefano Stabellini <sstabellini-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-remoteproc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, intel-gfx-PD4FTy7X32lNgt0PjOBp9y5qC8QIuHrW@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-Hi Hans,
+From: Matthew Wilcox <mawilcox@microsoft.com>
 
-On Tue, Jan 16, 2018 at 11:08:17AM +0100, Hans Verkuil wrote:
-> On 01/12/2018 03:04 PM, Jacopo Mondi wrote:
-> > Remove soc_camera framework dependencies from ov772x sensor driver.
-> > - Handle clock and gpios
-> > - Register async subdevice
-> > - Remove soc_camera specific g/s_mbus_config operations
-> > - Change image format colorspace from JPEG to SRGB as the two use the
-> >   same colorspace information but JPEG makes assumptions on color
-> >   components quantization that do not apply to the sensor
-> > - Remove sizes crop from get_selection as driver can't scale
-> > - Add kernel doc to driver interface header file
-> > - Adjust build system
-> >
-> > This commit does not remove the original soc_camera based driver as long
-> > as other platforms depends on soc_camera-based CEU driver.
-> >
-> > Signed-off-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
-> > Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+This version of the XArray has no known bugs.  I have converted the
+radix tree test suite entirely over to the XArray and fixed all bugs
+that it has uncovered.  There are additional tests in the test suite for
+the XArray, so I now claim the XArray has better test coverage than the
+Radix Tree did.  Of course, that is not the same thing as fewer bugs,
+but it now stands up to the tender embraces of Trinity without crashing.
 
-[snip]
+You can get this version from my git tree here:
+http://git.infradead.org/users/willy/linux-dax.git/shortlog/refs/heads/xarray-2018-01-09
+which includes a number of other patches that are at least tangentially
+related to this patch set.
 
-> >  static const struct ov772x_win_size *ov772x_select_win(u32 width, u32 height)
-> > @@ -855,24 +910,21 @@ static int ov772x_get_selection(struct v4l2_subdev *sd,
-> >  		struct v4l2_subdev_pad_config *cfg,
-> >  		struct v4l2_subdev_selection *sel)
-> >  {
-> > +	struct ov772x_priv *priv = to_ov772x(sd);
-> > +
-> >  	if (sel->which != V4L2_SUBDEV_FORMAT_ACTIVE)
-> >  		return -EINVAL;
-> >
-> > -	sel->r.left = 0;
-> > -	sel->r.top = 0;
->
-> Why are these two lines removed?
->
-> >  	switch (sel->target) {
-> >  	case V4L2_SEL_TGT_CROP_BOUNDS:
-> >  	case V4L2_SEL_TGT_CROP_DEFAULT:
-> > -		sel->r.width = OV772X_MAX_WIDTH;
-> > -		sel->r.height = OV772X_MAX_HEIGHT;
-> > -		return 0;
-> >  	case V4L2_SEL_TGT_CROP:
-> > -		sel->r.width = VGA_WIDTH;
-> > -		sel->r.height = VGA_HEIGHT;
-> > -		return 0;
-> > -	default:
-> > -		return -EINVAL;
->
-> Why is this default case removed?
->
+Most of the work I've done recently has been converting additional users
+from the radix tree to the XArray.  That's going pretty well; still 24
+radix tree users left to convert.  It's been worth doing because I've
+spotted several common patterns that have led to changes (the lock_type,
+reserve/release) and some common patterns that I'll add support for
+later (chaining multiple entries from a single index, wanting to use
+64-bit indices on 32-bit machines, having an array of XArrays, various
+workarounds for not having range entries yet).
 
-Ooops. I have badly addressed your comment on v1.
+As far as line count goes, for the whole git tree, we're at:
+ 212 files changed, 7764 insertions(+), 7002 deletions(-)
+with another 1376 lines to delete from radix-tree.[ch].  That doesn't take
+into account the 371 lines of xarray.rst, the 587 lines of xarray-test.c,
+and the fact that almost half of lib/xarray.c and include/linux/xarray.h
+is documentation.
 
-Will fix in v6.
+Changes since version 5:
 
-> > +		sel->r.width = priv->win->rect.width;
-> > +		sel->r.height = priv->win->rect.height;
-> > +		break;
-> >  	}
-> > +
-> > +	return 0;
-> >  }
-> >
-> >  static int ov772x_get_fmt(struct v4l2_subdev *sd,
-> > @@ -997,24 +1049,8 @@ static int ov772x_enum_mbus_code(struct v4l2_subdev *sd,
-> >  	return 0;
-> >  }
-> >
-> > -static int ov772x_g_mbus_config(struct v4l2_subdev *sd,
-> > -				struct v4l2_mbus_config *cfg)
-> > -{
-> > -	struct i2c_client *client = v4l2_get_subdevdata(sd);
-> > -	struct soc_camera_subdev_desc *ssdd = soc_camera_i2c_to_desc(client);
-> > -
-> > -	cfg->flags = V4L2_MBUS_PCLK_SAMPLE_RISING | V4L2_MBUS_MASTER |
-> > -		V4L2_MBUS_VSYNC_ACTIVE_HIGH | V4L2_MBUS_HSYNC_ACTIVE_HIGH |
-> > -		V4L2_MBUS_DATA_ACTIVE_HIGH;
-> > -	cfg->type = V4L2_MBUS_PARALLEL;
-> > -	cfg->flags = soc_camera_apply_board_flags(ssdd, cfg);
-> > -
-> > -	return 0;
-> > -}
-> > -
-> >  static const struct v4l2_subdev_video_ops ov772x_subdev_video_ops = {
-> >  	.s_stream	= ov772x_s_stream,
-> > -	.g_mbus_config	= ov772x_g_mbus_config,
-> >  };
-> >
-> >  static const struct v4l2_subdev_pad_ops ov772x_subdev_pad_ops = {
-> > @@ -1038,12 +1074,11 @@ static int ov772x_probe(struct i2c_client *client,
-> >  			const struct i2c_device_id *did)
-> >  {
-> >  	struct ov772x_priv	*priv;
-> > -	struct soc_camera_subdev_desc *ssdd = soc_camera_i2c_to_desc(client);
-> > -	struct i2c_adapter	*adapter = to_i2c_adapter(client->dev.parent);
-> > +	struct i2c_adapter	*adapter = client->adapter;
-> >  	int			ret;
-> >
-> > -	if (!ssdd || !ssdd->drv_priv) {
-> > -		dev_err(&client->dev, "OV772X: missing platform data!\n");
-> > +	if (!client->dev.platform_data) {
-> > +		dev_err(&client->dev, "Missing OV7725 platform data\n");
->
-> Nitpick: I'd prefer lowercase in this string: ov7725. It also should be
-> ov772x.
->
-> >  		return -EINVAL;
-> >  	}
-> >
-> > @@ -1059,7 +1094,7 @@ static int ov772x_probe(struct i2c_client *client,
-> >  	if (!priv)
-> >  		return -ENOMEM;
-> >
-> > -	priv->info = ssdd->drv_priv;
-> > +	priv->info = client->dev.platform_data;
-> >
-> >  	v4l2_i2c_subdev_init(&priv->subdev, client, &ov772x_subdev_ops);
-> >  	v4l2_ctrl_handler_init(&priv->hdl, 3);
-> > @@ -1073,22 +1108,42 @@ static int ov772x_probe(struct i2c_client *client,
-> >  	if (priv->hdl.error)
-> >  		return priv->hdl.error;
-> >
-> > -	priv->clk = v4l2_clk_get(&client->dev, "mclk");
-> > +	priv->clk = clk_get(&client->dev, "xclk");
-> >  	if (IS_ERR(priv->clk)) {
-> > +		dev_err(&client->dev, "Unable to get xclk clock\n");
-> >  		ret = PTR_ERR(priv->clk);
-> > -		goto eclkget;
-> > +		goto error_ctrl_free;
-> >  	}
-> >
-> > -	ret = ov772x_video_probe(priv);
-> > -	if (ret < 0) {
-> > -		v4l2_clk_put(priv->clk);
-> > -eclkget:
-> > -		v4l2_ctrl_handler_free(&priv->hdl);
-> > -	} else {
-> > -		priv->cfmt = &ov772x_cfmts[0];
-> > -		priv->win = &ov772x_win_sizes[0];
-> > +	priv->pwdn_gpio = gpiod_get_optional(&client->dev, "pwdn",
-> > +					     GPIOD_OUT_LOW);
-> > +	if (IS_ERR(priv->pwdn_gpio)) {
-> > +		dev_info(&client->dev, "Unable to get GPIO \"pwdn\"");
-> > +		ret = PTR_ERR(priv->pwdn_gpio);
-> > +		goto error_clk_put;
-> >  	}
-> >
-> > +	ret = ov772x_video_probe(priv);
-> > +	if (ret < 0)
-> > +		goto error_gpio_put;
-> > +
-> > +	priv->cfmt = &ov772x_cfmts[0];
-> > +	priv->win = &ov772x_win_sizes[0];
-> > +
-> > +	ret = v4l2_async_register_subdev(&priv->subdev);
-> > +	if (ret)
-> > +		goto error_gpio_put;
-> > +
-> > +	return 0;
-> > +
-> > +error_gpio_put:
-> > +	if (priv->pwdn_gpio)
-> > +		gpiod_put(priv->pwdn_gpio);
-> > +error_clk_put:
-> > +	clk_put(priv->clk);
-> > +error_ctrl_free:
-> > +	v4l2_ctrl_handler_free(&priv->hdl);
-> > +
-> >  	return ret;
-> >  }
-> >
-> > @@ -1096,7 +1151,9 @@ static int ov772x_remove(struct i2c_client *client)
-> >  {
-> >  	struct ov772x_priv *priv = to_ov772x(i2c_get_clientdata(client));
-> >
-> > -	v4l2_clk_put(priv->clk);
-> > +	clk_put(priv->clk);
-> > +	if (priv->pwdn_gpio)
-> > +		gpiod_put(priv->pwdn_gpio);
-> >  	v4l2_device_unregister_subdev(&priv->subdev);
-> >  	v4l2_ctrl_handler_free(&priv->hdl);
-> >  	return 0;
-> > @@ -1119,6 +1176,6 @@ static struct i2c_driver ov772x_i2c_driver = {
-> >
-> >  module_i2c_driver(ov772x_i2c_driver);
-> >
-> > -MODULE_DESCRIPTION("SoC Camera driver for ov772x");
-> > +MODULE_DESCRIPTION("V4L2 driver for OV772x image sensor");
->
-> Ditto: lower case ov772x.
+ - Rebased to 4.15-rc8
 
-Will change both. Thanks.
+API changes:
+ - Renamed __xa_init() to xa_init_flags().
+ - Added DEFINE_XARRAY_FLAGS().
+ - Renamed xa_ctx to xa_lock_type; store it in the XA_FLAGS and use separate
+   locking classes for each type so that lockdep doesn't emit spurious
+   warnings.  It also reduces the amount of boilerplate.
+ - Combined __xa_store_bh, __xa_store_irq and __xa_store into __xa_store().
+ - Ditto for __xa_cmpxchg().
+ - Renamed xa_store_empty() to xa_insert().
+ - Added __xa_insert().
+ - Added xa_reserve() and xa_release().
+ - Renamed XA_NO_TAG to XA_PRESENT.
+ - Combined xa_get_entries(), xa_get_tagged() and xa_get_maybe_tag()
+   into xa_extract().
+ - Added 'filter' argument to xa_find(), xa_find_after() and xa_for_each()
+   to match xa_extract() and provide the functionality that would
+   have otherwise had to be added in the form of xa_find_tag(),
+   xa_find_tag_after() and xa_for_each_tag().
+ - Replaced workingset_lookup_update() with mapping_set_update().
+ - Renamed page_cache_tree_delete() to page_cache_delete().
 
->
-> >  MODULE_AUTHOR("Kuninori Morimoto");
-> >  MODULE_LICENSE("GPL v2");
->
-> Hmm, shouldn't there be a struct of_device_id as well? So this can be
-> used in the device tree?
->
-> I see this sensor was only tested with a non-dt platform. Is it possible
-> to test this sensor with the GR-Peach platform (which I gather uses the
-> device tree)?
+New xarray users:
+ - Converted SuperH interrupt controller radix tree to XArray.
+ - Converted blk-cgroup radix tree to XArray.
+ - Converted blk-ioc radix tree to XArray.
+ - Converted i915 handles_vma radix tree to XArray.
+ - Converted s390 gmap radix trees to XArray.
+ - Converted hwspinlock to XArray.
+ - Converted btrfs fs_roots to XArray.
+ - Converted btrfs reada_zones to XArray.
+ - Converted btrfs reada_extents to XArray.
+ - Converted btrfs reada_tree to XArray.
+ - Converted btrfs buffer_radix to XArray.
+ - Converted btrfs delayed_nodes to XArray.
+ - Converted btrfs name_cache to XArray.
+ - Converted f2fs pids radix tree to XArray.
+ - Converted f2fs ino_root radix tree to XArray.
+ - Converted f2fs extent_tree to XArray.
+ - Converted f2fs gclist radix tree to XArray.
+ - Converted dma-debug active cacheline radix tree to XArray.
+ - Converted Xen pvcalls-back socketpass_mappings to XArray.
+ - Converted net/qrtr radix tree to XArray.
+ - Converted null_blk radix trees to XArray.
 
-I don't have that sensor, I'm sorry. I have it on Migo-R which I'm
-accessing and developing on from remote.
+Documentation:
+ - Added a bit more internals documentation.
+ - Rewrote xa_init_flags documentation.
+ - Added the __xa_ functions to the locking table.
+ - Rewrote the section on using the __xa_ functions.
 
->
-> Making this driver DT compliant can be done as a follow-up patch.
+Internal changes:
+ - Free up the bottom four bits of the xa_flags, since these are not
+   valid GFP flags to pass to kmem_cache_alloc().
+ - Moved the XA_FLAGS_TRACK_FREE bit to the bottom bits of the flags to leave
+   space for more tags (later).
+ - Fixed multiple bugs in xas_find() and xas_find_tag().
+ - Fixed bug in shrinking XArray (and add a test case that exercises it).
+ - Fixed bug in erasing multi-index entries.
+ - Fixed a compile warning with CONFIG_RADIX_TREE_MULTIORDER=n.
+ - Added an xas_update() helper.
+ - Use ->array to track an xa_node's state through its lifecycle
+   (allocated -> rcu_free -> actually free).
+ - Made XA_BUG_ON dump the entire tree while XA_NODE_BUG_ON dumps only the
+   node that appears suspect.
+ - Fixed debugging printks to use %px and pr_cont/pr_info etc.
+ - Renamed some internal tag functions.
+ - Moved xa_track_free() from xarray.h to xarray.c.
 
-Adding DT compatibility would imply adding bindings etc.
-I can do it later and only compile-test, I assume.
+Test suite:
+ - Added new tests for xas_find() and xas_find_tag().
+ - Added new tests for the update_node functionality.
+ - Converted the radix tree test suite to the xarray API.
 
-Thanks
-   j
+Matthew Wilcox (99):
+  xarray: Add the xa_lock to the radix_tree_root
+  page cache: Use xa_lock
+  xarray: Replace exceptional entries
+  xarray: Change definition of sibling entries
+  xarray: Add definition of struct xarray
+  xarray: Define struct xa_node
+  xarray: Add documentation
+  xarray: Add xa_load
+  xarray: Add xa_get_tag, xa_set_tag and xa_clear_tag
+  xarray: Add xa_store
+  xarray: Add xa_cmpxchg and xa_insert
+  xarray: Add xa_for_each
+  xarray: Add xa_extract
+  xarray: Add xa_destroy
+  xarray: Add xas_next and xas_prev
+  xarray: Add xas_create_range
+  xarray: Add MAINTAINERS entry
+  xarray: Add ability to store errno values
+  idr: Convert to XArray
+  ida: Convert to XArray
+  xarray: Add xa_reserve and xa_release
+  page cache: Convert hole search to XArray
+  page cache: Add page_cache_range_empty function
+  page cache: Add and replace pages using the XArray
+  page cache: Convert page deletion to XArray
+  page cache: Convert page cache lookups to XArray
+  page cache: Convert delete_batch to XArray
+  page cache: Remove stray radix comment
+  page cache: Convert filemap_range_has_page to XArray
+  mm: Convert page-writeback to XArray
+  mm: Convert workingset to XArray
+  mm: Convert truncate to XArray
+  mm: Convert add_to_swap_cache to XArray
+  mm: Convert delete_from_swap_cache to XArray
+  mm: Convert __do_page_cache_readahead to XArray
+  mm: Convert page migration to XArray
+  mm: Convert huge_memory to XArray
+  mm: Convert collapse_shmem to XArray
+  mm: Convert khugepaged_scan_shmem to XArray
+  pagevec: Use xa_tag_t
+  shmem: Convert replace to XArray
+  shmem: Convert shmem_confirm_swap to XArray
+  shmem: Convert find_swap_entry to XArray
+  shmem: Convert shmem_tag_pins to XArray
+  shmem: Convert shmem_wait_for_pins to XArray
+  shmem: Convert shmem_add_to_page_cache to XArray
+  shmem: Convert shmem_alloc_hugepage to XArray
+  shmem: Convert shmem_free_swap to XArray
+  shmem: Convert shmem_partial_swap_usage to XArray
+  shmem: Comment fixups
+  btrfs: Convert page cache to XArray
+  fs: Convert buffer to XArray
+  fs: Convert writeback to XArray
+  nilfs2: Convert to XArray
+  f2fs: Convert to XArray
+  lustre: Convert to XArray
+  dax: Convert dax_unlock_mapping_entry to XArray
+  dax: Convert lock_slot to XArray
+  dax: More XArray conversion
+  dax: Convert __dax_invalidate_mapping_entry to XArray
+  dax: Convert dax_writeback_one to XArray
+  dax: Convert dax_insert_pfn_mkwrite to XArray
+  dax: Convert dax_insert_mapping_entry to XArray
+  dax: Convert grab_mapping_entry to XArray
+  dax: Fix sparse warning
+  page cache: Finish XArray conversion
+  mm: Convert cgroup writeback to XArray
+  vmalloc: Convert to XArray
+  brd: Convert to XArray
+  xfs: Convert m_perag_tree to XArray
+  xfs: Convert pag_ici_root to XArray
+  xfs: Convert xfs dquot to XArray
+  xfs: Convert mru cache to XArray
+  usb: Convert xhci-mem to XArray
+  md: Convert raid5-cache to XArray
+  irqdomain: Convert to XArray
+  fscache: Convert to XArray
+  sh: intc: Convert to XArray
+  blk-cgroup: Convert to XArray
+  blk-ioc: Convert to XArray
+  i915: Convert handles_vma to XArray
+  s390: Convert gmap to XArray
+  hwspinlock: Convert to XArray
+  btrfs: Convert fs_roots_radix to XArray
+  btrfs: Remove unused spinlock
+  btrfs: Convert reada_zones to XArray
+  btrfs: Convert reada_extents to XArray
+  btrfs: Convert reada_tree to XArray
+  btrfs: Convert buffer_radix to XArray
+  btrfs: Convert delayed_nodes_tree to XArray
+  btrfs: Convert name_cache to XArray
+  f2fs: Convert pids radix tree to XArray
+  f2fs: Convert ino_root to XArray
+  f2fs: Convert extent_tree_root to XArray
+  f2fs: Convert gclist.iroot to XArray
+  dma-debug: Convert to XArray
+  xen: Convert pvcalls-back to XArray
+  qrtr: Convert to XArray
+  null_blk: Convert to XArray
 
->
-> > diff --git a/include/media/i2c/ov772x.h b/include/media/i2c/ov772x.h
-> > index 00dbb7c..27d087b 100644
-> > --- a/include/media/i2c/ov772x.h
-> > +++ b/include/media/i2c/ov772x.h
-> > @@ -48,8 +48,10 @@ struct ov772x_edge_ctrl {
-> >  	.threshold = (t & OV772X_EDGE_THRESHOLD_MASK),	\
-> >  }
-> >
-> > -/*
-> > - * ov772x camera info
-> > +/**
-> > + * ov772x_camera_info -	ov772x driver interface structure
-> > + * @flags:		Sensor configuration flags
-> > + * @edgectrl:		Sensor edge control
-> >   */
-> >  struct ov772x_camera_info {
-> >  	unsigned long		flags;
-> >
->
-> Regards,
->
-> 	Hans
+ Documentation/cgroup-v1/memory.txt              |    2 +-
+ Documentation/core-api/index.rst                |    1 +
+ Documentation/core-api/xarray.rst               |  371 +++++
+ Documentation/vm/page_migration                 |   14 +-
+ MAINTAINERS                                     |   12 +
+ arch/arm/include/asm/cacheflush.h               |    6 +-
+ arch/nios2/include/asm/cacheflush.h             |    6 +-
+ arch/parisc/include/asm/cacheflush.h            |    6 +-
+ arch/powerpc/include/asm/book3s/64/pgtable.h    |    4 +-
+ arch/powerpc/include/asm/nohash/64/pgtable.h    |    4 +-
+ arch/s390/include/asm/gmap.h                    |   12 +-
+ arch/s390/mm/gmap.c                             |  133 +-
+ block/bfq-cgroup.c                              |    4 +-
+ block/blk-cgroup.c                              |   52 +-
+ block/blk-ioc.c                                 |   13 +-
+ block/cfq-iosched.c                             |    4 +-
+ drivers/block/brd.c                             |   93 +-
+ drivers/block/null_blk.c                        |   87 +-
+ drivers/gpu/drm/i915/i915_gem.c                 |   19 +-
+ drivers/gpu/drm/i915/i915_gem_context.c         |   12 +-
+ drivers/gpu/drm/i915/i915_gem_context.h         |    4 +-
+ drivers/gpu/drm/i915/i915_gem_execbuffer.c      |    6 +-
+ drivers/gpu/drm/i915/selftests/mock_context.c   |    2 +-
+ drivers/hwspinlock/hwspinlock_core.c            |  151 +-
+ drivers/md/raid5-cache.c                        |  119 +-
+ drivers/sh/intc/core.c                          |    9 +-
+ drivers/sh/intc/internals.h                     |    5 +-
+ drivers/sh/intc/virq.c                          |   72 +-
+ drivers/staging/lustre/lustre/llite/glimpse.c   |   12 +-
+ drivers/staging/lustre/lustre/mdc/mdc_request.c |   16 +-
+ drivers/usb/host/xhci-mem.c                     |   68 +-
+ drivers/usb/host/xhci.h                         |    6 +-
+ drivers/xen/pvcalls-back.c                      |   51 +-
+ fs/afs/write.c                                  |    9 +-
+ fs/btrfs/btrfs_inode.h                          |    7 +-
+ fs/btrfs/compression.c                          |    6 +-
+ fs/btrfs/ctree.h                                |   31 +-
+ fs/btrfs/delayed-inode.c                        |   65 +-
+ fs/btrfs/disk-io.c                              |   73 +-
+ fs/btrfs/extent_io.c                            |  106 +-
+ fs/btrfs/inode.c                                |   72 +-
+ fs/btrfs/reada.c                                |  205 ++-
+ fs/btrfs/send.c                                 |   19 +-
+ fs/btrfs/tests/btrfs-tests.c                    |   29 +-
+ fs/btrfs/transaction.c                          |   87 +-
+ fs/btrfs/volumes.c                              |    5 +-
+ fs/btrfs/volumes.h                              |    5 +-
+ fs/buffer.c                                     |   25 +-
+ fs/cifs/file.c                                  |    9 +-
+ fs/dax.c                                        |  383 ++---
+ fs/ext4/inode.c                                 |    2 +-
+ fs/f2fs/checkpoint.c                            |   85 +-
+ fs/f2fs/data.c                                  |    9 +-
+ fs/f2fs/dir.c                                   |    5 +-
+ fs/f2fs/extent_cache.c                          |   59 +-
+ fs/f2fs/f2fs.h                                  |    6 +-
+ fs/f2fs/gc.c                                    |   14 +-
+ fs/f2fs/gc.h                                    |    2 +-
+ fs/f2fs/inline.c                                |    6 +-
+ fs/f2fs/node.c                                  |   10 +-
+ fs/f2fs/super.c                                 |    2 -
+ fs/f2fs/trace.c                                 |   60 +-
+ fs/f2fs/trace.h                                 |    2 -
+ fs/fs-writeback.c                               |   37 +-
+ fs/fscache/cookie.c                             |    6 +-
+ fs/fscache/internal.h                           |    2 +-
+ fs/fscache/object.c                             |    2 +-
+ fs/fscache/page.c                               |  152 +-
+ fs/fscache/stats.c                              |    6 +-
+ fs/gfs2/aops.c                                  |    2 +-
+ fs/inode.c                                      |   11 +-
+ fs/nfs/blocklayout/blocklayout.c                |    2 +-
+ fs/nilfs2/btnode.c                              |   41 +-
+ fs/nilfs2/page.c                                |   78 +-
+ fs/proc/task_mmu.c                              |    2 +-
+ fs/xfs/libxfs/xfs_sb.c                          |   11 +-
+ fs/xfs/libxfs/xfs_sb.h                          |    2 +-
+ fs/xfs/xfs_dquot.c                              |   38 +-
+ fs/xfs/xfs_icache.c                             |  146 +-
+ fs/xfs/xfs_icache.h                             |   11 +-
+ fs/xfs/xfs_inode.c                              |   24 +-
+ fs/xfs/xfs_mount.c                              |   22 +-
+ fs/xfs/xfs_mount.h                              |    6 +-
+ fs/xfs/xfs_mru_cache.c                          |   72 +-
+ fs/xfs/xfs_qm.c                                 |   36 +-
+ fs/xfs/xfs_qm.h                                 |   18 +-
+ include/linux/backing-dev-defs.h                |    2 +-
+ include/linux/backing-dev.h                     |   14 +-
+ include/linux/blk-cgroup.h                      |    5 +-
+ include/linux/fs.h                              |   68 +-
+ include/linux/fscache.h                         |    8 +-
+ include/linux/idr.h                             |  168 ++-
+ include/linux/iocontext.h                       |    6 +-
+ include/linux/irqdomain.h                       |   10 +-
+ include/linux/mm.h                              |   17 +-
+ include/linux/pagemap.h                         |   16 +-
+ include/linux/pagevec.h                         |    8 +-
+ include/linux/radix-tree.h                      |   97 +-
+ include/linux/swap.h                            |   22 +-
+ include/linux/swapops.h                         |   19 +-
+ include/linux/xarray.h                          | 1052 ++++++++++++++
+ kernel/irq/irqdomain.c                          |   39 +-
+ kernel/pid.c                                    |    2 +-
+ lib/Makefile                                    |    2 +-
+ lib/dma-debug.c                                 |  105 +-
+ lib/idr.c                                       |  633 ++++----
+ lib/radix-tree.c                                |  399 ++----
+ lib/xarray.c                                    | 1753 +++++++++++++++++++++++
+ mm/backing-dev.c                                |   22 +-
+ mm/filemap.c                                    |  766 ++++------
+ mm/huge_memory.c                                |   23 +-
+ mm/khugepaged.c                                 |  182 +--
+ mm/madvise.c                                    |    2 +-
+ mm/memcontrol.c                                 |    6 +-
+ mm/memory.c                                     |   16 +-
+ mm/migrate.c                                    |   41 +-
+ mm/mincore.c                                    |    2 +-
+ mm/page-writeback.c                             |   78 +-
+ mm/readahead.c                                  |   10 +-
+ mm/rmap.c                                       |    4 +-
+ mm/shmem.c                                      |  312 ++--
+ mm/swap.c                                       |    6 +-
+ mm/swap_state.c                                 |  124 +-
+ mm/truncate.c                                   |   45 +-
+ mm/vmalloc.c                                    |   39 +-
+ mm/vmscan.c                                     |   14 +-
+ mm/workingset.c                                 |   89 +-
+ net/qrtr/qrtr.c                                 |   21 +-
+ tools/include/linux/spinlock.h                  |   12 +-
+ tools/testing/radix-tree/.gitignore             |    2 +
+ tools/testing/radix-tree/Makefile               |   15 +-
+ tools/testing/radix-tree/idr-test.c             |   40 +-
+ tools/testing/radix-tree/linux/bug.h            |    1 +
+ tools/testing/radix-tree/linux/kconfig.h        |    1 +
+ tools/testing/radix-tree/linux/kernel.h         |    5 +
+ tools/testing/radix-tree/linux/lockdep.h        |   11 +
+ tools/testing/radix-tree/linux/rcupdate.h       |    2 +
+ tools/testing/radix-tree/linux/xarray.h         |    3 +
+ tools/testing/radix-tree/multiorder.c           |   83 +-
+ tools/testing/radix-tree/regression1.c          |   68 +-
+ tools/testing/radix-tree/test.c                 |   53 +-
+ tools/testing/radix-tree/test.h                 |    6 +
+ tools/testing/radix-tree/xarray-test.c          |  587 ++++++++
+ 143 files changed, 6647 insertions(+), 3990 deletions(-)
+ create mode 100644 Documentation/core-api/xarray.rst
+ create mode 100644 include/linux/xarray.h
+ create mode 100644 lib/xarray.c
+ create mode 100644 tools/testing/radix-tree/linux/kconfig.h
+ create mode 100644 tools/testing/radix-tree/linux/lockdep.h
+ create mode 100644 tools/testing/radix-tree/linux/xarray.h
+ create mode 100644 tools/testing/radix-tree/xarray-test.c
+
+-- 
+2.15.1
+
