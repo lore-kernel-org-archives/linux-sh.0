@@ -1,180 +1,172 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Wed, 10 Jan 2018 08:00:16 +0000
-Subject: [PATCH 22/33] dma-mapping: provide a generic asm/dma-mapping.h
-Message-Id: <20180110080027.13879-23-hch@lst.de>
+From: Matthew Wilcox <willy@infradead.org>
+Date: Wed, 17 Jan 2018 20:20:25 +0000
+Subject: [PATCH v6 01/99] xarray: Add the xa_lock to the radix_tree_root
+Message-Id: <20180117202203.19756-2-willy@infradead.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180110080027.13879-1-hch@lst.de>
-In-Reply-To: <20180110080027.13879-1-hch@lst.de>
+References: <20180117202203.19756-1-willy@infradead.org>
+In-Reply-To: <20180117202203.19756-1-willy@infradead.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: iommu@lists.linux-foundation.org
-Cc: Konrad Rzeszutek Wilk <konrad@darnok.org>, linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org, linux-c6x-dev@linux-c6x.org, linux-cris-kernel@axis.com, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-metag@vger.kernel.org, Michal Simek <monstr@monstr.eu>, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, patches@groups.riscv.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, Guan Xuetao <gxt@mprc.pku.edu.cn>, x86@kernel.org, linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: Matthew Wilcox <mawilcox@microsoft.com>, linux-mm@kvack.org, linux-fsdevel@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net, linux-nilfs@vger.kernel.org, linux-btrfs@vger.kernel.org, linux-xfs@vger.kernel.org, linux-usb@vger.kernel.org, Bjorn Andersson <bjorn.andersson@linaro.org>, Stefano Stabellini <sstabellini@kernel.org>, iommu@lists.linux-foundation.org, linux-remoteproc@vger.kernel.org, linux-s390@vger.kernel.org, intel-gfx@lists.freedesktop.org, cgroups@vger.kernel.org, linux-sh@vger.kernel.org, David Howells <dhowells@redhat.com>
 
-For architectures that just use the generic dma_noop_ops we can provide
-a generic version of dma-mapping.h.
+From: Matthew Wilcox <mawilcox@microsoft.com>
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
+This results in no change in structure size on 64-bit x86 as it fits in
+the padding between the gfp_t and the void *.
+
+Initialising the spinlock requires a name for the benefit of lockdep,
+so RADIX_TREE_INIT() now needs to know the name of the radix tree it's
+initialising, and so do IDR_INIT() and IDA_INIT().
+
+Also add the xa_lock() and xa_unlock() family of wrappers to make it
+easier to use the lock.  If we could rely on -fplan9-extensions in
+the compiler, we could avoid all of this syntactic sugar, but that
+wasn't added until gcc 4.6.
+
+Signed-off-by: Matthew Wilcox <mawilcox@microsoft.com>
 ---
- MAINTAINERS                          |  1 +
- arch/m32r/include/asm/Kbuild         |  1 +
- arch/m32r/include/asm/dma-mapping.h  | 17 -----------------
- arch/riscv/include/asm/Kbuild        |  1 +
- arch/riscv/include/asm/dma-mapping.h | 30 ------------------------------
- arch/s390/include/asm/Kbuild         |  1 +
- arch/s390/include/asm/dma-mapping.h  | 17 -----------------
- include/asm-generic/dma-mapping.h    | 10 ++++++++++
- 8 files changed, 14 insertions(+), 64 deletions(-)
- delete mode 100644 arch/m32r/include/asm/dma-mapping.h
- delete mode 100644 arch/riscv/include/asm/dma-mapping.h
- delete mode 100644 arch/s390/include/asm/dma-mapping.h
- create mode 100644 include/asm-generic/dma-mapping.h
+ fs/f2fs/gc.c                   |  2 +-
+ include/linux/idr.h            | 12 ++++++------
+ include/linux/radix-tree.h     |  7 +++++--
+ include/linux/xarray.h         | 24 ++++++++++++++++++++++++
+ kernel/pid.c                   |  2 +-
+ tools/include/linux/spinlock.h |  1 +
+ 6 files changed, 38 insertions(+), 10 deletions(-)
+ create mode 100644 include/linux/xarray.h
 
-diff --git a/MAINTAINERS b/MAINTAINERS
-index d2cfdcce1db5..234e642e7149 100644
---- a/MAINTAINERS
-+++ b/MAINTAINERS
-@@ -4338,6 +4338,7 @@ F:	lib/dma-noop.c
- F:	lib/dma-virt.c
- F:	drivers/base/dma-mapping.c
- F:	drivers/base/dma-coherent.c
-+F:	include/asm-generic/dma-mapping.h
- F:	include/linux/dma-direct.h
- F:	include/linux/dma-mapping.h
+diff --git a/fs/f2fs/gc.c b/fs/f2fs/gc.c
+index d844dcb80570..aac1e02f75df 100644
+--- a/fs/f2fs/gc.c
++++ b/fs/f2fs/gc.c
+@@ -991,7 +991,7 @@ int f2fs_gc(struct f2fs_sb_info *sbi, bool sync,
+ 	unsigned int init_segno = segno;
+ 	struct gc_inode_list gc_list = {
+ 		.ilist = LIST_HEAD_INIT(gc_list.ilist),
+-		.iroot = RADIX_TREE_INIT(GFP_NOFS),
++		.iroot = RADIX_TREE_INIT(gc_list.iroot, GFP_NOFS),
+ 	};
  
-diff --git a/arch/m32r/include/asm/Kbuild b/arch/m32r/include/asm/Kbuild
-index 7e11b125c35e..ca83fda8177b 100644
---- a/arch/m32r/include/asm/Kbuild
-+++ b/arch/m32r/include/asm/Kbuild
-@@ -1,5 +1,6 @@
- generic-y += clkdev.h
- generic-y += current.h
-+generic-y += dma-mapping.h
- generic-y += exec.h
- generic-y += extable.h
- generic-y += irq_work.h
-diff --git a/arch/m32r/include/asm/dma-mapping.h b/arch/m32r/include/asm/dma-mapping.h
-deleted file mode 100644
-index 8967fb659691..000000000000
---- a/arch/m32r/include/asm/dma-mapping.h
-+++ /dev/null
-@@ -1,17 +0,0 @@
--/* SPDX-License-Identifier: GPL-2.0 */
--#ifndef _ASM_M32R_DMA_MAPPING_H
--#define _ASM_M32R_DMA_MAPPING_H
--
--#include <linux/kernel.h>
--#include <linux/types.h>
--#include <linux/mm.h>
--#include <linux/scatterlist.h>
--#include <linux/dma-debug.h>
--#include <linux/io.h>
--
--static inline const struct dma_map_ops *get_arch_dma_ops(struct bus_type *bus)
--{
--	return &dma_noop_ops;
--}
--
--#endif /* _ASM_M32R_DMA_MAPPING_H */
-diff --git a/arch/riscv/include/asm/Kbuild b/arch/riscv/include/asm/Kbuild
-index 970460a0b492..197460ccbf21 100644
---- a/arch/riscv/include/asm/Kbuild
-+++ b/arch/riscv/include/asm/Kbuild
-@@ -7,6 +7,7 @@ generic-y += device.h
- generic-y += div64.h
- generic-y += dma.h
- generic-y += dma-contiguous.h
-+generic-y += dma-mapping.h
- generic-y += emergency-restart.h
- generic-y += errno.h
- generic-y += exec.h
-diff --git a/arch/riscv/include/asm/dma-mapping.h b/arch/riscv/include/asm/dma-mapping.h
-deleted file mode 100644
-index 73849e2cc761..000000000000
---- a/arch/riscv/include/asm/dma-mapping.h
-+++ /dev/null
-@@ -1,30 +0,0 @@
--/*
-- * Copyright (C) 2003-2004 Hewlett-Packard Co
-- *	David Mosberger-Tang <davidm@hpl.hp.com>
-- * Copyright (C) 2012 ARM Ltd.
-- * Copyright (C) 2016 SiFive, Inc.
-- *
-- * This program is free software; you can redistribute it and/or modify
-- * it under the terms of the GNU General Public License version 2 as
-- * published by the Free Software Foundation.
-- *
-- * This program is distributed in the hope that it will be useful,
-- * but WITHOUT ANY WARRANTY; without even the implied warranty of
-- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-- * GNU General Public License for more details.
-- *
-- * You should have received a copy of the GNU General Public License
-- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
-- */
--#ifndef __ASM_RISCV_DMA_MAPPING_H
--#define __ASM_RISCV_DMA_MAPPING_H
--
--/* Use ops->dma_mapping_error (if it exists) or assume success */
--// #undef DMA_ERROR_CODE
--
--static inline const struct dma_map_ops *get_arch_dma_ops(struct bus_type *bus)
--{
--	return &dma_noop_ops;
--}
--
--#endif	/* __ASM_RISCV_DMA_MAPPING_H */
-diff --git a/arch/s390/include/asm/Kbuild b/arch/s390/include/asm/Kbuild
-index 048450869328..dade72be127b 100644
---- a/arch/s390/include/asm/Kbuild
-+++ b/arch/s390/include/asm/Kbuild
-@@ -4,6 +4,7 @@ generic-y += cacheflush.h
- generic-y += clkdev.h
- generic-y += device.h
- generic-y += dma-contiguous.h
-+generic-y += dma-mapping.h
- generic-y += div64.h
- generic-y += emergency-restart.h
- generic-y += export.h
-diff --git a/arch/s390/include/asm/dma-mapping.h b/arch/s390/include/asm/dma-mapping.h
-deleted file mode 100644
-index bdc2455483f6..000000000000
---- a/arch/s390/include/asm/dma-mapping.h
-+++ /dev/null
-@@ -1,17 +0,0 @@
--/* SPDX-License-Identifier: GPL-2.0 */
--#ifndef _ASM_S390_DMA_MAPPING_H
--#define _ASM_S390_DMA_MAPPING_H
--
--#include <linux/kernel.h>
--#include <linux/types.h>
--#include <linux/mm.h>
--#include <linux/scatterlist.h>
--#include <linux/dma-debug.h>
--#include <linux/io.h>
--
--static inline const struct dma_map_ops *get_arch_dma_ops(struct bus_type *bus)
--{
--	return &dma_noop_ops;
--}
--
--#endif /* _ASM_S390_DMA_MAPPING_H */
-diff --git a/include/asm-generic/dma-mapping.h b/include/asm-generic/dma-mapping.h
+ 	trace_f2fs_gc_begin(sbi->sb, sync, background,
+diff --git a/include/linux/idr.h b/include/linux/idr.h
+index ed1459d36b9d..11eea38b9629 100644
+--- a/include/linux/idr.h
++++ b/include/linux/idr.h
+@@ -32,11 +32,11 @@ struct idr {
+ #define IDR_RT_MARKER	(ROOT_IS_IDR | (__force gfp_t)			\
+ 					(1 << (ROOT_TAG_SHIFT + IDR_FREE)))
+ 
+-#define IDR_INIT							\
++#define IDR_INIT(name)							\
+ {									\
+-	.idr_rt = RADIX_TREE_INIT(IDR_RT_MARKER)			\
++	.idr_rt = RADIX_TREE_INIT(name, IDR_RT_MARKER)			\
+ }
+-#define DEFINE_IDR(name)	struct idr name = IDR_INIT
++#define DEFINE_IDR(name)	struct idr name = IDR_INIT(name)
+ 
+ /**
+  * idr_get_cursor - Return the current position of the cyclic allocator
+@@ -195,10 +195,10 @@ struct ida {
+ 	struct radix_tree_root	ida_rt;
+ };
+ 
+-#define IDA_INIT	{						\
+-	.ida_rt = RADIX_TREE_INIT(IDR_RT_MARKER | GFP_NOWAIT),		\
++#define IDA_INIT(name)	{						\
++	.ida_rt = RADIX_TREE_INIT(name, IDR_RT_MARKER | GFP_NOWAIT),	\
+ }
+-#define DEFINE_IDA(name)	struct ida name = IDA_INIT
++#define DEFINE_IDA(name)	struct ida name = IDA_INIT(name)
+ 
+ int ida_pre_get(struct ida *ida, gfp_t gfp_mask);
+ int ida_get_new_above(struct ida *ida, int starting_id, int *p_id);
+diff --git a/include/linux/radix-tree.h b/include/linux/radix-tree.h
+index 6c4e2e716dac..34149e8b5f73 100644
+--- a/include/linux/radix-tree.h
++++ b/include/linux/radix-tree.h
+@@ -110,20 +110,23 @@ struct radix_tree_node {
+ #define ROOT_TAG_SHIFT	(__GFP_BITS_SHIFT)
+ 
+ struct radix_tree_root {
++	spinlock_t		xa_lock;
+ 	gfp_t			gfp_mask;
+ 	struct radix_tree_node	__rcu *rnode;
+ };
+ 
+-#define RADIX_TREE_INIT(mask)	{					\
++#define RADIX_TREE_INIT(name, mask)	{				\
++	.xa_lock = __SPIN_LOCK_UNLOCKED(name.xa_lock),			\
+ 	.gfp_mask = (mask),						\
+ 	.rnode = NULL,							\
+ }
+ 
+ #define RADIX_TREE(name, mask) \
+-	struct radix_tree_root name = RADIX_TREE_INIT(mask)
++	struct radix_tree_root name = RADIX_TREE_INIT(name, mask)
+ 
+ #define INIT_RADIX_TREE(root, mask)					\
+ do {									\
++	spin_lock_init(&(root)->xa_lock);				\
+ 	(root)->gfp_mask = (mask);					\
+ 	(root)->rnode = NULL;						\
+ } while (0)
+diff --git a/include/linux/xarray.h b/include/linux/xarray.h
 new file mode 100644
-index 000000000000..164031531d85
+index 000000000000..2dfc8006fe64
 --- /dev/null
-+++ b/include/asm-generic/dma-mapping.h
-@@ -0,0 +1,10 @@
-+/* SPDX-License-Identifier: GPL-2.0 */
-+#ifndef _ASM_GENERIC_DMA_MAPPING_H
-+#define _ASM_GENERIC_DMA_MAPPING_H
++++ b/include/linux/xarray.h
+@@ -0,0 +1,24 @@
++/* SPDX-License-Identifier: GPL-2.0+ */
++#ifndef _LINUX_XARRAY_H
++#define _LINUX_XARRAY_H
++/*
++ * eXtensible Arrays
++ * Copyright (c) 2017 Microsoft Corporation
++ * Author: Matthew Wilcox <mawilcox@microsoft.com>
++ */
 +
-+static inline const struct dma_map_ops *get_arch_dma_ops(struct bus_type *bus)
-+{
-+	return &dma_noop_ops;
-+}
++#include <linux/spinlock.h>
 +
-+#endif /* _ASM_GENERIC_DMA_MAPPING_H */
++#define xa_trylock(xa)		spin_trylock(&(xa)->xa_lock)
++#define xa_lock(xa)		spin_lock(&(xa)->xa_lock)
++#define xa_unlock(xa)		spin_unlock(&(xa)->xa_lock)
++#define xa_lock_bh(xa)		spin_lock_bh(&(xa)->xa_lock)
++#define xa_unlock_bh(xa)	spin_unlock_bh(&(xa)->xa_lock)
++#define xa_lock_irq(xa)		spin_lock_irq(&(xa)->xa_lock)
++#define xa_unlock_irq(xa)	spin_unlock_irq(&(xa)->xa_lock)
++#define xa_lock_irqsave(xa, flags) \
++				spin_lock_irqsave(&(xa)->xa_lock, flags)
++#define xa_unlock_irqrestore(xa, flags) \
++				spin_unlock_irqrestore(&(xa)->xa_lock, flags)
++
++#endif /* _LINUX_XARRAY_H */
+diff --git a/kernel/pid.c b/kernel/pid.c
+index 1e8bb6550ec4..fa8bbd16c0d6 100644
+--- a/kernel/pid.c
++++ b/kernel/pid.c
+@@ -58,7 +58,7 @@ int pid_max_max = PID_MAX_LIMIT;
+  */
+ struct pid_namespace init_pid_ns = {
+ 	.kref = KREF_INIT(2),
+-	.idr = IDR_INIT,
++	.idr = IDR_INIT(init_pid_ns.idr),
+ 	.pid_allocated = PIDNS_ADDING,
+ 	.level = 0,
+ 	.child_reaper = &init_task,
+diff --git a/tools/include/linux/spinlock.h b/tools/include/linux/spinlock.h
+index 4ed569fcb139..b21b586b9854 100644
+--- a/tools/include/linux/spinlock.h
++++ b/tools/include/linux/spinlock.h
+@@ -7,6 +7,7 @@
+ 
+ #define spinlock_t		pthread_mutex_t
+ #define DEFINE_SPINLOCK(x)	pthread_mutex_t x = PTHREAD_MUTEX_INITIALIZER;
++#define __SPIN_LOCK_UNLOCKED(x)	(pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER
+ 
+ #define spin_lock_irqsave(x, f)		(void)f, pthread_mutex_lock(x)
+ #define spin_unlock_irqrestore(x, f)	(void)f, pthread_mutex_unlock(x)
 -- 
-2.14.2
+2.15.1
 
