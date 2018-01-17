@@ -1,39 +1,88 @@
-From: Jesper Nilsson <jesper.nilsson@axis.com>
-Date: Tue, 09 Jan 2018 15:53:17 +0000
-Subject: Re: [PATCH 34/67] cris: use dma-direct
-Message-Id: <20180109155317.GN32368@axis.com>
+From: Matthew Wilcox <willy@infradead.org>
+Date: Wed, 17 Jan 2018 20:21:25 +0000
+Subject: [PATCH v6 61/99] dax: Convert dax_writeback_one to XArray
+Message-Id: <20180117202203.19756-62-willy@infradead.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20171229081911.2802-1-hch@lst.de>
- <20171229081911.2802-35-hch@lst.de>
-In-Reply-To: <20171229081911.2802-35-hch@lst.de>
+References: <20180117202203.19756-1-willy@infradead.org>
+In-Reply-To: <20180117202203.19756-1-willy@infradead.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Christoph Hellwig <hch@lst.de>
-Cc: iommu@lists.linux-foundation.org, linux-mips@linux-mips.org, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, Guan Xuetao <gxt@mprc.pku.edu.cn>, linux-arch@vger.kernel.org, linux-s390@vger.kernel.org, linux-c6x-dev@linux-c6x.org, linux-hexagon@vger.kernel.org, x86@kernel.org, linux-snps-arc@lists.infradead.org, adi-buildroot-devel@lists.sourceforge.net, linux-m68k@lists.linux-m68k.org, patches@groups.riscv.org, linux-metag@vger.kernel.org, linux-arm-kernel@lists.infradead.org, Michal Simek <monstr@monstr.eu>, linux-parisc@vger.kernel.org, linux-cris-kernel@axis.com, linux-kernel@vger.kernel.org, linux-alpha@vger.kernel.org, linuxppc-dev@lists.ozlabs.org
+To: linux-kernel@vger.kernel.org
+Cc: linux-s390@vger.kernel.org, David Howells <dhowells@redhat.com>, linux-nilfs@vger.kernel.org, Matthew Wilcox <mawilcox@microsoft.com>, linux-sh@vger.kernel.org, intel-gfx@lists.freedesktop.org, linux-usb@vger.kernel.org, linux-remoteproc@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net, linux-xfs@vger.kernel.org, linux-mm@kvack.org, iommu@lists.linux-foundation.org, Stefano Stabellini <sstabellini@kernel.org>, linux-fsdevel@vger.kernel.org, cgroups@vger.kernel.org, Bjorn Andersson <bjorn.andersson@linaro.org>, linux-btrfs@vger.kernel.org
 
-On Fri, Dec 29, 2017 at 09:18:38AM +0100, Christoph Hellwig wrote:
-> cris currently has an incomplete direct mapping dma_map_ops implementation
-> is PCI support is enabled.  Replace it with the fully feature generic
-> dma-direct implementation.
-> 
-> Signed-off-by: Christoph Hellwig <hch@lst.de>
+From: Matthew Wilcox <mawilcox@microsoft.com>
 
-For CRIS:
+Likewise easy
 
-Acked-by: Jesper Nilsson <jesper.nilsson@axis.com>
+Signed-off-by: Matthew Wilcox <mawilcox@microsoft.com>
+---
+ fs/dax.c | 17 +++++++----------
+ 1 file changed, 7 insertions(+), 10 deletions(-)
 
-> ---
->  arch/cris/Kconfig                       |  4 ++
->  arch/cris/arch-v32/drivers/pci/Makefile |  2 +-
->  arch/cris/arch-v32/drivers/pci/dma.c    | 78 ---------------------------------
->  arch/cris/include/asm/Kbuild            |  1 +
->  arch/cris/include/asm/dma-mapping.h     | 20 ---------
->  5 files changed, 6 insertions(+), 99 deletions(-)
->  delete mode 100644 arch/cris/arch-v32/drivers/pci/dma.c
->  delete mode 100644 arch/cris/include/asm/dma-mapping.h
-> 
-
-/^JN - Jesper Nilsson
+diff --git a/fs/dax.c b/fs/dax.c
+index 9a30224da4d6..b66b8c896ed8 100644
+--- a/fs/dax.c
++++ b/fs/dax.c
+@@ -632,8 +632,7 @@ static int dax_writeback_one(struct block_device *bdev,
+ 		struct dax_device *dax_dev, struct address_space *mapping,
+ 		pgoff_t index, void *entry)
+ {
+-	struct radix_tree_root *pages = &mapping->pages;
+-	XA_STATE(xas, pages, index);
++	XA_STATE(xas, &mapping->pages, index);
+ 	void *entry2, *kaddr;
+ 	long ret = 0, id;
+ 	sector_t sector;
+@@ -648,7 +647,7 @@ static int dax_writeback_one(struct block_device *bdev,
+ 	if (WARN_ON(!xa_is_value(entry)))
+ 		return -EIO;
+ 
+-	xa_lock_irq(&mapping->pages);
++	xas_lock_irq(&xas);
+ 	entry2 = get_unlocked_mapping_entry(&xas);
+ 	/* Entry got punched out / reallocated? */
+ 	if (!entry2 || WARN_ON_ONCE(!xa_is_value(entry2)))
+@@ -667,7 +666,7 @@ static int dax_writeback_one(struct block_device *bdev,
+ 	}
+ 
+ 	/* Another fsync thread may have already written back this entry */
+-	if (!radix_tree_tag_get(pages, index, PAGECACHE_TAG_TOWRITE))
++	if (!xas_get_tag(&xas, PAGECACHE_TAG_TOWRITE))
+ 		goto put_unlocked;
+ 	/* Lock the entry to serialize with page faults */
+ 	entry = lock_slot(&xas);
+@@ -678,8 +677,8 @@ static int dax_writeback_one(struct block_device *bdev,
+ 	 * at the entry only under xa_lock and once they do that they will
+ 	 * see the entry locked and wait for it to unlock.
+ 	 */
+-	radix_tree_tag_clear(pages, index, PAGECACHE_TAG_TOWRITE);
+-	xa_unlock_irq(&mapping->pages);
++	xas_clear_tag(&xas, PAGECACHE_TAG_TOWRITE);
++	xas_unlock_irq(&xas);
+ 
+ 	/*
+ 	 * Even if dax_writeback_mapping_range() was given a wbc->range_start
+@@ -717,9 +716,7 @@ static int dax_writeback_one(struct block_device *bdev,
+ 	 * the pfn mappings are writeprotected and fault waits for mapping
+ 	 * entry lock.
+ 	 */
+-	xa_lock_irq(&mapping->pages);
+-	radix_tree_tag_clear(pages, index, PAGECACHE_TAG_DIRTY);
+-	xa_unlock_irq(&mapping->pages);
++	xa_clear_tag(&mapping->pages, index, PAGECACHE_TAG_DIRTY);
+ 	trace_dax_writeback_one(mapping->host, index, size >> PAGE_SHIFT);
+  dax_unlock:
+ 	dax_read_unlock(id);
+@@ -728,7 +725,7 @@ static int dax_writeback_one(struct block_device *bdev,
+ 
+  put_unlocked:
+ 	put_unlocked_mapping_entry(&xas, entry2);
+-	xa_unlock_irq(&mapping->pages);
++	xas_unlock_irq(&xas);
+ 	return ret;
+ }
+ 
 -- 
-               Jesper Nilsson -- jesper.nilsson@axis.com
+2.15.1
+
