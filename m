@@ -1,7 +1,7 @@
 From: Matthew Wilcox <willy@infradead.org>
-Date: Wed, 17 Jan 2018 20:21:45 +0000
-Subject: [PATCH v6 81/99] i915: Convert handles_vma to XArray
-Message-Id: <20180117202203.19756-82-willy@infradead.org>
+Date: Wed, 17 Jan 2018 20:21:59 +0000
+Subject: [PATCH v6 95/99] f2fs: Convert gclist.iroot to XArray
+Message-Id: <20180117202203.19756-96-willy@infradead.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20180117202203.19756-1-willy@infradead.org>
 In-Reply-To: <20180117202203.19756-1-willy@infradead.org>
@@ -17,126 +17,69 @@ Straightforward conversion.
 
 Signed-off-by: Matthew Wilcox <mawilcox@microsoft.com>
 ---
- drivers/gpu/drm/i915/i915_gem.c               |  2 +-
- drivers/gpu/drm/i915/i915_gem_context.c       | 12 +++++-------
- drivers/gpu/drm/i915/i915_gem_context.h       |  4 ++--
- drivers/gpu/drm/i915/i915_gem_execbuffer.c    |  6 +++---
- drivers/gpu/drm/i915/selftests/mock_context.c |  2 +-
- 5 files changed, 12 insertions(+), 14 deletions(-)
+ fs/f2fs/gc.c | 14 +++++++-------
+ fs/f2fs/gc.h |  2 +-
+ 2 files changed, 8 insertions(+), 8 deletions(-)
 
-diff --git a/drivers/gpu/drm/i915/i915_gem.c b/drivers/gpu/drm/i915/i915_gem.c
-index 25ce7bcf9988..69e944f4dfce 100644
---- a/drivers/gpu/drm/i915/i915_gem.c
-+++ b/drivers/gpu/drm/i915/i915_gem.c
-@@ -3351,7 +3351,7 @@ void i915_gem_close_object(struct drm_gem_object *gem, struct drm_file *file)
- 		if (ctx->file_priv != fpriv)
- 			continue;
- 
--		vma = radix_tree_delete(&ctx->handles_vma, lut->handle);
-+		vma = xa_erase(&ctx->handles_vma, lut->handle);
- 		GEM_BUG_ON(vma->obj != obj);
- 
- 		/* We allow the process to have multiple handles to the same
-diff --git a/drivers/gpu/drm/i915/i915_gem_context.c b/drivers/gpu/drm/i915/i915_gem_context.c
-index f782cf2069c1..1aff35ba6e18 100644
---- a/drivers/gpu/drm/i915/i915_gem_context.c
-+++ b/drivers/gpu/drm/i915/i915_gem_context.c
-@@ -95,9 +95,9 @@
- 
- static void lut_close(struct i915_gem_context *ctx)
+diff --git a/fs/f2fs/gc.c b/fs/f2fs/gc.c
+index aac1e02f75df..2b33068dc36b 100644
+--- a/fs/f2fs/gc.c
++++ b/fs/f2fs/gc.c
+@@ -417,7 +417,7 @@ static struct inode *find_gc_inode(struct gc_inode_list *gc_list, nid_t ino)
  {
-+	XA_STATE(xas, &ctx->handles_vma, 0);
- 	struct i915_lut_handle *lut, *ln;
--	struct radix_tree_iter iter;
--	void __rcu **slot;
-+	struct i915_vma *vma;
+ 	struct inode_entry *ie;
  
- 	list_for_each_entry_safe(lut, ln, &ctx->handles_list, ctx_link) {
- 		list_del(&lut->obj_link);
-@@ -105,10 +105,8 @@ static void lut_close(struct i915_gem_context *ctx)
- 	}
+-	ie = radix_tree_lookup(&gc_list->iroot, ino);
++	ie = xa_load(&gc_list->iroot, ino);
+ 	if (ie)
+ 		return ie->inode;
+ 	return NULL;
+@@ -434,7 +434,7 @@ static void add_gc_inode(struct gc_inode_list *gc_list, struct inode *inode)
+ 	new_ie = f2fs_kmem_cache_alloc(inode_entry_slab, GFP_NOFS);
+ 	new_ie->inode = inode;
  
- 	rcu_read_lock();
--	radix_tree_for_each_slot(slot, &ctx->handles_vma, &iter, 0) {
--		struct i915_vma *vma = rcu_dereference_raw(*slot);
--
--		radix_tree_iter_delete(&ctx->handles_vma, &iter, slot);
-+	xas_for_each(&xas, vma, ULONG_MAX) {
-+		xas_store(&xas, NULL);
- 		__i915_gem_object_release_unless_active(vma->obj);
- 	}
- 	rcu_read_unlock();
-@@ -276,7 +274,7 @@ __create_hw_context(struct drm_i915_private *dev_priv,
- 	ctx->i915 = dev_priv;
- 	ctx->priority = I915_PRIORITY_NORMAL;
+-	f2fs_radix_tree_insert(&gc_list->iroot, inode->i_ino, new_ie);
++	xa_store(&gc_list->iroot, inode->i_ino, new_ie, GFP_NOFS);
+ 	list_add_tail(&new_ie->list, &gc_list->ilist);
+ }
  
--	INIT_RADIX_TREE(&ctx->handles_vma, GFP_KERNEL);
-+	xa_init(&ctx->handles_vma);
- 	INIT_LIST_HEAD(&ctx->handles_list);
- 
- 	/* Default context will never have a file_priv */
-diff --git a/drivers/gpu/drm/i915/i915_gem_context.h b/drivers/gpu/drm/i915/i915_gem_context.h
-index 44688e22a5c2..8e3e0d002f77 100644
---- a/drivers/gpu/drm/i915/i915_gem_context.h
-+++ b/drivers/gpu/drm/i915/i915_gem_context.h
-@@ -181,11 +181,11 @@ struct i915_gem_context {
- 	/** remap_slice: Bitmask of cache lines that need remapping */
- 	u8 remap_slice;
- 
--	/** handles_vma: rbtree to look up our context specific obj/vma for
-+	/** handles_vma: lookup our context specific obj/vma for
- 	 * the user handle. (user handles are per fd, but the binding is
- 	 * per vm, which may be one per context or shared with the global GTT)
- 	 */
--	struct radix_tree_root handles_vma;
-+	struct xarray handles_vma;
- 
- 	/** handles_list: reverse list of all the rbtree entries in use for
- 	 * this context, which allows us to free all the allocations on
-diff --git a/drivers/gpu/drm/i915/i915_gem_execbuffer.c b/drivers/gpu/drm/i915/i915_gem_execbuffer.c
-index 435ed95df144..828f4b5473ea 100644
---- a/drivers/gpu/drm/i915/i915_gem_execbuffer.c
-+++ b/drivers/gpu/drm/i915/i915_gem_execbuffer.c
-@@ -683,7 +683,7 @@ static int eb_select_context(struct i915_execbuffer *eb)
- 
- static int eb_lookup_vmas(struct i915_execbuffer *eb)
+@@ -442,7 +442,7 @@ static void put_gc_inode(struct gc_inode_list *gc_list)
  {
--	struct radix_tree_root *handles_vma = &eb->ctx->handles_vma;
-+	struct xarray *handles_vma = &eb->ctx->handles_vma;
- 	struct drm_i915_gem_object *obj;
- 	unsigned int i;
- 	int err;
-@@ -702,7 +702,7 @@ static int eb_lookup_vmas(struct i915_execbuffer *eb)
- 		struct i915_lut_handle *lut;
- 		struct i915_vma *vma;
+ 	struct inode_entry *ie, *next_ie;
+ 	list_for_each_entry_safe(ie, next_ie, &gc_list->ilist, list) {
+-		radix_tree_delete(&gc_list->iroot, ie->inode->i_ino);
++		xa_erase(&gc_list->iroot, ie->inode->i_ino);
+ 		iput(ie->inode);
+ 		list_del(&ie->list);
+ 		kmem_cache_free(inode_entry_slab, ie);
+@@ -989,10 +989,10 @@ int f2fs_gc(struct f2fs_sb_info *sbi, bool sync,
+ 	int ret = 0;
+ 	struct cp_control cpc;
+ 	unsigned int init_segno = segno;
+-	struct gc_inode_list gc_list = {
+-		.ilist = LIST_HEAD_INIT(gc_list.ilist),
+-		.iroot = RADIX_TREE_INIT(gc_list.iroot, GFP_NOFS),
+-	};
++	struct gc_inode_list gc_list;
++
++	xa_init(&gc_list.iroot);
++	INIT_LIST_HEAD(&gc_list.ilist);
  
--		vma = radix_tree_lookup(handles_vma, handle);
-+		vma = xa_load(handles_vma, handle);
- 		if (likely(vma))
- 			goto add_vma;
+ 	trace_f2fs_gc_begin(sbi->sb, sync, background,
+ 				get_pages(sbi, F2FS_DIRTY_NODES),
+diff --git a/fs/f2fs/gc.h b/fs/f2fs/gc.h
+index 9325191fab2d..769259b0a4f6 100644
+--- a/fs/f2fs/gc.h
++++ b/fs/f2fs/gc.h
+@@ -41,7 +41,7 @@ struct f2fs_gc_kthread {
  
-@@ -724,7 +724,7 @@ static int eb_lookup_vmas(struct i915_execbuffer *eb)
- 			goto err_obj;
- 		}
+ struct gc_inode_list {
+ 	struct list_head ilist;
+-	struct radix_tree_root iroot;
++	struct xarray iroot;
+ };
  
--		err = radix_tree_insert(handles_vma, handle, vma);
-+		err = xa_err(xa_store(handles_vma, handle, vma, GFP_KERNEL));
- 		if (unlikely(err)) {
- 			kfree(lut);
- 			goto err_obj;
-diff --git a/drivers/gpu/drm/i915/selftests/mock_context.c b/drivers/gpu/drm/i915/selftests/mock_context.c
-index bbf80d42e793..b664a7159242 100644
---- a/drivers/gpu/drm/i915/selftests/mock_context.c
-+++ b/drivers/gpu/drm/i915/selftests/mock_context.c
-@@ -40,7 +40,7 @@ mock_context(struct drm_i915_private *i915,
- 	INIT_LIST_HEAD(&ctx->link);
- 	ctx->i915 = i915;
- 
--	INIT_RADIX_TREE(&ctx->handles_vma, GFP_KERNEL);
-+	xa_init(&ctx->handles_vma);
- 	INIT_LIST_HEAD(&ctx->handles_list);
- 
- 	ret = ida_simple_get(&i915->contexts.hw_ida,
+ /*
 -- 
 2.15.1
 
