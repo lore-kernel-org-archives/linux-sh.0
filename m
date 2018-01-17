@@ -1,180 +1,178 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Fri, 12 Jan 2018 08:42:21 +0000
-Subject: [PATCH 23/34] dma-mapping: provide a generic asm/dma-mapping.h
-Message-Id: <20180112084232.2857-24-hch@lst.de>
+From: Matthew Wilcox <willy@infradead.org>
+Date: Wed, 17 Jan 2018 20:20:47 +0000
+Subject: [PATCH v6 23/99] page cache: Add page_cache_range_empty function
+Message-Id: <20180117202203.19756-24-willy@infradead.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180112084232.2857-1-hch@lst.de>
-In-Reply-To: <20180112084232.2857-1-hch-jcswGhMUV9g@public.gmane.org>
+References: <20180117202203.19756-1-willy@infradead.org>
+In-Reply-To: <20180117202203.19756-1-willy@infradead.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: linux-mips-6z/3iImG2C8G8FEW9MqTrA@public.gmane.org, linux-ia64-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sparclinux-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Guan Xuetao <gxt-TG0Ac1+ktVePQbnJrJN+5g@public.gmane.org>, linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-c6x-dev-jPsnJVOj+W6hPH1hqNUYSQ@public.gmane.org, linux-hexagon-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, x86-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, Konrad Rzeszutek Wilk <konrad-Gq0aWv8utHQdnm+yROfE0A@public.gmane.org>, linux-snps-arc-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, linux-m68k-cunTk1MwBs8S/qaLPR03pWD2FQJk+8+b@public.gmane.org, patches-q3qR2WxjNRFS9aJRtSZj7A@public.gmane.org, linux-metag-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, Michal Simek <monstr-pSz03upnqPeHXe+LvDLADg@public.gmane.org>, linux-parisc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-cris-kernel-VrBV9hrLPhE@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-alpha-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linuxppc-dev-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org
+To: linux-kernel@vger.kernel.org
+Cc: linux-s390@vger.kernel.org, David Howells <dhowells@redhat.com>, linux-nilfs@vger.kernel.org, Matthew Wilcox <mawilcox@microsoft.com>, linux-sh@vger.kernel.org, intel-gfx@lists.freedesktop.org, linux-usb@vger.kernel.org, linux-remoteproc@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net, linux-xfs@vger.kernel.org, linux-mm@kvack.org, iommu@lists.linux-foundation.org, Stefano Stabellini <sstabellini@kernel.org>, linux-fsdevel@vger.kernel.org, cgroups@vger.kernel.org, Bjorn Andersson <bjorn.andersson@linaro.org>, linux-btrfs@vger.kernel.org
 
-For architectures that just use the generic dma_noop_ops we can provide
-a generic version of dma-mapping.h.
+From: Matthew Wilcox <mawilcox@microsoft.com>
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
+btrfs has its own custom function for determining whether the page cache
+has any pages in a particular range.  Move this functionality to the
+page cache, and call it from btrfs.
+
+Signed-off-by: Matthew Wilcox <mawilcox@microsoft.com>
 ---
- MAINTAINERS                          |  1 +
- arch/m32r/include/asm/Kbuild         |  1 +
- arch/m32r/include/asm/dma-mapping.h  | 17 -----------------
- arch/riscv/include/asm/Kbuild        |  1 +
- arch/riscv/include/asm/dma-mapping.h | 30 ------------------------------
- arch/s390/include/asm/Kbuild         |  1 +
- arch/s390/include/asm/dma-mapping.h  | 17 -----------------
- include/asm-generic/dma-mapping.h    | 10 ++++++++++
- 8 files changed, 14 insertions(+), 64 deletions(-)
- delete mode 100644 arch/m32r/include/asm/dma-mapping.h
- delete mode 100644 arch/riscv/include/asm/dma-mapping.h
- delete mode 100644 arch/s390/include/asm/dma-mapping.h
- create mode 100644 include/asm-generic/dma-mapping.h
+ fs/btrfs/btrfs_inode.h  |  7 ++++-
+ fs/btrfs/inode.c        | 70 -------------------------------------------------
+ include/linux/pagemap.h |  2 ++
+ mm/filemap.c            | 26 ++++++++++++++++++
+ 4 files changed, 34 insertions(+), 71 deletions(-)
 
-diff --git a/MAINTAINERS b/MAINTAINERS
-index d2cfdcce1db5..234e642e7149 100644
---- a/MAINTAINERS
-+++ b/MAINTAINERS
-@@ -4338,6 +4338,7 @@ F:	lib/dma-noop.c
- F:	lib/dma-virt.c
- F:	drivers/base/dma-mapping.c
- F:	drivers/base/dma-coherent.c
-+F:	include/asm-generic/dma-mapping.h
- F:	include/linux/dma-direct.h
- F:	include/linux/dma-mapping.h
+diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
+index 63f0ccc92a71..a48bd6e0a0bb 100644
+--- a/fs/btrfs/btrfs_inode.h
++++ b/fs/btrfs/btrfs_inode.h
+@@ -365,6 +365,11 @@ static inline void btrfs_print_data_csum_error(struct btrfs_inode *inode,
+ 			logical_start, csum, csum_expected, mirror_num);
+ }
  
-diff --git a/arch/m32r/include/asm/Kbuild b/arch/m32r/include/asm/Kbuild
-index 7e11b125c35e..ca83fda8177b 100644
---- a/arch/m32r/include/asm/Kbuild
-+++ b/arch/m32r/include/asm/Kbuild
-@@ -1,5 +1,6 @@
- generic-y += clkdev.h
- generic-y += current.h
-+generic-y += dma-mapping.h
- generic-y += exec.h
- generic-y += extable.h
- generic-y += irq_work.h
-diff --git a/arch/m32r/include/asm/dma-mapping.h b/arch/m32r/include/asm/dma-mapping.h
-deleted file mode 100644
-index 8967fb659691..000000000000
---- a/arch/m32r/include/asm/dma-mapping.h
-+++ /dev/null
-@@ -1,17 +0,0 @@
--/* SPDX-License-Identifier: GPL-2.0 */
--#ifndef _ASM_M32R_DMA_MAPPING_H
--#define _ASM_M32R_DMA_MAPPING_H
--
--#include <linux/kernel.h>
--#include <linux/types.h>
--#include <linux/mm.h>
--#include <linux/scatterlist.h>
--#include <linux/dma-debug.h>
--#include <linux/io.h>
--
--static inline const struct dma_map_ops *get_arch_dma_ops(struct bus_type *bus)
--{
--	return &dma_noop_ops;
--}
--
--#endif /* _ASM_M32R_DMA_MAPPING_H */
-diff --git a/arch/riscv/include/asm/Kbuild b/arch/riscv/include/asm/Kbuild
-index 970460a0b492..197460ccbf21 100644
---- a/arch/riscv/include/asm/Kbuild
-+++ b/arch/riscv/include/asm/Kbuild
-@@ -7,6 +7,7 @@ generic-y += device.h
- generic-y += div64.h
- generic-y += dma.h
- generic-y += dma-contiguous.h
-+generic-y += dma-mapping.h
- generic-y += emergency-restart.h
- generic-y += errno.h
- generic-y += exec.h
-diff --git a/arch/riscv/include/asm/dma-mapping.h b/arch/riscv/include/asm/dma-mapping.h
-deleted file mode 100644
-index 73849e2cc761..000000000000
---- a/arch/riscv/include/asm/dma-mapping.h
-+++ /dev/null
-@@ -1,30 +0,0 @@
--/*
-- * Copyright (C) 2003-2004 Hewlett-Packard Co
-- *	David Mosberger-Tang <davidm@hpl.hp.com>
-- * Copyright (C) 2012 ARM Ltd.
-- * Copyright (C) 2016 SiFive, Inc.
-- *
-- * This program is free software; you can redistribute it and/or modify
-- * it under the terms of the GNU General Public License version 2 as
-- * published by the Free Software Foundation.
-- *
-- * This program is distributed in the hope that it will be useful,
-- * but WITHOUT ANY WARRANTY; without even the implied warranty of
-- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-- * GNU General Public License for more details.
-- *
-- * You should have received a copy of the GNU General Public License
-- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
-- */
--#ifndef __ASM_RISCV_DMA_MAPPING_H
--#define __ASM_RISCV_DMA_MAPPING_H
--
--/* Use ops->dma_mapping_error (if it exists) or assume success */
--// #undef DMA_ERROR_CODE
--
--static inline const struct dma_map_ops *get_arch_dma_ops(struct bus_type *bus)
--{
--	return &dma_noop_ops;
--}
--
--#endif	/* __ASM_RISCV_DMA_MAPPING_H */
-diff --git a/arch/s390/include/asm/Kbuild b/arch/s390/include/asm/Kbuild
-index 048450869328..dade72be127b 100644
---- a/arch/s390/include/asm/Kbuild
-+++ b/arch/s390/include/asm/Kbuild
-@@ -4,6 +4,7 @@ generic-y += cacheflush.h
- generic-y += clkdev.h
- generic-y += device.h
- generic-y += dma-contiguous.h
-+generic-y += dma-mapping.h
- generic-y += div64.h
- generic-y += emergency-restart.h
- generic-y += export.h
-diff --git a/arch/s390/include/asm/dma-mapping.h b/arch/s390/include/asm/dma-mapping.h
-deleted file mode 100644
-index bdc2455483f6..000000000000
---- a/arch/s390/include/asm/dma-mapping.h
-+++ /dev/null
-@@ -1,17 +0,0 @@
--/* SPDX-License-Identifier: GPL-2.0 */
--#ifndef _ASM_S390_DMA_MAPPING_H
--#define _ASM_S390_DMA_MAPPING_H
--
--#include <linux/kernel.h>
--#include <linux/types.h>
--#include <linux/mm.h>
--#include <linux/scatterlist.h>
--#include <linux/dma-debug.h>
--#include <linux/io.h>
--
--static inline const struct dma_map_ops *get_arch_dma_ops(struct bus_type *bus)
--{
--	return &dma_noop_ops;
--}
--
--#endif /* _ASM_S390_DMA_MAPPING_H */
-diff --git a/include/asm-generic/dma-mapping.h b/include/asm-generic/dma-mapping.h
-new file mode 100644
-index 000000000000..164031531d85
---- /dev/null
-+++ b/include/asm-generic/dma-mapping.h
-@@ -0,0 +1,10 @@
-+/* SPDX-License-Identifier: GPL-2.0 */
-+#ifndef _ASM_GENERIC_DMA_MAPPING_H
-+#define _ASM_GENERIC_DMA_MAPPING_H
-+
-+static inline const struct dma_map_ops *get_arch_dma_ops(struct bus_type *bus)
+-bool btrfs_page_exists_in_range(struct inode *inode, loff_t start, loff_t end);
++static inline bool btrfs_page_exists_in_range(struct inode *inode,
++						loff_t start, loff_t end)
 +{
-+	return &dma_noop_ops;
++	return page_cache_range_empty(inode->i_mapping, start >> PAGE_SHIFT,
++							end >> PAGE_SHIFT);
 +}
+ 
+ #endif
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index dbdb5bf6bca1..d7d2c556d5a2 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -7541,76 +7541,6 @@ noinline int can_nocow_extent(struct inode *inode, u64 offset, u64 *len,
+ 	return ret;
+ }
+ 
+-bool btrfs_page_exists_in_range(struct inode *inode, loff_t start, loff_t end)
+-{
+-	struct radix_tree_root *root = &inode->i_mapping->pages;
+-	bool found = false;
+-	void **pagep = NULL;
+-	struct page *page = NULL;
+-	unsigned long start_idx;
+-	unsigned long end_idx;
+-
+-	start_idx = start >> PAGE_SHIFT;
+-
+-	/*
+-	 * end is the last byte in the last page.  end = start is legal
+-	 */
+-	end_idx = end >> PAGE_SHIFT;
+-
+-	rcu_read_lock();
+-
+-	/* Most of the code in this while loop is lifted from
+-	 * find_get_page.  It's been modified to begin searching from a
+-	 * page and return just the first page found in that range.  If the
+-	 * found idx is less than or equal to the end idx then we know that
+-	 * a page exists.  If no pages are found or if those pages are
+-	 * outside of the range then we're fine (yay!) */
+-	while (page = NULL &&
+-	       radix_tree_gang_lookup_slot(root, &pagep, NULL, start_idx, 1)) {
+-		page = radix_tree_deref_slot(pagep);
+-		if (unlikely(!page))
+-			break;
+-
+-		if (radix_tree_exception(page)) {
+-			if (radix_tree_deref_retry(page)) {
+-				page = NULL;
+-				continue;
+-			}
+-			/*
+-			 * Otherwise, shmem/tmpfs must be storing a swap entry
+-			 * here so return it without attempting to raise page
+-			 * count.
+-			 */
+-			page = NULL;
+-			break; /* TODO: Is this relevant for this use case? */
+-		}
+-
+-		if (!page_cache_get_speculative(page)) {
+-			page = NULL;
+-			continue;
+-		}
+-
+-		/*
+-		 * Has the page moved?
+-		 * This is part of the lockless pagecache protocol. See
+-		 * include/linux/pagemap.h for details.
+-		 */
+-		if (unlikely(page != *pagep)) {
+-			put_page(page);
+-			page = NULL;
+-		}
+-	}
+-
+-	if (page) {
+-		if (page->index <= end_idx)
+-			found = true;
+-		put_page(page);
+-	}
+-
+-	rcu_read_unlock();
+-	return found;
+-}
+-
+ static int lock_extent_direct(struct inode *inode, u64 lockstart, u64 lockend,
+ 			      struct extent_state **cached_state, int writing)
+ {
+diff --git a/include/linux/pagemap.h b/include/linux/pagemap.h
+index 0db127c3ccac..34d4fa3ad1c5 100644
+--- a/include/linux/pagemap.h
++++ b/include/linux/pagemap.h
+@@ -245,6 +245,8 @@ pgoff_t page_cache_next_gap(struct address_space *mapping,
+ 			     pgoff_t index, unsigned long max_scan);
+ pgoff_t page_cache_prev_gap(struct address_space *mapping,
+ 			     pgoff_t index, unsigned long max_scan);
++bool page_cache_range_empty(struct address_space *mapping,
++				pgoff_t index, pgoff_t max);
+ 
+ #define FGP_ACCESSED		0x00000001
+ #define FGP_LOCK		0x00000002
+diff --git a/mm/filemap.c b/mm/filemap.c
+index 146e8ec16ec0..f1b4480723dd 100644
+--- a/mm/filemap.c
++++ b/mm/filemap.c
+@@ -1398,6 +1398,32 @@ pgoff_t page_cache_prev_gap(struct address_space *mapping,
+ }
+ EXPORT_SYMBOL(page_cache_prev_gap);
+ 
++bool page_cache_range_empty(struct address_space *mapping, pgoff_t index,
++				pgoff_t max)
++{
++	struct page *page;
++	XA_STATE(xas, &mapping->pages, index);
 +
-+#endif /* _ASM_GENERIC_DMA_MAPPING_H */
++	rcu_read_lock();
++	do {
++		page = xas_find(&xas, max);
++		if (xas_retry(&xas, page))
++			continue;
++		/* Shadow entries don't count */
++		if (xa_is_value(page))
++			continue;
++		/*
++		 * We don't need to try to pin this page; we're about to
++		 * release the RCU lock anyway.  It is enough to know that
++		 * there was a page here recently.
++		 */
++	} while (0);
++	rcu_read_unlock();
++
++	return page != NULL;
++}
++EXPORT_SYMBOL_GPL(page_cache_range_empty);
++
+ /**
+  * find_get_entry - find and get a page cache entry
+  * @mapping: the address_space to search
 -- 
-2.14.2
+2.15.1
 
