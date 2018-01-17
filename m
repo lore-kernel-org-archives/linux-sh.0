@@ -1,7 +1,7 @@
 From: Matthew Wilcox <willy@infradead.org>
-Date: Wed, 17 Jan 2018 20:21:01 +0000
-Subject: [PATCH v6 37/99] mm: Convert huge_memory to XArray
-Message-Id: <20180117202203.19756-38-willy@infradead.org>
+Date: Wed, 17 Jan 2018 20:21:12 +0000
+Subject: [PATCH v6 48/99] shmem: Convert shmem_free_swap to XArray
+Message-Id: <20180117202203.19756-49-willy@infradead.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20180117202203.19756-1-willy@infradead.org>
 In-Reply-To: <20180117202203.19756-1-willy@infradead.org>
@@ -13,73 +13,37 @@ Cc: linux-s390@vger.kernel.org, David Howells <dhowells@redhat.com>, linux-nilfs
 
 From: Matthew Wilcox <mawilcox@microsoft.com>
 
-Quite a straightforward conversion.
+This is a perfect use for xa_cmpxchg().  Note the use of 0 for GFP
+flags; we won't be allocating memory.
 
 Signed-off-by: Matthew Wilcox <mawilcox@microsoft.com>
 ---
- mm/huge_memory.c | 19 ++++++++-----------
- 1 file changed, 8 insertions(+), 11 deletions(-)
+ mm/shmem.c | 7 ++-----
+ 1 file changed, 2 insertions(+), 5 deletions(-)
 
-diff --git a/mm/huge_memory.c b/mm/huge_memory.c
-index f71dd3e7d8cd..5c275295bbd3 100644
---- a/mm/huge_memory.c
-+++ b/mm/huge_memory.c
-@@ -2379,7 +2379,7 @@ static void __split_huge_page_tail(struct page *head, int tail,
- 	if (PageAnon(head) && !PageSwapCache(head)) {
- 		page_ref_inc(page_tail);
- 	} else {
--		/* Additional pin to radix tree */
-+		/* Additional pin to page cache */
- 		page_ref_add(page_tail, 2);
- 	}
+diff --git a/mm/shmem.c b/mm/shmem.c
+index e8233cb7ab5c..5a2226e06f8c 100644
+--- a/mm/shmem.c
++++ b/mm/shmem.c
+@@ -635,16 +635,13 @@ static void shmem_delete_from_page_cache(struct page *page, void *radswap)
+ }
  
-@@ -2450,13 +2450,13 @@ static void __split_huge_page(struct page *page, struct list_head *list,
- 	ClearPageCompound(head);
- 	/* See comment in __split_huge_page_tail() */
- 	if (PageAnon(head)) {
--		/* Additional pin to radix tree of swap cache */
-+		/* Additional pin to swap cache */
- 		if (PageSwapCache(head))
- 			page_ref_add(head, 2);
- 		else
- 			page_ref_inc(head);
- 	} else {
--		/* Additional pin to radix tree */
-+		/* Additional pin to page cache */
- 		page_ref_add(head, 2);
- 		xa_unlock(&head->mapping->pages);
- 	}
-@@ -2568,7 +2568,7 @@ bool can_split_huge_page(struct page *page, int *pextra_pins)
+ /*
+- * Remove swap entry from radix tree, free the swap and its page cache.
++ * Remove swap entry from page cache, free the swap and its page cache.
+  */
+ static int shmem_free_swap(struct address_space *mapping,
+ 			   pgoff_t index, void *radswap)
  {
- 	int extra_pins;
+-	void *old;
++	void *old = xa_cmpxchg(&mapping->pages, index, radswap, NULL, 0);
  
--	/* Additional pins from radix tree */
-+	/* Additional pins from page cache */
- 	if (PageAnon(page))
- 		extra_pins = PageSwapCache(page) ? HPAGE_PMD_NR : 0;
- 	else
-@@ -2664,17 +2664,14 @@ int split_huge_page_to_list(struct page *page, struct list_head *list)
- 	spin_lock_irqsave(zone_lru_lock(page_zone(head)), flags);
- 
- 	if (mapping) {
--		void **pslot;
-+		XA_STATE(xas, &mapping->pages, page_index(head));
- 
--		xa_lock(&mapping->pages);
--		pslot = radix_tree_lookup_slot(&mapping->pages,
--				page_index(head));
- 		/*
--		 * Check if the head page is present in radix tree.
-+		 * Check if the head page is present in page cache.
- 		 * We assume all tail are present too, if head is there.
- 		 */
--		if (radix_tree_deref_slot_protected(pslot,
--					&mapping->pages.xa_lock) != head)
-+		xa_lock(&mapping->pages);
-+		if (xas_load(&xas) != head)
- 			goto fail;
- 	}
- 
+-	xa_lock_irq(&mapping->pages);
+-	old = radix_tree_delete_item(&mapping->pages, index, radswap);
+-	xa_unlock_irq(&mapping->pages);
+ 	if (old != radswap)
+ 		return -ENOENT;
+ 	free_swap_and_cache(radix_to_swp_entry(radswap));
 -- 
 2.15.1
 
