@@ -1,89 +1,135 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Wed, 10 Jan 2018 08:00:19 +0000
-Subject: [PATCH 25/33] dma-direct: add dma address sanity checks
-Message-Id: <20180110080027.13879-26-hch@lst.de>
+From: Matthew Wilcox <willy@infradead.org>
+Date: Wed, 17 Jan 2018 20:21:31 +0000
+Subject: [PATCH v6 67/99] mm: Convert cgroup writeback to XArray
+Message-Id: <20180117202203.19756-68-willy@infradead.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180110080027.13879-1-hch@lst.de>
-In-Reply-To: <20180110080027.13879-1-hch@lst.de>
+References: <20180117202203.19756-1-willy@infradead.org>
+In-Reply-To: <20180117202203.19756-1-willy@infradead.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: iommu@lists.linux-foundation.org
-Cc: Konrad Rzeszutek Wilk <konrad@darnok.org>, linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org, linux-c6x-dev@linux-c6x.org, linux-cris-kernel@axis.com, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-metag@vger.kernel.org, Michal Simek <monstr@monstr.eu>, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, patches@groups.riscv.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, Guan Xuetao <gxt@mprc.pku.edu.cn>, x86@kernel.org, linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: linux-s390@vger.kernel.org, David Howells <dhowells@redhat.com>, linux-nilfs@vger.kernel.org, Matthew Wilcox <mawilcox@microsoft.com>, linux-sh@vger.kernel.org, intel-gfx@lists.freedesktop.org, linux-usb@vger.kernel.org, linux-remoteproc@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net, linux-xfs@vger.kernel.org, linux-mm@kvack.org, iommu@lists.linux-foundation.org, Stefano Stabellini <sstabellini@kernel.org>, linux-fsdevel@vger.kernel.org, cgroups@vger.kernel.org, Bjorn Andersson <bjorn.andersson@linaro.org>, linux-btrfs@vger.kernel.org
 
-Roughly based on the x86 pci-nommu implementation.
+From: Matthew Wilcox <mawilcox@microsoft.com>
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
+This is a fairly naive conversion, leaving in place the GFP_ATOMIC
+allocation.  By switching the locking around, we could use GFP_KERNEL
+and probably simplify the error handling.
+
+Signed-off-by: Matthew Wilcox <mawilcox@microsoft.com>
 ---
- lib/dma-direct.c | 31 ++++++++++++++++++++++++++++++-
- 1 file changed, 30 insertions(+), 1 deletion(-)
+ include/linux/backing-dev-defs.h |  2 +-
+ include/linux/backing-dev.h      |  2 +-
+ mm/backing-dev.c                 | 22 ++++++++++------------
+ 3 files changed, 12 insertions(+), 14 deletions(-)
 
-diff --git a/lib/dma-direct.c b/lib/dma-direct.c
-index 12ea9653781b..32fd4d9e4c47 100644
---- a/lib/dma-direct.c
-+++ b/lib/dma-direct.c
-@@ -9,6 +9,23 @@
- #include <linux/scatterlist.h>
- #include <linux/pfn.h>
+diff --git a/include/linux/backing-dev-defs.h b/include/linux/backing-dev-defs.h
+index bfe86b54f6c1..074a54aad33c 100644
+--- a/include/linux/backing-dev-defs.h
++++ b/include/linux/backing-dev-defs.h
+@@ -187,7 +187,7 @@ struct backing_dev_info {
+ 	struct bdi_writeback wb;  /* the root writeback info for this bdi */
+ 	struct list_head wb_list; /* list of all wbs */
+ #ifdef CONFIG_CGROUP_WRITEBACK
+-	struct radix_tree_root cgwb_tree; /* radix tree of active cgroup wbs */
++	struct xarray cgwb_xa;		/* radix tree of active cgroup wbs */
+ 	struct rb_root cgwb_congested_tree; /* their congested states */
+ #else
+ 	struct bdi_writeback_congested *wb_congested;
+diff --git a/include/linux/backing-dev.h b/include/linux/backing-dev.h
+index 3df0d20e23f3..27e7b31bd802 100644
+--- a/include/linux/backing-dev.h
++++ b/include/linux/backing-dev.h
+@@ -271,7 +271,7 @@ static inline struct bdi_writeback *wb_find_current(struct backing_dev_info *bdi
+ 	if (!memcg_css->parent)
+ 		return &bdi->wb;
  
-+#define DIRECT_MAPPING_ERROR		0
-+
-+static bool
-+check_addr(struct device *dev, dma_addr_t dma_addr, size_t size,
-+		const char *caller)
-+{
-+	if (unlikely(dev && !dma_capable(dev, dma_addr, size))) {
-+		if (*dev->dma_mask >= DMA_BIT_MASK(32)) {
-+			dev_err(dev,
-+				"%s: overflow %pad+%zu of device mask %llx\n",
-+				caller, &dma_addr, size, *dev->dma_mask);
-+		}
-+		return false;
-+	}
-+	return true;
-+}
-+
- static void *dma_direct_alloc(struct device *dev, size_t size,
- 		dma_addr_t *dma_handle, gfp_t gfp, unsigned long attrs)
+-	wb = radix_tree_lookup(&bdi->cgwb_tree, memcg_css->id);
++	wb = xa_load(&bdi->cgwb_xa, memcg_css->id);
+ 
+ 	/*
+ 	 * %current's blkcg equals the effective blkcg of its memcg.  No
+diff --git a/mm/backing-dev.c b/mm/backing-dev.c
+index b5f940ce0143..aa0f85df0928 100644
+--- a/mm/backing-dev.c
++++ b/mm/backing-dev.c
+@@ -417,8 +417,8 @@ static void wb_exit(struct bdi_writeback *wb)
+ #include <linux/memcontrol.h>
+ 
+ /*
+- * cgwb_lock protects bdi->cgwb_tree, bdi->cgwb_congested_tree,
+- * blkcg->cgwb_list, and memcg->cgwb_list.  bdi->cgwb_tree is also RCU
++ * cgwb_lock protects bdi->cgwb_xa, bdi->cgwb_congested_tree,
++ * blkcg->cgwb_list, and memcg->cgwb_list.  bdi->cgwb_xa is also RCU
+  * protected.
+  */
+ static DEFINE_SPINLOCK(cgwb_lock);
+@@ -539,7 +539,7 @@ static void cgwb_kill(struct bdi_writeback *wb)
  {
-@@ -31,7 +48,11 @@ static dma_addr_t dma_direct_map_page(struct device *dev, struct page *page,
- 		unsigned long offset, size_t size, enum dma_data_direction dir,
- 		unsigned long attrs)
+ 	lockdep_assert_held(&cgwb_lock);
+ 
+-	WARN_ON(!radix_tree_delete(&wb->bdi->cgwb_tree, wb->memcg_css->id));
++	WARN_ON(xa_erase(&wb->bdi->cgwb_xa, wb->memcg_css->id) != wb);
+ 	list_del(&wb->memcg_node);
+ 	list_del(&wb->blkcg_node);
+ 	percpu_ref_kill(&wb->refcnt);
+@@ -571,7 +571,7 @@ static int cgwb_create(struct backing_dev_info *bdi,
+ 
+ 	/* look up again under lock and discard on blkcg mismatch */
+ 	spin_lock_irqsave(&cgwb_lock, flags);
+-	wb = radix_tree_lookup(&bdi->cgwb_tree, memcg_css->id);
++	wb = xa_load(&bdi->cgwb_xa, memcg_css->id);
+ 	if (wb && wb->blkcg_css != blkcg_css) {
+ 		cgwb_kill(wb);
+ 		wb = NULL;
+@@ -614,8 +614,7 @@ static int cgwb_create(struct backing_dev_info *bdi,
+ 	spin_lock_irqsave(&cgwb_lock, flags);
+ 	if (test_bit(WB_registered, &bdi->wb.state) &&
+ 	    blkcg_cgwb_list->next && memcg_cgwb_list->next) {
+-		/* we might have raced another instance of this function */
+-		ret = radix_tree_insert(&bdi->cgwb_tree, memcg_css->id, wb);
++		ret = xa_insert(&bdi->cgwb_xa, memcg_css->id, wb, GFP_ATOMIC);
+ 		if (!ret) {
+ 			list_add_tail_rcu(&wb->bdi_node, &bdi->wb_list);
+ 			list_add(&wb->memcg_node, memcg_cgwb_list);
+@@ -682,7 +681,7 @@ struct bdi_writeback *wb_get_create(struct backing_dev_info *bdi,
+ 
+ 	do {
+ 		rcu_read_lock();
+-		wb = radix_tree_lookup(&bdi->cgwb_tree, memcg_css->id);
++		wb = xa_load(&bdi->cgwb_xa, memcg_css->id);
+ 		if (wb) {
+ 			struct cgroup_subsys_state *blkcg_css;
+ 
+@@ -704,7 +703,7 @@ static int cgwb_bdi_init(struct backing_dev_info *bdi)
  {
--	return phys_to_dma(dev, page_to_phys(page)) + offset;
-+	dma_addr_t dma_addr = phys_to_dma(dev, page_to_phys(page)) + offset;
-+
-+	if (!check_addr(dev, dma_addr, size, __func__))
-+		return DIRECT_MAPPING_ERROR;
-+	return dma_addr;
- }
+ 	int ret;
  
- static int dma_direct_map_sg(struct device *dev, struct scatterlist *sgl,
-@@ -44,16 +65,24 @@ static int dma_direct_map_sg(struct device *dev, struct scatterlist *sgl,
- 		BUG_ON(!sg_page(sg));
+-	INIT_RADIX_TREE(&bdi->cgwb_tree, GFP_ATOMIC);
++	xa_init(&bdi->cgwb_xa);
+ 	bdi->cgwb_congested_tree = RB_ROOT;
  
- 		sg_dma_address(sg) = phys_to_dma(dev, sg_phys(sg));
-+		if (!check_addr(dev, sg_dma_address(sg), sg->length, __func__))
-+			return 0;
- 		sg_dma_len(sg) = sg->length;
- 	}
+ 	ret = wb_init(&bdi->wb, bdi, 1, GFP_KERNEL);
+@@ -717,15 +716,14 @@ static int cgwb_bdi_init(struct backing_dev_info *bdi)
  
- 	return nents;
- }
+ static void cgwb_bdi_unregister(struct backing_dev_info *bdi)
+ {
+-	struct radix_tree_iter iter;
+-	void **slot;
++	XA_STATE(xas, &bdi->cgwb_xa, 0);
+ 	struct bdi_writeback *wb;
  
-+static int dma_direct_mapping_error(struct device *dev, dma_addr_t dma_addr)
-+{
-+	return dma_addr = DIRECT_MAPPING_ERROR;
-+}
-+
- const struct dma_map_ops dma_direct_ops = {
- 	.alloc			= dma_direct_alloc,
- 	.free			= dma_direct_free,
- 	.map_page		= dma_direct_map_page,
- 	.map_sg			= dma_direct_map_sg,
-+	.mapping_error		= dma_direct_mapping_error,
- };
- EXPORT_SYMBOL(dma_direct_ops);
+ 	WARN_ON(test_bit(WB_registered, &bdi->wb.state));
+ 
+ 	spin_lock_irq(&cgwb_lock);
+-	radix_tree_for_each_slot(slot, &bdi->cgwb_tree, &iter, 0)
+-		cgwb_kill(*slot);
++	xas_for_each(&xas, wb, ULONG_MAX)
++		cgwb_kill(wb);
+ 
+ 	while (!list_empty(&bdi->wb_list)) {
+ 		wb = list_first_entry(&bdi->wb_list, struct bdi_writeback,
 -- 
-2.14.2
+2.15.1
 
