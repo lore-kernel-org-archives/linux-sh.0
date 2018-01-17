@@ -1,7 +1,7 @@
 From: Matthew Wilcox <willy@infradead.org>
-Date: Wed, 17 Jan 2018 20:21:07 +0000
-Subject: [PATCH v6 43/99] shmem: Convert find_swap_entry to XArray
-Message-Id: <20180117202203.19756-44-willy@infradead.org>
+Date: Wed, 17 Jan 2018 20:21:51 +0000
+Subject: [PATCH v6 87/99] btrfs: Convert reada_extents to XArray
+Message-Id: <20180117202203.19756-88-willy@infradead.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20180117202203.19756-1-willy@infradead.org>
 In-Reply-To: <20180117202203.19756-1-willy@infradead.org>
@@ -13,57 +13,131 @@ Cc: Matthew Wilcox <mawilcox@microsoft.com>, linux-mm@kvack.org, linux-fsdevel@v
 
 From: Matthew Wilcox <mawilcox@microsoft.com>
 
-This is a 1:1 conversion.
+Straightforward conversion.
 
 Signed-off-by: Matthew Wilcox <mawilcox@microsoft.com>
 ---
- mm/shmem.c | 23 +++++++++++------------
- 1 file changed, 11 insertions(+), 12 deletions(-)
+ fs/btrfs/reada.c   | 32 +++++++++++++++++---------------
+ fs/btrfs/volumes.c |  2 +-
+ fs/btrfs/volumes.h |  2 +-
+ 3 files changed, 19 insertions(+), 17 deletions(-)
 
-diff --git a/mm/shmem.c b/mm/shmem.c
-index 654f367aca90..ce285ae635ea 100644
---- a/mm/shmem.c
-+++ b/mm/shmem.c
-@@ -1076,28 +1076,27 @@ static void shmem_evict_inode(struct inode *inode)
- 	clear_inode(inode);
- }
- 
--static unsigned long find_swap_entry(struct radix_tree_root *root, void *item)
-+static unsigned long find_swap_entry(struct xarray *xa, void *item)
- {
--	struct radix_tree_iter iter;
--	void **slot;
--	unsigned long found = -1;
-+	XA_STATE(xas, xa, 0);
- 	unsigned int checked = 0;
-+	void *entry;
- 
- 	rcu_read_lock();
--	radix_tree_for_each_slot(slot, root, &iter, 0) {
--		if (*slot = item) {
--			found = iter.index;
-+	xas_for_each(&xas, entry, ULONG_MAX) {
-+		if (xas_retry(&xas, entry))
-+			continue;
-+		if (entry = item)
- 			break;
--		}
- 		checked++;
--		if ((checked % 4096) != 0)
-+		if ((checked % XA_CHECK_SCHED) != 0)
+diff --git a/fs/btrfs/reada.c b/fs/btrfs/reada.c
+index ef8e84ff2012..8100f1565250 100644
+--- a/fs/btrfs/reada.c
++++ b/fs/btrfs/reada.c
+@@ -438,13 +438,14 @@ static struct reada_extent *reada_find_extent(struct btrfs_fs_info *fs_info,
  			continue;
--		slot = radix_tree_iter_resume(slot, &iter);
-+		xas_pause(&xas);
- 		cond_resched_rcu();
- 	}
--
- 	rcu_read_unlock();
--	return found;
-+
-+	return xas_invalid(&xas) ? -1 : xas.xa_index;
- }
+ 		}
+ 		prev_dev = dev;
+-		ret = radix_tree_insert(&dev->reada_extents, index, re);
++		ret = xa_insert(&dev->reada_extents, index, re,
++					GFP_NOFS & ~__GFP_DIRECT_RECLAIM);
+ 		if (ret) {
+ 			while (--nzones >= 0) {
+ 				dev = re->zones[nzones]->device;
+ 				BUG_ON(dev = NULL);
+ 				/* ignore whether the entry was inserted */
+-				radix_tree_delete(&dev->reada_extents, index);
++				xa_erase(&dev->reada_extents, index);
+ 			}
+ 			radix_tree_delete(&fs_info->reada_tree, index);
+ 			spin_unlock(&fs_info->reada_lock);
+@@ -504,7 +505,7 @@ static void reada_extent_put(struct btrfs_fs_info *fs_info,
+ 	for (i = 0; i < re->nzones; ++i) {
+ 		struct reada_zone *zone = re->zones[i];
  
- /*
+-		radix_tree_delete(&zone->device->reada_extents, index);
++		xa_erase(&zone->device->reada_extents, index);
+ 	}
+ 
+ 	spin_unlock(&fs_info->reada_lock);
+@@ -644,6 +645,7 @@ static int reada_start_machine_dev(struct btrfs_device *dev)
+ 	int mirror_num = 0;
+ 	struct extent_buffer *eb = NULL;
+ 	u64 logical;
++	unsigned long index;
+ 	int ret;
+ 	int i;
+ 
+@@ -660,19 +662,19 @@ static int reada_start_machine_dev(struct btrfs_device *dev)
+ 	 * a contiguous block of extents, we could also coagulate them or use
+ 	 * plugging to speed things up
+ 	 */
+-	ret = radix_tree_gang_lookup(&dev->reada_extents, (void **)&re,
+-				     dev->reada_next >> PAGE_SHIFT, 1);
+-	if (ret = 0 || re->logical > dev->reada_curr_zone->end) {
++	index = dev->reada_next >> PAGE_SHIFT;
++	re = xa_find(&dev->reada_extents, &index, ULONG_MAX, XA_PRESENT);
++	if (!re || re->logical > dev->reada_curr_zone->end) {
+ 		ret = reada_pick_zone(dev);
+ 		if (!ret) {
+ 			spin_unlock(&fs_info->reada_lock);
+ 			return 0;
+ 		}
+-		re = NULL;
+-		ret = radix_tree_gang_lookup(&dev->reada_extents, (void **)&re,
+-					dev->reada_next >> PAGE_SHIFT, 1);
++		index = dev->reada_next >> PAGE_SHIFT;
++		re = xa_find(&dev->reada_extents, &index, ULONG_MAX,
++								XA_PRESENT);
+ 	}
+-	if (ret = 0) {
++	if (!re) {
+ 		spin_unlock(&fs_info->reada_lock);
+ 		return 0;
+ 	}
+@@ -828,11 +830,11 @@ static void dump_devs(struct btrfs_fs_info *fs_info, int all)
+ 		cnt = 0;
+ 		index = 0;
+ 		while (all) {
+-			struct reada_extent *re = NULL;
++			struct reada_extent *re;
+ 
+-			ret = radix_tree_gang_lookup(&device->reada_extents,
+-						     (void **)&re, index, 1);
+-			if (ret = 0)
++			re = xa_find(&device->reada_extents, &index, ULONG_MAX,
++								XA_PRESENT);
++			if (!re)
+ 				break;
+ 			pr_debug("  re: logical %llu size %u empty %d scheduled %d",
+ 				re->logical, fs_info->nodesize,
+@@ -848,7 +850,7 @@ static void dump_devs(struct btrfs_fs_info *fs_info, int all)
+ 				}
+ 			}
+ 			pr_cont("\n");
+-			index = (re->logical >> PAGE_SHIFT) + 1;
++			index++;
+ 			if (++cnt > 15)
+ 				break;
+ 		}
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 8e683799b436..304c2ef4c557 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -248,7 +248,7 @@ static struct btrfs_device *__alloc_device(void)
+ 	atomic_set(&dev->dev_stats_ccnt, 0);
+ 	btrfs_device_data_ordered_init(dev);
+ 	xa_init(&dev->reada_zones);
+-	INIT_RADIX_TREE(&dev->reada_extents, GFP_NOFS & ~__GFP_DIRECT_RECLAIM);
++	xa_init(&dev->reada_extents);
+ 
+ 	return dev;
+ }
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index aeabe03d3e44..0e0c04e2613c 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -140,7 +140,7 @@ struct btrfs_device {
+ 	u64 reada_next;
+ 	struct reada_zone *reada_curr_zone;
+ 	struct xarray reada_zones;
+-	struct radix_tree_root reada_extents;
++	struct xarray reada_extents;
+ 
+ 	/* disk I/O failure stats. For detailed description refer to
+ 	 * enum btrfs_dev_stat_values in ioctl.h */
 -- 
 2.15.1
 
