@@ -1,191 +1,171 @@
 From: Matthew Wilcox <willy@infradead.org>
-Date: Wed, 17 Jan 2018 20:21:54 +0000
-Subject: [PATCH v6 90/99] btrfs: Convert delayed_nodes_tree to XArray
-Message-Id: <20180117202203.19756-91-willy@infradead.org>
+Date: Wed, 17 Jan 2018 20:21:58 +0000
+Subject: [PATCH v6 94/99] f2fs: Convert extent_tree_root to XArray
+Message-Id: <20180117202203.19756-95-willy@infradead.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20180117202203.19756-1-willy@infradead.org>
-In-Reply-To: <20180117202203.19756-1-willy@infradead.org>
+In-Reply-To: <20180117202203.19756-1-willy-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: linux-s390@vger.kernel.org, David Howells <dhowells@redhat.com>, linux-nilfs@vger.kernel.org, Matthew Wilcox <mawilcox@microsoft.com>, linux-sh@vger.kernel.org, intel-gfx@lists.freedesktop.org, linux-usb@vger.kernel.org, linux-remoteproc@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net, linux-xfs@vger.kernel.org, linux-mm@kvack.org, iommu@lists.linux-foundation.org, Stefano Stabellini <sstabellini@kernel.org>, linux-fsdevel@vger.kernel.org, cgroups@vger.kernel.org, Bjorn Andersson <bjorn.andersson@linaro.org>, linux-btrfs@vger.kernel.org
+To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Matthew Wilcox <mawilcox-0li6OtcxBFHby3iVrkZq2A@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-f2fs-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, linux-nilfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-btrfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-xfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Bjorn Andersson <bjorn.andersson-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, Stefano Stabellini <sstabellini-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-remoteproc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, intel-gfx-PD4FTy7X32lNgt0PjOBp9y5qC8QIuHrW@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
 From: Matthew Wilcox <mawilcox@microsoft.com>
 
-Rename it to just 'delayed_nodes' and remove it from the protection of
-btrfs_root->inode_lock.
+Rename it to extent_array and use the xa_lock in place of the
+extent_tree_lock mutex.
 
 Signed-off-by: Matthew Wilcox <mawilcox@microsoft.com>
 ---
- fs/btrfs/ctree.h         |  8 +++---
- fs/btrfs/delayed-inode.c | 65 ++++++++++++++++--------------------------------
- fs/btrfs/disk-io.c       |  2 +-
- fs/btrfs/inode.c         |  2 +-
- 4 files changed, 27 insertions(+), 50 deletions(-)
+ fs/f2fs/extent_cache.c | 59 +++++++++++++++++++++++++-------------------------
+ fs/f2fs/f2fs.h         |  3 +--
+ 2 files changed, 30 insertions(+), 32 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 87984ce3a4c2..9acfdc623d15 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1219,11 +1219,9 @@ struct btrfs_root {
- 	/* red-black tree that keeps track of in-memory inodes */
- 	struct rb_root inode_tree;
+diff --git a/fs/f2fs/extent_cache.c b/fs/f2fs/extent_cache.c
+index ff2352a0ed15..da5f3bd1808d 100644
+--- a/fs/f2fs/extent_cache.c
++++ b/fs/f2fs/extent_cache.c
+@@ -250,25 +250,25 @@ static struct extent_tree *__grab_extent_tree(struct inode *inode)
+ 	struct extent_tree *et;
+ 	nid_t ino = inode->i_ino;
  
--	/*
--	 * radix tree that keeps track of delayed nodes of every inode,
--	 * protected by inode_lock
--	 */
--	struct radix_tree_root delayed_nodes_tree;
-+	/* track delayed nodes of every inode */
-+	struct xarray delayed_nodes;
+-	mutex_lock(&sbi->extent_tree_lock);
+-	et = radix_tree_lookup(&sbi->extent_tree_root, ino);
+-	if (!et) {
+-		et = f2fs_kmem_cache_alloc(extent_tree_slab, GFP_NOFS);
+-		f2fs_radix_tree_insert(&sbi->extent_tree_root, ino, et);
+-		memset(et, 0, sizeof(struct extent_tree));
+-		et->ino = ino;
+-		et->root = RB_ROOT;
+-		et->cached_en = NULL;
+-		rwlock_init(&et->lock);
+-		INIT_LIST_HEAD(&et->list);
+-		atomic_set(&et->node_cnt, 0);
+-		atomic_inc(&sbi->total_ext_tree);
+-	} else {
++	et = xa_load(&sbi->extent_array, ino);
++	if (et) {
+ 		atomic_dec(&sbi->total_zombie_tree);
+ 		list_del_init(&et->list);
++		goto out;
+ 	}
+-	mutex_unlock(&sbi->extent_tree_lock);
+ 
++	et = f2fs_kmem_cache_alloc(extent_tree_slab, GFP_NOFS | __GFP_ZERO);
++	et->ino = ino;
++	et->root = RB_ROOT;
++	et->cached_en = NULL;
++	rwlock_init(&et->lock);
++	INIT_LIST_HEAD(&et->list);
++	atomic_set(&et->node_cnt, 0);
 +
- 	/*
- 	 * right now this just gets used so that a root has its own devid
- 	 * for stat.  It may be used for more later
-diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-index 056276101c63..156a762f3809 100644
---- a/fs/btrfs/delayed-inode.c
-+++ b/fs/btrfs/delayed-inode.c
-@@ -86,7 +86,7 @@ static struct btrfs_delayed_node *btrfs_get_delayed_node(
++	xa_store(&sbi->extent_array, ino, et, GFP_NOFS);
++	atomic_inc(&sbi->total_ext_tree);
++
++out:
+ 	/* never died until evict_inode */
+ 	F2FS_I(inode)->extent_tree = et;
+ 
+@@ -622,7 +622,7 @@ unsigned int f2fs_shrink_extent_tree(struct f2fs_sb_info *sbi, int nr_shrink)
+ 	if (!atomic_read(&sbi->total_zombie_tree))
+ 		goto free_node;
+ 
+-	if (!mutex_trylock(&sbi->extent_tree_lock))
++	if (!xa_trylock(&sbi->extent_array))
+ 		goto out;
+ 
+ 	/* 1. remove unreferenced extent tree */
+@@ -634,7 +634,7 @@ unsigned int f2fs_shrink_extent_tree(struct f2fs_sb_info *sbi, int nr_shrink)
+ 		}
+ 		f2fs_bug_on(sbi, atomic_read(&et->node_cnt));
+ 		list_del_init(&et->list);
+-		radix_tree_delete(&sbi->extent_tree_root, et->ino);
++		xa_erase(&sbi->extent_array, et->ino);
+ 		kmem_cache_free(extent_tree_slab, et);
+ 		atomic_dec(&sbi->total_ext_tree);
+ 		atomic_dec(&sbi->total_zombie_tree);
+@@ -642,13 +642,13 @@ unsigned int f2fs_shrink_extent_tree(struct f2fs_sb_info *sbi, int nr_shrink)
+ 
+ 		if (node_cnt + tree_cnt >= nr_shrink)
+ 			goto unlock_out;
+-		cond_resched();
++		cond_resched_lock(&sbi->extent_array.xa_lock);
+ 	}
+-	mutex_unlock(&sbi->extent_tree_lock);
++	xa_unlock(&sbi->extent_array);
+ 
+ free_node:
+ 	/* 2. remove LRU extent entries */
+-	if (!mutex_trylock(&sbi->extent_tree_lock))
++	if (!xa_trylock(&sbi->extent_array))
+ 		goto out;
+ 
+ 	remained = nr_shrink - (node_cnt + tree_cnt);
+@@ -678,7 +678,7 @@ unsigned int f2fs_shrink_extent_tree(struct f2fs_sb_info *sbi, int nr_shrink)
+ 	spin_unlock(&sbi->extent_lock);
+ 
+ unlock_out:
+-	mutex_unlock(&sbi->extent_tree_lock);
++	xa_unlock(&sbi->extent_array);
+ out:
+ 	trace_f2fs_shrink_extent_tree(sbi, node_cnt, tree_cnt);
+ 
+@@ -725,23 +725,23 @@ void f2fs_destroy_extent_tree(struct inode *inode)
+ 
+ 	if (inode->i_nlink && !is_bad_inode(inode) &&
+ 					atomic_read(&et->node_cnt)) {
+-		mutex_lock(&sbi->extent_tree_lock);
++		xa_lock(&sbi->extent_array);
+ 		list_add_tail(&et->list, &sbi->zombie_list);
+ 		atomic_inc(&sbi->total_zombie_tree);
+-		mutex_unlock(&sbi->extent_tree_lock);
++		xa_unlock(&sbi->extent_array);
+ 		return;
  	}
  
- 	spin_lock(&root->inode_lock);
--	node = radix_tree_lookup(&root->delayed_nodes_tree, ino);
-+	node = xa_load(&root->delayed_nodes, ino);
+ 	/* free all extent info belong to this extent tree */
+ 	node_cnt = f2fs_destroy_extent_node(inode);
  
- 	if (node) {
- 		if (btrfs_inode->delayed_node) {
-@@ -131,10 +131,9 @@ static struct btrfs_delayed_node *btrfs_get_delayed_node(
- static struct btrfs_delayed_node *btrfs_get_or_create_delayed_node(
- 		struct btrfs_inode *btrfs_inode)
+-	/* delete extent tree entry in radix tree */
+-	mutex_lock(&sbi->extent_tree_lock);
++	/* delete extent from array */
++	xa_lock(&sbi->extent_array);
+ 	f2fs_bug_on(sbi, atomic_read(&et->node_cnt));
+-	radix_tree_delete(&sbi->extent_tree_root, inode->i_ino);
+-	kmem_cache_free(extent_tree_slab, et);
++	__xa_erase(&sbi->extent_array, inode->i_ino);
+ 	atomic_dec(&sbi->total_ext_tree);
+-	mutex_unlock(&sbi->extent_tree_lock);
++	xa_unlock(&sbi->extent_array);
++	kmem_cache_free(extent_tree_slab, et);
+ 
+ 	F2FS_I(inode)->extent_tree = NULL;
+ 
+@@ -787,8 +787,7 @@ void f2fs_update_extent_cache_range(struct dnode_of_data *dn,
+ 
+ void init_extent_cache_info(struct f2fs_sb_info *sbi)
  {
--	struct btrfs_delayed_node *node;
-+	struct btrfs_delayed_node *node, *exists;
- 	struct btrfs_root *root = btrfs_inode->root;
- 	u64 ino = btrfs_ino(btrfs_inode);
--	int ret;
+-	INIT_RADIX_TREE(&sbi->extent_tree_root, GFP_NOIO);
+-	mutex_init(&sbi->extent_tree_lock);
++	xa_init(&sbi->extent_array);
+ 	INIT_LIST_HEAD(&sbi->extent_list);
+ 	spin_lock_init(&sbi->extent_lock);
+ 	atomic_set(&sbi->total_ext_tree, 0);
+diff --git a/fs/f2fs/f2fs.h b/fs/f2fs/f2fs.h
+index b3ee784b49bc..4eacef9c7274 100644
+--- a/fs/f2fs/f2fs.h
++++ b/fs/f2fs/f2fs.h
+@@ -1064,8 +1064,7 @@ struct f2fs_sb_info {
+ 	spinlock_t inode_lock[NR_INODE_TYPE];	/* for dirty inode list lock */
  
- again:
- 	node = btrfs_get_delayed_node(btrfs_inode);
-@@ -149,23 +148,18 @@ static struct btrfs_delayed_node *btrfs_get_or_create_delayed_node(
- 	/* cached in the btrfs inode and can be accessed */
- 	refcount_set(&node->refs, 2);
- 
--	ret = radix_tree_preload(GFP_NOFS);
--	if (ret) {
-+	xa_lock(&root->delayed_nodes);
-+	exists = __xa_cmpxchg(&root->delayed_nodes, ino, NULL, node, GFP_NOFS);
-+	if (unlikely(exists)) {
-+		int ret = xa_err(exists);
-+		xa_unlock(&root->delayed_nodes);
- 		kmem_cache_free(delayed_node_cache, node);
-+		if (ret = -EEXIST)
-+			goto again;
- 		return ERR_PTR(ret);
- 	}
--
--	spin_lock(&root->inode_lock);
--	ret = radix_tree_insert(&root->delayed_nodes_tree, ino, node);
--	if (ret = -EEXIST) {
--		spin_unlock(&root->inode_lock);
--		kmem_cache_free(delayed_node_cache, node);
--		radix_tree_preload_end();
--		goto again;
--	}
- 	btrfs_inode->delayed_node = node;
--	spin_unlock(&root->inode_lock);
--	radix_tree_preload_end();
-+	xa_unlock(&root->delayed_nodes);
- 
- 	return node;
- }
-@@ -278,15 +272,12 @@ static void __btrfs_release_delayed_node(
- 	if (refcount_dec_and_test(&delayed_node->refs)) {
- 		struct btrfs_root *root = delayed_node->root;
- 
--		spin_lock(&root->inode_lock);
- 		/*
- 		 * Once our refcount goes to zero, nobody is allowed to bump it
- 		 * back up.  We can delete it now.
- 		 */
- 		ASSERT(refcount_read(&delayed_node->refs) = 0);
--		radix_tree_delete(&root->delayed_nodes_tree,
--				  delayed_node->inode_id);
--		spin_unlock(&root->inode_lock);
-+		xa_erase(&root->delayed_nodes, delayed_node->inode_id);
- 		kmem_cache_free(delayed_node_cache, delayed_node);
- 	}
- }
-@@ -1926,31 +1917,19 @@ void btrfs_kill_delayed_inode_items(struct btrfs_inode *inode)
- 
- void btrfs_kill_all_delayed_nodes(struct btrfs_root *root)
- {
--	u64 inode_id = 0;
--	struct btrfs_delayed_node *delayed_nodes[8];
--	int i, n;
--
--	while (1) {
--		spin_lock(&root->inode_lock);
--		n = radix_tree_gang_lookup(&root->delayed_nodes_tree,
--					   (void **)delayed_nodes, inode_id,
--					   ARRAY_SIZE(delayed_nodes));
--		if (!n) {
--			spin_unlock(&root->inode_lock);
--			break;
--		}
--
--		inode_id = delayed_nodes[n - 1]->inode_id + 1;
--
--		for (i = 0; i < n; i++)
--			refcount_inc(&delayed_nodes[i]->refs);
--		spin_unlock(&root->inode_lock);
-+	struct btrfs_delayed_node *node;
-+	unsigned long inode_id = 0;
- 
--		for (i = 0; i < n; i++) {
--			__btrfs_kill_delayed_node(delayed_nodes[i]);
--			btrfs_release_delayed_node(delayed_nodes[i]);
--		}
-+	xa_lock(&root->delayed_nodes);
-+	xa_for_each(&root->delayed_nodes, node, inode_id, ULONG_MAX,
-+								XA_PRESENT) {
-+		refcount_inc(&node->refs);
-+		xa_unlock(&root->delayed_nodes);
-+		__btrfs_kill_delayed_node(node);
-+		btrfs_release_delayed_node(node);
-+		xa_lock(&root->delayed_nodes);
- 	}
-+	xa_unlock(&root->delayed_nodes);
- }
- 
- void btrfs_destroy_delayed_inodes(struct btrfs_fs_info *fs_info)
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 650d1350b64d..593be6c53fae 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1149,7 +1149,7 @@ static void __setup_root(struct btrfs_root *root, struct btrfs_fs_info *fs_info,
- 	root->nr_ordered_extents = 0;
- 	root->name = NULL;
- 	root->inode_tree = RB_ROOT;
--	INIT_RADIX_TREE(&root->delayed_nodes_tree, GFP_ATOMIC);
-+	xa_init(&root->delayed_nodes);
- 	root->block_rsv = NULL;
- 	root->orphan_block_rsv = NULL;
- 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index d7d2c556d5a2..9b6d08ca6d0c 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -3793,7 +3793,7 @@ static int btrfs_read_locked_inode(struct inode *inode)
- 	 * cache.
- 	 *
- 	 * This is required for both inode re-read from disk and delayed inode
--	 * in delayed_nodes_tree.
-+	 * in delayed_nodes.
- 	 */
- 	if (BTRFS_I(inode)->last_trans = fs_info->generation)
- 		set_bit(BTRFS_INODE_NEEDS_FULL_SYNC,
+ 	/* for extent tree cache */
+-	struct radix_tree_root extent_tree_root;/* cache extent cache entries */
+-	struct mutex extent_tree_lock;	/* locking extent radix tree */
++	struct xarray extent_array;		/* cache extent cache entries */
+ 	struct list_head extent_list;		/* lru list for shrinker */
+ 	spinlock_t extent_lock;			/* locking extent lru list */
+ 	atomic_t total_ext_tree;		/* extent tree count */
 -- 
 2.15.1
 
