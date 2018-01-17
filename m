@@ -1,7 +1,7 @@
 From: Matthew Wilcox <willy@infradead.org>
-Date: Wed, 17 Jan 2018 20:21:59 +0000
-Subject: [PATCH v6 95/99] f2fs: Convert gclist.iroot to XArray
-Message-Id: <20180117202203.19756-96-willy@infradead.org>
+Date: Wed, 17 Jan 2018 20:21:20 +0000
+Subject: [PATCH v6 56/99] lustre: Convert to XArray
+Message-Id: <20180117202203.19756-57-willy@infradead.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20180117202203.19756-1-willy@infradead.org>
 In-Reply-To: <20180117202203.19756-1-willy@infradead.org>
@@ -9,77 +9,89 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-kernel@vger.kernel.org
-Cc: Matthew Wilcox <mawilcox@microsoft.com>, linux-mm@kvack.org, linux-fsdevel@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net, linux-nilfs@vger.kernel.org, linux-btrfs@vger.kernel.org, linux-xfs@vger.kernel.org, linux-usb@vger.kernel.org, Bjorn Andersson <bjorn.andersson@linaro.org>, Stefano Stabellini <sstabellini@kernel.org>, iommu@lists.linux-foundation.org, linux-remoteproc@vger.kernel.org, linux-s390@vger.kernel.org, intel-gfx@lists.freedesktop.org, cgroups@vger.kernel.org, linux-sh@vger.kernel.org, David Howells <dhowells@redhat.com>
+Cc: linux-s390@vger.kernel.org, David Howells <dhowells@redhat.com>, linux-nilfs@vger.kernel.org, Matthew Wilcox <mawilcox@microsoft.com>, linux-sh@vger.kernel.org, intel-gfx@lists.freedesktop.org, linux-usb@vger.kernel.org, linux-remoteproc@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net, linux-xfs@vger.kernel.org, linux-mm@kvack.org, iommu@lists.linux-foundation.org, Stefano Stabellini <sstabellini@kernel.org>, linux-fsdevel@vger.kernel.org, cgroups@vger.kernel.org, Bjorn Andersson <bjorn.andersson@linaro.org>, linux-btrfs@vger.kernel.org
 
 From: Matthew Wilcox <mawilcox@microsoft.com>
 
-Straightforward conversion.
-
 Signed-off-by: Matthew Wilcox <mawilcox@microsoft.com>
 ---
- fs/f2fs/gc.c | 14 +++++++-------
- fs/f2fs/gc.h |  2 +-
- 2 files changed, 8 insertions(+), 8 deletions(-)
+ drivers/staging/lustre/lustre/llite/glimpse.c   | 12 +++++-------
+ drivers/staging/lustre/lustre/mdc/mdc_request.c | 16 ++++++++--------
+ 2 files changed, 13 insertions(+), 15 deletions(-)
 
-diff --git a/fs/f2fs/gc.c b/fs/f2fs/gc.c
-index aac1e02f75df..2b33068dc36b 100644
---- a/fs/f2fs/gc.c
-+++ b/fs/f2fs/gc.c
-@@ -417,7 +417,7 @@ static struct inode *find_gc_inode(struct gc_inode_list *gc_list, nid_t ino)
- {
- 	struct inode_entry *ie;
- 
--	ie = radix_tree_lookup(&gc_list->iroot, ino);
-+	ie = xa_load(&gc_list->iroot, ino);
- 	if (ie)
- 		return ie->inode;
- 	return NULL;
-@@ -434,7 +434,7 @@ static void add_gc_inode(struct gc_inode_list *gc_list, struct inode *inode)
- 	new_ie = f2fs_kmem_cache_alloc(inode_entry_slab, GFP_NOFS);
- 	new_ie->inode = inode;
- 
--	f2fs_radix_tree_insert(&gc_list->iroot, inode->i_ino, new_ie);
-+	xa_store(&gc_list->iroot, inode->i_ino, new_ie, GFP_NOFS);
- 	list_add_tail(&new_ie->list, &gc_list->ilist);
- }
- 
-@@ -442,7 +442,7 @@ static void put_gc_inode(struct gc_inode_list *gc_list)
- {
- 	struct inode_entry *ie, *next_ie;
- 	list_for_each_entry_safe(ie, next_ie, &gc_list->ilist, list) {
--		radix_tree_delete(&gc_list->iroot, ie->inode->i_ino);
-+		xa_erase(&gc_list->iroot, ie->inode->i_ino);
- 		iput(ie->inode);
- 		list_del(&ie->list);
- 		kmem_cache_free(inode_entry_slab, ie);
-@@ -989,10 +989,10 @@ int f2fs_gc(struct f2fs_sb_info *sbi, bool sync,
- 	int ret = 0;
- 	struct cp_control cpc;
- 	unsigned int init_segno = segno;
--	struct gc_inode_list gc_list = {
--		.ilist = LIST_HEAD_INIT(gc_list.ilist),
--		.iroot = RADIX_TREE_INIT(gc_list.iroot, GFP_NOFS),
--	};
-+	struct gc_inode_list gc_list;
-+
-+	xa_init(&gc_list.iroot);
-+	INIT_LIST_HEAD(&gc_list.ilist);
- 
- 	trace_f2fs_gc_begin(sbi->sb, sync, background,
- 				get_pages(sbi, F2FS_DIRTY_NODES),
-diff --git a/fs/f2fs/gc.h b/fs/f2fs/gc.h
-index 9325191fab2d..769259b0a4f6 100644
---- a/fs/f2fs/gc.h
-+++ b/fs/f2fs/gc.h
-@@ -41,7 +41,7 @@ struct f2fs_gc_kthread {
- 
- struct gc_inode_list {
- 	struct list_head ilist;
--	struct radix_tree_root iroot;
-+	struct xarray iroot;
+diff --git a/drivers/staging/lustre/lustre/llite/glimpse.c b/drivers/staging/lustre/lustre/llite/glimpse.c
+index 5f2843da911c..25232fdf5797 100644
+--- a/drivers/staging/lustre/lustre/llite/glimpse.c
++++ b/drivers/staging/lustre/lustre/llite/glimpse.c
+@@ -57,7 +57,7 @@ static const struct cl_lock_descr whole_file = {
  };
  
  /*
+- * Check whether file has possible unwriten pages.
++ * Check whether file has possible unwritten pages.
+  *
+  * \retval 1    file is mmap-ed or has dirty pages
+  *	 0    otherwise
+@@ -66,16 +66,14 @@ blkcnt_t dirty_cnt(struct inode *inode)
+ {
+ 	blkcnt_t cnt = 0;
+ 	struct vvp_object *vob = cl_inode2vvp(inode);
+-	void	      *results[1];
+ 
+-	if (inode->i_mapping)
+-		cnt += radix_tree_gang_lookup_tag(&inode->i_mapping->pages,
+-						  results, 0, 1,
+-						  PAGECACHE_TAG_DIRTY);
++	if (inode->i_mapping && xa_tagged(&inode->i_mapping->pages,
++				PAGECACHE_TAG_DIRTY))
++		cnt = 1;
+ 	if (cnt = 0 && atomic_read(&vob->vob_mmap_cnt) > 0)
+ 		cnt = 1;
+ 
+-	return (cnt > 0) ? 1 : 0;
++	return cnt;
+ }
+ 
+ int cl_glimpse_lock(const struct lu_env *env, struct cl_io *io,
+diff --git a/drivers/staging/lustre/lustre/mdc/mdc_request.c b/drivers/staging/lustre/lustre/mdc/mdc_request.c
+index 2ec79a6b17da..ea23247e9e02 100644
+--- a/drivers/staging/lustre/lustre/mdc/mdc_request.c
++++ b/drivers/staging/lustre/lustre/mdc/mdc_request.c
+@@ -934,17 +934,18 @@ static struct page *mdc_page_locate(struct address_space *mapping, __u64 *hash,
+ 	 * hash _smaller_ than one we are looking for.
+ 	 */
+ 	unsigned long offset = hash_x_index(*hash, hash64);
++	XA_STATE(xas, &mapping->pages, offset);
+ 	struct page *page;
+-	int found;
+ 
+-	xa_lock_irq(&mapping->pages);
+-	found = radix_tree_gang_lookup(&mapping->pages,
+-				       (void **)&page, offset, 1);
+-	if (found > 0 && !xa_is_value(page)) {
++	xas_lock_irq(&xas);
++	page = xas_find(&xas, ULONG_MAX);
++	if (xa_is_value(page))
++		page = NULL;
++	if (page) {
+ 		struct lu_dirpage *dp;
+ 
+ 		get_page(page);
+-		xa_unlock_irq(&mapping->pages);
++		xas_unlock_irq(&xas);
+ 		/*
+ 		 * In contrast to find_lock_page() we are sure that directory
+ 		 * page cannot be truncated (while DLM lock is held) and,
+@@ -992,8 +993,7 @@ static struct page *mdc_page_locate(struct address_space *mapping, __u64 *hash,
+ 			page = ERR_PTR(-EIO);
+ 		}
+ 	} else {
+-		xa_unlock_irq(&mapping->pages);
+-		page = NULL;
++		xas_unlock_irq(&xas);
+ 	}
+ 	return page;
+ }
 -- 
 2.15.1
 
