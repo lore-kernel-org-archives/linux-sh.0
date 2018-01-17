@@ -1,7 +1,7 @@
 From: Matthew Wilcox <willy@infradead.org>
-Date: Wed, 17 Jan 2018 20:21:46 +0000
-Subject: [PATCH v6 82/99] s390: Convert gmap to XArray
-Message-Id: <20180117202203.19756-83-willy@infradead.org>
+Date: Wed, 17 Jan 2018 20:21:43 +0000
+Subject: [PATCH v6 79/99] blk-cgroup: Convert to XArray
+Message-Id: <20180117202203.19756-80-willy@infradead.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20180117202203.19756-1-willy@infradead.org>
 In-Reply-To: <20180117202203.19756-1-willy@infradead.org>
@@ -9,361 +9,268 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-kernel@vger.kernel.org
-Cc: linux-s390@vger.kernel.org, David Howells <dhowells@redhat.com>, linux-nilfs@vger.kernel.org, Matthew Wilcox <mawilcox@microsoft.com>, linux-sh@vger.kernel.org, intel-gfx@lists.freedesktop.org, linux-usb@vger.kernel.org, linux-remoteproc@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net, linux-xfs@vger.kernel.org, linux-mm@kvack.org, iommu@lists.linux-foundation.org, Stefano Stabellini <sstabellini@kernel.org>, linux-fsdevel@vger.kernel.org, cgroups@vger.kernel.org, Bjorn Andersson <bjorn.andersson@linaro.org>, linux-btrfs@vger.kernel.org
+Cc: Matthew Wilcox <mawilcox@microsoft.com>, linux-mm@kvack.org, linux-fsdevel@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net, linux-nilfs@vger.kernel.org, linux-btrfs@vger.kernel.org, linux-xfs@vger.kernel.org, linux-usb@vger.kernel.org, Bjorn Andersson <bjorn.andersson@linaro.org>, Stefano Stabellini <sstabellini@kernel.org>, iommu@lists.linux-foundation.org, linux-remoteproc@vger.kernel.org, linux-s390@vger.kernel.org, intel-gfx@lists.freedesktop.org, cgroups@vger.kernel.org, linux-sh@vger.kernel.org, David Howells <dhowells@redhat.com>
 
 From: Matthew Wilcox <mawilcox@microsoft.com>
 
-The three radix trees in gmap are all converted to the XArray.
-This is another case where the multiple locks held mandates the use
-of the xa_reserve() API.  The gmap_insert_rmap() function is
-considerably simplified by using the advanced API;
-gmap_radix_tree_free() turns out to just be xa_destroy(), and
-gmap_rmap_radix_tree_free() is a nice little iteration followed
-by xa_destroy().
+This call to radix_tree_preload is awkward.  At the point of allocation,
+we're under not only a local lock, but also under the queue lock.  So we
+can't back out, drop the lock and retry the allocation.  Replace this
+preload call with a call to xa_reserve() which will ensure the memory is
+allocated.
 
 Signed-off-by: Matthew Wilcox <mawilcox@microsoft.com>
 ---
- arch/s390/include/asm/gmap.h |  12 ++--
- arch/s390/mm/gmap.c          | 133 +++++++++++++++----------------------------
- 2 files changed, 51 insertions(+), 94 deletions(-)
+ block/bfq-cgroup.c         |  4 ++--
+ block/blk-cgroup.c         | 52 ++++++++++++++++++++++------------------------
+ block/cfq-iosched.c        |  4 ++--
+ include/linux/blk-cgroup.h |  5 ++---
+ 4 files changed, 31 insertions(+), 34 deletions(-)
 
-diff --git a/arch/s390/include/asm/gmap.h b/arch/s390/include/asm/gmap.h
-index e07cce88dfb0..7695a01d19d7 100644
---- a/arch/s390/include/asm/gmap.h
-+++ b/arch/s390/include/asm/gmap.h
-@@ -14,14 +14,14 @@
-  * @list: list head for the mm->context gmap list
-  * @crst_list: list of all crst tables used in the guest address space
-  * @mm: pointer to the parent mm_struct
-- * @guest_to_host: radix tree with guest to host address translation
-- * @host_to_guest: radix tree with pointer to segment table entries
-+ * @guest_to_host: guest to host address translation
-+ * @host_to_guest: pointers to segment table entries
-  * @guest_table_lock: spinlock to protect all entries in the guest page table
-  * @ref_count: reference counter for the gmap structure
-  * @table: pointer to the page directory
-  * @asce: address space control element for gmap page table
-  * @pfault_enabled: defines if pfaults are applicable for the guest
-- * @host_to_rmap: radix tree with gmap_rmap lists
-+ * @host_to_rmap: gmap_rmap lists
-  * @children: list of shadow gmap structures
-  * @pt_list: list of all page tables used in the shadow guest address space
-  * @shadow_lock: spinlock to protect the shadow gmap list
-@@ -35,8 +35,8 @@ struct gmap {
- 	struct list_head list;
- 	struct list_head crst_list;
- 	struct mm_struct *mm;
--	struct radix_tree_root guest_to_host;
--	struct radix_tree_root host_to_guest;
-+	struct xarray guest_to_host;
-+	struct xarray host_to_guest;
- 	spinlock_t guest_table_lock;
- 	atomic_t ref_count;
- 	unsigned long *table;
-@@ -45,7 +45,7 @@ struct gmap {
- 	void *private;
- 	bool pfault_enabled;
- 	/* Additional data for shadow guest address spaces */
--	struct radix_tree_root host_to_rmap;
-+	struct xarray host_to_rmap;
- 	struct list_head children;
- 	struct list_head pt_list;
- 	spinlock_t shadow_lock;
-diff --git a/arch/s390/mm/gmap.c b/arch/s390/mm/gmap.c
-index 05d459b638f5..818a5e80914d 100644
---- a/arch/s390/mm/gmap.c
-+++ b/arch/s390/mm/gmap.c
-@@ -60,9 +60,9 @@ static struct gmap *gmap_alloc(unsigned long limit)
- 	INIT_LIST_HEAD(&gmap->crst_list);
- 	INIT_LIST_HEAD(&gmap->children);
- 	INIT_LIST_HEAD(&gmap->pt_list);
--	INIT_RADIX_TREE(&gmap->guest_to_host, GFP_KERNEL);
--	INIT_RADIX_TREE(&gmap->host_to_guest, GFP_ATOMIC);
--	INIT_RADIX_TREE(&gmap->host_to_rmap, GFP_ATOMIC);
-+	xa_init(&gmap->guest_to_host);
-+	xa_init(&gmap->host_to_guest);
-+	xa_init(&gmap->host_to_rmap);
- 	spin_lock_init(&gmap->guest_table_lock);
- 	spin_lock_init(&gmap->shadow_lock);
- 	atomic_set(&gmap->ref_count, 1);
-@@ -121,55 +121,16 @@ static void gmap_flush_tlb(struct gmap *gmap)
- 		__tlb_flush_global();
- }
+diff --git a/block/bfq-cgroup.c b/block/bfq-cgroup.c
+index da1525ec4c87..0648aaa6498b 100644
+--- a/block/bfq-cgroup.c
++++ b/block/bfq-cgroup.c
+@@ -860,7 +860,7 @@ static int bfq_io_set_weight_legacy(struct cgroup_subsys_state *css,
+ 		return ret;
  
--static void gmap_radix_tree_free(struct radix_tree_root *root)
--{
--	struct radix_tree_iter iter;
--	unsigned long indices[16];
--	unsigned long index;
--	void __rcu **slot;
--	int i, nr;
--
--	/* A radix tree is freed by deleting all of its entries */
--	index = 0;
--	do {
--		nr = 0;
--		radix_tree_for_each_slot(slot, root, &iter, index) {
--			indices[nr] = iter.index;
--			if (++nr = 16)
--				break;
--		}
--		for (i = 0; i < nr; i++) {
--			index = indices[i];
--			radix_tree_delete(root, index);
--		}
--	} while (nr > 0);
--}
--
--static void gmap_rmap_radix_tree_free(struct radix_tree_root *root)
-+static void gmap_rmap_free(struct xarray *xa)
- {
- 	struct gmap_rmap *rmap, *rnext, *head;
--	struct radix_tree_iter iter;
--	unsigned long indices[16];
--	unsigned long index;
--	void __rcu **slot;
--	int i, nr;
--
--	/* A radix tree is freed by deleting all of its entries */
--	index = 0;
--	do {
--		nr = 0;
--		radix_tree_for_each_slot(slot, root, &iter, index) {
--			indices[nr] = iter.index;
--			if (++nr = 16)
--				break;
--		}
--		for (i = 0; i < nr; i++) {
--			index = indices[i];
--			head = radix_tree_delete(root, index);
--			gmap_for_each_rmap_safe(rmap, rnext, head)
--				kfree(rmap);
--		}
--	} while (nr > 0);
-+	unsigned long index = 0;
-+
-+	xa_for_each(xa, head, index, ULONG_MAX, XA_PRESENT) {
-+		gmap_for_each_rmap_safe(rmap, rnext, head)
-+			kfree(rmap);
-+	}
-+	xa_destroy(xa);
- }
- 
- /**
-@@ -188,15 +149,15 @@ static void gmap_free(struct gmap *gmap)
- 	/* Free all segment & region tables. */
- 	list_for_each_entry_safe(page, next, &gmap->crst_list, lru)
- 		__free_pages(page, CRST_ALLOC_ORDER);
--	gmap_radix_tree_free(&gmap->guest_to_host);
--	gmap_radix_tree_free(&gmap->host_to_guest);
-+	xa_destroy(&gmap->guest_to_host);
-+	xa_destroy(&gmap->host_to_guest);
- 
- 	/* Free additional data for a shadow gmap */
- 	if (gmap_is_shadow(gmap)) {
- 		/* Free all page tables. */
- 		list_for_each_entry_safe(page, next, &gmap->pt_list, lru)
- 			page_table_free_pgste(page);
--		gmap_rmap_radix_tree_free(&gmap->host_to_rmap);
-+		gmap_rmap_free(&gmap->host_to_rmap);
- 		/* Release reference to the parent */
- 		gmap_put(gmap->parent);
- 	}
-@@ -358,7 +319,7 @@ static int __gmap_unlink_by_vmaddr(struct gmap *gmap, unsigned long vmaddr)
- 
- 	BUG_ON(gmap_is_shadow(gmap));
- 	spin_lock(&gmap->guest_table_lock);
--	entry = radix_tree_delete(&gmap->host_to_guest, vmaddr >> PMD_SHIFT);
-+	entry = xa_erase(&gmap->host_to_guest, vmaddr >> PMD_SHIFT);
- 	if (entry) {
- 		flush = (*entry != _SEGMENT_ENTRY_EMPTY);
- 		*entry = _SEGMENT_ENTRY_EMPTY;
-@@ -378,7 +339,7 @@ static int __gmap_unmap_by_gaddr(struct gmap *gmap, unsigned long gaddr)
- {
- 	unsigned long vmaddr;
- 
--	vmaddr = (unsigned long) radix_tree_delete(&gmap->guest_to_host,
-+	vmaddr = (unsigned long) xa_erase(&gmap->guest_to_host,
- 						   gaddr >> PMD_SHIFT);
- 	return vmaddr ? __gmap_unlink_by_vmaddr(gmap, vmaddr) : 0;
- }
-@@ -441,9 +402,9 @@ int gmap_map_segment(struct gmap *gmap, unsigned long from,
- 		/* Remove old translation */
- 		flush |= __gmap_unmap_by_gaddr(gmap, to + off);
- 		/* Store new translation */
--		if (radix_tree_insert(&gmap->guest_to_host,
-+		if (xa_is_err(xa_store(&gmap->guest_to_host,
- 				      (to + off) >> PMD_SHIFT,
--				      (void *) from + off))
-+				      (void *) from + off, GFP_KERNEL)))
- 			break;
- 	}
- 	up_write(&gmap->mm->mmap_sem);
-@@ -474,7 +435,7 @@ unsigned long __gmap_translate(struct gmap *gmap, unsigned long gaddr)
- 	unsigned long vmaddr;
- 
- 	vmaddr = (unsigned long)
--		radix_tree_lookup(&gmap->guest_to_host, gaddr >> PMD_SHIFT);
-+		xa_load(&gmap->guest_to_host, gaddr >> PMD_SHIFT);
- 	/* Note: guest_to_host is empty for a shadow gmap */
- 	return vmaddr ? (vmaddr | (gaddr & ~PMD_MASK)) : -EFAULT;
- }
-@@ -588,21 +549,19 @@ int __gmap_link(struct gmap *gmap, unsigned long gaddr, unsigned long vmaddr)
- 	if (pmd_large(*pmd))
- 		return -EFAULT;
- 	/* Link gmap segment table entry location to page table. */
--	rc = radix_tree_preload(GFP_KERNEL);
-+	rc = xa_reserve(&gmap->host_to_guest, vmaddr >> PMD_SHIFT, GFP_KERNEL);
- 	if (rc)
- 		return rc;
- 	ptl = pmd_lock(mm, pmd);
- 	spin_lock(&gmap->guest_table_lock);
- 	if (*table = _SEGMENT_ENTRY_EMPTY) {
--		rc = radix_tree_insert(&gmap->host_to_guest,
--				       vmaddr >> PMD_SHIFT, table);
-+		rc = xa_err(xa_store(&gmap->host_to_guest, vmaddr >> PMD_SHIFT,
-+				table, GFP_NOWAIT | __GFP_NOFAIL));
- 		if (!rc)
- 			*table = pmd_val(*pmd);
--	} else
--		rc = 0;
-+	}
- 	spin_unlock(&gmap->guest_table_lock);
- 	spin_unlock(ptl);
--	radix_tree_preload_end();
- 	return rc;
- }
- 
-@@ -660,7 +619,7 @@ void __gmap_zap(struct gmap *gmap, unsigned long gaddr)
- 	pte_t *ptep;
- 
- 	/* Find the vm address for the guest address */
--	vmaddr = (unsigned long) radix_tree_lookup(&gmap->guest_to_host,
-+	vmaddr = (unsigned long) xa_load(&gmap->guest_to_host,
- 						   gaddr >> PMD_SHIFT);
- 	if (vmaddr) {
- 		vmaddr |= gaddr & ~PMD_MASK;
-@@ -682,8 +641,7 @@ void gmap_discard(struct gmap *gmap, unsigned long from, unsigned long to)
- 	for (gaddr = from; gaddr < to;
- 	     gaddr = (gaddr + PMD_SIZE) & PMD_MASK) {
- 		/* Find the vm address for the guest address */
--		vmaddr = (unsigned long)
--			radix_tree_lookup(&gmap->guest_to_host,
-+		vmaddr = (unsigned long) xa_load(&gmap->guest_to_host,
- 					  gaddr >> PMD_SHIFT);
- 		if (!vmaddr)
- 			continue;
-@@ -1002,29 +960,24 @@ int gmap_read_table(struct gmap *gmap, unsigned long gaddr, unsigned long *val)
- EXPORT_SYMBOL_GPL(gmap_read_table);
- 
- /**
-- * gmap_insert_rmap - add a rmap to the host_to_rmap radix tree
-+ * gmap_insert_rmap - add a rmap to the host_to_rmap
-  * @sg: pointer to the shadow guest address space structure
-  * @vmaddr: vm address associated with the rmap
-  * @rmap: pointer to the rmap structure
-  *
-- * Called with the sg->guest_table_lock
-+ * Called with the sg->guest_table_lock and page table lock held
-  */
- static inline void gmap_insert_rmap(struct gmap *sg, unsigned long vmaddr,
- 				    struct gmap_rmap *rmap)
- {
--	void __rcu **slot;
-+	XA_STATE(xas, &sg->host_to_rmap, vmaddr >> PAGE_SHIFT);
- 
- 	BUG_ON(!gmap_is_shadow(sg));
--	slot = radix_tree_lookup_slot(&sg->host_to_rmap, vmaddr >> PAGE_SHIFT);
--	if (slot) {
--		rmap->next = radix_tree_deref_slot_protected(slot,
--							&sg->guest_table_lock);
--		radix_tree_replace_slot(&sg->host_to_rmap, slot, rmap);
--	} else {
--		rmap->next = NULL;
--		radix_tree_insert(&sg->host_to_rmap, vmaddr >> PAGE_SHIFT,
--				  rmap);
--	}
-+
-+	xas_lock(&xas);
-+	rmap->next = xas_load(&xas);
-+	xas_store(&xas, rmap);
-+	xas_unlock(&xas);
- }
- 
- /**
-@@ -1058,7 +1011,8 @@ static int gmap_protect_rmap(struct gmap *sg, unsigned long raddr,
- 		if (!rmap)
- 			return -ENOMEM;
- 		rmap->raddr = raddr;
--		rc = radix_tree_preload(GFP_KERNEL);
-+		rc = xa_reserve(&sg->host_to_rmap, vmaddr >> PAGE_SHIFT,
-+				GFP_KERNEL);
- 		if (rc) {
- 			kfree(rmap);
- 			return rc;
-@@ -1074,7 +1028,7 @@ static int gmap_protect_rmap(struct gmap *sg, unsigned long raddr,
- 			spin_unlock(&sg->guest_table_lock);
- 			gmap_pte_op_end(ptl);
+ 	ret = 0;
+-	spin_lock_irq(&blkcg->lock);
++	xa_lock_irq(&blkcg->blkg_array);
+ 	bfqgd->weight = (unsigned short)val;
+ 	hlist_for_each_entry(blkg, &blkcg->blkg_list, blkcg_node) {
+ 		struct bfq_group *bfqg = blkg_to_bfqg(blkg);
+@@ -894,7 +894,7 @@ static int bfq_io_set_weight_legacy(struct cgroup_subsys_state *css,
+ 			bfqg->entity.prio_changed = 1;
  		}
+ 	}
+-	spin_unlock_irq(&blkcg->lock);
++	xa_unlock_irq(&blkcg->blkg_array);
+ 
+ 	return ret;
+ }
+diff --git a/block/blk-cgroup.c b/block/blk-cgroup.c
+index 4117524ca45b..37962d52f1a8 100644
+--- a/block/blk-cgroup.c
++++ b/block/blk-cgroup.c
+@@ -146,12 +146,12 @@ struct blkcg_gq *blkg_lookup_slowpath(struct blkcg *blkcg,
+ 	struct blkcg_gq *blkg;
+ 
+ 	/*
+-	 * Hint didn't match.  Look up from the radix tree.  Note that the
++	 * Hint didn't match.  Fetch from the xarray.  Note that the
+ 	 * hint can only be updated under queue_lock as otherwise @blkg
+-	 * could have already been removed from blkg_tree.  The caller is
++	 * could have already been removed from blkg_array.  The caller is
+ 	 * responsible for grabbing queue_lock if @update_hint.
+ 	 */
+-	blkg = radix_tree_lookup(&blkcg->blkg_tree, q->id);
++	blkg = xa_load(&blkcg->blkg_array, q->id);
+ 	if (blkg && blkg->q = q) {
+ 		if (update_hint) {
+ 			lockdep_assert_held(q->queue_lock);
+@@ -223,8 +223,8 @@ static struct blkcg_gq *blkg_create(struct blkcg *blkcg,
+ 	}
+ 
+ 	/* insert */
+-	spin_lock(&blkcg->lock);
+-	ret = radix_tree_insert(&blkcg->blkg_tree, q->id, blkg);
++	xa_lock(&blkcg->blkg_array);
++	ret = xa_err(__xa_store(&blkcg->blkg_array, q->id, blkg, GFP_NOWAIT));
+ 	if (likely(!ret)) {
+ 		hlist_add_head_rcu(&blkg->blkcg_node, &blkcg->blkg_list);
+ 		list_add(&blkg->q_node, &q->blkg_list);
+@@ -237,7 +237,7 @@ static struct blkcg_gq *blkg_create(struct blkcg *blkcg,
+ 		}
+ 	}
+ 	blkg->online = true;
+-	spin_unlock(&blkcg->lock);
++	xa_unlock(&blkcg->blkg_array);
+ 
+ 	if (!ret)
+ 		return blkg;
+@@ -314,7 +314,7 @@ static void blkg_destroy(struct blkcg_gq *blkg)
+ 	int i;
+ 
+ 	lockdep_assert_held(blkg->q->queue_lock);
+-	lockdep_assert_held(&blkcg->lock);
++	lockdep_assert_held(&blkcg->blkg_array.xa_lock);
+ 
+ 	/* Something wrong if we are trying to remove same group twice */
+ 	WARN_ON_ONCE(list_empty(&blkg->q_node));
+@@ -334,7 +334,7 @@ static void blkg_destroy(struct blkcg_gq *blkg)
+ 
+ 	blkg->online = false;
+ 
+-	radix_tree_delete(&blkcg->blkg_tree, blkg->q->id);
++	xa_erase(&blkcg->blkg_array, blkg->q->id);
+ 	list_del_init(&blkg->q_node);
+ 	hlist_del_init_rcu(&blkg->blkcg_node);
+ 
+@@ -368,9 +368,9 @@ static void blkg_destroy_all(struct request_queue *q)
+ 	list_for_each_entry_safe(blkg, n, &q->blkg_list, q_node) {
+ 		struct blkcg *blkcg = blkg->blkcg;
+ 
+-		spin_lock(&blkcg->lock);
++		xa_lock(&blkcg->blkg_array);
+ 		blkg_destroy(blkg);
+-		spin_unlock(&blkcg->lock);
++		xa_unlock(&blkcg->blkg_array);
+ 	}
+ 
+ 	q->root_blkg = NULL;
+@@ -443,7 +443,7 @@ static int blkcg_reset_stats(struct cgroup_subsys_state *css,
+ 	int i;
+ 
+ 	mutex_lock(&blkcg_pol_mutex);
+-	spin_lock_irq(&blkcg->lock);
++	xa_lock_irq(&blkcg->blkg_array);
+ 
+ 	/*
+ 	 * Note that stat reset is racy - it doesn't synchronize against
+@@ -462,7 +462,7 @@ static int blkcg_reset_stats(struct cgroup_subsys_state *css,
+ 		}
+ 	}
+ 
+-	spin_unlock_irq(&blkcg->lock);
++	xa_unlock_irq(&blkcg->blkg_array);
+ 	mutex_unlock(&blkcg_pol_mutex);
+ 	return 0;
+ }
+@@ -1012,7 +1012,7 @@ static void blkcg_css_offline(struct cgroup_subsys_state *css)
+ {
+ 	struct blkcg *blkcg = css_to_blkcg(css);
+ 
+-	spin_lock_irq(&blkcg->lock);
++	xa_lock_irq(&blkcg->blkg_array);
+ 
+ 	while (!hlist_empty(&blkcg->blkg_list)) {
+ 		struct blkcg_gq *blkg = hlist_entry(blkcg->blkg_list.first,
+@@ -1023,13 +1023,13 @@ static void blkcg_css_offline(struct cgroup_subsys_state *css)
+ 			blkg_destroy(blkg);
+ 			spin_unlock(q->queue_lock);
+ 		} else {
+-			spin_unlock_irq(&blkcg->lock);
++			xa_unlock_irq(&blkcg->blkg_array);
+ 			cpu_relax();
+-			spin_lock_irq(&blkcg->lock);
++			xa_lock_irq(&blkcg->blkg_array);
+ 		}
+ 	}
+ 
+-	spin_unlock_irq(&blkcg->lock);
++	xa_unlock_irq(&blkcg->blkg_array);
+ 
+ 	wb_blkcg_offline(blkcg);
+ }
+@@ -1096,8 +1096,7 @@ blkcg_css_alloc(struct cgroup_subsys_state *parent_css)
+ 			pol->cpd_init_fn(cpd);
+ 	}
+ 
+-	spin_lock_init(&blkcg->lock);
+-	INIT_RADIX_TREE(&blkcg->blkg_tree, GFP_NOWAIT | __GFP_NOWARN);
++	xa_init_flags(&blkcg->blkg_array, XA_FLAGS_LOCK_IRQ);
+ 	INIT_HLIST_HEAD(&blkcg->blkg_list);
+ #ifdef CONFIG_CGROUP_WRITEBACK
+ 	INIT_LIST_HEAD(&blkcg->cgwb_list);
+@@ -1132,14 +1131,14 @@ blkcg_css_alloc(struct cgroup_subsys_state *parent_css)
+ int blkcg_init_queue(struct request_queue *q)
+ {
+ 	struct blkcg_gq *new_blkg, *blkg;
+-	bool preloaded;
+ 	int ret;
+ 
+ 	new_blkg = blkg_alloc(&blkcg_root, q, GFP_KERNEL);
+ 	if (!new_blkg)
+ 		return -ENOMEM;
+ 
+-	preloaded = !radix_tree_preload(GFP_KERNEL);
++	if (xa_reserve(&blkcg_root.blkg_array, q->id, GFP_KERNEL))
++		return -ENOMEM;
+ 
+ 	/*
+ 	 * Make sure the root blkg exists and count the existing blkgs.  As
+@@ -1152,11 +1151,10 @@ int blkcg_init_queue(struct request_queue *q)
+ 	spin_unlock_irq(q->queue_lock);
+ 	rcu_read_unlock();
+ 
+-	if (preloaded)
 -		radix_tree_preload_end();
-+		xa_release(&sg->host_to_rmap, vmaddr >> PAGE_SHIFT);
- 		if (rc) {
- 			kfree(rmap);
- 			rc = gmap_pte_op_fixup(parent, paddr, vmaddr, prot);
-@@ -1962,7 +1916,8 @@ int gmap_shadow_page(struct gmap *sg, unsigned long saddr, pte_t pte)
- 			rc = vmaddr;
- 			break;
+-
+-	if (IS_ERR(blkg))
++	if (IS_ERR(blkg)) {
++		xa_erase(&blkcg_root.blkg_array, q->id);
+ 		return PTR_ERR(blkg);
++	}
+ 
+ 	q->root_blkg = blkg;
+ 	q->root_rl.blkg = blkg;
+@@ -1374,8 +1372,8 @@ void blkcg_deactivate_policy(struct request_queue *q,
+ 	__clear_bit(pol->plid, q->blkcg_pols);
+ 
+ 	list_for_each_entry(blkg, &q->blkg_list, q_node) {
+-		/* grab blkcg lock too while removing @pd from @blkg */
+-		spin_lock(&blkg->blkcg->lock);
++		/* grab xa_lock too while removing @pd from @blkg */
++		xa_lock(&blkg->blkcg->blkg_array);
+ 
+ 		if (blkg->pd[pol->plid]) {
+ 			if (pol->pd_offline_fn)
+@@ -1384,7 +1382,7 @@ void blkcg_deactivate_policy(struct request_queue *q,
+ 			blkg->pd[pol->plid] = NULL;
  		}
--		rc = radix_tree_preload(GFP_KERNEL);
-+		rc = xa_reserve(&sg->host_to_rmap, vmaddr >> PAGE_SHIFT,
-+				GFP_KERNEL);
- 		if (rc)
- 			break;
- 		rc = -EAGAIN;
-@@ -1974,7 +1929,8 @@ int gmap_shadow_page(struct gmap *sg, unsigned long saddr, pte_t pte)
- 			if (!tptep) {
- 				spin_unlock(&sg->guest_table_lock);
- 				gmap_pte_op_end(ptl);
--				radix_tree_preload_end();
-+				xa_release(&sg->host_to_rmap,
-+						vmaddr >> PAGE_SHIFT);
- 				break;
- 			}
- 			rc = ptep_shadow_pte(sg->mm, saddr, sptep, tptep, pte);
-@@ -1983,11 +1939,13 @@ int gmap_shadow_page(struct gmap *sg, unsigned long saddr, pte_t pte)
- 				gmap_insert_rmap(sg, vmaddr, rmap);
- 				rmap = NULL;
- 				rc = 0;
-+			} else {
-+				xa_release(&sg->host_to_rmap,
-+						vmaddr >> PAGE_SHIFT);
- 			}
- 			gmap_pte_op_end(ptl);
- 			spin_unlock(&sg->guest_table_lock);
- 		}
--		radix_tree_preload_end();
- 		if (!rc)
- 			break;
- 		rc = gmap_pte_op_fixup(parent, paddr, vmaddr, prot);
-@@ -2030,7 +1988,7 @@ static void gmap_shadow_notify(struct gmap *sg, unsigned long vmaddr,
- 		return;
+ 
+-		spin_unlock(&blkg->blkcg->lock);
++		xa_unlock(&blkg->blkcg->blkg_array);
  	}
- 	/* Remove the page table tree from on specific entry */
--	head = radix_tree_delete(&sg->host_to_rmap, vmaddr >> PAGE_SHIFT);
-+	head = xa_erase(&sg->host_to_rmap, vmaddr >> PAGE_SHIFT);
- 	gmap_for_each_rmap_safe(rmap, rnext, head) {
- 		bits = rmap->raddr & _SHADOW_RMAP_MASK;
- 		raddr = rmap->raddr ^ bits;
-@@ -2078,8 +2036,7 @@ void ptep_notify(struct mm_struct *mm, unsigned long vmaddr,
- 	rcu_read_lock();
- 	list_for_each_entry_rcu(gmap, &mm->context.gmap_list, list) {
- 		spin_lock(&gmap->guest_table_lock);
--		table = radix_tree_lookup(&gmap->host_to_guest,
--					  vmaddr >> PMD_SHIFT);
-+		table = xa_load(&gmap->host_to_guest, vmaddr >> PMD_SHIFT);
- 		if (table)
- 			gaddr = __gmap_segment_gaddr(table) + offset;
- 		spin_unlock(&gmap->guest_table_lock);
+ 
+ 	spin_unlock_irq(q->queue_lock);
+diff --git a/block/cfq-iosched.c b/block/cfq-iosched.c
+index 9f342ef1ad42..a51bef7af8df 100644
+--- a/block/cfq-iosched.c
++++ b/block/cfq-iosched.c
+@@ -1827,7 +1827,7 @@ static int __cfq_set_weight(struct cgroup_subsys_state *css, u64 val,
+ 	if (val < min || val > max)
+ 		return -ERANGE;
+ 
+-	spin_lock_irq(&blkcg->lock);
++	xa_lock_irq(&blkcg->blkg_array);
+ 	cfqgd = blkcg_to_cfqgd(blkcg);
+ 	if (!cfqgd) {
+ 		ret = -EINVAL;
+@@ -1859,7 +1859,7 @@ static int __cfq_set_weight(struct cgroup_subsys_state *css, u64 val,
+ 	}
+ 
+ out:
+-	spin_unlock_irq(&blkcg->lock);
++	xa_unlock_irq(&blkcg->blkg_array);
+ 	return ret;
+ }
+ 
+diff --git a/include/linux/blk-cgroup.h b/include/linux/blk-cgroup.h
+index e9825ff57b15..6278c49d3997 100644
+--- a/include/linux/blk-cgroup.h
++++ b/include/linux/blk-cgroup.h
+@@ -17,7 +17,7 @@
+ #include <linux/cgroup.h>
+ #include <linux/percpu_counter.h>
+ #include <linux/seq_file.h>
+-#include <linux/radix-tree.h>
++#include <linux/xarray.h>
+ #include <linux/blkdev.h>
+ #include <linux/atomic.h>
+ #include <linux/kthread.h>
+@@ -44,9 +44,8 @@ struct blkcg_gq;
+ 
+ struct blkcg {
+ 	struct cgroup_subsys_state	css;
+-	spinlock_t			lock;
+ 
+-	struct radix_tree_root		blkg_tree;
++	struct xarray			blkg_array;
+ 	struct blkcg_gq	__rcu		*blkg_hint;
+ 	struct hlist_head		blkg_list;
+ 
 -- 
 2.15.1
 
