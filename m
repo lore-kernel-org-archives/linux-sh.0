@@ -1,264 +1,230 @@
 From: Matthew Wilcox <willy@infradead.org>
-Date: Wed, 17 Jan 2018 20:21:23 +0000
-Subject: [PATCH v6 59/99] dax: More XArray conversion
-Message-Id: <20180117202203.19756-60-willy@infradead.org>
+Date: Wed, 17 Jan 2018 20:22:00 +0000
+Subject: [PATCH v6 96/99] dma-debug: Convert to XArray
+Message-Id: <20180117202203.19756-97-willy@infradead.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20180117202203.19756-1-willy@infradead.org>
-In-Reply-To: <20180117202203.19756-1-willy@infradead.org>
+In-Reply-To: <20180117202203.19756-1-willy-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: linux-s390@vger.kernel.org, David Howells <dhowells@redhat.com>, linux-nilfs@vger.kernel.org, Matthew Wilcox <mawilcox@microsoft.com>, linux-sh@vger.kernel.org, intel-gfx@lists.freedesktop.org, linux-usb@vger.kernel.org, linux-remoteproc@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net, linux-xfs@vger.kernel.org, linux-mm@kvack.org, iommu@lists.linux-foundation.org, Stefano Stabellini <sstabellini@kernel.org>, linux-fsdevel@vger.kernel.org, cgroups@vger.kernel.org, Bjorn Andersson <bjorn.andersson@linaro.org>, linux-btrfs@vger.kernel.org
+To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Matthew Wilcox <mawilcox-0li6OtcxBFHby3iVrkZq2A@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-f2fs-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, linux-nilfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-btrfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-xfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Bjorn Andersson <bjorn.andersson-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, Stefano Stabellini <sstabellini-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-remoteproc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, intel-gfx-PD4FTy7X32lNgt0PjOBp9y5qC8QIuHrW@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
 From: Matthew Wilcox <mawilcox@microsoft.com>
 
-This time, we want to convert get_unlocked_mapping_entry() to use the
-XArray.  That has a ripple effect, causing us to change the waitqueues
-to hash on the address of the xarray rather than the address of the
-mapping (functionally equivalent), and create a lot of on-the-stack
-xa_state which are only used as a container for passing the xarray and
-the index down to deeper function calls.
-
-Also rename dax_wake_mapping_entry_waiter() to dax_wake_entry().
+This is an unusual way to use the xarray tags.  If any other users
+come up, we can add an xas_get_tags() / xas_set_tags() API, but until
+then I don't want to encourage this kind of abuse.
 
 Signed-off-by: Matthew Wilcox <mawilcox@microsoft.com>
 ---
- fs/dax.c | 72 +++++++++++++++++++++++++++++-----------------------------------
- 1 file changed, 33 insertions(+), 39 deletions(-)
+ lib/dma-debug.c | 105 +++++++++++++++++++++++++-------------------------------
+ 1 file changed, 46 insertions(+), 59 deletions(-)
 
-diff --git a/fs/dax.c b/fs/dax.c
-index 8eab0b56f7f9..d3fe61b95216 100644
---- a/fs/dax.c
-+++ b/fs/dax.c
-@@ -120,7 +120,7 @@ static int dax_is_empty_entry(void *entry)
-  * DAX radix tree locking
+diff --git a/lib/dma-debug.c b/lib/dma-debug.c
+index fb4af570ce04..965b3837d060 100644
+--- a/lib/dma-debug.c
++++ b/lib/dma-debug.c
+@@ -22,7 +22,6 @@
+ #include <linux/dma-mapping.h>
+ #include <linux/sched/task.h>
+ #include <linux/stacktrace.h>
+-#include <linux/radix-tree.h>
+ #include <linux/dma-debug.h>
+ #include <linux/spinlock.h>
+ #include <linux/vmalloc.h>
+@@ -30,6 +29,7 @@
+ #include <linux/uaccess.h>
+ #include <linux/export.h>
+ #include <linux/device.h>
++#include <linux/xarray.h>
+ #include <linux/types.h>
+ #include <linux/sched.h>
+ #include <linux/ctype.h>
+@@ -465,9 +465,8 @@ EXPORT_SYMBOL(debug_dma_dump_mappings);
+  * At any time debug_dma_assert_idle() can be called to trigger a
+  * warning if any cachelines in the given page are in the active set.
   */
- struct exceptional_entry_key {
--	struct address_space *mapping;
-+	struct xarray *xa;
- 	pgoff_t entry_start;
- };
+-static RADIX_TREE(dma_active_cacheline, GFP_NOWAIT);
+-static DEFINE_SPINLOCK(radix_lock);
+-#define ACTIVE_CACHELINE_MAX_OVERLAP ((1 << RADIX_TREE_MAX_TAGS) - 1)
++static DEFINE_XARRAY_FLAGS(dma_active_cacheline, XA_FLAGS_LOCK_IRQ);
++#define ACTIVE_CACHELINE_MAX_OVERLAP ((1 << XA_MAX_TAGS) - 1)
+ #define CACHELINE_PER_PAGE_SHIFT (PAGE_SHIFT - L1_CACHE_SHIFT)
+ #define CACHELINES_PER_PAGE (1 << CACHELINE_PER_PAGE_SHIFT)
  
-@@ -129,9 +129,10 @@ struct wait_exceptional_entry_queue {
- 	struct exceptional_entry_key key;
- };
- 
--static wait_queue_head_t *dax_entry_waitqueue(struct address_space *mapping,
--		pgoff_t index, void *entry, struct exceptional_entry_key *key)
-+static wait_queue_head_t *dax_entry_waitqueue(struct xa_state *xas,
-+		void *entry, struct exceptional_entry_key *key)
- {
-+	unsigned long index = xas->xa_index;
- 	unsigned long hash;
- 
- 	/*
-@@ -142,10 +143,10 @@ static wait_queue_head_t *dax_entry_waitqueue(struct address_space *mapping,
- 	if (dax_is_pmd_entry(entry))
- 		index &= ~PG_PMD_COLOUR;
- 
--	key->mapping = mapping;
-+	key->xa = xas->xa;
- 	key->entry_start = index;
- 
--	hash = hash_long((unsigned long)mapping ^ index, DAX_WAIT_TABLE_BITS);
-+	hash = hash_long((unsigned long)xas->xa ^ index, DAX_WAIT_TABLE_BITS);
- 	return wait_table + hash;
+@@ -477,37 +476,40 @@ static phys_addr_t to_cacheline_number(struct dma_debug_entry *entry)
+ 		(entry->offset >> L1_CACHE_SHIFT);
  }
  
-@@ -156,7 +157,7 @@ static int wake_exceptional_entry_func(wait_queue_entry_t *wait, unsigned int mo
- 	struct wait_exceptional_entry_queue *ewait  		container_of(wait, struct wait_exceptional_entry_queue, wait);
+-static int active_cacheline_read_overlap(phys_addr_t cln)
++static unsigned int active_cacheline_read_overlap(struct xa_state *xas)
+ {
+-	int overlap = 0, i;
++	unsigned int tags = 0;
++	xa_tag_t tag;
  
--	if (key->mapping != ewait->key.mapping ||
-+	if (key->xa != ewait->key.xa ||
- 	    key->entry_start != ewait->key.entry_start)
+-	for (i = RADIX_TREE_MAX_TAGS - 1; i >= 0; i--)
+-		if (radix_tree_tag_get(&dma_active_cacheline, cln, i))
+-			overlap |= 1 << i;
+-	return overlap;
++	for (tag = 0; tag < XA_MAX_TAGS; tag++)
++		if (xas_get_tag(xas, tag))
++			tags |= 1U << tag;
++
++	return tags;
+ }
+ 
+-static int active_cacheline_set_overlap(phys_addr_t cln, int overlap)
++static int active_cacheline_set_overlap(struct xa_state *xas, int overlap)
+ {
+-	int i;
++	xa_tag_t tag;
+ 
+ 	if (overlap > ACTIVE_CACHELINE_MAX_OVERLAP || overlap < 0)
+ 		return overlap;
+ 
+-	for (i = RADIX_TREE_MAX_TAGS - 1; i >= 0; i--)
+-		if (overlap & 1 << i)
+-			radix_tree_tag_set(&dma_active_cacheline, cln, i);
++	for (tag = 0; tag < XA_MAX_TAGS; tag++) {
++		if (overlap & (1U << tag))
++			xas_set_tag(xas, tag);
+ 		else
+-			radix_tree_tag_clear(&dma_active_cacheline, cln, i);
++			xas_clear_tag(xas, tag);
++	}
+ 
+ 	return overlap;
+ }
+ 
+-static void active_cacheline_inc_overlap(phys_addr_t cln)
++static void active_cacheline_inc_overlap(struct xa_state *xas)
+ {
+-	int overlap = active_cacheline_read_overlap(cln);
++	int overlap = active_cacheline_read_overlap(xas);
+ 
+-	overlap = active_cacheline_set_overlap(cln, ++overlap);
++	overlap = active_cacheline_set_overlap(xas, ++overlap);
+ 
+ 	/* If we overflowed the overlap counter then we're potentially
+ 	 * leaking dma-mappings.  Otherwise, if maps and unmaps are
+@@ -517,21 +519,22 @@ static void active_cacheline_inc_overlap(phys_addr_t cln)
+ 	 */
+ 	WARN_ONCE(overlap > ACTIVE_CACHELINE_MAX_OVERLAP,
+ 		  "DMA-API: exceeded %d overlapping mappings of cacheline %pa\n",
+-		  ACTIVE_CACHELINE_MAX_OVERLAP, &cln);
++		  ACTIVE_CACHELINE_MAX_OVERLAP, &xas->xa_index);
+ }
+ 
+-static int active_cacheline_dec_overlap(phys_addr_t cln)
++static int active_cacheline_dec_overlap(struct xa_state *xas)
+ {
+-	int overlap = active_cacheline_read_overlap(cln);
++	int overlap = active_cacheline_read_overlap(xas);
+ 
+-	return active_cacheline_set_overlap(cln, --overlap);
++	return active_cacheline_set_overlap(xas, --overlap);
+ }
+ 
+ static int active_cacheline_insert(struct dma_debug_entry *entry)
+ {
+ 	phys_addr_t cln = to_cacheline_number(entry);
++	XA_STATE(xas, &dma_active_cacheline, cln);
+ 	unsigned long flags;
+-	int rc;
++	struct dma_debug_entry *exists;
+ 
+ 	/* If the device is not writing memory then we don't have any
+ 	 * concerns about the cpu consuming stale data.  This mitigates
+@@ -540,32 +543,32 @@ static int active_cacheline_insert(struct dma_debug_entry *entry)
+ 	if (entry->direction = DMA_TO_DEVICE)
  		return 0;
- 	return autoremove_wake_function(wait, mode, sync, NULL);
-@@ -167,13 +168,12 @@ static int wake_exceptional_entry_func(wait_queue_entry_t *wait, unsigned int mo
-  * The important information it's conveying is whether the entry at
-  * this index used to be a PMD entry.
-  */
--static void dax_wake_mapping_entry_waiter(struct address_space *mapping,
--		pgoff_t index, void *entry, bool wake_all)
-+static void dax_wake_entry(struct xa_state *xas, void *entry, bool wake_all)
- {
- 	struct exceptional_entry_key key;
- 	wait_queue_head_t *wq;
  
--	wq = dax_entry_waitqueue(mapping, index, entry, &key);
-+	wq = dax_entry_waitqueue(xas, entry, &key);
+-	spin_lock_irqsave(&radix_lock, flags);
+-	rc = radix_tree_insert(&dma_active_cacheline, cln, entry);
+-	if (rc = -EEXIST)
+-		active_cacheline_inc_overlap(cln);
+-	spin_unlock_irqrestore(&radix_lock, flags);
++	xas_lock_irqsave(&xas, flags);
++	exists = xas_create(&xas);
++	if (exists)
++		active_cacheline_inc_overlap(&xas);
++	else
++		xas_store(&xas, entry);
++	xas_unlock_irqrestore(&xas, flags);
  
- 	/*
- 	 * Checking for locked entry and prepare_to_wait_exclusive() happens
-@@ -205,10 +205,9 @@ static inline void *lock_slot(struct xa_state *xas)
-  *
-  * Must be called with xa_lock held.
-  */
--static void *get_unlocked_mapping_entry(struct address_space *mapping,
--					pgoff_t index, void ***slotp)
-+static void *get_unlocked_mapping_entry(struct xa_state *xas)
- {
--	void *entry, **slot;
-+	void *entry;
- 	struct wait_exceptional_entry_queue ewait;
- 	wait_queue_head_t *wq;
- 
-@@ -216,22 +215,19 @@ static void *get_unlocked_mapping_entry(struct address_space *mapping,
- 	ewait.wait.func = wake_exceptional_entry_func;
- 
- 	for (;;) {
--		entry = __radix_tree_lookup(&mapping->pages, index, NULL,
--					  &slot);
--		if (!entry ||
--		    WARN_ON_ONCE(!xa_is_value(entry)) || !dax_locked(entry)) {
--			if (slotp)
--				*slotp = slot;
-+		entry = xas_load(xas);
-+		if (!entry || WARN_ON_ONCE(!xa_is_value(entry)) ||
-+		    !dax_locked(entry))
- 			return entry;
--		}
- 
--		wq = dax_entry_waitqueue(mapping, index, entry, &ewait.key);
-+		wq = dax_entry_waitqueue(xas, entry, &ewait.key);
- 		prepare_to_wait_exclusive(wq, &ewait.wait,
- 					  TASK_UNINTERRUPTIBLE);
--		xa_unlock_irq(&mapping->pages);
-+		xas_pause(xas);
-+		xas_unlock_irq(xas);
- 		schedule();
- 		finish_wait(wq, &ewait.wait);
--		xa_lock_irq(&mapping->pages);
-+		xas_lock_irq(xas);
- 	}
+-	return rc;
++	return xas_error(&xas);
  }
  
-@@ -251,7 +247,7 @@ static void dax_unlock_mapping_entry(struct address_space *mapping,
- 	xas_store(&xas, entry);
- 	/* Safe to not call xas_pause here -- we don't touch the array after */
- 	xas_unlock_irq(&xas);
--	dax_wake_mapping_entry_waiter(mapping, index, entry, false);
-+	dax_wake_entry(&xas, entry, false);
+ static void active_cacheline_remove(struct dma_debug_entry *entry)
+ {
+ 	phys_addr_t cln = to_cacheline_number(entry);
++	XA_STATE(xas, &dma_active_cacheline, cln);
+ 	unsigned long flags;
+ 
+ 	/* ...mirror the insert case */
+ 	if (entry->direction = DMA_TO_DEVICE)
+ 		return;
+ 
+-	spin_lock_irqsave(&radix_lock, flags);
+-	/* since we are counting overlaps the final put of the
+-	 * cacheline will occur when the overlap count is 0.
+-	 * active_cacheline_dec_overlap() returns -1 in that case
+-	 */
+-	if (active_cacheline_dec_overlap(cln) < 0)
+-		radix_tree_delete(&dma_active_cacheline, cln);
+-	spin_unlock_irqrestore(&radix_lock, flags);
++	xas_lock_irqsave(&xas, flags);
++	xas_load(&xas);
++	if (active_cacheline_dec_overlap(&xas) < 0)
++		xas_store(&xas, NULL);
++	xas_unlock_irqrestore(&xas, flags);
  }
  
- static void put_locked_mapping_entry(struct address_space *mapping,
-@@ -264,14 +260,13 @@ static void put_locked_mapping_entry(struct address_space *mapping,
-  * Called when we are done with radix tree entry we looked up via
-  * get_unlocked_mapping_entry() and which we didn't lock in the end.
+ /**
+@@ -578,12 +581,8 @@ static void active_cacheline_remove(struct dma_debug_entry *entry)
   */
--static void put_unlocked_mapping_entry(struct address_space *mapping,
--				       pgoff_t index, void *entry)
-+static void put_unlocked_mapping_entry(struct xa_state *xas, void *entry)
+ void debug_dma_assert_idle(struct page *page)
  {
+-	static struct dma_debug_entry *ents[CACHELINES_PER_PAGE];
+-	struct dma_debug_entry *entry = NULL;
+-	void **results = (void **) &ents;
+-	unsigned int nents, i;
+-	unsigned long flags;
+-	phys_addr_t cln;
++	struct dma_debug_entry *entry;
++	unsigned long cln;
+ 
+ 	if (dma_debug_disabled())
+ 		return;
+@@ -591,21 +590,9 @@ void debug_dma_assert_idle(struct page *page)
+ 	if (!page)
+ 		return;
+ 
+-	cln = (phys_addr_t) page_to_pfn(page) << CACHELINE_PER_PAGE_SHIFT;
+-	spin_lock_irqsave(&radix_lock, flags);
+-	nents = radix_tree_gang_lookup(&dma_active_cacheline, results, cln,
+-				       CACHELINES_PER_PAGE);
+-	for (i = 0; i < nents; i++) {
+-		phys_addr_t ent_cln = to_cacheline_number(ents[i]);
+-
+-		if (ent_cln = cln) {
+-			entry = ents[i];
+-			break;
+-		} else if (ent_cln >= cln + CACHELINES_PER_PAGE)
+-			break;
+-	}
+-	spin_unlock_irqrestore(&radix_lock, flags);
+-
++	cln = page_to_pfn(page) << CACHELINE_PER_PAGE_SHIFT;
++	entry = xa_find(&dma_active_cacheline, &cln,
++			cln + CACHELINES_PER_PAGE - 1, XA_PRESENT);
  	if (!entry)
  		return;
  
- 	/* We have to wake up next waiter for the radix tree entry lock */
--	dax_wake_mapping_entry_waiter(mapping, index, entry, false);
-+	dax_wake_entry(xas, entry, false);
- }
- 
- /*
-@@ -308,7 +303,7 @@ static void *grab_mapping_entry(struct address_space *mapping, pgoff_t index,
- 
- restart:
- 	xa_lock_irq(&mapping->pages);
--	entry = get_unlocked_mapping_entry(mapping, index, &slot);
-+	entry = get_unlocked_mapping_entry(&xas);
- 
- 	if (WARN_ON_ONCE(entry && !xa_is_value(entry))) {
- 		entry = ERR_PTR(-EIO);
-@@ -318,8 +313,7 @@ static void *grab_mapping_entry(struct address_space *mapping, pgoff_t index,
- 	if (entry) {
- 		if (size_flag & DAX_PMD) {
- 			if (dax_is_pte_entry(entry)) {
--				put_unlocked_mapping_entry(mapping, index,
--						entry);
-+				put_unlocked_mapping_entry(&xas, entry);
- 				entry = ERR_PTR(-EEXIST);
- 				goto out_unlock;
- 			}
-@@ -382,8 +376,7 @@ static void *grab_mapping_entry(struct address_space *mapping, pgoff_t index,
- 		if (pmd_downgrade) {
- 			radix_tree_delete(&mapping->pages, index);
- 			mapping->nrexceptional--;
--			dax_wake_mapping_entry_waiter(mapping, index, entry,
--					true);
-+			dax_wake_entry(&xas, entry, true);
- 		}
- 
- 		entry = dax_radix_locked_entry(0, size_flag | DAX_EMPTY);
-@@ -417,12 +410,13 @@ static void *grab_mapping_entry(struct address_space *mapping, pgoff_t index,
- static int __dax_invalidate_mapping_entry(struct address_space *mapping,
- 					  pgoff_t index, bool trunc)
- {
-+	XA_STATE(xas, &mapping->pages, index);
- 	int ret = 0;
- 	void *entry;
- 	struct radix_tree_root *pages = &mapping->pages;
- 
- 	xa_lock_irq(&mapping->pages);
--	entry = get_unlocked_mapping_entry(mapping, index, NULL);
-+	entry = get_unlocked_mapping_entry(&xas);
- 	if (!entry || WARN_ON_ONCE(!xa_is_value(entry)))
- 		goto out;
- 	if (!trunc &&
-@@ -433,7 +427,7 @@ static int __dax_invalidate_mapping_entry(struct address_space *mapping,
- 	mapping->nrexceptional--;
- 	ret = 1;
- out:
--	put_unlocked_mapping_entry(mapping, index, entry);
-+	put_unlocked_mapping_entry(&xas, entry);
- 	xa_unlock_irq(&mapping->pages);
- 	return ret;
- }
-@@ -640,7 +634,7 @@ static int dax_writeback_one(struct block_device *bdev,
- {
- 	struct radix_tree_root *pages = &mapping->pages;
- 	XA_STATE(xas, pages, index);
--	void *entry2, **slot, *kaddr;
-+	void *entry2, *kaddr;
- 	long ret = 0, id;
- 	sector_t sector;
- 	pgoff_t pgoff;
-@@ -655,7 +649,7 @@ static int dax_writeback_one(struct block_device *bdev,
- 		return -EIO;
- 
- 	xa_lock_irq(&mapping->pages);
--	entry2 = get_unlocked_mapping_entry(mapping, index, &slot);
-+	entry2 = get_unlocked_mapping_entry(&xas);
- 	/* Entry got punched out / reallocated? */
- 	if (!entry2 || WARN_ON_ONCE(!xa_is_value(entry2)))
- 		goto put_unlocked;
-@@ -733,7 +727,7 @@ static int dax_writeback_one(struct block_device *bdev,
- 	return ret;
- 
-  put_unlocked:
--	put_unlocked_mapping_entry(mapping, index, entry2);
-+	put_unlocked_mapping_entry(&xas, entry2);
- 	xa_unlock_irq(&mapping->pages);
- 	return ret;
- }
-@@ -1503,16 +1497,16 @@ static int dax_insert_pfn_mkwrite(struct vm_fault *vmf,
- 	struct address_space *mapping = vmf->vma->vm_file->f_mapping;
- 	pgoff_t index = vmf->pgoff;
- 	XA_STATE(xas, &mapping->pages, index);
--	void *entry, **slot;
-+	void *entry;
- 	int vmf_ret, error;
- 
- 	xa_lock_irq(&mapping->pages);
--	entry = get_unlocked_mapping_entry(mapping, index, &slot);
-+	entry = get_unlocked_mapping_entry(&xas);
- 	/* Did we race with someone splitting entry or so? */
- 	if (!entry ||
- 	    (pe_size = PE_SIZE_PTE && !dax_is_pte_entry(entry)) ||
- 	    (pe_size = PE_SIZE_PMD && !dax_is_pmd_entry(entry))) {
--		put_unlocked_mapping_entry(mapping, index, entry);
-+		put_unlocked_mapping_entry(&xas, entry);
- 		xa_unlock_irq(&mapping->pages);
- 		trace_dax_insert_pfn_mkwrite_no_entry(mapping->host, vmf,
- 						      VM_FAULT_NOPAGE);
 -- 
 2.15.1
 
