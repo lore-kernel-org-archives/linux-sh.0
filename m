@@ -1,48 +1,121 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 02 Jan 2018 10:49:48 +0000
-Subject: Re: Build regressions/improvements in v4.15-rc6
-Message-Id: <CAMuHMdXEoMH1=yWSnmDkqiZEyaBeR+DOfzVPvhmAgU2kp2zRRw@mail.gmail.com>
+From: Matthew Wilcox <willy@infradead.org>
+Date: Wed, 17 Jan 2018 20:21:19 +0000
+Subject: [PATCH v6 55/99] f2fs: Convert to XArray
+Message-Id: <20180117202203.19756-56-willy@infradead.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1514890072-16256-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1514890072-16256-1-git-send-email-geert@linux-m68k.org>
+References: <20180117202203.19756-1-willy@infradead.org>
+In-Reply-To: <20180117202203.19756-1-willy@infradead.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
-Cc: Linux-sh list <linux-sh@vger.kernel.org>
+To: linux-kernel@vger.kernel.org
+Cc: linux-s390@vger.kernel.org, David Howells <dhowells@redhat.com>, linux-nilfs@vger.kernel.org, Matthew Wilcox <mawilcox@microsoft.com>, linux-sh@vger.kernel.org, intel-gfx@lists.freedesktop.org, linux-usb@vger.kernel.org, linux-remoteproc@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net, linux-xfs@vger.kernel.org, linux-mm@kvack.org, iommu@lists.linux-foundation.org, Stefano Stabellini <sstabellini@kernel.org>, linux-fsdevel@vger.kernel.org, cgroups@vger.kernel.org, Bjorn Andersson <bjorn.andersson@linaro.org>, linux-btrfs@vger.kernel.org
 
-On Tue, Jan 2, 2018 at 11:47 AM, Geert Uytterhoeven
-<geert@linux-m68k.org> wrote:
-> JFYI, when comparing v4.15-rc6[1] to v4.15-rc5[3], the summaries are:
->   - build errors: +1/-2
+From: Matthew Wilcox <mawilcox@microsoft.com>
 
-  + {standard input}: Error: unknown opcode:  => 4554, 3363, 2025,
-1819, 788, 2605, 2035, 6420, 4224, 1442, 3788, 768, 144, 3386, 2702,
-6299, 3263, 1403, 4629, 1777, 4616, 301, 464, 9439, 7321, 2938, 721,
-4287, 1032, 1984, 5457, 2796, 3891, 448, 8820, 7236, 7554, 4308, 273,
-70, 12519, 4236, 9328, 2876, 1307, 5332, 2254, 3913, 9489, 2337, 7557,
-1027, 4275, 4443, 4444, 6426, 6443, 8558, 11347, 14301, 6223, 9815,
-4327, 1329, 6096, 4571, 2099, 7573, 4034, 1458, 8141, 7666, 41, 5299,
-2863, 4566, 2853, 537, 7540, 6514, 5143, 4535, 2994, 1328, 2599, 5271,
-2714, 4172, 6621, 8955, 4617, 11573, 6478, 1469, 5160, 9075, 7523,
-3207, 1362, 1486, 527, 3007, 3636, 5323, 5272, 774, 21710, 6006, 4710,
-3621, 4556, 1545, 1717, 2493, 4578, 8289, 5020, 1404, 4193, 1515,
-11241, 604, 6572, 6181, 46, 1230, 14340, 5509, 4514, 2074, 4607, 379,
-2716, 1150, 12022, 6053, 866, 10521, 5285, 549, 2239, 1933, 2918,
-2193, 9420
+This is a straightforward conversion.
 
-sh4/sh-randconfig
+Signed-off-by: Matthew Wilcox <mawilcox@microsoft.com>
+---
+ fs/f2fs/data.c   |  3 +--
+ fs/f2fs/dir.c    |  5 +----
+ fs/f2fs/inline.c |  6 +-----
+ fs/f2fs/node.c   | 10 ++--------
+ 4 files changed, 5 insertions(+), 19 deletions(-)
 
-> [1] http://kisskb.ellerman.id.au/kisskb/head/30a7acd573899fd8b8ac39236eff6468b195ac7d/ (all 270 configs)
-> [3] http://kisskb.ellerman.id.au/kisskb/head/464e1d5f23cca236b930ef068c328a64cab78fb1/ (all 270 configs)
+diff --git a/fs/f2fs/data.c b/fs/f2fs/data.c
+index c8f6d9806896..1f3f192f152f 100644
+--- a/fs/f2fs/data.c
++++ b/fs/f2fs/data.c
+@@ -2175,8 +2175,7 @@ void f2fs_set_page_dirty_nobuffers(struct page *page)
+ 	xa_lock_irqsave(&mapping->pages, flags);
+ 	WARN_ON_ONCE(!PageUptodate(page));
+ 	account_page_dirtied(page, mapping);
+-	radix_tree_tag_set(&mapping->pages,
+-			page_index(page), PAGECACHE_TAG_DIRTY);
++	__xa_set_tag(&mapping->pages, page_index(page), PAGECACHE_TAG_DIRTY);
+ 	xa_unlock_irqrestore(&mapping->pages, flags);
+ 	unlock_page_memcg(page);
+ 
+diff --git a/fs/f2fs/dir.c b/fs/f2fs/dir.c
+index b5515ea6bb2f..296070016ec9 100644
+--- a/fs/f2fs/dir.c
++++ b/fs/f2fs/dir.c
+@@ -708,7 +708,6 @@ void f2fs_delete_entry(struct f2fs_dir_entry *dentry, struct page *page,
+ 	unsigned int bit_pos;
+ 	int slots = GET_DENTRY_SLOTS(le16_to_cpu(dentry->name_len));
+ 	struct address_space *mapping = page_mapping(page);
+-	unsigned long flags;
+ 	int i;
+ 
+ 	f2fs_update_time(F2FS_I_SB(dir), REQ_TIME);
+@@ -739,10 +738,8 @@ void f2fs_delete_entry(struct f2fs_dir_entry *dentry, struct page *page,
+ 
+ 	if (bit_pos = NR_DENTRY_IN_BLOCK &&
+ 			!truncate_hole(dir, page->index, page->index + 1)) {
+-		xa_lock_irqsave(&mapping->pages, flags);
+-		radix_tree_tag_clear(&mapping->pages, page_index(page),
++		xa_clear_tag(&mapping->pages, page_index(page),
+ 				     PAGECACHE_TAG_DIRTY);
+-		xa_unlock_irqrestore(&mapping->pages, flags);
+ 
+ 		clear_page_dirty_for_io(page);
+ 		ClearPagePrivate(page);
+diff --git a/fs/f2fs/inline.c b/fs/f2fs/inline.c
+index 7858b8e15f33..d3c3f84beca9 100644
+--- a/fs/f2fs/inline.c
++++ b/fs/f2fs/inline.c
+@@ -204,7 +204,6 @@ int f2fs_write_inline_data(struct inode *inode, struct page *page)
+ 	void *src_addr, *dst_addr;
+ 	struct dnode_of_data dn;
+ 	struct address_space *mapping = page_mapping(page);
+-	unsigned long flags;
+ 	int err;
+ 
+ 	set_new_dnode(&dn, inode, NULL, NULL, 0);
+@@ -226,10 +225,7 @@ int f2fs_write_inline_data(struct inode *inode, struct page *page)
+ 	kunmap_atomic(src_addr);
+ 	set_page_dirty(dn.inode_page);
+ 
+-	xa_lock_irqsave(&mapping->pages, flags);
+-	radix_tree_tag_clear(&mapping->pages, page_index(page),
+-			     PAGECACHE_TAG_DIRTY);
+-	xa_unlock_irqrestore(&mapping->pages, flags);
++	xa_clear_tag(&mapping->pages, page_index(page), PAGECACHE_TAG_DIRTY);
+ 
+ 	set_inode_flag(inode, FI_APPEND_WRITE);
+ 	set_inode_flag(inode, FI_DATA_EXIST);
+diff --git a/fs/f2fs/node.c b/fs/f2fs/node.c
+index 6b64a3009d55..0a6d5c2f996e 100644
+--- a/fs/f2fs/node.c
++++ b/fs/f2fs/node.c
+@@ -88,14 +88,10 @@ bool available_free_memory(struct f2fs_sb_info *sbi, int type)
+ static void clear_node_page_dirty(struct page *page)
+ {
+ 	struct address_space *mapping = page->mapping;
+-	unsigned int long flags;
+ 
+ 	if (PageDirty(page)) {
+-		xa_lock_irqsave(&mapping->pages, flags);
+-		radix_tree_tag_clear(&mapping->pages,
+-				page_index(page),
++		xa_clear_tag(&mapping->pages, page_index(page),
+ 				PAGECACHE_TAG_DIRTY);
+-		xa_unlock_irqrestore(&mapping->pages, flags);
+ 
+ 		clear_page_dirty_for_io(page);
+ 		dec_page_count(F2FS_M_SB(mapping), F2FS_DIRTY_NODES);
+@@ -1142,9 +1138,7 @@ void ra_node_page(struct f2fs_sb_info *sbi, nid_t nid)
+ 		return;
+ 	f2fs_bug_on(sbi, check_nid_range(sbi, nid));
+ 
+-	rcu_read_lock();
+-	apage = radix_tree_lookup(&NODE_MAPPING(sbi)->pages, nid);
+-	rcu_read_unlock();
++	apage = xa_load(&NODE_MAPPING(sbi)->pages, nid);
+ 	if (apage)
+ 		return;
+ 
+-- 
+2.15.1
 
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
