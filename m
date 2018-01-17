@@ -1,7 +1,7 @@
 From: Matthew Wilcox <willy@infradead.org>
-Date: Wed, 17 Jan 2018 20:21:24 +0000
-Subject: [PATCH v6 60/99] dax: Convert __dax_invalidate_mapping_entry to XArray
-Message-Id: <20180117202203.19756-61-willy@infradead.org>
+Date: Wed, 17 Jan 2018 20:20:45 +0000
+Subject: [PATCH v6 21/99] xarray: Add xa_reserve and xa_release
+Message-Id: <20180117202203.19756-22-willy@infradead.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20180117202203.19756-1-willy@infradead.org>
 In-Reply-To: <20180117202203.19756-1-willy@infradead.org>
@@ -9,51 +9,172 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-kernel@vger.kernel.org
-Cc: Matthew Wilcox <mawilcox@microsoft.com>, linux-mm@kvack.org, linux-fsdevel@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net, linux-nilfs@vger.kernel.org, linux-btrfs@vger.kernel.org, linux-xfs@vger.kernel.org, linux-usb@vger.kernel.org, Bjorn Andersson <bjorn.andersson@linaro.org>, Stefano Stabellini <sstabellini@kernel.org>, iommu@lists.linux-foundation.org, linux-remoteproc@vger.kernel.org, linux-s390@vger.kernel.org, intel-gfx@lists.freedesktop.org, cgroups@vger.kernel.org, linux-sh@vger.kernel.org, David Howells <dhowells@redhat.com>
+Cc: linux-s390@vger.kernel.org, David Howells <dhowells@redhat.com>, linux-nilfs@vger.kernel.org, Matthew Wilcox <mawilcox@microsoft.com>, linux-sh@vger.kernel.org, intel-gfx@lists.freedesktop.org, linux-usb@vger.kernel.org, linux-remoteproc@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net, linux-xfs@vger.kernel.org, linux-mm@kvack.org, iommu@lists.linux-foundation.org, Stefano Stabellini <sstabellini@kernel.org>, linux-fsdevel@vger.kernel.org, cgroups@vger.kernel.org, Bjorn Andersson <bjorn.andersson@linaro.org>, linux-btrfs@vger.kernel.org
 
 From: Matthew Wilcox <mawilcox@microsoft.com>
 
-Simple now that we already have an xa_state!
+This function simply creates a slot in the XArray for users which need
+to acquire multiple locks before storing their entry in the tree and
+so cannot use a plain xa_store().
 
 Signed-off-by: Matthew Wilcox <mawilcox@microsoft.com>
 ---
- fs/dax.c | 10 +++++-----
- 1 file changed, 5 insertions(+), 5 deletions(-)
+ include/linux/xarray.h                 | 14 ++++++++++
+ lib/xarray.c                           | 51 ++++++++++++++++++++++++++++++++++
+ tools/testing/radix-tree/xarray-test.c | 25 +++++++++++++++++
+ 3 files changed, 90 insertions(+)
 
-diff --git a/fs/dax.c b/fs/dax.c
-index d3fe61b95216..9a30224da4d6 100644
---- a/fs/dax.c
-+++ b/fs/dax.c
-@@ -413,24 +413,24 @@ static int __dax_invalidate_mapping_entry(struct address_space *mapping,
- 	XA_STATE(xas, &mapping->pages, index);
- 	int ret = 0;
- 	void *entry;
--	struct radix_tree_root *pages = &mapping->pages;
- 
- 	xa_lock_irq(&mapping->pages);
- 	entry = get_unlocked_mapping_entry(&xas);
- 	if (!entry || WARN_ON_ONCE(!xa_is_value(entry)))
- 		goto out;
- 	if (!trunc &&
--	    (radix_tree_tag_get(pages, index, PAGECACHE_TAG_DIRTY) ||
--	     radix_tree_tag_get(pages, index, PAGECACHE_TAG_TOWRITE)))
-+	    (xas_get_tag(&xas, PAGECACHE_TAG_DIRTY) ||
-+	     xas_get_tag(&xas, PAGECACHE_TAG_TOWRITE)))
- 		goto out;
--	radix_tree_delete(pages, index);
-+	xas_store(&xas, NULL);
- 	mapping->nrexceptional--;
- 	ret = 1;
- out:
- 	put_unlocked_mapping_entry(&xas, entry);
--	xa_unlock_irq(&mapping->pages);
-+	xas_unlock_irq(&xas);
- 	return ret;
+diff --git a/include/linux/xarray.h b/include/linux/xarray.h
+index 6f59f1f60205..c3f7405c5517 100644
+--- a/include/linux/xarray.h
++++ b/include/linux/xarray.h
+@@ -259,6 +259,7 @@ void *xa_load(struct xarray *, unsigned long index);
+ void *xa_store(struct xarray *, unsigned long index, void *entry, gfp_t);
+ void *xa_cmpxchg(struct xarray *, unsigned long index,
+ 			void *old, void *entry, gfp_t);
++int xa_reserve(struct xarray *, unsigned long index, gfp_t);
+ bool xa_get_tag(struct xarray *, unsigned long index, xa_tag_t);
+ void xa_set_tag(struct xarray *, unsigned long index, xa_tag_t);
+ void xa_clear_tag(struct xarray *, unsigned long index, xa_tag_t);
+@@ -373,6 +374,19 @@ static inline int xa_insert(struct xarray *xa, unsigned long index,
+ 	return -EEXIST;
  }
+ 
++/**
++ * xa_release() - Release a reserved entry.
++ * @xa: XArray.
++ * @index: Index of entry.
++ *
++ * After calling xa_reserve(), you can call this function to release the
++ * reservation.  It is harmless to call this function if the entry was used.
++ */
++static inline void xa_release(struct xarray *xa, unsigned long index)
++{
++	xa_cmpxchg(xa, index, NULL, NULL, 0);
++}
 +
- /*
-  * Delete DAX entry at @index from @mapping.  Wait for it
-  * to be unlocked before deleting it.
+ #define xa_trylock(xa)		spin_trylock(&(xa)->xa_lock)
+ #define xa_lock(xa)		spin_lock(&(xa)->xa_lock)
+ #define xa_unlock(xa)		spin_unlock(&(xa)->xa_lock)
+diff --git a/lib/xarray.c b/lib/xarray.c
+index ace309cc9253..b4dec8e2d202 100644
+--- a/lib/xarray.c
++++ b/lib/xarray.c
+@@ -1275,6 +1275,8 @@ void *xa_cmpxchg(struct xarray *xa, unsigned long index,
+ 	do {
+ 		xas_lock(&xas);
+ 		curr = xas_load(&xas);
++		if (curr = XA_ZERO_ENTRY)
++			curr = NULL;
+ 		if (curr = old)
+ 			xas_store(&xas, entry);
+ 		xas_unlock(&xas);
+@@ -1310,6 +1312,8 @@ void *__xa_cmpxchg(struct xarray *xa, unsigned long index,
+ 
+ 	do {
+ 		curr = xas_load(&xas);
++		if (curr = XA_ZERO_ENTRY)
++			curr = NULL;
+ 		if (curr = old)
+ 			xas_store(&xas, entry);
+ 	} while (__xas_nomem(&xas, gfp));
+@@ -1318,6 +1322,53 @@ void *__xa_cmpxchg(struct xarray *xa, unsigned long index,
+ }
+ EXPORT_SYMBOL(__xa_cmpxchg);
+ 
++/**
++ * xa_reserve() - Reserve this index in the XArray.
++ * @xa: XArray.
++ * @index: Index into array.
++ * @gfp: Memory allocation flags.
++ *
++ * Ensures there is somewhere to store an entry at @index in the array.
++ * If there is already something stored at @index, this function does
++ * nothing.  If there was nothing there, the entry is marked as reserved.
++ * Loads from @index will continue to see a %NULL pointer until a
++ * subsequent store to @index.
++ *
++ * If you do not use the entry that you have reserved, call xa_release()
++ * or xa_erase() to free any unnecessary memory.
++ *
++ * Return: 0 if the reservation succeeded or -ENOMEM if it failed.
++ */
++int xa_reserve(struct xarray *xa, unsigned long index, gfp_t gfp)
++{
++	XA_STATE(xas, xa, index);
++	unsigned int lock_type = xa_lock_type(xa);
++	void *curr;
++
++	do {
++		if (lock_type = XA_LOCK_IRQ)
++			xas_lock_irq(&xas);
++		else if (lock_type = XA_LOCK_BH)
++			xas_lock_bh(&xas);
++		else
++			xas_lock(&xas);
++
++		curr = xas_create(&xas);
++		if (!curr)
++			xas_store(&xas, XA_ZERO_ENTRY);
++
++                if (lock_type = XA_LOCK_IRQ)
++                        xas_unlock_irq(&xas);
++                else if (lock_type = XA_LOCK_BH)
++                        xas_unlock_bh(&xas);
++                else
++                        xas_unlock(&xas);
++	} while (xas_nomem(&xas, gfp));
++
++	return xas_error(&xas);
++}
++EXPORT_SYMBOL(xa_reserve);
++
+ /**
+  * __xa_set_tag() - Set this tag on this entry while locked.
+  * @xa: XArray.
+diff --git a/tools/testing/radix-tree/xarray-test.c b/tools/testing/radix-tree/xarray-test.c
+index 4d3541ac31e9..fe38b53df2ab 100644
+--- a/tools/testing/radix-tree/xarray-test.c
++++ b/tools/testing/radix-tree/xarray-test.c
+@@ -502,6 +502,29 @@ void check_move(struct xarray *xa)
+ 	} while (i < (1 << 16));
+ }
+ 
++void check_reserve(struct xarray *xa)
++{
++	assert(xa_empty(xa));
++	xa_reserve(xa, 12345678, GFP_KERNEL);
++	assert(!xa_empty(xa));
++	assert(!xa_load(xa, 12345678));
++	xa_release(xa, 12345678);
++	assert(xa_empty(xa));
++
++	xa_reserve(xa, 12345678, GFP_KERNEL);
++	assert(!xa_store(xa, 12345678, xa_mk_value(12345678), GFP_NOWAIT));
++	xa_release(xa, 12345678);
++	assert(xa_erase(xa, 12345678) = xa_mk_value(12345678));
++	assert(xa_empty(xa));
++
++	xa_reserve(xa, 12345678, GFP_KERNEL);
++	assert(!xa_cmpxchg(xa, 12345678, NULL, xa_mk_value(12345678),
++								GFP_NOWAIT));
++	xa_release(xa, 12345678);
++	assert(xa_erase(xa, 12345678) = xa_mk_value(12345678));
++	assert(xa_empty(xa));
++}
++
+ void xarray_checks(void)
+ {
+ 	DEFINE_XARRAY(array);
+@@ -548,6 +571,8 @@ void xarray_checks(void)
+ 
+ 	check_move(&array);
+ 	item_kill_tree(&array);
++
++	check_reserve(&array);
+ }
+ 
+ int __weak main(void)
 -- 
 2.15.1
 
