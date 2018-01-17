@@ -1,7 +1,7 @@
 From: Matthew Wilcox <willy@infradead.org>
-Date: Wed, 17 Jan 2018 20:21:08 +0000
-Subject: [PATCH v6 44/99] shmem: Convert shmem_tag_pins to XArray
-Message-Id: <20180117202203.19756-45-willy@infradead.org>
+Date: Wed, 17 Jan 2018 20:21:21 +0000
+Subject: [PATCH v6 57/99] dax: Convert dax_unlock_mapping_entry to XArray
+Message-Id: <20180117202203.19756-58-willy@infradead.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20180117202203.19756-1-willy@infradead.org>
 In-Reply-To: <20180117202203.19756-1-willy@infradead.org>
@@ -13,75 +13,104 @@ Cc: linux-s390@vger.kernel.org, David Howells <dhowells@redhat.com>, linux-nilfs
 
 From: Matthew Wilcox <mawilcox@microsoft.com>
 
-Simplify the locking by taking the spinlock while we walk the tree on
-the assumption that many acquires and releases of the lock will be
-worse than holding the lock for a (potentially) long time.
-
-We could replicate the same locking behaviour with the xarray, but would
-have to be careful that the xa_node wasn't RCU-freed under us before we
-took the lock.
+Replace slot_locked() with dax_locked() and inline unlock_slot() into
+its only caller.
 
 Signed-off-by: Matthew Wilcox <mawilcox@microsoft.com>
 ---
- mm/shmem.c | 39 ++++++++++++++++-----------------------
- 1 file changed, 16 insertions(+), 23 deletions(-)
+ fs/dax.c | 48 ++++++++++++++++--------------------------------
+ 1 file changed, 16 insertions(+), 32 deletions(-)
 
-diff --git a/mm/shmem.c b/mm/shmem.c
-index ce285ae635ea..2f41c7ceea18 100644
---- a/mm/shmem.c
-+++ b/mm/shmem.c
-@@ -2601,35 +2601,28 @@ static loff_t shmem_file_llseek(struct file *file, loff_t offset, int whence)
+diff --git a/fs/dax.c b/fs/dax.c
+index 5097a606da1a..f3463d93a6ce 100644
+--- a/fs/dax.c
++++ b/fs/dax.c
+@@ -73,6 +73,11 @@ fs_initcall(init_dax_wait_table);
+ #define DAX_ZERO_PAGE	(1UL << 2)
+ #define DAX_EMPTY	(1UL << 3)
  
- static void shmem_tag_pins(struct address_space *mapping)
- {
--	struct radix_tree_iter iter;
--	void **slot;
--	pgoff_t start;
-+	XA_STATE(xas, &mapping->pages, 0);
- 	struct page *page;
-+	unsigned int tagged = 0;
- 
- 	lru_add_drain();
--	start = 0;
--	rcu_read_lock();
- 
--	radix_tree_for_each_slot(slot, &mapping->pages, &iter, start) {
--		page = radix_tree_deref_slot(slot);
--		if (!page || radix_tree_exception(page)) {
--			if (radix_tree_deref_retry(page)) {
--				slot = radix_tree_iter_retry(&iter);
--				continue;
--			}
--		} else if (page_count(page) - page_mapcount(page) > 1) {
--			xa_lock_irq(&mapping->pages);
--			radix_tree_tag_set(&mapping->pages, iter.index,
--					   SHMEM_TAG_PINNED);
--			xa_unlock_irq(&mapping->pages);
--		}
-+	xas_lock_irq(&xas);
-+	xas_for_each(&xas, page, ULONG_MAX) {
-+		if (xa_is_value(page))
-+			continue;
-+		if (page_count(page) - page_mapcount(page) > 1)
-+			xas_set_tag(&xas, SHMEM_TAG_PINNED);
- 
--		if (need_resched()) {
--			slot = radix_tree_iter_resume(slot, &iter);
--			cond_resched_rcu();
--		}
-+		if (++tagged % XA_CHECK_SCHED)
-+			continue;
++static bool dax_locked(void *entry)
++{
++	return xa_to_value(entry) & DAX_ENTRY_LOCK;
++}
 +
-+		xas_pause(&xas);
-+		xas_unlock_irq(&xas);
-+		cond_resched();
-+		xas_lock_irq(&xas);
- 	}
--	rcu_read_unlock();
-+	xas_unlock_irq(&xas);
+ static unsigned long dax_radix_sector(void *entry)
+ {
+ 	return xa_to_value(entry) >> DAX_SHIFT;
+@@ -180,16 +185,6 @@ static void dax_wake_mapping_entry_waiter(struct address_space *mapping,
+ 		__wake_up(wq, TASK_NORMAL, wake_all ? 0 : 1, &key);
  }
  
+-/*
+- * Check whether the given slot is locked.  Must be called with xa_lock held.
+- */
+-static inline int slot_locked(struct address_space *mapping, void **slot)
+-{
+-	unsigned long entry = xa_to_value(
+-		radix_tree_deref_slot_protected(slot, &mapping->pages.xa_lock));
+-	return entry & DAX_ENTRY_LOCK;
+-}
+-
  /*
+  * Mark the given slot as locked.  Must be called with xa_lock held.
+  */
+@@ -202,18 +197,6 @@ static inline void *lock_slot(struct address_space *mapping, void **slot)
+ 	return entry;
+ }
+ 
+-/*
+- * Mark the given slot as unlocked.  Must be called with xa_lock held.
+- */
+-static inline void *unlock_slot(struct address_space *mapping, void **slot)
+-{
+-	unsigned long v = xa_to_value(
+-		radix_tree_deref_slot_protected(slot, &mapping->pages.xa_lock));
+-	void *entry = xa_mk_value(v & ~DAX_ENTRY_LOCK);
+-	radix_tree_replace_slot(&mapping->pages, slot, entry);
+-	return entry;
+-}
+-
+ /*
+  * Lookup entry in radix tree, wait for it to become unlocked if it is
+  * a DAX entry and return it. The caller must call
+@@ -237,8 +220,7 @@ static void *get_unlocked_mapping_entry(struct address_space *mapping,
+ 		entry = __radix_tree_lookup(&mapping->pages, index, NULL,
+ 					  &slot);
+ 		if (!entry ||
+-		    WARN_ON_ONCE(!xa_is_value(entry)) ||
+-		    !slot_locked(mapping, slot)) {
++		    WARN_ON_ONCE(!xa_is_value(entry)) || !dax_locked(entry)) {
+ 			if (slotp)
+ 				*slotp = slot;
+ 			return entry;
+@@ -257,17 +239,19 @@ static void *get_unlocked_mapping_entry(struct address_space *mapping,
+ static void dax_unlock_mapping_entry(struct address_space *mapping,
+ 				     pgoff_t index)
+ {
+-	void *entry, **slot;
++	XA_STATE(xas, &mapping->pages, index);
++	void *entry;
+ 
+-	xa_lock_irq(&mapping->pages);
+-	entry = __radix_tree_lookup(&mapping->pages, index, NULL, &slot);
+-	if (WARN_ON_ONCE(!entry || !xa_is_value(entry) ||
+-			 !slot_locked(mapping, slot))) {
+-		xa_unlock_irq(&mapping->pages);
++	xas_lock_irq(&xas);
++	entry = xas_load(&xas);
++	if (WARN_ON_ONCE(!entry || !xa_is_value(entry) || !dax_locked(entry))) {
++		xas_unlock_irq(&xas);
+ 		return;
+ 	}
+-	unlock_slot(mapping, slot);
+-	xa_unlock_irq(&mapping->pages);
++	entry = xa_mk_value(xa_to_value(entry) & ~DAX_ENTRY_LOCK);
++	xas_store(&xas, entry);
++	/* Safe to not call xas_pause here -- we don't touch the array after */
++	xas_unlock_irq(&xas);
+ 	dax_wake_mapping_entry_waiter(mapping, index, entry, false);
+ }
+ 
 -- 
 2.15.1
 
