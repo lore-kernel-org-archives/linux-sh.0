@@ -1,43 +1,73 @@
-From: "Eric W. Biederman" <ebiederm@xmission.com>
-Date: Fri, 12 Jan 2018 00:59:31 +0000
-Subject: [PATCH 02/11] signal/sh: Ensure si_signo is initialized in do_divide_error
-Message-Id: <20180112005940.23279-2-ebiederm@xmission.com>
+From: Matthew Wilcox <willy@infradead.org>
+Date: Wed, 17 Jan 2018 20:21:27 +0000
+Subject: [PATCH v6 63/99] dax: Convert dax_insert_mapping_entry to XArray
+Message-Id: <20180117202203.19756-64-willy@infradead.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87373b6ghs.fsf@xmission.com>
-In-Reply-To: <87373b6ghs.fsf@xmission.com>
+References: <20180117202203.19756-1-willy@infradead.org>
+In-Reply-To: <20180117202203.19756-1-willy@infradead.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-kernel@vger.kernel.org
-Cc: Al Viro <viro@zeniv.linux.org.uk>, Oleg Nesterov <oleg@redhat.com>, linux-arch@vger.kernel.org, "Eric W. Biederman" <ebiederm@xmission.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, stable@vger.kernel.org
+Cc: Matthew Wilcox <mawilcox@microsoft.com>, linux-mm@kvack.org, linux-fsdevel@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net, linux-nilfs@vger.kernel.org, linux-btrfs@vger.kernel.org, linux-xfs@vger.kernel.org, linux-usb@vger.kernel.org, Bjorn Andersson <bjorn.andersson@linaro.org>, Stefano Stabellini <sstabellini@kernel.org>, iommu@lists.linux-foundation.org, linux-remoteproc@vger.kernel.org, linux-s390@vger.kernel.org, intel-gfx@lists.freedesktop.org, cgroups@vger.kernel.org, linux-sh@vger.kernel.org, David Howells <dhowells@redhat.com>
 
-Set si_signo.
+From: Matthew Wilcox <mawilcox@microsoft.com>
 
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: Rich Felker <dalias@libc.org>
-Cc: Paul Mundt <lethal@linux-sh.org>
-Cc: linux-sh@vger.kernel.org
-Cc: stable@vger.kernel.org
-Fixes: 0983b31849bb ("sh: Wire up division and address error exceptions on SH-2A.")
-Signed-off-by: "Eric W. Biederman" <ebiederm@xmission.com>
+Signed-off-by: Matthew Wilcox <mawilcox@microsoft.com>
 ---
- arch/sh/kernel/traps_32.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ fs/dax.c | 18 ++++++------------
+ 1 file changed, 6 insertions(+), 12 deletions(-)
 
-diff --git a/arch/sh/kernel/traps_32.c b/arch/sh/kernel/traps_32.c
-index 57cff00cad17..b3770bb26211 100644
---- a/arch/sh/kernel/traps_32.c
-+++ b/arch/sh/kernel/traps_32.c
-@@ -609,7 +609,8 @@ asmlinkage void do_divide_error(unsigned long r4)
- 		break;
+diff --git a/fs/dax.c b/fs/dax.c
+index e6b25ef112f2..494e8fb7a98f 100644
+--- a/fs/dax.c
++++ b/fs/dax.c
+@@ -498,9 +498,9 @@ static void *dax_insert_mapping_entry(struct address_space *mapping,
+ 				      void *entry, sector_t sector,
+ 				      unsigned long flags, bool dirty)
+ {
+-	struct radix_tree_root *pages = &mapping->pages;
+ 	void *new_entry;
+ 	pgoff_t index = vmf->pgoff;
++	XA_STATE(xas, &mapping->pages, index);
+ 
+ 	if (dirty)
+ 		__mark_inode_dirty(mapping->host, I_DIRTY_PAGES);
+@@ -516,7 +516,7 @@ static void *dax_insert_mapping_entry(struct address_space *mapping,
+ 					PAGE_SIZE, 0);
  	}
  
--	force_sig_info(SIGFPE, &info, current);
-+	info.si_signo = SIGFPE;
-+	force_sig_info(info.si_signo, &info, current);
+-	xa_lock_irq(&mapping->pages);
++	xas_lock_irq(&xas);
+ 	new_entry = dax_radix_locked_entry(sector, flags);
+ 
+ 	if (dax_is_zero_entry(entry) || dax_is_empty_entry(entry)) {
+@@ -528,21 +528,15 @@ static void *dax_insert_mapping_entry(struct address_space *mapping,
+ 		 * existing entry is a PMD, we will just leave the PMD in the
+ 		 * tree and dirty it if necessary.
+ 		 */
+-		struct radix_tree_node *node;
+-		void **slot;
+-		void *ret;
+-
+-		ret = __radix_tree_lookup(pages, index, &node, &slot);
+-		WARN_ON_ONCE(ret != entry);
+-		__radix_tree_replace(pages, node, slot,
+-				     new_entry, NULL);
++		void *prev = xas_store(&xas, new_entry);
++		WARN_ON_ONCE(prev != entry);
+ 		entry = new_entry;
+ 	}
+ 
+ 	if (dirty)
+-		radix_tree_tag_set(pages, index, PAGECACHE_TAG_DIRTY);
++		xas_set_tag(&xas, PAGECACHE_TAG_DIRTY);
+ 
+-	xa_unlock_irq(&mapping->pages);
++	xas_unlock_irq(&xas);
+ 	return entry;
  }
- #endif
  
 -- 
-2.14.1
+2.15.1
 
