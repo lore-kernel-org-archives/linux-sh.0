@@ -1,114 +1,222 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Fri, 12 Jan 2018 08:42:20 +0000
-Subject: [PATCH 22/34] dma-mapping: add an arch_dma_supported hook
-Message-Id: <20180112084232.2857-23-hch@lst.de>
+From: Matthew Wilcox <willy@infradead.org>
+Date: Wed, 17 Jan 2018 20:20:35 +0000
+Subject: [PATCH v6 11/99] xarray: Add xa_cmpxchg and xa_insert
+Message-Id: <20180117202203.19756-12-willy@infradead.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180112084232.2857-1-hch@lst.de>
-In-Reply-To: <20180112084232.2857-1-hch-jcswGhMUV9g@public.gmane.org>
+References: <20180117202203.19756-1-willy@infradead.org>
+In-Reply-To: <20180117202203.19756-1-willy@infradead.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: linux-mips-6z/3iImG2C8G8FEW9MqTrA@public.gmane.org, linux-ia64-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sparclinux-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Guan Xuetao <gxt-TG0Ac1+ktVePQbnJrJN+5g@public.gmane.org>, linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-c6x-dev-jPsnJVOj+W6hPH1hqNUYSQ@public.gmane.org, linux-hexagon-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, x86-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, Konrad Rzeszutek Wilk <konrad-Gq0aWv8utHQdnm+yROfE0A@public.gmane.org>, linux-snps-arc-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, linux-m68k-cunTk1MwBs8S/qaLPR03pWD2FQJk+8+b@public.gmane.org, patches-q3qR2WxjNRFS9aJRtSZj7A@public.gmane.org, linux-metag-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, Michal Simek <monstr-pSz03upnqPeHXe+LvDLADg@public.gmane.org>, linux-parisc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-cris-kernel-VrBV9hrLPhE@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-alpha-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linuxppc-dev-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org
+To: linux-kernel@vger.kernel.org
+Cc: Matthew Wilcox <mawilcox@microsoft.com>, linux-mm@kvack.org, linux-fsdevel@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net, linux-nilfs@vger.kernel.org, linux-btrfs@vger.kernel.org, linux-xfs@vger.kernel.org, linux-usb@vger.kernel.org, Bjorn Andersson <bjorn.andersson@linaro.org>, Stefano Stabellini <sstabellini@kernel.org>, iommu@lists.linux-foundation.org, linux-remoteproc@vger.kernel.org, linux-s390@vger.kernel.org, intel-gfx@lists.freedesktop.org, cgroups@vger.kernel.org, linux-sh@vger.kernel.org, David Howells <dhowells@redhat.com>
 
-To implement the x86 forbid_dac and iommu_sac_force we want an arch hook
-so that it can apply the global options across all dma_map_ops
-implementations.
+From: Matthew Wilcox <mawilcox@microsoft.com>
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
+Like cmpxchg(), xa_cmpxchg will only store to the index if the current
+entry matches the old entry.  It returns the current entry, which is
+usually more useful than the errno returned by radix_tree_insert().
+For the users who really only want the errno, the xa_insert() wrapper
+provides a more convenient calling convention.
+
+Signed-off-by: Matthew Wilcox <mawilcox@microsoft.com>
 ---
- arch/x86/include/asm/dma-mapping.h |  3 +++
- arch/x86/kernel/pci-dma.c          | 19 ++++++++++++-------
- include/linux/dma-mapping.h        | 11 +++++++++++
- 3 files changed, 26 insertions(+), 7 deletions(-)
+ include/linux/xarray.h                 | 56 ++++++++++++++++++++++++++++
+ lib/xarray.c                           | 68 ++++++++++++++++++++++++++++++++++
+ tools/testing/radix-tree/xarray-test.c | 10 +++++
+ 3 files changed, 134 insertions(+)
 
-diff --git a/arch/x86/include/asm/dma-mapping.h b/arch/x86/include/asm/dma-mapping.h
-index dfdc9357a349..6277c83c0eb1 100644
---- a/arch/x86/include/asm/dma-mapping.h
-+++ b/arch/x86/include/asm/dma-mapping.h
-@@ -30,6 +30,9 @@ static inline const struct dma_map_ops *get_arch_dma_ops(struct bus_type *bus)
- 	return dma_ops;
+diff --git a/include/linux/xarray.h b/include/linux/xarray.h
+index 139b1c1fd022..fc9ab3b13e60 100644
+--- a/include/linux/xarray.h
++++ b/include/linux/xarray.h
+@@ -210,6 +210,8 @@ struct xarray {
+ void xa_init_flags(struct xarray *, gfp_t flags);
+ void *xa_load(struct xarray *, unsigned long index);
+ void *xa_store(struct xarray *, unsigned long index, void *entry, gfp_t);
++void *xa_cmpxchg(struct xarray *, unsigned long index,
++			void *old, void *entry, gfp_t);
+ bool xa_get_tag(struct xarray *, unsigned long index, xa_tag_t);
+ void xa_set_tag(struct xarray *, unsigned long index, xa_tag_t);
+ void xa_clear_tag(struct xarray *, unsigned long index, xa_tag_t);
+@@ -264,6 +266,32 @@ static inline bool xa_tagged(const struct xarray *xa, xa_tag_t tag)
+ 	return xa->xa_flags & XA_FLAGS_TAG(tag);
  }
  
-+int arch_dma_supported(struct device *dev, u64 mask);
-+#define arch_dma_supported arch_dma_supported
-+
- bool arch_dma_alloc_attrs(struct device **dev, gfp_t *gfp);
- #define arch_dma_alloc_attrs arch_dma_alloc_attrs
- 
-diff --git a/arch/x86/kernel/pci-dma.c b/arch/x86/kernel/pci-dma.c
-index 61a8f1cb3829..df7ab02f959f 100644
---- a/arch/x86/kernel/pci-dma.c
-+++ b/arch/x86/kernel/pci-dma.c
-@@ -215,7 +215,7 @@ static __init int iommu_setup(char *p)
- }
- early_param("iommu", iommu_setup);
- 
--int x86_dma_supported(struct device *dev, u64 mask)
-+int arch_dma_supported(struct device *dev, u64 mask)
- {
- #ifdef CONFIG_PCI
- 	if (mask > 0xffffffff && forbid_dac > 0) {
-@@ -224,12 +224,6 @@ int x86_dma_supported(struct device *dev, u64 mask)
- 	}
- #endif
- 
--	/* Copied from i386. Doesn't make much sense, because it will
--	   only work for pci_alloc_coherent.
--	   The caller just has to use GFP_DMA in this case. */
--	if (mask < DMA_BIT_MASK(24))
--		return 0;
--
- 	/* Tell the device to use SAC when IOMMU force is on.  This
- 	   allows the driver to use cheaper accesses in some cases.
- 
-@@ -249,6 +243,17 @@ int x86_dma_supported(struct device *dev, u64 mask)
- 
- 	return 1;
- }
-+EXPORT_SYMBOL(arch_dma_supported);
-+
-+int x86_dma_supported(struct device *dev, u64 mask)
-+{
-+	/* Copied from i386. Doesn't make much sense, because it will
-+	   only work for pci_alloc_coherent.
-+	   The caller just has to use GFP_DMA in this case. */
-+	if (mask < DMA_BIT_MASK(24))
-+		return 0;
-+	return 1;
-+}
- 
- static int __init pci_iommu_init(void)
- {
-diff --git a/include/linux/dma-mapping.h b/include/linux/dma-mapping.h
-index 88bcb1a8211d..d67742dad904 100644
---- a/include/linux/dma-mapping.h
-+++ b/include/linux/dma-mapping.h
-@@ -576,6 +576,14 @@ static inline int dma_mapping_error(struct device *dev, dma_addr_t dma_addr)
- 	return 0;
- }
- 
-+/*
-+ * This is a hack for the legacy x86 forbid_dac and iommu_sac_force. Please
-+ * don't use this is new code.
++/**
++ * xa_insert() - Store this entry in the XArray unless another entry is
++ *			already present.
++ * @xa: XArray.
++ * @index: Index into array.
++ * @entry: New entry.
++ * @gfp: Memory allocation flags.
++ *
++ * If you would rather see the existing entry in the array, use xa_cmpxchg().
++ * This function is for users who don't care what the entry is, only that
++ * one is present.
++ *
++ * Return: -EEXIST if another entry was present, 0 if the store succeeded,
++ * or another negative errno if a different error happened (eg -ENOMEM).
 + */
-+#ifndef arch_dma_supported
-+#define arch_dma_supported(dev, mask)	(1)
-+#endif
-+
- static inline void dma_check_mask(struct device *dev, u64 mask)
- {
- 	if (sme_active() && (mask < (((u64)sme_get_me_mask() << 1) - 1)))
-@@ -588,6 +596,9 @@ static inline int dma_supported(struct device *dev, u64 mask)
- 
- 	if (!ops)
- 		return 0;
-+	if (!arch_dma_supported(dev, mask))
++static inline int xa_insert(struct xarray *xa, unsigned long index,
++		void *entry, gfp_t gfp)
++{
++	void *curr = xa_cmpxchg(xa, index, NULL, entry, gfp);
++	if (!curr)
 +		return 0;
++	if (xa_is_err(curr))
++		return xa_err(curr);
++	return -EEXIST;
++}
 +
- 	if (!ops->dma_supported)
- 		return 1;
- 	return ops->dma_supported(dev, mask);
+ #define xa_trylock(xa)		spin_trylock(&(xa)->xa_lock)
+ #define xa_lock(xa)		spin_lock(&(xa)->xa_lock)
+ #define xa_unlock(xa)		spin_unlock(&(xa)->xa_lock)
+@@ -283,9 +311,37 @@ static inline bool xa_tagged(const struct xarray *xa, xa_tag_t tag)
+  */
+ void *__xa_erase(struct xarray *, unsigned long index);
+ void *__xa_store(struct xarray *, unsigned long index, void *entry, gfp_t);
++void *__xa_cmpxchg(struct xarray *, unsigned long index, void *old,
++		void *entry, gfp_t);
+ void __xa_set_tag(struct xarray *, unsigned long index, xa_tag_t);
+ void __xa_clear_tag(struct xarray *, unsigned long index, xa_tag_t);
+ 
++/**
++ * __xa_insert() - Store this entry in the XArray unless another entry is
++ *			already present.
++ * @xa: XArray.
++ * @index: Index into array.
++ * @entry: New entry.
++ * @gfp: Memory allocation flags.
++ *
++ * If you would rather see the existing entry in the array, use __xa_cmpxchg().
++ * This function is for users who don't care what the entry is, only that
++ * one is present.
++ *
++ * Return: -EEXIST if another entry was present, 0 if the store succeeded,
++ * or another negative errno if a different error happened (eg -ENOMEM).
++ */
++static inline int __xa_insert(struct xarray *xa, unsigned long index,
++		void *entry, gfp_t gfp)
++{
++	void *curr = __xa_cmpxchg(xa, index, NULL, entry, gfp);
++	if (!curr)
++		return 0;
++	if (xa_is_err(curr))
++		return xa_err(curr);
++	return -EEXIST;
++}
++
+ /* Everything below here is the Advanced API.  Proceed with caution. */
+ 
+ /*
+diff --git a/lib/xarray.c b/lib/xarray.c
+index 45b70e622bf1..d925a98fb9b8 100644
+--- a/lib/xarray.c
++++ b/lib/xarray.c
+@@ -928,6 +928,74 @@ void *__xa_store(struct xarray *xa, unsigned long index, void *entry, gfp_t gfp)
+ }
+ EXPORT_SYMBOL(__xa_store);
+ 
++/**
++ * xa_cmpxchg() - Conditionally replace an entry in the XArray.
++ * @xa: XArray.
++ * @index: Index into array.
++ * @old: Old value to test against.
++ * @entry: New value to place in array.
++ * @gfp: Memory allocation flags.
++ *
++ * If the entry at @index is the same as @old, replace it with @entry.
++ * If the return value is equal to @old, then the exchange was successful.
++ *
++ * Return: The old value at this index or xa_err() if an error happened.
++ */
++void *xa_cmpxchg(struct xarray *xa, unsigned long index,
++			void *old, void *entry, gfp_t gfp)
++{
++	XA_STATE(xas, xa, index);
++	void *curr;
++
++	if (WARN_ON_ONCE(xa_is_internal(entry)))
++		return XA_ERROR(-EINVAL);
++
++	do {
++		xas_lock(&xas);
++		curr = xas_load(&xas);
++		if (curr = old)
++			xas_store(&xas, entry);
++		xas_unlock(&xas);
++	} while (xas_nomem(&xas, gfp));
++
++	return xas_result(&xas, curr);
++}
++EXPORT_SYMBOL(xa_cmpxchg);
++
++/**
++ * __xa_cmpxchg() - Store this entry in the XArray.
++ * @xa: XArray.
++ * @index: Index into array.
++ * @old: Old value to test against.
++ * @entry: New entry.
++ * @gfp: Memory allocation flags.
++ *
++ * You must already be holding the xa_lock when calling this function.
++ * It will drop the lock if needed to allocate memory, and then reacquire
++ * it afterwards.
++ *
++ *
++ * Return: The old entry at this index or xa_err() if an error happened.
++ */
++void *__xa_cmpxchg(struct xarray *xa, unsigned long index,
++			void *old, void *entry, gfp_t gfp)
++{
++	XA_STATE(xas, xa, index);
++	void *curr;
++
++	if (WARN_ON_ONCE(xa_is_internal(entry)))
++		return XA_ERROR(-EINVAL);
++
++	do {
++		curr = xas_load(&xas);
++		if (curr = old)
++			xas_store(&xas, entry);
++	} while (__xas_nomem(&xas, gfp));
++
++	return xas_result(&xas, curr);
++}
++EXPORT_SYMBOL(__xa_cmpxchg);
++
+ /**
+  * __xa_set_tag() - Set this tag on this entry while locked.
+  * @xa: XArray.
+diff --git a/tools/testing/radix-tree/xarray-test.c b/tools/testing/radix-tree/xarray-test.c
+index 5defd0b9f85c..d6a969d999d9 100644
+--- a/tools/testing/radix-tree/xarray-test.c
++++ b/tools/testing/radix-tree/xarray-test.c
+@@ -84,6 +84,15 @@ void check_xa_shrink(struct xarray *xa)
+ 	assert(xa_load(xa, 0) = xa_mk_value(0));
+ }
+ 
++void check_cmpxchg(struct xarray *xa)
++{
++	assert(xa_empty(xa));
++	assert(!xa_store(xa, 12345678, xa_mk_value(12345678), GFP_KERNEL));
++	assert(!xa_cmpxchg(xa, 5, xa_mk_value(5), NULL, GFP_KERNEL));
++	assert(xa_erase(xa, 12345678) = xa_mk_value(12345678));
++	assert(xa_empty(xa));
++}
++
+ void check_multi_store(struct xarray *xa)
+ {
+ 	unsigned long i, j, k;
+@@ -149,6 +158,7 @@ void xarray_checks(void)
+ 	check_xa_shrink(&array);
+ 	item_kill_tree(&array);
+ 
++	check_cmpxchg(&array);
+ 	check_multi_store(&array);
+ 	item_kill_tree(&array);
+ }
 -- 
-2.14.2
+2.15.1
 
