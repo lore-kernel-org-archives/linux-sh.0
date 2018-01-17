@@ -1,49 +1,82 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Wed, 10 Jan 2018 08:00:12 +0000
-Subject: [PATCH 18/33] s390: move s390_pci_dma_ops to asm/pci_dma.h
-Message-Id: <20180110080027.13879-19-hch@lst.de>
+From: Matthew Wilcox <willy@infradead.org>
+Date: Wed, 17 Jan 2018 20:20:49 +0000
+Subject: [PATCH v6 25/99] page cache: Convert page deletion to XArray
+Message-Id: <20180117202203.19756-26-willy@infradead.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180110080027.13879-1-hch@lst.de>
-In-Reply-To: <20180110080027.13879-1-hch-jcswGhMUV9g@public.gmane.org>
+References: <20180117202203.19756-1-willy@infradead.org>
+In-Reply-To: <20180117202203.19756-1-willy-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: linux-mips-6z/3iImG2C8G8FEW9MqTrA@public.gmane.org, linux-ia64-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sparclinux-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Guan Xuetao <gxt-TG0Ac1+ktVePQbnJrJN+5g@public.gmane.org>, linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-c6x-dev-jPsnJVOj+W6hPH1hqNUYSQ@public.gmane.org, linux-hexagon-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, x86-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, Konrad Rzeszutek Wilk <konrad-Gq0aWv8utHQdnm+yROfE0A@public.gmane.org>, linux-snps-arc-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, linux-m68k-cunTk1MwBs8S/qaLPR03pWD2FQJk+8+b@public.gmane.org, patches-q3qR2WxjNRFS9aJRtSZj7A@public.gmane.org, linux-metag-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, Michal Simek <monstr-pSz03upnqPeHXe+LvDLADg@public.gmane.org>, linux-parisc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-cris-kernel-VrBV9hrLPhE@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-alpha-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linuxppc-dev-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org
+To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Matthew Wilcox <mawilcox-0li6OtcxBFHby3iVrkZq2A@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-f2fs-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, linux-nilfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-btrfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-xfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Bjorn Andersson <bjorn.andersson-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, Stefano Stabellini <sstabellini-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-remoteproc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, intel-gfx-PD4FTy7X32lNgt0PjOBp9y5qC8QIuHrW@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-This is not needed in drivers, so move it to a private header.
+From: Matthew Wilcox <mawilcox@microsoft.com>
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
+The code is slightly shorter and simpler.
+
+Signed-off-by: Matthew Wilcox <mawilcox@microsoft.com>
 ---
- arch/s390/include/asm/dma-mapping.h | 2 --
- arch/s390/include/asm/pci_dma.h     | 3 +++
- 2 files changed, 3 insertions(+), 2 deletions(-)
+ mm/filemap.c | 30 ++++++++++++++----------------
+ 1 file changed, 14 insertions(+), 16 deletions(-)
 
-diff --git a/arch/s390/include/asm/dma-mapping.h b/arch/s390/include/asm/dma-mapping.h
-index 2ec7240c1ada..bdc2455483f6 100644
---- a/arch/s390/include/asm/dma-mapping.h
-+++ b/arch/s390/include/asm/dma-mapping.h
-@@ -9,8 +9,6 @@
- #include <linux/dma-debug.h>
- #include <linux/io.h>
+diff --git a/mm/filemap.c b/mm/filemap.c
+index e6371b551de1..ed30d5310e50 100644
+--- a/mm/filemap.c
++++ b/mm/filemap.c
+@@ -112,30 +112,28 @@
+  *   ->tasklist_lock            (memory_failure, collect_procs_ao)
+  */
  
--extern const struct dma_map_ops s390_pci_dma_ops;
--
- static inline const struct dma_map_ops *get_arch_dma_ops(struct bus_type *bus)
+-static void page_cache_tree_delete(struct address_space *mapping,
++static void page_cache_delete(struct address_space *mapping,
+ 				   struct page *page, void *shadow)
  {
- 	return &dma_noop_ops;
-diff --git a/arch/s390/include/asm/pci_dma.h b/arch/s390/include/asm/pci_dma.h
-index e8d9161fa17a..419fac7a62c0 100644
---- a/arch/s390/include/asm/pci_dma.h
-+++ b/arch/s390/include/asm/pci_dma.h
-@@ -201,4 +201,7 @@ void dma_cleanup_tables(unsigned long *);
- unsigned long *dma_walk_cpu_trans(unsigned long *rto, dma_addr_t dma_addr);
- void dma_update_cpu_trans(unsigned long *entry, void *page_addr, int flags);
+-	int i, nr;
++	XA_STATE(xas, &mapping->pages, page->index);
++	unsigned int i, nr;
  
-+extern const struct dma_map_ops s390_pci_dma_ops;
+-	/* hugetlb pages are represented by one entry in the radix tree */
++	mapping_set_update(&xas, mapping);
 +
-+
- #endif
++	/* hugetlb pages are represented by a single entry in the xarray */
+ 	nr = PageHuge(page) ? 1 : hpage_nr_pages(page);
+ 
+ 	VM_BUG_ON_PAGE(!PageLocked(page), page);
+ 	VM_BUG_ON_PAGE(PageTail(page), page);
+ 	VM_BUG_ON_PAGE(nr != 1 && shadow, page);
+ 
+-	for (i = 0; i < nr; i++) {
+-		struct radix_tree_node *node;
+-		void **slot;
+-
+-		__radix_tree_lookup(&mapping->pages, page->index + i,
+-				    &node, &slot);
+-
+-		VM_BUG_ON_PAGE(!node && nr != 1, page);
+-
+-		radix_tree_clear_tags(&mapping->pages, node, slot);
+-		__radix_tree_replace(&mapping->pages, node, slot, shadow,
+-				workingset_lookup_update(mapping));
++	i = nr;
++repeat:
++	xas_store(&xas, shadow);
++	xas_init_tags(&xas);
++	if (--i) {
++		xas_next(&xas);
++		goto repeat;
+ 	}
+ 
+ 	page->mapping = NULL;
+@@ -235,7 +233,7 @@ void __delete_from_page_cache(struct page *page, void *shadow)
+ 	trace_mm_filemap_delete_from_page_cache(page);
+ 
+ 	unaccount_page_cache_page(mapping, page);
+-	page_cache_tree_delete(mapping, page, shadow);
++	page_cache_delete(mapping, page, shadow);
+ }
+ 
+ static void page_cache_free_page(struct address_space *mapping,
 -- 
-2.14.2
+2.15.1
 
