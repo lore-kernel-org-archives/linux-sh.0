@@ -1,37 +1,94 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Fri, 12 Jan 2018 08:42:04 +0000
-Subject: [PATCH 06/34] m32r: remove the unused dma_capable helper
-Message-Id: <20180112084232.2857-7-hch@lst.de>
+From: Matthew Wilcox <willy@infradead.org>
+Date: Wed, 17 Jan 2018 20:22:02 +0000
+Subject: [PATCH v6 98/99] qrtr: Convert to XArray
+Message-Id: <20180117202203.19756-99-willy@infradead.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180112084232.2857-1-hch@lst.de>
-In-Reply-To: <20180112084232.2857-1-hch-jcswGhMUV9g@public.gmane.org>
+References: <20180117202203.19756-1-willy@infradead.org>
+In-Reply-To: <20180117202203.19756-1-willy@infradead.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: linux-mips-6z/3iImG2C8G8FEW9MqTrA@public.gmane.org, linux-ia64-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sparclinux-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Guan Xuetao <gxt-TG0Ac1+ktVePQbnJrJN+5g@public.gmane.org>, linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-c6x-dev-jPsnJVOj+W6hPH1hqNUYSQ@public.gmane.org, linux-hexagon-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, x86-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, Konrad Rzeszutek Wilk <konrad-Gq0aWv8utHQdnm+yROfE0A@public.gmane.org>, linux-snps-arc-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, linux-m68k-cunTk1MwBs8S/qaLPR03pWD2FQJk+8+b@public.gmane.org, patches-q3qR2WxjNRFS9aJRtSZj7A@public.gmane.org, linux-metag-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, Michal Simek <monstr-pSz03upnqPeHXe+LvDLADg@public.gmane.org>, linux-parisc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-cris-kernel-VrBV9hrLPhE@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-alpha-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linuxppc-dev-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org
+To: linux-kernel@vger.kernel.org
+Cc: Matthew Wilcox <mawilcox@microsoft.com>, linux-mm@kvack.org, linux-fsdevel@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net, linux-nilfs@vger.kernel.org, linux-btrfs@vger.kernel.org, linux-xfs@vger.kernel.org, linux-usb@vger.kernel.org, Bjorn Andersson <bjorn.andersson@linaro.org>, Stefano Stabellini <sstabellini@kernel.org>, iommu@lists.linux-foundation.org, linux-remoteproc@vger.kernel.org, linux-s390@vger.kernel.org, intel-gfx@lists.freedesktop.org, cgroups@vger.kernel.org, linux-sh@vger.kernel.org, David Howells <dhowells@redhat.com>
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
+From: Matthew Wilcox <mawilcox@microsoft.com>
+
+Moved the kref protection under the xa_lock too.
+
+Signed-off-by: Matthew Wilcox <mawilcox@microsoft.com>
 ---
- arch/m32r/include/asm/dma-mapping.h | 7 -------
- 1 file changed, 7 deletions(-)
+ net/qrtr/qrtr.c | 21 +++++++++++----------
+ 1 file changed, 11 insertions(+), 10 deletions(-)
 
-diff --git a/arch/m32r/include/asm/dma-mapping.h b/arch/m32r/include/asm/dma-mapping.h
-index 336ffe60814b..8967fb659691 100644
---- a/arch/m32r/include/asm/dma-mapping.h
-+++ b/arch/m32r/include/asm/dma-mapping.h
-@@ -14,11 +14,4 @@ static inline const struct dma_map_ops *get_arch_dma_ops(struct bus_type *bus)
- 	return &dma_noop_ops;
+diff --git a/net/qrtr/qrtr.c b/net/qrtr/qrtr.c
+index 77ab05e23001..7de9a06d2aa2 100644
+--- a/net/qrtr/qrtr.c
++++ b/net/qrtr/qrtr.c
+@@ -104,10 +104,10 @@ static inline struct qrtr_sock *qrtr_sk(struct sock *sk)
+ static unsigned int qrtr_local_nid = -1;
+ 
+ /* for node ids */
+-static RADIX_TREE(qrtr_nodes, GFP_KERNEL);
++static DEFINE_XARRAY(qrtr_nodes);
+ /* broadcast list */
+ static LIST_HEAD(qrtr_all_nodes);
+-/* lock for qrtr_nodes, qrtr_all_nodes and node reference */
++/* lock for qrtr_all_nodes */
+ static DEFINE_MUTEX(qrtr_node_lock);
+ 
+ /* local port allocation management */
+@@ -148,12 +148,15 @@ static int qrtr_bcast_enqueue(struct qrtr_node *node, struct sk_buff *skb,
+  * kref_put_mutex.  As such, the node mutex is expected to be locked on call.
+  */
+ static void __qrtr_node_release(struct kref *kref)
++		__releases(qrtr_nodes.xa_lock)
+ {
+ 	struct qrtr_node *node = container_of(kref, struct qrtr_node, ref);
+ 
+ 	if (node->nid != QRTR_EP_NID_AUTO)
+-		radix_tree_delete(&qrtr_nodes, node->nid);
++		__xa_erase(&qrtr_nodes, node->nid);
++	xa_unlock(&qrtr_nodes);
+ 
++	mutex_lock(&qrtr_node_lock);
+ 	list_del(&node->item);
+ 	mutex_unlock(&qrtr_node_lock);
+ 
+@@ -174,7 +177,7 @@ static void qrtr_node_release(struct qrtr_node *node)
+ {
+ 	if (!node)
+ 		return;
+-	kref_put_mutex(&node->ref, __qrtr_node_release, &qrtr_node_lock);
++	kref_put_lock(&node->ref, __qrtr_node_release, &qrtr_nodes.xa_lock);
  }
  
--static inline bool dma_capable(struct device *dev, dma_addr_t addr, size_t size)
--{
--	if (!dev->dma_mask)
--		return false;
--	return addr + size - 1 <= *dev->dma_mask;
--}
--
- #endif /* _ASM_M32R_DMA_MAPPING_H */
+ /* Pass an outgoing packet socket buffer to the endpoint driver. */
+@@ -217,10 +220,10 @@ static struct qrtr_node *qrtr_node_lookup(unsigned int nid)
+ {
+ 	struct qrtr_node *node;
+ 
+-	mutex_lock(&qrtr_node_lock);
+-	node = radix_tree_lookup(&qrtr_nodes, nid);
++	xa_lock(&qrtr_nodes);
++	node = xa_load(&qrtr_nodes, nid);
+ 	node = qrtr_node_acquire(node);
+-	mutex_unlock(&qrtr_node_lock);
++	xa_unlock(&qrtr_nodes);
+ 
+ 	return node;
+ }
+@@ -235,10 +238,8 @@ static void qrtr_node_assign(struct qrtr_node *node, unsigned int nid)
+ 	if (node->nid != QRTR_EP_NID_AUTO || nid = QRTR_EP_NID_AUTO)
+ 		return;
+ 
+-	mutex_lock(&qrtr_node_lock);
+-	radix_tree_insert(&qrtr_nodes, nid, node);
+ 	node->nid = nid;
+-	mutex_unlock(&qrtr_node_lock);
++	xa_store(&qrtr_nodes, nid, node, GFP_KERNEL);
+ }
+ 
+ /**
 -- 
-2.14.2
+2.15.1
 
