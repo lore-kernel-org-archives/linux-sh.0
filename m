@@ -1,46 +1,225 @@
-From: Richard Kuo <rkuo@codeaurora.org>
-Date: Tue, 09 Jan 2018 03:13:39 +0000
-Subject: Re: [PATCH 06/67] hexagon: remove unused flush_write_buffers definition
-Message-Id: <20180109031339.GA4196@codeaurora.org>
+From: Matthew Wilcox <willy@infradead.org>
+Date: Wed, 17 Jan 2018 20:21:37 +0000
+Subject: [PATCH v6 73/99] xfs: Convert mru cache to XArray
+Message-Id: <20180117202203.19756-74-willy@infradead.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20171229081911.2802-1-hch@lst.de>
-	<20171229081911.2802-7-hch@lst.de>
-In-Reply-To: <20171229081911.2802-7-hch-jcswGhMUV9g@public.gmane.org>
+References: <20180117202203.19756-1-willy@infradead.org>
+In-Reply-To: <20180117202203.19756-1-willy@infradead.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Christoph Hellwig <hch-jcswGhMUV9g@public.gmane.org>
-Cc: linux-mips-6z/3iImG2C8G8FEW9MqTrA@public.gmane.org, linux-ia64-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sparclinux-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Guan Xuetao <gxt-TG0Ac1+ktVePQbnJrJN+5g@public.gmane.org>, linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-c6x-dev-jPsnJVOj+W6hPH1hqNUYSQ@public.gmane.org, linux-hexagon-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, x86-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, linux-snps-arc-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, adi-buildroot-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, linux-m68k-cunTk1MwBs8S/qaLPR03pWD2FQJk+8+b@public.gmane.org, patches-q3qR2WxjNRFS9aJRtSZj7A@public.gmane.org, linux-metag-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, Michal Simek <monstr-pSz03upnqPeHXe+LvDLADg@public.gmane.org>, linux-parisc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-cris-kernel-VrBV9hrLPhE@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-alpha-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linuxppc-dev-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org
+To: linux-kernel@vger.kernel.org
+Cc: linux-s390@vger.kernel.org, David Howells <dhowells@redhat.com>, linux-nilfs@vger.kernel.org, Matthew Wilcox <mawilcox@microsoft.com>, linux-sh@vger.kernel.org, intel-gfx@lists.freedesktop.org, linux-usb@vger.kernel.org, linux-remoteproc@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net, linux-xfs@vger.kernel.org, linux-mm@kvack.org, iommu@lists.linux-foundation.org, Stefano Stabellini <sstabellini@kernel.org>, linux-fsdevel@vger.kernel.org, cgroups@vger.kernel.org, Bjorn Andersson <bjorn.andersson@linaro.org>, linux-btrfs@vger.kernel.org
 
-On Fri, Dec 29, 2017 at 09:18:10AM +0100, Christoph Hellwig wrote:
-> Signed-off-by: Christoph Hellwig <hch@lst.de>
-> ---
->  arch/hexagon/include/asm/io.h | 2 --
->  1 file changed, 2 deletions(-)
-> 
-> diff --git a/arch/hexagon/include/asm/io.h b/arch/hexagon/include/asm/io.h
-> index 66f5e9a61efc..9e8621d94ee9 100644
-> --- a/arch/hexagon/include/asm/io.h
-> +++ b/arch/hexagon/include/asm/io.h
-> @@ -330,8 +330,6 @@ static inline void outsl(unsigned long port, const void *buffer, int count)
->  	}
->  }
->  
-> -#define flush_write_buffers() do { } while (0)
-> -
->  #endif /* __KERNEL__ */
->  
->  #endif
-> -- 
-> 2.14.2
-> 
+From: Matthew Wilcox <mawilcox@microsoft.com>
 
-For Hexagon:
+This eliminates a call to radix_tree_preload().
 
-Acked-by: Richard Kuo <rkuo@codeaurora.org>
+Signed-off-by: Matthew Wilcox <mawilcox@microsoft.com>
+---
+ fs/xfs/xfs_mru_cache.c | 72 +++++++++++++++++++++++---------------------------
+ 1 file changed, 33 insertions(+), 39 deletions(-)
 
-
+diff --git a/fs/xfs/xfs_mru_cache.c b/fs/xfs/xfs_mru_cache.c
+index f8a674d7f092..2179bede5396 100644
+--- a/fs/xfs/xfs_mru_cache.c
++++ b/fs/xfs/xfs_mru_cache.c
+@@ -101,10 +101,9 @@
+  * an infinite loop in the code.
+  */
+ struct xfs_mru_cache {
+-	struct radix_tree_root	store;     /* Core storage data structure.  */
++	struct xarray		store;     /* Core storage data structure.  */
+ 	struct list_head	*lists;    /* Array of lists, one per grp.  */
+ 	struct list_head	reap_list; /* Elements overdue for reaping. */
+-	spinlock_t		lock;      /* Lock to protect this struct.  */
+ 	unsigned int		grp_count; /* Number of discrete groups.    */
+ 	unsigned int		grp_time;  /* Time period spanned by grps.  */
+ 	unsigned int		lru_grp;   /* Group containing time zero.   */
+@@ -232,22 +231,21 @@ _xfs_mru_cache_list_insert(
+  * data store, removing it from the reap list, calling the client's free
+  * function and deleting the element from the element zone.
+  *
+- * We get called holding the mru->lock, which we drop and then reacquire.
+- * Sparse need special help with this to tell it we know what we are doing.
++ * We get called holding the mru->store lock, which we drop and then reacquire.
++ * Sparse needs special help with this to tell it we know what we are doing.
+  */
+ STATIC void
+ _xfs_mru_cache_clear_reap_list(
+ 	struct xfs_mru_cache	*mru)
+-		__releases(mru->lock) __acquires(mru->lock)
++		__releases(mru->store) __acquires(mru->store)
+ {
+ 	struct xfs_mru_cache_elem *elem, *next;
+ 	struct list_head	tmp;
+ 
+ 	INIT_LIST_HEAD(&tmp);
+ 	list_for_each_entry_safe(elem, next, &mru->reap_list, list_node) {
+-
+ 		/* Remove the element from the data store. */
+-		radix_tree_delete(&mru->store, elem->key);
++		__xa_erase(&mru->store, elem->key);
+ 
+ 		/*
+ 		 * remove to temp list so it can be freed without
+@@ -255,14 +253,14 @@ _xfs_mru_cache_clear_reap_list(
+ 		 */
+ 		list_move(&elem->list_node, &tmp);
+ 	}
+-	spin_unlock(&mru->lock);
++	xa_unlock(&mru->store);
+ 
+ 	list_for_each_entry_safe(elem, next, &tmp, list_node) {
+ 		list_del_init(&elem->list_node);
+ 		mru->free_func(elem);
+ 	}
+ 
+-	spin_lock(&mru->lock);
++	xa_lock(&mru->store);
+ }
+ 
+ /*
+@@ -284,7 +282,7 @@ _xfs_mru_cache_reap(
+ 	if (!mru || !mru->lists)
+ 		return;
+ 
+-	spin_lock(&mru->lock);
++	xa_lock(&mru->store);
+ 	next = _xfs_mru_cache_migrate(mru, jiffies);
+ 	_xfs_mru_cache_clear_reap_list(mru);
+ 
+@@ -298,7 +296,7 @@ _xfs_mru_cache_reap(
+ 		queue_delayed_work(xfs_mru_reap_wq, &mru->work, next);
+ 	}
+ 
+-	spin_unlock(&mru->lock);
++	xa_unlock(&mru->store);
+ }
+ 
+ int
+@@ -358,13 +356,8 @@ xfs_mru_cache_create(
+ 	for (grp = 0; grp < mru->grp_count; grp++)
+ 		INIT_LIST_HEAD(mru->lists + grp);
+ 
+-	/*
+-	 * We use GFP_KERNEL radix tree preload and do inserts under a
+-	 * spinlock so GFP_ATOMIC is appropriate for the radix tree itself.
+-	 */
+-	INIT_RADIX_TREE(&mru->store, GFP_ATOMIC);
++	xa_init(&mru->store);
+ 	INIT_LIST_HEAD(&mru->reap_list);
+-	spin_lock_init(&mru->lock);
+ 	INIT_DELAYED_WORK(&mru->work, _xfs_mru_cache_reap);
+ 
+ 	mru->grp_time  = grp_time;
+@@ -394,17 +387,17 @@ xfs_mru_cache_flush(
+ 	if (!mru || !mru->lists)
+ 		return;
+ 
+-	spin_lock(&mru->lock);
++	xa_lock(&mru->store);
+ 	if (mru->queued) {
+-		spin_unlock(&mru->lock);
++		xa_unlock(&mru->store);
+ 		cancel_delayed_work_sync(&mru->work);
+-		spin_lock(&mru->lock);
++		xa_lock(&mru->store);
+ 	}
+ 
+ 	_xfs_mru_cache_migrate(mru, jiffies + mru->grp_count * mru->grp_time);
+ 	_xfs_mru_cache_clear_reap_list(mru);
+ 
+-	spin_unlock(&mru->lock);
++	xa_unlock(&mru->store);
+ }
+ 
+ void
+@@ -431,24 +424,24 @@ xfs_mru_cache_insert(
+ 	unsigned long		key,
+ 	struct xfs_mru_cache_elem *elem)
+ {
++	XA_STATE(xas, &mru->store, key);
+ 	int			error;
+ 
+ 	ASSERT(mru && mru->lists);
+ 	if (!mru || !mru->lists)
+ 		return -EINVAL;
+ 
+-	if (radix_tree_preload(GFP_NOFS))
+-		return -ENOMEM;
+-
+ 	INIT_LIST_HEAD(&elem->list_node);
+ 	elem->key = key;
+ 
+-	spin_lock(&mru->lock);
+-	error = radix_tree_insert(&mru->store, key, elem);
+-	radix_tree_preload_end();
+-	if (!error)
+-		_xfs_mru_cache_list_insert(mru, elem);
+-	spin_unlock(&mru->lock);
++	do {
++		xas_lock(&xas);
++		xas_store(&xas, elem);
++		error = xas_error(&xas);
++		if (!error)
++			_xfs_mru_cache_list_insert(mru, elem);
++		xas_unlock(&xas);
++	} while (xas_nomem(&xas, GFP_NOFS));
+ 
+ 	return error;
+ }
+@@ -470,11 +463,11 @@ xfs_mru_cache_remove(
+ 	if (!mru || !mru->lists)
+ 		return NULL;
+ 
+-	spin_lock(&mru->lock);
+-	elem = radix_tree_delete(&mru->store, key);
++	xa_lock(&mru->store);
++	elem = __xa_erase(&mru->store, key);
+ 	if (elem)
+ 		list_del(&elem->list_node);
+-	spin_unlock(&mru->lock);
++	xa_unlock(&mru->store);
+ 
+ 	return elem;
+ }
+@@ -520,20 +513,21 @@ xfs_mru_cache_lookup(
+ 	struct xfs_mru_cache	*mru,
+ 	unsigned long		key)
+ {
++	XA_STATE(xas, &mru->store, key);
+ 	struct xfs_mru_cache_elem *elem;
+ 
+ 	ASSERT(mru && mru->lists);
+ 	if (!mru || !mru->lists)
+ 		return NULL;
+ 
+-	spin_lock(&mru->lock);
+-	elem = radix_tree_lookup(&mru->store, key);
++	xas_lock(&xas);
++	elem = xas_load(&xas);
+ 	if (elem) {
+ 		list_del(&elem->list_node);
+ 		_xfs_mru_cache_list_insert(mru, elem);
+-		__release(mru_lock); /* help sparse not be stupid */
++		__release(&xas); /* help sparse not be stupid */
+ 	} else
+-		spin_unlock(&mru->lock);
++		xas_unlock(&xas);
+ 
+ 	return elem;
+ }
+@@ -546,7 +540,7 @@ xfs_mru_cache_lookup(
+ void
+ xfs_mru_cache_done(
+ 	struct xfs_mru_cache	*mru)
+-		__releases(mru->lock)
++		__releases(mru->store)
+ {
+-	spin_unlock(&mru->lock);
++	xa_unlock(&mru->store);
+ }
 -- 
-Employee of Qualcomm Innovation Center, Inc.
-Qualcomm Innovation Center, Inc. is a member of the Code Aurora Forum, 
-a Linux Foundation Collaborative Project
+2.15.1
+
