@@ -1,77 +1,104 @@
-From: Randy Dunlap <rdunlap@infradead.org>
-Date: Sun, 21 Jan 2018 18:04:58 +0000
+From: Hans Verkuil <hverkuil@xs4all.nl>
+Date: Mon, 22 Jan 2018 10:00:50 +0000
 Subject: Re: [PATCH v6 0/9] Renesas Capture Engine Unit (CEU) V4L2 driver
-Message-Id: <830114e9-c559-fc3a-05ac-938959c69999@infradead.org>
+Message-Id: <2a18ce21-8efd-6182-f626-8f7c7bcaebee@xs4all.nl>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1516139101-7835-1-git-send-email-jacopo+renesas@jmondi.org>
- <b26ef29e-0c26-6359-1205-735e6770eb10@infradead.org>
- <20180121175445.GQ24926@w540>
-In-Reply-To: <20180121175445.GQ24926@w540>
+ <6fcd22c1-19a5-e0b7-2b00-961e1cd1ebaa@xs4all.nl>
+ <20180121174909.GP24926@w540>
+In-Reply-To: <20180121174909.GP24926@w540>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: jacopo mondi <jacopo@jmondi.org>
-Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>, laurent.pinchart@ideasonboard.com, magnus.damm@gmail.com, geert@glider.be, hverkuil@xs4all.nl, mchehab@kernel.org, festevam@gmail.com, sakari.ailus@iki.fi, robh+dt@kernel.org, mark.rutland@arm.com, pombredanne@nexb.com, linux-renesas-soc@vger.kernel.org, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org
+To: jacopo mondi <jacopo-AW8dsiIh9cEdnm+yROfE0A@public.gmane.org>
+Cc: Jacopo Mondi <jacopo+renesas-AW8dsiIh9cEdnm+yROfE0A@public.gmane.org>, laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org, magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, geert-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org, mchehab-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, festevam-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, sakari.ailus-X3B1VOXEql0@public.gmane.org, robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, mark.rutland-5wv7dgnIgG8@public.gmane.org, pombredanne-od1rfyK75/E@public.gmane.org, linux-renesas-soc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-media-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 01/21/2018 09:54 AM, jacopo mondi wrote:
-> Hi Randy,
->    thanks for noticing,
+On 21/01/18 18:49, jacopo mondi wrote:
+> Hi Hans,
 > 
-> On Fri, Jan 19, 2018 at 02:12:19PM -0800, Randy Dunlap wrote:
->> On 01/16/2018 01:44 PM, Jacopo Mondi wrote:
+> On Fri, Jan 19, 2018 at 12:26:09PM +0100, Hans Verkuil wrote:
+>> Hi Jacopo,
+>>
+>> On 01/16/18 22:44, Jacopo Mondi wrote:
 >>> Hello,
 >>>    new version of CEU after Hans' review.
 >>>
 >>> Added his Acked-by to most patches and closed review comments.
 >>> Running v4l2-compliance, I noticed a new failure introduced by the way I now
 >>> calculate the plane sizes in set/try_fmt.
+>>>
+>>> This is the function used to update per-plane bytesperline and sizeimage:
+>>>
+>>> static void ceu_update_plane_sizes(struct v4l2_plane_pix_format *plane,
+>>> 				   unsigned int bpl, unsigned int szimage)
+>>> {
+>>> 	if (plane->bytesperline < bpl)
+>>> 		plane->bytesperline = bpl;
+>>> 	if (plane->sizeimage < szimage)
+>>> 		plane->sizeimage = szimage;
+>>> }
+>>>
+>>> I'm seeing a failure as v4l2-compliance requires buffers with both bytesperline
+>>> and sizeimage set to MAX_INT . Hans, is this expected from v4l2-compliance?
+>>> How should I handle this, if that has to be handled by the single drivers?
 >>
->> I would expect that you have already seen this, but I get a build error
->> in renesas-ceu.c.  Here is a small patch for it.
+>> I commented on this in my review of patch 3/9.
 > 
-> Actually I did not.
-> The compile error has been introduced by this commit
+> Fixed thank you.
 > 
-> commit 4e48afecd5ee3a394d228349fc1c33982e9fb557
-> Author: Mauro Carvalho Chehab <mchehab@s-opensource.com>
-> Date:   Wed Sep 27 10:12:00 2017 -0400
->         media: v4l2-async: simplify v4l2_async_subdev structure
+>>
+>>>
+>>> Apart from that, here it is the output of v4l2-compliance, with the last tests
+>>> failing due to the above stated reason, and two errors in try/set format due to
+>>> the fact the driver is not setting ycbcr encoding after it receives an invalid
+>>
+>> Which driver? The CEU driver or the sensor driver? I don't actually see where
+>> it fails.
+>>
 > 
-> Which is not in v4.15-rc8 on which I have based my work on.
+> Here it is:
 > 
-> As a general question, if I'm aiming to have my driver included in
-> next release, should I always base my work on linux-next or it depends
-> on sub-system/maintainers preferences?
+>                 fail: v4l2-test-formats.cpp(335): ycbcr_enc >= 0xff
+>                 fail: v4l2-test-formats.cpp(451): testColorspace(pix_mp.pixelformat, pix_mp.colorspace, pix_mp.ycbcr_enc, pix_mp.quantization)
+>                 fail: v4l2-test-formats.cpp(736): Video Capture Multiplanar is valid, but TRY_FMT failed to return a format
+>                 test VIDIOC_TRY_FMT: FAIL
+>                 fail: v4l2-test-formats.cpp(335): ycbcr_enc >= 0xff
+>                 fail: v4l2-test-formats.cpp(451): testColorspace(pix_mp.pixelformat, pix_mp.colorspace, pix_mp.ycbcr_enc, pix_mp.quantization)
+>                 fail: v4l2-test-formats.cpp(996): Video Capture Multiplanar is valid, but no S_FMT was implemented
+>                 test VIDIOC_S_FMT: FAIL
 
-That's up to the subsystem maintainer, but usually you should make sure
-that it will apply to linux-next or to the subsystem's "-next" tree,
-whatever that is called.
+Sorry, I was perhaps confusing. I meant that I couldn't see where in the code
+ycbcr_enc was not overwritten by 0 (which should have happened). You will need
+to debug a bit, I think. It could be a bug in the ceu driver or the sensor driver.
 
+> 
+> 
+>>> format. I would set those, but I'm not sure what it the correct value and not
+>>> all mainline drivers do that.
 >>
->> ---
->> From: Randy Dunlap <rdunlap@infradead.org>
+>> In any case, the default for ycbcr_enc, xfer_func and quantization is 0.
 >>
->> Fix build error (on x86 with COMPILE_TEST):
->>
->> ../drivers/media/platform/renesas-ceu.c: In function 'ceu_parse_dt':
->> ../drivers/media/platform/renesas-ceu.c:1497:27: error: request for member 'fwnode' in something not a structure or union
->>    ceu_sd->asd.match.fwnode.fwnode >>
->> Signed-off-by: Randy Dunlap <rdunlap@infradead.org>
->> ---
->>  drivers/media/platform/renesas-ceu.c |    2 +-
->>  1 file changed, 1 insertion(+), 1 deletion(-)
->>
->> --- linux-next-20180119.orig/drivers/media/platform/renesas-ceu.c
->> +++ linux-next-20180119/drivers/media/platform/renesas-ceu.c
->> @@ -1494,7 +1494,7 @@ static int ceu_parse_dt(struct ceu_devic
->>
->>  		ceu_sd->mbus_flags = fw_ep.bus.parallel.flags;
->>  		ceu_sd->asd.match_type = V4L2_ASYNC_MATCH_FWNODE;
->> -		ceu_sd->asd.match.fwnode.fwnode >> +		ceu_sd->asd.match.fwnode >>  			fwnode_graph_get_remote_port_parent(
->>  					of_fwnode_handle(ep));
->>
->>
+> 
+> Thanks again. I do expect to be the sensor driver to set ycbcr_enc and
+> quantization, but from a very trivial grep on media/i2c/ I see only a
+> few drivers taking care of them (adv7511 and adv7842). What about the
+> others? I assume v4l2-compliance would not fail on them as it does on
+> ov7670, but I don't see where ycbr_enc (and others) are managed.
 
+In most cases these values are initialized to 0 (either a memset or by
+initializing the struct), which is typically all you need for sensor
+drivers. HDMI drivers are more complicated which is why you see explicit
+handling of these fields only there.
 
--- 
-~Randy
+> 
+> Overall, with this addressed, the other issue I mentioned on patch
+> [3/9] on readbuffers clarified and frameinterval handled for ov722x, I
+> hope we're done with this series. Thanks again your continued effort
+> in reviews and guidance.
+
+My pleasure!
+
+Regards,
+
+	Hans
+
