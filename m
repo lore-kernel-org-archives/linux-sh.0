@@ -1,203 +1,119 @@
 From: Hans Verkuil <hverkuil@xs4all.nl>
-Date: Mon, 22 Jan 2018 09:07:45 +0000
+Date: Mon, 22 Jan 2018 09:56:43 +0000
 Subject: Re: [PATCH v6 3/9] v4l: platform: Add Renesas CEU driver
-Message-Id: <8363e777-2af8-408a-1a42-65309e48af6b@xs4all.nl>
+Message-Id: <c91b4aa3-23e7-248b-00ee-c219185fe716@xs4all.nl>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1516139101-7835-1-git-send-email-jacopo+renesas@jmondi.org>
- <2529707.jzkV7c2yGz@avalon> <4195ec6a-b99d-2fad-3898-9ce9c02fce00@xs4all.nl>
- <1556766.StfJmN1Kpx@avalon>
-In-Reply-To: <1556766.StfJmN1Kpx@avalon>
+ <1516139101-7835-4-git-send-email-jacopo+renesas@jmondi.org>
+ <d056343b-46be-436a-e316-0a588a182eb9@xs4all.nl>
+ <20180121095323.GL24926@w540>
+ <55c3ab66-0886-4b2b-6842-ac07fc9138f3@xs4all.nl>
+ <e9623e9c-6444-2531-62c0-feed622c6e3b@xs4all.nl>
+ <20180121172907.GO24926@w540>
+In-Reply-To: <20180121172907.GO24926@w540>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>, magnus.damm@gmail.com, geert@glider.be, mchehab@kernel.org, festevam@gmail.com, sakari.ailus@iki.fi, robh+dt@kernel.org, mark.rutland@arm.com, pombredanne@nexb.com, linux-renesas-soc@vger.kernel.org, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: jacopo mondi <jacopo@jmondi.org>
+Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>, laurent.pinchart@ideasonboard.com, magnus.damm@gmail.com, geert@glider.be, mchehab@kernel.org, festevam@gmail.com, sakari.ailus@iki.fi, robh+dt@kernel.org, mark.rutland@arm.com, pombredanne@nexb.com, linux-renesas-soc@vger.kernel.org, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org
 
-On 22/01/18 01:52, Laurent Pinchart wrote:
+On 21/01/18 18:29, jacopo mondi wrote:
 > Hi Hans,
-> 
-> On Friday, 19 January 2018 14:25:39 EET Hans Verkuil wrote:
->> On 01/19/18 13:20, Laurent Pinchart wrote:
->>> On Friday, 19 January 2018 13:20:19 EET Hans Verkuil wrote:
->>>> On 01/16/18 22:44, Jacopo Mondi wrote:
->>>>> Add driver for Renesas Capture Engine Unit (CEU).
->>>>>
->>>>> The CEU interface supports capturing 'data' (YUV422) and 'images'
->>>>> (NV[12|21|16|61]).
->>>>>
->>>>> This driver aims to replace the soc_camera-based sh_mobile_ceu one.
->>>>>
->>>>> Tested with ov7670 camera sensor, providing YUYV_2X8 data on Renesas RZ
->>>>> platform GR-Peach.
->>>>>
->>>>> Tested with ov7725 camera sensor on SH4 platform Migo-R.
->>>>>
->>>>> Signed-off-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
->>>>> Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
->>>>> ---
->>>>>
->>>>>  drivers/media/platform/Kconfig       |    9 +
->>>>>  drivers/media/platform/Makefile      |    1 +
->>>>>  drivers/media/platform/renesas-ceu.c | 1659 +++++++++++++++++++++++++++
->>>>>  3 files changed, 1669 insertions(+)
->>>>>  create mode 100644 drivers/media/platform/renesas-ceu.c
->>>
->>> [snip]
->>>
->>>>> diff --git a/drivers/media/platform/renesas-ceu.c
->>>>> b/drivers/media/platform/renesas-ceu.c new file mode 100644
->>>>> index 0000000..1b8f0ef
->>>>> --- /dev/null
->>>>> +++ b/drivers/media/platform/renesas-ceu.c
->>>
->>> [snip]
->>>
->>>>> +static void ceu_update_plane_sizes(struct v4l2_plane_pix_format *plane,
->>>>> +				   unsigned int bpl, unsigned int szimage)
->>>>> +{
->>>>> +	if (plane->bytesperline < bpl)
->>>>> +		plane->bytesperline = bpl;
->>>>> +	if (plane->sizeimage < szimage)
->>>>> +		plane->sizeimage = szimage;
+>=20
+> On Sun, Jan 21, 2018 at 11:23:12AM +0100, Hans Verkuil wrote:
+>> On 21/01/18 11:21, Hans Verkuil wrote:
+>>> On 21/01/18 10:53, jacopo mondi wrote:
+>>>> Hi Hans,
 >>>>
->>>> As mentioned in your cover letter, you do need to check for invalid
->>>> bytesperline values. The v4l2-compliance test is to see what happens
->>>> when userspace gives insane values, so yes, drivers need to be able
->>>> to handle that.
->>>
->>> What limit would you set, what is an acceptable large value versus an
->>> invalid large value ? I think we should have rules for this at the API
->>> level (or at least, if not part of the API, rules that are consistent
->>> across drivers).
->>
->> I would expect this to be the max of what the hardware can support. If
->> that's really high, then this can be, say, 4 times the width.
->>
->> Note that there are very few drivers that can handle a user-specified
->> stride.
-> 
-> But that's no reason not to handle it here if the hardware permits, right ? 
-> :-)
-
-Certainly. But it is the reason why it's hard to find example code in
-existing drivers.
-
->>>> plane->sizeimage is set by the driver, so drop the 'if' before the
->>>> assignment.
->>>
->>> I don't think that's correct. Userspace should be able to control padding
->>> lines at the end of the image, the same way it controls padding pixels at
->>> the end of lines.
->>
->> If userspace wants larger buffers, then it should use VIDIOC_CREATE_BUFS.
->>
->> sizeimage is exclusively set by the driver, applications rely on that.
-> 
-> The API documentation is pretty confusing about this.
-> 
-> In pixfmt-v4l2.rst, the field in the v4l2_pix_format structure is documented 
-> as
-> 
->       - Size in bytes of the buffer to hold a complete image, set by the
->         driver. Usually this is ``bytesperline`` times ``height``. When
->         the image consists of variable length compressed data this is the
->         maximum number of bytes required to hold an image.
-> 
-> Then in pixfmt-v4l2-mplane.rst, the field in the v4l2_plane_pix_format 
-> structure is documented as
-> 
->       - Maximum size in bytes required for image data in this plane.
-
-This should contain the same text as in pixfmt-v4l2.rst.
-
-> 
-> Finally, in vidioc-create-bufs.rst, we have
-> 
-> The buffers created by this ioctl will have as minimum size the size
-> defined by the ``format.pix.sizeimage`` field (or the corresponding
-> fields for other format types). Usually if the ``format.pix.sizeimage``
-> field is less than the minimum required for the given format, then an
-> error will be returned since drivers will typically not allow this. If
-> it is larger, then the value will be used as-is. In other words, the
-> driver may reject the requested size, but if it is accepted the driver
-> will use it unchanged.
-> 
-> The VIDIOC_CREATE_BUFS documentation contradicts the v4l2_pix_format 
-> documentation, as the multiplane case doesn't state anything about who sets 
-> the sizeimage field. We should clarify the documentation.
-
-The pixfmt-v4l2-mplane.rst is the one that's incomplete. I noticed the same
-thing when I looked at it.
-
-> 
->>>>> +}
->>>
->>> [snip]
->>>
->>>>> +static const struct v4l2_ioctl_ops ceu_ioctl_ops = {
->>>>> +	.vidioc_querycap		= ceu_querycap,
->>>>> +
->>>>> +	.vidioc_enum_fmt_vid_cap_mplane	= ceu_enum_fmt_vid_cap,
->>>>> +	.vidioc_try_fmt_vid_cap_mplane	= ceu_try_fmt_vid_cap,
->>>>> +	.vidioc_s_fmt_vid_cap_mplane	= ceu_s_fmt_vid_cap,
->>>>> +	.vidioc_g_fmt_vid_cap_mplane	= ceu_g_fmt_vid_cap,
->>>>> +
->>>>> +	.vidioc_enum_input		= ceu_enum_input,
->>>>> +	.vidioc_g_input			= ceu_g_input,
->>>>> +	.vidioc_s_input			= ceu_s_input,
->>>>> +
->>>>> +	.vidioc_reqbufs			= vb2_ioctl_reqbufs,
->>>>> +	.vidioc_querybuf		= vb2_ioctl_querybuf,
->>>>> +	.vidioc_qbuf			= vb2_ioctl_qbuf,
->>>>> +	.vidioc_expbuf			= vb2_ioctl_expbuf,
->>>>> +	.vidioc_dqbuf			= vb2_ioctl_dqbuf,
->>>>> +	.vidioc_create_bufs		= vb2_ioctl_create_bufs,
->>>>> +	.vidioc_prepare_buf		= vb2_ioctl_prepare_buf,
->>>>> +	.vidioc_streamon		= vb2_ioctl_streamon,
->>>>> +	.vidioc_streamoff		= vb2_ioctl_streamoff,
->>>>> +
->>>>> +	.vidioc_g_parm			= ceu_g_parm,
->>>>> +	.vidioc_s_parm			= ceu_s_parm,
->>>>> +	.vidioc_enum_framesizes		= ceu_enum_framesizes,
->>>>> +	.vidioc_enum_frameintervals	= ceu_enum_frameintervals,
+>>>> On Fri, Jan 19, 2018 at 12:20:19PM +0100, Hans Verkuil wrote:
+>>>>> static int ov7670_g_parm(struct v4l2_subdev *sd, struct v4l2_streampa=
+rm *parms)
+>>>>> {
+>>>>>         struct v4l2_captureparm *cp =3D &parms->parm.capture;
+>>>>>         struct ov7670_info *info =3D to_state(sd);
+>>>>>
+>>>>>         if (parms->type !=3D V4L2_BUF_TYPE_VIDEO_CAPTURE)
+>>>>>                 return -EINVAL;
+>>>>>
+>>>>> And parms->type is CAPTURE_MPLANE. Just drop this test from the ov767=
+0 driver
+>>>>> in the g/s_parm functions. It shouldn't test for that since a subdev =
+driver
+>>>>> knows nothing about buffer types.
+>>>>>
 >>>>
->>>> You're missing these ioctls:
->>>>         .vidioc_log_status              = v4l2_ctrl_log_status,
+>>>> I will drop that test in an additional patch part of next iteration of=
+ this series,
 >>>
->>> Is log status mandatory ?
+>>> Replace g/s_parm by g/s_frame_interval. Consider g/s_parm for subdev dr=
+ivers as
+>>> deprecated (I'm working on a patch series to replace all g/s_parm uses =
+by
+>>> g/s_frame_interval).
 >>
->> No, but it doesn't hurt to add this one. It comes for free.
-> 
-> Possibly a bit out of scope, but now that the standard debugging interface 
-> seems to be debugfs, wouldn't it make sense to implement log status through 
-> there instead of as an ioctl ?
+>> Take a look here:
+>>
+>> https://git.linuxtv.org/hverkuil/media_tree.git/log/?h=3Dparm
+>>
+>> You probably want to use the patch 'v4l2-common: add g/s_parm helper fun=
+ctions'
+>> for the new ceu driver in your patch series. Feel free to add it.
+>=20
+> Thanks, I have now re-based my series on top of your 'parm' branch,
+> and now I have silenced those errors on bad frame interval.
+>=20
+> CEU g/s_parm now look like this:
+>=20
+> static int ceu_g_parm(struct file *file, void *fh, struct v4l2_streamparm=
+ *a)
+> {
+> 	struct ceu_device *ceudev =3D video_drvdata(file);
+> 	int ret;
+>=20
+> 	ret =3D v4l2_g_parm(V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE,
+> 			  ceudev->sd->v4l2_sd, a);
+> 	if (ret)
+> 		return ret;
+>=20
+> 	a->parm.capture.readbuffers =3D 0;
+>=20
+> 	return 0;
+> }
+>=20
+> Very similar to what you've done on other platform drivers in this
+> commit:
+> https://git.linuxtv.org/hverkuil/media_tree.git/commit/?h=3Dparm&id=A5895=
+6ef45cebaa5ce43a5f740fe04517b24a853
+>=20
+> I have a question though (please bear with me a little more :)
+> I had to manually set a->parm.capture.readbuffers to 0 to silence the fol=
+lowing
+> error in v4l2_compliance (which I have now updated to the most recent
+> remote HEAD):
+>=20
+>  fail: v4l2-test-formats.cpp(1114): cap->readbuffers
+>                 test VIDIOC_G/S_PARM: FAIL
+>=20
+> 		fail_on_test(cap->readbuffers > VIDEO_MAX_FRAME);
+> 		if (!(node->g_caps() & V4L2_CAP_READWRITE))
+> 			fail_on_test(cap->readbuffers);
+> 		else if (node->g_caps() & V4L2_CAP_STREAMING)
+> 			fail_on_test(!cap->readbuffers);
+>=20
+> CEU does not support CAP_READWRITE, as it seems atmel-isc/isi do not, so
+> v4l2-compliance wants to have readbuffers set to 0. I wonder why in
+> the previously mentioned commit you didn't have to set readbuffers
+> explicitly to 0 for atmel-isc/isi as I had to for CEU. Will v4l2-complian=
+ce
+> fail if run on atmel-isc/isi with your commit, or am I missing something?
 
-Why? The ioctl has been there for many many years and it works very well (Cisco
-uses this on a daily basis). I see no reason to do a lot of work for no good
-purpose. It's probably less useful for sensors but for video receivers (HDMI or
-analog) I couldn't do without. With HDMI/analog video receivers you never
-know what sort of video you receive, so being able to log the current status
-is great. We use it in regression tests and error reporting all the time.
+I've reworked the g/s_parm helper functions so they will now check for
+the READWRITE capability and set readbuffers accordingly. I'll post a new
+version later today.
 
-Sure, today we'd design this using debugfs, but I don't think it existed when
-LOG_STATUS was created. In any case, I see no reason to change this. In fact,
-that would break our tests.
+Thanks for testing this, I missed that corner case.
 
 Regards,
 
 	Hans
-
-> 
->>>>         .vidioc_subscribe_event         = v4l2_ctrl_subscribe_event,
->>>>         .vidioc_unsubscribe_event       = v4l2_event_unsubscribe,
->>>>
->>>> These missing _event ops are the reason for this compliance failure:
->>>>
->>>> fail: v4l2-test-controls.cpp(782): subscribe event for control 'User
->>>> Controls' failed
->>>>
->>>>> +};
->>>
->>> [snip]
-> 
 
