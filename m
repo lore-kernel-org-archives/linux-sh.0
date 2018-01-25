@@ -1,46 +1,73 @@
-From: jacopo mondi <jacopo@jmondi.org>
-Date: Tue, 02 Jan 2018 09:00:20 +0000
-Subject: Re: [PATCH v2 6/9] v4l: i2c: Copy ov772x soc_camera sensor driver
-Message-Id: <20180102090020.GC4314@w540>
+From: Jacopo Mondi <jacopo+renesas@jmondi.org>
+Date: Thu, 25 Jan 2018 11:24:53 +0000
+Subject: [PATCH] sh: clk: Relax clk rate match test
+Message-Id: <1516879493-24637-1-git-send-email-jacopo+renesas@jmondi.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1514469681-15602-1-git-send-email-jacopo+renesas@jmondi.org>
- <1514469681-15602-7-git-send-email-jacopo+renesas@jmondi.org>
- <CAOFm3uEU1ZegJgjUYXVJCTLRROtJ_KJDgf1-KiHdoJSw-5zd3Q@mail.gmail.com>
-In-Reply-To: <CAOFm3uEU1ZegJgjUYXVJCTLRROtJ_KJDgf1-KiHdoJSw-5zd3Q@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Philippe Ombredanne <pombredanne@nexb.com>
-Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Magnus Damm <magnus.damm@gmail.com>, geert@glider.be, Mauro Carvalho Chehab <mchehab@kernel.org>, Hans Verkuil <hverkuil@xs4all.nl>, Rob Herring <robh+dt@kernel.org>, Mark Rutland <mark.rutland@arm.com>, linux-renesas-soc@vger.kernel.org, Linux Media Mailing List <linux-media@vger.kernel.org>, linux-sh@vger.kernel.org, "open list:OPEN FIRMWARE AND FLATTENED DEVICE TREE BINDINGS" <devicetree@vger.kernel.org>, LKML <linux-kernel@vger.kernel.org>
+To: magnus.damm@gmail.com, kuninori.morimoto.gx@renesas.com, geert@linux-m68k.org, laurent.pinchart@ideasonboard.com, ysato@users.sourceforge.jp, dalias@libc.org
+Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>, linux-sh@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-media@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Hi Philippe,
-   thanks for the comment,
+When asking for a clk rate to be set, the sh core clock matches only
+exact rate values against the calculated frequency table entries. If the
+rate does not match exactly the test fails, and the whole frequency
+table is walked, resulting in selection of the last entry, corresponding to
+the lowest available clock rate.
 
-On Fri, Dec 29, 2017 at 01:47:30PM +0100, Philippe Ombredanne wrote:
-> Jacopo,
->
-> On Thu, Dec 28, 2017 at 3:01 PM, Jacopo Mondi <jacopo+renesas@jmondi.org> wrote:
-> > Copy the soc_camera based driver in v4l2 sensor driver directory.
-> > This commit just copies the original file without modifying it.
-> > No modification to KConfig and Makefile as soc_camera framework
-> > dependencies need to be removed first in next commit.
->
-> Do you mind using a simpler SPDX identifier instead of this long
-> legalese boilerplate?
-> This is documented in Thomas doc patches. This applies to your entire
-> patch set of course.
+Ie. when asking for a 10MHz clock rate on div6 clocks (ie. "video_clk" line),
+the calculated clock frequency 10088572 Hz gets ignored, and the clock is
+actually set to 5201920 Hz, which is the last available entry of the frequencies
+table.
 
-Please read the changelogs. In this commit I am just copying the
-already in mainline driver with no code changes. I have gathered all
-of changes in [7/9] (and in [9/9] for tw9910 driver).
+Relax the clock frequency match test, allowing selection of clock rates
+immediately slower than the required one.
 
-If you look at those patches, you'll notice I have replaced the
-license text with the SPDX identifier.
+Signed-off-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
+
+---
+Hello renesas lists,
+
+I'm now working on handling frame rate for the ov7720 image sensor to have that
+driver accepted as part of v4l2. The sensor is installed on on Migo-R board.
+In order to properly calculate pixel clock and the framerate I noticed the
+clock signal fed to the sensor from the SH7722 chip was always the lowest
+available one.
+
+This patch fixes the issues and allows me to properly select which clock
+frequency supply to the sensor, which according to datasheet does not support
+input clock frequencies slower than 10MHz (but works anyhow).
+
+As all patches for SH architecture I wonder where they should be picked up from,
+as SH seems not maintained at the moment.
 
 Thanks
-    j
+   j
 
-> Thanks!
-> --
-> Cordially
-> Philippe Ombredanne
+---
+ drivers/sh/clk/core.c | 9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/sh/clk/core.c b/drivers/sh/clk/core.c
+index 92863e3..d2cb94c 100644
+--- a/drivers/sh/clk/core.c
++++ b/drivers/sh/clk/core.c
+@@ -198,9 +198,12 @@ int clk_rate_table_find(struct clk *clk,
+ {
+ 	struct cpufreq_frequency_table *pos;
+
+-	cpufreq_for_each_valid_entry(pos, freq_table)
+-		if (pos->frequency = rate)
+-			return pos - freq_table;
++	cpufreq_for_each_valid_entry(pos, freq_table) {
++		if (pos->frequency > rate)
++			continue;
++
++		return pos - freq_table;
++	}
+
+ 	return -ENOENT;
+ }
+--
+2.7.4
+
