@@ -1,10 +1,10 @@
 From: Jacopo Mondi <jacopo+renesas@jmondi.org>
-Date: Fri, 26 Jan 2018 13:48:35 +0000
+Date: Fri, 26 Jan 2018 13:55:22 +0000
 Subject: [PATCH v7 03/11] media: platform: Add Renesas CEU driver
-Message-Id: <1516974528-11120-4-git-send-email-jacopo+renesas@jmondi.org>
+Message-Id: <1516974930-11713-4-git-send-email-jacopo+renesas@jmondi.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1516974528-11120-1-git-send-email-jacopo+renesas@jmondi.org>
-In-Reply-To: <1516974528-11120-1-git-send-email-jacopo+renesas@jmondi.org>
+References: <1516974930-11713-1-git-send-email-jacopo+renesas@jmondi.org>
+In-Reply-To: <1516974930-11713-1-git-send-email-jacopo+renesas@jmondi.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
