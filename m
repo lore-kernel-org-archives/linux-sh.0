@@ -1,146 +1,33 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 02 Jan 2018 15:44:03 +0000
-Subject: Re: [PATCH v2 7/9] media: i2c: ov772x: Remove soc_camera dependencies
-Message-Id: <5703631.yJ335LfYLI@avalon>
+From: Peter Schuster <femi.ageuh@gmail.com>
+Date: Fri, 26 Jan 2018 07:22:47 +0000
+Subject: =?UTF-8?Q?Darlehen_Geld_f=C3=BCr_Einzelpersonen_und_Fachleute_in_w?= =?UTF-8?Q?eniger_als_72_Stunden
+Message-Id: <CACKcKZ-YTVoO8xO=VcRR-F_91T=fQ=MZa2wBTk_EaRT7GRz52Q@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1514469681-15602-1-git-send-email-jacopo+renesas@jmondi.org> <1514469681-15602-8-git-send-email-jacopo+renesas@jmondi.org>
-In-Reply-To: <1514469681-15602-8-git-send-email-jacopo+renesas@jmondi.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Jacopo Mondi <jacopo+renesas@jmondi.org>
-Cc: magnus.damm@gmail.com, geert@glider.be, mchehab@kernel.org, hverkuil@xs4all.nl, robh+dt@kernel.org, mark.rutland@arm.com, linux-renesas-soc@vger.kernel.org, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: linux-sh@vger.kernel.org
 
-Hi Jacopo,
+Hallo,
 
-Thank you for the patch.
+Sind Sie in einer schwierigen Situation, für die Sie sich für ein
+Darlehen suchen? Benötigen Sie eine Finanzierung, um eine Schuld zu
+begleichen oder eine Aktivität zu finanzieren? Haben Sie einen
+Verbraucherkredit, eine Hypothek, einen persönlichen Kredit, eine
+Hypothek, Investition Darlehen, Schuldenkonsolidierung Darlehen oder
+andere braucht?
 
-On Thursday, 28 December 2017 16:01:19 EET Jacopo Mondi wrote:
-> Remove soc_camera framework dependencies from ov772x sensor driver.
-> - Handle clock and gpios
-> - Register async subdevice
-> - Remove soc_camera specific g/s_mbus_config operations
-> - Change image format colorspace to SRGB
+Ich bin ein einzelner Investor. I zur Verfügung stellen die Kredit
+kurz-, mittel- und langfristige. Ihr Finanzierungsbedingungen sind
+sehr einfach und meine Zinssatz beträgt 3% pro Jahr.
 
-Could you explain the rationale for this ?
+Für alle Anfragen, bleibe ich zur Verfügung, um Ihre Fragen zu beantworten.
 
-> - Remove sizes crop from get_selection as driver can't scale
-> - Add kernel doc to driver interface header file
-> - Adjust build system
+Danke, dass Sie mir per E-Mail an Sie von  :   klaus.peterschuster@outlook.de
 
-That's a lot for a single patch. On the other hand I don't think splitting 
-this in 7 patches would be a good idea either. If you can find a better 
-granularity, go for it, otherwise keep it as-is. Same comment for the tw9910 
-driver.
+Mit freundlichen Grüßen.
 
-> This commit does not remove the original soc_camera based driver as long
-> as other platforms depends on soc_camera-based CEU driver.
-> 
-> Signed-off-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
-> ---
->  drivers/media/i2c/Kconfig  |  11 +++
->  drivers/media/i2c/Makefile |   1 +
->  drivers/media/i2c/ov772x.c | 169 ++++++++++++++++++++++++++++-------------
->  include/media/i2c/ov772x.h |   8 ++-
->  4 files changed, 130 insertions(+), 59 deletions(-)
-> 
-> diff --git a/drivers/media/i2c/Kconfig b/drivers/media/i2c/Kconfig
-> index cb5d7ff..a61d7f4 100644
-> --- a/drivers/media/i2c/Kconfig
-> +++ b/drivers/media/i2c/Kconfig
+Peter Schuster
 
-[snip]
-
-> diff --git a/drivers/media/i2c/ov772x.c b/drivers/media/i2c/ov772x.c
-> index 8063835..f7b293f 100644
-> --- a/drivers/media/i2c/ov772x.c
-> +++ b/drivers/media/i2c/ov772x.c
-> @@ -1,6 +1,9 @@
-
-[snip]
-
-> @@ -25,8 +26,8 @@
->  #include <linux/videodev2.h>
-> 
->  #include <media/i2c/ov772x.h>
-> -#include <media/soc_camera.h>
-> -#include <media/v4l2-clk.h>
-> +
-> +#include <media/v4l2-device.h>
->  #include <media/v4l2-ctrls.h>
-
-I think C comes before D.
-
->  #include <media/v4l2-subdev.h>
->  #include <media/v4l2-image-sizes.h>
-
-[snip]
-
-> @@ -650,13 +653,63 @@ static int ov772x_s_register(struct v4l2_subdev *sd,
->  }
->  #endif
-> 
-> +static int ov772x_power_on(struct ov772x_priv *priv)
-> +{
-> +	struct i2c_client *client = v4l2_get_subdevdata(&priv->subdev);
-> +	int ret;
-> +
-> +	if (priv->info->xclk_rate)
-> +		ret = clk_set_rate(priv->clk, priv->info->xclk_rate);
-
-The return value is then ignored.
-
-I wonder whether the clk_set_rate() call shouldn't be kept in board code as 
-it's a board-specific frequency. DT platforms would use the assigned-clock-
-rates property that doesn't require any explicit handling in the driver.
-
-> +	if (priv->clk) {
-> +		ret = clk_prepare_enable(priv->clk);
-> +		if (ret)
-> +			return ret;
-> +	}
-> +
-> +	if (priv->pwdn_gpio) {
-> +		gpiod_set_value(priv->pwdn_gpio, 1);
-> +		usleep_range(500, 1000);
-> +	}
-> +
-> +	/* Reset GPIOs are shared in some platforms. */
-
-I'd make this a FIXME comment as this is really a hack.
-
-	/*
-	 * FIXME: The reset signal is connected to a shared GPIO on some
-	 * platforms (namely the SuperH Migo-R). Until a framework becomes
-	 * available to handle this cleanly, request the GPIO temporarily
-	 * only to avoid conflicts.
-	 */
-
-Same for the tw9910 driver.
-
-> +	priv->rstb_gpio = gpiod_get_optional(&client->dev, "rstb",
-> +					     GPIOD_OUT_LOW);
-> +	if (IS_ERR(priv->rstb_gpio)) {
-> +		dev_info(&client->dev, "Unable to get GPIO \"rstb\"");
-> +		return PTR_ERR(priv->rstb_gpio);
-> +	}
-> +
-> +	if (priv->rstb_gpio) {
-> +		gpiod_set_value(priv->rstb_gpio, 0);
-> +		usleep_range(500, 1000);
-> +		gpiod_set_value(priv->rstb_gpio, 1);
-> +		usleep_range(500, 1000);
-> +
-> +		gpiod_put(priv->rstb_gpio);
-> +	}
-> +
-> +	return 0;
-> +}
-
-[snip]
-
---
-Regards,
-
-Laurent Pinchart
-
+Financial Bank
+https://firstfinancialsa.com/de
