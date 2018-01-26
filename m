@@ -1,290 +1,369 @@
-From: jacopo mondi <jacopo@jmondi.org>
-Date: Tue, 30 Jan 2018 09:47:51 +0000
-Subject: Re: [PATCH v7 07/11] media: i2c: ov772x: Support frame interval handling
-Message-Id: <20180130092808.GA11063@w540>
+From: Jacopo Mondi <jacopo+renesas@jmondi.org>
+Date: Fri, 26 Jan 2018 13:48:46 +0000
+Subject: [PATCH v7 09/11] media: i2c: tw9910: Remove soc_camera dependencies
+Message-Id: <1516974528-11120-15-git-send-email-jacopo+renesas@jmondi.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1516974930-11713-1-git-send-email-jacopo+renesas@jmondi.org>
- <1516974930-11713-8-git-send-email-jacopo+renesas@jmondi.org>
- <1735356.2kmgrjUaxx@avalon>
-In-Reply-To: <1735356.2kmgrjUaxx@avalon>
+References: <1516974528-11120-1-git-send-email-jacopo+renesas@jmondi.org>
+In-Reply-To: <1516974528-11120-1-git-send-email-jacopo+renesas@jmondi.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>
-Cc: Jacopo Mondi <jacopo+renesas-AW8dsiIh9cEdnm+yROfE0A@public.gmane.org>, magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, geert-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org, hverkuil-qWit8jRvyhVmR6Xm/wNWPw@public.gmane.org, mchehab-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, festevam-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, sakari.ailus-X3B1VOXEql0@public.gmane.org, robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, mark.rutland-5wv7dgnIgG8@public.gmane.org, pombredanne-od1rfyK75/E@public.gmane.org, linux-renesas-soc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-media-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: laurent.pinchart@ideasonboard.com, magnus.damm@gmail.com, geert@glider.be, hverkuil@xs4all.nl, mchehab@kernel.org, festevam@gmail.com, sakari.ailus@iki.fi, robh+dt@kernel.org, mark.rutland@arm.com, pombredanne@nexb.com
+Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>, linux-renesas-soc@vger.kernel.org, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Hi Laurent,
+Remove soc_camera framework dependencies from tw9910 sensor driver.
+- Handle clock and gpios
+- Register async subdevice
+- Remove soc_camera specific g/s_mbus_config operations
+- Add kernel doc to driver interface header file
+- Adjust build system
 
-On Mon, Jan 29, 2018 at 01:01:01PM +0200, Laurent Pinchart wrote:
-> Hi Jacopo,
->
-> Thank you for the patch.
->
-> On Friday, 26 January 2018 15:55:26 EET Jacopo Mondi wrote:
-> > Add support to ov772x driver for frame intervals handling and enumeration.
-> > Tested with 10MHz and 24MHz input clock at VGA and QVGA resolutions for
-> > 10, 15 and 30 frame per second rates.
-> >
-> > Signed-off-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
-> > ---
-> > drivers/media/i2c/ov772x.c | 315 +++++++++++++++++++++++++++++++++++++++++-
-> > 1 file changed, 310 insertions(+), 5 deletions(-)
-> >
-> > diff --git a/drivers/media/i2c/ov772x.c b/drivers/media/i2c/ov772x.c
-> > index 912b1b9..6d46748 100644
-> > --- a/drivers/media/i2c/ov772x.c
-> > +++ b/drivers/media/i2c/ov772x.c
-> > @@ -250,6 +250,7 @@
-> >  #define AEC_1p2         0x10	/*  01: 1/2  window */
-> >  #define AEC_1p4         0x20	/*  10: 1/4  window */
-> >  #define AEC_2p3         0x30	/*  11: Low 2/3 window */
-> > +#define COM4_RESERVED   0x01	/* Reserved value */
->
-> I'd write "Reserved bits", "Reserved value" makes it sound like it's the value
-> of the full register.
->
+This commit does not remove the original soc_camera based driver as long
+as other platforms depends on soc_camera-based CEU driver.
 
-Ack
+Signed-off-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
+Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Acked-by: Hans Verkuil <hans.verkuil@cisco.com>
+---
+ drivers/media/i2c/Kconfig  |   9 +++
+ drivers/media/i2c/Makefile |   1 +
+ drivers/media/i2c/tw9910.c | 162 ++++++++++++++++++++++++++++-----------------
+ include/media/i2c/tw9910.h |   9 +++
+ 4 files changed, 120 insertions(+), 61 deletions(-)
 
-> >  /* COM5 */
-> >  #define AFR_ON_OFF      0x80	/* Auto frame rate control ON/OFF selection
-> */
-> > @@ -267,6 +268,19 @@
-> >  				/* AEC max step control */
-> >  #define AEC_NO_LIMIT    0x01	/*   0 : AEC incease step has limit */
-> >  				/*   1 : No limit to AEC increase step */
-> > +/* CLKRC */
-> > +				/* Input clock divider register */
-> > +#define CLKRC_RESERVED  0x80	/* Reserved value */
-> > +#define CLKRC_BYPASS    0x40	/* Bypass input clock divider */
-> > +#define CLKRC_DIV2      0x01	/* Divide input clock by 2 */
-> > +#define CLKRC_DIV3      0x02	/* Divide input clock by 3 */
-> > +#define CLKRC_DIV4      0x03	/* Divide input clock by 4 */
-> > +#define CLKRC_DIV5      0x04	/* Divide input clock by 5 */
-> > +#define CLKRC_DIV6      0x05	/* Divide input clock by 6 */
-> > +#define CLKRC_DIV8      0x07	/* Divide input clock by 8 */
-> > +#define CLKRC_DIV10     0x09	/* Divide input clock by 10 */
-> > +#define CLKRC_DIV16     0x0f	/* Divide input clock by 16 */
-> > +#define CLKRC_DIV20     0x13	/* Divide input clock by 20 */
->
-> How about just
->
-> #define CLKRC_DIV(n)		((n) - 1)
->
-
-Ack again,
-
-> >  /* COM7 */
-> >  				/* SCCB Register Reset */
-> > @@ -373,6 +387,12 @@
-> >  #define VERSION(pid, ver) ((pid<<8)|(ver&0xFF))
-> >
-> >  /*
-> > + * Input clock frequencies
-> > + */
-> > +enum { OV772X_FIN_10MHz, OV772X_FIN_24MHz, OV772X_FIN_48MHz, OV772X_FIN_N,
-> > };
-> > +static unsigned int ov772x_fin_vals[] = { 10000000, 24000000, 48000000
-> > };
-> > +
-> > +/*
-> >   * struct
-> >   */
-> >
-> > @@ -391,6 +411,16 @@ struct ov772x_win_size {
-> >  	struct v4l2_rect	  rect;
-> >  };
-> >
-> > +struct ov772x_pclk_config {
-> > +	u8 com4;
-> > +	u8 clkrc;
-> > +};
-> > +
-> > +struct ov772x_frame_rate {
-> > +	unsigned int fps;
-> > +	const struct ov772x_pclk_config pclk[OV772X_FIN_N];
-> > +};
-> > +
-> >  struct ov772x_priv {
-> >  	struct v4l2_subdev                subdev;
-> >  	struct v4l2_ctrl_handler	  hdl;
-> > @@ -404,6 +434,7 @@ struct ov772x_priv {
-> >  	unsigned short                    flag_hflip:1;
-> >  	/* band_filter = COM8[5] ? 256 - BDBASE : 0 */
-> >  	unsigned short                    band_filter;
-> > +	unsigned int			  fps;
-> >  };
-> >
-> >  /*
-> > @@ -508,6 +539,154 @@ static const struct ov772x_win_size ov772x_win_sizes[]
-> > = { };
-> >
-> >  /*
-> > + * frame rate settings lists
-> > + */
-> > +unsigned int ov772x_frame_intervals[] = {10, 15, 30, 60};
-> > +#define OV772X_N_FRAME_INTERVALS ARRAY_SIZE(ov772x_frame_intervals)
-> > +
-> > +static const struct ov772x_frame_rate vga_frame_rates[] = {
-> > +	{	/* PCLK = 7,5 MHz */
-> > +		.fps		= 10,
-> > +		.pclk = {
-> > +			[OV772X_FIN_10MHz] = {
-> > +				.com4	= PLL_6x | COM4_RESERVED,
-> > +				.clkrc	= CLKRC_DIV8 | CLKRC_RESERVED,
-> > +			},
-> > +			[OV772X_FIN_24MHz] = {
-> > +				.com4	= PLL_BYPASS | COM4_RESERVED,
-> > +				.clkrc	= CLKRC_DIV3 | CLKRC_RESERVED,
-> > +			},
-> > +			[OV772X_FIN_48MHz] = {
-> > +				.com4	= PLL_BYPASS | COM4_RESERVED,
-> > +				.clkrc	= CLKRC_DIV6 | CLKRC_RESERVED,
-> > +			},
-> > +		},
-> > +	},
-> > +	{	/* PCLK = 12 MHz */
-> > +		.fps		= 15,
-> > +		.pclk = {
-> > +			[OV772X_FIN_10MHz]	= {
-> > +				.com4	= PLL_4x | COM4_RESERVED,
-> > +				.clkrc	= CLKRC_DIV3 | CLKRC_RESERVED,
-> > +			},
-> > +			[OV772X_FIN_24MHz]	= {
-> > +				.com4	= PLL_BYPASS | COM4_RESERVED,
-> > +				.clkrc	= CLKRC_DIV2 | CLKRC_RESERVED,
-> > +			},
-> > +			[OV772X_FIN_48MHz]	= {
-> > +				.com4	= PLL_BYPASS | COM4_RESERVED,
-> > +				.clkrc	= CLKRC_DIV4 | CLKRC_RESERVED,
-> > +			},
-> > +		},
-> > +	},
-> > +	{	/* PCLK = 24 MHz */
-> > +		.fps		= 30,
-> > +		.pclk = {
-> > +			[OV772X_FIN_10MHz]	= {
-> > +				.com4	= PLL_8x | COM4_RESERVED,
-> > +				.clkrc	= CLKRC_DIV3 | CLKRC_RESERVED,
-> > +			},
-> > +			[OV772X_FIN_24MHz]	= {
-> > +				.com4	= PLL_BYPASS | COM4_RESERVED,
-> > +				.clkrc	= CLKRC_BYPASS | CLKRC_RESERVED,
-> > +			},
-> > +			[OV772X_FIN_48MHz]	= {
-> > +				.com4	= PLL_BYPASS | COM4_RESERVED,
-> > +				.clkrc	= CLKRC_DIV2 | CLKRC_RESERVED,
-> > +			},
-> > +		},
-> > +	},
-> > +	{	/* PCLK = 48 MHz */
-> > +		.fps		= 60,
-> > +		.pclk = {
-> > +			[OV772X_FIN_10MHz]	= {
-> > +				.com4	= PLL_8x | COM4_RESERVED,
-> > +				.clkrc	= CLKRC_DIV2 | CLKRC_RESERVED,
-> > +			},
-> > +			[OV772X_FIN_24MHz]	= {
-> > +				.com4	= PLL_4x | COM4_RESERVED,
-> > +				.clkrc	= CLKRC_DIV2 | CLKRC_RESERVED,
-> > +			},
-> > +			[OV772X_FIN_48MHz]	= {
-> > +				.com4	= PLL_BYPASS | COM4_RESERVED,
-> > +				.clkrc	= CLKRC_BYPASS | CLKRC_RESERVED,
-> > +			},
-> > +		},
-> > +	},
-> > +};
-> > +
-> > +static const struct ov772x_frame_rate qvga_frame_rates[] = {
-> > +	{	/* PCLK = 3,2 MHz */
-> > +		.fps		= 10,
-> > +		.pclk = {
-> > +			[OV772X_FIN_10MHz] = {
-> > +				.com4	= PLL_6x | COM4_RESERVED,
-> > +				.clkrc	= CLKRC_DIV16 | CLKRC_RESERVED,
-> > +			},
-> > +			[OV772X_FIN_24MHz] = {
-> > +				.com4	= PLL_BYPASS | COM4_RESERVED,
-> > +				.clkrc	= CLKRC_DIV8 | CLKRC_RESERVED,
-> > +			},
-> > +			[OV772X_FIN_48MHz] = {
-> > +				.com4	= PLL_BYPASS | COM4_RESERVED,
-> > +				.clkrc	= CLKRC_DIV16 | CLKRC_RESERVED,
-> > +			},
-> > +		},
-> > +	},
-> > +	{	/* PCLK = 4,8 MHz */
-> > +		.fps		= 15,
-> > +		.pclk = {
-> > +			[OV772X_FIN_10MHz]	= {
-> > +				.com4	= PLL_BYPASS | COM4_RESERVED,
-> > +				.clkrc	= CLKRC_DIV2 | CLKRC_RESERVED,
-> > +			},
-> > +			[OV772X_FIN_24MHz]	= {
-> > +				.com4	= PLL_BYPASS | COM4_RESERVED,
-> > +				.clkrc	= CLKRC_DIV5 | CLKRC_RESERVED,
-> > +			},
-> > +			[OV772X_FIN_48MHz]	= {
-> > +				.com4	= PLL_BYPASS | COM4_RESERVED,
-> > +				.clkrc	= CLKRC_DIV10 | CLKRC_RESERVED,
-> > +			},
-> > +		},
-> > +	},
-> > +	{	/* PCLK = 9,6 MHz */
-> > +		.fps		= 30,
-> > +		.pclk = {
-> > +			[OV772X_FIN_10MHz]	= {
-> > +				.com4	= PLL_BYPASS | COM4_RESERVED,
-> > +				.clkrc	= CLKRC_BYPASS | CLKRC_RESERVED,
-> > +			},
-> > +			[OV772X_FIN_24MHz]	= {
-> > +				.com4	= PLL_4x | COM4_RESERVED,
-> > +				.clkrc	= CLKRC_DIV10 | CLKRC_RESERVED,
-> > +			},
-> > +			[OV772X_FIN_48MHz]	= {
-> > +				.com4	= PLL_4x | COM4_RESERVED,
-> > +				.clkrc	= CLKRC_DIV20 | CLKRC_RESERVED,
-> > +			},
-> > +		},
-> > +	},
-> > +	{	/* PCLK = 19 MHz */
-> > +		.fps		= 60,
-> > +		.pclk = {
-> > +			[OV772X_FIN_10MHz]	= {
-> > +				.com4	= PLL_4x | COM4_RESERVED,
-> > +				.clkrc	= CLKRC_DIV2 | CLKRC_RESERVED,
-> > +			},
-> > +			[OV772X_FIN_24MHz]	= {
-> > +				.com4	= PLL_6x | COM4_RESERVED,
-> > +				.clkrc	= CLKRC_DIV8 | CLKRC_RESERVED,
-> > +			},
-> > +			[OV772X_FIN_48MHz]	= {
-> > +				.com4	= PLL_6x | COM4_RESERVED,
-> > +				.clkrc	= CLKRC_DIV16 | CLKRC_RESERVED,
-> > +			},
-> > +		},
-> > +	},
-> > +};
-> > +
-> > +/*
-> >   * general function
-> >   */
->
-> I'm afraid I'll have to ask the obvious: could we replace this table with
-> dynamic computation ? You might be able to reuse the (probably badly named)
-> aptina-pll library from drivers/media/i2c/
->
-
-Mmmm, okay... I might be able to use the above mentioned library,
-but that's designed for a still simple but more complex PLL with 2
-dividers and one multiplier. I know I can model it to work on ov7720
-PLL using limits, but since I only have 4 possible PLL multipliers
-(1x, 2x, 4x, 8x) and a single divider it is simpler to test all 4 of
-them and see which one approximate the desired pixel clock.
-
-I will send v8 with this changed shortly.
-
-Thanks
-   j
+diff --git a/drivers/media/i2c/Kconfig b/drivers/media/i2c/Kconfig
+index e71e968..0460613 100644
+--- a/drivers/media/i2c/Kconfig
++++ b/drivers/media/i2c/Kconfig
+@@ -423,6 +423,15 @@ config VIDEO_TW9906
+ 	  To compile this driver as a module, choose M here: the
+ 	  module will be called tw9906.
+ 
++config VIDEO_TW9910
++	tristate "Techwell TW9910 video decoder"
++	depends on VIDEO_V4L2 && I2C
++	---help---
++	  Support for Techwell TW9910 NTSC/PAL/SECAM video decoder.
++
++	  To compile this driver as a module, choose M here: the
++	  module will be called tw9910.
++
+ config VIDEO_VPX3220
+ 	tristate "vpx3220a, vpx3216b & vpx3214c video decoders"
+ 	depends on VIDEO_V4L2 && I2C
+diff --git a/drivers/media/i2c/Makefile b/drivers/media/i2c/Makefile
+index b0489a1..23c3ac6 100644
+--- a/drivers/media/i2c/Makefile
++++ b/drivers/media/i2c/Makefile
+@@ -48,6 +48,7 @@ obj-$(CONFIG_VIDEO_TVP7002) += tvp7002.o
+ obj-$(CONFIG_VIDEO_TW2804) += tw2804.o
+ obj-$(CONFIG_VIDEO_TW9903) += tw9903.o
+ obj-$(CONFIG_VIDEO_TW9906) += tw9906.o
++obj-$(CONFIG_VIDEO_TW9910) += tw9910.o
+ obj-$(CONFIG_VIDEO_CS3308) += cs3308.o
+ obj-$(CONFIG_VIDEO_CS5345) += cs5345.o
+ obj-$(CONFIG_VIDEO_CS53L32A) += cs53l32a.o
+diff --git a/drivers/media/i2c/tw9910.c b/drivers/media/i2c/tw9910.c
+index bdb5e0a..96792df 100644
+--- a/drivers/media/i2c/tw9910.c
++++ b/drivers/media/i2c/tw9910.c
+@@ -1,6 +1,9 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * tw9910 Video Driver
+  *
++ * Copyright (C) 2017 Jacopo Mondi <jacopo+renesas@jmondi.org>
++ *
+  * Copyright (C) 2008 Renesas Solutions Corp.
+  * Kuninori Morimoto <morimoto.kuninori@renesas.com>
+  *
+@@ -10,12 +13,10 @@
+  * Copyright 2006-7 Jonathan Corbet <corbet@lwn.net>
+  * Copyright (C) 2008 Magnus Damm
+  * Copyright (C) 2008, Guennadi Liakhovetski <kernel@pengutronix.de>
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License version 2 as
+- * published by the Free Software Foundation.
+  */
+ 
++#include <linux/clk.h>
++#include <linux/gpio/consumer.h>
+ #include <linux/init.h>
+ #include <linux/module.h>
+ #include <linux/i2c.h>
+@@ -25,9 +26,7 @@
+ #include <linux/v4l2-mediabus.h>
+ #include <linux/videodev2.h>
+ 
+-#include <media/soc_camera.h>
+ #include <media/i2c/tw9910.h>
+-#include <media/v4l2-clk.h>
+ #include <media/v4l2-subdev.h>
+ 
+ #define GET_ID(val)  ((val & 0xF8) >> 3)
+@@ -228,8 +227,10 @@ struct tw9910_scale_ctrl {
+ 
+ struct tw9910_priv {
+ 	struct v4l2_subdev		subdev;
+-	struct v4l2_clk			*clk;
++	struct clk			*clk;
+ 	struct tw9910_video_info	*info;
++	struct gpio_desc		*pdn_gpio;
++	struct gpio_desc		*rstb_gpio;
+ 	const struct tw9910_scale_ctrl	*scale;
+ 	v4l2_std_id			norm;
+ 	u32				revision;
+@@ -582,13 +583,66 @@ static int tw9910_s_register(struct v4l2_subdev *sd,
+ }
+ #endif
+ 
++static int tw9910_power_on(struct tw9910_priv *priv)
++{
++	struct i2c_client *client = v4l2_get_subdevdata(&priv->subdev);
++	int ret;
++
++	if (priv->clk) {
++		ret = clk_prepare_enable(priv->clk);
++		if (ret)
++			return ret;
++	}
++
++	if (priv->pdn_gpio) {
++		gpiod_set_value(priv->pdn_gpio, 0);
++		usleep_range(500, 1000);
++	}
++
++	/*
++	 * FIXME: The reset signal is connected to a shared GPIO on some
++	 * platforms (namely the SuperH Migo-R). Until a framework becomes
++	 * available to handle this cleanly, request the GPIO temporarily
++	 * to avoid conflicts.
++	 */
++	priv->rstb_gpio = gpiod_get_optional(&client->dev, "rstb",
++					     GPIOD_OUT_LOW);
++	if (IS_ERR(priv->rstb_gpio)) {
++		dev_info(&client->dev, "Unable to get GPIO \"rstb\"");
++		return PTR_ERR(priv->rstb_gpio);
++	}
++
++	if (priv->rstb_gpio) {
++		gpiod_set_value(priv->rstb_gpio, 1);
++		usleep_range(500, 1000);
++		gpiod_set_value(priv->rstb_gpio, 0);
++		usleep_range(500, 1000);
++
++		gpiod_put(priv->rstb_gpio);
++	}
++
++	return 0;
++}
++
++static int tw9910_power_off(struct tw9910_priv *priv)
++{
++	clk_disable_unprepare(priv->clk);
++
++	if (priv->pdn_gpio) {
++		gpiod_set_value(priv->pdn_gpio, 1);
++		usleep_range(500, 1000);
++	}
++
++	return 0;
++}
++
+ static int tw9910_s_power(struct v4l2_subdev *sd, int on)
+ {
+ 	struct i2c_client *client = v4l2_get_subdevdata(sd);
+-	struct soc_camera_subdev_desc *ssdd = soc_camera_i2c_to_desc(client);
+ 	struct tw9910_priv *priv = to_tw9910(client);
+ 
+-	return soc_camera_set_power(&client->dev, ssdd, priv->clk, on);
++	return on ? tw9910_power_on(priv) :
++		    tw9910_power_off(priv);
+ }
+ 
+ static int tw9910_set_frame(struct v4l2_subdev *sd, u32 *width, u32 *height)
+@@ -614,7 +668,7 @@ static int tw9910_set_frame(struct v4l2_subdev *sd, u32 *width, u32 *height)
+ 	 * set bus width
+ 	 */
+ 	val = 0x00;
+-	if (SOCAM_DATAWIDTH_16 = priv->info->buswidth)
++	if (priv->info->buswidth = 16)
+ 		val = LEN;
+ 
+ 	ret = tw9910_mask_set(client, OPFORM, LEN, val);
+@@ -799,8 +853,7 @@ static int tw9910_video_probe(struct i2c_client *client)
+ 	/*
+ 	 * tw9910 only use 8 or 16 bit bus width
+ 	 */
+-	if (SOCAM_DATAWIDTH_16 != priv->info->buswidth &&
+-	    SOCAM_DATAWIDTH_8  != priv->info->buswidth) {
++	if (priv->info->buswidth != 16 && priv->info->buswidth != 8) {
+ 		dev_err(&client->dev, "bus width error\n");
+ 		return -ENODEV;
+ 	}
+@@ -856,45 +909,6 @@ static int tw9910_enum_mbus_code(struct v4l2_subdev *sd,
+ 	return 0;
+ }
+ 
+-static int tw9910_g_mbus_config(struct v4l2_subdev *sd,
+-				struct v4l2_mbus_config *cfg)
+-{
+-	struct i2c_client *client = v4l2_get_subdevdata(sd);
+-	struct soc_camera_subdev_desc *ssdd = soc_camera_i2c_to_desc(client);
+-
+-	cfg->flags = V4L2_MBUS_PCLK_SAMPLE_RISING | V4L2_MBUS_MASTER |
+-		V4L2_MBUS_VSYNC_ACTIVE_HIGH | V4L2_MBUS_VSYNC_ACTIVE_LOW |
+-		V4L2_MBUS_HSYNC_ACTIVE_HIGH | V4L2_MBUS_HSYNC_ACTIVE_LOW |
+-		V4L2_MBUS_DATA_ACTIVE_HIGH;
+-	cfg->type = V4L2_MBUS_PARALLEL;
+-	cfg->flags = soc_camera_apply_board_flags(ssdd, cfg);
+-
+-	return 0;
+-}
+-
+-static int tw9910_s_mbus_config(struct v4l2_subdev *sd,
+-				const struct v4l2_mbus_config *cfg)
+-{
+-	struct i2c_client *client = v4l2_get_subdevdata(sd);
+-	struct soc_camera_subdev_desc *ssdd = soc_camera_i2c_to_desc(client);
+-	u8 val = VSSL_VVALID | HSSL_DVALID;
+-	unsigned long flags = soc_camera_apply_board_flags(ssdd, cfg);
+-
+-	/*
+-	 * set OUTCTR1
+-	 *
+-	 * We use VVALID and DVALID signals to control VSYNC and HSYNC
+-	 * outputs, in this mode their polarity is inverted.
+-	 */
+-	if (flags & V4L2_MBUS_HSYNC_ACTIVE_LOW)
+-		val |= HSP_HI;
+-
+-	if (flags & V4L2_MBUS_VSYNC_ACTIVE_LOW)
+-		val |= VSP_HI;
+-
+-	return i2c_smbus_write_byte_data(client, OUTCTR1, val);
+-}
+-
+ static int tw9910_g_tvnorms(struct v4l2_subdev *sd, v4l2_std_id *norm)
+ {
+ 	*norm = V4L2_STD_NTSC | V4L2_STD_PAL;
+@@ -905,8 +919,6 @@ static const struct v4l2_subdev_video_ops tw9910_subdev_video_ops = {
+ 	.s_std		= tw9910_s_std,
+ 	.g_std		= tw9910_g_std,
+ 	.s_stream	= tw9910_s_stream,
+-	.g_mbus_config	= tw9910_g_mbus_config,
+-	.s_mbus_config	= tw9910_s_mbus_config,
+ 	.g_tvnorms	= tw9910_g_tvnorms,
+ };
+ 
+@@ -935,15 +947,14 @@ static int tw9910_probe(struct i2c_client *client,
+ 	struct tw9910_video_info	*info;
+ 	struct i2c_adapter		*adapter  		to_i2c_adapter(client->dev.parent);
+-	struct soc_camera_subdev_desc	*ssdd = soc_camera_i2c_to_desc(client);
+ 	int ret;
+ 
+-	if (!ssdd || !ssdd->drv_priv) {
++	if (!client->dev.platform_data) {
+ 		dev_err(&client->dev, "TW9910: missing platform data!\n");
+ 		return -EINVAL;
+ 	}
+ 
+-	info = ssdd->drv_priv;
++	info = client->dev.platform_data;
+ 
+ 	if (!i2c_check_functionality(adapter, I2C_FUNC_SMBUS_BYTE_DATA)) {
+ 		dev_err(&client->dev,
+@@ -959,13 +970,37 @@ static int tw9910_probe(struct i2c_client *client,
+ 
+ 	v4l2_i2c_subdev_init(&priv->subdev, client, &tw9910_subdev_ops);
+ 
+-	priv->clk = v4l2_clk_get(&client->dev, "mclk");
+-	if (IS_ERR(priv->clk))
++	priv->clk = clk_get(&client->dev, "xti");
++	if (PTR_ERR(priv->clk) = -ENOENT) {
++		priv->clk = NULL;
++	} else if (IS_ERR(priv->clk)) {
++		dev_err(&client->dev, "Unable to get xti clock\n");
+ 		return PTR_ERR(priv->clk);
++	}
++
++	priv->pdn_gpio = gpiod_get_optional(&client->dev, "pdn",
++					    GPIOD_OUT_HIGH);
++	if (IS_ERR(priv->pdn_gpio)) {
++		dev_info(&client->dev, "Unable to get GPIO \"pdn\"");
++		ret = PTR_ERR(priv->pdn_gpio);
++		goto error_clk_put;
++	}
+ 
+ 	ret = tw9910_video_probe(client);
+ 	if (ret < 0)
+-		v4l2_clk_put(priv->clk);
++		goto error_gpio_put;
++
++	ret = v4l2_async_register_subdev(&priv->subdev);
++	if (ret)
++		goto error_gpio_put;
++
++	return ret;
++
++error_gpio_put:
++	if (priv->pdn_gpio)
++		gpiod_put(priv->pdn_gpio);
++error_clk_put:
++	clk_put(priv->clk);
+ 
+ 	return ret;
+ }
+@@ -973,7 +1008,12 @@ static int tw9910_probe(struct i2c_client *client,
+ static int tw9910_remove(struct i2c_client *client)
+ {
+ 	struct tw9910_priv *priv = to_tw9910(client);
+-	v4l2_clk_put(priv->clk);
++
++	if (priv->pdn_gpio)
++		gpiod_put(priv->pdn_gpio);
++	clk_put(priv->clk);
++	v4l2_device_unregister_subdev(&priv->subdev);
++
+ 	return 0;
+ }
+ 
+@@ -994,6 +1034,6 @@ static struct i2c_driver tw9910_i2c_driver = {
+ 
+ module_i2c_driver(tw9910_i2c_driver);
+ 
+-MODULE_DESCRIPTION("SoC Camera driver for tw9910");
++MODULE_DESCRIPTION("V4L2 driver for TW9910 video decoder");
+ MODULE_AUTHOR("Kuninori Morimoto");
+ MODULE_LICENSE("GPL v2");
+diff --git a/include/media/i2c/tw9910.h b/include/media/i2c/tw9910.h
+index 90bcf1f..bec8f7b 100644
+--- a/include/media/i2c/tw9910.h
++++ b/include/media/i2c/tw9910.h
+@@ -18,6 +18,9 @@
+ 
+ #include <media/soc_camera.h>
+ 
++/**
++ * tw9910_mpout_pin - MPOUT (multi-purpose output) pin functions
++ */
+ enum tw9910_mpout_pin {
+ 	TW9910_MPO_VLOSS,
+ 	TW9910_MPO_HLOCK,
+@@ -29,6 +32,12 @@ enum tw9910_mpout_pin {
+ 	TW9910_MPO_RTCO,
+ };
+ 
++/**
++ * tw9910_video_info -	tw9910 driver interface structure
++ * @buswidth:		Parallel data bus width (8 or 16).
++ * @mpout:		Selected function of MPOUT (multi-purpose output) pin.
++ *			See &enum tw9910_mpout_pin
++ */
+ struct tw9910_video_info {
+ 	unsigned long		buswidth;
+ 	enum tw9910_mpout_pin	mpout;
+-- 
+2.7.4
 
