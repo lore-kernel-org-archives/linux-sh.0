@@ -1,156 +1,335 @@
-From: Sakari Ailus <sakari.ailus@iki.fi>
-Date: Wed, 17 Jan 2018 08:55:22 +0000
-Subject: Re: [PATCH v6 1/9] dt-bindings: media: Add Renesas CEU bindings
-Message-Id: <20180117085522.kfgt6re2rfq4qeun@valkosipuli.retiisi.org.uk>
+From: Jacopo Mondi <jacopo+renesas@jmondi.org>
+Date: Tue, 30 Jan 2018 09:58:18 +0000
+Subject: [PATCH v8 07/11] media: i2c: ov772x: Support frame interval handling
+Message-Id: <1517306302-27957-8-git-send-email-jacopo+renesas@jmondi.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1516139101-7835-1-git-send-email-jacopo+renesas@jmondi.org>
- <1516139101-7835-2-git-send-email-jacopo+renesas@jmondi.org>
- <20180117075958.ggnk4cmmkdah2am6@valkosipuli.retiisi.org.uk>
- <20180117083553.GF24926@w540>
-In-Reply-To: <20180117083553.GF24926@w540>
+References: <1517306302-27957-1-git-send-email-jacopo+renesas@jmondi.org>
+In-Reply-To: <1517306302-27957-1-git-send-email-jacopo+renesas@jmondi.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: jacopo mondi <jacopo@jmondi.org>
-Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>, laurent.pinchart@ideasonboard.com, magnus.damm@gmail.com, geert@glider.be, hverkuil@xs4all.nl, mchehab@kernel.org, festevam@gmail.com, robh+dt@kernel.org, mark.rutland@arm.com, pombredanne@nexb.com, linux-renesas-soc@vger.kernel.org, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org
+To: laurent.pinchart@ideasonboard.com, magnus.damm@gmail.com, geert@glider.be, hverkuil@xs4all.nl, mchehab@kernel.org, festevam@gmail.com, sakari.ailus@iki.fi, robh+dt@kernel.org, mark.rutland@arm.com, pombredanne@nexb.com
+Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>, linux-renesas-soc@vger.kernel.org, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org
 
-On Wed, Jan 17, 2018 at 09:35:53AM +0100, jacopo mondi wrote:
-> Hi Sakari,
->     it's the second series this week where I fail to handle BT.656
-> properly, sorry about this :)
+Add support to ov772x driver for frame intervals handling and enumeration.
+Tested with 10MHz and 24MHz input clock at VGA and QVGA resolutions for
+10, 15 and 30 frame per second rates.
 
-No worries. I guess I forgot your reply. If the hardware doesn't support
-Bt.656 then the current definition is fine.
+Signed-off-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
+---
+ drivers/media/i2c/ov772x.c | 210 +++++++++++++++++++++++++++++++++++++++++----
+ 1 file changed, 193 insertions(+), 17 deletions(-)
 
-Acked-by: Sakari Ailus <sakari.ailus@linux.intel.com>
-
-> 
-> On Wed, Jan 17, 2018 at 09:59:59AM +0200, Sakari Ailus wrote:
-> > Hi Jacopo,
-> >
-> > On Tue, Jan 16, 2018 at 10:44:53PM +0100, Jacopo Mondi wrote:
-> > > Add bindings documentation for Renesas Capture Engine Unit (CEU).
-> > >
-> > > Signed-off-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
-> > > Reviewed-by: Rob Herring <robh@kernel.org>
-> > > Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-> > > Acked-by: Hans Verkuil <hans.verkuil@cisco.com>
-> > > ---
-> > >  .../devicetree/bindings/media/renesas,ceu.txt      | 81 ++++++++++++++++++++++
-> > >  1 file changed, 81 insertions(+)
-> > >  create mode 100644 Documentation/devicetree/bindings/media/renesas,ceu.txt
-> > >
-> > > diff --git a/Documentation/devicetree/bindings/media/renesas,ceu.txt b/Documentation/devicetree/bindings/media/renesas,ceu.txt
-> > > new file mode 100644
-> > > index 0000000..590ee27
-> > > --- /dev/null
-> > > +++ b/Documentation/devicetree/bindings/media/renesas,ceu.txt
-> > > @@ -0,0 +1,81 @@
-> > > +Renesas Capture Engine Unit (CEU)
-> > > +----------------------------------------------
-> > > +
-> > > +The Capture Engine Unit is the image capture interface found in the Renesas
-> > > +SH Mobile and RZ SoCs.
-> > > +
-> > > +The interface supports a single parallel input with data bus width of 8 or 16
-> > > +bits.
-> > > +
-> > > +Required properties:
-> > > +- compatible: Shall be "renesas,r7s72100-ceu" for CEU units found in RZ/A1-H
-> > > +  and RZ/A1-M SoCs.
-> > > +- reg: Registers address base and size.
-> > > +- interrupts: The interrupt specifier.
-> > > +
-> > > +The CEU supports a single parallel input and should contain a single 'port'
-> > > +subnode with a single 'endpoint'. Connection to input devices are modeled
-> > > +according to the video interfaces OF bindings specified in:
-> > > +Documentation/devicetree/bindings/media/video-interfaces.txt
-> > > +
-> > > +Optional endpoint properties applicable to parallel input bus described in
-> > > +the above mentioned "video-interfaces.txt" file are supported.
-> > > +
-> > > +- hsync-active: Active state of the HSYNC signal, 0/1 for LOW/HIGH respectively.
-> > > +  If property is not present, default is active high.
-> > > +- vsync-active: Active state of the VSYNC signal, 0/1 for LOW/HIGH respectively.
-> > > +  If property is not present, default is active high.
-> >
-> > Does the hardware support Bt.656? If it does, you need to tell the
-> > difference between the parallel interface with default sync polarity and
-> > Bt.656 interfaces. With the above it's ambiguous.
-> 
-> No, it does not support BT.656.
-> 
-> I'm listing them as -required- endpoint properties. If they are not
-> specified the drivers fails during probe:
-> 
->         renesas-ceu e8210000.ceu: Only parallel input supported.
-> 
-> Thanks
->    j
-> 
-> >
-> > > +
-> > > +Example:
-> > > +
-> > > +The example describes the connection between the Capture Engine Unit and an
-> > > +OV7670 image sensor connected to i2c1 interface.
-> > > +
-> > > +ceu: ceu@e8210000 {
-> > > +	reg = <0xe8210000 0x209c>;
-> > > +	compatible = "renesas,r7s72100-ceu";
-> > > +	interrupts = <GIC_SPI 332 IRQ_TYPE_LEVEL_HIGH>;
-> > > +
-> > > +	pinctrl-names = "default";
-> > > +	pinctrl-0 = <&vio_pins>;
-> > > +
-> > > +	status = "okay";
-> > > +
-> > > +	port {
-> > > +		ceu_in: endpoint {
-> > > +			remote-endpoint = <&ov7670_out>;
-> > > +
-> > > +			hsync-active = <1>;
-> > > +			vsync-active = <0>;
-> > > +		};
-> > > +	};
-> > > +};
-> > > +
-> > > +i2c1: i2c@fcfee400 {
-> > > +	pinctrl-names = "default";
-> > > +	pinctrl-0 = <&i2c1_pins>;
-> > > +
-> > > +	status = "okay";
-> > > +
-> > > +	clock-frequency = <100000>;
-> > > +
-> > > +	ov7670: camera@21 {
-> > > +		compatible = "ovti,ov7670";
-> > > +		reg = <0x21>;
-> > > +
-> > > +		pinctrl-names = "default";
-> > > +		pinctrl-0 = <&vio_pins>;
-> > > +
-> > > +		reset-gpios = <&port3 11 GPIO_ACTIVE_LOW>;
-> > > +		powerdown-gpios = <&port3 12 GPIO_ACTIVE_HIGH>;
-> > > +
-> > > +		port {
-> > > +			ov7670_out: endpoint {
-> > > +				remote-endpoint = <&ceu_in>;
-> > > +
-> > > +				hsync-active = <1>;
-> > > +				vsync-active = <0>;
-> > > +			};
-> > > +		};
-> > > +	};
-> > > +};
-> > > --
-> > > 2.7.4
-> > >
-> >
-> > --
-> > Sakari Ailus
-> > e-mail: sakari.ailus@iki.fi
-
+diff --git a/drivers/media/i2c/ov772x.c b/drivers/media/i2c/ov772x.c
+index 23106d7..28de254 100644
+--- a/drivers/media/i2c/ov772x.c
++++ b/drivers/media/i2c/ov772x.c
+@@ -250,6 +250,7 @@
+ #define AEC_1p2         0x10	/*  01: 1/2  window */
+ #define AEC_1p4         0x20	/*  10: 1/4  window */
+ #define AEC_2p3         0x30	/*  11: Low 2/3 window */
++#define COM4_RESERVED   0x01	/* Reserved bit */
+ 
+ /* COM5 */
+ #define AFR_ON_OFF      0x80	/* Auto frame rate control ON/OFF selection */
+@@ -267,6 +268,10 @@
+ 				/* AEC max step control */
+ #define AEC_NO_LIMIT    0x01	/*   0 : AEC incease step has limit */
+ 				/*   1 : No limit to AEC increase step */
++/* CLKRC */
++				/* Input clock divider register */
++#define CLKRC_RESERVED  0x80	/* Reserved bit */
++#define CLKRC_DIV(n)    ((n) - 1)
+ 
+ /* COM7 */
+ 				/* SCCB Register Reset */
+@@ -373,6 +378,19 @@
+ #define VERSION(pid, ver) ((pid<<8)|(ver&0xFF))
+ 
+ /*
++ * Frame size (including blanking lines)
++ */
++#define VGA_FRAME_SIZE		(510 * 748)
++#define QVGA_FRAME_SIZE		(278 * 576)
++
++/*
++ * Input clock frequencies
++ */
++static const u8 ov772x_com4_vals[] = { PLL_BYPASS, PLL_4x, PLL_6x, PLL_8x };
++static const unsigned int ov772x_pll_mult[] = { 1, 4, 6, 8 };
++#define OV772X_PLL_N_MULT ARRAY_SIZE(ov772x_pll_mult)
++
++/*
+  * struct
+  */
+ 
+@@ -388,6 +406,7 @@ struct ov772x_color_format {
+ struct ov772x_win_size {
+ 	char                     *name;
+ 	unsigned char             com7_bit;
++	unsigned int		  sizeimage;
+ 	struct v4l2_rect	  rect;
+ };
+ 
+@@ -404,6 +423,7 @@ struct ov772x_priv {
+ 	unsigned short                    flag_hflip:1;
+ 	/* band_filter = COM8[5] ? 256 - BDBASE : 0 */
+ 	unsigned short                    band_filter;
++	unsigned int			  fps;
+ };
+ 
+ /*
+@@ -487,27 +507,35 @@ static const struct ov772x_color_format ov772x_cfmts[] = {
+ 
+ static const struct ov772x_win_size ov772x_win_sizes[] = {
+ 	{
+-		.name     = "VGA",
+-		.com7_bit = SLCT_VGA,
++		.name		= "VGA",
++		.com7_bit	= SLCT_VGA,
++		.sizeimage	= 381480,
+ 		.rect = {
+-			.left = 140,
+-			.top = 14,
+-			.width = VGA_WIDTH,
+-			.height = VGA_HEIGHT,
++			.left	= 140,
++			.top	= 14,
++			.width	= VGA_WIDTH,
++			.height	= VGA_HEIGHT,
+ 		},
+ 	}, {
+-		.name     = "QVGA",
+-		.com7_bit = SLCT_QVGA,
++		.name		= "QVGA",
++		.com7_bit	= SLCT_QVGA,
++		.sizeimage	= 160128,
+ 		.rect = {
+-			.left = 252,
+-			.top = 6,
+-			.width = QVGA_WIDTH,
+-			.height = QVGA_HEIGHT,
++			.left	= 252,
++			.top	= 6,
++			.width	= QVGA_WIDTH,
++			.height	= QVGA_HEIGHT,
+ 		},
+ 	},
+ };
+ 
+ /*
++ * frame rate settings lists
++ */
++unsigned int ov772x_frame_intervals[] = { 5, 10, 15, 20, 30, 60 };
++#define OV772X_N_FRAME_INTERVALS ARRAY_SIZE(ov772x_frame_intervals)
++
++/*
+  * general function
+  */
+ 
+@@ -574,6 +602,124 @@ static int ov772x_s_stream(struct v4l2_subdev *sd, int enable)
+ 	return 0;
+ }
+ 
++static int ov772x_set_frame_rate(struct ov772x_priv *priv,
++				 struct v4l2_fract *tpf,
++				 const struct ov772x_color_format *cfmt,
++				 const struct ov772x_win_size *win)
++{
++	struct i2c_client *client = v4l2_get_subdevdata(&priv->subdev);
++	unsigned int fps = tpf->denominator / tpf->numerator;
++	unsigned int fin = clk_get_rate(priv->clk);
++	unsigned int rate_prev;
++	unsigned int fsize;
++	unsigned int pclk;
++	unsigned int rate;
++	unsigned int idx;
++	unsigned int i;
++	u8 clkrc = 0;
++	u8 com4 = 0;
++	int ret;
++
++	/* Approximate to the closest supported frame interval. */
++	rate_prev = ~0L;
++	for (i = 0, idx = 0; i < OV772X_N_FRAME_INTERVALS; i++) {
++		rate = abs(fps - ov772x_frame_intervals[i]);
++		if (rate < rate_prev) {
++			idx = i;
++			rate_prev = rate;
++		}
++	}
++	fps = ov772x_frame_intervals[idx];
++
++	/* Use image size (with blankings) to calculate desired pixel clock. */
++	if ((cfmt->com7 & OFMT_RGB) = OFMT_RGB ||
++	    (cfmt->com7 & OFMT_YUV) = OFMT_YUV)
++		fsize = win->sizeimage * 2;
++	else if ((cfmt->com7 & OFMT_BRAW) = OFMT_BRAW)
++		fsize = win->sizeimage;
++
++	pclk = fps * fsize;
++
++	/*
++	 * Pixel clock generation circuit is pretty simple:
++	 *
++	 * Fin -> [ / CLKRC_div] -> [ * PLL_mult] -> pclk
++	 *
++	 * Try to approximate the desired pixel clock testing all available
++	 * PLL multipliers (1x, 4x, 6x, 8x) and calculate corresponding
++	 * divisor with:
++	 *
++	 * div = PLL_mult * Fin / pclk
++	 *
++	 * and re-calculate the pixel clock using it:
++	 *
++	 * pclk = Fin * PLL_mult / CLKRC_div
++	 *
++	 * Choose the PLL_mult and CLKRC_div pair that gives a pixel clock
++	 * closer to the desired one.
++	 *
++	 * The desired pixel clock is calculated using a known frame size
++	 * (blanking included) and FPS.
++	 */
++	rate_prev = ~0L;
++	for (i = 0; i < OV772X_PLL_N_MULT; i++) {
++		unsigned int pll_mult = ov772x_pll_mult[i];
++		unsigned int pll_out = pll_mult * fin;
++		unsigned int t_pclk;
++		unsigned int div;
++
++		if (pll_out < pclk)
++			continue;
++
++		div = DIV_ROUND_CLOSEST(pll_out, pclk);
++		t_pclk = DIV_ROUND_CLOSEST((fin * pll_mult), div);
++		rate = abs(pclk - t_pclk);
++		if (rate < rate_prev) {
++			rate_prev = rate;
++			clkrc = CLKRC_DIV(div);
++			com4 = ov772x_com4_vals[i];
++		}
++	}
++
++	ret = ov772x_write(client, COM4, com4 | COM4_RESERVED);
++	if (ret < 0)
++		return ret;
++
++	ret = ov772x_write(client, CLKRC, clkrc | CLKRC_RESERVED);
++	if (ret < 0)
++		return ret;
++
++	tpf->numerator = 1;
++	tpf->denominator = fps;
++	priv->fps = tpf->denominator;
++
++	return 0;
++}
++
++static int ov772x_g_frame_interval(struct v4l2_subdev *sd,
++				   struct v4l2_subdev_frame_interval *ival)
++{
++	struct ov772x_priv *priv = to_ov772x(sd);
++	struct v4l2_fract *tpf = &ival->interval;
++
++	memset(ival->reserved, 0, sizeof(ival->reserved));
++	tpf->numerator = 1;
++	tpf->denominator = priv->fps;
++
++	return 0;
++}
++
++static int ov772x_s_frame_interval(struct v4l2_subdev *sd,
++				   struct v4l2_subdev_frame_interval *ival)
++{
++	struct ov772x_priv *priv = to_ov772x(sd);
++	struct v4l2_fract *tpf = &ival->interval;
++
++	memset(ival->reserved, 0, sizeof(ival->reserved));
++
++	return ov772x_set_frame_rate(priv, tpf, priv->cfmt, priv->win);
++}
++
+ static int ov772x_s_ctrl(struct v4l2_ctrl *ctrl)
+ {
+ 	struct ov772x_priv *priv = container_of(ctrl->handler,
+@@ -757,6 +903,7 @@ static int ov772x_set_params(struct ov772x_priv *priv,
+ 			     const struct ov772x_win_size *win)
+ {
+ 	struct i2c_client *client = v4l2_get_subdevdata(&priv->subdev);
++	struct v4l2_fract tpf;
+ 	int ret;
+ 	u8  val;
+ 
+@@ -885,6 +1032,13 @@ static int ov772x_set_params(struct ov772x_priv *priv,
+ 	if (ret < 0)
+ 		goto ov772x_set_fmt_error;
+ 
++	/* COM4, CLKRC: Set pixel clock and framerate. */
++	tpf.numerator = 1;
++	tpf.denominator = priv->fps;
++	ret = ov772x_set_frame_rate(priv, &tpf, cfmt, win);
++	if (ret < 0)
++		goto ov772x_set_fmt_error;
++
+ 	/*
+ 	 * set COM8
+ 	 */
+@@ -1043,6 +1197,24 @@ static const struct v4l2_subdev_core_ops ov772x_subdev_core_ops = {
+ 	.s_power	= ov772x_s_power,
+ };
+ 
++static int ov772x_enum_frame_interval(struct v4l2_subdev *sd,
++				      struct v4l2_subdev_pad_config *cfg,
++				      struct v4l2_subdev_frame_interval_enum *fie)
++{
++	if (fie->pad || fie->index >= OV772X_N_FRAME_INTERVALS)
++		return -EINVAL;
++
++	if (fie->width != VGA_WIDTH && fie->width != QVGA_WIDTH)
++		return -EINVAL;
++	if (fie->height != VGA_HEIGHT && fie->height != QVGA_HEIGHT)
++		return -EINVAL;
++
++	fie->interval.numerator = 1;
++	fie->interval.denominator = ov772x_frame_intervals[fie->index];
++
++	return 0;
++}
++
+ static int ov772x_enum_mbus_code(struct v4l2_subdev *sd,
+ 		struct v4l2_subdev_pad_config *cfg,
+ 		struct v4l2_subdev_mbus_code_enum *code)
+@@ -1055,14 +1227,17 @@ static int ov772x_enum_mbus_code(struct v4l2_subdev *sd,
+ }
+ 
+ static const struct v4l2_subdev_video_ops ov772x_subdev_video_ops = {
+-	.s_stream	= ov772x_s_stream,
++	.s_stream		= ov772x_s_stream,
++	.s_frame_interval	= ov772x_s_frame_interval,
++	.g_frame_interval	= ov772x_g_frame_interval,
+ };
+ 
+ static const struct v4l2_subdev_pad_ops ov772x_subdev_pad_ops = {
+-	.enum_mbus_code = ov772x_enum_mbus_code,
+-	.get_selection	= ov772x_get_selection,
+-	.get_fmt	= ov772x_get_fmt,
+-	.set_fmt	= ov772x_set_fmt,
++	.enum_frame_interval	= ov772x_enum_frame_interval,
++	.enum_mbus_code		= ov772x_enum_mbus_code,
++	.get_selection		= ov772x_get_selection,
++	.get_fmt		= ov772x_get_fmt,
++	.set_fmt		= ov772x_set_fmt,
+ };
+ 
+ static const struct v4l2_subdev_ops ov772x_subdev_ops = {
+@@ -1134,6 +1309,7 @@ static int ov772x_probe(struct i2c_client *client,
+ 
+ 	priv->cfmt = &ov772x_cfmts[0];
+ 	priv->win = &ov772x_win_sizes[0];
++	priv->fps = 15;
+ 
+ 	ret = v4l2_async_register_subdev(&priv->subdev);
+ 	if (ret)
 -- 
-Sakari Ailus
-e-mail: sakari.ailus@iki.fi
+2.7.4
+
