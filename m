@@ -1,7 +1,7 @@
 From: Jacopo Mondi <jacopo+renesas@jmondi.org>
-Date: Tue, 30 Jan 2018 09:58:22 +0000
-Subject: [PATCH v8 11/11] media: i2c: ov7670: Fully set mbus frame fmt
-Message-Id: <1517306302-27957-12-git-send-email-jacopo+renesas@jmondi.org>
+Date: Tue, 30 Jan 2018 09:58:13 +0000
+Subject: [PATCH v8 02/11] include: media: Add Renesas CEU driver interface
+Message-Id: <1517306302-27957-3-git-send-email-jacopo+renesas@jmondi.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1517306302-27957-1-git-send-email-jacopo+renesas@jmondi.org>
 In-Reply-To: <1517306302-27957-1-git-send-email-jacopo+renesas@jmondi.org>
@@ -11,36 +11,51 @@ Content-Transfer-Encoding: 7bit
 To: laurent.pinchart@ideasonboard.com, magnus.damm@gmail.com, geert@glider.be, hverkuil@xs4all.nl, mchehab@kernel.org, festevam@gmail.com, sakari.ailus@iki.fi, robh+dt@kernel.org, mark.rutland@arm.com, pombredanne@nexb.com
 Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>, linux-renesas-soc@vger.kernel.org, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org
 
-The sensor driver sets mbus format colorspace information and sizes,
-but not ycbcr encoding, quantization and xfer function. When supplied
-with an badly initialized mbus frame format structure, those fields
-need to be set explicitly not to leave them uninitialized. This is
-tested by v4l2-compliance, which supplies a mbus format description
-structure and checks for all fields to be properly set.
+Add renesas-ceu header file.
 
-Without this commit, v4l2-compliance fails when testing formats with:
-fail: v4l2-test-formats.cpp(335): ycbcr_enc >= 0xff
+Do not remove the existing sh_mobile_ceu.h one as long as the original
+driver does not go away.
 
 Signed-off-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
+Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Acked-by: Hans Verkuil <hans.verkuil@cisco.com>
 ---
- drivers/media/i2c/ov7670.c | 4 ++++
- 1 file changed, 4 insertions(+)
+ include/media/drv-intf/renesas-ceu.h | 26 ++++++++++++++++++++++++++
+ 1 file changed, 26 insertions(+)
+ create mode 100644 include/media/drv-intf/renesas-ceu.h
 
-diff --git a/drivers/media/i2c/ov7670.c b/drivers/media/i2c/ov7670.c
-index 25b26d4..61c472e 100644
---- a/drivers/media/i2c/ov7670.c
-+++ b/drivers/media/i2c/ov7670.c
-@@ -996,6 +996,10 @@ static int ov7670_try_fmt_internal(struct v4l2_subdev *sd,
- 	fmt->height = wsize->height;
- 	fmt->colorspace = ov7670_formats[index].colorspace;
- 
-+	fmt->ycbcr_enc = V4L2_YCBCR_ENC_DEFAULT;
-+	fmt->quantization = V4L2_QUANTIZATION_DEFAULT;
-+	fmt->xfer_func = V4L2_XFER_FUNC_DEFAULT;
+diff --git a/include/media/drv-intf/renesas-ceu.h b/include/media/drv-intf/renesas-ceu.h
+new file mode 100644
+index 0000000..52841d1
+--- /dev/null
++++ b/include/media/drv-intf/renesas-ceu.h
+@@ -0,0 +1,26 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * renesas-ceu.h - Renesas CEU driver interface
++ *
++ * Copyright 2017-2018 Jacopo Mondi <jacopo+renesas@jmondi.org>
++ */
 +
- 	info->format = *fmt;
- 
- 	return 0;
++#ifndef __MEDIA_DRV_INTF_RENESAS_CEU_H__
++#define __MEDIA_DRV_INTF_RENESAS_CEU_H__
++
++#define CEU_MAX_SUBDEVS		2
++
++struct ceu_async_subdev {
++	unsigned long flags;
++	unsigned char bus_width;
++	unsigned char bus_shift;
++	unsigned int i2c_adapter_id;
++	unsigned int i2c_address;
++};
++
++struct ceu_platform_data {
++	unsigned int num_subdevs;
++	struct ceu_async_subdev subdevs[CEU_MAX_SUBDEVS];
++};
++
++#endif /* ___MEDIA_DRV_INTF_RENESAS_CEU_H__ */
 -- 
 2.7.4
 
