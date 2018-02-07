@@ -1,49 +1,55 @@
-From: Masahiro Yamada <yamada.masahiro@socionext.com>
-Date: Mon, 19 Feb 2018 17:17:39 +0000
-Subject: Re: [PATCH] sh: fix build error for empty CONFIG_BUILTIN_DTB_SOURCE
-Message-Id: <CAK7LNAS_yqOVKGOEJ_SrvigpqEKZoriuWGuCYdwEWtTtSMxetA@mail.gmail.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Wed, 07 Feb 2018 19:11:52 +0000
+Subject: Re: [PATCH v3 00/16] mmc: tmio: another batch of TMIO MMC fixes and cleanups
+Message-Id: <20180207191152.kvqrugblst2cko3c@ninjato>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="hmv3ictfz5w3jtha"
 List-Id: <linux-sh.vger.kernel.org>
-References: <1519060182-1746-1-git-send-email-yamada.masahiro@socionext.com>
-In-Reply-To: <1519060182-1746-1-git-send-email-yamada.masahiro@socionext.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Linux Kbuild mailing list <linux-kbuild@vger.kernel.org>
-Cc: Nicholas Piggin <npiggin@gmail.com>, Masahiro Yamada <yamada.masahiro@socionext.com>, devicetree@vger.kernel.org, Linux-sh list <linux-sh@vger.kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Rob Herring <robh+dt@kernel.org>, Rich Felker <dalias@libc.org>, Mark Rutland <mark.rutland@arm.com>
-
-2018-02-20 2:09 GMT+09:00 Masahiro Yamada <yamada.masahiro@socionext.com>:
-> If CONFIG_USE_BUILTIN_DTB is enabled, but CONFIG_BUILTIN_DTB_SOURCE
-> is empty (for example, allmodconfig), a build error occurs.
->
-> Surround obj-y with ifneq ... endif.
->
-> I replaced $(CONFIG_USE_BUILTIN_DTB) with 'y' since this is always
-> the case from the following code from arch/sh/Makefile:
->
->   core-$(CONFIG_USE_BUILTIN_DTB)  += arch/sh/boot/dts/
->
-> Signed-off-by: Masahiro Yamada <yamada.masahiro@socionext.com>
-> ---
->
->  arch/sh/boot/dts/Makefile | 4 +++-
->  1 file changed, 3 insertions(+), 1 deletion(-)
->
-> diff --git a/arch/sh/boot/dts/Makefile b/arch/sh/boot/dts/Makefile
-> index 715def0..01d0f7f 100644
-> --- a/arch/sh/boot/dts/Makefile
-> +++ b/arch/sh/boot/dts/Makefile
-> @@ -1 +1,3 @@
-> -obj-$(CONFIG_USE_BUILTIN_DTB) += $(patsubst "%",%,$(CONFIG_BUILTIN_DTB_SOURCE)).dtb.o
-> +ifneq ($(CONFIG_BUILTIN_DTB_SOURCE),"")
-> +obj-y += $(patsubst "%",%,$(CONFIG_BUILTIN_DTB_SOURCE)).dtb.o
-> +endif
+References: <1516206496-16612-1-git-send-email-yamada.masahiro@socionext.com>
+ <CAPDyKFp3dPjsEeyrKAbW_duErCS+xYD0K8zhcRPCY65eRNtMqg@mail.gmail.com>
+In-Reply-To: <CAPDyKFp3dPjsEeyrKAbW_duErCS+xYD0K8zhcRPCY65eRNtMqg@mail.gmail.com>
+To: Ulf Hansson <ulf.hansson@linaro.org>
+Cc: Masahiro Yamada <yamada.masahiro@socionext.com>, "linux-mmc@vger.kernel.org" <linux-mmc@vger.kernel.org>, Wolfram Sang <wsa+renesas@sang-engineering.com>, Ulf Magnusson <ulfalizer@gmail.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Simon Horman <horms+renesas@verge.net.au>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Linux-Renesas <linux-renesas-soc@vger.kernel.org>, devicetree@vger.kernel.org, Linux-sh list <linux-sh@vger.kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rob Herring <robh@kernel.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Rob Herring <robh+dt@kernel.org>, Lee Jones <lee.jones@linaro.org>, Rich Felker <dalias@libc.org>, Mark Rutland <mark.rutland@arm.com>
 
 
+--hmv3ictfz5w3jtha
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-I inserted this before Nicholas' patch
-to silence the test robot.
+
+> I picked patch5 and patch6, as those seemed trivial. Unless there is a
+> rc9, let's aim for 4.17 for the rest.
+
+I can't find the branch where you picked these patches? I wanted to use
+it to apply the rest of the patches. They don't seem to fit on v4.15
+or current linus/master. Can you share this branch?
+
+I will do reviewing now "visually". But please wait until I tested them
+before applying.
+
+Thanks,
+
+   Wolfram
 
 
--- 
-Best Regards
-Masahiro Yamada
+--hmv3ictfz5w3jtha
+Content-Type: application/pgp-signature; name="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQIzBAABCAAdFiEEOZGx6rniZ1Gk92RdFA3kzBSgKbYFAlp7T3gACgkQFA3kzBSg
+KbYcLRAAi0hE9uVMzeGBlvgjQGw54Uj+EbBvYeUyO4pa7I38zge+HfGCGjF0mhBB
+y7ABAjSittWqEubxBhY1PRgkx3SduAyMV2muz4mUSYbn6fpllR9ov89t273b02FE
+d17wq52rLPUpQxw3TlBGmR9yKIxPW0fKVM91Pg+NfpbtMChwri+HMY4z5iT+qdSE
+757D3k1xwxr33yBQrlj83DA1ipusuGkYNzcKneDwT1qIheQUAZ/aSR5Q3m4AHKJ0
+dVTBpeepl7ei1enze8EhM/zi3fH5l4icGmnqT9WJbyYN48StYa7dEYpvECpqaG23
+cSo4ce3verU12aI/+BXkoGIQUc5xT8bQwVWqTdkX6fqp/hI5tV4kVMfd8H080Yv8
+mbqc/CjU2AV94EIgHrzaIlAm+DBeCzbdRlmFg/Pa2tINfQjzhxfBaSu02nfIqEsa
+uJ/G2BUPjanzVWebP2/mQtvMAVm67ZAiRMjg91aE2BXWK+LqSqaQ+L22MgBJiVf0
+b0QaCGMUmS12P+shRSqUn56Pxs33YGEEw3agIGYRhhsrns67lDiKrt63tK6rkINQ
+HM5TSfHviIVBtj75Lq9XoyPpqBj1askTtRsQxXUkTGqVrJI50UyJC3ANVzteOm/Y
+IKAmVgx+wn4eKr3A29PXQmpTlxuLqt0v5KKn+1x1rEW+b5e9hkU=
+=bDb4
+-----END PGP SIGNATURE-----
+
+--hmv3ictfz5w3jtha--
