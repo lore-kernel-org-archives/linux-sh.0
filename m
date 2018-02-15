@@ -1,33 +1,49 @@
-From: kbuild test robot <lkp@intel.com>
-Date: Tue, 20 Feb 2018 05:22:23 +0000
-Subject: [RFC PATCH] media: i2c: ov772x: ov772x_frame_intervals[] can be static
-Message-Id: <20180220052223.GA27152@lkp-sb04>
+From: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Date: Thu, 15 Feb 2018 15:17:34 +0000
+Subject: [PATCH 4.4 097/108] signal/sh: Ensure si_signo is initialized in do_divide_error
+Message-Id: <20180215151235.853108888@linuxfoundation.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1519059584-30844-8-git-send-email-jacopo+renesas@jmondi.org>
-In-Reply-To: <1519059584-30844-8-git-send-email-jacopo+renesas@jmondi.org>
+References: <20180215151222.267507937@linuxfoundation.org>
+In-Reply-To: <20180215151222.267507937@linuxfoundation.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Jacopo Mondi <jacopo+renesas@jmondi.org>
-Cc: kbuild-all@01.org, laurent.pinchart@ideasonboard.com, magnus.damm@gmail.com, geert@glider.be, hverkuil@xs4all.nl, mchehab@kernel.org, festevam@gmail.com, sakari.ailus@iki.fi, robh+dt@kernel.org, mark.rutland@arm.com, pombredanne@nexb.com, linux-renesas-soc@vger.kernel.org, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, stable@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, "Eric W. Biederman" <ebiederm@xmission.com>
 
+4.4-stable review patch.  If anyone has any objections, please let me know.
 
-Fixes: 42b7d5be5f1f ("media: i2c: ov772x: Support frame interval handling")
-Signed-off-by: Fengguang Wu <fengguang.wu@intel.com>
+------------------
+
+From: Eric W. Biederman <ebiederm@xmission.com>
+
+commit 0e88bb002a9b2ee8cc3cc9478ce2dc126f849696 upstream.
+
+Set si_signo.
+
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+Cc: Paul Mundt <lethal@linux-sh.org>
+Cc: linux-sh@vger.kernel.org
+Fixes: 0983b31849bb ("sh: Wire up division and address error exceptions on SH-2A.")
+Signed-off-by: "Eric W. Biederman" <ebiederm@xmission.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
 ---
- ov772x.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/sh/kernel/traps_32.c |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/media/i2c/ov772x.c b/drivers/media/i2c/ov772x.c
-index eba71d97..0d8ce2a 100644
---- a/drivers/media/i2c/ov772x.c
-+++ b/drivers/media/i2c/ov772x.c
-@@ -532,7 +532,7 @@ static const struct ov772x_win_size ov772x_win_sizes[] = {
- /*
-  * frame rate settings lists
-  */
--unsigned int ov772x_frame_intervals[] = { 5, 10, 15, 20, 30, 60 };
-+static unsigned int ov772x_frame_intervals[] = { 5, 10, 15, 20, 30, 60 };
- #define OV772X_N_FRAME_INTERVALS ARRAY_SIZE(ov772x_frame_intervals)
+--- a/arch/sh/kernel/traps_32.c
++++ b/arch/sh/kernel/traps_32.c
+@@ -607,7 +607,8 @@ asmlinkage void do_divide_error(unsigned
+ 		break;
+ 	}
  
- /*
+-	force_sig_info(SIGFPE, &info, current);
++	info.si_signo = SIGFPE;
++	force_sig_info(info.si_signo, &info, current);
+ }
+ #endif
+ 
+
+
