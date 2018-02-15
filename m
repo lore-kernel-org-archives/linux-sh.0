@@ -1,17 +1,17 @@
 From: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-Date: Thu, 15 Feb 2018 15:17:34 +0000
-Subject: [PATCH 4.4 097/108] signal/sh: Ensure si_signo is initialized in do_divide_error
-Message-Id: <20180215151235.853108888@linuxfoundation.org>
+Date: Thu, 15 Feb 2018 15:17:29 +0000
+Subject: [PATCH 3.18 38/45] signal/sh: Ensure si_signo is initialized in do_divide_error
+Message-Id: <20180215144124.021242790@linuxfoundation.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180215151222.267507937@linuxfoundation.org>
-In-Reply-To: <20180215151222.267507937@linuxfoundation.org>
+References: <20180215144115.863307741@linuxfoundation.org>
+In-Reply-To: <20180215144115.863307741@linuxfoundation.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-kernel@vger.kernel.org
 Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, stable@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, "Eric W. Biederman" <ebiederm@xmission.com>
 
-4.4-stable review patch.  If anyone has any objections, please let me know.
+3.18-stable review patch.  If anyone has any objections, please let me know.
 
 ------------------
 
