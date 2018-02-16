@@ -1,53 +1,133 @@
-From: Thomas Petazzoni <thomas.petazzoni@bootlin.com>
-Date: Mon, 26 Feb 2018 13:32:13 +0000
-Subject: Re: [PATCH 0/8] SH7786 PCIe support fixes
-Message-Id: <20180226143213.6d774a46@windsurf.lan>
+From: Masahiro Yamada <yamada.masahiro@socionext.com>
+Date: Fri, 16 Feb 2018 18:38:28 +0000
+Subject: [PATCH 00/23] kconfig: move compiler capability tests to Kconfig
+Message-Id: <1518806331-7101-1-git-send-email-yamada.masahiro@socionext.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20171204150907.24345-1-thomas.petazzoni@free-electrons.com>
-        <20180107160627.5a1231fa@windsurf>
-In-Reply-To: <20180107160627.5a1231fa@windsurf>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Andrew Morton <akpm@linux-foundation.org>
-Cc: Bjorn Helgaas <bhelgaas@google.com>, Lorenzo Pieralisi <lorenzo.pieralisi@arm.com>, linux-sh@vger.kernel.org, linux-pci@vger.kernel.org, Geert Uytterhoeven <geert@linux-m68k.org>
+To: linux-kbuild@vger.kernel.org, Linus Torvalds <torvalds@linux-foundation.org>
+Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Arnd Bergmann <arnd@arndb.de>, Kees Cook <keescook@chromium.org>, Randy Dunlap <rdunlap@infradead.org>, Ulf Magnusson <ulfalizer@gmail.com>, Sam Ravnborg <sam@ravnborg.org>, Michal Marek <michal.lkml@markovi.net>, Masahiro Yamada <yamada.masahiro@socionext.com>, Peter Oberparleiter <oberpar@linux.vnet.ibm.com>, kernel-hardening@lists.openwall.com, Jonathan Corbet <corbet@lwn.net>, sparclinux@vger.kernel.org, linux-sh@vger.kernel.org, x86@kernel.org, Thomas Gleixner <tglx@linutronix.de>, Rich Felker <dalias@libc.org>, Jeff Dike <jdike@addtoit.com>, "H. Peter Anvin" <hpa@zytor.com>, user-mode-linux-devel@lists.sourceforge.net, Yoshinori Sato <ysato@users.sourceforge.jp>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, linuxppc-dev@lists.ozlabs.org, Paul Mackerras <paulus@samba.org>, user-mode-linux-user@lists.sourceforge.net, Ingo Molnar <mingo@redhat.com>, "David S. Miller" <davem@davemloft.net>, Michael Ellerman <mpe@ellerman.id.au>, linux-doc@vger.kernel.org, linux-kernel@vger.kernel.org, Richard Weinberger <richard@nod.at>, Emese Revfy <re.emese@gmail.com>
 
-Hello,
+I brushed up the implementation in this version.
 
-+Andrew Morton in To.
+In the previous RFC, CC_HAS_ was described by using 'option shell=',
+like this:
 
-On Sun, 7 Jan 2018 16:06:27 +0100, Thomas Petazzoni wrote:
-> Hello,
-> 
-> On Mon,  4 Dec 2017 16:08:59 +0100, Thomas Petazzoni wrote:
-> 
-> > Thomas Petazzoni (8):
-> >   arch/sh: add sh7786_mm_sel() function
-> >   arch/sh: make the DMA mapping operations observe dev->dma_pfn_offset
-> >   arch/sh: pci: don't use disabled resources
-> >   arch/sh: pcie-sh7786: mark unavailable PCI resource as disabled
-> >   arch/sh: pcie-sh7786: exclude unusable PCI MEM areas
-> >   arch/sh: pcie-sh7786: adjust PCI MEM and IO regions
-> >   arch/sh: pcie-sh7786: adjust the memory mapping
-> >   arch/sh: pcie-sh7786: handle non-zero DMA offset  
-> 
-> It's been a month. Any feedback on those patches ?
+config CC_HAS_STACKPROTECTOR
+        bool
+        option shell="$CC -Werror -fstack-protector -c -x c /dev/null"
 
-It's been another month. Patches have been sent on December 4, pinged
-on January 7, we're February 26, and I had no feedback.
+After I thought a bit more, the following syntax is more grammatical,
+and flexible.
 
-Since it's touching a very old SoC that no many people care about
-anymore, I do understand the lack of interest. But in this case, could
-we please just merge those patches ? If nobody is interested, it is
-also unlikely to break things for people, right ?
+config CC_HAS_STACKPROTECTOR
+        bool
+        default $(shell $CC -Werror -fstack-protector -c -x c /dev/null)
 
-Andrew, would you be willing to take those patches, which are not
-receiving any attention ?
+This version supports cc-option, so it can be written as:
 
-Thanks a lot,
+config CC_HAS_STACKPROTECTOR
+        bool
+        default $(cc-option -fstack-protector)
 
-Thomas
+To support this in a clean way, I introduced a new concept 'function'
+like we see in Makefiles.
+
+$(shell ...) is a built-in function.  $(cc-option ...) is implemented
+as macro (user-defined function).
+
+I also try cleaning of stack-protector, gcc-plugins since the Makefile
+is so dirty.
+
+Current limitations:
+
+Dependency on outside scripts.
+  For example, scripts/gcc-x86_64-has-stack-protecter.sh is run from
+  Kconfig.  When the shell script is updated, should Kconfig be re-run
+  automatically?
+
+Inter-option dependency:
+  $(call cc-option,...) in Makefile accumulates added options to
+  KBUILD_CFLAGS, but it is difficult to do it in Kconfig.
+  If a compiler option check is dependent on another option,
+  this is a difficult case.  Let's see how significant it is.
+
+Functions are evaluated statically:
+  Functions are only expanded when parsing the Kconfig.  So, it can
+  not refelect user configuration.  If this is required, $(shell )
+  must be dynamically re-calculated depending on other symbols.
+  But, this is difficult, and may cause performance issue.
+
+
+
+Masahiro Yamada (22):
+  kbuild: remove kbuild cache
+  kbuild: remove CONFIG_CROSS_COMPILE support
+  kconfig: add xstrdup() helper
+  kconfig: set SYMBOL_AUTO to the symbol marked with defconfig_list
+  kconfig: move and rename sym_expand_string_value()
+  kconfig: reference environments directly and remove 'option env='
+    syntax
+  kconfig: add function support and implement 'shell' function
+  kconfig: add 'macro' keyword to support user-defined function
+  kconfig: add 'cc-option' macro
+  stack-protector: test compiler capability in Kconfig and drop AUTO
+    mode
+  kconfig: add 'shell-stdout' function
+  kconfig: replace $UNAME_RELEASE with function call
+  kconfig: expand environments/functions in (main)menu, comment, prompt
+  kconfig: show compiler version text in the top comment
+  kconfig: add CC_IS_GCC and GCC_VERSION
+  kconfig: add CC_IS_CLANG and CLANG_VERSION
+  gcov: remove CONFIG_GCOV_FORMAT_AUTODETECT
+  kcov: imply GCC_PLUGINS and GCC_PLUGIN_SANCOV instead of select'ing
+    them
+  gcc-plugins: always build plugins with C++
+  gcc-plugins: move GCC version check for PowerPC to Kconfig
+  gcc-plugins: test GCC plugin support in Kconfig
+  gcc-plugins: enable GCC_PLUGINS for COMPILE_TEST
+
+Sami Tolvanen (1):
+  kbuild: add clang-version.sh
+
+ Documentation/kbuild/kconfig-language.txt |   8 -
+ Kconfig                                   |   4 +-
+ Makefile                                  | 103 ++----------
+ arch/Kconfig                              |  43 +++--
+ arch/powerpc/Kconfig                      |   2 +-
+ arch/sh/Kconfig                           |   4 +-
+ arch/sparc/Kconfig                        |   4 +-
+ arch/tile/Kconfig                         |   2 +-
+ arch/um/Kconfig.common                    |   4 -
+ arch/x86/Kconfig                          |  12 +-
+ arch/x86/um/Kconfig                       |   4 +-
+ init/Kconfig                              |  44 +++---
+ kernel/gcov/Kconfig                       |  18 +--
+ kernel/gcov/Makefile                      |   2 -
+ lib/Kconfig.debug                         |   7 +-
+ scripts/Kbuild.include                    | 101 ++----------
+ scripts/Makefile.gcc-plugins              |  95 ++++-------
+ scripts/clang-version.sh                  |  31 ++++
+ scripts/gcc-plugin.sh                     |  37 +----
+ scripts/gcc-plugins/Makefile              |  15 +-
+ scripts/gcc-x86_32-has-stack-protector.sh |   7 +-
+ scripts/gcc-x86_64-has-stack-protector.sh |   5 -
+ scripts/kconfig/confdata.c                |  33 +---
+ scripts/kconfig/function.c                | 251 ++++++++++++++++++++++++++++++
+ scripts/kconfig/kconf_id.c                |   2 +-
+ scripts/kconfig/kxgettext.c               |   2 +-
+ scripts/kconfig/lkc.h                     |   6 +-
+ scripts/kconfig/lkc_proto.h               |   7 +-
+ scripts/kconfig/menu.c                    |   6 +-
+ scripts/kconfig/symbol.c                  | 139 +++--------------
+ scripts/kconfig/util.c                    | 186 ++++++++++++++++++++--
+ scripts/kconfig/zconf.l                   |  40 ++++-
+ scripts/kconfig/zconf.y                   |  48 +++---
+ 33 files changed, 687 insertions(+), 585 deletions(-)
+ create mode 100755 scripts/clang-version.sh
+ create mode 100644 scripts/kconfig/function.c
+
 -- 
-Thomas Petazzoni, CTO, Bootlin (formerly Free Electrons)
-Embedded Linux and Kernel engineering
-http://bootlin.com
+2.7.4
+
