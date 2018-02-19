@@ -1,60 +1,61 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Wed, 07 Feb 2018 19:28:54 +0000
-Subject: Re: [PATCH v3 08/16] sh: kfr2r09: use MMC_CAP2_NO_WRITE_PROTECT instead of TMIO own flag
-Message-Id: <20180207192854.fnzanswn52zm6es3@ninjato>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="qryj6jou2wpnfecu"
+From: Jacopo Mondi <jacopo+renesas@jmondi.org>
+Date: Mon, 19 Feb 2018 16:59:35 +0000
+Subject: [PATCH v9 02/11] include: media: Add Renesas CEU driver interface
+Message-Id: <1519059584-30844-3-git-send-email-jacopo+renesas@jmondi.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1516206496-16612-1-git-send-email-yamada.masahiro@socionext.com>
- <1516206496-16612-9-git-send-email-yamada.masahiro@socionext.com>
-In-Reply-To: <1516206496-16612-9-git-send-email-yamada.masahiro@socionext.com>
-To: Masahiro Yamada <yamada.masahiro@socionext.com>
-Cc: linux-mmc@vger.kernel.org, Wolfram Sang <wsa+renesas@sang-engineering.com>, Ulf Magnusson <ulfalizer@gmail.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Simon Horman <horms+renesas@verge.net.au>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, linux-renesas-soc@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
+References: <1519059584-30844-1-git-send-email-jacopo+renesas@jmondi.org>
+In-Reply-To: <1519059584-30844-1-git-send-email-jacopo+renesas@jmondi.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: laurent.pinchart@ideasonboard.com, magnus.damm@gmail.com, geert@glider.be, hverkuil@xs4all.nl, mchehab@kernel.org, festevam@gmail.com, sakari.ailus@iki.fi, robh+dt@kernel.org, mark.rutland@arm.com, pombredanne@nexb.com
+Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>, linux-renesas-soc@vger.kernel.org, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org
 
+Add renesas-ceu header file.
 
---qryj6jou2wpnfecu
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Do not remove the existing sh_mobile_ceu.h one as long as the original
+driver does not go away.
 
-On Thu, Jan 18, 2018 at 01:28:08AM +0900, Masahiro Yamada wrote:
-> TMIO_MMC_WRPROTECT_DISABLE is equivalent to MMC_CAP2_NO_WRITE_PROTECT.
->=20
-> The flag is propagated as follows:
->     tmio_mmc_data::capabilities2 -> mmc_host::caps2
->=20
-> Only the difference is the TMIO_... makes tmio_mmc_get_ro() return 0
-> (i.e. it does not affect mmc_gpio_get_ro() at all), while MMC_CAP2_...
-> returns 0 before calling ->get_ro() hook (i.e. it affects both IP own
-> logic and GPIO detection).
->=20
-> The TMIO MMC drivers do not set-up gpio_ro by themselves, so gpio_ro
-> is obviously unused by legacy boards like this.  So, this conversion
-> should be safe.
->=20
-> Signed-off-by: Masahiro Yamada <yamada.masahiro@socionext.com>
+Signed-off-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
+Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Acked-by: Hans Verkuil <hans.verkuil@cisco.com>
+---
+ include/media/drv-intf/renesas-ceu.h | 26 ++++++++++++++++++++++++++
+ 1 file changed, 26 insertions(+)
+ create mode 100644 include/media/drv-intf/renesas-ceu.h
 
-Reviewed-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+diff --git a/include/media/drv-intf/renesas-ceu.h b/include/media/drv-intf/renesas-ceu.h
+new file mode 100644
+index 0000000..52841d1
+--- /dev/null
++++ b/include/media/drv-intf/renesas-ceu.h
+@@ -0,0 +1,26 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * renesas-ceu.h - Renesas CEU driver interface
++ *
++ * Copyright 2017-2018 Jacopo Mondi <jacopo+renesas@jmondi.org>
++ */
++
++#ifndef __MEDIA_DRV_INTF_RENESAS_CEU_H__
++#define __MEDIA_DRV_INTF_RENESAS_CEU_H__
++
++#define CEU_MAX_SUBDEVS		2
++
++struct ceu_async_subdev {
++	unsigned long flags;
++	unsigned char bus_width;
++	unsigned char bus_shift;
++	unsigned int i2c_adapter_id;
++	unsigned int i2c_address;
++};
++
++struct ceu_platform_data {
++	unsigned int num_subdevs;
++	struct ceu_async_subdev subdevs[CEU_MAX_SUBDEVS];
++};
++
++#endif /* ___MEDIA_DRV_INTF_RENESAS_CEU_H__ */
+-- 
+2.7.4
 
-
---qryj6jou2wpnfecu
-Content-Type: application/pgp-signature; name="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQIzBAABCAAdFiEEOZGx6rniZ1Gk92RdFA3kzBSgKbYFAlp7U3YACgkQFA3kzBSg
-Kbbwjw/7BOZTH8WCzr0tdfHQhYR61u6eShFWFx2Ow4SiRxP2P3qGE46XoAvSeJ9h
-wL08flsd2kXBOjlhTxWolZjZPjqB+PYpb3RhL5Hd5SCyeGRyEjRP6ZMsY0vHPz9V
-3QgV8eaHXUJlHtTrNwoChpaJRZzV/0uvX4wGoUTr2LHoyRogtqUrw6de3NPVdB0+
-KZornPKsbHYqic8/PXw4iHM0XlFt8Qh+WdCEA6NSc/9tiCSDc/bGccfzLYrloCyI
-tfdFP1RBdY3HemK9ZyfHbelT5Fm3EEolbkhq1heLVk+81NudVp9T3bpTlhEVKO2I
-7UF4VXPGV8CVYXfaA592F56cTHwJrKr4AVj7DeTA2ls6e4SeDu+aPjM9+oru26mJ
-5eW7zuDfQxPMHkSbdYAAN2vGe3+Dfe8VoiC1K9frQBaFDCc2i97cj+2Yg+5YbdPM
-B/fGaY7U4NGlKjLsLHX5drqteeDOepziAwtmt/vpGugGRnyWCj45ndcrdA9cB5PO
-GKz9CQ2O91lp/UKWSwUjc+pkJiQSXS7CKvTsmQ64Rhdtmb49rDTl+dWGiR/QksGb
-3sF3Xs23jHzjh/UaosEF9eupKyQYfMgmxMnqm4vkWG5bJlU8uBh+17Jox1bJo77l
-wCo0iwYSIyP3t48kqa82eWewTy+Qob9ol19Y+9KpRtr86bEFFMY=
-=VhT6
------END PGP SIGNATURE-----
-
---qryj6jou2wpnfecu--
