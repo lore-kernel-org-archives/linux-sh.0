@@ -1,61 +1,33 @@
-From: Jacopo Mondi <jacopo+renesas@jmondi.org>
-Date: Wed, 21 Feb 2018 17:47:56 +0000
-Subject: [PATCH v10 02/10] include: media: Add Renesas CEU driver interface
-Message-Id: <1519235284-32286-3-git-send-email-jacopo+renesas@jmondi.org>
+From: kbuild test robot <lkp@intel.com>
+Date: Tue, 20 Feb 2018 05:22:23 +0000
+Subject: [RFC PATCH] media: i2c: ov772x: ov772x_frame_intervals[] can be static
+Message-Id: <20180220052223.GA27152@lkp-sb04>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1519235284-32286-1-git-send-email-jacopo+renesas@jmondi.org>
-In-Reply-To: <1519235284-32286-1-git-send-email-jacopo+renesas@jmondi.org>
+References: <1519059584-30844-8-git-send-email-jacopo+renesas@jmondi.org>
+In-Reply-To: <1519059584-30844-8-git-send-email-jacopo+renesas@jmondi.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: laurent.pinchart@ideasonboard.com, magnus.damm@gmail.com, geert@glider.be, hverkuil@xs4all.nl, mchehab@kernel.org, festevam@gmail.com, sakari.ailus@iki.fi, robh+dt@kernel.org, mark.rutland@arm.com, pombredanne@nexb.com
-Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>, linux-renesas-soc@vger.kernel.org, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Jacopo Mondi <jacopo+renesas@jmondi.org>
+Cc: kbuild-all@01.org, laurent.pinchart@ideasonboard.com, magnus.damm@gmail.com, geert@glider.be, hverkuil@xs4all.nl, mchehab@kernel.org, festevam@gmail.com, sakari.ailus@iki.fi, robh+dt@kernel.org, mark.rutland@arm.com, pombredanne@nexb.com, linux-renesas-soc@vger.kernel.org, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Add renesas-ceu header file.
 
-Do not remove the existing sh_mobile_ceu.h one as long as the original
-driver does not go away.
-
-Signed-off-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
-Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Acked-by: Hans Verkuil <hans.verkuil@cisco.com>
+Fixes: 42b7d5be5f1f ("media: i2c: ov772x: Support frame interval handling")
+Signed-off-by: Fengguang Wu <fengguang.wu@intel.com>
 ---
- include/media/drv-intf/renesas-ceu.h | 26 ++++++++++++++++++++++++++
- 1 file changed, 26 insertions(+)
- create mode 100644 include/media/drv-intf/renesas-ceu.h
+ ov772x.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/include/media/drv-intf/renesas-ceu.h b/include/media/drv-intf/renesas-ceu.h
-new file mode 100644
-index 0000000..52841d1
---- /dev/null
-+++ b/include/media/drv-intf/renesas-ceu.h
-@@ -0,0 +1,26 @@
-+// SPDX-License-Identifier: GPL-2.0
-+/*
-+ * renesas-ceu.h - Renesas CEU driver interface
-+ *
-+ * Copyright 2017-2018 Jacopo Mondi <jacopo+renesas@jmondi.org>
-+ */
-+
-+#ifndef __MEDIA_DRV_INTF_RENESAS_CEU_H__
-+#define __MEDIA_DRV_INTF_RENESAS_CEU_H__
-+
-+#define CEU_MAX_SUBDEVS		2
-+
-+struct ceu_async_subdev {
-+	unsigned long flags;
-+	unsigned char bus_width;
-+	unsigned char bus_shift;
-+	unsigned int i2c_adapter_id;
-+	unsigned int i2c_address;
-+};
-+
-+struct ceu_platform_data {
-+	unsigned int num_subdevs;
-+	struct ceu_async_subdev subdevs[CEU_MAX_SUBDEVS];
-+};
-+
-+#endif /* ___MEDIA_DRV_INTF_RENESAS_CEU_H__ */
--- 
-2.7.4
-
+diff --git a/drivers/media/i2c/ov772x.c b/drivers/media/i2c/ov772x.c
+index eba71d97..0d8ce2a 100644
+--- a/drivers/media/i2c/ov772x.c
++++ b/drivers/media/i2c/ov772x.c
+@@ -532,7 +532,7 @@ static const struct ov772x_win_size ov772x_win_sizes[] = {
+ /*
+  * frame rate settings lists
+  */
+-unsigned int ov772x_frame_intervals[] = { 5, 10, 15, 20, 30, 60 };
++static unsigned int ov772x_frame_intervals[] = { 5, 10, 15, 20, 30, 60 };
+ #define OV772X_N_FRAME_INTERVALS ARRAY_SIZE(ov772x_frame_intervals)
+ 
+ /*
