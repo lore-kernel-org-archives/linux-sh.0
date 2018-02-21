@@ -1,188 +1,397 @@
 From: Jacopo Mondi <jacopo+renesas@jmondi.org>
-Date: Thu, 22 Feb 2018 10:37:16 +0000
-Subject: [PATCH v11 00/10] Renesas Capture Engine Unit (CEU) V4L2 driver
-Message-Id: <1519295846-11612-1-git-send-email-jacopo+renesas@jmondi.org>
+Date: Wed, 21 Feb 2018 17:48:04 +0000
+Subject: [PATCH v10 10/10] arch: sh: migor: Use new renesas-ceu camera driver
+Message-Id: <1519235284-32286-11-git-send-email-jacopo+renesas@jmondi.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1519235284-32286-1-git-send-email-jacopo+renesas@jmondi.org>
+In-Reply-To: <1519235284-32286-1-git-send-email-jacopo+renesas@jmondi.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: laurent.pinchart@ideasonboard.com, magnus.damm@gmail.com, geert@glider.be, hverkuil@xs4all.nl, mchehab@kernel.org, festevam@gmail.com, sakari.ailus@iki.fi, robh+dt@kernel.org, mark.rutland@arm.com, pombredanne@nexb.com
 Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>, linux-renesas-soc@vger.kernel.org, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Hello,
-   Hans reported he sees a few warnings when compiling CEU driver with gcc7.3.0
+Migo-R platform uses sh_mobile_ceu camera driver, which is now being
+replaced by a proper V4L2 camera driver named 'renesas-ceu'.
 
-I have silenced them, and the one reported in "probe" was actually a bug.
-That's the diff from v10:
+Move Migo-R platform to use the v4l2 renesas-ceu camera driver
+interface and get rid of soc_camera defined components used to register
+sensor drivers and of platform specific enable/disable routines.
 
-diff --git a/drivers/media/platform/renesas-ceu.c b/drivers/media/platform/renesas-ceu.c
-index 6624fba..cfabe1a 100644
---- a/drivers/media/platform/renesas-ceu.c
-+++ b/drivers/media/platform/renesas-ceu.c
-@@ -412,6 +412,9 @@ static int ceu_hw_config(struct ceu_device *ceudev)
-                cfzsr   = (pix->height << 16) | pix->width;
-                cdwdr   = pix->width;
-                break;
+Register clock source and GPIOs for sensor drivers, so they can use
+clock and gpio APIs.
+
+Also, memory for CEU video buffers is now reserved with membocks APIs,
+and need to be declared as dma_coherent during machine initialization to
+remove that architecture specific part from CEU driver.
+
+Signed-off-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
+Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Acked-by: Hans Verkuil <hans.verkuil@cisco.com>
+---
+ arch/sh/boards/mach-migor/setup.c      | 225 +++++++++++++++------------------
+ arch/sh/kernel/cpu/sh4a/clock-sh7722.c |   2 +-
+ 2 files changed, 101 insertions(+), 126 deletions(-)
+
+diff --git a/arch/sh/boards/mach-migor/setup.c b/arch/sh/boards/mach-migor/setup.c
+index 0bcbe58..271dfc2 100644
+--- a/arch/sh/boards/mach-migor/setup.c
++++ b/arch/sh/boards/mach-migor/setup.c
+@@ -1,17 +1,16 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * Renesas System Solutions Asia Pte. Ltd - Migo-R
+  *
+  * Copyright (C) 2008 Magnus Damm
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
++#include <linux/clkdev.h>
+ #include <linux/init.h>
+ #include <linux/platform_device.h>
+ #include <linux/interrupt.h>
+ #include <linux/input.h>
+ #include <linux/input/sh_keysc.h>
++#include <linux/memblock.h>
+ #include <linux/mmc/host.h>
+ #include <linux/mtd/physmap.h>
+ #include <linux/mfd/tmio.h>
+@@ -23,10 +22,11 @@
+ #include <linux/delay.h>
+ #include <linux/clk.h>
+ #include <linux/gpio.h>
++#include <linux/gpio/machine.h>
+ #include <linux/videodev2.h>
+ #include <linux/sh_intc.h>
+ #include <video/sh_mobile_lcdc.h>
+-#include <media/drv-intf/sh_mobile_ceu.h>
++#include <media/drv-intf/renesas-ceu.h>
+ #include <media/i2c/ov772x.h>
+ #include <media/soc_camera.h>
+ #include <media/i2c/tw9910.h>
+@@ -45,6 +45,9 @@
+  * 0x18000000       8GB    8   NAND Flash (K9K8G08U0A)
+  */
+ 
++#define CEU_BUFFER_MEMORY_SIZE		(4 << 20)
++static phys_addr_t ceu_dma_membase;
 +
-+       default:
-+               return -EINVAL;
-        }
-
-        camcr |= mbus_flags & V4L2_MBUS_VSYNC_ACTIVE_LOW ? 1 << 1 : 0;
-@@ -1568,8 +1571,10 @@ static int ceu_probe(struct platform_device *pdev)
-
-        res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-        ceudev->base = devm_ioremap_resource(dev, res);
--       if (IS_ERR(ceudev->base))
-+       if (IS_ERR(ceudev->base)) {
-+               ret = PTR_ERR(ceudev->base);
-                goto error_free_ceudev;
-+       }
-
-        ret = platform_get_irq(pdev, 0);
-        if (ret < 0) {
-
-
-Now that I've switch to a new compiler I see two more warnings, which are to be
-ignored imo, as this behaviour is expected:
-
-../drivers/media/platform/renesas-ceu.c: In function ‘ceu_hw_config’:
-../drivers/media/platform/renesas-ceu.c:392:9: warning: this statement may fall through [-Wimplicit-fallthrough=]
-   cdocr |= CEU_CDOCR_NO_DOWSAMPLE;
-../drivers/media/platform/renesas-ceu.c:393:2: note: here
-  case V4L2_PIX_FMT_NV12:
-  ^~~~
-../drivers/media/platform/renesas-ceu.c:405:9: warning: this statement may fall through [-Wimplicit-fallthrough=]
-   cdocr |= CEU_CDOCR_NO_DOWSAMPLE;
-../drivers/media/platform/renesas-ceu.c:406:2: note: here
-  case V4L2_PIX_FMT_NV21:
-  ^~~~
-
-MAINTAINERS file update has been sent as separate series, and I guess Hans you
-can now send a pull request for this driver!
-
-Cheers!
-   j
-
-v10->v11:
-- Silence two compiler warnings reported by Hans on CEU driver v10
-
-v9->v10:
-- Close 0-days warning on ov772x frame interval
-- Set default format on CEU after input change
-- Drop ov7670 mbus frame format set not to block this series while topic
-  gets clarified
-
-v8->v9:
-- Address Laurent's review of ov772x frame rate
-- Address Sergei comment on ceu node name
-
-v7->v8:
-- Calculate PLL divider/multiplier and do not use static tables
-- Change RZ/A1-H to RZ/A1H (same for L) in bindings documentation
-- Use rounded clock rate in Migo-R board code as SH clk_set_clk()
-  implementation does not perform rounding
-- Set ycbcr_enc and other fields of v4l2_mbus_format for ov772x as patch
-  [11/11] does for ov7670
-
-v6->v7:
-- Add patch to handle ycbr_enc and other fields of v4l2_mbus_format for ov7670
-- Add patch to handle frame interval for ov772x
-- Rebased on Hans' media-tree/parm branch with v4l2_g/s_parm_cap
-- Drop const modifier in CEU releated fields of Migo-R setup.c board file
-  to silence complier warnings.
-
-v5->v6:
-- Add Hans' Acked-by to most patches
-- Fix a bad change in ov772x get_selection
-- Add .buf_prepare callack to CEU and verify plane sizes there
-- Remove VB2_USERPTR from supported io_modes in CEU driver
-- Remove read() fops in CEU driver
-
-v4->v5:
-- Added Rob's and Laurent's Reviewed-by tag to DT bindings
-- Change CEU driver module license to "GPL v2" to match SPDX identifier as
-  suggested by Philippe Ombredanne
-- Make struct ceu_data static as suggested by Laurent and add his
-  Reviewed-by to CEU driver.
-
-v3->v4:
-- Drop generic fallback compatible string "renesas,ceu"
-- Addressed Laurent's comments on [3/9]
-  - Fix error messages on irq get/request
-  - Do not leak ceudev if irq_get fails
-  - Make irq_mask a const field
-
-v2->v3:
-- Improved DT bindings removing standard properties (pinctrl- ones and
-  remote-endpoint) not specific to this driver and improved description of
-  compatible strings
-- Remove ov772x's xlkc_rate property and set clock rate in Migo-R board file
-- Made 'xclk' clock private to ov772x driver in Migo-R board file
-- Change 'rstb' GPIO active output level and changed ov772x and tw9910 drivers
-  accordingly as suggested by Fabio
-- Minor changes in CEU driver to address Laurent's comments
-- Moved Migo-R setup patch to the end of the series to silence 0-day bot
-- Renamed tw9910 clock to 'xti' as per video decoder manual
-- Changed all SPDX identifiers to GPL-2.0 from previous GPL-2.0+
-
-v1->v2:
- - DT
- -- Addressed Geert's comments and added clocks for CEU to mstp6 clock source
- -- Specified supported generic video iterfaces properties in dt-bindings and
-    simplified example
-
- - CEU driver
- -- Re-worked interrupt handler, interrupt management, reset(*) and capture
-    start operation
- -- Re-worked querycap/enum_input/enum_frameintervals to fix some
-    v4l2_compliance failures
- -- Removed soc_camera legacy operations g/s_mbus_format
- -- Update to new notifier implementation
- -- Fixed several comments from Hans, Laurent and Sakari
-
- - Migo-R
- -- Register clocks and gpios for sensor drivers in Migo-R setup
- -- Updated sensors (tw9910 and ov772x) drivers headers and drivers to close
-    remarks from Hans and Laurent:
- --- Removed platform callbacks and handle clocks and gpios from sensor drivers
- --- Remove g/s_mbus_config operations
-
-
-
-Jacopo Mondi (10):
-  dt-bindings: media: Add Renesas CEU bindings
-  include: media: Add Renesas CEU driver interface
-  media: platform: Add Renesas CEU driver
-  ARM: dts: r7s72100: Add Capture Engine Unit (CEU)
-  media: i2c: Copy ov772x soc_camera sensor driver
-  media: i2c: ov772x: Remove soc_camera dependencies
-  media: i2c: ov772x: Support frame interval handling
-  media: i2c: Copy tw9910 soc_camera sensor driver
-  media: i2c: tw9910: Remove soc_camera dependencies
-  arch: sh: migor: Use new renesas-ceu camera driver
-
- .../devicetree/bindings/media/renesas,ceu.txt      |   81 +
- arch/arm/boot/dts/r7s72100.dtsi                    |   15 +-
- arch/sh/boards/mach-migor/setup.c                  |  225 ++-
- arch/sh/kernel/cpu/sh4a/clock-sh7722.c             |    2 +-
- drivers/media/i2c/Kconfig                          |   20 +
- drivers/media/i2c/Makefile                         |    2 +
- drivers/media/i2c/ov772x.c                         | 1365 ++++++++++++++++
- drivers/media/i2c/tw9910.c                         | 1039 ++++++++++++
- drivers/media/platform/Kconfig                     |    9 +
- drivers/media/platform/Makefile                    |    1 +
- drivers/media/platform/renesas-ceu.c               | 1675 ++++++++++++++++++++
- include/media/drv-intf/renesas-ceu.h               |   26 +
- include/media/i2c/ov772x.h                         |    6 +-
- include/media/i2c/tw9910.h                         |    9 +
- 14 files changed, 4344 insertions(+), 131 deletions(-)
- create mode 100644 Documentation/devicetree/bindings/media/renesas,ceu.txt
- create mode 100644 drivers/media/i2c/ov772x.c
- create mode 100644 drivers/media/i2c/tw9910.c
- create mode 100644 drivers/media/platform/renesas-ceu.c
- create mode 100644 include/media/drv-intf/renesas-ceu.h
-
---
+ static struct smc91x_platdata smc91x_info = {
+ 	.flags = SMC91X_USE_16BIT | SMC91X_NOWAIT,
+ };
+@@ -301,65 +304,24 @@ static struct platform_device migor_lcdc_device = {
+ 	},
+ };
+ 
+-static struct clk *camera_clk;
+-static DEFINE_MUTEX(camera_lock);
+-
+-static void camera_power_on(int is_tw)
+-{
+-	mutex_lock(&camera_lock);
+-
+-	/* Use 10 MHz VIO_CKO instead of 24 MHz to work
+-	 * around signal quality issues on Panel Board V2.1.
+-	 */
+-	camera_clk = clk_get(NULL, "video_clk");
+-	clk_set_rate(camera_clk, 10000000);
+-	clk_enable(camera_clk);	/* start VIO_CKO */
+-
+-	/* use VIO_RST to take camera out of reset */
+-	mdelay(10);
+-	if (is_tw) {
+-		gpio_set_value(GPIO_PTT2, 0);
+-		gpio_set_value(GPIO_PTT0, 0);
+-	} else {
+-		gpio_set_value(GPIO_PTT0, 1);
+-	}
+-	gpio_set_value(GPIO_PTT3, 0);
+-	mdelay(10);
+-	gpio_set_value(GPIO_PTT3, 1);
+-	mdelay(10); /* wait to let chip come out of reset */
+-}
+-
+-static void camera_power_off(void)
+-{
+-	clk_disable(camera_clk); /* stop VIO_CKO */
+-	clk_put(camera_clk);
+-
+-	gpio_set_value(GPIO_PTT3, 0);
+-	mutex_unlock(&camera_lock);
+-}
+-
+-static int ov7725_power(struct device *dev, int mode)
+-{
+-	if (mode)
+-		camera_power_on(0);
+-	else
+-		camera_power_off();
+-
+-	return 0;
+-}
+-
+-static int tw9910_power(struct device *dev, int mode)
+-{
+-	if (mode)
+-		camera_power_on(1);
+-	else
+-		camera_power_off();
+-
+-	return 0;
+-}
+-
+-static struct sh_mobile_ceu_info sh_mobile_ceu_info = {
+-	.flags = SH_CEU_FLAG_USE_8BIT_BUS,
++static struct ceu_platform_data ceu_pdata = {
++	.num_subdevs			= 2,
++	.subdevs = {
++		{ /* [0] = ov772x */
++			.flags		= 0,
++			.bus_width	= 8,
++			.bus_shift	= 0,
++			.i2c_adapter_id	= 0,
++			.i2c_address	= 0x21,
++		},
++		{ /* [1] = tw9910 */
++			.flags		= 0,
++			.bus_width	= 8,
++			.bus_shift	= 0,
++			.i2c_adapter_id	= 0,
++			.i2c_address	= 0x45,
++		},
++	},
+ };
+ 
+ static struct resource migor_ceu_resources[] = {
+@@ -373,18 +335,32 @@ static struct resource migor_ceu_resources[] = {
+ 		.start  = evt2irq(0x880),
+ 		.flags  = IORESOURCE_IRQ,
+ 	},
+-	[2] = {
+-		/* place holder for contiguous memory */
+-	},
+ };
+ 
+ static struct platform_device migor_ceu_device = {
+-	.name		= "sh_mobile_ceu",
+-	.id             = 0, /* "ceu0" clock */
++	.name		= "renesas-ceu",
++	.id             = 0, /* ceu.0 */
+ 	.num_resources	= ARRAY_SIZE(migor_ceu_resources),
+ 	.resource	= migor_ceu_resources,
+ 	.dev	= {
+-		.platform_data	= &sh_mobile_ceu_info,
++		.platform_data	= &ceu_pdata,
++	},
++};
++
++/* Powerdown/reset gpios for CEU image sensors */
++static struct gpiod_lookup_table ov7725_gpios = {
++	.dev_id		= "0-0021",
++	.table		= {
++		GPIO_LOOKUP("sh7722_pfc", GPIO_PTT0, "pwdn", GPIO_ACTIVE_HIGH),
++		GPIO_LOOKUP("sh7722_pfc", GPIO_PTT3, "rstb", GPIO_ACTIVE_LOW),
++	},
++};
++
++static struct gpiod_lookup_table tw9910_gpios = {
++	.dev_id		= "0-0045",
++	.table		= {
++		GPIO_LOOKUP("sh7722_pfc", GPIO_PTT2, "pdn", GPIO_ACTIVE_HIGH),
++		GPIO_LOOKUP("sh7722_pfc", GPIO_PTT3, "rstb", GPIO_ACTIVE_LOW),
+ 	},
+ };
+ 
+@@ -423,6 +399,15 @@ static struct platform_device sdhi_cn9_device = {
+ 	},
+ };
+ 
++static struct ov772x_camera_info ov7725_info = {
++	.flags		= 0,
++};
++
++static struct tw9910_video_info tw9910_info = {
++	.buswidth       = 8,
++	.mpout          = TW9910_MPO_FIELD,
++};
++
+ static struct i2c_board_info migor_i2c_devices[] = {
+ 	{
+ 		I2C_BOARD_INFO("rs5c372b", 0x32),
+@@ -434,51 +419,13 @@ static struct i2c_board_info migor_i2c_devices[] = {
+ 	{
+ 		I2C_BOARD_INFO("wm8978", 0x1a),
+ 	},
+-};
+-
+-static struct i2c_board_info migor_i2c_camera[] = {
+ 	{
+ 		I2C_BOARD_INFO("ov772x", 0x21),
++		.platform_data = &ov7725_info,
+ 	},
+ 	{
+ 		I2C_BOARD_INFO("tw9910", 0x45),
+-	},
+-};
+-
+-static struct ov772x_camera_info ov7725_info;
+-
+-static struct soc_camera_link ov7725_link = {
+-	.power		= ov7725_power,
+-	.board_info	= &migor_i2c_camera[0],
+-	.i2c_adapter_id	= 0,
+-	.priv		= &ov7725_info,
+-};
+-
+-static struct tw9910_video_info tw9910_info = {
+-	.buswidth	= SOCAM_DATAWIDTH_8,
+-	.mpout		= TW9910_MPO_FIELD,
+-};
+-
+-static struct soc_camera_link tw9910_link = {
+-	.power		= tw9910_power,
+-	.board_info	= &migor_i2c_camera[1],
+-	.i2c_adapter_id	= 0,
+-	.priv		= &tw9910_info,
+-};
+-
+-static struct platform_device migor_camera[] = {
+-	{
+-		.name	= "soc-camera-pdrv",
+-		.id	= 0,
+-		.dev	= {
+-			.platform_data = &ov7725_link,
+-		},
+-	}, {
+-		.name	= "soc-camera-pdrv",
+-		.id	= 1,
+-		.dev	= {
+-			.platform_data = &tw9910_link,
+-		},
++		.platform_data = &tw9910_info,
+ 	},
+ };
+ 
+@@ -486,12 +433,9 @@ static struct platform_device *migor_devices[] __initdata = {
+ 	&smc91x_eth_device,
+ 	&sh_keysc_device,
+ 	&migor_lcdc_device,
+-	&migor_ceu_device,
+ 	&migor_nor_flash_device,
+ 	&migor_nand_flash_device,
+ 	&sdhi_cn9_device,
+-	&migor_camera[0],
+-	&migor_camera[1],
+ };
+ 
+ extern char migor_sdram_enter_start;
+@@ -501,6 +445,8 @@ extern char migor_sdram_leave_end;
+ 
+ static int __init migor_devices_setup(void)
+ {
++	struct clk *video_clk;
++
+ 	/* register board specific self-refresh code */
+ 	sh_mobile_register_self_refresh(SUSP_SH_STANDBY | SUSP_SH_SF,
+ 					&migor_sdram_enter_start,
+@@ -620,20 +566,8 @@ static int __init migor_devices_setup(void)
+ 	gpio_request(GPIO_FN_VIO_D9, NULL);
+ 	gpio_request(GPIO_FN_VIO_D8, NULL);
+ 
+-	gpio_request(GPIO_PTT3, NULL); /* VIO_RST */
+-	gpio_direction_output(GPIO_PTT3, 0);
+-	gpio_request(GPIO_PTT2, NULL); /* TV_IN_EN */
+-	gpio_direction_output(GPIO_PTT2, 1);
+-	gpio_request(GPIO_PTT0, NULL); /* CAM_EN */
+-#ifdef CONFIG_SH_MIGOR_RTA_WVGA
+-	gpio_direction_output(GPIO_PTT0, 0);
+-#else
+-	gpio_direction_output(GPIO_PTT0, 1);
+-#endif
+ 	__raw_writew(__raw_readw(PORT_MSELCRB) | 0x2000, PORT_MSELCRB); /* D15->D8 */
+ 
+-	platform_resource_setup_memory(&migor_ceu_device, "ceu", 4 << 20);
+-
+ 	/* SIU: Port B */
+ 	gpio_request(GPIO_FN_SIUBOLR, NULL);
+ 	gpio_request(GPIO_FN_SIUBOBT, NULL);
+@@ -647,9 +581,36 @@ static int __init migor_devices_setup(void)
+ 	 */
+ 	__raw_writew(__raw_readw(PORT_MSELCRA) | 1, PORT_MSELCRA);
+ 
++	 /*
++	  * Use 10 MHz VIO_CKO instead of 24 MHz to work around signal quality
++	  * issues on Panel Board V2.1.
++	  */
++	video_clk = clk_get(NULL, "video_clk");
++	if (!IS_ERR(video_clk)) {
++		clk_set_rate(video_clk, clk_round_rate(video_clk, 10000000));
++		clk_put(video_clk);
++	}
++
++	/* Add a clock alias for ov7725 xclk source. */
++	clk_add_alias("xclk", "0-0021", "video_clk", NULL);
++
++	/* Register GPIOs for video sources. */
++	gpiod_add_lookup_table(&ov7725_gpios);
++	gpiod_add_lookup_table(&tw9910_gpios);
++
+ 	i2c_register_board_info(0, migor_i2c_devices,
+ 				ARRAY_SIZE(migor_i2c_devices));
+ 
++	/* Initialize CEU platform device separately to map memory first */
++	device_initialize(&migor_ceu_device.dev);
++	arch_setup_pdev_archdata(&migor_ceu_device);
++	dma_declare_coherent_memory(&migor_ceu_device.dev,
++				    ceu_dma_membase, ceu_dma_membase,
++				    ceu_dma_membase + CEU_BUFFER_MEMORY_SIZE - 1,
++				    DMA_MEMORY_EXCLUSIVE);
++
++	platform_device_add(&migor_ceu_device);
++
+ 	return platform_add_devices(migor_devices, ARRAY_SIZE(migor_devices));
+ }
+ arch_initcall(migor_devices_setup);
+@@ -665,10 +626,24 @@ static int migor_mode_pins(void)
+ 	return MODE_PIN0 | MODE_PIN1 | MODE_PIN5;
+ }
+ 
++/* Reserve a portion of memory for CEU buffers */
++static void __init migor_mv_mem_reserve(void)
++{
++	phys_addr_t phys;
++	phys_addr_t size = CEU_BUFFER_MEMORY_SIZE;
++
++	phys = memblock_alloc_base(size, PAGE_SIZE, MEMBLOCK_ALLOC_ANYWHERE);
++	memblock_free(phys, size);
++	memblock_remove(phys, size);
++
++	ceu_dma_membase = phys;
++}
++
+ /*
+  * The Machine Vector
+  */
+ static struct sh_machine_vector mv_migor __initmv = {
+ 	.mv_name		= "Migo-R",
+ 	.mv_mode_pins		= migor_mode_pins,
++	.mv_mem_reserve		= migor_mv_mem_reserve,
+ };
+diff --git a/arch/sh/kernel/cpu/sh4a/clock-sh7722.c b/arch/sh/kernel/cpu/sh4a/clock-sh7722.c
+index 8f07a1a..d85091e 100644
+--- a/arch/sh/kernel/cpu/sh4a/clock-sh7722.c
++++ b/arch/sh/kernel/cpu/sh4a/clock-sh7722.c
+@@ -223,7 +223,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-vou.0", &mstp_clks[HWBLK_VOU]),
+ 	CLKDEV_CON_ID("jpu0", &mstp_clks[HWBLK_JPU]),
+ 	CLKDEV_CON_ID("beu0", &mstp_clks[HWBLK_BEU]),
+-	CLKDEV_DEV_ID("sh_mobile_ceu.0", &mstp_clks[HWBLK_CEU]),
++	CLKDEV_DEV_ID("renesas-ceu.0", &mstp_clks[HWBLK_CEU]),
+ 	CLKDEV_CON_ID("veu0", &mstp_clks[HWBLK_VEU]),
+ 	CLKDEV_CON_ID("vpu0", &mstp_clks[HWBLK_VPU]),
+ 	CLKDEV_DEV_ID("sh_mobile_lcdc_fb.0", &mstp_clks[HWBLK_LCDC]),
+-- 
 2.7.4
 
