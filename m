@@ -1,387 +1,412 @@
 From: Jacopo Mondi <jacopo+renesas@jmondi.org>
-Date: Mon, 19 Feb 2018 16:59:33 +0000
-Subject: [PATCH v9 00/11] Renesas Capture Engine Unit (CEU) V4L2 driver
-Message-Id: <1519059584-30844-1-git-send-email-jacopo+renesas@jmondi.org>
+Date: Wed, 21 Feb 2018 17:48:00 +0000
+Subject: [PATCH v10 06/10] media: i2c: ov772x: Remove soc_camera dependencies
+Message-Id: <1519235284-32286-7-git-send-email-jacopo+renesas@jmondi.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1519235284-32286-1-git-send-email-jacopo+renesas@jmondi.org>
+In-Reply-To: <1519235284-32286-1-git-send-email-jacopo+renesas@jmondi.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: laurent.pinchart@ideasonboard.com, magnus.damm@gmail.com, geert@glider.be, hverkuil@xs4all.nl, mchehab@kernel.org, festevam@gmail.com, sakari.ailus@iki.fi, robh+dt@kernel.org, mark.rutland@arm.com, pombredanne@nexb.com
 Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>, linux-renesas-soc@vger.kernel.org, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Hello,
-   finally I addressed Laurent's comment on ov772x frame rate handling, which
-I almost forgot about :)
+Remove soc_camera framework dependencies from ov772x sensor driver.
+- Handle clock and gpios
+- Register async subdevice
+- Remove soc_camera specific g/s_mbus_config operations
+- Change image format colorspace from JPEG to SRGB as the two use the
+  same colorspace information but JPEG makes assumptions on color
+  components quantization that do not apply to the sensor
+- Remove sizes crop from get_selection as driver can't scale
+- Add kernel doc to driver interface header file
+- Adjust build system
 
-Also, Sergei reported that the ceu node name should be generic, so I changed it
-to "ceu: camera@e8210000".
+This commit does not remove the original soc_camera based driver as long
+as other platforms depends on soc_camera-based CEU driver.
 
-All patches but the trivial [11/11] one are now reviewed/acked. Hope this is
-last iteration for CEU!
+Signed-off-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
+Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+---
+ drivers/media/i2c/Kconfig  |  11 +++
+ drivers/media/i2c/Makefile |   1 +
+ drivers/media/i2c/ov772x.c | 172 ++++++++++++++++++++++++++++++---------------
+ include/media/i2c/ov772x.h |   6 +-
+ 4 files changed, 133 insertions(+), 57 deletions(-)
 
-Series based on top of Hans':
-[PATCHv2 0/9] media: replace g/s_parm by g/s_frame_interval
-and makes use of newly introduced v4l2_g/s_parm_cap() functions from v4l2-common
-in CEU's g/s_parm() callbacks.
-
-A branch for testing is available at:
-git://jmondi.org/linux ceu/media-tree-parm/v9
-with few patches for Migo-R and GR-Peach applied on top of Hans' media-tree/parm
-branch.
-
-------------------------------------------------------------------------------
-Copying from v7 cover letter:
-
-The 2 new patches in the series:
-[11/11] has been added to silence a v4l2-compliance error, and modifies
-ov7670 driver to set all fields of 'struct v4l2_mbus_format' during set_format
-operation, including ycbcr_enc, quantization and xfer_func. As the patch commit
-reports, this suppresses the following v4l2-compliance error:
-fail: v4l2-test-formats.cpp(335): ycbcr_enc >= 0xff
-v8/v9: Did the same for ov772x
-
-[7/11] has been required by Hans to add frame interval handling to ov772x
-driver. As this is quite a big change I kept it in a separate patch to ease
-review, it can eventually be squashed on [6/11] if accepted.
-v8: Calculate PLL divider/multiplier in place of using static tables.
-v9: Address Laurent's comment on frame rate handling patch
-
-If for TW9910 video decoder the same is required (frame interval handling) I'm
-in favour of moving that driver to staging as it was proposed for ov772x before
-this series.
-
-------------------------------------------------------------------------------
-v4l2-compliance:
-
-v4l2-compliance requires a fix to relax buffer type check on s/g_parm
-(see Hans' "[PATCHv2 9/9] vidioc-g-parm.rst: also allow _MPLANE buffer types")
-Issue is addressed by patch
-"[PATCH] v4l2-compliance: Relax g/s_parm type check"
-just sent to linux-media mailing list.
-
-With that fixed, I have v4l2-compliance exhausting my tiny GR-Peach 6MB of
-available system, and thus failing when allocating buffers to test "Buffer
-IOCTLs":
-
-renesas-ceu e8210000.camera: dma_alloc_coherent of size 307200 failed
-Unable to request buffers: Cannot allocate memory (12).
-
-Also, Hans, you asked me to run v4l2-compliance with the -f option, I cannot do
-that on my tiny GR-Peach as with its limited available system memory it cannot
-allocate the number of requested buffers for that test.
-I won't stress here why I cannot do that on Migo-R, long story short: I need a
-special compiler with DSP support to run anything but the little
-initramfs I have received for SH7722. I've been able to tweak yavta to work and
-test capture and frame rate handling with it, but v4l2-compliance is much more
-complex and I don't think I'll be able run it on that platform.
-
-I have verified capture still works properly in all supported image formats.
-Below v4l2-compliance output, with 2 errors due to memory constraints on my
-test platform. Hope this won't cause issues with ceu driver acceptance now
-that we're so close to have it finalized :)
-
-------------------------------------------------------------------------------
-v4l2-compliance SHA   : 372109e86a4de045c642a808fc97b2e7ca5e6c93
-
-Driver Info:
-        Driver name   : renesas-ceu
-        Card type     : Renesas CEU
-        Bus info      : platform:renesas-ceu-e8210000.c
-        Driver version: 4.15.0
-        Capabilities  : 0x84201000
-                Video Capture Multiplanar
-                Streaming
-                Extended Pix Format
-                Device Capabilities
-        Device Caps   : 0x04201000
-                Video Capture Multiplanar
-                Streaming
-                Extended Pix Format
-
-Compliance test for device /dev/video0 (not using libv4l2):
-
-Required ioctls:
-        test VIDIOC_QUERYCAP: OK
-
-Allow for multiple opens:
-        test second video open: OK
-        test VIDIOC_QUERYCAP: OK
-        test VIDIOC_G/S_PRIORITY: OK
-        test for unlimited opens: OK
-
-Debug ioctls:
-        test VIDIOC_DBG_G/S_REGISTER: OK
-        test VIDIOC_LOG_STATUS: OK
-
-Input ioctls:
-        test VIDIOC_G/S_TUNER/ENUM_FREQ_BANDS: OK (Not Supported)
-        test VIDIOC_G/S_FREQUENCY: OK (Not Supported)
-        test VIDIOC_S_HW_FREQ_SEEK: OK (Not Supported)
-        test VIDIOC_ENUMAUDIO: OK (Not Supported)
-        test VIDIOC_G/S/ENUMINPUT: OK
-        test VIDIOC_G/S_AUDIO: OK (Not Supported)
-        Inputs: 1 Audio Inputs: 0 Tuners: 0
-
-Output ioctls:
-        test VIDIOC_G/S_MODULATOR: OK (Not Supported)
-        test VIDIOC_G/S_FREQUENCY: OK (Not Supported)
-        test VIDIOC_ENUMAUDOUT: OK (Not Supported)
-        test VIDIOC_G/S/ENUMOUTPUT: OK (Not Supported)
-        test VIDIOC_G/S_AUDOUT: OK (Not Supported)
-        Outputs: 0 Audio Outputs: 0 Modulators: 0
-
-Input/Output configuration ioctls:
-        test VIDIOC_ENUM/G/S/QUERY_STD: OK (Not Supported)
-        test VIDIOC_ENUM/G/S/QUERY_DV_TIMINGS: OK (Not Supported)
-        test VIDIOC_DV_TIMINGS_CAP: OK (Not Supported)
-        test VIDIOC_G/S_EDID: OK (Not Supported)
-
-Test input 0:
-
-        Control ioctls:
-                info: checking v4l2_queryctrl of control 'User Controls' (0x00980001)
-                info: checking v4l2_queryctrl of control 'Brightness' (0x00980900)
-                info: checking v4l2_queryctrl of control 'Contrast' (0x00980901)
-                info: checking v4l2_queryctrl of control 'Saturation' (0x00980902)
-                info: checking v4l2_queryctrl of control 'Hue' (0x00980903)
-                info: checking v4l2_queryctrl of control 'Exposure' (0x00980911)
-                info: checking v4l2_queryctrl of control 'Gain, Automatic' (0x00980912)
-                info: checking v4l2_queryctrl of control 'Gain' (0x00980913)
-                info: checking v4l2_queryctrl of control 'Horizontal Flip' (0x00980914)
-                info: checking v4l2_queryctrl of control 'Vertical Flip' (0x00980915)
-                info: checking v4l2_queryctrl of control 'Camera Controls' (0x009a0001)
-                info: checking v4l2_queryctrl of control 'Auto Exposure' (0x009a0901)
-                info: checking v4l2_queryctrl of control 'Image Processing Controls' (0x009f0001)
-                info: checking v4l2_queryctrl of control 'Test Pattern' (0x009f0903)
-                info: checking v4l2_queryctrl of control 'Brightness' (0x00980900)
-                info: checking v4l2_queryctrl of control 'Contrast' (0x00980901)
-                info: checking v4l2_queryctrl of control 'Saturation' (0x00980902)
-                info: checking v4l2_queryctrl of control 'Hue' (0x00980903)
-                info: checking v4l2_queryctrl of control 'Exposure' (0x00980911)
-                info: checking v4l2_queryctrl of control 'Gain, Automatic' (0x00980912)
-                info: checking v4l2_queryctrl of control 'Gain' (0x00980913)
-                info: checking v4l2_queryctrl of control 'Horizontal Flip' (0x00980914)
-                info: checking v4l2_queryctrl of control 'Vertical Flip' (0x00980915)
-                test VIDIOC_QUERY_EXT_CTRL/QUERYMENU: OK
-                test VIDIOC_QUERYCTRL: OK
-                info: checking control 'User Controls' (0x00980001)
-                info: checking control 'Brightness' (0x00980900)
-                info: checking control 'Contrast' (0x00980901)
-                info: checking control 'Saturation' (0x00980902)
-                info: checking control 'Hue' (0x00980903)
-                info: checking control 'Exposure' (0x00980911)
-                info: checking control 'Gain, Automatic' (0x00980912)
-                info: checking control 'Gain' (0x00980913)
-                info: checking control 'Horizontal Flip' (0x00980914)
-                info: checking control 'Vertical Flip' (0x00980915)
-                info: checking control 'Camera Controls' (0x009a0001)
-                info: checking control 'Auto Exposure' (0x009a0901)
-                info: checking control 'Image Processing Controls' (0x009f0001)
-                info: checking control 'Test Pattern' (0x009f0903)
-                test VIDIOC_G/S_CTRL: OK
-                info: checking extended control 'User Controls' (0x00980001)
-                info: checking extended control 'Brightness' (0x00980900)
-                info: checking extended control 'Contrast' (0x00980901)
-                info: checking extended control 'Saturation' (0x00980902)
-                info: checking extended control 'Hue' (0x00980903)
-                info: checking extended control 'Exposure' (0x00980911)
-                info: checking extended control 'Gain, Automatic' (0x00980912)
-                info: checking extended control 'Gain' (0x00980913)
-                info: checking extended control 'Horizontal Flip' (0x00980914)
-                info: checking extended control 'Vertical Flip' (0x00980915)
-                info: checking extended control 'Camera Controls' (0x009a0001)
-                info: checking extended control 'Auto Exposure' (0x009a0901)
-                info: checking extended control 'Image Processing Controls' (0x009f0001)
-                info: checking extended control 'Test Pattern' (0x009f0903)
-                test VIDIOC_G/S/TRY_EXT_CTRLS: OK
-                info: checking control event 'User Controls' (0x00980001)
-                info: checking control event 'Brightness' (0x00980900)
-                info: checking control event 'Contrast' (0x00980901)
-                info: checking control event 'Saturation' (0x00980902)
-                info: checking control event 'Hue' (0x00980903)
-                info: checking control event 'Exposure' (0x00980911)
-                info: checking control event 'Gain, Automatic' (0x00980912)
-                info: checking control event 'Gain' (0x00980913)
-                info: checking control event 'Horizontal Flip' (0x00980914)
-                info: checking control event 'Vertical Flip' (0x00980915)
-                info: checking control event 'Camera Controls' (0x009a0001)
-                info: checking control event 'Auto Exposure' (0x009a0901)
-                info: checking control event 'Image Processing Controls' (0x009f0001)
-                info: checking control event 'Test Pattern' (0x009f0903)
-                test VIDIOC_(UN)SUBSCRIBE_EVENT/DQEVENT: OK
-                test VIDIOC_G/S_JPEGCOMP: OK (Not Supported)
-                Standard Controls: 14 Private Controls: 0
-
-        Format ioctls:
-                info: found 5 frameintervals for pixel format 3631564e (NV16) and size 640x480
-                info: found 5 frameintervals for pixel format 3631564e (NV16) and size 352x288
-                info: found 5 frameintervals for pixel format 3631564e (NV16) and size 320x240
-                info: found 5 frameintervals for pixel format 3631564e (NV16) and size 176x144
-                info: found 4 framesizes for pixel format 3631564e (NV16)
-                info: found 5 frameintervals for pixel format 3136564e (NV61) and size 640x480
-                info: found 5 frameintervals for pixel format 3136564e (NV61) and size 352x288
-                info: found 5 frameintervals for pixel format 3136564e (NV61) and size 320x240
-                info: found 5 frameintervals for pixel format 3136564e (NV61) and size 176x144
-                info: found 4 framesizes for pixel format 3136564e (NV61)
-                info: found 5 frameintervals for pixel format 3231564e (NV12) and size 640x480
-                info: found 5 frameintervals for pixel format 3231564e (NV12) and size 352x288
-                info: found 5 frameintervals for pixel format 3231564e (NV12) and size 320x240
-                info: found 5 frameintervals for pixel format 3231564e (NV12) and size 176x144
-                info: found 4 framesizes for pixel format 3231564e (NV12)
-                info: found 5 frameintervals for pixel format 3132564e (NV21) and size 640x480
-                info: found 5 frameintervals for pixel format 3132564e (NV21) and size 352x288
-                info: found 5 frameintervals for pixel format 3132564e (NV21) and size 320x240
-                info: found 5 frameintervals for pixel format 3132564e (NV21) and size 176x144
-                info: found 4 framesizes for pixel format 3132564e (NV21)
-                info: found 5 frameintervals for pixel format 56595559 (YUYV) and size 640x480
-                info: found 5 frameintervals for pixel format 56595559 (YUYV) and size 352x288
-                info: found 5 frameintervals for pixel format 56595559 (YUYV) and size 320x240
-                info: found 5 frameintervals for pixel format 56595559 (YUYV) and size 176x144
-                info: found 4 framesizes for pixel format 56595559 (YUYV)
-                info: found 5 formats for buftype 9
-                test VIDIOC_ENUM_FMT/FRAMESIZES/FRAMEINTERVALS: OK
-                test VIDIOC_G/S_PARM: OK
-                test VIDIOC_G_FBUF: OK (Not Supported)
-                test VIDIOC_G_FMT: OK
-                test VIDIOC_TRY_FMT: OK
-                info: Global format check succeeded for type 9
-                test VIDIOC_S_FMT: OK
-                test VIDIOC_G_SLICED_VBI_CAP: OK (Not Supported)
-                test Cropping: OK (Not Supported)
-                test Composing: OK (Not Supported)
-                test Scaling: OK (Not Supported)
-
-        Codec ioctls:
-                test VIDIOC_(TRY_)ENCODER_CMD: OK (Not Supported)
-                test VIDIOC_G_ENC_INDEX: OK (Not Supported)
-                test VIDIOC_(TRY_)DECODER_CMD: OK (Not Supported)
-
-        Buffer ioctls:
-                info: test buftype Video Capture Multiplanar
-                fail: v4l2-test-buffers.cpp(525): q2.reqbufs(node->node2, 1)
-                test VIDIOC_REQBUFS/CREATE_BUFS/QUERYBUF: FAIL
-                fail: v4l2-test-buffers.cpp(590): q.reqbufs(node, 2)
-                test VIDIOC_EXPBUF: FAIL
-
-Test input 0:
-
-
-Total: 43, Succeeded: 41, Failed: 2, Warnings: 0
-------------------------------------------------------------------------------
-
-Thanks
-   j
-
-v8->v9:
-- Address Laurent's review of ov772x frame rate
-- Address Sergei comment on ceu node name
-
-v7->v8:
-- Calculate PLL divider/multiplier and do not use static tables
-- Change RZ/A1-H to RZ/A1H (same for L) in bindings documentation
-- Use rounded clock rate in Migo-R board code as SH clk_set_clk()
-  implementation does not perform rounding
-- Set ycbcr_enc and other fields of v4l2_mbus_format for ov772x as patch
-  [11/11] does for ov7670
-
-v6->v7:
-- Add patch to handle ycbr_enc and other fields of v4l2_mbus_format for ov7670
-- Add patch to handle frame interval for ov772x
-- Rebased on Hans' media-tree/parm branch with v4l2_g/s_parm_cap
-- Drop const modifier in CEU releated fields of Migo-R setup.c board file
-  to silence complier warnings.
-
-v5->v6:
-- Add Hans' Acked-by to most patches
-- Fix a bad change in ov772x get_selection
-- Add .buf_prepare callack to CEU and verify plane sizes there
-- Remove VB2_USERPTR from supported io_modes in CEU driver
-- Remove read() fops in CEU driver
-
-v4->v5:
-- Added Rob's and Laurent's Reviewed-by tag to DT bindings
-- Change CEU driver module license to "GPL v2" to match SPDX identifier as
-  suggested by Philippe Ombredanne
-- Make struct ceu_data static as suggested by Laurent and add his
-  Reviewed-by to CEU driver.
-
-v3->v4:
-- Drop generic fallback compatible string "renesas,ceu"
-- Addressed Laurent's comments on [3/9]
-  - Fix error messages on irq get/request
-  - Do not leak ceudev if irq_get fails
-  - Make irq_mask a const field
-
-v2->v3:
-- Improved DT bindings removing standard properties (pinctrl- ones and
-  remote-endpoint) not specific to this driver and improved description of
-  compatible strings
-- Remove ov772x's xlkc_rate property and set clock rate in Migo-R board file
-- Made 'xclk' clock private to ov772x driver in Migo-R board file
-- Change 'rstb' GPIO active output level and changed ov772x and tw9910 drivers
-  accordingly as suggested by Fabio
-- Minor changes in CEU driver to address Laurent's comments
-- Moved Migo-R setup patch to the end of the series to silence 0-day bot
-- Renamed tw9910 clock to 'xti' as per video decoder manual
-- Changed all SPDX identifiers to GPL-2.0 from previous GPL-2.0+
-
-v1->v2:
- - DT
- -- Addressed Geert's comments and added clocks for CEU to mstp6 clock source
- -- Specified supported generic video iterfaces properties in dt-bindings and
-    simplified example
-
- - CEU driver
- -- Re-worked interrupt handler, interrupt management, reset(*) and capture
-    start operation
- -- Re-worked querycap/enum_input/enum_frameintervals to fix some
-    v4l2_compliance failures
- -- Removed soc_camera legacy operations g/s_mbus_format
- -- Update to new notifier implementation
- -- Fixed several comments from Hans, Laurent and Sakari
-
- - Migo-R
- -- Register clocks and gpios for sensor drivers in Migo-R setup
- -- Updated sensors (tw9910 and ov772x) drivers headers and drivers to close
-    remarks from Hans and Laurent:
- --- Removed platform callbacks and handle clocks and gpios from sensor drivers
- --- Remove g/s_mbus_config operations
-
-Jacopo Mondi (11):
-  dt-bindings: media: Add Renesas CEU bindings
-  include: media: Add Renesas CEU driver interface
-  media: platform: Add Renesas CEU driver
-  ARM: dts: r7s72100: Add Capture Engine Unit (CEU)
-  media: i2c: Copy ov772x soc_camera sensor driver
-  media: i2c: ov772x: Remove soc_camera dependencies
-  media: i2c: ov772x: Support frame interval handling
-  media: i2c: Copy tw9910 soc_camera sensor driver
-  media: i2c: tw9910: Remove soc_camera dependencies
-  arch: sh: migor: Use new renesas-ceu camera driver
-  media: i2c: ov7670: Fully set mbus frame fmt
-
- .../devicetree/bindings/media/renesas,ceu.txt      |   81 +
- arch/arm/boot/dts/r7s72100.dtsi                    |   15 +-
- arch/sh/boards/mach-migor/setup.c                  |  225 ++-
- arch/sh/kernel/cpu/sh4a/clock-sh7722.c             |    2 +-
- drivers/media/i2c/Kconfig                          |   20 +
- drivers/media/i2c/Makefile                         |    2 +
- drivers/media/i2c/ov7670.c                         |    4 +
- drivers/media/i2c/ov772x.c                         | 1364 ++++++++++++++++
- drivers/media/i2c/tw9910.c                         | 1039 ++++++++++++
- drivers/media/platform/Kconfig                     |    9 +
- drivers/media/platform/Makefile                    |    1 +
- drivers/media/platform/renesas-ceu.c               | 1661 ++++++++++++++++++++
- include/media/drv-intf/renesas-ceu.h               |   26 +
- include/media/i2c/ov772x.h                         |    6 +-
- include/media/i2c/tw9910.h                         |    9 +
- 15 files changed, 4333 insertions(+), 131 deletions(-)
- create mode 100644 Documentation/devicetree/bindings/media/renesas,ceu.txt
- create mode 100644 drivers/media/i2c/ov772x.c
- create mode 100644 drivers/media/i2c/tw9910.c
- create mode 100644 drivers/media/platform/renesas-ceu.c
- create mode 100644 include/media/drv-intf/renesas-ceu.h
-
---
+diff --git a/drivers/media/i2c/Kconfig b/drivers/media/i2c/Kconfig
+index 9f18cd2..e71e968 100644
+--- a/drivers/media/i2c/Kconfig
++++ b/drivers/media/i2c/Kconfig
+@@ -645,6 +645,17 @@ config VIDEO_OV5670
+ 	  To compile this driver as a module, choose M here: the
+ 	  module will be called ov5670.
+ 
++config VIDEO_OV772X
++	tristate "OmniVision OV772x sensor support"
++	depends on I2C && VIDEO_V4L2
++	depends on MEDIA_CAMERA_SUPPORT
++	---help---
++	  This is a Video4Linux2 sensor-level driver for the OmniVision
++	  OV772x camera.
++
++	  To compile this driver as a module, choose M here: the
++	  module will be called ov772x.
++
+ config VIDEO_OV7640
+ 	tristate "OmniVision OV7640 sensor support"
+ 	depends on I2C && VIDEO_V4L2
+diff --git a/drivers/media/i2c/Makefile b/drivers/media/i2c/Makefile
+index c0f94cd..b0489a1 100644
+--- a/drivers/media/i2c/Makefile
++++ b/drivers/media/i2c/Makefile
+@@ -68,6 +68,7 @@ obj-$(CONFIG_VIDEO_OV5670) += ov5670.o
+ obj-$(CONFIG_VIDEO_OV6650) += ov6650.o
+ obj-$(CONFIG_VIDEO_OV7640) += ov7640.o
+ obj-$(CONFIG_VIDEO_OV7670) += ov7670.o
++obj-$(CONFIG_VIDEO_OV772X) += ov772x.o
+ obj-$(CONFIG_VIDEO_OV7740) += ov7740.o
+ obj-$(CONFIG_VIDEO_OV9650) += ov9650.o
+ obj-$(CONFIG_VIDEO_OV13858) += ov13858.o
+diff --git a/drivers/media/i2c/ov772x.c b/drivers/media/i2c/ov772x.c
+index 8063835..23106d7 100644
+--- a/drivers/media/i2c/ov772x.c
++++ b/drivers/media/i2c/ov772x.c
+@@ -1,6 +1,9 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * ov772x Camera Driver
+  *
++ * Copyright (C) 2017 Jacopo Mondi <jacopo+renesas@jmondi.org>
++ *
+  * Copyright (C) 2008 Renesas Solutions Corp.
+  * Kuninori Morimoto <morimoto.kuninori@renesas.com>
+  *
+@@ -9,27 +12,25 @@
+  * Copyright 2006-7 Jonathan Corbet <corbet@lwn.net>
+  * Copyright (C) 2008 Magnus Damm
+  * Copyright (C) 2008, Guennadi Liakhovetski <kernel@pengutronix.de>
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License version 2 as
+- * published by the Free Software Foundation.
+  */
+ 
++#include <linux/clk.h>
++#include <linux/delay.h>
++#include <linux/gpio/consumer.h>
++#include <linux/i2c.h>
+ #include <linux/init.h>
+ #include <linux/kernel.h>
+ #include <linux/module.h>
+-#include <linux/i2c.h>
+ #include <linux/slab.h>
+-#include <linux/delay.h>
+ #include <linux/v4l2-mediabus.h>
+ #include <linux/videodev2.h>
+ 
+ #include <media/i2c/ov772x.h>
+-#include <media/soc_camera.h>
+-#include <media/v4l2-clk.h>
++
+ #include <media/v4l2-ctrls.h>
+-#include <media/v4l2-subdev.h>
++#include <media/v4l2-device.h>
+ #include <media/v4l2-image-sizes.h>
++#include <media/v4l2-subdev.h>
+ 
+ /*
+  * register offset
+@@ -393,8 +394,10 @@ struct ov772x_win_size {
+ struct ov772x_priv {
+ 	struct v4l2_subdev                subdev;
+ 	struct v4l2_ctrl_handler	  hdl;
+-	struct v4l2_clk			 *clk;
++	struct clk			 *clk;
+ 	struct ov772x_camera_info        *info;
++	struct gpio_desc		 *pwdn_gpio;
++	struct gpio_desc		 *rstb_gpio;
+ 	const struct ov772x_color_format *cfmt;
+ 	const struct ov772x_win_size     *win;
+ 	unsigned short                    flag_vflip:1;
+@@ -409,7 +412,7 @@ struct ov772x_priv {
+ static const struct ov772x_color_format ov772x_cfmts[] = {
+ 	{
+ 		.code		= MEDIA_BUS_FMT_YUYV8_2X8,
+-		.colorspace	= V4L2_COLORSPACE_JPEG,
++		.colorspace	= V4L2_COLORSPACE_SRGB,
+ 		.dsp3		= 0x0,
+ 		.dsp4		= DSP_OFMT_YUV,
+ 		.com3		= SWAP_YUV,
+@@ -417,7 +420,7 @@ static const struct ov772x_color_format ov772x_cfmts[] = {
+ 	},
+ 	{
+ 		.code		= MEDIA_BUS_FMT_YVYU8_2X8,
+-		.colorspace	= V4L2_COLORSPACE_JPEG,
++		.colorspace	= V4L2_COLORSPACE_SRGB,
+ 		.dsp3		= UV_ON,
+ 		.dsp4		= DSP_OFMT_YUV,
+ 		.com3		= SWAP_YUV,
+@@ -425,7 +428,7 @@ static const struct ov772x_color_format ov772x_cfmts[] = {
+ 	},
+ 	{
+ 		.code		= MEDIA_BUS_FMT_UYVY8_2X8,
+-		.colorspace	= V4L2_COLORSPACE_JPEG,
++		.colorspace	= V4L2_COLORSPACE_SRGB,
+ 		.dsp3		= 0x0,
+ 		.dsp4		= DSP_OFMT_YUV,
+ 		.com3		= 0x0,
+@@ -550,7 +553,7 @@ static int ov772x_reset(struct i2c_client *client)
+ }
+ 
+ /*
+- * soc_camera_ops function
++ * subdev ops
+  */
+ 
+ static int ov772x_s_stream(struct v4l2_subdev *sd, int enable)
+@@ -650,13 +653,65 @@ static int ov772x_s_register(struct v4l2_subdev *sd,
+ }
+ #endif
+ 
++static int ov772x_power_on(struct ov772x_priv *priv)
++{
++	struct i2c_client *client = v4l2_get_subdevdata(&priv->subdev);
++	int ret;
++
++	if (priv->clk) {
++		ret = clk_prepare_enable(priv->clk);
++		if (ret)
++			return ret;
++	}
++
++	if (priv->pwdn_gpio) {
++		gpiod_set_value(priv->pwdn_gpio, 1);
++		usleep_range(500, 1000);
++	}
++
++	/*
++	 * FIXME: The reset signal is connected to a shared GPIO on some
++	 * platforms (namely the SuperH Migo-R). Until a framework becomes
++	 * available to handle this cleanly, request the GPIO temporarily
++	 * to avoid conflicts.
++	 */
++	priv->rstb_gpio = gpiod_get_optional(&client->dev, "rstb",
++					     GPIOD_OUT_LOW);
++	if (IS_ERR(priv->rstb_gpio)) {
++		dev_info(&client->dev, "Unable to get GPIO \"rstb\"");
++		return PTR_ERR(priv->rstb_gpio);
++	}
++
++	if (priv->rstb_gpio) {
++		gpiod_set_value(priv->rstb_gpio, 1);
++		usleep_range(500, 1000);
++		gpiod_set_value(priv->rstb_gpio, 0);
++		usleep_range(500, 1000);
++
++		gpiod_put(priv->rstb_gpio);
++	}
++
++	return 0;
++}
++
++static int ov772x_power_off(struct ov772x_priv *priv)
++{
++	clk_disable_unprepare(priv->clk);
++
++	if (priv->pwdn_gpio) {
++		gpiod_set_value(priv->pwdn_gpio, 0);
++		usleep_range(500, 1000);
++	}
++
++	return 0;
++}
++
+ static int ov772x_s_power(struct v4l2_subdev *sd, int on)
+ {
+-	struct i2c_client *client = v4l2_get_subdevdata(sd);
+-	struct soc_camera_subdev_desc *ssdd = soc_camera_i2c_to_desc(client);
+ 	struct ov772x_priv *priv = to_ov772x(sd);
+ 
+-	return soc_camera_set_power(&client->dev, ssdd, priv->clk, on);
++	return on ? ov772x_power_on(priv) :
++		    ov772x_power_off(priv);
+ }
+ 
+ static const struct ov772x_win_size *ov772x_select_win(u32 width, u32 height)
+@@ -855,6 +910,8 @@ static int ov772x_get_selection(struct v4l2_subdev *sd,
+ 		struct v4l2_subdev_pad_config *cfg,
+ 		struct v4l2_subdev_selection *sel)
+ {
++	struct ov772x_priv *priv = to_ov772x(sd);
++
+ 	if (sel->which != V4L2_SUBDEV_FORMAT_ACTIVE)
+ 		return -EINVAL;
+ 
+@@ -863,12 +920,9 @@ static int ov772x_get_selection(struct v4l2_subdev *sd,
+ 	switch (sel->target) {
+ 	case V4L2_SEL_TGT_CROP_BOUNDS:
+ 	case V4L2_SEL_TGT_CROP_DEFAULT:
+-		sel->r.width = OV772X_MAX_WIDTH;
+-		sel->r.height = OV772X_MAX_HEIGHT;
+-		return 0;
+ 	case V4L2_SEL_TGT_CROP:
+-		sel->r.width = VGA_WIDTH;
+-		sel->r.height = VGA_HEIGHT;
++		sel->r.width = priv->win->rect.width;
++		sel->r.height = priv->win->rect.height;
+ 		return 0;
+ 	default:
+ 		return -EINVAL;
+@@ -914,6 +968,9 @@ static int ov772x_set_fmt(struct v4l2_subdev *sd,
+ 	mf->height = win->rect.height;
+ 	mf->field = V4L2_FIELD_NONE;
+ 	mf->colorspace = cfmt->colorspace;
++	mf->ycbcr_enc = V4L2_YCBCR_ENC_DEFAULT;
++	mf->quantization = V4L2_QUANTIZATION_DEFAULT;
++	mf->xfer_func = V4L2_XFER_FUNC_DEFAULT;
+ 
+ 	if (format->which = V4L2_SUBDEV_FORMAT_TRY) {
+ 		cfg->try_fmt = *mf;
+@@ -997,24 +1054,8 @@ static int ov772x_enum_mbus_code(struct v4l2_subdev *sd,
+ 	return 0;
+ }
+ 
+-static int ov772x_g_mbus_config(struct v4l2_subdev *sd,
+-				struct v4l2_mbus_config *cfg)
+-{
+-	struct i2c_client *client = v4l2_get_subdevdata(sd);
+-	struct soc_camera_subdev_desc *ssdd = soc_camera_i2c_to_desc(client);
+-
+-	cfg->flags = V4L2_MBUS_PCLK_SAMPLE_RISING | V4L2_MBUS_MASTER |
+-		V4L2_MBUS_VSYNC_ACTIVE_HIGH | V4L2_MBUS_HSYNC_ACTIVE_HIGH |
+-		V4L2_MBUS_DATA_ACTIVE_HIGH;
+-	cfg->type = V4L2_MBUS_PARALLEL;
+-	cfg->flags = soc_camera_apply_board_flags(ssdd, cfg);
+-
+-	return 0;
+-}
+-
+ static const struct v4l2_subdev_video_ops ov772x_subdev_video_ops = {
+ 	.s_stream	= ov772x_s_stream,
+-	.g_mbus_config	= ov772x_g_mbus_config,
+ };
+ 
+ static const struct v4l2_subdev_pad_ops ov772x_subdev_pad_ops = {
+@@ -1038,12 +1079,11 @@ static int ov772x_probe(struct i2c_client *client,
+ 			const struct i2c_device_id *did)
+ {
+ 	struct ov772x_priv	*priv;
+-	struct soc_camera_subdev_desc *ssdd = soc_camera_i2c_to_desc(client);
+-	struct i2c_adapter	*adapter = to_i2c_adapter(client->dev.parent);
++	struct i2c_adapter	*adapter = client->adapter;
+ 	int			ret;
+ 
+-	if (!ssdd || !ssdd->drv_priv) {
+-		dev_err(&client->dev, "OV772X: missing platform data!\n");
++	if (!client->dev.platform_data) {
++		dev_err(&client->dev, "Missing ov772x platform data\n");
+ 		return -EINVAL;
+ 	}
+ 
+@@ -1059,7 +1099,7 @@ static int ov772x_probe(struct i2c_client *client,
+ 	if (!priv)
+ 		return -ENOMEM;
+ 
+-	priv->info = ssdd->drv_priv;
++	priv->info = client->dev.platform_data;
+ 
+ 	v4l2_i2c_subdev_init(&priv->subdev, client, &ov772x_subdev_ops);
+ 	v4l2_ctrl_handler_init(&priv->hdl, 3);
+@@ -1073,22 +1113,42 @@ static int ov772x_probe(struct i2c_client *client,
+ 	if (priv->hdl.error)
+ 		return priv->hdl.error;
+ 
+-	priv->clk = v4l2_clk_get(&client->dev, "mclk");
++	priv->clk = clk_get(&client->dev, "xclk");
+ 	if (IS_ERR(priv->clk)) {
++		dev_err(&client->dev, "Unable to get xclk clock\n");
+ 		ret = PTR_ERR(priv->clk);
+-		goto eclkget;
++		goto error_ctrl_free;
+ 	}
+ 
+-	ret = ov772x_video_probe(priv);
+-	if (ret < 0) {
+-		v4l2_clk_put(priv->clk);
+-eclkget:
+-		v4l2_ctrl_handler_free(&priv->hdl);
+-	} else {
+-		priv->cfmt = &ov772x_cfmts[0];
+-		priv->win = &ov772x_win_sizes[0];
++	priv->pwdn_gpio = gpiod_get_optional(&client->dev, "pwdn",
++					     GPIOD_OUT_LOW);
++	if (IS_ERR(priv->pwdn_gpio)) {
++		dev_info(&client->dev, "Unable to get GPIO \"pwdn\"");
++		ret = PTR_ERR(priv->pwdn_gpio);
++		goto error_clk_put;
+ 	}
+ 
++	ret = ov772x_video_probe(priv);
++	if (ret < 0)
++		goto error_gpio_put;
++
++	priv->cfmt = &ov772x_cfmts[0];
++	priv->win = &ov772x_win_sizes[0];
++
++	ret = v4l2_async_register_subdev(&priv->subdev);
++	if (ret)
++		goto error_gpio_put;
++
++	return 0;
++
++error_gpio_put:
++	if (priv->pwdn_gpio)
++		gpiod_put(priv->pwdn_gpio);
++error_clk_put:
++	clk_put(priv->clk);
++error_ctrl_free:
++	v4l2_ctrl_handler_free(&priv->hdl);
++
+ 	return ret;
+ }
+ 
+@@ -1096,7 +1156,9 @@ static int ov772x_remove(struct i2c_client *client)
+ {
+ 	struct ov772x_priv *priv = to_ov772x(i2c_get_clientdata(client));
+ 
+-	v4l2_clk_put(priv->clk);
++	clk_put(priv->clk);
++	if (priv->pwdn_gpio)
++		gpiod_put(priv->pwdn_gpio);
+ 	v4l2_device_unregister_subdev(&priv->subdev);
+ 	v4l2_ctrl_handler_free(&priv->hdl);
+ 	return 0;
+@@ -1119,6 +1181,6 @@ static struct i2c_driver ov772x_i2c_driver = {
+ 
+ module_i2c_driver(ov772x_i2c_driver);
+ 
+-MODULE_DESCRIPTION("SoC Camera driver for ov772x");
++MODULE_DESCRIPTION("V4L2 driver for OV772x image sensor");
+ MODULE_AUTHOR("Kuninori Morimoto");
+ MODULE_LICENSE("GPL v2");
+diff --git a/include/media/i2c/ov772x.h b/include/media/i2c/ov772x.h
+index 00dbb7c..27d087b 100644
+--- a/include/media/i2c/ov772x.h
++++ b/include/media/i2c/ov772x.h
+@@ -48,8 +48,10 @@ struct ov772x_edge_ctrl {
+ 	.threshold = (t & OV772X_EDGE_THRESHOLD_MASK),	\
+ }
+ 
+-/*
+- * ov772x camera info
++/**
++ * ov772x_camera_info -	ov772x driver interface structure
++ * @flags:		Sensor configuration flags
++ * @edgectrl:		Sensor edge control
+  */
+ struct ov772x_camera_info {
+ 	unsigned long		flags;
+-- 
 2.7.4
 
