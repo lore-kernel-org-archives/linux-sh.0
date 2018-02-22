@@ -1,74 +1,57 @@
-From: Hans Verkuil <hverkuil@xs4all.nl>
-Date: Thu, 22 Feb 2018 10:05:01 +0000
-Subject: Re: [PATCH v10 03/10] media: platform: Add Renesas CEU driver
-Message-Id: <bb33d217-76a8-71a6-e7fd-6d449d662784@xs4all.nl>
+From: Jacopo Mondi <jacopo+renesas@jmondi.org>
+Date: Thu, 22 Feb 2018 10:37:20 +0000
+Subject: [PATCH v11 04/10] ARM: dts: r7s72100: Add Capture Engine Unit (CEU)
+Message-Id: <1519295846-11612-5-git-send-email-jacopo+renesas@jmondi.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1519235284-32286-1-git-send-email-jacopo+renesas@jmondi.org>
- <1519235284-32286-4-git-send-email-jacopo+renesas@jmondi.org>
-In-Reply-To: <1519235284-32286-4-git-send-email-jacopo+renesas@jmondi.org>
+References: <1519295846-11612-1-git-send-email-jacopo+renesas@jmondi.org>
+In-Reply-To: <1519295846-11612-1-git-send-email-jacopo+renesas@jmondi.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: Jacopo Mondi <jacopo+renesas@jmondi.org>, laurent.pinchart@ideasonboard.com, magnus.damm@gmail.com, geert@glider.be, mchehab@kernel.org, festevam@gmail.com, sakari.ailus@iki.fi, robh+dt@kernel.org, mark.rutland@arm.com, pombredanne@nexb.com
-Cc: linux-renesas-soc@vger.kernel.org, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: laurent.pinchart@ideasonboard.com, magnus.damm@gmail.com, geert@glider.be, hverkuil@xs4all.nl, mchehab@kernel.org, festevam@gmail.com, sakari.ailus@iki.fi, robh+dt@kernel.org, mark.rutland@arm.com, pombredanne@nexb.com
+Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>, linux-renesas-soc@vger.kernel.org, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org
 
-On 02/21/18 18:47, Jacopo Mondi wrote:
-> Add driver for Renesas Capture Engine Unit (CEU).
-> 
-> The CEU interface supports capturing 'data' (YUV422) and 'images'
-> (NV[12|21|16|61]).
-> 
-> This driver aims to replace the soc_camera-based sh_mobile_ceu one.
-> 
-> Tested with ov7670 camera sensor, providing YUYV_2X8 data on Renesas RZ
-> platform GR-Peach.
-> 
-> Tested with ov7725 camera sensor on SH4 platform Migo-R.
-> 
-> Signed-off-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
-> Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Add Capture Engine Unit (CEU) node to device tree.
 
-I get these warnings when I try to compile this driver:
+Signed-off-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
+Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Acked-by: Hans Verkuil <hans.verkuil@cisco.com>
+---
+ arch/arm/boot/dts/r7s72100.dtsi | 15 ++++++++++++---
+ 1 file changed, 12 insertions(+), 3 deletions(-)
 
+diff --git a/arch/arm/boot/dts/r7s72100.dtsi b/arch/arm/boot/dts/r7s72100.dtsi
+index ab9645a..23e05ce 100644
+--- a/arch/arm/boot/dts/r7s72100.dtsi
++++ b/arch/arm/boot/dts/r7s72100.dtsi
+@@ -135,9 +135,9 @@
+ 			#clock-cells = <1>;
+ 			compatible = "renesas,r7s72100-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0xfcfe042c 4>;
+-			clocks = <&p0_clk>;
+-			clock-indices = <R7S72100_CLK_RTC>;
+-			clock-output-names = "rtc";
++			clocks = <&b_clk>, <&p0_clk>;
++			clock-indices = <R7S72100_CLK_CEU R7S72100_CLK_RTC>;
++			clock-output-names = "ceu", "rtc";
+ 		};
+ 
+ 		mstp7_clks: mstp7_clks@fcfe0430 {
+@@ -667,4 +667,13 @@
+ 		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
++
++	ceu: camera@e8210000 {
++		reg = <0xe8210000 0x3000>;
++		compatible = "renesas,r7s72100-ceu";
++		interrupts = <GIC_SPI 332 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp6_clks R7S72100_CLK_CEU>;
++		power-domains = <&cpg_clocks>;
++		status = "disabled";
++	};
+ };
+-- 
+2.7.4
 
-  CC [M]  drivers/media/platform/renesas-ceu.o
-drivers/media/platform/renesas-ceu.c: In function ‘ceu_start_streaming’:
-drivers/media/platform/renesas-ceu.c:290:2: warning: ‘cdwdr’ may be used uninitialized in this function [-Wmaybe-uninitialized]
-  iowrite32(data, priv->base + reg_offs);
-  ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-drivers/media/platform/renesas-ceu.c:338:27: note: ‘cdwdr’ was declared here
-  u32 camcr, cdocr, cfzsr, cdwdr, capwr;
-                           ^~~~~
-drivers/media/platform/renesas-ceu.c:290:2: warning: ‘cfzsr’ may be used uninitialized in this function [-Wmaybe-uninitialized]
-  iowrite32(data, priv->base + reg_offs);
-  ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-drivers/media/platform/renesas-ceu.c:338:20: note: ‘cfzsr’ was declared here
-  u32 camcr, cdocr, cfzsr, cdwdr, capwr;
-                    ^~~~~
-drivers/media/platform/renesas-ceu.c:418:8: warning: ‘camcr’ may be used uninitialized in this function [-Wmaybe-uninitialized]
-  camcr |= mbus_flags & V4L2_MBUS_HSYNC_ACTIVE_LOW ? 1 << 0 : 0;
-  ~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-drivers/media/platform/renesas-ceu.c:338:6: note: ‘camcr’ was declared here
-  u32 camcr, cdocr, cfzsr, cdwdr, capwr;
-      ^~~~~
-drivers/media/platform/renesas-ceu.c: In function ‘ceu_probe’:
-drivers/media/platform/renesas-ceu.c:1632:9: warning: ‘ret’ may be used uninitialized in this function [-Wmaybe-uninitialized]
-  return ret;
-         ^~~
-cc1: some warnings being treated as errors
-
-The last warning is indeed correct.
-
-The others are only right if pixelformat is illegal, which can't happen.
-I'd add a:
-
-	default:
-		return -EINVAL;
-
-to the switch, this shuts up the warnings.
-
-So I need a v11 (just for this patch) after all.
-
-Regards,
-
-	Hans
