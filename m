@@ -1,49 +1,44 @@
-From: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-Date: Thu, 15 Feb 2018 15:17:47 +0000
-Subject: [PATCH 4.15 167/202] signal/sh: Ensure si_signo is initialized in do_divide_error
-Message-Id: <20180215151721.613983854@linuxfoundation.org>
+From: Dan Carpenter <dan.carpenter@oracle.com>
+Date: Thu, 22 Feb 2018 09:13:59 +0000
+Subject: [PATCH] sh: ptrace: remove a bogus check
+Message-Id: <20180222091359.GB9883@mwanda>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180215151712.768794354@linuxfoundation.org>
-In-Reply-To: <20180215151712.768794354@linuxfoundation.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, stable@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, "Eric W. Biederman" <ebiederm@xmission.com>
+To: linux-sh@vger.kernel.org
 
-4.15-stable review patch.  If anyone has any objections, please let me know.
+We made "addr" unsigned back in 2010 in commit 9b05a69e0534 ("ptrace:
+change signature of arch_ptrace()").  The check for negatives was always
+just a basic sanity check that duplicated other stricter checks, but now
+it causes static checker warnings so we should remove it.
 
-------------------
+Here is the Smatch warning for reference:
 
-From: Eric W. Biederman <ebiederm@xmission.com>
+    arch/sh/kernel/ptrace_64.c:399 arch_ptrace()
+    warn: unsigned 'addr' is never less than zero.
 
-commit 0e88bb002a9b2ee8cc3cc9478ce2dc126f849696 upstream.
+Signed-off-by: Dan Carpenter <dan.carpenter@oracle.com>
 
-Set si_signo.
-
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: Rich Felker <dalias@libc.org>
-Cc: Paul Mundt <lethal@linux-sh.org>
-Cc: linux-sh@vger.kernel.org
-Fixes: 0983b31849bb ("sh: Wire up division and address error exceptions on SH-2A.")
-Signed-off-by: "Eric W. Biederman" <ebiederm@xmission.com>
-Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-
----
- arch/sh/kernel/traps_32.c |    3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
-
---- a/arch/sh/kernel/traps_32.c
-+++ b/arch/sh/kernel/traps_32.c
-@@ -609,7 +609,8 @@ asmlinkage void do_divide_error(unsigned
- 		break;
- 	}
+diff --git a/arch/sh/kernel/ptrace_64.c b/arch/sh/kernel/ptrace_64.c
+index 1e0656d9e7af..b38d53be168a 100644
+--- a/arch/sh/kernel/ptrace_64.c
++++ b/arch/sh/kernel/ptrace_64.c
+@@ -396,7 +396,7 @@ long arch_ptrace(struct task_struct *child, long request,
+ 		unsigned long tmp;
  
--	force_sig_info(SIGFPE, &info, current);
-+	info.si_signo = SIGFPE;
-+	force_sig_info(info.si_signo, &info, current);
- }
- #endif
+ 		ret = -EIO;
+-		if ((addr & 3) || addr < 0)
++		if (addr & 3)
+ 			break;
  
-
-
+ 		if (addr < sizeof(struct pt_regs))
+@@ -424,7 +424,7 @@ long arch_ptrace(struct task_struct *child, long request,
+                    this could crash the kernel or result in a security
+                    loophole. */
+ 		ret = -EIO;
+-		if ((addr & 3) || addr < 0)
++		if (addr & 3)
+ 			break;
+ 
+ 		if (addr < sizeof(struct pt_regs)) {
