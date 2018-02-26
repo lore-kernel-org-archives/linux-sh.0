@@ -1,36 +1,53 @@
-From: Ulf Hansson <ulf.hansson@linaro.org>
-Date: Wed, 14 Feb 2018 10:39:26 +0000
-Subject: Re: [PATCH v3 00/16] mmc: tmio: another batch of TMIO MMC fixes and cleanups
-Message-Id: <CAPDyKFox8m4maTHQZi4gzyi=UVh0KO_xnfhjbjeMxsd=a9PB5A@mail.gmail.com>
+From: Thomas Petazzoni <thomas.petazzoni@bootlin.com>
+Date: Mon, 26 Feb 2018 13:32:13 +0000
+Subject: Re: [PATCH 0/8] SH7786 PCIe support fixes
+Message-Id: <20180226143213.6d774a46@windsurf.lan>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1516206496-16612-1-git-send-email-yamada.masahiro@socionext.com>
- <CAPDyKFp3dPjsEeyrKAbW_duErCS+xYD0K8zhcRPCY65eRNtMqg@mail.gmail.com>
- <20180207191152.kvqrugblst2cko3c@ninjato> <CAPDyKFoxp7p0atQTV=PoQ7Bwt0fOs2aEq1KJHPtrq+zA3eFYgw@mail.gmail.com>
- <20180214102311.w7hfbnpfkecnjlkb@katana>
-In-Reply-To: <20180214102311.w7hfbnpfkecnjlkb@katana>
+References: <20171204150907.24345-1-thomas.petazzoni@free-electrons.com>
+        <20180107160627.5a1231fa@windsurf>
+In-Reply-To: <20180107160627.5a1231fa@windsurf>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Wolfram Sang <wsa@the-dreams.de>, Masahiro Yamada <yamada.masahiro@socionext.com>
-Cc: "linux-mmc@vger.kernel.org" <linux-mmc@vger.kernel.org>, Wolfram Sang <wsa+renesas@sang-engineering.com>, Ulf Magnusson <ulfalizer@gmail.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Simon Horman <horms+renesas@verge.net.au>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Linux-Renesas <linux-renesas-soc@vger.kernel.org>, devicetree@vger.kernel.org, Linux-sh list <linux-sh@vger.kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rob Herring <robh@kernel.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Rob Herring <robh+dt@kernel.org>, Lee Jones <lee.jones@linaro.org>, Rich Felker <dalias@libc.org>, Mark Rutland <mark.rutland@arm.com>
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Andrew Morton <akpm@linux-foundation.org>
+Cc: Bjorn Helgaas <bhelgaas@google.com>, Lorenzo Pieralisi <lorenzo.pieralisi@arm.com>, linux-sh@vger.kernel.org, linux-pci@vger.kernel.org, Geert Uytterhoeven <geert@linux-m68k.org>
 
-On 14 February 2018 at 11:23, Wolfram Sang <wsa@the-dreams.de> wrote:
->
->> You need to check again. :-)
->
-> Seems like it. Sorry for the noise.
->
->> I am eager to apply those patches you already have reviewed (to
->> patch14), as those mostly seemed rather trivial and should be nice
->> cleanups.
->>
->> Do you mind me going ahead, then you can continue and review/test the rest?
->
-> Yes, we can work incremently from there. I'll send patches if I discover
-> something unexpected.
->
+Hello,
 
-Great! So, applied patches 7->14.
++Andrew Morton in To.
 
-Thanks and kind regards
-Uffe
+On Sun, 7 Jan 2018 16:06:27 +0100, Thomas Petazzoni wrote:
+> Hello,
+> 
+> On Mon,  4 Dec 2017 16:08:59 +0100, Thomas Petazzoni wrote:
+> 
+> > Thomas Petazzoni (8):
+> >   arch/sh: add sh7786_mm_sel() function
+> >   arch/sh: make the DMA mapping operations observe dev->dma_pfn_offset
+> >   arch/sh: pci: don't use disabled resources
+> >   arch/sh: pcie-sh7786: mark unavailable PCI resource as disabled
+> >   arch/sh: pcie-sh7786: exclude unusable PCI MEM areas
+> >   arch/sh: pcie-sh7786: adjust PCI MEM and IO regions
+> >   arch/sh: pcie-sh7786: adjust the memory mapping
+> >   arch/sh: pcie-sh7786: handle non-zero DMA offset  
+> 
+> It's been a month. Any feedback on those patches ?
+
+It's been another month. Patches have been sent on December 4, pinged
+on January 7, we're February 26, and I had no feedback.
+
+Since it's touching a very old SoC that no many people care about
+anymore, I do understand the lack of interest. But in this case, could
+we please just merge those patches ? If nobody is interested, it is
+also unlikely to break things for people, right ?
+
+Andrew, would you be willing to take those patches, which are not
+receiving any attention ?
+
+Thanks a lot,
+
+Thomas
+-- 
+Thomas Petazzoni, CTO, Bootlin (formerly Free Electrons)
+Embedded Linux and Kernel engineering
+http://bootlin.com
