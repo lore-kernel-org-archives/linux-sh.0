@@ -1,89 +1,62 @@
-From: Shea Levy <shea@shealevy.com>
-Date: Mon, 26 Mar 2018 00:55:48 +0000
-Subject: Re: [PATCH v2 02/16] riscv: Use INITRAMFS_GENERIC_UNLOAD.
-Message-Id: <87o9jbu02z.fsf@xps13.shealevy.com>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="=-=-="
+From: Jacopo Mondi <jacopo+renesas@jmondi.org>
+Date: Fri, 02 Mar 2018 16:35:36 +0000
+Subject: [PATCH 0/5] Renesas CEU: SH7724 ECOVEC + Aptina mt9t112
+Message-Id: <1520008541-3961-1-git-send-email-jacopo+renesas@jmondi.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <mhng-5691a509-dedf-4092-bd6d-020a81512c15@palmer-si-x1c4>
-In-Reply-To: <mhng-5691a509-dedf-4092-bd6d-020a81512c15@palmer-si-x1c4>
-To: Palmer Dabbelt <palmer@sifive.com>
-Cc: linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-c6x-dev@linux-c6x.org, uclinux-h8-devel@lists.sourceforge.jp, linux-m68k@lists.linux-m68k.org, nios2-dev@lists.rocketboards.org, openrisc@lists.librecores.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org, linux-sh@vger.kernel.org, user-mode-linux-devel@lists.sourceforge.net
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: hverkuil@xs4all.nl, laurent.pinchart@ideasonboard.com, sakari.ailus@iki.fi, mchehab@kernel.org
+Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>, linux-renesas-soc@vger.kernel.org, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
---=-=-=
-Content-Type: text/plain
-Content-Transfer-Encoding: quoted-printable
+Hello,
+   now that CEU has been picked up for inclusion in v4.17, we can start moving
+users of old sh_mobile_ceu_camera driver to use the newly introduced one.
 
-Hi Palmer,
+Migo-R has been first, now it's SH7724 ECOVEC board turn.
 
-Palmer Dabbelt <palmer@sifive.com> writes:
+ECOVEC has a camera board with two MT9T112 image sensor and one TW9910 video
+decoder input. This series moves the mt9t112 driver away from soc_camera
+framework and remove dependencies on it in mach-ecovec board code.
 
-> On Sun, 25 Mar 2018 15:18:39 PDT (-0700), shea@shealevy.com wrote:
->> Signed-off-by: Shea Levy <shea@shealevy.com>
->> ---
->>  arch/riscv/Kconfig   | 1 +
->>  arch/riscv/mm/init.c | 6 ------
->>  2 files changed, 1 insertion(+), 6 deletions(-)
->>
->> diff --git a/arch/riscv/Kconfig b/arch/riscv/Kconfig
->> index c22ebe08e902..ab1b4cee84fc 100644
->> --- a/arch/riscv/Kconfig
->> +++ b/arch/riscv/Kconfig
->> @@ -37,6 +37,7 @@ config RISCV
->>  	select THREAD_INFO_IN_TASK
->>  	select RISCV_TIMER
->>  	select GENERIC_IRQ_MULTI_HANDLER
->> +	select INITRAMFS_GENERIC_UNLOAD
->>
->>  config MMU
->>  	def_bool y
->> diff --git a/arch/riscv/mm/init.c b/arch/riscv/mm/init.c
->> index c77df8142be2..36f83fe8a726 100644
->> --- a/arch/riscv/mm/init.c
->> +++ b/arch/riscv/mm/init.c
->> @@ -62,9 +62,3 @@ void free_initmem(void)
->>  {
->>  	free_initmem_default(0);
->>  }
->> -
->> -#ifdef CONFIG_BLK_DEV_INITRD
->> -void free_initrd_mem(unsigned long start, unsigned long end)
->> -{
->> -}
->> -#endif /* CONFIG_BLK_DEV_INITRD */
->
-> I haven't looked through the rest of the patch set, but this is a pretty=
-=20
-> trivial change so feel free to add a=20
->
-> Reviewed-By: Palmer Dabbelt <palmer@sifive.com>
->
-> if you'd like.  If you'd like it merged through my tree then just say=20
-> something!
+As per Migo-R, memory for CEU is reserved using memblocks APIs and declared
+as DMA-capable in board code, power up/down routines have been removed from
+board code, and GPIOs lookup table registered for sensor drivers.
 
-I'm not sure how these cross-cutting changes go, if you can take the
-series through your tree that'd be great!
+As in the previous series, still no code has been removed or changed in
+drivers/media/i2c/soc_camera/ until we do not remove all dependencies on it
+in all board files.
 
-Thanks,
-Shea
+Hans, since you asked me to add frame rate interval support for ov772x I expect
+to receive the same request for mt9t112. Unfortunately I do not have access to
+register level documentation, nor can perform any testing as I don't have the
+camera modules. For the same reason I cannot run any v4l2-compliance test on
+that driver, but just make sure the ECOVEC boots cleanly with the new board
+file. I'm in favour of moving the driver to staging if you think that's the case.
 
---=-=-=
-Content-Type: application/pgp-signature; name="signature.asc"
+Series based on media-tree master, and as per Migo-R I would ask SH arch/
+changes to go through media tree as SH maintainers are un-responsive.
 
------BEGIN PGP SIGNATURE-----
+Thanks
+  j
 
-iQIzBAEBCAAdFiEE6ESKvwKkwnxgMLnaXAvWlX2G/icFAlq4RRQACgkQXAvWlX2G
-/idVvw//eVifwGjCVA7W+miXNnrCgZRDqcXBSsy5+RJM0TcRiPp6DHk/yebLED8j
-i3/bd9OxMb6FyO2no4XZMZcsCrBPyeXZkwlbU0qhhc4DI/cNicmOUZro8Aj22Zmh
-MFmOPbShBJG95BW7OfbCbVwAMxJXzGqzVoIHFE6xN4ZkOYvFytX9R/rruZJORHgO
-3+sZBR2g2QG6y7KdXz3yoaRg00neNL8u6kOnDifPDBLBKo/8GI4J1nuycLGt4U3x
-/adDOQx6/jTpC22B8AnC1cLS1O9ws/k3aDLgtpaLyPoFvyMp6WbAoSJYZZlVKXE6
-/iqreLOaLVy67NPtldqJbcIgOCCZcOKuEhwlMtXNFQXBcC5FOmtI+Ske9MBKJsxJ
-dzbS8JTliRn858IJR52cTSo+jaeM7dTqwjYw2lpl8CZsdVOxwyh6ytIAP3h8LYBJ
-IyJrSbeDLkfWnQRcyTQBfR2ZHeTb2CDw40+VPMYm8EpRyQoI1oUkwKuPhaiUpcRz
-OSJpw7bHo3Nnj+V7PR4+7avRIpZSMoPtPHUcWxKkQURS/3HyMsE49Vzz6Ozz91jK
-GVb3D2dM/QDTDA5qY3r9bzJcgbmnKKdaqT9ybKyhjhs3AZJ1HjFhPhBqFgjcOSL/
-VXjOvwvokD+HXOJOHW/CAOnF85kFwysKxYUBoj38xxrx4rjT1W8=
-=L1b7
------END PGP SIGNATURE-----
---=-=-=--
+Jacopo Mondi (5):
+  media: i2c: Copy mt9t112 soc_camera sensor driver
+  media: i2c: mt9t112: Remove soc_camera dependencies
+  media: i2c: mt9t112: Fix code style issues
+  arch: sh: ecovec: Use new renesas-ceu camera driver
+  media: MAINTAINERS: Add entry for Aptina MT9T112
+
+ MAINTAINERS                            |    7 +
+ arch/sh/boards/mach-ecovec24/setup.c   |  338 +++++-----
+ arch/sh/kernel/cpu/sh4a/clock-sh7724.c |    4 +-
+ drivers/media/i2c/Kconfig              |   11 +
+ drivers/media/i2c/Makefile             |    1 +
+ drivers/media/i2c/mt9t112.c            | 1136 ++++++++++++++++++++++++++++++++
+ include/media/i2c/mt9t112.h            |   17 +-
+ 7 files changed, 1333 insertions(+), 181 deletions(-)
+ create mode 100644 drivers/media/i2c/mt9t112.c
+
+--
+2.7.4
+
