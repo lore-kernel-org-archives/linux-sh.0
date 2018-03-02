@@ -1,27 +1,42 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Tue, 27 Mar 2018 11:55:13 +0000
-Subject: Re: [RFC 4/4] backlight: gpio_backlight: remove platform data support
-Message-Id: <CACRpkdaUX8tga=Bt=gjKmxJJE=2_AqFrjow_AmyP_z=4MSK1hA@mail.gmail.com>
+From: Jacopo Mondi <jacopo+renesas@jmondi.org>
+Date: Fri, 02 Mar 2018 16:35:41 +0000
+Subject: [PATCH 5/5] media: MAINTAINERS: Add entry for Aptina MT9T112
+Message-Id: <1520008541-3961-6-git-send-email-jacopo+renesas@jmondi.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180315224202.96668-1-dmitry.torokhov@gmail.com> <20180315224202.96668-5-dmitry.torokhov@gmail.com>
-In-Reply-To: <20180315224202.96668-5-dmitry.torokhov@gmail.com>
+References: <1520008541-3961-1-git-send-email-jacopo+renesas@jmondi.org>
+In-Reply-To: <1520008541-3961-1-git-send-email-jacopo+renesas@jmondi.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Dmitry Torokhov <dmitry.torokhov@gmail.com>
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Lee Jones <lee.jones@linaro.org>, Daniel Thompson <daniel.thompson@linaro.org>, Jingoo Han <jingoohan1@gmail.com>, linux-fbdev@vger.kernel.org, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, linux-sh@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+To: hverkuil@xs4all.nl, laurent.pinchart@ideasonboard.com, sakari.ailus@iki.fi, mchehab@kernel.org
+Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>, linux-renesas-soc@vger.kernel.org, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-On Thu, Mar 15, 2018 at 11:42 PM, Dmitry Torokhov
-<dmitry.torokhov@gmail.com> wrote:
+Add entry for Aptina/Micron MT9T112 camera sensor. The driver is
+currently orphaned.
 
-> Legacy boards can use static property sets/GPIO lookup tables to describe
-> backlight connections, there is no need to maintain legacy platform data.
->
-> Signed-off-by: Dmitry Torokhov <dmitry.torokhov@gmail.com>
+Signed-off-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
+---
+ MAINTAINERS | 7 +++++++
+ 1 file changed, 7 insertions(+)
 
-Good riddance, this is how all drivers should eventually end up
-after full device property conversion I guess.
-Reviewed-by: Linus Walleij <linus.walleij@linaro.org>
+diff --git a/MAINTAINERS b/MAINTAINERS
+index 91ed6ad..1d8be25 100644
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -9385,6 +9385,13 @@ S:	Maintained
+ F:	drivers/media/i2c/mt9t001.c
+ F:	include/media/i2c/mt9t001.h
+ 
++MT9T112 APTINA CAMERA SENSOR
++L:	linux-media@vger.kernel.org
++T:	git git://linuxtv.org/media_tree.git
++S:	Orphan
++F:	drivers/media/i2c/mt9t112.c
++F:	include/media/i2c/mt9t112.h
++
+ MT9V032 APTINA CAMERA SENSOR
+ M:	Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+ L:	linux-media@vger.kernel.org
+-- 
+2.7.4
 
-Yours,
-Linus Walleij
