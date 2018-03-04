@@ -1,95 +1,59 @@
-From: Dmitry Torokhov <dmitry.torokhov@gmail.com>
-Date: Fri, 16 Mar 2018 23:40:41 +0000
-Subject: Re: [RFC 3/4] sh: ecovec24: convert backlight to use device properties
-Message-Id: <20180316234041.GB32310@dtor-ws>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Sun, 04 Mar 2018 22:42:48 +0000
+Subject: Re: [PATCH v3 00/16] mmc: tmio: another batch of TMIO MMC fixes and cleanups
+Message-Id: <20180304224248.mzhsvl4ccmtzg5am@ninjato>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="yszxsr7oewrqteql"
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180315224202.96668-1-dmitry.torokhov@gmail.com>
- <20180315224202.96668-4-dmitry.torokhov@gmail.com>
- <CAMuHMdX9CsWmGYN20mDge7h8UjRDWQMAXD+L2uKFjO3x=R5gLw@mail.gmail.com>
-In-Reply-To: <CAMuHMdX9CsWmGYN20mDge7h8UjRDWQMAXD+L2uKFjO3x=R5gLw@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Lee Jones <lee.jones@linaro.org>, Daniel Thompson <daniel.thompson@linaro.org>, Jingoo Han <jingoohan1@gmail.com>, Linux Fbdev development list <linux-fbdev@vger.kernel.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Linus Walleij <linus.walleij@linaro.org>
+References: <1516206496-16612-1-git-send-email-yamada.masahiro@socionext.com>
+In-Reply-To: <1516206496-16612-1-git-send-email-yamada.masahiro@socionext.com>
+To: Masahiro Yamada <yamada.masahiro@socionext.com>
+Cc: linux-mmc@vger.kernel.org, Wolfram Sang <wsa+renesas@sang-engineering.com>, Ulf Magnusson <ulfalizer@gmail.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Simon Horman <horms+renesas@verge.net.au>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, linux-renesas-soc@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Rob Herring <robh@kernel.org>, linux-kernel@vger.kernel.org, Rob Herring <robh+dt@kernel.org>, Lee Jones <lee.jones@linaro.org>, Rich Felker <dalias@libc.org>, Mark Rutland <mark.rutland@arm.com>, Ulf Hansson <ulf.hansson@linaro.org>
 
-On Fri, Mar 16, 2018 at 09:50:21AM +0100, Geert Uytterhoeven wrote:
-> Hi Dmitry,
-> 
-> On Thu, Mar 15, 2018 at 11:42 PM, Dmitry Torokhov
-> <dmitry.torokhov@gmail.com> wrote:
-> > Instead of backlight legacy platform data, let's switch to using device
-> > properties and GPIO lookup tables.
-> >
-> > Signed-off-by: Dmitry Torokhov <dmitry.torokhov@gmail.com>
-> 
-> Thanks for your patch!
-> 
-> > --- a/arch/sh/boards/mach-ecovec24/setup.c
-> > +++ b/arch/sh/boards/mach-ecovec24/setup.c
-> 
-> > @@ -367,17 +368,21 @@ static struct platform_device lcdc_device = {
-> >         },
-> >  };
-> >
-> > -static struct gpio_backlight_platform_data gpio_backlight_data = {
-> > -       .gpio = GPIO_PTR1,
-> > -       .def_value = 1,
-> > -       .name = "backlight",
-> > +static struct gpiod_lookup_table gpio_backlight_gpios_table = {
-> 
-> gpio_backlight_gpios_table is unused?
 
-There was supposed to be gpiod_add_lookup_table() that I lost as I was
-reshuffling and reshuffling the patches.
+--yszxsr7oewrqteql
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-> 
-> > +       .dev_id = "gpio-backlight.0",
-> > +       .table = {
-> > +               GPIO_LOOKUP_IDX("sh7724_pfc", GPIO_PTR1, NULL, 0, GPIO_ACTIVE_HIGH);
-> > +               { }
-> > +       },
-> > +};
-> > +
-> > +static struct property_entry gpio_backlight_properties[] = {
-> 
-> const
+On Thu, Jan 18, 2018 at 01:28:00AM +0900, Masahiro Yamada wrote:
+>=20
+> In the previous batch (https://lkml.org/lkml/2017/11/24/428)
+> I sent 22 patches for TMIO MMC.
+>=20
+> 14 patches were applied, the rest is under discussion.
+>=20
+> This series consists of 16 patches.
 
-OK.
+Which I tested now, so we can add
 
-> 
-> > +       PROPERTY_ENTRY_BOOL("default-on"),
-> > +       { }
-> >  };
-> >
-> >  static struct platform_device gpio_backlight_device = {
-> >         .name = "gpio-backlight",
-> > -       .dev = {
-> > -               .platform_data = &gpio_backlight_data,
-> > -       },
-> >  };
-> >
-> >  /* CEU0 */
-> > @@ -1436,6 +1441,8 @@ static int __init arch_setup(void)
-> >                 return error;
-> >
-> >         if (use_backlight) {
-> > +               device_add_properties(&gpio_backlight_device.dev,
-> > +                                     gpio_backlight_properties);
-> >                 error = platform_device_add(&gpio_backlight_device);
-> >                 if (error)
-> >                         pr_warn("%s: failed to register backlight: %d\n",
-> 
-> Gr{oetje,eeting}s,
-> 
->                         Geert
-> 
-> --
-> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-> 
-> In personal conversations with technical people, I call myself a hacker. But
-> when I'm talking to journalists I just say "programmer" or something like that.
->                                 -- Linus Torvalds
+Tested-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
--- 
-Dmitry
+to the patches except for
+
+> Patch 12: updated per Wolfram
+
+this one which needs a fix. I will send it as an incremental patch.
+
+
+--yszxsr7oewrqteql
+Content-Type: application/pgp-signature; name="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQIzBAABCAAdFiEEOZGx6rniZ1Gk92RdFA3kzBSgKbYFAlqcdmgACgkQFA3kzBSg
+KbZk8Q/9HwCGNFQurY6N8ZOxjaTvUVyMWSSfTRbGAIq5dE8cDMsIzKjxzurENvNs
+1eg1aq2HG/W59pbCcqbt5rcCwtnqWjXjXprbVXQWbDxOfDh5MracWtCsyGxiDvLt
+MADjdQlRBEumF2XGlVpcSgFmQqG/W3vjvPXaYijInc8twkIGOd/bPU71Kt4bQXZV
+5Ft4VOLK/JQXfysIqHDZL9z1LTeCMeJ1Ow6+vK/izpTS9O2sv5a/ZmjnQKLEX+8V
+GZdaLDEsZ1CbAmMj0ByQ3udvqrw5K8j+MpR41T6wb2XilMG8a9i+PsuRG517P+94
+DLq0PnyUy4ABEAzR6/fGhuera1x6oRSvYzOfuXtwy0n+xPS2Nq0gSaDnO6VWYoBg
+kjoUDdujpFbFV2mc7eaV+oHfRLzCFO3hmm8NlQGIY59/ESmk5Fq2dtcIKarYaYkS
+phWN8dgpE6uiMeCFuzdeXwloYcCw5kehYfxBgHmVGQuRlNqsWQnr7W6tvqOgxbFh
+UDATbvqQ+haeKmrzduMjrtSNKwk2kK95T2vrCDK3XUMDou2N6hmkL0VFbOuxRe9p
+WQ9ayT/rEI0N2z6QG64E4KED89FgZu7B6KWCC4Yo40pb45xjxZQUEavPmXQbzoTb
+vi9eMvgMsgeJy7JSv1TW1QUclewYXxPhK0puxY5r0QuyzRZTDDc=
+=8bck
+-----END PGP SIGNATURE-----
+
+--yszxsr7oewrqteql--
