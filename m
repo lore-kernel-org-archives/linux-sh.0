@@ -1,53 +1,111 @@
-From: Shea Levy <shea@shealevy.com>
-Date: Sat, 24 Mar 2018 17:44:48 +0000
-Subject: [PATCH 06/16] frv: Use INITRAMFS_GENERIC_UNLOAD
-Message-Id: <20180324174458.26423-7-shea@shealevy.com>
+From: Huacai Chen <chenhc@lemote.com>
+Date: Mon, 05 Mar 2018 06:18:41 +0000
+Subject: [PATCH] ZBOOT: fix stack protector in compressed boot phase
+Message-Id: <1520230721-1839-1-git-send-email-chenhc@lemote.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180324174458.26423-1-shea@shealevy.com>
-In-Reply-To: <20180324174458.26423-1-shea@shealevy.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-c6x-dev@linux-c6x.org, uclinux-h8-devel@lists.sourceforge.jp, linux-m68k@lists.linux-m68k.org, nios2-dev@lists.rocketboards.org, openrisc@lists.librecores.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org, linux-sh@vger.kernel.org, user-mode-linux-devel@lists.sourceforge.net
-Cc: Shea Levy <shea@shealevy.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Shea Levy <shea@shealevy.com>
+Call __stack_chk_guard_setup() in decompress_kernel() is too late that
+stack checking always fails for decompress_kernel() itself. So remove
+__stack_chk_guard_setup() and initialize __stack_chk_guard at where we
+define it.
+
+Original code comes from ARM but also used for MIPS and SH, so fix them
+together. If without this fix, compressed booting of these archs will
+fail because stack checking is enabled by default (>=4.16).
+
+Cc: stable@vger.kernel.org
+Signed-off-by: Huacai Chen <chenhc@lemote.com>
 ---
- arch/frv/Kconfig   |  1 +
- arch/frv/mm/init.c | 11 -----------
- 2 files changed, 1 insertion(+), 11 deletions(-)
+ arch/arm/boot/compressed/misc.c        | 9 +--------
+ arch/mips/boot/compressed/decompress.c | 9 +--------
+ arch/sh/boot/compressed/misc.c         | 9 +--------
+ 3 files changed, 3 insertions(+), 24 deletions(-)
 
-diff --git a/arch/frv/Kconfig b/arch/frv/Kconfig
-index af369b05fed5..5c104b800cb1 100644
---- a/arch/frv/Kconfig
-+++ b/arch/frv/Kconfig
-@@ -17,6 +17,7 @@ config FRV
- 	select OLD_SIGACTION
- 	select HAVE_DEBUG_STACKOVERFLOW
- 	select ARCH_NO_COHERENT_DMA_MMAP
-+	select INITRAMFS_GENERIC_UNLOAD
+diff --git a/arch/arm/boot/compressed/misc.c b/arch/arm/boot/compressed/misc.c
+index 16a8a80..43aca75 100644
+--- a/arch/arm/boot/compressed/misc.c
++++ b/arch/arm/boot/compressed/misc.c
+@@ -128,12 +128,7 @@ asmlinkage void __div0(void)
+ 	error("Attempting division by 0!");
+ }
  
- config CPU_BIG_ENDIAN
- 	def_bool y
-diff --git a/arch/frv/mm/init.c b/arch/frv/mm/init.c
-index cf464100e838..345edc4dc462 100644
---- a/arch/frv/mm/init.c
-+++ b/arch/frv/mm/init.c
-@@ -131,14 +131,3 @@ void free_initmem(void)
- 	free_initmem_default(-1);
- #endif
- } /* end free_initmem() */
+-unsigned long __stack_chk_guard;
 -
--/*****************************************************************************/
--/*
-- * free the initial ramdisk memory
-- */
--#ifdef CONFIG_BLK_DEV_INITRD
--void __init free_initrd_mem(unsigned long start, unsigned long end)
+-void __stack_chk_guard_setup(void)
 -{
--	free_reserved_area((void *)start, (void *)end, -1, "initrd");
--} /* end free_initrd_mem() */
--#endif
+-	__stack_chk_guard = 0x000a0dff;
+-}
++unsigned long __stack_chk_guard = 0x000a0dff;
+ 
+ void __stack_chk_fail(void)
+ {
+@@ -150,8 +145,6 @@ decompress_kernel(unsigned long output_start, unsigned long free_mem_ptr_p,
+ {
+ 	int ret;
+ 
+-	__stack_chk_guard_setup();
+-
+ 	output_data		= (unsigned char *)output_start;
+ 	free_mem_ptr		= free_mem_ptr_p;
+ 	free_mem_end_ptr	= free_mem_ptr_end_p;
+diff --git a/arch/mips/boot/compressed/decompress.c b/arch/mips/boot/compressed/decompress.c
+index fdf99e9..0694b3f 100644
+--- a/arch/mips/boot/compressed/decompress.c
++++ b/arch/mips/boot/compressed/decompress.c
+@@ -76,12 +76,7 @@ void error(char *x)
+ #include "../../../../lib/decompress_unxz.c"
+ #endif
+ 
+-unsigned long __stack_chk_guard;
+-
+-void __stack_chk_guard_setup(void)
+-{
+-	__stack_chk_guard = 0x000a0dff;
+-}
++unsigned long __stack_chk_guard = 0x000a0dff;
+ 
+ void __stack_chk_fail(void)
+ {
+@@ -92,8 +87,6 @@ void decompress_kernel(unsigned long boot_heap_start)
+ {
+ 	unsigned long zimage_start, zimage_size;
+ 
+-	__stack_chk_guard_setup();
+-
+ 	zimage_start = (unsigned long)(&__image_begin);
+ 	zimage_size = (unsigned long)(&__image_end) -
+ 	    (unsigned long)(&__image_begin);
+diff --git a/arch/sh/boot/compressed/misc.c b/arch/sh/boot/compressed/misc.c
+index 627ce8e..2c564c2 100644
+--- a/arch/sh/boot/compressed/misc.c
++++ b/arch/sh/boot/compressed/misc.c
+@@ -104,12 +104,7 @@ static void error(char *x)
+ 	while(1);	/* Halt */
+ }
+ 
+-unsigned long __stack_chk_guard;
+-
+-void __stack_chk_guard_setup(void)
+-{
+-	__stack_chk_guard = 0x000a0dff;
+-}
++unsigned long __stack_chk_guard = 0x000a0dff;
+ 
+ void __stack_chk_fail(void)
+ {
+@@ -130,8 +125,6 @@ void decompress_kernel(void)
+ {
+ 	unsigned long output_addr;
+ 
+-	__stack_chk_guard_setup();
+-
+ #ifdef CONFIG_SUPERH64
+ 	output_addr = (CONFIG_MEMORY_START + 0x2000);
+ #else
 -- 
-2.16.2
+2.7.0
 
