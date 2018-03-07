@@ -1,71 +1,61 @@
-From: Thomas Petazzoni <thomas.petazzoni@bootlin.com>
-Date: Mon, 26 Mar 2018 21:25:25 +0000
-Subject: [PATCH 3/5] arch/sh: pcie-sh7786: properly wait for PHY operations ACK
-Message-Id: <20180326212527.12565-4-thomas.petazzoni@bootlin.com>
+From: Arvind Yadav <arvind.yadav.cs@gmail.com>
+Date: Wed, 07 Mar 2018 11:15:14 +0000
+Subject: [PATCH 2/2] sh: superhyway: use put_device() if device_register fail
+Message-Id: <ea06f4581b63ebdbb7c9e8739780181f53a9c774.1520420267.git.arvind.yadav.cs@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1520420267.git.arvind.yadav.cs@gmail.com>
+In-Reply-To: <cover.1520420267.git.arvind.yadav.cs@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: ysato@users.sourceforge.jp, dalias@libc.org
+Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
 
-When doing a PHY write, the following sequence must be done:
+if device_register() returned an error! Always use put_device()
+to give up the reference initialized.
 
- - Write the PCIEPHYDOUTR and PCIEPHYADDR registers
- - Wait for the ACK bit to be set
- - Clear the PCIEPHYDOUTR and PCIEPHYADDR registers
- - Wait for the ACK bit to clear
-
-However, in the last step, the current code waits for the ACK bit to
-be set, which is not correct, and does not match the SH7786 datasheet.
-
-This commit fixes that by improving the phy_wait_for_ack() to indicate
-whether we want to wait for the ACK bit to be set or cleared, and then
-use this new argument in phy_write_reg().
-
-Signed-off-by: Thomas Petazzoni <thomas.petazzoni@bootlin.com>
+Signed-off-by: Arvind Yadav <arvind.yadav.cs@gmail.com>
 ---
- arch/sh/drivers/pci/pcie-sh7786.c | 13 +++++++++----
- 1 file changed, 9 insertions(+), 4 deletions(-)
+ drivers/sh/superhyway/superhyway.c | 11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
 
-diff --git a/arch/sh/drivers/pci/pcie-sh7786.c b/arch/sh/drivers/pci/pcie-sh7786.c
-index 29df5c6fe22c..01a45ce8b2da 100644
---- a/arch/sh/drivers/pci/pcie-sh7786.c
-+++ b/arch/sh/drivers/pci/pcie-sh7786.c
-@@ -152,12 +152,17 @@ static void sh7786_pci_fixup(struct pci_dev *dev)
- DECLARE_PCI_FIXUP_HEADER(PCI_VENDOR_ID_RENESAS, PCI_DEVICE_ID_RENESAS_SH7786,
- 			 sh7786_pci_fixup);
- 
--static int __init phy_wait_for_ack(struct pci_channel *chan)
-+static int phy_wait_for_ack(struct pci_channel *chan, bool set)
+diff --git a/drivers/sh/superhyway/superhyway.c b/drivers/sh/superhyway/superhyway.c
+index 348836b..98922e7 100644
+--- a/drivers/sh/superhyway/superhyway.c
++++ b/drivers/sh/superhyway/superhyway.c
+@@ -54,6 +54,7 @@ int superhyway_add_device(unsigned long base, struct superhyway_device *sdev,
+ 			  struct superhyway_bus *bus)
  {
- 	unsigned int timeout = 100;
+ 	struct superhyway_device *dev = sdev;
++	int ret;
  
- 	while (timeout--) {
--		if (pci_read_reg(chan, SH4A_PCIEPHYADRR) & (1 << BITS_ACK))
-+		int state +			pci_read_reg(chan, SH4A_PCIEPHYADRR) & (1 << BITS_ACK);
-+		if (set && state)
-+			return 0;
+ 	if (!dev) {
+ 		dev = kzalloc(sizeof(struct superhyway_device), GFP_KERNEL);
+@@ -87,7 +88,11 @@ int superhyway_add_device(unsigned long base, struct superhyway_device *sdev,
+ 
+ 	superhyway_devices++;
+ 
+-	return device_register(&dev->dev);
++	ret = device_register(&dev->dev);
++	if (ret)
++		put_device(&dev->dev);
 +
-+		if (!set && !state)
- 			return 0;
- 
- 		udelay(100);
-@@ -192,13 +197,13 @@ static void __init phy_write_reg(struct pci_channel *chan, unsigned int addr,
- 	pci_write_reg(chan, data, SH4A_PCIEPHYDOUTR);
- 	pci_write_reg(chan, phyaddr, SH4A_PCIEPHYADRR);
- 
--	phy_wait_for_ack(chan);
-+	phy_wait_for_ack(chan, true);
- 
- 	/* Clear command */
- 	pci_write_reg(chan, 0, SH4A_PCIEPHYDOUTR);
- 	pci_write_reg(chan, 0, SH4A_PCIEPHYADRR);
- 
--	phy_wait_for_ack(chan);
-+	phy_wait_for_ack(chan, false);
++	return ret;
  }
  
- static int __init pcie_clk_init(struct sh7786_pcie_port *port)
+ int superhyway_add_devices(struct superhyway_bus *bus,
+@@ -110,8 +115,10 @@ static int __init superhyway_init(void)
+ 	int ret;
+ 
+ 	ret = device_register(&superhyway_bus_device);
+-	if (unlikely(ret))
++	if (unlikely(ret)) {
++		put_device(&superhyway_bus_device);
+ 		return ret;
++	}
+ 
+ 	for (bus = superhyway_channels; bus->ops; bus++)
+ 		ret |= superhyway_scan_bus(bus);
 -- 
-2.14.3
+1.9.1
 
