@@ -1,58 +1,46 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 31 Mar 2018 21:23:51 +0000
-Subject: [PATCH net-next 2/2] sh_eth: kill useless check in __sh_eth_get_regs()
-Message-Id: <47af0c2c-bba9-a346-1925-06c99142cbb2@cogentembedded.com>
+From: Arvind Yadav <arvind.yadav.cs@gmail.com>
+Date: Wed, 07 Mar 2018 11:15:13 +0000
+Subject: [PATCH 1/2] sh: maple: use put_device() instead of kfree()
+Message-Id: <ca808c5980d1ceaab59b5798e46e994a9c150b24.1520420267.git.arvind.yadav.cs@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <998029b4-9400-ebc3-51c1-623c3f72b6cc@cogentembedded.com>
-In-Reply-To: <998029b4-9400-ebc3-51c1-623c3f72b6cc@cogentembedded.com>
+References: <cover.1520420267.git.arvind.yadav.cs@gmail.com>
+In-Reply-To: <cover.1520420267.git.arvind.yadav.cs@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org
-Cc: linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org
+To: ysato@users.sourceforge.jp, dalias@libc.org
+Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
 
-Iff TSU registers exist on a given [G]Ether controller, they always include
-the CAM entry table registers (TSU_ADR{H|L}<n>), thus the check for invalid
-TSU_ADRH0 offset in __sh_eth_get_regs() is useless...
+Never directly free @dev after calling device_register(), even
+if it returned an error! Always use put_device() to give up the
+reference initialized.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Arvind Yadav <arvind.yadav.cs@gmail.com>
 ---
- drivers/net/ethernet/renesas/sh_eth.c |   23 +++++++++--------------
- 1 file changed, 9 insertions(+), 14 deletions(-)
+ drivers/sh/maple/maple.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
-=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
-+++ net-next/drivers/net/ethernet/renesas/sh_eth.c
-@@ -2153,22 +2153,17 @@ static size_t __sh_eth_get_regs(struct n
- 		add_tsu_reg(TSU_POST2);
- 		add_tsu_reg(TSU_POST3);
- 		add_tsu_reg(TSU_POST4);
--		if (mdp->reg_offset[TSU_ADRH0] != SH_ETH_OFFSET_INVALID) {
--			/* This is the start of a table, not just a single
--			 * register.
--			 */
--			if (buf) {
--				unsigned int i;
-+		/* This is the start of a table, not just a single register. */
-+		if (buf) {
-+			unsigned int i;
- 
--				mark_reg_valid(TSU_ADRH0);
--				for (i = 0; i < SH_ETH_TSU_CAM_ENTRIES * 2; i++)
--					*buf++ = ioread32(
--						mdp->tsu_addr +
--						mdp->reg_offset[TSU_ADRH0] +
--						i * 4);
--			}
--			len += SH_ETH_TSU_CAM_ENTRIES * 2;
-+			mark_reg_valid(TSU_ADRH0);
-+			for (i = 0; i < SH_ETH_TSU_CAM_ENTRIES * 2; i++)
-+				*buf++ = ioread32(mdp->tsu_addr +
-+						  mdp->reg_offset[TSU_ADRH0] +
-+						  i * 4);
- 		}
-+		len += SH_ETH_TSU_CAM_ENTRIES * 2;
+diff --git a/drivers/sh/maple/maple.c b/drivers/sh/maple/maple.c
+index 7525039..28674fe 100644
+--- a/drivers/sh/maple/maple.c
++++ b/drivers/sh/maple/maple.c
+@@ -393,7 +393,7 @@ static void maple_attach_driver(struct maple_device *mdev)
+ 		dev_warn(&mdev->dev, "could not register device at"
+ 			" (%d, %d), with error 0x%X\n", mdev->unit,
+ 			mdev->port, error);
+-		maple_free_dev(mdev);
++		put_device(&mdev->dev);
+ 		mdev = NULL;
+ 		return;
  	}
+@@ -886,6 +886,7 @@ static int __init maple_bus_init(void)
  
- #undef mark_reg_valid
+ cleanup:
+ 	printk(KERN_ERR "Maple bus registration failed\n");
++	put_device(&maple_bus);
+ 	return retval;
+ }
+ /* Push init to later to ensure hardware gets detected */
+-- 
+1.9.1
+
