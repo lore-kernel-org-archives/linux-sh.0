@@ -1,23 +1,44 @@
-From: Shea Levy <shea@shealevy.com>
-Date: Sun, 25 Mar 2018 22:18:37 +0000
-Subject: [PATCH v2 00/16] Generic infrastructure for unloading initramfs
-Message-Id: <20180325221853.10839-1-shea@shealevy.com>
+From: Jacopo Mondi <jacopo+renesas@jmondi.org>
+Date: Mon, 12 Mar 2018 13:43:01 +0000
+Subject: [PATCH v2 0/4] Renesas CEU: SH7724 ECOVEC + Aptina mt9t112
+Message-Id: <1520862185-17150-1-git-send-email-jacopo+renesas@jmondi.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180324174458.26423-1-shea@shealevy.com>
-In-Reply-To: <20180324174458.26423-1-shea@shealevy.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-c6x-dev@linux-c6x.org, uclinux-h8-devel@lists.sourceforge.jp, linux-m68k@lists.linux-m68k.org, nios2-dev@lists.rocketboards.org, openrisc@lists.librecores.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org, linux-sh@vger.kernel.org, user-mode-linux-devel@lists.sourceforge.net
+To: hverkuil@xs4all.nl, laurent.pinchart@ideasonboard.com, sakari.ailus@iki.fi, mchehab@kernel.org
+Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>, linux-renesas-soc@vger.kernel.org, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-This patch series extracts out code for unloading the initramfs that
-was identical across 14 architectures, and moves those architectures
-to the common code path. Additionally, RISC-V is newly moved to the
-common code path.
+Hello Hans,
+   I have squashed in the two patches I sent on top of v1 in this series, one
+fix for the build error you reported me, and reduced the patch count fixing the
+style changes on the patch that removes the soc_camera dependencies.
 
-In addition to reducing duplication, this allows us to bring future
-improvements (such as generalizing existing "keep initrd" command line
-options) to multiple architectures at once.
+No frame rate control, but now a TODO note makes clear that is expected
+v4l2 compliance tool to report errors.
 
-v2: Mark generic free_initrd_mem __init.
+v1 -> v2:
+- Fix soc_camera driver build error
+- Add TODO note for missing frame rate control
+- Reduce patch count
+
+Jacopo Mondi (4):
+  media: i2c: Copy mt9t112 soc_camera sensor driver
+  media: i2c: mt9t112: Remove soc_camera dependencies
+  arch: sh: ecovec: Use new renesas-ceu camera driver
+  media: MAINTAINERS: Add entry for Aptina MT9T112
+
+ MAINTAINERS                            |    7 +
+ arch/sh/boards/mach-ecovec24/setup.c   |  338 +++++-----
+ arch/sh/kernel/cpu/sh4a/clock-sh7724.c |    4 +-
+ drivers/media/i2c/Kconfig              |   11 +
+ drivers/media/i2c/Makefile             |    1 +
+ drivers/media/i2c/mt9t112.c            | 1140 ++++++++++++++++++++++++++++++++
+ drivers/media/i2c/soc_camera/mt9t112.c |    2 +-
+ include/media/i2c/mt9t112.h            |   17 +-
+ 8 files changed, 1338 insertions(+), 182 deletions(-)
+ create mode 100644 drivers/media/i2c/mt9t112.c
+
+--
+2.7.4
 
