@@ -1,130 +1,171 @@
-From: Ilya Smith <blackzert@gmail.com>
-Date: Fri, 23 Mar 2018 17:43:25 +0000
-Subject: Re: [RFC PATCH v2 1/2] Randomization of address chosen by mmap.
-Message-Id: <547032AD-605D-46AF-9DA6-C2ECA01923E1@gmail.com>
+From: Huacai Chen <chenhc@lemote.com>
+Date: Mon, 12 Mar 2018 02:04:17 +0000
+Subject: [PATCH V2] ZBOOT: fix stack protector in compressed boot phase
+Message-Id: <1520820258-19225-1-git-send-email-chenhc@lemote.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1521736598-12812-1-git-send-email-blackzert@gmail.com>
- <1521736598-12812-2-git-send-email-blackzert@gmail.com>
- <20180322135314.61efce938293e051e118fa46@linux-foundation.org>
-In-Reply-To: <20180322135314.61efce938293e051e118fa46@linux-foundation.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: rth@twiddle.net, ink@jurassic.park.msu.ru, mattst88@gmail.com, vgupta@synopsys.com, linux@armlinux.org.uk, tony.luck@intel.com, fenghua.yu@intel.com, ralf@linux-mips.org, jejb@parisc-linux.org, Helge Deller <deller@gmx.de>, benh@kernel.crashing.org, paulus@samba.org, mpe@ellerman.id.au, schwidefsky@de.ibm.com, heiko.carstens@de.ibm.com, ysato@users.sourceforge.jp, dalias@libc.org, davem@davemloft.net, tglx@linutronix.de, mingo@redhat.com, hpa@zytor.com, x86@kernel.org, nyc@holomorphy.com, viro@zeniv.linux.org.uk, arnd@arndb.de, gregkh@linuxfoundation.org, deepa.kernel@gmail.com, Michal Hocko <mhocko@suse.com>, Hugh Dickins <hughd@google.com>, kstewart@linuxfoundation.org, pombredanne@nexb.com, steve.capper@arm.com, punit.agrawal@arm.com, aneesh.kumar@linux.vnet.ibm.com, npiggin@gmail.com, Kees Cook <keescook@chromium.org>, bhsharma@redhat.com, riel@redhat.com, nitin.m.gupta@oracle.com, "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>, Dan Williams <dan.j.williams@intel.com>, Jan Kara <jack@suse.cz>, ross.zwisler@linux.intel.com, Jerome Glisse <jglisse@redhat.com>, Matthew Wilcox <willy@infradead.org>, Andrea Arcangeli <aarcange@redhat.com>, Oleg Nesterov <oleg@redhat.com>, linux-alpha@vger.kernel.org, LKML <linux-kernel@vger.kernel.org>, linux-snps-arc@lists.infradead.org, linux-ia64@vger.kernel.org, linux-metag@vger.kernel.org, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, Linux-MM <linux-mm@kvack.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
+Call __stack_chk_guard_setup() in decompress_kernel() is too late that
+stack checking always fails for decompress_kernel() itself. So remove
+__stack_chk_guard_setup() and initialize __stack_chk_guard before we
+call decompress_kernel().
 
-> On 22 Mar 2018, at 23:53, Andrew Morton <akpm@linux-foundation.org> wrote:
-> 
-> On Thu, 22 Mar 2018 19:36:37 +0300 Ilya Smith <blackzert@gmail.com> wrote:
-> 
->> include/linux/mm.h |  16 ++++--
->> mm/mmap.c          | 164 +++++++++++++++++++++++++++++++++++++++++++++++++++++
-> 
-> You'll be wanting to update the documentation. 
-> Documentation/sysctl/kernel.txt and
-> Documentation/admin-guide/kernel-parameters.txt.
-> 
+Original code comes from ARM but also used for MIPS and SH, so fix them
+together. If without this fix, compressed booting of these archs will
+fail because stack checking is enabled by default (>=4.16).
 
-Sure, thanks for pointing there. I will add few lines there after discussion them
-here.
+V2: Fix build on ARM.
 
->> ...
->> 
->> @@ -2268,6 +2276,9 @@ extern unsigned long unmapped_area_topdown(struct vm_unmapped_area_info *info);
->> static inline unsigned long
->> vm_unmapped_area(struct vm_unmapped_area_info *info)
->> {
->> +	/* How about 32 bit process?? */
->> +	if ((current->flags & PF_RANDOMIZE) && randomize_va_space > 3)
->> +		return unmapped_area_random(info);
-> 
-> The handling of randomize_va_space is peculiar.  Rather than being a
-> bitfield which independently selects different modes, it is treated as
-> a scalar: the larger the value, the more stuff we randomize.
-> 
-> I can see the sense in that (and I wonder what randomize_va_space=5
-> will do).  But it is...  odd.
-> 
-> Why did you select randomize_va_space=4 for this?  Is there a mode 3
-> already and we forgot to document it?  Or did you leave a gap for
-> something?  If the former, please feel free to fix the documentation
-> (in a separate, preceding patch) while you're in there ;)
-> 
+Cc: stable@vger.kernel.org
+Signed-off-by: Huacai Chen <chenhc@lemote.com>
+---
+ arch/arm/boot/compressed/head.S        | 4 ++++
+ arch/arm/boot/compressed/misc.c        | 7 -------
+ arch/mips/boot/compressed/decompress.c | 7 -------
+ arch/mips/boot/compressed/head.S       | 4 ++++
+ arch/sh/boot/compressed/head_32.S      | 4 ++++
+ arch/sh/boot/compressed/head_64.S      | 4 ++++
+ arch/sh/boot/compressed/misc.c         | 7 -------
+ 7 files changed, 16 insertions(+), 21 deletions(-)
 
-Yes, I was not sure about correct value so leaved some gap for future. Also
-according to current implementation this value used like a scalar. But I’m
-agree bitfield looks more flexible for the future. I think right now I can leave
-3 as value for my patch and it could be fixed any time in the future. What
-do you think about it?
-
->> 	if (info->flags & VM_UNMAPPED_AREA_TOPDOWN)
->> 		return unmapped_area_topdown(info);
->> 	else
->> @@ -2529,11 +2540,6 @@ int drop_caches_sysctl_handler(struct ctl_table *, int,
->> void drop_slab(void);
->> void drop_slab_node(int nid);
->> 
->> 
->> ...
->> 
->> @@ -1780,6 +1781,169 @@ unsigned long mmap_region(struct file *file, unsigned long addr,
->> 	return error;
->> }
->> 
->> +unsigned long unmapped_area_random(struct vm_unmapped_area_info *info)
->> +{
-> 
-> This function is just dead code if CONFIG_MMU=n, yes?  Let's add the
-> ifdefs to make it go away in that case.
-> 
-
-Thanks, I missed that case. I will fix it.
-
->> +	struct mm_struct *mm = current->mm;
->> +	struct vm_area_struct *vma = NULL;
->> +	struct vm_area_struct *visited_vma = NULL;
->> +	unsigned long entropy[2];
->> +	unsigned long length, low_limit, high_limit, gap_start, gap_end;
->> +	unsigned long addr = 0;
->> +
->> +	/* get entropy with prng */
->> +	prandom_bytes(&entropy, sizeof(entropy));
->> +	/* small hack to prevent EPERM result */
->> +	info->low_limit = max(info->low_limit, mmap_min_addr);
->> +
->> 
->> ...
->> 
->> +found:
->> +	/* We found a suitable gap. Clip it with the original high_limit. */
->> +	if (gap_end > info->high_limit)
->> +		gap_end = info->high_limit;
->> +	gap_end -= info->length;
->> +	gap_end -= (gap_end - info->align_offset) & info->align_mask;
->> +	/* only one suitable page */
->> +	if (gap_end ==  gap_start)
->> +		return gap_start;
->> +	addr = entropy[1] % (min((gap_end - gap_start) >> PAGE_SHIFT,
->> +							 0x10000UL));
-> 
-> What does the magic 10000 mean?  Isn't a comment needed explaining this?
-> 
->> +	addr = gap_end - (addr << PAGE_SHIFT);
->> +	addr += (info->align_offset - addr) & info->align_mask;
->> +	return addr;
->> +}
->> 
->> ...
->> 
-> 
-
-This one what I fix by next patch. I was trying to make patches separate to make
-it easier to understand them. This constant came from last version discussion 
-and honestly doesn’t means much. I replaced it with Architecture depended limit
-that as I plan would be CONFIG value as well.
-
-This value means maximum number of pages we can move away from the next
-vma. The less value means less security but less memory fragmentation. Any way
-on 64bit systems memory fragmentation is not such a big problem.
+diff --git a/arch/arm/boot/compressed/head.S b/arch/arm/boot/compressed/head.S
+index 45c8823..bae1fc6 100644
+--- a/arch/arm/boot/compressed/head.S
++++ b/arch/arm/boot/compressed/head.S
+@@ -547,6 +547,10 @@ not_relocated:	mov	r0, #0
+ 		bic	r4, r4, #1
+ 		blne	cache_on
+ 
++		ldr	r0, =__stack_chk_guard
++		ldr	r1, =0x000a0dff
++		str	r1, [r0]
++
+ /*
+  * The C runtime environment should now be setup sufficiently.
+  * Set up some pointers, and start decompressing.
+diff --git a/arch/arm/boot/compressed/misc.c b/arch/arm/boot/compressed/misc.c
+index 16a8a80..e518ef5 100644
+--- a/arch/arm/boot/compressed/misc.c
++++ b/arch/arm/boot/compressed/misc.c
+@@ -130,11 +130,6 @@ asmlinkage void __div0(void)
+ 
+ unsigned long __stack_chk_guard;
+ 
+-void __stack_chk_guard_setup(void)
+-{
+-	__stack_chk_guard = 0x000a0dff;
+-}
+-
+ void __stack_chk_fail(void)
+ {
+ 	error("stack-protector: Kernel stack is corrupted\n");
+@@ -150,8 +145,6 @@ decompress_kernel(unsigned long output_start, unsigned long free_mem_ptr_p,
+ {
+ 	int ret;
+ 
+-	__stack_chk_guard_setup();
+-
+ 	output_data		= (unsigned char *)output_start;
+ 	free_mem_ptr		= free_mem_ptr_p;
+ 	free_mem_end_ptr	= free_mem_ptr_end_p;
+diff --git a/arch/mips/boot/compressed/decompress.c b/arch/mips/boot/compressed/decompress.c
+index fdf99e9..5ba431c 100644
+--- a/arch/mips/boot/compressed/decompress.c
++++ b/arch/mips/boot/compressed/decompress.c
+@@ -78,11 +78,6 @@ void error(char *x)
+ 
+ unsigned long __stack_chk_guard;
+ 
+-void __stack_chk_guard_setup(void)
+-{
+-	__stack_chk_guard = 0x000a0dff;
+-}
+-
+ void __stack_chk_fail(void)
+ {
+ 	error("stack-protector: Kernel stack is corrupted\n");
+@@ -92,8 +87,6 @@ void decompress_kernel(unsigned long boot_heap_start)
+ {
+ 	unsigned long zimage_start, zimage_size;
+ 
+-	__stack_chk_guard_setup();
+-
+ 	zimage_start = (unsigned long)(&__image_begin);
+ 	zimage_size = (unsigned long)(&__image_end) -
+ 	    (unsigned long)(&__image_begin);
+diff --git a/arch/mips/boot/compressed/head.S b/arch/mips/boot/compressed/head.S
+index 409cb48..00d0ee0 100644
+--- a/arch/mips/boot/compressed/head.S
++++ b/arch/mips/boot/compressed/head.S
+@@ -32,6 +32,10 @@ start:
+ 	bne	a2, a0, 1b
+ 	 addiu	a0, a0, 4
+ 
++	PTR_LA	a0, __stack_chk_guard
++	PTR_LI	a1, 0x000a0dff
++	sw	a1, 0(a0)
++
+ 	PTR_LA	a0, (.heap)	     /* heap address */
+ 	PTR_LA	sp, (.stack + 8192)  /* stack address */
+ 
+diff --git a/arch/sh/boot/compressed/head_32.S b/arch/sh/boot/compressed/head_32.S
+index 7bb1681..a3fdb05 100644
+--- a/arch/sh/boot/compressed/head_32.S
++++ b/arch/sh/boot/compressed/head_32.S
+@@ -76,6 +76,10 @@ l1:
+ 	mov.l	init_stack_addr, r0
+ 	mov.l	@r0, r15
+ 
++	mov.l	__stack_chk_guard, r0
++	mov	#0x000a0dff, r1
++	mov.l	r1, @r0
++
+ 	/* Decompress the kernel */
+ 	mov.l	decompress_kernel_addr, r0
+ 	jsr	@r0
+diff --git a/arch/sh/boot/compressed/head_64.S b/arch/sh/boot/compressed/head_64.S
+index 9993113..8b4d540 100644
+--- a/arch/sh/boot/compressed/head_64.S
++++ b/arch/sh/boot/compressed/head_64.S
+@@ -132,6 +132,10 @@ startup:
+ 	addi	r22, 4, r22
+ 	bne	r22, r23, tr1
+ 
++	movi	datalabel __stack_chk_guard, r0
++	movi	0x000a0dff, r1
++	st.l	r0, 0, r1
++
+ 	/*
+ 	 * Decompress the kernel.
+ 	 */
+diff --git a/arch/sh/boot/compressed/misc.c b/arch/sh/boot/compressed/misc.c
+index 627ce8e..fe4c079 100644
+--- a/arch/sh/boot/compressed/misc.c
++++ b/arch/sh/boot/compressed/misc.c
+@@ -106,11 +106,6 @@ static void error(char *x)
+ 
+ unsigned long __stack_chk_guard;
+ 
+-void __stack_chk_guard_setup(void)
+-{
+-	__stack_chk_guard = 0x000a0dff;
+-}
+-
+ void __stack_chk_fail(void)
+ {
+ 	error("stack-protector: Kernel stack is corrupted\n");
+@@ -130,8 +125,6 @@ void decompress_kernel(void)
+ {
+ 	unsigned long output_addr;
+ 
+-	__stack_chk_guard_setup();
+-
+ #ifdef CONFIG_SUPERH64
+ 	output_addr = (CONFIG_MEMORY_START + 0x2000);
+ #else
+-- 
+2.7.0
 
