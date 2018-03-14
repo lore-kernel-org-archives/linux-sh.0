@@ -1,7 +1,7 @@
 From: Yoshinori Sato <ysato@users.sourceforge.jp>
-Date: Wed, 14 Mar 2018 07:34:38 +0000
+Date: Wed, 14 Mar 2018 08:10:40 +0000
 Subject: Re: [PATCH V2] ZBOOT: fix stack protector in compressed boot phase
-Message-Id: <87sh93az5d.wl-ysato@users.sourceforge.jp>
+Message-Id: <87po47axhb.wl-ysato@users.sourceforge.jp>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1520820258-19225-1-git-send-email-chenhc@lemote.com>
  <CAAhV-H4zFAMjg9W2f1VfYrgLnDfNDPaUHUechGDT+v3o_8WNTg@mail.gmail.com>
@@ -21,6 +21,8 @@ Huacai Chen wrote:
 > 
 > Huacai
 >
+
+Sorry. Previous mail bounced. It resend.
 
 OK. Apply this fix.
 SuperH can not handle long int directly.
