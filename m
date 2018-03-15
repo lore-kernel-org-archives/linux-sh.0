@@ -1,222 +1,66 @@
-From: Yoshinori Sato <ysato@users.sourceforge.jp>
-Date: Wed, 14 Mar 2018 08:10:40 +0000
-Subject: Re: [PATCH V2] ZBOOT: fix stack protector in compressed boot phase
-Message-Id: <87po47axhb.wl-ysato@users.sourceforge.jp>
+From: Dmitry Torokhov <dmitry.torokhov@gmail.com>
+Date: Thu, 15 Mar 2018 22:41:59 +0000
+Subject: [RFC 1/4] backlight: gpio_backlight: use generic device properties
+Message-Id: <20180315224202.96668-2-dmitry.torokhov@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1520820258-19225-1-git-send-email-chenhc@lemote.com>
- <CAAhV-H4zFAMjg9W2f1VfYrgLnDfNDPaUHUechGDT+v3o_8WNTg@mail.gmail.com>
-In-Reply-To: <CAAhV-H4zFAMjg9W2f1VfYrgLnDfNDPaUHUechGDT+v3o_8WNTg@mail.gmail.com>
+References: <20180315224202.96668-1-dmitry.torokhov@gmail.com>
+In-Reply-To: <20180315224202.96668-1-dmitry.torokhov@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Lee Jones <lee.jones@linaro.org>
+Cc: Daniel Thompson <daniel.thompson@linaro.org>, Jingoo Han <jingoohan1@gmail.com>, linux-fbdev@vger.kernel.org, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Linus Walleij <linus.walleij@linaro.org>
 
-On Tue, 13 Mar 2018 17:55:53 +0900,
-Huacai Chen wrote:
-> 
-> Hi, Yoshinori, Rich and SuperH developers,
-> 
-> I'm not familiar with SuperH assembly, but SuperH has the same bug
-> obviously. Could you please fix that?
-> 
-> Huacai
->
+Instead of using of_property_read_bool() switch to using
+device_property_read_bool() This will allow switching from platform data to
+device properties everywhere.
 
-Sorry. Previous mail bounced. It resend.
+Signed-off-by: Dmitry Torokhov <dmitry.torokhov@gmail.com>
+---
+ drivers/video/backlight/gpio_backlight.c | 12 ++----------
+ 1 file changed, 2 insertions(+), 10 deletions(-)
 
-OK. Apply this fix.
-SuperH can not handle long int directly.
-
-diff --git a/arch/sh/boot/compressed/head_32.S b/arch/sh/boot/compressed/head_32.S
-index a3fdb053f351..7411fcb5764a 100644
---- a/arch/sh/boot/compressed/head_32.S
-+++ b/arch/sh/boot/compressed/head_32.S
-@@ -76,8 +76,8 @@ l1:
- 	mov.l	init_stack_addr, r0
- 	mov.l	@r0, r15
+diff --git a/drivers/video/backlight/gpio_backlight.c b/drivers/video/backlight/gpio_backlight.c
+index e470da95d806f..173fc4aafb89b 100644
+--- a/drivers/video/backlight/gpio_backlight.c
++++ b/drivers/video/backlight/gpio_backlight.c
+@@ -61,11 +61,10 @@ static int gpio_backlight_probe_dt(struct platform_device *pdev,
+ 				   struct gpio_backlight *gbl)
+ {
+ 	struct device *dev = &pdev->dev;
+-	struct device_node *np = dev->of_node;
+ 	enum gpiod_flags flags;
+ 	int ret;
  
--	mov.l	__stack_chk_guard, r0
--	mov	#0x000a0dff, r1
-+	mov.l	__stack_chk_guard_ptr, r0
-+	mov.l	__stack_chk_val, r1
- 	mov.l	r1, @r0
+-	gbl->def_value = of_property_read_bool(np, "default-on");
++	gbl->def_value = device_property_read_bool(dev, "default-on");
+ 	flags = gbl->def_value ? GPIOD_OUT_HIGH : GPIOD_OUT_LOW;
  
- 	/* Decompress the kernel */
-@@ -109,6 +109,10 @@ kernel_start_addr:
- #else
- 	.long	_text+PAGE_SIZE
- #endif
-+__stack_chk_guard_ptr:
-+	.long	__stack_chk_guard
-+__stack_chk_val:
-+	.long	0x000a0dff
+ 	gbl->gpiod = devm_gpiod_get(dev, NULL, flags);
+@@ -89,22 +88,15 @@ static int gpio_backlight_probe(struct platform_device *pdev)
+ 	struct backlight_properties props;
+ 	struct backlight_device *bl;
+ 	struct gpio_backlight *gbl;
+-	struct device_node *np = pdev->dev.of_node;
+ 	int ret;
  
- 	.align	9
- fake_headers_as_bzImage:
+-	if (!pdata && !np) {
+-		dev_err(&pdev->dev,
+-			"failed to find platform data or device tree node.\n");
+-		return -ENODEV;
+-	}
+-
+ 	gbl = devm_kzalloc(&pdev->dev, sizeof(*gbl), GFP_KERNEL);
+ 	if (gbl = NULL)
+ 		return -ENOMEM;
+ 
+ 	gbl->dev = &pdev->dev;
+ 
+-	if (np) {
++	if (!pdata) {
+ 		ret = gpio_backlight_probe_dt(pdev, gbl);
+ 		if (ret)
+ 			return ret;
+-- 
+2.16.2.804.g6dcf76e118-goog
 
-> On Mon, Mar 12, 2018 at 10:04 AM, Huacai Chen <chenhc@lemote.com> wrote:
-> > Call __stack_chk_guard_setup() in decompress_kernel() is too late that
-> > stack checking always fails for decompress_kernel() itself. So remove
-> > __stack_chk_guard_setup() and initialize __stack_chk_guard before we
-> > call decompress_kernel().
-> >
-> > Original code comes from ARM but also used for MIPS and SH, so fix them
-> > together. If without this fix, compressed booting of these archs will
-> > fail because stack checking is enabled by default (>=4.16).
-> >
-> > V2: Fix build on ARM.
-> >
-> > Cc: stable@vger.kernel.org
-> > Signed-off-by: Huacai Chen <chenhc@lemote.com>
-> > ---
-> >  arch/arm/boot/compressed/head.S        | 4 ++++
-> >  arch/arm/boot/compressed/misc.c        | 7 -------
-> >  arch/mips/boot/compressed/decompress.c | 7 -------
-> >  arch/mips/boot/compressed/head.S       | 4 ++++
-> >  arch/sh/boot/compressed/head_32.S      | 4 ++++
-> >  arch/sh/boot/compressed/head_64.S      | 4 ++++
-> >  arch/sh/boot/compressed/misc.c         | 7 -------
-> >  7 files changed, 16 insertions(+), 21 deletions(-)
-> >
-> > diff --git a/arch/arm/boot/compressed/head.S b/arch/arm/boot/compressed/head.S
-> > index 45c8823..bae1fc6 100644
-> > --- a/arch/arm/boot/compressed/head.S
-> > +++ b/arch/arm/boot/compressed/head.S
-> > @@ -547,6 +547,10 @@ not_relocated:     mov     r0, #0
-> >                 bic     r4, r4, #1
-> >                 blne    cache_on
-> >
-> > +               ldr     r0, =__stack_chk_guard
-> > +               ldr     r1, =0x000a0dff
-> > +               str     r1, [r0]
-> > +
-> >  /*
-> >   * The C runtime environment should now be setup sufficiently.
-> >   * Set up some pointers, and start decompressing.
-> > diff --git a/arch/arm/boot/compressed/misc.c b/arch/arm/boot/compressed/misc.c
-> > index 16a8a80..e518ef5 100644
-> > --- a/arch/arm/boot/compressed/misc.c
-> > +++ b/arch/arm/boot/compressed/misc.c
-> > @@ -130,11 +130,6 @@ asmlinkage void __div0(void)
-> >
-> >  unsigned long __stack_chk_guard;
-> >
-> > -void __stack_chk_guard_setup(void)
-> > -{
-> > -       __stack_chk_guard = 0x000a0dff;
-> > -}
-> > -
-> >  void __stack_chk_fail(void)
-> >  {
-> >         error("stack-protector: Kernel stack is corrupted\n");
-> > @@ -150,8 +145,6 @@ decompress_kernel(unsigned long output_start, unsigned long free_mem_ptr_p,
-> >  {
-> >         int ret;
-> >
-> > -       __stack_chk_guard_setup();
-> > -
-> >         output_data             = (unsigned char *)output_start;
-> >         free_mem_ptr            = free_mem_ptr_p;
-> >         free_mem_end_ptr        = free_mem_ptr_end_p;
-> > diff --git a/arch/mips/boot/compressed/decompress.c b/arch/mips/boot/compressed/decompress.c
-> > index fdf99e9..5ba431c 100644
-> > --- a/arch/mips/boot/compressed/decompress.c
-> > +++ b/arch/mips/boot/compressed/decompress.c
-> > @@ -78,11 +78,6 @@ void error(char *x)
-> >
-> >  unsigned long __stack_chk_guard;
-> >
-> > -void __stack_chk_guard_setup(void)
-> > -{
-> > -       __stack_chk_guard = 0x000a0dff;
-> > -}
-> > -
-> >  void __stack_chk_fail(void)
-> >  {
-> >         error("stack-protector: Kernel stack is corrupted\n");
-> > @@ -92,8 +87,6 @@ void decompress_kernel(unsigned long boot_heap_start)
-> >  {
-> >         unsigned long zimage_start, zimage_size;
-> >
-> > -       __stack_chk_guard_setup();
-> > -
-> >         zimage_start = (unsigned long)(&__image_begin);
-> >         zimage_size = (unsigned long)(&__image_end) -
-> >             (unsigned long)(&__image_begin);
-> > diff --git a/arch/mips/boot/compressed/head.S b/arch/mips/boot/compressed/head.S
-> > index 409cb48..00d0ee0 100644
-> > --- a/arch/mips/boot/compressed/head.S
-> > +++ b/arch/mips/boot/compressed/head.S
-> > @@ -32,6 +32,10 @@ start:
-> >         bne     a2, a0, 1b
-> >          addiu  a0, a0, 4
-> >
-> > +       PTR_LA  a0, __stack_chk_guard
-> > +       PTR_LI  a1, 0x000a0dff
-> > +       sw      a1, 0(a0)
-> > +
-> >         PTR_LA  a0, (.heap)          /* heap address */
-> >         PTR_LA  sp, (.stack + 8192)  /* stack address */
-> >
-> > diff --git a/arch/sh/boot/compressed/head_32.S b/arch/sh/boot/compressed/head_32.S
-> > index 7bb1681..a3fdb05 100644
-> > --- a/arch/sh/boot/compressed/head_32.S
-> > +++ b/arch/sh/boot/compressed/head_32.S
-> > @@ -76,6 +76,10 @@ l1:
-> >         mov.l   init_stack_addr, r0
-> >         mov.l   @r0, r15
-> >
-> > +       mov.l   __stack_chk_guard, r0
-> > +       mov     #0x000a0dff, r1
-> > +       mov.l   r1, @r0
-> > +
-> >         /* Decompress the kernel */
-> >         mov.l   decompress_kernel_addr, r0
-> >         jsr     @r0
-> > diff --git a/arch/sh/boot/compressed/head_64.S b/arch/sh/boot/compressed/head_64.S
-> > index 9993113..8b4d540 100644
-> > --- a/arch/sh/boot/compressed/head_64.S
-> > +++ b/arch/sh/boot/compressed/head_64.S
-> > @@ -132,6 +132,10 @@ startup:
-> >         addi    r22, 4, r22
-> >         bne     r22, r23, tr1
-> >
-> > +       movi    datalabel __stack_chk_guard, r0
-> > +       movi    0x000a0dff, r1
-> > +       st.l    r0, 0, r1
-> > +
-> >         /*
-> >          * Decompress the kernel.
-> >          */
-> > diff --git a/arch/sh/boot/compressed/misc.c b/arch/sh/boot/compressed/misc.c
-> > index 627ce8e..fe4c079 100644
-> > --- a/arch/sh/boot/compressed/misc.c
-> > +++ b/arch/sh/boot/compressed/misc.c
-> > @@ -106,11 +106,6 @@ static void error(char *x)
-> >
-> >  unsigned long __stack_chk_guard;
-> >
-> > -void __stack_chk_guard_setup(void)
-> > -{
-> > -       __stack_chk_guard = 0x000a0dff;
-> > -}
-> > -
-> >  void __stack_chk_fail(void)
-> >  {
-> >         error("stack-protector: Kernel stack is corrupted\n");
-> > @@ -130,8 +125,6 @@ void decompress_kernel(void)
-> >  {
-> >         unsigned long output_addr;
-> >
-> > -       __stack_chk_guard_setup();
-> > -
-> >  #ifdef CONFIG_SUPERH64
-> >         output_addr = (CONFIG_MEMORY_START + 0x2000);
-> >  #else
-> > --
-> > 2.7.0
-> >
-
---
-Yoshinori Sato
-<ysato@users.sourceforge.jp>
