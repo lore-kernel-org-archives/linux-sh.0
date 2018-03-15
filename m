@@ -1,109 +1,88 @@
-From: jacopo mondi <jacopo@jmondi.org>
-Date: Sat, 10 Mar 2018 18:20:42 +0000
-Subject: Re: [PATCH 0/5] Renesas CEU: SH7724 ECOVEC + Aptina mt9t112
-Message-Id: <20180310182042.GK4023@w540>
+From: Dmitry Torokhov <dmitry.torokhov@gmail.com>
+Date: Thu, 15 Mar 2018 22:42:01 +0000
+Subject: [RFC 3/4] sh: ecovec24: convert backlight to use device properties
+Message-Id: <20180315224202.96668-4-dmitry.torokhov@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1520008541-3961-1-git-send-email-jacopo+renesas@jmondi.org>
- <f783d586-3f6b-0dad-a130-c2c52ce42634@xs4all.nl>
-In-Reply-To: <f783d586-3f6b-0dad-a130-c2c52ce42634@xs4all.nl>
+References: <20180315224202.96668-1-dmitry.torokhov@gmail.com>
+In-Reply-To: <20180315224202.96668-1-dmitry.torokhov@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: Hans Verkuil <hverkuil@xs4all.nl>
-Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>, laurent.pinchart@ideasonboard.com, sakari.ailus@iki.fi, mchehab@kernel.org, linux-renesas-soc@vger.kernel.org, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Lee Jones <lee.jones@linaro.org>
+Cc: Daniel Thompson <daniel.thompson@linaro.org>, Jingoo Han <jingoohan1@gmail.com>, linux-fbdev@vger.kernel.org, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Linus Walleij <linus.walleij@linaro.org>
 
-Hi Hans,
+Instead of backlight legacy platform data, let's switch to using device
+properties and GPIO lookup tables.
 
-On Sat, Mar 10, 2018 at 06:57:17PM +0100, Hans Verkuil wrote:
-> Hi Jacopo,
->
-> On 02/03/18 17:35, Jacopo Mondi wrote:
-> > Hello,
-> >    now that CEU has been picked up for inclusion in v4.17, we can start moving
-> > users of old sh_mobile_ceu_camera driver to use the newly introduced one.
-> >
-> > Migo-R has been first, now it's SH7724 ECOVEC board turn.
-> >
-> > ECOVEC has a camera board with two MT9T112 image sensor and one TW9910 video
-> > decoder input. This series moves the mt9t112 driver away from soc_camera
-> > framework and remove dependencies on it in mach-ecovec board code.
-> >
-> > As per Migo-R, memory for CEU is reserved using memblocks APIs and declared
-> > as DMA-capable in board code, power up/down routines have been removed from
-> > board code, and GPIOs lookup table registered for sensor drivers.
-> >
-> > As in the previous series, still no code has been removed or changed in
-> > drivers/media/i2c/soc_camera/ until we do not remove all dependencies on it
-> > in all board files.
-> >
-> > Hans, since you asked me to add frame rate interval support for ov772x I expect
-> > to receive the same request for mt9t112. Unfortunately I do not have access to
-> > register level documentation, nor can perform any testing as I don't have the
-> > camera modules. For the same reason I cannot run any v4l2-compliance test on
-> > that driver, but just make sure the ECOVEC boots cleanly with the new board
-> > file. I'm in favour of moving the driver to staging if you think that's the case.
-> >
-> > Series based on media-tree master, and as per Migo-R I would ask SH arch/
-> > changes to go through media tree as SH maintainers are un-responsive.
->
-> When compiling this series I get this error:
->
-> drivers/media/i2c/soc_camera/mt9t112.c: In function ‘mt9t112_init_pll’:
-> drivers/media/i2c/soc_camera/mt9t112.c:426:16: error: dereferencing pointer to incomplete type ‘struct mt9t112_camera_info’
->       priv->info->divider.m,
->                 ^~
->
-> Can you take a look?
+Signed-off-by: Dmitry Torokhov <dmitry.torokhov@gmail.com>
+---
+ arch/sh/boards/mach-ecovec24/setup.c | 23 +++++++++++++++--------
+ 1 file changed, 15 insertions(+), 8 deletions(-)
 
-Ups, changing the driver interface ofc breaks the soc_camera version
-of the driver (I didn't notice as I've compiled soc_camera out in my
-tests).
+diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
+index 67633d2d42390..ad3d48b3ead19 100644
+--- a/arch/sh/boards/mach-ecovec24/setup.c
++++ b/arch/sh/boards/mach-ecovec24/setup.c
+@@ -11,11 +11,13 @@
+ #include <linux/init.h>
+ #include <linux/device.h>
+ #include <linux/platform_device.h>
++#include <linux/property.h>
+ #include <linux/mmc/host.h>
+ #include <linux/mmc/sh_mmcif.h>
+ #include <linux/mtd/physmap.h>
+ #include <linux/mfd/tmio.h>
+ #include <linux/gpio.h>
++#include <linux/gpio/machine.h>
+ #include <linux/interrupt.h>
+ #include <linux/io.h>
+ #include <linux/delay.h>
+@@ -30,7 +32,6 @@
+ #include <linux/spi/mmc_spi.h>
+ #include <linux/input.h>
+ #include <linux/input/sh_keysc.h>
+-#include <linux/platform_data/gpio_backlight.h>
+ #include <linux/sh_eth.h>
+ #include <linux/sh_intc.h>
+ #include <linux/videodev2.h>
+@@ -367,17 +368,21 @@ static struct platform_device lcdc_device = {
+ 	},
+ };
+ 
+-static struct gpio_backlight_platform_data gpio_backlight_data = {
+-	.gpio = GPIO_PTR1,
+-	.def_value = 1,
+-	.name = "backlight",
++static struct gpiod_lookup_table gpio_backlight_gpios_table = {
++	.dev_id = "gpio-backlight.0",
++	.table = {
++		GPIO_LOOKUP_IDX("sh7724_pfc", GPIO_PTR1, NULL, 0, GPIO_ACTIVE_HIGH);
++		{ }
++	},
++};
++
++static struct property_entry gpio_backlight_properties[] = {
++	PROPERTY_ENTRY_BOOL("default-on"),
++	{ }
+ };
+ 
+ static struct platform_device gpio_backlight_device = {
+ 	.name = "gpio-backlight",
+-	.dev = {
+-		.platform_data = &gpio_backlight_data,
+-	},
+ };
+ 
+ /* CEU0 */
+@@ -1436,6 +1441,8 @@ static int __init arch_setup(void)
+ 		return error;
+ 
+ 	if (use_backlight) {
++		device_add_properties(&gpio_backlight_device.dev,
++				      gpio_backlight_properties);
+ 		error = platform_device_add(&gpio_backlight_device);
+ 		if (error)
+ 			pr_warn("%s: failed to register backlight: %d\n",
+-- 
+2.16.2.804.g6dcf76e118-goog
 
-As the old driver is the only user of that interface this series
-doesn't touch[1] I'll rename the old 'struct mt9t112_camera_info' to
-the newly introduced 'struct mt9t112_platform_data' (and I've made
-sure nobody uses the flag definitions I have removed).
-
-I'll pile another patch on top of the one just sent to add the TODO
-note at driver's beginning.
-
-Sorry about that
-   j
-
-[1]
-$git grep "media/i2c/mt9t112.h" .
-MAINTAINERS:F:  include/media/i2c/mt9t112.h
-arch/sh/boards/mach-ecovec24/setup.c:#include <media/i2c/mt9t112.h>
-drivers/media/i2c/mt9t112.c:#include <media/i2c/mt9t112.h>
-drivers/media/i2c/soc_camera/mt9t112.c:#include <media/i2c/mt9t112.h>
-
->
-> Regards,
->
-> 	Hans
->
-> >
-> > Thanks
-> >   j
-> >
-> > Jacopo Mondi (5):
-> >   media: i2c: Copy mt9t112 soc_camera sensor driver
-> >   media: i2c: mt9t112: Remove soc_camera dependencies
-> >   media: i2c: mt9t112: Fix code style issues
-> >   arch: sh: ecovec: Use new renesas-ceu camera driver
-> >   media: MAINTAINERS: Add entry for Aptina MT9T112
-> >
-> >  MAINTAINERS                            |    7 +
-> >  arch/sh/boards/mach-ecovec24/setup.c   |  338 +++++-----
-> >  arch/sh/kernel/cpu/sh4a/clock-sh7724.c |    4 +-
-> >  drivers/media/i2c/Kconfig              |   11 +
-> >  drivers/media/i2c/Makefile             |    1 +
-> >  drivers/media/i2c/mt9t112.c            | 1136 ++++++++++++++++++++++++++++++++
-> >  include/media/i2c/mt9t112.h            |   17 +-
-> >  7 files changed, 1333 insertions(+), 181 deletions(-)
-> >  create mode 100644 drivers/media/i2c/mt9t112.c
-> >
-> > --
-> > 2.7.4
-> >
->
