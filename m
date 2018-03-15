@@ -1,71 +1,104 @@
-From: Rich Felker <dalias@libc.org>
-Date: Wed, 28 Mar 2018 17:59:52 +0000
-Subject: Re: [PATCH V4 Resend] ZBOOT: fix stack protector in compressed boot phase
-Message-Id: <20180328175952.GO1436@brightrain.aerifal.cx>
+From: Dmitry Torokhov <dmitry.torokhov@gmail.com>
+Date: Thu, 15 Mar 2018 22:42:00 +0000
+Subject: [RFC 2/4] sh: ecovec24: conditionally register backlight device
+Message-Id: <20180315224202.96668-3-dmitry.torokhov@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1522226933-29317-1-git-send-email-chenhc@lemote.com>
-In-Reply-To: <1522226933-29317-1-git-send-email-chenhc@lemote.com>
+References: <20180315224202.96668-1-dmitry.torokhov@gmail.com>
+In-Reply-To: <20180315224202.96668-1-dmitry.torokhov@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Lee Jones <lee.jones@linaro.org>
+Cc: Daniel Thompson <daniel.thompson@linaro.org>, Jingoo Han <jingoohan1@gmail.com>, linux-fbdev@vger.kernel.org, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Linus Walleij <linus.walleij@linaro.org>
 
-On Wed, Mar 28, 2018 at 04:48:53PM +0800, Huacai Chen wrote:
-> Call __stack_chk_guard_setup() in decompress_kernel() is too late that
-> stack checking always fails for decompress_kernel() itself. So remove
-> __stack_chk_guard_setup() and initialize __stack_chk_guard before we
-> call decompress_kernel().
-> 
-> Original code comes from ARM but also used for MIPS and SH, so fix them
-> together. If without this fix, compressed booting of these archs will
-> fail because stack checking is enabled by default (>=4.16).
-> 
-> V1 -> V2: Fix build on ARM.
-> V2 -> V3: Fix build on SuperH.
-> V3 -> V4: Initialize __stack_chk_guard in C code as a constant.
-> 
-> Cc: stable@vger.kernel.org
-> Signed-off-by: Huacai Chen <chenhc@lemote.com>
-> ---
->  arch/arm/boot/compressed/misc.c        | 9 +--------
->  arch/mips/boot/compressed/decompress.c | 9 +--------
->  arch/sh/boot/compressed/misc.c         | 9 +--------
->  3 files changed, 3 insertions(+), 24 deletions(-)
-> 
-> [...]
-> 
-> diff --git a/arch/sh/boot/compressed/misc.c b/arch/sh/boot/compressed/misc.c
-> index 627ce8e..c15cac9 100644
-> --- a/arch/sh/boot/compressed/misc.c
-> +++ b/arch/sh/boot/compressed/misc.c
-> @@ -104,12 +104,7 @@ static void error(char *x)
->  	while(1);	/* Halt */
->  }
->  
-> -unsigned long __stack_chk_guard;
-> -
-> -void __stack_chk_guard_setup(void)
-> -{
-> -	__stack_chk_guard = 0x000a0dff;
-> -}
-> +const unsigned long __stack_chk_guard = 0x000a0dff;
->  
->  void __stack_chk_fail(void)
->  {
-> @@ -130,8 +125,6 @@ void decompress_kernel(void)
->  {
->  	unsigned long output_addr;
->  
-> -	__stack_chk_guard_setup();
-> -
->  #ifdef CONFIG_SUPERH64
->  	output_addr = (CONFIG_MEMORY_START + 0x2000);
->  #else
-> -- 
-> 2.7.0
+Commit fe79f919f47e ("sh: ecovec24: Use gpio-backlight") removed custom
+backlight support and switched over to generic gpio-backlight driver. The
+comment when we run with DVI states "no backlight", but setting
+gpio_backlight_data.fbdev to NULL actually makes gpio-backlight to react to
+events from any framebuffer device, not ignore them.
 
-LGTM.
+We want to get rid of platform data in favor of generic device properties
+in gpio_backlight driver, so we can not have kernel pointers passed around
+to tie the framebuffer device to backlight. Assuming that the intent of the
+above referenced commit was to indeed not export backlight when using DVI,
+let's switch to conditionally registering backlight device so it is not
+present at all in DVI case.
 
-Acked-by: Rich Felker <dalias@libc.org>
+Signed-off-by: Dmitry Torokhov <dmitry.torokhov@gmail.com>
+---
+ arch/sh/boards/mach-ecovec24/setup.c | 24 +++++++++++++++++-------
+ 1 file changed, 17 insertions(+), 7 deletions(-)
 
-Rich
+diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
+index 6f929abe0b50f..67633d2d42390 100644
+--- a/arch/sh/boards/mach-ecovec24/setup.c
++++ b/arch/sh/boards/mach-ecovec24/setup.c
+@@ -368,7 +368,6 @@ static struct platform_device lcdc_device = {
+ };
+ 
+ static struct gpio_backlight_platform_data gpio_backlight_data = {
+-	.fbdev = &lcdc_device.dev,
+ 	.gpio = GPIO_PTR1,
+ 	.def_value = 1,
+ 	.name = "backlight",
+@@ -987,7 +986,6 @@ static struct platform_device *ecovec_devices[] __initdata = {
+ 	&usb1_common_device,
+ 	&usbhs_device,
+ 	&lcdc_device,
+-	&gpio_backlight_device,
+ 	&ceu0_device,
+ 	&ceu1_device,
+ 	&keysc_device,
+@@ -1077,6 +1075,8 @@ static int __init arch_setup(void)
+ {
+ 	struct clk *clk;
+ 	bool cn12_enabled = false;
++	bool use_backlight = false;
++	int error;
+ 
+ 	/* register board specific self-refresh code */
+ 	sh_mobile_register_self_refresh(SUSP_SH_STANDBY | SUSP_SH_SF |
+@@ -1193,9 +1193,6 @@ static int __init arch_setup(void)
+ 		lcdc_info.ch[0].lcd_modes		= ecovec_dvi_modes;
+ 		lcdc_info.ch[0].num_modes		= ARRAY_SIZE(ecovec_dvi_modes);
+ 
+-		/* No backlight */
+-		gpio_backlight_data.fbdev = NULL;
+-
+ 		gpio_set_value(GPIO_PTA2, 1);
+ 		gpio_set_value(GPIO_PTU1, 1);
+ 	} else {
+@@ -1217,6 +1214,8 @@ static int __init arch_setup(void)
+ 		/* enable TouchScreen */
+ 		i2c_register_board_info(0, &ts_i2c_clients, 1);
+ 		irq_set_irq_type(IRQ0, IRQ_TYPE_LEVEL_LOW);
++
++		use_backlight = true;
+ 	}
+ 
+ 	/* enable CEU0 */
+@@ -1431,8 +1430,19 @@ static int __init arch_setup(void)
+ 	gpio_set_value(GPIO_PTG4, 1);
+ #endif
+ 
+-	return platform_add_devices(ecovec_devices,
+-				    ARRAY_SIZE(ecovec_devices));
++	error = platform_add_devices(ecovec_devices,
++				      ARRAY_SIZE(ecovec_devices));
++	if (error)
++		return error;
++
++	if (use_backlight) {
++		error = platform_device_add(&gpio_backlight_device);
++		if (error)
++			pr_warn("%s: failed to register backlight: %d\n",
++				error);
++	}
++
++	return 0;
+ }
+ arch_initcall(arch_setup);
+ 
+-- 
+2.16.2.804.g6dcf76e118-goog
+
