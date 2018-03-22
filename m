@@ -1,44 +1,16 @@
-From: Jacopo Mondi <jacopo+renesas@jmondi.org>
-Date: Mon, 12 Mar 2018 13:43:01 +0000
-Subject: [PATCH v2 0/4] Renesas CEU: SH7724 ECOVEC + Aptina mt9t112
-Message-Id: <1520862185-17150-1-git-send-email-jacopo+renesas@jmondi.org>
+From: Albrecht Solicitor <maria.barba@06d01.mspz3.gob.ec>
+Date: Thu, 22 Mar 2018 22:15:01 +0000
+Subject: Business Proposal
+Message-Id: <20180322222638.41658236D3F6@06d01.mspz3.gob.ec>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: hverkuil@xs4all.nl, laurent.pinchart@ideasonboard.com, sakari.ailus@iki.fi, mchehab@kernel.org
-Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>, linux-renesas-soc@vger.kernel.org, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Recipients <maria.barba@06d01.mspz3.gob.ec>
 
-Hello Hans,
-   I have squashed in the two patches I sent on top of v1 in this series, one
-fix for the build error you reported me, and reduced the patch count fixing the
-style changes on the patch that removes the soc_camera dependencies.
+Good day!
 
-No frame rate control, but now a TODO note makes clear that is expected
-v4l2 compliance tool to report errors.
+I seek your consent to present you as the beneficiary of an unclaimed financial estate belonging to my late client. I am contacting you because you share a similar name as his. Get back to me so I give you comprehensive details if interested.
 
-v1 -> v2:
-- Fix soc_camera driver build error
-- Add TODO note for missing frame rate control
-- Reduce patch count
-
-Jacopo Mondi (4):
-  media: i2c: Copy mt9t112 soc_camera sensor driver
-  media: i2c: mt9t112: Remove soc_camera dependencies
-  arch: sh: ecovec: Use new renesas-ceu camera driver
-  media: MAINTAINERS: Add entry for Aptina MT9T112
-
- MAINTAINERS                            |    7 +
- arch/sh/boards/mach-ecovec24/setup.c   |  338 +++++-----
- arch/sh/kernel/cpu/sh4a/clock-sh7724.c |    4 +-
- drivers/media/i2c/Kconfig              |   11 +
- drivers/media/i2c/Makefile             |    1 +
- drivers/media/i2c/mt9t112.c            | 1140 ++++++++++++++++++++++++++++++++
- drivers/media/i2c/soc_camera/mt9t112.c |    2 +-
- include/media/i2c/mt9t112.h            |   17 +-
- 8 files changed, 1338 insertions(+), 182 deletions(-)
- create mode 100644 drivers/media/i2c/mt9t112.c
-
---
-2.7.4
-
+Regards
+Albrecht.
