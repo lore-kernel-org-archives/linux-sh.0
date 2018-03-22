@@ -1,55 +1,77 @@
-From: Rich Felker <dalias@libc.org>
-Date: Fri, 16 Mar 2018 23:13:59 +0000
+From: James Hogan <jhogan@kernel.org>
+Date: Thu, 22 Mar 2018 22:21:08 +0000
 Subject: Re: [PATCH V3] ZBOOT: fix stack protector in compressed boot phase
-Message-Id: <20180316231359.GU1436@brightrain.aerifal.cx>
+Message-Id: <20180322222107.GJ13126@saruman>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="I/5syFLg1Ed7r+1G"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1521186916-13745-1-git-send-email-chenhc@lemote.com>
- <20180316151337.f277e3a734326672d41cec61@linux-foundation.org>
-In-Reply-To: <20180316151337.f277e3a734326672d41cec61@linux-foundation.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+In-Reply-To: <1521186916-13745-1-git-send-email-chenhc@lemote.com>
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Mar 16, 2018 at 03:13:37PM -0700, Andrew Morton wrote:
-> On Fri, 16 Mar 2018 15:55:16 +0800 Huacai Chen <chenhc@lemote.com> wrote:
-> 
-> > Call __stack_chk_guard_setup() in decompress_kernel() is too late that
-> > stack checking always fails for decompress_kernel() itself. So remove
-> > __stack_chk_guard_setup() and initialize __stack_chk_guard before we
-> > call decompress_kernel().
-> > 
-> > Original code comes from ARM but also used for MIPS and SH, so fix them
-> > together. If without this fix, compressed booting of these archs will
-> > fail because stack checking is enabled by default (>=4.16).
-> > 
-> > ...
-> >
-> >  arch/arm/boot/compressed/head.S        | 4 ++++
-> >  arch/arm/boot/compressed/misc.c        | 7 -------
-> >  arch/mips/boot/compressed/decompress.c | 7 -------
-> >  arch/mips/boot/compressed/head.S       | 4 ++++
-> >  arch/sh/boot/compressed/head_32.S      | 8 ++++++++
-> >  arch/sh/boot/compressed/head_64.S      | 4 ++++
-> >  arch/sh/boot/compressed/misc.c         | 7 -------
-> >  7 files changed, 20 insertions(+), 21 deletions(-)
-> 
-> Perhaps this should be split into three patches and each one routed via
-> the appropriate arch tree maintainer (for sh, that might be me).
 
-Apologies for that. I'm trying to pick back up on things now, now that
-I've got both some downtime from other things and funding for core sh
-maintenance stuff. If you know any issues you'd especially like me to
-put my attention on now, please let me know. I have a few patches
-queued up from myself and others, but I believe there's a lot more I
-haven't been able to get to for quite a while. I should have new SH
-hardware to test on soon and in the meantime I've improved my qemu
-setup.
+--I/5syFLg1Ed7r+1G
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-One question I have about this specific patch is why any code is
-needed at all. Why can't __stack_chk_guard just be moved to
-initialized data, or left uninitialized, for the compressed kernel
-image loader? Assuming it is needed, the code looks ok, but I question
-the premise.
+On Fri, Mar 16, 2018 at 03:55:16PM +0800, Huacai Chen wrote:
+> diff --git a/arch/mips/boot/compressed/decompress.c b/arch/mips/boot/comp=
+ressed/decompress.c
+> index fdf99e9..5ba431c 100644
+> --- a/arch/mips/boot/compressed/decompress.c
+> +++ b/arch/mips/boot/compressed/decompress.c
+> @@ -78,11 +78,6 @@ void error(char *x)
+> =20
+>  unsigned long __stack_chk_guard;
 
-Rich
+=2E..
+
+> diff --git a/arch/mips/boot/compressed/head.S b/arch/mips/boot/compressed=
+/head.S
+> index 409cb48..00d0ee0 100644
+> --- a/arch/mips/boot/compressed/head.S
+> +++ b/arch/mips/boot/compressed/head.S
+> @@ -32,6 +32,10 @@ start:
+>  	bne	a2, a0, 1b
+>  	 addiu	a0, a0, 4
+> =20
+> +	PTR_LA	a0, __stack_chk_guard
+> +	PTR_LI	a1, 0x000a0dff
+> +	sw	a1, 0(a0)
+
+Should that not be LONG_S? Otherwise big endian MIPS64 would get a
+word-swapped canary (which is probably mostly harmless, but still).
+
+Also I think it worth mentioning in the commit message the MIPS
+configuration you hit this with, presumably a Loongson one? For me
+decompress_kernel() gets a stack guard on loongson3_defconfig, but not
+malta_defconfig or malta_defconfig + 64-bit. I presume its sensitive to
+the compiler inlining stuff into decompress_kernel() or something such
+that it suddenly qualifies for a stack guard.
+
+Cheers
+James
+
+--I/5syFLg1Ed7r+1G
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+
+iQIzBAEBCAAdFiEEd80NauSabkiESfLYbAtpk944dnoFAlq0LFMACgkQbAtpk944
+dnrmTQ/+JqSPbejJsFyxpccmWIyLBtYPujNEeohQv5ZthOfaooKRy7NvUQqirXxG
+HKpHT1EqQtZsXxir/BZxdpo0rN+M/7kMWU9XKLtFqkiz88k1i+k4o7dlrdQcZOqy
+HFBPtJnkchJrgBxxzPNxmHnWCxOFoYbK2HBxsn0cBGDm9sgLgXPkMwkAk29fG3uT
+ViYFSUhnlmNAo4GBgUkxSFK3rDZZQWq7DFHaMrTEKeJo0SdLtmCt7YD25grSOp0K
+klBR1sdHe+oIXQAcowD3xdsLNSNeRoRgtan2Y6ByBLs00+dE7A6D8buruvohh/m4
+B37/oeHOEg65kmOVVSnhseaW92YfUyBEkGosJHgV0a9/BoNeN8r1deLgKGb/VYCC
+bzOiN0pTzDzPZXvIsWEKibOMrrcm/2Et6Gkh4VawwFEKXZ2ZQAkvwUXFvBjXFwuq
+3/V3+bLsrS6mdkvDGe3HcqNEdRhGcjt9uISxGhQtPe30aK9EgtTYH/Ol9GNe/R2l
+b/1eEo5RGf0FAko1+xeE81q+xAUPoR4IECl5wj9LQy/KEP7rBSSJj2Ixxl2YMZGg
+osFHqfdRh1ihHViu8OMMsT0/qTCH/H953rgGZySpK4twyChK92FMfF2uO7z18NHC
+uAylLlojOuGKA0t6HsAEuB64oWg3HV2bYGu1p1yQK5XolLuLrWk=
+=1hrp
+-----END PGP SIGNATURE-----
+
+--I/5syFLg1Ed7r+1G--
