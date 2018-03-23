@@ -1,199 +1,62 @@
-From: Marek Szyprowski <m.szyprowski@samsung.com>
-Date: Fri, 23 Mar 2018 08:14:23 +0000
+From: James Hogan <jhogan@kernel.org>
+Date: Fri, 23 Mar 2018 21:08:12 +0000
 Subject: Re: [PATCH V3] ZBOOT: fix stack protector in compressed boot phase
-Message-Id: <e117a68e-69d6-2f9d-b6bb-7a8b0025e2b4@samsung.com>
+Message-Id: <20180323210811.GD11796@saruman>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="MAH+hnPXVZWQ5cD/"
 List-Id: <linux-sh.vger.kernel.org>
-References: <CGME20180316075352epcas5p3d95b13f9382ff7bbce83b8177e8e3ad6@epcas5p3.samsung.com>
- <1521186916-13745-1-git-send-email-chenhc@lemote.com>
-In-Reply-To: <1521186916-13745-1-git-send-email-chenhc@lemote.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+References: <1521186916-13745-1-git-send-email-chenhc@lemote.com>
+ <20180322222107.GJ13126@saruman>
+ <1521777055.1510.9.camel@flygoat.com>
+In-Reply-To: <1521777055.1510.9.camel@flygoat.com>
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Huacai,
 
-On 2018-03-16 08:55, Huacai Chen wrote:
-> Call __stack_chk_guard_setup() in decompress_kernel() is too late that
-> stack checking always fails for decompress_kernel() itself. So remove
-> __stack_chk_guard_setup() and initialize __stack_chk_guard before we
-> call decompress_kernel().
->
-> Original code comes from ARM but also used for MIPS and SH, so fix them
-> together. If without this fix, compressed booting of these archs will
-> fail because stack checking is enabled by default (>=4.16).
->
-> V2: Fix build on ARM.
-> V3: Fix build on SuperH.
->
-> Cc: stable@vger.kernel.org
-> Signed-off-by: Huacai Chen <chenhc@lemote.com>
+--MAH+hnPXVZWQ5cD/
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-This patch breaks booting on ARM Exynos4210 based boards (tested with
-next-20180323, exynos_defconfig, both Trats and Origen fails to boot).
-That's a bit strange, because all other Exynos SoC works fine (I've
-checked 3250, 4412, 5250, 5410 and 542x). I really have no idea what
-is so specific inc case of Exynos4210, that causes this failure.
+On Fri, Mar 23, 2018 at 11:50:55AM +0800, Jiaxun Yang wrote:
+> =E5=9C=A8 2018-03-22=E5=9B=9B=E7=9A=84 22:21 +0000=EF=BC=8CJames Hogan=E5=
+=86=99=E9=81=93=EF=BC=9A
+> > Also I think it worth mentioning in the commit message the MIPS
+> > configuration you hit this with, presumably a Loongson one? For me
+> > decompress_kernel() gets a stack guard on loongson3_defconfig, but
+> > not
+> > malta_defconfig or malta_defconfig + 64-bit. I presume its sensitive
+> > to
+> > the compiler inlining stuff into decompress_kernel() or something
+> > such
+> > that it suddenly qualifies for a stack guard.
+>=20
+> Have you tested with CONFIG_CC_STACKPROTECTOR_STRONG=3Dy ?
 
-> ---
->   arch/arm/boot/compressed/head.S        | 4 ++++
->   arch/arm/boot/compressed/misc.c        | 7 -------
->   arch/mips/boot/compressed/decompress.c | 7 -------
->   arch/mips/boot/compressed/head.S       | 4 ++++
->   arch/sh/boot/compressed/head_32.S      | 8 ++++++++
->   arch/sh/boot/compressed/head_64.S      | 4 ++++
->   arch/sh/boot/compressed/misc.c         | 7 -------
->   7 files changed, 20 insertions(+), 21 deletions(-)
->
-> diff --git a/arch/arm/boot/compressed/head.S b/arch/arm/boot/compressed/head.S
-> index 45c8823..bae1fc6 100644
-> --- a/arch/arm/boot/compressed/head.S
-> +++ b/arch/arm/boot/compressed/head.S
-> @@ -547,6 +547,10 @@ not_relocated:	mov	r0, #0
->   		bic	r4, r4, #1
->   		blne	cache_on
->   
-> +		ldr	r0, =__stack_chk_guard
-> +		ldr	r1, =0x000a0dff
-> +		str	r1, [r0]
-> +
->   /*
->    * The C runtime environment should now be setup sufficiently.
->    * Set up some pointers, and start decompressing.
-> diff --git a/arch/arm/boot/compressed/misc.c b/arch/arm/boot/compressed/misc.c
-> index 16a8a80..e518ef5 100644
-> --- a/arch/arm/boot/compressed/misc.c
-> +++ b/arch/arm/boot/compressed/misc.c
-> @@ -130,11 +130,6 @@ asmlinkage void __div0(void)
->   
->   unsigned long __stack_chk_guard;
->   
-> -void __stack_chk_guard_setup(void)
-> -{
-> -	__stack_chk_guard = 0x000a0dff;
-> -}
-> -
->   void __stack_chk_fail(void)
->   {
->   	error("stack-protector: Kernel stack is corrupted\n");
-> @@ -150,8 +145,6 @@ decompress_kernel(unsigned long output_start, unsigned long free_mem_ptr_p,
->   {
->   	int ret;
->   
-> -	__stack_chk_guard_setup();
-> -
->   	output_data		= (unsigned char *)output_start;
->   	free_mem_ptr		= free_mem_ptr_p;
->   	free_mem_end_ptr	= free_mem_ptr_end_p;
-> diff --git a/arch/mips/boot/compressed/decompress.c b/arch/mips/boot/compressed/decompress.c
-> index fdf99e9..5ba431c 100644
-> --- a/arch/mips/boot/compressed/decompress.c
-> +++ b/arch/mips/boot/compressed/decompress.c
-> @@ -78,11 +78,6 @@ void error(char *x)
->   
->   unsigned long __stack_chk_guard;
->   
-> -void __stack_chk_guard_setup(void)
-> -{
-> -	__stack_chk_guard = 0x000a0dff;
-> -}
-> -
->   void __stack_chk_fail(void)
->   {
->   	error("stack-protector: Kernel stack is corrupted\n");
-> @@ -92,8 +87,6 @@ void decompress_kernel(unsigned long boot_heap_start)
->   {
->   	unsigned long zimage_start, zimage_size;
->   
-> -	__stack_chk_guard_setup();
-> -
->   	zimage_start = (unsigned long)(&__image_begin);
->   	zimage_size = (unsigned long)(&__image_end) -
->   	    (unsigned long)(&__image_begin);
-> diff --git a/arch/mips/boot/compressed/head.S b/arch/mips/boot/compressed/head.S
-> index 409cb48..00d0ee0 100644
-> --- a/arch/mips/boot/compressed/head.S
-> +++ b/arch/mips/boot/compressed/head.S
-> @@ -32,6 +32,10 @@ start:
->   	bne	a2, a0, 1b
->   	 addiu	a0, a0, 4
->   
-> +	PTR_LA	a0, __stack_chk_guard
-> +	PTR_LI	a1, 0x000a0dff
-> +	sw	a1, 0(a0)
-> +
->   	PTR_LA	a0, (.heap)	     /* heap address */
->   	PTR_LA	sp, (.stack + 8192)  /* stack address */
->   
-> diff --git a/arch/sh/boot/compressed/head_32.S b/arch/sh/boot/compressed/head_32.S
-> index 7bb1681..e84237d 100644
-> --- a/arch/sh/boot/compressed/head_32.S
-> +++ b/arch/sh/boot/compressed/head_32.S
-> @@ -76,6 +76,10 @@ l1:
->   	mov.l	init_stack_addr, r0
->   	mov.l	@r0, r15
->   
-> +	mov.l	__stack_chk_guard_addr, r0
-> +	mov.l	__stack_chk_guard_val, r1
-> +	mov.l	r1, @r0
-> +
->   	/* Decompress the kernel */
->   	mov.l	decompress_kernel_addr, r0
->   	jsr	@r0
-> @@ -97,6 +101,10 @@ kexec_magic:
->   	.long	0x400000F0	/* magic used by kexec to parse zImage format */
->   init_stack_addr:
->   	.long	stack_start
-> +__stack_chk_guard_val:
-> +	.long	0x000A0DFF
-> +__stack_chk_guard_addr:
-> +	.long	__stack_chk_guard
->   decompress_kernel_addr:
->   	.long	decompress_kernel
->   kernel_start_addr:
-> diff --git a/arch/sh/boot/compressed/head_64.S b/arch/sh/boot/compressed/head_64.S
-> index 9993113..8b4d540 100644
-> --- a/arch/sh/boot/compressed/head_64.S
-> +++ b/arch/sh/boot/compressed/head_64.S
-> @@ -132,6 +132,10 @@ startup:
->   	addi	r22, 4, r22
->   	bne	r22, r23, tr1
->   
-> +	movi	datalabel __stack_chk_guard, r0
-> +	movi	0x000a0dff, r1
-> +	st.l	r0, 0, r1
-> +
->   	/*
->   	 * Decompress the kernel.
->   	 */
-> diff --git a/arch/sh/boot/compressed/misc.c b/arch/sh/boot/compressed/misc.c
-> index 627ce8e..fe4c079 100644
-> --- a/arch/sh/boot/compressed/misc.c
-> +++ b/arch/sh/boot/compressed/misc.c
-> @@ -106,11 +106,6 @@ static void error(char *x)
->   
->   unsigned long __stack_chk_guard;
->   
-> -void __stack_chk_guard_setup(void)
-> -{
-> -	__stack_chk_guard = 0x000a0dff;
-> -}
-> -
->   void __stack_chk_fail(void)
->   {
->   	error("stack-protector: Kernel stack is corrupted\n");
-> @@ -130,8 +125,6 @@ void decompress_kernel(void)
->   {
->   	unsigned long output_addr;
->   
-> -	__stack_chk_guard_setup();
-> -
->   #ifdef CONFIG_SUPERH64
->   	output_addr = (CONFIG_MEMORY_START + 0x2000);
->   #else
+Yes. for malta_defconfig I could only reproduce by adding an array to
+decompress_kernel() so that it would get the guard.
 
-Best regards
--- 
-Marek Szyprowski, PhD
-Samsung R&D Institute Poland
+Cheers
+James
 
+--MAH+hnPXVZWQ5cD/
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+
+iQIzBAEBCAAdFiEEd80NauSabkiESfLYbAtpk944dnoFAlq1bLsACgkQbAtpk944
+dnqRoRAAgQ9jkBNRCrcD5HNMyD7XNnyB4QBm9KgvsYASAFF2b9bzC1qaFsv7ogMe
++yUEgTbXYGvVyBKMRr/D0d0ndlTSPCwVJHwtwgBVp+PizfWmBTF6j1IvbQ1YnQfH
+vYfFm72xW0L0awtmXV2tbo/Y/AQopzAaWL09sFhrqSt9tWRmPDnlx0r+DfPp3wVP
+I5mA+BftMiVSjqOiwU5QAmj2JVFRpkfKCAftdjG6UFQE0l7aw+4EFHpYiI+8Ai6A
+XiFyf+GQu6Bh0GK+mdTSa0pb+UMEhf1Q4Y5BlJca6zThYTdlZKJoAwIPjHh+Pn4M
+hsKYqKczPJd0hlDSFG5/LC7tp5ySoRGTP/kFQoodjjOf774FkdTTY73/8JDcHc7n
+Jb8UMrMiwWLOPwyqjS9SD2sBcnHVAUZvGhIS5pJHzEiAIKNVVeXpjWYTTwQ2nKiN
+r240w2CjnH/l8C4iwUChu2xvoXV/3EYJLibTIaLbAyGu0TTeW8nGQR4m3wRIL3ig
+Dg9C3tgQY4NJMaTXWRyJGEf58cezFSkDvHRAmNqO6r4IkXjJ4VXlqCvUj0p+KThw
+2oKS6aDj7ZU25DrTAPmb24SCUS9A61Ktwo463YznQdv2WUppc++dRUoBnJ5j89iP
+o4ngC6M2GKsRrL2SRphyLz4Pyi+alDWvXm+tQnKD7Uy940M8SF0=
+=0EHR
+-----END PGP SIGNATURE-----
+
+--MAH+hnPXVZWQ5cD/--
