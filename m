@@ -1,9 +1,9 @@
 From: Wolfram Sang <wsa@the-dreams.de>
-Date: Fri, 23 Mar 2018 07:50:54 +0000
+Date: Sat, 24 Mar 2018 12:31:13 +0000
 Subject: Re: [PATCH v2 0/4] i2c: pca-platform: additional improvements
-Message-Id: <20180323075054.jbmoijyikoy5rxgt@ninjato>
+Message-Id: <20180324123113.u6c3p4u3uxsv2gcc@ninjato>
 MIME-Version: 1
-Content-Type: multipart/mixed; boundary="dy3hz6x2vm2qzpbc"
+Content-Type: multipart/mixed; boundary="sxbkkaxi7blcjj7k"
 List-Id: <linux-sh.vger.kernel.org>
 References: <20170705101358.17458-1-chris.packham@alliedtelesis.co.nz>
  <20171029172918.2xtz2srh2meq45io@ninjato>
@@ -14,7 +14,7 @@ To: Chris Packham <Chris.Packham@alliedtelesis.co.nz>
 Cc: Rich Felker <dalias@libc.org>, "ysato@users.sourceforge.jp" <ysato@users.sourceforge.jp>, "linux-i2c@vger.kernel.org" <linux-i2c@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
 
 
---dy3hz6x2vm2qzpbc
+--sxbkkaxi7blcjj7k
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
 Content-Transfer-Encoding: quoted-printable
@@ -55,33 +55,28 @@ een
 > Ping. Was there any movement on this series? I think this may have been=
 =20
 > caught up between the holiday period and various merge windows.
->=20
-> Just wanted to check if there was anything I need to be doing to get=20
-> this through.
 
-No, there wasn't. I was waiting for ACKs from the maintainers, but
-checking the arch/sh/-git-history, the last action I see from them is
-~18 months ago. So, I'll pick up your patches without those acks...
+Applied to for-next, thanks!
 
 
---dy3hz6x2vm2qzpbc
+--sxbkkaxi7blcjj7k
 Content-Type: application/pgp-signature; name="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQIzBAABCAAdFiEEOZGx6rniZ1Gk92RdFA3kzBSgKbYFAlq0sdoACgkQFA3kzBSg
-KbZSKRAAmNS+tvB4q/eISEo9CnYscjptJWUdYVzx6yl3DCAIpvxNOTJS1DAZl/XR
-Axbj4ixJZBVcprS9ptgSYQWTeVCjpuq1xlN+pV6P1kBnzDIN4qi3yEnyTy3NVecE
-UguPozfWcz25Vzqvat7NJGJ0CYAY7U3qM1Rpy4OFch1aCEEtYdvrcfLsf1odN3HT
-jFcN1L8kHBlm6yakRe/kqZtPhE28CTrCL1cOgoMvTpEh61oRXW4vqQNh1Te5uaUW
-3RpS8rjjfufhRJ+Gho8fpfC0q3dbfWExKZZeydKQOV+zPDnouWHlXZLd5qQpVhV9
-JcsifL69+Uelu+CFxeZ399AsseIViEDgaDojT2DYI8HN+w0eMAQoHwjVzS6iQTuY
-6jz+kEEymqfJKifC/GMYdwIfomU5Jlqjhi/pdPUTSB6IU+ylxXFuQ8+SmMQ/O2ji
-msSdh8iXXMnL8GpAriVamQ7IvsPbEbf2wZx4b1hdhfVud+Qx7AiQ9q1ED1FA8pJf
-crGdMgwWDkg6Hx3xh8QbGHJnjVsfTRsjEVi6agesaIhBsGPbNN/XFj/Qrm6OwLwq
-p56/SjCuUL49NsZwEPrY9sw1PFzp7H8od/CsIdyknRsGX6Noh0kK61c9K93AroPm
-E4YoKoFL5xcW8+2ZYKtaXO5nBdsoPd8Meh9VXbDoUtAzZdOGUU0=
-=IFQ9
+iQIzBAABCAAdFiEEOZGx6rniZ1Gk92RdFA3kzBSgKbYFAlq2RREACgkQFA3kzBSg
+KbaGLQ/+Pdv4MVTwB8owtCYe7Z278BRh/Rv/JHGLF8u4DXDeemsYlLr7j6iaP56V
+B6jr1YCoPWEI/zeWHdzp5csrVeW7zOViIQ6UMJv8qcOKbBZCwuufktLTGXB3db36
++8r1c40uW2oRJyljP3MkwMbe0iqnXDUHDzxHmwXn6TqRleMxpHTcio/D+HzOH5LJ
+mIvk2jdSP2eDKedZ21ZF3z4OZxUgIbo3RvF9R2q/fFCoU1y4vrK9PmiJ9N/fbGVj
+7Qx0LBwPET/MS10S+vN2Z6kmivaJvRLzbpsHgHGcqrpAhxqV5I00kU9haO4/sHcv
+b/UnLURAsG6Z8Fck3rzZY1Y3zkNHUJWhmth9bzRkXTacdhorhtwHGxExX6eE6uRd
+qQt+hJOaG+26kPqVyy3pq3Sqi4/WspZJR8ekUGaLc8xdMTwAtSrLin9FBPZHHOaI
+SGvKrAnkadcdchiHGXH4Twb1bE8czLVZxznhHOQwMe7RKeFJpHudVsJ5Mkt6wx73
+WcAm8Bqg+YCxveZ9N5DwrXe5SJCrgHz0psxErPU74T7iCvjpH8l1j8cdZnJVZtvL
+XlvXn156k6AFCVhFR6CZWfYtf/BYWIcXivduAkc6/G2vPsN2/nFN2mvBI6ejkR/q
+4G2wghRF3fr3soEcesC+UEWHB6ayRYwVZ/WqfpY7G8PJJJtsXB8=
+=0aTj
 -----END PGP SIGNATURE-----
 
---dy3hz6x2vm2qzpbc--
+--sxbkkaxi7blcjj7k--
