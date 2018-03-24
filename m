@@ -1,62 +1,52 @@
-From: James Hogan <jhogan@kernel.org>
-Date: Fri, 23 Mar 2018 21:08:12 +0000
-Subject: Re: [PATCH V3] ZBOOT: fix stack protector in compressed boot phase
-Message-Id: <20180323210811.GD11796@saruman>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="MAH+hnPXVZWQ5cD/"
+From: Shea Levy <shea@shealevy.com>
+Date: Sat, 24 Mar 2018 17:44:43 +0000
+Subject: [PATCH 01/16] initrd: Add generic code path for common initrd unloading logic.
+Message-Id: <20180324174458.26423-2-shea@shealevy.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1521186916-13745-1-git-send-email-chenhc@lemote.com>
- <20180322222107.GJ13126@saruman>
- <1521777055.1510.9.camel@flygoat.com>
-In-Reply-To: <1521777055.1510.9.camel@flygoat.com>
-To: linux-arm-kernel@lists.infradead.org
+References: <20180324174458.26423-1-shea@shealevy.com>
+In-Reply-To: <20180324174458.26423-1-shea@shealevy.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-c6x-dev@linux-c6x.org, uclinux-h8-devel@lists.sourceforge.jp, linux-m68k@lists.linux-m68k.org, nios2-dev@lists.rocketboards.org, openrisc@lists.librecores.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org, linux-sh@vger.kernel.org, user-mode-linux-devel@lists.sourceforge.net
+Cc: Shea Levy <shea@shealevy.com>
 
+Signed-off-by: Shea Levy <shea@shealevy.com>
+---
+ init/initramfs.c | 7 +++++++
+ usr/Kconfig      | 4 ++++
+ 2 files changed, 11 insertions(+)
 
---MAH+hnPXVZWQ5cD/
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+diff --git a/init/initramfs.c b/init/initramfs.c
+index 7e99a0038942..de5ce873eb5a 100644
+--- a/init/initramfs.c
++++ b/init/initramfs.c
+@@ -526,6 +526,13 @@ extern unsigned long __initramfs_size;
+ #include <linux/initrd.h>
+ #include <linux/kexec.h>
+ 
++#ifdef CONFIG_INITRAMFS_GENERIC_UNLOAD
++void free_initrd_mem(unsigned long start, unsigned long end)
++{
++       free_reserved_area((void *)start, (void *)end, -1, "initrd");
++}
++#endif
++
+ static void __init free_initrd(void)
+ {
+ #ifdef CONFIG_KEXEC_CORE
+diff --git a/usr/Kconfig b/usr/Kconfig
+index 43658b8a975e..fd79d4d6fa26 100644
+--- a/usr/Kconfig
++++ b/usr/Kconfig
+@@ -233,3 +233,7 @@ config INITRAMFS_COMPRESSION
+ 	default ".lzma" if RD_LZMA
+ 	default ".bz2"  if RD_BZIP2
+ 	default ""
++
++# Arches can select this for a generic initrd unloading codepath
++config INITRAMFS_GENERIC_UNLOAD
++	bool
+-- 
+2.16.2
 
-On Fri, Mar 23, 2018 at 11:50:55AM +0800, Jiaxun Yang wrote:
-> =E5=9C=A8 2018-03-22=E5=9B=9B=E7=9A=84 22:21 +0000=EF=BC=8CJames Hogan=E5=
-=86=99=E9=81=93=EF=BC=9A
-> > Also I think it worth mentioning in the commit message the MIPS
-> > configuration you hit this with, presumably a Loongson one? For me
-> > decompress_kernel() gets a stack guard on loongson3_defconfig, but
-> > not
-> > malta_defconfig or malta_defconfig + 64-bit. I presume its sensitive
-> > to
-> > the compiler inlining stuff into decompress_kernel() or something
-> > such
-> > that it suddenly qualifies for a stack guard.
->=20
-> Have you tested with CONFIG_CC_STACKPROTECTOR_STRONG=3Dy ?
-
-Yes. for malta_defconfig I could only reproduce by adding an array to
-decompress_kernel() so that it would get the guard.
-
-Cheers
-James
-
---MAH+hnPXVZWQ5cD/
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-
-iQIzBAEBCAAdFiEEd80NauSabkiESfLYbAtpk944dnoFAlq1bLsACgkQbAtpk944
-dnqRoRAAgQ9jkBNRCrcD5HNMyD7XNnyB4QBm9KgvsYASAFF2b9bzC1qaFsv7ogMe
-+yUEgTbXYGvVyBKMRr/D0d0ndlTSPCwVJHwtwgBVp+PizfWmBTF6j1IvbQ1YnQfH
-vYfFm72xW0L0awtmXV2tbo/Y/AQopzAaWL09sFhrqSt9tWRmPDnlx0r+DfPp3wVP
-I5mA+BftMiVSjqOiwU5QAmj2JVFRpkfKCAftdjG6UFQE0l7aw+4EFHpYiI+8Ai6A
-XiFyf+GQu6Bh0GK+mdTSa0pb+UMEhf1Q4Y5BlJca6zThYTdlZKJoAwIPjHh+Pn4M
-hsKYqKczPJd0hlDSFG5/LC7tp5ySoRGTP/kFQoodjjOf774FkdTTY73/8JDcHc7n
-Jb8UMrMiwWLOPwyqjS9SD2sBcnHVAUZvGhIS5pJHzEiAIKNVVeXpjWYTTwQ2nKiN
-r240w2CjnH/l8C4iwUChu2xvoXV/3EYJLibTIaLbAyGu0TTeW8nGQR4m3wRIL3ig
-Dg9C3tgQY4NJMaTXWRyJGEf58cezFSkDvHRAmNqO6r4IkXjJ4VXlqCvUj0p+KThw
-2oKS6aDj7ZU25DrTAPmb24SCUS9A61Ktwo463YznQdv2WUppc++dRUoBnJ5j89iP
-o4ngC6M2GKsRrL2SRphyLz4Pyi+alDWvXm+tQnKD7Uy940M8SF0=
-=0EHR
------END PGP SIGNATURE-----
-
---MAH+hnPXVZWQ5cD/--
