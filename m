@@ -1,11 +1,10 @@
 From: Shea Levy <shea@shealevy.com>
-Date: Sun, 25 Mar 2018 22:18:51 +0000
-Subject: [PATCH v2 14/16] powerpc: Use INITRAMFS_GENERIC_UNLOAD
-Message-Id: <20180325221853.10839-15-shea@shealevy.com>
+Date: Sat, 24 Mar 2018 17:44:50 +0000
+Subject: [PATCH 08/16] m32r: Use INITRAMFS_GENERIC_UNLOAD
+Message-Id: <20180324174458.26423-9-shea@shealevy.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20180324174458.26423-1-shea@shealevy.com>
- <20180325221853.10839-1-shea@shealevy.com>
-In-Reply-To: <20180325221853.10839-1-shea@shealevy.com>
+In-Reply-To: <20180324174458.26423-1-shea@shealevy.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -14,40 +13,41 @@ Cc: Shea Levy <shea@shealevy.com>
 
 Signed-off-by: Shea Levy <shea@shealevy.com>
 ---
- arch/powerpc/Kconfig  | 1 +
- arch/powerpc/mm/mem.c | 7 -------
- 2 files changed, 1 insertion(+), 7 deletions(-)
+ arch/m32r/Kconfig   |  1 +
+ arch/m32r/mm/init.c | 11 -----------
+ 2 files changed, 1 insertion(+), 11 deletions(-)
 
-diff --git a/arch/powerpc/Kconfig b/arch/powerpc/Kconfig
-index 73ce5dd07642..8cf384068e79 100644
---- a/arch/powerpc/Kconfig
-+++ b/arch/powerpc/Kconfig
-@@ -223,6 +223,7 @@ config PPC
- 	select HAVE_SYSCALL_TRACEPOINTS
- 	select HAVE_VIRT_CPU_ACCOUNTING
- 	select HAVE_IRQ_TIME_ACCOUNTING
+diff --git a/arch/m32r/Kconfig b/arch/m32r/Kconfig
+index dd84ee194579..010a2b999181 100644
+--- a/arch/m32r/Kconfig
++++ b/arch/m32r/Kconfig
+@@ -21,6 +21,7 @@ config M32R
+ 	select CPU_NO_EFFICIENT_FFS
+ 	select DMA_DIRECT_OPS
+ 	select ARCH_NO_COHERENT_DMA_MMAP if !MMU
 +	select INITRAMFS_GENERIC_UNLOAD
- 	select IRQ_DOMAIN
- 	select IRQ_FORCED_THREADING
- 	select MODULES_USE_ELF_RELA
-diff --git a/arch/powerpc/mm/mem.c b/arch/powerpc/mm/mem.c
-index fe8c61149fb8..e85b2a3cd264 100644
---- a/arch/powerpc/mm/mem.c
-+++ b/arch/powerpc/mm/mem.c
-@@ -404,13 +404,6 @@ void free_initmem(void)
- 	free_initmem_default(POISON_FREE_INITMEM);
- }
  
+ config SBUS
+ 	bool
+diff --git a/arch/m32r/mm/init.c b/arch/m32r/mm/init.c
+index 93abc8c3a46e..e2b5f09209ee 100644
+--- a/arch/m32r/mm/init.c
++++ b/arch/m32r/mm/init.c
+@@ -139,14 +139,3 @@ void free_initmem(void)
+ {
+ 	free_initmem_default(-1);
+ }
+-
 -#ifdef CONFIG_BLK_DEV_INITRD
--void __init free_initrd_mem(unsigned long start, unsigned long end)
+-/*===================================*
+- * free_initrd_mem() :
+- * orig : arch/sh/mm/init.c
+- *===================================*/
+-void free_initrd_mem(unsigned long start, unsigned long end)
 -{
 -	free_reserved_area((void *)start, (void *)end, -1, "initrd");
 -}
 -#endif
--
- /*
-  * This is called when a page has been modified by the kernel.
-  * It just marks the page as not i-cache clean.  We do the i-cache
 -- 
 2.16.2
 
