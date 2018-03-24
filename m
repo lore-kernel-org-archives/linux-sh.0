@@ -1,51 +1,30 @@
-From: NIIBE Yutaka <gniibe@fsij.org>
-Date: Fri, 23 Mar 2018 02:09:30 +0000
-Subject: Re: Moving forward with gdb sh native support?
-Message-Id: <871sgbr19h.fsf@iwagami.gniibe.org>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 24 Mar 2018 20:04:53 +0000
+Subject: [PATCH 0/2] sh_eth: unify the SoC feature checks
+Message-Id: <b3706a51-27a4-d78b-998d-9440637ac216@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180322013659.GA8118@brightrain.aerifal.cx>
-In-Reply-To: <20180322013659.GA8118@brightrain.aerifal.cx>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: netdev@vger.kernel.org
+Cc: linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org
 
-John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de> wrote:
-> FWIW, Yutaka Niibe has managed to determine the original author of the
-> SH patchset and it turns out this was not Takashi Yoshii who wrote the
-> patch but Toshinobu Sugioka. Yutaka has contacted him and asked him
-> to sign the copyright assignment for GDB. So, with me and Toshinobu
-> having signed the copyright assignment, it should now be possible to
-> get my out-of-tree patch merged upstream to GDB.
+Hello!
 
-Mostly 20 years ago, if I remember correctly, it was me who implemented
-the ptrace syscall in SuperH kernel, and put something to GDB for native
-debugging.  It was under the GNU/Linux for SuperH Project.  Me, Kaz
-Kojima, Toshinobu Sugioka, and Takashi Yoshii were all working together
-at that time.
+Here's a set of 5 patches against DaveM's 'net-next.git' repo.
 
-Before the ptrace system call, or any part of the kernel, as a start, I
-wrote my own initial program loader for SuperH which has GDB serial
-debug support.  Then, I ported the kernel to SH-3.  After my first
-submission of the patch to lkml, I realized that Kaz, Toshinobu, and
-Stuart Menefy were also having their own ports of SuperH.  I managed to
-merge all efforts.
+The Ether driver sometimes uses the bit fields in 'struct sh_eth_cpu_data'
+to check which Ether registers exist in a certain SoC and sometimes it uses
+sh_eth_is_{gether|rz_fast_ether}() which basically compares 2 pointers (1 of
+them being constant) -- the latter is definitely not a strongest feature of
+the RISC CPUs (be it SH or ARM), so I decided to get rid of this type of
+the feature checks in favour of the bit fields (I've also made use of a
+32-bit value and method pointer where appropriate)...
 
-I and Kaz designed the shared object ABI for SuperH, and implemented in
-glibc, gcc, binutils, and GDB.  For all of GNU toolchain changes and
-glibc, I assigned my copyright to FSF.  So did Kaz Kojima.
+[1/5] sh_eth: add sh_eth_cpu_data::soft_reset() method
+[2/5] sh_eth: add sh_eth_cpu_data::edtrr_trns value
+[3/5] sh_eth: add sh_eth_cpu_data::xdfar_rw flag
+[4/5] sh_eth: add sh_eth_cpu_data::no_tx_cntr flag
+[5/5] sh_eth: add sh_eth_cpu_data::cexcr flag
 
-After that, it was Toshinobu Sugioka who kept working the GDB patchset,
-as well as other patches to distribute his own RPM based distribution.
-
-Last year, I determined that the GDB patchset (of Adrian) was originally
-came from Toshinobu Sugioka, via Takashi Yoshii.  So, I asked his
-copyright assignment to FSF.  He did.  It was handled with the ticket of
-[gnu.org #1227959].  I received the confrmation from FSF, in the
-message of:
-
-	Date: Wed, 26 Jul 2017 10:06:13 -0400
-	Message-ID: <rt-4.2.13-5-gc649048-17168-1501077972-1368.1227959-6-0@rt.gnu.org>
-
-... which was also sent to GDB maintainers.
--- 
+MBR, Sergei
