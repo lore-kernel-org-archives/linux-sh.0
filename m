@@ -1,545 +1,166 @@
-From: Jacopo Mondi <jacopo+renesas@jmondi.org>
-Date: Fri, 02 Mar 2018 16:35:40 +0000
-Subject: [PATCH 4/5] arch: sh: ecovec: Use new renesas-ceu camera driver
-Message-Id: <1520008541-3961-5-git-send-email-jacopo+renesas@jmondi.org>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 24 Mar 2018 20:08:42 +0000
+Subject: [PATCH 2/5] sh_eth: add sh_eth_cpu_data::edtrr_trns value
+Message-Id: <e694fd10-e4af-dcea-e577-72d83b57988f@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1520008541-3961-1-git-send-email-jacopo+renesas@jmondi.org>
-In-Reply-To: <1520008541-3961-1-git-send-email-jacopo+renesas@jmondi.org>
+References: <b3706a51-27a4-d78b-998d-9440637ac216@cogentembedded.com>
+In-Reply-To: <b3706a51-27a4-d78b-998d-9440637ac216@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: hverkuil@xs4all.nl, laurent.pinchart@ideasonboard.com, sakari.ailus@iki.fi, mchehab@kernel.org
-Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>, linux-renesas-soc@vger.kernel.org, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: netdev@vger.kernel.org
+Cc: linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org
 
-SH4 7724 Ecovec platform uses sh_mobile_ceu camera driver, which is now
-being replaced by a proper V4L2 camera driver named 'renesas-ceu'.
+sh_eth_get_edtrr_trns() returns the value to be written to EDTRR in order
+to start TX DMA -- this value is different between the GEther-like and
+the other controllers. We can replace this function (and thus get rid of
+the calls to sh_eth_is_{gether|rz_fast_ether}() by it) with a new field
+'edtrr_trns' in the 'struct sh_eth_cpu_data'.
 
-Get rid of soc_camera defined components used to register sensor drivers
-and of platform specific enable/disable routines.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Register GPIOs for sensor drivers and declare memory reserved with
-memblock APIs as dma capable to be used for CEU buffers.
-
-While at there re-order include directives to respect alphabetical
-ordering.
-
-Signed-off-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
 ---
- arch/sh/boards/mach-ecovec24/setup.c   | 338 ++++++++++++++++-----------------
- arch/sh/kernel/cpu/sh4a/clock-sh7724.c |   4 +-
- 2 files changed, 171 insertions(+), 171 deletions(-)
+ drivers/net/ethernet/renesas/sh_eth.c |   27 +++++++++++++++------------
+ drivers/net/ethernet/renesas/sh_eth.h |    1 +
+ 2 files changed, 16 insertions(+), 12 deletions(-)
 
-diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
-index 6f929ab..adc61d1 100644
---- a/arch/sh/boards/mach-ecovec24/setup.c
-+++ b/arch/sh/boards/mach-ecovec24/setup.c
-@@ -7,44 +7,47 @@
-  * License.  See the file "COPYING" in the main directory of this archive
-  * for more details.
-  */
--
--#include <linux/init.h>
-+#include <asm/clock.h>
-+#include <asm/heartbeat.h>
-+#include <asm/suspend.h>
-+#include <cpu/sh7724.h>
-+#include <linux/delay.h>
- #include <linux/device.h>
--#include <linux/platform_device.h>
-+#include <linux/i2c.h>
-+#include <linux/io.h>
-+#include <linux/init.h>
-+#include <linux/input.h>
-+#include <linux/input/sh_keysc.h>
-+#include <linux/interrupt.h>
-+#include <linux/memblock.h>
-+#include <linux/mfd/tmio.h>
- #include <linux/mmc/host.h>
- #include <linux/mmc/sh_mmcif.h>
- #include <linux/mtd/physmap.h>
--#include <linux/mfd/tmio.h>
- #include <linux/gpio.h>
--#include <linux/interrupt.h>
--#include <linux/io.h>
--#include <linux/delay.h>
-+#include <linux/gpio/machine.h>
-+#include <linux/platform_data/gpio_backlight.h>
-+#include <linux/platform_data/tsc2007.h>
-+#include <linux/platform_device.h>
- #include <linux/regulator/fixed.h>
- #include <linux/regulator/machine.h>
--#include <linux/usb/r8a66597.h>
--#include <linux/usb/renesas_usbhs.h>
--#include <linux/i2c.h>
--#include <linux/platform_data/tsc2007.h>
--#include <linux/spi/spi.h>
--#include <linux/spi/sh_msiof.h>
--#include <linux/spi/mmc_spi.h>
--#include <linux/input.h>
--#include <linux/input/sh_keysc.h>
--#include <linux/platform_data/gpio_backlight.h>
- #include <linux/sh_eth.h>
- #include <linux/sh_intc.h>
-+#include <linux/spi/mmc_spi.h>
-+#include <linux/spi/sh_msiof.h>
-+#include <linux/spi/spi.h>
-+#include <linux/usb/r8a66597.h>
-+#include <linux/usb/renesas_usbhs.h>
- #include <linux/videodev2.h>
--#include <video/sh_mobile_lcdc.h>
-+
-+#include <media/drv-intf/renesas-ceu.h>
-+#include <media/i2c/mt9t112.h>
-+#include <media/i2c/tw9910.h>
-+
- #include <sound/sh_fsi.h>
- #include <sound/simple_card.h>
--#include <media/drv-intf/sh_mobile_ceu.h>
--#include <media/soc_camera.h>
--#include <media/i2c/tw9910.h>
--#include <media/i2c/mt9t112.h>
--#include <asm/heartbeat.h>
--#include <asm/clock.h>
--#include <asm/suspend.h>
--#include <cpu/sh7724.h>
-+
-+#include <video/sh_mobile_lcdc.h>
+Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
+=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
++++ net-next/drivers/net/ethernet/renesas/sh_eth.c
+@@ -584,6 +584,7 @@ static struct sh_eth_cpu_data r7s72100_d
  
- /*
-  *  Address      Interface        BusWidth
-@@ -81,6 +84,10 @@
-  * amixer set 'Out Mixer Right DAC Right' on
-  */
+ 	.register_type	= SH_ETH_REG_FAST_RZ,
  
-+#define CEU_BUFFER_MEMORY_SIZE		(4 << 20)
-+static phys_addr_t ceu0_dma_membase;
-+static phys_addr_t ceu1_dma_membase;
-+
- /* Heartbeat */
- static unsigned char led_pos[] = { 0, 1, 2, 3 };
++	.edtrr_trns	= EDTRR_TRNS_GETHER,
+ 	.ecsr_value	= ECSR_ICD,
+ 	.ecsipr_value	= ECSIPR_ICDIP,
+ 	.eesipr_value	= EESIPR_TWB1IP | EESIPR_TWBIP | EESIPR_TC1IP |
+@@ -631,6 +632,7 @@ static struct sh_eth_cpu_data r8a7740_da
  
-@@ -382,8 +389,24 @@ static struct platform_device gpio_backlight_device = {
- };
+ 	.register_type	= SH_ETH_REG_GIGABIT,
  
- /* CEU0 */
--static struct sh_mobile_ceu_info sh_mobile_ceu0_info = {
--	.flags = SH_CEU_FLAG_USE_8BIT_BUS,
-+static struct ceu_platform_data ceu0_pdata = {
-+	.num_subdevs			= 2,
-+	.subdevs = {
-+		{ /* [0] = mt9t112  */
-+			.flags		= 0,
-+			.bus_width	= 8,
-+			.bus_shift	= 0,
-+			.i2c_adapter_id	= 0,
-+			.i2c_address	= 0x3c,
-+		},
-+		{ /* [1] = tw9910  */
-+			.flags		= 0,
-+			.bus_width	= 8,
-+			.bus_shift	= 0,
-+			.i2c_adapter_id	= 0,
-+			.i2c_address	= 0x45,
-+		},
-+	},
- };
++	.edtrr_trns	= EDTRR_TRNS_GETHER,
+ 	.ecsr_value	= ECSR_ICD | ECSR_MPD,
+ 	.ecsipr_value	= ECSIPR_LCHNGIP | ECSIPR_ICDIP | ECSIPR_MPDIP,
+ 	.eesipr_value	= EESIPR_RFCOFIP | EESIPR_ECIIP |
+@@ -687,6 +689,7 @@ static struct sh_eth_cpu_data rcar_gen1_
  
- static struct resource ceu0_resources[] = {
-@@ -397,24 +420,30 @@ static struct resource ceu0_resources[] = {
- 		.start  = evt2irq(0x880),
- 		.flags  = IORESOURCE_IRQ,
- 	},
--	[2] = {
--		/* place holder for contiguous memory */
--	},
- };
+ 	.register_type	= SH_ETH_REG_FAST_RCAR,
  
- static struct platform_device ceu0_device = {
--	.name		= "sh_mobile_ceu",
--	.id             = 0, /* "ceu0" clock */
-+	.name		= "renesas-ceu",
-+	.id             = 0, /* ceu.0 */
- 	.num_resources	= ARRAY_SIZE(ceu0_resources),
- 	.resource	= ceu0_resources,
- 	.dev	= {
--		.platform_data	= &sh_mobile_ceu0_info,
-+		.platform_data	= &ceu0_pdata,
- 	},
- };
++	.edtrr_trns	= EDTRR_TRNS_ETHER,
+ 	.ecsr_value	= ECSR_PSRTO | ECSR_LCHNG | ECSR_ICD,
+ 	.ecsipr_value	= ECSIPR_PSRTOIP | ECSIPR_LCHNGIP | ECSIPR_ICDIP,
+ 	.eesipr_value	= EESIPR_RFCOFIP | EESIPR_ADEIP | EESIPR_ECIIP |
+@@ -716,6 +719,7 @@ static struct sh_eth_cpu_data rcar_gen2_
  
- /* CEU1 */
--static struct sh_mobile_ceu_info sh_mobile_ceu1_info = {
--	.flags = SH_CEU_FLAG_USE_8BIT_BUS,
-+static struct ceu_platform_data ceu1_pdata = {
-+	.num_subdevs			= 1,
-+	.subdevs = {
-+		{ /* [0] = mt9t112  */
-+			.flags		= 0,
-+			.bus_width	= 8,
-+			.bus_shift	= 0,
-+			.i2c_adapter_id	= 1,
-+			.i2c_address	= 0x3c,
-+		},
-+	},
- };
+ 	.register_type	= SH_ETH_REG_FAST_RCAR,
  
- static struct resource ceu1_resources[] = {
-@@ -428,26 +457,71 @@ static struct resource ceu1_resources[] = {
- 		.start  = evt2irq(0x9e0),
- 		.flags  = IORESOURCE_IRQ,
- 	},
--	[2] = {
--		/* place holder for contiguous memory */
--	},
- };
++	.edtrr_trns	= EDTRR_TRNS_ETHER,
+ 	.ecsr_value	= ECSR_PSRTO | ECSR_LCHNG | ECSR_ICD | ECSR_MPD,
+ 	.ecsipr_value	= ECSIPR_PSRTOIP | ECSIPR_LCHNGIP | ECSIPR_ICDIP |
+ 			  ECSIPR_MPDIP,
+@@ -765,6 +769,7 @@ static struct sh_eth_cpu_data sh7724_dat
  
- static struct platform_device ceu1_device = {
--	.name		= "sh_mobile_ceu",
--	.id             = 1, /* "ceu1" clock */
-+	.name		= "renesas-ceu",
-+	.id             = 1, /* ceu.1 */
- 	.num_resources	= ARRAY_SIZE(ceu1_resources),
- 	.resource	= ceu1_resources,
- 	.dev	= {
--		.platform_data	= &sh_mobile_ceu1_info,
-+		.platform_data	= &ceu1_pdata,
-+	},
-+};
-+
-+/* Power up/down GPIOs for camera devices and video decoder */
-+static struct gpiod_lookup_table tw9910_gpios = {
-+	.dev_id		= "0-0045",
-+	.table		= {
-+		GPIO_LOOKUP("sh7724_pfc", GPIO_PTU2, "pdn", GPIO_ACTIVE_HIGH),
-+	},
-+};
-+
-+static struct gpiod_lookup_table mt9t112_0_gpios = {
-+	.dev_id		= "0-003c",
-+	.table		= {
-+		GPIO_LOOKUP("sh7724_pfc", GPIO_PTA3, "standby",
-+			    GPIO_ACTIVE_HIGH),
-+	},
-+};
-+
-+static struct gpiod_lookup_table mt9t112_1_gpios = {
-+	.dev_id		= "1-003c",
-+	.table		= {
-+		GPIO_LOOKUP("sh7724_pfc", GPIO_PTA4, "standby",
-+			    GPIO_ACTIVE_HIGH),
- 	},
- };
+ 	.register_type	= SH_ETH_REG_FAST_SH4,
  
- /* I2C device */
-+static struct tw9910_video_info tw9910_info = {
-+	.buswidth	= 8,
-+	.mpout		= TW9910_MPO_FIELD,
-+};
-+
-+static struct mt9t112_platform_data mt9t112_0_pdata = {
-+	.flags = MT9T112_FLAG_PCLK_RISING_EDGE,
-+	.divider = { 0x49, 0x6, 0, 6, 0, 9, 9, 6, 0 }, /* for 24MHz */
-+};
-+
-+static struct mt9t112_platform_data mt9t112_1_pdata = {
-+	.flags = MT9T112_FLAG_PCLK_RISING_EDGE,
-+	.divider = { 0x49, 0x6, 0, 6, 0, 9, 9, 6, 0 }, /* for 24MHz */
-+};
-+
- static struct i2c_board_info i2c0_devices[] = {
- 	{
- 		I2C_BOARD_INFO("da7210", 0x1a),
- 	},
-+	{
-+		I2C_BOARD_INFO("tw9910", 0x45),
-+		.platform_data = &tw9910_info,
-+	},
-+	{
-+		/* 1st camera */
-+		I2C_BOARD_INFO("mt9t112", 0x3c),
-+		.platform_data = &mt9t112_0_pdata,
-+	},
- };
++	.edtrr_trns	= EDTRR_TRNS_ETHER,
+ 	.ecsr_value	= ECSR_PSRTO | ECSR_LCHNG | ECSR_ICD,
+ 	.ecsipr_value	= ECSIPR_PSRTOIP | ECSIPR_LCHNGIP | ECSIPR_ICDIP,
+ 	.eesipr_value	= EESIPR_RFCOFIP | EESIPR_ADEIP | EESIPR_ECIIP |
+@@ -809,6 +814,7 @@ static struct sh_eth_cpu_data sh7757_dat
  
- static struct i2c_board_info i2c1_devices[] = {
-@@ -457,7 +531,12 @@ static struct i2c_board_info i2c1_devices[] = {
- 	{
- 		I2C_BOARD_INFO("lis3lv02d", 0x1c),
- 		.irq = evt2irq(0x620),
--	}
-+	},
-+	{
-+		/* 2nd camera */
-+		I2C_BOARD_INFO("mt9t112", 0x3c),
-+		.platform_data = &mt9t112_1_pdata,
-+	},
- };
+ 	.register_type	= SH_ETH_REG_FAST_SH4,
  
- /* KEYSC */
-@@ -724,115 +803,6 @@ static struct platform_device msiof0_device = {
++	.edtrr_trns	= EDTRR_TRNS_ETHER,
+ 	.eesipr_value	= EESIPR_RFCOFIP | EESIPR_ECIIP |
+ 			  EESIPR_FTCIP | EESIPR_TDEIP | EESIPR_TFUFIP |
+ 			  EESIPR_FRIP | EESIPR_RDEIP | EESIPR_RFOFIP |
+@@ -884,6 +890,7 @@ static struct sh_eth_cpu_data sh7757_dat
  
- #endif
+ 	.register_type	= SH_ETH_REG_GIGABIT,
  
--/* I2C Video/Camera */
--static struct i2c_board_info i2c_camera[] = {
--	{
--		I2C_BOARD_INFO("tw9910", 0x45),
--	},
--	{
--		/* 1st camera */
--		I2C_BOARD_INFO("mt9t112", 0x3c),
--	},
--	{
--		/* 2nd camera */
--		I2C_BOARD_INFO("mt9t112", 0x3c),
--	},
--};
--
--/* tw9910 */
--static int tw9910_power(struct device *dev, int mode)
--{
--	int val = mode ? 0 : 1;
--
--	gpio_set_value(GPIO_PTU2, val);
--	if (mode)
--		mdelay(100);
--
--	return 0;
--}
--
--static struct tw9910_video_info tw9910_info = {
--	.buswidth	= SOCAM_DATAWIDTH_8,
--	.mpout		= TW9910_MPO_FIELD,
--};
--
--static struct soc_camera_link tw9910_link = {
--	.i2c_adapter_id	= 0,
--	.bus_id		= 1,
--	.power		= tw9910_power,
--	.board_info	= &i2c_camera[0],
--	.priv		= &tw9910_info,
--};
--
--/* mt9t112 */
--static int mt9t112_power1(struct device *dev, int mode)
--{
--	gpio_set_value(GPIO_PTA3, mode);
--	if (mode)
--		mdelay(100);
--
--	return 0;
--}
--
--static struct mt9t112_camera_info mt9t112_info1 = {
--	.flags = MT9T112_FLAG_PCLK_RISING_EDGE | MT9T112_FLAG_DATAWIDTH_8,
--	.divider = { 0x49, 0x6, 0, 6, 0, 9, 9, 6, 0 }, /* for 24MHz */
--};
--
--static struct soc_camera_link mt9t112_link1 = {
--	.i2c_adapter_id	= 0,
--	.power		= mt9t112_power1,
--	.bus_id		= 0,
--	.board_info	= &i2c_camera[1],
--	.priv		= &mt9t112_info1,
--};
--
--static int mt9t112_power2(struct device *dev, int mode)
--{
--	gpio_set_value(GPIO_PTA4, mode);
--	if (mode)
--		mdelay(100);
--
--	return 0;
--}
--
--static struct mt9t112_camera_info mt9t112_info2 = {
--	.flags = MT9T112_FLAG_PCLK_RISING_EDGE | MT9T112_FLAG_DATAWIDTH_8,
--	.divider = { 0x49, 0x6, 0, 6, 0, 9, 9, 6, 0 }, /* for 24MHz */
--};
--
--static struct soc_camera_link mt9t112_link2 = {
--	.i2c_adapter_id	= 1,
--	.power		= mt9t112_power2,
--	.bus_id		= 1,
--	.board_info	= &i2c_camera[2],
--	.priv		= &mt9t112_info2,
--};
--
--static struct platform_device camera_devices[] = {
--	{
--		.name	= "soc-camera-pdrv",
--		.id	= 0,
--		.dev	= {
--			.platform_data = &tw9910_link,
--		},
--	},
--	{
--		.name	= "soc-camera-pdrv",
--		.id	= 1,
--		.dev	= {
--			.platform_data = &mt9t112_link1,
--		},
--	},
--	{
--		.name	= "soc-camera-pdrv",
--		.id	= 2,
--		.dev	= {
--			.platform_data = &mt9t112_link2,
--		},
--	},
--};
--
- /* FSI */
- static struct resource fsi_resources[] = {
- 	[0] = {
-@@ -979,6 +949,11 @@ static struct platform_device sh_mmcif_device = {
- };
- #endif
++	.edtrr_trns	= EDTRR_TRNS_GETHER,
+ 	.ecsr_value	= ECSR_ICD | ECSR_MPD,
+ 	.ecsipr_value	= ECSIPR_LCHNGIP | ECSIPR_ICDIP | ECSIPR_MPDIP,
+ 	.eesipr_value	= EESIPR_RFCOFIP | EESIPR_ECIIP |
+@@ -925,6 +932,7 @@ static struct sh_eth_cpu_data sh7734_dat
  
-+static struct platform_device *ecovec_ceu_devices[] __initdata = {
-+	&ceu0_device,
-+	&ceu1_device,
-+};
-+
- static struct platform_device *ecovec_devices[] __initdata = {
- 	&heartbeat_device,
- 	&nor_flash_device,
-@@ -988,8 +963,6 @@ static struct platform_device *ecovec_devices[] __initdata = {
- 	&usbhs_device,
- 	&lcdc_device,
- 	&gpio_backlight_device,
--	&ceu0_device,
--	&ceu1_device,
- 	&keysc_device,
- 	&cn12_power,
- #if defined(CONFIG_MMC_SDHI) || defined(CONFIG_MMC_SDHI_MODULE)
-@@ -1001,9 +974,6 @@ static struct platform_device *ecovec_devices[] __initdata = {
- #else
- 	&msiof0_device,
- #endif
--	&camera_devices[0],
--	&camera_devices[1],
--	&camera_devices[2],
- 	&fsi_device,
- 	&fsi_da7210_device,
- 	&irda_device,
-@@ -1240,7 +1210,6 @@ static int __init arch_setup(void)
- 	gpio_request(GPIO_FN_VIO0_CLK, NULL);
- 	gpio_request(GPIO_FN_VIO0_FLD, NULL);
- 	gpio_request(GPIO_FN_VIO0_HD,  NULL);
--	platform_resource_setup_memory(&ceu0_device, "ceu0", 4 << 20);
+ 	.register_type	= SH_ETH_REG_GIGABIT,
  
- 	/* enable CEU1 */
- 	gpio_request(GPIO_FN_VIO1_D7,  NULL);
-@@ -1255,7 +1224,6 @@ static int __init arch_setup(void)
- 	gpio_request(GPIO_FN_VIO1_HD,  NULL);
- 	gpio_request(GPIO_FN_VIO1_VD,  NULL);
- 	gpio_request(GPIO_FN_VIO1_CLK, NULL);
--	platform_resource_setup_memory(&ceu1_device, "ceu1", 4 << 20);
++	.edtrr_trns	= EDTRR_TRNS_GETHER,
+ 	.ecsr_value	= ECSR_ICD | ECSR_MPD,
+ 	.ecsipr_value	= ECSIPR_LCHNGIP | ECSIPR_ICDIP | ECSIPR_MPDIP,
+ 	.eesipr_value	= EESIPR_RFCOFIP | EESIPR_ECIIP |
+@@ -963,6 +971,7 @@ static struct sh_eth_cpu_data sh7763_dat
  
- 	/* enable KEYSC */
- 	gpio_request(GPIO_FN_KEYOUT5_IN5, NULL);
-@@ -1332,16 +1300,6 @@ static int __init arch_setup(void)
- 		__raw_writew((__raw_readw(IODRIVEA) & ~0x3000) | 0x2000,
- 			     IODRIVEA);
+ 	.register_type	= SH_ETH_REG_GIGABIT,
  
--	/* enable Video */
--	gpio_request(GPIO_PTU2, NULL);
--	gpio_direction_output(GPIO_PTU2, 1);
--
--	/* enable Camera */
--	gpio_request(GPIO_PTA3, NULL);
--	gpio_request(GPIO_PTA4, NULL);
--	gpio_direction_output(GPIO_PTA3, 0);
--	gpio_direction_output(GPIO_PTA4, 0);
--
- 	/* enable FSI */
- 	gpio_request(GPIO_FN_FSIMCKB,    NULL);
- 	gpio_request(GPIO_FN_FSIIBSD,    NULL);
-@@ -1390,6 +1348,11 @@ static int __init arch_setup(void)
- 	gpio_request(GPIO_PTU5, NULL);
- 	gpio_direction_output(GPIO_PTU5, 0);
++	.edtrr_trns	= EDTRR_TRNS_GETHER,
+ 	.ecsr_value	= ECSR_ICD | ECSR_MPD,
+ 	.ecsipr_value	= ECSIPR_LCHNGIP | ECSIPR_ICDIP | ECSIPR_MPDIP,
+ 	.eesipr_value	= EESIPR_RFCOFIP | EESIPR_ECIIP |
+@@ -995,6 +1004,7 @@ static struct sh_eth_cpu_data sh7619_dat
  
-+	/* Register gpio lookup tables for cameras and video decoder */
-+	gpiod_add_lookup_table(&tw9910_gpios);
-+	gpiod_add_lookup_table(&mt9t112_0_gpios);
-+	gpiod_add_lookup_table(&mt9t112_1_gpios);
-+
- 	/* enable I2C device */
- 	i2c_register_board_info(0, i2c0_devices,
- 				ARRAY_SIZE(i2c0_devices));
-@@ -1431,6 +1394,25 @@ static int __init arch_setup(void)
- 	gpio_set_value(GPIO_PTG4, 1);
- #endif
+ 	.register_type	= SH_ETH_REG_FAST_SH3_SH2,
  
-+	/* Initialize CEU platform devices separately to map memory first */
-+	device_initialize(&ecovec_ceu_devices[0]->dev);
-+	arch_setup_pdev_archdata(ecovec_ceu_devices[0]);
-+	dma_declare_coherent_memory(&ecovec_ceu_devices[0]->dev,
-+				    ceu0_dma_membase, ceu0_dma_membase,
-+				    ceu0_dma_membase +
-+				    CEU_BUFFER_MEMORY_SIZE - 1,
-+				    DMA_MEMORY_EXCLUSIVE);
-+	platform_device_add(ecovec_ceu_devices[0]);
-+
-+	device_initialize(&ecovec_ceu_devices[1]->dev);
-+	arch_setup_pdev_archdata(ecovec_ceu_devices[1]);
-+	dma_declare_coherent_memory(&ecovec_ceu_devices[1]->dev,
-+				    ceu1_dma_membase, ceu1_dma_membase,
-+				    ceu1_dma_membase +
-+				    CEU_BUFFER_MEMORY_SIZE - 1,
-+				    DMA_MEMORY_EXCLUSIVE);
-+	platform_device_add(ecovec_ceu_devices[1]);
-+
- 	return platform_add_devices(ecovec_devices,
- 				    ARRAY_SIZE(ecovec_devices));
++	.edtrr_trns	= EDTRR_TRNS_ETHER,
+ 	.eesipr_value	= EESIPR_RFCOFIP | EESIPR_ECIIP |
+ 			  EESIPR_FTCIP | EESIPR_TDEIP | EESIPR_TFUFIP |
+ 			  EESIPR_FRIP | EESIPR_RDEIP | EESIPR_RFOFIP |
+@@ -1015,6 +1025,7 @@ static struct sh_eth_cpu_data sh771x_dat
+ 
+ 	.register_type	= SH_ETH_REG_FAST_SH3_SH2,
+ 
++	.edtrr_trns	= EDTRR_TRNS_ETHER,
+ 	.eesipr_value	= EESIPR_RFCOFIP | EESIPR_ECIIP |
+ 			  EESIPR_FTCIP | EESIPR_TDEIP | EESIPR_TFUFIP |
+ 			  EESIPR_FRIP | EESIPR_RDEIP | EESIPR_RFOFIP |
+@@ -1094,14 +1105,6 @@ static void read_mac_address(struct net_
+ 	}
  }
-@@ -1443,6 +1425,24 @@ static int __init devices_setup(void)
- }
- device_initcall(devices_setup);
  
-+/* Reserve a portion of memory for CEU 0 and CEU 1 buffers */
-+static void __init ecovec_mv_mem_reserve(void)
-+{
-+	phys_addr_t phys;
-+	phys_addr_t size = CEU_BUFFER_MEMORY_SIZE;
-+
-+	phys = memblock_alloc_base(size, PAGE_SIZE, MEMBLOCK_ALLOC_ANYWHERE);
-+	memblock_free(phys, size);
-+	memblock_remove(phys, size);
-+	ceu0_dma_membase = phys;
-+
-+	phys = memblock_alloc_base(size, PAGE_SIZE, MEMBLOCK_ALLOC_ANYWHERE);
-+	memblock_free(phys, size);
-+	memblock_remove(phys, size);
-+	ceu1_dma_membase = phys;
-+}
-+
- static struct sh_machine_vector mv_ecovec __initmv = {
- 	.mv_name	= "R0P7724 (EcoVec)",
-+	.mv_mem_reserve	= ecovec_mv_mem_reserve,
- };
-diff --git a/arch/sh/kernel/cpu/sh4a/clock-sh7724.c b/arch/sh/kernel/cpu/sh4a/clock-sh7724.c
-index f27c618..3194336 100644
---- a/arch/sh/kernel/cpu/sh4a/clock-sh7724.c
-+++ b/arch/sh/kernel/cpu/sh4a/clock-sh7724.c
-@@ -338,14 +338,14 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[HWBLK_SDHI0]),
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[HWBLK_SDHI1]),
- 	CLKDEV_CON_ID("veu1", &mstp_clks[HWBLK_VEU1]),
--	CLKDEV_DEV_ID("sh_mobile_ceu.1", &mstp_clks[HWBLK_CEU1]),
-+	CLKDEV_DEV_ID("renesas-ceu.1", &mstp_clks[HWBLK_CEU1]),
- 	CLKDEV_CON_ID("beu1", &mstp_clks[HWBLK_BEU1]),
- 	CLKDEV_CON_ID("2ddmac0", &mstp_clks[HWBLK_2DDMAC]),
- 	CLKDEV_DEV_ID("sh_fsi.0", &mstp_clks[HWBLK_SPU]),
- 	CLKDEV_CON_ID("jpu0", &mstp_clks[HWBLK_JPU]),
- 	CLKDEV_DEV_ID("sh-vou", &mstp_clks[HWBLK_VOU]),
- 	CLKDEV_CON_ID("beu0", &mstp_clks[HWBLK_BEU0]),
--	CLKDEV_DEV_ID("sh_mobile_ceu.0", &mstp_clks[HWBLK_CEU0]),
-+	CLKDEV_DEV_ID("renesas-ceu.0", &mstp_clks[HWBLK_CEU0]),
- 	CLKDEV_CON_ID("veu0", &mstp_clks[HWBLK_VEU0]),
- 	CLKDEV_CON_ID("vpu0", &mstp_clks[HWBLK_VPU]),
- 	CLKDEV_DEV_ID("sh_mobile_lcdc_fb.0", &mstp_clks[HWBLK_LCDC]),
--- 
-2.7.4
-
+-static u32 sh_eth_get_edtrr_trns(struct sh_eth_private *mdp)
+-{
+-	if (sh_eth_is_gether(mdp) || sh_eth_is_rz_fast_ether(mdp))
+-		return EDTRR_TRNS_GETHER;
+-	else
+-		return EDTRR_TRNS_ETHER;
+-}
+-
+ struct bb_info {
+ 	void (*set_gate)(void *addr);
+ 	struct mdiobb_ctrl ctrl;
+@@ -1741,9 +1744,9 @@ static void sh_eth_error(struct net_devi
+ 		sh_eth_tx_free(ndev, true);
+ 
+ 		/* SH7712 BUG */
+-		if (edtrr ^ sh_eth_get_edtrr_trns(mdp)) {
++		if (edtrr ^ mdp->cd->edtrr_trns) {
+ 			/* tx dma start */
+-			sh_eth_write(ndev, sh_eth_get_edtrr_trns(mdp), EDTRR);
++			sh_eth_write(ndev, mdp->cd->edtrr_trns, EDTRR);
+ 		}
+ 		/* wakeup */
+ 		netif_wake_queue(ndev);
+@@ -2502,8 +2505,8 @@ static int sh_eth_start_xmit(struct sk_b
+ 
+ 	mdp->cur_tx++;
+ 
+-	if (!(sh_eth_read(ndev, EDTRR) & sh_eth_get_edtrr_trns(mdp)))
+-		sh_eth_write(ndev, sh_eth_get_edtrr_trns(mdp), EDTRR);
++	if (!(sh_eth_read(ndev, EDTRR) & mdp->cd->edtrr_trns))
++		sh_eth_write(ndev, mdp->cd->edtrr_trns, EDTRR);
+ 
+ 	return NETDEV_TX_OK;
+ }
+Index: net-next/drivers/net/ethernet/renesas/sh_eth.h
+=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.h
++++ net-next/drivers/net/ethernet/renesas/sh_eth.h
+@@ -479,6 +479,7 @@ struct sh_eth_cpu_data {
+ 
+ 	/* mandatory initialize value */
+ 	int register_type;
++	u32 edtrr_trns;
+ 	u32 eesipr_value;
+ 
+ 	/* optional initialize value */
