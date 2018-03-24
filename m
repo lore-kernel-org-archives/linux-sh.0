@@ -1,38 +1,49 @@
-From: Thomas Petazzoni <thomas.petazzoni@bootlin.com>
-Date: Mon, 26 Mar 2018 21:25:27 +0000
-Subject: [PATCH 5/5] arch/sh: pcie-sh7786: do not disable MAC data scrambling
-Message-Id: <20180326212527.12565-6-thomas.petazzoni@bootlin.com>
+From: Shea Levy <shea@shealevy.com>
+Date: Sat, 24 Mar 2018 17:44:46 +0000
+Subject: [PATCH 04/16] arc: Use INITRAMFS_GENERIC_UNLOAD
+Message-Id: <20180324174458.26423-5-shea@shealevy.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20180324174458.26423-1-shea@shealevy.com>
+In-Reply-To: <20180324174458.26423-1-shea@shealevy.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-c6x-dev@linux-c6x.org, uclinux-h8-devel@lists.sourceforge.jp, linux-m68k@lists.linux-m68k.org, nios2-dev@lists.rocketboards.org, openrisc@lists.librecores.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org, linux-sh@vger.kernel.org, user-mode-linux-devel@lists.sourceforge.net
+Cc: Shea Levy <shea@shealevy.com>
 
-The code enables MAC data scrambling, and then later disables
-it. Disabling MAC data is mostly a debugging feature, data scrambling
-should normally be enabled.
-
-Signed-off-by: Thomas Petazzoni <thomas.petazzoni@bootlin.com>
+Signed-off-by: Shea Levy <shea@shealevy.com>
 ---
- arch/sh/drivers/pci/pcie-sh7786.c | 5 -----
- 1 file changed, 5 deletions(-)
+ arch/arc/Kconfig   | 1 +
+ arch/arc/mm/init.c | 7 -------
+ 2 files changed, 1 insertion(+), 7 deletions(-)
 
-diff --git a/arch/sh/drivers/pci/pcie-sh7786.c b/arch/sh/drivers/pci/pcie-sh7786.c
-index 88841ceb2f06..ca72e838ce62 100644
---- a/arch/sh/drivers/pci/pcie-sh7786.c
-+++ b/arch/sh/drivers/pci/pcie-sh7786.c
-@@ -427,11 +427,6 @@ static int __init pcie_init(struct sh7786_pcie_port *port)
- 	data |= PCIEDLINTENR_DLL_ACT_ENABLE;
- 	pci_write_reg(chan, data, SH4A_PCIEDLINTENR);
+diff --git a/arch/arc/Kconfig b/arch/arc/Kconfig
+index d76bf4a83740..2844ce5b910c 100644
+--- a/arch/arc/Kconfig
++++ b/arch/arc/Kconfig
+@@ -44,6 +44,7 @@ config ARC
+ 	select HAVE_GENERIC_DMA_COHERENT
+ 	select HAVE_KERNEL_GZIP
+ 	select HAVE_KERNEL_LZMA
++	select INITRAMFS_GENERIC_UNLOAD
  
--	/* Disable MAC data scrambling. */
--	data = pci_read_reg(chan, SH4A_PCIEMACCTLR);
--	data |= PCIEMACCTLR_SCR_DIS | (0xff << 16);
--	pci_write_reg(chan, data, SH4A_PCIEMACCTLR);
+ config MIGHT_HAVE_PCI
+ 	bool
+diff --git a/arch/arc/mm/init.c b/arch/arc/mm/init.c
+index ba145065c579..7bcf23ab1756 100644
+--- a/arch/arc/mm/init.c
++++ b/arch/arc/mm/init.c
+@@ -229,10 +229,3 @@ void __ref free_initmem(void)
+ {
+ 	free_initmem_default(-1);
+ }
 -
- 	/*
- 	 * This will timeout if we don't have a link, but we permit the
- 	 * port to register anyways in order to support hotplug on future
+-#ifdef CONFIG_BLK_DEV_INITRD
+-void __init free_initrd_mem(unsigned long start, unsigned long end)
+-{
+-	free_reserved_area((void *)start, (void *)end, -1, "initrd");
+-}
+-#endif
 -- 
-2.14.3
+2.16.2
 
