@@ -1,46 +1,49 @@
-From: Rich Felker <dalias@libc.org>
-Date: Thu, 29 Mar 2018 16:26:56 +0000
-Subject: Re: [PATCH v5 15/16] sh: Switch to generic free_initrd_mem.
-Message-Id: <20180329162656.GP1436@brightrain.aerifal.cx>
+From: Shea Levy <shea@shealevy.com>
+Date: Sat, 24 Mar 2018 17:44:51 +0000
+Subject: [PATCH 09/16] m68k: Use INITRAMFS_GENERIC_UNLOAD
+Message-Id: <20180324174458.26423-10-shea@shealevy.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180328203659.18692-1-shea@shealevy.com>
- <20180329113207.30674-1-shea@shealevy.com>
- <20180329113207.30674-15-shea@shealevy.com>
-In-Reply-To: <20180329113207.30674-15-shea@shealevy.com>
+References: <20180324174458.26423-1-shea@shealevy.com>
+In-Reply-To: <20180324174458.26423-1-shea@shealevy.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-riscv@lists.infradead.org
+To: linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-c6x-dev@linux-c6x.org, uclinux-h8-devel@lists.sourceforge.jp, linux-m68k@lists.linux-m68k.org, nios2-dev@lists.rocketboards.org, openrisc@lists.librecores.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org, linux-sh@vger.kernel.org, user-mode-linux-devel@lists.sourceforge.net
+Cc: Shea Levy <shea@shealevy.com>
 
-On Thu, Mar 29, 2018 at 07:32:06AM -0400, Shea Levy wrote:
-> The generic implementation is functionally identical.
-> 
-> Signed-off-by: Shea Levy <shea@shealevy.com>
-> ---
->  arch/sh/mm/init.c | 7 -------
->  1 file changed, 7 deletions(-)
-> 
-> diff --git a/arch/sh/mm/init.c b/arch/sh/mm/init.c
-> index ce0bbaa7e404..7451459d0725 100644
-> --- a/arch/sh/mm/init.c
-> +++ b/arch/sh/mm/init.c
-> @@ -477,13 +477,6 @@ void free_initmem(void)
->  	free_initmem_default(-1);
->  }
->  
-> -#ifdef CONFIG_BLK_DEV_INITRD
-> -void free_initrd_mem(unsigned long start, unsigned long end)
-> -{
-> -	free_reserved_area((void *)start, (void *)end, -1, "initrd");
-> -}
-> -#endif
-> -
->  #ifdef CONFIG_MEMORY_HOTPLUG
->  int arch_add_memory(int nid, u64 start, u64 size, struct vmem_altmap *altmap,
->  		bool want_memblock)
-> -- 
-> 2.16.2
+Signed-off-by: Shea Levy <shea@shealevy.com>
+---
+ arch/m68k/Kconfig   | 1 +
+ arch/m68k/mm/init.c | 7 -------
+ 2 files changed, 1 insertion(+), 7 deletions(-)
 
-LGTM.
+diff --git a/arch/m68k/Kconfig b/arch/m68k/Kconfig
+index 785612b576f7..47913a68529e 100644
+--- a/arch/m68k/Kconfig
++++ b/arch/m68k/Kconfig
+@@ -24,6 +24,7 @@ config M68K
+ 	select MODULES_USE_ELF_RELA
+ 	select OLD_SIGSUSPEND3
+ 	select OLD_SIGACTION
++	select INITRAMFS_GENERIC_UNLOAD
+ 
+ config CPU_BIG_ENDIAN
+ 	def_bool y
+diff --git a/arch/m68k/mm/init.c b/arch/m68k/mm/init.c
+index e85acd131fa8..e20bef09258c 100644
+--- a/arch/m68k/mm/init.c
++++ b/arch/m68k/mm/init.c
+@@ -172,10 +172,3 @@ void __init mem_init(void)
+ 	mem_init_print_info(NULL);
+ 	print_memmap();
+ }
+-
+-#ifdef CONFIG_BLK_DEV_INITRD
+-void free_initrd_mem(unsigned long start, unsigned long end)
+-{
+-	free_reserved_area((void *)start, (void *)end, -1, "initrd");
+-}
+-#endif
+-- 
+2.16.2
 
-Acked-by: Rich Felker <dalias@libc.org>
