@@ -1,33 +1,52 @@
-From: Thomas Petazzoni <thomas.petazzoni@bootlin.com>
-Date: Mon, 26 Mar 2018 21:27:13 +0000
-Subject: [PATCH 0/2] arch/sh: enable L2 cache on SH7786
-Message-Id: <20180326212715.12907-1-thomas.petazzoni@bootlin.com>
+From: Shea Levy <shea@shealevy.com>
+Date: Sat, 24 Mar 2018 17:44:56 +0000
+Subject: [PATCH 14/16] powerpc: Use INITRAMFS_GENERIC_UNLOAD
+Message-Id: <20180324174458.26423-15-shea@shealevy.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20180324174458.26423-1-shea@shealevy.com>
+In-Reply-To: <20180324174458.26423-1-shea@shealevy.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-c6x-dev@linux-c6x.org, uclinux-h8-devel@lists.sourceforge.jp, linux-m68k@lists.linux-m68k.org, nios2-dev@lists.rocketboards.org, openrisc@lists.librecores.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org, linux-sh@vger.kernel.org, user-mode-linux-devel@lists.sourceforge.net
+Cc: Shea Levy <shea@shealevy.com>
 
-Hello,
+Signed-off-by: Shea Levy <shea@shealevy.com>
+---
+ arch/powerpc/Kconfig  | 1 +
+ arch/powerpc/mm/mem.c | 7 -------
+ 2 files changed, 1 insertion(+), 7 deletions(-)
 
-This small series enables the L2 cache on SH7786, bringing nice
-performance improvements.
-
-Thanks!
-
-Thomas
-
-Thomas Petazzoni (2):
-  arch/sh: make l2_cache_init() return an integer
-  arch/sh: enable L2 cache on SH7786
-
- arch/sh/include/cpu-sh4/cpu/cache.h    | 2 ++
- arch/sh/kernel/cpu/init.c              | 4 ++--
- arch/sh/kernel/cpu/sh4a/setup-sh7723.c | 3 ++-
- arch/sh/kernel/cpu/sh4a/setup-sh7724.c | 3 ++-
- arch/sh/kernel/cpu/sh4a/setup-sh7786.c | 7 +++++++
- 5 files changed, 15 insertions(+), 4 deletions(-)
-
+diff --git a/arch/powerpc/Kconfig b/arch/powerpc/Kconfig
+index 73ce5dd07642..8cf384068e79 100644
+--- a/arch/powerpc/Kconfig
++++ b/arch/powerpc/Kconfig
+@@ -223,6 +223,7 @@ config PPC
+ 	select HAVE_SYSCALL_TRACEPOINTS
+ 	select HAVE_VIRT_CPU_ACCOUNTING
+ 	select HAVE_IRQ_TIME_ACCOUNTING
++	select INITRAMFS_GENERIC_UNLOAD
+ 	select IRQ_DOMAIN
+ 	select IRQ_FORCED_THREADING
+ 	select MODULES_USE_ELF_RELA
+diff --git a/arch/powerpc/mm/mem.c b/arch/powerpc/mm/mem.c
+index fe8c61149fb8..e85b2a3cd264 100644
+--- a/arch/powerpc/mm/mem.c
++++ b/arch/powerpc/mm/mem.c
+@@ -404,13 +404,6 @@ void free_initmem(void)
+ 	free_initmem_default(POISON_FREE_INITMEM);
+ }
+ 
+-#ifdef CONFIG_BLK_DEV_INITRD
+-void __init free_initrd_mem(unsigned long start, unsigned long end)
+-{
+-	free_reserved_area((void *)start, (void *)end, -1, "initrd");
+-}
+-#endif
+-
+ /*
+  * This is called when a page has been modified by the kernel.
+  * It just marks the page as not i-cache clean.  We do the i-cache
 -- 
-2.14.3
+2.16.2
 
