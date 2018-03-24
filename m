@@ -1,11 +1,10 @@
 From: Shea Levy <shea@shealevy.com>
-Date: Sun, 25 Mar 2018 22:18:41 +0000
-Subject: [PATCH v2 04/16] arc: Use INITRAMFS_GENERIC_UNLOAD
-Message-Id: <20180325221853.10839-5-shea@shealevy.com>
+Date: Sat, 24 Mar 2018 17:44:49 +0000
+Subject: [PATCH 07/16] h8300: Use INITRAMFS_GENERIC_UNLOAD
+Message-Id: <20180324174458.26423-8-shea@shealevy.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20180324174458.26423-1-shea@shealevy.com>
- <20180325221853.10839-1-shea@shealevy.com>
-In-Reply-To: <20180325221853.10839-1-shea@shealevy.com>
+In-Reply-To: <20180324174458.26423-1-shea@shealevy.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -14,37 +13,40 @@ Cc: Shea Levy <shea@shealevy.com>
 
 Signed-off-by: Shea Levy <shea@shealevy.com>
 ---
- arch/arc/Kconfig   | 1 +
- arch/arc/mm/init.c | 7 -------
+ arch/h8300/Kconfig   | 1 +
+ arch/h8300/mm/init.c | 7 -------
  2 files changed, 1 insertion(+), 7 deletions(-)
 
-diff --git a/arch/arc/Kconfig b/arch/arc/Kconfig
-index d76bf4a83740..2844ce5b910c 100644
---- a/arch/arc/Kconfig
-+++ b/arch/arc/Kconfig
-@@ -44,6 +44,7 @@ config ARC
- 	select HAVE_GENERIC_DMA_COHERENT
- 	select HAVE_KERNEL_GZIP
- 	select HAVE_KERNEL_LZMA
+diff --git a/arch/h8300/Kconfig b/arch/h8300/Kconfig
+index 091d6d04b5e5..58c9b6b1df16 100644
+--- a/arch/h8300/Kconfig
++++ b/arch/h8300/Kconfig
+@@ -24,6 +24,7 @@ config H8300
+ 	select HAVE_ARCH_HASH
+ 	select CPU_NO_EFFICIENT_FFS
+ 	select DMA_DIRECT_OPS
 +	select INITRAMFS_GENERIC_UNLOAD
  
- config MIGHT_HAVE_PCI
- 	bool
-diff --git a/arch/arc/mm/init.c b/arch/arc/mm/init.c
-index ba145065c579..7bcf23ab1756 100644
---- a/arch/arc/mm/init.c
-+++ b/arch/arc/mm/init.c
-@@ -229,10 +229,3 @@ void __ref free_initmem(void)
- {
- 	free_initmem_default(-1);
+ config CPU_BIG_ENDIAN
+ 	def_bool y
+diff --git a/arch/h8300/mm/init.c b/arch/h8300/mm/init.c
+index 015287ac8ce8..37574332b202 100644
+--- a/arch/h8300/mm/init.c
++++ b/arch/h8300/mm/init.c
+@@ -102,13 +102,6 @@ void __init mem_init(void)
  }
--
+ 
+ 
 -#ifdef CONFIG_BLK_DEV_INITRD
--void __init free_initrd_mem(unsigned long start, unsigned long end)
+-void free_initrd_mem(unsigned long start, unsigned long end)
 -{
 -	free_reserved_area((void *)start, (void *)end, -1, "initrd");
 -}
 -#endif
+-
+ void
+ free_initmem(void)
+ {
 -- 
 2.16.2
 
