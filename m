@@ -1,7 +1,7 @@
 From: Shea Levy <shea@shealevy.com>
-Date: Sun, 25 Mar 2018 22:18:44 +0000
-Subject: [PATCH v2 07/16] h8300: Use INITRAMFS_GENERIC_UNLOAD
-Message-Id: <20180325221853.10839-8-shea@shealevy.com>
+Date: Sun, 25 Mar 2018 22:18:49 +0000
+Subject: [PATCH v2 12/16] openrisc: Use INITRAMFS_GENERIC_UNLOAD
+Message-Id: <20180325221853.10839-13-shea@shealevy.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20180324174458.26423-1-shea@shealevy.com>
  <20180325221853.10839-1-shea@shealevy.com>
@@ -14,29 +14,29 @@ Cc: Shea Levy <shea@shealevy.com>
 
 Signed-off-by: Shea Levy <shea@shealevy.com>
 ---
- arch/h8300/Kconfig   | 1 +
- arch/h8300/mm/init.c | 7 -------
+ arch/openrisc/Kconfig   | 1 +
+ arch/openrisc/mm/init.c | 7 -------
  2 files changed, 1 insertion(+), 7 deletions(-)
 
-diff --git a/arch/h8300/Kconfig b/arch/h8300/Kconfig
-index 091d6d04b5e5..58c9b6b1df16 100644
---- a/arch/h8300/Kconfig
-+++ b/arch/h8300/Kconfig
-@@ -24,6 +24,7 @@ config H8300
- 	select HAVE_ARCH_HASH
- 	select CPU_NO_EFFICIENT_FFS
- 	select DMA_DIRECT_OPS
+diff --git a/arch/openrisc/Kconfig b/arch/openrisc/Kconfig
+index dfb6a79ba7ff..0f8d2132baa5 100644
+--- a/arch/openrisc/Kconfig
++++ b/arch/openrisc/Kconfig
+@@ -36,6 +36,7 @@ config OPENRISC
+ 	select OMPIC if SMP
+ 	select ARCH_WANT_FRAME_POINTERS
+ 	select GENERIC_IRQ_MULTI_HANDLER
 +	select INITRAMFS_GENERIC_UNLOAD
  
  config CPU_BIG_ENDIAN
  	def_bool y
-diff --git a/arch/h8300/mm/init.c b/arch/h8300/mm/init.c
-index 015287ac8ce8..37574332b202 100644
---- a/arch/h8300/mm/init.c
-+++ b/arch/h8300/mm/init.c
-@@ -102,13 +102,6 @@ void __init mem_init(void)
+diff --git a/arch/openrisc/mm/init.c b/arch/openrisc/mm/init.c
+index 6972d5d6f23f..c1a3dcf9ad40 100644
+--- a/arch/openrisc/mm/init.c
++++ b/arch/openrisc/mm/init.c
+@@ -222,13 +222,6 @@ void __init mem_init(void)
+ 	return;
  }
- 
  
 -#ifdef CONFIG_BLK_DEV_INITRD
 -void free_initrd_mem(unsigned long start, unsigned long end)
@@ -45,9 +45,9 @@ index 015287ac8ce8..37574332b202 100644
 -}
 -#endif
 -
- void
- free_initmem(void)
+ void free_initmem(void)
  {
+ 	free_initmem_default(-1);
 -- 
 2.16.2
 
