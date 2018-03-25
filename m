@@ -1,10 +1,11 @@
 From: Shea Levy <shea@shealevy.com>
-Date: Sat, 24 Mar 2018 17:44:45 +0000
-Subject: [PATCH 03/16] alpha: Use INITRAMFS_GENERIC_UNLOAD
-Message-Id: <20180324174458.26423-4-shea@shealevy.com>
+Date: Sun, 25 Mar 2018 22:18:51 +0000
+Subject: [PATCH v2 14/16] powerpc: Use INITRAMFS_GENERIC_UNLOAD
+Message-Id: <20180325221853.10839-15-shea@shealevy.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20180324174458.26423-1-shea@shealevy.com>
-In-Reply-To: <20180324174458.26423-1-shea@shealevy.com>
+ <20180325221853.10839-1-shea@shealevy.com>
+In-Reply-To: <20180325221853.10839-1-shea@shealevy.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -13,38 +14,40 @@ Cc: Shea Levy <shea@shealevy.com>
 
 Signed-off-by: Shea Levy <shea@shealevy.com>
 ---
- arch/alpha/Kconfig   | 1 +
- arch/alpha/mm/init.c | 8 --------
- 2 files changed, 1 insertion(+), 8 deletions(-)
+ arch/powerpc/Kconfig  | 1 +
+ arch/powerpc/mm/mem.c | 7 -------
+ 2 files changed, 1 insertion(+), 7 deletions(-)
 
-diff --git a/arch/alpha/Kconfig b/arch/alpha/Kconfig
-index e96adcbcab41..238d743ae8f2 100644
---- a/arch/alpha/Kconfig
-+++ b/arch/alpha/Kconfig
-@@ -27,6 +27,7 @@ config ALPHA
- 	select ODD_RT_SIGACTION
- 	select OLD_SIGSUSPEND
- 	select CPU_NO_EFFICIENT_FFS if !ALPHA_EV67
+diff --git a/arch/powerpc/Kconfig b/arch/powerpc/Kconfig
+index 73ce5dd07642..8cf384068e79 100644
+--- a/arch/powerpc/Kconfig
++++ b/arch/powerpc/Kconfig
+@@ -223,6 +223,7 @@ config PPC
+ 	select HAVE_SYSCALL_TRACEPOINTS
+ 	select HAVE_VIRT_CPU_ACCOUNTING
+ 	select HAVE_IRQ_TIME_ACCOUNTING
 +	select INITRAMFS_GENERIC_UNLOAD
- 	help
- 	  The Alpha is a 64-bit general-purpose processor designed and
- 	  marketed by the Digital Equipment Corporation of blessed memory,
-diff --git a/arch/alpha/mm/init.c b/arch/alpha/mm/init.c
-index 9d74520298ab..55f7c8efa962 100644
---- a/arch/alpha/mm/init.c
-+++ b/arch/alpha/mm/init.c
-@@ -291,11 +291,3 @@ free_initmem(void)
- {
- 	free_initmem_default(-1);
+ 	select IRQ_DOMAIN
+ 	select IRQ_FORCED_THREADING
+ 	select MODULES_USE_ELF_RELA
+diff --git a/arch/powerpc/mm/mem.c b/arch/powerpc/mm/mem.c
+index fe8c61149fb8..e85b2a3cd264 100644
+--- a/arch/powerpc/mm/mem.c
++++ b/arch/powerpc/mm/mem.c
+@@ -404,13 +404,6 @@ void free_initmem(void)
+ 	free_initmem_default(POISON_FREE_INITMEM);
  }
--
+ 
 -#ifdef CONFIG_BLK_DEV_INITRD
--void
--free_initrd_mem(unsigned long start, unsigned long end)
+-void __init free_initrd_mem(unsigned long start, unsigned long end)
 -{
 -	free_reserved_area((void *)start, (void *)end, -1, "initrd");
 -}
 -#endif
+-
+ /*
+  * This is called when a page has been modified by the kernel.
+  * It just marks the page as not i-cache clean.  We do the i-cache
 -- 
 2.16.2
 
