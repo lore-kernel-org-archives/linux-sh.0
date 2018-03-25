@@ -1,10 +1,11 @@
 From: Shea Levy <shea@shealevy.com>
-Date: Sat, 24 Mar 2018 17:44:51 +0000
-Subject: [PATCH 09/16] m68k: Use INITRAMFS_GENERIC_UNLOAD
-Message-Id: <20180324174458.26423-10-shea@shealevy.com>
+Date: Sun, 25 Mar 2018 22:18:46 +0000
+Subject: [PATCH v2 09/16] m68k: Use INITRAMFS_GENERIC_UNLOAD
+Message-Id: <20180325221853.10839-10-shea@shealevy.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20180324174458.26423-1-shea@shealevy.com>
-In-Reply-To: <20180324174458.26423-1-shea@shealevy.com>
+ <20180325221853.10839-1-shea@shealevy.com>
+In-Reply-To: <20180325221853.10839-1-shea@shealevy.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
