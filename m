@@ -1,27 +1,53 @@
-From: <bruno@solunagreen.com>
-Date: Fri, 16 Mar 2018 12:15:24 +0000
-Subject: Invoice # 9437174237 Problem
-Message-Id: <11468343371.2018316121524@vger.kernel.org>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="----=_NextPart_000_004E_FA3C0298.9DB5CB8C"
+From: Shea Levy <shea@shealevy.com>
+Date: Sun, 25 Mar 2018 22:18:44 +0000
+Subject: [PATCH v2 07/16] h8300: Use INITRAMFS_GENERIC_UNLOAD
+Message-Id: <20180325221853.10839-8-shea@shealevy.com>
 List-Id: <linux-sh.vger.kernel.org>
-To: linux-sh@vger.kernel.org
+References: <20180324174458.26423-1-shea@shealevy.com>
+ <20180325221853.10839-1-shea@shealevy.com>
+In-Reply-To: <20180325221853.10839-1-shea@shealevy.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-c6x-dev@linux-c6x.org, uclinux-h8-devel@lists.sourceforge.jp, linux-m68k@lists.linux-m68k.org, nios2-dev@lists.rocketboards.org, openrisc@lists.librecores.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org, linux-sh@vger.kernel.org, user-mode-linux-devel@lists.sourceforge.net
+Cc: Shea Levy <shea@shealevy.com>
 
-------=_NextPart_000_004E_FA3C0298.9DB5CB8C
-Content-Type: text/plain
-Content-Transfer-Encoding: quoted-printable
+Signed-off-by: Shea Levy <shea@shealevy.com>
+---
+ arch/h8300/Kconfig   | 1 +
+ arch/h8300/mm/init.c | 7 -------
+ 2 files changed, 1 insertion(+), 7 deletions(-)
 
-Morning=20
+diff --git a/arch/h8300/Kconfig b/arch/h8300/Kconfig
+index 091d6d04b5e5..58c9b6b1df16 100644
+--- a/arch/h8300/Kconfig
++++ b/arch/h8300/Kconfig
+@@ -24,6 +24,7 @@ config H8300
+ 	select HAVE_ARCH_HASH
+ 	select CPU_NO_EFFICIENT_FFS
+ 	select DMA_DIRECT_OPS
++	select INITRAMFS_GENERIC_UNLOAD
+ 
+ config CPU_BIG_ENDIAN
+ 	def_bool y
+diff --git a/arch/h8300/mm/init.c b/arch/h8300/mm/init.c
+index 015287ac8ce8..37574332b202 100644
+--- a/arch/h8300/mm/init.c
++++ b/arch/h8300/mm/init.c
+@@ -102,13 +102,6 @@ void __init mem_init(void)
+ }
+ 
+ 
+-#ifdef CONFIG_BLK_DEV_INITRD
+-void free_initrd_mem(unsigned long start, unsigned long end)
+-{
+-	free_reserved_area((void *)start, (void *)end, -1, "initrd");
+-}
+-#endif
+-
+ void
+ free_initmem(void)
+ {
+-- 
+2.16.2
 
-
-=0DI called you, but could not reach you the other day, please reply back a=
-bout this past due invoice asap.
-
-> http://edsqualityflooring.com/Question/
-
-
-
-=0DMany Thanks
-
-
-------=_NextPart_000_004E_FA3C0298.9DB5CB8C--
