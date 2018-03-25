@@ -1,10 +1,11 @@
 From: Shea Levy <shea@shealevy.com>
-Date: Sat, 24 Mar 2018 17:44:57 +0000
-Subject: [PATCH 15/16] sh: Use INITRAMFS_GENERIC_UNLOAD
-Message-Id: <20180324174458.26423-16-shea@shealevy.com>
+Date: Sun, 25 Mar 2018 22:18:38 +0000
+Subject: [PATCH v2 01/16] initrd: Add generic code path for common initrd unloading logic.
+Message-Id: <20180325221853.10839-2-shea@shealevy.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20180324174458.26423-1-shea@shealevy.com>
-In-Reply-To: <20180324174458.26423-1-shea@shealevy.com>
+ <20180325221853.10839-1-shea@shealevy.com>
+In-Reply-To: <20180325221853.10839-1-shea@shealevy.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -13,40 +14,40 @@ Cc: Shea Levy <shea@shealevy.com>
 
 Signed-off-by: Shea Levy <shea@shealevy.com>
 ---
- arch/sh/Kconfig   | 1 +
- arch/sh/mm/init.c | 7 -------
- 2 files changed, 1 insertion(+), 7 deletions(-)
+ init/initramfs.c | 7 +++++++
+ usr/Kconfig      | 4 ++++
+ 2 files changed, 11 insertions(+)
 
-diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-index 97fe29316476..b6f80dad2152 100644
---- a/arch/sh/Kconfig
-+++ b/arch/sh/Kconfig
-@@ -50,6 +50,7 @@ config SUPERH
- 	select HAVE_ARCH_AUDITSYSCALL
- 	select HAVE_FUTEX_CMPXCHG if FUTEX
- 	select HAVE_NMI
-+	select INITRAMFS_GENERIC_UNLOAD
- 	help
- 	  The SuperH is a RISC processor targeted for use in embedded systems
- 	  and consumer electronics; it was also used in the Sega Dreamcast
-diff --git a/arch/sh/mm/init.c b/arch/sh/mm/init.c
-index ce0bbaa7e404..7451459d0725 100644
---- a/arch/sh/mm/init.c
-+++ b/arch/sh/mm/init.c
-@@ -477,13 +477,6 @@ void free_initmem(void)
- 	free_initmem_default(-1);
- }
+diff --git a/init/initramfs.c b/init/initramfs.c
+index 7e99a0038942..5f2e3dba4822 100644
+--- a/init/initramfs.c
++++ b/init/initramfs.c
+@@ -526,6 +526,13 @@ extern unsigned long __initramfs_size;
+ #include <linux/initrd.h>
+ #include <linux/kexec.h>
  
--#ifdef CONFIG_BLK_DEV_INITRD
--void free_initrd_mem(unsigned long start, unsigned long end)
--{
--	free_reserved_area((void *)start, (void *)end, -1, "initrd");
--}
--#endif
--
- #ifdef CONFIG_MEMORY_HOTPLUG
- int arch_add_memory(int nid, u64 start, u64 size, struct vmem_altmap *altmap,
- 		bool want_memblock)
++#ifdef CONFIG_INITRAMFS_GENERIC_UNLOAD
++void __init free_initrd_mem(unsigned long start, unsigned long end)
++{
++       free_reserved_area((void *)start, (void *)end, -1, "initrd");
++}
++#endif
++
+ static void __init free_initrd(void)
+ {
+ #ifdef CONFIG_KEXEC_CORE
+diff --git a/usr/Kconfig b/usr/Kconfig
+index 43658b8a975e..fd79d4d6fa26 100644
+--- a/usr/Kconfig
++++ b/usr/Kconfig
+@@ -233,3 +233,7 @@ config INITRAMFS_COMPRESSION
+ 	default ".lzma" if RD_LZMA
+ 	default ".bz2"  if RD_BZIP2
+ 	default ""
++
++# Arches can select this for a generic initrd unloading codepath
++config INITRAMFS_GENERIC_UNLOAD
++	bool
 -- 
 2.16.2
 
