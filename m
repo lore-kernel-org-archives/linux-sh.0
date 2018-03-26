@@ -1,53 +1,87 @@
-From: Shea Levy <shea@shealevy.com>
-Date: Sun, 25 Mar 2018 22:18:48 +0000
-Subject: [PATCH v2 11/16] nios2: Use INITRAMFS_GENERIC_UNLOAD
-Message-Id: <20180325221853.10839-12-shea@shealevy.com>
+From: Thomas Petazzoni <thomas.petazzoni@bootlin.com>
+Date: Mon, 26 Mar 2018 21:27:14 +0000
+Subject: [PATCH 1/2] arch/sh: make l2_cache_init() return an integer
+Message-Id: <20180326212715.12907-2-thomas.petazzoni@bootlin.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180324174458.26423-1-shea@shealevy.com>
- <20180325221853.10839-1-shea@shealevy.com>
-In-Reply-To: <20180325221853.10839-1-shea@shealevy.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-c6x-dev@linux-c6x.org, uclinux-h8-devel@lists.sourceforge.jp, linux-m68k@lists.linux-m68k.org, nios2-dev@lists.rocketboards.org, openrisc@lists.librecores.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org, linux-sh@vger.kernel.org, user-mode-linux-devel@lists.sourceforge.net
-Cc: Shea Levy <shea@shealevy.com>
+To: linux-sh@vger.kernel.org
 
-Signed-off-by: Shea Levy <shea@shealevy.com>
+On some SH platforms, enabling the L2 cache requires changing bits in
+the CCR register. However, this register is already being changed by
+the cache_init() function in arch/sh/kernel/cpu/init.c function, so
+the l2_cache_init() function called by cache_init() cannot change CCR
+as well.
+
+In order to solve this, we change l2_cache_init() into a function that
+returns a bit mask that will be OR'ed into the value written to the
+CCR register by cache_init(). It won't support all possible
+situations, but will be good enough to enable L2 on SH7786.
+
+Signed-off-by: Thomas Petazzoni <thomas.petazzoni@bootlin.com>
 ---
- arch/nios2/Kconfig   | 1 +
- arch/nios2/mm/init.c | 7 -------
- 2 files changed, 1 insertion(+), 7 deletions(-)
+ arch/sh/kernel/cpu/init.c              | 4 ++--
+ arch/sh/kernel/cpu/sh4a/setup-sh7723.c | 3 ++-
+ arch/sh/kernel/cpu/sh4a/setup-sh7724.c | 3 ++-
+ 3 files changed, 6 insertions(+), 4 deletions(-)
 
-diff --git a/arch/nios2/Kconfig b/arch/nios2/Kconfig
-index 3d4ec88f1db1..d3b72d5c8967 100644
---- a/arch/nios2/Kconfig
-+++ b/arch/nios2/Kconfig
-@@ -19,6 +19,7 @@ config NIOS2
- 	select SPARSE_IRQ
- 	select USB_ARCH_HAS_HCD if USB_SUPPORT
- 	select CPU_NO_EFFICIENT_FFS
-+	select INITRAMFS_GENERIC_UNLOAD
+diff --git a/arch/sh/kernel/cpu/init.c b/arch/sh/kernel/cpu/init.c
+index c4f01c5c8736..eb6775cdb9fc 100644
+--- a/arch/sh/kernel/cpu/init.c
++++ b/arch/sh/kernel/cpu/init.c
+@@ -99,7 +99,7 @@ static void expmask_init(void)
+ #endif
  
- config GENERIC_CSUM
- 	def_bool y
-diff --git a/arch/nios2/mm/init.c b/arch/nios2/mm/init.c
-index c92fe4234009..3df75ff8c768 100644
---- a/arch/nios2/mm/init.c
-+++ b/arch/nios2/mm/init.c
-@@ -82,13 +82,6 @@ void __init mmu_init(void)
- 	flush_tlb_all();
+ /* 2nd-level cache init */
+-void __attribute__ ((weak)) l2_cache_init(void)
++int __attribute__ ((weak)) l2_cache_init(void)
+ {
  }
  
--#ifdef CONFIG_BLK_DEV_INITRD
--void __init free_initrd_mem(unsigned long start, unsigned long end)
--{
--	free_reserved_area((void *)start, (void *)end, -1, "initrd");
--}
--#endif
--
- void __ref free_initmem(void)
+@@ -187,7 +187,7 @@ static void cache_init(void)
+ 	flags &= ~CCR_CACHE_ENABLE;
+ #endif
+ 
+-	l2_cache_init();
++	flags |= l2_cache_init();
+ 
+ 	__raw_writel(flags, SH_CCR);
+ 	back_to_cached();
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7723.c b/arch/sh/kernel/cpu/sh4a/setup-sh7723.c
+index 1c1b3c469831..c6c29206dee7 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7723.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7723.c
+@@ -421,10 +421,11 @@ void __init plat_early_device_setup(void)
+ #define RAMCR_CACHE_L2E		0x0001
+ #define L2_CACHE_ENABLE		(RAMCR_CACHE_L2E|RAMCR_CACHE_L2FC)
+ 
+-void l2_cache_init(void)
++int l2_cache_init(void)
  {
- 	free_initmem_default(-1);
+ 	/* Enable L2 cache */
+ 	__raw_writel(L2_CACHE_ENABLE, RAMCR);
++	return 0;
+ }
+ 
+ enum {
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7724.c b/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
+index c20258b18775..ee9f5209adf0 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
+@@ -841,10 +841,11 @@ void __init plat_early_device_setup(void)
+ #define RAMCR_CACHE_L2E		0x0001
+ #define L2_CACHE_ENABLE		(RAMCR_CACHE_L2E|RAMCR_CACHE_L2FC)
+ 
+-void l2_cache_init(void)
++int l2_cache_init(void)
+ {
+ 	/* Enable L2 cache */
+ 	__raw_writel(L2_CACHE_ENABLE, RAMCR);
++	return 0;
+ }
+ 
+ enum {
 -- 
-2.16.2
+2.14.3
 
