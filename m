@@ -1,111 +1,103 @@
-From: Huacai Chen <chenhc@lemote.com>
-Date: Mon, 05 Mar 2018 06:18:41 +0000
-Subject: [PATCH] ZBOOT: fix stack protector in compressed boot phase
-Message-Id: <1520230721-1839-1-git-send-email-chenhc@lemote.com>
+From: Thomas Petazzoni <thomas.petazzoni@bootlin.com>
+Date: Mon, 26 Mar 2018 21:25:26 +0000
+Subject: [PATCH 4/5] arch/sh: pcie-sh7786: add error handling to phy_write_reg()
+Message-Id: <20180326212527.12565-5-thomas.petazzoni@bootlin.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Call __stack_chk_guard_setup() in decompress_kernel() is too late that
-stack checking always fails for decompress_kernel() itself. So remove
-__stack_chk_guard_setup() and initialize __stack_chk_guard at where we
-define it.
+Instead of ignoring timeout errors occuring in phy_wait_for_ack(),
+propagate them in phy_write_reg(), and check for errors in phy_init().
 
-Original code comes from ARM but also used for MIPS and SH, so fix them
-together. If without this fix, compressed booting of these archs will
-fail because stack checking is enabled by default (>=4.16).
+In phy_init(), we don't really care which PHY write failed, as long as
+one of them failed we return an error.
 
-Cc: stable@vger.kernel.org
-Signed-off-by: Huacai Chen <chenhc@lemote.com>
+Signed-off-by: Thomas Petazzoni <thomas.petazzoni@bootlin.com>
 ---
- arch/arm/boot/compressed/misc.c        | 9 +--------
- arch/mips/boot/compressed/decompress.c | 9 +--------
- arch/sh/boot/compressed/misc.c         | 9 +--------
- 3 files changed, 3 insertions(+), 24 deletions(-)
+ arch/sh/drivers/pci/pcie-sh7786.c | 37 ++++++++++++++++++++++++-------------
+ 1 file changed, 24 insertions(+), 13 deletions(-)
 
-diff --git a/arch/arm/boot/compressed/misc.c b/arch/arm/boot/compressed/misc.c
-index 16a8a80..43aca75 100644
---- a/arch/arm/boot/compressed/misc.c
-+++ b/arch/arm/boot/compressed/misc.c
-@@ -128,12 +128,7 @@ asmlinkage void __div0(void)
- 	error("Attempting division by 0!");
+diff --git a/arch/sh/drivers/pci/pcie-sh7786.c b/arch/sh/drivers/pci/pcie-sh7786.c
+index 01a45ce8b2da..88841ceb2f06 100644
+--- a/arch/sh/drivers/pci/pcie-sh7786.c
++++ b/arch/sh/drivers/pci/pcie-sh7786.c
+@@ -185,10 +185,11 @@ static int __init pci_wait_for_irq(struct pci_channel *chan, unsigned int mask)
+ 	return -ETIMEDOUT;
  }
  
--unsigned long __stack_chk_guard;
--
--void __stack_chk_guard_setup(void)
--{
--	__stack_chk_guard = 0x000a0dff;
--}
-+unsigned long __stack_chk_guard = 0x000a0dff;
- 
- void __stack_chk_fail(void)
+-static void __init phy_write_reg(struct pci_channel *chan, unsigned int addr,
+-				 unsigned int lane, unsigned int data)
++static int __init phy_write_reg(struct pci_channel *chan, unsigned int addr,
++				unsigned int lane, unsigned int data)
  {
-@@ -150,8 +145,6 @@ decompress_kernel(unsigned long output_start, unsigned long free_mem_ptr_p,
- {
- 	int ret;
+ 	unsigned long phyaddr;
++	int ret;
  
--	__stack_chk_guard_setup();
--
- 	output_data		= (unsigned char *)output_start;
- 	free_mem_ptr		= free_mem_ptr_p;
- 	free_mem_end_ptr	= free_mem_ptr_end_p;
-diff --git a/arch/mips/boot/compressed/decompress.c b/arch/mips/boot/compressed/decompress.c
-index fdf99e9..0694b3f 100644
---- a/arch/mips/boot/compressed/decompress.c
-+++ b/arch/mips/boot/compressed/decompress.c
-@@ -76,12 +76,7 @@ void error(char *x)
- #include "../../../../lib/decompress_unxz.c"
- #endif
+ 	phyaddr = (1 << BITS_CMD) + ((lane & 0xf) << BITS_LANE) +
+ 			((addr & 0xff) << BITS_ADR);
+@@ -197,13 +198,19 @@ static void __init phy_write_reg(struct pci_channel *chan, unsigned int addr,
+ 	pci_write_reg(chan, data, SH4A_PCIEPHYDOUTR);
+ 	pci_write_reg(chan, phyaddr, SH4A_PCIEPHYADRR);
  
--unsigned long __stack_chk_guard;
--
--void __stack_chk_guard_setup(void)
--{
--	__stack_chk_guard = 0x000a0dff;
--}
-+unsigned long __stack_chk_guard = 0x000a0dff;
+-	phy_wait_for_ack(chan, true);
++	ret = phy_wait_for_ack(chan, true);
++	if (ret)
++		return ret;
  
- void __stack_chk_fail(void)
- {
-@@ -92,8 +87,6 @@ void decompress_kernel(unsigned long boot_heap_start)
- {
- 	unsigned long zimage_start, zimage_size;
+ 	/* Clear command */
+ 	pci_write_reg(chan, 0, SH4A_PCIEPHYDOUTR);
+ 	pci_write_reg(chan, 0, SH4A_PCIEPHYADRR);
  
--	__stack_chk_guard_setup();
--
- 	zimage_start = (unsigned long)(&__image_begin);
- 	zimage_size = (unsigned long)(&__image_end) -
- 	    (unsigned long)(&__image_begin);
-diff --git a/arch/sh/boot/compressed/misc.c b/arch/sh/boot/compressed/misc.c
-index 627ce8e..2c564c2 100644
---- a/arch/sh/boot/compressed/misc.c
-+++ b/arch/sh/boot/compressed/misc.c
-@@ -104,12 +104,7 @@ static void error(char *x)
- 	while(1);	/* Halt */
+-	phy_wait_for_ack(chan, false);
++	ret = phy_wait_for_ack(chan, false);
++	if (ret)
++		return ret;
++
++	return 0;
  }
  
--unsigned long __stack_chk_guard;
--
--void __stack_chk_guard_setup(void)
--{
--	__stack_chk_guard = 0x000a0dff;
--}
-+unsigned long __stack_chk_guard = 0x000a0dff;
- 
- void __stack_chk_fail(void)
+ static int __init pcie_clk_init(struct sh7786_pcie_port *port)
+@@ -266,25 +273,29 @@ static int __init phy_init(struct sh7786_pcie_port *port)
  {
-@@ -130,8 +125,6 @@ void decompress_kernel(void)
- {
- 	unsigned long output_addr;
+ 	struct pci_channel *chan = port->hose;
+ 	unsigned int timeout = 100;
++	int ret = 0;
  
--	__stack_chk_guard_setup();
--
- #ifdef CONFIG_SUPERH64
- 	output_addr = (CONFIG_MEMORY_START + 0x2000);
- #else
+ 	clk_enable(&port->phy_clk);
+ 
+ 	/* Initialize the phy */
+-	phy_write_reg(chan, 0x60, 0xf, 0x004b008b);
+-	phy_write_reg(chan, 0x61, 0xf, 0x00007b41);
+-	phy_write_reg(chan, 0x64, 0xf, 0x00ff4f00);
+-	phy_write_reg(chan, 0x65, 0xf, 0x09070907);
+-	phy_write_reg(chan, 0x66, 0xf, 0x00000010);
+-	phy_write_reg(chan, 0x74, 0xf, 0x0007001c);
+-	phy_write_reg(chan, 0x79, 0xf, 0x01fc000d);
+-	phy_write_reg(chan, 0xb0, 0xf, 0x00000610);
++	ret |= phy_write_reg(chan, 0x60, 0xf, 0x004b008b);
++	ret |= phy_write_reg(chan, 0x61, 0xf, 0x00007b41);
++	ret |= phy_write_reg(chan, 0x64, 0xf, 0x00ff4f00);
++	ret |= phy_write_reg(chan, 0x65, 0xf, 0x09070907);
++	ret |= phy_write_reg(chan, 0x66, 0xf, 0x00000010);
++	ret |= phy_write_reg(chan, 0x74, 0xf, 0x0007001c);
++	ret |= phy_write_reg(chan, 0x79, 0xf, 0x01fc000d);
++	ret |= phy_write_reg(chan, 0xb0, 0xf, 0x00000610);
+ 
+ 	/* Deassert Standby */
+-	phy_write_reg(chan, 0x67, 0x1, 0x00000400);
++	ret |= phy_write_reg(chan, 0x67, 0x1, 0x00000400);
+ 
+ 	/* Disable clock */
+ 	clk_disable(&port->phy_clk);
+ 
++	if (ret)
++		return ret;
++
+ 	while (timeout--) {
+ 		if (pci_read_reg(chan, SH4A_PCIEPHYSR))
+ 			return 0;
 -- 
-2.7.0
+2.14.3
 
