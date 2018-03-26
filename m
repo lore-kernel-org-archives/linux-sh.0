@@ -1,39 +1,38 @@
-From: Shea Levy <shea@shealevy.com>
-Date: Wed, 28 Mar 2018 20:36:58 +0000
-Subject: [PATCH v4 15/16] sh: Use generic free_initrd_mem.
-Message-Id: <20180328203659.18692-16-shea@shealevy.com>
+From: Thomas Petazzoni <thomas.petazzoni@bootlin.com>
+Date: Mon, 26 Mar 2018 21:25:27 +0000
+Subject: [PATCH 5/5] arch/sh: pcie-sh7786: do not disable MAC data scrambling
+Message-Id: <20180326212527.12565-6-thomas.petazzoni@bootlin.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180328152714.6103-1-shea@shealevy.com>
- <20180328203659.18692-1-shea@shealevy.com>
-In-Reply-To: <20180328203659.18692-1-shea@shealevy.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-riscv@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Signed-off-by: Shea Levy <shea@shealevy.com>
+The code enables MAC data scrambling, and then later disables
+it. Disabling MAC data is mostly a debugging feature, data scrambling
+should normally be enabled.
+
+Signed-off-by: Thomas Petazzoni <thomas.petazzoni@bootlin.com>
 ---
- arch/sh/mm/init.c | 7 -------
- 1 file changed, 7 deletions(-)
+ arch/sh/drivers/pci/pcie-sh7786.c | 5 -----
+ 1 file changed, 5 deletions(-)
 
-diff --git a/arch/sh/mm/init.c b/arch/sh/mm/init.c
-index ce0bbaa7e404..7451459d0725 100644
---- a/arch/sh/mm/init.c
-+++ b/arch/sh/mm/init.c
-@@ -477,13 +477,6 @@ void free_initmem(void)
- 	free_initmem_default(-1);
- }
+diff --git a/arch/sh/drivers/pci/pcie-sh7786.c b/arch/sh/drivers/pci/pcie-sh7786.c
+index 88841ceb2f06..ca72e838ce62 100644
+--- a/arch/sh/drivers/pci/pcie-sh7786.c
++++ b/arch/sh/drivers/pci/pcie-sh7786.c
+@@ -427,11 +427,6 @@ static int __init pcie_init(struct sh7786_pcie_port *port)
+ 	data |= PCIEDLINTENR_DLL_ACT_ENABLE;
+ 	pci_write_reg(chan, data, SH4A_PCIEDLINTENR);
  
--#ifdef CONFIG_BLK_DEV_INITRD
--void free_initrd_mem(unsigned long start, unsigned long end)
--{
--	free_reserved_area((void *)start, (void *)end, -1, "initrd");
--}
--#endif
+-	/* Disable MAC data scrambling. */
+-	data = pci_read_reg(chan, SH4A_PCIEMACCTLR);
+-	data |= PCIEMACCTLR_SCR_DIS | (0xff << 16);
+-	pci_write_reg(chan, data, SH4A_PCIEMACCTLR);
 -
- #ifdef CONFIG_MEMORY_HOTPLUG
- int arch_add_memory(int nid, u64 start, u64 size, struct vmem_altmap *altmap,
- 		bool want_memblock)
+ 	/*
+ 	 * This will timeout if we don't have a link, but we permit the
+ 	 * port to register anyways in order to support hotplug on future
 -- 
-2.16.2
+2.14.3
 
