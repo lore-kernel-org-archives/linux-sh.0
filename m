@@ -1,16 +1,33 @@
-From: Albrecht Solicitor <maria.barba@06d01.mspz3.gob.ec>
-Date: Thu, 22 Mar 2018 22:15:01 +0000
-Subject: Business Proposal
-Message-Id: <20180322222638.41658236D3F6@06d01.mspz3.gob.ec>
+From: Thomas Petazzoni <thomas.petazzoni@bootlin.com>
+Date: Mon, 26 Mar 2018 21:27:13 +0000
+Subject: [PATCH 0/2] arch/sh: enable L2 cache on SH7786
+Message-Id: <20180326212715.12907-1-thomas.petazzoni@bootlin.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Recipients <maria.barba@06d01.mspz3.gob.ec>
+To: linux-sh@vger.kernel.org
 
-Good day!
+Hello,
 
-I seek your consent to present you as the beneficiary of an unclaimed financial estate belonging to my late client. I am contacting you because you share a similar name as his. Get back to me so I give you comprehensive details if interested.
+This small series enables the L2 cache on SH7786, bringing nice
+performance improvements.
 
-Regards
-Albrecht.
+Thanks!
+
+Thomas
+
+Thomas Petazzoni (2):
+  arch/sh: make l2_cache_init() return an integer
+  arch/sh: enable L2 cache on SH7786
+
+ arch/sh/include/cpu-sh4/cpu/cache.h    | 2 ++
+ arch/sh/kernel/cpu/init.c              | 4 ++--
+ arch/sh/kernel/cpu/sh4a/setup-sh7723.c | 3 ++-
+ arch/sh/kernel/cpu/sh4a/setup-sh7724.c | 3 ++-
+ arch/sh/kernel/cpu/sh4a/setup-sh7786.c | 7 +++++++
+ 5 files changed, 15 insertions(+), 4 deletions(-)
+
+-- 
+2.14.3
+
