@@ -1,52 +1,61 @@
-From: Shea Levy <shea@shealevy.com>
-Date: Sat, 24 Mar 2018 17:44:56 +0000
-Subject: [PATCH 14/16] powerpc: Use INITRAMFS_GENERIC_UNLOAD
-Message-Id: <20180324174458.26423-15-shea@shealevy.com>
+From: Thomas Petazzoni <thomas.petazzoni@bootlin.com>
+Date: Mon, 26 Mar 2018 21:27:15 +0000
+Subject: [PATCH 2/2] arch/sh: enable L2 cache on SH7786
+Message-Id: <20180326212715.12907-3-thomas.petazzoni@bootlin.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180324174458.26423-1-shea@shealevy.com>
-In-Reply-To: <20180324174458.26423-1-shea@shealevy.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-c6x-dev@linux-c6x.org, uclinux-h8-devel@lists.sourceforge.jp, linux-m68k@lists.linux-m68k.org, nios2-dev@lists.rocketboards.org, openrisc@lists.librecores.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org, linux-sh@vger.kernel.org, user-mode-linux-devel@lists.sourceforge.net
-Cc: Shea Levy <shea@shealevy.com>
+To: linux-sh@vger.kernel.org
 
-Signed-off-by: Shea Levy <shea@shealevy.com>
+This brings a significant performance improvement in some specific
+scenarios, so let's enable the L2 cache.
+
+Signed-off-by: Thomas Petazzoni <thomas.petazzoni@bootlin.com>
 ---
- arch/powerpc/Kconfig  | 1 +
- arch/powerpc/mm/mem.c | 7 -------
- 2 files changed, 1 insertion(+), 7 deletions(-)
+ arch/sh/include/cpu-sh4/cpu/cache.h    | 2 ++
+ arch/sh/kernel/cpu/sh4a/setup-sh7786.c | 7 +++++++
+ 2 files changed, 9 insertions(+)
 
-diff --git a/arch/powerpc/Kconfig b/arch/powerpc/Kconfig
-index 73ce5dd07642..8cf384068e79 100644
---- a/arch/powerpc/Kconfig
-+++ b/arch/powerpc/Kconfig
-@@ -223,6 +223,7 @@ config PPC
- 	select HAVE_SYSCALL_TRACEPOINTS
- 	select HAVE_VIRT_CPU_ACCOUNTING
- 	select HAVE_IRQ_TIME_ACCOUNTING
-+	select INITRAMFS_GENERIC_UNLOAD
- 	select IRQ_DOMAIN
- 	select IRQ_FORCED_THREADING
- 	select MODULES_USE_ELF_RELA
-diff --git a/arch/powerpc/mm/mem.c b/arch/powerpc/mm/mem.c
-index fe8c61149fb8..e85b2a3cd264 100644
---- a/arch/powerpc/mm/mem.c
-+++ b/arch/powerpc/mm/mem.c
-@@ -404,13 +404,6 @@ void free_initmem(void)
- 	free_initmem_default(POISON_FREE_INITMEM);
- }
+diff --git a/arch/sh/include/cpu-sh4/cpu/cache.h b/arch/sh/include/cpu-sh4/cpu/cache.h
+index 92c4cd119b66..6765e18ac6a5 100644
+--- a/arch/sh/include/cpu-sh4/cpu/cache.h
++++ b/arch/sh/include/cpu-sh4/cpu/cache.h
+@@ -22,10 +22,12 @@
+ #define CCR_CACHE_WT	0x0002	/* Write-Through (for P0,U0,P3) (else writeback)*/
+ #define CCR_CACHE_CB	0x0004	/* Copy-Back (for P1) (else writethrough) */
+ #define CCR_CACHE_OCI	0x0008	/* OC Invalidate */
++#define CCR_CACHE_L2OE	0x0010  /* Operand Secondary Cache Enable */
+ #define CCR_CACHE_ORA	0x0020	/* OC RAM Mode */
+ #define CCR_CACHE_OIX	0x0080	/* OC Index Enable */
+ #define CCR_CACHE_ICE	0x0100	/* Instruction Cache Enable */
+ #define CCR_CACHE_ICI	0x0800	/* IC Invalidate */
++#define CCR_CACHE_L2IE	0x1000  /* Instruction Secondary Cache Enable */
+ #define CCR_CACHE_IIX	0x8000	/* IC Index Enable */
+ #ifndef CONFIG_CPU_SH4A
+ #define CCR_CACHE_EMODE	0x80000000	/* EMODE Enable */
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7786.c b/arch/sh/kernel/cpu/sh4a/setup-sh7786.c
+index 17aac38a6e90..63fb246e23a9 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7786.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7786.c
+@@ -27,6 +27,8 @@
+ #include <cpu/dma-register.h>
+ #include <asm/mmzone.h>
  
--#ifdef CONFIG_BLK_DEV_INITRD
--void __init free_initrd_mem(unsigned long start, unsigned long end)
--{
--	free_reserved_area((void *)start, (void *)end, -1, "initrd");
--}
--#endif
--
- /*
-  * This is called when a page has been modified by the kernel.
-  * It just marks the page as not i-cache clean.  We do the i-cache
++#include <asm/cache.h>
++
+ static struct plat_sci_port scif0_platform_data = {
+ 	.scscr		= SCSCR_REIE | SCSCR_CKE1,
+ 	.type		= PORT_SCIF,
+@@ -840,3 +842,8 @@ void __init plat_early_device_setup(void)
+ 	early_platform_add_devices(sh7786_early_devices,
+ 				   ARRAY_SIZE(sh7786_early_devices));
+ }
++
++int l2_cache_init(void)
++{
++	return CCR_CACHE_L2OE | CCR_CACHE_L2IE;
++}
 -- 
-2.16.2
+2.14.3
 
