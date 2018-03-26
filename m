@@ -1,82 +1,69 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Sat, 24 Mar 2018 12:31:13 +0000
-Subject: Re: [PATCH v2 0/4] i2c: pca-platform: additional improvements
-Message-Id: <20180324123113.u6c3p4u3uxsv2gcc@ninjato>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="sxbkkaxi7blcjj7k"
+From: Thomas Petazzoni <thomas.petazzoni@bootlin.com>
+Date: Mon, 26 Mar 2018 21:25:23 +0000
+Subject: [PATCH 1/5] drivers/sh/clk: add support for CLK_SET_TO_ENABLE flag
+Message-Id: <20180326212527.12565-2-thomas.petazzoni@bootlin.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20170705101358.17458-1-chris.packham@alliedtelesis.co.nz>
- <20171029172918.2xtz2srh2meq45io@ninjato>
- <20171207104205.h5ejivdmtharmdln@ninjato>
- <8564c3ea3b3c4b08b940b02acf501722@svr-chch-ex1.atlnz.lc>
-In-Reply-To: <8564c3ea3b3c4b08b940b02acf501722@svr-chch-ex1.atlnz.lc>
-To: Chris Packham <Chris.Packham@alliedtelesis.co.nz>
-Cc: Rich Felker <dalias@libc.org>, "ysato@users.sourceforge.jp" <ysato@users.sourceforge.jp>, "linux-i2c@vger.kernel.org" <linux-i2c@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
+The current sh_clk_mstp_{enable,disable} functions assume that
+enable_bit must be cleared to enable the clock, and set to disable the
+clock.
 
---sxbkkaxi7blcjj7k
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+However, this clock type is used for the PHY of the SH7786 PCIe
+controller, which has the opposite polarity: set to enable, clear to
+disable. In order to properly support this clock, we introduce a
+CLK_SET_TO_ENABLE flag.
 
-On Fri, Mar 23, 2018 at 03:39:47AM +0000, Chris Packham wrote:
-> On 07/12/17 23:42, Wolfram Sang wrote:
-> > On Sun, Oct 29, 2017 at 06:29:18PM +0100, Wolfram Sang wrote:
-> >> On Wed, Jul 05, 2017 at 10:13:54PM +1200, Chris Packham wrote:
-> >>> This series addresses some of the points identified by Andy. The seri=
-es is
-> >>> based on top of i2c/for-next. 2 of the patches from v1 have already b=
-een
-> >>> applied so I've dropped them from this version.
-> >>>
-> >>> I have compile tested patch 1/1 but I don't have access to sh hardware
-> >>> to actually test the changes on.
-> >>>
-> >>> Chris Packham (4):
-> >>>    sh: sh7785lcr: add GPIO lookup table for i2c controller reset
-> >>>    i2c: pca-platform: unconditionally use devm_gpiod_get_optional
-> >>>    i2c: pca-platform: use device_property_read_u32
-> >>>    i2c: pca-platform: drop gpio from platform data
-> >>>
-> >>>   arch/blackfin/mach-bf561/boards/acvilon.c |  1 -
-> >>>   arch/sh/boards/board-sh7785lcr.c          | 11 +++++++++-
-> >>>   drivers/i2c/busses/i2c-pca-platform.c     | 34 +++++++++-----------=
------------
-> >>>   include/linux/i2c-pca-platform.h          |  3 ---
-> >>>   4 files changed, 20 insertions(+), 29 deletions(-)
-> >>
-> >> Series looks good to me, too. I'd need ACKs from the SH maintainers,
-> >> though. Technically, from Blackfin maintainers as well. But I haven't
-> >> heard from them in months, so I could go without that.
-> >=20
-> > Adding Rich Felker to CC...
-> >=20
->=20
-> Ping. Was there any movement on this series? I think this may have been=
-=20
-> caught up between the holiday period and various merge windows.
+Signed-off-by: Thomas Petazzoni <thomas.petazzoni@bootlin.com>
+---
+ drivers/sh/clk/cpg.c   | 10 ++++++++--
+ include/linux/sh_clk.h |  2 ++
+ 2 files changed, 10 insertions(+), 2 deletions(-)
 
-Applied to for-next, thanks!
+diff --git a/drivers/sh/clk/cpg.c b/drivers/sh/clk/cpg.c
+index 7442bc130055..ecb1ab9a8f1d 100644
+--- a/drivers/sh/clk/cpg.c
++++ b/drivers/sh/clk/cpg.c
+@@ -53,7 +53,10 @@ static unsigned int r32(const void __iomem *addr)
+ 
+ static int sh_clk_mstp_enable(struct clk *clk)
+ {
+-	sh_clk_write(sh_clk_read(clk) & ~(1 << clk->enable_bit), clk);
++	if (clk->flags & CLK_SET_TO_ENABLE)
++		sh_clk_write(sh_clk_read(clk) | (1 << clk->enable_bit), clk);
++	else
++		sh_clk_write(sh_clk_read(clk) & ~(1 << clk->enable_bit), clk);
+ 	if (clk->status_reg) {
+ 		unsigned int (*read)(const void __iomem *addr);
+ 		int i;
+@@ -82,7 +85,10 @@ static int sh_clk_mstp_enable(struct clk *clk)
+ 
+ static void sh_clk_mstp_disable(struct clk *clk)
+ {
+-	sh_clk_write(sh_clk_read(clk) | (1 << clk->enable_bit), clk);
++	if (clk->flags & CLK_SET_TO_ENABLE)
++		sh_clk_write(sh_clk_read(clk) & ~(1 << clk->enable_bit), clk);
++	else
++		sh_clk_write(sh_clk_read(clk) | (1 << clk->enable_bit), clk);
+ }
+ 
+ static struct sh_clk_ops sh_clk_mstp_clk_ops = {
+diff --git a/include/linux/sh_clk.h b/include/linux/sh_clk.h
+index 7bed5be886c6..0413570a7141 100644
+--- a/include/linux/sh_clk.h
++++ b/include/linux/sh_clk.h
+@@ -73,6 +73,8 @@ struct clk {
+ 
+ #define CLK_MASK_DIV_ON_DISABLE	BIT(4)
+ 
++#define CLK_SET_TO_ENABLE	BIT(5)
++
+ #define CLK_ENABLE_REG_MASK	(CLK_ENABLE_REG_32BIT | \
+ 				 CLK_ENABLE_REG_16BIT | \
+ 				 CLK_ENABLE_REG_8BIT)
+-- 
+2.14.3
 
-
---sxbkkaxi7blcjj7k
-Content-Type: application/pgp-signature; name="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQIzBAABCAAdFiEEOZGx6rniZ1Gk92RdFA3kzBSgKbYFAlq2RREACgkQFA3kzBSg
-KbaGLQ/+Pdv4MVTwB8owtCYe7Z278BRh/Rv/JHGLF8u4DXDeemsYlLr7j6iaP56V
-B6jr1YCoPWEI/zeWHdzp5csrVeW7zOViIQ6UMJv8qcOKbBZCwuufktLTGXB3db36
-+8r1c40uW2oRJyljP3MkwMbe0iqnXDUHDzxHmwXn6TqRleMxpHTcio/D+HzOH5LJ
-mIvk2jdSP2eDKedZ21ZF3z4OZxUgIbo3RvF9R2q/fFCoU1y4vrK9PmiJ9N/fbGVj
-7Qx0LBwPET/MS10S+vN2Z6kmivaJvRLzbpsHgHGcqrpAhxqV5I00kU9haO4/sHcv
-b/UnLURAsG6Z8Fck3rzZY1Y3zkNHUJWhmth9bzRkXTacdhorhtwHGxExX6eE6uRd
-qQt+hJOaG+26kPqVyy3pq3Sqi4/WspZJR8ekUGaLc8xdMTwAtSrLin9FBPZHHOaI
-SGvKrAnkadcdchiHGXH4Twb1bE8czLVZxznhHOQwMe7RKeFJpHudVsJ5Mkt6wx73
-WcAm8Bqg+YCxveZ9N5DwrXe5SJCrgHz0psxErPU74T7iCvjpH8l1j8cdZnJVZtvL
-XlvXn156k6AFCVhFR6CZWfYtf/BYWIcXivduAkc6/G2vPsN2/nFN2mvBI6ejkR/q
-4G2wghRF3fr3soEcesC+UEWHB6ayRYwVZ/WqfpY7G8PJJJtsXB8=
-=0aTj
------END PGP SIGNATURE-----
-
---sxbkkaxi7blcjj7k--
