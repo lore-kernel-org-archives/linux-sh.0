@@ -1,115 +1,82 @@
-From: Huacai Chen <chenhc@lemote.com>
-Date: Wed, 28 Mar 2018 08:48:53 +0000
-Subject: [PATCH V4 Resend] ZBOOT: fix stack protector in compressed boot phase
-Message-Id: <1522226933-29317-1-git-send-email-chenhc@lemote.com>
+From: James Hogan <jhogan@kernel.org>
+Date: Wed, 28 Mar 2018 15:21:15 +0000
+Subject: Re: [PATCH V4 Resend] ZBOOT: fix stack protector in compressed boot phase
+Message-Id: <20180328152115.GB1991@saruman>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="oC1+HKm2/end4ao3"
 List-Id: <linux-sh.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+References: <1522226933-29317-1-git-send-email-chenhc@lemote.com>
+In-Reply-To: <1522226933-29317-1-git-send-email-chenhc@lemote.com>
 To: linux-arm-kernel@lists.infradead.org
 
-Call __stack_chk_guard_setup() in decompress_kernel() is too late that
-stack checking always fails for decompress_kernel() itself. So remove
-__stack_chk_guard_setup() and initialize __stack_chk_guard before we
-call decompress_kernel().
 
-Original code comes from ARM but also used for MIPS and SH, so fix them
-together. If without this fix, compressed booting of these archs will
-fail because stack checking is enabled by default (>=4.16).
+--oC1+HKm2/end4ao3
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-V1 -> V2: Fix build on ARM.
-V2 -> V3: Fix build on SuperH.
-V3 -> V4: Initialize __stack_chk_guard in C code as a constant.
+On Wed, Mar 28, 2018 at 04:48:53PM +0800, Huacai Chen wrote:
+> diff --git a/arch/mips/boot/compressed/decompress.c b/arch/mips/boot/comp=
+ressed/decompress.c
+> index fdf99e9..81df904 100644
+> --- a/arch/mips/boot/compressed/decompress.c
+> +++ b/arch/mips/boot/compressed/decompress.c
+> @@ -76,12 +76,7 @@ void error(char *x)
+>  #include "../../../../lib/decompress_unxz.c"
+>  #endif
+> =20
+> -unsigned long __stack_chk_guard;
+> -
+> -void __stack_chk_guard_setup(void)
+> -{
+> -	__stack_chk_guard =3D 0x000a0dff;
+> -}
+> +const unsigned long __stack_chk_guard =3D 0x000a0dff;
+> =20
+>  void __stack_chk_fail(void)
+>  {
+> @@ -92,8 +87,6 @@ void decompress_kernel(unsigned long boot_heap_start)
+>  {
+>  	unsigned long zimage_start, zimage_size;
+> =20
+> -	__stack_chk_guard_setup();
+> -
+>  	zimage_start =3D (unsigned long)(&__image_begin);
+>  	zimage_size =3D (unsigned long)(&__image_end) -
+>  	    (unsigned long)(&__image_begin);
 
-Cc: stable@vger.kernel.org
-Signed-off-by: Huacai Chen <chenhc@lemote.com>
----
- arch/arm/boot/compressed/misc.c        | 9 +--------
- arch/mips/boot/compressed/decompress.c | 9 +--------
- arch/sh/boot/compressed/misc.c         | 9 +--------
- 3 files changed, 3 insertions(+), 24 deletions(-)
+This looks good to me, though I've Cc'd Kees as apparently the original
+author from commit 8779657d29c0 ("stackprotector: Introduce
+CONFIG_CC_STACKPROTECTOR_STRONG") in case there was a particular reason
+this wasn't done in the first place.
 
-diff --git a/arch/arm/boot/compressed/misc.c b/arch/arm/boot/compressed/misc.c
-index 16a8a80..e8fe51f 100644
---- a/arch/arm/boot/compressed/misc.c
-+++ b/arch/arm/boot/compressed/misc.c
-@@ -128,12 +128,7 @@ asmlinkage void __div0(void)
- 	error("Attempting division by 0!");
- }
- 
--unsigned long __stack_chk_guard;
--
--void __stack_chk_guard_setup(void)
--{
--	__stack_chk_guard = 0x000a0dff;
--}
-+const unsigned long __stack_chk_guard = 0x000a0dff;
- 
- void __stack_chk_fail(void)
- {
-@@ -150,8 +145,6 @@ decompress_kernel(unsigned long output_start, unsigned long free_mem_ptr_p,
- {
- 	int ret;
- 
--	__stack_chk_guard_setup();
--
- 	output_data		= (unsigned char *)output_start;
- 	free_mem_ptr		= free_mem_ptr_p;
- 	free_mem_end_ptr	= free_mem_ptr_end_p;
-diff --git a/arch/mips/boot/compressed/decompress.c b/arch/mips/boot/compressed/decompress.c
-index fdf99e9..81df904 100644
---- a/arch/mips/boot/compressed/decompress.c
-+++ b/arch/mips/boot/compressed/decompress.c
-@@ -76,12 +76,7 @@ void error(char *x)
- #include "../../../../lib/decompress_unxz.c"
- #endif
- 
--unsigned long __stack_chk_guard;
--
--void __stack_chk_guard_setup(void)
--{
--	__stack_chk_guard = 0x000a0dff;
--}
-+const unsigned long __stack_chk_guard = 0x000a0dff;
- 
- void __stack_chk_fail(void)
- {
-@@ -92,8 +87,6 @@ void decompress_kernel(unsigned long boot_heap_start)
- {
- 	unsigned long zimage_start, zimage_size;
- 
--	__stack_chk_guard_setup();
--
- 	zimage_start = (unsigned long)(&__image_begin);
- 	zimage_size = (unsigned long)(&__image_end) -
- 	    (unsigned long)(&__image_begin);
-diff --git a/arch/sh/boot/compressed/misc.c b/arch/sh/boot/compressed/misc.c
-index 627ce8e..c15cac9 100644
---- a/arch/sh/boot/compressed/misc.c
-+++ b/arch/sh/boot/compressed/misc.c
-@@ -104,12 +104,7 @@ static void error(char *x)
- 	while(1);	/* Halt */
- }
- 
--unsigned long __stack_chk_guard;
--
--void __stack_chk_guard_setup(void)
--{
--	__stack_chk_guard = 0x000a0dff;
--}
-+const unsigned long __stack_chk_guard = 0x000a0dff;
- 
- void __stack_chk_fail(void)
- {
-@@ -130,8 +125,6 @@ void decompress_kernel(void)
- {
- 	unsigned long output_addr;
- 
--	__stack_chk_guard_setup();
--
- #ifdef CONFIG_SUPERH64
- 	output_addr = (CONFIG_MEMORY_START + 0x2000);
- #else
--- 
-2.7.0
+Acked-by: James Hogan <jhogan@kernel.org>
 
+(Happy to apply with acks from Kees and ARM, SH maintainers if nobody
+else does).
+
+Cheers
+James
+
+--oC1+HKm2/end4ao3
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+
+iQIzBAEBCAAdFiEEd80NauSabkiESfLYbAtpk944dnoFAlq7suoACgkQbAtpk944
+dnrxJxAAlrAgDS3oDkev9n/dI09IAb5AGksi/hRV8rvWiOecvAyIYE7RG0rthOmS
+0loNyQOkdrydZy5n4BUO+OxjV8UJQnGazAeDPM5/gOqHZiuouSPg8JvfspH9dbCP
+MJ09R/ig3biJiSNRYlW8L+cD6Zo4Iy/aEfusc0i+cRAC2kHJDJe6D0XoXHYSk2mj
+Vx9jj9GoLTROXwtMhYRjsFb1qTfKL5NBY+66zMPV2pVnsQoV8PSMftdYz1RCU/VC
+iNVFI5/pus+YVNL2nTqhUXRQUNDvOGqMt08yk4P1gyMLPHzEUf3uKHn12pMYslI2
+H+LGmfe8MdwVG+Mb554Y1di245/kGybclsAdqMUK1RtbzrfuDOYv6u8GAop/d6cg
+gjgnHstbImtbIyTGcT4aY4ntY/HftPJ/s7kTbIdFZGV0Pkzi4aCOiJSVqO/lLX0h
+FzM5sFf/YcGyDMw8zCDlL9OfRWImuzIn89xvwdsEtorZvtgI9syxPZSLU8fNNwAy
+jmPMm6PC1l5i+BwfO0UJO2M0HtIO/L9P3a67xdjrWZbMAFfp3X6PEGs1fu5c3QV1
+MJ6SF316yu1pOnIbqLImqsY4/DYnHkhT3/evZAA5n4/Rxz3ICp+8OKYEbGmmbXV+
+Bv7VIDn2vv+MlmIVDYELo1v+LWmX833VssiwXcHPlSS7s4XjT4w=
+=au7i
+-----END PGP SIGNATURE-----
+
+--oC1+HKm2/end4ao3--
