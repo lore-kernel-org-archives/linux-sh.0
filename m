@@ -1,32 +1,115 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 31 Mar 2018 21:28:20 +0000
-Subject: Re: [PATCH net-next 1/2] sh_eth: add sh_eth_cpu_data::no_xdfar flag
-Message-Id: <f2d1b237-fa73-0aab-ef2e-e7cccdfa89f7@cogentembedded.com>
+From: Huacai Chen <chenhc@lemote.com>
+Date: Wed, 28 Mar 2018 08:48:53 +0000
+Subject: [PATCH V4 Resend] ZBOOT: fix stack protector in compressed boot phase
+Message-Id: <1522226933-29317-1-git-send-email-chenhc@lemote.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <998029b4-9400-ebc3-51c1-623c3f72b6cc@cogentembedded.com>
- <233e32d1-947b-2377-3d1f-39d5d83bd3f7@cogentembedded.com>
-In-Reply-To: <233e32d1-947b-2377-3d1f-39d5d83bd3f7@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org
-Cc: linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On 04/01/2018 12:22 AM, Sergei Shtylyov wrote:
+Call __stack_chk_guard_setup() in decompress_kernel() is too late that
+stack checking always fails for decompress_kernel() itself. So remove
+__stack_chk_guard_setup() and initialize __stack_chk_guard before we
+call decompress_kernel().
 
-> The commit 6ded286555c2 ("sh_eth: Fix RX recovery on R-Car in case of RX
-> ring underrun") added a check for an bad RDFAR offset in sh_eth_rx(), so
-> that the code could work on the R-Car Ether controllers which don't have
-> this register (and TDFAR), then the commit 3365711df02 ("sh_eth: WARN on
+Original code comes from ARM but also used for MIPS and SH, so fix them
+together. If without this fix, compressed booting of these archs will
+fail because stack checking is enabled by default (>=4.16).
 
-   Oops, only 11 digits! Should have been 3365711df024. :-)
+V1 -> V2: Fix build on ARM.
+V2 -> V3: Fix build on SuperH.
+V3 -> V4: Initialize __stack_chk_guard in C code as a constant.
 
-> access to a register not implemented in a particular chip") replaced
-> offset 0 with 0xffff. Adding/checking the 'no_xdfar' bit field in the
-> 'struct sh_eth_cpu_data' instead results in less object code...
-> 
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Cc: stable@vger.kernel.org
+Signed-off-by: Huacai Chen <chenhc@lemote.com>
+---
+ arch/arm/boot/compressed/misc.c        | 9 +--------
+ arch/mips/boot/compressed/decompress.c | 9 +--------
+ arch/sh/boot/compressed/misc.c         | 9 +--------
+ 3 files changed, 3 insertions(+), 24 deletions(-)
 
-[...]
+diff --git a/arch/arm/boot/compressed/misc.c b/arch/arm/boot/compressed/misc.c
+index 16a8a80..e8fe51f 100644
+--- a/arch/arm/boot/compressed/misc.c
++++ b/arch/arm/boot/compressed/misc.c
+@@ -128,12 +128,7 @@ asmlinkage void __div0(void)
+ 	error("Attempting division by 0!");
+ }
+ 
+-unsigned long __stack_chk_guard;
+-
+-void __stack_chk_guard_setup(void)
+-{
+-	__stack_chk_guard = 0x000a0dff;
+-}
++const unsigned long __stack_chk_guard = 0x000a0dff;
+ 
+ void __stack_chk_fail(void)
+ {
+@@ -150,8 +145,6 @@ decompress_kernel(unsigned long output_start, unsigned long free_mem_ptr_p,
+ {
+ 	int ret;
+ 
+-	__stack_chk_guard_setup();
+-
+ 	output_data		= (unsigned char *)output_start;
+ 	free_mem_ptr		= free_mem_ptr_p;
+ 	free_mem_end_ptr	= free_mem_ptr_end_p;
+diff --git a/arch/mips/boot/compressed/decompress.c b/arch/mips/boot/compressed/decompress.c
+index fdf99e9..81df904 100644
+--- a/arch/mips/boot/compressed/decompress.c
++++ b/arch/mips/boot/compressed/decompress.c
+@@ -76,12 +76,7 @@ void error(char *x)
+ #include "../../../../lib/decompress_unxz.c"
+ #endif
+ 
+-unsigned long __stack_chk_guard;
+-
+-void __stack_chk_guard_setup(void)
+-{
+-	__stack_chk_guard = 0x000a0dff;
+-}
++const unsigned long __stack_chk_guard = 0x000a0dff;
+ 
+ void __stack_chk_fail(void)
+ {
+@@ -92,8 +87,6 @@ void decompress_kernel(unsigned long boot_heap_start)
+ {
+ 	unsigned long zimage_start, zimage_size;
+ 
+-	__stack_chk_guard_setup();
+-
+ 	zimage_start = (unsigned long)(&__image_begin);
+ 	zimage_size = (unsigned long)(&__image_end) -
+ 	    (unsigned long)(&__image_begin);
+diff --git a/arch/sh/boot/compressed/misc.c b/arch/sh/boot/compressed/misc.c
+index 627ce8e..c15cac9 100644
+--- a/arch/sh/boot/compressed/misc.c
++++ b/arch/sh/boot/compressed/misc.c
+@@ -104,12 +104,7 @@ static void error(char *x)
+ 	while(1);	/* Halt */
+ }
+ 
+-unsigned long __stack_chk_guard;
+-
+-void __stack_chk_guard_setup(void)
+-{
+-	__stack_chk_guard = 0x000a0dff;
+-}
++const unsigned long __stack_chk_guard = 0x000a0dff;
+ 
+ void __stack_chk_fail(void)
+ {
+@@ -130,8 +125,6 @@ void decompress_kernel(void)
+ {
+ 	unsigned long output_addr;
+ 
+-	__stack_chk_guard_setup();
+-
+ #ifdef CONFIG_SUPERH64
+ 	output_addr = (CONFIG_MEMORY_START + 0x2000);
+ #else
+-- 
+2.7.0
 
-MBR, Sergei
