@@ -1,82 +1,69 @@
-From: James Hogan <jhogan@kernel.org>
-Date: Wed, 28 Mar 2018 15:21:15 +0000
+From: Kees Cook <keescook@chromium.org>
+Date: Wed, 28 Mar 2018 17:00:05 +0000
 Subject: Re: [PATCH V4 Resend] ZBOOT: fix stack protector in compressed boot phase
-Message-Id: <20180328152115.GB1991@saruman>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="oC1+HKm2/end4ao3"
+Message-Id: <CAGXu5j+p9fy=fVkBtyXUNH6tmCfraWdZTJCqiRHvyO3vxNxzng@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1522226933-29317-1-git-send-email-chenhc@lemote.com>
-In-Reply-To: <1522226933-29317-1-git-send-email-chenhc@lemote.com>
+ <20180328152115.GB1991@saruman>
+In-Reply-To: <20180328152115.GB1991@saruman>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
+On Wed, Mar 28, 2018 at 8:21 AM, James Hogan <jhogan@kernel.org> wrote:
+> On Wed, Mar 28, 2018 at 04:48:53PM +0800, Huacai Chen wrote:
+>> diff --git a/arch/mips/boot/compressed/decompress.c b/arch/mips/boot/compressed/decompress.c
+>> index fdf99e9..81df904 100644
+>> --- a/arch/mips/boot/compressed/decompress.c
+>> +++ b/arch/mips/boot/compressed/decompress.c
+>> @@ -76,12 +76,7 @@ void error(char *x)
+>>  #include "../../../../lib/decompress_unxz.c"
+>>  #endif
+>>
+>> -unsigned long __stack_chk_guard;
+>> -
+>> -void __stack_chk_guard_setup(void)
+>> -{
+>> -     __stack_chk_guard = 0x000a0dff;
+>> -}
+>> +const unsigned long __stack_chk_guard = 0x000a0dff;
+>>
+>>  void __stack_chk_fail(void)
+>>  {
+>> @@ -92,8 +87,6 @@ void decompress_kernel(unsigned long boot_heap_start)
+>>  {
+>>       unsigned long zimage_start, zimage_size;
+>>
+>> -     __stack_chk_guard_setup();
+>> -
+>>       zimage_start = (unsigned long)(&__image_begin);
+>>       zimage_size = (unsigned long)(&__image_end) -
+>>           (unsigned long)(&__image_begin);
+>
+> This looks good to me, though I've Cc'd Kees as apparently the original
+> author from commit 8779657d29c0 ("stackprotector: Introduce
 
---oC1+HKm2/end4ao3
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+I wonder what changed in the compiler -- I regularly boot
+stack-protected ARM images. Regardless, this is fine. :)
 
-On Wed, Mar 28, 2018 at 04:48:53PM +0800, Huacai Chen wrote:
-> diff --git a/arch/mips/boot/compressed/decompress.c b/arch/mips/boot/comp=
-ressed/decompress.c
-> index fdf99e9..81df904 100644
-> --- a/arch/mips/boot/compressed/decompress.c
-> +++ b/arch/mips/boot/compressed/decompress.c
-> @@ -76,12 +76,7 @@ void error(char *x)
->  #include "../../../../lib/decompress_unxz.c"
->  #endif
-> =20
-> -unsigned long __stack_chk_guard;
-> -
-> -void __stack_chk_guard_setup(void)
-> -{
-> -	__stack_chk_guard =3D 0x000a0dff;
-> -}
-> +const unsigned long __stack_chk_guard =3D 0x000a0dff;
-> =20
->  void __stack_chk_fail(void)
->  {
-> @@ -92,8 +87,6 @@ void decompress_kernel(unsigned long boot_heap_start)
->  {
->  	unsigned long zimage_start, zimage_size;
-> =20
-> -	__stack_chk_guard_setup();
-> -
->  	zimage_start =3D (unsigned long)(&__image_begin);
->  	zimage_size =3D (unsigned long)(&__image_end) -
->  	    (unsigned long)(&__image_begin);
+> CONFIG_CC_STACKPROTECTOR_STRONG") in case there was a particular reason
+> this wasn't done in the first place.
 
-This looks good to me, though I've Cc'd Kees as apparently the original
-author from commit 8779657d29c0 ("stackprotector: Introduce
-CONFIG_CC_STACKPROTECTOR_STRONG") in case there was a particular reason
-this wasn't done in the first place.
+I think I was copying from other places? It's been long enough that I
+don't remember, actually. :)
 
-Acked-by: James Hogan <jhogan@kernel.org>
+> Acked-by: James Hogan <jhogan@kernel.org>
 
-(Happy to apply with acks from Kees and ARM, SH maintainers if nobody
-else does).
+Acked-by: Kees Cook <keescook@chromium.org>
 
-Cheers
-James
+> (Happy to apply with acks from Kees and ARM, SH maintainers if nobody
+> else does).
 
---oC1+HKm2/end4ao3
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+That'd be fine by me, FWIW. Thanks!
 
------BEGIN PGP SIGNATURE-----
+-Kees
 
-iQIzBAEBCAAdFiEEd80NauSabkiESfLYbAtpk944dnoFAlq7suoACgkQbAtpk944
-dnrxJxAAlrAgDS3oDkev9n/dI09IAb5AGksi/hRV8rvWiOecvAyIYE7RG0rthOmS
-0loNyQOkdrydZy5n4BUO+OxjV8UJQnGazAeDPM5/gOqHZiuouSPg8JvfspH9dbCP
-MJ09R/ig3biJiSNRYlW8L+cD6Zo4Iy/aEfusc0i+cRAC2kHJDJe6D0XoXHYSk2mj
-Vx9jj9GoLTROXwtMhYRjsFb1qTfKL5NBY+66zMPV2pVnsQoV8PSMftdYz1RCU/VC
-iNVFI5/pus+YVNL2nTqhUXRQUNDvOGqMt08yk4P1gyMLPHzEUf3uKHn12pMYslI2
-H+LGmfe8MdwVG+Mb554Y1di245/kGybclsAdqMUK1RtbzrfuDOYv6u8GAop/d6cg
-gjgnHstbImtbIyTGcT4aY4ntY/HftPJ/s7kTbIdFZGV0Pkzi4aCOiJSVqO/lLX0h
-FzM5sFf/YcGyDMw8zCDlL9OfRWImuzIn89xvwdsEtorZvtgI9syxPZSLU8fNNwAy
-jmPMm6PC1l5i+BwfO0UJO2M0HtIO/L9P3a67xdjrWZbMAFfp3X6PEGs1fu5c3QV1
-MJ6SF316yu1pOnIbqLImqsY4/DYnHkhT3/evZAA5n4/Rxz3ICp+8OKYEbGmmbXV+
-Bv7VIDn2vv+MlmIVDYELo1v+LWmX833VssiwXcHPlSS7s4XjT4w=
-=au7i
------END PGP SIGNATURE-----
-
---oC1+HKm2/end4ao3--
+-- 
+Kees Cook
+Pixel Security
