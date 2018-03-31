@@ -1,52 +1,58 @@
-From: Shea Levy <shea@shealevy.com>
-Date: Sat, 24 Mar 2018 17:44:52 +0000
-Subject: [PATCH 10/16] microblaze: Use INITRAMFS_GENERIC_UNLOAD
-Message-Id: <20180324174458.26423-11-shea@shealevy.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 31 Mar 2018 21:23:51 +0000
+Subject: [PATCH net-next 2/2] sh_eth: kill useless check in __sh_eth_get_regs()
+Message-Id: <47af0c2c-bba9-a346-1925-06c99142cbb2@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180324174458.26423-1-shea@shealevy.com>
-In-Reply-To: <20180324174458.26423-1-shea@shealevy.com>
+References: <998029b4-9400-ebc3-51c1-623c3f72b6cc@cogentembedded.com>
+In-Reply-To: <998029b4-9400-ebc3-51c1-623c3f72b6cc@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-c6x-dev@linux-c6x.org, uclinux-h8-devel@lists.sourceforge.jp, linux-m68k@lists.linux-m68k.org, nios2-dev@lists.rocketboards.org, openrisc@lists.librecores.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org, linux-sh@vger.kernel.org, user-mode-linux-devel@lists.sourceforge.net
-Cc: Shea Levy <shea@shealevy.com>
+To: netdev@vger.kernel.org
+Cc: linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org
 
-Signed-off-by: Shea Levy <shea@shealevy.com>
+Iff TSU registers exist on a given [G]Ether controller, they always include
+the CAM entry table registers (TSU_ADR{H|L}<n>), thus the check for invalid
+TSU_ADRH0 offset in __sh_eth_get_regs() is useless...
+
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
- arch/microblaze/Kconfig   | 1 +
- arch/microblaze/mm/init.c | 7 -------
- 2 files changed, 1 insertion(+), 7 deletions(-)
+ drivers/net/ethernet/renesas/sh_eth.c |   23 +++++++++--------------
+ 1 file changed, 9 insertions(+), 14 deletions(-)
 
-diff --git a/arch/microblaze/Kconfig b/arch/microblaze/Kconfig
-index 3817a3e2146c..ef23e8410b4b 100644
---- a/arch/microblaze/Kconfig
-+++ b/arch/microblaze/Kconfig
-@@ -36,6 +36,7 @@ config MICROBLAZE
- 	select TRACING_SUPPORT
- 	select VIRT_TO_BUS
- 	select CPU_NO_EFFICIENT_FFS
-+	select INITRAMFS_GENERIC_UNLOAD
+Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
+=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
++++ net-next/drivers/net/ethernet/renesas/sh_eth.c
+@@ -2153,22 +2153,17 @@ static size_t __sh_eth_get_regs(struct n
+ 		add_tsu_reg(TSU_POST2);
+ 		add_tsu_reg(TSU_POST3);
+ 		add_tsu_reg(TSU_POST4);
+-		if (mdp->reg_offset[TSU_ADRH0] != SH_ETH_OFFSET_INVALID) {
+-			/* This is the start of a table, not just a single
+-			 * register.
+-			 */
+-			if (buf) {
+-				unsigned int i;
++		/* This is the start of a table, not just a single register. */
++		if (buf) {
++			unsigned int i;
  
- # Endianness selection
- choice
-diff --git a/arch/microblaze/mm/init.c b/arch/microblaze/mm/init.c
-index df6de7ccdc2e..ea058dfda222 100644
---- a/arch/microblaze/mm/init.c
-+++ b/arch/microblaze/mm/init.c
-@@ -187,13 +187,6 @@ void __init setup_memory(void)
- 	paging_init();
- }
+-				mark_reg_valid(TSU_ADRH0);
+-				for (i = 0; i < SH_ETH_TSU_CAM_ENTRIES * 2; i++)
+-					*buf++ = ioread32(
+-						mdp->tsu_addr +
+-						mdp->reg_offset[TSU_ADRH0] +
+-						i * 4);
+-			}
+-			len += SH_ETH_TSU_CAM_ENTRIES * 2;
++			mark_reg_valid(TSU_ADRH0);
++			for (i = 0; i < SH_ETH_TSU_CAM_ENTRIES * 2; i++)
++				*buf++ = ioread32(mdp->tsu_addr +
++						  mdp->reg_offset[TSU_ADRH0] +
++						  i * 4);
+ 		}
++		len += SH_ETH_TSU_CAM_ENTRIES * 2;
+ 	}
  
--#ifdef CONFIG_BLK_DEV_INITRD
--void free_initrd_mem(unsigned long start, unsigned long end)
--{
--	free_reserved_area((void *)start, (void *)end, -1, "initrd");
--}
--#endif
--
- void free_initmem(void)
- {
- 	free_initmem_default(-1);
--- 
-2.16.2
-
+ #undef mark_reg_valid
