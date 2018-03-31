@@ -1,52 +1,21 @@
-From: Shea Levy <shea@shealevy.com>
-Date: Sat, 24 Mar 2018 17:44:53 +0000
-Subject: [PATCH 11/16] nios2: Use INITRAMFS_GENERIC_UNLOAD
-Message-Id: <20180324174458.26423-12-shea@shealevy.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 31 Mar 2018 21:15:04 +0000
+Subject: [PATCH 0/2] sh_eth: remove SH_ETH_OFFSET_INVALID abuses
+Message-Id: <998029b4-9400-ebc3-51c1-623c3f72b6cc@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180324174458.26423-1-shea@shealevy.com>
-In-Reply-To: <20180324174458.26423-1-shea@shealevy.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-c6x-dev@linux-c6x.org, uclinux-h8-devel@lists.sourceforge.jp, linux-m68k@lists.linux-m68k.org, nios2-dev@lists.rocketboards.org, openrisc@lists.librecores.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org, linux-sh@vger.kernel.org, user-mode-linux-devel@lists.sourceforge.net
-Cc: Shea Levy <shea@shealevy.com>
+To: netdev@vger.kernel.org
+Cc: linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org
 
-Signed-off-by: Shea Levy <shea@shealevy.com>
----
- arch/nios2/Kconfig   | 1 +
- arch/nios2/mm/init.c | 7 -------
- 2 files changed, 1 insertion(+), 7 deletions(-)
+Hello!
 
-diff --git a/arch/nios2/Kconfig b/arch/nios2/Kconfig
-index 3d4ec88f1db1..d3b72d5c8967 100644
---- a/arch/nios2/Kconfig
-+++ b/arch/nios2/Kconfig
-@@ -19,6 +19,7 @@ config NIOS2
- 	select SPARSE_IRQ
- 	select USB_ARCH_HAS_HCD if USB_SUPPORT
- 	select CPU_NO_EFFICIENT_FFS
-+	select INITRAMFS_GENERIC_UNLOAD
- 
- config GENERIC_CSUM
- 	def_bool y
-diff --git a/arch/nios2/mm/init.c b/arch/nios2/mm/init.c
-index c92fe4234009..3df75ff8c768 100644
---- a/arch/nios2/mm/init.c
-+++ b/arch/nios2/mm/init.c
-@@ -82,13 +82,6 @@ void __init mmu_init(void)
- 	flush_tlb_all();
- }
- 
--#ifdef CONFIG_BLK_DEV_INITRD
--void __init free_initrd_mem(unsigned long start, unsigned long end)
--{
--	free_reserved_area((void *)start, (void *)end, -1, "initrd");
--}
--#endif
--
- void __ref free_initmem(void)
- {
- 	free_initmem_default(-1);
--- 
-2.16.2
+Here's a set of 2 patches against DaveM's 'net-next.git' repo. They get rid of
+the abuse of SH_ETH_OFFSET_INVALID for the register existence checks, so that
+only its necessary uses would remain...
 
+[1/2] sh_eth: add sh_eth_cpu_data::no_xdfar flag
+[2/2] sh_eth: kill useless check in __sh_eth_get_regs()
+
+MBR, Sergei
