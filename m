@@ -1,340 +1,116 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Fri, 20 Apr 2018 08:03:02 +0000
-Subject: [PATCH 11/22] microblaze: use generic dma_noncoherent_ops
-Message-Id: <20180420080313.18796-12-hch@lst.de>
+From: "Michael S. Tsirkin" <mst@redhat.com>
+Date: Thu, 05 Apr 2018 21:03:50 +0000
+Subject: [PATCH v2 3/3] mm/gup: document return value
+Message-Id: <1522962072-182137-6-git-send-email-mst@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180420080313.18796-1-hch@lst.de>
-In-Reply-To: <20180420080313.18796-1-hch@lst.de>
+References: <1522962072-182137-1-git-send-email-mst@redhat.com>
+In-Reply-To: <1522962072-182137-1-git-send-email-mst@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Cc: linux-arch@vger.kernel.org, Michal Simek <monstr@monstr.eu>, Greentime Hu <green.hu@gmail.com>, Vincent Chen <deanbo422@gmail.com>, linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org, linux-c6x-dev@linux-c6x.org, linux-hexagon@vger.kernel.org, linux-m68k@lists.linux-m68k.org, nios2-dev@lists.rocketboards.org, openrisc@lists.librecores.org, linux-parisc@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-kernel@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: "Kirill A . Shutemov" <kirill.shutemov@linux.intel.com>, Andrew Morton <akpm@linux-foundation.org>, Huang Ying <ying.huang@intel.com>, Jonathan Corbet <corbet@lwn.net>, Linus Torvalds <torvalds@linux-foundation.org>, Peter Zijlstra <peterz@infradead.org>, Thomas Gleixner <tglx@linutronix.de>, Thorsten Leemhuis <regressions@leemhuis.info>, Ralf Baechle <ralf@linux-mips.org>, James Hogan <jhogan@kernel.org>, Martin Schwidefsky <schwidefsky@de.ibm.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, "David S. Miller" <davem@davemloft.net>, linux-mips@linux-mips.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-mm@kvack.org
 
-Switch to the generic noncoherent direct mapping implementation.
+__get_user_pages_fast handles errors differently from
+get_user_pages_fast: the former always returns the number of pages
+pinned, the later might return a negative error code.
 
-This removes the direction-based optimizations in
-sync_{single,sg}_for_{cpu,device} which were marked untestested and
-do not match the usually very well tested {un,}map_{single,sg}
-implementations.
-
-Signed-off-by: Christoph Hellwig <hch@lst.de>
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
 ---
- arch/microblaze/Kconfig                   |   4 +
- arch/microblaze/include/asm/Kbuild        |   1 +
- arch/microblaze/include/asm/dma-mapping.h |  28 -----
- arch/microblaze/include/asm/pgtable.h     |   2 -
- arch/microblaze/kernel/dma.c              | 144 ++--------------------
- arch/microblaze/mm/consistent.c           |   9 +-
- 6 files changed, 22 insertions(+), 166 deletions(-)
- delete mode 100644 arch/microblaze/include/asm/dma-mapping.h
+ arch/mips/mm/gup.c  | 2 ++
+ arch/s390/mm/gup.c  | 2 ++
+ arch/sh/mm/gup.c    | 2 ++
+ arch/sparc/mm/gup.c | 4 ++++
+ mm/gup.c            | 4 +++-
+ mm/util.c           | 6 ++++--
+ 6 files changed, 17 insertions(+), 3 deletions(-)
 
-diff --git a/arch/microblaze/Kconfig b/arch/microblaze/Kconfig
-index 3817a3e2146c..91b9b999eb18 100644
---- a/arch/microblaze/Kconfig
-+++ b/arch/microblaze/Kconfig
-@@ -1,6 +1,8 @@
- config MICROBLAZE
- 	def_bool y
-+	select ARCH_HAS_SYNC_DMA_FOR_DEVICE
- 	select ARCH_HAS_GCOV_PROFILE_ALL
-+	select ARCH_HAS_SYNC_DMA_FOR_CPU
- 	select ARCH_MIGHT_HAVE_PC_PARPORT
- 	select ARCH_NO_COHERENT_DMA_MMAP if !MMU
- 	select ARCH_WANT_IPC_PARSE_VERSION
-@@ -8,6 +10,8 @@ config MICROBLAZE
- 	select TIMER_OF
- 	select CLONE_BACKWARDS3
- 	select COMMON_CLK
-+	select DMA_NONCOHERENT_OPS
-+	select DMA_NONCOHERENT_MMAP
- 	select GENERIC_ATOMIC64
- 	select GENERIC_CLOCKEVENTS
- 	select GENERIC_CPU_DEVICES
-diff --git a/arch/microblaze/include/asm/Kbuild b/arch/microblaze/include/asm/Kbuild
-index 3c80a5a308ed..8d3e71f43a3e 100644
---- a/arch/microblaze/include/asm/Kbuild
-+++ b/arch/microblaze/include/asm/Kbuild
-@@ -4,6 +4,7 @@ generic-y += bug.h
- generic-y += bugs.h
- generic-y += device.h
- generic-y += div64.h
-+generic-y += dma-mapping.h
- generic-y += emergency-restart.h
- generic-y += exec.h
- generic-y += extable.h
-diff --git a/arch/microblaze/include/asm/dma-mapping.h b/arch/microblaze/include/asm/dma-mapping.h
-deleted file mode 100644
-index add50c1373bf..000000000000
---- a/arch/microblaze/include/asm/dma-mapping.h
-+++ /dev/null
-@@ -1,28 +0,0 @@
--/*
-- * Implements the generic device dma API for microblaze and the pci
-- *
-- * Copyright (C) 2009-2010 Michal Simek <monstr@monstr.eu>
-- * Copyright (C) 2009-2010 PetaLogix
-- *
-- * This file is subject to the terms and conditions of the GNU General
-- * Public License. See the file COPYING in the main directory of this
-- * archive for more details.
-- *
-- * This file is base on powerpc and x86 dma-mapping.h versions
-- * Copyright (C) 2004 IBM
-- */
--
--#ifndef _ASM_MICROBLAZE_DMA_MAPPING_H
--#define _ASM_MICROBLAZE_DMA_MAPPING_H
--
--/*
-- * Available generic sets of operations
-- */
--extern const struct dma_map_ops dma_nommu_ops;
--
--static inline const struct dma_map_ops *get_arch_dma_ops(struct bus_type *bus)
--{
--	return &dma_nommu_ops;
--}
--
--#endif	/* _ASM_MICROBLAZE_DMA_MAPPING_H */
-diff --git a/arch/microblaze/include/asm/pgtable.h b/arch/microblaze/include/asm/pgtable.h
-index e53b8532353c..5174733fb489 100644
---- a/arch/microblaze/include/asm/pgtable.h
-+++ b/arch/microblaze/include/asm/pgtable.h
-@@ -551,8 +551,6 @@ void __init *early_get_page(void);
- 
- extern unsigned long ioremap_bot, ioremap_base;
- 
--void *consistent_alloc(gfp_t gfp, size_t size, dma_addr_t *dma_handle);
--void consistent_free(size_t size, void *vaddr);
- void consistent_sync(void *vaddr, size_t size, int direction);
- void consistent_sync_page(struct page *page, unsigned long offset,
- 	size_t size, int direction);
-diff --git a/arch/microblaze/kernel/dma.c b/arch/microblaze/kernel/dma.c
-index 3145e7dc8ab1..71032cf64669 100644
---- a/arch/microblaze/kernel/dma.c
-+++ b/arch/microblaze/kernel/dma.c
-@@ -8,29 +8,15 @@
-  */
- 
- #include <linux/device.h>
--#include <linux/dma-mapping.h>
-+#include <linux/dma-noncoherent.h>
- #include <linux/gfp.h>
- #include <linux/dma-debug.h>
- #include <linux/export.h>
- #include <linux/bug.h>
- #include <asm/cacheflush.h>
- 
--static void *dma_nommu_alloc_coherent(struct device *dev, size_t size,
--				       dma_addr_t *dma_handle, gfp_t flag,
--				       unsigned long attrs)
--{
--	return consistent_alloc(flag, size, dma_handle);
--}
--
--static void dma_nommu_free_coherent(struct device *dev, size_t size,
--				     void *vaddr, dma_addr_t dma_handle,
--				     unsigned long attrs)
--{
--	consistent_free(size, vaddr);
--}
--
--static inline void __dma_sync(unsigned long paddr,
--			      size_t size, enum dma_data_direction direction)
-+static void __dma_sync(struct device *dev, phys_addr_t paddr, size_t size,
-+		enum dma_data_direction direction)
- {
- 	switch (direction) {
- 	case DMA_TO_DEVICE:
-@@ -45,113 +31,21 @@ static inline void __dma_sync(unsigned long paddr,
- 	}
- }
- 
--static int dma_nommu_map_sg(struct device *dev, struct scatterlist *sgl,
--			     int nents, enum dma_data_direction direction,
--			     unsigned long attrs)
-+void arch_sync_dma_for_device(struct device *dev, phys_addr_t paddr,
-+		size_t size, enum dma_data_direction dir)
- {
--	struct scatterlist *sg;
--	int i;
--
--	/* FIXME this part of code is untested */
--	for_each_sg(sgl, sg, nents, i) {
--		sg->dma_address = sg_phys(sg);
--
--		if (attrs & DMA_ATTR_SKIP_CPU_SYNC)
--			continue;
--
--		__dma_sync(sg_phys(sg), sg->length, direction);
--	}
--
--	return nents;
--}
--
--static inline dma_addr_t dma_nommu_map_page(struct device *dev,
--					     struct page *page,
--					     unsigned long offset,
--					     size_t size,
--					     enum dma_data_direction direction,
--					     unsigned long attrs)
--{
--	if (!(attrs & DMA_ATTR_SKIP_CPU_SYNC))
--		__dma_sync(page_to_phys(page) + offset, size, direction);
--	return page_to_phys(page) + offset;
-+	__dma_sync(dev, paddr, size, dir);
- }
- 
--static inline void dma_nommu_unmap_page(struct device *dev,
--					 dma_addr_t dma_address,
--					 size_t size,
--					 enum dma_data_direction direction,
--					 unsigned long attrs)
-+void arch_sync_dma_for_cpu(struct device *dev, phys_addr_t paddr,
-+		size_t size, enum dma_data_direction dir)
- {
--/* There is not necessary to do cache cleanup
-- *
-- * phys_to_virt is here because in __dma_sync_page is __virt_to_phys and
-- * dma_address is physical address
-- */
--	if (!(attrs & DMA_ATTR_SKIP_CPU_SYNC))
--		__dma_sync(dma_address, size, direction);
-+	__dma_sync(dev, paddr, size, dir);
- }
- 
--static inline void
--dma_nommu_sync_single_for_cpu(struct device *dev,
--			       dma_addr_t dma_handle, size_t size,
--			       enum dma_data_direction direction)
--{
--	/*
--	 * It's pointless to flush the cache as the memory segment
--	 * is given to the CPU
--	 */
--
--	if (direction = DMA_FROM_DEVICE)
--		__dma_sync(dma_handle, size, direction);
--}
--
--static inline void
--dma_nommu_sync_single_for_device(struct device *dev,
--				  dma_addr_t dma_handle, size_t size,
--				  enum dma_data_direction direction)
--{
--	/*
--	 * It's pointless to invalidate the cache if the device isn't
--	 * supposed to write to the relevant region
--	 */
--
--	if (direction = DMA_TO_DEVICE)
--		__dma_sync(dma_handle, size, direction);
--}
--
--static inline void
--dma_nommu_sync_sg_for_cpu(struct device *dev,
--			   struct scatterlist *sgl, int nents,
--			   enum dma_data_direction direction)
--{
--	struct scatterlist *sg;
--	int i;
--
--	/* FIXME this part of code is untested */
--	if (direction = DMA_FROM_DEVICE)
--		for_each_sg(sgl, sg, nents, i)
--			__dma_sync(sg->dma_address, sg->length, direction);
--}
--
--static inline void
--dma_nommu_sync_sg_for_device(struct device *dev,
--			      struct scatterlist *sgl, int nents,
--			      enum dma_data_direction direction)
--{
--	struct scatterlist *sg;
--	int i;
--
--	/* FIXME this part of code is untested */
--	if (direction = DMA_TO_DEVICE)
--		for_each_sg(sgl, sg, nents, i)
--			__dma_sync(sg->dma_address, sg->length, direction);
--}
--
--static
--int dma_nommu_mmap_coherent(struct device *dev, struct vm_area_struct *vma,
--			     void *cpu_addr, dma_addr_t handle, size_t size,
--			     unsigned long attrs)
-+int arch_dma_mmap(struct device *dev, struct vm_area_struct *vma,
-+		void *cpu_addr, dma_addr_t handle, size_t size,
-+		unsigned long attrs)
- {
- #ifdef CONFIG_MMU
- 	unsigned long user_count = vma_pages(vma);
-@@ -170,17 +64,3 @@ int dma_nommu_mmap_coherent(struct device *dev, struct vm_area_struct *vma,
- 	return -ENXIO;
- #endif
- }
--
--const struct dma_map_ops dma_nommu_ops = {
--	.alloc			= dma_nommu_alloc_coherent,
--	.free			= dma_nommu_free_coherent,
--	.mmap			= dma_nommu_mmap_coherent,
--	.map_sg			= dma_nommu_map_sg,
--	.map_page		= dma_nommu_map_page,
--	.unmap_page		= dma_nommu_unmap_page,
--	.sync_single_for_cpu	= dma_nommu_sync_single_for_cpu,
--	.sync_single_for_device	= dma_nommu_sync_single_for_device,
--	.sync_sg_for_cpu	= dma_nommu_sync_sg_for_cpu,
--	.sync_sg_for_device	= dma_nommu_sync_sg_for_device,
--};
--EXPORT_SYMBOL(dma_nommu_ops);
-diff --git a/arch/microblaze/mm/consistent.c b/arch/microblaze/mm/consistent.c
-index b06c3a7faf20..b9a9c8c3397b 100644
---- a/arch/microblaze/mm/consistent.c
-+++ b/arch/microblaze/mm/consistent.c
-@@ -33,6 +33,7 @@
- #include <linux/pci.h>
- #include <linux/interrupt.h>
- #include <linux/gfp.h>
-+#include <linux/dma-noncoherent.h>
- 
- #include <asm/pgalloc.h>
- #include <linux/io.h>
-@@ -59,7 +60,8 @@
-  * uncached region.  This will no doubt cause big problems if memory allocated
-  * here is not also freed properly. -- JW
-  */
--void *consistent_alloc(gfp_t gfp, size_t size, dma_addr_t *dma_handle)
-+void *arch_dma_alloc(struct device *dev, size_t size, dma_addr_t *dma_handle,
-+		gfp_t gfp, unsigned long attrs)
- {
- 	unsigned long order, vaddr;
- 	void *ret;
-@@ -154,7 +156,6 @@ void *consistent_alloc(gfp_t gfp, size_t size, dma_addr_t *dma_handle)
- 
- 	return ret;
- }
--EXPORT_SYMBOL(consistent_alloc);
- 
- #ifdef CONFIG_MMU
- static pte_t *consistent_virt_to_pte(void *vaddr)
-@@ -178,7 +179,8 @@ unsigned long consistent_virt_to_pfn(void *vaddr)
+diff --git a/arch/mips/mm/gup.c b/arch/mips/mm/gup.c
+index 1e4658e..5a4875ca 100644
+--- a/arch/mips/mm/gup.c
++++ b/arch/mips/mm/gup.c
+@@ -178,6 +178,8 @@ static int gup_pud_range(pgd_t pgd, unsigned long addr, unsigned long end,
  /*
-  * free page(s) as defined by the above mapping.
+  * Like get_user_pages_fast() except its IRQ-safe in that it won't fall
+  * back to the regular GUP.
++ * Note a difference with get_user_pages_fast: this always returns the
++ * number of pages pinned, 0 if no pages were pinned.
   */
--void consistent_free(size_t size, void *vaddr)
-+void arch_dma_free(struct device *dev, size_t size, void *vaddr,
-+		dma_addr_t dma_addr, unsigned long attrs)
- {
- 	struct page *page;
- 
-@@ -218,7 +220,6 @@ void consistent_free(size_t size, void *vaddr)
- 	flush_tlb_all();
- #endif
+ int __get_user_pages_fast(unsigned long start, int nr_pages, int write,
+ 			  struct page **pages)
+diff --git a/arch/s390/mm/gup.c b/arch/s390/mm/gup.c
+index 05c8abd..2809d11 100644
+--- a/arch/s390/mm/gup.c
++++ b/arch/s390/mm/gup.c
+@@ -220,6 +220,8 @@ static inline int gup_p4d_range(pgd_t *pgdp, pgd_t pgd, unsigned long addr,
+ /*
+  * Like get_user_pages_fast() except its IRQ-safe in that it won't fall
+  * back to the regular GUP.
++ * Note a difference with get_user_pages_fast: this always returns the
++ * number of pages pinned, 0 if no pages were pinned.
+  */
+ int __get_user_pages_fast(unsigned long start, int nr_pages, int write,
+ 			  struct page **pages)
+diff --git a/arch/sh/mm/gup.c b/arch/sh/mm/gup.c
+index 8045b5b..56c86ca 100644
+--- a/arch/sh/mm/gup.c
++++ b/arch/sh/mm/gup.c
+@@ -160,6 +160,8 @@ static int gup_pud_range(pgd_t pgd, unsigned long addr, unsigned long end,
+ /*
+  * Like get_user_pages_fast() except its IRQ-safe in that it won't fall
+  * back to the regular GUP.
++ * Note a difference with get_user_pages_fast: this always returns the
++ * number of pages pinned, 0 if no pages were pinned.
+  */
+ int __get_user_pages_fast(unsigned long start, int nr_pages, int write,
+ 			  struct page **pages)
+diff --git a/arch/sparc/mm/gup.c b/arch/sparc/mm/gup.c
+index 5335ba3..ca3eb69 100644
+--- a/arch/sparc/mm/gup.c
++++ b/arch/sparc/mm/gup.c
+@@ -192,6 +192,10 @@ static int gup_pud_range(pgd_t pgd, unsigned long addr, unsigned long end,
+ 	return 1;
  }
--EXPORT_SYMBOL(consistent_free);
+ 
++/*
++ * Note a difference with get_user_pages_fast: this always returns the
++ * number of pages pinned, 0 if no pages were pinned.
++ */
+ int __get_user_pages_fast(unsigned long start, int nr_pages, int write,
+ 			  struct page **pages)
+ {
+diff --git a/mm/gup.c b/mm/gup.c
+index 8f3a064..5cb5bb1 100644
+--- a/mm/gup.c
++++ b/mm/gup.c
+@@ -1740,7 +1740,9 @@ bool gup_fast_permitted(unsigned long start, int nr_pages, int write)
  
  /*
-  * make an area consistent.
+  * Like get_user_pages_fast() except it's IRQ-safe in that it won't fall back to
+- * the regular GUP. It will only return non-negative values.
++ * the regular GUP.
++ * Note a difference with get_user_pages_fast: this always returns the
++ * number of pages pinned, 0 if no pages were pinned.
+  */
+ int __get_user_pages_fast(unsigned long start, int nr_pages, int write,
+ 			  struct page **pages)
+diff --git a/mm/util.c b/mm/util.c
+index c125050..db2f005 100644
+--- a/mm/util.c
++++ b/mm/util.c
+@@ -297,8 +297,10 @@ void arch_pick_mmap_layout(struct mm_struct *mm)
+ /*
+  * Like get_user_pages_fast() except its IRQ-safe in that it won't fall
+  * back to the regular GUP.
+- * If the architecture not support this function, simply return with no
+- * page pinned
++ * Note a difference with get_user_pages_fast: this always returns the
++ * number of pages pinned, 0 if no pages were pinned.
++ * If the architecture does not support this function, simply return with no
++ * pages pinned.
+  */
+ int __weak __get_user_pages_fast(unsigned long start,
+ 				 int nr_pages, int write, struct page **pages)
 -- 
-2.17.0
+MST
 
