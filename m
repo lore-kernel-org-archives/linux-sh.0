@@ -1,69 +1,108 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Fri, 20 Apr 2018 15:43:01 +0000
-Subject: Re: [PATCH] sh: time: Remove the read_persistent_clock()
-Message-Id: <CAK8P3a3r3wZ_K2UXTQ12gUk_ioC_tg3AMxYvp83WY0ds3t0y5A@mail.gmail.com>
+From: jacopo mondi <jacopo@jmondi.org>
+Date: Mon, 09 Apr 2018 07:25:47 +0000
+Subject: Re: [RFC v2 2/2] base: dma-mapping: Postpone page_to_pfn() on mmap()
+Message-Id: <20180409072547.GU20945@w540>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="8a48p4KKsB+A/3VY"
 List-Id: <linux-sh.vger.kernel.org>
-References: <c52709fe323b56916b3f621dac1baf6d49225188.1524117883.git.baolin.wang@linaro.org>
-In-Reply-To: <c52709fe323b56916b3f621dac1baf6d49225188.1524117883.git.baolin.wang@linaro.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+References: <1510679286-6988-1-git-send-email-jacopo+renesas@jmondi.org>
+ <1510679286-6988-3-git-send-email-jacopo+renesas@jmondi.org>
+ <ea4f2d82-6a27-a7c1-091f-6230cfd988a3@arm.com>
+In-Reply-To: <ea4f2d82-6a27-a7c1-091f-6230cfd988a3@arm.com>
+To: Robin Murphy <robin.murphy@arm.com>
+Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>, ysato@users.sourceforge.jp, dalias@libc.org, laurent.pinchart@ideasonboard.com, geert@linux-m68k.org, linux-renesas-soc@vger.kernel.org, iommu@lists.linux-foundation.org, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
 
-On Fri, Apr 20, 2018 at 5:32 PM, Rich Felker <dalias@libc.org> wrote:
-> On Fri, Apr 20, 2018 at 05:19:43PM +0200, Arnd Bergmann wrote:
->> On Thu, Apr 19, 2018 at 8:06 AM, Baolin Wang <baolin.wang@linaro.org> wrote:
->> > The read_persistent_clock() uses a timespec, which is not year 2038 safe
->> > on 32bit systems. Moreover on sh platform, we have RTC drivers that can
->> > be used to compensate the system suspend time. Thus we can remove the
->> > read_persistent_clock() safely.
->> >
->> > Signed-off-by: Baolin Wang <baolin.wang@linaro.org>
->>
->> Hi Baolin and sh maintainers.
->>
->> I have done a similar patch but never got around to posting it. Please
->> see my patch below.
->>
->> Note that the patch is whitespace broken, I can send a proper
->> version to the sh maintainers if they want to merge it, or I can
->> apply my patch to my y2038 tree myself.
->>
->>        Arnd
->>
->> commit cade6829ca223d9761863e74595d677b3dc14ecd
->> Author: Arnd Bergmann <arnd@arndb.de>
->> Date:   Wed Jan 24 16:18:50 2018 +0100
->>
->>     sh: remove unused rtc_sh_get/set_time infrastructure
->>
->>     All platforms are now converted to RTC drivers, so this has become
->>     obsolete. The board_time_init() callback still has one caller, but
->>     could otherwise also get killed.
->>
->>     This removes one more usage of the deprecated timespec structure,
->>     which overflows in y2038.
->>
->>     Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+
+--8a48p4KKsB+A/3VY
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+
+Hi Robin, Laurent,
+    a long time passed, sorry about this.
+
+On Wed, Nov 15, 2017 at 01:38:23PM +0000, Robin Murphy wrote:
+> On 14/11/17 17:08, Jacopo Mondi wrote:
+> >On SH4 architecture, with SPARSEMEM memory model, translating page to
+> >pfn hangs the CPU. Post-pone translation to pfn after
+> >dma_mmap_from_dev_coherent() function call as it succeeds and make page
+> >translation not necessary.
+> >
+> >This patch was suggested by Laurent Pinchart and he's working to submit
+> >a proper fix mainline. Not sending for inclusion at the moment.
 >
-> In principle this looks correct, but I don't think all the drivers
-> have been converted. I did a quick grep for where board_time_init is
-> set, and found mach-dreamcast and mach-sh03 boards have rtc drivers
-> that set rtc_sh_[gs]et_time pointers. These need to be converted to
-> proper rtc drivers, I think.
+> Y'know, I think this patch does have some merit by itself - until we know
+> that cpu_addr *doesn't* represent some device-private memory which is not
+> guaranteed to be backed by a struct page, calling virt_to_page() on it is
+> arguably semantically incorrect, even if it might happen to be benign in
+> most cases.
 
-Ah, of course. I fished the one patch out of my stash of unsubmitted
-patches, but missed the fact that I had three of them, the other ones
-converting sh03 and dreamcast, respectively. ;-)
+I still need to carry this patch in my trees to have a working dma memory mapping
+on SH4 platforms. My understanding from your comment is that there may
+be a way forward for this patch, do you still think the same? Have you
+got any suggestion on how to improve this eventually for inclusion?
 
-Let me send all three for proper review then.
+Thanks
+   j
 
-> The of-generic board also uses board_time_init, but only to call the
-> arch-independent timer_probe which uses devicetree to get
-> clocksource/clockevent devices. This probe should probably be moved to
-> the place where board_timer_init is called, right?
+>
+> Robin.
+>
+> >Suggested-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+> >Signed-off-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
+> >---
+> >  drivers/base/dma-mapping.c | 3 ++-
+> >  1 file changed, 2 insertions(+), 1 deletion(-)
+> >
+> >diff --git a/drivers/base/dma-mapping.c b/drivers/base/dma-mapping.c
+> >index e584edd..73d64d3 100644
+> >--- a/drivers/base/dma-mapping.c
+> >+++ b/drivers/base/dma-mapping.c
+> >@@ -227,8 +227,8 @@ int dma_common_mmap(struct device *dev, struct vm_area_struct *vma,
+> >  #ifndef CONFIG_ARCH_NO_COHERENT_DMA_MMAP
+> >  	unsigned long user_count = vma_pages(vma);
+> >  	unsigned long count = PAGE_ALIGN(size) >> PAGE_SHIFT;
+> >-	unsigned long pfn = page_to_pfn(virt_to_page(cpu_addr));
+> >  	unsigned long off = vma->vm_pgoff;
+> >+	unsigned long pfn;
+> >
+> >  	vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
+> >
+> >@@ -236,6 +236,7 @@ int dma_common_mmap(struct device *dev, struct vm_area_struct *vma,
+> >  		return ret;
+> >
+> >  	if (off < count && user_count <= (count - off)) {
+> >+		pfn = page_to_pfn(virt_to_page(cpu_addr));
+> >  		ret = remap_pfn_range(vma, vma->vm_start,
+> >  				      pfn + off,
+> >  				      user_count << PAGE_SHIFT,
+> >--
+> >2.7.4
+> >
+> >_______________________________________________
+> >iommu mailing list
+> >iommu@lists.linux-foundation.org
+> >https://lists.linuxfoundation.org/mailman/listinfo/iommu
+> >
 
-Good idea. My patches don't do that, but that seems like a
-good follow-up.
+--8a48p4KKsB+A/3VY
+Content-Type: application/pgp-signature; name="signature.asc"
 
-      Arnd
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBAgAGBQJayxV7AAoJEHI0Bo8WoVY8poQP/RLuihAmfxnsaF8Y5vpyWWQT
+GS7+W9OGNVGOn8IeMsp0Lq+GSpzqHVd8o18/06m1Cp+4KIzhgbGrOPpSHBZ4qMON
+oi98PJHrMWxIqzgSt/ejjXQ70USkEAOfv4tMZ8R8QnzFcOZ4Ka/ppoH2JuSzb0E5
+XCKfgkqFu7VyT5cQCERb0+orAVmj5w4vpglIr6igE0UTh0XjubXqtIxFitH3qmdw
+cnboVo3SH7eTLTDzSWdOPUi0aPRditdbHOpencmWpwtKQRAwFx7xwtefWkrML+dT
+n8Ygl0VOk+B5zYlb1JMCmX1/btaxOl9P7wDI0IkUwuEY3S7ZWmpzoWnlw/Fzbnlb
+wWoEmTLuM514Qd9UTB98hDqpsZhe5D/Zo7kExHAU+peucxUyfZ6g2q1mwrDYwUY+
+BP78VWaQc4lHQZ9xBGkHgaXzmVHjmEjXFWe+L/3z1iGmngYdR4/b5Dhfw1GXT6mt
+PHcliy3AbgHT/wr55WBCEB2+xdl7tChdv/Hl2x89kDqkRXFnS+uWsIJ4qd4U0DIy
+oDb/6g4TAbGV7j/k3gEQT4MkclRYrv/rlDVyYZrGIWn6oX8iDieVLoJSa2mNa59K
+sAWLR3Ca+vLaGI+WOn+8mvg0ZxW4Wywi5xwiru98RVPHI1CxGQGL1Hm3ayyK/K+F
+H2NKjX9Nm20Zg0HDf/oh
+=MB4Z
+-----END PGP SIGNATURE-----
+
+--8a48p4KKsB+A/3VY--
