@@ -1,29 +1,53 @@
-From: Helge Deller <deller@gmx.de>
-Date: Wed, 25 Apr 2018 21:07:57 +0000
-Subject: Re: [PATCH 22/22] parisc: use generic dma_noncoherent_ops
-Message-Id: <84d9e1ac-86c3-6f2e-377f-2be44783b933@gmx.de>
+From: Laurent Dufour <ldufour@linux.vnet.ibm.com>
+Date: Mon, 09 Apr 2018 13:57:06 +0000
+Subject: [PATCH 0/3] move __HAVE_ARCH_PTE_SPECIAL in Kconfig
+Message-Id: <1523282229-20731-1-git-send-email-ldufour@linux.vnet.ibm.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180420080313.18796-1-hch@lst.de>
- <20180420080313.18796-23-hch@lst.de>
- <e0b4f3be-68b9-c3af-e432-fd20419e2d70@gmx.de> <20180425072105.GA12308@lst.de>
-In-Reply-To: <20180425072105.GA12308@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Christoph Hellwig <hch@lst.de>
-Cc: linux-arch@vger.kernel.org, Michal Simek <monstr@monstr.eu>, Vincent Chen <deanbo422@gmail.com>, linux-c6x-dev@linux-c6x.org, linux-parisc@vger.kernel.org, linux-sh@vger.kernel.org, linux-hexagon@vger.kernel.org, linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, openrisc@lists.librecores.org, Greentime Hu <green.hu@gmail.com>, linux-alpha@vger.kernel.org, sparclinux@vger.kernel.org, nios2-dev@lists.rocketboards.org, linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org
+To: linux-arm-kernel@lists.infradead.org
 
-On 25.04.2018 09:21, Christoph Hellwig wrote:
-> On Sat, Apr 21, 2018 at 07:43:46PM +0200, Helge Deller wrote:
->> This patch breaks a 32bit kernel on a B160L machine (PA7300LC CPU, "pcxl2").
->> After applying this patch series the lasi82956 network driver works unreliable. 
->> NIC gets IP, but ping doesn't work.
->> See drivers/net/ethernet/i825xx/lasi_82596.c, it uses dma*sync() functions.
-> 
-> Just to confirm:  Without the series it is known to actually work?
+The per architecture __HAVE_ARCH_PTE_SPECIAL is defined statically in the
+per architecture header files. This doesn't allow to make other
+configuration dependent on it.
 
-Yes.
-I reverted this series from my tree, rebuilt, and then the issue was gone.
-I won't be able to test again earlier than next week.
+This series is moving the __HAVE_ARCH_PTE_SPECIAL into the Kconfig files,
+setting it automatically when architectures was already setting it in
+header file.
 
-Helge
+There is no functional change introduced by this series.
+
+Laurent Dufour (3):
+  mm: introduce ARCH_HAS_PTE_SPECIAL
+  mm: replace __HAVE_ARCH_PTE_SPECIAL
+  mm: remove __HAVE_ARCH_PTE_SPECIAL
+
+ Documentation/features/vm/pte_special/arch-support.txt | 2 +-
+ arch/arc/Kconfig                                       | 1 +
+ arch/arc/include/asm/pgtable.h                         | 2 --
+ arch/arm/Kconfig                                       | 1 +
+ arch/arm/include/asm/pgtable-3level.h                  | 1 -
+ arch/arm64/Kconfig                                     | 1 +
+ arch/arm64/include/asm/pgtable.h                       | 2 --
+ arch/powerpc/Kconfig                                   | 1 +
+ arch/powerpc/include/asm/book3s/64/pgtable.h           | 3 ---
+ arch/powerpc/include/asm/pte-common.h                  | 3 ---
+ arch/riscv/Kconfig                                     | 1 +
+ arch/s390/Kconfig                                      | 1 +
+ arch/s390/include/asm/pgtable.h                        | 1 -
+ arch/sh/Kconfig                                        | 1 +
+ arch/sh/include/asm/pgtable.h                          | 2 --
+ arch/sparc/Kconfig                                     | 1 +
+ arch/sparc/include/asm/pgtable_64.h                    | 3 ---
+ arch/x86/Kconfig                                       | 1 +
+ arch/x86/include/asm/pgtable_types.h                   | 1 -
+ include/linux/pfn_t.h                                  | 4 ++--
+ mm/Kconfig                                             | 3 +++
+ mm/gup.c                                               | 4 ++--
+ mm/memory.c                                            | 2 +-
+ 23 files changed, 18 insertions(+), 24 deletions(-)
+
+-- 
+2.7.4
+
