@@ -1,260 +1,179 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Fri, 20 Apr 2018 08:03:05 +0000
-Subject: [PATCH 14/22] nios2: use generic dma_noncoherent_ops
-Message-Id: <20180420080313.18796-15-hch@lst.de>
+From: Laurent Dufour <ldufour@linux.vnet.ibm.com>
+Date: Mon, 09 Apr 2018 13:57:07 +0000
+Subject: [PATCH 1/3] mm: introduce ARCH_HAS_PTE_SPECIAL
+Message-Id: <1523282229-20731-2-git-send-email-ldufour@linux.vnet.ibm.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180420080313.18796-1-hch@lst.de>
-In-Reply-To: <20180420080313.18796-1-hch@lst.de>
+References: <1523282229-20731-1-git-send-email-ldufour@linux.vnet.ibm.com>
+In-Reply-To: <1523282229-20731-1-git-send-email-ldufour@linux.vnet.ibm.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Cc: linux-arch@vger.kernel.org, Michal Simek <monstr@monstr.eu>, Greentime Hu <green.hu@gmail.com>, Vincent Chen <deanbo422@gmail.com>, linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org, linux-c6x-dev@linux-c6x.org, linux-hexagon@vger.kernel.org, linux-m68k@lists.linux-m68k.org, nios2-dev@lists.rocketboards.org, openrisc@lists.librecores.org, linux-parisc@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-kernel@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Switch to the generic noncoherent direct mapping implementation.
+Currently the PTE special supports is turned on in per architecture header
+files. Most of the time, it is defined in arch/*/include/asm/pgtable.h
+depending or not on some other per architecture static definition.
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
+This patch introduce a new configuration variable to manage this directly
+in the Kconfig files. It would later replace __HAVE_ARCH_PTE_SPECIAL.
+
+Here notes for some architecture where the definition of
+__HAVE_ARCH_PTE_SPECIAL is not obvious:
+
+arm
+ __HAVE_ARCH_PTE_SPECIAL which is currently defined in
+arch/arm/include/asm/pgtable-3level.h which is included by
+arch/arm/include/asm/pgtable.h when CONFIG_ARM_LPAE is set.
+So select ARCH_HAS_PTE_SPECIAL if ARM_LPAE.
+
+powerpc
+__HAVE_ARCH_PTE_SPECIAL is defined in 2 files:
+ - arch/powerpc/include/asm/book3s/64/pgtable.h
+ - arch/powerpc/include/asm/pte-common.h
+The first one is included if (PPC_BOOK3S & PPC64) while the second is
+included in all the other cases.
+So select ARCH_HAS_PTE_SPECIAL all the time.
+
+sparc:
+__HAVE_ARCH_PTE_SPECIAL is defined if defined(__sparc__) &&
+defined(__arch64__) which are defined through the compiler in
+sparc/Makefile if !SPARC32 which I assume to be if SPARC64.
+So select ARCH_HAS_PTE_SPECIAL if SPARC64
+
+Suggested-by: Jerome Glisse <jglisse@redhat.com>
+Signed-off-by: Laurent Dufour <ldufour@linux.vnet.ibm.com>
 ---
- arch/nios2/Kconfig                   |   3 +
- arch/nios2/include/asm/Kbuild        |   1 +
- arch/nios2/include/asm/dma-mapping.h |  20 ----
- arch/nios2/mm/dma-mapping.c          | 139 +++------------------------
- 4 files changed, 17 insertions(+), 146 deletions(-)
- delete mode 100644 arch/nios2/include/asm/dma-mapping.h
+ arch/arc/Kconfig     | 1 +
+ arch/arm/Kconfig     | 1 +
+ arch/arm64/Kconfig   | 1 +
+ arch/powerpc/Kconfig | 1 +
+ arch/riscv/Kconfig   | 1 +
+ arch/s390/Kconfig    | 1 +
+ arch/sh/Kconfig      | 1 +
+ arch/sparc/Kconfig   | 1 +
+ arch/x86/Kconfig     | 1 +
+ mm/Kconfig           | 3 +++
+ 10 files changed, 12 insertions(+)
 
-diff --git a/arch/nios2/Kconfig b/arch/nios2/Kconfig
-index 3d4ec88f1db1..92035042cf62 100644
---- a/arch/nios2/Kconfig
-+++ b/arch/nios2/Kconfig
-@@ -1,6 +1,9 @@
- # SPDX-License-Identifier: GPL-2.0
- config NIOS2
+diff --git a/arch/arc/Kconfig b/arch/arc/Kconfig
+index d76bf4a83740..8516e2b0239a 100644
+--- a/arch/arc/Kconfig
++++ b/arch/arc/Kconfig
+@@ -44,6 +44,7 @@ config ARC
+ 	select HAVE_GENERIC_DMA_COHERENT
+ 	select HAVE_KERNEL_GZIP
+ 	select HAVE_KERNEL_LZMA
++	select ARCH_HAS_PTE_SPECIAL
+ 
+ config MIGHT_HAVE_PCI
+ 	bool
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index 1878083771af..a67973cb041c 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -7,6 +7,7 @@ config ARM
+ 	select ARCH_HAS_DEBUG_VIRTUAL if MMU
+ 	select ARCH_HAS_DEVMEM_IS_ALLOWED
+ 	select ARCH_HAS_ELF_RANDOMIZE
++	select ARCH_HAS_PTE_SPECIAL if ARM_LPAE
+ 	select ARCH_HAS_SET_MEMORY
+ 	select ARCH_HAS_PHYS_TO_DMA
+ 	select ARCH_HAS_STRICT_KERNEL_RWX if MMU && !XIP_KERNEL
+diff --git a/arch/arm64/Kconfig b/arch/arm64/Kconfig
+index 276e96ceaf27..7ae3c09921fb 100644
+--- a/arch/arm64/Kconfig
++++ b/arch/arm64/Kconfig
+@@ -17,6 +17,7 @@ config ARM64
+ 	select ARCH_HAS_GIGANTIC_PAGE if (MEMORY_ISOLATION && COMPACTION) || CMA
+ 	select ARCH_HAS_KCOV
+ 	select ARCH_HAS_MEMBARRIER_SYNC_CORE
++	select ARCH_HAS_PTE_SPECIAL
+ 	select ARCH_HAS_SET_MEMORY
+ 	select ARCH_HAS_SG_CHAIN
+ 	select ARCH_HAS_STRICT_KERNEL_RWX
+diff --git a/arch/powerpc/Kconfig b/arch/powerpc/Kconfig
+index c32a181a7cbb..f7415fe25c07 100644
+--- a/arch/powerpc/Kconfig
++++ b/arch/powerpc/Kconfig
+@@ -141,6 +141,7 @@ config PPC
+ 	select ARCH_HAS_GCOV_PROFILE_ALL
+ 	select ARCH_HAS_PHYS_TO_DMA
+ 	select ARCH_HAS_PMEM_API                if PPC64
++	select ARCH_HAS_PTE_SPECIAL
+ 	select ARCH_HAS_MEMBARRIER_CALLBACKS
+ 	select ARCH_HAS_SCALED_CPUTIME		if VIRT_CPU_ACCOUNTING_NATIVE
+ 	select ARCH_HAS_SG_CHAIN
+diff --git a/arch/riscv/Kconfig b/arch/riscv/Kconfig
+index 148865de1692..b0a8404bf684 100644
+--- a/arch/riscv/Kconfig
++++ b/arch/riscv/Kconfig
+@@ -34,6 +34,7 @@ config RISCV
+ 	select THREAD_INFO_IN_TASK
+ 	select RISCV_TIMER
+ 	select GENERIC_IRQ_MULTI_HANDLER
++	select ARCH_HAS_PTE_SPECIAL
+ 
+ config MMU
  	def_bool y
-+	select ARCH_HAS_SYNC_DMA_FOR_CPU
-+	select ARCH_HAS_SYNC_DMA_FOR_DEVICE
-+	select DMA_NONCOHERENT_OPS
- 	select TIMER_OF
- 	select GENERIC_ATOMIC64
- 	select GENERIC_CLOCKEVENTS
-diff --git a/arch/nios2/include/asm/Kbuild b/arch/nios2/include/asm/Kbuild
-index d232da2cbb38..24f6ee1ee69b 100644
---- a/arch/nios2/include/asm/Kbuild
-+++ b/arch/nios2/include/asm/Kbuild
-@@ -8,6 +8,7 @@ generic-y += current.h
- generic-y += device.h
- generic-y += div64.h
- generic-y += dma.h
-+generic-y += dma-mapping.h
- generic-y += emergency-restart.h
- generic-y += exec.h
- generic-y += extable.h
-diff --git a/arch/nios2/include/asm/dma-mapping.h b/arch/nios2/include/asm/dma-mapping.h
-deleted file mode 100644
-index 6ceb92251da0..000000000000
---- a/arch/nios2/include/asm/dma-mapping.h
-+++ /dev/null
-@@ -1,20 +0,0 @@
--/*
-- * Copyright (C) 2011 Tobias Klauser <tklauser@distanz.ch>
-- * Copyright (C) 2009 Wind River Systems Inc
-- *
-- * This file is subject to the terms and conditions of the GNU General
-- * Public License.  See the file COPYING in the main directory of this
-- * archive for more details.
-- */
--
--#ifndef _ASM_NIOS2_DMA_MAPPING_H
--#define _ASM_NIOS2_DMA_MAPPING_H
--
--extern const struct dma_map_ops nios2_dma_ops;
--
--static inline const struct dma_map_ops *get_arch_dma_ops(struct bus_type *bus)
--{
--	return &nios2_dma_ops;
--}
--
--#endif /* _ASM_NIOS2_DMA_MAPPING_H */
-diff --git a/arch/nios2/mm/dma-mapping.c b/arch/nios2/mm/dma-mapping.c
-index 4be815519dd4..4af9e5b5ba1c 100644
---- a/arch/nios2/mm/dma-mapping.c
-+++ b/arch/nios2/mm/dma-mapping.c
-@@ -12,18 +12,18 @@
+diff --git a/arch/s390/Kconfig b/arch/s390/Kconfig
+index 32a0d5b958bf..5f1f4997e7e9 100644
+--- a/arch/s390/Kconfig
++++ b/arch/s390/Kconfig
+@@ -72,6 +72,7 @@ config S390
+ 	select ARCH_HAS_GCOV_PROFILE_ALL
+ 	select ARCH_HAS_GIGANTIC_PAGE if (MEMORY_ISOLATION && COMPACTION) || CMA
+ 	select ARCH_HAS_KCOV
++	select ARCH_HAS_PTE_SPECIAL
+ 	select ARCH_HAS_SET_MEMORY
+ 	select ARCH_HAS_SG_CHAIN
+ 	select ARCH_HAS_STRICT_KERNEL_RWX
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index 97fe29316476..a6c75b6806d2 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -50,6 +50,7 @@ config SUPERH
+ 	select HAVE_ARCH_AUDITSYSCALL
+ 	select HAVE_FUTEX_CMPXCHG if FUTEX
+ 	select HAVE_NMI
++	select ARCH_HAS_PTE_SPECIAL
+ 	help
+ 	  The SuperH is a RISC processor targeted for use in embedded systems
+ 	  and consumer electronics; it was also used in the Sega Dreamcast
+diff --git a/arch/sparc/Kconfig b/arch/sparc/Kconfig
+index 8767e45f1b2b..6b5a4f05dcb2 100644
+--- a/arch/sparc/Kconfig
++++ b/arch/sparc/Kconfig
+@@ -86,6 +86,7 @@ config SPARC64
+ 	select ARCH_USE_QUEUED_SPINLOCKS
+ 	select GENERIC_TIME_VSYSCALL
+ 	select ARCH_CLOCKSOURCE_DATA
++	select ARCH_HAS_PTE_SPECIAL
  
- #include <linux/types.h>
- #include <linux/mm.h>
--#include <linux/export.h>
- #include <linux/string.h>
--#include <linux/scatterlist.h>
- #include <linux/dma-mapping.h>
- #include <linux/io.h>
- #include <linux/cache.h>
- #include <asm/cacheflush.h>
+ config ARCH_DEFCONFIG
+ 	string
+diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
+index bf4ddea48e61..3f5fb25486bf 100644
+--- a/arch/x86/Kconfig
++++ b/arch/x86/Kconfig
+@@ -56,6 +56,7 @@ config X86
+ 	select ARCH_HAS_KCOV			if X86_64
+ 	select ARCH_HAS_MEMBARRIER_SYNC_CORE
+ 	select ARCH_HAS_PMEM_API		if X86_64
++	select ARCH_HAS_PTE_SPECIAL
+ 	select ARCH_HAS_REFCOUNT
+ 	select ARCH_HAS_UACCESS_FLUSHCACHE	if X86_64
+ 	select ARCH_HAS_SET_MEMORY
+diff --git a/mm/Kconfig b/mm/Kconfig
+index bf9d6366bced..60ae67b83e62 100644
+--- a/mm/Kconfig
++++ b/mm/Kconfig
+@@ -757,3 +757,6 @@ config GUP_BENCHMARK
+ 	  performance of get_user_pages_fast().
  
--static inline void __dma_sync_for_device(void *vaddr, size_t size,
--			      enum dma_data_direction direction)
-+void arch_sync_dma_for_device(struct device *dev, phys_addr_t paddr,
-+		size_t size, enum dma_data_direction dir)
- {
--	switch (direction) {
-+	void *vaddr = phys_to_virt(paddr);
+ 	  See tools/testing/selftests/vm/gup_benchmark.c
 +
-+	switch (dir) {
- 	case DMA_FROM_DEVICE:
- 		invalidate_dcache_range((unsigned long)vaddr,
- 			(unsigned long)(vaddr + size));
-@@ -42,10 +42,12 @@ static inline void __dma_sync_for_device(void *vaddr, size_t size,
- 	}
- }
- 
--static inline void __dma_sync_for_cpu(void *vaddr, size_t size,
--			      enum dma_data_direction direction)
-+void arch_sync_dma_for_cpu(struct device *dev, phys_addr_t paddr,
-+		size_t size, enum dma_data_direction dir)
- {
--	switch (direction) {
-+	void *vaddr = phys_to_virt(paddr);
-+
-+	switch (dir) {
- 	case DMA_BIDIRECTIONAL:
- 	case DMA_FROM_DEVICE:
- 		invalidate_dcache_range((unsigned long)vaddr,
-@@ -58,8 +60,8 @@ static inline void __dma_sync_for_cpu(void *vaddr, size_t size,
- 	}
- }
- 
--static void *nios2_dma_alloc(struct device *dev, size_t size,
--		dma_addr_t *dma_handle, gfp_t gfp, unsigned long attrs)
-+void *arch_dma_alloc(struct device *dev, size_t size, dma_addr_t *dma_handle,
-+		gfp_t gfp, unsigned long attrs)
- {
- 	void *ret;
- 
-@@ -80,125 +82,10 @@ static void *nios2_dma_alloc(struct device *dev, size_t size,
- 	return ret;
- }
- 
--static void nios2_dma_free(struct device *dev, size_t size, void *vaddr,
-+void arch_dma_free(struct device *dev, size_t size, void *vaddr,
- 		dma_addr_t dma_handle, unsigned long attrs)
- {
- 	unsigned long addr = (unsigned long) CAC_ADDR((unsigned long) vaddr);
- 
- 	free_pages(addr, get_order(size));
- }
--
--static int nios2_dma_map_sg(struct device *dev, struct scatterlist *sg,
--		int nents, enum dma_data_direction direction,
--		unsigned long attrs)
--{
--	int i;
--
--	for_each_sg(sg, sg, nents, i) {
--		void *addr = sg_virt(sg);
--
--		if (!addr)
--			continue;
--
--		sg->dma_address = sg_phys(sg);
--
--		if (attrs & DMA_ATTR_SKIP_CPU_SYNC)
--			continue;
--
--		__dma_sync_for_device(addr, sg->length, direction);
--	}
--
--	return nents;
--}
--
--static dma_addr_t nios2_dma_map_page(struct device *dev, struct page *page,
--			unsigned long offset, size_t size,
--			enum dma_data_direction direction,
--			unsigned long attrs)
--{
--	void *addr = page_address(page) + offset;
--
--	if (!(attrs & DMA_ATTR_SKIP_CPU_SYNC))
--		__dma_sync_for_device(addr, size, direction);
--
--	return page_to_phys(page) + offset;
--}
--
--static void nios2_dma_unmap_page(struct device *dev, dma_addr_t dma_address,
--		size_t size, enum dma_data_direction direction,
--		unsigned long attrs)
--{
--	if (!(attrs & DMA_ATTR_SKIP_CPU_SYNC))
--		__dma_sync_for_cpu(phys_to_virt(dma_address), size, direction);
--}
--
--static void nios2_dma_unmap_sg(struct device *dev, struct scatterlist *sg,
--		int nhwentries, enum dma_data_direction direction,
--		unsigned long attrs)
--{
--	void *addr;
--	int i;
--
--	if (direction = DMA_TO_DEVICE)
--		return;
--
--	if (attrs & DMA_ATTR_SKIP_CPU_SYNC)
--		return;
--
--	for_each_sg(sg, sg, nhwentries, i) {
--		addr = sg_virt(sg);
--		if (addr)
--			__dma_sync_for_cpu(addr, sg->length, direction);
--	}
--}
--
--static void nios2_dma_sync_single_for_cpu(struct device *dev,
--		dma_addr_t dma_handle, size_t size,
--		enum dma_data_direction direction)
--{
--	__dma_sync_for_cpu(phys_to_virt(dma_handle), size, direction);
--}
--
--static void nios2_dma_sync_single_for_device(struct device *dev,
--		dma_addr_t dma_handle, size_t size,
--		enum dma_data_direction direction)
--{
--	__dma_sync_for_device(phys_to_virt(dma_handle), size, direction);
--}
--
--static void nios2_dma_sync_sg_for_cpu(struct device *dev,
--		struct scatterlist *sg, int nelems,
--		enum dma_data_direction direction)
--{
--	int i;
--
--	/* Make sure that gcc doesn't leave the empty loop body.  */
--	for_each_sg(sg, sg, nelems, i)
--		__dma_sync_for_cpu(sg_virt(sg), sg->length, direction);
--}
--
--static void nios2_dma_sync_sg_for_device(struct device *dev,
--		struct scatterlist *sg, int nelems,
--		enum dma_data_direction direction)
--{
--	int i;
--
--	/* Make sure that gcc doesn't leave the empty loop body.  */
--	for_each_sg(sg, sg, nelems, i)
--		__dma_sync_for_device(sg_virt(sg), sg->length, direction);
--
--}
--
--const struct dma_map_ops nios2_dma_ops = {
--	.alloc			= nios2_dma_alloc,
--	.free			= nios2_dma_free,
--	.map_page		= nios2_dma_map_page,
--	.unmap_page		= nios2_dma_unmap_page,
--	.map_sg			= nios2_dma_map_sg,
--	.unmap_sg		= nios2_dma_unmap_sg,
--	.sync_single_for_device	= nios2_dma_sync_single_for_device,
--	.sync_single_for_cpu	= nios2_dma_sync_single_for_cpu,
--	.sync_sg_for_cpu	= nios2_dma_sync_sg_for_cpu,
--	.sync_sg_for_device	= nios2_dma_sync_sg_for_device,
--};
--EXPORT_SYMBOL(nios2_dma_ops);
++config ARCH_HAS_PTE_SPECIAL
++	bool
 -- 
-2.17.0
+2.7.4
 
