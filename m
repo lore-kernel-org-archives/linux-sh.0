@@ -1,37 +1,69 @@
-From: Laurent Dufour <ldufour@linux.vnet.ibm.com>
-Date: Mon, 09 Apr 2018 16:17:16 +0000
-Subject: Re: [PATCH 0/3] move __HAVE_ARCH_PTE_SPECIAL in Kconfig
-Message-Id: <21c34965-ec30-4d7f-aeaf-cb3da9758a0e@linux.vnet.ibm.com>
+From: Jacopo Mondi <jacopo+renesas@jmondi.org>
+Date: Mon, 09 Apr 2018 16:59:08 +0000
+Subject: [PATCH] base: dma-mapping: Postpone cpu addr translation on mmap()
+Message-Id: <1523293148-18726-1-git-send-email-jacopo+renesas@jmondi.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1523282229-20731-1-git-send-email-ldufour@linux.vnet.ibm.com>
- <17b19aac-fed7-23a2-013c-43ca867152e9@synopsys.com>
-In-Reply-To: <17b19aac-fed7-23a2-013c-43ca867152e9@synopsys.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: laurent.pinchart@ideasonboard.com, robin.murphy@arm.com
+Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>, ysato@users.sourceforge.jp, dalias@libc.org, iommu@lists.linux-foundation.org, linux-sh@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-kernel@vger.kernel.org
 
-On 09/04/2018 18:03, Vineet Gupta wrote:
-> On 04/09/2018 06:57 AM, Laurent Dufour wrote:
->> The per architecture __HAVE_ARCH_PTE_SPECIAL is defined statically in the
->> per architecture header files. This doesn't allow to make other
->> configuration dependent on it.
-> 
-> So I understand this series has more "readability" value and I'm fine with this
-> change but I wonder if you really would want to make something depend on it or
-> make this de-configurable. PTE special is really a fundamental construct - e.g.
-> it is used for anon mapped pages where zero page has been wired up etc...
+Postpone calling virt_to_page() translation on memory locations not
+guaranteed to be backed by a struct page.
 
-I don't want it to be de-configurable. This is almost like
-ARCH_SUPPORTS_MEMORY_FAILURE, ARCH_USES_HIGH_VMA_FLAGS, ARCH_HAS_HMM...
+This patch fixes a specific issue of SH architecture configured with
+SPARSEMEM memory model, when mapping buffers allocated with the memblock
+APIs at system initialization time, and thus not backed by the page
+infrastructure.
 
-These values are selected by per architecture Kconfig files and are not exposed
-through the configuration menu.
+It does apply to the general case though, as an early translation is anyhow
+incorrect and shall be postponed after trying to map memory from the device
+coherent memory pool first.
 
-Concerning making something depend on it, I will probably make
-CONFIG_SPECULATIVE_PAGE_FAULT introduced by the SPF series dependent on it.
-For details, please see https://lkml.org/lkml/2018/3/13/1143
+Suggested-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
 
-Thanks,
-Laurent.
+---
+Compared to the RFC version I have tried to generalize the commit message,
+please suggest any improvement to that.
+
+I'm still a bit puzzled on what happens if dma_mmap_from_dev_coherent() fails.
+Does a dma_mmap_from_dev_coherent() failure guarantee anyhow that the
+successive virt_to_page() isn't problematic as it is today?
+Or is it the
+ 	if (off < count && user_count <= (count - off))
+check that makes the translation safe?
+
+Thanks
+   j
+
+---
+ drivers/base/dma-mapping.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/base/dma-mapping.c b/drivers/base/dma-mapping.c
+index 3b11835..8b4ec34 100644
+--- a/drivers/base/dma-mapping.c
++++ b/drivers/base/dma-mapping.c
+@@ -226,8 +226,8 @@ int dma_common_mmap(struct device *dev, struct vm_area_struct *vma,
+ #ifndef CONFIG_ARCH_NO_COHERENT_DMA_MMAP
+ 	unsigned long user_count = vma_pages(vma);
+ 	unsigned long count = PAGE_ALIGN(size) >> PAGE_SHIFT;
+-	unsigned long pfn = page_to_pfn(virt_to_page(cpu_addr));
+ 	unsigned long off = vma->vm_pgoff;
++	unsigned long pfn;
+
+ 	vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
+
+@@ -235,6 +235,7 @@ int dma_common_mmap(struct device *dev, struct vm_area_struct *vma,
+ 		return ret;
+
+ 	if (off < count && user_count <= (count - off)) {
++		pfn = page_to_pfn(virt_to_page(cpu_addr));
+ 		ret = remap_pfn_range(vma, vma->vm_start,
+ 				      pfn + off,
+ 				      user_count << PAGE_SHIFT,
+--
+2.7.4
 
