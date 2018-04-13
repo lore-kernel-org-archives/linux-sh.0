@@ -1,187 +1,65 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Fri, 20 Apr 2018 15:48:54 +0000
-Subject: [PATCH 2/4] sh: sh03: rtc: push down rtc class ops into driver
-Message-Id: <20180420154933.3235131-2-arnd@arndb.de>
+From: Rich Felker <dalias@libc.org>
+Date: Fri, 13 Apr 2018 15:38:58 +0000
+Subject: [GIT PULL] arch/sh updates for 4.17
+Message-Id: <20180413153858.GA24377@brightrain.aerifal.cx>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180420154933.3235131-1-arnd@arndb.de>
-In-Reply-To: <20180420154933.3235131-1-arnd@arndb.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Rich Felker <dalias@libc.org>
-Cc: Baolin Wang <baolin.wang@linaro.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh@vger.kernel.org, broonie@kernel.org, Arnd Bergmann <arnd@arndb.de>, linux-kernel@vger.kernel.org
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: Linux-sh list <linux-sh@vger.kernel.org>, linux-kernel@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>
 
-The dreamcast RTC support has an extra level of indirection to
-provide either the old read_persistent_clock/update_persistent_clock
-interface or the rtc-generic device for hctosys/systohc.
+Hi Linus,
 
-By removing the indirection and always using the RTC_CLASS interface,
-we can avoid the lossy double conversion between rtc_time and timespec,
-so we end up supporting the entire range of 'year' values, and clarifying
-the rtc_set_time callback.
+Please pull these changes for arch/sh. Some of them have been pending
+(and in linux-next) for a long time and address longstanding issues.
 
-I did not change the behavior of sh03_rtc_settimeofday(), which keeps
-just updating the seconds/minutes by calling set_rtc_mmss(), this
-could be improved if anyone cares. Also, the file should ideally be
-moved into drivers/rtc and not use rtc-generic.
+Rich
 
-Signed-off-by: Arnd Bergmann <arnd@arndb.de>
----
- arch/sh/boards/mach-sh03/Makefile |  3 ++-
- arch/sh/boards/mach-sh03/rtc.c    | 51 ++++++++++++++++++++++++---------------
- arch/sh/boards/mach-sh03/setup.c  |  9 -------
- arch/sh/configs/sh03_defconfig    |  2 ++
- 4 files changed, 35 insertions(+), 30 deletions(-)
 
-diff --git a/arch/sh/boards/mach-sh03/Makefile b/arch/sh/boards/mach-sh03/Makefile
-index 400306a796ec..47007a3a2fc8 100644
---- a/arch/sh/boards/mach-sh03/Makefile
-+++ b/arch/sh/boards/mach-sh03/Makefile
-@@ -2,4 +2,5 @@
- # Makefile for the Interface (CTP/PCI-SH03) specific parts of the kernel
- #
- 
--obj-y	 := setup.o rtc.o
-+obj-y	 := setup.o
-+obj-$(CONFIG_RTC_DRV_GENERIC) += rtc.o
-diff --git a/arch/sh/boards/mach-sh03/rtc.c b/arch/sh/boards/mach-sh03/rtc.c
-index dc3d50e3b7a2..8b23ed7c201c 100644
---- a/arch/sh/boards/mach-sh03/rtc.c
-+++ b/arch/sh/boards/mach-sh03/rtc.c
-@@ -13,8 +13,9 @@
- #include <linux/bcd.h>
- #include <linux/rtc.h>
- #include <linux/spinlock.h>
--#include <asm/io.h>
--#include <asm/rtc.h>
-+#include <linux/io.h>
-+#include <linux/rtc.h>
-+#include <linux/platform_device.h>
- 
- #define RTC_BASE	0xb0000000
- #define RTC_SEC1	(RTC_BASE + 0)
-@@ -38,7 +39,7 @@
- 
- static DEFINE_SPINLOCK(sh03_rtc_lock);
- 
--unsigned long get_cmos_time(void)
-+static int sh03_rtc_gettimeofday(struct device *dev, struct rtc_time *tm)
- {
- 	unsigned int year, mon, day, hour, min, sec;
- 
-@@ -75,17 +76,18 @@ unsigned long get_cmos_time(void)
- 	}
- 
- 	spin_unlock(&sh03_rtc_lock);
--	return mktime(year, mon, day, hour, min, sec);
--}
- 
--void sh03_rtc_gettimeofday(struct timespec *tv)
--{
-+	tm->tm_sec  = sec;
-+	tm->tm_min  = min;
-+	tm->tm_hour = hour;
-+	tm->tm_mday = day;
-+	tm->tm_mon  = mon;
-+	tm->tm_year = year - 1900;
- 
--	tv->tv_sec = get_cmos_time();
--	tv->tv_nsec = 0;
-+	return 0;
- }
- 
--static int set_rtc_mmss(unsigned long nowtime)
-+static int set_rtc_mmss(struct rtc_time *tm)
- {
- 	int retval = 0;
- 	int real_seconds, real_minutes, cmos_minutes;
-@@ -97,8 +99,8 @@ static int set_rtc_mmss(unsigned long nowtime)
- 		if (!(__raw_readb(RTC_CTL) & RTC_BUSY))
- 			break;
- 	cmos_minutes = (__raw_readb(RTC_MIN1) & 0xf) + (__raw_readb(RTC_MIN10) & 0xf) * 10;
--	real_seconds = nowtime % 60;
--	real_minutes = nowtime / 60;
-+	real_seconds = tm->tm_sec;
-+	real_minutes = tm->tm_min;
- 	if (((abs(real_minutes - cmos_minutes) + 15)/30) & 1)
- 		real_minutes += 30;		/* correct for half hour time zone */
- 	real_minutes %= 60;
-@@ -112,22 +114,31 @@ static int set_rtc_mmss(unsigned long nowtime)
- 		printk_once(KERN_NOTICE
- 		       "set_rtc_mmss: can't update from %d to %d\n",
- 		       cmos_minutes, real_minutes);
--		retval = -1;
-+		retval = -EINVAL;
- 	}
- 	spin_unlock(&sh03_rtc_lock);
- 
- 	return retval;
- }
- 
--int sh03_rtc_settimeofday(const time_t secs)
-+int sh03_rtc_settimeofday(struct device *dev, struct rtc_time *tm)
- {
--	unsigned long nowtime = secs;
--
--	return set_rtc_mmss(nowtime);
-+	return set_rtc_mmss(tm);
- }
- 
--void sh03_time_init(void)
-+static const struct rtc_class_ops rtc_generic_ops = {
-+	.read_time = sh03_rtc_gettimeofday,
-+	.set_time = sh03_rtc_settimeofday,
-+};
-+
-+static int __init sh03_time_init(void)
- {
--	rtc_sh_get_time = sh03_rtc_gettimeofday;
--	rtc_sh_set_time = sh03_rtc_settimeofday;
-+	struct platform_device *pdev;
-+
-+	pdev = platform_device_register_data(NULL, "rtc-generic", -1,
-+					     &rtc_generic_ops,
-+					     sizeof(rtc_generic_ops));
-+
-+	return PTR_ERR_OR_ZERO(pdev);
- }
-+arch_initcall(sh03_time_init);
-diff --git a/arch/sh/boards/mach-sh03/setup.c b/arch/sh/boards/mach-sh03/setup.c
-index 85e7059a77e9..3901b6031ad5 100644
---- a/arch/sh/boards/mach-sh03/setup.c
-+++ b/arch/sh/boards/mach-sh03/setup.c
-@@ -22,14 +22,6 @@ static void __init init_sh03_IRQ(void)
- 	plat_irq_setup_pins(IRQ_MODE_IRQ);
- }
- 
--/* arch/sh/boards/sh03/rtc.c */
--void sh03_time_init(void);
--
--static void __init sh03_setup(char **cmdline_p)
--{
--	board_time_init = sh03_time_init;
--}
--
- static struct resource cf_ide_resources[] = {
- 	[0] = {
- 		.start  = 0x1f0,
-@@ -101,6 +93,5 @@ device_initcall(sh03_devices_setup);
- 
- static struct sh_machine_vector mv_sh03 __initmv = {
- 	.mv_name		= "Interface (CTP/PCI-SH03)",
--	.mv_setup		= sh03_setup,
- 	.mv_init_irq		= init_sh03_IRQ,
- };
-diff --git a/arch/sh/configs/sh03_defconfig b/arch/sh/configs/sh03_defconfig
-index 2156223405a1..489ffdfb1517 100644
---- a/arch/sh/configs/sh03_defconfig
-+++ b/arch/sh/configs/sh03_defconfig
-@@ -130,3 +130,5 @@ CONFIG_CRYPTO_SHA1=y
- CONFIG_CRYPTO_DEFLATE=y
- # CONFIG_CRYPTO_ANSI_CPRNG is not set
- CONFIG_CRC_CCITT=y
-+CONFIG_RTC_CLASS=y
-+CONFIG_RTC_DRV_GENERIC=y
--- 
-2.9.0
 
+
+The following changes since commit 0adb32858b0bddf4ada5f364a84ed60b196dbcda:
+
+  Linux 4.16 (2018-04-01 14:20:27 -0700)
+
+are available in the git repository at:
+
+  git://git.libc.org/linux-sh tags/sh-for-4.17
+
+for you to fetch changes up to bf9c7e3d7924f72225f8f9c28438b4a711192ad3:
+
+  arch/sh: pcie-sh7786: handle non-zero DMA offset (2018-04-12 19:47:58 -0400)
+
+----------------------------------------------------------------
+Fixes for bugs in futex, device tree, and userspace breakpoint traps,
+and for PCI issues on SH7786.
+
+----------------------------------------------------------------
+Aurelien Jarno (1):
+      sh: fix futex FUTEX_OP_SET op on userspace addresses
+
+Rich Felker (2):
+      sh: fix memory corruption of unflattened device tree
+      sh: fix debug trap failure to process signals before return to user
+
+Thomas Petazzoni (8):
+      arch/sh: add sh7786_mm_sel() function
+      arch/sh: make the DMA mapping operations observe dev->dma_pfn_offset
+      arch/sh: pci: don't use disabled resources
+      arch/sh: pcie-sh7786: mark unavailable PCI resource as disabled
+      arch/sh: pcie-sh7786: exclude unusable PCI MEM areas
+      arch/sh: pcie-sh7786: adjust PCI MEM and IO regions
+      arch/sh: pcie-sh7786: adjust the memory mapping
+      arch/sh: pcie-sh7786: handle non-zero DMA offset
+
+ arch/sh/boards/of-generic.c          |  6 ---
+ arch/sh/drivers/pci/pci.c            |  5 +++
+ arch/sh/drivers/pci/pcie-sh7786.c    | 78 +++++++++++++++++++++++++-----------
+ arch/sh/include/asm/futex.h          |  5 +--
+ arch/sh/include/cpu-sh4/cpu/sh7786.h |  7 ++++
+ arch/sh/kernel/dma-nommu.c           |  7 +++-
+ arch/sh/kernel/entry-common.S        |  2 +-
+ arch/sh/kernel/setup.c               |  8 ++++
+ arch/sh/mm/consistent.c              |  4 +-
+ 9 files changed, 84 insertions(+), 38 deletions(-)
