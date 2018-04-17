@@ -1,106 +1,85 @@
-From: Daniel Wagner <wagi@monom.org>
-Date: Mon, 30 Apr 2018 08:09:18 +0000
-Subject: [PATCH] serial: sh-sci: Use spin_{try}lock_irqsave instead of open coding version
-Message-Id: <20180430080918.16763-1-wagi@monom.org>
+From: Jacopo Mondi <jacopo+renesas@jmondi.org>
+Date: Tue, 17 Apr 2018 13:35:23 +0000
+Subject: [PATCH] sh: mm: Fix unprotected access to struct device
+Message-Id: <1523972123-5700-1-git-send-email-jacopo+renesas@jmondi.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: linux-rt-users@vger.kernel.org, linux-serial@vger.kernel.org, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, linux-sh@vger.kernel.org, Daniel Wagner <daniel.wagner@siemens.com>, Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+To: ysato@users.sourceforge.jp, dalias@libc.org, thomas.petazzoni@free-electrons.com, robin.murphy@arm.com
+Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>, geert@linux-m68k.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-From: Daniel Wagner <daniel.wagner@siemens.com>
+With commit ce88313069c36eef80f21fd7 ("arch/sh: make the DMA mapping
+operations observe dev->dma_pfn_offset") the generic DMA allocation
+function on which the SH 'dma_alloc_coherent()' function relies on,
+access the 'dma_pfn_offset' field of struct device.
 
-Commit 40f70c03e33a ("serial: sh-sci: add locking to console write
-function to avoid SMP lockup") copied the strategy to avoid locking
-problems in conjuncture with the console from the UART8250
-driver. Instead using directly spin_{try}lock_irqsave(),
-local_irq_save() followed by spin_{try}lock() was used. While this is
-correct on mainline, for -rt it is a problem. spin_{try}lock() will
-check if it is running in a valid context. Since the local_irq_save()
-has already been executed, the context has changed and
-spin_{try}lock() will complain. The reason why spin_{try}lock()
-complains is that on -rt the spin locks are turned into mutexes and
-therefore can sleep. Sleeping with interrupts disabled is not valid.
+Unfortunately the 'dma_generic_alloc_coherent()' function is called from
+several places with a NULL struct device argument, halting the CPU
+during the boot process.
 
-BUG: sleeping function called from invalid context at /home/wagi/work/rt/v4.4-cip-rt/kernel/locking/rtmutex.c:995
-in_atomic(): 0, irqs_disabled(): 128, pid: 778, name: irq/76-eth0
-CPU: 0 PID: 778 Comm: irq/76-eth0 Not tainted 4.4.126-test-cip22-rt14-00403-gcd03665c8318 #12
-Hardware name: Generic RZ/G1 (Flattened Device Tree)
-Backtrace:
-[<c00140a0>] (dump_backtrace) from [<c001424c>] (show_stack+0x18/0x1c)
- r7:c06b01f0 r6:60010193 r5:00000000 r4:c06b01f0
-[<c0014234>] (show_stack) from [<c01d3c94>] (dump_stack+0x78/0x94)
-[<c01d3c1c>] (dump_stack) from [<c004c134>] (___might_sleep+0x134/0x194)
- r7:60010113 r6:c06d3559 r5:00000000 r4:ffffe000
-[<c004c000>] (___might_sleep) from [<c04ded60>] (rt_spin_lock+0x20/0x74)
- r5:c06f4d60 r4:c06f4d60
-[<c04ded40>] (rt_spin_lock) from [<c02577e4>] (serial_console_write+0x100/0x118)
- r5:c06f4d60 r4:c06f4d60
-[<c02576e4>] (serial_console_write) from [<c0061060>] (call_console_drivers.constprop.15+0x10c/0x124)
- r10:c06d2894 r9:c04e18b0 r8:00000028 r7:00000000 r6:c06d3559 r5:c06d2798
- r4:c06b9914 r3:c02576e4
-[<c0060f54>] (call_console_drivers.constprop.15) from [<c0062984>] (console_unlock+0x32c/0x430)
- r10:c06d30d8 r9:00000028 r8:c06dd518 r7:00000005 r6:00000000 r5:c06d2798
- r4:c06d2798 r3:00000028
-[<c0062658>] (console_unlock) from [<c0062e1c>] (vprintk_emit+0x394/0x4f0)
- r10:c06d2798 r9:c06d30ee r8:00000006 r7:00000005 r6:c06a78fc r5:00000027
- r4:00000003
-[<c0062a88>] (vprintk_emit) from [<c0062fa0>] (vprintk+0x28/0x30)
- r10:c060bd46 r9:00001000 r8:c06b9a90 r7:c06b9a90 r6:c06b994c r5:c06b9a3c
- r4:c0062fa8
-[<c0062f78>] (vprintk) from [<c0062fb8>] (vprintk_default+0x10/0x14)
-[<c0062fa8>] (vprintk_default) from [<c009cd30>] (printk+0x78/0x84)
-[<c009ccbc>] (printk) from [<c025afdc>] (credit_entropy_bits+0x17c/0x2cc)
- r3:00000001 r2:decade60 r1:c061a5ee r0:c061a523
- r4:00000006
-[<c025ae60>] (credit_entropy_bits) from [<c025bf74>] (add_interrupt_randomness+0x160/0x178)
- r10:466e7196 r9:1f536000 r8:fffeef74 r7:00000000 r6:c06b9a60 r5:c06b9a3c
- r4:dfbcf680
-[<c025be14>] (add_interrupt_randomness) from [<c006536c>] (irq_thread+0x1e8/0x248)
- r10:c006537c r9:c06cdf21 r8:c0064fcc r7:df791c24 r6:df791c00 r5:ffffe000
- r4:df525180
-[<c0065184>] (irq_thread) from [<c003fba4>] (kthread+0x108/0x11c)
- r10:00000000 r9:00000000 r8:c0065184 r7:df791c00 r6:00000000 r5:df791d00
- r4:decac000
-[<c003fa9c>] (kthread) from [<c00101b8>] (ret_from_fork+0x14/0x3c)
- r8:00000000 r7:00000000 r6:00000000 r5:c003fa9c r4:df791d00
+This patch fixes the issue protecting access to dev->dma_pfn_offset,
+with a trivial check for validity. It also passes a valid 'struct device'
+in the 'platform_resource_setup_memory' function which is the main user
+of 'dma_alloc_coherent()', and inserting a WARN_ON() check to make future
+(and existing) bogus users of this function they're should provide a valid
+'struct device' whenever possible.
 
-Cc: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
-Signed-off-by: Daniel Wagner <daniel.wagner@siemens.com>
+Fixes: ce88313069c36eef80f21fd7 ("arch/sh: make the DMA mapping operations observe dev->dma_pfn_offset")
+Signed-off-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
 ---
- drivers/tty/serial/sh-sci.c | 8 +++-----
- 1 file changed, 3 insertions(+), 5 deletions(-)
+ arch/sh/mm/consistent.c | 15 ++++++++++++---
+ 1 file changed, 12 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index cf8d0955657d..3900711b60fc 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -2516,13 +2516,12 @@ static void serial_console_write(struct console *co, const char *s,
- 	unsigned long flags;
- 	int locked = 1;
- 
--	local_irq_save(flags);
- 	if (port->sysrq)
- 		locked = 0;
- 	else if (oops_in_progress)
--		locked = spin_trylock(&port->lock);
-+		locked = spin_trylock_irqsave(&port->lock, flags);
- 	else
--		spin_lock(&port->lock);
-+		spin_lock_irqsave(&port->lock, flags);
- 
- 	/* first save the SCSCR then disable the interrupts */
- 	ctrl = serial_port_in(port, SCSCR);
-@@ -2539,8 +2538,7 @@ static void serial_console_write(struct console *co, const char *s,
- 	serial_port_out(port, SCSCR, ctrl);
- 
- 	if (locked)
--		spin_unlock(&port->lock);
--	local_irq_restore(flags);
-+		spin_unlock_irqrestore(&port->lock, flags);
+diff --git a/arch/sh/mm/consistent.c b/arch/sh/mm/consistent.c
+index 8ce9869..b257155 100644
+--- a/arch/sh/mm/consistent.c
++++ b/arch/sh/mm/consistent.c
+@@ -39,6 +39,8 @@ void *dma_generic_alloc_coherent(struct device *dev, size_t size,
+ 	void *ret, *ret_nocache;
+ 	int order = get_order(size);
+
++	WARN_ON(!dev);
++
+ 	gfp |= __GFP_ZERO;
+
+ 	ret = (void *)__get_free_pages(gfp, order);
+@@ -59,7 +61,9 @@ void *dma_generic_alloc_coherent(struct device *dev, size_t size,
+
+ 	split_page(pfn_to_page(virt_to_phys(ret) >> PAGE_SHIFT), order);
+
+-	*dma_handle = virt_to_phys(ret) - PFN_PHYS(dev->dma_pfn_offset);
++	*dma_handle = virt_to_phys(ret);
++	if (dev)
++		*dma_handle -= PFN_PHYS(dev->dma_pfn_offset);
+
+ 	return ret_nocache;
  }
- 
- static int serial_console_setup(struct console *co, char *options)
--- 
-2.14.3
+@@ -69,9 +73,14 @@ void dma_generic_free_coherent(struct device *dev, size_t size,
+ 			       unsigned long attrs)
+ {
+ 	int order = get_order(size);
+-	unsigned long pfn = (dma_handle >> PAGE_SHIFT) + dev->dma_pfn_offset;
++	unsigned long pfn = (dma_handle >> PAGE_SHIFT);
+ 	int k;
+
++	WARN_ON(!dev);
++
++	if (dev)
++		pfn += dev->dma_pfn_offset;
++
+ 	for (k = 0; k < (1 << order); k++)
+ 		__free_pages(pfn_to_page(pfn + k), 0);
+
+@@ -143,7 +152,7 @@ int __init platform_resource_setup_memory(struct platform_device *pdev,
+ 	if (!memsize)
+ 		return 0;
+
+-	buf = dma_alloc_coherent(NULL, memsize, &dma_handle, GFP_KERNEL);
++	buf = dma_alloc_coherent(&pdev->dev, memsize, &dma_handle, GFP_KERNEL);
+ 	if (!buf) {
+ 		pr_warning("%s: unable to allocate memory\n", name);
+ 		return -ENOMEM;
+--
+2.7.4
+
