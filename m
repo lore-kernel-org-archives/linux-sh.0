@@ -1,43 +1,67 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Tue, 24 Apr 2018 14:02:35 +0000
-Subject: [PATCH 3/3] dma-debug: unexport dma_debug_resize_entries and debug_dma_dump_mappings
-Message-Id: <20180424140235.9125-4-hch@lst.de>
+From: Jacopo Mondi <jacopo+renesas@jmondi.org>
+Date: Tue, 17 Apr 2018 14:13:13 +0000
+Subject: [PATCH] sh: migor: Set DMA and DMA coherent mask
+Message-Id: <1523974393-10870-1-git-send-email-jacopo+renesas@jmondi.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180424140235.9125-1-hch@lst.de>
-In-Reply-To: <20180424140235.9125-1-hch-jcswGhMUV9g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-xtensa-PjhNF2WwrV/0Sa2dR60CXw@public.gmane.org, Michal Simek <monstr-pSz03upnqPeHXe+LvDLADg@public.gmane.org>, Vincent Chen <deanbo422-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-c6x-dev-jPsnJVOj+W6hPH1hqNUYSQ@public.gmane.org, linux-parisc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-hexagon-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-m68k-cunTk1MwBs8S/qaLPR03pWD2FQJk+8+b@public.gmane.org, openrisc-cunTk1MwBs9a3B2Vnqf2dGD2FQJk+8+b@public.gmane.org, Greentime Hu <green.hu-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-alpha-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sparclinux-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, nios2-dev-g9ZBwUv/Ih/yUk5EbOjzuce+I+R0W71w@public.gmane.org, linux-snps-arc-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org
+To: ysato@users.sourceforge.jp, dalias@libc.org
+Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>, geert@linux-m68k.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Only used by the AMD GART driver, which must be built in.
+As of commit 205e1b7f51e4 ("dma-mapping: warn when there is no
+coherent_dma_mask") the Migo-R platform devices registered without a DMA
+mask and coherent DMA mask issue the following warning
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
+WARNING: CPU: 0 PID: 1 at ./include/linux/dma-mapping.h:516 0x40159e20
+
+Set dma mask and coherent DMA mask for Migo-R platforms devices to 32
+bits as all other SH4a platforms do.
+
+Signed-off-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
 ---
- lib/dma-debug.c | 2 --
- 1 file changed, 2 deletions(-)
+ arch/sh/kernel/cpu/sh4a/setup-sh7722.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
 
-diff --git a/lib/dma-debug.c b/lib/dma-debug.c
-index 075253cb613b..6a1ebaa83623 100644
---- a/lib/dma-debug.c
-+++ b/lib/dma-debug.c
-@@ -444,7 +444,6 @@ void debug_dma_dump_mappings(struct device *dev)
- 		spin_unlock_irqrestore(&bucket->lock, flags);
- 	}
- }
--EXPORT_SYMBOL(debug_dma_dump_mappings);
- 
- /*
-  * For each mapping (initial cacheline in the case of
-@@ -753,7 +752,6 @@ int dma_debug_resize_entries(u32 num_entries)
- 
- 	return ret;
- }
--EXPORT_SYMBOL(dma_debug_resize_entries);
- 
- /*
-  * DMA-API debugging init code
--- 
-2.17.0
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7722.c b/arch/sh/kernel/cpu/sh4a/setup-sh7722.c
+index 6b3a26e..3fe1ea7 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7722.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7722.c
+@@ -7,6 +7,7 @@
+  * License.  See the file "COPYING" in the main directory of this archive
+  * for more details.
+  */
++#include <linux/dma-mapping.h>
+ #include <linux/init.h>
+ #include <linux/mm.h>
+ #include <linux/platform_device.h>
+@@ -347,6 +348,8 @@ static struct platform_device vpu_device = {
+ 	.name		= "uio_pdrv_genirq",
+ 	.id		= 0,
+ 	.dev = {
++		.dma_mask		= &vpu_device.dev.coherent_dma_mask,
++		.coherent_dma_mask	= DMA_BIT_MASK(32),
+ 		.platform_data	= &vpu_platform_data,
+ 	},
+ 	.resource	= vpu_resources,
+@@ -375,6 +378,8 @@ static struct platform_device veu_device = {
+ 	.name		= "uio_pdrv_genirq",
+ 	.id		= 1,
+ 	.dev = {
++		.dma_mask		= &veu_device.dev.coherent_dma_mask,
++		.coherent_dma_mask	= DMA_BIT_MASK(32),
+ 		.platform_data	= &veu_platform_data,
+ 	},
+ 	.resource	= veu_resources,
+@@ -403,6 +408,8 @@ static struct platform_device jpu_device = {
+ 	.name		= "uio_pdrv_genirq",
+ 	.id		= 2,
+ 	.dev = {
++		.dma_mask		= &jpu_device.dev.coherent_dma_mask,
++		.coherent_dma_mask	= DMA_BIT_MASK(32),
+ 		.platform_data	= &jpu_platform_data,
+ 	},
+ 	.resource	= jpu_resources,
+--
+2.7.4
 
