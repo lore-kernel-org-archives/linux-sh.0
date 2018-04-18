@@ -1,20 +1,17 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 18 Apr 2018 09:13:10 +0000
+From: Christoph Hellwig <hch@infradead.org>
+Date: Wed, 18 Apr 2018 10:47:03 +0000
 Subject: Re: [PATCH] sh: mm: Fix unprotected access to struct device
-Message-Id: <75621aa6-1fe9-2049-fc70-fd6d542c7307@cogentembedded.com>
+Message-Id: <20180418104703.GA12462@infradead.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1523972123-5700-1-git-send-email-jacopo+renesas@jmondi.org>
 In-Reply-To: <1523972123-5700-1-git-send-email-jacopo+renesas@jmondi.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Jacopo Mondi <jacopo+renesas@jmondi.org>, ysato@users.sourceforge.jp, dalias@libc.org, thomas.petazzoni@free-electrons.com, robin.murphy@arm.com
-Cc: geert@linux-m68k.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Jacopo Mondi <jacopo+renesas@jmondi.org>
+Cc: ysato@users.sourceforge.jp, dalias@libc.org, thomas.petazzoni@free-electrons.com, robin.murphy@arm.com, geert@linux-m68k.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Hello!
-
-On 4/17/2018 4:35 PM, Jacopo Mondi wrote:
-
+On Tue, Apr 17, 2018 at 03:35:23PM +0200, Jacopo Mondi wrote:
 > With commit ce88313069c36eef80f21fd7 ("arch/sh: make the DMA mapping
 > operations observe dev->dma_pfn_offset") the generic DMA allocation
 > function on which the SH 'dma_alloc_coherent()' function relies on,
@@ -30,27 +27,5 @@ On 4/17/2018 4:35 PM, Jacopo Mondi wrote:
 > of 'dma_alloc_coherent()', and inserting a WARN_ON() check to make future
 > (and existing) bogus users of this function they're should provide a valid
 > 'struct device' whenever possible.
-> 
-> Fixes: ce88313069c36eef80f21fd7 ("arch/sh: make the DMA mapping operations observe dev->dma_pfn_offset")
-> Signed-off-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
-> ---
->   arch/sh/mm/consistent.c | 15 ++++++++++++---
->   1 file changed, 12 insertions(+), 3 deletions(-)
-> 
-> diff --git a/arch/sh/mm/consistent.c b/arch/sh/mm/consistent.c
-> index 8ce9869..b257155 100644
-> --- a/arch/sh/mm/consistent.c
-> +++ b/arch/sh/mm/consistent.c
-[...]
-> @@ -69,9 +73,14 @@ void dma_generic_free_coherent(struct device *dev, size_t size,
->   			       unsigned long attrs)
->   {
->   	int order = get_order(size);
-> -	unsigned long pfn = (dma_handle >> PAGE_SHIFT) + dev->dma_pfn_offset;
-> +	unsigned long pfn = (dma_handle >> PAGE_SHIFT);
 
-    Parens no longer needed...
-
-[...]
-
-MBR, Sergei
+Please fix those callers to not pass a NULL pointer instead.
