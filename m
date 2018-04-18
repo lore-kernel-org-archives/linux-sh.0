@@ -1,56 +1,86 @@
-From: Michal Hocko <mhocko@kernel.org>
-Date: Wed, 11 Apr 2018 08:34:19 +0000
-Subject: Re: [PATCH v3 1/2] mm: introduce ARCH_HAS_PTE_SPECIAL
-Message-Id: <20180411083419.GB23400@dhcp22.suse.cz>
+From: Jacopo Mondi <jacopo+renesas@jmondi.org>
+Date: Wed, 18 Apr 2018 09:42:35 +0000
+Subject: [PATCH v3] sh: mm: Fix unprotected access to struct device
+Message-Id: <1524044555-20610-1-git-send-email-jacopo+renesas@jmondi.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1523433816-14460-1-git-send-email-ldufour@linux.vnet.ibm.com>
- <1523433816-14460-2-git-send-email-ldufour@linux.vnet.ibm.com>
-In-Reply-To: <1523433816-14460-2-git-send-email-ldufour@linux.vnet.ibm.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: ysato@users.sourceforge.jp, dalias@libc.org, thomas.petazzoni@free-electrons.com, robin.murphy@arm.com
+Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>, geert@linux-m68k.org, sergei.shtylyov@cogentembedded.com, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-On Wed 11-04-18 10:03:35, Laurent Dufour wrote:
-> Currently the PTE special supports is turned on in per architecture header
-> files. Most of the time, it is defined in arch/*/include/asm/pgtable.h
-> depending or not on some other per architecture static definition.
-> 
-> This patch introduce a new configuration variable to manage this directly
-> in the Kconfig files. It would later replace __HAVE_ARCH_PTE_SPECIAL.
-> 
-> Here notes for some architecture where the definition of
-> __HAVE_ARCH_PTE_SPECIAL is not obvious:
-> 
-> arm
->  __HAVE_ARCH_PTE_SPECIAL which is currently defined in
-> arch/arm/include/asm/pgtable-3level.h which is included by
-> arch/arm/include/asm/pgtable.h when CONFIG_ARM_LPAE is set.
-> So select ARCH_HAS_PTE_SPECIAL if ARM_LPAE.
-> 
-> powerpc
-> __HAVE_ARCH_PTE_SPECIAL is defined in 2 files:
->  - arch/powerpc/include/asm/book3s/64/pgtable.h
->  - arch/powerpc/include/asm/pte-common.h
-> The first one is included if (PPC_BOOK3S & PPC64) while the second is
-> included in all the other cases.
-> So select ARCH_HAS_PTE_SPECIAL all the time.
-> 
-> sparc:
-> __HAVE_ARCH_PTE_SPECIAL is defined if defined(__sparc__) &&
-> defined(__arch64__) which are defined through the compiler in
-> sparc/Makefile if !SPARC32 which I assume to be if SPARC64.
-> So select ARCH_HAS_PTE_SPECIAL if SPARC64
-> 
-> There is no functional change introduced by this patch.
-> 
-> Suggested-by: Jerome Glisse <jglisse@redhat>
-> Reviewed-by: Jerome Glisse <jglisse@redhat>
-> Acked-by: David Rientjes <rientjes@google.com>
-> Signed-off-by: Laurent Dufour <ldufour@linux.vnet.ibm.com>
+With commit ce88313069c36eef80f21fd7 ("arch/sh: make the DMA mapping
+operations observe dev->dma_pfn_offset") the generic DMA allocation
+function on which the SH 'dma_alloc_coherent()' function relies on,
+accesses the 'dma_pfn_offset' field of struct device.
 
-Looks good to me. I have checked x86 and the generic code and it looks
-good to me. Anyway arch maintainers really have to double check this.
--- 
-Michal Hocko
-SUSE Labs
+Unfortunately the 'dma_generic_alloc_coherent()' function is called from
+several places with a NULL struct device argument, halting the CPU
+during the boot process.
+
+This patch fixes the issue by protecting access to dev->dma_pfn_offset,
+with a trivial check for validity. It also passes a valid 'struct device'
+in the 'platform_resource_setup_memory()' function which is the main user
+of 'dma_alloc_coherent()', and inserts a WARN_ON() check to remind to future
+(and existing) bogus users of this function to provide a valid 'struct device'
+whenever possible.
+
+Fixes: ce88313069c36eef80f21fd7 ("arch/sh: make the DMA mapping operations observe dev->dma_pfn_offset")
+Signed-off-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
+Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reviewed-by: Thomas Petazzoni <thomas.petazzoni@bootlin.com>
+
+---
+v2 -> v3:
+- remove (now) useless parenthesis around pfn assignement as suggested
+  by Sergei
+- Add changelog to the patch, which I forgot in v2
+
+v1 -> v2:
+- Move WARN_ON() closer to dev validity check as suggested by Geert
+
+---
+ arch/sh/mm/consistent.c | 11 ++++++++---
+ 1 file changed, 8 insertions(+), 3 deletions(-)
+
+diff --git a/arch/sh/mm/consistent.c b/arch/sh/mm/consistent.c
+index 8ce9869..f1b4469 100644
+--- a/arch/sh/mm/consistent.c
++++ b/arch/sh/mm/consistent.c
+@@ -59,7 +59,9 @@ void *dma_generic_alloc_coherent(struct device *dev, size_t size,
+
+ 	split_page(pfn_to_page(virt_to_phys(ret) >> PAGE_SHIFT), order);
+
+-	*dma_handle = virt_to_phys(ret) - PFN_PHYS(dev->dma_pfn_offset);
++	*dma_handle = virt_to_phys(ret);
++	if (!WARN_ON(!dev))
++		*dma_handle -= PFN_PHYS(dev->dma_pfn_offset);
+
+ 	return ret_nocache;
+ }
+@@ -69,9 +71,12 @@ void dma_generic_free_coherent(struct device *dev, size_t size,
+ 			       unsigned long attrs)
+ {
+ 	int order = get_order(size);
+-	unsigned long pfn = (dma_handle >> PAGE_SHIFT) + dev->dma_pfn_offset;
++	unsigned long pfn = dma_handle >> PAGE_SHIFT;
+ 	int k;
+
++	if (!WARN_ON(!dev))
++		pfn += dev->dma_pfn_offset;
++
+ 	for (k = 0; k < (1 << order); k++)
+ 		__free_pages(pfn_to_page(pfn + k), 0);
+
+@@ -143,7 +148,7 @@ int __init platform_resource_setup_memory(struct platform_device *pdev,
+ 	if (!memsize)
+ 		return 0;
+
+-	buf = dma_alloc_coherent(NULL, memsize, &dma_handle, GFP_KERNEL);
++	buf = dma_alloc_coherent(&pdev->dev, memsize, &dma_handle, GFP_KERNEL);
+ 	if (!buf) {
+ 		pr_warning("%s: unable to allocate memory\n", name);
+ 		return -ENOMEM;
+--
+2.7.4
+
