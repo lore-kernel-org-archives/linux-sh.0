@@ -1,34 +1,39 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Tue, 24 Apr 2018 07:35:24 +0000
-Subject: Re: [PATCH 01/22] dma-debug: move initialization to common code
-Message-Id: <20180424073524.GB18945@lst.de>
+From: Baolin Wang <baolin.wang@linaro.org>
+Date: Thu, 19 Apr 2018 06:06:35 +0000
+Subject: [PATCH] sh: time: Remove the read_persistent_clock()
+Message-Id: <c52709fe323b56916b3f621dac1baf6d49225188.1524117883.git.baolin.wang@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180420080313.18796-1-hch@lst.de> <20180420080313.18796-2-hch@lst.de> <294a1469-01d6-10fb-5de1-b1d4513a066c@arm.com>
-In-Reply-To: <294a1469-01d6-10fb-5de1-b1d4513a066c@arm.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Robin Murphy <robin.murphy@arm.com>
-Cc: Christoph Hellwig <hch@lst.de>, linux-arch@vger.kernel.org, linux-xtensa@linux-xtensa.org, Michal Simek <monstr@monstr.eu>, Vincent Chen <deanbo422@gmail.com>, linux-c6x-dev@linux-c6x.org, linux-parisc@vger.kernel.org, linux-sh@vger.kernel.org, linux-hexagon@vger.kernel.org, linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, openrisc@lists.librecores.org, Greentime Hu <green.hu@gmail.com>, linux-alpha@vger.kernel.org, sparclinux@vger.kernel.org, nios2-dev@lists.rocketboards.org, linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Fri, Apr 20, 2018 at 11:23:43AM +0100, Robin Murphy wrote:
->> -void dma_debug_init(u32 num_entries)
->> +static int dma_debug_init(void)
->>   {
->> +	u32 num_entries;
->
-> Maybe initialise it to PREALLOC_DMA_DEBUG_ENTRIES?
+The read_persistent_clock() uses a timespec, which is not year 2038 safe
+on 32bit systems. Moreover on sh platform, we have RTC drivers that can
+be used to compensate the system suspend time. Thus we can remove the
+read_persistent_clock() safely.
 
-We initialize it down in an if/else clause which seems a little more clear
-to me, at the cost of two extra lines of code.  But I suspect I should
-just go a little further and merge the global req_entries and the local
-num_entries into a single variable with a better name.
+Signed-off-by: Baolin Wang <baolin.wang@linaro.org>
+---
+ arch/sh/kernel/time.c |    5 -----
+ 1 file changed, 5 deletions(-)
 
->> +core_initcall(dma_debug_init);
->
-> I think it's worth noting that for most users this now happens much earlier 
-> than before. In general that's probably good (e.g. on arm64 it should 
-> prevent false-positives from the Arm SMMU drivers under ACPI), and I can't 
-> imagine it's high-risk, but it is a behaviour change.
+diff --git a/arch/sh/kernel/time.c b/arch/sh/kernel/time.c
+index fcd5e41..326004c 100644
+--- a/arch/sh/kernel/time.c
++++ b/arch/sh/kernel/time.c
+@@ -37,11 +37,6 @@ static int null_rtc_set_time(const time_t secs)
+ void (*rtc_sh_get_time)(struct timespec *) = null_rtc_get_time;
+ int (*rtc_sh_set_time)(const time_t) = null_rtc_set_time;
+ 
+-void read_persistent_clock(struct timespec *ts)
+-{
+-	rtc_sh_get_time(ts);
+-}
+-
+ #ifdef CONFIG_GENERIC_CMOS_UPDATE
+ int update_persistent_clock(struct timespec now)
+ {
+-- 
+1.7.9.5
 
-I'll mention this in the changelog, thanks!
