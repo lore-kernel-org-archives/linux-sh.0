@@ -1,122 +1,56 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Fri, 20 Apr 2018 15:48:55 +0000
-Subject: [PATCH 3/4] sh: remove unused rtc_sh_get/set_time infrastructure
-Message-Id: <20180420154933.3235131-3-arnd@arndb.de>
+From: Christoph Hellwig <hch@lst.de>
+Date: Fri, 20 Apr 2018 08:02:56 +0000
+Subject: [PATCH 05/22] alpha: simplify get_arch_dma_ops
+Message-Id: <20180420080313.18796-6-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180420154933.3235131-1-arnd@arndb.de>
-In-Reply-To: <20180420154933.3235131-1-arnd@arndb.de>
+References: <20180420080313.18796-1-hch@lst.de>
+In-Reply-To: <20180420080313.18796-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Rich Felker <dalias@libc.org>
-Cc: Baolin Wang <baolin.wang@linaro.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh@vger.kernel.org, broonie@kernel.org, Arnd Bergmann <arnd@arndb.de>, linux-kernel@vger.kernel.org
+Cc: linux-arch@vger.kernel.org, linux-xtensa@linux-xtensa.org, Michal Simek <monstr@monstr.eu>, Vincent Chen <deanbo422@gmail.com>, linux-c6x-dev@linux-c6x.org, linux-parisc@vger.kernel.org, linux-sh@vger.kernel.org, linux-hexagon@vger.kernel.org, linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, openrisc@lists.librecores.org, Greentime Hu <green.hu@gmail.com>, linux-alpha@vger.kernel.org, sparclinux@vger.kernel.org, nios2-dev@lists.rocketboards.org, linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org
 
-All platforms are now converted to RTC drivers, so this has become
-obsolete. The board_time_init() callback still has one caller, but
-could otherwise also get killed.
+Remove the dma_ops indirection.
 
-This removes one more usage of the deprecated timespec structure,
-which overflows in y2038.
-
-Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- arch/sh/include/asm/rtc.h |  2 --
- arch/sh/kernel/time.c     | 69 -----------------------------------------------
- 2 files changed, 71 deletions(-)
+ arch/alpha/include/asm/dma-mapping.h | 4 ++--
+ arch/alpha/kernel/pci_iommu.c        | 4 +---
+ 2 files changed, 3 insertions(+), 5 deletions(-)
 
-diff --git a/arch/sh/include/asm/rtc.h b/arch/sh/include/asm/rtc.h
-index c63555ee1255..fe55fbb181aa 100644
---- a/arch/sh/include/asm/rtc.h
-+++ b/arch/sh/include/asm/rtc.h
-@@ -4,8 +4,6 @@
+diff --git a/arch/alpha/include/asm/dma-mapping.h b/arch/alpha/include/asm/dma-mapping.h
+index 76ce923ecca1..8beeafd4f68e 100644
+--- a/arch/alpha/include/asm/dma-mapping.h
++++ b/arch/alpha/include/asm/dma-mapping.h
+@@ -2,14 +2,14 @@
+ #ifndef _ALPHA_DMA_MAPPING_H
+ #define _ALPHA_DMA_MAPPING_H
  
- void time_init(void);
- extern void (*board_time_init)(void);
--extern void (*rtc_sh_get_time)(struct timespec *);
--extern int (*rtc_sh_set_time)(const time_t);
+-extern const struct dma_map_ops *dma_ops;
++extern const struct dma_map_ops alpha_pci_ops;
  
- #define RTC_CAP_4_DIGIT_YEAR	(1 << 0)
+ static inline const struct dma_map_ops *get_arch_dma_ops(struct bus_type *bus)
+ {
+ #ifdef CONFIG_ALPHA_JENSEN
+ 	return &dma_direct_ops;
+ #else
+-	return dma_ops;
++	return &alpha_pci_ops;
+ #endif
+ }
  
-diff --git a/arch/sh/kernel/time.c b/arch/sh/kernel/time.c
-index fcd5e41977d1..eb0a91270499 100644
---- a/arch/sh/kernel/time.c
-+++ b/arch/sh/kernel/time.c
-@@ -22,75 +22,6 @@
- #include <asm/clock.h>
- #include <asm/rtc.h>
- 
--/* Dummy RTC ops */
--static void null_rtc_get_time(struct timespec *tv)
--{
--	tv->tv_sec = mktime(2000, 1, 1, 0, 0, 0);
--	tv->tv_nsec = 0;
--}
+diff --git a/arch/alpha/kernel/pci_iommu.c b/arch/alpha/kernel/pci_iommu.c
+index 83b34b9188ea..6923b0d9c1e1 100644
+--- a/arch/alpha/kernel/pci_iommu.c
++++ b/arch/alpha/kernel/pci_iommu.c
+@@ -950,6 +950,4 @@ const struct dma_map_ops alpha_pci_ops = {
+ 	.mapping_error		= alpha_pci_mapping_error,
+ 	.dma_supported		= alpha_pci_supported,
+ };
 -
--static int null_rtc_set_time(const time_t secs)
--{
--	return 0;
--}
--
--void (*rtc_sh_get_time)(struct timespec *) = null_rtc_get_time;
--int (*rtc_sh_set_time)(const time_t) = null_rtc_set_time;
--
--void read_persistent_clock(struct timespec *ts)
--{
--	rtc_sh_get_time(ts);
--}
--
--#ifdef CONFIG_GENERIC_CMOS_UPDATE
--int update_persistent_clock(struct timespec now)
--{
--	return rtc_sh_set_time(now.tv_sec);
--}
--#endif
--
--static int rtc_generic_get_time(struct device *dev, struct rtc_time *tm)
--{
--	struct timespec tv;
--
--	rtc_sh_get_time(&tv);
--	rtc_time_to_tm(tv.tv_sec, tm);
--	return 0;
--}
--
--static int rtc_generic_set_time(struct device *dev, struct rtc_time *tm)
--{
--	unsigned long secs;
--
--	rtc_tm_to_time(tm, &secs);
--	if ((rtc_sh_set_time = null_rtc_set_time) ||
--	    (rtc_sh_set_time(secs) < 0))
--		return -EOPNOTSUPP;
--
--	return 0;
--}
--
--static const struct rtc_class_ops rtc_generic_ops = {
--	.read_time = rtc_generic_get_time,
--	.set_time = rtc_generic_set_time,
--};
--
--static int __init rtc_generic_init(void)
--{
--	struct platform_device *pdev;
--
--	if (rtc_sh_get_time = null_rtc_get_time)
--		return -ENODEV;
--
--	pdev = platform_device_register_data(NULL, "rtc-generic", -1,
--					     &rtc_generic_ops,
--					     sizeof(rtc_generic_ops));
--
--
--	return PTR_ERR_OR_ZERO(pdev);
--}
--device_initcall(rtc_generic_init);
--
- void (*board_time_init)(void);
- 
- static void __init sh_late_time_init(void)
+-const struct dma_map_ops *dma_ops = &alpha_pci_ops;
+-EXPORT_SYMBOL(dma_ops);
++EXPORT_SYMBOL(alpha_pci_ops);
 -- 
-2.9.0
+2.17.0
 
