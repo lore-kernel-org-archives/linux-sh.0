@@ -1,82 +1,58 @@
 From: Christoph Hellwig <hch@lst.de>
-Date: Fri, 20 Apr 2018 08:03:08 +0000
-Subject: [PATCH 17/22] sh: introduce a sh_cacheop_vaddr helper
-Message-Id: <20180420080313.18796-18-hch@lst.de>
+Date: Fri, 20 Apr 2018 08:02:51 +0000
+Subject: 
+Message-Id: <20180420080313.18796-1-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180420080313.18796-1-hch@lst.de>
-In-Reply-To: <20180420080313.18796-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Cc: linux-arch@vger.kernel.org, Michal Simek <monstr@monstr.eu>, Greentime Hu <green.hu@gmail.com>, Vincent Chen <deanbo422@gmail.com>, linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org, linux-c6x-dev@linux-c6x.org, linux-hexagon@vger.kernel.org, linux-m68k@lists.linux-m68k.org, nios2-dev@lists.rocketboards.org, openrisc@lists.librecores.org, linux-parisc@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-kernel@vger.kernel.org
+Cc: linux-arch@vger.kernel.org, linux-xtensa@linux-xtensa.org, Michal Simek <monstr@monstr.eu>, Vincent Chen <deanbo422@gmail.com>, linux-c6x-dev@linux-c6x.org, linux-parisc@vger.kernel.org, linux-sh@vger.kernel.org, linux-hexagon@vger.kernel.org, linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, openrisc@lists.librecores.org, Greentime Hu <green.hu@gmail.com>, linux-alpha@vger.kernel.org, sparclinux@vger.kernel.org, nios2-dev@lists.rocketboards.org, linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org
 
-And use it in the maple bus code to avoid a dma API dependency.
+To: iommu@lists.linux-foundation.org
+Cc: linux-arch@vger.kernel.org
+Cc: Michal Simek <monstr@monstr.eu>
+Cc: Greentime Hu <green.hu@gmail.com>
+Cc: Vincent Chen <deanbo422@gmail.com>
+Cc: linux-alpha@vger.kernel.org
+Cc: linux-snps-arc@lists.infradead.org
+Cc: linux-arm-kernel@lists.infradead.org
+Cc: linux-c6x-dev@linux-c6x.org
+Cc: linux-hexagon@vger.kernel.org
+Cc: linux-m68k@lists.linux-m68k.org
+Cc: nios2-dev@lists.rocketboards.org
+Cc: openrisc@lists.librecores.org
+Cc: linux-parisc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
+Cc: sparclinux@vger.kernel.org
+Cc: linux-xtensa@linux-xtensa.org
+Cc: linux-kernel@vger.kernel.org
+Subject: [RFC] common non-cache coherent direct dma mapping ops
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
----
- arch/sh/include/asm/cacheflush.h | 7 +++++++
- arch/sh/mm/consistent.c          | 5 +----
- drivers/sh/maple/maple.c         | 7 ++++---
- 3 files changed, 12 insertions(+), 7 deletions(-)
+Hi all,
 
-diff --git a/arch/sh/include/asm/cacheflush.h b/arch/sh/include/asm/cacheflush.h
-index d103ab5a4e4b..b932e42ef028 100644
---- a/arch/sh/include/asm/cacheflush.h
-+++ b/arch/sh/include/asm/cacheflush.h
-@@ -101,5 +101,12 @@ void kunmap_coherent(void *kvaddr);
- 
- void cpu_cache_init(void);
- 
-+static inline void *sh_cacheop_vaddr(void *vaddr)
-+{
-+	if (__in_29bit_mode())
-+		vaddr = (void *)CAC_ADDR((unsigned long)vaddr);
-+	return vaddr;
-+}
-+
- #endif /* __KERNEL__ */
- #endif /* __ASM_SH_CACHEFLUSH_H */
-diff --git a/arch/sh/mm/consistent.c b/arch/sh/mm/consistent.c
-index af2f28572119..516d481525e1 100644
---- a/arch/sh/mm/consistent.c
-+++ b/arch/sh/mm/consistent.c
-@@ -69,10 +69,7 @@ void dma_generic_free_coherent(struct device *dev, size_t size,
- void sh_sync_dma_for_device(void *vaddr, size_t size,
- 		    enum dma_data_direction direction)
- {
--	void *addr;
--
--	addr = __in_29bit_mode() ?
--	       (void *)CAC_ADDR((unsigned long)vaddr) : vaddr;
-+	void *addr = sh_cacheop_vaddr(vaddr);
- 
- 	switch (direction) {
- 	case DMA_FROM_DEVICE:		/* invalidate only */
-diff --git a/drivers/sh/maple/maple.c b/drivers/sh/maple/maple.c
-index 7525039d812c..c9c354bd713a 100644
---- a/drivers/sh/maple/maple.c
-+++ b/drivers/sh/maple/maple.c
-@@ -300,8 +300,8 @@ static void maple_send(void)
- 	mutex_unlock(&maple_wlist_lock);
- 	if (maple_packets > 0) {
- 		for (i = 0; i < (1 << MAPLE_DMA_PAGES); i++)
--			sh_sync_dma_for_device(maple_sendbuf + i * PAGE_SIZE,
--				       PAGE_SIZE, DMA_BIDIRECTIONAL);
-+			__flush_purge_region(maple_sendbuf + i * PAGE_SIZE,
-+					PAGE_SIZE);
- 	}
- 
- finish:
-@@ -642,7 +642,8 @@ static void maple_dma_handler(struct work_struct *work)
- 		list_for_each_entry_safe(mq, nmq, &maple_sentq, list) {
- 			mdev = mq->dev;
- 			recvbuf = mq->recvbuf->buf;
--			sh_sync_dma_for_device(recvbuf, 0x400, DMA_FROM_DEVICE);
-+			__flush_invalidate_region(sh_cacheop_vaddr(recvbuf),
-+					0x400);
- 			code = recvbuf[0];
- 			kfree(mq->sendbuf);
- 			list_del_init(&mq->list);
--- 
-2.17.0
+this series continues consolidating the dma-mapping code, with a focus
+on architectures that do not (always) provide cache coherence for DMA.
+Three architectures (arm, mips and powerpc) are still left to be
+converted later due to complexity of their dma ops selection.
 
+The dma-noncoherent ops calls the dma-direct ops for the actual
+translation of streaming mappins and allow the architecture to provide
+any cache flushing required for cpu to device and/or device to cpu
+ownership transfers.  The dma coherent allocator is for now still left
+entirely to architecture supplied implementations due the amount of
+variations.  Hopefully we can do some consolidation for them later on
+as well.
+
+A lot of architectures are currently doing very questionable things
+in their dma mapping routines, which are documented in the changelogs
+for each patch.  Please review them very careful and correct me on
+incorrect assumptions.
+
+Because this series sits on top of two previously submitted series
+a git tree might be useful to actually test it.  It is provided here:
+
+    git://git.infradead.org/users/hch/misc.git generic-dma-noncoherent
+
+Gitweb:
+
+    http://git.infradead.org/users/hch/misc.git/shortlog/refs/heads/generic-dma-noncoherent
