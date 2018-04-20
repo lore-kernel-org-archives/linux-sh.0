@@ -1,57 +1,113 @@
-From: Laurent Dufour <ldufour@linux.vnet.ibm.com>
-Date: Tue, 10 Apr 2018 16:44:00 +0000
-Subject: Re: [PATCH v2 2/2] mm: remove odd HAVE_PTE_SPECIAL
-Message-Id: <1521dc0e-e9f8-d10f-e213-1b1552eb03fa@linux.vnet.ibm.com>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Fri, 20 Apr 2018 15:48:56 +0000
+Subject: [PATCH 4/4] sh: remove board_time_init() callback
+Message-Id: <20180420154933.3235131-4-arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1523373951-10981-1-git-send-email-ldufour@linux.vnet.ibm.com>
- <1523373951-10981-3-git-send-email-ldufour@linux.vnet.ibm.com>
- <3f20ac8b-20b8-f052-bc44-dcc0316354ca@arm.com>
-In-Reply-To: <3f20ac8b-20b8-f052-bc44-dcc0316354ca@arm.com>
+References: <20180420154933.3235131-1-arnd@arndb.de>
+In-Reply-To: <20180420154933.3235131-1-arnd@arndb.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Rich Felker <dalias@libc.org>
+Cc: Baolin Wang <baolin.wang@linaro.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh@vger.kernel.org, broonie@kernel.org, Arnd Bergmann <arnd@arndb.de>, Jonathan Corbet <corbet@lwn.net>, linux-doc@vger.kernel.org, linux-kernel@vger.kernel.org
 
+The only remaining user of board_time_init() is the of-generic
+machine, and that just calls the global timer_init() function.
+Calling that one has no effect on non-DT platforms, so we can
+simply call it unconditionally in place of board_time_init().
 
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+---
+ Documentation/sh/new-machine.txt | 8 --------
+ arch/sh/boards/of-generic.c      | 8 --------
+ arch/sh/include/asm/rtc.h        | 1 -
+ arch/sh/kernel/time.c            | 5 +----
+ 4 files changed, 1 insertion(+), 21 deletions(-)
 
-On 10/04/2018 17:58, Robin Murphy wrote:
-> On 10/04/18 16:25, Laurent Dufour wrote:
->> Remove the additional define HAVE_PTE_SPECIAL and rely directly on
->> CONFIG_ARCH_HAS_PTE_SPECIAL.
->>
->> There is no functional change introduced by this patch
->>
->> Signed-off-by: Laurent Dufour <ldufour@linux.vnet.ibm.com>
->> ---
->>   mm/memory.c | 23 ++++++++++-------------
->>   1 file changed, 10 insertions(+), 13 deletions(-)
->>
->> diff --git a/mm/memory.c b/mm/memory.c
->> index 96910c625daa..53b6344a90d2 100644
->> --- a/mm/memory.c
->> +++ b/mm/memory.c
->> @@ -817,19 +817,13 @@ static void print_bad_pte(struct vm_area_struct *vma,
->> unsigned long addr,
->>    * PFNMAP mappings in order to support COWable mappings.
->>    *
->>    */
->> -#ifdef CONFIG_ARCH_HAS_PTE_SPECIAL
->> -# define HAVE_PTE_SPECIAL 1
->> -#else
->> -# define HAVE_PTE_SPECIAL 0
->> -#endif
->>   struct page *_vm_normal_page(struct vm_area_struct *vma, unsigned long addr,
->>                    pte_t pte, bool with_public_device)
->>   {
->>       unsigned long pfn = pte_pfn(pte);
->>   -    if (HAVE_PTE_SPECIAL) {
->> -        if (likely(!pte_special(pte)))
->> -            goto check_pfn;
->> +#ifdef CONFIG_ARCH_HAS_PTE_SPECIAL
-> 
-> Nit: Couldn't you use IS_ENABLED(CONFIG_ARCH_HAS_PTE_SPECIAL) within the
-> existing code structure to avoid having to add these #ifdefs?
-
-I agree, that would be better. I didn't thought about this option..
-Thanks for reporting this.
+diff --git a/Documentation/sh/new-machine.txt b/Documentation/sh/new-machine.txt
+index f0354164cb0e..e0961a66130b 100644
+--- a/Documentation/sh/new-machine.txt
++++ b/Documentation/sh/new-machine.txt
+@@ -116,7 +116,6 @@ might look something like:
+  * arch/sh/boards/vapor/setup.c - Setup code for imaginary board
+  */
+ #include <linux/init.h>
+-#include <asm/rtc.h> /* for board_time_init() */
+ 
+ const char *get_system_type(void)
+ {
+@@ -132,13 +131,6 @@ int __init platform_setup(void)
+ 	 * this board.
+ 	 */
+ 
+-  	/* 
+-	 * Presume all FooTech boards have the same broken timer,
+-	 * and also presume that we've defined foo_timer_init to
+-	 * do something useful.
+-	 */
+-  	board_time_init = foo_timer_init;
+-
+ 	/* Start-up imaginary PCI ... */
+ 
+ 	/* And whatever else ... */
+diff --git a/arch/sh/boards/of-generic.c b/arch/sh/boards/of-generic.c
+index 46b2481eec90..ee74ff1e7721 100644
+--- a/arch/sh/boards/of-generic.c
++++ b/arch/sh/boards/of-generic.c
+@@ -116,18 +116,10 @@ static void __init sh_of_mem_reserve(void)
+ 	early_init_fdt_scan_reserved_mem();
+ }
+ 
+-static void __init sh_of_time_init(void)
+-{
+-	pr_info("SH generic board support: scanning for clocksource devices\n");
+-	timer_probe();
+-}
+-
+ static void __init sh_of_setup(char **cmdline_p)
+ {
+ 	struct device_node *root;
+ 
+-	board_time_init = sh_of_time_init;
+-
+ 	sh_mv.mv_name = "Unknown SH model";
+ 	root = of_find_node_by_path("/");
+ 	if (root) {
+diff --git a/arch/sh/include/asm/rtc.h b/arch/sh/include/asm/rtc.h
+index fe55fbb181aa..69dbae2949b0 100644
+--- a/arch/sh/include/asm/rtc.h
++++ b/arch/sh/include/asm/rtc.h
+@@ -3,7 +3,6 @@
+ #define _ASM_RTC_H
+ 
+ void time_init(void);
+-extern void (*board_time_init)(void);
+ 
+ #define RTC_CAP_4_DIGIT_YEAR	(1 << 0)
+ 
+diff --git a/arch/sh/kernel/time.c b/arch/sh/kernel/time.c
+index eb0a91270499..a29eb989d81b 100644
+--- a/arch/sh/kernel/time.c
++++ b/arch/sh/kernel/time.c
+@@ -22,8 +22,6 @@
+ #include <asm/clock.h>
+ #include <asm/rtc.h>
+ 
+-void (*board_time_init)(void);
+-
+ static void __init sh_late_time_init(void)
+ {
+ 	/*
+@@ -41,8 +39,7 @@ static void __init sh_late_time_init(void)
+ 
+ void __init time_init(void)
+ {
+-	if (board_time_init)
+-		board_time_init();
++	timer_init();
+ 
+ 	clk_init();
+ 
+-- 
+2.9.0
 
