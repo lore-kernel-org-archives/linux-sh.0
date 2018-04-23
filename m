@@ -1,73 +1,62 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 09 Apr 2018 15:18:23 +0000
-Subject: Re: [RFC v2 2/2] base: dma-mapping: Postpone page_to_pfn() on mmap()
-Message-Id: <6024361.mOebchCzSY@avalon>
+From: jacopo mondi <jacopo@jmondi.org>
+Date: Mon, 23 Apr 2018 15:21:43 +0000
+Subject: Re: [PATCH v10 04/10] ARM: dts: r7s72100: Add Capture Engine Unit (CEU)
+Message-Id: <20180423152143.GH3999@w540>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="RwxaKO075aXzzOz0"
 List-Id: <linux-sh.vger.kernel.org>
-References: <1510679286-6988-1-git-send-email-jacopo+renesas@jmondi.org> <2555020.mSAUJ9kk90@avalon> <20180409151113.GD3094@brightrain.aerifal.cx>
-In-Reply-To: <20180409151113.GD3094@brightrain.aerifal.cx>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Rich Felker <dalias@libc.org>
-Cc: Robin Murphy <robin.murphy@arm.com>, jacopo mondi <jacopo@jmondi.org>, Jacopo Mondi <jacopo+renesas@jmondi.org>, ysato@users.sourceforge.jp, geert@linux-m68k.org, linux-renesas-soc@vger.kernel.org, iommu@lists.linux-foundation.org, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
-
-Hi Rich,
-
-On Monday, 9 April 2018 18:11:13 EEST Rich Felker wrote:
-> On Mon, Apr 09, 2018 at 04:06:15PM +0300, Laurent Pinchart wrote:
-> > On Monday, 9 April 2018 14:11:22 EEST Robin Murphy wrote:
-> >> On 09/04/18 08:25, jacopo mondi wrote:
-> >>> Hi Robin, Laurent,
-> >>> 
-> >>>      a long time passed, sorry about this.
-> >>> 
-> >>> On Wed, Nov 15, 2017 at 01:38:23PM +0000, Robin Murphy wrote:
-> >>>> On 14/11/17 17:08, Jacopo Mondi wrote:
-> >>>>> On SH4 architecture, with SPARSEMEM memory model, translating page
-> >>>>> to pfn hangs the CPU. Post-pone translation to pfn after
-> >>>>> dma_mmap_from_dev_coherent() function call as it succeeds and make
-> >>>>> page translation not necessary.
-> >>>>> 
-> >>>>> This patch was suggested by Laurent Pinchart and he's working to
-> >>>>> submit a proper fix mainline. Not sending for inclusion at the
-> >>>>> moment.
-> >>>> 
-> >>>> Y'know, I think this patch does have some merit by itself - until we
-> >>>> know that cpu_addr *doesn't* represent some device-private memory
-> >>>> which is not guaranteed to be backed by a struct page, calling
-> >>>> virt_to_page() on it is arguably semantically incorrect, even if it
-> >>>> might happen to be benign in most cases.
-> >>> 
-> >>> I still need to carry this patch in my trees to have a working dma
-> >>> memory mapping on SH4 platforms. My understanding from your comment is
-> >>> that there may be a way forward for this patch, do you still think the
-> >>> same? Have you got any suggestion on how to improve this eventually
-> >>> for inclusion?
-> >> 
-> >> As before, the change itself does seem reasonable; it might be worth
-> >> rewording the commit message in more general terms rather than making it
-> >> sound like an SH-specific workaround (which I really don't think it is),
-> >> but otherwise I'd say just repost it as a non-RFC patch.
-> > 
-> > I actually can't remember any better fix I would have in mind, so this
-> > looks good to me :-) I agree with Robin, the commit message should be
-> > reworded. Robin's explanation of why virt_to_page() should be postponed
-> > until we know that cpu_addr represents memory that is guaranteed to be
-> > backed by a struct page is a good starting point. You can mention SH4 as
-> > an example of an architecture that will crash when calling virt_to_page()
-> > in such a case, but the fix isn't specific to SH4.
-> 
-> Just checking since I joined late -- is the consensus that this does
-> not require any action/review specific to SH (in my role as maintainer
-> way behind on maintenance)?
-
-I don't think it requires any action specific to SH. If you want to review the 
-patch in the context of SH though, please feel free to do so :-)
-
--- 
-Regards,
-
-Laurent Pinchart
+References: <1519235284-32286-1-git-send-email-jacopo+renesas@jmondi.org>
+ <1519235284-32286-5-git-send-email-jacopo+renesas@jmondi.org>
+ <20180221182918.fbxnhdl4r4y3ejfj@verge.net.au>
+In-Reply-To: <20180221182918.fbxnhdl4r4y3ejfj@verge.net.au>
+To: Simon Horman <horms@verge.net.au>
+Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>, laurent.pinchart@ideasonboard.com, magnus.damm@gmail.com, geert@glider.be, hverkuil@xs4all.nl, mchehab@kernel.org, festevam@gmail.com, sakari.ailus@iki.fi, robh+dt@kernel.org, mark.rutland@arm.com, pombredanne@nexb.com, linux-renesas-soc@vger.kernel.org, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org
 
 
+--RwxaKO075aXzzOz0
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
 
+Hi Simon,
+
+On Wed, Feb 21, 2018 at 07:29:18PM +0100, Simon Horman wrote:
+> On Wed, Feb 21, 2018 at 06:47:58PM +0100, Jacopo Mondi wrote:
+> > Add Capture Engine Unit (CEU) node to device tree.
+> >
+> > Signed-off-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
+> > Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> > Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+> > Acked-by: Hans Verkuil <hans.verkuil@cisco.com>
+>
+> This patch depends on the binding for "renesas,r7s72100-ceu".
+> Please repost or otherwise ping me once that dependency has been accepted.
+
+Bindings for the CEU interface went in v4.17-rc1.
+
+Could you please resurect this patch?
+
+Thanks
+   j
+
+--RwxaKO075aXzzOz0
+Content-Type: application/pgp-signature; name="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBAgAGBQJa3foHAAoJEHI0Bo8WoVY88jgP/jwL5jYnW1PO6nNMb2aW2DdP
+lB6YSXYDY25gsU3XZH544VzEmi6Wj2ynXGqKNlkTuWubcvmbvXtMEUqoVuOIfnte
+TJhBphhttylk5yhxXK7MpaxDZ5zeD/mnhSsKr55ZIV6M+4g/7AZAESLif4eoJbeL
+y0v44ngRjol2VJPFSI9S4lm9jiWy5Vi+LG8OFR4mfCkRO9WbCMIuUpehucEQNnWw
+eUnpgr8DnPMCUodbTBxM3E8+3FGZq/EaD9ucNjkxZ5Sb/7wkrfgK37uX6EUuewp8
+51b5ZK8Q9vTnuRnKmhmnEVL19GXAdJga5uSPhnbV7t2rabb1awWoXHX1fLvKzjWn
+Ag5pTjdT7c0mSykQYS48PiQljRBjBT7qh5laUJ/TKH1xHB62eoBFmjkO8z8Tv4K+
+pZA6myEgHSRjI+CerdnzWOn2QmB5i8AmP7f8tbto6EfGMv7Bb3/RBY36cpjkVnhO
+hHKbvwiS1EWBoGyeyGneFdbaFYvWhlBUzdlkIMrmOuZM8mQWc0zJhokOS7XQUkik
+1WK17peJPt/XOZGiBDX2aQIuVyntyqJGFXbSLNWsMD5Hy+3whA2bFMr+OJxjMx43
+pftCR0plJYxIvhLUCIAoiQSRCsVPNtiO/tTmKmknkzx5cDU5cH4jqEkTdJSqhtdr
+IlJgVoiaZ+bwN4ko8IZm
+=9cTo
+-----END PGP SIGNATURE-----
+
+--RwxaKO075aXzzOz0--
