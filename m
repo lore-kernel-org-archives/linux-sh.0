@@ -1,89 +1,78 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Thu, 19 Apr 2018 20:00:06 +0000
-Subject: [PATCH 0/7] i2c: clean up include/linux/i2c-*
-Message-Id: <20180419200015.15095-1-wsa@the-dreams.de>
+From: Christoph Hellwig <hch@lst.de>
+Date: Tue, 24 Apr 2018 14:02:34 +0000
+Subject: [PATCH 2/3] dma-debug: simplify counting of preallocated requests
+Message-Id: <20180424140235.9125-3-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20180424140235.9125-1-hch@lst.de>
+In-Reply-To: <20180424140235.9125-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: iommu@lists.linux-foundation.org
+Cc: linux-arch@vger.kernel.org, Michal Simek <monstr@monstr.eu>, Greentime Hu <green.hu@gmail.com>, Vincent Chen <deanbo422@gmail.com>, linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org, linux-c6x-dev@linux-c6x.org, linux-hexagon@vger.kernel.org, linux-m68k@lists.linux-m68k.org, nios2-dev@lists.rocketboards.org, openrisc@lists.librecores.org, linux-parisc@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-kernel@vger.kernel.org
 
-Move all plain platform_data includes to the platform_data-dir
-(except for i2c-pnx which can be moved into the driver itself).
+Just keep a single variable with a descriptive name instead of two
+with confusing names.
 
-My preference is to take these patches via the i2c tree. I can provide an
-immutable branch if needed. But we can also discuss those going in via
-arch-trees if dependencies are against us.
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+---
+ lib/dma-debug.c | 20 ++++----------------
+ 1 file changed, 4 insertions(+), 16 deletions(-)
 
-The current branch can be found here:
-
-git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git i2c/platform_data
-
-and buildbot had no complaints.
-
-Looking forward to comments or Acks, Revs...
-
-Kind regards,
-
-   Wolfram
-
-
-Wolfram Sang (7):
-  i2c: i2c-gpio: move header to platform_data
-  i2c: i2c-mux-gpio: move header to platform_data
-  i2c: i2c-ocores: move header to platform_data
-  i2c: i2c-omap: move header to platform_data
-  i2c: i2c-pca-platform: move header to platform_data
-  i2c: i2c-xiic: move header to platform_data
-  i2c: pnx: move header into the driver
-
- Documentation/i2c/busses/i2c-ocores                |  2 +-
- Documentation/i2c/muxes/i2c-mux-gpio               |  4 +--
- MAINTAINERS                                        |  8 ++---
- arch/arm/mach-ks8695/board-acs5k.c                 |  2 +-
- arch/arm/mach-omap1/board-htcherald.c              |  2 +-
- arch/arm/mach-omap1/common.h                       |  2 +-
- arch/arm/mach-omap1/i2c.c                          |  2 +-
- arch/arm/mach-omap2/common.h                       |  2 +-
- arch/arm/mach-omap2/omap_hwmod_2420_data.c         |  2 +-
- arch/arm/mach-omap2/omap_hwmod_2430_data.c         |  2 +-
- arch/arm/mach-omap2/omap_hwmod_33xx_data.c         |  2 +-
- arch/arm/mach-omap2/omap_hwmod_3xxx_data.c         |  2 +-
- arch/arm/mach-omap2/omap_hwmod_44xx_data.c         |  2 +-
- arch/arm/mach-omap2/omap_hwmod_54xx_data.c         |  2 +-
- arch/arm/mach-omap2/omap_hwmod_7xx_data.c          |  2 +-
- arch/arm/mach-pxa/palmz72.c                        |  2 +-
- arch/arm/mach-pxa/viper.c                          |  2 +-
- arch/arm/mach-sa1100/simpad.c                      |  2 +-
- arch/mips/alchemy/board-gpr.c                      |  2 +-
- arch/sh/boards/board-sh7785lcr.c                   |  2 +-
- drivers/i2c/busses/i2c-gpio.c                      |  2 +-
- drivers/i2c/busses/i2c-i801.c                      |  2 +-
- drivers/i2c/busses/i2c-ocores.c                    |  2 +-
- drivers/i2c/busses/i2c-omap.c                      |  2 +-
- drivers/i2c/busses/i2c-pca-platform.c              |  2 +-
- drivers/i2c/busses/i2c-pnx.c                       | 21 +++++++++++-
- drivers/i2c/busses/i2c-xiic.c                      |  2 +-
- drivers/i2c/muxes/i2c-mux-gpio.c                   |  2 +-
- drivers/media/platform/marvell-ccic/mmp-driver.c   |  2 +-
- drivers/mfd/sm501.c                                |  2 +-
- drivers/mfd/timberdale.c                           |  4 +--
- include/linux/i2c-pnx.h                            | 38 ----------------------
- include/linux/{ => platform_data}/i2c-gpio.h       |  0
- include/linux/{ => platform_data}/i2c-mux-gpio.h   |  0
- include/linux/{ => platform_data}/i2c-ocores.h     |  0
- include/linux/{ => platform_data}/i2c-omap.h       |  0
- .../linux/{ => platform_data}/i2c-pca-platform.h   |  0
- include/linux/{ => platform_data}/i2c-xiic.h       |  0
- 38 files changed, 55 insertions(+), 74 deletions(-)
- delete mode 100644 include/linux/i2c-pnx.h
- rename include/linux/{ => platform_data}/i2c-gpio.h (100%)
- rename include/linux/{ => platform_data}/i2c-mux-gpio.h (100%)
- rename include/linux/{ => platform_data}/i2c-ocores.h (100%)
- rename include/linux/{ => platform_data}/i2c-omap.h (100%)
- rename include/linux/{ => platform_data}/i2c-pca-platform.h (100%)
- rename include/linux/{ => platform_data}/i2c-xiic.h (100%)
-
+diff --git a/lib/dma-debug.c b/lib/dma-debug.c
+index 712a897174e4..075253cb613b 100644
+--- a/lib/dma-debug.c
++++ b/lib/dma-debug.c
+@@ -132,7 +132,7 @@ static u32 min_free_entries;
+ static u32 nr_total_entries;
+ 
+ /* number of preallocated entries requested by kernel cmdline */
+-static u32 req_entries;
++static u32 nr_prealloc_entries = PREALLOC_DMA_DEBUG_ENTRIES;
+ 
+ /* debugfs dentry's for the stuff above */
+ static struct dentry *dma_debug_dent        __read_mostly;
+@@ -1011,7 +1011,6 @@ void dma_debug_add_bus(struct bus_type *bus)
+ 
+ static int dma_debug_init(void)
+ {
+-	u32 num_entries;
+ 	int i;
+ 
+ 	/* Do not use dma_debug_initialized here, since we really want to be
+@@ -1032,12 +1031,7 @@ static int dma_debug_init(void)
+ 		return 0;
+ 	}
+ 
+-	if (req_entries)
+-		num_entries = req_entries;
+-	else
+-		num_entries = PREALLOC_DMA_DEBUG_ENTRIES;
+-
+-	if (prealloc_memory(num_entries) != 0) {
++	if (prealloc_memory(nr_prealloc_entries) != 0) {
+ 		pr_err("DMA-API: debugging out of memory error - disabled\n");
+ 		global_disable = true;
+ 
+@@ -1068,16 +1062,10 @@ static __init int dma_debug_cmdline(char *str)
+ 
+ static __init int dma_debug_entries_cmdline(char *str)
+ {
+-	int res;
+-
+ 	if (!str)
+ 		return -EINVAL;
+-
+-	res = get_option(&str, &req_entries);
+-
+-	if (!res)
+-		req_entries = 0;
+-
++	if (!get_option(&str, &nr_prealloc_entries))
++		nr_prealloc_entries = PREALLOC_DMA_DEBUG_ENTRIES;
+ 	return 0;
+ }
+ 
 -- 
-2.11.0
+2.17.0
 
