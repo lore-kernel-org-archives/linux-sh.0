@@ -1,258 +1,259 @@
 From: Christoph Hellwig <hch@lst.de>
-Date: Fri, 20 Apr 2018 08:03:10 +0000
-Subject: [PATCH 19/22] sh: use generic dma_noncoherent_ops
-Message-Id: <20180420080313.18796-20-hch@lst.de>
+Date: Fri, 27 Apr 2018 15:53:42 +0000
+Subject: [PATCH 4/3] dma-debug: remove CONFIG_HAVE_DMA_API_DEBUG
+Message-Id: <20180427155342.GA9232@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180420080313.18796-1-hch@lst.de>
-In-Reply-To: <20180420080313.18796-1-hch@lst.de>
+References: <20180424140235.9125-1-hch@lst.de>
+In-Reply-To: <20180424140235.9125-1-hch-jcswGhMUV9g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Cc: linux-arch@vger.kernel.org, Michal Simek <monstr@monstr.eu>, Greentime Hu <green.hu@gmail.com>, Vincent Chen <deanbo422@gmail.com>, linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org, linux-c6x-dev@linux-c6x.org, linux-hexagon@vger.kernel.org, linux-m68k@lists.linux-m68k.org, nios2-dev@lists.rocketboards.org, openrisc@lists.librecores.org, linux-parisc@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-kernel@vger.kernel.org
+To: iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-xtensa-PjhNF2WwrV/0Sa2dR60CXw@public.gmane.org, Michal Simek <monstr-pSz03upnqPeHXe+LvDLADg@public.gmane.org>, linux-snps-arc-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, linux-c6x-dev-jPsnJVOj+W6hPH1hqNUYSQ@public.gmane.org, linux-parisc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-hexagon-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-m68k-cunTk1MwBs8S/qaLPR03pWD2FQJk+8+b@public.gmane.org, openrisc-cunTk1MwBs9a3B2Vnqf2dGD2FQJk+8+b@public.gmane.org, Greentime Hu <green.hu-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-alpha-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sparclinux-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, nios2-dev-g9ZBwUv/Ih/yUk5EbOjzuce+I+R0W71w@public.gmane.org, Vincent Chen <deanbo422-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org
 
-Switch to the generic noncoherent direct mapping implementation.
+There is no arch specific code required for dma-debug, so there is no
+need to opt into the support either.
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- arch/sh/Kconfig                   |  3 +-
- arch/sh/include/asm/Kbuild        |  1 +
- arch/sh/include/asm/dma-mapping.h | 26 -----------
- arch/sh/kernel/Makefile           |  1 -
- arch/sh/kernel/dma-nommu.c        | 75 -------------------------------
- arch/sh/mm/consistent.c           | 24 +++++-----
- 6 files changed, 13 insertions(+), 117 deletions(-)
- delete mode 100644 arch/sh/include/asm/dma-mapping.h
- delete mode 100644 arch/sh/kernel/dma-nommu.c
+ .../io/dma-api-debug/arch-support.txt         | 31 -------------------
+ arch/Kconfig                                  |  3 --
+ arch/arm/Kconfig                              |  1 -
+ arch/arm64/Kconfig                            |  1 -
+ arch/c6x/Kconfig                              |  1 -
+ arch/ia64/Kconfig                             |  1 -
+ arch/microblaze/Kconfig                       |  1 -
+ arch/mips/Kconfig                             |  1 -
+ arch/powerpc/Kconfig                          |  1 -
+ arch/riscv/Kconfig                            |  1 -
+ arch/s390/Kconfig                             |  1 -
+ arch/sh/Kconfig                               |  1 -
+ arch/sparc/Kconfig                            |  1 -
+ arch/x86/Kconfig                              |  1 -
+ arch/xtensa/Kconfig                           |  1 -
+ lib/Kconfig.debug                             |  1 -
+ 16 files changed, 48 deletions(-)
+ delete mode 100644 Documentation/features/io/dma-api-debug/arch-support.txt
 
+diff --git a/Documentation/features/io/dma-api-debug/arch-support.txt b/Documentation/features/io/dma-api-debug/arch-support.txt
+deleted file mode 100644
+index e438ed675623..000000000000
+--- a/Documentation/features/io/dma-api-debug/arch-support.txt
++++ /dev/null
+@@ -1,31 +0,0 @@
+-#
+-# Feature name:          dma-api-debug
+-#         Kconfig:       HAVE_DMA_API_DEBUG
+-#         description:   arch supports DMA debug facilities
+-#
+-    -----------------------
+-    |         arch |status|
+-    -----------------------
+-    |       alpha: | TODO |
+-    |         arc: | TODO |
+-    |         arm: |  ok  |
+-    |       arm64: |  ok  |
+-    |         c6x: |  ok  |
+-    |       h8300: | TODO |
+-    |     hexagon: | TODO |
+-    |        ia64: |  ok  |
+-    |        m68k: | TODO |
+-    |  microblaze: |  ok  |
+-    |        mips: |  ok  |
+-    |       nios2: | TODO |
+-    |    openrisc: | TODO |
+-    |      parisc: | TODO |
+-    |     powerpc: |  ok  |
+-    |        s390: |  ok  |
+-    |          sh: |  ok  |
+-    |       sparc: |  ok  |
+-    |          um: | TODO |
+-    |   unicore32: | TODO |
+-    |         x86: |  ok  |
+-    |      xtensa: |  ok  |
+-    -----------------------
+diff --git a/arch/Kconfig b/arch/Kconfig
+index 8e0d665c8d53..f07a1a99e5db 100644
+--- a/arch/Kconfig
++++ b/arch/Kconfig
+@@ -278,9 +278,6 @@ config HAVE_CLK
+ 	  The <linux/clk.h> calls support software clock gating and
+ 	  thus are a key power management tool on many systems.
+ 
+-config HAVE_DMA_API_DEBUG
+-	bool
+-
+ config HAVE_HW_BREAKPOINT
+ 	bool
+ 	depends on PERF_EVENTS
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index 676977bdfe33..c43f5bb55ac8 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -60,7 +60,6 @@ config ARM
+ 	select HAVE_CONTEXT_TRACKING
+ 	select HAVE_C_RECORDMCOUNT
+ 	select HAVE_DEBUG_KMEMLEAK
+-	select HAVE_DMA_API_DEBUG
+ 	select HAVE_DMA_CONTIGUOUS if MMU
+ 	select HAVE_DYNAMIC_FTRACE if (!XIP_KERNEL) && !CPU_ENDIAN_BE32 && MMU
+ 	select HAVE_DYNAMIC_FTRACE_WITH_REGS if HAVE_DYNAMIC_FTRACE
+diff --git a/arch/arm64/Kconfig b/arch/arm64/Kconfig
+index db51b6445744..b25ed7834f6c 100644
+--- a/arch/arm64/Kconfig
++++ b/arch/arm64/Kconfig
+@@ -105,7 +105,6 @@ config ARM64
+ 	select HAVE_CONTEXT_TRACKING
+ 	select HAVE_DEBUG_BUGVERBOSE
+ 	select HAVE_DEBUG_KMEMLEAK
+-	select HAVE_DMA_API_DEBUG
+ 	select HAVE_DMA_CONTIGUOUS
+ 	select HAVE_DYNAMIC_FTRACE
+ 	select HAVE_EFFICIENT_UNALIGNED_ACCESS
+diff --git a/arch/c6x/Kconfig b/arch/c6x/Kconfig
+index c6b4dd1418b4..8c088b96e372 100644
+--- a/arch/c6x/Kconfig
++++ b/arch/c6x/Kconfig
+@@ -10,7 +10,6 @@ config C6X
+ 	select GENERIC_ATOMIC64
+ 	select GENERIC_IRQ_SHOW
+ 	select HAVE_ARCH_TRACEHOOK
+-	select HAVE_DMA_API_DEBUG
+ 	select HAVE_MEMBLOCK
+ 	select SPARSE_IRQ
+ 	select IRQ_DOMAIN
+diff --git a/arch/ia64/Kconfig b/arch/ia64/Kconfig
+index 9485b5490eca..2067289fad4a 100644
+--- a/arch/ia64/Kconfig
++++ b/arch/ia64/Kconfig
+@@ -29,7 +29,6 @@ config IA64
+ 	select HAVE_FUNCTION_TRACER
+ 	select TTY
+ 	select HAVE_ARCH_TRACEHOOK
+-	select HAVE_DMA_API_DEBUG
+ 	select HAVE_MEMBLOCK
+ 	select HAVE_MEMBLOCK_NODE_MAP
+ 	select HAVE_VIRT_CPU_ACCOUNTING
+diff --git a/arch/microblaze/Kconfig b/arch/microblaze/Kconfig
+index 3817a3e2146c..d14782100088 100644
+--- a/arch/microblaze/Kconfig
++++ b/arch/microblaze/Kconfig
+@@ -19,7 +19,6 @@ config MICROBLAZE
+ 	select HAVE_ARCH_HASH
+ 	select HAVE_ARCH_KGDB
+ 	select HAVE_DEBUG_KMEMLEAK
+-	select HAVE_DMA_API_DEBUG
+ 	select HAVE_DYNAMIC_FTRACE
+ 	select HAVE_FTRACE_MCOUNT_RECORD
+ 	select HAVE_FUNCTION_GRAPH_TRACER
+diff --git a/arch/mips/Kconfig b/arch/mips/Kconfig
+index 0f619b8c0e9e..2dcdc13cd65d 100644
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -42,7 +42,6 @@ config MIPS
+ 	select HAVE_C_RECORDMCOUNT
+ 	select HAVE_DEBUG_KMEMLEAK
+ 	select HAVE_DEBUG_STACKOVERFLOW
+-	select HAVE_DMA_API_DEBUG
+ 	select HAVE_DMA_CONTIGUOUS
+ 	select HAVE_DYNAMIC_FTRACE
+ 	select HAVE_EXIT_THREAD
+diff --git a/arch/powerpc/Kconfig b/arch/powerpc/Kconfig
+index 1887f8f86a77..268fd46fc3c7 100644
+--- a/arch/powerpc/Kconfig
++++ b/arch/powerpc/Kconfig
+@@ -181,7 +181,6 @@ config PPC
+ 	select HAVE_CONTEXT_TRACKING		if PPC64
+ 	select HAVE_DEBUG_KMEMLEAK
+ 	select HAVE_DEBUG_STACKOVERFLOW
+-	select HAVE_DMA_API_DEBUG
+ 	select HAVE_DYNAMIC_FTRACE
+ 	select HAVE_DYNAMIC_FTRACE_WITH_REGS	if MPROFILE_KERNEL
+ 	select HAVE_EBPF_JIT			if PPC64
+diff --git a/arch/riscv/Kconfig b/arch/riscv/Kconfig
+index 17212ba54ee3..95e2da34aaad 100644
+--- a/arch/riscv/Kconfig
++++ b/arch/riscv/Kconfig
+@@ -23,7 +23,6 @@ config RISCV
+ 	select GENERIC_ATOMIC64 if !64BIT || !RISCV_ISA_A
+ 	select HAVE_MEMBLOCK
+ 	select HAVE_MEMBLOCK_NODE_MAP
+-	select HAVE_DMA_API_DEBUG
+ 	select HAVE_DMA_CONTIGUOUS
+ 	select HAVE_GENERIC_DMA_COHERENT
+ 	select IRQ_DOMAIN
+diff --git a/arch/s390/Kconfig b/arch/s390/Kconfig
+index b794a2ab6d15..6a64287ec1da 100644
+--- a/arch/s390/Kconfig
++++ b/arch/s390/Kconfig
+@@ -130,7 +130,6 @@ config S390
+ 	select HAVE_CMPXCHG_LOCAL
+ 	select HAVE_COPY_THREAD_TLS
+ 	select HAVE_DEBUG_KMEMLEAK
+-	select HAVE_DMA_API_DEBUG
+ 	select HAVE_DMA_CONTIGUOUS
+ 	select DMA_DIRECT_OPS
+ 	select HAVE_DYNAMIC_FTRACE
 diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-index 23e7432302b0..23ed245407b1 100644
+index 9417f70e008e..7d521926041e 100644
 --- a/arch/sh/Kconfig
 +++ b/arch/sh/Kconfig
-@@ -50,7 +50,6 @@ config SUPERH
- 	select HAVE_ARCH_AUDITSYSCALL
- 	select HAVE_FUTEX_CMPXCHG if FUTEX
- 	select HAVE_NMI
--	select NEED_DMA_MAP_STATE
- 	select NEED_SG_DMA_LENGTH
+@@ -13,7 +13,6 @@ config SUPERH
+ 	select HAVE_OPROFILE
+ 	select HAVE_GENERIC_DMA_COHERENT
+ 	select HAVE_ARCH_TRACEHOOK
+-	select HAVE_DMA_API_DEBUG
+ 	select HAVE_PERF_EVENTS
+ 	select HAVE_DEBUG_BUGVERBOSE
+ 	select ARCH_HAVE_CUSTOM_GPIO_H
+diff --git a/arch/sparc/Kconfig b/arch/sparc/Kconfig
+index c1cfc17eb504..435dbc033afe 100644
+--- a/arch/sparc/Kconfig
++++ b/arch/sparc/Kconfig
+@@ -25,7 +25,6 @@ config SPARC
+ 	select RTC_CLASS
+ 	select RTC_DRV_M48T59
+ 	select RTC_SYSTOHC
+-	select HAVE_DMA_API_DEBUG
+ 	select HAVE_ARCH_JUMP_LABEL if SPARC64
+ 	select GENERIC_IRQ_SHOW
+ 	select ARCH_WANT_IPC_PARSE_VERSION
+diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
+index aad35c568681..3eeca48a146b 100644
+--- a/arch/x86/Kconfig
++++ b/arch/x86/Kconfig
+@@ -135,7 +135,6 @@ config X86
+ 	select HAVE_C_RECORDMCOUNT
+ 	select HAVE_DEBUG_KMEMLEAK
+ 	select HAVE_DEBUG_STACKOVERFLOW
+-	select HAVE_DMA_API_DEBUG
+ 	select HAVE_DMA_CONTIGUOUS
+ 	select HAVE_DYNAMIC_FTRACE
+ 	select HAVE_DYNAMIC_FTRACE_WITH_REGS
+diff --git a/arch/xtensa/Kconfig b/arch/xtensa/Kconfig
+index c921e8bccdc8..17df332269b2 100644
+--- a/arch/xtensa/Kconfig
++++ b/arch/xtensa/Kconfig
+@@ -19,7 +19,6 @@ config XTENSA
+ 	select HAVE_ARCH_KASAN if MMU
+ 	select HAVE_CC_STACKPROTECTOR
+ 	select HAVE_DEBUG_KMEMLEAK
+-	select HAVE_DMA_API_DEBUG
+ 	select HAVE_DMA_CONTIGUOUS
+ 	select HAVE_EXIT_THREAD
+ 	select HAVE_FUNCTION_TRACER
+diff --git a/lib/Kconfig.debug b/lib/Kconfig.debug
+index 685ed2dd4384..d5175eb7b917 100644
+--- a/lib/Kconfig.debug
++++ b/lib/Kconfig.debug
+@@ -1634,7 +1634,6 @@ config PROVIDE_OHCI1394_DMA_INIT
  
+ config DMA_API_DEBUG
+ 	bool "Enable debugging of DMA-API usage"
+-	depends on HAVE_DMA_API_DEBUG
+ 	select NEED_DMA_MAP_STATE
  	help
-@@ -163,6 +162,8 @@ config DMA_COHERENT
- 
- config DMA_NONCOHERENT
- 	def_bool !DMA_COHERENT
-+	select ARCH_HAS_SYNC_DMA_FOR_DEVICE
-+	select DMA_NONCOHERENT_OPS
- 
- config PGTABLE_LEVELS
- 	default 3 if X2TLB
-diff --git a/arch/sh/include/asm/Kbuild b/arch/sh/include/asm/Kbuild
-index 1efcce74997b..50f7e878ea1b 100644
---- a/arch/sh/include/asm/Kbuild
-+++ b/arch/sh/include/asm/Kbuild
-@@ -1,6 +1,7 @@
- generic-y += current.h
- generic-y += delay.h
- generic-y += div64.h
-+generic-y += dma-mapping.h
- generic-y += emergency-restart.h
- generic-y += exec.h
- generic-y += irq_regs.h
-diff --git a/arch/sh/include/asm/dma-mapping.h b/arch/sh/include/asm/dma-mapping.h
-deleted file mode 100644
-index 1ebc6a4eb1c5..000000000000
---- a/arch/sh/include/asm/dma-mapping.h
-+++ /dev/null
-@@ -1,26 +0,0 @@
--/* SPDX-License-Identifier: GPL-2.0 */
--#ifndef __ASM_SH_DMA_MAPPING_H
--#define __ASM_SH_DMA_MAPPING_H
--
--extern const struct dma_map_ops nommu_dma_ops;
--
--static inline const struct dma_map_ops *get_arch_dma_ops(struct bus_type *bus)
--{
--#ifdef CONFIG_DMA_NONCOHERENT
--	return &nommu_dma_ops;
--#else
--	return &dma_direct_ops;
--#endif
--}
--
--extern void *dma_generic_alloc_coherent(struct device *dev, size_t size,
--					dma_addr_t *dma_addr, gfp_t flag,
--					unsigned long attrs);
--extern void dma_generic_free_coherent(struct device *dev, size_t size,
--				      void *vaddr, dma_addr_t dma_handle,
--				      unsigned long attrs);
--
--void sh_sync_dma_for_device(void *vaddr, size_t size,
--	    enum dma_data_direction dir);
--
--#endif /* __ASM_SH_DMA_MAPPING_H */
-diff --git a/arch/sh/kernel/Makefile b/arch/sh/kernel/Makefile
-index cb5f1bfb52de..985106e13614 100644
---- a/arch/sh/kernel/Makefile
-+++ b/arch/sh/kernel/Makefile
-@@ -45,7 +45,6 @@ obj-$(CONFIG_DUMP_CODE)		+= disassemble.o
- obj-$(CONFIG_HIBERNATION)	+= swsusp.o
- obj-$(CONFIG_DWARF_UNWINDER)	+= dwarf.o
- obj-$(CONFIG_PERF_EVENTS)	+= perf_event.o perf_callchain.o
--obj-$(CONFIG_DMA_NONCOHERENT)	+= dma-nommu.o
- obj-$(CONFIG_HAVE_HW_BREAKPOINT)		+= hw_breakpoint.o
- 
- ccflags-y := -Werror
-diff --git a/arch/sh/kernel/dma-nommu.c b/arch/sh/kernel/dma-nommu.c
-deleted file mode 100644
-index 442922a9f8c0..000000000000
---- a/arch/sh/kernel/dma-nommu.c
-+++ /dev/null
-@@ -1,75 +0,0 @@
--/*
-- * DMA mapping support for platforms lacking IOMMUs.
-- *
-- * Copyright (C) 2009  Paul Mundt
-- *
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
-- */
--#include <linux/dma-mapping.h>
--#include <linux/io.h>
--#include <asm/cacheflush.h>
--
--static dma_addr_t nommu_map_page(struct device *dev, struct page *page,
--				 unsigned long offset, size_t size,
--				 enum dma_data_direction dir,
--				 unsigned long attrs)
--{
--	dma_addr_t addr = page_to_phys(page) + offset;
--
--	WARN_ON(size = 0);
--
--	if (!(attrs & DMA_ATTR_SKIP_CPU_SYNC))
--		sh_sync_dma_for_device(page_address(page) + offset, size, dir);
--
--	return addr;
--}
--
--static int nommu_map_sg(struct device *dev, struct scatterlist *sg,
--			int nents, enum dma_data_direction dir,
--			unsigned long attrs)
--{
--	struct scatterlist *s;
--	int i;
--
--	WARN_ON(nents = 0 || sg[0].length = 0);
--
--	for_each_sg(sg, s, nents, i) {
--		BUG_ON(!sg_page(s));
--
--		if (!(attrs & DMA_ATTR_SKIP_CPU_SYNC))
--			sh_sync_dma_for_device(sg_virt(s), s->length, dir);
--
--		s->dma_address = sg_phys(s);
--		s->dma_length = s->length;
--	}
--
--	return nents;
--}
--
--static void nommu_sync_single_for_device(struct device *dev, dma_addr_t addr,
--			      size_t size, enum dma_data_direction dir)
--{
--	sh_sync_dma_for_device(phys_to_virt(addr), size, dir);
--}
--
--static void nommu_sync_sg_for_device(struct device *dev, struct scatterlist *sg,
--			  int nelems, enum dma_data_direction dir)
--{
--	struct scatterlist *s;
--	int i;
--
--	for_each_sg(sg, s, nelems, i)
--		sh_sync_dma_for_device(sg_virt(s), s->length, dir);
--}
--
--const struct dma_map_ops nommu_dma_ops = {
--	.alloc			= dma_generic_alloc_coherent,
--	.free			= dma_generic_free_coherent,
--	.map_page		= nommu_map_page,
--	.map_sg			= nommu_map_sg,
--	.sync_single_for_device	= nommu_sync_single_for_device,
--	.sync_sg_for_device	= nommu_sync_sg_for_device,
--};
--EXPORT_SYMBOL(nommu_dma_ops);
-diff --git a/arch/sh/mm/consistent.c b/arch/sh/mm/consistent.c
-index 516d481525e1..aaeeb74fdcc3 100644
---- a/arch/sh/mm/consistent.c
-+++ b/arch/sh/mm/consistent.c
-@@ -12,17 +12,15 @@
- #include <linux/mm.h>
- #include <linux/init.h>
- #include <linux/platform_device.h>
--#include <linux/dma-mapping.h>
--#include <linux/dma-debug.h>
-+#include <linux/dma-noncoherent.h>
- #include <linux/io.h>
- #include <linux/module.h>
- #include <linux/gfp.h>
- #include <asm/cacheflush.h>
- #include <asm/addrspace.h>
- 
--void *dma_generic_alloc_coherent(struct device *dev, size_t size,
--				 dma_addr_t *dma_handle, gfp_t gfp,
--				 unsigned long attrs)
-+void *arch_dma_alloc(struct device *dev, size_t size, dma_addr_t *dma_handle,
-+		gfp_t gfp, unsigned long attrs)
- {
- 	void *ret, *ret_nocache;
- 	int order = get_order(size);
-@@ -37,7 +35,7 @@ void *dma_generic_alloc_coherent(struct device *dev, size_t size,
- 	 * Pages from the page allocator may have data present in
- 	 * cache. So flush the cache before using uncached memory.
- 	 */
--	sh_sync_dma_for_device(ret, size, DMA_BIDIRECTIONAL);
-+	__flush_purge_region(sh_cacheop_vaddr(ret), size);
- 
- 	ret_nocache = (void __force *)ioremap_nocache(virt_to_phys(ret), size);
- 	if (!ret_nocache) {
-@@ -52,9 +50,8 @@ void *dma_generic_alloc_coherent(struct device *dev, size_t size,
- 	return ret_nocache;
- }
- 
--void dma_generic_free_coherent(struct device *dev, size_t size,
--			       void *vaddr, dma_addr_t dma_handle,
--			       unsigned long attrs)
-+void arch_dma_free(struct device *dev, size_t size, void *vaddr,
-+		dma_addr_t dma_handle, unsigned long attrs)
- {
- 	int order = get_order(size);
- 	unsigned long pfn = dma_handle >> PAGE_SHIFT;
-@@ -66,12 +63,12 @@ void dma_generic_free_coherent(struct device *dev, size_t size,
- 	iounmap(vaddr);
- }
- 
--void sh_sync_dma_for_device(void *vaddr, size_t size,
--		    enum dma_data_direction direction)
-+void arch_sync_dma_for_device(struct device *dev, phys_addr_t paddr,
-+		size_t size, enum dma_data_direction dir)
- {
--	void *addr = sh_cacheop_vaddr(vaddr);
-+	void *addr = sh_cacheop_vaddr(phys_to_virt(paddr));
- 
--	switch (direction) {
-+	switch (dir) {
- 	case DMA_FROM_DEVICE:		/* invalidate only */
- 		__flush_invalidate_region(addr, size);
- 		break;
-@@ -85,7 +82,6 @@ void sh_sync_dma_for_device(void *vaddr, size_t size,
- 		BUG();
- 	}
- }
--EXPORT_SYMBOL(sh_sync_dma_for_device);
- 
- static int __init memchunk_setup(char *str)
- {
+ 	  Enable this option to debug the use of the DMA API by device drivers.
 -- 
 2.17.0
 
