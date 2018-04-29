@@ -1,81 +1,119 @@
-From: Rich Felker <dalias@libc.org>
-Date: Thu, 26 Apr 2018 15:47:40 +0000
+From: Rob Landley <rob@landley.net>
+Date: Sun, 29 Apr 2018 16:58:28 +0000
 Subject: Re: Board support for NextVoD - pdk7105
-Message-Id: <20180426154740.GI3094@brightrain.aerifal.cx>
+Message-Id: <5b7dce9c-8af1-4372-ca4f-1d251104ee0a@landley.net>
 List-Id: <linux-sh.vger.kernel.org>
 References: <406f18f4-33df-04f8-919b-5f431dd2229b@physik.fu-berlin.de>
 In-Reply-To: <406f18f4-33df-04f8-919b-5f431dd2229b@physik.fu-berlin.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Thu, Apr 26, 2018 at 03:23:45PM +0200, John Paul Adrian Glaubitz wrote:
-> Hi!
->=20
-> On 04/25/2018 08:30 PM, Rich Felker wrote:
-> >I've got my replacement NextVoD setup more properly now and ready for
-> >development work.
->=20
-> Cool \o/.
->=20
-> >Is this the source for the kernel you're using and
-> >shipped with it? The repo does not seem to be based off upstream
-> >kernel git at all, but rather a new repo starting with some
-> >already-modified 2.6.32 tree as the initial commit.
->=20
-> The kernel on the device is based on this source:
->=20
-> >https://github.com/dlintw/kernel-pdk7105
->=20
-> which is based on the ST-Linux kernel from:
->=20
-> >http://archive.stlinux.com/stlinux/2.4/SRPMS/index.html
->=20
-> There also is a 3.4 version:
->=20
-> >https://github.com/dlintw/pdk7105-3.4
->=20
-> But I haven't got it to build yet.
->=20
-> >If this is the right starting point, I'll pull the initial commit from
-> >it and start diffing it against STlinux 2.4's "2.6.32" (which is
-> >itself already modified and probably contains a lot of prereqs; src is
-> >available as srpm at http://archive.stlinux.com/stlinux/2.4/SRPMS/),
-> >and see if I can determine what the actual changes are.
->=20
-> Yeah. I think that sounds reasonable.
->=20
-> FWIW, the ST-40 stuff was already part of the Linux kernel but
-> it was removed at some point:
->=20
-> >https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commi=
-t/?id=F96691872439ab2071171d4531c4a95b5d493ae5
 
-Thanks. This info is all very helpful. Especially the removal commit
-gives a good idea what the minimal subset of the STlinux fork needed
-to get something to work might be.
 
-> >This could be a good direction for future of arch/sh -- presumably all
-> >the ST SoCs have a lot in common and could probably be a good first
-> >target for supporting with device tree rather than legacy-style board
-> >files full of platform devices.
->=20
-> Device tree would be really cool to have for more SH devices.
->=20
-> @Yoshinori: Is there any chance the LANDISK device tree patches can
->             get merged at some point?
+On 04/25/2018 01:30 PM, Rich Felker wrote:
+> On Wed, Aug 03, 2016 at 11:59:27AM +0200, John Paul Adrian Glaubitz wrote:
+>> Hi!
+>>
+>> I'm currently playing around with a NextVoD box from Taiwan which is
+>> a VoD system based on the ST40 SoC by ST Microelectronics:
+>>
+>> root@nextvod01:~# cat /proc/cpuinfo
+>> machine		: pdk7105
+>> processor	: 0
+>> cpu family	: sh4
+>> cpu variant	: st40-300
+>> cpu type	: STx7105
+>> cut		: 3.x
+>> cpu flags	: fpu icbi synco fpchg
+>> cache type	: split (harvard)
+>> icache size	: 32KiB (2-way)
+>> dcache size	: 32KiB (2-way)
+>> address sizes	: 32 bits physical
+>> bogomips	: 448.51
+>> root@nextvod01:~#
+>>
+>> Attaching the output from dmesg and the current kernel config.gz.
+>>
+>> The machine is currently running a rather old kernel which I would like
+>> to update, however I'm not sure whether the necessary patches have been
+>> upstreamed. There is a git repository available which has 2.6.32 kernel
+>> with the necessary patches [1].
+>>
+>> Do you think we could get this merged into the normal SH kernel?
+> 
+> I've got my replacement NextVoD setup more properly now and ready for
+> development work. Is this the source for the kernel you're using and
+> shipped with it? The repo does not seem to be based off upstream
+> kernel git at all, but rather a new repo starting with some
+> already-modified 2.6.32 tree as the initial commit.
 
-I'd like to move forward with them; the main thing that blocked me was
-that some of the device tree changes were incompatible with how we're
-using DT already on J2. One I recall was just changes in how the boot
-commandline is handled, which can probably be omitted or made
-non-breaking with minor changes.
+I have the box you sent me sitting on the shelf at home until I can get a power
+supply and serial adapter for it.
 
-The big issue I think we need to resolve consistently is what
-"physical addresses" mean on models with MMU -- P1 (or whichever one
-it is) segment-based addresses, or physical addresses in the sense of
-what goes in the TLB entries. I think it should probably be the latter
-but I'm not sure.
+Can we get a web page (wiki page) somewhere with info on this thing? I spent
+half an hour trawling through the emails you guys cc'd me on back in january
+about the first board Rich got, and... let's see:
 
-Rich
+> I have pre-installed Debian Wheezy onto your box. Once you power
+> it up and hook it up to the network, it should boot into Debian
+> Wheezy, the boot is finished once the LED has turned from purple
+> to solid blue.
+> 
+> You will be able to login via SSH using root/root.
+> 
+> The box was installed using the image "wheezy-sh4.dd" linked here:
+> 
+>> https://github.com/fuyuanli/nextvod-linux-manual/blob/master/doc/02.01.md
+> 
+> Original firmware can be found here:
+> 
+>> https://code.google.com/p/nexttv-mod/downloads/detail?name=U-boot_sourcecode.zip
+> 
+> And the original stlinux distribution is to be found here:
+> 
+>> http://archive.stlinux.com/stlinux/index.html
+> 
+
+> 
+> Some stuff can be found here:
+> 
+>> https://github.com/OpenSH4
+>> https://github.com/dlintw/nextvod-tdt
+>> https://github.com/dlintw/sh4twbox-build-env
+>> https://github.com/dlintw/sh4twbox-multiboot
+> 
+> The kernel is here:
+> 
+>> https://github.com/dlintw/kernel-pdk7105
+> 
+> And I just found there is apparently a more modern kernel:
+> 
+>> https://github.com/dlintw/pdk7105-3.4
+
+Ooh, did you send one to Sato-san too? (Or is he just cc'd?)
+
+And there was more about the serial adapter but that boiled down to
+"Rich offered to mail me a cable" so I don't have a window open for
+that.
+
+Info about where these boards _come_ from and so on would be nice.
+"Ask Adrian to mail you one" seems unlikely to scale.
+
+And I already asked if there was an existing community of
+devs banging on these in China (seems like, since so much stuff is
+translated) that we could maybe talk to...
+
+(It's a fun little board. Bit like the original linksys, only
+smaller and with video outputs. I look forward to powering it on.)
+
+> This could be a good direction for future of arch/sh -- presumably all
+> the ST SoCs have a lot in common and could probably be a good first
+> target for supporting with device tree rather than legacy-style board
+> files full of platform devices.
+
+Rich, I'll see if I can get you one of the SH7760 boards I'm working
+on at this contract, but it won't happen this month.
+
+Rob
