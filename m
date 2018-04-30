@@ -1,32 +1,86 @@
-From: Greentime Hu <green.hu@gmail.com>
-Date: Thu, 26 Apr 2018 09:39:20 +0000
-Subject: Re: [PATCH 13/22] nds32: use generic dma_noncoherent_ops
-Message-Id: <CAEbi=3dnduyq3k8hkoLu180EtwCQ5-Hz0jc1iviv70WXp7yUJg@mail.gmail.com>
+From: Bartosz Golaszewski <brgl@bgdev.pl>
+Date: Mon, 30 Apr 2018 16:35:53 +0000
+Subject: [PATCH 0/3] sh: make early_platform code SuperH-specific
+Message-Id: <20180430163556.2560-1-brgl@bgdev.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180420080313.18796-1-hch@lst.de> <20180420080313.18796-14-hch@lst.de>
- <CAEbi=3fkakVD2vxGu6SgJM77JnNM8Y79xS8_o6m9d_85BJpMFQ@mail.gmail.com>
- <20180424191640.GA32495@lst.de> <CAEbi=3f7yzE+KAM2GOh6QahC_E6BAUfB3ys3U-WdBSUf3DPZqg@mail.gmail.com>
- <20180425064055.GA11460@lst.de> <CAEbi=3fcd8E=xi_hbef45LnPsBZhZv37yPO-xfZmU1gMaWnDvg@mail.gmail.com>
- <20180426064239.GA13895@lst.de> <CAEbi=3e3gM_WpQOtKZXP4Xj2Az4bLf_u6BjDELqXy6-d9HurMQ@mail.gmail.com>
- <20180426082429.GA15580@lst.de>
-In-Reply-To: <20180426082429.GA15580@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Christoph Hellwig <hch@lst.de>
-Cc: linux-arch <linux-arch@vger.kernel.org>, Michal Simek <monstr@monstr.eu>, Vincent Chen <deanbo422@gmail.com>, linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org, linux-c6x-dev@linux-c6x.org, linux-hexagon@vger.kernel.org, linux-m68k@lists.linux-m68k.org, nios2-dev@lists.rocketboards.org, openrisc@lists.librecores.org, linux-parisc@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux <sparclinux@vger.kernel.org>, linux-xtensa@linux-xtensa.org, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-2018-04-26 16:24 GMT+08:00 Christoph Hellwig <hch@lst.de>:
-> On Thu, Apr 26, 2018 at 04:06:34PM +0800, Greentime Hu wrote:
->> It works!!!
->
-> Thanks!
->
-> Can you retest the updated tree here with all the fixes and give me
-> your Tested-by: for the generic and nds32 patches?
->
-> git://git.infradead.org/users/hch/misc.git generic-dma-noncoherent
+I recently started a discussion about the need for a proper early device
+probing mechanism[1]. One that would be based on real platform drivers
+and support both platform data and device tree.
 
-Sorry Christoph. I found the previous mail I said it works was wrong
-because I used a wrong vmlinux.
-It still failed. >,<
+While we're far from reaching any consensus on the implementation, Arnd
+suggested that I start off by moving the SuperH-specific early platform
+drivers implementation to arch/sh[2].
+
+This series is the first attempt at making way for a new, less hacky
+implementation.
+
+The first patch removes the last instance of a non-sh driver using the
+early_platform API. It can be removed since ARM no longer probes early
+drivers.
+
+The second patch moves all the early_platform code to arch/sh.
+
+The last patch prefixes all early_platform symbols with 'sh_'.
+
+[1] https://lkml.org/lkml/2018/4/26/657
+[2] https://lkml.org/lkml/2018/4/27/239
+
+Bartosz Golaszewski (3):
+  clocksource: timer-ti-dm: remove the early platform driver
+    registration
+  platform: move the early platform device support to arch/sh
+  sh: add the sh_ prefix to early platform symbols
+
+ arch/sh/drivers/Makefile               |   2 +-
+ arch/sh/drivers/platform_early.c       | 346 +++++++++++++++++++++++++
+ arch/sh/include/asm/platform_early.h   |  61 +++++
+ arch/sh/kernel/cpu/sh2/setup-sh7619.c  |   4 +-
+ arch/sh/kernel/cpu/sh2a/setup-mxg.c    |   3 +-
+ arch/sh/kernel/cpu/sh2a/setup-sh7201.c |   3 +-
+ arch/sh/kernel/cpu/sh2a/setup-sh7203.c |   3 +-
+ arch/sh/kernel/cpu/sh2a/setup-sh7206.c |   3 +-
+ arch/sh/kernel/cpu/sh2a/setup-sh7264.c |   3 +-
+ arch/sh/kernel/cpu/sh2a/setup-sh7269.c |   3 +-
+ arch/sh/kernel/cpu/sh3/setup-sh3.c     |   1 +
+ arch/sh/kernel/cpu/sh3/setup-sh7705.c  |   3 +-
+ arch/sh/kernel/cpu/sh3/setup-sh770x.c  |   3 +-
+ arch/sh/kernel/cpu/sh3/setup-sh7710.c  |   3 +-
+ arch/sh/kernel/cpu/sh3/setup-sh7720.c  |   3 +-
+ arch/sh/kernel/cpu/sh4/setup-sh4-202.c |   3 +-
+ arch/sh/kernel/cpu/sh4/setup-sh7750.c  |   9 +-
+ arch/sh/kernel/cpu/sh4/setup-sh7760.c  |   3 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7343.c |   3 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7366.c |   3 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7722.c |   3 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7723.c |   3 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7724.c |   3 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7734.c |   3 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7757.c |   3 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7763.c |   3 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7770.c |   3 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7780.c |   4 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7785.c |   3 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7786.c |   3 +-
+ arch/sh/kernel/cpu/sh4a/setup-shx3.c   |   3 +-
+ arch/sh/kernel/cpu/sh5/setup-sh5.c     |   3 +-
+ arch/sh/kernel/setup.c                 |   3 +-
+ arch/sh/kernel/time.c                  |   5 +-
+ drivers/base/platform.c                | 288 --------------------
+ drivers/clocksource/sh_cmt.c           |   6 +-
+ drivers/clocksource/sh_mtu2.c          |   8 +-
+ drivers/clocksource/sh_tmu.c           |   8 +-
+ drivers/clocksource/timer-ti-dm.c      |   1 -
+ drivers/tty/serial/sh-sci.c            |   5 +-
+ include/linux/platform_device.h        |  52 ----
+ 41 files changed, 491 insertions(+), 387 deletions(-)
+ create mode 100644 arch/sh/drivers/platform_early.c
+ create mode 100644 arch/sh/include/asm/platform_early.h
+
+-- 
+2.17.0
+
