@@ -1,40 +1,90 @@
-From: Rich Felker <dalias@libc.org>
-Date: Fri, 11 May 2018 02:06:34 +0000
-Subject: Re: early alloc change broke sh
-Message-Id: <20180511020634.GQ1392@brightrain.aerifal.cx>
+From: Bartosz Golaszewski <brgl@bgdev.pl>
+Date: Wed, 02 May 2018 09:48:18 +0000
+Subject: [PATCH v2 0/3] sh: make early_platform code SuperH-specific
+Message-Id: <20180502094821.2907-1-brgl@bgdev.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180511000128.GA23149@brightrain.aerifal.cx>
-In-Reply-To: <20180511000128.GA23149@brightrain.aerifal.cx>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Rob Herring <robh@kernel.org>
-Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, May 10, 2018 at 08:01:28PM -0400, Rich Felker wrote:
-> Since commit 0fa1c579349fdd90173381712ad78aa99c09d38b (of/fdt: use
-> memblock_virt_alloc for early alloc), attempting to boot on sh (j2,
-> nommu) fails with OOM:
-> 
-> [    0.000000] bootmem alloc of 7836 bytes failed!
-> [    0.000000] Kernel panic - not syncing: Out of memory
-> 
-> I suspect there are significant differences in memblock_virt_alloc and
-> memblock_alloc (perhaps specific to nommu?). It looks like microblaze
-> was also affected:
-> 
-> http://lkml.iu.edu/hypermail/linux/kernel/1801.1/02200.html
-> 
-> I'll continue looking for a solution but I wanted to let you know
-> right away in case you might know what's wrong and have a fix. It
-> would be nice if we could get a fix for this regression in 4.17 since
-> multiple archs are broken.
+I recently started a discussion about the need for a proper early device
+probing mechanism[1]. One that would be based on real platform drivers
+and support both platform data and device tree.
 
-The problem seems to be that a working memblock_virt_alloc depends on:
+While we're far from reaching any consensus on the implementation, Arnd
+suggested that I start off by moving the SuperH-specific early platform
+drivers implementation to arch/sh[2].
 
-	#if defined(CONFIG_HAVE_MEMBLOCK) && defined(CONFIG_NO_BOOTMEM)
+This series is the first attempt at making way for a new, less hacky
+implementation.
 
-Otherwise, it's a thin wrapper around __alloc_bootmem, which is not
-equivalent to the old memblock_alloc call.
+The first patch removes the last instance of a non-sh driver using the
+early_platform API. It can be removed since ARM no longer probes early
+drivers.
 
-Rich
+The second patch moves all the early_platform code to arch/sh.
+
+The last patch prefixes all early_platform symbols with 'sh_'.
+
+[1] https://lkml.org/lkml/2018/4/26/657
+[2] https://lkml.org/lkml/2018/4/27/239
+
+v1 -> v2:
+- certain drivers are compiled for arm/mach-shmobile too - we need to
+  add ifdefs for CONFIG_SUPERH around early_platform calls
+
+Bartosz Golaszewski (3):
+  clocksource: timer-ti-dm: remove the early platform driver
+    registration
+  platform: move the early platform device support to arch/sh
+  sh: add the sh_ prefix to early platform symbols
+
+ arch/sh/drivers/Makefile               |   2 +-
+ arch/sh/drivers/platform_early.c       | 346 +++++++++++++++++++++++++
+ arch/sh/include/asm/platform_early.h   |  61 +++++
+ arch/sh/kernel/cpu/sh2/setup-sh7619.c  |   4 +-
+ arch/sh/kernel/cpu/sh2a/setup-mxg.c    |   3 +-
+ arch/sh/kernel/cpu/sh2a/setup-sh7201.c |   3 +-
+ arch/sh/kernel/cpu/sh2a/setup-sh7203.c |   3 +-
+ arch/sh/kernel/cpu/sh2a/setup-sh7206.c |   3 +-
+ arch/sh/kernel/cpu/sh2a/setup-sh7264.c |   3 +-
+ arch/sh/kernel/cpu/sh2a/setup-sh7269.c |   3 +-
+ arch/sh/kernel/cpu/sh3/setup-sh3.c     |   1 +
+ arch/sh/kernel/cpu/sh3/setup-sh7705.c  |   3 +-
+ arch/sh/kernel/cpu/sh3/setup-sh770x.c  |   3 +-
+ arch/sh/kernel/cpu/sh3/setup-sh7710.c  |   3 +-
+ arch/sh/kernel/cpu/sh3/setup-sh7720.c  |   3 +-
+ arch/sh/kernel/cpu/sh4/setup-sh4-202.c |   3 +-
+ arch/sh/kernel/cpu/sh4/setup-sh7750.c  |   9 +-
+ arch/sh/kernel/cpu/sh4/setup-sh7760.c  |   3 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7343.c |   3 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7366.c |   3 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7722.c |   3 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7723.c |   3 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7724.c |   3 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7734.c |   3 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7757.c |   3 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7763.c |   3 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7770.c |   3 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7780.c |   4 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7785.c |   3 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7786.c |   3 +-
+ arch/sh/kernel/cpu/sh4a/setup-shx3.c   |   3 +-
+ arch/sh/kernel/cpu/sh5/setup-sh5.c     |   3 +-
+ arch/sh/kernel/setup.c                 |   3 +-
+ arch/sh/kernel/time.c                  |   5 +-
+ drivers/base/platform.c                | 288 --------------------
+ drivers/clocksource/sh_cmt.c           |  17 +-
+ drivers/clocksource/sh_mtu2.c          |  17 +-
+ drivers/clocksource/sh_tmu.c           |  18 +-
+ drivers/clocksource/timer-ti-dm.c      |   1 -
+ drivers/tty/serial/sh-sci.c            |  11 +-
+ include/linux/platform_device.h        |  52 ----
+ 41 files changed, 526 insertions(+), 388 deletions(-)
+ create mode 100644 arch/sh/drivers/platform_early.c
+ create mode 100644 arch/sh/include/asm/platform_early.h
+
+-- 
+2.17.0
+
