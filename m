@@ -1,88 +1,94 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 08 May 2018 07:29:04 +0000
-Subject: Re: [PATCH] serial: sh-sci: Use spin_{try}lock_irqsave instead of open coding version
-Message-Id: <CAMuHMdUWrM9LsN7CoHzPruCA1k8WB+VHvHddARCmtmZGFVW05g@mail.gmail.com>
+From: jacopo mondi <jacopo@jmondi.org>
+Date: Wed, 02 May 2018 07:41:33 +0000
+Subject: Re: [PATCH] sh: mm: Fix unprotected access to struct device
+Message-Id: <20180502074133.GD17527@w540>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="sXc4Kmr5FA7axrvy"
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180430080918.16763-1-wagi@monom.org> <CAMuHMdUjsy95zNtoZnp17dmgRcrkzfSCxTe5G=ho5nphqX0HEg@mail.gmail.com>
- <20180507124704.s4qlrcc3leoky4r7@linutronix.de> <66cd1363-9f62-e2f5-2271-1fa78509f2cd@monom.org>
-In-Reply-To: <66cd1363-9f62-e2f5-2271-1fa78509f2cd@monom.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Daniel Wagner <wagi@monom.org>
-Cc: Sebastian Andrzej Siewior <bigeasy@linutronix.de>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, linux-rt-users@vger.kernel.org, "open list:SERIAL DRIVERS" <linux-serial@vger.kernel.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Linux-sh list <linux-sh@vger.kernel.org>, Daniel Wagner <daniel.wagner@siemens.com>, Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+References: <1523972123-5700-1-git-send-email-jacopo+renesas@jmondi.org>
+ <20180418104703.GA12462@infradead.org>
+ <20180418131314.GC3999@w540>
+ <20180420083147.GC31275@infradead.org>
+ <CAMuHMdWwJrUgOjaAX1oUHd+KFUMuUzcH6g29zC2mJX377oAHiA@mail.gmail.com>
+In-Reply-To: <CAMuHMdWwJrUgOjaAX1oUHd+KFUMuUzcH6g29zC2mJX377oAHiA@mail.gmail.com>
+To: hch@infradead.org
+Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Jacopo Mondi <jacopo+renesas@jmondi.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Thomas Petazzoni <thomas.petazzoni@free-electrons.com>, Robin Murphy <robin.murphy@arm.com>, Linux-Renesas <linux-renesas-soc@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
 
-Hi Daniel,
 
-On Tue, May 8, 2018 at 9:23 AM, Daniel Wagner <wagi@monom.org> wrote:
-> On 05/07/2018 02:47 PM, Sebastian Andrzej Siewior wrote:
->> On 2018-05-03 09:43:33 [+0200], Geert Uytterhoeven wrote:
->>>> --- a/drivers/tty/serial/sh-sci.c
->>>> +++ b/drivers/tty/serial/sh-sci.c
->>>> @@ -2516,13 +2516,12 @@ static void serial_console_write(struct console
->>>> *co, const char *s,
->>>>          unsigned long flags;
->>>>          int locked = 1;
->>>>
->>>> -       local_irq_save(flags);
->>>
->>>
->>> Hence the below now runs with local interrupts enabled.
->>>
->>> For checking port->sysrq or oops_in_progress that probably isn't an
->>> issue.
->>> If oops_in_progress is set, you have other problems, and the race
->>> condition
->>> between checking the flag and calling spin_lock{,_irqsave}() existed
->>> before,
->>> and is hard to avoid.
->>
->> while oops_in_progress is an issue of its own, the port->sysrq isn't
->> avoided by by local_irq_save(). On SMP systems you can still receive a
->> `break' signal on the UART and have a `printk()' issued on another CPU.
->>
->>> For actual console printing, I think you want to keep interrupts
->>> disabled.
->>
->> why? They should be disabled as part of getting the lock and not for any
->> other reason.
->>
->>>>          if (port->sysrq)
->>>>                  locked = 0;
->>>>          else if (oops_in_progress)
->>>> -               locked = spin_trylock(&port->lock);
->>>> +               locked = spin_trylock_irqsave(&port->lock, flags);
->>>>          else
->>>> -               spin_lock(&port->lock);
->>>> +               spin_lock_irqsave(&port->lock, flags);
->>>
->>>
->>> Add
->>>
->>>          if (!locked
->>>                  local_irq_save(flags)
->>>
->>> here?
->>
->>
->> So for oops_in_progress you get here with interrupts disabled. And if
->> not, I don't see the point in disabling the interrupts without any kind
->> of locking.
+--sXc4Kmr5FA7axrvy
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+
+Hi Christoph,
+
+On Fri, Apr 20, 2018 at 11:59:13AM +0200, Geert Uytterhoeven wrote:
+> Hi Christoph,
 >
+> On Fri, Apr 20, 2018 at 10:31 AM, Christoph Hellwig <hch@infradead.org> wrote:
+> > On Wed, Apr 18, 2018 at 03:13:14PM +0200, jacopo mondi wrote:
+> >> As long as it goes for arch/sh, the only user of dma_alloc_coherent()
+> >> is platform_resource_setup_memory(), and it has been fixed by this
+> >> patch.
+> >
+> > Great!
+> >
+> >> Unfortunately, as Thomas pointed out, there are drivers which calls
+> >> into this with the wrong 'struct device' as the sh_eth one he had fixed.
+> >
+> > Yes, we'll need fixes there.  Other DMA ops implementations also look
+> > at struct device, so they generally are buggy.
+> >
+> >> I would then say that as long as it goes for the NULL case, we should be
+> >> fine now.
+> >
+> > Then I'd say skil that part, please.
 >
-> So I understand, the initial version of this patch was correct.
+> The major reason for keeping the NULL WARN_ON() checks is to make it
+> obvious to the developer what is wrong, and fall back to the old behavior.
 >
-> @Geert if you don't object I'll send a v3 (v1 ported to mainline).
+> Without the checks, the kernel will just crash during early startup,
+> without a clue in the (missing) kernel output, usually leading to a
+> frustrating bisection experience (if the developer is sufficiently motivated,
+> at all).
+>
+> Hence my vote for keeping the checks.
 
-Please go ahead, thanks!
+Gentle ping as I don't see this patch being collected in v4.17-rc3
 
-Gr{oetje,eeting}s,
+Thanks
+   j
 
-                        Geert
+>
+> Gr{oetje,eeting}s,
+>
+>                         Geert
+>
+> --
+> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+>
+> In personal conversations with technical people, I call myself a hacker. But
+> when I'm talking to journalists I just say "programmer" or something like that.
+>                                 -- Linus Torvalds
 
--- 
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+--sXc4Kmr5FA7axrvy
+Content-Type: application/pgp-signature; name="signature.asc"
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBAgAGBQJa6WutAAoJEHI0Bo8WoVY8CYYP/2N/7yrUnb3i7cWeEF1OFoLZ
+nXYQlHzmWBkA011mxrHC4dtoJHv+i1N85amPAMHMs6teawOkIR2VCEwMPWr6vmY4
+HegIHIdbf2Qlc14AzIMZ8P0t3BB9zLQoXkzT16saV+PMh019wXN8oD0q1vJBAmN/
+I8eTCptil6FnhJrkGiuJuxzoSX1EdcFOyYC0AB6l1pMG+hc98V4JBphpA8WLTpc7
++S997xBY5Y/WF9K4IGCSdaSFCFcv3S3uTE2GjOIHnDwIKxAJhmsOWDs4xbmBXCWz
+BMTi2llfa10o96WqBQi39CuKT7HcLbc6Oj0fEKm9U9YtF/CCs/vCLUkk6ZCDK2Nv
+Sw3ZnQVZpv6V5Nltuk2mtqn+LqM9JzgjfN7slEnkC4JA8PgK+N/aW8wsnq/2e7QY
+vJSeW3+FXiIrvRdgQbif4EgXLzAiYzyozbq6KG8KInuFvMo82u0BjTiz93e0F6XD
+7udl060h3DfoXVmBVuKPVYpOhJgO+PTEVLm53lQzCucpOePgAflUs9XaTP9AxJ3O
+PSdHIt3RF/Il8NqsDargaIQlq9L15rHYBfK2++zLuHbmrf36DPcRJBCEg0PGwCsY
+RSkP+Tinfi3tV30oPtt3T9WeVlzumlqzCI4SiGKosouAdlU6A2LwpMCM1ZZBjUI/
+mkHWCqa16xsN6SS7A9Es
+=HPqX
+-----END PGP SIGNATURE-----
+
+--sXc4Kmr5FA7axrvy--
