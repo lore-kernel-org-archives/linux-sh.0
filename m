@@ -1,28 +1,108 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Tue, 08 May 2018 10:45:56 +0000
-Subject: Re: [PATCH 3/3] dma-debug: unexport dma_debug_resize_entries and debug_dma_dump_mappings
-Message-Id: <20180508104556.GA26841@lst.de>
+From: Rich Felker <dalias@libc.org>
+Date: Thu, 03 May 2018 01:37:08 +0000
+Subject: Re: [J-core] [PATCH v5 00/22] sh: LANDISK and R2Dplus convert to device tree
+Message-Id: <20180503013708.GC1392@brightrain.aerifal.cx>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180424140235.9125-1-hch@lst.de> <20180424140235.9125-4-hch@lst.de> <bb5bb25f-24da-9729-a39b-3b88c65ef628@arm.com>
-In-Reply-To: <bb5bb25f-24da-9729-a39b-3b88c65ef628@arm.com>
+References: <1467564402-2649-1-git-send-email-ysato@users.sourceforge.jp>
+ <c1ec211d-cbe2-1139-edb0-8baa0e7364e8@physik.fu-berlin.de>
+ <8c75b447-fc14-871e-1a04-733132527b65@landley.net>
+ <E7B2D113-C30D-4A32-AFB6-DC91DDADE0E8@physik.fu-berlin.de>
+ <20171117191706.GF1627@brightrain.aerifal.cx>
+ <7193aa1b-50e3-11d4-f93d-f567e2e06b8c@physik.fu-berlin.de>
+ <20180105212857.GR1627@brightrain.aerifal.cx>
+In-Reply-To: <20180105212857.GR1627@brightrain.aerifal.cx>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Robin Murphy <robin.murphy@arm.com>
-Cc: Christoph Hellwig <hch@lst.de>, iommu@lists.linux-foundation.org, linux-arch@vger.kernel.org, linux-xtensa@linux-xtensa.org, Michal Simek <monstr@monstr.eu>, Vincent Chen <deanbo422@gmail.com>, linux-c6x-dev@linux-c6x.org, linux-parisc@vger.kernel.org, linux-sh@vger.kernel.org, linux-hexagon@vger.kernel.org, linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, openrisc@lists.librecores.org, Greentime Hu <green.hu@gmail.com>, linux-alpha@vger.kernel.org, sparclinux@vger.kernel.org, nios2-dev@lists.rocketboards.org, linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org
+To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc: Rob Landley <rob@landley.net>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-On Tue, May 08, 2018 at 11:05:20AM +0100, Robin Murphy wrote:
-> On 24/04/18 15:02, Christoph Hellwig wrote:
->> Only used by the AMD GART driver, which must be built in.
->
-> FWIW debug_dma_dump_mappings() is also called by the Intel VT-d driver, but 
-> the same reasoning still applies.
+On Fri, Jan 05, 2018 at 04:28:57PM -0500, Rich Felker wrote:
+> On Fri, Nov 17, 2017 at 08:54:47PM +0100, John Paul Adrian Glaubitz wrote:
+> > On 11/17/2017 08:17 PM, Rich Felker wrote:
+> > > There were significant problems that I don't think were ever
+> > > addressed, including incompatible changes in how boot command line was
+> > > handled and possibly ambiguity about what a physical address means
+> > > (zero based vs based in the zone SH3/4 excludes from MMU mapping) in
+> > > the contract for how the bootloader passes a DTB pointer in to the
+> > > kernel, or something similar.
+> > 
+> > I see, thanks for the heads-up.
+> > 
+> > > This is a large part of why I want to get to the point where I can
+> > > build and boot a kernel on the LANDISK -- not being able to test any
+> > > of this is a blocker for moving everything to device tree.
+> > 
+> > I can actually help you with that. I know what to do to get the kernel
+> > to boot on the LANDISK device. I've got everything working except
+> > being unable to detect the IDE controller. The attached config builds
+> > a kernel which boots with the attached output.
+> > 
+> > Furthermore, in order to install the kernel, you need to use the
+> > cross-LILO version from [1] which allows to install the bootloader
+> > on an x86 machine into the SuperH LANDISK image.
+> > 
+> > Instructions can be found in [2]. A base filesystem can be found in [3].
+> > 
+> > And I could also send you an USL-5P which is also a LANDISK device,
+> > just in a different form-factor.
+> > 
+> > Adrian
+> > 
+> > > [1]http://iohack.osdn.jp/kogiidena/debian26/base/landisk-tools-20070612.tgz
+> > > [2] https://www.with.de/fw/pub/Computing/PlextorPX-EH/LANDISKdebian.pdf
+> > > [3] http://iohack.osdn.jp/kogiidena/debian26/base/
+> 
+> I'm trying to reproduce this but can't find any documentation for
+> cross-LILO in [2], much less any code except possibly the binary
+> "lilo.x86" in [1]. Googling cross-lilo isn't finding anything
+> meaningful except this thread. Is there anywhere to find source and
+> information on what it's doing, or is this going to be something I
+> have to reverse-engineer?
 
-I'll update the changelog.
+Progress on all this! I've got my LANDISK working again, but with the
+disk image Sato-san provided me, which is using (a patched?) U-Boot
+and a kernel based on this patch series. I don't know how to recreate
+the U-Boot setup from scratch, but I might be able to figure out how
+to replace the kernel image it's using. It's possible I may be able to
+get lilo working too -- I tried building it but I'm still not sure how
+to use it, and in any case I need to image the existing system before
+I clobber it since I'm not sure I have the original image.
 
-> This does rather beg the question of 
-> whether it's right to have bits of low-level dma-debug internals *only* 
-> called by a couple of IOMMU drivers, but that can wait for another day.
+On a better note, I've reviewed this patch series in more depth and
+understand it pretty well now, and have classified the patches as
+follows:
 
-My gut feeling is that it is wrong, but I didn't have time to look into
-the details and history of how this happened.
+01-04 -- about P1 vs absolute interpretation of "physical addresses",
+and can be completely dropped if we just use the latter. The former
+does not work with full-32-bit address space.
+
+05 -- change in command line interpretation. Something like this might
+be desired at some point, if we make it non-conflicting with current
+use, but it's independent and not needed.
+
+06-09 -- extending arch/sh device tree support with functionality
+needed to get traditional sh systems using it. These look roughly ok,
+but might need minor cleanup. Just applying these and linking in a
+minimal DTB, I should be able to get a non-board-specific kernel that
+boots and shows console messages until it gets stuck with no interrupt
+controller or devices. This is the milestone I'm looking to get to
+first.
+
+10 -- LANDISK board-specific init stuff, moved into of-generic.c. This
+is not where it belongs, but I don't know where it should be, or if we
+can get it to book without this. If not, it can be applied as a hack
+for testing.
+
+11-13,19 -- new style device tree drivers for clock, pci bus, and irq
+controller. They'll have to go through subsystem maintainers unless we
+want to move them into arch/sh/drivers. Without these the system is
+not going to be usable to the point of reaching userspace.
+
+14,20 -- device trees. The evt2irq/irq2evt macros probably don't make
+sense and should be either irqdomain mappings or just removed. But
+these can be used out-of-tree anyway to make a DTB while testing.
+
+15-17 -- might also be needed for PCI to work. Not sure about them.
+
+Rich
