@@ -1,86 +1,93 @@
-From: jacopo mondi <jacopo@jmondi.org>
-Date: Fri, 18 May 2018 11:52:43 +0000
-Subject: Re: [PATCH 0/2] Remove calls to empty arch_setup_pdev_archdata()
-Message-Id: <20180518115243.GA4432@w540>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="bg08WKrSYDhXBjb5"
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 03 May 2018 07:43:33 +0000
+Subject: Re: [PATCH] serial: sh-sci: Use spin_{try}lock_irqsave instead of open coding version
+Message-Id: <CAMuHMdUjsy95zNtoZnp17dmgRcrkzfSCxTe5G=ho5nphqX0HEg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1526641611-2769-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1526641611-2769-1-git-send-email-geert+renesas@glider.be>
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Jacopo Mondi <jacopo+renesas@jmondi.org>, linux-sh@vger.kernel.org, linux-renesas-soc@vger.kernel.org
+References: <20180430080918.16763-1-wagi@monom.org>
+In-Reply-To: <20180430080918.16763-1-wagi@monom.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Daniel Wagner <wagi@monom.org>
+Cc: Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, linux-rt-users@vger.kernel.org, "open list:SERIAL DRIVERS" <linux-serial@vger.kernel.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Linux-sh list <linux-sh@vger.kernel.org>, Daniel Wagner <daniel.wagner@siemens.com>, Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
 
+Hi Daniel,
 
---bg08WKrSYDhXBjb5
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-
-Hi Geert,
-
-On Fri, May 18, 2018 at 01:06:49PM +0200, Geert Uytterhoeven wrote:
-> 	Hi,
+On Mon, Apr 30, 2018 at 10:09 AM, Daniel Wagner <wagi@monom.org> wrote:
+> From: Daniel Wagner <daniel.wagner@siemens.com>
 >
-> Recently, a few calls to arch_setup_pdev_archdata() were added to the
-> ecovec and migor board files (copied from platform_device_register())?
+> Commit 40f70c03e33a ("serial: sh-sci: add locking to console write
+> function to avoid SMP lockup") copied the strategy to avoid locking
+> problems in conjuncture with the console from the UART8250
+> driver. Instead using directly spin_{try}lock_irqsave(),
+> local_irq_save() followed by spin_{try}lock() was used. While this is
+> correct on mainline, for -rt it is a problem. spin_{try}lock() will
+> check if it is running in a valid context. Since the local_irq_save()
+> has already been executed, the context has changed and
+> spin_{try}lock() will complain. The reason why spin_{try}lock()
+> complains is that on -rt the spin locks are turned into mutexes and
+> therefore can sleep. Sleeping with interrupts disabled is not valid.
 
-I suspect that was me
+> Cc: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+> Signed-off-by: Daniel Wagner <daniel.wagner@siemens.com>
 
+Thanks for your patch!
+
+> --- a/drivers/tty/serial/sh-sci.c
+> +++ b/drivers/tty/serial/sh-sci.c
+> @@ -2516,13 +2516,12 @@ static void serial_console_write(struct console *co, const char *s,
+>         unsigned long flags;
+>         int locked = 1;
 >
-> However, SuperH doesn't implement arch_setup_pdev_archdata(), and falls
-> back to the default (empty) implementation.  As this code is
-> board-specific, the calls can just be removed.
+> -       local_irq_save(flags);
 
-Thanks for looking into that.
+Hence the below now runs with local interrupts enabled.
 
-Acked-by: Jacopo Mondi <jacopo@jmondi.org>
+For checking port->sysrq or oops_in_progress that probably isn't an issue.
+If oops_in_progress is set, you have other problems, and the race condition
+between checking the flag and calling spin_lock{,_irqsave}() existed before,
+and is hard to avoid.
 
-Thanks
-   j
+For actual console printing, I think you want to keep interrupts disabled.
 
->
-> Thanks!
->
-> Geert Uytterhoeven (2):
->   sh: ecovec: Remove calls to empty arch_setup_pdev_archdata()
->   sh: migor: Remove calls to empty arch_setup_pdev_archdata()
->
->  arch/sh/boards/mach-ecovec24/setup.c | 2 --
->  arch/sh/boards/mach-migor/setup.c    | 1 -
->  2 files changed, 3 deletions(-)
->
-> --
-> 2.7.4
->
-> Gr{oetje,eeting}s,
->
-> 						Geert
->
-> --
-> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
->
-> In personal conversations with technical people, I call myself a hacker. But
-> when I'm talking to journalists I just say "programmer" or something like that.
-> 							    -- Linus Torvalds
+>         if (port->sysrq)
+>                 locked = 0;
+>         else if (oops_in_progress)
+> -               locked = spin_trylock(&port->lock);
+> +               locked = spin_trylock_irqsave(&port->lock, flags);
+>         else
+> -               spin_lock(&port->lock);
+> +               spin_lock_irqsave(&port->lock, flags);
 
---bg08WKrSYDhXBjb5
-Content-Type: application/pgp-signature; name="signature.asc"
+Add
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
+        if (!locked
+                local_irq_save(flags)
 
-iQIcBAEBAgAGBQJa/r6KAAoJEHI0Bo8WoVY82LwP/1cxACVID1it0L++O9Ey3Wme
-c/ucOz/wdV5tTNvCFhIR8UdjEelPLfczCfa1g8p2nWQyHlA3Al8Ec82i6IrG4Itp
-sc2LAcBafi3yjh2q5YetHu0+/tmH5KuUn0Gn1e3VsjrxhjYdYHBQa6SmGDteuyy6
-XSX/mh9gOJE0ryIRQfSBBTGjwTyHboAjhHhJCh0ehUpSwxelu7EQA+gEx4fLqsYT
-hcX8Gn0QyyZ5rpxJqd2nltQxd7HnEvzZH8B25fXSdiVu1eAo62yCynZMdQxLtUhr
-vjnBNTxvCBZFZrusNYXkAB8vexT+w/K8CF+6XYK0qcW425/zBrov8pkF4dVsr+Zb
-l/NtXqa9xYKiU7Ehw9SC6x+wWM8trhVWc/RFA3jdRzb0ycyC1HsTXoXGoVz9xjw+
-KRDAca5Xspx2sXubl4Max0UTMKPH2Jbm02ZbZq3JNmVADkWKf6Wx6P/RPP3Cln6Q
-bMdHwv0ijfKXls4XLe4i3mRqWYOcEIvj1FV74H7GI1oLGNhWPGqWdq0uyW0N8Fz2
-l7sAPl1/jGN/SnAHhM6W/3L2QF0z79q/WfIPhFSogqZ58zTETVCT1p0kSlul5qdF
-fSim18Agl5o1Ey9fLrFIwzkeATsGhrR2ycIy9Y/MkQeNBwBnsUWtytxx5PF56i5e
-3/txBONEwzVvba4lZzsV
-=JGip
------END PGP SIGNATURE-----
+here?
 
---bg08WKrSYDhXBjb5--
+>         /* first save the SCSCR then disable the interrupts */
+>         ctrl = serial_port_in(port, SCSCR);
+> @@ -2539,8 +2538,7 @@ static void serial_console_write(struct console *co, const char *s,
+>         serial_port_out(port, SCSCR, ctrl);
+>
+>         if (locked)
+> -               spin_unlock(&port->lock);
+> -       local_irq_restore(flags);
+> +               spin_unlock_irqrestore(&port->lock, flags);
+
+        else
+                local_irq_restore(flags);
+
+>  }
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+-- 
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
