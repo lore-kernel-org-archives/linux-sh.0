@@ -1,290 +1,94 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Fri, 11 May 2018 07:59:43 +0000
-Subject: [PATCH 18/20] xtensa: use generic dma_noncoherent_ops
-Message-Id: <20180511075945.16548-19-hch@lst.de>
+From: Bartosz Golaszewski <brgl@bgdev.pl>
+Date: Fri, 04 May 2018 13:27:28 +0000
+Subject: [PATCH v3 0/3] sh: make early_platform code SuperH-specific
+Message-Id: <20180504132731.14574-1-brgl@bgdev.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180511075945.16548-1-hch@lst.de>
-In-Reply-To: <20180511075945.16548-1-hch-jcswGhMUV9g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-xtensa-PjhNF2WwrV/0Sa2dR60CXw@public.gmane.org, Michal Simek <monstr-pSz03upnqPeHXe+LvDLADg@public.gmane.org>, Vincent Chen <deanbo422-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-c6x-dev-jPsnJVOj+W6hPH1hqNUYSQ@public.gmane.org, linux-parisc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-hexagon-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-m68k-cunTk1MwBs8S/qaLPR03pWD2FQJk+8+b@public.gmane.org, openrisc-cunTk1MwBs9a3B2Vnqf2dGD2FQJk+8+b@public.gmane.org, Greentime Hu <green.hu-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-alpha-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sparclinux-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, nios2-dev-g9ZBwUv/Ih/yUk5EbOjzuce+I+R0W71w@public.gmane.org, linux-snps-arc-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org
+To: linux-arm-kernel@lists.infradead.org
 
-Switch to the generic noncoherent direct mapping implementation.
+I recently started a discussion about the need for a proper early device
+probing mechanism[1]. One that would be based on real platform drivers
+and support both platform data and device tree.
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
----
- arch/xtensa/Kconfig                   |   3 +
- arch/xtensa/include/asm/Kbuild        |   1 +
- arch/xtensa/include/asm/dma-mapping.h |  26 ------
- arch/xtensa/kernel/pci-dma.c          | 130 +++-----------------------
- 4 files changed, 19 insertions(+), 141 deletions(-)
- delete mode 100644 arch/xtensa/include/asm/dma-mapping.h
+While we're far from reaching any consensus on the implementation, Arnd
+suggested that I start off by moving the SuperH-specific early platform
+drivers implementation to arch/sh[2].
 
-diff --git a/arch/xtensa/Kconfig b/arch/xtensa/Kconfig
-index 17df332269b2..ef114648e954 100644
---- a/arch/xtensa/Kconfig
-+++ b/arch/xtensa/Kconfig
-@@ -5,11 +5,14 @@ config ZONE_DMA
- config XTENSA
- 	def_bool y
- 	select ARCH_NO_COHERENT_DMA_MMAP if !MMU
-+	select ARCH_HAS_SYNC_DMA_FOR_CPU
-+	select ARCH_HAS_SYNC_DMA_FOR_DEVICE
- 	select ARCH_WANT_FRAME_POINTERS
- 	select ARCH_WANT_IPC_PARSE_VERSION
- 	select BUILDTIME_EXTABLE_SORT
- 	select CLONE_BACKWARDS
- 	select COMMON_CLK
-+	select DMA_NONCOHERENT_OPS
- 	select GENERIC_ATOMIC64
- 	select GENERIC_CLOCKEVENTS
- 	select GENERIC_IRQ_SHOW
-diff --git a/arch/xtensa/include/asm/Kbuild b/arch/xtensa/include/asm/Kbuild
-index 436b20337168..a8d6cd3bee4b 100644
---- a/arch/xtensa/include/asm/Kbuild
-+++ b/arch/xtensa/include/asm/Kbuild
-@@ -2,6 +2,7 @@ generic-y += bug.h
- generic-y += device.h
- generic-y += div64.h
- generic-y += dma-contiguous.h
-+generic-y += dma-mapping.h
- generic-y += emergency-restart.h
- generic-y += exec.h
- generic-y += extable.h
-diff --git a/arch/xtensa/include/asm/dma-mapping.h b/arch/xtensa/include/asm/dma-mapping.h
-deleted file mode 100644
-index 44098800dad7..000000000000
---- a/arch/xtensa/include/asm/dma-mapping.h
-+++ /dev/null
-@@ -1,26 +0,0 @@
--/*
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
-- *
-- * Copyright (C) 2003 - 2005 Tensilica Inc.
-- * Copyright (C) 2015 Cadence Design Systems Inc.
-- */
--
--#ifndef _XTENSA_DMA_MAPPING_H
--#define _XTENSA_DMA_MAPPING_H
--
--#include <asm/cache.h>
--#include <asm/io.h>
--
--#include <linux/mm.h>
--#include <linux/scatterlist.h>
--
--extern const struct dma_map_ops xtensa_dma_map_ops;
--
--static inline const struct dma_map_ops *get_arch_dma_ops(struct bus_type *bus)
--{
--	return &xtensa_dma_map_ops;
--}
--
--#endif	/* _XTENSA_DMA_MAPPING_H */
-diff --git a/arch/xtensa/kernel/pci-dma.c b/arch/xtensa/kernel/pci-dma.c
-index 392b4a80ebc2..a83d60e92908 100644
---- a/arch/xtensa/kernel/pci-dma.c
-+++ b/arch/xtensa/kernel/pci-dma.c
-@@ -16,26 +16,24 @@
-  */
- 
- #include <linux/dma-contiguous.h>
-+#include <linux/dma-noncoherent.h>
- #include <linux/dma-direct.h>
- #include <linux/gfp.h>
- #include <linux/highmem.h>
- #include <linux/mm.h>
--#include <linux/module.h>
--#include <linux/pci.h>
--#include <linux/string.h>
- #include <linux/types.h>
- #include <asm/cacheflush.h>
- #include <asm/io.h>
- 
--static void do_cache_op(dma_addr_t dma_handle, size_t size,
-+static void do_cache_op(phys_addr_t paddr, size_t size,
- 			void (*fn)(unsigned long, unsigned long))
- {
--	unsigned long off = dma_handle & (PAGE_SIZE - 1);
--	unsigned long pfn = PFN_DOWN(dma_handle);
-+	unsigned long off = paddr & (PAGE_SIZE - 1);
-+	unsigned long pfn = PFN_DOWN(paddr);
- 	struct page *page = pfn_to_page(pfn);
- 
- 	if (!PageHighMem(page))
--		fn((unsigned long)bus_to_virt(dma_handle), size);
-+		fn((unsigned long)phys_to_virt(paddr), size);
- 	else
- 		while (size > 0) {
- 			size_t sz = min_t(size_t, size, PAGE_SIZE - off);
-@@ -49,14 +47,13 @@ static void do_cache_op(dma_addr_t dma_handle, size_t size,
- 		}
- }
- 
--static void xtensa_sync_single_for_cpu(struct device *dev,
--				       dma_addr_t dma_handle, size_t size,
--				       enum dma_data_direction dir)
-+void arch_sync_dma_for_cpu(struct device *dev, phys_addr_t paddr,
-+		size_t size, enum dma_data_direction dir)
- {
- 	switch (dir) {
- 	case DMA_BIDIRECTIONAL:
- 	case DMA_FROM_DEVICE:
--		do_cache_op(dma_handle, size, __invalidate_dcache_range);
-+		do_cache_op(paddr, size, __invalidate_dcache_range);
- 		break;
- 
- 	case DMA_NONE:
-@@ -68,15 +65,14 @@ static void xtensa_sync_single_for_cpu(struct device *dev,
- 	}
- }
- 
--static void xtensa_sync_single_for_device(struct device *dev,
--					  dma_addr_t dma_handle, size_t size,
--					  enum dma_data_direction dir)
-+void arch_sync_dma_for_device(struct device *dev, phys_addr_t paddr,
-+		size_t size, enum dma_data_direction dir)
- {
- 	switch (dir) {
- 	case DMA_BIDIRECTIONAL:
- 	case DMA_TO_DEVICE:
- 		if (XCHAL_DCACHE_IS_WRITEBACK)
--			do_cache_op(dma_handle, size, __flush_dcache_range);
-+			do_cache_op(paddr, size, __flush_dcache_range);
- 		break;
- 
- 	case DMA_NONE:
-@@ -88,40 +84,13 @@ static void xtensa_sync_single_for_device(struct device *dev,
- 	}
- }
- 
--static void xtensa_sync_sg_for_cpu(struct device *dev,
--				   struct scatterlist *sg, int nents,
--				   enum dma_data_direction dir)
--{
--	struct scatterlist *s;
--	int i;
--
--	for_each_sg(sg, s, nents, i) {
--		xtensa_sync_single_for_cpu(dev, sg_dma_address(s),
--					   sg_dma_len(s), dir);
--	}
--}
--
--static void xtensa_sync_sg_for_device(struct device *dev,
--				      struct scatterlist *sg, int nents,
--				      enum dma_data_direction dir)
--{
--	struct scatterlist *s;
--	int i;
--
--	for_each_sg(sg, s, nents, i) {
--		xtensa_sync_single_for_device(dev, sg_dma_address(s),
--					      sg_dma_len(s), dir);
--	}
--}
--
- /*
-  * Note: We assume that the full memory space is always mapped to 'kseg'
-  *	 Otherwise we have to use page attributes (not implemented).
-  */
- 
--static void *xtensa_dma_alloc(struct device *dev, size_t size,
--			      dma_addr_t *handle, gfp_t flag,
--			      unsigned long attrs)
-+void *arch_dma_alloc(struct device *dev, size_t size, dma_addr_t *handle,
-+		gfp_t flag, unsigned long attrs)
- {
- 	unsigned long ret;
- 	unsigned long uncached;
-@@ -171,8 +140,8 @@ static void *xtensa_dma_alloc(struct device *dev, size_t size,
- 	return (void *)uncached;
- }
- 
--static void xtensa_dma_free(struct device *dev, size_t size, void *vaddr,
--			    dma_addr_t dma_handle, unsigned long attrs)
-+void arch_dma_free(struct device *dev, size_t size, void *vaddr,
-+		dma_addr_t dma_handle, unsigned long attrs)
- {
- 	unsigned long count = PAGE_ALIGN(size) >> PAGE_SHIFT;
- 	unsigned long addr = (unsigned long)vaddr;
-@@ -192,72 +161,3 @@ static void xtensa_dma_free(struct device *dev, size_t size, void *vaddr,
- 	if (!dma_release_from_contiguous(dev, page, count))
- 		__free_pages(page, get_order(size));
- }
--
--static dma_addr_t xtensa_map_page(struct device *dev, struct page *page,
--				  unsigned long offset, size_t size,
--				  enum dma_data_direction dir,
--				  unsigned long attrs)
--{
--	dma_addr_t dma_handle = page_to_phys(page) + offset;
--
--	if (!(attrs & DMA_ATTR_SKIP_CPU_SYNC))
--		xtensa_sync_single_for_device(dev, dma_handle, size, dir);
--
--	return dma_handle;
--}
--
--static void xtensa_unmap_page(struct device *dev, dma_addr_t dma_handle,
--			      size_t size, enum dma_data_direction dir,
--			      unsigned long attrs)
--{
--	if (!(attrs & DMA_ATTR_SKIP_CPU_SYNC))
--		xtensa_sync_single_for_cpu(dev, dma_handle, size, dir);
--}
--
--static int xtensa_map_sg(struct device *dev, struct scatterlist *sg,
--			 int nents, enum dma_data_direction dir,
--			 unsigned long attrs)
--{
--	struct scatterlist *s;
--	int i;
--
--	for_each_sg(sg, s, nents, i) {
--		s->dma_address = xtensa_map_page(dev, sg_page(s), s->offset,
--						 s->length, dir, attrs);
--	}
--	return nents;
--}
--
--static void xtensa_unmap_sg(struct device *dev,
--			    struct scatterlist *sg, int nents,
--			    enum dma_data_direction dir,
--			    unsigned long attrs)
--{
--	struct scatterlist *s;
--	int i;
--
--	for_each_sg(sg, s, nents, i) {
--		xtensa_unmap_page(dev, sg_dma_address(s),
--				  sg_dma_len(s), dir, attrs);
--	}
--}
--
--int xtensa_dma_mapping_error(struct device *dev, dma_addr_t dma_addr)
--{
--	return 0;
--}
--
--const struct dma_map_ops xtensa_dma_map_ops = {
--	.alloc = xtensa_dma_alloc,
--	.free = xtensa_dma_free,
--	.map_page = xtensa_map_page,
--	.unmap_page = xtensa_unmap_page,
--	.map_sg = xtensa_map_sg,
--	.unmap_sg = xtensa_unmap_sg,
--	.sync_single_for_cpu = xtensa_sync_single_for_cpu,
--	.sync_single_for_device = xtensa_sync_single_for_device,
--	.sync_sg_for_cpu = xtensa_sync_sg_for_cpu,
--	.sync_sg_for_device = xtensa_sync_sg_for_device,
--	.mapping_error = xtensa_dma_mapping_error,
--};
--EXPORT_SYMBOL(xtensa_dma_map_ops);
+This series is the first attempt at making way for a new, less hacky
+implementation.
+
+The first patch removes the last instance of a non-sh driver using the
+early_platform API. It can be removed since ARM no longer probes early
+drivers.
+
+The second patch moves all the early_platform code to arch/sh.
+
+The last patch prefixes all early_platform symbols with 'sh_'.
+
+[1] https://lkml.org/lkml/2018/4/26/657
+[2] https://lkml.org/lkml/2018/4/27/239
+
+v1 -> v2:
+- certain drivers are compiled for arm/mach-shmobile too - we need to
+  add ifdefs for CONFIG_SUPERH around early_platform calls
+
+v2 -> v3:
+- added a stub for is_early_platform_device() which always returns false
+  on non-SuperH architectures
+
+Bartosz Golaszewski (3):
+  clocksource: timer-ti-dm: remove the early platform driver
+    registration
+  platform: move the early platform device support to arch/sh
+  sh: add the sh_ prefix to early platform symbols
+
+ arch/sh/drivers/Makefile               |   2 +-
+ arch/sh/drivers/platform_early.c       | 346 +++++++++++++++++++++++++
+ arch/sh/include/asm/platform_early.h   |  61 +++++
+ arch/sh/kernel/cpu/sh2/setup-sh7619.c  |   3 +-
+ arch/sh/kernel/cpu/sh2a/setup-mxg.c    |   3 +-
+ arch/sh/kernel/cpu/sh2a/setup-sh7201.c |   3 +-
+ arch/sh/kernel/cpu/sh2a/setup-sh7203.c |   3 +-
+ arch/sh/kernel/cpu/sh2a/setup-sh7206.c |   3 +-
+ arch/sh/kernel/cpu/sh2a/setup-sh7264.c |   3 +-
+ arch/sh/kernel/cpu/sh2a/setup-sh7269.c |   3 +-
+ arch/sh/kernel/cpu/sh3/setup-sh3.c     |   1 +
+ arch/sh/kernel/cpu/sh3/setup-sh7705.c  |   3 +-
+ arch/sh/kernel/cpu/sh3/setup-sh770x.c  |   3 +-
+ arch/sh/kernel/cpu/sh3/setup-sh7710.c  |   3 +-
+ arch/sh/kernel/cpu/sh3/setup-sh7720.c  |   3 +-
+ arch/sh/kernel/cpu/sh4/setup-sh4-202.c |   3 +-
+ arch/sh/kernel/cpu/sh4/setup-sh7750.c  |   9 +-
+ arch/sh/kernel/cpu/sh4/setup-sh7760.c  |   3 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7343.c |   3 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7366.c |   3 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7722.c |   3 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7723.c |   3 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7724.c |   3 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7734.c |   3 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7757.c |   3 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7763.c |   3 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7770.c |   3 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7780.c |   3 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7785.c |   3 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7786.c |   3 +-
+ arch/sh/kernel/cpu/sh4a/setup-shx3.c   |   3 +-
+ arch/sh/kernel/cpu/sh5/setup-sh5.c     |   3 +-
+ arch/sh/kernel/setup.c                 |   3 +-
+ arch/sh/kernel/time.c                  |   5 +-
+ drivers/base/platform.c                | 288 --------------------
+ drivers/clocksource/sh_cmt.c           |  13 +-
+ drivers/clocksource/sh_mtu2.c          |  13 +-
+ drivers/clocksource/sh_tmu.c           |  14 +-
+ drivers/clocksource/timer-ti-dm.c      |   1 -
+ drivers/tty/serial/sh-sci.c            |  11 +-
+ include/linux/platform_device.h        |  64 +----
+ 41 files changed, 524 insertions(+), 388 deletions(-)
+ create mode 100644 arch/sh/drivers/platform_early.c
+ create mode 100644 arch/sh/include/asm/platform_early.h
+
 -- 
 2.17.0
 
