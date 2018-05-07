@@ -1,93 +1,65 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 03 May 2018 07:43:33 +0000
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Mon, 07 May 2018 12:47:04 +0000
 Subject: Re: [PATCH] serial: sh-sci: Use spin_{try}lock_irqsave instead of open coding version
-Message-Id: <CAMuHMdUjsy95zNtoZnp17dmgRcrkzfSCxTe5G=ho5nphqX0HEg@mail.gmail.com>
+Message-Id: <20180507124704.s4qlrcc3leoky4r7@linutronix.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20180430080918.16763-1-wagi@monom.org>
-In-Reply-To: <20180430080918.16763-1-wagi@monom.org>
+ <CAMuHMdUjsy95zNtoZnp17dmgRcrkzfSCxTe5G=ho5nphqX0HEg@mail.gmail.com>
+In-Reply-To: <CAMuHMdUjsy95zNtoZnp17dmgRcrkzfSCxTe5G=ho5nphqX0HEg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Daniel Wagner <wagi@monom.org>
-Cc: Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, linux-rt-users@vger.kernel.org, "open list:SERIAL DRIVERS" <linux-serial@vger.kernel.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Linux-sh list <linux-sh@vger.kernel.org>, Daniel Wagner <daniel.wagner@siemens.com>, Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+To: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: Daniel Wagner <wagi@monom.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, linux-rt-users@vger.kernel.org, "open list:SERIAL DRIVERS" <linux-serial@vger.kernel.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Linux-sh list <linux-sh@vger.kernel.org>, Daniel Wagner <daniel.wagner@siemens.com>, Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
 
-Hi Daniel,
+On 2018-05-03 09:43:33 [+0200], Geert Uytterhoeven wrote:
+> > --- a/drivers/tty/serial/sh-sci.c
+> > +++ b/drivers/tty/serial/sh-sci.c
+> > @@ -2516,13 +2516,12 @@ static void serial_console_write(struct console *co, const char *s,
+> >         unsigned long flags;
+> >         int locked = 1;
+> >
+> > -       local_irq_save(flags);
+> 
+> Hence the below now runs with local interrupts enabled.
+> 
+> For checking port->sysrq or oops_in_progress that probably isn't an issue.
+> If oops_in_progress is set, you have other problems, and the race condition
+> between checking the flag and calling spin_lock{,_irqsave}() existed before,
+> and is hard to avoid.
 
-On Mon, Apr 30, 2018 at 10:09 AM, Daniel Wagner <wagi@monom.org> wrote:
-> From: Daniel Wagner <daniel.wagner@siemens.com>
->
-> Commit 40f70c03e33a ("serial: sh-sci: add locking to console write
-> function to avoid SMP lockup") copied the strategy to avoid locking
-> problems in conjuncture with the console from the UART8250
-> driver. Instead using directly spin_{try}lock_irqsave(),
-> local_irq_save() followed by spin_{try}lock() was used. While this is
-> correct on mainline, for -rt it is a problem. spin_{try}lock() will
-> check if it is running in a valid context. Since the local_irq_save()
-> has already been executed, the context has changed and
-> spin_{try}lock() will complain. The reason why spin_{try}lock()
-> complains is that on -rt the spin locks are turned into mutexes and
-> therefore can sleep. Sleeping with interrupts disabled is not valid.
+while oops_in_progress is an issue of its own, the port->sysrq isn't
+avoided by by local_irq_save(). On SMP systems you can still receive a
+`break' signal on the UART and have a `printk()' issued on another CPU.
 
-> Cc: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
-> Signed-off-by: Daniel Wagner <daniel.wagner@siemens.com>
+> For actual console printing, I think you want to keep interrupts disabled.
 
-Thanks for your patch!
+why? They should be disabled as part of getting the lock and not for any
+other reason.
 
-> --- a/drivers/tty/serial/sh-sci.c
-> +++ b/drivers/tty/serial/sh-sci.c
-> @@ -2516,13 +2516,12 @@ static void serial_console_write(struct console *co, const char *s,
->         unsigned long flags;
->         int locked = 1;
->
-> -       local_irq_save(flags);
+> >         if (port->sysrq)
+> >                 locked = 0;
+> >         else if (oops_in_progress)
+> > -               locked = spin_trylock(&port->lock);
+> > +               locked = spin_trylock_irqsave(&port->lock, flags);
+> >         else
+> > -               spin_lock(&port->lock);
+> > +               spin_lock_irqsave(&port->lock, flags);
+> 
+> Add
+> 
+>         if (!locked
+>                 local_irq_save(flags)
+> 
+> here?
 
-Hence the below now runs with local interrupts enabled.
+So for oops_in_progress you get here with interrupts disabled. And if
+not, I don't see the point in disabling the interrupts without any kind
+of locking.
 
-For checking port->sysrq or oops_in_progress that probably isn't an issue.
-If oops_in_progress is set, you have other problems, and the race condition
-between checking the flag and calling spin_lock{,_irqsave}() existed before,
-and is hard to avoid.
+> Gr{oetje,eeting}s,
+> 
+>                         Geert
+> 
 
-For actual console printing, I think you want to keep interrupts disabled.
-
->         if (port->sysrq)
->                 locked = 0;
->         else if (oops_in_progress)
-> -               locked = spin_trylock(&port->lock);
-> +               locked = spin_trylock_irqsave(&port->lock, flags);
->         else
-> -               spin_lock(&port->lock);
-> +               spin_lock_irqsave(&port->lock, flags);
-
-Add
-
-        if (!locked
-                local_irq_save(flags)
-
-here?
-
->         /* first save the SCSCR then disable the interrupts */
->         ctrl = serial_port_in(port, SCSCR);
-> @@ -2539,8 +2538,7 @@ static void serial_console_write(struct console *co, const char *s,
->         serial_port_out(port, SCSCR, ctrl);
->
->         if (locked)
-> -               spin_unlock(&port->lock);
-> -       local_irq_restore(flags);
-> +               spin_unlock_irqrestore(&port->lock, flags);
-
-        else
-                local_irq_restore(flags);
-
->  }
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
--- 
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+Sebastian
