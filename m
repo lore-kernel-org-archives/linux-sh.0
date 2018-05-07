@@ -1,7 +1,7 @@
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Date: Mon, 07 May 2018 11:00:17 +0000
+From: Rob Landley <rob@landley.net>
+Date: Mon, 07 May 2018 13:40:35 +0000
 Subject: Re: [J-core] [PATCH v5 00/22] sh: LANDISK and R2Dplus convert to device tree
-Message-Id: <5f690985-e905-deb9-aa4f-51561463ae22@physik.fu-berlin.de>
+Message-Id: <9051f0a5-bc75-b49e-c8c3-aa877be1979e@landley.net>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1467564402-2649-1-git-send-email-ysato@users.sourceforge.jp>
  <c1ec211d-cbe2-1139-edb0-8baa0e7364e8@physik.fu-berlin.de>
@@ -14,38 +14,26 @@ References: <1467564402-2649-1-git-send-email-ysato@users.sourceforge.jp>
  <20180503023320.GD1392@brightrain.aerifal.cx>
  <048ab147-21b8-045d-d21c-e1be2dd0e954@physik.fu-berlin.de>
  <87k1sgtf8t.wl-ysato@users.sourceforge.jp>
-In-Reply-To: <87k1sgtf8t.wl-ysato@users.sourceforge.jp>
+ <5f690985-e905-deb9-aa4f-51561463ae22@physik.fu-berlin.de>
+In-Reply-To: <5f690985-e905-deb9-aa4f-51561463ae22@physik.fu-berlin.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: Rich Felker <dalias@libc.org>, Rob Landley <rob@landley.net>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-On 05/07/2018 03:40 AM, Yoshinori Sato wrote:
->> @Yoshinori:
->>
->> Did the HDL-160U LANDISK device you have use u-boot by default or
->> did you convert it from lilo?
-> 
-> Yes.
-> Replace sh-lilo's second stage with u-boot.
-> With this method it is unnecessary to rewrite Flash for boot.
+On 05/07/2018 06:00 AM, John Paul Adrian Glaubitz wrote:
+> I have been able to boot my own kernel on my USL-5P device, but
+> I could never get it to detect the IDE controller. Do I need
+> an additional patch for that?
 
-Great, thank you. I will give it a try on my USL-5P and write down
-the individual steps once I have figured it out.
+On a related note, is there a list of boards anywhere? I'm working on a 7760
+system at $DAYJOB, Rich has a landisk which according to
+https://www.openbsd.org/landisk.html is an SH7751R, and Sato-san says that
+QEMU's -r2d emulates that too? ("RTS7751R2Dplus is QEMU-SH4 target. So easy
+trying.")
 
-As for the IDE controller: Can you tell me whether there are any
-particular patches necessary to get the kernel detect the IDE
-controller of the LANDISK devices?
+What other boards do we need to covert to device tree? arch/sh/boards has 15 C
+files and 19 subdirectories, but I dunno the status of any of them...
 
-I have been able to boot my own kernel on my USL-5P device, but
-I could never get it to detect the IDE controller. Do I need
-an additional patch for that?
-
-Adrian
-
--- 
-  .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer - glaubitz@debian.org
-`. `'   Freie Universitaet Berlin - glaubitz@physik.fu-berlin.de
-   `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+Rob
