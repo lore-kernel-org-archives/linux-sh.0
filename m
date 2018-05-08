@@ -1,103 +1,80 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Tue, 22 May 2018 12:04:21 +0000
-Subject: [PATCH 16/25] sh: simplify get_arch_dma_ops
-Message-Id: <20180522120430.28709-17-hch@lst.de>
+From: Robin Murphy <robin.murphy@arm.com>
+Date: Tue, 08 May 2018 09:50:06 +0000
+Subject: Re: [PATCH 2/3] dma-debug: simplify counting of preallocated requests
+Message-Id: <b50ef15a-8ffb-e8f2-11a7-b38d2ebda1c6@arm.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180522120430.28709-1-hch@lst.de>
-In-Reply-To: <20180522120430.28709-1-hch@lst.de>
+References: <20180424140235.9125-1-hch@lst.de>
+	<20180424140235.9125-3-hch@lst.de>
+In-Reply-To: <20180424140235.9125-3-hch-jcswGhMUV9g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: iommu@lists.linux-foundation.org
-Cc: linux-arch@vger.kernel.org, linux-xtensa@linux-xtensa.org, Michal Simek <monstr@monstr.eu>, Vincent Chen <deanbo422@gmail.com>, linux-c6x-dev@linux-c6x.org, linux-parisc@vger.kernel.org, linux-sh@vger.kernel.org, linux-hexagon@vger.kernel.org, linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, openrisc@lists.librecores.org, Greentime Hu <green.hu@gmail.com>, linux-alpha@vger.kernel.org, sparclinux@vger.kernel.org, nios2-dev@lists.rocketboards.org, linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org
+To: Christoph Hellwig <hch-jcswGhMUV9g@public.gmane.org>, iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-xtensa-PjhNF2WwrV/0Sa2dR60CXw@public.gmane.org, Michal Simek <monstr-pSz03upnqPeHXe+LvDLADg@public.gmane.org>, linux-snps-arc-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, linux-c6x-dev-jPsnJVOj+W6hPH1hqNUYSQ@public.gmane.org, linux-parisc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-hexagon-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-m68k-cunTk1MwBs8S/qaLPR03pWD2FQJk+8+b@public.gmane.org, openrisc-cunTk1MwBs9a3B2Vnqf2dGD2FQJk+8+b@public.gmane.org, Greentime Hu <green.hu-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-alpha-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sparclinux-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, nios2-dev-g9ZBwUv/Ih/yUk5EbOjzuce+I+R0W71w@public.gmane.org, Vincent Chen <deanbo422-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org
 
-Remove the indirection through the dma_ops variable, and just return
-nommu_dma_ops directly from get_arch_dma_ops.
+On 24/04/18 15:02, Christoph Hellwig wrote:
+> Just keep a single variable with a descriptive name instead of two
+> with confusing names.
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
----
- arch/sh/include/asm/dma-mapping.h |  5 ++---
- arch/sh/kernel/dma-nommu.c        |  8 +-------
- arch/sh/mm/consistent.c           |  3 ---
- arch/sh/mm/init.c                 | 10 ----------
- 4 files changed, 3 insertions(+), 23 deletions(-)
+Reviewed-by: Robin Murphy <robin.murphy@arm.com>
 
-diff --git a/arch/sh/include/asm/dma-mapping.h b/arch/sh/include/asm/dma-mapping.h
-index 41167931e5d9..149e71f95be7 100644
---- a/arch/sh/include/asm/dma-mapping.h
-+++ b/arch/sh/include/asm/dma-mapping.h
-@@ -2,12 +2,11 @@
- #ifndef __ASM_SH_DMA_MAPPING_H
- #define __ASM_SH_DMA_MAPPING_H
- 
--extern const struct dma_map_ops *dma_ops;
--extern void no_iommu_init(void);
-+extern const struct dma_map_ops nommu_dma_ops;
- 
- static inline const struct dma_map_ops *get_arch_dma_ops(struct bus_type *bus)
- {
--	return dma_ops;
-+	return &nommu_dma_ops;
- }
- 
- extern void *dma_generic_alloc_coherent(struct device *dev, size_t size,
-diff --git a/arch/sh/kernel/dma-nommu.c b/arch/sh/kernel/dma-nommu.c
-index 3e3a32fc676e..79a9edafa5b0 100644
---- a/arch/sh/kernel/dma-nommu.c
-+++ b/arch/sh/kernel/dma-nommu.c
-@@ -79,10 +79,4 @@ const struct dma_map_ops nommu_dma_ops = {
- 	.sync_sg_for_device	= nommu_sync_sg_for_device,
- #endif
- };
--
--void __init no_iommu_init(void)
--{
--	if (dma_ops)
--		return;
--	dma_ops = &nommu_dma_ops;
--}
-+EXPORT_SYMBOL(nommu_dma_ops);
-diff --git a/arch/sh/mm/consistent.c b/arch/sh/mm/consistent.c
-index 35ea3099a3b6..221832eec33b 100644
---- a/arch/sh/mm/consistent.c
-+++ b/arch/sh/mm/consistent.c
-@@ -20,9 +20,6 @@
- #include <asm/cacheflush.h>
- #include <asm/addrspace.h>
- 
--const struct dma_map_ops *dma_ops;
--EXPORT_SYMBOL(dma_ops);
--
- void *dma_generic_alloc_coherent(struct device *dev, size_t size,
- 				 dma_addr_t *dma_handle, gfp_t gfp,
- 				 unsigned long attrs)
-diff --git a/arch/sh/mm/init.c b/arch/sh/mm/init.c
-index ce0bbaa7e404..32e09f03e6bf 100644
---- a/arch/sh/mm/init.c
-+++ b/arch/sh/mm/init.c
-@@ -395,22 +395,12 @@ void __init paging_init(void)
- 	free_area_init_nodes(max_zone_pfns);
- }
- 
--/*
-- * Early initialization for any I/O MMUs we might have.
-- */
--static void __init iommu_init(void)
--{
--	no_iommu_init();
--}
--
- unsigned int mem_init_done = 0;
- 
- void __init mem_init(void)
- {
- 	pg_data_t *pgdat;
- 
--	iommu_init();
--
- 	high_memory = NULL;
- 	for_each_online_pgdat(pgdat)
- 		high_memory = max_t(void *, high_memory,
--- 
-2.17.0
-
+> Signed-off-by: Christoph Hellwig <hch@lst.de>
+> ---
+>   lib/dma-debug.c | 20 ++++----------------
+>   1 file changed, 4 insertions(+), 16 deletions(-)
+> 
+> diff --git a/lib/dma-debug.c b/lib/dma-debug.c
+> index 712a897174e4..075253cb613b 100644
+> --- a/lib/dma-debug.c
+> +++ b/lib/dma-debug.c
+> @@ -132,7 +132,7 @@ static u32 min_free_entries;
+>   static u32 nr_total_entries;
+>   
+>   /* number of preallocated entries requested by kernel cmdline */
+> -static u32 req_entries;
+> +static u32 nr_prealloc_entries = PREALLOC_DMA_DEBUG_ENTRIES;
+>   
+>   /* debugfs dentry's for the stuff above */
+>   static struct dentry *dma_debug_dent        __read_mostly;
+> @@ -1011,7 +1011,6 @@ void dma_debug_add_bus(struct bus_type *bus)
+>   
+>   static int dma_debug_init(void)
+>   {
+> -	u32 num_entries;
+>   	int i;
+>   
+>   	/* Do not use dma_debug_initialized here, since we really want to be
+> @@ -1032,12 +1031,7 @@ static int dma_debug_init(void)
+>   		return 0;
+>   	}
+>   
+> -	if (req_entries)
+> -		num_entries = req_entries;
+> -	else
+> -		num_entries = PREALLOC_DMA_DEBUG_ENTRIES;
+> -
+> -	if (prealloc_memory(num_entries) != 0) {
+> +	if (prealloc_memory(nr_prealloc_entries) != 0) {
+>   		pr_err("DMA-API: debugging out of memory error - disabled\n");
+>   		global_disable = true;
+>   
+> @@ -1068,16 +1062,10 @@ static __init int dma_debug_cmdline(char *str)
+>   
+>   static __init int dma_debug_entries_cmdline(char *str)
+>   {
+> -	int res;
+> -
+>   	if (!str)
+>   		return -EINVAL;
+> -
+> -	res = get_option(&str, &req_entries);
+> -
+> -	if (!res)
+> -		req_entries = 0;
+> -
+> +	if (!get_option(&str, &nr_prealloc_entries))
+> +		nr_prealloc_entries = PREALLOC_DMA_DEBUG_ENTRIES;
+>   	return 0;
+>   }
+>   
+> 
