@@ -1,7 +1,7 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Mon, 07 May 2018 21:13:25 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 08 May 2018 06:45:01 +0000
 Subject: Re: [PATCH v3 2/3] platform: move the early platform device support to arch/sh
-Message-Id: <CAK8P3a2Fn-QK6SzFTJCmrToSG2vyO2fZt47Bomqjq-sAe8s4-Q@mail.gmail.com>
+Message-Id: <CAMuHMdXbTkOHAGFBAz16zV1NKmejzy1SpO7LuqZUmsasVf0-jg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20180504132731.14574-1-brgl@bgdev.pl>
  <20180504132731.14574-3-brgl@bgdev.pl>
@@ -11,7 +11,9 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, May 4, 2018 at 9:27 AM, Bartosz Golaszewski <brgl@bgdev.pl> wrote:
+Hi Bartosz,
+
+On Fri, May 4, 2018 at 3:27 PM, Bartosz Golaszewski <brgl@bgdev.pl> wrote:
 > From: Bartosz Golaszewski <bgolaszewski@baylibre.com>
 >
 > SuperH is the only user of the current implementation of early platform
@@ -28,7 +30,22 @@ On Fri, May 4, 2018 at 9:27 AM, Bartosz Golaszewski <brgl@bgdev.pl> wrote:
 >
 > Signed-off-by: Bartosz Golaszewski <bgolaszewski@baylibre.com>
 
-I had not gotten around to look at this in enough detail so far, but
-looking now, it seems all good.
+>  drivers/clocksource/sh_cmt.c           |   7 +
+>  drivers/clocksource/sh_mtu2.c          |   7 +
+>  drivers/clocksource/sh_tmu.c           |   8 +
+>  drivers/tty/serial/sh-sci.c            |   7 +-
+>  include/linux/platform_device.h        |  64 +----
 
-Acked-by: Arnd Bergmann <arnd@arndb.de>
+The parts used on contemporary ARM/ARM64 Renesas SoCs look fine to me, so
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+-- 
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
