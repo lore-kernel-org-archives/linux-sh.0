@@ -1,29 +1,51 @@
-From: Rob Herring <robh@kernel.org>
-Date: Mon, 14 May 2018 20:01:16 +0000
-Subject: Re: [PATCH] sh: switch to NO_BOOTMEM
-Message-Id: <CAL_JsqLWDfCOAzeKP7hM3yGONRU_AKhM1oJHZ7GyzTLNT6EQJw@mail.gmail.com>
+From: Robin Murphy <robin.murphy@arm.com>
+Date: Tue, 08 May 2018 10:05:20 +0000
+Subject: Re: [PATCH 3/3] dma-debug: unexport dma_debug_resize_entries and debug_dma_dump_mappings
+Message-Id: <bb5bb25f-24da-9729-a39b-3b88c65ef628@arm.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180511134559.13464-1-robh@kernel.org> <20180514120343.GB5265@infradead.org>
-In-Reply-To: <20180514120343.GB5265@infradead.org>
+References: <20180424140235.9125-1-hch@lst.de>
+	<20180424140235.9125-4-hch@lst.de>
+In-Reply-To: <20180424140235.9125-4-hch-jcswGhMUV9g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Christoph Hellwig <hch@infradead.org>
-Cc: Rich Felker <dalias@libc.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, SH-Linux <linux-sh@vger.kernel.org>, Arnd Bergmann <arnd@arndb.de>, Yoshinori Sato <ysato@users.sourceforge.jp>
+To: Christoph Hellwig <hch-jcswGhMUV9g@public.gmane.org>, iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-xtensa-PjhNF2WwrV/0Sa2dR60CXw@public.gmane.org, Michal Simek <monstr-pSz03upnqPeHXe+LvDLADg@public.gmane.org>, linux-snps-arc-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, linux-c6x-dev-jPsnJVOj+W6hPH1hqNUYSQ@public.gmane.org, linux-parisc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-hexagon-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-m68k-cunTk1MwBs8S/qaLPR03pWD2FQJk+8+b@public.gmane.org, openrisc-cunTk1MwBs9a3B2Vnqf2dGD2FQJk+8+b@public.gmane.org, Greentime Hu <green.hu-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-alpha-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sparclinux-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, nios2-dev-g9ZBwUv/Ih/yUk5EbOjzuce+I+R0W71w@public.gmane.org, Vincent Chen <deanbo422-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org
 
-On Mon, May 14, 2018 at 7:03 AM, Christoph Hellwig <hch@infradead.org> wrote:
->> unflattening could also fix this, but removing bootmem is desired. So
->> enable NO_BOOTMEM on SH like other architectures have done.
->
-> Can you send out similarly shoot in the wild conversion for the
-> remaining architectures while you are at it?  We still seem to be
-> missing: alpha, c6x, hexagon, ia64, m68k, mips, nios2 and unicore32.
+On 24/04/18 15:02, Christoph Hellwig wrote:
+> Only used by the AMD GART driver, which must be built in.
 
-Sparc (32-bit only) too.
+FWIW debug_dma_dump_mappings() is also called by the Intel VT-d driver, 
+but the same reasoning still applies. This does rather beg the question 
+of whether it's right to have bits of low-level dma-debug internals 
+*only* called by a couple of IOMMU drivers, but that can wait for 
+another day.
 
-I might be talked into the remaining arches that support DT which
-would be c6x, hexagon, mips, and nios2. Though, looking at the MIPS
-arch code always makes me cry (just try "git grep 'bootmem'
-arch/mips/").
+Reviewed-by: Robin Murphy <robin.murphy@arm.com>
 
-Rob
+> Signed-off-by: Christoph Hellwig <hch@lst.de>
+> ---
+>   lib/dma-debug.c | 2 --
+>   1 file changed, 2 deletions(-)
+> 
+> diff --git a/lib/dma-debug.c b/lib/dma-debug.c
+> index 075253cb613b..6a1ebaa83623 100644
+> --- a/lib/dma-debug.c
+> +++ b/lib/dma-debug.c
+> @@ -444,7 +444,6 @@ void debug_dma_dump_mappings(struct device *dev)
+>   		spin_unlock_irqrestore(&bucket->lock, flags);
+>   	}
+>   }
+> -EXPORT_SYMBOL(debug_dma_dump_mappings);
+>   
+>   /*
+>    * For each mapping (initial cacheline in the case of
+> @@ -753,7 +752,6 @@ int dma_debug_resize_entries(u32 num_entries)
+>   
+>   	return ret;
+>   }
+> -EXPORT_SYMBOL(dma_debug_resize_entries);
+>   
+>   /*
+>    * DMA-API debugging init code
+> 
