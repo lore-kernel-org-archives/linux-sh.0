@@ -1,45 +1,40 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Fri, 11 May 2018 07:59:26 +0000
-Subject: [PATCH 01/20] dma-mapping: simplify Kconfig dependencies
-Message-Id: <20180511075945.16548-2-hch@lst.de>
+From: Masahiro Yamada <yamada.masahiro@socionext.com>
+Date: Wed, 09 May 2018 07:53:22 +0000
+Subject: [PATCH] sh: remove no-op macro VMLINUX_SYMBOL()
+Message-Id: <1525852402-29269-1-git-send-email-yamada.masahiro@socionext.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180511075945.16548-1-hch@lst.de>
-In-Reply-To: <20180511075945.16548-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: iommu@lists.linux-foundation.org
-Cc: linux-arch@vger.kernel.org, linux-xtensa@linux-xtensa.org, Michal Simek <monstr@monstr.eu>, Vincent Chen <deanbo422@gmail.com>, linux-c6x-dev@linux-c6x.org, linux-parisc@vger.kernel.org, linux-sh@vger.kernel.org, linux-hexagon@vger.kernel.org, linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, openrisc@lists.librecores.org, Greentime Hu <green.hu@gmail.com>, linux-alpha@vger.kernel.org, sparclinux@vger.kernel.org, nios2-dev@lists.rocketboards.org, linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
+Cc: linux-arch <linux-arch@vger.kernel.org>, Masahiro Yamada <yamada.masahiro@socionext.com>, linux-kernel@vger.kernel.org
 
-ARCH_DMA_ADDR_T_64BIT is always true for 64-bit architectures now, so we
-can skip the clause requiring it.  'n' is the default default, so no need
-to explicitly state it.
+VMLINUX_SYMBOL() is no-op unless CONFIG_HAVE_UNDERSCORE_SYMBOL_PREFIX
+is defined.  It has ever been selected only by BLACKFIN and METAG.
+VMLINUX_SYMBOL() is unneeded for SuperH-specific code.
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
+Signed-off-by: Masahiro Yamada <yamada.masahiro@socionext.com>
 ---
- lib/Kconfig | 6 ++----
- 1 file changed, 2 insertions(+), 4 deletions(-)
 
-diff --git a/lib/Kconfig b/lib/Kconfig
-index 1d84e61cccfe..6c4e9d0ce5d1 100644
---- a/lib/Kconfig
-+++ b/lib/Kconfig
-@@ -443,13 +443,11 @@ config IOMMU_HELPER
- 
- config DMA_DIRECT_OPS
- 	bool
--	depends on HAS_DMA && (!64BIT || ARCH_DMA_ADDR_T_64BIT)
--	default n
-+	depends on HAS_DMA
- 
- config DMA_VIRT_OPS
- 	bool
--	depends on HAS_DMA && (!64BIT || ARCH_DMA_ADDR_T_64BIT)
--	default n
-+	depends on HAS_DMA
- 
- config SWIOTLB
- 	bool
+ arch/sh/include/asm/vmlinux.lds.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/sh/include/asm/vmlinux.lds.h b/arch/sh/include/asm/vmlinux.lds.h
+index f312813..9929556 100644
+--- a/arch/sh/include/asm/vmlinux.lds.h
++++ b/arch/sh/include/asm/vmlinux.lds.h
+@@ -7,9 +7,9 @@
+ #ifdef CONFIG_DWARF_UNWINDER
+ #define DWARF_EH_FRAME							\
+ 	.eh_frame : AT(ADDR(.eh_frame) - LOAD_OFFSET) {			\
+-		  VMLINUX_SYMBOL(__start_eh_frame) = .;			\
++		  __start_eh_frame = .;					\
+ 		  *(.eh_frame)						\
+-		  VMLINUX_SYMBOL(__stop_eh_frame) = .;			\
++		  __stop_eh_frame = .;					\
+ 	}
+ #else
+ #define DWARF_EH_FRAME
 -- 
-2.17.0
+2.7.4
 
