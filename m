@@ -1,7 +1,7 @@
 From: Christoph Hellwig <hch@lst.de>
-Date: Fri, 11 May 2018 07:59:37 +0000
-Subject: [PATCH 12/20] openrisc: use generic dma_noncoherent_ops
-Message-Id: <20180511075945.16548-13-hch@lst.de>
+Date: Fri, 11 May 2018 07:59:43 +0000
+Subject: [PATCH 18/20] xtensa: use generic dma_noncoherent_ops
+Message-Id: <20180511075945.16548-19-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20180511075945.16548-1-hch@lst.de>
 In-Reply-To: <20180511075945.16548-1-hch-jcswGhMUV9g@public.gmane.org>
@@ -13,240 +13,278 @@ Cc: linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-xtensa-PjhNF2WwrV/
 
 Switch to the generic noncoherent direct mapping implementation.
 
-Fix sync_single_for_device to do the same cache coherency operations as
-the more tested map_single path, as both should transfer ownership to
-the device.
-
-Remove the sync_single_for_cpu implementation as no cache coherency
-operations are used in the more commonly used unmap_single case, both
-of which transfer ownership to the CPU.
-
-Implement the missing sync_sg_for_device operation, matching the cache
-coherency operations in sync_single_for_device and map_{single,sg}.
-
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- arch/openrisc/Kconfig                   |   2 +
- arch/openrisc/include/asm/Kbuild        |   1 +
- arch/openrisc/include/asm/dma-mapping.h |  35 --------
- arch/openrisc/kernel/dma.c              | 109 +++---------------------
- 4 files changed, 13 insertions(+), 134 deletions(-)
- delete mode 100644 arch/openrisc/include/asm/dma-mapping.h
+ arch/xtensa/Kconfig                   |   3 +
+ arch/xtensa/include/asm/Kbuild        |   1 +
+ arch/xtensa/include/asm/dma-mapping.h |  26 ------
+ arch/xtensa/kernel/pci-dma.c          | 130 +++-----------------------
+ 4 files changed, 19 insertions(+), 141 deletions(-)
+ delete mode 100644 arch/xtensa/include/asm/dma-mapping.h
 
-diff --git a/arch/openrisc/Kconfig b/arch/openrisc/Kconfig
-index 9ecad05bfc73..65e3c574c9d3 100644
---- a/arch/openrisc/Kconfig
-+++ b/arch/openrisc/Kconfig
-@@ -6,6 +6,8 @@
- 
- config OPENRISC
+diff --git a/arch/xtensa/Kconfig b/arch/xtensa/Kconfig
+index 17df332269b2..ef114648e954 100644
+--- a/arch/xtensa/Kconfig
++++ b/arch/xtensa/Kconfig
+@@ -5,11 +5,14 @@ config ZONE_DMA
+ config XTENSA
  	def_bool y
+ 	select ARCH_NO_COHERENT_DMA_MMAP if !MMU
++	select ARCH_HAS_SYNC_DMA_FOR_CPU
 +	select ARCH_HAS_SYNC_DMA_FOR_DEVICE
+ 	select ARCH_WANT_FRAME_POINTERS
+ 	select ARCH_WANT_IPC_PARSE_VERSION
+ 	select BUILDTIME_EXTABLE_SORT
+ 	select CLONE_BACKWARDS
+ 	select COMMON_CLK
 +	select DMA_NONCOHERENT_OPS
- 	select OF
- 	select OF_EARLY_FLATTREE
- 	select IRQ_DOMAIN
-diff --git a/arch/openrisc/include/asm/Kbuild b/arch/openrisc/include/asm/Kbuild
-index f05c722a21f8..e663a996b612 100644
---- a/arch/openrisc/include/asm/Kbuild
-+++ b/arch/openrisc/include/asm/Kbuild
-@@ -6,6 +6,7 @@ generic-y += current.h
+ 	select GENERIC_ATOMIC64
+ 	select GENERIC_CLOCKEVENTS
+ 	select GENERIC_IRQ_SHOW
+diff --git a/arch/xtensa/include/asm/Kbuild b/arch/xtensa/include/asm/Kbuild
+index 436b20337168..a8d6cd3bee4b 100644
+--- a/arch/xtensa/include/asm/Kbuild
++++ b/arch/xtensa/include/asm/Kbuild
+@@ -2,6 +2,7 @@ generic-y += bug.h
  generic-y += device.h
  generic-y += div64.h
- generic-y += dma.h
+ generic-y += dma-contiguous.h
 +generic-y += dma-mapping.h
  generic-y += emergency-restart.h
  generic-y += exec.h
  generic-y += extable.h
-diff --git a/arch/openrisc/include/asm/dma-mapping.h b/arch/openrisc/include/asm/dma-mapping.h
+diff --git a/arch/xtensa/include/asm/dma-mapping.h b/arch/xtensa/include/asm/dma-mapping.h
 deleted file mode 100644
-index e212a1f0b6d2..000000000000
---- a/arch/openrisc/include/asm/dma-mapping.h
+index 44098800dad7..000000000000
+--- a/arch/xtensa/include/asm/dma-mapping.h
 +++ /dev/null
-@@ -1,35 +0,0 @@
+@@ -1,26 +0,0 @@
 -/*
-- * OpenRISC Linux
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
 - *
-- * Linux architectural port borrowing liberally from similar works of
-- * others.  All original copyrights apply as per the original source
-- * declaration.
-- *
-- * OpenRISC implementation:
-- * Copyright (C) 2010-2011 Jonas Bonn <jonas@southpole.se>
-- *
-- * This program is free software; you can redistribute it and/or modify
-- * it under the terms of the GNU General Public License as published by
-- * the Free Software Foundation; either version 2 of the License, or
-- * (at your option) any later version.
+- * Copyright (C) 2003 - 2005 Tensilica Inc.
+- * Copyright (C) 2015 Cadence Design Systems Inc.
 - */
 -
--#ifndef __ASM_OPENRISC_DMA_MAPPING_H
--#define __ASM_OPENRISC_DMA_MAPPING_H
+-#ifndef _XTENSA_DMA_MAPPING_H
+-#define _XTENSA_DMA_MAPPING_H
 -
--/*
-- * See Documentation/DMA-API-HOWTO.txt and
-- * Documentation/DMA-API.txt for documentation.
-- */
+-#include <asm/cache.h>
+-#include <asm/io.h>
 -
--#include <linux/dma-debug.h>
--#include <linux/dma-mapping.h>
+-#include <linux/mm.h>
+-#include <linux/scatterlist.h>
 -
--extern const struct dma_map_ops or1k_dma_map_ops;
+-extern const struct dma_map_ops xtensa_dma_map_ops;
 -
 -static inline const struct dma_map_ops *get_arch_dma_ops(struct bus_type *bus)
 -{
--	return &or1k_dma_map_ops;
+-	return &xtensa_dma_map_ops;
 -}
 -
--#endif	/* __ASM_OPENRISC_DMA_MAPPING_H */
-diff --git a/arch/openrisc/kernel/dma.c b/arch/openrisc/kernel/dma.c
-index ec7fd45704d2..cce99405edf4 100644
---- a/arch/openrisc/kernel/dma.c
-+++ b/arch/openrisc/kernel/dma.c
-@@ -19,9 +19,7 @@
-  * the only thing implemented properly.  The rest need looking into...
+-#endif	/* _XTENSA_DMA_MAPPING_H */
+diff --git a/arch/xtensa/kernel/pci-dma.c b/arch/xtensa/kernel/pci-dma.c
+index 392b4a80ebc2..a83d60e92908 100644
+--- a/arch/xtensa/kernel/pci-dma.c
++++ b/arch/xtensa/kernel/pci-dma.c
+@@ -16,26 +16,24 @@
   */
  
--#include <linux/dma-mapping.h>
--#include <linux/dma-debug.h>
--#include <linux/export.h>
+ #include <linux/dma-contiguous.h>
 +#include <linux/dma-noncoherent.h>
+ #include <linux/dma-direct.h>
+ #include <linux/gfp.h>
+ #include <linux/highmem.h>
+ #include <linux/mm.h>
+-#include <linux/module.h>
+-#include <linux/pci.h>
+-#include <linux/string.h>
+ #include <linux/types.h>
+ #include <asm/cacheflush.h>
+ #include <asm/io.h>
  
- #include <asm/cpuinfo.h>
- #include <asm/spr_defs.h>
-@@ -80,10 +78,9 @@ page_clear_nocache(pte_t *pte, unsigned long addr,
-  * is being ignored for now; uncached but write-combined memory is a
-  * missing feature of the OR1K.
-  */
--static void *
--or1k_dma_alloc(struct device *dev, size_t size,
--	       dma_addr_t *dma_handle, gfp_t gfp,
--	       unsigned long attrs)
-+void *
-+arch_dma_alloc(struct device *dev, size_t size, dma_addr_t *dma_handle,
-+		gfp_t gfp, unsigned long attrs)
+-static void do_cache_op(dma_addr_t dma_handle, size_t size,
++static void do_cache_op(phys_addr_t paddr, size_t size,
+ 			void (*fn)(unsigned long, unsigned long))
  {
- 	unsigned long va;
- 	void *page;
-@@ -115,9 +112,9 @@ or1k_dma_alloc(struct device *dev, size_t size,
- 	return (void *)va;
+-	unsigned long off = dma_handle & (PAGE_SIZE - 1);
+-	unsigned long pfn = PFN_DOWN(dma_handle);
++	unsigned long off = paddr & (PAGE_SIZE - 1);
++	unsigned long pfn = PFN_DOWN(paddr);
+ 	struct page *page = pfn_to_page(pfn);
+ 
+ 	if (!PageHighMem(page))
+-		fn((unsigned long)bus_to_virt(dma_handle), size);
++		fn((unsigned long)phys_to_virt(paddr), size);
+ 	else
+ 		while (size > 0) {
+ 			size_t sz = min_t(size_t, size, PAGE_SIZE - off);
+@@ -49,14 +47,13 @@ static void do_cache_op(dma_addr_t dma_handle, size_t size,
+ 		}
  }
  
--static void
--or1k_dma_free(struct device *dev, size_t size, void *vaddr,
--	      dma_addr_t dma_handle, unsigned long attrs)
-+void
-+arch_dma_free(struct device *dev, size_t size, void *vaddr,
-+		dma_addr_t dma_handle, unsigned long attrs)
+-static void xtensa_sync_single_for_cpu(struct device *dev,
+-				       dma_addr_t dma_handle, size_t size,
+-				       enum dma_data_direction dir)
++void arch_sync_dma_for_cpu(struct device *dev, phys_addr_t paddr,
++		size_t size, enum dma_data_direction dir)
  {
- 	unsigned long va = (unsigned long)vaddr;
- 	struct mm_walk walk = {
-@@ -133,18 +130,11 @@ or1k_dma_free(struct device *dev, size_t size, void *vaddr,
- 	free_pages_exact(vaddr, size);
- }
- 
--static dma_addr_t
--or1k_map_page(struct device *dev, struct page *page,
--	      unsigned long offset, size_t size,
--	      enum dma_data_direction dir,
--	      unsigned long attrs)
-+void arch_sync_dma_for_device(struct device *dev, phys_addr_t addr, size_t size,
-+		enum dma_data_direction dir)
- {
--	unsigned long cl;
--	dma_addr_t addr = page_to_phys(page) + offset;
- 	struct cpuinfo_or1k *cpuinfo = &cpuinfo_or1k[smp_processor_id()];
--
--	if (attrs & DMA_ATTR_SKIP_CPU_SYNC)
--		return addr;
-+	unsigned long cl;
- 
  	switch (dir) {
- 	case DMA_TO_DEVICE:
-@@ -167,83 +157,4 @@ or1k_map_page(struct device *dev, struct page *page,
- 		 */
+ 	case DMA_BIDIRECTIONAL:
+ 	case DMA_FROM_DEVICE:
+-		do_cache_op(dma_handle, size, __invalidate_dcache_range);
++		do_cache_op(paddr, size, __invalidate_dcache_range);
  		break;
+ 
+ 	case DMA_NONE:
+@@ -68,15 +65,14 @@ static void xtensa_sync_single_for_cpu(struct device *dev,
  	}
--
--	return addr;
  }
--
--static void
--or1k_unmap_page(struct device *dev, dma_addr_t dma_handle,
--		size_t size, enum dma_data_direction dir,
--		unsigned long attrs)
--{
--	/* Nothing special to do here... */
--}
--
--static int
--or1k_map_sg(struct device *dev, struct scatterlist *sg,
--	    int nents, enum dma_data_direction dir,
--	    unsigned long attrs)
+ 
+-static void xtensa_sync_single_for_device(struct device *dev,
+-					  dma_addr_t dma_handle, size_t size,
+-					  enum dma_data_direction dir)
++void arch_sync_dma_for_device(struct device *dev, phys_addr_t paddr,
++		size_t size, enum dma_data_direction dir)
+ {
+ 	switch (dir) {
+ 	case DMA_BIDIRECTIONAL:
+ 	case DMA_TO_DEVICE:
+ 		if (XCHAL_DCACHE_IS_WRITEBACK)
+-			do_cache_op(dma_handle, size, __flush_dcache_range);
++			do_cache_op(paddr, size, __flush_dcache_range);
+ 		break;
+ 
+ 	case DMA_NONE:
+@@ -88,40 +84,13 @@ static void xtensa_sync_single_for_device(struct device *dev,
+ 	}
+ }
+ 
+-static void xtensa_sync_sg_for_cpu(struct device *dev,
+-				   struct scatterlist *sg, int nents,
+-				   enum dma_data_direction dir)
 -{
 -	struct scatterlist *s;
 -	int i;
 -
 -	for_each_sg(sg, s, nents, i) {
--		s->dma_address = or1k_map_page(dev, sg_page(s), s->offset,
--					       s->length, dir, 0);
+-		xtensa_sync_single_for_cpu(dev, sg_dma_address(s),
+-					   sg_dma_len(s), dir);
 -	}
+-}
 -
+-static void xtensa_sync_sg_for_device(struct device *dev,
+-				      struct scatterlist *sg, int nents,
+-				      enum dma_data_direction dir)
+-{
+-	struct scatterlist *s;
+-	int i;
+-
+-	for_each_sg(sg, s, nents, i) {
+-		xtensa_sync_single_for_device(dev, sg_dma_address(s),
+-					      sg_dma_len(s), dir);
+-	}
+-}
+-
+ /*
+  * Note: We assume that the full memory space is always mapped to 'kseg'
+  *	 Otherwise we have to use page attributes (not implemented).
+  */
+ 
+-static void *xtensa_dma_alloc(struct device *dev, size_t size,
+-			      dma_addr_t *handle, gfp_t flag,
+-			      unsigned long attrs)
++void *arch_dma_alloc(struct device *dev, size_t size, dma_addr_t *handle,
++		gfp_t flag, unsigned long attrs)
+ {
+ 	unsigned long ret;
+ 	unsigned long uncached;
+@@ -171,8 +140,8 @@ static void *xtensa_dma_alloc(struct device *dev, size_t size,
+ 	return (void *)uncached;
+ }
+ 
+-static void xtensa_dma_free(struct device *dev, size_t size, void *vaddr,
+-			    dma_addr_t dma_handle, unsigned long attrs)
++void arch_dma_free(struct device *dev, size_t size, void *vaddr,
++		dma_addr_t dma_handle, unsigned long attrs)
+ {
+ 	unsigned long count = PAGE_ALIGN(size) >> PAGE_SHIFT;
+ 	unsigned long addr = (unsigned long)vaddr;
+@@ -192,72 +161,3 @@ static void xtensa_dma_free(struct device *dev, size_t size, void *vaddr,
+ 	if (!dma_release_from_contiguous(dev, page, count))
+ 		__free_pages(page, get_order(size));
+ }
+-
+-static dma_addr_t xtensa_map_page(struct device *dev, struct page *page,
+-				  unsigned long offset, size_t size,
+-				  enum dma_data_direction dir,
+-				  unsigned long attrs)
+-{
+-	dma_addr_t dma_handle = page_to_phys(page) + offset;
+-
+-	if (!(attrs & DMA_ATTR_SKIP_CPU_SYNC))
+-		xtensa_sync_single_for_device(dev, dma_handle, size, dir);
+-
+-	return dma_handle;
+-}
+-
+-static void xtensa_unmap_page(struct device *dev, dma_addr_t dma_handle,
+-			      size_t size, enum dma_data_direction dir,
+-			      unsigned long attrs)
+-{
+-	if (!(attrs & DMA_ATTR_SKIP_CPU_SYNC))
+-		xtensa_sync_single_for_cpu(dev, dma_handle, size, dir);
+-}
+-
+-static int xtensa_map_sg(struct device *dev, struct scatterlist *sg,
+-			 int nents, enum dma_data_direction dir,
+-			 unsigned long attrs)
+-{
+-	struct scatterlist *s;
+-	int i;
+-
+-	for_each_sg(sg, s, nents, i) {
+-		s->dma_address = xtensa_map_page(dev, sg_page(s), s->offset,
+-						 s->length, dir, attrs);
+-	}
 -	return nents;
 -}
 -
--static void
--or1k_unmap_sg(struct device *dev, struct scatterlist *sg,
--	      int nents, enum dma_data_direction dir,
--	      unsigned long attrs)
+-static void xtensa_unmap_sg(struct device *dev,
+-			    struct scatterlist *sg, int nents,
+-			    enum dma_data_direction dir,
+-			    unsigned long attrs)
 -{
 -	struct scatterlist *s;
 -	int i;
 -
 -	for_each_sg(sg, s, nents, i) {
--		or1k_unmap_page(dev, sg_dma_address(s), sg_dma_len(s), dir, 0);
+-		xtensa_unmap_page(dev, sg_dma_address(s),
+-				  sg_dma_len(s), dir, attrs);
 -	}
 -}
 -
--static void
--or1k_sync_single_for_cpu(struct device *dev,
--			 dma_addr_t dma_handle, size_t size,
--			 enum dma_data_direction dir)
+-int xtensa_dma_mapping_error(struct device *dev, dma_addr_t dma_addr)
 -{
--	unsigned long cl;
--	dma_addr_t addr = dma_handle;
--	struct cpuinfo_or1k *cpuinfo = &cpuinfo_or1k[smp_processor_id()];
--
--	/* Invalidate the dcache for the requested range */
--	for (cl = addr; cl < addr + size; cl += cpuinfo->dcache_block_size)
--		mtspr(SPR_DCBIR, cl);
+-	return 0;
 -}
 -
--static void
--or1k_sync_single_for_device(struct device *dev,
--			    dma_addr_t dma_handle, size_t size,
--			    enum dma_data_direction dir)
--{
--	unsigned long cl;
--	dma_addr_t addr = dma_handle;
--	struct cpuinfo_or1k *cpuinfo = &cpuinfo_or1k[smp_processor_id()];
--
--	/* Flush the dcache for the requested range */
--	for (cl = addr; cl < addr + size; cl += cpuinfo->dcache_block_size)
--		mtspr(SPR_DCBFR, cl);
--}
--
--const struct dma_map_ops or1k_dma_map_ops = {
--	.alloc = or1k_dma_alloc,
--	.free = or1k_dma_free,
--	.map_page = or1k_map_page,
--	.unmap_page = or1k_unmap_page,
--	.map_sg = or1k_map_sg,
--	.unmap_sg = or1k_unmap_sg,
--	.sync_single_for_cpu = or1k_sync_single_for_cpu,
--	.sync_single_for_device = or1k_sync_single_for_device,
+-const struct dma_map_ops xtensa_dma_map_ops = {
+-	.alloc = xtensa_dma_alloc,
+-	.free = xtensa_dma_free,
+-	.map_page = xtensa_map_page,
+-	.unmap_page = xtensa_unmap_page,
+-	.map_sg = xtensa_map_sg,
+-	.unmap_sg = xtensa_unmap_sg,
+-	.sync_single_for_cpu = xtensa_sync_single_for_cpu,
+-	.sync_single_for_device = xtensa_sync_single_for_device,
+-	.sync_sg_for_cpu = xtensa_sync_sg_for_cpu,
+-	.sync_sg_for_device = xtensa_sync_sg_for_device,
+-	.mapping_error = xtensa_dma_mapping_error,
 -};
--EXPORT_SYMBOL(or1k_dma_map_ops);
+-EXPORT_SYMBOL(xtensa_dma_map_ops);
 -- 
 2.17.0
 
