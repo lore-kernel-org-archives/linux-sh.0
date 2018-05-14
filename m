@@ -1,91 +1,45 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Tue, 22 May 2018 12:04:11 +0000
-Subject: [PATCH 06/25] microblaze: remove the consistent_sync and consistent_sync_page
-Message-Id: <20180522120430.28709-7-hch@lst.de>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 14 May 2018 08:35:40 +0000
+Subject: Re: Build regressions/improvements in v4.17-rc5
+Message-Id: <CAMuHMdUoDmXZy+fF_-op6Pk8gdaOFDvzvpDOkXcZ3uvTpqVKOg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180522120430.28709-1-hch@lst.de>
-In-Reply-To: <20180522120430.28709-1-hch@lst.de>
+References: <1526286669-484-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1526286669-484-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: iommu@lists.linux-foundation.org
-Cc: linux-arch@vger.kernel.org, linux-xtensa@linux-xtensa.org, Michal Simek <monstr@monstr.eu>, Vincent Chen <deanbo422@gmail.com>, linux-c6x-dev@linux-c6x.org, linux-parisc@vger.kernel.org, linux-sh@vger.kernel.org, linux-hexagon@vger.kernel.org, linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, openrisc@lists.librecores.org, Greentime Hu <green.hu@gmail.com>, linux-alpha@vger.kernel.org, sparclinux@vger.kernel.org, nios2-dev@lists.rocketboards.org, linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org
+To: Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
+Cc: Linux-sh list <linux-sh@vger.kernel.org>
 
-Both unused.
+On Mon, May 14, 2018 at 10:31 AM, Geert Uytterhoeven
+<geert@linux-m68k.org> wrote:
+> JFYI, when comparing v4.17-rc5[1] to v4.17-rc4[3], the summaries are:
+>   - build errors: +4/-1
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
----
- arch/microblaze/include/asm/pgtable.h |  3 --
- arch/microblaze/mm/consistent.c       | 45 ---------------------------
- 2 files changed, 48 deletions(-)
+  + /kisskb/src/arch/sh/boards/mach-landisk/setup.c: error: implicit
+declaration of function 'ioremap_prot'
+[-Werror=implicit-function-declaration]:  => 64:2
 
-diff --git a/arch/microblaze/include/asm/pgtable.h b/arch/microblaze/include/asm/pgtable.h
-index 8a2e654b709f..7b650ab14fa0 100644
---- a/arch/microblaze/include/asm/pgtable.h
-+++ b/arch/microblaze/include/asm/pgtable.h
-@@ -553,9 +553,6 @@ void __init *early_get_page(void);
- 
- extern unsigned long ioremap_bot, ioremap_base;
- 
--void consistent_sync(void *vaddr, size_t size, int direction);
--void consistent_sync_page(struct page *page, unsigned long offset,
--	size_t size, int direction);
- unsigned long consistent_virt_to_pfn(void *vaddr);
- 
- void setup_memory(void);
-diff --git a/arch/microblaze/mm/consistent.c b/arch/microblaze/mm/consistent.c
-index b9a9c8c3397b..c9a278ac795a 100644
---- a/arch/microblaze/mm/consistent.c
-+++ b/arch/microblaze/mm/consistent.c
-@@ -220,48 +220,3 @@ void arch_dma_free(struct device *dev, size_t size, void *vaddr,
- 	flush_tlb_all();
- #endif
- }
--
--/*
-- * make an area consistent.
-- */
--void consistent_sync(void *vaddr, size_t size, int direction)
--{
--	unsigned long start;
--	unsigned long end;
--
--	start = (unsigned long)vaddr;
--
--	/* Convert start address back down to unshadowed memory region */
--#ifdef CONFIG_XILINX_UNCACHED_SHADOW
--	start &= ~UNCACHED_SHADOW_MASK;
--#endif
--	end = start + size;
--
--	switch (direction) {
--	case PCI_DMA_NONE:
--		BUG();
--	case PCI_DMA_FROMDEVICE:	/* invalidate only */
--		invalidate_dcache_range(start, end);
--		break;
--	case PCI_DMA_TODEVICE:		/* writeback only */
--		flush_dcache_range(start, end);
--		break;
--	case PCI_DMA_BIDIRECTIONAL:	/* writeback and invalidate */
--		flush_dcache_range(start, end);
--		break;
--	}
--}
--EXPORT_SYMBOL(consistent_sync);
--
--/*
-- * consistent_sync_page makes memory consistent. identical
-- * to consistent_sync, but takes a struct page instead of a
-- * virtual address
-- */
--void consistent_sync_page(struct page *page, unsigned long offset,
--	size_t size, int direction)
--{
--	unsigned long start = (unsigned long)page_address(page) + offset;
--	consistent_sync((void *)start, size, direction);
--}
--EXPORT_SYMBOL(consistent_sync_page);
+sh-randconfig
+
+Probably not a regression, but I haven't seen this one before.
+
+  + error: "__udivdi3" [drivers/mtd/nand/raw/nand.ko] undefined!:  => N/A
+
+m68k-allmodconfig
+
+Patch available.
+
+> [1] http://kisskb.ellerman.id.au/kisskb/head/67b8d5c7081221efa252e111cd52532ec6d4266f/ (244 out of 246 configs)
+> [3] http://kisskb.ellerman.id.au/kisskb/head/75bc37fefc4471e718ba8e651aa74673d4e0a9eb/ (244 out of 246 configs)
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
 -- 
-2.17.0
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
