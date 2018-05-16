@@ -1,81 +1,95 @@
-From: Rich Felker <dalias@libc.org>
-Date: Tue, 15 May 2018 01:41:52 +0000
+From: Yoshinori Sato <ysato@users.sourceforge.jp>
+Date: Wed, 16 May 2018 06:42:44 +0000
 Subject: Re: [J-core] [PATCH v5 00/22] sh: LANDISK and R2Dplus convert to device tree
-Message-Id: <20180515014152.GV1392@brightrain.aerifal.cx>
+Message-Id: <87tvr814pn.wl-ysato@users.sourceforge.jp>
 List-Id: <linux-sh.vger.kernel.org>
 References: <c1ec211d-cbe2-1139-edb0-8baa0e7364e8@physik.fu-berlin.de>
- <8c75b447-fc14-871e-1a04-733132527b65@landley.net>
- <E7B2D113-C30D-4A32-AFB6-DC91DDADE0E8@physik.fu-berlin.de>
- <20171117191706.GF1627@brightrain.aerifal.cx>
- <7193aa1b-50e3-11d4-f93d-f567e2e06b8c@physik.fu-berlin.de>
- <20180105212857.GR1627@brightrain.aerifal.cx>
- <20180503013708.GC1392@brightrain.aerifal.cx>
- <20180503023320.GD1392@brightrain.aerifal.cx>
- <048ab147-21b8-045d-d21c-e1be2dd0e954@physik.fu-berlin.de>
- <87k1sgtf8t.wl-ysato@users.sourceforge.jp>
-In-Reply-To: <87k1sgtf8t.wl-ysato@users.sourceforge.jp>
+        <8c75b447-fc14-871e-1a04-733132527b65@landley.net>
+        <E7B2D113-C30D-4A32-AFB6-DC91DDADE0E8@physik.fu-berlin.de>
+        <20171117191706.GF1627@brightrain.aerifal.cx>
+        <7193aa1b-50e3-11d4-f93d-f567e2e06b8c@physik.fu-berlin.de>
+        <20180105212857.GR1627@brightrain.aerifal.cx>
+        <20180503013708.GC1392@brightrain.aerifal.cx>
+        <20180503023320.GD1392@brightrain.aerifal.cx>
+        <048ab147-21b8-045d-d21c-e1be2dd0e954@physik.fu-berlin.de>
+        <87k1sgtf8t.wl-ysato@users.sourceforge.jp>
+        <20180515014152.GV1392@brightrain.aerifal.cx>
+In-Reply-To: <20180515014152.GV1392@brightrain.aerifal.cx>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshinori Sato <ysato@users.sourceforge.jp>
+To: Rich Felker <dalias@libc.org>
 Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, Rob Landley <rob@landley.net>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-On Mon, May 07, 2018 at 10:40:34AM +0900, Yoshinori Sato wrote:
-> On Thu, 03 May 2018 19:07:38 +0900,
-> John Paul Adrian Glaubitz wrote:
-> > 
-> > [1  <text/plain; utf-8 (7bit)>]
-> > Hi Rich!
-> > 
-> > On 05/03/2018 04:33 AM, Rich Felker wrote:
-> > > I found the U-Boot stuff here:
-> > > 
-> > > https://ja.osdn.net/users/ysato/pf/uboot/wiki/FrontPage
-> > > 
-> > > but I'm not sure how to install it yet. Will try to figure it out.
-> > 
-> > Interesting. It seems the HDL-160U uses u-boot instead of lilo which
-> > is used on my USL-5P. Both are based on the LANDISK platform though.
-> > I wonder whether it is possible to convert the USL-5P to use u-boot
-> > instead of the very limited lilo.
-> > 
-> > As for the kernel configuration, for USL-5P, I had to use the kernel
-> > configuration attached to this mail. One important configuration setting
-> > is CONFIG_SH_PCLK_FREQ which has to be set to "33250000" otherwise
-> > the kernel won't boot properly.
-> > 
-> > I still have my USL-5P ready to be set up for testing a new kernel
-> > image with the device tree patches merged. Although I still don't
-> > know how to enable the internal (pseudo) IDE controller.
-> > 
-> > @Yoshinori:
-> > 
-> > Did the HDL-160U LANDISK device you have use u-boot by default or
-> > did you convert it from lilo?
+On Tue, 15 May 2018 10:41:52 +0900,
+Rich Felker wrote:
 > 
-> Yes.
-> Replace sh-lilo's second stage with u-boot.
-> With this method it is unnecessary to rewrite Flash for boot.
+> On Mon, May 07, 2018 at 10:40:34AM +0900, Yoshinori Sato wrote:
+> > On Thu, 03 May 2018 19:07:38 +0900,
+> > John Paul Adrian Glaubitz wrote:
+> > > 
+> > > [1  <text/plain; utf-8 (7bit)>]
+> > > Hi Rich!
+> > > 
+> > > On 05/03/2018 04:33 AM, Rich Felker wrote:
+> > > > I found the U-Boot stuff here:
+> > > > 
+> > > > https://ja.osdn.net/users/ysato/pf/uboot/wiki/FrontPage
+> > > > 
+> > > > but I'm not sure how to install it yet. Will try to figure it out.
+> > > 
+> > > Interesting. It seems the HDL-160U uses u-boot instead of lilo which
+> > > is used on my USL-5P. Both are based on the LANDISK platform though.
+> > > I wonder whether it is possible to convert the USL-5P to use u-boot
+> > > instead of the very limited lilo.
+> > > 
+> > > As for the kernel configuration, for USL-5P, I had to use the kernel
+> > > configuration attached to this mail. One important configuration setting
+> > > is CONFIG_SH_PCLK_FREQ which has to be set to "33250000" otherwise
+> > > the kernel won't boot properly.
+> > > 
+> > > I still have my USL-5P ready to be set up for testing a new kernel
+> > > image with the device tree patches merged. Although I still don't
+> > > know how to enable the internal (pseudo) IDE controller.
+> > > 
+> > > @Yoshinori:
+> > > 
+> > > Did the HDL-160U LANDISK device you have use u-boot by default or
+> > > did you convert it from lilo?
+> > 
+> > Yes.
+> > Replace sh-lilo's second stage with u-boot.
+> > With this method it is unnecessary to rewrite Flash for boot.
+> 
+> Can you give me a brief explanation of how to reproduce the bootloader
+> installation? For now I'm just using the existing MBR/partitioning you
+> sent me, and replacing zImage.itb in /boot makes it attempt to load a
+> new kernel, but I haven't gotten any output yet to know if it's
+> working.
 
-Can you give me a brief explanation of how to reproduce the bootloader
-installation? For now I'm just using the existing MBR/partitioning you
-sent me, and replacing zImage.itb in /boot makes it attempt to load a
-new kernel, but I haven't gotten any output yet to know if it's
-working.
+landisk's u-boot using spl.
+You should be able to update it by the following procedure.
+1. Rebuild u-boot.
+2. Format ext4 for HDD first partition.
+3. put u-boot.img to HDD first partition.
+4. put spl/u-boot-spl.bin to HDD MBR and subsequent region.
 
-Probably the most important thing I'm missing right now is what the
-its file for generating the zImage.itb should look like. I tried
-making one myself but it may be wrong. I'm also unsure whether I
-should use a zImage or vmlinux file as input, and if using a zImage
-file, what load address I should choose.
+> Probably the most important thing I'm missing right now is what the
+> its file for generating the zImage.itb should look like. I tried
+> making one myself but it may be wrong. I'm also unsure whether I
+> should use a zImage or vmlinux file as input, and if using a zImage
+> file, what load address I should choose.
+> 
+> For now I'm using the upstream landisk board support (maybe not
+> working, we'll see). Once I can confirm I'm getting some output and
+> the kernel seems minimally functional, I'm going to switch to DT, but
+> integrating the DT stuff with u-boot isn't important right away since
+> I can start with a linked-in DT.
+> 
+> At some point I'd also like to know how to reinstall u-boot on the MBR
+> or whatever.
+> 
+> Rich
 
-For now I'm using the upstream landisk board support (maybe not
-working, we'll see). Once I can confirm I'm getting some output and
-the kernel seems minimally functional, I'm going to switch to DT, but
-integrating the DT stuff with u-boot isn't important right away since
-I can start with a linked-in DT.
-
-At some point I'd also like to know how to reinstall u-boot on the MBR
-or whatever.
-
-Rich
+-- 
+Yosinori Sato
