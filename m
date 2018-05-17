@@ -1,107 +1,58 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Tue, 22 May 2018 12:04:23 +0000
-Subject: [PATCH 18/25] sh: use dma_direct_ops for the CONFIG_DMA_COHERENT case
-Message-Id: <20180522120430.28709-19-hch@lst.de>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Thu, 17 May 2018 14:32:03 +0000
+Subject: Re: [PATCH 0/7] i2c: clean up include/linux/i2c-*
+Message-Id: <20180517143202.vzwmqkemlqxj2xgu@ninjato>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="2am76ftu5fuftxje"
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180522120430.28709-1-hch@lst.de>
-In-Reply-To: <20180522120430.28709-1-hch@lst.de>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: iommu@lists.linux-foundation.org
-Cc: linux-arch@vger.kernel.org, Michal Simek <monstr@monstr.eu>, Greentime Hu <green.hu@gmail.com>, Vincent Chen <deanbo422@gmail.com>, linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org, linux-c6x-dev@linux-c6x.org, linux-hexagon@vger.kernel.org, linux-m68k@lists.linux-m68k.org, nios2-dev@lists.rocketboards.org, openrisc@lists.librecores.org, linux-parisc@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-kernel@vger.kernel.org
+References: <20180419200015.15095-1-wsa@the-dreams.de>
+In-Reply-To: <20180419200015.15095-1-wsa@the-dreams.de>
+To: linux-arm-kernel@lists.infradead.org
 
-This is a slight change in behavior as we avoid the detour through the
-virtual mapping for the coherent allocator, but if this CPU really is
-coherent that should be the right thing to do.
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
----
- arch/sh/Kconfig                   | 1 +
- arch/sh/include/asm/dma-mapping.h | 4 ++++
- arch/sh/kernel/Makefile           | 4 ++--
- arch/sh/kernel/dma-nommu.c        | 4 ----
- 4 files changed, 7 insertions(+), 6 deletions(-)
+--2am76ftu5fuftxje
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-index 7d521926041e..d0b095323d62 100644
---- a/arch/sh/Kconfig
-+++ b/arch/sh/Kconfig
-@@ -157,6 +157,7 @@ config SWAP_IO_SPACE
- 	bool
- 
- config DMA_COHERENT
-+	select DMA_DIRECT_OPS
- 	bool
- 
- config DMA_NONCOHERENT
-diff --git a/arch/sh/include/asm/dma-mapping.h b/arch/sh/include/asm/dma-mapping.h
-index 149e71f95be7..1ebc6a4eb1c5 100644
---- a/arch/sh/include/asm/dma-mapping.h
-+++ b/arch/sh/include/asm/dma-mapping.h
-@@ -6,7 +6,11 @@ extern const struct dma_map_ops nommu_dma_ops;
- 
- static inline const struct dma_map_ops *get_arch_dma_ops(struct bus_type *bus)
- {
-+#ifdef CONFIG_DMA_NONCOHERENT
- 	return &nommu_dma_ops;
-+#else
-+	return &dma_direct_ops;
-+#endif
- }
- 
- extern void *dma_generic_alloc_coherent(struct device *dev, size_t size,
-diff --git a/arch/sh/kernel/Makefile b/arch/sh/kernel/Makefile
-index dc80041f7363..cb5f1bfb52de 100644
---- a/arch/sh/kernel/Makefile
-+++ b/arch/sh/kernel/Makefile
-@@ -12,7 +12,7 @@ endif
- 
- CFLAGS_REMOVE_return_address.o = -pg
- 
--obj-y	:= debugtraps.o dma-nommu.o dumpstack.o 		\
-+obj-y	:= debugtraps.o dumpstack.o 		\
- 	   idle.o io.o irq.o irq_$(BITS).o kdebugfs.o			\
- 	   machvec.o nmi_debug.o process.o				\
- 	   process_$(BITS).o ptrace.o ptrace_$(BITS).o			\
-@@ -45,7 +45,7 @@ obj-$(CONFIG_DUMP_CODE)		+= disassemble.o
- obj-$(CONFIG_HIBERNATION)	+= swsusp.o
- obj-$(CONFIG_DWARF_UNWINDER)	+= dwarf.o
- obj-$(CONFIG_PERF_EVENTS)	+= perf_event.o perf_callchain.o
--
-+obj-$(CONFIG_DMA_NONCOHERENT)	+= dma-nommu.o
- obj-$(CONFIG_HAVE_HW_BREAKPOINT)		+= hw_breakpoint.o
- 
- ccflags-y := -Werror
-diff --git a/arch/sh/kernel/dma-nommu.c b/arch/sh/kernel/dma-nommu.c
-index 79a9edafa5b0..d8689b1cb743 100644
---- a/arch/sh/kernel/dma-nommu.c
-+++ b/arch/sh/kernel/dma-nommu.c
-@@ -51,7 +51,6 @@ static int nommu_map_sg(struct device *dev, struct scatterlist *sg,
- 	return nents;
- }
- 
--#ifdef CONFIG_DMA_NONCOHERENT
- static void nommu_sync_single_for_device(struct device *dev, dma_addr_t addr,
- 			      size_t size, enum dma_data_direction dir)
- {
-@@ -67,16 +66,13 @@ static void nommu_sync_sg_for_device(struct device *dev, struct scatterlist *sg,
- 	for_each_sg(sg, s, nelems, i)
- 		sh_sync_dma_for_device(sg_virt(s), s->length, dir);
- }
--#endif
- 
- const struct dma_map_ops nommu_dma_ops = {
- 	.alloc			= dma_generic_alloc_coherent,
- 	.free			= dma_generic_free_coherent,
- 	.map_page		= nommu_map_page,
- 	.map_sg			= nommu_map_sg,
--#ifdef CONFIG_DMA_NONCOHERENT
- 	.sync_single_for_device	= nommu_sync_single_for_device,
- 	.sync_sg_for_device	= nommu_sync_sg_for_device,
--#endif
- };
- EXPORT_SYMBOL(nommu_dma_ops);
--- 
-2.17.0
+On Thu, Apr 19, 2018 at 10:00:06PM +0200, Wolfram Sang wrote:
+> Move all plain platform_data includes to the platform_data-dir
+> (except for i2c-pnx which can be moved into the driver itself).
+>=20
+> My preference is to take these patches via the i2c tree. I can provide an
+> immutable branch if needed. But we can also discuss those going in via
+> arch-trees if dependencies are against us.
 
+All applied to for-next!
+
+The immutable branch is here:
+
+git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git i2c/platform_da=
+ta-immutable
+
+Thanks,
+
+   Wolfram
+
+
+--2am76ftu5fuftxje
+Content-Type: application/pgp-signature; name="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQIzBAABCAAdFiEEOZGx6rniZ1Gk92RdFA3kzBSgKbYFAlr9kmIACgkQFA3kzBSg
+KbZKxw/+JSU2lxyogS2eTiaKLZ+5KEMXeB/xFcc1vSljvMU6dkspqQUo7QJHZW8Q
+AsIJtMO1XLfKODlsmidF4yhhOy2cninfK+MQbmZOsuReUF5eEf9DnUxs6YE1YKmJ
+3MuoIHqmKXDEYUjL+0xJeU5g8lsPbXVyML+AJ+96THHEDkUf0MeAFApESAoplIWa
+/+B+A465tDedkI1MCSrNNtwiNUUfkMFyS9G6UFIT3ovjbofNN8xoyNP+5aYqwd2S
+DtVRPNaBg8kYzZur7na3n9+ARxGHGFPOLpx+Z5E67IEfJlS5uYLFuZBhQyXyKLBx
+qhhOB6/lHP5hW7vU2EyUjHvpHS55SP0kIQltV85krPlOvmrV3aBp+ucL87NM2BfQ
+OTIUTLZdo49bY1gmPo2FfKtPuPgK9T6t82LOrO/IBx7PkaXSNxhw9HL6+kRyxHBI
+ELISIMIDIrUG27qhrbBT5ttdTJkAKDvviW/e7vy5VHcEHztrK3L0oz/PMDmlzIvL
+YFts1pN6v61jRyr/J7Dv3MYk1bk+B/n94kuZgnTrUws+6Zbv9MBw5l28kOClOp3N
+grELJFSGl5PPSiGp7lntGVSt46iEhJToQzwNRbJHL2Ks19rFPlzBbQCRxY3VtJAj
+jZ7YVZnaWnmDyRUvedNP+YeiTW351d6OQeJAeK6s+9iCz0GjpX4=
+=vxpG
+-----END PGP SIGNATURE-----
+
+--2am76ftu5fuftxje--
