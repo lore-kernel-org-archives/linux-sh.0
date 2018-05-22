@@ -1,94 +1,55 @@
-From: Bartosz Golaszewski <brgl@bgdev.pl>
-Date: Fri, 04 May 2018 13:27:28 +0000
-Subject: [PATCH v3 0/3] sh: make early_platform code SuperH-specific
-Message-Id: <20180504132731.14574-1-brgl@bgdev.pl>
+From: Christoph Hellwig <hch@lst.de>
+Date: Tue, 22 May 2018 12:04:07 +0000
+Subject: [PATCH 02/25] hexagon: implement the sync_sg_for_device DMA operation
+Message-Id: <20180522120430.28709-3-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20180522120430.28709-1-hch@lst.de>
+In-Reply-To: <20180522120430.28709-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: iommu@lists.linux-foundation.org
+Cc: linux-arch@vger.kernel.org, Michal Simek <monstr@monstr.eu>, Greentime Hu <green.hu@gmail.com>, Vincent Chen <deanbo422@gmail.com>, linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org, linux-c6x-dev@linux-c6x.org, linux-hexagon@vger.kernel.org, linux-m68k@lists.linux-m68k.org, nios2-dev@lists.rocketboards.org, openrisc@lists.librecores.org, linux-parisc@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-kernel@vger.kernel.org
 
-I recently started a discussion about the need for a proper early device
-probing mechanism[1]. One that would be based on real platform drivers
-and support both platform data and device tree.
+This methods needs to provide the equivalent of sync_single_for_device
+for each S/G list element, but was missing.
 
-While we're far from reaching any consensus on the implementation, Arnd
-suggested that I start off by moving the SuperH-specific early platform
-drivers implementation to arch/sh[2].
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+---
+ arch/hexagon/kernel/dma.c | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
 
-This series is the first attempt at making way for a new, less hacky
-implementation.
-
-The first patch removes the last instance of a non-sh driver using the
-early_platform API. It can be removed since ARM no longer probes early
-drivers.
-
-The second patch moves all the early_platform code to arch/sh.
-
-The last patch prefixes all early_platform symbols with 'sh_'.
-
-[1] https://lkml.org/lkml/2018/4/26/657
-[2] https://lkml.org/lkml/2018/4/27/239
-
-v1 -> v2:
-- certain drivers are compiled for arm/mach-shmobile too - we need to
-  add ifdefs for CONFIG_SUPERH around early_platform calls
-
-v2 -> v3:
-- added a stub for is_early_platform_device() which always returns false
-  on non-SuperH architectures
-
-Bartosz Golaszewski (3):
-  clocksource: timer-ti-dm: remove the early platform driver
-    registration
-  platform: move the early platform device support to arch/sh
-  sh: add the sh_ prefix to early platform symbols
-
- arch/sh/drivers/Makefile               |   2 +-
- arch/sh/drivers/platform_early.c       | 346 +++++++++++++++++++++++++
- arch/sh/include/asm/platform_early.h   |  61 +++++
- arch/sh/kernel/cpu/sh2/setup-sh7619.c  |   3 +-
- arch/sh/kernel/cpu/sh2a/setup-mxg.c    |   3 +-
- arch/sh/kernel/cpu/sh2a/setup-sh7201.c |   3 +-
- arch/sh/kernel/cpu/sh2a/setup-sh7203.c |   3 +-
- arch/sh/kernel/cpu/sh2a/setup-sh7206.c |   3 +-
- arch/sh/kernel/cpu/sh2a/setup-sh7264.c |   3 +-
- arch/sh/kernel/cpu/sh2a/setup-sh7269.c |   3 +-
- arch/sh/kernel/cpu/sh3/setup-sh3.c     |   1 +
- arch/sh/kernel/cpu/sh3/setup-sh7705.c  |   3 +-
- arch/sh/kernel/cpu/sh3/setup-sh770x.c  |   3 +-
- arch/sh/kernel/cpu/sh3/setup-sh7710.c  |   3 +-
- arch/sh/kernel/cpu/sh3/setup-sh7720.c  |   3 +-
- arch/sh/kernel/cpu/sh4/setup-sh4-202.c |   3 +-
- arch/sh/kernel/cpu/sh4/setup-sh7750.c  |   9 +-
- arch/sh/kernel/cpu/sh4/setup-sh7760.c  |   3 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7343.c |   3 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7366.c |   3 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7722.c |   3 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7723.c |   3 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7724.c |   3 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7734.c |   3 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7757.c |   3 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7763.c |   3 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7770.c |   3 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7780.c |   3 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7785.c |   3 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7786.c |   3 +-
- arch/sh/kernel/cpu/sh4a/setup-shx3.c   |   3 +-
- arch/sh/kernel/cpu/sh5/setup-sh5.c     |   3 +-
- arch/sh/kernel/setup.c                 |   3 +-
- arch/sh/kernel/time.c                  |   5 +-
- drivers/base/platform.c                | 288 --------------------
- drivers/clocksource/sh_cmt.c           |  13 +-
- drivers/clocksource/sh_mtu2.c          |  13 +-
- drivers/clocksource/sh_tmu.c           |  14 +-
- drivers/clocksource/timer-ti-dm.c      |   1 -
- drivers/tty/serial/sh-sci.c            |  11 +-
- include/linux/platform_device.h        |  64 +----
- 41 files changed, 524 insertions(+), 388 deletions(-)
- create mode 100644 arch/sh/drivers/platform_early.c
- create mode 100644 arch/sh/include/asm/platform_early.h
-
+diff --git a/arch/hexagon/kernel/dma.c b/arch/hexagon/kernel/dma.c
+index d2b717f352f4..9e46556a227d 100644
+--- a/arch/hexagon/kernel/dma.c
++++ b/arch/hexagon/kernel/dma.c
+@@ -188,6 +188,18 @@ static void hexagon_sync_single_for_device(struct device *dev,
+ 	dma_sync(dma_addr_to_virt(dma_handle), size, dir);
+ }
+ 
++static void hexagon_sync_sg_for_device(struct device *dev,
++		struct scatterlist *sgl, int nents, enum dma_data_direction dir)
++{
++	struct scatterlist *sg;
++	int i;
++
++	for_each_sg(sgl, sg, nents, i)
++		hexagon_sync_single_for_device(dev, sg_dma_address(sg),
++				sg->length, dir);
++}
++
++
+ static int hexagon_mapping_error(struct device *dev, dma_addr_t dma_addr)
+ {
+ 	return dma_addr = HEXAGON_MAPPING_ERROR;
+@@ -199,6 +211,7 @@ const struct dma_map_ops hexagon_dma_ops = {
+ 	.map_sg		= hexagon_map_sg,
+ 	.map_page	= hexagon_map_page,
+ 	.sync_single_for_device = hexagon_sync_single_for_device,
++	.sync_sg_for_device = hexagon_sync_sg_for_device,
+ 	.mapping_error	= hexagon_mapping_error,
+ };
+ 
 -- 
 2.17.0
 
