@@ -1,37 +1,91 @@
-From: Bartosz Golaszewski <brgl@bgdev.pl>
-Date: Wed, 02 May 2018 09:48:19 +0000
-Subject: [PATCH v2 1/3] clocksource: timer-ti-dm: remove the early platform driver registration
-Message-Id: <20180502094821.2907-2-brgl@bgdev.pl>
+From: Christoph Hellwig <hch@lst.de>
+Date: Tue, 22 May 2018 12:04:22 +0000
+Subject: [PATCH 17/25] sh: introduce a sh_cacheop_vaddr helper
+Message-Id: <20180522120430.28709-18-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180502094821.2907-1-brgl@bgdev.pl>
-In-Reply-To: <20180502094821.2907-1-brgl@bgdev.pl>
+References: <20180522120430.28709-1-hch@lst.de>
+In-Reply-To: <20180522120430.28709-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: iommu@lists.linux-foundation.org
+Cc: linux-arch@vger.kernel.org, Michal Simek <monstr@monstr.eu>, Greentime Hu <green.hu@gmail.com>, Vincent Chen <deanbo422@gmail.com>, linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org, linux-c6x-dev@linux-c6x.org, linux-hexagon@vger.kernel.org, linux-m68k@lists.linux-m68k.org, nios2-dev@lists.rocketboards.org, openrisc@lists.librecores.org, linux-parisc@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-kernel@vger.kernel.org
 
-From: Bartosz Golaszewski <bgolaszewski@baylibre.com>
+And use it in the maple bus code to avoid a dma API dependency.
 
-This driver is no longer used as an early platform driver. Remove the
-registration macro.
-
-Signed-off-by: Bartosz Golaszewski <bgolaszewski@baylibre.com>
+Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- drivers/clocksource/timer-ti-dm.c | 1 -
- 1 file changed, 1 deletion(-)
+ arch/sh/include/asm/cacheflush.h | 7 +++++++
+ arch/sh/mm/consistent.c          | 6 +-----
+ drivers/sh/maple/maple.c         | 7 ++++---
+ 3 files changed, 12 insertions(+), 8 deletions(-)
 
-diff --git a/drivers/clocksource/timer-ti-dm.c b/drivers/clocksource/timer-ti-dm.c
-index 4cce6b224b87..595124074821 100644
---- a/drivers/clocksource/timer-ti-dm.c
-+++ b/drivers/clocksource/timer-ti-dm.c
-@@ -991,7 +991,6 @@ static struct platform_driver omap_dm_timer_driver = {
- 	},
- };
+diff --git a/arch/sh/include/asm/cacheflush.h b/arch/sh/include/asm/cacheflush.h
+index d103ab5a4e4b..b932e42ef028 100644
+--- a/arch/sh/include/asm/cacheflush.h
++++ b/arch/sh/include/asm/cacheflush.h
+@@ -101,5 +101,12 @@ void kunmap_coherent(void *kvaddr);
  
--early_platform_init("earlytimer", &omap_dm_timer_driver);
- module_platform_driver(omap_dm_timer_driver);
+ void cpu_cache_init(void);
  
- MODULE_DESCRIPTION("OMAP Dual-Mode Timer Driver");
++static inline void *sh_cacheop_vaddr(void *vaddr)
++{
++	if (__in_29bit_mode())
++		vaddr = (void *)CAC_ADDR((unsigned long)vaddr);
++	return vaddr;
++}
++
+ #endif /* __KERNEL__ */
+ #endif /* __ASM_SH_CACHEFLUSH_H */
+diff --git a/arch/sh/mm/consistent.c b/arch/sh/mm/consistent.c
+index 221832eec33b..5f86ae24025b 100644
+--- a/arch/sh/mm/consistent.c
++++ b/arch/sh/mm/consistent.c
+@@ -69,10 +69,7 @@ void dma_generic_free_coherent(struct device *dev, size_t size,
+ void sh_sync_dma_for_device(void *vaddr, size_t size,
+ 		    enum dma_data_direction direction)
+ {
+-	void *addr;
+-
+-	addr = __in_29bit_mode() ?
+-	       (void *)CAC_ADDR((unsigned long)vaddr) : vaddr;
++	void *addr = sh_cacheop_vaddr(vaddr);
+ 
+ 	switch (direction) {
+ 	case DMA_FROM_DEVICE:		/* invalidate only */
+@@ -88,7 +85,6 @@ void sh_sync_dma_for_device(void *vaddr, size_t size,
+ 		BUG();
+ 	}
+ }
+-EXPORT_SYMBOL(sh_sync_dma_for_device);
+ 
+ static int __init memchunk_setup(char *str)
+ {
+diff --git a/drivers/sh/maple/maple.c b/drivers/sh/maple/maple.c
+index 7525039d812c..c9c354bd713a 100644
+--- a/drivers/sh/maple/maple.c
++++ b/drivers/sh/maple/maple.c
+@@ -300,8 +300,8 @@ static void maple_send(void)
+ 	mutex_unlock(&maple_wlist_lock);
+ 	if (maple_packets > 0) {
+ 		for (i = 0; i < (1 << MAPLE_DMA_PAGES); i++)
+-			sh_sync_dma_for_device(maple_sendbuf + i * PAGE_SIZE,
+-				       PAGE_SIZE, DMA_BIDIRECTIONAL);
++			__flush_purge_region(maple_sendbuf + i * PAGE_SIZE,
++					PAGE_SIZE);
+ 	}
+ 
+ finish:
+@@ -642,7 +642,8 @@ static void maple_dma_handler(struct work_struct *work)
+ 		list_for_each_entry_safe(mq, nmq, &maple_sentq, list) {
+ 			mdev = mq->dev;
+ 			recvbuf = mq->recvbuf->buf;
+-			sh_sync_dma_for_device(recvbuf, 0x400, DMA_FROM_DEVICE);
++			__flush_invalidate_region(sh_cacheop_vaddr(recvbuf),
++					0x400);
+ 			code = recvbuf[0];
+ 			kfree(mq->sendbuf);
+ 			list_del_init(&mq->list);
 -- 
 2.17.0
 
