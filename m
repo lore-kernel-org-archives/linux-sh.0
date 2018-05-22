@@ -1,221 +1,215 @@
 From: Christoph Hellwig <hch@lst.de>
-Date: Tue, 22 May 2018 12:04:24 +0000
-Subject: [PATCH 19/25] sh: split arch/sh/mm/consistent.c
-Message-Id: <20180522120430.28709-20-hch@lst.de>
+Date: Tue, 22 May 2018 12:04:13 +0000
+Subject: [PATCH 08/25] nds32: consolidate DMA cache maintainance routines
+Message-Id: <20180522120430.28709-9-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20180522120430.28709-1-hch@lst.de>
-In-Reply-To: <20180522120430.28709-1-hch@lst.de>
+In-Reply-To: <20180522120430.28709-1-hch-jcswGhMUV9g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: iommu@lists.linux-foundation.org
-Cc: linux-arch@vger.kernel.org, Michal Simek <monstr@monstr.eu>, Greentime Hu <green.hu@gmail.com>, Vincent Chen <deanbo422@gmail.com>, linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org, linux-c6x-dev@linux-c6x.org, linux-hexagon@vger.kernel.org, linux-m68k@lists.linux-m68k.org, nios2-dev@lists.rocketboards.org, openrisc@lists.librecores.org, linux-parisc@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-kernel@vger.kernel.org
+To: iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-xtensa-PjhNF2WwrV/0Sa2dR60CXw@public.gmane.org, Michal Simek <monstr-pSz03upnqPeHXe+LvDLADg@public.gmane.org>, Vincent Chen <deanbo422-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-c6x-dev-jPsnJVOj+W6hPH1hqNUYSQ@public.gmane.org, linux-parisc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-hexagon-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-m68k-cunTk1MwBs8S/qaLPR03pWD2FQJk+8+b@public.gmane.org, openrisc-cunTk1MwBs9a3B2Vnqf2dGD2FQJk+8+b@public.gmane.org, Greentime Hu <green.hu-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-alpha-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sparclinux-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, nios2-dev-g9ZBwUv/Ih/yUk5EbOjzuce+I+R0W71w@public.gmane.org, linux-snps-arc-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org
 
-Half of the file just contains platform device memory setup code which
-is required for all builds, and half contains helpers for dma coherent
-allocation, which is only needed if CONFIG_DMA_NONCOHERENT is enabled.
+Make sure all other DMA methods call nds32_dma_sync_single_for_{device,cpu}
+to perform cache maintaince, and remove the consisteny_sync helper that
+implemented both with entirely separate code based off an argument.
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- arch/sh/kernel/Makefile       |  2 +-
- arch/sh/kernel/dma-coherent.c | 80 +++++++++++++++++++++++++++++++++++
- arch/sh/mm/consistent.c       | 75 --------------------------------
- 3 files changed, 81 insertions(+), 76 deletions(-)
- create mode 100644 arch/sh/kernel/dma-coherent.c
+ arch/nds32/kernel/dma.c | 140 +++++++++++++++++-----------------------
+ 1 file changed, 61 insertions(+), 79 deletions(-)
 
-diff --git a/arch/sh/kernel/Makefile b/arch/sh/kernel/Makefile
-index cb5f1bfb52de..d5ddb64bfffe 100644
---- a/arch/sh/kernel/Makefile
-+++ b/arch/sh/kernel/Makefile
-@@ -45,7 +45,7 @@ obj-$(CONFIG_DUMP_CODE)		+= disassemble.o
- obj-$(CONFIG_HIBERNATION)	+= swsusp.o
- obj-$(CONFIG_DWARF_UNWINDER)	+= dwarf.o
- obj-$(CONFIG_PERF_EVENTS)	+= perf_event.o perf_callchain.o
--obj-$(CONFIG_DMA_NONCOHERENT)	+= dma-nommu.o
-+obj-$(CONFIG_DMA_NONCOHERENT)	+= dma-nommu.o dma-coherent.o
- obj-$(CONFIG_HAVE_HW_BREAKPOINT)		+= hw_breakpoint.o
+diff --git a/arch/nds32/kernel/dma.c b/arch/nds32/kernel/dma.c
+index e1bf7206e015..4e6fb4ffd3f7 100644
+--- a/arch/nds32/kernel/dma.c
++++ b/arch/nds32/kernel/dma.c
+@@ -22,11 +22,6 @@
+ static pte_t *consistent_pte;
+ static DEFINE_RAW_SPINLOCK(consistent_lock);
  
- ccflags-y := -Werror
-diff --git a/arch/sh/kernel/dma-coherent.c b/arch/sh/kernel/dma-coherent.c
-new file mode 100644
-index 000000000000..4f41e5cd5207
---- /dev/null
-+++ b/arch/sh/kernel/dma-coherent.c
-@@ -0,0 +1,80 @@
-+/*
-+ * Copyright (C) 2004 - 2007  Paul Mundt
-+ *
-+ * This file is subject to the terms and conditions of the GNU General Public
-+ * License.  See the file "COPYING" in the main directory of this archive
-+ * for more details.
-+ */
-+#include <linux/mm.h>
-+#include <linux/init.h>
-+#include <linux/dma-mapping.h>
-+#include <linux/module.h>
-+#include <asm/cacheflush.h>
-+#include <asm/addrspace.h>
+-enum master_type {
+-	FOR_CPU = 0,
+-	FOR_DEVICE = 1,
+-};
+-
+ /*
+  * VM region handling support.
+  *
+@@ -333,15 +328,53 @@ static int __init consistent_init(void)
+ }
+ 
+ core_initcall(consistent_init);
+-static void consistent_sync(void *vaddr, size_t size, int direction, int master_type);
 +
-+void *dma_generic_alloc_coherent(struct device *dev, size_t size,
-+				 dma_addr_t *dma_handle, gfp_t gfp,
-+				 unsigned long attrs)
++static void
++nds32_dma_sync_single_for_device(struct device *dev, dma_addr_t handle,
++				 size_t size, enum dma_data_direction dir)
 +{
-+	void *ret, *ret_nocache;
-+	int order = get_order(size);
++	unsigned long start = (unsigned long)phys_to_virt(handle);
 +
-+	gfp |= __GFP_ZERO;
-+
-+	ret = (void *)__get_free_pages(gfp, order);
-+	if (!ret)
-+		return NULL;
-+
-+	/*
-+	 * Pages from the page allocator may have data present in
-+	 * cache. So flush the cache before using uncached memory.
-+	 */
-+	sh_sync_dma_for_device(ret, size, DMA_BIDIRECTIONAL);
-+
-+	ret_nocache = (void __force *)ioremap_nocache(virt_to_phys(ret), size);
-+	if (!ret_nocache) {
-+		free_pages((unsigned long)ret, order);
-+		return NULL;
-+	}
-+
-+	split_page(pfn_to_page(virt_to_phys(ret) >> PAGE_SHIFT), order);
-+
-+	*dma_handle = virt_to_phys(ret) - PFN_PHYS(dev->dma_pfn_offset);
-+
-+	return ret_nocache;
-+}
-+
-+void dma_generic_free_coherent(struct device *dev, size_t size,
-+			       void *vaddr, dma_addr_t dma_handle,
-+			       unsigned long attrs)
-+{
-+	int order = get_order(size);
-+	unsigned long pfn = (dma_handle >> PAGE_SHIFT) + dev->dma_pfn_offset;
-+	int k;
-+
-+	for (k = 0; k < (1 << order); k++)
-+		__free_pages(pfn_to_page(pfn + k), 0);
-+
-+	iounmap(vaddr);
-+}
-+
-+void sh_sync_dma_for_device(void *vaddr, size_t size,
-+		    enum dma_data_direction direction)
-+{
-+	void *addr = sh_cacheop_vaddr(vaddr);
-+
-+	switch (direction) {
-+	case DMA_FROM_DEVICE:		/* invalidate only */
-+		__flush_invalidate_region(addr, size);
++	switch (dir) {
++	case DMA_FROM_DEVICE:
 +		break;
-+	case DMA_TO_DEVICE:		/* writeback only */
-+		__flush_wback_region(addr, size);
-+		break;
-+	case DMA_BIDIRECTIONAL:		/* writeback and invalidate */
-+		__flush_purge_region(addr, size);
++	case DMA_TO_DEVICE:
++	case DMA_BIDIRECTIONAL:
++		cpu_dma_wb_range(start, start + size);
 +		break;
 +	default:
 +		BUG();
 +	}
 +}
-+EXPORT_SYMBOL(sh_sync_dma_for_device);
-diff --git a/arch/sh/mm/consistent.c b/arch/sh/mm/consistent.c
-index 5f86ae24025b..5da5be74fb6b 100644
---- a/arch/sh/mm/consistent.c
-+++ b/arch/sh/mm/consistent.c
-@@ -1,10 +1,6 @@
- /*
-- * arch/sh/mm/consistent.c
-- *
-  * Copyright (C) 2004 - 2007  Paul Mundt
-  *
-- * Declared coherent memory functions based on arch/x86/kernel/pci-dma_32.c
-- *
-  * This file is subject to the terms and conditions of the GNU General Public
-  * License.  See the file "COPYING" in the main directory of this archive
-  * for more details.
-@@ -13,78 +9,7 @@
- #include <linux/init.h>
- #include <linux/platform_device.h>
- #include <linux/dma-mapping.h>
--#include <linux/dma-debug.h>
- #include <linux/io.h>
--#include <linux/module.h>
--#include <linux/gfp.h>
--#include <asm/cacheflush.h>
--#include <asm/addrspace.h>
--
--void *dma_generic_alloc_coherent(struct device *dev, size_t size,
--				 dma_addr_t *dma_handle, gfp_t gfp,
--				 unsigned long attrs)
++
++static void
++nds32_dma_sync_single_for_cpu(struct device *dev, dma_addr_t handle,
++			      size_t size, enum dma_data_direction dir)
++{
++	unsigned long start = (unsigned long)phys_to_virt(handle);
++
++	switch (dir) {
++	case DMA_TO_DEVICE:
++		break;
++	case DMA_FROM_DEVICE:
++	case DMA_BIDIRECTIONAL:
++		cpu_dma_inval_range(start, start + size);
++		break;
++	default:
++		BUG();
++	}
++}
++
+ static dma_addr_t nds32_dma_map_page(struct device *dev, struct page *page,
+ 				     unsigned long offset, size_t size,
+ 				     enum dma_data_direction dir,
+ 				     unsigned long attrs)
+ {
++	dma_addr_t dma_addr = page_to_phys(page) + offset;
++
+ 	if (!(attrs & DMA_ATTR_SKIP_CPU_SYNC))
+-		consistent_sync((void *)(page_address(page) + offset), size, dir, FOR_DEVICE);
+-	return page_to_phys(page) + offset;
++		nds32_dma_sync_single_for_device(dev, handle, size, dir);
++	return dma_addr;
+ }
+ 
+ static void nds32_dma_unmap_page(struct device *dev, dma_addr_t handle,
+@@ -349,75 +382,19 @@ static void nds32_dma_unmap_page(struct device *dev, dma_addr_t handle,
+ 				 unsigned long attrs)
+ {
+ 	if (!(attrs & DMA_ATTR_SKIP_CPU_SYNC))
+-		consistent_sync(phys_to_virt(handle), size, dir, FOR_CPU);
++		nds32_dma_sync_single_for_cpu(dev, handle, size, dir);
+ }
+ 
+-/*
+- * Make an area consistent for devices.
+- */
+-static void consistent_sync(void *vaddr, size_t size, int direction, int master_type)
 -{
--	void *ret, *ret_nocache;
--	int order = get_order(size);
+-	unsigned long start = (unsigned long)vaddr;
+-	unsigned long end = start + size;
 -
--	gfp |= __GFP_ZERO;
--
--	ret = (void *)__get_free_pages(gfp, order);
--	if (!ret)
--		return NULL;
--
--	/*
--	 * Pages from the page allocator may have data present in
--	 * cache. So flush the cache before using uncached memory.
--	 */
--	sh_sync_dma_for_device(ret, size, DMA_BIDIRECTIONAL);
--
--	ret_nocache = (void __force *)ioremap_nocache(virt_to_phys(ret), size);
--	if (!ret_nocache) {
--		free_pages((unsigned long)ret, order);
--		return NULL;
+-	if (master_type = FOR_CPU) {
+-		switch (direction) {
+-		case DMA_TO_DEVICE:
+-			break;
+-		case DMA_FROM_DEVICE:
+-		case DMA_BIDIRECTIONAL:
+-			cpu_dma_inval_range(start, end);
+-			break;
+-		default:
+-			BUG();
+-		}
+-	} else {
+-		/* FOR_DEVICE */
+-		switch (direction) {
+-		case DMA_FROM_DEVICE:
+-			break;
+-		case DMA_TO_DEVICE:
+-		case DMA_BIDIRECTIONAL:
+-			cpu_dma_wb_range(start, end);
+-			break;
+-		default:
+-			BUG();
+-		}
 -	}
--
--	split_page(pfn_to_page(virt_to_phys(ret) >> PAGE_SHIFT), order);
--
--	*dma_handle = virt_to_phys(ret) - PFN_PHYS(dev->dma_pfn_offset);
--
--	return ret_nocache;
 -}
 -
--void dma_generic_free_coherent(struct device *dev, size_t size,
--			       void *vaddr, dma_addr_t dma_handle,
+-static int nds32_dma_map_sg(struct device *dev, struct scatterlist *sg,
+-			    int nents, enum dma_data_direction dir,
+-			    unsigned long attrs)
++static void
++nds32_dma_sync_sg_for_device(struct device *dev, struct scatterlist *sg,
++			     int nents, enum dma_data_direction dir)
+ {
+ 	int i;
+ 
+ 	for (i = 0; i < nents; i++, sg++) {
+-		char *virt -		    page_address((struct page *)sg->page_link) + sg->offset;
+-		consistent_sync(virt, sg->length, dir, FOR_CPU);
++		nds32_dma_sync_single_for_device(dev, sg_dma_address(sg),
++				sg->length, dir);
+ 	}
+-	return nents;
+-}
+-
+-static void nds32_dma_unmap_sg(struct device *dev, struct scatterlist *sg,
+-			       int nhwentries, enum dma_data_direction dir,
 -			       unsigned long attrs)
 -{
--	int order = get_order(size);
--	unsigned long pfn = (dma_handle >> PAGE_SHIFT) + dev->dma_pfn_offset;
--	int k;
--
--	for (k = 0; k < (1 << order); k++)
--		__free_pages(pfn_to_page(pfn + k), 0);
--
--	iounmap(vaddr);
 -}
 -
--void sh_sync_dma_for_device(void *vaddr, size_t size,
--		    enum dma_data_direction direction)
+-static void
+-nds32_dma_sync_single_for_cpu(struct device *dev, dma_addr_t handle,
+-			      size_t size, enum dma_data_direction dir)
 -{
--	void *addr = sh_cacheop_vaddr(vaddr);
--
--	switch (direction) {
--	case DMA_FROM_DEVICE:		/* invalidate only */
--		__flush_invalidate_region(addr, size);
--		break;
--	case DMA_TO_DEVICE:		/* writeback only */
--		__flush_wback_region(addr, size);
--		break;
--	case DMA_BIDIRECTIONAL:		/* writeback and invalidate */
--		__flush_purge_region(addr, size);
--		break;
--	default:
--		BUG();
--	}
+-	consistent_sync((void *)phys_to_virt(handle), size, dir, FOR_CPU);
 -}
+-
+-static void
+-nds32_dma_sync_single_for_device(struct device *dev, dma_addr_t handle,
+-				 size_t size, enum dma_data_direction dir)
+-{
+-	consistent_sync((void *)phys_to_virt(handle), size, dir, FOR_DEVICE);
+ }
  
- static int __init memchunk_setup(char *str)
+ static void
+@@ -427,23 +404,28 @@ nds32_dma_sync_sg_for_cpu(struct device *dev, struct scatterlist *sg, int nents,
+ 	int i;
+ 
+ 	for (i = 0; i < nents; i++, sg++) {
+-		char *virt -		    page_address((struct page *)sg->page_link) + sg->offset;
+-		consistent_sync(virt, sg->length, dir, FOR_CPU);
++		nds32_dma_sync_single_for_cpu(dev, sg_dma_address(sg),
++				sg->length, dir);
+ 	}
+ }
+ 
+-static void
+-nds32_dma_sync_sg_for_device(struct device *dev, struct scatterlist *sg,
+-			     int nents, enum dma_data_direction dir)
++static int nds32_dma_map_sg(struct device *dev, struct scatterlist *sg,
++			    int nents, enum dma_data_direction dir,
++			    unsigned long attrs)
  {
+ 	int i;
+ 
+ 	for (i = 0; i < nents; i++, sg++) {
+-		char *virt -		    page_address((struct page *)sg->page_link) + sg->offset;
+-		consistent_sync(virt, sg->length, dir, FOR_DEVICE);
++		nds32_dma_sync_single_for_device(dev, sg_dma_address(sg),
++				sg->length, dir);
+ 	}
++	return nents;
++}
++
++static void nds32_dma_unmap_sg(struct device *dev, struct scatterlist *sg,
++			       int nhwentries, enum dma_data_direction dir,
++			       unsigned long attrs)
++{
+ }
+ 
+ struct dma_map_ops nds32_dma_ops = {
 -- 
 2.17.0
 
