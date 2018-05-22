@@ -1,873 +1,261 @@
-From: Bartosz Golaszewski <brgl@bgdev.pl>
-Date: Wed, 02 May 2018 09:48:21 +0000
-Subject: [PATCH v2 3/3] sh: add the sh_ prefix to early platform symbols
-Message-Id: <20180502094821.2907-4-brgl@bgdev.pl>
+From: Christoph Hellwig <hch@lst.de>
+Date: Tue, 22 May 2018 12:04:30 +0000
+Subject: [PATCH 25/25] parisc: use generic dma_noncoherent_ops
+Message-Id: <20180522120430.28709-26-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180502094821.2907-1-brgl@bgdev.pl>
-In-Reply-To: <20180502094821.2907-1-brgl@bgdev.pl>
+References: <20180522120430.28709-1-hch@lst.de>
+In-Reply-To: <20180522120430.28709-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: iommu@lists.linux-foundation.org
+Cc: linux-arch@vger.kernel.org, Michal Simek <monstr@monstr.eu>, Greentime Hu <green.hu@gmail.com>, Vincent Chen <deanbo422@gmail.com>, linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org, linux-c6x-dev@linux-c6x.org, linux-hexagon@vger.kernel.org, linux-m68k@lists.linux-m68k.org, nios2-dev@lists.rocketboards.org, openrisc@lists.librecores.org, linux-parisc@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-kernel@vger.kernel.org
 
-From: Bartosz Golaszewski <bgolaszewski@baylibre.com>
+Switch to the generic noncoherent direct mapping implementation.
 
-Old early platform device support is now sh-specific. Before moving on
-to implementing new early platform framework based on real platform
-devices, prefix all early platform symbols with 'sh_'.
+Fix sync_single_for_cpu to do skip the cache flush unless the transfer
+is to the device to match the more tested unmap_single path which should
+have the same cache coherency implications.
 
-Signed-off-by: Bartosz Golaszewski <bgolaszewski@baylibre.com>
+Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- arch/sh/drivers/platform_early.c       | 66 +++++++++++++-------------
- arch/sh/include/asm/platform_early.h   | 30 ++++++------
- arch/sh/kernel/cpu/sh2/setup-sh7619.c  |  2 +-
- arch/sh/kernel/cpu/sh2a/setup-mxg.c    |  2 +-
- arch/sh/kernel/cpu/sh2a/setup-sh7201.c |  2 +-
- arch/sh/kernel/cpu/sh2a/setup-sh7203.c |  2 +-
- arch/sh/kernel/cpu/sh2a/setup-sh7206.c |  2 +-
- arch/sh/kernel/cpu/sh2a/setup-sh7264.c |  2 +-
- arch/sh/kernel/cpu/sh2a/setup-sh7269.c |  2 +-
- arch/sh/kernel/cpu/sh3/setup-sh7705.c  |  2 +-
- arch/sh/kernel/cpu/sh3/setup-sh770x.c  |  2 +-
- arch/sh/kernel/cpu/sh3/setup-sh7710.c  |  2 +-
- arch/sh/kernel/cpu/sh3/setup-sh7720.c  |  2 +-
- arch/sh/kernel/cpu/sh4/setup-sh4-202.c |  2 +-
- arch/sh/kernel/cpu/sh4/setup-sh7750.c  |  8 ++--
- arch/sh/kernel/cpu/sh4/setup-sh7760.c  |  2 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7343.c |  2 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7366.c |  2 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7722.c |  2 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7723.c |  2 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7724.c |  2 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7734.c |  2 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7757.c |  2 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7763.c |  2 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7770.c |  2 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7780.c |  2 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7785.c |  2 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7786.c |  2 +-
- arch/sh/kernel/cpu/sh4a/setup-shx3.c   |  2 +-
- arch/sh/kernel/cpu/sh5/setup-sh5.c     |  2 +-
- arch/sh/kernel/setup.c                 |  2 +-
- arch/sh/kernel/time.c                  |  4 +-
- drivers/clocksource/sh_cmt.c           |  6 +--
- drivers/clocksource/sh_mtu2.c          |  6 +--
- drivers/clocksource/sh_tmu.c           |  6 +--
- drivers/tty/serial/sh-sci.c            |  4 +-
- 36 files changed, 93 insertions(+), 93 deletions(-)
+ arch/parisc/Kconfig                   |   4 +
+ arch/parisc/include/asm/dma-mapping.h |   4 -
+ arch/parisc/kernel/pci-dma.c          | 145 ++------------------------
+ arch/parisc/kernel/setup.c            |   2 +-
+ 4 files changed, 16 insertions(+), 139 deletions(-)
 
-diff --git a/arch/sh/drivers/platform_early.c b/arch/sh/drivers/platform_early.c
-index bc094f6eb366..6eba755b8c12 100644
---- a/arch/sh/drivers/platform_early.c
-+++ b/arch/sh/drivers/platform_early.c
-@@ -3,8 +3,8 @@
- #include <asm/platform_early.h>
- #include <linux/pm.h>
+diff --git a/arch/parisc/Kconfig b/arch/parisc/Kconfig
+index 4d8f64d48597..4993c6dc8358 100644
+--- a/arch/parisc/Kconfig
++++ b/arch/parisc/Kconfig
+@@ -188,6 +188,10 @@ config PA20
+ config PA11
+ 	def_bool y
+ 	depends on PA7000 || PA7100LC || PA7200 || PA7300LC
++	select ARCH_HAS_SYNC_DMA_FOR_CPU
++	select ARCH_HAS_SYNC_DMA_FOR_DEVICE
++	select DMA_NONCOHERENT_OPS
++	select DMA_NONCOHERENT_CACHE_SYNC
  
--static __initdata LIST_HEAD(early_platform_driver_list);
--static __initdata LIST_HEAD(early_platform_device_list);
-+static __initdata LIST_HEAD(sh_early_platform_driver_list);
-+static __initdata LIST_HEAD(sh_early_platform_device_list);
+ config PREFETCH
+ 	def_bool y
+diff --git a/arch/parisc/include/asm/dma-mapping.h b/arch/parisc/include/asm/dma-mapping.h
+index eeec8dd18e74..44a9f97194aa 100644
+--- a/arch/parisc/include/asm/dma-mapping.h
++++ b/arch/parisc/include/asm/dma-mapping.h
+@@ -21,10 +21,6 @@
+ ** flush/purge and allocate "regular" cacheable pages for everything.
+ */
  
- static const struct platform_device_id *
- platform_match_id(const struct platform_device_id *id,
-@@ -57,13 +57,13 @@ static void pm_runtime_early_init(struct device *dev) {}
- #endif
+-#ifdef CONFIG_PA11
+-extern const struct dma_map_ops pa11_dma_ops;
+-#endif
+-
+ extern const struct dma_map_ops *hppa_dma_ops;
  
- /**
-- * early_platform_driver_register - register early platform driver
-- * @epdrv: early_platform driver structure
-+ * sh_early_platform_driver_register - register early platform driver
-+ * @epdrv: sh_early_platform driver structure
-  * @buf: string passed from early_param()
-  *
-- * Helper function for early_platform_init() / early_platform_init_buffer()
-+ * Helper function for sh_early_platform_init() / sh_early_platform_init_buffer()
-  */
--int __init early_platform_driver_register(struct early_platform_driver *epdrv,
-+int __init sh_early_platform_driver_register(struct sh_early_platform_driver *epdrv,
- 					  char *buf)
+ static inline const struct dma_map_ops *get_arch_dma_ops(struct bus_type *bus)
+diff --git a/arch/parisc/kernel/pci-dma.c b/arch/parisc/kernel/pci-dma.c
+index 4d7506336918..87a7926cda6f 100644
+--- a/arch/parisc/kernel/pci-dma.c
++++ b/arch/parisc/kernel/pci-dma.c
+@@ -21,13 +21,12 @@
+ #include <linux/init.h>
+ #include <linux/gfp.h>
+ #include <linux/mm.h>
+-#include <linux/pci.h>
+ #include <linux/proc_fs.h>
+ #include <linux/seq_file.h>
+ #include <linux/string.h>
+ #include <linux/types.h>
+-#include <linux/scatterlist.h>
+-#include <linux/export.h>
++#include <linux/dma-direct.h>
++#include <linux/dma-noncoherent.h>
+ 
+ #include <asm/cacheflush.h>
+ #include <asm/dma.h>    /* for DMA_CHUNK_SIZE */
+@@ -450,7 +449,7 @@ static void *pcx_dma_alloc(struct device *dev, size_t size,
+ 	return addr;
+ }
+ 
+-static void *pa11_dma_alloc(struct device *dev, size_t size,
++void *arch_dma_alloc(struct device *dev, size_t size,
+ 		dma_addr_t *dma_handle, gfp_t gfp, unsigned long attrs)
  {
- 	char *tmp;
-@@ -74,7 +74,7 @@ int __init early_platform_driver_register(struct early_platform_driver *epdrv,
- 	 */
- 	if (!epdrv->list.next) {
- 		INIT_LIST_HEAD(&epdrv->list);
--		list_add_tail(&epdrv->list, &early_platform_driver_list);
-+		list_add_tail(&epdrv->list, &sh_early_platform_driver_list);
- 	}
  
- 	/* If the user has specified device then make sure the driver
-@@ -83,7 +83,7 @@ int __init early_platform_driver_register(struct early_platform_driver *epdrv,
- 	 */
- 	n = strlen(epdrv->pdrv->driver.name);
- 	if (buf && !strncmp(buf, epdrv->pdrv->driver.name, n)) {
--		list_move(&epdrv->list, &early_platform_driver_list);
-+		list_move(&epdrv->list, &sh_early_platform_driver_list);
- 
- 		/* Allow passing parameters after device name */
- 		if (buf[n] = '\0' || buf[n] = ',')
-@@ -113,14 +113,14 @@ int __init early_platform_driver_register(struct early_platform_driver *epdrv,
+@@ -460,7 +459,7 @@ static void *pa11_dma_alloc(struct device *dev, size_t size,
+ 		return pcx_dma_alloc(dev, size, dma_handle, gfp, attrs);
  }
  
- /**
-- * early_platform_add_devices - adds a number of early platform devices
-+ * sh_early_platform_add_devices - adds a number of early platform devices
-  * @devs: array of early platform devices to add
-  * @num: number of early platform devices in array
-  *
-  * Used by early architecture code to register early platform devices and
-  * their platform data.
-  */
--void __init early_platform_add_devices(struct platform_device **devs, int num)
-+void __init sh_early_platform_add_devices(struct platform_device **devs, int num)
+-static void pa11_dma_free(struct device *dev, size_t size, void *vaddr,
++void arch_dma_free(struct device *dev, size_t size, void *vaddr,
+ 		dma_addr_t dma_handle, unsigned long attrs)
  {
- 	struct device *dev;
- 	int i;
-@@ -133,20 +133,20 @@ void __init early_platform_add_devices(struct platform_device **devs, int num)
- 			pm_runtime_early_init(dev);
- 			INIT_LIST_HEAD(&dev->devres_head);
- 			list_add_tail(&dev->devres_head,
--				      &early_platform_device_list);
-+				      &sh_early_platform_device_list);
- 		}
- 	}
+ 	int order = get_order(size);
+@@ -475,142 +474,20 @@ static void pa11_dma_free(struct device *dev, size_t size, void *vaddr,
+ 	free_pages((unsigned long)vaddr, get_order(size));
  }
  
- /**
-- * early_platform_driver_register_all - register early platform drivers
-+ * sh_early_platform_driver_register_all - register early platform drivers
-  * @class_str: string to identify early platform driver class
-  *
-  * Used by architecture code to register all early platform drivers
-  * for a certain class. If omitted then only early platform drivers
-  * with matching kernel command line class parameters will be registered.
-  */
--void __init early_platform_driver_register_all(char *class_str)
-+void __init sh_early_platform_driver_register_all(char *class_str)
+-static dma_addr_t pa11_dma_map_page(struct device *dev, struct page *page,
+-		unsigned long offset, size_t size,
+-		enum dma_data_direction direction, unsigned long attrs)
++void arch_sync_dma_for_device(struct device *dev, phys_addr_t paddr,
++		size_t size, enum dma_data_direction dir)
  {
- 	/* The "class_str" parameter may or may not be present on the kernel
- 	 * command line. If it is present then there may be more than one
-@@ -159,23 +159,23 @@ void __init early_platform_driver_register_all(char *class_str)
- 	 * We use parse_early_options() to make sure the early_param() gets
- 	 * called at least once. The early_param() may be called more than
- 	 * once since the name of the preferred device may be specified on
--	 * the kernel command line. early_platform_driver_register() handles
-+	 * the kernel command line. sh_early_platform_driver_register() handles
- 	 * this case for us.
- 	 */
- 	parse_early_options(class_str);
+-	void *addr = page_address(page) + offset;
+-	BUG_ON(direction = DMA_NONE);
+-
+-	if (!(attrs & DMA_ATTR_SKIP_CPU_SYNC))
+-		flush_kernel_dcache_range((unsigned long) addr, size);
+-
+-	return virt_to_phys(addr);
+-}
+-
+-static void pa11_dma_unmap_page(struct device *dev, dma_addr_t dma_handle,
+-		size_t size, enum dma_data_direction direction,
+-		unsigned long attrs)
+-{
+-	BUG_ON(direction = DMA_NONE);
+-
+-	if (attrs & DMA_ATTR_SKIP_CPU_SYNC)
+-		return;
+-
+-	if (direction = DMA_TO_DEVICE)
+-		return;
+-
+-	/*
+-	 * For PCI_DMA_FROMDEVICE this flush is not necessary for the
+-	 * simple map/unmap case. However, it IS necessary if if
+-	 * pci_dma_sync_single_* has been called and the buffer reused.
+-	 */
+-
+-	flush_kernel_dcache_range((unsigned long) phys_to_virt(dma_handle), size);
+-}
+-
+-static int pa11_dma_map_sg(struct device *dev, struct scatterlist *sglist,
+-		int nents, enum dma_data_direction direction,
+-		unsigned long attrs)
+-{
+-	int i;
+-	struct scatterlist *sg;
+-
+-	BUG_ON(direction = DMA_NONE);
+-
+-	for_each_sg(sglist, sg, nents, i) {
+-		unsigned long vaddr = (unsigned long)sg_virt(sg);
+-
+-		sg_dma_address(sg) = (dma_addr_t) virt_to_phys(vaddr);
+-		sg_dma_len(sg) = sg->length;
+-
+-		if (attrs & DMA_ATTR_SKIP_CPU_SYNC)
+-			continue;
+-
+-		flush_kernel_dcache_range(vaddr, sg->length);
+-	}
+-	return nents;
+-}
+-
+-static void pa11_dma_unmap_sg(struct device *dev, struct scatterlist *sglist,
+-		int nents, enum dma_data_direction direction,
+-		unsigned long attrs)
+-{
+-	int i;
+-	struct scatterlist *sg;
+-
+-	BUG_ON(direction = DMA_NONE);
+-
+-	if (attrs & DMA_ATTR_SKIP_CPU_SYNC)
+-		return;
+-
+-	if (direction = DMA_TO_DEVICE)
+-		return;
+-
+-	/* once we do combining we'll need to use phys_to_virt(sg_dma_address(sglist)) */
+-
+-	for_each_sg(sglist, sg, nents, i)
+-		flush_kernel_dcache_range(sg_virt(sg), sg->length);
+-}
+-
+-static void pa11_dma_sync_single_for_cpu(struct device *dev,
+-		dma_addr_t dma_handle, size_t size,
+-		enum dma_data_direction direction)
+-{
+-	BUG_ON(direction = DMA_NONE);
+-
+-	flush_kernel_dcache_range((unsigned long) phys_to_virt(dma_handle),
+-			size);
+-}
+-
+-static void pa11_dma_sync_single_for_device(struct device *dev,
+-		dma_addr_t dma_handle, size_t size,
+-		enum dma_data_direction direction)
+-{
+-	BUG_ON(direction = DMA_NONE);
+-
+-	flush_kernel_dcache_range((unsigned long) phys_to_virt(dma_handle),
+-			size);
+-}
+-
+-static void pa11_dma_sync_sg_for_cpu(struct device *dev, struct scatterlist *sglist, int nents, enum dma_data_direction direction)
+-{
+-	int i;
+-	struct scatterlist *sg;
+-
+-	/* once we do combining we'll need to use phys_to_virt(sg_dma_address(sglist)) */
+-
+-	for_each_sg(sglist, sg, nents, i)
+-		flush_kernel_dcache_range(sg_virt(sg), sg->length);
++	flush_kernel_dcache_range((unsigned long)phys_to_virt(paddr), size);
  }
  
- /**
-- * early_platform_match - find early platform device matching driver
-+ * sh_early_platform_match - find early platform device matching driver
-  * @epdrv: early platform driver structure
-  * @id: id to match against
-  */
- static struct platform_device * __init
--early_platform_match(struct early_platform_driver *epdrv, int id)
-+sh_early_platform_match(struct sh_early_platform_driver *epdrv, int id)
+-static void pa11_dma_sync_sg_for_device(struct device *dev, struct scatterlist *sglist, int nents, enum dma_data_direction direction)
++void arch_sync_dma_for_cpu(struct device *dev, phys_addr_t paddr,
++		size_t size, enum dma_data_direction dir)
  {
- 	struct platform_device *pd;
- 
--	list_for_each_entry(pd, &early_platform_device_list, dev.devres_head)
-+	list_for_each_entry(pd, &sh_early_platform_device_list, dev.devres_head)
- 		if (platform_match(&pd->dev, &epdrv->pdrv->driver))
- 			if (pd->id = id)
- 				return pd;
-@@ -184,16 +184,16 @@ early_platform_match(struct early_platform_driver *epdrv, int id)
+-	int i;
+-	struct scatterlist *sg;
+-
+-	/* once we do combining we'll need to use phys_to_virt(sg_dma_address(sglist)) */
+-
+-	for_each_sg(sglist, sg, nents, i)
+-		flush_kernel_dcache_range(sg_virt(sg), sg->length);
++	flush_kernel_dcache_range((unsigned long)phys_to_virt(paddr), size);
  }
  
- /**
-- * early_platform_left - check if early platform driver has matching devices
-+ * sh_early_platform_left - check if early platform driver has matching devices
-  * @epdrv: early platform driver structure
-  * @id: return true if id or above exists
-  */
--static int __init early_platform_left(struct early_platform_driver *epdrv,
-+static int __init sh_early_platform_left(struct sh_early_platform_driver *epdrv,
- 				       int id)
+-static void pa11_dma_cache_sync(struct device *dev, void *vaddr, size_t size,
++void arch_dma_cache_sync(struct device *dev, void *vaddr, size_t size,
+ 	       enum dma_data_direction direction)
  {
- 	struct platform_device *pd;
- 
--	list_for_each_entry(pd, &early_platform_device_list, dev.devres_head)
-+	list_for_each_entry(pd, &sh_early_platform_device_list, dev.devres_head)
- 		if (platform_match(&pd->dev, &epdrv->pdrv->driver))
- 			if (pd->id >= id)
- 				return 1;
-@@ -202,22 +202,22 @@ static int __init early_platform_left(struct early_platform_driver *epdrv,
+ 	flush_kernel_dcache_range((unsigned long)vaddr, size);
  }
- 
- /**
-- * early_platform_driver_probe_id - probe drivers matching class_str and id
-+ * sh_early_platform_driver_probe_id - probe drivers matching class_str and id
-  * @class_str: string to identify early platform driver class
-  * @id: id to match against
-  * @nr_probe: number of platform devices to successfully probe before exiting
-  */
--static int __init early_platform_driver_probe_id(char *class_str,
-+static int __init sh_early_platform_driver_probe_id(char *class_str,
- 						 int id,
- 						 int nr_probe)
- {
--	struct early_platform_driver *epdrv;
-+	struct sh_early_platform_driver *epdrv;
- 	struct platform_device *match;
- 	int match_id;
- 	int n = 0;
- 	int left = 0;
- 
--	list_for_each_entry(epdrv, &early_platform_driver_list, list) {
-+	list_for_each_entry(epdrv, &sh_early_platform_driver_list, list) {
- 		/* only use drivers matching our class_str */
- 		if (strcmp(class_str, epdrv->class_str))
- 			continue;
-@@ -228,7 +228,7 @@ static int __init early_platform_driver_probe_id(char *class_str,
- 
- 		} else {
- 			match_id = id;
--			left += early_platform_left(epdrv, id);
-+			left += sh_early_platform_left(epdrv, id);
- 
- 			/* skip requested id */
- 			switch (epdrv->requested_id) {
-@@ -250,7 +250,7 @@ static int __init early_platform_driver_probe_id(char *class_str,
- 			match = NULL;
- 			break;
- 		default:
--			match = early_platform_match(epdrv, match_id);
-+			match = sh_early_platform_match(epdrv, match_id);
- 		}
- 
- 		if (match) {
-@@ -292,7 +292,7 @@ static int __init early_platform_driver_probe_id(char *class_str,
- }
- 
- /**
-- * early_platform_driver_probe - probe a class of registered drivers
-+ * sh_early_platform_driver_probe - probe a class of registered drivers
-  * @class_str: string to identify early platform driver class
-  * @nr_probe: number of platform devices to successfully probe before exiting
-  * @user_only: only probe user specified early platform devices
-@@ -301,7 +301,7 @@ static int __init early_platform_driver_probe_id(char *class_str,
-  * within a certain class. For probe to happen a registered early platform
-  * device matching a registered early platform driver is needed.
-  */
--int __init early_platform_driver_probe(char *class_str,
-+int __init sh_early_platform_driver_probe(char *class_str,
- 				       int nr_probe,
- 				       int user_only)
- {
-@@ -309,7 +309,7 @@ int __init early_platform_driver_probe(char *class_str,
- 
- 	n = 0;
- 	for (i = -2; n < nr_probe; i++) {
--		k = early_platform_driver_probe_id(class_str, i, nr_probe - n);
-+		k = sh_early_platform_driver_probe_id(class_str, i, nr_probe - n);
- 
- 		if (k < 0)
- 			break;
-@@ -324,14 +324,14 @@ int __init early_platform_driver_probe(char *class_str,
- }
- 
- /**
-- * early_platform_cleanup - clean up early platform code
-+ * sh_early_platform_cleanup - clean up early platform code
-  */
--static int __init early_platform_cleanup(void)
-+static int __init sh_early_platform_cleanup(void)
- {
- 	struct platform_device *pd, *pd2;
- 
- 	/* clean up the devres list used to chain devices */
--	list_for_each_entry_safe(pd, pd2, &early_platform_device_list,
-+	list_for_each_entry_safe(pd, pd2, &sh_early_platform_device_list,
- 				 dev.devres_head) {
- 		list_del(&pd->dev.devres_head);
- 		memset(&pd->dev.devres_head, 0, sizeof(pd->dev.devres_head));
-@@ -343,4 +343,4 @@ static int __init early_platform_cleanup(void)
-  * This must happen once after all early devices are probed but before probing
-  * real platform devices.
-  */
--subsys_initcall(early_platform_cleanup);
-+subsys_initcall(sh_early_platform_cleanup);
-diff --git a/arch/sh/include/asm/platform_early.h b/arch/sh/include/asm/platform_early.h
-index 4590ab757d5f..fc802137c37d 100644
---- a/arch/sh/include/asm/platform_early.h
-+++ b/arch/sh/include/asm/platform_early.h
-@@ -8,7 +8,7 @@
- #include <linux/pm_runtime.h>
- #include <linux/slab.h>
- 
--struct early_platform_driver {
-+struct sh_early_platform_driver {
- 	const char *class_str;
- 	struct platform_driver *pdrv;
- 	struct list_head list;
-@@ -20,39 +20,39 @@ struct early_platform_driver {
- #define EARLY_PLATFORM_ID_UNSET -2
- #define EARLY_PLATFORM_ID_ERROR -3
- 
--extern int early_platform_driver_register(struct early_platform_driver *epdrv,
-+extern int sh_early_platform_driver_register(struct sh_early_platform_driver *epdrv,
- 					  char *buf);
--extern void early_platform_add_devices(struct platform_device **devs, int num);
-+extern void sh_early_platform_add_devices(struct platform_device **devs, int num);
- 
--static inline int is_early_platform_device(struct platform_device *pdev)
-+static inline int is_sh_early_platform_device(struct platform_device *pdev)
- {
- 	return !pdev->dev.driver;
- }
- 
--extern void early_platform_driver_register_all(char *class_str);
--extern int early_platform_driver_probe(char *class_str,
-+extern void sh_early_platform_driver_register_all(char *class_str);
-+extern int sh_early_platform_driver_probe(char *class_str,
- 				       int nr_probe, int user_only);
- 
--#define early_platform_init(class_string, platdrv)		\
--	early_platform_init_buffer(class_string, platdrv, NULL, 0)
-+#define sh_early_platform_init(class_string, platdrv)		\
-+	sh_early_platform_init_buffer(class_string, platdrv, NULL, 0)
- 
- #ifndef MODULE
--#define early_platform_init_buffer(class_string, platdrv, buf, bufsiz)	\
--static __initdata struct early_platform_driver early_driver = {		\
-+#define sh_early_platform_init_buffer(class_string, platdrv, buf, bufsiz)	\
-+static __initdata struct sh_early_platform_driver early_driver = {		\
- 	.class_str = class_string,					\
- 	.buffer = buf,							\
- 	.bufsize = bufsiz,						\
- 	.pdrv = platdrv,						\
- 	.requested_id = EARLY_PLATFORM_ID_UNSET,			\
- };									\
--static int __init early_platform_driver_setup_func(char *buffer)	\
-+static int __init sh_early_platform_driver_setup_func(char *buffer)	\
- {									\
--	return early_platform_driver_register(&early_driver, buffer);	\
-+	return sh_early_platform_driver_register(&early_driver, buffer);	\
- }									\
--early_param(class_string, early_platform_driver_setup_func)
-+early_param(class_string, sh_early_platform_driver_setup_func)
- #else /* MODULE */
--#define early_platform_init_buffer(class_string, platdrv, buf, bufsiz)	\
--static inline char *early_platform_driver_setup_func(void)		\
-+#define sh_early_platform_init_buffer(class_string, platdrv, buf, bufsiz)	\
-+static inline char *sh_early_platform_driver_setup_func(void)		\
- {									\
- 	return bufsiz ? buf : NULL;					\
- }
-diff --git a/arch/sh/kernel/cpu/sh2/setup-sh7619.c b/arch/sh/kernel/cpu/sh2/setup-sh7619.c
-index 6707e92955aa..04a28ca4ce7c 100644
---- a/arch/sh/kernel/cpu/sh2/setup-sh7619.c
-+++ b/arch/sh/kernel/cpu/sh2/setup-sh7619.c
-@@ -204,6 +204,6 @@ void __init plat_early_device_setup(void)
- 	/* enable CMT clock */
- 	__raw_writeb(__raw_readb(STBCR3) & ~0x10, STBCR3);
- 
--	early_platform_add_devices(sh7619_early_devices,
-+	sh_early_platform_add_devices(sh7619_early_devices,
- 				   ARRAY_SIZE(sh7619_early_devices));
- }
-diff --git a/arch/sh/kernel/cpu/sh2a/setup-mxg.c b/arch/sh/kernel/cpu/sh2a/setup-mxg.c
-index d33568a12fad..fb9dd473a9cc 100644
---- a/arch/sh/kernel/cpu/sh2a/setup-mxg.c
-+++ b/arch/sh/kernel/cpu/sh2a/setup-mxg.c
-@@ -173,6 +173,6 @@ static struct platform_device *mxg_early_devices[] __initdata = {
- 
- void __init plat_early_device_setup(void)
- {
--	early_platform_add_devices(mxg_early_devices,
-+	sh_early_platform_add_devices(mxg_early_devices,
- 				   ARRAY_SIZE(mxg_early_devices));
- }
-diff --git a/arch/sh/kernel/cpu/sh2a/setup-sh7201.c b/arch/sh/kernel/cpu/sh2a/setup-sh7201.c
-index b258c5c3af60..37357d0fc9bc 100644
---- a/arch/sh/kernel/cpu/sh2a/setup-sh7201.c
-+++ b/arch/sh/kernel/cpu/sh2a/setup-sh7201.c
-@@ -416,6 +416,6 @@ void __init plat_early_device_setup(void)
- 	/* enable MTU2 clock */
- 	__raw_writeb(__raw_readb(STBCR3) & ~0x20, STBCR3);
- 
--	early_platform_add_devices(sh7201_early_devices,
-+	sh_early_platform_add_devices(sh7201_early_devices,
- 				   ARRAY_SIZE(sh7201_early_devices));
- }
-diff --git a/arch/sh/kernel/cpu/sh2a/setup-sh7203.c b/arch/sh/kernel/cpu/sh2a/setup-sh7203.c
-index db3f8df8d76d..79ba8d0db6b0 100644
---- a/arch/sh/kernel/cpu/sh2a/setup-sh7203.c
-+++ b/arch/sh/kernel/cpu/sh2a/setup-sh7203.c
-@@ -353,6 +353,6 @@ void __init plat_early_device_setup(void)
- 	/* enable MTU2 clock */
- 	__raw_writeb(__raw_readb(STBCR3) & ~0x20, STBCR3);
- 
--	early_platform_add_devices(sh7203_early_devices,
-+	sh_early_platform_add_devices(sh7203_early_devices,
- 				   ARRAY_SIZE(sh7203_early_devices));
- }
-diff --git a/arch/sh/kernel/cpu/sh2a/setup-sh7206.c b/arch/sh/kernel/cpu/sh2a/setup-sh7206.c
-index e1be4fedc739..501922504a3f 100644
---- a/arch/sh/kernel/cpu/sh2a/setup-sh7206.c
-+++ b/arch/sh/kernel/cpu/sh2a/setup-sh7206.c
-@@ -289,6 +289,6 @@ void __init plat_early_device_setup(void)
- 	/* enable MTU2 clock */
- 	__raw_writeb(__raw_readb(STBCR3) & ~0x20, STBCR3);
- 
--	early_platform_add_devices(sh7206_early_devices,
-+	sh_early_platform_add_devices(sh7206_early_devices,
- 				   ARRAY_SIZE(sh7206_early_devices));
- }
-diff --git a/arch/sh/kernel/cpu/sh2a/setup-sh7264.c b/arch/sh/kernel/cpu/sh2a/setup-sh7264.c
-index b5bed10d0d72..955f15386bbd 100644
---- a/arch/sh/kernel/cpu/sh2a/setup-sh7264.c
-+++ b/arch/sh/kernel/cpu/sh2a/setup-sh7264.c
-@@ -550,6 +550,6 @@ static struct platform_device *sh7264_early_devices[] __initdata = {
- 
- void __init plat_early_device_setup(void)
- {
--	early_platform_add_devices(sh7264_early_devices,
-+	sh_early_platform_add_devices(sh7264_early_devices,
- 				   ARRAY_SIZE(sh7264_early_devices));
- }
-diff --git a/arch/sh/kernel/cpu/sh2a/setup-sh7269.c b/arch/sh/kernel/cpu/sh2a/setup-sh7269.c
-index 248a6732397a..d8ecb24a0888 100644
---- a/arch/sh/kernel/cpu/sh2a/setup-sh7269.c
-+++ b/arch/sh/kernel/cpu/sh2a/setup-sh7269.c
-@@ -566,6 +566,6 @@ static struct platform_device *sh7269_early_devices[] __initdata = {
- 
- void __init plat_early_device_setup(void)
- {
--	early_platform_add_devices(sh7269_early_devices,
-+	sh_early_platform_add_devices(sh7269_early_devices,
- 				   ARRAY_SIZE(sh7269_early_devices));
- }
-diff --git a/arch/sh/kernel/cpu/sh3/setup-sh7705.c b/arch/sh/kernel/cpu/sh3/setup-sh7705.c
-index 7ec8c11c2f7a..481cfbc3b82d 100644
---- a/arch/sh/kernel/cpu/sh3/setup-sh7705.c
-+++ b/arch/sh/kernel/cpu/sh3/setup-sh7705.c
-@@ -182,7 +182,7 @@ static struct platform_device *sh7705_early_devices[] __initdata = {
- 
- void __init plat_early_device_setup(void)
- {
--	early_platform_add_devices(sh7705_early_devices,
-+	sh_early_platform_add_devices(sh7705_early_devices,
- 				   ARRAY_SIZE(sh7705_early_devices));
- }
- 
-diff --git a/arch/sh/kernel/cpu/sh3/setup-sh770x.c b/arch/sh/kernel/cpu/sh3/setup-sh770x.c
-index 20839dd40a2f..d0cd14f5fc19 100644
---- a/arch/sh/kernel/cpu/sh3/setup-sh770x.c
-+++ b/arch/sh/kernel/cpu/sh3/setup-sh770x.c
-@@ -234,7 +234,7 @@ static struct platform_device *sh770x_early_devices[] __initdata = {
- 
- void __init plat_early_device_setup(void)
- {
--	early_platform_add_devices(sh770x_early_devices,
-+	sh_early_platform_add_devices(sh770x_early_devices,
- 				   ARRAY_SIZE(sh770x_early_devices));
- }
- 
-diff --git a/arch/sh/kernel/cpu/sh3/setup-sh7710.c b/arch/sh/kernel/cpu/sh3/setup-sh7710.c
-index 780ccd202bab..fb680bae22c3 100644
---- a/arch/sh/kernel/cpu/sh3/setup-sh7710.c
-+++ b/arch/sh/kernel/cpu/sh3/setup-sh7710.c
-@@ -181,7 +181,7 @@ static struct platform_device *sh7710_early_devices[] __initdata = {
- 
- void __init plat_early_device_setup(void)
- {
--	early_platform_add_devices(sh7710_early_devices,
-+	sh_early_platform_add_devices(sh7710_early_devices,
- 				   ARRAY_SIZE(sh7710_early_devices));
- }
- 
-diff --git a/arch/sh/kernel/cpu/sh3/setup-sh7720.c b/arch/sh/kernel/cpu/sh3/setup-sh7720.c
-index 723bd9c04c8a..faf084cbbbed 100644
---- a/arch/sh/kernel/cpu/sh3/setup-sh7720.c
-+++ b/arch/sh/kernel/cpu/sh3/setup-sh7720.c
-@@ -215,7 +215,7 @@ static struct platform_device *sh7720_early_devices[] __initdata = {
- 
- void __init plat_early_device_setup(void)
- {
--	early_platform_add_devices(sh7720_early_devices,
-+	sh_early_platform_add_devices(sh7720_early_devices,
- 				   ARRAY_SIZE(sh7720_early_devices));
- }
- 
-diff --git a/arch/sh/kernel/cpu/sh4/setup-sh4-202.c b/arch/sh/kernel/cpu/sh4/setup-sh4-202.c
-index 4a5fa86006cd..123b848368d4 100644
---- a/arch/sh/kernel/cpu/sh4/setup-sh4-202.c
-+++ b/arch/sh/kernel/cpu/sh4/setup-sh4-202.c
-@@ -80,7 +80,7 @@ static struct platform_device *sh4202_early_devices[] __initdata = {
- 
- void __init plat_early_device_setup(void)
- {
--	early_platform_add_devices(sh4202_early_devices,
-+	sh_early_platform_add_devices(sh4202_early_devices,
- 				   ARRAY_SIZE(sh4202_early_devices));
- }
- 
-diff --git a/arch/sh/kernel/cpu/sh4/setup-sh7750.c b/arch/sh/kernel/cpu/sh4/setup-sh7750.c
-index abb3703c2273..8f6c83b745db 100644
---- a/arch/sh/kernel/cpu/sh4/setup-sh7750.c
-+++ b/arch/sh/kernel/cpu/sh4/setup-sh7750.c
-@@ -165,15 +165,15 @@ void __init plat_early_device_setup(void)
- 	if (mach_is_rts7751r2d()) {
- 		scif_platform_data.scscr |= SCSCR_CKE1;
- 		dev[0] = &scif_device;
--		early_platform_add_devices(dev, 1);
-+		sh_early_platform_add_devices(dev, 1);
- 	} else {
- 		dev[0] = &sci_device;
--		early_platform_add_devices(dev, 1);
-+		sh_early_platform_add_devices(dev, 1);
- 		dev[0] = &scif_device;
--		early_platform_add_devices(dev, 1);
-+		sh_early_platform_add_devices(dev, 1);
- 	}
- 
--	early_platform_add_devices(sh7750_early_devices,
-+	sh_early_platform_add_devices(sh7750_early_devices,
- 				   ARRAY_SIZE(sh7750_early_devices));
- }
- 
-diff --git a/arch/sh/kernel/cpu/sh4/setup-sh7760.c b/arch/sh/kernel/cpu/sh4/setup-sh7760.c
-index 649f4dcb5935..ab8cc1826d8c 100644
---- a/arch/sh/kernel/cpu/sh4/setup-sh7760.c
-+++ b/arch/sh/kernel/cpu/sh4/setup-sh7760.c
-@@ -275,7 +275,7 @@ static struct platform_device *sh7760_early_devices[] __initdata = {
- 
- void __init plat_early_device_setup(void)
- {
--	early_platform_add_devices(sh7760_early_devices,
-+	sh_early_platform_add_devices(sh7760_early_devices,
- 				   ARRAY_SIZE(sh7760_early_devices));
- }
- 
-diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7343.c b/arch/sh/kernel/cpu/sh4a/setup-sh7343.c
-index 73715a635048..a3ff0803b62e 100644
---- a/arch/sh/kernel/cpu/sh4a/setup-sh7343.c
-+++ b/arch/sh/kernel/cpu/sh4a/setup-sh7343.c
-@@ -300,7 +300,7 @@ static struct platform_device *sh7343_early_devices[] __initdata = {
- 
- void __init plat_early_device_setup(void)
- {
--	early_platform_add_devices(sh7343_early_devices,
-+	sh_early_platform_add_devices(sh7343_early_devices,
- 				   ARRAY_SIZE(sh7343_early_devices));
- }
- 
-diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7366.c b/arch/sh/kernel/cpu/sh4a/setup-sh7366.c
-index 942856048112..2ad400fef830 100644
---- a/arch/sh/kernel/cpu/sh4a/setup-sh7366.c
-+++ b/arch/sh/kernel/cpu/sh4a/setup-sh7366.c
-@@ -244,7 +244,7 @@ static struct platform_device *sh7366_early_devices[] __initdata = {
- 
- void __init plat_early_device_setup(void)
- {
--	early_platform_add_devices(sh7366_early_devices,
-+	sh_early_platform_add_devices(sh7366_early_devices,
- 				   ARRAY_SIZE(sh7366_early_devices));
- }
- 
-diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7722.c b/arch/sh/kernel/cpu/sh4a/setup-sh7722.c
-index bf60456a8012..01e687d72c16 100644
---- a/arch/sh/kernel/cpu/sh4a/setup-sh7722.c
-+++ b/arch/sh/kernel/cpu/sh4a/setup-sh7722.c
-@@ -516,7 +516,7 @@ static struct platform_device *sh7722_early_devices[] __initdata = {
- 
- void __init plat_early_device_setup(void)
- {
--	early_platform_add_devices(sh7722_early_devices,
-+	sh_early_platform_add_devices(sh7722_early_devices,
- 				   ARRAY_SIZE(sh7722_early_devices));
- }
- 
-diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7723.c b/arch/sh/kernel/cpu/sh4a/setup-sh7723.c
-index d25d3c3b44ab..6738c39413b2 100644
---- a/arch/sh/kernel/cpu/sh4a/setup-sh7723.c
-+++ b/arch/sh/kernel/cpu/sh4a/setup-sh7723.c
-@@ -414,7 +414,7 @@ static struct platform_device *sh7723_early_devices[] __initdata = {
- 
- void __init plat_early_device_setup(void)
- {
--	early_platform_add_devices(sh7723_early_devices,
-+	sh_early_platform_add_devices(sh7723_early_devices,
- 				   ARRAY_SIZE(sh7723_early_devices));
- }
- 
-diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7724.c b/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
-index 0eeadabc8065..0163750a3fb0 100644
---- a/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
-+++ b/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
-@@ -834,7 +834,7 @@ static struct platform_device *sh7724_early_devices[] __initdata = {
- 
- void __init plat_early_device_setup(void)
- {
--	early_platform_add_devices(sh7724_early_devices,
-+	sh_early_platform_add_devices(sh7724_early_devices,
- 				   ARRAY_SIZE(sh7724_early_devices));
- }
- 
-diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7734.c b/arch/sh/kernel/cpu/sh4a/setup-sh7734.c
-index bed9d01fa85f..d3760029f0f3 100644
---- a/arch/sh/kernel/cpu/sh4a/setup-sh7734.c
-+++ b/arch/sh/kernel/cpu/sh4a/setup-sh7734.c
-@@ -284,7 +284,7 @@ static struct platform_device *sh7734_early_devices[] __initdata = {
- 
- void __init plat_early_device_setup(void)
- {
--	early_platform_add_devices(sh7734_early_devices,
-+	sh_early_platform_add_devices(sh7734_early_devices,
- 		ARRAY_SIZE(sh7734_early_devices));
- }
- 
-diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7757.c b/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
-index b5b19e81a8dc..25d655ab4114 100644
---- a/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
-+++ b/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
-@@ -771,7 +771,7 @@ static struct platform_device *sh7757_early_devices[] __initdata = {
- 
- void __init plat_early_device_setup(void)
- {
--	early_platform_add_devices(sh7757_early_devices,
-+	sh_early_platform_add_devices(sh7757_early_devices,
- 				   ARRAY_SIZE(sh7757_early_devices));
- }
- 
-diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7763.c b/arch/sh/kernel/cpu/sh4a/setup-sh7763.c
-index 51a6c64f860e..42f234efaa42 100644
---- a/arch/sh/kernel/cpu/sh4a/setup-sh7763.c
-+++ b/arch/sh/kernel/cpu/sh4a/setup-sh7763.c
-@@ -225,7 +225,7 @@ static struct platform_device *sh7763_early_devices[] __initdata = {
- 
- void __init plat_early_device_setup(void)
- {
--	early_platform_add_devices(sh7763_early_devices,
-+	sh_early_platform_add_devices(sh7763_early_devices,
- 				   ARRAY_SIZE(sh7763_early_devices));
- }
- 
-diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7770.c b/arch/sh/kernel/cpu/sh4a/setup-sh7770.c
-index 77f228e20599..35420329f5e1 100644
---- a/arch/sh/kernel/cpu/sh4a/setup-sh7770.c
-+++ b/arch/sh/kernel/cpu/sh4a/setup-sh7770.c
-@@ -320,7 +320,7 @@ static struct platform_device *sh7770_early_devices[] __initdata = {
- 
- void __init plat_early_device_setup(void)
- {
--	early_platform_add_devices(sh7770_early_devices,
-+	sh_early_platform_add_devices(sh7770_early_devices,
- 				   ARRAY_SIZE(sh7770_early_devices));
- }
- 
-diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7780.c b/arch/sh/kernel/cpu/sh4a/setup-sh7780.c
-index 1e8dc7480330..04d63081b9ff 100644
---- a/arch/sh/kernel/cpu/sh4a/setup-sh7780.c
-+++ b/arch/sh/kernel/cpu/sh4a/setup-sh7780.c
-@@ -290,7 +290,7 @@ void __init plat_early_device_setup(void)
- 		scif1_platform_data.scscr &= ~SCSCR_CKE1;
- 	}
- 
--	early_platform_add_devices(sh7780_early_devices,
-+	sh_early_platform_add_devices(sh7780_early_devices,
- 				   ARRAY_SIZE(sh7780_early_devices));
- }
- 
-diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7785.c b/arch/sh/kernel/cpu/sh4a/setup-sh7785.c
-index eda0d61ebf71..eb3c003223e2 100644
---- a/arch/sh/kernel/cpu/sh4a/setup-sh7785.c
-+++ b/arch/sh/kernel/cpu/sh4a/setup-sh7785.c
-@@ -357,7 +357,7 @@ static struct platform_device *sh7785_early_devices[] __initdata = {
- 
- void __init plat_early_device_setup(void)
- {
--	early_platform_add_devices(sh7785_early_devices,
-+	sh_early_platform_add_devices(sh7785_early_devices,
- 				   ARRAY_SIZE(sh7785_early_devices));
- }
- 
-diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7786.c b/arch/sh/kernel/cpu/sh4a/setup-sh7786.c
-index 77226a60c36f..46473345cb79 100644
---- a/arch/sh/kernel/cpu/sh4a/setup-sh7786.c
-+++ b/arch/sh/kernel/cpu/sh4a/setup-sh7786.c
-@@ -838,6 +838,6 @@ arch_initcall(sh7786_devices_setup);
- 
- void __init plat_early_device_setup(void)
- {
--	early_platform_add_devices(sh7786_early_devices,
-+	sh_early_platform_add_devices(sh7786_early_devices,
- 				   ARRAY_SIZE(sh7786_early_devices));
- }
-diff --git a/arch/sh/kernel/cpu/sh4a/setup-shx3.c b/arch/sh/kernel/cpu/sh4a/setup-shx3.c
-index 83feaf0a4aae..c531182425f7 100644
---- a/arch/sh/kernel/cpu/sh4a/setup-shx3.c
-+++ b/arch/sh/kernel/cpu/sh4a/setup-shx3.c
-@@ -156,7 +156,7 @@ arch_initcall(shx3_devices_setup);
- 
- void __init plat_early_device_setup(void)
- {
--	early_platform_add_devices(shx3_early_devices,
-+	sh_early_platform_add_devices(shx3_early_devices,
- 				   ARRAY_SIZE(shx3_early_devices));
- }
- 
-diff --git a/arch/sh/kernel/cpu/sh5/setup-sh5.c b/arch/sh/kernel/cpu/sh5/setup-sh5.c
-index 8ebd26a9fd90..034bb36bfdc2 100644
---- a/arch/sh/kernel/cpu/sh5/setup-sh5.c
-+++ b/arch/sh/kernel/cpu/sh5/setup-sh5.c
-@@ -119,6 +119,6 @@ arch_initcall(sh5_devices_setup);
- 
- void __init plat_early_device_setup(void)
- {
--	early_platform_add_devices(sh5_early_devices,
-+	sh_early_platform_add_devices(sh5_early_devices,
- 				   ARRAY_SIZE(sh5_early_devices));
- }
-diff --git a/arch/sh/kernel/setup.c b/arch/sh/kernel/setup.c
-index c9610a2b0888..4713d544b4c4 100644
---- a/arch/sh/kernel/setup.c
-+++ b/arch/sh/kernel/setup.c
-@@ -329,7 +329,7 @@ void __init setup_arch(char **cmdline_p)
- 	sh_mv_setup();
- 
- 	/* Let earlyprintk output early console messages */
--	early_platform_driver_probe("earlyprintk", 1, 1);
-+	sh_early_platform_driver_probe("earlyprintk", 1, 1);
- 
- #ifdef CONFIG_OF_FLATTREE
- #ifdef CONFIG_USE_BUILTIN_DTB
-diff --git a/arch/sh/kernel/time.c b/arch/sh/kernel/time.c
-index 674d8413491b..9c460a74e3c2 100644
---- a/arch/sh/kernel/time.c
-+++ b/arch/sh/kernel/time.c
-@@ -105,8 +105,8 @@ static void __init sh_late_time_init(void)
- 	 * clocksource and the jiffies clocksource is used transparently
- 	 * instead. No error handling is necessary here.
- 	 */
--	early_platform_driver_register_all("earlytimer");
--	early_platform_driver_probe("earlytimer", 2, 0);
-+	sh_early_platform_driver_register_all("earlytimer");
-+	sh_early_platform_driver_probe("earlytimer", 2, 0);
- }
- 
- void __init time_init(void)
-diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
-index ac1905f96945..49736e0e5c4d 100644
---- a/drivers/clocksource/sh_cmt.c
-+++ b/drivers/clocksource/sh_cmt.c
-@@ -1048,7 +1048,7 @@ static int sh_cmt_probe(struct platform_device *pdev)
- 	int ret;
- 
- #ifdef CONFIG_SUPERH
--	if (!is_early_platform_device(pdev)) {
-+	if (!is_sh_early_platform_device(pdev)) {
- 		pm_runtime_set_active(&pdev->dev);
- 		pm_runtime_enable(&pdev->dev);
- 	}
-@@ -1070,7 +1070,7 @@ static int sh_cmt_probe(struct platform_device *pdev)
- 		return ret;
- 	}
- #ifdef CONFIG_SUPERH
--	if (is_early_platform_device(pdev))
-+	if (is_sh_early_platform_device(pdev))
- 		return 0;
- #endif
- 
-@@ -1109,7 +1109,7 @@ static void __exit sh_cmt_exit(void)
- }
- 
- #ifdef CONFIG_SUPERH
--early_platform_init("earlytimer", &sh_cmt_device_driver);
-+sh_early_platform_init("earlytimer", &sh_cmt_device_driver);
- #endif
- 
- subsys_initcall(sh_cmt_init);
-diff --git a/drivers/clocksource/sh_mtu2.c b/drivers/clocksource/sh_mtu2.c
-index 3c8aad8f58c6..480a51faa314 100644
---- a/drivers/clocksource/sh_mtu2.c
-+++ b/drivers/clocksource/sh_mtu2.c
-@@ -455,7 +455,7 @@ static int sh_mtu2_probe(struct platform_device *pdev)
- 	int ret;
- 
- #ifdef CONFIG_SUPERH
--	if (!is_early_platform_device(pdev)) {
-+	if (!is_sh_early_platform_device(pdev)) {
- 		pm_runtime_set_active(&pdev->dev);
- 		pm_runtime_enable(&pdev->dev);
- 	}
-@@ -477,7 +477,7 @@ static int sh_mtu2_probe(struct platform_device *pdev)
- 		return ret;
- 	}
- #ifdef CONFIG_SUPERH
--	if (is_early_platform_device(pdev))
-+	if (is_sh_early_platform_device(pdev))
- 		return 0;
- #endif
- 
-@@ -528,7 +528,7 @@ static void __exit sh_mtu2_exit(void)
- }
- 
- #ifdef CONFIG_SUPERH
--early_platform_init("earlytimer", &sh_mtu2_device_driver);
-+sh_early_platform_init("earlytimer", &sh_mtu2_device_driver);
- #endif
- 
- subsys_initcall(sh_mtu2_init);
-diff --git a/drivers/clocksource/sh_tmu.c b/drivers/clocksource/sh_tmu.c
-index c42ab459abc5..546bb6246155 100644
---- a/drivers/clocksource/sh_tmu.c
-+++ b/drivers/clocksource/sh_tmu.c
-@@ -611,7 +611,7 @@ static int sh_tmu_probe(struct platform_device *pdev)
- 	int ret;
- 
- #ifdef CONFIG_SUPERH
--	if (!is_early_platform_device(pdev)) {
-+	if (!is_sh_early_platform_device(pdev)) {
- 		pm_runtime_set_active(&pdev->dev);
- 		pm_runtime_enable(&pdev->dev);
- 	}
-@@ -634,7 +634,7 @@ static int sh_tmu_probe(struct platform_device *pdev)
- 	}
- 
- #ifdef CONFIG_SUPERH
--	if (is_early_platform_device(pdev))
-+	if (is_sh_early_platform_device(pdev))
- 		return 0;
- #endif
- 
-@@ -686,7 +686,7 @@ static void __exit sh_tmu_exit(void)
- }
- 
- #ifdef CONFIG_SUPERH
--early_platform_init("earlytimer", &sh_tmu_device_driver);
-+sh_early_platform_init("earlytimer", &sh_tmu_device_driver);
- #endif
- 
- subsys_initcall(sh_tmu_init);
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 37faf3d8d647..2f9bd1900444 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -3196,7 +3196,7 @@ static int sci_probe(struct platform_device *dev)
- 	 * to make it beyond this yet.
- 	 */
- #ifdef CONFIG_SUPERH
--	if (is_early_platform_device(dev))
-+	if (is_sh_early_platform_device(dev))
- 		return sci_probe_earlyprintk(dev);
- #endif
- 
-@@ -3295,7 +3295,7 @@ static void __exit sci_exit(void)
- }
- 
- #if defined(CONFIG_SUPERH) && defined(CONFIG_SERIAL_SH_SCI_CONSOLE)
--early_platform_init_buffer("earlyprintk", &sci_driver,
-+sh_early_platform_init_buffer("earlyprintk", &sci_driver,
- 			   early_serial_buf, ARRAY_SIZE(early_serial_buf));
- #endif
- #ifdef CONFIG_SERIAL_SH_SCI_EARLYCON
+-
+-const struct dma_map_ops pa11_dma_ops = {
+-	.alloc =		pa11_dma_alloc,
+-	.free =			pa11_dma_free,
+-	.map_page =		pa11_dma_map_page,
+-	.unmap_page =		pa11_dma_unmap_page,
+-	.map_sg =		pa11_dma_map_sg,
+-	.unmap_sg =		pa11_dma_unmap_sg,
+-	.sync_single_for_cpu =	pa11_dma_sync_single_for_cpu,
+-	.sync_single_for_device = pa11_dma_sync_single_for_device,
+-	.sync_sg_for_cpu =	pa11_dma_sync_sg_for_cpu,
+-	.sync_sg_for_device =	pa11_dma_sync_sg_for_device,
+-	.cache_sync =		pa11_dma_cache_sync,
+-};
+diff --git a/arch/parisc/kernel/setup.c b/arch/parisc/kernel/setup.c
+index 5c8450a22255..4e87c35c22b7 100644
+--- a/arch/parisc/kernel/setup.c
++++ b/arch/parisc/kernel/setup.c
+@@ -102,7 +102,7 @@ void __init dma_ops_init(void)
+ 	case pcxl: /* falls through */
+ 	case pcxs:
+ 	case pcxt:
+-		hppa_dma_ops = &pa11_dma_ops;
++		hppa_dma_ops = &dma_noncoherent_ops;
+ 		break;
+ 	default:
+ 		break;
 -- 
 2.17.0
 
