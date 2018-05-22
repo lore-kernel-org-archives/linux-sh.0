@@ -1,36 +1,53 @@
-From: Rich Felker <dalias@libc.org>
-Date: Sat, 05 May 2018 20:45:13 +0000
-Subject: Re: [PATCH v3] sh: mm: Fix unprotected access to struct device
-Message-Id: <20180505204513.GF1392@brightrain.aerifal.cx>
+From: Christoph Hellwig <hch@lst.de>
+Date: Tue, 22 May 2018 12:04:06 +0000
+Subject: [PATCH 01/25] hexagon: remove the sync_single_for_cpu DMA operation
+Message-Id: <20180522120430.28709-2-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1524044555-20610-1-git-send-email-jacopo+renesas@jmondi.org>
- <20180502074600.GC27261@w540>
- <20180502123909.GA9546@infradead.org>
- <20180503071539.GA19612@w540>
-In-Reply-To: <20180503071539.GA19612@w540>
+References: <20180522120430.28709-1-hch@lst.de>
+In-Reply-To: <20180522120430.28709-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: jacopo mondi <jacopo@jmondi.org>
-Cc: Christoph Hellwig <hch@infradead.org>, ysato@users.sourceforge.jp, thomas.petazzoni@free-electrons.com, robin.murphy@arm.com, geert@linux-m68k.org, sergei.shtylyov@cogentembedded.com, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: iommu@lists.linux-foundation.org
+Cc: linux-arch@vger.kernel.org, Michal Simek <monstr@monstr.eu>, Greentime Hu <green.hu@gmail.com>, Vincent Chen <deanbo422@gmail.com>, linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org, linux-c6x-dev@linux-c6x.org, linux-hexagon@vger.kernel.org, linux-m68k@lists.linux-m68k.org, nios2-dev@lists.rocketboards.org, openrisc@lists.librecores.org, linux-parisc@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-kernel@vger.kernel.org
 
-On Thu, May 03, 2018 at 09:15:39AM +0200, jacopo mondi wrote:
-> Hi Christoph,
-> 
-> On Wed, May 02, 2018 at 05:39:09AM -0700, Christoph Hellwig wrote:
-> > On Wed, May 02, 2018 at 09:46:31AM +0200, jacopo mondi wrote:
-> > > Hi again Christoph,
-> > >
-> > >     The gentle ping actually applies to this version of the patch.
-> > >
-> > > Sorry for the confusion.
-> >
-> > I'd expect this to go in through the sh tree, but if the sh maintainers
-> > are fine with it I can take it through the dma-mapping tree.
-> 
-> Oh, that's fine then. I'll let Rich comment if he plans to send a pull
-> requets for v4.17 fixes or not.
+hexagon does all the required cache maintainance at dma map time, and none
+at unmap time.  It thus has to implement sync_single_for_device to match
+the map cace for buffer reuse, but there is no point in doing another
+invalidation in the sync_single_cpu_case, which in terms of cache
+maintainance is equivalent to the unmap case.
 
-OK, I'll prepare a pull request with this and another fix I just made.
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+---
+ arch/hexagon/kernel/dma.c | 8 --------
+ 1 file changed, 8 deletions(-)
 
-Rich
+diff --git a/arch/hexagon/kernel/dma.c b/arch/hexagon/kernel/dma.c
+index 77459df34e2e..d2b717f352f4 100644
+--- a/arch/hexagon/kernel/dma.c
++++ b/arch/hexagon/kernel/dma.c
+@@ -181,13 +181,6 @@ static dma_addr_t hexagon_map_page(struct device *dev, struct page *page,
+ 	return bus;
+ }
+ 
+-static void hexagon_sync_single_for_cpu(struct device *dev,
+-					dma_addr_t dma_handle, size_t size,
+-					enum dma_data_direction dir)
+-{
+-	dma_sync(dma_addr_to_virt(dma_handle), size, dir);
+-}
+-
+ static void hexagon_sync_single_for_device(struct device *dev,
+ 					dma_addr_t dma_handle, size_t size,
+ 					enum dma_data_direction dir)
+@@ -205,7 +198,6 @@ const struct dma_map_ops hexagon_dma_ops = {
+ 	.free		= hexagon_free_coherent,
+ 	.map_sg		= hexagon_map_sg,
+ 	.map_page	= hexagon_map_page,
+-	.sync_single_for_cpu = hexagon_sync_single_for_cpu,
+ 	.sync_single_for_device = hexagon_sync_single_for_device,
+ 	.mapping_error	= hexagon_mapping_error,
+ };
+-- 
+2.17.0
+
