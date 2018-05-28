@@ -1,51 +1,75 @@
-From: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-Date: Fri, 18 May 2018 09:01:41 +0000
-Subject: Re: [PATCH 4.9 27/33] futex: Remove duplicated code and fix undefined behaviour
-Message-Id: <20180518090141.GA10227@kroah.com>
+From: Jacopo Mondi <jacopo+renesas@jmondi.org>
+Date: Mon, 28 May 2018 16:37:06 +0000
+Subject: [PATCH 0/5] Remove sh_mobile_ceu_camera from arch/sh
+Message-Id: <1527525431-22852-1-git-send-email-jacopo+renesas@jmondi.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180518081535.096308218@linuxfoundation.org>
- <20180518081536.166573281@linuxfoundation.org>
- <e8dc5f94-3b52-dcf0-3b5e-b442bde7d803@suse.cz>
-In-Reply-To: <e8dc5f94-3b52-dcf0-3b5e-b442bde7d803@suse.cz>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
-To: Jiri Slaby <jslaby@suse.cz>
-Cc: linux-kernel@vger.kernel.org, stable@vger.kernel.org, Thomas Gleixner <tglx@linutronix.de>, Russell King <rmk+kernel@armlinux.org.uk>, "Darren Hart (VMware)" <dvhart@infradead.org>, linux-mips@linux-mips.org, Rich Felker <dalias@libc.org>, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, peterz@infradead.org, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Max Filippov <jcmvbkbc@gmail.com>, Paul Mackerras <paulus@samba.org>, sparclinux@vger.kernel.org, Jonas Bonn <jonas@southpole.se>, linux-s390@vger.kernel.org, linux-arch@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-hexagon@vger.kernel.org, Helge Deller <deller@gmx.de>, "James E.J. Bottomley" <jejb@parisc-linux.org>, Catalin Marinas <catalin.marinas@arm.com>, Matt Turner <matt>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: hverkuil@xs4all.nl, laurent.pinchart@ideasonboard.com, sakari.ailus@iki.fi, mchehab@kernel.org, ysato@users.sourceforge.jp, dalias@libc.org
+Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>, linux-renesas-soc@vger.kernel.org, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-On Fri, May 18, 2018 at 10:30:24AM +0200, Jiri Slaby wrote:
-> On 05/18/2018, 10:16 AM, Greg Kroah-Hartman wrote:
-> > 4.9-stable review patch.  If anyone has any objections, please let me k=
-now.
-> >=20
-> > ------------------
-> >=20
-> > From: Jiri Slaby <jslaby@suse.cz>
-> >=20
-> > commit 30d6e0a4190d37740e9447e4e4815f06992dd8c3 upstream.
-> ...
-> > --- a/kernel/futex.c
-> > +++ b/kernel/futex.c
-> > @@ -1458,6 +1458,45 @@ out:
-> >  	return ret;
-> >  }
-> > =20
-> > +static int futex_atomic_op_inuser(unsigned int encoded_op, u32 __user =
-*uaddr)
-> > +{
-> > +	unsigned int op =3D	  (encoded_op & 0x70000000) >> 28;
-> > +	unsigned int cmp =3D	  (encoded_op & 0x0f000000) >> 24;
-> > +	int oparg =3D sign_extend32((encoded_op & 0x00fff000) >> 12, 12);
-> > +	int cmparg =3D sign_extend32(encoded_op & 0x00000fff, 12);
->=20
-> 12 is wrong here =E2=80=93 wherever you apply this, you need also a follo=
-w-up fix:
-> commit d70ef22892ed6c066e51e118b225923c9b74af34
-> Author: Jiri Slaby <jslaby@suse.cz>
-> Date:   Thu Nov 30 15:35:44 2017 +0100
->=20
->     futex: futex_wake_op, fix sign_extend32 sign bits
+Hello,
+    this series removes dependencies on the soc_camera based
+sh_mobile_ceu_camera driver from 3 board files in arch/sh and from one
+sensor driver used by one of those boards.
 
-Thanks for letting me know, I've now queued it up to the needed trees.
+Hans, this means there are no more user of the soc_camera framework that I know
+of in Linux, and I guess we can now plan of to remove that framework.
 
-greg k-h
+A note on the sensor driver: I haven't been able to find any documentation
+for the SHARP RJ54N1CB0C sensor and so I inferred as much as possible from the
+existing code. It seems to me that the sensor needs to power-up/enable gpios
+(both active high) and I have registered them from the kfr2r09 board file,
+assuming this was not a platform-specific design, but something the sensor
+requires. As per the previous drivers ported away from soc_camera, I'm in
+favour of moving them to staging if they do not match the quality expected
+from a modern V4L2 sensor driver. Ie. framerate control is missing, and I
+know this has been a blocker for other drivers in the past.
+
+What I've done to three board files closely resembles what I done already for
+Migo-R and Ecovec, and it listed in the single commit messages.
+
+The only tough one is probably ap325rxa, which had an additional sensor
+registered but controlled from i2c transaction of magic blobs from the board
+file. I dare to remove that sensor registration completely as it seems to me
+there is no diver for that at all in mainline.
+
+Last, this patch is based on the media tree master branch, with Akinobu Mita's
+patches on ov772x driver on top, which I strangely see only partially applied
+to the media master tree [1]
+
+Hans, as this is mostly media-related work, but mostly on SH architecture, I
+would like to ask if these should go through you or SH tree.
+
+All of that has only been compile tested. It's pretty hard to find this
+platforms around and testing would be awesome if somebody happens to have
+one of these.
+
+Thanks
+   j
+
+[1] https://patchwork.linuxtv.org/patch/49318/
+    https://patchwork.linuxtv.org/patch/49317/
+    https://patchwork.linuxtv.org/patch/49312/
+
+Jacopo Mondi (5):
+  media: i2c: Copy rj54n1cb0c soc_camera sensor driver
+  media: i2c: rj54n1: Remove soc_camera dependencies
+  arch: sh: kfr2r09: Use new renesas-ceu camera driver
+  arch: sh: ms7724se: Use new renesas-ceu camera driver
+  arch: sh: ap325rxa: Use new renesas-ceu camera driver
+
+ arch/sh/boards/mach-ap325rxa/setup.c   |  282 ++-----
+ arch/sh/boards/mach-kfr2r09/setup.c    |  216 +++--
+ arch/sh/boards/mach-se/7724/setup.c    |  120 ++-
+ arch/sh/kernel/cpu/sh4a/clock-sh7723.c |    2 +-
+ drivers/media/i2c/Kconfig              |   11 +
+ drivers/media/i2c/Makefile             |    1 +
+ drivers/media/i2c/rj54n1cb0c.c         | 1437 ++++++++++++++++++++++++++++++++
+ 7 files changed, 1710 insertions(+), 359 deletions(-)
+ create mode 100644 drivers/media/i2c/rj54n1cb0c.c
+
+--
+2.7.4
+
