@@ -1,48 +1,73 @@
 From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 08 May 2018 09:52:53 +0000
-Subject: Re: [PATCH v3] serial: sh-sci: Use spin_{try}lock_irqsave instead of open coding version
-Message-Id: <CAMuHMdV4D4uMWNxFH-RzuUV_ssEMYWZ-dbhfa=cgB57oNHiyuA@mail.gmail.com>
+Date: Mon, 28 May 2018 09:19:55 +0000
+Subject: Re: [REVIEW][PATCH 16/22] signal/sh: Use force_sig_fault where appropriate
+Message-Id: <CAMuHMdXxL+k_SitLXV1LJDHJmCY1HiUnZSk7MM64rcgs75nLiw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180508085509.31384-1-wagi@monom.org>
-In-Reply-To: <20180508085509.31384-1-wagi@monom.org>
+References: <87604mhrnb.fsf@xmission.com> <20180420143811.9994-16-ebiederm@xmission.com>
+ <20180420145514.GP3094@brightrain.aerifal.cx>
+In-Reply-To: <20180420145514.GP3094@brightrain.aerifal.cx>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Daniel Wagner <wagi@monom.org>
-Cc: Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, linux-rt-users@vger.kernel.org, "open list:SERIAL DRIVERS" <linux-serial@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Greg KH <gregkh@linuxfoundation.org>, Daniel Wagner <daniel.wagner@siemens.com>, Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+To: Rich Felker <dalias@libc.org>
+Cc: "Eric W. Biederman" <ebiederm@xmission.com>, Linux-Arch <linux-arch@vger.kernel.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Linux-sh list <linux-sh@vger.kernel.org>
 
-On Tue, May 8, 2018 at 10:55 AM, Daniel Wagner <wagi@monom.org> wrote:
-> From: Daniel Wagner <daniel.wagner@siemens.com>
->
-> Commit 40f70c03e33a ("serial: sh-sci: add locking to console write
-> function to avoid SMP lockup") copied the strategy to avoid locking
-> problems in conjuncture with the console from the UART8250
-> driver. Instead using directly spin_{try}lock_irqsave(),
-> local_irq_save() followed by spin_{try}lock() was used. While this is
-> correct on mainline, for -rt it is a problem. spin_{try}lock() will
-> check if it is running in a valid context. Since the local_irq_save()
-> has already been executed, the context has changed and
-> spin_{try}lock() will complain. The reason why spin_{try}lock()
-> complains is that on -rt the spin locks are turned into mutexes and
-> therefore can sleep. Sleeping with interrupts disabled is not valid.
+On Fri, Apr 20, 2018 at 4:55 PM, Rich Felker <dalias@libc.org> wrote:
+> On Fri, Apr 20, 2018 at 09:38:05AM -0500, Eric W. Biederman wrote:
+>> Filling in struct siginfo before calling force_sig_info a tedious and
+>> error prone process, where once in a great while the wrong fields
+>> are filled out, and siginfo has been inconsistently cleared.
+>>
+>> Simplify this process by using the helper force_sig_fault.  Which
+>> takes as a parameters all of the information it needs, ensures
+>> all of the fiddly bits of filling in struct siginfo are done properly
+>> and then calls force_sig_info.
+>>
+>> In short about a 5 line reduction in code for every time force_sig_info
+>> is called, which makes the calling function clearer.
+>>
+>> Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+>> Cc: Rich Felker <dalias@libc.org>
+>> Cc: linux-sh@vger.kernel.org
+>> Signed-off-by: "Eric W. Biederman" <ebiederm@xmission.com>
 
-[...]
+>> --- a/arch/sh/kernel/traps_32.c
+>> +++ b/arch/sh/kernel/traps_32.c
 
-> Cc: Geert Uytterhoeven <geert@linux-m68k.org>
-> Cc: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
-> Signed-off-by: Daniel Wagner <daniel.wagner@siemens.com>
-> ---
-> changes since v2:
->  - dropped the local_irq_save() it's wrong as Sebastian pointed out
->
-> changes since v1:
->  - Ported to current mainline (initial version was against v4.4.y)
->  - Left local_irq_save() in place when spinlocks are not used as suggested
->    by Geert.
+>> @@ -599,20 +593,17 @@ int is_dsp_inst(struct pt_regs *regs)
+>>  #ifdef CONFIG_CPU_SH2A
+>>  asmlinkage void do_divide_error(unsigned long r4)
+>>  {
+>> -     siginfo_t info;
+>> +     int code;
+>>
+>> -     clear_siginfo(&info);
+>>       switch (r4) {
+>>       case TRAP_DIVZERO_ERROR:
+>> -             info.si_code = FPE_INTDIV;
+>> +             code = FPE_INTDIV;
+>>               break;
+>>       case TRAP_DIVOVF_ERROR:
+>> -             info.si_code = FPE_INTOVF;
+>> +             code = FPE_INTOVF;
+>>               break;
+>>       }
+>> -
+>> -     info.si_signo = SIGFPE;
+>> -     force_sig_info(info.si_signo, &info, current);
+>> +     force_sig_fault(SIGFPE, code, NULL, current);
 
-Thanks for the update!
+/kisskb/src/arch/sh/kernel/traps_32.c:606:17: error: 'code' may be
+used uninitialized in this function [-Werror=uninitialized]
 
-Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+http://kisskb.ellerman.id.au/kisskb/buildresult/13366052/
+http://kisskb.ellerman.id.au/kisskb/buildresult/13366048/
+http://kisskb.ellerman.id.au/kisskb/buildresult/13366072/
+
+>>  }
+
+> Acked-by: Rich Felker <dalias@libc.org>
+
 
 Gr{oetje,eeting}s,
 
