@@ -1,75 +1,43 @@
-From: Jacopo Mondi <jacopo+renesas@jmondi.org>
-Date: Mon, 28 May 2018 16:37:06 +0000
-Subject: [PATCH 0/5] Remove sh_mobile_ceu_camera from arch/sh
-Message-Id: <1527525431-22852-1-git-send-email-jacopo+renesas@jmondi.org>
+From: Luc Van Oostenryck <luc.vanoostenryck@gmail.com>
+Date: Mon, 28 May 2018 16:40:18 +0000
+Subject: [PATCH] sh: pass machine size to sparse
+Message-Id: <20180528164018.16064-1-luc.vanoostenryck@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20171031172220.10186-1-luc.vanoostenryck@gmail.com>
+In-Reply-To: <20171031172220.10186-1-luc.vanoostenryck@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: hverkuil@xs4all.nl, laurent.pinchart@ideasonboard.com, sakari.ailus@iki.fi, mchehab@kernel.org, ysato@users.sourceforge.jp, dalias@libc.org
-Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>, linux-renesas-soc@vger.kernel.org, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Luc Van Oostenryck <luc.vanoostenryck@gmail.com>
 
-Hello,
-    this series removes dependencies on the soc_camera based
-sh_mobile_ceu_camera driver from 3 board files in arch/sh and from one
-sensor driver used by one of those boards.
+By default, sparse assumes a 64bit machine when compiled on x86-64
+and 32bit when compiled on anything else.
 
-Hans, this means there are no more user of the soc_camera framework that I know
-of in Linux, and I guess we can now plan of to remove that framework.
+This can of course create all sort of problems, like issuing false
+warnings like: 'shift too big (32) for type unsigned long', or
+worse, to not emit legitimate warnings.
 
-A note on the sensor driver: I haven't been able to find any documentation
-for the SHARP RJ54N1CB0C sensor and so I inferred as much as possible from the
-existing code. It seems to me that the sensor needs to power-up/enable gpios
-(both active high) and I have registered them from the kfr2r09 board file,
-assuming this was not a platform-specific design, but something the sensor
-requires. As per the previous drivers ported away from soc_camera, I'm in
-favour of moving them to staging if they do not match the quality expected
-from a modern V4L2 sensor driver. Ie. framerate control is missing, and I
-know this has been a blocker for other drivers in the past.
+Fix this by passing to sparse the appropriate -m32/-m64 flag
 
-What I've done to three board files closely resembles what I done already for
-Migo-R and Ecovec, and it listed in the single commit messages.
+Signed-off-by: Luc Van Oostenryck <luc.vanoostenryck@gmail.com>
+---
+ arch/sh/Makefile | 2 ++
+ 1 file changed, 2 insertions(+)
 
-The only tough one is probably ap325rxa, which had an additional sensor
-registered but controlled from i2c transaction of magic blobs from the board
-file. I dare to remove that sensor registration completely as it seems to me
-there is no diver for that at all in mainline.
-
-Last, this patch is based on the media tree master branch, with Akinobu Mita's
-patches on ov772x driver on top, which I strangely see only partially applied
-to the media master tree [1]
-
-Hans, as this is mostly media-related work, but mostly on SH architecture, I
-would like to ask if these should go through you or SH tree.
-
-All of that has only been compile tested. It's pretty hard to find this
-platforms around and testing would be awesome if somebody happens to have
-one of these.
-
-Thanks
-   j
-
-[1] https://patchwork.linuxtv.org/patch/49318/
-    https://patchwork.linuxtv.org/patch/49317/
-    https://patchwork.linuxtv.org/patch/49312/
-
-Jacopo Mondi (5):
-  media: i2c: Copy rj54n1cb0c soc_camera sensor driver
-  media: i2c: rj54n1: Remove soc_camera dependencies
-  arch: sh: kfr2r09: Use new renesas-ceu camera driver
-  arch: sh: ms7724se: Use new renesas-ceu camera driver
-  arch: sh: ap325rxa: Use new renesas-ceu camera driver
-
- arch/sh/boards/mach-ap325rxa/setup.c   |  282 ++-----
- arch/sh/boards/mach-kfr2r09/setup.c    |  216 +++--
- arch/sh/boards/mach-se/7724/setup.c    |  120 ++-
- arch/sh/kernel/cpu/sh4a/clock-sh7723.c |    2 +-
- drivers/media/i2c/Kconfig              |   11 +
- drivers/media/i2c/Makefile             |    1 +
- drivers/media/i2c/rj54n1cb0c.c         | 1437 ++++++++++++++++++++++++++++++++
- 7 files changed, 1710 insertions(+), 359 deletions(-)
- create mode 100644 drivers/media/i2c/rj54n1cb0c.c
-
---
-2.7.4
+diff --git a/arch/sh/Makefile b/arch/sh/Makefile
+index 65300193b..3a195c9d5 100644
+--- a/arch/sh/Makefile
++++ b/arch/sh/Makefile
+@@ -206,6 +206,8 @@ ifeq ($(CONFIG_DWARF_UNWINDER),y)
+   KBUILD_CFLAGS += -fasynchronous-unwind-tables
+ endif
+ 
++CHECKFLAGS += -m$(BITS)
++
+ libs-$(CONFIG_SUPERH32)		:= arch/sh/lib/	$(libs-y)
+ libs-$(CONFIG_SUPERH64)		:= arch/sh/lib64/ $(libs-y)
+ 
+-- 
+2.17.0
 
