@@ -1,52 +1,34 @@
-From: Jacopo Mondi <jacopo+renesas@jmondi.org>
-Date: Wed, 30 May 2018 09:13:24 +0000
-Subject: [PATCH] media: arch: sh: migor: Fix TW9910 PDN gpio
-Message-Id: <1527671604-18768-1-git-send-email-jacopo+renesas@jmondi.org>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 30 May 2018 09:30:49 +0000
+Subject: Re: [PATCH] media: arch: sh: migor: Fix TW9910 PDN gpio
+Message-Id: <CAMuHMdVsV9k0OjFMkQSiKCenxfEHgcZxrMU3a5eXRaCDdeA5-A@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1527671604-18768-1-git-send-email-jacopo+renesas@jmondi.org>
+In-Reply-To: <1527671604-18768-1-git-send-email-jacopo+renesas@jmondi.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: ysato@users.sourceforge.jp, dalias@libc.org, laurent.pinchart@ideasonboard.com, hans.verkuil@cisco.com
-Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>, linux-sh@vger.kernel.org, linux-media@vger.kernel.org, linux-renesas-soc@vger.kernel.org
+To: Jacopo Mondi <jacopo+renesas@jmondi.org>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hans.verkuil@cisco.com>, Linux-sh list <linux-sh@vger.kernel.org>, Linux Media Mailing List <linux-media@vger.kernel.org>, Linux-Renesas <linux-renesas-soc@vger.kernel.org>
 
-The TW9910 PDN gpio (power down) is listed as active high in the chip
-manual. It turns out it is actually active low as when set to physical
-level 0 it actually turns the video decoder power off.
+Hi Jacopo,
 
-Without this patch applied:
-tw9910 0-0045: Product ID error 1f:2
+On Wed, May 30, 2018 at 11:13 AM, Jacopo Mondi
+<jacopo+renesas@jmondi.org> wrote:
+> The TW9910 PDN gpio (power down) is listed as active high in the chip
+> manual. It turns out it is actually active low as when set to physical
+> level 0 it actually turns the video decoder power off.
 
-With this patch applied:
-tw9910 0-0045: tw9910 Product ID b:0
+So the picture "Typical TW9910 External Circuitry" in the datasheet, which
+ties PDN to GND permanently, is wrong?
 
-Fixes: commit "186c446f4b840bd77b79d3dc951ca436cb8abe79"
+Gr{oetje,eeting}s,
 
-Signed-off-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
+                        Geert
 
----
-Hi,
-   sending to both media and sh lists, as all previous CEU-related patches
-went through Hans' tree, even the board specific parts.
+-- 
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-Thanks
-   j
----
- arch/sh/boards/mach-migor/setup.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/arch/sh/boards/mach-migor/setup.c b/arch/sh/boards/mach-migor/setup.c
-index 271dfc2..3d7d004 100644
---- a/arch/sh/boards/mach-migor/setup.c
-+++ b/arch/sh/boards/mach-migor/setup.c
-@@ -359,7 +359,7 @@ static struct gpiod_lookup_table ov7725_gpios = {
- static struct gpiod_lookup_table tw9910_gpios = {
- 	.dev_id		= "0-0045",
- 	.table		= {
--		GPIO_LOOKUP("sh7722_pfc", GPIO_PTT2, "pdn", GPIO_ACTIVE_HIGH),
-+		GPIO_LOOKUP("sh7722_pfc", GPIO_PTT2, "pdn", GPIO_ACTIVE_LOW),
- 		GPIO_LOOKUP("sh7722_pfc", GPIO_PTT3, "rstb", GPIO_ACTIVE_LOW),
- 	},
- };
---
-2.7.4
-
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
