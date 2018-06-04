@@ -1,52 +1,65 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 29 Jun 2018 14:25:12 +0000
-Subject: [PATCH 3/4] serial: sh-sci: Stop TX DMA workqueue during port shutdown
-Message-Id: <20180629142513.20743-7-geert+renesas@glider.be>
+From: Masami Hiramatsu <mhiramat@kernel.org>
+Date: Mon, 04 Jun 2018 15:59:10 +0000
+Subject: [RFC PATCH -tip v5 22/27] sh: kprobes: Don't call the ->break_handler() in SH kprobes code
+Message-Id: <152812795011.10068.14489215679738766582.stgit@devbox>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180629142513.20743-1-geert+renesas@glider.be>
-In-Reply-To: <20180629142513.20743-1-geert+renesas@glider.be>
+References: <152812730943.10068.5166429445118734697.stgit@devbox>
+In-Reply-To: <152812730943.10068.5166429445118734697.stgit@devbox>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>, Wolfram Sang <wsa+renesas@sang-engineering.com>
-Cc: linux-serial@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@kernel.org>
+Cc: Masami Hiramatsu <mhiramat@kernel.org>, Ingo Molnar <mingo@redhat.com>, "H . Peter Anvin" <hpa@zytor.com>, linux-kernel@vger.kernel.org, Ananth N Mavinakayanahalli <ananth@linux.vnet.ibm.com>, Andrew Morton <akpm@linux-foundation.org>, Steven Rostedt <rostedt@goodmis.org>, linux-arch@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
 
-The transmit DMA workqueue is never stopped, hence the work function may
-be called after the port has been shut down.
+Don't call the ->break_handler() from the SH kprobes code,
+because it was only used by jprobes which got removed.
 
-Fix this race condition by cancelling queued work, if any, before DMA
-release.  Don't initialize the work if DMA initialization failed, as it
-won't be used anyway.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Masami Hiramatsu <mhiramat@kernel.org>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+Cc: linux-sh@vger.kernel.org
 ---
- drivers/tty/serial/sh-sci.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ arch/sh/kernel/kprobes.c |   14 +-------------
+ 1 file changed, 1 insertion(+), 13 deletions(-)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 061660ccf9442d02..58016386558c6789 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -1704,6 +1704,7 @@ static void sci_tx_dma_release(struct sci_port *s)
- 	struct dma_chan *chan = s->chan_tx_saved;
- 	struct uart_port *port = &s->port;
- 
-+	cancel_work_sync(&s->work_tx);
- dev_dbg_dma(port->dev, "%s\n", __func__);
- 	s->chan_tx_saved = s->chan_tx = NULL;
- 	s->cookie_tx = -EINVAL;
-@@ -1978,10 +1979,9 @@ static void sci_request_dma(struct uart_port *port)
- 				UART_XMIT_SIZE,
- 				port->state->xmit.buf, &s->tx_dma_addr);
- 
-+			INIT_WORK(&s->work_tx, work_fn_tx);
- 			s->chan_tx_saved = s->chan_tx = chan;
+diff --git a/arch/sh/kernel/kprobes.c b/arch/sh/kernel/kprobes.c
+index 2b5e58873b96..4fafe0cd12c6 100644
+--- a/arch/sh/kernel/kprobes.c
++++ b/arch/sh/kernel/kprobes.c
+@@ -248,11 +248,6 @@ static int __kprobes kprobe_handler(struct pt_regs *regs)
+ 			prepare_singlestep(p, regs);
+ 			kcb->kprobe_status = KPROBE_REENTER;
+ 			return 1;
+-		} else {
+-			p = __this_cpu_read(current_kprobe);
+-			if (p->break_handler && p->break_handler(p, regs)) {
+-				goto ss_probe;
+-			}
  		}
--
--		INIT_WORK(&s->work_tx, work_fn_tx);
+ 		goto no_kprobe;
  	}
+@@ -281,7 +276,6 @@ static int __kprobes kprobe_handler(struct pt_regs *regs)
+ 		/* handler has already set things up, so skip ss setup */
+ 		return 1;
  
- 	chan = sci_request_dma_chan(port, DMA_DEV_TO_MEM);
--- 
-2.17.1
+-ss_probe:
+ 	prepare_singlestep(p, regs);
+ 	kcb->kprobe_status = KPROBE_HIT_SS;
+ 	return 1;
+@@ -508,14 +502,8 @@ int __kprobes kprobe_exceptions_notify(struct notifier_block *self,
+ 				if (post_kprobe_handler(args->regs))
+ 					ret = NOTIFY_STOP;
+ 			} else {
+-				if (kprobe_handler(args->regs)) {
++				if (kprobe_handler(args->regs))
+ 					ret = NOTIFY_STOP;
+-				} else {
+-					p = __this_cpu_read(current_kprobe);
+-					if (p->break_handler &&
+-					    p->break_handler(p, args->regs))
+-						ret = NOTIFY_STOP;
+-				}
+ 			}
+ 		}
+ 	}
 
