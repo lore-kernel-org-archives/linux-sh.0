@@ -1,59 +1,83 @@
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Date: Thu, 21 Jun 2018 09:49:07 +0000
-Subject: Re: RFC: Add native support for Linux SH
-Message-Id: <c00b74d3-c80b-8da9-affc-fd33a62c6e09@physik.fu-berlin.de>
+From: Ben Hutchings <ben@decadent.org.uk>
+Date: Thu, 07 Jun 2018 14:05:21 +0000
+Subject: [PATCH 3.16 267/410] arm64: do not use print_symbol()
+Message-Id: <lsq.1528380321.214381661@decadent.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
+In-Reply-To: <lsq.1528380320.647747352@decadent.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi everyone!
+3.16.57-rc1 review patch.  If anyone has any objections, please let me know.
 
-I was wondering whether there is a chance now for the Linux SH patches
-to be upstreamed. All parties involved in the code have signed the
-copyright assignment for the FSF.
+------------------
 
-Yutaka Niibe, one of the original initiators of the Linux SH port
-has helped in the process in getting the missing copyright assignments,
-see his mail here [1].
+From: Sergey Senozhatsky <sergey.senozhatsky.work@gmail.com>
 
-I have just rebased the patchset, it can be found in my github account [2].
+commit 4ef7963843d3243260aa335dfb9cb2fede06aacf upstream.
 
-I am currently not subscribed, so please keep me CC'ed.
+print_symbol() is a very old API that has been obsoleted by %pS format
+specifier in a normal printk() call.
 
-Adrian
+Replace print_symbol() with a direct printk("%pS") call.
 
-> [1] https://marc.info/?l=linux-sh&m2177366209159&w=2
-> [2] https://github.com/glaubitz/binutils-gdb/tree/linux-sh
+Link: http://lkml.kernel.org/r/20171211125025.2270-3-sergey.senozhatsky@gmail.com
+To: Andrew Morton <akpm@linux-foundation.org>
+To: Russell King <linux@armlinux.org.uk>
+To: Catalin Marinas <catalin.marinas@arm.com>
+To: Mark Salter <msalter@redhat.com>
+To: Tony Luck <tony.luck@intel.com>
+To: David Howells <dhowells@redhat.com>
+To: Yoshinori Sato <ysato@users.sourceforge.jp>
+To: Guan Xuetao <gxt@mprc.pku.edu.cn>
+To: Borislav Petkov <bp@alien8.de>
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+To: Thomas Gleixner <tglx@linutronix.de>
+To: Peter Zijlstra <peterz@infradead.org>
+To: Vineet Gupta <vgupta@synopsys.com>
+To: Fengguang Wu <fengguang.wu@intel.com>
+Cc: Steven Rostedt <rostedt@goodmis.org>
+Cc: Petr Mladek <pmladek@suse.com>
+Cc: LKML <linux-kernel@vger.kernel.org>
+Cc: linux-arm-kernel@lists.infradead.org
+Cc: linux-c6x-dev@linux-c6x.org
+Cc: linux-ia64@vger.kernel.org
+Cc: linux-am33-list@redhat.com
+Cc: linux-sh@vger.kernel.org
+Cc: linux-edac@vger.kernel.org
+Cc: x86@kernel.org
+Cc: linux-snps-arc@lists.infradead.org
+Cc: Catalin Marinas <catalin.marinas@arm.com>
+Cc: Will Deacon <will.deacon@arm.com>
+Signed-off-by: Sergey Senozhatsky <sergey.senozhatsky@gmail.com>
+[pmladek@suse.com: updated commit message]
+Signed-off-by: Petr Mladek <pmladek@suse.com>
+[bwh: Backported to 3.16: adjust context]
+Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
+---
+ arch/arm64/kernel/process.c | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
 
-On 02/13/2017 11:27 PM, Yao Qi wrote:
-> On Fri, Feb 10, 2017 at 8:55 PM, John Paul Adrian Glaubitz
-> <glaubitz@physik.fu-berlin.de> wrote:
->> With this post, I would like to ask for some feedback on how to
->> proceed with this patch. The original author of the patch is
->> Takashi Yoshii who wrote it while working at Renesas Electronics
->> in Japan.
->>
->> Back in 2011, one of the major show-stoppers why the patch was
->> not merged was apparently the missing FSF copyright assignment
->> by the author [2]. However, since Yoshii-san was working for
->> Renesas back then, I think the copyright assignment would have
->> to be signed by them and not him personally. And since Renesas
->> has already contributed various SuperH code to various FSF
->> projects like gcc and binutils, I'd assume that the necessary
->> FSF copyright assignment has already been signed.
->>
-> 
-> As far as I can see, the missing copyright assignment is still an issue.
-> Renesas does contribute to various FSF projects, and they do have
-> copy right assignments for these projects, like gcc, binutils and glibc.
-> However, they don't have a copy right assignment for gdb for the author
-> Yoshii-san.
-> 
+--- a/arch/arm64/kernel/process.c
++++ b/arch/arm64/kernel/process.c
+@@ -31,7 +31,6 @@
+ #include <linux/delay.h>
+ #include <linux/reboot.h>
+ #include <linux/interrupt.h>
+-#include <linux/kallsyms.h>
+ #include <linux/init.h>
+ #include <linux/cpu.h>
+ #include <linux/elfcore.h>
+@@ -198,8 +197,8 @@ void __show_regs(struct pt_regs *regs)
+ 	}
+ 
+ 	show_regs_print_info(KERN_DEFAULT);
+-	print_symbol("pc : %s\n", regs->pc);
+-	print_symbol("lr : %s\n", lr);
++	printk("pc : %pS\n", (void *)regs->pc);
++	printk("lr : %pS\n", (void *)lr);
+ 	printk("sp : %016llx pstate : %08llx\n", sp, regs->pstate);
+ 	for (i = top_reg; i >= 0; i--) {
+ 		printk("x%-2d: %016llx ", i, regs->regs[i]);
 
--- 
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer - glaubitz@debian.org
-`. `'   Freie Universitaet Berlin - glaubitz@physik.fu-berlin.de
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
