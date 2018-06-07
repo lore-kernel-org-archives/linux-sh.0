@@ -1,60 +1,46 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 29 Jun 2018 14:25:06 +0000
-Subject: [PATCH 0/3] serial: sh-sci: Fix port shutdown DMA race conditions
-Message-Id: <20180629142513.20743-1-geert+renesas@glider.be>
+From: Ben Hutchings <ben@decadent.org.uk>
+Date: Thu, 07 Jun 2018 14:05:21 +0000
+Subject: [PATCH 3.16 097/410] signal/sh: Ensure si_signo is initialized in do_divide_error
+Message-Id: <lsq.1528380321.968714223@decadent.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
+In-Reply-To: <lsq.1528380320.647747352@decadent.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>, Wolfram Sang <wsa+renesas@sang-engineering.com>
-Cc: linux-serial@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-kernel@vger.kernel.org, stable@vger.kernel.org
+Cc: akpm@linux-foundation.org, Rich Felker <dalias@libc.org>, "Eric W. Biederman" <ebiederm@xmission.com>, Paul Mundt <lethal@linux-sh.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh@vger.kernel.org
 
-	Hi all,
+3.16.57-rc1 review patch.  If anyone has any objections, please let me know.
 
-This patch series fixes race conditions between DMA use and port
-shutdown on Renesas "SCIF" serial ports, causing e.g.
+------------------
 
-    sh-sci e6550000.serial: Failed preparing Tx DMA descriptor
-    Unable to handle kernel read from unreadable memory at virtual address 0000000000000000
-    ...
-    Call trace:
-     sci_tx_dma_release+0x50/0xfc
-     work_fn_tx+0x128/0x22c
-     process_one_work+0x394/0x62c
-     worker_thread+0x21c/0x324
-     kthread+0x118/0x128
-     ret_from_fork+0x10/0x18
+From: "Eric W. Biederman" <ebiederm@xmission.com>
 
-I have no guaranteed way to reproducis this issue. I see it sometimes
-when doing a partial login on a port running getty, and letting getty
-time out.
+commit 0e88bb002a9b2ee8cc3cc9478ce2dc126f849696 upstream.
 
-The first two patches simplify DMA release handling, and make sure the
-work function is not called after port shutdown.
-The last patch switches the driver to the new
-dmaengine_terminate_(a)sync() functions, now DMA release is done from a
-single point.
+Set si_signo.
 
-Please review. Thanks!
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+Cc: Paul Mundt <lethal@linux-sh.org>
+Cc: linux-sh@vger.kernel.org
+Fixes: 0983b31849bb ("sh: Wire up division and address error exceptions on SH-2A.")
+Signed-off-by: "Eric W. Biederman" <ebiederm@xmission.com>
+Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
+---
+ arch/sh/kernel/traps_32.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-Geert Uytterhoeven (3):
-  serial: sh-sci: Postpone DMA release when falling back to PIO
-  serial: sh-sci: Stop TX DMA workqueue during port shutdown
-  serial: sh-sci: Stop using deprecated dmaengine_terminate_all()
+--- a/arch/sh/kernel/traps_32.c
++++ b/arch/sh/kernel/traps_32.c
+@@ -607,7 +607,8 @@ asmlinkage void do_divide_error(unsigned
+ 		break;
+ 	}
+ 
+-	force_sig_info(SIGFPE, &info, current);
++	info.si_signo = SIGFPE;
++	force_sig_info(info.si_signo, &info, current);
+ }
+ #endif
+ 
 
- drivers/tty/serial/sh-sci.c | 93 +++++++++++++++++++------------------
- 1 file changed, 47 insertions(+), 46 deletions(-)
-
--- 
-2.17.1
-
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
