@@ -1,65 +1,59 @@
-From: Masami Hiramatsu <mhiramat@kernel.org>
-Date: Mon, 04 Jun 2018 15:59:10 +0000
-Subject: [RFC PATCH -tip v5 22/27] sh: kprobes: Don't call the ->break_handler() in SH kprobes code
-Message-Id: <152812795011.10068.14489215679738766582.stgit@devbox>
+From: Masahiro Yamada <yamada.masahiro@socionext.com>
+Date: Wed, 13 Jun 2018 14:31:25 +0000
+Subject: Re: [PATCH] sh: remove no-op macro VMLINUX_SYMBOL()
+Message-Id: <CAK7LNAQjBYQ1YKGnFodng8uibRDuJ+D9iD4OLQ-qE_8xYOv6Ww@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <152812730943.10068.5166429445118734697.stgit@devbox>
-In-Reply-To: <152812730943.10068.5166429445118734697.stgit@devbox>
+References: <1525852402-29269-1-git-send-email-yamada.masahiro@socionext.com>
+In-Reply-To: <1525852402-29269-1-git-send-email-yamada.masahiro@socionext.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@kernel.org>
-Cc: Masami Hiramatsu <mhiramat@kernel.org>, Ingo Molnar <mingo@redhat.com>, "H . Peter Anvin" <hpa@zytor.com>, linux-kernel@vger.kernel.org, Ananth N Mavinakayanahalli <ananth@linux.vnet.ibm.com>, Andrew Morton <akpm@linux-foundation.org>, Steven Rostedt <rostedt@goodmis.org>, linux-arch@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Linux-sh list <linux-sh@vger.kernel.org>
+Cc: linux-arch <linux-arch@vger.kernel.org>, Masahiro Yamada <yamada.masahiro@socionext.com>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
 
-Don't call the ->break_handler() from the SH kprobes code,
-because it was only used by jprobes which got removed.
+2018-05-09 16:53 GMT+09:00 Masahiro Yamada <yamada.masahiro@socionext.com>:
+> VMLINUX_SYMBOL() is no-op unless CONFIG_HAVE_UNDERSCORE_SYMBOL_PREFIX
+> is defined.  It has ever been selected only by BLACKFIN and METAG.
+> VMLINUX_SYMBOL() is unneeded for SuperH-specific code.
+>
+> Signed-off-by: Masahiro Yamada <yamada.masahiro@socionext.com>
+> ---
 
-Signed-off-by: Masami Hiramatsu <mhiramat@kernel.org>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: Rich Felker <dalias@libc.org>
-Cc: linux-sh@vger.kernel.org
----
- arch/sh/kernel/kprobes.c |   14 +-------------
- 1 file changed, 1 insertion(+), 13 deletions(-)
 
-diff --git a/arch/sh/kernel/kprobes.c b/arch/sh/kernel/kprobes.c
-index 2b5e58873b96..4fafe0cd12c6 100644
---- a/arch/sh/kernel/kprobes.c
-+++ b/arch/sh/kernel/kprobes.c
-@@ -248,11 +248,6 @@ static int __kprobes kprobe_handler(struct pt_regs *regs)
- 			prepare_singlestep(p, regs);
- 			kcb->kprobe_status = KPROBE_REENTER;
- 			return 1;
--		} else {
--			p = __this_cpu_read(current_kprobe);
--			if (p->break_handler && p->break_handler(p, regs)) {
--				goto ss_probe;
--			}
- 		}
- 		goto no_kprobe;
- 	}
-@@ -281,7 +276,6 @@ static int __kprobes kprobe_handler(struct pt_regs *regs)
- 		/* handler has already set things up, so skip ss setup */
- 		return 1;
- 
--ss_probe:
- 	prepare_singlestep(p, regs);
- 	kcb->kprobe_status = KPROBE_HIT_SS;
- 	return 1;
-@@ -508,14 +502,8 @@ int __kprobes kprobe_exceptions_notify(struct notifier_block *self,
- 				if (post_kprobe_handler(args->regs))
- 					ret = NOTIFY_STOP;
- 			} else {
--				if (kprobe_handler(args->regs)) {
-+				if (kprobe_handler(args->regs))
- 					ret = NOTIFY_STOP;
--				} else {
--					p = __this_cpu_read(current_kprobe);
--					if (p->break_handler &&
--					    p->break_handler(p, args->regs))
--						ret = NOTIFY_STOP;
--				}
- 			}
- 		}
- 	}
 
+For information for SH maintainers just in case.
+
+I already picked up this patch to my Kbuild tree.
+
+Thanks.
+
+
+
+>  arch/sh/include/asm/vmlinux.lds.h | 4 ++--
+>  1 file changed, 2 insertions(+), 2 deletions(-)
+>
+> diff --git a/arch/sh/include/asm/vmlinux.lds.h b/arch/sh/include/asm/vmlinux.lds.h
+> index f312813..9929556 100644
+> --- a/arch/sh/include/asm/vmlinux.lds.h
+> +++ b/arch/sh/include/asm/vmlinux.lds.h
+> @@ -7,9 +7,9 @@
+>  #ifdef CONFIG_DWARF_UNWINDER
+>  #define DWARF_EH_FRAME                                                 \
+>         .eh_frame : AT(ADDR(.eh_frame) - LOAD_OFFSET) {                 \
+> -                 VMLINUX_SYMBOL(__start_eh_frame) = .;                 \
+> +                 __start_eh_frame = .;                                 \
+>                   *(.eh_frame)                                          \
+> -                 VMLINUX_SYMBOL(__stop_eh_frame) = .;                  \
+> +                 __stop_eh_frame = .;                                  \
+>         }
+>  #else
+>  #define DWARF_EH_FRAME
+> --
+> 2.7.4
+>
+
+
+
+-- 
+Best Regards
+Masahiro Yamada
