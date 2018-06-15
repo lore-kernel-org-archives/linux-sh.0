@@ -1,111 +1,66 @@
-From: Masami Hiramatsu <mhiramat@kernel.org>
-Date: Tue, 19 Jun 2018 16:09:28 +0000
-Subject: [PATCH -tip v6 11/27] sh: kprobes: Remove jprobe implementation
-Message-Id: <152942456877.15209.5482537226935729621.stgit@devbox>
+From: Thomas Petazzoni <thomas.petazzoni@bootlin.com>
+Date: Fri, 15 Jun 2018 15:50:10 +0000
+Subject: [PATCH] arch/sh: fix SH4 flush_dcache_all() for SMP
+Message-Id: <20180615155010.8019-1-thomas.petazzoni@bootlin.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <152942424698.15209.15245996287444292393.stgit@devbox>
-In-Reply-To: <152942424698.15209.15245996287444292393.stgit@devbox>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@kernel.org>
-Cc: Masami Hiramatsu <mhiramat@kernel.org>, Ingo Molnar <mingo@redhat.com>, "H . Peter Anvin" <hpa@zytor.com>, linux-kernel@vger.kernel.org, Ananth N Mavinakayanahalli <ananth@linux.vnet.ibm.com>, Andrew Morton <akpm@linux-foundation.org>, Steven Rostedt <rostedt@goodmis.org>, linux-arch@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Cc: Thomas Petazzoni <thomas.petazzoni@bootlin.com>
 
-Remove arch dependent setjump/longjump functions
-and unused fields in kprobe_ctlblk for jprobes
-from arch/sh.
+The SH4 flush_dcache_all() function uses current_cpu_data, which
+internally uses smp_processor_id(). However, it is incorrect to use
+smp_processor_id() in a context where migration is enabled, because
+the processor on which the code is running can change at any point in
+time.
 
-Signed-off-by: Masami Hiramatsu <mhiramat@kernel.org>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: Rich Felker <dalias@libc.org>
-Cc: linux-sh@vger.kernel.org
+To avoid this, we enclose the code flushing the dcache in a get_cpu()
+/ put_cpu() section so that migration is disabled.
+
+Signed-off-by: Thomas Petazzoni <thomas.petazzoni@bootlin.com>
 ---
- arch/sh/include/asm/kprobes.h |    4 ---
- arch/sh/kernel/kprobes.c      |   51 -----------------------------------------
- 2 files changed, 55 deletions(-)
+Note: I am not sure at all this is the best fix. Careful review and
+suggestions are welcome.
 
-diff --git a/arch/sh/include/asm/kprobes.h b/arch/sh/include/asm/kprobes.h
-index 85d8bcaa8493..6171682f7798 100644
---- a/arch/sh/include/asm/kprobes.h
-+++ b/arch/sh/include/asm/kprobes.h
-@@ -27,7 +27,6 @@ struct kprobe;
+ arch/sh/mm/cache-sh4.c | 14 ++++++++++----
+ 1 file changed, 10 insertions(+), 4 deletions(-)
+
+diff --git a/arch/sh/mm/cache-sh4.c b/arch/sh/mm/cache-sh4.c
+index eee911422cf9..cde8d7f8acbb 100644
+--- a/arch/sh/mm/cache-sh4.c
++++ b/arch/sh/mm/cache-sh4.c
+@@ -149,13 +149,17 @@ static void flush_icache_all(void)
+ static void flush_dcache_all(void)
+ {
+ 	unsigned long addr, end_addr, entry_offset;
++	struct sh_cpuinfo *cpud;
++	int cpu;
++
++	cpu = get_cpu();
++	cpud = &cpu_data[cpu];
  
- void arch_remove_kprobe(struct kprobe *);
- void kretprobe_trampoline(void);
--void jprobe_return_end(void);
+ 	end_addr = CACHE_OC_ADDRESS_ARRAY +
+-		(current_cpu_data.dcache.sets <<
+-		 current_cpu_data.dcache.entry_shift) *
+-			current_cpu_data.dcache.ways;
++		(cpud->dcache.sets << cpud->dcache.entry_shift) *
++		cpud->dcache.ways;
  
- /* Architecture specific copy of original instruction*/
- struct arch_specific_insn {
-@@ -43,9 +42,6 @@ struct prev_kprobe {
- /* per-cpu kprobe control block */
- struct kprobe_ctlblk {
- 	unsigned long kprobe_status;
--	unsigned long jprobe_saved_r15;
--	struct pt_regs jprobe_saved_regs;
--	kprobe_opcode_t jprobes_stack[MAX_STACK_SIZE];
- 	struct prev_kprobe prev_kprobe;
- };
+-	entry_offset = 1 << current_cpu_data.dcache.entry_shift;
++	entry_offset = 1 << cpud->dcache.entry_shift;
  
-diff --git a/arch/sh/kernel/kprobes.c b/arch/sh/kernel/kprobes.c
-index 52a5e11247d1..2b5e58873b96 100644
---- a/arch/sh/kernel/kprobes.c
-+++ b/arch/sh/kernel/kprobes.c
-@@ -523,57 +523,6 @@ int __kprobes kprobe_exceptions_notify(struct notifier_block *self,
- 	return ret;
+ 	for (addr = CACHE_OC_ADDRESS_ARRAY; addr < end_addr; ) {
+ 		__raw_writel(0, addr); addr += entry_offset;
+@@ -167,6 +171,8 @@ static void flush_dcache_all(void)
+ 		__raw_writel(0, addr); addr += entry_offset;
+ 		__raw_writel(0, addr); addr += entry_offset;
+ 	}
++
++	put_cpu();
  }
  
--int __kprobes setjmp_pre_handler(struct kprobe *p, struct pt_regs *regs)
--{
--	struct jprobe *jp = container_of(p, struct jprobe, kp);
--	unsigned long addr;
--	struct kprobe_ctlblk *kcb = get_kprobe_ctlblk();
--
--	kcb->jprobe_saved_regs = *regs;
--	kcb->jprobe_saved_r15 = regs->regs[15];
--	addr = kcb->jprobe_saved_r15;
--
--	/*
--	 * TBD: As Linus pointed out, gcc assumes that the callee
--	 * owns the argument space and could overwrite it, e.g.
--	 * tailcall optimization. So, to be absolutely safe
--	 * we also save and restore enough stack bytes to cover
--	 * the argument area.
--	 */
--	memcpy(kcb->jprobes_stack, (kprobe_opcode_t *) addr,
--	       MIN_STACK_SIZE(addr));
--
--	regs->pc = (unsigned long)(jp->entry);
--
--	return 1;
--}
--
--void __kprobes jprobe_return(void)
--{
--	asm volatile ("trapa #0x3a\n\t" "jprobe_return_end:\n\t" "nop\n\t");
--}
--
--int __kprobes longjmp_break_handler(struct kprobe *p, struct pt_regs *regs)
--{
--	struct kprobe_ctlblk *kcb = get_kprobe_ctlblk();
--	unsigned long stack_addr = kcb->jprobe_saved_r15;
--	u8 *addr = (u8 *)regs->pc;
--
--	if ((addr >= (u8 *)jprobe_return) &&
--	    (addr <= (u8 *)jprobe_return_end)) {
--		*regs = kcb->jprobe_saved_regs;
--
--		memcpy((kprobe_opcode_t *)stack_addr, kcb->jprobes_stack,
--		       MIN_STACK_SIZE(stack_addr));
--
--		kcb->kprobe_status = KPROBE_HIT_SS;
--		preempt_enable_no_resched();
--		return 1;
--	}
--
--	return 0;
--}
--
- static struct kprobe trampoline_p = {
- 	.addr = (kprobe_opcode_t *)&kretprobe_trampoline,
- 	.pre_handler = trampoline_probe_handler
+ static void sh4_flush_cache_all(void *unused)
+-- 
+2.14.4
 
