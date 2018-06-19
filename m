@@ -1,83 +1,65 @@
-From: Mauro Carvalho Chehab <mchehab+samsung@kernel.org>
-Date: Fri, 15 Jun 2018 16:30:31 +0000
-Subject: [PATCH v4 03/26] arch/*: Kconfig: fix documentation for NMI watchdog
-Message-Id: <3018fe79cb72e48491a2b35c577baa93af16af52.1529079119.git.mchehab+samsung@kernel.org>
+From: Masami Hiramatsu <mhiramat@kernel.org>
+Date: Tue, 19 Jun 2018 16:14:47 +0000
+Subject: [PATCH -tip v6 22/27] sh: kprobes: Don't call the ->break_handler() in SH kprobes code
+Message-Id: <152942488763.15209.7791710414058030809.stgit@devbox>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1529079119.git.mchehab+samsung@kernel.org>
-In-Reply-To: <cover.1529079119.git.mchehab+samsung@kernel.org>
+References: <152942424698.15209.15245996287444292393.stgit@devbox>
+In-Reply-To: <152942424698.15209.15245996287444292393.stgit@devbox>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@kernel.org>
+Cc: Masami Hiramatsu <mhiramat@kernel.org>, Ingo Molnar <mingo@redhat.com>, "H . Peter Anvin" <hpa@zytor.com>, linux-kernel@vger.kernel.org, Ananth N Mavinakayanahalli <ananth@linux.vnet.ibm.com>, Andrew Morton <akpm@linux-foundation.org>, Steven Rostedt <rostedt@goodmis.org>, linux-arch@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
 
-Changeset 9919cba7ff71 ("watchdog: Update documentation") updated
-the documentation, removing the old nmi_watchdog.txt and adding
-a file with a new content.
+Don't call the ->break_handler() from the SH kprobes code,
+because it was only used by jprobes which got removed.
 
-Update Kconfig files accordingly.
-
-Fixes: 9919cba7ff71 ("watchdog: Update documentation")
-
-Signed-off-by: Mauro Carvalho Chehab <mchehab+samsung@kernel.org>
+Signed-off-by: Masami Hiramatsu <mhiramat@kernel.org>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+Cc: linux-sh@vger.kernel.org
 ---
- arch/arm/Kconfig    | 2 +-
- arch/parisc/Kconfig | 2 +-
- arch/sh/Kconfig     | 2 +-
- arch/sparc/Kconfig  | 2 +-
- 4 files changed, 4 insertions(+), 4 deletions(-)
+ arch/sh/kernel/kprobes.c |   14 +-------------
+ 1 file changed, 1 insertion(+), 13 deletions(-)
 
-diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
-index 483d2858e367..54eeb8d00bc6 100644
---- a/arch/arm/Kconfig
-+++ b/arch/arm/Kconfig
-@@ -1302,7 +1302,7 @@ config SMP
- 	  will run faster if you say N here.
+diff --git a/arch/sh/kernel/kprobes.c b/arch/sh/kernel/kprobes.c
+index 2b5e58873b96..4fafe0cd12c6 100644
+--- a/arch/sh/kernel/kprobes.c
++++ b/arch/sh/kernel/kprobes.c
+@@ -248,11 +248,6 @@ static int __kprobes kprobe_handler(struct pt_regs *regs)
+ 			prepare_singlestep(p, regs);
+ 			kcb->kprobe_status = KPROBE_REENTER;
+ 			return 1;
+-		} else {
+-			p = __this_cpu_read(current_kprobe);
+-			if (p->break_handler && p->break_handler(p, regs)) {
+-				goto ss_probe;
+-			}
+ 		}
+ 		goto no_kprobe;
+ 	}
+@@ -281,7 +276,6 @@ static int __kprobes kprobe_handler(struct pt_regs *regs)
+ 		/* handler has already set things up, so skip ss setup */
+ 		return 1;
  
- 	  See also <file:Documentation/x86/i386/IO-APIC.txt>,
--	  <file:Documentation/nmi_watchdog.txt> and the SMP-HOWTO available at
-+	  <file:Documentation/lockup-watchdogs.txt> and the SMP-HOWTO available at
- 	  <http://tldp.org/HOWTO/SMP-HOWTO.html>.
- 
- 	  If you don't know what to do here, say N.
-diff --git a/arch/parisc/Kconfig b/arch/parisc/Kconfig
-index 4d8f64d48597..c480770fabcd 100644
---- a/arch/parisc/Kconfig
-+++ b/arch/parisc/Kconfig
-@@ -275,7 +275,7 @@ config SMP
- 	  machines, but will use only one CPU of a multiprocessor machine.
- 	  On a uniprocessor machine, the kernel will run faster if you say N.
- 
--	  See also <file:Documentation/nmi_watchdog.txt> and the SMP-HOWTO
-+	  See also <file:Documentation/lockup-watchdogs.txt> and the SMP-HOWTO
- 	  available at <http://www.tldp.org/docs.html#howto>.
- 
- 	  If you don't know what to do here, say N.
-diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-index 4bedd1c97f29..dd4f3d3e644f 100644
---- a/arch/sh/Kconfig
-+++ b/arch/sh/Kconfig
-@@ -687,7 +687,7 @@ config SMP
- 	  People using multiprocessor machines who say Y here should also say
- 	  Y to "Enhanced Real Time Clock Support", below.
- 
--	  See also <file:Documentation/nmi_watchdog.txt> and the SMP-HOWTO
-+	  See also <file:Documentation/lockup-watchdogs.txt> and the SMP-HOWTO
- 	  available at <http://www.tldp.org/docs.html#howto>.
- 
- 	  If you don't know what to do here, say N.
-diff --git a/arch/sparc/Kconfig b/arch/sparc/Kconfig
-index 9a2b8877f174..0f535debf802 100644
---- a/arch/sparc/Kconfig
-+++ b/arch/sparc/Kconfig
-@@ -178,7 +178,7 @@ config SMP
- 	  Y to "Enhanced Real Time Clock Support", below. The "Advanced Power
- 	  Management" code will be disabled if you say Y here.
- 
--	  See also <file:Documentation/nmi_watchdog.txt> and the SMP-HOWTO
-+	  See also <file:Documentation/lockup-watchdogs.txt> and the SMP-HOWTO
- 	  available at <http://www.tldp.org/docs.html#howto>.
- 
- 	  If you don't know what to do here, say N.
--- 
-2.17.1
+-ss_probe:
+ 	prepare_singlestep(p, regs);
+ 	kcb->kprobe_status = KPROBE_HIT_SS;
+ 	return 1;
+@@ -508,14 +502,8 @@ int __kprobes kprobe_exceptions_notify(struct notifier_block *self,
+ 				if (post_kprobe_handler(args->regs))
+ 					ret = NOTIFY_STOP;
+ 			} else {
+-				if (kprobe_handler(args->regs)) {
++				if (kprobe_handler(args->regs))
+ 					ret = NOTIFY_STOP;
+-				} else {
+-					p = __this_cpu_read(current_kprobe);
+-					if (p->break_handler &&
+-					    p->break_handler(p, args->regs))
+-						ret = NOTIFY_STOP;
+-				}
+ 			}
+ 		}
+ 	}
 
