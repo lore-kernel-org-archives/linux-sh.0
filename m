@@ -1,46 +1,59 @@
-From: Ben Hutchings <ben@decadent.org.uk>
-Date: Thu, 07 Jun 2018 14:05:21 +0000
-Subject: [PATCH 3.16 097/410] signal/sh: Ensure si_signo is initialized in do_divide_error
-Message-Id: <lsq.1528380321.968714223@decadent.org.uk>
+From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Date: Thu, 21 Jun 2018 09:49:07 +0000
+Subject: Re: RFC: Add native support for Linux SH
+Message-Id: <c00b74d3-c80b-8da9-affc-fd33a62c6e09@physik.fu-berlin.de>
 List-Id: <linux-sh.vger.kernel.org>
-In-Reply-To: <lsq.1528380320.647747352@decadent.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc: akpm@linux-foundation.org, Rich Felker <dalias@libc.org>, "Eric W. Biederman" <ebiederm@xmission.com>, Paul Mundt <lethal@linux-sh.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-3.16.57-rc1 review patch.  If anyone has any objections, please let me know.
+Hi everyone!
 
-------------------
+I was wondering whether there is a chance now for the Linux SH patches
+to be upstreamed. All parties involved in the code have signed the
+copyright assignment for the FSF.
 
-From: "Eric W. Biederman" <ebiederm@xmission.com>
+Yutaka Niibe, one of the original initiators of the Linux SH port
+has helped in the process in getting the missing copyright assignments,
+see his mail here [1].
 
-commit 0e88bb002a9b2ee8cc3cc9478ce2dc126f849696 upstream.
+I have just rebased the patchset, it can be found in my github account [2].
 
-Set si_signo.
+I am currently not subscribed, so please keep me CC'ed.
 
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: Rich Felker <dalias@libc.org>
-Cc: Paul Mundt <lethal@linux-sh.org>
-Cc: linux-sh@vger.kernel.org
-Fixes: 0983b31849bb ("sh: Wire up division and address error exceptions on SH-2A.")
-Signed-off-by: "Eric W. Biederman" <ebiederm@xmission.com>
-Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
----
- arch/sh/kernel/traps_32.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+Adrian
 
---- a/arch/sh/kernel/traps_32.c
-+++ b/arch/sh/kernel/traps_32.c
-@@ -607,7 +607,8 @@ asmlinkage void do_divide_error(unsigned
- 		break;
- 	}
- 
--	force_sig_info(SIGFPE, &info, current);
-+	info.si_signo = SIGFPE;
-+	force_sig_info(info.si_signo, &info, current);
- }
- #endif
- 
+> [1] https://marc.info/?l=linux-sh&m2177366209159&w=2
+> [2] https://github.com/glaubitz/binutils-gdb/tree/linux-sh
 
+On 02/13/2017 11:27 PM, Yao Qi wrote:
+> On Fri, Feb 10, 2017 at 8:55 PM, John Paul Adrian Glaubitz
+> <glaubitz@physik.fu-berlin.de> wrote:
+>> With this post, I would like to ask for some feedback on how to
+>> proceed with this patch. The original author of the patch is
+>> Takashi Yoshii who wrote it while working at Renesas Electronics
+>> in Japan.
+>>
+>> Back in 2011, one of the major show-stoppers why the patch was
+>> not merged was apparently the missing FSF copyright assignment
+>> by the author [2]. However, since Yoshii-san was working for
+>> Renesas back then, I think the copyright assignment would have
+>> to be signed by them and not him personally. And since Renesas
+>> has already contributed various SuperH code to various FSF
+>> projects like gcc and binutils, I'd assume that the necessary
+>> FSF copyright assignment has already been signed.
+>>
+> 
+> As far as I can see, the missing copyright assignment is still an issue.
+> Renesas does contribute to various FSF projects, and they do have
+> copy right assignments for these projects, like gcc, binutils and glibc.
+> However, they don't have a copy right assignment for gdb for the author
+> Yoshii-san.
+> 
+
+-- 
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer - glaubitz@debian.org
+`. `'   Freie Universitaet Berlin - glaubitz@physik.fu-berlin.de
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
