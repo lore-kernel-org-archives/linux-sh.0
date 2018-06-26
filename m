@@ -1,83 +1,35 @@
-From: Mauro Carvalho Chehab <mchehab+samsung@kernel.org>
-Date: Thu, 14 Jun 2018 16:08:48 +0000
-Subject: [PATCH v3 03/27] arch/*: Kconfig: fix documentation for NMI watchdog
-Message-Id: <564367865a45eb5509b23c295259e74387b874ad.1528990947.git.mchehab+samsung@kernel.org>
+From: Anders Roxell <anders.roxell@linaro.org>
+Date: Tue, 26 Jun 2018 15:31:25 +0000
+Subject: [PATCH] sh: configs: remove no longer needed config option
+Message-Id: <20180626153125.515-1-anders.roxell@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1528990947.git.mchehab+samsung@kernel.org>
-In-Reply-To: <cover.1528990947.git.mchehab+samsung@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: ysato@users.sourceforge.jp, dalias@libc.org
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Anders Roxell <anders.roxell@linaro.org>
 
-Changeset 9919cba7ff71 ("watchdog: Update documentation") updated
-the documentation, removing the old nmi_watchdog.txt and adding
-a file with a new content.
+Since commit eedf265aa003 ("devpts: Make each mount of devpts an
+independent filesystem.") CONFIG_DEVPTS_MULTIPLE_INSTANCES isn't needed
+in the defconfig anymore.
 
-Update Kconfig files accordingly.
-
-Fixes: 9919cba7ff71 ("watchdog: Update documentation")
-
-Signed-off-by: Mauro Carvalho Chehab <mchehab+samsung@kernel.org>
+Signed-off-by: Anders Roxell <anders.roxell@linaro.org>
 ---
- arch/arm/Kconfig    | 2 +-
- arch/parisc/Kconfig | 2 +-
- arch/sh/Kconfig     | 2 +-
- arch/sparc/Kconfig  | 2 +-
- 4 files changed, 4 insertions(+), 4 deletions(-)
+ arch/sh/configs/sh7785lcr_32bit_defconfig | 1 -
+ 1 file changed, 1 deletion(-)
 
-diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
-index 2a78bdef9a24..fc3330807b09 100644
---- a/arch/arm/Kconfig
-+++ b/arch/arm/Kconfig
-@@ -1301,7 +1301,7 @@ config SMP
- 	  will run faster if you say N here.
- 
- 	  See also <file:Documentation/x86/i386/IO-APIC.txt>,
--	  <file:Documentation/nmi_watchdog.txt> and the SMP-HOWTO available at
-+	  <file:Documentation/lockup-watchdogs.txt> and the SMP-HOWTO available at
- 	  <http://tldp.org/HOWTO/SMP-HOWTO.html>.
- 
- 	  If you don't know what to do here, say N.
-diff --git a/arch/parisc/Kconfig b/arch/parisc/Kconfig
-index 4d8f64d48597..c480770fabcd 100644
---- a/arch/parisc/Kconfig
-+++ b/arch/parisc/Kconfig
-@@ -275,7 +275,7 @@ config SMP
- 	  machines, but will use only one CPU of a multiprocessor machine.
- 	  On a uniprocessor machine, the kernel will run faster if you say N.
- 
--	  See also <file:Documentation/nmi_watchdog.txt> and the SMP-HOWTO
-+	  See also <file:Documentation/lockup-watchdogs.txt> and the SMP-HOWTO
- 	  available at <http://www.tldp.org/docs.html#howto>.
- 
- 	  If you don't know what to do here, say N.
-diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-index 4d61a085982b..ac1829353139 100644
---- a/arch/sh/Kconfig
-+++ b/arch/sh/Kconfig
-@@ -687,7 +687,7 @@ config SMP
- 	  People using multiprocessor machines who say Y here should also say
- 	  Y to "Enhanced Real Time Clock Support", below.
- 
--	  See also <file:Documentation/nmi_watchdog.txt> and the SMP-HOWTO
-+	  See also <file:Documentation/lockup-watchdogs.txt> and the SMP-HOWTO
- 	  available at <http://www.tldp.org/docs.html#howto>.
- 
- 	  If you don't know what to do here, say N.
-diff --git a/arch/sparc/Kconfig b/arch/sparc/Kconfig
-index 9a2b8877f174..0f535debf802 100644
---- a/arch/sparc/Kconfig
-+++ b/arch/sparc/Kconfig
-@@ -178,7 +178,7 @@ config SMP
- 	  Y to "Enhanced Real Time Clock Support", below. The "Advanced Power
- 	  Management" code will be disabled if you say Y here.
- 
--	  See also <file:Documentation/nmi_watchdog.txt> and the SMP-HOWTO
-+	  See also <file:Documentation/lockup-watchdogs.txt> and the SMP-HOWTO
- 	  available at <http://www.tldp.org/docs.html#howto>.
- 
- 	  If you don't know what to do here, say N.
+diff --git a/arch/sh/configs/sh7785lcr_32bit_defconfig b/arch/sh/configs/sh7785lcr_32bit_defconfig
+index 2ddf5ca7094e..7aa78ced9ffa 100644
+--- a/arch/sh/configs/sh7785lcr_32bit_defconfig
++++ b/arch/sh/configs/sh7785lcr_32bit_defconfig
+@@ -72,7 +72,6 @@ CONFIG_VT_HW_CONSOLE_BINDING=y
+ CONFIG_SERIAL_SH_SCI=y
+ CONFIG_SERIAL_SH_SCI_NR_UARTS=6
+ CONFIG_SERIAL_SH_SCI_CONSOLE=y
+-CONFIG_DEVPTS_MULTIPLE_INSTANCES=y
+ # CONFIG_LEGACY_PTYS is not set
+ # CONFIG_HW_RANDOM is not set
+ CONFIG_I2C=y
 -- 
-2.17.1
+2.18.0
 
