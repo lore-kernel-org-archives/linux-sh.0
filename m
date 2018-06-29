@@ -1,83 +1,72 @@
-From: Ben Hutchings <ben@decadent.org.uk>
-Date: Thu, 07 Jun 2018 14:05:21 +0000
-Subject: [PATCH 3.16 267/410] arm64: do not use print_symbol()
-Message-Id: <lsq.1528380321.214381661@decadent.org.uk>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 29 Jun 2018 14:25:09 +0000
+Subject: [PATCH 3/3] serial: sh-sci: Stop using deprecated dmaengine_terminate_all()
+Message-Id: <20180629142513.20743-4-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-In-Reply-To: <lsq.1528380320.647747352@decadent.org.uk>
+References: <20180629142513.20743-1-geert+renesas@glider.be>
+In-Reply-To: <20180629142513.20743-1-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>, Wolfram Sang <wsa+renesas@sang-engineering.com>
+Cc: linux-serial@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-3.16.57-rc1 review patch.  If anyone has any objections, please let me know.
+As of commit b36f09c3c441a6e5 ("dmaengine: Add transfer termination
+synchronization support"), dmaengine_terminate_all() is deprecated.
 
-------------------
+Replace calls to dmaengine_terminate_all() in DMA release code by calls
+to dmaengine_terminate_sync(), as the latter waits until all running
+completion callbacks have finished.
 
-From: Sergey Senozhatsky <sergey.senozhatsky.work@gmail.com>
+Replace calls to dmaengine_terminate_all() in DMA failure paths by calls
+to dmaengine_terminate_async(), as these are usually done in atomic
+context.
 
-commit 4ef7963843d3243260aa335dfb9cb2fede06aacf upstream.
-
-print_symbol() is a very old API that has been obsoleted by %pS format
-specifier in a normal printk() call.
-
-Replace print_symbol() with a direct printk("%pS") call.
-
-Link: http://lkml.kernel.org/r/20171211125025.2270-3-sergey.senozhatsky@gmail.com
-To: Andrew Morton <akpm@linux-foundation.org>
-To: Russell King <linux@armlinux.org.uk>
-To: Catalin Marinas <catalin.marinas@arm.com>
-To: Mark Salter <msalter@redhat.com>
-To: Tony Luck <tony.luck@intel.com>
-To: David Howells <dhowells@redhat.com>
-To: Yoshinori Sato <ysato@users.sourceforge.jp>
-To: Guan Xuetao <gxt@mprc.pku.edu.cn>
-To: Borislav Petkov <bp@alien8.de>
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-To: Thomas Gleixner <tglx@linutronix.de>
-To: Peter Zijlstra <peterz@infradead.org>
-To: Vineet Gupta <vgupta@synopsys.com>
-To: Fengguang Wu <fengguang.wu@intel.com>
-Cc: Steven Rostedt <rostedt@goodmis.org>
-Cc: Petr Mladek <pmladek@suse.com>
-Cc: LKML <linux-kernel@vger.kernel.org>
-Cc: linux-arm-kernel@lists.infradead.org
-Cc: linux-c6x-dev@linux-c6x.org
-Cc: linux-ia64@vger.kernel.org
-Cc: linux-am33-list@redhat.com
-Cc: linux-sh@vger.kernel.org
-Cc: linux-edac@vger.kernel.org
-Cc: x86@kernel.org
-Cc: linux-snps-arc@lists.infradead.org
-Cc: Catalin Marinas <catalin.marinas@arm.com>
-Cc: Will Deacon <will.deacon@arm.com>
-Signed-off-by: Sergey Senozhatsky <sergey.senozhatsky@gmail.com>
-[pmladek@suse.com: updated commit message]
-Signed-off-by: Petr Mladek <pmladek@suse.com>
-[bwh: Backported to 3.16: adjust context]
-Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm64/kernel/process.c | 5 ++---
- 1 file changed, 2 insertions(+), 3 deletions(-)
+ drivers/tty/serial/sh-sci.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
---- a/arch/arm64/kernel/process.c
-+++ b/arch/arm64/kernel/process.c
-@@ -31,7 +31,6 @@
- #include <linux/delay.h>
- #include <linux/reboot.h>
- #include <linux/interrupt.h>
--#include <linux/kallsyms.h>
- #include <linux/init.h>
- #include <linux/cpu.h>
- #include <linux/elfcore.h>
-@@ -198,8 +197,8 @@ void __show_regs(struct pt_regs *regs)
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 1e0b6fe6865dcff6..5c870ab80b98e25b 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1221,7 +1221,7 @@ static void sci_rx_dma_release(struct sci_port *s)
+ 
+ 	s->chan_rx_saved = s->chan_rx = NULL;
+ 	s->cookie_rx[0] = s->cookie_rx[1] = -EINVAL;
+-	dmaengine_terminate_all(chan);
++	dmaengine_terminate_sync(chan);
+ 	dma_free_coherent(chan->device->dev, s->buf_len_rx * 2, s->rx_buf[0],
+ 			  sg_dma_address(&s->sg_rx[0]));
+ 	dma_release_channel(chan);
+@@ -1298,7 +1298,7 @@ static void sci_tx_dma_release(struct sci_port *s)
+ 	cancel_work_sync(&s->work_tx);
+ 	s->chan_tx_saved = s->chan_tx = NULL;
+ 	s->cookie_tx = -EINVAL;
+-	dmaengine_terminate_all(chan);
++	dmaengine_terminate_sync(chan);
+ 	dma_unmap_single(chan->device->dev, s->tx_dma_addr, UART_XMIT_SIZE,
+ 			 DMA_TO_DEVICE);
+ 	dma_release_channel(chan);
+@@ -1336,7 +1336,7 @@ static void sci_submit_rx(struct sci_port *s)
+ 
+ fail:
+ 	if (i)
+-		dmaengine_terminate_all(chan);
++		dmaengine_terminate_async(chan);
+ 	for (i = 0; i < 2; i++)
+ 		s->cookie_rx[i] = -EINVAL;
+ 	s->active_rx = -EINVAL;
+@@ -1454,7 +1454,7 @@ static enum hrtimer_restart rx_timer_fn(struct hrtimer *t)
  	}
  
- 	show_regs_print_info(KERN_DEFAULT);
--	print_symbol("pc : %s\n", regs->pc);
--	print_symbol("lr : %s\n", lr);
-+	printk("pc : %pS\n", (void *)regs->pc);
-+	printk("lr : %pS\n", (void *)lr);
- 	printk("sp : %016llx pstate : %08llx\n", sp, regs->pstate);
- 	for (i = top_reg; i >= 0; i--) {
- 		printk("x%-2d: %016llx ", i, regs->regs[i]);
+ 	/* Handle incomplete DMA receive */
+-	dmaengine_terminate_all(s->chan_rx);
++	dmaengine_terminate_async(s->chan_rx);
+ 	read = sg_dma_len(&s->sg_rx[active]) - state.residue;
+ 
+ 	if (read) {
+-- 
+2.17.1
 
