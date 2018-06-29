@@ -1,35 +1,60 @@
-From: Anders Roxell <anders.roxell@linaro.org>
-Date: Tue, 26 Jun 2018 15:31:25 +0000
-Subject: [PATCH] sh: configs: remove no longer needed config option
-Message-Id: <20180626153125.515-1-anders.roxell@linaro.org>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 29 Jun 2018 14:25:06 +0000
+Subject: [PATCH 0/3] serial: sh-sci: Fix port shutdown DMA race conditions
+Message-Id: <20180629142513.20743-1-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: ysato@users.sourceforge.jp, dalias@libc.org
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Anders Roxell <anders.roxell@linaro.org>
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>, Wolfram Sang <wsa+renesas@sang-engineering.com>
+Cc: linux-serial@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Since commit eedf265aa003 ("devpts: Make each mount of devpts an
-independent filesystem.") CONFIG_DEVPTS_MULTIPLE_INSTANCES isn't needed
-in the defconfig anymore.
+	Hi all,
 
-Signed-off-by: Anders Roxell <anders.roxell@linaro.org>
----
- arch/sh/configs/sh7785lcr_32bit_defconfig | 1 -
- 1 file changed, 1 deletion(-)
+This patch series fixes race conditions between DMA use and port
+shutdown on Renesas "SCIF" serial ports, causing e.g.
 
-diff --git a/arch/sh/configs/sh7785lcr_32bit_defconfig b/arch/sh/configs/sh7785lcr_32bit_defconfig
-index 2ddf5ca7094e..7aa78ced9ffa 100644
---- a/arch/sh/configs/sh7785lcr_32bit_defconfig
-+++ b/arch/sh/configs/sh7785lcr_32bit_defconfig
-@@ -72,7 +72,6 @@ CONFIG_VT_HW_CONSOLE_BINDING=y
- CONFIG_SERIAL_SH_SCI=y
- CONFIG_SERIAL_SH_SCI_NR_UARTS=6
- CONFIG_SERIAL_SH_SCI_CONSOLE=y
--CONFIG_DEVPTS_MULTIPLE_INSTANCES=y
- # CONFIG_LEGACY_PTYS is not set
- # CONFIG_HW_RANDOM is not set
- CONFIG_I2C=y
+    sh-sci e6550000.serial: Failed preparing Tx DMA descriptor
+    Unable to handle kernel read from unreadable memory at virtual address 0000000000000000
+    ...
+    Call trace:
+     sci_tx_dma_release+0x50/0xfc
+     work_fn_tx+0x128/0x22c
+     process_one_work+0x394/0x62c
+     worker_thread+0x21c/0x324
+     kthread+0x118/0x128
+     ret_from_fork+0x10/0x18
+
+I have no guaranteed way to reproducis this issue. I see it sometimes
+when doing a partial login on a port running getty, and letting getty
+time out.
+
+The first two patches simplify DMA release handling, and make sure the
+work function is not called after port shutdown.
+The last patch switches the driver to the new
+dmaengine_terminate_(a)sync() functions, now DMA release is done from a
+single point.
+
+Please review. Thanks!
+
+Geert Uytterhoeven (3):
+  serial: sh-sci: Postpone DMA release when falling back to PIO
+  serial: sh-sci: Stop TX DMA workqueue during port shutdown
+  serial: sh-sci: Stop using deprecated dmaengine_terminate_all()
+
+ drivers/tty/serial/sh-sci.c | 93 +++++++++++++++++++------------------
+ 1 file changed, 47 insertions(+), 46 deletions(-)
+
 -- 
-2.18.0
+2.17.1
 
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
