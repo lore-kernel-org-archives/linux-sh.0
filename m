@@ -1,117 +1,229 @@
-From: Randy Dunlap <rdunlap@infradead.org>
-Date: Sun, 22 Jul 2018 18:02:26 +0000
-Subject: Re: [PATCH] arch/h8300: modify ffs(), fls() etc. functions to return int
-Message-Id: <87467b7c-d361-034f-09d4-8694f26f80e0@infradead.org>
+From: Alexandre Ghiti <alex@ghiti.fr>
+Date: Thu, 05 Jul 2018 11:07:13 +0000
+Subject: [PATCH v4 08/11] hugetlb: Introduce generic version of prepare_hugepage_range
+Message-Id: <20180705110716.3919-9-alex@ghiti.fr>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1cdcd8e1-b12c-31cb-1188-c062dae3e461@infradead.org>
- <CAMuHMdVwY0b9S3j2MnuC59vYOuV=LXtQwnhevq227r+mec491Q@mail.gmail.com>
-In-Reply-To: <CAMuHMdVwY0b9S3j2MnuC59vYOuV=LXtQwnhevq227r+mec491Q@mail.gmail.com>
+References: <20180705110716.3919-1-alex@ghiti.fr>
+In-Reply-To: <20180705110716.3919-1-alex@ghiti.fr>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Richard Kuo <rkuo@codeaurora.org>, "open list:QUALCOMM HEXAGON..." <linux-hexagon@vger.kernel.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Linux-sh list <linux-sh@vger.kernel.org>
+To: linux@armlinux.org.uk, catalin.marinas@arm.com, will.deacon@arm.com, tony.luck@intel.com, fenghua.yu@intel.com, ralf@linux-mips.org, paul.burton@mips.com, jhogan@kernel.org, jejb@parisc-linux.org, deller@gmx.de, benh@kernel.crashing.org, paulus@samba.org, mpe@ellerman.id.au, ysato@users.sourceforge.jp, dalias@libc.org, davem@davemloft.net, tglx@linutronix.de, mingo@redhat.com, hpa@zytor.com, x86@kernel.org, arnd@arndb.de, linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org, linux-ia64@vger.kernel.org, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-arch@vger.kernel.org
+Cc: Alexandre Ghiti <alex@ghiti.fr>
 
-On 07/22/2018 02:25 AM, Geert Uytterhoeven wrote:
-> CC hexagon
-> 
-> hexagon != H8/300 != SuperH
-> 
-> On Sat, Jul 21, 2018 at 5:28 AM Randy Dunlap <rdunlap@infradead.org> wrote:
->>
->> From: Randy Dunlap <rdunlap@infradead.org>
->>
->> Building drivers/mtd/nand/raw/nandsim.c on arch/hexagon/ produces a
->> printk format build warning.  This is due to hexagon's ffs() being
->> coded as returning long instead of int.
->>
->> Fix the printk format warning by changing all of hexagon's ffx() and
->> flx() functions to return int instead of long.  The variables that
->> they return are already int instead of long.
->>
->> ../drivers/mtd/nand/raw/nandsim.c: In function 'init_nandsim':
->> ../drivers/mtd/nand/raw/nandsim.c:760:2: warning: format '%u' expects argument of type 'unsigned int', but argument 2 has type 'long int' [-Wformat]
->>
->>
->> There are no ffx() or flx() allmodconfig build errors after making this
->> change.
->>
->> Signed-off-by: Randy Dunlap <rdunlap@infradead.org>
->> Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
->> Cc: Rich Felker <dalias@libc.org>
->> Cc: linux-sh@vger.kernel.org
->> ---
->>  arch/hexagon/include/asm/bitops.h |   10 +++++-----
->>  1 file changed, 5 insertions(+), 5 deletions(-)
->>
->> --- linux-next-20180717.orig/arch/hexagon/include/asm/bitops.h
->> +++ linux-next-20180717/arch/hexagon/include/asm/bitops.h
->> @@ -194,7 +194,7 @@ static inline int __test_bit(int nr, con
->>   *
->>   * Undefined if no zero exists, so code should check against ~0UL first.
->>   */
->> -static inline long ffz(int x)
->> +static inline int ffz(int x)
->>  {
->>         int r;
->>
->> @@ -211,7 +211,7 @@ static inline long ffz(int x)
->>   * This is defined the same way as ffs.
->>   * Note fls(0) = 0, fls(1) = 1, fls(0x80000000) = 32.
->>   */
->> -static inline long fls(int x)
->> +static inline int fls(int x)
->>  {
->>         int r;
->>
->> @@ -232,7 +232,7 @@ static inline long fls(int x)
->>   * the libc and compiler builtin ffs routines, therefore
->>   * differs in spirit from the above ffz (man ffs).
->>   */
->> -static inline long ffs(int x)
->> +static inline int ffs(int x)
->>  {
->>         int r;
->>
->> @@ -254,7 +254,7 @@ static inline long ffs(int x)
->>   * bits_per_long assumed to be 32
->>   * numbering starts at 0 I think (instead of 1 like ffs)
->>   */
->> -static inline unsigned long __ffs(unsigned long word)
->> +static inline int __ffs(unsigned long word)
-> 
-> The version in asm-generic deoes use "unsigned long".
-> 
-> See also "m68k/bitops: convert __ffs to match generic declaration"
-> https://git.kernel.org/pub/scm/linux/kernel/git/geert/linux-m68k.git/commit/?h=for-v4.19&idK538d3dca3e590cdb0234746011a6d9c245cfa3
-> 
->>  {
->>         int num;
->>
->> @@ -272,7 +272,7 @@ static inline unsigned long __ffs(unsign
->>   * Undefined if no set bit exists, so code should check against 0 first.
->>   * bits_per_long assumed to be 32
->>   */
->> -static inline unsigned long __fls(unsigned long word)
->> +static inline int __fls(unsigned long word)
-> 
-> Same here
+arm, arm64, powerpc, sparc, x86 architectures use the same version of
+prepare_hugepage_range, so move this generic implementation into
+asm-generic/hugetlb.h.
 
-Hi Geert,
+Signed-off-by: Alexandre Ghiti <alex@ghiti.fr>
+---
+ arch/arm/include/asm/hugetlb.h     | 11 -----------
+ arch/arm64/include/asm/hugetlb.h   | 11 -----------
+ arch/ia64/include/asm/hugetlb.h    |  1 +
+ arch/mips/include/asm/hugetlb.h    |  1 +
+ arch/parisc/include/asm/hugetlb.h  |  1 +
+ arch/powerpc/include/asm/hugetlb.h | 15 ---------------
+ arch/sh/include/asm/hugetlb.h      |  1 +
+ arch/sparc/include/asm/hugetlb.h   | 16 ----------------
+ arch/x86/include/asm/hugetlb.h     | 15 ---------------
+ include/asm-generic/hugetlb.h      | 15 +++++++++++++++
+ 10 files changed, 19 insertions(+), 68 deletions(-)
 
-Thanks for all your catches here.  So ffs() and fls() return int,
-while __ffs() and __fls() return unsigned long.
-
-(hm, arch/arc/include/asm/bitops.h is a little different.)
-(and unicore32)
-
-
-I'll send a v2 patch (for hexagon).
-That will still fix the printk format warning above.
-
->>  {
->>         int num;
-
-
+diff --git a/arch/arm/include/asm/hugetlb.h b/arch/arm/include/asm/hugetlb.h
+index 1e718a626ef9..34fb401efe81 100644
+--- a/arch/arm/include/asm/hugetlb.h
++++ b/arch/arm/include/asm/hugetlb.h
+@@ -32,17 +32,6 @@ static inline int is_hugepage_only_range(struct mm_struct *mm,
+ 	return 0;
+ }
+ 
+-static inline int prepare_hugepage_range(struct file *file,
+-					 unsigned long addr, unsigned long len)
+-{
+-	struct hstate *h = hstate_file(file);
+-	if (len & ~huge_page_mask(h))
+-		return -EINVAL;
+-	if (addr & ~huge_page_mask(h))
+-		return -EINVAL;
+-	return 0;
+-}
+-
+ static inline void arch_clear_hugepage_flags(struct page *page)
+ {
+ 	clear_bit(PG_dcache_clean, &page->flags);
+diff --git a/arch/arm64/include/asm/hugetlb.h b/arch/arm64/include/asm/hugetlb.h
+index 1fd64ebf0cd7..3e7f6e69b28d 100644
+--- a/arch/arm64/include/asm/hugetlb.h
++++ b/arch/arm64/include/asm/hugetlb.h
+@@ -31,17 +31,6 @@ static inline int is_hugepage_only_range(struct mm_struct *mm,
+ 	return 0;
+ }
+ 
+-static inline int prepare_hugepage_range(struct file *file,
+-					 unsigned long addr, unsigned long len)
+-{
+-	struct hstate *h = hstate_file(file);
+-	if (len & ~huge_page_mask(h))
+-		return -EINVAL;
+-	if (addr & ~huge_page_mask(h))
+-		return -EINVAL;
+-	return 0;
+-}
+-
+ static inline void arch_clear_hugepage_flags(struct page *page)
+ {
+ 	clear_bit(PG_dcache_clean, &page->flags);
+diff --git a/arch/ia64/include/asm/hugetlb.h b/arch/ia64/include/asm/hugetlb.h
+index 82fe3d7a38d9..cbe296271030 100644
+--- a/arch/ia64/include/asm/hugetlb.h
++++ b/arch/ia64/include/asm/hugetlb.h
+@@ -9,6 +9,7 @@ void hugetlb_free_pgd_range(struct mmu_gather *tlb, unsigned long addr,
+ 			    unsigned long end, unsigned long floor,
+ 			    unsigned long ceiling);
+ 
++#define __HAVE_ARCH_PREPARE_HUGEPAGE_RANGE
+ int prepare_hugepage_range(struct file *file,
+ 			unsigned long addr, unsigned long len);
+ 
+diff --git a/arch/mips/include/asm/hugetlb.h b/arch/mips/include/asm/hugetlb.h
+index b3d6bb53ee6e..6ff2531cfb1d 100644
+--- a/arch/mips/include/asm/hugetlb.h
++++ b/arch/mips/include/asm/hugetlb.h
+@@ -18,6 +18,7 @@ static inline int is_hugepage_only_range(struct mm_struct *mm,
+ 	return 0;
+ }
+ 
++#define __HAVE_ARCH_PREPARE_HUGEPAGE_RANGE
+ static inline int prepare_hugepage_range(struct file *file,
+ 					 unsigned long addr,
+ 					 unsigned long len)
+diff --git a/arch/parisc/include/asm/hugetlb.h b/arch/parisc/include/asm/hugetlb.h
+index 5a102d7251e4..fb7e0fd858a3 100644
+--- a/arch/parisc/include/asm/hugetlb.h
++++ b/arch/parisc/include/asm/hugetlb.h
+@@ -22,6 +22,7 @@ static inline int is_hugepage_only_range(struct mm_struct *mm,
+  * If the arch doesn't supply something else, assume that hugepage
+  * size aligned regions are ok without further preparation.
+  */
++#define __HAVE_ARCH_PREPARE_HUGEPAGE_RANGE
+ static inline int prepare_hugepage_range(struct file *file,
+ 			unsigned long addr, unsigned long len)
+ {
+diff --git a/arch/powerpc/include/asm/hugetlb.h b/arch/powerpc/include/asm/hugetlb.h
+index 7123599089c6..69c14ecac133 100644
+--- a/arch/powerpc/include/asm/hugetlb.h
++++ b/arch/powerpc/include/asm/hugetlb.h
+@@ -117,21 +117,6 @@ void hugetlb_free_pgd_range(struct mmu_gather *tlb, unsigned long addr,
+ 			    unsigned long end, unsigned long floor,
+ 			    unsigned long ceiling);
+ 
+-/*
+- * If the arch doesn't supply something else, assume that hugepage
+- * size aligned regions are ok without further preparation.
+- */
+-static inline int prepare_hugepage_range(struct file *file,
+-			unsigned long addr, unsigned long len)
+-{
+-	struct hstate *h = hstate_file(file);
+-	if (len & ~huge_page_mask(h))
+-		return -EINVAL;
+-	if (addr & ~huge_page_mask(h))
+-		return -EINVAL;
+-	return 0;
+-}
+-
+ #define __HAVE_ARCH_HUGE_PTEP_GET_AND_CLEAR
+ static inline pte_t huge_ptep_get_and_clear(struct mm_struct *mm,
+ 					    unsigned long addr, pte_t *ptep)
+diff --git a/arch/sh/include/asm/hugetlb.h b/arch/sh/include/asm/hugetlb.h
+index 54f65094efe6..f1bbd255ee43 100644
+--- a/arch/sh/include/asm/hugetlb.h
++++ b/arch/sh/include/asm/hugetlb.h
+@@ -15,6 +15,7 @@ static inline int is_hugepage_only_range(struct mm_struct *mm,
+  * If the arch doesn't supply something else, assume that hugepage
+  * size aligned regions are ok without further preparation.
+  */
++#define __HAVE_ARCH_PREPARE_HUGEPAGE_RANGE
+ static inline int prepare_hugepage_range(struct file *file,
+ 			unsigned long addr, unsigned long len)
+ {
+diff --git a/arch/sparc/include/asm/hugetlb.h b/arch/sparc/include/asm/hugetlb.h
+index f661362376e0..2101ea217f33 100644
+--- a/arch/sparc/include/asm/hugetlb.h
++++ b/arch/sparc/include/asm/hugetlb.h
+@@ -26,22 +26,6 @@ static inline int is_hugepage_only_range(struct mm_struct *mm,
+ 	return 0;
+ }
+ 
+-/*
+- * If the arch doesn't supply something else, assume that hugepage
+- * size aligned regions are ok without further preparation.
+- */
+-static inline int prepare_hugepage_range(struct file *file,
+-			unsigned long addr, unsigned long len)
+-{
+-	struct hstate *h = hstate_file(file);
+-
+-	if (len & ~huge_page_mask(h))
+-		return -EINVAL;
+-	if (addr & ~huge_page_mask(h))
+-		return -EINVAL;
+-	return 0;
+-}
+-
+ #define __HAVE_ARCH_HUGE_PTEP_CLEAR_FLUSH
+ static inline void huge_ptep_clear_flush(struct vm_area_struct *vma,
+ 					 unsigned long addr, pte_t *ptep)
+diff --git a/arch/x86/include/asm/hugetlb.h b/arch/x86/include/asm/hugetlb.h
+index 19668672ab37..2e5117d37c7d 100644
+--- a/arch/x86/include/asm/hugetlb.h
++++ b/arch/x86/include/asm/hugetlb.h
+@@ -12,21 +12,6 @@ static inline int is_hugepage_only_range(struct mm_struct *mm,
+ 	return 0;
+ }
+ 
+-/*
+- * If the arch doesn't supply something else, assume that hugepage
+- * size aligned regions are ok without further preparation.
+- */
+-static inline int prepare_hugepage_range(struct file *file,
+-			unsigned long addr, unsigned long len)
+-{
+-	struct hstate *h = hstate_file(file);
+-	if (len & ~huge_page_mask(h))
+-		return -EINVAL;
+-	if (addr & ~huge_page_mask(h))
+-		return -EINVAL;
+-	return 0;
+-}
+-
+ static inline void huge_ptep_set_wrprotect(struct mm_struct *mm,
+ 					   unsigned long addr, pte_t *ptep)
+ {
+diff --git a/include/asm-generic/hugetlb.h b/include/asm-generic/hugetlb.h
+index cd9697672b79..6c0c8b0c71e0 100644
+--- a/include/asm-generic/hugetlb.h
++++ b/include/asm-generic/hugetlb.h
+@@ -87,4 +87,19 @@ static inline pte_t huge_pte_wrprotect(pte_t pte)
+ }
+ #endif
+ 
++#ifndef __HAVE_ARCH_PREPARE_HUGEPAGE_RANGE
++static inline int prepare_hugepage_range(struct file *file,
++		unsigned long addr, unsigned long len)
++{
++	struct hstate *h = hstate_file(file);
++
++	if (len & ~huge_page_mask(h))
++		return -EINVAL;
++	if (addr & ~huge_page_mask(h))
++		return -EINVAL;
++
++	return 0;
++}
++#endif
++
+ #endif /* _ASM_GENERIC_HUGETLB_H */
 -- 
-~Randy
+2.16.2
+
