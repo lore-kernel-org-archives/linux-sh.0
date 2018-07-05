@@ -1,77 +1,71 @@
-From: Yoshinori Sato <ysato@users.sourceforge.jp>
-Date: Thu, 12 Jul 2018 09:44:39 +0000
-Subject: Re: [PATCH] [RFC] serial: sh-sci: fix register alocation in h8300.
-Message-Id: <87lgagpz3s.wl-ysato@users.sourceforge.jp>
+From: Alexandre Ghiti <alex@ghiti.fr>
+Date: Thu, 05 Jul 2018 11:07:05 +0000
+Subject: [PATCH v4 00/11] hugetlb: Factorize hugetlb architecture primitives
+Message-Id: <20180705110716.3919-1-alex@ghiti.fr>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180711114121.10735-1-ysato@users.sourceforge.jp>
-In-Reply-To: <20180711114121.10735-1-ysato@users.sourceforge.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux@armlinux.org.uk, catalin.marinas@arm.com, will.deacon@arm.com, tony.luck@intel.com, fenghua.yu@intel.com, ralf@linux-mips.org, paul.burton@mips.com, jhogan@kernel.org, jejb@parisc-linux.org, deller@gmx.de, benh@kernel.crashing.org, paulus@samba.org, mpe@ellerman.id.au, ysato@users.sourceforge.jp, dalias@libc.org, davem@davemloft.net, tglx@linutronix.de, mingo@redhat.com, hpa@zytor.com, x86@kernel.org, arnd@arndb.de, linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org, linux-ia64@vger.kernel.org, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-arch@vger.kernel.org
+Cc: Alexandre Ghiti <alex@ghiti.fr>
 
-On Wed, 11 Jul 2018 21:53:30 +0900,
-Geert Uytterhoeven wrote:
-> 
-> Hi Sato-san,
-> 
-> CC Laurent
-> 
-> On Wed, Jul 11, 2018 at 2:38 PM Yoshinori Sato
-> <ysato@users.sourceforge.jp> wrote:
-> > h8300's SCI registers aligned byte address.
-> > Although it may be appropriate to put it in sci_port_params,
-> > because I can not think of a good way, I did it like this.
-> >
-> > Signei-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
-> 
-> Thanks for your patch!
-> 
-> Fixes: dfc80387aefb7816 ("serial: sh-sci: Compute the regshift value
-> for SCI ports")
-> 
-> > --- a/drivers/tty/serial/sh-sci.c
-> > +++ b/drivers/tty/serial/sh-sci.c
-> > @@ -2862,12 +2862,16 @@ static int sci_init_single(struct platform_device *dev,
-> >         port->flags             = UPF_FIXED_PORT | UPF_BOOT_AUTOCONF | p->flags;
-> >         port->fifosize          = sci_port->params->fifosize;
-> >
-> > +#if !defined(CONFIG_H8300)
-> >         if (port->type = PORT_SCI) {
-> >                 if (sci_port->reg_size >= 0x20)
-> >                         port->regshift = 2;
-> >                 else
-> >                         port->regshift = 1;
-> >         }
-> > +#else
-> > +       port->regshift = 0;
-> > +#endif
-> 
-> What about using reg_size instead?
-> 
->         if (sci_port->reg_size >= 0x20)
->                 port->regshift = 2;
->         else if (sci_port->reg_size >= 0x10)
->                 port->regshift = 1;
->         else
->                 port->regshift = 0;
-> 
-> >         /*
-> >          * The UART port needs an IRQ value, so we peg this to the RX IRQ
-> 
+In order to reduce copy/paste of functions across architectures and then
+make riscv hugetlb port (and future ports) simpler and smaller, this
+patchset intends to factorize the numerous hugetlb primitives that are
+defined across all the architectures.
 
-It looks more better fix.
-And works fine of h8300.
+Except for prepare_hugepage_range, this patchset moves the versions that
+are just pass-through to standard pte primitives into
+asm-generic/hugetlb.h by using the same #ifdef semantic that can be
+found in asm-generic/pgtable.h, i.e. __HAVE_ARCH_***.
 
-Thanks.
+s390 architecture has not been tackled in this serie since it does not
+use asm-generic/hugetlb.h at all.
+powerpc could be factorized a bit more (cf huge_ptep_set_wrprotect).
 
-> Gr{oetje,eeting}s,
-> 
->                         Geert
-> 
-> -- 
-> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-> 
-> In personal conversations with technical people, I call myself a hacker. But
-> when I'm talking to journalists I just say "programmer" or something like that.
->                                 -- Linus Torvalds
+This patchset has been compiled on x86 only. 
+
+Changelog:
+
+v4:
+  Fix powerpc build error due to misplacing of #include
+  <asm-generic/hugetlb.h> outside of #ifdef CONFIG_HUGETLB_PAGE, as
+  pointed by Christophe Leroy.
+
+v1, v2, v3:
+  Same version, just problems with email provider and misuse of
+  --batch-size option of git send-email
+
+Alexandre Ghiti (11):
+  hugetlb: Harmonize hugetlb.h arch specific defines with pgtable.h
+  hugetlb: Introduce generic version of hugetlb_free_pgd_range
+  hugetlb: Introduce generic version of set_huge_pte_at
+  hugetlb: Introduce generic version of huge_ptep_get_and_clear
+  hugetlb: Introduce generic version of huge_ptep_clear_flush
+  hugetlb: Introduce generic version of huge_pte_none
+  hugetlb: Introduce generic version of huge_pte_wrprotect
+  hugetlb: Introduce generic version of prepare_hugepage_range
+  hugetlb: Introduce generic version of huge_ptep_set_wrprotect
+  hugetlb: Introduce generic version of huge_ptep_set_access_flags
+  hugetlb: Introduce generic version of huge_ptep_get
+
+ arch/arm/include/asm/hugetlb-3level.h        | 32 +---------
+ arch/arm/include/asm/hugetlb.h               | 33 +----------
+ arch/arm64/include/asm/hugetlb.h             | 39 +++---------
+ arch/ia64/include/asm/hugetlb.h              | 47 ++-------------
+ arch/mips/include/asm/hugetlb.h              | 40 +++----------
+ arch/parisc/include/asm/hugetlb.h            | 33 +++--------
+ arch/powerpc/include/asm/book3s/32/pgtable.h |  2 +
+ arch/powerpc/include/asm/book3s/64/pgtable.h |  1 +
+ arch/powerpc/include/asm/hugetlb.h           | 43 ++------------
+ arch/powerpc/include/asm/nohash/32/pgtable.h |  2 +
+ arch/powerpc/include/asm/nohash/64/pgtable.h |  1 +
+ arch/sh/include/asm/hugetlb.h                | 54 ++---------------
+ arch/sparc/include/asm/hugetlb.h             | 40 +++----------
+ arch/x86/include/asm/hugetlb.h               | 72 +----------------------
+ include/asm-generic/hugetlb.h                | 88 +++++++++++++++++++++++++++-
+ 15 files changed, 143 insertions(+), 384 deletions(-)
+
+-- 
+2.16.2
+
