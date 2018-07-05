@@ -1,187 +1,180 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Tue, 24 Jul 2018 21:36:22 +0000
-Subject: [PATCH v2 2/4] sh: sh03: rtc: push down rtc class ops into driver
-Message-Id: <20180724213624.3899336-2-arnd@arndb.de>
+From: Alexandre Ghiti <alex@ghiti.fr>
+Date: Thu, 05 Jul 2018 05:12:35 +0000
+Subject: [PATCH v2 04/11] hugetlb: Introduce generic version of huge_ptep_get_and_clear
+Message-Id: <20180705051242.694-4-alex@ghiti.fr>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180724213624.3899336-1-arnd@arndb.de>
-In-Reply-To: <20180724213624.3899336-1-arnd@arndb.de>
+References: <20180705050323.301-1-alex@ghiti.fr>
+ <20180705051242.694-1-alex@ghiti.fr>
+In-Reply-To: <20180705051242.694-1-alex@ghiti.fr>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dalias@libc.org
-Cc: ysato@users.sourceforge.jp, baolin.wang@linaro.org, y2038@lists.linaro.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Arnd Bergmann <arnd@arndb.de>
+To: linux@armlinux.org.uk, catalin.marinas@arm.com, will.deacon@arm.com, tony.luck@intel.com, fenghua.yu@intel.com, ralf@linux-mips.org, paul.burton@mips.com, jhogan@kernel.org, jejb@parisc-linux.org, deller@gmx.de, benh@kernel.crashing.org, paulus@samba.org, mpe@ellerman.id.au, ysato@users.sourceforge.jp, dalias@libc.org, davem@davemloft.net, tglx@linutronix.de, mingo@redhat.com, hpa@zytor.com, x86@kernel.org, arnd@arndb.de, linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org, linux-ia64@vger.kernel.org, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-arch@vger.kernel.org
+Cc: Alexandre Ghiti <alex@ghiti.fr>
 
-The dreamcast RTC support has an extra level of indirection to
-provide either the old read_persistent_clock/update_persistent_clock
-interface or the rtc-generic device for hctosys/systohc.
+arm, ia64, sh, x86 architectures use the
+same version of huge_ptep_get_and_clear, so move this generic
+implementation into asm-generic/hugetlb.h.
 
-By removing the indirection and always using the RTC_CLASS interface,
-we can avoid the lossy double conversion between rtc_time and timespec,
-so we end up supporting the entire range of 'year' values, and clarifying
-the rtc_set_time callback.
-
-I did not change the behavior of sh03_rtc_settimeofday(), which keeps
-just updating the seconds/minutes by calling set_rtc_mmss(), this
-could be improved if anyone cares. Also, the file should ideally be
-moved into drivers/rtc and not use rtc-generic.
-
-Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Alexandre Ghiti <alex@ghiti.fr>
 ---
- arch/sh/boards/mach-sh03/Makefile |  3 +-
- arch/sh/boards/mach-sh03/rtc.c    | 51 +++++++++++++++++++------------
- arch/sh/boards/mach-sh03/setup.c  |  9 ------
- arch/sh/configs/sh03_defconfig    |  2 ++
- 4 files changed, 35 insertions(+), 30 deletions(-)
+ arch/arm/include/asm/hugetlb-3level.h | 6 ------
+ arch/arm64/include/asm/hugetlb.h      | 1 +
+ arch/ia64/include/asm/hugetlb.h       | 6 ------
+ arch/mips/include/asm/hugetlb.h       | 1 +
+ arch/parisc/include/asm/hugetlb.h     | 1 +
+ arch/powerpc/include/asm/hugetlb.h    | 1 +
+ arch/sh/include/asm/hugetlb.h         | 6 ------
+ arch/sparc/include/asm/hugetlb.h      | 1 +
+ arch/x86/include/asm/hugetlb.h        | 6 ------
+ include/asm-generic/hugetlb.h         | 8 ++++++++
+ 10 files changed, 13 insertions(+), 24 deletions(-)
 
-diff --git a/arch/sh/boards/mach-sh03/Makefile b/arch/sh/boards/mach-sh03/Makefile
-index 400306a796ec..47007a3a2fc8 100644
---- a/arch/sh/boards/mach-sh03/Makefile
-+++ b/arch/sh/boards/mach-sh03/Makefile
-@@ -2,4 +2,5 @@
- # Makefile for the Interface (CTP/PCI-SH03) specific parts of the kernel
- #
+diff --git a/arch/arm/include/asm/hugetlb-3level.h b/arch/arm/include/asm/hugetlb-3level.h
+index 398fb06e8207..ad36e84b819a 100644
+--- a/arch/arm/include/asm/hugetlb-3level.h
++++ b/arch/arm/include/asm/hugetlb-3level.h
+@@ -49,12 +49,6 @@ static inline void huge_ptep_set_wrprotect(struct mm_struct *mm,
+ 	ptep_set_wrprotect(mm, addr, ptep);
+ }
  
--obj-y	 := setup.o rtc.o
-+obj-y	 := setup.o
-+obj-$(CONFIG_RTC_DRV_GENERIC) += rtc.o
-diff --git a/arch/sh/boards/mach-sh03/rtc.c b/arch/sh/boards/mach-sh03/rtc.c
-index dc3d50e3b7a2..8b23ed7c201c 100644
---- a/arch/sh/boards/mach-sh03/rtc.c
-+++ b/arch/sh/boards/mach-sh03/rtc.c
-@@ -13,8 +13,9 @@
- #include <linux/bcd.h>
- #include <linux/rtc.h>
- #include <linux/spinlock.h>
--#include <asm/io.h>
--#include <asm/rtc.h>
-+#include <linux/io.h>
-+#include <linux/rtc.h>
-+#include <linux/platform_device.h>
- 
- #define RTC_BASE	0xb0000000
- #define RTC_SEC1	(RTC_BASE + 0)
-@@ -38,7 +39,7 @@
- 
- static DEFINE_SPINLOCK(sh03_rtc_lock);
- 
--unsigned long get_cmos_time(void)
-+static int sh03_rtc_gettimeofday(struct device *dev, struct rtc_time *tm)
- {
- 	unsigned int year, mon, day, hour, min, sec;
- 
-@@ -75,17 +76,18 @@ unsigned long get_cmos_time(void)
- 	}
- 
- 	spin_unlock(&sh03_rtc_lock);
--	return mktime(year, mon, day, hour, min, sec);
--}
- 
--void sh03_rtc_gettimeofday(struct timespec *tv)
+-static inline pte_t huge_ptep_get_and_clear(struct mm_struct *mm,
+-					    unsigned long addr, pte_t *ptep)
 -{
-+	tm->tm_sec  = sec;
-+	tm->tm_min  = min;
-+	tm->tm_hour = hour;
-+	tm->tm_mday = day;
-+	tm->tm_mon  = mon;
-+	tm->tm_year = year - 1900;
- 
--	tv->tv_sec = get_cmos_time();
--	tv->tv_nsec = 0;
-+	return 0;
- }
- 
--static int set_rtc_mmss(unsigned long nowtime)
-+static int set_rtc_mmss(struct rtc_time *tm)
- {
- 	int retval = 0;
- 	int real_seconds, real_minutes, cmos_minutes;
-@@ -97,8 +99,8 @@ static int set_rtc_mmss(unsigned long nowtime)
- 		if (!(__raw_readb(RTC_CTL) & RTC_BUSY))
- 			break;
- 	cmos_minutes = (__raw_readb(RTC_MIN1) & 0xf) + (__raw_readb(RTC_MIN10) & 0xf) * 10;
--	real_seconds = nowtime % 60;
--	real_minutes = nowtime / 60;
-+	real_seconds = tm->tm_sec;
-+	real_minutes = tm->tm_min;
- 	if (((abs(real_minutes - cmos_minutes) + 15)/30) & 1)
- 		real_minutes += 30;		/* correct for half hour time zone */
- 	real_minutes %= 60;
-@@ -112,22 +114,31 @@ static int set_rtc_mmss(unsigned long nowtime)
- 		printk_once(KERN_NOTICE
- 		       "set_rtc_mmss: can't update from %d to %d\n",
- 		       cmos_minutes, real_minutes);
--		retval = -1;
-+		retval = -EINVAL;
- 	}
- 	spin_unlock(&sh03_rtc_lock);
- 
- 	return retval;
- }
- 
--int sh03_rtc_settimeofday(const time_t secs)
-+int sh03_rtc_settimeofday(struct device *dev, struct rtc_time *tm)
- {
--	unsigned long nowtime = secs;
--
--	return set_rtc_mmss(nowtime);
-+	return set_rtc_mmss(tm);
- }
- 
--void sh03_time_init(void)
-+static const struct rtc_class_ops rtc_generic_ops = {
-+	.read_time = sh03_rtc_gettimeofday,
-+	.set_time = sh03_rtc_settimeofday,
-+};
-+
-+static int __init sh03_time_init(void)
- {
--	rtc_sh_get_time = sh03_rtc_gettimeofday;
--	rtc_sh_set_time = sh03_rtc_settimeofday;
-+	struct platform_device *pdev;
-+
-+	pdev = platform_device_register_data(NULL, "rtc-generic", -1,
-+					     &rtc_generic_ops,
-+					     sizeof(rtc_generic_ops));
-+
-+	return PTR_ERR_OR_ZERO(pdev);
- }
-+arch_initcall(sh03_time_init);
-diff --git a/arch/sh/boards/mach-sh03/setup.c b/arch/sh/boards/mach-sh03/setup.c
-index 85e7059a77e9..3901b6031ad5 100644
---- a/arch/sh/boards/mach-sh03/setup.c
-+++ b/arch/sh/boards/mach-sh03/setup.c
-@@ -22,14 +22,6 @@ static void __init init_sh03_IRQ(void)
- 	plat_irq_setup_pins(IRQ_MODE_IRQ);
- }
- 
--/* arch/sh/boards/sh03/rtc.c */
--void sh03_time_init(void);
--
--static void __init sh03_setup(char **cmdline_p)
--{
--	board_time_init = sh03_time_init;
+-	return ptep_get_and_clear(mm, addr, ptep);
 -}
 -
- static struct resource cf_ide_resources[] = {
- 	[0] = {
- 		.start  = 0x1f0,
-@@ -101,6 +93,5 @@ device_initcall(sh03_devices_setup);
+ static inline int huge_ptep_set_access_flags(struct vm_area_struct *vma,
+ 					     unsigned long addr, pte_t *ptep,
+ 					     pte_t pte, int dirty)
+diff --git a/arch/arm64/include/asm/hugetlb.h b/arch/arm64/include/asm/hugetlb.h
+index 874661a1dff1..6ae0bcafe162 100644
+--- a/arch/arm64/include/asm/hugetlb.h
++++ b/arch/arm64/include/asm/hugetlb.h
+@@ -66,6 +66,7 @@ extern void set_huge_pte_at(struct mm_struct *mm, unsigned long addr,
+ extern int huge_ptep_set_access_flags(struct vm_area_struct *vma,
+ 				      unsigned long addr, pte_t *ptep,
+ 				      pte_t pte, int dirty);
++#define __HAVE_ARCH_HUGE_PTEP_GET_AND_CLEAR
+ extern pte_t huge_ptep_get_and_clear(struct mm_struct *mm,
+ 				     unsigned long addr, pte_t *ptep);
+ extern void huge_ptep_set_wrprotect(struct mm_struct *mm,
+diff --git a/arch/ia64/include/asm/hugetlb.h b/arch/ia64/include/asm/hugetlb.h
+index a235d6f60fb3..6719c74da0de 100644
+--- a/arch/ia64/include/asm/hugetlb.h
++++ b/arch/ia64/include/asm/hugetlb.h
+@@ -20,12 +20,6 @@ static inline int is_hugepage_only_range(struct mm_struct *mm,
+ 		REGION_NUMBER((addr)+(len)-1) = RGN_HPAGE);
+ }
  
- static struct sh_machine_vector mv_sh03 __initmv = {
- 	.mv_name		= "Interface (CTP/PCI-SH03)",
--	.mv_setup		= sh03_setup,
- 	.mv_init_irq		= init_sh03_IRQ,
- };
-diff --git a/arch/sh/configs/sh03_defconfig b/arch/sh/configs/sh03_defconfig
-index 2156223405a1..489ffdfb1517 100644
---- a/arch/sh/configs/sh03_defconfig
-+++ b/arch/sh/configs/sh03_defconfig
-@@ -130,3 +130,5 @@ CONFIG_CRYPTO_SHA1=y
- CONFIG_CRYPTO_DEFLATE=y
- # CONFIG_CRYPTO_ANSI_CPRNG is not set
- CONFIG_CRC_CCITT=y
-+CONFIG_RTC_CLASS=y
-+CONFIG_RTC_DRV_GENERIC=y
+-static inline pte_t huge_ptep_get_and_clear(struct mm_struct *mm,
+-					    unsigned long addr, pte_t *ptep)
+-{
+-	return ptep_get_and_clear(mm, addr, ptep);
+-}
+-
+ static inline void huge_ptep_clear_flush(struct vm_area_struct *vma,
+ 					 unsigned long addr, pte_t *ptep)
+ {
+diff --git a/arch/mips/include/asm/hugetlb.h b/arch/mips/include/asm/hugetlb.h
+index 8ea439041d5d..0959cc5a41fa 100644
+--- a/arch/mips/include/asm/hugetlb.h
++++ b/arch/mips/include/asm/hugetlb.h
+@@ -36,6 +36,7 @@ static inline int prepare_hugepage_range(struct file *file,
+ 	return 0;
+ }
+ 
++#define __HAVE_ARCH_HUGE_PTEP_GET_AND_CLEAR
+ static inline pte_t huge_ptep_get_and_clear(struct mm_struct *mm,
+ 					    unsigned long addr, pte_t *ptep)
+ {
+diff --git a/arch/parisc/include/asm/hugetlb.h b/arch/parisc/include/asm/hugetlb.h
+index 77c8adbac7c3..6e281e1bb336 100644
+--- a/arch/parisc/include/asm/hugetlb.h
++++ b/arch/parisc/include/asm/hugetlb.h
+@@ -8,6 +8,7 @@
+ void set_huge_pte_at(struct mm_struct *mm, unsigned long addr,
+ 		     pte_t *ptep, pte_t pte);
+ 
++#define __HAVE_ARCH_HUGE_PTEP_GET_AND_CLEAR
+ pte_t huge_ptep_get_and_clear(struct mm_struct *mm, unsigned long addr,
+ 			      pte_t *ptep);
+ 
+diff --git a/arch/powerpc/include/asm/hugetlb.h b/arch/powerpc/include/asm/hugetlb.h
+index ba7d5d8b543f..ec3e0c2e78f8 100644
+--- a/arch/powerpc/include/asm/hugetlb.h
++++ b/arch/powerpc/include/asm/hugetlb.h
+@@ -132,6 +132,7 @@ static inline int prepare_hugepage_range(struct file *file,
+ 	return 0;
+ }
+ 
++#define __HAVE_ARCH_HUGE_PTEP_GET_AND_CLEAR
+ static inline pte_t huge_ptep_get_and_clear(struct mm_struct *mm,
+ 					    unsigned long addr, pte_t *ptep)
+ {
+diff --git a/arch/sh/include/asm/hugetlb.h b/arch/sh/include/asm/hugetlb.h
+index bc552e37c1c9..08ee6c00b5e9 100644
+--- a/arch/sh/include/asm/hugetlb.h
++++ b/arch/sh/include/asm/hugetlb.h
+@@ -25,12 +25,6 @@ static inline int prepare_hugepage_range(struct file *file,
+ 	return 0;
+ }
+ 
+-static inline pte_t huge_ptep_get_and_clear(struct mm_struct *mm,
+-					    unsigned long addr, pte_t *ptep)
+-{
+-	return ptep_get_and_clear(mm, addr, ptep);
+-}
+-
+ static inline void huge_ptep_clear_flush(struct vm_area_struct *vma,
+ 					 unsigned long addr, pte_t *ptep)
+ {
+diff --git a/arch/sparc/include/asm/hugetlb.h b/arch/sparc/include/asm/hugetlb.h
+index 16b0c53ea6c9..944e3a4bfaff 100644
+--- a/arch/sparc/include/asm/hugetlb.h
++++ b/arch/sparc/include/asm/hugetlb.h
+@@ -16,6 +16,7 @@ extern struct pud_huge_patch_entry __pud_huge_patch, __pud_huge_patch_end;
+ void set_huge_pte_at(struct mm_struct *mm, unsigned long addr,
+ 		     pte_t *ptep, pte_t pte);
+ 
++#define __HAVE_ARCH_HUGE_PTEP_GET_AND_CLEAR
+ pte_t huge_ptep_get_and_clear(struct mm_struct *mm, unsigned long addr,
+ 			      pte_t *ptep);
+ 
+diff --git a/arch/x86/include/asm/hugetlb.h b/arch/x86/include/asm/hugetlb.h
+index 554d5614b375..48b8d9b13cc6 100644
+--- a/arch/x86/include/asm/hugetlb.h
++++ b/arch/x86/include/asm/hugetlb.h
+@@ -27,12 +27,6 @@ static inline int prepare_hugepage_range(struct file *file,
+ 	return 0;
+ }
+ 
+-static inline pte_t huge_ptep_get_and_clear(struct mm_struct *mm,
+-					    unsigned long addr, pte_t *ptep)
+-{
+-	return ptep_get_and_clear(mm, addr, ptep);
+-}
+-
+ static inline void huge_ptep_clear_flush(struct vm_area_struct *vma,
+ 					 unsigned long addr, pte_t *ptep)
+ {
+diff --git a/include/asm-generic/hugetlb.h b/include/asm-generic/hugetlb.h
+index ee010b756246..0f6f151780dd 100644
+--- a/include/asm-generic/hugetlb.h
++++ b/include/asm-generic/hugetlb.h
+@@ -57,4 +57,12 @@ static inline void set_huge_pte_at(struct mm_struct *mm, unsigned long addr,
+ }
+ #endif
+ 
++#ifndef __HAVE_ARCH_HUGE_PTEP_GET_AND_CLEAR
++static inline pte_t huge_ptep_get_and_clear(struct mm_struct *mm,
++		unsigned long addr, pte_t *ptep)
++{
++	return ptep_get_and_clear(mm, addr, ptep);
++}
++#endif
++
+ #endif /* _ASM_GENERIC_HUGETLB_H */
 -- 
-2.18.0
+2.16.2
 
