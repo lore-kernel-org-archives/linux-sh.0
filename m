@@ -1,83 +1,190 @@
-From: Boris Brezillon <boris.brezillon@bootlin.com>
-Date: Thu, 26 Jul 2018 19:43:35 +0000
-Subject: Re: [PATCH v3] mtd/maps: fix solutionengine.c printk format warnings
-Message-Id: <20180726214335.047e877e@bbrezillon>
+From: Alexandre Ghiti <alex@ghiti.fr>
+Date: Thu, 05 Jul 2018 11:07:11 +0000
+Subject: [PATCH v4 06/11] hugetlb: Introduce generic version of huge_pte_none
+Message-Id: <20180705110716.3919-7-alex@ghiti.fr>
 List-Id: <linux-sh.vger.kernel.org>
-References: <578dd079-80d0-939a-fbfd-ae101da1dc29@infradead.org>
-In-Reply-To: <578dd079-80d0-939a-fbfd-ae101da1dc29@infradead.org>
+References: <20180705110716.3919-1-alex@ghiti.fr>
+In-Reply-To: <20180705110716.3919-1-alex@ghiti.fr>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Randy Dunlap <rdunlap@infradead.org>
-Cc: LKML <linux-kernel@vger.kernel.org>, linux-sh@vger.kernel.org, linux-mtd@lists.infradead.org, Rich Felker <dalias@libc.org>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Marek Vasut <marek.vasut@gmail.com>, Richard Weinberger <richard@nod.at>, Brian Norris <computersforpeace@gmail.com>, David Woodhouse <dwmw2@infradead.org>
+To: linux@armlinux.org.uk, catalin.marinas@arm.com, will.deacon@arm.com, tony.luck@intel.com, fenghua.yu@intel.com, ralf@linux-mips.org, paul.burton@mips.com, jhogan@kernel.org, jejb@parisc-linux.org, deller@gmx.de, benh@kernel.crashing.org, paulus@samba.org, mpe@ellerman.id.au, ysato@users.sourceforge.jp, dalias@libc.org, davem@davemloft.net, tglx@linutronix.de, mingo@redhat.com, hpa@zytor.com, x86@kernel.org, arnd@arndb.de, linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org, linux-ia64@vger.kernel.org, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-arch@vger.kernel.org
+Cc: Alexandre Ghiti <alex@ghiti.fr>
 
-On Tue, 24 Jul 2018 11:29:01 -0700
-Randy Dunlap <rdunlap@infradead.org> wrote:
+arm, arm64, ia64, parisc, powerpc, sh, sparc, x86 architectures
+use the same version of huge_pte_none, so move this generic
+implementation into asm-generic/hugetlb.h.
 
-> From: Randy Dunlap <rdunlap@infradead.org>
-> 
-> Fix 2 printk format warnings (this driver is currently only used by
-> arch/sh/) by using "%pap" instead of "%lx".
-> 
-> Fixes these build warnings:
-> 
-> ../drivers/mtd/maps/solutionengine.c: In function 'init_soleng_maps':
-> ../include/linux/kern_levels.h:5:18: warning: format '%lx' expects argument of type 'long unsigned int', but argument 2 has type 'resource_size_t' {aka 'unsigned int'} [-Wformat=]
-> ../drivers/mtd/maps/solutionengine.c:62:54: note: format string is defined here
->   printk(KERN_NOTICE "Solution Engine: Flash at 0x%08lx, EPROM at 0x%08lx\n",
->                                                   ~~~~^
->                                                   %08x
-> ../include/linux/kern_levels.h:5:18: warning: format '%lx' expects argument of type 'long unsigned int', but argument 3 has type 'resource_size_t' {aka 'unsigned int'} [-Wformat=]
-> ../drivers/mtd/maps/solutionengine.c:62:72: note: format string is defined here
->   printk(KERN_NOTICE "Solution Engine: Flash at 0x%08lx, EPROM at 0x%08lx\n",
->                                                                     ~~~~^
->                                                                     %08x
-> 
-> Cc: David Woodhouse <dwmw2@infradead.org>
-> Cc: Brian Norris <computersforpeace@gmail.com>
-> Cc: Boris Brezillon <boris.brezillon@bootlin.com>
-> Cc: Marek Vasut <marek.vasut@gmail.com>
-> Cc: Richard Weinberger <richard@nod.at>
-> Cc: linux-mtd@lists.infradead.org
-> Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-> Cc: Rich Felker <dalias@libc.org>
-> Cc: linux-sh@vger.kernel.org
-> Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> 
-> Signed-off-by: Randy Dunlap <rdunlap@infradead.org>
+Signed-off-by: Alexandre Ghiti <alex@ghiti.fr>
+---
+ arch/arm/include/asm/hugetlb.h     | 5 -----
+ arch/arm64/include/asm/hugetlb.h   | 5 -----
+ arch/ia64/include/asm/hugetlb.h    | 5 -----
+ arch/mips/include/asm/hugetlb.h    | 1 +
+ arch/parisc/include/asm/hugetlb.h  | 5 -----
+ arch/powerpc/include/asm/hugetlb.h | 5 -----
+ arch/sh/include/asm/hugetlb.h      | 5 -----
+ arch/sparc/include/asm/hugetlb.h   | 5 -----
+ arch/x86/include/asm/hugetlb.h     | 5 -----
+ include/asm-generic/hugetlb.h      | 7 +++++++
+ 10 files changed, 8 insertions(+), 40 deletions(-)
 
-Applied.
-
-Thanks,
-
-Boris
-
-> ---
-> v3: drop anding the phys addresses with 0x1fffffff since the only
->     phys addresses are 0 or 0x01000000.
-> 
->  drivers/mtd/maps/solutionengine.c |    6 +++---
->  1 file changed, 3 insertions(+), 3 deletions(-)
-> 
-> --- linux-next-20180717.orig/drivers/mtd/maps/solutionengine.c
-> +++ linux-next-20180717/drivers/mtd/maps/solutionengine.c
-> @@ -59,9 +59,9 @@ static int __init init_soleng_maps(void)
->  			return -ENXIO;
->  		}
->  	}
-> -	printk(KERN_NOTICE "Solution Engine: Flash at 0x%08lx, EPROM at 0x%08lx\n",
-> -	       soleng_flash_map.phys & 0x1fffffff,
-> -	       soleng_eprom_map.phys & 0x1fffffff);
-> +	printk(KERN_NOTICE "Solution Engine: Flash at 0x%pap, EPROM at 0x%pap\n",
-> +	       &soleng_flash_map.phys,
-> +	       &soleng_eprom_map.phys);
->  	flash_mtd->owner = THIS_MODULE;
->  
->  	eprom_mtd = do_map_probe("map_rom", &soleng_eprom_map);
-> 
-> 
-> 
-> ______________________________________________________
-> Linux MTD discussion mailing list
-> http://lists.infradead.org/mailman/listinfo/linux-mtd/
+diff --git a/arch/arm/include/asm/hugetlb.h b/arch/arm/include/asm/hugetlb.h
+index 047b893ef95d..3d2ce4dbc145 100644
+--- a/arch/arm/include/asm/hugetlb.h
++++ b/arch/arm/include/asm/hugetlb.h
+@@ -43,11 +43,6 @@ static inline int prepare_hugepage_range(struct file *file,
+ 	return 0;
+ }
+ 
+-static inline int huge_pte_none(pte_t pte)
+-{
+-	return pte_none(pte);
+-}
+-
+ static inline pte_t huge_pte_wrprotect(pte_t pte)
+ {
+ 	return pte_wrprotect(pte);
+diff --git a/arch/arm64/include/asm/hugetlb.h b/arch/arm64/include/asm/hugetlb.h
+index 4c8dd488554d..49247c6f94db 100644
+--- a/arch/arm64/include/asm/hugetlb.h
++++ b/arch/arm64/include/asm/hugetlb.h
+@@ -42,11 +42,6 @@ static inline int prepare_hugepage_range(struct file *file,
+ 	return 0;
+ }
+ 
+-static inline int huge_pte_none(pte_t pte)
+-{
+-	return pte_none(pte);
+-}
+-
+ static inline pte_t huge_pte_wrprotect(pte_t pte)
+ {
+ 	return pte_wrprotect(pte);
+diff --git a/arch/ia64/include/asm/hugetlb.h b/arch/ia64/include/asm/hugetlb.h
+index 41b5f6adeee4..bf573500b3c4 100644
+--- a/arch/ia64/include/asm/hugetlb.h
++++ b/arch/ia64/include/asm/hugetlb.h
+@@ -26,11 +26,6 @@ static inline void huge_ptep_clear_flush(struct vm_area_struct *vma,
+ {
+ }
+ 
+-static inline int huge_pte_none(pte_t pte)
+-{
+-	return pte_none(pte);
+-}
+-
+ static inline pte_t huge_pte_wrprotect(pte_t pte)
+ {
+ 	return pte_wrprotect(pte);
+diff --git a/arch/mips/include/asm/hugetlb.h b/arch/mips/include/asm/hugetlb.h
+index 7df1f116a3cc..1c9c4531376c 100644
+--- a/arch/mips/include/asm/hugetlb.h
++++ b/arch/mips/include/asm/hugetlb.h
+@@ -55,6 +55,7 @@ static inline void huge_ptep_clear_flush(struct vm_area_struct *vma,
+ 	flush_tlb_page(vma, addr & huge_page_mask(hstate_vma(vma)));
+ }
+ 
++#define __HAVE_ARCH_HUGE_PTE_NONE
+ static inline int huge_pte_none(pte_t pte)
+ {
+ 	unsigned long val = pte_val(pte) & ~_PAGE_GLOBAL;
+diff --git a/arch/parisc/include/asm/hugetlb.h b/arch/parisc/include/asm/hugetlb.h
+index 9afff26747a1..c09d8c74553c 100644
+--- a/arch/parisc/include/asm/hugetlb.h
++++ b/arch/parisc/include/asm/hugetlb.h
+@@ -38,11 +38,6 @@ static inline void huge_ptep_clear_flush(struct vm_area_struct *vma,
+ {
+ }
+ 
+-static inline int huge_pte_none(pte_t pte)
+-{
+-	return pte_none(pte);
+-}
+-
+ static inline pte_t huge_pte_wrprotect(pte_t pte)
+ {
+ 	return pte_wrprotect(pte);
+diff --git a/arch/powerpc/include/asm/hugetlb.h b/arch/powerpc/include/asm/hugetlb.h
+index 0b02856aa85b..3562d46585ba 100644
+--- a/arch/powerpc/include/asm/hugetlb.h
++++ b/arch/powerpc/include/asm/hugetlb.h
+@@ -152,11 +152,6 @@ static inline void huge_ptep_clear_flush(struct vm_area_struct *vma,
+ 	flush_hugetlb_page(vma, addr);
+ }
+ 
+-static inline int huge_pte_none(pte_t pte)
+-{
+-	return pte_none(pte);
+-}
+-
+ static inline pte_t huge_pte_wrprotect(pte_t pte)
+ {
+ 	return pte_wrprotect(pte);
+diff --git a/arch/sh/include/asm/hugetlb.h b/arch/sh/include/asm/hugetlb.h
+index 9abf9c86b769..a9f8266f33cf 100644
+--- a/arch/sh/include/asm/hugetlb.h
++++ b/arch/sh/include/asm/hugetlb.h
+@@ -31,11 +31,6 @@ static inline void huge_ptep_clear_flush(struct vm_area_struct *vma,
+ {
+ }
+ 
+-static inline int huge_pte_none(pte_t pte)
+-{
+-	return pte_none(pte);
+-}
+-
+ static inline pte_t huge_pte_wrprotect(pte_t pte)
+ {
+ 	return pte_wrprotect(pte);
+diff --git a/arch/sparc/include/asm/hugetlb.h b/arch/sparc/include/asm/hugetlb.h
+index 651a9593fcee..11115bbd712e 100644
+--- a/arch/sparc/include/asm/hugetlb.h
++++ b/arch/sparc/include/asm/hugetlb.h
+@@ -48,11 +48,6 @@ static inline void huge_ptep_clear_flush(struct vm_area_struct *vma,
+ {
+ }
+ 
+-static inline int huge_pte_none(pte_t pte)
+-{
+-	return pte_none(pte);
+-}
+-
+ static inline pte_t huge_pte_wrprotect(pte_t pte)
+ {
+ 	return pte_wrprotect(pte);
+diff --git a/arch/x86/include/asm/hugetlb.h b/arch/x86/include/asm/hugetlb.h
+index 8347d5abf882..c5fdc53b6e41 100644
+--- a/arch/x86/include/asm/hugetlb.h
++++ b/arch/x86/include/asm/hugetlb.h
+@@ -27,11 +27,6 @@ static inline int prepare_hugepage_range(struct file *file,
+ 	return 0;
+ }
+ 
+-static inline int huge_pte_none(pte_t pte)
+-{
+-	return pte_none(pte);
+-}
+-
+ static inline pte_t huge_pte_wrprotect(pte_t pte)
+ {
+ 	return pte_wrprotect(pte);
+diff --git a/include/asm-generic/hugetlb.h b/include/asm-generic/hugetlb.h
+index ffa63fd8388d..2fc3d68424e9 100644
+--- a/include/asm-generic/hugetlb.h
++++ b/include/asm-generic/hugetlb.h
+@@ -73,4 +73,11 @@ static inline void huge_ptep_clear_flush(struct vm_area_struct *vma,
+ }
+ #endif
+ 
++#ifndef __HAVE_ARCH_HUGE_PTE_NONE
++static inline int huge_pte_none(pte_t pte)
++{
++	return pte_none(pte);
++}
++#endif
++
+ #endif /* _ASM_GENERIC_HUGETLB_H */
+-- 
+2.16.2
 
