@@ -1,137 +1,191 @@
-From: Mauro Carvalho Chehab <mchehab+kde@kernel.org>
-Date: Tue, 24 Jul 2018 21:49:08 +0000
-Subject: Re: [PATCH 1/9] sh: defconfig: migor: Update defconfig
-Message-Id: <20180724184908.28b4f27b@coco.lan>
+From: Alexandre Ghiti <alex@ghiti.fr>
+Date: Thu, 05 Jul 2018 05:12:37 +0000
+Subject: [PATCH v2 06/11] hugetlb: Introduce generic version of huge_pte_none
+Message-Id: <20180705051242.694-6-alex@ghiti.fr>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1530699346-3235-1-git-send-email-jacopo+renesas@jmondi.org>
-        <1530699346-3235-2-git-send-email-jacopo+renesas@jmondi.org>
-In-Reply-To: <1530699346-3235-2-git-send-email-jacopo+renesas@jmondi.org>
+References: <20180705050323.301-1-alex@ghiti.fr>
+ <20180705051242.694-1-alex@ghiti.fr>
+In-Reply-To: <20180705051242.694-1-alex@ghiti.fr>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Jacopo Mondi <jacopo+renesas@jmondi.org>
-Cc: hverkuil@xs4all.nl, mchehab@kernel.org, ysato@users.sourceforge.jp, dalias@libc.org, linux-renesas-soc@vger.kernel.org, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux@armlinux.org.uk, catalin.marinas@arm.com, will.deacon@arm.com, tony.luck@intel.com, fenghua.yu@intel.com, ralf@linux-mips.org, paul.burton@mips.com, jhogan@kernel.org, jejb@parisc-linux.org, deller@gmx.de, benh@kernel.crashing.org, paulus@samba.org, mpe@ellerman.id.au, ysato@users.sourceforge.jp, dalias@libc.org, davem@davemloft.net, tglx@linutronix.de, mingo@redhat.com, hpa@zytor.com, x86@kernel.org, arnd@arndb.de, linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org, linux-ia64@vger.kernel.org, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-arch@vger.kernel.org
+Cc: Alexandre Ghiti <alex@ghiti.fr>
 
-Em Wed,  4 Jul 2018 12:15:38 +0200
-Jacopo Mondi <jacopo+renesas@jmondi.org> escreveu:
+arm, arm64, ia64, parisc, powerpc, sh, sparc, x86 architectures
+use the same version of huge_pte_none, so move this generic
+implementation into asm-generic/hugetlb.h.
 
-> Update defconfig to Linux v4.18-rc2.
-> 
-> Signed-off-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
+Signed-off-by: Alexandre Ghiti <alex@ghiti.fr>
+---
+ arch/arm/include/asm/hugetlb.h     | 5 -----
+ arch/arm64/include/asm/hugetlb.h   | 5 -----
+ arch/ia64/include/asm/hugetlb.h    | 5 -----
+ arch/mips/include/asm/hugetlb.h    | 1 +
+ arch/parisc/include/asm/hugetlb.h  | 5 -----
+ arch/powerpc/include/asm/hugetlb.h | 5 -----
+ arch/sh/include/asm/hugetlb.h      | 5 -----
+ arch/sparc/include/asm/hugetlb.h   | 5 -----
+ arch/x86/include/asm/hugetlb.h     | 5 -----
+ include/asm-generic/hugetlb.h      | 7 +++++++
+ 10 files changed, 8 insertions(+), 40 deletions(-)
 
-Why do you want to apply this via the media tree?
+diff --git a/arch/arm/include/asm/hugetlb.h b/arch/arm/include/asm/hugetlb.h
+index 047b893ef95d..3d2ce4dbc145 100644
+--- a/arch/arm/include/asm/hugetlb.h
++++ b/arch/arm/include/asm/hugetlb.h
+@@ -43,11 +43,6 @@ static inline int prepare_hugepage_range(struct file *file,
+ 	return 0;
+ }
+ 
+-static inline int huge_pte_none(pte_t pte)
+-{
+-	return pte_none(pte);
+-}
+-
+ static inline pte_t huge_pte_wrprotect(pte_t pte)
+ {
+ 	return pte_wrprotect(pte);
+diff --git a/arch/arm64/include/asm/hugetlb.h b/arch/arm64/include/asm/hugetlb.h
+index 4c8dd488554d..49247c6f94db 100644
+--- a/arch/arm64/include/asm/hugetlb.h
++++ b/arch/arm64/include/asm/hugetlb.h
+@@ -42,11 +42,6 @@ static inline int prepare_hugepage_range(struct file *file,
+ 	return 0;
+ }
+ 
+-static inline int huge_pte_none(pte_t pte)
+-{
+-	return pte_none(pte);
+-}
+-
+ static inline pte_t huge_pte_wrprotect(pte_t pte)
+ {
+ 	return pte_wrprotect(pte);
+diff --git a/arch/ia64/include/asm/hugetlb.h b/arch/ia64/include/asm/hugetlb.h
+index 41b5f6adeee4..bf573500b3c4 100644
+--- a/arch/ia64/include/asm/hugetlb.h
++++ b/arch/ia64/include/asm/hugetlb.h
+@@ -26,11 +26,6 @@ static inline void huge_ptep_clear_flush(struct vm_area_struct *vma,
+ {
+ }
+ 
+-static inline int huge_pte_none(pte_t pte)
+-{
+-	return pte_none(pte);
+-}
+-
+ static inline pte_t huge_pte_wrprotect(pte_t pte)
+ {
+ 	return pte_wrprotect(pte);
+diff --git a/arch/mips/include/asm/hugetlb.h b/arch/mips/include/asm/hugetlb.h
+index 7df1f116a3cc..1c9c4531376c 100644
+--- a/arch/mips/include/asm/hugetlb.h
++++ b/arch/mips/include/asm/hugetlb.h
+@@ -55,6 +55,7 @@ static inline void huge_ptep_clear_flush(struct vm_area_struct *vma,
+ 	flush_tlb_page(vma, addr & huge_page_mask(hstate_vma(vma)));
+ }
+ 
++#define __HAVE_ARCH_HUGE_PTE_NONE
+ static inline int huge_pte_none(pte_t pte)
+ {
+ 	unsigned long val = pte_val(pte) & ~_PAGE_GLOBAL;
+diff --git a/arch/parisc/include/asm/hugetlb.h b/arch/parisc/include/asm/hugetlb.h
+index 9afff26747a1..c09d8c74553c 100644
+--- a/arch/parisc/include/asm/hugetlb.h
++++ b/arch/parisc/include/asm/hugetlb.h
+@@ -38,11 +38,6 @@ static inline void huge_ptep_clear_flush(struct vm_area_struct *vma,
+ {
+ }
+ 
+-static inline int huge_pte_none(pte_t pte)
+-{
+-	return pte_none(pte);
+-}
+-
+ static inline pte_t huge_pte_wrprotect(pte_t pte)
+ {
+ 	return pte_wrprotect(pte);
+diff --git a/arch/powerpc/include/asm/hugetlb.h b/arch/powerpc/include/asm/hugetlb.h
+index de0769f0b5b2..530b817e097c 100644
+--- a/arch/powerpc/include/asm/hugetlb.h
++++ b/arch/powerpc/include/asm/hugetlb.h
+@@ -152,11 +152,6 @@ static inline void huge_ptep_clear_flush(struct vm_area_struct *vma,
+ 	flush_hugetlb_page(vma, addr);
+ }
+ 
+-static inline int huge_pte_none(pte_t pte)
+-{
+-	return pte_none(pte);
+-}
+-
+ static inline pte_t huge_pte_wrprotect(pte_t pte)
+ {
+ 	return pte_wrprotect(pte);
+diff --git a/arch/sh/include/asm/hugetlb.h b/arch/sh/include/asm/hugetlb.h
+index 9abf9c86b769..a9f8266f33cf 100644
+--- a/arch/sh/include/asm/hugetlb.h
++++ b/arch/sh/include/asm/hugetlb.h
+@@ -31,11 +31,6 @@ static inline void huge_ptep_clear_flush(struct vm_area_struct *vma,
+ {
+ }
+ 
+-static inline int huge_pte_none(pte_t pte)
+-{
+-	return pte_none(pte);
+-}
+-
+ static inline pte_t huge_pte_wrprotect(pte_t pte)
+ {
+ 	return pte_wrprotect(pte);
+diff --git a/arch/sparc/include/asm/hugetlb.h b/arch/sparc/include/asm/hugetlb.h
+index 651a9593fcee..11115bbd712e 100644
+--- a/arch/sparc/include/asm/hugetlb.h
++++ b/arch/sparc/include/asm/hugetlb.h
+@@ -48,11 +48,6 @@ static inline void huge_ptep_clear_flush(struct vm_area_struct *vma,
+ {
+ }
+ 
+-static inline int huge_pte_none(pte_t pte)
+-{
+-	return pte_none(pte);
+-}
+-
+ static inline pte_t huge_pte_wrprotect(pte_t pte)
+ {
+ 	return pte_wrprotect(pte);
+diff --git a/arch/x86/include/asm/hugetlb.h b/arch/x86/include/asm/hugetlb.h
+index 8347d5abf882..c5fdc53b6e41 100644
+--- a/arch/x86/include/asm/hugetlb.h
++++ b/arch/x86/include/asm/hugetlb.h
+@@ -27,11 +27,6 @@ static inline int prepare_hugepage_range(struct file *file,
+ 	return 0;
+ }
+ 
+-static inline int huge_pte_none(pte_t pte)
+-{
+-	return pte_none(pte);
+-}
+-
+ static inline pte_t huge_pte_wrprotect(pte_t pte)
+ {
+ 	return pte_wrprotect(pte);
+diff --git a/include/asm-generic/hugetlb.h b/include/asm-generic/hugetlb.h
+index ffa63fd8388d..2fc3d68424e9 100644
+--- a/include/asm-generic/hugetlb.h
++++ b/include/asm-generic/hugetlb.h
+@@ -73,4 +73,11 @@ static inline void huge_ptep_clear_flush(struct vm_area_struct *vma,
+ }
+ #endif
+ 
++#ifndef __HAVE_ARCH_HUGE_PTE_NONE
++static inline int huge_pte_none(pte_t pte)
++{
++	return pte_none(pte);
++}
++#endif
++
+ #endif /* _ASM_GENERIC_HUGETLB_H */
+-- 
+2.16.2
 
-IMO, the natural path would be to submit this to the SUPERH
-maintainer. If there is a good reason for merging via media,
-I'd expect an ack from the maintainer to do it so.
-
-Regards,
-Mauro
-
-> 
-> ---
-> The updated config file generated by:
-> 
-> make ARCH=sh migor_defconfig
-> make ARCH=sh menuconfig
-> make ARCH=sh savedefconfig
-> cp defconfig arch/sh/configs/migor_defconfig
-> ---
-> ---
->  arch/sh/configs/migor_defconfig | 25 ++-----------------------
->  1 file changed, 2 insertions(+), 23 deletions(-)
-> 
-> diff --git a/arch/sh/configs/migor_defconfig b/arch/sh/configs/migor_defconfig
-> index e04f21b..a85a327 100644
-> --- a/arch/sh/configs/migor_defconfig
-> +++ b/arch/sh/configs/migor_defconfig
-> @@ -3,8 +3,6 @@ CONFIG_IKCONFIG=y
->  CONFIG_IKCONFIG_PROC=y
->  CONFIG_LOG_BUF_SHIFT
->  CONFIG_BLK_DEV_INITRD=y
-> -# CONFIG_CC_OPTIMIZE_FOR_SIZE is not set
-> -# CONFIG_SYSCTL_SYSCALL is not set
->  CONFIG_SLAB=y
->  CONFIG_PROFILING=y
->  CONFIG_OPROFILE=y
-> @@ -13,9 +11,7 @@ CONFIG_MODULES=y
->  CONFIG_CPU_SUBTYPE_SH7722=y
->  CONFIG_MEMORY_START=0x0c000000
->  CONFIG_NUMA=y
-> -# CONFIG_MIGRATION is not set
->  CONFIG_SH_MIGOR=y
-> -# CONFIG_SH_TIMER_CMT is not set
->  CONFIG_SECCOMP=y
->  CONFIG_CMDLINE_OVERWRITE=y
->  CONFIG_CMDLINE="console=tty0 console=ttySC0,115200 earlyprintk=serial ip=on root=/dev/nfs ip=dhcp"
-> @@ -27,7 +23,6 @@ CONFIG_IP_PNP=y
->  CONFIG_IP_PNP_DHCP=y
->  # CONFIG_IPV6 is not set
->  CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
-> -CONFIG_FW_LOADER=m
->  CONFIG_MTD=y
->  CONFIG_MTD_CMDLINE_PARTS=y
->  CONFIG_MTD_BLOCK=y
-> @@ -40,9 +35,7 @@ CONFIG_BLK_DEV_RAM=y
->  CONFIG_SCSI=y
->  CONFIG_BLK_DEV_SD=y
->  CONFIG_NETDEVICES=y
-> -CONFIG_NET_ETHERNET=y
->  CONFIG_SMC91X=y
-> -# CONFIG_INPUT_MOUSEDEV is not set
->  CONFIG_INPUT_EVDEV=y
->  # CONFIG_KEYBOARD_ATKBD is not set
->  CONFIG_KEYBOARD_SH_KEYSC=y
-> @@ -50,30 +43,16 @@ CONFIG_KEYBOARD_SH_KEYSC=y
->  CONFIG_INPUT_TOUCHSCREEN=y
->  CONFIG_TOUCHSCREEN_MIGOR=y
->  # CONFIG_SERIO is not set
-> -CONFIG_VT_HW_CONSOLE_BINDING=y
->  CONFIG_SERIAL_SH_SCI=y
-> -CONFIG_SERIAL_SH_SCI_NR_UARTS=3
-> -CONFIG_SERIAL_SH_SCI_CONSOLE=y
->  CONFIG_HW_RANDOM=y
->  CONFIG_I2C=y
->  CONFIG_I2C_SH_MOBILE=y
->  # CONFIG_HWMON is not set
->  CONFIG_MEDIA_SUPPORT=y
-> -CONFIG_VIDEO_DEV=y
-> -# CONFIG_VIDEO_ALLOW_V4L1 is not set
-> -# CONFIG_MEDIA_TUNER_CUSTOMISE is not set
-> -CONFIG_VIDEO_HELPER_CHIPS_AUTO=y
-> -CONFIG_SOC_CAMERA=y
-> -CONFIG_SOC_CAMERA_TW9910=y
-> -CONFIG_SOC_CAMERA_OV772X=y
-> -CONFIG_VIDEO_SH_MOBILE_CEU=y
-> -# CONFIG_RADIO_ADAPTERS is not set
->  CONFIG_FB=y
->  CONFIG_FB_SH_MOBILE_LCDC=y
->  CONFIG_FRAMEBUFFER_CONSOLE=y
->  CONFIG_FRAMEBUFFER_CONSOLE_DETECT_PRIMARY=y
-> -CONFIG_FONTS=y
-> -CONFIG_FONT_MINI_4x6=y
->  CONFIG_LOGO=y
->  # CONFIG_LOGO_LINUX_MONO is not set
->  # CONFIG_LOGO_LINUX_VGA16 is not set
-> @@ -81,7 +60,6 @@ CONFIG_LOGO=y
->  # CONFIG_LOGO_SUPERH_MONO is not set
->  # CONFIG_LOGO_SUPERH_CLUT224 is not set
->  CONFIG_USB_GADGET=y
-> -CONFIG_USB_GADGET_M66592=y
->  CONFIG_USB_G_SERIAL=m
->  CONFIG_RTC_CLASS=y
->  CONFIG_RTC_DRV_RS5C372=y
-> @@ -95,6 +73,7 @@ CONFIG_NFS_FS=y
->  CONFIG_ROOT_NFS=y
->  CONFIG_DEBUG_FS=y
->  CONFIG_CRYPTO_MANAGER=y
-> -# CONFIG_CRYPTO_ANSI_CPRNG is not set
->  # CONFIG_CRYPTO_HW is not set
->  CONFIG_CRC_T10DIF=y
-> +CONFIG_FONTS=y
-> +CONFIG_FONT_MINI_4x6=y
-
-
-
-Thanks,
-Mauro
