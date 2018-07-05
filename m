@@ -1,158 +1,55 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Tue, 24 Jul 2018 21:36:21 +0000
-Subject: [PATCH v2 1/4] sh: dreamcast: rtc: push down rtc class ops into driver
-Message-Id: <20180724213624.3899336-1-arnd@arndb.de>
+From: Alexandre Ghiti <alex@ghiti.fr>
+Date: Thu, 05 Jul 2018 05:16:30 +0000
+Subject: [PATCH v3 01/11] hugetlb: Harmonize hugetlb.h arch specific defines with pgtable.h
+Message-Id: <20180705051640.790-2-alex@ghiti.fr>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20180705051640.790-1-alex@ghiti.fr>
+In-Reply-To: <20180705051640.790-1-alex@ghiti.fr>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dalias@libc.org
-Cc: ysato@users.sourceforge.jp, baolin.wang@linaro.org, y2038@lists.linaro.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Arnd Bergmann <arnd@arndb.de>
+To: linux@armlinux.org.uk, catalin.marinas@arm.com, will.deacon@arm.com, tony.luck@intel.com, fenghua.yu@intel.com, ralf@linux-mips.org, paul.burton@mips.com, jhogan@kernel.org, jejb@parisc-linux.org, deller@gmx.de, benh@kernel.crashing.org, paulus@samba.org, mpe@ellerman.id.au, ysato@users.sourceforge.jp, dalias@libc.org, davem@davemloft.net, tglx@linutronix.de, mingo@redhat.com, hpa@zytor.com, x86@kernel.org, arnd@arndb.de, linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org, linux-ia64@vger.kernel.org, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-arch@vger.kernel.org
+Cc: Alexandre Ghiti <alex@ghiti.fr>
 
-The dreamcast RTC support has an extra level of indirection to
-provide either the old read_persistent_clock/update_persistent_clock
-interface or the rtc-generic device for hctosys/systohc.
+asm-generic/hugetlb.h proposes generic implementations of hugetlb
+related functions: use __HAVE_ARCH_HUGE* defines in order to make arch
+specific implementations of hugetlb functions consistent with pgtable.h
+scheme.
 
-Both do the same thing here, so we can do away with the abstraction
-and simply enable the RTC core code to take care of it.
-
-Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Alexandre Ghiti <alex@ghiti.fr>
 ---
- arch/sh/boards/mach-dreamcast/Makefile        |  4 +-
- arch/sh/boards/mach-dreamcast/rtc.c           | 39 +++++++++++++------
- arch/sh/boards/mach-dreamcast/setup.c         |  1 -
- arch/sh/configs/dreamcast_defconfig           |  2 +
- arch/sh/include/mach-dreamcast/mach/sysasic.h |  1 -
- 5 files changed, 31 insertions(+), 16 deletions(-)
+ arch/arm64/include/asm/hugetlb.h | 2 +-
+ include/asm-generic/hugetlb.h    | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/sh/boards/mach-dreamcast/Makefile b/arch/sh/boards/mach-dreamcast/Makefile
-index 7b97546c7e5f..62b024bc2a3e 100644
---- a/arch/sh/boards/mach-dreamcast/Makefile
-+++ b/arch/sh/boards/mach-dreamcast/Makefile
-@@ -2,5 +2,5 @@
- # Makefile for the Sega Dreamcast specific parts of the kernel
- #
- 
--obj-y	 := setup.o irq.o rtc.o
--
-+obj-y	 := setup.o irq.o
-+obj-$(CONFIG_RTC_DRV_GENERIC) += rtc.o
-diff --git a/arch/sh/boards/mach-dreamcast/rtc.c b/arch/sh/boards/mach-dreamcast/rtc.c
-index 061d65714fcc..4f168d8d2951 100644
---- a/arch/sh/boards/mach-dreamcast/rtc.c
-+++ b/arch/sh/boards/mach-dreamcast/rtc.c
-@@ -11,8 +11,9 @@
-  */
- 
- #include <linux/time.h>
--#include <asm/rtc.h>
--#include <asm/io.h>
-+#include <linux/rtc.h>
-+#include <linux/io.h>
-+#include <linux/platform_device.h>
- 
- /* The AICA RTC has an Epoch of 1/1/1950, so we must subtract 20 years (in
-    seconds) to get the standard Unix Epoch when getting the time, and add
-@@ -30,9 +31,10 @@
-  *
-  * Grabs the current RTC seconds counter and adjusts it to the Unix Epoch.
-  */
--static void aica_rtc_gettimeofday(struct timespec *ts)
-+static int aica_rtc_gettimeofday(struct device *dev, struct rtc_time *tm)
- {
- 	unsigned long val1, val2;
-+	time64_t t;
- 
- 	do {
- 		val1 = ((__raw_readl(AICA_RTC_SECS_H) & 0xffff) << 16) |
-@@ -42,10 +44,12 @@ static void aica_rtc_gettimeofday(struct timespec *ts)
- 			(__raw_readl(AICA_RTC_SECS_L) & 0xffff);
- 	} while (val1 != val2);
- 
--	ts->tv_sec = val1 - TWENTY_YEARS;
-+	/* normalize to 1970..2106 time range */
-+	t = (u32)(val1 - TWENTY_YEARS);
- 
--	/* Can't get nanoseconds with just a seconds counter. */
--	ts->tv_nsec = 0;
-+	rtc_time64_to_tm(t, tm);
-+
-+	return 0;
+diff --git a/arch/arm64/include/asm/hugetlb.h b/arch/arm64/include/asm/hugetlb.h
+index e73f68569624..3fcf14663dfa 100644
+--- a/arch/arm64/include/asm/hugetlb.h
++++ b/arch/arm64/include/asm/hugetlb.h
+@@ -81,9 +81,9 @@ extern void huge_ptep_set_wrprotect(struct mm_struct *mm,
+ 				    unsigned long addr, pte_t *ptep);
+ extern void huge_ptep_clear_flush(struct vm_area_struct *vma,
+ 				  unsigned long addr, pte_t *ptep);
++#define __HAVE_ARCH_HUGE_PTE_CLEAR
+ extern void huge_pte_clear(struct mm_struct *mm, unsigned long addr,
+ 			   pte_t *ptep, unsigned long sz);
+-#define huge_pte_clear huge_pte_clear
+ extern void set_huge_swap_pte_at(struct mm_struct *mm, unsigned long addr,
+ 				 pte_t *ptep, pte_t pte, unsigned long sz);
+ #define set_huge_swap_pte_at set_huge_swap_pte_at
+diff --git a/include/asm-generic/hugetlb.h b/include/asm-generic/hugetlb.h
+index 9d0cde8ab716..3da7cff52360 100644
+--- a/include/asm-generic/hugetlb.h
++++ b/include/asm-generic/hugetlb.h
+@@ -32,7 +32,7 @@ static inline pte_t huge_pte_modify(pte_t pte, pgprot_t newprot)
+ 	return pte_modify(pte, newprot);
  }
  
- /**
-@@ -54,10 +58,11 @@ static void aica_rtc_gettimeofday(struct timespec *ts)
-  *
-  * Adjusts the given @tv to the AICA Epoch and sets the RTC seconds counter.
-  */
--static int aica_rtc_settimeofday(const time_t secs)
-+static int aica_rtc_settimeofday(struct device *dev, struct rtc_time *tm)
+-#ifndef huge_pte_clear
++#ifndef __HAVE_ARCH_HUGE_PTE_CLEAR
+ static inline void huge_pte_clear(struct mm_struct *mm, unsigned long addr,
+ 		    pte_t *ptep, unsigned long sz)
  {
- 	unsigned long val1, val2;
--	unsigned long adj = secs + TWENTY_YEARS;
-+	time64_t secs = rtc_tm_to_time64(tm);
-+	u32 adj = secs + TWENTY_YEARS;
- 
- 	do {
- 		__raw_writel((adj & 0xffff0000) >> 16, AICA_RTC_SECS_H);
-@@ -73,9 +78,19 @@ static int aica_rtc_settimeofday(const time_t secs)
- 	return 0;
- }
- 
--void aica_time_init(void)
-+static const struct rtc_class_ops rtc_generic_ops = {
-+	.read_time = aica_rtc_gettimeofday,
-+	.set_time = aica_rtc_settimeofday,
-+};
-+
-+static int __init aica_time_init(void)
- {
--	rtc_sh_get_time = aica_rtc_gettimeofday;
--	rtc_sh_set_time = aica_rtc_settimeofday;
--}
-+	struct platform_device *pdev;
-+
-+	pdev = platform_device_register_data(NULL, "rtc-generic", -1,
-+					     &rtc_generic_ops,
-+					     sizeof(rtc_generic_ops));
- 
-+	return PTR_ERR_OR_ZERO(pdev);
-+}
-+arch_initcall(aica_time_init);
-diff --git a/arch/sh/boards/mach-dreamcast/setup.c b/arch/sh/boards/mach-dreamcast/setup.c
-index ad1a4db72e04..672c2ad8f8d5 100644
---- a/arch/sh/boards/mach-dreamcast/setup.c
-+++ b/arch/sh/boards/mach-dreamcast/setup.c
-@@ -30,7 +30,6 @@
- 
- static void __init dreamcast_setup(char **cmdline_p)
- {
--	board_time_init = aica_time_init;
- }
- 
- static struct sh_machine_vector mv_dreamcast __initmv = {
-diff --git a/arch/sh/configs/dreamcast_defconfig b/arch/sh/configs/dreamcast_defconfig
-index 3f08dc54480b..1d27666c029f 100644
---- a/arch/sh/configs/dreamcast_defconfig
-+++ b/arch/sh/configs/dreamcast_defconfig
-@@ -70,3 +70,5 @@ CONFIG_PROC_KCORE=y
- CONFIG_TMPFS=y
- CONFIG_HUGETLBFS=y
- # CONFIG_CRYPTO_ANSI_CPRNG is not set
-+CONFIG_RTC_CLASS=y
-+CONFIG_RTC_DRV_GENERIC=y
-diff --git a/arch/sh/include/mach-dreamcast/mach/sysasic.h b/arch/sh/include/mach-dreamcast/mach/sysasic.h
-index 58f710e1ebc2..59effd1ed3e1 100644
---- a/arch/sh/include/mach-dreamcast/mach/sysasic.h
-+++ b/arch/sh/include/mach-dreamcast/mach/sysasic.h
-@@ -42,7 +42,6 @@
- /* arch/sh/boards/mach-dreamcast/irq.c */
- extern int systemasic_irq_demux(int);
- extern void systemasic_irq_init(void);
--extern void aica_time_init(void);
- 
- #endif /* __ASM_SH_DREAMCAST_SYSASIC_H */
- 
 -- 
-2.18.0
+2.16.2
 
