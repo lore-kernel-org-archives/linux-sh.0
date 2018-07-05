@@ -1,103 +1,192 @@
-From: Matthew Wilcox <willy@infradead.org>
-Date: Thu, 12 Jul 2018 20:52:37 +0000
-Subject: Re: Random warning dump during init.
-Message-Id: <20180712205237.GA21078@bombadil.infradead.org>
+From: Alexandre Ghiti <alex@ghiti.fr>
+Date: Thu, 05 Jul 2018 11:07:08 +0000
+Subject: [PATCH v4 03/11] hugetlb: Introduce generic version of set_huge_pte_at
+Message-Id: <20180705110716.3919-4-alex@ghiti.fr>
 List-Id: <linux-sh.vger.kernel.org>
-References: <b4645807-bc6f-9578-20c2-798654c593a2@landley.net>
-In-Reply-To: <b4645807-bc6f-9578-20c2-798654c593a2@landley.net>
+References: <20180705110716.3919-1-alex@ghiti.fr>
+In-Reply-To: <20180705110716.3919-1-alex@ghiti.fr>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux@armlinux.org.uk, catalin.marinas@arm.com, will.deacon@arm.com, tony.luck@intel.com, fenghua.yu@intel.com, ralf@linux-mips.org, paul.burton@mips.com, jhogan@kernel.org, jejb@parisc-linux.org, deller@gmx.de, benh@kernel.crashing.org, paulus@samba.org, mpe@ellerman.id.au, ysato@users.sourceforge.jp, dalias@libc.org, davem@davemloft.net, tglx@linutronix.de, mingo@redhat.com, hpa@zytor.com, x86@kernel.org, arnd@arndb.de, linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org, linux-ia64@vger.kernel.org, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-arch@vger.kernel.org
+Cc: Alexandre Ghiti <alex@ghiti.fr>
 
-On Thu, Jul 12, 2018 at 09:59:42PM +0200, Geert Uytterhoeven wrote:
-> CC willy
-> 
-> On Thu, Jul 12, 2018 at 4:55 PM Rob Landley <rob@landley.net> wrote:
-> > On 07/11/2018 01:17 PM, Rob Landley wrote:
-> > > Building commit d0fbad0aec1d (from July 2) I hit this, and I confirmed today's
-> > > pull is still doing it. (It's my mkroot sh4 target built with musl-cross-make,
-> > > booting under qemu.)
-> > >
-> > > NET: Registered protocol family 17
-> > > Freeing unused kernel memory: 116K
-> > > This architecture does not have kernel memory protection.
-> > > WARNING: CPU: 0 PID: 1 at mm/slub.c:2412 ___slab_alloc.constprop.34+0x196/0x288
-> > >
-> > > CPU: 0 PID: 1 Comm: swapper Not tainted 4.18.0-rc3 #1
-> > > PC is at ___slab_alloc.constprop.34+0x196/0x288
-> > > PR is at __slab_alloc.constprop.33+0x2a/0x4c
-> > > PC  : 8c09ada2 SP  : 8f829ea8 SR  : 400080f0
-> > > TEA : c0001240
-> > > R0  : 8c09ac0c R1  : 8c01cc54 R2  : 8ff750d0 R3  : 00000000
-> > > R4  : 8f802780 R5  : 006080c0 R6  : 8c01d79c R7  : 8ff750d0
-> > > R8  : 8c011bd8 R9  : 8ff750d0 R10 : 8f802780 R11 : 00008000
-> > > R12 : 8c01d79c R13 : 006080c0 R14 : 8f8027fc
-> > > MACH: 00000205 MACL: 0ae4849d GBR : 00000000 PR  : 8c09aebe
-> > >
-> > > Call trace:
-> > >  [<(ptrval)>] arch_local_irq_restore+0x0/0x24
-> > >  [<(ptrval)>] __slab_alloc.constprop.33+0x2a/0x4c
-> > >  [<(ptrval)>] arch_local_save_flags+0x0/0x8
-> > >  [<(ptrval)>] arch_local_irq_restore+0x0/0x24
-> > >  [<(ptrval)>] mm_init.isra.6+0xb4/0x104
-> > >  [<(ptrval)>] kmem_cache_alloc+0x9c/0xf4
-> > >  [<(ptrval)>] arch_local_irq_restore+0x0/0x24
-> > >  [<(ptrval)>] mm_init.isra.6+0xb4/0x104
-> > >  [<(ptrval)>] mm_init.isra.6+0xb4/0x104
-> > >  [<(ptrval)>] __do_execve_file+0x1da/0x5bc
-> > >  [<(ptrval)>] kmem_cache_alloc+0x0/0xf4
-> > >  [<(ptrval)>] getname_kernel+0x1e/0xc8
-> > >  [<(ptrval)>] do_execve+0x16/0x24
-> > >  [<(ptrval)>] arch_local_save_flags+0x0/0x8
-> > >  [<(ptrval)>] arch_local_irq_restore+0x0/0x24
-> > >  [<(ptrval)>] printk+0x0/0x24
-> > >  [<(ptrval)>] kernel_init+0x34/0xec
-> > >  [<(ptrval)>] ret_from_kernel_thread+0xc/0x14
-> > >  [<(ptrval)>] schedule_tail+0x0/0x54
-> > >  [<(ptrval)>] kernel_init+0x0/0xec
+arm, ia64, mips, powerpc, sh, x86 architectures use the
+same version of set_huge_pte_at, so move this generic
+implementation into asm-generic/hugetlb.h.
 
-The stack dump is a bit garbled, but it looks to me like kmem_cache_alloc()
-is being called from getname_kernel().  The problem is, neither of the
-conditions which must both be satisfied to generate the warning is true.
+Signed-off-by: Alexandre Ghiti <alex@ghiti.fr>
+---
+ arch/arm/include/asm/hugetlb-3level.h | 6 ------
+ arch/arm64/include/asm/hugetlb.h      | 1 +
+ arch/ia64/include/asm/hugetlb.h       | 6 ------
+ arch/mips/include/asm/hugetlb.h       | 6 ------
+ arch/parisc/include/asm/hugetlb.h     | 1 +
+ arch/powerpc/include/asm/hugetlb.h    | 6 ------
+ arch/sh/include/asm/hugetlb.h         | 6 ------
+ arch/sparc/include/asm/hugetlb.h      | 1 +
+ arch/x86/include/asm/hugetlb.h        | 6 ------
+ include/asm-generic/hugetlb.h         | 8 +++++++-
+ 10 files changed, 10 insertions(+), 37 deletions(-)
 
-getname_kernel calls __getname which is:
-include/linux/fs.h:#define __getname()          kmem_cache_alloc(names_cachep, GFP_KERNEL)
-which doesn't have GFP_ZERO set.  And names_cachep is created as:
+diff --git a/arch/arm/include/asm/hugetlb-3level.h b/arch/arm/include/asm/hugetlb-3level.h
+index d4014fbe5ea3..398fb06e8207 100644
+--- a/arch/arm/include/asm/hugetlb-3level.h
++++ b/arch/arm/include/asm/hugetlb-3level.h
+@@ -37,12 +37,6 @@ static inline pte_t huge_ptep_get(pte_t *ptep)
+ 	return retval;
+ }
+ 
+-static inline void set_huge_pte_at(struct mm_struct *mm, unsigned long addr,
+-				   pte_t *ptep, pte_t pte)
+-{
+-	set_pte_at(mm, addr, ptep, pte);
+-}
+-
+ static inline void huge_ptep_clear_flush(struct vm_area_struct *vma,
+ 					 unsigned long addr, pte_t *ptep)
+ {
+diff --git a/arch/arm64/include/asm/hugetlb.h b/arch/arm64/include/asm/hugetlb.h
+index 4af1a800a900..874661a1dff1 100644
+--- a/arch/arm64/include/asm/hugetlb.h
++++ b/arch/arm64/include/asm/hugetlb.h
+@@ -60,6 +60,7 @@ static inline void arch_clear_hugepage_flags(struct page *page)
+ extern pte_t arch_make_huge_pte(pte_t entry, struct vm_area_struct *vma,
+ 				struct page *page, int writable);
+ #define arch_make_huge_pte arch_make_huge_pte
++#define __HAVE_ARCH_HUGE_SET_HUGE_PTE_AT
+ extern void set_huge_pte_at(struct mm_struct *mm, unsigned long addr,
+ 			    pte_t *ptep, pte_t pte);
+ extern int huge_ptep_set_access_flags(struct vm_area_struct *vma,
+diff --git a/arch/ia64/include/asm/hugetlb.h b/arch/ia64/include/asm/hugetlb.h
+index afe9fa4d969b..a235d6f60fb3 100644
+--- a/arch/ia64/include/asm/hugetlb.h
++++ b/arch/ia64/include/asm/hugetlb.h
+@@ -20,12 +20,6 @@ static inline int is_hugepage_only_range(struct mm_struct *mm,
+ 		REGION_NUMBER((addr)+(len)-1) = RGN_HPAGE);
+ }
+ 
+-static inline void set_huge_pte_at(struct mm_struct *mm, unsigned long addr,
+-				   pte_t *ptep, pte_t pte)
+-{
+-	set_pte_at(mm, addr, ptep, pte);
+-}
+-
+ static inline pte_t huge_ptep_get_and_clear(struct mm_struct *mm,
+ 					    unsigned long addr, pte_t *ptep)
+ {
+diff --git a/arch/mips/include/asm/hugetlb.h b/arch/mips/include/asm/hugetlb.h
+index 53764050243e..8ea439041d5d 100644
+--- a/arch/mips/include/asm/hugetlb.h
++++ b/arch/mips/include/asm/hugetlb.h
+@@ -36,12 +36,6 @@ static inline int prepare_hugepage_range(struct file *file,
+ 	return 0;
+ }
+ 
+-static inline void set_huge_pte_at(struct mm_struct *mm, unsigned long addr,
+-				   pte_t *ptep, pte_t pte)
+-{
+-	set_pte_at(mm, addr, ptep, pte);
+-}
+-
+ static inline pte_t huge_ptep_get_and_clear(struct mm_struct *mm,
+ 					    unsigned long addr, pte_t *ptep)
+ {
+diff --git a/arch/parisc/include/asm/hugetlb.h b/arch/parisc/include/asm/hugetlb.h
+index 28c23b68d38d..77c8adbac7c3 100644
+--- a/arch/parisc/include/asm/hugetlb.h
++++ b/arch/parisc/include/asm/hugetlb.h
+@@ -4,6 +4,7 @@
+ 
+ #include <asm/page.h>
+ 
++#define __HAVE_ARCH_HUGE_SET_HUGE_PTE_AT
+ void set_huge_pte_at(struct mm_struct *mm, unsigned long addr,
+ 		     pte_t *ptep, pte_t pte);
+ 
+diff --git a/arch/powerpc/include/asm/hugetlb.h b/arch/powerpc/include/asm/hugetlb.h
+index a7d5c739df9b..0794b53439d4 100644
+--- a/arch/powerpc/include/asm/hugetlb.h
++++ b/arch/powerpc/include/asm/hugetlb.h
+@@ -132,12 +132,6 @@ static inline int prepare_hugepage_range(struct file *file,
+ 	return 0;
+ }
+ 
+-static inline void set_huge_pte_at(struct mm_struct *mm, unsigned long addr,
+-				   pte_t *ptep, pte_t pte)
+-{
+-	set_pte_at(mm, addr, ptep, pte);
+-}
+-
+ static inline pte_t huge_ptep_get_and_clear(struct mm_struct *mm,
+ 					    unsigned long addr, pte_t *ptep)
+ {
+diff --git a/arch/sh/include/asm/hugetlb.h b/arch/sh/include/asm/hugetlb.h
+index f6a51b609409..bc552e37c1c9 100644
+--- a/arch/sh/include/asm/hugetlb.h
++++ b/arch/sh/include/asm/hugetlb.h
+@@ -25,12 +25,6 @@ static inline int prepare_hugepage_range(struct file *file,
+ 	return 0;
+ }
+ 
+-static inline void set_huge_pte_at(struct mm_struct *mm, unsigned long addr,
+-				   pte_t *ptep, pte_t pte)
+-{
+-	set_pte_at(mm, addr, ptep, pte);
+-}
+-
+ static inline pte_t huge_ptep_get_and_clear(struct mm_struct *mm,
+ 					    unsigned long addr, pte_t *ptep)
+ {
+diff --git a/arch/sparc/include/asm/hugetlb.h b/arch/sparc/include/asm/hugetlb.h
+index 59d89b52ccb7..16b0c53ea6c9 100644
+--- a/arch/sparc/include/asm/hugetlb.h
++++ b/arch/sparc/include/asm/hugetlb.h
+@@ -12,6 +12,7 @@ struct pud_huge_patch_entry {
+ extern struct pud_huge_patch_entry __pud_huge_patch, __pud_huge_patch_end;
+ #endif
+ 
++#define __HAVE_ARCH_HUGE_SET_HUGE_PTE_AT
+ void set_huge_pte_at(struct mm_struct *mm, unsigned long addr,
+ 		     pte_t *ptep, pte_t pte);
+ 
+diff --git a/arch/x86/include/asm/hugetlb.h b/arch/x86/include/asm/hugetlb.h
+index 996ce8e15365..554d5614b375 100644
+--- a/arch/x86/include/asm/hugetlb.h
++++ b/arch/x86/include/asm/hugetlb.h
+@@ -27,12 +27,6 @@ static inline int prepare_hugepage_range(struct file *file,
+ 	return 0;
+ }
+ 
+-static inline void set_huge_pte_at(struct mm_struct *mm, unsigned long addr,
+-				   pte_t *ptep, pte_t pte)
+-{
+-	set_pte_at(mm, addr, ptep, pte);
+-}
+-
+ static inline pte_t huge_ptep_get_and_clear(struct mm_struct *mm,
+ 					    unsigned long addr, pte_t *ptep)
+ {
+diff --git a/include/asm-generic/hugetlb.h b/include/asm-generic/hugetlb.h
+index c697ca9dda18..ee010b756246 100644
+--- a/include/asm-generic/hugetlb.h
++++ b/include/asm-generic/hugetlb.h
+@@ -47,8 +47,14 @@ static inline void hugetlb_free_pgd_range(struct mmu_gather *tlb,
+ {
+ 	free_pgd_range(tlb, addr, end, floor, ceiling);
+ }
++#endif
+ 
+-
++#ifndef __HAVE_ARCH_HUGE_SET_HUGE_PTE_AT
++static inline void set_huge_pte_at(struct mm_struct *mm, unsigned long addr,
++		pte_t *ptep, pte_t pte)
++{
++	set_pte_at(mm, addr, ptep, pte);
++}
+ #endif
+ 
+ #endif /* _ASM_GENERIC_HUGETLB_H */
+-- 
+2.16.2
 
-        names_cachep = kmem_cache_create_usercopy("names_cache", PATH_MAX, 0,
-                        SLAB_HWCACHE_ALIGN|SLAB_PANIC, 0, PATH_MAX, NULL);
-
-which doesn't have a constructor.
-
-So how you're getting this warning, I have no idea!
-
-> > > ---[ end trace 547fc2facfcadcaf ]---
-> > > 8139cp 0000:00:02.0 eth0: link up, 100Mbps, full-duplex, lpa 0x05E1
-> > > Type exit when done.
-> > > / #
-> >
-> > I bisected it to:
-> >
-> > commit 128227e7fe4087b60f1bd31f762e61237eb23790
-> > Author: Matthew Wilcox <mawilcox@microsoft.com>
-> > Date:   Thu Jun 7 17:05:13 2018 -0700
-> >
-> >     slab: __GFP_ZERO is incompatible with a constructor
-> >
-> >     __GFP_ZERO requests that the object be initialised to all-zeroes, while
-> >     the purpose of a constructor is to initialise an object to a particular
-> >     pattern.  We cannot do both.  Add a warning to catch any users who
-> >     mistakenly pass a __GFP_ZERO flag when allocating a slab with a
-> >     constructor.
-> 
-> Gr{oetje,eeting}s,
-> 
->                         Geert
-> 
-> -- 
-> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-> 
-> In personal conversations with technical people, I call myself a hacker. But
-> when I'm talking to journalists I just say "programmer" or something like that.
->                                 -- Linus Torvalds
