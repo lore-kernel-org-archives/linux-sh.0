@@ -1,103 +1,319 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Wed, 25 Jul 2018 09:40:39 +0000
-Subject: [PATCH 1/5] sh: simplify get_arch_dma_ops
-Message-Id: <20180725094043.32443-2-hch@lst.de>
+From: Alexandre Ghiti <alex@ghiti.fr>
+Date: Thu, 05 Jul 2018 05:16:31 +0000
+Subject: [PATCH v3 02/11] hugetlb: Introduce generic version of hugetlb_free_pgd_range
+Message-Id: <20180705051640.790-3-alex@ghiti.fr>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180725094043.32443-1-hch@lst.de>
-In-Reply-To: <20180725094043.32443-1-hch@lst.de>
+References: <20180705051640.790-1-alex@ghiti.fr>
+In-Reply-To: <20180705051640.790-1-alex@ghiti.fr>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
-Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>, Thomas Petazzoni <thomas.petazzoni@free-electrons.com>, linux-sh@vger.kernel.org, iommu@lists.linux-foundation.org, linux-kernel@vger.kernel.org
+To: linux@armlinux.org.uk, catalin.marinas@arm.com, will.deacon@arm.com, tony.luck@intel.com, fenghua.yu@intel.com, ralf@linux-mips.org, paul.burton@mips.com, jhogan@kernel.org, jejb@parisc-linux.org, deller@gmx.de, benh@kernel.crashing.org, paulus@samba.org, mpe@ellerman.id.au, ysato@users.sourceforge.jp, dalias@libc.org, davem@davemloft.net, tglx@linutronix.de, mingo@redhat.com, hpa@zytor.com, x86@kernel.org, arnd@arndb.de, linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org, linux-ia64@vger.kernel.org, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-arch@vger.kernel.org
+Cc: Alexandre Ghiti <alex@ghiti.fr>
 
-Remove the indirection through the dma_ops variable, and just return
-nommu_dma_ops directly from get_arch_dma_ops.
+arm, arm64, mips, parisc, sh, x86 architectures use the
+same version of hugetlb_free_pgd_range, so move this generic
+implementation into asm-generic/hugetlb.h.
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
+Signed-off-by: Alexandre Ghiti <alex@ghiti.fr>
 ---
- arch/sh/include/asm/dma-mapping.h |  5 ++---
- arch/sh/kernel/dma-nommu.c        |  8 +-------
- arch/sh/mm/consistent.c           |  3 ---
- arch/sh/mm/init.c                 | 10 ----------
- 4 files changed, 3 insertions(+), 23 deletions(-)
+ arch/arm/include/asm/hugetlb.h     | 12 ++----------
+ arch/arm64/include/asm/hugetlb.h   | 10 ----------
+ arch/ia64/include/asm/hugetlb.h    |  5 +++--
+ arch/mips/include/asm/hugetlb.h    | 13 ++-----------
+ arch/parisc/include/asm/hugetlb.h  | 12 ++----------
+ arch/powerpc/include/asm/hugetlb.h |  4 +++-
+ arch/sh/include/asm/hugetlb.h      | 12 ++----------
+ arch/sparc/include/asm/hugetlb.h   |  4 +++-
+ arch/x86/include/asm/hugetlb.h     | 11 ++---------
+ include/asm-generic/hugetlb.h      | 11 +++++++++++
+ 10 files changed, 30 insertions(+), 64 deletions(-)
 
-diff --git a/arch/sh/include/asm/dma-mapping.h b/arch/sh/include/asm/dma-mapping.h
-index 41167931e5d9..149e71f95be7 100644
---- a/arch/sh/include/asm/dma-mapping.h
-+++ b/arch/sh/include/asm/dma-mapping.h
-@@ -2,12 +2,11 @@
- #ifndef __ASM_SH_DMA_MAPPING_H
- #define __ASM_SH_DMA_MAPPING_H
+diff --git a/arch/arm/include/asm/hugetlb.h b/arch/arm/include/asm/hugetlb.h
+index 7d26f6c4f0f5..047b893ef95d 100644
+--- a/arch/arm/include/asm/hugetlb.h
++++ b/arch/arm/include/asm/hugetlb.h
+@@ -23,19 +23,9 @@
+ #define _ASM_ARM_HUGETLB_H
  
--extern const struct dma_map_ops *dma_ops;
--extern void no_iommu_init(void);
-+extern const struct dma_map_ops nommu_dma_ops;
+ #include <asm/page.h>
+-#include <asm-generic/hugetlb.h>
  
- static inline const struct dma_map_ops *get_arch_dma_ops(struct bus_type *bus)
+ #include <asm/hugetlb-3level.h>
+ 
+-static inline void hugetlb_free_pgd_range(struct mmu_gather *tlb,
+-					  unsigned long addr, unsigned long end,
+-					  unsigned long floor,
+-					  unsigned long ceiling)
+-{
+-	free_pgd_range(tlb, addr, end, floor, ceiling);
+-}
+-
+-
+ static inline int is_hugepage_only_range(struct mm_struct *mm,
+ 					 unsigned long addr, unsigned long len)
  {
--	return dma_ops;
-+	return &nommu_dma_ops;
+@@ -68,4 +58,6 @@ static inline void arch_clear_hugepage_flags(struct page *page)
+ 	clear_bit(PG_dcache_clean, &page->flags);
  }
  
- extern void *dma_generic_alloc_coherent(struct device *dev, size_t size,
-diff --git a/arch/sh/kernel/dma-nommu.c b/arch/sh/kernel/dma-nommu.c
-index 3e3a32fc676e..79a9edafa5b0 100644
---- a/arch/sh/kernel/dma-nommu.c
-+++ b/arch/sh/kernel/dma-nommu.c
-@@ -79,10 +79,4 @@ const struct dma_map_ops nommu_dma_ops = {
- 	.sync_sg_for_device	= nommu_sync_sg_for_device,
++#include <asm-generic/hugetlb.h>
++
+ #endif /* _ASM_ARM_HUGETLB_H */
+diff --git a/arch/arm64/include/asm/hugetlb.h b/arch/arm64/include/asm/hugetlb.h
+index 3fcf14663dfa..4af1a800a900 100644
+--- a/arch/arm64/include/asm/hugetlb.h
++++ b/arch/arm64/include/asm/hugetlb.h
+@@ -25,16 +25,6 @@ static inline pte_t huge_ptep_get(pte_t *ptep)
+ 	return READ_ONCE(*ptep);
+ }
+ 
+-
+-
+-static inline void hugetlb_free_pgd_range(struct mmu_gather *tlb,
+-					  unsigned long addr, unsigned long end,
+-					  unsigned long floor,
+-					  unsigned long ceiling)
+-{
+-	free_pgd_range(tlb, addr, end, floor, ceiling);
+-}
+-
+ static inline int is_hugepage_only_range(struct mm_struct *mm,
+ 					 unsigned long addr, unsigned long len)
+ {
+diff --git a/arch/ia64/include/asm/hugetlb.h b/arch/ia64/include/asm/hugetlb.h
+index 74d2a5540aaf..afe9fa4d969b 100644
+--- a/arch/ia64/include/asm/hugetlb.h
++++ b/arch/ia64/include/asm/hugetlb.h
+@@ -3,9 +3,8 @@
+ #define _ASM_IA64_HUGETLB_H
+ 
+ #include <asm/page.h>
+-#include <asm-generic/hugetlb.h>
+-
+ 
++#define __HAVE_ARCH_HUGETLB_FREE_PGD_RANGE
+ void hugetlb_free_pgd_range(struct mmu_gather *tlb, unsigned long addr,
+ 			    unsigned long end, unsigned long floor,
+ 			    unsigned long ceiling);
+@@ -70,4 +69,6 @@ static inline void arch_clear_hugepage_flags(struct page *page)
+ {
+ }
+ 
++#include <asm-generic/hugetlb.h>
++
+ #endif /* _ASM_IA64_HUGETLB_H */
+diff --git a/arch/mips/include/asm/hugetlb.h b/arch/mips/include/asm/hugetlb.h
+index 982bc0685330..53764050243e 100644
+--- a/arch/mips/include/asm/hugetlb.h
++++ b/arch/mips/include/asm/hugetlb.h
+@@ -10,8 +10,6 @@
+ #define __ASM_HUGETLB_H
+ 
+ #include <asm/page.h>
+-#include <asm-generic/hugetlb.h>
+-
+ 
+ static inline int is_hugepage_only_range(struct mm_struct *mm,
+ 					 unsigned long addr,
+@@ -38,15 +36,6 @@ static inline int prepare_hugepage_range(struct file *file,
+ 	return 0;
+ }
+ 
+-static inline void hugetlb_free_pgd_range(struct mmu_gather *tlb,
+-					  unsigned long addr,
+-					  unsigned long end,
+-					  unsigned long floor,
+-					  unsigned long ceiling)
+-{
+-	free_pgd_range(tlb, addr, end, floor, ceiling);
+-}
+-
+ static inline void set_huge_pte_at(struct mm_struct *mm, unsigned long addr,
+ 				   pte_t *ptep, pte_t pte)
+ {
+@@ -114,4 +103,6 @@ static inline void arch_clear_hugepage_flags(struct page *page)
+ {
+ }
+ 
++#include <asm-generic/hugetlb.h>
++
+ #endif /* __ASM_HUGETLB_H */
+diff --git a/arch/parisc/include/asm/hugetlb.h b/arch/parisc/include/asm/hugetlb.h
+index 58e0f4620426..28c23b68d38d 100644
+--- a/arch/parisc/include/asm/hugetlb.h
++++ b/arch/parisc/include/asm/hugetlb.h
+@@ -3,8 +3,6 @@
+ #define _ASM_PARISC64_HUGETLB_H
+ 
+ #include <asm/page.h>
+-#include <asm-generic/hugetlb.h>
+-
+ 
+ void set_huge_pte_at(struct mm_struct *mm, unsigned long addr,
+ 		     pte_t *ptep, pte_t pte);
+@@ -32,14 +30,6 @@ static inline int prepare_hugepage_range(struct file *file,
+ 	return 0;
+ }
+ 
+-static inline void hugetlb_free_pgd_range(struct mmu_gather *tlb,
+-					  unsigned long addr, unsigned long end,
+-					  unsigned long floor,
+-					  unsigned long ceiling)
+-{
+-	free_pgd_range(tlb, addr, end, floor, ceiling);
+-}
+-
+ static inline void huge_ptep_clear_flush(struct vm_area_struct *vma,
+ 					 unsigned long addr, pte_t *ptep)
+ {
+@@ -71,4 +61,6 @@ static inline void arch_clear_hugepage_flags(struct page *page)
+ {
+ }
+ 
++#include <asm-generic/hugetlb.h>
++
+ #endif /* _ASM_PARISC64_HUGETLB_H */
+diff --git a/arch/powerpc/include/asm/hugetlb.h b/arch/powerpc/include/asm/hugetlb.h
+index 3225eb6402cc..de46ee16b615 100644
+--- a/arch/powerpc/include/asm/hugetlb.h
++++ b/arch/powerpc/include/asm/hugetlb.h
+@@ -4,7 +4,6 @@
+ 
+ #ifdef CONFIG_HUGETLB_PAGE
+ #include <asm/page.h>
+-#include <asm-generic/hugetlb.h>
+ 
+ extern struct kmem_cache *hugepte_cache;
+ 
+@@ -113,6 +112,7 @@ static inline void flush_hugetlb_page(struct vm_area_struct *vma,
+ void flush_hugetlb_page(struct vm_area_struct *vma, unsigned long vmaddr);
  #endif
- };
--
--void __init no_iommu_init(void)
--{
--	if (dma_ops)
--		return;
--	dma_ops = &nommu_dma_ops;
--}
-+EXPORT_SYMBOL(nommu_dma_ops);
-diff --git a/arch/sh/mm/consistent.c b/arch/sh/mm/consistent.c
-index fceb2adfcac7..e9d422bd42a5 100644
---- a/arch/sh/mm/consistent.c
-+++ b/arch/sh/mm/consistent.c
-@@ -20,9 +20,6 @@
- #include <asm/cacheflush.h>
- #include <asm/addrspace.h>
  
--const struct dma_map_ops *dma_ops;
--EXPORT_SYMBOL(dma_ops);
++#define __HAVE_ARCH_HUGETLB_FREE_PGD_RANGE
+ void hugetlb_free_pgd_range(struct mmu_gather *tlb, unsigned long addr,
+ 			    unsigned long end, unsigned long floor,
+ 			    unsigned long ceiling);
+@@ -193,4 +193,6 @@ static inline pte_t *hugepte_offset(hugepd_t hpd, unsigned long addr,
+ }
+ #endif /* CONFIG_HUGETLB_PAGE */
+ 
++#include <asm-generic/hugetlb.h>
++
+ #endif /* _ASM_POWERPC_HUGETLB_H */
+diff --git a/arch/sh/include/asm/hugetlb.h b/arch/sh/include/asm/hugetlb.h
+index 735939c0f513..f6a51b609409 100644
+--- a/arch/sh/include/asm/hugetlb.h
++++ b/arch/sh/include/asm/hugetlb.h
+@@ -4,8 +4,6 @@
+ 
+ #include <asm/cacheflush.h>
+ #include <asm/page.h>
+-#include <asm-generic/hugetlb.h>
 -
- void *dma_generic_alloc_coherent(struct device *dev, size_t size,
- 				 dma_addr_t *dma_handle, gfp_t gfp,
- 				 unsigned long attrs)
-diff --git a/arch/sh/mm/init.c b/arch/sh/mm/init.c
-index 4034035fbede..7713c084d040 100644
---- a/arch/sh/mm/init.c
-+++ b/arch/sh/mm/init.c
-@@ -339,22 +339,12 @@ void __init paging_init(void)
- 	free_area_init_nodes(max_zone_pfns);
+ 
+ static inline int is_hugepage_only_range(struct mm_struct *mm,
+ 					 unsigned long addr,
+@@ -27,14 +25,6 @@ static inline int prepare_hugepage_range(struct file *file,
+ 	return 0;
  }
  
--/*
-- * Early initialization for any I/O MMUs we might have.
-- */
--static void __init iommu_init(void)
+-static inline void hugetlb_free_pgd_range(struct mmu_gather *tlb,
+-					  unsigned long addr, unsigned long end,
+-					  unsigned long floor,
+-					  unsigned long ceiling)
 -{
--	no_iommu_init();
+-	free_pgd_range(tlb, addr, end, floor, ceiling);
 -}
 -
- unsigned int mem_init_done = 0;
- 
- void __init mem_init(void)
+ static inline void set_huge_pte_at(struct mm_struct *mm, unsigned long addr,
+ 				   pte_t *ptep, pte_t pte)
  {
- 	pg_data_t *pgdat;
+@@ -85,4 +75,6 @@ static inline void arch_clear_hugepage_flags(struct page *page)
+ 	clear_bit(PG_dcache_clean, &page->flags);
+ }
  
--	iommu_init();
++#include <asm-generic/hugetlb.h>
++
+ #endif /* _ASM_SH_HUGETLB_H */
+diff --git a/arch/sparc/include/asm/hugetlb.h b/arch/sparc/include/asm/hugetlb.h
+index 300557c66698..59d89b52ccb7 100644
+--- a/arch/sparc/include/asm/hugetlb.h
++++ b/arch/sparc/include/asm/hugetlb.h
+@@ -3,7 +3,6 @@
+ #define _ASM_SPARC64_HUGETLB_H
+ 
+ #include <asm/page.h>
+-#include <asm-generic/hugetlb.h>
+ 
+ #ifdef CONFIG_HUGETLB_PAGE
+ struct pud_huge_patch_entry {
+@@ -84,8 +83,11 @@ static inline void arch_clear_hugepage_flags(struct page *page)
+ {
+ }
+ 
++#define __HAVE_ARCH_HUGETLB_FREE_PGD_RANGE
+ void hugetlb_free_pgd_range(struct mmu_gather *tlb, unsigned long addr,
+ 			    unsigned long end, unsigned long floor,
+ 			    unsigned long ceiling);
+ 
++#include <asm-generic/hugetlb.h>
++
+ #endif /* _ASM_SPARC64_HUGETLB_H */
+diff --git a/arch/x86/include/asm/hugetlb.h b/arch/x86/include/asm/hugetlb.h
+index 5ed826da5e07..996ce8e15365 100644
+--- a/arch/x86/include/asm/hugetlb.h
++++ b/arch/x86/include/asm/hugetlb.h
+@@ -3,7 +3,6 @@
+ #define _ASM_X86_HUGETLB_H
+ 
+ #include <asm/page.h>
+-#include <asm-generic/hugetlb.h>
+ 
+ #define hugepages_supported() boot_cpu_has(X86_FEATURE_PSE)
+ 
+@@ -28,14 +27,6 @@ static inline int prepare_hugepage_range(struct file *file,
+ 	return 0;
+ }
+ 
+-static inline void hugetlb_free_pgd_range(struct mmu_gather *tlb,
+-					  unsigned long addr, unsigned long end,
+-					  unsigned long floor,
+-					  unsigned long ceiling)
+-{
+-	free_pgd_range(tlb, addr, end, floor, ceiling);
+-}
 -
- 	high_memory = NULL;
- 	for_each_online_pgdat(pgdat)
- 		high_memory = max_t(void *, high_memory,
+ static inline void set_huge_pte_at(struct mm_struct *mm, unsigned long addr,
+ 				   pte_t *ptep, pte_t pte)
+ {
+@@ -90,4 +81,6 @@ static inline void arch_clear_hugepage_flags(struct page *page)
+ static inline bool gigantic_page_supported(void) { return true; }
+ #endif
+ 
++#include <asm-generic/hugetlb.h>
++
+ #endif /* _ASM_X86_HUGETLB_H */
+diff --git a/include/asm-generic/hugetlb.h b/include/asm-generic/hugetlb.h
+index 3da7cff52360..c697ca9dda18 100644
+--- a/include/asm-generic/hugetlb.h
++++ b/include/asm-generic/hugetlb.h
+@@ -40,4 +40,15 @@ static inline void huge_pte_clear(struct mm_struct *mm, unsigned long addr,
+ }
+ #endif
+ 
++#ifndef __HAVE_ARCH_HUGETLB_FREE_PGD_RANGE
++static inline void hugetlb_free_pgd_range(struct mmu_gather *tlb,
++		unsigned long addr, unsigned long end,
++		unsigned long floor, unsigned long ceiling)
++{
++	free_pgd_range(tlb, addr, end, floor, ceiling);
++}
++
++
++#endif
++
+ #endif /* _ASM_GENERIC_HUGETLB_H */
 -- 
-2.18.0
+2.16.2
 
