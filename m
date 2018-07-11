@@ -1,55 +1,56 @@
-From: Richard Kuo <rkuo@codeaurora.org>
-Date: Mon, 23 Jul 2018 21:34:27 +0000
-Subject: Re: [PATCH] arch/h8300: fix kernel/dma.c build warning
-Message-Id: <20180723213427.GB12771@codeaurora.org>
+From: Rob Landley <rob@landley.net>
+Date: Wed, 11 Jul 2018 18:17:45 +0000
+Subject: Random warning dump during init.
+Message-Id: <b4645807-bc6f-9578-20c2-798654c593a2@landley.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <b4146df6-93ef-5f4d-9302-2040895d62b0@infradead.org>
- <CAMuHMdVs4y_BeONEWiAqmNSo+U8um1EZ16sfgdnw8rar6ASzxg@mail.gmail.com>
- <24723dd8-9d9f-24b7-6fe9-71a776c5d444@infradead.org>
-In-Reply-To: <24723dd8-9d9f-24b7-6fe9-71a776c5d444@infradead.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Randy Dunlap <rdunlap@infradead.org>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>, "open list:QUALCOMM HEXAGON..." <linux-hexagon@vger.kernel.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Linux-sh list <linux-sh@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-On Sun, Jul 22, 2018 at 10:24:58AM -0700, Randy Dunlap wrote:
-> On 07/22/2018 02:25 AM, Geert Uytterhoeven wrote:
-> > CC hexagon
-> > 
-> > hexagon != H8/300 != SuperH
-> 
-> argh.  Thanks.
-> 
-> > On Sat, Jul 21, 2018 at 5:17 AM Randy Dunlap <rdunlap@infradead.org> wrote:
-> >>
-> >> From: Randy Dunlap <rdunlap@infradead.org>
-> >>
-> >> Fix build warning in arch/hexagon/kernel/dma.c by casting a void *
-> >> to unsigned long to match the function parameter type.
-> >>
-> >> ../arch/hexagon/kernel/dma.c: In function 'arch_dma_alloc':
-> >> ../arch/hexagon/kernel/dma.c:51:5: warning: passing argument 2 of 'gen_pool_add' makes integer from pointer without a cast [enabled by default]
-> >> ../include/linux/genalloc.h:112:19: note: expected 'long unsigned int' but argument is of type 'void *'
-> >>
-> >> Signed-off-by: Randy Dunlap <rdunlap@infradead.org>
-> >> Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-> >> Cc: Rich Felker <dalias@libc.org>
-> >> Cc: linux-sh@vger.kernel.org
-> >> ---
-> >>  arch/hexagon/kernel/dma.c |    2 +-
-> >>  1 file changed, 1 insertion(+), 1 deletion(-)
-> >>
+Building commit d0fbad0aec1d (from July 2) I hit this, and I confirmed today's
+pull is still doing it. (It's my mkroot sh4 target built with musl-cross-make,
+booting under qemu.)
 
-Thanks all the same!
+NET: Registered protocol family 17
+Freeing unused kernel memory: 116K
+This architecture does not have kernel memory protection.
+WARNING: CPU: 0 PID: 1 at mm/slub.c:2412 ___slab_alloc.constprop.34+0x196/0x288
 
-For Hexagon:
+CPU: 0 PID: 1 Comm: swapper Not tainted 4.18.0-rc3 #1
+PC is at ___slab_alloc.constprop.34+0x196/0x288
+PR is at __slab_alloc.constprop.33+0x2a/0x4c
+PC  : 8c09ada2 SP  : 8f829ea8 SR  : 400080f0
+TEA : c0001240
+R0  : 8c09ac0c R1  : 8c01cc54 R2  : 8ff750d0 R3  : 00000000
+R4  : 8f802780 R5  : 006080c0 R6  : 8c01d79c R7  : 8ff750d0
+R8  : 8c011bd8 R9  : 8ff750d0 R10 : 8f802780 R11 : 00008000
+R12 : 8c01d79c R13 : 006080c0 R14 : 8f8027fc
+MACH: 00000205 MACL: 0ae4849d GBR : 00000000 PR  : 8c09aebe
 
+Call trace:
+ [<(ptrval)>] arch_local_irq_restore+0x0/0x24
+ [<(ptrval)>] __slab_alloc.constprop.33+0x2a/0x4c
+ [<(ptrval)>] arch_local_save_flags+0x0/0x8
+ [<(ptrval)>] arch_local_irq_restore+0x0/0x24
+ [<(ptrval)>] mm_init.isra.6+0xb4/0x104
+ [<(ptrval)>] kmem_cache_alloc+0x9c/0xf4
+ [<(ptrval)>] arch_local_irq_restore+0x0/0x24
+ [<(ptrval)>] mm_init.isra.6+0xb4/0x104
+ [<(ptrval)>] mm_init.isra.6+0xb4/0x104
+ [<(ptrval)>] __do_execve_file+0x1da/0x5bc
+ [<(ptrval)>] kmem_cache_alloc+0x0/0xf4
+ [<(ptrval)>] getname_kernel+0x1e/0xc8
+ [<(ptrval)>] do_execve+0x16/0x24
+ [<(ptrval)>] arch_local_save_flags+0x0/0x8
+ [<(ptrval)>] arch_local_irq_restore+0x0/0x24
+ [<(ptrval)>] printk+0x0/0x24
+ [<(ptrval)>] kernel_init+0x34/0xec
+ [<(ptrval)>] ret_from_kernel_thread+0xc/0x14
+ [<(ptrval)>] schedule_tail+0x0/0x54
+ [<(ptrval)>] kernel_init+0x0/0xec
 
-Acked-by: Richard Kuo <rkuo@codeaurora.org>
-
-
--- 
-Employee of Qualcomm Innovation Center, Inc.
-Qualcomm Innovation Center, Inc. is a member of the Code Aurora Forum, 
-a Linux Foundation Collaborative Project
+---[ end trace 547fc2facfcadcaf ]---
+8139cp 0000:00:02.0 eth0: link up, 100Mbps, full-duplex, lpa 0x05E1
+Type exit when done.
+/ #
