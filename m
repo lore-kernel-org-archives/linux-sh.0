@@ -1,198 +1,107 @@
-From: Mike Kravetz <mike.kravetz@oracle.com>
-Date: Thu, 26 Jul 2018 19:05:17 +0000
-Subject: Re: [PATCH v4 07/11] hugetlb: Introduce generic version of huge_pte_wrprotect
-Message-Id: <8a8f0608-ff9a-04ea-7c63-2b3bb99b7966@oracle.com>
+From: Christoph Hellwig <hch@lst.de>
+Date: Thu, 19 Jul 2018 13:05:14 +0000
+Subject: [PATCH 3/5] sh: use dma_direct_ops for the CONFIG_DMA_COHERENT case
+Message-Id: <20180719130516.1989-4-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180705110716.3919-1-alex@ghiti.fr>
- <20180705110716.3919-8-alex@ghiti.fr>
-In-Reply-To: <20180705110716.3919-8-alex@ghiti.fr>
+References: <20180719130516.1989-1-hch@lst.de>
+In-Reply-To: <20180719130516.1989-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Alexandre Ghiti <alex@ghiti.fr>, linux@armlinux.org.uk, catalin.marinas@arm.com, will.deacon@arm.com, tony.luck@intel.com, fenghua.yu@intel.com, ralf@linux-mips.org, paul.burton@mips.com, jhogan@kernel.org, jejb@parisc-linux.org, deller@gmx.de, benh@kernel.crashing.org, paulus@samba.org, mpe@ellerman.id.au, ysato@users.sourceforge.jp, dalias@libc.org, davem@davemloft.net, tglx@linutronix.de, mingo@redhat.com, hpa@zytor.com, x86@kernel.org, arnd@arndb.de, linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org, linux-ia64@vger.kernel.org, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-arch@vger.kernel.org
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>, Thomas Petazzoni <thomas.petazzoni@free-electrons.com>, linux-sh@vger.kernel.org, iommu@lists.linux-foundation.org, linux-kernel@vger.kernel.org
 
-On 07/05/2018 04:07 AM, Alexandre Ghiti wrote:
-> arm, arm64, ia64, mips, parisc, powerpc, sh, sparc, x86
-> architectures use the same version of huge_pte_wrprotect, so move
-> this generic implementation into asm-generic/hugetlb.h.
-> 
+This is a slight change in behavior as we avoid the detour through the
+virtual mapping for the coherent allocator, but if this CPU really is
+coherent that should be the right thing to do.
 
-Reviewed-by: Mike Kravetz <mike.kravetz@oracle.com>
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+---
+ arch/sh/Kconfig                   | 1 +
+ arch/sh/include/asm/dma-mapping.h | 4 ++++
+ arch/sh/kernel/Makefile           | 4 ++--
+ arch/sh/kernel/dma-nommu.c        | 4 ----
+ 4 files changed, 7 insertions(+), 6 deletions(-)
+
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index dd4f3d3e644f..c9993a0cdc7e 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -159,6 +159,7 @@ config SWAP_IO_SPACE
+ 	bool
+ 
+ config DMA_COHERENT
++	select DMA_DIRECT_OPS
+ 	bool
+ 
+ config DMA_NONCOHERENT
+diff --git a/arch/sh/include/asm/dma-mapping.h b/arch/sh/include/asm/dma-mapping.h
+index 149e71f95be7..1ebc6a4eb1c5 100644
+--- a/arch/sh/include/asm/dma-mapping.h
++++ b/arch/sh/include/asm/dma-mapping.h
+@@ -6,7 +6,11 @@ extern const struct dma_map_ops nommu_dma_ops;
+ 
+ static inline const struct dma_map_ops *get_arch_dma_ops(struct bus_type *bus)
+ {
++#ifdef CONFIG_DMA_NONCOHERENT
+ 	return &nommu_dma_ops;
++#else
++	return &dma_direct_ops;
++#endif
+ }
+ 
+ extern void *dma_generic_alloc_coherent(struct device *dev, size_t size,
+diff --git a/arch/sh/kernel/Makefile b/arch/sh/kernel/Makefile
+index dc80041f7363..cb5f1bfb52de 100644
+--- a/arch/sh/kernel/Makefile
++++ b/arch/sh/kernel/Makefile
+@@ -12,7 +12,7 @@ endif
+ 
+ CFLAGS_REMOVE_return_address.o = -pg
+ 
+-obj-y	:= debugtraps.o dma-nommu.o dumpstack.o 		\
++obj-y	:= debugtraps.o dumpstack.o 		\
+ 	   idle.o io.o irq.o irq_$(BITS).o kdebugfs.o			\
+ 	   machvec.o nmi_debug.o process.o				\
+ 	   process_$(BITS).o ptrace.o ptrace_$(BITS).o			\
+@@ -45,7 +45,7 @@ obj-$(CONFIG_DUMP_CODE)		+= disassemble.o
+ obj-$(CONFIG_HIBERNATION)	+= swsusp.o
+ obj-$(CONFIG_DWARF_UNWINDER)	+= dwarf.o
+ obj-$(CONFIG_PERF_EVENTS)	+= perf_event.o perf_callchain.o
+-
++obj-$(CONFIG_DMA_NONCOHERENT)	+= dma-nommu.o
+ obj-$(CONFIG_HAVE_HW_BREAKPOINT)		+= hw_breakpoint.o
+ 
+ ccflags-y := -Werror
+diff --git a/arch/sh/kernel/dma-nommu.c b/arch/sh/kernel/dma-nommu.c
+index 79a9edafa5b0..d8689b1cb743 100644
+--- a/arch/sh/kernel/dma-nommu.c
++++ b/arch/sh/kernel/dma-nommu.c
+@@ -51,7 +51,6 @@ static int nommu_map_sg(struct device *dev, struct scatterlist *sg,
+ 	return nents;
+ }
+ 
+-#ifdef CONFIG_DMA_NONCOHERENT
+ static void nommu_sync_single_for_device(struct device *dev, dma_addr_t addr,
+ 			      size_t size, enum dma_data_direction dir)
+ {
+@@ -67,16 +66,13 @@ static void nommu_sync_sg_for_device(struct device *dev, struct scatterlist *sg,
+ 	for_each_sg(sg, s, nelems, i)
+ 		sh_sync_dma_for_device(sg_virt(s), s->length, dir);
+ }
+-#endif
+ 
+ const struct dma_map_ops nommu_dma_ops = {
+ 	.alloc			= dma_generic_alloc_coherent,
+ 	.free			= dma_generic_free_coherent,
+ 	.map_page		= nommu_map_page,
+ 	.map_sg			= nommu_map_sg,
+-#ifdef CONFIG_DMA_NONCOHERENT
+ 	.sync_single_for_device	= nommu_sync_single_for_device,
+ 	.sync_sg_for_device	= nommu_sync_sg_for_device,
+-#endif
+ };
+ EXPORT_SYMBOL(nommu_dma_ops);
 -- 
-Mike Kravetz
+2.18.0
 
-> Signed-off-by: Alexandre Ghiti <alex@ghiti.fr>
-> ---
->  arch/arm/include/asm/hugetlb.h     | 5 -----
->  arch/arm64/include/asm/hugetlb.h   | 5 -----
->  arch/ia64/include/asm/hugetlb.h    | 5 -----
->  arch/mips/include/asm/hugetlb.h    | 5 -----
->  arch/parisc/include/asm/hugetlb.h  | 5 -----
->  arch/powerpc/include/asm/hugetlb.h | 5 -----
->  arch/sh/include/asm/hugetlb.h      | 5 -----
->  arch/sparc/include/asm/hugetlb.h   | 5 -----
->  arch/x86/include/asm/hugetlb.h     | 5 -----
->  include/asm-generic/hugetlb.h      | 7 +++++++
->  10 files changed, 7 insertions(+), 45 deletions(-)
-> 
-> diff --git a/arch/arm/include/asm/hugetlb.h b/arch/arm/include/asm/hugetlb.h
-> index 3d2ce4dbc145..1e718a626ef9 100644
-> --- a/arch/arm/include/asm/hugetlb.h
-> +++ b/arch/arm/include/asm/hugetlb.h
-> @@ -43,11 +43,6 @@ static inline int prepare_hugepage_range(struct file *file,
->  	return 0;
->  }
->  
-> -static inline pte_t huge_pte_wrprotect(pte_t pte)
-> -{
-> -	return pte_wrprotect(pte);
-> -}
-> -
->  static inline void arch_clear_hugepage_flags(struct page *page)
->  {
->  	clear_bit(PG_dcache_clean, &page->flags);
-> diff --git a/arch/arm64/include/asm/hugetlb.h b/arch/arm64/include/asm/hugetlb.h
-> index 49247c6f94db..1fd64ebf0cd7 100644
-> --- a/arch/arm64/include/asm/hugetlb.h
-> +++ b/arch/arm64/include/asm/hugetlb.h
-> @@ -42,11 +42,6 @@ static inline int prepare_hugepage_range(struct file *file,
->  	return 0;
->  }
->  
-> -static inline pte_t huge_pte_wrprotect(pte_t pte)
-> -{
-> -	return pte_wrprotect(pte);
-> -}
-> -
->  static inline void arch_clear_hugepage_flags(struct page *page)
->  {
->  	clear_bit(PG_dcache_clean, &page->flags);
-> diff --git a/arch/ia64/include/asm/hugetlb.h b/arch/ia64/include/asm/hugetlb.h
-> index bf573500b3c4..82fe3d7a38d9 100644
-> --- a/arch/ia64/include/asm/hugetlb.h
-> +++ b/arch/ia64/include/asm/hugetlb.h
-> @@ -26,11 +26,6 @@ static inline void huge_ptep_clear_flush(struct vm_area_struct *vma,
->  {
->  }
->  
-> -static inline pte_t huge_pte_wrprotect(pte_t pte)
-> -{
-> -	return pte_wrprotect(pte);
-> -}
-> -
->  static inline void huge_ptep_set_wrprotect(struct mm_struct *mm,
->  					   unsigned long addr, pte_t *ptep)
->  {
-> diff --git a/arch/mips/include/asm/hugetlb.h b/arch/mips/include/asm/hugetlb.h
-> index 1c9c4531376c..b3d6bb53ee6e 100644
-> --- a/arch/mips/include/asm/hugetlb.h
-> +++ b/arch/mips/include/asm/hugetlb.h
-> @@ -62,11 +62,6 @@ static inline int huge_pte_none(pte_t pte)
->  	return !val || (val = (unsigned long)invalid_pte_table);
->  }
->  
-> -static inline pte_t huge_pte_wrprotect(pte_t pte)
-> -{
-> -	return pte_wrprotect(pte);
-> -}
-> -
->  static inline void huge_ptep_set_wrprotect(struct mm_struct *mm,
->  					   unsigned long addr, pte_t *ptep)
->  {
-> diff --git a/arch/parisc/include/asm/hugetlb.h b/arch/parisc/include/asm/hugetlb.h
-> index c09d8c74553c..5a102d7251e4 100644
-> --- a/arch/parisc/include/asm/hugetlb.h
-> +++ b/arch/parisc/include/asm/hugetlb.h
-> @@ -38,11 +38,6 @@ static inline void huge_ptep_clear_flush(struct vm_area_struct *vma,
->  {
->  }
->  
-> -static inline pte_t huge_pte_wrprotect(pte_t pte)
-> -{
-> -	return pte_wrprotect(pte);
-> -}
-> -
->  void huge_ptep_set_wrprotect(struct mm_struct *mm,
->  					   unsigned long addr, pte_t *ptep);
->  
-> diff --git a/arch/powerpc/include/asm/hugetlb.h b/arch/powerpc/include/asm/hugetlb.h
-> index 3562d46585ba..7123599089c6 100644
-> --- a/arch/powerpc/include/asm/hugetlb.h
-> +++ b/arch/powerpc/include/asm/hugetlb.h
-> @@ -152,11 +152,6 @@ static inline void huge_ptep_clear_flush(struct vm_area_struct *vma,
->  	flush_hugetlb_page(vma, addr);
->  }
->  
-> -static inline pte_t huge_pte_wrprotect(pte_t pte)
-> -{
-> -	return pte_wrprotect(pte);
-> -}
-> -
->  extern int huge_ptep_set_access_flags(struct vm_area_struct *vma,
->  				      unsigned long addr, pte_t *ptep,
->  				      pte_t pte, int dirty);
-> diff --git a/arch/sh/include/asm/hugetlb.h b/arch/sh/include/asm/hugetlb.h
-> index a9f8266f33cf..54f65094efe6 100644
-> --- a/arch/sh/include/asm/hugetlb.h
-> +++ b/arch/sh/include/asm/hugetlb.h
-> @@ -31,11 +31,6 @@ static inline void huge_ptep_clear_flush(struct vm_area_struct *vma,
->  {
->  }
->  
-> -static inline pte_t huge_pte_wrprotect(pte_t pte)
-> -{
-> -	return pte_wrprotect(pte);
-> -}
-> -
->  static inline void huge_ptep_set_wrprotect(struct mm_struct *mm,
->  					   unsigned long addr, pte_t *ptep)
->  {
-> diff --git a/arch/sparc/include/asm/hugetlb.h b/arch/sparc/include/asm/hugetlb.h
-> index 11115bbd712e..f661362376e0 100644
-> --- a/arch/sparc/include/asm/hugetlb.h
-> +++ b/arch/sparc/include/asm/hugetlb.h
-> @@ -48,11 +48,6 @@ static inline void huge_ptep_clear_flush(struct vm_area_struct *vma,
->  {
->  }
->  
-> -static inline pte_t huge_pte_wrprotect(pte_t pte)
-> -{
-> -	return pte_wrprotect(pte);
-> -}
-> -
->  static inline void huge_ptep_set_wrprotect(struct mm_struct *mm,
->  					   unsigned long addr, pte_t *ptep)
->  {
-> diff --git a/arch/x86/include/asm/hugetlb.h b/arch/x86/include/asm/hugetlb.h
-> index c5fdc53b6e41..19668672ab37 100644
-> --- a/arch/x86/include/asm/hugetlb.h
-> +++ b/arch/x86/include/asm/hugetlb.h
-> @@ -27,11 +27,6 @@ static inline int prepare_hugepage_range(struct file *file,
->  	return 0;
->  }
->  
-> -static inline pte_t huge_pte_wrprotect(pte_t pte)
-> -{
-> -	return pte_wrprotect(pte);
-> -}
-> -
->  static inline void huge_ptep_set_wrprotect(struct mm_struct *mm,
->  					   unsigned long addr, pte_t *ptep)
->  {
-> diff --git a/include/asm-generic/hugetlb.h b/include/asm-generic/hugetlb.h
-> index 2fc3d68424e9..cd9697672b79 100644
-> --- a/include/asm-generic/hugetlb.h
-> +++ b/include/asm-generic/hugetlb.h
-> @@ -80,4 +80,11 @@ static inline int huge_pte_none(pte_t pte)
->  }
->  #endif
->  
-> +#ifndef __HAVE_ARCH_HUGE_PTE_WRPROTECT
-> +static inline pte_t huge_pte_wrprotect(pte_t pte)
-> +{
-> +	return pte_wrprotect(pte);
-> +}
-> +#endif
-> +
->  #endif /* _ASM_GENERIC_HUGETLB_H */
-> 
