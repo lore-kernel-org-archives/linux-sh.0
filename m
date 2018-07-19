@@ -1,85 +1,91 @@
-From: Bjorn Helgaas <helgaas@kernel.org>
-Date: Tue, 31 Jul 2018 10:54:59 +0000
-Subject: Re: [PATCH] PCI: call dma_debug_add_bus for pci_bus_type in common code
-Message-Id: <20180731105459.GH45322@bhelgaas-glaptop.roam.corp.google.com>
+From: Christoph Hellwig <hch@lst.de>
+Date: Thu, 19 Jul 2018 13:05:13 +0000
+Subject: [PATCH 2/5] sh: introduce a sh_cacheop_vaddr helper
+Message-Id: <20180719130516.1989-3-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180730073842.16092-1-hch@lst.de>
-In-Reply-To: <20180730073842.16092-1-hch@lst.de>
+References: <20180719130516.1989-1-hch@lst.de>
+In-Reply-To: <20180719130516.1989-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Christoph Hellwig <hch@lst.de>
-Cc: linux-pci@vger.kernel.org, iommu@lists.linux-foundation.org, linuxppc-dev@lists.ozlabs.org, x86@kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>, Thomas Petazzoni <thomas.petazzoni@free-electrons.com>, linux-sh@vger.kernel.org, iommu@lists.linux-foundation.org, linux-kernel@vger.kernel.org
 
-On Mon, Jul 30, 2018 at 09:38:42AM +0200, Christoph Hellwig wrote:
-> There is nothing arch specific about PCI or dma-debug, so move this
-> call to common code just after registering the bus type.
-> 
-> Signed-off-by: Christoph Hellwig <hch@lst.de>
+And use it in the maple bus code to avoid a dma API dependency.
 
-Applied with acks from Thomas and Michael to pci/misc for v4.19, thanks!
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+---
+ arch/sh/include/asm/cacheflush.h | 7 +++++++
+ arch/sh/mm/consistent.c          | 6 +-----
+ drivers/sh/maple/maple.c         | 7 ++++---
+ 3 files changed, 12 insertions(+), 8 deletions(-)
 
-> ---
->  arch/powerpc/kernel/dma.c | 3 ---
->  arch/sh/drivers/pci/pci.c | 2 --
->  arch/x86/kernel/pci-dma.c | 3 ---
->  drivers/pci/pci-driver.c  | 2 +-
->  4 files changed, 1 insertion(+), 9 deletions(-)
-> 
-> diff --git a/arch/powerpc/kernel/dma.c b/arch/powerpc/kernel/dma.c
-> index 155170d70324..dbfc7056d7df 100644
-> --- a/arch/powerpc/kernel/dma.c
-> +++ b/arch/powerpc/kernel/dma.c
-> @@ -357,9 +357,6 @@ EXPORT_SYMBOL_GPL(dma_get_required_mask);
->  
->  static int __init dma_init(void)
->  {
-> -#ifdef CONFIG_PCI
-> -	dma_debug_add_bus(&pci_bus_type);
-> -#endif
->  #ifdef CONFIG_IBMVIO
->  	dma_debug_add_bus(&vio_bus_type);
->  #endif
-> diff --git a/arch/sh/drivers/pci/pci.c b/arch/sh/drivers/pci/pci.c
-> index e5b7437ab4af..8256626bc53c 100644
-> --- a/arch/sh/drivers/pci/pci.c
-> +++ b/arch/sh/drivers/pci/pci.c
-> @@ -160,8 +160,6 @@ static int __init pcibios_init(void)
->  	for (hose = hose_head; hose; hose = hose->next)
->  		pcibios_scanbus(hose);
->  
-> -	dma_debug_add_bus(&pci_bus_type);
-> -
->  	pci_initialized = 1;
->  
->  	return 0;
-> diff --git a/arch/x86/kernel/pci-dma.c b/arch/x86/kernel/pci-dma.c
-> index ab5d9dd668d2..43f58632f123 100644
-> --- a/arch/x86/kernel/pci-dma.c
-> +++ b/arch/x86/kernel/pci-dma.c
-> @@ -155,9 +155,6 @@ static int __init pci_iommu_init(void)
->  {
->  	struct iommu_table_entry *p;
->  
-> -#ifdef CONFIG_PCI
-> -	dma_debug_add_bus(&pci_bus_type);
-> -#endif
->  	x86_init.iommu.iommu_init();
->  
->  	for (p = __iommu_table; p < __iommu_table_end; p++) {
-> diff --git a/drivers/pci/pci-driver.c b/drivers/pci/pci-driver.c
-> index 6792292b5fc7..bef17c3fca67 100644
-> --- a/drivers/pci/pci-driver.c
-> +++ b/drivers/pci/pci-driver.c
-> @@ -1668,7 +1668,7 @@ static int __init pci_driver_init(void)
->  	if (ret)
->  		return ret;
->  #endif
-> -
-> +	dma_debug_add_bus(&pci_bus_type);
->  	return 0;
->  }
->  postcore_initcall(pci_driver_init);
-> -- 
-> 2.18.0
-> 
+diff --git a/arch/sh/include/asm/cacheflush.h b/arch/sh/include/asm/cacheflush.h
+index d103ab5a4e4b..b932e42ef028 100644
+--- a/arch/sh/include/asm/cacheflush.h
++++ b/arch/sh/include/asm/cacheflush.h
+@@ -101,5 +101,12 @@ void kunmap_coherent(void *kvaddr);
+ 
+ void cpu_cache_init(void);
+ 
++static inline void *sh_cacheop_vaddr(void *vaddr)
++{
++	if (__in_29bit_mode())
++		vaddr = (void *)CAC_ADDR((unsigned long)vaddr);
++	return vaddr;
++}
++
+ #endif /* __KERNEL__ */
+ #endif /* __ASM_SH_CACHEFLUSH_H */
+diff --git a/arch/sh/mm/consistent.c b/arch/sh/mm/consistent.c
+index e9d422bd42a5..1622ae6b9dbd 100644
+--- a/arch/sh/mm/consistent.c
++++ b/arch/sh/mm/consistent.c
+@@ -74,10 +74,7 @@ void dma_generic_free_coherent(struct device *dev, size_t size,
+ void sh_sync_dma_for_device(void *vaddr, size_t size,
+ 		    enum dma_data_direction direction)
+ {
+-	void *addr;
+-
+-	addr = __in_29bit_mode() ?
+-	       (void *)CAC_ADDR((unsigned long)vaddr) : vaddr;
++	void *addr = sh_cacheop_vaddr(vaddr);
+ 
+ 	switch (direction) {
+ 	case DMA_FROM_DEVICE:		/* invalidate only */
+@@ -93,7 +90,6 @@ void sh_sync_dma_for_device(void *vaddr, size_t size,
+ 		BUG();
+ 	}
+ }
+-EXPORT_SYMBOL(sh_sync_dma_for_device);
+ 
+ static int __init memchunk_setup(char *str)
+ {
+diff --git a/drivers/sh/maple/maple.c b/drivers/sh/maple/maple.c
+index 2e45988d1259..e5d7fb81ad66 100644
+--- a/drivers/sh/maple/maple.c
++++ b/drivers/sh/maple/maple.c
+@@ -300,8 +300,8 @@ static void maple_send(void)
+ 	mutex_unlock(&maple_wlist_lock);
+ 	if (maple_packets > 0) {
+ 		for (i = 0; i < (1 << MAPLE_DMA_PAGES); i++)
+-			sh_sync_dma_for_device(maple_sendbuf + i * PAGE_SIZE,
+-				       PAGE_SIZE, DMA_BIDIRECTIONAL);
++			__flush_purge_region(maple_sendbuf + i * PAGE_SIZE,
++					PAGE_SIZE);
+ 	}
+ 
+ finish:
+@@ -642,7 +642,8 @@ static void maple_dma_handler(struct work_struct *work)
+ 		list_for_each_entry_safe(mq, nmq, &maple_sentq, list) {
+ 			mdev = mq->dev;
+ 			recvbuf = mq->recvbuf->buf;
+-			sh_sync_dma_for_device(recvbuf, 0x400, DMA_FROM_DEVICE);
++			__flush_invalidate_region(sh_cacheop_vaddr(recvbuf),
++					0x400);
+ 			code = recvbuf[0];
+ 			kfree(mq->sendbuf);
+ 			list_del_init(&mq->list);
+-- 
+2.18.0
+
