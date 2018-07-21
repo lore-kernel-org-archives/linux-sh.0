@@ -1,31 +1,41 @@
-From: Luiz Capitulino <lcapitulino@redhat.com>
-Date: Tue, 31 Jul 2018 20:06:40 +0000
-Subject: Re: [PATCH v5 00/11] hugetlb: Factorize hugetlb architecture primitives
-Message-Id: <20180731160640.11306628@doriath>
+From: Randy Dunlap <rdunlap@infradead.org>
+Date: Sat, 21 Jul 2018 03:17:35 +0000
+Subject: [PATCH] arch/h8300: fix kernel/dma.c build warning
+Message-Id: <b4146df6-93ef-5f4d-9302-2040895d62b0@infradead.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180731060155.16915-1-alex@ghiti.fr>
-In-Reply-To: <20180731060155.16915-1-alex@ghiti.fr>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Alexandre Ghiti <alex@ghiti.fr>
-Cc: linux-mm@kvack.org, mike.kravetz@oracle.com, linux@armlinux.org.uk, catalin.marinas@arm.com, will.deacon@arm.com, tony.luck@intel.com, fenghua.yu@intel.com, ralf@linux-mips.org, paul.burton@mips.com, jhogan@kernel.org, jejb@parisc-linux.org, deller@gmx.de, benh@kernel.crashing.org, paulus@samba.org, mpe@ellerman.id.au, ysato@users.sourceforge.jp, dalias@libc.org, davem@davemloft.net, tglx@linutronix.de, mingo@redhat.com, hpa@zytor.com, x86@kernel.org, arnd@arndb.de, linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org, linux-ia64@vger.kernel.org, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-arch@vger.kernel.org
+To: LKML <linux-kernel@vger.kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
 
-On Tue, 31 Jul 2018 06:01:44 +0000
-Alexandre Ghiti <alex@ghiti.fr> wrote:
+From: Randy Dunlap <rdunlap@infradead.org>
 
-> [CC linux-mm for inclusion in -mm tree] 
-> 
-> In order to reduce copy/paste of functions across architectures and then
-> make riscv hugetlb port (and future ports) simpler and smaller, this
-> patchset intends to factorize the numerous hugetlb primitives that are
-> defined across all the architectures.
+Fix build warning in arch/hexagon/kernel/dma.c by casting a void *
+to unsigned long to match the function parameter type.
 
-[...]
+../arch/hexagon/kernel/dma.c: In function 'arch_dma_alloc':
+../arch/hexagon/kernel/dma.c:51:5: warning: passing argument 2 of 'gen_pool_add' makes integer from pointer without a cast [enabled by default]
+../include/linux/genalloc.h:112:19: note: expected 'long unsigned int' but argument is of type 'void *'
 
->  15 files changed, 139 insertions(+), 382 deletions(-)
+Signed-off-by: Randy Dunlap <rdunlap@infradead.org>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+Cc: linux-sh@vger.kernel.org
+---
+ arch/hexagon/kernel/dma.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-I imagine you're mostly interested in non-x86 review at this point, but
-as this series is looking amazing:
+--- linux-next-20180717.orig/arch/hexagon/kernel/dma.c
++++ linux-next-20180717/arch/hexagon/kernel/dma.c
+@@ -47,7 +47,7 @@ void *arch_dma_alloc(struct device *dev,
+ 			panic("Can't create %s() memory pool!", __func__);
+ 		else
+ 			gen_pool_add(coherent_pool,
+-				pfn_to_virt(max_low_pfn),
++				(unsigned long)pfn_to_virt(max_low_pfn),
+ 				hexagon_coherent_pool_size, -1);
+ 	}
+ 
 
-Reviewed-by: Luiz Capitulino <lcapitulino@redhat.com>
+
