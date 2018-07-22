@@ -1,8 +1,10 @@
 From: Yoshinori Sato <ysato@users.sourceforge.jp>
-Date: Sat, 21 Jul 2018 14:34:36 +0000
+Date: Sun, 22 Jul 2018 13:02:14 +0000
 Subject: [PATCH v2] serial: sh-sci: byte allocated register support
-Message-Id: <20180721143436.43675-1-ysato@users.sourceforge.jp>
+Message-Id: <20180722130214.19572-1-ysato@users.sourceforge.jp>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20180721143436.43675-1-ysato@users.sourceforge.jp>
+In-Reply-To: <20180721143436.43675-1-ysato@users.sourceforge.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
