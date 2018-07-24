@@ -1,10 +1,10 @@
 From: Christoph Hellwig <hch@lst.de>
-Date: Thu, 19 Jul 2018 13:05:16 +0000
+Date: Tue, 24 Jul 2018 12:01:47 +0000
 Subject: [PATCH 5/5] sh: use generic dma_noncoherent_ops
-Message-Id: <20180719130516.1989-6-hch@lst.de>
+Message-Id: <20180724120147.15096-6-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180719130516.1989-1-hch@lst.de>
-In-Reply-To: <20180719130516.1989-1-hch@lst.de>
+References: <20180724120147.15096-1-hch@lst.de>
+In-Reply-To: <20180724120147.15096-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -104,7 +104,7 @@ index d5ddb64bfffe..59673f8a3379 100644
  
  ccflags-y := -Werror
 diff --git a/arch/sh/kernel/dma-coherent.c b/arch/sh/kernel/dma-coherent.c
-index 0e7720b5d495..088ecd188b71 100644
+index 763ba10fbd3e..9199b5523f7c 100644
 --- a/arch/sh/kernel/dma-coherent.c
 +++ b/arch/sh/kernel/dma-coherent.c
 @@ -7,14 +7,13 @@
