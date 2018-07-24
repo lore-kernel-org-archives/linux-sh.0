@@ -1,161 +1,187 @@
-From: Baolin Wang <baolin.wang@linaro.org>
-Date: Tue, 17 Jul 2018 11:24:24 +0000
-Subject: [RESEND PATCH 1/4] sh: dreamcast: rtc: push down rtc class ops into driver
-Message-Id: <bb0912b9725f192179cc94ef8c3f6702fc078e11.1531826106.git.baolin.wang@linaro.org>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Tue, 24 Jul 2018 21:36:22 +0000
+Subject: [PATCH v2 2/4] sh: sh03: rtc: push down rtc class ops into driver
+Message-Id: <20180724213624.3899336-2-arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20180724213624.3899336-1-arnd@arndb.de>
+In-Reply-To: <20180724213624.3899336-1-arnd@arndb.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: ysato@users.sourceforge.jp, dalias@libc.org, corbet@lwn.net
-Cc: baolin.wang@linaro.org, arnd@arndb.de, broonie@kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
-
-From: Arnd Bergmann <arnd@arndb.de>
+To: dalias@libc.org
+Cc: ysato@users.sourceforge.jp, baolin.wang@linaro.org, y2038@lists.linaro.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Arnd Bergmann <arnd@arndb.de>
 
 The dreamcast RTC support has an extra level of indirection to
 provide either the old read_persistent_clock/update_persistent_clock
 interface or the rtc-generic device for hctosys/systohc.
 
-Both do the same thing here, so we can do away with the abstraction
-and simply enable the RTC core code to take care of it.
+By removing the indirection and always using the RTC_CLASS interface,
+we can avoid the lossy double conversion between rtc_time and timespec,
+so we end up supporting the entire range of 'year' values, and clarifying
+the rtc_set_time callback.
+
+I did not change the behavior of sh03_rtc_settimeofday(), which keeps
+just updating the seconds/minutes by calling set_rtc_mmss(), this
+could be improved if anyone cares. Also, the file should ideally be
+moved into drivers/rtc and not use rtc-generic.
 
 Signed-off-by: Arnd Bergmann <arnd@arndb.de>
-Signed-off-by: Baolin Wang <baolin.wang@linaro.org>
 ---
- arch/sh/boards/mach-dreamcast/Makefile        |    4 +--
- arch/sh/boards/mach-dreamcast/rtc.c           |   39 +++++++++++++++++--------
- arch/sh/boards/mach-dreamcast/setup.c         |    1 -
- arch/sh/configs/dreamcast_defconfig           |    2 ++
- arch/sh/include/mach-dreamcast/mach/sysasic.h |    1 -
- 5 files changed, 31 insertions(+), 16 deletions(-)
+ arch/sh/boards/mach-sh03/Makefile |  3 +-
+ arch/sh/boards/mach-sh03/rtc.c    | 51 +++++++++++++++++++------------
+ arch/sh/boards/mach-sh03/setup.c  |  9 ------
+ arch/sh/configs/sh03_defconfig    |  2 ++
+ 4 files changed, 35 insertions(+), 30 deletions(-)
 
-diff --git a/arch/sh/boards/mach-dreamcast/Makefile b/arch/sh/boards/mach-dreamcast/Makefile
-index 7b97546..62b024b 100644
---- a/arch/sh/boards/mach-dreamcast/Makefile
-+++ b/arch/sh/boards/mach-dreamcast/Makefile
-@@ -2,5 +2,5 @@
- # Makefile for the Sega Dreamcast specific parts of the kernel
+diff --git a/arch/sh/boards/mach-sh03/Makefile b/arch/sh/boards/mach-sh03/Makefile
+index 400306a796ec..47007a3a2fc8 100644
+--- a/arch/sh/boards/mach-sh03/Makefile
++++ b/arch/sh/boards/mach-sh03/Makefile
+@@ -2,4 +2,5 @@
+ # Makefile for the Interface (CTP/PCI-SH03) specific parts of the kernel
  #
  
--obj-y	 := setup.o irq.o rtc.o
--
-+obj-y	 := setup.o irq.o
+-obj-y	 := setup.o rtc.o
++obj-y	 := setup.o
 +obj-$(CONFIG_RTC_DRV_GENERIC) += rtc.o
-diff --git a/arch/sh/boards/mach-dreamcast/rtc.c b/arch/sh/boards/mach-dreamcast/rtc.c
-index 061d657..4f168d8 100644
---- a/arch/sh/boards/mach-dreamcast/rtc.c
-+++ b/arch/sh/boards/mach-dreamcast/rtc.c
-@@ -11,8 +11,9 @@
-  */
- 
- #include <linux/time.h>
--#include <asm/rtc.h>
+diff --git a/arch/sh/boards/mach-sh03/rtc.c b/arch/sh/boards/mach-sh03/rtc.c
+index dc3d50e3b7a2..8b23ed7c201c 100644
+--- a/arch/sh/boards/mach-sh03/rtc.c
++++ b/arch/sh/boards/mach-sh03/rtc.c
+@@ -13,8 +13,9 @@
+ #include <linux/bcd.h>
+ #include <linux/rtc.h>
+ #include <linux/spinlock.h>
 -#include <asm/io.h>
-+#include <linux/rtc.h>
+-#include <asm/rtc.h>
 +#include <linux/io.h>
++#include <linux/rtc.h>
 +#include <linux/platform_device.h>
  
- /* The AICA RTC has an Epoch of 1/1/1950, so we must subtract 20 years (in
-    seconds) to get the standard Unix Epoch when getting the time, and add
-@@ -30,9 +31,10 @@
-  *
-  * Grabs the current RTC seconds counter and adjusts it to the Unix Epoch.
-  */
--static void aica_rtc_gettimeofday(struct timespec *ts)
-+static int aica_rtc_gettimeofday(struct device *dev, struct rtc_time *tm)
+ #define RTC_BASE	0xb0000000
+ #define RTC_SEC1	(RTC_BASE + 0)
+@@ -38,7 +39,7 @@
+ 
+ static DEFINE_SPINLOCK(sh03_rtc_lock);
+ 
+-unsigned long get_cmos_time(void)
++static int sh03_rtc_gettimeofday(struct device *dev, struct rtc_time *tm)
  {
- 	unsigned long val1, val2;
-+	time64_t t;
+ 	unsigned int year, mon, day, hour, min, sec;
  
- 	do {
- 		val1 = ((__raw_readl(AICA_RTC_SECS_H) & 0xffff) << 16) |
-@@ -42,10 +44,12 @@ static void aica_rtc_gettimeofday(struct timespec *ts)
- 			(__raw_readl(AICA_RTC_SECS_L) & 0xffff);
- 	} while (val1 != val2);
+@@ -75,17 +76,18 @@ unsigned long get_cmos_time(void)
+ 	}
  
--	ts->tv_sec = val1 - TWENTY_YEARS;
-+	/* normalize to 1970..2106 time range */
-+	t = (u32)(val1 - TWENTY_YEARS);
+ 	spin_unlock(&sh03_rtc_lock);
+-	return mktime(year, mon, day, hour, min, sec);
+-}
  
--	/* Can't get nanoseconds with just a seconds counter. */
--	ts->tv_nsec = 0;
-+	rtc_time64_to_tm(t, tm);
-+
+-void sh03_rtc_gettimeofday(struct timespec *tv)
+-{
++	tm->tm_sec  = sec;
++	tm->tm_min  = min;
++	tm->tm_hour = hour;
++	tm->tm_mday = day;
++	tm->tm_mon  = mon;
++	tm->tm_year = year - 1900;
+ 
+-	tv->tv_sec = get_cmos_time();
+-	tv->tv_nsec = 0;
 +	return 0;
  }
  
- /**
-@@ -54,10 +58,11 @@ static void aica_rtc_gettimeofday(struct timespec *ts)
-  *
-  * Adjusts the given @tv to the AICA Epoch and sets the RTC seconds counter.
-  */
--static int aica_rtc_settimeofday(const time_t secs)
-+static int aica_rtc_settimeofday(struct device *dev, struct rtc_time *tm)
+-static int set_rtc_mmss(unsigned long nowtime)
++static int set_rtc_mmss(struct rtc_time *tm)
  {
- 	unsigned long val1, val2;
--	unsigned long adj = secs + TWENTY_YEARS;
-+	time64_t secs = rtc_tm_to_time64(tm);
-+	u32 adj = secs + TWENTY_YEARS;
+ 	int retval = 0;
+ 	int real_seconds, real_minutes, cmos_minutes;
+@@ -97,8 +99,8 @@ static int set_rtc_mmss(unsigned long nowtime)
+ 		if (!(__raw_readb(RTC_CTL) & RTC_BUSY))
+ 			break;
+ 	cmos_minutes = (__raw_readb(RTC_MIN1) & 0xf) + (__raw_readb(RTC_MIN10) & 0xf) * 10;
+-	real_seconds = nowtime % 60;
+-	real_minutes = nowtime / 60;
++	real_seconds = tm->tm_sec;
++	real_minutes = tm->tm_min;
+ 	if (((abs(real_minutes - cmos_minutes) + 15)/30) & 1)
+ 		real_minutes += 30;		/* correct for half hour time zone */
+ 	real_minutes %= 60;
+@@ -112,22 +114,31 @@ static int set_rtc_mmss(unsigned long nowtime)
+ 		printk_once(KERN_NOTICE
+ 		       "set_rtc_mmss: can't update from %d to %d\n",
+ 		       cmos_minutes, real_minutes);
+-		retval = -1;
++		retval = -EINVAL;
+ 	}
+ 	spin_unlock(&sh03_rtc_lock);
  
- 	do {
- 		__raw_writel((adj & 0xffff0000) >> 16, AICA_RTC_SECS_H);
-@@ -73,9 +78,19 @@ static int aica_rtc_settimeofday(const time_t secs)
- 	return 0;
+ 	return retval;
  }
  
--void aica_time_init(void)
+-int sh03_rtc_settimeofday(const time_t secs)
++int sh03_rtc_settimeofday(struct device *dev, struct rtc_time *tm)
+ {
+-	unsigned long nowtime = secs;
+-
+-	return set_rtc_mmss(nowtime);
++	return set_rtc_mmss(tm);
+ }
+ 
+-void sh03_time_init(void)
 +static const struct rtc_class_ops rtc_generic_ops = {
-+	.read_time = aica_rtc_gettimeofday,
-+	.set_time = aica_rtc_settimeofday,
++	.read_time = sh03_rtc_gettimeofday,
++	.set_time = sh03_rtc_settimeofday,
 +};
 +
-+static int __init aica_time_init(void)
++static int __init sh03_time_init(void)
  {
--	rtc_sh_get_time = aica_rtc_gettimeofday;
--	rtc_sh_set_time = aica_rtc_settimeofday;
--}
+-	rtc_sh_get_time = sh03_rtc_gettimeofday;
+-	rtc_sh_set_time = sh03_rtc_settimeofday;
 +	struct platform_device *pdev;
 +
 +	pdev = platform_device_register_data(NULL, "rtc-generic", -1,
 +					     &rtc_generic_ops,
 +					     sizeof(rtc_generic_ops));
- 
++
 +	return PTR_ERR_OR_ZERO(pdev);
-+}
-+arch_initcall(aica_time_init);
-diff --git a/arch/sh/boards/mach-dreamcast/setup.c b/arch/sh/boards/mach-dreamcast/setup.c
-index ad1a4db..672c2ad8 100644
---- a/arch/sh/boards/mach-dreamcast/setup.c
-+++ b/arch/sh/boards/mach-dreamcast/setup.c
-@@ -30,7 +30,6 @@
- 
- static void __init dreamcast_setup(char **cmdline_p)
- {
--	board_time_init = aica_time_init;
+ }
++arch_initcall(sh03_time_init);
+diff --git a/arch/sh/boards/mach-sh03/setup.c b/arch/sh/boards/mach-sh03/setup.c
+index 85e7059a77e9..3901b6031ad5 100644
+--- a/arch/sh/boards/mach-sh03/setup.c
++++ b/arch/sh/boards/mach-sh03/setup.c
+@@ -22,14 +22,6 @@ static void __init init_sh03_IRQ(void)
+ 	plat_irq_setup_pins(IRQ_MODE_IRQ);
  }
  
- static struct sh_machine_vector mv_dreamcast __initmv = {
-diff --git a/arch/sh/configs/dreamcast_defconfig b/arch/sh/configs/dreamcast_defconfig
-index 3f08dc5..1d27666 100644
---- a/arch/sh/configs/dreamcast_defconfig
-+++ b/arch/sh/configs/dreamcast_defconfig
-@@ -70,3 +70,5 @@ CONFIG_PROC_KCORE=y
- CONFIG_TMPFS=y
- CONFIG_HUGETLBFS=y
+-/* arch/sh/boards/sh03/rtc.c */
+-void sh03_time_init(void);
+-
+-static void __init sh03_setup(char **cmdline_p)
+-{
+-	board_time_init = sh03_time_init;
+-}
+-
+ static struct resource cf_ide_resources[] = {
+ 	[0] = {
+ 		.start  = 0x1f0,
+@@ -101,6 +93,5 @@ device_initcall(sh03_devices_setup);
+ 
+ static struct sh_machine_vector mv_sh03 __initmv = {
+ 	.mv_name		= "Interface (CTP/PCI-SH03)",
+-	.mv_setup		= sh03_setup,
+ 	.mv_init_irq		= init_sh03_IRQ,
+ };
+diff --git a/arch/sh/configs/sh03_defconfig b/arch/sh/configs/sh03_defconfig
+index 2156223405a1..489ffdfb1517 100644
+--- a/arch/sh/configs/sh03_defconfig
++++ b/arch/sh/configs/sh03_defconfig
+@@ -130,3 +130,5 @@ CONFIG_CRYPTO_SHA1=y
+ CONFIG_CRYPTO_DEFLATE=y
  # CONFIG_CRYPTO_ANSI_CPRNG is not set
+ CONFIG_CRC_CCITT=y
 +CONFIG_RTC_CLASS=y
 +CONFIG_RTC_DRV_GENERIC=y
-diff --git a/arch/sh/include/mach-dreamcast/mach/sysasic.h b/arch/sh/include/mach-dreamcast/mach/sysasic.h
-index 58f710e..59effd1 100644
---- a/arch/sh/include/mach-dreamcast/mach/sysasic.h
-+++ b/arch/sh/include/mach-dreamcast/mach/sysasic.h
-@@ -42,7 +42,6 @@
- /* arch/sh/boards/mach-dreamcast/irq.c */
- extern int systemasic_irq_demux(int);
- extern void systemasic_irq_init(void);
--extern void aica_time_init(void);
- 
- #endif /* __ASM_SH_DREAMCAST_SYSASIC_H */
- 
 -- 
-1.7.9.5
+2.18.0
 
