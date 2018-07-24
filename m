@@ -1,10 +1,10 @@
 From: Christoph Hellwig <hch@lst.de>
-Date: Thu, 19 Jul 2018 13:05:14 +0000
+Date: Tue, 24 Jul 2018 12:01:45 +0000
 Subject: [PATCH 3/5] sh: use dma_direct_ops for the CONFIG_DMA_COHERENT case
-Message-Id: <20180719130516.1989-4-hch@lst.de>
+Message-Id: <20180724120147.15096-4-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180719130516.1989-1-hch@lst.de>
-In-Reply-To: <20180719130516.1989-1-hch@lst.de>
+References: <20180724120147.15096-1-hch@lst.de>
+In-Reply-To: <20180724120147.15096-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
