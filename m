@@ -1,320 +1,158 @@
-From: Alexandre Ghiti <alex@ghiti.fr>
-Date: Thu, 05 Jul 2018 05:12:33 +0000
-Subject: [PATCH v2 02/11] hugetlb: Introduce generic version of hugetlb_free_pgd_range
-Message-Id: <20180705051242.694-2-alex@ghiti.fr>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Tue, 24 Jul 2018 21:36:21 +0000
+Subject: [PATCH v2 1/4] sh: dreamcast: rtc: push down rtc class ops into driver
+Message-Id: <20180724213624.3899336-1-arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180705050323.301-1-alex@ghiti.fr>
- <20180705051242.694-1-alex@ghiti.fr>
-In-Reply-To: <20180705051242.694-1-alex@ghiti.fr>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux@armlinux.org.uk, catalin.marinas@arm.com, will.deacon@arm.com, tony.luck@intel.com, fenghua.yu@intel.com, ralf@linux-mips.org, paul.burton@mips.com, jhogan@kernel.org, jejb@parisc-linux.org, deller@gmx.de, benh@kernel.crashing.org, paulus@samba.org, mpe@ellerman.id.au, ysato@users.sourceforge.jp, dalias@libc.org, davem@davemloft.net, tglx@linutronix.de, mingo@redhat.com, hpa@zytor.com, x86@kernel.org, arnd@arndb.de, linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org, linux-ia64@vger.kernel.org, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-arch@vger.kernel.org
-Cc: Alexandre Ghiti <alex@ghiti.fr>
+To: dalias@libc.org
+Cc: ysato@users.sourceforge.jp, baolin.wang@linaro.org, y2038@lists.linaro.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Arnd Bergmann <arnd@arndb.de>
 
-arm, arm64, mips, parisc, sh, x86 architectures use the
-same version of hugetlb_free_pgd_range, so move this generic
-implementation into asm-generic/hugetlb.h.
+The dreamcast RTC support has an extra level of indirection to
+provide either the old read_persistent_clock/update_persistent_clock
+interface or the rtc-generic device for hctosys/systohc.
 
-Signed-off-by: Alexandre Ghiti <alex@ghiti.fr>
+Both do the same thing here, so we can do away with the abstraction
+and simply enable the RTC core code to take care of it.
+
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
 ---
- arch/arm/include/asm/hugetlb.h     | 12 ++----------
- arch/arm64/include/asm/hugetlb.h   | 10 ----------
- arch/ia64/include/asm/hugetlb.h    |  5 +++--
- arch/mips/include/asm/hugetlb.h    | 13 ++-----------
- arch/parisc/include/asm/hugetlb.h  | 12 ++----------
- arch/powerpc/include/asm/hugetlb.h |  4 +++-
- arch/sh/include/asm/hugetlb.h      | 12 ++----------
- arch/sparc/include/asm/hugetlb.h   |  4 +++-
- arch/x86/include/asm/hugetlb.h     | 11 ++---------
- include/asm-generic/hugetlb.h      | 11 +++++++++++
- 10 files changed, 30 insertions(+), 64 deletions(-)
+ arch/sh/boards/mach-dreamcast/Makefile        |  4 +-
+ arch/sh/boards/mach-dreamcast/rtc.c           | 39 +++++++++++++------
+ arch/sh/boards/mach-dreamcast/setup.c         |  1 -
+ arch/sh/configs/dreamcast_defconfig           |  2 +
+ arch/sh/include/mach-dreamcast/mach/sysasic.h |  1 -
+ 5 files changed, 31 insertions(+), 16 deletions(-)
 
-diff --git a/arch/arm/include/asm/hugetlb.h b/arch/arm/include/asm/hugetlb.h
-index 7d26f6c4f0f5..047b893ef95d 100644
---- a/arch/arm/include/asm/hugetlb.h
-+++ b/arch/arm/include/asm/hugetlb.h
-@@ -23,19 +23,9 @@
- #define _ASM_ARM_HUGETLB_H
+diff --git a/arch/sh/boards/mach-dreamcast/Makefile b/arch/sh/boards/mach-dreamcast/Makefile
+index 7b97546c7e5f..62b024bc2a3e 100644
+--- a/arch/sh/boards/mach-dreamcast/Makefile
++++ b/arch/sh/boards/mach-dreamcast/Makefile
+@@ -2,5 +2,5 @@
+ # Makefile for the Sega Dreamcast specific parts of the kernel
+ #
  
- #include <asm/page.h>
--#include <asm-generic/hugetlb.h>
- 
- #include <asm/hugetlb-3level.h>
- 
--static inline void hugetlb_free_pgd_range(struct mmu_gather *tlb,
--					  unsigned long addr, unsigned long end,
--					  unsigned long floor,
--					  unsigned long ceiling)
--{
--	free_pgd_range(tlb, addr, end, floor, ceiling);
--}
+-obj-y	 := setup.o irq.o rtc.o
 -
--
- static inline int is_hugepage_only_range(struct mm_struct *mm,
- 					 unsigned long addr, unsigned long len)
++obj-y	 := setup.o irq.o
++obj-$(CONFIG_RTC_DRV_GENERIC) += rtc.o
+diff --git a/arch/sh/boards/mach-dreamcast/rtc.c b/arch/sh/boards/mach-dreamcast/rtc.c
+index 061d65714fcc..4f168d8d2951 100644
+--- a/arch/sh/boards/mach-dreamcast/rtc.c
++++ b/arch/sh/boards/mach-dreamcast/rtc.c
+@@ -11,8 +11,9 @@
+  */
+ 
+ #include <linux/time.h>
+-#include <asm/rtc.h>
+-#include <asm/io.h>
++#include <linux/rtc.h>
++#include <linux/io.h>
++#include <linux/platform_device.h>
+ 
+ /* The AICA RTC has an Epoch of 1/1/1950, so we must subtract 20 years (in
+    seconds) to get the standard Unix Epoch when getting the time, and add
+@@ -30,9 +31,10 @@
+  *
+  * Grabs the current RTC seconds counter and adjusts it to the Unix Epoch.
+  */
+-static void aica_rtc_gettimeofday(struct timespec *ts)
++static int aica_rtc_gettimeofday(struct device *dev, struct rtc_time *tm)
  {
-@@ -68,4 +58,6 @@ static inline void arch_clear_hugepage_flags(struct page *page)
- 	clear_bit(PG_dcache_clean, &page->flags);
- }
+ 	unsigned long val1, val2;
++	time64_t t;
  
-+#include <asm-generic/hugetlb.h>
+ 	do {
+ 		val1 = ((__raw_readl(AICA_RTC_SECS_H) & 0xffff) << 16) |
+@@ -42,10 +44,12 @@ static void aica_rtc_gettimeofday(struct timespec *ts)
+ 			(__raw_readl(AICA_RTC_SECS_L) & 0xffff);
+ 	} while (val1 != val2);
+ 
+-	ts->tv_sec = val1 - TWENTY_YEARS;
++	/* normalize to 1970..2106 time range */
++	t = (u32)(val1 - TWENTY_YEARS);
+ 
+-	/* Can't get nanoseconds with just a seconds counter. */
+-	ts->tv_nsec = 0;
++	rtc_time64_to_tm(t, tm);
 +
- #endif /* _ASM_ARM_HUGETLB_H */
-diff --git a/arch/arm64/include/asm/hugetlb.h b/arch/arm64/include/asm/hugetlb.h
-index 3fcf14663dfa..4af1a800a900 100644
---- a/arch/arm64/include/asm/hugetlb.h
-+++ b/arch/arm64/include/asm/hugetlb.h
-@@ -25,16 +25,6 @@ static inline pte_t huge_ptep_get(pte_t *ptep)
- 	return READ_ONCE(*ptep);
++	return 0;
  }
  
--
--
--static inline void hugetlb_free_pgd_range(struct mmu_gather *tlb,
--					  unsigned long addr, unsigned long end,
--					  unsigned long floor,
--					  unsigned long ceiling)
--{
--	free_pgd_range(tlb, addr, end, floor, ceiling);
--}
--
- static inline int is_hugepage_only_range(struct mm_struct *mm,
- 					 unsigned long addr, unsigned long len)
+ /**
+@@ -54,10 +58,11 @@ static void aica_rtc_gettimeofday(struct timespec *ts)
+  *
+  * Adjusts the given @tv to the AICA Epoch and sets the RTC seconds counter.
+  */
+-static int aica_rtc_settimeofday(const time_t secs)
++static int aica_rtc_settimeofday(struct device *dev, struct rtc_time *tm)
  {
-diff --git a/arch/ia64/include/asm/hugetlb.h b/arch/ia64/include/asm/hugetlb.h
-index 74d2a5540aaf..afe9fa4d969b 100644
---- a/arch/ia64/include/asm/hugetlb.h
-+++ b/arch/ia64/include/asm/hugetlb.h
-@@ -3,9 +3,8 @@
- #define _ASM_IA64_HUGETLB_H
+ 	unsigned long val1, val2;
+-	unsigned long adj = secs + TWENTY_YEARS;
++	time64_t secs = rtc_tm_to_time64(tm);
++	u32 adj = secs + TWENTY_YEARS;
  
- #include <asm/page.h>
--#include <asm-generic/hugetlb.h>
--
- 
-+#define __HAVE_ARCH_HUGETLB_FREE_PGD_RANGE
- void hugetlb_free_pgd_range(struct mmu_gather *tlb, unsigned long addr,
- 			    unsigned long end, unsigned long floor,
- 			    unsigned long ceiling);
-@@ -70,4 +69,6 @@ static inline void arch_clear_hugepage_flags(struct page *page)
- {
- }
- 
-+#include <asm-generic/hugetlb.h>
-+
- #endif /* _ASM_IA64_HUGETLB_H */
-diff --git a/arch/mips/include/asm/hugetlb.h b/arch/mips/include/asm/hugetlb.h
-index 982bc0685330..53764050243e 100644
---- a/arch/mips/include/asm/hugetlb.h
-+++ b/arch/mips/include/asm/hugetlb.h
-@@ -10,8 +10,6 @@
- #define __ASM_HUGETLB_H
- 
- #include <asm/page.h>
--#include <asm-generic/hugetlb.h>
--
- 
- static inline int is_hugepage_only_range(struct mm_struct *mm,
- 					 unsigned long addr,
-@@ -38,15 +36,6 @@ static inline int prepare_hugepage_range(struct file *file,
+ 	do {
+ 		__raw_writel((adj & 0xffff0000) >> 16, AICA_RTC_SECS_H);
+@@ -73,9 +78,19 @@ static int aica_rtc_settimeofday(const time_t secs)
  	return 0;
  }
  
--static inline void hugetlb_free_pgd_range(struct mmu_gather *tlb,
--					  unsigned long addr,
--					  unsigned long end,
--					  unsigned long floor,
--					  unsigned long ceiling)
--{
--	free_pgd_range(tlb, addr, end, floor, ceiling);
+-void aica_time_init(void)
++static const struct rtc_class_ops rtc_generic_ops = {
++	.read_time = aica_rtc_gettimeofday,
++	.set_time = aica_rtc_settimeofday,
++};
++
++static int __init aica_time_init(void)
+ {
+-	rtc_sh_get_time = aica_rtc_gettimeofday;
+-	rtc_sh_set_time = aica_rtc_settimeofday;
 -}
--
- static inline void set_huge_pte_at(struct mm_struct *mm, unsigned long addr,
- 				   pte_t *ptep, pte_t pte)
- {
-@@ -114,4 +103,6 @@ static inline void arch_clear_hugepage_flags(struct page *page)
- {
- }
- 
-+#include <asm-generic/hugetlb.h>
++	struct platform_device *pdev;
 +
- #endif /* __ASM_HUGETLB_H */
-diff --git a/arch/parisc/include/asm/hugetlb.h b/arch/parisc/include/asm/hugetlb.h
-index 58e0f4620426..28c23b68d38d 100644
---- a/arch/parisc/include/asm/hugetlb.h
-+++ b/arch/parisc/include/asm/hugetlb.h
-@@ -3,8 +3,6 @@
- #define _ASM_PARISC64_HUGETLB_H
++	pdev = platform_device_register_data(NULL, "rtc-generic", -1,
++					     &rtc_generic_ops,
++					     sizeof(rtc_generic_ops));
  
- #include <asm/page.h>
--#include <asm-generic/hugetlb.h>
--
- 
- void set_huge_pte_at(struct mm_struct *mm, unsigned long addr,
- 		     pte_t *ptep, pte_t pte);
-@@ -32,14 +30,6 @@ static inline int prepare_hugepage_range(struct file *file,
- 	return 0;
- }
- 
--static inline void hugetlb_free_pgd_range(struct mmu_gather *tlb,
--					  unsigned long addr, unsigned long end,
--					  unsigned long floor,
--					  unsigned long ceiling)
--{
--	free_pgd_range(tlb, addr, end, floor, ceiling);
--}
--
- static inline void huge_ptep_clear_flush(struct vm_area_struct *vma,
- 					 unsigned long addr, pte_t *ptep)
- {
-@@ -71,4 +61,6 @@ static inline void arch_clear_hugepage_flags(struct page *page)
- {
- }
- 
-+#include <asm-generic/hugetlb.h>
-+
- #endif /* _ASM_PARISC64_HUGETLB_H */
-diff --git a/arch/powerpc/include/asm/hugetlb.h b/arch/powerpc/include/asm/hugetlb.h
-index 3225eb6402cc..de46ee16b615 100644
---- a/arch/powerpc/include/asm/hugetlb.h
-+++ b/arch/powerpc/include/asm/hugetlb.h
-@@ -4,7 +4,6 @@
- 
- #ifdef CONFIG_HUGETLB_PAGE
- #include <asm/page.h>
--#include <asm-generic/hugetlb.h>
- 
- extern struct kmem_cache *hugepte_cache;
- 
-@@ -113,6 +112,7 @@ static inline void flush_hugetlb_page(struct vm_area_struct *vma,
- void flush_hugetlb_page(struct vm_area_struct *vma, unsigned long vmaddr);
- #endif
- 
-+#define __HAVE_ARCH_HUGETLB_FREE_PGD_RANGE
- void hugetlb_free_pgd_range(struct mmu_gather *tlb, unsigned long addr,
- 			    unsigned long end, unsigned long floor,
- 			    unsigned long ceiling);
-@@ -193,4 +193,6 @@ static inline pte_t *hugepte_offset(hugepd_t hpd, unsigned long addr,
- }
- #endif /* CONFIG_HUGETLB_PAGE */
- 
-+#include <asm-generic/hugetlb.h>
-+
- #endif /* _ASM_POWERPC_HUGETLB_H */
-diff --git a/arch/sh/include/asm/hugetlb.h b/arch/sh/include/asm/hugetlb.h
-index 735939c0f513..f6a51b609409 100644
---- a/arch/sh/include/asm/hugetlb.h
-+++ b/arch/sh/include/asm/hugetlb.h
-@@ -4,8 +4,6 @@
- 
- #include <asm/cacheflush.h>
- #include <asm/page.h>
--#include <asm-generic/hugetlb.h>
--
- 
- static inline int is_hugepage_only_range(struct mm_struct *mm,
- 					 unsigned long addr,
-@@ -27,14 +25,6 @@ static inline int prepare_hugepage_range(struct file *file,
- 	return 0;
- }
- 
--static inline void hugetlb_free_pgd_range(struct mmu_gather *tlb,
--					  unsigned long addr, unsigned long end,
--					  unsigned long floor,
--					  unsigned long ceiling)
--{
--	free_pgd_range(tlb, addr, end, floor, ceiling);
--}
--
- static inline void set_huge_pte_at(struct mm_struct *mm, unsigned long addr,
- 				   pte_t *ptep, pte_t pte)
- {
-@@ -85,4 +75,6 @@ static inline void arch_clear_hugepage_flags(struct page *page)
- 	clear_bit(PG_dcache_clean, &page->flags);
- }
- 
-+#include <asm-generic/hugetlb.h>
-+
- #endif /* _ASM_SH_HUGETLB_H */
-diff --git a/arch/sparc/include/asm/hugetlb.h b/arch/sparc/include/asm/hugetlb.h
-index 300557c66698..59d89b52ccb7 100644
---- a/arch/sparc/include/asm/hugetlb.h
-+++ b/arch/sparc/include/asm/hugetlb.h
-@@ -3,7 +3,6 @@
- #define _ASM_SPARC64_HUGETLB_H
- 
- #include <asm/page.h>
--#include <asm-generic/hugetlb.h>
- 
- #ifdef CONFIG_HUGETLB_PAGE
- struct pud_huge_patch_entry {
-@@ -84,8 +83,11 @@ static inline void arch_clear_hugepage_flags(struct page *page)
- {
- }
- 
-+#define __HAVE_ARCH_HUGETLB_FREE_PGD_RANGE
- void hugetlb_free_pgd_range(struct mmu_gather *tlb, unsigned long addr,
- 			    unsigned long end, unsigned long floor,
- 			    unsigned long ceiling);
- 
-+#include <asm-generic/hugetlb.h>
-+
- #endif /* _ASM_SPARC64_HUGETLB_H */
-diff --git a/arch/x86/include/asm/hugetlb.h b/arch/x86/include/asm/hugetlb.h
-index 5ed826da5e07..996ce8e15365 100644
---- a/arch/x86/include/asm/hugetlb.h
-+++ b/arch/x86/include/asm/hugetlb.h
-@@ -3,7 +3,6 @@
- #define _ASM_X86_HUGETLB_H
- 
- #include <asm/page.h>
--#include <asm-generic/hugetlb.h>
- 
- #define hugepages_supported() boot_cpu_has(X86_FEATURE_PSE)
- 
-@@ -28,14 +27,6 @@ static inline int prepare_hugepage_range(struct file *file,
- 	return 0;
- }
- 
--static inline void hugetlb_free_pgd_range(struct mmu_gather *tlb,
--					  unsigned long addr, unsigned long end,
--					  unsigned long floor,
--					  unsigned long ceiling)
--{
--	free_pgd_range(tlb, addr, end, floor, ceiling);
--}
--
- static inline void set_huge_pte_at(struct mm_struct *mm, unsigned long addr,
- 				   pte_t *ptep, pte_t pte)
- {
-@@ -90,4 +81,6 @@ static inline void arch_clear_hugepage_flags(struct page *page)
- static inline bool gigantic_page_supported(void) { return true; }
- #endif
- 
-+#include <asm-generic/hugetlb.h>
-+
- #endif /* _ASM_X86_HUGETLB_H */
-diff --git a/include/asm-generic/hugetlb.h b/include/asm-generic/hugetlb.h
-index 3da7cff52360..c697ca9dda18 100644
---- a/include/asm-generic/hugetlb.h
-+++ b/include/asm-generic/hugetlb.h
-@@ -40,4 +40,15 @@ static inline void huge_pte_clear(struct mm_struct *mm, unsigned long addr,
- }
- #endif
- 
-+#ifndef __HAVE_ARCH_HUGETLB_FREE_PGD_RANGE
-+static inline void hugetlb_free_pgd_range(struct mmu_gather *tlb,
-+		unsigned long addr, unsigned long end,
-+		unsigned long floor, unsigned long ceiling)
-+{
-+	free_pgd_range(tlb, addr, end, floor, ceiling);
++	return PTR_ERR_OR_ZERO(pdev);
 +}
-+
-+
-+#endif
-+
- #endif /* _ASM_GENERIC_HUGETLB_H */
++arch_initcall(aica_time_init);
+diff --git a/arch/sh/boards/mach-dreamcast/setup.c b/arch/sh/boards/mach-dreamcast/setup.c
+index ad1a4db72e04..672c2ad8f8d5 100644
+--- a/arch/sh/boards/mach-dreamcast/setup.c
++++ b/arch/sh/boards/mach-dreamcast/setup.c
+@@ -30,7 +30,6 @@
+ 
+ static void __init dreamcast_setup(char **cmdline_p)
+ {
+-	board_time_init = aica_time_init;
+ }
+ 
+ static struct sh_machine_vector mv_dreamcast __initmv = {
+diff --git a/arch/sh/configs/dreamcast_defconfig b/arch/sh/configs/dreamcast_defconfig
+index 3f08dc54480b..1d27666c029f 100644
+--- a/arch/sh/configs/dreamcast_defconfig
++++ b/arch/sh/configs/dreamcast_defconfig
+@@ -70,3 +70,5 @@ CONFIG_PROC_KCORE=y
+ CONFIG_TMPFS=y
+ CONFIG_HUGETLBFS=y
+ # CONFIG_CRYPTO_ANSI_CPRNG is not set
++CONFIG_RTC_CLASS=y
++CONFIG_RTC_DRV_GENERIC=y
+diff --git a/arch/sh/include/mach-dreamcast/mach/sysasic.h b/arch/sh/include/mach-dreamcast/mach/sysasic.h
+index 58f710e1ebc2..59effd1ed3e1 100644
+--- a/arch/sh/include/mach-dreamcast/mach/sysasic.h
++++ b/arch/sh/include/mach-dreamcast/mach/sysasic.h
+@@ -42,7 +42,6 @@
+ /* arch/sh/boards/mach-dreamcast/irq.c */
+ extern int systemasic_irq_demux(int);
+ extern void systemasic_irq_init(void);
+-extern void aica_time_init(void);
+ 
+ #endif /* __ASM_SH_DREAMCAST_SYSASIC_H */
+ 
 -- 
-2.16.2
+2.18.0
 
