@@ -1,31 +1,25 @@
 From: Christoph Hellwig <hch@lst.de>
-Date: Tue, 24 Jul 2018 20:21:15 +0000
-Subject: Re: use the generic dma-noncoherent code for sh V2
-Message-Id: <20180724202115.GA4685@lst.de>
+Date: Wed, 25 Jul 2018 09:40:38 +0000
+Subject: use the generic dma-noncoherent code for sh V3
+Message-Id: <20180725094043.32443-1-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180724120147.15096-1-hch@lst.de>
-In-Reply-To: <20180724120147.15096-1-hch@lst.de>
+References: <20180719130516.1989-1-hch@lst.de>
+In-Reply-To: <20180719130516.1989-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
-Cc: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>, iommu@lists.linux-foundation.org, Jacopo Mondi <jacopo+renesas@jmondi.org>, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
+To: Yoshinori Sato <ysato-Rn4VEauK+AKRv+LV9MX5uooqe+aC9MnS@public.gmane.org>, Rich Felker <dalias-8zAoT0mYgF4@public.gmane.org>
+Cc: Thomas Petazzoni <thomas.petazzoni-wi1+55ScJUtKEb57/3fJTNBPR1lH4CV8@public.gmane.org>, iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Jacopo Mondi <jacopo+renesas-AW8dsiIh9cEdnm+yROfE0A@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Ok, there is one more issue with this version.   Wait for a new one
-tomorrow.
+Hi all,
 
-On Tue, Jul 24, 2018 at 02:01:42PM +0200, Christoph Hellwig wrote:
-> Hi all,
-> 
-> can you review these patches to switch sh to use the generic
-> dma-noncoherent code?  All the requirements are in mainline already
-> and we've switched various architectures over to it already.
-> 
-> Changes since V1:
->  - fixed two stupid compile errors and verified them using a local
->    cross toolchain instead of the 0day buildbot
-> _______________________________________________
-> iommu mailing list
-> iommu@lists.linux-foundation.org
-> https://lists.linuxfoundation.org/mailman/listinfo/iommu
----end quoted text---
+can you review these patches to switch sh to use the generic
+dma-noncoherent code?  All the requirements are in mainline already
+and we've switched various architectures over to it already.
+
+Changes since V2:
+ - drop a now obsolete export
+
+Changes since V1:
+ - fixed two stupid compile errors and verified them using a local
+   cross toolchain instead of the 0day buildbot
