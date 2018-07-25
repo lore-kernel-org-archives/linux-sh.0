@@ -1,10 +1,10 @@
 From: Christoph Hellwig <hch@lst.de>
-Date: Tue, 24 Jul 2018 12:01:43 +0000
+Date: Wed, 25 Jul 2018 09:40:39 +0000
 Subject: [PATCH 1/5] sh: simplify get_arch_dma_ops
-Message-Id: <20180724120147.15096-2-hch@lst.de>
+Message-Id: <20180725094043.32443-2-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180724120147.15096-1-hch@lst.de>
-In-Reply-To: <20180724120147.15096-1-hch@lst.de>
+References: <20180725094043.32443-1-hch@lst.de>
+In-Reply-To: <20180725094043.32443-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
