@@ -1,10 +1,10 @@
 From: Christoph Hellwig <hch@lst.de>
-Date: Tue, 24 Jul 2018 12:01:44 +0000
+Date: Wed, 25 Jul 2018 09:40:40 +0000
 Subject: [PATCH 2/5] sh: introduce a sh_cacheop_vaddr helper
-Message-Id: <20180724120147.15096-3-hch@lst.de>
+Message-Id: <20180725094043.32443-3-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180724120147.15096-1-hch@lst.de>
-In-Reply-To: <20180724120147.15096-1-hch@lst.de>
+References: <20180725094043.32443-1-hch@lst.de>
+In-Reply-To: <20180725094043.32443-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
