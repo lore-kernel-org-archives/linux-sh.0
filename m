@@ -1,125 +1,41 @@
-From: Baolin Wang <baolin.wang@linaro.org>
-Date: Tue, 17 Jul 2018 11:24:26 +0000
-Subject: [RESEND PATCH 3/4] sh: remove unused rtc_sh_get/set_time infrastructure
-Message-Id: <b4cd85cb5f115b52ac24b237d681e543aec0edf7.1531826106.git.baolin.wang@linaro.org>
+From: Anders Roxell <anders.roxell@linaro.org>
+Date: Thu, 26 Jul 2018 07:09:09 +0000
+Subject: Re: [PATCH] sh: configs: remove no longer needed config option
+Message-Id: <CADYN=9JpBipFM81gW9jH_oc2bX=L0es=KoTAnCL70jUYtsKMoA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <bb0912b9725f192179cc94ef8c3f6702fc078e11.1531826106.git.baolin.wang@linaro.org>
-In-Reply-To: <bb0912b9725f192179cc94ef8c3f6702fc078e11.1531826106.git.baolin.wang@linaro.org>
+References: <20180626153125.515-1-anders.roxell@linaro.org>
+In-Reply-To: <20180626153125.515-1-anders.roxell@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: ysato@users.sourceforge.jp, dalias@libc.org, corbet@lwn.net
-Cc: baolin.wang@linaro.org, arnd@arndb.de, broonie@kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, dalias@libc.org
+Cc: linux-sh@vger.kernel.org, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
 
-From: Arnd Bergmann <arnd@arndb.de>
+On Tue, 26 Jun 2018 at 17:31, Anders Roxell <anders.roxell@linaro.org> wrote:
+>
+> Since commit eedf265aa003 ("devpts: Make each mount of devpts an
+> independent filesystem.") CONFIG_DEVPTS_MULTIPLE_INSTANCES isn't needed
+> in the defconfig anymore.
+>
+> Signed-off-by: Anders Roxell <anders.roxell@linaro.org>
+> ---
+>  arch/sh/configs/sh7785lcr_32bit_defconfig | 1 -
+>  1 file changed, 1 deletion(-)
+>
+> diff --git a/arch/sh/configs/sh7785lcr_32bit_defconfig b/arch/sh/configs/sh7785lcr_32bit_defconfig
+> index 2ddf5ca7094e..7aa78ced9ffa 100644
+> --- a/arch/sh/configs/sh7785lcr_32bit_defconfig
+> +++ b/arch/sh/configs/sh7785lcr_32bit_defconfig
+> @@ -72,7 +72,6 @@ CONFIG_VT_HW_CONSOLE_BINDING=y
+>  CONFIG_SERIAL_SH_SCI=y
+>  CONFIG_SERIAL_SH_SCI_NR_UARTS=6
+>  CONFIG_SERIAL_SH_SCI_CONSOLE=y
+> -CONFIG_DEVPTS_MULTIPLE_INSTANCES=y
+>  # CONFIG_LEGACY_PTYS is not set
+>  # CONFIG_HW_RANDOM is not set
+>  CONFIG_I2C=y
+> --
+> 2.18.0
+>
 
-All platforms are now converted to RTC drivers, so this has become
-obsolete. The board_time_init() callback still has one caller, but
-could otherwise also get killed.
-
-This removes one more usage of the deprecated timespec structure,
-which overflows in y2038.
-
-Signed-off-by: Arnd Bergmann <arnd@arndb.de>
-Signed-off-by: Baolin Wang <baolin.wang@linaro.org>
----
- arch/sh/include/asm/rtc.h |    2 --
- arch/sh/kernel/time.c     |   69 ---------------------------------------------
- 2 files changed, 71 deletions(-)
-
-diff --git a/arch/sh/include/asm/rtc.h b/arch/sh/include/asm/rtc.h
-index c63555e..fe55fbb 100644
---- a/arch/sh/include/asm/rtc.h
-+++ b/arch/sh/include/asm/rtc.h
-@@ -4,8 +4,6 @@
- 
- void time_init(void);
- extern void (*board_time_init)(void);
--extern void (*rtc_sh_get_time)(struct timespec *);
--extern int (*rtc_sh_set_time)(const time_t);
- 
- #define RTC_CAP_4_DIGIT_YEAR	(1 << 0)
- 
-diff --git a/arch/sh/kernel/time.c b/arch/sh/kernel/time.c
-index fcd5e41..eb0a912 100644
---- a/arch/sh/kernel/time.c
-+++ b/arch/sh/kernel/time.c
-@@ -22,75 +22,6 @@
- #include <asm/clock.h>
- #include <asm/rtc.h>
- 
--/* Dummy RTC ops */
--static void null_rtc_get_time(struct timespec *tv)
--{
--	tv->tv_sec = mktime(2000, 1, 1, 0, 0, 0);
--	tv->tv_nsec = 0;
--}
--
--static int null_rtc_set_time(const time_t secs)
--{
--	return 0;
--}
--
--void (*rtc_sh_get_time)(struct timespec *) = null_rtc_get_time;
--int (*rtc_sh_set_time)(const time_t) = null_rtc_set_time;
--
--void read_persistent_clock(struct timespec *ts)
--{
--	rtc_sh_get_time(ts);
--}
--
--#ifdef CONFIG_GENERIC_CMOS_UPDATE
--int update_persistent_clock(struct timespec now)
--{
--	return rtc_sh_set_time(now.tv_sec);
--}
--#endif
--
--static int rtc_generic_get_time(struct device *dev, struct rtc_time *tm)
--{
--	struct timespec tv;
--
--	rtc_sh_get_time(&tv);
--	rtc_time_to_tm(tv.tv_sec, tm);
--	return 0;
--}
--
--static int rtc_generic_set_time(struct device *dev, struct rtc_time *tm)
--{
--	unsigned long secs;
--
--	rtc_tm_to_time(tm, &secs);
--	if ((rtc_sh_set_time = null_rtc_set_time) ||
--	    (rtc_sh_set_time(secs) < 0))
--		return -EOPNOTSUPP;
--
--	return 0;
--}
--
--static const struct rtc_class_ops rtc_generic_ops = {
--	.read_time = rtc_generic_get_time,
--	.set_time = rtc_generic_set_time,
--};
--
--static int __init rtc_generic_init(void)
--{
--	struct platform_device *pdev;
--
--	if (rtc_sh_get_time = null_rtc_get_time)
--		return -ENODEV;
--
--	pdev = platform_device_register_data(NULL, "rtc-generic", -1,
--					     &rtc_generic_ops,
--					     sizeof(rtc_generic_ops));
--
--
--	return PTR_ERR_OR_ZERO(pdev);
--}
--device_initcall(rtc_generic_init);
--
- void (*board_time_init)(void);
- 
- static void __init sh_late_time_init(void)
--- 
-1.7.9.5
-
+Ping.
