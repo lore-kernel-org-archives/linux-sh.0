@@ -1,55 +1,79 @@
-From: Alexandre Ghiti <alex@ghiti.fr>
-Date: Thu, 05 Jul 2018 04:58:37 +0000
-Subject: [PATCH 01/11] hugetlb: Harmonize hugetlb.h arch specific defines with pgtable.h
-Message-Id: <20180705045847.32575-2-alex@ghiti.fr>
+From: Christoph Hellwig <hch@lst.de>
+Date: Mon, 30 Jul 2018 07:38:42 +0000
+Subject: [PATCH] PCI: call dma_debug_add_bus for pci_bus_type in common code
+Message-Id: <20180730073842.16092-1-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180705045847.32575-1-alex@ghiti.fr>
-In-Reply-To: <20180705045847.32575-1-alex@ghiti.fr>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux@armlinux.org.uk, catalin.marinas@arm.com, will.deacon@arm.com, tony.luck@intel.com, fenghua.yu@intel.com, ralf@linux-mips.org, paul.burton@mips.com, jhogan@kernel.org, jejb@parisc-linux.org, deller@gmx.de, benh@kernel.crashing.org, paulus@samba.org, mpe@ellerman.id.au, ysato@users.sourceforge.jp, dalias@libc.org, davem@davemloft.net, tglx@linutronix.de, mingo@redhat.com, hpa@zytor.com, x86@kernel.org, arnd@arndb.de, linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org, linux-ia64@vger.kernel.org, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-arch@vger.kernel.org
-Cc: Alexandre Ghiti <alex@ghiti.fr>
+To: linux-pci@vger.kernel.org
+Cc: iommu@lists.linux-foundation.org, linuxppc-dev@lists.ozlabs.org, x86@kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-asm-generic/hugetlb.h proposes generic implementations of hugetlb
-related functions: use __HAVE_ARCH_HUGE* defines in order to make arch
-specific implementations of hugetlb functions consistent with pgtable.h
-scheme.
+There is nothing arch specific about PCI or dma-debug, so move this
+call to common code just after registering the bus type.
 
-Signed-off-by: Alexandre Ghiti <alex@ghiti.fr>
+Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- arch/arm64/include/asm/hugetlb.h | 2 +-
- include/asm-generic/hugetlb.h    | 2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
+ arch/powerpc/kernel/dma.c | 3 ---
+ arch/sh/drivers/pci/pci.c | 2 --
+ arch/x86/kernel/pci-dma.c | 3 ---
+ drivers/pci/pci-driver.c  | 2 +-
+ 4 files changed, 1 insertion(+), 9 deletions(-)
 
-diff --git a/arch/arm64/include/asm/hugetlb.h b/arch/arm64/include/asm/hugetlb.h
-index e73f68569624..3fcf14663dfa 100644
---- a/arch/arm64/include/asm/hugetlb.h
-+++ b/arch/arm64/include/asm/hugetlb.h
-@@ -81,9 +81,9 @@ extern void huge_ptep_set_wrprotect(struct mm_struct *mm,
- 				    unsigned long addr, pte_t *ptep);
- extern void huge_ptep_clear_flush(struct vm_area_struct *vma,
- 				  unsigned long addr, pte_t *ptep);
-+#define __HAVE_ARCH_HUGE_PTE_CLEAR
- extern void huge_pte_clear(struct mm_struct *mm, unsigned long addr,
- 			   pte_t *ptep, unsigned long sz);
--#define huge_pte_clear huge_pte_clear
- extern void set_huge_swap_pte_at(struct mm_struct *mm, unsigned long addr,
- 				 pte_t *ptep, pte_t pte, unsigned long sz);
- #define set_huge_swap_pte_at set_huge_swap_pte_at
-diff --git a/include/asm-generic/hugetlb.h b/include/asm-generic/hugetlb.h
-index 9d0cde8ab716..3da7cff52360 100644
---- a/include/asm-generic/hugetlb.h
-+++ b/include/asm-generic/hugetlb.h
-@@ -32,7 +32,7 @@ static inline pte_t huge_pte_modify(pte_t pte, pgprot_t newprot)
- 	return pte_modify(pte, newprot);
- }
+diff --git a/arch/powerpc/kernel/dma.c b/arch/powerpc/kernel/dma.c
+index 155170d70324..dbfc7056d7df 100644
+--- a/arch/powerpc/kernel/dma.c
++++ b/arch/powerpc/kernel/dma.c
+@@ -357,9 +357,6 @@ EXPORT_SYMBOL_GPL(dma_get_required_mask);
  
--#ifndef huge_pte_clear
-+#ifndef __HAVE_ARCH_HUGE_PTE_CLEAR
- static inline void huge_pte_clear(struct mm_struct *mm, unsigned long addr,
- 		    pte_t *ptep, unsigned long sz)
+ static int __init dma_init(void)
  {
+-#ifdef CONFIG_PCI
+-	dma_debug_add_bus(&pci_bus_type);
+-#endif
+ #ifdef CONFIG_IBMVIO
+ 	dma_debug_add_bus(&vio_bus_type);
+ #endif
+diff --git a/arch/sh/drivers/pci/pci.c b/arch/sh/drivers/pci/pci.c
+index e5b7437ab4af..8256626bc53c 100644
+--- a/arch/sh/drivers/pci/pci.c
++++ b/arch/sh/drivers/pci/pci.c
+@@ -160,8 +160,6 @@ static int __init pcibios_init(void)
+ 	for (hose = hose_head; hose; hose = hose->next)
+ 		pcibios_scanbus(hose);
+ 
+-	dma_debug_add_bus(&pci_bus_type);
+-
+ 	pci_initialized = 1;
+ 
+ 	return 0;
+diff --git a/arch/x86/kernel/pci-dma.c b/arch/x86/kernel/pci-dma.c
+index ab5d9dd668d2..43f58632f123 100644
+--- a/arch/x86/kernel/pci-dma.c
++++ b/arch/x86/kernel/pci-dma.c
+@@ -155,9 +155,6 @@ static int __init pci_iommu_init(void)
+ {
+ 	struct iommu_table_entry *p;
+ 
+-#ifdef CONFIG_PCI
+-	dma_debug_add_bus(&pci_bus_type);
+-#endif
+ 	x86_init.iommu.iommu_init();
+ 
+ 	for (p = __iommu_table; p < __iommu_table_end; p++) {
+diff --git a/drivers/pci/pci-driver.c b/drivers/pci/pci-driver.c
+index 6792292b5fc7..bef17c3fca67 100644
+--- a/drivers/pci/pci-driver.c
++++ b/drivers/pci/pci-driver.c
+@@ -1668,7 +1668,7 @@ static int __init pci_driver_init(void)
+ 	if (ret)
+ 		return ret;
+ #endif
+-
++	dma_debug_add_bus(&pci_bus_type);
+ 	return 0;
+ }
+ postcore_initcall(pci_driver_init);
 -- 
-2.16.2
+2.18.0
 
