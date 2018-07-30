@@ -1,59 +1,102 @@
-From: Mike Kravetz <mike.kravetz@oracle.com>
-Date: Thu, 26 Jul 2018 18:40:49 +0000
-Subject: Re: [PATCH v4 01/11] hugetlb: Harmonize hugetlb.h arch specific defines with pgtable.h
-Message-Id: <1f95fdc7-378b-9c2a-15ae-da78578a27bf@oracle.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 30 Jul 2018 13:02:34 +0000
+Subject: [PATCH QEMU] hw/char/sh_serial: Add timeout handling to unbreak serial input
+Message-Id: <20180730130234.30020-1-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180705110716.3919-1-alex@ghiti.fr>
- <20180705110716.3919-2-alex@ghiti.fr>
-In-Reply-To: <20180705110716.3919-2-alex@ghiti.fr>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Alexandre Ghiti <alex@ghiti.fr>, linux@armlinux.org.uk, catalin.marinas@arm.com, will.deacon@arm.com, tony.luck@intel.com, fenghua.yu@intel.com, ralf@linux-mips.org, paul.burton@mips.com, jhogan@kernel.org, jejb@parisc-linux.org, deller@gmx.de, benh@kernel.crashing.org, paulus@samba.org, mpe@ellerman.id.au, ysato@users.sourceforge.jp, dalias@libc.org, davem@davemloft.net, tglx@linutronix.de, mingo@redhat.com, hpa@zytor.com, x86@kernel.org, arnd@arndb.de, linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org, linux-ia64@vger.kernel.org, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-arch@vger.kernel.org
+To: Peter Maydell <peter.maydell@linaro.org>
+Cc: Rob Landley <rob@landley.net>, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>, qemu-devel@nongnu.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On 07/05/2018 04:07 AM, Alexandre Ghiti wrote:
-> asm-generic/hugetlb.h proposes generic implementations of hugetlb
-> related functions: use __HAVE_ARCH_HUGE* defines in order to make arch
-> specific implementations of hugetlb functions consistent with pgtable.h
-> scheme.
-> 
+As of commit 18e8cf159177100e ("serial: sh-sci: increase RX FIFO trigger
+defaults for (H)SCIF") in Linux v4.11-rc1, the serial console on the
+QEMU SH4 target is broken: it delays serial input until enough data has
+been received.
 
-Reviewed-by: Mike Kravetz <mike.kravetz@oracle.com>
+Since aformentioned commit, the Linux SCIF driver programs the Receive
+FIFO Data Count Trigger bits in the FIFO Control Register, to postpone
+generating a receive interrupt until:
+  1. At least the receive trigger count of bytes of data are available
+     in the receive FIFO, OR
+  2. No further data has been received for at least 15 etu after the
+     last received data.
+
+While QEMU implements the former, it does not implement the latter.
+Hence the receive interrupt is not generated until the former condition
+is met.
+
+Fix this by adding basic timeout handling.  As the QEMU SCIF emulation
+ignores any serial speed programming, the timeout value used conforms to
+a default speed of 9600 bps, which is fine for any interative console.
+
+Reported-by: Rob Landley <rob@landley.net>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ hw/char/sh_serial.c | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
+
+diff --git a/hw/char/sh_serial.c b/hw/char/sh_serial.c
+index 373a40595fd975d1..12831561a6c8b137 100644
+--- a/hw/char/sh_serial.c
++++ b/hw/char/sh_serial.c
+@@ -29,6 +29,7 @@
+ #include "hw/sh4/sh.h"
+ #include "chardev/char-fe.h"
+ #include "qapi/error.h"
++#include "qemu/timer.h"
+ 
+ //#define DEBUG_SERIAL
+ 
+@@ -63,6 +64,8 @@ typedef struct {
+     int rtrg;
+ 
+     CharBackend chr;
++    QEMUTimer *fifo_timeout_timer;
++    uint64_t etu; /* Elementary Time Unit (ns) */
+ 
+     qemu_irq eri;
+     qemu_irq rxi;
+@@ -314,6 +317,16 @@ static int sh_serial_can_receive1(void *opaque)
+     return sh_serial_can_receive(s);
+ }
+ 
++static void sh_serial_timeout_int(void *opaque)
++{
++    sh_serial_state *s = opaque;
++
++    s->flags |= SH_SERIAL_FLAG_RDF;
++    if (s->scr & (1 << 6) && s->rxi) {
++        qemu_set_irq(s->rxi, 1);
++    }
++}
++
+ static void sh_serial_receive1(void *opaque, const uint8_t *buf, int size)
+ {
+     sh_serial_state *s = opaque;
+@@ -330,8 +343,12 @@ static void sh_serial_receive1(void *opaque, const uint8_t *buf, int size)
+                 if (s->rx_cnt >= s->rtrg) {
+                     s->flags |= SH_SERIAL_FLAG_RDF;
+                     if (s->scr & (1 << 6) && s->rxi) {
++                        timer_del(s->fifo_timeout_timer);
+                         qemu_set_irq(s->rxi, 1);
+                     }
++                } else {
++                    timer_mod(s->fifo_timeout_timer,
++                        qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) + 15 * s->etu);
+                 }
+             }
+         }
+@@ -402,6 +419,9 @@ void sh_serial_init(MemoryRegion *sysmem,
+                                  sh_serial_event, NULL, s, NULL, true);
+     }
+ 
++    s->fifo_timeout_timer = timer_new_ns(QEMU_CLOCK_VIRTUAL,
++                                         sh_serial_timeout_int, s);
++    s->etu = NANOSECONDS_PER_SECOND / 9600;
+     s->eri = eri_source;
+     s->rxi = rxi_source;
+     s->txi = txi_source;
 -- 
-Mike Kravetz
+2.17.1
 
-> Signed-off-by: Alexandre Ghiti <alex@ghiti.fr>
-> ---
->  arch/arm64/include/asm/hugetlb.h | 2 +-
->  include/asm-generic/hugetlb.h    | 2 +-
->  2 files changed, 2 insertions(+), 2 deletions(-)
-> 
-> diff --git a/arch/arm64/include/asm/hugetlb.h b/arch/arm64/include/asm/hugetlb.h
-> index e73f68569624..3fcf14663dfa 100644
-> --- a/arch/arm64/include/asm/hugetlb.h
-> +++ b/arch/arm64/include/asm/hugetlb.h
-> @@ -81,9 +81,9 @@ extern void huge_ptep_set_wrprotect(struct mm_struct *mm,
->  				    unsigned long addr, pte_t *ptep);
->  extern void huge_ptep_clear_flush(struct vm_area_struct *vma,
->  				  unsigned long addr, pte_t *ptep);
-> +#define __HAVE_ARCH_HUGE_PTE_CLEAR
->  extern void huge_pte_clear(struct mm_struct *mm, unsigned long addr,
->  			   pte_t *ptep, unsigned long sz);
-> -#define huge_pte_clear huge_pte_clear
->  extern void set_huge_swap_pte_at(struct mm_struct *mm, unsigned long addr,
->  				 pte_t *ptep, pte_t pte, unsigned long sz);
->  #define set_huge_swap_pte_at set_huge_swap_pte_at
-> diff --git a/include/asm-generic/hugetlb.h b/include/asm-generic/hugetlb.h
-> index 9d0cde8ab716..3da7cff52360 100644
-> --- a/include/asm-generic/hugetlb.h
-> +++ b/include/asm-generic/hugetlb.h
-> @@ -32,7 +32,7 @@ static inline pte_t huge_pte_modify(pte_t pte, pgprot_t newprot)
->  	return pte_modify(pte, newprot);
->  }
->  
-> -#ifndef huge_pte_clear
-> +#ifndef __HAVE_ARCH_HUGE_PTE_CLEAR
->  static inline void huge_pte_clear(struct mm_struct *mm, unsigned long addr,
->  		    pte_t *ptep, unsigned long sz)
->  {
-> 
