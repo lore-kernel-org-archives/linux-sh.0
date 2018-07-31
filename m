@@ -1,100 +1,47 @@
-From: Alex Ghiti <alex@ghiti.fr>
-Date: Thu, 05 Jul 2018 10:48:53 +0000
-Subject: Re: [PATCH v3 02/11] hugetlb: Introduce generic version of hugetlb_free_pgd_range
-Message-Id: <bd8ee99c-a89b-c114-9b0e-8e36601c50c6@ghiti.fr>
+From: Yoshinori Sato <ysato@users.sourceforge.jp>
+Date: Tue, 31 Jul 2018 05:15:19 +0000
+Subject: [PATCH] sh: remove unneeded constructor.
+Message-Id: <20180731051519.101249-1-ysato@users.sourceforge.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180705051640.790-1-alex@ghiti.fr>
- <20180705051640.790-3-alex@ghiti.fr>
- <005bf713-fb51-bf29-5f86-6f244cd49f35@c-s.fr>
-In-Reply-To: <005bf713-fb51-bf29-5f86-6f244cd49f35@c-s.fr>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: Christophe Leroy <christophe.leroy@c-s.fr>
-Cc: linux@armlinux.org.uk, catalin.marinas@arm.com, will.deacon@arm.com, tony.luck@intel.com, fenghua.yu@intel.com, ralf@linux-mips.org, paul.burton@mips.com, jhogan@kernel.org, jejb@parisc-linux.org, deller@gmx.de, benh@kernel.crashing.org, paulus@samba.org, mpe@ellerman.id.au, ysato@users.sourceforge.jp, dalias@libc.org, davem@davemloft.net, tglx@linutronix.de, mingo@redhat.com, hpa@zytor.com, x86@kernel.org, arnd@arndb.de, linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org, linux-ia64@vger.kernel.org, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-arch@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
-My bad, when I moved the #include <asm-generic/hugeltb.h> at the bottom 
-of the file, I did not pay attention to that #ifdef.
-I'm going to fix powerpc and check other architectures if I did not make 
-the same mistake.
-I'll send a v4 as soon as possible.
+pgd_cache specifies __GFP_ZERO when allocating.
+This constructor is meaningless.
 
-Thanks for your comment,
+Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
+---
+ arch/sh/mm/pgtable.c | 11 +----------
+ 1 file changed, 1 insertion(+), 10 deletions(-)
 
-Alex
-
-On 07/05/2018 10:22 AM, Christophe Leroy wrote:
->
->
-> On 07/05/2018 05:16 AM, Alexandre Ghiti wrote:
->> arm, arm64, mips, parisc, sh, x86 architectures use the
->> same version of hugetlb_free_pgd_range, so move this generic
->> implementation into asm-generic/hugetlb.h.
->>
->> Signed-off-by: Alexandre Ghiti <alex@ghiti.fr>
->
-> Build failure on mpc885_ads_defconfig
->
->   CC      arch/powerpc/kernel/setup-common.o
-> In file included from arch/powerpc/kernel/setup-common.c:37:
-> ./include/linux/hugetlb.h:191:65: error: expected identifier or '(' 
-> before '{' token
->  #define hugetlb_free_pgd_range(tlb, addr, end, floor, ceiling) 
-> ({BUG(); 0; })
->                                                                  ^
-> ./include/asm-generic/hugetlb.h:44:20: note: in expansion of macro 
-> 'hugetlb_free_pgd_range'
->  static inline void hugetlb_free_pgd_range(struct mmu_gather *tlb,
->                     ^~~~~~~~~~~~~~~~~~~~~~
->
-> see below
->
->> ---
->>   arch/arm/include/asm/hugetlb.h     | 12 ++----------
->>   arch/arm64/include/asm/hugetlb.h   | 10 ----------
->>   arch/ia64/include/asm/hugetlb.h    |  5 +++--
->>   arch/mips/include/asm/hugetlb.h    | 13 ++-----------
->>   arch/parisc/include/asm/hugetlb.h  | 12 ++----------
->>   arch/powerpc/include/asm/hugetlb.h |  4 +++-
->>   arch/sh/include/asm/hugetlb.h      | 12 ++----------
->>   arch/sparc/include/asm/hugetlb.h   |  4 +++-
->>   arch/x86/include/asm/hugetlb.h     | 11 ++---------
->>   include/asm-generic/hugetlb.h      | 11 +++++++++++
->>   10 files changed, 30 insertions(+), 64 deletions(-)
->>
->
-> [snip]
->
->> diff --git a/arch/powerpc/include/asm/hugetlb.h 
->> b/arch/powerpc/include/asm/hugetlb.h
->> index 3225eb6402cc..de46ee16b615 100644
->> --- a/arch/powerpc/include/asm/hugetlb.h
->> +++ b/arch/powerpc/include/asm/hugetlb.h
->> @@ -4,7 +4,6 @@
->>     #ifdef CONFIG_HUGETLB_PAGE
->>   #include <asm/page.h>
->> -#include <asm-generic/hugetlb.h>
->>     extern struct kmem_cache *hugepte_cache;
->>   @@ -113,6 +112,7 @@ static inline void flush_hugetlb_page(struct 
->> vm_area_struct *vma,
->>   void flush_hugetlb_page(struct vm_area_struct *vma, unsigned long 
->> vmaddr);
->>   #endif
->>   +#define __HAVE_ARCH_HUGETLB_FREE_PGD_RANGE
->>   void hugetlb_free_pgd_range(struct mmu_gather *tlb, unsigned long 
->> addr,
->>                   unsigned long end, unsigned long floor,
->>                   unsigned long ceiling);
->> @@ -193,4 +193,6 @@ static inline pte_t *hugepte_offset(hugepd_t hpd, 
->> unsigned long addr,
->>   }
->>   #endif /* CONFIG_HUGETLB_PAGE */
->>   +#include <asm-generic/hugetlb.h>
->> +
->
-> That include was previously inside #ifdef CONFIG_HUGETLB_PAGE.
-> Why put it outside ?
->
-> Christophe
->
+diff --git a/arch/sh/mm/pgtable.c b/arch/sh/mm/pgtable.c
+index 5c8f9247c3c2..4b8be7525fba 100644
+--- a/arch/sh/mm/pgtable.c
++++ b/arch/sh/mm/pgtable.c
+@@ -9,20 +9,11 @@ static struct kmem_cache *pgd_cachep;
+ static struct kmem_cache *pmd_cachep;
+ #endif
+ 
+-void pgd_ctor(void *x)
+-{
+-	pgd_t *pgd = x;
+-
+-	memcpy(pgd + USER_PTRS_PER_PGD,
+-	       swapper_pg_dir + USER_PTRS_PER_PGD,
+-	       (PTRS_PER_PGD - USER_PTRS_PER_PGD) * sizeof(pgd_t));
+-}
+-
+ void pgtable_cache_init(void)
+ {
+ 	pgd_cachep = kmem_cache_create("pgd_cache",
+ 				       PTRS_PER_PGD * (1<<PTE_MAGNITUDE),
+-				       PAGE_SIZE, SLAB_PANIC, pgd_ctor);
++				       PAGE_SIZE, SLAB_PANIC, NULL);
+ #if PAGETABLE_LEVELS > 2
+ 	pmd_cachep = kmem_cache_create("pmd_cache",
+ 				       PTRS_PER_PMD * (1<<PTE_MAGNITUDE),
+-- 
+2.11.0
 
