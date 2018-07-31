@@ -1,15 +1,14 @@
 From: Alexandre Ghiti <alex@ghiti.fr>
-Date: Thu, 05 Jul 2018 05:12:34 +0000
-Subject: [PATCH v2 03/11] hugetlb: Introduce generic version of set_huge_pte_at
-Message-Id: <20180705051242.694-3-alex@ghiti.fr>
+Date: Tue, 31 Jul 2018 06:01:47 +0000
+Subject: [PATCH v5 03/11] hugetlb: Introduce generic version of set_huge_pte_at
+Message-Id: <20180731060155.16915-4-alex@ghiti.fr>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180705050323.301-1-alex@ghiti.fr>
- <20180705051242.694-1-alex@ghiti.fr>
-In-Reply-To: <20180705051242.694-1-alex@ghiti.fr>
+References: <20180731060155.16915-1-alex@ghiti.fr>
+In-Reply-To: <20180731060155.16915-1-alex@ghiti.fr>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux@armlinux.org.uk, catalin.marinas@arm.com, will.deacon@arm.com, tony.luck@intel.com, fenghua.yu@intel.com, ralf@linux-mips.org, paul.burton@mips.com, jhogan@kernel.org, jejb@parisc-linux.org, deller@gmx.de, benh@kernel.crashing.org, paulus@samba.org, mpe@ellerman.id.au, ysato@users.sourceforge.jp, dalias@libc.org, davem@davemloft.net, tglx@linutronix.de, mingo@redhat.com, hpa@zytor.com, x86@kernel.org, arnd@arndb.de, linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org, linux-ia64@vger.kernel.org, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-arch@vger.kernel.org
+To: linux-mm@kvack.org, mike.kravetz@oracle.com, linux@armlinux.org.uk, catalin.marinas@arm.com, will.deacon@arm.com, tony.luck@intel.com, fenghua.yu@intel.com, ralf@linux-mips.org, paul.burton@mips.com, jhogan@kernel.org, jejb@parisc-linux.org, deller@gmx.de, benh@kernel.crashing.org, paulus@samba.org, mpe@ellerman.id.au, ysato@users.sourceforge.jp, dalias@libc.org, davem@davemloft.net, tglx@linutronix.de, mingo@redhat.com, hpa@zytor.com, x86@kernel.org, arnd@arndb.de, linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org, linux-ia64@vger.kernel.org, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-arch@vger.kernel.org
 Cc: Alexandre Ghiti <alex@ghiti.fr>
 
 arm, ia64, mips, powerpc, sh, x86 architectures use the
@@ -17,6 +16,7 @@ same version of set_huge_pte_at, so move this generic
 implementation into asm-generic/hugetlb.h.
 
 Signed-off-by: Alexandre Ghiti <alex@ghiti.fr>
+Reviewed-by: Mike Kravetz <mike.kravetz@oracle.com>
 ---
  arch/arm/include/asm/hugetlb-3level.h | 6 ------
  arch/arm64/include/asm/hugetlb.h      | 1 +
@@ -106,7 +106,7 @@ index 28c23b68d38d..77c8adbac7c3 100644
  		     pte_t *ptep, pte_t pte);
  
 diff --git a/arch/powerpc/include/asm/hugetlb.h b/arch/powerpc/include/asm/hugetlb.h
-index de46ee16b615..ba7d5d8b543f 100644
+index a7d5c739df9b..0794b53439d4 100644
 --- a/arch/powerpc/include/asm/hugetlb.h
 +++ b/arch/powerpc/include/asm/hugetlb.h
 @@ -132,12 +132,6 @@ static inline int prepare_hugepage_range(struct file *file,
@@ -152,10 +152,10 @@ index 59d89b52ccb7..16b0c53ea6c9 100644
  		     pte_t *ptep, pte_t pte);
  
 diff --git a/arch/x86/include/asm/hugetlb.h b/arch/x86/include/asm/hugetlb.h
-index 996ce8e15365..554d5614b375 100644
+index 398da3b3414c..8db9a761964d 100644
 --- a/arch/x86/include/asm/hugetlb.h
 +++ b/arch/x86/include/asm/hugetlb.h
-@@ -27,12 +27,6 @@ static inline int prepare_hugepage_range(struct file *file,
+@@ -28,12 +28,6 @@ static inline int prepare_hugepage_range(struct file *file,
  	return 0;
  }
  
