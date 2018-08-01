@@ -1,25 +1,37 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 09 Aug 2018 11:27:49 +0000
-Subject: Re: [PATCH 01/13] sh: boards: convert to SPDX identifiers
-Message-Id: <20180809112749.usoyeeby7vlrsepa@verge.net.au>
+From: Rich Felker <dalias@libc.org>
+Date: Wed, 01 Aug 2018 23:03:44 +0000
+Subject: Re: [PATCH QEMU] hw/char/sh_serial: Add timeout handling to unbreak serial input
+Message-Id: <20180801230344.GJ1392@brightrain.aerifal.cx>
 List-Id: <linux-sh.vger.kernel.org>
-References: <874lg8p7d2.wl-kuninori.morimoto.gx@renesas.com>
- <8736vsp7bu.wl-kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <8736vsp7bu.wl-kuninori.morimoto.gx@renesas.com>
+References: <20180730130234.30020-1-geert+renesas@glider.be>
+ <1115027626.150336.1532963923061@webmail.strato.com>
+ <97622558-a520-6ab2-b61f-8038ae61b451@landley.net>
+In-Reply-To: <97622558-a520-6ab2-b61f-8038ae61b451@landley.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Linux-SH <linux-sh@vger.kernel.org>, Linux-Renesas <linux-renesas-soc@vger.kernel.org>
+To: Rob Landley <rob@landley.net>
+Cc: Ulrich Hecht <uli@fpond.eu>, Geert Uytterhoeven <geert+renesas@glider.be>, Peter Maydell <peter.maydell@linaro.org>, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>, qemu-devel@nongnu.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org
 
-On Mon, Aug 06, 2018 at 02:23:10AM +0000, Kuninori Morimoto wrote:
+On Tue, Jul 31, 2018 at 11:36:46AM -0500, Rob Landley wrote:
+> On 07/30/2018 10:18 AM, Ulrich Hecht wrote:>> On July 30, 2018 at 3:02 PM Geert
+> Uytterhoeven <geert+renesas@glider.be> wrote:
+> >> Fix this by adding basic timeout handling.  As the QEMU SCIF emulation
+> >> ignores any serial speed programming, the timeout value used conforms to
+> >> a default speed of 9600 bps, which is fine for any interative console.
+> >>
+> >> Reported-by: Rob Landley <rob@landley.net>
+> >> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> > 
+> > Works for me, kernel 4.18-rc7 for rts7751r2dplus.
 > 
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> Works for me too.
 > 
-> This patch updates license to use SPDX-License-Identifier
-> instead of verbose license text.
-> 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> Tested-by: Rob Landley <rob@landley.net>
 
-Reviewed-by: Simon Horman <horms+renesas@verge.net.au>
+Me too. This would be a very welcome fix for a longstanding and
+annoying problem.
 
+Tested-by: Rich Felker <dalias@libc.org>
+
+Rich
