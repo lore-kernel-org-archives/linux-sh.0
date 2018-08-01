@@ -1,63 +1,36 @@
-From: Rob Landley <rob@landley.net>
-Date: Fri, 10 Aug 2018 18:18:34 +0000
-Subject: Re: [PATCH] sh: remove unneeded constructor.
-Message-Id: <a7d1d866-2d0f-2a1e-5275-ecdbb707bf84@landley.net>
+From: Alexandre Ghiti <alex@ghiti.fr>
+Date: Wed, 01 Aug 2018 11:50:49 +0000
+Subject: Re: [PATCH v5 00/11] hugetlb: Factorize hugetlb architecture primitives
+Message-Id: <1cee9f98-4cff-3e42-6cc8-088310e406d9@ghiti.fr>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180731051519.101249-1-ysato@users.sourceforge.jp>
- <CAMuHMdUQReuzR=x54gnC1XdP77RrT1TaWoFFXUhUQ02A+giPqQ@mail.gmail.com>
- <87600us5k9.wl-ysato@users.sourceforge.jp>
- <20180804103550.GA3183@bombadil.infradead.org>
- <CAMuHMdXsz-+zsxouaLP5tTKA46G34iAACSce+RXrD8AiiQc2+A@mail.gmail.com>
- <20180804105149.GB3183@bombadil.infradead.org>
- <4e9e1599-9dbf-75dc-561e-77d5cb063714@landley.net>
- <20180805163234.GR1392@brightrain.aerifal.cx>
- <61a157f1-7d43-6554-5d26-84d47ce6cabe@landley.net>
- <20180805233349.GS1392@brightrain.aerifal.cx>
- <CAMuHMdUgy8B4d4rAAvixB66cxaN9OiWxnXJKL17J1c47MfU76Q@mail.gmail.com>
-In-Reply-To: <CAMuHMdUgy8B4d4rAAvixB66cxaN9OiWxnXJKL17J1c47MfU76Q@mail.gmail.com>
+References: <20180731060155.16915-1-alex@ghiti.fr>
+ <20180731160640.11306628@doriath>
+In-Reply-To: <20180731160640.11306628@doriath>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>, Rich Felker <dalias@libc.org>
-Cc: Matthew Wilcox <willy@infradead.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Linux-sh list <linux-sh@vger.kernel.org>, Linux-Arch <linux-arch@vger.kernel.org>, Arnd Bergmann <arnd@arndb.de>
+To: Luiz Capitulino <lcapitulino@redhat.com>
+Cc: linux-mm@kvack.org, mike.kravetz@oracle.com, linux@armlinux.org.uk, catalin.marinas@arm.com, will.deacon@arm.com, tony.luck@intel.com, fenghua.yu@intel.com, ralf@linux-mips.org, paul.burton@mips.com, jhogan@kernel.org, jejb@parisc-linux.org, deller@gmx.de, benh@kernel.crashing.org, paulus@samba.org, mpe@ellerman.id.au, ysato@users.sourceforge.jp, dalias@libc.org, davem@davemloft.net, tglx@linutronix.de, mingo@redhat.com, hpa@zytor.com, x86@kernel.org, arnd@arndb.de, linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org, linux-ia64@vger.kernel.org, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-arch@vger.kernel.org
 
-On 08/06/2018 01:57 AM, Geert Uytterhoeven wrote:
-> On the platform side, there will be a big difference between mostly legacy
-> SH and new DT-based j-core on the 32-bit bit side, and mostly new DT-based
-> j-core on the 64-bit side.
+On 07/31/2018 10:06 PM, Luiz Capitulino wrote:
+> On Tue, 31 Jul 2018 06:01:44 +0000
+> Alexandre Ghiti <alex@ghiti.fr> wrote:
+>
+>> [CC linux-mm for inclusion in -mm tree]
+>>
+>> In order to reduce copy/paste of functions across architectures and then
+>> make riscv hugetlb port (and future ports) simpler and smaller, this
+>> patchset intends to factorize the numerous hugetlb primitives that are
+>> defined across all the architectures.
+> [...]
+>
+>>   15 files changed, 139 insertions(+), 382 deletions(-)
+> I imagine you're mostly interested in non-x86 review at this point, but
+> as this series is looking amazing:
+>
+> Reviewed-by: Luiz Capitulino <lcapitulino@redhat.com>
 
-At $DAYJOB I'm working on a sh7760 board with platform data (the open source
-release of the linux patches for which looks like it'll miss this merge window
-but might hit next one; they only want to run everything through the lawyers
-once so legal clearance waits until we're done fiddling).
+It's always good to have another feedback :)
+Thanks for your review Luiz,
 
-The device tree people break platform data support because they only test device
-tree, and then refuse patches to make the existing platform data work again. For
-example, I have this bookmarked:
-
-  http://lkml.iu.edu/hypermail/linux/kernel/1807.0/05252.html
-
-In case I ever have time to go back and look at it, but I've moved on to other
-things already. (My current "circle back to poke at it as I have time" is trying
-to get DMAEngine working for sh7760 with the smc91x.c.) The fix I sent upstream
-for the LEDs is the fix we're shipping with. It's the simple, obvious, "make it
-work exactly like it used to work", and they went "nah, we don't want to do
-that, do something else that will require changing the platform data that worked
-before our commit". (See longish thread, above. The reply I bookmarked was the
-polite one.)
-
-I'm aware there's a problem regression testing old hardware, which limits
-conversion of that old hardware to device tree. But the people who _have_ old
-hardware continue to run old kernels because upgrading to current kernels
-doesn't _work_. And then when we make it work, our patches to make it work get
-rejected presumably on the grounds that the device tree people want to make not
-having already migrated everything to systemd painful. So current kernels won't
-"just work" for the _next_ person either, and nobody upgrades, and then if
-somebody tries their hand at converting a board to device tree there's no
-testers. Or if there are they go "it didn't boot" because of some unrelated
-regression elsewhere in the code because the kernel they're using (and still
-maintaining in-house) is years old...
-
-This is something like the eighth company I've seen that at. :P
-
-Rob
+Alex
