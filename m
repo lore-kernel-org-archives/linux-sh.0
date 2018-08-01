@@ -1,32 +1,36 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 09 Aug 2018 11:29:14 +0000
-Subject: Re: [PATCH 02/13] sh: drivers: convert to SPDX identifiers
-Message-Id: <20180809112914.wlax73qw7sowdlky@verge.net.au>
+From: Nick Desaulniers <ndesaulniers@google.com>
+Date: Wed, 01 Aug 2018 18:29:43 +0000
+Subject: [PATCH] sh: dwarf: prefer _THIS_IP_ to current_text_addr
+Message-Id: <20180801182943.22176-1-ndesaulniers@google.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <874lg8p7d2.wl-kuninori.morimoto.gx@renesas.com>
- <871sbcp7be.wl-kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <871sbcp7be.wl-kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Linux-SH <linux-sh@vger.kernel.org>, Linux-Renesas <linux-renesas-soc@vger.kernel.org>
+To: ysato@users.sourceforge.jp, dalias@libc.org
+Cc: akpm@linux-foundation.org, alexander.levin@verizon.com, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Nick Desaulniers <ndesaulniers@google.com>
 
-On Mon, Aug 06, 2018 at 02:23:25AM +0000, Kuninori Morimoto wrote:
-> 
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> 
-> This patch updates license to use SPDX-License-Identifier
-> instead of verbose license text.
-> 
-> As original license mentioned, it is GPL-2.0 in SPDX.
-> Then, MODULE_LICENSE() should be "GPL v2" instead of "GPL".
-> See ${LINUX}/include/linux/module.h
-> 
-> 	"GPL"		[GNU Public License v2 or later]
-> 	"GPL v2"	[GNU Public License v2]
-> 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+As part of the effort to reduce the code duplication between _THIS_IP_
+and current_text_addr(), let's consolidate callers of
+current_text_addr() to use _THIS_IP_.
 
-Reviewed-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Nick Desaulniers <ndesaulniers@google.com>
+---
+ arch/sh/kernel/dwarf.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/sh/kernel/dwarf.c b/arch/sh/kernel/dwarf.c
+index 1a2526676a87..bb511e2d9d68 100644
+--- a/arch/sh/kernel/dwarf.c
++++ b/arch/sh/kernel/dwarf.c
+@@ -599,7 +599,7 @@ struct dwarf_frame *dwarf_unwind_stack(unsigned long pc,
+ 	 * time this function makes its first function call.
+ 	 */
+ 	if (!pc || !prev)
+-		pc = (unsigned long)current_text_addr();
++		pc = _THIS_IP_;
+ 
+ #ifdef CONFIG_FUNCTION_GRAPH_TRACER
+ 	/*
+-- 
+2.18.0.597.ga71716f1ad-goog
 
