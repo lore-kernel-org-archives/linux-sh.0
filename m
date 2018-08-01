@@ -1,26 +1,75 @@
-From: jose_mera@hmha.gob.ec
-Date: Tue, 28 Aug 2018 10:35:10 +0000
-Subject: =?utf-8?b?V29obHTDpHRpZ2tlaXRzc3BlbmRlIGluIEjDtmhlIHZvbiDigqwgMi4wMDAu?= =?utf-8?q?000=2C00?=
-Message-Id: <20180828103521.AEF4620A4236@mail.hmha.gob.ec>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 01 Aug 2018 07:42:02 +0000
+Subject: Re: [PATCH] sh: remove unneeded constructor.
+Message-Id: <CAMuHMdUQReuzR=x54gnC1XdP77RrT1TaWoFFXUhUQ02A+giPqQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180506111415.6E1C2847C89@mail.ithb.ac.id>
-In-Reply-To: <20180506111415.6E1C2847C89@mail.ithb.ac.id>
+References: <20180731051519.101249-1-ysato@users.sourceforge.jp>
+In-Reply-To: <20180731051519.101249-1-ysato@users.sourceforge.jp>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>, Linux-sh list <linux-sh@vger.kernel.org>, Rob Landley <rob@landley.net>, Matthew Wilcox <willy@infradead.org>, Linux-Arch <linux-arch@vger.kernel.org>
 
-Lieber Freund,
- 
-Ich bin Herr Tayeb Souami, New Jersey, Vereinigte Staaten von Amerika, der Mega-Gewinner von $ 315million In Mega Millions Jackpot, spende ich an 5 zufällige Personen, wenn Sie diese E-Mail erhalten, dann wurde Ihre E-Mail nach einem Spinball ausgewählt.Ich habe den größten Teil meines Vermögens auf eine Reihe von Wohltätigkeitsorganisationen und Organisationen verteilt.Ich habe mich freiwillig dazu entschieden, die Summe von € 2.000.000,00 an Sie als eine der ausgewählten 5 zu spenden, um meine Gewinne zu überprüfen, sehen Sie bitte meine You Tube Seite unten.
- 
-UHR MICH HIER: https://www.youtube.com/watch?v=Z6ui8ZDQ6Ks
- 
-Das ist dein Spendencode: [DFC530342018]
- 
-Antworten Sie mit dem SPENDE-CODE an diese E-Mail: financialfundingcompany09@gmail.com
- 
-Ich hoffe, Sie und Ihre Familie glücklich zu machen.
- 
-Grüße
-Herr Tayeb Souami
+Hi Sato-san,
+
+CC Rob , Willy, linux-arch
+
+On Tue, Jul 31, 2018 at 7:15 AM Yoshinori Sato
+<ysato@users.sourceforge.jp> wrote:
+> pgd_cache specifies __GFP_ZERO when allocating.
+> This constructor is meaningless.
+>
+> Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
+
+Thanks for your patch!
+
+> --- a/arch/sh/mm/pgtable.c
+> +++ b/arch/sh/mm/pgtable.c
+> @@ -9,20 +9,11 @@ static struct kmem_cache *pgd_cachep;
+>  static struct kmem_cache *pmd_cachep;
+>  #endif
+>
+> -void pgd_ctor(void *x)
+> -{
+> -       pgd_t *pgd = x;
+> -
+> -       memcpy(pgd + USER_PTRS_PER_PGD,
+> -              swapper_pg_dir + USER_PTRS_PER_PGD,
+> -              (PTRS_PER_PGD - USER_PTRS_PER_PGD) * sizeof(pgd_t));
+> -}
+> -
+>  void pgtable_cache_init(void)
+>  {
+>         pgd_cachep = kmem_cache_create("pgd_cache",
+>                                        PTRS_PER_PGD * (1<<PTE_MAGNITUDE),
+> -                                      PAGE_SIZE, SLAB_PANIC, pgd_ctor);
+> +                                      PAGE_SIZE, SLAB_PANIC, NULL);
+>  #if PAGETABLE_LEVELS > 2
+>         pmd_cachep = kmem_cache_create("pmd_cache",
+>                                        PTRS_PER_PMD * (1<<PTE_MAGNITUDE),
+
+While I can confirm your patch fixes the
+
+    WARNING: CPU: 0 PID: 1 at mm/slub.c:2412
+___slab_alloc.constprop.34+0x196/0x288
+
+seen since commit 128227e7fe4087b6 ("slab: __GFP_ZERO is incompatible
+with a constructor"), I'm not 100% sure this is the correct fix.
+
+swapper_pg_dir[] does have two non-zero entries (768 and 895), which were
+copied by the constructor.  Perhaps SH does have a need for these two
+entries, and thus for the constructor?
+
+Unfortunately I'm too SH-illiterate to answer this myself.
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
