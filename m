@@ -1,25 +1,44 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 09 Aug 2018 12:15:46 +0000
-Subject: Re: [PATCH 09/13] sh: sh5: convert to SPDX identifiers
-Message-Id: <20180809121545.fuxw3vkw2xxi4rr6@verge.net.au>
+From: Rich Felker <dalias@libc.org>
+Date: Thu, 02 Aug 2018 02:09:06 +0000
+Subject: Re: use the generic dma-noncoherent code for sh V3
+Message-Id: <20180802020906.GK1392@brightrain.aerifal.cx>
 List-Id: <linux-sh.vger.kernel.org>
-References: <874lg8p7d2.wl-kuninori.morimoto.gx@renesas.com>
- <87r2jcnsnw.wl-kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87r2jcnsnw.wl-kuninori.morimoto.gx@renesas.com>
+References: <20180725094043.32443-1-hch@lst.de>
+ <877elcrlbe.wl-ysato@users.sourceforge.jp>
+ <20180731072413.GA22837@lst.de>
+In-Reply-To: <20180731072413.GA22837@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Linux-SH <linux-sh@vger.kernel.org>, Linux-Renesas <linux-renesas-soc@vger.kernel.org>
+To: Christoph Hellwig <hch@lst.de>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Jacopo Mondi <jacopo+renesas@jmondi.org>, Thomas Petazzoni <thomas.petazzoni@free-electrons.com>, linux-sh@vger.kernel.org, iommu@lists.linux-foundation.org, linux-kernel@vger.kernel.org
 
-On Mon, Aug 06, 2018 at 02:25:17AM +0000, Kuninori Morimoto wrote:
+On Tue, Jul 31, 2018 at 09:24:13AM +0200, Christoph Hellwig wrote:
+> On Tue, Jul 31, 2018 at 03:06:13PM +0900, Yoshinori Sato wrote:
+> > On Wed, 25 Jul 2018 18:40:38 +0900,
+> > Christoph Hellwig wrote:
+> > > 
+> > > Hi all,
+> > > 
+> > > can you review these patches to switch sh to use the generic
+> > > dma-noncoherent code?  All the requirements are in mainline already
+> > > and we've switched various architectures over to it already.
+> > > 
+> > > Changes since V2:
+> > >  - drop a now obsolete export
+> > > 
+> > > Changes since V1:
+> > >  - fixed two stupid compile errors and verified them using a local
+> > >    cross toolchain instead of the 0day buildbot
+> > 
+> > Acked-by: Yoshinori Sato <ysato@users.sourceforge.jp>
 > 
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> 
-> This patch updates license to use SPDX-License-Identifier
-> instead of verbose license text.
-> 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> Do you want to pull this in through the sh tree?  If not I'd be happy
+> to take it through the dma mapping tree.
 
-Reviewed-by: Simon Horman <horms+renesas@verge.net.au>
+Usually I send the pull requests for sh tree, and I'm trying to figure
+out which patches are okay to merge and prepare one now, but if you're
+happy to take it through the dma mapping tree go ahead, and I'll focus
+on other sh stuff that needs attention.
 
+Rich
