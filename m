@@ -1,86 +1,64 @@
-From: Hans Verkuil <hverkuil@xs4all.nl>
-Date: Mon, 02 Jul 2018 10:11:59 +0000
-Subject: Re: [PATCH v11 10/10] arch: sh: migor: Use new renesas-ceu camera driver
-Message-Id: <3a262281-2f47-af79-970a-c8ec5ac82778@xs4all.nl>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 03 Aug 2018 11:14:16 +0000
+Subject: Re: Commit 18e8cf159177 broke qemu-system-sh4 serial input.
+Message-Id: <CAMuHMdXnxCo35N3Oi-sKDf5pNr7iisdiKdbHx_7R1mFyWTF8SQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1519295846-11612-1-git-send-email-jacopo+renesas@jmondi.org>
- <1519295846-11612-11-git-send-email-jacopo+renesas@jmondi.org>
-In-Reply-To: <1519295846-11612-11-git-send-email-jacopo+renesas@jmondi.org>
+References: <41d6bb75-5be0-c563-0569-ea37aab58f1e@landley.net>
+In-Reply-To: <41d6bb75-5be0-c563-0569-ea37aab58f1e@landley.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Jacopo Mondi <jacopo+renesas@jmondi.org>, laurent.pinchart@ideasonboard.com, magnus.damm@gmail.com, geert@glider.be, mchehab@kernel.org, festevam@gmail.com, sakari.ailus@iki.fi, robh+dt@kernel.org, mark.rutland@arm.com, pombredanne@nexb.com
-Cc: linux-renesas-soc@vger.kernel.org, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-On 22/02/18 11:37, Jacopo Mondi wrote:
-> Migo-R platform uses sh_mobile_ceu camera driver, which is now being
-> replaced by a proper V4L2 camera driver named 'renesas-ceu'.
-> 
-> Move Migo-R platform to use the v4l2 renesas-ceu camera driver
-> interface and get rid of soc_camera defined components used to register
-> sensor drivers and of platform specific enable/disable routines.
-> 
-> Register clock source and GPIOs for sensor drivers, so they can use
-> clock and gpio APIs.
-> 
-> Also, memory for CEU video buffers is now reserved with membocks APIs,
-> and need to be declared as dma_coherent during machine initialization to
-> remove that architecture specific part from CEU driver.
-> 
-> Signed-off-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
-> Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-> Acked-by: Hans Verkuil <hans.verkuil@cisco.com>
-> ---
->  arch/sh/boards/mach-migor/setup.c      | 225 +++++++++++++++------------------
->  arch/sh/kernel/cpu/sh4a/clock-sh7722.c |   2 +-
->  2 files changed, 101 insertions(+), 126 deletions(-)
-> 
-> diff --git a/arch/sh/boards/mach-migor/setup.c b/arch/sh/boards/mach-migor/setup.c
-> index 0bcbe58..271dfc2 100644
-> --- a/arch/sh/boards/mach-migor/setup.c
-> +++ b/arch/sh/boards/mach-migor/setup.c
-> @@ -1,17 +1,16 @@
-> +// SPDX-License-Identifier: GPL-2.0
->  /*
->   * Renesas System Solutions Asia Pte. Ltd - Migo-R
->   *
->   * Copyright (C) 2008 Magnus Damm
-> - *
-> - * This file is subject to the terms and conditions of the GNU General Public
-> - * License.  See the file "COPYING" in the main directory of this archive
-> - * for more details.
->   */
-> +#include <linux/clkdev.h>
->  #include <linux/init.h>
->  #include <linux/platform_device.h>
->  #include <linux/interrupt.h>
->  #include <linux/input.h>
->  #include <linux/input/sh_keysc.h>
-> +#include <linux/memblock.h>
->  #include <linux/mmc/host.h>
->  #include <linux/mtd/physmap.h>
->  #include <linux/mfd/tmio.h>
-> @@ -23,10 +22,11 @@
->  #include <linux/delay.h>
->  #include <linux/clk.h>
->  #include <linux/gpio.h>
-> +#include <linux/gpio/machine.h>
->  #include <linux/videodev2.h>
->  #include <linux/sh_intc.h>
->  #include <video/sh_mobile_lcdc.h>
-> -#include <media/drv-intf/sh_mobile_ceu.h>
-> +#include <media/drv-intf/renesas-ceu.h>
->  #include <media/i2c/ov772x.h>
->  #include <media/soc_camera.h>
+On Fri, Apr 21, 2017 at 8:21 AM Rob Landley <rob@landley.net> wrote:
+> In 4.11-rc7 the qemu serial console hangs after the first character you
+> type. To reproduce, configure linux with this mini.config:
+>
+> CONFIG_CPU_SUBTYPE_SH7751R=y
+> CONFIG_MMU=y
+> CONFIG_MEMORY_START=0x0c000000
+> CONFIG_VSYSCALL=y
+> CONFIG_SH_FPU=y
+> CONFIG_SH_RTS7751R2D=y
+> CONFIG_RTS7751R2D_PLUS=y
+> CONFIG_SERIAL_SH_SCI=y
+> CONFIG_SERIAL_SH_SCI_CONSOLE=y
+> CONFIG_EARLY_PRINTK=y
+> CONFIG_BLK_DEV_INITRD=y"
+> CONFIG_RD_GZIP=y
+> CONFIG_BINFMT_ELF=y
+> CONFIG_BINFMT_SCRIPT=y
+> CONFIG_MISC_FILESYSTEMS=y
+> CONFIG_DEVTMPFS=y
+>
+> Using "make ARCH=sh allnoconfig KCONFIG_ALLCONFIG=mini.conf", then build
+> the result, then boot under qemu using the following command line:
+>
+> qemu-system-sh4 -M r2d -monitor null -serial null -serial stdio
+> -nographic -no-reboot -append "panic=1 HOST=sh4 console=ttySC1 noiotrap"
+> -kernel zImage -initrd sh4-linux-musl-root.cpio.gz
+>
+> You'll need a simple cpio.gz initramfs (I built one using
+> https://github.com/landley/mkroot and the musl-cross-make cross
+> compiler, the cpio.gz is ~450k or I'd attach it here).
+>
+> I bisected it to commit 18e8cf159177 back in February. If you do this
+> with the revision _before_ that commit, typing "ls -l" and hitting enter
+> works fine. Afterwards you get an "l" and then it hangs. (If type enough
+> it'll eventually deal a burst of characters all at once, and then hang
+> again.)
 
-You left a stray soc_camera.h include here.
+FTR, patch for qemu is "hw/char/sh_serial: Add timeout handling to unbreak
+serial input"
+(http://lists.nongnu.org/archive/html/qemu-devel/2018-07/msg05579.html)
 
-Can you make a patch that removes this and verify that everything compiles?
+Gr{oetje,eeting}s,
 
-I also see CONFIG_SOC_CAMERA in several arch/sh/configs/*_defconfig files.
-Should those be updated?
+                        Geert
 
-Regards,
+-- 
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-	Hans
-
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
