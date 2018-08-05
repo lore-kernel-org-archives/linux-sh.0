@@ -1,37 +1,22 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 21 Aug 2018 06:10:03 +0000
-Subject: Re: [PATCH 13/13] sh: lib: convert to SPDX identifiers
-Message-Id: <87lg90jlxk.wl-kuninori.morimoto.gx@renesas.com>
+From: elena_figueroa@hmha.gob.ec
+Date: Sun, 05 Aug 2018 14:47:13 +0000
+Subject: =?utf-8?b?V29obHTDpHRpZ2tlaXRzc3BlbmRlIGluIEjDtmhlIHZvbiDigqwgMi4wMDAu?= =?utf-8?q?000=2C00_EUR?=
+Message-Id: <20180805144716.448641F67F11@mail.hmha.gob.ec>
 List-Id: <linux-sh.vger.kernel.org>
-References: <874lg8p7d2.wl-kuninori.morimoto.gx@renesas.com>
-        <87lg9knslt.wl-kuninori.morimoto.gx@renesas.com>
-        <20180809123631.q7rxqaqaipakfdvh@verge.net.au>
-        <87d0udvn6d.wl-kuninori.morimoto.gx@renesas.com>
-        <874lfoe5u8.wl-ysato@users.sourceforge.jp>
-In-Reply-To: <874lfoe5u8.wl-ysato@users.sourceforge.jp>
+References: <20180506111415.6E1C2847C89@mail.ithb.ac.id>
+In-Reply-To: <20180506111415.6E1C2847C89@mail.ithb.ac.id>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: Simon Horman <horms@verge.net.au>, Rich Felker <dalias@libc.org>, Linux-SH <linux-sh@vger.kernel.org>, Linux-Renesas <linux-renesas-soc@vger.kernel.org>
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: linux-sh@vger.kernel.org
 
-
-Hi Sato-san
-
-> > > Given the above clause I wonder if the SPDX identifier should be:
-> > > 
-> > > SPDX-License-Identifier: GPL-2.0+ WITH GCC-exception-2.0
-> > 
-> > Ahh, indeed.
-> > I will post v2 patch.
-> > Sato-san, can I post [13/13 v2] only ? or should post all patches ?
-> > 
-> 
-> Please sent all patches.
-> Thanks.
-
-OK, will do
-
-Best regards
----
-Kuninori Morimoto
+Hallo, ich bin Herr Tayeb Souami, New Jersey, Vereinigte Staaten von Amerika, Sie haben eine Wohltätigkeitsspende in Höhe von € 2.000.000,00, ich habe die America Lotterie in Amerika im Wert von $ 315 Millionen gewonnen, und ich gebe einen Teil davon an fünf glückliche Menschen und wohltätige Häuser, um Armut aus dieser Welt zu beseitigen, bekämpfe ich die Armut. Kontaktieren Sie mich für weitere Informationen: wumt.claimservice@gmail.com
+ 
+Das ist dein Spendencode: [DFC530342018]
+ 
+Antworten Sie mit dem Spendencode auf diese E-Mail: wumt.claimservice@gmail.com
+ 
+Ich hoffe, Sie und Ihre Familie glücklich zu machen.
+ 
+Grüße
+Herr Tayeb Souami
