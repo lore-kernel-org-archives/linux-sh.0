@@ -1,234 +1,86 @@
-From: Alexandre Ghiti <alex@ghiti.fr>
-Date: Mon, 06 Aug 2018 17:57:08 +0000
-Subject: [PATCH v6 08/11] hugetlb: Introduce generic version of prepare_hugepage_range
-Message-Id: <20180806175711.24438-9-alex@ghiti.fr>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 06 Aug 2018 14:07:52 +0000
+Subject: [PATCH/RFC 1/4] sh-sci: Use a separate sci_port for earlycon
+Message-Id: <20180806140755.24087-2-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180806175711.24438-1-alex@ghiti.fr>
-In-Reply-To: <20180806175711.24438-1-alex@ghiti.fr>
+References: <20180806140755.24087-1-geert+renesas@glider.be>
+In-Reply-To: <20180806140755.24087-1-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mm@kvack.org, mike.kravetz@oracle.com, linux@armlinux.org.uk, catalin.marinas@arm.com, will.deacon@arm.com, tony.luck@intel.com, fenghua.yu@intel.com, ralf@linux-mips.org, paul.burton@mips.com, jhogan@kernel.org, jejb@parisc-linux.org, deller@gmx.de, benh@kernel.crashing.org, paulus@samba.org, mpe@ellerman.id.au, ysato@users.sourceforge.jp, dalias@libc.org, davem@davemloft.net, tglx@linutronix.de, mingo@redhat.com, hpa@zytor.com, x86@kernel.org, arnd@arndb.de, linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org, linux-ia64@vger.kernel.org, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-arch@vger.kernel.org
-Cc: Alexandre Ghiti <alex@ghiti.fr>
+To: Chris Brandt <chris.brandt@renesas.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Ulrich Hecht <uli@fpond.eu>, Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, linux-serial@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-arm, arm64, powerpc, sparc, x86 architectures use the same version of
-prepare_hugepage_range, so move this generic implementation into
-asm-generic/hugetlb.h.
+From: Yoshinori Sato <ysato@users.sourceforge.jp>
 
-Signed-off-by: Alexandre Ghiti <alex@ghiti.fr>
-Tested-by: Helge Deller <deller@gmx.de> # parisc
-Acked-by: Catalin Marinas <catalin.marinas@arm.com> # arm64
-Acked-by: Paul Burton <paul.burton@mips.com> # MIPS parts
-Reviewed-by: Luiz Capitulino <lcapitulino@redhat.com>
-Reviewed-by: Mike Kravetz <mike.kravetz@oracle.com>
+The first sh-sci port and earlycon use the same sci_port.
+Hence after the initialization of the first port, earlycon may die.
+
+Fis this by assigning a separate sci_port for earlycon.
+
+Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
+[geert: Rebased, reworded]
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/include/asm/hugetlb.h     | 11 -----------
- arch/arm64/include/asm/hugetlb.h   | 11 -----------
- arch/ia64/include/asm/hugetlb.h    |  1 +
- arch/mips/include/asm/hugetlb.h    |  1 +
- arch/parisc/include/asm/hugetlb.h  |  1 +
- arch/powerpc/include/asm/hugetlb.h | 15 ---------------
- arch/sh/include/asm/hugetlb.h      |  1 +
- arch/sparc/include/asm/hugetlb.h   | 16 ----------------
- arch/x86/include/asm/hugetlb.h     | 15 ---------------
- include/asm-generic/hugetlb.h      | 15 +++++++++++++++
- 10 files changed, 19 insertions(+), 68 deletions(-)
+I still don't fully understand why Sato-san needed this for H8/300, and
+we never needed it on Renesas ARM SoCs before.
 
-diff --git a/arch/arm/include/asm/hugetlb.h b/arch/arm/include/asm/hugetlb.h
-index 9ca14227eeb7..3fcef21ff2c2 100644
---- a/arch/arm/include/asm/hugetlb.h
-+++ b/arch/arm/include/asm/hugetlb.h
-@@ -33,17 +33,6 @@ static inline int is_hugepage_only_range(struct mm_struct *mm,
- 	return 0;
- }
+Also, I don't like the early index.
+---
+ drivers/tty/serial/sh-sci.c | 21 ++++++++++++++-------
+ 1 file changed, 14 insertions(+), 7 deletions(-)
+
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index ac4424bf6b136cc4..cf3195bed0246a3d 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -164,6 +164,8 @@ struct sci_port {
+ #define SCI_NPORTS CONFIG_SERIAL_SH_SCI_NR_UARTS
  
--static inline int prepare_hugepage_range(struct file *file,
--					 unsigned long addr, unsigned long len)
--{
--	struct hstate *h = hstate_file(file);
--	if (len & ~huge_page_mask(h))
--		return -EINVAL;
--	if (addr & ~huge_page_mask(h))
--		return -EINVAL;
--	return 0;
--}
--
- static inline void arch_clear_hugepage_flags(struct page *page)
+ static struct sci_port sci_ports[SCI_NPORTS];
++#define EARLY_INDEX 256
++static struct sci_port earlycon_port;
+ static unsigned long sci_ports_in_use;
+ static struct uart_driver sci_uart_driver;
+ 
+@@ -2941,12 +2943,16 @@ static void serial_console_putchar(struct uart_port *port, int ch)
+ static void serial_console_write(struct console *co, const char *s,
+ 				 unsigned count)
  {
- 	clear_bit(PG_dcache_clean, &page->flags);
-diff --git a/arch/arm64/include/asm/hugetlb.h b/arch/arm64/include/asm/hugetlb.h
-index 1fd64ebf0cd7..3e7f6e69b28d 100644
---- a/arch/arm64/include/asm/hugetlb.h
-+++ b/arch/arm64/include/asm/hugetlb.h
-@@ -31,17 +31,6 @@ static inline int is_hugepage_only_range(struct mm_struct *mm,
- 	return 0;
- }
+-	struct sci_port *sci_port = &sci_ports[co->index];
+-	struct uart_port *port = &sci_port->port;
+ 	unsigned short bits, ctrl, ctrl_temp;
++	struct sci_port *sci_port;
++	struct uart_port *port;
+ 	unsigned long flags;
+ 	int locked = 1;
  
--static inline int prepare_hugepage_range(struct file *file,
--					 unsigned long addr, unsigned long len)
--{
--	struct hstate *h = hstate_file(file);
--	if (len & ~huge_page_mask(h))
--		return -EINVAL;
--	if (addr & ~huge_page_mask(h))
--		return -EINVAL;
--	return 0;
--}
--
- static inline void arch_clear_hugepage_flags(struct page *page)
- {
- 	clear_bit(PG_dcache_clean, &page->flags);
-diff --git a/arch/ia64/include/asm/hugetlb.h b/arch/ia64/include/asm/hugetlb.h
-index 82fe3d7a38d9..cbe296271030 100644
---- a/arch/ia64/include/asm/hugetlb.h
-+++ b/arch/ia64/include/asm/hugetlb.h
-@@ -9,6 +9,7 @@ void hugetlb_free_pgd_range(struct mmu_gather *tlb, unsigned long addr,
- 			    unsigned long end, unsigned long floor,
- 			    unsigned long ceiling);
- 
-+#define __HAVE_ARCH_PREPARE_HUGEPAGE_RANGE
- int prepare_hugepage_range(struct file *file,
- 			unsigned long addr, unsigned long len);
- 
-diff --git a/arch/mips/include/asm/hugetlb.h b/arch/mips/include/asm/hugetlb.h
-index b3d6bb53ee6e..6ff2531cfb1d 100644
---- a/arch/mips/include/asm/hugetlb.h
-+++ b/arch/mips/include/asm/hugetlb.h
-@@ -18,6 +18,7 @@ static inline int is_hugepage_only_range(struct mm_struct *mm,
- 	return 0;
- }
- 
-+#define __HAVE_ARCH_PREPARE_HUGEPAGE_RANGE
- static inline int prepare_hugepage_range(struct file *file,
- 					 unsigned long addr,
- 					 unsigned long len)
-diff --git a/arch/parisc/include/asm/hugetlb.h b/arch/parisc/include/asm/hugetlb.h
-index 5a102d7251e4..fb7e0fd858a3 100644
---- a/arch/parisc/include/asm/hugetlb.h
-+++ b/arch/parisc/include/asm/hugetlb.h
-@@ -22,6 +22,7 @@ static inline int is_hugepage_only_range(struct mm_struct *mm,
-  * If the arch doesn't supply something else, assume that hugepage
-  * size aligned regions are ok without further preparation.
-  */
-+#define __HAVE_ARCH_PREPARE_HUGEPAGE_RANGE
- static inline int prepare_hugepage_range(struct file *file,
- 			unsigned long addr, unsigned long len)
- {
-diff --git a/arch/powerpc/include/asm/hugetlb.h b/arch/powerpc/include/asm/hugetlb.h
-index 7123599089c6..69c14ecac133 100644
---- a/arch/powerpc/include/asm/hugetlb.h
-+++ b/arch/powerpc/include/asm/hugetlb.h
-@@ -117,21 +117,6 @@ void hugetlb_free_pgd_range(struct mmu_gather *tlb, unsigned long addr,
- 			    unsigned long end, unsigned long floor,
- 			    unsigned long ceiling);
- 
--/*
-- * If the arch doesn't supply something else, assume that hugepage
-- * size aligned regions are ok without further preparation.
-- */
--static inline int prepare_hugepage_range(struct file *file,
--			unsigned long addr, unsigned long len)
--{
--	struct hstate *h = hstate_file(file);
--	if (len & ~huge_page_mask(h))
--		return -EINVAL;
--	if (addr & ~huge_page_mask(h))
--		return -EINVAL;
--	return 0;
--}
--
- #define __HAVE_ARCH_HUGE_PTEP_GET_AND_CLEAR
- static inline pte_t huge_ptep_get_and_clear(struct mm_struct *mm,
- 					    unsigned long addr, pte_t *ptep)
-diff --git a/arch/sh/include/asm/hugetlb.h b/arch/sh/include/asm/hugetlb.h
-index 54f65094efe6..f1bbd255ee43 100644
---- a/arch/sh/include/asm/hugetlb.h
-+++ b/arch/sh/include/asm/hugetlb.h
-@@ -15,6 +15,7 @@ static inline int is_hugepage_only_range(struct mm_struct *mm,
-  * If the arch doesn't supply something else, assume that hugepage
-  * size aligned regions are ok without further preparation.
-  */
-+#define __HAVE_ARCH_PREPARE_HUGEPAGE_RANGE
- static inline int prepare_hugepage_range(struct file *file,
- 			unsigned long addr, unsigned long len)
- {
-diff --git a/arch/sparc/include/asm/hugetlb.h b/arch/sparc/include/asm/hugetlb.h
-index f661362376e0..2101ea217f33 100644
---- a/arch/sparc/include/asm/hugetlb.h
-+++ b/arch/sparc/include/asm/hugetlb.h
-@@ -26,22 +26,6 @@ static inline int is_hugepage_only_range(struct mm_struct *mm,
- 	return 0;
- }
- 
--/*
-- * If the arch doesn't supply something else, assume that hugepage
-- * size aligned regions are ok without further preparation.
-- */
--static inline int prepare_hugepage_range(struct file *file,
--			unsigned long addr, unsigned long len)
--{
--	struct hstate *h = hstate_file(file);
--
--	if (len & ~huge_page_mask(h))
--		return -EINVAL;
--	if (addr & ~huge_page_mask(h))
--		return -EINVAL;
--	return 0;
--}
--
- #define __HAVE_ARCH_HUGE_PTEP_CLEAR_FLUSH
- static inline void huge_ptep_clear_flush(struct vm_area_struct *vma,
- 					 unsigned long addr, pte_t *ptep)
-diff --git a/arch/x86/include/asm/hugetlb.h b/arch/x86/include/asm/hugetlb.h
-index 3cd3a2c9840e..59c056adb3c9 100644
---- a/arch/x86/include/asm/hugetlb.h
-+++ b/arch/x86/include/asm/hugetlb.h
-@@ -13,21 +13,6 @@ static inline int is_hugepage_only_range(struct mm_struct *mm,
- 	return 0;
- }
- 
--/*
-- * If the arch doesn't supply something else, assume that hugepage
-- * size aligned regions are ok without further preparation.
-- */
--static inline int prepare_hugepage_range(struct file *file,
--			unsigned long addr, unsigned long len)
--{
--	struct hstate *h = hstate_file(file);
--	if (len & ~huge_page_mask(h))
--		return -EINVAL;
--	if (addr & ~huge_page_mask(h))
--		return -EINVAL;
--	return 0;
--}
--
- static inline void huge_ptep_set_wrprotect(struct mm_struct *mm,
- 					   unsigned long addr, pte_t *ptep)
- {
-diff --git a/include/asm-generic/hugetlb.h b/include/asm-generic/hugetlb.h
-index cd9697672b79..6c0c8b0c71e0 100644
---- a/include/asm-generic/hugetlb.h
-+++ b/include/asm-generic/hugetlb.h
-@@ -87,4 +87,19 @@ static inline pte_t huge_pte_wrprotect(pte_t pte)
- }
- #endif
- 
-+#ifndef __HAVE_ARCH_PREPARE_HUGEPAGE_RANGE
-+static inline int prepare_hugepage_range(struct file *file,
-+		unsigned long addr, unsigned long len)
-+{
-+	struct hstate *h = hstate_file(file);
++	sci_port = (co->index != EARLY_INDEX) ?
++		&sci_ports[co->index] : &earlycon_port;
++	port = &sci_port->port;
 +
-+	if (len & ~huge_page_mask(h))
-+		return -EINVAL;
-+	if (addr & ~huge_page_mask(h))
-+		return -EINVAL;
-+
-+	return 0;
-+}
-+#endif
-+
- #endif /* _ASM_GENERIC_HUGETLB_H */
+ #if defined(SUPPORT_SYSRQ)
+ 	if (port->sysrq)
+ 		locked = 0;
+@@ -3367,12 +3373,13 @@ static int __init early_console_setup(struct earlycon_device *device,
+ 	device->port.serial_in = sci_serial_in;
+ 	device->port.serial_out	= sci_serial_out;
+ 	device->port.type = type;
+-	memcpy(&sci_ports[0].port, &device->port, sizeof(struct uart_port));
++	device->con->index = EARLY_INDEX;
++	memcpy(&earlycon_port.port, &device->port, sizeof(struct uart_port));
+ 	port_cfg.type = type;
+-	sci_ports[0].cfg = &port_cfg;
+-	sci_ports[0].params = sci_probe_regmap(&port_cfg);
+-	port_cfg.scscr = sci_serial_in(&sci_ports[0].port, SCSCR);
+-	sci_serial_out(&sci_ports[0].port, SCSCR,
++	earlycon_port.cfg = &port_cfg;
++	earlycon_port.params = sci_probe_regmap(&port_cfg);
++	port_cfg.scscr = sci_serial_in(&earlycon_port.port, SCSCR);
++	sci_serial_out(&earlycon_port.port, SCSCR,
+ 		       SCSCR_RE | SCSCR_TE | port_cfg.scscr);
+ 
+ 	device->con->write = serial_console_write;
 -- 
-2.16.2
+2.17.1
 
