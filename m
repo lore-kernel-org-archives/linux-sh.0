@@ -1,36 +1,76 @@
-From: Alexandre Ghiti <alex@ghiti.fr>
-Date: Wed, 01 Aug 2018 11:50:49 +0000
-Subject: Re: [PATCH v5 00/11] hugetlb: Factorize hugetlb architecture primitives
-Message-Id: <1cee9f98-4cff-3e42-6cc8-088310e406d9@ghiti.fr>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 06 Aug 2018 14:07:51 +0000
+Subject: [PATCH/RFC 0/4] sh-sci : Do not derive regshift from regsize
+Message-Id: <20180806140755.24087-1-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180731060155.16915-1-alex@ghiti.fr>
- <20180731160640.11306628@doriath>
-In-Reply-To: <20180731160640.11306628@doriath>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Luiz Capitulino <lcapitulino@redhat.com>
-Cc: linux-mm@kvack.org, mike.kravetz@oracle.com, linux@armlinux.org.uk, catalin.marinas@arm.com, will.deacon@arm.com, tony.luck@intel.com, fenghua.yu@intel.com, ralf@linux-mips.org, paul.burton@mips.com, jhogan@kernel.org, jejb@parisc-linux.org, deller@gmx.de, benh@kernel.crashing.org, paulus@samba.org, mpe@ellerman.id.au, ysato@users.sourceforge.jp, dalias@libc.org, davem@davemloft.net, tglx@linutronix.de, mingo@redhat.com, hpa@zytor.com, x86@kernel.org, arnd@arndb.de, linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org, linux-ia64@vger.kernel.org, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-arch@vger.kernel.org
+To: Chris Brandt <chris.brandt@renesas.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Ulrich Hecht <uli@fpond.eu>, Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, linux-serial@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On 07/31/2018 10:06 PM, Luiz Capitulino wrote:
-> On Tue, 31 Jul 2018 06:01:44 +0000
-> Alexandre Ghiti <alex@ghiti.fr> wrote:
->
->> [CC linux-mm for inclusion in -mm tree]
->>
->> In order to reduce copy/paste of functions across architectures and then
->> make riscv hugetlb port (and future ports) simpler and smaller, this
->> patchset intends to factorize the numerous hugetlb primitives that are
->> defined across all the architectures.
-> [...]
->
->>   15 files changed, 139 insertions(+), 382 deletions(-)
-> I imagine you're mostly interested in non-x86 review at this point, but
-> as this series is looking amazing:
->
-> Reviewed-by: Luiz Capitulino <lcapitulino@redhat.com>
+	Hi all,
 
-It's always good to have another feedback :)
-Thanks for your review Luiz,
+This RFC patch series was sparked by noticing that commit 2d4dd0da45401c7a
+("serial: sh-sci: Allow for compressed SCIF address") broke earlycon
+support on most Renesas ARM SoCs using SCIF ports, and by the fragility of
+deriving regshift from the register block size (which may be rounded up):
+  1. The first patch is an old patch from Sato-san, which I never really
+     understood.  But it turned out to be a dependency for patch 2.
+  2. Patch 2 makes sure regshift is initialized when using earlycon,
+     unbreaking the serial console on e.g. R-Car Gen2 and Gen3.
+  3. Patch 3 reverts the patch that started deriving regshift from the
+     register block size, and that removed the plat_sci_port.regshift
+     field.  Which is a field I needed again in patch 4.
+  4. Patch 4 removes the remaining regshift derivations on DT platforms.
+ (5. I didn't bother writing patch 5, which involves adding .regshift
+     initializations to all SH board files that need it.)
 
-Alex
+However, I'm not happy with the end result, so please DO NOT apply this!
+As I spent almost a full day on this, and would still like to know the
+story about "sh-sci: Use a separate sci_port for earlycon", I decided to
+post it anyway.
+
+As earlycon will be broken in v4.19-rc1 on RZ/A1, RZ/G, and R-Car, assuming
+no other actions are taken, an alternative solution would be to:
+  1. Revert commit 7acece71a517cad8 ("serial: sh-sci: Remove
+     SCIx_RZ_SCIFA_REGTYPE"),
+  2. Revert commit 2d4dd0da45401c7a ("serial: sh-sci: Allow for compressed
+     SCIF address") alternative,
+  3. Add an OF_EARLYCON_DECLARE() for RZ/A2, to fix earlycon on RZ/A2.
+
+What do you think?
+Thanks for your comments!
+
+P.S. Apparently SCIx_SH4_SCIF_REGTYPE and SCIx_SH2_SCIF_FIFODATA_REGTYPE
+     are identical?
+
+Geert Uytterhoeven (3):
+  [RFC] sh-sci: Take into account regshift to fix earlycon breakage
+  [RFC] Revert "serial: sh-sci: Compute the regshift value for SCI
+    ports"
+  [RFC] sh-sci: Derive regshift value from DT compatible value
+
+Yoshinori Sato (1):
+  [RFC] sh-sci: Use a separate sci_port for earlycon
+
+ arch/sh/kernel/cpu/sh3/setup-sh770x.c |  1 +
+ arch/sh/kernel/cpu/sh4/setup-sh7750.c |  3 +-
+ arch/sh/kernel/cpu/sh4/setup-sh7760.c | 10 +---
+ drivers/tty/serial/sh-sci.c           | 68 +++++++++++++++++----------
+ include/linux/serial_sci.h            |  1 +
+ 5 files changed, 49 insertions(+), 34 deletions(-)
+
+-- 
+2.17.1
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
