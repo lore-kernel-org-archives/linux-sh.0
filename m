@@ -1,40 +1,143 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 08 Aug 2018 11:05:46 +0000
-Subject: Re: [PATCH/RFC 4/4] sh-sci: Derive regshift value from DT compatible value
-Message-Id: <CAMuHMdVbYak4N3RAR-kqT+m1981BdSnB2+SMmCnN0ffUrjKaVA@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 06 Aug 2018 02:26:04 +0000
+Subject: [PATCH 11/13] sh: cpu: convert to SPDX identifiers
+Message-Id: <87o9egnsmk.wl-kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180806140755.24087-1-geert+renesas@glider.be>
- <20180806140755.24087-5-geert+renesas@glider.be> <TY1PR01MB15621F645BA5AA48C6060F0D8A200@TY1PR01MB1562.jpnprd01.prod.outlook.com>
- <CAMuHMdWfsdbmGUQPk4O=9jyPZ_tUEytO5z2XE6-TnagJ3taPVA@mail.gmail.com>
- <TY1PR01MB1562F2D2FD1BF47A80B044028A270@TY1PR01MB1562.jpnprd01.prod.outlook.com>
- <CAMuHMdWgJrPRh8TRTrEjWsaRAhEQX0T7M5eBGP_z3Ft=T6FfDg@mail.gmail.com>
- <TY1PR01MB1562BACED660584300228AA08A260@TY1PR01MB1562.jpnprd01.prod.outlook.com>
- <CAMuHMdU4WW_Yx7P1rJjUNSaDXXcSGDAyqap1Gm9sVcDRgL09dg@mail.gmail.com> <TY1PR01MB1562EEC8C0F3AB19370AC6F98A260@TY1PR01MB1562.jpnprd01.prod.outlook.com>
-In-Reply-To: <TY1PR01MB1562EEC8C0F3AB19370AC6F98A260@TY1PR01MB1562.jpnprd01.prod.outlook.com>
+References: <874lg8p7d2.wl-kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <874lg8p7d2.wl-kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Chris Brandt <Chris.Brandt@renesas.com>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, uli@fpond.eu, Yoshinori Sato <ysato@users.sourceforge.jp>, Greg KH <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>, Linux-Renesas <linux-renesas-soc@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "open list:SERIAL DRIVERS" <linux-serial@vger.kernel.org>
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+Cc: Linux-SH <linux-sh@vger.kernel.org>, Linux-Renesas <linux-renesas-soc@vger.kernel.org>
 
-Hi Chris,
 
-On Wed, Aug 8, 2018 at 12:39 PM Chris Brandt <Chris.Brandt@renesas.com> wrote:
-> On Wednesday, August 08, 2018, Geert Uytterhoeven wrote:
-> > BTW, I guess earlycon also works on RZ/A2 with current tty-next or
-> > latest renesas-drivers?
->
-> I was using your RFC patches on top of the current renesas-drivers.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-I meant without the RFC patch series.
+This patch updates license to use SPDX-License-Identifier
+instead of verbose license text.
 
-Gr{oetje,eeting}s,
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/sh/kernel/cpu/clock.c        |  5 +----
+ arch/sh/kernel/cpu/init.c         |  5 +----
+ arch/sh/kernel/cpu/irq/Makefile   |  1 +
+ arch/sh/kernel/cpu/irq/intc-sh5.c |  5 +----
+ arch/sh/kernel/cpu/irq/ipr.c      |  5 +----
+ arch/sh/kernel/cpu/pfc.c          | 10 +---------
+ 6 files changed, 6 insertions(+), 25 deletions(-)
 
-                        Geert
-
+diff --git a/arch/sh/kernel/cpu/clock.c b/arch/sh/kernel/cpu/clock.c
+index fca9b1e7..6fb3441 100644
+--- a/arch/sh/kernel/cpu/clock.c
++++ b/arch/sh/kernel/cpu/clock.c
+@@ -1,3 +1,4 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * arch/sh/kernel/cpu/clock.c - SuperH clock framework
+  *
+@@ -9,10 +10,6 @@
+  *	Written by Tuukka Tikkanen <tuukka.tikkanen@elektrobit.com>
+  *
+  *  Modified for omap shared clock framework by Tony Lindgren <tony@atomide.com>
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ #include <linux/kernel.h>
+ #include <linux/init.h>
+diff --git a/arch/sh/kernel/cpu/init.c b/arch/sh/kernel/cpu/init.c
+index c4f01c5..ce7291e 100644
+--- a/arch/sh/kernel/cpu/init.c
++++ b/arch/sh/kernel/cpu/init.c
+@@ -1,3 +1,4 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * arch/sh/kernel/cpu/init.c
+  *
+@@ -5,10 +6,6 @@
+  *
+  * Copyright (C) 2002 - 2009  Paul Mundt
+  * Copyright (C) 2003  Richard Curnow
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ #include <linux/init.h>
+ #include <linux/kernel.h>
+diff --git a/arch/sh/kernel/cpu/irq/Makefile b/arch/sh/kernel/cpu/irq/Makefile
+index 3f8e794..8b91cb9 100644
+--- a/arch/sh/kernel/cpu/irq/Makefile
++++ b/arch/sh/kernel/cpu/irq/Makefile
+@@ -1,3 +1,4 @@
++# SPDX-License-Identifier: GPL-2.0
+ #
+ # Makefile for the Linux/SuperH CPU-specific IRQ handlers.
+ #
+diff --git a/arch/sh/kernel/cpu/irq/intc-sh5.c b/arch/sh/kernel/cpu/irq/intc-sh5.c
+index 9e056a3..744f903 100644
+--- a/arch/sh/kernel/cpu/irq/intc-sh5.c
++++ b/arch/sh/kernel/cpu/irq/intc-sh5.c
+@@ -1,3 +1,4 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * arch/sh/kernel/cpu/irq/intc-sh5.c
+  *
+@@ -9,10 +10,6 @@
+  * Per-interrupt selective. IRLM=0 (Fixed priority) is not
+  * supported being useless without a cascaded interrupt
+  * controller.
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ #include <linux/init.h>
+ #include <linux/interrupt.h>
+diff --git a/arch/sh/kernel/cpu/irq/ipr.c b/arch/sh/kernel/cpu/irq/ipr.c
+index 5de6dff5..d41bce7 100644
+--- a/arch/sh/kernel/cpu/irq/ipr.c
++++ b/arch/sh/kernel/cpu/irq/ipr.c
+@@ -1,3 +1,4 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * Interrupt handling for IPR-based IRQ.
+  *
+@@ -11,10 +12,6 @@
+  *	On-chip supporting modules for SH7709/SH7709A/SH7729.
+  *	Hitachi SolutionEngine external I/O:
+  *		MS7709SE01, MS7709ASE01, and MS7750SE01
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ #include <linux/init.h>
+ #include <linux/interrupt.h>
+diff --git a/arch/sh/kernel/cpu/pfc.c b/arch/sh/kernel/cpu/pfc.c
+index d766564..062056e 100644
+--- a/arch/sh/kernel/cpu/pfc.c
++++ b/arch/sh/kernel/cpu/pfc.c
+@@ -1,16 +1,8 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * SH Pin Function Control Initialization
+  *
+  * Copyright (C) 2012  Renesas Solutions Corp.
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation; version 2 of the License.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+  */
+ 
+ #include <linux/init.h>
 -- 
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+2.7.4
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
