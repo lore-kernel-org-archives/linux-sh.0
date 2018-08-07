@@ -1,37 +1,74 @@
-From: Chris Brandt <Chris.Brandt@renesas.com>
-Date: Tue, 07 Aug 2018 19:24:30 +0000
-Subject: RE: [PATCH/RFC 4/4] sh-sci: Derive regshift value from DT compatible value
-Message-Id: <TY1PR01MB1562F2D2FD1BF47A80B044028A270@TY1PR01MB1562.jpnprd01.prod.outlook.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 07 Aug 2018 19:37:06 +0000
+Subject: Re: [PATCH/RFC 4/4] sh-sci: Derive regshift value from DT compatible value
+Message-Id: <CAMuHMdWgJrPRh8TRTrEjWsaRAhEQX0T7M5eBGP_z3Ft=T6FfDg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20180806140755.24087-1-geert+renesas@glider.be>
- <20180806140755.24087-5-geert+renesas@glider.be>
- <TY1PR01MB15621F645BA5AA48C6060F0D8A200@TY1PR01MB1562.jpnprd01.prod.outlook.com>
- <CAMuHMdWfsdbmGUQPk4O=9jyPZ_tUEytO5z2XE6-TnagJ3taPVA@mail.gmail.com>
-In-Reply-To: <CAMuHMdWfsdbmGUQPk4O=9jyPZ_tUEytO5z2XE6-TnagJ3taPVA@mail.gmail.com>
+ <20180806140755.24087-5-geert+renesas@glider.be> <TY1PR01MB15621F645BA5AA48C6060F0D8A200@TY1PR01MB1562.jpnprd01.prod.outlook.com>
+ <CAMuHMdWfsdbmGUQPk4O=9jyPZ_tUEytO5z2XE6-TnagJ3taPVA@mail.gmail.com> <TY1PR01MB1562F2D2FD1BF47A80B044028A270@TY1PR01MB1562.jpnprd01.prod.outlook.com>
+In-Reply-To: <TY1PR01MB1562F2D2FD1BF47A80B044028A270@TY1PR01MB1562.jpnprd01.prod.outlook.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, "uli@fpond.eu" <uli@fpond.eu>, Yoshinori Sato <ysato@users.sourceforge.jp>, Greg KH <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>, Linux-Renesas <linux-renesas-soc@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "open list:SERIAL DRIVERS" <linux-serial@vger.kernel.org>
+To: Chris Brandt <Chris.Brandt@renesas.com>
+Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, uli@fpond.eu, Yoshinori Sato <ysato@users.sourceforge.jp>, Greg KH <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>, Linux-Renesas <linux-renesas-soc@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "open list:SERIAL DRIVERS" <linux-serial@vger.kernel.org>
 
-SGkgR2VlcnQsDQoNCk9uIE1vbmRheSwgQXVndXN0IDA2LCAyMDE4IDEsIEdlZXJ0IFV5dHRlcmhv
-ZXZlbiB3cm90ZToNCj4gPiBJIGhhZCBhIHNpbXBsZSBwYXRjaCB0byBhZGQgc3VwcG9ydCBmb3Ig
-Q09ORklHX0RFQlVHX0xMIGZvciBSWi9BMg0KPiA+IGJlY2F1c2UgZWFybHljb24gbmV2ZXIgd29y
-a2VkIGJlY2F1c2Ugb2YgUlovQTIncyBkaWZmZXJlbnQgcmVnaXN0ZXINCj4gbG9jYXRpb25zLg0K
-PiANCj4gWWVhaCwgc2NpX3Byb2JlX3JlZ21hcCgpIGFzc3VtZWQgdGhlIHdyb25nIHJlZ3R5cGUg
-Zm9yIHlvdXIgVFlQRV9TQ0lGDQo+IHBvcnQuIFlvdSBuZWVkZWQgYW4gT0ZfRUFSTFlDT05fREVD
-TEFSRSgpIGxpbmUgdGhhdCBhbHNvIGZpbGxlZCBpbg0KPiB0aGUgY29ycmVjdCByZWd0eXBlLg0K
-DQoNCkkgZ2F2ZSB5b3VyIHBhdGNoIGEgdHJ5Lg0KV2hlbiBlYXJseWNvbiBpcyBlbmFibGVkLCBv
-biBSWi9BMiwgaXQgZ2V0cyBzdHVjayBpbiBoZXJlOg0KDQpzdGF0aWMgdm9pZCBzY2lfcG9sbF9w
-dXRfY2hhcihzdHJ1Y3QgdWFydF9wb3J0ICpwb3J0LCB1bnNpZ25lZCBjaGFyIGMpDQp7DQoJdW5z
-aWduZWQgc2hvcnQgc3RhdHVzOw0KDQoJZG8gew0KCQlzdGF0dXMgPSBzZXJpYWxfcG9ydF9pbihw
-b3J0LCBTQ3hTUik7DQoJfSB3aGlsZSAoIShzdGF0dXMgJiBTQ3hTUl9URHhFKHBvcnQpKSk7DQoN
-CglzZXJpYWxfcG9ydF9vdXQocG9ydCwgU0N4VERSLCBjKTsNCglzY2lfY2xlYXJfU0N4U1IocG9y
-dCwgU0N4U1JfVER4RV9DTEVBUihwb3J0KSAmIH5TQ3hTUl9URU5EKHBvcnQpKTsNCn0NCg0KDQpJ
-IHNlZSB0aGF0IHlvdSBhZGRlZCB0aGlzOg0KDQpPRl9FQVJMWUNPTl9ERUNMQVJFKHNjaWYsICJy
-ZW5lc2FzLHNjaWYtcjdzOTIxMCIsIHJ6YTJfZWFybHlfY29uc29sZV9zZXR1cCk7DQoNCiBhbmQg
-InJlbmVzYXMsc2NpZi1yN3M5MjEwIiBtYXRjaGVzIHdoYXQgSSBoYXZlIGluIG15IC5kdHNpLg0K
-DQpCdXQsIHdoZW4gSSBydW4gdGhlIGNvZGUsIEkgZW5kIHVwIGluIGZ1bmN0aW9uIHNjaWZfZWFy
-bHlfY29uc29sZV9zZXR1cCwNCm5vdCByemEyX2Vhcmx5X2NvbnNvbGVfc2V0dXANCg0KSSdtIGFz
-c3VtaW5nIEknbSBqdXN0IHN1cHBvc2VkIHRvIHVzZSB0aGlzIG9uIG15IGJvb3RhcmdzOg0KICAg
-ZWFybHljb249c2NpZiwweEU4MDA5MDAwDQoNCg0KQ2hyaXMNCg0K
+Hi Chris,
+
+On Tue, Aug 7, 2018 at 9:24 PM Chris Brandt <Chris.Brandt@renesas.com> wrote:
+> On Monday, August 06, 2018 1, Geert Uytterhoeven wrote:
+> > > I had a simple patch to add support for CONFIG_DEBUG_LL for RZ/A2
+> > > because earlycon never worked because of RZ/A2's different register
+> > locations.
+> >
+> > Yeah, sci_probe_regmap() assumed the wrong regtype for your TYPE_SCIF
+> > port. You needed an OF_EARLYCON_DECLARE() line that also filled in
+> > the correct regtype.
+>
+>
+> I gave your patch a try.
+> When earlycon is enabled, on RZ/A2, it gets stuck in here:
+>
+> static void sci_poll_put_char(struct uart_port *port, unsigned char c)
+> {
+>         unsigned short status;
+>
+>         do {
+>                 status = serial_port_in(port, SCxSR);
+>         } while (!(status & SCxSR_TDxE(port)));
+>
+>         serial_port_out(port, SCxTDR, c);
+>         sci_clear_SCxSR(port, SCxSR_TDxE_CLEAR(port) & ~SCxSR_TEND(port));
+> }
+>
+>
+> I see that you added this:
+>
+> OF_EARLYCON_DECLARE(scif, "renesas,scif-r7s9210", rza2_early_console_setup);
+>
+>  and "renesas,scif-r7s9210" matches what I have in my .dtsi.
+>
+> But, when I run the code, I end up in function scif_early_console_setup,
+> not rza2_early_console_setup
+
+Hmm, perhaps it doesn't pick the first/most specialized match.
+
+> I'm assuming I'm just supposed to use this on my bootargs:
+>    earlycon=scif,0xE8009000
+
+Just "earlycon" should be sufficient. It'll find the right port from
+chosen/stdout-path
+in DT. Can you please retry using that?
+
+Thanks!
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+-- 
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
