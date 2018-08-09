@@ -1,7 +1,7 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Thu, 09 Aug 2018 12:13:13 +0000
+Date: Thu, 09 Aug 2018 12:13:53 +0000
 Subject: Re: [PATCH 06/13] sh: sh3: convert to SPDX identifiers
-Message-Id: <20180809121308.pg3p35ibbxtmibdy@verge.net.au>
+Message-Id: <20180809121353.tfdadubj2tjlop3a@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <874lg8p7d2.wl-kuninori.morimoto.gx@renesas.com>
  <87va8onspc.wl-kuninori.morimoto.gx@renesas.com>
