@@ -1,25 +1,99 @@
-From: Andrew Morton <akpm@linux-foundation.org>
-Date: Wed, 01 Aug 2018 22:22:35 +0000
-Subject: Re: [PATCH v2] sh: prefer _THIS_IP_ to current_text_addr
-Message-Id: <20180801152235.92f2df81e72ef7d0776c24ac@linux-foundation.org>
+From: Firoz Khan <firoz.khan@linaro.org>
+Date: Thu, 09 Aug 2018 05:48:43 +0000
+Subject: [PATCH 1/3] sh: Rename NR_syscalls macro to __NR_syscalls
+Message-Id: <1533793005-4525-2-git-send-email-firoz.khan@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <CAKwvOd=DnrfVcuO8Pg=FBrub1M4A8LzarZbtv6m=JO_r6Ea6aQ@mail.gmail.com>
-        <20180801185331.39535-1-ndesaulniers@google.com>
-        <20180801145530.185dab6b47a61842923fc02d@linux-foundation.org>
-        <CAKwvOdmHadWqZSLT2DM4D9Kt-EwVHrjuiKy6vYJpVw7Dk=bTKQ@mail.gmail.com>
-In-Reply-To: <CAKwvOdmHadWqZSLT2DM4D9Kt-EwVHrjuiKy6vYJpVw7Dk=bTKQ@mail.gmail.com>
+References: <1533793005-4525-1-git-send-email-firoz.khan@linaro.org>
+In-Reply-To: <1533793005-4525-1-git-send-email-firoz.khan@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Nick Desaulniers <ndesaulniers@google.com>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, dalias@libc.org, linux-sh@vger.kernel.org, LKML <linux-kernel@vger.kernel.org>
+To: linux-sh@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Steven Rostedt <rostedt@goodmis.org>, Ingo Molnar <mingo@redhat.com>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Philippe Ombredanne <pombredanne@nexb.com>, Thomas Gleixner <tglx@linutronix.de>, Kate Stewart <kstewart@linuxfoundation.org>
+Cc: y2038@lists.linaro.org, linux-kernel@vger.kernel.org, linux-arch@vger.kernel.org, arnd@arndb.de, deepa.kernel@gmail.com, marcin.juszkiewicz@linaro.org, firoz.khan@linaro.org
 
-On Wed, 1 Aug 2018 15:06:33 -0700 Nick Desaulniers <ndesaulniers@google.com> wrote:
+NR_syscalls macro holds the number of system call exist in SH arch-
+itecture. One of the patch in this patch series has a script which
+will generate a uapi header based on syscall.tbl file. The syscall.tbl
+file contains the total number of system call information, which will
+be used to update NR_syscalls.
 
-> So the plan is to replace the 5 call sites of current_text_addr() with
-> _THIS_IP_ (if possible), then delete all definitions of the arch
-> specific current_text_addr()'s.  This can be done on a per tree basis,
-> rather than a treewide patch for converting _THIS_IP_ (who has many
-> more call sites) to current_text_addr().  What do you think?
+The macro name also changed form NR_syscalls to __NR_syscalls for
+making the name convention same across all architecture. While
+__NR_syscalls isn't strictly part of the uapi, having it as part of
+the generated header to simplifies the implementation.
 
-Sounds good to me.
+Signed-off-by: Firoz Khan <firoz.khan@linaro.org>
+---
+ arch/sh/include/asm/ftrace.h         | 2 +-
+ arch/sh/include/uapi/asm/unistd_32.h | 2 +-
+ arch/sh/include/uapi/asm/unistd_64.h | 2 +-
+ arch/sh/kernel/cpu/sh5/entry.S       | 2 +-
+ arch/sh/kernel/entry-common.S        | 2 +-
+ 5 files changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/arch/sh/include/asm/ftrace.h b/arch/sh/include/asm/ftrace.h
+index b1c1dc0..968a9bb 100644
+--- a/arch/sh/include/asm/ftrace.h
++++ b/arch/sh/include/asm/ftrace.h
+@@ -5,7 +5,7 @@
+ #ifdef CONFIG_FUNCTION_TRACER
+ 
+ #define MCOUNT_INSN_SIZE	4 /* sizeof mcount call */
+-#define FTRACE_SYSCALL_MAX	NR_syscalls
++#define FTRACE_SYSCALL_MAX	__NR_syscalls
+ 
+ #ifndef __ASSEMBLY__
+ extern void mcount(void);
+diff --git a/arch/sh/include/uapi/asm/unistd_32.h b/arch/sh/include/uapi/asm/unistd_32.h
+index 58f04cf..2c4f087 100644
+--- a/arch/sh/include/uapi/asm/unistd_32.h
++++ b/arch/sh/include/uapi/asm/unistd_32.h
+@@ -396,6 +396,6 @@
+ #define __NR_preadv2		381
+ #define __NR_pwritev2		382
+ 
+-#define NR_syscalls 383
++#define __NR_syscalls 383
+ 
+ #endif /* __ASM_SH_UNISTD_32_H */
+diff --git a/arch/sh/include/uapi/asm/unistd_64.h b/arch/sh/include/uapi/asm/unistd_64.h
+index 6f809a5..9e6e8cb 100644
+--- a/arch/sh/include/uapi/asm/unistd_64.h
++++ b/arch/sh/include/uapi/asm/unistd_64.h
+@@ -416,6 +416,6 @@
+ #define __NR_preadv2		392
+ #define __NR_pwritev2		393
+ 
+-#define NR_syscalls 394
++#define __NR_syscalls 394
+ 
+ #endif /* __ASM_SH_UNISTD_64_H */
+diff --git a/arch/sh/kernel/cpu/sh5/entry.S b/arch/sh/kernel/cpu/sh5/entry.S
+index 0c8d037..d2ff022 100644
+--- a/arch/sh/kernel/cpu/sh5/entry.S
++++ b/arch/sh/kernel/cpu/sh5/entry.S
+@@ -1192,7 +1192,7 @@ system_call:
+ 	STI()
+ 
+ 	pta	syscall_allowed, tr0
+-	movi	NR_syscalls - 1, r4	/* Last valid */
++	movi	__NR_syscalls - 1, r4	/* Last valid */
+ 	bgeu/l	r4, r5, tr0
+ 
+ syscall_bad:
+diff --git a/arch/sh/kernel/entry-common.S b/arch/sh/kernel/entry-common.S
+index 28cc612..80ea3c4 100644
+--- a/arch/sh/kernel/entry-common.S
++++ b/arch/sh/kernel/entry-common.S
+@@ -396,7 +396,7 @@ syscall_exit:
+ #if !defined(CONFIG_CPU_SH2)
+ 1:	.long	TRA
+ #endif
+-2:	.long	NR_syscalls
++2:	.long	__NR_syscalls
+ 3:	.long	sys_call_table
+ 7:	.long	do_syscall_trace_enter
+ 8:	.long	do_syscall_trace_leave
+-- 
+1.9.1
+
