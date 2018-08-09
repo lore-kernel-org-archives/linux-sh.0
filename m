@@ -1,174 +1,513 @@
-From: Alexandre Ghiti <alex@ghiti.fr>
-Date: Mon, 06 Aug 2018 17:57:05 +0000
-Subject: [PATCH v6 05/11] hugetlb: Introduce generic version of huge_ptep_clear_flush
-Message-Id: <20180806175711.24438-6-alex@ghiti.fr>
+From: Firoz Khan <firoz.khan@linaro.org>
+Date: Thu, 09 Aug 2018 05:48:45 +0000
+Subject: [PATCH 3/3] sh: uapi header and system call table file generation
+Message-Id: <1533793005-4525-4-git-send-email-firoz.khan@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180806175711.24438-1-alex@ghiti.fr>
-In-Reply-To: <20180806175711.24438-1-alex@ghiti.fr>
+References: <1533793005-4525-1-git-send-email-firoz.khan@linaro.org>
+In-Reply-To: <1533793005-4525-1-git-send-email-firoz.khan@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mm@kvack.org, mike.kravetz@oracle.com, linux@armlinux.org.uk, catalin.marinas@arm.com, will.deacon@arm.com, tony.luck@intel.com, fenghua.yu@intel.com, ralf@linux-mips.org, paul.burton@mips.com, jhogan@kernel.org, jejb@parisc-linux.org, deller@gmx.de, benh@kernel.crashing.org, paulus@samba.org, mpe@ellerman.id.au, ysato@users.sourceforge.jp, dalias@libc.org, davem@davemloft.net, tglx@linutronix.de, mingo@redhat.com, hpa@zytor.com, x86@kernel.org, arnd@arndb.de, linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org, linux-ia64@vger.kernel.org, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-arch@vger.kernel.org
-Cc: Alexandre Ghiti <alex@ghiti.fr>
+To: linux-sh@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Steven Rostedt <rostedt@goodmis.org>, Ingo Molnar <mingo@redhat.com>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Philippe Ombredanne <pombredanne@nexb.com>, Thomas Gleixner <tglx@linutronix.de>, Kate Stewart <kstewart@linuxfoundation.org>
+Cc: y2038@lists.linaro.org, linux-kernel@vger.kernel.org, linux-arch@vger.kernel.org, arnd@arndb.de, deepa.kernel@gmail.com, marcin.juszkiewicz@linaro.org, firoz.khan@linaro.org
 
-arm, x86 architectures use the same version of
-huge_ptep_clear_flush, so move this generic implementation into
-asm-generic/hugetlb.h.
+System call table generation script must be run to generate
+unistd_64.h and syscall_table.h files. This patch will have
+changes which will invokes the script.
 
-Signed-off-by: Alexandre Ghiti <alex@ghiti.fr>
-Tested-by: Helge Deller <deller@gmx.de> # parisc
-Acked-by: Catalin Marinas <catalin.marinas@arm.com> # arm64
-Acked-by: Paul Burton <paul.burton@mips.com> # MIPS parts
-Reviewed-by: Luiz Capitulino <lcapitulino@redhat.com>
-Reviewed-by: Mike Kravetz <mike.kravetz@oracle.com>
+This patch will generate unistd_64.h and syscall_table.h
+files by the syscall table generation script invoked by
+arch/ia64/Makefile and the generated files against the
+removed files will be identical.
+
+The generated uapi header file will be included in
+uapi/asm/unistd.h and generated system call table support
+file will be included by ia64/kernel/syscall_table.S file.
+
+Signed-off-by: Firoz Khan <firoz.khan@linaro.org>
 ---
- arch/arm/include/asm/hugetlb-3level.h | 6 ------
- arch/arm64/include/asm/hugetlb.h      | 1 +
- arch/ia64/include/asm/hugetlb.h       | 1 +
- arch/mips/include/asm/hugetlb.h       | 1 +
- arch/parisc/include/asm/hugetlb.h     | 1 +
- arch/powerpc/include/asm/hugetlb.h    | 1 +
- arch/sh/include/asm/hugetlb.h         | 1 +
- arch/sparc/include/asm/hugetlb.h      | 1 +
- arch/x86/include/asm/hugetlb.h        | 6 ------
- include/asm-generic/hugetlb.h         | 8 ++++++++
- 10 files changed, 15 insertions(+), 12 deletions(-)
+ arch/sh/Makefile                |   3 +
+ arch/sh/include/asm/Kbuild      |   2 +
+ arch/sh/include/uapi/asm/Kbuild |   2 +
+ arch/sh/kernel/Makefile         |   2 +-
+ arch/sh/kernel/syscall.S        |   9 +
+ arch/sh/kernel/syscalls_32.S    | 402 ----------------------------------------
+ 6 files changed, 17 insertions(+), 403 deletions(-)
+ create mode 100644 arch/sh/kernel/syscall.S
+ delete mode 100644 arch/sh/kernel/syscalls_32.S
 
-diff --git a/arch/arm/include/asm/hugetlb-3level.h b/arch/arm/include/asm/hugetlb-3level.h
-index ad36e84b819a..b897541520ef 100644
---- a/arch/arm/include/asm/hugetlb-3level.h
-+++ b/arch/arm/include/asm/hugetlb-3level.h
-@@ -37,12 +37,6 @@ static inline pte_t huge_ptep_get(pte_t *ptep)
- 	return retval;
- }
+diff --git a/arch/sh/Makefile b/arch/sh/Makefile
+index 65300193..19ca795 100644
+--- a/arch/sh/Makefile
++++ b/arch/sh/Makefile
+@@ -228,6 +228,9 @@ archclean:
+ 	$(Q)$(MAKE) $(clean)=$(boot)
+ 	$(Q)$(MAKE) $(clean)=arch/sh/kernel/vsyscall
  
--static inline void huge_ptep_clear_flush(struct vm_area_struct *vma,
--					 unsigned long addr, pte_t *ptep)
--{
--	ptep_clear_flush(vma, addr, ptep);
--}
--
- static inline void huge_ptep_set_wrprotect(struct mm_struct *mm,
- 					   unsigned long addr, pte_t *ptep)
- {
-diff --git a/arch/arm64/include/asm/hugetlb.h b/arch/arm64/include/asm/hugetlb.h
-index 6ae0bcafe162..4c8dd488554d 100644
---- a/arch/arm64/include/asm/hugetlb.h
-+++ b/arch/arm64/include/asm/hugetlb.h
-@@ -71,6 +71,7 @@ extern pte_t huge_ptep_get_and_clear(struct mm_struct *mm,
- 				     unsigned long addr, pte_t *ptep);
- extern void huge_ptep_set_wrprotect(struct mm_struct *mm,
- 				    unsigned long addr, pte_t *ptep);
-+#define __HAVE_ARCH_HUGE_PTEP_CLEAR_FLUSH
- extern void huge_ptep_clear_flush(struct vm_area_struct *vma,
- 				  unsigned long addr, pte_t *ptep);
- #define __HAVE_ARCH_HUGE_PTE_CLEAR
-diff --git a/arch/ia64/include/asm/hugetlb.h b/arch/ia64/include/asm/hugetlb.h
-index 6719c74da0de..41b5f6adeee4 100644
---- a/arch/ia64/include/asm/hugetlb.h
-+++ b/arch/ia64/include/asm/hugetlb.h
-@@ -20,6 +20,7 @@ static inline int is_hugepage_only_range(struct mm_struct *mm,
- 		REGION_NUMBER((addr)+(len)-1) = RGN_HPAGE);
- }
- 
-+#define __HAVE_ARCH_HUGE_PTEP_CLEAR_FLUSH
- static inline void huge_ptep_clear_flush(struct vm_area_struct *vma,
- 					 unsigned long addr, pte_t *ptep)
- {
-diff --git a/arch/mips/include/asm/hugetlb.h b/arch/mips/include/asm/hugetlb.h
-index 0959cc5a41fa..7df1f116a3cc 100644
---- a/arch/mips/include/asm/hugetlb.h
-+++ b/arch/mips/include/asm/hugetlb.h
-@@ -48,6 +48,7 @@ static inline pte_t huge_ptep_get_and_clear(struct mm_struct *mm,
- 	return pte;
- }
- 
-+#define __HAVE_ARCH_HUGE_PTEP_CLEAR_FLUSH
- static inline void huge_ptep_clear_flush(struct vm_area_struct *vma,
- 					 unsigned long addr, pte_t *ptep)
- {
-diff --git a/arch/parisc/include/asm/hugetlb.h b/arch/parisc/include/asm/hugetlb.h
-index 6e281e1bb336..9afff26747a1 100644
---- a/arch/parisc/include/asm/hugetlb.h
-+++ b/arch/parisc/include/asm/hugetlb.h
-@@ -32,6 +32,7 @@ static inline int prepare_hugepage_range(struct file *file,
- 	return 0;
- }
- 
-+#define __HAVE_ARCH_HUGE_PTEP_CLEAR_FLUSH
- static inline void huge_ptep_clear_flush(struct vm_area_struct *vma,
- 					 unsigned long addr, pte_t *ptep)
- {
-diff --git a/arch/powerpc/include/asm/hugetlb.h b/arch/powerpc/include/asm/hugetlb.h
-index 970101cf9c82..0b02856aa85b 100644
---- a/arch/powerpc/include/asm/hugetlb.h
-+++ b/arch/powerpc/include/asm/hugetlb.h
-@@ -143,6 +143,7 @@ static inline pte_t huge_ptep_get_and_clear(struct mm_struct *mm,
- #endif
- }
- 
-+#define __HAVE_ARCH_HUGE_PTEP_CLEAR_FLUSH
- static inline void huge_ptep_clear_flush(struct vm_area_struct *vma,
- 					 unsigned long addr, pte_t *ptep)
- {
-diff --git a/arch/sh/include/asm/hugetlb.h b/arch/sh/include/asm/hugetlb.h
-index 08ee6c00b5e9..9abf9c86b769 100644
---- a/arch/sh/include/asm/hugetlb.h
-+++ b/arch/sh/include/asm/hugetlb.h
-@@ -25,6 +25,7 @@ static inline int prepare_hugepage_range(struct file *file,
- 	return 0;
- }
- 
-+#define __HAVE_ARCH_HUGE_PTEP_CLEAR_FLUSH
- static inline void huge_ptep_clear_flush(struct vm_area_struct *vma,
- 					 unsigned long addr, pte_t *ptep)
- {
-diff --git a/arch/sparc/include/asm/hugetlb.h b/arch/sparc/include/asm/hugetlb.h
-index 944e3a4bfaff..651a9593fcee 100644
---- a/arch/sparc/include/asm/hugetlb.h
-+++ b/arch/sparc/include/asm/hugetlb.h
-@@ -42,6 +42,7 @@ static inline int prepare_hugepage_range(struct file *file,
- 	return 0;
- }
- 
-+#define __HAVE_ARCH_HUGE_PTEP_CLEAR_FLUSH
- static inline void huge_ptep_clear_flush(struct vm_area_struct *vma,
- 					 unsigned long addr, pte_t *ptep)
- {
-diff --git a/arch/x86/include/asm/hugetlb.h b/arch/x86/include/asm/hugetlb.h
-index e9e7fef867ad..fd59673e7a0a 100644
---- a/arch/x86/include/asm/hugetlb.h
-+++ b/arch/x86/include/asm/hugetlb.h
-@@ -28,12 +28,6 @@ static inline int prepare_hugepage_range(struct file *file,
- 	return 0;
- }
- 
--static inline void huge_ptep_clear_flush(struct vm_area_struct *vma,
--					 unsigned long addr, pte_t *ptep)
--{
--	ptep_clear_flush(vma, addr, ptep);
--}
--
- static inline int huge_pte_none(pte_t pte)
- {
- 	return pte_none(pte);
-diff --git a/include/asm-generic/hugetlb.h b/include/asm-generic/hugetlb.h
-index 0f6f151780dd..ffa63fd8388d 100644
---- a/include/asm-generic/hugetlb.h
-+++ b/include/asm-generic/hugetlb.h
-@@ -65,4 +65,12 @@ static inline pte_t huge_ptep_get_and_clear(struct mm_struct *mm,
- }
- #endif
- 
-+#ifndef __HAVE_ARCH_HUGE_PTEP_CLEAR_FLUSH
-+static inline void huge_ptep_clear_flush(struct vm_area_struct *vma,
-+		unsigned long addr, pte_t *ptep)
-+{
-+	ptep_clear_flush(vma, addr, ptep);
-+}
-+#endif
++archheaders:
++	$(Q)$(MAKE) $(build)=arch/sh/kernel/syscalls all
 +
- #endif /* _ASM_GENERIC_HUGETLB_H */
+ define archhelp
+ 	@echo '  zImage 	           - Compressed kernel image'
+ 	@echo '  romImage	           - Compressed ROM image, if supported'
+diff --git a/arch/sh/include/asm/Kbuild b/arch/sh/include/asm/Kbuild
+index 46dd82a..a907c57 100644
+--- a/arch/sh/include/asm/Kbuild
++++ b/arch/sh/include/asm/Kbuild
+@@ -18,3 +18,5 @@ generic-y += serial.h
+ generic-y += sizes.h
+ generic-y += trace_clock.h
+ generic-y += xor.h
++
++generated-y += syscall_table.h
+\ No newline at end of file
+diff --git a/arch/sh/include/uapi/asm/Kbuild b/arch/sh/include/uapi/asm/Kbuild
+index ba4d39c..443b746 100644
+--- a/arch/sh/include/uapi/asm/Kbuild
++++ b/arch/sh/include/uapi/asm/Kbuild
+@@ -21,3 +21,5 @@ generic-y += statfs.h
+ generic-y += termbits.h
+ generic-y += termios.h
+ generic-y += ucontext.h
++
++generated-y += unistd_32.h
+\ No newline at end of file
+diff --git a/arch/sh/kernel/Makefile b/arch/sh/kernel/Makefile
+index dc80041..a042981 100644
+--- a/arch/sh/kernel/Makefile
++++ b/arch/sh/kernel/Makefile
+@@ -18,7 +18,7 @@ obj-y	:= debugtraps.o dma-nommu.o dumpstack.o 		\
+ 	   process_$(BITS).o ptrace.o ptrace_$(BITS).o			\
+ 	   reboot.o return_address.o					\
+ 	   setup.o signal_$(BITS).o sys_sh.o 				\
+-	   syscalls_$(BITS).o time.o topology.o traps.o			\
++	   syscall.o time.o topology.o traps.o			\
+ 	   traps_$(BITS).o unwinder.o
+ 
+ ifndef CONFIG_GENERIC_IOMAP
+diff --git a/arch/sh/kernel/syscall.S b/arch/sh/kernel/syscall.S
+new file mode 100644
+index 0000000..317a2a9
+--- /dev/null
++++ b/arch/sh/kernel/syscall.S
+@@ -0,0 +1,9 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++#include <linux/sys.h>
++#include <linux/linkage.h>
++
++#define __SYSCALL(nr, entry, nargs) .long entry
++
++.data
++ENTRY(sys_call_table)
++#include <asm/syscall_table.h>
+diff --git a/arch/sh/kernel/syscalls_32.S b/arch/sh/kernel/syscalls_32.S
+deleted file mode 100644
+index 254bc22..0000000
+--- a/arch/sh/kernel/syscalls_32.S
++++ /dev/null
+@@ -1,402 +0,0 @@
+-/*
+- * arch/sh/kernel/syscalls.S
+- *
+- * System call table for SuperH
+- *
+- *  Copyright (C) 1999, 2000, 2002  Niibe Yutaka
+- *  Copyright (C) 2003  Paul Mundt
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+- *
+- */
+-#include <linux/sys.h>
+-#include <linux/linkage.h>
+-
+-	.data
+-ENTRY(sys_call_table)
+-	.long sys_restart_syscall	/* 0  -  old "setup()" system call*/
+-	.long sys_exit
+-	.long sys_fork
+-	.long sys_read
+-	.long sys_write
+-	.long sys_open		/* 5 */
+-	.long sys_close
+-	.long sys_waitpid
+-	.long sys_creat
+-	.long sys_link
+-	.long sys_unlink		/* 10 */
+-	.long sys_execve
+-	.long sys_chdir
+-	.long sys_time
+-	.long sys_mknod
+-	.long sys_chmod		/* 15 */
+-	.long sys_lchown16
+-	.long sys_ni_syscall	/* old break syscall holder */
+-	.long sys_stat
+-	.long sys_lseek
+-	.long sys_getpid		/* 20 */
+-	.long sys_mount
+-	.long sys_oldumount
+-	.long sys_setuid16
+-	.long sys_getuid16
+-	.long sys_stime		/* 25 */
+-	.long sys_ptrace
+-	.long sys_alarm
+-	.long sys_fstat
+-	.long sys_pause
+-	.long sys_utime		/* 30 */
+-	.long sys_ni_syscall	/* old stty syscall holder */
+-	.long sys_ni_syscall	/* old gtty syscall holder */
+-	.long sys_access
+-	.long sys_nice
+-	.long sys_ni_syscall	/* 35 */		/* old ftime syscall holder */
+-	.long sys_sync
+-	.long sys_kill
+-	.long sys_rename
+-	.long sys_mkdir
+-	.long sys_rmdir		/* 40 */
+-	.long sys_dup
+-	.long sys_sh_pipe
+-	.long sys_times
+-	.long sys_ni_syscall	/* old prof syscall holder */
+-	.long sys_brk		/* 45 */
+-	.long sys_setgid16
+-	.long sys_getgid16
+-	.long sys_signal
+-	.long sys_geteuid16
+-	.long sys_getegid16	/* 50 */
+-	.long sys_acct
+-	.long sys_umount		/* recycled never used phys() */
+-	.long sys_ni_syscall	/* old lock syscall holder */
+-	.long sys_ioctl
+-	.long sys_fcntl		/* 55 */
+-	.long sys_ni_syscall	/* old mpx syscall holder */
+-	.long sys_setpgid
+-	.long sys_ni_syscall	/* old ulimit syscall holder */
+-	.long sys_ni_syscall	/* sys_olduname */
+-	.long sys_umask		/* 60 */
+-	.long sys_chroot
+-	.long sys_ustat
+-	.long sys_dup2
+-	.long sys_getppid
+-	.long sys_getpgrp		/* 65 */
+-	.long sys_setsid
+-	.long sys_sigaction
+-	.long sys_sgetmask
+-	.long sys_ssetmask
+-	.long sys_setreuid16	/* 70 */
+-	.long sys_setregid16
+-	.long sys_sigsuspend
+-	.long sys_sigpending
+-	.long sys_sethostname
+-	.long sys_setrlimit	/* 75 */
+-	.long sys_old_getrlimit
+-	.long sys_getrusage
+-	.long sys_gettimeofday
+-	.long sys_settimeofday
+-	.long sys_getgroups16	/* 80 */
+-	.long sys_setgroups16
+-	.long sys_ni_syscall	/* sys_oldselect */
+-	.long sys_symlink
+-	.long sys_lstat
+-	.long sys_readlink		/* 85 */
+-	.long sys_uselib
+-	.long sys_swapon
+-	.long sys_reboot
+-	.long sys_old_readdir
+-	.long old_mmap		/* 90 */
+-	.long sys_munmap
+-	.long sys_truncate
+-	.long sys_ftruncate
+-	.long sys_fchmod
+-	.long sys_fchown16		/* 95 */
+-	.long sys_getpriority
+-	.long sys_setpriority
+-	.long sys_ni_syscall	/* old profil syscall holder */
+-	.long sys_statfs
+-	.long sys_fstatfs		/* 100 */
+-	.long sys_ni_syscall	/* ioperm */
+-	.long sys_socketcall
+-	.long sys_syslog
+-	.long sys_setitimer
+-	.long sys_getitimer	/* 105 */
+-	.long sys_newstat
+-	.long sys_newlstat
+-	.long sys_newfstat
+-	.long sys_uname
+-	.long sys_ni_syscall	/* 110 */ /* iopl */
+-	.long sys_vhangup
+-	.long sys_ni_syscall	/* idle */
+-	.long sys_ni_syscall	/* vm86old */
+-	.long sys_wait4
+-	.long sys_swapoff		/* 115 */
+-	.long sys_sysinfo
+-	.long sys_ipc
+-	.long sys_fsync
+-	.long sys_sigreturn
+-	.long sys_clone		/* 120 */
+-	.long sys_setdomainname
+-	.long sys_newuname
+-	.long sys_cacheflush	/* x86: sys_modify_ldt */
+-	.long sys_adjtimex
+-	.long sys_mprotect		/* 125 */
+-	.long sys_sigprocmask
+-	.long sys_ni_syscall	/* old "create_module" */
+-	.long sys_init_module
+-	.long sys_delete_module
+-	.long sys_ni_syscall	/* 130: old "get_kernel_syms" */
+-	.long sys_quotactl
+-	.long sys_getpgid
+-	.long sys_fchdir
+-	.long sys_bdflush
+-	.long sys_sysfs		/* 135 */
+-	.long sys_personality
+-	.long sys_ni_syscall	/* for afs_syscall */
+-	.long sys_setfsuid16
+-	.long sys_setfsgid16
+-	.long sys_llseek		/* 140 */
+-	.long sys_getdents
+-	.long sys_select
+-	.long sys_flock
+-	.long sys_msync
+-	.long sys_readv		/* 145 */
+-	.long sys_writev
+-	.long sys_getsid
+-	.long sys_fdatasync
+-	.long sys_sysctl
+-	.long sys_mlock		/* 150 */
+-	.long sys_munlock
+-	.long sys_mlockall
+-	.long sys_munlockall
+-	.long sys_sched_setparam
+-	.long sys_sched_getparam   /* 155 */
+-	.long sys_sched_setscheduler
+-	.long sys_sched_getscheduler
+-	.long sys_sched_yield
+-	.long sys_sched_get_priority_max
+-	.long sys_sched_get_priority_min  /* 160 */
+-	.long sys_sched_rr_get_interval
+-	.long sys_nanosleep
+-	.long sys_mremap
+-	.long sys_setresuid16
+-	.long sys_getresuid16	/* 165 */
+-	.long sys_ni_syscall	/* vm86 */
+-	.long sys_ni_syscall	/* old "query_module" */
+-	.long sys_poll
+-	.long sys_ni_syscall	/* was nfsservctl */
+-	.long sys_setresgid16	/* 170 */
+-	.long sys_getresgid16
+-	.long sys_prctl
+-	.long sys_rt_sigreturn
+-	.long sys_rt_sigaction
+-	.long sys_rt_sigprocmask	/* 175 */
+-	.long sys_rt_sigpending
+-	.long sys_rt_sigtimedwait
+-	.long sys_rt_sigqueueinfo
+-	.long sys_rt_sigsuspend
+-	.long sys_pread_wrapper	   /* 180 */
+-	.long sys_pwrite_wrapper
+-	.long sys_chown16
+-	.long sys_getcwd
+-	.long sys_capget
+-	.long sys_capset           /* 185 */
+-	.long sys_sigaltstack
+-	.long sys_sendfile
+-	.long sys_ni_syscall	/* getpmsg */
+-	.long sys_ni_syscall	/* putpmsg */
+-	.long sys_vfork            /* 190 */
+-	.long sys_getrlimit
+-	.long sys_mmap2
+-	.long sys_truncate64
+-	.long sys_ftruncate64
+-	.long sys_stat64		/* 195 */
+-	.long sys_lstat64
+-	.long sys_fstat64
+-	.long sys_lchown
+-	.long sys_getuid
+-	.long sys_getgid		/* 200 */
+-	.long sys_geteuid
+-	.long sys_getegid
+-	.long sys_setreuid
+-	.long sys_setregid
+-	.long sys_getgroups	/* 205 */
+-	.long sys_setgroups
+-	.long sys_fchown
+-	.long sys_setresuid
+-	.long sys_getresuid
+-	.long sys_setresgid	/* 210 */
+-	.long sys_getresgid
+-	.long sys_chown
+-	.long sys_setuid
+-	.long sys_setgid
+-	.long sys_setfsuid		/* 215 */
+-	.long sys_setfsgid
+-	.long sys_pivot_root
+-	.long sys_mincore
+-	.long sys_madvise
+-	.long sys_getdents64	/* 220 */
+-	.long sys_fcntl64
+-	.long sys_ni_syscall	/* reserved for TUX */
+-	.long sys_ni_syscall	/* Reserved for Security */
+-	.long sys_gettid
+-	.long sys_readahead	/* 225 */
+-	.long sys_setxattr
+-	.long sys_lsetxattr
+-	.long sys_fsetxattr
+-	.long sys_getxattr
+-	.long sys_lgetxattr	/* 230 */
+-	.long sys_fgetxattr
+-	.long sys_listxattr
+-	.long sys_llistxattr
+-	.long sys_flistxattr
+-	.long sys_removexattr	/* 235 */
+-	.long sys_lremovexattr
+-	.long sys_fremovexattr
+-	.long sys_tkill
+-	.long sys_sendfile64
+-	.long sys_futex		/* 240 */
+-	.long sys_sched_setaffinity
+-	.long sys_sched_getaffinity
+-	.long sys_ni_syscall	/* reserved for set_thread_area */
+-	.long sys_ni_syscall	/* reserved for get_thread_area */
+-	.long sys_io_setup	/* 245 */
+-	.long sys_io_destroy
+-	.long sys_io_getevents
+-	.long sys_io_submit
+-	.long sys_io_cancel
+-	.long sys_fadvise64	/* 250 */
+-	.long sys_ni_syscall
+-	.long sys_exit_group
+-	.long sys_lookup_dcookie
+-	.long sys_epoll_create
+-	.long sys_epoll_ctl	/* 255 */
+-	.long sys_epoll_wait
+- 	.long sys_remap_file_pages
+- 	.long sys_set_tid_address
+- 	.long sys_timer_create
+- 	.long sys_timer_settime		/* 260 */
+- 	.long sys_timer_gettime
+- 	.long sys_timer_getoverrun
+- 	.long sys_timer_delete
+- 	.long sys_clock_settime
+- 	.long sys_clock_gettime		/* 265 */
+- 	.long sys_clock_getres
+- 	.long sys_clock_nanosleep
+-	.long sys_statfs64
+-	.long sys_fstatfs64
+-	.long sys_tgkill		/* 270 */
+-	.long sys_utimes
+- 	.long sys_fadvise64_64_wrapper
+-	.long sys_ni_syscall	/* Reserved for vserver */
+-	.long sys_mbind
+-	.long sys_get_mempolicy		/* 275 */
+-	.long sys_set_mempolicy
+-	.long sys_mq_open
+-	.long sys_mq_unlink
+-	.long sys_mq_timedsend
+-	.long sys_mq_timedreceive       /* 280 */
+-	.long sys_mq_notify
+-	.long sys_mq_getsetattr
+-	.long sys_kexec_load
+-	.long sys_waitid
+-	.long sys_add_key		/* 285 */
+-	.long sys_request_key
+-	.long sys_keyctl
+-	.long sys_ioprio_set
+-	.long sys_ioprio_get
+-	.long sys_inotify_init		/* 290 */
+-	.long sys_inotify_add_watch
+-	.long sys_inotify_rm_watch
+-	.long sys_ni_syscall
+-	.long sys_migrate_pages
+-	.long sys_openat		/* 295 */
+-	.long sys_mkdirat
+-	.long sys_mknodat
+-	.long sys_fchownat
+-	.long sys_futimesat
+-	.long sys_fstatat64		/* 300 */
+-	.long sys_unlinkat
+-	.long sys_renameat
+-	.long sys_linkat
+-	.long sys_symlinkat
+-	.long sys_readlinkat		/* 305 */
+-	.long sys_fchmodat
+-	.long sys_faccessat
+-	.long sys_pselect6
+-	.long sys_ppoll
+-	.long sys_unshare		/* 310 */
+-	.long sys_set_robust_list
+-	.long sys_get_robust_list
+-	.long sys_splice
+-	.long sys_sync_file_range
+-	.long sys_tee			/* 315 */
+-	.long sys_vmsplice
+-	.long sys_move_pages
+-	.long sys_getcpu
+-	.long sys_epoll_pwait
+-	.long sys_utimensat		/* 320 */
+-	.long sys_signalfd
+-	.long sys_timerfd_create
+-	.long sys_eventfd
+-	.long sys_fallocate
+-	.long sys_timerfd_settime	/* 325 */
+-	.long sys_timerfd_gettime
+-	.long sys_signalfd4
+-	.long sys_eventfd2
+-	.long sys_epoll_create1
+-	.long sys_dup3			/* 330 */
+-	.long sys_pipe2
+-	.long sys_inotify_init1
+-	.long sys_preadv
+-	.long sys_pwritev
+-	.long sys_rt_tgsigqueueinfo	/* 335 */
+-	.long sys_perf_event_open
+-	.long sys_fanotify_init
+-	.long sys_fanotify_mark
+-	.long sys_prlimit64
+-	/* Broken-out socket family */
+-	.long sys_socket		/* 340 */
+-	.long sys_bind
+-	.long sys_connect
+-	.long sys_listen
+-	.long sys_accept
+-	.long sys_getsockname	/* 345 */
+-	.long sys_getpeername
+-	.long sys_socketpair
+-	.long sys_send
+-	.long sys_sendto
+-	.long sys_recv			/* 350 */
+-	.long sys_recvfrom
+-	.long sys_shutdown
+-	.long sys_setsockopt
+-	.long sys_getsockopt
+-	.long sys_sendmsg		/* 355 */
+-	.long sys_recvmsg
+-	.long sys_recvmmsg
+-	.long sys_accept4
+-	.long sys_name_to_handle_at
+-	.long sys_open_by_handle_at	/* 360 */
+-	.long sys_clock_adjtime
+-	.long sys_syncfs
+-	.long sys_sendmmsg
+-	.long sys_setns
+-	.long sys_process_vm_readv	/* 365 */
+-	.long sys_process_vm_writev
+-	.long sys_kcmp
+-	.long sys_finit_module
+-	.long sys_sched_getattr
+-	.long sys_sched_setattr		/* 370 */
+-	.long sys_renameat2
+-	.long sys_seccomp
+-	.long sys_getrandom
+-	.long sys_memfd_create
+-	.long sys_bpf			/* 375 */
+-	.long sys_execveat
+-	.long sys_userfaultfd
+-	.long sys_membarrier
+-	.long sys_mlock2
+-	.long sys_copy_file_range	/* 380 */
+-	.long sys_preadv2
+-	.long sys_pwritev2
 -- 
-2.16.2
+1.9.1
 
