@@ -1,60 +1,63 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Mon, 06 Aug 2018 08:53:00 +0000
+From: Rob Landley <rob@landley.net>
+Date: Fri, 10 Aug 2018 18:18:34 +0000
 Subject: Re: [PATCH] sh: remove unneeded constructor.
-Message-Id: <CAK8P3a0JWqW-Z8EJ2BWL-Ez0=ombxrynmptxv7HT_WjSCFbV6w@mail.gmail.com>
+Message-Id: <a7d1d866-2d0f-2a1e-5275-ecdbb707bf84@landley.net>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20180731051519.101249-1-ysato@users.sourceforge.jp>
  <CAMuHMdUQReuzR=x54gnC1XdP77RrT1TaWoFFXUhUQ02A+giPqQ@mail.gmail.com>
- <87600us5k9.wl-ysato@users.sourceforge.jp> <20180804103550.GA3183@bombadil.infradead.org>
+ <87600us5k9.wl-ysato@users.sourceforge.jp>
+ <20180804103550.GA3183@bombadil.infradead.org>
  <CAMuHMdXsz-+zsxouaLP5tTKA46G34iAACSce+RXrD8AiiQc2+A@mail.gmail.com>
- <20180804105149.GB3183@bombadil.infradead.org> <4e9e1599-9dbf-75dc-561e-77d5cb063714@landley.net>
- <20180805163234.GR1392@brightrain.aerifal.cx> <61a157f1-7d43-6554-5d26-84d47ce6cabe@landley.net>
- <20180805233349.GS1392@brightrain.aerifal.cx> <CAMuHMdUgy8B4d4rAAvixB66cxaN9OiWxnXJKL17J1c47MfU76Q@mail.gmail.com>
+ <20180804105149.GB3183@bombadil.infradead.org>
+ <4e9e1599-9dbf-75dc-561e-77d5cb063714@landley.net>
+ <20180805163234.GR1392@brightrain.aerifal.cx>
+ <61a157f1-7d43-6554-5d26-84d47ce6cabe@landley.net>
+ <20180805233349.GS1392@brightrain.aerifal.cx>
+ <CAMuHMdUgy8B4d4rAAvixB66cxaN9OiWxnXJKL17J1c47MfU76Q@mail.gmail.com>
 In-Reply-To: <CAMuHMdUgy8B4d4rAAvixB66cxaN9OiWxnXJKL17J1c47MfU76Q@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Rich Felker <dalias@libc.org>, Rob Landley <rob@landley.net>, Matthew Wilcox <willy@infradead.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Linux-sh list <linux-sh@vger.kernel.org>, linux-arch <linux-arch@vger.kernel.org>
+To: Geert Uytterhoeven <geert@linux-m68k.org>, Rich Felker <dalias@libc.org>
+Cc: Matthew Wilcox <willy@infradead.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Linux-sh list <linux-sh@vger.kernel.org>, Linux-Arch <linux-arch@vger.kernel.org>, Arnd Bergmann <arnd@arndb.de>
 
-On Mon, Aug 6, 2018 at 8:57 AM Geert Uytterhoeven <geert@linux-m68k.org> wrote:
-> On Mon, Aug 6, 2018 at 1:34 AM Rich Felker <dalias@libc.org> wrote:
-> > On Sun, Aug 05, 2018 at 05:48:52PM -0500, Rob Landley wrote:
-> > > On 08/05/2018 11:32 AM, Rich Felker wrote:
-> >
-> > Yes, if there's a lot of arch-specific infrastructure for boot time
-> > setup, platform devices, behavior of mmu and cache, etc. that's the
-> > same for 32- and 64-bit "variants" of an arch, and especially if the
-> > 32-bit variant is mostly a legacy userspace that actually runs on
-> > 64-bit hardware that's capable of doing both, then there's a good
-> > argument for having them use a shared tree. That last part makes sense
-> > for SH -- I think we'd certainly want 32-bit userspace to be able to
-> > run on a 64-bit kernel. But it seems like it's possible to split that
-> > across archs since ARM did.
-> >
-> > Really it's sort of a historical accident/misfactoring that
-> > "user-to-kernel interface for ISA X" and "kernel internals for the
-> > machine arch using ISA X" are conflated as the same thing. If this had
-> > been done in a more clean manner the "compat syscall" stuff wouldn't
-> > be such a mess.
->
-> Obviously you know more about eventual 64-bit j-core support than me,
-> but if you intend to run 32-bit userspace on 64-bit j-core, having it
-> shared makes sense, especially if you'll maintain both.
->
+On 08/06/2018 01:57 AM, Geert Uytterhoeven wrote:
 > On the platform side, there will be a big difference between mostly legacy
 > SH and new DT-based j-core on the 32-bit bit side, and mostly new DT-based
 > j-core on the 64-bit side.
->
-> Arnd probably has a better view on this.
 
-I suspect arch/sh is in a similar state to what arch/arm was in when we added
-arch/arm64, where 90% of the code is there to deal with concepts that no longer
-apply to the new code base, in particular board support for pre-DT machines.
+At $DAYJOB I'm working on a sh7760 board with platform data (the open source
+release of the linux patches for which looks like it'll miss this merge window
+but might hit next one; they only want to run everything through the lawyers
+once so legal clearance waits until we're done fiddling).
 
-Starting a new arch/j64 would then make it look more like a clean arch/riscv/ or
-arch/nds32, which are the most recently added ones. However, if you do
-that, you should really start from scratch instead of copying the existing
-arch code, which was the mistake that arch/arm64 did.
+The device tree people break platform data support because they only test device
+tree, and then refuse patches to make the existing platform data work again. For
+example, I have this bookmarked:
 
-       Arnd
+  http://lkml.iu.edu/hypermail/linux/kernel/1807.0/05252.html
+
+In case I ever have time to go back and look at it, but I've moved on to other
+things already. (My current "circle back to poke at it as I have time" is trying
+to get DMAEngine working for sh7760 with the smc91x.c.) The fix I sent upstream
+for the LEDs is the fix we're shipping with. It's the simple, obvious, "make it
+work exactly like it used to work", and they went "nah, we don't want to do
+that, do something else that will require changing the platform data that worked
+before our commit". (See longish thread, above. The reply I bookmarked was the
+polite one.)
+
+I'm aware there's a problem regression testing old hardware, which limits
+conversion of that old hardware to device tree. But the people who _have_ old
+hardware continue to run old kernels because upgrading to current kernels
+doesn't _work_. And then when we make it work, our patches to make it work get
+rejected presumably on the grounds that the device tree people want to make not
+having already migrated everything to systemd painful. So current kernels won't
+"just work" for the _next_ person either, and nobody upgrades, and then if
+somebody tries their hand at converting a board to device tree there's no
+testers. Or if there are they go "it didn't boot" because of some unrelated
+regression elsewhere in the code because the kernel they're using (and still
+maintaining in-house) is years old...
+
+This is something like the eighth company I've seen that at. :P
+
+Rob
