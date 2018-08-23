@@ -1,7 +1,7 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 23 Aug 2018 02:51:43 +0000
-Subject: [PATCH v2 07/13] sh: sh4: convert to SPDX identifiers
-Message-Id: <87a7pddcnb.wl-kuninori.morimoto.gx@renesas.com>
+Date: Thu, 23 Aug 2018 02:52:19 +0000
+Subject: [PATCH v2 09/13] sh: sh5: convert to SPDX identifiers
+Message-Id: <877ekhdcmj.wl-kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <87k1ohdcqu.wl-kuninori.morimoto.gx@renesas.com>
 In-Reply-To: <87k1ohdcqu.wl-kuninori.morimoto.gx@renesas.com>
@@ -15,36 +15,32 @@ Cc: Linux-SH <linux-sh@vger.kernel.org>, Linux-Renesas <linux-renesas-soc@vger.k
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
 This patch updates license to use SPDX-License-Identifier
-instead of verbose license text,
-excepting ${LINUX}/arch/sh/kernel/cpu/sh4/softfloat.c
-which is not GPL license
+instead of verbose license text.
 
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Reviewed-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/sh/kernel/cpu/sh4/clock-sh4-202.c | 5 +----
- arch/sh/kernel/cpu/sh4/clock-sh4.c     | 5 +----
- arch/sh/kernel/cpu/sh4/fpu.c           | 5 +----
- arch/sh/kernel/cpu/sh4/perf_event.c    | 5 +----
- arch/sh/kernel/cpu/sh4/probe.c         | 5 +----
- arch/sh/kernel/cpu/sh4/setup-sh4-202.c | 5 +----
- arch/sh/kernel/cpu/sh4/setup-sh7750.c  | 5 +----
- arch/sh/kernel/cpu/sh4/setup-sh7760.c  | 5 +----
- arch/sh/kernel/cpu/sh4/sq.c            | 5 +----
- 9 files changed, 9 insertions(+), 36 deletions(-)
+ arch/sh/kernel/cpu/sh5/clock-sh5.c | 5 +----
+ arch/sh/kernel/cpu/sh5/entry.S     | 7 ++-----
+ arch/sh/kernel/cpu/sh5/fpu.c       | 5 +----
+ arch/sh/kernel/cpu/sh5/probe.c     | 5 +----
+ arch/sh/kernel/cpu/sh5/setup-sh5.c | 5 +----
+ arch/sh/kernel/cpu/sh5/switchto.S  | 7 ++-----
+ arch/sh/kernel/cpu/sh5/unwind.c    | 5 +----
+ 7 files changed, 9 insertions(+), 30 deletions(-)
 
-diff --git a/arch/sh/kernel/cpu/sh4/clock-sh4-202.c b/arch/sh/kernel/cpu/sh4/clock-sh4-202.c
-index 4b5bab5..c1cdef7 100644
---- a/arch/sh/kernel/cpu/sh4/clock-sh4-202.c
-+++ b/arch/sh/kernel/cpu/sh4/clock-sh4-202.c
+diff --git a/arch/sh/kernel/cpu/sh5/clock-sh5.c b/arch/sh/kernel/cpu/sh5/clock-sh5.c
+index c48b93d..43763c2 100644
+--- a/arch/sh/kernel/cpu/sh5/clock-sh5.c
++++ b/arch/sh/kernel/cpu/sh5/clock-sh5.c
 @@ -1,13 +1,10 @@
 +// SPDX-License-Identifier: GPL-2.0
  /*
-  * arch/sh/kernel/cpu/sh4/clock-sh4-202.c
+  * arch/sh/kernel/cpu/sh5/clock-sh5.c
   *
-  * Additional SH4-202 support for the clock framework
+  * SH-5 support for the clock framework
   *
-  *  Copyright (C) 2005  Paul Mundt
+  *  Copyright (C) 2008  Paul Mundt
 - *
 - * This file is subject to the terms and conditions of the GNU General Public
 - * License.  See the file "COPYING" in the main directory of this archive
@@ -52,72 +48,59 @@ index 4b5bab5..c1cdef7 100644
   */
  #include <linux/init.h>
  #include <linux/kernel.h>
-diff --git a/arch/sh/kernel/cpu/sh4/clock-sh4.c b/arch/sh/kernel/cpu/sh4/clock-sh4.c
-index 99e5ec8..ee3c553 100644
---- a/arch/sh/kernel/cpu/sh4/clock-sh4.c
-+++ b/arch/sh/kernel/cpu/sh4/clock-sh4.c
+diff --git a/arch/sh/kernel/cpu/sh5/entry.S b/arch/sh/kernel/cpu/sh5/entry.S
+index 0c8d037..de68ffd 100644
+--- a/arch/sh/kernel/cpu/sh5/entry.S
++++ b/arch/sh/kernel/cpu/sh5/entry.S
+@@ -1,13 +1,10 @@
+-/*
++/* SPDX-License-Identifier: GPL-2.0
++ *
+  * arch/sh/kernel/cpu/sh5/entry.S
+  *
+  * Copyright (C) 2000, 2001  Paolo Alberelli
+  * Copyright (C) 2004 - 2008  Paul Mundt
+  * Copyright (C) 2003, 2004  Richard Curnow
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ #include <linux/errno.h>
+ #include <linux/init.h>
+diff --git a/arch/sh/kernel/cpu/sh5/fpu.c b/arch/sh/kernel/cpu/sh5/fpu.c
+index 9f8713a..9218d9e 100644
+--- a/arch/sh/kernel/cpu/sh5/fpu.c
++++ b/arch/sh/kernel/cpu/sh5/fpu.c
 @@ -1,3 +1,4 @@
 +// SPDX-License-Identifier: GPL-2.0
  /*
-  * arch/sh/kernel/cpu/sh4/clock-sh4.c
+  * arch/sh/kernel/cpu/sh5/fpu.c
   *
-@@ -11,10 +12,6 @@
-  *  Copyright (C) 2000  Philipp Rumpf <prumpf@tux.org>
-  *  Copyright (C) 2002, 2003, 2004  Paul Mundt
-  *  Copyright (C) 2002  M. R. Brown  <mrbrown@linux-sh.org>
+@@ -7,10 +8,6 @@
+  *
+  * Started from SH4 version:
+  *   Copyright (C) 1999, 2000  Kaz Kojima & Niibe Yutaka
 - *
 - * This file is subject to the terms and conditions of the GNU General Public
 - * License.  See the file "COPYING" in the main directory of this archive
 - * for more details.
   */
- #include <linux/init.h>
- #include <linux/kernel.h>
-diff --git a/arch/sh/kernel/cpu/sh4/fpu.c b/arch/sh/kernel/cpu/sh4/fpu.c
-index 95fd2dcb..1ff56e5 100644
---- a/arch/sh/kernel/cpu/sh4/fpu.c
-+++ b/arch/sh/kernel/cpu/sh4/fpu.c
-@@ -1,10 +1,7 @@
-+// SPDX-License-Identifier: GPL-2.0
- /*
-  * Save/restore floating point context for signal handlers.
-  *
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
-- *
-  * Copyright (C) 1999, 2000  Kaz Kojima & Niibe Yutaka
-  * Copyright (C) 2006  ST Microelectronics Ltd. (denorm support)
-  *
-diff --git a/arch/sh/kernel/cpu/sh4/perf_event.c b/arch/sh/kernel/cpu/sh4/perf_event.c
-index fa4f724..db5847b 100644
---- a/arch/sh/kernel/cpu/sh4/perf_event.c
-+++ b/arch/sh/kernel/cpu/sh4/perf_event.c
-@@ -1,11 +1,8 @@
-+// SPDX-License-Identifier: GPL-2.0
- /*
-  * Performance events support for SH7750-style performance counters
-  *
-  *  Copyright (C) 2009  Paul Mundt
-- *
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
-  */
- #include <linux/kernel.h>
- #include <linux/init.h>
-diff --git a/arch/sh/kernel/cpu/sh4/probe.c b/arch/sh/kernel/cpu/sh4/probe.c
-index a521bcf..ef4dd62 100644
---- a/arch/sh/kernel/cpu/sh4/probe.c
-+++ b/arch/sh/kernel/cpu/sh4/probe.c
+ #include <linux/sched.h>
+ #include <linux/signal.h>
+diff --git a/arch/sh/kernel/cpu/sh5/probe.c b/arch/sh/kernel/cpu/sh5/probe.c
+index eca427c..9472501 100644
+--- a/arch/sh/kernel/cpu/sh5/probe.c
++++ b/arch/sh/kernel/cpu/sh5/probe.c
 @@ -1,3 +1,4 @@
 +// SPDX-License-Identifier: GPL-2.0
  /*
-  * arch/sh/kernel/cpu/sh4/probe.c
+  * arch/sh/kernel/cpu/sh5/probe.c
   *
 @@ -5,10 +6,6 @@
   *
-  * Copyright (C) 2001 - 2007  Paul Mundt
-  * Copyright (C) 2003  Richard Curnow
+  * Copyright (C) 2000, 2001  Paolo Alberelli
+  * Copyright (C) 2003 - 2007  Paul Mundt
 - *
 - * This file is subject to the terms and conditions of the GNU General Public
 - * License.  See the file "COPYING" in the main directory of this archive
@@ -125,52 +108,16 @@ index a521bcf..ef4dd62 100644
   */
  #include <linux/init.h>
  #include <linux/io.h>
-diff --git a/arch/sh/kernel/cpu/sh4/setup-sh4-202.c b/arch/sh/kernel/cpu/sh4/setup-sh4-202.c
-index 2623f82..a40ef35 100644
---- a/arch/sh/kernel/cpu/sh4/setup-sh4-202.c
-+++ b/arch/sh/kernel/cpu/sh4/setup-sh4-202.c
-@@ -1,12 +1,9 @@
-+// SPDX-License-Identifier: GPL-2.0
- /*
-  * SH4-202 Setup
-  *
-  *  Copyright (C) 2006  Paul Mundt
-  *  Copyright (C) 2009  Magnus Damm
-- *
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
-  */
- #include <linux/platform_device.h>
- #include <linux/init.h>
-diff --git a/arch/sh/kernel/cpu/sh4/setup-sh7750.c b/arch/sh/kernel/cpu/sh4/setup-sh7750.c
-index 57d3068..b37bda6 100644
---- a/arch/sh/kernel/cpu/sh4/setup-sh7750.c
-+++ b/arch/sh/kernel/cpu/sh4/setup-sh7750.c
-@@ -1,12 +1,9 @@
-+// SPDX-License-Identifier: GPL-2.0
- /*
-  * SH7091/SH7750/SH7750S/SH7750R/SH7751/SH7751R Setup
-  *
-  *  Copyright (C) 2006  Paul Mundt
-  *  Copyright (C) 2006  Jamie Lenehan
-- *
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
-  */
- #include <linux/platform_device.h>
- #include <linux/init.h>
-diff --git a/arch/sh/kernel/cpu/sh4/setup-sh7760.c b/arch/sh/kernel/cpu/sh4/setup-sh7760.c
-index e51fe17..86845da 100644
---- a/arch/sh/kernel/cpu/sh4/setup-sh7760.c
-+++ b/arch/sh/kernel/cpu/sh4/setup-sh7760.c
+diff --git a/arch/sh/kernel/cpu/sh5/setup-sh5.c b/arch/sh/kernel/cpu/sh5/setup-sh5.c
+index 084a9cc..41c1673 100644
+--- a/arch/sh/kernel/cpu/sh5/setup-sh5.c
++++ b/arch/sh/kernel/cpu/sh5/setup-sh5.c
 @@ -1,11 +1,8 @@
 +// SPDX-License-Identifier: GPL-2.0
  /*
-  * SH7760 Setup
+  * SH5-101/SH5-103 CPU Setup
   *
-  *  Copyright (C) 2006  Paul Mundt
+  *  Copyright (C) 2009  Paul Mundt
 - *
 - * This file is subject to the terms and conditions of the GNU General Public
 - * License.  See the file "COPYING" in the main directory of this archive
@@ -178,25 +125,43 @@ index e51fe17..86845da 100644
   */
  #include <linux/platform_device.h>
  #include <linux/init.h>
-diff --git a/arch/sh/kernel/cpu/sh4/sq.c b/arch/sh/kernel/cpu/sh4/sq.c
-index 4ca78ed..934ff84 100644
---- a/arch/sh/kernel/cpu/sh4/sq.c
-+++ b/arch/sh/kernel/cpu/sh4/sq.c
-@@ -1,3 +1,4 @@
+diff --git a/arch/sh/kernel/cpu/sh5/switchto.S b/arch/sh/kernel/cpu/sh5/switchto.S
+index 45c351b0..d1beff7 100644
+--- a/arch/sh/kernel/cpu/sh5/switchto.S
++++ b/arch/sh/kernel/cpu/sh5/switchto.S
+@@ -1,13 +1,10 @@
+-/*
++/* SPDX-License-Identifier: GPL-2.0
++ *
+  * arch/sh/kernel/cpu/sh5/switchto.S
+  *
+  * sh64 context switch
+  *
+  * Copyright (C) 2004  Richard Curnow
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+ */
+ 
+ 	.section .text..SHmedia32,"ax"
+diff --git a/arch/sh/kernel/cpu/sh5/unwind.c b/arch/sh/kernel/cpu/sh5/unwind.c
+index 3a4fed4..3cb0cd9 100644
+--- a/arch/sh/kernel/cpu/sh5/unwind.c
++++ b/arch/sh/kernel/cpu/sh5/unwind.c
+@@ -1,12 +1,9 @@
 +// SPDX-License-Identifier: GPL-2.0
  /*
-  * arch/sh/kernel/cpu/sh4/sq.c
+  * arch/sh/kernel/cpu/sh5/unwind.c
   *
-@@ -5,10 +6,6 @@
-  *
-  * Copyright (C) 2001 - 2006  Paul Mundt
-  * Copyright (C) 2001, 2002  M. R. Brown
+  * Copyright (C) 2004  Paul Mundt
+  * Copyright (C) 2004  Richard Curnow
 - *
 - * This file is subject to the terms and conditions of the GNU General Public
 - * License.  See the file "COPYING" in the main directory of this archive
 - * for more details.
   */
- #include <linux/init.h>
- #include <linux/cpu.h>
+ #include <linux/kallsyms.h>
+ #include <linux/kernel.h>
 -- 
 2.7.4
