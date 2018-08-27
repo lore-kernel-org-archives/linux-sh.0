@@ -1,238 +1,81 @@
-From: Alexandre Ghiti <alex@ghiti.fr>
-Date: Mon, 06 Aug 2018 17:57:09 +0000
-Subject: [PATCH v6 09/11] hugetlb: Introduce generic version of huge_ptep_set_wrprotect
-Message-Id: <20180806175711.24438-10-alex@ghiti.fr>
+From: Nicholas Piggin <npiggin@gmail.com>
+Date: Mon, 27 Aug 2018 07:43:43 +0000
+Subject: Re: [PATCH] treewide: remove current_text_addr
+Message-Id: <20180827161121.07aa9da6@roar.ozlabs.ibm.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180806175711.24438-1-alex@ghiti.fr>
-In-Reply-To: <20180806175711.24438-1-alex@ghiti.fr>
+References: <CAKwvOdkWL_2yTnJqM6n6R9UCPwY4iz-9BQYGN2MDAk9EzumUvA@mail.gmail.com>
+ <20180821202900.208417-1-ndesaulniers@google.com>
+ <207784db-4fcc-85e7-a0b2-fec26b7dab81@gmx.de>
+ <c62e4e00-fb8f-19a6-f3eb-bde60118cb1a@zytor.com>
+ <81141365-8168-799b-f34f-da5f92efaaf9@zytor.com>
+ <7f49eeab-a5cc-867f-58fb-abd266f9c2c9@zytor.com>
+ <6ca8a1d3-ff95-e9f4-f003-0a5af85bcb6f@zytor.com>
+ <CA+55aFzuSCKfmgT9efHuwtan+m3+bPh4BpwbZwn5gGX_H=Thuw@mail.gmail.com>
+In-Reply-To: <CA+55aFzuSCKfmgT9efHuwtan+m3+bPh4BpwbZwn5gGX_H=Thuw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mm@kvack.org, mike.kravetz@oracle.com, linux@armlinux.org.uk, catalin.marinas@arm.com, will.deacon@arm.com, tony.luck@intel.com, fenghua.yu@intel.com, ralf@linux-mips.org, paul.burton@mips.com, jhogan@kernel.org, jejb@parisc-linux.org, deller@gmx.de, benh@kernel.crashing.org, paulus@samba.org, mpe@ellerman.id.au, ysato@users.sourceforge.jp, dalias@libc.org, davem@davemloft.net, tglx@linutronix.de, mingo@redhat.com, hpa@zytor.com, x86@kernel.org, arnd@arndb.de, linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org, linux-ia64@vger.kernel.org, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-arch@vger.kernel.org
-Cc: Alexandre Ghiti <alex@ghiti.fr>
+To: linux-arm-kernel@lists.infradead.org
 
-arm, ia64, mips, powerpc, sh, x86 architectures use the same version
-of huge_ptep_set_wrprotect, so move this generic implementation into
-asm-generic/hugetlb.h.
+[ Trimmed the cc list because my SMTP didn't accept that many
+addresses. ]
 
-Signed-off-by: Alexandre Ghiti <alex@ghiti.fr>
-Tested-by: Helge Deller <deller@gmx.de> # parisc
-Acked-by: Catalin Marinas <catalin.marinas@arm.com> # arm64
-Acked-by: Paul Burton <paul.burton@mips.com> # MIPS parts
-Reviewed-by: Luiz Capitulino <lcapitulino@redhat.com>
-Reviewed-by: Mike Kravetz <mike.kravetz@oracle.com>
----
- arch/arm/include/asm/hugetlb-3level.h        | 6 ------
- arch/arm64/include/asm/hugetlb.h             | 1 +
- arch/ia64/include/asm/hugetlb.h              | 6 ------
- arch/mips/include/asm/hugetlb.h              | 6 ------
- arch/parisc/include/asm/hugetlb.h            | 1 +
- arch/powerpc/include/asm/book3s/32/pgtable.h | 6 ------
- arch/powerpc/include/asm/book3s/64/pgtable.h | 1 +
- arch/powerpc/include/asm/nohash/32/pgtable.h | 6 ------
- arch/powerpc/include/asm/nohash/64/pgtable.h | 1 +
- arch/sh/include/asm/hugetlb.h                | 6 ------
- arch/sparc/include/asm/hugetlb.h             | 1 +
- arch/x86/include/asm/hugetlb.h               | 6 ------
- include/asm-generic/hugetlb.h                | 8 ++++++++
- 13 files changed, 13 insertions(+), 42 deletions(-)
+On Sun, 26 Aug 2018 13:25:14 -0700
+Linus Torvalds <torvalds@linux-foundation.org> wrote:
 
-diff --git a/arch/arm/include/asm/hugetlb-3level.h b/arch/arm/include/asm/hugetlb-3level.h
-index b897541520ef..8247cd6a2ac6 100644
---- a/arch/arm/include/asm/hugetlb-3level.h
-+++ b/arch/arm/include/asm/hugetlb-3level.h
-@@ -37,12 +37,6 @@ static inline pte_t huge_ptep_get(pte_t *ptep)
- 	return retval;
- }
- 
--static inline void huge_ptep_set_wrprotect(struct mm_struct *mm,
--					   unsigned long addr, pte_t *ptep)
--{
--	ptep_set_wrprotect(mm, addr, ptep);
--}
--
- static inline int huge_ptep_set_access_flags(struct vm_area_struct *vma,
- 					     unsigned long addr, pte_t *ptep,
- 					     pte_t pte, int dirty)
-diff --git a/arch/arm64/include/asm/hugetlb.h b/arch/arm64/include/asm/hugetlb.h
-index 3e7f6e69b28d..f4f69ae5466e 100644
---- a/arch/arm64/include/asm/hugetlb.h
-+++ b/arch/arm64/include/asm/hugetlb.h
-@@ -48,6 +48,7 @@ extern int huge_ptep_set_access_flags(struct vm_area_struct *vma,
- #define __HAVE_ARCH_HUGE_PTEP_GET_AND_CLEAR
- extern pte_t huge_ptep_get_and_clear(struct mm_struct *mm,
- 				     unsigned long addr, pte_t *ptep);
-+#define __HAVE_ARCH_HUGE_PTEP_SET_WRPROTECT
- extern void huge_ptep_set_wrprotect(struct mm_struct *mm,
- 				    unsigned long addr, pte_t *ptep);
- #define __HAVE_ARCH_HUGE_PTEP_CLEAR_FLUSH
-diff --git a/arch/ia64/include/asm/hugetlb.h b/arch/ia64/include/asm/hugetlb.h
-index cbe296271030..49d1f7949f3a 100644
---- a/arch/ia64/include/asm/hugetlb.h
-+++ b/arch/ia64/include/asm/hugetlb.h
-@@ -27,12 +27,6 @@ static inline void huge_ptep_clear_flush(struct vm_area_struct *vma,
- {
- }
- 
--static inline void huge_ptep_set_wrprotect(struct mm_struct *mm,
--					   unsigned long addr, pte_t *ptep)
--{
--	ptep_set_wrprotect(mm, addr, ptep);
--}
--
- static inline int huge_ptep_set_access_flags(struct vm_area_struct *vma,
- 					     unsigned long addr, pte_t *ptep,
- 					     pte_t pte, int dirty)
-diff --git a/arch/mips/include/asm/hugetlb.h b/arch/mips/include/asm/hugetlb.h
-index 6ff2531cfb1d..3dcf5debf8c4 100644
---- a/arch/mips/include/asm/hugetlb.h
-+++ b/arch/mips/include/asm/hugetlb.h
-@@ -63,12 +63,6 @@ static inline int huge_pte_none(pte_t pte)
- 	return !val || (val = (unsigned long)invalid_pte_table);
- }
- 
--static inline void huge_ptep_set_wrprotect(struct mm_struct *mm,
--					   unsigned long addr, pte_t *ptep)
--{
--	ptep_set_wrprotect(mm, addr, ptep);
--}
--
- static inline int huge_ptep_set_access_flags(struct vm_area_struct *vma,
- 					     unsigned long addr,
- 					     pte_t *ptep, pte_t pte,
-diff --git a/arch/parisc/include/asm/hugetlb.h b/arch/parisc/include/asm/hugetlb.h
-index fb7e0fd858a3..9c3950ca2974 100644
---- a/arch/parisc/include/asm/hugetlb.h
-+++ b/arch/parisc/include/asm/hugetlb.h
-@@ -39,6 +39,7 @@ static inline void huge_ptep_clear_flush(struct vm_area_struct *vma,
- {
- }
- 
-+#define __HAVE_ARCH_HUGE_PTEP_SET_WRPROTECT
- void huge_ptep_set_wrprotect(struct mm_struct *mm,
- 					   unsigned long addr, pte_t *ptep);
- 
-diff --git a/arch/powerpc/include/asm/book3s/32/pgtable.h b/arch/powerpc/include/asm/book3s/32/pgtable.h
-index 02f5acd7ccc4..fc1511ce33a4 100644
---- a/arch/powerpc/include/asm/book3s/32/pgtable.h
-+++ b/arch/powerpc/include/asm/book3s/32/pgtable.h
-@@ -228,12 +228,6 @@ static inline void ptep_set_wrprotect(struct mm_struct *mm, unsigned long addr,
- {
- 	pte_update(ptep, (_PAGE_RW | _PAGE_HWWRITE), _PAGE_RO);
- }
--static inline void huge_ptep_set_wrprotect(struct mm_struct *mm,
--					   unsigned long addr, pte_t *ptep)
--{
--	ptep_set_wrprotect(mm, addr, ptep);
--}
--
- 
- static inline void __ptep_set_access_flags(struct vm_area_struct *vma,
- 					   pte_t *ptep, pte_t entry,
-diff --git a/arch/powerpc/include/asm/book3s/64/pgtable.h b/arch/powerpc/include/asm/book3s/64/pgtable.h
-index 42aafba7a308..7d957f7c47cd 100644
---- a/arch/powerpc/include/asm/book3s/64/pgtable.h
-+++ b/arch/powerpc/include/asm/book3s/64/pgtable.h
-@@ -451,6 +451,7 @@ static inline void ptep_set_wrprotect(struct mm_struct *mm, unsigned long addr,
- 		pte_update(mm, addr, ptep, 0, _PAGE_PRIVILEGED, 0);
- }
- 
-+#define __HAVE_ARCH_HUGE_PTEP_SET_WRPROTECT
- static inline void huge_ptep_set_wrprotect(struct mm_struct *mm,
- 					   unsigned long addr, pte_t *ptep)
- {
-diff --git a/arch/powerpc/include/asm/nohash/32/pgtable.h b/arch/powerpc/include/asm/nohash/32/pgtable.h
-index 7c46a98cc7f4..6cabbd04a6fa 100644
---- a/arch/powerpc/include/asm/nohash/32/pgtable.h
-+++ b/arch/powerpc/include/asm/nohash/32/pgtable.h
-@@ -249,12 +249,6 @@ static inline void ptep_set_wrprotect(struct mm_struct *mm, unsigned long addr,
- {
- 	pte_update(ptep, (_PAGE_RW | _PAGE_HWWRITE), _PAGE_RO);
- }
--static inline void huge_ptep_set_wrprotect(struct mm_struct *mm,
--					   unsigned long addr, pte_t *ptep)
--{
--	ptep_set_wrprotect(mm, addr, ptep);
--}
--
- 
- static inline void __ptep_set_access_flags(struct vm_area_struct *vma,
- 					   pte_t *ptep, pte_t entry,
-diff --git a/arch/powerpc/include/asm/nohash/64/pgtable.h b/arch/powerpc/include/asm/nohash/64/pgtable.h
-index dd0c7236208f..69fbf7e9b4db 100644
---- a/arch/powerpc/include/asm/nohash/64/pgtable.h
-+++ b/arch/powerpc/include/asm/nohash/64/pgtable.h
-@@ -238,6 +238,7 @@ static inline void ptep_set_wrprotect(struct mm_struct *mm, unsigned long addr,
- 	pte_update(mm, addr, ptep, _PAGE_RW, 0, 0);
- }
- 
-+#define __HAVE_ARCH_HUGE_PTEP_SET_WRPROTECT
- static inline void huge_ptep_set_wrprotect(struct mm_struct *mm,
- 					   unsigned long addr, pte_t *ptep)
- {
-diff --git a/arch/sh/include/asm/hugetlb.h b/arch/sh/include/asm/hugetlb.h
-index f1bbd255ee43..8df4004977b9 100644
---- a/arch/sh/include/asm/hugetlb.h
-+++ b/arch/sh/include/asm/hugetlb.h
-@@ -32,12 +32,6 @@ static inline void huge_ptep_clear_flush(struct vm_area_struct *vma,
- {
- }
- 
--static inline void huge_ptep_set_wrprotect(struct mm_struct *mm,
--					   unsigned long addr, pte_t *ptep)
--{
--	ptep_set_wrprotect(mm, addr, ptep);
--}
--
- static inline int huge_ptep_set_access_flags(struct vm_area_struct *vma,
- 					     unsigned long addr, pte_t *ptep,
- 					     pte_t pte, int dirty)
-diff --git a/arch/sparc/include/asm/hugetlb.h b/arch/sparc/include/asm/hugetlb.h
-index 2101ea217f33..c41754a113f3 100644
---- a/arch/sparc/include/asm/hugetlb.h
-+++ b/arch/sparc/include/asm/hugetlb.h
-@@ -32,6 +32,7 @@ static inline void huge_ptep_clear_flush(struct vm_area_struct *vma,
- {
- }
- 
-+#define __HAVE_ARCH_HUGE_PTEP_SET_WRPROTECT
- static inline void huge_ptep_set_wrprotect(struct mm_struct *mm,
- 					   unsigned long addr, pte_t *ptep)
- {
-diff --git a/arch/x86/include/asm/hugetlb.h b/arch/x86/include/asm/hugetlb.h
-index 59c056adb3c9..a3f781f7a264 100644
---- a/arch/x86/include/asm/hugetlb.h
-+++ b/arch/x86/include/asm/hugetlb.h
-@@ -13,12 +13,6 @@ static inline int is_hugepage_only_range(struct mm_struct *mm,
- 	return 0;
- }
- 
--static inline void huge_ptep_set_wrprotect(struct mm_struct *mm,
--					   unsigned long addr, pte_t *ptep)
--{
--	ptep_set_wrprotect(mm, addr, ptep);
--}
--
- static inline int huge_ptep_set_access_flags(struct vm_area_struct *vma,
- 					     unsigned long addr, pte_t *ptep,
- 					     pte_t pte, int dirty)
-diff --git a/include/asm-generic/hugetlb.h b/include/asm-generic/hugetlb.h
-index 6c0c8b0c71e0..9b9039845278 100644
---- a/include/asm-generic/hugetlb.h
-+++ b/include/asm-generic/hugetlb.h
-@@ -102,4 +102,12 @@ static inline int prepare_hugepage_range(struct file *file,
- }
- #endif
- 
-+#ifndef __HAVE_ARCH_HUGE_PTEP_SET_WRPROTECT
-+static inline void huge_ptep_set_wrprotect(struct mm_struct *mm,
-+		unsigned long addr, pte_t *ptep)
-+{
-+	ptep_set_wrprotect(mm, addr, ptep);
-+}
-+#endif
-+
- #endif /* _ASM_GENERIC_HUGETLB_H */
--- 
-2.16.2
+> On Sun, Aug 26, 2018 at 12:32 PM H. Peter Anvin <hpa@zytor.com> wrote:
+> >
+> > Here is a full-blown (user space) test program demonstrating the whole
+> > technique and how to use it.  
+> 
+> So while I agree that some _THIS_IP_ users might be better off being
+> converted to __builtin_return_address(0) at the caller, I also think
+> that the whole "notailcall" thing shows why that can easily be more
+> problematic than just our currnet _THIS_IP_ solution.
+> 
+> Honestly, I'd suggest:
+> 
+>  - just do the current_text_addr() to _THIS_IP_ conversion
+> 
+>  - keep _THIS_IP_ and make it be the generic one, and screw the whole
+> "some architectures might implement is better" issue. Nobody cares.
+> 
+>  - try to convince people to move away from the "we want the kernel
+> instruction pointer for the call" model entirely, and consider this a
+> "legacy" issue.
+> 
+> The whole instruction pointer is a nasty thing. We should discourage
+> it and not make complex infrastructure for it.
+> 
+> Instead, maybe we could encourage something like
+> 
+>   struct kernel_loc { const char *file; const char *fn; int line; };
+> 
+>   #define __GEN_LOC__(n) \
+>         ({ static const struct kernel_loc n = { \
+>                 __FILE__, __FUNCTION__, __LINE__  \
+>            }; &n; })
+> 
+>   #define _THIS_LOC_ __GEN_LOC__(__UNIQUE_ID(loc))
+> 
+> which is a hell of a lot nicer to use, and actually allows gcc to
+> optimize things (try it: if you pass a _THIS_LOC_ off to an inline
+> function, and that inline function uses the name and line number, gcc
+> will pick them up directly, without the extra structure dereference.
+> 
+> Wouldn't it be much nicer to pass these kinds of "location pointer"
+> around, rather than the nasty _THIS_IP_ thing?
 
+Seems nice. Do you even need this unique ID thing? AFAIKS the name
+would never really be useful.
+
+It could perhaps go into a cold data section too, I assume the common
+case is that you do not access it. Although gcc will end up putting
+the file and function names into regular rodata.
+
+Possibly we could add a printk specifier for it, pass it through to
+existing BUG, etc macros that want exactly this, etc. Makes a lot of
+sense.
+
+Thanks,
+Nick
