@@ -1,7 +1,7 @@
-From: ines_valdiviezo@hmha.gob.ec
-Date: Tue, 21 Aug 2018 01:23:37 +0000
-Subject: =?utf-8?b?V29obHTDpHRpZ2tlaXRzc3BlbmRlIGluIEjDtmhlIHZvbiDigqwgMi4wMDAu?= =?utf-8?q?000=2C00_EUR?=
-Message-Id: <20180821012340.CC67F2126131@mail.hmha.gob.ec>
+From: jose_mera@hmha.gob.ec
+Date: Tue, 28 Aug 2018 10:35:10 +0000
+Subject: =?utf-8?b?V29obHTDpHRpZ2tlaXRzc3BlbmRlIGluIEjDtmhlIHZvbiDigqwgMi4wMDAu?= =?utf-8?q?000=2C00?=
+Message-Id: <20180828103521.AEF4620A4236@mail.hmha.gob.ec>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20180506111415.6E1C2847C89@mail.ithb.ac.id>
 In-Reply-To: <20180506111415.6E1C2847C89@mail.ithb.ac.id>
@@ -12,16 +12,15 @@ To: linux-sh@vger.kernel.org
 
 Lieber Freund,
  
-Ich bin Herr Richard Wahl der Mega-Gewinner von $ 533M In Mega Millions Jackpot spende ich an 5 zufällige Personen, wenn Sie diese E-Mail erhalten, dann wurde Ihre E-Mail nach einem Spinball ausgewählt. Ich habe den größten Teil meines Vermögens auf eine Reihe von Wohltätigkeitsorganisationen und Organisationen verteilt. Ich habe mich freiwillig dazu entschieden, Ihnen den Betrag von € 2.000.000,00 zu spenden
-eine der ausgewählten 5, um meine Gewinne zu überprüfen, finden Sie auf meiner You Tube Seite unten.
+Ich bin Herr Tayeb Souami, New Jersey, Vereinigte Staaten von Amerika, der Mega-Gewinner von $ 315million In Mega Millions Jackpot, spende ich an 5 zufällige Personen, wenn Sie diese E-Mail erhalten, dann wurde Ihre E-Mail nach einem Spinball ausgewählt.Ich habe den größten Teil meines Vermögens auf eine Reihe von Wohltätigkeitsorganisationen und Organisationen verteilt.Ich habe mich freiwillig dazu entschieden, die Summe von € 2.000.000,00 an Sie als eine der ausgewählten 5 zu spenden, um meine Gewinne zu überprüfen, sehen Sie bitte meine You Tube Seite unten.
  
-UHR MICH HIER: https://www.youtube.com/watch?v=tne02ExNDrw
+UHR MICH HIER: https://www.youtube.com/watch?v=Z6ui8ZDQ6Ks
  
-Das ist dein Spendencode: [DF00430342018]
+Das ist dein Spendencode: [DFC530342018]
  
-Antworten Sie mit dem Spendencode auf diese E-Mail: oceanicfinancialhome@gmail.com
+Antworten Sie mit dem SPENDE-CODE an diese E-Mail: financialfundingcompany09@gmail.com
  
 Ich hoffe, Sie und Ihre Familie glücklich zu machen.
  
 Grüße
-Herr Richard Wahl
+Herr Tayeb Souami
