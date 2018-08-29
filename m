@@ -1,187 +1,209 @@
-From: Alexandre Ghiti <alex@ghiti.fr>
-Date: Mon, 06 Aug 2018 17:57:10 +0000
-Subject: [PATCH v6 10/11] hugetlb: Introduce generic version of huge_ptep_set_access_flags
-Message-Id: <20180806175711.24438-11-alex@ghiti.fr>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Wed, 29 Aug 2018 13:11:23 +0000
+Subject: [PATCH net-next 3/3] net: socket: implement 64-bit timestamps
+Message-Id: <20180829131123.3866959-1-arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180806175711.24438-1-alex@ghiti.fr>
-In-Reply-To: <20180806175711.24438-1-alex@ghiti.fr>
+References: <20180829130308.3504560-1-arnd@arndb.de>
+In-Reply-To: <20180829130308.3504560-1-arnd@arndb.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mm@kvack.org, mike.kravetz@oracle.com, linux@armlinux.org.uk, catalin.marinas@arm.com, will.deacon@arm.com, tony.luck@intel.com, fenghua.yu@intel.com, ralf@linux-mips.org, paul.burton@mips.com, jhogan@kernel.org, jejb@parisc-linux.org, deller@gmx.de, benh@kernel.crashing.org, paulus@samba.org, mpe@ellerman.id.au, ysato@users.sourceforge.jp, dalias@libc.org, davem@davemloft.net, tglx@linutronix.de, mingo@redhat.com, hpa@zytor.com, x86@kernel.org, arnd@arndb.de, linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org, linux-ia64@vger.kernel.org, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-arch@vger.kernel.org
-Cc: Alexandre Ghiti <alex@ghiti.fr>
+To: netdev@vger.kernel.org, "David S . Miller" <davem@davemloft.net>
+Cc: linux-arch@vger.kernel.org, y2038@lists.linaro.org, linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org, linux-mips@linux-mips.org, linux-sh@vger.kernel.org, viro@zeniv.linux.org.uk, tglx@linutronix.de, edumazet@google.com, Arnd Bergmann <arnd@arndb.de>
 
-arm, ia64, sh, x86 architectures use the same version
-of huge_ptep_set_access_flags, so move this generic implementation
-into asm-generic/hugetlb.h.
+The 'timeval' and 'timespec' data structures used for socket timestamps
+are going to be redefined in user space based on 64-bit time_t in future
+versions of the C library to deal with the y2038 overflow problem,
+which breaks the ABI definition.
 
-Signed-off-by: Alexandre Ghiti <alex@ghiti.fr>
-Tested-by: Helge Deller <deller@gmx.de> # parisc
-Acked-by: Catalin Marinas <catalin.marinas@arm.com> # arm64
-Acked-by: Paul Burton <paul.burton@mips.com> # MIPS parts
-Reviewed-by: Luiz Capitulino <lcapitulino@redhat.com>
-Reviewed-by: Mike Kravetz <mike.kravetz@oracle.com>
+Unlike many modern ioctl commands, SIOCGSTAMP and SIOCGSTAMPNS do not
+use the _IOR() macro to encode the size of the transferred data, so it
+remains ambiguous whether the application uses the old or new layout.
+
+The best workaround I could find is rather ugly: we redefine the command
+code based on the size of the respective data structure with a ternary
+operator. This lets it get evaluated as late as possible, hopefully after
+that structure is visible to the caller. We cannot use an #ifdef here,
+because inux/sockios.h might have been included before any libc header
+that could determine the size of time_t.
+
+The ioctl implementation now interprets the new command codes as always
+referring to the 64-bit structure on all architectures, while the old
+architecture specific command code still refers to the old architecture
+specific layout. The new command number is only used when they are
+actually different.
+
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
 ---
- arch/arm/include/asm/hugetlb-3level.h | 7 -------
- arch/arm64/include/asm/hugetlb.h      | 1 +
- arch/ia64/include/asm/hugetlb.h       | 7 -------
- arch/mips/include/asm/hugetlb.h       | 1 +
- arch/parisc/include/asm/hugetlb.h     | 1 +
- arch/powerpc/include/asm/hugetlb.h    | 1 +
- arch/sh/include/asm/hugetlb.h         | 7 -------
- arch/sparc/include/asm/hugetlb.h      | 1 +
- arch/x86/include/asm/hugetlb.h        | 7 -------
- include/asm-generic/hugetlb.h         | 9 +++++++++
- 10 files changed, 14 insertions(+), 28 deletions(-)
+ arch/alpha/include/uapi/asm/sockios.h  |  4 ++--
+ arch/mips/include/uapi/asm/sockios.h   |  4 ++--
+ arch/sh/include/uapi/asm/sockios.h     |  5 +++--
+ arch/xtensa/include/uapi/asm/sockios.h |  4 ++--
+ include/uapi/asm-generic/sockios.h     |  4 ++--
+ include/uapi/linux/sockios.h           | 21 +++++++++++++++++++++
+ net/socket.c                           | 22 +++++++++++++++++-----
+ 7 files changed, 49 insertions(+), 15 deletions(-)
 
-diff --git a/arch/arm/include/asm/hugetlb-3level.h b/arch/arm/include/asm/hugetlb-3level.h
-index 8247cd6a2ac6..54e4b097b1f5 100644
---- a/arch/arm/include/asm/hugetlb-3level.h
-+++ b/arch/arm/include/asm/hugetlb-3level.h
-@@ -37,11 +37,4 @@ static inline pte_t huge_ptep_get(pte_t *ptep)
- 	return retval;
- }
+diff --git a/arch/alpha/include/uapi/asm/sockios.h b/arch/alpha/include/uapi/asm/sockios.h
+index ba287e4b01bf..af92bc27c3be 100644
+--- a/arch/alpha/include/uapi/asm/sockios.h
++++ b/arch/alpha/include/uapi/asm/sockios.h
+@@ -11,7 +11,7 @@
+ #define SIOCSPGRP	_IOW('s', 8, pid_t)
+ #define SIOCGPGRP	_IOR('s', 9, pid_t)
  
--static inline int huge_ptep_set_access_flags(struct vm_area_struct *vma,
--					     unsigned long addr, pte_t *ptep,
--					     pte_t pte, int dirty)
--{
--	return ptep_set_access_flags(vma, addr, ptep, pte, dirty);
--}
--
- #endif /* _ASM_ARM_HUGETLB_3LEVEL_H */
-diff --git a/arch/arm64/include/asm/hugetlb.h b/arch/arm64/include/asm/hugetlb.h
-index f4f69ae5466e..80887abcef7f 100644
---- a/arch/arm64/include/asm/hugetlb.h
-+++ b/arch/arm64/include/asm/hugetlb.h
-@@ -42,6 +42,7 @@ extern pte_t arch_make_huge_pte(pte_t entry, struct vm_area_struct *vma,
- #define __HAVE_ARCH_HUGE_SET_HUGE_PTE_AT
- extern void set_huge_pte_at(struct mm_struct *mm, unsigned long addr,
- 			    pte_t *ptep, pte_t pte);
-+#define __HAVE_ARCH_HUGE_PTEP_SET_ACCESS_FLAGS
- extern int huge_ptep_set_access_flags(struct vm_area_struct *vma,
- 				      unsigned long addr, pte_t *ptep,
- 				      pte_t pte, int dirty);
-diff --git a/arch/ia64/include/asm/hugetlb.h b/arch/ia64/include/asm/hugetlb.h
-index 49d1f7949f3a..e9b42750fdf5 100644
---- a/arch/ia64/include/asm/hugetlb.h
-+++ b/arch/ia64/include/asm/hugetlb.h
-@@ -27,13 +27,6 @@ static inline void huge_ptep_clear_flush(struct vm_area_struct *vma,
- {
- }
+-#define SIOCGSTAMP	0x8906		/* Get stamp (timeval) */
+-#define SIOCGSTAMPNS	0x8907		/* Get stamp (timespec) */
++#define SIOCGSTAMP_OLD	0x8906		/* Get stamp (timeval) */
++#define SIOCGSTAMPNS_OLD 0x8907		/* Get stamp (timespec) */
  
--static inline int huge_ptep_set_access_flags(struct vm_area_struct *vma,
--					     unsigned long addr, pte_t *ptep,
--					     pte_t pte, int dirty)
--{
--	return ptep_set_access_flags(vma, addr, ptep, pte, dirty);
--}
--
- static inline pte_t huge_ptep_get(pte_t *ptep)
- {
- 	return *ptep;
-diff --git a/arch/mips/include/asm/hugetlb.h b/arch/mips/include/asm/hugetlb.h
-index 3dcf5debf8c4..120adc3b2ffd 100644
---- a/arch/mips/include/asm/hugetlb.h
-+++ b/arch/mips/include/asm/hugetlb.h
-@@ -63,6 +63,7 @@ static inline int huge_pte_none(pte_t pte)
- 	return !val || (val = (unsigned long)invalid_pte_table);
- }
+ #endif /* _ASM_ALPHA_SOCKIOS_H */
+diff --git a/arch/mips/include/uapi/asm/sockios.h b/arch/mips/include/uapi/asm/sockios.h
+index 5b40a88593fa..66f60234f290 100644
+--- a/arch/mips/include/uapi/asm/sockios.h
++++ b/arch/mips/include/uapi/asm/sockios.h
+@@ -21,7 +21,7 @@
+ #define SIOCSPGRP	_IOW('s', 8, pid_t)
+ #define SIOCGPGRP	_IOR('s', 9, pid_t)
  
-+#define __HAVE_ARCH_HUGE_PTEP_SET_ACCESS_FLAGS
- static inline int huge_ptep_set_access_flags(struct vm_area_struct *vma,
- 					     unsigned long addr,
- 					     pte_t *ptep, pte_t pte,
-diff --git a/arch/parisc/include/asm/hugetlb.h b/arch/parisc/include/asm/hugetlb.h
-index 9c3950ca2974..165b4e5a6f32 100644
---- a/arch/parisc/include/asm/hugetlb.h
-+++ b/arch/parisc/include/asm/hugetlb.h
-@@ -43,6 +43,7 @@ static inline void huge_ptep_clear_flush(struct vm_area_struct *vma,
- void huge_ptep_set_wrprotect(struct mm_struct *mm,
- 					   unsigned long addr, pte_t *ptep);
+-#define SIOCGSTAMP	0x8906		/* Get stamp (timeval) */
+-#define SIOCGSTAMPNS	0x8907		/* Get stamp (timespec) */
++#define SIOCGSTAMP_OLD	0x8906		/* Get stamp (timeval) */
++#define SIOCGSTAMPNS_OLD 0x8907		/* Get stamp (timespec) */
  
-+#define __HAVE_ARCH_HUGE_PTEP_SET_ACCESS_FLAGS
- int huge_ptep_set_access_flags(struct vm_area_struct *vma,
- 					     unsigned long addr, pte_t *ptep,
- 					     pte_t pte, int dirty);
-diff --git a/arch/powerpc/include/asm/hugetlb.h b/arch/powerpc/include/asm/hugetlb.h
-index 69c14ecac133..658bf7136a3c 100644
---- a/arch/powerpc/include/asm/hugetlb.h
-+++ b/arch/powerpc/include/asm/hugetlb.h
-@@ -137,6 +137,7 @@ static inline void huge_ptep_clear_flush(struct vm_area_struct *vma,
- 	flush_hugetlb_page(vma, addr);
- }
+ #endif /* _ASM_SOCKIOS_H */
+diff --git a/arch/sh/include/uapi/asm/sockios.h b/arch/sh/include/uapi/asm/sockios.h
+index 17313d2c3527..ef18a668456d 100644
+--- a/arch/sh/include/uapi/asm/sockios.h
++++ b/arch/sh/include/uapi/asm/sockios.h
+@@ -10,6 +10,7 @@
+ #define SIOCSPGRP	_IOW('s', 8, pid_t)
+ #define SIOCGPGRP	_IOR('s', 9, pid_t)
  
-+#define __HAVE_ARCH_HUGE_PTEP_SET_ACCESS_FLAGS
- extern int huge_ptep_set_access_flags(struct vm_area_struct *vma,
- 				      unsigned long addr, pte_t *ptep,
- 				      pte_t pte, int dirty);
-diff --git a/arch/sh/include/asm/hugetlb.h b/arch/sh/include/asm/hugetlb.h
-index 8df4004977b9..c87195ae0cfa 100644
---- a/arch/sh/include/asm/hugetlb.h
-+++ b/arch/sh/include/asm/hugetlb.h
-@@ -32,13 +32,6 @@ static inline void huge_ptep_clear_flush(struct vm_area_struct *vma,
- {
- }
+-#define SIOCGSTAMP	_IOR('s', 100, struct timeval) /* Get stamp (timeval) */
+-#define SIOCGSTAMPNS	_IOR('s', 101, struct timespec) /* Get stamp (timespec) */
++#define SIOCGSTAMP_OLD	_IOR('s', 100, struct timeval) /* Get stamp (timeval) */
++#define SIOCGSTAMPNS_OLD _IOR('s', 101, struct timespec) /* Get stamp (timespec) */
++
+ #endif /* __ASM_SH_SOCKIOS_H */
+diff --git a/arch/xtensa/include/uapi/asm/sockios.h b/arch/xtensa/include/uapi/asm/sockios.h
+index fb8ac3607189..1a1f58f4b75a 100644
+--- a/arch/xtensa/include/uapi/asm/sockios.h
++++ b/arch/xtensa/include/uapi/asm/sockios.h
+@@ -26,7 +26,7 @@
+ #define SIOCSPGRP	_IOW('s', 8, pid_t)
+ #define SIOCGPGRP	_IOR('s', 9, pid_t)
  
--static inline int huge_ptep_set_access_flags(struct vm_area_struct *vma,
--					     unsigned long addr, pte_t *ptep,
--					     pte_t pte, int dirty)
--{
--	return ptep_set_access_flags(vma, addr, ptep, pte, dirty);
--}
--
- static inline pte_t huge_ptep_get(pte_t *ptep)
- {
- 	return *ptep;
-diff --git a/arch/sparc/include/asm/hugetlb.h b/arch/sparc/include/asm/hugetlb.h
-index c41754a113f3..028a1465fbe7 100644
---- a/arch/sparc/include/asm/hugetlb.h
-+++ b/arch/sparc/include/asm/hugetlb.h
-@@ -40,6 +40,7 @@ static inline void huge_ptep_set_wrprotect(struct mm_struct *mm,
- 	set_huge_pte_at(mm, addr, ptep, pte_wrprotect(old_pte));
- }
+-#define SIOCGSTAMP	0x8906		/* Get stamp (timeval) */
+-#define SIOCGSTAMPNS	0x8907		/* Get stamp (timespec) */
++#define SIOCGSTAMP_OLD	0x8906		/* Get stamp (timeval) */
++#define SIOCGSTAMPNS_OLD 0x8907		/* Get stamp (timespec) */
  
-+#define __HAVE_ARCH_HUGE_PTEP_SET_ACCESS_FLAGS
- static inline int huge_ptep_set_access_flags(struct vm_area_struct *vma,
- 					     unsigned long addr, pte_t *ptep,
- 					     pte_t pte, int dirty)
-diff --git a/arch/x86/include/asm/hugetlb.h b/arch/x86/include/asm/hugetlb.h
-index a3f781f7a264..574d42eb081e 100644
---- a/arch/x86/include/asm/hugetlb.h
-+++ b/arch/x86/include/asm/hugetlb.h
-@@ -13,13 +13,6 @@ static inline int is_hugepage_only_range(struct mm_struct *mm,
- 	return 0;
- }
+ #endif	/* _XTENSA_SOCKIOS_H */
+diff --git a/include/uapi/asm-generic/sockios.h b/include/uapi/asm-generic/sockios.h
+index 64f658c7cec2..44fa3ed70483 100644
+--- a/include/uapi/asm-generic/sockios.h
++++ b/include/uapi/asm-generic/sockios.h
+@@ -8,7 +8,7 @@
+ #define FIOGETOWN	0x8903
+ #define SIOCGPGRP	0x8904
+ #define SIOCATMARK	0x8905
+-#define SIOCGSTAMP	0x8906		/* Get stamp (timeval) */
+-#define SIOCGSTAMPNS	0x8907		/* Get stamp (timespec) */
++#define SIOCGSTAMP_OLD	0x8906		/* Get stamp (timeval) */
++#define SIOCGSTAMPNS_OLD 0x8907		/* Get stamp (timespec) */
  
--static inline int huge_ptep_set_access_flags(struct vm_area_struct *vma,
--					     unsigned long addr, pte_t *ptep,
--					     pte_t pte, int dirty)
--{
--	return ptep_set_access_flags(vma, addr, ptep, pte, dirty);
--}
--
- static inline pte_t huge_ptep_get(pte_t *ptep)
- {
- 	return *ptep;
-diff --git a/include/asm-generic/hugetlb.h b/include/asm-generic/hugetlb.h
-index 9b9039845278..f3c99a03ee83 100644
---- a/include/asm-generic/hugetlb.h
-+++ b/include/asm-generic/hugetlb.h
-@@ -110,4 +110,13 @@ static inline void huge_ptep_set_wrprotect(struct mm_struct *mm,
- }
- #endif
+ #endif /* __ASM_GENERIC_SOCKIOS_H */
+diff --git a/include/uapi/linux/sockios.h b/include/uapi/linux/sockios.h
+index d393e9ed3964..7d1bccbbef78 100644
+--- a/include/uapi/linux/sockios.h
++++ b/include/uapi/linux/sockios.h
+@@ -19,6 +19,7 @@
+ #ifndef _LINUX_SOCKIOS_H
+ #define _LINUX_SOCKIOS_H
  
-+#ifndef __HAVE_ARCH_HUGE_PTEP_SET_ACCESS_FLAGS
-+static inline int huge_ptep_set_access_flags(struct vm_area_struct *vma,
-+		unsigned long addr, pte_t *ptep,
-+		pte_t pte, int dirty)
-+{
-+	return ptep_set_access_flags(vma, addr, ptep, pte, dirty);
-+}
++#include <asm/bitsperlong.h>
+ #include <asm/sockios.h>
+ 
+ /* Linux-specific socket ioctls */
+@@ -27,6 +28,26 @@
+ 
+ #define SOCK_IOC_TYPE	0x89
+ 
++/*
++ * the timeval/timespec data structure layout is defined by libc,
++ * so we need to cover both possible versions on 32-bit.
++ */
++/* Get stamp (timeval) */
++#define SIOCGSTAMP_NEW	 _IOR(SOCK_IOC_TYPE, 0x06, long long[2])
++/* Get stamp (timespec) */
++#define SIOCGSTAMPNS_NEW _IOR(SOCK_IOC_TYPE, 0x07, long long[2])
++
++#if __BITS_PER_LONG = 64 || (defined(__x86_64__) && defined(__ILP32__))
++/* on 64-bit and x32, avoid the ?: operator */
++#define SIOCGSTAMP	SIOCGSTAMP_OLD
++#define SIOCGSTAMPNS	SIOCGSTAMPNS_OLD
++#else
++#define SIOCGSTAMP	((sizeof(struct timeval))  = 8 ? \
++			 SIOCGSTAMP_OLD   : SIOCGSTAMP_NEW)
++#define SIOCGSTAMPNS	((sizeof(struct timespec)) = 8 ? \
++			 SIOCGSTAMPNS_OLD : SIOCGSTAMPNS_NEW)
 +#endif
 +
- #endif /* _ASM_GENERIC_HUGETLB_H */
+ /* Routing table calls. */
+ #define SIOCADDRT	0x890B		/* add routing table entry	*/
+ #define SIOCDELRT	0x890C		/* delete routing table entry	*/
+diff --git a/net/socket.c b/net/socket.c
+index 6814e8dc8af1..9762e7d5378b 100644
+--- a/net/socket.c
++++ b/net/socket.c
+@@ -1069,14 +1069,24 @@ static long sock_ioctl(struct file *file, unsigned cmd, unsigned long arg)
+ 
+ 			err = open_related_ns(&net->ns, get_net_ns);
+ 			break;
+-		case SIOCGSTAMP:
+-		case SIOCGSTAMPNS:
++		case SIOCGSTAMP_OLD:
++		case SIOCGSTAMPNS_OLD:
+ 			if (!sock->ops->gettstamp) {
+ 				err = -ENOIOCTLCMD;
+ 				break;
+ 			}
+ 			err = sock->ops->gettstamp(sock, argp,
+-						   cmd = SIOCGSTAMP, false);
++						   cmd = SIOCGSTAMP_OLD,
++						   !IS_ENABLED(CONFIG_64BIT));
++		case SIOCGSTAMP_NEW:
++		case SIOCGSTAMPNS_NEW:
++			if (!sock->ops->gettstamp) {
++				err = -ENOIOCTLCMD;
++				break;
++			}
++			err = sock->ops->gettstamp(sock, argp,
++						   cmd = SIOCGSTAMP_NEW,
++						   false);
+ 			break;
+ 		default:
+ 			err = sock_do_ioctl(net, sock, cmd, arg);
+@@ -3095,8 +3105,8 @@ static int compat_sock_ioctl_trans(struct file *file, struct socket *sock,
+ 	case SIOCADDRT:
+ 	case SIOCDELRT:
+ 		return routing_ioctl(net, sock, cmd, argp);
+-	case SIOCGSTAMP:
+-	case SIOCGSTAMPNS:
++	case SIOCGSTAMP_OLD:
++	case SIOCGSTAMPNS_OLD:
+ 		if (!sock->ops->gettstamp)
+ 			return -ENOIOCTLCMD;
+ 		return sock->ops->gettstamp(sock, argp, cmd = SIOCGSTAMP,
+@@ -3119,6 +3129,8 @@ static int compat_sock_ioctl_trans(struct file *file, struct socket *sock,
+ 	case SIOCADDDLCI:
+ 	case SIOCDELDLCI:
+ 	case SIOCGSKNS:
++	case SIOCGSTAMP_NEW:
++	case SIOCGSTAMPNS_NEW:
+ 		return sock_ioctl(file, cmd, arg);
+ 
+ 	case SIOCGIFFLAGS:
 -- 
-2.16.2
-
+2.18.0
