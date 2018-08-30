@@ -1,77 +1,42 @@
-From: Martin Schwidefsky <schwidefsky@de.ibm.com>
-Date: Mon, 06 Aug 2018 05:24:54 +0000
-Subject: Re: Getting the instruction pointer on a per arch basis
-Message-Id: <20180806072454.6efb5973@mschwideX1>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 30 Aug 2018 19:19:24 +0000
+Subject: [PATCH] clocksource: sh_cmt: fixup for 64-bit machines
+Message-Id: <8aa6d2cd-68f9-eae4-cba0-222c1511eb9d@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <CAKwvOdku_BOi6m2ugaef6=8+VH_+KAHH-Ch+uZZqMr8WAKARCw@mail.gmail.com>
-        <CAKwvOdn1Ri2VP9hNfKwQ3WMzL278e7-3DGusZc1cwQZbk9H6nw@mail.gmail.com>
-        <20180801074051.11fa62b3@mschwideX1>
-        <CAKwvOdnAzsF_vXH4UQiQd9HwjUju_sU9R4523zxqJSphuut-7Q@mail.gmail.com>
-In-Reply-To: <CAKwvOdnAzsF_vXH4UQiQd9HwjUju_sU9R4523zxqJSphuut-7Q@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Nick Desaulniers <ndesaulniers@google.com>
-Cc: heiko.carstens@de.ibm.com, Yoshinori Sato <ysato@users.sourceforge.jp>, dalias@libc.org, tony.luck@intel.com, fenghua.yu@intel.com, msalter@redhat.com, jacquiot.aurelien@gmail.com, "David S. Miller" <davem@davemloft.net>, Thomas Gleixner <tglx@linutronix.de>, mingo@redhat.com, Pirama Arumuga Nainar <pirama@google.com>, Greg Hackmann <ghackmann@google.com>, Mark Salyzyn <salyzyn@google.com>, LKML <linux-kernel@vger.kernel.org>, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, linux-c6x-dev@linux-c6x.org, sparclinux@vger.kernel.org
+To: Daniel Lezcano <daniel.lezcano@linaro.org>, Thomas Gleixner <tglx@linutronix.de>, linux-renesas-soc@vger.kernel.org
+Cc: Vladimir Barinov <vladimir.barinov@cogentembedded.com>, Andrey Gusakov <andrey.gusakov@cogentembedded.com>, Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>, linux-sh@vger.kernel.org
 
-On Wed, 1 Aug 2018 11:21:13 -0700
-Nick Desaulniers <ndesaulniers@google.com> wrote:
+When trying to use CMT for clockevents on R-Car gen3 SoCs, I noticed that
+the maximum delta (in ns) for the broadcast timer was diplayed as 1000 in
+/proc/timer_list.  It turned out that when calculating it, the driver did
+shift left 1 by 32 (causing what I think was undefined behaviour) getting
+1 as a result. Using 1UL instead fixed the maximum delta and did even fix
+switching an active clocksource to a CMT channel (which caused the system
+to go non-interactive before).
 
-> On Tue, Jul 31, 2018 at 10:41 PM Martin Schwidefsky
-> <schwidefsky@de.ibm.com> wrote:
-> >
-> > On Tue, 31 Jul 2018 16:09:06 -0700
-> > Nick Desaulniers <ndesaulniers@google.com> wrote:
-> >  
-> > > + More maintainers and lists for visibility
-> > >
-> > > On Tue, Jul 31, 2018 at 3:32 PM Nick Desaulniers
-> > > <ndesaulniers@google.com> wrote:  
-> > > >
-> > > > I'm currently looking into cleaning up the code duplication between
-> > > > current_text_addr() and _THIS_IP_, virtually every implementation of
-> > > > current_text_addr() and _THIS_IP_ itself are basically:
-> > > >
-> > > > #define _THIS_IP_ ({ __label__ _l; _l: &&_l; })
-> > > >
-> > > > For a few arch's, they have inline assembly instead (for
-> > > > current_text_addr()).  Examples:
-> > > > * s390
-> > > > * sh
-> > > > * ia64
-> > > > * x86 (um and 32b)
-> > > > * c6x
-> > > > * sparc
-> > > >
-> > > > I have a patch that cuts down on the duplication, but I don't
-> > > > understand why the few arch specific implementations are necessary.  I
-> > > > could reduce the duplication further if it's ok to just use the
-> > > > statement expression.
-> > > >
-> > > > Does anyone know why this is the case?  
-> >
-> > For s390 it is just that we did not know about the label trick when we
-> > introduced the define. The inline has an advantage though, the code
-> > generated with the label trick is using a LARL instruction which is
-> > 4 bytes, the inline assembly uses a BASR which is 2 bytes.
-> >
-> > If I use the label method in current_text_addr() the size of vmlinux
-> > increases by a small amount:
-> >
-> > add/remove: 33/13 grow/shrink: 101/48 up/down: 11941/-8887 (3054)  
-> 
-> Thanks for the measurements.  Was this output produced by a utility?
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Yes, ./scripts/bloat-o-meter
+---
+This patch is against the 'tip.git' repo's 'timers/core' branch.
 
-> > This is acceptable though, I would not mind if _THIS_IP_ and
-> > current_text_addr use a common definition using labels.  
-> 
-> Thank you for this feedback Martin, I appreciate it.  Patches soon.
+I am not sure whether the CMT driver was ever used on SH64; on R-Car gen3
+(ARM64) I'm only enabling this driver now, so not sure how urgent is this...
 
--- 
-blue skies,
-   Martin.
+ drivers/clocksource/sh_cmt.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-"Reality continues to ruin my life." - Calvin.
-
+Index: tip/drivers/clocksource/sh_cmt.c
+=================================--- tip.orig/drivers/clocksource/sh_cmt.c
++++ tip/drivers/clocksource/sh_cmt.c
+@@ -891,7 +891,7 @@ static int sh_cmt_setup_channel(struct s
+ 	if (cmt->info->width = (sizeof(ch->max_match_value) * 8))
+ 		ch->max_match_value = ~0;
+ 	else
+-		ch->max_match_value = (1 << cmt->info->width) - 1;
++		ch->max_match_value = (1UL << cmt->info->width) - 1;
+ 
+ 	ch->match_value = ch->max_match_value;
+ 	raw_spin_lock_init(&ch->lock);
