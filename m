@@ -1,28 +1,43 @@
-From: Michal Hocko <mhocko@kernel.org>
-Date: Wed, 26 Sep 2018 09:27:54 +0000
-Subject: Re: [PATCH 07/30] memblock: remove _virt from APIs returning virtual address
-Message-Id: <20180926092754.GN6278@dhcp22.suse.cz>
+From: Rob Herring <robh@kernel.org>
+Date: Wed, 05 Sep 2018 19:37:32 +0000
+Subject: [PATCH 15/21] SH: use for_each_of_cpu_node iterator
+Message-Id: <20180905193738.19325-16-robh@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1536927045-23536-1-git-send-email-rppt@linux.vnet.ibm.com>
- <1536927045-23536-8-git-send-email-rppt@linux.vnet.ibm.com>
-In-Reply-To: <1536927045-23536-8-git-send-email-rppt@linux.vnet.ibm.com>
+References: <20180905193738.19325-1-robh@kernel.org>
+In-Reply-To: <20180905193738.19325-1-robh@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mike Rapoport <rppt@linux.vnet.ibm.com>
-Cc: linux-mm@kvack.org, Andrew Morton <akpm@linux-foundation.org>, Catalin Marinas <catalin.marinas@arm.com>, Chris Zankel <chris@zankel.net>, "David S. Miller" <davem@davemloft.net>, Geert Uytterhoeven <geert@linux-m68k.org>, Greentime Hu <green.hu@gmail.com>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Guan Xuetao <gxt@pku.edu.cn>, Ingo Molnar <mingo@redhat.com>, "James E.J. Bottomley" <jejb@parisc-linux.org>, Jonas Bonn <jonas@southpole.se>, Jonathan Corbet <corbet@lwn.net>, Ley Foon Tan <lftan@altera.com>, Mark Salter <msalter@redhat.com>, Martin Schwidefsky <schwidefsky@de.ibm.com>, Matt Turner <mattst88@gmail.com>, Michael Ellerman <mpe@ellerman.id.au>, Michal Simek <monstr@monstr.eu>, Palmer Dabbelt <palmer@sifive.com>, Paul Burton <paul.burton@mips.com>, Richard Kuo <rkuo@codeaurora.org>, Richard Weinberger <richard@nod.at>, Rich Felker <dalias@libc.org>, Russell King <linux@armlinux.org.uk>, Serge Semin <fancer.lancer@gmail.com>, Thomas Gleixner <tglx@linutronix.de>, Tony Luck <tony.luck@intel.com>, Vineet Gupta <vgupta@synopsys.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-alpha@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-c6x-dev@linux-c6x.org, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-um@lists.infradead.org, nios2-dev@lists.rocketboards.org, openrisc@lists.librecores.org, sparclinux@vger.kernel.org, uclinux-h8-devel@lists.sourceforge.jp
+To: devicetree@vger.kernel.org, linux-kernel@vger.kernel.org
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
 
-On Fri 14-09-18 15:10:22, Mike Rapoport wrote:
-> The conversion is done using
-> 
-> sed -i 's@memblock_virt_alloc@memblock_alloc@g' \
-> 	$(git grep -l memblock_virt_alloc)
-> 
-> Signed-off-by: Mike Rapoport <rppt@linux.vnet.ibm.com>
+Use the for_each_of_cpu_node iterator to iterate over cpu nodes. This
+has the side effect of defaulting to iterating using "cpu" node names in
+preference to the deprecated (for FDT) device_type = "cpu".
 
-As I've said earlier, I am not entirely thrilled by this change. It is
-unnecessary churn. So if nothing else just add a note _why_ you think
-this is better.
--- 
-Michal Hocko
-SUSE Labs
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+Cc: linux-sh@vger.kernel.org
+Signed-off-by: Rob Herring <robh@kernel.org>
+---
+Please ack and I will take via the DT tree. This is dependent on the
+first 2 patches.
+
+ arch/sh/boards/of-generic.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/sh/boards/of-generic.c b/arch/sh/boards/of-generic.c
+index 26789ad28193..cde370cad4ae 100644
+--- a/arch/sh/boards/of-generic.c
++++ b/arch/sh/boards/of-generic.c
+@@ -64,7 +64,7 @@ static void sh_of_smp_probe(void)
+
+ 	init_cpu_possible(cpumask_of(0));
+
+-	for_each_node_by_type(np, "cpu") {
++	for_each_of_cpu_node(np) {
+ 		const __be32 *cell = of_get_property(np, "reg", NULL);
+ 		u64 id = -1;
+ 		if (cell) id = of_read_number(cell, of_n_addr_cells(np));
+--
+2.17.1
