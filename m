@@ -1,17 +1,46 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 05 Sep 2018 08:49:36 +0000
-Subject: [PATCH 1/4] spi: sh-msiof: Fix invalid SPI use during system suspend
-Message-Id: <20180905084939.7401-2-geert+renesas@glider.be>
+From: Mark Brown <broonie@kernel.org>
+Date: Wed, 05 Sep 2018 11:46:12 +0000
+Subject: Applied "spi: sh-msiof: Fix invalid SPI use during system suspend" to the spi tree
+Message-Id: <20180905114612.5DC1711229D0@debutante.sirena.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180905084939.7401-1-geert+renesas@glider.be>
-In-Reply-To: <20180905084939.7401-1-geert+renesas@glider.be>
+In-Reply-To: <20180905084939.7401-2-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
-Cc: Gaku Inami <gaku.inami.xw@bp.renesas.com>, Hiromitsu Yamasaki <hiromitsu.yamasaki.ym@renesas.com>, linux-spi@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+Cc: Hiromitsu Yamasaki <hiromitsu.yamasaki.ym@renesas.com>, Geert Uytterhoeven <geert+renesas@glider.be>, Mark Brown <broonie@kernel.org>, stable@vger.kernel.orgMark Brown <broonie@kernel.org>Hiromitsu Yamasaki <hiromitsu.yamasaki.ym@renesas.com>, linux-spi@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.orgGeert Uytterhoeven <geert+renesas@glider.be>linux-spi@vger.kernel.org
 
+The patch
+
+   spi: sh-msiof: Fix invalid SPI use during system suspend
+
+has been applied to the spi tree at
+
+   https://git.kernel.org/pub/scm/linux/kernel/git/broonie/spi.git 
+
+All being well this means that it will be integrated into the linux-next
+tree (usually sometime in the next 24 hours) and sent to Linus during
+the next merge window (or sooner if it is a bug fix), however if
+problems are discovered then the patch may be dropped or reverted.  
+
+You may get further e-mails resulting from automated or manual testing
+and review of the tree, please engage with people reporting problems and
+send followup patches addressing any issues that are reported if needed.
+
+If any updates are required or you are submitting further changes they
+should be sent as incremental updates against current git, existing
+patches will not be replaced.
+
+Please add any relevant lists and maintainers to the CCs when replying
+to this mail.
+
+Thanks,
+Mark
+
+From ffa69d6a16f686efe45269342474e421f2aa58b2 Mon Sep 17 00:00:00 2001
 From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+Date: Wed, 5 Sep 2018 10:49:36 +0200
+Subject: [PATCH] spi: sh-msiof: Fix invalid SPI use during system suspend
 
 If the SPI queue is running during system suspend, the system may lock
 up.
@@ -25,12 +54,14 @@ Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
 Signed-off-by: Hiromitsu Yamasaki <hiromitsu.yamasaki.ym@renesas.com>
 [geert: Cleanup, reword]
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Mark Brown <broonie@kernel.org>
+Cc: stable@vger.kernel.org
 ---
  drivers/spi/spi-sh-msiof.c | 25 +++++++++++++++++++++++++
  1 file changed, 25 insertions(+)
 
 diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
-index 539d6d1a277a6179..bfe4e6d4f7bff66c 100644
+index 539d6d1a277a..bfe4e6d4f7bf 100644
 --- a/drivers/spi/spi-sh-msiof.c
 +++ b/drivers/spi/spi-sh-msiof.c
 @@ -1426,12 +1426,37 @@ static const struct platform_device_id spi_driver_ids[] = {
@@ -72,4 +103,4 @@ index 539d6d1a277a6179..bfe4e6d4f7bff66c 100644
  	},
  };
 -- 
-2.17.1
+2.19.0.rc1
