@@ -1,53 +1,95 @@
-From: Boris Brezillon <boris.brezillon@bootlin.com>
-Date: Thu, 06 Sep 2018 22:38:33 +0000
-Subject: [PATCH 01/19] mtd: rawnand: Leave chip->IO_ADDR_{R,W} to NULL when unused
-Message-Id: <20180906223851.6964-2-boris.brezillon@bootlin.com>
+From: Mark Brown <broonie@kernel.org>
+Date: Wed, 05 Sep 2018 11:45:59 +0000
+Subject: Applied "spi: rspi: Fix interrupted DMA transfers" to the spi tree
+Message-Id: <20180905114559.E12A811229D0@debutante.sirena.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180906223851.6964-1-boris.brezillon@bootlin.com>
-In-Reply-To: <20180906223851.6964-1-boris.brezillon@bootlin.com>
+In-Reply-To: <20180905084939.7401-5-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Boris Brezillon <boris.brezillon@bootlin.com>, Richard Weinberger <richard@nod.at>, Miquel Raynal <miquel.raynal@bootlin.com>, linux-mtd@lists.infradead.org
-Cc: David Woodhouse <dwmw2@infradead.org>, Brian Norris <computersforpeace@gmail.com>, Marek Vasut <marek.vasut@gmail.com>, Jonathan Corbet <corbet@lwn.net>, linux-doc@vger.kernel.org, Hartley Sweeten <hsweeten@visionengravers.com>, Ryan Mallon <rmallon@gmail.com>, Alexander Shiyan <shc_work@mail.ru>, Shawn Guo <shawnguo@kernel.org>, Sascha Hauer <kernel@pengutronix.de>, Fabio Estevam <fabio.estevam@nxp.com>, NXP Linux Team <linux-imx@nxp.com>, Imre Kaloz <kaloz@openwrt.org>, Krzysztof Halasa <khalasa@piap.pl>, Tony Lindgren <tony@atomide.com>, linux-omap@vger.kernel.org, Alexander Clouter <alex@digriz.org.uk>, Thomas Petazzoni <thomas.petazzoni@bootlin.com>, Gregory CLEMENT <gregory.clement@bootlin.com>, Jason Cooper <jason@lakedaemon.net>, Sebastian Hesselbarth <sebastian.hesselbarth@gmail.com>, Andrew Lunn <andrew@lunn.ch>, Daniel Mack <daniel@zonque.org>, Haojian Zhuang <haojian.zhuang@gmail.com>, Robert Jarzmik <robert.jarzmik@free.fr>, Ralf Baechle <ralf@linux-mips.org>, linux-mips@linux-mips.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, devel@driverdev.osuosl.org
+To: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Mark Brown <broonie@kernel.org>, stable@vger.kernel.orgMark Brown <broonie@kernel.org>, Gaku Inami <gaku.inami.xw@bp.renesas.com>, Hiromitsu Yamasaki <hiromitsu.yamasaki.ym@renesas.com>, linux-spi@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.orglinux-spi@vger.kernel.org
 
-There's no point in poisoning the ->IO_ADDR_{R,W}, a NULL pointer
-is just as good to detect unexpected ->IO_ADDR_{R,W} usage.
+The patch
 
-Signed-off-by: Boris Brezillon <boris.brezillon@bootlin.com>
+   spi: rspi: Fix interrupted DMA transfers
+
+has been applied to the spi tree at
+
+   https://git.kernel.org/pub/scm/linux/kernel/git/broonie/spi.git 
+
+All being well this means that it will be integrated into the linux-next
+tree (usually sometime in the next 24 hours) and sent to Linus during
+the next merge window (or sooner if it is a bug fix), however if
+problems are discovered then the patch may be dropped or reverted.  
+
+You may get further e-mails resulting from automated or manual testing
+and review of the tree, please engage with people reporting problems and
+send followup patches addressing any issues that are reported if needed.
+
+If any updates are required or you are submitting further changes they
+should be sent as incremental updates against current git, existing
+patches will not be replaced.
+
+Please add any relevant lists and maintainers to the CCs when replying
+to this mail.
+
+Thanks,
+Mark
+
+From 8dbbaa47b96f6ea5f09f922b4effff3c505cd8cf Mon Sep 17 00:00:00 2001
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 5 Sep 2018 10:49:39 +0200
+Subject: [PATCH] spi: rspi: Fix interrupted DMA transfers
+
+When interrupted, wait_event_interruptible_timeout() returns
+-ERESTARTSYS, and the SPI transfer in progress will fail, as expected:
+
+    m25p80 spi0.0: SPI transfer failed: -512
+    spi_master spi0: failed to transfer one message from queue
+
+However, as the underlying DMA transfers may not have completed, all
+subsequent SPI transfers may start to fail:
+
+    spi_master spi0: receive timeout
+    qspi_transfer_out_in() returned -110
+    m25p80 spi0.0: SPI transfer failed: -110
+    spi_master spi0: failed to transfer one message from queue
+
+Fix this by calling dmaengine_terminate_all() not only for timeouts, but
+also for errors.
+
+This can be reproduced on r8a7991/koelsch, using "hd /dev/mtd0" followed
+by CTRL-C.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Mark Brown <broonie@kernel.org>
+Cc: stable@vger.kernel.org
 ---
- drivers/mtd/nand/raw/brcmnand/brcmnand.c | 3 ---
- drivers/mtd/nand/raw/socrates_nand.c     | 4 ----
- 2 files changed, 7 deletions(-)
+ drivers/spi/spi-rspi.c | 10 ++++++----
+ 1 file changed, 6 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/mtd/nand/raw/brcmnand/brcmnand.c b/drivers/mtd/nand/raw/brcmnand/brcmnand.c
-index fee40a3ce5d2..851db4a7d3e4 100644
---- a/drivers/mtd/nand/raw/brcmnand/brcmnand.c
-+++ b/drivers/mtd/nand/raw/brcmnand/brcmnand.c
-@@ -2270,9 +2270,6 @@ static int brcmnand_init_cs(struct brcmnand_host *host, struct device_node *dn)
- 	mtd->owner = THIS_MODULE;
- 	mtd->dev.parent = &pdev->dev;
+diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
+index f93a4587e3fb..b37de1d991d6 100644
+--- a/drivers/spi/spi-rspi.c
++++ b/drivers/spi/spi-rspi.c
+@@ -598,11 +598,13 @@ static int rspi_dma_transfer(struct rspi_data *rspi, struct sg_table *tx,
  
--	chip->IO_ADDR_R = (void __iomem *)0xdeadbeef;
--	chip->IO_ADDR_W = (void __iomem *)0xdeadbeef;
--
- 	chip->cmd_ctrl = brcmnand_cmd_ctrl;
- 	chip->cmdfunc = brcmnand_cmdfunc;
- 	chip->waitfunc = brcmnand_waitfunc;
-diff --git a/drivers/mtd/nand/raw/socrates_nand.c b/drivers/mtd/nand/raw/socrates_nand.c
-index 64ea9a014054..aa42b4ea4d23 100644
---- a/drivers/mtd/nand/raw/socrates_nand.c
-+++ b/drivers/mtd/nand/raw/socrates_nand.c
-@@ -152,10 +152,6 @@ static int socrates_nand_probe(struct platform_device *ofdev)
- 	mtd->name = "socrates_nand";
- 	mtd->dev.parent = &ofdev->dev;
- 
--	/*should never be accessed directly */
--	nand_chip->IO_ADDR_R = (void *)0xdeadbeef;
--	nand_chip->IO_ADDR_W = (void *)0xdeadbeef;
--
- 	nand_chip->cmd_ctrl = socrates_nand_cmd_ctrl;
- 	nand_chip->read_byte = socrates_nand_read_byte;
- 	nand_chip->write_buf = socrates_nand_write_buf;
+ 	ret = wait_event_interruptible_timeout(rspi->wait,
+ 					       rspi->dma_callbacked, HZ);
+-	if (ret > 0 && rspi->dma_callbacked)
++	if (ret > 0 && rspi->dma_callbacked) {
+ 		ret = 0;
+-	else if (!ret) {
+-		dev_err(&rspi->master->dev, "DMA timeout\n");
+-		ret = -ETIMEDOUT;
++	} else {
++		if (!ret) {
++			dev_err(&rspi->master->dev, "DMA timeout\n");
++			ret = -ETIMEDOUT;
++		}
+ 		if (tx)
+ 			dmaengine_terminate_all(rspi->master->dma_tx);
+ 		if (rx)
 -- 
-2.14.1
+2.19.0.rc1
