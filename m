@@ -1,70 +1,67 @@
-From: Mike Rapoport <rppt@linux.vnet.ibm.com>
-Date: Thu, 27 Sep 2018 04:50:20 +0000
-Subject: Re: [PATCH 03/30] mm: remove CONFIG_HAVE_MEMBLOCK
-Message-Id: <20180927045019.GA16740@rapoport-lnx>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 05 Sep 2018 20:32:07 +0000
+Subject: [PATCH 2/2] clocksource: sh_cmt: add R-Car gen3 support
+Message-Id: <dc0446c7-e63b-17f1-45ed-e544b5602b9e@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1536927045-23536-1-git-send-email-rppt@linux.vnet.ibm.com>
- <1536927045-23536-4-git-send-email-rppt@linux.vnet.ibm.com>
- <CAKgT0UdP=78RsWHMxFu4PD8a3AhA3eNcG68Z_9aGY0vhOKf7xA@mail.gmail.com>
- <20180926183152.GA4597@rapoport-lnx>
- <CAKgT0UcC-GTtyPK9ynvj6r3YFqy8kE40iMJxzPowbNoXGf9iWg@mail.gmail.com>
-In-Reply-To: <CAKgT0UcC-GTtyPK9ynvj6r3YFqy8kE40iMJxzPowbNoXGf9iWg@mail.gmail.com>
+References: <3ce24bfe-1edb-1a92-8847-ff998ac86d16@cogentembedded.com>
+In-Reply-To: <3ce24bfe-1edb-1a92-8847-ff998ac86d16@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Alexander Duyck <alexander.duyck@gmail.com>
-Cc: linux-mm <linux-mm@kvack.org>, Andrew Morton <akpm@linux-foundation.org>, Catalin Marinas <catalin.marinas@arm.com>, chris@zankel.net, David Miller <davem@davemloft.net>, Geert Uytterhoeven <geert@linux-m68k.org>, green.hu@gmail.com, Greg KH <gregkh@linuxfoundation.org>, gxt@pku.edu.cn, Ingo Molnar <mingo@redhat.com>, jejb@parisc-linux.org, jonas@southpole.se, Jonathan Corbet <corbet@lwn.net>, lftan@altera.com, msalter@redhat.com, Martin Schwidefsky <schwidefsky@de.ibm.com>, mattst88@gmail.com, mpe@ellerman.id.au, Michal Hocko <mhocko@suse.com>, monstr@monstr.eu, palmer@sifive.com, paul.burton@mips.com, rkuo@codeaurora.org, richard@nod.at, dalias@libc.org, Russell King - ARM Linux <linux@armlinux.org.uk>, fancer.lancer@gmail.com, Thomas Gleixner <tglx@linutronix.de>, Tony Luck <tony.luck@intel.com>, vgupta@synopsys.com, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-alpha@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-c6x-dev@linux-c6x.org, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, LKML <linux-kernel@vger.kernel.org>, linux-m68k@lists.linux-m68k.org, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, "open list:LINUX FOR POWERPC (32-BIT AND 64-BIT)" <linuxppc-dev@lists.ozlabs.org>, linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-um@lists.infradead.org, nios2-dev@lists.rocketboards.org, openrisc@lists.librecores.org, sparclinux@vger.kernel.org, uclinux-h8-devel@lists.sourceforge.jp
+To: Daniel Lezcano <daniel.lezcano@linaro.org>, Thomas Gleixner <tglx@linutronix.de>, Rob Herring <robh+dt@kernel.org>, devicetree@vger.kernel.org
+Cc: linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org
 
-On Wed, Sep 26, 2018 at 05:34:32PM -0700, Alexander Duyck wrote:
-> On Wed, Sep 26, 2018 at 11:32 AM Mike Rapoport <rppt@linux.vnet.ibm.com> wrote:
-> >
-> > On Wed, Sep 26, 2018 at 09:58:41AM -0700, Alexander Duyck wrote:
-> > > On Fri, Sep 14, 2018 at 5:11 AM Mike Rapoport <rppt@linux.vnet.ibm.com> wrote:
-> > > >
-> > > > All architecures use memblock for early memory management. There is no need
-> > > > for the CONFIG_HAVE_MEMBLOCK configuration option.
-> > > >
-> > > > Signed-off-by: Mike Rapoport <rppt@linux.vnet.ibm.com>
-> > >
-> > > <snip>
-> > >
-> > > > diff --git a/include/linux/memblock.h b/include/linux/memblock.h
-> > > > index 5169205..4ae91fc 100644
-> > > > --- a/include/linux/memblock.h
-> > > > +++ b/include/linux/memblock.h
-> > > > @@ -2,7 +2,6 @@
-> > > >  #define _LINUX_MEMBLOCK_H
-> > > >  #ifdef __KERNEL__
-> > > >
-> > > > -#ifdef CONFIG_HAVE_MEMBLOCK
-> > > >  /*
-> > > >   * Logical memory blocks.
-> > > >   *
-> > > > @@ -460,7 +459,6 @@ static inline phys_addr_t memblock_alloc(phys_addr_t size, phys_addr_t align)
-> > > >  {
-> > > >         return 0;
-> > > >  }
-> > > > -#endif /* CONFIG_HAVE_MEMBLOCK */
-> > > >
-> > > >  #endif /* __KERNEL__ */
-> > >
-> > > There was an #else above this section and I believe it and the code
-> > > after it needs to be stripped as well.
-> >
-> > Right, I've already sent the fix [1] and it's in mmots.
-> >
-> > [1] https://lkml.org/lkml/2018/9/19/416
-> >
-> 
-> Are you sure? The patch you reference appears to be for
-> drivers/of/fdt.c, and the bit I pointed out here is in
-> include/linux/memblock.h.
+Add support for the R-Car gen3 CMT0 and CMT1 bindings -- they seem to be
+the same CMT0 and CMT1 as in R-Car gen2 SoCs. Also document R8A779{7|8}
+bindings as these are the R-Car gen3 SoCs for which the initial support
+was done.
 
-Ah, sorry. You are right, will fix. Thanks for spotting it!
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+---
+ Documentation/devicetree/bindings/timer/renesas,cmt.txt |    7 +++++++
+ drivers/clocksource/sh_cmt.c                            |    8 ++++++++
+ 2 files changed, 15 insertions(+)
+
+Index: renesas/Documentation/devicetree/bindings/timer/renesas,cmt.txt
+=================================--- renesas.orig/Documentation/devicetree/bindings/timer/renesas,cmt.txt
++++ renesas/Documentation/devicetree/bindings/timer/renesas,cmt.txt
+@@ -34,6 +34,10 @@ Required Properties:
+     - "renesas,r8a7793-cmt1" for the 48-bit CMT1 device included in r8a7793.
+     - "renesas,r8a7794-cmt0" for the 32-bit CMT0 device included in r8a7794.
+     - "renesas,r8a7794-cmt1" for the 48-bit CMT1 device included in r8a7794.
++    - "renesas,r8a77970-cmt0" for the 32-bit CMT0 device included in r8a77970.
++    - "renesas,r8a77970-cmt1" for the 48-bit CMT1 device included in r8a77970.
++    - "renesas,r8a77980-cmt0" for the 32-bit CMT0 device included in r8a77980.
++    - "renesas,r8a77980-cmt1" for the 48-bit CMT1 device included in r8a77980.
  
-> - Alex
-> 
-
--- 
-Sincerely yours,
-Mike.
+     - "renesas,rcar-gen2-cmt0" for 32-bit CMT0 devices included in R-Car Gen2
+ 		and RZ/G1.
+@@ -41,6 +45,9 @@ Required Properties:
+ 		and RZ/G1.
+ 		These are fallbacks for r8a73a4, R-Car Gen2 and RZ/G1 entries
+ 		listed above.
++    - "renesas,rcar-gen3-cmt0" for 32-bit CMT0 devices included in R-Car Gen3.
++    - "renesas,rcar-gen3-cmt1" for 48-bit CMT1 devices included in R-Car Gen3.
++		These are fallbacks for R-Car Gen3 entries listed above.
+ 
+   - reg: base address and length of the registers block for the timer module.
+   - interrupts: interrupt-specifier for the timer, one per channel.
+Index: renesas/drivers/clocksource/sh_cmt.c
+=================================--- renesas.orig/drivers/clocksource/sh_cmt.c
++++ renesas/drivers/clocksource/sh_cmt.c
+@@ -945,6 +945,14 @@ static const struct of_device_id sh_cmt_
+ 		.compatible = "renesas,rcar-gen2-cmt1",
+ 		.data = &sh_cmt_info[SH_CMT1_RCAR_GEN2]
+ 	},
++	{
++		.compatible = "renesas,rcar-gen3-cmt0",
++		.data = &sh_cmt_info[SH_CMT0_RCAR_GEN2]
++	},
++	{
++		.compatible = "renesas,rcar-gen3-cmt1",
++		.data = &sh_cmt_info[SH_CMT1_RCAR_GEN2]
++	},
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(of, sh_cmt_of_table);
