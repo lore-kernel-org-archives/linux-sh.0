@@ -1,67 +1,70 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 05 Sep 2018 20:32:07 +0000
-Subject: [PATCH 2/2] clocksource: sh_cmt: add R-Car gen3 support
-Message-Id: <dc0446c7-e63b-17f1-45ed-e544b5602b9e@cogentembedded.com>
+From: Chris Paterson <Chris.Paterson2@renesas.com>
+Date: Thu, 06 Sep 2018 08:06:03 +0000
+Subject: RE: [PATCH 2/2] clocksource: sh_cmt: add R-Car gen3 support
+Message-Id: <TYAPR01MB228578C6DE61F93B96761B40B7010@TYAPR01MB2285.jpnprd01.prod.outlook.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <3ce24bfe-1edb-1a92-8847-ff998ac86d16@cogentembedded.com>
-In-Reply-To: <3ce24bfe-1edb-1a92-8847-ff998ac86d16@cogentembedded.com>
+ <dc0446c7-e63b-17f1-45ed-e544b5602b9e@cogentembedded.com>
+In-Reply-To: <dc0446c7-e63b-17f1-45ed-e544b5602b9e@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Daniel Lezcano <daniel.lezcano@linaro.org>, Thomas Gleixner <tglx@linutronix.de>, Rob Herring <robh+dt@kernel.org>, devicetree@vger.kernel.org
-Cc: linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org
+To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Daniel Lezcano <daniel.lezcano@linaro.org>, Thomas Gleixner <tglx@linutronix.de>, Rob Herring <robh+dt@kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+Cc: "linux-renesas-soc@vger.kernel.org" <linux-renesas-soc@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
 
-Add support for the R-Car gen3 CMT0 and CMT1 bindings -- they seem to be
-the same CMT0 and CMT1 as in R-Car gen2 SoCs. Also document R8A779{7|8}
-bindings as these are the R-Car gen3 SoCs for which the initial support
-was done.
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
----
- Documentation/devicetree/bindings/timer/renesas,cmt.txt |    7 +++++++
- drivers/clocksource/sh_cmt.c                            |    8 ++++++++
- 2 files changed, 15 insertions(+)
-
-Index: renesas/Documentation/devicetree/bindings/timer/renesas,cmt.txt
-=================================--- renesas.orig/Documentation/devicetree/bindings/timer/renesas,cmt.txt
-+++ renesas/Documentation/devicetree/bindings/timer/renesas,cmt.txt
-@@ -34,6 +34,10 @@ Required Properties:
-     - "renesas,r8a7793-cmt1" for the 48-bit CMT1 device included in r8a7793.
-     - "renesas,r8a7794-cmt0" for the 32-bit CMT0 device included in r8a7794.
-     - "renesas,r8a7794-cmt1" for the 48-bit CMT1 device included in r8a7794.
-+    - "renesas,r8a77970-cmt0" for the 32-bit CMT0 device included in r8a77970.
-+    - "renesas,r8a77970-cmt1" for the 48-bit CMT1 device included in r8a77970.
-+    - "renesas,r8a77980-cmt0" for the 32-bit CMT0 device included in r8a77980.
-+    - "renesas,r8a77980-cmt1" for the 48-bit CMT1 device included in r8a77980.
- 
-     - "renesas,rcar-gen2-cmt0" for 32-bit CMT0 devices included in R-Car Gen2
- 		and RZ/G1.
-@@ -41,6 +45,9 @@ Required Properties:
- 		and RZ/G1.
- 		These are fallbacks for r8a73a4, R-Car Gen2 and RZ/G1 entries
- 		listed above.
-+    - "renesas,rcar-gen3-cmt0" for 32-bit CMT0 devices included in R-Car Gen3.
-+    - "renesas,rcar-gen3-cmt1" for 48-bit CMT1 devices included in R-Car Gen3.
-+		These are fallbacks for R-Car Gen3 entries listed above.
- 
-   - reg: base address and length of the registers block for the timer module.
-   - interrupts: interrupt-specifier for the timer, one per channel.
-Index: renesas/drivers/clocksource/sh_cmt.c
-=================================--- renesas.orig/drivers/clocksource/sh_cmt.c
-+++ renesas/drivers/clocksource/sh_cmt.c
-@@ -945,6 +945,14 @@ static const struct of_device_id sh_cmt_
- 		.compatible = "renesas,rcar-gen2-cmt1",
- 		.data = &sh_cmt_info[SH_CMT1_RCAR_GEN2]
- 	},
-+	{
-+		.compatible = "renesas,rcar-gen3-cmt0",
-+		.data = &sh_cmt_info[SH_CMT0_RCAR_GEN2]
-+	},
-+	{
-+		.compatible = "renesas,rcar-gen3-cmt1",
-+		.data = &sh_cmt_info[SH_CMT1_RCAR_GEN2]
-+	},
- 	{ }
- };
- MODULE_DEVICE_TABLE(of, sh_cmt_of_table);
+SGVsbG8gU2VyZ2VpLA0KDQo+IEZyb206IGRldmljZXRyZWUtb3duZXJAdmdlci5rZXJuZWwub3Jn
+IDxkZXZpY2V0cmVlLQ0KPiBvd25lckB2Z2VyLmtlcm5lbC5vcmc+IE9uIEJlaGFsZiBPZiBTZXJn
+ZWkgU2h0eWx5b3YNCj4gU2VudDogMDUgU2VwdGVtYmVyIDIwMTggMjE6MzINCj4gDQo+IEFkZCBz
+dXBwb3J0IGZvciB0aGUgUi1DYXIgZ2VuMyBDTVQwIGFuZCBDTVQxIGJpbmRpbmdzIC0tIHRoZXkg
+c2VlbSB0byBiZQ0KPiB0aGUgc2FtZSBDTVQwIGFuZCBDTVQxIGFzIGluIFItQ2FyIGdlbjIgU29D
+cy4gQWxzbyBkb2N1bWVudCBSOEE3Nzl7N3w4fQ0KPiBiaW5kaW5ncyBhcyB0aGVzZSBhcmUgdGhl
+IFItQ2FyIGdlbjMgU29DcyBmb3Igd2hpY2ggdGhlIGluaXRpYWwgc3VwcG9ydCB3YXMNCj4gZG9u
+ZS4NCg0KSXMgaXQgYWxsb3dlZCB0byBjb21iaW5lIHRoZSBiaW5kaW5ncyBkb2MgdXBkYXRlIHdp
+dGggdGhlIGRyaXZlciBjaGFuZ2U/IChJIHVzdWFsbHkgZ2V0IGEgY2hlY2twYXRjaCB3YXJuaW5n
+IGZvciB0aGlzKS4NCg0KSXQgaXQncyBub3QgYSBwcm9ibGVtOg0KUmV2aWV3ZWQtYnk6IENocmlz
+IFBhdGVyc29uIDxjaHJpcy5wYXRlcnNvbjJAcmVuZXNhcy5jb20+DQoNCktpbmQgcmVnYXJkcywg
+Q2hyaXMNCg0KPiANCj4gU2lnbmVkLW9mZi1ieTogU2VyZ2VpIFNodHlseW92IDxzZXJnZWkuc2h0
+eWx5b3ZAY29nZW50ZW1iZWRkZWQuY29tPg0KPiANCj4gLS0tDQo+ICBEb2N1bWVudGF0aW9uL2Rl
+dmljZXRyZWUvYmluZGluZ3MvdGltZXIvcmVuZXNhcyxjbXQudHh0IHwgICAgNyArKysrKysrDQo+
+ICBkcml2ZXJzL2Nsb2Nrc291cmNlL3NoX2NtdC5jICAgICAgICAgICAgICAgICAgICAgICAgICAg
+IHwgICAgOCArKysrKysrKw0KPiAgMiBmaWxlcyBjaGFuZ2VkLCAxNSBpbnNlcnRpb25zKCspDQo+
+IA0KPiBJbmRleDogcmVuZXNhcy9Eb2N1bWVudGF0aW9uL2RldmljZXRyZWUvYmluZGluZ3MvdGlt
+ZXIvcmVuZXNhcyxjbXQudHh0DQo+ID09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09
+PT09PT09PT09PT09PT09PT09PT09PT0NCj4gPT09PT09PT09DQo+IC0tLSByZW5lc2FzLm9yaWcv
+RG9jdW1lbnRhdGlvbi9kZXZpY2V0cmVlL2JpbmRpbmdzL3RpbWVyL3JlbmVzYXMsY210LnR4dA0K
+PiArKysgcmVuZXNhcy9Eb2N1bWVudGF0aW9uL2RldmljZXRyZWUvYmluZGluZ3MvdGltZXIvcmVu
+ZXNhcyxjbXQudHh0DQo+IEBAIC0zNCw2ICszNCwxMCBAQCBSZXF1aXJlZCBQcm9wZXJ0aWVzOg0K
+PiAgICAgIC0gInJlbmVzYXMscjhhNzc5My1jbXQxIiBmb3IgdGhlIDQ4LWJpdCBDTVQxIGRldmlj
+ZSBpbmNsdWRlZCBpbiByOGE3NzkzLg0KPiAgICAgIC0gInJlbmVzYXMscjhhNzc5NC1jbXQwIiBm
+b3IgdGhlIDMyLWJpdCBDTVQwIGRldmljZSBpbmNsdWRlZCBpbiByOGE3Nzk0Lg0KPiAgICAgIC0g
+InJlbmVzYXMscjhhNzc5NC1jbXQxIiBmb3IgdGhlIDQ4LWJpdCBDTVQxIGRldmljZSBpbmNsdWRl
+ZCBpbiByOGE3Nzk0Lg0KPiArICAgIC0gInJlbmVzYXMscjhhNzc5NzAtY210MCIgZm9yIHRoZSAz
+Mi1iaXQgQ01UMCBkZXZpY2UgaW5jbHVkZWQgaW4NCj4gcjhhNzc5NzAuDQo+ICsgICAgLSAicmVu
+ZXNhcyxyOGE3Nzk3MC1jbXQxIiBmb3IgdGhlIDQ4LWJpdCBDTVQxIGRldmljZSBpbmNsdWRlZCBp
+bg0KPiByOGE3Nzk3MC4NCj4gKyAgICAtICJyZW5lc2FzLHI4YTc3OTgwLWNtdDAiIGZvciB0aGUg
+MzItYml0IENNVDAgZGV2aWNlIGluY2x1ZGVkIGluDQo+IHI4YTc3OTgwLg0KPiArICAgIC0gInJl
+bmVzYXMscjhhNzc5ODAtY210MSIgZm9yIHRoZSA0OC1iaXQgQ01UMSBkZXZpY2UgaW5jbHVkZWQg
+aW4NCj4gcjhhNzc5ODAuDQo+IA0KPiAgICAgIC0gInJlbmVzYXMscmNhci1nZW4yLWNtdDAiIGZv
+ciAzMi1iaXQgQ01UMCBkZXZpY2VzIGluY2x1ZGVkIGluIFItQ2FyIEdlbjINCj4gIAkJYW5kIFJa
+L0cxLg0KPiBAQCAtNDEsNiArNDUsOSBAQCBSZXF1aXJlZCBQcm9wZXJ0aWVzOg0KPiAgCQlhbmQg
+UlovRzEuDQo+ICAJCVRoZXNlIGFyZSBmYWxsYmFja3MgZm9yIHI4YTczYTQsIFItQ2FyIEdlbjIg
+YW5kIFJaL0cxDQo+IGVudHJpZXMNCj4gIAkJbGlzdGVkIGFib3ZlLg0KPiArICAgIC0gInJlbmVz
+YXMscmNhci1nZW4zLWNtdDAiIGZvciAzMi1iaXQgQ01UMCBkZXZpY2VzIGluY2x1ZGVkIGluIFIt
+Q2FyDQo+IEdlbjMuDQo+ICsgICAgLSAicmVuZXNhcyxyY2FyLWdlbjMtY210MSIgZm9yIDQ4LWJp
+dCBDTVQxIGRldmljZXMgaW5jbHVkZWQgaW4gUi1DYXINCj4gR2VuMy4NCj4gKwkJVGhlc2UgYXJl
+IGZhbGxiYWNrcyBmb3IgUi1DYXIgR2VuMyBlbnRyaWVzIGxpc3RlZCBhYm92ZS4NCj4gDQo+ICAg
+IC0gcmVnOiBiYXNlIGFkZHJlc3MgYW5kIGxlbmd0aCBvZiB0aGUgcmVnaXN0ZXJzIGJsb2NrIGZv
+ciB0aGUgdGltZXIgbW9kdWxlLg0KPiAgICAtIGludGVycnVwdHM6IGludGVycnVwdC1zcGVjaWZp
+ZXIgZm9yIHRoZSB0aW1lciwgb25lIHBlciBjaGFubmVsLg0KPiBJbmRleDogcmVuZXNhcy9kcml2
+ZXJzL2Nsb2Nrc291cmNlL3NoX2NtdC5jDQo+ID09PT09PT09PT09PT09PT09PT09PT09PT09PT09
+PT09PT09PT09PT09PT09PT09PT09PT09PT09PT0NCj4gPT09PT09PT09DQo+IC0tLSByZW5lc2Fz
+Lm9yaWcvZHJpdmVycy9jbG9ja3NvdXJjZS9zaF9jbXQuYw0KPiArKysgcmVuZXNhcy9kcml2ZXJz
+L2Nsb2Nrc291cmNlL3NoX2NtdC5jDQo+IEBAIC05NDUsNiArOTQ1LDE0IEBAIHN0YXRpYyBjb25z
+dCBzdHJ1Y3Qgb2ZfZGV2aWNlX2lkIHNoX2NtdF8NCj4gIAkJLmNvbXBhdGlibGUgPSAicmVuZXNh
+cyxyY2FyLWdlbjItY210MSIsDQo+ICAJCS5kYXRhID0gJnNoX2NtdF9pbmZvW1NIX0NNVDFfUkNB
+Ul9HRU4yXQ0KPiAgCX0sDQo+ICsJew0KPiArCQkuY29tcGF0aWJsZSA9ICJyZW5lc2FzLHJjYXIt
+Z2VuMy1jbXQwIiwNCj4gKwkJLmRhdGEgPSAmc2hfY210X2luZm9bU0hfQ01UMF9SQ0FSX0dFTjJd
+DQo+ICsJfSwNCj4gKwl7DQo+ICsJCS5jb21wYXRpYmxlID0gInJlbmVzYXMscmNhci1nZW4zLWNt
+dDEiLA0KPiArCQkuZGF0YSA9ICZzaF9jbXRfaW5mb1tTSF9DTVQxX1JDQVJfR0VOMl0NCj4gKwl9
+LA0KPiAgCXsgfQ0KPiAgfTsNCj4gIE1PRFVMRV9ERVZJQ0VfVEFCTEUob2YsIHNoX2NtdF9vZl90
+YWJsZSk7DQo
