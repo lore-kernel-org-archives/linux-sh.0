@@ -1,24 +1,37 @@
-From: Michal Hocko <mhocko@kernel.org>
-Date: Wed, 26 Sep 2018 09:37:39 +0000
-Subject: Re: [PATCH 16/30] memblock: replace __alloc_bootmem_node with appropriate memblock_ API
-Message-Id: <20180926093739.GQ6278@dhcp22.suse.cz>
+From: Boris Brezillon <boris.brezillon@bootlin.com>
+Date: Thu, 06 Sep 2018 22:38:44 +0000
+Subject: [PATCH 12/19] mtd: rawnand: Get rid of the duplicate nand_chip forward declaration
+Message-Id: <20180906223851.6964-13-boris.brezillon@bootlin.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1536927045-23536-1-git-send-email-rppt@linux.vnet.ibm.com>
- <1536927045-23536-17-git-send-email-rppt@linux.vnet.ibm.com>
-In-Reply-To: <1536927045-23536-17-git-send-email-rppt@linux.vnet.ibm.com>
+References: <20180906223851.6964-1-boris.brezillon@bootlin.com>
+In-Reply-To: <20180906223851.6964-1-boris.brezillon@bootlin.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mike Rapoport <rppt@linux.vnet.ibm.com>
-Cc: linux-mm@kvack.org, Andrew Morton <akpm@linux-foundation.org>, Catalin Marinas <catalin.marinas@arm.com>, Chris Zankel <chris@zankel.net>, "David S. Miller" <davem@davemloft.net>, Geert Uytterhoeven <geert@linux-m68k.org>, Greentime Hu <green.hu@gmail.com>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Guan Xuetao <gxt@pku.edu.cn>, Ingo Molnar <mingo@redhat.com>, "James E.J. Bottomley" <jejb@parisc-linux.org>, Jonas Bonn <jonas@southpole.se>, Jonathan Corbet <corbet@lwn.net>, Ley Foon Tan <lftan@altera.com>, Mark Salter <msalter@redhat.com>, Martin Schwidefsky <schwidefsky@de.ibm.com>, Matt Turner <mattst88@gmail.com>, Michael Ellerman <mpe@ellerman.id.au>, Michal Simek <monstr@monstr.eu>, Palmer Dabbelt <palmer@sifive.com>, Paul Burton <paul.burton@mips.com>, Richard Kuo <rkuo@codeaurora.org>, Richard Weinberger <richard@nod.at>, Rich Felker <dalias@libc.org>, Russell King <linux@armlinux.org.uk>, Serge Semin <fancer.lancer@gmail.com>, Thomas Gleixner <tglx@linutronix.de>, Tony Luck <tony.luck@intel.com>, Vineet Gupta <vgupta@synopsys.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-alpha@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-c6x-dev@linux-c6x.org, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-um@lists.infradead.org, nios2-dev@lists.rocketboards.org, openrisc@lists.librecores.org, sparclinux@vger.kernel.org, uclinux-h8-devel@lists.sourceforge.jp
+To: Boris Brezillon <boris.brezillon@bootlin.com>, Richard Weinberger <richard@nod.at>, Miquel Raynal <miquel.raynal@bootlin.com>, linux-mtd@lists.infradead.org
+Cc: David Woodhouse <dwmw2@infradead.org>, Brian Norris <computersforpeace@gmail.com>, Marek Vasut <marek.vasut@gmail.com>, Jonathan Corbet <corbet@lwn.net>, linux-doc@vger.kernel.org, Hartley Sweeten <hsweeten@visionengravers.com>, Ryan Mallon <rmallon@gmail.com>, Alexander Shiyan <shc_work@mail.ru>, Shawn Guo <shawnguo@kernel.org>, Sascha Hauer <kernel@pengutronix.de>, Fabio Estevam <fabio.estevam@nxp.com>, NXP Linux Team <linux-imx@nxp.com>, Imre Kaloz <kaloz@openwrt.org>, Krzysztof Halasa <khalasa@piap.pl>, Tony Lindgren <tony@atomide.com>, linux-omap@vger.kernel.org, Alexander Clouter <alex@digriz.org.uk>, Thomas Petazzoni <thomas.petazzoni@bootlin.com>, Gregory CLEMENT <gregory.clement@bootlin.com>, Jason Cooper <jason@lakedaemon.net>, Sebastian Hesselbarth <sebastian.hesselbarth@gmail.com>, Andrew Lunn <andrew@lunn.ch>, Daniel Mack <daniel@zonque.org>, Haojian Zhuang <haojian.zhuang@gmail.com>, Robert Jarzmik <robert.jarzmik@free.fr>, Ralf Baechle <ralf@linux-mips.org>, linux-mips@linux-mips.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, devel@driverdev.osuosl.org
 
-On Fri 14-09-18 15:10:31, Mike Rapoport wrote:
-> Use memblock_alloc_try_nid whenever goal (i.e. minimal address is
-> specified) and memblock_alloc_node otherwise.
-> 
-> Signed-off-by: Mike Rapoport <rppt@linux.vnet.ibm.com>
+There's already a forward declaration of nand_chip at the beginning of
+the file. Get rid of this one.
 
-Acked-by: Michal Hocko <mhocko@suse.com>
+Signed-off-by: Boris Brezillon <boris.brezillon@bootlin.com>
+---
+ include/linux/mtd/rawnand.h | 3 ---
+ 1 file changed, 3 deletions(-)
+
+diff --git a/include/linux/mtd/rawnand.h b/include/linux/mtd/rawnand.h
+index 768415ed1159..608279104aae 100644
+--- a/include/linux/mtd/rawnand.h
++++ b/include/linux/mtd/rawnand.h
+@@ -210,9 +210,6 @@ enum nand_ecc_algo {
+ #define NAND_CI_CELLTYPE_MSK	0x0C
+ #define NAND_CI_CELLTYPE_SHIFT	2
+ 
+-/* Keep gcc happy */
+-struct nand_chip;
+-
+ /* ONFI version bits */
+ #define ONFI_VERSION_1_0		BIT(1)
+ #define ONFI_VERSION_2_0		BIT(2)
 -- 
-Michal Hocko
-SUSE Labs
+2.14.1
