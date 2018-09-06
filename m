@@ -1,352 +1,251 @@
-From: Michal Hocko <mhocko@kernel.org>
-Date: Wed, 26 Sep 2018 09:38:20 +0000
-Subject: Re: [PATCH 21/30] memblock: replace alloc_bootmem with memblock_alloc
-Message-Id: <20180926093820.GR6278@dhcp22.suse.cz>
+From: Boris Brezillon <boris.brezillon@bootlin.com>
+Date: Thu, 06 Sep 2018 22:38:38 +0000
+Subject: [PATCH 06/19] mtd: rawnand: Deprecate ->block_{bad,markbad}() hooks
+Message-Id: <20180906223851.6964-7-boris.brezillon@bootlin.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1536927045-23536-1-git-send-email-rppt@linux.vnet.ibm.com>
- <1536927045-23536-22-git-send-email-rppt@linux.vnet.ibm.com>
-In-Reply-To: <1536927045-23536-22-git-send-email-rppt@linux.vnet.ibm.com>
+References: <20180906223851.6964-1-boris.brezillon@bootlin.com>
+In-Reply-To: <20180906223851.6964-1-boris.brezillon@bootlin.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mike Rapoport <rppt@linux.vnet.ibm.com>
-Cc: linux-mm@kvack.org, Andrew Morton <akpm@linux-foundation.org>, Catalin Marinas <catalin.marinas@arm.com>, Chris Zankel <chris@zankel.net>, "David S. Miller" <davem@davemloft.net>, Geert Uytterhoeven <geert@linux-m68k.org>, Greentime Hu <green.hu@gmail.com>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Guan Xuetao <gxt@pku.edu.cn>, Ingo Molnar <mingo@redhat.com>, "James E.J. Bottomley" <jejb@parisc-linux.org>, Jonas Bonn <jonas@southpole.se>, Jonathan Corbet <corbet@lwn.net>, Ley Foon Tan <lftan@altera.com>, Mark Salter <msalter@redhat.com>, Martin Schwidefsky <schwidefsky@de.ibm.com>, Matt Turner <mattst88@gmail.com>, Michael Ellerman <mpe@ellerman.id.au>, Michal Simek <monstr@monstr.eu>, Palmer Dabbelt <palmer@sifive.com>, Paul Burton <paul.burton@mips.com>, Richard Kuo <rkuo@codeaurora.org>, Richard Weinberger <richard@nod.at>, Rich Felker <dalias@libc.org>, Russell King <linux@armlinux.org.uk>, Serge Semin <fancer.lancer@gmail.com>, Thomas Gleixner <tglx@linutronix.de>, Tony Luck <tony.luck@intel.com>, Vineet Gupta <vgupta@synopsys.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-alpha@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-c6x-dev@linux-c6x.org, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-um@lists.infradead.org, nios2-dev@lists.rocketboards.org, openrisc@lists.librecores.org, sparclinux@vger.kernel.org, uclinux-h8-devel@lists.sourceforge.jp
+To: Boris Brezillon <boris.brezillon@bootlin.com>, Richard Weinberger <richard@nod.at>, Miquel Raynal <miquel.raynal@bootlin.com>, linux-mtd@lists.infradead.org
+Cc: David Woodhouse <dwmw2@infradead.org>, Brian Norris <computersforpeace@gmail.com>, Marek Vasut <marek.vasut@gmail.com>, Jonathan Corbet <corbet@lwn.net>, linux-doc@vger.kernel.org, Hartley Sweeten <hsweeten@visionengravers.com>, Ryan Mallon <rmallon@gmail.com>, Alexander Shiyan <shc_work@mail.ru>, Shawn Guo <shawnguo@kernel.org>, Sascha Hauer <kernel@pengutronix.de>, Fabio Estevam <fabio.estevam@nxp.com>, NXP Linux Team <linux-imx@nxp.com>, Imre Kaloz <kaloz@openwrt.org>, Krzysztof Halasa <khalasa@piap.pl>, Tony Lindgren <tony@atomide.com>, linux-omap@vger.kernel.org, Alexander Clouter <alex@digriz.org.uk>, Thomas Petazzoni <thomas.petazzoni@bootlin.com>, Gregory CLEMENT <gregory.clement@bootlin.com>, Jason Cooper <jason@lakedaemon.net>, Sebastian Hesselbarth <sebastian.hesselbarth@gmail.com>, Andrew Lunn <andrew@lunn.ch>, Daniel Mack <daniel@zonque.org>, Haojian Zhuang <haojian.zhuang@gmail.com>, Robert Jarzmik <robert.jarzmik@free.fr>, Ralf Baechle <ralf@linux-mips.org>, linux-mips@linux-mips.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, devel@driverdev.osuosl.org
 
-On Fri 14-09-18 15:10:36, Mike Rapoport wrote:
-> The alloc_bootmem(size) is a shortcut for allocation of SMP_CACHE_BYTES
-> aligned memory. When the align parameter of memblock_alloc() is 0, the
-> alignment is implicitly set to SMP_CACHE_BYTES and thus alloc_bootmem(size)
-> and memblock_alloc(size, 0) are equivalent.
-> 
-> The conversion is done using the following semantic patch:
-> 
-> @@
-> expression size;
-> @@
-> - alloc_bootmem(size)
-> + memblock_alloc(size, 0)
+Those hooks have been overloaded by some drivers for bad reasons:
+either the driver was not fitting in the NAND framework and should
+have been an MTD driver (docg4), or it was not properly implementing
+the OOB read/write request or had a weird layout where BBM are trashed.
+In any case, we should discourage people from overloading those
+methods and encourage them to fix their driver instead.
 
-As mentioned in other email, please make it explicit SMP_CACHE_BYTES.
+Move the ->block_{bad,markbad}() hooks to the nand_legacy struct to
+make it clear.
 
-> Signed-off-by: Mike Rapoport <rppt@linux.vnet.ibm.com>
-> ---
->  arch/alpha/kernel/core_marvel.c     | 4 ++--
->  arch/alpha/kernel/pci-noop.c        | 4 ++--
->  arch/alpha/kernel/pci.c             | 4 ++--
->  arch/alpha/kernel/pci_iommu.c       | 4 ++--
->  arch/ia64/kernel/mca.c              | 4 ++--
->  arch/ia64/mm/tlb.c                  | 4 ++--
->  arch/m68k/sun3/sun3dvma.c           | 3 ++-
->  arch/microblaze/mm/init.c           | 2 +-
->  arch/mips/kernel/setup.c            | 2 +-
->  arch/um/drivers/net_kern.c          | 2 +-
->  arch/um/drivers/vector_kern.c       | 2 +-
->  arch/um/kernel/initrd.c             | 2 +-
->  arch/x86/kernel/acpi/boot.c         | 3 ++-
->  arch/x86/kernel/apic/io_apic.c      | 2 +-
->  arch/x86/kernel/e820.c              | 2 +-
->  arch/x86/platform/olpc/olpc_dt.c    | 2 +-
->  arch/xtensa/platforms/iss/network.c | 2 +-
->  drivers/macintosh/smu.c             | 2 +-
->  init/main.c                         | 4 ++--
->  19 files changed, 28 insertions(+), 26 deletions(-)
-> 
-> diff --git a/arch/alpha/kernel/core_marvel.c b/arch/alpha/kernel/core_marvel.c
-> index bdebb8c2..1f00c94 100644
-> --- a/arch/alpha/kernel/core_marvel.c
-> +++ b/arch/alpha/kernel/core_marvel.c
-> @@ -82,7 +82,7 @@ mk_resource_name(int pe, int port, char *str)
->  	char *name;
->  	
->  	sprintf(tmp, "PCI %s PE %d PORT %d", str, pe, port);
-> -	name = alloc_bootmem(strlen(tmp) + 1);
-> +	name = memblock_alloc(strlen(tmp) + 1, 0);
->  	strcpy(name, tmp);
->  
->  	return name;
-> @@ -117,7 +117,7 @@ alloc_io7(unsigned int pe)
->  		return NULL;
->  	}
->  
-> -	io7 = alloc_bootmem(sizeof(*io7));
-> +	io7 = memblock_alloc(sizeof(*io7), 0);
->  	io7->pe = pe;
->  	raw_spin_lock_init(&io7->irq_lock);
->  
-> diff --git a/arch/alpha/kernel/pci-noop.c b/arch/alpha/kernel/pci-noop.c
-> index c7c5879..59cbfc2 100644
-> --- a/arch/alpha/kernel/pci-noop.c
-> +++ b/arch/alpha/kernel/pci-noop.c
-> @@ -33,7 +33,7 @@ alloc_pci_controller(void)
->  {
->  	struct pci_controller *hose;
->  
-> -	hose = alloc_bootmem(sizeof(*hose));
-> +	hose = memblock_alloc(sizeof(*hose), 0);
->  
->  	*hose_tail = hose;
->  	hose_tail = &hose->next;
-> @@ -44,7 +44,7 @@ alloc_pci_controller(void)
->  struct resource * __init
->  alloc_resource(void)
->  {
-> -	return alloc_bootmem(sizeof(struct resource));
-> +	return memblock_alloc(sizeof(struct resource), 0);
->  }
->  
->  SYSCALL_DEFINE3(pciconfig_iobase, long, which, unsigned long, bus,
-> diff --git a/arch/alpha/kernel/pci.c b/arch/alpha/kernel/pci.c
-> index c668c3b..4cc3eb9 100644
-> --- a/arch/alpha/kernel/pci.c
-> +++ b/arch/alpha/kernel/pci.c
-> @@ -392,7 +392,7 @@ alloc_pci_controller(void)
->  {
->  	struct pci_controller *hose;
->  
-> -	hose = alloc_bootmem(sizeof(*hose));
-> +	hose = memblock_alloc(sizeof(*hose), 0);
->  
->  	*hose_tail = hose;
->  	hose_tail = &hose->next;
-> @@ -403,7 +403,7 @@ alloc_pci_controller(void)
->  struct resource * __init
->  alloc_resource(void)
->  {
-> -	return alloc_bootmem(sizeof(struct resource));
-> +	return memblock_alloc(sizeof(struct resource), 0);
->  }
->  
->  
-> diff --git a/arch/alpha/kernel/pci_iommu.c b/arch/alpha/kernel/pci_iommu.c
-> index 0c05493..5d178c7 100644
-> --- a/arch/alpha/kernel/pci_iommu.c
-> +++ b/arch/alpha/kernel/pci_iommu.c
-> @@ -79,7 +79,7 @@ iommu_arena_new_node(int nid, struct pci_controller *hose, dma_addr_t base,
->  		printk("%s: couldn't allocate arena from node %d\n"
->  		       "    falling back to system-wide allocation\n",
->  		       __func__, nid);
-> -		arena = alloc_bootmem(sizeof(*arena));
-> +		arena = memblock_alloc(sizeof(*arena), 0);
->  	}
->  
->  	arena->ptes = memblock_alloc_node(sizeof(*arena), align, nid);
-> @@ -92,7 +92,7 @@ iommu_arena_new_node(int nid, struct pci_controller *hose, dma_addr_t base,
->  
->  #else /* CONFIG_DISCONTIGMEM */
->  
-> -	arena = alloc_bootmem(sizeof(*arena));
-> +	arena = memblock_alloc(sizeof(*arena), 0);
->  	arena->ptes = memblock_alloc_from(mem_size, align, 0);
->  
->  #endif /* CONFIG_DISCONTIGMEM */
-> diff --git a/arch/ia64/kernel/mca.c b/arch/ia64/kernel/mca.c
-> index 5586926..7120976 100644
-> --- a/arch/ia64/kernel/mca.c
-> +++ b/arch/ia64/kernel/mca.c
-> @@ -361,9 +361,9 @@ static ia64_state_log_t ia64_state_log[IA64_MAX_LOG_TYPES];
->  
->  #define IA64_LOG_ALLOCATE(it, size) \
->  	{ia64_state_log[it].isl_log[IA64_LOG_CURR_INDEX(it)] = \
-> -		(ia64_err_rec_t *)alloc_bootmem(size); \
-> +		(ia64_err_rec_t *)memblock_alloc(size, 0); \
->  	ia64_state_log[it].isl_log[IA64_LOG_NEXT_INDEX(it)] = \
-> -		(ia64_err_rec_t *)alloc_bootmem(size);}
-> +		(ia64_err_rec_t *)memblock_alloc(size, 0);}
->  #define IA64_LOG_LOCK_INIT(it) spin_lock_init(&ia64_state_log[it].isl_lock)
->  #define IA64_LOG_LOCK(it)      spin_lock_irqsave(&ia64_state_log[it].isl_lock, s)
->  #define IA64_LOG_UNLOCK(it)    spin_unlock_irqrestore(&ia64_state_log[it].isl_lock,s)
-> diff --git a/arch/ia64/mm/tlb.c b/arch/ia64/mm/tlb.c
-> index acf10eb..5554863 100644
-> --- a/arch/ia64/mm/tlb.c
-> +++ b/arch/ia64/mm/tlb.c
-> @@ -59,8 +59,8 @@ struct ia64_tr_entry *ia64_idtrs[NR_CPUS];
->  void __init
->  mmu_context_init (void)
->  {
-> -	ia64_ctx.bitmap = alloc_bootmem((ia64_ctx.max_ctx+1)>>3);
-> -	ia64_ctx.flushmap = alloc_bootmem((ia64_ctx.max_ctx+1)>>3);
-> +	ia64_ctx.bitmap = memblock_alloc((ia64_ctx.max_ctx + 1) >> 3, 0);
-> +	ia64_ctx.flushmap = memblock_alloc((ia64_ctx.max_ctx + 1) >> 3, 0);
->  }
->  
->  /*
-> diff --git a/arch/m68k/sun3/sun3dvma.c b/arch/m68k/sun3/sun3dvma.c
-> index 8546922..72d9458 100644
-> --- a/arch/m68k/sun3/sun3dvma.c
-> +++ b/arch/m68k/sun3/sun3dvma.c
-> @@ -267,7 +267,8 @@ void __init dvma_init(void)
->  
->  	list_add(&(hole->list), &hole_list);
->  
-> -	iommu_use = alloc_bootmem(IOMMU_TOTAL_ENTRIES * sizeof(unsigned long));
-> +	iommu_use = memblock_alloc(IOMMU_TOTAL_ENTRIES * sizeof(unsigned long),
-> +				   0);
->  
->  	dvma_unmap_iommu(DVMA_START, DVMA_SIZE);
->  
-> diff --git a/arch/microblaze/mm/init.c b/arch/microblaze/mm/init.c
-> index df6de7c..8c7f074 100644
-> --- a/arch/microblaze/mm/init.c
-> +++ b/arch/microblaze/mm/init.c
-> @@ -377,7 +377,7 @@ void * __ref zalloc_maybe_bootmem(size_t size, gfp_t mask)
->  	if (mem_init_done)
->  		p = kzalloc(size, mask);
->  	else {
-> -		p = alloc_bootmem(size);
-> +		p = memblock_alloc(size, 0);
->  		if (p)
->  			memset(p, 0, size);
->  	}
-> diff --git a/arch/mips/kernel/setup.c b/arch/mips/kernel/setup.c
-> index a717c90..a6bc2f6 100644
-> --- a/arch/mips/kernel/setup.c
-> +++ b/arch/mips/kernel/setup.c
-> @@ -909,7 +909,7 @@ static void __init resource_init(void)
->  		if (end >= HIGHMEM_START)
->  			end = HIGHMEM_START - 1;
->  
-> -		res = alloc_bootmem(sizeof(struct resource));
-> +		res = memblock_alloc(sizeof(struct resource), 0);
->  
->  		res->start = start;
->  		res->end = end;
-> diff --git a/arch/um/drivers/net_kern.c b/arch/um/drivers/net_kern.c
-> index 3ef1b48..ef19a39 100644
-> --- a/arch/um/drivers/net_kern.c
-> +++ b/arch/um/drivers/net_kern.c
-> @@ -650,7 +650,7 @@ static int __init eth_setup(char *str)
->  		return 1;
->  	}
->  
-> -	new = alloc_bootmem(sizeof(*new));
-> +	new = memblock_alloc(sizeof(*new), 0);
->  
->  	INIT_LIST_HEAD(&new->list);
->  	new->index = n;
-> diff --git a/arch/um/drivers/vector_kern.c b/arch/um/drivers/vector_kern.c
-> index c84133c..9d77579 100644
-> --- a/arch/um/drivers/vector_kern.c
-> +++ b/arch/um/drivers/vector_kern.c
-> @@ -1575,7 +1575,7 @@ static int __init vector_setup(char *str)
->  				 str, error);
->  		return 1;
->  	}
-> -	new = alloc_bootmem(sizeof(*new));
-> +	new = memblock_alloc(sizeof(*new), 0);
->  	INIT_LIST_HEAD(&new->list);
->  	new->unit = n;
->  	new->arguments = str;
-> diff --git a/arch/um/kernel/initrd.c b/arch/um/kernel/initrd.c
-> index 6f6e789..844056c 100644
-> --- a/arch/um/kernel/initrd.c
-> +++ b/arch/um/kernel/initrd.c
-> @@ -36,7 +36,7 @@ int __init read_initrd(void)
->  		return 0;
->  	}
->  
-> -	area = alloc_bootmem(size);
-> +	area = memblock_alloc(size, 0);
->  
->  	if (load_initrd(initrd, area, size) = -1)
->  		return 0;
-> diff --git a/arch/x86/kernel/acpi/boot.c b/arch/x86/kernel/acpi/boot.c
-> index 3b20607..fd887c1 100644
-> --- a/arch/x86/kernel/acpi/boot.c
-> +++ b/arch/x86/kernel/acpi/boot.c
-> @@ -932,7 +932,8 @@ static int __init acpi_parse_hpet(struct acpi_table_header *table)
->  	 * the resource tree during the lateinit timeframe.
->  	 */
->  #define HPET_RESOURCE_NAME_SIZE 9
-> -	hpet_res = alloc_bootmem(sizeof(*hpet_res) + HPET_RESOURCE_NAME_SIZE);
-> +	hpet_res = memblock_alloc(sizeof(*hpet_res) + HPET_RESOURCE_NAME_SIZE,
-> +				  0);
->  
->  	hpet_res->name = (void *)&hpet_res[1];
->  	hpet_res->flags = IORESOURCE_MEM;
-> diff --git a/arch/x86/kernel/apic/io_apic.c b/arch/x86/kernel/apic/io_apic.c
-> index e25118f..8c74509 100644
-> --- a/arch/x86/kernel/apic/io_apic.c
-> +++ b/arch/x86/kernel/apic/io_apic.c
-> @@ -2578,7 +2578,7 @@ static struct resource * __init ioapic_setup_resources(void)
->  	n = IOAPIC_RESOURCE_NAME_SIZE + sizeof(struct resource);
->  	n *= nr_ioapics;
->  
-> -	mem = alloc_bootmem(n);
-> +	mem = memblock_alloc(n, 0);
->  	res = (void *)mem;
->  
->  	mem += sizeof(struct resource) * nr_ioapics;
-> diff --git a/arch/x86/kernel/e820.c b/arch/x86/kernel/e820.c
-> index c88c23c..7ea8748 100644
-> --- a/arch/x86/kernel/e820.c
-> +++ b/arch/x86/kernel/e820.c
-> @@ -1094,7 +1094,7 @@ void __init e820__reserve_resources(void)
->  	struct resource *res;
->  	u64 end;
->  
-> -	res = alloc_bootmem(sizeof(*res) * e820_table->nr_entries);
-> +	res = memblock_alloc(sizeof(*res) * e820_table->nr_entries, 0);
->  	e820_res = res;
->  
->  	for (i = 0; i < e820_table->nr_entries; i++) {
-> diff --git a/arch/x86/platform/olpc/olpc_dt.c b/arch/x86/platform/olpc/olpc_dt.c
-> index d6ee929..140cd76 100644
-> --- a/arch/x86/platform/olpc/olpc_dt.c
-> +++ b/arch/x86/platform/olpc/olpc_dt.c
-> @@ -141,7 +141,7 @@ void * __init prom_early_alloc(unsigned long size)
->  		 * fast enough on the platforms we care about while minimizing
->  		 * wasted bootmem) and hand off chunks of it to callers.
->  		 */
-> -		res = alloc_bootmem(chunk_size);
-> +		res = memblock_alloc(chunk_size, 0);
->  		BUG_ON(!res);
->  		prom_early_allocated += chunk_size;
->  		memset(res, 0, chunk_size);
-> diff --git a/arch/xtensa/platforms/iss/network.c b/arch/xtensa/platforms/iss/network.c
-> index d027ddd..206b9d4 100644
-> --- a/arch/xtensa/platforms/iss/network.c
-> +++ b/arch/xtensa/platforms/iss/network.c
-> @@ -646,7 +646,7 @@ static int __init iss_net_setup(char *str)
->  		return 1;
->  	}
->  
-> -	new = alloc_bootmem(sizeof(*new));
-> +	new = memblock_alloc(sizeof(*new), 0);
->  	if (new = NULL) {
->  		pr_err("Alloc_bootmem failed\n");
->  		return 1;
-> diff --git a/drivers/macintosh/smu.c b/drivers/macintosh/smu.c
-> index e8ae2e5..332fcca 100644
-> --- a/drivers/macintosh/smu.c
-> +++ b/drivers/macintosh/smu.c
-> @@ -493,7 +493,7 @@ int __init smu_init (void)
->  		goto fail_np;
->  	}
->  
-> -	smu = alloc_bootmem(sizeof(struct smu_device));
-> +	smu = memblock_alloc(sizeof(struct smu_device), 0);
->  
->  	spin_lock_init(&smu->lock);
->  	INIT_LIST_HEAD(&smu->cmd_list);
-> diff --git a/init/main.c b/init/main.c
-> index d0b92bd..99a9e99 100644
-> --- a/init/main.c
-> +++ b/init/main.c
-> @@ -768,8 +768,8 @@ static int __init initcall_blacklist(char *str)
->  		str_entry = strsep(&str, ",");
->  		if (str_entry) {
->  			pr_debug("blacklisting initcall %s\n", str_entry);
-> -			entry = alloc_bootmem(sizeof(*entry));
-> -			entry->buf = alloc_bootmem(strlen(str_entry) + 1);
-> +			entry = memblock_alloc(sizeof(*entry), 0);
-> +			entry->buf = memblock_alloc(strlen(str_entry) + 1, 0);
->  			strcpy(entry->buf, str_entry);
->  			list_add(&entry->next, &blacklisted_initcalls);
->  		}
-> -- 
-> 2.7.4
-> 
+Signed-off-by: Boris Brezillon <boris.brezillon@bootlin.com>
+---
+ drivers/mtd/nand/raw/cafe_nand.c           |  2 +-
+ drivers/mtd/nand/raw/diskonchip.c          |  2 +-
+ drivers/mtd/nand/raw/gpmi-nand/gpmi-nand.c |  4 ++--
+ drivers/mtd/nand/raw/nand_base.c           | 37 ++++++++++++++++++++++--------
+ drivers/mtd/nand/raw/nand_bbt.c            |  2 +-
+ drivers/mtd/nand/raw/qcom_nandc.c          |  4 ++--
+ drivers/mtd/nand/raw/sm_common.c           |  2 +-
+ include/linux/mtd/rawnand.h                |  9 ++++----
+ 8 files changed, 40 insertions(+), 22 deletions(-)
 
+diff --git a/drivers/mtd/nand/raw/cafe_nand.c b/drivers/mtd/nand/raw/cafe_nand.c
+index 738af0f0a48d..db62b12800d3 100644
+--- a/drivers/mtd/nand/raw/cafe_nand.c
++++ b/drivers/mtd/nand/raw/cafe_nand.c
+@@ -719,7 +719,7 @@ static int cafe_nand_probe(struct pci_dev *pdev,
+ 
+ 	if (skipbbt) {
+ 		cafe->nand.options |= NAND_SKIP_BBTSCAN;
+-		cafe->nand.block_bad = cafe_nand_block_bad;
++		cafe->nand.legacy.block_bad = cafe_nand_block_bad;
+ 	}
+ 
+ 	if (numtimings && numtimings != 3) {
+diff --git a/drivers/mtd/nand/raw/diskonchip.c b/drivers/mtd/nand/raw/diskonchip.c
+index c3a79369fbed..16fdfd06ef25 100644
+--- a/drivers/mtd/nand/raw/diskonchip.c
++++ b/drivers/mtd/nand/raw/diskonchip.c
+@@ -1572,7 +1572,7 @@ static int __init doc_probe(unsigned long physadr)
+ 	nand->legacy.cmd_ctrl		= doc200x_hwcontrol;
+ 	nand->legacy.dev_ready	= doc200x_dev_ready;
+ 	nand->legacy.waitfunc	= doc200x_wait;
+-	nand->block_bad		= doc200x_block_bad;
++	nand->legacy.block_bad	= doc200x_block_bad;
+ 	nand->ecc.hwctl		= doc200x_enable_hwecc;
+ 	nand->ecc.calculate	= doc200x_calculate_ecc;
+ 	nand->ecc.correct	= doc200x_correct_data;
+diff --git a/drivers/mtd/nand/raw/gpmi-nand/gpmi-nand.c b/drivers/mtd/nand/raw/gpmi-nand/gpmi-nand.c
+index dc6291902acf..94c2b7525c85 100644
+--- a/drivers/mtd/nand/raw/gpmi-nand/gpmi-nand.c
++++ b/drivers/mtd/nand/raw/gpmi-nand/gpmi-nand.c
+@@ -1774,7 +1774,7 @@ static int mx23_boot_init(struct gpmi_nand_data  *this)
+ 		 */
+ 		if (block_mark != 0xff) {
+ 			dev_dbg(dev, "Transcribing mark in block %u\n", block);
+-			ret = chip->block_markbad(chip, byte);
++			ret = chip->legacy.block_markbad(chip, byte);
+ 			if (ret)
+ 				dev_err(dev,
+ 					"Failed to mark block bad with ret %d\n",
+@@ -1908,7 +1908,7 @@ static int gpmi_nand_init(struct gpmi_nand_data *this)
+ 	chip->legacy.read_buf	= gpmi_read_buf;
+ 	chip->legacy.write_buf	= gpmi_write_buf;
+ 	chip->badblock_pattern	= &gpmi_bbt_descr;
+-	chip->block_markbad	= gpmi_block_markbad;
++	chip->legacy.block_markbad = gpmi_block_markbad;
+ 	chip->options		|= NAND_NO_SUBPAGE_WRITE;
+ 
+ 	/* Set up swap_block_mark, must be set before the gpmi_set_geometry() */
+diff --git a/drivers/mtd/nand/raw/nand_base.c b/drivers/mtd/nand/raw/nand_base.c
+index 30b55a4677f9..d71a3d303903 100644
+--- a/drivers/mtd/nand/raw/nand_base.c
++++ b/drivers/mtd/nand/raw/nand_base.c
+@@ -475,6 +475,27 @@ static int nand_default_block_markbad(struct nand_chip *chip, loff_t ofs)
+ 	return ret;
+ }
+ 
++/**
++ * nand_markbad_bbm - mark a block by updating the BBM
++ * @chip: NAND chip object
++ * @ofs: offset of the block to mark bad
++ */
++int nand_markbad_bbm(struct nand_chip *chip, loff_t ofs)
++{
++	if (chip->legacy.block_markbad)
++		return chip->legacy.block_markbad(chip, ofs);
++
++	return nand_default_block_markbad(chip, ofs);
++}
++
++static int nand_isbad_bbm(struct nand_chip *chip, loff_t ofs)
++{
++	if (chip->legacy.block_bad)
++		return chip->legacy.block_bad(chip, ofs);
++
++	return nand_block_bad(chip, ofs);
++}
++
+ /**
+  * nand_block_markbad_lowlevel - mark a block bad
+  * @mtd: MTD device structure
+@@ -482,7 +503,7 @@ static int nand_default_block_markbad(struct nand_chip *chip, loff_t ofs)
+  *
+  * This function performs the generic NAND bad block marking steps (i.e., bad
+  * block table(s) and/or marker(s)). We only allow the hardware driver to
+- * specify how to write bad block markers to OOB (chip->block_markbad).
++ * specify how to write bad block markers to OOB (chip->legacy.block_markbad).
+  *
+  * We try operations in the following order:
+  *
+@@ -510,7 +531,7 @@ static int nand_block_markbad_lowlevel(struct mtd_info *mtd, loff_t ofs)
+ 
+ 		/* Write bad block marker to OOB */
+ 		nand_get_device(mtd, FL_WRITING);
+-		ret = chip->block_markbad(chip, ofs);
++		ret = nand_markbad_bbm(chip, ofs);
+ 		nand_release_device(mtd);
+ 	}
+ 
+@@ -582,11 +603,11 @@ static int nand_block_checkbad(struct mtd_info *mtd, loff_t ofs, int allowbbt)
+ {
+ 	struct nand_chip *chip = mtd_to_nand(mtd);
+ 
+-	if (!chip->bbt)
+-		return chip->block_bad(chip, ofs);
+-
+ 	/* Return info from the table */
+-	return nand_isbad_bbt(chip, ofs, allowbbt);
++	if (chip->bbt)
++		return nand_isbad_bbt(chip, ofs, allowbbt);
++
++	return nand_isbad_bbm(chip, ofs);
+ }
+ 
+ /**
+@@ -4942,10 +4963,6 @@ static void nand_set_defaults(struct nand_chip *chip)
+ 	/* If called twice, pointers that depend on busw may need to be reset */
+ 	if (!chip->legacy.read_byte || chip->legacy.read_byte = nand_read_byte)
+ 		chip->legacy.read_byte = busw ? nand_read_byte16 : nand_read_byte;
+-	if (!chip->block_bad)
+-		chip->block_bad = nand_block_bad;
+-	if (!chip->block_markbad)
+-		chip->block_markbad = nand_default_block_markbad;
+ 	if (!chip->legacy.write_buf || chip->legacy.write_buf = nand_write_buf)
+ 		chip->legacy.write_buf = busw ? nand_write_buf16 : nand_write_buf;
+ 	if (!chip->legacy.write_byte || chip->legacy.write_byte = nand_write_byte)
+diff --git a/drivers/mtd/nand/raw/nand_bbt.c b/drivers/mtd/nand/raw/nand_bbt.c
+index 9d73e086c5de..b838ecdde8fb 100644
+--- a/drivers/mtd/nand/raw/nand_bbt.c
++++ b/drivers/mtd/nand/raw/nand_bbt.c
+@@ -689,7 +689,7 @@ static void mark_bbt_block_bad(struct nand_chip *this,
+ 	bbt_mark_entry(this, block, BBT_BLOCK_WORN);
+ 
+ 	to = (loff_t)block << this->bbt_erase_shift;
+-	res = this->block_markbad(this, to);
++	res = nand_markbad_bbm(this, to);
+ 	if (res)
+ 		pr_warn("nand_bbt: error %d while marking block %d bad\n",
+ 			res, block);
+diff --git a/drivers/mtd/nand/raw/qcom_nandc.c b/drivers/mtd/nand/raw/qcom_nandc.c
+index bd187139416f..79342e24ed81 100644
+--- a/drivers/mtd/nand/raw/qcom_nandc.c
++++ b/drivers/mtd/nand/raw/qcom_nandc.c
+@@ -2819,8 +2819,8 @@ static int qcom_nand_host_init_and_register(struct qcom_nand_controller *nandc,
+ 	 * and block_markbad helpers until we permanently switch to using
+ 	 * MTD_OPS_RAW for all drivers (with the help of badblockbits)
+ 	 */
+-	chip->block_bad		= qcom_nandc_block_bad;
+-	chip->block_markbad	= qcom_nandc_block_markbad;
++	chip->legacy.block_bad		= qcom_nandc_block_bad;
++	chip->legacy.block_markbad	= qcom_nandc_block_markbad;
+ 
+ 	chip->controller = &nandc->controller;
+ 	chip->options |= NAND_NO_SUBPAGE_WRITE | NAND_USE_BOUNCE_BUFFER |
+diff --git a/drivers/mtd/nand/raw/sm_common.c b/drivers/mtd/nand/raw/sm_common.c
+index bf143e0db787..6f063ef57640 100644
+--- a/drivers/mtd/nand/raw/sm_common.c
++++ b/drivers/mtd/nand/raw/sm_common.c
+@@ -168,7 +168,7 @@ static int sm_attach_chip(struct nand_chip *chip)
+ 	/* Bad block marker position */
+ 	chip->badblockpos = 0x05;
+ 	chip->badblockbits = 7;
+-	chip->block_markbad = sm_block_markbad;
++	chip->legacy.block_markbad = sm_block_markbad;
+ 
+ 	/* ECC layout */
+ 	if (mtd->writesize = SM_SECTOR_SIZE)
+diff --git a/include/linux/mtd/rawnand.h b/include/linux/mtd/rawnand.h
+index 15642c028da2..aa3e931d0206 100644
+--- a/include/linux/mtd/rawnand.h
++++ b/include/linux/mtd/rawnand.h
+@@ -1187,6 +1187,8 @@ int nand_op_parser_exec_op(struct nand_chip *chip,
+  *	       If set to NULL no access to ready/busy is available and the
+  *	       ready/busy information is read from the chip status register.
+  * @waitfunc: hardware specific function for wait on ready.
++ * @block_bad: check if a block is bad, using OOB markers
++ * @block_markbad: mark a block bad
+  *
+  * If you look at this structure you're already wrong. These fields/hooks are
+  * all deprecated.
+@@ -1203,6 +1205,8 @@ struct nand_legacy {
+ 			int page_addr);
+ 	int (*dev_ready)(struct nand_chip *chip);
+ 	int (*waitfunc)(struct nand_chip *chip);
++	int (*block_bad)(struct nand_chip *chip, loff_t ofs);
++	int (*block_markbad)(struct nand_chip *chip, loff_t ofs);
+ };
+ 
+ /**
+@@ -1214,8 +1218,6 @@ struct nand_legacy {
+  *			fields/hooks, you should consider reworking the driver
+  *			avoid using them.
+  * @select_chip:	[REPLACEABLE] select chip nr
+- * @block_bad:		[REPLACEABLE] check if a block is bad, using OOB markers
+- * @block_markbad:	[REPLACEABLE] mark a block bad
+  * @exec_op:		controller specific method to execute NAND operations.
+  *			This method replaces ->cmdfunc(),
+  *			->legacy.{read,write}_{buf,byte,word}(),
+@@ -1303,8 +1305,6 @@ struct nand_chip {
+ 	struct nand_legacy legacy;
+ 
+ 	void (*select_chip)(struct nand_chip *chip, int cs);
+-	int (*block_bad)(struct nand_chip *chip, loff_t ofs);
+-	int (*block_markbad)(struct nand_chip *chip, loff_t ofs);
+ 	int (*exec_op)(struct nand_chip *chip,
+ 		       const struct nand_operation *op,
+ 		       bool check_only);
+@@ -1556,6 +1556,7 @@ extern const struct nand_manufacturer_ops macronix_nand_manuf_ops;
+ 
+ int nand_create_bbt(struct nand_chip *chip);
+ int nand_markbad_bbt(struct nand_chip *chip, loff_t offs);
++int nand_markbad_bbm(struct nand_chip *chip, loff_t ofs);
+ int nand_isreserved_bbt(struct nand_chip *chip, loff_t offs);
+ int nand_isbad_bbt(struct nand_chip *chip, loff_t offs, int allowbbt);
+ int nand_erase_nand(struct nand_chip *chip, struct erase_info *instr,
 -- 
-Michal Hocko
-SUSE Labs
+2.14.1
