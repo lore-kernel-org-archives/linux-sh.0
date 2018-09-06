@@ -1,191 +1,53 @@
-From: Alexandre Ghiti <alex@ghiti.fr>
-Date: Thu, 20 Sep 2018 06:03:58 +0000
-Subject: [PATCH v7 11/11] hugetlb: Introduce generic version of huge_ptep_get
-Message-Id: <20180920060358.16606-12-alex@ghiti.fr>
+From: Boris Brezillon <boris.brezillon@bootlin.com>
+Date: Thu, 06 Sep 2018 22:38:33 +0000
+Subject: [PATCH 01/19] mtd: rawnand: Leave chip->IO_ADDR_{R,W} to NULL when unused
+Message-Id: <20180906223851.6964-2-boris.brezillon@bootlin.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180920060358.16606-1-alex@ghiti.fr>
-In-Reply-To: <20180920060358.16606-1-alex@ghiti.fr>
+References: <20180906223851.6964-1-boris.brezillon@bootlin.com>
+In-Reply-To: <20180906223851.6964-1-boris.brezillon@bootlin.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: akpm@linux-foundation.org
-Cc: linux-mm@kvack.org, mike.kravetz@oracle.com, linux@armlinux.org.uk, catalin.marinas@arm.com, will.deacon@arm.com, tony.luck@intel.com, fenghua.yu@intel.com, ralf@linux-mips.org, paul.burton@mips.com, jhogan@kernel.org, jejb@parisc-linux.org, deller@gmx.de, benh@kernel.crashing.org, paulus@samba.org, mpe@ellerman.id.au, ysato@users.sourceforge.jp, dalias@libc.org, davem@davemloft.net, tglx@linutronix.de, mingo@redhat.com, hpa@zytor.com, x86@kernel.org, arnd@arndb.de, linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org, linux-ia64@vger.kernel.org, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-arch@vger.kernel.org, Alexandre Ghiti <alex@ghiti.fr>
+To: Boris Brezillon <boris.brezillon@bootlin.com>, Richard Weinberger <richard@nod.at>, Miquel Raynal <miquel.raynal@bootlin.com>, linux-mtd@lists.infradead.org
+Cc: David Woodhouse <dwmw2@infradead.org>, Brian Norris <computersforpeace@gmail.com>, Marek Vasut <marek.vasut@gmail.com>, Jonathan Corbet <corbet@lwn.net>, linux-doc@vger.kernel.org, Hartley Sweeten <hsweeten@visionengravers.com>, Ryan Mallon <rmallon@gmail.com>, Alexander Shiyan <shc_work@mail.ru>, Shawn Guo <shawnguo@kernel.org>, Sascha Hauer <kernel@pengutronix.de>, Fabio Estevam <fabio.estevam@nxp.com>, NXP Linux Team <linux-imx@nxp.com>, Imre Kaloz <kaloz@openwrt.org>, Krzysztof Halasa <khalasa@piap.pl>, Tony Lindgren <tony@atomide.com>, linux-omap@vger.kernel.org, Alexander Clouter <alex@digriz.org.uk>, Thomas Petazzoni <thomas.petazzoni@bootlin.com>, Gregory CLEMENT <gregory.clement@bootlin.com>, Jason Cooper <jason@lakedaemon.net>, Sebastian Hesselbarth <sebastian.hesselbarth@gmail.com>, Andrew Lunn <andrew@lunn.ch>, Daniel Mack <daniel@zonque.org>, Haojian Zhuang <haojian.zhuang@gmail.com>, Robert Jarzmik <robert.jarzmik@free.fr>, Ralf Baechle <ralf@linux-mips.org>, linux-mips@linux-mips.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, devel@driverdev.osuosl.org
 
-ia64, mips, parisc, powerpc, sh, sparc, x86 architectures use the
-same version of huge_ptep_get, so move this generic implementation into
-asm-generic/hugetlb.h.
+There's no point in poisoning the ->IO_ADDR_{R,W}, a NULL pointer
+is just as good to detect unexpected ->IO_ADDR_{R,W} usage.
 
-Signed-off-by: Alexandre Ghiti <alex@ghiti.fr>
-Tested-by: Helge Deller <deller@gmx.de> # parisc
-Acked-by: Catalin Marinas <catalin.marinas@arm.com> # arm64
-Acked-by: Paul Burton <paul.burton@mips.com> # MIPS parts
-Acked-by: Ingo Molnar <mingo@kernel.org> # x86
-Reviewed-by: Luiz Capitulino <lcapitulino@redhat.com>
-Reviewed-by: Mike Kravetz <mike.kravetz@oracle.com>
+Signed-off-by: Boris Brezillon <boris.brezillon@bootlin.com>
 ---
- arch/arm/include/asm/hugetlb-3level.h | 1 +
- arch/arm64/include/asm/hugetlb.h      | 1 +
- arch/ia64/include/asm/hugetlb.h       | 5 -----
- arch/mips/include/asm/hugetlb.h       | 5 -----
- arch/parisc/include/asm/hugetlb.h     | 5 -----
- arch/powerpc/include/asm/hugetlb.h    | 5 -----
- arch/sh/include/asm/hugetlb.h         | 5 -----
- arch/sparc/include/asm/hugetlb.h      | 5 -----
- arch/x86/include/asm/hugetlb.h        | 5 -----
- include/asm-generic/hugetlb.h         | 7 +++++++
- 10 files changed, 9 insertions(+), 35 deletions(-)
+ drivers/mtd/nand/raw/brcmnand/brcmnand.c | 3 ---
+ drivers/mtd/nand/raw/socrates_nand.c     | 4 ----
+ 2 files changed, 7 deletions(-)
 
-diff --git a/arch/arm/include/asm/hugetlb-3level.h b/arch/arm/include/asm/hugetlb-3level.h
-index 54e4b097b1f5..0d9f3918fa7e 100644
---- a/arch/arm/include/asm/hugetlb-3level.h
-+++ b/arch/arm/include/asm/hugetlb-3level.h
-@@ -29,6 +29,7 @@
-  * ptes.
-  * (The valid bit is automatically cleared by set_pte_at for PROT_NONE ptes).
-  */
-+#define __HAVE_ARCH_HUGE_PTEP_GET
- static inline pte_t huge_ptep_get(pte_t *ptep)
- {
- 	pte_t retval = *ptep;
-diff --git a/arch/arm64/include/asm/hugetlb.h b/arch/arm64/include/asm/hugetlb.h
-index 80887abcef7f..fb6609875455 100644
---- a/arch/arm64/include/asm/hugetlb.h
-+++ b/arch/arm64/include/asm/hugetlb.h
-@@ -20,6 +20,7 @@
+diff --git a/drivers/mtd/nand/raw/brcmnand/brcmnand.c b/drivers/mtd/nand/raw/brcmnand/brcmnand.c
+index fee40a3ce5d2..851db4a7d3e4 100644
+--- a/drivers/mtd/nand/raw/brcmnand/brcmnand.c
++++ b/drivers/mtd/nand/raw/brcmnand/brcmnand.c
+@@ -2270,9 +2270,6 @@ static int brcmnand_init_cs(struct brcmnand_host *host, struct device_node *dn)
+ 	mtd->owner = THIS_MODULE;
+ 	mtd->dev.parent = &pdev->dev;
  
- #include <asm/page.h>
- 
-+#define __HAVE_ARCH_HUGE_PTEP_GET
- static inline pte_t huge_ptep_get(pte_t *ptep)
- {
- 	return READ_ONCE(*ptep);
-diff --git a/arch/ia64/include/asm/hugetlb.h b/arch/ia64/include/asm/hugetlb.h
-index e9b42750fdf5..36cc0396b214 100644
---- a/arch/ia64/include/asm/hugetlb.h
-+++ b/arch/ia64/include/asm/hugetlb.h
-@@ -27,11 +27,6 @@ static inline void huge_ptep_clear_flush(struct vm_area_struct *vma,
- {
- }
- 
--static inline pte_t huge_ptep_get(pte_t *ptep)
--{
--	return *ptep;
--}
+-	chip->IO_ADDR_R = (void __iomem *)0xdeadbeef;
+-	chip->IO_ADDR_W = (void __iomem *)0xdeadbeef;
 -
- static inline void arch_clear_hugepage_flags(struct page *page)
- {
- }
-diff --git a/arch/mips/include/asm/hugetlb.h b/arch/mips/include/asm/hugetlb.h
-index 120adc3b2ffd..425bb6fc3bda 100644
---- a/arch/mips/include/asm/hugetlb.h
-+++ b/arch/mips/include/asm/hugetlb.h
-@@ -82,11 +82,6 @@ static inline int huge_ptep_set_access_flags(struct vm_area_struct *vma,
- 	return changed;
- }
+ 	chip->cmd_ctrl = brcmnand_cmd_ctrl;
+ 	chip->cmdfunc = brcmnand_cmdfunc;
+ 	chip->waitfunc = brcmnand_waitfunc;
+diff --git a/drivers/mtd/nand/raw/socrates_nand.c b/drivers/mtd/nand/raw/socrates_nand.c
+index 64ea9a014054..aa42b4ea4d23 100644
+--- a/drivers/mtd/nand/raw/socrates_nand.c
++++ b/drivers/mtd/nand/raw/socrates_nand.c
+@@ -152,10 +152,6 @@ static int socrates_nand_probe(struct platform_device *ofdev)
+ 	mtd->name = "socrates_nand";
+ 	mtd->dev.parent = &ofdev->dev;
  
--static inline pte_t huge_ptep_get(pte_t *ptep)
--{
--	return *ptep;
--}
+-	/*should never be accessed directly */
+-	nand_chip->IO_ADDR_R = (void *)0xdeadbeef;
+-	nand_chip->IO_ADDR_W = (void *)0xdeadbeef;
 -
- static inline void arch_clear_hugepage_flags(struct page *page)
- {
- }
-diff --git a/arch/parisc/include/asm/hugetlb.h b/arch/parisc/include/asm/hugetlb.h
-index 165b4e5a6f32..7cb595dcb7d7 100644
---- a/arch/parisc/include/asm/hugetlb.h
-+++ b/arch/parisc/include/asm/hugetlb.h
-@@ -48,11 +48,6 @@ int huge_ptep_set_access_flags(struct vm_area_struct *vma,
- 					     unsigned long addr, pte_t *ptep,
- 					     pte_t pte, int dirty);
- 
--static inline pte_t huge_ptep_get(pte_t *ptep)
--{
--	return *ptep;
--}
--
- static inline void arch_clear_hugepage_flags(struct page *page)
- {
- }
-diff --git a/arch/powerpc/include/asm/hugetlb.h b/arch/powerpc/include/asm/hugetlb.h
-index d4d9cf6cb846..383da1ab9e23 100644
---- a/arch/powerpc/include/asm/hugetlb.h
-+++ b/arch/powerpc/include/asm/hugetlb.h
-@@ -139,11 +139,6 @@ extern int huge_ptep_set_access_flags(struct vm_area_struct *vma,
- 				      unsigned long addr, pte_t *ptep,
- 				      pte_t pte, int dirty);
- 
--static inline pte_t huge_ptep_get(pte_t *ptep)
--{
--	return *ptep;
--}
--
- static inline void arch_clear_hugepage_flags(struct page *page)
- {
- }
-diff --git a/arch/sh/include/asm/hugetlb.h b/arch/sh/include/asm/hugetlb.h
-index c87195ae0cfa..6f025fe18146 100644
---- a/arch/sh/include/asm/hugetlb.h
-+++ b/arch/sh/include/asm/hugetlb.h
-@@ -32,11 +32,6 @@ static inline void huge_ptep_clear_flush(struct vm_area_struct *vma,
- {
- }
- 
--static inline pte_t huge_ptep_get(pte_t *ptep)
--{
--	return *ptep;
--}
--
- static inline void arch_clear_hugepage_flags(struct page *page)
- {
- 	clear_bit(PG_dcache_clean, &page->flags);
-diff --git a/arch/sparc/include/asm/hugetlb.h b/arch/sparc/include/asm/hugetlb.h
-index 028a1465fbe7..3963f80d1cb3 100644
---- a/arch/sparc/include/asm/hugetlb.h
-+++ b/arch/sparc/include/asm/hugetlb.h
-@@ -53,11 +53,6 @@ static inline int huge_ptep_set_access_flags(struct vm_area_struct *vma,
- 	return changed;
- }
- 
--static inline pte_t huge_ptep_get(pte_t *ptep)
--{
--	return *ptep;
--}
--
- static inline void arch_clear_hugepage_flags(struct page *page)
- {
- }
-diff --git a/arch/x86/include/asm/hugetlb.h b/arch/x86/include/asm/hugetlb.h
-index 574d42eb081e..7469d321f072 100644
---- a/arch/x86/include/asm/hugetlb.h
-+++ b/arch/x86/include/asm/hugetlb.h
-@@ -13,11 +13,6 @@ static inline int is_hugepage_only_range(struct mm_struct *mm,
- 	return 0;
- }
- 
--static inline pte_t huge_ptep_get(pte_t *ptep)
--{
--	return *ptep;
--}
--
- static inline void arch_clear_hugepage_flags(struct page *page)
- {
- }
-diff --git a/include/asm-generic/hugetlb.h b/include/asm-generic/hugetlb.h
-index f3c99a03ee83..71d7b77eea50 100644
---- a/include/asm-generic/hugetlb.h
-+++ b/include/asm-generic/hugetlb.h
-@@ -119,4 +119,11 @@ static inline int huge_ptep_set_access_flags(struct vm_area_struct *vma,
- }
- #endif
- 
-+#ifndef __HAVE_ARCH_HUGE_PTEP_GET
-+static inline pte_t huge_ptep_get(pte_t *ptep)
-+{
-+	return *ptep;
-+}
-+#endif
-+
- #endif /* _ASM_GENERIC_HUGETLB_H */
+ 	nand_chip->cmd_ctrl = socrates_nand_cmd_ctrl;
+ 	nand_chip->read_byte = socrates_nand_read_byte;
+ 	nand_chip->write_buf = socrates_nand_write_buf;
 -- 
-2.16.2
+2.14.1
