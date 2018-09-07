@@ -1,66 +1,71 @@
-From: Boris Brezillon <boris.brezillon@bootlin.com>
-Date: Thu, 06 Sep 2018 22:38:42 +0000
-Subject: [PATCH 10/19] mtd: rawnand: Move function prototypes after struct declarations
-Message-Id: <20180906223851.6964-11-boris.brezillon@bootlin.com>
+From: Sasha Levin <Alexander.Levin@microsoft.com>
+Date: Fri, 07 Sep 2018 00:39:30 +0000
+Subject: [PATCH AUTOSEL 3.18 06/19] mtd/maps: fix solutionengine.c printk format warnings
+Message-Id: <20180907003923.58019-6-alexander.levin@microsoft.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180906223851.6964-1-boris.brezillon@bootlin.com>
-In-Reply-To: <20180906223851.6964-1-boris.brezillon@bootlin.com>
+References: <20180907003923.58019-1-alexander.levin@microsoft.com>
+In-Reply-To: <20180907003923.58019-1-alexander.levin@microsoft.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Boris Brezillon <boris.brezillon@bootlin.com>, Richard Weinberger <richard@nod.at>, Miquel Raynal <miquel.raynal@bootlin.com>, linux-mtd@lists.infradead.org
-Cc: David Woodhouse <dwmw2@infradead.org>, Brian Norris <computersforpeace@gmail.com>, Marek Vasut <marek.vasut@gmail.com>, Jonathan Corbet <corbet@lwn.net>, linux-doc@vger.kernel.org, Hartley Sweeten <hsweeten@visionengravers.com>, Ryan Mallon <rmallon@gmail.com>, Alexander Shiyan <shc_work@mail.ru>, Shawn Guo <shawnguo@kernel.org>, Sascha Hauer <kernel@pengutronix.de>, Fabio Estevam <fabio.estevam@nxp.com>, NXP Linux Team <linux-imx@nxp.com>, Imre Kaloz <kaloz@openwrt.org>, Krzysztof Halasa <khalasa@piap.pl>, Tony Lindgren <tony@atomide.com>, linux-omap@vger.kernel.org, Alexander Clouter <alex@digriz.org.uk>, Thomas Petazzoni <thomas.petazzoni@bootlin.com>, Gregory CLEMENT <gregory.clement@bootlin.com>, Jason Cooper <jason@lakedaemon.net>, Sebastian Hesselbarth <sebastian.hesselbarth@gmail.com>, Andrew Lunn <andrew@lunn.ch>, Daniel Mack <daniel@zonque.org>, Haojian Zhuang <haojian.zhuang@gmail.com>, Robert Jarzmik <robert.jarzmik@free.fr>, Ralf Baechle <ralf@linux-mips.org>, linux-mips@linux-mips.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, devel@driverdev.osuosl.org
+To: "stable@vger.kernel.org" <stable@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+Cc: Randy Dunlap <rdunlap@infradead.org>, David Woodhouse <dwmw2@infradead.org>, Brian Norris <computersforpeace@gmail.com>, Boris Brezillon <boris.brezillon@bootlin.com>, Marek Vasut <marek.vasut@gmail.com>, Richard Weinberger <richard@nod.at>, "linux-mtd@lists.infradead.org" <linux-mtd@lists.infradead.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Sasha Levin <Alexander.Levin@microsoft.com>
 
-Move nand_scan[_with_ids]() and nand_wait_ready() at the end of the
-file where all function prototype lies. This will also allow us to get
-rid of the nand_flash_dev forward declaration.
+From: Randy Dunlap <rdunlap@infradead.org>
 
+[ Upstream commit 1d25e3eeed1d987404e2d2e451eebac8c15cecc1 ]
+
+Fix 2 printk format warnings (this driver is currently only used by
+arch/sh/) by using "%pap" instead of "%lx".
+
+Fixes these build warnings:
+
+../drivers/mtd/maps/solutionengine.c: In function 'init_soleng_maps':
+../include/linux/kern_levels.h:5:18: warning: format '%lx' expects argument of type 'long unsigned int', but argument 2 has type 'resource_size_t' {aka 'unsigned int'} [-Wformat=]
+../drivers/mtd/maps/solutionengine.c:62:54: note: format string is defined here
+  printk(KERN_NOTICE "Solution Engine: Flash at 0x%08lx, EPROM at 0x%08lx\n",
+                                                  ~~~~^
+                                                  %08x
+../include/linux/kern_levels.h:5:18: warning: format '%lx' expects argument of type 'long unsigned int', but argument 3 has type 'resource_size_t' {aka 'unsigned int'} [-Wformat=]
+../drivers/mtd/maps/solutionengine.c:62:72: note: format string is defined here
+  printk(KERN_NOTICE "Solution Engine: Flash at 0x%08lx, EPROM at 0x%08lx\n",
+                                                                    ~~~~^
+                                                                    %08x
+
+Cc: David Woodhouse <dwmw2@infradead.org>
+Cc: Brian Norris <computersforpeace@gmail.com>
+Cc: Boris Brezillon <boris.brezillon@bootlin.com>
+Cc: Marek Vasut <marek.vasut@gmail.com>
+Cc: Richard Weinberger <richard@nod.at>
+Cc: linux-mtd@lists.infradead.org
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+Cc: linux-sh@vger.kernel.org
+Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+Signed-off-by: Randy Dunlap <rdunlap@infradead.org>
 Signed-off-by: Boris Brezillon <boris.brezillon@bootlin.com>
+Signed-off-by: Sasha Levin <alexander.levin@microsoft.com>
 ---
- include/linux/mtd/rawnand.h | 24 ++++++++++++------------
- 1 file changed, 12 insertions(+), 12 deletions(-)
+ drivers/mtd/maps/solutionengine.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/include/linux/mtd/rawnand.h b/include/linux/mtd/rawnand.h
-index 992d78d29674..15183b73fed2 100644
---- a/include/linux/mtd/rawnand.h
-+++ b/include/linux/mtd/rawnand.h
-@@ -27,18 +27,6 @@
- struct nand_chip;
- struct nand_flash_dev;
+diff --git a/drivers/mtd/maps/solutionengine.c b/drivers/mtd/maps/solutionengine.c
+index bb580bc16445..c07f21b20463 100644
+--- a/drivers/mtd/maps/solutionengine.c
++++ b/drivers/mtd/maps/solutionengine.c
+@@ -59,9 +59,9 @@ static int __init init_soleng_maps(void)
+ 			return -ENXIO;
+ 		}
+ 	}
+-	printk(KERN_NOTICE "Solution Engine: Flash at 0x%08lx, EPROM at 0x%08lx\n",
+-	       soleng_flash_map.phys & 0x1fffffff,
+-	       soleng_eprom_map.phys & 0x1fffffff);
++	printk(KERN_NOTICE "Solution Engine: Flash at 0x%pap, EPROM at 0x%pap\n",
++	       &soleng_flash_map.phys,
++	       &soleng_eprom_map.phys);
+ 	flash_mtd->owner = THIS_MODULE;
  
--/* Scan and identify a NAND device */
--int nand_scan_with_ids(struct nand_chip *chip, unsigned int max_chips,
--		       struct nand_flash_dev *ids);
--
--static inline int nand_scan(struct nand_chip *chip, unsigned int max_chips)
--{
--	return nand_scan_with_ids(chip, max_chips, NULL);
--}
--
--/* Internal helper for board drivers which need to override command function */
--void nand_wait_ready(struct nand_chip *chip);
--
- /* The maximum number of NAND chips in an array */
- #define NAND_MAX_CHIPS		8
- 
-@@ -1739,6 +1727,18 @@ int nand_read_data_op(struct nand_chip *chip, void *buf, unsigned int len,
- int nand_write_data_op(struct nand_chip *chip, const void *buf,
- 		       unsigned int len, bool force_8bit);
- 
-+/* Scan and identify a NAND device */
-+int nand_scan_with_ids(struct nand_chip *chip, unsigned int max_chips,
-+		       struct nand_flash_dev *ids);
-+
-+static inline int nand_scan(struct nand_chip *chip, unsigned int max_chips)
-+{
-+	return nand_scan_with_ids(chip, max_chips, NULL);
-+}
-+
-+/* Internal helper for board drivers which need to override command function */
-+void nand_wait_ready(struct nand_chip *chip);
-+
- /*
-  * Free resources held by the NAND device, must be called on error after a
-  * sucessful nand_scan().
+ 	eprom_mtd = do_map_probe("map_rom", &soleng_eprom_map);
 -- 
-2.14.1
+2.17.1
