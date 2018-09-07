@@ -1,10 +1,10 @@
 From: Sasha Levin <Alexander.Levin@microsoft.com>
-Date: Fri, 07 Sep 2018 00:36:14 +0000
-Subject: [PATCH AUTOSEL 4.18 31/88] mtd/maps: fix solutionengine.c printk format warnings
-Message-Id: <20180907003547.57567-31-alexander.levin@microsoft.com>
+Date: Fri, 07 Sep 2018 00:37:36 +0000
+Subject: [PATCH AUTOSEL 4.14 23/67] mtd/maps: fix solutionengine.c printk format warnings
+Message-Id: <20180907003716.57737-23-alexander.levin@microsoft.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180907003547.57567-1-alexander.levin@microsoft.com>
-In-Reply-To: <20180907003547.57567-1-alexander.levin@microsoft.com>
+References: <20180907003716.57737-1-alexander.levin@microsoft.com>
+In-Reply-To: <20180907003716.57737-1-alexander.levin@microsoft.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
