@@ -1,76 +1,79 @@
-From: Biju Das <biju.das@bp.renesas.com>
-Date: Thu, 06 Sep 2018 08:27:48 +0000
-Subject: RE: [PATCH 2/2] clocksource: sh_cmt: add R-Car gen3 support
-Message-Id: <OSBPR01MB21036C90B39B5ADB56A7DD8EB8010@OSBPR01MB2103.jpnprd01.prod.outlook.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Mon, 10 Sep 2018 19:12:14 +0000
+Subject: Re: [PATCH 2/2] clocksource: sh_cmt: add R-Car gen3 support
+Message-Id: <cbcd513a-caba-a804-110d-acd5432a2698@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <3ce24bfe-1edb-1a92-8847-ff998ac86d16@cogentembedded.com>
  <dc0446c7-e63b-17f1-45ed-e544b5602b9e@cogentembedded.com>
-In-Reply-To: <dc0446c7-e63b-17f1-45ed-e544b5602b9e@cogentembedded.com>
+ <OSBPR01MB21036C90B39B5ADB56A7DD8EB8010@OSBPR01MB2103.jpnprd01.prod.outlook.com>
+In-Reply-To: <OSBPR01MB21036C90B39B5ADB56A7DD8EB8010@OSBPR01MB2103.jpnprd01.prod.outlook.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Daniel Lezcano <daniel.lezcano@linaro.org>, Thomas Gleixner <tglx@linutronix.de>, Rob Herring <robh+dt@kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: Biju Das <biju.das@bp.renesas.com>, Daniel Lezcano <daniel.lezcano@linaro.org>, Thomas Gleixner <tglx@linutronix.de>, Rob Herring <robh+dt@kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
 Cc: "linux-renesas-soc@vger.kernel.org" <linux-renesas-soc@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
 
-SGkgU2VyZ2llLA0KDQpUaGFua3MgZm9yIHRoZSBwYXRjaA0KDQo+IC0tLS0tT3JpZ2luYWwgTWVz
-c2FnZS0tLS0tDQo+IEZyb206IGRldmljZXRyZWUtb3duZXJAdmdlci5rZXJuZWwub3JnIDxkZXZp
-Y2V0cmVlLQ0KPiBvd25lckB2Z2VyLmtlcm5lbC5vcmc+IE9uIEJlaGFsZiBPZiBTZXJnZWkgU2h0
-eWx5b3YNCj4gU2VudDogMDUgU2VwdGVtYmVyIDIwMTggMjE6MzINCj4gVG86IERhbmllbCBMZXpj
-YW5vIDxkYW5pZWwubGV6Y2Fub0BsaW5hcm8ub3JnPjsgVGhvbWFzIEdsZWl4bmVyDQo+IDx0Z2x4
-QGxpbnV0cm9uaXguZGU+OyBSb2IgSGVycmluZyA8cm9iaCtkdEBrZXJuZWwub3JnPjsNCj4gZGV2
-aWNldHJlZUB2Z2VyLmtlcm5lbC5vcmcNCj4gQ2M6IGxpbnV4LXJlbmVzYXMtc29jQHZnZXIua2Vy
-bmVsLm9yZzsgbGludXgtc2hAdmdlci5rZXJuZWwub3JnDQo+IFN1YmplY3Q6IFtQQVRDSCAyLzJd
-IGNsb2Nrc291cmNlOiBzaF9jbXQ6IGFkZCBSLUNhciBnZW4zIHN1cHBvcnQNCj4NCj4gQWRkIHN1
-cHBvcnQgZm9yIHRoZSBSLUNhciBnZW4zIENNVDAgYW5kIENNVDEgYmluZGluZ3MgLS0gdGhleSBz
-ZWVtIHRvIGJlDQo+IHRoZSBzYW1lIENNVDAgYW5kIENNVDEgYXMgaW4gUi1DYXIgZ2VuMiBTb0Nz
-LiBBbHNvIGRvY3VtZW50IFI4QTc3OXs3fDh9DQo+IGJpbmRpbmdzIGFzIHRoZXNlIGFyZSB0aGUg
-Ui1DYXIgZ2VuMyBTb0NzIGZvciB3aGljaCB0aGUgaW5pdGlhbCBzdXBwb3J0IHdhcw0KPiBkb25l
-Lg0KPg0KPiBTaWduZWQtb2ZmLWJ5OiBTZXJnZWkgU2h0eWx5b3YgPHNlcmdlaS5zaHR5bHlvdkBj
-b2dlbnRlbWJlZGRlZC5jb20+DQo+DQo+IC0tLQ0KPiAgRG9jdW1lbnRhdGlvbi9kZXZpY2V0cmVl
-L2JpbmRpbmdzL3RpbWVyL3JlbmVzYXMsY210LnR4dCB8ICAgIDcgKysrKysrKw0KPiAgZHJpdmVy
-cy9jbG9ja3NvdXJjZS9zaF9jbXQuYyAgICAgICAgICAgICAgICAgICAgICAgICAgICB8ICAgIDgg
-KysrKysrKysNCj4gIDIgZmlsZXMgY2hhbmdlZCwgMTUgaW5zZXJ0aW9ucygrKQ0KPg0KPiBJbmRl
-eDogcmVuZXNhcy9Eb2N1bWVudGF0aW9uL2RldmljZXRyZWUvYmluZGluZ3MvdGltZXIvcmVuZXNh
-cyxjbXQudHh0DQo+ID09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09
-PT09PT09PT09PT09PT0NCj4gPT09PT09PT09DQo+IC0tLSByZW5lc2FzLm9yaWcvRG9jdW1lbnRh
-dGlvbi9kZXZpY2V0cmVlL2JpbmRpbmdzL3RpbWVyL3JlbmVzYXMsY210LnR4dA0KPiArKysgcmVu
-ZXNhcy9Eb2N1bWVudGF0aW9uL2RldmljZXRyZWUvYmluZGluZ3MvdGltZXIvcmVuZXNhcyxjbXQu
-dHh0DQo+IEBAIC0zNCw2ICszNCwxMCBAQCBSZXF1aXJlZCBQcm9wZXJ0aWVzOg0KPiAgICAgIC0g
-InJlbmVzYXMscjhhNzc5My1jbXQxIiBmb3IgdGhlIDQ4LWJpdCBDTVQxIGRldmljZSBpbmNsdWRl
-ZCBpbiByOGE3NzkzLg0KPiAgICAgIC0gInJlbmVzYXMscjhhNzc5NC1jbXQwIiBmb3IgdGhlIDMy
-LWJpdCBDTVQwIGRldmljZSBpbmNsdWRlZCBpbiByOGE3Nzk0Lg0KPiAgICAgIC0gInJlbmVzYXMs
-cjhhNzc5NC1jbXQxIiBmb3IgdGhlIDQ4LWJpdCBDTVQxIGRldmljZSBpbmNsdWRlZCBpbiByOGE3
-Nzk0Lg0KPiArICAgIC0gInJlbmVzYXMscjhhNzc5NzAtY210MCIgZm9yIHRoZSAzMi1iaXQgQ01U
-MCBkZXZpY2UgaW5jbHVkZWQgaW4NCj4gcjhhNzc5NzAuDQo+ICsgICAgLSAicmVuZXNhcyxyOGE3
-Nzk3MC1jbXQxIiBmb3IgdGhlIDQ4LWJpdCBDTVQxIGRldmljZSBpbmNsdWRlZCBpbg0KPiByOGE3
-Nzk3MC4NCj4gKyAgICAtICJyZW5lc2FzLHI4YTc3OTgwLWNtdDAiIGZvciB0aGUgMzItYml0IENN
-VDAgZGV2aWNlIGluY2x1ZGVkIGluDQo+IHI4YTc3OTgwLg0KPiArICAgIC0gInJlbmVzYXMscjhh
-Nzc5ODAtY210MSIgZm9yIHRoZSA0OC1iaXQgQ01UMSBkZXZpY2UgaW5jbHVkZWQgaW4NCj4gcjhh
-Nzc5ODAuDQo+DQo+ICAgICAgLSAicmVuZXNhcyxyY2FyLWdlbjItY210MCIgZm9yIDMyLWJpdCBD
-TVQwIGRldmljZXMgaW5jbHVkZWQgaW4gUi1DYXIgR2VuMg0KPiAgYW5kIFJaL0cxLg0KPiBAQCAt
-NDEsNiArNDUsOSBAQCBSZXF1aXJlZCBQcm9wZXJ0aWVzOg0KPiAgYW5kIFJaL0cxLg0KPiAgVGhl
-c2UgYXJlIGZhbGxiYWNrcyBmb3IgcjhhNzNhNCwgUi1DYXIgR2VuMiBhbmQgUlovRzENCj4gZW50
-cmllcw0KPiAgbGlzdGVkIGFib3ZlLg0KPiArICAgIC0gInJlbmVzYXMscmNhci1nZW4zLWNtdDAi
-IGZvciAzMi1iaXQgQ01UMCBkZXZpY2VzIGluY2x1ZGVkIGluIFItQ2FyDQo+IEdlbjMuDQo+ICsg
-ICAgLSAicmVuZXNhcyxyY2FyLWdlbjMtY210MSIgZm9yIDQ4LWJpdCBDTVQxIGRldmljZXMgaW5j
-bHVkZWQgaW4gUi1DYXINCg0KIERvIHdlIG5lZWQgdG8gbWVudGlvbiBDTVQxLzIvMyBpbnN0ZWFk
-IG9mIENNVDEsIHNpbmNlIENNVDIvMyBpcyBzaW1pbGFyIHRvIENNVDE/DQoNCj4gR2VuMy4NCj4g
-K1RoZXNlIGFyZSBmYWxsYmFja3MgZm9yIFItQ2FyIEdlbjMgZW50cmllcyBsaXN0ZWQgYWJvdmUu
-DQo+DQo+ICAgIC0gcmVnOiBiYXNlIGFkZHJlc3MgYW5kIGxlbmd0aCBvZiB0aGUgcmVnaXN0ZXJz
-IGJsb2NrIGZvciB0aGUgdGltZXIgbW9kdWxlLg0KPiAgICAtIGludGVycnVwdHM6IGludGVycnVw
-dC1zcGVjaWZpZXIgZm9yIHRoZSB0aW1lciwgb25lIHBlciBjaGFubmVsLg0KPiBJbmRleDogcmVu
-ZXNhcy9kcml2ZXJzL2Nsb2Nrc291cmNlL3NoX2NtdC5jDQo+ID09PT09PT09PT09PT09PT09PT09
-PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT0NCj4gPT09PT09PT09DQo+IC0t
-LSByZW5lc2FzLm9yaWcvZHJpdmVycy9jbG9ja3NvdXJjZS9zaF9jbXQuYw0KPiArKysgcmVuZXNh
-cy9kcml2ZXJzL2Nsb2Nrc291cmNlL3NoX2NtdC5jDQo+IEBAIC05NDUsNiArOTQ1LDE0IEBAIHN0
-YXRpYyBjb25zdCBzdHJ1Y3Qgb2ZfZGV2aWNlX2lkIHNoX2NtdF8NCj4gIC5jb21wYXRpYmxlID0g
-InJlbmVzYXMscmNhci1nZW4yLWNtdDEiLA0KPiAgLmRhdGEgPSAmc2hfY210X2luZm9bU0hfQ01U
-MV9SQ0FSX0dFTjJdDQo+ICB9LA0KPiArew0KPiArLmNvbXBhdGlibGUgPSAicmVuZXNhcyxyY2Fy
-LWdlbjMtY210MCIsDQo+ICsuZGF0YSA9ICZzaF9jbXRfaW5mb1tTSF9DTVQwX1JDQVJfR0VOMl0N
-Cj4gK30sDQo+ICt7DQo+ICsuY29tcGF0aWJsZSA9ICJyZW5lc2FzLHJjYXItZ2VuMy1jbXQxIiwN
-Cj4gKy5kYXRhID0gJnNoX2NtdF9pbmZvW1NIX0NNVDFfUkNBUl9HRU4yXQ0KPiArfSwNCj4gIHsg
-fQ0KPiAgfTsNCj4gIE1PRFVMRV9ERVZJQ0VfVEFCTEUob2YsIHNoX2NtdF9vZl90YWJsZSk7DQoN
-CnJlZ2FyZHMsDQpCaWp1DQoNCg0KDQpSZW5lc2FzIEVsZWN0cm9uaWNzIEV1cm9wZSBMdGQsIER1
-a2VzIE1lYWRvdywgTWlsbGJvYXJkIFJvYWQsIEJvdXJuZSBFbmQsIEJ1Y2tpbmdoYW1zaGlyZSwg
-U0w4IDVGSCwgVUsuIFJlZ2lzdGVyZWQgaW4gRW5nbGFuZCAmIFdhbGVzIHVuZGVyIFJlZ2lzdGVy
-ZWQgTm8uIDA0NTg2NzA5Lg0K
+Hello!
+
+On 09/06/2018 11:27 AM, Biju Das wrote:
+
+>> -----Original Message-----
+>> From: devicetree-owner@vger.kernel.org <devicetree-
+>> owner@vger.kernel.org> On Behalf Of Sergei Shtylyov
+>> Sent: 05 September 2018 21:32
+>> To: Daniel Lezcano <daniel.lezcano@linaro.org>; Thomas Gleixner
+>> <tglx@linutronix.de>; Rob Herring <robh+dt@kernel.org>;
+>> devicetree@vger.kernel.org
+>> Cc: linux-renesas-soc@vger.kernel.org; linux-sh@vger.kernel.org
+>> Subject: [PATCH 2/2] clocksource: sh_cmt: add R-Car gen3 support
+>>
+>> Add support for the R-Car gen3 CMT0 and CMT1 bindings -- they seem to be
+>> the same CMT0 and CMT1 as in R-Car gen2 SoCs. Also document R8A779{7|8}
+>> bindings as these are the R-Car gen3 SoCs for which the initial support was
+>> done.
+>>
+>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+>>
+>> ---
+>>  Documentation/devicetree/bindings/timer/renesas,cmt.txt |    7 +++++++
+>>  drivers/clocksource/sh_cmt.c                            |    8 ++++++++
+>>  2 files changed, 15 insertions(+)
+>>
+>> Index: renesas/Documentation/devicetree/bindings/timer/renesas,cmt.txt
+>> =============================
+>> ====>> --- renesas.orig/Documentation/devicetree/bindings/timer/renesas,cmt.txt
+>> +++ renesas/Documentation/devicetree/bindings/timer/renesas,cmt.txt
+>> @@ -34,6 +34,10 @@ Required Properties:
+>>      - "renesas,r8a7793-cmt1" for the 48-bit CMT1 device included in r8a7793.
+>>      - "renesas,r8a7794-cmt0" for the 32-bit CMT0 device included in r8a7794.
+>>      - "renesas,r8a7794-cmt1" for the 48-bit CMT1 device included in r8a7794.
+>> +    - "renesas,r8a77970-cmt0" for the 32-bit CMT0 device included in
+>> r8a77970.
+>> +    - "renesas,r8a77970-cmt1" for the 48-bit CMT1 device included in
+>> r8a77970.
+>> +    - "renesas,r8a77980-cmt0" for the 32-bit CMT0 device included in
+>> r8a77980.
+>> +    - "renesas,r8a77980-cmt1" for the 48-bit CMT1 device included in
+>> r8a77980.
+>>
+>>      - "renesas,rcar-gen2-cmt0" for 32-bit CMT0 devices included in R-Car Gen2
+>>  and RZ/G1.
+>> @@ -41,6 +45,9 @@ Required Properties:
+>>  and RZ/G1.
+>>  These are fallbacks for r8a73a4, R-Car Gen2 and RZ/G1
+>> entries
+>>  listed above.
+>> +    - "renesas,rcar-gen3-cmt0" for 32-bit CMT0 devices included in R-Car
+>> Gen3.
+>> +    - "renesas,rcar-gen3-cmt1" for 48-bit CMT1 devices included in R-Car
+> 
+>  Do we need to mention CMT1/2/3 instead of CMT1, since CMT2/3 is similar to CMT1?
+
+   Well, the manual only describes CMT0 and CMT1 separately. Perhaps it would have been
+clearer to call them CMTT0 and CMTT1 as they stand for Compare Match Timer Type 0/1?
+Note at this point we already have a history of describing CMT0/1 only in the bindings
+as well...
+
+[...]
+
+MBR, Sergei
