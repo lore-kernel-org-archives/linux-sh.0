@@ -1,26 +1,36 @@
-From: cinthia_reyes@hmha.gob.ec
-Date: Mon, 24 Sep 2018 10:37:21 +0000
-Subject: =?utf-8?b?V29obHTDpHRpZ2tlaXRzc3BlbmRlIGluIEjDtmhlIHZvbiDigqwgMi4wMDAu?= =?utf-8?q?000=2C00?=
-Message-Id: <20180924103731.F225AF44A5@mail.hmha.gob.ec>
+From: Mark Brown <broonie@kernel.org>
+Date: Wed, 12 Sep 2018 12:12:07 +0000
+Subject: [PATCH] sh: Provide prototypes for PCI I/O mapping in asm/io.h
+Message-Id: <20180912121207.16772-1-broonie@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180506111415.6E1C2847C89@mail.ithb.ac.id>
-In-Reply-To: <20180506111415.6E1C2847C89@mail.ithb.ac.id>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Lieber Freund,
+Most architectures provide prototypes for the PCI I/O mapping operations
+when asm/io.h is included but SH doesn't currently do that, leading to
+for example warnings in sound/pci/hda/patch_ca0132.c when pci_iomap() is
+used on current -next.  Make SH more consistent with other architectures
+by including asm-generic/pci_iomap.h in asm/io.h.
+
+Reported-by: kbuild test robot <lkp@intel.com>
+Signed-off-by: Mark Brown <broonie@kernel.org>
+---
+ arch/sh/include/asm/io.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/sh/include/asm/io.h b/arch/sh/include/asm/io.h
+index 98cb8c802b1a..4f7f235f15f8 100644
+--- a/arch/sh/include/asm/io.h
++++ b/arch/sh/include/asm/io.h
+@@ -24,6 +24,7 @@
+ #define __IO_PREFIX     generic
+ #include <asm/io_generic.h>
+ #include <asm/io_trapped.h>
++#include <asm-generic/pci_iomap.h>
+ #include <mach/mangle-port.h>
  
-Ich bin Herr Tayeb Souami, New Jersey, Vereinigte Staaten von Amerika, der Mega-Gewinner von $ 315million In Mega Millions Jackpot, spende ich an 5 zufällige Personen, wenn Sie diese E-Mail erhalten, dann wurde Ihre E-Mail nach einem Spinball ausgewählt.Ich habe den größten Teil meines Vermögens auf eine Reihe von Wohltätigkeitsorganisationen und Organisationen verteilt.Ich habe mich freiwillig dazu entschieden, die Summe von € 2.000.000,00 an Sie als eine der ausgewählten 5 zu spenden, um meine Gewinne zu überprüfen, sehen Sie bitte meine You Tube Seite unten.
- 
-UHR MICH HIER: https://www.youtube.com/watch?v=Z6ui8ZDQ6Ks
- 
-Das ist dein Spendencode: [DFC530342018]
- 
-Antworten Sie mit dem SPENDE-CODE an diese E-Mail: financialfundingcompany09@gmail.com
- 
-Ich hoffe, Sie und Ihre Familie glücklich zu machen.
- 
-Grüße
-Herr Tayeb Souami
+ #define __raw_writeb(v,a)	(__chk_io_ptr(a), *(volatile u8  __force *)(a) = (v))
+-- 
+2.19.0.rc2
