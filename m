@@ -1,251 +1,177 @@
-From: Boris Brezillon <boris.brezillon@bootlin.com>
-Date: Thu, 06 Sep 2018 22:38:38 +0000
-Subject: [PATCH 06/19] mtd: rawnand: Deprecate ->block_{bad,markbad}() hooks
-Message-Id: <20180906223851.6964-7-boris.brezillon@bootlin.com>
+From: Firoz Khan <firoz.khan@linaro.org>
+Date: Tue, 18 Sep 2018 09:18:17 +0000
+Subject: Re: [PATCH 1/3] sh: Rename NR_syscalls macro to __NR_syscalls
+Message-Id: <CALxhOngjRE12Agy-JmB6+0HAhUW6VdpOjpMU_bVEjCwEn0Nemg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180906223851.6964-1-boris.brezillon@bootlin.com>
-In-Reply-To: <20180906223851.6964-1-boris.brezillon@bootlin.com>
+References: <1533793005-4525-2-git-send-email-firoz.khan@linaro.org>
+ <201808092020.H3Qhfo8m%fengguang.wu@intel.com> <20180810153852.720e2143@gandalf.local.home>
+In-Reply-To: <20180810153852.720e2143@gandalf.local.home>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Boris Brezillon <boris.brezillon@bootlin.com>, Richard Weinberger <richard@nod.at>, Miquel Raynal <miquel.raynal@bootlin.com>, linux-mtd@lists.infradead.org
-Cc: David Woodhouse <dwmw2@infradead.org>, Brian Norris <computersforpeace@gmail.com>, Marek Vasut <marek.vasut@gmail.com>, Jonathan Corbet <corbet@lwn.net>, linux-doc@vger.kernel.org, Hartley Sweeten <hsweeten@visionengravers.com>, Ryan Mallon <rmallon@gmail.com>, Alexander Shiyan <shc_work@mail.ru>, Shawn Guo <shawnguo@kernel.org>, Sascha Hauer <kernel@pengutronix.de>, Fabio Estevam <fabio.estevam@nxp.com>, NXP Linux Team <linux-imx@nxp.com>, Imre Kaloz <kaloz@openwrt.org>, Krzysztof Halasa <khalasa@piap.pl>, Tony Lindgren <tony@atomide.com>, linux-omap@vger.kernel.org, Alexander Clouter <alex@digriz.org.uk>, Thomas Petazzoni <thomas.petazzoni@bootlin.com>, Gregory CLEMENT <gregory.clement@bootlin.com>, Jason Cooper <jason@lakedaemon.net>, Sebastian Hesselbarth <sebastian.hesselbarth@gmail.com>, Andrew Lunn <andrew@lunn.ch>, Daniel Mack <daniel@zonque.org>, Haojian Zhuang <haojian.zhuang@gmail.com>, Robert Jarzmik <robert.jarzmik@free.fr>, Ralf Baechle <ralf@linux-mips.org>, linux-mips@linux-mips.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, devel@driverdev.osuosl.org
+To: Steven Rostedt <rostedt@goodmis.org>
+Cc: kbuild test robot <lkp@intel.com>, kbuild-all@01.org, linux-sh@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Ingo Molnar <mingo@redhat.com>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Philippe Ombredanne <pombredanne@nexb.com>, Thomas Gleixner <tglx@linutronix.de>, Kate Stewart <kstewart@linuxfoundation.org>, y2038 Mailman List <y2038@lists.linaro.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Linux-Arch <linux-arch@vger.kernel.org>, Arnd Bergmann <arnd@arndb.de>, Deepa Dinamani <deepa.kernel@gmail.com>, Marcin Juszkiewicz <marcin.juszkiewicz@linaro.org>
 
-Those hooks have been overloaded by some drivers for bad reasons:
-either the driver was not fitting in the NAND framework and should
-have been an MTD driver (docg4), or it was not properly implementing
-the OOB read/write request or had a weird layout where BBM are trashed.
-In any case, we should discourage people from overloading those
-methods and encourage them to fix their driver instead.
+On 11 August 2018 at 01:08, Steven Rostedt <rostedt@goodmis.org> wrote:
+> On Thu, 9 Aug 2018 20:58:58 +0800
+> kbuild test robot <lkp@intel.com> wrote:
+>
+>> Hi Firoz,
+>>
+>> Thank you for the patch! Yet something to improve:
+>>
+>> [auto build test ERROR on linus/master]
+>> [also build test ERROR on v4.18-rc8 next-20180808]
+>> [if your patch is applied to the wrong git tree, please drop us a note to help improve the system]
+>>
+>> url:    https://github.com/0day-ci/linux/commits/Firoz-Khan/sh-Rename-NR_syscalls-macro-to-__NR_syscalls/20180809-171759
+>> config: sh-allmodconfig (attached as .config)
+>> compiler: sh4-linux-gnu-gcc (Debian 7.2.0-11) 7.2.0
+>> reproduce:
+>>         wget https://raw.githubusercontent.com/intel/lkp-tests/master/sbin/make.cross -O ~/bin/make.cross
+>>         chmod +x ~/bin/make.cross
+>>         # save the attached .config to linux build tree
+>>         GCC_VERSION=7.2.0 make.cross ARCH=sh
+>>
+>> All errors (new ones prefixed by >>):
+>>
+>>    In file included from kernel/trace/trace_selftest_dynamic.c:3:0:
+>> >> kernel/trace/trace.h:243:53: error: 'NR_syscalls' undeclared here (not in a function); did you mean '__NR_syscalls'?
+>>      struct trace_event_file __rcu *enter_syscall_files[NR_syscalls];
+>>                                                         ^~~~~~~~~~~
+>>                                                         __NR_syscalls
+>> --
+>>    In file included from kernel/trace/trace_output.h:6:0,
+>>                     from kernel/trace/trace_syscalls.c:12:
+>> >> kernel/trace/trace.h:243:53: error: 'NR_syscalls' undeclared here (not in a function); did you mean '__NR_syscalls'?
+>>      struct trace_event_file __rcu *enter_syscall_files[NR_syscalls];
+>>                                                         ^~~~~~~~~~~
+>>                                                         __NR_syscalls
+>
+> Most archs have a:
+>
+> #define NR_syscalls __NR_syscalls
 
-Move the ->block_{bad,markbad}() hooks to the nand_legacy struct to
-make it clear.
+Thanks for your reply!
+Sorry for the delayed response :(
 
-Signed-off-by: Boris Brezillon <boris.brezillon@bootlin.com>
----
- drivers/mtd/nand/raw/cafe_nand.c           |  2 +-
- drivers/mtd/nand/raw/diskonchip.c          |  2 +-
- drivers/mtd/nand/raw/gpmi-nand/gpmi-nand.c |  4 ++--
- drivers/mtd/nand/raw/nand_base.c           | 37 ++++++++++++++++++++++--------
- drivers/mtd/nand/raw/nand_bbt.c            |  2 +-
- drivers/mtd/nand/raw/qcom_nandc.c          |  4 ++--
- drivers/mtd/nand/raw/sm_common.c           |  2 +-
- include/linux/mtd/rawnand.h                |  9 ++++----
- 8 files changed, 40 insertions(+), 22 deletions(-)
+Yes. I'll add this change in the next version of the patch series.
 
-diff --git a/drivers/mtd/nand/raw/cafe_nand.c b/drivers/mtd/nand/raw/cafe_nand.c
-index 738af0f0a48d..db62b12800d3 100644
---- a/drivers/mtd/nand/raw/cafe_nand.c
-+++ b/drivers/mtd/nand/raw/cafe_nand.c
-@@ -719,7 +719,7 @@ static int cafe_nand_probe(struct pci_dev *pdev,
- 
- 	if (skipbbt) {
- 		cafe->nand.options |= NAND_SKIP_BBTSCAN;
--		cafe->nand.block_bad = cafe_nand_block_bad;
-+		cafe->nand.legacy.block_bad = cafe_nand_block_bad;
- 	}
- 
- 	if (numtimings && numtimings != 3) {
-diff --git a/drivers/mtd/nand/raw/diskonchip.c b/drivers/mtd/nand/raw/diskonchip.c
-index c3a79369fbed..16fdfd06ef25 100644
---- a/drivers/mtd/nand/raw/diskonchip.c
-+++ b/drivers/mtd/nand/raw/diskonchip.c
-@@ -1572,7 +1572,7 @@ static int __init doc_probe(unsigned long physadr)
- 	nand->legacy.cmd_ctrl		= doc200x_hwcontrol;
- 	nand->legacy.dev_ready	= doc200x_dev_ready;
- 	nand->legacy.waitfunc	= doc200x_wait;
--	nand->block_bad		= doc200x_block_bad;
-+	nand->legacy.block_bad	= doc200x_block_bad;
- 	nand->ecc.hwctl		= doc200x_enable_hwecc;
- 	nand->ecc.calculate	= doc200x_calculate_ecc;
- 	nand->ecc.correct	= doc200x_correct_data;
-diff --git a/drivers/mtd/nand/raw/gpmi-nand/gpmi-nand.c b/drivers/mtd/nand/raw/gpmi-nand/gpmi-nand.c
-index dc6291902acf..94c2b7525c85 100644
---- a/drivers/mtd/nand/raw/gpmi-nand/gpmi-nand.c
-+++ b/drivers/mtd/nand/raw/gpmi-nand/gpmi-nand.c
-@@ -1774,7 +1774,7 @@ static int mx23_boot_init(struct gpmi_nand_data  *this)
- 		 */
- 		if (block_mark != 0xff) {
- 			dev_dbg(dev, "Transcribing mark in block %u\n", block);
--			ret = chip->block_markbad(chip, byte);
-+			ret = chip->legacy.block_markbad(chip, byte);
- 			if (ret)
- 				dev_err(dev,
- 					"Failed to mark block bad with ret %d\n",
-@@ -1908,7 +1908,7 @@ static int gpmi_nand_init(struct gpmi_nand_data *this)
- 	chip->legacy.read_buf	= gpmi_read_buf;
- 	chip->legacy.write_buf	= gpmi_write_buf;
- 	chip->badblock_pattern	= &gpmi_bbt_descr;
--	chip->block_markbad	= gpmi_block_markbad;
-+	chip->legacy.block_markbad = gpmi_block_markbad;
- 	chip->options		|= NAND_NO_SUBPAGE_WRITE;
- 
- 	/* Set up swap_block_mark, must be set before the gpmi_set_geometry() */
-diff --git a/drivers/mtd/nand/raw/nand_base.c b/drivers/mtd/nand/raw/nand_base.c
-index 30b55a4677f9..d71a3d303903 100644
---- a/drivers/mtd/nand/raw/nand_base.c
-+++ b/drivers/mtd/nand/raw/nand_base.c
-@@ -475,6 +475,27 @@ static int nand_default_block_markbad(struct nand_chip *chip, loff_t ofs)
- 	return ret;
- }
- 
-+/**
-+ * nand_markbad_bbm - mark a block by updating the BBM
-+ * @chip: NAND chip object
-+ * @ofs: offset of the block to mark bad
-+ */
-+int nand_markbad_bbm(struct nand_chip *chip, loff_t ofs)
-+{
-+	if (chip->legacy.block_markbad)
-+		return chip->legacy.block_markbad(chip, ofs);
-+
-+	return nand_default_block_markbad(chip, ofs);
-+}
-+
-+static int nand_isbad_bbm(struct nand_chip *chip, loff_t ofs)
-+{
-+	if (chip->legacy.block_bad)
-+		return chip->legacy.block_bad(chip, ofs);
-+
-+	return nand_block_bad(chip, ofs);
-+}
-+
- /**
-  * nand_block_markbad_lowlevel - mark a block bad
-  * @mtd: MTD device structure
-@@ -482,7 +503,7 @@ static int nand_default_block_markbad(struct nand_chip *chip, loff_t ofs)
-  *
-  * This function performs the generic NAND bad block marking steps (i.e., bad
-  * block table(s) and/or marker(s)). We only allow the hardware driver to
-- * specify how to write bad block markers to OOB (chip->block_markbad).
-+ * specify how to write bad block markers to OOB (chip->legacy.block_markbad).
-  *
-  * We try operations in the following order:
-  *
-@@ -510,7 +531,7 @@ static int nand_block_markbad_lowlevel(struct mtd_info *mtd, loff_t ofs)
- 
- 		/* Write bad block marker to OOB */
- 		nand_get_device(mtd, FL_WRITING);
--		ret = chip->block_markbad(chip, ofs);
-+		ret = nand_markbad_bbm(chip, ofs);
- 		nand_release_device(mtd);
- 	}
- 
-@@ -582,11 +603,11 @@ static int nand_block_checkbad(struct mtd_info *mtd, loff_t ofs, int allowbbt)
- {
- 	struct nand_chip *chip = mtd_to_nand(mtd);
- 
--	if (!chip->bbt)
--		return chip->block_bad(chip, ofs);
--
- 	/* Return info from the table */
--	return nand_isbad_bbt(chip, ofs, allowbbt);
-+	if (chip->bbt)
-+		return nand_isbad_bbt(chip, ofs, allowbbt);
-+
-+	return nand_isbad_bbm(chip, ofs);
- }
- 
- /**
-@@ -4942,10 +4963,6 @@ static void nand_set_defaults(struct nand_chip *chip)
- 	/* If called twice, pointers that depend on busw may need to be reset */
- 	if (!chip->legacy.read_byte || chip->legacy.read_byte = nand_read_byte)
- 		chip->legacy.read_byte = busw ? nand_read_byte16 : nand_read_byte;
--	if (!chip->block_bad)
--		chip->block_bad = nand_block_bad;
--	if (!chip->block_markbad)
--		chip->block_markbad = nand_default_block_markbad;
- 	if (!chip->legacy.write_buf || chip->legacy.write_buf = nand_write_buf)
- 		chip->legacy.write_buf = busw ? nand_write_buf16 : nand_write_buf;
- 	if (!chip->legacy.write_byte || chip->legacy.write_byte = nand_write_byte)
-diff --git a/drivers/mtd/nand/raw/nand_bbt.c b/drivers/mtd/nand/raw/nand_bbt.c
-index 9d73e086c5de..b838ecdde8fb 100644
---- a/drivers/mtd/nand/raw/nand_bbt.c
-+++ b/drivers/mtd/nand/raw/nand_bbt.c
-@@ -689,7 +689,7 @@ static void mark_bbt_block_bad(struct nand_chip *this,
- 	bbt_mark_entry(this, block, BBT_BLOCK_WORN);
- 
- 	to = (loff_t)block << this->bbt_erase_shift;
--	res = this->block_markbad(this, to);
-+	res = nand_markbad_bbm(this, to);
- 	if (res)
- 		pr_warn("nand_bbt: error %d while marking block %d bad\n",
- 			res, block);
-diff --git a/drivers/mtd/nand/raw/qcom_nandc.c b/drivers/mtd/nand/raw/qcom_nandc.c
-index bd187139416f..79342e24ed81 100644
---- a/drivers/mtd/nand/raw/qcom_nandc.c
-+++ b/drivers/mtd/nand/raw/qcom_nandc.c
-@@ -2819,8 +2819,8 @@ static int qcom_nand_host_init_and_register(struct qcom_nand_controller *nandc,
- 	 * and block_markbad helpers until we permanently switch to using
- 	 * MTD_OPS_RAW for all drivers (with the help of badblockbits)
- 	 */
--	chip->block_bad		= qcom_nandc_block_bad;
--	chip->block_markbad	= qcom_nandc_block_markbad;
-+	chip->legacy.block_bad		= qcom_nandc_block_bad;
-+	chip->legacy.block_markbad	= qcom_nandc_block_markbad;
- 
- 	chip->controller = &nandc->controller;
- 	chip->options |= NAND_NO_SUBPAGE_WRITE | NAND_USE_BOUNCE_BUFFER |
-diff --git a/drivers/mtd/nand/raw/sm_common.c b/drivers/mtd/nand/raw/sm_common.c
-index bf143e0db787..6f063ef57640 100644
---- a/drivers/mtd/nand/raw/sm_common.c
-+++ b/drivers/mtd/nand/raw/sm_common.c
-@@ -168,7 +168,7 @@ static int sm_attach_chip(struct nand_chip *chip)
- 	/* Bad block marker position */
- 	chip->badblockpos = 0x05;
- 	chip->badblockbits = 7;
--	chip->block_markbad = sm_block_markbad;
-+	chip->legacy.block_markbad = sm_block_markbad;
- 
- 	/* ECC layout */
- 	if (mtd->writesize = SM_SECTOR_SIZE)
-diff --git a/include/linux/mtd/rawnand.h b/include/linux/mtd/rawnand.h
-index 15642c028da2..aa3e931d0206 100644
---- a/include/linux/mtd/rawnand.h
-+++ b/include/linux/mtd/rawnand.h
-@@ -1187,6 +1187,8 @@ int nand_op_parser_exec_op(struct nand_chip *chip,
-  *	       If set to NULL no access to ready/busy is available and the
-  *	       ready/busy information is read from the chip status register.
-  * @waitfunc: hardware specific function for wait on ready.
-+ * @block_bad: check if a block is bad, using OOB markers
-+ * @block_markbad: mark a block bad
-  *
-  * If you look at this structure you're already wrong. These fields/hooks are
-  * all deprecated.
-@@ -1203,6 +1205,8 @@ struct nand_legacy {
- 			int page_addr);
- 	int (*dev_ready)(struct nand_chip *chip);
- 	int (*waitfunc)(struct nand_chip *chip);
-+	int (*block_bad)(struct nand_chip *chip, loff_t ofs);
-+	int (*block_markbad)(struct nand_chip *chip, loff_t ofs);
- };
- 
- /**
-@@ -1214,8 +1218,6 @@ struct nand_legacy {
-  *			fields/hooks, you should consider reworking the driver
-  *			avoid using them.
-  * @select_chip:	[REPLACEABLE] select chip nr
-- * @block_bad:		[REPLACEABLE] check if a block is bad, using OOB markers
-- * @block_markbad:	[REPLACEABLE] mark a block bad
-  * @exec_op:		controller specific method to execute NAND operations.
-  *			This method replaces ->cmdfunc(),
-  *			->legacy.{read,write}_{buf,byte,word}(),
-@@ -1303,8 +1305,6 @@ struct nand_chip {
- 	struct nand_legacy legacy;
- 
- 	void (*select_chip)(struct nand_chip *chip, int cs);
--	int (*block_bad)(struct nand_chip *chip, loff_t ofs);
--	int (*block_markbad)(struct nand_chip *chip, loff_t ofs);
- 	int (*exec_op)(struct nand_chip *chip,
- 		       const struct nand_operation *op,
- 		       bool check_only);
-@@ -1556,6 +1556,7 @@ extern const struct nand_manufacturer_ops macronix_nand_manuf_ops;
- 
- int nand_create_bbt(struct nand_chip *chip);
- int nand_markbad_bbt(struct nand_chip *chip, loff_t offs);
-+int nand_markbad_bbm(struct nand_chip *chip, loff_t ofs);
- int nand_isreserved_bbt(struct nand_chip *chip, loff_t offs);
- int nand_isbad_bbt(struct nand_chip *chip, loff_t offs, int allowbbt);
- int nand_erase_nand(struct nand_chip *chip, struct erase_info *instr,
--- 
-2.14.1
+- Firoz
+
+>
+>>    In file included from include/linux/smp.h:11:0,
+>>                     from include/linux/tracepoint.h:17,
+>>                     from include/trace/syscall.h:5,
+>>                     from kernel/trace/trace_syscalls.c:2:
+>>    kernel/trace/trace_syscalls.c:559:23: warning: 'enabled_perf_exit_syscalls' defined but not used [-Wunused-variable]
+>>     static DECLARE_BITMAP(enabled_perf_exit_syscalls, NR_syscalls);
+>>                           ^
+>>    include/linux/types.h:11:16: note: in definition of macro 'DECLARE_BITMAP'
+>>      unsigned long name[BITS_TO_LONGS(bits)]
+>>                    ^~~~
+>>    kernel/trace/trace_syscalls.c:558:23: warning: 'enabled_perf_enter_syscalls' defined but not used [-Wunused-variable]
+>>     static DECLARE_BITMAP(enabled_perf_enter_syscalls, NR_syscalls);
+>>                           ^
+>>    include/linux/types.h:11:16: note: in definition of macro 'DECLARE_BITMAP'
+>>      unsigned long name[BITS_TO_LONGS(bits)]
+>>                    ^~~~
+>>
+>> vim +243 kernel/trace/trace.h
+>>
+>> 490901078 Steven Rostedt (Red Hat  2015-09-24  196)
+>> bc0c38d13 Steven Rostedt           2008-05-12  197  /*
+>> bc0c38d13 Steven Rostedt           2008-05-12  198   * The trace array - an array of per-CPU trace arrays. This is the
+>> bc0c38d13 Steven Rostedt           2008-05-12  199   * highest level data structure that individual tracers deal with.
+>> bc0c38d13 Steven Rostedt           2008-05-12  200   * They have on/off state as well:
+>> bc0c38d13 Steven Rostedt           2008-05-12  201   */
+>> bc0c38d13 Steven Rostedt           2008-05-12  202  struct trace_array {
+>> ae63b31e4 Steven Rostedt           2012-05-03  203    struct list_head        list;
+>> 277ba0446 Steven Rostedt           2012-08-03  204    char                    *name;
+>> 12883efb6 Steven Rostedt (Red Hat  2013-03-05  205)   struct trace_buffer     trace_buffer;
+>> 12883efb6 Steven Rostedt (Red Hat  2013-03-05  206) #ifdef CONFIG_TRACER_MAX_TRACE
+>> 12883efb6 Steven Rostedt (Red Hat  2013-03-05  207)   /*
+>> 12883efb6 Steven Rostedt (Red Hat  2013-03-05  208)    * The max_buffer is used to snapshot the trace when a maximum
+>> 12883efb6 Steven Rostedt (Red Hat  2013-03-05  209)    * latency is reached, or when the user initiates a snapshot.
+>> 12883efb6 Steven Rostedt (Red Hat  2013-03-05  210)    * Some tracers will use this to store a maximum trace while
+>> 12883efb6 Steven Rostedt (Red Hat  2013-03-05  211)    * it continues examining live traces.
+>> 12883efb6 Steven Rostedt (Red Hat  2013-03-05  212)    *
+>> 12883efb6 Steven Rostedt (Red Hat  2013-03-05  213)    * The buffers for the max_buffer are set up the same as the trace_buffer
+>> 12883efb6 Steven Rostedt (Red Hat  2013-03-05  214)    * When a snapshot is taken, the buffer of the max_buffer is swapped
+>> 12883efb6 Steven Rostedt (Red Hat  2013-03-05  215)    * with the buffer of the trace_buffer and the buffers are reset for
+>> 12883efb6 Steven Rostedt (Red Hat  2013-03-05  216)    * the trace_buffer so the tracing can continue.
+>> 12883efb6 Steven Rostedt (Red Hat  2013-03-05  217)    */
+>> 12883efb6 Steven Rostedt (Red Hat  2013-03-05  218)   struct trace_buffer     max_buffer;
+>> 45ad21ca5 Steven Rostedt (Red Hat  2013-03-05  219)   bool                    allocated_snapshot;
+>> f971cc9aa Steven Rostedt (Red Hat  2016-09-07  220) #endif
+>> f971cc9aa Steven Rostedt (Red Hat  2016-09-07  221) #if defined(CONFIG_TRACER_MAX_TRACE) || defined(CONFIG_HWLAT_TRACER)
+>> 6d9b3fa5e Steven Rostedt (Red Hat  2014-01-14  222)   unsigned long           max_latency;
+>> 12883efb6 Steven Rostedt (Red Hat  2013-03-05  223) #endif
+>> 490901078 Steven Rostedt (Red Hat  2015-09-24  224)   struct trace_pid_list   __rcu *filtered_pids;
+>> 0b9b12c1b Steven Rostedt (Red Hat  2014-01-14  225)   /*
+>> 0b9b12c1b Steven Rostedt (Red Hat  2014-01-14  226)    * max_lock is used to protect the swapping of buffers
+>> 0b9b12c1b Steven Rostedt (Red Hat  2014-01-14  227)    * when taking a max snapshot. The buffers themselves are
+>> 0b9b12c1b Steven Rostedt (Red Hat  2014-01-14  228)    * protected by per_cpu spinlocks. But the action of the swap
+>> 0b9b12c1b Steven Rostedt (Red Hat  2014-01-14  229)    * needs its own lock.
+>> 0b9b12c1b Steven Rostedt (Red Hat  2014-01-14  230)    *
+>> 0b9b12c1b Steven Rostedt (Red Hat  2014-01-14  231)    * This is defined as a arch_spinlock_t in order to help
+>> 0b9b12c1b Steven Rostedt (Red Hat  2014-01-14  232)    * with performance when lockdep debugging is enabled.
+>> 0b9b12c1b Steven Rostedt (Red Hat  2014-01-14  233)    *
+>> 0b9b12c1b Steven Rostedt (Red Hat  2014-01-14  234)    * It is also used in other places outside the update_max_tr
+>> 0b9b12c1b Steven Rostedt (Red Hat  2014-01-14  235)    * so it needs to be defined outside of the
+>> 0b9b12c1b Steven Rostedt (Red Hat  2014-01-14  236)    * CONFIG_TRACER_MAX_TRACE.
+>> 0b9b12c1b Steven Rostedt (Red Hat  2014-01-14  237)    */
+>> 0b9b12c1b Steven Rostedt (Red Hat  2014-01-14  238)   arch_spinlock_t         max_lock;
+>> 499e54705 Steven Rostedt           2012-02-22  239    int                     buffer_disabled;
+>> 12ab74ee0 Steven Rostedt           2012-08-08  240  #ifdef CONFIG_FTRACE_SYSCALLS
+>> 12ab74ee0 Steven Rostedt           2012-08-08  241    int                     sys_refcount_enter;
+>> 12ab74ee0 Steven Rostedt           2012-08-08  242    int                     sys_refcount_exit;
+>> 7f1d2f821 Steven Rostedt (Red Hat  2015-05-05 @243)   struct trace_event_file __rcu *enter_syscall_files[NR_syscalls];
+>> 7f1d2f821 Steven Rostedt (Red Hat  2015-05-05  244)   struct trace_event_file __rcu *exit_syscall_files[NR_syscalls];
+>> 12ab74ee0 Steven Rostedt           2012-08-08  245  #endif
+>> 2b6080f28 Steven Rostedt           2012-05-11  246    int                     stop_count;
+>> 2b6080f28 Steven Rostedt           2012-05-11  247    int                     clock_id;
+>> 37aea98b8 Steven Rostedt (Red Hat  2015-09-30  248)   int                     nr_topts;
+>> 065e63f95 Steven Rostedt (VMware   2017-08-31  249)   bool                    clear_trace;
+>> 2b6080f28 Steven Rostedt           2012-05-11  250    struct tracer           *current_trace;
+>> 983f938ae Steven Rostedt (Red Hat  2015-09-30  251)   unsigned int            trace_flags;
+>> 9a38a8856 Steven Rostedt (Red Hat  2015-09-30  252)   unsigned char           trace_flags_index[TRACE_FLAGS_MAX_SIZE];
+>> ae63b31e4 Steven Rostedt           2012-05-03  253    unsigned int            flags;
+>> 2b6080f28 Steven Rostedt           2012-05-11  254    raw_spinlock_t          start_lock;
+>> ae63b31e4 Steven Rostedt           2012-05-03  255    struct dentry           *dir;
+>> 2b6080f28 Steven Rostedt           2012-05-11  256    struct dentry           *options;
+>> 2b6080f28 Steven Rostedt           2012-05-11  257    struct dentry           *percpu_dir;
+>> ae63b31e4 Steven Rostedt           2012-05-03  258    struct dentry           *event_dir;
+>> 37aea98b8 Steven Rostedt (Red Hat  2015-09-30  259)   struct trace_options    *topts;
+>> ae63b31e4 Steven Rostedt           2012-05-03  260    struct list_head        systems;
+>> ae63b31e4 Steven Rostedt           2012-05-03  261    struct list_head        events;
+>> 3dd809536 Steven Rostedt (VMware   2018-05-09  262)   struct trace_event_file *trace_marker_file;
+>> ccfe9e42e Alexander Z Lam          2013-08-08  263    cpumask_var_t           tracing_cpumask; /* only trace on set CPUs */
+>> a695cb581 Steven Rostedt (Red Hat  2013-03-06  264)   int                     ref;
+>> f20a58062 Steven Rostedt (Red Hat  2013-11-07  265) #ifdef CONFIG_FUNCTION_TRACER
+>> f20a58062 Steven Rostedt (Red Hat  2013-11-07  266)   struct ftrace_ops       *ops;
+>> 345ddcc88 Steven Rostedt (Red Hat  2016-04-22  267)   struct trace_pid_list   __rcu *function_pids;
+>> 04ec7bb64 Steven Rostedt (VMware   2017-04-05  268) #ifdef CONFIG_DYNAMIC_FTRACE
+>> 673feb9d7 Steven Rostedt (VMware   2017-06-23  269)   /* All of these are protected by the ftrace_lock */
+>> 04ec7bb64 Steven Rostedt (VMware   2017-04-05  270)   struct list_head        func_probes;
+>> 673feb9d7 Steven Rostedt (VMware   2017-06-23  271)   struct list_head        mod_trace;
+>> 673feb9d7 Steven Rostedt (VMware   2017-06-23  272)   struct list_head        mod_notrace;
+>> 04ec7bb64 Steven Rostedt (VMware   2017-04-05  273) #endif
+>> f20a58062 Steven Rostedt (Red Hat  2013-11-07  274)   /* function tracing enabled */
+>> f20a58062 Steven Rostedt (Red Hat  2013-11-07  275)   int                     function_enabled;
+>> f20a58062 Steven Rostedt (Red Hat  2013-11-07  276) #endif
+>> 00b414529 Tom Zanussi              2018-01-15  277    int                     time_stamp_abs_ref;
+>> 067fe038e Tom Zanussi              2018-01-15  278    struct list_head        hist_vars;
+>> bc0c38d13 Steven Rostedt           2008-05-12  279  };
+>> bc0c38d13 Steven Rostedt           2008-05-12  280
+>>
+>> :::::: The code at line 243 was first introduced by commit
+>> :::::: 7f1d2f8210195c8c309d424a77dbf06a6d2186f4 tracing: Rename ftrace_event_file to trace_event_file
+>>
+>> :::::: TO: Steven Rostedt (Red Hat) <rostedt@goodmis.org>
+>> :::::: CC: Steven Rostedt <rostedt@goodmis.org>
+>>
+>> ---
+>> 0-DAY kernel test infrastructure                Open Source Technology Center
+>> https://lists.01.org/pipermail/kbuild-all                   Intel Corporation
+>
