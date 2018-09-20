@@ -1,104 +1,187 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Wed, 05 Sep 2018 11:46:03 +0000
-Subject: Applied "spi: rspi: Fix invalid SPI use during system suspend" to the spi tree
-Message-Id: <20180905114603.E093011229D0@debutante.sirena.org.uk>
+From: Alexandre Ghiti <alex@ghiti.fr>
+Date: Thu, 20 Sep 2018 06:03:57 +0000
+Subject: [PATCH v7 10/11] hugetlb: Introduce generic version of huge_ptep_set_access_flags
+Message-Id: <20180920060358.16606-11-alex@ghiti.fr>
 List-Id: <linux-sh.vger.kernel.org>
-In-Reply-To: <20180905084939.7401-4-geert+renesas@glider.be>
+References: <20180920060358.16606-1-alex@ghiti.fr>
+In-Reply-To: <20180920060358.16606-1-alex@ghiti.fr>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Mark Brown <broonie@kernel.org>, stable@vger.kernel.orgMark Brown <broonie@kernel.org>, Gaku Inami <gaku.inami.xw@bp.renesas.com>, Hiromitsu Yamasaki <hiromitsu.yamasaki.ym@renesas.com>, linux-spi@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.orglinux-spi@vger.kernel.org
+To: akpm@linux-foundation.org
+Cc: linux-mips@linux-mips.org, dalias@libc.org, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, benh@kernel.crashing.org, will.deacon@arm.com, jejb@parisc-linux.org, linux-mm@kvack.org, paulus@samba.org, hpa@zytor.com, sparclinux@vger.kernel.org, linux-arch@vger.kernel.org, ysato@users.sourceforge.jp, mpe@ellerman.id.au, deller@gmx.de, x86@kernel.org, linux@armlinux.org.uk, mingo@redhat.com, catalin.marinas@arm.com, jhogan@kernel.org, fenghua.yu@intel.com, arnd@arndb.de, tglx@linutronix.de, linux-arm-kernel@lists.infradead.org, tony.luck@intel.com, Alexandre Ghiti <alex@ghiti.fr>, linux-parisc@vger.kernel.org, linux-kernel@vger.kernel.org, ralf@linux-mips.org, paul.burton@mips.com, linuxppc-dev@lists.ozlabs.org, davem@davemloft.net, mike.kravetz@oracle.com
 
-The patch
+arm, ia64, sh, x86 architectures use the same version
+of huge_ptep_set_access_flags, so move this generic implementation
+into asm-generic/hugetlb.h.
 
-   spi: rspi: Fix invalid SPI use during system suspend
-
-has been applied to the spi tree at
-
-   https://git.kernel.org/pub/scm/linux/kernel/git/broonie/spi.git 
-
-All being well this means that it will be integrated into the linux-next
-tree (usually sometime in the next 24 hours) and sent to Linus during
-the next merge window (or sooner if it is a bug fix), however if
-problems are discovered then the patch may be dropped or reverted.  
-
-You may get further e-mails resulting from automated or manual testing
-and review of the tree, please engage with people reporting problems and
-send followup patches addressing any issues that are reported if needed.
-
-If any updates are required or you are submitting further changes they
-should be sent as incremental updates against current git, existing
-patches will not be replaced.
-
-Please add any relevant lists and maintainers to the CCs when replying
-to this mail.
-
-Thanks,
-Mark
-
-From c1ca59c22c56930b377a665fdd1b43351887830b Mon Sep 17 00:00:00 2001
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 5 Sep 2018 10:49:38 +0200
-Subject: [PATCH] spi: rspi: Fix invalid SPI use during system suspend
-
-If the SPI queue is running during system suspend, the system may lock
-up.
-
-Fix this by stopping/restarting the queue during system suspend/resume,
-by calling spi_master_suspend()/spi_master_resume() from the PM
-callbacks.  In-kernel users will receive an -ESHUTDOWN error while
-system suspend/resume is in progress.
-
-Based on a patch for sh-msiof by Gaku Inami.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Mark Brown <broonie@kernel.org>
-Cc: stable@vger.kernel.org
+Signed-off-by: Alexandre Ghiti <alex@ghiti.fr>
+Tested-by: Helge Deller <deller@gmx.de> # parisc
+Acked-by: Catalin Marinas <catalin.marinas@arm.com> # arm64
+Acked-by: Paul Burton <paul.burton@mips.com> # MIPS parts
+Acked-by: Ingo Molnar <mingo@kernel.org> # x86
+Reviewed-by: Luiz Capitulino <lcapitulino@redhat.com>
+Reviewed-by: Mike Kravetz <mike.kravetz@oracle.com>
 ---
- drivers/spi/spi-rspi.c | 24 ++++++++++++++++++++++++
- 1 file changed, 24 insertions(+)
+ arch/arm/include/asm/hugetlb-3level.h | 7 -------
+ arch/arm64/include/asm/hugetlb.h      | 1 +
+ arch/ia64/include/asm/hugetlb.h       | 7 -------
+ arch/mips/include/asm/hugetlb.h       | 1 +
+ arch/parisc/include/asm/hugetlb.h     | 1 +
+ arch/powerpc/include/asm/hugetlb.h    | 1 +
+ arch/sh/include/asm/hugetlb.h         | 7 -------
+ arch/sparc/include/asm/hugetlb.h      | 1 +
+ arch/x86/include/asm/hugetlb.h        | 7 -------
+ include/asm-generic/hugetlb.h         | 9 +++++++++
+ 10 files changed, 14 insertions(+), 28 deletions(-)
 
-diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
-index 95dc4d78618d..f93a4587e3fb 100644
---- a/drivers/spi/spi-rspi.c
-+++ b/drivers/spi/spi-rspi.c
-@@ -1350,12 +1350,36 @@ static const struct platform_device_id spi_driver_ids[] = {
+diff --git a/arch/arm/include/asm/hugetlb-3level.h b/arch/arm/include/asm/hugetlb-3level.h
+index 8247cd6a2ac6..54e4b097b1f5 100644
+--- a/arch/arm/include/asm/hugetlb-3level.h
++++ b/arch/arm/include/asm/hugetlb-3level.h
+@@ -37,11 +37,4 @@ static inline pte_t huge_ptep_get(pte_t *ptep)
+ 	return retval;
+ }
  
- MODULE_DEVICE_TABLE(platform, spi_driver_ids);
+-static inline int huge_ptep_set_access_flags(struct vm_area_struct *vma,
+-					     unsigned long addr, pte_t *ptep,
+-					     pte_t pte, int dirty)
+-{
+-	return ptep_set_access_flags(vma, addr, ptep, pte, dirty);
+-}
+-
+ #endif /* _ASM_ARM_HUGETLB_3LEVEL_H */
+diff --git a/arch/arm64/include/asm/hugetlb.h b/arch/arm64/include/asm/hugetlb.h
+index f4f69ae5466e..80887abcef7f 100644
+--- a/arch/arm64/include/asm/hugetlb.h
++++ b/arch/arm64/include/asm/hugetlb.h
+@@ -42,6 +42,7 @@ extern pte_t arch_make_huge_pte(pte_t entry, struct vm_area_struct *vma,
+ #define __HAVE_ARCH_HUGE_SET_HUGE_PTE_AT
+ extern void set_huge_pte_at(struct mm_struct *mm, unsigned long addr,
+ 			    pte_t *ptep, pte_t pte);
++#define __HAVE_ARCH_HUGE_PTEP_SET_ACCESS_FLAGS
+ extern int huge_ptep_set_access_flags(struct vm_area_struct *vma,
+ 				      unsigned long addr, pte_t *ptep,
+ 				      pte_t pte, int dirty);
+diff --git a/arch/ia64/include/asm/hugetlb.h b/arch/ia64/include/asm/hugetlb.h
+index 49d1f7949f3a..e9b42750fdf5 100644
+--- a/arch/ia64/include/asm/hugetlb.h
++++ b/arch/ia64/include/asm/hugetlb.h
+@@ -27,13 +27,6 @@ static inline void huge_ptep_clear_flush(struct vm_area_struct *vma,
+ {
+ }
  
-+#ifdef CONFIG_PM_SLEEP
-+static int rspi_suspend(struct device *dev)
+-static inline int huge_ptep_set_access_flags(struct vm_area_struct *vma,
+-					     unsigned long addr, pte_t *ptep,
+-					     pte_t pte, int dirty)
+-{
+-	return ptep_set_access_flags(vma, addr, ptep, pte, dirty);
+-}
+-
+ static inline pte_t huge_ptep_get(pte_t *ptep)
+ {
+ 	return *ptep;
+diff --git a/arch/mips/include/asm/hugetlb.h b/arch/mips/include/asm/hugetlb.h
+index 3dcf5debf8c4..120adc3b2ffd 100644
+--- a/arch/mips/include/asm/hugetlb.h
++++ b/arch/mips/include/asm/hugetlb.h
+@@ -63,6 +63,7 @@ static inline int huge_pte_none(pte_t pte)
+ 	return !val || (val = (unsigned long)invalid_pte_table);
+ }
+ 
++#define __HAVE_ARCH_HUGE_PTEP_SET_ACCESS_FLAGS
+ static inline int huge_ptep_set_access_flags(struct vm_area_struct *vma,
+ 					     unsigned long addr,
+ 					     pte_t *ptep, pte_t pte,
+diff --git a/arch/parisc/include/asm/hugetlb.h b/arch/parisc/include/asm/hugetlb.h
+index 9c3950ca2974..165b4e5a6f32 100644
+--- a/arch/parisc/include/asm/hugetlb.h
++++ b/arch/parisc/include/asm/hugetlb.h
+@@ -43,6 +43,7 @@ static inline void huge_ptep_clear_flush(struct vm_area_struct *vma,
+ void huge_ptep_set_wrprotect(struct mm_struct *mm,
+ 					   unsigned long addr, pte_t *ptep);
+ 
++#define __HAVE_ARCH_HUGE_PTEP_SET_ACCESS_FLAGS
+ int huge_ptep_set_access_flags(struct vm_area_struct *vma,
+ 					     unsigned long addr, pte_t *ptep,
+ 					     pte_t pte, int dirty);
+diff --git a/arch/powerpc/include/asm/hugetlb.h b/arch/powerpc/include/asm/hugetlb.h
+index 2a90f387880a..d4d9cf6cb846 100644
+--- a/arch/powerpc/include/asm/hugetlb.h
++++ b/arch/powerpc/include/asm/hugetlb.h
+@@ -134,6 +134,7 @@ static inline void huge_ptep_clear_flush(struct vm_area_struct *vma,
+ 	flush_hugetlb_page(vma, addr);
+ }
+ 
++#define __HAVE_ARCH_HUGE_PTEP_SET_ACCESS_FLAGS
+ extern int huge_ptep_set_access_flags(struct vm_area_struct *vma,
+ 				      unsigned long addr, pte_t *ptep,
+ 				      pte_t pte, int dirty);
+diff --git a/arch/sh/include/asm/hugetlb.h b/arch/sh/include/asm/hugetlb.h
+index 8df4004977b9..c87195ae0cfa 100644
+--- a/arch/sh/include/asm/hugetlb.h
++++ b/arch/sh/include/asm/hugetlb.h
+@@ -32,13 +32,6 @@ static inline void huge_ptep_clear_flush(struct vm_area_struct *vma,
+ {
+ }
+ 
+-static inline int huge_ptep_set_access_flags(struct vm_area_struct *vma,
+-					     unsigned long addr, pte_t *ptep,
+-					     pte_t pte, int dirty)
+-{
+-	return ptep_set_access_flags(vma, addr, ptep, pte, dirty);
+-}
+-
+ static inline pte_t huge_ptep_get(pte_t *ptep)
+ {
+ 	return *ptep;
+diff --git a/arch/sparc/include/asm/hugetlb.h b/arch/sparc/include/asm/hugetlb.h
+index c41754a113f3..028a1465fbe7 100644
+--- a/arch/sparc/include/asm/hugetlb.h
++++ b/arch/sparc/include/asm/hugetlb.h
+@@ -40,6 +40,7 @@ static inline void huge_ptep_set_wrprotect(struct mm_struct *mm,
+ 	set_huge_pte_at(mm, addr, ptep, pte_wrprotect(old_pte));
+ }
+ 
++#define __HAVE_ARCH_HUGE_PTEP_SET_ACCESS_FLAGS
+ static inline int huge_ptep_set_access_flags(struct vm_area_struct *vma,
+ 					     unsigned long addr, pte_t *ptep,
+ 					     pte_t pte, int dirty)
+diff --git a/arch/x86/include/asm/hugetlb.h b/arch/x86/include/asm/hugetlb.h
+index a3f781f7a264..574d42eb081e 100644
+--- a/arch/x86/include/asm/hugetlb.h
++++ b/arch/x86/include/asm/hugetlb.h
+@@ -13,13 +13,6 @@ static inline int is_hugepage_only_range(struct mm_struct *mm,
+ 	return 0;
+ }
+ 
+-static inline int huge_ptep_set_access_flags(struct vm_area_struct *vma,
+-					     unsigned long addr, pte_t *ptep,
+-					     pte_t pte, int dirty)
+-{
+-	return ptep_set_access_flags(vma, addr, ptep, pte, dirty);
+-}
+-
+ static inline pte_t huge_ptep_get(pte_t *ptep)
+ {
+ 	return *ptep;
+diff --git a/include/asm-generic/hugetlb.h b/include/asm-generic/hugetlb.h
+index 9b9039845278..f3c99a03ee83 100644
+--- a/include/asm-generic/hugetlb.h
++++ b/include/asm-generic/hugetlb.h
+@@ -110,4 +110,13 @@ static inline void huge_ptep_set_wrprotect(struct mm_struct *mm,
+ }
+ #endif
+ 
++#ifndef __HAVE_ARCH_HUGE_PTEP_SET_ACCESS_FLAGS
++static inline int huge_ptep_set_access_flags(struct vm_area_struct *vma,
++		unsigned long addr, pte_t *ptep,
++		pte_t pte, int dirty)
 +{
-+	struct platform_device *pdev = to_platform_device(dev);
-+	struct rspi_data *rspi = platform_get_drvdata(pdev);
-+
-+	return spi_master_suspend(rspi->master);
++	return ptep_set_access_flags(vma, addr, ptep, pte, dirty);
 +}
++#endif
 +
-+static int rspi_resume(struct device *dev)
-+{
-+	struct platform_device *pdev = to_platform_device(dev);
-+	struct rspi_data *rspi = platform_get_drvdata(pdev);
-+
-+	return spi_master_resume(rspi->master);
-+}
-+
-+static SIMPLE_DEV_PM_OPS(rspi_pm_ops, rspi_suspend, rspi_resume);
-+#define DEV_PM_OPS	&rspi_pm_ops
-+#else
-+#define DEV_PM_OPS	NULL
-+#endif /* CONFIG_PM_SLEEP */
-+
- static struct platform_driver rspi_driver = {
- 	.probe =	rspi_probe,
- 	.remove =	rspi_remove,
- 	.id_table =	spi_driver_ids,
- 	.driver		= {
- 		.name = "renesas_spi",
-+		.pm = DEV_PM_OPS,
- 		.of_match_table = of_match_ptr(rspi_of_match),
- 	},
- };
+ #endif /* _ASM_GENERIC_HUGETLB_H */
 -- 
-2.19.0.rc1
+2.16.2
