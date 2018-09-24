@@ -1,31 +1,26 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 10 Sep 2018 10:02:43 +0000
-Subject: Re: [PATCH] sh: mm: Use dma_zalloc_coherent instead of dma_alloc_coherent + memset
-Message-Id: <CAMuHMdWxmUpw7M=qBtcELX67eSy7C-o_j8bdmozchi3YsRFTxg@mail.gmail.com>
+From: cinthia_reyes@hmha.gob.ec
+Date: Mon, 24 Sep 2018 10:37:21 +0000
+Subject: =?utf-8?b?V29obHTDpHRpZ2tlaXRzc3BlbmRlIGluIEjDtmhlIHZvbiDigqwgMi4wMDAu?= =?utf-8?q?000=2C00?=
+Message-Id: <20180924103731.F225AF44A5@mail.hmha.gob.ec>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1536548104-57453-1-git-send-email-zhongjiang@huawei.com>
-In-Reply-To: <1536548104-57453-1-git-send-email-zhongjiang@huawei.com>
+References: <20180506111415.6E1C2847C89@mail.ithb.ac.id>
+In-Reply-To: <20180506111415.6E1C2847C89@mail.ithb.ac.id>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: zhongjiang@huawei.com
-Cc: Rich Felker <dalias@libc.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Robin Murphy <robin.murphy@arm.com>, Thomas Petazzoni <thomas.petazzoni@free-electrons.com>, Geert Uytterhoeven <geert+renesas@glider.be>, Linux-sh list <linux-sh@vger.kernel.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: linux-sh@vger.kernel.org
 
-On Mon, Sep 10, 2018 at 5:07 AM zhong jiang <zhongjiang@huawei.com> wrote:
-> dma_zalloc_coherent has taken the dma_alloc_coherent() and memset() into
-> account. Therefore, just use dma_zalloc_coherent to replace the open code.
->
-> Signed-off-by: zhong jiang <zhongjiang@huawei.com>
-
-Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
--- 
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+Lieber Freund,
+ 
+Ich bin Herr Tayeb Souami, New Jersey, Vereinigte Staaten von Amerika, der Mega-Gewinner von $ 315million In Mega Millions Jackpot, spende ich an 5 zufällige Personen, wenn Sie diese E-Mail erhalten, dann wurde Ihre E-Mail nach einem Spinball ausgewählt.Ich habe den größten Teil meines Vermögens auf eine Reihe von Wohltätigkeitsorganisationen und Organisationen verteilt.Ich habe mich freiwillig dazu entschieden, die Summe von € 2.000.000,00 an Sie als eine der ausgewählten 5 zu spenden, um meine Gewinne zu überprüfen, sehen Sie bitte meine You Tube Seite unten.
+ 
+UHR MICH HIER: https://www.youtube.com/watch?v=Z6ui8ZDQ6Ks
+ 
+Das ist dein Spendencode: [DFC530342018]
+ 
+Antworten Sie mit dem SPENDE-CODE an diese E-Mail: financialfundingcompany09@gmail.com
+ 
+Ich hoffe, Sie und Ihre Familie glücklich zu machen.
+ 
+Grüße
+Herr Tayeb Souami
