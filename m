@@ -1,23 +1,72 @@
-From: Michal Hocko <mhocko@kernel.org>
-Date: Wed, 26 Sep 2018 09:25:29 +0000
-Subject: Re: [PATCH 05/30] mm: nobootmem: remove dead code
-Message-Id: <20180926092529.GM6278@dhcp22.suse.cz>
+From: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Date: Mon, 24 Sep 2018 11:51:06 +0000
+Subject: [PATCH 4.14 032/173] mtd/maps: fix solutionengine.c printk format warnings
+Message-Id: <20180924113118.313764756@linuxfoundation.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1536927045-23536-1-git-send-email-rppt@linux.vnet.ibm.com>
- <1536927045-23536-6-git-send-email-rppt@linux.vnet.ibm.com>
-In-Reply-To: <1536927045-23536-6-git-send-email-rppt@linux.vnet.ibm.com>
+References: <20180924113114.334025954@linuxfoundation.org>
+In-Reply-To: <20180924113114.334025954@linuxfoundation.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mike Rapoport <rppt@linux.vnet.ibm.com>
-Cc: linux-mm@kvack.org, Andrew Morton <akpm@linux-foundation.org>, Catalin Marinas <catalin.marinas@arm.com>, Chris Zankel <chris@zankel.net>, "David S. Miller" <davem@davemloft.net>, Geert Uytterhoeven <geert@linux-m68k.org>, Greentime Hu <green.hu@gmail.com>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Guan Xuetao <gxt@pku.edu.cn>, Ingo Molnar <mingo@redhat.com>, "James E.J. Bottomley" <jejb@parisc-linux.org>, Jonas Bonn <jonas@southpole.se>, Jonathan Corbet <corbet@lwn.net>, Ley Foon Tan <lftan@altera.com>, Mark Salter <msalter@redhat.com>, Martin Schwidefsky <schwidefsky@de.ibm.com>, Matt Turner <mattst88@gmail.com>, Michael Ellerman <mpe@ellerman.id.au>, Michal Simek <monstr@monstr.eu>, Palmer Dabbelt <palmer@sifive.com>, Paul Burton <paul.burton@mips.com>, Richard Kuo <rkuo@codeaurora.org>, Richard Weinberger <richard@nod.at>, Rich Felker <dalias@libc.org>, Russell King <linux@armlinux.org.uk>, Serge Semin <fancer.lancer@gmail.com>, Thomas Gleixner <tglx@linutronix.de>, Tony Luck <tony.luck@intel.com>, Vineet Gupta <vgupta@synopsys.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-alpha@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-c6x-dev@linux-c6x.org, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-um@lists.infradead.org, nios2-dev@lists.rocketboards.org, openrisc@lists.librecores.org, sparclinux@vger.kernel.org, uclinux-h8-devel@lists.sourceforge.jp
+To: linux-kernel@vger.kernel.org
+Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, stable@vger.kernel.org, David Woodhouse <dwmw2@infradead.org>, Brian Norris <computersforpeace@gmail.com>, Boris Brezillon <boris.brezillon@bootlin.com>, Marek Vasut <marek.vasut@gmail.com>, Richard Weinberger <richard@nod.at>, linux-mtd@lists.infradead.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Randy Dunlap <rdunlap@infradead.org>, Sasha Levin <alexander.levin@microsoft.com>
 
-On Fri 14-09-18 15:10:20, Mike Rapoport wrote:
-> Several bootmem functions and macros are not used. Remove them.
-> 
-> Signed-off-by: Mike Rapoport <rppt@linux.vnet.ibm.com>
+4.14-stable review patch.  If anyone has any objections, please let me know.
 
-Acked-by: Michal Hocko <mhocko@suse.com>
--- 
-Michal Hocko
-SUSE Labs
+------------------
+
+From: Randy Dunlap <rdunlap@infradead.org>
+
+[ Upstream commit 1d25e3eeed1d987404e2d2e451eebac8c15cecc1 ]
+
+Fix 2 printk format warnings (this driver is currently only used by
+arch/sh/) by using "%pap" instead of "%lx".
+
+Fixes these build warnings:
+
+../drivers/mtd/maps/solutionengine.c: In function 'init_soleng_maps':
+../include/linux/kern_levels.h:5:18: warning: format '%lx' expects argument of type 'long unsigned int', but argument 2 has type 'resource_size_t' {aka 'unsigned int'} [-Wformat=]
+../drivers/mtd/maps/solutionengine.c:62:54: note: format string is defined here
+  printk(KERN_NOTICE "Solution Engine: Flash at 0x%08lx, EPROM at 0x%08lx\n",
+                                                  ~~~~^
+                                                  %08x
+../include/linux/kern_levels.h:5:18: warning: format '%lx' expects argument of type 'long unsigned int', but argument 3 has type 'resource_size_t' {aka 'unsigned int'} [-Wformat=]
+../drivers/mtd/maps/solutionengine.c:62:72: note: format string is defined here
+  printk(KERN_NOTICE "Solution Engine: Flash at 0x%08lx, EPROM at 0x%08lx\n",
+                                                                    ~~~~^
+                                                                    %08x
+
+Cc: David Woodhouse <dwmw2@infradead.org>
+Cc: Brian Norris <computersforpeace@gmail.com>
+Cc: Boris Brezillon <boris.brezillon@bootlin.com>
+Cc: Marek Vasut <marek.vasut@gmail.com>
+Cc: Richard Weinberger <richard@nod.at>
+Cc: linux-mtd@lists.infradead.org
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+Cc: linux-sh@vger.kernel.org
+Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+Signed-off-by: Randy Dunlap <rdunlap@infradead.org>
+Signed-off-by: Boris Brezillon <boris.brezillon@bootlin.com>
+Signed-off-by: Sasha Levin <alexander.levin@microsoft.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/mtd/maps/solutionengine.c |    6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+--- a/drivers/mtd/maps/solutionengine.c
++++ b/drivers/mtd/maps/solutionengine.c
+@@ -59,9 +59,9 @@ static int __init init_soleng_maps(void)
+ 			return -ENXIO;
+ 		}
+ 	}
+-	printk(KERN_NOTICE "Solution Engine: Flash at 0x%08lx, EPROM at 0x%08lx\n",
+-	       soleng_flash_map.phys & 0x1fffffff,
+-	       soleng_eprom_map.phys & 0x1fffffff);
++	printk(KERN_NOTICE "Solution Engine: Flash at 0x%pap, EPROM at 0x%pap\n",
++	       &soleng_flash_map.phys,
++	       &soleng_eprom_map.phys);
+ 	flash_mtd->owner = THIS_MODULE;
+ 
+ 	eprom_mtd = do_map_probe("map_rom", &soleng_eprom_map);
