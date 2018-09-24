@@ -1,40 +1,72 @@
-From: UMAR AKMEL <umarakmal101@gmail.com>
-Date: Tue, 04 Sep 2018 09:01:03 +0000
-Subject: HELLO
-Message-Id: <CAAiazJgddf_aVvYn-6A6=UPiUFh8UM6Hh_yWqrL-iUGdV-L7Fg@mail.gmail.com>
+From: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Date: Mon, 24 Sep 2018 11:50:29 +0000
+Subject: [PATCH 4.18 043/235] mtd/maps: fix solutionengine.c printk format warnings
+Message-Id: <20180924113109.492131457@linuxfoundation.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20180924113103.999624566@linuxfoundation.org>
+In-Reply-To: <20180924113103.999624566@linuxfoundation.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, stable@vger.kernel.org, David Woodhouse <dwmw2@infradead.org>, Brian Norris <computersforpeace@gmail.com>, Boris Brezillon <boris.brezillon@bootlin.com>, Marek Vasut <marek.vasut@gmail.com>, Richard Weinberger <richard@nod.at>, linux-mtd@lists.infradead.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Randy Dunlap <rdunlap@infradead.org>, Sasha Levin <alexander.levin@microsoft.com>
 
-My Dear Good Friend.
+4.18-stable review patch.  If anyone has any objections, please let me know.
 
-Compliment of the season, how are you and your family? Hope All is
-well. I am Mr Umar Akmel, the accountant general in the accounts unit
-(Bank of Coris) Ouagadougou Burkina Faso. I got your contact from the
-Burkina Faso chambers of commerce have some fund to claim in my bank
-Which will be of benefit to both of us.
+------------------
 
-I want you to be an inheritor of the fund, the fund is in a Doormat
-account and with your bank information and my Documentation certifies
-you as the inheritor/beneficiary Since I am an insider and working in
-the same bank, the Transfer will be processed legally and successfully
-and I will Be coming down to your country for disbursement.
+From: Randy Dunlap <rdunlap@infradead.org>
 
-The amount of money involved is ($5.6m) which I want you to Claim for
-further transfer out of the country to your bank Account, all to our
-financial benefit. This is very great opportunity as it will take a
-maximum of 7 banking Working days to be concluded.
+[ Upstream commit 1d25e3eeed1d987404e2d2e451eebac8c15cecc1 ]
 
-I as an insider will do my duties perfectly well concerning this
-transaction for security reasons. This is confidential for successful
-conclusion and hitch-free transaction. Contact me immediately for
-further details and mutual Relationship and we will decide together on
-how to disburse  The funds and percentage as well, my private email
-Address: (umarakmal1960@gmail.com)
+Fix 2 printk format warnings (this driver is currently only used by
+arch/sh/) by using "%pap" instead of "%lx".
 
-I will be waiting to hear from you.
+Fixes these build warnings:
 
-Yours truly.
-Umar Akmel
+../drivers/mtd/maps/solutionengine.c: In function 'init_soleng_maps':
+../include/linux/kern_levels.h:5:18: warning: format '%lx' expects argument of type 'long unsigned int', but argument 2 has type 'resource_size_t' {aka 'unsigned int'} [-Wformat=]
+../drivers/mtd/maps/solutionengine.c:62:54: note: format string is defined here
+  printk(KERN_NOTICE "Solution Engine: Flash at 0x%08lx, EPROM at 0x%08lx\n",
+                                                  ~~~~^
+                                                  %08x
+../include/linux/kern_levels.h:5:18: warning: format '%lx' expects argument of type 'long unsigned int', but argument 3 has type 'resource_size_t' {aka 'unsigned int'} [-Wformat=]
+../drivers/mtd/maps/solutionengine.c:62:72: note: format string is defined here
+  printk(KERN_NOTICE "Solution Engine: Flash at 0x%08lx, EPROM at 0x%08lx\n",
+                                                                    ~~~~^
+                                                                    %08x
+
+Cc: David Woodhouse <dwmw2@infradead.org>
+Cc: Brian Norris <computersforpeace@gmail.com>
+Cc: Boris Brezillon <boris.brezillon@bootlin.com>
+Cc: Marek Vasut <marek.vasut@gmail.com>
+Cc: Richard Weinberger <richard@nod.at>
+Cc: linux-mtd@lists.infradead.org
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+Cc: linux-sh@vger.kernel.org
+Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+Signed-off-by: Randy Dunlap <rdunlap@infradead.org>
+Signed-off-by: Boris Brezillon <boris.brezillon@bootlin.com>
+Signed-off-by: Sasha Levin <alexander.levin@microsoft.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/mtd/maps/solutionengine.c |    6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+--- a/drivers/mtd/maps/solutionengine.c
++++ b/drivers/mtd/maps/solutionengine.c
+@@ -59,9 +59,9 @@ static int __init init_soleng_maps(void)
+ 			return -ENXIO;
+ 		}
+ 	}
+-	printk(KERN_NOTICE "Solution Engine: Flash at 0x%08lx, EPROM at 0x%08lx\n",
+-	       soleng_flash_map.phys & 0x1fffffff,
+-	       soleng_eprom_map.phys & 0x1fffffff);
++	printk(KERN_NOTICE "Solution Engine: Flash at 0x%pap, EPROM at 0x%pap\n",
++	       &soleng_flash_map.phys,
++	       &soleng_eprom_map.phys);
+ 	flash_mtd->owner = THIS_MODULE;
+ 
+ 	eprom_mtd = do_map_probe("map_rom", &soleng_eprom_map);
