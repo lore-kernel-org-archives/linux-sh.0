@@ -1,10 +1,10 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 07 Sep 2018 01:32:48 +0000
+Date: Wed, 26 Sep 2018 01:28:36 +0000
 Subject: [PATCH v2 resend 08/13] sh: sh4a: convert to SPDX identifiers
-Message-Id: <87sh2mqesi.wl-kuninori.morimoto.gx@renesas.com>
+Message-Id: <87efdhyrya.wl-kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <874lf2rtgt.wl-kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <874lf2rtgt.wl-kuninori.morimoto.gx@renesas.com>
+References: <87pnx1ys2k.wl-kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87pnx1ys2k.wl-kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
