@@ -1,97 +1,64 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 26 Sep 2018 01:29:05 +0000
-Subject: [PATCH v2 resend 10/13] sh: shmobile: convert to SPDX identifiers
-Message-Id: <87bm8lyrxg.wl-kuninori.morimoto.gx@renesas.com>
+From: Michal Hocko <mhocko@kernel.org>
+Date: Wed, 26 Sep 2018 09:31:27 +0000
+Subject: Re: [PATCH 14/30] memblock: add align parameter to memblock_alloc_node()
+Message-Id: <20180926093127.GO6278@dhcp22.suse.cz>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87pnx1ys2k.wl-kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87pnx1ys2k.wl-kuninori.morimoto.gx@renesas.com>
+References: <1536927045-23536-1-git-send-email-rppt@linux.vnet.ibm.com>
+ <1536927045-23536-15-git-send-email-rppt@linux.vnet.ibm.com>
+In-Reply-To: <1536927045-23536-15-git-send-email-rppt@linux.vnet.ibm.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
-Cc: Linux-SH <linux-sh@vger.kernel.org>, Linux-Renesas <linux-renesas-soc@vger.kernel.org>
+To: Mike Rapoport <rppt@linux.vnet.ibm.com>
+Cc: linux-mm@kvack.org, Andrew Morton <akpm@linux-foundation.org>, Catalin Marinas <catalin.marinas@arm.com>, Chris Zankel <chris@zankel.net>, "David S. Miller" <davem@davemloft.net>, Geert Uytterhoeven <geert@linux-m68k.org>, Greentime Hu <green.hu@gmail.com>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Guan Xuetao <gxt@pku.edu.cn>, Ingo Molnar <mingo@redhat.com>, "James E.J. Bottomley" <jejb@parisc-linux.org>, Jonas Bonn <jonas@southpole.se>, Jonathan Corbet <corbet@lwn.net>, Ley Foon Tan <lftan@altera.com>, Mark Salter <msalter@redhat.com>, Martin Schwidefsky <schwidefsky@de.ibm.com>, Matt Turner <mattst88@gmail.com>, Michael Ellerman <mpe@ellerman.id.au>, Michal Simek <monstr@monstr.eu>, Palmer Dabbelt <palmer@sifive.com>, Paul Burton <paul.burton@mips.com>, Richard Kuo <rkuo@codeaurora.org>, Richard Weinberger <richard@nod.at>, Rich Felker <dalias@libc.org>, Russell King <linux@armlinux.org.uk>, Serge Semin <fancer.lancer@gmail.com>, Thomas Gleixner <tglx@linutronix.de>, Tony Luck <tony.luck@intel.com>, Vineet Gupta <vgupta@synopsys.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-alpha@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-c6x-dev@linux-c6x.org, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-um@lists.infradead.org, nios2-dev@lists.rocketboards.org, openrisc@lists.librecores.org, sparclinux@vger.kernel.org, uclinux-h8-devel@lists.sourceforge.jp
 
+On Fri 14-09-18 15:10:29, Mike Rapoport wrote:
+> With the align parameter memblock_alloc_node() can be used as drop in
+> replacement for alloc_bootmem_pages_node() and __alloc_bootmem_node(),
+> which is done in the following patches.
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+/me confused. Why do we need this patch at all? Maybe it should be
+folded into the later patch you are refereing here?
 
-This patch updates license to use SPDX-License-Identifier
-instead of verbose license text.
+> Signed-off-by: Mike Rapoport <rppt@linux.vnet.ibm.com>
+> ---
+>  include/linux/bootmem.h | 4 ++--
+>  mm/sparse.c             | 2 +-
+>  2 files changed, 3 insertions(+), 3 deletions(-)
+> 
+> diff --git a/include/linux/bootmem.h b/include/linux/bootmem.h
+> index 7d91f0f..3896af2 100644
+> --- a/include/linux/bootmem.h
+> +++ b/include/linux/bootmem.h
+> @@ -157,9 +157,9 @@ static inline void * __init memblock_alloc_from_nopanic(
+>  }
+>  
+>  static inline void * __init memblock_alloc_node(
+> -						phys_addr_t size, int nid)
+> +		phys_addr_t size, phys_addr_t align, int nid)
+>  {
+> -	return memblock_alloc_try_nid(size, 0, BOOTMEM_LOW_LIMIT,
+> +	return memblock_alloc_try_nid(size, align, BOOTMEM_LOW_LIMIT,
+>  					    BOOTMEM_ALLOC_ACCESSIBLE, nid);
+>  }
+>  
+> diff --git a/mm/sparse.c b/mm/sparse.c
+> index 04e97af..509828f 100644
+> --- a/mm/sparse.c
+> +++ b/mm/sparse.c
+> @@ -68,7 +68,7 @@ static noinline struct mem_section __ref *sparse_index_alloc(int nid)
+>  	if (slab_is_available())
+>  		section = kzalloc_node(array_size, GFP_KERNEL, nid);
+>  	else
+> -		section = memblock_alloc_node(array_size, nid);
+> +		section = memblock_alloc_node(array_size, 0, nid);
+>  
+>  	return section;
+>  }
+> -- 
+> 2.7.4
+> 
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Reviewed-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/sh/kernel/cpu/shmobile/Makefile  | 1 +
- arch/sh/kernel/cpu/shmobile/cpuidle.c | 5 +----
- arch/sh/kernel/cpu/shmobile/pm.c      | 5 +----
- arch/sh/kernel/cpu/shmobile/sleep.S   | 7 ++-----
- 4 files changed, 5 insertions(+), 13 deletions(-)
-
-diff --git a/arch/sh/kernel/cpu/shmobile/Makefile b/arch/sh/kernel/cpu/shmobile/Makefile
-index e8a5111..7581d5f 100644
---- a/arch/sh/kernel/cpu/shmobile/Makefile
-+++ b/arch/sh/kernel/cpu/shmobile/Makefile
-@@ -1,3 +1,4 @@
-+# SPDX-License-Identifier: GPL-2.0
- #
- # Makefile for the Linux/SuperH SH-Mobile backends.
- #
-diff --git a/arch/sh/kernel/cpu/shmobile/cpuidle.c b/arch/sh/kernel/cpu/shmobile/cpuidle.c
-index c32e660..dbd2cde 100644
---- a/arch/sh/kernel/cpu/shmobile/cpuidle.c
-+++ b/arch/sh/kernel/cpu/shmobile/cpuidle.c
-@@ -1,13 +1,10 @@
-+// SPDX-License-Identifier: GPL-2.0
- /*
-  * arch/sh/kernel/cpu/shmobile/cpuidle.c
-  *
-  * Cpuidle support code for SuperH Mobile
-  *
-  *  Copyright (C) 2009 Magnus Damm
-- *
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
-  */
- #include <linux/init.h>
- #include <linux/kernel.h>
-diff --git a/arch/sh/kernel/cpu/shmobile/pm.c b/arch/sh/kernel/cpu/shmobile/pm.c
-index fba2be5..ca9945f 100644
---- a/arch/sh/kernel/cpu/shmobile/pm.c
-+++ b/arch/sh/kernel/cpu/shmobile/pm.c
-@@ -1,13 +1,10 @@
-+// SPDX-License-Identifier: GPL-2.0
- /*
-  * arch/sh/kernel/cpu/shmobile/pm.c
-  *
-  * Power management support code for SuperH Mobile
-  *
-  *  Copyright (C) 2009 Magnus Damm
-- *
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
-  */
- #include <linux/init.h>
- #include <linux/kernel.h>
-diff --git a/arch/sh/kernel/cpu/shmobile/sleep.S b/arch/sh/kernel/cpu/shmobile/sleep.S
-index e6aac65..f928c03 100644
---- a/arch/sh/kernel/cpu/shmobile/sleep.S
-+++ b/arch/sh/kernel/cpu/shmobile/sleep.S
-@@ -1,13 +1,10 @@
--/*
-+/* SPDX-License-Identifier: GPL-2.0
-+ *
-  * arch/sh/kernel/cpu/sh4a/sleep-sh_mobile.S
-  *
-  * Sleep mode and Standby modes support for SuperH Mobile
-  *
-  *  Copyright (C) 2009 Magnus Damm
-- *
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
-  */
- 
- #include <linux/sys.h>
 -- 
-2.7.4
+Michal Hocko
+SUSE Labs
