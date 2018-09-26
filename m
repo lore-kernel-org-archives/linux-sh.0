@@ -1,62 +1,32 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 05 Sep 2018 08:49:39 +0000
-Subject: [PATCH 4/4] spi: rspi: Fix interrupted DMA transfers
-Message-Id: <20180905084939.7401-5-geert+renesas@glider.be>
+From: Michal Hocko <mhocko@kernel.org>
+Date: Wed, 26 Sep 2018 09:38:46 +0000
+Subject: Re: [PATCH 29/30] mm: remove include/linux/bootmem.h
+Message-Id: <20180926093846.GS6278@dhcp22.suse.cz>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20180905084939.7401-1-geert+renesas@glider.be>
-In-Reply-To: <20180905084939.7401-1-geert+renesas@glider.be>
+References: <1536927045-23536-1-git-send-email-rppt@linux.vnet.ibm.com>
+ <1536927045-23536-30-git-send-email-rppt@linux.vnet.ibm.com>
+In-Reply-To: <1536927045-23536-30-git-send-email-rppt@linux.vnet.ibm.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
-Cc: Gaku Inami <gaku.inami.xw@bp.renesas.com>, Hiromitsu Yamasaki <hiromitsu.yamasaki.ym@renesas.com>, linux-spi@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Mike Rapoport <rppt@linux.vnet.ibm.com>
+Cc: linux-mm@kvack.org, Andrew Morton <akpm@linux-foundation.org>, Catalin Marinas <catalin.marinas@arm.com>, Chris Zankel <chris@zankel.net>, "David S. Miller" <davem@davemloft.net>, Geert Uytterhoeven <geert@linux-m68k.org>, Greentime Hu <green.hu@gmail.com>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Guan Xuetao <gxt@pku.edu.cn>, Ingo Molnar <mingo@redhat.com>, "James E.J. Bottomley" <jejb@parisc-linux.org>, Jonas Bonn <jonas@southpole.se>, Jonathan Corbet <corbet@lwn.net>, Ley Foon Tan <lftan@altera.com>, Mark Salter <msalter@redhat.com>, Martin Schwidefsky <schwidefsky@de.ibm.com>, Matt Turner <mattst88@gmail.com>, Michael Ellerman <mpe@ellerman.id.au>, Michal Simek <monstr@monstr.eu>, Palmer Dabbelt <palmer@sifive.com>, Paul Burton <paul.burton@mips.com>, Richard Kuo <rkuo@codeaurora.org>, Richard Weinberger <richard@nod.at>, Rich Felker <dalias@libc.org>, Russell King <linux@armlinux.org.uk>, Serge Semin <fancer.lancer@gmail.com>, Thomas Gleixner <tglx@linutronix.de>, Tony Luck <tony.luck@intel.com>, Vineet Gupta <vgupta@synopsys.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-alpha@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-c6x-dev@linux-c6x.org, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-um@lists.infradead.org, nios2-dev@lists.rocketboards.org, openrisc@lists.librecores.org, sparclinux@vger.kernel.org, uclinux-h8-devel@lists.sourceforge.jp
 
-When interrupted, wait_event_interruptible_timeout() returns
--ERESTARTSYS, and the SPI transfer in progress will fail, as expected:
+On Fri 14-09-18 15:10:44, Mike Rapoport wrote:
+> Move remaining definitions and declarations from include/linux/bootmem.h
+> into include/linux/memblock.h and remove the redundant header.
+> 
+> The includes were replaced with the semantic patch below and then
+> semi-automated removal of duplicated '#include <linux/memblock.h>
+> 
+> @@
+> @@
+> - #include <linux/bootmem.h>
+> + #include <linux/memblock.h>
+> 
+> Signed-off-by: Mike Rapoport <rppt@linux.vnet.ibm.com>
 
-    m25p80 spi0.0: SPI transfer failed: -512
-    spi_master spi0: failed to transfer one message from queue
-
-However, as the underlying DMA transfers may not have completed, all
-subsequent SPI transfers may start to fail:
-
-    spi_master spi0: receive timeout
-    qspi_transfer_out_in() returned -110
-    m25p80 spi0.0: SPI transfer failed: -110
-    spi_master spi0: failed to transfer one message from queue
-
-Fix this by calling dmaengine_terminate_all() not only for timeouts, but
-also for errors.
-
-This can be reproduced on r8a7991/koelsch, using "hd /dev/mtd0" followed
-by CTRL-C.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- drivers/spi/spi-rspi.c | 10 ++++++----
- 1 file changed, 6 insertions(+), 4 deletions(-)
-
-diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
-index 45faa390747b1166..98a839d286b8e82b 100644
---- a/drivers/spi/spi-rspi.c
-+++ b/drivers/spi/spi-rspi.c
-@@ -598,11 +598,13 @@ static int rspi_dma_transfer(struct rspi_data *rspi, struct sg_table *tx,
- 
- 	ret = wait_event_interruptible_timeout(rspi->wait,
- 					       rspi->dma_callbacked, HZ);
--	if (ret > 0 && rspi->dma_callbacked)
-+	if (ret > 0 && rspi->dma_callbacked) {
- 		ret = 0;
--	else if (!ret) {
--		dev_err(&rspi->master->dev, "DMA timeout\n");
--		ret = -ETIMEDOUT;
-+	} else {
-+		if (!ret) {
-+			dev_err(&rspi->master->dev, "DMA timeout\n");
-+			ret = -ETIMEDOUT;
-+		}
- 		if (tx)
- 			dmaengine_terminate_all(rspi->master->dma_tx);
- 		if (rx)
+Acked-by: Michal Hocko <mhocko@suse.com>
 -- 
-2.17.1
+Michal Hocko
+SUSE Labs
