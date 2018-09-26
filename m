@@ -1,10 +1,10 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 07 Sep 2018 01:31:05 +0000
+Date: Wed, 26 Sep 2018 01:26:37 +0000
 Subject: [PATCH v2 resend 01/13] sh: boards: convert to SPDX identifiers
-Message-Id: <8736umrtft.wl-kuninori.morimoto.gx@renesas.com>
+Message-Id: <87o9clys1m.wl-kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <874lf2rtgt.wl-kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <874lf2rtgt.wl-kuninori.morimoto.gx@renesas.com>
+References: <87pnx1ys2k.wl-kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87pnx1ys2k.wl-kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -479,7 +479,7 @@ index 3963c6f..d2f2691 100644
  
  #include <linux/sys.h>
 diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
-index adc61d1..fccc691 100644
+index 06a8945..46467f8 100644
 --- a/arch/sh/boards/mach-ecovec24/setup.c
 +++ b/arch/sh/boards/mach-ecovec24/setup.c
 @@ -1,11 +1,8 @@
