@@ -1,202 +1,28 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 26 Sep 2018 01:28:22 +0000
-Subject: [PATCH v2 resend 07/13] sh: sh4: convert to SPDX identifiers
-Message-Id: <87ftxxyryo.wl-kuninori.morimoto.gx@renesas.com>
+From: Michal Hocko <mhocko@kernel.org>
+Date: Wed, 26 Sep 2018 09:22:39 +0000
+Subject: Re: [PATCH 02/30] mm: remove CONFIG_NO_BOOTMEM
+Message-Id: <20180926092239.GK6278@dhcp22.suse.cz>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87pnx1ys2k.wl-kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87pnx1ys2k.wl-kuninori.morimoto.gx@renesas.com>
+References: <1536927045-23536-1-git-send-email-rppt@linux.vnet.ibm.com>
+ <1536927045-23536-3-git-send-email-rppt@linux.vnet.ibm.com>
+In-Reply-To: <1536927045-23536-3-git-send-email-rppt@linux.vnet.ibm.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
-Cc: Linux-SH <linux-sh@vger.kernel.org>, Linux-Renesas <linux-renesas-soc@vger.kernel.org>
+To: Mike Rapoport <rppt@linux.vnet.ibm.com>
+Cc: linux-mm@kvack.org, Andrew Morton <akpm@linux-foundation.org>, Catalin Marinas <catalin.marinas@arm.com>, Chris Zankel <chris@zankel.net>, "David S. Miller" <davem@davemloft.net>, Geert Uytterhoeven <geert@linux-m68k.org>, Greentime Hu <green.hu@gmail.com>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Guan Xuetao <gxt@pku.edu.cn>, Ingo Molnar <mingo@redhat.com>, "James E.J. Bottomley" <jejb@parisc-linux.org>, Jonas Bonn <jonas@southpole.se>, Jonathan Corbet <corbet@lwn.net>, Ley Foon Tan <lftan@altera.com>, Mark Salter <msalter@redhat.com>, Martin Schwidefsky <schwidefsky@de.ibm.com>, Matt Turner <mattst88@gmail.com>, Michael Ellerman <mpe@ellerman.id.au>, Michal Simek <monstr@monstr.eu>, Palmer Dabbelt <palmer@sifive.com>, Paul Burton <paul.burton@mips.com>, Richard Kuo <rkuo@codeaurora.org>, Richard Weinberger <richard@nod.at>, Rich Felker <dalias@libc.org>, Russell King <linux@armlinux.org.uk>, Serge Semin <fancer.lancer@gmail.com>, Thomas Gleixner <tglx@linutronix.de>, Tony Luck <tony.luck@intel.com>, Vineet Gupta <vgupta@synopsys.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-alpha@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-c6x-dev@linux-c6x.org, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-um@lists.infradead.org, nios2-dev@lists.rocketboards.org, openrisc@lists.librecores.org, sparclinux@vger.kernel.org, uclinux-h8-devel@lists.sourceforge.jp
 
+On Fri 14-09-18 15:10:17, Mike Rapoport wrote:
+> All achitectures select NO_BOOTMEM which essentially becomes 'Y' for any
+> kernel configuration and therefore it can be removed.
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+git grep suggests that DEFERRED_STRUCT_PAGE_INIT still depends on
+NO_BOOTMEM but I have a vague feeling that I've seen a patch to address
+that. It would be great to have it folded to this one.
 
-This patch updates license to use SPDX-License-Identifier
-instead of verbose license text,
-excepting ${LINUX}/arch/sh/kernel/cpu/sh4/softfloat.c
-which is not GPL license
+> Signed-off-by: Mike Rapoport <rppt@linux.vnet.ibm.com>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Reviewed-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/sh/kernel/cpu/sh4/clock-sh4-202.c | 5 +----
- arch/sh/kernel/cpu/sh4/clock-sh4.c     | 5 +----
- arch/sh/kernel/cpu/sh4/fpu.c           | 5 +----
- arch/sh/kernel/cpu/sh4/perf_event.c    | 5 +----
- arch/sh/kernel/cpu/sh4/probe.c         | 5 +----
- arch/sh/kernel/cpu/sh4/setup-sh4-202.c | 5 +----
- arch/sh/kernel/cpu/sh4/setup-sh7750.c  | 5 +----
- arch/sh/kernel/cpu/sh4/setup-sh7760.c  | 5 +----
- arch/sh/kernel/cpu/sh4/sq.c            | 5 +----
- 9 files changed, 9 insertions(+), 36 deletions(-)
-
-diff --git a/arch/sh/kernel/cpu/sh4/clock-sh4-202.c b/arch/sh/kernel/cpu/sh4/clock-sh4-202.c
-index 4b5bab5..c1cdef7 100644
---- a/arch/sh/kernel/cpu/sh4/clock-sh4-202.c
-+++ b/arch/sh/kernel/cpu/sh4/clock-sh4-202.c
-@@ -1,13 +1,10 @@
-+// SPDX-License-Identifier: GPL-2.0
- /*
-  * arch/sh/kernel/cpu/sh4/clock-sh4-202.c
-  *
-  * Additional SH4-202 support for the clock framework
-  *
-  *  Copyright (C) 2005  Paul Mundt
-- *
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
-  */
- #include <linux/init.h>
- #include <linux/kernel.h>
-diff --git a/arch/sh/kernel/cpu/sh4/clock-sh4.c b/arch/sh/kernel/cpu/sh4/clock-sh4.c
-index 99e5ec8..ee3c553 100644
---- a/arch/sh/kernel/cpu/sh4/clock-sh4.c
-+++ b/arch/sh/kernel/cpu/sh4/clock-sh4.c
-@@ -1,3 +1,4 @@
-+// SPDX-License-Identifier: GPL-2.0
- /*
-  * arch/sh/kernel/cpu/sh4/clock-sh4.c
-  *
-@@ -11,10 +12,6 @@
-  *  Copyright (C) 2000  Philipp Rumpf <prumpf@tux.org>
-  *  Copyright (C) 2002, 2003, 2004  Paul Mundt
-  *  Copyright (C) 2002  M. R. Brown  <mrbrown@linux-sh.org>
-- *
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
-  */
- #include <linux/init.h>
- #include <linux/kernel.h>
-diff --git a/arch/sh/kernel/cpu/sh4/fpu.c b/arch/sh/kernel/cpu/sh4/fpu.c
-index 95fd2dcb..1ff56e5 100644
---- a/arch/sh/kernel/cpu/sh4/fpu.c
-+++ b/arch/sh/kernel/cpu/sh4/fpu.c
-@@ -1,10 +1,7 @@
-+// SPDX-License-Identifier: GPL-2.0
- /*
-  * Save/restore floating point context for signal handlers.
-  *
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
-- *
-  * Copyright (C) 1999, 2000  Kaz Kojima & Niibe Yutaka
-  * Copyright (C) 2006  ST Microelectronics Ltd. (denorm support)
-  *
-diff --git a/arch/sh/kernel/cpu/sh4/perf_event.c b/arch/sh/kernel/cpu/sh4/perf_event.c
-index fa4f724..db5847b 100644
---- a/arch/sh/kernel/cpu/sh4/perf_event.c
-+++ b/arch/sh/kernel/cpu/sh4/perf_event.c
-@@ -1,11 +1,8 @@
-+// SPDX-License-Identifier: GPL-2.0
- /*
-  * Performance events support for SH7750-style performance counters
-  *
-  *  Copyright (C) 2009  Paul Mundt
-- *
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
-  */
- #include <linux/kernel.h>
- #include <linux/init.h>
-diff --git a/arch/sh/kernel/cpu/sh4/probe.c b/arch/sh/kernel/cpu/sh4/probe.c
-index a521bcf..ef4dd62 100644
---- a/arch/sh/kernel/cpu/sh4/probe.c
-+++ b/arch/sh/kernel/cpu/sh4/probe.c
-@@ -1,3 +1,4 @@
-+// SPDX-License-Identifier: GPL-2.0
- /*
-  * arch/sh/kernel/cpu/sh4/probe.c
-  *
-@@ -5,10 +6,6 @@
-  *
-  * Copyright (C) 2001 - 2007  Paul Mundt
-  * Copyright (C) 2003  Richard Curnow
-- *
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
-  */
- #include <linux/init.h>
- #include <linux/io.h>
-diff --git a/arch/sh/kernel/cpu/sh4/setup-sh4-202.c b/arch/sh/kernel/cpu/sh4/setup-sh4-202.c
-index 2623f82..a40ef35 100644
---- a/arch/sh/kernel/cpu/sh4/setup-sh4-202.c
-+++ b/arch/sh/kernel/cpu/sh4/setup-sh4-202.c
-@@ -1,12 +1,9 @@
-+// SPDX-License-Identifier: GPL-2.0
- /*
-  * SH4-202 Setup
-  *
-  *  Copyright (C) 2006  Paul Mundt
-  *  Copyright (C) 2009  Magnus Damm
-- *
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
-  */
- #include <linux/platform_device.h>
- #include <linux/init.h>
-diff --git a/arch/sh/kernel/cpu/sh4/setup-sh7750.c b/arch/sh/kernel/cpu/sh4/setup-sh7750.c
-index 57d3068..b37bda6 100644
---- a/arch/sh/kernel/cpu/sh4/setup-sh7750.c
-+++ b/arch/sh/kernel/cpu/sh4/setup-sh7750.c
-@@ -1,12 +1,9 @@
-+// SPDX-License-Identifier: GPL-2.0
- /*
-  * SH7091/SH7750/SH7750S/SH7750R/SH7751/SH7751R Setup
-  *
-  *  Copyright (C) 2006  Paul Mundt
-  *  Copyright (C) 2006  Jamie Lenehan
-- *
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
-  */
- #include <linux/platform_device.h>
- #include <linux/init.h>
-diff --git a/arch/sh/kernel/cpu/sh4/setup-sh7760.c b/arch/sh/kernel/cpu/sh4/setup-sh7760.c
-index e51fe17..86845da 100644
---- a/arch/sh/kernel/cpu/sh4/setup-sh7760.c
-+++ b/arch/sh/kernel/cpu/sh4/setup-sh7760.c
-@@ -1,11 +1,8 @@
-+// SPDX-License-Identifier: GPL-2.0
- /*
-  * SH7760 Setup
-  *
-  *  Copyright (C) 2006  Paul Mundt
-- *
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
-  */
- #include <linux/platform_device.h>
- #include <linux/init.h>
-diff --git a/arch/sh/kernel/cpu/sh4/sq.c b/arch/sh/kernel/cpu/sh4/sq.c
-index 4ca78ed..934ff84 100644
---- a/arch/sh/kernel/cpu/sh4/sq.c
-+++ b/arch/sh/kernel/cpu/sh4/sq.c
-@@ -1,3 +1,4 @@
-+// SPDX-License-Identifier: GPL-2.0
- /*
-  * arch/sh/kernel/cpu/sh4/sq.c
-  *
-@@ -5,10 +6,6 @@
-  *
-  * Copyright (C) 2001 - 2006  Paul Mundt
-  * Copyright (C) 2001, 2002  M. R. Brown
-- *
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
-  */
- #include <linux/init.h>
- #include <linux/cpu.h>
+Acked-by: Michal Hocko <mhocko@suse.com>
 -- 
-2.7.4
+Michal Hocko
+SUSE Labs
