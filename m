@@ -1,17 +1,51 @@
-From: "GEN  KELVIN" <genkelvin@us.edu>
-Date: Sun, 21 Oct 2018 00:25:43 +0000
-Subject: I NEED YOUR HELP URGENTLY!!!
-Message-Id: <ae7f7a695e3643dbaad0d0b4770dc729@MWGPSMTP03.global.alltfs.com>
+From: Sasha Levin <Alexander.Levin@microsoft.com>
+Date: Mon, 01 Oct 2018 00:38:34 +0000
+Subject: [PATCH AUTOSEL 4.18 52/65] arch/hexagon: fix kernel/dma.c build warning
+Message-Id: <20181001003754.146961-52-alexander.levin@microsoft.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20181001003754.146961-1-alexander.levin@microsoft.com>
+In-Reply-To: <20181001003754.146961-1-alexander.levin@microsoft.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: "stable@vger.kernel.org" <stable@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+Cc: Randy Dunlap <rdunlap@infradead.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Richard Kuo <rkuo@codeaurora.org>, Sasha Levin <Alexander.Levin@microsoft.com>
 
-Compliment of the day to you. I am Gen.Kelvin W Howard, I am sending this brief letter to solicit your partnership of Sixteen  Million Two Hundred Thousand United States Dollars ($16,200,000). I shall send you more information and procedures when I receive positive response from you.Best Regards,
-CONTACT ME: kivenhoward@gmail.com
-Gen.Kelvin W Howard
+From: Randy Dunlap <rdunlap@infradead.org>
 
+[ Upstream commit 200f351e27f014fcbf69b544b0b4b72aeaf45fd3 ]
+
+Fix build warning in arch/hexagon/kernel/dma.c by casting a void *
+to unsigned long to match the function parameter type.
+
+../arch/hexagon/kernel/dma.c: In function 'arch_dma_alloc':
+../arch/hexagon/kernel/dma.c:51:5: warning: passing argument 2 of 'gen_pool_add' makes integer from pointer without a cast [enabled by default]
+../include/linux/genalloc.h:112:19: note: expected 'long unsigned int' but argument is of type 'void *'
+
+Signed-off-by: Randy Dunlap <rdunlap@infradead.org>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+Cc: linux-sh@vger.kernel.org
+Patch-mainline: linux-kernel @ 07/20/2018, 20:17
+[rkuo@codeaurora.org: fixed architecture name]
+Signed-off-by: Richard Kuo <rkuo@codeaurora.org>
+Signed-off-by: Sasha Levin <alexander.levin@microsoft.com>
 ---
-This email has been checked for viruses by Avast antivirus software.
-https://www.avast.com/antivirus
+ arch/hexagon/kernel/dma.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/hexagon/kernel/dma.c b/arch/hexagon/kernel/dma.c
+index 77459df34e2e..7ebe7ad19d15 100644
+--- a/arch/hexagon/kernel/dma.c
++++ b/arch/hexagon/kernel/dma.c
+@@ -60,7 +60,7 @@ static void *hexagon_dma_alloc_coherent(struct device *dev, size_t size,
+ 			panic("Can't create %s() memory pool!", __func__);
+ 		else
+ 			gen_pool_add(coherent_pool,
+-				pfn_to_virt(max_low_pfn),
++				(unsigned long)pfn_to_virt(max_low_pfn),
+ 				hexagon_coherent_pool_size, -1);
+ 	}
+ 
+-- 
+2.17.1
