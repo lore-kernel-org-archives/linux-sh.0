@@ -1,44 +1,51 @@
-From: Logan Gunthorpe <logang@deltatee.com>
-Date: Mon, 15 Oct 2018 17:57:01 +0000
-Subject: [PATCH v2 5/6] sh: mm: make use of new memblocks_present() helper
-Message-Id: <20181015175702.9036-6-logang@deltatee.com>
+From: Sasha Levin <Alexander.Levin@microsoft.com>
+Date: Mon, 01 Oct 2018 00:41:48 +0000
+Subject: [PATCH AUTOSEL 3.18 07/13] arch/hexagon: fix kernel/dma.c build warning
+Message-Id: <20181001004139.147341-7-alexander.levin@microsoft.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20181015175702.9036-1-logang@deltatee.com>
-In-Reply-To: <20181015175702.9036-1-logang@deltatee.com>
+References: <20181001004139.147341-1-alexander.levin@microsoft.com>
+In-Reply-To: <20181001004139.147341-1-alexander.levin@microsoft.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: "stable@vger.kernel.org" <stable@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+Cc: Randy Dunlap <rdunlap@infradead.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Richard Kuo <rkuo@codeaurora.org>, Sasha Levin <Alexander.Levin@microsoft.com>
 
-Cleanup the open coded for_each_memblock() loop that is equivalent
-to the new memblocks_present() helper.
+From: Randy Dunlap <rdunlap@infradead.org>
 
-Signed-off-by: Logan Gunthorpe <logang@deltatee.com>
+[ Upstream commit 200f351e27f014fcbf69b544b0b4b72aeaf45fd3 ]
+
+Fix build warning in arch/hexagon/kernel/dma.c by casting a void *
+to unsigned long to match the function parameter type.
+
+../arch/hexagon/kernel/dma.c: In function 'arch_dma_alloc':
+../arch/hexagon/kernel/dma.c:51:5: warning: passing argument 2 of 'gen_pool_add' makes integer from pointer without a cast [enabled by default]
+../include/linux/genalloc.h:112:19: note: expected 'long unsigned int' but argument is of type 'void *'
+
+Signed-off-by: Randy Dunlap <rdunlap@infradead.org>
 Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
 Cc: Rich Felker <dalias@libc.org>
-Cc: Dan Williams <dan.j.williams@intel.com>
-Cc: Rob Herring <robh@kernel.org>
+Cc: linux-sh@vger.kernel.org
+Patch-mainline: linux-kernel @ 07/20/2018, 20:17
+[rkuo@codeaurora.org: fixed architecture name]
+Signed-off-by: Richard Kuo <rkuo@codeaurora.org>
+Signed-off-by: Sasha Levin <alexander.levin@microsoft.com>
 ---
- arch/sh/mm/init.c | 7 +------
- 1 file changed, 1 insertion(+), 6 deletions(-)
+ arch/hexagon/kernel/dma.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/sh/mm/init.c b/arch/sh/mm/init.c
-index 7713c084d040..f601f96408ee 100644
---- a/arch/sh/mm/init.c
-+++ b/arch/sh/mm/init.c
-@@ -235,12 +235,7 @@ static void __init do_init_bootmem(void)
- 
- 	plat_mem_setup();
- 
--	for_each_memblock(memory, reg) {
--		int nid = memblock_get_region_node(reg);
--
--		memory_present(nid, memblock_region_memory_base_pfn(reg),
--			memblock_region_memory_end_pfn(reg));
--	}
-+	memblocks_present();
- 	sparse_init();
- }
+diff --git a/arch/hexagon/kernel/dma.c b/arch/hexagon/kernel/dma.c
+index b74f9bae31a3..5a821e1c4b9b 100644
+--- a/arch/hexagon/kernel/dma.c
++++ b/arch/hexagon/kernel/dma.c
+@@ -79,7 +79,7 @@ static void *hexagon_dma_alloc_coherent(struct device *dev, size_t size,
+ 			panic("Can't create %s() memory pool!", __func__);
+ 		else
+ 			gen_pool_add(coherent_pool,
+-				pfn_to_virt(max_low_pfn),
++				(unsigned long)pfn_to_virt(max_low_pfn),
+ 				hexagon_coherent_pool_size, -1);
+ 	}
  
 -- 
-2.19.0
+2.17.1
