@@ -1,10 +1,10 @@
 From: Sasha Levin <Alexander.Levin@microsoft.com>
-Date: Mon, 01 Oct 2018 00:38:34 +0000
-Subject: [PATCH AUTOSEL 4.18 52/65] arch/hexagon: fix kernel/dma.c build warning
-Message-Id: <20181001003754.146961-52-alexander.levin@microsoft.com>
+Date: Mon, 01 Oct 2018 00:41:30 +0000
+Subject: [PATCH AUTOSEL 4.4 09/17] arch/hexagon: fix kernel/dma.c build warning
+Message-Id: <20181001004122.147276-9-alexander.levin@microsoft.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20181001003754.146961-1-alexander.levin@microsoft.com>
-In-Reply-To: <20181001003754.146961-1-alexander.levin@microsoft.com>
+References: <20181001004122.147276-1-alexander.levin@microsoft.com>
+In-Reply-To: <20181001004122.147276-1-alexander.levin@microsoft.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -35,10 +35,10 @@ Signed-off-by: Sasha Levin <alexander.levin@microsoft.com>
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/arch/hexagon/kernel/dma.c b/arch/hexagon/kernel/dma.c
-index 77459df34e2e..7ebe7ad19d15 100644
+index 9e3ddf792bd3..2704e0b8de43 100644
 --- a/arch/hexagon/kernel/dma.c
 +++ b/arch/hexagon/kernel/dma.c
-@@ -60,7 +60,7 @@ static void *hexagon_dma_alloc_coherent(struct device *dev, size_t size,
+@@ -68,7 +68,7 @@ static void *hexagon_dma_alloc_coherent(struct device *dev, size_t size,
  			panic("Can't create %s() memory pool!", __func__);
  		else
  			gen_pool_add(coherent_pool,
