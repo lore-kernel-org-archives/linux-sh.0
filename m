@@ -1,51 +1,13 @@
-From: Sasha Levin <Alexander.Levin@microsoft.com>
-Date: Mon, 01 Oct 2018 00:40:39 +0000
-Subject: [PATCH AUTOSEL 4.9 17/26] arch/hexagon: fix kernel/dma.c build warning
-Message-Id: <20181001004026.147201-17-alexander.levin@microsoft.com>
+From: "Ma. Jenny Kossa" <mylp5050@gmail.com>
+Date: Thu, 04 Oct 2018 17:46:10 +0000
+Subject: Re: Hello
+Message-Id: <CAAV6jyMT9x7rjZAH8B14GbP=qeX76xq4PdUTUkhZ-pC=+Jc6kA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20181001004026.147201-1-alexander.levin@microsoft.com>
-In-Reply-To: <20181001004026.147201-1-alexander.levin@microsoft.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "stable@vger.kernel.org" <stable@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
-Cc: Randy Dunlap <rdunlap@infradead.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Richard Kuo <rkuo@codeaurora.org>, Sasha Levin <Alexander.Levin@microsoft.com>
+To: linux-sh@vger.kernel.org
 
-From: Randy Dunlap <rdunlap@infradead.org>
-
-[ Upstream commit 200f351e27f014fcbf69b544b0b4b72aeaf45fd3 ]
-
-Fix build warning in arch/hexagon/kernel/dma.c by casting a void *
-to unsigned long to match the function parameter type.
-
-../arch/hexagon/kernel/dma.c: In function 'arch_dma_alloc':
-../arch/hexagon/kernel/dma.c:51:5: warning: passing argument 2 of 'gen_pool_add' makes integer from pointer without a cast [enabled by default]
-../include/linux/genalloc.h:112:19: note: expected 'long unsigned int' but argument is of type 'void *'
-
-Signed-off-by: Randy Dunlap <rdunlap@infradead.org>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: Rich Felker <dalias@libc.org>
-Cc: linux-sh@vger.kernel.org
-Patch-mainline: linux-kernel @ 07/20/2018, 20:17
-[rkuo@codeaurora.org: fixed architecture name]
-Signed-off-by: Richard Kuo <rkuo@codeaurora.org>
-Signed-off-by: Sasha Levin <alexander.levin@microsoft.com>
----
- arch/hexagon/kernel/dma.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/arch/hexagon/kernel/dma.c b/arch/hexagon/kernel/dma.c
-index b9017785fb71..0e2be48dbf07 100644
---- a/arch/hexagon/kernel/dma.c
-+++ b/arch/hexagon/kernel/dma.c
-@@ -68,7 +68,7 @@ static void *hexagon_dma_alloc_coherent(struct device *dev, size_t size,
- 			panic("Can't create %s() memory pool!", __func__);
- 		else
- 			gen_pool_add(coherent_pool,
--				pfn_to_virt(max_low_pfn),
-+				(unsigned long)pfn_to_virt(max_low_pfn),
- 				hexagon_coherent_pool_size, -1);
- 	}
- 
--- 
-2.17.1
+Hello My Dear, My name is Mrs. Jenny Kossa the wife of late Moses
+Kossa from the USA. Please I have something to discuss with you. Can I
+trust you?
