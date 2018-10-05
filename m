@@ -1,96 +1,187 @@
-From: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
-Date: Tue, 30 Oct 2018 12:36:27 +0000
-Subject: Re: [PATCH 0/7] serial: Finish kgdb on qcom_geni; fix many lockdep splats w/ kgdb
-Message-Id: <20181030123627.GS10650@smile.fi.intel.com>
+From: Logan Gunthorpe <logang@deltatee.com>
+Date: Fri, 05 Oct 2018 16:16:42 +0000
+Subject: [PATCH 5/5] RISC-V: Implement sparsemem
+Message-Id: <20181005161642.2462-6-logang@deltatee.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20181029180707.207546-1-dianders@chromium.org>
-In-Reply-To: <20181029180707.207546-1-dianders@chromium.org>
+References: <20181005161642.2462-1-logang@deltatee.com>
+In-Reply-To: <20181005161642.2462-1-logang@deltatee.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Douglas Anderson <dianders@chromium.org>
-Cc: Jason Wessel <jason.wessel@windriver.com>, Daniel Thompson <daniel.thompson@linaro.org>, tglx@linutronix.de, mingo@kernel.org, gregkh@linuxfoundation.org, linux-arm-msm@vger.kernel.org, kgdb-bugreport@lists.sourceforge.net, nm@ti.com, linux-mips@linux-mips.org, dalias@libc.org, catalin.marinas@arm.com, vigneshr@ti.com, linux-aspeed@lists.ozlabs.org, linux-sh@vger.kernel.org, peterz@infradead.org, will.deacon@arm.com, mhocko@suse.com, paulus@samba.org, hpa@zytor.com, sparclinux@vger.kernel.org, marex@denx.de, sfr@canb.auug.org.au, ysato@users.sourceforge.jp, linux-hexagon@vger.kernel.org, x86@kernel.org, linux@armlinux.org.uk, pombredanne@nexb.com, tony@atomide.com, mingo@redhat.com, joel@jms.id.au, linux-serial@vger.kernel.org, rolf.evers.fischer@aptiv.com, jhogan@kernel.or
+To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Oct 29, 2018 at 11:07:00AM -0700, Douglas Anderson wrote:
-> I started out this series trying to make sysrq work over the serial
-> console on qcom_geni_serial, then fell into a rat's nest.
-> 
-> To solve the deadlock I faced when enabling sysrq I tried to borrow
-> code from '8250_port.c' which avoided grabbing the port lock in
-> console_write().  ...but since these days I try to run with lockdep on
-> all the time, I found it caused an annoying lockdep splat (which I
-> also reproduced on my rk3399 board).  ...so I instead changed my
-> qcom_geni_serial solution to borrow code from 'msm_serial.c'
-> 
-> I wasn't super happy with the solution in 'msm_serial.c' though.  I
-> don't like releasing the spinlock there.  Not only is it ugly but it
-> means we are unlocking / re-locking _all the time_ even though sysrq
-> characters are rare.  ...so I came up with what I think is a better
-> solution and then implemented it for qcom_geni_serial.
-> 
-> Since I had a good way to test 8250-based UARTs, I also fixed that
-> driver to use my new method.  When doing so, I ran into a missing
-> msm_serial.c at all, so I didn't switch that (or all other serial
-> drivers for that matter) to the new method.
-> 
-> After fixing all the above issues, I found the next lockdep splat in
-> kgdb and I think I've worked around it in a good-enough way, but I'm
-> much less confident about this.  Hopefully folks can take a look at
-> it.
-> 
-> In general, patches earlier in this series should be "less
-> controversial" and hopefully can land even if people don't like
-> patches later in the series.  ;-)
-> 
-> Looking back, this is pretty much two series squashed that could be
-> treated indepdently.  The first is a serial series and the second is a
-> kgdb series.
-> 
-> For all serial patches I'd expect them to go through the tty tree once
-> they've been reviewed.
-> 
-> If folks are OK w/ the 'smp' patch it probably should go in some core
-> kernel tree.  The kgdb patch won't work without it, though, so to land
-> that we'd need coordination between the folks landing that and the
-> folks landing the 'smp' patch.
+This patch implements sparsemem support for risc-v which helps pave the
+way for memory hotplug and eventually P2P support.
 
-I have got only 0/7 and 5/7, everything okay with your mail client and other tools?
+We introduce Kconfig options for virtual and physical address bits which
+are used to calculate the size of the vmemmap and set the
+MAX_PHYSMEM_BITS.
 
-> 
-> 
-> Douglas Anderson (7):
->   serial: qcom_geni_serial: Finish supporting sysrq
->   serial: core: Allow processing sysrq at port unlock time
->   serial: qcom_geni_serial: Process sysrq at port unlock time
->   serial: core: Include console.h from serial_core.h
->   serial: 8250: Process sysrq at port unlock time
->   smp: Don't yell about IRQs disabled in kgdb_roundup_cpus()
->   kgdb: Remove irq flags and local_irq_enable/disable from roundup
-> 
->  arch/arc/kernel/kgdb.c                      |  4 +--
->  arch/arm/kernel/kgdb.c                      |  4 +--
->  arch/arm64/kernel/kgdb.c                    |  4 +--
->  arch/hexagon/kernel/kgdb.c                  | 11 ++----
->  arch/mips/kernel/kgdb.c                     |  4 +--
->  arch/powerpc/kernel/kgdb.c                  |  2 +-
->  arch/sh/kernel/kgdb.c                       |  4 +--
->  arch/sparc/kernel/smp_64.c                  |  2 +-
->  arch/x86/kernel/kgdb.c                      |  9 ++---
->  drivers/tty/serial/8250/8250_aspeed_vuart.c |  6 +++-
->  drivers/tty/serial/8250/8250_fsl.c          |  6 +++-
->  drivers/tty/serial/8250/8250_omap.c         |  6 +++-
->  drivers/tty/serial/8250/8250_port.c         |  8 ++---
->  drivers/tty/serial/qcom_geni_serial.c       | 10 ++++--
->  include/linux/kgdb.h                        |  9 ++---
->  include/linux/serial_core.h                 | 38 ++++++++++++++++++++-
->  kernel/debug/debug_core.c                   |  2 +-
->  kernel/smp.c                                |  4 ++-
->  18 files changed, 80 insertions(+), 53 deletions(-)
-> 
-> -- 
-> 2.19.1.568.g152ad8e336-goog
-> 
+The vmemmap is located directly before the VMALLOC region and sized
+such that we can allocate enough pages to populate all the virtual
+address space in the system (similar to the way it's done in arm64).
 
+During initialization, call memblocks_present() and sparse_init(),
+and provide a stub for vmemmap_populate() (all of which is similar to
+arm64).
+
+Signed-off-by: Logan Gunthorpe <logang@deltatee.com>
+Cc: Palmer Dabbelt <palmer@sifive.com>
+Cc: Albert Ou <aou@eecs.berkeley.edu>
+Cc: Andrew Waterman <andrew@sifive.com>
+Cc: Olof Johansson <olof@lixom.net>
+Cc: Michael Clark <michaeljclark@mac.com>
+Cc: Rob Herring <robh@kernel.org>
+Cc: Zong Li <zong@andestech.com>
+---
+ arch/riscv/Kconfig                 | 23 +++++++++++++++++++++++
+ arch/riscv/include/asm/pgtable.h   | 24 ++++++++++++++++++++----
+ arch/riscv/include/asm/sparsemem.h | 11 +++++++++++
+ arch/riscv/kernel/setup.c          |  4 +++-
+ arch/riscv/mm/init.c               |  8 ++++++++
+ 5 files changed, 65 insertions(+), 5 deletions(-)
+ create mode 100644 arch/riscv/include/asm/sparsemem.h
+
+diff --git a/arch/riscv/Kconfig b/arch/riscv/Kconfig
+index a344980287a5..a1b5d758a542 100644
+--- a/arch/riscv/Kconfig
++++ b/arch/riscv/Kconfig
+@@ -52,12 +52,32 @@ config ZONE_DMA32
+ 	bool
+ 	default y if 64BIT
+ 
++config VA_BITS
++	int
++	default 32 if 32BIT
++	default 39 if 64BIT
++
++config PA_BITS
++	int
++	default 34 if 32BIT
++	default 56 if 64BIT
++
+ config PAGE_OFFSET
+ 	hex
+ 	default 0xC0000000 if 32BIT && MAXPHYSMEM_2GB
+ 	default 0xffffffff80000000 if 64BIT && MAXPHYSMEM_2GB
+ 	default 0xffffffe000000000 if 64BIT && MAXPHYSMEM_128GB
+ 
++config ARCH_FLATMEM_ENABLE
++	def_bool y
++
++config ARCH_SPARSEMEM_ENABLE
++	def_bool y
++	select SPARSEMEM_VMEMMAP_ENABLE
++
++config ARCH_SELECT_MEMORY_MODEL
++	def_bool ARCH_SPARSEMEM_ENABLE
++
+ config STACKTRACE_SUPPORT
+ 	def_bool y
+ 
+@@ -92,6 +112,9 @@ config PGTABLE_LEVELS
+ config HAVE_KPROBES
+ 	def_bool n
+ 
++config HAVE_ARCH_PFN_VALID
++	def_bool y
++
+ menu "Platform type"
+ 
+ choice
+diff --git a/arch/riscv/include/asm/pgtable.h b/arch/riscv/include/asm/pgtable.h
+index 16301966d65b..20c49cded686 100644
+--- a/arch/riscv/include/asm/pgtable.h
++++ b/arch/riscv/include/asm/pgtable.h
+@@ -89,6 +89,26 @@ extern pgd_t swapper_pg_dir[];
+ #define __S110	PAGE_SHARED_EXEC
+ #define __S111	PAGE_SHARED_EXEC
+ 
++#define VMALLOC_SIZE     (KERN_VIRT_SIZE >> 1)
++#define VMALLOC_END      (PAGE_OFFSET - 1)
++#define VMALLOC_START    (PAGE_OFFSET - VMALLOC_SIZE)
++
++/*
++ * Log2 of the upper bound of the size of a struct page. Used for sizing
++ * the vmemmap region only, does not affect actual memory footprint.
++ * We don't use sizeof(struct page) directly since taking its size here
++ * requires its definition to be available at this point in the inclusion
++ * chain, and it may not be a power of 2 in the first place.
++ */
++#define STRUCT_PAGE_MAX_SHIFT	6
++
++#define VMEMMAP_SIZE	(UL(1) << (CONFIG_VA_BITS - PAGE_SHIFT - 1 + \
++				   STRUCT_PAGE_MAX_SHIFT))
++#define VMEMMAP_END	(VMALLOC_START - 1)
++#define VMEMMAP_START	(VMALLOC_START - VMEMMAP_SIZE)
++
++#define vmemmap		((struct page *)VMEMMAP_START)
++
+ /*
+  * ZERO_PAGE is a global shared page that is always zero,
+  * used for zero-mapped memory areas, etc.
+@@ -411,10 +431,6 @@ static inline void pgtable_cache_init(void)
+ 	/* No page table caches to initialize */
+ }
+ 
+-#define VMALLOC_SIZE     (KERN_VIRT_SIZE >> 1)
+-#define VMALLOC_END      (PAGE_OFFSET - 1)
+-#define VMALLOC_START    (PAGE_OFFSET - VMALLOC_SIZE)
+-
+ /*
+  * Task size is 0x40000000000 for RV64 or 0xb800000 for RV32.
+  * Note that PGDIR_SIZE must evenly divide TASK_SIZE.
+diff --git a/arch/riscv/include/asm/sparsemem.h b/arch/riscv/include/asm/sparsemem.h
+new file mode 100644
+index 000000000000..4563e806c788
+--- /dev/null
++++ b/arch/riscv/include/asm/sparsemem.h
+@@ -0,0 +1,11 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++
++#ifndef __ASM_SPARSEMEM_H
++#define __ASM_SPARSEMEM_H
++
++#ifdef CONFIG_SPARSEMEM
++#define MAX_PHYSMEM_BITS	CONFIG_PA_BITS
++#define SECTION_SIZE_BITS	30
++#endif
++
++#endif
+diff --git a/arch/riscv/kernel/setup.c b/arch/riscv/kernel/setup.c
+index aee603123030..89fa781a9bf8 100644
+--- a/arch/riscv/kernel/setup.c
++++ b/arch/riscv/kernel/setup.c
+@@ -205,6 +205,9 @@ static void __init setup_bootmem(void)
+ 		                  PFN_PHYS(end_pfn - start_pfn),
+ 		                  &memblock.memory, 0);
+ 	}
++
++	memblocks_present();
++	sparse_init();
+ }
+ 
+ void __init setup_arch(char **cmdline_p)
+@@ -239,4 +242,3 @@ void __init setup_arch(char **cmdline_p)
+ 
+ 	riscv_fill_hwcap();
+ }
+-
+diff --git a/arch/riscv/mm/init.c b/arch/riscv/mm/init.c
+index 58a522f9bcc3..5d529878667c 100644
+--- a/arch/riscv/mm/init.c
++++ b/arch/riscv/mm/init.c
+@@ -70,3 +70,11 @@ void free_initrd_mem(unsigned long start, unsigned long end)
+ {
+ }
+ #endif /* CONFIG_BLK_DEV_INITRD */
++
++#ifdef CONFIG_SPARSEMEM
++int __meminit vmemmap_populate(unsigned long start, unsigned long end, int node,
++			       struct vmem_altmap *altmap)
++{
++	return vmemmap_populate_basepages(start, end, node);
++}
++#endif
 -- 
-With Best Regards,
-Andy Shevchenko
+2.19.0
