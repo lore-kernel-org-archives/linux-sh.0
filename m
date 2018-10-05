@@ -1,19 +1,44 @@
-From: FRANK CHRISTOPHER <mr.peteruderika@yahoo.pt>
-Date: Wed, 24 Oct 2018 20:38:40 +0000
-Subject: For your attention
-Message-Id: <456493476.24145967.1540413520643@mail.yahoo.com>
+From: Logan Gunthorpe <logang@deltatee.com>
+Date: Fri, 05 Oct 2018 16:16:41 +0000
+Subject: [PATCH 4/5] sh: mm: make use of new memblocks_present() helper
+Message-Id: <20181005161642.2462-5-logang@deltatee.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20181005161642.2462-1-logang@deltatee.com>
+In-Reply-To: <20181005161642.2462-1-logang@deltatee.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
+Cleanup the open coded for_each_memblock() loop that is equivalent
+to the new memblocks_present() helper.
 
+Signed-off-by: Logan Gunthorpe <logang@deltatee.com>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+Cc: Dan Williams <dan.j.williams@intel.com>
+Cc: Rob Herring <robh@kernel.org>
+---
+ arch/sh/mm/init.c | 7 +------
+ 1 file changed, 1 insertion(+), 6 deletions(-)
 
-My name is Mr Frank Christopher, the est. managing director of the Banque Internationale du Benin. I am contacting you in a benevolent spirit;and with utmost confidence and trust to enable us provide a solution to a money transfer of $18Million to your account.
-
- Do get back to me for more details.
-
- Best Regards,
-
-Mr Frank Christopher.
+diff --git a/arch/sh/mm/init.c b/arch/sh/mm/init.c
+index 7713c084d040..f601f96408ee 100644
+--- a/arch/sh/mm/init.c
++++ b/arch/sh/mm/init.c
+@@ -235,12 +235,7 @@ static void __init do_init_bootmem(void)
+ 
+ 	plat_mem_setup();
+ 
+-	for_each_memblock(memory, reg) {
+-		int nid = memblock_get_region_node(reg);
+-
+-		memory_present(nid, memblock_region_memory_base_pfn(reg),
+-			memblock_region_memory_end_pfn(reg));
+-	}
++	memblocks_present();
+ 	sparse_init();
+ }
+ 
+-- 
+2.19.0
