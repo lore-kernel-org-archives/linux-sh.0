@@ -1,15 +1,19 @@
-From: Sasha Levin <Alexander.Levin@microsoft.com>
-Date: Mon, 01 Oct 2018 00:41:30 +0000
-Subject: [PATCH AUTOSEL 4.4 09/17] arch/hexagon: fix kernel/dma.c build warning
-Message-Id: <20181001004122.147276-9-alexander.levin@microsoft.com>
+From: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Date: Thu, 11 Oct 2018 15:34:29 +0000
+Subject: [PATCH 3.18 088/120] arch/hexagon: fix kernel/dma.c build warning
+Message-Id: <20181011152553.453918143@linuxfoundation.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20181001004122.147276-1-alexander.levin@microsoft.com>
-In-Reply-To: <20181001004122.147276-1-alexander.levin@microsoft.com>
+References: <20181011152549.500488630@linuxfoundation.org>
+In-Reply-To: <20181011152549.500488630@linuxfoundation.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "stable@vger.kernel.org" <stable@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
-Cc: Randy Dunlap <rdunlap@infradead.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Richard Kuo <rkuo@codeaurora.org>, Sasha Levin <Alexander.Levin@microsoft.com>
+To: linux-kernel@vger.kernel.org
+Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, stable@vger.kernel.org, Randy Dunlap <rdunlap@infradead.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, Richard Kuo <rkuo@codeaurora.org>, Sasha Levin <alexander.levin@microsoft.com>
+
+3.18-stable review patch.  If anyone has any objections, please let me know.
+
+------------------
 
 From: Randy Dunlap <rdunlap@infradead.org>
 
@@ -30,15 +34,14 @@ Patch-mainline: linux-kernel @ 07/20/2018, 20:17
 [rkuo@codeaurora.org: fixed architecture name]
 Signed-off-by: Richard Kuo <rkuo@codeaurora.org>
 Signed-off-by: Sasha Levin <alexander.levin@microsoft.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 ---
- arch/hexagon/kernel/dma.c | 2 +-
+ arch/hexagon/kernel/dma.c |    2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/hexagon/kernel/dma.c b/arch/hexagon/kernel/dma.c
-index 9e3ddf792bd3..2704e0b8de43 100644
 --- a/arch/hexagon/kernel/dma.c
 +++ b/arch/hexagon/kernel/dma.c
-@@ -68,7 +68,7 @@ static void *hexagon_dma_alloc_coherent(struct device *dev, size_t size,
+@@ -79,7 +79,7 @@ static void *hexagon_dma_alloc_coherent(
  			panic("Can't create %s() memory pool!", __func__);
  		else
  			gen_pool_add(coherent_pool,
@@ -47,5 +50,3 @@ index 9e3ddf792bd3..2704e0b8de43 100644
  				hexagon_coherent_pool_size, -1);
  	}
  
--- 
-2.17.1
