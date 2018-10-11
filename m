@@ -1,30 +1,63 @@
-From: "Stephen  Bates" <sbates@raithlin.com>
-Date: Thu, 11 Oct 2018 12:18:20 +0000
+From: Christoph Hellwig <hch@lst.de>
+Date: Thu, 11 Oct 2018 13:37:30 +0000
 Subject: Re: [PATCH 5/5] RISC-V: Implement sparsemem
-Message-Id: <15C8B877-4BBE-47E1-98D1-945E9355E757@raithlin.com>
+Message-Id: <20181011133730.GB7276@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20181005161642.2462-6-logang@deltatee.com>
- <mhng-c93e2f59-7121-4964-bd61-3c4c02044cf3@palmer-si-x1c4>
-In-Reply-To: <mhng-c93e2f59-7121-4964-bd61-3c4c02044cf3@palmer-si-x1c4>
+References: <20181005161642.2462-1-logang@deltatee.com>
+ <20181005161642.2462-6-logang@deltatee.com>
+In-Reply-To: <20181005161642.2462-6-logang@deltatee.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-UGFsbWVyDQoNCj4gSSBkb24ndCByZWFsbHkga25vdyBhbnl0aGluZyBhYm91dCB0aGlzLCBidXQg
-eW91J3JlIHdlbGNvbWUgdG8gYWRkIGENCj4gICAgDQo+ICAgIFJldmlld2VkLWJ5OiBQYWxtZXIg
-RGFiYmVsdCA8cGFsbWVyQHNpZml2ZS5jb20+DQoNClRoYW5rcy4gSSB0aGluayBpdCB3b3VsZCBi
-ZSBnb29kIHRvIGdldCBzb21lb25lIHdobydzIGZhbWlsaWFyIHdpdGggbGludXgvbW0gdG8gdGFr
-ZSBhIGxvb2suDQogICAgDQo+IGlmIHlvdSB0aGluayBpdCdsbCBoZWxwLiAgSSdtIGFzc3VtaW5n
-IHlvdSdyZSB0YXJnZXRpbmcgYSBkaWZmZXJlbnQgdHJlZSBmb3IgDQo+IHRoZSBwYXRjaCBzZXQs
-IGluIHdoaWNoIGNhc2UgaXQncyBwcm9iYWJseSBiZXN0IHRvIGtlZXAgdGhpcyB0b2dldGhlciB3
-aXRoIHRoZSANCj4gcmVzdCBvZiBpdC4NCg0KTm8gSSB0aGluayB0aGlzIHNlcmllcyBzaG91bGQg
-YmUgcHVsbGVkIGJ5IHRoZSBSSVNDLVYgbWFpbnRhaW5lci4gVGhlIG90aGVyIHBhdGNoZXMgaW4g
-dGhpcyBzZXJpZXMganVzdCByZWZhY3RvciBzb21lIGNvZGUgYW5kIG5lZWQgdG8gYmUgQUNLJ2Vk
-IGJ5IHRoZWlyIEFSQ0ggZGV2ZWxvcGVycyBidXQgSSBzdXNwZWN0IHRoZSBzZXJpZXMgc2hvdWxk
-IGJlIHB1bGxlZCBpbnRvIFJJU0MtVi4gVGhhdCBzYWlkIHNpbmNlIGl0IGRvZXMgdG91Y2ggb3Ro
-ZXIgYXJjaCBzaG91bGQgaXQgYmUgcHVsbGVkIGJ5IG1tPyANCg0KQlRXIG5vdGUgdGhhdCBSSVND
-LVYgU1BBUlNFTUVNIHN1cHBvcnQgaXMgcHJldHR5IHVzZWZ1bCBmb3IgYWxsIG1hbm5lciBvZiB0
-aGluZ3MgYW5kIG5vdCBqdXN0IHRoZSBwMnBkbWEgZGlzY3Vzc2VkIGluIHRoZSBjb3Zlci4NCiAg
-ICANCj4gVGhhbmtzIGZvciBwb3J0aW5nIHlvdXIgc3R1ZmYgdG8gUklTQy1WIQ0KDQpZb3UgYmV0
-IDstKQ0KDQpTdGVwaGVuDQogICAgDQogICAgDQoNCg=
+> +/*
+> + * Log2 of the upper bound of the size of a struct page. Used for sizing
+> + * the vmemmap region only, does not affect actual memory footprint.
+> + * We don't use sizeof(struct page) directly since taking its size here
+> + * requires its definition to be available at this point in the inclusion
+> + * chain, and it may not be a power of 2 in the first place.
+> + */
+> +#define STRUCT_PAGE_MAX_SHIFT	6
+
+I know this is copied from arm64, but wouldn't this be a good time
+to move this next to the struct page defintion?
+
+Also this:
+
+arch/arm64/mm/init.c:   BUILD_BUG_ON(sizeof(struct page) > (1 << STRUCT_PAGE_MAX_SHIFT));
+
+should move to comment code (or would have to be duplicated for riscv)
+
+> +#define VMEMMAP_SIZE	(UL(1) << (CONFIG_VA_BITS - PAGE_SHIFT - 1 + \
+> +				   STRUCT_PAGE_MAX_SHIFT))
+
+Might be more readable with a another define, and without abuse of the
+horrible UL macro:
+
+#define VMEMMAP_SHIFT \
+	(CONFIG_VA_BITS - PAGE_SHIFT - 1 + STRUCT_PAGE_MAX_SHIFT)
+#define VMEMMAP_SIZE	(1UL << VMEMMAP_SHIFT)
+
+> +#define VMEMMAP_END	(VMALLOC_START - 1)
+> +#define VMEMMAP_START	(VMALLOC_START - VMEMMAP_SIZE)
+> +
+> +#define vmemmap		((struct page *)VMEMMAP_START)
+
+This could also use some comments..
+
+> @@ -0,0 +1,11 @@
+> +/* SPDX-License-Identifier: GPL-2.0 */
+> +
+> +#ifndef __ASM_SPARSEMEM_H
+> +#define __ASM_SPARSEMEM_H
+> +
+> +#ifdef CONFIG_SPARSEMEM
+> +#define MAX_PHYSMEM_BITS	CONFIG_PA_BITS
+> +#define SECTION_SIZE_BITS	30
+> +#endif
+> +
+> +#endif
+
+For potentially wide-spanning ifdefs like inclusion headers it always
+is nice to have a comment with the symbol on the endif line.
