@@ -1,7 +1,7 @@
 From: Logan Gunthorpe <logang@deltatee.com>
-Date: Thu, 11 Oct 2018 17:30:07 +0000
+Date: Thu, 11 Oct 2018 18:45:56 +0000
 Subject: Re: [PATCH 5/5] RISC-V: Implement sparsemem
-Message-Id: <8ebf1a13-ec4e-c546-641c-f8dcb1f6c44d@deltatee.com>
+Message-Id: <83cfd2d7-b840-b0c6-594e-8b39be8177c1@deltatee.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20181005161642.2462-1-logang@deltatee.com>
  <20181005161642.2462-6-logang@deltatee.com> <20181011133730.GB7276@lst.de>
@@ -15,6 +15,8 @@ To: linux-arm-kernel@lists.infradead.org
 
 
 On 2018-10-11 10:24 a.m., Logan Gunthorpe wrote:
+> 
+> 
 > On 2018-10-11 7:37 a.m., Christoph Hellwig wrote:
 >>> +/*
 >>> + * Log2 of the upper bound of the size of a struct page. Used for sizing
@@ -27,23 +29,14 @@ On 2018-10-11 10:24 a.m., Logan Gunthorpe wrote:
 >>
 >> I know this is copied from arm64, but wouldn't this be a good time
 >> to move this next to the struct page defintion?
->>
->> Also this:
->>
->> arch/arm64/mm/init.c:   BUILD_BUG_ON(sizeof(struct page) > (1 << STRUCT_PAGE_MAX_SHIFT));
->>
->> should move to comment code (or would have to be duplicated for riscv)
-> 
-> Makes sense. Where is a good place for the BUILD_BUG_ON in common code?
 
-Never mind. Seems like it's pretty trivial to do this:
+Ok, I spoke too soon...
 
-#define STRUCT_PAGE_MAX_SHIFT \
-    ilog2(roundup_pow_of_two(sizeof(struct page)))
+Having this define next to the struct page definition works great for
+riscv. However, making that happen in arm64 seems to be a nightmare. The
+include chain in arm64 is tangled up so much that including mm_types
+where this is needed seems to be extremely difficult.
 
-So the BUILD_BUG_ON becomes unnecessary.
-
-The comment saying it can't be done is really misleading as it wasn't
-actually difficult.
+Unless you have any ideas, this might not be possible.
 
 Logan
