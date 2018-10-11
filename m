@@ -1,11 +1,12 @@
 From: Logan Gunthorpe <logang@deltatee.com>
-Date: Thu, 11 Oct 2018 16:24:33 +0000
+Date: Thu, 11 Oct 2018 17:30:07 +0000
 Subject: Re: [PATCH 5/5] RISC-V: Implement sparsemem
-Message-Id: <8cea5ffa-5fbf-8ea2-b673-20e2d09a910d@deltatee.com>
+Message-Id: <8ebf1a13-ec4e-c546-641c-f8dcb1f6c44d@deltatee.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20181005161642.2462-1-logang@deltatee.com>
  <20181005161642.2462-6-logang@deltatee.com> <20181011133730.GB7276@lst.de>
-In-Reply-To: <20181011133730.GB7276@lst.de>
+ <8cea5ffa-5fbf-8ea2-b673-20e2d09a910d@deltatee.com>
+In-Reply-To: <8cea5ffa-5fbf-8ea2-b673-20e2d09a910d@deltatee.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -13,29 +14,36 @@ To: linux-arm-kernel@lists.infradead.org
 
 
 
-On 2018-10-11 7:37 a.m., Christoph Hellwig wrote:
->> +/*
->> + * Log2 of the upper bound of the size of a struct page. Used for sizing
->> + * the vmemmap region only, does not affect actual memory footprint.
->> + * We don't use sizeof(struct page) directly since taking its size here
->> + * requires its definition to be available at this point in the inclusion
->> + * chain, and it may not be a power of 2 in the first place.
->> + */
->> +#define STRUCT_PAGE_MAX_SHIFT	6
+On 2018-10-11 10:24 a.m., Logan Gunthorpe wrote:
+> On 2018-10-11 7:37 a.m., Christoph Hellwig wrote:
+>>> +/*
+>>> + * Log2 of the upper bound of the size of a struct page. Used for sizing
+>>> + * the vmemmap region only, does not affect actual memory footprint.
+>>> + * We don't use sizeof(struct page) directly since taking its size here
+>>> + * requires its definition to be available at this point in the inclusion
+>>> + * chain, and it may not be a power of 2 in the first place.
+>>> + */
+>>> +#define STRUCT_PAGE_MAX_SHIFT	6
+>>
+>> I know this is copied from arm64, but wouldn't this be a good time
+>> to move this next to the struct page defintion?
+>>
+>> Also this:
+>>
+>> arch/arm64/mm/init.c:   BUILD_BUG_ON(sizeof(struct page) > (1 << STRUCT_PAGE_MAX_SHIFT));
+>>
+>> should move to comment code (or would have to be duplicated for riscv)
 > 
-> I know this is copied from arm64, but wouldn't this be a good time
-> to move this next to the struct page defintion?
-> 
-> Also this:
-> 
-> arch/arm64/mm/init.c:   BUILD_BUG_ON(sizeof(struct page) > (1 << STRUCT_PAGE_MAX_SHIFT));
-> 
-> should move to comment code (or would have to be duplicated for riscv)
+> Makes sense. Where is a good place for the BUILD_BUG_ON in common code?
 
-Makes sense. Where is a good place for the BUILD_BUG_ON in common code?
+Never mind. Seems like it's pretty trivial to do this:
 
-I've queued up changes for your other feedback.
+#define STRUCT_PAGE_MAX_SHIFT \
+    ilog2(roundup_pow_of_two(sizeof(struct page)))
 
-Thanks,
+So the BUILD_BUG_ON becomes unnecessary.
+
+The comment saying it can't be done is really misleading as it wasn't
+actually difficult.
 
 Logan
