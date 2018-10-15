@@ -1,132 +1,64 @@
-From: Doug Anderson <dianders@chromium.org>
-Date: Wed, 31 Oct 2018 21:41:14 +0000
-Subject: Re: [PATCH v2 2/2] kgdb: Fix kgdb_roundup_cpus() for arches who used smp_call_function()
-Message-Id: <CAD=FV=V1eHo7Wz31DTMMNi394qwEaESTxJCYVE60Q7hpDEqRmQ@mail.gmail.com>
+From: Logan Gunthorpe <logang@deltatee.com>
+Date: Mon, 15 Oct 2018 17:57:00 +0000
+Subject: [PATCH v2 4/6] arm64: mm: make use of new memblocks_present() helper
+Message-Id: <20181015175702.9036-5-logang@deltatee.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20181030221843.121254-1-dianders@chromium.org>
- <20181030221843.121254-3-dianders@chromium.org>
- <20181031184050.sd5opni3mznaapkv@holly.lan>
-In-Reply-To: <20181031184050.sd5opni3mznaapkv@holly.lan>
+References: <20181015175702.9036-1-logang@deltatee.com>
+In-Reply-To: <20181015175702.9036-1-logang@deltatee.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi,
+Cleanup the arm64_memory_present() function seeing it's very
+similar to other arches.
 
-On Wed, Oct 31, 2018 at 11:40 AM Daniel Thompson
-<daniel.thompson@linaro.org> wrote:
->
-> On Tue, Oct 30, 2018 at 03:18:43PM -0700, Douglas Anderson wrote:
-> > diff --git a/kernel/debug/debug_core.c b/kernel/debug/debug_core.c
-> > index f3cadda45f07..9a3f952de6ed 100644
-> > --- a/kernel/debug/debug_core.c
-> > +++ b/kernel/debug/debug_core.c
-> > @@ -55,6 +55,7 @@
-> >  #include <linux/mm.h>
-> >  #include <linux/vmacache.h>
-> >  #include <linux/rcupdate.h>
-> > +#include <linux/irq.h>
-> >
-> >  #include <asm/cacheflush.h>
-> >  #include <asm/byteorder.h>
-> > @@ -220,6 +221,39 @@ int __weak kgdb_skipexception(int exception, struct pt_regs *regs)
-> >       return 0;
-> >  }
-> >
-> > +/*
-> > + * Default (weak) implementation for kgdb_roundup_cpus
-> > + */
-> > +
-> > +static DEFINE_PER_CPU(call_single_data_t, kgdb_roundup_csd);
-> > +
-> > +void __weak kgdb_call_nmi_hook(void *ignored)
-> > +{
-> > +     kgdb_nmicallback(raw_smp_processor_id(), get_irq_regs());
-> > +}
-> > +
-> > +void __weak kgdb_roundup_cpus(void)
-> > +{
-> > +     call_single_data_t *csd;
-> > +     int cpu;
-> > +
-> > +     for_each_cpu(cpu, cpu_online_mask) {
-> > +             csd = &per_cpu(kgdb_roundup_csd, cpu);
-> > +             smp_call_function_single_async(cpu, csd);
-> > +     }
->
-> smp_call_function() automatically skips the calling CPU but this code does
-> not. It isn't a hard bug since kgdb_nmicallback() does a re-entrancy
-> check but I'd still prefer to skip the calling CPU.
+memblocks_present() is a direct replacement of arm64_memory_present()
 
-I'll incorporate this into the next version.
+Signed-off-by: Logan Gunthorpe <logang@deltatee.com>
+Acked-by: Catalin Marinas <catalin.marinas@arm.com>
+Cc: Will Deacon <will.deacon@arm.com>
+---
+ arch/arm64/mm/init.c | 20 +-------------------
+ 1 file changed, 1 insertion(+), 19 deletions(-)
 
-
-> As mentioned in another part of the thread we can also add robustness
-> by skipping a cpu where csd->flags != 0 (and adding an appropriately
-> large comment regarding why). Doing the check directly is abusing
-> internal knowledge that smp.c normally keeps to itself so an accessor
-> of some kind would be needed.
-
-Sure.  I could add smp_async_func_finished() that just looked like:
-
-int smp_async_func_finished(call_single_data_t *csd)
-{
-  return !(csd->flags & CSD_FLAG_LOCK);
-}
-
-My understanding of all the mutual exclusion / memory barrier concepts
-employed by smp.c is pretty weak, though.  I'm hoping that it's safe
-to just access the structure and check the bit directly.
-
-...but do you think adding a generic accessor like this is better than
-just keeping track of this in kgdb directly?  I could avoid the
-accessor by adding a "rounding_up" member to "struct
-debuggerinfo_struct" and doing something like this in roundup:
-
-  /* If it didn't round up last time, don't try again */
-  if (kgdb_info[cpu].rounding_up)
-    continue
-
-  kgdb_info[cpu].rounding_up = true
-  smp_call_function_single_async(cpu, csd);
-
-...and then in kgdb_nmicallback() I could just add:
-
-  kgdb_info[cpu].rounding_up = false
-
-In that case we're not adding a generic accessor to smp.c that most
-people should never use.
-
-
-I'll wait to hear back from you if you think the accessor is OK.  It
-seems like it might be nice not to have to add something to smp.c just
-for this one use case.
-
-
-> > +}
-> > +
-> > +static void kgdb_generic_roundup_init(void)
-> > +{
-> > +     call_single_data_t *csd;
-> > +     int cpu;
-> > +
-> > +     for_each_possible_cpu(cpu) {
-> > +             csd = &per_cpu(kgdb_roundup_csd, cpu);
-> > +             csd->func = kgdb_call_nmi_hook;
-> > +     }
-> > +}
->
-> I can't help noticing this code is very similar to kgdb_roundup_cpus. Do
-> we really gain much from ahead-of-time initializing csd->func?
-
-Oh!  Right...  At first I thought about just trying to put the "csd"
-on the stack in kgdb_roundup_cpus() but then I realized that it needed
-to persist past the end of kgdb_roundup_cpus().  ...and once I gave up
-on the idea of putting it on the stack I decided I needed the init.
-
-...but you're right that I don't really.  The only thing I'm initting
-is the function pointer and it totally wouldn't hurt to just init that
-over and over again every time kgdb_roundup_cpus() is called.
-
--Doug
+diff --git a/arch/arm64/mm/init.c b/arch/arm64/mm/init.c
+index 6a0b5c5a61af..c51a944fe19f 100644
+--- a/arch/arm64/mm/init.c
++++ b/arch/arm64/mm/init.c
+@@ -296,24 +296,6 @@ int pfn_valid(unsigned long pfn)
+ EXPORT_SYMBOL(pfn_valid);
+ #endif
+ 
+-#ifndef CONFIG_SPARSEMEM
+-static void __init arm64_memory_present(void)
+-{
+-}
+-#else
+-static void __init arm64_memory_present(void)
+-{
+-	struct memblock_region *reg;
+-
+-	for_each_memblock(memory, reg) {
+-		int nid = memblock_get_region_node(reg);
+-
+-		memory_present(nid, memblock_region_memory_base_pfn(reg),
+-				memblock_region_memory_end_pfn(reg));
+-	}
+-}
+-#endif
+-
+ static phys_addr_t memory_limit = PHYS_ADDR_MAX;
+ 
+ /*
+@@ -506,7 +488,7 @@ void __init bootmem_init(void)
+ 	 * Sparsemem tries to allocate bootmem in memory_present(), so must be
+ 	 * done after the fixed reservations.
+ 	 */
+-	arm64_memory_present();
++	memblocks_present();
+ 
+ 	sparse_init();
+ 	zone_sizes_init(min, max);
+-- 
+2.19.0
