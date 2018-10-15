@@ -1,10 +1,10 @@
 From: Logan Gunthorpe <logang@deltatee.com>
-Date: Fri, 05 Oct 2018 16:16:41 +0000
-Subject: [PATCH 4/5] sh: mm: make use of new memblocks_present() helper
-Message-Id: <20181005161642.2462-5-logang@deltatee.com>
+Date: Mon, 15 Oct 2018 17:57:01 +0000
+Subject: [PATCH v2 5/6] sh: mm: make use of new memblocks_present() helper
+Message-Id: <20181015175702.9036-6-logang@deltatee.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20181005161642.2462-1-logang@deltatee.com>
-In-Reply-To: <20181005161642.2462-1-logang@deltatee.com>
+References: <20181015175702.9036-1-logang@deltatee.com>
+In-Reply-To: <20181015175702.9036-1-logang@deltatee.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
