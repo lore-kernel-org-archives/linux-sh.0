@@ -1,7 +1,7 @@
 From: Logan Gunthorpe <logang@deltatee.com>
-Date: Mon, 15 Oct 2018 17:57:02 +0000
-Subject: [PATCH v2 6/6] RISC-V: Implement sparsemem
-Message-Id: <20181015175702.9036-7-logang@deltatee.com>
+Date: Mon, 15 Oct 2018 17:56:57 +0000
+Subject: [PATCH v2 1/6] mm: Introduce common STRUCT_PAGE_MAX_SHIFT define
+Message-Id: <20181015175702.9036-2-logang@deltatee.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20181015175702.9036-1-logang@deltatee.com>
 In-Reply-To: <20181015175702.9036-1-logang@deltatee.com>
@@ -10,175 +10,93 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This patch implements sparsemem support for risc-v which helps pave the
-way for memory hotplug and eventually P2P support.
+This define is used by arm64 to calculate the size of the vmemmap
+region. It is defined as the log2 of the upper bound on the size
+of a struct page.
 
-We introduce Kconfig options for virtual and physical address bits which
-are used to calculate the size of the vmemmap and set the
-MAX_PHYSMEM_BITS.
-
-The vmemmap is located directly before the VMALLOC region and sized
-such that we can allocate enough pages to populate all the virtual
-address space in the system (similar to the way it's done in arm64).
-
-During initialization, call memblocks_present() and sparse_init(),
-and provide a stub for vmemmap_populate() (all of which is similar to
-arm64).
+We move it into mm_types.h so it can be defined properly instead of
+set and checked with a build bug. This also allows us to use the same
+define for riscv.
 
 Signed-off-by: Logan Gunthorpe <logang@deltatee.com>
-Reviewed-by: Palmer Dabbelt <palmer@sifive.com>
-Cc: Albert Ou <aou@eecs.berkeley.edu>
-Cc: Andrew Waterman <andrew@sifive.com>
-Cc: Olof Johansson <olof@lixom.net>
-Cc: Michael Clark <michaeljclark@mac.com>
-Cc: Rob Herring <robh@kernel.org>
-Cc: Zong Li <zong@andestech.com>
+Cc: Catalin Marinas <catalin.marinas@arm.com>
+Cc: Will Deacon <will.deacon@arm.com>
+Cc: Arnd Bergmann <arnd@arndb.de>
+Cc: Andrew Morton <akpm@linux-foundation.org>
+Cc: Christoph Hellwig <hch@lst.de>
 ---
- arch/riscv/Kconfig                 | 23 +++++++++++++++++++++++
- arch/riscv/include/asm/pgtable.h   | 21 +++++++++++++++++----
- arch/riscv/include/asm/sparsemem.h | 11 +++++++++++
- arch/riscv/kernel/setup.c          |  4 +++-
- arch/riscv/mm/init.c               |  8 ++++++++
- 5 files changed, 62 insertions(+), 5 deletions(-)
- create mode 100644 arch/riscv/include/asm/sparsemem.h
+ arch/arm64/include/asm/memory.h | 9 ---------
+ arch/arm64/mm/init.c            | 8 --------
+ include/asm-generic/fixmap.h    | 1 +
+ include/linux/mm_types.h        | 5 +++++
+ 4 files changed, 6 insertions(+), 17 deletions(-)
 
-diff --git a/arch/riscv/Kconfig b/arch/riscv/Kconfig
-index a344980287a5..a1b5d758a542 100644
---- a/arch/riscv/Kconfig
-+++ b/arch/riscv/Kconfig
-@@ -52,12 +52,32 @@ config ZONE_DMA32
- 	bool
- 	default y if 64BIT
+diff --git a/arch/arm64/include/asm/memory.h b/arch/arm64/include/asm/memory.h
+index b96442960aea..f0a5c9531e8b 100644
+--- a/arch/arm64/include/asm/memory.h
++++ b/arch/arm64/include/asm/memory.h
+@@ -34,15 +34,6 @@
+  */
+ #define PCI_IO_SIZE		SZ_16M
  
-+config VA_BITS
-+	int
-+	default 32 if 32BIT
-+	default 39 if 64BIT
-+
-+config PA_BITS
-+	int
-+	default 34 if 32BIT
-+	default 56 if 64BIT
-+
- config PAGE_OFFSET
- 	hex
- 	default 0xC0000000 if 32BIT && MAXPHYSMEM_2GB
- 	default 0xffffffff80000000 if 64BIT && MAXPHYSMEM_2GB
- 	default 0xffffffe000000000 if 64BIT && MAXPHYSMEM_128GB
+-/*
+- * Log2 of the upper bound of the size of a struct page. Used for sizing
+- * the vmemmap region only, does not affect actual memory footprint.
+- * We don't use sizeof(struct page) directly since taking its size here
+- * requires its definition to be available at this point in the inclusion
+- * chain, and it may not be a power of 2 in the first place.
+- */
+-#define STRUCT_PAGE_MAX_SHIFT	6
+-
+ /*
+  * VMEMMAP_SIZE - allows the whole linear region to be covered by
+  *                a struct page array
+diff --git a/arch/arm64/mm/init.c b/arch/arm64/mm/init.c
+index 787e27964ab9..6a0b5c5a61af 100644
+--- a/arch/arm64/mm/init.c
++++ b/arch/arm64/mm/init.c
+@@ -615,14 +615,6 @@ void __init mem_init(void)
+ 	BUILD_BUG_ON(TASK_SIZE_32			> TASK_SIZE_64);
+ #endif
  
-+config ARCH_FLATMEM_ENABLE
-+	def_bool y
-+
-+config ARCH_SPARSEMEM_ENABLE
-+	def_bool y
-+	select SPARSEMEM_VMEMMAP_ENABLE
-+
-+config ARCH_SELECT_MEMORY_MODEL
-+	def_bool ARCH_SPARSEMEM_ENABLE
-+
- config STACKTRACE_SUPPORT
- 	def_bool y
+-#ifdef CONFIG_SPARSEMEM_VMEMMAP
+-	/*
+-	 * Make sure we chose the upper bound of sizeof(struct page)
+-	 * correctly when sizing the VMEMMAP array.
+-	 */
+-	BUILD_BUG_ON(sizeof(struct page) > (1 << STRUCT_PAGE_MAX_SHIFT));
+-#endif
+-
+ 	if (PAGE_SIZE >= 16384 && get_num_physpages() <= 128) {
+ 		extern int sysctl_overcommit_memory;
+ 		/*
+diff --git a/include/asm-generic/fixmap.h b/include/asm-generic/fixmap.h
+index 827e4d3bbc7a..8cc7b09c1bc7 100644
+--- a/include/asm-generic/fixmap.h
++++ b/include/asm-generic/fixmap.h
+@@ -16,6 +16,7 @@
+ #define __ASM_GENERIC_FIXMAP_H
  
-@@ -92,6 +112,9 @@ config PGTABLE_LEVELS
- config HAVE_KPROBES
- 	def_bool n
+ #include <linux/bug.h>
++#include <linux/mm_types.h>
  
-+config HAVE_ARCH_PFN_VALID
-+	def_bool y
-+
- menu "Platform type"
+ #define __fix_to_virt(x)	(FIXADDR_TOP - ((x) << PAGE_SHIFT))
+ #define __virt_to_fix(x)	((FIXADDR_TOP - ((x)&PAGE_MASK)) >> PAGE_SHIFT)
+diff --git a/include/linux/mm_types.h b/include/linux/mm_types.h
+index 5ed8f6292a53..ec8c16d9396b 100644
+--- a/include/linux/mm_types.h
++++ b/include/linux/mm_types.h
+@@ -206,6 +206,11 @@ struct page {
+ #endif
+ } _struct_page_alignment;
  
- choice
-diff --git a/arch/riscv/include/asm/pgtable.h b/arch/riscv/include/asm/pgtable.h
-index 16301966d65b..e1162336f5ea 100644
---- a/arch/riscv/include/asm/pgtable.h
-+++ b/arch/riscv/include/asm/pgtable.h
-@@ -89,6 +89,23 @@ extern pgd_t swapper_pg_dir[];
- #define __S110	PAGE_SHARED_EXEC
- #define __S111	PAGE_SHARED_EXEC
- 
-+#define VMALLOC_SIZE     (KERN_VIRT_SIZE >> 1)
-+#define VMALLOC_END      (PAGE_OFFSET - 1)
-+#define VMALLOC_START    (PAGE_OFFSET - VMALLOC_SIZE)
-+
 +/*
-+ * Roughly size the vmemmap space to be large enough to fit enough
-+ * struct pages to map half the virtual address space. Then
-+ * position vmemmap directly below the VMALLOC region.
++ * Used for sizing the vmemmap region on some architectures
 + */
-+#define VMEMMAP_SHIFT \
-+	(CONFIG_VA_BITS - PAGE_SHIFT - 1 + STRUCT_PAGE_MAX_SHIFT)
-+#define VMEMMAP_SIZE	(1UL << VMEMMAP_SHIFT)
-+#define VMEMMAP_END	(VMALLOC_START - 1)
-+#define VMEMMAP_START	(VMALLOC_START - VMEMMAP_SIZE)
++#define STRUCT_PAGE_MAX_SHIFT	ilog2(roundup_pow_of_two(sizeof(struct page)))
 +
-+#define vmemmap		((struct page *)VMEMMAP_START)
-+
- /*
-  * ZERO_PAGE is a global shared page that is always zero,
-  * used for zero-mapped memory areas, etc.
-@@ -411,10 +428,6 @@ static inline void pgtable_cache_init(void)
- 	/* No page table caches to initialize */
- }
+ #define PAGE_FRAG_CACHE_MAX_SIZE	__ALIGN_MASK(32768, ~PAGE_MASK)
+ #define PAGE_FRAG_CACHE_MAX_ORDER	get_order(PAGE_FRAG_CACHE_MAX_SIZE)
  
--#define VMALLOC_SIZE     (KERN_VIRT_SIZE >> 1)
--#define VMALLOC_END      (PAGE_OFFSET - 1)
--#define VMALLOC_START    (PAGE_OFFSET - VMALLOC_SIZE)
--
- /*
-  * Task size is 0x40000000000 for RV64 or 0xb800000 for RV32.
-  * Note that PGDIR_SIZE must evenly divide TASK_SIZE.
-diff --git a/arch/riscv/include/asm/sparsemem.h b/arch/riscv/include/asm/sparsemem.h
-new file mode 100644
-index 000000000000..215530b24336
---- /dev/null
-+++ b/arch/riscv/include/asm/sparsemem.h
-@@ -0,0 +1,11 @@
-+/* SPDX-License-Identifier: GPL-2.0 */
-+
-+#ifndef __ASM_SPARSEMEM_H
-+#define __ASM_SPARSEMEM_H
-+
-+#ifdef CONFIG_SPARSEMEM
-+#define MAX_PHYSMEM_BITS	CONFIG_PA_BITS
-+#define SECTION_SIZE_BITS	30
-+#endif /* CONFIG_SPARSEMEM */
-+
-+#endif /* __ASM_SPARSEMEM_H */
-diff --git a/arch/riscv/kernel/setup.c b/arch/riscv/kernel/setup.c
-index b2d26d9d8489..494c380e4ea6 100644
---- a/arch/riscv/kernel/setup.c
-+++ b/arch/riscv/kernel/setup.c
-@@ -205,6 +205,9 @@ static void __init setup_bootmem(void)
- 		                  PFN_PHYS(end_pfn - start_pfn),
- 		                  &memblock.memory, 0);
- 	}
-+
-+	memblocks_present();
-+	sparse_init();
- }
- 
- void __init setup_arch(char **cmdline_p)
-@@ -239,4 +242,3 @@ void __init setup_arch(char **cmdline_p)
- 
- 	riscv_fill_hwcap();
- }
--
-diff --git a/arch/riscv/mm/init.c b/arch/riscv/mm/init.c
-index 58a522f9bcc3..5d529878667c 100644
---- a/arch/riscv/mm/init.c
-+++ b/arch/riscv/mm/init.c
-@@ -70,3 +70,11 @@ void free_initrd_mem(unsigned long start, unsigned long end)
- {
- }
- #endif /* CONFIG_BLK_DEV_INITRD */
-+
-+#ifdef CONFIG_SPARSEMEM
-+int __meminit vmemmap_populate(unsigned long start, unsigned long end, int node,
-+			       struct vmem_altmap *altmap)
-+{
-+	return vmemmap_populate_basepages(start, end, node);
-+}
-+#endif
 -- 
 2.19.0
