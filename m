@@ -1,74 +1,82 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Mon, 15 Oct 2018 11:22:06 +0000
-Subject: Applied "spi: sh-msiof: fix deferred probing" to the spi tree
-Message-Id: <20181015112206.75EE011224A9@debutante.sirena.org.uk>
+From: Logan Gunthorpe <logang@deltatee.com>
+Date: Mon, 15 Oct 2018 17:56:58 +0000
+Subject: [PATCH v2 2/6] mm/sparse: add common helper to mark all memblocks present
+Message-Id: <20181015175702.9036-3-logang@deltatee.com>
 List-Id: <linux-sh.vger.kernel.org>
-In-Reply-To: <c705888d-128a-bf3a-7828-ce105b3665d4@cogentembedded.com>
+References: <20181015175702.9036-1-logang@deltatee.com>
+In-Reply-To: <20181015175702.9036-1-logang@deltatee.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: Mark Brown <broonie@kernel.org>Mark Brown <broonie@kernel.org>, linux-spi@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.orglinux-spi@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The patch
+Presently the arches arm64, arm and sh have a function which loops through
+each memblock and calls memory present. riscv will require a similar
+function.
 
-   spi: sh-msiof: fix deferred probing
+Introduce a common memblocks_present() function that can be used by
+all the arches. Subsequent patches will cleanup the arches that
+make use of this.
 
-has been applied to the spi tree at
-
-   https://git.kernel.org/pub/scm/linux/kernel/git/broonie/spi.git 
-
-All being well this means that it will be integrated into the linux-next
-tree (usually sometime in the next 24 hours) and sent to Linus during
-the next merge window (or sooner if it is a bug fix), however if
-problems are discovered then the patch may be dropped or reverted.  
-
-You may get further e-mails resulting from automated or manual testing
-and review of the tree, please engage with people reporting problems and
-send followup patches addressing any issues that are reported if needed.
-
-If any updates are required or you are submitting further changes they
-should be sent as incremental updates against current git, existing
-patches will not be replaced.
-
-Please add any relevant lists and maintainers to the CCs when replying
-to this mail.
-
-Thanks,
-Mark
-
-From f34c6e6257aa477cdfe7e9bbbecd3c5648ecda69 Mon Sep 17 00:00:00 2001
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 12 Oct 2018 22:48:22 +0300
-Subject: [PATCH] spi: sh-msiof: fix deferred probing
-
-Since commit 9ec36cafe43b ("of/irq: do irq resolution in platform_get_irq")
-platform_get_irq() can return -EPROBE_DEFER. However, the driver overrides
-an error returned by that function with -ENOENT which breaks the deferred
-probing. Propagate upstream an error code returned by platform_get_irq()
-and remove the bogus "platform" from the error message, while at it...
-
-Fixes: 9ec36cafe43b ("of/irq: do irq resolution in platform_get_irq")
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Signed-off-by: Mark Brown <broonie@kernel.org>
+Signed-off-by: Logan Gunthorpe <logang@deltatee.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>
+Cc: Michal Hocko <mhocko@suse.com>
+Cc: Vlastimil Babka <vbabka@suse.cz>
+Cc: Pavel Tatashin <pasha.tatashin@oracle.com>
+Cc: Oscar Salvador <osalvador@suse.de>
 ---
- drivers/spi/spi-sh-msiof.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ include/linux/mmzone.h |  6 ++++++
+ mm/sparse.c            | 14 ++++++++++++++
+ 2 files changed, 20 insertions(+)
 
-diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
-index 101cd6aae2ea..30ea0a2068e0 100644
---- a/drivers/spi/spi-sh-msiof.c
-+++ b/drivers/spi/spi-sh-msiof.c
-@@ -1343,8 +1343,8 @@ static int sh_msiof_spi_probe(struct platform_device *pdev)
+diff --git a/include/linux/mmzone.h b/include/linux/mmzone.h
+index d4b0c79d2924..26a026a45857 100644
+--- a/include/linux/mmzone.h
++++ b/include/linux/mmzone.h
+@@ -784,6 +784,12 @@ void memory_present(int nid, unsigned long start, unsigned long end);
+ static inline void memory_present(int nid, unsigned long start, unsigned long end) {}
+ #endif
  
- 	i = platform_get_irq(pdev, 0);
- 	if (i < 0) {
--		dev_err(&pdev->dev, "cannot get platform IRQ\n");
--		ret = -ENOENT;
-+		dev_err(&pdev->dev, "cannot get IRQ\n");
-+		ret = i;
- 		goto err1;
++#if defined(CONFIG_SPARSEMEM) && defined(CONFIG_HAVE_MEMBLOCK)
++void memblocks_present(void);
++#else
++static inline void memblocks_present(void) {}
++#endif
++
+ #ifdef CONFIG_HAVE_MEMORYLESS_NODES
+ int local_memory_node(int node_id);
+ #else
+diff --git a/mm/sparse.c b/mm/sparse.c
+index 10b07eea9a6e..90aec8331a03 100644
+--- a/mm/sparse.c
++++ b/mm/sparse.c
+@@ -5,6 +5,7 @@
+ #include <linux/mm.h>
+ #include <linux/slab.h>
+ #include <linux/mmzone.h>
++#include <linux/memblock.h>
+ #include <linux/bootmem.h>
+ #include <linux/compiler.h>
+ #include <linux/highmem.h>
+@@ -238,6 +239,19 @@ void __init memory_present(int nid, unsigned long start, unsigned long end)
  	}
+ }
  
++#ifdef CONFIG_HAVE_MEMBLOCK
++void __init memblocks_present(void)
++{
++	struct memblock_region *reg;
++
++	for_each_memblock(memory, reg) {
++		memory_present(memblock_get_region_node(reg),
++			       memblock_region_memory_base_pfn(reg),
++			       memblock_region_memory_end_pfn(reg));
++	}
++}
++#endif
++
+ /*
+  * Subtle, we encode the real pfn into the mem_map such that
+  * the identity pfn - section_mem_map will return the actual
 -- 
-2.19.0.rc2
+2.19.0
