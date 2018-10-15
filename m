@@ -1,52 +1,67 @@
-From: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-Date: Mon, 08 Oct 2018 18:31:49 +0000
-Subject: [PATCH 4.9 42/59] arch/hexagon: fix kernel/dma.c build warning
-Message-Id: <20181008175550.812431935@linuxfoundation.org>
+From: Logan Gunthorpe <logang@deltatee.com>
+Date: Mon, 15 Oct 2018 17:56:59 +0000
+Subject: [PATCH v2 3/6] ARM: mm: make use of new memblocks_present() helper
+Message-Id: <20181015175702.9036-4-logang@deltatee.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20181008175546.620836256@linuxfoundation.org>
-In-Reply-To: <20181008175546.620836256@linuxfoundation.org>
+References: <20181015175702.9036-1-logang@deltatee.com>
+In-Reply-To: <20181015175702.9036-1-logang@deltatee.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, stable@vger.kernel.org, Randy Dunlap <rdunlap@infradead.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, Richard Kuo <rkuo@codeaurora.org>, Sasha Levin <alexander.levin@microsoft.com>
+To: linux-arm-kernel@lists.infradead.org
 
-4.9-stable review patch.  If anyone has any objections, please let me know.
+Cleanup the arm_memory_present() function seeing it's very
+similar to other arches.
 
-------------------
+The new memblocks_present() helper checks for node ids which the
+arm version did not. However, this is equivalent seeing
+HAVE_MEMBLOCK_NODE_MAP should be false in this arch and therefore
+memblock_get_region_node() should return 0.
 
-From: Randy Dunlap <rdunlap@infradead.org>
-
-[ Upstream commit 200f351e27f014fcbf69b544b0b4b72aeaf45fd3 ]
-
-Fix build warning in arch/hexagon/kernel/dma.c by casting a void *
-to unsigned long to match the function parameter type.
-
-../arch/hexagon/kernel/dma.c: In function 'arch_dma_alloc':
-../arch/hexagon/kernel/dma.c:51:5: warning: passing argument 2 of 'gen_pool_add' makes integer from pointer without a cast [enabled by default]
-../include/linux/genalloc.h:112:19: note: expected 'long unsigned int' but argument is of type 'void *'
-
-Signed-off-by: Randy Dunlap <rdunlap@infradead.org>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: Rich Felker <dalias@libc.org>
-Cc: linux-sh@vger.kernel.org
-Patch-mainline: linux-kernel @ 07/20/2018, 20:17
-[rkuo@codeaurora.org: fixed architecture name]
-Signed-off-by: Richard Kuo <rkuo@codeaurora.org>
-Signed-off-by: Sasha Levin <alexander.levin@microsoft.com>
-Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Signed-off-by: Logan Gunthorpe <logang@deltatee.com>
+Cc: Russell King <linux@armlinux.org.uk>
+Cc: Kees Cook <keescook@chromium.org>
+Cc: Philip Derrin <philip@cog.systems>
+Cc: "Steven Rostedt (VMware)" <rostedt@goodmis.org>
+Cc: Nicolas Pitre <nicolas.pitre@linaro.org>
 ---
- arch/hexagon/kernel/dma.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/mm/init.c | 17 +----------------
+ 1 file changed, 1 insertion(+), 16 deletions(-)
 
---- a/arch/hexagon/kernel/dma.c
-+++ b/arch/hexagon/kernel/dma.c
-@@ -68,7 +68,7 @@ static void *hexagon_dma_alloc_coherent(
- 			panic("Can't create %s() memory pool!", __func__);
- 		else
- 			gen_pool_add(coherent_pool,
--				pfn_to_virt(max_low_pfn),
-+				(unsigned long)pfn_to_virt(max_low_pfn),
- 				hexagon_coherent_pool_size, -1);
- 	}
+diff --git a/arch/arm/mm/init.c b/arch/arm/mm/init.c
+index 0cc8e04295a4..e2710dd7446f 100644
+--- a/arch/arm/mm/init.c
++++ b/arch/arm/mm/init.c
+@@ -201,21 +201,6 @@ int pfn_valid(unsigned long pfn)
+ EXPORT_SYMBOL(pfn_valid);
+ #endif
  
+-#ifndef CONFIG_SPARSEMEM
+-static void __init arm_memory_present(void)
+-{
+-}
+-#else
+-static void __init arm_memory_present(void)
+-{
+-	struct memblock_region *reg;
+-
+-	for_each_memblock(memory, reg)
+-		memory_present(0, memblock_region_memory_base_pfn(reg),
+-			       memblock_region_memory_end_pfn(reg));
+-}
+-#endif
+-
+ static bool arm_memblock_steal_permitted = true;
+ 
+ phys_addr_t __init arm_memblock_steal(phys_addr_t size, phys_addr_t align)
+@@ -317,7 +302,7 @@ void __init bootmem_init(void)
+ 	 * Sparsemem tries to allocate bootmem in memory_present(),
+ 	 * so must be done after the fixed reservations
+ 	 */
+-	arm_memory_present();
++	memblocks_present();
+ 
+ 	/*
+ 	 * sparse_init() needs the bootmem allocator up and running.
+-- 
+2.19.0
