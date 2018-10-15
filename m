@@ -1,42 +1,55 @@
-From: Will Deacon <will.deacon@arm.com>
-Date: Mon, 29 Oct 2018 17:53:04 +0000
-Subject: Re: [PATCH v2 1/6] mm: Introduce common STRUCT_PAGE_MAX_SHIFT define
-Message-Id: <20181029175303.GB16739@arm.com>
+From: Logan Gunthorpe <logang@deltatee.com>
+Date: Mon, 15 Oct 2018 17:56:56 +0000
+Subject: [PATCH v2 0/6] sparsemem support for RISC-V
+Message-Id: <20181015175702.9036-1-logang@deltatee.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20181015175702.9036-1-logang@deltatee.com>
- <20181015175702.9036-2-logang@deltatee.com>
-In-Reply-To: <20181015175702.9036-2-logang@deltatee.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Logan,
+This patchset implements sparsemem on RISC-V. The first few patches
+move some code in existing architectures into common helpers
+so they can be used by the new RISC-V implementation. The final
+patch actually adds sparsmem support to RISC-V.
 
-On Mon, Oct 15, 2018 at 11:56:57AM -0600, Logan Gunthorpe wrote:
-> This define is used by arm64 to calculate the size of the vmemmap
-> region. It is defined as the log2 of the upper bound on the size
-> of a struct page.
-> 
-> We move it into mm_types.h so it can be defined properly instead of
-> set and checked with a build bug. This also allows us to use the same
-> define for riscv.
-> 
-> Signed-off-by: Logan Gunthorpe <logang@deltatee.com>
-> Cc: Catalin Marinas <catalin.marinas@arm.com>
-> Cc: Will Deacon <will.deacon@arm.com>
-> Cc: Arnd Bergmann <arnd@arndb.de>
-> Cc: Andrew Morton <akpm@linux-foundation.org>
-> Cc: Christoph Hellwig <hch@lst.de>
-> ---
->  arch/arm64/include/asm/memory.h | 9 ---------
->  arch/arm64/mm/init.c            | 8 --------
->  include/asm-generic/fixmap.h    | 1 +
->  include/linux/mm_types.h        | 5 +++++
->  4 files changed, 6 insertions(+), 17 deletions(-)
+This is the first small step in supporting P2P on RISC-V.
 
-This looks like a really good cleanup to me, thanks:
+--
 
-Acked-by: Will Deacon <will.deacon@arm.com>
+Changes in v2:
 
-Will
+* Rebase on v4.19-rc8
+* Move the STRUCT_PAGE_MAX_SHIFT define into a common header (near
+  the definition of struct page). As suggested by Christoph.
+* Clean up the unnecessary nid variable in the memblocks_present()
+  function, per Christoph.
+* Collected tags from Palmer and Catalin.
+
+--
+Logan Gunthorpe (6):
+  mm: Introduce common STRUCT_PAGE_MAX_SHIFT define
+  mm/sparse: add common helper to mark all memblocks present
+  ARM: mm: make use of new memblocks_present() helper
+  arm64: mm: make use of new memblocks_present() helper
+  sh: mm: make use of new memblocks_present() helper
+  RISC-V: Implement sparsemem
+
+ arch/arm/mm/init.c                 | 17 +----------------
+ arch/arm64/include/asm/memory.h    |  9 ---------
+ arch/arm64/mm/init.c               | 28 +---------------------------
+ arch/riscv/Kconfig                 | 23 +++++++++++++++++++++++
+ arch/riscv/include/asm/pgtable.h   | 21 +++++++++++++++++----
+ arch/riscv/include/asm/sparsemem.h | 11 +++++++++++
+ arch/riscv/kernel/setup.c          |  4 +++-
+ arch/riscv/mm/init.c               |  8 ++++++++
+ arch/sh/mm/init.c                  |  7 +------
+ include/asm-generic/fixmap.h       |  1 +
+ include/linux/mm_types.h           |  5 +++++
+ include/linux/mmzone.h             |  6 ++++++
+ mm/sparse.c                        | 14 ++++++++++++++
+ 13 files changed, 91 insertions(+), 63 deletions(-)
+ create mode 100644 arch/riscv/include/asm/sparsemem.h
+
+--
+2.19.0
