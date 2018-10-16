@@ -1,55 +1,38 @@
-From: Logan Gunthorpe <logang@deltatee.com>
-Date: Mon, 15 Oct 2018 17:56:56 +0000
-Subject: [PATCH v2 0/6] sparsemem support for RISC-V
-Message-Id: <20181015175702.9036-1-logang@deltatee.com>
+From: Palmer Dabbelt <palmer@sifive.com>
+Date: Tue, 16 Oct 2018 00:04:15 +0000
+Subject: Re: [PATCH v2 0/6] sparsemem support for RISC-V
+Message-Id: <mhng-fd0541de-3ac1-4772-916d-be6b2d02e63e@palmer-si-x1c4>
 List-Id: <linux-sh.vger.kernel.org>
+In-Reply-To: <20181015175702.9036-1-logang@deltatee.com>
+References: <20181015175702.9036-1-logang@deltatee.com>
+In-Reply-To: <20181015175702.9036-1-logang@deltatee.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This patchset implements sparsemem on RISC-V. The first few patches
-move some code in existing architectures into common helpers
-so they can be used by the new RISC-V implementation. The final
-patch actually adds sparsmem support to RISC-V.
+On Mon, 15 Oct 2018 10:56:56 PDT (-0700), logang@deltatee.com wrote:
+> This patchset implements sparsemem on RISC-V. The first few patches
+> move some code in existing architectures into common helpers
+> so they can be used by the new RISC-V implementation. The final
+> patch actually adds sparsmem support to RISC-V.
+>
+> This is the first small step in supporting P2P on RISC-V.
 
-This is the first small step in supporting P2P on RISC-V.
+Thanks.  I see less maintainer tags for the parts that touch other ports than I 
+would feel comfortable merging.  I'm going to let this sit in my inbox for 
+a bit and we'll see if anything collects.
 
---
+For patch sets I submit that clean up other ports I've attempted to split the 
+patch into N patch sets, where:
 
-Changes in v2:
+* One part adds the generic support, which starts out as dead code.
+* One part per arch uses the generic support.
 
-* Rebase on v4.19-rc8
-* Move the STRUCT_PAGE_MAX_SHIFT define into a common header (near
-  the definition of struct page). As suggested by Christoph.
-* Clean up the unnecessary nid variable in the memblocks_present()
-  function, per Christoph.
-* Collected tags from Palmer and Catalin.
+This is a bit of a headache, but it at least allows us to get the RISC-V 
+version that uses the generic support in quickly while waiting on acks from the 
+other arch maintainers.
 
---
-Logan Gunthorpe (6):
-  mm: Introduce common STRUCT_PAGE_MAX_SHIFT define
-  mm/sparse: add common helper to mark all memblocks present
-  ARM: mm: make use of new memblocks_present() helper
-  arm64: mm: make use of new memblocks_present() helper
-  sh: mm: make use of new memblocks_present() helper
-  RISC-V: Implement sparsemem
+Like I said, I'll wait a bit and hope people ack.
 
- arch/arm/mm/init.c                 | 17 +----------------
- arch/arm64/include/asm/memory.h    |  9 ---------
- arch/arm64/mm/init.c               | 28 +---------------------------
- arch/riscv/Kconfig                 | 23 +++++++++++++++++++++++
- arch/riscv/include/asm/pgtable.h   | 21 +++++++++++++++++----
- arch/riscv/include/asm/sparsemem.h | 11 +++++++++++
- arch/riscv/kernel/setup.c          |  4 +++-
- arch/riscv/mm/init.c               |  8 ++++++++
- arch/sh/mm/init.c                  |  7 +------
- include/asm-generic/fixmap.h       |  1 +
- include/linux/mm_types.h           |  5 +++++
- include/linux/mmzone.h             |  6 ++++++
- mm/sparse.c                        | 14 ++++++++++++++
- 13 files changed, 91 insertions(+), 63 deletions(-)
- create mode 100644 arch/riscv/include/asm/sparsemem.h
-
---
-2.19.0
+Thanks!
