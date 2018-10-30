@@ -1,52 +1,40 @@
-From: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-Date: Mon, 08 Oct 2018 18:31:41 +0000
-Subject: [PATCH 4.4 100/113] arch/hexagon: fix kernel/dma.c build warning
-Message-Id: <20181008175536.804387083@linuxfoundation.org>
+From: Douglas Anderson <dianders@chromium.org>
+Date: Tue, 30 Oct 2018 22:18:41 +0000
+Subject: [PATCH v2 0/2] kgdb: Fix kgdb_roundup_cpus()
+Message-Id: <20181030221843.121254-1-dianders@chromium.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20181008175530.864641368@linuxfoundation.org>
-In-Reply-To: <20181008175530.864641368@linuxfoundation.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, stable@vger.kernel.org, Randy Dunlap <rdunlap@infradead.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, Richard Kuo <rkuo@codeaurora.org>, Sasha Levin <alexander.levin@microsoft.com>
+To: linux-arm-kernel@lists.infradead.org
 
-4.4-stable review patch.  If anyone has any objections, please let me know.
+This series was originally part of the series ("serial: Finish kgdb on
+qcom_geni; fix many lockdep splats w/ kgdb") but it made sense to
+split it up.
 
-------------------
+It's believed that dropping into kgdb should be more robust once these
+patches are applied.
 
-From: Randy Dunlap <rdunlap@infradead.org>
+Changes in v2:
+- Removing irq flags separated from fixing lockdep splat.
+- Don't use smp_call_function (Daniel).
 
-[ Upstream commit 200f351e27f014fcbf69b544b0b4b72aeaf45fd3 ]
+Douglas Anderson (2):
+  kgdb: Remove irq flags from roundup
+  kgdb: Fix kgdb_roundup_cpus() for arches who used smp_call_function()
 
-Fix build warning in arch/hexagon/kernel/dma.c by casting a void *
-to unsigned long to match the function parameter type.
+ arch/arc/kernel/kgdb.c     | 10 ++--------
+ arch/arm/kernel/kgdb.c     | 12 ------------
+ arch/arm64/kernel/kgdb.c   | 12 ------------
+ arch/hexagon/kernel/kgdb.c | 32 --------------------------------
+ arch/mips/kernel/kgdb.c    |  9 +--------
+ arch/powerpc/kernel/kgdb.c |  6 +++---
+ arch/sh/kernel/kgdb.c      | 12 ------------
+ arch/sparc/kernel/smp_64.c |  2 +-
+ arch/x86/kernel/kgdb.c     |  9 ++-------
+ include/linux/kgdb.h       | 22 ++++++++++++++--------
+ kernel/debug/debug_core.c  | 38 +++++++++++++++++++++++++++++++++++++-
+ 11 files changed, 60 insertions(+), 104 deletions(-)
 
-../arch/hexagon/kernel/dma.c: In function 'arch_dma_alloc':
-../arch/hexagon/kernel/dma.c:51:5: warning: passing argument 2 of 'gen_pool_add' makes integer from pointer without a cast [enabled by default]
-../include/linux/genalloc.h:112:19: note: expected 'long unsigned int' but argument is of type 'void *'
-
-Signed-off-by: Randy Dunlap <rdunlap@infradead.org>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: Rich Felker <dalias@libc.org>
-Cc: linux-sh@vger.kernel.org
-Patch-mainline: linux-kernel @ 07/20/2018, 20:17
-[rkuo@codeaurora.org: fixed architecture name]
-Signed-off-by: Richard Kuo <rkuo@codeaurora.org>
-Signed-off-by: Sasha Levin <alexander.levin@microsoft.com>
-Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
----
- arch/hexagon/kernel/dma.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
---- a/arch/hexagon/kernel/dma.c
-+++ b/arch/hexagon/kernel/dma.c
-@@ -68,7 +68,7 @@ static void *hexagon_dma_alloc_coherent(
- 			panic("Can't create %s() memory pool!", __func__);
- 		else
- 			gen_pool_add(coherent_pool,
--				pfn_to_virt(max_low_pfn),
-+				(unsigned long)pfn_to_virt(max_low_pfn),
- 				hexagon_coherent_pool_size, -1);
- 	}
- 
+-- 
+2.19.1.568.g152ad8e336-goog
