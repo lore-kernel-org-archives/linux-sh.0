@@ -1,121 +1,93 @@
-From: Yangtao Li <tiny.windzz@gmail.com>
-Date: Tue, 06 Nov 2018 14:40:30 +0000
-Subject: [PATCH] sh: mm: Change to use DEFINE_SHOW_ATTRIBUTE macro
-Message-Id: <20181106144030.8663-1-tiny.windzz@gmail.com>
+From: Firoz Khan <firoz.khan@linaro.org>
+Date: Thu, 01 Nov 2018 13:49:31 +0000
+Subject: [PATCH v2 1/3] sh: add __NR_syscalls along with NR_syscalls
+Message-Id: <1541080130-3678-2-git-send-email-firoz.khan@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1541080130-3678-1-git-send-email-firoz.khan@linaro.org>
+In-Reply-To: <1541080130-3678-1-git-send-email-firoz.khan@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: ysato@users.sourceforge.jp, dalias@libc.org
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Yangtao Li <tiny.windzz@gmail.com>
+To: linux-sh@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Philippe Ombredanne <pombredanne@nexb.com>, Thomas Gleixner <tglx@linutronix.de>, Kate Stewart <kstewart@linuxfoundation.org>
+Cc: y2038@lists.linaro.org, linux-kernel@vger.kernel.org, linux-arch@vger.kernel.org, arnd@arndb.de, deepa.kernel@gmail.com, marcin.juszkiewicz@linaro.org, firoz.khan@linaro.org
 
-Use DEFINE_SHOW_ATTRIBUTE macro to simplify the code.
+NR_syscalls macro holds the number of system call exist
+in sh architecture. We have to change the value of NR-
+_syscalls, if we add or delete a system call.
 
-Signed-off-by: Yangtao Li <tiny.windzz@gmail.com>
+One of the patch in this patch series has a script which
+will generate a uapi header based on syscall.tbl file.
+The syscall.tbl file contains the total number of system
+calls information. So we have two option to update NR_sy-
+scalls value.
+
+1. Update NR_syscalls in asm/unistd.h manually by count-
+   ing the no.of system calls. No need to update NR_sys-
+   calls until we either add a new system call or delete
+   existing system call.
+
+2. We can keep this feature it above mentioned script,
+   that will count the number of syscalls and keep it in
+   a generated file. In this case we don't need to expli-
+   citly update NR_syscalls in asm/unistd.h file.
+
+The 2nd option will be the recommended one. For that, I
+added the __NR_syscalls macro in uapi/asm/unistd_32/64.h
+along with NR_syscalls which is moved to asm/unistd.h.
+The macro __NR_syscalls also added for making the name
+convention same across all architecture. While __NR_sys-
+calls isn't strictly part of the uapi, having it as part
+of the generated header to simplifies the implementation.
+We also need to enclose this macro with #ifdef __KERNEL__
+to avoid side effects.
+
+Signed-off-by: Firoz Khan <firoz.khan@linaro.org>
 ---
- arch/sh/mm/asids-debugfs.c | 15 ++-------------
- arch/sh/mm/cache-debugfs.c | 15 ++-------------
- arch/sh/mm/tlb-debugfs.c   | 15 ++-------------
- 3 files changed, 6 insertions(+), 39 deletions(-)
+ arch/sh/include/asm/unistd.h         | 2 ++
+ arch/sh/include/uapi/asm/unistd_32.h | 4 +++-
+ arch/sh/include/uapi/asm/unistd_64.h | 4 +++-
+ 3 files changed, 8 insertions(+), 2 deletions(-)
 
-diff --git a/arch/sh/mm/asids-debugfs.c b/arch/sh/mm/asids-debugfs.c
-index e5539e0f8e3b..a3cfa04543e4 100644
---- a/arch/sh/mm/asids-debugfs.c
-+++ b/arch/sh/mm/asids-debugfs.c
-@@ -26,7 +26,7 @@
- #include <asm/processor.h>
- #include <asm/mmu_context.h>
+diff --git a/arch/sh/include/asm/unistd.h b/arch/sh/include/asm/unistd.h
+index b36200a..66fd71c 100644
+--- a/arch/sh/include/asm/unistd.h
++++ b/arch/sh/include/asm/unistd.h
+@@ -5,6 +5,8 @@
+ #  include <asm/unistd_64.h>
+ # endif
  
--static int asids_seq_show(struct seq_file *file, void *iter)
-+static int asids_debugfs_show(struct seq_file *file, void *iter)
- {
- 	struct task_struct *p;
++#define NR_syscalls __NR_syscalls
++
+ # define __ARCH_WANT_OLD_READDIR
+ # define __ARCH_WANT_OLD_STAT
+ # define __ARCH_WANT_STAT64
+diff --git a/arch/sh/include/uapi/asm/unistd_32.h b/arch/sh/include/uapi/asm/unistd_32.h
+index 58f04cf..31c85aa 100644
+--- a/arch/sh/include/uapi/asm/unistd_32.h
++++ b/arch/sh/include/uapi/asm/unistd_32.h
+@@ -396,6 +396,8 @@
+ #define __NR_preadv2		381
+ #define __NR_pwritev2		382
  
-@@ -48,18 +48,7 @@ static int asids_seq_show(struct seq_file *file, void *iter)
- 	return 0;
- }
+-#define NR_syscalls 383
++#ifdef __KERNEL__
++#define __NR_syscalls		383
++#endif
  
--static int asids_debugfs_open(struct inode *inode, struct file *file)
--{
--	return single_open(file, asids_seq_show, inode->i_private);
--}
--
--static const struct file_operations asids_debugfs_fops = {
--	.owner		= THIS_MODULE,
--	.open		= asids_debugfs_open,
--	.read		= seq_read,
--	.llseek		= seq_lseek,
--	.release	= single_release,
--};
-+DEFINE_SHOW_ATTRIBUTE(asids_debugfs);
+ #endif /* __ASM_SH_UNISTD_32_H */
+diff --git a/arch/sh/include/uapi/asm/unistd_64.h b/arch/sh/include/uapi/asm/unistd_64.h
+index 6f809a5..75da548 100644
+--- a/arch/sh/include/uapi/asm/unistd_64.h
++++ b/arch/sh/include/uapi/asm/unistd_64.h
+@@ -416,6 +416,8 @@
+ #define __NR_preadv2		392
+ #define __NR_pwritev2		393
  
- static int __init asids_debugfs_init(void)
- {
-diff --git a/arch/sh/mm/cache-debugfs.c b/arch/sh/mm/cache-debugfs.c
-index 4eb9d43578b4..08420371af97 100644
---- a/arch/sh/mm/cache-debugfs.c
-+++ b/arch/sh/mm/cache-debugfs.c
-@@ -22,7 +22,7 @@ enum cache_type {
- 	CACHE_TYPE_UNIFIED,
- };
+-#define NR_syscalls 394
++#ifdef __KERNEL__
++#define __NR_syscalls		394
++#endif
  
--static int cache_seq_show(struct seq_file *file, void *iter)
-+static int cache_debugfs_show(struct seq_file *file, void *iter)
- {
- 	unsigned int cache_type = (unsigned int)file->private;
- 	struct cache_info *cache;
-@@ -94,18 +94,7 @@ static int cache_seq_show(struct seq_file *file, void *iter)
- 	return 0;
- }
- 
--static int cache_debugfs_open(struct inode *inode, struct file *file)
--{
--	return single_open(file, cache_seq_show, inode->i_private);
--}
--
--static const struct file_operations cache_debugfs_fops = {
--	.owner		= THIS_MODULE,
--	.open		= cache_debugfs_open,
--	.read		= seq_read,
--	.llseek		= seq_lseek,
--	.release	= single_release,
--};
-+DEFINE_SHOW_ATTRIBUTE(cache_debugfs);
- 
- static int __init cache_debugfs_init(void)
- {
-diff --git a/arch/sh/mm/tlb-debugfs.c b/arch/sh/mm/tlb-debugfs.c
-index dea637a09246..74c252ed35fc 100644
---- a/arch/sh/mm/tlb-debugfs.c
-+++ b/arch/sh/mm/tlb-debugfs.c
-@@ -36,7 +36,7 @@ static struct {
- 	{ 0xc, " 64MB" },
- };
- 
--static int tlb_seq_show(struct seq_file *file, void *iter)
-+static int tlb_debugfs_show(struct seq_file *file, void *iter)
- {
- 	unsigned int tlb_type = (unsigned int)file->private;
- 	unsigned long addr1, addr2, data1, data2;
-@@ -134,18 +134,7 @@ static int tlb_seq_show(struct seq_file *file, void *iter)
- 	return 0;
- }
- 
--static int tlb_debugfs_open(struct inode *inode, struct file *file)
--{
--	return single_open(file, tlb_seq_show, inode->i_private);
--}
--
--static const struct file_operations tlb_debugfs_fops = {
--	.owner		= THIS_MODULE,
--	.open		= tlb_debugfs_open,
--	.read		= seq_read,
--	.llseek		= seq_lseek,
--	.release	= single_release,
--};
-+DEFINE_SHOW_ATTRIBUTE(tlb_debugfs);
- 
- static int __init tlb_debugfs_init(void)
- {
+ #endif /* __ASM_SH_UNISTD_64_H */
 -- 
-2.17.0
+1.9.1
