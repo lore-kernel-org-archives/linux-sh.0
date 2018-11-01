@@ -1,164 +1,465 @@
-From: Adam Borowski <kilobyte@angband.pl>
-Date: Fri, 09 Nov 2018 19:02:55 +0000
-Subject: [PATCH 08/17] sh: Remove support for BZIP2 and LZMA compressed kernel
-Message-Id: <20181109190304.8573-8-kilobyte@angband.pl>
+From: Firoz Khan <firoz.khan@linaro.org>
+Date: Thu, 01 Nov 2018 13:49:46 +0000
+Subject: [PATCH v2 3/3] sh: generate uapi header and syscall table header files
+Message-Id: <1541080130-3678-4-git-send-email-firoz.khan@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20181109185953.xwyelyqnygbskkxk@angband.pl>
- <20181109190304.8573-1-kilobyte@angband.pl>
-In-Reply-To: <20181109190304.8573-1-kilobyte@angband.pl>
+References: <1541080130-3678-1-git-send-email-firoz.khan@linaro.org>
+In-Reply-To: <1541080130-3678-1-git-send-email-firoz.khan@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org, Nick Terrell <terrelln@fb.com>, Russell King <linux@armlinux.org.uk>, Geert Uytterhoeven <geert@linux-m68k.org>, linux-m68k@lists.linux-m68k.org, Ralf Baechle <ralf@linux-mips.org>, Paul Burton <paul.burton@mips.com>, James Hogan <jhogan@kernel.org>, linux-mips@linux-mips.org, Jonas Bonn <jonas@southpole.se>, Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>, Stafford Horne <shorne@gmail.com>, openrisc@lists.librecores.org, "James E.J. Bottomley" <jejb@parisc-linux.org>, Helge Deller <deller@gmx.de>, linux-parisc@vger.kernel.org, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Michael Ellerman <mpe@ellerman.id.au>, linuxppc-dev@lists.ozlabs.org, Martin Schwidefsky <schwidefsky@de.ibm.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, linux-s390@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>, x86@kernel.org, Chris Zankel <chris@zankel.net>, Max Filippov <jcmvbkbc@gmail.com>, linux-xtensa@linux-xtensa.org
-Cc: Adam Borowski <kilobyte@angband.pl>
+To: linux-sh@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Philippe Ombredanne <pombredanne@nexb.com>, Thomas Gleixner <tglx@linutronix.de>, Kate Stewart <kstewart@linuxfoundation.org>
+Cc: y2038@lists.linaro.org, linux-kernel@vger.kernel.org, linux-arch@vger.kernel.org, arnd@arndb.de, deepa.kernel@gmail.com, marcin.juszkiewicz@linaro.org, firoz.khan@linaro.org
 
-Made redundant by newer choices.
+System call table generation script must be run to gener-
+ate unistd_32.h and syscall_table.h files. This patch will
+have changes which will invokes the script.
 
-Signed-off-by: Adam Borowski <kilobyte@angband.pl>
+This patch will generate unistd_32.h and syscall_table.h
+files by the syscall table generation script invoked by
+sh/Makefile and the generated files against the removed
+files must be identical.
+
+The generated uapi header file will be included in uapi/-
+asm/unistd.h and generated system call table header file
+will be included by kernel/syscall_32.S file.
+
+Signed-off-by: Firoz Khan <firoz.khan@linaro.org>
 ---
- arch/sh/Kconfig                  |  2 --
- arch/sh/Makefile                 |  4 +---
- arch/sh/boot/Makefile            | 19 ++-----------------
- arch/sh/boot/compressed/Makefile |  5 -----
- arch/sh/boot/compressed/misc.c   | 12 ------------
- 5 files changed, 3 insertions(+), 39 deletions(-)
+ arch/sh/Makefile                |   3 +
+ arch/sh/include/asm/Kbuild      |   1 +
+ arch/sh/include/uapi/asm/Kbuild |   1 +
+ arch/sh/kernel/syscalls_32.S    | 387 +---------------------------------------
+ 4 files changed, 8 insertions(+), 384 deletions(-)
 
-diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-index f82a4da7adf3..fbb2e17275d1 100644
---- a/arch/sh/Kconfig
-+++ b/arch/sh/Kconfig
-@@ -23,8 +23,6 @@ config SUPERH
- 	select HAVE_DEBUG_KMEMLEAK
- 	select HAVE_KERNEL_GZIP
- 	select CPU_NO_EFFICIENT_FFS
--	select HAVE_KERNEL_BZIP2
--	select HAVE_KERNEL_LZMA
- 	select HAVE_KERNEL_XZ
- 	select HAVE_KERNEL_LZO
- 	select HAVE_UID16
 diff --git a/arch/sh/Makefile b/arch/sh/Makefile
-index c521ade2557c..70925d0cd2a8 100644
+index c521ade..4009bef 100644
 --- a/arch/sh/Makefile
 +++ b/arch/sh/Makefile
-@@ -209,7 +209,7 @@ endif
- libs-$(CONFIG_SUPERH32)		:= arch/sh/lib/	$(libs-y)
- libs-$(CONFIG_SUPERH64)		:= arch/sh/lib64/ $(libs-y)
+@@ -228,6 +228,9 @@ archclean:
+ 	$(Q)$(MAKE) $(clean)=$(boot)
+ 	$(Q)$(MAKE) $(clean)=arch/sh/kernel/vsyscall
  
--BOOT_TARGETS = uImage uImage.bz2 uImage.gz uImage.lzma uImage.xz uImage.lzo \
-+BOOT_TARGETS = uImage uImage.bz2 uImage.gz uImage.xz uImage.lzo \
- 	       uImage.srec uImage.bin zImage vmlinux.bin vmlinux.srec \
- 	       romImage
- PHONY += $(BOOT_TARGETS)
-@@ -237,8 +237,6 @@ define archhelp
- 	@echo '  uImage.srec	           - Create an S-record for U-Boot'
- 	@echo '  uImage.bin	           - Kernel-only image for U-Boot (bin)'
- 	@echo '* uImage.gz	           - Kernel-only image for U-Boot (gzip)'
--	@echo '  uImage.bz2	           - Kernel-only image for U-Boot (bzip2)'
--	@echo '  uImage.lzma	           - Kernel-only image for U-Boot (lzma)'
- 	@echo '  uImage.xz	           - Kernel-only image for U-Boot (xz)'
- 	@echo '  uImage.lzo	           - Kernel-only image for U-Boot (lzo)'
- endef
-diff --git a/arch/sh/boot/Makefile b/arch/sh/boot/Makefile
-index 58592dfa5cb6..bf8cf598a5ab 100644
---- a/arch/sh/boot/Makefile
-+++ b/arch/sh/boot/Makefile
-@@ -21,15 +21,12 @@ CONFIG_PHYSICAL_START	?= $(CONFIG_MEMORY_START)
++archheaders:
++	$(Q)$(MAKE) $(build)=arch/sh/kernel/syscalls all
++
+ define archhelp
+ 	@echo '  zImage 	           - Compressed kernel image'
+ 	@echo '  romImage	           - Compressed ROM image, if supported'
+diff --git a/arch/sh/include/asm/Kbuild b/arch/sh/include/asm/Kbuild
+index 6a5609a..5c3a36d 100644
+--- a/arch/sh/include/asm/Kbuild
++++ b/arch/sh/include/asm/Kbuild
+@@ -19,3 +19,4 @@ generic-y += serial.h
+ generic-y += sizes.h
+ generic-y += trace_clock.h
+ generic-y += xor.h
++generic-y += syscall_table.h
+diff --git a/arch/sh/include/uapi/asm/Kbuild b/arch/sh/include/uapi/asm/Kbuild
+index ba4d39c..f7b2130 100644
+--- a/arch/sh/include/uapi/asm/Kbuild
++++ b/arch/sh/include/uapi/asm/Kbuild
+@@ -21,3 +21,4 @@ generic-y += statfs.h
+ generic-y += termbits.h
+ generic-y += termios.h
+ generic-y += ucontext.h
++generic-y += unistd_32.h
+diff --git a/arch/sh/kernel/syscalls_32.S b/arch/sh/kernel/syscalls_32.S
+index 254bc22..54978e0 100644
+--- a/arch/sh/kernel/syscalls_32.S
++++ b/arch/sh/kernel/syscalls_32.S
+@@ -14,389 +14,8 @@
+ #include <linux/sys.h>
+ #include <linux/linkage.h>
  
- suffix-y := bin
- suffix-$(CONFIG_KERNEL_GZIP)	:= gz
--suffix-$(CONFIG_KERNEL_BZIP2)	:= bz2
--suffix-$(CONFIG_KERNEL_LZMA)	:= lzma
- suffix-$(CONFIG_KERNEL_XZ)	:= xz
- suffix-$(CONFIG_KERNEL_LZO)	:= lzo
- 
- targets := zImage vmlinux.srec romImage uImage uImage.srec uImage.gz \
--	   uImage.bz2 uImage.lzma uImage.xz uImage.lzo uImage.bin
--extra-y += vmlinux.bin vmlinux.bin.gz vmlinux.bin.bz2 vmlinux.bin.lzma \
--	   vmlinux.bin.xz vmlinux.bin.lzo
-+	   uImage.xz uImage.lzo uImage.bin
-+extra-y += vmlinux.bin vmlinux.bin.gz vmlinux.bin.xz vmlinux.bin.lzo
- subdir- := compressed romimage
- 
- $(obj)/zImage: $(obj)/compressed/vmlinux FORCE
-@@ -68,27 +65,15 @@ $(obj)/vmlinux.bin: vmlinux FORCE
- $(obj)/vmlinux.bin.gz: $(obj)/vmlinux.bin FORCE
- 	$(call if_changed,gzip)
- 
--$(obj)/vmlinux.bin.bz2: $(obj)/vmlinux.bin FORCE
--	$(call if_changed,bzip2)
--
--$(obj)/vmlinux.bin.lzma: $(obj)/vmlinux.bin FORCE
--	$(call if_changed,lzma)
--
- $(obj)/vmlinux.bin.xz: $(obj)/vmlinux.bin FORCE
- 	$(call if_changed,xzkern)
- 
- $(obj)/vmlinux.bin.lzo: $(obj)/vmlinux.bin FORCE
- 	$(call if_changed,lzo)
- 
--$(obj)/uImage.bz2: $(obj)/vmlinux.bin.bz2
--	$(call if_changed,uimage,bzip2)
--
- $(obj)/uImage.gz: $(obj)/vmlinux.bin.gz
- 	$(call if_changed,uimage,gzip)
- 
--$(obj)/uImage.lzma: $(obj)/vmlinux.bin.lzma
--	$(call if_changed,uimage,lzma)
--
- $(obj)/uImage.xz: $(obj)/vmlinux.bin.xz
- 	$(call if_changed,uimage,xz)
- 
-diff --git a/arch/sh/boot/compressed/Makefile b/arch/sh/boot/compressed/Makefile
-index f5e1bd779789..abd33fd0d525 100644
---- a/arch/sh/boot/compressed/Makefile
-+++ b/arch/sh/boot/compressed/Makefile
-@@ -6,7 +6,6 @@
- #
- 
- targets		:= vmlinux vmlinux.bin vmlinux.bin.gz \
--		   vmlinux.bin.bz2 vmlinux.bin.lzma \
- 		   vmlinux.bin.xz vmlinux.bin.lzo \
- 		   head_$(BITS).o misc.o piggy.o
- 
-@@ -64,10 +63,6 @@ vmlinux.bin.all-y := $(obj)/vmlinux.bin
- 
- $(obj)/vmlinux.bin.gz: $(vmlinux.bin.all-y) FORCE
- 	$(call if_changed,gzip)
--$(obj)/vmlinux.bin.bz2: $(vmlinux.bin.all-y) FORCE
--	$(call if_changed,bzip2)
--$(obj)/vmlinux.bin.lzma: $(vmlinux.bin.all-y) FORCE
--	$(call if_changed,lzma)
- $(obj)/vmlinux.bin.xz: $(vmlinux.bin.all-y) FORCE
- 	$(call if_changed,xzkern)
- $(obj)/vmlinux.bin.lzo: $(vmlinux.bin.all-y) FORCE
-diff --git a/arch/sh/boot/compressed/misc.c b/arch/sh/boot/compressed/misc.c
-index c15cac9251b9..c82402add51e 100644
---- a/arch/sh/boot/compressed/misc.c
-+++ b/arch/sh/boot/compressed/misc.c
-@@ -44,24 +44,12 @@ extern int _end;
- static unsigned long free_mem_ptr;
- static unsigned long free_mem_end_ptr;
- 
--#ifdef CONFIG_HAVE_KERNEL_BZIP2
--#define HEAP_SIZE	0x400000
--#else
- #define HEAP_SIZE	0x10000
--#endif
- 
- #ifdef CONFIG_KERNEL_GZIP
- #include "../../../../lib/decompress_inflate.c"
- #endif
- 
--#ifdef CONFIG_KERNEL_BZIP2
--#include "../../../../lib/decompress_bunzip2.c"
--#endif
--
--#ifdef CONFIG_KERNEL_LZMA
--#include "../../../../lib/decompress_unlzma.c"
--#endif
--
- #ifdef CONFIG_KERNEL_XZ
- #include "../../../../lib/decompress_unxz.c"
- #endif
++#define __SYSCALL(nr, entry, nargs) .long entry
+ 	.data
+ ENTRY(sys_call_table)
+-	.long sys_restart_syscall	/* 0  -  old "setup()" system call*/
+-	.long sys_exit
+-	.long sys_fork
+-	.long sys_read
+-	.long sys_write
+-	.long sys_open		/* 5 */
+-	.long sys_close
+-	.long sys_waitpid
+-	.long sys_creat
+-	.long sys_link
+-	.long sys_unlink		/* 10 */
+-	.long sys_execve
+-	.long sys_chdir
+-	.long sys_time
+-	.long sys_mknod
+-	.long sys_chmod		/* 15 */
+-	.long sys_lchown16
+-	.long sys_ni_syscall	/* old break syscall holder */
+-	.long sys_stat
+-	.long sys_lseek
+-	.long sys_getpid		/* 20 */
+-	.long sys_mount
+-	.long sys_oldumount
+-	.long sys_setuid16
+-	.long sys_getuid16
+-	.long sys_stime		/* 25 */
+-	.long sys_ptrace
+-	.long sys_alarm
+-	.long sys_fstat
+-	.long sys_pause
+-	.long sys_utime		/* 30 */
+-	.long sys_ni_syscall	/* old stty syscall holder */
+-	.long sys_ni_syscall	/* old gtty syscall holder */
+-	.long sys_access
+-	.long sys_nice
+-	.long sys_ni_syscall	/* 35 */		/* old ftime syscall holder */
+-	.long sys_sync
+-	.long sys_kill
+-	.long sys_rename
+-	.long sys_mkdir
+-	.long sys_rmdir		/* 40 */
+-	.long sys_dup
+-	.long sys_sh_pipe
+-	.long sys_times
+-	.long sys_ni_syscall	/* old prof syscall holder */
+-	.long sys_brk		/* 45 */
+-	.long sys_setgid16
+-	.long sys_getgid16
+-	.long sys_signal
+-	.long sys_geteuid16
+-	.long sys_getegid16	/* 50 */
+-	.long sys_acct
+-	.long sys_umount		/* recycled never used phys() */
+-	.long sys_ni_syscall	/* old lock syscall holder */
+-	.long sys_ioctl
+-	.long sys_fcntl		/* 55 */
+-	.long sys_ni_syscall	/* old mpx syscall holder */
+-	.long sys_setpgid
+-	.long sys_ni_syscall	/* old ulimit syscall holder */
+-	.long sys_ni_syscall	/* sys_olduname */
+-	.long sys_umask		/* 60 */
+-	.long sys_chroot
+-	.long sys_ustat
+-	.long sys_dup2
+-	.long sys_getppid
+-	.long sys_getpgrp		/* 65 */
+-	.long sys_setsid
+-	.long sys_sigaction
+-	.long sys_sgetmask
+-	.long sys_ssetmask
+-	.long sys_setreuid16	/* 70 */
+-	.long sys_setregid16
+-	.long sys_sigsuspend
+-	.long sys_sigpending
+-	.long sys_sethostname
+-	.long sys_setrlimit	/* 75 */
+-	.long sys_old_getrlimit
+-	.long sys_getrusage
+-	.long sys_gettimeofday
+-	.long sys_settimeofday
+-	.long sys_getgroups16	/* 80 */
+-	.long sys_setgroups16
+-	.long sys_ni_syscall	/* sys_oldselect */
+-	.long sys_symlink
+-	.long sys_lstat
+-	.long sys_readlink		/* 85 */
+-	.long sys_uselib
+-	.long sys_swapon
+-	.long sys_reboot
+-	.long sys_old_readdir
+-	.long old_mmap		/* 90 */
+-	.long sys_munmap
+-	.long sys_truncate
+-	.long sys_ftruncate
+-	.long sys_fchmod
+-	.long sys_fchown16		/* 95 */
+-	.long sys_getpriority
+-	.long sys_setpriority
+-	.long sys_ni_syscall	/* old profil syscall holder */
+-	.long sys_statfs
+-	.long sys_fstatfs		/* 100 */
+-	.long sys_ni_syscall	/* ioperm */
+-	.long sys_socketcall
+-	.long sys_syslog
+-	.long sys_setitimer
+-	.long sys_getitimer	/* 105 */
+-	.long sys_newstat
+-	.long sys_newlstat
+-	.long sys_newfstat
+-	.long sys_uname
+-	.long sys_ni_syscall	/* 110 */ /* iopl */
+-	.long sys_vhangup
+-	.long sys_ni_syscall	/* idle */
+-	.long sys_ni_syscall	/* vm86old */
+-	.long sys_wait4
+-	.long sys_swapoff		/* 115 */
+-	.long sys_sysinfo
+-	.long sys_ipc
+-	.long sys_fsync
+-	.long sys_sigreturn
+-	.long sys_clone		/* 120 */
+-	.long sys_setdomainname
+-	.long sys_newuname
+-	.long sys_cacheflush	/* x86: sys_modify_ldt */
+-	.long sys_adjtimex
+-	.long sys_mprotect		/* 125 */
+-	.long sys_sigprocmask
+-	.long sys_ni_syscall	/* old "create_module" */
+-	.long sys_init_module
+-	.long sys_delete_module
+-	.long sys_ni_syscall	/* 130: old "get_kernel_syms" */
+-	.long sys_quotactl
+-	.long sys_getpgid
+-	.long sys_fchdir
+-	.long sys_bdflush
+-	.long sys_sysfs		/* 135 */
+-	.long sys_personality
+-	.long sys_ni_syscall	/* for afs_syscall */
+-	.long sys_setfsuid16
+-	.long sys_setfsgid16
+-	.long sys_llseek		/* 140 */
+-	.long sys_getdents
+-	.long sys_select
+-	.long sys_flock
+-	.long sys_msync
+-	.long sys_readv		/* 145 */
+-	.long sys_writev
+-	.long sys_getsid
+-	.long sys_fdatasync
+-	.long sys_sysctl
+-	.long sys_mlock		/* 150 */
+-	.long sys_munlock
+-	.long sys_mlockall
+-	.long sys_munlockall
+-	.long sys_sched_setparam
+-	.long sys_sched_getparam   /* 155 */
+-	.long sys_sched_setscheduler
+-	.long sys_sched_getscheduler
+-	.long sys_sched_yield
+-	.long sys_sched_get_priority_max
+-	.long sys_sched_get_priority_min  /* 160 */
+-	.long sys_sched_rr_get_interval
+-	.long sys_nanosleep
+-	.long sys_mremap
+-	.long sys_setresuid16
+-	.long sys_getresuid16	/* 165 */
+-	.long sys_ni_syscall	/* vm86 */
+-	.long sys_ni_syscall	/* old "query_module" */
+-	.long sys_poll
+-	.long sys_ni_syscall	/* was nfsservctl */
+-	.long sys_setresgid16	/* 170 */
+-	.long sys_getresgid16
+-	.long sys_prctl
+-	.long sys_rt_sigreturn
+-	.long sys_rt_sigaction
+-	.long sys_rt_sigprocmask	/* 175 */
+-	.long sys_rt_sigpending
+-	.long sys_rt_sigtimedwait
+-	.long sys_rt_sigqueueinfo
+-	.long sys_rt_sigsuspend
+-	.long sys_pread_wrapper	   /* 180 */
+-	.long sys_pwrite_wrapper
+-	.long sys_chown16
+-	.long sys_getcwd
+-	.long sys_capget
+-	.long sys_capset           /* 185 */
+-	.long sys_sigaltstack
+-	.long sys_sendfile
+-	.long sys_ni_syscall	/* getpmsg */
+-	.long sys_ni_syscall	/* putpmsg */
+-	.long sys_vfork            /* 190 */
+-	.long sys_getrlimit
+-	.long sys_mmap2
+-	.long sys_truncate64
+-	.long sys_ftruncate64
+-	.long sys_stat64		/* 195 */
+-	.long sys_lstat64
+-	.long sys_fstat64
+-	.long sys_lchown
+-	.long sys_getuid
+-	.long sys_getgid		/* 200 */
+-	.long sys_geteuid
+-	.long sys_getegid
+-	.long sys_setreuid
+-	.long sys_setregid
+-	.long sys_getgroups	/* 205 */
+-	.long sys_setgroups
+-	.long sys_fchown
+-	.long sys_setresuid
+-	.long sys_getresuid
+-	.long sys_setresgid	/* 210 */
+-	.long sys_getresgid
+-	.long sys_chown
+-	.long sys_setuid
+-	.long sys_setgid
+-	.long sys_setfsuid		/* 215 */
+-	.long sys_setfsgid
+-	.long sys_pivot_root
+-	.long sys_mincore
+-	.long sys_madvise
+-	.long sys_getdents64	/* 220 */
+-	.long sys_fcntl64
+-	.long sys_ni_syscall	/* reserved for TUX */
+-	.long sys_ni_syscall	/* Reserved for Security */
+-	.long sys_gettid
+-	.long sys_readahead	/* 225 */
+-	.long sys_setxattr
+-	.long sys_lsetxattr
+-	.long sys_fsetxattr
+-	.long sys_getxattr
+-	.long sys_lgetxattr	/* 230 */
+-	.long sys_fgetxattr
+-	.long sys_listxattr
+-	.long sys_llistxattr
+-	.long sys_flistxattr
+-	.long sys_removexattr	/* 235 */
+-	.long sys_lremovexattr
+-	.long sys_fremovexattr
+-	.long sys_tkill
+-	.long sys_sendfile64
+-	.long sys_futex		/* 240 */
+-	.long sys_sched_setaffinity
+-	.long sys_sched_getaffinity
+-	.long sys_ni_syscall	/* reserved for set_thread_area */
+-	.long sys_ni_syscall	/* reserved for get_thread_area */
+-	.long sys_io_setup	/* 245 */
+-	.long sys_io_destroy
+-	.long sys_io_getevents
+-	.long sys_io_submit
+-	.long sys_io_cancel
+-	.long sys_fadvise64	/* 250 */
+-	.long sys_ni_syscall
+-	.long sys_exit_group
+-	.long sys_lookup_dcookie
+-	.long sys_epoll_create
+-	.long sys_epoll_ctl	/* 255 */
+-	.long sys_epoll_wait
+- 	.long sys_remap_file_pages
+- 	.long sys_set_tid_address
+- 	.long sys_timer_create
+- 	.long sys_timer_settime		/* 260 */
+- 	.long sys_timer_gettime
+- 	.long sys_timer_getoverrun
+- 	.long sys_timer_delete
+- 	.long sys_clock_settime
+- 	.long sys_clock_gettime		/* 265 */
+- 	.long sys_clock_getres
+- 	.long sys_clock_nanosleep
+-	.long sys_statfs64
+-	.long sys_fstatfs64
+-	.long sys_tgkill		/* 270 */
+-	.long sys_utimes
+- 	.long sys_fadvise64_64_wrapper
+-	.long sys_ni_syscall	/* Reserved for vserver */
+-	.long sys_mbind
+-	.long sys_get_mempolicy		/* 275 */
+-	.long sys_set_mempolicy
+-	.long sys_mq_open
+-	.long sys_mq_unlink
+-	.long sys_mq_timedsend
+-	.long sys_mq_timedreceive       /* 280 */
+-	.long sys_mq_notify
+-	.long sys_mq_getsetattr
+-	.long sys_kexec_load
+-	.long sys_waitid
+-	.long sys_add_key		/* 285 */
+-	.long sys_request_key
+-	.long sys_keyctl
+-	.long sys_ioprio_set
+-	.long sys_ioprio_get
+-	.long sys_inotify_init		/* 290 */
+-	.long sys_inotify_add_watch
+-	.long sys_inotify_rm_watch
+-	.long sys_ni_syscall
+-	.long sys_migrate_pages
+-	.long sys_openat		/* 295 */
+-	.long sys_mkdirat
+-	.long sys_mknodat
+-	.long sys_fchownat
+-	.long sys_futimesat
+-	.long sys_fstatat64		/* 300 */
+-	.long sys_unlinkat
+-	.long sys_renameat
+-	.long sys_linkat
+-	.long sys_symlinkat
+-	.long sys_readlinkat		/* 305 */
+-	.long sys_fchmodat
+-	.long sys_faccessat
+-	.long sys_pselect6
+-	.long sys_ppoll
+-	.long sys_unshare		/* 310 */
+-	.long sys_set_robust_list
+-	.long sys_get_robust_list
+-	.long sys_splice
+-	.long sys_sync_file_range
+-	.long sys_tee			/* 315 */
+-	.long sys_vmsplice
+-	.long sys_move_pages
+-	.long sys_getcpu
+-	.long sys_epoll_pwait
+-	.long sys_utimensat		/* 320 */
+-	.long sys_signalfd
+-	.long sys_timerfd_create
+-	.long sys_eventfd
+-	.long sys_fallocate
+-	.long sys_timerfd_settime	/* 325 */
+-	.long sys_timerfd_gettime
+-	.long sys_signalfd4
+-	.long sys_eventfd2
+-	.long sys_epoll_create1
+-	.long sys_dup3			/* 330 */
+-	.long sys_pipe2
+-	.long sys_inotify_init1
+-	.long sys_preadv
+-	.long sys_pwritev
+-	.long sys_rt_tgsigqueueinfo	/* 335 */
+-	.long sys_perf_event_open
+-	.long sys_fanotify_init
+-	.long sys_fanotify_mark
+-	.long sys_prlimit64
+-	/* Broken-out socket family */
+-	.long sys_socket		/* 340 */
+-	.long sys_bind
+-	.long sys_connect
+-	.long sys_listen
+-	.long sys_accept
+-	.long sys_getsockname	/* 345 */
+-	.long sys_getpeername
+-	.long sys_socketpair
+-	.long sys_send
+-	.long sys_sendto
+-	.long sys_recv			/* 350 */
+-	.long sys_recvfrom
+-	.long sys_shutdown
+-	.long sys_setsockopt
+-	.long sys_getsockopt
+-	.long sys_sendmsg		/* 355 */
+-	.long sys_recvmsg
+-	.long sys_recvmmsg
+-	.long sys_accept4
+-	.long sys_name_to_handle_at
+-	.long sys_open_by_handle_at	/* 360 */
+-	.long sys_clock_adjtime
+-	.long sys_syncfs
+-	.long sys_sendmmsg
+-	.long sys_setns
+-	.long sys_process_vm_readv	/* 365 */
+-	.long sys_process_vm_writev
+-	.long sys_kcmp
+-	.long sys_finit_module
+-	.long sys_sched_getattr
+-	.long sys_sched_setattr		/* 370 */
+-	.long sys_renameat2
+-	.long sys_seccomp
+-	.long sys_getrandom
+-	.long sys_memfd_create
+-	.long sys_bpf			/* 375 */
+-	.long sys_execveat
+-	.long sys_userfaultfd
+-	.long sys_membarrier
+-	.long sys_mlock2
+-	.long sys_copy_file_range	/* 380 */
+-	.long sys_preadv2
+-	.long sys_pwritev2
++#include <asm/syscall_table.h>
++#undef __SYSCALL
 -- 
-2.19.1
+1.9.1
