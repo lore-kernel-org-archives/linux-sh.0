@@ -1,79 +1,64 @@
-From: Mike Rapoport <rppt@linux.ibm.com>
-Date: Tue, 27 Nov 2018 21:48:45 +0000
-Subject: Re: [PATCH 4/5] openrisc: simplify pte_alloc_one_kernel()
-Message-Id: <7843DE67-DCC3-48BF-873F-71D87B08EDA8@linux.ibm.com>
+From: Daniel Thompson <daniel.thompson@linaro.org>
+Date: Sat, 03 Nov 2018 10:45:03 +0000
+Subject: Re: [PATCH v2 2/2] kgdb: Fix kgdb_roundup_cpus() for arches who used smp_call_function()
+Message-Id: <20181103104503.eftn5btx7otgufro@holly.lan>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1543182277-8819-1-git-send-email-rppt@linux.ibm.com>
- <1543182277-8819-5-git-send-email-rppt@linux.ibm.com>
- <20181127211600.GB3235@lianli.shorne-pla.net>
-In-Reply-To: <20181127211600.GB3235@lianli.shorne-pla.net>
+References: <20181030221843.121254-1-dianders@chromium.org>
+ <20181030221843.121254-3-dianders@chromium.org>
+ <20181031184050.sd5opni3mznaapkv@holly.lan>
+ <CAD=FV=V1eHo7Wz31DTMMNi394qwEaESTxJCYVE60Q7hpDEqRmQ@mail.gmail.com>
+In-Reply-To: <CAD=FV=V1eHo7Wz31DTMMNi394qwEaESTxJCYVE60Q7hpDEqRmQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
+On Wed, Oct 31, 2018 at 02:41:14PM -0700, Doug Anderson wrote:
+> > As mentioned in another part of the thread we can also add robustness
+> > by skipping a cpu where csd->flags != 0 (and adding an appropriately
+> > large comment regarding why). Doing the check directly is abusing
+> > internal knowledge that smp.c normally keeps to itself so an accessor
+> > of some kind would be needed.
+> 
+> Sure.  I could add smp_async_func_finished() that just looked like:
+> 
+> int smp_async_func_finished(call_single_data_t *csd)
+> {
+>   return !(csd->flags & CSD_FLAG_LOCK);
+> }
+> 
+> My understanding of all the mutual exclusion / memory barrier concepts
+> employed by smp.c is pretty weak, though.  I'm hoping that it's safe
+> to just access the structure and check the bit directly.
+> 
+> ...but do you think adding a generic accessor like this is better than
+> just keeping track of this in kgdb directly?  I could avoid the
+> accessor by adding a "rounding_up" member to "struct
+> debuggerinfo_struct" and doing something like this in roundup:
+> 
+>   /* If it didn't round up last time, don't try again */
+>   if (kgdb_info[cpu].rounding_up)
+>     continue
+> 
+>   kgdb_info[cpu].rounding_up = true
+>   smp_call_function_single_async(cpu, csd);
+> 
+> ...and then in kgdb_nmicallback() I could just add:
+> 
+>   kgdb_info[cpu].rounding_up = false
+> 
+> In that case we're not adding a generic accessor to smp.c that most
+> people should never use.
+
+Whilst it is very tempting to make a sarcastic reply here ("Of course! What
+kgdb really needs is yet another set of condition variables") I can't
+because I actually agree with the proposal. I don't really want kgdb to
+be too "special" especially when it doesn't need to be.
+
+Only thing to note is that rounding_up will not be manipulated within a
+common spin lock so you might have to invest a bit of thought to make
+sure any races between the master and slave as the slave CPU clears the
+flag are benign.
 
 
-On November 27, 2018 11:16:00 PM GMT+02:00, Stafford Horne <shorne@gmail.com> wrote:
->On Sun, Nov 25, 2018 at 11:44:36PM +0200, Mike Rapoport wrote:
->> The pte_alloc_one_kernel() function allocates a page using
->> __get_free_page(GFP_KERNEL) when mm initialization is complete and
->> memblock_phys_alloc() on the earlier stages. The physical address of
->the
->> page allocated with memblock_phys_alloc() is converted to the virtual
->> address and in the both cases the allocated page is cleared using
->> clear_page().
->> 
->> The code is simplified by replacing __get_free_page() with
->> get_zeroed_page() and by replacing memblock_phys_alloc() with
->> memblock_alloc().
->
->Hello Mike,
->
->This looks fine to me.  How do you plan to get this merged?  Will you
->be taking
->care of the whole series or so you want me to queue this openrisc part?
-
-I was thinking about merging via the -mm tree.
-Andrew, would that be ok?
-
->> Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
->
->Acked-by: Stafford Horne <shorne@gmail.com>
-
-Thanks!
-
->> ---
->>  arch/openrisc/mm/ioremap.c | 11 ++++-------
->>  1 file changed, 4 insertions(+), 7 deletions(-)
->> 
->> diff --git a/arch/openrisc/mm/ioremap.c b/arch/openrisc/mm/ioremap.c
->> index c969752..cfef989 100644
->> --- a/arch/openrisc/mm/ioremap.c
->> +++ b/arch/openrisc/mm/ioremap.c
->> @@ -123,13 +123,10 @@ pte_t __ref *pte_alloc_one_kernel(struct
->mm_struct *mm,
->>  {
->>  	pte_t *pte;
->>  
->> -	if (likely(mem_init_done)) {
->> -		pte = (pte_t *) __get_free_page(GFP_KERNEL);
->> -	} else {
->> -		pte = (pte_t *) __va(memblock_phys_alloc(PAGE_SIZE, PAGE_SIZE));
->> -	}
->> +	if (likely(mem_init_done))
->> +		pte = (pte_t *)get_zeroed_page(GFP_KERNEL);
->> +	else
->> +		pte = memblock_alloc(PAGE_SIZE, PAGE_SIZE);
->>  
->> -	if (pte)
->> -		clear_page(pte);
->>  	return pte;
->>  }
->> -- 
->> 2.7.4
->> 
-
--- 
-Sincerely yours,
-Mike.
+Daniel.
