@@ -1,34 +1,39 @@
-From: Vinod Koul <vkoul@kernel.org>
-Date: Thu, 29 Nov 2018 14:37:08 +0000
-Subject: Re: [PATCH v2] dmaengine: sh: Remove R-Mobile APE6 support
-Message-Id: <20181129142508.GJ3175@vkoul-mobl.Dlink>
+From: Mark Brown <broonie@kernel.org>
+Date: Tue, 06 Nov 2018 17:51:42 +0000
+Subject: [PATCH] sh: Provide prototypes for PCI I/O mapping in asm/io.h
+Message-Id: <20181106175142.27988-1-broonie@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20181129111839.12879-1-geert+renesas@glider.be>
-In-Reply-To: <20181129111839.12879-1-geert+renesas@glider.be>
+References: <20180912121207.16772-1-broonie@kernel.org>
+In-Reply-To: <20180912121207.16772-1-broonie@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Dan Williams <dan.j.williams@intel.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Wolfram Sang <wsa+renesas@sang-engineering.com>, Simon Horman <horms+renesas@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, dmaengine@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+Cc: arnd@arndb.de, akpm@linux-foundation.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Mark Brown <broonie@kernel.org>
 
-On 29-11-18, 12:18, Geert Uytterhoeven wrote:
-> Renesas R-Mobile APE6 support is currently unused:
->   - DMA slaves were never enabled in r8a73a4.dtsi,
->   - The driver relies on legacy filter matching and describing all
->     slaves and MID/RIDs in a table, unlike modern DMA engine drivers for
->     similar hardware like rcar-dmac,
->   - The driver doesn't seem to work well.
-> 
-> Remove the driver, it can be resurrected from git history when needed.
-> 
-> As this was the last user of SH_DMAE_BASE on Renesas ARM SoCs, the
-> sh-dma-engine driver core is now used on SuperH only.
-> 
-> Note that the DT bindings are still present, as r8a73a4.dtsi uses them.
+Most architectures provide prototypes for the PCI I/O mapping operations
+when asm/io.h is included but SH doesn't currently do that, leading to
+for example warnings in sound/pci/hda/patch_ca0132.c when pci_iomap() is
+used on current -next.  Make SH more consistent with other architectures
+by including asm-generic/pci_iomap.h in asm/io.h.
 
-Sorry but this doesnt apply for me, can you please rebase on topic/sh
-and resend.
+Reported-by: kbuild test robot <lkp@intel.com>
+Signed-off-by: Mark Brown <broonie@kernel.org>
+---
+ arch/sh/include/asm/io.h | 1 +
+ 1 file changed, 1 insertion(+)
 
-Thanks
+diff --git a/arch/sh/include/asm/io.h b/arch/sh/include/asm/io.h
+index 98cb8c802b1a..4f7f235f15f8 100644
+--- a/arch/sh/include/asm/io.h
++++ b/arch/sh/include/asm/io.h
+@@ -24,6 +24,7 @@
+ #define __IO_PREFIX     generic
+ #include <asm/io_generic.h>
+ #include <asm/io_trapped.h>
++#include <asm-generic/pci_iomap.h>
+ #include <mach/mangle-port.h>
+ 
+ #define __raw_writeb(v,a)	(__chk_io_ptr(a), *(volatile u8  __force *)(a) = (v))
 -- 
-~Vinod
+2.19.0.rc2
