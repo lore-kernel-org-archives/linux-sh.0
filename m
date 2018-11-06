@@ -1,207 +1,95 @@
-From: David Hildenbrand <david@redhat.com>
-Date: Fri, 30 Nov 2018 17:59:19 +0000
-Subject: [PATCH RFCv2 1/4] mm/memory_hotplug: Introduce memory block types
-Message-Id: <20181130175922.10425-2-david@redhat.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 06 Nov 2018 08:01:23 +0000
+Subject: Re: Build regressions/improvements in v4.20-rc1 (sound/pci/hda/patch_ca0132.c)
+Message-Id: <CAMuHMdViTrKqQzci3=YJzk2+kQKqbWcr0oaaR1ZQM_VqT33RvA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20181130175922.10425-1-david@redhat.com>
-In-Reply-To: <20181130175922.10425-1-david@redhat.com>
+References: <20181105220559.27458-1-geert@linux-m68k.org> <CAMuHMdWGpjvwunNWgFujPO9_j+=QiNsi346s4-xBF1g4DT5xZw@mail.gmail.com>
+ <80f2f98b-9ab1-2a1c-0962-63e3be1dd742@infradead.org>
+In-Reply-To: <80f2f98b-9ab1-2a1c-0962-63e3be1dd742@infradead.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-mm@kvack.org
-Cc: linux-kernel@vger.kernel.org, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-acpi@vger.kernel.org, devel@linuxdriverproject.org, xen-devel@lists.xenproject.org, x86@kernel.org, David Hildenbrand <david@redhat.com>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, "Rafael J. Wysocki" <rafael@kernel.org>, Andrew Morton <akpm@linux-foundation.org>, Ingo Molnar <mingo@kernel.org>, Pavel Tatashin <pasha.tatashin@oracle.com>, Stephen Rothwell <sfr@canb.auug.org.au>, Andrew Banman <andrew.banman@hpe.com>, "mike.travis@hpe.com" <mike.travis@hpe.com>, Oscar Salvador <osalvador@suse.com>, Dave Hansen <dave.hansen@linux.intel.com>, Michal Hocko <mhocko@kernel.org>, =?UTF-8?q?Michal=20Such=C3=A1nek?
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Randy Dunlap <rdunlap@infradead.org>
+Cc: Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, linux-s390 <linux-s390@vger.kernel.org>, ALSA Development Mailing List <alsa-devel@alsa-project.org>, linuxppc-dev <linuxppc-dev@lists.ozlabs.org>, Linux-sh list <linux-sh@vger.kernel.org>
 
-Memory onlining should always be handled by user space, because only user
-space knows which use cases it wants to satisfy. E.g. memory might be
-onlined to the MOVABLE zone even if it can never be removed from the
-system, e.g. to make usage of huge pages more reliable.
+Hi Randy,
 
-However to implement such rules (especially default rules in distributions)
-we need more information about the memory that was added in user space.
+On Tue, Nov 6, 2018 at 2:06 AM Randy Dunlap <rdunlap@infradead.org> wrote:
+> On 11/5/18 2:12 PM, Geert Uytterhoeven wrote:
+> > On Mon, Nov 5, 2018 at 11:07 PM Geert Uytterhoeven <geert@linux-m68k.org> wrote:
+> >> Below is the list of build error/warning regressions/improvements in
+> >> v4.20-rc1[1] compared to v4.19[2].
+> >>
+> >> Summarized:
+> >>   - build errors: +3/-0
+> >>   - build warnings: +449/-2712
+> >>
+> >> Happy fixing! ;-)
+> >>
+> >> Thanks to the linux-next team for providing the build service.
+> >>
+> >> [1] http://kisskb.ellerman.id.au/kisskb/branch/linus/head/651022382c7f8da46cb4872a545ee1da6d097d2a/ (all 240 configs)
+> >> [2] http://kisskb.ellerman.id.au/kisskb/branch/linus/head/84df9525b0c27f3ebc2ebb1864fa62a97fdedb7d/ (all 240 configs)
+> >>
+> >>
+> >> *** ERRORS ***
+> >>
+> >>   + /kisskb/src/sound/pci/hda/patch_ca0132.c: error: implicit declaration of function 'pci_iomap' [-Werror=implicit-function-declaration]:  => 8799:3
+> >
+> > sh4-all{mod,yes}config
+> >
+> > Looks like d9b84a15892c0233 ("ALSA: hda: Fix implicit definition of
+> > pci_iomap() on SH")
+> > is not sufficient?
+>
+> Different problem.  This is about "select":
+>
+> config SND_SOC_ALL_CODECS
+>         tristate "Build all ASoC CODEC drivers"
+>
+> That enables (sets):
+>         select SND_SOC_HDAC_HDA
+> which selects SND_HDA even though CONFIG_PCI is not enabled.
+>
+> After SND_HDA is selected (above), the Kconfig symbols in
+> sound/pci/hda/Kconfig are available for enabling, so
+> SND_HDA_CODEC_CA0132 is enabled but will not build.
 
-E.g. on x86 we want to online memory provided by balloon devices (e.g.
-XEN, Hyper-V) differently (-> will not be unplugged by offlining the whole
-block) than ordinary DIMMs (-> might eventually be unplugged by offlining
-the whole block). This might also become relevat for other architectures.
+Thanks for looking into this!
 
-Also, udev rules right now check if running on s390x and treat all added
-memory blocks as standby memory (-> don't online automatically). As soon as
-we support other memory hotplug mechanism (e.g. virtio-mem) checks would
-have to get more involved (e.g. also check if under KVM) but eventually
-also wrong (e.g. if KVM ever supports standby memory we are doomed).
+> One simple solution (but possibly too naive) is:
+>
+> ---
+>  sound/soc/codecs/Kconfig |    2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+>
+> --- lnx-420-rc1.orig/sound/soc/codecs/Kconfig
+> +++ lnx-420-rc1/sound/soc/codecs/Kconfig
+> @@ -82,7 +82,7 @@ config SND_SOC_ALL_CODECS
+>         select SND_SOC_ES7241
+>         select SND_SOC_GTM601
+>         select SND_SOC_HDAC_HDMI
+> -       select SND_SOC_HDAC_HDA
+> +       select SND_SOC_HDAC_HDA if PCI
+>         select SND_SOC_ICS43432
+>         select SND_SOC_INNO_RK3036
+>         select SND_SOC_ISABELLE if I2C
 
-I decided to allow to specify the type of memory that is getting added
-to the system. Let's start with two types, BOOT and UNSPECIFIED to get the
-basic infrastructure running. We'll introduce and use further types in
-follow-up patches. For now we classify any hotplugged memory temporarily
-as as UNSPECIFIED (which will eventually be dropped later on).
+I guess that will work. There are already plenty of "select foo if bar" lines.
+However, looking at what else can enable SND_HDA, I think it should be
 
-Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-Cc: "Rafael J. Wysocki" <rafael@kernel.org>
-Cc: Andrew Morton <akpm@linux-foundation.org>
-Cc: Ingo Molnar <mingo@kernel.org>
-Cc: Pavel Tatashin <pasha.tatashin@oracle.com>
-Cc: Stephen Rothwell <sfr@canb.auug.org.au>
-Cc: Andrew Banman <andrew.banman@hpe.com>
-Cc: "mike.travis@hpe.com" <mike.travis@hpe.com>
-Cc: Oscar Salvador <osalvador@suse.com>
-Cc: Dave Hansen <dave.hansen@linux.intel.com>
-Cc: Michal Hocko <mhocko@kernel.org>
-Cc: Michal Such=C3=A1nek <msuchanek@suse.de>
-Cc: Vitaly Kuznetsov <vkuznets@redhat.com>
-Cc: Dan Williams <dan.j.williams@intel.com>
-Cc: Pavel Tatashin <pavel.tatashin@microsoft.com>
-Cc: Martin Schwidefsky <schwidefsky@de.ibm.com>
-Cc: Heiko Carstens <heiko.carstens@de.ibm.com>
-Signed-off-by: David Hildenbrand <david@redhat.com>
----
- drivers/base/memory.c  | 38 +++++++++++++++++++++++++++++++++++---
- include/linux/memory.h | 27 +++++++++++++++++++++++++++
- 2 files changed, 62 insertions(+), 3 deletions(-)
+    select SND_SOC_HDAC_HDA if SND_PCI || ARCH_TEGRA
 
-diff --git a/drivers/base/memory.c b/drivers/base/memory.c
-index 0c290f86ab20..17f2985c07c5 100644
---- a/drivers/base/memory.c
-+++ b/drivers/base/memory.c
-@@ -381,6 +381,29 @@ static ssize_t show_phys_device(struct device *dev,
- 	return sprintf(buf, "%d\n", mem->phys_device);
- }
-=20
-+static ssize_t type_show(struct device *dev, struct device_attribute *attr,
-+			 char *buf)
-+{
-+	struct memory_block *mem =3D to_memory_block(dev);
-+	ssize_t len =3D 0;
-+
-+	switch (mem->type) {
-+	case MEMORY_BLOCK_UNSPECIFIED:
-+		len =3D sprintf(buf, "unspecified\n");
-+		break;
-+	case MEMORY_BLOCK_BOOT:
-+		len =3D sprintf(buf, "boot\n");
-+		break;
-+	default:
-+		len =3D sprintf(buf, "ERROR-UNKNOWN-%ld\n",
-+				mem->state);
-+		WARN_ON(1);
-+		break;
-+	}
-+
-+	return len;
-+}
-+
- #ifdef CONFIG_MEMORY_HOTREMOVE
- static void print_allowed_zone(char *buf, int nid, unsigned long start_pfn,
- 		unsigned long nr_pages, int online_type,
-@@ -442,6 +465,7 @@ static DEVICE_ATTR(phys_index, 0444, show_mem_start_phy=
-s_index, NULL);
- static DEVICE_ATTR(state, 0644, show_mem_state, store_mem_state);
- static DEVICE_ATTR(phys_device, 0444, show_phys_device, NULL);
- static DEVICE_ATTR(removable, 0444, show_mem_removable, NULL);
-+static DEVICE_ATTR_RO(type);
-=20
- /*
-  * Block size attribute stuff
-@@ -620,6 +644,7 @@ static struct attribute *memory_memblk_attrs[] =3D {
- 	&dev_attr_state.attr,
- 	&dev_attr_phys_device.attr,
- 	&dev_attr_removable.attr,
-+	&dev_attr_type.attr,
- #ifdef CONFIG_MEMORY_HOTREMOVE
- 	&dev_attr_valid_zones.attr,
- #endif
-@@ -657,13 +682,17 @@ int register_memory(struct memory_block *memory)
- }
-=20
- static int init_memory_block(struct memory_block **memory,
--			     struct mem_section *section, unsigned long state)
-+			     struct mem_section *section, unsigned long state,
-+			     int type)
- {
- 	struct memory_block *mem;
- 	unsigned long start_pfn;
- 	int scn_nr;
- 	int ret =3D 0;
-=20
-+	if (type =3D MEMORY_BLOCK_NONE)
-+		return -EINVAL;
-+
- 	mem =3D kzalloc(sizeof(*mem), GFP_KERNEL);
- 	if (!mem)
- 		return -ENOMEM;
-@@ -675,6 +704,7 @@ static int init_memory_block(struct memory_block **memo=
-ry,
- 	mem->state =3D state;
- 	start_pfn =3D section_nr_to_pfn(mem->start_section_nr);
- 	mem->phys_device =3D arch_get_memory_phys_device(start_pfn);
-+	mem->type =3D type;
-=20
- 	ret =3D register_memory(mem);
-=20
-@@ -699,7 +729,8 @@ static int add_memory_block(int base_section_nr)
-=20
- 	if (section_count =3D 0)
- 		return 0;
--	ret =3D init_memory_block(&mem, __nr_to_section(section_nr), MEM_ONLINE);
-+	ret =3D init_memory_block(&mem, __nr_to_section(section_nr), MEM_ONLINE,
-+				MEMORY_BLOCK_BOOT);
- 	if (ret)
- 		return ret;
- 	mem->section_count =3D section_count;
-@@ -722,7 +753,8 @@ int hotplug_memory_register(int nid, struct mem_section=
- *section)
- 		mem->section_count++;
- 		put_device(&mem->dev);
- 	} else {
--		ret =3D init_memory_block(&mem, section, MEM_OFFLINE);
-+		ret =3D init_memory_block(&mem, section, MEM_OFFLINE,
-+					MEMORY_BLOCK_UNSPECIFIED);
- 		if (ret)
- 			goto out;
- 		mem->section_count++;
-diff --git a/include/linux/memory.h b/include/linux/memory.h
-index d75ec88ca09d..06268e96e0da 100644
---- a/include/linux/memory.h
-+++ b/include/linux/memory.h
-@@ -34,12 +34,39 @@ struct memory_block {
- 	int (*phys_callback)(struct memory_block *);
- 	struct device dev;
- 	int nid;			/* NID for this memory block */
-+	int type;			/* type of this memory block */
- };
-=20
- int arch_get_memory_phys_device(unsigned long start_pfn);
- unsigned long memory_block_size_bytes(void);
- int set_memory_block_size_order(unsigned int order);
-=20
-+/*
-+ * Memory block types allow user space to formulate rules if and how to
-+ * online memory blocks. The types are exposed to user space as text
-+ * strings in sysfs.
-+ *
-+ * MEMORY_BLOCK_NONE:
-+ *  No memory block is to be created (e.g. device memory). Not exposed to
-+ *  user space.
-+ *
-+ * MEMORY_BLOCK_UNSPECIFIED:
-+ *  The type of memory block was not further specified when adding the
-+ *  memory block.
-+ *
-+ * MEMORY_BLOCK_BOOT:
-+ *  This memory block was added during boot by the basic system. No
-+ *  specific device driver takes care of this memory block. This memory
-+ *  block type is onlined automatically by the kernel during boot and might
-+ *  later be managed by a different device driver, in which case the type
-+ *  might change.
-+ */
-+enum {
-+	MEMORY_BLOCK_NONE =3D 0,
-+	MEMORY_BLOCK_UNSPECIFIED,
-+	MEMORY_BLOCK_BOOT,
-+};
-+
- /* These states are exposed to userspace as text strings in sysfs */
- #define	MEM_ONLINE		(1<<0) /* exposed to userspace */
- #define	MEM_GOING_OFFLINE	(1<<1) /* exposed to userspace */
---=20
-2.17.2
+That still leaves the issue that pci_iomap() on SH should be an empty stub if
+PCI is not available, like on other architectures.
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+-- 
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
