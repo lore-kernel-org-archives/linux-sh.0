@@ -1,199 +1,42 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 08 Nov 2018 06:27:44 +0000
-Subject: [PATCH resend 07/13] sh: sh4: convert to SPDX identifiers
-Message-Id: <87a7mk148j.wl-kuninori.morimoto.gx@renesas.com>
+From: Logan Gunthorpe <logang@deltatee.com>
+Date: Wed, 07 Nov 2018 17:38:57 +0000
+Subject: [PATCH 0/2] Introduce common code for risc-v sparsemem support
+Message-Id: <20181107173859.24096-1-logang@deltatee.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org, linux-mm@kvack.org, linux-arch@vger.kernel.org, linux-riscv@lists.infradead.org, linux-arm-kernel@lists.infradead.org, linux-sh@vger.kernel.org, Andrew Morton <akpm@linux-foundation.org>
+Cc: Stephen Bates <sbates@raithlin.com>, Palmer Dabbelt <palmer@sifive.com>, Albert Ou <aou@eecs.berkeley.edu>, Christoph Hellwig <hch@lst.de>, Arnd Bergmann <arnd@arndb.de>, Logan Gunthorpe <logang@deltatee.com>
 
+These are the first two common patches in my series to introduce
+sparsemem support to RISC-V. The full series was posted last cycle
+here [1] and the latest version can be found here [2].
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+As recommended by Palmer, I'd like to get the changes to common code
+merged and then I will pursue the cleanups in the individual arches (arm,
+arm64, and sh) as well as adding the new feature to riscv.
 
-This patch updates license to use SPDX-License-Identifier
-instead of verbose license text,
-excepting ${LINUX}/arch/sh/kernel/cpu/sh4/softfloat.c
-which is not GPL license
+I would suggest we merge these two patches through Andrew's mm tree.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Reviewed-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/sh/kernel/cpu/sh4/clock-sh4-202.c | 5 +----
- arch/sh/kernel/cpu/sh4/clock-sh4.c     | 5 +----
- arch/sh/kernel/cpu/sh4/fpu.c           | 5 +----
- arch/sh/kernel/cpu/sh4/perf_event.c    | 5 +----
- arch/sh/kernel/cpu/sh4/probe.c         | 5 +----
- arch/sh/kernel/cpu/sh4/setup-sh4-202.c | 5 +----
- arch/sh/kernel/cpu/sh4/setup-sh7750.c  | 5 +----
- arch/sh/kernel/cpu/sh4/setup-sh7760.c  | 5 +----
- arch/sh/kernel/cpu/sh4/sq.c            | 5 +----
- 9 files changed, 9 insertions(+), 36 deletions(-)
+Thanks,
 
-diff --git a/arch/sh/kernel/cpu/sh4/clock-sh4-202.c b/arch/sh/kernel/cpu/sh4/clock-sh4-202.c
-index 4b5bab5..c1cdef7 100644
---- a/arch/sh/kernel/cpu/sh4/clock-sh4-202.c
-+++ b/arch/sh/kernel/cpu/sh4/clock-sh4-202.c
-@@ -1,13 +1,10 @@
-+// SPDX-License-Identifier: GPL-2.0
- /*
-  * arch/sh/kernel/cpu/sh4/clock-sh4-202.c
-  *
-  * Additional SH4-202 support for the clock framework
-  *
-  *  Copyright (C) 2005  Paul Mundt
-- *
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
-  */
- #include <linux/init.h>
- #include <linux/kernel.h>
-diff --git a/arch/sh/kernel/cpu/sh4/clock-sh4.c b/arch/sh/kernel/cpu/sh4/clock-sh4.c
-index 99e5ec8..ee3c553 100644
---- a/arch/sh/kernel/cpu/sh4/clock-sh4.c
-+++ b/arch/sh/kernel/cpu/sh4/clock-sh4.c
-@@ -1,3 +1,4 @@
-+// SPDX-License-Identifier: GPL-2.0
- /*
-  * arch/sh/kernel/cpu/sh4/clock-sh4.c
-  *
-@@ -11,10 +12,6 @@
-  *  Copyright (C) 2000  Philipp Rumpf <prumpf@tux.org>
-  *  Copyright (C) 2002, 2003, 2004  Paul Mundt
-  *  Copyright (C) 2002  M. R. Brown  <mrbrown@linux-sh.org>
-- *
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
-  */
- #include <linux/init.h>
- #include <linux/kernel.h>
-diff --git a/arch/sh/kernel/cpu/sh4/fpu.c b/arch/sh/kernel/cpu/sh4/fpu.c
-index 95fd2dcb..1ff56e5 100644
---- a/arch/sh/kernel/cpu/sh4/fpu.c
-+++ b/arch/sh/kernel/cpu/sh4/fpu.c
-@@ -1,10 +1,7 @@
-+// SPDX-License-Identifier: GPL-2.0
- /*
-  * Save/restore floating point context for signal handlers.
-  *
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
-- *
-  * Copyright (C) 1999, 2000  Kaz Kojima & Niibe Yutaka
-  * Copyright (C) 2006  ST Microelectronics Ltd. (denorm support)
-  *
-diff --git a/arch/sh/kernel/cpu/sh4/perf_event.c b/arch/sh/kernel/cpu/sh4/perf_event.c
-index fa4f724..db5847b 100644
---- a/arch/sh/kernel/cpu/sh4/perf_event.c
-+++ b/arch/sh/kernel/cpu/sh4/perf_event.c
-@@ -1,11 +1,8 @@
-+// SPDX-License-Identifier: GPL-2.0
- /*
-  * Performance events support for SH7750-style performance counters
-  *
-  *  Copyright (C) 2009  Paul Mundt
-- *
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
-  */
- #include <linux/kernel.h>
- #include <linux/init.h>
-diff --git a/arch/sh/kernel/cpu/sh4/probe.c b/arch/sh/kernel/cpu/sh4/probe.c
-index a521bcf..ef4dd62 100644
---- a/arch/sh/kernel/cpu/sh4/probe.c
-+++ b/arch/sh/kernel/cpu/sh4/probe.c
-@@ -1,3 +1,4 @@
-+// SPDX-License-Identifier: GPL-2.0
- /*
-  * arch/sh/kernel/cpu/sh4/probe.c
-  *
-@@ -5,10 +6,6 @@
-  *
-  * Copyright (C) 2001 - 2007  Paul Mundt
-  * Copyright (C) 2003  Richard Curnow
-- *
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
-  */
- #include <linux/init.h>
- #include <linux/io.h>
-diff --git a/arch/sh/kernel/cpu/sh4/setup-sh4-202.c b/arch/sh/kernel/cpu/sh4/setup-sh4-202.c
-index 2623f82..a40ef35 100644
---- a/arch/sh/kernel/cpu/sh4/setup-sh4-202.c
-+++ b/arch/sh/kernel/cpu/sh4/setup-sh4-202.c
-@@ -1,12 +1,9 @@
-+// SPDX-License-Identifier: GPL-2.0
- /*
-  * SH4-202 Setup
-  *
-  *  Copyright (C) 2006  Paul Mundt
-  *  Copyright (C) 2009  Magnus Damm
-- *
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
-  */
- #include <linux/platform_device.h>
- #include <linux/init.h>
-diff --git a/arch/sh/kernel/cpu/sh4/setup-sh7750.c b/arch/sh/kernel/cpu/sh4/setup-sh7750.c
-index 57d3068..b37bda6 100644
---- a/arch/sh/kernel/cpu/sh4/setup-sh7750.c
-+++ b/arch/sh/kernel/cpu/sh4/setup-sh7750.c
-@@ -1,12 +1,9 @@
-+// SPDX-License-Identifier: GPL-2.0
- /*
-  * SH7091/SH7750/SH7750S/SH7750R/SH7751/SH7751R Setup
-  *
-  *  Copyright (C) 2006  Paul Mundt
-  *  Copyright (C) 2006  Jamie Lenehan
-- *
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
-  */
- #include <linux/platform_device.h>
- #include <linux/init.h>
-diff --git a/arch/sh/kernel/cpu/sh4/setup-sh7760.c b/arch/sh/kernel/cpu/sh4/setup-sh7760.c
-index e51fe17..86845da 100644
---- a/arch/sh/kernel/cpu/sh4/setup-sh7760.c
-+++ b/arch/sh/kernel/cpu/sh4/setup-sh7760.c
-@@ -1,11 +1,8 @@
-+// SPDX-License-Identifier: GPL-2.0
- /*
-  * SH7760 Setup
-  *
-  *  Copyright (C) 2006  Paul Mundt
-- *
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
-  */
- #include <linux/platform_device.h>
- #include <linux/init.h>
-diff --git a/arch/sh/kernel/cpu/sh4/sq.c b/arch/sh/kernel/cpu/sh4/sq.c
-index 4ca78ed..934ff84 100644
---- a/arch/sh/kernel/cpu/sh4/sq.c
-+++ b/arch/sh/kernel/cpu/sh4/sq.c
-@@ -1,3 +1,4 @@
-+// SPDX-License-Identifier: GPL-2.0
- /*
-  * arch/sh/kernel/cpu/sh4/sq.c
-  *
-@@ -5,10 +6,6 @@
-  *
-  * Copyright (C) 2001 - 2006  Paul Mundt
-  * Copyright (C) 2001, 2002  M. R. Brown
-- *
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
-  */
- #include <linux/init.h>
- #include <linux/cpu.h>
--- 
-2.7.4
+Logan
+
+[1] https://lore.kernel.org/lkml/20181015175702.9036-1-logang@deltatee.com/T/#u
+[2] https://github.com/sbates130272/linux-p2pmem.git riscv-sparsemem-v3
+
+Logan Gunthorpe (2):
+  mm: Introduce common STRUCT_PAGE_MAX_SHIFT define
+  mm/sparse: add common helper to mark all memblocks present
+
+ arch/arm64/include/asm/memory.h |  9 ---------
+ arch/arm64/mm/init.c            |  8 --------
+ include/asm-generic/fixmap.h    |  1 +
+ include/linux/mm_types.h        |  5 +++++
+ include/linux/mmzone.h          |  6 ++++++
+ mm/sparse.c                     | 11 +++++++++++
+ 6 files changed, 23 insertions(+), 17 deletions(-)
+
+--
+2.19.0
