@@ -1,64 +1,73 @@
-From: Daniel Thompson <daniel.thompson@linaro.org>
-Date: Sat, 03 Nov 2018 10:45:03 +0000
+From: Doug Anderson <dianders@chromium.org>
+Date: Wed, 07 Nov 2018 01:04:39 +0000
 Subject: Re: [PATCH v2 2/2] kgdb: Fix kgdb_roundup_cpus() for arches who used smp_call_function()
-Message-Id: <20181103104503.eftn5btx7otgufro@holly.lan>
+Message-Id: <CAD=FV=XbSm48ttzXvvhTir9ViKA9T7Huiho3CNuzprqAVpHyJg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20181030221843.121254-1-dianders@chromium.org>
  <20181030221843.121254-3-dianders@chromium.org>
  <20181031184050.sd5opni3mznaapkv@holly.lan>
  <CAD=FV=V1eHo7Wz31DTMMNi394qwEaESTxJCYVE60Q7hpDEqRmQ@mail.gmail.com>
-In-Reply-To: <CAD=FV=V1eHo7Wz31DTMMNi394qwEaESTxJCYVE60Q7hpDEqRmQ@mail.gmail.com>
+ <20181103104503.eftn5btx7otgufro@holly.lan>
+In-Reply-To: <20181103104503.eftn5btx7otgufro@holly.lan>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Oct 31, 2018 at 02:41:14PM -0700, Doug Anderson wrote:
-> > As mentioned in another part of the thread we can also add robustness
-> > by skipping a cpu where csd->flags != 0 (and adding an appropriately
-> > large comment regarding why). Doing the check directly is abusing
-> > internal knowledge that smp.c normally keeps to itself so an accessor
-> > of some kind would be needed.
-> 
-> Sure.  I could add smp_async_func_finished() that just looked like:
-> 
-> int smp_async_func_finished(call_single_data_t *csd)
-> {
->   return !(csd->flags & CSD_FLAG_LOCK);
-> }
-> 
-> My understanding of all the mutual exclusion / memory barrier concepts
-> employed by smp.c is pretty weak, though.  I'm hoping that it's safe
-> to just access the structure and check the bit directly.
-> 
-> ...but do you think adding a generic accessor like this is better than
-> just keeping track of this in kgdb directly?  I could avoid the
-> accessor by adding a "rounding_up" member to "struct
-> debuggerinfo_struct" and doing something like this in roundup:
-> 
->   /* If it didn't round up last time, don't try again */
->   if (kgdb_info[cpu].rounding_up)
->     continue
-> 
->   kgdb_info[cpu].rounding_up = true
->   smp_call_function_single_async(cpu, csd);
-> 
-> ...and then in kgdb_nmicallback() I could just add:
-> 
->   kgdb_info[cpu].rounding_up = false
-> 
-> In that case we're not adding a generic accessor to smp.c that most
-> people should never use.
+Hi,
 
-Whilst it is very tempting to make a sarcastic reply here ("Of course! What
-kgdb really needs is yet another set of condition variables") I can't
-because I actually agree with the proposal. I don't really want kgdb to
-be too "special" especially when it doesn't need to be.
+On Sat, Nov 3, 2018 at 3:45 AM Daniel Thompson
+<daniel.thompson@linaro.org> wrote:
+>
+> On Wed, Oct 31, 2018 at 02:41:14PM -0700, Doug Anderson wrote:
+> > > As mentioned in another part of the thread we can also add robustness
+> > > by skipping a cpu where csd->flags != 0 (and adding an appropriately
+> > > large comment regarding why). Doing the check directly is abusing
+> > > internal knowledge that smp.c normally keeps to itself so an accessor
+> > > of some kind would be needed.
+> >
+> > Sure.  I could add smp_async_func_finished() that just looked like:
+> >
+> > int smp_async_func_finished(call_single_data_t *csd)
+> > {
+> >   return !(csd->flags & CSD_FLAG_LOCK);
+> > }
+> >
+> > My understanding of all the mutual exclusion / memory barrier concepts
+> > employed by smp.c is pretty weak, though.  I'm hoping that it's safe
+> > to just access the structure and check the bit directly.
+> >
+> > ...but do you think adding a generic accessor like this is better than
+> > just keeping track of this in kgdb directly?  I could avoid the
+> > accessor by adding a "rounding_up" member to "struct
+> > debuggerinfo_struct" and doing something like this in roundup:
+> >
+> >   /* If it didn't round up last time, don't try again */
+> >   if (kgdb_info[cpu].rounding_up)
+> >     continue
+> >
+> >   kgdb_info[cpu].rounding_up = true
+> >   smp_call_function_single_async(cpu, csd);
+> >
+> > ...and then in kgdb_nmicallback() I could just add:
+> >
+> >   kgdb_info[cpu].rounding_up = false
+> >
+> > In that case we're not adding a generic accessor to smp.c that most
+> > people should never use.
+>
+> Whilst it is very tempting to make a sarcastic reply here ("Of course! What
+> kgdb really needs is yet another set of condition variables") I can't
+> because I actually agree with the proposal. I don't really want kgdb to
+> be too "special" especially when it doesn't need to be.
+>
+> Only thing to note is that rounding_up will not be manipulated within a
+> common spin lock so you might have to invest a bit of thought to make
+> sure any races between the master and slave as the slave CPU clears the
+> flag are benign.
 
-Only thing to note is that rounding_up will not be manipulated within a
-common spin lock so you might have to invest a bit of thought to make
-sure any races between the master and slave as the slave CPU clears the
-flag are benign.
+OK, so I've hopefully got all this thought through and posted v3.
+I've put most of my thoughts in the patch descriptions themselves so
+let's continue the discussion there.
 
-
-Daniel.
+-Doug
