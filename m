@@ -1,458 +1,103 @@
-From: David Hildenbrand <david@redhat.com>
-Date: Fri, 30 Nov 2018 17:59:21 +0000
-Subject: [PATCH RFCv2 3/4] mm/memory_hotplug: Introduce and use more memory types
-Message-Id: <20181130175922.10425-4-david@redhat.com>
+From: Logan Gunthorpe <logang@deltatee.com>
+Date: Wed, 07 Nov 2018 17:38:58 +0000
+Subject: [PATCH 1/2] mm: Introduce common STRUCT_PAGE_MAX_SHIFT define
+Message-Id: <20181107173859.24096-2-logang@deltatee.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20181130175922.10425-1-david@redhat.com>
-In-Reply-To: <20181130175922.10425-1-david@redhat.com>
+References: <20181107173859.24096-1-logang@deltatee.com>
+In-Reply-To: <20181107173859.24096-1-logang@deltatee.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-mm@kvack.org
-Cc: linux-kernel@vger.kernel.org, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-acpi@vger.kernel.org, devel@linuxdriverproject.org, xen-devel@lists.xenproject.org, x86@kernel.org, David Hildenbrand <david@redhat.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Michael Ellerman <mpe@ellerman.id.au>, "Rafael J. Wysocki" <rjw@rjwysocki.net>, Len Brown <lenb@kernel.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, "K. Y. Srinivasan" <kys@microsoft.com>, Haiyang Zhang <haiyangz@microsoft.com>, Stephen Hemminger <sthemmin@microsoft.com>, Martin Schwidefsky <schwidefsky@de.ibm.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, Boris Ostrovsky <boris.o>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-kernel@vger.kernel.org, linux-mm@kvack.org, linux-arch@vger.kernel.org, linux-riscv@lists.infradead.org, linux-arm-kernel@lists.infradead.org, linux-sh@vger.kernel.org, Andrew Morton <akpm@linux-foundation.org>
+Cc: Stephen Bates <sbates@raithlin.com>, Palmer Dabbelt <palmer@sifive.com>, Albert Ou <aou@eecs.berkeley.edu>, Christoph Hellwig <hch@lst.de>, Arnd Bergmann <arnd@arndb.de>, Logan Gunthorpe <logang@deltatee.com>, Catalin Marinas <catalin.marinas@arm.com>
 
-Let's introduce new types for different kinds of memory blocks and use
-them in existing code. As I don't see an easy way to split this up,
-do it in one hunk for now.
+This define is used by arm64 to calculate the size of the vmemmap
+region. It is defined as the log2 of the upper bound on the size
+of a struct page.
 
-acpi:
- Use DIMM or DIMM_UNREMOVABLE depending on hotremove support in the kernel.
- Properly change the type when trying to add memory that was already
- detected and used during boot (so this memory will correctly end up as
- "acpi" in user space).
+We move it into mm_types.h so it can be defined properly instead of
+set and checked with a build bug. This also allows us to use the same
+define for riscv.
 
-pseries:
- Use DIMM or DIMM_UNREMOVABLE depending on hotremove support in the kernel.
- As far as I see, handling like in the acpi case for existing blocks is
- not required.
-
-probed memory from user space:
- Use DIMM_UNREMOVABLE as there is no interface to get rid of this code
- again.
-
-hv_balloon,xen/balloon:
- Use BALLOON. As simple as that :)
-
-s390x/sclp:
- Use a dedicated type S390X_STANDBY as this type of memory and it's
- semantics are very s390x specific.
-
-powernv/memtrace:
- Only allow to use BOOT memory for memtrace. I consider this code in
- general dangerous, but we have to keep it working ... most probably just
- a debug feature.
-
-Cc: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-Cc: Paul Mackerras <paulus@samba.org>
-Cc: Michael Ellerman <mpe@ellerman.id.au>
-Cc: "Rafael J. Wysocki" <rjw@rjwysocki.net>
-Cc: Len Brown <lenb@kernel.org>
-Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-Cc: "K. Y. Srinivasan" <kys@microsoft.com>
-Cc: Haiyang Zhang <haiyangz@microsoft.com>
-Cc: Stephen Hemminger <sthemmin@microsoft.com>
-Cc: Martin Schwidefsky <schwidefsky@de.ibm.com>
-Cc: Heiko Carstens <heiko.carstens@de.ibm.com>
-Cc: Boris Ostrovsky <boris.ostrovsky@oracle.com>
-Cc: Juergen Gross <jgross@suse.com>
-Cc: Stefano Stabellini <sstabellini@kernel.org>
-Cc: Rashmica Gupta <rashmica.g@gmail.com>
+Signed-off-by: Logan Gunthorpe <logang@deltatee.com>
+Acked-by: Will Deacon <will.deacon@arm.com>
+Cc: Catalin Marinas <catalin.marinas@arm.com>
+Cc: Arnd Bergmann <arnd@arndb.de>
 Cc: Andrew Morton <akpm@linux-foundation.org>
-Cc: Pavel Tatashin <pavel.tatashin@microsoft.com>
-Cc: Balbir Singh <bsingharora@gmail.com>
-Cc: Michael Neuling <mikey@neuling.org>
-Cc: Nathan Fontenot <nfont@linux.vnet.ibm.com>
-Cc: YueHaibing <yuehaibing@huawei.com>
-Cc: Vasily Gorbik <gor@linux.ibm.com>
-Cc: Ingo Molnar <mingo@kernel.org>
-Cc: Stephen Rothwell <sfr@canb.auug.org.au>
-Cc: "mike.travis@hpe.com" <mike.travis@hpe.com>
-Cc: Oscar Salvador <osalvador@suse.de>
-Cc: Joonsoo Kim <iamjoonsoo.kim@lge.com>
-Cc: Mathieu Malaterre <malat@debian.org>
-Cc: Michal Hocko <mhocko@suse.com>
-Cc: Arun KS <arunks@codeaurora.org>
-Cc: Andrew Banman <andrew.banman@hpe.com>
-Cc: Dave Hansen <dave.hansen@linux.intel.com>
-Cc: Michal Such=C3=A1nek <msuchanek@suse.de>
-Cc: Vitaly Kuznetsov <vkuznets@redhat.com>
-Cc: Dan Williams <dan.j.williams@intel.com>
-Signed-off-by: David Hildenbrand <david@redhat.com>
-
+Cc: Christoph Hellwig <hch@lst.de>
 ---
+ arch/arm64/include/asm/memory.h | 9 ---------
+ arch/arm64/mm/init.c            | 8 --------
+ include/asm-generic/fixmap.h    | 1 +
+ include/linux/mm_types.h        | 5 +++++
+ 4 files changed, 6 insertions(+), 17 deletions(-)
 
-At first I tried to abstract the types quite a lot, but I think there
-are subtle differences that are worth differentiating. More details about
-the types can be found in the excessive documentation.
-
-It is wort noting that BALLOON_MOVABLE has no user yet, but I have
-something in mind that might want to make use of that (virtio-mem).
-Just included it to discuss the general approach. I can drop it from
-this patch.
----
- arch/powerpc/platforms/powernv/memtrace.c     |  9 ++--
- .../platforms/pseries/hotplug-memory.c        |  7 ++-
- drivers/acpi/acpi_memhotplug.c                | 16 ++++++-
- drivers/base/memory.c                         | 18 ++++++-
- drivers/hv/hv_balloon.c                       |  3 +-
- drivers/s390/char/sclp_cmd.c                  |  3 +-
- drivers/xen/balloon.c                         |  2 +-
- include/linux/memory.h                        | 47 ++++++++++++++++++-
- include/linux/memory_hotplug.h                |  6 +--
- mm/memory_hotplug.c                           | 15 +++---
- 10 files changed, 104 insertions(+), 22 deletions(-)
-
-diff --git a/arch/powerpc/platforms/powernv/memtrace.c b/arch/powerpc/platf=
-orms/powernv/memtrace.c
-index 248a38ad25c7..5d08db87091e 100644
---- a/arch/powerpc/platforms/powernv/memtrace.c
-+++ b/arch/powerpc/platforms/powernv/memtrace.c
-@@ -54,9 +54,9 @@ static const struct file_operations memtrace_fops =3D {
- 	.open	=3D simple_open,
- };
-=20
--static int check_memblock_online(struct memory_block *mem, void *arg)
-+static int check_memblock_boot_and_online(struct memory_block *mem, void *=
-arg)
- {
--	if (mem->state !=3D MEM_ONLINE)
-+	if (mem->type !=3D MEM_BLOCK_BOOT || mem->state !=3D MEM_ONLINE)
- 		return -1;
-=20
- 	return 0;
-@@ -77,7 +77,7 @@ static bool memtrace_offline_pages(u32 nid, u64 start_pfn=
-, u64 nr_pages)
- 	u64 end_pfn =3D start_pfn + nr_pages - 1;
-=20
- 	if (walk_memory_range(start_pfn, end_pfn, NULL,
--	    check_memblock_online))
-+	    check_memblock_boot_and_online))
- 		return false;
-=20
- 	walk_memory_range(start_pfn, end_pfn, (void *)MEM_GOING_OFFLINE,
-@@ -233,7 +233,8 @@ static int memtrace_online(void)
- 			ent->mem =3D 0;
- 		}
-=20
--		if (add_memory(ent->nid, ent->start, ent->size)) {
-+		if (add_memory(ent->nid, ent->start, ent->size,
-+			       MEMORY_BLOCK_BOOT)) {
- 			pr_err("Failed to add trace memory to node %d\n",
- 				ent->nid);
- 			ret +=3D 1;
-diff --git a/arch/powerpc/platforms/pseries/hotplug-memory.c b/arch/powerpc=
-/platforms/pseries/hotplug-memory.c
-index 2a983b5a52e1..5f91359c7993 100644
---- a/arch/powerpc/platforms/pseries/hotplug-memory.c
-+++ b/arch/powerpc/platforms/pseries/hotplug-memory.c
-@@ -651,7 +651,7 @@ static int dlpar_memory_remove_by_ic(u32 lmbs_to_remove=
-, u32 drc_index)
- static int dlpar_add_lmb(struct drmem_lmb *lmb)
- {
- 	unsigned long block_sz;
--	int nid, rc;
-+	int nid, rc, type =3D MEMORY_BLOCK_DIMM;
-=20
- 	if (lmb->flags & DRCONF_MEM_ASSIGNED)
- 		return -EINVAL;
-@@ -667,8 +667,11 @@ static int dlpar_add_lmb(struct drmem_lmb *lmb)
- 	/* Find the node id for this address */
- 	nid =3D memory_add_physaddr_to_nid(lmb->base_addr);
-=20
-+	if (!IS_ENABLED(CONFIG_MEMORY_HOTREMOVE))
-+		type =3D MEMORY_BLOCK_DIMM_UNREMOVABLE;
-+
- 	/* Add the memory */
--	rc =3D __add_memory(nid, lmb->base_addr, block_sz);
-+	rc =3D __add_memory(nid, lmb->base_addr, block_sz, type);
- 	if (rc) {
- 		invalidate_lmb_associativity_index(lmb);
- 		return rc;
-diff --git a/drivers/acpi/acpi_memhotplug.c b/drivers/acpi/acpi_memhotplug.c
-index 8fe0960ea572..f841113b450d 100644
---- a/drivers/acpi/acpi_memhotplug.c
-+++ b/drivers/acpi/acpi_memhotplug.c
-@@ -177,6 +177,13 @@ static unsigned long acpi_meminfo_end_pfn(struct acpi_=
-memory_info *info)
-=20
- static int acpi_bind_memblk(struct memory_block *mem, void *arg)
- {
-+	/* switch the type of memory block if this memory was already present */
-+	if (mem->type =3D MEMORY_BLOCK_BOOT) {
-+		if (IS_ENABLED(CONFIG_MEMORY_HOTREMOVE))
-+			mem->type =3D MEMORY_BLOCK_DIMM;
-+		else
-+			mem->type =3D MEMORY_BLOCK_DIMM_UNREMOVABLE;
-+	}
- 	return acpi_bind_one(&mem->dev, arg);
- }
-=20
-@@ -191,6 +198,7 @@ static int acpi_bind_memory_blocks(struct acpi_memory_i=
-nfo *info,
- static int acpi_unbind_memblk(struct memory_block *mem, void *arg)
- {
- 	acpi_unbind_one(&mem->dev);
-+	mem->type =3D MEMORY_BLOCK_BOOT;
- 	return 0;
- }
-=20
-@@ -203,10 +211,13 @@ static void acpi_unbind_memory_blocks(struct acpi_mem=
-ory_info *info)
- static int acpi_memory_enable_device(struct acpi_memory_device *mem_device)
- {
- 	acpi_handle handle =3D mem_device->device->handle;
--	int result, num_enabled =3D 0;
-+	int result, num_enabled =3D 0, type =3D MEMORY_BLOCK_DIMM;
- 	struct acpi_memory_info *info;
- 	int node;
-=20
-+	if (!IS_ENABLED(CONFIG_MEMORY_HOTREMOVE))
-+		type =3D MEMORY_BLOCK_DIMM_UNREMOVABLE;
-+
- 	node =3D acpi_get_node(handle);
- 	/*
- 	 * Tell the VM there is more memory here...
-@@ -228,7 +239,8 @@ static int acpi_memory_enable_device(struct acpi_memory=
-_device *mem_device)
- 		if (node < 0)
- 			node =3D memory_add_physaddr_to_nid(info->start_addr);
-=20
--		result =3D __add_memory(node, info->start_addr, info->length);
-+		result =3D __add_memory(node, info->start_addr, info->length,
-+				      type);
-=20
+diff --git a/arch/arm64/include/asm/memory.h b/arch/arm64/include/asm/memory.h
+index b96442960aea..f0a5c9531e8b 100644
+--- a/arch/arm64/include/asm/memory.h
++++ b/arch/arm64/include/asm/memory.h
+@@ -34,15 +34,6 @@
+  */
+ #define PCI_IO_SIZE		SZ_16M
+ 
+-/*
+- * Log2 of the upper bound of the size of a struct page. Used for sizing
+- * the vmemmap region only, does not affect actual memory footprint.
+- * We don't use sizeof(struct page) directly since taking its size here
+- * requires its definition to be available at this point in the inclusion
+- * chain, and it may not be a power of 2 in the first place.
+- */
+-#define STRUCT_PAGE_MAX_SHIFT	6
+-
+ /*
+  * VMEMMAP_SIZE - allows the whole linear region to be covered by
+  *                a struct page array
+diff --git a/arch/arm64/mm/init.c b/arch/arm64/mm/init.c
+index 9d9582cac6c4..1a3e411a1d08 100644
+--- a/arch/arm64/mm/init.c
++++ b/arch/arm64/mm/init.c
+@@ -612,14 +612,6 @@ void __init mem_init(void)
+ 	BUILD_BUG_ON(TASK_SIZE_32			> TASK_SIZE_64);
+ #endif
+ 
+-#ifdef CONFIG_SPARSEMEM_VMEMMAP
+-	/*
+-	 * Make sure we chose the upper bound of sizeof(struct page)
+-	 * correctly when sizing the VMEMMAP array.
+-	 */
+-	BUILD_BUG_ON(sizeof(struct page) > (1 << STRUCT_PAGE_MAX_SHIFT));
+-#endif
+-
+ 	if (PAGE_SIZE >= 16384 && get_num_physpages() <= 128) {
+ 		extern int sysctl_overcommit_memory;
  		/*
- 		 * If the memory block has been used by the kernel, add_memory()
-diff --git a/drivers/base/memory.c b/drivers/base/memory.c
-index c42300082c88..c5fdca7a3009 100644
---- a/drivers/base/memory.c
-+++ b/drivers/base/memory.c
-@@ -394,6 +394,21 @@ static ssize_t type_show(struct device *dev, struct de=
-vice_attribute *attr,
- 	case MEMORY_BLOCK_BOOT:
- 		len =3D sprintf(buf, "boot\n");
- 		break;
-+	case MEMORY_BLOCK_DIMM:
-+		len =3D sprintf(buf, "dimm\n");
-+		break;
-+	case MEMORY_BLOCK_DIMM_UNREMOVABLE:
-+		len =3D sprintf(buf, "dimm-unremovable\n");
-+		break;
-+	case MEMORY_BLOCK_BALLOON:
-+		len =3D sprintf(buf, "balloon\n");
-+		break;
-+	case MEMORY_BLOCK_BALLOON_MOVABLE:
-+		len =3D sprintf(buf, "balloon-movable\n");
-+		break;
-+	case MEMORY_BLOCK_S390X_STANDBY:
-+		len =3D sprintf(buf, "s390x-standby\n");
-+		break;
- 	default:
- 		len =3D sprintf(buf, "ERROR-UNKNOWN-%ld\n",
- 				mem->state);
-@@ -538,7 +553,8 @@ memory_probe_store(struct device *dev, struct device_at=
-tribute *attr,
-=20
- 	nid =3D memory_add_physaddr_to_nid(phys_addr);
- 	ret =3D __add_memory(nid, phys_addr,
--			   MIN_MEMORY_BLOCK_SIZE * sections_per_block);
-+			   MIN_MEMORY_BLOCK_SIZE * sections_per_block,
-+			   MEMORY_BLOCK_DIMM_UNREMOVABLE);
-=20
- 	if (ret)
- 		goto out;
-diff --git a/drivers/hv/hv_balloon.c b/drivers/hv/hv_balloon.c
-index 47719862e57f..f502ea6cd255 100644
---- a/drivers/hv/hv_balloon.c
-+++ b/drivers/hv/hv_balloon.c
-@@ -741,7 +741,8 @@ static void hv_mem_hot_add(unsigned long start, unsigne=
-d long size,
-=20
- 		nid =3D memory_add_physaddr_to_nid(PFN_PHYS(start_pfn));
- 		ret =3D add_memory(nid, PFN_PHYS((start_pfn)),
--				(HA_CHUNK << PAGE_SHIFT));
-+				 (HA_CHUNK << PAGE_SHIFT),
-+				 MEMORY_BLOCK_BALLOON);
-=20
- 		if (ret) {
- 			pr_err("hot_add memory failed error is %d\n", ret);
-diff --git a/drivers/s390/char/sclp_cmd.c b/drivers/s390/char/sclp_cmd.c
-index 37d42de06079..0ca6f77e7e1d 100644
---- a/drivers/s390/char/sclp_cmd.c
-+++ b/drivers/s390/char/sclp_cmd.c
-@@ -406,7 +406,8 @@ static void __init add_memory_merged(u16 rn)
- 	if (!size)
- 		goto skip_add;
- 	for (addr =3D start; addr < start + size; addr +=3D block_size)
--		add_memory(numa_pfn_to_nid(PFN_DOWN(addr)), addr, block_size);
-+		add_memory(numa_pfn_to_nid(PFN_DOWN(addr)), addr, block_size,
-+			   MEMORY_BLOCK_S390X_STANDBY);
- skip_add:
- 	first_rn =3D rn;
- 	num =3D 1;
-diff --git a/drivers/xen/balloon.c b/drivers/xen/balloon.c
-index 5d2d7a917b4e..953ff86d609b 100644
---- a/drivers/xen/balloon.c
-+++ b/drivers/xen/balloon.c
-@@ -352,7 +352,7 @@ static enum bp_state reserve_additional_memory(void)
- 	mutex_unlock(&balloon_mutex);
- 	/* add_memory_resource() requires the device_hotplug lock */
- 	lock_device_hotplug();
--	rc =3D add_memory_resource(nid, resource);
-+	rc =3D add_memory_resource(nid, resource, MEMORY_BLOCK_BALLOON);
- 	unlock_device_hotplug();
- 	mutex_lock(&balloon_mutex);
-=20
-diff --git a/include/linux/memory.h b/include/linux/memory.h
-index 9f39ef41e6d2..a3a1e9764805 100644
---- a/include/linux/memory.h
-+++ b/include/linux/memory.h
-@@ -59,12 +59,57 @@ int set_memory_block_size_order(unsigned int order);
-  *  specific device driver takes care of this memory block. This memory
-  *  block type is onlined automatically by the kernel during boot and might
-  *  later be managed by a different device driver, in which case the type
-- *  might change.
-+ *  might change (e.g. to MEMORY_BLOCK_DIMM).
-+ *
-+ * MEMORY_BLOCK_DIMM:
-+ *  This memory block is managed by a device driver taking care of DIMMs
-+ *  (or similar). Once all memory blocks belonging to the DIMM have been
-+ *  offlined, the DIMM along with the memory blocks can be removed to
-+ *  effectively unplug it. This memory block type is usually onlined to the
-+ *  MOVABLE zone, to make offlining and unplug possible. Examples include
-+ *  ACPI DIMMs and PPC LMBs if the kernel supports removal of memory.
-+ *
-+ * MEMORY_BLOCK_DIMM_UNREMOVABLE:
-+ *  This memory block is managed by a device driver taking care of DIMMs
-+ *  (or similar). There is either no HW interface to remove the DIMM or
-+ *  the kernel does not support offlining/removal of memory, so this memory
-+ *  block can never be removed. Examples include ACPI DIMMs and PPC LMBs
-+ *  when removal of memory is not supported by the kernel, as well as
-+ *  memory probed manually from user space.
-+ *  This memory block type is usually onlined to the NORMAL zone.
-+ *
-+ * MEMORY_BLOCK_BALLOON:
-+ *  This memory block was added by a balloon device driver (or similar)
-+ *  that does not require a specific zone for optimal operation
-+ *  (e.g. unplug memory using balloon inflation on this memory block on
-+ *  page granularity). Examples include memory added by the XEN and Hyper-V
-+ *  balloon driver.
-+ *  This memory block type is usually onlined to the NORMAL zone.
-+ *
-+ * MEMORY_BLOCK_BALLOON_MOVABLE:
-+ *  This memory block was added by a balloon device driver (or similar)
-+ *  that suggests to online this memory block to the MOVABLE zone for
-+ *  optimal operation (a.g. unplug using balloon inflation on this memory
-+ *  block in bigger chunks than pages). There are no examples yet.
-+ *  This memory block type is usually onlined to the MOVABLE zone.
-+ *
-+ * MEMORY_BLOCK_S390X_STANDBY:
-+ *  The memory block is special standby memory on s390x. As long as
-+ *  offline, no memory will be allocated to the system for this memory
-+ *  block. Onlining memory will result in memory getting allocated to the
-+ *  system and memory can usually not be offlined again. The memory block
-+ *  will never be removed. This memory type is usually not onlined
-+ *  automatically but explicitly by the administrator.
-  */
- enum {
- 	MEMORY_BLOCK_NONE =3D 0,
- 	MEMORY_BLOCK_UNSPECIFIED,
- 	MEMORY_BLOCK_BOOT,
-+	MEMORY_BLOCK_DIMM,
-+	MEMORY_BLOCK_DIMM_UNREMOVABLE,
-+	MEMORY_BLOCK_BALLOON,
-+	MEMORY_BLOCK_BALLOON_MOVABLE,
-+	MEMORY_BLOCK_S390X_STANDBY,
- };
-=20
- /* These states are exposed to userspace as text strings in sysfs */
-diff --git a/include/linux/memory_hotplug.h b/include/linux/memory_hotplug.h
-index 667a37aa9a3c..7c8895299e8c 100644
---- a/include/linux/memory_hotplug.h
-+++ b/include/linux/memory_hotplug.h
-@@ -326,9 +326,9 @@ static inline void __remove_memory(int nid, u64 start, =
-u64 size) {}
- extern void __ref free_area_init_core_hotplug(int nid);
- extern int walk_memory_range(unsigned long start_pfn, unsigned long end_pf=
-n,
- 		void *arg, int (*func)(struct memory_block *, void *));
--extern int __add_memory(int nid, u64 start, u64 size);
--extern int add_memory(int nid, u64 start, u64 size);
--extern int add_memory_resource(int nid, struct resource *resource);
-+extern int __add_memory(int nid, u64 start, u64 size, int type);
-+extern int add_memory(int nid, u64 start, u64 size, int type);
-+extern int add_memory_resource(int nid, struct resource *resource, int typ=
-e);
- extern int arch_add_memory(int nid, u64 start, u64 size,
- 			   struct vmem_altmap *altmap, int type);
- extern void move_pfn_range_to_zone(struct zone *zone, unsigned long start_=
-pfn,
-diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
-index 7246faa44488..f109002d6e6e 100644
---- a/mm/memory_hotplug.c
-+++ b/mm/memory_hotplug.c
-@@ -1071,7 +1071,7 @@ static int online_memory_block(struct memory_block *m=
-em, void *arg)
-  *
-  * we are OK calling __meminit stuff here - we have CONFIG_MEMORY_HOTPLUG
-  */
--int __ref add_memory_resource(int nid, struct resource *res)
-+int __ref add_memory_resource(int nid, struct resource *res, int type)
- {
- 	u64 start, size;
- 	bool new_node =3D false;
-@@ -1080,6 +1080,9 @@ int __ref add_memory_resource(int nid, struct resourc=
-e *res)
- 	start =3D res->start;
- 	size =3D resource_size(res);
-=20
-+	if (type =3D MEMORY_BLOCK_NONE)
-+		return -EINVAL;
+diff --git a/include/asm-generic/fixmap.h b/include/asm-generic/fixmap.h
+index 827e4d3bbc7a..8cc7b09c1bc7 100644
+--- a/include/asm-generic/fixmap.h
++++ b/include/asm-generic/fixmap.h
+@@ -16,6 +16,7 @@
+ #define __ASM_GENERIC_FIXMAP_H
+ 
+ #include <linux/bug.h>
++#include <linux/mm_types.h>
+ 
+ #define __fix_to_virt(x)	(FIXADDR_TOP - ((x) << PAGE_SHIFT))
+ #define __virt_to_fix(x)	((FIXADDR_TOP - ((x)&PAGE_MASK)) >> PAGE_SHIFT)
+diff --git a/include/linux/mm_types.h b/include/linux/mm_types.h
+index 5ed8f6292a53..2c471a2c43fa 100644
+--- a/include/linux/mm_types.h
++++ b/include/linux/mm_types.h
+@@ -206,6 +206,11 @@ struct page {
+ #endif
+ } _struct_page_alignment;
+ 
++/*
++ * Used for sizing the vmemmap region on some architectures
++ */
++#define STRUCT_PAGE_MAX_SHIFT	(order_base_2(sizeof(struct page)))
 +
- 	ret =3D check_hotplug_memory_range(start, size);
- 	if (ret)
- 		return ret;
-@@ -1100,7 +1103,7 @@ int __ref add_memory_resource(int nid, struct resourc=
-e *res)
- 	new_node =3D ret;
-=20
- 	/* call arch's memory hotadd */
--	ret =3D arch_add_memory(nid, start, size, NULL, MEMORY_TYPE_UNSPECIFIED);
-+	ret =3D arch_add_memory(nid, start, size, NULL, type);
- 	if (ret < 0)
- 		goto error;
-=20
-@@ -1141,7 +1144,7 @@ int __ref add_memory_resource(int nid, struct resourc=
-e *res)
- }
-=20
- /* requires device_hotplug_lock, see add_memory_resource() */
--int __ref __add_memory(int nid, u64 start, u64 size)
-+int __ref __add_memory(int nid, u64 start, u64 size, int type)
- {
- 	struct resource *res;
- 	int ret;
-@@ -1150,18 +1153,18 @@ int __ref __add_memory(int nid, u64 start, u64 size)
- 	if (IS_ERR(res))
- 		return PTR_ERR(res);
-=20
--	ret =3D add_memory_resource(nid, res);
-+	ret =3D add_memory_resource(nid, res, type);
- 	if (ret < 0)
- 		release_memory_resource(res);
- 	return ret;
- }
-=20
--int add_memory(int nid, u64 start, u64 size)
-+int add_memory(int nid, u64 start, u64 size, int type)
- {
- 	int rc;
-=20
- 	lock_device_hotplug();
--	rc =3D __add_memory(nid, start, size);
-+	rc =3D __add_memory(nid, start, size, type);
- 	unlock_device_hotplug();
-=20
- 	return rc;
---=20
-2.17.2
+ #define PAGE_FRAG_CACHE_MAX_SIZE	__ALIGN_MASK(32768, ~PAGE_MASK)
+ #define PAGE_FRAG_CACHE_MAX_ORDER	get_order(PAGE_FRAG_CACHE_MAX_SIZE)
+ 
+-- 
+2.19.0
