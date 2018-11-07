@@ -1,54 +1,72 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Tue, 06 Nov 2018 15:46:59 +0000
-Subject: Re: [alsa-devel] Build regressions/improvements in v4.20-rc1 (sound/pci/hda/patch_ca0132.c)
-Message-Id: <20181106154659.GA31950@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="0OAP2g/MAC+5xKAE"
+From: Logan Gunthorpe <logang@deltatee.com>
+Date: Wed, 07 Nov 2018 17:38:59 +0000
+Subject: [PATCH 2/2] mm/sparse: add common helper to mark all memblocks present
+Message-Id: <20181107173859.24096-3-logang@deltatee.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20181105220559.27458-1-geert@linux-m68k.org>
- <CAMuHMdWGpjvwunNWgFujPO9_j+=QiNsi346s4-xBF1g4DT5xZw@mail.gmail.com>
- <80f2f98b-9ab1-2a1c-0962-63e3be1dd742@infradead.org>
- <CAMuHMdViTrKqQzci3=YJzk2+kQKqbWcr0oaaR1ZQM_VqT33RvA@mail.gmail.com>
- <eccd20fa-5be3-957d-7905-9cc4021ba94e@linux.intel.com>
-In-Reply-To: <eccd20fa-5be3-957d-7905-9cc4021ba94e@linux.intel.com>
-To: Pierre-Louis Bossart <pierre-louis.bossart@linux.intel.com>
-Cc: linux-s390 <linux-s390@vger.kernel.org>, ALSA Development Mailing List <alsa-devel@alsa-project.org>, Linux-sh list <linux-sh@vger.kernel.org>, Randy Dunlap <rdunlap@infradead.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Geert Uytterhoeven <geert@linux-m68k.org>, linuxppc-dev <linuxppc-dev@lists.ozlabs.org>
+References: <20181107173859.24096-1-logang@deltatee.com>
+In-Reply-To: <20181107173859.24096-1-logang@deltatee.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-kernel@vger.kernel.org, linux-mm@kvack.org, linux-arch@vger.kernel.org, linux-riscv@lists.infradead.org, linux-arm-kernel@lists.infradead.org, linux-sh@vger.kernel.org, Andrew Morton <akpm@linux-foundation.org>
+Cc: Stephen Bates <sbates@raithlin.com>, Palmer Dabbelt <palmer@sifive.com>, Albert Ou <aou@eecs.berkeley.edu>, Christoph Hellwig <hch@lst.de>, Arnd Bergmann <arnd@arndb.de>, Logan Gunthorpe <logang@deltatee.com>, Michal Hocko <mhocko@suse.com>, Vlastimil Babka <vbabka@suse.cz>, Oscar Salvador <osalvador@suse.de>
 
+Presently the arches arm64, arm and sh have a function which loops through
+each memblock and calls memory present. riscv will require a similar
+function.
 
---0OAP2g/MAC+5xKAE
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Introduce a common memblocks_present() function that can be used by
+all the arches. Subsequent patches will cleanup the arches that
+make use of this.
 
-On Tue, Nov 06, 2018 at 08:56:39AM -0600, Pierre-Louis Bossart wrote:
+Signed-off-by: Logan Gunthorpe <logang@deltatee.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>
+Cc: Michal Hocko <mhocko@suse.com>
+Cc: Vlastimil Babka <vbabka@suse.cz>
+Cc: Oscar Salvador <osalvador@suse.de>
+---
+ include/linux/mmzone.h |  6 ++++++
+ mm/sparse.c            | 11 +++++++++++
+ 2 files changed, 17 insertions(+)
 
-> > However, looking at what else can enable SND_HDA, I think it should be
-
-> >      select SND_SOC_HDAC_HDA if SND_PCI || ARCH_TEGRA
-
-> This codec can only be used by the Skylake driver (and the upcoming SOF
-> one). For Tegra this module will never be used unless they follow the same
-> path of enabling ASoC to deal with the HDaudio codecs instead of the legacy.
-
-> Likewise HDAC_HDMI will only work on Intel platforms for now.
-
-_ALL_CODECS is a build coverage option, not a useful configuration
-option.  We should be building things in as many different
-configurations as possible so that it's easier for people to get build
-coverage when making subsystem wide changes.
-
---0OAP2g/MAC+5xKAE
-Content-Type: application/pgp-signature; name="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAABCgAdFiEEreZoqmdXGLWf4p/qJNaLcl1Uh9AFAlvht3EACgkQJNaLcl1U
-h9Deagf+OnHg8fBz8mKu9ehkKNp8xTUnAUdpPtoS0edsuI0QuH1I5WbIs6F3Ro58
-cxf6scOiMI7R0/qne0h0ReQbOudbh0mT0aCBL1UP77FGvWhkgpJF8CkJP5Hwl+MB
-eFtQe4CE0IfCXtzbfhg+RZ22OkUmJ4Rgdue5yqS7fPHswqQb/7zMGXZpKYGHuJx5
-T1Dhj5dnKqI7pS8lThDzcA/ZtkBbST4aN+Zv1RvI9ew6pVMrYWq30QSohmx2+qTs
-A9ESsst56DEvX8RSIZcsqMNejmuXFIQ4L7dqyIjS/9FjLoG1fp5SUkSOd4p6NHoo
-BBLuGM/ddEXdoSs7PJGNuK+CihZHtA==
-=wMGV
------END PGP SIGNATURE-----
-
---0OAP2g/MAC+5xKAE--
+diff --git a/include/linux/mmzone.h b/include/linux/mmzone.h
+index 847705a6d0ec..db023a92f3a4 100644
+--- a/include/linux/mmzone.h
++++ b/include/linux/mmzone.h
+@@ -783,6 +783,12 @@ void memory_present(int nid, unsigned long start, unsigned long end);
+ static inline void memory_present(int nid, unsigned long start, unsigned long end) {}
+ #endif
+ 
++#if defined(CONFIG_SPARSEMEM)
++void memblocks_present(void);
++#else
++static inline void memblocks_present(void) {}
++#endif
++
+ #ifdef CONFIG_HAVE_MEMORYLESS_NODES
+ int local_memory_node(int node_id);
+ #else
+diff --git a/mm/sparse.c b/mm/sparse.c
+index 33307fc05c4d..5841e4ad6d93 100644
+--- a/mm/sparse.c
++++ b/mm/sparse.c
+@@ -239,6 +239,17 @@ void __init memory_present(int nid, unsigned long start, unsigned long end)
+ 	}
+ }
+ 
++void __init memblocks_present(void)
++{
++	struct memblock_region *reg;
++
++	for_each_memblock(memory, reg) {
++		memory_present(memblock_get_region_node(reg),
++			       memblock_region_memory_base_pfn(reg),
++			       memblock_region_memory_end_pfn(reg));
++	}
++}
++
+ /*
+  * Subtle, we encode the real pfn into the mem_map such that
+  * the identity pfn - section_mem_map will return the actual
+-- 
+2.19.0
