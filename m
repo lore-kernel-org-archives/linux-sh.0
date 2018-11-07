@@ -1,72 +1,54 @@
-From: Logan Gunthorpe <logang@deltatee.com>
-Date: Wed, 07 Nov 2018 17:38:59 +0000
-Subject: [PATCH 2/2] mm/sparse: add common helper to mark all memblocks present
-Message-Id: <20181107173859.24096-3-logang@deltatee.com>
+From: Andrew Morton <akpm@linux-foundation.org>
+Date: Wed, 07 Nov 2018 20:12:07 +0000
+Subject: Re: [PATCH 2/2] mm/sparse: add common helper to mark all memblocks present
+Message-Id: <20181107121207.62cb37cf58484b7cc80a8fd8@linux-foundation.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20181107173859.24096-1-logang@deltatee.com>
-In-Reply-To: <20181107173859.24096-1-logang@deltatee.com>
+        <20181107173859.24096-3-logang@deltatee.com>
+In-Reply-To: <20181107173859.24096-3-logang@deltatee.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org, linux-mm@kvack.org, linux-arch@vger.kernel.org, linux-riscv@lists.infradead.org, linux-arm-kernel@lists.infradead.org, linux-sh@vger.kernel.org, Andrew Morton <akpm@linux-foundation.org>
-Cc: Stephen Bates <sbates@raithlin.com>, Palmer Dabbelt <palmer@sifive.com>, Albert Ou <aou@eecs.berkeley.edu>, Christoph Hellwig <hch@lst.de>, Arnd Bergmann <arnd@arndb.de>, Logan Gunthorpe <logang@deltatee.com>, Michal Hocko <mhocko@suse.com>, Vlastimil Babka <vbabka@suse.cz>, Oscar Salvador <osalvador@suse.de>
+To: Logan Gunthorpe <logang@deltatee.com>
+Cc: linux-kernel@vger.kernel.org, linux-mm@kvack.org, linux-arch@vger.kernel.org, linux-riscv@lists.infradead.org, linux-arm-kernel@lists.infradead.org, linux-sh@vger.kernel.org, Stephen Bates <sbates@raithlin.com>, Palmer Dabbelt <palmer@sifive.com>, Albert Ou <aou@eecs.berkeley.edu>, Christoph Hellwig <hch@lst.de>, Arnd Bergmann <arnd@arndb.de>, Michal Hocko <mhocko@suse.com>, Vlastimil Babka <vbabka@suse.cz>, Oscar Salvador <osalvador@suse.de>
 
-Presently the arches arm64, arm and sh have a function which loops through
-each memblock and calls memory present. riscv will require a similar
-function.
+On Wed,  7 Nov 2018 10:38:59 -0700 Logan Gunthorpe <logang@deltatee.com> wrote:
 
-Introduce a common memblocks_present() function that can be used by
-all the arches. Subsequent patches will cleanup the arches that
-make use of this.
+> Presently the arches arm64, arm and sh have a function which loops through
+> each memblock and calls memory present. riscv will require a similar
+> function.
+> 
+> Introduce a common memblocks_present() function that can be used by
+> all the arches. Subsequent patches will cleanup the arches that
+> make use of this.
+> 
+> ...
+>
+> --- a/mm/sparse.c
+> +++ b/mm/sparse.c
+> @@ -239,6 +239,17 @@ void __init memory_present(int nid, unsigned long start, unsigned long end)
+>  	}
+>  }
+>  
+> +void __init memblocks_present(void)
+> +{
+> +	struct memblock_region *reg;
+> +
+> +	for_each_memblock(memory, reg) {
+> +		memory_present(memblock_get_region_node(reg),
+> +			       memblock_region_memory_base_pfn(reg),
+> +			       memblock_region_memory_end_pfn(reg));
+> +	}
+> +}
+> +
 
-Signed-off-by: Logan Gunthorpe <logang@deltatee.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>
-Cc: Michal Hocko <mhocko@suse.com>
-Cc: Vlastimil Babka <vbabka@suse.cz>
-Cc: Oscar Salvador <osalvador@suse.de>
----
- include/linux/mmzone.h |  6 ++++++
- mm/sparse.c            | 11 +++++++++++
- 2 files changed, 17 insertions(+)
+I don't like the name much.  To me, memblocks_present means "are
+memblocks present" whereas this actually means "memblocks are present".
+But whatever.  A little covering comment which describes what this
+does and why it does it would be nice.
 
-diff --git a/include/linux/mmzone.h b/include/linux/mmzone.h
-index 847705a6d0ec..db023a92f3a4 100644
---- a/include/linux/mmzone.h
-+++ b/include/linux/mmzone.h
-@@ -783,6 +783,12 @@ void memory_present(int nid, unsigned long start, unsigned long end);
- static inline void memory_present(int nid, unsigned long start, unsigned long end) {}
- #endif
- 
-+#if defined(CONFIG_SPARSEMEM)
-+void memblocks_present(void);
-+#else
-+static inline void memblocks_present(void) {}
-+#endif
-+
- #ifdef CONFIG_HAVE_MEMORYLESS_NODES
- int local_memory_node(int node_id);
- #else
-diff --git a/mm/sparse.c b/mm/sparse.c
-index 33307fc05c4d..5841e4ad6d93 100644
---- a/mm/sparse.c
-+++ b/mm/sparse.c
-@@ -239,6 +239,17 @@ void __init memory_present(int nid, unsigned long start, unsigned long end)
- 	}
- }
- 
-+void __init memblocks_present(void)
-+{
-+	struct memblock_region *reg;
-+
-+	for_each_memblock(memory, reg) {
-+		memory_present(memblock_get_region_node(reg),
-+			       memblock_region_memory_base_pfn(reg),
-+			       memblock_region_memory_end_pfn(reg));
-+	}
-+}
-+
- /*
-  * Subtle, we encode the real pfn into the mem_map such that
-  * the identity pfn - section_mem_map will return the actual
--- 
-2.19.0
+Acked-by: Andrew Morton <akpm@linux-foundation.org>
+
+I can grab both patches and shall sneak them into 4.20-rcX, but feel
+free to merge them into some git tree if you'd prefer.  If I see them
+turn up in linux-next I shall drop my copy.
