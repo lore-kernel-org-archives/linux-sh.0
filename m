@@ -1,20 +1,77 @@
-From: <sinara-group@bk.ru>
-Date: Mon, 12 Nov 2018 08:59:13 +0000
-Subject: Inquiry 12/11/2018
-Message-Id: <20181112091357.9A76398AD03@mail.hanqfast.cf>
+From: Logan Gunthorpe <logang@deltatee.com>
+Date: Wed, 07 Nov 2018 20:54:33 +0000
+Subject: [PATCH v2 2/2] mm/sparse: add common helper to mark all memblocks present
+Message-Id: <20181107205433.3875-3-logang@deltatee.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20181107205433.3875-1-logang@deltatee.com>
+In-Reply-To: <20181107205433.3875-1-logang@deltatee.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org, linux-mm@kvack.org, linux-arch@vger.kernel.org, linux-riscv@lists.infradead.org, linux-arm-kernel@lists.infradead.org, linux-sh@vger.kernel.org, Andrew Morton <akpm@linux-foundation.org>
+Cc: Stephen Bates <sbates@raithlin.com>, Palmer Dabbelt <palmer@sifive.com>, Albert Ou <aou@eecs.berkeley.edu>, Christoph Hellwig <hch@lst.de>, Arnd Bergmann <arnd@arndb.de>, Logan Gunthorpe <logang@deltatee.com>, Michal Hocko <mhocko@suse.com>, Vlastimil Babka <vbabka@suse.cz>, Oscar Salvador <osalvador@suse.de>
 
-Hi,friend,
+Presently the arches arm64, arm and sh have a function which loops through
+each memblock and calls memory present. riscv will require a similar
+function.
+
+Introduce a common memblocks_present() function that can be used by
+all the arches. Subsequent patches will cleanup the arches that
+make use of this.
+
+Signed-off-by: Logan Gunthorpe <logang@deltatee.com>
+Acked-by: Andrew Morton <akpm@linux-foundation.org>
+Cc: Michal Hocko <mhocko@suse.com>
+Cc: Vlastimil Babka <vbabka@suse.cz>
+Cc: Oscar Salvador <osalvador@suse.de>
+---
+ include/linux/mmzone.h |  6 ++++++
+ mm/sparse.c            | 16 ++++++++++++++++
+ 2 files changed, 22 insertions(+)
+
+diff --git a/include/linux/mmzone.h b/include/linux/mmzone.h
+index 847705a6d0ec..db023a92f3a4 100644
+--- a/include/linux/mmzone.h
++++ b/include/linux/mmzone.h
+@@ -783,6 +783,12 @@ void memory_present(int nid, unsigned long start, unsigned long end);
+ static inline void memory_present(int nid, unsigned long start, unsigned long end) {}
+ #endif
  
-This is Daniel Murray and i am from Sinara Group Co.Ltd Group Co.,LTD in Russia.
-We are glad to know about your company from the web and we are interested in your products.
-Could you kindly send us your Latest catalog and price list for our trial order.
++#if defined(CONFIG_SPARSEMEM)
++void memblocks_present(void);
++#else
++static inline void memblocks_present(void) {}
++#endif
++
+ #ifdef CONFIG_HAVE_MEMORYLESS_NODES
+ int local_memory_node(int node_id);
+ #else
+diff --git a/mm/sparse.c b/mm/sparse.c
+index 33307fc05c4d..3abc8cc50201 100644
+--- a/mm/sparse.c
++++ b/mm/sparse.c
+@@ -239,6 +239,22 @@ void __init memory_present(int nid, unsigned long start, unsigned long end)
+ 	}
+ }
  
-Best Regards,
- 
-Daniel Murray
-Purchasing Manager
++/*
++ * Mark all memblocks as present using memory_present(). This is a
++ * convienence function that is useful for a number of arches
++ * to mark all of the systems memory as present during initialization.
++ */
++void __init memblocks_present(void)
++{
++	struct memblock_region *reg;
++
++	for_each_memblock(memory, reg) {
++		memory_present(memblock_get_region_node(reg),
++			       memblock_region_memory_base_pfn(reg),
++			       memblock_region_memory_end_pfn(reg));
++	}
++}
++
+ /*
+  * Subtle, we encode the real pfn into the mem_map such that
+  * the identity pfn - section_mem_map will return the actual
+-- 
+2.19.0
