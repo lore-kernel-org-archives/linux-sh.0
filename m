@@ -1,36 +1,53 @@
-From: Adam Borowski <kilobyte@angband.pl>
-Date: Fri, 09 Nov 2018 19:02:50 +0000
-Subject: [PATCH 03/17] .gitignore: add ZSTD-compressed files
-Message-Id: <20181109190304.8573-3-kilobyte@angband.pl>
+From: Douglas Anderson <dianders@chromium.org>
+Date: Wed, 07 Nov 2018 01:00:24 +0000
+Subject: [PATCH v3 0/4] kgdb: Fix kgdb_roundup_cpus()
+Message-Id: <20181107010028.184543-1-dianders@chromium.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20181109185953.xwyelyqnygbskkxk@angband.pl>
- <20181109190304.8573-1-kilobyte@angband.pl>
-In-Reply-To: <20181109190304.8573-1-kilobyte@angband.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org, Nick Terrell <terrelln@fb.com>, Russell King <linux@armlinux.org.uk>, Geert Uytterhoeven <geert@linux-m68k.org>, linux-m68k@lists.linux-m68k.org, Ralf Baechle <ralf@linux-mips.org>, Paul Burton <paul.burton@mips.com>, James Hogan <jhogan@kernel.org>, linux-mips@linux-mips.org, Jonas Bonn <jonas@southpole.se>, Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>, Stafford Horne <shorne@gmail.com>, openrisc@lists.librecores.org, "James E.J. Bottomley" <jejb@parisc-linux.org>, Helge Deller <deller@gmx.de>, linux-parisc@vger.kernel.org, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Michael Ellerman <mpe@ellerman.id.au>, linuxppc-dev@lists.ozlabs.org, Martin Schwidefsky <schwidefsky@de.ibm.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, linux-s390@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>, x86@kernel.org, Chris Zankel <chris@zankel.net>, Max Filippov <jcmvbkbc@gmail.com>, linux-xtensa@linux-xtensa.org
-Cc: Adam Borowski <kilobyte@angband.pl>
+To: linux-arm-kernel@lists.infradead.org
 
-For now, that's arch/x86/boot/compressed/vmlinux.bin.zst but probably more
-will come, thus let's be consistent with all other compressors.
+This series was originally part of the series ("serial: Finish kgdb on
+qcom_geni; fix many lockdep splats w/ kgdb") but it made sense to
+split it up.
 
-Signed-off-by: Adam Borowski <kilobyte@angband.pl>
----
- .gitignore | 1 +
- 1 file changed, 1 insertion(+)
+It's believed that dropping into kgdb should be more robust once these
+patches are applied.
 
-diff --git a/.gitignore b/.gitignore
-index 97ba6b79834c..0d09cf1c053c 100644
---- a/.gitignore
-+++ b/.gitignore
-@@ -42,6 +42,7 @@
- *.tab.[ch]
- *.tar
- *.xz
-+*.zst
- Module.symvers
- modules.builtin
- 
+Changes in v3:
+- No separate init call.
+- Don't round up the CPU that is doing the rounding up.
+- Add "#ifdef CONFIG_SMP" to match the rest of the file.
+- Updated desc saying we don't solve the "failed to roundup" case.
+- Document the ignored parameter.
+- Patch #3 and #4 are new.
+
+Changes in v2:
+- Removing irq flags separated from fixing lockdep splat.
+- Removing irq flags separated from fixing lockdep splat.
+- Don't use smp_call_function (Daniel).
+
+Douglas Anderson (4):
+  kgdb: Remove irq flags from roundup
+  kgdb: Fix kgdb_roundup_cpus() for arches who used smp_call_function()
+  kgdb: Don't round up a CPU that failed rounding up before
+  kdb: Don't back trace on a cpu that didn't round up
+
+ arch/arc/kernel/kgdb.c     | 10 ++-----
+ arch/arm/kernel/kgdb.c     | 12 ---------
+ arch/arm64/kernel/kgdb.c   | 12 ---------
+ arch/hexagon/kernel/kgdb.c | 32 ----------------------
+ arch/mips/kernel/kgdb.c    |  9 +------
+ arch/powerpc/kernel/kgdb.c |  6 ++---
+ arch/sh/kernel/kgdb.c      | 12 ---------
+ arch/sparc/kernel/smp_64.c |  2 +-
+ arch/x86/kernel/kgdb.c     |  9 ++-----
+ include/linux/kgdb.h       | 22 +++++++++------
+ kernel/debug/debug_core.c  | 55 +++++++++++++++++++++++++++++++++++++-
+ kernel/debug/debug_core.h  |  1 +
+ kernel/debug/kdb/kdb_bt.c  | 11 +++++++-
+ 13 files changed, 88 insertions(+), 105 deletions(-)
+
 -- 
-2.19.1
+2.19.1.930.g4563a0d9d0-goog
