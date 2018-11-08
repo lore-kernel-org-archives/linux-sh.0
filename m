@@ -1,66 +1,164 @@
-From: Firoz Khan <firoz.khan@linaro.org>
-Date: Tue, 20 Nov 2018 07:17:44 +0000
-Subject: Re: [PATCH v3 1/3] sh: add __NR_syscalls along with NR_syscalls
-Message-Id: <CALxhOng+PHszhOWiBr3BXzy+PFrkrMteyk8A7J74ZUdGf24aww@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 08 Nov 2018 06:28:15 +0000
+Subject: [PATCH resend 09/13] sh: sh5: convert to SPDX identifiers
+Message-Id: <877eho147n.wl-kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1542169930-24118-1-git-send-email-firoz.khan@linaro.org>
- <1542169930-24118-2-git-send-email-firoz.khan@linaro.org> <CAK8P3a3fFznLDZTs0eLa_dJCKdENC96w1MoC1pNM6gYwcb=Cow@mail.gmail.com>
-In-Reply-To: <CAK8P3a3fFznLDZTs0eLa_dJCKdENC96w1MoC1pNM6gYwcb=Cow@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Arnd Bergmann <arnd@arndb.de>
-Cc: linux-sh@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Philippe Ombredanne <pombredanne@nexb.com>, Thomas Gleixner <tglx@linutronix.de>, Kate Stewart <kstewart@linuxfoundation.org>, y2038 Mailman List <y2038@lists.linaro.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Linux-Arch <linux-arch@vger.kernel.org>, Deepa Dinamani <deepa.kernel@gmail.com>, Marcin Juszkiewicz <marcin.juszkiewicz@linaro.org>
+To: linux-sh@vger.kernel.org
 
-Hi Arnd,
 
-On Mon, 19 Nov 2018 at 22:21, Arnd Bergmann <arnd@arndb.de> wrote:
->
-> On Wed, Nov 14, 2018 at 5:32 AM Firoz Khan <firoz.khan@linaro.org> wrote:
-> >
-> > NR_syscalls macro holds the number of system call exist
-> > in sh architecture. We have to change the value of NR-
-> > _syscalls, if we add or delete a system call.
-> >
-> > One of the patch in this patch series has a script which
-> > will generate a uapi header based on syscall.tbl file.
-> > The syscall.tbl file contains the total number of system
-> > calls information. So we have two option to update NR_sy-
-> > scalls value.
-> >
-> > 1. Update NR_syscalls in asm/unistd.h manually by count-
-> >    ing the no.of system calls. No need to update NR_sys-
-> >    calls until we either add a new system call or delete
-> >    existing system call.
-> >
-> > 2. We can keep this feature it above mentioned script,
-> >    that will count the number of syscalls and keep it in
-> >    a generated file. In this case we don't need to expli-
-> >    citly update NR_syscalls in asm/unistd.h file.
-> >
-> > The 2nd option will be the recommended one. For that, I
-> > added the __NR_syscalls macro in uapi/asm/unistd_32/64.h
-> > along with NR_syscalls which is moved to asm/unistd.h.
-> > The macro __NR_syscalls also added for making the name
-> > convention same across all architecture. While __NR_sys-
-> > calls isn't strictly part of the uapi, having it as part
-> > of the generated header to simplifies the implementation.
-> > We also need to enclose this macro with #ifdef __KERNEL__
-> > to avoid side effects.
-> >
-> > Signed-off-by: Firoz Khan <firoz.khan@linaro.org>
->
-> Looks correct to me, but since there are only three references to
-> 'NR_syscalls' in arch/sh, I wonder if we should just replace it with
-> __NR_syscalls in the same patch.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-This is the approach I had initially, But someone pointed out that doing
-this way - #define NR_syscalls    __NR_syscalls would be better. The
-only difference is here the number of occurrence 3 and there 5-7
-occurrence of NR_syscalls.
+This patch updates license to use SPDX-License-Identifier
+instead of verbose license text.
 
-Thanks
-Firoz
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Reviewed-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/sh/kernel/cpu/sh5/clock-sh5.c | 5 +----
+ arch/sh/kernel/cpu/sh5/entry.S     | 7 ++-----
+ arch/sh/kernel/cpu/sh5/fpu.c       | 5 +----
+ arch/sh/kernel/cpu/sh5/probe.c     | 5 +----
+ arch/sh/kernel/cpu/sh5/setup-sh5.c | 5 +----
+ arch/sh/kernel/cpu/sh5/switchto.S  | 7 ++-----
+ arch/sh/kernel/cpu/sh5/unwind.c    | 5 +----
+ 7 files changed, 9 insertions(+), 30 deletions(-)
 
->
->        Arnd
+diff --git a/arch/sh/kernel/cpu/sh5/clock-sh5.c b/arch/sh/kernel/cpu/sh5/clock-sh5.c
+index c48b93d..43763c2 100644
+--- a/arch/sh/kernel/cpu/sh5/clock-sh5.c
++++ b/arch/sh/kernel/cpu/sh5/clock-sh5.c
+@@ -1,13 +1,10 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * arch/sh/kernel/cpu/sh5/clock-sh5.c
+  *
+  * SH-5 support for the clock framework
+  *
+  *  Copyright (C) 2008  Paul Mundt
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ #include <linux/init.h>
+ #include <linux/kernel.h>
+diff --git a/arch/sh/kernel/cpu/sh5/entry.S b/arch/sh/kernel/cpu/sh5/entry.S
+index 0c8d037..de68ffd 100644
+--- a/arch/sh/kernel/cpu/sh5/entry.S
++++ b/arch/sh/kernel/cpu/sh5/entry.S
+@@ -1,13 +1,10 @@
+-/*
++/* SPDX-License-Identifier: GPL-2.0
++ *
+  * arch/sh/kernel/cpu/sh5/entry.S
+  *
+  * Copyright (C) 2000, 2001  Paolo Alberelli
+  * Copyright (C) 2004 - 2008  Paul Mundt
+  * Copyright (C) 2003, 2004  Richard Curnow
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ #include <linux/errno.h>
+ #include <linux/init.h>
+diff --git a/arch/sh/kernel/cpu/sh5/fpu.c b/arch/sh/kernel/cpu/sh5/fpu.c
+index 9f8713a..9218d9e 100644
+--- a/arch/sh/kernel/cpu/sh5/fpu.c
++++ b/arch/sh/kernel/cpu/sh5/fpu.c
+@@ -1,3 +1,4 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * arch/sh/kernel/cpu/sh5/fpu.c
+  *
+@@ -7,10 +8,6 @@
+  *
+  * Started from SH4 version:
+  *   Copyright (C) 1999, 2000  Kaz Kojima & Niibe Yutaka
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ #include <linux/sched.h>
+ #include <linux/signal.h>
+diff --git a/arch/sh/kernel/cpu/sh5/probe.c b/arch/sh/kernel/cpu/sh5/probe.c
+index eca427c..9472501 100644
+--- a/arch/sh/kernel/cpu/sh5/probe.c
++++ b/arch/sh/kernel/cpu/sh5/probe.c
+@@ -1,3 +1,4 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * arch/sh/kernel/cpu/sh5/probe.c
+  *
+@@ -5,10 +6,6 @@
+  *
+  * Copyright (C) 2000, 2001  Paolo Alberelli
+  * Copyright (C) 2003 - 2007  Paul Mundt
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ #include <linux/init.h>
+ #include <linux/io.h>
+diff --git a/arch/sh/kernel/cpu/sh5/setup-sh5.c b/arch/sh/kernel/cpu/sh5/setup-sh5.c
+index 084a9cc..41c1673 100644
+--- a/arch/sh/kernel/cpu/sh5/setup-sh5.c
++++ b/arch/sh/kernel/cpu/sh5/setup-sh5.c
+@@ -1,11 +1,8 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * SH5-101/SH5-103 CPU Setup
+  *
+  *  Copyright (C) 2009  Paul Mundt
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ #include <linux/platform_device.h>
+ #include <linux/init.h>
+diff --git a/arch/sh/kernel/cpu/sh5/switchto.S b/arch/sh/kernel/cpu/sh5/switchto.S
+index 45c351b0..d1beff7 100644
+--- a/arch/sh/kernel/cpu/sh5/switchto.S
++++ b/arch/sh/kernel/cpu/sh5/switchto.S
+@@ -1,13 +1,10 @@
+-/*
++/* SPDX-License-Identifier: GPL-2.0
++ *
+  * arch/sh/kernel/cpu/sh5/switchto.S
+  *
+  * sh64 context switch
+  *
+  * Copyright (C) 2004  Richard Curnow
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+ */
+ 
+ 	.section .text..SHmedia32,"ax"
+diff --git a/arch/sh/kernel/cpu/sh5/unwind.c b/arch/sh/kernel/cpu/sh5/unwind.c
+index 3a4fed4..3cb0cd9 100644
+--- a/arch/sh/kernel/cpu/sh5/unwind.c
++++ b/arch/sh/kernel/cpu/sh5/unwind.c
+@@ -1,12 +1,9 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * arch/sh/kernel/cpu/sh5/unwind.c
+  *
+  * Copyright (C) 2004  Paul Mundt
+  * Copyright (C) 2004  Richard Curnow
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ #include <linux/kallsyms.h>
+ #include <linux/kernel.h>
+-- 
+2.7.4
