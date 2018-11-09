@@ -1,407 +1,99 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 08 Nov 2018 06:24:58 +0000
-Subject: [PATCH resend 00/13] sh: convert to SPDX identifiers
-Message-Id: <87k1lo14d6.wl-kuninori.morimoto.gx@renesas.com>
+From: Adam Borowski <kilobyte@angband.pl>
+Date: Fri, 09 Nov 2018 19:02:53 +0000
+Subject: [PATCH 06/17] parisc: Remove support for BZIP2 and LZMA compressed kernel
+Message-Id: <20181109190304.8573-6-kilobyte@angband.pl>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20181109185953.xwyelyqnygbskkxk@angband.pl>
+ <20181109190304.8573-1-kilobyte@angband.pl>
+In-Reply-To: <20181109190304.8573-1-kilobyte@angband.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org, Nick Terrell <terrelln@fb.com>, Russell King <linux@armlinux.org.uk>, Geert Uytterhoeven <geert@linux-m68k.org>, linux-m68k@lists.linux-m68k.org, Ralf Baechle <ralf@linux-mips.org>, Paul Burton <paul.burton@mips.com>, James Hogan <jhogan@kernel.org>, linux-mips@linux-mips.org, Jonas Bonn <jonas@southpole.se>, Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>, Stafford Horne <shorne@gmail.com>, openrisc@lists.librecores.org, "James E.J. Bottomley" <jejb@parisc-linux.org>, Helge Deller <deller@gmx.de>, linux-parisc@vger.kernel.org, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Michael Ellerman <mpe@ellerman.id.au>, linuxppc-dev@lists.ozlabs.org, Martin Schwidefsky <schwidefsky@de.ibm.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, linux-s390@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>, x86@kernel.org, Chris Zankel <chris@zankel.net>, Max Filippov <jcmvbkbc@gmail.com>, linux-xtensa@linux-xtensa.org
+Cc: Adam Borowski <kilobyte@angband.pl>
 
+Made redundant by newer choices.
 
-Hi SH ML
+Signed-off-by: Adam Borowski <kilobyte@angband.pl>
+---
+ arch/parisc/Kconfig                  |  2 --
+ arch/parisc/boot/compressed/Makefile | 10 ++--------
+ arch/parisc/boot/compressed/misc.c   |  8 --------
+ 3 files changed, 2 insertions(+), 18 deletions(-)
 
-1month passed, I resend patches.
-
-Kuninori Morimoto (13):
-  sh: boards: convert to SPDX identifiers
-  sh: drivers: convert to SPDX identifiers
-  sh: include: convert to SPDX identifiers
-  sh: sh2: convert to SPDX identifiers
-  sh: sh2a: convert to SPDX identifiers
-  sh: sh3: convert to SPDX identifiers
-  sh: sh4: convert to SPDX identifiers
-  sh: sh4a: convert to SPDX identifiers
-  sh: sh5: convert to SPDX identifiers
-  sh: shmobile: convert to SPDX identifiers
-  sh: cpu: convert to SPDX identifiers
-  sh: kernel: convert to SPDX identifiers
-  sh: lib: convert to SPDX identifiers
-
- arch/sh/boards/board-apsh4a3a.c                    |  5 +---
- arch/sh/boards/board-apsh4ad0a.c                   |  5 +---
- arch/sh/boards/board-edosk7760.c                   | 15 +----------
- arch/sh/boards/board-espt.c                        |  5 +---
- arch/sh/boards/board-magicpanelr2.c                |  5 +---
- arch/sh/boards/board-sh7757lcr.c                   |  5 +---
- arch/sh/boards/board-sh7785lcr.c                   |  5 +---
- arch/sh/boards/board-titan.c                       |  5 +---
- arch/sh/boards/board-urquell.c                     |  5 +---
- arch/sh/boards/mach-ap325rxa/Makefile              |  1 +
- arch/sh/boards/mach-ap325rxa/sdram.S               |  7 ++----
- arch/sh/boards/mach-cayman/Makefile                |  1 +
- arch/sh/boards/mach-cayman/irq.c                   |  5 +---
- arch/sh/boards/mach-cayman/panic.c                 |  5 +---
- arch/sh/boards/mach-cayman/setup.c                 |  5 +---
- arch/sh/boards/mach-dreamcast/Makefile             |  1 +
- arch/sh/boards/mach-dreamcast/irq.c                |  2 +-
- arch/sh/boards/mach-dreamcast/rtc.c                |  4 +--
- arch/sh/boards/mach-dreamcast/setup.c              |  3 +--
- arch/sh/boards/mach-ecovec24/Makefile              |  3 ++-
- arch/sh/boards/mach-ecovec24/sdram.S               |  7 ++----
- arch/sh/boards/mach-ecovec24/setup.c               |  5 +---
- arch/sh/boards/mach-highlander/irq-r7780mp.c       |  5 +---
- arch/sh/boards/mach-highlander/irq-r7780rp.c       |  5 +---
- arch/sh/boards/mach-highlander/irq-r7785rp.c       |  5 +---
- arch/sh/boards/mach-highlander/pinmux-r7785rp.c    |  5 +---
- arch/sh/boards/mach-highlander/psw.c               |  5 +---
- arch/sh/boards/mach-highlander/setup.c             |  5 +---
- arch/sh/boards/mach-hp6xx/Makefile                 |  1 +
- arch/sh/boards/mach-hp6xx/hp6xx_apm.c              |  4 +--
- arch/sh/boards/mach-hp6xx/pm.c                     |  4 +--
- arch/sh/boards/mach-hp6xx/pm_wakeup.S              |  8 ++----
- arch/sh/boards/mach-hp6xx/setup.c                  |  4 +--
- arch/sh/boards/mach-kfr2r09/Makefile               |  1 +
- arch/sh/boards/mach-kfr2r09/lcd_wqvga.c            |  5 +---
- arch/sh/boards/mach-kfr2r09/sdram.S                |  7 ++----
- arch/sh/boards/mach-landisk/Makefile               |  1 +
- arch/sh/boards/mach-landisk/gio.c                  |  6 +----
- arch/sh/boards/mach-landisk/irq.c                  |  5 +---
- arch/sh/boards/mach-landisk/psw.c                  |  5 +---
- arch/sh/boards/mach-landisk/setup.c                |  5 +---
- arch/sh/boards/mach-lboxre2/Makefile               |  1 +
- arch/sh/boards/mach-lboxre2/irq.c                  |  6 +----
- arch/sh/boards/mach-lboxre2/setup.c                |  6 +----
- arch/sh/boards/mach-microdev/Makefile              |  1 +
- arch/sh/boards/mach-microdev/fdc37c93xapm.c        |  5 +---
- arch/sh/boards/mach-microdev/io.c                  |  4 +--
- arch/sh/boards/mach-microdev/irq.c                 |  4 +--
- arch/sh/boards/mach-microdev/setup.c               |  4 +--
- arch/sh/boards/mach-migor/Makefile                 |  1 +
- arch/sh/boards/mach-migor/lcd_qvga.c               |  5 +---
- arch/sh/boards/mach-migor/sdram.S                  |  7 ++----
- arch/sh/boards/mach-r2d/Makefile                   |  1 +
- arch/sh/boards/mach-r2d/setup.c                    |  5 +---
- arch/sh/boards/mach-rsk/Makefile                   |  1 +
- arch/sh/boards/mach-rsk/devices-rsk7203.c          |  5 +---
- arch/sh/boards/mach-rsk/devices-rsk7264.c          |  5 +---
- arch/sh/boards/mach-rsk/devices-rsk7269.c          |  5 +---
- arch/sh/boards/mach-rsk/setup.c                    |  5 +---
- arch/sh/boards/mach-sdk7780/Makefile               |  1 +
- arch/sh/boards/mach-sdk7780/irq.c                  |  5 +---
- arch/sh/boards/mach-sdk7780/setup.c                |  5 +---
- arch/sh/boards/mach-sdk7786/Makefile               |  1 +
- arch/sh/boards/mach-sdk7786/fpga.c                 |  5 +---
- arch/sh/boards/mach-sdk7786/gpio.c                 |  5 +---
- arch/sh/boards/mach-sdk7786/irq.c                  |  5 +---
- arch/sh/boards/mach-sdk7786/nmi.c                  |  5 +---
- arch/sh/boards/mach-sdk7786/setup.c                |  5 +---
- arch/sh/boards/mach-sdk7786/sram.c                 |  5 +---
- arch/sh/boards/mach-se/7206/Makefile               |  1 +
- arch/sh/boards/mach-se/7343/Makefile               |  1 +
- arch/sh/boards/mach-se/7343/irq.c                  |  5 +---
- arch/sh/boards/mach-se/770x/Makefile               |  1 +
- arch/sh/boards/mach-se/7721/Makefile               |  1 +
- arch/sh/boards/mach-se/7721/irq.c                  |  5 +---
- arch/sh/boards/mach-se/7721/setup.c                |  6 +----
- arch/sh/boards/mach-se/7722/Makefile               |  1 +
- arch/sh/boards/mach-se/7722/irq.c                  |  5 +---
- arch/sh/boards/mach-se/7722/setup.c                |  6 +----
- arch/sh/boards/mach-se/7724/Makefile               |  1 +
- arch/sh/boards/mach-se/7724/irq.c                  |  5 +---
- arch/sh/boards/mach-se/7724/sdram.S                |  7 ++----
- arch/sh/boards/mach-se/7751/Makefile               |  1 +
- arch/sh/boards/mach-se/7780/Makefile               |  1 +
- arch/sh/boards/mach-se/7780/irq.c                  |  5 +---
- arch/sh/boards/mach-se/7780/setup.c                |  5 +---
- arch/sh/boards/mach-sh03/Makefile                  |  1 +
- arch/sh/boards/mach-sh7763rdp/Makefile             |  1 +
- arch/sh/boards/mach-sh7763rdp/irq.c                |  5 +---
- arch/sh/boards/mach-sh7763rdp/setup.c              |  5 +---
- arch/sh/boards/mach-x3proto/Makefile               |  1 +
- arch/sh/boards/mach-x3proto/gpio.c                 |  5 +---
- arch/sh/boards/mach-x3proto/ilsel.c                |  5 +---
- arch/sh/boards/mach-x3proto/setup.c                |  5 +---
- arch/sh/boards/of-generic.c                        |  5 +---
- arch/sh/drivers/dma/Makefile                       |  1 +
- arch/sh/drivers/dma/dma-api.c                      |  7 ++----
- arch/sh/drivers/dma/dma-g2.c                       |  7 ++----
- arch/sh/drivers/dma/dma-pvr2.c                     |  7 ++----
- arch/sh/drivers/dma/dma-sh.c                       |  7 ++----
- arch/sh/drivers/dma/dma-sysfs.c                    |  5 +---
- arch/sh/drivers/dma/dmabrg.c                       |  3 +--
- arch/sh/drivers/heartbeat.c                        |  5 +---
- arch/sh/drivers/pci/fixups-dreamcast.c             |  5 +---
- arch/sh/drivers/pci/fixups-landisk.c               |  4 +--
- arch/sh/drivers/pci/fixups-r7780rp.c               |  5 +---
- arch/sh/drivers/pci/fixups-rts7751r2d.c            |  5 +---
- arch/sh/drivers/pci/fixups-sdk7780.c               |  5 +---
- arch/sh/drivers/pci/fixups-sdk7786.c               |  5 +---
- arch/sh/drivers/pci/fixups-snapgear.c              |  4 +--
- arch/sh/drivers/pci/fixups-titan.c                 |  4 +--
- arch/sh/drivers/pci/ops-dreamcast.c                |  5 +---
- arch/sh/drivers/pci/ops-sh4.c                      |  5 +---
- arch/sh/drivers/pci/ops-sh5.c                      |  4 +--
- arch/sh/drivers/pci/ops-sh7786.c                   |  5 +---
- arch/sh/drivers/pci/pci-dreamcast.c                |  5 +---
- arch/sh/drivers/pci/pci-sh5.c                      |  4 +--
- arch/sh/drivers/pci/pci-sh5.h                      |  6 ++---
- arch/sh/drivers/pci/pci-sh7751.c                   |  5 +---
- arch/sh/drivers/pci/pci-sh7751.h                   |  7 ++----
- arch/sh/drivers/pci/pci-sh7780.c                   |  5 +---
- arch/sh/drivers/pci/pci-sh7780.h                   |  7 ++----
- arch/sh/drivers/pci/pci.c                          |  5 +---
- arch/sh/drivers/pci/pcie-sh7786.c                  |  5 +---
- arch/sh/drivers/pci/pcie-sh7786.h                  |  7 ++----
- arch/sh/drivers/push-switch.c                      |  5 +---
- arch/sh/drivers/superhyway/Makefile                |  1 +
- arch/sh/drivers/superhyway/ops-sh4-202.c           |  5 +---
- arch/sh/include/asm/Kbuild                         |  1 +
- arch/sh/include/asm/addrspace.h                    |  5 +---
- arch/sh/include/asm/asm-offsets.h                  |  1 +
- arch/sh/include/asm/bl_bit_64.h                    |  7 ++----
- arch/sh/include/asm/cache_insns_64.h               |  7 ++----
- arch/sh/include/asm/checksum_32.h                  |  5 +---
- arch/sh/include/asm/cmpxchg-xchg.h                 |  4 +--
- arch/sh/include/asm/device.h                       |  5 ++--
- arch/sh/include/asm/dma-register.h                 |  7 ++----
- arch/sh/include/asm/dma.h                          |  7 ++----
- arch/sh/include/asm/dwarf.h                        |  8 ++----
- arch/sh/include/asm/fb.h                           |  1 +
- arch/sh/include/asm/fixmap.h                       |  7 ++----
- arch/sh/include/asm/flat.h                         |  7 ++----
- arch/sh/include/asm/freq.h                         |  8 ++----
- arch/sh/include/asm/gpio.h                         |  7 ++----
- arch/sh/include/asm/machvec.h                      |  6 ++---
- arch/sh/include/asm/mmu_context_64.h               |  5 +---
- arch/sh/include/asm/pgtable.h                      |  7 ++----
- arch/sh/include/asm/pgtable_64.h                   |  5 +---
- arch/sh/include/asm/processor_64.h                 |  5 +---
- arch/sh/include/asm/sfp-machine.h                  | 20 +++------------
- arch/sh/include/asm/shmparam.h                     |  7 ++----
- arch/sh/include/asm/siu.h                          |  7 ++----
- arch/sh/include/asm/spinlock-cas.h                 |  7 ++----
- arch/sh/include/asm/spinlock-llsc.h                |  7 ++----
- arch/sh/include/asm/spinlock.h                     |  7 ++----
- arch/sh/include/asm/string_32.h                    |  1 +
- arch/sh/include/asm/switch_to.h                    |  7 ++----
- arch/sh/include/asm/switch_to_64.h                 |  7 ++----
- arch/sh/include/asm/tlb_64.h                       |  7 ++----
- arch/sh/include/asm/traps_64.h                     |  7 ++----
- arch/sh/include/asm/uaccess_64.h                   |  5 +---
- arch/sh/include/asm/vga.h                          |  1 +
- arch/sh/include/asm/watchdog.h                     |  8 ++----
- arch/sh/include/cpu-common/cpu/addrspace.h         |  7 ++----
- arch/sh/include/cpu-common/cpu/mmu_context.h       |  7 ++----
- arch/sh/include/cpu-common/cpu/pfc.h               | 12 ++-------
- arch/sh/include/cpu-common/cpu/timer.h             |  1 +
- arch/sh/include/cpu-sh2/cpu/cache.h                |  7 ++----
- arch/sh/include/cpu-sh2/cpu/freq.h                 |  7 ++----
- arch/sh/include/cpu-sh2/cpu/watchdog.h             |  7 ++----
- arch/sh/include/cpu-sh2a/cpu/cache.h               |  7 ++----
- arch/sh/include/cpu-sh2a/cpu/freq.h                |  7 ++----
- arch/sh/include/cpu-sh2a/cpu/watchdog.h            |  1 +
- arch/sh/include/cpu-sh3/cpu/cache.h                |  7 ++----
- arch/sh/include/cpu-sh3/cpu/dma-register.h         |  7 ++----
- arch/sh/include/cpu-sh3/cpu/freq.h                 |  7 ++----
- arch/sh/include/cpu-sh3/cpu/gpio.h                 |  7 ++----
- arch/sh/include/cpu-sh3/cpu/mmu_context.h          |  7 ++----
- arch/sh/include/cpu-sh3/cpu/watchdog.h             |  7 ++----
- arch/sh/include/cpu-sh4/cpu/addrspace.h            |  5 +---
- arch/sh/include/cpu-sh4/cpu/cache.h                |  7 ++----
- arch/sh/include/cpu-sh4/cpu/dma-register.h         |  7 ++----
- arch/sh/include/cpu-sh4/cpu/fpu.h                  |  6 ++---
- arch/sh/include/cpu-sh4/cpu/freq.h                 |  7 ++----
- arch/sh/include/cpu-sh4/cpu/mmu_context.h          |  7 ++----
- arch/sh/include/cpu-sh4/cpu/sh7786.h               |  7 ++----
- arch/sh/include/cpu-sh4/cpu/sq.h                   |  7 ++----
- arch/sh/include/cpu-sh4/cpu/watchdog.h             |  7 ++----
- arch/sh/include/cpu-sh5/cpu/cache.h                |  5 +---
- arch/sh/include/cpu-sh5/cpu/irq.h                  |  5 +---
- arch/sh/include/cpu-sh5/cpu/registers.h            |  5 +---
- arch/sh/include/mach-common/mach/hp6xx.h           | 12 +++------
- arch/sh/include/mach-common/mach/lboxre2.h         |  6 +----
- arch/sh/include/mach-common/mach/magicpanelr2.h    |  7 ++----
- arch/sh/include/mach-common/mach/mangle-port.h     |  7 ++----
- arch/sh/include/mach-common/mach/microdev.h        |  6 ++---
- arch/sh/include/mach-common/mach/sdk7780.h         |  5 +---
- arch/sh/include/mach-common/mach/secureedge5410.h  |  6 ++---
- arch/sh/include/mach-common/mach/sh7763rdp.h       |  6 +----
- arch/sh/include/mach-dreamcast/mach/dma.h          |  7 ++----
- arch/sh/include/mach-dreamcast/mach/pci.h          |  7 ++----
- arch/sh/include/mach-dreamcast/mach/sysasic.h      |  7 +++---
- .../mach-ecovec24/mach/partner-jet-setup.txt       |  1 +
- .../mach-kfr2r09/mach/partner-jet-setup.txt        |  1 +
- arch/sh/include/mach-se/mach/se7721.h              |  8 ++----
- arch/sh/include/mach-se/mach/se7722.h              |  6 +----
- arch/sh/include/mach-se/mach/se7724.h              |  6 +----
- arch/sh/include/mach-se/mach/se7780.h              |  5 +---
- arch/sh/include/uapi/asm/Kbuild                    |  1 +
- arch/sh/include/uapi/asm/setup.h                   |  1 +
- arch/sh/include/uapi/asm/types.h                   |  1 +
- arch/sh/kernel/cpu/clock.c                         |  5 +---
- arch/sh/kernel/cpu/init.c                          |  5 +---
- arch/sh/kernel/cpu/irq/Makefile                    |  1 +
- arch/sh/kernel/cpu/irq/intc-sh5.c                  |  5 +---
- arch/sh/kernel/cpu/irq/ipr.c                       |  5 +---
- arch/sh/kernel/cpu/pfc.c                           | 10 +-------
- arch/sh/kernel/cpu/sh2/Makefile                    |  1 +
- arch/sh/kernel/cpu/sh2/clock-sh7619.c              |  5 +---
- arch/sh/kernel/cpu/sh2/entry.S                     |  7 ++----
- arch/sh/kernel/cpu/sh2/ex.S                        |  7 ++----
- arch/sh/kernel/cpu/sh2/probe.c                     |  5 +---
- arch/sh/kernel/cpu/sh2/setup-sh7619.c              |  5 +---
- arch/sh/kernel/cpu/sh2/smp-j2.c                    |  5 +---
- arch/sh/kernel/cpu/sh2a/clock-sh7201.c             |  5 +---
- arch/sh/kernel/cpu/sh2a/clock-sh7203.c             |  5 +---
- arch/sh/kernel/cpu/sh2a/clock-sh7206.c             |  5 +---
- arch/sh/kernel/cpu/sh2a/clock-sh7264.c             |  5 +---
- arch/sh/kernel/cpu/sh2a/clock-sh7269.c             |  5 +---
- arch/sh/kernel/cpu/sh2a/entry.S                    |  7 ++----
- arch/sh/kernel/cpu/sh2a/ex.S                       |  7 ++----
- arch/sh/kernel/cpu/sh2a/fpu.c                      |  5 +---
- arch/sh/kernel/cpu/sh2a/opcode_helper.c            |  5 +---
- arch/sh/kernel/cpu/sh2a/pinmux-sh7203.c            |  5 +---
- arch/sh/kernel/cpu/sh2a/pinmux-sh7264.c            |  5 +---
- arch/sh/kernel/cpu/sh2a/pinmux-sh7269.c            |  5 +---
- arch/sh/kernel/cpu/sh2a/probe.c                    |  5 +---
- arch/sh/kernel/cpu/sh2a/setup-mxg.c                |  5 +---
- arch/sh/kernel/cpu/sh2a/setup-sh7201.c             |  5 +---
- arch/sh/kernel/cpu/sh2a/setup-sh7203.c             |  5 +---
- arch/sh/kernel/cpu/sh2a/setup-sh7206.c             |  5 +---
- arch/sh/kernel/cpu/sh2a/setup-sh7264.c             |  5 +---
- arch/sh/kernel/cpu/sh2a/setup-sh7269.c             |  5 +---
- arch/sh/kernel/cpu/sh3/clock-sh3.c                 |  5 +---
- arch/sh/kernel/cpu/sh3/clock-sh7705.c              |  5 +---
- arch/sh/kernel/cpu/sh3/clock-sh7706.c              |  5 +---
- arch/sh/kernel/cpu/sh3/clock-sh7709.c              |  5 +---
- arch/sh/kernel/cpu/sh3/clock-sh7710.c              |  5 +---
- arch/sh/kernel/cpu/sh3/clock-sh7712.c              |  5 +---
- arch/sh/kernel/cpu/sh3/entry.S                     |  7 ++----
- arch/sh/kernel/cpu/sh3/ex.S                        |  9 +++----
- arch/sh/kernel/cpu/sh3/pinmux-sh7720.c             |  5 +---
- arch/sh/kernel/cpu/sh3/probe.c                     |  5 +---
- arch/sh/kernel/cpu/sh3/setup-sh3.c                 |  5 +---
- arch/sh/kernel/cpu/sh3/setup-sh7705.c              |  5 +---
- arch/sh/kernel/cpu/sh3/setup-sh770x.c              |  5 +---
- arch/sh/kernel/cpu/sh3/setup-sh7710.c              |  5 +---
- arch/sh/kernel/cpu/sh3/setup-sh7720.c              |  5 +---
- arch/sh/kernel/cpu/sh3/swsusp.S                    |  7 ++----
- arch/sh/kernel/cpu/sh4/clock-sh4-202.c             |  5 +---
- arch/sh/kernel/cpu/sh4/clock-sh4.c                 |  5 +---
- arch/sh/kernel/cpu/sh4/fpu.c                       |  5 +---
- arch/sh/kernel/cpu/sh4/perf_event.c                |  5 +---
- arch/sh/kernel/cpu/sh4/probe.c                     |  5 +---
- arch/sh/kernel/cpu/sh4/setup-sh4-202.c             |  5 +---
- arch/sh/kernel/cpu/sh4/setup-sh7750.c              |  5 +---
- arch/sh/kernel/cpu/sh4/setup-sh7760.c              |  5 +---
- arch/sh/kernel/cpu/sh4/sq.c                        |  5 +---
- arch/sh/kernel/cpu/sh4a/clock-sh7343.c             | 14 +----------
- arch/sh/kernel/cpu/sh4a/clock-sh7366.c             | 14 +----------
- arch/sh/kernel/cpu/sh4a/clock-sh7722.c             | 14 +----------
- arch/sh/kernel/cpu/sh4a/clock-sh7723.c             | 14 +----------
- arch/sh/kernel/cpu/sh4a/clock-sh7724.c             | 14 +----------
- arch/sh/kernel/cpu/sh4a/clock-sh7734.c             |  5 +---
- arch/sh/kernel/cpu/sh4a/clock-sh7757.c             |  5 +---
- arch/sh/kernel/cpu/sh4a/clock-sh7763.c             |  5 +---
- arch/sh/kernel/cpu/sh4a/clock-sh7770.c             |  5 +---
- arch/sh/kernel/cpu/sh4a/clock-sh7780.c             |  5 +---
- arch/sh/kernel/cpu/sh4a/clock-sh7785.c             |  5 +---
- arch/sh/kernel/cpu/sh4a/clock-sh7786.c             |  5 +---
- arch/sh/kernel/cpu/sh4a/clock-shx3.c               |  5 +---
- arch/sh/kernel/cpu/sh4a/intc-shx3.c                |  5 +---
- arch/sh/kernel/cpu/sh4a/perf_event.c               |  5 +---
- arch/sh/kernel/cpu/sh4a/pinmux-sh7723.c            |  5 +---
- arch/sh/kernel/cpu/sh4a/pinmux-sh7724.c            |  5 +---
- arch/sh/kernel/cpu/sh4a/pinmux-sh7734.c            |  5 +---
- arch/sh/kernel/cpu/sh4a/pinmux-sh7757.c            |  5 +---
- arch/sh/kernel/cpu/sh4a/pinmux-sh7785.c            |  5 +---
- arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c            |  5 +---
- arch/sh/kernel/cpu/sh4a/pinmux-shx3.c              |  5 +---
- arch/sh/kernel/cpu/sh4a/setup-sh7343.c             |  5 +---
- arch/sh/kernel/cpu/sh4a/setup-sh7366.c             |  5 +---
- arch/sh/kernel/cpu/sh4a/setup-sh7722.c             |  5 +---
- arch/sh/kernel/cpu/sh4a/setup-sh7723.c             |  5 +---
- arch/sh/kernel/cpu/sh4a/setup-sh7724.c             |  5 +---
- arch/sh/kernel/cpu/sh4a/setup-sh7734.c             |  7 ++----
- arch/sh/kernel/cpu/sh4a/setup-sh7757.c             |  5 +---
- arch/sh/kernel/cpu/sh4a/setup-sh7763.c             |  5 +---
- arch/sh/kernel/cpu/sh4a/setup-sh7770.c             |  5 +---
- arch/sh/kernel/cpu/sh4a/setup-sh7780.c             |  5 +---
- arch/sh/kernel/cpu/sh4a/setup-sh7785.c             |  5 +---
- arch/sh/kernel/cpu/sh4a/setup-sh7786.c             |  5 +---
- arch/sh/kernel/cpu/sh4a/setup-shx3.c               |  5 +---
- arch/sh/kernel/cpu/sh4a/smp-shx3.c                 |  5 +---
- arch/sh/kernel/cpu/sh4a/ubc.c                      |  5 +---
- arch/sh/kernel/cpu/sh5/clock-sh5.c                 |  5 +---
- arch/sh/kernel/cpu/sh5/entry.S                     |  7 ++----
- arch/sh/kernel/cpu/sh5/fpu.c                       |  5 +---
- arch/sh/kernel/cpu/sh5/probe.c                     |  5 +---
- arch/sh/kernel/cpu/sh5/setup-sh5.c                 |  5 +---
- arch/sh/kernel/cpu/sh5/switchto.S                  |  7 ++----
- arch/sh/kernel/cpu/sh5/unwind.c                    |  5 +---
- arch/sh/kernel/cpu/shmobile/Makefile               |  1 +
- arch/sh/kernel/cpu/shmobile/cpuidle.c              |  5 +---
- arch/sh/kernel/cpu/shmobile/pm.c                   |  5 +---
- arch/sh/kernel/cpu/shmobile/sleep.S                |  7 ++----
- arch/sh/kernel/debugtraps.S                        |  7 ++----
- arch/sh/kernel/disassemble.c                       |  5 +---
- arch/sh/kernel/dma-coherent.c                      |  5 +---
- arch/sh/kernel/dumpstack.c                         |  5 +---
- arch/sh/kernel/dwarf.c                             |  5 +---
- arch/sh/kernel/entry-common.S                      |  8 ++----
- arch/sh/kernel/head_32.S                           |  7 ++----
- arch/sh/kernel/head_64.S                           |  7 ++----
- arch/sh/kernel/hw_breakpoint.c                     |  5 +---
- arch/sh/kernel/idle.c                              |  5 +---
- arch/sh/kernel/io.c                                |  5 +---
- arch/sh/kernel/io_trapped.c                        |  5 +---
- arch/sh/kernel/iomap.c                             |  5 +---
- arch/sh/kernel/ioport.c                            |  5 +---
- arch/sh/kernel/irq_32.c                            |  5 +---
- arch/sh/kernel/irq_64.c                            |  5 +---
- arch/sh/kernel/kgdb.c                              |  5 +---
- arch/sh/kernel/kprobes.c                           |  5 +---
- arch/sh/kernel/machine_kexec.c                     |  4 +--
- arch/sh/kernel/machvec.c                           |  5 +---
- arch/sh/kernel/module.c                            | 15 +----------
- arch/sh/kernel/nmi_debug.c                         |  5 +---
- arch/sh/kernel/perf_callchain.c                    |  5 +---
- arch/sh/kernel/perf_event.c                        |  5 +---
- arch/sh/kernel/process_32.c                        |  5 +---
- arch/sh/kernel/process_64.c                        |  5 +---
- arch/sh/kernel/ptrace_32.c                         |  5 +---
- arch/sh/kernel/ptrace_64.c                         |  5 +---
- arch/sh/kernel/relocate_kernel.S                   |  6 ++---
- arch/sh/kernel/return_address.c                    |  5 +---
- arch/sh/kernel/sh_bios.c                           |  5 +---
- arch/sh/kernel/sh_ksyms_64.c                       |  5 +---
- arch/sh/kernel/signal_64.c                         |  5 +---
- arch/sh/kernel/smp.c                               |  5 +---
- arch/sh/kernel/stacktrace.c                        |  5 +---
- arch/sh/kernel/swsusp.c                            |  5 +---
- arch/sh/kernel/syscalls_32.S                       |  8 ++----
- arch/sh/kernel/syscalls_64.S                       |  7 ++----
- arch/sh/kernel/time.c                              |  5 +---
- arch/sh/kernel/topology.c                          |  5 +---
- arch/sh/kernel/traps_32.c                          |  5 +---
- arch/sh/kernel/traps_64.c                          |  5 +---
- arch/sh/kernel/unwinder.c                          |  1 +
- arch/sh/kernel/vsyscall/vsyscall.c                 |  5 +---
- arch/sh/lib/ashiftrt.S                             | 29 +++-------------------
- arch/sh/lib/ashlsi3.S                              | 29 +++-------------------
- arch/sh/lib/ashrsi3.S                              | 29 +++-------------------
- arch/sh/lib/checksum.S                             |  9 +++----
- arch/sh/lib/io.c                                   |  5 +---
- arch/sh/lib/libgcc.h                               |  2 ++
- arch/sh/lib/lshrsi3.S                              | 29 +++-------------------
- arch/sh/lib/mcount.S                               |  7 ++----
- arch/sh/lib/movmem.S                               | 29 +++-------------------
- arch/sh/lib/udiv_qrnnd.S                           | 29 +++-------------------
- arch/sh/lib/udivsi3.S                              | 29 +++-------------------
- arch/sh/lib/udivsi3_i4i-Os.S                       | 29 +++-------------------
- arch/sh/lib/udivsi3_i4i.S                          | 29 +++-------------------
- 373 files changed, 497 insertions(+), 1671 deletions(-)
-
+diff --git a/arch/parisc/Kconfig b/arch/parisc/Kconfig
+index 92a339ee28b3..a9cca7d1a8d8 100644
+--- a/arch/parisc/Kconfig
++++ b/arch/parisc/Kconfig
+@@ -18,10 +18,8 @@ config PARISC
+ 	select BUG
+ 	select BUILDTIME_EXTABLE_SORT
+ 	select HAVE_PERF_EVENTS
+-	select HAVE_KERNEL_BZIP2
+ 	select HAVE_KERNEL_GZIP
+ 	select HAVE_KERNEL_LZ4
+-	select HAVE_KERNEL_LZMA
+ 	select HAVE_KERNEL_LZO
+ 	select HAVE_KERNEL_XZ
+ 	select GENERIC_ATOMIC64 if !64BIT
+diff --git a/arch/parisc/boot/compressed/Makefile b/arch/parisc/boot/compressed/Makefile
+index 777533cdea31..a05f36f9279b 100644
+--- a/arch/parisc/boot/compressed/Makefile
++++ b/arch/parisc/boot/compressed/Makefile
+@@ -8,8 +8,8 @@ KCOV_INSTRUMENT := n
+ GCOV_PROFILE := n
+ UBSAN_SANITIZE := n
+ 
+-targets := vmlinux.lds vmlinux vmlinux.bin vmlinux.bin.gz vmlinux.bin.bz2
+-targets += vmlinux.bin.xz vmlinux.bin.lzma vmlinux.bin.lzo vmlinux.bin.lz4
++targets := vmlinux.lds vmlinux vmlinux.bin vmlinux.bin.gz
++targets += vmlinux.bin.xz vmlinux.bin.lzo vmlinux.bin.lz4
+ targets += misc.o piggy.o sizes.h head.o real2.o firmware.o
+ 
+ KBUILD_CFLAGS := -D__KERNEL__ -O2 -DBOOTLOADER
+@@ -60,20 +60,14 @@ $(obj)/vmlinux.bin: vmlinux
+ vmlinux.bin.all-y := $(obj)/vmlinux.bin
+ 
+ suffix-$(CONFIG_KERNEL_GZIP)  := gz
+-suffix-$(CONFIG_KERNEL_BZIP2) := bz2
+ suffix-$(CONFIG_KERNEL_LZ4)  := lz4
+-suffix-$(CONFIG_KERNEL_LZMA)  := lzma
+ suffix-$(CONFIG_KERNEL_LZO)  := lzo
+ suffix-$(CONFIG_KERNEL_XZ)  := xz
+ 
+ $(obj)/vmlinux.bin.gz: $(vmlinux.bin.all-y)
+ 	$(call if_changed,gzip)
+-$(obj)/vmlinux.bin.bz2: $(vmlinux.bin.all-y)
+-	$(call if_changed,bzip2)
+ $(obj)/vmlinux.bin.lz4: $(vmlinux.bin.all-y)
+ 	$(call if_changed,lz4)
+-$(obj)/vmlinux.bin.lzma: $(vmlinux.bin.all-y)
+-	$(call if_changed,lzma)
+ $(obj)/vmlinux.bin.lzo: $(vmlinux.bin.all-y)
+ 	$(call if_changed,lzo)
+ $(obj)/vmlinux.bin.xz: $(vmlinux.bin.all-y)
+diff --git a/arch/parisc/boot/compressed/misc.c b/arch/parisc/boot/compressed/misc.c
+index 2556bb181813..1ca59916071e 100644
+--- a/arch/parisc/boot/compressed/misc.c
++++ b/arch/parisc/boot/compressed/misc.c
+@@ -42,18 +42,10 @@ static unsigned long free_mem_end_ptr;
+ #include "../../../../lib/decompress_inflate.c"
+ #endif
+ 
+-#ifdef CONFIG_KERNEL_BZIP2
+-#include "../../../../lib/decompress_bunzip2.c"
+-#endif
+-
+ #ifdef CONFIG_KERNEL_LZ4
+ #include "../../../../lib/decompress_unlz4.c"
+ #endif
+ 
+-#ifdef CONFIG_KERNEL_LZMA
+-#include "../../../../lib/decompress_unlzma.c"
+-#endif
+-
+ #ifdef CONFIG_KERNEL_LZO
+ #include "../../../../lib/decompress_unlzo.c"
+ #endif
 -- 
-2.7.4
+2.19.1
