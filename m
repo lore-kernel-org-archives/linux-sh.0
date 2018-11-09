@@ -1,94 +1,59 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 08 Nov 2018 06:28:43 +0000
-Subject: [PATCH resend 10/13] sh: shmobile: convert to SPDX identifiers
-Message-Id: <874lcs146w.wl-kuninori.morimoto.gx@renesas.com>
+From: Adam Borowski <kilobyte@angband.pl>
+Date: Fri, 09 Nov 2018 18:59:53 +0000
+Subject: [PATCH 0/17] Kernel compression: add ZSTD, remove LZMA1 and BZIP2
+Message-Id: <20181109185953.xwyelyqnygbskkxk@angband.pl>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: linux-kernel@vger.kernel.org, Nick Terrell <terrelln@fb.com>, Russell King <linux@armlinux.org.uk>, Geert Uytterhoeven <geert@linux-m68k.org>, linux-m68k@lists.linux-m68k.org, Ralf Baechle <ralf@linux-mips.org>, Paul Burton <paul.burton@mips.com>, James Hogan <jhogan@kernel.org>, linux-mips@linux-mips.org, Jonas Bonn <jonas@southpole.se>, Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>, Stafford Horne <shorne@gmail.com>, openrisc@lists.librecores.org, "James E.J. Bottomley" <jejb@parisc-linux.org>, Helge Deller <deller@gmx.de>, linux-parisc@vger.kernel.org, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Michael Ellerman <mpe@ellerman.id.au>, linuxppc-dev@lists.ozlabs.org, Martin Schwidefsky <schwidefsky@de.ibm.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, linux-s390@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>, x86@kernel.org, Chris Zankel <chris@zankel.net>, Max Filippov <jcmvbkbc@gmail.com>, linux-xtensa@linux-xtensa.org
+
+Hi!
+As new compressors get invented, they tend to find their way into the
+kernel, yet we never prune superseded ones.  It's time to do so.
+
+In particular, BZIP2 is drastically slower than other compressors we
+have, even when they achieve smaller sizes.  It takes more memory, too.
+And, BZIP2 is not used anywhere else in the kernel -- just for booting
+the kernel itself and the initrd.  Thus, we can drop it from the tree
+completely, making Linus happier by around 900 lines.
+
+LZMA1 is redundant with XZ (LZMA2), and unlike the latter, it uses its own
+copy of code that's not shared with anything else (some drivers use XZ).
+Let's drop it as well.  Some bootloaders can use it thus let's keep the
+Kconfig option, but I left no piece of code inside the kernel itself.
+
+On the other hand, Nick Terrell has a couple of patches adding ZSTD support
+(using code already in use in multiple pieces around the kernel).  ZSTD is
+strong and fast, obsoleting all mid-range compressors.  As the removal of
+BZIP2 and LZMA1 would be hopelessly entangled with this addition, I'm
+resending Nick's patches here.  I've been booting using them since Oct'17
+on amd64 (kernel+initrd), armhf and arm64 (initrd) without issues, other
+folks tested various other architectures as well.
+
+Thus, I'd recommend people to use:
+* XZ for most machines
+* ZSTD where speed is important
+* maaaaybe LZ4 is some special cases
+(grub and u-boot are ridiculously slow at reading, making fast but weak
+decompressors a net loss.  On the other hand, XZ decompresses pretty fast
+but is very slow at compress time, making ZSTD preferred for rapid devel
+cycles.)
+
+* we can't get rid of GZIP in foreseable future
+* LZO is obsolete but is used elsewhere in the kernel
+
+Total:
+ 69 files changed, 518 insertions(+), 1785 deletions(-)
+
+Not sure whose tree this patchset should go through.  I'm also not sure
+how finely split into commits you want the arch bits be; I included
+defconfig bits all together, yet separated code changes per-arch.
 
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-
-This patch updates license to use SPDX-License-Identifier
-instead of verbose license text.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Reviewed-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/sh/kernel/cpu/shmobile/Makefile  | 1 +
- arch/sh/kernel/cpu/shmobile/cpuidle.c | 5 +----
- arch/sh/kernel/cpu/shmobile/pm.c      | 5 +----
- arch/sh/kernel/cpu/shmobile/sleep.S   | 7 ++-----
- 4 files changed, 5 insertions(+), 13 deletions(-)
-
-diff --git a/arch/sh/kernel/cpu/shmobile/Makefile b/arch/sh/kernel/cpu/shmobile/Makefile
-index e8a5111..7581d5f 100644
---- a/arch/sh/kernel/cpu/shmobile/Makefile
-+++ b/arch/sh/kernel/cpu/shmobile/Makefile
-@@ -1,3 +1,4 @@
-+# SPDX-License-Identifier: GPL-2.0
- #
- # Makefile for the Linux/SuperH SH-Mobile backends.
- #
-diff --git a/arch/sh/kernel/cpu/shmobile/cpuidle.c b/arch/sh/kernel/cpu/shmobile/cpuidle.c
-index c32e660..dbd2cde 100644
---- a/arch/sh/kernel/cpu/shmobile/cpuidle.c
-+++ b/arch/sh/kernel/cpu/shmobile/cpuidle.c
-@@ -1,13 +1,10 @@
-+// SPDX-License-Identifier: GPL-2.0
- /*
-  * arch/sh/kernel/cpu/shmobile/cpuidle.c
-  *
-  * Cpuidle support code for SuperH Mobile
-  *
-  *  Copyright (C) 2009 Magnus Damm
-- *
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
-  */
- #include <linux/init.h>
- #include <linux/kernel.h>
-diff --git a/arch/sh/kernel/cpu/shmobile/pm.c b/arch/sh/kernel/cpu/shmobile/pm.c
-index fba2be5..ca9945f 100644
---- a/arch/sh/kernel/cpu/shmobile/pm.c
-+++ b/arch/sh/kernel/cpu/shmobile/pm.c
-@@ -1,13 +1,10 @@
-+// SPDX-License-Identifier: GPL-2.0
- /*
-  * arch/sh/kernel/cpu/shmobile/pm.c
-  *
-  * Power management support code for SuperH Mobile
-  *
-  *  Copyright (C) 2009 Magnus Damm
-- *
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
-  */
- #include <linux/init.h>
- #include <linux/kernel.h>
-diff --git a/arch/sh/kernel/cpu/shmobile/sleep.S b/arch/sh/kernel/cpu/shmobile/sleep.S
-index e6aac65..f928c03 100644
---- a/arch/sh/kernel/cpu/shmobile/sleep.S
-+++ b/arch/sh/kernel/cpu/shmobile/sleep.S
-@@ -1,13 +1,10 @@
--/*
-+/* SPDX-License-Identifier: GPL-2.0
-+ *
-  * arch/sh/kernel/cpu/sh4a/sleep-sh_mobile.S
-  *
-  * Sleep mode and Standby modes support for SuperH Mobile
-  *
-  *  Copyright (C) 2009 Magnus Damm
-- *
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
-  */
- 
- #include <linux/sys.h>
+Meow!
 -- 
-2.7.4
+⢀⣴⠾⠻⢶⣦⠀ 
+⣾⠁⢠⠒⠀⣿⡁ A dumb species has no way to open a tuna can.
+⢿⡄⠘⠷⠚⠋⠀ A smart species invents a can opener.
+⠈⠳⣄⠀⠀⠀⠀ A master species delegates.
