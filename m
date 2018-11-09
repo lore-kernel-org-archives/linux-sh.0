@@ -1,76 +1,164 @@
-From: Randy Dunlap <rdunlap@infradead.org>
-Date: Fri, 02 Nov 2018 16:07:01 +0000
-Subject: Re: [PATCH resend] arch/sh: mach-kfr2r09: fix struct mtd_oob_ops build warning
-Message-Id: <bcd90d69-7487-a927-d5c1-d77c422665a8@infradead.org>
+From: Adam Borowski <kilobyte@angband.pl>
+Date: Fri, 09 Nov 2018 19:02:52 +0000
+Subject: [PATCH 05/17] mips: Remove support for BZIP2 and LZMA compressed kernel
+Message-Id: <20181109190304.8573-5-kilobyte@angband.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <702f0a25-c63e-6912-4640-6ab0f00afbc7@infradead.org>
- <20181102075245.GR15991@w540>
-In-Reply-To: <20181102075245.GR15991@w540>
+References: <20181109185953.xwyelyqnygbskkxk@angband.pl>
+ <20181109190304.8573-1-kilobyte@angband.pl>
+In-Reply-To: <20181109190304.8573-1-kilobyte@angband.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: jacopo mondi <jacopo@jmondi.org>
-Cc: LKML <linux-kernel@vger.kernel.org>, Geert Uytterhoeven <geert@linux-m68k.org>, Miquel Raynal <miquel.raynal@bootlin.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Jacopo Mondi <jacopo+renesas@jmondi.org>, Magnus Damm <magnus.damm@gmail.com>, linux-mtd@lists.infradead.org, linux-sh@vger.kernel.org, Andrew Morton <akpm@linux-foundation.org>
+To: linux-kernel@vger.kernel.org, Nick Terrell <terrelln@fb.com>, Russell King <linux@armlinux.org.uk>, Geert Uytterhoeven <geert@linux-m68k.org>, linux-m68k@lists.linux-m68k.org, Ralf Baechle <ralf@linux-mips.org>, Paul Burton <paul.burton@mips.com>, James Hogan <jhogan@kernel.org>, linux-mips@linux-mips.org, Jonas Bonn <jonas@southpole.se>, Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>, Stafford Horne <shorne@gmail.com>, openrisc@lists.librecores.org, "James E.J. Bottomley" <jejb@parisc-linux.org>, Helge Deller <deller@gmx.de>, linux-parisc@vger.kernel.org, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Michael Ellerman <mpe@ellerman.id.au>, linuxppc-dev@lists.ozlabs.org, Martin Schwidefsky <schwidefsky@de.ibm.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, linux-s390@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>, x86@kernel.org, Chris Zankel <chris@zankel.net>, Max Filippov <jcmvbkbc@gmail.com>, linux-xtensa@linux-xtensa.org
+Cc: Adam Borowski <kilobyte@angband.pl>
 
-On 11/2/18 12:52 AM, jacopo mondi wrote:
-> Hi Randy,
->    thanks for the patch.
-> 
-> On Thu, Nov 01, 2018 at 04:38:30PM -0700, Randy Dunlap wrote:
->> From: Randy Dunlap <rdunlap@infradead.org>
->>
->> arch/sh/boards/mach-kfr2r09/setup.c does not need to #include
->> <mtd/onenand.h>, and doing so causes a build warning, so drop
->> that header file.
->>
->> In file included from ../arch/sh/boards/mach-kfr2r09/setup.c:28:
->> ../include/linux/mtd/onenand.h:225:12: warning: 'struct mtd_oob_ops' declared inside parameter list will not be visible outside of this definition or declaration
->>      struct mtd_oob_ops *ops);
->>
->> Fixes: f3590dc32974 ("media: arch: sh: kfr2r09: Use new renesas-ceu camera driver")
-> 
-> Not sure if this is worth pointing out, but this commit only resorts
-> headers. The one introducing the warning is actually 33893d7aa.
-> 
-> I felt like reporting this, as introducing a "Fixes" line for that
-> commit too would help backporting maybe?
+Made redundant by newer choices.
 
-Oops, thanks, I'll fix that and send a v2 with your Ack.
+Signed-off-by: Adam Borowski <kilobyte@angband.pl>
+---
+ arch/mips/Kconfig                      |  2 --
+ arch/mips/boot/Makefile                | 27 --------------------------
+ arch/mips/boot/compressed/Makefile     |  2 --
+ arch/mips/boot/compressed/decompress.c |  8 --------
+ 4 files changed, 39 deletions(-)
 
-> In any case:
-> Acked-by: Jacopo Mondi <jacopo@jmondi.org>
-> 
-> Thanks
->    j
-> 
->>
->> Reported-by: Geert Uytterhoeven <geert@linux-m68k.org>
->> Suggested-by: Miquel Raynal <miquel.raynal@bootlin.com>
->> Signed-off-by: Randy Dunlap <rdunlap@infradead.org>
->> Reviewed-by: Miquel Raynal <miquel.raynal@bootlin.com>
->> Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
->> Cc: Rich Felker <dalias@libc.org>
->> Cc: Jacopo Mondi <jacopo+renesas@jmondi.org>
->> Cc: Magnus Damm <magnus.damm@gmail.com>
->> Cc: linux-mtd@lists.infradead.org
->> Cc: linux-sh@vger.kernel.org
->> ---
->>  arch/sh/boards/mach-kfr2r09/setup.c |    1 -
->>  1 file changed, 1 deletion(-)
->>
->> --- linux-next-20181101.orig/arch/sh/boards/mach-kfr2r09/setup.c
->> +++ linux-next-20181101/arch/sh/boards/mach-kfr2r09/setup.c
->> @@ -25,7 +25,6 @@
->>  #include <linux/memblock.h>
->>  #include <linux/mfd/tmio.h>
->>  #include <linux/mmc/host.h>
->> -#include <linux/mtd/onenand.h>
->>  #include <linux/mtd/physmap.h>
->>  #include <linux/platform_data/lv5207lp.h>
->>  #include <linux/platform_device.h>
->>
->>
-
-
+diff --git a/arch/mips/Kconfig b/arch/mips/Kconfig
+index 8272ea4c7264..8f774bb9d22f 100644
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -1834,9 +1834,7 @@ endif # CPU_LOONGSON2F
+ config SYS_SUPPORTS_ZBOOT
+ 	bool
+ 	select HAVE_KERNEL_GZIP
+-	select HAVE_KERNEL_BZIP2
+ 	select HAVE_KERNEL_LZ4
+-	select HAVE_KERNEL_LZMA
+ 	select HAVE_KERNEL_LZO
+ 	select HAVE_KERNEL_XZ
+ 
+diff --git a/arch/mips/boot/Makefile b/arch/mips/boot/Makefile
+index 35704c28a28b..9c5f380a6c20 100644
+--- a/arch/mips/boot/Makefile
++++ b/arch/mips/boot/Makefile
+@@ -24,9 +24,7 @@ strip-flags   := $(addprefix --remove-section=,$(drop-sections))
+ hostprogs-y := elf2ecoff
+ 
+ suffix-y			:= bin
+-suffix-$(CONFIG_KERNEL_BZIP2)	:= bz2
+ suffix-$(CONFIG_KERNEL_GZIP)	:= gz
+-suffix-$(CONFIG_KERNEL_LZMA)	:= lzma
+ suffix-$(CONFIG_KERNEL_LZO)	:= lzo
+ 
+ targets := vmlinux.ecoff
+@@ -54,20 +52,12 @@ UIMAGE_ENTRYADDR = $(VMLINUX_ENTRY_ADDRESS)
+ # Compressed vmlinux images
+ #
+ 
+-extra-y += vmlinux.bin.bz2
+ extra-y += vmlinux.bin.gz
+-extra-y += vmlinux.bin.lzma
+ extra-y += vmlinux.bin.lzo
+ 
+-$(obj)/vmlinux.bin.bz2: $(obj)/vmlinux.bin FORCE
+-	$(call if_changed,bzip2)
+-
+ $(obj)/vmlinux.bin.gz: $(obj)/vmlinux.bin FORCE
+ 	$(call if_changed,gzip)
+ 
+-$(obj)/vmlinux.bin.lzma: $(obj)/vmlinux.bin FORCE
+-	$(call if_changed,lzma)
+-
+ $(obj)/vmlinux.bin.lzo: $(obj)/vmlinux.bin FORCE
+ 	$(call if_changed,lzo)
+ 
+@@ -77,23 +67,15 @@ $(obj)/vmlinux.bin.lzo: $(obj)/vmlinux.bin FORCE
+ 
+ targets += uImage
+ targets += uImage.bin
+-targets += uImage.bz2
+ targets += uImage.gz
+-targets += uImage.lzma
+ targets += uImage.lzo
+ 
+ $(obj)/uImage.bin: $(obj)/vmlinux.bin FORCE
+ 	$(call if_changed,uimage,none)
+ 
+-$(obj)/uImage.bz2: $(obj)/vmlinux.bin.bz2 FORCE
+-	$(call if_changed,uimage,bzip2)
+-
+ $(obj)/uImage.gz: $(obj)/vmlinux.bin.gz FORCE
+ 	$(call if_changed,uimage,gzip)
+ 
+-$(obj)/uImage.lzma: $(obj)/vmlinux.bin.lzma FORCE
+-	$(call if_changed,uimage,lzma)
+-
+ $(obj)/uImage.lzo: $(obj)/vmlinux.bin.lzo FORCE
+ 	$(call if_changed,uimage,lzo)
+ 
+@@ -122,7 +104,6 @@ $(obj)/vmlinux.its.S: $(addprefix $(srctree)/arch/mips/$(PLATFORM)/,$(ITS_INPUTS
+ 
+ targets += vmlinux.its
+ targets += vmlinux.gz.its
+-targets += vmlinux.bz2.its
+ targets += vmlinux.lzmo.its
+ targets += vmlinux.lzo.its
+ 
+@@ -142,19 +123,11 @@ $(obj)/vmlinux.its: $(obj)/vmlinux.its.S $(VMLINUX) FORCE
+ $(obj)/vmlinux.gz.its: $(obj)/vmlinux.its.S $(VMLINUX) FORCE
+ 	$(call if_changed,cpp_its_S,gzip,vmlinux.bin.gz)
+ 
+-$(obj)/vmlinux.bz2.its: $(obj)/vmlinux.its.S $(VMLINUX)  FORCE
+-	$(call if_changed,cpp_its_S,bzip2,vmlinux.bin.bz2)
+-
+-$(obj)/vmlinux.lzma.its: $(obj)/vmlinux.its.S $(VMLINUX) FORCE
+-	$(call if_changed,cpp_its_S,lzma,vmlinux.bin.lzma)
+-
+ $(obj)/vmlinux.lzo.its: $(obj)/vmlinux.its.S $(VMLINUX) FORCE
+ 	$(call if_changed,cpp_its_S,lzo,vmlinux.bin.lzo)
+ 
+ targets += vmlinux.itb
+ targets += vmlinux.gz.itb
+-targets += vmlinux.bz2.itb
+-targets += vmlinux.lzma.itb
+ targets += vmlinux.lzo.itb
+ 
+ quiet_cmd_itb-image = ITB     $@
+diff --git a/arch/mips/boot/compressed/Makefile b/arch/mips/boot/compressed/Makefile
+index 3c453a1f1ff1..a7448d74fe7b 100644
+--- a/arch/mips/boot/compressed/Makefile
++++ b/arch/mips/boot/compressed/Makefile
+@@ -62,9 +62,7 @@ $(obj)/vmlinux.bin: $(KBUILD_IMAGE) FORCE
+ 	$(call if_changed,objcopy)
+ 
+ tool_$(CONFIG_KERNEL_GZIP)    = gzip
+-tool_$(CONFIG_KERNEL_BZIP2)   = bzip2
+ tool_$(CONFIG_KERNEL_LZ4)     = lz4
+-tool_$(CONFIG_KERNEL_LZMA)    = lzma
+ tool_$(CONFIG_KERNEL_LZO)     = lzo
+ tool_$(CONFIG_KERNEL_XZ)      = xzkern
+ 
+diff --git a/arch/mips/boot/compressed/decompress.c b/arch/mips/boot/compressed/decompress.c
+index 81df9047e110..ac6978d210e6 100644
+--- a/arch/mips/boot/compressed/decompress.c
++++ b/arch/mips/boot/compressed/decompress.c
+@@ -56,18 +56,10 @@ void error(char *x)
+ #include "../../../../lib/decompress_inflate.c"
+ #endif
+ 
+-#ifdef CONFIG_KERNEL_BZIP2
+-#include "../../../../lib/decompress_bunzip2.c"
+-#endif
+-
+ #ifdef CONFIG_KERNEL_LZ4
+ #include "../../../../lib/decompress_unlz4.c"
+ #endif
+ 
+-#ifdef CONFIG_KERNEL_LZMA
+-#include "../../../../lib/decompress_unlzma.c"
+-#endif
+-
+ #ifdef CONFIG_KERNEL_LZO
+ #include "../../../../lib/decompress_unlzo.c"
+ #endif
 -- 
-~Randy
+2.19.1
