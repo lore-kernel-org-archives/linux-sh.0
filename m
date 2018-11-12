@@ -1,100 +1,237 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 13 Nov 2018 22:08:25 +0000
-Subject: Re: [PATCH/RFC] dmaengine: sh: Remove R-Mobile APE6 support
-Message-Id: <CAMuHMdXKRDpdXzr5kH+NEG+7PJ4QjMWa3h4z1Ne_q1x-RdiyPg@mail.gmail.com>
+From: Douglas Anderson <dianders@chromium.org>
+Date: Mon, 12 Nov 2018 18:26:55 +0000
+Subject: [PATCH v4 1/4] kgdb: Remove irq flags from roundup
+Message-Id: <20181112182659.245726-2-dianders@chromium.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <CAMuHMdVV+NnwX+4o19wyF6GVF7Xk52nDyruJLfAfzvAMPhrcKQ@mail.gmail.com>
-In-Reply-To: <CAMuHMdVV+NnwX+4o19wyF6GVF7Xk52nDyruJLfAfzvAMPhrcKQ@mail.gmail.com>
+References: <20181112182659.245726-1-dianders@chromium.org>
+In-Reply-To: <20181112182659.245726-1-dianders@chromium.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Rob Landley <rob@landley.net>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Vinod <vkoul@kernel.org>, Dan Williams <dan.j.williams@intel.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Wolfram Sang <wsa+renesas@sang-engineering.com>, Simon Horman <horms+renesas@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, dmaengine@vger.kernel.org, Linux-Renesas <linux-renesas-soc@vger.kernel.org>, Richard Weinberger <richard@nod.at>, Yoshinori Sato <ysato@users.sourceforge.jp>, Linux-sh list <linux-sh@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Rob,
+The function kgdb_roundup_cpus() was passed a parameter that was
+documented as:
 
-On Tue, Nov 13, 2018 at 8:32 PM Rob Landley <rob@landley.net> wrote:
-> On 11/12/18 9:30 AM, Geert Uytterhoeven wrote:
-> > CC SuperH
-> >
-> > On Mon, Nov 12, 2018 at 4:22 PM Geert Uytterhoeven
-> > <geert+renesas@glider.be> wrote:
-> >> Renesas R-Mobile APE6 support is currently unused:
-> >>   - DMA slaves were never enabled in r8a73a4.dtsi,
-> >>   - The driver relies on legacy filter matching and describing all
-> >>     slaves and MID/RIDs in a table, unlike modern DMA engine drivers for
-> >>     similar hardware like rcar-dmac,
-> >>   - The driver doesn't seem to work well.
-> >>
-> >> Remove the driver, it can be resurrected from git history when needed.
-> >>
-> >> As this was the last user of SH_DMAE_BASE on Renesas ARM SoCs, the
-> >> sh-dma-engine driver core is now used on SuperH only.
->
-> I'm trying to add dma support to smc91x on an sh7760 board:
->
-> https://www.spinics.net/lists/linux-sh/msg53400.html
->
-> I missed the ship window for the previous iteration so we had to use PIO, but
-> DMA's a huge speedup and it's cycling back around on my todo list...
->
-> Unfortunately due to a flash corruption bug we were stuck at 4.14 for that
-> release. I'm trying to track that down now, then need to redo this work on top
-> of 4.20 or 4.21.
->
-> Kernel board support patches are at the lawyers being frowned at expensively
-> before release, but it won't include DMA this time because I only got the first
-> half of it working. (Board's hooked up and can do memory-to-memory, but the
-> ethernet card couldn't use it because the smc91x claims of using dmaengine are
-> lies, it's hardwired to a specific arm chip ("mainstone" I think?), and when I
-> got QEMU to emulate that ARM board and tried to enable DMA: packet timeouts. I
-> dunno if it's broken in the kernel or QEMU doesn't emulate the DMA...)
->
-> >> Notes:
-> >>   1. As Renesas ARM SoCs no longer use drivers/dma/sh/shdma-base.c, the
-> >>      task to remove use of the deprecated dma_slave_config.direction
-> >>      field gets thrown into the SuperH maintainers' basket ;-)
->
-> At least in 4.14 there were two DMA apis, once of which is obsolete and unused,
-> and the other is modern dmaengine support which at least passes its self-test.
->
-> I left off boggling at the "slave API", I think...
+> the flags that will be used when restoring the interrupts. There is
+> local_irq_save() call before kgdb_roundup_cpus().
 
-Yes, there's SH_DMA_API and the "new" DMA_ENGINE API.
+Nobody used those flags.  Anyone who wanted to temporarily turn on
+interrupts just did local_irq_enable() and local_irq_disable() without
+looking at them.  So we can definitely remove the flags.
 
-> >>   3. I tried to get SCIFA DMA to work by:
-> >>        - Applying the DT and driver patches below,
-> >>        - Reverting 219fb0c1436e4893 ("serial: sh-sci: Remove the
-> >>          platform data dma slave rx/tx channel IDs").
->
-> The board I'm using is platform data, never got converted to device tree. (If I
-> can ever convince them to mail a board to Rich Felker I might try to hire him to
-> convert it _myself_. Or I could just get him an old board on ebay, current
-> cheapest one looks like
-> https://www.ebay.com/p/Johnson-Controls-Ms-nae3511-2-Metasys-Controller-NAE-and-2x-Unt1108/567230953?iid(3254042308
-> at the moment? Dead battery's fine for a dev/test system...)
->
-> But it's not happening this month.
->
-> >>      After that, serial console output using DMA seems to work, but the
-> >>      system locks up when receiving any serial console input.
-> >>      Probably it is easier to add r8a73a4 support to rcar-dmac.
->
-> What _is_ the status of dmaengine? I thought it was the generic dma API the
-> kernel was moving towards? (The youtube videos suggested such...)
+Signed-off-by: Douglas Anderson <dianders@chromium.org>
+---
 
-Dmaengine is working on the Renesas R-Car Gen2 and Gen3 SoCs, using
-rcar-dmac and usb-dmac.  But that's ARM (32/64-bit), not SuperH.
+Changes in v4: None
+Changes in v3: None
+Changes in v2:
+- Removing irq flags separated from fixing lockdep splat.
 
-I'm afraid you're on your own on SuperH... Good luck!
+ arch/arc/kernel/kgdb.c     | 2 +-
+ arch/arm/kernel/kgdb.c     | 2 +-
+ arch/arm64/kernel/kgdb.c   | 2 +-
+ arch/hexagon/kernel/kgdb.c | 9 ++-------
+ arch/mips/kernel/kgdb.c    | 2 +-
+ arch/powerpc/kernel/kgdb.c | 2 +-
+ arch/sh/kernel/kgdb.c      | 2 +-
+ arch/sparc/kernel/smp_64.c | 2 +-
+ arch/x86/kernel/kgdb.c     | 9 ++-------
+ include/linux/kgdb.h       | 9 ++-------
+ kernel/debug/debug_core.c  | 2 +-
+ 11 files changed, 14 insertions(+), 29 deletions(-)
 
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+diff --git a/arch/arc/kernel/kgdb.c b/arch/arc/kernel/kgdb.c
+index 9a3c34af2ae8..0932851028e0 100644
+--- a/arch/arc/kernel/kgdb.c
++++ b/arch/arc/kernel/kgdb.c
+@@ -197,7 +197,7 @@ static void kgdb_call_nmi_hook(void *ignored)
+ 	kgdb_nmicallback(raw_smp_processor_id(), NULL);
+ }
+ 
+-void kgdb_roundup_cpus(unsigned long flags)
++void kgdb_roundup_cpus(void)
+ {
+ 	local_irq_enable();
+ 	smp_call_function(kgdb_call_nmi_hook, NULL, 0);
+diff --git a/arch/arm/kernel/kgdb.c b/arch/arm/kernel/kgdb.c
+index caa0dbe3dc61..f21077b077be 100644
+--- a/arch/arm/kernel/kgdb.c
++++ b/arch/arm/kernel/kgdb.c
+@@ -175,7 +175,7 @@ static void kgdb_call_nmi_hook(void *ignored)
+        kgdb_nmicallback(raw_smp_processor_id(), get_irq_regs());
+ }
+ 
+-void kgdb_roundup_cpus(unsigned long flags)
++void kgdb_roundup_cpus(void)
+ {
+        local_irq_enable();
+        smp_call_function(kgdb_call_nmi_hook, NULL, 0);
+diff --git a/arch/arm64/kernel/kgdb.c b/arch/arm64/kernel/kgdb.c
+index a20de58061a8..12c339ff6e75 100644
+--- a/arch/arm64/kernel/kgdb.c
++++ b/arch/arm64/kernel/kgdb.c
+@@ -289,7 +289,7 @@ static void kgdb_call_nmi_hook(void *ignored)
+ 	kgdb_nmicallback(raw_smp_processor_id(), get_irq_regs());
+ }
+ 
+-void kgdb_roundup_cpus(unsigned long flags)
++void kgdb_roundup_cpus(void)
+ {
+ 	local_irq_enable();
+ 	smp_call_function(kgdb_call_nmi_hook, NULL, 0);
+diff --git a/arch/hexagon/kernel/kgdb.c b/arch/hexagon/kernel/kgdb.c
+index 16c24b22d0b2..012e0e230ac2 100644
+--- a/arch/hexagon/kernel/kgdb.c
++++ b/arch/hexagon/kernel/kgdb.c
+@@ -119,17 +119,12 @@ void kgdb_arch_set_pc(struct pt_regs *regs, unsigned long pc)
+ 
+ /**
+  * kgdb_roundup_cpus - Get other CPUs into a holding pattern
+- * @flags: Current IRQ state
+  *
+  * On SMP systems, we need to get the attention of the other CPUs
+  * and get them be in a known state.  This should do what is needed
+  * to get the other CPUs to call kgdb_wait(). Note that on some arches,
+  * the NMI approach is not used for rounding up all the CPUs. For example,
+- * in case of MIPS, smp_call_function() is used to roundup CPUs. In
+- * this case, we have to make sure that interrupts are enabled before
+- * calling smp_call_function(). The argument to this function is
+- * the flags that will be used when restoring the interrupts. There is
+- * local_irq_save() call before kgdb_roundup_cpus().
++ * in case of MIPS, smp_call_function() is used to roundup CPUs.
+  *
+  * On non-SMP systems, this is not called.
+  */
+@@ -139,7 +134,7 @@ static void hexagon_kgdb_nmi_hook(void *ignored)
+ 	kgdb_nmicallback(raw_smp_processor_id(), get_irq_regs());
+ }
+ 
+-void kgdb_roundup_cpus(unsigned long flags)
++void kgdb_roundup_cpus(void)
+ {
+ 	local_irq_enable();
+ 	smp_call_function(hexagon_kgdb_nmi_hook, NULL, 0);
+diff --git a/arch/mips/kernel/kgdb.c b/arch/mips/kernel/kgdb.c
+index eb6c0d582626..2b05effc17b4 100644
+--- a/arch/mips/kernel/kgdb.c
++++ b/arch/mips/kernel/kgdb.c
+@@ -219,7 +219,7 @@ static void kgdb_call_nmi_hook(void *ignored)
+ 	set_fs(old_fs);
+ }
+ 
+-void kgdb_roundup_cpus(unsigned long flags)
++void kgdb_roundup_cpus(void)
+ {
+ 	local_irq_enable();
+ 	smp_call_function(kgdb_call_nmi_hook, NULL, 0);
+diff --git a/arch/powerpc/kernel/kgdb.c b/arch/powerpc/kernel/kgdb.c
+index 59c578f865aa..b0e804844be0 100644
+--- a/arch/powerpc/kernel/kgdb.c
++++ b/arch/powerpc/kernel/kgdb.c
+@@ -124,7 +124,7 @@ static int kgdb_call_nmi_hook(struct pt_regs *regs)
+ }
+ 
+ #ifdef CONFIG_SMP
+-void kgdb_roundup_cpus(unsigned long flags)
++void kgdb_roundup_cpus(void)
+ {
+ 	smp_send_debugger_break();
+ }
+diff --git a/arch/sh/kernel/kgdb.c b/arch/sh/kernel/kgdb.c
+index 4f04c6638a4d..cc57630f6bf2 100644
+--- a/arch/sh/kernel/kgdb.c
++++ b/arch/sh/kernel/kgdb.c
+@@ -319,7 +319,7 @@ static void kgdb_call_nmi_hook(void *ignored)
+ 	kgdb_nmicallback(raw_smp_processor_id(), get_irq_regs());
+ }
+ 
+-void kgdb_roundup_cpus(unsigned long flags)
++void kgdb_roundup_cpus(void)
+ {
+ 	local_irq_enable();
+ 	smp_call_function(kgdb_call_nmi_hook, NULL, 0);
+diff --git a/arch/sparc/kernel/smp_64.c b/arch/sparc/kernel/smp_64.c
+index 4792e08ad36b..f45d876983f1 100644
+--- a/arch/sparc/kernel/smp_64.c
++++ b/arch/sparc/kernel/smp_64.c
+@@ -1014,7 +1014,7 @@ void flush_dcache_page_all(struct mm_struct *mm, struct page *page)
+ }
+ 
+ #ifdef CONFIG_KGDB
+-void kgdb_roundup_cpus(unsigned long flags)
++void kgdb_roundup_cpus(void)
+ {
+ 	smp_cross_call(&xcall_kgdb_capture, 0, 0, 0);
+ }
+diff --git a/arch/x86/kernel/kgdb.c b/arch/x86/kernel/kgdb.c
+index 8e36f249646e..ac6291a4178d 100644
+--- a/arch/x86/kernel/kgdb.c
++++ b/arch/x86/kernel/kgdb.c
+@@ -422,21 +422,16 @@ static void kgdb_disable_hw_debug(struct pt_regs *regs)
+ #ifdef CONFIG_SMP
+ /**
+  *	kgdb_roundup_cpus - Get other CPUs into a holding pattern
+- *	@flags: Current IRQ state
+  *
+  *	On SMP systems, we need to get the attention of the other CPUs
+  *	and get them be in a known state.  This should do what is needed
+  *	to get the other CPUs to call kgdb_wait(). Note that on some arches,
+  *	the NMI approach is not used for rounding up all the CPUs. For example,
+- *	in case of MIPS, smp_call_function() is used to roundup CPUs. In
+- *	this case, we have to make sure that interrupts are enabled before
+- *	calling smp_call_function(). The argument to this function is
+- *	the flags that will be used when restoring the interrupts. There is
+- *	local_irq_save() call before kgdb_roundup_cpus().
++ *	in case of MIPS, smp_call_function() is used to roundup CPUs.
+  *
+  *	On non-SMP systems, this is not called.
+  */
+-void kgdb_roundup_cpus(unsigned long flags)
++void kgdb_roundup_cpus(void)
+ {
+ 	apic->send_IPI_allbutself(APIC_DM_NMI);
+ }
+diff --git a/include/linux/kgdb.h b/include/linux/kgdb.h
+index e465bb15912d..05e5b2eb0d32 100644
+--- a/include/linux/kgdb.h
++++ b/include/linux/kgdb.h
+@@ -178,21 +178,16 @@ kgdb_arch_handle_exception(int vector, int signo, int err_code,
+ 
+ /**
+  *	kgdb_roundup_cpus - Get other CPUs into a holding pattern
+- *	@flags: Current IRQ state
+  *
+  *	On SMP systems, we need to get the attention of the other CPUs
+  *	and get them into a known state.  This should do what is needed
+  *	to get the other CPUs to call kgdb_wait(). Note that on some arches,
+  *	the NMI approach is not used for rounding up all the CPUs. For example,
+- *	in case of MIPS, smp_call_function() is used to roundup CPUs. In
+- *	this case, we have to make sure that interrupts are enabled before
+- *	calling smp_call_function(). The argument to this function is
+- *	the flags that will be used when restoring the interrupts. There is
+- *	local_irq_save() call before kgdb_roundup_cpus().
++ *	in case of MIPS, smp_call_function() is used to roundup CPUs.
+  *
+  *	On non-SMP systems, this is not called.
+  */
+-extern void kgdb_roundup_cpus(unsigned long flags);
++extern void kgdb_roundup_cpus(void);
+ 
+ /**
+  *	kgdb_arch_set_pc - Generic call back to the program counter
+diff --git a/kernel/debug/debug_core.c b/kernel/debug/debug_core.c
+index 65c0f1363788..f3cadda45f07 100644
+--- a/kernel/debug/debug_core.c
++++ b/kernel/debug/debug_core.c
+@@ -593,7 +593,7 @@ static int kgdb_cpu_enter(struct kgdb_state *ks, struct pt_regs *regs,
+ 
+ 	/* Signal the other CPUs to enter kgdb_wait() */
+ 	else if ((!kgdb_single_step) && kgdb_do_roundup)
+-		kgdb_roundup_cpus(flags);
++		kgdb_roundup_cpus();
+ #endif
+ 
+ 	/*
+-- 
+2.19.1.930.g4563a0d9d0-goog
