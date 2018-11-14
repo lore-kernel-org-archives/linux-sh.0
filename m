@@ -1,50 +1,30 @@
-From: Logan Gunthorpe <logang@deltatee.com>
-Date: Wed, 07 Nov 2018 20:54:31 +0000
-Subject: [PATCH v2 0/2] Introduce common code for risc-v sparsemem support
-Message-Id: <20181107205433.3875-1-logang@deltatee.com>
+From: Palmer Dabbelt <palmer@sifive.com>
+Date: Wed, 14 Nov 2018 18:06:24 +0000
+Subject: Re: [PATCH v2 0/2] Introduce common code for risc-v sparsemem support
+Message-Id: <mhng-dfc065e5-80c6-4a9d-b95b-95170df42969@palmer-si-x1c4>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20181107205433.3875-1-logang@deltatee.com>
+In-Reply-To: <20181107205433.3875-1-logang@deltatee.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org, linux-mm@kvack.org, linux-arch@vger.kernel.org, linux-riscv@lists.infradead.org, linux-arm-kernel@lists.infradead.org, linux-sh@vger.kernel.org, Andrew Morton <akpm@linux-foundation.org>
-Cc: Stephen Bates <sbates@raithlin.com>, Palmer Dabbelt <palmer@sifive.com>, Albert Ou <aou@eecs.berkeley.edu>, Christoph Hellwig <hch@lst.de>, Arnd Bergmann <arnd@arndb.de>, Logan Gunthorpe <logang@deltatee.com>
+To: linux-mm@kvack.org, akpm@linux-foundation.org
+Cc: linux-kernel@vger.kernel.org, linux-arch@vger.kernel.org, linux-riscv@lists.infradead.org, linux-arm-kernel@lists.infradead.org, linux-sh@vger.kernel.org, sbates@raithlin.com, aou@eecs.berkeley.edu, Christoph Hellwig <hch@lst.de>, Arnd Bergmann <arnd@arndb.de>, logang@deltatee.com
 
-These are the first two common patches in my series to introduce
-sparsemem support to RISC-V. The full series was posted last cycle
-here [1] and the latest version can be found here [2].
+On Wed, 07 Nov 2018 12:54:31 PST (-0800), logang@deltatee.com wrote:
+> These are the first two common patches in my series to introduce
+> sparsemem support to RISC-V. The full series was posted last cycle
+> here [1] and the latest version can be found here [2].
+>
+> As recommended by Palmer, I'd like to get the changes to common code
+> merged and then I will pursue the cleanups in the individual arches (arm,
+> arm64, and sh) as well as add the new feature to riscv.
+>
+> I would suggest we merge these two patches through Andrew's mm tree.
 
-As recommended by Palmer, I'd like to get the changes to common code
-merged and then I will pursue the cleanups in the individual arches (arm,
-arm64, and sh) as well as add the new feature to riscv.
+I haven't seen any review on this.  It looks fine to me, but I'm not qualified 
+to review it as I don't really know anything about core MM stuff -- and I 
+certainly don't feel comfortable taking this through my tree.
 
-I would suggest we merge these two patches through Andrew's mm tree.
-
-Thanks,
-
-Logan
-
-[1] https://lore.kernel.org/lkml/20181015175702.9036-1-logang@deltatee.com/T/#u
-[2] https://github.com/sbates130272/linux-p2pmem.git riscv-sparsemem-v4
-
---
-
-Changes in v2:
- * Added a comment documenting the awkwardly named memblocks_present()
-   function, as suggested by Andrew.
-
---
-
-Logan Gunthorpe (2):
-  mm: Introduce common STRUCT_PAGE_MAX_SHIFT define
-  mm/sparse: add common helper to mark all memblocks present
-
- arch/arm64/include/asm/memory.h |  9 ---------
- arch/arm64/mm/init.c            |  8 --------
- include/asm-generic/fixmap.h    |  1 +
- include/linux/mm_types.h        |  5 +++++
- include/linux/mmzone.h          |  6 ++++++
- mm/sparse.c                     | 16 ++++++++++++++++
- 6 files changed, 28 insertions(+), 17 deletions(-)
-
---
-2.19.0
+I've To'd linux-mm, hopefully it just got lost in the shuffle during the merge 
+window.
