@@ -1,55 +1,91 @@
-From: Andrew Morton <akpm@linux-foundation.org>
-Date: Wed, 07 Nov 2018 20:11:59 +0000
-Subject: Re: [PATCH 1/2] mm: Introduce common STRUCT_PAGE_MAX_SHIFT define
-Message-Id: <20181107121159.b8c9add7c61fb97f48ddd7de@linux-foundation.org>
+From: Firoz Khan <firoz.khan@linaro.org>
+Date: Wed, 14 Nov 2018 04:44:07 +0000
+Subject: [PATCH v3 0/3] sh: system call table generation support
+Message-Id: <1542169930-24118-1-git-send-email-firoz.khan@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20181107173859.24096-1-logang@deltatee.com>
-        <20181107173859.24096-2-logang@deltatee.com>
-In-Reply-To: <20181107173859.24096-2-logang@deltatee.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Logan Gunthorpe <logang@deltatee.com>
-Cc: linux-kernel@vger.kernel.org, linux-mm@kvack.org, linux-arch@vger.kernel.org, linux-riscv@lists.infradead.org, linux-arm-kernel@lists.infradead.org, linux-sh@vger.kernel.org, Stephen Bates <sbates@raithlin.com>, Palmer Dabbelt <palmer@sifive.com>, Albert Ou <aou@eecs.berkeley.edu>, Christoph Hellwig <hch@lst.de>, Arnd Bergmann <arnd@arndb.de>, Catalin Marinas <catalin.marinas@arm.com>
+To: linux-sh@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Philippe Ombredanne <pombredanne@nexb.com>, Thomas Gleixner <tglx@linutronix.de>, Kate Stewart <kstewart@linuxfoundation.org>
+Cc: y2038@lists.linaro.org, linux-kernel@vger.kernel.org, linux-arch@vger.kernel.org, arnd@arndb.de, deepa.kernel@gmail.com, marcin.juszkiewicz@linaro.org, firoz.khan@linaro.org
 
-On Wed,  7 Nov 2018 10:38:58 -0700 Logan Gunthorpe <logang@deltatee.com> wrote:
+The purpose of this patch series is, we can easily
+add/modify/delete system call table support by cha-
+nging entry in syscall.tbl file instead of manually
+changing many files. The other goal is to unify the 
+system call table generation support implementation 
+across all the architectures. 
 
-> This define is used by arm64 to calculate the size of the vmemmap
-> region. It is defined as the log2 of the upper bound on the size
-> of a struct page.
-> 
-> We move it into mm_types.h so it can be defined properly instead of
-> set and checked with a build bug. This also allows us to use the same
-> define for riscv.
-> 
-> --- a/arch/arm64/include/asm/memory.h
-> +++ b/arch/arm64/include/asm/memory.h
-> @@ -34,15 +34,6 @@
->   */
->  #define PCI_IO_SIZE		SZ_16M
->  
-> -/*
-> - * Log2 of the upper bound of the size of a struct page. Used for sizing
-> - * the vmemmap region only, does not affect actual memory footprint.
-> - * We don't use sizeof(struct page) directly since taking its size here
-> - * requires its definition to be available at this point in the inclusion
-> - * chain, and it may not be a power of 2 in the first place.
-> - */
-> -#define STRUCT_PAGE_MAX_SHIFT	6
+The system call tables are in different format in 
+all architecture. It will be difficult to manually
+add, modify or delete the system calls in the resp-
+ective files manually. To make it easy by keeping a 
+script and which'll generate uapi header file and 
+syscall table file.
 
-Well that was lame.
+syscall.tbl contains the list of available system 
+calls along with system call number and correspond-
+ing entry point. Add a new system call in this arch-
+itecture will be possible by adding new entry in 
+the syscall.tbl file.
 
-> --- a/include/linux/mm_types.h
-> +++ b/include/linux/mm_types.h
-> @@ -206,6 +206,11 @@ struct page {
->  #endif
->  } _struct_page_alignment;
->  
-> +/*
-> + * Used for sizing the vmemmap region on some architectures
-> + */
-> +#define STRUCT_PAGE_MAX_SHIFT	(order_base_2(sizeof(struct page)))
+Adding a new table entry consisting of:
+        - System call number.
+        - ABI.
+        - System call name.
+        - Entry point name.
 
-Much better.
+Please note, this support is only available for 32-bit
+kernel, not 64-bit kernel. As I came across the 64-bit
+kernel is not active for long time.
 
-Acked-by: Andrew Morton <akpm@linux-foundation.org>
+ARM, s390 and x86 architecuture does exist the sim-
+ilar support. I leverage their implementation to come
+up with a generic solution.
+
+I have done the same support for work for alpha, ia64,
+m68k, microblaze, mips, parisc, powerpc, sparc, and 
+xtensa. Below mentioned git repository contains more 
+details about the workflow.
+
+https://github.com/frzkhn/system_call_table_generator/
+
+Finally, this is the ground work to solve the Y2038
+issue. We need to add two dozen of system calls to solve
+Y2038 issue. So this patch series will help to add new 
+system calls easily by adding new entry in the syscall-
+.tbl.
+
+Changes since v2:
+ - changed from generic-y to generated-y in Kbuild.
+
+Changes since v1:
+ - optimized/updated the syscall table generation 
+   scripts.
+ - fixed all mixed indentation issues in syscall.tbl.
+ - added "comments" in syscall.tbl.
+
+Firoz Khan (3):
+  sh: add __NR_syscalls along with NR_syscalls
+  sh: add system call table generation support
+  sh: generate uapi header and syscall table header files
+
+ arch/sh/Makefile                      |   3 +
+ arch/sh/include/asm/Kbuild            |   1 +
+ arch/sh/include/asm/unistd.h          |   2 +
+ arch/sh/include/uapi/asm/Kbuild       |   1 +
+ arch/sh/include/uapi/asm/unistd_32.h  |   4 +-
+ arch/sh/include/uapi/asm/unistd_64.h  |   4 +-
+ arch/sh/kernel/syscalls/Makefile      |  38 ++++
+ arch/sh/kernel/syscalls/syscall.tbl   | 392 ++++++++++++++++++++++++++++++++++
+ arch/sh/kernel/syscalls/syscallhdr.sh |  36 ++++
+ arch/sh/kernel/syscalls/syscalltbl.sh |  32 +++
+ arch/sh/kernel/syscalls_32.S          | 387 +--------------------------------
+ 11 files changed, 514 insertions(+), 386 deletions(-)
+ create mode 100644 arch/sh/kernel/syscalls/Makefile
+ create mode 100644 arch/sh/kernel/syscalls/syscall.tbl
+ create mode 100644 arch/sh/kernel/syscalls/syscallhdr.sh
+ create mode 100644 arch/sh/kernel/syscalls/syscalltbl.sh
+
+-- 
+1.9.1
