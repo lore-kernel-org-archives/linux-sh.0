@@ -1,77 +1,70 @@
-From: Logan Gunthorpe <logang@deltatee.com>
-Date: Wed, 07 Nov 2018 20:54:33 +0000
-Subject: [PATCH v2 2/2] mm/sparse: add common helper to mark all memblocks present
-Message-Id: <20181107205433.3875-3-logang@deltatee.com>
+From: Steven Rostedt <rostedt@goodmis.org>
+Date: Thu, 22 Nov 2018 00:28:13 +0000
+Subject: [for-next][PATCH 12/18] sh/function_graph: Simplify with function_graph_entry()
+Message-Id: <20181122003333.106149216@goodmis.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20181107205433.3875-1-logang@deltatee.com>
-In-Reply-To: <20181107205433.3875-1-logang@deltatee.com>
+References: <20181122002801.501220343@goodmis.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org, linux-mm@kvack.org, linux-arch@vger.kernel.org, linux-riscv@lists.infradead.org, linux-arm-kernel@lists.infradead.org, linux-sh@vger.kernel.org, Andrew Morton <akpm@linux-foundation.org>
-Cc: Stephen Bates <sbates@raithlin.com>, Palmer Dabbelt <palmer@sifive.com>, Albert Ou <aou@eecs.berkeley.edu>, Christoph Hellwig <hch@lst.de>, Arnd Bergmann <arnd@arndb.de>, Logan Gunthorpe <logang@deltatee.com>, Michal Hocko <mhocko@suse.com>, Vlastimil Babka <vbabka@suse.cz>, Oscar Salvador <osalvador@suse.de>
+To: linux-kernel@vger.kernel.org
+Cc: Linus Torvalds <torvalds@linux-foundation.org>, Ingo Molnar <mingo@kernel.org>, Andrew Morton <akpm@linux-foundation.org>, Thomas Gleixner <tglx@linutronix.de>, Peter Zijlstra <peterz@infradead.org>, linux-arch@vger.kernel.org, Joel Fernandes <joel@joelfernandes.org>, Masami Hiramatsu <mhiramat@kernel.org>, Josh Poimboeuf <jpoimboe@redhat.com>, Andy Lutomirski <luto@kernel.org>, Frederic Weisbecker <frederic@kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, stable@kernel.org
 
-Presently the arches arm64, arm and sh have a function which loops through
-each memblock and calls memory present. riscv will require a similar
-function.
+From: "Steven Rostedt (VMware)" <rostedt@goodmis.org>
 
-Introduce a common memblocks_present() function that can be used by
-all the arches. Subsequent patches will cleanup the arches that
-make use of this.
+The function_graph_entry() function does the work of calling the function
+graph hook function and the management of the shadow stack, simplifying the
+work done in the architecture dependent prepare_ftrace_return().
 
-Signed-off-by: Logan Gunthorpe <logang@deltatee.com>
-Acked-by: Andrew Morton <akpm@linux-foundation.org>
-Cc: Michal Hocko <mhocko@suse.com>
-Cc: Vlastimil Babka <vbabka@suse.cz>
-Cc: Oscar Salvador <osalvador@suse.de>
+Have superh use the new code, and remove the shadow stack management as well as
+having to set up the trace structure.
+
+This is needed to prepare for a fix of a design bug on how the curr_ret_stack
+is used.
+
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+Cc: linux-sh@vger.kernel.org
+Cc: stable@kernel.org
+Fixes: 03274a3ffb449 ("tracing/fgraph: Adjust fgraph depth before calling trace return callback")
+Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
 ---
- include/linux/mmzone.h |  6 ++++++
- mm/sparse.c            | 16 ++++++++++++++++
- 2 files changed, 22 insertions(+)
+ arch/sh/kernel/ftrace.c | 16 ++--------------
+ 1 file changed, 2 insertions(+), 14 deletions(-)
 
-diff --git a/include/linux/mmzone.h b/include/linux/mmzone.h
-index 847705a6d0ec..db023a92f3a4 100644
---- a/include/linux/mmzone.h
-+++ b/include/linux/mmzone.h
-@@ -783,6 +783,12 @@ void memory_present(int nid, unsigned long start, unsigned long end);
- static inline void memory_present(int nid, unsigned long start, unsigned long end) {}
- #endif
+diff --git a/arch/sh/kernel/ftrace.c b/arch/sh/kernel/ftrace.c
+index 96dd9f7da250..1b04270e5460 100644
+--- a/arch/sh/kernel/ftrace.c
++++ b/arch/sh/kernel/ftrace.c
+@@ -321,8 +321,7 @@ int ftrace_disable_ftrace_graph_caller(void)
+ void prepare_ftrace_return(unsigned long *parent, unsigned long self_addr)
+ {
+ 	unsigned long old;
+-	int faulted, err;
+-	struct ftrace_graph_ent trace;
++	int faulted;
+ 	unsigned long return_hooker = (unsigned long)&return_to_handler;
  
-+#if defined(CONFIG_SPARSEMEM)
-+void memblocks_present(void);
-+#else
-+static inline void memblocks_present(void) {}
-+#endif
-+
- #ifdef CONFIG_HAVE_MEMORYLESS_NODES
- int local_memory_node(int node_id);
- #else
-diff --git a/mm/sparse.c b/mm/sparse.c
-index 33307fc05c4d..3abc8cc50201 100644
---- a/mm/sparse.c
-+++ b/mm/sparse.c
-@@ -239,6 +239,22 @@ void __init memory_present(int nid, unsigned long start, unsigned long end)
+ 	if (unlikely(ftrace_graph_is_dead()))
+@@ -365,18 +364,7 @@ void prepare_ftrace_return(unsigned long *parent, unsigned long self_addr)
+ 		return;
  	}
- }
  
-+/*
-+ * Mark all memblocks as present using memory_present(). This is a
-+ * convienence function that is useful for a number of arches
-+ * to mark all of the systems memory as present during initialization.
-+ */
-+void __init memblocks_present(void)
-+{
-+	struct memblock_region *reg;
-+
-+	for_each_memblock(memory, reg) {
-+		memory_present(memblock_get_region_node(reg),
-+			       memblock_region_memory_base_pfn(reg),
-+			       memblock_region_memory_end_pfn(reg));
-+	}
-+}
-+
- /*
-  * Subtle, we encode the real pfn into the mem_map such that
-  * the identity pfn - section_mem_map will return the actual
+-	err = ftrace_push_return_trace(old, self_addr, &trace.depth, 0, NULL);
+-	if (err = -EBUSY) {
++	if (function_graph_enter(old, self_addr, 0, NULL))
+ 		__raw_writel(old, parent);
+-		return;
+-	}
+-
+-	trace.func = self_addr;
+-
+-	/* Only trace if the calling function expects to */
+-	if (!ftrace_graph_entry(&trace)) {
+-		current->curr_ret_stack--;
+-		__raw_writel(old, parent);
+-	}
+ }
+ #endif /* CONFIG_FUNCTION_GRAPH_TRACER */
 -- 
-2.19.0
+2.19.1
