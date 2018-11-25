@@ -1,87 +1,39 @@
-From: Adam Borowski <kilobyte@angband.pl>
-Date: Fri, 09 Nov 2018 19:02:56 +0000
-Subject: [PATCH 09/17] unicore32: Remove support for BZIP2 and LZMA compressed kernel
-Message-Id: <20181109190304.8573-9-kilobyte@angband.pl>
+From: Mike Rapoport <rppt@linux.ibm.com>
+Date: Sun, 25 Nov 2018 21:44:34 +0000
+Subject: [PATCH 2/5] microblaze: prefer memblock API returning virtual address
+Message-Id: <1543182277-8819-3-git-send-email-rppt@linux.ibm.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20181109185953.xwyelyqnygbskkxk@angband.pl>
- <20181109190304.8573-1-kilobyte@angband.pl>
-In-Reply-To: <20181109190304.8573-1-kilobyte@angband.pl>
+References: <1543182277-8819-1-git-send-email-rppt@linux.ibm.com>
+In-Reply-To: <1543182277-8819-1-git-send-email-rppt@linux.ibm.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org, Nick Terrell <terrelln@fb.com>, Russell King <linux@armlinux.org.uk>, Geert Uytterhoeven <geert@linux-m68k.org>, linux-m68k@lists.linux-m68k.org, Ralf Baechle <ralf@linux-mips.org>, Paul Burton <paul.burton@mips.com>, James Hogan <jhogan@kernel.org>, linux-mips@linux-mips.org, Jonas Bonn <jonas@southpole.se>, Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>, Stafford Horne <shorne@gmail.com>, openrisc@lists.librecores.org, "James E.J. Bottomley" <jejb@parisc-linux.org>, Helge Deller <deller@gmx.de>, linux-parisc@vger.kernel.org, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Michael Ellerman <mpe@ellerman.id.au>, linuxppc-dev@lists.ozlabs.org, Martin Schwidefsky <schwidefsky@de.ibm.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, linux-s390@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>, x86@kernel.org, Chris Zankel <chris@zankel.net>, Max Filippov <jcmvbkbc@gmail.com>, linux-xtensa@linux-xtensa.org
-Cc: Adam Borowski <kilobyte@angband.pl>
+To: linux-arm-kernel@lists.infradead.org
 
-Made redundant by newer choices -- sort of, as no one enabled support
-for XZ nor ZSTD for unicore yet...
+Rather than use the memblock_alloc_base that returns a physical address and
+then convert this address to the virtual one, use appropriate memblock
+function that returns a virtual address.
 
-Signed-off-by: Adam Borowski <kilobyte@angband.pl>
+Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
 ---
- arch/unicore32/Kconfig                  | 2 --
- arch/unicore32/boot/compressed/Makefile | 4 +---
- arch/unicore32/boot/compressed/misc.c   | 8 --------
- 3 files changed, 1 insertion(+), 13 deletions(-)
+ arch/microblaze/mm/init.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
 
-diff --git a/arch/unicore32/Kconfig b/arch/unicore32/Kconfig
-index a4c05159dca5..b7eb7e9fb0d2 100644
---- a/arch/unicore32/Kconfig
-+++ b/arch/unicore32/Kconfig
-@@ -7,10 +7,8 @@ config UNICORE32
- 	select DMA_DIRECT_OPS
- 	select HAVE_GENERIC_DMA_COHERENT
- 	select HAVE_KERNEL_GZIP
--	select HAVE_KERNEL_BZIP2
- 	select GENERIC_ATOMIC64
- 	select HAVE_KERNEL_LZO
--	select HAVE_KERNEL_LZMA
- 	select VIRT_TO_BUS
- 	select ARCH_HAVE_CUSTOM_GPIO_H
- 	select GENERIC_FIND_FIRST_BIT
-diff --git a/arch/unicore32/boot/compressed/Makefile b/arch/unicore32/boot/compressed/Makefile
-index 9aecdd3ddc48..79ff908ad78c 100644
---- a/arch/unicore32/boot/compressed/Makefile
-+++ b/arch/unicore32/boot/compressed/Makefile
-@@ -22,9 +22,7 @@ $(obj)/font.c: $(srctree)/lib/fonts/font_8x8.c
+diff --git a/arch/microblaze/mm/init.c b/arch/microblaze/mm/init.c
+index b17fd8a..44f4b89 100644
+--- a/arch/microblaze/mm/init.c
++++ b/arch/microblaze/mm/init.c
+@@ -363,8 +363,9 @@ void __init *early_get_page(void)
+ 	 * Mem start + kernel_tlb -> here is limit
+ 	 * because of mem mapping from head.S
+ 	 */
+-	return __va(memblock_alloc_base(PAGE_SIZE, PAGE_SIZE,
+-				memory_start + kernel_tlb));
++	return memblock_alloc_try_nid_raw(PAGE_SIZE, PAGE_SIZE,
++				MEMBLOCK_LOW_LIMIT, memory_start + kernel_tlb,
++				NUMA_NO_NODE);
+ }
  
- # piggy.S and piggy.o
- suffix_$(CONFIG_KERNEL_GZIP)	:= gzip
--suffix_$(CONFIG_KERNEL_BZIP2)	:= bz2
- suffix_$(CONFIG_KERNEL_LZO)	:= lzo
--suffix_$(CONFIG_KERNEL_LZMA)	:= lzma
- 
- $(obj)/piggy.$(suffix_y): $(obj)/../Image FORCE
- 	$(call if_changed,$(suffix_y))
-@@ -39,7 +37,7 @@ targets		:= vmlinux vmlinux.lds font.o font.c head.o misc.o \
- 			piggy.$(suffix_y) piggy.o piggy.S \
- 
- # Make sure files are removed during clean
--extra-y		+= piggy.gzip piggy.bz2 piggy.lzo piggy.lzma
-+extra-y		+= piggy.gzip piggy.lzo
- 
- # ?
- LDFLAGS_vmlinux += -p
-diff --git a/arch/unicore32/boot/compressed/misc.c b/arch/unicore32/boot/compressed/misc.c
-index 5c65dfee278c..ab9b56cf6907 100644
---- a/arch/unicore32/boot/compressed/misc.c
-+++ b/arch/unicore32/boot/compressed/misc.c
-@@ -91,18 +91,10 @@ void error(char *x)
- #include "../../../../lib/decompress_inflate.c"
- #endif
- 
--#ifdef CONFIG_KERNEL_BZIP2
--#include "../../../../lib/decompress_bunzip2.c"
--#endif
--
- #ifdef CONFIG_KERNEL_LZO
- #include "../../../../lib/decompress_unlzo.c"
- #endif
- 
--#ifdef CONFIG_KERNEL_LZMA
--#include "../../../../lib/decompress_unlzma.c"
--#endif
--
- unsigned long decompress_kernel(unsigned long output_start,
- 		unsigned long free_mem_ptr_p,
- 		unsigned long free_mem_ptr_end_p)
+ #endif /* CONFIG_MMU */
 -- 
-2.19.1
+2.7.4
