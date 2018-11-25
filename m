@@ -1,116 +1,244 @@
-From: Doug Anderson <dianders@chromium.org>
-Date: Tue, 27 Nov 2018 03:52:27 +0000
-Subject: Re: [PATCH v4 2/4] kgdb: Fix kgdb_roundup_cpus() for arches who used smp_call_function()
-Message-Id: <CAD=FV=WYa8Hfo0hN8eqTBsjGY7A0nnQBoG1nSrvQ92we+v5kuA@mail.gmail.com>
+From: Mike Rapoport <rppt@linux.ibm.com>
+Date: Sun, 25 Nov 2018 21:44:37 +0000
+Subject: [PATCH 5/5] arch: simplify several early memory allocations
+Message-Id: <1543182277-8819-6-git-send-email-rppt@linux.ibm.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20181112182659.245726-1-dianders@chromium.org>
- <20181112182659.245726-3-dianders@chromium.org>
- <20181114220744.GB4044@brain-police>
-In-Reply-To: <20181114220744.GB4044@brain-police>
+References: <1543182277-8819-1-git-send-email-rppt@linux.ibm.com>
+In-Reply-To: <1543182277-8819-1-git-send-email-rppt@linux.ibm.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi,
+There are several early memory allocations in arch/ code that use
+memblock_phys_alloc() to allocate memory, convert the returned physical
+address to the virtual address and then set the allocated memory to zero.
 
-On Wed, Nov 14, 2018 at 2:07 PM Will Deacon <will.deacon@arm.com> wrote:
->
-> > +void __weak kgdb_call_nmi_hook(void *ignored)
-> > +{
-> > +     kgdb_nmicallback(raw_smp_processor_id(), get_irq_regs());
-> > +}
->
-> I suppose you could pass the cpu as an argument, but it doesn't really
-> matter.
+Exactly the same behaviour can be achieved simply by calling
+memblock_alloc(): it allocates the memory in the same way as
+memblock_phys_alloc(), then it performs the phys_to_virt() conversion and
+clears the allocated memory.
 
-I probably won't change it for now if it doesn't matter...
+Replace the longer sequence with a simpler call to memblock_alloc().
 
+Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
+---
+ arch/arm/mm/mmu.c                     |  4 +---
+ arch/c6x/mm/dma-coherent.c            |  9 ++-------
+ arch/nds32/mm/init.c                  | 12 ++++--------
+ arch/powerpc/kernel/setup-common.c    |  4 ++--
+ arch/powerpc/mm/pgtable_32.c          |  4 +---
+ arch/powerpc/mm/ppc_mmu_32.c          |  3 +--
+ arch/powerpc/platforms/powernv/opal.c |  3 +--
+ arch/sparc/kernel/prom_64.c           |  7 ++-----
+ arch/sparc/mm/init_64.c               |  9 +++------
+ arch/unicore32/mm/mmu.c               |  4 +---
+ 10 files changed, 18 insertions(+), 41 deletions(-)
 
-> Also, I think there are cases where the CSD callback can run without
-> having received an IPI, so we could potentially up passing NULL for the regs
-> here which probably goes boom.
-
-Hrm, good point.  This is not a new issue so I'd tend to add it to the
-TODO list rather than block the series.  I'll also add a comment in
-the code since I'm touching it anyway.
-
-Interestingly enough quite a bit of things continue to work just fine
-even if this is NULL.  I simulated setting this to NULL for all CPUs
-and I could drop into the debugger, type "btc" to backtrace all CPUs,
-attach to kgdb, etc.  ...but when I typed "cpu 1" it went boom.  So it
-seems like parts of kdb use this but definitely not everything.
-
-Also interesting is that on MIPS this is always NULL.  I have no idea
-why but my patch series preserves this oddity.  Presumably if someone
-was on a SMP MIPS machine and did "cpu 1" from kdb they'd go boom too.
-
-In general kdb has a lot of crufty stuff like this in it.  We need to
-work to get rid of the cruft but one step at a time I think.
-
-I've started a kgdb-wishlist:
-
-https://bugs.chromium.org/p/chromium/issues/list?q=label%3Akgdb-wishlist
-
-...and this is crbug.com/908723
-
-
-> > +void __weak kgdb_roundup_cpus(void)
-> > +{
-> > +     call_single_data_t *csd;
-> > +     int this_cpu = get_cpu();
->
-> Do you actually need to disable preemption here? afaict, irqs are already
-> disabled by the kgdb core.
-
-Ah, right.  I can just use raw_smp_processor_id().  Done.  I didn't
-try to see if I could use smp_processor_id() since
-kgdb_call_nmi_hook() already used raw_smp_processor_id(), but I can
-dig if you wish.
-
-
-> > +     int cpu;
-> > +
-> > +     for_each_cpu(cpu, cpu_online_mask) {
->
-> for_each_online_cpu(cpu) ?
-
-Done.
-
-
-> I'm assuming this is serialised wrt CPU hotplug somehow?
-
-I doubt it.  I can add it to my wishlist (crbug.com/908722) , but I
-don't think it's something I'm going to try to solve right now and
-it's definitely not new.  I think we need to make some sort of attempt
-in kgdb_cpu_enter() to stop hotplugging, though we'd have to take into
-account that we may be entering kgdb in an IRQ context so it might be
-hard to grab a mutex.  We need to account for it there since that
-function has code like:
-
-> while (kgdb_do_roundup && --time_left &&
->        (atomic_read(&masters_in_kgdb) + atomic_read(&slaves_in_kgdb)) !>    online_cpus)
-> udelay(1000);
-
-...and that would also be broken if cpus were plugging / unplugging.
-
-In general, at least, the worst case would be that we'd either have an
-extra 1 second delay entering the debugger (because we were waiting
-for a CPU to respond that's been hotplugged) or we'd enter kgdb
-without stopping one of the CPUs.  Neither of those is ideal but I
-don't think we'd end up in too bad shape.
-
-Oh, but actually, I guess I should probably check the error return of
-smp_call_function_single_async() and if it returns an error I should
-unset rounding_up...  That would make things behave slightly better
-and is probably right anyway.
-
-
-Overall: thank you very much for the review and the feedback.  Sorry
-I'm not really fixing everything here.  My hope is to move things to a
-slightly better state but I don't have time to fix everything.
-Hopefully I can find some more time soon to fix more, or perhaps
-someone else will.
-
-
--Doug
+diff --git a/arch/arm/mm/mmu.c b/arch/arm/mm/mmu.c
+index f5cc1cc..0a04c9a5 100644
+--- a/arch/arm/mm/mmu.c
++++ b/arch/arm/mm/mmu.c
+@@ -721,9 +721,7 @@ EXPORT_SYMBOL(phys_mem_access_prot);
+ 
+ static void __init *early_alloc_aligned(unsigned long sz, unsigned long align)
+ {
+-	void *ptr = __va(memblock_phys_alloc(sz, align));
+-	memset(ptr, 0, sz);
+-	return ptr;
++	return memblock_alloc(sz, align);
+ }
+ 
+ static void __init *early_alloc(unsigned long sz)
+diff --git a/arch/c6x/mm/dma-coherent.c b/arch/c6x/mm/dma-coherent.c
+index 01305c7..ffc49e2 100644
+--- a/arch/c6x/mm/dma-coherent.c
++++ b/arch/c6x/mm/dma-coherent.c
+@@ -118,8 +118,6 @@ void arch_dma_free(struct device *dev, size_t size, void *vaddr,
+  */
+ void __init coherent_mem_init(phys_addr_t start, u32 size)
+ {
+-	phys_addr_t bitmap_phys;
+-
+ 	if (!size)
+ 		return;
+ 
+@@ -135,11 +133,8 @@ void __init coherent_mem_init(phys_addr_t start, u32 size)
+ 	if (dma_size & (PAGE_SIZE - 1))
+ 		++dma_pages;
+ 
+-	bitmap_phys = memblock_phys_alloc(BITS_TO_LONGS(dma_pages) * sizeof(long),
+-					  sizeof(long));
+-
+-	dma_bitmap = phys_to_virt(bitmap_phys);
+-	memset(dma_bitmap, 0, dma_pages * PAGE_SIZE);
++	dma_bitmap = memblock_alloc(BITS_TO_LONGS(dma_pages) * sizeof(long),
++				    sizeof(long));
+ }
+ 
+ static void c6x_dma_sync(struct device *dev, phys_addr_t paddr, size_t size,
+diff --git a/arch/nds32/mm/init.c b/arch/nds32/mm/init.c
+index 131104b..9f19be8 100644
+--- a/arch/nds32/mm/init.c
++++ b/arch/nds32/mm/init.c
+@@ -80,8 +80,7 @@ static void __init map_ram(void)
+ 		}
+ 
+ 		/* Alloc one page for holding PTE's... */
+-		pte = (pte_t *) __va(memblock_phys_alloc(PAGE_SIZE, PAGE_SIZE));
+-		memset(pte, 0, PAGE_SIZE);
++		pte = memblock_alloc(PAGE_SIZE, PAGE_SIZE);
+ 		set_pmd(pme, __pmd(__pa(pte) + _PAGE_KERNEL_TABLE));
+ 
+ 		/* Fill the newly allocated page with PTE'S */
+@@ -113,8 +112,7 @@ static void __init fixedrange_init(void)
+ 	pgd = swapper_pg_dir + pgd_index(vaddr);
+ 	pud = pud_offset(pgd, vaddr);
+ 	pmd = pmd_offset(pud, vaddr);
+-	fixmap_pmd_p = (pmd_t *) __va(memblock_phys_alloc(PAGE_SIZE, PAGE_SIZE));
+-	memset(fixmap_pmd_p, 0, PAGE_SIZE);
++	fixmap_pmd_p = memblock_alloc(PAGE_SIZE, PAGE_SIZE);
+ 	set_pmd(pmd, __pmd(__pa(fixmap_pmd_p) + _PAGE_KERNEL_TABLE));
+ 
+ #ifdef CONFIG_HIGHMEM
+@@ -126,8 +124,7 @@ static void __init fixedrange_init(void)
+ 	pgd = swapper_pg_dir + pgd_index(vaddr);
+ 	pud = pud_offset(pgd, vaddr);
+ 	pmd = pmd_offset(pud, vaddr);
+-	pte = (pte_t *) __va(memblock_phys_alloc(PAGE_SIZE, PAGE_SIZE));
+-	memset(pte, 0, PAGE_SIZE);
++	pte = memblock_alloc(PAGE_SIZE, PAGE_SIZE);
+ 	set_pmd(pmd, __pmd(__pa(pte) + _PAGE_KERNEL_TABLE));
+ 	pkmap_page_table = pte;
+ #endif /* CONFIG_HIGHMEM */
+@@ -152,8 +149,7 @@ void __init paging_init(void)
+ 	fixedrange_init();
+ 
+ 	/* allocate space for empty_zero_page */
+-	zero_page = __va(memblock_phys_alloc(PAGE_SIZE, PAGE_SIZE));
+-	memset(zero_page, 0, PAGE_SIZE);
++	zero_page = memblock_alloc(PAGE_SIZE, PAGE_SIZE);
+ 	zone_sizes_init();
+ 
+ 	empty_zero_page = virt_to_page(zero_page);
+diff --git a/arch/powerpc/kernel/setup-common.c b/arch/powerpc/kernel/setup-common.c
+index 93ee370..8f6c763 100644
+--- a/arch/powerpc/kernel/setup-common.c
++++ b/arch/powerpc/kernel/setup-common.c
+@@ -459,8 +459,8 @@ void __init smp_setup_cpu_maps(void)
+ 
+ 	DBG("smp_setup_cpu_maps()\n");
+ 
+-	cpu_to_phys_id = __va(memblock_phys_alloc(nr_cpu_ids * sizeof(u32), __alignof__(u32)));
+-	memset(cpu_to_phys_id, 0, nr_cpu_ids * sizeof(u32));
++	cpu_to_phys_id = memblock_alloc(nr_cpu_ids * sizeof(u32),
++					__alignof__(u32));
+ 
+ 	for_each_node_by_type(dn, "cpu") {
+ 		const __be32 *intserv;
+diff --git a/arch/powerpc/mm/pgtable_32.c b/arch/powerpc/mm/pgtable_32.c
+index bda3c6f..9931e68 100644
+--- a/arch/powerpc/mm/pgtable_32.c
++++ b/arch/powerpc/mm/pgtable_32.c
+@@ -50,9 +50,7 @@ __ref pte_t *pte_alloc_one_kernel(struct mm_struct *mm, unsigned long address)
+ 	if (slab_is_available()) {
+ 		pte = (pte_t *)__get_free_page(GFP_KERNEL|__GFP_ZERO);
+ 	} else {
+-		pte = __va(memblock_phys_alloc(PAGE_SIZE, PAGE_SIZE));
+-		if (pte)
+-			clear_page(pte);
++		pte = memblock_alloc(PAGE_SIZE, PAGE_SIZE);
+ 	}
+ 	return pte;
+ }
+diff --git a/arch/powerpc/mm/ppc_mmu_32.c b/arch/powerpc/mm/ppc_mmu_32.c
+index f6f575b..fddf823 100644
+--- a/arch/powerpc/mm/ppc_mmu_32.c
++++ b/arch/powerpc/mm/ppc_mmu_32.c
+@@ -224,8 +224,7 @@ void __init MMU_init_hw(void)
+ 	 * Find some memory for the hash table.
+ 	 */
+ 	if ( ppc_md.progress ) ppc_md.progress("hash:find piece", 0x322);
+-	Hash = __va(memblock_phys_alloc(Hash_size, Hash_size));
+-	memset(Hash, 0, Hash_size);
++	Hash = memblock_alloc(Hash_size, Hash_size);
+ 	_SDR1 = __pa(Hash) | SDR1_LOW_BITS;
+ 
+ 	Hash_end = (struct hash_pte *) ((unsigned long)Hash + Hash_size);
+diff --git a/arch/powerpc/platforms/powernv/opal.c b/arch/powerpc/platforms/powernv/opal.c
+index beed86f..29ee2ea 100644
+--- a/arch/powerpc/platforms/powernv/opal.c
++++ b/arch/powerpc/platforms/powernv/opal.c
+@@ -171,8 +171,7 @@ int __init early_init_dt_scan_recoverable_ranges(unsigned long node,
+ 	/*
+ 	 * Allocate a buffer to hold the MC recoverable ranges.
+ 	 */
+-	mc_recoverable_range =__va(memblock_phys_alloc(size, __alignof__(u64)));
+-	memset(mc_recoverable_range, 0, size);
++	mc_recoverable_range = memblock_alloc(size, __alignof__(u64));
+ 
+ 	for (i = 0; i < mc_recoverable_range_len; i++) {
+ 		mc_recoverable_range[i].start_addr diff --git a/arch/sparc/kernel/prom_64.c b/arch/sparc/kernel/prom_64.c
+index c37955d..2a17665 100644
+--- a/arch/sparc/kernel/prom_64.c
++++ b/arch/sparc/kernel/prom_64.c
+@@ -34,16 +34,13 @@
+ 
+ void * __init prom_early_alloc(unsigned long size)
+ {
+-	unsigned long paddr = memblock_phys_alloc(size, SMP_CACHE_BYTES);
+-	void *ret;
++	void *ret = memblock_alloc(size, SMP_CACHE_BYTES);
+ 
+-	if (!paddr) {
++	if (!ret) {
+ 		prom_printf("prom_early_alloc(%lu) failed\n", size);
+ 		prom_halt();
+ 	}
+ 
+-	ret = __va(paddr);
+-	memset(ret, 0, size);
+ 	prom_early_allocated += size;
+ 
+ 	return ret;
+diff --git a/arch/sparc/mm/init_64.c b/arch/sparc/mm/init_64.c
+index 3c8aac2..52884f4 100644
+--- a/arch/sparc/mm/init_64.c
++++ b/arch/sparc/mm/init_64.c
+@@ -1089,16 +1089,13 @@ static void __init allocate_node_data(int nid)
+ 	struct pglist_data *p;
+ 	unsigned long start_pfn, end_pfn;
+ #ifdef CONFIG_NEED_MULTIPLE_NODES
+-	unsigned long paddr;
+ 
+-	paddr = memblock_phys_alloc_try_nid(sizeof(struct pglist_data),
+-					    SMP_CACHE_BYTES, nid);
+-	if (!paddr) {
++	NODE_DATA(nid) = memblock_alloc_node(sizeof(struct pglist_data),
++					     SMP_CACHE_BYTES, nid);
++	if (!NODE_DATA(nid)) {
+ 		prom_printf("Cannot allocate pglist_data for nid[%d]\n", nid);
+ 		prom_halt();
+ 	}
+-	NODE_DATA(nid) = __va(paddr);
+-	memset(NODE_DATA(nid), 0, sizeof(struct pglist_data));
+ 
+ 	NODE_DATA(nid)->node_id = nid;
+ #endif
+diff --git a/arch/unicore32/mm/mmu.c b/arch/unicore32/mm/mmu.c
+index 040a8c2..50d8c1a 100644
+--- a/arch/unicore32/mm/mmu.c
++++ b/arch/unicore32/mm/mmu.c
+@@ -143,9 +143,7 @@ static void __init build_mem_type_table(void)
+ 
+ static void __init *early_alloc(unsigned long sz)
+ {
+-	void *ptr = __va(memblock_phys_alloc(sz, sz));
+-	memset(ptr, 0, sz);
+-	return ptr;
++	return memblock_alloc(sz, sz);
+ }
+ 
+ static pte_t * __init early_pte_alloc(pmd_t *pmd, unsigned long addr,
+-- 
+2.7.4
