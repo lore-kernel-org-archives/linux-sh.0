@@ -1,10 +1,10 @@
 From: Mike Rapoport <rppt@linux.ibm.com>
-Date: Sun, 09 Dec 2018 15:00:22 +0000
-Subject: [PATCH v3 4/6] openrisc: simplify pte_alloc_one_kernel()
-Message-Id: <1544367624-15376-5-git-send-email-rppt@linux.ibm.com>
+Date: Mon, 03 Dec 2018 15:47:13 +0000
+Subject: [PATCH v2 4/6] openrisc: simplify pte_alloc_one_kernel()
+Message-Id: <1543852035-26634-5-git-send-email-rppt@linux.ibm.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1544367624-15376-1-git-send-email-rppt@linux.ibm.com>
-In-Reply-To: <1544367624-15376-1-git-send-email-rppt@linux.ibm.com>
+References: <1543852035-26634-1-git-send-email-rppt@linux.ibm.com>
+In-Reply-To: <1543852035-26634-1-git-send-email-rppt@linux.ibm.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
