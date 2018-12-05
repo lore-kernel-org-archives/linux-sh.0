@@ -1,7 +1,7 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 05 Dec 2018 08:00:01 +0000
-Subject: [PATCH 04/13] sh: sh2: convert to SPDX identifiers
-Message-Id: <87efawcszk.wl-kuninori.morimoto.gx@renesas.com>
+Date: Wed, 05 Dec 2018 08:01:35 +0000
+Subject: [PATCH 11/13] sh: cpu: convert to SPDX identifiers
+Message-Id: <874lbscswy.wl-kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <87k1koct23.wl-kuninori.morimoto.gx@renesas.com>
 In-Reply-To: <87k1koct23.wl-kuninori.morimoto.gx@renesas.com>
@@ -20,37 +20,47 @@ instead of verbose license text.
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Reviewed-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/sh/kernel/cpu/sh2/Makefile       | 1 +
- arch/sh/kernel/cpu/sh2/clock-sh7619.c | 5 +----
- arch/sh/kernel/cpu/sh2/entry.S        | 7 ++-----
- arch/sh/kernel/cpu/sh2/ex.S           | 7 ++-----
- arch/sh/kernel/cpu/sh2/probe.c        | 5 +----
- arch/sh/kernel/cpu/sh2/setup-sh7619.c | 5 +----
- arch/sh/kernel/cpu/sh2/smp-j2.c       | 5 +----
- 7 files changed, 9 insertions(+), 26 deletions(-)
+ arch/sh/kernel/cpu/clock.c        |  5 +----
+ arch/sh/kernel/cpu/init.c         |  5 +----
+ arch/sh/kernel/cpu/irq/Makefile   |  1 +
+ arch/sh/kernel/cpu/irq/intc-sh5.c |  5 +----
+ arch/sh/kernel/cpu/irq/ipr.c      |  5 +----
+ arch/sh/kernel/cpu/pfc.c          | 10 +---------
+ 6 files changed, 6 insertions(+), 25 deletions(-)
 
-diff --git a/arch/sh/kernel/cpu/sh2/Makefile b/arch/sh/kernel/cpu/sh2/Makefile
-index 904c428..214c3a5 100644
---- a/arch/sh/kernel/cpu/sh2/Makefile
-+++ b/arch/sh/kernel/cpu/sh2/Makefile
-@@ -1,3 +1,4 @@
-+# SPDX-License-Identifier: GPL-2.0
- #
- # Makefile for the Linux/SuperH SH-2 backends.
- #
-diff --git a/arch/sh/kernel/cpu/sh2/clock-sh7619.c b/arch/sh/kernel/cpu/sh2/clock-sh7619.c
-index e80252a..d66d194c 100644
---- a/arch/sh/kernel/cpu/sh2/clock-sh7619.c
-+++ b/arch/sh/kernel/cpu/sh2/clock-sh7619.c
+diff --git a/arch/sh/kernel/cpu/clock.c b/arch/sh/kernel/cpu/clock.c
+index fca9b1e7..6fb3441 100644
+--- a/arch/sh/kernel/cpu/clock.c
++++ b/arch/sh/kernel/cpu/clock.c
 @@ -1,3 +1,4 @@
 +// SPDX-License-Identifier: GPL-2.0
  /*
-  * arch/sh/kernel/cpu/sh2/clock-sh7619.c
+  * arch/sh/kernel/cpu/clock.c - SuperH clock framework
   *
-@@ -7,10 +8,6 @@
+@@ -9,10 +10,6 @@
+  *	Written by Tuukka Tikkanen <tuukka.tikkanen@elektrobit.com>
   *
-  * Based on clock-sh4.c
-  *  Copyright (C) 2005  Paul Mundt
+  *  Modified for omap shared clock framework by Tony Lindgren <tony@atomide.com>
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ #include <linux/kernel.h>
+ #include <linux/init.h>
+diff --git a/arch/sh/kernel/cpu/init.c b/arch/sh/kernel/cpu/init.c
+index c4f01c5..ce7291e 100644
+--- a/arch/sh/kernel/cpu/init.c
++++ b/arch/sh/kernel/cpu/init.c
+@@ -1,3 +1,4 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * arch/sh/kernel/cpu/init.c
+  *
+@@ -5,10 +6,6 @@
+  *
+  * Copyright (C) 2002 - 2009  Paul Mundt
+  * Copyright (C) 2003  Richard Curnow
 - *
 - * This file is subject to the terms and conditions of the GNU General Public
 - * License.  See the file "COPYING" in the main directory of this archive
@@ -58,100 +68,76 @@ index e80252a..d66d194c 100644
   */
  #include <linux/init.h>
  #include <linux/kernel.h>
-diff --git a/arch/sh/kernel/cpu/sh2/entry.S b/arch/sh/kernel/cpu/sh2/entry.S
-index 1ee0a6e..0a1c2bf 100644
---- a/arch/sh/kernel/cpu/sh2/entry.S
-+++ b/arch/sh/kernel/cpu/sh2/entry.S
-@@ -1,14 +1,11 @@
--/*
-+/* SPDX-License-Identifier: GPL-2.0
-+ *
-  * arch/sh/kernel/cpu/sh2/entry.S
-  *
-  * The SH-2 exception entry
-  *
-  * Copyright (C) 2005-2008 Yoshinori Sato
-  * Copyright (C) 2005  AXE,Inc.
-- *
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
-  */
- 
- #include <linux/linkage.h>
-diff --git a/arch/sh/kernel/cpu/sh2/ex.S b/arch/sh/kernel/cpu/sh2/ex.S
-index 85b0bf8..dd0cc88 100644
---- a/arch/sh/kernel/cpu/sh2/ex.S
-+++ b/arch/sh/kernel/cpu/sh2/ex.S
-@@ -1,13 +1,10 @@
--/*
-+/* SPDX-License-Identifier: GPL-2.0
-+ *
-  * arch/sh/kernel/cpu/sh2/ex.S
-  *
-  * The SH-2 exception vector table
-  *
-  * Copyright (C) 2005 Yoshinori Sato
-- *
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
-  */
- 
- #include <linux/linkage.h>
-diff --git a/arch/sh/kernel/cpu/sh2/probe.c b/arch/sh/kernel/cpu/sh2/probe.c
-index a5bd036..d342ea0 100644
---- a/arch/sh/kernel/cpu/sh2/probe.c
-+++ b/arch/sh/kernel/cpu/sh2/probe.c
-@@ -1,13 +1,10 @@
+diff --git a/arch/sh/kernel/cpu/irq/Makefile b/arch/sh/kernel/cpu/irq/Makefile
+index 3f8e794..8b91cb9 100644
+--- a/arch/sh/kernel/cpu/irq/Makefile
++++ b/arch/sh/kernel/cpu/irq/Makefile
+@@ -1,3 +1,4 @@
++# SPDX-License-Identifier: GPL-2.0
+ #
+ # Makefile for the Linux/SuperH CPU-specific IRQ handlers.
+ #
+diff --git a/arch/sh/kernel/cpu/irq/intc-sh5.c b/arch/sh/kernel/cpu/irq/intc-sh5.c
+index 9e056a3..744f903 100644
+--- a/arch/sh/kernel/cpu/irq/intc-sh5.c
++++ b/arch/sh/kernel/cpu/irq/intc-sh5.c
+@@ -1,3 +1,4 @@
 +// SPDX-License-Identifier: GPL-2.0
  /*
-  * arch/sh/kernel/cpu/sh2/probe.c
+  * arch/sh/kernel/cpu/irq/intc-sh5.c
   *
-  * CPU Subtype Probing for SH-2.
-  *
-  * Copyright (C) 2002 Paul Mundt
+@@ -9,10 +10,6 @@
+  * Per-interrupt selective. IRLM=0 (Fixed priority) is not
+  * supported being useless without a cascaded interrupt
+  * controller.
 - *
 - * This file is subject to the terms and conditions of the GNU General Public
 - * License.  See the file "COPYING" in the main directory of this archive
 - * for more details.
   */
  #include <linux/init.h>
- #include <linux/of_fdt.h>
-diff --git a/arch/sh/kernel/cpu/sh2/setup-sh7619.c b/arch/sh/kernel/cpu/sh2/setup-sh7619.c
-index d08db08..f5b6841 100644
---- a/arch/sh/kernel/cpu/sh2/setup-sh7619.c
-+++ b/arch/sh/kernel/cpu/sh2/setup-sh7619.c
-@@ -1,12 +1,9 @@
+ #include <linux/interrupt.h>
+diff --git a/arch/sh/kernel/cpu/irq/ipr.c b/arch/sh/kernel/cpu/irq/ipr.c
+index 5de6dff5..d41bce7 100644
+--- a/arch/sh/kernel/cpu/irq/ipr.c
++++ b/arch/sh/kernel/cpu/irq/ipr.c
+@@ -1,3 +1,4 @@
 +// SPDX-License-Identifier: GPL-2.0
  /*
-  * SH7619 Setup
+  * Interrupt handling for IPR-based IRQ.
   *
-  *  Copyright (C) 2006  Yoshinori Sato
-  *  Copyright (C) 2009  Paul Mundt
+@@ -11,10 +12,6 @@
+  *	On-chip supporting modules for SH7709/SH7709A/SH7729.
+  *	Hitachi SolutionEngine external I/O:
+  *		MS7709SE01, MS7709ASE01, and MS7750SE01
 - *
 - * This file is subject to the terms and conditions of the GNU General Public
 - * License.  See the file "COPYING" in the main directory of this archive
 - * for more details.
   */
- #include <linux/platform_device.h>
  #include <linux/init.h>
-diff --git a/arch/sh/kernel/cpu/sh2/smp-j2.c b/arch/sh/kernel/cpu/sh2/smp-j2.c
-index 6ccd7e4..ae44dc2 100644
---- a/arch/sh/kernel/cpu/sh2/smp-j2.c
-+++ b/arch/sh/kernel/cpu/sh2/smp-j2.c
-@@ -1,11 +1,8 @@
+ #include <linux/interrupt.h>
+diff --git a/arch/sh/kernel/cpu/pfc.c b/arch/sh/kernel/cpu/pfc.c
+index d766564..062056e 100644
+--- a/arch/sh/kernel/cpu/pfc.c
++++ b/arch/sh/kernel/cpu/pfc.c
+@@ -1,16 +1,8 @@
 +// SPDX-License-Identifier: GPL-2.0
  /*
-  * SMP support for J2 processor
+  * SH Pin Function Control Initialization
   *
-  * Copyright (C) 2015-2016 Smart Energy Instruments, Inc.
+  * Copyright (C) 2012  Renesas Solutions Corp.
 - *
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation; version 2 of the License.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
   */
  
- #include <linux/smp.h>
+ #include <linux/init.h>
 -- 
 2.7.4
