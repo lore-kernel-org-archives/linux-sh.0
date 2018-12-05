@@ -1,99 +1,351 @@
-From: Steven Rostedt <rostedt@goodmis.org>
-Date: Mon, 10 Dec 2018 19:30:12 +0000
-Subject: [PATCH 5/6] sh: ftrace: Use ftrace_graph_get_ret_stack() instead of curr_ret_stack
-Message-Id: <20181210193335.284057850@goodmis.org>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 05 Dec 2018 08:00:36 +0000
+Subject: [PATCH 06/13] sh: sh3: convert to SPDX identifiers
+Message-Id: <87bm60csyl.wl-kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20181210193007.655970639@goodmis.org>
+References: <87k1koct23.wl-kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87k1koct23.wl-kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org, linux-arch@vger.kernel.org
-Cc: Ingo Molnar <mingo@kernel.org>, Andrew Morton <akpm@linux-foundation.org>, linux-sh@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+To: Andrew Morton <akpm@linux-foundation.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@redhat.com>, Will Deacon <will.deacon@arm.com>, Oleg Nesterov <oleg@redhat.com>
+Cc: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
 
-From: "Steven Rostedt (VMware)" <rostedt@goodmis.org>
 
-[
-  Folks, I'm working on rewriting the function graph tracer. In order to
-  do so, some changes need to be done that affect architecture specific
-  code. I'm only able to compile test these changes. I would like to
-  have folks check out my repo and give them a test.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-    git://git.kernel.org/pub/scm/linux/kernel/git/rostedt/linux-trace.git
-  ftrace/core
+This patch updates license to use SPDX-License-Identifier
+instead of verbose license text.
 
-  Head SHA1: 51584396cff54aaf57ed0bd353767d71429f77b4
-]
-
-The structure of the ret_stack array on the task struct is going to
-change, and accessing it directly via the curr_ret_stack index will no
-longer give the ret_stack entry that holds the return address. To access
-that, architectures must now use ftrace_graph_get_ret_stack() to get the
-associated ret_stack that matches the saved return address.
-
-Cc: linux-sh@vger.kernel.org
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: Rich Felker <dalias@libc.org>
-Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Reviewed-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/sh/kernel/dumpstack.c | 11 +++++++----
- arch/sh/kernel/dwarf.c     |  9 +++++----
- 2 files changed, 12 insertions(+), 8 deletions(-)
+ arch/sh/kernel/cpu/sh3/clock-sh3.c     | 5 +----
+ arch/sh/kernel/cpu/sh3/clock-sh7705.c  | 5 +----
+ arch/sh/kernel/cpu/sh3/clock-sh7706.c  | 5 +----
+ arch/sh/kernel/cpu/sh3/clock-sh7709.c  | 5 +----
+ arch/sh/kernel/cpu/sh3/clock-sh7710.c  | 5 +----
+ arch/sh/kernel/cpu/sh3/clock-sh7712.c  | 5 +----
+ arch/sh/kernel/cpu/sh3/entry.S         | 7 ++-----
+ arch/sh/kernel/cpu/sh3/ex.S            | 9 +++------
+ arch/sh/kernel/cpu/sh3/pinmux-sh7720.c | 5 +----
+ arch/sh/kernel/cpu/sh3/probe.c         | 5 +----
+ arch/sh/kernel/cpu/sh3/setup-sh3.c     | 5 +----
+ arch/sh/kernel/cpu/sh3/setup-sh7705.c  | 5 +----
+ arch/sh/kernel/cpu/sh3/setup-sh770x.c  | 5 +----
+ arch/sh/kernel/cpu/sh3/setup-sh7710.c  | 5 +----
+ arch/sh/kernel/cpu/sh3/setup-sh7720.c  | 5 +----
+ arch/sh/kernel/cpu/sh3/swsusp.S        | 7 ++-----
+ 16 files changed, 20 insertions(+), 68 deletions(-)
 
-diff --git a/arch/sh/kernel/dumpstack.c b/arch/sh/kernel/dumpstack.c
-index b564b1eae4ae..2c2e151bf39e 100644
---- a/arch/sh/kernel/dumpstack.c
-+++ b/arch/sh/kernel/dumpstack.c
-@@ -59,17 +59,20 @@ print_ftrace_graph_addr(unsigned long addr, void *data,
- 			struct thread_info *tinfo, int *graph)
- {
- 	struct task_struct *task = tinfo->task;
-+	struct ftrace_ret_stack *ret_stack;
- 	unsigned long ret_addr;
--	int index = task->curr_ret_stack;
- 
- 	if (addr != (unsigned long)return_to_handler)
- 		return;
- 
--	if (!task->ret_stack || index < *graph)
-+	if (!task->ret_stack)
- 		return;
- 
--	index -= *graph;
--	ret_addr = task->ret_stack[index].ret;
-+	ret_stack = ftrace_graph_get_ret_stack(task, *graph);
-+	if (!ret_stack)
-+		return;
-+
-+	ret_addr = ret_stack->ret;
- 
- 	ops->address(data, ret_addr, 1);
- 
-diff --git a/arch/sh/kernel/dwarf.c b/arch/sh/kernel/dwarf.c
-index bb511e2d9d68..df0fd6efe758 100644
---- a/arch/sh/kernel/dwarf.c
-+++ b/arch/sh/kernel/dwarf.c
-@@ -608,17 +608,18 @@ struct dwarf_frame *dwarf_unwind_stack(unsigned long pc,
- 	 * expected to find the real return address.
- 	 */
- 	if (pc = (unsigned long)&return_to_handler) {
--		int index = current->curr_ret_stack;
-+		struct ftrace_ret_stack *ret_stack;
- 
-+		ret_stack = ftrace_graph_get_ret_stack(current, 0);
-+		if (ret_stack)
-+			pc = ret_stack->ret;
- 		/*
- 		 * We currently have no way of tracking how many
- 		 * return_to_handler()'s we've seen. If there is more
- 		 * than one patched return address on our stack,
- 		 * complain loudly.
- 		 */
--		WARN_ON(index > 0);
+diff --git a/arch/sh/kernel/cpu/sh3/clock-sh3.c b/arch/sh/kernel/cpu/sh3/clock-sh3.c
+index 90faa44..d776572 100644
+--- a/arch/sh/kernel/cpu/sh3/clock-sh3.c
++++ b/arch/sh/kernel/cpu/sh3/clock-sh3.c
+@@ -1,3 +1,4 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * arch/sh/kernel/cpu/sh3/clock-sh3.c
+  *
+@@ -11,10 +12,6 @@
+  *  Copyright (C) 2000  Philipp Rumpf <prumpf@tux.org>
+  *  Copyright (C) 2002, 2003, 2004  Paul Mundt
+  *  Copyright (C) 2002  M. R. Brown  <mrbrown@linux-sh.org>
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ #include <linux/init.h>
+ #include <linux/kernel.h>
+diff --git a/arch/sh/kernel/cpu/sh3/clock-sh7705.c b/arch/sh/kernel/cpu/sh3/clock-sh7705.c
+index a8da4a9..4947114 100644
+--- a/arch/sh/kernel/cpu/sh3/clock-sh7705.c
++++ b/arch/sh/kernel/cpu/sh3/clock-sh7705.c
+@@ -1,3 +1,4 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * arch/sh/kernel/cpu/sh3/clock-sh7705.c
+  *
+@@ -11,10 +12,6 @@
+  *  Copyright (C) 2000  Philipp Rumpf <prumpf@tux.org>
+  *  Copyright (C) 2002, 2003, 2004  Paul Mundt
+  *  Copyright (C) 2002  M. R. Brown  <mrbrown@linux-sh.org>
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ #include <linux/init.h>
+ #include <linux/kernel.h>
+diff --git a/arch/sh/kernel/cpu/sh3/clock-sh7706.c b/arch/sh/kernel/cpu/sh3/clock-sh7706.c
+index a4088e5..1785502 100644
+--- a/arch/sh/kernel/cpu/sh3/clock-sh7706.c
++++ b/arch/sh/kernel/cpu/sh3/clock-sh7706.c
+@@ -1,3 +1,4 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * arch/sh/kernel/cpu/sh3/clock-sh7706.c
+  *
+@@ -7,10 +8,6 @@
+  *
+  * Based on arch/sh/kernel/cpu/sh3/clock-sh7709.c
+  *  Copyright (C) 2005  Andriy Skulysh
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ #include <linux/init.h>
+ #include <linux/kernel.h>
+diff --git a/arch/sh/kernel/cpu/sh3/clock-sh7709.c b/arch/sh/kernel/cpu/sh3/clock-sh7709.c
+index 54a6d4b..54701bb 100644
+--- a/arch/sh/kernel/cpu/sh3/clock-sh7709.c
++++ b/arch/sh/kernel/cpu/sh3/clock-sh7709.c
+@@ -1,3 +1,4 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * arch/sh/kernel/cpu/sh3/clock-sh7709.c
+  *
+@@ -7,10 +8,6 @@
+  *
+  * Based on arch/sh/kernel/cpu/sh3/clock-sh7705.c
+  *  Copyright (C) 2005  Paul Mundt
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ #include <linux/init.h>
+ #include <linux/kernel.h>
+diff --git a/arch/sh/kernel/cpu/sh3/clock-sh7710.c b/arch/sh/kernel/cpu/sh3/clock-sh7710.c
+index ce601b2..e60d0bc 100644
+--- a/arch/sh/kernel/cpu/sh3/clock-sh7710.c
++++ b/arch/sh/kernel/cpu/sh3/clock-sh7710.c
+@@ -1,3 +1,4 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * arch/sh/kernel/cpu/sh3/clock-sh7710.c
+  *
+@@ -11,10 +12,6 @@
+  *  Copyright (C) 2000  Philipp Rumpf <prumpf@tux.org>
+  *  Copyright (C) 2002, 2003, 2004  Paul Mundt
+  *  Copyright (C) 2002  M. R. Brown  <mrbrown@linux-sh.org>
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ #include <linux/init.h>
+ #include <linux/kernel.h>
+diff --git a/arch/sh/kernel/cpu/sh3/clock-sh7712.c b/arch/sh/kernel/cpu/sh3/clock-sh7712.c
+index 21438a9..5af553f 100644
+--- a/arch/sh/kernel/cpu/sh3/clock-sh7712.c
++++ b/arch/sh/kernel/cpu/sh3/clock-sh7712.c
+@@ -1,3 +1,4 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * arch/sh/kernel/cpu/sh3/clock-sh7712.c
+  *
+@@ -7,10 +8,6 @@
+  *
+  * Based on arch/sh/kernel/cpu/sh3/clock-sh3.c
+  *  Copyright (C) 2005  Paul Mundt
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ #include <linux/init.h>
+ #include <linux/kernel.h>
+diff --git a/arch/sh/kernel/cpu/sh3/entry.S b/arch/sh/kernel/cpu/sh3/entry.S
+index 262db6e..25eb809 100644
+--- a/arch/sh/kernel/cpu/sh3/entry.S
++++ b/arch/sh/kernel/cpu/sh3/entry.S
+@@ -1,12 +1,9 @@
+-/*
++/* SPDX-License-Identifier: GPL-2.0
++ *
+  * arch/sh/kernel/cpu/sh3/entry.S
+  *
+  *  Copyright (C) 1999, 2000, 2002  Niibe Yutaka
+  *  Copyright (C) 2003 - 2012  Paul Mundt
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ #include <linux/sys.h>
+ #include <linux/errno.h>
+diff --git a/arch/sh/kernel/cpu/sh3/ex.S b/arch/sh/kernel/cpu/sh3/ex.S
+index 99b4d02..ee2113f 100644
+--- a/arch/sh/kernel/cpu/sh3/ex.S
++++ b/arch/sh/kernel/cpu/sh3/ex.S
+@@ -1,14 +1,11 @@
+-/*
++/* SPDX-License-Identifier: GPL-2.0
++ *
+  *  arch/sh/kernel/cpu/sh3/ex.S
+  *
+  *  The SH-3 and SH-4 exception vector table.
 -
--		pc = current->ret_stack[index].ret;
-+		WARN_ON(ftrace_graph_get_ret_stack(current, 1);
- 	}
- #endif
++ *
+  *  Copyright (C) 1999, 2000, 2002  Niibe Yutaka
+  *  Copyright (C) 2003 - 2008  Paul Mundt
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ #include <linux/linkage.h>
  
+diff --git a/arch/sh/kernel/cpu/sh3/pinmux-sh7720.c b/arch/sh/kernel/cpu/sh3/pinmux-sh7720.c
+index 26e90a6..34015e6 100644
+--- a/arch/sh/kernel/cpu/sh3/pinmux-sh7720.c
++++ b/arch/sh/kernel/cpu/sh3/pinmux-sh7720.c
+@@ -1,11 +1,8 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * SH7720 Pinmux
+  *
+  *  Copyright (C) 2008  Magnus Damm
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ 
+ #include <linux/bug.h>
+diff --git a/arch/sh/kernel/cpu/sh3/probe.c b/arch/sh/kernel/cpu/sh3/probe.c
+index 426e1e1..5e7ad59 100644
+--- a/arch/sh/kernel/cpu/sh3/probe.c
++++ b/arch/sh/kernel/cpu/sh3/probe.c
+@@ -1,3 +1,4 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * arch/sh/kernel/cpu/sh3/probe.c
+  *
+@@ -5,10 +6,6 @@
+  *
+  * Copyright (C) 1999, 2000  Niibe Yutaka
+  * Copyright (C) 2002  Paul Mundt
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ 
+ #include <linux/init.h>
+diff --git a/arch/sh/kernel/cpu/sh3/setup-sh3.c b/arch/sh/kernel/cpu/sh3/setup-sh3.c
+index 53be70b..8058c01 100644
+--- a/arch/sh/kernel/cpu/sh3/setup-sh3.c
++++ b/arch/sh/kernel/cpu/sh3/setup-sh3.c
+@@ -1,11 +1,8 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * Shared SH3 Setup code
+  *
+  *  Copyright (C) 2008  Magnus Damm
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ 
+ #include <linux/init.h>
+diff --git a/arch/sh/kernel/cpu/sh3/setup-sh7705.c b/arch/sh/kernel/cpu/sh3/setup-sh7705.c
+index f6e392e..e19d1ce 100644
+--- a/arch/sh/kernel/cpu/sh3/setup-sh7705.c
++++ b/arch/sh/kernel/cpu/sh3/setup-sh7705.c
+@@ -1,12 +1,9 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * SH7705 Setup
+  *
+  *  Copyright (C) 2006 - 2009  Paul Mundt
+  *  Copyright (C) 2007  Nobuhiro Iwamatsu
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ #include <linux/platform_device.h>
+ #include <linux/init.h>
+diff --git a/arch/sh/kernel/cpu/sh3/setup-sh770x.c b/arch/sh/kernel/cpu/sh3/setup-sh770x.c
+index 59a8861..5c5144b 100644
+--- a/arch/sh/kernel/cpu/sh3/setup-sh770x.c
++++ b/arch/sh/kernel/cpu/sh3/setup-sh770x.c
+@@ -1,3 +1,4 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * SH3 Setup code for SH7706, SH7707, SH7708, SH7709
+  *
+@@ -7,10 +8,6 @@
+  * Based on setup-sh7709.c
+  *
+  *  Copyright (C) 2006  Paul Mundt
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ #include <linux/init.h>
+ #include <linux/io.h>
+diff --git a/arch/sh/kernel/cpu/sh3/setup-sh7710.c b/arch/sh/kernel/cpu/sh3/setup-sh7710.c
+index ea52410..4776e24 100644
+--- a/arch/sh/kernel/cpu/sh3/setup-sh7710.c
++++ b/arch/sh/kernel/cpu/sh3/setup-sh7710.c
+@@ -1,12 +1,9 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * SH3 Setup code for SH7710, SH7712
+  *
+  *  Copyright (C) 2006 - 2009  Paul Mundt
+  *  Copyright (C) 2007  Nobuhiro Iwamatsu
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ #include <linux/platform_device.h>
+ #include <linux/init.h>
+diff --git a/arch/sh/kernel/cpu/sh3/setup-sh7720.c b/arch/sh/kernel/cpu/sh3/setup-sh7720.c
+index bf34b4e..1d4c34e 100644
+--- a/arch/sh/kernel/cpu/sh3/setup-sh7720.c
++++ b/arch/sh/kernel/cpu/sh3/setup-sh7720.c
+@@ -1,3 +1,4 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * Setup code for SH7720, SH7721.
+  *
+@@ -8,10 +9,6 @@
+  *
+  *  Copyright (C) 2006  Paul Mundt
+  *  Copyright (C) 2006  Jamie Lenehan
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ #include <linux/platform_device.h>
+ #include <linux/init.h>
+diff --git a/arch/sh/kernel/cpu/sh3/swsusp.S b/arch/sh/kernel/cpu/sh3/swsusp.S
+index 0114542..dc111c4 100644
+--- a/arch/sh/kernel/cpu/sh3/swsusp.S
++++ b/arch/sh/kernel/cpu/sh3/swsusp.S
+@@ -1,11 +1,8 @@
+-/*
++/* SPDX-License-Identifier: GPL-2.0
++ *
+  * arch/sh/kernel/cpu/sh3/swsusp.S
+  *
+  * Copyright (C) 2009 Magnus Damm
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ #include <linux/sys.h>
+ #include <linux/errno.h>
 -- 
-2.19.1
+2.7.4
