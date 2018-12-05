@@ -1,216 +1,224 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Mon, 10 Dec 2018 19:02:00 +0000
-Subject: Re: dma_declare_coherent_memory on main memory
-Message-Id: <20181210190159.GA30648@lst.de>
+From: Christophe Leroy <christophe.leroy@c-s.fr>
+Date: Wed, 05 Dec 2018 04:41:11 +0000
+Subject: [PATCH 2/2] kgdb/treewide: constify struct kgdb_arch arch_kgdb_ops
+Message-Id: <6b1a19ffa0da02cff9b82b866ba31d57478501ce.1543957194.git.christophe.leroy@c-s.fr>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20181207153432.GA24917@lst.de>
- <20181210072648.ore6xttedsgpndi4@pengutronix.de>
-In-Reply-To: <20181210072648.ore6xttedsgpndi4@pengutronix.de>
+References: <75bbcdd1e9277d66ebb06e349dda304bd01ce761.1543957194.git.christophe.leroy@c-s.fr>
+In-Reply-To: <75bbcdd1e9277d66ebb06e349dda304bd01ce761.1543957194.git.christophe.leroy@c-s.fr>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sascha Hauer <s.hauer@pengutronix.de>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, iommu@lists.linux-foundation.org, linux-imx@nxp.com, Fabio Estevam <fabio.estevam@nxp.com>, Shawn Guo <shawnguo@kernel.org>, Christoph Hellwig <hch@lst.de>, linux-arm-kernel@lists.infradead.org
+To: Vineet Gupta <vgupta@synopsys.com>, Russell King <linux@armlinux.org.uk>, Catalin Marinas <catalin.marinas@arm.com>, Will Deacon <will.deacon@arm.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Richard Kuo <rkuo@codeaurora.org>, Michal Simek <monstr@monstr.eu>, Ralf Baechle <ralf@linux-mips.org>, Paul Burton <paul.burton@mips.com>, James Hogan <jhogan@kernel.org>, Ley Foon Tan <lftan@altera.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Michael Ellerman <mpe@ellerman.id.au>, Rich Felker <dalias@libc.org>, "David S. Miller" <davem@davemloft.net>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>, x86@kernel.org, Jason Wessel <jason.wessel@windriver.com>, Daniel Thompson <daniel.thompson@linaro.org>, "GitAuthor: Christophe Leroy" <christophe.leroy@c-s.fr>, Douglas Anderson <dianders@chromium.org>, Randy Dunlap <rdunlap@infradead.org>, "Gustavo A. R. Silva" <gustavo@embeddedor.com>
+Cc: uclinux-h8-devel@lists.sourceforge.jp, linux-sh@vger.kernel.org, linux-hexagon@vger.kernel.org, linux-kernel@vger.kernel.org, linux-mips@vger.kernel.org, kgdb-bugreport@lists.sourceforge.net, sparclinux@vger.kernel.org, nios2-dev@lists.rocketboards.org, linux-snps-arc@lists.infradead.org, linuxppc-dev@lists.ozlabs.org, linux-arm-kernel@lists.infradead.org
 
-On Mon, Dec 10, 2018 at 08:26:48AM +0100, Sascha Hauer wrote:
-> > the ARM imx27/31 ports and various sh boards use
-> > dma_declare_coherent_memory on main memory taken from the memblock
-> > allocator.
-> > 
-> > Is there any good reason these couldn't be switched to CMA areas?
-> > Getting rid of these magic dma_declare_coherent_memory area would
-> > help making the dma allocator a lot simpler.
-> 
-> At least for i.MX27/31 I'd say this predates CMA support, so historical
-> reasons.
+checkpatch.pl reports the following:
 
-Ok.  Do you still have test hardware for i.MX?  If so I'd love to see
-if the patch below works.  Note that this is the brute force approach,
-just having a global CMA pool might be a little more elegant.
+  WARNING: struct kgdb_arch should normally be const
+  #28: FILE: arch/mips/kernel/kgdb.c:397:
+  +struct kgdb_arch arch_kgdb_ops = {
 
-diff --git a/arch/arm/configs/imx_v4_v5_defconfig b/arch/arm/configs/imx_v4_v5_defconfig
-index 8661dd9b064a..88852e7e5e7e 100644
---- a/arch/arm/configs/imx_v4_v5_defconfig
-+++ b/arch/arm/configs/imx_v4_v5_defconfig
-@@ -185,3 +185,5 @@ CONFIG_NLS_ISO8859_1=y
- CONFIG_NLS_ISO8859_15=m
- CONFIG_FONTS=y
- CONFIG_FONT_8x8=y
-+CONFIG_CMA=y
-+CONFIG_DMA_CMA=y
-diff --git a/arch/arm/configs/imx_v6_v7_defconfig b/arch/arm/configs/imx_v6_v7_defconfig
-index 1ad5736c8fa6..16c8d717316c 100644
---- a/arch/arm/configs/imx_v6_v7_defconfig
-+++ b/arch/arm/configs/imx_v6_v7_defconfig
-@@ -444,3 +444,5 @@ CONFIG_PROVE_LOCKING=y
- # CONFIG_DEBUG_BUGVERBOSE is not set
- # CONFIG_FTRACE is not set
- # CONFIG_ARM_UNWIND is not set
-+CONFIG_CMA=y
-+CONFIG_DMA_CMA=y
-diff --git a/arch/arm/mach-imx/mach-imx27_visstrim_m10.c b/arch/arm/mach-imx/mach-imx27_visstrim_m10.c
-index 5169dfba9718..2339a50d5459 100644
---- a/arch/arm/mach-imx/mach-imx27_visstrim_m10.c
-+++ b/arch/arm/mach-imx/mach-imx27_visstrim_m10.c
-@@ -23,6 +23,7 @@
- 
- #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
- 
-+#include <linux/cma.h>
- #include <linux/platform_device.h>
- #include <linux/mtd/physmap.h>
- #include <linux/i2c.h>
-@@ -35,6 +36,7 @@
- #include <linux/platform_data/asoc-mx27vis.h>
- #include <media/soc_camera.h>
- #include <sound/tlv320aic32x4.h>
-+#include <asm/dma-contiguous.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
- #include <asm/mach/time.h>
-@@ -245,6 +247,7 @@ static phys_addr_t mx2_camera_base __initdata;
- static void __init visstrim_analog_camera_init(void)
- {
- 	struct platform_device *pdev;
-+	struct cma *cma;
- 
- 	gpio_set_value(TVP5150_PWDN, 1);
- 	ndelay(1);
-@@ -257,9 +260,10 @@ static void __init visstrim_analog_camera_init(void)
- 	if (IS_ERR(pdev))
- 		return;
- 
--	dma_declare_coherent_memory(&pdev->dev, mx2_camera_base,
--				    mx2_camera_base, MX2_CAMERA_BUF_SIZE,
--				    DMA_MEMORY_EXCLUSIVE);
-+	if (cma_init_reserved_mem(mx2_camera_base, MX2_CAMERA_BUF_SIZE, 0,
-+			"visstrim-cam", &cma))
-+		return;
-+	dma_contiguous_early_fixup(mx2_camera_base, MX2_CAMERA_BUF_SIZE);
+This report makes sense, as all other ops struct, this
+one should also be const. This patch does the change.
+
+Signed-off-by: Christophe Leroy <christophe.leroy@c-s.fr>
+---
+ arch/arc/kernel/kgdb.c        | 2 +-
+ arch/arm/kernel/kgdb.c        | 2 +-
+ arch/arm64/kernel/kgdb.c      | 2 +-
+ arch/h8300/kernel/kgdb.c      | 2 +-
+ arch/hexagon/kernel/kgdb.c    | 2 +-
+ arch/microblaze/kernel/kgdb.c | 2 +-
+ arch/mips/kernel/kgdb.c       | 2 +-
+ arch/nios2/kernel/kgdb.c      | 2 +-
+ arch/powerpc/kernel/kgdb.c    | 2 +-
+ arch/sh/kernel/kgdb.c         | 2 +-
+ arch/sparc/kernel/kgdb_32.c   | 2 +-
+ arch/sparc/kernel/kgdb_64.c   | 2 +-
+ arch/x86/kernel/kgdb.c        | 2 +-
+ include/linux/kgdb.h          | 2 +-
+ 14 files changed, 14 insertions(+), 14 deletions(-)
+
+diff --git a/arch/arc/kernel/kgdb.c b/arch/arc/kernel/kgdb.c
+index 9a3c34af2ae8..bfd04b442e36 100644
+--- a/arch/arc/kernel/kgdb.c
++++ b/arch/arc/kernel/kgdb.c
+@@ -204,7 +204,7 @@ void kgdb_roundup_cpus(unsigned long flags)
+ 	local_irq_disable();
  }
  
- static void __init visstrim_reserve(void)
-@@ -440,13 +444,16 @@ static const struct imx_ssi_platform_data visstrim_m10_ssi_pdata __initconst = {
- static void __init visstrim_coda_init(void)
- {
- 	struct platform_device *pdev;
-+	struct cma *cma;
- 
- 	pdev = imx27_add_coda();
--	dma_declare_coherent_memory(&pdev->dev,
--				    mx2_camera_base + MX2_CAMERA_BUF_SIZE,
--				    mx2_camera_base + MX2_CAMERA_BUF_SIZE,
--				    MX2_CAMERA_BUF_SIZE,
--				    DMA_MEMORY_EXCLUSIVE);
-+	if (IS_ERR(pdev))
-+		return;
-+	if (cma_init_reserved_mem(mx2_camera_base + MX2_CAMERA_BUF_SIZE,
-+			MX2_CAMERA_BUF_SIZE, 0, "visstrim-coda", &cma))
-+		return;
-+	dma_contiguous_early_fixup(mx2_camera_base + MX2_CAMERA_BUF_SIZE,
-+			MX2_CAMERA_BUF_SIZE);
- }
- 
- /* DMA deinterlace */
-@@ -459,21 +466,22 @@ static void __init visstrim_deinterlace_init(void)
- {
- 	int ret = -ENOMEM;
- 	struct platform_device *pdev = &visstrim_deinterlace;
-+	struct cma *cma;
- 
- 	ret = platform_device_register(pdev);
- 
--	dma_declare_coherent_memory(&pdev->dev,
--				    mx2_camera_base + 2 * MX2_CAMERA_BUF_SIZE,
--				    mx2_camera_base + 2 * MX2_CAMERA_BUF_SIZE,
--				    MX2_CAMERA_BUF_SIZE,
--				    DMA_MEMORY_EXCLUSIVE);
-+	if (cma_init_reserved_mem(mx2_camera_base + 2 * MX2_CAMERA_BUF_SIZE,
-+			MX2_CAMERA_BUF_SIZE, 0, "visstrim-deinterlace", &cma))
-+		return;
-+	dma_contiguous_early_fixup(mx2_camera_base + 2 * MX2_CAMERA_BUF_SIZE,
-+			MX2_CAMERA_BUF_SIZE);
- }
- 
- /* Emma-PrP for format conversion */
- static void __init visstrim_emmaprp_init(void)
- {
- 	struct platform_device *pdev;
--	int ret;
-+	struct cma *cma;
- 
- 	pdev = imx27_add_mx2_emmaprp();
- 	if (IS_ERR(pdev))
-@@ -483,12 +491,12 @@ static void __init visstrim_emmaprp_init(void)
- 	 * Use the same memory area as the analog camera since both
- 	 * devices are, by nature, exclusive.
- 	 */
--	ret = dma_declare_coherent_memory(&pdev->dev,
--				mx2_camera_base, mx2_camera_base,
--				MX2_CAMERA_BUF_SIZE,
--				DMA_MEMORY_EXCLUSIVE);
--	if (ret)
-+	if (cma_init_reserved_mem(mx2_camera_base, MX2_CAMERA_BUF_SIZE, 0,
-+			"visstrim-emmaprp", &cma)) {
- 		pr_err("Failed to declare memory for emmaprp\n");
-+		return;
-+	}
-+	dma_contiguous_early_fixup(mx2_camera_base, MX2_CAMERA_BUF_SIZE);
- }
- 
- /* Audio */
-diff --git a/arch/arm/mach-imx/mach-mx31moboard.c b/arch/arm/mach-imx/mach-mx31moboard.c
-index 643a3d749703..1c0705ec0ccd 100644
---- a/arch/arm/mach-imx/mach-mx31moboard.c
-+++ b/arch/arm/mach-imx/mach-mx31moboard.c
-@@ -13,6 +13,7 @@
+-struct kgdb_arch arch_kgdb_ops = {
++const struct kgdb_arch arch_kgdb_ops = {
+ 	/* breakpoint instruction: TRAP_S 0x3 */
+ #ifdef CONFIG_CPU_BIG_ENDIAN
+ 	.gdb_bpt_instr		= {0x78, 0x7e},
+diff --git a/arch/arm/kernel/kgdb.c b/arch/arm/kernel/kgdb.c
+index caa0dbe3dc61..21a6d5958955 100644
+--- a/arch/arm/kernel/kgdb.c
++++ b/arch/arm/kernel/kgdb.c
+@@ -274,7 +274,7 @@ int kgdb_arch_remove_breakpoint(struct kgdb_bkpt *bpt)
+  * and we handle the normal undef case within the do_undefinstr
+  * handler.
   */
- 
- #include <linux/delay.h>
-+#include <linux/cma.h>
- #include <linux/dma-mapping.h>
- #include <linux/gfp.h>
- #include <linux/gpio.h>
-@@ -37,6 +38,7 @@
- #include <linux/usb/otg.h>
- #include <linux/usb/ulpi.h>
- 
-+#include <asm/dma-contiguous.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
- #include <asm/mach/time.h>
-@@ -466,6 +468,7 @@ static int __init mx31moboard_init_cam(void)
- {
- 	int ret;
- 	struct platform_device *pdev;
-+	struct cma *cma;
- 
- 	imx31_add_ipu_core();
- 
-@@ -473,18 +476,18 @@ static int __init mx31moboard_init_cam(void)
- 	if (IS_ERR(pdev))
- 		return PTR_ERR(pdev);
- 
--	ret = dma_declare_coherent_memory(&pdev->dev,
--					  mx3_camera_base, mx3_camera_base,
--					  MX3_CAMERA_BUF_SIZE,
--					  DMA_MEMORY_EXCLUSIVE);
-+	ret = cma_init_reserved_mem(mx3_camera_base, MX3_CAMERA_BUF_SIZE, 0,
-+			"mx31cam", &cma);
- 	if (ret)
--		goto err;
-+		goto out_device_put;
-+	dma_contiguous_early_fixup(mx3_camera_base, MX3_CAMERA_BUF_SIZE);
- 
- 	ret = platform_device_add(pdev);
- 	if (ret)
--err:
--		platform_device_put(pdev);
--
-+		goto out_device_put;
-+	return 0;
-+out_device_put:
-+	platform_device_put(pdev);
- 	return ret;
- 
+-struct kgdb_arch arch_kgdb_ops = {
++const struct kgdb_arch arch_kgdb_ops = {
+ #ifndef __ARMEB__
+ 	.gdb_bpt_instr		= {0xfe, 0xde, 0xff, 0xe7}
+ #else /* ! __ARMEB__ */
+diff --git a/arch/arm64/kernel/kgdb.c b/arch/arm64/kernel/kgdb.c
+index a20de58061a8..fe1d1f935b90 100644
+--- a/arch/arm64/kernel/kgdb.c
++++ b/arch/arm64/kernel/kgdb.c
+@@ -357,7 +357,7 @@ void kgdb_arch_exit(void)
+ 	unregister_die_notifier(&kgdb_notifier);
  }
+ 
+-struct kgdb_arch arch_kgdb_ops;
++const struct kgdb_arch arch_kgdb_ops;
+ 
+ int kgdb_arch_set_breakpoint(struct kgdb_bkpt *bpt)
+ {
+diff --git a/arch/h8300/kernel/kgdb.c b/arch/h8300/kernel/kgdb.c
+index 1a1d30cb0609..602e478afbd5 100644
+--- a/arch/h8300/kernel/kgdb.c
++++ b/arch/h8300/kernel/kgdb.c
+@@ -129,7 +129,7 @@ void kgdb_arch_exit(void)
+ 	/* Nothing to do */
+ }
+ 
+-struct kgdb_arch arch_kgdb_ops = {
++const struct kgdb_arch arch_kgdb_ops = {
+ 	/* Breakpoint instruction: trapa #2 */
+ 	.gdb_bpt_instr = { 0x57, 0x20 },
+ };
+diff --git a/arch/hexagon/kernel/kgdb.c b/arch/hexagon/kernel/kgdb.c
+index 16c24b22d0b2..f1924d483e78 100644
+--- a/arch/hexagon/kernel/kgdb.c
++++ b/arch/hexagon/kernel/kgdb.c
+@@ -83,7 +83,7 @@ struct dbg_reg_def_t dbg_reg_def[DBG_MAX_REG_NUM] = {
+ 	{ "syscall_nr", GDB_SIZEOF_REG, offsetof(struct pt_regs, syscall_nr)},
+ };
+ 
+-struct kgdb_arch arch_kgdb_ops = {
++const struct kgdb_arch arch_kgdb_ops = {
+ 	/* trap0(#0xDB) 0x0cdb0054 */
+ 	.gdb_bpt_instr = {0x54, 0x00, 0xdb, 0x0c},
+ };
+diff --git a/arch/microblaze/kernel/kgdb.c b/arch/microblaze/kernel/kgdb.c
+index 6366f69d118e..130cd0f064ce 100644
+--- a/arch/microblaze/kernel/kgdb.c
++++ b/arch/microblaze/kernel/kgdb.c
+@@ -143,7 +143,7 @@ void kgdb_arch_exit(void)
+ /*
+  * Global data
+  */
+-struct kgdb_arch arch_kgdb_ops = {
++const struct kgdb_arch arch_kgdb_ops = {
+ #ifdef __MICROBLAZEEL__
+ 	.gdb_bpt_instr = {0x18, 0x00, 0x0c, 0xba}, /* brki r16, 0x18 */
+ #else
+diff --git a/arch/mips/kernel/kgdb.c b/arch/mips/kernel/kgdb.c
+index 31eff1bec577..edfdc2ec2d16 100644
+--- a/arch/mips/kernel/kgdb.c
++++ b/arch/mips/kernel/kgdb.c
+@@ -394,7 +394,7 @@ int kgdb_arch_handle_exception(int vector, int signo, int err_code,
+ 	return -1;
+ }
+ 
+-struct kgdb_arch arch_kgdb_ops = {
++const struct kgdb_arch arch_kgdb_ops = {
+ #ifdef CONFIG_CPU_BIG_ENDIAN
+ 	.gdb_bpt_instr = { spec_op << 2, 0x00, 0x00, break_op },
+ #else
+diff --git a/arch/nios2/kernel/kgdb.c b/arch/nios2/kernel/kgdb.c
+index 117859122d1c..37b25f844a2d 100644
+--- a/arch/nios2/kernel/kgdb.c
++++ b/arch/nios2/kernel/kgdb.c
+@@ -165,7 +165,7 @@ void kgdb_arch_exit(void)
+ 	/* Nothing to do */
+ }
+ 
+-struct kgdb_arch arch_kgdb_ops = {
++const struct kgdb_arch arch_kgdb_ops = {
+ 	/* Breakpoint instruction: trap 30 */
+ 	.gdb_bpt_instr = { 0xba, 0x6f, 0x3b, 0x00 },
+ };
+diff --git a/arch/powerpc/kernel/kgdb.c b/arch/powerpc/kernel/kgdb.c
+index 59c578f865aa..bdb588b1d8fb 100644
+--- a/arch/powerpc/kernel/kgdb.c
++++ b/arch/powerpc/kernel/kgdb.c
+@@ -477,7 +477,7 @@ int kgdb_arch_remove_breakpoint(struct kgdb_bkpt *bpt)
+ /*
+  * Global data
+  */
+-struct kgdb_arch arch_kgdb_ops;
++const struct kgdb_arch arch_kgdb_ops;
+ 
+ static int kgdb_not_implemented(struct pt_regs *regs)
+ {
+diff --git a/arch/sh/kernel/kgdb.c b/arch/sh/kernel/kgdb.c
+index 4f04c6638a4d..a24c48446e98 100644
+--- a/arch/sh/kernel/kgdb.c
++++ b/arch/sh/kernel/kgdb.c
+@@ -382,7 +382,7 @@ void kgdb_arch_exit(void)
+ 	unregister_die_notifier(&kgdb_notifier);
+ }
+ 
+-struct kgdb_arch arch_kgdb_ops = {
++const struct kgdb_arch arch_kgdb_ops = {
+ 	/* Breakpoint instruction: trapa #0x3c */
+ #ifdef CONFIG_CPU_LITTLE_ENDIAN
+ 	.gdb_bpt_instr		= { 0x3c, 0xc3 },
+diff --git a/arch/sparc/kernel/kgdb_32.c b/arch/sparc/kernel/kgdb_32.c
+index 639c8e54530a..7580775a14b9 100644
+--- a/arch/sparc/kernel/kgdb_32.c
++++ b/arch/sparc/kernel/kgdb_32.c
+@@ -166,7 +166,7 @@ void kgdb_arch_set_pc(struct pt_regs *regs, unsigned long ip)
+ 	regs->npc = regs->pc + 4;
+ }
+ 
+-struct kgdb_arch arch_kgdb_ops = {
++const struct kgdb_arch arch_kgdb_ops = {
+ 	/* Breakpoint instruction: ta 0x7d */
+ 	.gdb_bpt_instr		= { 0x91, 0xd0, 0x20, 0x7d },
+ };
+diff --git a/arch/sparc/kernel/kgdb_64.c b/arch/sparc/kernel/kgdb_64.c
+index a68bbddbdba4..5d6c2d287e85 100644
+--- a/arch/sparc/kernel/kgdb_64.c
++++ b/arch/sparc/kernel/kgdb_64.c
+@@ -195,7 +195,7 @@ void kgdb_arch_set_pc(struct pt_regs *regs, unsigned long ip)
+ 	regs->tnpc = regs->tpc + 4;
+ }
+ 
+-struct kgdb_arch arch_kgdb_ops = {
++const struct kgdb_arch arch_kgdb_ops = {
+ 	/* Breakpoint instruction: ta 0x72 */
+ 	.gdb_bpt_instr		= { 0x91, 0xd0, 0x20, 0x72 },
+ };
+diff --git a/arch/x86/kernel/kgdb.c b/arch/x86/kernel/kgdb.c
+index 8e36f249646e..e7effc02f13c 100644
+--- a/arch/x86/kernel/kgdb.c
++++ b/arch/x86/kernel/kgdb.c
+@@ -804,7 +804,7 @@ int kgdb_arch_remove_breakpoint(struct kgdb_bkpt *bpt)
+ 				  (char *)bpt->saved_instr, BREAK_INSTR_SIZE);
+ }
+ 
+-struct kgdb_arch arch_kgdb_ops = {
++const struct kgdb_arch arch_kgdb_ops = {
+ 	/* Breakpoint instruction: */
+ 	.gdb_bpt_instr		= { 0xcc },
+ 	.flags			= KGDB_HW_BREAKPOINT,
+diff --git a/include/linux/kgdb.h b/include/linux/kgdb.h
+index e465bb15912d..3bf313311cca 100644
+--- a/include/linux/kgdb.h
++++ b/include/linux/kgdb.h
+@@ -281,7 +281,7 @@ struct kgdb_io {
+ 	int			is_console;
+ };
+ 
+-extern struct kgdb_arch		arch_kgdb_ops;
++extern const struct kgdb_arch		arch_kgdb_ops;
+ 
+ extern unsigned long kgdb_arch_pc(int exception, struct pt_regs *regs);
+ 
+-- 
+2.13.3
