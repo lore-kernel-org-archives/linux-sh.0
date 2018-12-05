@@ -1,186 +1,892 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Fri, 07 Dec 2018 13:48:18 +0000
-Subject: [PATCH 2/8] sh: sh03: rtc: push down rtc class ops into driver
-Message-Id: <20181207134824.300024-3-arnd@arndb.de>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 05 Dec 2018 08:01:46 +0000
+Subject: [PATCH 12/13] sh: kernel: convert to SPDX identifiers
+Message-Id: <8736rccswn.wl-kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20181207134824.300024-1-arnd@arndb.de>
-In-Reply-To: <20181207134824.300024-1-arnd@arndb.de>
+References: <87k1koct23.wl-kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87k1koct23.wl-kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: y2038@lists.linaro.org
-Cc: linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org, linux-sh@vger.kernel.org, Baolin Wang <baolin.wang@linaro.org>, Andrew Morton <akpm@linux-foundation.org>, John Stultz <john.stultz@linaro.org>, Alexander Viro <viro@zeniv.linux.org.uk>, Thomas Gleixner <tglx@linutronix.de>, Rich Felker <dalias@libc.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Arnd Bergmann <arnd@arndb.de>
+To: Andrew Morton <akpm@linux-foundation.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@redhat.com>, Will Deacon <will.deacon@arm.com>, Oleg Nesterov <oleg@redhat.com>
+Cc: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
 
-The dreamcast RTC support has an extra level of indirection to
-provide either the old read_persistent_clock/update_persistent_clock
-interface or the rtc-generic device for hctosys/systohc.
 
-By removing the indirection and always using the RTC_CLASS interface,
-we can avoid the lossy double conversion between rtc_time and timespec,
-so we end up supporting the entire range of 'year' values, and clarifying
-the rtc_set_time callback.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-I did not change the behavior of sh03_rtc_settimeofday(), which keeps
-just updating the seconds/minutes by calling set_rtc_mmss(), this
-could be improved if anyone cares. Also, the file should ideally be
-moved into drivers/rtc and not use rtc-generic.
+This patch updates license to use SPDX-License-Identifier
+instead of verbose license text.
 
-Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Reviewed-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/sh/boards/mach-sh03/Makefile |  3 +-
- arch/sh/boards/mach-sh03/rtc.c    | 51 +++++++++++++++++++------------
- arch/sh/boards/mach-sh03/setup.c  |  9 ------
- arch/sh/configs/sh03_defconfig    |  2 ++
- 4 files changed, 35 insertions(+), 30 deletions(-)
+ arch/sh/kernel/debugtraps.S        |  7 ++-----
+ arch/sh/kernel/disassemble.c       |  5 +----
+ arch/sh/kernel/dma-coherent.c      |  5 +----
+ arch/sh/kernel/dumpstack.c         |  5 +----
+ arch/sh/kernel/dwarf.c             |  5 +----
+ arch/sh/kernel/entry-common.S      |  8 ++------
+ arch/sh/kernel/head_32.S           |  7 ++-----
+ arch/sh/kernel/head_64.S           |  7 ++-----
+ arch/sh/kernel/hw_breakpoint.c     |  5 +----
+ arch/sh/kernel/idle.c              |  5 +----
+ arch/sh/kernel/io.c                |  5 +----
+ arch/sh/kernel/io_trapped.c        |  5 +----
+ arch/sh/kernel/iomap.c             |  5 +----
+ arch/sh/kernel/ioport.c            |  5 +----
+ arch/sh/kernel/irq_32.c            |  5 +----
+ arch/sh/kernel/irq_64.c            |  5 +----
+ arch/sh/kernel/kgdb.c              |  5 +----
+ arch/sh/kernel/kprobes.c           |  5 +----
+ arch/sh/kernel/machine_kexec.c     |  4 +---
+ arch/sh/kernel/machvec.c           |  5 +----
+ arch/sh/kernel/module.c            | 15 +--------------
+ arch/sh/kernel/nmi_debug.c         |  5 +----
+ arch/sh/kernel/perf_callchain.c    |  5 +----
+ arch/sh/kernel/perf_event.c        |  5 +----
+ arch/sh/kernel/process_32.c        |  5 +----
+ arch/sh/kernel/process_64.c        |  5 +----
+ arch/sh/kernel/ptrace_32.c         |  5 +----
+ arch/sh/kernel/ptrace_64.c         |  5 +----
+ arch/sh/kernel/relocate_kernel.S   |  6 ++----
+ arch/sh/kernel/return_address.c    |  5 +----
+ arch/sh/kernel/sh_bios.c           |  5 +----
+ arch/sh/kernel/sh_ksyms_64.c       |  5 +----
+ arch/sh/kernel/signal_64.c         |  5 +----
+ arch/sh/kernel/smp.c               |  5 +----
+ arch/sh/kernel/stacktrace.c        |  5 +----
+ arch/sh/kernel/swsusp.c            |  5 +----
+ arch/sh/kernel/syscalls_32.S       |  8 ++------
+ arch/sh/kernel/syscalls_64.S       |  7 ++-----
+ arch/sh/kernel/time.c              |  5 +----
+ arch/sh/kernel/topology.c          |  5 +----
+ arch/sh/kernel/traps_32.c          |  5 +----
+ arch/sh/kernel/traps_64.c          |  5 +----
+ arch/sh/kernel/unwinder.c          |  1 +
+ arch/sh/kernel/vsyscall/vsyscall.c |  5 +----
+ 44 files changed, 51 insertions(+), 189 deletions(-)
 
-diff --git a/arch/sh/boards/mach-sh03/Makefile b/arch/sh/boards/mach-sh03/Makefile
-index 400306a796ec..47007a3a2fc8 100644
---- a/arch/sh/boards/mach-sh03/Makefile
-+++ b/arch/sh/boards/mach-sh03/Makefile
-@@ -2,4 +2,5 @@
- # Makefile for the Interface (CTP/PCI-SH03) specific parts of the kernel
- #
+diff --git a/arch/sh/kernel/debugtraps.S b/arch/sh/kernel/debugtraps.S
+index 7a1b46f..ad07527 100644
+--- a/arch/sh/kernel/debugtraps.S
++++ b/arch/sh/kernel/debugtraps.S
+@@ -1,13 +1,10 @@
+-/*
++/* SPDX-License-Identifier: GPL-2.0
++ *
+  * arch/sh/kernel/debugtraps.S
+  *
+  * Debug trap jump tables for SuperH
+  *
+  *  Copyright (C) 2006 - 2008  Paul Mundt
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ #include <linux/sys.h>
+ #include <linux/linkage.h>
+diff --git a/arch/sh/kernel/disassemble.c b/arch/sh/kernel/disassemble.c
+index 015fee5..defebf1 100644
+--- a/arch/sh/kernel/disassemble.c
++++ b/arch/sh/kernel/disassemble.c
+@@ -1,12 +1,9 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * Disassemble SuperH instructions.
+  *
+  * Copyright (C) 1999 kaz Kojima
+  * Copyright (C) 2008 Paul Mundt
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ #include <linux/kernel.h>
+ #include <linux/string.h>
+diff --git a/arch/sh/kernel/dma-coherent.c b/arch/sh/kernel/dma-coherent.c
+index a0021ee..b175146 100644
+--- a/arch/sh/kernel/dma-coherent.c
++++ b/arch/sh/kernel/dma-coherent.c
+@@ -1,9 +1,6 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * Copyright (C) 2004 - 2007  Paul Mundt
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ #include <linux/mm.h>
+ #include <linux/init.h>
+diff --git a/arch/sh/kernel/dumpstack.c b/arch/sh/kernel/dumpstack.c
+index b564b1e..93c6c0e 100644
+--- a/arch/sh/kernel/dumpstack.c
++++ b/arch/sh/kernel/dumpstack.c
+@@ -1,12 +1,9 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  *  Copyright (C) 1991, 1992  Linus Torvalds
+  *  Copyright (C) 2000, 2001, 2002 Andi Kleen, SuSE Labs
+  *  Copyright (C) 2009  Matt Fleming
+  *  Copyright (C) 2002 - 2012  Paul Mundt
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ #include <linux/kallsyms.h>
+ #include <linux/ftrace.h>
+diff --git a/arch/sh/kernel/dwarf.c b/arch/sh/kernel/dwarf.c
+index bb511e2..9e1d26c 100644
+--- a/arch/sh/kernel/dwarf.c
++++ b/arch/sh/kernel/dwarf.c
+@@ -1,10 +1,7 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * Copyright (C) 2009 Matt Fleming <matt@console-pimps.org>
+  *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+- *
+  * This is an implementation of a DWARF unwinder. Its main purpose is
+  * for generating stacktrace information. Based on the DWARF 3
+  * specification from http://www.dwarfstd.org.
+diff --git a/arch/sh/kernel/entry-common.S b/arch/sh/kernel/entry-common.S
+index 28cc612..d31f66e 100644
+--- a/arch/sh/kernel/entry-common.S
++++ b/arch/sh/kernel/entry-common.S
+@@ -1,11 +1,7 @@
+-/* 
++/* SPDX-License-Identifier: GPL-2.0
++ *
+  *  Copyright (C) 1999, 2000, 2002  Niibe Yutaka
+  *  Copyright (C) 2003 - 2008  Paul Mundt
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+- *
+  */
  
--obj-y	 := setup.o rtc.o
-+obj-y	 := setup.o
-+obj-$(CONFIG_RTC_DRV_GENERIC) += rtc.o
-diff --git a/arch/sh/boards/mach-sh03/rtc.c b/arch/sh/boards/mach-sh03/rtc.c
-index dc3d50e3b7a2..8b23ed7c201c 100644
---- a/arch/sh/boards/mach-sh03/rtc.c
-+++ b/arch/sh/boards/mach-sh03/rtc.c
-@@ -13,8 +13,9 @@
- #include <linux/bcd.h>
- #include <linux/rtc.h>
- #include <linux/spinlock.h>
--#include <asm/io.h>
--#include <asm/rtc.h>
-+#include <linux/io.h>
-+#include <linux/rtc.h>
-+#include <linux/platform_device.h>
+ ! NOTE:
+diff --git a/arch/sh/kernel/head_32.S b/arch/sh/kernel/head_32.S
+index 4e352c3..4adbd4a 100644
+--- a/arch/sh/kernel/head_32.S
++++ b/arch/sh/kernel/head_32.S
+@@ -1,14 +1,11 @@
+-/* $Id: head.S,v 1.7 2003/09/01 17:58:19 lethal Exp $
++/* SPDX-License-Identifier: GPL-2.0
++ * $Id: head.S,v 1.7 2003/09/01 17:58:19 lethal Exp $
+  *
+  *  arch/sh/kernel/head.S
+  *
+  *  Copyright (C) 1999, 2000  Niibe Yutaka & Kaz Kojima
+  *  Copyright (C) 2010  Matt Fleming
+  *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+- *
+  * Head.S contains the SH exception handlers and startup code.
+  */
+ #include <linux/init.h>
+diff --git a/arch/sh/kernel/head_64.S b/arch/sh/kernel/head_64.S
+index cca4913..67685e1 100644
+--- a/arch/sh/kernel/head_64.S
++++ b/arch/sh/kernel/head_64.S
+@@ -1,12 +1,9 @@
+-/*
++/* SPDX-License-Identifier: GPL-2.0
++ *
+  * arch/sh/kernel/head_64.S
+  *
+  * Copyright (C) 2000, 2001  Paolo Alberelli
+  * Copyright (C) 2003, 2004  Paul Mundt
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
  
- #define RTC_BASE	0xb0000000
- #define RTC_SEC1	(RTC_BASE + 0)
-@@ -38,7 +39,7 @@
+ #include <linux/init.h>
+diff --git a/arch/sh/kernel/hw_breakpoint.c b/arch/sh/kernel/hw_breakpoint.c
+index d9ff3b4..bc96b16 100644
+--- a/arch/sh/kernel/hw_breakpoint.c
++++ b/arch/sh/kernel/hw_breakpoint.c
+@@ -1,13 +1,10 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * arch/sh/kernel/hw_breakpoint.c
+  *
+  * Unified kernel/user-space hardware breakpoint facility for the on-chip UBC.
+  *
+  * Copyright (C) 2009 - 2010  Paul Mundt
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ #include <linux/init.h>
+ #include <linux/perf_event.h>
+diff --git a/arch/sh/kernel/idle.c b/arch/sh/kernel/idle.c
+index be616ee..c20fc54 100644
+--- a/arch/sh/kernel/idle.c
++++ b/arch/sh/kernel/idle.c
+@@ -1,11 +1,8 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * The idle loop for all SuperH platforms.
+  *
+  *  Copyright (C) 2002 - 2009  Paul Mundt
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ #include <linux/module.h>
+ #include <linux/init.h>
+diff --git a/arch/sh/kernel/io.c b/arch/sh/kernel/io.c
+index 5c51b79..da22f3b 100644
+--- a/arch/sh/kernel/io.c
++++ b/arch/sh/kernel/io.c
+@@ -1,12 +1,9 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * arch/sh/kernel/io.c - Machine independent I/O functions.
+  *
+  * Copyright (C) 2000 - 2009  Stuart Menefy
+  * Copyright (C) 2005  Paul Mundt
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ #include <linux/module.h>
+ #include <linux/pci.h>
+diff --git a/arch/sh/kernel/io_trapped.c b/arch/sh/kernel/io_trapped.c
+index 4d4e7a2..bacad6d 100644
+--- a/arch/sh/kernel/io_trapped.c
++++ b/arch/sh/kernel/io_trapped.c
+@@ -1,13 +1,10 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * Trapped io support
+  *
+  * Copyright (C) 2008 Magnus Damm
+  *
+  * Intercept io operations by trapping.
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ #include <linux/kernel.h>
+ #include <linux/mm.h>
+diff --git a/arch/sh/kernel/iomap.c b/arch/sh/kernel/iomap.c
+index 2e8e8b9..ef9e2c9 100644
+--- a/arch/sh/kernel/iomap.c
++++ b/arch/sh/kernel/iomap.c
+@@ -1,12 +1,9 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * arch/sh/kernel/iomap.c
+  *
+  * Copyright (C) 2000  Niibe Yutaka
+  * Copyright (C) 2005 - 2007 Paul Mundt
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ #include <linux/module.h>
+ #include <linux/io.h>
+diff --git a/arch/sh/kernel/ioport.c b/arch/sh/kernel/ioport.c
+index cca14ba..34f8cdb 100644
+--- a/arch/sh/kernel/ioport.c
++++ b/arch/sh/kernel/ioport.c
+@@ -1,12 +1,9 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * arch/sh/kernel/ioport.c
+  *
+  * Copyright (C) 2000  Niibe Yutaka
+  * Copyright (C) 2005 - 2007 Paul Mundt
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ #include <linux/module.h>
+ #include <linux/io.h>
+diff --git a/arch/sh/kernel/irq_32.c b/arch/sh/kernel/irq_32.c
+index e5a755b..e09cdc4 100644
+--- a/arch/sh/kernel/irq_32.c
++++ b/arch/sh/kernel/irq_32.c
+@@ -1,11 +1,8 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * SHcompact irqflags support
+  *
+  * Copyright (C) 2006 - 2009 Paul Mundt
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License. See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ #include <linux/irqflags.h>
+ #include <linux/module.h>
+diff --git a/arch/sh/kernel/irq_64.c b/arch/sh/kernel/irq_64.c
+index 8fc05b9..7a1f504 100644
+--- a/arch/sh/kernel/irq_64.c
++++ b/arch/sh/kernel/irq_64.c
+@@ -1,11 +1,8 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * SHmedia irqflags support
+  *
+  * Copyright (C) 2006 - 2009 Paul Mundt
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License. See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ #include <linux/irqflags.h>
+ #include <linux/module.h>
+diff --git a/arch/sh/kernel/kgdb.c b/arch/sh/kernel/kgdb.c
+index 4f04c66..d24bd2d 100644
+--- a/arch/sh/kernel/kgdb.c
++++ b/arch/sh/kernel/kgdb.c
+@@ -1,13 +1,10 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * SuperH KGDB support
+  *
+  * Copyright (C) 2008 - 2012  Paul Mundt
+  *
+  * Single stepping taken from the old stub by Henry Bell and Jeremy Siegel.
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ #include <linux/kgdb.h>
+ #include <linux/kdebug.h>
+diff --git a/arch/sh/kernel/kprobes.c b/arch/sh/kernel/kprobes.c
+index 241e903..1f8c0d3 100644
+--- a/arch/sh/kernel/kprobes.c
++++ b/arch/sh/kernel/kprobes.c
+@@ -1,12 +1,9 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * Kernel probes (kprobes) for SuperH
+  *
+  * Copyright (C) 2007 Chris Smith <chris.smith@st.com>
+  * Copyright (C) 2006 Lineo Solutions, Inc.
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ #include <linux/kprobes.h>
+ #include <linux/extable.h>
+diff --git a/arch/sh/kernel/machine_kexec.c b/arch/sh/kernel/machine_kexec.c
+index 9fea49f..b9f9f1a 100644
+--- a/arch/sh/kernel/machine_kexec.c
++++ b/arch/sh/kernel/machine_kexec.c
+@@ -1,12 +1,10 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * machine_kexec.c - handle transition of Linux booting another kernel
+  * Copyright (C) 2002-2003 Eric Biederman  <ebiederm@xmission.com>
+  *
+  * GameCube/ppc32 port Copyright (C) 2004 Albert Herranz
+  * LANDISK/sh4 supported by kogiidena
+- *
+- * This source code is licensed under the GNU General Public License,
+- * Version 2.  See the file COPYING for more details.
+  */
+ #include <linux/mm.h>
+ #include <linux/kexec.h>
+diff --git a/arch/sh/kernel/machvec.c b/arch/sh/kernel/machvec.c
+index ec05f49..beadbbd 100644
+--- a/arch/sh/kernel/machvec.c
++++ b/arch/sh/kernel/machvec.c
+@@ -1,3 +1,4 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * arch/sh/kernel/machvec.c
+  *
+@@ -5,10 +6,6 @@
+  *
+  *  Copyright (C) 1999  Niibe Yutaka
+  *  Copyright (C) 2002 - 2007 Paul Mundt
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ #include <linux/init.h>
+ #include <linux/string.h>
+diff --git a/arch/sh/kernel/module.c b/arch/sh/kernel/module.c
+index 1b525de..bbc78d1 100644
+--- a/arch/sh/kernel/module.c
++++ b/arch/sh/kernel/module.c
+@@ -1,3 +1,4 @@
++// SPDX-License-Identifier: GPL-2.0+
+ /*  Kernel module help for SH.
  
- static DEFINE_SPINLOCK(sh03_rtc_lock);
+     SHcompact version by Kaz Kojima and Paul Mundt.
+@@ -9,20 +10,6 @@
  
--unsigned long get_cmos_time(void)
-+static int sh03_rtc_gettimeofday(struct device *dev, struct rtc_time *tm)
- {
- 	unsigned int year, mon, day, hour, min, sec;
- 
-@@ -75,17 +76,18 @@ unsigned long get_cmos_time(void)
- 	}
- 
- 	spin_unlock(&sh03_rtc_lock);
--	return mktime(year, mon, day, hour, min, sec);
--}
- 
--void sh03_rtc_gettimeofday(struct timespec *tv)
--{
-+	tm->tm_sec  = sec;
-+	tm->tm_min  = min;
-+	tm->tm_hour = hour;
-+	tm->tm_mday = day;
-+	tm->tm_mon  = mon;
-+	tm->tm_year = year - 1900;
- 
--	tv->tv_sec = get_cmos_time();
--	tv->tv_nsec = 0;
-+	return 0;
- }
- 
--static int set_rtc_mmss(unsigned long nowtime)
-+static int set_rtc_mmss(struct rtc_time *tm)
- {
- 	int retval = 0;
- 	int real_seconds, real_minutes, cmos_minutes;
-@@ -97,8 +99,8 @@ static int set_rtc_mmss(unsigned long nowtime)
- 		if (!(__raw_readb(RTC_CTL) & RTC_BUSY))
- 			break;
- 	cmos_minutes = (__raw_readb(RTC_MIN1) & 0xf) + (__raw_readb(RTC_MIN10) & 0xf) * 10;
--	real_seconds = nowtime % 60;
--	real_minutes = nowtime / 60;
-+	real_seconds = tm->tm_sec;
-+	real_minutes = tm->tm_min;
- 	if (((abs(real_minutes - cmos_minutes) + 15)/30) & 1)
- 		real_minutes += 30;		/* correct for half hour time zone */
- 	real_minutes %= 60;
-@@ -112,22 +114,31 @@ static int set_rtc_mmss(unsigned long nowtime)
- 		printk_once(KERN_NOTICE
- 		       "set_rtc_mmss: can't update from %d to %d\n",
- 		       cmos_minutes, real_minutes);
--		retval = -1;
-+		retval = -EINVAL;
- 	}
- 	spin_unlock(&sh03_rtc_lock);
- 
- 	return retval;
- }
- 
--int sh03_rtc_settimeofday(const time_t secs)
-+int sh03_rtc_settimeofday(struct device *dev, struct rtc_time *tm)
- {
--	unsigned long nowtime = secs;
+ 	Based on the sh version, and on code from the sh64-specific parts of
+ 	modutils, originally written by Richard Curnow and Ben Gaster.
 -
--	return set_rtc_mmss(nowtime);
-+	return set_rtc_mmss(tm);
- }
- 
--void sh03_time_init(void)
-+static const struct rtc_class_ops rtc_generic_ops = {
-+	.read_time = sh03_rtc_gettimeofday,
-+	.set_time = sh03_rtc_settimeofday,
-+};
-+
-+static int __init sh03_time_init(void)
- {
--	rtc_sh_get_time = sh03_rtc_gettimeofday;
--	rtc_sh_set_time = sh03_rtc_settimeofday;
-+	struct platform_device *pdev;
-+
-+	pdev = platform_device_register_data(NULL, "rtc-generic", -1,
-+					     &rtc_generic_ops,
-+					     sizeof(rtc_generic_ops));
-+
-+	return PTR_ERR_OR_ZERO(pdev);
- }
-+arch_initcall(sh03_time_init);
-diff --git a/arch/sh/boards/mach-sh03/setup.c b/arch/sh/boards/mach-sh03/setup.c
-index 85e7059a77e9..3901b6031ad5 100644
---- a/arch/sh/boards/mach-sh03/setup.c
-+++ b/arch/sh/boards/mach-sh03/setup.c
-@@ -22,14 +22,6 @@ static void __init init_sh03_IRQ(void)
- 	plat_irq_setup_pins(IRQ_MODE_IRQ);
- }
- 
--/* arch/sh/boards/sh03/rtc.c */
--void sh03_time_init(void);
+-    This program is free software; you can redistribute it and/or modify
+-    it under the terms of the GNU General Public License as published by
+-    the Free Software Foundation; either version 2 of the License, or
+-    (at your option) any later version.
 -
--static void __init sh03_setup(char **cmdline_p)
--{
--	board_time_init = sh03_time_init;
--}
+-    This program is distributed in the hope that it will be useful,
+-    but WITHOUT ANY WARRANTY; without even the implied warranty of
+-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-    GNU General Public License for more details.
 -
- static struct resource cf_ide_resources[] = {
- 	[0] = {
- 		.start  = 0x1f0,
-@@ -101,6 +93,5 @@ device_initcall(sh03_devices_setup);
+-    You should have received a copy of the GNU General Public License
+-    along with this program; if not, write to the Free Software
+-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+ #include <linux/moduleloader.h>
+ #include <linux/elf.h>
+diff --git a/arch/sh/kernel/nmi_debug.c b/arch/sh/kernel/nmi_debug.c
+index 730d928..1177786 100644
+--- a/arch/sh/kernel/nmi_debug.c
++++ b/arch/sh/kernel/nmi_debug.c
+@@ -1,9 +1,6 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * Copyright (C) 2007 Atmel Corporation
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License version 2 as
+- * published by the Free Software Foundation.
+  */
+ #include <linux/delay.h>
+ #include <linux/kdebug.h>
+diff --git a/arch/sh/kernel/perf_callchain.c b/arch/sh/kernel/perf_callchain.c
+index fa2c0cd..6281f2f 100644
+--- a/arch/sh/kernel/perf_callchain.c
++++ b/arch/sh/kernel/perf_callchain.c
+@@ -1,11 +1,8 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * Performance event callchain support - SuperH architecture code
+  *
+  * Copyright (C) 2009  Paul Mundt
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ #include <linux/kernel.h>
+ #include <linux/sched.h>
+diff --git a/arch/sh/kernel/perf_event.c b/arch/sh/kernel/perf_event.c
+index ba3269a..445e3ec 100644
+--- a/arch/sh/kernel/perf_event.c
++++ b/arch/sh/kernel/perf_event.c
+@@ -1,3 +1,4 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * Performance event support framework for SuperH hardware counters.
+  *
+@@ -15,10 +16,6 @@
+  *
+  * ppc:
+  *  Copyright 2008-2009 Paul Mackerras, IBM Corporation.
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ #include <linux/kernel.h>
+ #include <linux/init.h>
+diff --git a/arch/sh/kernel/process_32.c b/arch/sh/kernel/process_32.c
+index 27fddb5..a094633 100644
+--- a/arch/sh/kernel/process_32.c
++++ b/arch/sh/kernel/process_32.c
+@@ -1,3 +1,4 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * arch/sh/kernel/process.c
+  *
+@@ -8,10 +9,6 @@
+  *  SuperH version:  Copyright (C) 1999, 2000  Niibe Yutaka & Kaz Kojima
+  *		     Copyright (C) 2006 Lineo Solutions Inc. support SH4A UBC
+  *		     Copyright (C) 2002 - 2008  Paul Mundt
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ #include <linux/module.h>
+ #include <linux/mm.h>
+diff --git a/arch/sh/kernel/process_64.c b/arch/sh/kernel/process_64.c
+index ee2abe96..c2844a2 100644
+--- a/arch/sh/kernel/process_64.c
++++ b/arch/sh/kernel/process_64.c
+@@ -1,3 +1,4 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * arch/sh/kernel/process_64.c
+  *
+@@ -12,10 +13,6 @@
+  *
+  *   In turn started from i386 version:
+  *     Copyright (C) 1995  Linus Torvalds
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ #include <linux/mm.h>
+ #include <linux/fs.h>
+diff --git a/arch/sh/kernel/ptrace_32.c b/arch/sh/kernel/ptrace_32.c
+index 5fc3ff6..d5052c3 100644
+--- a/arch/sh/kernel/ptrace_32.c
++++ b/arch/sh/kernel/ptrace_32.c
+@@ -1,3 +1,4 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * SuperH process tracing
+  *
+@@ -5,10 +6,6 @@
+  * Copyright (C) 2002 - 2009  Paul Mundt
+  *
+  * Audit support by Yuichi Nakamura <ynakam@hitachisoft.jp>
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ #include <linux/kernel.h>
+ #include <linux/sched.h>
+diff --git a/arch/sh/kernel/ptrace_64.c b/arch/sh/kernel/ptrace_64.c
+index 1e0656d..3390349 100644
+--- a/arch/sh/kernel/ptrace_64.c
++++ b/arch/sh/kernel/ptrace_64.c
+@@ -1,3 +1,4 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * arch/sh/kernel/ptrace_64.c
+  *
+@@ -10,10 +11,6 @@
+  *   Original x86 implementation:
+  *	By Ross Biro 1/23/92
+  *	edited by Linus Torvalds
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ #include <linux/kernel.h>
+ #include <linux/rwsem.h>
+diff --git a/arch/sh/kernel/relocate_kernel.S b/arch/sh/kernel/relocate_kernel.S
+index fcc9934..d9bf2b7 100644
+--- a/arch/sh/kernel/relocate_kernel.S
++++ b/arch/sh/kernel/relocate_kernel.S
+@@ -1,13 +1,11 @@
+-/*
++/* SPDX-License-Identifier: GPL-2.0
++ *
+  * relocate_kernel.S - put the kernel image in place to boot
+  * 2005.9.17 kogiidena@eggplant.ddo.jp
+  *
+  * LANDISK/sh4 is supported. Maybe, SH archtecture works well.
+  *
+  * 2009-03-18 Magnus Damm - Added Kexec Jump support
+- *
+- * This source code is licensed under the GNU General Public License,
+- * Version 2.  See the file COPYING for more details.
+  */
+ #include <linux/linkage.h>
+ #include <asm/addrspace.h>
+diff --git a/arch/sh/kernel/return_address.c b/arch/sh/kernel/return_address.c
+index 5124aeb..8838094 100644
+--- a/arch/sh/kernel/return_address.c
++++ b/arch/sh/kernel/return_address.c
+@@ -1,12 +1,9 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * arch/sh/kernel/return_address.c
+  *
+  * Copyright (C) 2009  Matt Fleming
+  * Copyright (C) 2009  Paul Mundt
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ #include <linux/kernel.h>
+ #include <linux/module.h>
+diff --git a/arch/sh/kernel/sh_bios.c b/arch/sh/kernel/sh_bios.c
+index fe584e5..250dbdf 100644
+--- a/arch/sh/kernel/sh_bios.c
++++ b/arch/sh/kernel/sh_bios.c
+@@ -1,3 +1,4 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  *  C interface for trapping into the standard LinuxSH BIOS.
+  *
+@@ -5,10 +6,6 @@
+  *  Copyright (C) 1999, 2000  Niibe Yutaka
+  *  Copyright (C) 2002  M. R. Brown
+  *  Copyright (C) 2004 - 2010  Paul Mundt
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ #include <linux/module.h>
+ #include <linux/console.h>
+diff --git a/arch/sh/kernel/sh_ksyms_64.c b/arch/sh/kernel/sh_ksyms_64.c
+index 6ee3740..9de1706 100644
+--- a/arch/sh/kernel/sh_ksyms_64.c
++++ b/arch/sh/kernel/sh_ksyms_64.c
+@@ -1,11 +1,8 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * arch/sh/kernel/sh_ksyms_64.c
+  *
+  * Copyright (C) 2000, 2001  Paolo Alberelli
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ #include <linux/rwsem.h>
+ #include <linux/module.h>
+diff --git a/arch/sh/kernel/signal_64.c b/arch/sh/kernel/signal_64.c
+index 7b77f18..76661de 100644
+--- a/arch/sh/kernel/signal_64.c
++++ b/arch/sh/kernel/signal_64.c
+@@ -1,13 +1,10 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * arch/sh/kernel/signal_64.c
+  *
+  * Copyright (C) 2000, 2001  Paolo Alberelli
+  * Copyright (C) 2003 - 2008  Paul Mundt
+  * Copyright (C) 2004  Richard Curnow
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ #include <linux/rwsem.h>
+ #include <linux/sched.h>
+diff --git a/arch/sh/kernel/smp.c b/arch/sh/kernel/smp.c
+index c483422..372acdc 100644
+--- a/arch/sh/kernel/smp.c
++++ b/arch/sh/kernel/smp.c
+@@ -1,3 +1,4 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * arch/sh/kernel/smp.c
+  *
+@@ -5,10 +6,6 @@
+  *
+  * Copyright (C) 2002 - 2010 Paul Mundt
+  * Copyright (C) 2006 - 2007 Akio Idehara
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ #include <linux/err.h>
+ #include <linux/cache.h>
+diff --git a/arch/sh/kernel/stacktrace.c b/arch/sh/kernel/stacktrace.c
+index 7a73d27..f3cb2cc 100644
+--- a/arch/sh/kernel/stacktrace.c
++++ b/arch/sh/kernel/stacktrace.c
+@@ -1,13 +1,10 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * arch/sh/kernel/stacktrace.c
+  *
+  * Stack trace management functions
+  *
+  *  Copyright (C) 2006 - 2008  Paul Mundt
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ #include <linux/sched.h>
+ #include <linux/sched/debug.h>
+diff --git a/arch/sh/kernel/swsusp.c b/arch/sh/kernel/swsusp.c
+index 12b64a0..0b772d6 100644
+--- a/arch/sh/kernel/swsusp.c
++++ b/arch/sh/kernel/swsusp.c
+@@ -1,11 +1,8 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * swsusp.c - SuperH hibernation support
+  *
+  * Copyright (C) 2009 Magnus Damm
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
  
- static struct sh_machine_vector mv_sh03 __initmv = {
- 	.mv_name		= "Interface (CTP/PCI-SH03)",
--	.mv_setup		= sh03_setup,
- 	.mv_init_irq		= init_sh03_IRQ,
- };
-diff --git a/arch/sh/configs/sh03_defconfig b/arch/sh/configs/sh03_defconfig
-index 2156223405a1..489ffdfb1517 100644
---- a/arch/sh/configs/sh03_defconfig
-+++ b/arch/sh/configs/sh03_defconfig
-@@ -130,3 +130,5 @@ CONFIG_CRYPTO_SHA1=y
- CONFIG_CRYPTO_DEFLATE=y
- # CONFIG_CRYPTO_ANSI_CPRNG is not set
- CONFIG_CRC_CCITT=y
-+CONFIG_RTC_CLASS=y
-+CONFIG_RTC_DRV_GENERIC=y
+ #include <linux/mm.h>
+diff --git a/arch/sh/kernel/syscalls_32.S b/arch/sh/kernel/syscalls_32.S
+index 254bc22..94b088d 100644
+--- a/arch/sh/kernel/syscalls_32.S
++++ b/arch/sh/kernel/syscalls_32.S
+@@ -1,15 +1,11 @@
+-/*
++/* SPDX-License-Identifier: GPL-2.0
++ *
+  * arch/sh/kernel/syscalls.S
+  *
+  * System call table for SuperH
+  *
+  *  Copyright (C) 1999, 2000, 2002  Niibe Yutaka
+  *  Copyright (C) 2003  Paul Mundt
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+- *
+  */
+ #include <linux/sys.h>
+ #include <linux/linkage.h>
+diff --git a/arch/sh/kernel/syscalls_64.S b/arch/sh/kernel/syscalls_64.S
+index d6a27f7..1bcb86f 100644
+--- a/arch/sh/kernel/syscalls_64.S
++++ b/arch/sh/kernel/syscalls_64.S
+@@ -1,13 +1,10 @@
+-/*
++/* SPDX-License-Identifier: GPL-2.0
++ *
+  * arch/sh/kernel/syscalls_64.S
+  *
+  * Copyright (C) 2000, 2001  Paolo Alberelli
+  * Copyright (C) 2004 - 2007  Paul Mundt
+  * Copyright (C) 2003, 2004 Richard Curnow
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ 
+ #include <linux/sys.h>
+diff --git a/arch/sh/kernel/time.c b/arch/sh/kernel/time.c
+index fcd5e41..6742d6e 100644
+--- a/arch/sh/kernel/time.c
++++ b/arch/sh/kernel/time.c
+@@ -1,3 +1,4 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  *  arch/sh/kernel/time.c
+  *
+@@ -5,10 +6,6 @@
+  *  Copyright (C) 2000  Philipp Rumpf <prumpf@tux.org>
+  *  Copyright (C) 2002 - 2009  Paul Mundt
+  *  Copyright (C) 2002  M. R. Brown  <mrbrown@linux-sh.org>
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ #include <linux/kernel.h>
+ #include <linux/init.h>
+diff --git a/arch/sh/kernel/topology.c b/arch/sh/kernel/topology.c
+index c82912a..7a989ee 100644
+--- a/arch/sh/kernel/topology.c
++++ b/arch/sh/kernel/topology.c
+@@ -1,11 +1,8 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * arch/sh/kernel/topology.c
+  *
+  *  Copyright (C) 2007  Paul Mundt
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ #include <linux/cpu.h>
+ #include <linux/cpumask.h>
+diff --git a/arch/sh/kernel/traps_32.c b/arch/sh/kernel/traps_32.c
+index 60709ad..f2a18b5 100644
+--- a/arch/sh/kernel/traps_32.c
++++ b/arch/sh/kernel/traps_32.c
+@@ -1,3 +1,4 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * 'traps.c' handles hardware traps and faults after we have saved some
+  * state in 'entry.S'.
+@@ -6,10 +7,6 @@
+  *                  Copyright (C) 2000 Philipp Rumpf
+  *                  Copyright (C) 2000 David Howells
+  *                  Copyright (C) 2002 - 2010 Paul Mundt
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ #include <linux/kernel.h>
+ #include <linux/ptrace.h>
+diff --git a/arch/sh/kernel/traps_64.c b/arch/sh/kernel/traps_64.c
+index 014fb08..c52bda4 100644
+--- a/arch/sh/kernel/traps_64.c
++++ b/arch/sh/kernel/traps_64.c
+@@ -1,13 +1,10 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * arch/sh/kernel/traps_64.c
+  *
+  * Copyright (C) 2000, 2001  Paolo Alberelli
+  * Copyright (C) 2003, 2004  Paul Mundt
+  * Copyright (C) 2003, 2004  Richard Curnow
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ #include <linux/sched.h>
+ #include <linux/sched/debug.h>
+diff --git a/arch/sh/kernel/unwinder.c b/arch/sh/kernel/unwinder.c
+index 521b543..7a54b72 100644
+--- a/arch/sh/kernel/unwinder.c
++++ b/arch/sh/kernel/unwinder.c
+@@ -1,3 +1,4 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * Copyright (C) 2009  Matt Fleming
+  *
+diff --git a/arch/sh/kernel/vsyscall/vsyscall.c b/arch/sh/kernel/vsyscall/vsyscall.c
+index cc0cc5b..9849448 100644
+--- a/arch/sh/kernel/vsyscall/vsyscall.c
++++ b/arch/sh/kernel/vsyscall/vsyscall.c
+@@ -1,3 +1,4 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * arch/sh/kernel/vsyscall/vsyscall.c
+  *
+@@ -5,10 +6,6 @@
+  *
+  * vDSO randomization
+  * Copyright(C) 2005-2006, Red Hat, Inc., Ingo Molnar
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ #include <linux/mm.h>
+ #include <linux/kernel.h>
 -- 
-2.18.0
+2.7.4
