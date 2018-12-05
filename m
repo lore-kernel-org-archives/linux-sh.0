@@ -1,75 +1,97 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 10 Dec 2018 18:21:50 +0000
-Subject: [PATCH v3 0/4] serial: sh-sci: Fix fallback to PIO on DMA failure
-Message-Id: <20181210182154.20357-1-geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 05 Dec 2018 08:01:24 +0000
+Subject: [PATCH 10/13] sh: shmobile: convert to SPDX identifiers
+Message-Id: <875zw8csxa.wl-kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87k1koct23.wl-kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87k1koct23.wl-kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
-Cc: Ulrich Hecht <uli+renesas@fpond.eu>, Wolfram Sang <wsa+renesas@sang-engineering.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, linux-serial@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Andrew Morton <akpm@linux-foundation.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@redhat.com>, Will Deacon <will.deacon@arm.com>, Oleg Nesterov <oleg@redhat.com>
+Cc: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
 
-	Hi Greg, Jiri,
 
-When submitting a DMA request fails, the sh-sci driver is supposed to
-fall back to PIO.  However, this never really worked due to various
-reasons (sh-sci driver issues and dmaengine framework limitations).
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-There are three places where DMA submission can fail, and the driver
-should fall back to PIO:
-  1. sci_dma_rx_complete(),
-  2. sci_submit_rx(),
-  3. work_fn_tx().
+This patch updates license to use SPDX-License-Identifier
+instead of verbose license text.
 
-This patch series fixes fallback to PIO in the receive path (cases 1 and
-2).
-Fallback to PIO in the transmit path (case 3) already seems to work
-fine.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Reviewed-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/sh/kernel/cpu/shmobile/Makefile  | 1 +
+ arch/sh/kernel/cpu/shmobile/cpuidle.c | 5 +----
+ arch/sh/kernel/cpu/shmobile/pm.c      | 5 +----
+ arch/sh/kernel/cpu/shmobile/sleep.S   | 7 ++-----
+ 4 files changed, 5 insertions(+), 13 deletions(-)
 
-Changes compared to v2:
-  - Add missing definition of "u16 scr" to sci_dma_rx_complete(),
-  - Move label handle_pio inside #ifdef to kill defined but not used
-    compiler warning when CONFIG_SERIAL_SH_SCI_DMA=n,
-  - Move call to dmaengine_terminate_async() in sci_dma_rx_complete()
-    inside the spinlock, for symmetry with sci_submit_rx(),
-  - Move the call sci_submit_rx() in sci_rx_interrupt() up, as it may
-    fail, rendering the modification of scr unused,
-  - Split in multiple patches,
-  - Drop RFC status.
-
-Changes compared to v1:
-  - Fix fallback in sci_dma_rx_complete(),
-  - Fallback in the transmit path already works fine,
-  - Widen audience, but keep RFC.
-
-This has been tested on r8a7791/koelsch, using SCIF1 on debug serial 1,
-and SCIFA3 on EXIO-B, by introducing random failures in DMA submission
-code.  For testing, this series is also available in the
-topic/scif-pio-fallback-v3 branch of my renesas-drivers git repository
-at
-git://git.kernel.org/pub/scm/linux/kernel/git/geert/renesas-drivers.git.
-
-Thanks!
-
-Geert Uytterhoeven (4):
-  serial: sh-sci: Fix locking in sci_submit_rx()
-  serial: sh-sci: Fix crash in rx_timer_fn() on PIO fallback
-  serial: sh-sci: Resume PIO in sci_rx_interrupt() on DMA failure
-  serial: sh-sci: Fix fallback to PIO in sci_dma_rx_complete()
-
- drivers/tty/serial/sh-sci.c | 39 +++++++++++++++++++++++++++----------
- 1 file changed, 29 insertions(+), 10 deletions(-)
-
+diff --git a/arch/sh/kernel/cpu/shmobile/Makefile b/arch/sh/kernel/cpu/shmobile/Makefile
+index e8a5111..7581d5f 100644
+--- a/arch/sh/kernel/cpu/shmobile/Makefile
++++ b/arch/sh/kernel/cpu/shmobile/Makefile
+@@ -1,3 +1,4 @@
++# SPDX-License-Identifier: GPL-2.0
+ #
+ # Makefile for the Linux/SuperH SH-Mobile backends.
+ #
+diff --git a/arch/sh/kernel/cpu/shmobile/cpuidle.c b/arch/sh/kernel/cpu/shmobile/cpuidle.c
+index c32e660..dbd2cde 100644
+--- a/arch/sh/kernel/cpu/shmobile/cpuidle.c
++++ b/arch/sh/kernel/cpu/shmobile/cpuidle.c
+@@ -1,13 +1,10 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * arch/sh/kernel/cpu/shmobile/cpuidle.c
+  *
+  * Cpuidle support code for SuperH Mobile
+  *
+  *  Copyright (C) 2009 Magnus Damm
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ #include <linux/init.h>
+ #include <linux/kernel.h>
+diff --git a/arch/sh/kernel/cpu/shmobile/pm.c b/arch/sh/kernel/cpu/shmobile/pm.c
+index fba2be5..ca9945f 100644
+--- a/arch/sh/kernel/cpu/shmobile/pm.c
++++ b/arch/sh/kernel/cpu/shmobile/pm.c
+@@ -1,13 +1,10 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * arch/sh/kernel/cpu/shmobile/pm.c
+  *
+  * Power management support code for SuperH Mobile
+  *
+  *  Copyright (C) 2009 Magnus Damm
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ #include <linux/init.h>
+ #include <linux/kernel.h>
+diff --git a/arch/sh/kernel/cpu/shmobile/sleep.S b/arch/sh/kernel/cpu/shmobile/sleep.S
+index e6aac65..f928c03 100644
+--- a/arch/sh/kernel/cpu/shmobile/sleep.S
++++ b/arch/sh/kernel/cpu/shmobile/sleep.S
+@@ -1,13 +1,10 @@
+-/*
++/* SPDX-License-Identifier: GPL-2.0
++ *
+  * arch/sh/kernel/cpu/sh4a/sleep-sh_mobile.S
+  *
+  * Sleep mode and Standby modes support for SuperH Mobile
+  *
+  *  Copyright (C) 2009 Magnus Damm
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+  */
+ 
+ #include <linux/sys.h>
 -- 
-2.17.1
-
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
+2.7.4
