@@ -1,46 +1,32 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 17 Dec 2018 14:50:44 +0000
-Subject: Re: [PATCH v4 2/4] serial: sh-sci: Fix crash in rx_timer_fn() on PIO fallback
-Message-Id: <20181217145043.ygw2lwtw2v5i4lpm@verge.net.au>
+From: Logan Gunthorpe <logang@deltatee.com>
+Date: Thu, 06 Dec 2018 17:40:31 +0000
+Subject: Re: [PATCH 2/2] mm/sparse: add common helper to mark all memblocks present
+Message-Id: <71168447-7470-d2ba-d30e-200ff6202b35@deltatee.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20181213184444.21904-1-geert+renesas@glider.be>
- <20181213184444.21904-3-geert+renesas@glider.be>
- <20181217132241.4lbaeshn2rnlhjqe@verge.net.au>
- <CAMuHMdUHUUEd0KQ3NP4M_hiYuwcyYRMiET3BamC4Qmrc3oEBBA@mail.gmail.com>
-In-Reply-To: <CAMuHMdUHUUEd0KQ3NP4M_hiYuwcyYRMiET3BamC4Qmrc3oEBBA@mail.gmail.com>
+References: <20181107173859.24096-1-logang@deltatee.com>
+ <20181107173859.24096-3-logang@deltatee.com>
+ <20181107121207.62cb37cf58484b7cc80a8fd8@linux-foundation.org>
+In-Reply-To: <20181107121207.62cb37cf58484b7cc80a8fd8@linux-foundation.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>, Ulrich Hecht <uli+renesas@fpond.eu>, Wolfram Sang <wsa+renesas@sang-engineering.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Linux-Renesas <linux-renesas-soc@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "open list:SERIAL DRIVERS" <linux-serial@vger.kernel.org>
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: linux-kernel@vger.kernel.org, linux-mm@kvack.org, linux-arch@vger.kernel.org, linux-riscv@lists.infradead.org, linux-arm-kernel@lists.infradead.org, linux-sh@vger.kernel.org, Stephen Bates <sbates@raithlin.com>, Palmer Dabbelt <palmer@sifive.com>, Albert Ou <aou@eecs.berkeley.edu>, Christoph Hellwig <hch@lst.de>, Arnd Bergmann <arnd@arndb.de>, Michal Hocko <mhocko@suse.com>, Vlastimil Babka <vbabka@suse.cz>, Oscar Salvador <osalvador@suse.de>
 
-On Mon, Dec 17, 2018 at 02:27:47PM +0100, Geert Uytterhoeven wrote:
-> Hi Simon,
-> 
-> On Mon, Dec 17, 2018 at 2:22 PM Simon Horman <horms@verge.net.au> wrote:
-> > On Thu, Dec 13, 2018 at 07:44:42PM +0100, Geert Uytterhoeven wrote:
-> > > When falling back to PIO, active_rx must be set to a different value
-> > > than cookie_rx[i], else sci_dma_rx_find_active() will incorrectly find a
-> > > match, leading to a NULL pointer dereference in rx_timer_fn() later.
-> > >
-> > > Use zero instead, which is the same value as after driver
-> > > initialization.
-> > >
-> > > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> >
-> > This looks good so to me long as dmaengine_submit() doesn't return 0.
-> > Is that the case?
-> 
-> include/linux/dmaengine.h:
-> 
-> /**
->  * typedef dma_cookie_t - an opaque DMA cookie
->  *
->  * if dma_cookie_t is >0 it's a DMA request cookie, <0 it's an error code
->  */
-> typedef s32 dma_cookie_t;
-> #define DMA_MIN_COOKIE  1
+Hey Andrew,
 
-In that case I have no objections.
+On 2018-11-07 1:12 p.m., Andrew Morton wrote:
+> Acked-by: Andrew Morton <akpm@linux-foundation.org>
+> 
+> I can grab both patches and shall sneak them into 4.20-rcX, but feel
+> free to merge them into some git tree if you'd prefer.  If I see them
+> turn up in linux-next I shall drop my copy.
 
-Reviewed-by: Simon Horman <horms+renesas@verge.net.au>
+Just wanted to check if you are still planning to get these patches into
+4.20-rcX. It would really help us if you can do this seeing we then
+won't have to delay a cycle and can target the riscv sparsemem code for
+4.21.
+
+Thanks,
+
+Logan
