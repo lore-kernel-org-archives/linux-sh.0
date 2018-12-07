@@ -1,43 +1,121 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 10 Dec 2018 18:21:52 +0000
-Subject: [PATCH v3 2/4] serial: sh-sci: Fix crash in rx_timer_fn() on PIO fallback
-Message-Id: <20181210182154.20357-3-geert+renesas@glider.be>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Fri, 07 Dec 2018 13:48:19 +0000
+Subject: [PATCH 3/8] sh: remove unused rtc_sh_get/set_time infrastructure
+Message-Id: <20181207134824.300024-4-arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20181210182154.20357-1-geert+renesas@glider.be>
-In-Reply-To: <20181210182154.20357-1-geert+renesas@glider.be>
+References: <20181207134824.300024-1-arnd@arndb.de>
+In-Reply-To: <20181207134824.300024-1-arnd@arndb.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
-Cc: Ulrich Hecht <uli+renesas@fpond.eu>, Wolfram Sang <wsa+renesas@sang-engineering.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, linux-serial@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: y2038@lists.linaro.org
+Cc: linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org, linux-sh@vger.kernel.org, Baolin Wang <baolin.wang@linaro.org>, Andrew Morton <akpm@linux-foundation.org>, John Stultz <john.stultz@linaro.org>, Alexander Viro <viro@zeniv.linux.org.uk>, Thomas Gleixner <tglx@linutronix.de>, Rich Felker <dalias@libc.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Arnd Bergmann <arnd@arndb.de>
 
-When falling back to PIO, active_rx must be set to a different value
-than cookie_rx[i], else sci_dma_rx_find_active() will incorrectly find a
-match, leading to a NULL pointer dereference in rx_timer_fn() later.
+All platforms are now converted to RTC drivers, so this has become
+obsolete. The board_time_init() callback still has one caller, but
+could otherwise also get killed.
 
-Use zero instead, which is the same value as after driver
-initialization.
+This removes one more usage of the deprecated timespec structure,
+which overflows in y2038.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
 ---
-v3:
-  - Split in multiple patches.
----
- drivers/tty/serial/sh-sci.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/sh/include/asm/rtc.h |  2 --
+ arch/sh/kernel/time.c     | 69 ---------------------------------------
+ 2 files changed, 71 deletions(-)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 2a08039f792235e5..e353e03ce2602559 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -1369,7 +1369,7 @@ static void sci_submit_rx(struct sci_port *s, bool port_lock_held)
- 		dmaengine_terminate_async(chan);
- 	for (i = 0; i < 2; i++)
- 		s->cookie_rx[i] = -EINVAL;
--	s->active_rx = -EINVAL;
-+	s->active_rx = 0;
- 	s->chan_rx = NULL;
- 	sci_start_rx(port);
- 	if (!port_lock_held)
+diff --git a/arch/sh/include/asm/rtc.h b/arch/sh/include/asm/rtc.h
+index c63555ee1255..fe55fbb181aa 100644
+--- a/arch/sh/include/asm/rtc.h
++++ b/arch/sh/include/asm/rtc.h
+@@ -4,8 +4,6 @@
+ 
+ void time_init(void);
+ extern void (*board_time_init)(void);
+-extern void (*rtc_sh_get_time)(struct timespec *);
+-extern int (*rtc_sh_set_time)(const time_t);
+ 
+ #define RTC_CAP_4_DIGIT_YEAR	(1 << 0)
+ 
+diff --git a/arch/sh/kernel/time.c b/arch/sh/kernel/time.c
+index fcd5e41977d1..eb0a91270499 100644
+--- a/arch/sh/kernel/time.c
++++ b/arch/sh/kernel/time.c
+@@ -22,75 +22,6 @@
+ #include <asm/clock.h>
+ #include <asm/rtc.h>
+ 
+-/* Dummy RTC ops */
+-static void null_rtc_get_time(struct timespec *tv)
+-{
+-	tv->tv_sec = mktime(2000, 1, 1, 0, 0, 0);
+-	tv->tv_nsec = 0;
+-}
+-
+-static int null_rtc_set_time(const time_t secs)
+-{
+-	return 0;
+-}
+-
+-void (*rtc_sh_get_time)(struct timespec *) = null_rtc_get_time;
+-int (*rtc_sh_set_time)(const time_t) = null_rtc_set_time;
+-
+-void read_persistent_clock(struct timespec *ts)
+-{
+-	rtc_sh_get_time(ts);
+-}
+-
+-#ifdef CONFIG_GENERIC_CMOS_UPDATE
+-int update_persistent_clock(struct timespec now)
+-{
+-	return rtc_sh_set_time(now.tv_sec);
+-}
+-#endif
+-
+-static int rtc_generic_get_time(struct device *dev, struct rtc_time *tm)
+-{
+-	struct timespec tv;
+-
+-	rtc_sh_get_time(&tv);
+-	rtc_time_to_tm(tv.tv_sec, tm);
+-	return 0;
+-}
+-
+-static int rtc_generic_set_time(struct device *dev, struct rtc_time *tm)
+-{
+-	unsigned long secs;
+-
+-	rtc_tm_to_time(tm, &secs);
+-	if ((rtc_sh_set_time = null_rtc_set_time) ||
+-	    (rtc_sh_set_time(secs) < 0))
+-		return -EOPNOTSUPP;
+-
+-	return 0;
+-}
+-
+-static const struct rtc_class_ops rtc_generic_ops = {
+-	.read_time = rtc_generic_get_time,
+-	.set_time = rtc_generic_set_time,
+-};
+-
+-static int __init rtc_generic_init(void)
+-{
+-	struct platform_device *pdev;
+-
+-	if (rtc_sh_get_time = null_rtc_get_time)
+-		return -ENODEV;
+-
+-	pdev = platform_device_register_data(NULL, "rtc-generic", -1,
+-					     &rtc_generic_ops,
+-					     sizeof(rtc_generic_ops));
+-
+-
+-	return PTR_ERR_OR_ZERO(pdev);
+-}
+-device_initcall(rtc_generic_init);
+-
+ void (*board_time_init)(void);
+ 
+ static void __init sh_late_time_init(void)
 -- 
-2.17.1
+2.18.0
