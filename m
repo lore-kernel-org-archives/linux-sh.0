@@ -1,64 +1,100 @@
-From: Tom Zanussi <zanussi@kernel.org>
-Date: Sun, 23 Dec 2018 16:38:18 +0000
-Subject: Re: [for-next][PATCH 2/5] tracing: Use str_has_prefix() helper for histogram code
-Message-Id: <1545583098.4383.3.camel@kernel.org>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Fri, 07 Dec 2018 13:48:21 +0000
+Subject: [PATCH 5/8] timekeeping: remove unused {read,update}_persistent_clock
+Message-Id: <20181207134824.300024-6-arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20181222162007.697862256@goodmis.org>
-         <20181222162856.666843139@goodmis.org>
-         <20181222130107.43aaac9c@gandalf.local.home>
-         <1545501821.4383.2.camel@kernel.org>
-         <20181222225338.34cc579c@vmware.local.home>
-In-Reply-To: <20181222225338.34cc579c@vmware.local.home>
+References: <20181207134824.300024-1-arnd@arndb.de>
+In-Reply-To: <20181207134824.300024-1-arnd@arndb.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Steven Rostedt <rostedt@goodmis.org>
-Cc: linux-kernel@vger.kernel.org, Ingo Molnar <mingo@kernel.org>, Andrew Morton <akpm@linux-foundation.org>, Joe Perches <joe@perches.com>, Namhyung Kim <namhyung@kernel.org>, Linus Torvalds <torvalds@linux-foundation.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
+To: y2038@lists.linaro.org
+Cc: linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org, linux-sh@vger.kernel.org, Baolin Wang <baolin.wang@linaro.org>, Andrew Morton <akpm@linux-foundation.org>, John Stultz <john.stultz@linaro.org>, Alexander Viro <viro@zeniv.linux.org.uk>, Thomas Gleixner <tglx@linutronix.de>, Rich Felker <dalias@libc.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Arnd Bergmann <arnd@arndb.de>
 
-On Sat, 2018-12-22 at 22:53 -0500, Steven Rostedt wrote:
-> On Sat, 22 Dec 2018 12:03:41 -0600
-> Tom Zanussi <zanussi@kernel.org> wrote:
-> 
-> > Hi Steve,
-> > 
-> > On Sat, 2018-12-22 at 13:01 -0500, Steven Rostedt wrote:
-> > > On Sat, 22 Dec 2018 11:20:09 -0500
-> > > Steven Rostedt <rostedt@goodmis.org> wrote:
-> > >   
-> > > > From: "Steven Rostedt (VMware)" <rostedt@goodmis.org>
-> > > > 
-> > > > The tracing histogram code contains a lot of instances of the
-> > > > construct:
-> > > > 
-> > > >  strncmp(str, "const", sizeof("const") - 1)
-> > > > 
-> > > > This can be prone to bugs due to typos or bad cut and paste.
-> > > > Use
-> > > > the
-> > > > str_has_prefix() helper macro instead that removes the need for
-> > > > having two
-> > > > copies of the constant string.
-> > > > 
-> > > > Cc: Tom Zanussi <zanussi@linux.intel.com>  
-> > > 
-> > > I have no idea why I copied your intel email. The linux.intel.com
-> > > appears to be no longer active. I'm going to rebase to fix this
-> > > email
-> > > address.  
-> > 
-> > linux.intel.com is active, but there's no zanussi there, just
-> > tom.zanussi ;-)
-> > 
-> > So tom.zanussi@linux.intel.com should work fine.
-> 
-> BTW, would you give me your ack-by?
-> 
+After arch/sh has removed the last reference to these functions,
+we can remove them completely and just rely on the 64-bit time_t
+based versions. This cleans up a rather ugly use of __weak
+functions.
 
-Sure,
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+---
+ include/linux/timekeeping32.h |  6 ------
+ kernel/time/ntp.c             | 10 +---------
+ kernel/time/timekeeping.c     | 12 ++----------
+ 3 files changed, 3 insertions(+), 25 deletions(-)
 
-Acked-by: Tom Zanussi <tom.zanussi@linux.intel.com>
-
-Tom
-
-> -- Steve
-> 
+diff --git a/include/linux/timekeeping32.h b/include/linux/timekeeping32.h
+index a502616f7e1c..0036ff314ac5 100644
+--- a/include/linux/timekeeping32.h
++++ b/include/linux/timekeeping32.h
+@@ -52,10 +52,4 @@ static inline void getboottime(struct timespec *ts)
+ 	*ts = timespec64_to_timespec(ts64);
+ }
+ 
+-/*
+- * Persistent clock related interfaces
+- */
+-extern void read_persistent_clock(struct timespec *ts);
+-extern int update_persistent_clock(struct timespec now);
+-
+ #endif
+diff --git a/kernel/time/ntp.c b/kernel/time/ntp.c
+index c5e0cba3b39c..e23be418d015 100644
+--- a/kernel/time/ntp.c
++++ b/kernel/time/ntp.c
+@@ -555,17 +555,9 @@ static void sync_rtc_clock(void)
+ }
+ 
+ #ifdef CONFIG_GENERIC_CMOS_UPDATE
+-int __weak update_persistent_clock(struct timespec now)
+-{
+-	return -ENODEV;
+-}
+-
+ int __weak update_persistent_clock64(struct timespec64 now64)
+ {
+-	struct timespec now;
+-
+-	now = timespec64_to_timespec(now64);
+-	return update_persistent_clock(now);
++	return -ENODEV;
+ }
+ #endif
+ 
+diff --git a/kernel/time/timekeeping.c b/kernel/time/timekeeping.c
+index 2d110c948805..eb09be4871b3 100644
+--- a/kernel/time/timekeeping.c
++++ b/kernel/time/timekeeping.c
+@@ -1467,7 +1467,7 @@ u64 timekeeping_max_deferment(void)
+ }
+ 
+ /**
+- * read_persistent_clock -  Return time from the persistent clock.
++ * read_persistent_clock64 -  Return time from the persistent clock.
+  *
+  * Weak dummy function for arches that do not yet support it.
+  * Reads the time from the battery backed persistent clock.
+@@ -1475,20 +1475,12 @@ u64 timekeeping_max_deferment(void)
+  *
+  *  XXX - Do be sure to remove it once all arches implement it.
+  */
+-void __weak read_persistent_clock(struct timespec *ts)
++void __weak read_persistent_clock64(struct timespec64 *ts)
+ {
+ 	ts->tv_sec = 0;
+ 	ts->tv_nsec = 0;
+ }
+ 
+-void __weak read_persistent_clock64(struct timespec64 *ts64)
+-{
+-	struct timespec ts;
+-
+-	read_persistent_clock(&ts);
+-	*ts64 = timespec_to_timespec64(ts);
+-}
+-
+ /**
+  * read_persistent_wall_and_boot_offset - Read persistent clock, and also offset
+  *                                        from the boot.
+-- 
+2.18.0
