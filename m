@@ -1,397 +1,186 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 05 Dec 2018 08:00:14 +0000
-Subject: [PATCH 05/13] sh: sh2a: convert to SPDX identifiers
-Message-Id: <87d0qgcsz8.wl-kuninori.morimoto.gx@renesas.com>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Fri, 07 Dec 2018 13:48:18 +0000
+Subject: [PATCH 2/8] sh: sh03: rtc: push down rtc class ops into driver
+Message-Id: <20181207134824.300024-3-arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87k1koct23.wl-kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87k1koct23.wl-kuninori.morimoto.gx@renesas.com>
+References: <20181207134824.300024-1-arnd@arndb.de>
+In-Reply-To: <20181207134824.300024-1-arnd@arndb.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm@linux-foundation.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@redhat.com>, Will Deacon <will.deacon@arm.com>, Oleg Nesterov <oleg@redhat.com>
-Cc: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+To: y2038@lists.linaro.org
+Cc: linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org, linux-sh@vger.kernel.org, Baolin Wang <baolin.wang@linaro.org>, Andrew Morton <akpm@linux-foundation.org>, John Stultz <john.stultz@linaro.org>, Alexander Viro <viro@zeniv.linux.org.uk>, Thomas Gleixner <tglx@linutronix.de>, Rich Felker <dalias@libc.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Arnd Bergmann <arnd@arndb.de>
 
+The dreamcast RTC support has an extra level of indirection to
+provide either the old read_persistent_clock/update_persistent_clock
+interface or the rtc-generic device for hctosys/systohc.
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+By removing the indirection and always using the RTC_CLASS interface,
+we can avoid the lossy double conversion between rtc_time and timespec,
+so we end up supporting the entire range of 'year' values, and clarifying
+the rtc_set_time callback.
 
-This patch updates license to use SPDX-License-Identifier
-instead of verbose license text.
+I did not change the behavior of sh03_rtc_settimeofday(), which keeps
+just updating the seconds/minutes by calling set_rtc_mmss(), this
+could be improved if anyone cares. Also, the file should ideally be
+moved into drivers/rtc and not use rtc-generic.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Reviewed-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
 ---
- arch/sh/kernel/cpu/sh2a/clock-sh7201.c  | 5 +----
- arch/sh/kernel/cpu/sh2a/clock-sh7203.c  | 5 +----
- arch/sh/kernel/cpu/sh2a/clock-sh7206.c  | 5 +----
- arch/sh/kernel/cpu/sh2a/clock-sh7264.c  | 5 +----
- arch/sh/kernel/cpu/sh2a/clock-sh7269.c  | 5 +----
- arch/sh/kernel/cpu/sh2a/entry.S         | 7 ++-----
- arch/sh/kernel/cpu/sh2a/ex.S            | 7 ++-----
- arch/sh/kernel/cpu/sh2a/fpu.c           | 5 +----
- arch/sh/kernel/cpu/sh2a/opcode_helper.c | 5 +----
- arch/sh/kernel/cpu/sh2a/pinmux-sh7203.c | 5 +----
- arch/sh/kernel/cpu/sh2a/pinmux-sh7264.c | 5 +----
- arch/sh/kernel/cpu/sh2a/pinmux-sh7269.c | 5 +----
- arch/sh/kernel/cpu/sh2a/probe.c         | 5 +----
- arch/sh/kernel/cpu/sh2a/setup-mxg.c     | 5 +----
- arch/sh/kernel/cpu/sh2a/setup-sh7201.c  | 5 +----
- arch/sh/kernel/cpu/sh2a/setup-sh7203.c  | 5 +----
- arch/sh/kernel/cpu/sh2a/setup-sh7206.c  | 5 +----
- arch/sh/kernel/cpu/sh2a/setup-sh7264.c  | 5 +----
- arch/sh/kernel/cpu/sh2a/setup-sh7269.c  | 5 +----
- 19 files changed, 21 insertions(+), 78 deletions(-)
+ arch/sh/boards/mach-sh03/Makefile |  3 +-
+ arch/sh/boards/mach-sh03/rtc.c    | 51 +++++++++++++++++++------------
+ arch/sh/boards/mach-sh03/setup.c  |  9 ------
+ arch/sh/configs/sh03_defconfig    |  2 ++
+ 4 files changed, 35 insertions(+), 30 deletions(-)
 
-diff --git a/arch/sh/kernel/cpu/sh2a/clock-sh7201.c b/arch/sh/kernel/cpu/sh2a/clock-sh7201.c
-index 532a36c..5a5daaa 100644
---- a/arch/sh/kernel/cpu/sh2a/clock-sh7201.c
-+++ b/arch/sh/kernel/cpu/sh2a/clock-sh7201.c
-@@ -1,3 +1,4 @@
-+// SPDX-License-Identifier: GPL-2.0
- /*
-  * arch/sh/kernel/cpu/sh2a/clock-sh7201.c
-  *
-@@ -7,10 +8,6 @@
-  *
-  * Based on clock-sh4.c
-  *  Copyright (C) 2005  Paul Mundt
-- *
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
-  */
- #include <linux/init.h>
- #include <linux/kernel.h>
-diff --git a/arch/sh/kernel/cpu/sh2a/clock-sh7203.c b/arch/sh/kernel/cpu/sh2a/clock-sh7203.c
-index 529f719..c620539 100644
---- a/arch/sh/kernel/cpu/sh2a/clock-sh7203.c
-+++ b/arch/sh/kernel/cpu/sh2a/clock-sh7203.c
-@@ -1,3 +1,4 @@
-+// SPDX-License-Identifier: GPL-2.0
- /*
-  * arch/sh/kernel/cpu/sh2a/clock-sh7203.c
-  *
-@@ -10,10 +11,6 @@
-  *
-  * Based on clock-sh4.c
-  *  Copyright (C) 2005  Paul Mundt
-- *
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
-  */
- #include <linux/init.h>
- #include <linux/kernel.h>
-diff --git a/arch/sh/kernel/cpu/sh2a/clock-sh7206.c b/arch/sh/kernel/cpu/sh2a/clock-sh7206.c
-index 1777898..d286d7b 100644
---- a/arch/sh/kernel/cpu/sh2a/clock-sh7206.c
-+++ b/arch/sh/kernel/cpu/sh2a/clock-sh7206.c
-@@ -1,3 +1,4 @@
-+// SPDX-License-Identifier: GPL-2.0
- /*
-  * arch/sh/kernel/cpu/sh2a/clock-sh7206.c
-  *
-@@ -7,10 +8,6 @@
-  *
-  * Based on clock-sh4.c
-  *  Copyright (C) 2005  Paul Mundt
-- *
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
-  */
- #include <linux/init.h>
- #include <linux/kernel.h>
-diff --git a/arch/sh/kernel/cpu/sh2a/clock-sh7264.c b/arch/sh/kernel/cpu/sh2a/clock-sh7264.c
-index 7e06e39..d9acc1e 100644
---- a/arch/sh/kernel/cpu/sh2a/clock-sh7264.c
-+++ b/arch/sh/kernel/cpu/sh2a/clock-sh7264.c
-@@ -1,13 +1,10 @@
-+// SPDX-License-Identifier: GPL-2.0
- /*
-  * arch/sh/kernel/cpu/sh2a/clock-sh7264.c
-  *
-  * SH7264 clock framework support
-  *
-  * Copyright (C) 2012  Phil Edworthy
-- *
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
-  */
- #include <linux/init.h>
- #include <linux/kernel.h>
-diff --git a/arch/sh/kernel/cpu/sh2a/clock-sh7269.c b/arch/sh/kernel/cpu/sh2a/clock-sh7269.c
-index 663a97b..c17ab0d 100644
---- a/arch/sh/kernel/cpu/sh2a/clock-sh7269.c
-+++ b/arch/sh/kernel/cpu/sh2a/clock-sh7269.c
-@@ -1,13 +1,10 @@
-+// SPDX-License-Identifier: GPL-2.0
- /*
-  * arch/sh/kernel/cpu/sh2a/clock-sh7269.c
-  *
-  * SH7269 clock framework support
-  *
-  * Copyright (C) 2012  Phil Edworthy
-- *
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
-  */
- #include <linux/init.h>
- #include <linux/kernel.h>
-diff --git a/arch/sh/kernel/cpu/sh2a/entry.S b/arch/sh/kernel/cpu/sh2a/entry.S
-index da77a8e..9f11fc8 100644
---- a/arch/sh/kernel/cpu/sh2a/entry.S
-+++ b/arch/sh/kernel/cpu/sh2a/entry.S
-@@ -1,14 +1,11 @@
--/*
-+/* SPDX-License-Identifier: GPL-2.0
-+ *
-  * arch/sh/kernel/cpu/sh2a/entry.S
-  *
-  * The SH-2A exception entry
-  *
-  * Copyright (C) 2008 Yoshinori Sato
-  * Based on arch/sh/kernel/cpu/sh2/entry.S
-- *
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
-  */
+diff --git a/arch/sh/boards/mach-sh03/Makefile b/arch/sh/boards/mach-sh03/Makefile
+index 400306a796ec..47007a3a2fc8 100644
+--- a/arch/sh/boards/mach-sh03/Makefile
++++ b/arch/sh/boards/mach-sh03/Makefile
+@@ -2,4 +2,5 @@
+ # Makefile for the Interface (CTP/PCI-SH03) specific parts of the kernel
+ #
  
- #include <linux/linkage.h>
-diff --git a/arch/sh/kernel/cpu/sh2a/ex.S b/arch/sh/kernel/cpu/sh2a/ex.S
-index 4568066..ed91996 100644
---- a/arch/sh/kernel/cpu/sh2a/ex.S
-+++ b/arch/sh/kernel/cpu/sh2a/ex.S
-@@ -1,13 +1,10 @@
--/*
-+/* SPDX-License-Identifier: GPL-2.0
-+ *
-  * arch/sh/kernel/cpu/sh2a/ex.S
-  *
-  * The SH-2A exception vector table
-  *
-  * Copyright (C) 2008 Yoshinori Sato
-- *
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
-  */
+-obj-y	 := setup.o rtc.o
++obj-y	 := setup.o
++obj-$(CONFIG_RTC_DRV_GENERIC) += rtc.o
+diff --git a/arch/sh/boards/mach-sh03/rtc.c b/arch/sh/boards/mach-sh03/rtc.c
+index dc3d50e3b7a2..8b23ed7c201c 100644
+--- a/arch/sh/boards/mach-sh03/rtc.c
++++ b/arch/sh/boards/mach-sh03/rtc.c
+@@ -13,8 +13,9 @@
+ #include <linux/bcd.h>
+ #include <linux/rtc.h>
+ #include <linux/spinlock.h>
+-#include <asm/io.h>
+-#include <asm/rtc.h>
++#include <linux/io.h>
++#include <linux/rtc.h>
++#include <linux/platform_device.h>
  
- #include <linux/linkage.h>
-diff --git a/arch/sh/kernel/cpu/sh2a/fpu.c b/arch/sh/kernel/cpu/sh2a/fpu.c
-index 352f894..74b48db 100644
---- a/arch/sh/kernel/cpu/sh2a/fpu.c
-+++ b/arch/sh/kernel/cpu/sh2a/fpu.c
-@@ -1,12 +1,9 @@
-+// SPDX-License-Identifier: GPL-2.0
- /*
-  * Save/restore floating point context for signal handlers.
-  *
-  * Copyright (C) 1999, 2000  Kaz Kojima & Niibe Yutaka
-  *
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
-- *
-  * FIXME! These routines can be optimized in big endian case.
-  */
- #include <linux/sched/signal.h>
-diff --git a/arch/sh/kernel/cpu/sh2a/opcode_helper.c b/arch/sh/kernel/cpu/sh2a/opcode_helper.c
-index 72aa61c..c509081 100644
---- a/arch/sh/kernel/cpu/sh2a/opcode_helper.c
-+++ b/arch/sh/kernel/cpu/sh2a/opcode_helper.c
-@@ -1,13 +1,10 @@
-+// SPDX-License-Identifier: GPL-2.0
- /*
-  * arch/sh/kernel/cpu/sh2a/opcode_helper.c
-  *
-  * Helper for the SH-2A 32-bit opcodes.
-  *
-  *  Copyright (C) 2007  Paul Mundt
-- *
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
-  */
- #include <linux/kernel.h>
+ #define RTC_BASE	0xb0000000
+ #define RTC_SEC1	(RTC_BASE + 0)
+@@ -38,7 +39,7 @@
  
-diff --git a/arch/sh/kernel/cpu/sh2a/pinmux-sh7203.c b/arch/sh/kernel/cpu/sh2a/pinmux-sh7203.c
-index eef17dc..a6777e6 100644
---- a/arch/sh/kernel/cpu/sh2a/pinmux-sh7203.c
-+++ b/arch/sh/kernel/cpu/sh2a/pinmux-sh7203.c
-@@ -1,11 +1,8 @@
-+// SPDX-License-Identifier: GPL-2.0
- /*
-  * SH7203 Pinmux
-  *
-  *  Copyright (C) 2008  Magnus Damm
-- *
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
-  */
+ static DEFINE_SPINLOCK(sh03_rtc_lock);
  
- #include <linux/bug.h>
-diff --git a/arch/sh/kernel/cpu/sh2a/pinmux-sh7264.c b/arch/sh/kernel/cpu/sh2a/pinmux-sh7264.c
-index 569decb..7a103e1 100644
---- a/arch/sh/kernel/cpu/sh2a/pinmux-sh7264.c
-+++ b/arch/sh/kernel/cpu/sh2a/pinmux-sh7264.c
-@@ -1,11 +1,8 @@
-+// SPDX-License-Identifier: GPL-2.0
- /*
-  * SH7264 Pinmux
-  *
-  *  Copyright (C) 2012  Renesas Electronics Europe Ltd
-- *
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
-  */
+-unsigned long get_cmos_time(void)
++static int sh03_rtc_gettimeofday(struct device *dev, struct rtc_time *tm)
+ {
+ 	unsigned int year, mon, day, hour, min, sec;
  
- #include <linux/bug.h>
-diff --git a/arch/sh/kernel/cpu/sh2a/pinmux-sh7269.c b/arch/sh/kernel/cpu/sh2a/pinmux-sh7269.c
-index 4c17fb6..4da432e 100644
---- a/arch/sh/kernel/cpu/sh2a/pinmux-sh7269.c
-+++ b/arch/sh/kernel/cpu/sh2a/pinmux-sh7269.c
-@@ -1,12 +1,9 @@
-+// SPDX-License-Identifier: GPL-2.0
- /*
-  * SH7269 Pinmux
-  *
-  * Copyright (C) 2012  Renesas Electronics Europe Ltd
-  * Copyright (C) 2012  Phil Edworthy
-- *
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
-  */
+@@ -75,17 +76,18 @@ unsigned long get_cmos_time(void)
+ 	}
  
- #include <linux/bug.h>
-diff --git a/arch/sh/kernel/cpu/sh2a/probe.c b/arch/sh/kernel/cpu/sh2a/probe.c
-index 3f87971..c66a3bc 100644
---- a/arch/sh/kernel/cpu/sh2a/probe.c
-+++ b/arch/sh/kernel/cpu/sh2a/probe.c
-@@ -1,13 +1,10 @@
-+// SPDX-License-Identifier: GPL-2.0
- /*
-  * arch/sh/kernel/cpu/sh2a/probe.c
-  *
-  * CPU Subtype Probing for SH-2A.
-  *
-  * Copyright (C) 2004 - 2007  Paul Mundt
-- *
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
-  */
- #include <linux/init.h>
- #include <asm/processor.h>
-diff --git a/arch/sh/kernel/cpu/sh2a/setup-mxg.c b/arch/sh/kernel/cpu/sh2a/setup-mxg.c
-index 060fdd3..52350ad 100644
---- a/arch/sh/kernel/cpu/sh2a/setup-mxg.c
-+++ b/arch/sh/kernel/cpu/sh2a/setup-mxg.c
-@@ -1,11 +1,8 @@
-+// SPDX-License-Identifier: GPL-2.0
- /*
-  * Renesas MX-G (R8A03022BG) Setup
-  *
-  *  Copyright (C) 2008, 2009  Paul Mundt
-- *
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
-  */
- #include <linux/platform_device.h>
- #include <linux/init.h>
-diff --git a/arch/sh/kernel/cpu/sh2a/setup-sh7201.c b/arch/sh/kernel/cpu/sh2a/setup-sh7201.c
-index c1301f6..b51ed76 100644
---- a/arch/sh/kernel/cpu/sh2a/setup-sh7201.c
-+++ b/arch/sh/kernel/cpu/sh2a/setup-sh7201.c
-@@ -1,12 +1,9 @@
-+// SPDX-License-Identifier: GPL-2.0
- /*
-  *  SH7201 setup
-  *
-  *  Copyright (C) 2008  Peter Griffin pgriffin@mpc-data.co.uk
-  *  Copyright (C) 2009  Paul Mundt
-- *
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
-  */
- #include <linux/platform_device.h>
- #include <linux/init.h>
-diff --git a/arch/sh/kernel/cpu/sh2a/setup-sh7203.c b/arch/sh/kernel/cpu/sh2a/setup-sh7203.c
-index 32ec732..89b3e49 100644
---- a/arch/sh/kernel/cpu/sh2a/setup-sh7203.c
-+++ b/arch/sh/kernel/cpu/sh2a/setup-sh7203.c
-@@ -1,11 +1,8 @@
-+// SPDX-License-Identifier: GPL-2.0
- /*
-  * SH7203 and SH7263 Setup
-  *
-  *  Copyright (C) 2007 - 2009  Paul Mundt
-- *
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
-  */
- #include <linux/platform_device.h>
- #include <linux/init.h>
-diff --git a/arch/sh/kernel/cpu/sh2a/setup-sh7206.c b/arch/sh/kernel/cpu/sh2a/setup-sh7206.c
-index 8d8d354..36ff3a3 100644
---- a/arch/sh/kernel/cpu/sh2a/setup-sh7206.c
-+++ b/arch/sh/kernel/cpu/sh2a/setup-sh7206.c
-@@ -1,12 +1,9 @@
-+// SPDX-License-Identifier: GPL-2.0
- /*
-  * SH7206 Setup
-  *
-  *  Copyright (C) 2006  Yoshinori Sato
-  *  Copyright (C) 2009  Paul Mundt
-- *
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
-  */
- #include <linux/platform_device.h>
- #include <linux/init.h>
-diff --git a/arch/sh/kernel/cpu/sh2a/setup-sh7264.c b/arch/sh/kernel/cpu/sh2a/setup-sh7264.c
-index ab71eab..d199618 100644
---- a/arch/sh/kernel/cpu/sh2a/setup-sh7264.c
-+++ b/arch/sh/kernel/cpu/sh2a/setup-sh7264.c
-@@ -1,11 +1,8 @@
-+// SPDX-License-Identifier: GPL-2.0
- /*
-  * SH7264 Setup
-  *
-  * Copyright (C) 2012  Renesas Electronics Europe Ltd
-- *
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
-  */
- #include <linux/platform_device.h>
- #include <linux/init.h>
-diff --git a/arch/sh/kernel/cpu/sh2a/setup-sh7269.c b/arch/sh/kernel/cpu/sh2a/setup-sh7269.c
-index c7e81b2..9095c96 100644
---- a/arch/sh/kernel/cpu/sh2a/setup-sh7269.c
-+++ b/arch/sh/kernel/cpu/sh2a/setup-sh7269.c
-@@ -1,12 +1,9 @@
-+// SPDX-License-Identifier: GPL-2.0
- /*
-  * SH7269 Setup
-  *
-  * Copyright (C) 2012  Renesas Electronics Europe Ltd
-  * Copyright (C) 2012  Phil Edworthy
-- *
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
-  */
- #include <linux/platform_device.h>
- #include <linux/init.h>
+ 	spin_unlock(&sh03_rtc_lock);
+-	return mktime(year, mon, day, hour, min, sec);
+-}
+ 
+-void sh03_rtc_gettimeofday(struct timespec *tv)
+-{
++	tm->tm_sec  = sec;
++	tm->tm_min  = min;
++	tm->tm_hour = hour;
++	tm->tm_mday = day;
++	tm->tm_mon  = mon;
++	tm->tm_year = year - 1900;
+ 
+-	tv->tv_sec = get_cmos_time();
+-	tv->tv_nsec = 0;
++	return 0;
+ }
+ 
+-static int set_rtc_mmss(unsigned long nowtime)
++static int set_rtc_mmss(struct rtc_time *tm)
+ {
+ 	int retval = 0;
+ 	int real_seconds, real_minutes, cmos_minutes;
+@@ -97,8 +99,8 @@ static int set_rtc_mmss(unsigned long nowtime)
+ 		if (!(__raw_readb(RTC_CTL) & RTC_BUSY))
+ 			break;
+ 	cmos_minutes = (__raw_readb(RTC_MIN1) & 0xf) + (__raw_readb(RTC_MIN10) & 0xf) * 10;
+-	real_seconds = nowtime % 60;
+-	real_minutes = nowtime / 60;
++	real_seconds = tm->tm_sec;
++	real_minutes = tm->tm_min;
+ 	if (((abs(real_minutes - cmos_minutes) + 15)/30) & 1)
+ 		real_minutes += 30;		/* correct for half hour time zone */
+ 	real_minutes %= 60;
+@@ -112,22 +114,31 @@ static int set_rtc_mmss(unsigned long nowtime)
+ 		printk_once(KERN_NOTICE
+ 		       "set_rtc_mmss: can't update from %d to %d\n",
+ 		       cmos_minutes, real_minutes);
+-		retval = -1;
++		retval = -EINVAL;
+ 	}
+ 	spin_unlock(&sh03_rtc_lock);
+ 
+ 	return retval;
+ }
+ 
+-int sh03_rtc_settimeofday(const time_t secs)
++int sh03_rtc_settimeofday(struct device *dev, struct rtc_time *tm)
+ {
+-	unsigned long nowtime = secs;
+-
+-	return set_rtc_mmss(nowtime);
++	return set_rtc_mmss(tm);
+ }
+ 
+-void sh03_time_init(void)
++static const struct rtc_class_ops rtc_generic_ops = {
++	.read_time = sh03_rtc_gettimeofday,
++	.set_time = sh03_rtc_settimeofday,
++};
++
++static int __init sh03_time_init(void)
+ {
+-	rtc_sh_get_time = sh03_rtc_gettimeofday;
+-	rtc_sh_set_time = sh03_rtc_settimeofday;
++	struct platform_device *pdev;
++
++	pdev = platform_device_register_data(NULL, "rtc-generic", -1,
++					     &rtc_generic_ops,
++					     sizeof(rtc_generic_ops));
++
++	return PTR_ERR_OR_ZERO(pdev);
+ }
++arch_initcall(sh03_time_init);
+diff --git a/arch/sh/boards/mach-sh03/setup.c b/arch/sh/boards/mach-sh03/setup.c
+index 85e7059a77e9..3901b6031ad5 100644
+--- a/arch/sh/boards/mach-sh03/setup.c
++++ b/arch/sh/boards/mach-sh03/setup.c
+@@ -22,14 +22,6 @@ static void __init init_sh03_IRQ(void)
+ 	plat_irq_setup_pins(IRQ_MODE_IRQ);
+ }
+ 
+-/* arch/sh/boards/sh03/rtc.c */
+-void sh03_time_init(void);
+-
+-static void __init sh03_setup(char **cmdline_p)
+-{
+-	board_time_init = sh03_time_init;
+-}
+-
+ static struct resource cf_ide_resources[] = {
+ 	[0] = {
+ 		.start  = 0x1f0,
+@@ -101,6 +93,5 @@ device_initcall(sh03_devices_setup);
+ 
+ static struct sh_machine_vector mv_sh03 __initmv = {
+ 	.mv_name		= "Interface (CTP/PCI-SH03)",
+-	.mv_setup		= sh03_setup,
+ 	.mv_init_irq		= init_sh03_IRQ,
+ };
+diff --git a/arch/sh/configs/sh03_defconfig b/arch/sh/configs/sh03_defconfig
+index 2156223405a1..489ffdfb1517 100644
+--- a/arch/sh/configs/sh03_defconfig
++++ b/arch/sh/configs/sh03_defconfig
+@@ -130,3 +130,5 @@ CONFIG_CRYPTO_SHA1=y
+ CONFIG_CRYPTO_DEFLATE=y
+ # CONFIG_CRYPTO_ANSI_CPRNG is not set
+ CONFIG_CRC_CCITT=y
++CONFIG_RTC_CLASS=y
++CONFIG_RTC_DRV_GENERIC=y
 -- 
-2.7.4
+2.18.0
