@@ -1,41 +1,73 @@
-From: Mike Rapoport <rppt@linux.ibm.com>
-Date: Sun, 09 Dec 2018 15:00:20 +0000
-Subject: [PATCH v3 2/6] microblaze: prefer memblock API returning virtual address
-Message-Id: <1544367624-15376-3-git-send-email-rppt@linux.ibm.com>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Fri, 07 Dec 2018 13:48:23 +0000
+Subject: [PATCH 7/8] vfs: replace current_kernel_time64 with ktime equivalent
+Message-Id: <20181207134824.300024-8-arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1544367624-15376-1-git-send-email-rppt@linux.ibm.com>
-In-Reply-To: <1544367624-15376-1-git-send-email-rppt@linux.ibm.com>
+References: <20181207134824.300024-1-arnd@arndb.de>
+In-Reply-To: <20181207134824.300024-1-arnd@arndb.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: Michal Hocko <mhocko@suse.com>, linux-sh@vger.kernel.org, Benjamin Herrenschmidt <benh@kernel.crashing.org>, linux-mm@kvack.org, Rich Felker <dalias@libc.org>, Paul Mackerras <paulus@samba.org>, sparclinux@vger.kernel.org, Vincent Chen <deanbo422@gmail.com>, Jonas Bonn <jonas@southpole.se>, linux-c6x-dev@linux-c6x.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Michael Ellerman <mpe@ellerman.id.au>, Russell King <linux@armlinux.org.uk>, Mike Rapoport <rppt@linux.ibm.com>, Mark Salter <msalter@redhat.com>, Arnd Bergmann <arnd@arndb.de>, Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>, openrisc@lists.librecores.org, Greentime Hu <green.hu@gmail.com>, Stafford Horne <shorne@gmail.com>, Guan Xuetao <gxt@pku.edu.cn>, linux-arm-kernel@lists.infradead.org, Michal Simek <monstr@monstr.eu>, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, "David S. Miller" <davem@davemloft.net>
+To: y2038@lists.linaro.org
+Cc: linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org, linux-sh@vger.kernel.org, Baolin Wang <baolin.wang@linaro.org>, Andrew Morton <akpm@linux-foundation.org>, John Stultz <john.stultz@linaro.org>, Alexander Viro <viro@zeniv.linux.org.uk>, Thomas Gleixner <tglx@linutronix.de>, Rich Felker <dalias@libc.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Arnd Bergmann <arnd@arndb.de>
 
-Rather than use the memblock_alloc_base that returns a physical address and
-then convert this address to the virtual one, use appropriate memblock
-function that returns a virtual address.
+current_time is the last remaining caller of current_kernel_time64(),
+which is a wrapper around ktime_get_coarse_real_ts64().  This calls the
+latter directly for consistency with the rest of the kernel that is moving
+to the ktime_get_ family of time accessors, as now documented in
+Documentation/core-api/timekeeping.rst.
 
-Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
-Tested-by: Michal Simek <michal.simek@xilinx.com>
+An open questions is whether we may want to actually call the more
+accurate ktime_get_real_ts64() for file systems that save high-resolution
+timestamps in their on-disk format.  This would add a small overhead to
+each update of the inode stamps but lead to inode timestamps to actually
+have a usable resolution better than one jiffy (1 to 10 milliseconds
+normally).  Experiments on a variety of hardware platforms show a typical
+time of around 100 CPU cycles to read the cycle counter and calculate the
+accurate time from that.  On old platforms without a cycle counter, this
+can be signiciantly higher, up to several microseconds to access a
+hardware clock, but those have become very rare by now.
+
+I traced the original addition of the current_kernel_time() call to set
+the nanosecond fields back to linux-2.5.48, where Andi Kleen added a patch
+with subject "nanosecond stat timefields".  Andi explains that the
+motivation was to introduce as little overhead as possible back then.  At
+this time, reading the clock hardware was also more expensive when most
+architectures did not have a cycle counter.
+
+One side effect of having more accurate inode timestamp would be having to
+write out the inode every time that mtime/ctime/atime get touched on most
+systems, whereas many file systems today only write it when the timestamps
+have changed, i.e.  at most once per jiffy unless something else changes
+as well.  That change would certainly be noticed in some workloads, which
+is enough reason to not do it without a good reason, regardless of the
+cost of reading the time.
+
+One thing we could still consider however would be to round the timestamps
+from current_time() to multiples of NSEC_PER_JIFFY, e.g.  full
+milliseconds rather than having six or seven meaningless but confusing
+digits at the end of the timestamp.
+
+Link: http://lkml.kernel.org/r/20180726130820.4174359-1-arnd@arndb.de
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
 ---
- arch/microblaze/mm/init.c | 5 +++--
- 1 file changed, 3 insertions(+), 2 deletions(-)
+ fs/inode.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/arch/microblaze/mm/init.c b/arch/microblaze/mm/init.c
-index b17fd8a..44f4b89 100644
---- a/arch/microblaze/mm/init.c
-+++ b/arch/microblaze/mm/init.c
-@@ -363,8 +363,9 @@ void __init *early_get_page(void)
- 	 * Mem start + kernel_tlb -> here is limit
- 	 * because of mem mapping from head.S
- 	 */
--	return __va(memblock_alloc_base(PAGE_SIZE, PAGE_SIZE,
--				memory_start + kernel_tlb));
-+	return memblock_alloc_try_nid_raw(PAGE_SIZE, PAGE_SIZE,
-+				MEMBLOCK_LOW_LIMIT, memory_start + kernel_tlb,
-+				NUMA_NO_NODE);
- }
+diff --git a/fs/inode.c b/fs/inode.c
+index 9e198f00b64c..73432e64f874 100644
+--- a/fs/inode.c
++++ b/fs/inode.c
+@@ -2146,7 +2146,9 @@ EXPORT_SYMBOL(timespec64_trunc);
+  */
+ struct timespec64 current_time(struct inode *inode)
+ {
+-	struct timespec64 now = current_kernel_time64();
++	struct timespec64 now;
++
++	ktime_get_coarse_real_ts64(&now);
  
- #endif /* CONFIG_MMU */
+ 	if (unlikely(!inode->i_sb)) {
+ 		WARN(1, "current_time() called with uninitialized super_block in the inode");
 -- 
-2.7.4
+2.18.0
