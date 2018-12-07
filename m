@@ -1,31 +1,70 @@
-From: Steven Rostedt <rostedt@goodmis.org>
-Date: Sun, 23 Dec 2018 03:53:25 +0000
-Subject: Re: [for-next][PATCH 0/5] tracing: Add string_has_prefix() and usages
-Message-Id: <20181222225325.6be0c77f@vmware.local.home>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Fri, 07 Dec 2018 13:48:24 +0000
+Subject: [PATCH 8/8] timekeeping: remove obsolete time accessors
+Message-Id: <20181207134824.300024-9-arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20181222162007.697862256@goodmis.org>
-        <20181223034120.GF11421@danjae.aot.lge.com>
-In-Reply-To: <20181223034120.GF11421@danjae.aot.lge.com>
+References: <20181207134824.300024-1-arnd@arndb.de>
+In-Reply-To: <20181207134824.300024-1-arnd@arndb.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Namhyung Kim <namhyung@kernel.org>
-Cc: linux-kernel@vger.kernel.org, Ingo Molnar <mingo@kernel.org>, Andrew Morton <akpm@linux-foundation.org>, Joe Perches <joe@perches.com>, Linus Torvalds <torvalds@linux-foundation.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, kernel-team@lge.com
+To: y2038@lists.linaro.org
+Cc: linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org, linux-sh@vger.kernel.org, Baolin Wang <baolin.wang@linaro.org>, Andrew Morton <akpm@linux-foundation.org>, John Stultz <john.stultz@linaro.org>, Alexander Viro <viro@zeniv.linux.org.uk>, Thomas Gleixner <tglx@linutronix.de>, Rich Felker <dalias@libc.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Arnd Bergmann <arnd@arndb.de>
 
-On Sun, 23 Dec 2018 12:41:20 +0900
-Namhyung Kim <namhyung@kernel.org> wrote:
+There are no more remaining users of these deprecated wrappers, so
+let's remove them before new users have a chance to make it in.
 
-> > Steven Rostedt (VMware) (5):
-> >       string.h: Add str_has_prefix() helper function
-> >       tracing: Use str_has_prefix() helper for histogram code
-> >       tracing: Use str_has_prefix() instead of using fixed sizes
-> >       tracing: Have the historgram use the result of str_has_prefix() for len of prefix
-> >       tracing: Use the return of str_has_prefix() to remove open coded numbers  
-> 
-> For the series:
-> 
-> Acked-by: Namhyung Kim <namhyung@kernel.org>
+See Documentation/core-api/timekeeping.rst for replacements when
+porting old drivers that contain calls to this function.
 
-Thanks Namhyung!
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+---
+ include/linux/timekeeping.h   | 14 --------------
+ include/linux/timekeeping32.h |  9 ---------
+ 2 files changed, 23 deletions(-)
 
--- Steve
+diff --git a/include/linux/timekeeping.h b/include/linux/timekeeping.h
+index 29975e93fcb8..a8ab0f143ac4 100644
+--- a/include/linux/timekeeping.h
++++ b/include/linux/timekeeping.h
+@@ -262,18 +262,4 @@ void read_persistent_wall_and_boot_offset(struct timespec64 *wall_clock,
+ 					  struct timespec64 *boot_offset);
+ extern int update_persistent_clock64(struct timespec64 now);
+ 
+-/*
+- * deprecated aliases, don't use in new code
+- */
+-#define getnstimeofday64(ts)		ktime_get_real_ts64(ts)
+-
+-static inline struct timespec64 current_kernel_time64(void)
+-{
+-	struct timespec64 ts;
+-
+-	ktime_get_coarse_real_ts64(&ts);
+-
+-	return ts;
+-}
+-
+ #endif
+diff --git a/include/linux/timekeeping32.h b/include/linux/timekeeping32.h
+index 0036ff314ac5..cc59cc9e0e84 100644
+--- a/include/linux/timekeeping32.h
++++ b/include/linux/timekeeping32.h
+@@ -6,15 +6,6 @@
+  * over time so we can remove the file here.
+  */
+ 
+-static inline void do_gettimeofday(struct timeval *tv)
+-{
+-	struct timespec64 now;
+-
+-	ktime_get_real_ts64(&now);
+-	tv->tv_sec = now.tv_sec;
+-	tv->tv_usec = now.tv_nsec/1000;
+-}
+-
+ static inline unsigned long get_seconds(void)
+ {
+ 	return ktime_get_real_seconds();
+-- 
+2.18.0
