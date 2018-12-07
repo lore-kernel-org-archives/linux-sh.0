@@ -1,86 +1,64 @@
-From: Steven Rostedt <rostedt@goodmis.org>
-Date: Sat, 22 Dec 2018 16:20:08 +0000
-Subject: [for-next][PATCH 1/5] string.h: Add str_has_prefix() helper function
-Message-Id: <20181222162856.518489380@goodmis.org>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Fri, 07 Dec 2018 13:48:16 +0000
+Subject: [PATCH 0/8] timekeeping: cleanups
+Message-Id: <20181207134824.300024-1-arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20181222162007.697862256@goodmis.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Ingo Molnar <mingo@kernel.org>, Andrew Morton <akpm@linux-foundation.org>, Joe Perches <joe@perches.com>, Namhyung Kim <namhyung@kernel.org>, Linus Torvalds <torvalds@linux-foundation.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, Tom Zanussi <zanussi@kernel.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+To: y2038@lists.linaro.org
+Cc: linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org, linux-sh@vger.kernel.org, Baolin Wang <baolin.wang@linaro.org>, Andrew Morton <akpm@linux-foundation.org>, John Stultz <john.stultz@linaro.org>, Alexander Viro <viro@zeniv.linux.org.uk>, Thomas Gleixner <tglx@linutronix.de>, Rich Felker <dalias@libc.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Arnd Bergmann <arnd@arndb.de>
 
-From: "Steven Rostedt (VMware)" <rostedt@goodmis.org>
+Here are some older cleanups that for one reason or another never made
+it into the mainline kernel so far:
 
-A discussion came up in the trace triggers thread about converting a
-bunch of:
+- the arch/sh series was posted a couple of times by both
+  Baolin and me, with no reply from the sh maintainers
 
- strncmp(str, "const", sizeof("const") - 1)
+- the vfs patch initially got some opposition when the new
+  interfaces were not documented right, but that is done now.
 
-use cases into a helper macro. It started with:
+- The remaining three patches simply remove functions that
+  have been obsoleted a while ago and have lost their last
+  callers now.
 
-	strncmp(str, const, sizeof(const) - 1)
+I'm adding these into my y2038 tree now, so they make it into
+linux-next, planning to send a pull request to Thomas for the
+tip tree afterwards.
 
-But then Joe Perches mentioned that if a const is not used, the
-sizeof() will be the size of a pointer, which can be bad. And that
-gcc will optimize strlen("const") into "sizeof("const") - 1".
+       Arnd
 
-Thinking about this more, a quick grep in the kernel tree found several
-(thousands!) of cases that use this construct. A quick grep also
-revealed that there's probably several bugs in that use case. Some are
-that people forgot the "- 1" (which I found) and others could be that
-the constant for the sizeof is different than the constant (although, I
-haven't found any of those, but I also didn't look hard).
+Arnd Bergmann (8):
+  sh: dreamcast: rtc: push down rtc class ops into driver
+  sh: sh03: rtc: push down rtc class ops into driver
+  sh: remove unused rtc_sh_get/set_time infrastructure
+  sh: remove board_time_init() callback
+  timekeeping: remove unused {read,update}_persistent_clock
+  timekeeping: remove timespec_add/timespec_del
+  vfs: replace current_kernel_time64 with ktime equivalent
+  timekeeping: remove obsolete time accessors
 
-I figured the best thing to do is to create a helper macro and place it
-into include/linux/string.h. And go around and fix all the open coded
-versions of it later.
+ Documentation/sh/new-machine.txt              |  8 --
+ arch/sh/boards/mach-dreamcast/Makefile        |  4 +-
+ arch/sh/boards/mach-dreamcast/rtc.c           | 39 +++++++---
+ arch/sh/boards/mach-dreamcast/setup.c         |  1 -
+ arch/sh/boards/mach-sh03/Makefile             |  3 +-
+ arch/sh/boards/mach-sh03/rtc.c                | 51 ++++++++-----
+ arch/sh/boards/mach-sh03/setup.c              |  9 ---
+ arch/sh/boards/of-generic.c                   |  8 --
+ arch/sh/configs/dreamcast_defconfig           |  2 +
+ arch/sh/configs/sh03_defconfig                |  2 +
+ arch/sh/include/asm/rtc.h                     |  3 -
+ arch/sh/include/mach-dreamcast/mach/sysasic.h |  1 -
+ arch/sh/kernel/time.c                         | 74 +------------------
+ fs/inode.c                                    |  4 +-
+ include/linux/time32.h                        | 25 -------
+ include/linux/timekeeping.h                   | 14 ----
+ include/linux/timekeeping32.h                 | 15 ----
+ kernel/time/ntp.c                             | 10 +--
+ kernel/time/time.c                            | 36 ---------
+ kernel/time/timekeeping.c                     | 12 +--
+ 20 files changed, 73 insertions(+), 248 deletions(-)
 
-Note, gcc appears to optimize this when we make it into an always_inline
-static function, which removes a lot of issues that a macro produces.
-
-Link: http://lkml.kernel.org/r/e3e754f2bd18e56eaa8baf79bee619316ebf4cfc.1545161087.git.tom.zanussi@linux.intel.com
-Link: http://lkml.kernel.org/r/20181219211615.2298e781@gandalf.local.home
-Link: http://lkml.kernel.org/r/CAHk-=wg_sR-UEC1ggmkZpypOUYanL5CMX4R7ceuaV4QMf5jBtg@mail.gmail.com
-
-Cc: Tom Zanussi <zanussi@kernel.org>
-Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-Suggestions-by: Linus Torvalds <torvalds@linux-foundation.org>
-Suggestions-by: Joe Perches <joe@perches.com>
-Suggestions-by: Andreas Schwab <schwab@linux-m68k.org>
-Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
----
- include/linux/string.h | 20 ++++++++++++++++++++
- 1 file changed, 20 insertions(+)
-
-diff --git a/include/linux/string.h b/include/linux/string.h
-index 27d0482e5e05..7927b875f80c 100644
---- a/include/linux/string.h
-+++ b/include/linux/string.h
-@@ -456,4 +456,24 @@ static inline void memcpy_and_pad(void *dest, size_t dest_len,
- 		memcpy(dest, src, dest_len);
- }
- 
-+/**
-+ * str_has_prefix - Test if a string has a given prefix
-+ * @str: The string to test
-+ * @prefix: The string to see if @str starts with
-+ *
-+ * A common way to test a prefix of a string is to do:
-+ *  strncmp(str, prefix, sizeof(prefix) - 1)
-+ *
-+ * But this can lead to bugs due to typos, or if prefix is a pointer
-+ * and not a constant. Instead use str_has_prefix().
-+ *
-+ * Returns: 0 if @str does not start with @prefix
-+         strlen(@prefix) if @str does start with @prefix
-+ */
-+static __always_inline size_t str_has_prefix(const char *str, const char *prefix)
-+{
-+	size_t len = strlen(prefix);
-+	return strncmp(str, prefix, len) = 0 ? len : 0;
-+}
-+
- #endif /* _LINUX_STRING_H_ */
 -- 
-2.19.2
+2.18.0
