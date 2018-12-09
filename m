@@ -1,72 +1,89 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 10 Dec 2018 18:21:54 +0000
-Subject: [PATCH v3 4/4] serial: sh-sci: Fix fallback to PIO in sci_dma_rx_complete()
-Message-Id: <20181210182154.20357-5-geert+renesas@glider.be>
+From: Mike Rapoport <rppt@linux.ibm.com>
+Date: Sun, 09 Dec 2018 15:00:18 +0000
+Subject: [PATCH v3 0/6] memblock: simplify several early memory allocation
+Message-Id: <1544367624-15376-1-git-send-email-rppt@linux.ibm.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20181210182154.20357-1-geert+renesas@glider.be>
-In-Reply-To: <20181210182154.20357-1-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
-Cc: Ulrich Hecht <uli+renesas@fpond.eu>, Wolfram Sang <wsa+renesas@sang-engineering.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, linux-serial@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: Michal Hocko <mhocko@suse.com>, linux-sh@vger.kernel.org, Benjamin Herrenschmidt <benh@kernel.crashing.org>, linux-mm@kvack.org, Rich Felker <dalias@libc.org>, Paul Mackerras <paulus@samba.org>, sparclinux@vger.kernel.org, Vincent Chen <deanbo422@gmail.com>, Jonas Bonn <jonas@southpole.se>, linux-c6x-dev@linux-c6x.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Michael Ellerman <mpe@ellerman.id.au>, Russell King <linux@armlinux.org.uk>, Mike Rapoport <rppt@linux.ibm.com>, Mark Salter <msalter@redhat.com>, Arnd Bergmann <arnd@arndb.de>, Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>, openrisc@lists.librecores.org, Greentime Hu <green.hu@gmail.com>, Stafford Horne <shorne@gmail.com>, Guan Xuetao <gxt@pku.edu.cn>, linux-arm-kernel@lists.infradead.org, Michal Simek <monstr@monstr.eu>, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, "David S. Miller" <davem@davemloft.net>
 
-When submitting a DMA request fails in sci_dma_rx_complete(), the driver
-tries to fall back to PIO, but that does not work: no more data will be
-received, or the kernel will even crash.
+Hi,
 
-Fix this similar as in (but not identical to) sci_submit_rx():
-  - On SCIF, PIO cannot take over if any DMA transactions are pending,
-    hence they must be terminated first.
-  - All active cookies must be invalidated, else rx_timer_fn() may
-    trigger a NULL pointer dereference.
-  - Restarting the port is not needed, as it is already running, but
-    serial port interrupts must be directed back from the DMA engine to
-    the CPU.
+These patches simplify some of the early memory allocations by replacing
+usage of older memblock APIs with newer and shinier ones.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
+Quite a few places in the arch/ code allocated memory using a memblock API
+that returns a physical address of the allocated area, then converted this
+physical address to a virtual one and then used memset(0) to clear the
+allocated range.
+
+More recent memblock APIs do all the three steps in one call and their
+usage simplifies the code.
+
+It's important to note that regardless of API used, the core allocation is
+nearly identical for any set of memblock allocators: first it tries to find
+a free memory with all the constraints specified by the caller and then
+falls back to the allocation with some or all constraints disabled.
+
+The first three patches perform the conversion of call sites that have
+exact requirements for the node and the possible memory range.
+
+The fourth patch is a bit one-off as it simplifies openrisc's
+implementation of pte_alloc_one_kernel(), and not only the memblock usage.
+
+The fifth patch takes care of simpler cases when the allocation can be
+satisfied with a simple call to memblock_alloc().
+
+The sixth patch removes one-liner wrappers for memblock_alloc on arm and
+unicore32, as suggested by Christoph.
+
 v3:
-  - Add missing definition of "u16 scr",
-  - Move call to dmaengine_terminate_async() inside the spinlock, for
-    symmetry with sci_submit_rx(),
-  - Split in multiple patches.
----
- drivers/tty/serial/sh-sci.c | 14 +++++++++++++-
- 1 file changed, 13 insertions(+), 1 deletion(-)
+* added Tested-by from Michal Simek for microblaze changes
+* updated powerpc changes as per Michael Ellerman comments:
+  - use allocations that clear memory in alloc_paca_data() and alloc_stack()
+  - ensure the replacement is equivalent to old API
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index d8672336d4ff9b65..946cdb0c7250955f 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -1272,6 +1272,8 @@ static void sci_dma_rx_complete(void *arg)
- 	struct dma_async_tx_descriptor *desc;
- 	unsigned long flags;
- 	int active, count = 0;
-+	unsigned int i;
-+	u16 scr;
- 
- 	dev_dbg(port->dev, "%s(%d) active cookie %d\n", __func__, port->line,
- 		s->active_rx);
-@@ -1313,8 +1315,18 @@ static void sci_dma_rx_complete(void *arg)
- 	dev_warn(port->dev, "Failed submitting Rx DMA descriptor\n");
- 	/* Switch to PIO */
- 	spin_lock_irqsave(&port->lock, flags);
-+	dmaengine_terminate_async(chan);
-+	for (i = 0; i < 2; i++)
-+		s->cookie_rx[i] = -EINVAL;
-+	s->active_rx = 0;
- 	s->chan_rx = NULL;
--	sci_start_rx(port);
-+	/* Direct new serial port interrupts back to CPU */
-+	scr = serial_port_in(port, SCSCR);
-+	if (port->type = PORT_SCIFA || port->type = PORT_SCIFB) {
-+		scr &= ~SCSCR_RDRQE;
-+		enable_irq(s->irqs[SCIx_RXI_IRQ]);
-+	}
-+	serial_port_out(port, SCSCR, scr | SCSCR_RIE);
- 	spin_unlock_irqrestore(&port->lock, flags);
- }
- 
+v2:
+* added Ack from Stafford Horne for openrisc changes
+* entirely drop early_alloc wrappers on arm and unicore32, as per Christoph
+Hellwig
+
+
+
+Mike Rapoport (6):
+  powerpc: prefer memblock APIs returning virtual address
+  microblaze: prefer memblock API returning virtual address
+  sh: prefer memblock APIs returning virtual address
+  openrisc: simplify pte_alloc_one_kernel()
+  arch: simplify several early memory allocations
+  arm, unicore32: remove early_alloc*() wrappers
+
+ arch/arm/mm/mmu.c                      | 13 +++----------
+ arch/c6x/mm/dma-coherent.c             |  9 ++-------
+ arch/microblaze/mm/init.c              |  5 +++--
+ arch/nds32/mm/init.c                   | 12 ++++--------
+ arch/openrisc/mm/ioremap.c             | 11 ++++-------
+ arch/powerpc/kernel/paca.c             | 16 ++++++----------
+ arch/powerpc/kernel/setup-common.c     |  4 ++--
+ arch/powerpc/kernel/setup_64.c         | 24 ++++++++++--------------
+ arch/powerpc/mm/hash_utils_64.c        |  6 +++---
+ arch/powerpc/mm/pgtable-book3e.c       |  8 ++------
+ arch/powerpc/mm/pgtable-book3s64.c     |  5 +----
+ arch/powerpc/mm/pgtable-radix.c        | 25 +++++++------------------
+ arch/powerpc/mm/pgtable_32.c           |  4 +---
+ arch/powerpc/mm/ppc_mmu_32.c           |  3 +--
+ arch/powerpc/platforms/pasemi/iommu.c  |  5 +++--
+ arch/powerpc/platforms/powernv/opal.c  |  3 +--
+ arch/powerpc/platforms/pseries/setup.c | 18 ++++++++++++++----
+ arch/powerpc/sysdev/dart_iommu.c       |  7 +++++--
+ arch/sh/mm/init.c                      | 18 +++++-------------
+ arch/sh/mm/numa.c                      |  5 ++---
+ arch/sparc/kernel/prom_64.c            |  7 ++-----
+ arch/sparc/mm/init_64.c                |  9 +++------
+ arch/unicore32/mm/mmu.c                | 14 ++++----------
+ 23 files changed, 88 insertions(+), 143 deletions(-)
+
 -- 
-2.17.1
+2.7.4
