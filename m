@@ -1,17 +1,17 @@
-From: Rob Landley <rob@landley.net>
-Date: Sat, 08 Dec 2018 21:25:50 +0000
+From: Sascha Hauer <s.hauer@pengutronix.de>
+Date: Mon, 10 Dec 2018 07:26:48 +0000
 Subject: Re: dma_declare_coherent_memory on main memory
-Message-Id: <994d5106-8f7b-bfb3-4cd5-e190c0035722@landley.net>
+Message-Id: <20181210072648.ore6xttedsgpndi4@pengutronix.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20181207153432.GA24917@lst.de>
 In-Reply-To: <20181207153432.GA24917@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Christoph Hellwig <hch@lst.de>, Shawn Guo <shawnguo@kernel.org>, Sascha Hauer <s.hauer@pengutronix.de>, Fabio Estevam <fabio.estevam@nxp.com>
-Cc: iommu@lists.linux-foundation.org, linux-sh@vger.kernel.org, linux-imx@nxp.com, linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org
+To: Christoph Hellwig <hch@lst.de>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, iommu@lists.linux-foundation.org, linux-imx@nxp.com, Fabio Estevam <fabio.estevam@nxp.com>, Shawn Guo <shawnguo@kernel.org>, linux-arm-kernel@lists.infradead.org
 
-On 12/7/18 9:34 AM, Christoph Hellwig wrote:
+On Fri, Dec 07, 2018 at 04:34:32PM +0100, Christoph Hellwig wrote:
 > Hi all,
 > 
 > the ARM imx27/31 ports and various sh boards use
@@ -22,6 +22,13 @@ On 12/7/18 9:34 AM, Christoph Hellwig wrote:
 > Getting rid of these magic dma_declare_coherent_memory area would
 > help making the dma allocator a lot simpler.
 
-Not that I know of?
+At least for i.MX27/31 I'd say this predates CMA support, so historical
+reasons.
 
-Rob
+Sascha
+
+-- 
+Pengutronix e.K.                           |                             |
+Industrial Linux Solutions                 | http://www.pengutronix.de/  |
+Peiner Str. 6-8, 31137 Hildesheim, Germany | Phone: +49-5121-206917-0    |
+Amtsgericht Hildesheim, HRA 2686           | Fax:   +49-5121-206917-5555 |
