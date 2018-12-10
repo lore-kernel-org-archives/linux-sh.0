@@ -1,85 +1,60 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 10 Dec 2018 18:21:53 +0000
-Subject: [PATCH v3 3/4] serial: sh-sci: Resume PIO in sci_rx_interrupt() on DMA failure
-Message-Id: <20181210182154.20357-4-geert+renesas@glider.be>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Mon, 10 Dec 2018 19:00:52 +0000
+Subject: Re: [PATCH v3 3/4] serial: sh-sci: Resume PIO in sci_rx_interrupt() on DMA failure
+Message-Id: <20181210190052.admylepukreo23j3@ninjato>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="5tpyya7ld3dzzz5w"
 List-Id: <linux-sh.vger.kernel.org>
 References: <20181210182154.20357-1-geert+renesas@glider.be>
-In-Reply-To: <20181210182154.20357-1-geert+renesas@glider.be>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
-Cc: Ulrich Hecht <uli+renesas@fpond.eu>, Wolfram Sang <wsa+renesas@sang-engineering.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, linux-serial@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+ <20181210182154.20357-4-geert+renesas@glider.be>
+In-Reply-To: <20181210182154.20357-4-geert+renesas@glider.be>
+To: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>, Ulrich Hecht <uli+renesas@fpond.eu>, Wolfram Sang <wsa+renesas@sang-engineering.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, linux-serial@vger.kernel.org
 
-On (H)SCIF, sci_submit_rx() is called in the receive interrupt handler.
-Hence if DMA submission fails, the interrupt handler should resume
-handling reception using PIO, else no more data is received.
 
-Make sci_submit_rx() return an error indicator, so the receive interrupt
-handler can act appropriately.
+--5tpyya7ld3dzzz5w
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
-v3:
-  - Move label handle_pio inside #ifdef to kill defined but not used
-    compiler warning when CONFIG_SERIAL_SH_SCI_DMA=n,
-  - Move the call sci_submit_rx() in sci_rx_interrupt() up, as it may
-    fail, rendering the modification of scr unused,
-  - Split in multiple patches.
----
- drivers/tty/serial/sh-sci.c | 11 ++++++++---
- 1 file changed, 8 insertions(+), 3 deletions(-)
+Hi Geert,
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index e353e03ce2602559..d8672336d4ff9b65 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -1331,7 +1331,7 @@ static void sci_tx_dma_release(struct sci_port *s)
- 	dma_release_channel(chan);
- }
- 
--static void sci_submit_rx(struct sci_port *s, bool port_lock_held)
-+static int sci_submit_rx(struct sci_port *s, bool port_lock_held)
- {
- 	struct dma_chan *chan = s->chan_rx;
- 	struct uart_port *port = &s->port;
-@@ -1359,7 +1359,7 @@ static void sci_submit_rx(struct sci_port *s, bool port_lock_held)
- 	s->active_rx = s->cookie_rx[0];
- 
- 	dma_async_issue_pending(chan);
--	return;
-+	return 0;
- 
- fail:
- 	/* Switch to PIO */
-@@ -1374,6 +1374,7 @@ static void sci_submit_rx(struct sci_port *s, bool port_lock_held)
- 	sci_start_rx(port);
- 	if (!port_lock_held)
- 		spin_unlock_irqrestore(&port->lock, flags);
-+	return -1;
- }
- 
- static void work_fn_tx(struct work_struct *work)
-@@ -1668,8 +1669,10 @@ static irqreturn_t sci_rx_interrupt(int irq, void *ptr)
- 			disable_irq_nosync(irq);
- 			scr |= SCSCR_RDRQE;
- 		} else {
-+			if (sci_submit_rx(s, false))
-+				goto handle_pio;
-+
- 			scr &= ~SCSCR_RIE;
--			sci_submit_rx(s, false);
- 		}
- 		serial_port_out(port, SCSCR, scr);
- 		/* Clear current interrupt */
-@@ -1681,6 +1684,8 @@ static irqreturn_t sci_rx_interrupt(int irq, void *ptr)
- 
- 		return IRQ_HANDLED;
- 	}
-+
-+handle_pio:
- #endif
- 
- 	if (s->rx_trigger > 1 && s->rx_fifo_timeout > 0) {
--- 
-2.17.1
+>  	if (!port_lock_held)
+>  		spin_unlock_irqrestore(&port->lock, flags);
+> +	return -1;
+
+-Esomething here...
+
+>  		} else {
+> +			if (sci_submit_rx(s, false))
+> +				goto handle_pio;
+
+and 'sci_submit_rx() < 0' here? I think it makes it more readable that
+this is an error case then. 'if sci_submit_rx() do_something' sounds a
+bit like the good case if boolean logic was used.
+
+Thanks for picking this up again,
+
+   Wolfram
+
+
+--5tpyya7ld3dzzz5w
+Content-Type: application/pgp-signature; name="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQIzBAABCAAdFiEEOZGx6rniZ1Gk92RdFA3kzBSgKbYFAlwOt+AACgkQFA3kzBSg
+KbYjoA//TB9WHPJ3lfL102I7I3tkN6qFdL7OIMPExLCZ21eaeC+DhOA81Dl04Hs/
+auF2u2QiSkpLG8JApsZHOG9D5CybAeYVGH8DbXetyied02KaKrsCWEdH8HQfpn5A
+1g4eGKGmoF91gDoNfJnJPuSadthetYvIG+tlNEFbbHyf//U6LaDpaEK97rsEztGR
+LqdZcSL+CUsON4X/UoqQnoHkX/dimN28GVOsscqHuSnfXXij8R0zQttjx6vvtuNA
+HEnXIGLPAAlAZoArfbYfCgwLzG+Cl1LgEGJIb7avh9qS+5YapSKOvTN3NeF6pyTH
+uJUIE5hOoTKtacfFmIubRXQHAH2HyGH/eOteAN33NDtYL9X5R3GRCQwjcFF177jE
+gNgBAOqPL+x6Y/NZOS0PvPI+j+hWo5U8Gubj/jNib1S6wj4ifRP4GlRcgoY5vuAf
+XgbaMFEXsETeNWVk4H/7UeEh+tRx4MkBVqDKwR/ijVp23XuRUuuz+Pkl0rGSmPA7
+gVRok/3TgXupprRtMcdepcNtz33fF82EowDyhGLzsDTg545Y7L1x+kfkcN5o3vRU
+DysWALiWPcPC/X6Ei8gbvB0p3cncWgLA7WIst92mzAz8NWuT6ZvB6/PDZe67Xa/F
+fT0GIpjxiK9jOiF2gyeli9ENkdWnA8iuVVPRCtuDVFP5LcYEwiM=
+=iOlm
+-----END PGP SIGNATURE-----
+
+--5tpyya7ld3dzzz5w--
