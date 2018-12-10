@@ -1,22 +1,85 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 17 Dec 2018 13:38:08 +0000
-Subject: Re: [PATCH 01/15] pinctrl: sh-pfc: r8a77994: Remove bogus IPSR9 field
-Message-Id: <20181217133808.6pxaudvjh5y7u2vq@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 10 Dec 2018 18:21:53 +0000
+Subject: [PATCH v3 3/4] serial: sh-sci: Resume PIO in sci_rx_interrupt() on DMA failure
+Message-Id: <20181210182154.20357-4-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20181213182714.26094-1-geert+renesas@glider.be>
- <20181213182714.26094-2-geert+renesas@glider.be>
-In-Reply-To: <20181213182714.26094-2-geert+renesas@glider.be>
+References: <20181210182154.20357-1-geert+renesas@glider.be>
+In-Reply-To: <20181210182154.20357-1-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Linus Walleij <linus.walleij@linaro.org>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
+Cc: Ulrich Hecht <uli+renesas@fpond.eu>, Wolfram Sang <wsa+renesas@sang-engineering.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, linux-serial@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Thu, Dec 13, 2018 at 07:27:00PM +0100, Geert Uytterhoeven wrote:
-> The Peripheral Function Select Register 9 contains 12 fields, but the
-> variable field descriptor contains a 13th bogus field of 3 bits.
-> 
-> Fixes: 43c4436e2f1890a7 ("pinctrl: sh-pfc: add R8A7794 PFC support")
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+On (H)SCIF, sci_submit_rx() is called in the receive interrupt handler.
+Hence if DMA submission fails, the interrupt handler should resume
+handling reception using PIO, else no more data is received.
 
-Reviewed-by: Simon Horman <horms+renesas@verge.net.au>
+Make sci_submit_rx() return an error indicator, so the receive interrupt
+handler can act appropriately.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+v3:
+  - Move label handle_pio inside #ifdef to kill defined but not used
+    compiler warning when CONFIG_SERIAL_SH_SCI_DMA=n,
+  - Move the call sci_submit_rx() in sci_rx_interrupt() up, as it may
+    fail, rendering the modification of scr unused,
+  - Split in multiple patches.
+---
+ drivers/tty/serial/sh-sci.c | 11 ++++++++---
+ 1 file changed, 8 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index e353e03ce2602559..d8672336d4ff9b65 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1331,7 +1331,7 @@ static void sci_tx_dma_release(struct sci_port *s)
+ 	dma_release_channel(chan);
+ }
+ 
+-static void sci_submit_rx(struct sci_port *s, bool port_lock_held)
++static int sci_submit_rx(struct sci_port *s, bool port_lock_held)
+ {
+ 	struct dma_chan *chan = s->chan_rx;
+ 	struct uart_port *port = &s->port;
+@@ -1359,7 +1359,7 @@ static void sci_submit_rx(struct sci_port *s, bool port_lock_held)
+ 	s->active_rx = s->cookie_rx[0];
+ 
+ 	dma_async_issue_pending(chan);
+-	return;
++	return 0;
+ 
+ fail:
+ 	/* Switch to PIO */
+@@ -1374,6 +1374,7 @@ static void sci_submit_rx(struct sci_port *s, bool port_lock_held)
+ 	sci_start_rx(port);
+ 	if (!port_lock_held)
+ 		spin_unlock_irqrestore(&port->lock, flags);
++	return -1;
+ }
+ 
+ static void work_fn_tx(struct work_struct *work)
+@@ -1668,8 +1669,10 @@ static irqreturn_t sci_rx_interrupt(int irq, void *ptr)
+ 			disable_irq_nosync(irq);
+ 			scr |= SCSCR_RDRQE;
+ 		} else {
++			if (sci_submit_rx(s, false))
++				goto handle_pio;
++
+ 			scr &= ~SCSCR_RIE;
+-			sci_submit_rx(s, false);
+ 		}
+ 		serial_port_out(port, SCSCR, scr);
+ 		/* Clear current interrupt */
+@@ -1681,6 +1684,8 @@ static irqreturn_t sci_rx_interrupt(int irq, void *ptr)
+ 
+ 		return IRQ_HANDLED;
+ 	}
++
++handle_pio:
+ #endif
+ 
+ 	if (s->rx_trigger > 1 && s->rx_fifo_timeout > 0) {
+-- 
+2.17.1
