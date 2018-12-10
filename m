@@ -1,78 +1,43 @@
-From: Mike Rapoport <rppt@linux.ibm.com>
-Date: Mon, 03 Dec 2018 15:47:09 +0000
-Subject: [PATCH v2 0/6] memblock: simplify several early memory allocation
-Message-Id: <1543852035-26634-1-git-send-email-rppt@linux.ibm.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 10 Dec 2018 18:21:52 +0000
+Subject: [PATCH v3 2/4] serial: sh-sci: Fix crash in rx_timer_fn() on PIO fallback
+Message-Id: <20181210182154.20357-3-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20181210182154.20357-1-geert+renesas@glider.be>
+In-Reply-To: <20181210182154.20357-1-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: Michal Hocko <mhocko@suse.com>, linux-sh@vger.kernel.org, Benjamin Herrenschmidt <benh@kernel.crashing.org>, linux-mm@kvack.org, Rich Felker <dalias@libc.org>, Paul Mackerras <paulus@samba.org>, sparclinux@vger.kernel.org, Vincent Chen <deanbo422@gmail.com>, Jonas Bonn <jonas@southpole.se>, linux-c6x-dev@linux-c6x.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Michael Ellerman <mpe@ellerman.id.au>, Russell King <linux@armlinux.org.uk>, Mike Rapoport <rppt@linux.ibm.com>, Mark Salter <msalter@redhat.com>, Arnd Bergmann <arnd@arndb.de>, Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>, openrisc@lists.librecores.org, Greentime Hu <green.hu@gmail.com>, Stafford Horne <shorne@gmail.com>, Guan Xuetao <gxt@pku.edu.cn>, linux-arm-kernel@lists.infradead.org, Michal Simek <monstr@monstr.eu>, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, "David S. Miller" <davem@davemloft.net>
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
+Cc: Ulrich Hecht <uli+renesas@fpond.eu>, Wolfram Sang <wsa+renesas@sang-engineering.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, linux-serial@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Hi,
+When falling back to PIO, active_rx must be set to a different value
+than cookie_rx[i], else sci_dma_rx_find_active() will incorrectly find a
+match, leading to a NULL pointer dereference in rx_timer_fn() later.
 
-These patches simplify some of the early memory allocations by replacing
-usage of older memblock APIs with newer and shinier ones.
+Use zero instead, which is the same value as after driver
+initialization.
 
-Quite a few places in the arch/ code allocated memory using a memblock API
-that returns a physical address of the allocated area, then converted this
-physical address to a virtual one and then used memset(0) to clear the
-allocated range.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+v3:
+  - Split in multiple patches.
+---
+ drivers/tty/serial/sh-sci.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-More recent memblock APIs do all the three steps in one call and their
-usage simplifies the code.
-
-It's important to note that regardless of API used, the core allocation is
-nearly identical for any set of memblock allocators: first it tries to find
-a free memory with all the constraints specified by the caller and then
-falls back to the allocation with some or all constraints disabled.
-
-The first three patches perform the conversion of call sites that have
-exact requirements for the node and the possible memory range.
-
-The fourth patch is a bit one-off as it simplifies openrisc's
-implementation of pte_alloc_one_kernel(), and not only the memblock usage.
-
-The fifth patch takes care of simpler cases when the allocation can be
-satisfied with a simple call to memblock_alloc().
-
-The sixth patch removes one-liner wrappers for memblock_alloc on arm and
-unicore32, as suggested by Christoph.
-
-v2:
-* added Ack from Stafford Horne for openrisc changes
-* entirely drop early_alloc wrappers on arm and unicore32, as per Christoph
-Hellwig
-
-Mike Rapoport (6):
-  powerpc: prefer memblock APIs returning virtual address
-  microblaze: prefer memblock API returning virtual address
-  sh: prefer memblock APIs returning virtual address
-  openrisc: simplify pte_alloc_one_kernel()
-  arch: simplify several early memory allocations
-  arm, unicore32: remove early_alloc*() wrappers
-
- arch/arm/mm/mmu.c                      | 13 +++----------
- arch/c6x/mm/dma-coherent.c             |  9 ++-------
- arch/microblaze/mm/init.c              |  5 +++--
- arch/nds32/mm/init.c                   | 12 ++++--------
- arch/openrisc/mm/ioremap.c             | 11 ++++-------
- arch/powerpc/kernel/paca.c             | 14 ++++++--------
- arch/powerpc/kernel/setup-common.c     |  4 ++--
- arch/powerpc/kernel/setup_64.c         | 21 ++++++++++-----------
- arch/powerpc/mm/hash_utils_64.c        |  6 +++---
- arch/powerpc/mm/pgtable-book3e.c       |  8 ++------
- arch/powerpc/mm/pgtable-book3s64.c     |  5 +----
- arch/powerpc/mm/pgtable-radix.c        | 24 +++++++++---------------
- arch/powerpc/mm/pgtable_32.c           |  4 +---
- arch/powerpc/mm/ppc_mmu_32.c           |  3 +--
- arch/powerpc/platforms/pasemi/iommu.c  |  5 +++--
- arch/powerpc/platforms/powernv/opal.c  |  3 +--
- arch/powerpc/platforms/pseries/setup.c | 11 +++++++----
- arch/powerpc/sysdev/dart_iommu.c       |  5 +++--
- arch/sh/mm/init.c                      | 18 +++++-------------
- arch/sh/mm/numa.c                      |  5 ++---
- arch/sparc/kernel/prom_64.c            |  7 ++-----
- arch/sparc/mm/init_64.c                |  9 +++------
- arch/unicore32/mm/mmu.c                | 14 ++++----------
- 23 files changed, 81 insertions(+), 135 deletions(-)
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 2a08039f792235e5..e353e03ce2602559 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1369,7 +1369,7 @@ static void sci_submit_rx(struct sci_port *s, bool port_lock_held)
+ 		dmaengine_terminate_async(chan);
+ 	for (i = 0; i < 2; i++)
+ 		s->cookie_rx[i] = -EINVAL;
+-	s->active_rx = -EINVAL;
++	s->active_rx = 0;
+ 	s->chan_rx = NULL;
+ 	sci_start_rx(port);
+ 	if (!port_lock_held)
+-- 
+2.17.1
