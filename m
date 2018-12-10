@@ -1,41 +1,72 @@
-From: Mike Rapoport <rppt@linux.ibm.com>
-Date: Mon, 31 Dec 2018 09:29:22 +0000
-Subject: [PATCH v4 2/6] microblaze: prefer memblock API returning virtual address
-Message-Id: <1546248566-14910-3-git-send-email-rppt@linux.ibm.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 10 Dec 2018 18:21:54 +0000
+Subject: [PATCH v3 4/4] serial: sh-sci: Fix fallback to PIO in sci_dma_rx_complete()
+Message-Id: <20181210182154.20357-5-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1546248566-14910-1-git-send-email-rppt@linux.ibm.com>
-In-Reply-To: <1546248566-14910-1-git-send-email-rppt@linux.ibm.com>
+References: <20181210182154.20357-1-geert+renesas@glider.be>
+In-Reply-To: <20181210182154.20357-1-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: Michal Hocko <mhocko@suse.com>, linux-sh@vger.kernel.org, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Heiko Carstens <heiko.carstens@de.ibm.com>, linux-mm@kvack.org, Rich Felker <dalias@libc.org>, Paul Mackerras <paulus@samba.org>, sparclinux@vger.kernel.org, Vincent Chen <deanbo422@gmail.com>, Jonas Bonn <jonas@southpole.se>, linux-s390@vger.kernel.org, linux-c6x-dev@linux-c6x.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Michael Ellerman <mpe@ellerman.id.au>, Russell King <linux@armlinux.org.uk>, Mike Rapoport <rppt@linux.ibm.com>, Mark Salter <msalter@redhat.com>, Arnd Bergmann <arnd@arndb.de>, Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>, openrisc@lists.librecores.org, Greentime Hu <green.hu@gmail.com>, Stafford Horne <shorne@gmail.com>, Guan Xuetao <gxt@pku.edu.cn>, linux-arm-kernel@lists.infradead.org, Michal Simek <monstr@monstr.eu>, linux-kernel@vger.kernel.org, Martin Schwidefsky <schwidefsky@de.ibm.com>, linuxppc-dev@lists.ozlabs.org, "David S. Miller" <davem@davemloft.net>
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
+Cc: Ulrich Hecht <uli+renesas@fpond.eu>, Wolfram Sang <wsa+renesas@sang-engineering.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, linux-serial@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Rather than use the memblock_alloc_base that returns a physical address and
-then convert this address to the virtual one, use appropriate memblock
-function that returns a virtual address.
+When submitting a DMA request fails in sci_dma_rx_complete(), the driver
+tries to fall back to PIO, but that does not work: no more data will be
+received, or the kernel will even crash.
 
-Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
-Tested-by: Michal Simek <michal.simek@xilinx.com>
+Fix this similar as in (but not identical to) sci_submit_rx():
+  - On SCIF, PIO cannot take over if any DMA transactions are pending,
+    hence they must be terminated first.
+  - All active cookies must be invalidated, else rx_timer_fn() may
+    trigger a NULL pointer dereference.
+  - Restarting the port is not needed, as it is already running, but
+    serial port interrupts must be directed back from the DMA engine to
+    the CPU.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/microblaze/mm/init.c | 5 +++--
- 1 file changed, 3 insertions(+), 2 deletions(-)
+v3:
+  - Add missing definition of "u16 scr",
+  - Move call to dmaengine_terminate_async() inside the spinlock, for
+    symmetry with sci_submit_rx(),
+  - Split in multiple patches.
+---
+ drivers/tty/serial/sh-sci.c | 14 +++++++++++++-
+ 1 file changed, 13 insertions(+), 1 deletion(-)
 
-diff --git a/arch/microblaze/mm/init.c b/arch/microblaze/mm/init.c
-index b17fd8a..44f4b89 100644
---- a/arch/microblaze/mm/init.c
-+++ b/arch/microblaze/mm/init.c
-@@ -363,8 +363,9 @@ void __init *early_get_page(void)
- 	 * Mem start + kernel_tlb -> here is limit
- 	 * because of mem mapping from head.S
- 	 */
--	return __va(memblock_alloc_base(PAGE_SIZE, PAGE_SIZE,
--				memory_start + kernel_tlb));
-+	return memblock_alloc_try_nid_raw(PAGE_SIZE, PAGE_SIZE,
-+				MEMBLOCK_LOW_LIMIT, memory_start + kernel_tlb,
-+				NUMA_NO_NODE);
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index d8672336d4ff9b65..946cdb0c7250955f 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1272,6 +1272,8 @@ static void sci_dma_rx_complete(void *arg)
+ 	struct dma_async_tx_descriptor *desc;
+ 	unsigned long flags;
+ 	int active, count = 0;
++	unsigned int i;
++	u16 scr;
+ 
+ 	dev_dbg(port->dev, "%s(%d) active cookie %d\n", __func__, port->line,
+ 		s->active_rx);
+@@ -1313,8 +1315,18 @@ static void sci_dma_rx_complete(void *arg)
+ 	dev_warn(port->dev, "Failed submitting Rx DMA descriptor\n");
+ 	/* Switch to PIO */
+ 	spin_lock_irqsave(&port->lock, flags);
++	dmaengine_terminate_async(chan);
++	for (i = 0; i < 2; i++)
++		s->cookie_rx[i] = -EINVAL;
++	s->active_rx = 0;
+ 	s->chan_rx = NULL;
+-	sci_start_rx(port);
++	/* Direct new serial port interrupts back to CPU */
++	scr = serial_port_in(port, SCSCR);
++	if (port->type = PORT_SCIFA || port->type = PORT_SCIFB) {
++		scr &= ~SCSCR_RDRQE;
++		enable_irq(s->irqs[SCIx_RXI_IRQ]);
++	}
++	serial_port_out(port, SCSCR, scr | SCSCR_RIE);
+ 	spin_unlock_irqrestore(&port->lock, flags);
  }
  
- #endif /* CONFIG_MMU */
 -- 
-2.7.4
+2.17.1
