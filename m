@@ -1,78 +1,42 @@
-From: Mike Rapoport <rppt@linux.ibm.com>
-Date: Mon, 03 Dec 2018 16:28:16 +0000
-Subject: Re: [PATCH v2 3/6] sh: prefer memblock APIs returning virtual address
-Message-Id: <20181203162816.GA26700@rapoport-lnx>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 13 Dec 2018 18:27:11 +0000
+Subject: [PATCH 12/15] pinctrl: sh-pfc: Make pinmux_cfg_reg.var_field_width[] variable-length
+Message-Id: <20181213182714.26094-13-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1543852035-26634-1-git-send-email-rppt@linux.ibm.com>
- <1543852035-26634-4-git-send-email-rppt@linux.ibm.com>
- <20181203161052.GA4244@ravnborg.org>
-In-Reply-To: <20181203161052.GA4244@ravnborg.org>
+References: <20181213182714.26094-1-geert+renesas@glider.be>
+In-Reply-To: <20181213182714.26094-1-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sam Ravnborg <sam@ravnborg.org>
-Cc: Michal Hocko <mhocko@suse.com>, linux-sh@vger.kernel.org, Benjamin Herrenschmidt <benh@kernel.crashing.org>, linux-mm@kvack.org, Rich Felker <dalias@libc.org>, Paul Mackerras <paulus@samba.org>, sparclinux@vger.kernel.org, Vincent Chen <deanbo422@gmail.com>, Jonas Bonn <jonas@southpole.se>, linux-c6x-dev@linux-c6x.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Michael Ellerman <mpe@ellerman.id.au>, Russell King <linux@armlinux.org.uk>, Mark Salter <msalter@redhat.com>, Arnd Bergmann <arnd@arndb.de>, Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>, openrisc@lists.librecores.org, Greentime Hu <green.hu@gmail.com>, Stafford Horne <shorne@gmail.com>, Guan Xuetao <gxt@pku.edu.cn>, linux-arm-kernel@lists.infradead.org, Michal Simek <monstr@monstr.eu>, linux-kernel@vger.kernel.org, Andrew Morton <akpm@linux-foundation.org>, linuxppc-dev@lists.ozlabs.org, "David S. Miller" <davem@davemloft.net>
+To: Linus Walleij <linus.walleij@linaro.org>
+Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Mon, Dec 03, 2018 at 05:10:52PM +0100, Sam Ravnborg wrote:
-> Hi Mike.
-> 
-> On Mon, Dec 03, 2018 at 05:47:12PM +0200, Mike Rapoport wrote:
-> > Rather than use the memblock_alloc_base that returns a physical address and
-> > then convert this address to the virtual one, use appropriate memblock
-> > function that returns a virtual address.
-> > 
-> > There is a small functional change in the allocation of then NODE_DATA().
-> > Instead of panicing if the local allocation failed, the non-local
-> > allocation attempt will be made.
-> > 
-> > Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
-> > ---
-> >  arch/sh/mm/init.c | 18 +++++-------------
-> >  arch/sh/mm/numa.c |  5 ++---
-> >  2 files changed, 7 insertions(+), 16 deletions(-)
-> > 
-> > diff --git a/arch/sh/mm/init.c b/arch/sh/mm/init.c
-> > index c8c13c77..3576b5f 100644
-> > --- a/arch/sh/mm/init.c
-> > +++ b/arch/sh/mm/init.c
-> > @@ -192,24 +192,16 @@ void __init page_table_range_init(unsigned long start, unsigned long end,
-> >  void __init allocate_pgdat(unsigned int nid)
-> >  {
-> >  	unsigned long start_pfn, end_pfn;
-> > -#ifdef CONFIG_NEED_MULTIPLE_NODES
-> > -	unsigned long phys;
-> > -#endif
-> >  
-> >  	get_pfn_range_for_nid(nid, &start_pfn, &end_pfn);
-> >  
-> >  #ifdef CONFIG_NEED_MULTIPLE_NODES
-> > -	phys = __memblock_alloc_base(sizeof(struct pglist_data),
-> > -				SMP_CACHE_BYTES, end_pfn << PAGE_SHIFT);
-> > -	/* Retry with all of system memory */
-> > -	if (!phys)
-> > -		phys = __memblock_alloc_base(sizeof(struct pglist_data),
-> > -					SMP_CACHE_BYTES, memblock_end_of_DRAM());
-> > -	if (!phys)
-> > +	NODE_DATA(nid) = memblock_alloc_try_nid_nopanic(
-> > +				sizeof(struct pglist_data),
-> > +				SMP_CACHE_BYTES, MEMBLOCK_LOW_LIMIT,
-> > +				MEMBLOCK_ALLOC_ACCESSIBLE, nid);
-> > +	if (!NODE_DATA(nid))
-> >  		panic("Can't allocate pgdat for node %d\n", nid);
-> > -
-> > -	NODE_DATA(nid) = __va(phys);
-> > -	memset(NODE_DATA(nid), 0, sizeof(struct pglist_data));
-> The new code will always assign NODE_DATA(nid), where the old
-> code only assigned NODE_DATA(nid) in the good case.
-> I dunno if this is an issue, just noticed the difference and
-> wanted to point it out.
+pinmux_cfg_reg.var_field_width[] is actually a variable-length array,
+terminated by a zero, and counting at most r_width entries.
+Usually the number of entries is much smaller than r_width, so the
+ability to catch bugs at compile time through an "excess elements in
+array initializer" warning is fairly limited.
 
-If the allocation fails the NODE_DATA(nid) remains zero anyway and there is
-a panic() call. So I think there is no actual functional change here.
+Hence make the array variable-length, decreasing kernel size slightly.
 
-> 	Sam
-> 
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ drivers/pinctrl/sh-pfc/sh_pfc.h | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
+diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
+index a2c5d530aaa1c0b3..273b55de9fd67b03 100644
+--- a/drivers/pinctrl/sh-pfc/sh_pfc.h
++++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
+@@ -142,8 +142,7 @@ struct pinmux_cfg_reg {
+  */
+ #define PINMUX_CFG_REG_VAR(name, r, r_width, var_fw0, var_fwn...) \
+ 	.reg = r, .reg_width = r_width,	\
+-	.var_field_width = (const u8 [r_width]) \
+-		{ var_fw0, var_fwn, 0 }, \
++	.var_field_width = (const u8 []) { var_fw0, var_fwn, 0 }, \
+ 	.enum_ids = (const u16 [])
+ 
+ struct pinmux_drive_reg_field {
 -- 
-Sincerely yours,
-Mike.
+2.17.1
