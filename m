@@ -1,79 +1,64 @@
-From: Christophe LEROY <christophe.leroy@c-s.fr>
-Date: Thu, 06 Dec 2018 20:14:04 +0000
-Subject: Re: [PATCH 1/2] mips/kgdb: prepare arch_kgdb_ops for constness
-Message-Id: <77351ea7-e153-d293-1016-2dd45cf96fee@c-s.fr>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 13 Dec 2018 18:27:06 +0000
+Subject: [PATCH 07/15] pinctrl: sh-pfc: sh7264: Fix PFCR3 and PFCR0 register configuration
+Message-Id: <20181213182714.26094-8-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <75bbcdd1e9277d66ebb06e349dda304bd01ce761.1543957194.git.christophe.leroy@c-s.fr>
- <20181206140902.ea6jlwqrbcwyxp5r@holly.lan>
-In-Reply-To: <20181206140902.ea6jlwqrbcwyxp5r@holly.lan>
+References: <20181213182714.26094-1-geert+renesas@glider.be>
+In-Reply-To: <20181213182714.26094-1-geert+renesas@glider.be>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: Daniel Thompson <daniel.thompson@linaro.org>
-Cc: Rich Felker <dalias@libc.org>, "Gustavo A. R. Silva" <gustavo@embeddedor.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Will Deacon <will.deacon@arm.com>, linux-kernel@vger.kernel.org, Paul Mackerras <paulus@samba.org>, sparclinux@vger.kernel.org, linux-hexagon@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh@vger.kernel.org, Michael Ellerman <mpe@ellerman.id.au>, x86@kernel.org, Russell King <linux@armlinux.org.uk>, Ingo Molnar <mingo@redhat.com>, Catalin Marinas <catalin.marinas@arm.com>, James Hogan <jhogan@kernel.org>, linux-snps-arc@lists.infradead.org, uclinux-h8-devel@lists.sourceforge.jp, linux-mips@vger.kernel.org, Borislav Petkov <bp@alien8.de>, nios2-dev@lists.rocketboards.org, Thomas Gleixner <tglx@linutronix.de>, linux-arm-kernel@lists.infradead.org, Michal Simek <monstr@monstr.eu>, Vineet Gupta <vgupta@synopsys.com>, Randy Dunlap <rdunlap@infradead.org>, Douglas Anderson <dianders@chromium.org>, Ralf Baechle <ralf@linux-mips.org>, Richard Kuo <rkuo@codeaurora.org>, Paul Burton <paul.burton@mips.com>, Jason Wessel <jason.wessel@windriver.com>, kgdb-bugreport@lists.sourceforge.net, Ley Foon Tan <lftan@altera.com>, linuxppc-dev@lists.ozlabs.org, "David S. Miller" <davem@davemloft.net>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Linus Walleij <linus.walleij@linaro.org>
+Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
+The Port F Control Register 3 (PFCR3) contains only a single field.
+However, counting from left to right, it is the fourth field, not the
+first field.
+Insert the missing dummy configuration values (3 fields of 16 values) to
+fix this.
 
+The descriptor for the Port F Control Register 0 (PFCR0) lacks the
+description for the 4th field (PF0 Mode, PF0MD[2:0]).
+Add the missing configuration values to fix this.
 
-Le 06/12/2018 à 15:09, Daniel Thompson a écrit :
-> On Wed, Dec 05, 2018 at 04:41:09AM +0000, Christophe Leroy wrote:
->> MIPS is the only architecture modifying arch_kgdb_ops during init.
->> This patch makes the init static, so that it can be changed to
->> const in following patch, as recommended by checkpatch.pl
->>
->> Suggested-by: Paul Burton <paul.burton@mips.com>
->> Signed-off-by: Christophe Leroy <christophe.leroy@c-s.fr>
-> 
->  From my side this is
-> Acked-by: Daniel Thompson <daniel.thompson@linaro.org>
-> 
-> Since this is a dependency for the next patch I'd be happy to take via
-> my tree... but would need an ack from the MIPS guys to do that.
+Fixes: a8d42fc4217b1ea1 ("sh-pfc: Add sh7264 pinmux support")
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+Compile-tested only.
+Based on the SH7264 Hardware User Manual Rev. 4.00.
 
-Got an ack from MIPS:
-Acked-by: Paul Burton <paul.burton@mips.com>
+The odd location of the closing curly brace in the PFCR0 section
+suggests an editing accident.
+---
+ drivers/pinctrl/sh-pfc/pfc-sh7264.c | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
 
-Included in commit text v2
-
-Christophe
-
-> 
-> 
-> Daniel.
-> 
->> ---
->>   arch/mips/kernel/kgdb.c | 16 +++++++---------
->>   1 file changed, 7 insertions(+), 9 deletions(-)
->>
->> diff --git a/arch/mips/kernel/kgdb.c b/arch/mips/kernel/kgdb.c
->> index eb6c0d582626..31eff1bec577 100644
->> --- a/arch/mips/kernel/kgdb.c
->> +++ b/arch/mips/kernel/kgdb.c
->> @@ -394,18 +394,16 @@ int kgdb_arch_handle_exception(int vector, int signo, int err_code,
->>   	return -1;
->>   }
->>   
->> -struct kgdb_arch arch_kgdb_ops;
->> +struct kgdb_arch arch_kgdb_ops = {
->> +#ifdef CONFIG_CPU_BIG_ENDIAN
->> +	.gdb_bpt_instr = { spec_op << 2, 0x00, 0x00, break_op },
->> +#else
->> +	.gdb_bpt_instr = { break_op, 0x00, 0x00, spec_op << 2 },
->> +#endif
->> +};
->>   
->>   int kgdb_arch_init(void)
->>   {
->> -	union mips_instruction insn = {
->> -		.r_format = {
->> -			.opcode = spec_op,
->> -			.func	= break_op,
->> -		}
->> -	};
->> -	memcpy(arch_kgdb_ops.gdb_bpt_instr, insn.byte, BREAK_INSTR_SIZE);
->> -
->>   	register_die_notifier(&kgdb_notifier);
->>   
->>   	return 0;
->> -- 
->> 2.13.3
->>
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7264.c b/drivers/pinctrl/sh-pfc/pfc-sh7264.c
+index 4f44ce0d7237faa9..501de63e6c5f4be2 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7264.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7264.c
+@@ -1713,6 +1713,9 @@ static const struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 	},
+ 
+ 	{ PINMUX_CFG_REG("PFCR3", 0xfffe38a8, 16, 4) {
++		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
++		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
++		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+ 		PF12MD_000, PF12MD_001, 0, PF12MD_011,
+ 		PF12MD_100, PF12MD_101, 0, 0,
+ 		0, 0, 0, 0, 0, 0, 0, 0 }
+@@ -1756,8 +1759,10 @@ static const struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 		0, 0, 0, 0, 0, 0, 0, 0,
+ 		PF1MD_000, PF1MD_001, PF1MD_010, PF1MD_011,
+ 		PF1MD_100, PF1MD_101, 0, 0,
+-		0, 0, 0, 0, 0, 0, 0, 0
+-	 }
++		0, 0, 0, 0, 0, 0, 0, 0,
++		PF0MD_000, PF0MD_001, PF0MD_010, PF0MD_011,
++		PF0MD_100, PF0MD_101, 0, 0,
++		0, 0, 0, 0, 0, 0, 0, 0 }
+ 	},
+ 
+ 	{ PINMUX_CFG_REG("PFIOR0", 0xfffe38b2, 16, 1) {
+-- 
+2.17.1
