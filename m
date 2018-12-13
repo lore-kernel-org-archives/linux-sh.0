@@ -1,29 +1,38 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 17 Dec 2018 14:24:07 +0000
-Subject: Re: [PATCH 07/15] pinctrl: sh-pfc: sh7264: Fix PFCR3 and PFCR0 register configuration
-Message-Id: <20181217142406.pjhk67feprbkvzgq@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 13 Dec 2018 18:27:02 +0000
+Subject: [PATCH 03/15] pinctrl: sh-pfc: r8a779980: Add missing MOD_SEL0 field
+Message-Id: <20181213182714.26094-4-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20181213182714.26094-1-geert+renesas@glider.be>
- <20181213182714.26094-8-geert+renesas@glider.be>
-In-Reply-To: <20181213182714.26094-8-geert+renesas@glider.be>
+In-Reply-To: <20181213182714.26094-1-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Linus Walleij <linus.walleij@linaro.org>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org
+To: Linus Walleij <linus.walleij@linaro.org>
+Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Thu, Dec 13, 2018 at 07:27:06PM +0100, Geert Uytterhoeven wrote:
-> The Port F Control Register 3 (PFCR3) contains only a single field.
-> However, counting from left to right, it is the fourth field, not the
-> first field.
-> Insert the missing dummy configuration values (3 fields of 16 values) to
-> fix this.
-> 
-> The descriptor for the Port F Control Register 0 (PFCR0) lacks the
-> description for the 4th field (PF0 Mode, PF0MD[2:0]).
-> Add the missing configuration values to fix this.
-> 
-> Fixes: a8d42fc4217b1ea1 ("sh-pfc: Add sh7264 pinmux support")
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+The Module Select Register 0 contains 20 (= 5 x 4) reserved bits, and 12
+single-bit fields, but the variable field descriptor lacks a field of 4
+reserved bits.
 
-Reviewed-by: Simon Horman <horms+renesas@verge.net.au>
+Fixes: f59125248a691dfe ("pinctrl: sh-pfc: Add R8A77980 PFC support")
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ drivers/pinctrl/sh-pfc/pfc-r8a77980.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a77980.c b/drivers/pinctrl/sh-pfc/pfc-r8a77980.c
+index 69cc571e00aec6c1..91523a5ed2a89c7d 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a77980.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a77980.c
+@@ -2822,7 +2822,7 @@ static const struct pinmux_cfg_reg pinmux_config_regs[] = {
+ #define F_(x, y)	x,
+ #define FM(x)		FN_##x,
+ 	{ PINMUX_CFG_REG_VAR("MOD_SEL0", 0xe6060500, 32,
+-			     4, 4, 4, 4,
++			     4, 4, 4, 4, 4,
+ 			     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1) {
+ 		/* RESERVED 31, 30, 29, 28 */
+ 		0, 0, 0, 0, 0, 0, 0, 0,	0, 0, 0, 0, 0, 0, 0, 0,
+-- 
+2.17.1
