@@ -1,41 +1,38 @@
-From: Andrew Morton <akpm@linux-foundation.org>
-Date: Fri, 07 Dec 2018 19:56:26 +0000
-Subject: Re: [PATCH 2/2] mm/sparse: add common helper to mark all memblocks present
-Message-Id: <20181207115626.dd578402f407e3df798aad0c@linux-foundation.org>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 13 Dec 2018 18:27:01 +0000
+Subject: [PATCH 02/15] pinctrl: sh-pfc: r8a779970: Add missing MOD_SEL0 field
+Message-Id: <20181213182714.26094-3-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20181107173859.24096-1-logang@deltatee.com>
-        <20181107173859.24096-3-logang@deltatee.com>
-        <20181107121207.62cb37cf58484b7cc80a8fd8@linux-foundation.org>
-        <71168447-7470-d2ba-d30e-200ff6202b35@deltatee.com>
-In-Reply-To: <71168447-7470-d2ba-d30e-200ff6202b35@deltatee.com>
+References: <20181213182714.26094-1-geert+renesas@glider.be>
+In-Reply-To: <20181213182714.26094-1-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Logan Gunthorpe <logang@deltatee.com>
-Cc: linux-kernel@vger.kernel.org, linux-mm@kvack.org, linux-arch@vger.kernel.org, linux-riscv@lists.infradead.org, linux-arm-kernel@lists.infradead.org, linux-sh@vger.kernel.org, Stephen Bates <sbates@raithlin.com>, Palmer Dabbelt <palmer@sifive.com>, Albert Ou <aou@eecs.berkeley.edu>, Christoph Hellwig <hch@lst.de>, Arnd Bergmann <arnd@arndb.de>, Michal Hocko <mhocko@suse.com>, Vlastimil Babka <vbabka@suse.cz>, Oscar Salvador <osalvador@suse.de>
+To: Linus Walleij <linus.walleij@linaro.org>
+Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Thu, 6 Dec 2018 10:40:31 -0700 Logan Gunthorpe <logang@deltatee.com> wrote:
+The Module Select Register 0 contains 20 (= 5 x 4) reserved bits, and 12
+single-bit fields, but the variable field descriptor lacks a field of 4
+reserved bits.
 
-> Hey Andrew,
-> 
-> On 2018-11-07 1:12 p.m., Andrew Morton wrote:
-> > Acked-by: Andrew Morton <akpm@linux-foundation.org>
-> > 
-> > I can grab both patches and shall sneak them into 4.20-rcX, but feel
-> > free to merge them into some git tree if you'd prefer.  If I see them
-> > turn up in linux-next I shall drop my copy.
-> 
-> Just wanted to check if you are still planning to get these patches into
-> 4.20-rcX. It would really help us if you can do this seeing we then
-> won't have to delay a cycle and can target the riscv sparsemem code for
-> 4.21.
-> 
+Fixes: b92ac66a1819602b ("pinctrl: sh-pfc: Add R8A77970 PFC support")
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ drivers/pinctrl/sh-pfc/pfc-r8a77970.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Ah, OK, I assumed that it would be merged via an arm tree.
-
-I moved 
-
-mm-introduce-common-struct_page_max_shift-define.patch
-mm-sparse-add-common-helper-to-mark-all-memblocks-present.patch
-
-to head-of-queue.  Shall send to Linus next week.
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a77970.c b/drivers/pinctrl/sh-pfc/pfc-r8a77970.c
+index 2ab80d1e65bc96fc..ee3a2ba44134a374 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a77970.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a77970.c
+@@ -2422,7 +2422,7 @@ static const struct pinmux_cfg_reg pinmux_config_regs[] = {
+ #define F_(x, y)	x,
+ #define FM(x)		FN_##x,
+ 	{ PINMUX_CFG_REG_VAR("MOD_SEL0", 0xe6060500, 32,
+-			     4, 4, 4, 4,
++			     4, 4, 4, 4, 4,
+ 			     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1) {
+ 		/* RESERVED 31, 30, 29, 28 */
+ 		0, 0, 0, 0, 0, 0, 0, 0,	0, 0, 0, 0, 0, 0, 0, 0,
+-- 
+2.17.1
