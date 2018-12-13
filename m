@@ -1,62 +1,101 @@
-From: Mike Rapoport <rppt@linux.ibm.com>
-Date: Mon, 03 Dec 2018 16:55:04 +0000
-Subject: Re: [PATCH v2 6/6] arm, unicore32: remove early_alloc*() wrappers
-Message-Id: <20181203165504.GC26700@rapoport-lnx>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 13 Dec 2018 18:44:41 +0000
+Subject: [PATCH v4 1/4] serial: sh-sci: Fix locking in sci_submit_rx()
+Message-Id: <20181213184444.21904-2-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1543852035-26634-1-git-send-email-rppt@linux.ibm.com>
- <1543852035-26634-7-git-send-email-rppt@linux.ibm.com>
- <CABGGisySdgSma1bSF2Bk586Vf461o-U2f3w9UMgHJcVucQ0oFA@mail.gmail.com>
-In-Reply-To: <CABGGisySdgSma1bSF2Bk586Vf461o-U2f3w9UMgHJcVucQ0oFA@mail.gmail.com>
+References: <20181213184444.21904-1-geert+renesas@glider.be>
+In-Reply-To: <20181213184444.21904-1-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Rob Herring <robh@kernel.org>
-Cc: mhocko@suse.com, linux-sh@vger.kernel.org, Benjamin Herrenschmidt <benh@kernel.crashing.org>, linux-mm@kvack.org, dalias@libc.org, Paul Mackerras <paulus@samba.org>, sparclinux@vger.kernel.org, deanbo422@gmail.com, jonas@southpole.se, linux-c6x-dev@linux-c6x.org, ysato@users.sourceforge.jp, Michael Ellerman <mpe@ellerman.id.au>, linux@armlinux.org.uk, msalter@redhat.com, Arnd Bergmann <arnd@arndb.de>, stefan.kristiansson@saunalahti.fi, openrisc@lists.librecores.org, Greentime Hu <green.hu@gmail.com>, shorne@gmail.com, gxt@pku.edu.cn, linux-arm-kernel <linux-arm-kernel@lists.infradead.org>, Michal Simek <monstr@monstr.eu>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Andrew Morton <akpm@linux-foundation.org>, linuxppc-dev@lists.ozlabs.org, davem@davemloft.net
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
+Cc: Ulrich Hecht <uli+renesas@fpond.eu>, Wolfram Sang <wsa+renesas@sang-engineering.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, linux-serial@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Mon, Dec 03, 2018 at 10:27:02AM -0600, Rob Herring wrote:
-> On Mon, Dec 3, 2018 at 9:48 AM Mike Rapoport <rppt@linux.ibm.com> wrote:
-> >
-> > On arm and unicore32i the early_alloc_aligned() and and early_alloc() are
-> > oneliner wrappers for memblock_alloc.
-> >
-> > Replace their usage with direct call to memblock_alloc.
-> >
-> > Suggested-by: Christoph Hellwig <hch@infradead.org>
-> > Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
-> > ---
-> >  arch/arm/mm/mmu.c       | 11 +++--------
-> >  arch/unicore32/mm/mmu.c | 12 ++++--------
-> >  2 files changed, 7 insertions(+), 16 deletions(-)
-> >
-> > diff --git a/arch/arm/mm/mmu.c b/arch/arm/mm/mmu.c
-> > index 0a04c9a5..57de0dd 100644
-> > --- a/arch/arm/mm/mmu.c
-> > +++ b/arch/arm/mm/mmu.c
-> > @@ -719,14 +719,9 @@ EXPORT_SYMBOL(phys_mem_access_prot);
-> >
-> >  #define vectors_base() (vectors_high() ? 0xffff0000 : 0)
-> >
-> > -static void __init *early_alloc_aligned(unsigned long sz, unsigned long align)
-> > -{
-> > -       return memblock_alloc(sz, align);
-> > -}
-> > -
-> >  static void __init *early_alloc(unsigned long sz)
-> 
-> Why not get rid of this wrapper like you do on unicore?
+Some callers of sci_submit_rx() hold the port spinlock, others don't.
+During fallback to PIO, the driver needs to obtain the port spinlock.
+If the lock was already held, spinlock recursion is detected, causing a
+deadlock: BUG: spinlock recursion on CPU#0.
 
-ARM has early_alloc() and late_alloc() callbacks which in the end are
-passed as a parameter to alloc_init_pXd() functions. 
+Fix this by adding a flag parameter to sci_submit_rx() for the caller to
+indicate the port spinlock is already held, so spinlock recursion can be
+avoided.
 
-Removing early_alloc() would require refactoring all the page table
-allocation code.
+Move the spin_lock_irqsave() up, so all DMA disable steps are protected,
+which is safe as the recently introduced dmaengine_terminate_async() can
+be called in atomic context.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+v4:
+  - No changes,
+
+v3:
+  - Split in multiple patches.
+---
+ drivers/tty/serial/sh-sci.c | 16 +++++++++-------
+ 1 file changed, 9 insertions(+), 7 deletions(-)
+
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 8146d9cef0cbe2d0..2a08039f792235e5 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1331,7 +1331,7 @@ static void sci_tx_dma_release(struct sci_port *s)
+ 	dma_release_channel(chan);
+ }
  
-> >  {
-> > -       return early_alloc_aligned(sz, sz);
-> > +       return memblock_alloc(sz, sz);
-> >  }
-> 
-
+-static void sci_submit_rx(struct sci_port *s)
++static void sci_submit_rx(struct sci_port *s, bool port_lock_held)
+ {
+ 	struct dma_chan *chan = s->chan_rx;
+ 	struct uart_port *port = &s->port;
+@@ -1362,16 +1362,18 @@ static void sci_submit_rx(struct sci_port *s)
+ 	return;
+ 
+ fail:
++	/* Switch to PIO */
++	if (!port_lock_held)
++		spin_lock_irqsave(&port->lock, flags);
+ 	if (i)
+ 		dmaengine_terminate_async(chan);
+ 	for (i = 0; i < 2; i++)
+ 		s->cookie_rx[i] = -EINVAL;
+ 	s->active_rx = -EINVAL;
+-	/* Switch to PIO */
+-	spin_lock_irqsave(&port->lock, flags);
+ 	s->chan_rx = NULL;
+ 	sci_start_rx(port);
+-	spin_unlock_irqrestore(&port->lock, flags);
++	if (!port_lock_held)
++		spin_unlock_irqrestore(&port->lock, flags);
+ }
+ 
+ static void work_fn_tx(struct work_struct *work)
+@@ -1491,7 +1493,7 @@ static enum hrtimer_restart rx_timer_fn(struct hrtimer *t)
+ 	}
+ 
+ 	if (port->type = PORT_SCIFA || port->type = PORT_SCIFB)
+-		sci_submit_rx(s);
++		sci_submit_rx(s, true);
+ 
+ 	/* Direct new serial port interrupts back to CPU */
+ 	scr = serial_port_in(port, SCSCR);
+@@ -1617,7 +1619,7 @@ static void sci_request_dma(struct uart_port *port)
+ 		s->chan_rx_saved = s->chan_rx = chan;
+ 
+ 		if (port->type = PORT_SCIFA || port->type = PORT_SCIFB)
+-			sci_submit_rx(s);
++			sci_submit_rx(s, false);
+ 	}
+ }
+ 
+@@ -1667,7 +1669,7 @@ static irqreturn_t sci_rx_interrupt(int irq, void *ptr)
+ 			scr |= SCSCR_RDRQE;
+ 		} else {
+ 			scr &= ~SCSCR_RIE;
+-			sci_submit_rx(s);
++			sci_submit_rx(s, false);
+ 		}
+ 		serial_port_out(port, SCSCR, scr);
+ 		/* Clear current interrupt */
 -- 
-Sincerely yours,
-Mike.
+2.17.1
