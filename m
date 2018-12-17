@@ -1,28 +1,46 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 17 Dec 2018 14:07:24 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 17 Dec 2018 14:12:27 +0000
 Subject: Re: [PATCH 06/15] pinctrl: sh-pfc: r8a77995: Remove bogus SEL_PWM[0-3]_3 configurations
-Message-Id: <20181217140723.l76nsznmu7exzqha@verge.net.au>
+Message-Id: <CAMuHMdUjvVUd52hco_kmNVs2hscfr4vXhd1rZvSegGz7kTYCTg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20181213182714.26094-1-geert+renesas@glider.be>
- <20181213182714.26094-7-geert+renesas@glider.be>
-In-Reply-To: <20181213182714.26094-7-geert+renesas@glider.be>
+ <20181213182714.26094-7-geert+renesas@glider.be> <20181217140723.l76nsznmu7exzqha@verge.net.au>
+In-Reply-To: <20181217140723.l76nsznmu7exzqha@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Linus Walleij <linus.walleij@linaro.org>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org
+To: Simon Horman <horms@verge.net.au>
+Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Linus Walleij <linus.walleij@linaro.org>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Linux-Renesas <linux-renesas-soc@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "open list:GPIO SUBSYSTEM" <linux-gpio@vger.kernel.org>
 
-On Thu, Dec 13, 2018 at 07:27:05PM +0100, Geert Uytterhoeven wrote:
-> While the SEL_PWM[0-3] fields in the Module Select Register 0 support 4
+Hi Simon,
 
-s/support/supports
+On Mon, Dec 17, 2018 at 3:07 PM Simon Horman <horms@verge.net.au> wrote:
+> On Thu, Dec 13, 2018 at 07:27:05PM +0100, Geert Uytterhoeven wrote:
+> > While the SEL_PWM[0-3] fields in the Module Select Register 0 support 4
+>
+> s/support/supports
 
-> possible configurations per PWM pin, only the first 3 are valid.
-> 
-> Replace the invalid and unused configurations for SEL_PWM[0-3]_3 by
-> dummies.
-> 
-> Fixes: 794a6711764658a1 ("pinctrl: sh-pfc: Initial R8A77995 PFC support")
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+"fields" is plural, hence "support".
 
-Reviewed-by: Simon Horman <horms+renesas@verge.net.au>
+> > possible configurations per PWM pin, only the first 3 are valid.
+> >
+> > Replace the invalid and unused configurations for SEL_PWM[0-3]_3 by
+> > dummies.
+> >
+> > Fixes: 794a6711764658a1 ("pinctrl: sh-pfc: Initial R8A77995 PFC support")
+> > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+>
+> Reviewed-by: Simon Horman <horms+renesas@verge.net.au>
+
+Thanks!
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+-- 
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
