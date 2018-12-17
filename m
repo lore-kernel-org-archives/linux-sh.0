@@ -1,70 +1,165 @@
-From: David Hildenbrand <david@redhat.com>
-Date: Tue, 04 Dec 2018 09:47:33 +0000
-Subject: Re: [PATCH RFCv2 3/4] mm/memory_hotplug: Introduce and use more memory types
-Message-Id: <b8e03810-41d6-55cb-9546-62c73c7f4d7f@redhat.com>
+From: Nick Kossifidis <mick@ics.forth.gr>
+Date: Mon, 17 Dec 2018 14:59:19 +0000
+Subject: Re: [PATCH v2 6/6] RISC-V: Implement sparsemem
+Message-Id: <4b591ba933363e29392dba218ef63267@mailhost.ics.forth.gr>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20181130175922.10425-1-david@redhat.com>
- <20181130175922.10425-4-david@redhat.com>
- <20181204104454.522a3ba2@naga.suse.cz>
-In-Reply-To: <20181204104454.522a3ba2@naga.suse.cz>
+References: <20181015175702.9036-1-logang@deltatee.com>
+ <20181015175702.9036-7-logang@deltatee.com>
+In-Reply-To: <20181015175702.9036-7-logang@deltatee.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: =?UTF-8?Q?Michal_Such=c3=a1nek?= <msuchanek@suse.de>
-Cc: linux-mm@kvack.org, linux-kernel@vger.kernel.org, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-acpi@vger.kernel.org, devel@linuxdriverproject.org, xen-devel@lists.xenproject.org, x86@kernel.org, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Michael Ellerman <mpe@ellerman.id.au>, "Rafael J. Wysocki" <rjw@rjwysocki.net>, Len Brown <lenb@kernel.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, "K. Y. Srinivasan" <kys@microsoft.com>, Haiyang Zhang <haiyangz@microsoft.com>, Stephen Hemminger <sthemmin@microsoft.com>, Martin Schwidefsky <schwidefsky@de.ibm.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, Boris Ostrovsky <boris.ostrovsky@oracle.co>
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: Logan Gunthorpe <logang@deltatee.com>
+Cc: Rob Herring <robh@kernel.org>, Albert Ou <aou@eecs.berkeley.edu>, Andrew Waterman <andrew@sifive.com>, Arnd Bergmann <arnd@arndb.de>, linux-sh@vger.kernel.org, Palmer Dabbelt <palmer@sifive.com>, linux-kernel@vger.kernel.org, Stephen Bates <sbates@raithlin.com>, Zong Li <zong@andestech.com>, linux-mm@kvack.org, Olof Johansson <olof@lixom.net>, linux-riscv@lists.infradead.org, Michael Clark <michaeljclark@mac.com>, Christoph Hellwig <hch@lst.de>, Andrew Morton <akpm@linux-foundation.org>, linux-arm-kernel@lists.infradead.org
 
-On 04.12.18 10:44, Michal Such=C3=A1nek wrote:
-> On Fri, 30 Nov 2018 18:59:21 +0100
-> David Hildenbrand <david@redhat.com> wrote:
->=20
->> Let's introduce new types for different kinds of memory blocks and use
->> them in existing code. As I don't see an easy way to split this up,
->> do it in one hunk for now.
->>
->> acpi:
->>  Use DIMM or DIMM_UNREMOVABLE depending on hotremove support in the kern=
-el.
->>  Properly change the type when trying to add memory that was already
->>  detected and used during boot (so this memory will correctly end up as
->>  "acpi" in user space).
->>
->> pseries:
->>  Use DIMM or DIMM_UNREMOVABLE depending on hotremove support in the kern=
-el.
->>  As far as I see, handling like in the acpi case for existing blocks is
->>  not required.
->>
->> probed memory from user space:
->>  Use DIMM_UNREMOVABLE as there is no interface to get rid of this code
->>  again.
->>
->> hv_balloon,xen/balloon:
->>  Use BALLOON. As simple as that :)
->>
->> s390x/sclp:
->>  Use a dedicated type S390X_STANDBY as this type of memory and it's
->>  semantics are very s390x specific.
->>
->> powernv/memtrace:
->>  Only allow to use BOOT memory for memtrace. I consider this code in
->>  general dangerous, but we have to keep it working ... most probably just
->>  a debug feature.
->=20
-> I don't think it should be arbitrarily restricted like that.
->=20
+Hello Logan,
 
-Well code that "randomly" offlines/onlines/removes/adds memory blocks
-that it does not own (hint: nobody else in the kernel does that), should
-be restricted to types we can guarantee to work.
+Στις 2018-10-15 20:57, Logan Gunthorpe έγραψε:
+> This patch implements sparsemem support for risc-v which helps pave the
+> way for memory hotplug and eventually P2P support.
+> 
+> We introduce Kconfig options for virtual and physical address bits 
+> which
+> are used to calculate the size of the vmemmap and set the
+> MAX_PHYSMEM_BITS.
+> 
+> The vmemmap is located directly before the VMALLOC region and sized
+> such that we can allocate enough pages to populate all the virtual
+> address space in the system (similar to the way it's done in arm64).
+> 
+> During initialization, call memblocks_present() and sparse_init(),
+> and provide a stub for vmemmap_populate() (all of which is similar to
+> arm64).
+> 
+> Signed-off-by: Logan Gunthorpe <logang@deltatee.com>
+> Reviewed-by: Palmer Dabbelt <palmer@sifive.com>
+> Cc: Albert Ou <aou@eecs.berkeley.edu>
+> Cc: Andrew Waterman <andrew@sifive.com>
+> Cc: Olof Johansson <olof@lixom.net>
+> Cc: Michael Clark <michaeljclark@mac.com>
+> Cc: Rob Herring <robh@kernel.org>
+> Cc: Zong Li <zong@andestech.com>
+> ---
+>  arch/riscv/Kconfig                 | 23 +++++++++++++++++++++++
+>  arch/riscv/include/asm/pgtable.h   | 21 +++++++++++++++++----
+>  arch/riscv/include/asm/sparsemem.h | 11 +++++++++++
+>  arch/riscv/kernel/setup.c          |  4 +++-
+>  arch/riscv/mm/init.c               |  8 ++++++++
+>  5 files changed, 62 insertions(+), 5 deletions(-)
+>  create mode 100644 arch/riscv/include/asm/sparsemem.h
+> 
+> diff --git a/arch/riscv/Kconfig b/arch/riscv/Kconfig
+> index a344980287a5..a1b5d758a542 100644
+> --- a/arch/riscv/Kconfig
+> +++ b/arch/riscv/Kconfig
+> @@ -52,12 +52,32 @@ config ZONE_DMA32
+>  	bool
+>  	default y if 64BIT
+> 
+> +config VA_BITS
+> +	int
+> +	default 32 if 32BIT
+> +	default 39 if 64BIT
+> +
+> +config PA_BITS
+> +	int
+> +	default 34 if 32BIT
+> +	default 56 if 64BIT
+> +
+>  config PAGE_OFFSET
+>  	hex
+>  	default 0xC0000000 if 32BIT && MAXPHYSMEM_2GB
+>  	default 0xffffffff80000000 if 64BIT && MAXPHYSMEM_2GB
+>  	default 0xffffffe000000000 if 64BIT && MAXPHYSMEM_128GB
+> 
+> +config ARCH_FLATMEM_ENABLE
+> +	def_bool y
+> +
+> +config ARCH_SPARSEMEM_ENABLE
+> +	def_bool y
+> +	select SPARSEMEM_VMEMMAP_ENABLE
+> +
+> +config ARCH_SELECT_MEMORY_MODEL
+> +	def_bool ARCH_SPARSEMEM_ENABLE
+> +
+>  config STACKTRACE_SUPPORT
+>  	def_bool y
+> 
+> @@ -92,6 +112,9 @@ config PGTABLE_LEVELS
+>  config HAVE_KPROBES
+>  	def_bool n
+> 
+> +config HAVE_ARCH_PFN_VALID
+> +	def_bool y
+> +
+>  menu "Platform type"
+> 
+>  choice
+> diff --git a/arch/riscv/include/asm/pgtable.h 
+> b/arch/riscv/include/asm/pgtable.h
+> index 16301966d65b..e1162336f5ea 100644
+> --- a/arch/riscv/include/asm/pgtable.h
+> +++ b/arch/riscv/include/asm/pgtable.h
+> @@ -89,6 +89,23 @@ extern pgd_t swapper_pg_dir[];
+>  #define __S110	PAGE_SHARED_EXEC
+>  #define __S111	PAGE_SHARED_EXEC
+> 
+> +#define VMALLOC_SIZE     (KERN_VIRT_SIZE >> 1)
+> +#define VMALLOC_END      (PAGE_OFFSET - 1)
+> +#define VMALLOC_START    (PAGE_OFFSET - VMALLOC_SIZE)
+> +
+> +/*
+> + * Roughly size the vmemmap space to be large enough to fit enough
+> + * struct pages to map half the virtual address space. Then
+> + * position vmemmap directly below the VMALLOC region.
+> + */
+> +#define VMEMMAP_SHIFT \
+> +	(CONFIG_VA_BITS - PAGE_SHIFT - 1 + STRUCT_PAGE_MAX_SHIFT)
+> +#define VMEMMAP_SIZE	(1UL << VMEMMAP_SHIFT)
+> +#define VMEMMAP_END	(VMALLOC_START - 1)
+> +#define VMEMMAP_START	(VMALLOC_START - VMEMMAP_SIZE)
+> +
+> +#define vmemmap		((struct page *)VMEMMAP_START)
+> +
+>  /*
+>   * ZERO_PAGE is a global shared page that is always zero,
+>   * used for zero-mapped memory areas, etc.
+> @@ -411,10 +428,6 @@ static inline void pgtable_cache_init(void)
+>  	/* No page table caches to initialize */
+>  }
+> 
+> -#define VMALLOC_SIZE     (KERN_VIRT_SIZE >> 1)
+> -#define VMALLOC_END      (PAGE_OFFSET - 1)
+> -#define VMALLOC_START    (PAGE_OFFSET - VMALLOC_SIZE)
+> -
+>  /*
+>   * Task size is 0x40000000000 for RV64 or 0xb800000 for RV32.
+>   * Note that PGDIR_SIZE must evenly divide TASK_SIZE.
+> diff --git a/arch/riscv/include/asm/sparsemem.h
+> b/arch/riscv/include/asm/sparsemem.h
+> new file mode 100644
+> index 000000000000..215530b24336
+> --- /dev/null
+> +++ b/arch/riscv/include/asm/sparsemem.h
+> @@ -0,0 +1,11 @@
+> +/* SPDX-License-Identifier: GPL-2.0 */
+> +
+> +#ifndef __ASM_SPARSEMEM_H
+> +#define __ASM_SPARSEMEM_H
+> +
+> +#ifdef CONFIG_SPARSEMEM
+> +#define MAX_PHYSMEM_BITS	CONFIG_PA_BITS
+> +#define SECTION_SIZE_BITS	30
 
-> Thanks
->=20
-> Michal
->=20
+Having memory blocks of a minimum size of 1GB doesn't make much sense. 
+It makes it harder to implement hotplug on top of this since we'll only 
+able to add/remove 1GB at a time. ARM used to do the same and they 
+switched to 27bits (https://patchwork.kernel.org/patch/9172845/), ARM64 
+still uses 1GB, x86 also uses 27bits and most archs also use something 
+below 30. I believe we should go for 27bits as well or even better have 
+this as a compile time option.
 
+BTW memblocks_present is on master now (got merged 3 days ago).
 
---=20
-
-Thanks,
-
-David / dhildenb
+Regards,
+N.
