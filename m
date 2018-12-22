@@ -1,87 +1,86 @@
 From: Steven Rostedt <rostedt@goodmis.org>
-Date: Fri, 21 Dec 2018 17:56:25 +0000
-Subject: [for-next][PATCH 07/24] sh: ftrace: Use ftrace_graph_get_ret_stack() instead of curr_ret_stack
-Message-Id: <20181221175656.345267788@goodmis.org>
+Date: Sat, 22 Dec 2018 16:20:08 +0000
+Subject: [for-next][PATCH 1/5] string.h: Add str_has_prefix() helper function
+Message-Id: <20181222162856.518489380@goodmis.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20181221175618.968519903@goodmis.org>
+References: <20181222162007.697862256@goodmis.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-kernel@vger.kernel.org
-Cc: Ingo Molnar <mingo@kernel.org>, Andrew Morton <akpm@linux-foundation.org>, Namhyung Kim <namhyung@kernel.org>, Masami Hiramatsu <mhiramat@kernel.org>, linux-sh@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+Cc: Ingo Molnar <mingo@kernel.org>, Andrew Morton <akpm@linux-foundation.org>, Joe Perches <joe@perches.com>, Namhyung Kim <namhyung@kernel.org>, Linus Torvalds <torvalds@linux-foundation.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, Tom Zanussi <zanussi@kernel.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 
 From: "Steven Rostedt (VMware)" <rostedt@goodmis.org>
 
-The structure of the ret_stack array on the task struct is going to
-change, and accessing it directly via the curr_ret_stack index will no
-longer give the ret_stack entry that holds the return address. To access
-that, architectures must now use ftrace_graph_get_ret_stack() to get the
-associated ret_stack that matches the saved return address.
+A discussion came up in the trace triggers thread about converting a
+bunch of:
 
-Cc: linux-sh@vger.kernel.org
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: Rich Felker <dalias@libc.org>
+ strncmp(str, "const", sizeof("const") - 1)
+
+use cases into a helper macro. It started with:
+
+	strncmp(str, const, sizeof(const) - 1)
+
+But then Joe Perches mentioned that if a const is not used, the
+sizeof() will be the size of a pointer, which can be bad. And that
+gcc will optimize strlen("const") into "sizeof("const") - 1".
+
+Thinking about this more, a quick grep in the kernel tree found several
+(thousands!) of cases that use this construct. A quick grep also
+revealed that there's probably several bugs in that use case. Some are
+that people forgot the "- 1" (which I found) and others could be that
+the constant for the sizeof is different than the constant (although, I
+haven't found any of those, but I also didn't look hard).
+
+I figured the best thing to do is to create a helper macro and place it
+into include/linux/string.h. And go around and fix all the open coded
+versions of it later.
+
+Note, gcc appears to optimize this when we make it into an always_inline
+static function, which removes a lot of issues that a macro produces.
+
+Link: http://lkml.kernel.org/r/e3e754f2bd18e56eaa8baf79bee619316ebf4cfc.1545161087.git.tom.zanussi@linux.intel.com
+Link: http://lkml.kernel.org/r/20181219211615.2298e781@gandalf.local.home
+Link: http://lkml.kernel.org/r/CAHk-=wg_sR-UEC1ggmkZpypOUYanL5CMX4R7ceuaV4QMf5jBtg@mail.gmail.com
+
+Cc: Tom Zanussi <zanussi@kernel.org>
+Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Suggestions-by: Linus Torvalds <torvalds@linux-foundation.org>
+Suggestions-by: Joe Perches <joe@perches.com>
+Suggestions-by: Andreas Schwab <schwab@linux-m68k.org>
 Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
 ---
- arch/sh/kernel/dumpstack.c | 11 +++++++----
- arch/sh/kernel/dwarf.c     |  9 +++++----
- 2 files changed, 12 insertions(+), 8 deletions(-)
+ include/linux/string.h | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
 
-diff --git a/arch/sh/kernel/dumpstack.c b/arch/sh/kernel/dumpstack.c
-index b564b1eae4ae..2c2e151bf39e 100644
---- a/arch/sh/kernel/dumpstack.c
-+++ b/arch/sh/kernel/dumpstack.c
-@@ -59,17 +59,20 @@ print_ftrace_graph_addr(unsigned long addr, void *data,
- 			struct thread_info *tinfo, int *graph)
- {
- 	struct task_struct *task = tinfo->task;
-+	struct ftrace_ret_stack *ret_stack;
- 	unsigned long ret_addr;
--	int index = task->curr_ret_stack;
+diff --git a/include/linux/string.h b/include/linux/string.h
+index 27d0482e5e05..7927b875f80c 100644
+--- a/include/linux/string.h
++++ b/include/linux/string.h
+@@ -456,4 +456,24 @@ static inline void memcpy_and_pad(void *dest, size_t dest_len,
+ 		memcpy(dest, src, dest_len);
+ }
  
- 	if (addr != (unsigned long)return_to_handler)
- 		return;
- 
--	if (!task->ret_stack || index < *graph)
-+	if (!task->ret_stack)
- 		return;
- 
--	index -= *graph;
--	ret_addr = task->ret_stack[index].ret;
-+	ret_stack = ftrace_graph_get_ret_stack(task, *graph);
-+	if (!ret_stack)
-+		return;
++/**
++ * str_has_prefix - Test if a string has a given prefix
++ * @str: The string to test
++ * @prefix: The string to see if @str starts with
++ *
++ * A common way to test a prefix of a string is to do:
++ *  strncmp(str, prefix, sizeof(prefix) - 1)
++ *
++ * But this can lead to bugs due to typos, or if prefix is a pointer
++ * and not a constant. Instead use str_has_prefix().
++ *
++ * Returns: 0 if @str does not start with @prefix
++         strlen(@prefix) if @str does start with @prefix
++ */
++static __always_inline size_t str_has_prefix(const char *str, const char *prefix)
++{
++	size_t len = strlen(prefix);
++	return strncmp(str, prefix, len) = 0 ? len : 0;
++}
 +
-+	ret_addr = ret_stack->ret;
- 
- 	ops->address(data, ret_addr, 1);
- 
-diff --git a/arch/sh/kernel/dwarf.c b/arch/sh/kernel/dwarf.c
-index bb511e2d9d68..df0fd6efe758 100644
---- a/arch/sh/kernel/dwarf.c
-+++ b/arch/sh/kernel/dwarf.c
-@@ -608,17 +608,18 @@ struct dwarf_frame *dwarf_unwind_stack(unsigned long pc,
- 	 * expected to find the real return address.
- 	 */
- 	if (pc = (unsigned long)&return_to_handler) {
--		int index = current->curr_ret_stack;
-+		struct ftrace_ret_stack *ret_stack;
- 
-+		ret_stack = ftrace_graph_get_ret_stack(current, 0);
-+		if (ret_stack)
-+			pc = ret_stack->ret;
- 		/*
- 		 * We currently have no way of tracking how many
- 		 * return_to_handler()'s we've seen. If there is more
- 		 * than one patched return address on our stack,
- 		 * complain loudly.
- 		 */
--		WARN_ON(index > 0);
--
--		pc = current->ret_stack[index].ret;
-+		WARN_ON(ftrace_graph_get_ret_stack(current, 1);
- 	}
- #endif
- 
+ #endif /* _LINUX_STRING_H_ */
 -- 
 2.19.2
