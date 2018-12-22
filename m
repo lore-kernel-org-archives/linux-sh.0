@@ -1,75 +1,63 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 17 Dec 2018 15:18:16 +0000
-Subject: Re: [PATCH 10/15] pinctrl: sh-pfc: sh7734: Fix shifted values in IPSR10
-Message-Id: <20181217151810.ab3tq22t4fulpqun@verge.net.au>
+From: Steven Rostedt <rostedt@goodmis.org>
+Date: Sat, 22 Dec 2018 16:20:07 +0000
+Subject: [for-next][PATCH 0/5] tracing: Add string_has_prefix() and usages
+Message-Id: <20181222162007.697862256@goodmis.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20181213182714.26094-1-geert+renesas@glider.be>
- <20181213182714.26094-11-geert+renesas@glider.be>
- <20181217143742.4qsndrcickp3hsyw@verge.net.au>
- <CAMuHMdW-r42PNxESV4w26F=D=xTFpeyWX0WuOEcNYZWMRsXS4w@mail.gmail.com>
-In-Reply-To: <CAMuHMdW-r42PNxESV4w26F=D=xTFpeyWX0WuOEcNYZWMRsXS4w@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Linus Walleij <linus.walleij@linaro.org>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Linux-Renesas <linux-renesas-soc@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "open list:GPIO SUBSYSTEM" <linux-gpio@vger.kernel.org>
+To: linux-kernel@vger.kernel.org
+Cc: Ingo Molnar <mingo@kernel.org>, Andrew Morton <akpm@linux-foundation.org>, Joe Perches <joe@perches.com>, Namhyung Kim <namhyung@kernel.org>, Linus Torvalds <torvalds@linux-foundation.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
 
-On Mon, Dec 17, 2018 at 03:45:26PM +0100, Geert Uytterhoeven wrote:
-> Hi Simon,
-> 
-> On Mon, Dec 17, 2018 at 3:37 PM Simon Horman <horms@verge.net.au> wrote:
-> > On Thu, Dec 13, 2018 at 07:27:09PM +0100, Geert Uytterhoeven wrote:
-> > > Some values in the Peripheral Function Select Register 10 descriptor are
-> > > shifted by one position, which may cause a peripheral function to be
-> > > programmed incorrectly.
-> > >
-> > > Fixing this makes all HSCIF0 pins use Function 4 (value 3), like was
-> > > already the case for the HSCK0 pin in field IP10[5:3].
-> > >
-> > > Fixes: ac1ebc2190f575fc ("sh-pfc: Add sh7734 pinmux support")
-> > > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> > > ---
-> > > Based on the SH7734 Hardware User's Manual Rev. 1.00.
-> > > Compile-tested only.
-> > >
-> > > Noticed when investigating a different bug in the same register
-> > > description.
-> > > ---
-> > >  drivers/pinctrl/sh-pfc/pfc-sh7734.c | 16 ++++++++--------
-> > >  1 file changed, 8 insertions(+), 8 deletions(-)
-> > >
-> > > diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7734.c b/drivers/pinctrl/sh-pfc/pfc-sh7734.c
-> > > index cad70f9cf5699f0c..748a32a3af82d368 100644
-> > > --- a/drivers/pinctrl/sh-pfc/pfc-sh7734.c
-> > > +++ b/drivers/pinctrl/sh-pfc/pfc-sh7734.c
-> > > @@ -2210,22 +2210,22 @@ static const struct pinmux_cfg_reg pinmux_config_regs[] = {
-> > >           /* IP10_22 [1] */
-> > >               FN_CAN_CLK_A, FN_RX4_D,
-> > >           /* IP10_21_19 [3] */
-> > > -             FN_AUDIO_CLKOUT, FN_TX1_E, FN_HRTS0_C, FN_FSE_B,
-> > > -             FN_LCD_M_DISP_B, 0, 0, 0,
-> > > +             FN_AUDIO_CLKOUT, FN_TX1_E, 0, FN_HRTS0_C, FN_FSE_B,
-> >
-> > FN_FSE_B does no appear to be documented for this field in Users' Manual
-> > Hardware v1.00 (Jun 12, 2012). Should it be 0?
-> 
-> None of the FSE bits seem to be documented in the public datasheet, so I
-> just retained it, maintaining consistency with the surrounding fields.
+I hope everyone is OK with these changes. I pushed to linux-next but I'm
+willing to change them if there are still issues.
 
-That is fine by me.
+They ran through all my tests, althought zero-day-bot had a weird build
+regression in sh, that looks totally unrelated:
 
-> > Reviewed-by: Simon Horman <horms+renesas@verge.net.au>
-> 
-> Thanks!
-> 
-> Gr{oetje,eeting}s,
-> 
->                         Geert
-> 
-> -- 
-> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-> 
-> In personal conversations with technical people, I call myself a hacker. But
-> when I'm talking to journalists I just say "programmer" or something like that.
->                                 -- Linus Torvalds
-> 
+ Regressions in current branch:
+
+ arch/sh/kernel/dwarf.c:107:26: error: 'dwarf_frame_reg' defined but not used [-Werror=unused-function]
+ arch/sh/kernel/dwarf.c:1209:0: error: unterminated argument list invoking macro "WARN_ON"
+ arch/sh/kernel/dwarf.c:226:12: error: 'dwarf_read_encoded_value' defined but not used [-Werror=unused-function]
+ arch/sh/kernel/dwarf.c:306:26: error: 'dwarf_lookup_cie' defined but not used [-Werror=unused-function]
+ arch/sh/kernel/dwarf.c:38:27: error: 'dwarf_frame_cachep' defined but not used [-Werror=unused-variable]
+ arch/sh/kernel/dwarf.c:399:12: error: 'dwarf_cfa_execute_insns' defined but not used [-Werror=unused-function]
+ arch/sh/kernel/dwarf.c:41:27: error: 'dwarf_reg_cachep' defined but not used [-Werror=unused-variable]
+ arch/sh/kernel/dwarf.c:580:22: error: unused variable 'frame' [-Werror=unused-variable]
+ arch/sh/kernel/dwarf.c:581:20: error: unused variable 'cie' [-Werror=unused-variable]
+ arch/sh/kernel/dwarf.c:582:20: error: unused variable 'fde' [-Werror=unused-variable]
+ arch/sh/kernel/dwarf.c:583:20: error: unused variable 'reg' [-Werror=unused-variable]
+ arch/sh/kernel/dwarf.c:584:16: error: unused variable 'addr' [-Werror=unused-variable]
+ arch/sh/kernel/dwarf.c:622:3: error: expected ';' at end of input
+ arch/sh/kernel/dwarf.c:622:3: error: expected declaration or statement at end of input
+ arch/sh/kernel/dwarf.c:622:3: error: 'WARN_ON' undeclared (first use in this function); did you mean 'WMARK_LOW'?
+
+Pushing to my for-next branch should kick off another run. Let's see
+if it reports that again. Unless someone knows why that happened?
+
+-- Steve
+
+
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/rostedt/linux-trace.git
+for-next
+
+Head SHA1: 92b9de3e574bd874188a4e27a8830bb901a08ef8
+
+
+Steven Rostedt (VMware) (5):
+      string.h: Add str_has_prefix() helper function
+      tracing: Use str_has_prefix() helper for histogram code
+      tracing: Use str_has_prefix() instead of using fixed sizes
+      tracing: Have the historgram use the result of str_has_prefix() for len of prefix
+      tracing: Use the return of str_has_prefix() to remove open coded numbers
+
+----
+ include/linux/string.h           | 20 ++++++++++++++++++++
+ kernel/trace/trace.c             |  8 +++++---
+ kernel/trace/trace_events.c      |  2 +-
+ kernel/trace/trace_events_hist.c | 35 ++++++++++++++++++-----------------
+ kernel/trace/trace_probe.c       | 17 +++++++++--------
+ kernel/trace/trace_stack.c       |  6 ++++--
+ 6 files changed, 57 insertions(+), 31 deletions(-)
