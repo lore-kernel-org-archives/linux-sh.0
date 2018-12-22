@@ -1,73 +1,56 @@
-From: Mike Rapoport <rppt@linux.ibm.com>
-Date: Thu, 06 Dec 2018 21:30:27 +0000
-Subject: Re: [PATCH v2 5/6] arch: simplify several early memory allocations
-Message-Id: <20181206213026.GA7479@rapoport-lnx>
+From: Steven Rostedt <rostedt@goodmis.org>
+Date: Sat, 22 Dec 2018 16:20:11 +0000
+Subject: [for-next][PATCH 4/5] tracing: Have the historgram use the result of str_has_prefix() for len of pre
+Message-Id: <20181222162856.972056232@goodmis.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1543852035-26634-1-git-send-email-rppt@linux.ibm.com>
- <1543852035-26634-6-git-send-email-rppt@linux.ibm.com>
- <20181203162908.GB4244@ravnborg.org>
- <20181203164920.GB26700@rapoport-lnx>
- <20181206180826.GB19166@ravnborg.org>
-In-Reply-To: <20181206180826.GB19166@ravnborg.org>
+References: <20181222162007.697862256@goodmis.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sam Ravnborg <sam@ravnborg.org>
-Cc: Michal Hocko <mhocko@suse.com>, linux-sh@vger.kernel.org, Benjamin Herrenschmidt <benh@kernel.crashing.org>, linux-mm@kvack.org, Rich Felker <dalias@libc.org>, Paul Mackerras <paulus@samba.org>, sparclinux@vger.kernel.org, Vincent Chen <deanbo422@gmail.com>, Jonas Bonn <jonas@southpole.se>, linux-c6x-dev@linux-c6x.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Michael Ellerman <mpe@ellerman.id.au>, Russell King <linux@armlinux.org.uk>, Mark Salter <msalter@redhat.com>, Arnd Bergmann <arnd@arndb.de>, Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>, openrisc@lists.librecores.org, Greentime Hu <green.hu@gmail.com>, Stafford Horne <shorne@gmail.com>, Guan Xuetao <gxt@pku.edu.cn>, linux-arm-kernel@lists.infradead.org, Michal Simek <monstr@monstr.eu>, linux-kernel@vger.kernel.org, Andrew Morton <akpm@linux-foundation.org>, linuxppc-dev@lists.ozlabs.org, "David S. Miller" <davem@davemloft.net>
+To: linux-kernel@vger.kernel.org
+Cc: Ingo Molnar <mingo@kernel.org>, Andrew Morton <akpm@linux-foundation.org>, Joe Perches <joe@perches.com>, Namhyung Kim <namhyung@kernel.org>, Linus Torvalds <torvalds@linux-foundation.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, Tom Zanussi <zanussi@kernel.org>
 
-On Thu, Dec 06, 2018 at 07:08:26PM +0100, Sam Ravnborg wrote:
-> On Mon, Dec 03, 2018 at 06:49:21PM +0200, Mike Rapoport wrote:
-> > On Mon, Dec 03, 2018 at 05:29:08PM +0100, Sam Ravnborg wrote:
-> > > Hi Mike.
-> > > 
-> > > > index c37955d..2a17665 100644
-> > > > --- a/arch/sparc/kernel/prom_64.c
-> > > > +++ b/arch/sparc/kernel/prom_64.c
-> > > > @@ -34,16 +34,13 @@
-> > > >  
-> > > >  void * __init prom_early_alloc(unsigned long size)
-> > > >  {
-> > > > -	unsigned long paddr = memblock_phys_alloc(size, SMP_CACHE_BYTES);
-> > > > -	void *ret;
-> > > > +	void *ret = memblock_alloc(size, SMP_CACHE_BYTES);
-> > > >  
-> > > > -	if (!paddr) {
-> > > > +	if (!ret) {
-> > > >  		prom_printf("prom_early_alloc(%lu) failed\n", size);
-> > > >  		prom_halt();
-> > > >  	}
-> > > >  
-> > > > -	ret = __va(paddr);
-> > > > -	memset(ret, 0, size);
-> > > >  	prom_early_allocated += size;
-> > > >  
-> > > >  	return ret;
-> > > 
-> > > memblock_alloc() calls memblock_alloc_try_nid().
-> > > And if allocation fails then memblock_alloc_try_nid() calls panic().
-> > > So will we ever hit the prom_halt() code?
-> > 
-> > memblock_phys_alloc_try_nid() also calls panic if an allocation fails. So
-> > in either case we never reach prom_halt() code.
-> 
-> So we have code here we never reach - not nice.
-> If the idea is to avoid relying on the panic inside memblock_alloc() then
-> maybe replace it with a variant that do not call panic?
-> To make it clear what happens.
+From: "Steven Rostedt (VMware)" <rostedt@goodmis.org>
 
-My plan is to completely remove memblock variants that call panic() and
-make the callers check the return value.
+As str_has_prefix() returns the length on match, we can use that for the
+updating of the string pointer instead of recalculating the prefix size.
 
-I've started to work on it, but with the holidays it progresses slower than
-I'd like to.
+Cc: Tom Zanussi  <zanussi@kernel.org>
+Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
+---
+ kernel/trace/trace_events_hist.c | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
 
-Since the code here was unreachable for several year, a few more weeks
-won't make real difference so I'd prefer to keep the variant with panic()
-for now. 
+diff --git a/kernel/trace/trace_events_hist.c b/kernel/trace/trace_events_hist.c
+index 0d878dcd1e4b..449d90cfa151 100644
+--- a/kernel/trace/trace_events_hist.c
++++ b/kernel/trace/trace_events_hist.c
+@@ -4342,12 +4342,13 @@ static int parse_actions(struct hist_trigger_data *hist_data)
+ 	unsigned int i;
+ 	int ret = 0;
+ 	char *str;
++	int len;
  
-> 	Sam
-> 
-
+ 	for (i = 0; i < hist_data->attrs->n_actions; i++) {
+ 		str = hist_data->attrs->action_str[i];
+ 
+-		if (str_has_prefix(str, "onmatch(")) {
+-			char *action_str = str + sizeof("onmatch(") - 1;
++		if ((len = str_has_prefix(str, "onmatch("))) {
++			char *action_str = str + len;
+ 
+ 			data = onmatch_parse(tr, action_str);
+ 			if (IS_ERR(data)) {
+@@ -4355,8 +4356,8 @@ static int parse_actions(struct hist_trigger_data *hist_data)
+ 				break;
+ 			}
+ 			data->fn = action_trace;
+-		} else if (str_has_prefix(str, "onmax(")) {
+-			char *action_str = str + sizeof("onmax(") - 1;
++		} else if ((len = str_has_prefix(str, "onmax("))) {
++			char *action_str = str + len;
+ 
+ 			data = onmax_parse(action_str);
+ 			if (IS_ERR(data)) {
 -- 
-Sincerely yours,
-Mike.
+2.19.2
