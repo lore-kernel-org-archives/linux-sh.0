@@ -1,96 +1,124 @@
-From: Rich Felker <dalias@libc.org>
-Date: Mon, 10 Dec 2018 20:30:36 +0000
-Subject: Re: [PATCH v3 0/3] sh: system call table generation support
-Message-Id: <20181210203036.GM23599@brightrain.aerifal.cx>
+From: Steven Rostedt <rostedt@goodmis.org>
+Date: Sat, 22 Dec 2018 16:20:09 +0000
+Subject: [for-next][PATCH 2/5] tracing: Use str_has_prefix() helper for histogram code
+Message-Id: <20181222162856.666843139@goodmis.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1542169930-24118-1-git-send-email-firoz.khan@linaro.org>
- <CALxhOnis61eCGyS22e0_s5PLOimsNX+mhgMa_-enLWQ=EarBfg@mail.gmail.com>
-In-Reply-To: <CALxhOnis61eCGyS22e0_s5PLOimsNX+mhgMa_-enLWQ=EarBfg@mail.gmail.com>
+References: <20181222162007.697862256@goodmis.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Firoz Khan <firoz.khan@linaro.org>
-Cc: linux-sh@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Philippe Ombredanne <pombredanne@nexb.com>, Thomas Gleixner <tglx@linutronix.de>, Kate Stewart <kstewart@linuxfoundation.org>, y2038 Mailman List <y2038@lists.linaro.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Linux-Arch <linux-arch@vger.kernel.org>, Arnd Bergmann <arnd@arndb.de>, Deepa Dinamani <deepa.kernel@gmail.com>, Marcin Juszkiewicz <marcin.juszkiewicz@linaro.org>
+To: linux-kernel@vger.kernel.org
+Cc: Ingo Molnar <mingo@kernel.org>, Andrew Morton <akpm@linux-foundation.org>, Joe Perches <joe@perches.com>, Namhyung Kim <namhyung@kernel.org>, Linus Torvalds <torvalds@linux-foundation.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, Tom Zanussi <zanussi@linux.intel.com>
 
-On Mon, Nov 19, 2018 at 10:38:20AM +0530, Firoz Khan wrote:
-> On Wed, 14 Nov 2018 at 10:02, Firoz Khan <firoz.khan@linaro.org> wrote:
-> >
-> > The purpose of this patch series is, we can easily
-> > add/modify/delete system call table support by cha-
-> > nging entry in syscall.tbl file instead of manually
-> > changing many files. The other goal is to unify the
-> > system call table generation support implementation
-> > across all the architectures.
-> >
-> > The system call tables are in different format in
-> > all architecture. It will be difficult to manually
-> > add, modify or delete the system calls in the resp-
-> > ective files manually. To make it easy by keeping a
-> > script and which'll generate uapi header file and
-> > syscall table file.
-> >
-> > syscall.tbl contains the list of available system
-> > calls along with system call number and correspond-
-> > ing entry point. Add a new system call in this arch-
-> > itecture will be possible by adding new entry in
-> > the syscall.tbl file.
-> >
-> > Adding a new table entry consisting of:
-> >         - System call number.
-> >         - ABI.
-> >         - System call name.
-> >         - Entry point name.
-> >
-> > Please note, this support is only available for 32-bit
-> > kernel, not 64-bit kernel. As I came across the 64-bit
-> > kernel is not active for long time.
-> >
-> > ARM, s390 and x86 architecuture does exist the sim-
-> > ilar support. I leverage their implementation to come
-> > up with a generic solution.
-> >
-> > I have done the same support for work for alpha, ia64,
-> > m68k, microblaze, mips, parisc, powerpc, sparc, and
-> > xtensa. Below mentioned git repository contains more
-> > details about the workflow.
-> >
-> > https://github.com/frzkhn/system_call_table_generator/
-> >
-> > Finally, this is the ground work to solve the Y2038
-> > issue. We need to add two dozen of system calls to solve
-> > Y2038 issue. So this patch series will help to add new
-> > system calls easily by adding new entry in the syscall-
-> > .tbl.
-> >
-> > Changes since v2:
-> >  - changed from generic-y to generated-y in Kbuild.
-> >
-> > Changes since v1:
-> >  - optimized/updated the syscall table generation
-> >    scripts.
-> >  - fixed all mixed indentation issues in syscall.tbl.
-> >  - added "comments" in syscall.tbl.
-> >
-> > Firoz Khan (3):
-> >   sh: add __NR_syscalls along with NR_syscalls
-> >   sh: add system call table generation support
-> >   sh: generate uapi header and syscall table header files
-> 
-> Gentle reminder!
-> 
-> Could someone review this patch series. I haven't received any
-> feedback till now.
+From: "Steven Rostedt (VMware)" <rostedt@goodmis.org>
 
-I'm way behind, but fine with it going upstream via whatever tree is
-appropriate. I think Arnd will take care of it.
+The tracing histogram code contains a lot of instances of the construct:
 
-Acked-by: Rich Felker <dalias@libc.org>
+ strncmp(str, "const", sizeof("const") - 1)
 
-> FYI, this support is only available for 32-bit kernel, not 64-bit
-> kernel. As I came across the 64-bit kernel is not active for long time.
+This can be prone to bugs due to typos or bad cut and paste. Use the
+str_has_prefix() helper macro instead that removes the need for having two
+copies of the constant string.
 
-Support for 64-bit, which AFAIK barely ever existed in hardware, was
-removed from GCC a long time ago. At some point it needs to be removed
-from the kernel too, and doing so should allow a lot of cleanup.
+Cc: Tom Zanussi <zanussi@linux.intel.com>
+Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
+---
+ kernel/trace/trace_events_hist.c | 28 ++++++++++++++--------------
+ 1 file changed, 14 insertions(+), 14 deletions(-)
 
-Rich
+diff --git a/kernel/trace/trace_events_hist.c b/kernel/trace/trace_events_hist.c
+index c5448c103770..9d590138f870 100644
+--- a/kernel/trace/trace_events_hist.c
++++ b/kernel/trace/trace_events_hist.c
+@@ -1881,8 +1881,8 @@ static int parse_action(char *str, struct hist_trigger_attrs *attrs)
+ 	if (attrs->n_actions >= HIST_ACTIONS_MAX)
+ 		return ret;
+ 
+-	if ((strncmp(str, "onmatch(", sizeof("onmatch(") - 1) = 0) ||
+-	    (strncmp(str, "onmax(", sizeof("onmax(") - 1) = 0)) {
++	if ((str_has_prefix(str, "onmatch(")) ||
++	    (str_has_prefix(str, "onmax("))) {
+ 		attrs->action_str[attrs->n_actions] = kstrdup(str, GFP_KERNEL);
+ 		if (!attrs->action_str[attrs->n_actions]) {
+ 			ret = -ENOMEM;
+@@ -1899,34 +1899,34 @@ static int parse_assignment(char *str, struct hist_trigger_attrs *attrs)
+ {
+ 	int ret = 0;
+ 
+-	if ((strncmp(str, "key=", sizeof("key=") - 1) = 0) ||
+-	    (strncmp(str, "keys=", sizeof("keys=") - 1) = 0)) {
++	if ((str_has_prefix(str, "key=")) ||
++	    (str_has_prefix(str, "keys="))) {
+ 		attrs->keys_str = kstrdup(str, GFP_KERNEL);
+ 		if (!attrs->keys_str) {
+ 			ret = -ENOMEM;
+ 			goto out;
+ 		}
+-	} else if ((strncmp(str, "val=", sizeof("val=") - 1) = 0) ||
+-		 (strncmp(str, "vals=", sizeof("vals=") - 1) = 0) ||
+-		 (strncmp(str, "values=", sizeof("values=") - 1) = 0)) {
++	} else if ((str_has_prefix(str, "val=")) ||
++		   (str_has_prefix(str, "vals=")) ||
++		   (str_has_prefix(str, "values="))) {
+ 		attrs->vals_str = kstrdup(str, GFP_KERNEL);
+ 		if (!attrs->vals_str) {
+ 			ret = -ENOMEM;
+ 			goto out;
+ 		}
+-	} else if (strncmp(str, "sort=", sizeof("sort=") - 1) = 0) {
++	} else if (str_has_prefix(str, "sort=")) {
+ 		attrs->sort_key_str = kstrdup(str, GFP_KERNEL);
+ 		if (!attrs->sort_key_str) {
+ 			ret = -ENOMEM;
+ 			goto out;
+ 		}
+-	} else if (strncmp(str, "name=", sizeof("name=") - 1) = 0) {
++	} else if (str_has_prefix(str, "name=")) {
+ 		attrs->name = kstrdup(str, GFP_KERNEL);
+ 		if (!attrs->name) {
+ 			ret = -ENOMEM;
+ 			goto out;
+ 		}
+-	} else if (strncmp(str, "clock=", sizeof("clock=") - 1) = 0) {
++	} else if (str_has_prefix(str, "clock=")) {
+ 		strsep(&str, "=");
+ 		if (!str) {
+ 			ret = -EINVAL;
+@@ -1939,7 +1939,7 @@ static int parse_assignment(char *str, struct hist_trigger_attrs *attrs)
+ 			ret = -ENOMEM;
+ 			goto out;
+ 		}
+-	} else if (strncmp(str, "size=", sizeof("size=") - 1) = 0) {
++	} else if (str_has_prefix(str, "size=")) {
+ 		int map_bits = parse_map_size(str);
+ 
+ 		if (map_bits < 0) {
+@@ -3558,7 +3558,7 @@ static struct action_data *onmax_parse(char *str)
+ 	if (!onmax_fn_name || !str)
+ 		goto free;
+ 
+-	if (strncmp(onmax_fn_name, "save", sizeof("save") - 1) = 0) {
++	if (str_has_prefix(onmax_fn_name, "save")) {
+ 		char *params = strsep(&str, ")");
+ 
+ 		if (!params) {
+@@ -4346,7 +4346,7 @@ static int parse_actions(struct hist_trigger_data *hist_data)
+ 	for (i = 0; i < hist_data->attrs->n_actions; i++) {
+ 		str = hist_data->attrs->action_str[i];
+ 
+-		if (strncmp(str, "onmatch(", sizeof("onmatch(") - 1) = 0) {
++		if (str_has_prefix(str, "onmatch(")) {
+ 			char *action_str = str + sizeof("onmatch(") - 1;
+ 
+ 			data = onmatch_parse(tr, action_str);
+@@ -4355,7 +4355,7 @@ static int parse_actions(struct hist_trigger_data *hist_data)
+ 				break;
+ 			}
+ 			data->fn = action_trace;
+-		} else if (strncmp(str, "onmax(", sizeof("onmax(") - 1) = 0) {
++		} else if (str_has_prefix(str, "onmax(")) {
+ 			char *action_str = str + sizeof("onmax(") - 1;
+ 
+ 			data = onmax_parse(action_str);
+-- 
+2.19.2
