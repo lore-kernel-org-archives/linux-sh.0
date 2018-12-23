@@ -1,19 +1,20 @@
-From: Steven Rostedt <rostedt@goodmis.org>
-Date: Sun, 23 Dec 2018 00:55:02 +0000
+From: Namhyung Kim <namhyung@kernel.org>
+Date: Sun, 23 Dec 2018 03:41:20 +0000
 Subject: Re: [for-next][PATCH 0/5] tracing: Add string_has_prefix() and usages
-Message-Id: <20181222195502.3951b626@vmware.local.home>
+Message-Id: <20181223034120.GF11421@danjae.aot.lge.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20181222162007.697862256@goodmis.org>
 In-Reply-To: <20181222162007.697862256@goodmis.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Ingo Molnar <mingo@kernel.org>, Andrew Morton <akpm@linux-foundation.org>, Joe Perches <joe@perches.com>, Namhyung Kim <namhyung@kernel.org>, Linus Torvalds <torvalds@linux-foundation.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
+To: Steven Rostedt <rostedt@goodmis.org>
+Cc: linux-kernel@vger.kernel.org, Ingo Molnar <mingo@kernel.org>, Andrew Morton <akpm@linux-foundation.org>, Joe Perches <joe@perches.com>, Linus Torvalds <torvalds@linux-foundation.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, kernel-team@lge.com
 
-On Sat, 22 Dec 2018 11:20:07 -0500
-Steven Rostedt <rostedt@goodmis.org> wrote:
-
+On Sat, Dec 22, 2018 at 11:20:07AM -0500, Steven Rostedt wrote:
+> I hope everyone is OK with these changes. I pushed to linux-next but I'm
+> willing to change them if there are still issues.
+> 
 > They ran through all my tests, althought zero-day-bot had a weird build
 > regression in sh, that looks totally unrelated:
 > 
@@ -37,12 +38,35 @@ Steven Rostedt <rostedt@goodmis.org> wrote:
 > 
 > Pushing to my for-next branch should kick off another run. Let's see
 > if it reports that again. Unless someone knows why that happened?
+> 
+> 
+>   git://git.kernel.org/pub/scm/linux/kernel/git/rostedt/linux-trace.git
+> for-next
+> 
+> Head SHA1: 92b9de3e574bd874188a4e27a8830bb901a08ef8
+> 
+> 
+> Steven Rostedt (VMware) (5):
+>       string.h: Add str_has_prefix() helper function
+>       tracing: Use str_has_prefix() helper for histogram code
+>       tracing: Use str_has_prefix() instead of using fixed sizes
+>       tracing: Have the historgram use the result of str_has_prefix() for len of prefix
+>       tracing: Use the return of str_has_prefix() to remove open coded numbers
+
+For the series:
+
+Acked-by: Namhyung Kim <namhyung@kernel.org>
+
+Thanks,
+Namhyung
 
 
-FYI,
-
-Zeroday reported back a successful run of my for-next branch, and did
-it again, after I pushed a rebase that added an Acked-by. Thus, I'm
-guessing that the above is a simple fluke.
-
--- Steve
+> 
+> ----
+>  include/linux/string.h           | 20 ++++++++++++++++++++
+>  kernel/trace/trace.c             |  8 +++++---
+>  kernel/trace/trace_events.c      |  2 +-
+>  kernel/trace/trace_events_hist.c | 35 ++++++++++++++++++-----------------
+>  kernel/trace/trace_probe.c       | 17 +++++++++--------
+>  kernel/trace/trace_stack.c       |  6 ++++--
+>  6 files changed, 57 insertions(+), 31 deletions(-)
