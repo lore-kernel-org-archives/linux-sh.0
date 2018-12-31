@@ -1,251 +1,133 @@
-From: Daniel Thompson <daniel.thompson@linaro.org>
-Date: Mon, 03 Dec 2018 16:00:50 +0000
-Subject: Re: [PATCH v6 1/4] kgdb: Remove irq flags from roundup
-Message-Id: <20181203160050.vebvvdiuki2iuczg@holly.lan>
+From: Mike Rapoport <rppt@linux.ibm.com>
+Date: Mon, 31 Dec 2018 09:29:26 +0000
+Subject: [PATCH v4 6/6] arm, s390, unicore32: remove oneliner wrappers for memblock_alloc()
+Message-Id: <1546248566-14910-7-git-send-email-rppt@linux.ibm.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20181127173839.34328-1-dianders@chromium.org>
- <20181127173839.34328-2-dianders@chromium.org>
-In-Reply-To: <20181127173839.34328-2-dianders@chromium.org>
+References: <1546248566-14910-1-git-send-email-rppt@linux.ibm.com>
+In-Reply-To: <1546248566-14910-1-git-send-email-rppt@linux.ibm.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Douglas Anderson <dianders@chromium.org>
-Cc: linux-mips@linux-mips.org, Michal Hocko <mhocko@suse.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, Catalin Marinas <catalin.marinas@arm.com>, Will Deacon <will.deacon@arm.com>, Rich Felker <dalias@libc.org>, Paul Mackerras <paulus@samba.org>, Michael Ellerman <mpe@ellerman.id.au>, "H. Peter Anvin" <hpa@zytor.com>, sparclinux@vger.kernel.org, Stephen Rothwell <sfr@canb.auug.org.au>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-hexagon@vger.kernel.org, x86@kernel.org, Russell King <linux@armlinux.org.uk>, Ingo Molnar <mingo@redhat.com>, kgdb-bugreport@lists.sourceforge.net, James Hogan <jhogan@kernel.org>, linux-snps-arc@lists.infradead.org, Huang Ying <ying.huang@intel.com>, Mike Rapoport <rppt@linux.vnet.ibm.com>, Borislav Petkov <bp@alien8.de>, Thomas Gleixner <tglx@linutronix.de>, linux-arm-kernel@lists.infradead.org, Christophe Leroy <christophe.leroy@c-s.fr>, Vineet Gupta <vgupta@synopsys.com>, linux-kernel@vger.kernel.org, Ralf Baechle <ralf@linux-mips.org>, Richard Kuo <rkuo@codeaurora.org>, Paul Burton <paul.burton@mips.com>, Jason Wessel <jason.wessel@windriver.com>, Andrew Morton <akpm@linux-foundation.org>, linuxppc-dev@lists.ozlabs.org, "David S. Miller" <davem@davemloft.net>
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: Michal Hocko <mhocko@suse.com>, linux-sh@vger.kernel.org, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Heiko Carstens <heiko.carstens@de.ibm.com>, linux-mm@kvack.org, Rich Felker <dalias@libc.org>, Paul Mackerras <paulus@samba.org>, sparclinux@vger.kernel.org, Vincent Chen <deanbo422@gmail.com>, Jonas Bonn <jonas@southpole.se>, linux-s390@vger.kernel.org, linux-c6x-dev@linux-c6x.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Michael Ellerman <mpe@ellerman.id.au>, Russell King <linux@armlinux.org.uk>, Mike Rapoport <rppt@linux.ibm.com>, Mark Salter <msalter@redhat.com>, Arnd Bergmann <arnd@arndb.de>, Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>, openrisc@lists.librecores.org, Greentime Hu <green.hu@gmail.com>, Stafford Horne <shorne@gmail.com>, Guan Xuetao <gxt@pku.edu.cn>, linux-arm-kernel@lists.infradead.org, Michal Simek <monstr@monstr.eu>, linux-kernel@vger.kernel.org, Martin Schwidefsky <schwidefsky@de.ibm.com>, linuxppc-dev@lists.ozlabs.org, "David S. Miller" <davem@davemloft.net>
 
-On Tue, Nov 27, 2018 at 09:38:36AM -0800, Douglas Anderson wrote:
-> The function kgdb_roundup_cpus() was passed a parameter that was
-> documented as:
-> 
-> > the flags that will be used when restoring the interrupts. There is
-> > local_irq_save() call before kgdb_roundup_cpus().
-> 
-> Nobody used those flags.  Anyone who wanted to temporarily turn on
-> interrupts just did local_irq_enable() and local_irq_disable() without
-> looking at them.  So we can definitely remove the flags.
-> 
-> Signed-off-by: Douglas Anderson <dianders@chromium.org>
-> Acked-by: Will Deacon <will.deacon@arm.com>
-> ---
-> 
-> Changes in v6: None
-> Changes in v5: None
-> Changes in v4: None
-> Changes in v3: None
-> Changes in v2:
-> - Removing irq flags separated from fixing lockdep splat.
-> 
->  arch/arc/kernel/kgdb.c     | 2 +-
->  arch/arm/kernel/kgdb.c     | 2 +-
->  arch/arm64/kernel/kgdb.c   | 2 +-
->  arch/hexagon/kernel/kgdb.c | 9 ++-------
->  arch/mips/kernel/kgdb.c    | 2 +-
->  arch/powerpc/kernel/kgdb.c | 2 +-
->  arch/sh/kernel/kgdb.c      | 2 +-
->  arch/sparc/kernel/smp_64.c | 2 +-
->  arch/x86/kernel/kgdb.c     | 9 ++-------
+arm, s390 and unicore32 use oneliner wrappers for memblock_alloc().
+Replace their usage with direct call to memblock_alloc().
 
-Again, please formally Cc: the arch maintainers in the patch header
-(just after your Signed-off-by: if I'm not being explicitly clear).
+Suggested-by: Christoph Hellwig <hch@infradead.org>
+Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
+---
+ arch/arm/mm/mmu.c       | 11 +++--------
+ arch/s390/numa/numa.c   | 10 +---------
+ arch/unicore32/mm/mmu.c | 12 ++++--------
+ 3 files changed, 8 insertions(+), 25 deletions(-)
 
-
-Daniel.
-
->  include/linux/kgdb.h       | 9 ++-------
->  kernel/debug/debug_core.c  | 2 +-
->  11 files changed, 14 insertions(+), 29 deletions(-)
-> 
-> diff --git a/arch/arc/kernel/kgdb.c b/arch/arc/kernel/kgdb.c
-> index 9a3c34af2ae8..0932851028e0 100644
-> --- a/arch/arc/kernel/kgdb.c
-> +++ b/arch/arc/kernel/kgdb.c
-> @@ -197,7 +197,7 @@ static void kgdb_call_nmi_hook(void *ignored)
->  	kgdb_nmicallback(raw_smp_processor_id(), NULL);
->  }
->  
-> -void kgdb_roundup_cpus(unsigned long flags)
-> +void kgdb_roundup_cpus(void)
->  {
->  	local_irq_enable();
->  	smp_call_function(kgdb_call_nmi_hook, NULL, 0);
-> diff --git a/arch/arm/kernel/kgdb.c b/arch/arm/kernel/kgdb.c
-> index caa0dbe3dc61..f21077b077be 100644
-> --- a/arch/arm/kernel/kgdb.c
-> +++ b/arch/arm/kernel/kgdb.c
-> @@ -175,7 +175,7 @@ static void kgdb_call_nmi_hook(void *ignored)
->         kgdb_nmicallback(raw_smp_processor_id(), get_irq_regs());
->  }
->  
-> -void kgdb_roundup_cpus(unsigned long flags)
-> +void kgdb_roundup_cpus(void)
->  {
->         local_irq_enable();
->         smp_call_function(kgdb_call_nmi_hook, NULL, 0);
-> diff --git a/arch/arm64/kernel/kgdb.c b/arch/arm64/kernel/kgdb.c
-> index a20de58061a8..12c339ff6e75 100644
-> --- a/arch/arm64/kernel/kgdb.c
-> +++ b/arch/arm64/kernel/kgdb.c
-> @@ -289,7 +289,7 @@ static void kgdb_call_nmi_hook(void *ignored)
->  	kgdb_nmicallback(raw_smp_processor_id(), get_irq_regs());
->  }
->  
-> -void kgdb_roundup_cpus(unsigned long flags)
-> +void kgdb_roundup_cpus(void)
->  {
->  	local_irq_enable();
->  	smp_call_function(kgdb_call_nmi_hook, NULL, 0);
-> diff --git a/arch/hexagon/kernel/kgdb.c b/arch/hexagon/kernel/kgdb.c
-> index 16c24b22d0b2..012e0e230ac2 100644
-> --- a/arch/hexagon/kernel/kgdb.c
-> +++ b/arch/hexagon/kernel/kgdb.c
-> @@ -119,17 +119,12 @@ void kgdb_arch_set_pc(struct pt_regs *regs, unsigned long pc)
->  
->  /**
->   * kgdb_roundup_cpus - Get other CPUs into a holding pattern
-> - * @flags: Current IRQ state
->   *
->   * On SMP systems, we need to get the attention of the other CPUs
->   * and get them be in a known state.  This should do what is needed
->   * to get the other CPUs to call kgdb_wait(). Note that on some arches,
->   * the NMI approach is not used for rounding up all the CPUs. For example,
-> - * in case of MIPS, smp_call_function() is used to roundup CPUs. In
-> - * this case, we have to make sure that interrupts are enabled before
-> - * calling smp_call_function(). The argument to this function is
-> - * the flags that will be used when restoring the interrupts. There is
-> - * local_irq_save() call before kgdb_roundup_cpus().
-> + * in case of MIPS, smp_call_function() is used to roundup CPUs.
->   *
->   * On non-SMP systems, this is not called.
->   */
-> @@ -139,7 +134,7 @@ static void hexagon_kgdb_nmi_hook(void *ignored)
->  	kgdb_nmicallback(raw_smp_processor_id(), get_irq_regs());
->  }
->  
-> -void kgdb_roundup_cpus(unsigned long flags)
-> +void kgdb_roundup_cpus(void)
->  {
->  	local_irq_enable();
->  	smp_call_function(hexagon_kgdb_nmi_hook, NULL, 0);
-> diff --git a/arch/mips/kernel/kgdb.c b/arch/mips/kernel/kgdb.c
-> index eb6c0d582626..2b05effc17b4 100644
-> --- a/arch/mips/kernel/kgdb.c
-> +++ b/arch/mips/kernel/kgdb.c
-> @@ -219,7 +219,7 @@ static void kgdb_call_nmi_hook(void *ignored)
->  	set_fs(old_fs);
->  }
->  
-> -void kgdb_roundup_cpus(unsigned long flags)
-> +void kgdb_roundup_cpus(void)
->  {
->  	local_irq_enable();
->  	smp_call_function(kgdb_call_nmi_hook, NULL, 0);
-> diff --git a/arch/powerpc/kernel/kgdb.c b/arch/powerpc/kernel/kgdb.c
-> index 59c578f865aa..b0e804844be0 100644
-> --- a/arch/powerpc/kernel/kgdb.c
-> +++ b/arch/powerpc/kernel/kgdb.c
-> @@ -124,7 +124,7 @@ static int kgdb_call_nmi_hook(struct pt_regs *regs)
->  }
->  
->  #ifdef CONFIG_SMP
-> -void kgdb_roundup_cpus(unsigned long flags)
-> +void kgdb_roundup_cpus(void)
->  {
->  	smp_send_debugger_break();
->  }
-> diff --git a/arch/sh/kernel/kgdb.c b/arch/sh/kernel/kgdb.c
-> index 4f04c6638a4d..cc57630f6bf2 100644
-> --- a/arch/sh/kernel/kgdb.c
-> +++ b/arch/sh/kernel/kgdb.c
-> @@ -319,7 +319,7 @@ static void kgdb_call_nmi_hook(void *ignored)
->  	kgdb_nmicallback(raw_smp_processor_id(), get_irq_regs());
->  }
->  
-> -void kgdb_roundup_cpus(unsigned long flags)
-> +void kgdb_roundup_cpus(void)
->  {
->  	local_irq_enable();
->  	smp_call_function(kgdb_call_nmi_hook, NULL, 0);
-> diff --git a/arch/sparc/kernel/smp_64.c b/arch/sparc/kernel/smp_64.c
-> index 4792e08ad36b..f45d876983f1 100644
-> --- a/arch/sparc/kernel/smp_64.c
-> +++ b/arch/sparc/kernel/smp_64.c
-> @@ -1014,7 +1014,7 @@ void flush_dcache_page_all(struct mm_struct *mm, struct page *page)
->  }
->  
->  #ifdef CONFIG_KGDB
-> -void kgdb_roundup_cpus(unsigned long flags)
-> +void kgdb_roundup_cpus(void)
->  {
->  	smp_cross_call(&xcall_kgdb_capture, 0, 0, 0);
->  }
-> diff --git a/arch/x86/kernel/kgdb.c b/arch/x86/kernel/kgdb.c
-> index 8e36f249646e..ac6291a4178d 100644
-> --- a/arch/x86/kernel/kgdb.c
-> +++ b/arch/x86/kernel/kgdb.c
-> @@ -422,21 +422,16 @@ static void kgdb_disable_hw_debug(struct pt_regs *regs)
->  #ifdef CONFIG_SMP
->  /**
->   *	kgdb_roundup_cpus - Get other CPUs into a holding pattern
-> - *	@flags: Current IRQ state
->   *
->   *	On SMP systems, we need to get the attention of the other CPUs
->   *	and get them be in a known state.  This should do what is needed
->   *	to get the other CPUs to call kgdb_wait(). Note that on some arches,
->   *	the NMI approach is not used for rounding up all the CPUs. For example,
-> - *	in case of MIPS, smp_call_function() is used to roundup CPUs. In
-> - *	this case, we have to make sure that interrupts are enabled before
-> - *	calling smp_call_function(). The argument to this function is
-> - *	the flags that will be used when restoring the interrupts. There is
-> - *	local_irq_save() call before kgdb_roundup_cpus().
-> + *	in case of MIPS, smp_call_function() is used to roundup CPUs.
->   *
->   *	On non-SMP systems, this is not called.
->   */
-> -void kgdb_roundup_cpus(unsigned long flags)
-> +void kgdb_roundup_cpus(void)
->  {
->  	apic->send_IPI_allbutself(APIC_DM_NMI);
->  }
-> diff --git a/include/linux/kgdb.h b/include/linux/kgdb.h
-> index e465bb15912d..05e5b2eb0d32 100644
-> --- a/include/linux/kgdb.h
-> +++ b/include/linux/kgdb.h
-> @@ -178,21 +178,16 @@ kgdb_arch_handle_exception(int vector, int signo, int err_code,
->  
->  /**
->   *	kgdb_roundup_cpus - Get other CPUs into a holding pattern
-> - *	@flags: Current IRQ state
->   *
->   *	On SMP systems, we need to get the attention of the other CPUs
->   *	and get them into a known state.  This should do what is needed
->   *	to get the other CPUs to call kgdb_wait(). Note that on some arches,
->   *	the NMI approach is not used for rounding up all the CPUs. For example,
-> - *	in case of MIPS, smp_call_function() is used to roundup CPUs. In
-> - *	this case, we have to make sure that interrupts are enabled before
-> - *	calling smp_call_function(). The argument to this function is
-> - *	the flags that will be used when restoring the interrupts. There is
-> - *	local_irq_save() call before kgdb_roundup_cpus().
-> + *	in case of MIPS, smp_call_function() is used to roundup CPUs.
->   *
->   *	On non-SMP systems, this is not called.
->   */
-> -extern void kgdb_roundup_cpus(unsigned long flags);
-> +extern void kgdb_roundup_cpus(void);
->  
->  /**
->   *	kgdb_arch_set_pc - Generic call back to the program counter
-> diff --git a/kernel/debug/debug_core.c b/kernel/debug/debug_core.c
-> index 65c0f1363788..f3cadda45f07 100644
-> --- a/kernel/debug/debug_core.c
-> +++ b/kernel/debug/debug_core.c
-> @@ -593,7 +593,7 @@ static int kgdb_cpu_enter(struct kgdb_state *ks, struct pt_regs *regs,
->  
->  	/* Signal the other CPUs to enter kgdb_wait() */
->  	else if ((!kgdb_single_step) && kgdb_do_roundup)
-> -		kgdb_roundup_cpus(flags);
-> +		kgdb_roundup_cpus();
->  #endif
->  
->  	/*
-> -- 
-> 2.20.0.rc0.387.gc7a69e6b6c-goog
-> 
+diff --git a/arch/arm/mm/mmu.c b/arch/arm/mm/mmu.c
+index 0a04c9a5..57de0dd 100644
+--- a/arch/arm/mm/mmu.c
++++ b/arch/arm/mm/mmu.c
+@@ -719,14 +719,9 @@ EXPORT_SYMBOL(phys_mem_access_prot);
+ 
+ #define vectors_base()	(vectors_high() ? 0xffff0000 : 0)
+ 
+-static void __init *early_alloc_aligned(unsigned long sz, unsigned long align)
+-{
+-	return memblock_alloc(sz, align);
+-}
+-
+ static void __init *early_alloc(unsigned long sz)
+ {
+-	return early_alloc_aligned(sz, sz);
++	return memblock_alloc(sz, sz);
+ }
+ 
+ static void *__init late_alloc(unsigned long sz)
+@@ -998,7 +993,7 @@ void __init iotable_init(struct map_desc *io_desc, int nr)
+ 	if (!nr)
+ 		return;
+ 
+-	svm = early_alloc_aligned(sizeof(*svm) * nr, __alignof__(*svm));
++	svm = memblock_alloc(sizeof(*svm) * nr, __alignof__(*svm));
+ 
+ 	for (md = io_desc; nr; md++, nr--) {
+ 		create_mapping(md);
+@@ -1020,7 +1015,7 @@ void __init vm_reserve_area_early(unsigned long addr, unsigned long size,
+ 	struct vm_struct *vm;
+ 	struct static_vm *svm;
+ 
+-	svm = early_alloc_aligned(sizeof(*svm), __alignof__(*svm));
++	svm = memblock_alloc(sizeof(*svm), __alignof__(*svm));
+ 
+ 	vm = &svm->vm;
+ 	vm->addr = (void *)addr;
+diff --git a/arch/s390/numa/numa.c b/arch/s390/numa/numa.c
+index 2281a88..2d1271e 100644
+--- a/arch/s390/numa/numa.c
++++ b/arch/s390/numa/numa.c
+@@ -58,14 +58,6 @@ EXPORT_SYMBOL(__node_distance);
+ int numa_debug_enabled;
+ 
+ /*
+- * alloc_node_data() - Allocate node data
+- */
+-static __init pg_data_t *alloc_node_data(void)
+-{
+-	return memblock_alloc(sizeof(pg_data_t), 8);
+-}
+-
+-/*
+  * numa_setup_memory() - Assign bootmem to nodes
+  *
+  * The memory is first added to memblock without any respect to nodes.
+@@ -101,7 +93,7 @@ static void __init numa_setup_memory(void)
+ 
+ 	/* Allocate and fill out node_data */
+ 	for (nid = 0; nid < MAX_NUMNODES; nid++)
+-		NODE_DATA(nid) = alloc_node_data();
++		NODE_DATA(nid) = memblock_alloc(sizeof(pg_data_t), 8);
+ 
+ 	for_each_online_node(nid) {
+ 		unsigned long start_pfn, end_pfn;
+diff --git a/arch/unicore32/mm/mmu.c b/arch/unicore32/mm/mmu.c
+index 50d8c1a..a402192 100644
+--- a/arch/unicore32/mm/mmu.c
++++ b/arch/unicore32/mm/mmu.c
+@@ -141,16 +141,12 @@ static void __init build_mem_type_table(void)
+ 
+ #define vectors_base()	(vectors_high() ? 0xffff0000 : 0)
+ 
+-static void __init *early_alloc(unsigned long sz)
+-{
+-	return memblock_alloc(sz, sz);
+-}
+-
+ static pte_t * __init early_pte_alloc(pmd_t *pmd, unsigned long addr,
+ 		unsigned long prot)
+ {
+ 	if (pmd_none(*pmd)) {
+-		pte_t *pte = early_alloc(PTRS_PER_PTE * sizeof(pte_t));
++		pte_t *pte = memblock_alloc(PTRS_PER_PTE * sizeof(pte_t),
++					    PTRS_PER_PTE * sizeof(pte_t));
+ 		__pmd_populate(pmd, __pa(pte) | prot);
+ 	}
+ 	BUG_ON(pmd_bad(*pmd));
+@@ -352,7 +348,7 @@ static void __init devicemaps_init(void)
+ 	/*
+ 	 * Allocate the vector page early.
+ 	 */
+-	vectors = early_alloc(PAGE_SIZE);
++	vectors = memblock_alloc(PAGE_SIZE, PAGE_SIZE);
+ 
+ 	for (addr = VMALLOC_END; addr; addr += PGDIR_SIZE)
+ 		pmd_clear(pmd_off_k(addr));
+@@ -429,7 +425,7 @@ void __init paging_init(void)
+ 	top_pmd = pmd_off_k(0xffff0000);
+ 
+ 	/* allocate the zero page. */
+-	zero_page = early_alloc(PAGE_SIZE);
++	zero_page = memblock_alloc(PAGE_SIZE, PAGE_SIZE);
+ 
+ 	bootmem_init();
+ 
+-- 
+2.7.4
