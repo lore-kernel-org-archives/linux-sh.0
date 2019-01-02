@@ -1,37 +1,146 @@
-From: James Bottomley <James.Bottomley@HansenPartnership.com>
-Date: Fri, 18 Jan 2019 17:45:18 +0000
-Subject: Re: [PATCH v2 00/29] y2038: add time64 syscalls
-Message-Id: <1547833518.2794.36.camel@HansenPartnership.com>
+From: Firoz Khan <firoz.khan@linaro.org>
+Date: Wed, 02 Jan 2019 15:49:25 +0000
+Subject: [PATCH 2/2] sh: generate uapi header and syscall table header files
+Message-Id: <1546443445-21075-3-git-send-email-firoz.khan@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190118161835.2259170-1-arnd@arndb.de>
-         <be3863ae-d903-8e9e-5e6c-e4a58fac189d@blastwave.org>
-In-Reply-To: <be3863ae-d903-8e9e-5e6c-e4a58fac189d@blastwave.org>
+References: <1546443445-21075-1-git-send-email-firoz.khan@linaro.org>
+In-Reply-To: <1546443445-21075-1-git-send-email-firoz.khan@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Dennis Clarke <dclarke@blastwave.org>, Arnd Bergmann <arnd@arndb.de>, y2038@lists.linaro.org, linux-api@vger.kernel.org, linux-kernel@vger.kernel.org, linux-arch@vger.kernel.org
-Cc: mattst88@gmail.com, linux@armlinux.org.uk, catalin.marinas@arm.com, will.deacon@arm.com, tony.luck@intel.com, fenghua.yu@intel.com, geert@linux-m68k.org, monstr@monstr.eu, paul.burton@mips.com, deller@gmx.de, benh@kernel.crashing.org, mpe@ellerman.id.au, schwidefsky@de.ibm.com, heiko.carstens@de.ibm.com, dalias@libc.org, davem@davemloft.net, luto@kernel.org, tglx@linutronix.de, mingo@redhat.com, hpa@zytor.com, x86@kernel.org, jcmvbkbc@gmail.com, akpm@linux-foundation.org, deepa.kernel@gmail.com, ebiederm@xmission.com, firoz.khan@linaro.org, linux-alpha@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Andrew Morton <akpm@linux-foundation.org>, Simon Horman <horms+renesas@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, linux-sh@vger.kernel.org, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Philippe Ombredanne <pombredanne@nexb.com>, Thomas Gleixner <tglx@linutronix.de>, Kate Stewart <kstewart@linuxfoundation.org>
+Cc: y2038@lists.linaro.org, linux-kernel@vger.kernel.org, linux-arch@vger.kernel.org, arnd@arndb.de, deepa.kernel@gmail.com, marcin.juszkiewicz@linaro.org, firoz.khan@linaro.org
 
-On Fri, 2019-01-18 at 11:57 -0500, Dennis Clarke wrote:
-> On 1/18/19 11:18 AM, Arnd Bergmann wrote:
-> > This is a minor update of the patches I posted last week, I
-> > would like to add this into linux-next now, but would still do
-> > changes if there are concerns about the contents. The first
-> > version did not see a lot of replies, which could mean that
-> > either everyone is happy with it, or that it was largely ignored.
-> > 
-> > See also the article at https://lwn.net/Articles/776435/.
-> 
-> I would be happy to read "Approaching the kernel year-2038 end game"
-> however it is behind a pay wall.  Perhaps it may be best to just
-> host interesting articles about open source idea elsewhere.
+Unified system call table generation script must be run to
+generate unistd_32.h and syscall_table.h files. This patch
+will have changes which will invokes the script.
 
-Hey, this is an unfair characterization: lwn.net operates an early
-access subscription model, so you can't read the above for 14 days
-after publication without paying for an lwn.net subscription, but by
-the time these patches are upstream there will be no paywall because it
-will expire on 24 January and that URL will then be readable by all. 
-That makes LWN.net a nice, reliable resource for us while still
-supporting some business model to keep it going.
+This patch will generate unistd_32.h and syscall_table.h
+files by the syscall table generation script invoked by
+sh/Makefile and the generated files against the removed
+files must be identical.
 
-James
+The generated uapi header file will be included in uapi/-
+asm/unistd.h and generated system call table header file
+will be included by kernel/syscall_32.S file.
+
+Signed-off-by: Firoz Khan <firoz.khan@linaro.org>
+---
+ arch/sh/kernel/syscalls/Makefile      | 11 +++++++++--
+ arch/sh/kernel/syscalls/syscallhdr.sh | 36 -----------------------------------
+ arch/sh/kernel/syscalls/syscalltbl.sh | 32 -------------------------------
+ 3 files changed, 9 insertions(+), 70 deletions(-)
+ delete mode 100644 arch/sh/kernel/syscalls/syscallhdr.sh
+ delete mode 100644 arch/sh/kernel/syscalls/syscalltbl.sh
+
+diff --git a/arch/sh/kernel/syscalls/Makefile b/arch/sh/kernel/syscalls/Makefile
+index 659faef..75c7421 100644
+--- a/arch/sh/kernel/syscalls/Makefile
++++ b/arch/sh/kernel/syscalls/Makefile
+@@ -6,8 +6,9 @@ _dummy := $(shell [ -d '$(uapi)' ] || mkdir -p '$(uapi)')	\
+ 	  $(shell [ -d '$(kapi)' ] || mkdir -p '$(kapi)')
+ 
+ syscall := $(srctree)/$(src)/syscall.tbl
+-syshdr := $(srctree)/$(src)/syscallhdr.sh
+-systbl := $(srctree)/$(src)/syscalltbl.sh
++syshdr := $(srctree)/scripts/syscallhdr.sh
++sysnr := $(srctree)/scripts/syscallnr.sh
++systbl := $(srctree)/scripts/syscalltbl.sh
+ 
+ quiet_cmd_syshdr = SYSHDR  $@
+       cmd_syshdr = $(CONFIG_SHELL) '$(syshdr)' '$<' '$@'	\
+@@ -15,6 +16,12 @@ quiet_cmd_syshdr = SYSHDR  $@
+ 		   '$(syshdr_pfx_$(basetarget))'		\
+ 		   '$(syshdr_offset_$(basetarget))'
+ 
++quiet_cmd_sysnr = SYSNR  $@
++      cmd_sysnr = $(CONFIG_SHELL) '$(sysnr)' '$<' '$@'		\
++		  '$(sysnr_abis_$(basetarget))'			\
++		  '$(sysnr_pfx_$(basetarget))'			\
++		  '$(sysnr_offset_$(basetarget))'
++
+ quiet_cmd_systbl = SYSTBL  $@
+       cmd_systbl = $(CONFIG_SHELL) '$(systbl)' '$<' '$@'	\
+ 		   '$(systbl_abis_$(basetarget))'		\
+diff --git a/arch/sh/kernel/syscalls/syscallhdr.sh b/arch/sh/kernel/syscalls/syscallhdr.sh
+deleted file mode 100644
+index 1de0334..0000000
+--- a/arch/sh/kernel/syscalls/syscallhdr.sh
++++ /dev/null
+@@ -1,36 +0,0 @@
+-#!/bin/sh
+-# SPDX-License-Identifier: GPL-2.0
+-
+-in="$1"
+-out="$2"
+-my_abis=`echo "($3)" | tr ',' '|'`
+-prefix="$4"
+-offset="$5"
+-
+-fileguard=_UAPI_ASM_SH_`basename "$out" | sed \
+-	-e 'y/abcdefghijklmnopqrstuvwxyz/ABCDEFGHIJKLMNOPQRSTUVWXYZ/' \
+-	-e 's/[^A-Z0-9_]/_/g' -e 's/__/_/g'`
+-grep -E "^[0-9A-Fa-fXx]+[[:space:]]+${my_abis}" "$in" | sort -n | (
+-	printf "#ifndef %s\n" "${fileguard}"
+-	printf "#define %s\n" "${fileguard}"
+-	printf "\n"
+-
+-	nxt=0
+-	while read nr abi name entry ; do
+-		if [ -z "$offset" ]; then
+-			printf "#define __NR_%s%s\t%s\n" \
+-				"${prefix}" "${name}" "${nr}"
+-		else
+-			printf "#define __NR_%s%s\t(%s + %s)\n" \
+-				"${prefix}" "${name}" "${offset}" "${nr}"
+-		fi
+-		nxt=$((nr+1))
+-	done
+-
+-	printf "\n"
+-	printf "#ifdef __KERNEL__\n"
+-	printf "#define __NR_syscalls\t%s\n" "${nxt}"
+-	printf "#endif\n"
+-	printf "\n"
+-	printf "#endif /* %s */" "${fileguard}"
+-) > "$out"
+diff --git a/arch/sh/kernel/syscalls/syscalltbl.sh b/arch/sh/kernel/syscalls/syscalltbl.sh
+deleted file mode 100644
+index 904b8e6..0000000
+--- a/arch/sh/kernel/syscalls/syscalltbl.sh
++++ /dev/null
+@@ -1,32 +0,0 @@
+-#!/bin/sh
+-# SPDX-License-Identifier: GPL-2.0
+-
+-in="$1"
+-out="$2"
+-my_abis=`echo "($3)" | tr ',' '|'`
+-my_abi="$4"
+-offset="$5"
+-
+-emit() {
+-	t_nxt="$1"
+-	t_nr="$2"
+-	t_entry="$3"
+-
+-	while [ $t_nxt -lt $t_nr ]; do
+-		printf "__SYSCALL(%s,sys_ni_syscall)\n" "${t_nxt}"
+-		t_nxt=$((t_nxt+1))
+-	done
+-	printf "__SYSCALL(%s,%s)\n" "${t_nxt}" "${t_entry}"
+-}
+-
+-grep -E "^[0-9A-Fa-fXx]+[[:space:]]+${my_abis}" "$in" | sort -n | (
+-	nxt=0
+-	if [ -z "$offset" ]; then
+-		offset=0
+-	fi
+-
+-	while read nr abi name entry ; do
+-		emit $((nxt+offset)) $((nr+offset)) $entry
+-		nxt=$((nr+1))
+-	done
+-) > "$out"
+-- 
+1.9.1
