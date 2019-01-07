@@ -1,27 +1,75 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Mon, 21 Jan 2019 20:28:08 +0000
-Subject: Re: [PATCH v2 14/29] arch: add pkey and rseq syscall numbers everywhere
-Message-Id: <CAK8P3a1BxBHfHZCvTM6aoBiiN+EpnD4P9LM=Ked5Sc_QwF7hCg@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 07 Jan 2019 16:23:18 +0000
+Subject: [PATCH v5 2/4] serial: sh-sci: Extract sci_dma_rx_reenable_irq()
+Message-Id: <20190107162320.15530-3-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190118161835.2259170-1-arnd@arndb.de> <20190118161835.2259170-15-arnd@arndb.de>
- <CAMuHMdWaJyNqUeq4qu3AgU0fYrQdZ_zbo0DFFiM97Y5HESYYnA@mail.gmail.com>
-In-Reply-To: <CAMuHMdWaJyNqUeq4qu3AgU0fYrQdZ_zbo0DFFiM97Y5HESYYnA@mail.gmail.com>
+References: <20190107162320.15530-1-geert+renesas@glider.be>
+In-Reply-To: <20190107162320.15530-1-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: y2038 Mailman List <y2038@lists.linaro.org>, Linux API <linux-api@vger.kernel.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Linux-Arch <linux-arch@vger.kernel.org>, Matt Turner <mattst88@gmail.com>, Russell King <linux@armlinux.org.uk>, Catalin Marinas <catalin.marinas@arm.com>, Will Deacon <will.deacon@arm.com>, Tony Luck <tony.luck@intel.com>, Fenghua Yu <fenghua.yu@intel.com>, Michal Simek <monstr@monstr.eu>, Paul Burton <paul.burton@mips.com>, Helge Deller <deller@gmx.de>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Michael Ellerman <mpe@ellerman.id.au>, Martin Schwidefsky <schwidefsky@de.ibm.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, Rich Felker <dalias@libc.org>, "David S. Miller" <davem@davemloft.net>
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
+Cc: Wolfram Sang <wsa+renesas@sang-engineering.com>, Ulrich Hecht <uli+renesas@fpond.eu>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Simon Horman <horms@verge.net.au>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-serial@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Mon, Jan 21, 2019 at 9:56 AM Geert Uytterhoeven <geert@linux-m68k.org> wrote:
->
-> Note that all architectures that already define pkey syscalls, list
-> pkey_mprotect first.
+Extract the functionality to direct new serial port interrupts back to
+the CPU into its own helper, to prepare for using it from a second
+callsite.
 
-It's easy enough to change, so I've reordered them for consistency now.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+v5:
+  - New.
+---
+ drivers/tty/serial/sh-sci.c | 23 +++++++++++++++--------
+ 1 file changed, 15 insertions(+), 8 deletions(-)
 
-> Regardless, for m68k:
-> Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
-
-Thanks,
-
-     Arnd
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 4c75468680cb547d..4d814c30c4189b56 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1274,6 +1274,20 @@ static void start_hrtimer_us(struct hrtimer *hrt, unsigned long usec)
+ 	hrtimer_start(hrt, t, HRTIMER_MODE_REL);
+ }
+ 
++static void sci_dma_rx_reenable_irq(struct sci_port *s)
++{
++	struct uart_port *port = &s->port;
++	u16 scr;
++
++	/* Direct new serial port interrupts back to CPU */
++	scr = serial_port_in(port, SCSCR);
++	if (port->type = PORT_SCIFA || port->type = PORT_SCIFB) {
++		scr &= ~SCSCR_RDRQE;
++		enable_irq(s->irqs[SCIx_RXI_IRQ]);
++	}
++	serial_port_out(port, SCSCR, scr | SCSCR_RIE);
++}
++
+ static void sci_dma_rx_complete(void *arg)
+ {
+ 	struct sci_port *s = arg;
+@@ -1453,7 +1467,6 @@ static enum hrtimer_restart rx_timer_fn(struct hrtimer *t)
+ 	unsigned long flags;
+ 	unsigned int read;
+ 	int active, count;
+-	u16 scr;
+ 
+ 	dev_dbg(port->dev, "DMA Rx timed out\n");
+ 
+@@ -1503,13 +1516,7 @@ static enum hrtimer_restart rx_timer_fn(struct hrtimer *t)
+ 	if (port->type = PORT_SCIFA || port->type = PORT_SCIFB)
+ 		sci_submit_rx(s, true);
+ 
+-	/* Direct new serial port interrupts back to CPU */
+-	scr = serial_port_in(port, SCSCR);
+-	if (port->type = PORT_SCIFA || port->type = PORT_SCIFB) {
+-		scr &= ~SCSCR_RDRQE;
+-		enable_irq(s->irqs[SCIx_RXI_IRQ]);
+-	}
+-	serial_port_out(port, SCSCR, scr | SCSCR_RIE);
++	sci_dma_rx_reenable_irq(s);
+ 
+ 	spin_unlock_irqrestore(&port->lock, flags);
+ 
+-- 
+2.17.1
