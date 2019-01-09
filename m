@@ -1,7 +1,7 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 08 Jan 2019 14:48:19 +0000
+From: Ulrich Hecht <uli@fpond.eu>
+Date: Wed, 09 Jan 2019 12:51:08 +0000
 Subject: Re: [PATCH v5 3/4] serial: sh-sci: Fix fallback to PIO in sci_dma_rx_complete()
-Message-Id: <20190108144818.smfgkog62uwbavjc@verge.net.au>
+Message-Id: <738673847.1196230.1547038268445@webmail.strato.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20190107162320.15530-1-geert+renesas@glider.be>
  <20190107162320.15530-4-geert+renesas@glider.be>
@@ -9,10 +9,13 @@ In-Reply-To: <20190107162320.15530-4-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>, Wolfram Sang <wsa+renesas@sang-engineering.com>, Ulrich Hecht <uli+renesas@fpond.eu>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-serial@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org
+To: Geert Uytterhoeven <geert+renesas@glider.be>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
+Cc: Wolfram Sang <wsa+renesas@sang-engineering.com>, Ulrich Hecht <uli+renesas@fpond.eu>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Simon Horman <horms@verge.net.au>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-serial@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org
 
-On Mon, Jan 07, 2019 at 05:23:19PM +0100, Geert Uytterhoeven wrote:
+
+> On January 7, 2019 at 5:23 PM Geert Uytterhoeven <geert+renesas@glider.be> wrote:
+> 
+> 
 > When submitting a DMA request fails in sci_dma_rx_complete(), the driver
 > tries to fall back to PIO, but that does not work: no more data will be
 > received, or the kernel will even crash.
@@ -27,5 +30,44 @@ On Mon, Jan 07, 2019 at 05:23:19PM +0100, Geert Uytterhoeven wrote:
 >     the CPU.
 > 
 > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> ---
+> v5:
+>   - Call new helpers sci_dma_rx_chan_invalidate() and
+>     sci_dma_rx_reenable_irq() instead of open-coding,
+> 
+> v4:
+>   - No changes,
+> 
+> v3:
+>   - Add missing definition of "u16 scr",
+>   - Move call to dmaengine_terminate_async() inside the spinlock, for
+>     symmetry with sci_submit_rx(),
+>   - Split in multiple patches.
+> ---
+>  drivers/tty/serial/sh-sci.c | 5 +++--
+>  1 file changed, 3 insertions(+), 2 deletions(-)
+> 
+> diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+> index 4d814c30c4189b56..891833315698b953 100644
+> --- a/drivers/tty/serial/sh-sci.c
+> +++ b/drivers/tty/serial/sh-sci.c
+> @@ -1337,8 +1337,9 @@ static void sci_dma_rx_complete(void *arg)
+>  	dev_warn(port->dev, "Failed submitting Rx DMA descriptor\n");
+>  	/* Switch to PIO */
+>  	spin_lock_irqsave(&port->lock, flags);
+> -	s->chan_rx = NULL;
+> -	sci_start_rx(port);
+> +	dmaengine_terminate_async(chan);
+> +	sci_dma_rx_chan_invalidate(s);
+> +	sci_dma_rx_reenable_irq(s);
+>  	spin_unlock_irqrestore(&port->lock, flags);
+>  }
+>  
+> -- 
+> 2.17.1
+>
 
-Reviewed-by: Simon Horman <horms+renesas@verge.net.au>
+Reviewed-by: Ulrich Hecht <uli+renesas@fpond.eu>
+
+CU
+Uli
