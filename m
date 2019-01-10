@@ -1,160 +1,175 @@
-From: Mike Rapoport <rppt@linux.ibm.com>
-Date: Wed, 16 Jan 2019 13:44:12 +0000
-Subject: [PATCH 12/21] arch: use memblock_alloc() instead of memblock_alloc_from(size, align, 0)
-Message-Id: <1547646261-32535-13-git-send-email-rppt@linux.ibm.com>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Thu, 10 Jan 2019 17:22:05 +0000
+Subject: [PATCH 00/11] y2038: add time64 syscalls
+Message-Id: <20190110172216.313063-1-arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1547646261-32535-1-git-send-email-rppt@linux.ibm.com>
-In-Reply-To: <1547646261-32535-1-git-send-email-rppt@linux.ibm.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mm@kvack.org
-Cc: Rich Felker <dalias@libc.org>, linux-ia64@vger.kernel.org, devicetree@vger.kernel.org, Catalin Marinas <catalin.marinas@arm.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, x86@kernel.org, linux-mips@vger.kernel.org, Max Filippov <jcmvbkbc@gmail.com>, Guo Ren <guoren@kernel.org>, sparclinux@vger.kernel.org, Christoph Hellwig <hch@lst.de>, linux-s390@vger.kernel.org, linux-c6x-dev@linux-c6x.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Richard Weinberger <richard@nod.at>, linux-sh@vger.kernel.org, Russell King <linux@armlinux.org.uk>, kasan-dev@googlegroups.com, Mike Rapoport <rppt@linux.ibm.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Mark Salter <msalter@redhat.com>, Dennis Zhou <dennis@kernel.org>, Matt Turner <mattst88@gmail.com>, linux-snps-arc@lists.infradead.org, uclinux-h8-devel@lists.sourceforge.jp, Petr Mladek <pmladek@suse.com>, linux-xtensa@linux-xtensa.org, linux-alpha@vger.kernel.org, linux-um@lists.infradead.org, linux-m68k@lists.linux-m68k.org, Rob Herring <robh+dt@kernel.org>, Greentime Hu <green.hu@gmail.com>, xen-devel@lists.xenproject.org, Stafford Horne <shorne@gmail.com>, Guan Xuetao <gxt@pku.edu.cn>, linux-arm-kernel@lists.infradead.org, Michal Simek <monstr@monstr.eu>, Tony Luck <tony.luck@intel.com>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, linux-usb@vger.kernel.org, linux-kernel@vger.kernel.org, Paul Burton <paul.burton@mips.com>, Vineet Gupta <vgupta@synopsys.com>, Michael Ellerman <mpe@ellerman.id.au>, Andrew Morton <akpm@linux-foundation.org>, linuxppc-dev@lists.ozlabs.org, "David S. Miller" <davem@davemloft.net>, openrisc@lists.librecores.org
+To: y2038@lists.linaro.org, linux-api@vger.kernel.org, linux-kernel@vger.kernel.org
+Cc: Arnd Bergmann <arnd@arndb.de>, mattst88@gmail.com, linux@armlinux.org.uk, catalin.marinas@arm.com, will.deacon@arm.com, tony.luck@intel.com, fenghua.yu@intel.com, geert@linux-m68k.org, monstr@monstr.eu, paul.burton@mips.com, deller@gmx.de, benh@kernel.crashing.org, mpe@ellerman.id.au, schwidefsky@de.ibm.com, heiko.carstens@de.ibm.com, dalias@libc.org, davem@davemloft.net, luto@kernel.org, tglx@linutronix.de, mingo@redhat.com, hpa@zytor.com, x86@kernel.org, jcmvbkbc@gmail.com, akpm@linux-foundation.org, deepa.kernel@gmail.com, ebiederm@xmission.com, firoz.khan@linaro.org, linux-alpha@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.or
 
-The last parameter of memblock_alloc_from() is the lower limit for the
-memory allocation. When it is 0, the call is equivalent to
-memblock_alloc().
+This series finally gets us to the point of having system calls with
+64-bit time_t on all architectures, after a long time of incremental
+preparation patches.
 
-Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
----
- arch/alpha/kernel/core_cia.c  |  2 +-
- arch/alpha/kernel/pci_iommu.c |  4 ++--
- arch/alpha/kernel/setup.c     |  2 +-
- arch/ia64/kernel/mca.c        |  3 +--
- arch/mips/kernel/traps.c      |  2 +-
- arch/sparc/kernel/prom_32.c   |  2 +-
- arch/sparc/mm/init_32.c       |  2 +-
- arch/sparc/mm/srmmu.c         | 10 +++++-----
- 8 files changed, 13 insertions(+), 14 deletions(-)
+There was actually one conversion that I missed during the summer,
+i.e. Deepa's timex series, which I now updated based the 5.0-rc1 changes
+and review comments.
 
-diff --git a/arch/alpha/kernel/core_cia.c b/arch/alpha/kernel/core_cia.c
-index 867e873..466cd44 100644
---- a/arch/alpha/kernel/core_cia.c
-+++ b/arch/alpha/kernel/core_cia.c
-@@ -331,7 +331,7 @@ cia_prepare_tbia_workaround(int window)
- 	long i;
- 
- 	/* Use minimal 1K map. */
--	ppte = memblock_alloc_from(CIA_BROKEN_TBIA_SIZE, 32768, 0);
-+	ppte = memblock_alloc(CIA_BROKEN_TBIA_SIZE, 32768);
- 	pte = (virt_to_phys(ppte) >> (PAGE_SHIFT - 1)) | 1;
- 
- 	for (i = 0; i < CIA_BROKEN_TBIA_SIZE / sizeof(unsigned long); ++i)
-diff --git a/arch/alpha/kernel/pci_iommu.c b/arch/alpha/kernel/pci_iommu.c
-index aa0f50d..e4cf77b 100644
---- a/arch/alpha/kernel/pci_iommu.c
-+++ b/arch/alpha/kernel/pci_iommu.c
-@@ -87,13 +87,13 @@ iommu_arena_new_node(int nid, struct pci_controller *hose, dma_addr_t base,
- 		printk("%s: couldn't allocate arena ptes from node %d\n"
- 		       "    falling back to system-wide allocation\n",
- 		       __func__, nid);
--		arena->ptes = memblock_alloc_from(mem_size, align, 0);
-+		arena->ptes = memblock_alloc(mem_size, align);
- 	}
- 
- #else /* CONFIG_DISCONTIGMEM */
- 
- 	arena = memblock_alloc(sizeof(*arena), SMP_CACHE_BYTES);
--	arena->ptes = memblock_alloc_from(mem_size, align, 0);
-+	arena->ptes = memblock_alloc(mem_size, align);
- 
- #endif /* CONFIG_DISCONTIGMEM */
- 
-diff --git a/arch/alpha/kernel/setup.c b/arch/alpha/kernel/setup.c
-index 4b5b1b2..5d4c76a 100644
---- a/arch/alpha/kernel/setup.c
-+++ b/arch/alpha/kernel/setup.c
-@@ -293,7 +293,7 @@ move_initrd(unsigned long mem_limit)
- 	unsigned long size;
- 
- 	size = initrd_end - initrd_start;
--	start = memblock_alloc_from(PAGE_ALIGN(size), PAGE_SIZE, 0);
-+	start = memblock_alloc(PAGE_ALIGN(size), PAGE_SIZE);
- 	if (!start || __pa(start) + size > mem_limit) {
- 		initrd_start = initrd_end = 0;
- 		return NULL;
-diff --git a/arch/ia64/kernel/mca.c b/arch/ia64/kernel/mca.c
-index 91bd1e1..74d148b 100644
---- a/arch/ia64/kernel/mca.c
-+++ b/arch/ia64/kernel/mca.c
-@@ -1835,8 +1835,7 @@ format_mca_init_stack(void *mca_data, unsigned long offset,
- /* Caller prevents this from being called after init */
- static void * __ref mca_bootmem(void)
- {
--	return memblock_alloc_from(sizeof(struct ia64_mca_cpu),
--				   KERNEL_STACK_SIZE, 0);
-+	return memblock_alloc(sizeof(struct ia64_mca_cpu), KERNEL_STACK_SIZE);
- }
- 
- /* Do per-CPU MCA-related initialization.  */
-diff --git a/arch/mips/kernel/traps.c b/arch/mips/kernel/traps.c
-index c91097f..2bbdee5 100644
---- a/arch/mips/kernel/traps.c
-+++ b/arch/mips/kernel/traps.c
-@@ -2291,7 +2291,7 @@ void __init trap_init(void)
- 		phys_addr_t ebase_pa;
- 
- 		ebase = (unsigned long)
--			memblock_alloc_from(size, 1 << fls(size), 0);
-+			memblock_alloc(size, 1 << fls(size));
- 
- 		/*
- 		 * Try to ensure ebase resides in KSeg0 if possible.
-diff --git a/arch/sparc/kernel/prom_32.c b/arch/sparc/kernel/prom_32.c
-index 42d7f2a..38940af 100644
---- a/arch/sparc/kernel/prom_32.c
-+++ b/arch/sparc/kernel/prom_32.c
-@@ -32,7 +32,7 @@ void * __init prom_early_alloc(unsigned long size)
- {
- 	void *ret;
- 
--	ret = memblock_alloc_from(size, SMP_CACHE_BYTES, 0UL);
-+	ret = memblock_alloc(size, SMP_CACHE_BYTES);
- 	if (ret != NULL)
- 		memset(ret, 0, size);
- 
-diff --git a/arch/sparc/mm/init_32.c b/arch/sparc/mm/init_32.c
-index d900952..a8ff298 100644
---- a/arch/sparc/mm/init_32.c
-+++ b/arch/sparc/mm/init_32.c
-@@ -264,7 +264,7 @@ void __init mem_init(void)
- 	i = last_valid_pfn >> ((20 - PAGE_SHIFT) + 5);
- 	i += 1;
- 	sparc_valid_addr_bitmap = (unsigned long *)
--		memblock_alloc_from(i << 2, SMP_CACHE_BYTES, 0UL);
-+		memblock_alloc(i << 2, SMP_CACHE_BYTES);
- 
- 	if (sparc_valid_addr_bitmap = NULL) {
- 		prom_printf("mem_init: Cannot alloc valid_addr_bitmap.\n");
-diff --git a/arch/sparc/mm/srmmu.c b/arch/sparc/mm/srmmu.c
-index b609362..a400ec3 100644
---- a/arch/sparc/mm/srmmu.c
-+++ b/arch/sparc/mm/srmmu.c
-@@ -303,13 +303,13 @@ static void __init srmmu_nocache_init(void)
- 
- 	bitmap_bits = srmmu_nocache_size >> SRMMU_NOCACHE_BITMAP_SHIFT;
- 
--	srmmu_nocache_pool = memblock_alloc_from(srmmu_nocache_size,
--						 SRMMU_NOCACHE_ALIGN_MAX, 0UL);
-+	srmmu_nocache_pool = memblock_alloc(srmmu_nocache_size,
-+					    SRMMU_NOCACHE_ALIGN_MAX);
- 	memset(srmmu_nocache_pool, 0, srmmu_nocache_size);
- 
- 	srmmu_nocache_bitmap -		memblock_alloc_from(BITS_TO_LONGS(bitmap_bits) * sizeof(long),
--				    SMP_CACHE_BYTES, 0UL);
-+		memblock_alloc(BITS_TO_LONGS(bitmap_bits) * sizeof(long),
-+			       SMP_CACHE_BYTES);
- 	bit_map_init(&srmmu_nocache_map, srmmu_nocache_bitmap, bitmap_bits);
- 
- 	srmmu_swapper_pg_dir = __srmmu_get_nocache(SRMMU_PGD_TABLE_SIZE, SRMMU_PGD_TABLE_SIZE);
-@@ -467,7 +467,7 @@ static void __init sparc_context_init(int numctx)
- 	unsigned long size;
- 
- 	size = numctx * sizeof(struct ctx_list);
--	ctx_list_pool = memblock_alloc_from(size, SMP_CACHE_BYTES, 0UL);
-+	ctx_list_pool = memblock_alloc(size, SMP_CACHE_BYTES);
- 
- 	for (ctx = 0; ctx < numctx; ctx++) {
- 		struct ctx_list *clist;
+I hope that the actual conversion should be uncontroversial by now,
+even if some of the patches are rather large.
+
+The one area that may need a little discussion is for the system call
+numbers assigned in the final patch: Can we get consensus on whether
+the idea of using the same numbers on all architectures, as well as my
+choice of numbers makes sense here?
+
+So far, I have done a lot of build testing across most architectures,
+which has found a number of bugs. I have also done an LTP run on arm32
+with existing user space, but not on the other architectures. I did LTP
+tests with a modified musl libc[2] last summer on an older version of
+this series to make sure that the new 64-bit time_t interfaces work.
+The version there will need updates for testing with this new kernel
+patch series; I plan to do that next.
+
+For testing, the series plus the preparatory patches is available at
+[3].  Once there is a general agreement on this series and I have done
+more tests for the new system calls, I plan to add this to linux-next
+through my asm-generic tree or Thomas' timers tree.
+
+Please review and test!
+
+      Arnd
+
+[1] https://lore.kernel.org/lkml/20190110162435.309262-1-arnd@arndb.de/T/
+[2] https://git.linaro.org/people/arnd/musl-y2038.git/
+[3] https://git.kernel.org/pub/scm/linux/kernel/git/arnd/playground.git y2038-5.0-rc1
+
+Arnd Bergmann (8):
+  time: make adjtime compat handling available for 32 bit
+  time: fix sys_timer_settime prototype
+  sparc64: add custom adjtimex/clock_adjtime functions
+  y2038: syscalls: rename y2038 compat syscalls
+  y2038: use time32 syscall names on 32-bit
+  y2038: remove struct definition redirects
+  y2038: rename old time and utime syscalls
+  y2038: add 64-bit time_t syscalls to all 32-bit architectures
+
+Deepa Dinamani (3):
+  time: Add struct __kernel_timex
+  timex: use __kernel_timex internally
+  timex: change syscalls to use struct __kernel_timex
+
+ arch/Kconfig                                |   2 +-
+ arch/alpha/kernel/osf_sys.c                 |   5 +-
+ arch/alpha/kernel/syscalls/syscall.tbl      |   2 +
+ arch/arm/include/asm/unistd.h               |   4 +-
+ arch/arm/kernel/sys_oabi-compat.c           |   8 +-
+ arch/arm/tools/syscall.tbl                  |  77 ++++++++-----
+ arch/arm64/include/asm/unistd.h             |   2 +-
+ arch/arm64/include/asm/unistd32.h           |  89 ++++++++++----
+ arch/ia64/kernel/syscalls/syscall.tbl       |   1 +
+ arch/m68k/include/asm/unistd.h              |   4 +-
+ arch/m68k/kernel/syscalls/syscall.tbl       |  72 +++++++-----
+ arch/microblaze/include/asm/unistd.h        |   4 +-
+ arch/microblaze/kernel/syscalls/syscall.tbl |  77 ++++++++-----
+ arch/mips/include/asm/unistd.h              |   4 +-
+ arch/mips/kernel/syscalls/syscall_n32.tbl   |  71 ++++++++----
+ arch/mips/kernel/syscalls/syscall_n64.tbl   |   1 +
+ arch/mips/kernel/syscalls/syscall_o32.tbl   |  74 +++++++-----
+ arch/parisc/include/asm/unistd.h            |   9 +-
+ arch/parisc/kernel/syscalls/syscall.tbl     | 105 ++++++++++++-----
+ arch/powerpc/include/asm/unistd.h           |   8 +-
+ arch/powerpc/kernel/syscalls/syscall.tbl    | 121 +++++++++++++++-----
+ arch/s390/include/asm/unistd.h              |   2 +-
+ arch/s390/kernel/syscalls/syscall.tbl       |  72 +++++++-----
+ arch/sh/include/asm/unistd.h                |   4 +-
+ arch/sh/kernel/syscalls/syscall.tbl         |  72 +++++++-----
+ arch/sparc/include/asm/unistd.h             |   8 +-
+ arch/sparc/kernel/sys_sparc_64.c            |  59 +++++++++-
+ arch/sparc/kernel/syscalls/syscall.tbl      | 100 +++++++++++-----
+ arch/x86/entry/syscalls/syscall_32.tbl      |  74 +++++++-----
+ arch/x86/entry/syscalls/syscall_64.tbl      |   4 +-
+ arch/x86/include/asm/unistd.h               |   8 +-
+ arch/xtensa/include/asm/unistd.h            |   2 +-
+ arch/xtensa/kernel/syscalls/syscall.tbl     |  71 ++++++++----
+ drivers/ptp/ptp_clock.c                     |   2 +-
+ fs/aio.c                                    |  10 +-
+ fs/select.c                                 |   4 +-
+ fs/timerfd.c                                |   4 +-
+ fs/utimes.c                                 |  10 +-
+ include/linux/compat.h                      | 104 +----------------
+ include/linux/posix-clock.h                 |   2 +-
+ include/linux/syscalls.h                    |  65 ++++++++++-
+ include/linux/time32.h                      |  32 +++++-
+ include/linux/time64.h                      |   8 --
+ include/linux/timex.h                       |   4 +-
+ include/uapi/asm-generic/unistd.h           | 103 ++++++++++++-----
+ include/uapi/linux/time.h                   |   4 -
+ include/uapi/linux/timex.h                  |  39 +++++++
+ ipc/mqueue.c                                |  16 +--
+ ipc/sem.c                                   |   2 +-
+ kernel/compat.c                             |  64 -----------
+ kernel/futex.c                              |   2 +-
+ kernel/sched/core.c                         |   5 +-
+ kernel/signal.c                             |   2 +-
+ kernel/sys_ni.c                             |  18 +--
+ kernel/time/hrtimer.c                       |   2 +-
+ kernel/time/ntp.c                           |  18 +--
+ kernel/time/ntp_internal.h                  |   2 +-
+ kernel/time/posix-clock.c                   |   2 +-
+ kernel/time/posix-stubs.c                   |  25 ++--
+ kernel/time/posix-timers.c                  |  72 ++++++------
+ kernel/time/posix-timers.h                  |   2 +-
+ kernel/time/time.c                          |  92 ++++++++++++---
+ kernel/time/timekeeping.c                   |   4 +-
+ net/compat.c                                |   2 +-
+ scripts/checksyscalls.sh                    |  40 +++++++
+ 65 files changed, 1264 insertions(+), 713 deletions(-)
+
 -- 
-2.7.4
+2.20.0
+
+Cc: mattst88@gmail.com
+Cc: linux@armlinux.org.uk
+Cc: catalin.marinas@arm.com
+Cc: will.deacon@arm.com
+Cc: tony.luck@intel.com
+Cc: fenghua.yu@intel.com
+Cc: geert@linux-m68k.org
+Cc: monstr@monstr.eu
+Cc: paul.burton@mips.com
+Cc: deller@gmx.de
+Cc: benh@kernel.crashing.org
+Cc: mpe@ellerman.id.au
+Cc: schwidefsky@de.ibm.com
+Cc: heiko.carstens@de.ibm.com
+Cc: dalias@libc.org
+Cc: davem@davemloft.net
+Cc: luto@kernel.org
+Cc: tglx@linutronix.de
+Cc: mingo@redhat.com
+Cc: hpa@zytor.com
+Cc: x86@kernel.org
+Cc: jcmvbkbc@gmail.com
+Cc: arnd@arndb.de
+Cc: akpm@linux-foundation.org
+Cc: deepa.kernel@gmail.com
+Cc: ebiederm@xmission.com
+Cc: firoz.khan@linaro.org
+Cc: linux-kernel@vger.kernel.org
+Cc: linux-alpha@vger.kernel.org
+Cc: linux-arm-kernel@lists.infradead.org
+Cc: linux-ia64@vger.kernel.org
+Cc: linux-m68k@lists.linux-m68k.org
+Cc: linux-mips@vger.kernel.org
+Cc: linux-parisc@vger.kernel.org
+Cc: linuxppc-dev@lists.ozlabs.org
+Cc: linux-s390@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
+Cc: sparclinux@vger.kernel.org
+Cc: netdev@vger.kernel.org
+Cc: linux-fsdevel@vger.kernel.org
+Cc: linux-api@vger.kernel.org
+Cc: linux-arch@vger.kernel.org
