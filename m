@@ -1,32 +1,112 @@
 From: Arnd Bergmann <arnd@arndb.de>
-Date: Fri, 18 Jan 2019 16:18:16 +0000
-Subject: [PATCH v2 10/29] sh: add statx system call
-Message-Id: <20190118161835.2259170-11-arnd@arndb.de>
+Date: Thu, 10 Jan 2019 17:22:14 +0000
+Subject: [PATCH 09/11] y2038: remove struct definition redirects
+Message-Id: <20190110172216.313063-10-arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190118161835.2259170-1-arnd@arndb.de>
-In-Reply-To: <20190118161835.2259170-1-arnd@arndb.de>
+References: <20190110172216.313063-1-arnd@arndb.de>
+In-Reply-To: <20190110172216.313063-1-arnd@arndb.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: y2038@lists.linaro.org, linux-api@vger.kernel.org, linux-kernel@vger.kernel.org, linux-arch@vger.kernel.org
-Cc: dalias@libc.org, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, catalin.marinas@arm.com, will.deacon@arm.com, jcmvbkbc@gmail.com, deepa.kernel@gmail.com, hpa@zytor.com, sparclinux@vger.kernel.org, linux-s390@vger.kernel.org, mpe@ellerman.id.au, deller@gmx.de, x86@kernel.org, linux@armlinux.org.uk, mingo@redhat.com, geert@linux-m68k.org, benh@kernel.crashing.org, firoz.khan@linaro.org, mattst88@gmail.com, fenghua.yu@intel.com, Arnd Bergmann <arnd@arndb.de>, heiko.carstens@de.ibm.com, linux-fsdevel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, luto@kernel.org, tglx@linutronix.de, linux-arm-kernel@lists.infradead.org, monstr@monstr.eu, tony.luck@intel.com, linux-parisc@vger.kernel.org, netdev@vger.kernel.org, linux-mips@vger.kernel.org, paul.burton@mips.com, ebiederm@xmission.com, linux-alpha@vger.kernel.org, schwidefsky@de.ibm.com, akpm@linux-foundation.orglinu
+To: y2038@lists.linaro.org, linux-api@vger.kernel.org, linux-kernel@vger.kernel.org
+Cc: Arnd Bergmann <arnd@arndb.de>, mattst88@gmail.com, linux@armlinux.org.uk, catalin.marinas@arm.com, will.deacon@arm.com, tony.luck@intel.com, fenghua.yu@intel.com, geert@linux-m68k.org, monstr@monstr.eu, paul.burton@mips.com, deller@gmx.de, benh@kernel.crashing.org, mpe@ellerman.id.au, schwidefsky@de.ibm.com, heiko.carstens@de.ibm.com, dalias@libc.org, davem@davemloft.net, luto@kernel.org, tglx@linutronix.de, mingo@redhat.com, hpa@zytor.com, x86@kernel.org, jcmvbkbc@gmail.com, akpm@linux-foundation.org, deepa.kernel@gmail.com, ebiederm@xmission.com, firoz.khan@linaro.org, linux-alpha@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.or
 
-statx is available on almost all other architectures but
-got missed on sh, so add it now.
+We now use 64-bit time_t on all architectures, so the __kernel_timex,
+__kernel_timeval and __kernel_timespec redirects can be removed
+after having served their purpose.
+
+This makes it all much less confusing, as the __kernel_* types
+now always refer to the same layout based on 64-bit time_t across
+all 32-bit and 64-bit architectures.
 
 Signed-off-by: Arnd Bergmann <arnd@arndb.de>
 ---
- arch/sh/kernel/syscalls/syscall.tbl | 1 +
- 1 file changed, 1 insertion(+)
+ include/linux/time64.h     | 8 --------
+ include/linux/timex.h      | 7 -------
+ include/uapi/linux/time.h  | 4 ----
+ include/uapi/linux/timex.h | 2 --
+ 4 files changed, 21 deletions(-)
 
-diff --git a/arch/sh/kernel/syscalls/syscall.tbl b/arch/sh/kernel/syscalls/syscall.tbl
-index 21ec75288562..a70db013dbc7 100644
---- a/arch/sh/kernel/syscalls/syscall.tbl
-+++ b/arch/sh/kernel/syscalls/syscall.tbl
-@@ -390,3 +390,4 @@
- 380	common	copy_file_range			sys_copy_file_range
- 381	common	preadv2				sys_preadv2
- 382	common	pwritev2			sys_pwritev2
-+383	common	statx				sys_statx
+diff --git a/include/linux/time64.h b/include/linux/time64.h
+index 05634afba0db..f38d382ffec1 100644
+--- a/include/linux/time64.h
++++ b/include/linux/time64.h
+@@ -7,14 +7,6 @@
+ typedef __s64 time64_t;
+ typedef __u64 timeu64_t;
+ 
+-/* CONFIG_64BIT_TIME enables new 64 bit time_t syscalls in the compat path
+- * and 32-bit emulation.
+- */
+-#ifndef CONFIG_64BIT_TIME
+-#define __kernel_timespec timespec
+-#define __kernel_itimerspec itimerspec
+-#endif
+-
+ #include <uapi/linux/time.h>
+ 
+ struct timespec64 {
+diff --git a/include/linux/timex.h b/include/linux/timex.h
+index 4aff9f0d1367..ce0859763670 100644
+--- a/include/linux/timex.h
++++ b/include/linux/timex.h
+@@ -53,13 +53,6 @@
+ #ifndef _LINUX_TIMEX_H
+ #define _LINUX_TIMEX_H
+ 
+-/* CONFIG_64BIT_TIME enables new 64 bit time_t syscalls in the compat path
+- * and 32-bit emulation.
+- */
+-#ifndef CONFIG_64BIT_TIME
+-#define __kernel_timex timex
+-#endif
+-
+ #include <uapi/linux/timex.h>
+ 
+ #define ADJ_ADJTIME		0x8000	/* switch between adjtime/adjtimex modes */
+diff --git a/include/uapi/linux/time.h b/include/uapi/linux/time.h
+index 6b56a2208be7..b03f8717c312 100644
+--- a/include/uapi/linux/time.h
++++ b/include/uapi/linux/time.h
+@@ -42,19 +42,15 @@ struct itimerval {
+ 	struct timeval it_value;	/* current value */
+ };
+ 
+-#ifndef __kernel_timespec
+ struct __kernel_timespec {
+ 	__kernel_time64_t       tv_sec;                 /* seconds */
+ 	long long               tv_nsec;                /* nanoseconds */
+ };
+-#endif
+ 
+-#ifndef __kernel_itimerspec
+ struct __kernel_itimerspec {
+ 	struct __kernel_timespec it_interval;    /* timer period */
+ 	struct __kernel_timespec it_value;       /* timer expiration */
+ };
+-#endif
+ 
+ /*
+  * legacy timeval structure, only embedded in structures that
+diff --git a/include/uapi/linux/timex.h b/include/uapi/linux/timex.h
+index a1c6b73016a5..9f517f9010bb 100644
+--- a/include/uapi/linux/timex.h
++++ b/include/uapi/linux/timex.h
+@@ -97,7 +97,6 @@ struct __kernel_timex_timeval {
+ 	long long		tv_usec;
+ };
+ 
+-#ifndef __kernel_timex
+ struct __kernel_timex {
+ 	unsigned int modes;	/* mode selector */
+ 	int :32;            /* pad */
+@@ -131,7 +130,6 @@ struct __kernel_timex {
+ 	int  :32; int  :32; int  :32; int  :32;
+ 	int  :32; int  :32; int  :32;
+ };
+-#endif
+ 
+ /*
+  * Mode codes (timex.mode)
 -- 
 2.20.0
