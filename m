@@ -1,607 +1,749 @@
-From: "Dmitry V. Levin" <ldv@altlinux.org>
-Date: Mon, 07 Jan 2019 02:54:47 +0000
-Subject: [PATCH v7 20/22] syscall_get_arch: add "struct task_struct *" argument
-Message-Id: <20190107025447.GT1207@altlinux.org>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Thu, 10 Jan 2019 17:22:15 +0000
+Subject: [PATCH 10/11] y2038: rename old time and utime syscalls
+Message-Id: <20190110172216.313063-11-arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190107025101.GA1182@altlinux.org>
+References: <20190110172216.313063-1-arnd@arndb.de>
+In-Reply-To: <20190110172216.313063-1-arnd@arndb.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org, Richard Henderson <rth@twiddle.net>, Ivan Kokshaysky <ink@jurassic.park.msu.ru>, Matt Turner <mattst88@gmail.com>, Vineet Gupta <vgupta@synopsys.com>, Russell King <linux@armlinux.org.uk>, Catalin Marinas <catalin.marinas@arm.com>, Will Deacon <will.deacon@arm.com>, Aurelien Jacquiot <jacquiot.aurelien@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Richard Kuo <rkuo@codeaurora.org>, Tony Luck <tony.luck@intel.com>, Fenghua Yu <fenghua.yu@intel.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Michal Simek <monstr@monstr.eu>, Greentime Hu <green.hu@gmail.com>, Vincent Chen <deanbo422@gmail.com>, Ley Foon Tan <lftan@altera.com>, Jonas Bonn <jonas@southpole.se>, Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>, Stafford Horne <shorne@gmail.com>, "James E.J. Bottomley" <jejb@parisc-linux.org>, Helge Deller <deller@gmx.de>, Al
-Cc: linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Palmer Dabbelt <palmer@sifive.com>, linux-mips@vger.kernel.org, Paul Mackerras <paulus@samba.org>, Ralf Baechle <ralf@linux-mips.org>, "H. Peter Anvin" <hpa@zytor.com>, sparclinux@vger.kernel.org, linux-hexagon@vger.kernel.org, linux-riscv@lists.infradead.org, linux-arch@vger.kernel.org, linux-s390@vger.kernel.org, Paul Moore <paul@paul-moore.com>, Michael Ellerman <mpe@ellerman.id.au>, x86@kernel.org, Eugene Syromyatnikov <esyr@redhat.com>, Elvira Khabirova <lineprinter@altlinux.org>, Mark Salter <msalter@redhat.com>, James Hogan <jhogan@kernel.org>, linux-snps-arc@lists.infradead.org, uclinux-h8-devel@lists.sourceforge.jp, linux-xtensa@linux-xtensa.org, Kees Cook <keescook@chromium.org>, linux-um@lists.infradead.org, linux-m68k@lists.linux-m68k.org, openrisc@lists.l
+To: y2038@lists.linaro.org, linux-api@vger.kernel.org, linux-kernel@vger.kernel.org
+Cc: Arnd Bergmann <arnd@arndb.de>, mattst88@gmail.com, linux@armlinux.org.uk, catalin.marinas@arm.com, will.deacon@arm.com, tony.luck@intel.com, fenghua.yu@intel.com, geert@linux-m68k.org, monstr@monstr.eu, paul.burton@mips.com, deller@gmx.de, benh@kernel.crashing.org, mpe@ellerman.id.au, schwidefsky@de.ibm.com, heiko.carstens@de.ibm.com, dalias@libc.org, davem@davemloft.net, luto@kernel.org, tglx@linutronix.de, mingo@redhat.com, hpa@zytor.com, x86@kernel.org, jcmvbkbc@gmail.com, akpm@linux-foundation.org, deepa.kernel@gmail.com, ebiederm@xmission.com, firoz.khan@linaro.org, linux-alpha@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.or
 
-This argument is required to extend the generic ptrace API with
-PTRACE_GET_SYSCALL_INFO request: syscall_get_arch() is going
-to be called from ptrace_request() along with syscall_get_nr(),
-syscall_get_arguments(), syscall_get_error(), and
-syscall_get_return_value() functions with a tracee as their argument.
+The time, stime, utime, utimes, and futimesat system calls are only
+used on older architectures, and we do not provide y2038 safe variants
+of them, as they are replaced by clock_gettime64, clock_settime64,
+and utimensat_time64.
 
-Reverts: 5e937a9ae913 ("syscall_get_arch: remove useless function arguments")
-Reverts: 1002d94d3076 ("syscall.h: fix doc text for syscall_get_arch()")
-Reviewed-by: Andy Lutomirski <luto@kernel.org> # for x86
-Reviewed-by: Palmer Dabbelt <palmer@sifive.com>
-Acked-by: Paul Burton <paul.burton@mips.com> # MIPS parts
-Acked-by: Michael Ellerman <mpe@ellerman.id.au> (powerpc)
-Acked-by: Kees Cook <keescook@chromium.org> # seccomp parts
-Acked-by: Mark Salter <msalter@redhat.com> # for the c6x bit
-Acked-by: Paul Moore <paul@paul-moore.com> # audit related parts
-Cc: Eric Paris <eparis@redhat.com>
-Cc: Richard Henderson <rth@twiddle.net>
-Cc: Ivan Kokshaysky <ink@jurassic.park.msu.ru>
-Cc: Matt Turner <mattst88@gmail.com>
-Cc: Vineet Gupta <vgupta@synopsys.com>
-Cc: Russell King <linux@armlinux.org.uk>
-Cc: Catalin Marinas <catalin.marinas@arm.com>
-Cc: Will Deacon <will.deacon@arm.com>
-Cc: Aurelien Jacquiot <jacquiot.aurelien@gmail.com>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: Richard Kuo <rkuo@codeaurora.org>
-Cc: Tony Luck <tony.luck@intel.com>
-Cc: Fenghua Yu <fenghua.yu@intel.com>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Michal Simek <monstr@monstr.eu>
-Cc: Greentime Hu <green.hu@gmail.com>
-Cc: Vincent Chen <deanbo422@gmail.com>
-Cc: Ley Foon Tan <lftan@altera.com>
-Cc: Jonas Bonn <jonas@southpole.se>
-Cc: Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>
-Cc: Stafford Horne <shorne@gmail.com>
-Cc: James E.J. Bottomley <jejb@parisc-linux.org>
-Cc: Helge Deller <deller@gmx.de>
-Cc: Albert Ou <aou@eecs.berkeley.edu>
-Cc: Martin Schwidefsky <schwidefsky@de.ibm.com>
-Cc: Heiko Carstens <heiko.carstens@de.ibm.com>
-Cc: Rich Felker <dalias@libc.org>
-Cc: David S. Miller <davem@davemloft.net>
-Cc: Guan Xuetao <gxt@pku.edu.cn>
-Cc: Jeff Dike <jdike@addtoit.com>
-Cc: Richard Weinberger <richard@nod.at>
-Cc: Chris Zankel <chris@zankel.net>
-Cc: Max Filippov <jcmvbkbc@gmail.com>
-Cc: Arnd Bergmann <arnd@arndb.de>
-Cc: Will Drewry <wad@chromium.org>
-Cc: Oleg Nesterov <oleg@redhat.com>
-Cc: Elvira Khabirova <lineprinter@altlinux.org>
-Cc: Eugene Syromyatnikov <esyr@redhat.com>
-Cc: Ralf Baechle <ralf@linux-mips.org>
-Cc: James Hogan <jhogan@kernel.org>
-Cc: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-Cc: Paul Mackerras <paulus@samba.org>
-Cc: Thomas Gleixner <tglx@linutronix.de>
-Cc: Ingo Molnar <mingo@redhat.com>
-Cc: Borislav Petkov <bp@alien8.de>
-Cc: H. Peter Anvin <hpa@zytor.com>
-Cc: x86@kernel.org
-Cc: linux-alpha@vger.kernel.org
-Cc: linux-snps-arc@lists.infradead.org
-Cc: linux-arm-kernel@lists.infradead.org
-Cc: linux-c6x-dev@linux-c6x.org
-Cc: uclinux-h8-devel@lists.sourceforge.jp
-Cc: linux-hexagon@vger.kernel.org
-Cc: linux-ia64@vger.kernel.org
-Cc: linux-m68k@lists.linux-m68k.org
-Cc: linux-mips@vger.kernel.org
-Cc: nios2-dev@lists.rocketboards.org
-Cc: openrisc@lists.librecores.org
-Cc: linux-parisc@vger.kernel.org
-Cc: linuxppc-dev@lists.ozlabs.org
-Cc: linux-riscv@lists.infradead.org
-Cc: linux-s390@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
-Cc: sparclinux@vger.kernel.org
-Cc: linux-um@lists.infradead.org
-Cc: linux-xtensa@linux-xtensa.org
-Cc: linux-arch@vger.kernel.org
-Cc: linux-audit@redhat.com
-Signed-off-by: Dmitry V. Levin <ldv@altlinux.org>
+However, for consistency it seems better to have the 32-bit architectures
+that still use them call the "time32" entry points (leaving the
+traditional handlers for the 64-bit architectures), like we do for system
+calls that now require two versions.
+
+Note: We used to always define __ARCH_WANT_SYS_TIME and
+__ARCH_WANT_SYS_UTIME and only set __ARCH_WANT_COMPAT_SYS_TIME and
+__ARCH_WANT_SYS_UTIME32 for compat mode on 64-bit kernels. Now this is
+reversed: only 64-bit architectures set __ARCH_WANT_SYS_TIME/UTIME, while
+we need __ARCH_WANT_SYS_TIME32/UTIME32 for 32-bit architectures and compat
+mode. The resulting asm/unistd.h changes look a bit counterintuitive.
+
+This is only a cleanup patch and it should not change any behavior.
+
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
 ---
+ arch/arm/include/asm/unistd.h               |  4 ++--
+ arch/arm/tools/syscall.tbl                  | 10 +++++-----
+ arch/m68k/include/asm/unistd.h              |  4 ++--
+ arch/m68k/kernel/syscalls/syscall.tbl       | 10 +++++-----
+ arch/microblaze/include/asm/unistd.h        |  4 ++--
+ arch/microblaze/kernel/syscalls/syscall.tbl | 10 +++++-----
+ arch/mips/include/asm/unistd.h              |  4 ++--
+ arch/mips/kernel/syscalls/syscall_o32.tbl   | 10 +++++-----
+ arch/parisc/include/asm/unistd.h            |  9 ++++++---
+ arch/parisc/kernel/syscalls/syscall.tbl     | 15 ++++++++++-----
+ arch/powerpc/include/asm/unistd.h           |  8 ++++----
+ arch/powerpc/kernel/syscalls/syscall.tbl    | 19 ++++++++++++++-----
+ arch/s390/include/asm/unistd.h              |  2 +-
+ arch/sh/include/asm/unistd.h                |  4 ++--
+ arch/sh/kernel/syscalls/syscall.tbl         | 10 +++++-----
+ arch/sparc/include/asm/unistd.h             |  8 ++++----
+ arch/sparc/kernel/syscalls/syscall.tbl      | 14 +++++++++-----
+ arch/x86/entry/syscalls/syscall_32.tbl      | 10 +++++-----
+ arch/x86/include/asm/unistd.h               |  8 ++++----
+ arch/xtensa/include/asm/unistd.h            |  2 +-
+ arch/xtensa/kernel/syscalls/syscall.tbl     |  6 +++---
+ kernel/time/time.c                          |  4 ++--
+ 22 files changed, 98 insertions(+), 77 deletions(-)
 
-Notes:
-    v7: added more Acked-by
-    v6: added more Acked-by
-    v5: added Cc
-    v2: cleaned up mips part, added Reviewed-by
-
- arch/alpha/include/asm/syscall.h      |  2 +-
- arch/arc/include/asm/syscall.h        |  2 +-
- arch/arm/include/asm/syscall.h        |  2 +-
- arch/arm64/include/asm/syscall.h      |  4 ++--
- arch/c6x/include/asm/syscall.h        |  2 +-
- arch/csky/include/asm/syscall.h       |  2 +-
- arch/h8300/include/asm/syscall.h      |  2 +-
- arch/hexagon/include/asm/syscall.h    |  2 +-
- arch/ia64/include/asm/syscall.h       |  2 +-
- arch/m68k/include/asm/syscall.h       |  2 +-
- arch/microblaze/include/asm/syscall.h |  2 +-
- arch/mips/include/asm/syscall.h       |  6 +++---
- arch/mips/kernel/ptrace.c             |  2 +-
- arch/nds32/include/asm/syscall.h      |  2 +-
- arch/nios2/include/asm/syscall.h      |  2 +-
- arch/openrisc/include/asm/syscall.h   |  2 +-
- arch/parisc/include/asm/syscall.h     |  4 ++--
- arch/powerpc/include/asm/syscall.h    | 10 ++++++++--
- arch/riscv/include/asm/syscall.h      |  2 +-
- arch/s390/include/asm/syscall.h       |  4 ++--
- arch/sh/include/asm/syscall_32.h      |  2 +-
- arch/sh/include/asm/syscall_64.h      |  2 +-
- arch/sparc/include/asm/syscall.h      |  5 +++--
- arch/unicore32/include/asm/syscall.h  |  2 +-
- arch/x86/include/asm/syscall.h        |  8 +++++---
- arch/x86/um/asm/syscall.h             |  2 +-
- arch/xtensa/include/asm/syscall.h     |  2 +-
- include/asm-generic/syscall.h         |  5 +++--
- kernel/auditsc.c                      |  4 ++--
- kernel/seccomp.c                      |  4 ++--
- 30 files changed, 52 insertions(+), 42 deletions(-)
-
-diff --git a/arch/alpha/include/asm/syscall.h b/arch/alpha/include/asm/syscall.h
-index c67d6a69d7c8..20078aef0922 100644
---- a/arch/alpha/include/asm/syscall.h
-+++ b/arch/alpha/include/asm/syscall.h
-@@ -33,7 +33,7 @@ syscall_get_return_value(struct task_struct *task, struct pt_regs *regs)
- }
+diff --git a/arch/arm/include/asm/unistd.h b/arch/arm/include/asm/unistd.h
+index d713587dfcf4..7a39e77984ef 100644
+--- a/arch/arm/include/asm/unistd.h
++++ b/arch/arm/include/asm/unistd.h
+@@ -26,10 +26,10 @@
+ #define __ARCH_WANT_SYS_SIGPROCMASK
+ #define __ARCH_WANT_SYS_OLD_MMAP
+ #define __ARCH_WANT_SYS_OLD_SELECT
+-#define __ARCH_WANT_SYS_UTIME
++#define __ARCH_WANT_SYS_UTIME32
  
- static inline int
--syscall_get_arch(void)
-+syscall_get_arch(struct task_struct *task)
- {
- 	return AUDIT_ARCH_ALPHA;
- }
-diff --git a/arch/arc/include/asm/syscall.h b/arch/arc/include/asm/syscall.h
-index c7fc4c0c3bcb..caf2697ef5b7 100644
---- a/arch/arc/include/asm/syscall.h
-+++ b/arch/arc/include/asm/syscall.h
-@@ -70,7 +70,7 @@ syscall_get_arguments(struct task_struct *task, struct pt_regs *regs,
- }
+ #if !defined(CONFIG_AEABI) || defined(CONFIG_OABI_COMPAT)
+-#define __ARCH_WANT_SYS_TIME
++#define __ARCH_WANT_SYS_TIME32
+ #define __ARCH_WANT_SYS_IPC
+ #define __ARCH_WANT_SYS_OLDUMOUNT
+ #define __ARCH_WANT_SYS_ALARM
+diff --git a/arch/arm/tools/syscall.tbl b/arch/arm/tools/syscall.tbl
+index 200f4b878a46..a96d9b5ee04e 100644
+--- a/arch/arm/tools/syscall.tbl
++++ b/arch/arm/tools/syscall.tbl
+@@ -24,7 +24,7 @@
+ 10	common	unlink			sys_unlink
+ 11	common	execve			sys_execve
+ 12	common	chdir			sys_chdir
+-13	oabi	time			sys_time
++13	oabi	time			sys_time32
+ 14	common	mknod			sys_mknod
+ 15	common	chmod			sys_chmod
+ 16	common	lchown			sys_lchown16
+@@ -36,12 +36,12 @@
+ 22	oabi	umount			sys_oldumount
+ 23	common	setuid			sys_setuid16
+ 24	common	getuid			sys_getuid16
+-25	oabi	stime			sys_stime
++25	oabi	stime			sys_stime32
+ 26	common	ptrace			sys_ptrace
+ 27	oabi	alarm			sys_alarm
+ # 28 was sys_fstat
+ 29	common	pause			sys_pause
+-30	oabi	utime			sys_utime
++30	oabi	utime			sys_utime32
+ # 31 was sys_stty
+ # 32 was sys_gtty
+ 33	common	access			sys_access
+@@ -283,7 +283,7 @@
+ 266	common	statfs64		sys_statfs64_wrapper
+ 267	common	fstatfs64		sys_fstatfs64_wrapper
+ 268	common	tgkill			sys_tgkill
+-269	common	utimes			sys_utimes
++269	common	utimes			sys_utimes_time32
+ 270	common	arm_fadvise64_64	sys_arm_fadvise64_64
+ 271	common	pciconfig_iobase	sys_pciconfig_iobase
+ 272	common	pciconfig_read		sys_pciconfig_read
+@@ -340,7 +340,7 @@
+ 323	common	mkdirat			sys_mkdirat
+ 324	common	mknodat			sys_mknodat
+ 325	common	fchownat		sys_fchownat
+-326	common	futimesat		sys_futimesat
++326	common	futimesat		sys_futimesat_time32
+ 327	common	fstatat64		sys_fstatat64		sys_oabi_fstatat64
+ 328	common	unlinkat		sys_unlinkat
+ 329	common	renameat		sys_renameat
+diff --git a/arch/m68k/include/asm/unistd.h b/arch/m68k/include/asm/unistd.h
+index 49d5de18646b..2e0047cf86f8 100644
+--- a/arch/m68k/include/asm/unistd.h
++++ b/arch/m68k/include/asm/unistd.h
+@@ -15,8 +15,8 @@
+ #define __ARCH_WANT_SYS_IPC
+ #define __ARCH_WANT_SYS_PAUSE
+ #define __ARCH_WANT_SYS_SIGNAL
+-#define __ARCH_WANT_SYS_TIME
+-#define __ARCH_WANT_SYS_UTIME
++#define __ARCH_WANT_SYS_TIME32
++#define __ARCH_WANT_SYS_UTIME32
+ #define __ARCH_WANT_SYS_WAITPID
+ #define __ARCH_WANT_SYS_SOCKETCALL
+ #define __ARCH_WANT_SYS_FADVISE64
+diff --git a/arch/m68k/kernel/syscalls/syscall.tbl b/arch/m68k/kernel/syscalls/syscall.tbl
+index fe7583987efc..dec78dc5b056 100644
+--- a/arch/m68k/kernel/syscalls/syscall.tbl
++++ b/arch/m68k/kernel/syscalls/syscall.tbl
+@@ -20,7 +20,7 @@
+ 10	common	unlink				sys_unlink
+ 11	common	execve				sys_execve
+ 12	common	chdir				sys_chdir
+-13	common	time				sys_time
++13	common	time				sys_time32
+ 14	common	mknod				sys_mknod
+ 15	common	chmod				sys_chmod
+ 16	common	chown				sys_chown16
+@@ -32,12 +32,12 @@
+ 22	common	umount				sys_oldumount
+ 23	common	setuid				sys_setuid16
+ 24	common	getuid				sys_getuid16
+-25	common	stime				sys_stime
++25	common	stime				sys_stime32
+ 26	common	ptrace				sys_ptrace
+ 27	common	alarm				sys_alarm
+ 28	common	oldfstat			sys_fstat
+ 29	common	pause				sys_pause
+-30	common	utime				sys_utime
++30	common	utime				sys_utime32
+ # 31 was stty
+ # 32 was gtty
+ 33	common	access				sys_access
+@@ -273,7 +273,7 @@
+ 263	common	statfs64			sys_statfs64
+ 264	common	fstatfs64			sys_fstatfs64
+ 265	common	tgkill				sys_tgkill
+-266	common	utimes				sys_utimes
++266	common	utimes				sys_utimes_time32
+ 267	common	fadvise64_64			sys_fadvise64_64
+ 268	common	mbind				sys_mbind
+ 269	common	get_mempolicy			sys_get_mempolicy
+@@ -299,7 +299,7 @@
+ 289	common	mkdirat				sys_mkdirat
+ 290	common	mknodat				sys_mknodat
+ 291	common	fchownat			sys_fchownat
+-292	common	futimesat			sys_futimesat
++292	common	futimesat			sys_futimesat_time32
+ 293	common	fstatat64			sys_fstatat64
+ 294	common	unlinkat			sys_unlinkat
+ 295	common	renameat			sys_renameat
+diff --git a/arch/microblaze/include/asm/unistd.h b/arch/microblaze/include/asm/unistd.h
+index 9b7c2c4eaf12..d79d35ac6253 100644
+--- a/arch/microblaze/include/asm/unistd.h
++++ b/arch/microblaze/include/asm/unistd.h
+@@ -21,8 +21,8 @@
+ #define __ARCH_WANT_SYS_GETHOSTNAME
+ #define __ARCH_WANT_SYS_PAUSE
+ #define __ARCH_WANT_SYS_SIGNAL
+-#define __ARCH_WANT_SYS_TIME
+-#define __ARCH_WANT_SYS_UTIME
++#define __ARCH_WANT_SYS_TIME32
++#define __ARCH_WANT_SYS_UTIME32
+ #define __ARCH_WANT_SYS_WAITPID
+ #define __ARCH_WANT_SYS_SOCKETCALL
+ #define __ARCH_WANT_SYS_FADVISE64
+diff --git a/arch/microblaze/kernel/syscalls/syscall.tbl b/arch/microblaze/kernel/syscalls/syscall.tbl
+index 492ff5c35b68..44a87649d681 100644
+--- a/arch/microblaze/kernel/syscalls/syscall.tbl
++++ b/arch/microblaze/kernel/syscalls/syscall.tbl
+@@ -20,7 +20,7 @@
+ 10	common	unlink				sys_unlink
+ 11	common	execve				sys_execve
+ 12	common	chdir				sys_chdir
+-13	common	time				sys_time
++13	common	time				sys_time32
+ 14	common	mknod				sys_mknod
+ 15	common	chmod				sys_chmod
+ 16	common	lchown				sys_lchown
+@@ -32,12 +32,12 @@
+ 22	common	umount				sys_oldumount
+ 23	common	setuid				sys_setuid
+ 24	common	getuid				sys_getuid
+-25	common	stime				sys_stime
++25	common	stime				sys_stime32
+ 26	common	ptrace				sys_ptrace
+ 27	common	alarm				sys_alarm
+ 28	common	oldfstat			sys_ni_syscall
+ 29	common	pause				sys_pause
+-30	common	utime				sys_utime
++30	common	utime				sys_utime32
+ 31	common	stty				sys_ni_syscall
+ 32	common	gtty				sys_ni_syscall
+ 33	common	access				sys_access
+@@ -278,7 +278,7 @@
+ 268	common	statfs64			sys_statfs64
+ 269	common	fstatfs64			sys_fstatfs64
+ 270	common	tgkill				sys_tgkill
+-271	common	utimes				sys_utimes
++271	common	utimes				sys_utimes_time32
+ 272	common	fadvise64_64			sys_fadvise64_64
+ 273	common	vserver				sys_ni_syscall
+ 274	common	mbind				sys_mbind
+@@ -306,7 +306,7 @@
+ 296	common	mkdirat				sys_mkdirat
+ 297	common	mknodat				sys_mknodat
+ 298	common	fchownat			sys_fchownat
+-299	common	futimesat			sys_futimesat
++299	common	futimesat			sys_futimesat_time32
+ 300	common	fstatat64			sys_fstatat64
+ 301	common	unlinkat			sys_unlinkat
+ 302	common	renameat			sys_renameat
+diff --git a/arch/mips/include/asm/unistd.h b/arch/mips/include/asm/unistd.h
+index b23d74a601b3..a0bdd7247f73 100644
+--- a/arch/mips/include/asm/unistd.h
++++ b/arch/mips/include/asm/unistd.h
+@@ -45,10 +45,10 @@
+ #define __ARCH_WANT_SYS_SIGPROCMASK
+ # ifdef CONFIG_32BIT
+ #  define __ARCH_WANT_STAT64
+-#  define __ARCH_WANT_SYS_TIME
++#  define __ARCH_WANT_SYS_TIME32
+ # endif
+ # ifdef CONFIG_MIPS32_O32
+-#  define __ARCH_WANT_COMPAT_SYS_TIME
++#  define __ARCH_WANT_SYS_TIME32
+ # endif
+ #define __ARCH_WANT_SYS_FORK
+ #define __ARCH_WANT_SYS_CLONE
+diff --git a/arch/mips/kernel/syscalls/syscall_o32.tbl b/arch/mips/kernel/syscalls/syscall_o32.tbl
+index 5642d93b64c0..54312c5b5343 100644
+--- a/arch/mips/kernel/syscalls/syscall_o32.tbl
++++ b/arch/mips/kernel/syscalls/syscall_o32.tbl
+@@ -20,7 +20,7 @@
+ 10	o32	unlink				sys_unlink
+ 11	o32	execve				sys_execve			compat_sys_execve
+ 12	o32	chdir				sys_chdir
+-13	o32	time				sys_time			sys_time32
++13	o32	time				sys_time32
+ 14	o32	mknod				sys_mknod
+ 15	o32	chmod				sys_chmod
+ 16	o32	lchown				sys_lchown
+@@ -33,13 +33,13 @@
+ 22	o32	umount				sys_oldumount
+ 23	o32	setuid				sys_setuid
+ 24	o32	getuid				sys_getuid
+-25	o32	stime				sys_stime			sys_stime32
++25	o32	stime				sys_stime32
+ 26	o32	ptrace				sys_ptrace			compat_sys_ptrace
+ 27	o32	alarm				sys_alarm
+ # 28 was sys_fstat
+ 28	o32	unused28			sys_ni_syscall
+ 29	o32	pause				sys_pause
+-30	o32	utime				sys_utime			sys_utime32
++30	o32	utime				sys_utime32
+ 31	o32	stty				sys_ni_syscall
+ 32	o32	gtty				sys_ni_syscall
+ 33	o32	access				sys_access
+@@ -278,7 +278,7 @@
+ 264	o32	clock_getres			sys_clock_getres_time32
+ 265	o32	clock_nanosleep			sys_clock_nanosleep_time32
+ 266	o32	tgkill				sys_tgkill
+-267	o32	utimes				sys_utimes			sys_utimes_time32
++267	o32	utimes				sys_utimes_time32
+ 268	o32	mbind				sys_mbind			compat_sys_mbind
+ 269	o32	get_mempolicy			sys_get_mempolicy		compat_sys_get_mempolicy
+ 270	o32	set_mempolicy			sys_set_mempolicy		compat_sys_set_mempolicy
+@@ -303,7 +303,7 @@
+ 289	o32	mkdirat				sys_mkdirat
+ 290	o32	mknodat				sys_mknodat
+ 291	o32	fchownat			sys_fchownat
+-292	o32	futimesat			sys_futimesat			sys_futimesat_time32
++292	o32	futimesat			sys_futimesat_time32
+ 293	o32	fstatat64			sys_fstatat64			sys_newfstatat
+ 294	o32	unlinkat			sys_unlinkat
+ 295	o32	renameat			sys_renameat
+diff --git a/arch/parisc/include/asm/unistd.h b/arch/parisc/include/asm/unistd.h
+index 9ec1026af877..354e9f13c106 100644
+--- a/arch/parisc/include/asm/unistd.h
++++ b/arch/parisc/include/asm/unistd.h
+@@ -153,10 +153,8 @@ type name(type1 arg1, type2 arg2, type3 arg3, type4 arg4, type5 arg5)	\
+ #define __ARCH_WANT_SYS_GETHOSTNAME
+ #define __ARCH_WANT_SYS_PAUSE
+ #define __ARCH_WANT_SYS_SIGNAL
+-#define __ARCH_WANT_SYS_TIME
+-#define __ARCH_WANT_COMPAT_SYS_TIME
++#define __ARCH_WANT_SYS_TIME32
+ #define __ARCH_WANT_COMPAT_SYS_SCHED_RR_GET_INTERVAL
+-#define __ARCH_WANT_SYS_UTIME
+ #define __ARCH_WANT_SYS_UTIME32
+ #define __ARCH_WANT_SYS_WAITPID
+ #define __ARCH_WANT_SYS_SOCKETCALL
+@@ -171,6 +169,11 @@ type name(type1 arg1, type2 arg2, type3 arg3, type4 arg4, type5 arg5)	\
+ #define __ARCH_WANT_SYS_CLONE
+ #define __ARCH_WANT_COMPAT_SYS_SENDFILE
  
- static inline int
--syscall_get_arch(void)
-+syscall_get_arch(struct task_struct *task)
- {
- 	return IS_ENABLED(CONFIG_ISA_ARCOMPACT)
- 		? (IS_ENABLED(CONFIG_CPU_BIG_ENDIAN)
-diff --git a/arch/arm/include/asm/syscall.h b/arch/arm/include/asm/syscall.h
-index 06dea6bce293..3940ceac0bdc 100644
---- a/arch/arm/include/asm/syscall.h
-+++ b/arch/arm/include/asm/syscall.h
-@@ -104,7 +104,7 @@ static inline void syscall_set_arguments(struct task_struct *task,
- 	memcpy(&regs->ARM_r0 + i, args, n * sizeof(args[0]));
- }
- 
--static inline int syscall_get_arch(void)
-+static inline int syscall_get_arch(struct task_struct *task)
- {
- 	/* ARM tasks don't change audit architectures on the fly. */
- 	return AUDIT_ARCH_ARM;
-diff --git a/arch/arm64/include/asm/syscall.h b/arch/arm64/include/asm/syscall.h
-index ad8be16a39c9..1870df03f774 100644
---- a/arch/arm64/include/asm/syscall.h
-+++ b/arch/arm64/include/asm/syscall.h
-@@ -117,9 +117,9 @@ static inline void syscall_set_arguments(struct task_struct *task,
-  * We don't care about endianness (__AUDIT_ARCH_LE bit) here because
-  * AArch64 has the same system calls both on little- and big- endian.
-  */
--static inline int syscall_get_arch(void)
-+static inline int syscall_get_arch(struct task_struct *task)
- {
--	if (is_compat_task())
-+	if (is_compat_thread(task_thread_info(task)))
- 		return AUDIT_ARCH_ARM;
- 
- 	return AUDIT_ARCH_AARCH64;
-diff --git a/arch/c6x/include/asm/syscall.h b/arch/c6x/include/asm/syscall.h
-index 39dbd1ef994c..595057191c9c 100644
---- a/arch/c6x/include/asm/syscall.h
-+++ b/arch/c6x/include/asm/syscall.h
-@@ -121,7 +121,7 @@ static inline void syscall_set_arguments(struct task_struct *task,
- 	}
- }
- 
--static inline int syscall_get_arch(void)
-+static inline int syscall_get_arch(struct task_struct *task)
- {
- 	return IS_ENABLED(CONFIG_CPU_BIG_ENDIAN)
- 		? AUDIT_ARCH_C6XBE : AUDIT_ARCH_C6X;
-diff --git a/arch/csky/include/asm/syscall.h b/arch/csky/include/asm/syscall.h
-index d637445737b7..150ffb894fa2 100644
---- a/arch/csky/include/asm/syscall.h
-+++ b/arch/csky/include/asm/syscall.h
-@@ -70,7 +70,7 @@ syscall_set_arguments(struct task_struct *task, struct pt_regs *regs,
- }
- 
- static inline int
--syscall_get_arch(void)
-+syscall_get_arch(struct task_struct *task)
- {
- 	return AUDIT_ARCH_CSKY;
- }
-diff --git a/arch/h8300/include/asm/syscall.h b/arch/h8300/include/asm/syscall.h
-index 0a6565d12836..5c2ab1072700 100644
---- a/arch/h8300/include/asm/syscall.h
-+++ b/arch/h8300/include/asm/syscall.h
-@@ -62,7 +62,7 @@ syscall_get_return_value(struct task_struct *task, struct pt_regs *regs)
- }
- 
- static inline int
--syscall_get_arch(void)
-+syscall_get_arch(struct task_struct *task)
- {
- 	return AUDIT_ARCH_H8300;
- }
-diff --git a/arch/hexagon/include/asm/syscall.h b/arch/hexagon/include/asm/syscall.h
-index c3290c0bc458..94bdfd22f912 100644
---- a/arch/hexagon/include/asm/syscall.h
-+++ b/arch/hexagon/include/asm/syscall.h
-@@ -60,7 +60,7 @@ static inline long syscall_get_return_value(struct task_struct *task,
- 	return regs->r00;
- }
- 
--static inline int syscall_get_arch(void)
-+static inline int syscall_get_arch(struct task_struct *task)
- {
- 	return AUDIT_ARCH_HEXAGON;
- }
-diff --git a/arch/ia64/include/asm/syscall.h b/arch/ia64/include/asm/syscall.h
-index 1d0b875fec44..47ab33f5448a 100644
---- a/arch/ia64/include/asm/syscall.h
-+++ b/arch/ia64/include/asm/syscall.h
-@@ -81,7 +81,7 @@ static inline void syscall_set_arguments(struct task_struct *task,
- 	ia64_syscall_get_set_arguments(task, regs, i, n, args, 1);
- }
- 
--static inline int syscall_get_arch(void)
-+static inline int syscall_get_arch(struct task_struct *task)
- {
- 	return AUDIT_ARCH_IA64;
- }
-diff --git a/arch/m68k/include/asm/syscall.h b/arch/m68k/include/asm/syscall.h
-index c87b14417753..e5ea2e20d3a5 100644
---- a/arch/m68k/include/asm/syscall.h
-+++ b/arch/m68k/include/asm/syscall.h
-@@ -34,7 +34,7 @@ syscall_get_return_value(struct task_struct *task, struct pt_regs *regs)
- }
- 
- static inline int
--syscall_get_arch(void)
-+syscall_get_arch(struct task_struct *task)
- {
- 	return AUDIT_ARCH_M68K;
- }
-diff --git a/arch/microblaze/include/asm/syscall.h b/arch/microblaze/include/asm/syscall.h
-index 220decd605a4..77a86fafa974 100644
---- a/arch/microblaze/include/asm/syscall.h
-+++ b/arch/microblaze/include/asm/syscall.h
-@@ -101,7 +101,7 @@ static inline void syscall_set_arguments(struct task_struct *task,
- asmlinkage unsigned long do_syscall_trace_enter(struct pt_regs *regs);
- asmlinkage void do_syscall_trace_leave(struct pt_regs *regs);
- 
--static inline int syscall_get_arch(void)
-+static inline int syscall_get_arch(struct task_struct *task)
- {
- 	return AUDIT_ARCH_MICROBLAZE;
- }
-diff --git a/arch/mips/include/asm/syscall.h b/arch/mips/include/asm/syscall.h
-index 04ab927ff47d..466957d0474b 100644
---- a/arch/mips/include/asm/syscall.h
-+++ b/arch/mips/include/asm/syscall.h
-@@ -146,14 +146,14 @@ extern const unsigned long sys_call_table[];
- extern const unsigned long sys32_call_table[];
- extern const unsigned long sysn32_call_table[];
- 
--static inline int syscall_get_arch(void)
-+static inline int syscall_get_arch(struct task_struct *task)
- {
- 	int arch = AUDIT_ARCH_MIPS;
- #ifdef CONFIG_64BIT
--	if (!test_thread_flag(TIF_32BIT_REGS)) {
-+	if (!test_tsk_thread_flag(task, TIF_32BIT_REGS)) {
- 		arch |= __AUDIT_ARCH_64BIT;
- 		/* N32 sets only TIF_32BIT_ADDR */
--		if (test_thread_flag(TIF_32BIT_ADDR))
-+		if (test_tsk_thread_flag(task, TIF_32BIT_ADDR))
- 			arch |= __AUDIT_ARCH_CONVENTION_MIPS64_N32;
- 	}
- #endif
-diff --git a/arch/mips/kernel/ptrace.c b/arch/mips/kernel/ptrace.c
-index 0057c910bc2f..2ead6ff919b7 100644
---- a/arch/mips/kernel/ptrace.c
-+++ b/arch/mips/kernel/ptrace.c
-@@ -1418,7 +1418,7 @@ asmlinkage long syscall_trace_enter(struct pt_regs *regs, long syscall)
- 		unsigned long args[6];
- 
- 		sd.nr = syscall;
--		sd.arch = syscall_get_arch();
-+		sd.arch = syscall_get_arch(current);
- 		syscall_get_arguments(current, regs, 0, 6, args);
- 		for (i = 0; i < 6; i++)
- 			sd.args[i] = args[i];
-diff --git a/arch/nds32/include/asm/syscall.h b/arch/nds32/include/asm/syscall.h
-index 569149ca25da..e109acd225e6 100644
---- a/arch/nds32/include/asm/syscall.h
-+++ b/arch/nds32/include/asm/syscall.h
-@@ -187,7 +187,7 @@ void syscall_set_arguments(struct task_struct *task, struct pt_regs *regs,
- 	memcpy(&regs->uregs[0] + i, args, n * sizeof(args[0]));
- }
- 
--static inline int syscall_get_arch(void)
-+static inline int syscall_get_arch(struct task_struct *task)
- {
- 	return IS_ENABLED(CONFIG_CPU_BIG_ENDIAN)
- 		? AUDIT_ARCH_NDS32BE : AUDIT_ARCH_NDS32;
-diff --git a/arch/nios2/include/asm/syscall.h b/arch/nios2/include/asm/syscall.h
-index cf35e210fc4d..f0f6ae208e78 100644
---- a/arch/nios2/include/asm/syscall.h
-+++ b/arch/nios2/include/asm/syscall.h
-@@ -136,7 +136,7 @@ static inline void syscall_set_arguments(struct task_struct *task,
- 	}
- }
- 
--static inline int syscall_get_arch(void)
-+static inline int syscall_get_arch(struct task_struct *task)
- {
- 	return AUDIT_ARCH_NIOS2;
- }
-diff --git a/arch/openrisc/include/asm/syscall.h b/arch/openrisc/include/asm/syscall.h
-index 2db9f1cf0694..46b10c674bd2 100644
---- a/arch/openrisc/include/asm/syscall.h
-+++ b/arch/openrisc/include/asm/syscall.h
-@@ -72,7 +72,7 @@ syscall_set_arguments(struct task_struct *task, struct pt_regs *regs,
- 	memcpy(&regs->gpr[3 + i], args, n * sizeof(args[0]));
- }
- 
--static inline int syscall_get_arch(void)
-+static inline int syscall_get_arch(struct task_struct *task)
- {
- 	return AUDIT_ARCH_OPENRISC;
- }
-diff --git a/arch/parisc/include/asm/syscall.h b/arch/parisc/include/asm/syscall.h
-index 477511ff7546..310016e1925d 100644
---- a/arch/parisc/include/asm/syscall.h
-+++ b/arch/parisc/include/asm/syscall.h
-@@ -69,11 +69,11 @@ static inline void syscall_rollback(struct task_struct *task,
- 	/* do nothing */
- }
- 
--static inline int syscall_get_arch(void)
-+static inline int syscall_get_arch(struct task_struct *task)
- {
- 	int arch = AUDIT_ARCH_PARISC;
- #ifdef CONFIG_64BIT
--	if (!is_compat_task())
-+	if (!__is_compat_task(task))
- 		arch = AUDIT_ARCH_PARISC64;
- #endif
- 	return arch;
-diff --git a/arch/powerpc/include/asm/syscall.h b/arch/powerpc/include/asm/syscall.h
-index b522781ad7c0..7375808c566c 100644
---- a/arch/powerpc/include/asm/syscall.h
-+++ b/arch/powerpc/include/asm/syscall.h
-@@ -109,9 +109,15 @@ static inline void syscall_set_arguments(struct task_struct *task,
- 		regs->orig_gpr3 = args[0];
- }
- 
--static inline int syscall_get_arch(void)
-+static inline int syscall_get_arch(struct task_struct *task)
- {
--	int arch = is_32bit_task() ? AUDIT_ARCH_PPC : AUDIT_ARCH_PPC64;
-+	int arch;
++#ifdef CONFIG_64BIT
++#define __ARCH_WANT_SYS_TIME
++#define __ARCH_WANT_SYS_UTIME
++#endif
 +
-+	if (IS_ENABLED(CONFIG_PPC64) && !test_tsk_thread_flag(task, TIF_32BIT))
-+		arch = AUDIT_ARCH_PPC64;
-+	else
-+		arch = AUDIT_ARCH_PPC;
-+
- #ifdef __LITTLE_ENDIAN__
- 	arch |= __AUDIT_ARCH_LE;
+ #endif /* __ASSEMBLY__ */
+ 
+ #undef STR
+diff --git a/arch/parisc/kernel/syscalls/syscall.tbl b/arch/parisc/kernel/syscalls/syscall.tbl
+index 1b3bb683c014..2521cd561769 100644
+--- a/arch/parisc/kernel/syscalls/syscall.tbl
++++ b/arch/parisc/kernel/syscalls/syscall.tbl
+@@ -20,7 +20,8 @@
+ 10	common	unlink			sys_unlink
+ 11	common	execve			sys_execve			compat_sys_execve
+ 12	common	chdir			sys_chdir
+-13	common	time			sys_time			sys_time32
++13	32	time			sys_time32
++13	64	time			sys_time
+ 14	common	mknod			sys_mknod
+ 15	common	chmod			sys_chmod
+ 16	common	lchown			sys_lchown
+@@ -32,12 +33,14 @@
+ 22	common	bind			sys_bind
+ 23	common	setuid			sys_setuid
+ 24	common	getuid			sys_getuid
+-25	common	stime			sys_stime			sys_stime32
++25	32	stime			sys_stime32
++25	64	stime			sys_stime
+ 26	common	ptrace			sys_ptrace			compat_sys_ptrace
+ 27	common	alarm			sys_alarm
+ 28	common	fstat			sys_newfstat			compat_sys_newfstat
+ 29	common	pause			sys_pause
+-30	common	utime			sys_utime			sys_utime32
++30	32	utime			sys_utime32
++30	64	utime			sys_utime
+ 31	common	connect			sys_connect
+ 32	common	listen			sys_listen
+ 33	common	access			sys_access
+@@ -310,7 +313,8 @@
+ 276	common	mkdirat			sys_mkdirat
+ 277	common	mknodat			sys_mknodat
+ 278	common	fchownat		sys_fchownat
+-279	common	futimesat		sys_futimesat			sys_futimesat_time32
++279	32	futimesat		sys_futimesat_time32
++279	64	futimesat		sys_futimesat
+ 280	common	fstatat64		sys_fstatat64
+ 281	common	unlinkat		sys_unlinkat
+ 282	common	renameat		sys_renameat
+@@ -374,7 +378,8 @@
+ 333	common	finit_module		sys_finit_module
+ 334	common	sched_setattr		sys_sched_setattr
+ 335	common	sched_getattr		sys_sched_getattr
+-336	common	utimes			sys_utimes			sys_utimes_time32
++336	32	utimes			sys_utimes_time32
++336	64	utimes			sys_utimes
+ 337	common	renameat2		sys_renameat2
+ 338	common	seccomp			sys_seccomp
+ 339	common	getrandom		sys_getrandom
+diff --git a/arch/powerpc/include/asm/unistd.h b/arch/powerpc/include/asm/unistd.h
+index a3c35e6d6ffb..f44dbc65e38e 100644
+--- a/arch/powerpc/include/asm/unistd.h
++++ b/arch/powerpc/include/asm/unistd.h
+@@ -29,8 +29,8 @@
+ #define __ARCH_WANT_SYS_IPC
+ #define __ARCH_WANT_SYS_PAUSE
+ #define __ARCH_WANT_SYS_SIGNAL
+-#define __ARCH_WANT_SYS_TIME
+-#define __ARCH_WANT_SYS_UTIME
++#define __ARCH_WANT_SYS_TIME32
++#define __ARCH_WANT_SYS_UTIME32
+ #define __ARCH_WANT_SYS_WAITPID
+ #define __ARCH_WANT_SYS_SOCKETCALL
+ #define __ARCH_WANT_SYS_FADVISE64
+@@ -45,8 +45,8 @@
+ #define __ARCH_WANT_OLD_STAT
  #endif
-diff --git a/arch/riscv/include/asm/syscall.h b/arch/riscv/include/asm/syscall.h
-index bba3da6ef157..ca120a36a037 100644
---- a/arch/riscv/include/asm/syscall.h
-+++ b/arch/riscv/include/asm/syscall.h
-@@ -100,7 +100,7 @@ static inline void syscall_set_arguments(struct task_struct *task,
- 	memcpy(&regs->a1 + i * sizeof(regs->a1), args, n * sizeof(regs->a0));
- }
- 
--static inline int syscall_get_arch(void)
-+static inline int syscall_get_arch(struct task_struct *task)
- {
- #ifdef CONFIG_64BIT
- 	return AUDIT_ARCH_RISCV64;
-diff --git a/arch/s390/include/asm/syscall.h b/arch/s390/include/asm/syscall.h
-index 96f9a9151fde..5a40ea8b90ea 100644
---- a/arch/s390/include/asm/syscall.h
-+++ b/arch/s390/include/asm/syscall.h
-@@ -92,10 +92,10 @@ static inline void syscall_set_arguments(struct task_struct *task,
- 		regs->orig_gpr2 = args[0];
- }
- 
--static inline int syscall_get_arch(void)
-+static inline int syscall_get_arch(struct task_struct *task)
- {
- #ifdef CONFIG_COMPAT
--	if (test_tsk_thread_flag(current, TIF_31BIT))
-+	if (test_tsk_thread_flag(task, TIF_31BIT))
- 		return AUDIT_ARCH_S390;
+ #ifdef CONFIG_PPC64
+-#define __ARCH_WANT_COMPAT_SYS_TIME
+-#define __ARCH_WANT_SYS_UTIME32
++#define __ARCH_WANT_SYS_TIME
++#define __ARCH_WANT_SYS_UTIME
+ #define __ARCH_WANT_SYS_NEWFSTATAT
+ #define __ARCH_WANT_COMPAT_SYS_SENDFILE
  #endif
- 	return AUDIT_ARCH_S390X;
-diff --git a/arch/sh/include/asm/syscall_32.h b/arch/sh/include/asm/syscall_32.h
-index 6e118799831c..08de429eccd4 100644
---- a/arch/sh/include/asm/syscall_32.h
-+++ b/arch/sh/include/asm/syscall_32.h
-@@ -95,7 +95,7 @@ static inline void syscall_set_arguments(struct task_struct *task,
- 	}
- }
- 
--static inline int syscall_get_arch(void)
-+static inline int syscall_get_arch(struct task_struct *task)
- {
- 	int arch = AUDIT_ARCH_SH;
- 
-diff --git a/arch/sh/include/asm/syscall_64.h b/arch/sh/include/asm/syscall_64.h
-index 43882580c7f9..9b62a2404531 100644
---- a/arch/sh/include/asm/syscall_64.h
-+++ b/arch/sh/include/asm/syscall_64.h
-@@ -63,7 +63,7 @@ static inline void syscall_set_arguments(struct task_struct *task,
- 	memcpy(&regs->regs[2 + i], args, n * sizeof(args[0]));
- }
- 
--static inline int syscall_get_arch(void)
-+static inline int syscall_get_arch(struct task_struct *task)
- {
- 	int arch = AUDIT_ARCH_SH;
- 
-diff --git a/arch/sparc/include/asm/syscall.h b/arch/sparc/include/asm/syscall.h
-index 053989e3f6a6..9ffb367c17fd 100644
---- a/arch/sparc/include/asm/syscall.h
-+++ b/arch/sparc/include/asm/syscall.h
-@@ -128,10 +128,11 @@ static inline void syscall_set_arguments(struct task_struct *task,
- 		regs->u_regs[UREG_I0 + i + j] = args[j];
- }
- 
--static inline int syscall_get_arch(void)
-+static inline int syscall_get_arch(struct task_struct *task)
- {
- #if defined(CONFIG_SPARC64) && defined(CONFIG_COMPAT)
--	return in_compat_syscall() ? AUDIT_ARCH_SPARC : AUDIT_ARCH_SPARC64;
-+	return test_tsk_thread_flag(task, TIF_32BIT)
-+		? AUDIT_ARCH_SPARC : AUDIT_ARCH_SPARC64;
- #elif defined(CONFIG_SPARC64)
- 	return AUDIT_ARCH_SPARC64;
+diff --git a/arch/powerpc/kernel/syscalls/syscall.tbl b/arch/powerpc/kernel/syscalls/syscall.tbl
+index a5315f6dac26..ed02c21bb5a2 100644
+--- a/arch/powerpc/kernel/syscalls/syscall.tbl
++++ b/arch/powerpc/kernel/syscalls/syscall.tbl
+@@ -20,7 +20,9 @@
+ 10	common	unlink				sys_unlink
+ 11	nospu	execve				sys_execve			compat_sys_execve
+ 12	common	chdir				sys_chdir
+-13	common	time				sys_time			sys_time32
++13	32	time				sys_time32
++13	64	time				sys_time
++13	spu	time				sys_time
+ 14	common	mknod				sys_mknod
+ 15	common	chmod				sys_chmod
+ 16	common	lchown				sys_lchown
+@@ -36,14 +38,17 @@
+ 22	spu	umount				sys_ni_syscall
+ 23	common	setuid				sys_setuid
+ 24	common	getuid				sys_getuid
+-25	common	stime				sys_stime			sys_stime32
++25	32	stime				sys_stime32
++25	64	stime				sys_stime
++25	spu	stime				sys_stime
+ 26	nospu	ptrace				sys_ptrace			compat_sys_ptrace
+ 27	common	alarm				sys_alarm
+ 28	32	oldfstat			sys_fstat			sys_ni_syscall
+ 28	64	oldfstat			sys_ni_syscall
+ 28	spu	oldfstat			sys_ni_syscall
+ 29	nospu	pause				sys_pause
+-30	nospu	utime				sys_utime			sys_utime32
++30	32	utime				sys_utime32
++30	64	utime				sys_utime
+ 31	common	stty				sys_ni_syscall
+ 32	common	gtty				sys_ni_syscall
+ 33	common	access				sys_access
+@@ -315,7 +320,9 @@
+ 249	64	swapcontext			ppc64_swapcontext
+ 249	spu	swapcontext			sys_ni_syscall
+ 250	common	tgkill				sys_tgkill
+-251	common	utimes				sys_utimes			sys_utimes_time32
++251	32	utimes				sys_utimes_time32
++251	64	utimes				sys_utimes
++251	spu	utimes				sys_utimes
+ 252	common	statfs64			sys_statfs64			compat_sys_statfs64
+ 253	common	fstatfs64			sys_fstatfs64			compat_sys_fstatfs64
+ 254	32	fadvise64_64			ppc_fadvise64_64
+@@ -361,7 +368,9 @@
+ 287	common	mkdirat				sys_mkdirat
+ 288	common	mknodat				sys_mknodat
+ 289	common	fchownat			sys_fchownat
+-290	common	futimesat			sys_futimesat			sys_futimesat_time32
++290	32	futimesat			sys_futimesat_time32
++290	64	futimesat			sys_futimesat
++290	spu	utimesat			sys_futimesat
+ 291	32	fstatat64			sys_fstatat64
+ 291	64	newfstatat			sys_newfstatat
+ 291	spu	newfstatat			sys_newfstatat
+diff --git a/arch/s390/include/asm/unistd.h b/arch/s390/include/asm/unistd.h
+index ed08f114ee91..7ac6b4a217d9 100644
+--- a/arch/s390/include/asm/unistd.h
++++ b/arch/s390/include/asm/unistd.h
+@@ -30,7 +30,7 @@
+ #define __ARCH_WANT_SYS_SIGPENDING
+ #define __ARCH_WANT_SYS_SIGPROCMASK
+ # ifdef CONFIG_COMPAT
+-#   define __ARCH_WANT_COMPAT_SYS_TIME
++#   define __ARCH_WANT_SYS_TIME32
+ #   define __ARCH_WANT_SYS_UTIME32
+ # endif
+ #define __ARCH_WANT_SYS_FORK
+diff --git a/arch/sh/include/asm/unistd.h b/arch/sh/include/asm/unistd.h
+index a97f93ca3bd7..9c7d9d9999c6 100644
+--- a/arch/sh/include/asm/unistd.h
++++ b/arch/sh/include/asm/unistd.h
+@@ -16,8 +16,8 @@
+ # define __ARCH_WANT_SYS_IPC
+ # define __ARCH_WANT_SYS_PAUSE
+ # define __ARCH_WANT_SYS_SIGNAL
+-# define __ARCH_WANT_SYS_TIME
+-# define __ARCH_WANT_SYS_UTIME
++# define __ARCH_WANT_SYS_TIME32
++# define __ARCH_WANT_SYS_UTIME32
+ # define __ARCH_WANT_SYS_WAITPID
+ # define __ARCH_WANT_SYS_SOCKETCALL
+ # define __ARCH_WANT_SYS_FADVISE64
+diff --git a/arch/sh/kernel/syscalls/syscall.tbl b/arch/sh/kernel/syscalls/syscall.tbl
+index e6a18d3db6ac..d3993b305cab 100644
+--- a/arch/sh/kernel/syscalls/syscall.tbl
++++ b/arch/sh/kernel/syscalls/syscall.tbl
+@@ -20,7 +20,7 @@
+ 10	common	unlink				sys_unlink
+ 11	common	execve				sys_execve
+ 12	common	chdir				sys_chdir
+-13	common	time				sys_time
++13	common	time				sys_time32
+ 14	common	mknod				sys_mknod
+ 15	common	chmod				sys_chmod
+ 16	common	lchown				sys_lchown16
+@@ -32,12 +32,12 @@
+ 22	common	umount				sys_oldumount
+ 23	common	setuid				sys_setuid16
+ 24	common	getuid				sys_getuid16
+-25	common	stime				sys_stime
++25	common	stime				sys_stime32
+ 26	common	ptrace				sys_ptrace
+ 27	common	alarm				sys_alarm
+ 28	common	oldfstat			sys_fstat
+ 29	common	pause				sys_pause
+-30	common	utime				sys_utime
++30	common	utime				sys_utime32
+ # 31 was stty
+ # 32 was gtty
+ 33	common	access				sys_access
+@@ -278,7 +278,7 @@
+ 268	common	statfs64			sys_statfs64
+ 269	common	fstatfs64			sys_fstatfs64
+ 270	common	tgkill				sys_tgkill
+-271	common	utimes				sys_utimes
++271	common	utimes				sys_utimes_time32
+ 272	common	fadvise64_64			sys_fadvise64_64_wrapper
+ # 273 is reserved for vserver
+ 274	common	mbind				sys_mbind
+@@ -306,7 +306,7 @@
+ 296	common	mkdirat				sys_mkdirat
+ 297	common	mknodat				sys_mknodat
+ 298	common	fchownat			sys_fchownat
+-299	common	futimesat			sys_futimesat
++299	common	futimesat			sys_futimesat_time32
+ 300	common	fstatat64			sys_fstatat64
+ 301	common	unlinkat			sys_unlinkat
+ 302	common	renameat			sys_renameat
+diff --git a/arch/sparc/include/asm/unistd.h b/arch/sparc/include/asm/unistd.h
+index 08696ea5dca8..1e66278ba4a5 100644
+--- a/arch/sparc/include/asm/unistd.h
++++ b/arch/sparc/include/asm/unistd.h
+@@ -30,8 +30,8 @@
+ #define __ARCH_WANT_SYS_GETHOSTNAME
+ #define __ARCH_WANT_SYS_PAUSE
+ #define __ARCH_WANT_SYS_SIGNAL
+-#define __ARCH_WANT_SYS_TIME
+-#define __ARCH_WANT_SYS_UTIME
++#define __ARCH_WANT_SYS_TIME32
++#define __ARCH_WANT_SYS_UTIME32
+ #define __ARCH_WANT_SYS_WAITPID
+ #define __ARCH_WANT_SYS_SOCKETCALL
+ #define __ARCH_WANT_SYS_FADVISE64
+@@ -43,8 +43,8 @@
+ #ifdef __32bit_syscall_numbers__
+ #define __ARCH_WANT_SYS_IPC
  #else
-diff --git a/arch/unicore32/include/asm/syscall.h b/arch/unicore32/include/asm/syscall.h
-index 267e97e256bd..1451bce52eb8 100644
---- a/arch/unicore32/include/asm/syscall.h
-+++ b/arch/unicore32/include/asm/syscall.h
-@@ -39,7 +39,7 @@ syscall_get_return_value(struct task_struct *task, struct pt_regs *regs)
+-#define __ARCH_WANT_COMPAT_SYS_TIME
+-#define __ARCH_WANT_SYS_UTIME32
++#define __ARCH_WANT_SYS_TIME
++#define __ARCH_WANT_SYS_UTIME
+ #define __ARCH_WANT_COMPAT_SYS_SENDFILE
+ #endif
+ 
+diff --git a/arch/sparc/kernel/syscalls/syscall.tbl b/arch/sparc/kernel/syscalls/syscall.tbl
+index 29b77f3bf2b7..fde7491f76e8 100644
+--- a/arch/sparc/kernel/syscalls/syscall.tbl
++++ b/arch/sparc/kernel/syscalls/syscall.tbl
+@@ -44,7 +44,8 @@
+ 28	common	sigaltstack		sys_sigaltstack			compat_sys_sigaltstack
+ 29	32    	pause			sys_pause
+ 29	64    	pause			sys_nis_syscall
+-30	common	utime			sys_utime			sys_utime32
++30	32	utime			sys_utime32
++30	64	utime			sys_utime
+ 31	32    	lchown32		sys_lchown
+ 32	32    	fchown32		sys_fchown
+ 33	common	access			sys_access
+@@ -169,7 +170,8 @@
+ 135	common	socketpair		sys_socketpair
+ 136	common	mkdir			sys_mkdir
+ 137	common	rmdir			sys_rmdir
+-138	common	utimes			sys_utimes			sys_utimes_time32
++138	32	utimes			sys_utimes_time32
++138	64	utimes			sys_utimes
+ 139	common	stat64			sys_stat64			compat_sys_stat64
+ 140	common	sendfile64		sys_sendfile64
+ 141	common	getpeername		sys_getpeername
+@@ -274,9 +276,10 @@
+ 228	common	setfsuid		sys_setfsuid16
+ 229	common	setfsgid		sys_setfsgid16
+ 230	common	_newselect		sys_select			compat_sys_select
+-231	32	time			sys_time			sys_time32
++231	32	time			sys_time32
+ 232	common	splice			sys_splice
+-233	common	stime			sys_stime			sys_stime32
++233	32	stime			sys_stime32
++233	64	stime			sys_stime
+ 234	common	statfs64		sys_statfs64			compat_sys_statfs64
+ 235	common	fstatfs64		sys_fstatfs64			compat_sys_fstatfs64
+ 236	common	_llseek			sys_llseek
+@@ -345,7 +348,8 @@
+ 285	common	mkdirat			sys_mkdirat
+ 286	common	mknodat			sys_mknodat
+ 287	common	fchownat		sys_fchownat
+-288	common	futimesat		sys_futimesat			sys_futimesat_time32
++288	32	futimesat		sys_futimesat_time32
++288	64	futimesat		sys_futimesat
+ 289	common	fstatat64		sys_fstatat64			compat_sys_fstatat64
+ 290	common	unlinkat		sys_unlinkat
+ 291	common	renameat		sys_renameat
+diff --git a/arch/x86/entry/syscalls/syscall_32.tbl b/arch/x86/entry/syscalls/syscall_32.tbl
+index 35c7a1ebdf3d..1ad4b1c5417d 100644
+--- a/arch/x86/entry/syscalls/syscall_32.tbl
++++ b/arch/x86/entry/syscalls/syscall_32.tbl
+@@ -24,7 +24,7 @@
+ 10	i386	unlink			sys_unlink			__ia32_sys_unlink
+ 11	i386	execve			sys_execve			__ia32_compat_sys_execve
+ 12	i386	chdir			sys_chdir			__ia32_sys_chdir
+-13	i386	time			sys_time			__ia32_sys_time32
++13	i386	time			sys_time32			__ia32_sys_time32
+ 14	i386	mknod			sys_mknod			__ia32_sys_mknod
+ 15	i386	chmod			sys_chmod			__ia32_sys_chmod
+ 16	i386	lchown			sys_lchown16			__ia32_sys_lchown16
+@@ -36,12 +36,12 @@
+ 22	i386	umount			sys_oldumount			__ia32_sys_oldumount
+ 23	i386	setuid			sys_setuid16			__ia32_sys_setuid16
+ 24	i386	getuid			sys_getuid16			__ia32_sys_getuid16
+-25	i386	stime			sys_stime			__ia32_sys_stime32
++25	i386	stime			sys_stime32			__ia32_sys_stime32
+ 26	i386	ptrace			sys_ptrace			__ia32_compat_sys_ptrace
+ 27	i386	alarm			sys_alarm			__ia32_sys_alarm
+ 28	i386	oldfstat		sys_fstat			__ia32_sys_fstat
+ 29	i386	pause			sys_pause			__ia32_sys_pause
+-30	i386	utime			sys_utime			__ia32_sys_utime32
++30	i386	utime			sys_utime32			__ia32_sys_utime32
+ 31	i386	stty
+ 32	i386	gtty
+ 33	i386	access			sys_access			__ia32_sys_access
+@@ -282,7 +282,7 @@
+ 268	i386	statfs64		sys_statfs64			__ia32_compat_sys_statfs64
+ 269	i386	fstatfs64		sys_fstatfs64			__ia32_compat_sys_fstatfs64
+ 270	i386	tgkill			sys_tgkill			__ia32_sys_tgkill
+-271	i386	utimes			sys_utimes			__ia32_sys_utimes_time32
++271	i386	utimes			sys_utimes_time32		__ia32_sys_utimes_time32
+ 272	i386	fadvise64_64		sys_fadvise64_64		__ia32_compat_sys_x86_fadvise64_64
+ 273	i386	vserver
+ 274	i386	mbind			sys_mbind			__ia32_sys_mbind
+@@ -310,7 +310,7 @@
+ 296	i386	mkdirat			sys_mkdirat			__ia32_sys_mkdirat
+ 297	i386	mknodat			sys_mknodat			__ia32_sys_mknodat
+ 298	i386	fchownat		sys_fchownat			__ia32_sys_fchownat
+-299	i386	futimesat		sys_futimesat			__ia32_sys_futimesat_time32
++299	i386	futimesat		sys_futimesat_time32		__ia32_sys_futimesat_time32
+ 300	i386	fstatat64		sys_fstatat64			__ia32_compat_sys_x86_fstatat
+ 301	i386	unlinkat		sys_unlinkat			__ia32_sys_unlinkat
+ 302	i386	renameat		sys_renameat			__ia32_sys_renameat
+diff --git a/arch/x86/include/asm/unistd.h b/arch/x86/include/asm/unistd.h
+index dc4ed8bc2382..146859efd83c 100644
+--- a/arch/x86/include/asm/unistd.h
++++ b/arch/x86/include/asm/unistd.h
+@@ -23,8 +23,8 @@
+ 
+ #  include <asm/unistd_64.h>
+ #  include <asm/unistd_64_x32.h>
+-#  define __ARCH_WANT_COMPAT_SYS_TIME
+-#  define __ARCH_WANT_SYS_UTIME32
++#  define __ARCH_WANT_SYS_TIME
++#  define __ARCH_WANT_SYS_UTIME
+ #  define __ARCH_WANT_COMPAT_SYS_PREADV64
+ #  define __ARCH_WANT_COMPAT_SYS_PWRITEV64
+ #  define __ARCH_WANT_COMPAT_SYS_PREADV64V2
+@@ -48,8 +48,8 @@
+ # define __ARCH_WANT_SYS_SIGPENDING
+ # define __ARCH_WANT_SYS_SIGPROCMASK
+ # define __ARCH_WANT_SYS_SOCKETCALL
+-# define __ARCH_WANT_SYS_TIME
+-# define __ARCH_WANT_SYS_UTIME
++# define __ARCH_WANT_SYS_TIME32
++# define __ARCH_WANT_SYS_UTIME32
+ # define __ARCH_WANT_SYS_WAITPID
+ # define __ARCH_WANT_SYS_FORK
+ # define __ARCH_WANT_SYS_VFORK
+diff --git a/arch/xtensa/include/asm/unistd.h b/arch/xtensa/include/asm/unistd.h
+index 0d34629dafc5..2bcc5d633df0 100644
+--- a/arch/xtensa/include/asm/unistd.h
++++ b/arch/xtensa/include/asm/unistd.h
+@@ -7,7 +7,7 @@
+ 
+ #define __ARCH_WANT_NEW_STAT
+ #define __ARCH_WANT_STAT64
+-#define __ARCH_WANT_SYS_UTIME
++#define __ARCH_WANT_SYS_UTIME32
+ #define __ARCH_WANT_SYS_GETPGRP
+ 
+ /* 
+diff --git a/arch/xtensa/kernel/syscalls/syscall.tbl b/arch/xtensa/kernel/syscalls/syscall.tbl
+index 6f05bc8f015a..482673389e21 100644
+--- a/arch/xtensa/kernel/syscalls/syscall.tbl
++++ b/arch/xtensa/kernel/syscalls/syscall.tbl
+@@ -72,8 +72,8 @@
+ 61	common	fcntl64				sys_fcntl64
+ 62	common	fallocate			sys_fallocate
+ 63	common	fadvise64_64			xtensa_fadvise64_64
+-64	common	utime				sys_utime
+-65	common	utimes				sys_utimes
++64	common	utime				sys_utime32
++65	common	utimes				sys_utimes_time32
+ 66	common	ioctl				sys_ioctl
+ 67	common	fcntl				sys_fcntl
+ 68	common	setxattr			sys_setxattr
+@@ -318,7 +318,7 @@
+ 295	common	readlinkat			sys_readlinkat
+ 296	common	utimensat			sys_utimensat_time32
+ 297	common	fchownat			sys_fchownat
+-298	common	futimesat			sys_futimesat
++298	common	futimesat			sys_futimesat_time32
+ 299	common	fstatat64			sys_fstatat64
+ 300	common	fchmodat			sys_fchmodat
+ 301	common	faccessat			sys_faccessat
+diff --git a/kernel/time/time.c b/kernel/time/time.c
+index 6261f969dcb7..c3f756f8534b 100644
+--- a/kernel/time/time.c
++++ b/kernel/time/time.c
+@@ -99,7 +99,7 @@ SYSCALL_DEFINE1(stime, time_t __user *, tptr)
+ #endif /* __ARCH_WANT_SYS_TIME */
+ 
+ #ifdef CONFIG_COMPAT_32BIT_TIME
+-#ifdef __ARCH_WANT_COMPAT_SYS_TIME
++#ifdef __ARCH_WANT_SYS_TIME32
+ 
+ /* old_time32_t is a 32 bit "long" and needs to get converted. */
+ SYSCALL_DEFINE1(time32, old_time32_t __user *, tloc)
+@@ -134,7 +134,7 @@ SYSCALL_DEFINE1(stime32, old_time32_t __user *, tptr)
+ 	return 0;
  }
  
- static inline int
--syscall_get_arch(void)
-+syscall_get_arch(struct task_struct *task)
- {
- 	return AUDIT_ARCH_UNICORE;
- }
-diff --git a/arch/x86/include/asm/syscall.h b/arch/x86/include/asm/syscall.h
-index d653139857af..435f3f09279c 100644
---- a/arch/x86/include/asm/syscall.h
-+++ b/arch/x86/include/asm/syscall.h
-@@ -107,7 +107,7 @@ static inline void syscall_set_arguments(struct task_struct *task,
- 	memcpy(&regs->bx + i, args, n * sizeof(args[0]));
- }
+-#endif /* __ARCH_WANT_COMPAT_SYS_TIME */
++#endif /* __ARCH_WANT_SYS_TIME32 */
+ #endif
  
--static inline int syscall_get_arch(void)
-+static inline int syscall_get_arch(struct task_struct *task)
- {
- 	return AUDIT_ARCH_I386;
- }
-@@ -236,10 +236,12 @@ static inline void syscall_set_arguments(struct task_struct *task,
- 		}
- }
- 
--static inline int syscall_get_arch(void)
-+static inline int syscall_get_arch(struct task_struct *task)
- {
- 	/* x32 tasks should be considered AUDIT_ARCH_X86_64. */
--	return in_ia32_syscall() ? AUDIT_ARCH_I386 : AUDIT_ARCH_X86_64;
-+	return (IS_ENABLED(CONFIG_IA32_EMULATION) &&
-+		task->thread_info.status & TS_COMPAT)
-+		? AUDIT_ARCH_I386 : AUDIT_ARCH_X86_64;
- }
- #endif	/* CONFIG_X86_32 */
- 
-diff --git a/arch/x86/um/asm/syscall.h b/arch/x86/um/asm/syscall.h
-index ef898af102d1..56a2f0913e3c 100644
---- a/arch/x86/um/asm/syscall.h
-+++ b/arch/x86/um/asm/syscall.h
-@@ -9,7 +9,7 @@ typedef asmlinkage long (*sys_call_ptr_t)(unsigned long, unsigned long,
- 					  unsigned long, unsigned long,
- 					  unsigned long, unsigned long);
- 
--static inline int syscall_get_arch(void)
-+static inline int syscall_get_arch(struct task_struct *task)
- {
- #ifdef CONFIG_X86_32
- 	return AUDIT_ARCH_I386;
-diff --git a/arch/xtensa/include/asm/syscall.h b/arch/xtensa/include/asm/syscall.h
-index a168bf81c7f4..0681ca656809 100644
---- a/arch/xtensa/include/asm/syscall.h
-+++ b/arch/xtensa/include/asm/syscall.h
-@@ -14,7 +14,7 @@
- #include <asm/ptrace.h>
- #include <uapi/linux/audit.h>
- 
--static inline int syscall_get_arch(void)
-+static inline int syscall_get_arch(struct task_struct *task)
- {
- 	return AUDIT_ARCH_XTENSA;
- }
-diff --git a/include/asm-generic/syscall.h b/include/asm-generic/syscall.h
-index fdefe27fa63f..43216b431770 100644
---- a/include/asm-generic/syscall.h
-+++ b/include/asm-generic/syscall.h
-@@ -194,16 +194,17 @@ syscall_set_arguments(struct task_struct *task, struct pt_regs *regs,
- 
- /**
-  * syscall_get_arch - return the AUDIT_ARCH for the current system call
-+ * @task:	task of interest, must be blocked
-  *
-  * Returns the AUDIT_ARCH_* based on the system call convention in use.
-  *
-- * It's only valid to call this when current is stopped on entry to a system
-+ * It's only valid to call this when @task is stopped on entry to a system
-  * call, due to %TIF_SYSCALL_TRACE, %TIF_SYSCALL_AUDIT, or %TIF_SECCOMP.
-  *
-  * Architectures which permit CONFIG_HAVE_ARCH_SECCOMP_FILTER must
-  * provide an implementation of this.
-  */
- static int
--syscall_get_arch(void);
-+syscall_get_arch(struct task_struct *task);
- 
- #endif	/* _ASM_GENERIC_SYSCALL_H */
-diff --git a/kernel/auditsc.c b/kernel/auditsc.c
-index 6593a5207fb0..919fe4ef4314 100644
---- a/kernel/auditsc.c
-+++ b/kernel/auditsc.c
-@@ -1505,7 +1505,7 @@ void __audit_syscall_entry(int major, unsigned long a1, unsigned long a2,
- 			return;
- 	}
- 
--	context->arch	    = syscall_get_arch();
-+	context->arch	    = syscall_get_arch(current);
- 	context->major      = major;
- 	context->argv[0]    = a1;
- 	context->argv[1]    = a2;
-@@ -2480,7 +2480,7 @@ void audit_seccomp(unsigned long syscall, long signr, int code)
- 		return;
- 	audit_log_task(ab);
- 	audit_log_format(ab, " sig=%ld arch=%x syscall=%ld compat=%d ip=0x%lx code=0x%x",
--			 signr, syscall_get_arch(), syscall,
-+			 signr, syscall_get_arch(current), syscall,
- 			 in_compat_syscall(), KSTK_EIP(current), code);
- 	audit_log_end(ab);
- }
-diff --git a/kernel/seccomp.c b/kernel/seccomp.c
-index d7f538847b84..803a69e6af37 100644
---- a/kernel/seccomp.c
-+++ b/kernel/seccomp.c
-@@ -148,7 +148,7 @@ static void populate_seccomp_data(struct seccomp_data *sd)
- 	unsigned long args[6];
- 
- 	sd->nr = syscall_get_nr(task, regs);
--	sd->arch = syscall_get_arch();
-+	sd->arch = syscall_get_arch(task);
- 	syscall_get_arguments(task, regs, 0, 6, args);
- 	sd->args[0] = args[0];
- 	sd->args[1] = args[1];
-@@ -589,7 +589,7 @@ static void seccomp_init_siginfo(kernel_siginfo_t *info, int syscall, int reason
- 	info->si_code = SYS_SECCOMP;
- 	info->si_call_addr = (void __user *)KSTK_EIP(current);
- 	info->si_errno = reason;
--	info->si_arch = syscall_get_arch();
-+	info->si_arch = syscall_get_arch(current);
- 	info->si_syscall = syscall;
- }
- 
+ SYSCALL_DEFINE2(gettimeofday, struct timeval __user *, tv,
 -- 
-ldv
+2.20.0
