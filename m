@@ -1,61 +1,48 @@
-From: Firoz Khan <firoz.khan@linaro.org>
-Date: Wed, 02 Jan 2019 15:49:24 +0000
-Subject: [PATCH 1/2] sh: remove nargs from __SYSCALL
-Message-Id: <1546443445-21075-2-git-send-email-firoz.khan@linaro.org>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Thu, 10 Jan 2019 16:24:31 +0000
+Subject: [PATCH 11/15] mips: fix n32 compat_ipc_parse_version
+Message-Id: <20190110162435.309262-12-arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1546443445-21075-1-git-send-email-firoz.khan@linaro.org>
-In-Reply-To: <1546443445-21075-1-git-send-email-firoz.khan@linaro.org>
+References: <20190110162435.309262-1-arnd@arndb.de>
+In-Reply-To: <20190110162435.309262-1-arnd@arndb.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Andrew Morton <akpm@linux-foundation.org>, Simon Horman <horms+renesas@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, linux-sh@vger.kernel.org, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Philippe Ombredanne <pombredanne@nexb.com>, Thomas Gleixner <tglx@linutronix.de>, Kate Stewart <kstewart@linuxfoundation.org>
-Cc: y2038@lists.linaro.org, linux-kernel@vger.kernel.org, linux-arch@vger.kernel.org, arnd@arndb.de, deepa.kernel@gmail.com, marcin.juszkiewicz@linaro.org, firoz.khan@linaro.org
+To: y2038@lists.linaro.org, linux-api@vger.kernel.org, linux-kernel@vger.kernel.org
+Cc: dalias@libc.org, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, catalin.marinas@arm.com, will.deacon@arm.com, linux@dominikbrodowski.net, jcmvbkbc@gmail.com, deepa.kernel@gmail.com, hpa@zytor.com, sparclinux@vger.kernel.org, linux-s390@vger.kernel.org, dave@stgolabs.net, mpe@ellerman.id.au, deller@gmx.de, x86@kernel.org, linux@armlinux.org.uk, mingo@redhat.com, geert@linux-m68k.org, firoz.khan@linaro.org, mattst88@gmail.com, fenghua.yu@intel.com, Arnd Bergmann <arnd@arndb.de>, heiko.carstens@de.ibm.com, linux-m68k@lists.linux-m68k.org, ink@jurassic.park.msu.ru, luto@kernel.org, tglx@linutronix.de, linux-arm-kernel@lists.infradead.org, monstr@monstr.eu, tony.luck@intel.com, linux-parisc@vger.kernel.org, linux-mips@vger.kernel.org, stable@vger.kernel.org, paul.burton@mips.com, ebiederm@xmission.com, linux-alpha@vger.kernel.org, schwidefsky@de.ibm.com, akpm@linux-foun
 
-The __SYSCALL macro's arguments are system call number,
-system call entry name and number of arguments for the
-system call.
+While reading through the sysvipc implementation, I noticed that the n32
+semctl/shmctl/msgctl system calls behave differently based on whether
+o32 support is enabled or not: Without o32, the IPC_64 flag passed by
+user space is rejected but calls without that flag get IPC_64 behavior.
 
-Argument- nargs in __SYSCALL(nr, entry, nargs) is neither
-calculated nor used anywhere. So it would be better to
-keep the implementaion as  __SYSCALL(nr, entry). This will
-unifies the implementation with some other architetures
-too.
+As far as I can tell, this was inadvertently changed by a cleanup patch
+but never noticed by anyone, possibly nobody has tried using sysvipc
+on n32 after linux-3.19.
 
-Signed-off-by: Firoz Khan <firoz.khan@linaro.org>
+Change it back to the old behavior now.
+
+Fixes: 78aaf956ba3a ("MIPS: Compat: Fix build error if CONFIG_MIPS32_COMPAT but no compat ABI.")
+Cc: stable@vger.kernel.org
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
 ---
- arch/sh/kernel/syscalls/syscalltbl.sh | 4 ++--
- arch/sh/kernel/syscalls_32.S          | 2 +-
- 2 files changed, 3 insertions(+), 3 deletions(-)
+As stated above, this was only found by inspection, the patch is not
+tested. Please review accordingly.
+---
+ arch/mips/Kconfig | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/sh/kernel/syscalls/syscalltbl.sh b/arch/sh/kernel/syscalls/syscalltbl.sh
-index 85d78d9..904b8e6 100644
---- a/arch/sh/kernel/syscalls/syscalltbl.sh
-+++ b/arch/sh/kernel/syscalls/syscalltbl.sh
-@@ -13,10 +13,10 @@ emit() {
- 	t_entry="$3"
- 
- 	while [ $t_nxt -lt $t_nr ]; do
--		printf "__SYSCALL(%s, sys_ni_syscall, )\n" "${t_nxt}"
-+		printf "__SYSCALL(%s,sys_ni_syscall)\n" "${t_nxt}"
- 		t_nxt=$((t_nxt+1))
- 	done
--	printf "__SYSCALL(%s, %s, )\n" "${t_nxt}" "${t_entry}"
-+	printf "__SYSCALL(%s,%s)\n" "${t_nxt}" "${t_entry}"
- }
- 
- grep -E "^[0-9A-Fa-fXx]+[[:space:]]+${my_abis}" "$in" | sort -n | (
-diff --git a/arch/sh/kernel/syscalls_32.S b/arch/sh/kernel/syscalls_32.S
-index 96e9c54..bd1a9c5 100644
---- a/arch/sh/kernel/syscalls_32.S
-+++ b/arch/sh/kernel/syscalls_32.S
-@@ -10,7 +10,7 @@
- #include <linux/sys.h>
- #include <linux/linkage.h>
- 
--#define __SYSCALL(nr, entry, nargs) .long entry
-+#define __SYSCALL(nr, entry)	.long entry
- 	.data
- ENTRY(sys_call_table)
- #include <asm/syscall_table.h>
+diff --git a/arch/mips/Kconfig b/arch/mips/Kconfig
+index 787290781b8c..0d14f51d0002 100644
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -3155,6 +3155,7 @@ config MIPS32_O32
+ config MIPS32_N32
+ 	bool "Kernel support for n32 binaries"
+ 	depends on 64BIT
++	select ARCH_WANT_COMPAT_IPC_PARSE_VERSION
+ 	select COMPAT
+ 	select MIPS32_COMPAT
+ 	select SYSVIPC_COMPAT if SYSVIPC
 -- 
-1.9.1
+2.20.0
