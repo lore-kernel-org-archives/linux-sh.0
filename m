@@ -1,70 +1,37 @@
-From: Mike Rapoport <rppt@linux.ibm.com>
-Date: Mon, 21 Jan 2019 08:04:04 +0000
-Subject: [PATCH v2 17/21] init/main: add checks for the return value of memblock_alloc*()
-Message-Id: <1548057848-15136-18-git-send-email-rppt@linux.ibm.com>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Thu, 10 Jan 2019 16:24:23 +0000
+Subject: [PATCH 03/15] ia64: assign syscall numbers for perf and seccomp
+Message-Id: <20190110162435.309262-4-arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1548057848-15136-1-git-send-email-rppt@linux.ibm.com>
-In-Reply-To: <1548057848-15136-1-git-send-email-rppt@linux.ibm.com>
+References: <20190110162435.309262-1-arnd@arndb.de>
+In-Reply-To: <20190110162435.309262-1-arnd@arndb.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mm@kvack.org
-Cc: Rich Felker <dalias@libc.org>, linux-ia64@vger.kernel.org, devicetree@vger.kernel.org, Catalin Marinas <catalin.marinas@arm.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, x86@kernel.org, linux-mips@vger.kernel.org, Max Filippov <jcmvbkbc@gmail.com>, Guo Ren <guoren@kernel.org>, sparclinux@vger.kernel.org, Christoph Hellwig <hch@lst.de>, linux-s390@vger.kernel.org, linux-c6x-dev@linux-c6x.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Richard Weinberger <richard@nod.at>, linux-sh@vger.kernel.org, Russell King <linux@armlinux.org.uk>, kasan-dev@googlegroups.com, Mike Rapoport <rppt@linux.ibm.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Mark Salter <msalter@redhat.com>, Dennis Zhou <dennis@kernel.org>, Matt Turner <mattst88@gmail.com>, linux-snps-arc@lists.infradead.org, uclinux-h8-devel@lists.sourceforge.jp, Petr Mladek <pmladek@suse.com>, linux-xtensa@linux-xtensa.org, linux-alpha@vger.kernel.org, linux-um@lists.infradead.org, linux-m68k@lists.linux-m68k.org, Rob Herring <robh+dt@kernel.org>, Greentime Hu <green.hu@gmail.com>, xen-devel@lists.xenproject.org, Stafford Horne <shorne@gmail.com>, Guan Xuetao <gxt@pku.edu.cn>, linux-arm-kernel@lists.infradead.org, Michal Simek <monstr@monstr.eu>, Tony Luck <tony.luck@intel.com>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, linux-usb@vger.kernel.org, linux-kernel@vger.kernel.org, Paul Burton <paul.burton@mips.com>, Vineet Gupta <vgupta@synopsys.com>, Michael Ellerman <mpe@ellerman.id.au>, Andrew Morton <akpm@linux-foundation.org>, linuxppc-dev@lists.ozlabs.org, "David S. Miller" <davem@davemloft.net>, openrisc@lists.librecores.org
+To: y2038@lists.linaro.org, linux-api@vger.kernel.org, linux-kernel@vger.kernel.org
+Cc: dalias@libc.org, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, catalin.marinas@arm.com, will.deacon@arm.com, linux@dominikbrodowski.net, jcmvbkbc@gmail.com, deepa.kernel@gmail.com, hpa@zytor.com, sparclinux@vger.kernel.org, linux-s390@vger.kernel.org, dave@stgolabs.net, mpe@ellerman.id.au, deller@gmx.de, x86@kernel.org, linux@armlinux.org.uk, mingo@redhat.com, geert@linux-m68k.org, firoz.khan@linaro.org, mattst88@gmail.com, fenghua.yu@intel.com, Arnd Bergmann <arnd@arndb.de>, heiko.carstens@de.ibm.com, linux-m68k@lists.linux-m68k.org, ink@jurassic.park.msu.ru, luto@kernel.org, tglx@linutronix.de, linux-arm-kernel@lists.infradead.org, monstr@monstr.eu, tony.luck@intel.com, linux-parisc@vger.kernel.org, linux-mips@vger.kernel.org, paul.burton@mips.com, ebiederm@xmission.com, linux-alpha@vger.kernel.org, schwidefsky@de.ibm.com, akpm@linux-foundation.org, linuxppc-dev
 
-Add panic() calls if memblock_alloc() returns NULL.
+Most architectures have assigned numbers for both seccomp and
+perf_event_open, even when they do not implement either.
 
-The panic() format duplicates the one used by memblock itself and in order
-to avoid explosion with long parameters list replace open coded allocation
-size calculations with a local variable.
+ia64 is an exception here, so for consistency lets add numbers for both
+of them. Unless CONFIG_PERF_EVENTS and CONFIG_SECCOMP are implemented,
+the system calls just return -ENOSYS.
 
-Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
 ---
- init/main.c | 26 ++++++++++++++++++++------
- 1 file changed, 20 insertions(+), 6 deletions(-)
+ arch/ia64/kernel/syscalls/syscall.tbl | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/init/main.c b/init/main.c
-index a56f65a..d58a365 100644
---- a/init/main.c
-+++ b/init/main.c
-@@ -373,12 +373,20 @@ static inline void smp_prepare_cpus(unsigned int maxcpus) { }
-  */
- static void __init setup_command_line(char *command_line)
- {
--	saved_command_line -		memblock_alloc(strlen(boot_command_line) + 1, SMP_CACHE_BYTES);
--	initcall_command_line -		memblock_alloc(strlen(boot_command_line) + 1, SMP_CACHE_BYTES);
--	static_command_line = memblock_alloc(strlen(command_line) + 1,
--					     SMP_CACHE_BYTES);
-+	size_t len = strlen(boot_command_line) + 1;
-+
-+	saved_command_line = memblock_alloc(len, SMP_CACHE_BYTES);
-+	if (!saved_command_line)
-+		panic("%s: Failed to allocate %zu bytes\n", __func__, len);
-+
-+	initcall_command_line =	memblock_alloc(len, SMP_CACHE_BYTES);
-+	if (!initcall_command_line)
-+		panic("%s: Failed to allocate %zu bytes\n", __func__, len);
-+
-+	static_command_line = memblock_alloc(len, SMP_CACHE_BYTES);
-+	if (!static_command_line)
-+		panic("%s: Failed to allocate %zu bytes\n", __func__, len);
-+
- 	strcpy(saved_command_line, boot_command_line);
- 	strcpy(static_command_line, command_line);
- }
-@@ -773,8 +781,14 @@ static int __init initcall_blacklist(char *str)
- 			pr_debug("blacklisting initcall %s\n", str_entry);
- 			entry = memblock_alloc(sizeof(*entry),
- 					       SMP_CACHE_BYTES);
-+			if (!entry)
-+				panic("%s: Failed to allocate %zu bytes\n",
-+				      __func__, sizeof(*entry));
- 			entry->buf = memblock_alloc(strlen(str_entry) + 1,
- 						    SMP_CACHE_BYTES);
-+			if (!entry->buf)
-+				panic("%s: Failed to allocate %zu bytes\n",
-+				      __func__, strlen(str_entry) + 1);
- 			strcpy(entry->buf, str_entry);
- 			list_add(&entry->next, &blacklisted_initcalls);
- 		}
+diff --git a/arch/ia64/kernel/syscalls/syscall.tbl b/arch/ia64/kernel/syscalls/syscall.tbl
+index 52585281205b..2e93dbdcdb80 100644
+--- a/arch/ia64/kernel/syscalls/syscall.tbl
++++ b/arch/ia64/kernel/syscalls/syscall.tbl
+@@ -337,3 +337,5 @@
+ 325	common	pwritev2			sys_pwritev2
+ 326	common	statx				sys_statx
+ 327	common	io_pgetevents			sys_io_pgetevents
++328	common	perf_event_open			sys_perf_event_open
++329	common	seccomp				sys_seccomp
 -- 
-2.7.4
+2.20.0
