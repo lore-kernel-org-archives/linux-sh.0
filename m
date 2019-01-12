@@ -1,37 +1,49 @@
-From: Rob Landley <rob@landley.net>
-Date: Sat, 12 Jan 2019 04:21:30 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Sat, 12 Jan 2019 09:22:56 +0000
 Subject: Re: [PATCH 2/2] sh: generate uapi header and syscall table header files
-Message-Id: <d329d7b8-62fb-9cb0-521e-ee7887f122a1@landley.net>
+Message-Id: <CAMuHMdXuo1wMvwx-FZB6uBJahSSbqrmnxEAfepnhAS_odQkHDA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1546443445-21075-1-git-send-email-firoz.khan@linaro.org>
- <1546443445-21075-3-git-send-email-firoz.khan@linaro.org>
- <20190110235428.GA10016@roeck-us.net>
+ <1546443445-21075-3-git-send-email-firoz.khan@linaro.org> <20190110235428.GA10016@roeck-us.net>
 In-Reply-To: <20190110235428.GA10016@roeck-us.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guenter Roeck <linux@roeck-us.net>, Firoz Khan <firoz.khan@linaro.org>
-Cc: Kate Stewart <kstewart@linuxfoundation.org>, linux-arch@vger.kernel.org, Rich Felker <dalias@libc.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, linux-sh@vger.kernel.org, y2038@lists.linaro.org, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, linux-kernel@vger.kernel.org, marcin.juszkiewicz@linaro.org, arnd@arndb.de, deepa.kernel@gmail.com, Philippe Ombredanne <pombredanne@nexb.com>, Simon Horman <horms+renesas@verge.net.au>, Andrew Morton <akpm@linux-foundation.org>, Thomas Gleixner <tglx@linutronix.de>
+To: Guenter Roeck <linux@roeck-us.net>
+Cc: Firoz Khan <firoz.khan@linaro.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Andrew Morton <akpm@linux-foundation.org>, Simon Horman <horms+renesas@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-sh list <linux-sh@vger.kernel.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Philippe Ombredanne <pombredanne@nexb.com>, Thomas Gleixner <tglx@linutronix.de>, Kate Stewart <kstewart@linuxfoundation.org>, y2038 Mailman List <y2038@lists.linaro.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Linux-Arch <linux-arch@vger.kernel.org>, Arnd Bergmann <arnd@arndb.de>, Deepa Dinamani <deepa.kernel@gmail.com>, Marcin Juszkiewicz <marcin.juszkiewicz@linaro.org>
 
-On 1/10/19 5:54 PM, Guenter Roeck wrote:
+On Fri, Jan 11, 2019 at 1:37 AM Guenter Roeck <linux@roeck-us.net> wrote:
 > On Wed, Jan 02, 2019 at 09:07:25PM +0530, Firoz Khan wrote:
->> Unified system call table generation script must be run to
->> generate unistd_32.h and syscall_table.h files. This patch
->> will have changes which will invokes the script.
->>
->> This patch will generate unistd_32.h and syscall_table.h
->> files by the syscall table generation script invoked by
->> sh/Makefile and the generated files against the removed
->> files must be identical.
->>
->> The generated uapi header file will be included in uapi/-
->> asm/unistd.h and generated system call table header file
->> will be included by kernel/syscall_32.S file.
->>
->> Signed-off-by: Firoz Khan <firoz.khan@linaro.org>
-> 
+> > Unified system call table generation script must be run to
+> > generate unistd_32.h and syscall_table.h files. This patch
+> > will have changes which will invokes the script.
+> >
+> > This patch will generate unistd_32.h and syscall_table.h
+> > files by the syscall table generation script invoked by
+> > sh/Makefile and the generated files against the removed
+> > files must be identical.
+> >
+> > The generated uapi header file will be included in uapi/-
+> > asm/unistd.h and generated system call table header file
+> > will be included by kernel/syscall_32.S file.
+> >
+> > Signed-off-by: Firoz Khan <firoz.khan@linaro.org>
+>
 > Have you tested this patch ?
 
-I tested it at one point, but not recently. (It was before 4.20 came out...)
+All these series depend on "scripts: unify system call table generation
+scripts"
+https://lore.kernel.org/lkml/1546439331-18646-1-git-send-email-firoz.khan@linaro.org/
 
-Rob
+Yeah, 0day also didn't know that.
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+-- 
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
