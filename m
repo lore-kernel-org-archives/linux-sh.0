@@ -1,31 +1,43 @@
-From: Michal Hocko <mhocko@kernel.org>
-Date: Sun, 13 Jan 2019 17:35:55 +0000
+From: Anshuman Khandual <anshuman.khandual@arm.com>
+Date: Mon, 14 Jan 2019 04:12:55 +0000
 Subject: Re: [PATCH] mm: Introduce GFP_PGTABLE
-Message-Id: <20190113173555.GC1578@dhcp22.suse.cz>
+Message-Id: <f9f333a5-5533-996a-dc8e-1ff1096c1d19@arm.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1547288798-10243-1-git-send-email-anshuman.khandual@arm.com>
-In-Reply-To: <1547288798-10243-1-git-send-email-anshuman.khandual@arm.com>
+ <20190113173555.GC1578@dhcp22.suse.cz>
+In-Reply-To: <20190113173555.GC1578@dhcp22.suse.cz>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Anshuman Khandual <anshuman.khandual@arm.com>
-Cc: mark.rutland@arm.com, linux-sh@vger.kernel.org, peterz@infradead.org, catalin.marinas@arm.com, dave.hansen@linux.intel.com, will.deacon@arm.com, linux-kernel@vger.kernel.org, linux-mm@kvack.org, kvmarm@lists.cs.columbia.edu, mpe@ellerman.id.au, linux@armlinux.org.uk, mingo@redhat.com, vbabka@suse.cz, rientjes@google.com, marc.zyngier@arm.com, rppt@linux.vnet.ibm.com, shakeelb@google.com, kirill@shutemov.name, tglx@linutronix.de, linux-arm-kernel@lists.infradead.org, ard.biesheuvel@linaro.org, robin.murphy@arm.com, steve.capper@arm.com, christoffer.dall@arm.com, james.morse@arm.com, aneesh.kumar@linux.ibm.com, akpm@linux-foundation.org, linuxppc-dev@lists.ozlabs.org
+To: Michal Hocko <mhocko@kernel.org>
+Cc: linux-mm@kvack.org, akpm@linux-foundation.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-arm-kernel@lists.infradead.org, linux-sh@vger.kernel.org, kvmarm@lists.cs.columbia.edu, linux@armlinux.org.uk, catalin.marinas@arm.com, will.deacon@arm.com, mpe@ellerman.id.au, tglx@linutronix.de, mingo@redhat.com, dave.hansen@linux.intel.com, peterz@infradead.org, christoffer.dall@arm.com, marc.zyngier@arm.com, kirill@shutemov.name, rppt@linux.vnet.ibm.com, ard.biesheuvel@linaro.org, mark.rutland@arm.com, steve.capper@arm.com, james.morse@arm.com, robin.murphy@arm.com, aneesh.kumar@linux.ibm.com, vbabka@suse.cz, shakeelb@google.com, rientjes@google.com
 
-On Sat 12-01-19 15:56:38, Anshuman Khandual wrote:
-> All architectures have been defining their own PGALLOC_GFP as (GFP_KERNEL |
-> __GFP_ZERO) and using it for allocating page table pages. This causes some
-> code duplication which can be easily avoided. GFP_KERNEL allocated and
-> cleared out pages (__GFP_ZERO) are required for page tables on any given
-> architecture. This creates a new generic GFP flag flag which can be used
-> for any page table page allocation. Does not cause any functional change.
 
-I agree that some unification is due but GFP_PGTABLE is not something to
-expose in generic gfp.h IMHO. It just risks an abuse. I would be looking
-at providing asm-generic implementation and reuse it to remove the code
-duplication. But I haven't tried that to know that it will work out due
-to small/subtle differences between arches.
 
-> Signed-off-by: Anshuman Khandual <anshuman.khandual@arm.com>
--- 
-Michal Hocko
-SUSE Labs
+On 01/13/2019 11:05 PM, Michal Hocko wrote:
+> On Sat 12-01-19 15:56:38, Anshuman Khandual wrote:
+>> All architectures have been defining their own PGALLOC_GFP as (GFP_KERNEL |
+>> __GFP_ZERO) and using it for allocating page table pages. This causes some
+>> code duplication which can be easily avoided. GFP_KERNEL allocated and
+>> cleared out pages (__GFP_ZERO) are required for page tables on any given
+>> architecture. This creates a new generic GFP flag flag which can be used
+>> for any page table page allocation. Does not cause any functional change.
+> 
+> I agree that some unification is due but GFP_PGTABLE is not something to
+> expose in generic gfp.h IMHO. It just risks an abuse. I would be looking
+
+Why would you think that it risks an abuse ? It does not create new semantics
+of allocation in the buddy. Its just uses existing GFP_KERNEL allocation which
+is then getting zeroed out. The risks (if any) is exactly same as GFP_KERNEL.
+
+> at providing asm-generic implementation and reuse it to remove the code
+
+Does that mean GFP_PGTABLE can be created but not in gfp.h but in some other
+memory related header file ?
+
+> duplication. But I haven't tried that to know that it will work out due
+> to small/subtle differences between arches.
+
+IIUC from the allocation perspective GFP_ACCOUNT is the only thing which gets
+added with GFP_PGTABLE for user page table for memcg accounting purpose. There
+does not seem to be any other differences unless I am missing something.
