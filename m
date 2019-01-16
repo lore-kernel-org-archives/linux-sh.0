@@ -1,7 +1,7 @@
-From: Peter Zijlstra <peterz@infradead.org>
-Date: Wed, 16 Jan 2019 12:34:27 +0000
+From: Michal Hocko <mhocko@kernel.org>
+Date: Wed, 16 Jan 2019 12:44:31 +0000
 Subject: Re: [PATCH V2] mm: Introduce GFP_PGTABLE
-Message-Id: <20190116123427.GE10803@hirez.programming.kicks-ass.net>
+Message-Id: <20190116124431.GK24149@dhcp22.suse.cz>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1547619692-7946-1-git-send-email-anshuman.khandual@arm.com>
  <20190116065703.GE24149@dhcp22.suse.cz>
@@ -11,9 +11,9 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Matthew Wilcox <willy@infradead.org>
-Cc: mark.rutland@arm.com, christoffer.dall@arm.com, linux-sh@vger.kernel.org, catalin.marinas@arm.com, dave.hansen@linux.intel.com, will.deacon@arm.com, Michal Hocko <mhocko@kernel.org>, linux-mm@kvack.org, linux-riscv@lists.infradead.org, kvmarm@lists.cs.columbia.edu, mpe@ellerman.id.au, greentime@andestech.com, linux@armlinux.org.uk, mingo@redhat.com, vbabka@suse.cz, rientjes@google.com, palmer@sifive.com, Anshuman Khandual <anshuman.khandual@arm.com>, marc.zyngier@arm.com, rppt@linux.vnet.ibm.com, shakeelb@google.com, kirill@shutemov.name, tglx@linutronix.de, linux-arm-kernel@lists.infradead.org, ard.biesheuvel@linaro.org, robin.murphy@arm.com, steve.capper@arm.com, linux-kernel@vger.kernel.org, james.morse@arm.com, aneesh.kumar@linux.ibm.com, akpm@linux-foundation.org, linuxppc-dev@lists.ozlabs.org
+Cc: linux-sh@vger.kernel.org, peterz@infradead.org, catalin.marinas@arm.com, dave.hansen@linux.intel.com, will.deacon@arm.com, linux-mm@kvack.org, linux-riscv@lists.infradead.org, kvmarm@lists.cs.columbia.edu, mpe@ellerman.id.au, greentime@andestech.com, linux@armlinux.org.uk, mingo@redhat.com, vbabka@suse.cz, rientjes@google.com, palmer@sifive.com, Anshuman Khandual <anshuman.khandual@arm.com>, marc.zyngier@arm.com, rppt@linux.vnet.ibm.com, shakeelb@google.com, kirill@shutemov.name, tglx@linutronix.de, linux-arm-kernel@lists.infradead.org, ard.biesheuvel@linaro.org, robin.murphy@arm.com, linux-kernel@vger.kernel.org, aneesh.kumar@linux.ibm.com, akpm@linux-foundation.org, linuxppc-dev@lists.ozlabs.org
 
-On Wed, Jan 16, 2019 at 04:30:18AM -0800, Matthew Wilcox wrote:
+On Wed 16-01-19 04:30:18, Matthew Wilcox wrote:
 > On Wed, Jan 16, 2019 at 07:57:03AM +0100, Michal Hocko wrote:
 > > On Wed 16-01-19 11:51:32, Anshuman Khandual wrote:
 > > > All architectures have been defining their own PGALLOC_GFP as (GFP_KERNEL |
@@ -39,5 +39,12 @@ On Wed, Jan 16, 2019 at 04:30:18AM -0800, Matthew Wilcox wrote:
 > to the process.  Yet instead of spreading that goodness to all other
 > architectures, Anshuman has gone to more effort to avoid doing that.
 
-Also, s390 (of course, who else) has a fun custom page-table allocator
-for reasons that don't apply to many other archs.
+Yes, I believe the only reason this is x86 only is that each arch would
+have to be tweaked separately. So a cleanup in _that_ regard would be
+helpful. There is no real reason to have ptes accounted only for x86.
+There might be some exceptions but well, our asm-generic allows to opt
+in for generic implementation or override it with a special one. The
+later should be an exception rather than the rule.
+-- 
+Michal Hocko
+SUSE Labs
