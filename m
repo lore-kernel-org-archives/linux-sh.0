@@ -1,633 +1,435 @@
 From: Arnd Bergmann <arnd@arndb.de>
-Date: Thu, 10 Jan 2019 17:22:16 +0000
-Subject: [PATCH 11/11] y2038: add 64-bit time_t syscalls to all 32-bit architectures
-Message-Id: <20190110172216.313063-12-arnd@arndb.de>
+Date: Fri, 18 Jan 2019 16:18:15 +0000
+Subject: [PATCH v2 09/29] sh: remove duplicate unistd_32.h file
+Message-Id: <20190118161835.2259170-10-arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190110172216.313063-1-arnd@arndb.de>
-In-Reply-To: <20190110172216.313063-1-arnd@arndb.de>
+References: <20190118161835.2259170-1-arnd@arndb.de>
+In-Reply-To: <20190118161835.2259170-1-arnd@arndb.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: y2038@lists.linaro.org, linux-api@vger.kernel.org, linux-kernel@vger.kernel.org
+To: y2038@lists.linaro.org, linux-api@vger.kernel.org, linux-kernel@vger.kernel.org, linux-arch@vger.kernel.org
 Cc: Arnd Bergmann <arnd@arndb.de>, mattst88@gmail.com, linux@armlinux.org.uk, catalin.marinas@arm.com, will.deacon@arm.com, tony.luck@intel.com, fenghua.yu@intel.com, geert@linux-m68k.org, monstr@monstr.eu, paul.burton@mips.com, deller@gmx.de, benh@kernel.crashing.org, mpe@ellerman.id.au, schwidefsky@de.ibm.com, heiko.carstens@de.ibm.com, dalias@libc.org, davem@davemloft.net, luto@kernel.org, tglx@linutronix.de, mingo@redhat.com, hpa@zytor.com, x86@kernel.org, jcmvbkbc@gmail.com, akpm@linux-foundation.org, deepa.kernel@gmail.com, ebiederm@xmission.com, firoz.khan@linaro.org, linux-alpha@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.or
 
-This adds 21 new system calls on each ABI that has 32-bit time_t
-today. All of these have the exact same semantics as their existing
-counterparts, and the new ones all have macro names that end in 'time64'
-for clarification.
+When I merged this patch, the file was accidentally left intact
+instead of being removed, which means any changes to syscall.tbl
+have no effect.
 
-This gets us to the point of being able to safely use a C library
-that has 64-bit time_t in user space. There are still a couple of
-loose ends to tie up in various areas of the code, but this is the
-big one, and should be entirely uncontroversial at this point.
-
-In particular, there are four system calls (getitimer, setitimer,
-waitid, and getrusage) that don't have a 64-bit counterpart yet,
-but these can all be safely implemented in the C library by wrapping
-around the existing system calls because the 32-bit time_t they
-pass only counts elapsed time, not time since the epoch. They
-will be dealt with later.
-
+Fixes: 2b3c5a99d5f3 ("sh: generate uapi header and syscall table header files")
 Signed-off-by: Arnd Bergmann <arnd@arndb.de>
 ---
-The one point that still needs to be agreed on is the actual
-number assignment. Following the earlier patch that added
-the sysv IPC calls with common numbers where possible, I also
-tried the same here, using consistent numbers on all 32-bit
-architectures.
+ arch/sh/include/uapi/asm/unistd_32.h | 403 ---------------------------
+ 1 file changed, 403 deletions(-)
+ delete mode 100644 arch/sh/include/uapi/asm/unistd_32.h
 
-There are a couple of minor issues with this:
-
-- On asm-generic, we now leave the numbers from 295 to 402
-  unassigned, which wastes a small amount of kernel .data
-  segment. Originally I had asm-generic start at 300 and
-  everyone else start at 400 here, which was also not
-  perfect, and we have gone beyond 400 already, so I ended
-  up just using the same numbers as the rest here.
-
-- Once we get to 512, we clash with the x32 numbers (unless
-  we remove x32 support first), and probably have to skip
-  a few more. I also considered using the 512..547 space
-  for 32-bit-only calls (which never clash with x32), but
-  that also seems to add a bit of complexity.
-
-- On alpha, we have already used up the space up to 527
-  (with a small hole between 261 and 299). We could sync
-  up with that as well, but my feeling was that alpha syscalls
-  are already special enough that I don't care.
-
-Let me know if you have other ideas.
----
- arch/alpha/kernel/syscalls/syscall.tbl      |  2 +
- arch/arm/tools/syscall.tbl                  | 21 ++++++++++
- arch/arm64/include/asm/unistd.h             |  2 +-
- arch/arm64/include/asm/unistd32.h           | 41 +++++++++++++++++++
- arch/ia64/kernel/syscalls/syscall.tbl       |  1 +
- arch/m68k/kernel/syscalls/syscall.tbl       | 20 +++++++++
- arch/microblaze/kernel/syscalls/syscall.tbl | 21 ++++++++++
- arch/mips/kernel/syscalls/syscall_n32.tbl   | 21 ++++++++++
- arch/mips/kernel/syscalls/syscall_n64.tbl   |  1 +
- arch/mips/kernel/syscalls/syscall_o32.tbl   | 20 +++++++++
- arch/parisc/kernel/syscalls/syscall.tbl     | 21 ++++++++++
- arch/powerpc/kernel/syscalls/syscall.tbl    | 20 +++++++++
- arch/s390/kernel/syscalls/syscall.tbl       | 20 +++++++++
- arch/sh/kernel/syscalls/syscall.tbl         | 20 +++++++++
- arch/sparc/kernel/syscalls/syscall.tbl      | 20 +++++++++
- arch/x86/entry/syscalls/syscall_32.tbl      | 20 +++++++++
- arch/xtensa/kernel/syscalls/syscall.tbl     | 21 ++++++++++
- include/uapi/asm-generic/unistd.h           | 45 ++++++++++++++++++++-
- scripts/checksyscalls.sh                    | 40 ++++++++++++++++++
- 19 files changed, 375 insertions(+), 2 deletions(-)
-
-diff --git a/arch/alpha/kernel/syscalls/syscall.tbl b/arch/alpha/kernel/syscalls/syscall.tbl
-index 25b4a7e76943..04d96d042180 100644
---- a/arch/alpha/kernel/syscalls/syscall.tbl
-+++ b/arch/alpha/kernel/syscalls/syscall.tbl
-@@ -456,3 +456,5 @@
- 525	common	pkey_free			sys_pkey_free
- 526	common	pkey_mprotect			sys_pkey_mprotect
- 527	common	rseq				sys_rseq
-+# all other architectures have common numbers for new syscall, alpha
-+# is the exception.
-diff --git a/arch/arm/tools/syscall.tbl b/arch/arm/tools/syscall.tbl
-index a96d9b5ee04e..286afdc43283 100644
---- a/arch/arm/tools/syscall.tbl
-+++ b/arch/arm/tools/syscall.tbl
-@@ -416,3 +416,24 @@
- 399	common	io_pgetevents		sys_io_pgetevents_time32
- 400	common	migrate_pages		sys_migrate_pages
- 401	common	kexec_file_load		sys_kexec_file_load
-+# 402 is unused
-+403	common	clock_gettime64			sys_clock_gettime
-+404	common	clock_settime64			sys_clock_settime
-+405	common	clock_adjtime64			sys_clock_adjtime
-+406	common	clock_getres_time64		sys_clock_getres
-+407	common	clock_nanosleep_time64		sys_clock_nanosleep
-+408	common	timer_gettime64			sys_timer_gettime
-+409	common	timer_settime64			sys_timer_settime
-+410	common	timerfd_gettime64		sys_timerfd_gettime
-+411	common	timerfd_settime64		sys_timerfd_settime
-+412	common	utimensat_time64		sys_utimensat
-+413	common	pselect6_time64			sys_pselect6
-+414	common	ppoll_time64			sys_ppoll
-+416	common	io_pgetevents_time64		sys_io_pgetevents
-+417	common	recvmmsg_time64			sys_recvmmsg
-+418	common	mq_timedsend_time64		sys_mq_timedsend
-+419	common	mq_timedreceiv_time64		sys_mq_timedreceive
-+420	common	semtimedop_time64		sys_semtimedop
-+421	common	rt_sigtimedwait_time64		sys_rt_sigtimedwait
-+422	common	futex_time64			sys_futex
-+423	common	sched_rr_get_interval_time64	sys_sched_rr_get_interval
-diff --git a/arch/arm64/include/asm/unistd.h b/arch/arm64/include/asm/unistd.h
-index 2c30e6f145ff..d1dd93436e1e 100644
---- a/arch/arm64/include/asm/unistd.h
-+++ b/arch/arm64/include/asm/unistd.h
-@@ -44,7 +44,7 @@
- #define __ARM_NR_compat_set_tls		(__ARM_NR_COMPAT_BASE + 5)
- #define __ARM_NR_COMPAT_END		(__ARM_NR_COMPAT_BASE + 0x800)
- 
--#define __NR_compat_syscalls		402
-+#define __NR_compat_syscalls		424
- #endif
- 
- #define __ARCH_WANT_SYS_CLONE
-diff --git a/arch/arm64/include/asm/unistd32.h b/arch/arm64/include/asm/unistd32.h
-index 3ecec626fb0f..23c73db53d28 100644
---- a/arch/arm64/include/asm/unistd32.h
-+++ b/arch/arm64/include/asm/unistd32.h
-@@ -825,6 +825,47 @@ __SYSCALL(__NR_io_pgetevents, compat_sys_io_pgetevents)
- __SYSCALL(__NR_migrate_pages, sys_migrate_pages)
- #define __NR_kexec_file_load 401
- __SYSCALL(__NR_kexec_file_load, sys_kexec_file_load)
-+/* 402 is unused */
-+#define __NR_clock_gettime64 403
-+__SYSCALL(__NR_clock_gettime64, sys_clock_gettime)
-+#define __NR_clock_settime64 404
-+__SYSCALL(__NR_clock_settime64, sys_clock_settime)
-+#define __NR_clock_adjtime64 405
-+__SYSCALL(__NR_clock_adjtime64, sys_clock_adjtime)
-+#define __NR_clock_getres_time64 406
-+__SYSCALL(__NR_clock_getres_time64, sys_clock_getres)
-+#define __NR_clock_nanosleep_time64 407
-+__SYSCALL(__NR_clock_nanosleep_time64, sys_clock_nanosleep)
-+#define __NR_timer_gettime64 408
-+__SYSCALL(__NR_timer_gettime64, sys_timer_gettime)
-+#define __NR_timer_settime64 409
-+__SYSCALL(__NR_timer_settime64, sys_timer_settime)
-+#define __NR_timerfd_gettime64 410
-+__SYSCALL(__NR_timerfd_gettime64, sys_timerfd_gettime)
-+#define __NR_timerfd_settime64 411
-+__SYSCALL(__NR_timerfd_settime64, sys_timerfd_settime)
-+#define __NR_utimensat_time64 412
-+__SYSCALL(__NR_utimensat_time64, sys_utimensat)
-+#define __NR_pselect6_time64 413
-+__SYSCALL(__NR_pselect6_time64, compat_sys_pselect6_time64)
-+#define __NR_ppoll_time64 414
-+__SYSCALL(__NR_ppoll_time64, compat_sys_ppoll_time64)
-+#define __NR_io_pgetevents_time64 416
-+__SYSCALL(__NR_io_pgetevents_time64, sys_io_pgetevents)
-+#define __NR_recvmmsg_time64 417
-+__SYSCALL(__NR_recvmmsg_time64, compat_sys_recvmmsg_time64)
-+#define __NR_mq_timedsend_time64 418
-+__SYSCALL(__NR_mq_timedsend_time64, sys_mq_timedsend)
-+#define __NR_mq_timedreceiv_time64 419
-+__SYSCALL(__NR_mq_timedreceiv_time64, sys_mq_timedreceive)
-+#define __NR_semtimedop_time64 420
-+__SYSCALL(__NR_semtimedop_time64, sys_semtimedop)
-+#define __NR_rt_sigtimedwait_time64 421
-+__SYSCALL(__NR_rt_sigtimedwait_time64, compat_sys_rt_sigtimedwait_time64)
-+#define __NR_futex_time64 422
-+__SYSCALL(__NR_futex_time64, sys_futex)
-+#define __NR_sched_rr_get_interval_time64 423
-+__SYSCALL(__NR_sched_rr_get_interval_time64, sys_sched_rr_get_interval)
- 
- /*
-  * Please add new compat syscalls above this comment and update
-diff --git a/arch/ia64/kernel/syscalls/syscall.tbl b/arch/ia64/kernel/syscalls/syscall.tbl
-index 84e03de00177..ae18c430301c 100644
---- a/arch/ia64/kernel/syscalls/syscall.tbl
-+++ b/arch/ia64/kernel/syscalls/syscall.tbl
-@@ -343,3 +343,4 @@
- 331	common	pkey_free			sys_pkey_free
- 332	common	pkey_mprotect			sys_pkey_mprotect
- 333	common	rseq				sys_rseq
-+# 334 through 423 are reserved to sync up with other architectures
-diff --git a/arch/m68k/kernel/syscalls/syscall.tbl b/arch/m68k/kernel/syscalls/syscall.tbl
-index dec78dc5b056..da627bef806e 100644
---- a/arch/m68k/kernel/syscalls/syscall.tbl
-+++ b/arch/m68k/kernel/syscalls/syscall.tbl
-@@ -403,3 +403,23 @@
- 400	common	msgsnd				sys_msgsnd
- 401	common	msgrcv				sys_msgrcv
- 402	common	msgctl				sys_msgctl
-+403	common	clock_gettime64			sys_clock_gettime
-+404	common	clock_settime64			sys_clock_settime
-+405	common	clock_adjtime64			sys_clock_adjtime
-+406	common	clock_getres_time64		sys_clock_getres
-+407	common	clock_nanosleep_time64		sys_clock_nanosleep
-+408	common	timer_gettime64			sys_timer_gettime
-+409	common	timer_settime64			sys_timer_settime
-+410	common	timerfd_gettime64		sys_timerfd_gettime
-+411	common	timerfd_settime64		sys_timerfd_settime
-+412	common	utimensat_time64		sys_utimensat
-+413	common	pselect6_time64			sys_pselect6
-+414	common	ppoll_time64			sys_ppoll
-+416	common	io_pgetevents_time64		sys_io_pgetevents
-+417	common	recvmmsg_time64			sys_recvmmsg
-+418	common	mq_timedsend_time64		sys_mq_timedsend
-+419	common	mq_timedreceiv_time64		sys_mq_timedreceive
-+420	common	semtimedop_time64		sys_semtimedop
-+421	common	rt_sigtimedwait_time64		sys_rt_sigtimedwait
-+422	common	futex_time64			sys_futex
-+423	common	sched_rr_get_interval_time64	sys_sched_rr_get_interval
-diff --git a/arch/microblaze/kernel/syscalls/syscall.tbl b/arch/microblaze/kernel/syscalls/syscall.tbl
-index 44a87649d681..5ca6677c0437 100644
---- a/arch/microblaze/kernel/syscalls/syscall.tbl
-+++ b/arch/microblaze/kernel/syscalls/syscall.tbl
-@@ -408,3 +408,24 @@
- 398	common	statx				sys_statx
- 399	common	io_pgetevents			sys_io_pgetevents_time32
- 400	common	rseq				sys_rseq
-+# 401 and 402 are unused
-+403	common	clock_gettime64			sys_clock_gettime
-+404	common	clock_settime64			sys_clock_settime
-+405	common	clock_adjtime64			sys_clock_adjtime
-+406	common	clock_getres_time64		sys_clock_getres
-+407	common	clock_nanosleep_time64		sys_clock_nanosleep
-+408	common	timer_gettime64			sys_timer_gettime
-+409	common	timer_settime64			sys_timer_settime
-+410	common	timerfd_gettime64		sys_timerfd_gettime
-+411	common	timerfd_settime64		sys_timerfd_settime
-+412	common	utimensat_time64		sys_utimensat
-+413	common	pselect6_time64			sys_pselect6
-+414	common	ppoll_time64			sys_ppoll
-+416	common	io_pgetevents_time64		sys_io_pgetevents
-+417	common	recvmmsg_time64			sys_recvmmsg
-+418	common	mq_timedsend_time64		sys_mq_timedsend
-+419	common	mq_timedreceiv_time64		sys_mq_timedreceive
-+420	common	semtimedop_time64		sys_semtimedop
-+421	common	rt_sigtimedwait_time64		sys_rt_sigtimedwait
-+422	common	futex_time64			sys_futex
-+423	common	sched_rr_get_interval_time64	sys_sched_rr_get_interval
-diff --git a/arch/mips/kernel/syscalls/syscall_n32.tbl b/arch/mips/kernel/syscalls/syscall_n32.tbl
-index 6d1e019817c8..6218e3a08438 100644
---- a/arch/mips/kernel/syscalls/syscall_n32.tbl
-+++ b/arch/mips/kernel/syscalls/syscall_n32.tbl
-@@ -341,3 +341,24 @@
- 330	n32	statx				sys_statx
- 331	n32	rseq				sys_rseq
- 332	n32	io_pgetevents			compat_sys_io_pgetevents
-+# 333 through 402 are unassigned to sync up with generic numbers
-+403	n32	clock_gettime64			sys_clock_gettime
-+404	n32	clock_settime64			sys_clock_settime
-+405	n32	clock_adjtime64			sys_clock_adjtime
-+406	n32	clock_getres_time64		sys_clock_getres
-+407	n32	clock_nanosleep_time64		sys_clock_nanosleep
-+408	n32	timer_gettime64			sys_timer_gettime
-+409	n32	timer_settime64			sys_timer_settime
-+410	n32	timerfd_gettime64		sys_timerfd_gettime
-+411	n32	timerfd_settime64		sys_timerfd_settime
-+412	n32	utimensat_time64		sys_utimensat
-+413	n32	pselect6_time64			compat_sys_pselect6_time64
-+414	n32	ppoll_time64			compat_sys_ppoll_time64
-+416	n32	io_pgetevents_time64		sys_io_pgetevents
-+417	n32	recvmmsg_time64			compat_sys_recvmmsg_time64
-+418	n32	mq_timedsend_time64		sys_mq_timedsend
-+419	n32	mq_timedreceiv_time64		sys_mq_timedreceive
-+420	n32	semtimedop_time64		sys_semtimedop
-+421	n32	rt_sigtimedwait_time64		compat_sys_rt_sigtimedwait_time64
-+422	n32	futex_time64			sys_futex
-+423	n32	sched_rr_get_interval_time64	sys_sched_rr_get_interval
-diff --git a/arch/mips/kernel/syscalls/syscall_n64.tbl b/arch/mips/kernel/syscalls/syscall_n64.tbl
-index af0da757a7b2..c85502e67b44 100644
---- a/arch/mips/kernel/syscalls/syscall_n64.tbl
-+++ b/arch/mips/kernel/syscalls/syscall_n64.tbl
-@@ -337,3 +337,4 @@
- 326	n64	statx				sys_statx
- 327	n64	rseq				sys_rseq
- 328	n64	io_pgetevents			sys_io_pgetevents
-+# 329 through 423 are reserved to sync up with other architectures
-diff --git a/arch/mips/kernel/syscalls/syscall_o32.tbl b/arch/mips/kernel/syscalls/syscall_o32.tbl
-index 54312c5b5343..0be1cddeda0c 100644
---- a/arch/mips/kernel/syscalls/syscall_o32.tbl
-+++ b/arch/mips/kernel/syscalls/syscall_o32.tbl
-@@ -391,3 +391,23 @@
- 400	o32	msgsnd				sys_msgsnd			compat_sys_msgsnd
- 401	o32	msgrcv				sys_msgrcv			compat_sys_msgrcv
- 402	o32	msgctl				sys_msgctl			compat_sys_msgctl
-+403	o32	clock_gettime64			sys_clock_gettime		sys_clock_gettime
-+404	o32	clock_settime64			sys_clock_settime		sys_clock_settime
-+405	o32	clock_adjtime64			sys_clock_adjtime		sys_clock_adjtime
-+406	o32	clock_getres_time64		sys_clock_getres		sys_clock_getres
-+407	o32	clock_nanosleep_time64		sys_clock_nanosleep		sys_clock_nanosleep
-+408	o32	timer_gettime64			sys_timer_gettime		sys_timer_gettime
-+409	o32	timer_settime64			sys_timer_settime		sys_timer_settime
-+410	o32	timerfd_gettime64		sys_timerfd_gettime		sys_timerfd_gettime
-+411	o32	timerfd_settime64		sys_timerfd_settime		sys_timerfd_settime
-+412	o32	utimensat_time64		sys_utimensat			sys_utimensat
-+413	o32	pselect6_time64			sys_pselect6			compat_sys_pselect6_time64
-+414	o32	ppoll_time64			sys_ppoll			compat_sys_ppoll_time64
-+416	o32	io_pgetevents_time64		sys_io_pgetevents		sys_io_pgetevents
-+417	o32	recvmmsg_time64			sys_recvmmsg			compat_sys_recvmmsg_time64
-+418	o32	mq_timedsend_time64		sys_mq_timedsend		sys_mq_timedsend
-+419	o32	mq_timedreceiv_time64		sys_mq_timedreceive		sys_mq_timedreceive
-+420	o32	semtimedop_time64		sys_semtimedop			sys_semtimedop
-+421	o32	rt_sigtimedwait_time64		sys_rt_sigtimedwait		compat_sys_rt_sigtimedwait_time64
-+422	o32	futex_time64			sys_futex			sys_futex
-+423	o32	sched_rr_get_interval_time64	sys_sched_rr_get_interval	sys_sched_rr_get_interval
-diff --git a/arch/parisc/kernel/syscalls/syscall.tbl b/arch/parisc/kernel/syscalls/syscall.tbl
-index 2521cd561769..51ae690484e4 100644
---- a/arch/parisc/kernel/syscalls/syscall.tbl
-+++ b/arch/parisc/kernel/syscalls/syscall.tbl
-@@ -399,3 +399,24 @@
- 352	common	pkey_free		sys_pkey_free
- 353	common	pkey_mprotect		sys_pkey_mprotect
- 354	common	rseq			sys_rseq
-+# 355 through 402 are unassigned to sync up with generic numbers
-+403	32	clock_gettime64			sys_clock_gettime		sys_clock_gettime
-+404	32	clock_settime64			sys_clock_settime		sys_clock_settime
-+405	32	clock_adjtime64			sys_clock_adjtime		sys_clock_adjtime
-+406	32	clock_getres_time64		sys_clock_getres		sys_clock_getres
-+407	32	clock_nanosleep_time64		sys_clock_nanosleep		sys_clock_nanosleep
-+408	32	timer_gettime64			sys_timer_gettime		sys_timer_gettime
-+409	32	timer_settime64			sys_timer_settime		sys_timer_settime
-+410	32	timerfd_gettime64		sys_timerfd_gettime		sys_timerfd_gettime
-+411	32	timerfd_settime64		sys_timerfd_settime		sys_timerfd_settime
-+412	32	utimensat_time64		sys_utimensat			sys_utimensat
-+413	32	pselect6_time64			sys_pselect6			compat_sys_pselect6_time64
-+414	32	ppoll_time64			sys_ppoll			compat_sys_ppoll_time64
-+416	32	io_pgetevents_time64		sys_io_pgetevents		sys_io_pgetevents
-+417	32	recvmmsg_time64			sys_recvmmsg			compat_sys_recvmmsg_time64
-+418	32	mq_timedsend_time64		sys_mq_timedsend		sys_mq_timedsend
-+419	32	mq_timedreceiv_time64		sys_mq_timedreceive		sys_mq_timedreceive
-+420	32	semtimedop_time64		sys_semtimedop			sys_semtimedop
-+421	32	rt_sigtimedwait_time64		sys_rt_sigtimedwait		compat_sys_rt_sigtimedwait_time64
-+422	32	futex_time64			sys_futex			sys_futex
-+423	32	sched_rr_get_interval_time64	sys_sched_rr_get_interval	sys_sched_rr_get_interval
-diff --git a/arch/powerpc/kernel/syscalls/syscall.tbl b/arch/powerpc/kernel/syscalls/syscall.tbl
-index ed02c21bb5a2..5c0936d862fc 100644
---- a/arch/powerpc/kernel/syscalls/syscall.tbl
-+++ b/arch/powerpc/kernel/syscalls/syscall.tbl
-@@ -484,3 +484,23 @@
- 400	common	msgsnd				sys_msgsnd			compat_sys_msgsnd
- 401	common	msgrcv				sys_msgrcv			compat_sys_msgrcv
- 402	common	msgctl				sys_msgctl			compat_sys_msgctl
-+403	32	clock_gettime64			sys_clock_gettime		sys_clock_gettime
-+404	32	clock_settime64			sys_clock_settime		sys_clock_settime
-+405	32	clock_adjtime64			sys_clock_adjtime		sys_clock_adjtime
-+406	32	clock_getres_time64		sys_clock_getres		sys_clock_getres
-+407	32	clock_nanosleep_time64		sys_clock_nanosleep		sys_clock_nanosleep
-+408	32	timer_gettime64			sys_timer_gettime		sys_timer_gettime
-+409	32	timer_settime64			sys_timer_settime		sys_timer_settime
-+410	32	timerfd_gettime64		sys_timerfd_gettime		sys_timerfd_gettime
-+411	32	timerfd_settime64		sys_timerfd_settime		sys_timerfd_settime
-+412	32	utimensat_time64		sys_utimensat			sys_utimensat
-+413	32	pselect6_time64			sys_pselect6			compat_sys_pselect6_time64
-+414	32	ppoll_time64			sys_ppoll			compat_sys_ppoll_time64
-+416	32	io_pgetevents_time64		sys_io_pgetevents		sys_io_pgetevents
-+417	32	recvmmsg_time64			sys_recvmmsg			compat_sys_recvmmsg_time64
-+418	32	mq_timedsend_time64		sys_mq_timedsend		sys_mq_timedsend
-+419	32	mq_timedreceiv_time64		sys_mq_timedreceive		sys_mq_timedreceive
-+420	32	semtimedop_time64		sys_semtimedop			sys_semtimedop
-+421	32	rt_sigtimedwait_time64		sys_rt_sigtimedwait		compat_sys_rt_sigtimedwait_time64
-+422	32	futex_time64			sys_futex			sys_futex
-+423	32	sched_rr_get_interval_time64	sys_sched_rr_get_interval	sys_sched_rr_get_interval
-diff --git a/arch/s390/kernel/syscalls/syscall.tbl b/arch/s390/kernel/syscalls/syscall.tbl
-index b3199a744731..bc763c0bb245 100644
---- a/arch/s390/kernel/syscalls/syscall.tbl
-+++ b/arch/s390/kernel/syscalls/syscall.tbl
-@@ -406,3 +406,23 @@
- 400  common	msgsnd			sys_msgsnd			compat_sys_msgsnd
- 401  common	msgrcv			sys_msgrcv			compat_sys_msgrcv
- 402  common	msgctl			sys_msgctl			compat_sys_msgctl
-+403	32	clock_gettime64		-				sys_clock_gettime
-+404	32	clock_settime64		-				sys_clock_settime
-+405	32	clock_adjtime64		-				sys_clock_adjtime
-+406	32	clock_getres_time64	-				sys_clock_getres
-+407	32	clock_nanosleep_time64	-				sys_clock_nanosleep
-+408	32	timer_gettime64		-				sys_timer_gettime
-+409	32	timer_settime64		-				sys_timer_settime
-+410	32	timerfd_gettime64	-				sys_timerfd_gettime
-+411	32	timerfd_settime64	-				sys_timerfd_settime
-+412	32	utimensat_time64	-				sys_utimensat
-+413	32	pselect6_time64		-				compat_sys_pselect6_time64
-+414	32	ppoll_time64		-				compat_sys_ppoll_time64
-+416	32	io_pgetevents_time64	-				sys_io_pgetevents
-+417	32	recvmmsg_time64		-				compat_sys_recvmmsg_time64
-+418	32	mq_timedsend_time64	-				sys_mq_timedsend
-+419	32	mq_timedreceiv_time64	-				sys_mq_timedreceive
-+420	32	semtimedop_time64	-				sys_semtimedop
-+421	32	rt_sigtimedwait_time64	-				compat_sys_rt_sigtimedwait_time64
-+422	32	futex_time64		-				sys_futex
-+423	32	sched_rr_get_interval_time64	-			sys_sched_rr_get_interval
-diff --git a/arch/sh/kernel/syscalls/syscall.tbl b/arch/sh/kernel/syscalls/syscall.tbl
-index d3993b305cab..dcf3f8c91652 100644
---- a/arch/sh/kernel/syscalls/syscall.tbl
-+++ b/arch/sh/kernel/syscalls/syscall.tbl
-@@ -406,3 +406,23 @@
- 400	common	msgsnd				sys_msgsnd
- 401	common	msgrcv				sys_msgrcv
- 402	common	msgctl				sys_msgctl
-+403	common	clock_gettime64			sys_clock_gettime
-+404	common	clock_settime64			sys_clock_settime
-+405	common	clock_adjtime64			sys_clock_adjtime
-+406	common	clock_getres_time64		sys_clock_getres
-+407	common	clock_nanosleep_time64		sys_clock_nanosleep
-+408	common	timer_gettime64			sys_timer_gettime
-+409	common	timer_settime64			sys_timer_settime
-+410	common	timerfd_gettime64		sys_timerfd_gettime
-+411	common	timerfd_settime64		sys_timerfd_settime
-+412	common	utimensat_time64		sys_utimensat
-+413	common	pselect6_time64			sys_pselect6
-+414	common	ppoll_time64			sys_ppoll
-+416	common	io_pgetevents_time64		sys_io_pgetevents
-+417	common	recvmmsg_time64			sys_recvmmsg
-+418	common	mq_timedsend_time64		sys_mq_timedsend
-+419	common	mq_timedreceiv_time64		sys_mq_timedreceive
-+420	common	semtimedop_time64		sys_semtimedop
-+421	common	rt_sigtimedwait_time64		sys_rt_sigtimedwait
-+422	common	futex_time64			sys_futex
-+423	common	sched_rr_get_interval_time64	sys_sched_rr_get_interval
-diff --git a/arch/sparc/kernel/syscalls/syscall.tbl b/arch/sparc/kernel/syscalls/syscall.tbl
-index fde7491f76e8..18858a7eea02 100644
---- a/arch/sparc/kernel/syscalls/syscall.tbl
-+++ b/arch/sparc/kernel/syscalls/syscall.tbl
-@@ -449,3 +449,23 @@
- 400	common	msgsnd			sys_msgsnd			compat_sys_msgsnd
- 401	common	msgrcv			sys_msgrcv			compat_sys_msgrcv
- 402	common	msgctl			sys_msgctl			compat_sys_msgctl
-+403	32	clock_gettime64			sys_clock_gettime		sys_clock_gettime
-+404	32	clock_settime64			sys_clock_settime		sys_clock_settime
-+405	32	clock_adjtime64			sys_clock_adjtime		sys_clock_adjtime
-+406	32	clock_getres_time64		sys_clock_getres		sys_clock_getres
-+407	32	clock_nanosleep_time64		sys_clock_nanosleep		sys_clock_nanosleep
-+408	32	timer_gettime64			sys_timer_gettime		sys_timer_gettime
-+409	32	timer_settime64			sys_timer_settime		sys_timer_settime
-+410	32	timerfd_gettime64		sys_timerfd_gettime		sys_timerfd_gettime
-+411	32	timerfd_settime64		sys_timerfd_settime		sys_timerfd_settime
-+412	32	utimensat_time64		sys_utimensat			sys_utimensat
-+413	32	pselect6_time64			sys_pselect6			compat_sys_pselect6_time64
-+414	32	ppoll_time64			sys_ppoll			compat_sys_ppoll_time64
-+416	32	io_pgetevents_time64		sys_io_pgetevents		sys_io_pgetevents
-+417	32	recvmmsg_time64			sys_recvmmsg			compat_sys_recvmmsg_time64
-+418	32	mq_timedsend_time64		sys_mq_timedsend		sys_mq_timedsend
-+419	32	mq_timedreceiv_time64		sys_mq_timedreceive		sys_mq_timedreceive
-+420	32	semtimedop_time64		sys_semtimedop			sys_semtimedop
-+421	32	rt_sigtimedwait_time64		sys_rt_sigtimedwait		compat_sys_rt_sigtimedwait_time64
-+422	32	futex_time64			sys_futex			sys_futex
-+423	32	sched_rr_get_interval_time64	sys_sched_rr_get_interval	sys_sched_rr_get_interval
-diff --git a/arch/x86/entry/syscalls/syscall_32.tbl b/arch/x86/entry/syscalls/syscall_32.tbl
-index 1ad4b1c5417d..b21ddeeb43cb 100644
---- a/arch/x86/entry/syscalls/syscall_32.tbl
-+++ b/arch/x86/entry/syscalls/syscall_32.tbl
-@@ -409,3 +409,23 @@
- 400	i386	msgsnd			sys_msgsnd    			__ia32_compat_sys_msgsnd
- 401	i386	msgrcv			sys_msgrcv    			__ia32_compat_sys_msgrcv
- 402	i386	msgctl			sys_msgctl    			__ia32_compat_sys_msgctl
-+403	i386	clock_gettime64		sys_clock_gettime		__ia32_sys_clock_gettime
-+404	i386	clock_settime64		sys_clock_settime		__ia32_sys_clock_settime
-+405	i386	clock_adjtime64		sys_clock_adjtime		__ia32_sys_clock_adjtime
-+406	i386	clock_getres_time64	sys_clock_getres		__ia32_sys_clock_getres
-+407	i386	clock_nanosleep_time64	sys_clock_nanosleep		__ia32_sys_clock_nanosleep
-+408	i386	timer_gettime64		sys_timer_gettime		__ia32_sys_timer_gettime
-+409	i386	timer_settime64		sys_timer_settime		__ia32_sys_timer_settime
-+410	i386	timerfd_gettime64	sys_timerfd_gettime		__ia32_sys_timerfd_gettime
-+411	i386	timerfd_settime64	sys_timerfd_settime		__ia32_sys_timerfd_settime
-+412	i386	utimensat_time64	sys_utimensat			__ia32_sys_utimensat
-+413	i386	pselect6_time64		sys_pselect6			__ia32_compat_sys_pselect6_time64
-+414	i386	ppoll_time64		sys_ppoll			__ia32_compat_sys_ppoll_time64
-+416	i386	io_pgetevents_time64	sys_io_pgetevents		__ia32_sys_io_pgetevents
-+417	i386	recvmmsg_time64		sys_recvmmsg			__ia32_compat_sys_recvmmsg_time64
-+418	i386	mq_timedsend_time64	sys_mq_timedsend		__ia32_sys_mq_timedsend
-+419	i386	mq_timedreceiv_time64	sys_mq_timedreceive		__ia32_sys_mq_timedreceive
-+420	i386	semtimedop_time64	sys_semtimedop			__ia32_sys_semtimedop
-+421	i386	rt_sigtimedwait_time64	sys_rt_sigtimedwait		__ia32_compat_sys_rt_sigtimedwait_time64
-+422	i386	futex_time64		sys_futex			__ia32_sys_futex
-+423	i386	sched_rr_get_interval_time64	sys_sched_rr_get_interval	__ia32_sys_sched_rr_get_interval
-diff --git a/arch/xtensa/kernel/syscalls/syscall.tbl b/arch/xtensa/kernel/syscalls/syscall.tbl
-index 482673389e21..f63e1d8c0437 100644
---- a/arch/xtensa/kernel/syscalls/syscall.tbl
-+++ b/arch/xtensa/kernel/syscalls/syscall.tbl
-@@ -373,3 +373,24 @@
- 350	common	pkey_free			sys_pkey_free
- 351	common	statx				sys_statx
- 352	common	rseq				sys_rseq
-+# 353 through 402 are unassigned to sync up with generic numbers
-+403	common	clock_gettime64			sys_clock_gettime
-+404	common	clock_settime64			sys_clock_settime
-+405	common	clock_adjtime64			sys_clock_adjtime
-+406	common	clock_getres_time64		sys_clock_getres
-+407	common	clock_nanosleep_time64		sys_clock_nanosleep
-+408	common	timer_gettime64			sys_timer_gettime
-+409	common	timer_settime64			sys_timer_settime
-+410	common	timerfd_gettime64		sys_timerfd_gettime
-+411	common	timerfd_settime64		sys_timerfd_settime
-+412	common	utimensat_time64		sys_utimensat
-+413	common	pselect6_time64			sys_pselect6
-+414	common	ppoll_time64			sys_ppoll
-+416	common	io_pgetevents_time64		sys_io_pgetevents
-+417	common	recvmmsg_time64			sys_recvmmsg
-+418	common	mq_timedsend_time64		sys_mq_timedsend
-+419	common	mq_timedreceiv_time64		sys_mq_timedreceive
-+420	common	semtimedop_time64		sys_semtimedop
-+421	common	rt_sigtimedwait_time64		sys_rt_sigtimedwait
-+422	common	futex_time64			sys_futex
-+423	common	sched_rr_get_interval_time64	sys_sched_rr_get_interval
-diff --git a/include/uapi/asm-generic/unistd.h b/include/uapi/asm-generic/unistd.h
-index af38c660c857..b8626863a90f 100644
---- a/include/uapi/asm-generic/unistd.h
-+++ b/include/uapi/asm-generic/unistd.h
-@@ -740,9 +740,52 @@ __SC_COMP_3264(__NR_io_pgetevents, sys_io_pgetevents_time32, sys_io_pgetevents,
- __SYSCALL(__NR_rseq, sys_rseq)
- #define __NR_kexec_file_load 294
- __SYSCALL(__NR_kexec_file_load,     sys_kexec_file_load)
-+/* 295 through 402 are unassigned to sync up with generic numbers */
-+#if __BITS_PER_LONG = 32
-+#define __NR_clock_gettime64 403
-+__SYSCALL(__NR_clock_gettime64, sys_clock_gettime)
-+#define __NR_clock_settime64 404
-+__SYSCALL(__NR_clock_settime64, sys_clock_settime)
-+#define __NR_clock_adjtime64 405
-+__SYSCALL(__NR_clock_adjtime64, sys_clock_adjtime)
-+#define __NR_clock_getres_time64 406
-+__SYSCALL(__NR_clock_getres_time64, sys_clock_getres)
-+#define __NR_clock_nanosleep_time64 407
-+__SYSCALL(__NR_clock_nanosleep_time64, sys_clock_nanosleep)
-+#define __NR_timer_gettime64 408
-+__SYSCALL(__NR_timer_gettime64, sys_timer_gettime)
-+#define __NR_timer_settime64 409
-+__SYSCALL(__NR_timer_settime64, sys_timer_settime)
-+#define __NR_timerfd_gettime64 410
-+__SYSCALL(__NR_timerfd_gettime64, sys_timerfd_gettime)
-+#define __NR_timerfd_settime64 411
-+__SYSCALL(__NR_timerfd_settime64, sys_timerfd_settime)
-+#define __NR_utimensat_time64 412
-+__SYSCALL(__NR_utimensat_time64, sys_utimensat)
-+#define __NR_pselect6_time64 413
-+__SC_COMP(__NR_pselect6_time64, sys_pselect6, compat_sys_pselect6_time64)
-+#define __NR_ppoll_time64 414
-+__SC_COMP(__NR_ppoll_time64, sys_ppoll, compat_sys_ppoll_time64)
-+#define __NR_io_pgetevents_time64 416
-+__SYSCALL(__NR_io_pgetevents_time64, sys_io_pgetevents)
-+#define __NR_recvmmsg_time64 417
-+__SC_COMP(__NR_recvmmsg_time64, sys_recvmmsg, compat_sys_recvmmsg_time64)
-+#define __NR_mq_timedsend_time64 418
-+__SYSCALL(__NR_mq_timedsend_time64, sys_mq_timedsend)
-+#define __NR_mq_timedreceiv_time64 419
-+__SYSCALL(__NR_mq_timedreceiv_time64, sys_mq_timedreceive)
-+#define __NR_semtimedop_time64 420
-+__SYSCALL(__NR_semtimedop_time64, sys_semtimedop)
-+#define __NR_rt_sigtimedwait_time64 421
-+__SC_COMP(__NR_rt_sigtimedwait_time64, sys_rt_sigtimedwait, compat_sys_rt_sigtimedwait_time64)
-+#define __NR_futex_time64 422
-+__SYSCALL(__NR_futex_time64, sys_futex)
-+#define __NR_sched_rr_get_interval_time64 423
-+__SYSCALL(__NR_sched_rr_get_interval_time64, sys_sched_rr_get_interval)
-+#endif
- 
- #undef __NR_syscalls
--#define __NR_syscalls 295
-+#define __NR_syscalls 424
- 
- /*
-  * 32 bit systems traditionally used different
-diff --git a/scripts/checksyscalls.sh b/scripts/checksyscalls.sh
-index cf931003395f..45aac9dac53b 100755
---- a/scripts/checksyscalls.sh
-+++ b/scripts/checksyscalls.sh
-@@ -84,6 +84,26 @@ cat << EOF
- #define __IGNORE_statfs64
- #define __IGNORE_llseek
- #define __IGNORE_mmap2
-+#define __IGNORE_clock_gettime64
-+#define __IGNORE_clock_settime64
-+#define __IGNORE_clock_adjtime64
-+#define __IGNORE_clock_getres_time64
-+#define __IGNORE_clock_nanosleep_time64
-+#define __IGNORE_timer_gettime64
-+#define __IGNORE_timer_settime64
-+#define __IGNORE_timerfd_gettime64
-+#define __IGNORE_timerfd_settime64
-+#define __IGNORE_utimensat_time64
-+#define __IGNORE_pselect6_time64
-+#define __IGNORE_ppoll_time64
-+#define __IGNORE_io_pgetevents_time64
-+#define __IGNORE_recvmmsg_time64
-+#define __IGNORE_mq_timedsend_time64
-+#define __IGNORE_mq_timedreceiv_time64
-+#define __IGNORE_semtimedop_time64
-+#define __IGNORE_rt_sigtimedwait_time64
-+#define __IGNORE_futex_time64
-+#define __IGNORE_sched_rr_get_interval_time64
- #else
- #define __IGNORE_sendfile
- #define __IGNORE_ftruncate
-@@ -98,6 +118,26 @@ cat << EOF
- #define __IGNORE_statfs
- #define __IGNORE_lseek
- #define __IGNORE_mmap
-+#define __IGNORE_clock_gettime
-+#define __IGNORE_clock_settime
-+#define __IGNORE_clock_adjtime
-+#define __IGNORE_clock_getres
-+#define __IGNORE_clock_nanosleep
-+#define __IGNORE_timer_gettime
-+#define __IGNORE_timer_settime
-+#define __IGNORE_timerfd_gettime
-+#define __IGNORE_timerfd_settime
-+#define __IGNORE_utimensat
-+#define __IGNORE_pselect6
-+#define __IGNORE_ppoll
-+#define __IGNORE_io_pgetevents
-+#define __IGNORE_recvmmsg
-+#define __IGNORE_mq_timedsend
-+#define __IGNORE_mq_timedreceiv
-+#define __IGNORE_semtimedop
-+#define __IGNORE_rt_sigtimedwait
-+#define __IGNORE_futex
-+#define __IGNORE_sched_rr_get_interval
- #endif
- 
- /* i386-specific or historical system calls */
+diff --git a/arch/sh/include/uapi/asm/unistd_32.h b/arch/sh/include/uapi/asm/unistd_32.h
+deleted file mode 100644
+index 31c85aa251ab..000000000000
+--- a/arch/sh/include/uapi/asm/unistd_32.h
++++ /dev/null
+@@ -1,403 +0,0 @@
+-/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
+-#ifndef __ASM_SH_UNISTD_32_H
+-#define __ASM_SH_UNISTD_32_H
+-
+-/*
+- * Copyright (C) 1999  Niibe Yutaka
+- */
+-
+-/*
+- * This file contains the system call numbers.
+- */
+-
+-#define __NR_restart_syscall	  0
+-#define __NR_exit		  1
+-#define __NR_fork		  2
+-#define __NR_read		  3
+-#define __NR_write		  4
+-#define __NR_open		  5
+-#define __NR_close		  6
+-#define __NR_waitpid		  7
+-#define __NR_creat		  8
+-#define __NR_link		  9
+-#define __NR_unlink		 10
+-#define __NR_execve		 11
+-#define __NR_chdir		 12
+-#define __NR_time		 13
+-#define __NR_mknod		 14
+-#define __NR_chmod		 15
+-#define __NR_lchown		 16
+-				 /* 17 was sys_break */
+-#define __NR_oldstat		 18
+-#define __NR_lseek		 19
+-#define __NR_getpid		 20
+-#define __NR_mount		 21
+-#define __NR_umount		 22
+-#define __NR_setuid		 23
+-#define __NR_getuid		 24
+-#define __NR_stime		 25
+-#define __NR_ptrace		 26
+-#define __NR_alarm		 27
+-#define __NR_oldfstat		 28
+-#define __NR_pause		 29
+-#define __NR_utime		 30
+-				 /* 31 was sys_stty */
+-				 /* 32 was sys_gtty */
+-#define __NR_access		 33
+-#define __NR_nice		 34
+-				 /* 35 was sys_ftime */
+-#define __NR_sync		 36
+-#define __NR_kill		 37
+-#define __NR_rename		 38
+-#define __NR_mkdir		 39
+-#define __NR_rmdir		 40
+-#define __NR_dup		 41
+-#define __NR_pipe		 42
+-#define __NR_times		 43
+-				 /* 44 was sys_prof */
+-#define __NR_brk		 45
+-#define __NR_setgid		 46
+-#define __NR_getgid		 47
+-#define __NR_signal		 48
+-#define __NR_geteuid		 49
+-#define __NR_getegid		 50
+-#define __NR_acct		 51
+-#define __NR_umount2		 52
+-				 /* 53 was sys_lock */
+-#define __NR_ioctl		 54
+-#define __NR_fcntl		 55
+-				 /* 56 was sys_mpx */
+-#define __NR_setpgid		 57
+-				 /* 58 was sys_ulimit */
+-				 /* 59 was sys_olduname */
+-#define __NR_umask		 60
+-#define __NR_chroot		 61
+-#define __NR_ustat		 62
+-#define __NR_dup2		 63
+-#define __NR_getppid		 64
+-#define __NR_getpgrp		 65
+-#define __NR_setsid		 66
+-#define __NR_sigaction		 67
+-#define __NR_sgetmask		 68
+-#define __NR_ssetmask		 69
+-#define __NR_setreuid		 70
+-#define __NR_setregid		 71
+-#define __NR_sigsuspend		 72
+-#define __NR_sigpending		 73
+-#define __NR_sethostname	 74
+-#define __NR_setrlimit		 75
+-#define __NR_getrlimit		 76	/* Back compatible 2Gig limited rlimit */
+-#define __NR_getrusage		 77
+-#define __NR_gettimeofday	 78
+-#define __NR_settimeofday	 79
+-#define __NR_getgroups		 80
+-#define __NR_setgroups		 81
+-				 /* 82 was sys_oldselect */
+-#define __NR_symlink		 83
+-#define __NR_oldlstat		 84
+-#define __NR_readlink		 85
+-#define __NR_uselib		 86
+-#define __NR_swapon		 87
+-#define __NR_reboot		 88
+-#define __NR_readdir		 89
+-#define __NR_mmap		 90
+-#define __NR_munmap		 91
+-#define __NR_truncate		 92
+-#define __NR_ftruncate		 93
+-#define __NR_fchmod		 94
+-#define __NR_fchown		 95
+-#define __NR_getpriority	 96
+-#define __NR_setpriority	 97
+-				 /* 98 was sys_profil */
+-#define __NR_statfs		 99
+-#define __NR_fstatfs		100
+-				/* 101 was sys_ioperm */
+-#define __NR_socketcall		102
+-#define __NR_syslog		103
+-#define __NR_setitimer		104
+-#define __NR_getitimer		105
+-#define __NR_stat		106
+-#define __NR_lstat		107
+-#define __NR_fstat		108
+-#define __NR_olduname		109
+-				/* 110 was sys_iopl */
+-#define __NR_vhangup		111
+-				/* 112 was sys_idle */
+-				/* 113 was sys_vm86old */
+-#define __NR_wait4		114
+-#define __NR_swapoff		115
+-#define __NR_sysinfo		116
+-#define __NR_ipc		117
+-#define __NR_fsync		118
+-#define __NR_sigreturn		119
+-#define __NR_clone		120
+-#define __NR_setdomainname	121
+-#define __NR_uname		122
+-#define __NR_cacheflush		123
+-#define __NR_adjtimex		124
+-#define __NR_mprotect		125
+-#define __NR_sigprocmask	126
+-				/* 127 was sys_create_module */
+-#define __NR_init_module	128
+-#define __NR_delete_module	129
+-				/* 130 was sys_get_kernel_syms */
+-#define __NR_quotactl		131
+-#define __NR_getpgid		132
+-#define __NR_fchdir		133
+-#define __NR_bdflush		134
+-#define __NR_sysfs		135
+-#define __NR_personality	136
+-				/* 137 was sys_afs_syscall */
+-#define __NR_setfsuid		138
+-#define __NR_setfsgid		139
+-#define __NR__llseek		140
+-#define __NR_getdents		141
+-#define __NR__newselect		142
+-#define __NR_flock		143
+-#define __NR_msync		144
+-#define __NR_readv		145
+-#define __NR_writev		146
+-#define __NR_getsid		147
+-#define __NR_fdatasync		148
+-#define __NR__sysctl		149
+-#define __NR_mlock		150
+-#define __NR_munlock		151
+-#define __NR_mlockall		152
+-#define __NR_munlockall		153
+-#define __NR_sched_setparam		154
+-#define __NR_sched_getparam		155
+-#define __NR_sched_setscheduler		156
+-#define __NR_sched_getscheduler		157
+-#define __NR_sched_yield		158
+-#define __NR_sched_get_priority_max	159
+-#define __NR_sched_get_priority_min	160
+-#define __NR_sched_rr_get_interval	161
+-#define __NR_nanosleep		162
+-#define __NR_mremap		163
+-#define __NR_setresuid		164
+-#define __NR_getresuid		165
+-				/* 166 was sys_vm86 */
+-				/* 167 was sys_query_module */
+-#define __NR_poll		168
+-#define __NR_nfsservctl		169
+-#define __NR_setresgid		170
+-#define __NR_getresgid		171
+-#define __NR_prctl              172
+-#define __NR_rt_sigreturn	173
+-#define __NR_rt_sigaction	174
+-#define __NR_rt_sigprocmask	175
+-#define __NR_rt_sigpending	176
+-#define __NR_rt_sigtimedwait	177
+-#define __NR_rt_sigqueueinfo	178
+-#define __NR_rt_sigsuspend	179
+-#define __NR_pread64		180
+-#define __NR_pwrite64		181
+-#define __NR_chown		182
+-#define __NR_getcwd		183
+-#define __NR_capget		184
+-#define __NR_capset		185
+-#define __NR_sigaltstack	186
+-#define __NR_sendfile		187
+-				/* 188 reserved for sys_getpmsg */
+-				/* 189 reserved for sys_putpmsg */
+-#define __NR_vfork		190
+-#define __NR_ugetrlimit		191	/* SuS compliant getrlimit */
+-#define __NR_mmap2		192
+-#define __NR_truncate64		193
+-#define __NR_ftruncate64	194
+-#define __NR_stat64		195
+-#define __NR_lstat64		196
+-#define __NR_fstat64		197
+-#define __NR_lchown32		198
+-#define __NR_getuid32		199
+-#define __NR_getgid32		200
+-#define __NR_geteuid32		201
+-#define __NR_getegid32		202
+-#define __NR_setreuid32		203
+-#define __NR_setregid32		204
+-#define __NR_getgroups32	205
+-#define __NR_setgroups32	206
+-#define __NR_fchown32		207
+-#define __NR_setresuid32	208
+-#define __NR_getresuid32	209
+-#define __NR_setresgid32	210
+-#define __NR_getresgid32	211
+-#define __NR_chown32		212
+-#define __NR_setuid32		213
+-#define __NR_setgid32		214
+-#define __NR_setfsuid32		215
+-#define __NR_setfsgid32		216
+-#define __NR_pivot_root		217
+-#define __NR_mincore		218
+-#define __NR_madvise		219
+-#define __NR_getdents64		220
+-#define __NR_fcntl64		221
+-				/* 222 is reserved for tux */
+-				/* 223 is unused */
+-#define __NR_gettid		224
+-#define __NR_readahead		225
+-#define __NR_setxattr		226
+-#define __NR_lsetxattr		227
+-#define __NR_fsetxattr		228
+-#define __NR_getxattr		229
+-#define __NR_lgetxattr		230
+-#define __NR_fgetxattr		231
+-#define __NR_listxattr		232
+-#define __NR_llistxattr		233
+-#define __NR_flistxattr		234
+-#define __NR_removexattr	235
+-#define __NR_lremovexattr	236
+-#define __NR_fremovexattr	237
+-#define __NR_tkill		238
+-#define __NR_sendfile64		239
+-#define __NR_futex		240
+-#define __NR_sched_setaffinity	241
+-#define __NR_sched_getaffinity	242
+-				/* 243 is reserved for set_thread_area */
+-				/* 244 is reserved for get_thread_area */
+-#define __NR_io_setup		245
+-#define __NR_io_destroy		246
+-#define __NR_io_getevents	247
+-#define __NR_io_submit		248
+-#define __NR_io_cancel		249
+-#define __NR_fadvise64		250
+-				/* 251 is unused */
+-#define __NR_exit_group		252
+-#define __NR_lookup_dcookie	253
+-#define __NR_epoll_create	254
+-#define __NR_epoll_ctl		255
+-#define __NR_epoll_wait		256
+-#define __NR_remap_file_pages	257
+-#define __NR_set_tid_address	258
+-#define __NR_timer_create	259
+-#define __NR_timer_settime	(__NR_timer_create+1)
+-#define __NR_timer_gettime	(__NR_timer_create+2)
+-#define __NR_timer_getoverrun	(__NR_timer_create+3)
+-#define __NR_timer_delete	(__NR_timer_create+4)
+-#define __NR_clock_settime	(__NR_timer_create+5)
+-#define __NR_clock_gettime	(__NR_timer_create+6)
+-#define __NR_clock_getres	(__NR_timer_create+7)
+-#define __NR_clock_nanosleep	(__NR_timer_create+8)
+-#define __NR_statfs64		268
+-#define __NR_fstatfs64		269
+-#define __NR_tgkill		270
+-#define __NR_utimes		271
+-#define __NR_fadvise64_64	272
+-				/* 273 is reserved for vserver */
+-#define __NR_mbind              274
+-#define __NR_get_mempolicy      275
+-#define __NR_set_mempolicy      276
+-#define __NR_mq_open            277
+-#define __NR_mq_unlink          (__NR_mq_open+1)
+-#define __NR_mq_timedsend       (__NR_mq_open+2)
+-#define __NR_mq_timedreceive    (__NR_mq_open+3)
+-#define __NR_mq_notify          (__NR_mq_open+4)
+-#define __NR_mq_getsetattr      (__NR_mq_open+5)
+-#define __NR_kexec_load		283
+-#define __NR_waitid		284
+-#define __NR_add_key		285
+-#define __NR_request_key	286
+-#define __NR_keyctl		287
+-#define __NR_ioprio_set		288
+-#define __NR_ioprio_get		289
+-#define __NR_inotify_init	290
+-#define __NR_inotify_add_watch	291
+-#define __NR_inotify_rm_watch	292
+-				/* 293 is unused */
+-#define __NR_migrate_pages	294
+-#define __NR_openat		295
+-#define __NR_mkdirat		296
+-#define __NR_mknodat		297
+-#define __NR_fchownat		298
+-#define __NR_futimesat		299
+-#define __NR_fstatat64		300
+-#define __NR_unlinkat		301
+-#define __NR_renameat		302
+-#define __NR_linkat		303
+-#define __NR_symlinkat		304
+-#define __NR_readlinkat		305
+-#define __NR_fchmodat		306
+-#define __NR_faccessat		307
+-#define __NR_pselect6		308
+-#define __NR_ppoll		309
+-#define __NR_unshare		310
+-#define __NR_set_robust_list	311
+-#define __NR_get_robust_list	312
+-#define __NR_splice		313
+-#define __NR_sync_file_range	314
+-#define __NR_tee		315
+-#define __NR_vmsplice		316
+-#define __NR_move_pages		317
+-#define __NR_getcpu		318
+-#define __NR_epoll_pwait	319
+-#define __NR_utimensat		320
+-#define __NR_signalfd		321
+-#define __NR_timerfd_create	322
+-#define __NR_eventfd		323
+-#define __NR_fallocate		324
+-#define __NR_timerfd_settime	325
+-#define __NR_timerfd_gettime	326
+-#define __NR_signalfd4		327
+-#define __NR_eventfd2		328
+-#define __NR_epoll_create1	329
+-#define __NR_dup3		330
+-#define __NR_pipe2		331
+-#define __NR_inotify_init1	332
+-#define __NR_preadv		333
+-#define __NR_pwritev		334
+-#define __NR_rt_tgsigqueueinfo	335
+-#define __NR_perf_event_open	336
+-#define __NR_fanotify_init	337
+-#define __NR_fanotify_mark	338
+-#define __NR_prlimit64		339
+-
+-/* Non-multiplexed socket family */
+-#define __NR_socket		340
+-#define __NR_bind		341
+-#define __NR_connect		342
+-#define __NR_listen		343
+-#define __NR_accept		344
+-#define __NR_getsockname	345
+-#define __NR_getpeername	346
+-#define __NR_socketpair		347
+-#define __NR_send		348
+-#define __NR_sendto		349
+-#define __NR_recv		350
+-#define __NR_recvfrom		351
+-#define __NR_shutdown		352
+-#define __NR_setsockopt		353
+-#define __NR_getsockopt		354
+-#define __NR_sendmsg		355
+-#define __NR_recvmsg		356
+-#define __NR_recvmmsg		357
+-#define __NR_accept4		358
+-#define __NR_name_to_handle_at	359
+-#define __NR_open_by_handle_at	360
+-#define __NR_clock_adjtime	361
+-#define __NR_syncfs		362
+-#define __NR_sendmmsg		363
+-#define __NR_setns		364
+-#define __NR_process_vm_readv	365
+-#define __NR_process_vm_writev	366
+-#define __NR_kcmp		367
+-#define __NR_finit_module	368
+-#define __NR_sched_getattr	369
+-#define __NR_sched_setattr	370
+-#define __NR_renameat2		371
+-#define __NR_seccomp		372
+-#define __NR_getrandom		373
+-#define __NR_memfd_create	374
+-#define __NR_bpf		375
+-#define __NR_execveat		376
+-#define __NR_userfaultfd	377
+-#define __NR_membarrier		378
+-#define __NR_mlock2		379
+-#define __NR_copy_file_range	380
+-#define __NR_preadv2		381
+-#define __NR_pwritev2		382
+-
+-#ifdef __KERNEL__
+-#define __NR_syscalls		383
+-#endif
+-
+-#endif /* __ASM_SH_UNISTD_32_H */
 -- 
 2.20.0
