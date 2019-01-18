@@ -1,57 +1,33 @@
-From: Heiko Carstens <heiko.carstens@de.ibm.com>
-Date: Mon, 21 Jan 2019 11:57:05 +0000
-Subject: Re: [PATCH v2 13/29] arch: add split IPC system calls where needed
-Message-Id: <20190121115705.GB4020@osiris>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Fri, 18 Jan 2019 16:18:08 +0000
+Subject: [PATCH v2 02/29] ia64: add statx and io_pgetevents syscalls
+Message-Id: <20190118161835.2259170-3-arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20190118161835.2259170-1-arnd@arndb.de>
- <20190118161835.2259170-14-arnd@arndb.de>
-In-Reply-To: <20190118161835.2259170-14-arnd@arndb.de>
+In-Reply-To: <20190118161835.2259170-1-arnd@arndb.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Arnd Bergmann <arnd@arndb.de>
-Cc: y2038@lists.linaro.org, linux-api@vger.kernel.org, linux-kernel@vger.kernel.org, linux-arch@vger.kernel.org, mattst88@gmail.com, linux@armlinux.org.uk, catalin.marinas@arm.com, will.deacon@arm.com, tony.luck@intel.com, fenghua.yu@intel.com, geert@linux-m68k.org, monstr@monstr.eu, paul.burton@mips.com, deller@gmx.de, benh@kernel.crashing.org, mpe@ellerman.id.au, schwidefsky@de.ibm.com, dalias@libc.org, davem@davemloft.net, luto@kernel.org, tglx@linutronix.de, mingo@redhat.com, hpa@zytor.com, x86@kernel.org, jcmvbkbc@gmail.com, akpm@linux-foundation.org, deepa.kernel@gmail.com, ebiederm@xmission.com, firoz.khan@linaro.org, linux-alpha@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, linux-p
+To: y2038@lists.linaro.org, linux-api@vger.kernel.org, linux-kernel@vger.kernel.org, linux-arch@vger.kernel.org
+Cc: dalias@libc.org, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, catalin.marinas@arm.com, will.deacon@arm.com, jcmvbkbc@gmail.com, deepa.kernel@gmail.com, hpa@zytor.com, sparclinux@vger.kernel.org, linux-s390@vger.kernel.org, mpe@ellerman.id.au, deller@gmx.de, x86@kernel.org, linux@armlinux.org.uk, mingo@redhat.com, geert@linux-m68k.org, benh@kernel.crashing.org, firoz.khan@linaro.org, mattst88@gmail.com, fenghua.yu@intel.com, Arnd Bergmann <arnd@arndb.de>, heiko.carstens@de.ibm.com, linux-fsdevel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, luto@kernel.org, tglx@linutronix.de, linux-arm-kernel@lists.infradead.org, monstr@monstr.eu, tony.luck@intel.com, linux-parisc@vger.kernel.org, netdev@vger.kernel.org, linux-mips@vger.kernel.org, paul.burton@mips.com, ebiederm@xmission.com, linux-alpha@vger.kernel.org, schwidefsky@de.ibm.com, akpm@linux-foundation.orglinu
 
-On Fri, Jan 18, 2019 at 05:18:19PM +0100, Arnd Bergmann wrote:
-> The IPC system call handling is highly inconsistent across architectures,
-> some use sys_ipc, some use separate calls, and some use both.  We also
-> have some architectures that require passing IPC_64 in the flags, and
-> others that set it implicitly.
-> 
-> For the additon of a y2083 safe semtimedop() system call, I chose to only
-> support the separate entry points, but that requires first supporting
-> the regular ones with their own syscall numbers.
-> 
-> The IPC_64 is now implied by the new semctl/shmctl/msgctl system
-> calls even on the architectures that require passing it with the ipc()
-> multiplexer.
-> 
-> I'm not adding the new semtimedop() or semop() on 32-bit architectures,
-> those will get implemented using the new semtimedop_time64() version
-> that gets added along with the other time64 calls.
-> Three 64-bit architectures (powerpc, s390 and sparc) get semtimedop().
-> 
-> Signed-off-by: Arnd Bergmann <arnd@arndb.de>
-> ---
-> One aspect here that might be a bit controversial is the use of
-> the same system call numbers across all architectures, synchronizing
-> all of them with the x86-32 numbers. With the new syscall.tbl
-> files, I hope we can just keep doing that in the future, and no
-> longer require the architecture maintainers to assign a number.
-> 
-> This is mainly useful for implementers of the C libraries: if
-> we can add future system calls everywhere at the same time, using
-> a particular version of the kernel headers also guarantees that
-> the system call number macro is visible.
-> ---
->  arch/m68k/kernel/syscalls/syscall.tbl     | 11 +++++++++++
->  arch/mips/kernel/syscalls/syscall_o32.tbl | 11 +++++++++++
->  arch/powerpc/kernel/syscalls/syscall.tbl  | 13 +++++++++++++
->  arch/s390/kernel/syscalls/syscall.tbl     | 12 ++++++++++++
->  arch/sh/kernel/syscalls/syscall.tbl       | 11 +++++++++++
->  arch/sparc/kernel/syscalls/syscall.tbl    | 12 ++++++++++++
->  arch/x86/entry/syscalls/syscall_32.tbl    | 11 +++++++++++
->  7 files changed, 81 insertions(+)
+All architectures should implement these two, so assign numbers
+and hook them up on ia64.
 
-For the s390 bits:
-Acked-by: Heiko Carstens <heiko.carstens@de.ibm.com>
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+---
+ arch/ia64/kernel/syscalls/syscall.tbl | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/ia64/kernel/syscalls/syscall.tbl b/arch/ia64/kernel/syscalls/syscall.tbl
+index e97caf51be42..52585281205b 100644
+--- a/arch/ia64/kernel/syscalls/syscall.tbl
++++ b/arch/ia64/kernel/syscalls/syscall.tbl
+@@ -335,3 +335,5 @@
+ 323	common	copy_file_range			sys_copy_file_range
+ 324	common	preadv2				sys_preadv2
+ 325	common	pwritev2			sys_pwritev2
++326	common	statx				sys_statx
++327	common	io_pgetevents			sys_io_pgetevents
+-- 
+2.20.0
