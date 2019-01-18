@@ -1,175 +1,132 @@
 From: Arnd Bergmann <arnd@arndb.de>
-Date: Thu, 10 Jan 2019 17:22:05 +0000
-Subject: [PATCH 00/11] y2038: add time64 syscalls
-Message-Id: <20190110172216.313063-1-arnd@arndb.de>
+Date: Fri, 18 Jan 2019 16:18:25 +0000
+Subject: [PATCH v2 19/29] time: Add struct __kernel_timex
+Message-Id: <20190118161835.2259170-20-arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20190118161835.2259170-1-arnd@arndb.de>
+In-Reply-To: <20190118161835.2259170-1-arnd@arndb.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: y2038@lists.linaro.org, linux-api@vger.kernel.org, linux-kernel@vger.kernel.org
+To: y2038@lists.linaro.org, linux-api@vger.kernel.org, linux-kernel@vger.kernel.org, linux-arch@vger.kernel.org
 Cc: Arnd Bergmann <arnd@arndb.de>, mattst88@gmail.com, linux@armlinux.org.uk, catalin.marinas@arm.com, will.deacon@arm.com, tony.luck@intel.com, fenghua.yu@intel.com, geert@linux-m68k.org, monstr@monstr.eu, paul.burton@mips.com, deller@gmx.de, benh@kernel.crashing.org, mpe@ellerman.id.au, schwidefsky@de.ibm.com, heiko.carstens@de.ibm.com, dalias@libc.org, davem@davemloft.net, luto@kernel.org, tglx@linutronix.de, mingo@redhat.com, hpa@zytor.com, x86@kernel.org, jcmvbkbc@gmail.com, akpm@linux-foundation.org, deepa.kernel@gmail.com, ebiederm@xmission.com, firoz.khan@linaro.org, linux-alpha@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.or
 
-This series finally gets us to the point of having system calls with
-64-bit time_t on all architectures, after a long time of incremental
-preparation patches.
+From: Deepa Dinamani <deepa.kernel@gmail.com>
 
-There was actually one conversion that I missed during the summer,
-i.e. Deepa's timex series, which I now updated based the 5.0-rc1 changes
-and review comments.
+struct timex uses struct timeval internally.
+struct timeval is not y2038 safe.
+Introduce a new UAPI type struct __kernel_timex
+that is y2038 safe.
 
-I hope that the actual conversion should be uncontroversial by now,
-even if some of the patches are rather large.
+struct __kernel_timex uses a timeval type that is
+similar to struct __kernel_timespec which preserves the
+same structure size across 32 bit and 64 bit ABIs.
+struct __kernel_timex also restructures other members of the
+structure to make the structure the same on 64 bit and 32 bit
+architectures.
+Note that struct __kernel_timex is the same as struct timex
+on a 64 bit architecture.
 
-The one area that may need a little discussion is for the system call
-numbers assigned in the final patch: Can we get consensus on whether
-the idea of using the same numbers on all architectures, as well as my
-choice of numbers makes sense here?
+The above solution is similar to other new y2038 syscalls
+that are being introduced: both 32 bit and 64 bit ABIs
+have a common entry, and the compat entry supports the old 32 bit
+syscall interface.
 
-So far, I have done a lot of build testing across most architectures,
-which has found a number of bugs. I have also done an LTP run on arm32
-with existing user space, but not on the other architectures. I did LTP
-tests with a modified musl libc[2] last summer on an older version of
-this series to make sure that the new 64-bit time_t interfaces work.
-The version there will need updates for testing with this new kernel
-patch series; I plan to do that next.
+Alternatives considered were:
+1. Add new time type to struct timex that makes use of padded
+   bits. This time type could be based on the struct __kernel_timespec.
+   modes will use a flag to notify which time structure should be
+   used internally.
+   This needs some application level changes on both 64 bit and 32 bit
+   architectures. Although 64 bit machines could continue to use the
+   older timeval structure without any changes.
 
-For testing, the series plus the preparatory patches is available at
-[3].  Once there is a general agreement on this series and I have done
-more tests for the new system calls, I plan to add this to linux-next
-through my asm-generic tree or Thomas' timers tree.
+2. Add a new u8 type to struct timex that makes use of padded bits. This
+   can be used to save higher order tv_sec bits. modes will use a flag to
+   notify presence of such a type.
+   This will need some application level changes on 32 bit architectures.
 
-Please review and test!
+3. Add a new compat_timex structure that differs in only the size of the
+   time type; keep rest of struct timex the same.
+   This requires extra syscalls to manage all 3 cases on 64 bit
+   architectures. This will not need any application level changes but will
+   add more complexity from kernel side.
 
-      Arnd
+Signed-off-by: Deepa Dinamani <deepa.kernel@gmail.com>
+---
+ include/linux/timex.h      |  7 +++++++
+ include/uapi/linux/timex.h | 41 ++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 48 insertions(+)
 
-[1] https://lore.kernel.org/lkml/20190110162435.309262-1-arnd@arndb.de/T/
-[2] https://git.linaro.org/people/arnd/musl-y2038.git/
-[3] https://git.kernel.org/pub/scm/linux/kernel/git/arnd/playground.git y2038-5.0-rc1
-
-Arnd Bergmann (8):
-  time: make adjtime compat handling available for 32 bit
-  time: fix sys_timer_settime prototype
-  sparc64: add custom adjtimex/clock_adjtime functions
-  y2038: syscalls: rename y2038 compat syscalls
-  y2038: use time32 syscall names on 32-bit
-  y2038: remove struct definition redirects
-  y2038: rename old time and utime syscalls
-  y2038: add 64-bit time_t syscalls to all 32-bit architectures
-
-Deepa Dinamani (3):
-  time: Add struct __kernel_timex
-  timex: use __kernel_timex internally
-  timex: change syscalls to use struct __kernel_timex
-
- arch/Kconfig                                |   2 +-
- arch/alpha/kernel/osf_sys.c                 |   5 +-
- arch/alpha/kernel/syscalls/syscall.tbl      |   2 +
- arch/arm/include/asm/unistd.h               |   4 +-
- arch/arm/kernel/sys_oabi-compat.c           |   8 +-
- arch/arm/tools/syscall.tbl                  |  77 ++++++++-----
- arch/arm64/include/asm/unistd.h             |   2 +-
- arch/arm64/include/asm/unistd32.h           |  89 ++++++++++----
- arch/ia64/kernel/syscalls/syscall.tbl       |   1 +
- arch/m68k/include/asm/unistd.h              |   4 +-
- arch/m68k/kernel/syscalls/syscall.tbl       |  72 +++++++-----
- arch/microblaze/include/asm/unistd.h        |   4 +-
- arch/microblaze/kernel/syscalls/syscall.tbl |  77 ++++++++-----
- arch/mips/include/asm/unistd.h              |   4 +-
- arch/mips/kernel/syscalls/syscall_n32.tbl   |  71 ++++++++----
- arch/mips/kernel/syscalls/syscall_n64.tbl   |   1 +
- arch/mips/kernel/syscalls/syscall_o32.tbl   |  74 +++++++-----
- arch/parisc/include/asm/unistd.h            |   9 +-
- arch/parisc/kernel/syscalls/syscall.tbl     | 105 ++++++++++++-----
- arch/powerpc/include/asm/unistd.h           |   8 +-
- arch/powerpc/kernel/syscalls/syscall.tbl    | 121 +++++++++++++++-----
- arch/s390/include/asm/unistd.h              |   2 +-
- arch/s390/kernel/syscalls/syscall.tbl       |  72 +++++++-----
- arch/sh/include/asm/unistd.h                |   4 +-
- arch/sh/kernel/syscalls/syscall.tbl         |  72 +++++++-----
- arch/sparc/include/asm/unistd.h             |   8 +-
- arch/sparc/kernel/sys_sparc_64.c            |  59 +++++++++-
- arch/sparc/kernel/syscalls/syscall.tbl      | 100 +++++++++++-----
- arch/x86/entry/syscalls/syscall_32.tbl      |  74 +++++++-----
- arch/x86/entry/syscalls/syscall_64.tbl      |   4 +-
- arch/x86/include/asm/unistd.h               |   8 +-
- arch/xtensa/include/asm/unistd.h            |   2 +-
- arch/xtensa/kernel/syscalls/syscall.tbl     |  71 ++++++++----
- drivers/ptp/ptp_clock.c                     |   2 +-
- fs/aio.c                                    |  10 +-
- fs/select.c                                 |   4 +-
- fs/timerfd.c                                |   4 +-
- fs/utimes.c                                 |  10 +-
- include/linux/compat.h                      | 104 +----------------
- include/linux/posix-clock.h                 |   2 +-
- include/linux/syscalls.h                    |  65 ++++++++++-
- include/linux/time32.h                      |  32 +++++-
- include/linux/time64.h                      |   8 --
- include/linux/timex.h                       |   4 +-
- include/uapi/asm-generic/unistd.h           | 103 ++++++++++++-----
- include/uapi/linux/time.h                   |   4 -
- include/uapi/linux/timex.h                  |  39 +++++++
- ipc/mqueue.c                                |  16 +--
- ipc/sem.c                                   |   2 +-
- kernel/compat.c                             |  64 -----------
- kernel/futex.c                              |   2 +-
- kernel/sched/core.c                         |   5 +-
- kernel/signal.c                             |   2 +-
- kernel/sys_ni.c                             |  18 +--
- kernel/time/hrtimer.c                       |   2 +-
- kernel/time/ntp.c                           |  18 +--
- kernel/time/ntp_internal.h                  |   2 +-
- kernel/time/posix-clock.c                   |   2 +-
- kernel/time/posix-stubs.c                   |  25 ++--
- kernel/time/posix-timers.c                  |  72 ++++++------
- kernel/time/posix-timers.h                  |   2 +-
- kernel/time/time.c                          |  92 ++++++++++++---
- kernel/time/timekeeping.c                   |   4 +-
- net/compat.c                                |   2 +-
- scripts/checksyscalls.sh                    |  40 +++++++
- 65 files changed, 1264 insertions(+), 713 deletions(-)
-
+diff --git a/include/linux/timex.h b/include/linux/timex.h
+index 39c25dbebfe8..7f40e9e42ecc 100644
+--- a/include/linux/timex.h
++++ b/include/linux/timex.h
+@@ -53,6 +53,13 @@
+ #ifndef _LINUX_TIMEX_H
+ #define _LINUX_TIMEX_H
+ 
++/* CONFIG_64BIT_TIME enables new 64 bit time_t syscalls in the compat path
++ * and 32-bit emulation.
++ */
++#ifndef CONFIG_64BIT_TIME
++#define __kernel_timex timex
++#endif
++
+ #include <uapi/linux/timex.h>
+ 
+ #define ADJ_ADJTIME		0x8000	/* switch between adjtime/adjtimex modes */
+diff --git a/include/uapi/linux/timex.h b/include/uapi/linux/timex.h
+index 92685d826444..a1c6b73016a5 100644
+--- a/include/uapi/linux/timex.h
++++ b/include/uapi/linux/timex.h
+@@ -92,6 +92,47 @@ struct timex {
+ 	int  :32; int  :32; int  :32;
+ };
+ 
++struct __kernel_timex_timeval {
++	__kernel_time64_t       tv_sec;
++	long long		tv_usec;
++};
++
++#ifndef __kernel_timex
++struct __kernel_timex {
++	unsigned int modes;	/* mode selector */
++	int :32;            /* pad */
++	long long offset;	/* time offset (usec) */
++	long long freq;	/* frequency offset (scaled ppm) */
++	long long maxerror;/* maximum error (usec) */
++	long long esterror;/* estimated error (usec) */
++	int status;		/* clock command/status */
++	int :32;            /* pad */
++	long long constant;/* pll time constant */
++	long long precision;/* clock precision (usec) (read only) */
++	long long tolerance;/* clock frequency tolerance (ppm)
++				   * (read only)
++				   */
++	struct __kernel_timex_timeval time;	/* (read only, except for ADJ_SETOFFSET) */
++	long long tick;	/* (modified) usecs between clock ticks */
++
++	long long ppsfreq;/* pps frequency (scaled ppm) (ro) */
++	long long jitter; /* pps jitter (us) (ro) */
++	int shift;              /* interval duration (s) (shift) (ro) */
++	int :32;            /* pad */
++	long long stabil;            /* pps stability (scaled ppm) (ro) */
++	long long jitcnt; /* jitter limit exceeded (ro) */
++	long long calcnt; /* calibration intervals (ro) */
++	long long errcnt; /* calibration errors (ro) */
++	long long stbcnt; /* stability limit exceeded (ro) */
++
++	int tai;		/* TAI offset (ro) */
++
++	int  :32; int  :32; int  :32; int  :32;
++	int  :32; int  :32; int  :32; int  :32;
++	int  :32; int  :32; int  :32;
++};
++#endif
++
+ /*
+  * Mode codes (timex.mode)
+  */
 -- 
 2.20.0
-
-Cc: mattst88@gmail.com
-Cc: linux@armlinux.org.uk
-Cc: catalin.marinas@arm.com
-Cc: will.deacon@arm.com
-Cc: tony.luck@intel.com
-Cc: fenghua.yu@intel.com
-Cc: geert@linux-m68k.org
-Cc: monstr@monstr.eu
-Cc: paul.burton@mips.com
-Cc: deller@gmx.de
-Cc: benh@kernel.crashing.org
-Cc: mpe@ellerman.id.au
-Cc: schwidefsky@de.ibm.com
-Cc: heiko.carstens@de.ibm.com
-Cc: dalias@libc.org
-Cc: davem@davemloft.net
-Cc: luto@kernel.org
-Cc: tglx@linutronix.de
-Cc: mingo@redhat.com
-Cc: hpa@zytor.com
-Cc: x86@kernel.org
-Cc: jcmvbkbc@gmail.com
-Cc: arnd@arndb.de
-Cc: akpm@linux-foundation.org
-Cc: deepa.kernel@gmail.com
-Cc: ebiederm@xmission.com
-Cc: firoz.khan@linaro.org
-Cc: linux-kernel@vger.kernel.org
-Cc: linux-alpha@vger.kernel.org
-Cc: linux-arm-kernel@lists.infradead.org
-Cc: linux-ia64@vger.kernel.org
-Cc: linux-m68k@lists.linux-m68k.org
-Cc: linux-mips@vger.kernel.org
-Cc: linux-parisc@vger.kernel.org
-Cc: linuxppc-dev@lists.ozlabs.org
-Cc: linux-s390@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
-Cc: sparclinux@vger.kernel.org
-Cc: netdev@vger.kernel.org
-Cc: linux-fsdevel@vger.kernel.org
-Cc: linux-api@vger.kernel.org
-Cc: linux-arch@vger.kernel.org
