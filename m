@@ -1,44 +1,104 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 21 Jan 2019 08:56:02 +0000
-Subject: Re: [PATCH v2 26/29] y2038: use time32 syscall names on 32-bit
-Message-Id: <CAMuHMdWiHTjDT9-tnjgJy9qCWRr+qUgsJa6LjpRDJQzhoJqnzw@mail.gmail.com>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Fri, 18 Jan 2019 16:18:23 +0000
+Subject: [PATCH v2 17/29] syscalls: remove obsolete __IGNORE_ macros
+Message-Id: <20190118161835.2259170-18-arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190118161835.2259170-1-arnd@arndb.de> <20190118161835.2259170-27-arnd@arndb.de>
-In-Reply-To: <20190118161835.2259170-27-arnd@arndb.de>
+References: <20190118161835.2259170-1-arnd@arndb.de>
+In-Reply-To: <20190118161835.2259170-1-arnd@arndb.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Arnd Bergmann <arnd@arndb.de>
-Cc: y2038 Mailman List <y2038@lists.linaro.org>, Linux API <linux-api@vger.kernel.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Linux-Arch <linux-arch@vger.kernel.org>, Matt Turner <mattst88@gmail.com>, Russell King <linux@armlinux.org.uk>, Catalin Marinas <catalin.marinas@arm.com>, Will Deacon <will.deacon@arm.com>, Tony Luck <tony.luck@intel.com>, Fenghua Yu <fenghua.yu@intel.com>, Michal Simek <monstr@monstr.eu>, Paul Burton <paul.burton@mips.com>, Helge Deller <deller@gmx.de>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Michael Ellerman <mpe@ellerman.id.au>, Martin Schwidefsky <schwidefsky@de.ibm.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, Rich Felker <dalias@libc.org>, "David S. Miller" <davem@davemloft.net>
+To: y2038@lists.linaro.org, linux-api@vger.kernel.org, linux-kernel@vger.kernel.org, linux-arch@vger.kernel.org
+Cc: Arnd Bergmann <arnd@arndb.de>, mattst88@gmail.com, linux@armlinux.org.uk, catalin.marinas@arm.com, will.deacon@arm.com, tony.luck@intel.com, fenghua.yu@intel.com, geert@linux-m68k.org, monstr@monstr.eu, paul.burton@mips.com, deller@gmx.de, benh@kernel.crashing.org, mpe@ellerman.id.au, schwidefsky@de.ibm.com, heiko.carstens@de.ibm.com, dalias@libc.org, davem@davemloft.net, luto@kernel.org, tglx@linutronix.de, mingo@redhat.com, hpa@zytor.com, x86@kernel.org, jcmvbkbc@gmail.com, akpm@linux-foundation.org, deepa.kernel@gmail.com, ebiederm@xmission.com, firoz.khan@linaro.org, linux-alpha@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.or
 
-On Fri, Jan 18, 2019 at 5:21 PM Arnd Bergmann <arnd@arndb.de> wrote:
-> This is the big flip, where all 32-bit architectures set COMPAT_32BIT_TIME
-> abd use the _time32 system calls from the former compat layer instead
-> of the system calls that take __kernel_timespec and similar arguments.
->
-> The temporary redirects for __kernel_timespec, __kernel_itimerspec
-> and __kernel_timex can get removed with this.
->
-> It would be easy to split this commit by architecture, but with the new
-> generated system call tables, it's easy enough to do it all at once,
-> which makes it a little easier to check that the changes are the same
-> in each table.
->
-> Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+These are all for ignoring the lack of obsolete system calls,
+which have been marked the same way in scripts/checksyscall.sh,
+so these can be removed.
 
->  arch/m68k/kernel/syscalls/syscall.tbl       | 42 +++++------
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+---
+ arch/mips/include/asm/unistd.h   | 16 ----------------
+ arch/parisc/include/asm/unistd.h |  3 ---
+ arch/s390/include/asm/unistd.h   |  2 --
+ arch/xtensa/include/asm/unistd.h | 12 ------------
+ 4 files changed, 33 deletions(-)
 
-For m68k:
-Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
-
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+diff --git a/arch/mips/include/asm/unistd.h b/arch/mips/include/asm/unistd.h
+index b23d74a601b3..5e9eeb83d8d4 100644
+--- a/arch/mips/include/asm/unistd.h
++++ b/arch/mips/include/asm/unistd.h
+@@ -53,22 +53,6 @@
+ #define __ARCH_WANT_SYS_FORK
+ #define __ARCH_WANT_SYS_CLONE
+ 
+-/* whitelists for checksyscalls */
+-#define __IGNORE_select
+-#define __IGNORE_vfork
+-#define __IGNORE_time
+-#define __IGNORE_uselib
+-#define __IGNORE_fadvise64_64
+-#define __IGNORE_getdents64
+-#if _MIPS_SIM = _MIPS_SIM_NABI32
+-#define __IGNORE_truncate64
+-#define __IGNORE_ftruncate64
+-#define __IGNORE_stat64
+-#define __IGNORE_lstat64
+-#define __IGNORE_fstat64
+-#define __IGNORE_fstatat64
+-#endif
+-
+ #endif /* !__ASSEMBLY__ */
+ 
+ #endif /* _ASM_UNISTD_H */
+diff --git a/arch/parisc/include/asm/unistd.h b/arch/parisc/include/asm/unistd.h
+index 9ec1026af877..385eae49ed02 100644
+--- a/arch/parisc/include/asm/unistd.h
++++ b/arch/parisc/include/asm/unistd.h
+@@ -10,9 +10,6 @@
+ 
+ #define SYS_ify(syscall_name)   __NR_##syscall_name
+ 
+-#define __IGNORE_select			/* newselect */
+-#define __IGNORE_fadvise64		/* fadvise64_64 */
+-
+ #ifndef ASM_LINE_SEP
+ # define ASM_LINE_SEP ;
+ #endif
+diff --git a/arch/s390/include/asm/unistd.h b/arch/s390/include/asm/unistd.h
+index ed08f114ee91..59202ceea1f6 100644
+--- a/arch/s390/include/asm/unistd.h
++++ b/arch/s390/include/asm/unistd.h
+@@ -10,8 +10,6 @@
+ #include <uapi/asm/unistd.h>
+ #include <asm/unistd_nr.h>
+ 
+-#define __IGNORE_time
+-
+ #define __ARCH_WANT_NEW_STAT
+ #define __ARCH_WANT_OLD_READDIR
+ #define __ARCH_WANT_SYS_ALARM
+diff --git a/arch/xtensa/include/asm/unistd.h b/arch/xtensa/include/asm/unistd.h
+index 0d34629dafc5..81cc52ea1bd5 100644
+--- a/arch/xtensa/include/asm/unistd.h
++++ b/arch/xtensa/include/asm/unistd.h
+@@ -10,18 +10,6 @@
+ #define __ARCH_WANT_SYS_UTIME
+ #define __ARCH_WANT_SYS_GETPGRP
+ 
+-/* 
+- * Ignore legacy system calls in the checksyscalls.sh script
+- */
+-
+-#define __IGNORE_fork				/* use clone */
+-#define __IGNORE_time
+-#define __IGNORE_alarm				/* use setitimer */
+-#define __IGNORE_pause
+-#define __IGNORE_mmap				/* use mmap2 */
+-#define __IGNORE_vfork				/* use clone */
+-#define __IGNORE_fadvise64			/* use fadvise64_64 */
+-
+ #define NR_syscalls				__NR_syscalls
+ 
+ #endif /* _XTENSA_UNISTD_H */
+-- 
+2.20.0
