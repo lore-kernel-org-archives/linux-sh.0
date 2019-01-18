@@ -1,33 +1,36 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sun, 27 Jan 2019 17:42:12 +0000
-Subject: [PATCH 7/7] sh_eth: offload RX checksum on SH7763
-Message-Id: <e8ce7a88-b689-6114-66e4-c45a95087a1f@cogentembedded.com>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Fri, 18 Jan 2019 16:18:14 +0000
+Subject: [PATCH v2 08/29] m68k: assign syscall number for seccomp
+Message-Id: <20190118161835.2259170-9-arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <fc43bfa2-4312-b52b-a749-e3e43e242a95@cogentembedded.com>
-In-Reply-To: <fc43bfa2-4312-b52b-a749-e3e43e242a95@cogentembedded.com>
+References: <20190118161835.2259170-1-arnd@arndb.de>
+In-Reply-To: <20190118161835.2259170-1-arnd@arndb.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org, "David S. Miller" <davem@davemloft.net>
-Cc: linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org
+To: y2038@lists.linaro.org, linux-api@vger.kernel.org, linux-kernel@vger.kernel.org, linux-arch@vger.kernel.org
+Cc: Arnd Bergmann <arnd@arndb.de>, mattst88@gmail.com, linux@armlinux.org.uk, catalin.marinas@arm.com, will.deacon@arm.com, tony.luck@intel.com, fenghua.yu@intel.com, geert@linux-m68k.org, monstr@monstr.eu, paul.burton@mips.com, deller@gmx.de, benh@kernel.crashing.org, mpe@ellerman.id.au, schwidefsky@de.ibm.com, heiko.carstens@de.ibm.com, dalias@libc.org, davem@davemloft.net, luto@kernel.org, tglx@linutronix.de, mingo@redhat.com, hpa@zytor.com, x86@kernel.org, jcmvbkbc@gmail.com, akpm@linux-foundation.org, deepa.kernel@gmail.com, ebiederm@xmission.com, firoz.khan@linaro.org, linux-alpha@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.or
 
-The SH7763 SoC manual describes the Ether MAC's RX checksum offload
-the same way as it's implemented in the EtherAVB MACs...
+Most architectures have assigned a numbers for the seccomp syscall
+even when they do not implement it.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+m68k is an exception here, so for consistency lets add the number.
+Unless CONFIG_SECCOMP is implemented, the system call just
+returns -ENOSYS.
 
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
 ---
- drivers/net/ethernet/renesas/sh_eth.c |    1 +
+ arch/m68k/kernel/syscalls/syscall.tbl | 1 +
  1 file changed, 1 insertion(+)
 
-Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
-=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
-+++ net-next/drivers/net/ethernet/renesas/sh_eth.c
-@@ -1092,6 +1092,7 @@ static struct sh_eth_cpu_data sh7763_dat
- 	.irq_flags	= IRQF_SHARED,
- 	.magic		= 1,
- 	.cexcr		= 1,
-+	.rx_csum	= 1,
- 	.dual_port	= 1,
- };
- 
+diff --git a/arch/m68k/kernel/syscalls/syscall.tbl b/arch/m68k/kernel/syscalls/syscall.tbl
+index 1a95c4a1bc0d..85779d6ef935 100644
+--- a/arch/m68k/kernel/syscalls/syscall.tbl
++++ b/arch/m68k/kernel/syscalls/syscall.tbl
+@@ -387,3 +387,4 @@
+ 377	common	preadv2				sys_preadv2
+ 378	common	pwritev2			sys_pwritev2
+ 379	common	statx				sys_statx
++380	common	seccomp				sys_seccomp
+-- 
+2.20.0
