@@ -1,31 +1,32 @@
-From: Sasha Kelley <info@coutbloog.ml>
-Date: Thu, 24 Jan 2019 20:16:38 +0000
-Subject: Request for Quotation
-Message-Id: <20190124121638.B9816163C26EAB14@coutbloog.ml>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Fri, 18 Jan 2019 16:18:16 +0000
+Subject: [PATCH v2 10/29] sh: add statx system call
+Message-Id: <20190118161835.2259170-11-arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20190118161835.2259170-1-arnd@arndb.de>
+In-Reply-To: <20190118161835.2259170-1-arnd@arndb.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: y2038@lists.linaro.org, linux-api@vger.kernel.org, linux-kernel@vger.kernel.org, linux-arch@vger.kernel.org
+Cc: dalias@libc.org, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, catalin.marinas@arm.com, will.deacon@arm.com, jcmvbkbc@gmail.com, deepa.kernel@gmail.com, hpa@zytor.com, sparclinux@vger.kernel.org, linux-s390@vger.kernel.org, mpe@ellerman.id.au, deller@gmx.de, x86@kernel.org, linux@armlinux.org.uk, mingo@redhat.com, geert@linux-m68k.org, benh@kernel.crashing.org, firoz.khan@linaro.org, mattst88@gmail.com, fenghua.yu@intel.com, Arnd Bergmann <arnd@arndb.de>, heiko.carstens@de.ibm.com, linux-fsdevel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, luto@kernel.org, tglx@linutronix.de, linux-arm-kernel@lists.infradead.org, monstr@monstr.eu, tony.luck@intel.com, linux-parisc@vger.kernel.org, netdev@vger.kernel.org, linux-mips@vger.kernel.org, paul.burton@mips.com, ebiederm@xmission.com, linux-alpha@vger.kernel.org, schwidefsky@de.ibm.com, akpm@linux-foundation.orglinu
 
-Nice day to you!
+statx is available on almost all other architectures but
+got missed on sh, so add it now.
 
-My Names Sasha Kelley from Earthlink, Inc. Moscow Russia
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+---
+ arch/sh/kernel/syscalls/syscall.tbl | 1 +
+ 1 file changed, 1 insertion(+)
 
-There is an available invitation to tender suitable for your 
-products and I would like to inquire if your company will be 
-interested to submit offer for your products in Moscow Russia.
-
-Please confirm interest by sending product catalog/price list 
-for 
-our review.
-
-Looking forward to hearing from you.
-
-Best Regards,
-
-Area Manager
-Sasha Kelley
-Tel: +79017731031
-E-mail: earthlink@zoho.com
-Earthlink, Inc (Moscow).
+diff --git a/arch/sh/kernel/syscalls/syscall.tbl b/arch/sh/kernel/syscalls/syscall.tbl
+index 21ec75288562..a70db013dbc7 100644
+--- a/arch/sh/kernel/syscalls/syscall.tbl
++++ b/arch/sh/kernel/syscalls/syscall.tbl
+@@ -390,3 +390,4 @@
+ 380	common	copy_file_range			sys_copy_file_range
+ 381	common	preadv2				sys_preadv2
+ 382	common	pwritev2			sys_pwritev2
++383	common	statx				sys_statx
+-- 
+2.20.0
