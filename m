@@ -1,84 +1,78 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 07 Jan 2019 16:23:16 +0000
-Subject: [PATCH v5 0/4] serial: sh-sci: Fix fallback to PIO on DMA failure
-Message-Id: <20190107162320.15530-1-geert+renesas@glider.be>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Fri, 18 Jan 2019 16:18:22 +0000
+Subject: [PATCH v2 16/29] alpha: add generic get{eg,eu,g,p,u,pp}id() syscalls
+Message-Id: <20190118161835.2259170-17-arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20190118161835.2259170-1-arnd@arndb.de>
+In-Reply-To: <20190118161835.2259170-1-arnd@arndb.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
-Cc: Wolfram Sang <wsa+renesas@sang-engineering.com>, Ulrich Hecht <uli+renesas@fpond.eu>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Simon Horman <horms@verge.net.au>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-serial@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: y2038@lists.linaro.org, linux-api@vger.kernel.org, linux-kernel@vger.kernel.org, linux-arch@vger.kernel.org
+Cc: Arnd Bergmann <arnd@arndb.de>, mattst88@gmail.com, linux@armlinux.org.uk, catalin.marinas@arm.com, will.deacon@arm.com, tony.luck@intel.com, fenghua.yu@intel.com, geert@linux-m68k.org, monstr@monstr.eu, paul.burton@mips.com, deller@gmx.de, benh@kernel.crashing.org, mpe@ellerman.id.au, schwidefsky@de.ibm.com, heiko.carstens@de.ibm.com, dalias@libc.org, davem@davemloft.net, luto@kernel.org, tglx@linutronix.de, mingo@redhat.com, hpa@zytor.com, x86@kernel.org, jcmvbkbc@gmail.com, akpm@linux-foundation.org, deepa.kernel@gmail.com, ebiederm@xmission.com, firoz.khan@linaro.org, linux-alpha@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.or
 
-	Hi Greg, Jiri,
+Alpha has traditionally followed the OSF1 calling conventions
+here, with its getxpid, getxuid, getxgid system calls returning
+two different values in separate registers.
 
-When submitting a DMA request fails, the sh-sci driver is supposed to
-fall back to PIO.  However, this never really worked due to various
-reasons (sh-sci driver issues and dmaengine framework limitations).
+Following what glibc has done here, we can define getpid,
+getuid and getgid to be aliases for getxpid, getxuid and getxgid
+respectively, and add new system call numbers for getppid, geteuid
+and getegid.
 
-There are three places where DMA submission can fail, and the driver
-should fall back to PIO:
-  1. sci_dma_rx_complete(),
-  2. sci_submit_rx(),
-  3. work_fn_tx().
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+---
+ arch/alpha/include/asm/unistd.h        | 11 -----------
+ arch/alpha/include/uapi/asm/unistd.h   |  5 +++++
+ arch/alpha/kernel/syscalls/syscall.tbl |  3 +++
+ 3 files changed, 8 insertions(+), 11 deletions(-)
 
-This patch series fixes fallback to PIO in case 1, which is the only one
-that does not work yet in v5.0-rc1.
-
-Changes compared to v4:
-  - Drop patches to fix case 2, whch have been applied in v5.0-rc1,
-  - Add patches to extract common helpers and make naming more
-    consistent,
-  - Call new helpers sci_dma_rx_chan_invalidate() and
-    sci_dma_rx_reenable_irq() instead of open-coding.
-
-Changes compared to v3:
-  - Let sci_submit_rx() return -EAGAIN instead of -1 on failure,
-  - Check for negative error in sci_submit_rx() caller.
-
-Changes compared to v2:
-  - Add missing definition of "u16 scr" to sci_dma_rx_complete(),
-  - Move label handle_pio inside #ifdef to kill defined but not used
-    compiler warning when CONFIG_SERIAL_SH_SCI_DMA=n,
-  - Move call to dmaengine_terminate_async() in sci_dma_rx_complete()
-    inside the spinlock, for symmetry with sci_submit_rx(),
-  - Move the call sci_submit_rx() in sci_rx_interrupt() up, as it may
-    fail, rendering the modification of scr unused,
-  - Split in multiple patches,
-  - Drop RFC status.
-
-Changes compared to v1:
-  - Fix fallback in sci_dma_rx_complete(),
-  - Fallback in the transmit path already works fine,
-  - Widen audience, but keep RFC.
-
-This has been tested on r8a7791/koelsch, using SCIF1 on debug serial 1,
-and SCIFA3 on EXIO-B, by introducing random failures in DMA submission
-code.  For testing, this series is also available in the
-topic/scif-pio-fallback-v5 branch of my renesas-drivers git repository
-at
-git://git.kernel.org/pub/scm/linux/kernel/git/geert/renesas-drivers.git.
-
-Thanks!
-
-Geert Uytterhoeven (4):
-  serial: sh-sci: Extract sci_dma_rx_chan_invalidate()
-  serial: sh-sci: Extract sci_dma_rx_reenable_irq()
-  serial: sh-sci: Fix fallback to PIO in sci_dma_rx_complete()
-  serial: sh-sci: Make RX/TX DMA function names consistent
-
- drivers/tty/serial/sh-sci.c | 71 ++++++++++++++++++++++---------------
- 1 file changed, 43 insertions(+), 28 deletions(-)
-
+diff --git a/arch/alpha/include/asm/unistd.h b/arch/alpha/include/asm/unistd.h
+index 31ad350b58a0..986f5da9b7d8 100644
+--- a/arch/alpha/include/asm/unistd.h
++++ b/arch/alpha/include/asm/unistd.h
+@@ -19,15 +19,4 @@
+ #define __ARCH_WANT_SYS_VFORK
+ #define __ARCH_WANT_SYS_CLONE
+ 
+-/*
+- * Ignore legacy syscalls that we don't use.
+- */
+-#define __IGNORE_getegid
+-#define __IGNORE_geteuid
+-#define __IGNORE_getgid
+-#define __IGNORE_getpid
+-#define __IGNORE_getppid
+-#define __IGNORE_getuid
+-
+-
+ #endif /* _ALPHA_UNISTD_H */
+diff --git a/arch/alpha/include/uapi/asm/unistd.h b/arch/alpha/include/uapi/asm/unistd.h
+index 4507071f995f..71fd5db06866 100644
+--- a/arch/alpha/include/uapi/asm/unistd.h
++++ b/arch/alpha/include/uapi/asm/unistd.h
+@@ -7,6 +7,11 @@
+ #define __NR_umount	__NR_umount2
+ #define __NR_osf_shmat	__NR_shmat
+ 
++/* These return an extra value but can be used as aliases */
++#define __NR_getpid	__NR_getxpid
++#define __NR_getuid	__NR_getxuid
++#define __NR_getgid	__NR_getxgid
++
+ #include <asm/unistd_32.h>
+ 
+ #endif /* _UAPI_ALPHA_UNISTD_H */
+diff --git a/arch/alpha/kernel/syscalls/syscall.tbl b/arch/alpha/kernel/syscalls/syscall.tbl
+index 0ebd59fdcb8b..337b8108771a 100644
+--- a/arch/alpha/kernel/syscalls/syscall.tbl
++++ b/arch/alpha/kernel/syscalls/syscall.tbl
+@@ -458,3 +458,6 @@
+ 527	common	rseq				sys_rseq
+ 528	common	statfs64			sys_statfs64
+ 529	common	fstatfs64			sys_fstatfs64
++530	common	getegid				sys_getegid
++531	common	geteuid				sys_geteuid
++532	common	getppid				sys_getppid
 -- 
-2.17.1
-
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
+2.20.0
