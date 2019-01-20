@@ -1,37 +1,48 @@
-From: Catalin Marinas <catalin.marinas@arm.com>
-Date: Fri, 25 Jan 2019 15:55:43 +0000
-Subject: Re: [PATCH v2 29/29] y2038: add 64-bit time_t syscalls to all 32-bit architectures
-Message-Id: <20190125155542.GI25901@arrakis.emea.arm.com>
+From: Souptick Joarder <jrdr.linux@gmail.com>
+Date: Sun, 20 Jan 2019 13:20:24 +0000
+Subject: Re: [PATCH] arch/sh/mm/consistent.c: Use dma_zalloc_coherent
+Message-Id: <CAFqt6zYkgrUgtFQbc-W=Jap84wshPSH5aTRTBfsRkOQhaSROdQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190118161835.2259170-1-arnd@arndb.de>
- <20190118161835.2259170-30-arnd@arndb.de>
-In-Reply-To: <20190118161835.2259170-30-arnd@arndb.de>
+References: <5bd55e34.1c69fb81.b2503.b6f5@mx.google.com>
+In-Reply-To: <5bd55e34.1c69fb81.b2503.b6f5@mx.google.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Arnd Bergmann <arnd@arndb.de>
-Cc: y2038@lists.linaro.org, linux-api@vger.kernel.org, linux-kernel@vger.kernel.org, linux-arch@vger.kernel.org, mattst88@gmail.com, linux@armlinux.org.uk, will.deacon@arm.com, tony.luck@intel.com, fenghua.yu@intel.com, geert@linux-m68k.org, monstr@monstr.eu, paul.burton@mips.com, deller@gmx.de, benh@kernel.crashing.org, mpe@ellerman.id.au, schwidefsky@de.ibm.com, heiko.carstens@de.ibm.com, dalias@libc.org, davem@davemloft.net, luto@kernel.org, tglx@linutronix.de, mingo@redhat.com, hpa@zytor.com, x86@kernel.org, jcmvbkbc@gmail.com, akpm@linux-foundation.org, deepa.kernel@gmail.com, ebiederm@xmission.com, firoz.khan@linaro.org, linux-alpha@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org
+To: Sabyasachi Gupta <sabyasachi.linux@gmail.com>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, dalias@libc.org, thomas.petazzoni@free-electrons.com, robin.murphy@arm.com, jacopo+renesas@jmondi.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Brajeswar Ghosh <brajeswar.linux@gmail.com>
 
-On Fri, Jan 18, 2019 at 05:18:35PM +0100, Arnd Bergmann wrote:
-> This adds 21 new system calls on each ABI that has 32-bit time_t
-> today. All of these have the exact same semantics as their existing
-> counterparts, and the new ones all have macro names that end in 'time64'
-> for clarification.
-> 
-> This gets us to the point of being able to safely use a C library
-> that has 64-bit time_t in user space. There are still a couple of
-> loose ends to tie up in various areas of the code, but this is the
-> big one, and should be entirely uncontroversial at this point.
-> 
-> In particular, there are four system calls (getitimer, setitimer,
-> waitid, and getrusage) that don't have a 64-bit counterpart yet,
-> but these can all be safely implemented in the C library by wrapping
-> around the existing system calls because the 32-bit time_t they
-> pass only counts elapsed time, not time since the epoch. They
-> will be dealt with later.
-> 
-> Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+On Sun, Oct 28, 2018 at 12:29 PM Sabyasachi Gupta
+<sabyasachi.linux@gmail.com> wrote:
+>
+> Replaced dma_alloc_coherent + memset with dma_zalloc_coherant
+>
+> Signed-off-by: Sabyasachi Gupta <sabyasachi.linux@gmail.com>
 
-Acked-by: Catalin Marinas <catalin.marinas@arm.com>
+Acked-by: Souptick Joarder <jrdr.linux@gmail.com>
 
-(as long as compat follows the arm32 syscall numbers)
+> ---
+>  arch/sh/mm/consistent.c | 3 +--
+>  1 file changed, 1 insertion(+), 2 deletions(-)
+>
+> diff --git a/arch/sh/mm/consistent.c b/arch/sh/mm/consistent.c
+> index 792f361..fc8d235 100644
+> --- a/arch/sh/mm/consistent.c
+> +++ b/arch/sh/mm/consistent.c
+> @@ -52,13 +52,12 @@ int __init platform_resource_setup_memory(struct platform_device *pdev,
+>         if (!memsize)
+>                 return 0;
+>
+> -       buf = dma_alloc_coherent(&pdev->dev, memsize, &dma_handle, GFP_KERNEL);
+> +       buf = dma_zalloc_coherent(&pdev->dev, memsize, &dma_handle, GFP_KERNEL);
+>         if (!buf) {
+>                 pr_warning("%s: unable to allocate memory\n", name);
+>                 return -ENOMEM;
+>         }
+>
+> -       memset(buf, 0, memsize);
+>
+>         r->flags = IORESOURCE_MEM;
+>         r->start = dma_handle;
+> --
+> 2.7.4
+>
