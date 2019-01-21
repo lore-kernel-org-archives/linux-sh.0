@@ -1,79 +1,134 @@
-From: Anshuman Khandual <anshuman.khandual@arm.com>
-Date: Tue, 15 Jan 2019 14:23:24 +0000
-Subject: Re: [PATCH] mm: Introduce GFP_PGTABLE
-Message-Id: <a81dd27a-b7d1-ddad-e104-4ce51699ac3d@arm.com>
+From: Mike Rapoport <rppt@linux.ibm.com>
+Date: Mon, 21 Jan 2019 08:03:56 +0000
+Subject: [PATCH v2 09/21] memblock: drop memblock_alloc_base()
+Message-Id: <1548057848-15136-10-git-send-email-rppt@linux.ibm.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1547288798-10243-1-git-send-email-anshuman.khandual@arm.com>
- <20190113173555.GC1578@dhcp22.suse.cz>
- <f9f333a5-5533-996a-dc8e-1ff1096c1d19@arm.com>
- <20190114070137.GB21345@dhcp22.suse.cz>
-In-Reply-To: <20190114070137.GB21345@dhcp22.suse.cz>
+References: <1548057848-15136-1-git-send-email-rppt@linux.ibm.com>
+In-Reply-To: <1548057848-15136-1-git-send-email-rppt@linux.ibm.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Michal Hocko <mhocko@kernel.org>
-Cc: linux-mm@kvack.org, akpm@linux-foundation.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-arm-kernel@lists.infradead.org, linux-sh@vger.kernel.org, kvmarm@lists.cs.columbia.edu, linux@armlinux.org.uk, catalin.marinas@arm.com, will.deacon@arm.com, mpe@ellerman.id.au, tglx@linutronix.de, mingo@redhat.com, dave.hansen@linux.intel.com, peterz@infradead.org, christoffer.dall@arm.com, marc.zyngier@arm.com, kirill@shutemov.name, rppt@linux.vnet.ibm.com, ard.biesheuvel@linaro.org, mark.rutland@arm.com, steve.capper@arm.com, james.morse@arm.com, robin.murphy@arm.com, aneesh.kumar@linux.ibm.com, vbabka@suse.cz, shakeelb@google.com, rientjes@google.com
+To: linux-mm@kvack.org
+Cc: Rich Felker <dalias@libc.org>, linux-ia64@vger.kernel.org, devicetree@vger.kernel.org, Catalin Marinas <catalin.marinas@arm.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, x86@kernel.org, linux-mips@vger.kernel.org, Max Filippov <jcmvbkbc@gmail.com>, Guo Ren <guoren@kernel.org>, sparclinux@vger.kernel.org, Christoph Hellwig <hch@lst.de>, linux-s390@vger.kernel.org, linux-c6x-dev@linux-c6x.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Richard Weinberger <richard@nod.at>, linux-sh@vger.kernel.org, Russell King <linux@armlinux.org.uk>, kasan-dev@googlegroups.com, Mike Rapoport <rppt@linux.ibm.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Mark Salter <msalter@redhat.com>, Dennis Zhou <dennis@kernel.org>, Matt Turner <mattst88@gmail.com>, linux-snps-arc@lists.infradead.org, uclinux-h8-devel@lists.sourceforge.jp, Petr Mladek <pmladek@suse.com>, linux-xtensa@linux-xtensa.org, linux-alpha@vger.kernel.org, linux-um@lists.infradead.org, linux-m68k@lists.linux-m68k.org, Rob Herring <robh+dt@kernel.org>, Greentime Hu <green.hu@gmail.com>, xen-devel@lists.xenproject.org, Stafford Horne <shorne@gmail.com>, Guan Xuetao <gxt@pku.edu.cn>, linux-arm-kernel@lists.infradead.org, Michal Simek <monstr@monstr.eu>, Tony Luck <tony.luck@intel.com>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, linux-usb@vger.kernel.org, linux-kernel@vger.kernel.org, Paul Burton <paul.burton@mips.com>, Vineet Gupta <vgupta@synopsys.com>, Michael Ellerman <mpe@ellerman.id.au>, Andrew Morton <akpm@linux-foundation.org>, linuxppc-dev@lists.ozlabs.org, "David S. Miller" <davem@davemloft.net>, openrisc@lists.librecores.org
 
+The memblock_alloc_base() function tries to allocate a memory up to the
+limit specified by its max_addr parameter and panics if the allocation
+fails. Replace its usage with memblock_phys_alloc_range() and make the
+callers check the return value and panic in case of error.
 
+Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
+---
+ arch/powerpc/kernel/rtas.c      |  6 +++++-
+ arch/powerpc/mm/hash_utils_64.c |  8 ++++++--
+ arch/s390/kernel/smp.c          |  6 +++++-
+ drivers/macintosh/smu.c         |  2 +-
+ include/linux/memblock.h        |  2 --
+ mm/memblock.c                   | 14 --------------
+ 6 files changed, 17 insertions(+), 21 deletions(-)
 
-On 01/14/2019 12:31 PM, Michal Hocko wrote:
-> On Mon 14-01-19 09:30:55, Anshuman Khandual wrote:
->>
->>
->> On 01/13/2019 11:05 PM, Michal Hocko wrote:
->>> On Sat 12-01-19 15:56:38, Anshuman Khandual wrote:
->>>> All architectures have been defining their own PGALLOC_GFP as (GFP_KERNEL |
->>>> __GFP_ZERO) and using it for allocating page table pages. This causes some
->>>> code duplication which can be easily avoided. GFP_KERNEL allocated and
->>>> cleared out pages (__GFP_ZERO) are required for page tables on any given
->>>> architecture. This creates a new generic GFP flag flag which can be used
->>>> for any page table page allocation. Does not cause any functional change.
->>>
->>> I agree that some unification is due but GFP_PGTABLE is not something to
->>> expose in generic gfp.h IMHO. It just risks an abuse. I would be looking
->>
->> Why would you think that it risks an abuse ? It does not create new semantics
->> of allocation in the buddy. Its just uses existing GFP_KERNEL allocation which
->> is then getting zeroed out. The risks (if any) is exactly same as GFP_KERNEL.
-> 
-> Beucase my experience just tells me that people tend to use whatever
-> they find and name fits what they think they need.
-> 
->>> at providing asm-generic implementation and reuse it to remove the code
->>
->> Does that mean GFP_PGTABLE can be created but not in gfp.h but in some other
->> memory related header file ?
-> 
-> I would just keep it close to its users. If that is a single arch
-> generic place then only better. But I suspect some arches have special
-> requirements.
-
-We can move the definition into include/asm-generic/pgtable.h which can be
-used by all archs. If there any special requirements those can be added on
-this generic and common minimum allocation flag. The minimum required flag
-should not be duplicated every where.
-
-> 
->>> duplication. But I haven't tried that to know that it will work out due
->>> to small/subtle differences between arches.
->>
->> IIUC from the allocation perspective GFP_ACCOUNT is the only thing which gets
->> added with GFP_PGTABLE for user page table for memcg accounting purpose. There
->> does not seem to be any other differences unless I am missing something.
-> 
-> It's been some time since I've checked the last time. Some arches were
-> using GPF_REPEAT (__GFP_RETRY_MAYFAIL) back then. I have removed most of
-> those but some were doing a higher order allocations so they probably
-> have stayed.
-
-A simple grep shows that still there are some places which use the flag
-__GFP_RETRY_MAYFAIL. But that can be added on GFP_PGTABLE for these archs.
-
-arch/nds32/include/asm/pgalloc.h:           (pte_t *) __get_free_page(GFP_KERNEL | __GFP_RETRY_MAYFAIL |
-arch/nds32/include/asm/pgalloc.h:       pte = alloc_pages(GFP_KERNEL | __GFP_RETRY_MAYFAIL | __GFP_ZERO, 0);
-arch/powerpc/include/asm/book3s/64/pgalloc.h:   page = alloc_pages(pgtable_gfp_flags(mm, PGALLOC_GFP | __GFP_RETRY_MAYFAIL),
-arch/powerpc/kvm/book3s_64_mmu_hv.c:            hpt = __get_free_pages(GFP_KERNEL|__GFP_ZERO|__GFP_RETRY_MAYFAIL
-arch/riscv/include/asm/pgalloc.h:               GFP_KERNEL | __GFP_RETRY_MAYFAIL | __GFP_ZERO);
-arch/riscv/include/asm/pgalloc.h:               GFP_KERNEL | __GFP_RETRY_MAYFAIL | __GFP_ZERO);
-arch/riscv/include/asm/pgalloc.h:       pte = alloc_page(GFP_KERNEL | __GFP_RETRY_MAYFAIL | __GFP_ZERO);
-arch/sparc/kernel/mdesc.c:      base = kmalloc(handle_size + 15, GFP_KERNEL | __GFP_RETRY_MAYFAIL);
+diff --git a/arch/powerpc/kernel/rtas.c b/arch/powerpc/kernel/rtas.c
+index de35bd8f..fbc6761 100644
+--- a/arch/powerpc/kernel/rtas.c
++++ b/arch/powerpc/kernel/rtas.c
+@@ -1187,7 +1187,11 @@ void __init rtas_initialize(void)
+ 		ibm_suspend_me_token = rtas_token("ibm,suspend-me");
+ 	}
+ #endif
+-	rtas_rmo_buf = memblock_alloc_base(RTAS_RMOBUF_MAX, PAGE_SIZE, rtas_region);
++	rtas_rmo_buf = memblock_phys_alloc_range(RTAS_RMOBUF_MAX, PAGE_SIZE,
++						 0, rtas_region);
++	if (!rtas_rmo_buf)
++		panic("ERROR: RTAS: Failed to allocate %lx bytes below %pa\n",
++		      PAGE_SIZE, &rtas_region);
+ 
+ #ifdef CONFIG_RTAS_ERROR_LOGGING
+ 	rtas_last_error_token = rtas_token("rtas-last-error");
+diff --git a/arch/powerpc/mm/hash_utils_64.c b/arch/powerpc/mm/hash_utils_64.c
+index bc6be44..c7d5f48 100644
+--- a/arch/powerpc/mm/hash_utils_64.c
++++ b/arch/powerpc/mm/hash_utils_64.c
+@@ -882,8 +882,12 @@ static void __init htab_initialize(void)
+ 		}
+ #endif /* CONFIG_PPC_CELL */
+ 
+-		table = memblock_alloc_base(htab_size_bytes, htab_size_bytes,
+-					    limit);
++		table = memblock_phys_alloc_range(htab_size_bytes,
++						  htab_size_bytes,
++						  0, limit);
++		if (!table)
++			panic("ERROR: Failed to allocate %pa bytes below %pa\n",
++			      &htab_size_bytes, &limit);
+ 
+ 		DBG("Hash table allocated at %lx, size: %lx\n", table,
+ 		    htab_size_bytes);
+diff --git a/arch/s390/kernel/smp.c b/arch/s390/kernel/smp.c
+index f82b3d3..9061597 100644
+--- a/arch/s390/kernel/smp.c
++++ b/arch/s390/kernel/smp.c
+@@ -651,7 +651,11 @@ void __init smp_save_dump_cpus(void)
+ 		/* No previous system present, normal boot. */
+ 		return;
+ 	/* Allocate a page as dumping area for the store status sigps */
+-	page = memblock_alloc_base(PAGE_SIZE, PAGE_SIZE, 1UL << 31);
++	page = memblock_phys_alloc_range(PAGE_SIZE, PAGE_SIZE, 0, 1UL << 31);
++	if (!page)
++		panic("ERROR: Failed to allocate %x bytes below %lx\n",
++		      PAGE_SIZE, 1UL << 31);
++
+ 	/* Set multi-threading state to the previous system. */
+ 	pcpu_set_smt(sclp.mtid_prev);
+ 	boot_cpu_addr = stap();
+diff --git a/drivers/macintosh/smu.c b/drivers/macintosh/smu.c
+index 0a0b8e1..42cf68d 100644
+--- a/drivers/macintosh/smu.c
++++ b/drivers/macintosh/smu.c
+@@ -485,7 +485,7 @@ int __init smu_init (void)
+ 	 * SMU based G5s need some memory below 2Gb. Thankfully this is
+ 	 * called at a time where memblock is still available.
+ 	 */
+-	smu_cmdbuf_abs = memblock_alloc_base(4096, 4096, 0x80000000UL);
++	smu_cmdbuf_abs = memblock_phys_alloc_range(4096, 4096, 0, 0x80000000UL);
+ 	if (smu_cmdbuf_abs = 0) {
+ 		printk(KERN_ERR "SMU: Command buffer allocation failed !\n");
+ 		ret = -EINVAL;
+diff --git a/include/linux/memblock.h b/include/linux/memblock.h
+index 768e2b4..6874fdc 100644
+--- a/include/linux/memblock.h
++++ b/include/linux/memblock.h
+@@ -494,8 +494,6 @@ static inline bool memblock_bottom_up(void)
+ 	return memblock.bottom_up;
+ }
+ 
+-phys_addr_t memblock_alloc_base(phys_addr_t size, phys_addr_t align,
+-				phys_addr_t max_addr);
+ phys_addr_t memblock_phys_mem_size(void);
+ phys_addr_t memblock_reserved_size(void);
+ phys_addr_t memblock_mem_size(unsigned long limit_pfn);
+diff --git a/mm/memblock.c b/mm/memblock.c
+index e5ffdcd..531fa77 100644
+--- a/mm/memblock.c
++++ b/mm/memblock.c
+@@ -1363,20 +1363,6 @@ phys_addr_t __init memblock_phys_alloc_nid(phys_addr_t size, phys_addr_t align,
+ 	return ret;
+ }
+ 
+-phys_addr_t __init memblock_alloc_base(phys_addr_t size, phys_addr_t align, phys_addr_t max_addr)
+-{
+-	phys_addr_t alloc;
+-
+-	alloc = memblock_alloc_range_nid(size, align, 0, max_addr, NUMA_NO_NODE,
+-					MEMBLOCK_NONE);
+-
+-	if (alloc = 0)
+-		panic("ERROR: Failed to allocate %pa bytes below %pa.\n",
+-		      &size, &max_addr);
+-
+-	return alloc;
+-}
+-
+ phys_addr_t __init memblock_phys_alloc_try_nid(phys_addr_t size, phys_addr_t align, int nid)
+ {
+ 	phys_addr_t res = memblock_phys_alloc_nid(size, align, nid);
+-- 
+2.7.4
