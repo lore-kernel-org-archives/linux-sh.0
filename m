@@ -1,48 +1,39 @@
-From: Souptick Joarder <jrdr.linux@gmail.com>
-Date: Sun, 20 Jan 2019 13:20:24 +0000
+From: Robin Murphy <Robin.Murphy@arm.com>
+Date: Mon, 21 Jan 2019 11:43:51 +0000
 Subject: Re: [PATCH] arch/sh/mm/consistent.c: Use dma_zalloc_coherent
-Message-Id: <CAFqt6zYkgrUgtFQbc-W=Jap84wshPSH5aTRTBfsRkOQhaSROdQ@mail.gmail.com>
+Message-Id: <fcbf537f-6e95-0e25-710a-02a3a6e7961a@arm.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <5bd55e34.1c69fb81.b2503.b6f5@mx.google.com>
 In-Reply-To: <5bd55e34.1c69fb81.b2503.b6f5@mx.google.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sabyasachi Gupta <sabyasachi.linux@gmail.com>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, dalias@libc.org, thomas.petazzoni@free-electrons.com, robin.murphy@arm.com, jacopo+renesas@jmondi.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Brajeswar Ghosh <brajeswar.linux@gmail.com>
+To: Sabyasachi Gupta <sabyasachi.linux@gmail.com>, "ysato@users.sourceforge.jp" <ysato@users.sourceforge.jp>, "dalias@libc.org" <dalias@libc.org>, "thomas.petazzoni@free-electrons.com" <thomas.petazzoni@free-electrons.com>, "jacopo+renesas@jmondi.org" <jacopo+renesas@jmondi.org>
+Cc: "jrdr.linux@gmail.com" <jrdr.linux@gmail.com>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "brajeswar.linux@gmail.com" <brajeswar.linux@gmail.com>
 
-On Sun, Oct 28, 2018 at 12:29 PM Sabyasachi Gupta
-<sabyasachi.linux@gmail.com> wrote:
->
-> Replaced dma_alloc_coherent + memset with dma_zalloc_coherant
->
-> Signed-off-by: Sabyasachi Gupta <sabyasachi.linux@gmail.com>
-
-Acked-by: Souptick Joarder <jrdr.linux@gmail.com>
-
-> ---
->  arch/sh/mm/consistent.c | 3 +--
->  1 file changed, 1 insertion(+), 2 deletions(-)
->
-> diff --git a/arch/sh/mm/consistent.c b/arch/sh/mm/consistent.c
-> index 792f361..fc8d235 100644
-> --- a/arch/sh/mm/consistent.c
-> +++ b/arch/sh/mm/consistent.c
-> @@ -52,13 +52,12 @@ int __init platform_resource_setup_memory(struct platform_device *pdev,
->         if (!memsize)
->                 return 0;
->
-> -       buf = dma_alloc_coherent(&pdev->dev, memsize, &dma_handle, GFP_KERNEL);
-> +       buf = dma_zalloc_coherent(&pdev->dev, memsize, &dma_handle, GFP_KERNEL);
->         if (!buf) {
->                 pr_warning("%s: unable to allocate memory\n", name);
->                 return -ENOMEM;
->         }
->
-> -       memset(buf, 0, memsize);
->
->         r->flags = IORESOURCE_MEM;
->         r->start = dma_handle;
-> --
-> 2.7.4
->
+T24gMjgvMTAvMjAxOCAwNjo1OCwgU2FieWFzYWNoaSBHdXB0YSB3cm90ZToNCj4gUmVwbGFjZWQg
+ZG1hX2FsbG9jX2NvaGVyZW50ICsgbWVtc2V0IHdpdGggZG1hX3phbGxvY19jb2hlcmFudA0KDQpQ
+bGVhc2UgdGFrZSBhIGxvb2sgYXQgbGludXgtbmV4dCB3aGVyZSB3ZSd2ZSBhbHJlYWR5IHBoYXNl
+ZCBvdXQNCmRtYV96YWxsb2NfY29oZXJlbnQoKS4gVGhlIG1lbXNldCgpIHNob3VsZCBzdGlsbCBi
+ZSByZWR1bmRhbnQgYW5kIHdvcnRoDQpjbGVhbmluZyB1cCwgdGhvdWdoLg0KDQpUaGFua3MsDQpS
+b2Jpbi4NCg0KPiBTaWduZWQtb2ZmLWJ5OiBTYWJ5YXNhY2hpIEd1cHRhIDxzYWJ5YXNhY2hpLmxp
+bnV4QGdtYWlsLmNvbT4NCj4gLS0tDQo+ICAgYXJjaC9zaC9tbS9jb25zaXN0ZW50LmMgfCAzICst
+LQ0KPiAgIDEgZmlsZSBjaGFuZ2VkLCAxIGluc2VydGlvbigrKSwgMiBkZWxldGlvbnMoLSkNCj4N
+Cj4gZGlmZiAtLWdpdCBhL2FyY2gvc2gvbW0vY29uc2lzdGVudC5jIGIvYXJjaC9zaC9tbS9jb25z
+aXN0ZW50LmMNCj4gaW5kZXggNzkyZjM2MS4uZmM4ZDIzNSAxMDA2NDQNCj4gLS0tIGEvYXJjaC9z
+aC9tbS9jb25zaXN0ZW50LmMNCj4gKysrIGIvYXJjaC9zaC9tbS9jb25zaXN0ZW50LmMNCj4gQEAg
+LTUyLDEzICs1MiwxMiBAQCBpbnQgX19pbml0IHBsYXRmb3JtX3Jlc291cmNlX3NldHVwX21lbW9y
+eShzdHJ1Y3QgcGxhdGZvcm1fZGV2aWNlICpwZGV2LA0KPiAgIGlmICghbWVtc2l6ZSkNCj4gICBy
+ZXR1cm4gMDsNCj4NCj4gLWJ1ZiA9IGRtYV9hbGxvY19jb2hlcmVudCgmcGRldi0+ZGV2LCBtZW1z
+aXplLCAmZG1hX2hhbmRsZSwgR0ZQX0tFUk5FTCk7DQo+ICtidWYgPSBkbWFfemFsbG9jX2NvaGVy
+ZW50KCZwZGV2LT5kZXYsIG1lbXNpemUsICZkbWFfaGFuZGxlLCBHRlBfS0VSTkVMKTsNCj4gICBp
+ZiAoIWJ1Zikgew0KPiAgIHByX3dhcm5pbmcoIiVzOiB1bmFibGUgdG8gYWxsb2NhdGUgbWVtb3J5
+XG4iLCBuYW1lKTsNCj4gICByZXR1cm4gLUVOT01FTTsNCj4gICB9DQo+DQo+IC1tZW1zZXQoYnVm
+LCAwLCBtZW1zaXplKTsNCj4NCj4gICByLT5mbGFncyA9IElPUkVTT1VSQ0VfTUVNOw0KPiAgIHIt
+PnN0YXJ0ID0gZG1hX2hhbmRsZTsNCj4NCklNUE9SVEFOVCBOT1RJQ0U6IFRoZSBjb250ZW50cyBv
+ZiB0aGlzIGVtYWlsIGFuZCBhbnkgYXR0YWNobWVudHMgYXJlIGNvbmZpZGVudGlhbCBhbmQgbWF5
+IGFsc28gYmUgcHJpdmlsZWdlZC4gSWYgeW91IGFyZSBub3QgdGhlIGludGVuZGVkIHJlY2lwaWVu
+dCwgcGxlYXNlIG5vdGlmeSB0aGUgc2VuZGVyIGltbWVkaWF0ZWx5IGFuZCBkbyBub3QgZGlzY2xv
+c2UgdGhlIGNvbnRlbnRzIHRvIGFueSBvdGhlciBwZXJzb24sIHVzZSBpdCBmb3IgYW55IHB1cnBv
+c2UsIG9yIHN0b3JlIG9yIGNvcHkgdGhlIGluZm9ybWF0aW9uIGluIGFueSBtZWRpdW0uIFRoYW5r
+IHlvdS4NCg=
