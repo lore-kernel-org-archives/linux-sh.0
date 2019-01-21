@@ -1,211 +1,161 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Thu, 10 Jan 2019 17:22:09 +0000
-Subject: [PATCH 04/11] sparc64: add custom adjtimex/clock_adjtime functions
-Message-Id: <20190110172216.313063-5-arnd@arndb.de>
+From: Mike Rapoport <rppt@linux.ibm.com>
+Date: Mon, 21 Jan 2019 08:03:59 +0000
+Subject: [PATCH v2 12/21] arch: use memblock_alloc() instead of memblock_alloc_from(size, align, 0)
+Message-Id: <1548057848-15136-13-git-send-email-rppt@linux.ibm.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190110172216.313063-1-arnd@arndb.de>
-In-Reply-To: <20190110172216.313063-1-arnd@arndb.de>
+References: <1548057848-15136-1-git-send-email-rppt@linux.ibm.com>
+In-Reply-To: <1548057848-15136-1-git-send-email-rppt@linux.ibm.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: y2038@lists.linaro.org, linux-api@vger.kernel.org, linux-kernel@vger.kernel.org
-Cc: Arnd Bergmann <arnd@arndb.de>, mattst88@gmail.com, linux@armlinux.org.uk, catalin.marinas@arm.com, will.deacon@arm.com, tony.luck@intel.com, fenghua.yu@intel.com, geert@linux-m68k.org, monstr@monstr.eu, paul.burton@mips.com, deller@gmx.de, benh@kernel.crashing.org, mpe@ellerman.id.au, schwidefsky@de.ibm.com, heiko.carstens@de.ibm.com, dalias@libc.org, davem@davemloft.net, luto@kernel.org, tglx@linutronix.de, mingo@redhat.com, hpa@zytor.com, x86@kernel.org, jcmvbkbc@gmail.com, akpm@linux-foundation.org, deepa.kernel@gmail.com, ebiederm@xmission.com, firoz.khan@linaro.org, linux-alpha@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.or
+To: linux-mm@kvack.org
+Cc: Rich Felker <dalias@libc.org>, linux-ia64@vger.kernel.org, devicetree@vger.kernel.org, Catalin Marinas <catalin.marinas@arm.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, x86@kernel.org, linux-mips@vger.kernel.org, Max Filippov <jcmvbkbc@gmail.com>, Guo Ren <guoren@kernel.org>, sparclinux@vger.kernel.org, Christoph Hellwig <hch@lst.de>, linux-s390@vger.kernel.org, linux-c6x-dev@linux-c6x.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Richard Weinberger <richard@nod.at>, linux-sh@vger.kernel.org, Russell King <linux@armlinux.org.uk>, kasan-dev@googlegroups.com, Mike Rapoport <rppt@linux.ibm.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Mark Salter <msalter@redhat.com>, Dennis Zhou <dennis@kernel.org>, Matt Turner <mattst88@gmail.com>, linux-snps-arc@lists.infradead.org, uclinux-h8-devel@lists.sourceforge.jp, Petr Mladek <pmladek@suse.com>, linux-xtensa@linux-xtensa.org, linux-alpha@vger.kernel.org, linux-um@lists.infradead.org, linux-m68k@lists.linux-m68k.org, Rob Herring <robh+dt@kernel.org>, Greentime Hu <green.hu@gmail.com>, xen-devel@lists.xenproject.org, Stafford Horne <shorne@gmail.com>, Guan Xuetao <gxt@pku.edu.cn>, linux-arm-kernel@lists.infradead.org, Michal Simek <monstr@monstr.eu>, Tony Luck <tony.luck@intel.com>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, linux-usb@vger.kernel.org, linux-kernel@vger.kernel.org, Paul Burton <paul.burton@mips.com>, Vineet Gupta <vgupta@synopsys.com>, Michael Ellerman <mpe@ellerman.id.au>, Andrew Morton <akpm@linux-foundation.org>, linuxppc-dev@lists.ozlabs.org, "David S. Miller" <davem@davemloft.net>, openrisc@lists.librecores.org
 
-sparc64 is the only architecture on Linux that has a 'timeval'
-definition with a 32-bit tv_usec but a 64-bit tv_sec. This causes
-problems for sparc32 compat mode when we convert it to use the
-new __kernel_timex type that has the same layout as all other
-64-bit architectures.
+The last parameter of memblock_alloc_from() is the lower limit for the
+memory allocation. When it is 0, the call is equivalent to
+memblock_alloc().
 
-To avoid adding sparc64 specific code into the generic adjtimex
-implementation, this adds a wrapper in the sparc64 system call handling
-that converts the sparc64 'timex' into the new '__kernel_timex'.
-
-At this point, the two structures are defined to be identical,
-but that will change in the next step once we convert sparc32.
-
-Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
+Acked-by: Paul Burton <paul.burton@mips.com> # MIPS part
 ---
- arch/sparc/kernel/sys_sparc_64.c       | 59 +++++++++++++++++++++++++-
- arch/sparc/kernel/syscalls/syscall.tbl |  6 ++-
- include/linux/timex.h                  |  2 +
- kernel/time/posix-timers.c             | 24 +++++------
- 4 files changed, 76 insertions(+), 15 deletions(-)
+ arch/alpha/kernel/core_cia.c  |  2 +-
+ arch/alpha/kernel/pci_iommu.c |  4 ++--
+ arch/alpha/kernel/setup.c     |  2 +-
+ arch/ia64/kernel/mca.c        |  3 +--
+ arch/mips/kernel/traps.c      |  2 +-
+ arch/sparc/kernel/prom_32.c   |  2 +-
+ arch/sparc/mm/init_32.c       |  2 +-
+ arch/sparc/mm/srmmu.c         | 10 +++++-----
+ 8 files changed, 13 insertions(+), 14 deletions(-)
 
-diff --git a/arch/sparc/kernel/sys_sparc_64.c b/arch/sparc/kernel/sys_sparc_64.c
-index 1c079e7bab09..37de18a11207 100644
---- a/arch/sparc/kernel/sys_sparc_64.c
-+++ b/arch/sparc/kernel/sys_sparc_64.c
-@@ -28,8 +28,9 @@
- #include <linux/random.h>
- #include <linux/export.h>
- #include <linux/context_tracking.h>
--
-+#include <linux/timex.h>
- #include <linux/uaccess.h>
-+
- #include <asm/utrap.h>
- #include <asm/unistd.h>
+diff --git a/arch/alpha/kernel/core_cia.c b/arch/alpha/kernel/core_cia.c
+index 867e873..466cd44 100644
+--- a/arch/alpha/kernel/core_cia.c
++++ b/arch/alpha/kernel/core_cia.c
+@@ -331,7 +331,7 @@ cia_prepare_tbia_workaround(int window)
+ 	long i;
  
-@@ -544,6 +545,62 @@ SYSCALL_DEFINE2(getdomainname, char __user *, name, int, len)
- 	return err;
+ 	/* Use minimal 1K map. */
+-	ppte = memblock_alloc_from(CIA_BROKEN_TBIA_SIZE, 32768, 0);
++	ppte = memblock_alloc(CIA_BROKEN_TBIA_SIZE, 32768);
+ 	pte = (virt_to_phys(ppte) >> (PAGE_SHIFT - 1)) | 1;
+ 
+ 	for (i = 0; i < CIA_BROKEN_TBIA_SIZE / sizeof(unsigned long); ++i)
+diff --git a/arch/alpha/kernel/pci_iommu.c b/arch/alpha/kernel/pci_iommu.c
+index aa0f50d..e4cf77b 100644
+--- a/arch/alpha/kernel/pci_iommu.c
++++ b/arch/alpha/kernel/pci_iommu.c
+@@ -87,13 +87,13 @@ iommu_arena_new_node(int nid, struct pci_controller *hose, dma_addr_t base,
+ 		printk("%s: couldn't allocate arena ptes from node %d\n"
+ 		       "    falling back to system-wide allocation\n",
+ 		       __func__, nid);
+-		arena->ptes = memblock_alloc_from(mem_size, align, 0);
++		arena->ptes = memblock_alloc(mem_size, align);
+ 	}
+ 
+ #else /* CONFIG_DISCONTIGMEM */
+ 
+ 	arena = memblock_alloc(sizeof(*arena), SMP_CACHE_BYTES);
+-	arena->ptes = memblock_alloc_from(mem_size, align, 0);
++	arena->ptes = memblock_alloc(mem_size, align);
+ 
+ #endif /* CONFIG_DISCONTIGMEM */
+ 
+diff --git a/arch/alpha/kernel/setup.c b/arch/alpha/kernel/setup.c
+index 4b5b1b2..5d4c76a 100644
+--- a/arch/alpha/kernel/setup.c
++++ b/arch/alpha/kernel/setup.c
+@@ -293,7 +293,7 @@ move_initrd(unsigned long mem_limit)
+ 	unsigned long size;
+ 
+ 	size = initrd_end - initrd_start;
+-	start = memblock_alloc_from(PAGE_ALIGN(size), PAGE_SIZE, 0);
++	start = memblock_alloc(PAGE_ALIGN(size), PAGE_SIZE);
+ 	if (!start || __pa(start) + size > mem_limit) {
+ 		initrd_start = initrd_end = 0;
+ 		return NULL;
+diff --git a/arch/ia64/kernel/mca.c b/arch/ia64/kernel/mca.c
+index 91bd1e1..74d148b 100644
+--- a/arch/ia64/kernel/mca.c
++++ b/arch/ia64/kernel/mca.c
+@@ -1835,8 +1835,7 @@ format_mca_init_stack(void *mca_data, unsigned long offset,
+ /* Caller prevents this from being called after init */
+ static void * __ref mca_bootmem(void)
+ {
+-	return memblock_alloc_from(sizeof(struct ia64_mca_cpu),
+-				   KERNEL_STACK_SIZE, 0);
++	return memblock_alloc(sizeof(struct ia64_mca_cpu), KERNEL_STACK_SIZE);
  }
  
-+SYSCALL_DEFINE1(sparc_adjtimex, struct timex __user *, txc_p)
-+{
-+	struct timex txc;		/* Local copy of parameter */
-+	struct timex *kt = (void *)&txc;
-+	int ret;
-+
-+	/* Copy the user data space into the kernel copy
-+	 * structure. But bear in mind that the structures
-+	 * may change
-+	 */
-+	if (copy_from_user(&txc, txc_p, sizeof(struct timex)))
-+		return -EFAULT;
-+
-+	/*
-+	 * override for sparc64 specific timeval type: tv_usec
-+	 * is 32 bit wide instead of 64-bit in __kernel_timex
-+	 */
-+	kt->time.tv_usec = txc.time.tv_usec;
-+	ret = do_adjtimex(kt);
-+	txc.time.tv_usec = kt->time.tv_usec;
-+
-+	return copy_to_user(txc_p, &txc, sizeof(struct timex)) ? -EFAULT : ret;
-+}
-+
-+SYSCALL_DEFINE2(sparc_clock_adjtime, const clockid_t, which_clock,struct timex __user *, txc_p)
-+{
-+	struct timex txc;		/* Local copy of parameter */
-+	struct timex *kt = (void *)&txc;
-+	int ret;
-+
-+	if (!IS_ENABLED(CONFIG_POSIX_TIMERS)) {
-+		pr_err_once("process %d (%s) attempted a POSIX timer syscall "
-+		    "while CONFIG_POSIX_TIMERS is not set\n",
-+		    current->pid, current->comm);
-+
-+		return -ENOSYS;
-+	}
-+
-+	/* Copy the user data space into the kernel copy
-+	 * structure. But bear in mind that the structures
-+	 * may change
-+	 */
-+	if (copy_from_user(&txc, txc_p, sizeof(struct timex)))
-+		return -EFAULT;
-+
-+	/*
-+	 * override for sparc64 specific timeval type: tv_usec
-+	 * is 32 bit wide instead of 64-bit in __kernel_timex
-+	 */
-+	kt->time.tv_usec = txc.time.tv_usec;
-+	ret = do_clock_adjtime(which_clock, kt);
-+	txc.time.tv_usec = kt->time.tv_usec;
-+
-+	return copy_to_user(txc_p, &txc, sizeof(struct timex)) ? -EFAULT : ret;
-+}
-+
- SYSCALL_DEFINE5(utrap_install, utrap_entry_t, type,
- 		utrap_handler_t, new_p, utrap_handler_t, new_d,
- 		utrap_handler_t __user *, old_p,
-diff --git a/arch/sparc/kernel/syscalls/syscall.tbl b/arch/sparc/kernel/syscalls/syscall.tbl
-index 24ebef675184..e70110375399 100644
---- a/arch/sparc/kernel/syscalls/syscall.tbl
-+++ b/arch/sparc/kernel/syscalls/syscall.tbl
-@@ -258,7 +258,8 @@
- 216	64	sigreturn		sys_nis_syscall
- 217	common	clone			sys_clone
- 218	common	ioprio_get		sys_ioprio_get
--219	common	adjtimex		sys_adjtimex			compat_sys_adjtimex
-+219	32	adjtimex		sys_adjtimex			compat_sys_adjtimex
-+219	64	adjtimex		sys_sparc_adjtimex
- 220	32	sigprocmask		sys_sigprocmask			compat_sys_sigprocmask
- 220	64	sigprocmask		sys_nis_syscall
- 221	common	create_module		sys_ni_syscall
-@@ -377,7 +378,8 @@
- 331	common	prlimit64		sys_prlimit64
- 332	common	name_to_handle_at	sys_name_to_handle_at
- 333	common	open_by_handle_at	sys_open_by_handle_at		compat_sys_open_by_handle_at
--334	common	clock_adjtime		sys_clock_adjtime		compat_sys_clock_adjtime
-+334	32	clock_adjtime		sys_clock_adjtime		compat_sys_clock_adjtime
-+334	64	clock_adjtime		sys_sparc_clock_adjtime
- 335	common	syncfs			sys_syncfs
- 336	common	sendmmsg		sys_sendmmsg			compat_sys_sendmmsg
- 337	common	setns			sys_setns
-diff --git a/include/linux/timex.h b/include/linux/timex.h
-index 7f40e9e42ecc..a15e6aeb8d49 100644
---- a/include/linux/timex.h
-+++ b/include/linux/timex.h
-@@ -159,6 +159,8 @@ extern unsigned long tick_nsec;		/* SHIFTED_HZ period (nsec) */
- #define NTP_INTERVAL_LENGTH (NSEC_PER_SEC/NTP_INTERVAL_FREQ)
+ /* Do per-CPU MCA-related initialization.  */
+diff --git a/arch/mips/kernel/traps.c b/arch/mips/kernel/traps.c
+index c91097f..2bbdee5 100644
+--- a/arch/mips/kernel/traps.c
++++ b/arch/mips/kernel/traps.c
+@@ -2291,7 +2291,7 @@ void __init trap_init(void)
+ 		phys_addr_t ebase_pa;
  
- extern int do_adjtimex(struct timex *);
-+extern int do_clock_adjtime(const clockid_t which_clock, struct timex * ktx);
-+
- extern void hardpps(const struct timespec64 *, const struct timespec64 *);
+ 		ebase = (unsigned long)
+-			memblock_alloc_from(size, 1 << fls(size), 0);
++			memblock_alloc(size, 1 << fls(size));
  
- int read_current_timer(unsigned long *timer_val);
-diff --git a/kernel/time/posix-timers.c b/kernel/time/posix-timers.c
-index 8955f32f2a36..8f7f1dd95940 100644
---- a/kernel/time/posix-timers.c
-+++ b/kernel/time/posix-timers.c
-@@ -1047,22 +1047,28 @@ SYSCALL_DEFINE2(clock_gettime, const clockid_t, which_clock,
- 	return error;
- }
- 
--SYSCALL_DEFINE2(clock_adjtime, const clockid_t, which_clock,
--		struct timex __user *, utx)
-+int do_clock_adjtime(const clockid_t which_clock, struct timex * ktx)
+ 		/*
+ 		 * Try to ensure ebase resides in KSeg0 if possible.
+diff --git a/arch/sparc/kernel/prom_32.c b/arch/sparc/kernel/prom_32.c
+index 42d7f2a..38940af 100644
+--- a/arch/sparc/kernel/prom_32.c
++++ b/arch/sparc/kernel/prom_32.c
+@@ -32,7 +32,7 @@ void * __init prom_early_alloc(unsigned long size)
  {
- 	const struct k_clock *kc = clockid_to_kclock(which_clock);
--	struct timex ktx;
--	int err;
+ 	void *ret;
  
- 	if (!kc)
- 		return -EINVAL;
- 	if (!kc->clock_adj)
- 		return -EOPNOTSUPP;
+-	ret = memblock_alloc_from(size, SMP_CACHE_BYTES, 0UL);
++	ret = memblock_alloc(size, SMP_CACHE_BYTES);
+ 	if (ret != NULL)
+ 		memset(ret, 0, size);
  
-+	return kc->clock_adj(which_clock, ktx);
-+}
-+
-+SYSCALL_DEFINE2(clock_adjtime, const clockid_t, which_clock,
-+		struct timex __user *, utx)
-+{
-+	struct timex ktx;
-+	int err;
-+
- 	if (copy_from_user(&ktx, utx, sizeof(ktx)))
- 		return -EFAULT;
+diff --git a/arch/sparc/mm/init_32.c b/arch/sparc/mm/init_32.c
+index d900952..a8ff298 100644
+--- a/arch/sparc/mm/init_32.c
++++ b/arch/sparc/mm/init_32.c
+@@ -264,7 +264,7 @@ void __init mem_init(void)
+ 	i = last_valid_pfn >> ((20 - PAGE_SHIFT) + 5);
+ 	i += 1;
+ 	sparc_valid_addr_bitmap = (unsigned long *)
+-		memblock_alloc_from(i << 2, SMP_CACHE_BYTES, 0UL);
++		memblock_alloc(i << 2, SMP_CACHE_BYTES);
  
--	err = kc->clock_adj(which_clock, &ktx);
-+	err = do_clock_adjtime(which_clock, &ktx);
+ 	if (sparc_valid_addr_bitmap = NULL) {
+ 		prom_printf("mem_init: Cannot alloc valid_addr_bitmap.\n");
+diff --git a/arch/sparc/mm/srmmu.c b/arch/sparc/mm/srmmu.c
+index b609362..a400ec3 100644
+--- a/arch/sparc/mm/srmmu.c
++++ b/arch/sparc/mm/srmmu.c
+@@ -303,13 +303,13 @@ static void __init srmmu_nocache_init(void)
  
- 	if (err >= 0 && copy_to_user(utx, &ktx, sizeof(ktx)))
- 		return -EFAULT;
-@@ -1126,20 +1132,14 @@ COMPAT_SYSCALL_DEFINE2(clock_gettime, clockid_t, which_clock,
- COMPAT_SYSCALL_DEFINE2(clock_adjtime, clockid_t, which_clock,
- 		       struct old_timex32 __user *, utp)
- {
--	const struct k_clock *kc = clockid_to_kclock(which_clock);
- 	struct timex ktx;
- 	int err;
+ 	bitmap_bits = srmmu_nocache_size >> SRMMU_NOCACHE_BITMAP_SHIFT;
  
--	if (!kc)
--		return -EINVAL;
--	if (!kc->clock_adj)
--		return -EOPNOTSUPP;
--
- 	err = get_old_timex32(&ktx, utp);
- 	if (err)
- 		return err;
+-	srmmu_nocache_pool = memblock_alloc_from(srmmu_nocache_size,
+-						 SRMMU_NOCACHE_ALIGN_MAX, 0UL);
++	srmmu_nocache_pool = memblock_alloc(srmmu_nocache_size,
++					    SRMMU_NOCACHE_ALIGN_MAX);
+ 	memset(srmmu_nocache_pool, 0, srmmu_nocache_size);
  
--	err = kc->clock_adj(which_clock, &ktx);
-+	err = do_clock_adjtime(which_clock, &ktx);
+ 	srmmu_nocache_bitmap -		memblock_alloc_from(BITS_TO_LONGS(bitmap_bits) * sizeof(long),
+-				    SMP_CACHE_BYTES, 0UL);
++		memblock_alloc(BITS_TO_LONGS(bitmap_bits) * sizeof(long),
++			       SMP_CACHE_BYTES);
+ 	bit_map_init(&srmmu_nocache_map, srmmu_nocache_bitmap, bitmap_bits);
  
- 	if (err >= 0)
- 		err = put_old_timex32(utp, &ktx);
+ 	srmmu_swapper_pg_dir = __srmmu_get_nocache(SRMMU_PGD_TABLE_SIZE, SRMMU_PGD_TABLE_SIZE);
+@@ -467,7 +467,7 @@ static void __init sparc_context_init(int numctx)
+ 	unsigned long size;
+ 
+ 	size = numctx * sizeof(struct ctx_list);
+-	ctx_list_pool = memblock_alloc_from(size, SMP_CACHE_BYTES, 0UL);
++	ctx_list_pool = memblock_alloc(size, SMP_CACHE_BYTES);
+ 
+ 	for (ctx = 0; ctx < numctx; ctx++) {
+ 		struct ctx_list *clist;
 -- 
-2.20.0
+2.7.4
