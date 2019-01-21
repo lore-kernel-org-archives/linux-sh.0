@@ -1,43 +1,63 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Fri, 18 Jan 2019 16:18:21 +0000
-Subject: [PATCH v2 15/29] alpha: add standard statfs64/fstatfs64 syscalls
-Message-Id: <20190118161835.2259170-16-arnd@arndb.de>
+From: Mike Rapoport <rppt@linux.ibm.com>
+Date: Mon, 21 Jan 2019 08:04:05 +0000
+Subject: [PATCH v2 18/21] swiotlb: add checks for the return value of memblock_alloc*()
+Message-Id: <1548057848-15136-19-git-send-email-rppt@linux.ibm.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190118161835.2259170-1-arnd@arndb.de>
-In-Reply-To: <20190118161835.2259170-1-arnd@arndb.de>
+References: <1548057848-15136-1-git-send-email-rppt@linux.ibm.com>
+In-Reply-To: <1548057848-15136-1-git-send-email-rppt@linux.ibm.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: y2038@lists.linaro.org, linux-api@vger.kernel.org, linux-kernel@vger.kernel.org, linux-arch@vger.kernel.org
-Cc: Arnd Bergmann <arnd@arndb.de>, mattst88@gmail.com, linux@armlinux.org.uk, catalin.marinas@arm.com, will.deacon@arm.com, tony.luck@intel.com, fenghua.yu@intel.com, geert@linux-m68k.org, monstr@monstr.eu, paul.burton@mips.com, deller@gmx.de, benh@kernel.crashing.org, mpe@ellerman.id.au, schwidefsky@de.ibm.com, heiko.carstens@de.ibm.com, dalias@libc.org, davem@davemloft.net, luto@kernel.org, tglx@linutronix.de, mingo@redhat.com, hpa@zytor.com, x86@kernel.org, jcmvbkbc@gmail.com, akpm@linux-foundation.org, deepa.kernel@gmail.com, ebiederm@xmission.com, firoz.khan@linaro.org, linux-alpha@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.or
+To: linux-mm@kvack.org
+Cc: Rich Felker <dalias@libc.org>, linux-ia64@vger.kernel.org, devicetree@vger.kernel.org, Catalin Marinas <catalin.marinas@arm.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, x86@kernel.org, linux-mips@vger.kernel.org, Max Filippov <jcmvbkbc@gmail.com>, Guo Ren <guoren@kernel.org>, sparclinux@vger.kernel.org, Christoph Hellwig <hch@lst.de>, linux-s390@vger.kernel.org, linux-c6x-dev@linux-c6x.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Richard Weinberger <richard@nod.at>, linux-sh@vger.kernel.org, Russell King <linux@armlinux.org.uk>, kasan-dev@googlegroups.com, Mike Rapoport <rppt@linux.ibm.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Mark Salter <msalter@redhat.com>, Dennis Zhou <dennis@kernel.org>, Matt Turner <mattst88@gmail.com>, linux-snps-arc@lists.infradead.org, uclinux-h8-devel@lists.sourceforge.jp, Petr Mladek <pmladek@suse.com>, linux-xtensa@linux-xtensa.org, linux-alpha@vger.kernel.org, linux-um@lists.infradead.org, linux-m68k@lists.linux-m68k.org, Rob Herring <robh+dt@kernel.org>, Greentime Hu <green.hu@gmail.com>, xen-devel@lists.xenproject.org, Stafford Horne <shorne@gmail.com>, Guan Xuetao <gxt@pku.edu.cn>, linux-arm-kernel@lists.infradead.org, Michal Simek <monstr@monstr.eu>, Tony Luck <tony.luck@intel.com>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, linux-usb@vger.kernel.org, linux-kernel@vger.kernel.org, Paul Burton <paul.burton@mips.com>, Vineet Gupta <vgupta@synopsys.com>, Michael Ellerman <mpe@ellerman.id.au>, Andrew Morton <akpm@linux-foundation.org>, linuxppc-dev@lists.ozlabs.org, "David S. Miller" <davem@davemloft.net>, openrisc@lists.librecores.org
 
-As Joseph Myers points out, alpha has never had a standard statfs64
-interface and instead returns only 32-bit numbers here.
+Add panic() calls if memblock_alloc() returns NULL.
 
-While there is an old osf_statfs64 system call that returns additional
-data, this has some other quirks and does not get used in glibc.
+The panic() format duplicates the one used by memblock itself and in order
+to avoid explosion with long parameters list replace open coded allocation
+size calculations with a local variable.
 
-I considered making the stat64 structure layout compatible with
-with the one used by the kernel on most other 64 bit architecture that
-implement it (ia64, parisc, powerpc, and sparc), but in the end
-decided to stay with the one that was traditionally defined in
-the alpha headers but not used, since this is also what glibc
-exposes to user space.
-
-Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
 ---
- arch/alpha/kernel/syscalls/syscall.tbl | 2 ++
- 1 file changed, 2 insertions(+)
+ kernel/dma/swiotlb.c | 19 +++++++++++++------
+ 1 file changed, 13 insertions(+), 6 deletions(-)
 
-diff --git a/arch/alpha/kernel/syscalls/syscall.tbl b/arch/alpha/kernel/syscalls/syscall.tbl
-index 25b4a7e76943..0ebd59fdcb8b 100644
---- a/arch/alpha/kernel/syscalls/syscall.tbl
-+++ b/arch/alpha/kernel/syscalls/syscall.tbl
-@@ -456,3 +456,5 @@
- 525	common	pkey_free			sys_pkey_free
- 526	common	pkey_mprotect			sys_pkey_mprotect
- 527	common	rseq				sys_rseq
-+528	common	statfs64			sys_statfs64
-+529	common	fstatfs64			sys_fstatfs64
+diff --git a/kernel/dma/swiotlb.c b/kernel/dma/swiotlb.c
+index d636177..e78835c8 100644
+--- a/kernel/dma/swiotlb.c
++++ b/kernel/dma/swiotlb.c
+@@ -191,6 +191,7 @@ void __init swiotlb_update_mem_attributes(void)
+ int __init swiotlb_init_with_tbl(char *tlb, unsigned long nslabs, int verbose)
+ {
+ 	unsigned long i, bytes;
++	size_t alloc_size;
+ 
+ 	bytes = nslabs << IO_TLB_SHIFT;
+ 
+@@ -203,12 +204,18 @@ int __init swiotlb_init_with_tbl(char *tlb, unsigned long nslabs, int verbose)
+ 	 * to find contiguous free memory regions of size up to IO_TLB_SEGSIZE
+ 	 * between io_tlb_start and io_tlb_end.
+ 	 */
+-	io_tlb_list = memblock_alloc(
+-				PAGE_ALIGN(io_tlb_nslabs * sizeof(int)),
+-				PAGE_SIZE);
+-	io_tlb_orig_addr = memblock_alloc(
+-				PAGE_ALIGN(io_tlb_nslabs * sizeof(phys_addr_t)),
+-				PAGE_SIZE);
++	alloc_size = PAGE_ALIGN(io_tlb_nslabs * sizeof(int));
++	io_tlb_list = memblock_alloc(alloc_size, PAGE_SIZE);
++	if (!io_tlb_list)
++		panic("%s: Failed to allocate %lu bytes align=0x%lx\n",
++		      __func__, alloc_size, PAGE_SIZE);
++
++	alloc_size = PAGE_ALIGN(io_tlb_nslabs * sizeof(phys_addr_t));
++	io_tlb_orig_addr = memblock_alloc(alloc_size, PAGE_SIZE);
++	if (!io_tlb_orig_addr)
++		panic("%s: Failed to allocate %lu bytes align=0x%lx\n",
++		      __func__, alloc_size, PAGE_SIZE);
++
+ 	for (i = 0; i < io_tlb_nslabs; i++) {
+ 		io_tlb_list[i] = IO_TLB_SEGSIZE - OFFSET(i, IO_TLB_SEGSIZE);
+ 		io_tlb_orig_addr[i] = INVALID_PHYS_ADDR;
 -- 
-2.20.0
+2.7.4
