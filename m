@@ -1,41 +1,37 @@
-From: Mike Rapoport <rppt@linux.ibm.com>
-Date: Wed, 16 Jan 2019 13:44:01 +0000
-Subject: [PATCH 01/21] openrisc: prefer memblock APIs returning virtual address
-Message-Id: <1547646261-32535-2-git-send-email-rppt@linux.ibm.com>
+From: Catalin Marinas <catalin.marinas@arm.com>
+Date: Fri, 25 Jan 2019 15:47:25 +0000
+Subject: Re: [PATCH v2 25/29] y2038: syscalls: rename y2038 compat syscalls
+Message-Id: <20190125154724.GH25901@arrakis.emea.arm.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1547646261-32535-1-git-send-email-rppt@linux.ibm.com>
-In-Reply-To: <1547646261-32535-1-git-send-email-rppt@linux.ibm.com>
+References: <20190118161835.2259170-1-arnd@arndb.de>
+ <20190118161835.2259170-26-arnd@arndb.de>
+In-Reply-To: <20190118161835.2259170-26-arnd@arndb.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mm@kvack.org
-Cc: Rich Felker <dalias@libc.org>, linux-ia64@vger.kernel.org, devicetree@vger.kernel.org, Catalin Marinas <catalin.marinas@arm.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, x86@kernel.org, linux-mips@vger.kernel.org, Max Filippov <jcmvbkbc@gmail.com>, Guo Ren <guoren@kernel.org>, sparclinux@vger.kernel.org, Christoph Hellwig <hch@lst.de>, linux-s390@vger.kernel.org, linux-c6x-dev@linux-c6x.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Richard Weinberger <richard@nod.at>, linux-sh@vger.kernel.org, Russell King <linux@armlinux.org.uk>, kasan-dev@googlegroups.com, Mike Rapoport <rppt@linux.ibm.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Mark Salter <msalter@redhat.com>, Dennis Zhou <dennis@kernel.org>, Matt Turner <mattst88@gmail.com>, linux-snps-arc@lists.infradead.org, uclinux-h8-devel@lists.sourceforge.jp, Petr Mladek <pmladek@suse.com>, linux-xtensa@linux-xtensa.org, linux-alpha@vger.kernel.org, linux-um@lists.infradead.org, linux-m68k@lists.linux-m68k.org, Rob Herring <robh+dt@kernel.org>, Greentime Hu <green.hu@gmail.com>, xen-devel@lists.xenproject.org, Stafford Horne <shorne@gmail.com>, Guan Xuetao <gxt@pku.edu.cn>, linux-arm-kernel@lists.infradead.org, Michal Simek <monstr@monstr.eu>, Tony Luck <tony.luck@intel.com>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, linux-usb@vger.kernel.org, linux-kernel@vger.kernel.org, Paul Burton <paul.burton@mips.com>, Vineet Gupta <vgupta@synopsys.com>, Michael Ellerman <mpe@ellerman.id.au>, Andrew Morton <akpm@linux-foundation.org>, linuxppc-dev@lists.ozlabs.org, "David S. Miller" <davem@davemloft.net>, openrisc@lists.librecores.org
+To: Arnd Bergmann <arnd@arndb.de>
+Cc: y2038@lists.linaro.org, linux-api@vger.kernel.org, linux-kernel@vger.kernel.org, linux-arch@vger.kernel.org, mattst88@gmail.com, linux@armlinux.org.uk, will.deacon@arm.com, tony.luck@intel.com, fenghua.yu@intel.com, geert@linux-m68k.org, monstr@monstr.eu, paul.burton@mips.com, deller@gmx.de, benh@kernel.crashing.org, mpe@ellerman.id.au, schwidefsky@de.ibm.com, heiko.carstens@de.ibm.com, dalias@libc.org, davem@davemloft.net, luto@kernel.org, tglx@linutronix.de, mingo@redhat.com, hpa@zytor.com, x86@kernel.org, jcmvbkbc@gmail.com, akpm@linux-foundation.org, deepa.kernel@gmail.com, ebiederm@xmission.com, firoz.khan@linaro.org, linux-alpha@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org
 
-The allocation of the page tables memory in openrics uses
-memblock_phys_alloc() and then converts the returned physical address to
-virtual one. Use memblock_alloc_raw() and add a panic() if the allocation
-fails.
+On Fri, Jan 18, 2019 at 05:18:31PM +0100, Arnd Bergmann wrote:
+> A lot of system calls that pass a time_t somewhere have an implementation
+> using a COMPAT_SYSCALL_DEFINEx() on 64-bit architectures, and have
+> been reworked so that this implementation can now be used on 32-bit
+> architectures as well.
+> 
+> The missing step is to redefine them using the regular SYSCALL_DEFINEx()
+> to get them out of the compat namespace and make it possible to build them
+> on 32-bit architectures.
+> 
+> Any system call that ends in 'time' gets a '32' suffix on its name for
+> that version, while the others get a '_time32' suffix, to distinguish
+> them from the normal version, which takes a 64-bit time argument in the
+> future.
+> 
+> In this step, only 64-bit architectures are changed, doing this rename
+> first lets us avoid touching the 32-bit architectures twice.
+> 
+> Signed-off-by: Arnd Bergmann <arnd@arndb.de>
 
-Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
----
- arch/openrisc/mm/init.c | 5 ++++-
- 1 file changed, 4 insertions(+), 1 deletion(-)
+For arm64:
 
-diff --git a/arch/openrisc/mm/init.c b/arch/openrisc/mm/init.c
-index d157310..caeb418 100644
---- a/arch/openrisc/mm/init.c
-+++ b/arch/openrisc/mm/init.c
-@@ -105,7 +105,10 @@ static void __init map_ram(void)
- 			}
- 
- 			/* Alloc one page for holding PTE's... */
--			pte = (pte_t *) __va(memblock_phys_alloc(PAGE_SIZE, PAGE_SIZE));
-+			pte = memblock_alloc_raw(PAGE_SIZE, PAGE_SIZE);
-+			if (!pte)
-+				panic("%s: Failed to allocate page for PTEs\n",
-+				      __func__);
- 			set_pmd(pme, __pmd(_KERNPG_TABLE + __pa(pte)));
- 
- 			/* Fill the newly allocated page with PTE'S */
--- 
-2.7.4
+Acked-by: Catalin Marinas <catalin.marinas@arm.com>
