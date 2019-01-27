@@ -1,37 +1,33 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 21 Jan 2019 08:55:38 +0000
-Subject: Re: [PATCH v2 08/29] m68k: assign syscall number for seccomp
-Message-Id: <CAMuHMdUH+vJ89O6-Qm1p9r6h30z2ZRred1aQd6=h0sk6xXULMQ@mail.gmail.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sun, 27 Jan 2019 17:39:25 +0000
+Subject: [PATCH 4/7] sh_eth: offload RX checksum on R8A7740
+Message-Id: <e43f07fd-1407-a87a-7fe5-67a522da9e19@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190118161835.2259170-1-arnd@arndb.de>
- <20190118161835.2259170-9-arnd@arndb.de>
-In-Reply-To: <20190118161835.2259170-9-arnd@arndb.de>
+References: <fc43bfa2-4312-b52b-a749-e3e43e242a95@cogentembedded.com>
+In-Reply-To: <fc43bfa2-4312-b52b-a749-e3e43e242a95@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Arnd Bergmann <arnd@arndb.de>
-Cc: Rich Felker <dalias@libc.org>, "linux-ia64@vger.kernel.org" <linux-ia64@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Heiko Carstens <heiko.carstens@de.ibm.com>, linux-mips@vger.kernel.org, Max Filippov <jcmvbkbc@gmail.com>, netdev <netdev@vger.kernel.org>, Deepa Dinamani <deepa.kernel@gmail.com>, "H. Peter Anvin" <hpa@zytor.com>, sparclinux <sparclinux@vger.kernel.org>, Linux-Arch <linux-arch@vger.kernel.org>, linux-s390 <linux-s390@vger.kernel.org>, y2038 Mailman List <y2038@lists.linaro.org>, Michael Ellerman <mpe@ellerman.id.au>, Helge Deller <deller@gmx.de>, the arch/x86 maintainers <x86@kernel.org>, Russell King <linux@armlinux.org.uk>, Ingo Molnar <mingo@redhat.com>, Firoz Khan <firoz.khan@linaro.org>, Catalin Marinas <catalin.marinas@arm.com>, Matt Turner <mattst88@gmail.com>, Fenghua Yu <fenghua.>
+To: netdev@vger.kernel.org, "David S. Miller" <davem@davemloft.net>
+Cc: linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org
 
-On Fri, Jan 18, 2019 at 5:20 PM Arnd Bergmann <arnd@arndb.de> wrote:
-> Most architectures have assigned a numbers for the seccomp syscall
-> even when they do not implement it.
->
-> m68k is an exception here, so for consistency lets add the number.
-> Unless CONFIG_SECCOMP is implemented, the system call just
-> returns -ENOSYS.
->
-> Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+The R-Mobile A1 (R8A7740) SoC manual describes the Ether MAC's RX checksum
+offload the same way as it's implemented in the EtherAVB MAC...
 
-Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Gr{oetje,eeting}s,
+---
+ drivers/net/ethernet/renesas/sh_eth.c |    1 +
+ 1 file changed, 1 insertion(+)
 
-                        Geert
-
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
+=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
++++ net-next/drivers/net/ethernet/renesas/sh_eth.c
+@@ -670,6 +670,7 @@ static struct sh_eth_cpu_data r8a7740_da
+ 	.no_ade		= 1,
+ 	.xdfar_rw	= 1,
+ 	.csmr		= 1,
++	.rx_csum	= 1,
+ 	.tsu		= 1,
+ 	.select_mii	= 1,
+ 	.magic		= 1,
