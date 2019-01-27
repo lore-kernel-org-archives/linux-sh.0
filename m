@@ -1,33 +1,33 @@
-From: David Miller <davem@davemloft.net>
-Date: Mon, 28 Jan 2019 19:15:47 +0000
-Subject: Re: [PATCH 1/7] sh_eth: rename sh_eth_cpu_data::hw_checksum
-Message-Id: <20190128.111547.2246294745590521841.davem@davemloft.net>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sun, 27 Jan 2019 17:42:12 +0000
+Subject: [PATCH 7/7] sh_eth: offload RX checksum on SH7763
+Message-Id: <e8ce7a88-b689-6114-66e4-c45a95087a1f@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <b73763ac-5909-c95e-efa5-9d44fba9b9bf@cogentembedded.com>
-        <CAMuHMdUYH-UzmiMv6LUT=R3gmHSF7LvcaDXszUixtAeXgjTr_Q@mail.gmail.com>
-        <42ba30c2-3de0-411b-63e1-9feef2508d9c@cogentembedded.com>
-In-Reply-To: <42ba30c2-3de0-411b-63e1-9feef2508d9c@cogentembedded.com>
+References: <fc43bfa2-4312-b52b-a749-e3e43e242a95@cogentembedded.com>
+In-Reply-To: <fc43bfa2-4312-b52b-a749-e3e43e242a95@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: sergei.shtylyov@cogentembedded.com
-Cc: geert@linux-m68k.org, netdev@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org
+To: netdev@vger.kernel.org, "David S. Miller" <davem@davemloft.net>
+Cc: linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 28 Jan 2019 14:08:48 +0300
+The SH7763 SoC manual describes the Ether MAC's RX checksum offload
+the same way as it's implemented in the EtherAVB MACs...
 
-> On 01/28/2019 12:21 PM, Geert Uytterhoeven wrote:
-> 
->> On Sun, Jan 27, 2019 at 6:40 PM Sergei Shtylyov
->> <sergei.shtylyov@cogentembedded.com> wrote:
->>> Commit 62e04b7e0e3c ("sh_eth: rename 'sh_eth_cpu_data::hw_crc'") renamed
->>> the field to 'hw_checksum' for the Ether DMAC "intelligent checksum",
->>> however some Ether MACs implement a simpler checksumming scheme, so that
->>> name now seems misleading. Rename that filed to 'csmr' as the "intelligent
->>> checkmum" is always controlled by the CSMR register.
->> 
->> checksum
-> 
->    Oops! Do I need to repost?
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Please repost the series, thank you.
+---
+ drivers/net/ethernet/renesas/sh_eth.c |    1 +
+ 1 file changed, 1 insertion(+)
+
+Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
+=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
++++ net-next/drivers/net/ethernet/renesas/sh_eth.c
+@@ -1092,6 +1092,7 @@ static struct sh_eth_cpu_data sh7763_dat
+ 	.irq_flags	= IRQF_SHARED,
+ 	.magic		= 1,
+ 	.cexcr		= 1,
++	.rx_csum	= 1,
+ 	.dual_port	= 1,
+ };
+ 
