@@ -1,86 +1,104 @@
-From: Ulrich Hecht <uli@fpond.eu>
-Date: Wed, 09 Jan 2019 12:48:54 +0000
-Subject: Re: [PATCH v5 2/4] serial: sh-sci: Extract sci_dma_rx_reenable_irq()
-Message-Id: <1792061178.1196047.1547038134227@webmail.strato.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sun, 27 Jan 2019 17:36:10 +0000
+Subject: [PATCH 1/7] sh_eth: rename sh_eth_cpu_data::hw_checksum
+Message-Id: <b73763ac-5909-c95e-efa5-9d44fba9b9bf@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190107162320.15530-1-geert+renesas@glider.be>
- <20190107162320.15530-3-geert+renesas@glider.be>
-In-Reply-To: <20190107162320.15530-3-geert+renesas@glider.be>
+References: <fc43bfa2-4312-b52b-a749-e3e43e242a95@cogentembedded.com>
+In-Reply-To: <fc43bfa2-4312-b52b-a749-e3e43e242a95@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
-Cc: Wolfram Sang <wsa+renesas@sang-engineering.com>, Ulrich Hecht <uli+renesas@fpond.eu>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Simon Horman <horms@verge.net.au>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-serial@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org
+To: netdev@vger.kernel.org, "David S. Miller" <davem@davemloft.net>
+Cc: linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org
 
+Commit 62e04b7e0e3c ("sh_eth: rename 'sh_eth_cpu_data::hw_crc'") renamed
+the field to 'hw_checksum' for the Ether DMAC "intelligent checksum",
+however some Ether MACs implement a simpler checksumming scheme, so that
+name now seems misleading. Rename that filed to 'csmr' as the "intelligent
+checkmum" is always controlled by the CSMR register.
 
-> On January 7, 2019 at 5:23 PM Geert Uytterhoeven <geert+renesas@glider.be> wrote:
-> 
-> 
-> Extract the functionality to direct new serial port interrupts back to
-> the CPU into its own helper, to prepare for using it from a second
-> callsite.
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> ---
-> v5:
->   - New.
-> ---
->  drivers/tty/serial/sh-sci.c | 23 +++++++++++++++--------
->  1 file changed, 15 insertions(+), 8 deletions(-)
-> 
-> diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-> index 4c75468680cb547d..4d814c30c4189b56 100644
-> --- a/drivers/tty/serial/sh-sci.c
-> +++ b/drivers/tty/serial/sh-sci.c
-> @@ -1274,6 +1274,20 @@ static void start_hrtimer_us(struct hrtimer *hrt, unsigned long usec)
->  	hrtimer_start(hrt, t, HRTIMER_MODE_REL);
->  }
->  
-> +static void sci_dma_rx_reenable_irq(struct sci_port *s)
-> +{
-> +	struct uart_port *port = &s->port;
-> +	u16 scr;
-> +
-> +	/* Direct new serial port interrupts back to CPU */
-> +	scr = serial_port_in(port, SCSCR);
-> +	if (port->type = PORT_SCIFA || port->type = PORT_SCIFB) {
-> +		scr &= ~SCSCR_RDRQE;
-> +		enable_irq(s->irqs[SCIx_RXI_IRQ]);
-> +	}
-> +	serial_port_out(port, SCSCR, scr | SCSCR_RIE);
-> +}
-> +
->  static void sci_dma_rx_complete(void *arg)
->  {
->  	struct sci_port *s = arg;
-> @@ -1453,7 +1467,6 @@ static enum hrtimer_restart rx_timer_fn(struct hrtimer *t)
->  	unsigned long flags;
->  	unsigned int read;
->  	int active, count;
-> -	u16 scr;
->  
->  	dev_dbg(port->dev, "DMA Rx timed out\n");
->  
-> @@ -1503,13 +1516,7 @@ static enum hrtimer_restart rx_timer_fn(struct hrtimer *t)
->  	if (port->type = PORT_SCIFA || port->type = PORT_SCIFB)
->  		sci_submit_rx(s, true);
->  
-> -	/* Direct new serial port interrupts back to CPU */
-> -	scr = serial_port_in(port, SCSCR);
-> -	if (port->type = PORT_SCIFA || port->type = PORT_SCIFB) {
-> -		scr &= ~SCSCR_RDRQE;
-> -		enable_irq(s->irqs[SCIx_RXI_IRQ]);
-> -	}
-> -	serial_port_out(port, SCSCR, scr | SCSCR_RIE);
-> +	sci_dma_rx_reenable_irq(s);
->  
->  	spin_unlock_irqrestore(&port->lock, flags);
->  
-> -- 
-> 2.17.1
->
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Reviewed-by: Ulrich Hecht <uli+renesas@fpond.eu>
+---
+ drivers/net/ethernet/renesas/sh_eth.c |   14 +++++++-------
+ drivers/net/ethernet/renesas/sh_eth.h |    2 +-
+ 2 files changed, 8 insertions(+), 8 deletions(-)
 
-CU
-Uli
+Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
+=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
++++ net-next/drivers/net/ethernet/renesas/sh_eth.c
+@@ -555,7 +555,7 @@ static int sh_eth_soft_reset_gether(stru
+ 	sh_eth_write(ndev, 0, RDFFR);
+ 
+ 	/* Reset HW CRC register */
+-	if (mdp->cd->hw_checksum)
++	if (mdp->cd->csmr)
+ 		sh_eth_write(ndev, 0, CSMR);
+ 
+ 	/* Select MII mode */
+@@ -619,7 +619,7 @@ static struct sh_eth_cpu_data r7s72100_d
+ 	.no_trimd	= 1,
+ 	.no_ade		= 1,
+ 	.xdfar_rw	= 1,
+-	.hw_checksum	= 1,
++	.csmr		= 1,
+ 	.tsu		= 1,
+ 	.no_tx_cntrs	= 1,
+ };
+@@ -668,7 +668,7 @@ static struct sh_eth_cpu_data r8a7740_da
+ 	.no_trimd	= 1,
+ 	.no_ade		= 1,
+ 	.xdfar_rw	= 1,
+-	.hw_checksum	= 1,
++	.csmr		= 1,
+ 	.tsu		= 1,
+ 	.select_mii	= 1,
+ 	.magic		= 1,
+@@ -793,7 +793,7 @@ static struct sh_eth_cpu_data r8a77980_d
+ 	.no_trimd	= 1,
+ 	.no_ade		= 1,
+ 	.xdfar_rw	= 1,
+-	.hw_checksum	= 1,
++	.csmr		= 1,
+ 	.select_mii	= 1,
+ 	.magic		= 1,
+ 	.cexcr		= 1,
+@@ -1045,7 +1045,7 @@ static struct sh_eth_cpu_data sh7734_dat
+ 	.no_ade		= 1,
+ 	.xdfar_rw	= 1,
+ 	.tsu		= 1,
+-	.hw_checksum	= 1,
++	.csmr		= 1,
+ 	.select_mii	= 1,
+ 	.magic		= 1,
+ 	.cexcr		= 1,
+@@ -1633,7 +1633,7 @@ static int sh_eth_rx(struct net_device *
+ 		 * the RFS bits are from bit 25 to bit 16. So, the
+ 		 * driver needs right shifting by 16.
+ 		 */
+-		if (mdp->cd->hw_checksum)
++		if (mdp->cd->csmr)
+ 			desc_status >>= 16;
+ 
+ 		skb = mdp->rx_skbuff[entry];
+@@ -2173,7 +2173,7 @@ static size_t __sh_eth_get_regs(struct n
+ 	add_reg(MAFCR);
+ 	if (cd->rtrate)
+ 		add_reg(RTRATE);
+-	if (cd->hw_checksum)
++	if (cd->csmr)
+ 		add_reg(CSMR);
+ 	if (cd->select_mii)
+ 		add_reg(RMII_MII);
+Index: net-next/drivers/net/ethernet/renesas/sh_eth.h
+=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.h
++++ net-next/drivers/net/ethernet/renesas/sh_eth.h
+@@ -499,7 +499,7 @@ struct sh_eth_cpu_data {
+ 	unsigned no_ade:1;	/* E-DMAC DOES NOT have ADE bit in EESR */
+ 	unsigned no_xdfar:1;	/* E-DMAC DOES NOT have RDFAR/TDFAR */
+ 	unsigned xdfar_rw:1;	/* E-DMAC has writeable RDFAR/TDFAR */
+-	unsigned hw_checksum:1;	/* E-DMAC has CSMR */
++	unsigned csmr:1;	/* E-DMAC has CSMR */
+ 	unsigned select_mii:1;	/* EtherC has RMII_MII (MII select register) */
+ 	unsigned rmiimode:1;	/* EtherC has RMIIMODE register */
+ 	unsigned rtrate:1;	/* EtherC has RTRATE register */
