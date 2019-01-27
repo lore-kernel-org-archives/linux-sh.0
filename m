@@ -1,39 +1,33 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Thu, 10 Jan 2019 17:14:50 +0000
-Subject: Re: [PATCH 07/15] ARM: add kexec_file_load system call number
-Message-Id: <CAK8P3a27hYDL+yjO+DFe8n_C_dyjGNKcKOcWz-p3Pc1LwcxKjw@mail.gmail.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sun, 27 Jan 2019 17:38:33 +0000
+Subject: [PATCH 3/7] sh_eth: offload RX checksum on R7S72100
+Message-Id: <0476beba-ea1f-7675-aa08-573b74e84f4e@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190110162435.309262-1-arnd@arndb.de> <20190110162435.309262-8-arnd@arndb.de>
- <20190110163908.GC31683@fuggles.cambridge.arm.com>
-In-Reply-To: <20190110163908.GC31683@fuggles.cambridge.arm.com>
+References: <fc43bfa2-4312-b52b-a749-e3e43e242a95@cogentembedded.com>
+In-Reply-To: <fc43bfa2-4312-b52b-a749-e3e43e242a95@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Will Deacon <will.deacon@arm.com>
-Cc: y2038 Mailman List <y2038@lists.linaro.org>, Linux API <linux-api@vger.kernel.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Ivan Kokshaysky <ink@jurassic.park.msu.ru>, Matt Turner <mattst88@gmail.com>, Russell King - ARM Linux <linux@armlinux.org.uk>, Catalin Marinas <catalin.marinas@arm.com>, Tony Luck <tony.luck@intel.com>, Fenghua Yu <fenghua.yu@intel.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Michal Simek <monstr@monstr.eu>, Paul Burton <paul.burton@mips.com>, Helge Deller <deller@gmx.de>, Michael Ellerman <mpe@ellerman.id.au>, Martin Schwidefsky <schwidefsky@de.ibm.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, Rich Felker <dalias@libc.org>, David Miller <davem@davemloft.net>, Andy Lutomirski <luto@kernel.org>
+To: netdev@vger.kernel.org, "David S. Miller" <davem@davemloft.net>
+Cc: linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org
 
-On Thu, Jan 10, 2019 at 5:39 PM Will Deacon <will.deacon@arm.com> wrote:
->
-> > diff --git a/arch/arm64/include/asm/unistd32.h b/arch/arm64/include/asm/unistd32.h
-> > index 355fe2bc035b..19f3f58b6146 100644
-> > --- a/arch/arm64/include/asm/unistd32.h
-> > +++ b/arch/arm64/include/asm/unistd32.h
-> > @@ -823,6 +823,8 @@ __SYSCALL(__NR_rseq, sys_rseq)
-> >  __SYSCALL(__NR_io_pgetevents, compat_sys_io_pgetevents)
-> >  #define __NR_migrate_pages 400
-> >  __SYSCALL(__NR_migrate_pages, sys_migrate_pages)
-> > +#define __NR_kexec_file_load 401
-> > +__SYSCALL(__NR_kexec_file_load, sys_kexec_file_load)
->
-> Hmm, I wonder if we need a compat wrapper for this, or are we assuming
-> that the early entry code has already zero-extended the long and pointer
-> arguments?
+The RZ/A1H (R7S721000) SoC manual describes the Ether MAC's RX checksum
+offload the same way as it's implemented in the EtherAVB MACs...
 
-Yes, that is generally the assumption for compat syscalls.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-s390 needs some extra magic to do a 31-to-64 extension on pointer
-arguments, and I think sometimes we need a special wrapper to
-do sign-extension of 32-bit arguments into 64-bit, but the arguments
-here should not need that.
+---
+ drivers/net/ethernet/renesas/sh_eth.c |    1 +
+ 1 file changed, 1 insertion(+)
 
-     Arnd
+Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
+=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
++++ net-next/drivers/net/ethernet/renesas/sh_eth.c
+@@ -620,6 +620,7 @@ static struct sh_eth_cpu_data r7s72100_d
+ 	.no_ade		= 1,
+ 	.xdfar_rw	= 1,
+ 	.csmr		= 1,
++	.rx_csum	= 1,
+ 	.tsu		= 1,
+ 	.no_tx_cntrs	= 1,
+ };
