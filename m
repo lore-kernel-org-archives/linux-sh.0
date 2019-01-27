@@ -1,84 +1,232 @@
-From: Michael Ellerman <mpe@ellerman.id.au>
-Date: Wed, 16 Jan 2019 00:10:16 +0000
-Subject: Re: [PATCH 14/15] arch: add split IPC system calls where needed
-Message-Id: <871s5dzclz.fsf@concordia.ellerman.id.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sun, 27 Jan 2019 17:37:33 +0000
+Subject: [PATCH 2/7] sh_eth: RX checksum offload support
+Message-Id: <29cb4d33-37c3-43c0-3bce-fa01737c0fa4@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190110162435.309262-1-arnd@arndb.de>
- <20190110162435.309262-15-arnd@arndb.de>
- <87pnsz28k2.fsf@concordia.ellerman.id.au>
- <CAK8P3a0uas76i2W1yjFvxHT-2=A8_egUZeAUM-Vya6386+87Xg@mail.gmail.com>
-In-Reply-To: <CAK8P3a0uas76i2W1yjFvxHT-2=A8_egUZeAUM-Vya6386+87Xg@mail.gmail.com>
+References: <fc43bfa2-4312-b52b-a749-e3e43e242a95@cogentembedded.com>
+In-Reply-To: <fc43bfa2-4312-b52b-a749-e3e43e242a95@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Arnd Bergmann <arnd@arndb.de>
-Cc: Rich Felker <dalias@libc.org>, linux-ia64@vger.kernel.org, Linux-sh list <linux-sh@vger.kernel.org>, Catalin Marinas <catalin.marinas@arm.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, Dominik Brodowski <linux@dominikbrodowski.net>, linux-mips@vger.kernel.org, Max Filippov <jcmvbkbc@gmail.com>, Deepa Dinamani <deepa.kernel@gmail.com>, "H. Peter Anvin" <hpa@zytor.com>, sparclinux <sparclinux@vger.kernel.org>, linux-s390 <linux-s390@vger.kernel.org>, Davidlohr Bueso <dave@stgolabs.net>, y2038 Mailman List <y2038@lists.linaro.org>, Helge Deller <deller@gmx.de>, the arch/x86 maintainers <x86@kernel.org>, Russell King - ARM Linux <linux@armlinux.org.uk>, Ingo Molnar <mingo@redhat.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Firoz Khan <firoz.khan@linaro.org>, Matt Turner <mattst88@gmail.com>, Fenghua Yu <fenghua.yu@intel.com>, Will Deacon <will.deacon@arm.com>linux-
+To: netdev@vger.kernel.org, "David S. Miller" <davem@davemloft.net>
+Cc: linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org
 
-Arnd Bergmann <arnd@arndb.de> writes:
-> On Mon, Jan 14, 2019 at 4:59 AM Michael Ellerman <mpe@ellerman.id.au> wrote:
->> Arnd Bergmann <arnd@arndb.de> writes:
->> >  arch/m68k/kernel/syscalls/syscall.tbl     | 11 +++++++++++
->> >  arch/mips/kernel/syscalls/syscall_o32.tbl | 11 +++++++++++
->> >  arch/powerpc/kernel/syscalls/syscall.tbl  | 12 ++++++++++++
->>
->> I have some changes I'd like to make to our syscall table that will
->> clash with this.
->>
->> I'll try and send them today.
->
-> Ok. Are those for 5.0 or 5.1? If they are intended for 5.0, it would be
-> nice for me to have a branch based on 5.0-rc1 that I can put
-> the other patches on top of.
+Add support for the RX checksum offload. This is enabled by default and
+may be disabled and re-enabled using 'ethtool':
 
-For 5.1.
+# ethtool -K eth0 rx {on|off}
 
-I can put them in a topic branch for you.
+Some Ether MACs provide a simple checksumming scheme which appears to be
+completely compatible with CHECKSUM_COMPLETE: sum of all packet data after
+the L2 header is appended to packet data; this may be trivially read by
+the driver and used to update the skb accordingly. The same checksumming
+scheme is implemented in the EtherAVB MACs and now supported by tha 'ravb'
+driver.
 
->> > diff --git a/arch/powerpc/kernel/syscalls/syscall.tbl b/arch/powerpc/kernel/syscalls/syscall.tbl
->> > index db3bbb8744af..1bffab54ff35 100644
->> > --- a/arch/powerpc/kernel/syscalls/syscall.tbl
->> > +++ b/arch/powerpc/kernel/syscalls/syscall.tbl
->> > @@ -425,3 +425,15 @@
->> >  386  nospu   pkey_mprotect                   sys_pkey_mprotect
->> >  387  nospu   rseq                            sys_rseq
->> >  388  nospu   io_pgetevents                   sys_io_pgetevents               compat_sys_io_pgetevents
->> > +# room for arch specific syscalls
->> > +392  64      semtimedop                      sys_semtimedop
->> > +393  common  semget                          sys_semget
->> > +394  common  semctl                          sys_semctl                      compat_sys_semctl
->> > +395  common  shmget                          sys_shmget
->> > +396  common  shmctl                          sys_shmctl                      compat_sys_shmctl
->> > +397  common  shmat                           sys_shmat                       compat_sys_shmat
->> > +398  common  shmdt                           sys_shmdt
->> > +399  common  msgget                          sys_msgget
->> > +400  common  msgsnd                          sys_msgsnd                      compat_sys_msgsnd
->> > +401  common  msgrcv                          sys_msgrcv                      compat_sys_msgrcv
->> > +402  common  msgctl                          sys_msgctl                      compat_sys_msgctl
->>
->> We already have a gap at 366-377 from when we tried to add the split IPC
->> calls a few years back.
->>
->> I guess I don't mind leaving that gap and using the common numbers as
->> you've done here.
->>
->> But it would be good to add a comment pointing out that we have room
->> at 366 for more arch specific syscalls as well.
->
-> Ah, I missed that. I've added this to my patch now:
->
-> index 5c0936d862fc..2ddfba536d5f 100644
-> --- a/arch/powerpc/kernel/syscalls/syscall.tbl
-> +++ b/arch/powerpc/kernel/syscalls/syscall.tbl
-> @@ -460,6 +460,7 @@
->  363    spu     switch_endian                   sys_ni_syscall
->  364    common  userfaultfd                     sys_userfaultfd
->  365    common  membarrier                      sys_membarrier
-> +# 366-377 originally left for IPC, now unused
->  378    nospu   mlock2                          sys_mlock2
->  379    nospu   copy_file_range                 sys_copy_file_range
->  380    common  preadv2                         sys_preadv2
->          compat_sys_preadv2
+In terms of performance, throughput is close to gigabit line rate with the
+RX checksum offload both enabled and disabled.  The 'perf' output, however,
+appears to indicate that significantly less time is spent in do_csum() --
+this is as expected.
 
-Thanks.
+Test results with RX checksum offload enabled:
 
-cheers
+~/netperf-2.2pl4# perf record -a ./netperf -t TCP_MAERTS -H 192.168.2.4
+TCP MAERTS TEST to 192.168.2.4
+Recv   Send    Send
+Socket Socket  Message  Elapsed
+Size   Size    Size     Time     Throughput
+bytes  bytes   bytes    secs.    10^6bits/sec
+
+131072  16384  16384    10.01     933.93
+[ perf record: Woken up 8 times to write data ]
+[ perf record: Captured and wrote 1.955 MB perf.data (41940 samples) ]
+~/netperf-2.2pl4# perf report
+Samples: 41K of event 'cycles:ppp', Event count (approx.): 9915302763
+Overhead  Command          Shared Object             Symbol
+   9.44%  netperf          [kernel.kallsyms]         [k] __arch_copy_to_user
+   7.75%  swapper          [kernel.kallsyms]         [k] _raw_spin_unlock_irq
+   6.31%  swapper          [kernel.kallsyms]         [k] default_idle_call
+   5.89%  swapper          [kernel.kallsyms]         [k] arch_cpu_idle
+   4.37%  swapper          [kernel.kallsyms]         [k] tick_nohz_idle_exit
+   4.02%  netperf          [kernel.kallsyms]         [k] _raw_spin_unlock_irq
+   2.52%  netperf          [kernel.kallsyms]         [k] preempt_count_sub
+   1.81%  netperf          [kernel.kallsyms]         [k] tcp_recvmsg
+   1.80%  netperf          [kernel.kallsyms]         [k] _raw_spin_unlock_irqres
+   1.78%  netperf          [kernel.kallsyms]         [k] preempt_count_add
+   1.36%  netperf          [kernel.kallsyms]         [k] __tcp_transmit_skb
+   1.20%  netperf          [kernel.kallsyms]         [k] __local_bh_enable_ip
+   1.10%  netperf          [kernel.kallsyms]         [k] sh_eth_start_xmit
+
+Test results with RX checksum offload disabled:
+
+~/netperf-2.2pl4# perf record -a ./netperf -t TCP_MAERTS -H 192.168.2.4
+TCP MAERTS TEST to 192.168.2.4
+Recv   Send    Send
+Socket Socket  Message  Elapsed
+Size   Size    Size     Time     Throughput
+bytes  bytes   bytes    secs.    10^6bits/sec
+131072  16384  16384    10.01     932.04
+[ perf record: Woken up 14 times to write data ]
+[ perf record: Captured and wrote 3.642 MB perf.data (78817 samples) ]
+~/netperf-2.2pl4# perf report
+Samples: 78K of event 'cycles:ppp', Event count (approx.): 18091442796          
+Overhead  Command          Shared Object       Symbol                           
+   7.00%  swapper          [kernel.kallsyms]   [k] do_csum                      
+   3.94%  swapper          [kernel.kallsyms]   [k] sh_eth_poll                  
+   3.83%  ksoftirqd/0      [kernel.kallsyms]   [k] do_csum                      
+   3.23%  swapper          [kernel.kallsyms]   [k] _raw_spin_unlock_irq         
+   2.87%  netperf          [kernel.kallsyms]   [k] __arch_copy_to_user          
+   2.86%  swapper          [kernel.kallsyms]   [k] arch_cpu_idle                
+   2.13%  swapper          [kernel.kallsyms]   [k] default_idle_call            
+   2.12%  ksoftirqd/0      [kernel.kallsyms]   [k] sh_eth_poll                  
+   2.02%  swapper          [kernel.kallsyms]   [k] _raw_spin_unlock_irqrestore  
+   1.84%  swapper          [kernel.kallsyms]   [k] __softirqentry_text_start    
+   1.64%  swapper          [kernel.kallsyms]   [k] tick_nohz_idle_exit          
+   1.53%  netperf          [kernel.kallsyms]   [k] _raw_spin_unlock_irq         
+   1.32%  netperf          [kernel.kallsyms]   [k] preempt_count_sub            
+   1.27%  swapper          [kernel.kallsyms]   [k] __pi___inval_dcache_area     
+   1.22%  swapper          [kernel.kallsyms]   [k] check_preemption_disabled    
+   1.01%  ksoftirqd/0      [kernel.kallsyms]   [k] _raw_spin_unlock_irqrestore  
+
+The above results collected on the R-Car V3H Starter Kit board.
+
+Based on the commit 4d86d3818627 ("ravb: RX checksum offload")...
+
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+---
+ drivers/net/ethernet/renesas/sh_eth.c |   60 ++++++++++++++++++++++++++++++++--
+ drivers/net/ethernet/renesas/sh_eth.h |    1 
+ 2 files changed, 59 insertions(+), 2 deletions(-)
+
+Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
+=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
++++ net-next/drivers/net/ethernet/renesas/sh_eth.c
+@@ -1532,8 +1532,9 @@ static int sh_eth_dev_init(struct net_de
+ 	mdp->irq_enabled = true;
+ 	sh_eth_write(ndev, mdp->cd->eesipr_value, EESIPR);
+ 
+-	/* PAUSE Prohibition */
++	/* EMAC Mode: PAUSE prohibition; Duplex; RX Checksum; TX; RX */
+ 	sh_eth_write(ndev, ECMR_ZPF | (mdp->duplex ? ECMR_DM : 0) |
++		     (ndev->features & NETIF_F_RXCSUM ? ECMR_RCSC : 0) |
+ 		     ECMR_TE | ECMR_RE, ECMR);
+ 
+ 	if (mdp->cd->set_rate)
+@@ -1592,6 +1593,19 @@ static void sh_eth_dev_exit(struct net_d
+ 	update_mac_address(ndev);
+ }
+ 
++static void sh_eth_rx_csum(struct sk_buff *skb)
++{
++	u8 *hw_csum;
++
++	/* The hardware checksum is 2 bytes appended to packet data */
++	if (unlikely(skb->len < sizeof(__sum16)))
++		return;
++	hw_csum = skb_tail_pointer(skb) - sizeof(__sum16);
++	skb->csum = csum_unfold((__force __sum16)get_unaligned_le16(hw_csum));
++	skb->ip_summed = CHECKSUM_COMPLETE;
++	skb_trim(skb, skb->len - sizeof(__sum16));
++}
++
+ /* Packet receive function */
+ static int sh_eth_rx(struct net_device *ndev, u32 intr_status, int *quota)
+ {
+@@ -1666,6 +1680,8 @@ static int sh_eth_rx(struct net_device *
+ 					 DMA_FROM_DEVICE);
+ 			skb_put(skb, pkt_len);
+ 			skb->protocol = eth_type_trans(skb, ndev);
++			if (ndev->features & NETIF_F_RXCSUM)
++				sh_eth_rx_csum(skb);
+ 			netif_receive_skb(skb);
+ 			ndev->stats.rx_packets++;
+ 			ndev->stats.rx_bytes += pkt_len;
+@@ -2921,6 +2937,39 @@ static void sh_eth_set_rx_mode(struct ne
+ 	spin_unlock_irqrestore(&mdp->lock, flags);
+ }
+ 
++static void sh_eth_set_rx_csum(struct net_device *ndev, bool enable)
++{
++	struct sh_eth_private *mdp = netdev_priv(ndev);
++	unsigned long flags;
++
++	spin_lock_irqsave(&mdp->lock, flags);
++
++	/* Disable TX and RX */
++	sh_eth_rcv_snd_disable(ndev);
++
++	/* Modify RX Checksum setting */
++	sh_eth_modify(ndev, ECMR, ECMR_RCSC, enable ? ECMR_RCSC : 0);
++
++	/* Enable TX and RX */
++	sh_eth_rcv_snd_enable(ndev);
++
++	spin_unlock_irqrestore(&mdp->lock, flags);
++}
++
++static int sh_eth_set_features(struct net_device *ndev,
++			       netdev_features_t features)
++{
++	netdev_features_t changed = ndev->features ^ features;
++	struct sh_eth_private *mdp = netdev_priv(ndev);
++
++	if (changed & NETIF_F_RXCSUM && mdp->cd->rx_csum)
++		sh_eth_set_rx_csum(ndev, features & NETIF_F_RXCSUM);
++
++	ndev->features = features;
++
++	return 0;
++}
++
+ static int sh_eth_get_vtag_index(struct sh_eth_private *mdp)
+ {
+ 	if (!mdp->port)
+@@ -3102,6 +3151,7 @@ static const struct net_device_ops sh_et
+ 	.ndo_change_mtu		= sh_eth_change_mtu,
+ 	.ndo_validate_addr	= eth_validate_addr,
+ 	.ndo_set_mac_address	= eth_mac_addr,
++	.ndo_set_features	= sh_eth_set_features,
+ };
+ 
+ static const struct net_device_ops sh_eth_netdev_ops_tsu = {
+@@ -3117,6 +3167,7 @@ static const struct net_device_ops sh_et
+ 	.ndo_change_mtu		= sh_eth_change_mtu,
+ 	.ndo_validate_addr	= eth_validate_addr,
+ 	.ndo_set_mac_address	= eth_mac_addr,
++	.ndo_set_features	= sh_eth_set_features,
+ };
+ 
+ #ifdef CONFIG_OF
+@@ -3245,6 +3296,11 @@ static int sh_eth_drv_probe(struct platf
+ 	ndev->max_mtu = 2000 - (ETH_HLEN + VLAN_HLEN + ETH_FCS_LEN);
+ 	ndev->min_mtu = ETH_MIN_MTU;
+ 
++	if (mdp->cd->rx_csum) {
++		ndev->features = NETIF_F_RXCSUM;
++		ndev->hw_features = NETIF_F_RXCSUM;
++	}
++
+ 	/* set function */
+ 	if (mdp->cd->tsu)
+ 		ndev->netdev_ops = &sh_eth_netdev_ops_tsu;
+@@ -3294,7 +3350,7 @@ static int sh_eth_drv_probe(struct platf
+ 			goto out_release;
+ 		}
+ 		mdp->port = port;
+-		ndev->features = NETIF_F_HW_VLAN_CTAG_FILTER;
++		ndev->features |= NETIF_F_HW_VLAN_CTAG_FILTER;
+ 
+ 		/* Need to init only the first port of the two sharing a TSU */
+ 		if (port = 0) {
+Index: net-next/drivers/net/ethernet/renesas/sh_eth.h
+=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.h
++++ net-next/drivers/net/ethernet/renesas/sh_eth.h
+@@ -500,6 +500,7 @@ struct sh_eth_cpu_data {
+ 	unsigned no_xdfar:1;	/* E-DMAC DOES NOT have RDFAR/TDFAR */
+ 	unsigned xdfar_rw:1;	/* E-DMAC has writeable RDFAR/TDFAR */
+ 	unsigned csmr:1;	/* E-DMAC has CSMR */
++	unsigned rx_csum:1;	/* EtherC has ECMR.RCSC */
+ 	unsigned select_mii:1;	/* EtherC has RMII_MII (MII select register) */
+ 	unsigned rmiimode:1;	/* EtherC has RMIIMODE register */
+ 	unsigned rtrate:1;	/* EtherC has RTRATE register */
