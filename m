@@ -1,104 +1,56 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sun, 27 Jan 2019 17:36:10 +0000
-Subject: [PATCH 1/7] sh_eth: rename sh_eth_cpu_data::hw_checksum
-Message-Id: <b73763ac-5909-c95e-efa5-9d44fba9b9bf@cogentembedded.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 28 Jan 2019 09:21:44 +0000
+Subject: Re: [PATCH 1/7] sh_eth: rename sh_eth_cpu_data::hw_checksum
+Message-Id: <CAMuHMdUYH-UzmiMv6LUT=R3gmHSF7LvcaDXszUixtAeXgjTr_Q@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <fc43bfa2-4312-b52b-a749-e3e43e242a95@cogentembedded.com>
-In-Reply-To: <fc43bfa2-4312-b52b-a749-e3e43e242a95@cogentembedded.com>
+References: <fc43bfa2-4312-b52b-a749-e3e43e242a95@cogentembedded.com> <b73763ac-5909-c95e-efa5-9d44fba9b9bf@cogentembedded.com>
+In-Reply-To: <b73763ac-5909-c95e-efa5-9d44fba9b9bf@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org, "David S. Miller" <davem@davemloft.net>
-Cc: linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org
+To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Cc: netdev <netdev@vger.kernel.org>, "David S. Miller" <davem@davemloft.net>, Linux-Renesas <linux-renesas-soc@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
 
-Commit 62e04b7e0e3c ("sh_eth: rename 'sh_eth_cpu_data::hw_crc'") renamed
-the field to 'hw_checksum' for the Ether DMAC "intelligent checksum",
-however some Ether MACs implement a simpler checksumming scheme, so that
-name now seems misleading. Rename that filed to 'csmr' as the "intelligent
-checkmum" is always controlled by the CSMR register.
+Hi Sergei,
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Thanks for your patch!
 
----
- drivers/net/ethernet/renesas/sh_eth.c |   14 +++++++-------
- drivers/net/ethernet/renesas/sh_eth.h |    2 +-
- 2 files changed, 8 insertions(+), 8 deletions(-)
+On Sun, Jan 27, 2019 at 6:40 PM Sergei Shtylyov
+<sergei.shtylyov@cogentembedded.com> wrote:
+> Commit 62e04b7e0e3c ("sh_eth: rename 'sh_eth_cpu_data::hw_crc'") renamed
+> the field to 'hw_checksum' for the Ether DMAC "intelligent checksum",
+> however some Ether MACs implement a simpler checksumming scheme, so that
+> name now seems misleading. Rename that filed to 'csmr' as the "intelligent
+> checkmum" is always controlled by the CSMR register.
 
-Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
-=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
-+++ net-next/drivers/net/ethernet/renesas/sh_eth.c
-@@ -555,7 +555,7 @@ static int sh_eth_soft_reset_gether(stru
- 	sh_eth_write(ndev, 0, RDFFR);
- 
- 	/* Reset HW CRC register */
--	if (mdp->cd->hw_checksum)
-+	if (mdp->cd->csmr)
- 		sh_eth_write(ndev, 0, CSMR);
- 
- 	/* Select MII mode */
-@@ -619,7 +619,7 @@ static struct sh_eth_cpu_data r7s72100_d
- 	.no_trimd	= 1,
- 	.no_ade		= 1,
- 	.xdfar_rw	= 1,
--	.hw_checksum	= 1,
-+	.csmr		= 1,
- 	.tsu		= 1,
- 	.no_tx_cntrs	= 1,
- };
-@@ -668,7 +668,7 @@ static struct sh_eth_cpu_data r8a7740_da
- 	.no_trimd	= 1,
- 	.no_ade		= 1,
- 	.xdfar_rw	= 1,
--	.hw_checksum	= 1,
-+	.csmr		= 1,
- 	.tsu		= 1,
- 	.select_mii	= 1,
- 	.magic		= 1,
-@@ -793,7 +793,7 @@ static struct sh_eth_cpu_data r8a77980_d
- 	.no_trimd	= 1,
- 	.no_ade		= 1,
- 	.xdfar_rw	= 1,
--	.hw_checksum	= 1,
-+	.csmr		= 1,
- 	.select_mii	= 1,
- 	.magic		= 1,
- 	.cexcr		= 1,
-@@ -1045,7 +1045,7 @@ static struct sh_eth_cpu_data sh7734_dat
- 	.no_ade		= 1,
- 	.xdfar_rw	= 1,
- 	.tsu		= 1,
--	.hw_checksum	= 1,
-+	.csmr		= 1,
- 	.select_mii	= 1,
- 	.magic		= 1,
- 	.cexcr		= 1,
-@@ -1633,7 +1633,7 @@ static int sh_eth_rx(struct net_device *
- 		 * the RFS bits are from bit 25 to bit 16. So, the
- 		 * driver needs right shifting by 16.
- 		 */
--		if (mdp->cd->hw_checksum)
-+		if (mdp->cd->csmr)
- 			desc_status >>= 16;
- 
- 		skb = mdp->rx_skbuff[entry];
-@@ -2173,7 +2173,7 @@ static size_t __sh_eth_get_regs(struct n
- 	add_reg(MAFCR);
- 	if (cd->rtrate)
- 		add_reg(RTRATE);
--	if (cd->hw_checksum)
-+	if (cd->csmr)
- 		add_reg(CSMR);
- 	if (cd->select_mii)
- 		add_reg(RMII_MII);
-Index: net-next/drivers/net/ethernet/renesas/sh_eth.h
-=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.h
-+++ net-next/drivers/net/ethernet/renesas/sh_eth.h
-@@ -499,7 +499,7 @@ struct sh_eth_cpu_data {
- 	unsigned no_ade:1;	/* E-DMAC DOES NOT have ADE bit in EESR */
- 	unsigned no_xdfar:1;	/* E-DMAC DOES NOT have RDFAR/TDFAR */
- 	unsigned xdfar_rw:1;	/* E-DMAC has writeable RDFAR/TDFAR */
--	unsigned hw_checksum:1;	/* E-DMAC has CSMR */
-+	unsigned csmr:1;	/* E-DMAC has CSMR */
- 	unsigned select_mii:1;	/* EtherC has RMII_MII (MII select register) */
- 	unsigned rmiimode:1;	/* EtherC has RMIIMODE register */
- 	unsigned rtrate:1;	/* EtherC has RTRATE register */
+checksum
+
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+Apart from that:
+Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+
+> --- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
+> +++ net-next/drivers/net/ethernet/renesas/sh_eth.c
+
+> @@ -793,7 +793,7 @@ static struct sh_eth_cpu_data r8a77980_d
+>         .no_trimd       = 1,
+>         .no_ade         = 1,
+>         .xdfar_rw       = 1,
+> -       .hw_checksum    = 1,
+> +       .csmr           = 1,
+
+Interestingly, I cannot find the CSMR register in the R-Car Gen3 docs?
+Not introduced by this patch, though.
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
