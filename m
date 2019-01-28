@@ -1,10 +1,10 @@
 From: Sasha Levin <sashal@kernel.org>
-Date: Mon, 28 Jan 2019 15:43:14 +0000
-Subject: [PATCH AUTOSEL 4.20 277/304] arch/sh/boards/mach-kfr2r09/setup.c: fix struct mtd_oob_ops build warni
-Message-Id: <20190128154341.47195-277-sashal@kernel.org>
+Date: Mon, 28 Jan 2019 15:59:00 +0000
+Subject: [PATCH AUTOSEL 4.19 234/258] arch/sh/boards/mach-kfr2r09/setup.c: fix struct mtd_oob_ops build warni
+Message-Id: <20190128155924.51521-234-sashal@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190128154341.47195-1-sashal@kernel.org>
-In-Reply-To: <20190128154341.47195-1-sashal@kernel.org>
+References: <20190128155924.51521-1-sashal@kernel.org>
+In-Reply-To: <20190128155924.51521-1-sashal@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
