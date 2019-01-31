@@ -1,62 +1,63 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 10 Jan 2019 09:10:26 +0000
-Subject: Re: [PATCH RFT v2] net: sh_eth: add support for SH7786
-Message-Id: <f60a213c-755f-c95d-3931-2f9564b7717d@cogentembedded.com>
+From: Rob Landley <rob@landley.net>
+Date: Thu, 31 Jan 2019 06:29:49 +0000
+Subject: Commit 594cc251fdd0 (user_access_begin does access_ok) made arch/sh stop booting on qemu.
+Message-Id: <51e0329b-5d0b-1099-54f3-b51a34b6b216@landley.net>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="------------8845AE82FA9AD89B674979E9"
 List-Id: <linux-sh.vger.kernel.org>
-References: <cbc7976d-2376-15d4-0fc1-febdf142887b@cogentembedded.com>
- <20190108101615.165c5a4b@windsurf>
-In-Reply-To: <20190108101615.165c5a4b@windsurf>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+To: Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Linus Torvalds <torvalds@linux-foundation.org>
+
+This is a multi-part message in MIME format.
+--------------8845AE82FA9AD89B674979E9
+Content-Type: text/plain; charset=utf-8
 Content-Transfer-Encoding: 7bit
-To: Thomas Petazzoni <thomas.petazzoni@bootlin.com>
-Cc: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>, linux-sh@vger.kernel.org, linux-renesas-soc@vger.kernel.org
 
-Hello!
+That's what I bisected it to, anyway. Commit before that boots to a shell prompt
+under qemu-system-sh4 (built from today's git), after produces no console output
+(no boot messages, no nothin').
 
-On 08.01.2019 12:16, Thomas Petazzoni wrote:
+Rob
 
-> On Fri, 4 Jan 2019 15:53:24 +0300, Sergei Shtylyov wrote:
->> From: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
->>
->> This commit adds the sh_eth_cpu_data structure that describes the
->> SH7786 variant of the IP.
->>
->> Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
-> 
-> I tried to test this patch today, and it doesn't work for the moment.
+--------------8845AE82FA9AD89B674979E9
+Content-Type: text/plain; charset=UTF-8;
+ name="sh4.miniconf"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment;
+ filename="sh4.miniconf"
 
-    What are the symptoms?
+IyBtYWtlIEFSQ0g9c2ggYWxsbm9jb25maWcgS0NPTkZJR19BTExDT05GSUc9c2g0Lm1pbmlj
+b25mCiMgbWFrZSBBUkNIPXNoIC1qICQobnByb2MpCiMgYm9vdCBhcmNoL3NoL2Jvb3Qveklt
+YWdlCgoKQ09ORklHX0NQVV9TVUJUWVBFX1NINzc1MVI9eQpDT05GSUdfTU1VPXkKQ09ORklH
+X01FTU9SWV9TVEFSVD0weDBjMDAwMDAwCkNPTkZJR19WU1lTQ0FMTD15CkNPTkZJR19TSF9G
+UFU9eQpDT05GSUdfU0hfUlRTNzc1MVIyRD15CkNPTkZJR19SVFM3NzUxUjJEX1BMVVM9eQpD
+T05GSUdfU0VSSUFMX1NIX1NDST15CkNPTkZJR19TRVJJQUxfU0hfU0NJX0NPTlNPTEU9eQoK
+Q09ORklHX1BDST15CkNPTkZJR19ORVRfVkVORE9SX1JFQUxURUs9eQpDT05GSUdfODEzOUNQ
+PXkKCkNPTkZJR19QQ0k9eQpDT05GSUdfQkxLX0RFVl9TRD15CkNPTkZJR19BVEE9eQpDT05G
+SUdfQVRBX1NGRj15CkNPTkZJR19BVEFfQk1ETUE9eQpDT05GSUdfUEFUQV9QTEFURk9STT15
+CgojQ09ORklHX1NQST15CiNDT05GSUdfU1BJX1NIX1NDST15CiNDT05GSUdfTUZEX1NNNTAx
+PXkKCiNDT05GSUdfUlRDX0NMQVNTPXkKI0NPTkZJR19SVENfRFJWX1I5NzAxPXkKI0NPTkZJ
+R19SVENfRFJWX1NIPXkKI0NPTkZJR19SVENfSENUT1NZUz15CgoKIyBDT05GSUdfRU1CRURE
+RUQgaXMgbm90IHNldApDT05GSUdfRUFSTFlfUFJJTlRLPXkKQ09ORklHX0JJTkZNVF9FTEY9
+eQpDT05GSUdfQklORk1UX1NDUklQVD15CkNPTkZJR19OT19IWj15CkNPTkZJR19ISUdIX1JF
+U19USU1FUlM9eQoKQ09ORklHX0JMS19ERVY9eQpDT05GSUdfQkxLX0RFVl9JTklUUkQ9eQpD
+T05GSUdfUkRfR1pJUD15CgpDT05GSUdfQkxLX0RFVl9MT09QPXkKQ09ORklHX0VYVDRfRlM9
+eQpDT05GSUdfRVhUNF9VU0VfRk9SX0VYVDI9eQpDT05GSUdfVkZBVF9GUz15CkNPTkZJR19G
+QVRfREVGQVVMVF9VVEY4PXkKQ09ORklHX01JU0NfRklMRVNZU1RFTVM9eQpDT05GSUdfU1FV
+QVNIRlM9eQpDT05GSUdfU1FVQVNIRlNfWEFUVFI9eQpDT05GSUdfU1FVQVNIRlNfWkxJQj15
+CkNPTkZJR19ERVZUTVBGUz15CkNPTkZJR19ERVZUTVBGU19NT1VOVD15CkNPTkZJR19UTVBG
+Uz15CkNPTkZJR19UTVBGU19QT1NJWF9BQ0w9eQoKQ09ORklHX05FVD15CkNPTkZJR19QQUNL
+RVQ9eQpDT05GSUdfVU5JWD15CkNPTkZJR19JTkVUPXkKQ09ORklHX0lQVjY9eQpDT05GSUdf
+TkVUREVWSUNFUz15CiNDT05GSUdfTkVUX0NPUkU9eQojQ09ORklHX05FVENPTlNPTEU9eQpD
+T05GSUdfRVRIRVJORVQ9eQoK
+--------------8845AE82FA9AD89B674979E9
+Content-Type: application/x-shellscript;
+ name="qemu-sh4.sh"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment;
+ filename="qemu-sh4.sh"
 
-> However, I've rebased my whole SH7786 patch stack on top of 4.20, and
-> with my original sh_eth patch, network is also not working, so I can't
-
-    Hm... same symptoms?
-
-> say whether it's really this patch that has an issue, or some other
-> aspects.
-> 
-> (And yes, I remember to adjust the base address of the sh_eth
-> platform_device:
-> 
-> diff --git a/arch/sh/boards/board-wdc-cont4.c b/arch/sh/boards/board-wdc-cont4.c
-> index c72209822899..7ca1bfcc20ae 100644
-> --- a/arch/sh/boards/board-wdc-cont4.c
-> +++ b/arch/sh/boards/board-wdc-cont4.c
-> @@ -80,7 +80,7 @@ static int wdc_cont4_clk_init(void)
->   
->   static struct resource sh_eth_resources[] = {
->           {
-> -                .start  = 0xFEE00200,
-> +                .start  = 0xFEE00000,
->                   .end    = 0xFEE00400 - 1,
->                   .flags  = IORESOURCE_MEM,
->           }, {
-
-    Yes, seems correct.
-
-> Best regards,
-> 
-> Thomas
-
-MBR, Sergei
+cWVtdS1zeXN0ZW0tc2g0IC1NIHIyZCAtc2VyaWFsIG51bGwgLXNlcmlhbCBtb246c3RkaW8g
+LW5vZ3JhcGhpYyAtbm8tcmVib290IC1tIDI1NiAtYXBwZW5kICJwYW5pYz0xIEhPU1Q9c2g0
+IGNvbnNvbGU9dHR5U0MxIG5vaW90cmFwIiAta2VybmVsIHpJbWFnZSAtaW5pdHJkIHNoNC1s
+aW51eC1tdXNsLXJvb3QuY3Bpby5neiAiJEAiCg==
+--------------8845AE82FA9AD89B674979E9--
