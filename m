@@ -1,99 +1,109 @@
-From: Waiman Long <longman@redhat.com>
-Date: Thu, 07 Feb 2019 19:07:21 +0000
-Subject: [PATCH-tip 17/22] locking/rwsem: Recheck owner if it is not on cpu
-Message-Id: <1549566446-27967-18-git-send-email-longman@redhat.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Mon, 04 Feb 2019 18:05:55 +0000
+Subject: [PATCH v2 1/7] sh_eth: rename sh_eth_cpu_data::hw_checksum
+Message-Id: <49e422f5-08aa-cb39-b39f-7f963c2f15a5@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1549566446-27967-1-git-send-email-longman@redhat.com>
-In-Reply-To: <1549566446-27967-1-git-send-email-longman@redhat.com>
+References: <a21deed1-35dc-f1be-6c7e-7061ebe4b56c@cogentembedded.com>
+In-Reply-To: <a21deed1-35dc-f1be-6c7e-7061ebe4b56c@cogentembedded.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
-To: Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@redhat.com>, Will Deacon <will.deacon@arm.com>, Thomas Gleixner <tglx@linutronix.de>
-Cc: linux-kernel@vger.kernel.org, linux-alpha@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-arch@vger.kernel.org, x86@kernel.org, Arnd Bergmann <arnd@arndb.de>, Borislav Petkov <bp@alien8.de>, "H. Peter Anvin" <hpa@zytor.com>, Davidlohr Bueso <dave@stgolabs.net>, Linus Torvalds <torvalds@linux-foundation.org>, Andrew Morton <akpm@linux-foundation.org>, Tim Chen <tim.c.chen@linux.intel.com>, Waiman Long <longman@redhat.com>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: netdev@vger.kernel.org, "David S. Miller" <davem@davemloft.net>
+Cc: linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org
 
-After merging the owner value directly into the count field, it was
-found that the number of failed optimistic spinning operations increased
-significantly during the boot up process.
+Commit 62e04b7e0e3c ("sh_eth: rename 'sh_eth_cpu_data::hw_crc'") renamed
+the field to 'hw_checksum' for the Ether DMAC "intelligent checksum",
+however some Ether MACs implement a simpler checksumming scheme, so that
+name now seems misleading. Rename that field to 'csmr' as the "intelligent
+checksum" is always controlled by the CSMR register.
 
-The cause of this increased failures was tracked down to the condition
-that a lock holder might have just released the lock and gone to sleep
-right after its owner value was fetched by a spinner. So the task might
-have slept, but it was no longer the lock holder. The merging of owner
-into count increases the chance this condition can happen.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-To close this failure mode, we are now rechecking the owner value again
-to see if it has been changed in case it is not on cpu.
-
-On a 1-socket x86-64 system, the lock event counts before the patch
-were:
-
-  rwsem_opt_failX47
-  rwsem_opt_wlockx80
-  rwsem_wlockX47
-
-After the patch, the counts were:
-
-  rwsem_opt_fail"5
-  rwsem_opt_wlock=8541
-  rwsem_wlock"5
-
-Signed-off-by: Waiman Long <longman@redhat.com>
 ---
- kernel/locking/rwsem-xadd.c | 20 ++++++++++++++++----
- 1 file changed, 16 insertions(+), 4 deletions(-)
+Changes in version 2:
+- fixed typos in the patch description;
+- added Geert's tag.
 
-diff --git a/kernel/locking/rwsem-xadd.c b/kernel/locking/rwsem-xadd.c
-index 16dc7a1..21d462f 100644
---- a/kernel/locking/rwsem-xadd.c
-+++ b/kernel/locking/rwsem-xadd.c
-@@ -263,13 +263,25 @@ static inline bool rwsem_try_write_lock_unqueued(stru=
-ct rw_semaphore *sem,
- 	}
- }
-=20
--static inline bool owner_on_cpu(struct task_struct *owner)
-+static inline bool owner_on_cpu(struct task_struct *owner,
-+				struct rw_semaphore *sem)
- {
- 	/*
- 	 * As lock holder preemption issue, we both skip spinning if
- 	 * task is not on cpu or its cpu is preempted
- 	 */
--	return owner->on_cpu && !vcpu_is_preempted(task_cpu(owner));
-+	bool oncpu =3D owner->on_cpu && !vcpu_is_preempted(task_cpu(owner));
-+
-+	/*
-+	 * There is a slight chance that the lock holder might have
-+	 * just release the rwsem and gone to sleep right after we
-+	 * fetched the owner value. So we double-check the sem->owner
-+	 * field again to see if it has been changed. The sem->owner
-+	 * would have been cleared right before the lock was released.
-+	 */
-+	if (!oncpu && (READ_ONCE(sem->owner) !=3D owner))
-+		return true;	/* Assume the new owner is on cpu */
-+	return oncpu;
- }
-=20
- static inline bool rwsem_can_spin_on_owner(struct rw_semaphore *sem)
-@@ -286,7 +298,7 @@ static inline bool rwsem_can_spin_on_owner(struct rw_se=
-maphore *sem)
- 	owner =3D rwsem_get_owner(sem);
- 	if (owner) {
- 		ret =3D is_rwsem_owner_spinnable(owner) &&
--		      owner_on_cpu(owner);
-+		      owner_on_cpu(owner, sem);
- 	}
- 	rcu_read_unlock();
- 	return ret;
-@@ -323,7 +335,7 @@ static noinline bool rwsem_spin_on_owner(struct rw_sema=
-phore *sem)
- 		 * abort spinning when need_resched or owner is not running or
- 		 * owner's cpu is preempted.
+ drivers/net/ethernet/renesas/sh_eth.c |   14 +++++++-------
+ drivers/net/ethernet/renesas/sh_eth.h |    2 +-
+ 2 files changed, 8 insertions(+), 8 deletions(-)
+
+Index: renesas/drivers/net/ethernet/renesas/sh_eth.c
+=================================--- renesas.orig/drivers/net/ethernet/renesas/sh_eth.c
++++ renesas/drivers/net/ethernet/renesas/sh_eth.c
+@@ -555,7 +555,7 @@ static int sh_eth_soft_reset_gether(stru
+ 	sh_eth_write(ndev, 0, RDFFR);
+ 
+ 	/* Reset HW CRC register */
+-	if (mdp->cd->hw_checksum)
++	if (mdp->cd->csmr)
+ 		sh_eth_write(ndev, 0, CSMR);
+ 
+ 	/* Select MII mode */
+@@ -619,7 +619,7 @@ static struct sh_eth_cpu_data r7s72100_d
+ 	.no_trimd	= 1,
+ 	.no_ade		= 1,
+ 	.xdfar_rw	= 1,
+-	.hw_checksum	= 1,
++	.csmr		= 1,
+ 	.tsu		= 1,
+ 	.no_tx_cntrs	= 1,
+ };
+@@ -668,7 +668,7 @@ static struct sh_eth_cpu_data r8a7740_da
+ 	.no_trimd	= 1,
+ 	.no_ade		= 1,
+ 	.xdfar_rw	= 1,
+-	.hw_checksum	= 1,
++	.csmr		= 1,
+ 	.tsu		= 1,
+ 	.select_mii	= 1,
+ 	.magic		= 1,
+@@ -793,7 +793,7 @@ static struct sh_eth_cpu_data r8a77980_d
+ 	.no_trimd	= 1,
+ 	.no_ade		= 1,
+ 	.xdfar_rw	= 1,
+-	.hw_checksum	= 1,
++	.csmr		= 1,
+ 	.select_mii	= 1,
+ 	.magic		= 1,
+ 	.cexcr		= 1,
+@@ -1045,7 +1045,7 @@ static struct sh_eth_cpu_data sh7734_dat
+ 	.no_ade		= 1,
+ 	.xdfar_rw	= 1,
+ 	.tsu		= 1,
+-	.hw_checksum	= 1,
++	.csmr		= 1,
+ 	.select_mii	= 1,
+ 	.magic		= 1,
+ 	.cexcr		= 1,
+@@ -1633,7 +1633,7 @@ static int sh_eth_rx(struct net_device *
+ 		 * the RFS bits are from bit 25 to bit 16. So, the
+ 		 * driver needs right shifting by 16.
  		 */
--		if (need_resched() || !owner_on_cpu(owner)) {
-+		if (need_resched() || !owner_on_cpu(owner, sem)) {
- 			rcu_read_unlock();
- 			return false;
- 		}
---=20
-1.8.3.1
+-		if (mdp->cd->hw_checksum)
++		if (mdp->cd->csmr)
+ 			desc_status >>= 16;
+ 
+ 		skb = mdp->rx_skbuff[entry];
+@@ -2173,7 +2173,7 @@ static size_t __sh_eth_get_regs(struct n
+ 	add_reg(MAFCR);
+ 	if (cd->rtrate)
+ 		add_reg(RTRATE);
+-	if (cd->hw_checksum)
++	if (cd->csmr)
+ 		add_reg(CSMR);
+ 	if (cd->select_mii)
+ 		add_reg(RMII_MII);
+Index: renesas/drivers/net/ethernet/renesas/sh_eth.h
+=================================--- renesas.orig/drivers/net/ethernet/renesas/sh_eth.h
++++ renesas/drivers/net/ethernet/renesas/sh_eth.h
+@@ -499,7 +499,7 @@ struct sh_eth_cpu_data {
+ 	unsigned no_ade:1;	/* E-DMAC DOES NOT have ADE bit in EESR */
+ 	unsigned no_xdfar:1;	/* E-DMAC DOES NOT have RDFAR/TDFAR */
+ 	unsigned xdfar_rw:1;	/* E-DMAC has writeable RDFAR/TDFAR */
+-	unsigned hw_checksum:1;	/* E-DMAC has CSMR */
++	unsigned csmr:1;	/* E-DMAC has CSMR */
+ 	unsigned select_mii:1;	/* EtherC has RMII_MII (MII select register) */
+ 	unsigned rmiimode:1;	/* EtherC has RMIIMODE register */
+ 	unsigned rtrate:1;	/* EtherC has RTRATE register */
