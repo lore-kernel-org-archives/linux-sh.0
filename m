@@ -1,23 +1,26 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Wed, 13 Feb 2019 18:17:05 +0000
-Subject: Re: [PATCH 01/12] mfd/sm501: depend on HAS_DMA
-Message-Id: <20190213181705.GB19706@lst.de>
+From: Rob Landley <rob@landley.net>
+Date: Mon, 04 Feb 2019 11:55:54 +0000
+Subject: Re: [PATCH 7/7] sh_eth: offload RX checksum on SH7763
+Message-Id: <2859e252-a900-fdc7-bfd8-d1b7663174f2@landley.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190211133554.30055-1-hch@lst.de>
- <20190211133554.30055-2-hch@lst.de> <20190213072931.GD1863@dell>
-In-Reply-To: <20190213072931.GD1863@dell>
+References: <fc43bfa2-4312-b52b-a749-e3e43e242a95@cogentembedded.com>
+ <e8ce7a88-b689-6114-66e4-c45a95087a1f@cogentembedded.com>
+In-Reply-To: <e8ce7a88-b689-6114-66e4-c45a95087a1f@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Lee Jones <lee.jones@linaro.org>
-Cc: linux-xtensa@linux-xtensa.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, x86@kernel.org, linux-mips@vger.kernel.org, linux-kernel@vger.kernel.org, iommu@lists.linux-foundation.org, linux-riscv@lists.infradead.org, linux-snps-arc@lists.infradead.org, linuxppc-dev@lists.ozlabs.org, Christoph Hellwig <hch@lst.de>, linux-arm-kernel@lists.infradead.org
+To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, netdev@vger.kernel.org, "David S. Miller" <davem@davemloft.net>
+Cc: linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org
 
-On Wed, Feb 13, 2019 at 07:29:31AM +0000, Lee Jones wrote:
-> I would normally have taken this, but I fear it will conflict with
-> [PATCH 06/12].  For that reason, just take my:
+On 1/27/19 11:42 AM, Sergei Shtylyov wrote:
+> The SH7763 SoC manual describes the Ether MAC's RX checksum offload
+> the same way as it's implemented in the EtherAVB MACs...
 > 
->   Acked-by: Lee Jones <lee.jones@linaro.org>
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Yes, I'll need it for the later patches in the series.
+I think this is the chip in the JCI N40 on my desk, how would I test this and
+tell it was working? (Is there an existing test program or...?)
 
-Thanks for the review.
+Also, can this be tested under QEMU's r2 board emulation?
+
+Rob
