@@ -1,104 +1,71 @@
-From: Ira Weiny <ira.weiny@intel.com>
-Date: Wed, 27 Feb 2019 19:14:42 +0000
-Subject: Re: [RESEND PATCH 0/7] Add FOLL_LONGTERM to GUP fast and use it
-Message-Id: <20190227191442.GB31669@iweiny-DESK2.sc.intel.com>
+From: Masahiro Yamada <yamada.masahiro@socionext.com>
+Date: Mon, 04 Feb 2019 09:10:55 +0000
+Subject: [PATCH v2] sh: fix build error for invisible CONFIG_BUILTIN_DTB_SOURCE
+Message-Id: <1549271455-19292-1-git-send-email-yamada.masahiro@socionext.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190220053040.10831-1-ira.weiny@intel.com>
-In-Reply-To: <20190220053040.10831-1-ira.weiny@intel.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: John Hubbard <jhubbard@nvidia.com>, Andrew Morton <akpm@linux-foundation.org>, Michal Hocko <mhocko@suse.com>, "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>, Peter Zijlstra <peterz@infradead.org>, Jason Gunthorpe <jgg@ziepe.ca>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, "David S. Miller" <davem@davemloft.net>, Martin Schwidefsky <schwidefsky@de.ibm.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, Rich Felker <dalias@libc.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>, Ralf Baechle <ralf@linux-mips.org>, Paul Burton <paul.burton@mips.com>, James Hogan <jhogan@kernel.org>
-Cc: linux-fbdev@vger.kernel.org, kvm@vger.kernel.org, linux-sh@vger.kernel.org, linux-fpga@vger.kernel.org, dri-devel@lists.freedesktop.org, linux-mips@vger.kernel.org, linux-mm@kvack.org, sparclinux@vger.kernel.org, devel@driverdev.osuosl.org, linux-s390@vger.kernel.org, rds-devel@oss.oracle.com, linux-scsi@vger.kernel.org, linux-rdma@vger.kernel.org, xen-devel@lists.xenproject.org, devel@lists.orangefs.org, linux-media@vger.kernel.org, kvm-ppc@vger.kernel.org, ceph-devel@vger.kernel.org, virtualization@lists.linux-foundation.org, netdev@vger.kernel.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org
+To: linux-kbuild@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Rob Herring <robh+dt@kernel.org>, Masahiro Yamada <yamada.masahiro@socionext.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-kernel@vger.kernel.org, Rich Felker <dalias@libc.org>, Mark Rutland <mark.rutland@arm.com>
 
-On Tue, Feb 19, 2019 at 09:30:33PM -0800, 'Ira Weiny' wrote:
-> From: Ira Weiny <ira.weiny@intel.com>
-> 
-> Resending these as I had only 1 minor comment which I believe we have covered
-> in this series.  I was anticipating these going through the mm tree as they
-> depend on a cleanup patch there and the IB changes are very minor.  But they
-> could just as well go through the IB tree.
-> 
-> NOTE: This series depends on my clean up patch to remove the write parameter
-> from gup_fast_permitted()[1]
-> 
-> HFI1, qib, and mthca, use get_user_pages_fast() due to it performance
-> advantages.  These pages can be held for a significant time.  But
-> get_user_pages_fast() does not protect against mapping of FS DAX pages.
-> 
-> Introduce FOLL_LONGTERM and use this flag in get_user_pages_fast() which
-> retains the performance while also adding the FS DAX checks.  XDP has also
-> shown interest in using this functionality.[2]
-> 
-> In addition we change get_user_pages() to use the new FOLL_LONGTERM flag and
-> remove the specialized get_user_pages_longterm call.
-> 
-> [1] https://lkml.org/lkml/2019/2/11/237
-> [2] https://lkml.org/lkml/2019/2/11/1789
+I fixed a similar build error in commit 1b1e4ee86e00 ("sh: fix build
+error for empty CONFIG_BUILTIN_DTB_SOURCE"), but it came back again.
 
-Is there anything I need to do on this series or does anyone have any
-objections to it going into 5.1?  And if so who's tree is it going to go
-through?
+Since commit 37c8a5fafa3b ("kbuild: consolidate Devicetree dtb
+build rules"), the combination of CONFIG_OF_EARLY_FLATTREE=y and
+CONFIG_USE_BUILTIN_DTB=n results in the following build error:
 
-Thanks,
-Ira
+make[1]: *** No rule to make target 'arch/sh/boot/dts/.dtb.o', needed by 'arch/sh/boot/dts/built-in.a'.  Stop.
+make: *** [Makefile;1727: arch/sh/boot/dts/] Error 2
 
-> 
-> Ira Weiny (7):
->   mm/gup: Replace get_user_pages_longterm() with FOLL_LONGTERM
->   mm/gup: Change write parameter to flags in fast walk
->   mm/gup: Change GUP fast to use flags rather than a write 'bool'
->   mm/gup: Add FOLL_LONGTERM capability to GUP fast
->   IB/hfi1: Use the new FOLL_LONGTERM flag to get_user_pages_fast()
->   IB/qib: Use the new FOLL_LONGTERM flag to get_user_pages_fast()
->   IB/mthca: Use the new FOLL_LONGTERM flag to get_user_pages_fast()
-> 
->  arch/mips/mm/gup.c                          |  11 +-
->  arch/powerpc/kvm/book3s_64_mmu_hv.c         |   4 +-
->  arch/powerpc/kvm/e500_mmu.c                 |   2 +-
->  arch/powerpc/mm/mmu_context_iommu.c         |   4 +-
->  arch/s390/kvm/interrupt.c                   |   2 +-
->  arch/s390/mm/gup.c                          |  12 +-
->  arch/sh/mm/gup.c                            |  11 +-
->  arch/sparc/mm/gup.c                         |   9 +-
->  arch/x86/kvm/paging_tmpl.h                  |   2 +-
->  arch/x86/kvm/svm.c                          |   2 +-
->  drivers/fpga/dfl-afu-dma-region.c           |   2 +-
->  drivers/gpu/drm/via/via_dmablit.c           |   3 +-
->  drivers/infiniband/core/umem.c              |   5 +-
->  drivers/infiniband/hw/hfi1/user_pages.c     |   5 +-
->  drivers/infiniband/hw/mthca/mthca_memfree.c |   3 +-
->  drivers/infiniband/hw/qib/qib_user_pages.c  |   8 +-
->  drivers/infiniband/hw/qib/qib_user_sdma.c   |   2 +-
->  drivers/infiniband/hw/usnic/usnic_uiom.c    |   9 +-
->  drivers/media/v4l2-core/videobuf-dma-sg.c   |   6 +-
->  drivers/misc/genwqe/card_utils.c            |   2 +-
->  drivers/misc/vmw_vmci/vmci_host.c           |   2 +-
->  drivers/misc/vmw_vmci/vmci_queue_pair.c     |   6 +-
->  drivers/platform/goldfish/goldfish_pipe.c   |   3 +-
->  drivers/rapidio/devices/rio_mport_cdev.c    |   4 +-
->  drivers/sbus/char/oradax.c                  |   2 +-
->  drivers/scsi/st.c                           |   3 +-
->  drivers/staging/gasket/gasket_page_table.c  |   4 +-
->  drivers/tee/tee_shm.c                       |   2 +-
->  drivers/vfio/vfio_iommu_spapr_tce.c         |   3 +-
->  drivers/vfio/vfio_iommu_type1.c             |   3 +-
->  drivers/vhost/vhost.c                       |   2 +-
->  drivers/video/fbdev/pvr2fb.c                |   2 +-
->  drivers/virt/fsl_hypervisor.c               |   2 +-
->  drivers/xen/gntdev.c                        |   2 +-
->  fs/orangefs/orangefs-bufmap.c               |   2 +-
->  include/linux/mm.h                          |  17 +-
->  kernel/futex.c                              |   2 +-
->  lib/iov_iter.c                              |   7 +-
->  mm/gup.c                                    | 220 ++++++++++++--------
->  mm/gup_benchmark.c                          |   5 +-
->  mm/util.c                                   |   8 +-
->  net/ceph/pagevec.c                          |   2 +-
->  net/rds/info.c                              |   2 +-
->  net/rds/rdma.c                              |   3 +-
->  44 files changed, 232 insertions(+), 180 deletions(-)
-> 
-> -- 
-> 2.20.1
-> 
+Prior to that commit, there was only one path to descend into
+arch/sh/boot/dts/, and arch/sh/Makefile correctly guards it with
+CONFIG_USE_BUILTIN_DTB:
+
+  core-$(CONFIG_USE_BUILTIN_DTB)  += arch/sh/boot/dts/
+
+Now, there is another path to descend there from the top Makefile
+when CONFIG_OF_EARLY_FLATTREE=y. If CONFIG_USE_BUILTIN_DTB is disabled,
+CONFIG_BUILTIN_DTB_SOURCE is invisible instead of defined as "".
+
+Add obj-$(CONFIG_USE_BUILTIN_DTB) guard to avoid the attempt to build
+the non-existing file.
+
+Fixes: 37c8a5fafa3b ("kbuild: consolidate Devicetree dtb build rules")
+Reported-by: kbuild test robot <lkp@intel.com>
+Signed-off-by: Masahiro Yamada <yamada.masahiro@socionext.com>
+---
+
+Observant reviewers may point out another problem.
+There is a race condition when CONFIG_OF_EARLY_FLATTREE=y.
+
+Some architectures (sh, xtensa, etc.) embed a DTB in vmlinux,
+so there are two paths to descend into arch/*/boot/dts/.
+For parallel build with -j<N> option, two threads may build
+under arch/*/boot/dts/ simultaneously.
+
+Yes, this is a problem, and it is in my TODO list.
+For some reasons, I will postpone it by the next development cycle.
+
+For now, I want to fix this sh build error first because kbuild test
+robot is still complaining about it.
+
+
+Changes in v2:
+  - Change the subject a bit because the cause of the error is different
+
+ arch/sh/boot/dts/Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/sh/boot/dts/Makefile b/arch/sh/boot/dts/Makefile
+index 01d0f7f..2563d1e 100644
+--- a/arch/sh/boot/dts/Makefile
++++ b/arch/sh/boot/dts/Makefile
+@@ -1,3 +1,3 @@
+ ifneq ($(CONFIG_BUILTIN_DTB_SOURCE),"")
+-obj-y += $(patsubst "%",%,$(CONFIG_BUILTIN_DTB_SOURCE)).dtb.o
++obj-$(CONFIG_USE_BUILTIN_DTB) += $(patsubst "%",%,$(CONFIG_BUILTIN_DTB_SOURCE)).dtb.o
+ endif
+-- 
+2.7.4
