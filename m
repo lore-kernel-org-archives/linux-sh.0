@@ -1,88 +1,68 @@
-From: Will Deacon <will.deacon@arm.com>
-Date: Wed, 20 Feb 2019 14:47:17 +0000
-Subject: Re: [PATCH v4 1/3] locking/rwsem: Remove arch specific rwsem files
-Message-Id: <20190220144717.GI7523@fuggles.cambridge.arm.com>
+From: Masahiro Yamada <yamada.masahiro@socionext.com>
+Date: Mon, 04 Feb 2019 08:55:26 +0000
+Subject: [PATCH] sh: fix build error for empty CONFIG_BUILTIN_DTB_SOURCE again
+Message-Id: <1549270526-17230-1-git-send-email-yamada.masahiro@socionext.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1550095217-12047-1-git-send-email-longman@redhat.com>
- <1550095217-12047-2-git-send-email-longman@redhat.com>
-In-Reply-To: <1550095217-12047-2-git-send-email-longman@redhat.com>
+References: <1519060182-1746-1-git-send-email-yamada.masahiro@socionext.com>
+In-Reply-To: <1519060182-1746-1-git-send-email-yamada.masahiro@socionext.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Waiman Long <longman@redhat.com>
-Cc: linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, linux-mips@vger.kernel.org, "H. Peter Anvin" <hpa@zytor.com>, sparclinux@vger.kernel.org, linux-riscv@lists.infradead.org, linux-arch@vger.kernel.org, linux-s390@vger.kernel.org, Davidlohr Bueso <dave@stgolabs.net>, linux-c6x-dev@linux-c6x.org, linux-hexagon@vger.kernel.org, x86@kernel.org, Ingo Molnar <mingo@redhat.com>, uclinux-h8-devel@lists.sourceforge.jp, linux-xtensa@linux-xtensa.org, Arnd Bergmann <arnd@arndb.de>, linux-um@lists.infradead.org, linux-m68k@lists.linux-m68k.org, openrisc@lists.librecores.org, Borislav Petkov <bp@alien8.de>, Thomas Gleixner <tglx@linutronix.de>, linux-arm-kernel@lists.infradead.org, Tim Chen <tim.c.chen@linux.intel.com>, linux-parisc@vger.kernel.org, Linus Torvalds <torvalds@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-alpha@vger
+To: linux-kbuild@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Rob Herring <robh+dt@kernel.org>, Masahiro Yamada <yamada.masahiro@socionext.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-kernel@vger.kernel.org, Rich Felker <dalias@libc.org>, Mark Rutland <mark.rutland@arm.com>
 
-On Wed, Feb 13, 2019 at 05:00:15PM -0500, Waiman Long wrote:
-> As the generic rwsem-xadd code is using the appropriate acquire and
-> release versions of the atomic operations, the arch specific rwsem.h
-> files will not be that much faster than the generic code as long as the
-> atomic functions are properly implemented. So we can remove those arch
-> specific rwsem.h and stop building asm/rwsem.h to reduce maintenance
-> effort.
-> 
-> Currently, only x86, alpha and ia64 have implemented architecture
-> specific fast paths. I don't have access to alpha and ia64 systems for
-> testing, but they are legacy systems that are not likely to be updated
-> to the latest kernel anyway.
-> 
-> By using a rwsem microbenchmark, the total locking rates on a 4-socket
-> 56-core 112-thread x86-64 system before and after the patch were as
-> follows (mixed means equal # of read and write locks):
-> 
->                       Before Patch              After Patch
->    # of Threads  wlock   rlock   mixed     wlock   rlock   mixed
->    ------------  -----   -----   -----     -----   -----   -----
->         1        29,201  30,143  29,458    28,615  30,172  29,201
->         2         6,807  13,299   1,171     7,725  15,025   1,804
->         4         6,504  12,755   1,520     7,127  14,286   1,345
->         8         6,762  13,412     764     6,826  13,652     726
->        16         6,693  15,408     662     6,599  15,938     626
->        32         6,145  15,286     496     5,549  15,487     511
->        64         5,812  15,495      60     5,858  15,572      60
-> 
-> There were some run-to-run variations for the multi-thread tests. For
-> x86-64, using the generic C code fast path seems to be a little bit
-> faster than the assembly version with low lock contention.  Looking at
-> the assembly version of the fast paths, there are assembly to/from C
-> code wrappers that save and restore all the callee-clobbered registers
-> (7 registers on x86-64). The assembly generated from the generic C
-> code doesn't need to do that. That may explain the slight performance
-> gain here.
-> 
-> The generic asm rwsem.h can also be merged into kernel/locking/rwsem.h
-> with no code change as no other code other than those under
-> kernel/locking needs to access the internal rwsem macros and functions.
-> 
-> Signed-off-by: Waiman Long <longman@redhat.com>
-> ---
->  MAINTAINERS                     |   1 -
->  arch/alpha/include/asm/rwsem.h  | 211 -----------------------------------
->  arch/arm/include/asm/Kbuild     |   1 -
->  arch/arm64/include/asm/Kbuild   |   1 -
->  arch/hexagon/include/asm/Kbuild |   1 -
->  arch/ia64/include/asm/rwsem.h   | 172 -----------------------------
->  arch/powerpc/include/asm/Kbuild |   1 -
->  arch/s390/include/asm/Kbuild    |   1 -
->  arch/sh/include/asm/Kbuild      |   1 -
->  arch/sparc/include/asm/Kbuild   |   1 -
->  arch/x86/include/asm/rwsem.h    | 237 ----------------------------------------
->  arch/x86/lib/Makefile           |   1 -
->  arch/x86/lib/rwsem.S            | 156 --------------------------
->  arch/x86/um/Makefile            |   1 -
->  arch/xtensa/include/asm/Kbuild  |   1 -
->  include/asm-generic/rwsem.h     | 140 ------------------------
->  include/linux/rwsem.h           |   4 +-
->  kernel/locking/percpu-rwsem.c   |   2 +
->  kernel/locking/rwsem.h          | 130 ++++++++++++++++++++++
->  19 files changed, 133 insertions(+), 930 deletions(-)
->  delete mode 100644 arch/alpha/include/asm/rwsem.h
->  delete mode 100644 arch/ia64/include/asm/rwsem.h
->  delete mode 100644 arch/x86/include/asm/rwsem.h
->  delete mode 100644 arch/x86/lib/rwsem.S
->  delete mode 100644 include/asm-generic/rwsem.h
+I fixed this build error in commit 1b1e4ee86e00 ("sh: fix build error
+for empty CONFIG_BUILTIN_DTB_SOURCE"), but it came back again.
 
-Looks like a nice cleanup, thanks:
+Since commit 37c8a5fafa3b ("kbuild: consolidate Devicetree dtb
+build rules"), the combination of CONFIG_OF_EARLY_FLATTREE=y and
+CONFIG_USE_BUILTIN_DTB=n results in the following build error:
 
-Acked-by: Will Deacon <will.deacon@arm.com>
+make[1]: *** No rule to make target 'arch/sh/boot/dts/.dtb.o', needed by 'arch/sh/boot/dts/built-in.a'.  Stop.
+make: *** [Makefile;1727: arch/sh/boot/dts/] Error 2
 
-Will
+Prior to that commit, there was only one path to descend into
+arch/sh/boot/dts/, and arch/sh/Makefile correctly guards it with
+CONFIG_USE_BUILTIN_DTB:
+
+  core-$(CONFIG_USE_BUILTIN_DTB)  += arch/sh/boot/dts/
+
+Now, there is another path to descend there from the top Makefile
+when CONFIG_OF_EARLY_FLATTREE=y. Add obj-$(CONFIG_USE_BUILTIN_DTB)
+guard in case CONFIG_BUILTIN_DTB_SOURCE is hidden due to the unmet
+'depends on'.
+
+Fixes: 37c8a5fafa3b ("kbuild: consolidate Devicetree dtb build rules")
+Reported-by: kbuild test robot <lkp@intel.com>
+Signed-off-by: Masahiro Yamada <yamada.masahiro@socionext.com>
+---
+
+Observant reviewers may point out another problem.
+There is a race condition when CONFIG_OF_EARLY_FLATTREE=y.
+
+Some architectures (sh, xtensa, etc.) embed a DTB in vmlinux,
+so there are two paths to descend into arch/*/boot/dts/.
+For parallel build with -j<N> option, two threads may build
+under arch/*/boot/dts/ simultaneously.
+
+Yes, this is a problem, and it is in my TODO list.
+For some reasons, I will postpone it by the next development cycle.
+
+For now, I want to fix this sh build error first because kbuild test
+robot is still complaining about it.
+
+
+ arch/sh/boot/dts/Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/sh/boot/dts/Makefile b/arch/sh/boot/dts/Makefile
+index 01d0f7f..2563d1e 100644
+--- a/arch/sh/boot/dts/Makefile
++++ b/arch/sh/boot/dts/Makefile
+@@ -1,3 +1,3 @@
+ ifneq ($(CONFIG_BUILTIN_DTB_SOURCE),"")
+-obj-y += $(patsubst "%",%,$(CONFIG_BUILTIN_DTB_SOURCE)).dtb.o
++obj-$(CONFIG_USE_BUILTIN_DTB) += $(patsubst "%",%,$(CONFIG_BUILTIN_DTB_SOURCE)).dtb.o
+ endif
+-- 
+2.7.4
