@@ -1,74 +1,99 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 05 Feb 2019 08:06:44 +0000
-Subject: Re: [alsa-devel] [PATCH] ALSA: hda/ca0132: need CONFIG_PCI for compile
-Message-Id: <875ztyk6u1.wl-kuninori.morimoto.gx@renesas.com>
+From: Waiman Long <longman@redhat.com>
+Date: Thu, 07 Feb 2019 19:07:21 +0000
+Subject: [PATCH-tip 17/22] locking/rwsem: Recheck owner if it is not on cpu
+Message-Id: <1549566446-27967-18-git-send-email-longman@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <877eeeka1n.wl-kuninori.morimoto.gx@renesas.com>
- <s5hzhraeko4.wl-tiwai@suse.de>
-In-Reply-To: <s5hzhraeko4.wl-tiwai@suse.de>
+References: <1549566446-27967-1-git-send-email-longman@redhat.com>
+In-Reply-To: <1549566446-27967-1-git-send-email-longman@redhat.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Takashi Iwai <tiwai@suse.de>, Linux-SH <linux-sh@vger.kernel.org>, Linux-Renesas <linux-renesas-soc@vger.kernel.org>
-Cc: Linux-ALSA <alsa-devel@alsa-project.org>, Takashi Iwai <tiwai@suse.com>
+Content-Type: text/plain; charset="windows-1252"
+Content-Transfer-Encoding: quoted-printable
+To: Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@redhat.com>, Will Deacon <will.deacon@arm.com>, Thomas Gleixner <tglx@linutronix.de>
+Cc: linux-kernel@vger.kernel.org, linux-alpha@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-arch@vger.kernel.org, x86@kernel.org, Arnd Bergmann <arnd@arndb.de>, Borislav Petkov <bp@alien8.de>, "H. Peter Anvin" <hpa@zytor.com>, Davidlohr Bueso <dave@stgolabs.net>, Linus Torvalds <torvalds@linux-foundation.org>, Andrew Morton <akpm@linux-foundation.org>, Tim Chen <tim.c.chen@linux.intel.com>, Waiman Long <longman@redhat.com>
 
+After merging the owner value directly into the count field, it was
+found that the number of failed optimistic spinning operations increased
+significantly during the boot up process.
 
-Forward to Renesas / SH ML
+The cause of this increased failures was tracked down to the condition
+that a lock holder might have just released the lock and gone to sleep
+right after its owner value was fetched by a spinner. So the task might
+have slept, but it was no longer the lock holder. The merging of owner
+into count increases the chance this condition can happen.
 
-arch/sh need to be fixed pci_iounmap()
+To close this failure mode, we are now rechecking the owner value again
+to see if it has been changed in case it is not on cpu.
 
-> > From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> > 
-> > commit d99501b8575d ("ALSA: hda/ca0132 - Call pci_iounmap() instead of
-> > iounmap()") started to use pci_iounmap() on ca0132, but then, it should
-> > be depends on CONFIG_PCI.
-> > Otherwise, non CONFIG_PCI compile will be failed, like below
-> > 
-> > 	linux/sound/pci/hda/patch_ca0132.c: In function 'ca0132_free':
-> > 	linux/sound/pci/hda/patch_ca0132.c:8455:3: error: implicit\
-> > 		declaration of function 'pci_iounmap'; did you mean\
-> > 		'pcim_iounmap'? [-Werror=implicit-function-declaration]
-> > 	pci_iounmap(codec->bus->pci, spec->mem_base);
-> > 	^~~~~~~~~~~
-> 
-> No, the driver doesn't depend on PCI, it can be built and work fine
-> without it, too.  The only problem is the broken pci_iounmap()
-> implementation in sh.
-> 
-> We have added CONFIG_PCI check but obviously this isn't effective.
-> It needs to be an explicit #ifdef, instead.  Will fix it.
-> 
-> Ideally it should be fixed in arch/sh side.  I tried to fix it, but it
-> turned out to be much deeper than I thought, so I gave up scratching
-> it for now.
-> 
-> 
-> thanks,
-> 
-> Takashi
-> 
-> > Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> > ---
-> >  sound/pci/hda/Kconfig | 1 +
-> >  1 file changed, 1 insertion(+)
-> > 
-> > diff --git a/sound/pci/hda/Kconfig b/sound/pci/hda/Kconfig
-> > index 4235907..03af159 100644
-> > --- a/sound/pci/hda/Kconfig
-> > +++ b/sound/pci/hda/Kconfig
-> > @@ -171,6 +171,7 @@ comment "Set to Y if you want auto-loading the codec driver"
-> >  
-> >  config SND_HDA_CODEC_CA0132
-> >  	tristate "Build Creative CA0132 codec support"
-> > +	depends on CONFIG_PCI
-> >  	help
-> >  	  Say Y or M here to include Creative CA0132 codec support in
-> >  	  snd-hda-intel driver.
-> > -- 
-> > 2.7.4
-> > 
-> > _______________________________________________
-> > Alsa-devel mailing list
-> > Alsa-devel@alsa-project.org
-> > http://mailman.alsa-project.org/mailman/listinfo/alsa-devel
-> > 
+On a 1-socket x86-64 system, the lock event counts before the patch
+were:
+
+  rwsem_opt_failX47
+  rwsem_opt_wlockx80
+  rwsem_wlockX47
+
+After the patch, the counts were:
+
+  rwsem_opt_fail"5
+  rwsem_opt_wlock=8541
+  rwsem_wlock"5
+
+Signed-off-by: Waiman Long <longman@redhat.com>
+---
+ kernel/locking/rwsem-xadd.c | 20 ++++++++++++++++----
+ 1 file changed, 16 insertions(+), 4 deletions(-)
+
+diff --git a/kernel/locking/rwsem-xadd.c b/kernel/locking/rwsem-xadd.c
+index 16dc7a1..21d462f 100644
+--- a/kernel/locking/rwsem-xadd.c
++++ b/kernel/locking/rwsem-xadd.c
+@@ -263,13 +263,25 @@ static inline bool rwsem_try_write_lock_unqueued(stru=
+ct rw_semaphore *sem,
+ 	}
+ }
+=20
+-static inline bool owner_on_cpu(struct task_struct *owner)
++static inline bool owner_on_cpu(struct task_struct *owner,
++				struct rw_semaphore *sem)
+ {
+ 	/*
+ 	 * As lock holder preemption issue, we both skip spinning if
+ 	 * task is not on cpu or its cpu is preempted
+ 	 */
+-	return owner->on_cpu && !vcpu_is_preempted(task_cpu(owner));
++	bool oncpu =3D owner->on_cpu && !vcpu_is_preempted(task_cpu(owner));
++
++	/*
++	 * There is a slight chance that the lock holder might have
++	 * just release the rwsem and gone to sleep right after we
++	 * fetched the owner value. So we double-check the sem->owner
++	 * field again to see if it has been changed. The sem->owner
++	 * would have been cleared right before the lock was released.
++	 */
++	if (!oncpu && (READ_ONCE(sem->owner) !=3D owner))
++		return true;	/* Assume the new owner is on cpu */
++	return oncpu;
+ }
+=20
+ static inline bool rwsem_can_spin_on_owner(struct rw_semaphore *sem)
+@@ -286,7 +298,7 @@ static inline bool rwsem_can_spin_on_owner(struct rw_se=
+maphore *sem)
+ 	owner =3D rwsem_get_owner(sem);
+ 	if (owner) {
+ 		ret =3D is_rwsem_owner_spinnable(owner) &&
+-		      owner_on_cpu(owner);
++		      owner_on_cpu(owner, sem);
+ 	}
+ 	rcu_read_unlock();
+ 	return ret;
+@@ -323,7 +335,7 @@ static noinline bool rwsem_spin_on_owner(struct rw_sema=
+phore *sem)
+ 		 * abort spinning when need_resched or owner is not running or
+ 		 * owner's cpu is preempted.
+ 		 */
+-		if (need_resched() || !owner_on_cpu(owner)) {
++		if (need_resched() || !owner_on_cpu(owner, sem)) {
+ 			rcu_read_unlock();
+ 			return false;
+ 		}
+--=20
+1.8.3.1
