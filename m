@@ -1,113 +1,215 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Mon, 11 Feb 2019 13:35:50 +0000
-Subject: [PATCH 08/12] dma-mapping: remove dma_mark_declared_memory_occupied
-Message-Id: <20190211133554.30055-9-hch@lst.de>
+From: Waiman Long <longman@redhat.com>
+Date: Thu, 07 Feb 2019 19:07:07 +0000
+Subject: [PATCH-tip 03/22] locking/rwsem: Relocate rwsem_down_read_failed()
+Message-Id: <1549566446-27967-4-git-send-email-longman@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190211133554.30055-1-hch@lst.de>
-In-Reply-To: <20190211133554.30055-1-hch@lst.de>
+References: <1549566446-27967-1-git-send-email-longman@redhat.com>
+In-Reply-To: <1549566446-27967-1-git-send-email-longman@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: iommu@lists.linux-foundation.org
-Cc: linux-xtensa@linux-xtensa.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, x86@kernel.org, linux-mips@vger.kernel.org, linux-kernel@vger.kernel.org, devicetree@vger.kernel.org, linux-riscv@lists.infradead.org, linux-snps-arc@lists.infradead.org, Lee Jones <lee.jones@linaro.org>, linux-arm-kernel@lists.infradead.org
+To: Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@redhat.com>, Will Deacon <will.deacon@arm.com>, Thomas Gleixner <tglx@linutronix.de>
+Cc: linux-kernel@vger.kernel.org, linux-alpha@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-arch@vger.kernel.org, x86@kernel.org, Arnd Bergmann <arnd@arndb.de>, Borislav Petkov <bp@alien8.de>, "H. Peter Anvin" <hpa@zytor.com>, Davidlohr Bueso <dave@stgolabs.net>, Linus Torvalds <torvalds@linux-foundation.org>, Andrew Morton <akpm@linux-foundation.org>, Tim Chen <tim.c.chen@linux.intel.com>, Waiman Long <longman@redhat.com>
 
-This API is not used anywhere, so remove it.
+The rwsem_down_read_failed*() functions were relocted from above the
+optimistic spinning section to below that section. This enables the
+reader functions to use optimisitic spinning in future patches. There
+is no code change.
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
+Signed-off-by: Waiman Long <longman@redhat.com>
 ---
- Documentation/DMA-API.txt   | 17 -----------------
- include/linux/dma-mapping.h |  9 ---------
- kernel/dma/coherent.c       | 23 -----------------------
- 3 files changed, 49 deletions(-)
+ kernel/locking/rwsem-xadd.c | 172 ++++++++++++++++++++++----------------------
+ 1 file changed, 86 insertions(+), 86 deletions(-)
 
-diff --git a/Documentation/DMA-API.txt b/Documentation/DMA-API.txt
-index 78114ee63057..b9d0cba83877 100644
---- a/Documentation/DMA-API.txt
-+++ b/Documentation/DMA-API.txt
-@@ -605,23 +605,6 @@ unconditionally having removed all the required structures.  It is the
- driver's job to ensure that no parts of this memory region are
- currently in use.
- 
--::
--
--	void *
--	dma_mark_declared_memory_occupied(struct device *dev,
--					  dma_addr_t device_addr, size_t size)
--
--This is used to occupy specific regions of the declared space
--(dma_alloc_coherent() will hand out the first free region it finds).
--
--device_addr is the *device* address of the region requested.
--
--size is the size (and should be a page-sized multiple).
--
--The return value will be either a pointer to the processor virtual
--address of the memory, or an error (via PTR_ERR()) if any part of the
--region is occupied.
--
- Part III - Debug drivers use of the DMA-API
- -------------------------------------------
- 
-diff --git a/include/linux/dma-mapping.h b/include/linux/dma-mapping.h
-index fde0cfc71824..9df0f4d318c5 100644
---- a/include/linux/dma-mapping.h
-+++ b/include/linux/dma-mapping.h
-@@ -735,8 +735,6 @@ static inline int dma_get_cache_alignment(void)
- int dma_declare_coherent_memory(struct device *dev, phys_addr_t phys_addr,
- 				dma_addr_t device_addr, size_t size, int flags);
- void dma_release_declared_memory(struct device *dev);
--void *dma_mark_declared_memory_occupied(struct device *dev,
--					dma_addr_t device_addr, size_t size);
- #else
- static inline int
- dma_declare_coherent_memory(struct device *dev, phys_addr_t phys_addr,
-@@ -749,13 +747,6 @@ static inline void
- dma_release_declared_memory(struct device *dev)
- {
+diff --git a/kernel/locking/rwsem-xadd.c b/kernel/locking/rwsem-xadd.c
+index fbe9634..0d518b5 100644
+--- a/kernel/locking/rwsem-xadd.c
++++ b/kernel/locking/rwsem-xadd.c
+@@ -225,92 +225,6 @@ static void __rwsem_mark_wake(struct rw_semaphore *sem,
  }
--
--static inline void *
--dma_mark_declared_memory_occupied(struct device *dev,
--				  dma_addr_t device_addr, size_t size)
--{
--	return ERR_PTR(-EBUSY);
--}
- #endif /* CONFIG_DMA_DECLARE_COHERENT */
  
- static inline void *dmam_alloc_coherent(struct device *dev, size_t size,
-diff --git a/kernel/dma/coherent.c b/kernel/dma/coherent.c
-index 4b76aba574c2..1d12a31af6d7 100644
---- a/kernel/dma/coherent.c
-+++ b/kernel/dma/coherent.c
-@@ -137,29 +137,6 @@ void dma_release_declared_memory(struct device *dev)
- }
- EXPORT_SYMBOL(dma_release_declared_memory);
- 
--void *dma_mark_declared_memory_occupied(struct device *dev,
--					dma_addr_t device_addr, size_t size)
+ /*
+- * Wait for the read lock to be granted
+- */
+-static inline struct rw_semaphore __sched *
+-__rwsem_down_read_failed_common(struct rw_semaphore *sem, int state)
 -{
--	struct dma_coherent_mem *mem = dev->dma_mem;
--	unsigned long flags;
--	int pos, err;
+-	long count, adjustment = -RWSEM_ACTIVE_READ_BIAS;
+-	struct rwsem_waiter waiter;
+-	DEFINE_WAKE_Q(wake_q);
 -
--	size += device_addr & ~PAGE_MASK;
+-	waiter.task = current;
+-	waiter.type = RWSEM_WAITING_FOR_READ;
 -
--	if (!mem)
--		return ERR_PTR(-EINVAL);
+-	raw_spin_lock_irq(&sem->wait_lock);
+-	if (list_empty(&sem->wait_list)) {
+-		/*
+-		 * In case the wait queue is empty and the lock isn't owned
+-		 * by a writer, this reader can exit the slowpath and return
+-		 * immediately as its RWSEM_ACTIVE_READ_BIAS has already
+-		 * been set in the count.
+-		 */
+-		if (atomic_long_read(&sem->count) >= 0) {
+-			raw_spin_unlock_irq(&sem->wait_lock);
+-			return sem;
+-		}
+-		adjustment += RWSEM_WAITING_BIAS;
+-	}
+-	list_add_tail(&waiter.list, &sem->wait_list);
 -
--	spin_lock_irqsave(&mem->spinlock, flags);
--	pos = PFN_DOWN(device_addr - dma_get_device_base(dev, mem));
--	err = bitmap_allocate_region(mem->bitmap, pos, get_order(size));
--	spin_unlock_irqrestore(&mem->spinlock, flags);
+-	/* we're now waiting on the lock, but no longer actively locking */
+-	count = atomic_long_add_return(adjustment, &sem->count);
 -
--	if (err != 0)
--		return ERR_PTR(err);
--	return mem->virt_base + (pos << PAGE_SHIFT);
+-	/*
+-	 * If there are no active locks, wake the front queued process(es).
+-	 *
+-	 * If there are no writers and we are first in the queue,
+-	 * wake our own waiter to join the existing active readers !
+-	 */
+-	if (count = RWSEM_WAITING_BIAS ||
+-	    (count > RWSEM_WAITING_BIAS &&
+-	     adjustment != -RWSEM_ACTIVE_READ_BIAS))
+-		__rwsem_mark_wake(sem, RWSEM_WAKE_ANY, &wake_q);
+-
+-	raw_spin_unlock_irq(&sem->wait_lock);
+-	wake_up_q(&wake_q);
+-
+-	/* wait to be given the lock */
+-	while (true) {
+-		set_current_state(state);
+-		if (!waiter.task)
+-			break;
+-		if (signal_pending_state(state, current)) {
+-			raw_spin_lock_irq(&sem->wait_lock);
+-			if (waiter.task)
+-				goto out_nolock;
+-			raw_spin_unlock_irq(&sem->wait_lock);
+-			break;
+-		}
+-		schedule();
+-	}
+-
+-	__set_current_state(TASK_RUNNING);
+-	return sem;
+-out_nolock:
+-	list_del(&waiter.list);
+-	if (list_empty(&sem->wait_list))
+-		atomic_long_add(-RWSEM_WAITING_BIAS, &sem->count);
+-	raw_spin_unlock_irq(&sem->wait_lock);
+-	__set_current_state(TASK_RUNNING);
+-	return ERR_PTR(-EINTR);
 -}
--EXPORT_SYMBOL(dma_mark_declared_memory_occupied);
 -
- static void *__dma_alloc_from_coherent(struct dma_coherent_mem *mem,
- 		ssize_t size, dma_addr_t *dma_handle)
- {
+-__visible struct rw_semaphore * __sched
+-rwsem_down_read_failed(struct rw_semaphore *sem)
+-{
+-	return __rwsem_down_read_failed_common(sem, TASK_UNINTERRUPTIBLE);
+-}
+-EXPORT_SYMBOL(rwsem_down_read_failed);
+-
+-__visible struct rw_semaphore * __sched
+-rwsem_down_read_failed_killable(struct rw_semaphore *sem)
+-{
+-	return __rwsem_down_read_failed_common(sem, TASK_KILLABLE);
+-}
+-EXPORT_SYMBOL(rwsem_down_read_failed_killable);
+-
+-/*
+  * This function must be called with the sem->wait_lock held to prevent
+  * race conditions between checking the rwsem wait list and setting the
+  * sem->count accordingly.
+@@ -505,6 +419,92 @@ static inline bool rwsem_has_spinner(struct rw_semaphore *sem)
+ #endif
+ 
+ /*
++ * Wait for the read lock to be granted
++ */
++static inline struct rw_semaphore __sched *
++__rwsem_down_read_failed_common(struct rw_semaphore *sem, int state)
++{
++	long count, adjustment = -RWSEM_ACTIVE_READ_BIAS;
++	struct rwsem_waiter waiter;
++	DEFINE_WAKE_Q(wake_q);
++
++	waiter.task = current;
++	waiter.type = RWSEM_WAITING_FOR_READ;
++
++	raw_spin_lock_irq(&sem->wait_lock);
++	if (list_empty(&sem->wait_list)) {
++		/*
++		 * In case the wait queue is empty and the lock isn't owned
++		 * by a writer, this reader can exit the slowpath and return
++		 * immediately as its RWSEM_ACTIVE_READ_BIAS has already
++		 * been set in the count.
++		 */
++		if (atomic_long_read(&sem->count) >= 0) {
++			raw_spin_unlock_irq(&sem->wait_lock);
++			return sem;
++		}
++		adjustment += RWSEM_WAITING_BIAS;
++	}
++	list_add_tail(&waiter.list, &sem->wait_list);
++
++	/* we're now waiting on the lock, but no longer actively locking */
++	count = atomic_long_add_return(adjustment, &sem->count);
++
++	/*
++	 * If there are no active locks, wake the front queued process(es).
++	 *
++	 * If there are no writers and we are first in the queue,
++	 * wake our own waiter to join the existing active readers !
++	 */
++	if (count = RWSEM_WAITING_BIAS ||
++	    (count > RWSEM_WAITING_BIAS &&
++	     adjustment != -RWSEM_ACTIVE_READ_BIAS))
++		__rwsem_mark_wake(sem, RWSEM_WAKE_ANY, &wake_q);
++
++	raw_spin_unlock_irq(&sem->wait_lock);
++	wake_up_q(&wake_q);
++
++	/* wait to be given the lock */
++	while (true) {
++		set_current_state(state);
++		if (!waiter.task)
++			break;
++		if (signal_pending_state(state, current)) {
++			raw_spin_lock_irq(&sem->wait_lock);
++			if (waiter.task)
++				goto out_nolock;
++			raw_spin_unlock_irq(&sem->wait_lock);
++			break;
++		}
++		schedule();
++	}
++
++	__set_current_state(TASK_RUNNING);
++	return sem;
++out_nolock:
++	list_del(&waiter.list);
++	if (list_empty(&sem->wait_list))
++		atomic_long_add(-RWSEM_WAITING_BIAS, &sem->count);
++	raw_spin_unlock_irq(&sem->wait_lock);
++	__set_current_state(TASK_RUNNING);
++	return ERR_PTR(-EINTR);
++}
++
++__visible struct rw_semaphore * __sched
++rwsem_down_read_failed(struct rw_semaphore *sem)
++{
++	return __rwsem_down_read_failed_common(sem, TASK_UNINTERRUPTIBLE);
++}
++EXPORT_SYMBOL(rwsem_down_read_failed);
++
++__visible struct rw_semaphore * __sched
++rwsem_down_read_failed_killable(struct rw_semaphore *sem)
++{
++	return __rwsem_down_read_failed_common(sem, TASK_KILLABLE);
++}
++EXPORT_SYMBOL(rwsem_down_read_failed_killable);
++
++/*
+  * Wait until we successfully acquire the write lock
+  */
+ static inline struct rw_semaphore *
 -- 
-2.20.1
+1.8.3.1
