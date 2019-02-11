@@ -1,44 +1,102 @@
-From: ira.weiny@intel.com
-Date: Wed, 13 Feb 2019 23:04:53 +0000
-Subject: [PATCH V2 5/7] IB/hfi1: Use the new FOLL_LONGTERM flag to get_user_pages_fast()
-Message-Id: <20190213230455.5605-6-ira.weiny@intel.com>
+From: Christoph Hellwig <hch@lst.de>
+Date: Mon, 11 Feb 2019 13:35:54 +0000
+Subject: [PATCH 12/12] dma-mapping: remove dma_assign_coherent_memory
+Message-Id: <20190211133554.30055-13-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190211201643.7599-1-ira.weiny@intel.com>
- <20190213230455.5605-1-ira.weiny@intel.com>
-In-Reply-To: <20190213230455.5605-1-ira.weiny@intel.com>
+References: <20190211133554.30055-1-hch@lst.de>
+In-Reply-To: <20190211133554.30055-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mips@vger.kernel.org, linux-kernel@vger.kernel.org, kvm-ppc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, kvm@vger.kernel.org, linux-fpga@vger.kernel.org, dri-devel@lists.freedesktop.org, linux-rdma@vger.kernel.org, linux-media@vger.kernel.org, linux-scsi@vger.kernel.org, devel@driverdev.osuosl.org, virtualization@lists.linux-foundation.org, netdev@vger.kernel.org, linux-fbdev@vger.kernel.org, xen-devel@lists.xenproject.org, devel@lists.orangefs.org, linux-mm@kvack.org, ceph-devel@vger.kernel.org, rds-devel@oss.oracle.com
-Cc: Martin Brandenburg <martin@omnibond.com>, Rich Felker <dalias@libc.org>, David Hildenbrand <david@redhat.com>, David Airlie <airlied@linux.ie>, Jason Wang <jasowang@redhat.com>, =?UTF-8?q?Kai=20M=C3=A4kisara?= <Kai.Makisara@kolumbus.fi>, Michal Hocko <mhocko@suse.com>, Ira Weiny <ira.weiny@intel.com>, Ben Chan <benchan@chromium.org>, Rob Springer <rspringer@google.com>, Todd Poynor <toddpoynor@google.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, "Michael S. Tsirkin" <mst@redhat.com>, Jason Gunthorpe <jgg@ziepe.ca>, Ingo Molnar <mingo@redhat.com>, Matt Porter <mporter@kernel.crashing.org>, Wu Hao <hao.wu@intel.com>, Alan Tull <atull@kernel.org>, John Hubbard <jhubbard@nvidia.com>, "James E.J. Bottomley" <jejb@linux.ibm.com>, Alex Williamson <alex.williamson@redhat.com>, Stefano Stabellini <sstabellini@kernel.org>, Borislav Petkov <bp@alien8.de>
+To: iommu@lists.linux-foundation.org
+Cc: linux-xtensa@linux-xtensa.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, x86@kernel.org, linux-mips@vger.kernel.org, linux-kernel@vger.kernel.org, devicetree@vger.kernel.org, linux-riscv@lists.infradead.org, linux-snps-arc@lists.infradead.org, Lee Jones <lee.jones@linaro.org>, linux-arm-kernel@lists.infradead.org
 
-From: Ira Weiny <ira.weiny@intel.com>
+The only useful bit in this function was the already assigned check.
+Once that is moved to dma_init_coherent_memory thee rest can easily
+be handled in the two callers.
 
-Use the new FOLL_LONGTERM to get_user_pages_fast() to protect against
-FS DAX pages being mapped.
-
-Signed-off-by: Ira Weiny <ira.weiny@intel.com>
+Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- drivers/infiniband/hw/hfi1/user_pages.c | 6 ++++--
- 1 file changed, 4 insertions(+), 2 deletions(-)
+ kernel/dma/coherent.c | 47 +++++++++++++------------------------------
+ 1 file changed, 14 insertions(+), 33 deletions(-)
 
-diff --git a/drivers/infiniband/hw/hfi1/user_pages.c b/drivers/infiniband/hw/hfi1/user_pages.c
-index 78ccacaf97d0..6a7f9cd5a94e 100644
---- a/drivers/infiniband/hw/hfi1/user_pages.c
-+++ b/drivers/infiniband/hw/hfi1/user_pages.c
-@@ -104,9 +104,11 @@ int hfi1_acquire_user_pages(struct mm_struct *mm, unsigned long vaddr, size_t np
- 			    bool writable, struct page **pages)
- {
+diff --git a/kernel/dma/coherent.c b/kernel/dma/coherent.c
+index d7a27008f228..1e3ce71cd993 100644
+--- a/kernel/dma/coherent.c
++++ b/kernel/dma/coherent.c
+@@ -41,6 +41,9 @@ static int dma_init_coherent_memory(phys_addr_t phys_addr,
+ 	int bitmap_size = BITS_TO_LONGS(pages) * sizeof(long);
  	int ret;
-+	unsigned int gup_flags = writable ? FOLL_WRITE : 0;
  
--	ret = get_user_pages_fast(vaddr, npages, writable ? FOLL_WRITE : 0,
--				  pages);
-+	gup_flags |= FOLL_LONGTERM;
++	if (*mem)
++		return -EBUSY;
 +
-+	ret = get_user_pages_fast(vaddr, npages, gup_flags, pages);
- 	if (ret < 0)
- 		return ret;
+ 	if (!size) {
+ 		ret = -EINVAL;
+ 		goto out;
+@@ -88,33 +91,11 @@ static void dma_release_coherent_memory(struct dma_coherent_mem *mem)
+ 	kfree(mem);
+ }
+ 
+-static int dma_assign_coherent_memory(struct device *dev,
+-				      struct dma_coherent_mem *mem)
+-{
+-	if (!dev)
+-		return -ENODEV;
+-
+-	if (dev->dma_mem)
+-		return -EBUSY;
+-
+-	dev->dma_mem = mem;
+-	return 0;
+-}
+-
+ int dma_declare_coherent_memory(struct device *dev, phys_addr_t phys_addr,
+ 				dma_addr_t device_addr, size_t size)
+ {
+-	struct dma_coherent_mem *mem;
+-	int ret;
+-
+-	ret = dma_init_coherent_memory(phys_addr, device_addr, size, &mem);
+-	if (ret)
+-		return ret;
+-
+-	ret = dma_assign_coherent_memory(dev, mem);
+-	if (ret)
+-		dma_release_coherent_memory(mem);
+-	return ret;
++	return dma_init_coherent_memory(phys_addr, device_addr, size,
++					&dev->dma_mem);
+ }
+ EXPORT_SYMBOL(dma_declare_coherent_memory);
+ 
+@@ -238,18 +219,18 @@ static int rmem_dma_device_init(struct reserved_mem *rmem, struct device *dev)
+ 	struct dma_coherent_mem *mem = rmem->priv;
+ 	int ret;
+ 
+-	if (!mem) {
+-		ret = dma_init_coherent_memory(rmem->base, rmem->base,
+-					       rmem->size, &mem);
+-		if (ret) {
+-			pr_err("Reserved memory: failed to init DMA memory pool at %pa, size %ld MiB\n",
+-				&rmem->base, (unsigned long)rmem->size / SZ_1M);
+-			return ret;
+-		}
++	ret = dma_init_coherent_memory(rmem->base, rmem->base, rmem->size,
++			&mem);
++	if (ret && ret != -EBUSY) {
++		pr_err("Reserved memory: failed to init DMA memory pool at %pa, size %ld MiB\n",
++			&rmem->base, (unsigned long)rmem->size / SZ_1M);
++		return ret;
+ 	}
++
+ 	mem->use_dev_dma_pfn_offset = true;
++	if (dev)
++		dev->dma_mem = mem;
+ 	rmem->priv = mem;
+-	dma_assign_coherent_memory(dev, mem);
+ 	return 0;
+ }
  
 -- 
 2.20.1
