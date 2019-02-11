@@ -1,125 +1,371 @@
-From: Waiman Long <longman@redhat.com>
-Date: Thu, 14 Feb 2019 15:22:18 +0000
-Subject: Re: [PATCH-tip 00/22] locking/rwsem: Rework rwsem-xadd & enable new rwsem features
-Message-Id: <9860a0c2-1f24-a00f-fdea-89e55a07c571@redhat.com>
+From: Christoph Hellwig <hch@lst.de>
+Date: Mon, 11 Feb 2019 13:35:51 +0000
+Subject: [PATCH 09/12] dma-mapping: remove the DMA_MEMORY_EXCLUSIVE flag
+Message-Id: <20190211133554.30055-10-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1549566446-27967-1-git-send-email-longman@redhat.com>
- <CAHk-=wjfyrFBjifzmgMVrkrvEePEPaBTDq7D=f2i5kD2E=SqRQ@mail.gmail.com>
- <d7476dfb-1653-747b-b865-5597ba5fc1c1@redhat.com>
- <20190214132352.wm26r5g632swp34n@linux-r8p5>
-In-Reply-To: <20190214132352.wm26r5g632swp34n@linux-r8p5>
+References: <20190211133554.30055-1-hch@lst.de>
+In-Reply-To: <20190211133554.30055-1-hch@lst.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: Davidlohr Bueso <dave@stgolabs.net>
-Cc: Linus Torvalds <torvalds@linux-foundation.org>, Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@redhat.com>, Will Deacon <will.deacon@arm.com>, Thomas Gleixner <tglx@linutronix.de>, Linux List Kernel Mailing <linux-kernel@vger.kernel.org>, linux-alpha@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, Linux-sh list <linux-sh@vger.kernel.org>, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-arch <linux-arch@vger.kernel.org>, the arch/x86 maintainers <x86@kernel.org>, Arnd Bergmann <arnd@arndb.de>, Borislav Petkov <bp@alien8.de>, "H. Peter Anvin" <hpa@zytor.com>, Andrew Morton <akpm@linux-foundation.org>, Tim Chen <tim.c.chen@linux.intel.com>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: iommu@lists.linux-foundation.org
+Cc: linux-xtensa@linux-xtensa.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, x86@kernel.org, linux-mips@vger.kernel.org, linux-kernel@vger.kernel.org, devicetree@vger.kernel.org, linux-riscv@lists.infradead.org, linux-snps-arc@lists.infradead.org, Lee Jones <lee.jones@linaro.org>, linux-arm-kernel@lists.infradead.org
 
-On 02/14/2019 08:23 AM, Davidlohr Bueso wrote:
-> On Fri, 08 Feb 2019, Waiman Long wrote:
->> I am planning to run more performance test and post the data sometimes
->> next week. Davidlohr is also going to run some of his rwsem performance
->> test on this patchset.
->
-> So I ran this series on a 40-core IB 2 socket with various worklods in
-> mmtests. Below are some of the interesting ones; full numbers and curves
-> at https://linux-scalability.org/rwsem-reader-spinner/
->
-> All workloads are with increasing number of threads.
->
-> -- pagefault timings: pft is an artificial pf benchmark (thus reader
-> stress).
-> metric is faults/cpu and faults/sec
->                                       v5.0-rc6                 v5.0-rc6
->                                                                    dirty
-> Hmean     faults/cpu-1    624224.9815 (   0.00%)   618847.5201 *  -0.86%*
-> Hmean     faults/cpu-4    539550.3509 (   0.00%)   547407.5738 *   1.46%*
-> Hmean     faults/cpu-7    401470.3461 (   0.00%)   381157.9830 *  -5.06%*
-> Hmean     faults/cpu-12   267617.0353 (   0.00%)   271098.5441 *   1.30%*
-> Hmean     faults/cpu-21   176194.4641 (   0.00%)   175151.3256 *  -0.59%*
-> Hmean     faults/cpu-30   119927.3862 (   0.00%)   120610.1348 *   0.57%*
-> Hmean     faults/cpu-40    91203.6820 (   0.00%)    91832.7489 *   0.69%*
-> Hmean     faults/sec-1    623292.3467 (   0.00%)   617992.0795 *  -0.85%*
-> Hmean     faults/sec-4   2113364.6898 (   0.00%)  2140254.8238 *   1.27%*
-> Hmean     faults/sec-7   2557378.4385 (   0.00%)  2450945.7060 *  -4.16%*
-> Hmean     faults/sec-12  2696509.8975 (   0.00%)  2747968.9819 *   1.91%*
-> Hmean     faults/sec-21  2902892.5639 (   0.00%)  2905923.3881 *   0.10%*
-> Hmean     faults/sec-30  2956696.5793 (   0.00%)  2990583.5147 *   1.15%*
-> Hmean     faults/sec-40  3422806.4806 (   0.00%)  3352970.3082 *  -2.04%*
-> Stddev    faults/cpu-1      2949.5159 (   0.00%)     2802.2712 (   4.99%)
-> Stddev    faults/cpu-4     24165.9454 (   0.00%)    15841.1232 (  34.45%)
-> Stddev    faults/cpu-7     20914.8351 (   0.00%)    22744.3294 (  -8.75%)
-> Stddev    faults/cpu-12    11274.3490 (   0.00%)    14733.3152 ( -30.68%)
-> Stddev    faults/cpu-21     2500.1950 (   0.00%)     2200.9518 (  11.97%)
-> Stddev    faults/cpu-30     1599.5346 (   0.00%)     1414.0339 (  11.60%)
-> Stddev    faults/cpu-40     1473.0181 (   0.00%)     3004.1209 (-103.94%)
-> Stddev    faults/sec-1      2655.2581 (   0.00%)     2405.1625 (   9.42%)
-> Stddev    faults/sec-4     84042.7234 (   0.00%)    57996.7158 (  30.99%)
-> Stddev    faults/sec-7    123656.7901 (   0.00%)   135591.1087 (  -9.65%)
-> Stddev    faults/sec-12    97135.6091 (   0.00%)   127054.4926 ( -30.80%)
-> Stddev    faults/sec-21    69564.6264 (   0.00%)    65922.6381 (   5.24%)
-> Stddev    faults/sec-30    51524.4027 (   0.00%)    56109.4159 (  -8.90%)
-> Stddev    faults/sec-40   101927.5280 (   0.00%)   160117.0093 ( -57.09%)
->
-> With the exception of the hicup at 7 threads, things are pretty much in
-> the noise region for both metrics.
->
-> -- git checkout
->
-> First metric is total runtime for runs with incremental threads.
->
->           v5.0-rc6    v5.0-rc6
->                          dirty
-> User         218.95      219.07
-> System       149.29      146.82
-> Elapsed     1574.10     1427.08
->
-> In this case there's a non trivial improvement (11%) in overall
-> elapsed time.
->
-> -- reaim (which is always succeptible to rwsem changes for both
-> mmap_sem and
-> i_mmap)
->                                     v5.0-rc6               v5.0-rc6
->                                                                dirty
-> Hmean     compute-1         6674.01 (   0.00%)     6544.28 *  -1.94%*
-> Hmean     compute-21       85294.91 (   0.00%)    85524.20 *   0.27%*
-> Hmean     compute-41      149674.70 (   0.00%)   149494.58 *  -0.12%*
-> Hmean     compute-61      177721.15 (   0.00%)   170507.38 *  -4.06%*
-> Hmean     compute-81      181531.07 (   0.00%)   180463.24 *  -0.59%*
-> Hmean     compute-101     189024.09 (   0.00%)   187288.86 *  -0.92%*
-> Hmean     compute-121     200673.24 (   0.00%)   195327.65 *  -2.66%*
-> Hmean     compute-141     213082.29 (   0.00%)   211290.80 *  -0.84%*
-> Hmean     compute-161     207764.06 (   0.00%)   204626.68 *  -1.51%*
->
-> The 'compute' workload overall takes a small hit.
->
-> Hmean     new_dbase-1         60.48 (   0.00%)       60.63 *   0.25%*
-> Hmean     new_dbase-21      6590.49 (   0.00%)     6671.81 *   1.23%*
-> Hmean     new_dbase-41     14202.91 (   0.00%)    14470.59 *   1.88%*
-> Hmean     new_dbase-61     21207.24 (   0.00%)    21067.40 *  -0.66%*
-> Hmean     new_dbase-81     25542.40 (   0.00%)    25542.40 *   0.00%*
-> Hmean     new_dbase-101    30165.28 (   0.00%)    30046.21 *  -0.39%*
-> Hmean     new_dbase-121    33638.33 (   0.00%)    33219.90 *  -1.24%*
-> Hmean     new_dbase-141    36723.70 (   0.00%)    37504.52 *   2.13%*
-> Hmean     new_dbase-161    42242.51 (   0.00%)    42117.34 *  -0.30%*
-> Hmean     shared-1            76.54 (   0.00%)       76.09 *  -0.59%*
-> Hmean     shared-21         7535.51 (   0.00%)     5518.75 * -26.76%*
-> Hmean     shared-41        17207.81 (   0.00%)    14651.94 * -14.85%*
-> Hmean     shared-61        20716.98 (   0.00%)    18667.52 *  -9.89%*
-> Hmean     shared-81        27603.83 (   0.00%)    23466.45 * -14.99%*
-> Hmean     shared-101       26008.59 (   0.00%)    29536.96 *  13.57%*
-> Hmean     shared-121       28354.76 (   0.00%)    43139.39 *  52.14%*
-> Hmean     shared-141       38509.25 (   0.00%)    41619.35 *   8.08%*
-> Hmean     shared-161       40496.07 (   0.00%)    44303.46 *   9.40%*
->
-> Overall there is a small hit (in the noise level but consistent
-> throughout
-> many workloads), except git-checkout which does quite well.
->
-> Thanks,
-> Davidlohr
+All users of dma_declare_coherent want their allocations to be
+exclusive, so default to exclusive allocations.
 
-Thanks for running the patch through your performance tests.
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+---
+ Documentation/DMA-API.txt                     |  9 +------
+ arch/arm/mach-imx/mach-imx27_visstrim_m10.c   | 12 +++------
+ arch/arm/mach-imx/mach-mx31moboard.c          |  3 +--
+ arch/sh/boards/mach-ap325rxa/setup.c          |  5 ++--
+ arch/sh/boards/mach-ecovec24/setup.c          |  6 ++---
+ arch/sh/boards/mach-kfr2r09/setup.c           |  5 ++--
+ arch/sh/boards/mach-migor/setup.c             |  5 ++--
+ arch/sh/boards/mach-se/7724/setup.c           |  6 ++---
+ arch/sh/drivers/pci/fixups-dreamcast.c        |  3 +--
+ .../soc_camera/sh_mobile_ceu_camera.c         |  3 +--
+ drivers/usb/host/ohci-sm501.c                 |  3 +--
+ drivers/usb/host/ohci-tmio.c                  |  2 +-
+ include/linux/dma-mapping.h                   |  7 ++----
+ kernel/dma/coherent.c                         | 25 ++++++-------------
+ 14 files changed, 29 insertions(+), 65 deletions(-)
 
-Cheers,
-Longman
+diff --git a/Documentation/DMA-API.txt b/Documentation/DMA-API.txt
+index b9d0cba83877..38e561b773b4 100644
+--- a/Documentation/DMA-API.txt
++++ b/Documentation/DMA-API.txt
+@@ -566,8 +566,7 @@ boundaries when doing this.
+ 
+ 	int
+ 	dma_declare_coherent_memory(struct device *dev, phys_addr_t phys_addr,
+-				    dma_addr_t device_addr, size_t size, int
+-				    flags)
++				    dma_addr_t device_addr, size_t size);
+ 
+ Declare region of memory to be handed out by dma_alloc_coherent() when
+ it's asked for coherent memory for this device.
+@@ -581,12 +580,6 @@ dma_addr_t in dma_alloc_coherent()).
+ 
+ size is the size of the area (must be multiples of PAGE_SIZE).
+ 
+-flags can be ORed together and are:
+-
+-- DMA_MEMORY_EXCLUSIVE - only allocate memory from the declared regions.
+-  Do not allow dma_alloc_coherent() to fall back to system memory when
+-  it's out of memory in the declared region.
+-
+ As a simplification for the platforms, only *one* such region of
+ memory may be declared per device.
+ 
+diff --git a/arch/arm/mach-imx/mach-imx27_visstrim_m10.c b/arch/arm/mach-imx/mach-imx27_visstrim_m10.c
+index 5169dfba9718..07d4fcfe5c2e 100644
+--- a/arch/arm/mach-imx/mach-imx27_visstrim_m10.c
++++ b/arch/arm/mach-imx/mach-imx27_visstrim_m10.c
+@@ -258,8 +258,7 @@ static void __init visstrim_analog_camera_init(void)
+ 		return;
+ 
+ 	dma_declare_coherent_memory(&pdev->dev, mx2_camera_base,
+-				    mx2_camera_base, MX2_CAMERA_BUF_SIZE,
+-				    DMA_MEMORY_EXCLUSIVE);
++				    mx2_camera_base, MX2_CAMERA_BUF_SIZE);
+ }
+ 
+ static void __init visstrim_reserve(void)
+@@ -445,8 +444,7 @@ static void __init visstrim_coda_init(void)
+ 	dma_declare_coherent_memory(&pdev->dev,
+ 				    mx2_camera_base + MX2_CAMERA_BUF_SIZE,
+ 				    mx2_camera_base + MX2_CAMERA_BUF_SIZE,
+-				    MX2_CAMERA_BUF_SIZE,
+-				    DMA_MEMORY_EXCLUSIVE);
++				    MX2_CAMERA_BUF_SIZE);
+ }
+ 
+ /* DMA deinterlace */
+@@ -465,8 +463,7 @@ static void __init visstrim_deinterlace_init(void)
+ 	dma_declare_coherent_memory(&pdev->dev,
+ 				    mx2_camera_base + 2 * MX2_CAMERA_BUF_SIZE,
+ 				    mx2_camera_base + 2 * MX2_CAMERA_BUF_SIZE,
+-				    MX2_CAMERA_BUF_SIZE,
+-				    DMA_MEMORY_EXCLUSIVE);
++				    MX2_CAMERA_BUF_SIZE);
+ }
+ 
+ /* Emma-PrP for format conversion */
+@@ -485,8 +482,7 @@ static void __init visstrim_emmaprp_init(void)
+ 	 */
+ 	ret = dma_declare_coherent_memory(&pdev->dev,
+ 				mx2_camera_base, mx2_camera_base,
+-				MX2_CAMERA_BUF_SIZE,
+-				DMA_MEMORY_EXCLUSIVE);
++				MX2_CAMERA_BUF_SIZE);
+ 	if (ret)
+ 		pr_err("Failed to declare memory for emmaprp\n");
+ }
+diff --git a/arch/arm/mach-imx/mach-mx31moboard.c b/arch/arm/mach-imx/mach-mx31moboard.c
+index 643a3d749703..fe50f4cf00a7 100644
+--- a/arch/arm/mach-imx/mach-mx31moboard.c
++++ b/arch/arm/mach-imx/mach-mx31moboard.c
+@@ -475,8 +475,7 @@ static int __init mx31moboard_init_cam(void)
+ 
+ 	ret = dma_declare_coherent_memory(&pdev->dev,
+ 					  mx3_camera_base, mx3_camera_base,
+-					  MX3_CAMERA_BUF_SIZE,
+-					  DMA_MEMORY_EXCLUSIVE);
++					  MX3_CAMERA_BUF_SIZE);
+ 	if (ret)
+ 		goto err;
+ 
+diff --git a/arch/sh/boards/mach-ap325rxa/setup.c b/arch/sh/boards/mach-ap325rxa/setup.c
+index 8f234d0435aa..7899b4f51fdd 100644
+--- a/arch/sh/boards/mach-ap325rxa/setup.c
++++ b/arch/sh/boards/mach-ap325rxa/setup.c
+@@ -529,9 +529,8 @@ static int __init ap325rxa_devices_setup(void)
+ 	device_initialize(&ap325rxa_ceu_device.dev);
+ 	arch_setup_pdev_archdata(&ap325rxa_ceu_device);
+ 	dma_declare_coherent_memory(&ap325rxa_ceu_device.dev,
+-				    ceu_dma_membase, ceu_dma_membase,
+-				    ceu_dma_membase + CEU_BUFFER_MEMORY_SIZE - 1,
+-				    DMA_MEMORY_EXCLUSIVE);
++			ceu_dma_membase, ceu_dma_membase,
++			ceu_dma_membase + CEU_BUFFER_MEMORY_SIZE - 1);
+ 
+ 	platform_device_add(&ap325rxa_ceu_device);
+ 
+diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
+index 22b4106b8084..eb66754cfb8c 100644
+--- a/arch/sh/boards/mach-ecovec24/setup.c
++++ b/arch/sh/boards/mach-ecovec24/setup.c
+@@ -1440,8 +1440,7 @@ static int __init arch_setup(void)
+ 	dma_declare_coherent_memory(&ecovec_ceu_devices[0]->dev,
+ 				    ceu0_dma_membase, ceu0_dma_membase,
+ 				    ceu0_dma_membase +
+-				    CEU_BUFFER_MEMORY_SIZE - 1,
+-				    DMA_MEMORY_EXCLUSIVE);
++				    CEU_BUFFER_MEMORY_SIZE - 1);
+ 	platform_device_add(ecovec_ceu_devices[0]);
+ 
+ 	device_initialize(&ecovec_ceu_devices[1]->dev);
+@@ -1449,8 +1448,7 @@ static int __init arch_setup(void)
+ 	dma_declare_coherent_memory(&ecovec_ceu_devices[1]->dev,
+ 				    ceu1_dma_membase, ceu1_dma_membase,
+ 				    ceu1_dma_membase +
+-				    CEU_BUFFER_MEMORY_SIZE - 1,
+-				    DMA_MEMORY_EXCLUSIVE);
++				    CEU_BUFFER_MEMORY_SIZE - 1);
+ 	platform_device_add(ecovec_ceu_devices[1]);
+ 
+ 	gpiod_add_lookup_table(&cn12_power_gpiod_table);
+diff --git a/arch/sh/boards/mach-kfr2r09/setup.c b/arch/sh/boards/mach-kfr2r09/setup.c
+index 203d249a0a2b..b8bf67c86eab 100644
+--- a/arch/sh/boards/mach-kfr2r09/setup.c
++++ b/arch/sh/boards/mach-kfr2r09/setup.c
+@@ -603,9 +603,8 @@ static int __init kfr2r09_devices_setup(void)
+ 	device_initialize(&kfr2r09_ceu_device.dev);
+ 	arch_setup_pdev_archdata(&kfr2r09_ceu_device);
+ 	dma_declare_coherent_memory(&kfr2r09_ceu_device.dev,
+-				    ceu_dma_membase, ceu_dma_membase,
+-				    ceu_dma_membase + CEU_BUFFER_MEMORY_SIZE - 1,
+-				    DMA_MEMORY_EXCLUSIVE);
++			ceu_dma_membase, ceu_dma_membase,
++			ceu_dma_membase + CEU_BUFFER_MEMORY_SIZE - 1);
+ 
+ 	platform_device_add(&kfr2r09_ceu_device);
+ 
+diff --git a/arch/sh/boards/mach-migor/setup.c b/arch/sh/boards/mach-migor/setup.c
+index f4ad33c6d2aa..bcd249e6cfcc 100644
+--- a/arch/sh/boards/mach-migor/setup.c
++++ b/arch/sh/boards/mach-migor/setup.c
+@@ -603,9 +603,8 @@ static int __init migor_devices_setup(void)
+ 	device_initialize(&migor_ceu_device.dev);
+ 	arch_setup_pdev_archdata(&migor_ceu_device);
+ 	dma_declare_coherent_memory(&migor_ceu_device.dev,
+-				    ceu_dma_membase, ceu_dma_membase,
+-				    ceu_dma_membase + CEU_BUFFER_MEMORY_SIZE - 1,
+-				    DMA_MEMORY_EXCLUSIVE);
++			ceu_dma_membase, ceu_dma_membase,
++			ceu_dma_membase + CEU_BUFFER_MEMORY_SIZE - 1);
+ 
+ 	platform_device_add(&migor_ceu_device);
+ 
+diff --git a/arch/sh/boards/mach-se/7724/setup.c b/arch/sh/boards/mach-se/7724/setup.c
+index fdbec22ae687..13c2d3ce78f4 100644
+--- a/arch/sh/boards/mach-se/7724/setup.c
++++ b/arch/sh/boards/mach-se/7724/setup.c
+@@ -941,8 +941,7 @@ static int __init devices_setup(void)
+ 	dma_declare_coherent_memory(&ms7724se_ceu_devices[0]->dev,
+ 				    ceu0_dma_membase, ceu0_dma_membase,
+ 				    ceu0_dma_membase +
+-				    CEU_BUFFER_MEMORY_SIZE - 1,
+-				    DMA_MEMORY_EXCLUSIVE);
++				    CEU_BUFFER_MEMORY_SIZE - 1);
+ 	platform_device_add(ms7724se_ceu_devices[0]);
+ 
+ 	device_initialize(&ms7724se_ceu_devices[1]->dev);
+@@ -950,8 +949,7 @@ static int __init devices_setup(void)
+ 	dma_declare_coherent_memory(&ms7724se_ceu_devices[1]->dev,
+ 				    ceu1_dma_membase, ceu1_dma_membase,
+ 				    ceu1_dma_membase +
+-				    CEU_BUFFER_MEMORY_SIZE - 1,
+-				    DMA_MEMORY_EXCLUSIVE);
++				    CEU_BUFFER_MEMORY_SIZE - 1);
+ 	platform_device_add(ms7724se_ceu_devices[1]);
+ 
+ 	return platform_add_devices(ms7724se_devices,
+diff --git a/arch/sh/drivers/pci/fixups-dreamcast.c b/arch/sh/drivers/pci/fixups-dreamcast.c
+index dfdbd05b6eb1..7be8694c0d13 100644
+--- a/arch/sh/drivers/pci/fixups-dreamcast.c
++++ b/arch/sh/drivers/pci/fixups-dreamcast.c
+@@ -63,8 +63,7 @@ static void gapspci_fixup_resources(struct pci_dev *dev)
+ 		BUG_ON(dma_declare_coherent_memory(&dev->dev,
+ 						res.start,
+ 						region.start,
+-						resource_size(&res),
+-						DMA_MEMORY_EXCLUSIVE));
++						resource_size(&res)));
+ 		break;
+ 	default:
+ 		printk("PCI: Failed resource fixup\n");
+diff --git a/drivers/media/platform/soc_camera/sh_mobile_ceu_camera.c b/drivers/media/platform/soc_camera/sh_mobile_ceu_camera.c
+index 6803f744e307..cc357b8db1dc 100644
+--- a/drivers/media/platform/soc_camera/sh_mobile_ceu_camera.c
++++ b/drivers/media/platform/soc_camera/sh_mobile_ceu_camera.c
+@@ -1708,8 +1708,7 @@ static int sh_mobile_ceu_probe(struct platform_device *pdev)
+ 	if (res) {
+ 		err = dma_declare_coherent_memory(&pdev->dev, res->start,
+ 						  res->start,
+-						  resource_size(res),
+-						  DMA_MEMORY_EXCLUSIVE);
++						  resource_size(res));
+ 		if (err) {
+ 			dev_err(&pdev->dev, "Unable to declare CEU memory.\n");
+ 			return err;
+diff --git a/drivers/usb/host/ohci-sm501.c b/drivers/usb/host/ohci-sm501.c
+index c9233cddf9a2..c26228c25f99 100644
+--- a/drivers/usb/host/ohci-sm501.c
++++ b/drivers/usb/host/ohci-sm501.c
+@@ -126,8 +126,7 @@ static int ohci_hcd_sm501_drv_probe(struct platform_device *pdev)
+ 
+ 	retval = dma_declare_coherent_memory(dev, mem->start,
+ 					 mem->start - mem->parent->start,
+-					 resource_size(mem),
+-					 DMA_MEMORY_EXCLUSIVE);
++					 resource_size(mem));
+ 	if (retval) {
+ 		dev_err(dev, "cannot declare coherent memory\n");
+ 		goto err1;
+diff --git a/drivers/usb/host/ohci-tmio.c b/drivers/usb/host/ohci-tmio.c
+index a631dbb369d7..f88a0370659f 100644
+--- a/drivers/usb/host/ohci-tmio.c
++++ b/drivers/usb/host/ohci-tmio.c
+@@ -225,7 +225,7 @@ static int ohci_hcd_tmio_drv_probe(struct platform_device *dev)
+ 	}
+ 
+ 	ret = dma_declare_coherent_memory(&dev->dev, sram->start, sram->start,
+-				resource_size(sram), DMA_MEMORY_EXCLUSIVE);
++				resource_size(sram));
+ 	if (ret)
+ 		goto err_dma_declare;
+ 
+diff --git a/include/linux/dma-mapping.h b/include/linux/dma-mapping.h
+index 9df0f4d318c5..b12fba725f19 100644
+--- a/include/linux/dma-mapping.h
++++ b/include/linux/dma-mapping.h
+@@ -728,17 +728,14 @@ static inline int dma_get_cache_alignment(void)
+ 	return 1;
+ }
+ 
+-/* flags for the coherent memory api */
+-#define DMA_MEMORY_EXCLUSIVE		0x01
+-
+ #ifdef CONFIG_DMA_DECLARE_COHERENT
+ int dma_declare_coherent_memory(struct device *dev, phys_addr_t phys_addr,
+-				dma_addr_t device_addr, size_t size, int flags);
++				dma_addr_t device_addr, size_t size);
+ void dma_release_declared_memory(struct device *dev);
+ #else
+ static inline int
+ dma_declare_coherent_memory(struct device *dev, phys_addr_t phys_addr,
+-			    dma_addr_t device_addr, size_t size, int flags)
++			    dma_addr_t device_addr, size_t size)
+ {
+ 	return -ENOSYS;
+ }
+diff --git a/kernel/dma/coherent.c b/kernel/dma/coherent.c
+index 1d12a31af6d7..29fd6590dc1e 100644
+--- a/kernel/dma/coherent.c
++++ b/kernel/dma/coherent.c
+@@ -14,7 +14,6 @@ struct dma_coherent_mem {
+ 	dma_addr_t	device_base;
+ 	unsigned long	pfn_base;
+ 	int		size;
+-	int		flags;
+ 	unsigned long	*bitmap;
+ 	spinlock_t	spinlock;
+ 	bool		use_dev_dma_pfn_offset;
+@@ -38,9 +37,9 @@ static inline dma_addr_t dma_get_device_base(struct device *dev,
+ 		return mem->device_base;
+ }
+ 
+-static int dma_init_coherent_memory(
+-	phys_addr_t phys_addr, dma_addr_t device_addr, size_t size, int flags,
+-	struct dma_coherent_mem **mem)
++static int dma_init_coherent_memory(phys_addr_t phys_addr,
++		dma_addr_t device_addr, size_t size,
++		struct dma_coherent_mem **mem)
+ {
+ 	struct dma_coherent_mem *dma_mem = NULL;
+ 	void *mem_base = NULL;
+@@ -73,7 +72,6 @@ static int dma_init_coherent_memory(
+ 	dma_mem->device_base = device_addr;
+ 	dma_mem->pfn_base = PFN_DOWN(phys_addr);
+ 	dma_mem->size = pages;
+-	dma_mem->flags = flags;
+ 	spin_lock_init(&dma_mem->spinlock);
+ 
+ 	*mem = dma_mem;
+@@ -110,12 +108,12 @@ static int dma_assign_coherent_memory(struct device *dev,
+ }
+ 
+ int dma_declare_coherent_memory(struct device *dev, phys_addr_t phys_addr,
+-				dma_addr_t device_addr, size_t size, int flags)
++				dma_addr_t device_addr, size_t size)
+ {
+ 	struct dma_coherent_mem *mem;
+ 	int ret;
+ 
+-	ret = dma_init_coherent_memory(phys_addr, device_addr, size, flags, &mem);
++	ret = dma_init_coherent_memory(phys_addr, device_addr, size, &mem);
+ 	if (ret)
+ 		return ret;
+ 
+@@ -190,15 +188,7 @@ int dma_alloc_from_dev_coherent(struct device *dev, ssize_t size,
+ 		return 0;
+ 
+ 	*ret = __dma_alloc_from_coherent(mem, size, dma_handle);
+-	if (*ret)
+-		return 1;
+-
+-	/*
+-	 * In the case where the allocation can not be satisfied from the
+-	 * per-device area, try to fall back to generic memory if the
+-	 * constraints allow it.
+-	 */
+-	return mem->flags & DMA_MEMORY_EXCLUSIVE;
++	return 1;
+ }
+ 
+ void *dma_alloc_from_global_coherent(ssize_t size, dma_addr_t *dma_handle)
+@@ -327,8 +317,7 @@ static int rmem_dma_device_init(struct reserved_mem *rmem, struct device *dev)
+ 
+ 	if (!mem) {
+ 		ret = dma_init_coherent_memory(rmem->base, rmem->base,
+-					       rmem->size,
+-					       DMA_MEMORY_EXCLUSIVE, &mem);
++					       rmem->size, &mem);
+ 		if (ret) {
+ 			pr_err("Reserved memory: failed to init DMA memory pool at %pa, size %ld MiB\n",
+ 				&rmem->base, (unsigned long)rmem->size / SZ_1M);
+-- 
+2.20.1
