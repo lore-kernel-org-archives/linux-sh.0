@@ -1,55 +1,40 @@
-From: Waiman Long <longman@redhat.com>
-Date: Mon, 11 Feb 2019 19:31:24 +0000
-Subject: [PATCH v2 0/2] locking/rwsem: Remove arch specific rwsem files
-Message-Id: <1549913486-16799-1-git-send-email-longman@redhat.com>
+From: ira.weiny@intel.com
+Date: Wed, 13 Feb 2019 23:04:55 +0000
+Subject: [PATCH V2 7/7] IB/mthca: Use the new FOLL_LONGTERM flag to get_user_pages_fast()
+Message-Id: <20190213230455.5605-8-ira.weiny@intel.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20190211201643.7599-1-ira.weiny@intel.com>
+ <20190213230455.5605-1-ira.weiny@intel.com>
+In-Reply-To: <20190213230455.5605-1-ira.weiny@intel.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@redhat.com>, Will Deacon <will.deacon@arm.com>, Thomas Gleixner <tglx@linutronix.de>
-Cc: linux-kernel@vger.kernel.org, linux-alpha@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-arch@vger.kernel.org, x86@kernel.org, Arnd Bergmann <arnd@arndb.de>, Borislav Petkov <bp@alien8.de>, "H. Peter Anvin" <hpa@zytor.com>, Davidlohr Bueso <dave@stgolabs.net>, Linus Torvalds <torvalds@linux-foundation.org>, Andrew Morton <akpm@linux-foundation.org>, Tim Chen <tim.c.chen@linux.intel.com>, Waiman Long <longman@redhat.com>
+To: linux-mips@vger.kernel.org, linux-kernel@vger.kernel.org, kvm-ppc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, kvm@vger.kernel.org, linux-fpga@vger.kernel.org, dri-devel@lists.freedesktop.org, linux-rdma@vger.kernel.org, linux-media@vger.kernel.org, linux-scsi@vger.kernel.org, devel@driverdev.osuosl.org, virtualization@lists.linux-foundation.org, netdev@vger.kernel.org, linux-fbdev@vger.kernel.org, xen-devel@lists.xenproject.org, devel@lists.orangefs.org, linux-mm@kvack.org, ceph-devel@vger.kernel.org, rds-devel@oss.oracle.com
+Cc: Martin Brandenburg <martin@omnibond.com>, Rich Felker <dalias@libc.org>, David Hildenbrand <david@redhat.com>, David Airlie <airlied@linux.ie>, Jason Wang <jasowang@redhat.com>, =?UTF-8?q?Kai=20M=C3=A4kisara?= <Kai.Makisara@kolumbus.fi>, Michal Hocko <mhocko@suse.com>, Rob Springer <rspringer@google.com>, Todd Poynor <toddpoynor@google.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Joerg Roedel <joro@8bytes.org>, "Michael S. Tsirkin" <mst@redhat.com>, Jason Gunthorpe <jgg@ziepe.ca>, Ingo Molnar <mingo@redhat.com>, Matt Porter <mporter@kernel.crashing.org>, Wu Hao <hao.wu@intel.com>, Alan Tull <atull@kernel.org>, John Hubbard <jhubbard@nvidia.com>, "James E.J. Bottomley" <jejb@linux.ibm.com>, Alex Williamson <alex.williamson@redhat.com>, Stefano Stabellini <sstabellini@kernel.org>, Borislav Petkov <bp@alien8.de>, Alexander Viro <viro@zeniv.linux.org.uk>, Thomas
 
-v2:
- - Add patch 2 to optimize __down_read_trylock() as suggested by PeterZ.
- - Update performance test data in patch 1.
+From: Ira Weiny <ira.weiny@intel.com>
 
-This is part 0 of my rwsem patchset. It just removes the architecture
-specific files to make it easer to add enhancements in the upcoming
-rwsem patches.
+Use the new FOLL_LONGTERM to get_user_pages_fast() to protect against
+FS DAX pages being mapped.
 
-Since the two ll/sc platforms that I can tested on (arm64 & ppc) are
-both using the generic C codes, the rwsem performance shouldn't be
-affected by this patch except the down_read_trylock() code which was
-included in patch 2 for arm64.
+Signed-off-by: Ira Weiny <ira.weiny@intel.com>
+---
+ drivers/infiniband/hw/mthca/mthca_memfree.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-Waiman Long (2):
-  locking/rwsem: Remove arch specific rwsem files
-  locking/rwsem: Optimize down_read_trylock()
-
- MAINTAINERS                     |   1 -
- arch/alpha/include/asm/rwsem.h  | 211 -----------------------------------
- arch/arm/include/asm/Kbuild     |   1 -
- arch/arm64/include/asm/Kbuild   |   1 -
- arch/hexagon/include/asm/Kbuild |   1 -
- arch/ia64/include/asm/rwsem.h   | 172 -----------------------------
- arch/powerpc/include/asm/Kbuild |   1 -
- arch/s390/include/asm/Kbuild    |   1 -
- arch/sh/include/asm/Kbuild      |   1 -
- arch/sparc/include/asm/Kbuild   |   1 -
- arch/x86/include/asm/rwsem.h    | 237 ----------------------------------------
- arch/x86/lib/Makefile           |   1 -
- arch/x86/lib/rwsem.S            | 156 --------------------------
- arch/xtensa/include/asm/Kbuild  |   1 -
- include/asm-generic/rwsem.h     | 140 ------------------------
- include/linux/rwsem.h           |   4 +-
- kernel/locking/percpu-rwsem.c   |   2 +
- kernel/locking/rwsem.h          | 130 ++++++++++++++++++++++
- 18 files changed, 133 insertions(+), 929 deletions(-)
- delete mode 100644 arch/alpha/include/asm/rwsem.h
- delete mode 100644 arch/ia64/include/asm/rwsem.h
- delete mode 100644 arch/x86/include/asm/rwsem.h
- delete mode 100644 arch/x86/lib/rwsem.S
- delete mode 100644 include/asm-generic/rwsem.h
-
+diff --git a/drivers/infiniband/hw/mthca/mthca_memfree.c b/drivers/infiniband/hw/mthca/mthca_memfree.c
+index 112d2f38e0de..8ff0e90d7564 100644
+--- a/drivers/infiniband/hw/mthca/mthca_memfree.c
++++ b/drivers/infiniband/hw/mthca/mthca_memfree.c
+@@ -472,7 +472,8 @@ int mthca_map_user_db(struct mthca_dev *dev, struct mthca_uar *uar,
+ 		goto out;
+ 	}
+ 
+-	ret = get_user_pages_fast(uaddr & PAGE_MASK, 1, FOLL_WRITE, pages);
++	ret = get_user_pages_fast(uaddr & PAGE_MASK, 1,
++				  FOLL_WRITE | FOLL_LONGTERM, pages);
+ 	if (ret < 0)
+ 		goto out;
+ 
 -- 
-1.8.3.1
+2.20.1
