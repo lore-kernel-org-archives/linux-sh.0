@@ -1,18 +1,13 @@
 From: "Enrico Weigelt, metux IT consult" <info@metux.net>
-Date: Thu, 07 Mar 2019 22:18:31 +0000
-Subject: [PATCH v2] arch: sh: Kconfig: pedantic formatting
-Message-Id: <1551997111-26115-1-git-send-email-info@metux.net>
+Date: Wed, 06 Mar 2019 20:45:58 +0000
+Subject: [PATCH] arch: sh: Kconfig: pedantic cleanups
+Message-Id: <1551905158-29665-1-git-send-email-info@metux.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1551905158-29665-1-git-send-email-info@metux.net>
-In-Reply-To: <1551905158-29665-1-git-send-email-info@metux.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-kernel@vger.kernel.org
 Cc: ysato@users.sourceforge.jp, dalias@libc.org, linux-sh@vger.kernel.org
-
-Formatting of Kconfig files doesn't look so pretty, so just
-take damp cloth and clean it up. Just indention changes.
 
 Signed-off-by: Enrico Weigelt, metux IT consult <info@metux.net>
 ---
