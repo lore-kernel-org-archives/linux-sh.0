@@ -1,96 +1,49 @@
-From: Waiman Long <longman@redhat.com>
-Date: Fri, 22 Mar 2019 14:30:05 +0000
-Subject: [PATCH v5 0/3] locking/rwsem: Rwsem rearchitecture part 0
-Message-Id: <20190322143008.21313-1-longman@redhat.com>
+From: Valentin Schneider <valentin.schneider@arm.com>
+Date: Mon, 11 Mar 2019 22:47:48 +0000
+Subject: [PATCH 10/14] sh: entry: Remove unneeded need_resched() loop
+Message-Id: <20190311224752.8337-11-valentin.schneider@arm.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20190311224752.8337-1-valentin.schneider@arm.com>
+In-Reply-To: <20190311224752.8337-1-valentin.schneider@arm.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@redhat.com>, Will Deacon <will.deacon@arm.com>, Thomas Gleixner <tglx@linutronix.de>
-Cc: linux-kernel@vger.kernel.org, linux-alpha@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-c6x-dev@linux-c6x.org, uclinux-h8-devel@lists.sourceforge.jp, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, nios2-dev@lists.rocketboards.org, openrisc@lists.librecores.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-um@lists.infradead.org, linux-xtensa@linux-xtensa.org, linux-arch@vger.kernel.org, x86@kernel.org, Arnd Bergmann <arnd@arndb.de>, Borislav Petkov <bp@alien8.de>, "H. Peter Anvin" <hpa@zytor.com>, Davidlohr Bueso <dave@stgolabs.net>Linus Torvalds <tor>
+To: linux-kernel@vger.kernel.org
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
 
-v5:
- - Rebase to the latest v5.1 tree and fix conflicts in 
-   arch/{xtensa,s390}/include/asm/Kbuild.
+Since the enabling and disabling of IRQs within preempt_schedule_irq()
+is contained in a need_resched() loop, we don't need the outer arch
+code loop.
 
-v4:
- - Remove rwsem-spinlock.c and make all archs use rwsem-xadd.c.
+Signed-off-by: Valentin Schneider <valentin.schneider@arm.com>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+Cc: linux-sh@vger.kernel.org
+---
+ arch/sh/kernel/entry-common.S | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
 
-v3:
- - Optimize __down_read_trylock() for the uncontended case as suggested
-   by Linus.
-
-v2:
- - Add patch 2 to optimize __down_read_trylock() as suggested by PeterZ.
- - Update performance test data in patch 1.
-
-The goal of this patchset is to remove the architecture specific files
-for rwsem-xadd to make it easer to add enhancements in the later rwsem
-patches. It also removes the legacy rwsem-spinlock.c file and make all
-the architectures use one single implementation of rwsem - rwsem-xadd.c.
-
-Waiman Long (3):
-  locking/rwsem: Remove arch specific rwsem files
-  locking/rwsem: Remove rwsem-spinlock.c & use rwsem-xadd.c for all
-    archs
-  locking/rwsem: Optimize down_read_trylock()
-
- MAINTAINERS                     |   1 -
- arch/alpha/Kconfig              |   7 -
- arch/alpha/include/asm/rwsem.h  | 211 --------------------
- arch/arc/Kconfig                |   3 -
- arch/arm/Kconfig                |   4 -
- arch/arm/include/asm/Kbuild     |   1 -
- arch/arm64/Kconfig              |   3 -
- arch/arm64/include/asm/Kbuild   |   1 -
- arch/c6x/Kconfig                |   3 -
- arch/csky/Kconfig               |   3 -
- arch/h8300/Kconfig              |   3 -
- arch/hexagon/Kconfig            |   6 -
- arch/hexagon/include/asm/Kbuild |   1 -
- arch/ia64/Kconfig               |   4 -
- arch/ia64/include/asm/rwsem.h   | 172 ----------------
- arch/m68k/Kconfig               |   7 -
- arch/microblaze/Kconfig         |   6 -
- arch/mips/Kconfig               |   7 -
- arch/nds32/Kconfig              |   3 -
- arch/nios2/Kconfig              |   3 -
- arch/openrisc/Kconfig           |   6 -
- arch/parisc/Kconfig             |   6 -
- arch/powerpc/Kconfig            |   7 -
- arch/powerpc/include/asm/Kbuild |   1 -
- arch/riscv/Kconfig              |   3 -
- arch/s390/Kconfig               |   6 -
- arch/s390/include/asm/Kbuild    |   1 -
- arch/sh/Kconfig                 |   6 -
- arch/sh/include/asm/Kbuild      |   1 -
- arch/sparc/Kconfig              |   8 -
- arch/sparc/include/asm/Kbuild   |   1 -
- arch/unicore32/Kconfig          |   6 -
- arch/x86/Kconfig                |   3 -
- arch/x86/include/asm/rwsem.h    | 237 ----------------------
- arch/x86/lib/Makefile           |   1 -
- arch/x86/lib/rwsem.S            | 156 ---------------
- arch/x86/um/Kconfig             |   6 -
- arch/x86/um/Makefile            |   1 -
- arch/xtensa/Kconfig             |   3 -
- arch/xtensa/include/asm/Kbuild  |   1 -
- include/asm-generic/rwsem.h     | 140 -------------
- include/linux/rwsem-spinlock.h  |  47 -----
- include/linux/rwsem.h           |   9 +-
- kernel/Kconfig.locks            |   2 +-
- kernel/locking/Makefile         |   4 +-
- kernel/locking/percpu-rwsem.c   |   2 +
- kernel/locking/rwsem-spinlock.c | 339 --------------------------------
- kernel/locking/rwsem.h          | 130 ++++++++++++
- 48 files changed, 135 insertions(+), 1447 deletions(-)
- delete mode 100644 arch/alpha/include/asm/rwsem.h
- delete mode 100644 arch/ia64/include/asm/rwsem.h
- delete mode 100644 arch/x86/include/asm/rwsem.h
- delete mode 100644 arch/x86/lib/rwsem.S
- delete mode 100644 include/asm-generic/rwsem.h
- delete mode 100644 include/linux/rwsem-spinlock.h
- delete mode 100644 kernel/locking/rwsem-spinlock.c
-
+diff --git a/arch/sh/kernel/entry-common.S b/arch/sh/kernel/entry-common.S
+index d31f66e82ce5..65a105de52a0 100644
+--- a/arch/sh/kernel/entry-common.S
++++ b/arch/sh/kernel/entry-common.S
+@@ -93,7 +93,7 @@ ENTRY(resume_kernel)
+ 	mov.l	@(TI_PRE_COUNT,r8), r0	! current_thread_info->preempt_count
+ 	tst	r0, r0
+ 	bf	noresched
+-need_resched:
++
+ 	mov.l	@(TI_FLAGS,r8), r0	! current_thread_info->flags
+ 	tst	#_TIF_NEED_RESCHED, r0	! need_resched set?
+ 	bt	noresched
+@@ -107,8 +107,6 @@ need_resched:
+ 	mov.l	1f, r0
+ 	jsr	@r0			! call preempt_schedule_irq
+ 	 nop
+-	bra	need_resched
+-	 nop
+ 
+ noresched:
+ 	bra	__restore_all
 -- 
-2.18.1
+2.20.1
