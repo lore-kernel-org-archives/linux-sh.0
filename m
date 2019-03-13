@@ -1,7 +1,7 @@
 From: linux-sh@vger.kernel.org
-Date: Sat, 02 Mar 2019 23:25:29 +0000
+Date: Wed, 13 Mar 2019 14:28:04 +0000
 Subject: Zdravstvujte Vas interesuyut klientskie bazy dannyh?
-Message-Id: <20190302232529.9746C92640@ONEVPS180808022132.localdomain>
+Message-Id: <20190313142804.E9D4B5662F@tjwt_hq_fu_6_232.localdomain>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20190220052156.3EA94506162@dev.docker.novalocal>
 In-Reply-To: <20190220052156.3EA94506162@dev.docker.novalocal>
