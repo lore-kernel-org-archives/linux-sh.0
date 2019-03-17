@@ -1,55 +1,43 @@
-From: Mike Rapoport <rppt@linux.ibm.com>
-Date: Tue, 19 Mar 2019 20:39:12 +0000
-Subject: Re: [PATCH] sh: mm: make use of new memblocks_present() helper
-Message-Id: <20190319203912.GA17966@rapoport-lnx>
+From: ira.weiny@intel.com
+Date: Sun, 17 Mar 2019 18:34:36 +0000
+Subject: [RESEND 5/7] IB/hfi1: Use the new FOLL_LONGTERM flag to get_user_pages_fast()
+Message-Id: <20190317183438.2057-6-ira.weiny@intel.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190319180930.8231-1-logang@deltatee.com>
-In-Reply-To: <20190319180930.8231-1-logang@deltatee.com>
+References: <20190317183438.2057-1-ira.weiny@intel.com>
+In-Reply-To: <20190317183438.2057-1-ira.weiny@intel.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Logan Gunthorpe <logang@deltatee.com>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Andrew Morton <akpm@linux-foundation.org>, Michal Hocko <mhocko@suse.com>, Christoph Hellwig <hch@lst.de>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+To: Andrew Morton <akpm@linux-foundation.org>, John Hubbard <jhubbard@nvidia.com>, Michal Hocko <mhocko@suse.com>, "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>, Peter Zijlstra <peterz@infradead.org>, Jason Gunthorpe <jgg@ziepe.ca>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, "David S. Miller" <davem@davemloft.net>, Martin Schwidefsky <schwidefsky@de.ibm.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, Rich Felker <dalias@libc.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>, Ralf Baechle <ralf@linux-mips.org>, James Hogan <jhogan@kernel.org>
+Cc: Ira Weiny <ira.weiny@intel.com>, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linux-mips@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-rdma@vger.kernel.org, netdev@vger.kernel.org
 
-On Tue, Mar 19, 2019 at 12:09:30PM -0600, Logan Gunthorpe wrote:
-> Cleanup the open coded for_each_memblock() loop that is equivalent
-> to the new memblocks_present() helper.
-> 
-> Signed-off-by: Logan Gunthorpe <logang@deltatee.com>
-> Reviewed-by: Christoph Hellwig <hch@lst.de>
-> Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-> Cc: Rich Felker <dalias@libc.org>
+From: Ira Weiny <ira.weiny@intel.com>
 
-Reviewed-by: Mike Rapoport <rppt@linux.ibm.com>
+Use the new FOLL_LONGTERM to get_user_pages_fast() to protect against
+FS DAX pages being mapped.
 
-> ---
->  arch/sh/mm/init.c | 7 +------
->  1 file changed, 1 insertion(+), 6 deletions(-)
-> 
-> This is just a resend
-> 
-> diff --git a/arch/sh/mm/init.c b/arch/sh/mm/init.c
-> index a8e5c0e00fca..dc0ff41d602d 100644
-> --- a/arch/sh/mm/init.c
-> +++ b/arch/sh/mm/init.c
-> @@ -234,12 +234,7 @@ static void __init do_init_bootmem(void)
-> 
->  	plat_mem_setup();
-> 
-> -	for_each_memblock(memory, reg) {
-> -		int nid = memblock_get_region_node(reg);
-> -
-> -		memory_present(nid, memblock_region_memory_base_pfn(reg),
-> -			memblock_region_memory_end_pfn(reg));
-> -	}
-> +	memblocks_present();
->  	sparse_init();
->  }
-> 
-> --
-> 2.19.0
-> 
+Signed-off-by: Ira Weiny <ira.weiny@intel.com>
+---
+ drivers/infiniband/hw/hfi1/user_pages.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
 
+diff --git a/drivers/infiniband/hw/hfi1/user_pages.c b/drivers/infiniband/hw/hfi1/user_pages.c
+index 78ccacaf97d0..6a7f9cd5a94e 100644
+--- a/drivers/infiniband/hw/hfi1/user_pages.c
++++ b/drivers/infiniband/hw/hfi1/user_pages.c
+@@ -104,9 +104,11 @@ int hfi1_acquire_user_pages(struct mm_struct *mm, unsigned long vaddr, size_t np
+ 			    bool writable, struct page **pages)
+ {
+ 	int ret;
++	unsigned int gup_flags = writable ? FOLL_WRITE : 0;
+ 
+-	ret = get_user_pages_fast(vaddr, npages, writable ? FOLL_WRITE : 0,
+-				  pages);
++	gup_flags |= FOLL_LONGTERM;
++
++	ret = get_user_pages_fast(vaddr, npages, gup_flags, pages);
+ 	if (ret < 0)
+ 		return ret;
+ 
 -- 
-Sincerely yours,
-Mike.
+2.20.1
