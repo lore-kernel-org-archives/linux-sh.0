@@ -1,10 +1,10 @@
 From: Alexandre Ghiti <alex@ghiti.fr>
-Date: Wed, 27 Mar 2019 06:36:24 +0000
-Subject: [PATCH v8 2/4] sparc: Advertise gigantic page support
-Message-Id: <20190327063626.18421-3-alex@ghiti.fr>
+Date: Sun, 17 Mar 2019 16:28:45 +0000
+Subject: [PATCH v7 2/4] sparc: Advertise gigantic page support
+Message-Id: <20190317162847.14107-3-alex@ghiti.fr>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190327063626.18421-1-alex@ghiti.fr>
-In-Reply-To: <20190327063626.18421-1-alex@ghiti.fr>
+References: <20190317162847.14107-1-alex@ghiti.fr>
+In-Reply-To: <20190317162847.14107-1-alex@ghiti.fr>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -26,10 +26,10 @@ Acked-by: David S. Miller <davem@davemloft.net>
  1 file changed, 1 insertion(+)
 
 diff --git a/arch/sparc/Kconfig b/arch/sparc/Kconfig
-index 40f8f4f73fe8..ebcc9435db08 100644
+index d5dd652fb8cc..0b7f0e0fefa5 100644
 --- a/arch/sparc/Kconfig
 +++ b/arch/sparc/Kconfig
-@@ -91,6 +91,7 @@ config SPARC64
+@@ -90,6 +90,7 @@ config SPARC64
  	select ARCH_CLOCKSOURCE_DATA
  	select ARCH_HAS_PTE_SPECIAL
  	select PCI_DOMAINS if PCI
