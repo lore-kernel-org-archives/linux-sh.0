@@ -1,34 +1,38 @@
-From: Alex Ghiti <alex@ghiti.fr>
-Date: Wed, 06 Mar 2019 19:10:54 +0000
-Subject: Re: [PATCH v5 2/4] sparc: Advertise gigantic page support
-Message-Id: <ac0c5166-f1f6-5339-58e3-a33f085c1220@ghiti.fr>
+From: ira.weiny@intel.com
+Date: Sun, 17 Mar 2019 18:34:37 +0000
+Subject: [RESEND 6/7] IB/qib: Use the new FOLL_LONGTERM flag to get_user_pages_fast()
+Message-Id: <20190317183438.2057-7-ira.weiny@intel.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190306190005.7036-1-alex@ghiti.fr>
- <20190306190005.7036-3-alex@ghiti.fr>
- <20190306.110436.1714716608828903522.davem@davemloft.net>
-In-Reply-To: <20190306.110436.1714716608828903522.davem@davemloft.net>
+References: <20190317183438.2057-1-ira.weiny@intel.com>
+In-Reply-To: <20190317183438.2057-1-ira.weiny@intel.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: David Miller <davem@davemloft.net>
-Cc: dalias@libc.org, linux-sh@vger.kernel.org, peterz@infradead.org, benh@kernel.crashing.org, dave.hansen@linux.intel.com, heiko.carstens@de.ibm.com, linux-mm@kvack.org, paulus@samba.org, hpa@zytor.com, sparclinux@vger.kernel.org, linux-s390@vger.kernel.org, ysato@users.sourceforge.jp, mpe@ellerman.id.au, x86@kernel.org, mingo@redhat.com, vbabka@suse.cz, catalin.marinas@arm.com, will.deacon@arm.com, bp@alien8.de, luto@kernel.org, tglx@linutronix.de, linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org, schwidefsky@de.ibm.com, linuxppc-dev@lists.ozlabs.org, mike.kravetz@oracle.com
+To: Andrew Morton <akpm@linux-foundation.org>, John Hubbard <jhubbard@nvidia.com>, Michal Hocko <mhocko@suse.com>, "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>, Peter Zijlstra <peterz@infradead.org>, Jason Gunthorpe <jgg@ziepe.ca>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, "David S. Miller" <davem@davemloft.net>, Martin Schwidefsky <schwidefsky@de.ibm.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, Rich Felker <dalias@libc.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>, Ralf Baechle <ralf@linux-mips.org>, James Hogan <jhogan@kernel.org>
+Cc: Ira Weiny <ira.weiny@intel.com>, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linux-mips@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-rdma@vger.kernel.org, netdev@vger.kernel.org
 
-On 3/6/19 2:04 PM, David Miller wrote:
-> From: Alexandre Ghiti <alex@ghiti.fr>
-> Date: Wed,  6 Mar 2019 14:00:03 -0500
->
->> sparc actually supports gigantic pages and selecting
->> ARCH_HAS_GIGANTIC_PAGE allows it to allocate and free
->> gigantic pages at runtime.
->>
->> sparc allows configuration such as huge pages of 16GB,
->> pages of 8KB and MAX_ORDER = 13 (default):
->> HPAGE_SHIFT (34) - PAGE_SHIFT (13) = 21 >= MAX_ORDER (13)
->>
->> Signed-off-by: Alexandre Ghiti <alex@ghiti.fr>
-> Much better.
->
-> Acked-by: David S. Miller <davem@davemloft.net>
-Thanks !
+From: Ira Weiny <ira.weiny@intel.com>
 
-Alex
+Use the new FOLL_LONGTERM to get_user_pages_fast() to protect against
+FS DAX pages being mapped.
+
+Signed-off-by: Ira Weiny <ira.weiny@intel.com>
+---
+ drivers/infiniband/hw/qib/qib_user_sdma.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/infiniband/hw/qib/qib_user_sdma.c b/drivers/infiniband/hw/qib/qib_user_sdma.c
+index 31c523b2a9f5..b53cc0240e02 100644
+--- a/drivers/infiniband/hw/qib/qib_user_sdma.c
++++ b/drivers/infiniband/hw/qib/qib_user_sdma.c
+@@ -673,7 +673,7 @@ static int qib_user_sdma_pin_pages(const struct qib_devdata *dd,
+ 		else
+ 			j = npages;
+ 
+-		ret = get_user_pages_fast(addr, j, 0, pages);
++		ret = get_user_pages_fast(addr, j, FOLL_LONGTERM, pages);
+ 		if (ret != j) {
+ 			i = 0;
+ 			j = ret;
+-- 
+2.20.1
