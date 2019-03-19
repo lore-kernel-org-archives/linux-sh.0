@@ -1,38 +1,46 @@
-From: Valentin Schneider <valentin.schneider@arm.com>
-Date: Tue, 12 Mar 2019 18:18:55 +0000
-Subject: Re: [PATCH 00/14] entry: preempt_schedule_irq() callers scrub
-Message-Id: <a5b1605b-b3b3-7898-30ae-d993050e8c7a@arm.com>
+From: Logan Gunthorpe <logang@deltatee.com>
+Date: Tue, 19 Mar 2019 18:09:30 +0000
+Subject: [PATCH] sh: mm: make use of new memblocks_present() helper
+Message-Id: <20190319180930.8231-1-logang@deltatee.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190311224752.8337-1-valentin.schneider@arm.com>
- <e604601e-f8e1-a8b5-d364-69ca967996ce@synopsys.com>
-In-Reply-To: <e604601e-f8e1-a8b5-d364-69ca967996ce@synopsys.com>
+References: <20190115173711.16974-1-logang@deltatee.com>
+In-Reply-To: <20190115173711.16974-1-logang@deltatee.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Vineet Gupta <vineet.gupta1@synopsys.com>, linux-kernel@vger.kernel.org
-Cc: Julien Thierry <julien.thierry@arm.com>, Ingo Molnar <mingo@redhat.com>, Peter Zijlstra <peterz@infradead.org>, Thomas Gleixner <tglx@linutronix.de>, linux-xtensa@linux-xtensa.org, x86@kernel.org, sparclinux@vger.kernel.org, linux-sh@vger.kernel.org, linux-riscv@lists.infradead.org, linuxppc-dev@lists.ozlabs.org, linux-mips@vger.kernel.org, uclinux-h8-devel@lists.sourceforge.jp, linux-c6x-dev@linux-c6x.org, linux-ia64@vger.kernel.org, linux-s390@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-m68k@lists.linux-m68k.org, nios2-dev@lists.rocketboards.org
+To: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Cc: Andrew Morton <akpm@linux-foundation.org>, Mike Rapoport <rppt@linux.ibm.com>, Michal Hocko <mhocko@suse.com>, Logan Gunthorpe <logang@deltatee.com>, Christoph Hellwig <hch@lst.de>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
 
-On 12/03/2019 18:03, Vineet Gupta wrote:
-[...]
->> Regarding that loop, archs seem to fall in 3 categories:
->> A) Those that don't have the loop
-> 
-> Please clarify that this is the right thing to do (since core code already has the
-> loop) hence no fixing is required for this "category"
-> 
+Cleanup the open coded for_each_memblock() loop that is equivalent
+to the new memblocks_present() helper.
 
-Right, those don't need any change. I had a brief look at them to double
-check they had the proper need_resched() gate before calling
-preempt_schedule_irq() (with no loop) and they all seem fine. Also...
+Signed-off-by: Logan Gunthorpe <logang@deltatee.com>
+Reviewed-by: Christoph Hellwig <hch@lst.de>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+---
+ arch/sh/mm/init.c | 7 +------
+ 1 file changed, 1 insertion(+), 6 deletions(-)
 
->> B) Those that have a small need_resched() loop around the
->>    preempt_schedule_irq() callsite
->> C) Those that branch to some more generic code further up the entry code
->>    and eventually branch back to preempt_schedule_irq()
->>
->> arc, m68k, nios2 fall in A)
-> 
+This is just a resend
 
-I forgot to include parisc in here.
+diff --git a/arch/sh/mm/init.c b/arch/sh/mm/init.c
+index a8e5c0e00fca..dc0ff41d602d 100644
+--- a/arch/sh/mm/init.c
++++ b/arch/sh/mm/init.c
+@@ -234,12 +234,7 @@ static void __init do_init_bootmem(void)
 
-[...]
+ 	plat_mem_setup();
+
+-	for_each_memblock(memory, reg) {
+-		int nid = memblock_get_region_node(reg);
+-
+-		memory_present(nid, memblock_region_memory_base_pfn(reg),
+-			memblock_region_memory_end_pfn(reg));
+-	}
++	memblocks_present();
+ 	sparse_init();
+ }
+
+--
+2.19.0
