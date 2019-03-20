@@ -1,63 +1,186 @@
-From: Ira Weiny <ira.weiny@intel.com>
-Date: Thu, 21 Mar 2019 08:40:49 +0000
-Subject: Re: [RESEND PATCH 0/7] Add FOLL_LONGTERM to GUP fast and use it
-Message-Id: <20190321084048.GA26439@iweiny-DESK2.sc.intel.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 20 Mar 2019 10:21:34 +0000
+Subject: [PATCH v3 03/10] pinctrl: sh-pfc: Add missing #include <linux/errno.h>
+Message-Id: <20190320102141.19316-4-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190317183438.2057-1-ira.weiny@intel.com>
- <20190319151930.bab575d62fb1a33094160fe3@linux-foundation.org>
-In-Reply-To: <20190319151930.bab575d62fb1a33094160fe3@linux-foundation.org>
+References: <20190320102141.19316-1-geert+renesas@glider.be>
+In-Reply-To: <20190320102141.19316-1-geert+renesas@glider.be>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: John Hubbard <jhubbard@nvidia.com>, Michal Hocko <mhocko@suse.com>, "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>, Peter Zijlstra <peterz@infradead.org>, Jason Gunthorpe <jgg@ziepe.ca>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, "David S. Miller" <davem@davemloft.net>, Martin Schwidefsky <schwidefsky@de.ibm.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, Rich Felker <dalias@libc.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>, Ralf Baechle <ralf@linux-mips.org>, James Hogan <jhogan@kernel.org>, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linux-mips@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-rdma@vger.kernel.org, netdev@vger.kernel.org, Dan Williams <dan.j.williams@intel.com>
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: Linus Walleij <linus.walleij@linaro.org>
+Cc: linux-gpio@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Tue, Mar 19, 2019 at 03:19:30PM -0700, Andrew Morton wrote:
-> On Sun, 17 Mar 2019 11:34:31 -0700 ira.weiny@intel.com wrote:
-> 
-> > Resending after rebasing to the latest mm tree.
-> > 
-> > HFI1, qib, and mthca, use get_user_pages_fast() due to it performance
-> > advantages.  These pages can be held for a significant time.  But
-> > get_user_pages_fast() does not protect against mapping FS DAX pages.
-> > 
-> > Introduce FOLL_LONGTERM and use this flag in get_user_pages_fast() which
-> > retains the performance while also adding the FS DAX checks.  XDP has also
-> > shown interest in using this functionality.[1]
-> > 
-> > In addition we change get_user_pages() to use the new FOLL_LONGTERM flag and
-> > remove the specialized get_user_pages_longterm call.
-> 
-> It would be helpful to include your response to Christoph's question
-> (http://lkml.kernel.org/r/20190220180255.GA12020@iweiny-DESK2.sc.intel.com)
-> in the changelog.  Because if one person was wondering about this,
-> others will likely do so.
-> 
-> We have no record of acks or reviewed-by's.  At least one was missed
-> (http://lkml.kernel.org/r/CAOg9mSTTcD-9bCSDfC0WRYqfVrNB4TwOzL0c4+6QXi-N_Y43Vw@mail.gmail.com),
-> but that is very very partial.
+Source files using -Exxx error codes should include <linux/errno.h>.
+On ARM, this header file is included indirectly; on SuperH, it is not,
+leading to "error: ‘EINVAL’ undeclared" failures when enabling
+compile-testing later.
 
-That is my bad.  Sorry to Mike.  And I have added him.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+v3:
+  - No changes,
 
-> 
-> This patchset is fairly DAX-centered, but Dan wasn't cc'ed!
+v2:
+  - New.
+---
+ drivers/pinctrl/sh-pfc/pfc-r8a77470.c    | 1 +
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c     | 1 +
+ drivers/pinctrl/sh-pfc/pfc-r8a7791.c     | 1 +
+ drivers/pinctrl/sh-pfc/pfc-r8a7794.c     | 1 +
+ drivers/pinctrl/sh-pfc/pfc-r8a7795-es1.c | 1 +
+ drivers/pinctrl/sh-pfc/pfc-r8a7795.c     | 1 +
+ drivers/pinctrl/sh-pfc/pfc-r8a7796.c     | 1 +
+ drivers/pinctrl/sh-pfc/pfc-r8a77965.c    | 1 +
+ drivers/pinctrl/sh-pfc/pfc-r8a77970.c    | 1 +
+ drivers/pinctrl/sh-pfc/pfc-r8a77980.c    | 1 +
+ drivers/pinctrl/sh-pfc/pfc-r8a77990.c    | 1 +
+ drivers/pinctrl/sh-pfc/pfc-r8a77995.c    | 1 +
+ 12 files changed, 12 insertions(+)
 
-Agreed, I'm new to changing things which affect this many sub-systems and I
-struggled with who should be CC'ed (get_maintainer.pl returned a very large
-list  :-(.
-
-I fear I may have cc'ed too many people, and the wrong people apparently, so
-that may be affecting the review...
-
-So again my apologies.  I don't know if Dan is going to get a chance to put a
-reviewed-by on them this week but I thought I would send this note to let you
-know I'm not ignoring your feedback.  Just waiting a bit before resending to
-hopefully get some more acks/reviewed bys.
-
-Thanks,
-Ira
-
-> 
-> So ho hum.  I'll scoop them up and shall make the above changes to the
-> [1/n] changelog, but we still have some work to do.
-> 
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a77470.c b/drivers/pinctrl/sh-pfc/pfc-r8a77470.c
+index 4359aeb35dbdf8f3..83772abffaf81b66 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a77470.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a77470.c
+@@ -5,6 +5,7 @@
+  * Copyright (C) 2018 Renesas Electronics Corp.
+  */
+ 
++#include <linux/errno.h>
+ #include <linux/kernel.h>
+ 
+ #include "sh_pfc.h"
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+index a84229cb8cd4c8a7..202638b9cb54ce5a 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+@@ -8,6 +8,7 @@
+  * Copyright (C) 2012  Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+  */
+ 
++#include <linux/errno.h>
+ #include <linux/io.h>
+ #include <linux/kernel.h>
+ #include <linux/sys_soc.h>
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7791.c b/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
+index d8b13d4e9bbff7cb..d21a520695db1ae4 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
+@@ -6,6 +6,7 @@
+  * Copyright (C) 2014-2017 Cogent Embedded, Inc.
+  */
+ 
++#include <linux/errno.h>
+ #include <linux/kernel.h>
+ 
+ #include "sh_pfc.h"
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7794.c b/drivers/pinctrl/sh-pfc/pfc-r8a7794.c
+index 958a5f714c93d967..d24ba71649a10888 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7794.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7794.c
+@@ -7,6 +7,7 @@
+  * Copyright (C) 2015-2017 Cogent Embedded, Inc. <source@cogentembedded.com>
+  */
+ 
++#include <linux/errno.h>
+ #include <linux/kernel.h>
+ #include <linux/sys_soc.h>
+ 
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7795-es1.c b/drivers/pinctrl/sh-pfc/pfc-r8a7795-es1.c
+index 0ef7ada08316fa34..52a0fa8abfcca2bd 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7795-es1.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7795-es1.c
+@@ -5,6 +5,7 @@
+  * Copyright (C) 2015-2017  Renesas Electronics Corporation
+  */
+ 
++#include <linux/errno.h>
+ #include <linux/kernel.h>
+ 
+ #include "core.h"
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7795.c b/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
+index 1a987dfea46f897a..6400e6304daf25e9 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
+@@ -5,6 +5,7 @@
+  * Copyright (C) 2015-2017 Renesas Electronics Corporation
+  */
+ 
++#include <linux/errno.h>
+ #include <linux/kernel.h>
+ #include <linux/sys_soc.h>
+ 
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7796.c b/drivers/pinctrl/sh-pfc/pfc-r8a7796.c
+index a99c519e05a01f23..bb1255b9bc24241e 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7796.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7796.c
+@@ -11,6 +11,7 @@
+  * Copyright (C) 2015  Renesas Electronics Corporation
+  */
+ 
++#include <linux/errno.h>
+ #include <linux/kernel.h>
+ 
+ #include "core.h"
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a77965.c b/drivers/pinctrl/sh-pfc/pfc-r8a77965.c
+index 820b74ca9d10236b..c656d26e51503fe5 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a77965.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a77965.c
+@@ -12,6 +12,7 @@
+  * Copyright (C) 2015  Renesas Electronics Corporation
+  */
+ 
++#include <linux/errno.h>
+ #include <linux/kernel.h>
+ 
+ #include "core.h"
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a77970.c b/drivers/pinctrl/sh-pfc/pfc-r8a77970.c
+index f5868f5e40189441..37d0c1f10901704e 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a77970.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a77970.c
+@@ -12,6 +12,7 @@
+  * Copyright (C) 2015  Renesas Electronics Corporation
+  */
+ 
++#include <linux/errno.h>
+ #include <linux/io.h>
+ #include <linux/kernel.h>
+ 
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a77980.c b/drivers/pinctrl/sh-pfc/pfc-r8a77980.c
+index 376e689c737821b5..42c73913b5c7088c 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a77980.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a77980.c
+@@ -12,6 +12,7 @@
+  * Copyright (C) 2015 Renesas Electronics Corporation
+  */
+ 
++#include <linux/errno.h>
+ #include <linux/io.h>
+ #include <linux/kernel.h>
+ 
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a77990.c b/drivers/pinctrl/sh-pfc/pfc-r8a77990.c
+index 1a8d1ae896c0b0f5..10aa52eb4e32e467 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a77990.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a77990.c
+@@ -11,6 +11,7 @@
+  * Copyright (C) 2016-2017 Renesas Electronics Corp.
+  */
+ 
++#include <linux/errno.h>
+ #include <linux/kernel.h>
+ 
+ #include "core.h"
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a77995.c b/drivers/pinctrl/sh-pfc/pfc-r8a77995.c
+index 0acdfb8bf0777b50..110671d4626c541c 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a77995.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a77995.c
+@@ -11,6 +11,7 @@
+  * Copyright (C) 2015  Renesas Electronics Corporation
+  */
+ 
++#include <linux/errno.h>
+ #include <linux/kernel.h>
+ 
+ #include "core.h"
+-- 
+2.17.1
