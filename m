@@ -1,752 +1,430 @@
-From: Steven Rostedt <rostedt@goodmis.org>
-Date: Thu, 28 Mar 2019 23:05:16 +0000
-Subject: [RFC][PATCH 4/4 v2] syscalls: Remove start and number from syscall_set_arguments() args
-Message-Id: <20190329032253.429310275@goodmis.org>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 20 Mar 2019 10:21:38 +0000
+Subject: [PATCH v3 07/10 PARTIAL] pinctrl: sh-pfc: Absorb enum IDs in PINMUX_CFG_REG_VAR() macro
+Message-Id: <20190320102141.19316-8-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190328230512.486297455@goodmis.org>
+References: <20190320102141.19316-1-geert+renesas@glider.be>
+In-Reply-To: <20190320102141.19316-1-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: linux-ia64@vger.kernel.org, "Gustavo A. R. Silva" <gustavo@embeddedor.com>, Peter Zijlstra <peterz@infradead.org>, Dominik Brodowski <linux@dominikbrodowski.net>, "Dmitry V. Levin" <ldv@altlinux.org>, "H. Peter Anvin" <hpa@zytor.com>, sparclinux@vger.kernel.org, linux-riscv@lists.infradead.org, Ingo Molnar <mingo@kernel.org>, linux-arch@vger.kernel.org, linux-s390@vger.kernel.org, linux-c6x-dev@linux-c6x.org, linux-sh@vger.kernel.org, linux-hexagon@vger.kernel.org, x86@kernel.org, linux-snps-arc@lists.infradead.org, Dave Martin <dave.martin@arm.com>, uclinux-h8-devel@lists.sourceforge.jp, linux-xtensa@linux-xtensa.org, Kees Cook <keescook@chromium.org>, Roland McGrath <roland@hack.frob.com>, linux-um@lists.infradead.org, linux-mips@vger.kernel.org, openrisc@lists.librecores.org, Borislav Petkov <bp@alien8.de>, Andy Lutomirski <luto@kernel.org>, Thomas Gleixner <tglx@linu>
+To: Linus Walleij <linus.walleij@linaro.org>
+Cc: linux-gpio@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: "Steven Rostedt (VMware)" <rostedt@goodmis.org>
+Currently the PINMUX_CFG_REG_VAR() macro must be followed by
+initialization data, specifying all enum IDs.  Hence the macro itself
+does not know anything about the enum IDs, preventing the macro from
+performing any validation on it.
 
-After removing the start and count arguments of syscall_get_arguments() it
-seems reasonable to remove them from syscall_set_arguments(). Note, as of
-today, there are no users of syscall_set_arguments(). But we are told that
-there will be soon. But for now, at least make it consistent with
-syscall_get_arguments().
+Make the macro accept the enum IDs as a parameter, and update all users.
+Note that array data enclosed by curly braces cannot be passed to a
+macro as a parameter, hence both the register field widths and the enum
+IDs are wrapped using the GROUP() macro.
 
-Link: http://lkml.kernel.org/r/20190327222014.GA32540@altlinux.org
+No functional changes.
 
-Cc: Oleg Nesterov <oleg@redhat.com>
-Cc: Thomas Gleixner <tglx@linutronix.de>
-Cc: Kees Cook <keescook@chromium.org>
-Cc: Andy Lutomirski <luto@amacapital.net>
-Cc: Dominik Brodowski <linux@dominikbrodowski.net>
-Cc: Dave Martin <dave.martin@arm.com>
-Cc: "Dmitry V. Levin" <ldv@altlinux.org>
-Cc: x86@kernel.org
-Cc: linux-snps-arc@lists.infradead.org
-Cc: linux-kernel@vger.kernel.org
-Cc: linux-arm-kernel@lists.infradead.org
-Cc: linux-c6x-dev@linux-c6x.org
-Cc: uclinux-h8-devel@lists.sourceforge.jp
-Cc: linux-hexagon@vger.kernel.org
-Cc: linux-ia64@vger.kernel.org
-Cc: linux-mips@vger.kernel.org
-Cc: nios2-dev@lists.rocketboards.org
-Cc: openrisc@lists.librecores.org
-Cc: linux-parisc@vger.kernel.org
-Cc: linuxppc-dev@lists.ozlabs.org
-Cc: linux-riscv@lists.infradead.org
-Cc: linux-s390@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
-Cc: sparclinux@vger.kernel.org
-Cc: linux-um@lists.infradead.org
-Cc: linux-xtensa@linux-xtensa.org
-Cc: linux-arch@vger.kernel.org
-Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/include/asm/syscall.h        | 22 ++-------
- arch/arm64/include/asm/syscall.h      | 22 ++-------
- arch/c6x/include/asm/syscall.h        | 38 +++------------
- arch/csky/include/asm/syscall.h       | 13 ++---
- arch/ia64/include/asm/syscall.h       | 10 ++--
- arch/ia64/kernel/ptrace.c             |  7 ++-
- arch/microblaze/include/asm/syscall.h |  4 +-
- arch/nds32/include/asm/syscall.h      | 29 ++---------
- arch/nios2/include/asm/syscall.h      | 42 +++-------------
- arch/openrisc/include/asm/syscall.h   |  6 +--
- arch/powerpc/include/asm/syscall.h    |  7 +--
- arch/riscv/include/asm/syscall.h      | 12 ++---
- arch/s390/include/asm/syscall.h       | 11 ++---
- arch/sh/include/asm/syscall_32.h      | 21 +++-----
- arch/sh/include/asm/syscall_64.h      |  4 +-
- arch/sparc/include/asm/syscall.h      |  7 ++-
- arch/um/include/asm/syscall-generic.h | 39 +++------------
- arch/x86/include/asm/syscall.h        | 69 +++++++--------------------
- arch/xtensa/include/asm/syscall.h     | 17 ++-----
- include/asm-generic/syscall.h         | 10 +---
- 20 files changed, 88 insertions(+), 302 deletions(-)
+This patch is incomplete!
+It contains only the generic and r8a7791 parts.
 
-diff --git a/arch/arm/include/asm/syscall.h b/arch/arm/include/asm/syscall.h
-index db969a2972ae..080ce70cab12 100644
---- a/arch/arm/include/asm/syscall.h
-+++ b/arch/arm/include/asm/syscall.h
-@@ -65,26 +65,12 @@ static inline void syscall_get_arguments(struct task_struct *task,
+v3:
+  - Incorporate change that was accidentally part of the previous patch,
+
+v2:
+  - Improve comment.
+---
+ drivers/pinctrl/sh-pfc/pfc-emev2.c       |  47 +++++----
+ drivers/pinctrl/sh-pfc/pfc-r8a77470.c    | 111 +++++++++++---------
+ drivers/pinctrl/sh-pfc/pfc-r8a7778.c     |  81 +++++++++------
+ drivers/pinctrl/sh-pfc/pfc-r8a7779.c     |  89 +++++++++-------
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c     | 107 ++++++++++++--------
+ drivers/pinctrl/sh-pfc/pfc-r8a7791.c     | 123 ++++++++++++++---------
+ drivers/pinctrl/sh-pfc/pfc-r8a7792.c     |  86 +++++++++-------
+ drivers/pinctrl/sh-pfc/pfc-r8a7794.c     |  98 ++++++++++--------
+ drivers/pinctrl/sh-pfc/pfc-r8a7795-es1.c |  20 ++--
+ drivers/pinctrl/sh-pfc/pfc-r8a7795.c     |  21 ++--
+ drivers/pinctrl/sh-pfc/pfc-r8a7796.c     |  21 ++--
+ drivers/pinctrl/sh-pfc/pfc-r8a77965.c    |  21 ++--
+ drivers/pinctrl/sh-pfc/pfc-r8a77970.c    |   7 +-
+ drivers/pinctrl/sh-pfc/pfc-r8a77980.c    |   7 +-
+ drivers/pinctrl/sh-pfc/pfc-r8a77990.c    |  14 +--
+ drivers/pinctrl/sh-pfc/pfc-r8a77995.c    |  13 +--
+ drivers/pinctrl/sh-pfc/pfc-sh7734.c      |  83 ++++++++-------
+ drivers/pinctrl/sh-pfc/sh_pfc.h          |  25 +++--
+ 18 files changed, 572 insertions(+), 402 deletions(-)
+
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7791.c b/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
+index b96c9a207cf8971d..1292ec8d268fc41f 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
+@@ -5701,8 +5701,9 @@ static const struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 		GP_7_0_FN, FN_IP15_17_15 ))
+ 	},
+ 	{ PINMUX_CFG_REG_VAR("IPSR0", 0xE6060020, 32,
+-			     1, 2, 2, 2, 2, 2, 2, 3, 1, 1, 1, 1, 1, 1, 1, 1,
+-			     1, 1, 1, 1, 1, 1, 1, 1) {
++			     GROUP(1, 2, 2, 2, 2, 2, 2, 3, 1, 1, 1, 1,
++				   1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
++			     GROUP(
+ 		/* IP0_31 [1] */
+ 		0, 0,
+ 		/* IP0_30_29 [2] */
+@@ -5757,10 +5758,11 @@ static const struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 		/* IP0_1 [1] */
+ 		FN_D1, 0,
+ 		/* IP0_0 [1] */
+-		FN_D0, 0, }
++		FN_D0, 0, ))
+ 	},
+ 	{ PINMUX_CFG_REG_VAR("IPSR1", 0xE6060024, 32,
+-			     3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2) {
++			     GROUP(3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2),
++			     GROUP(
+ 		/* IP1_31_29 [3] */
+ 		FN_A18, FN_DREQ1, FN_SCIFA1_RXD_C, 0, FN_SCIFB1_RXD_C,
+ 		0, 0, 0,
+@@ -5793,10 +5795,11 @@ static const struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 		FN_A8, FN_MSIOF1_SS1, FN_I2C0_SCL, 0,
+ 		/* IP1_1_0 [2] */
+ 		FN_A7, FN_MSIOF1_SYNC,
+-		0, 0, }
++		0, 0, ))
+ 	},
+ 	{ PINMUX_CFG_REG_VAR("IPSR2", 0xE6060028, 32,
+-			     2, 3, 2, 2, 2, 2, 3, 3, 3, 3, 2, 2, 3) {
++			     GROUP(2, 3, 2, 2, 2, 2, 3, 3, 3, 3, 2, 2, 3),
++			     GROUP(
+ 		/* IP2_31_30 [2] */
+ 		0, 0, 0, 0,
+ 		/* IP2_29_27 [3] */
+@@ -5829,10 +5832,11 @@ static const struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 		FN_A20, FN_SPCLK, 0, 0,
+ 		/* IP2_2_0 [3] */
+ 		FN_A19, FN_DACK1, FN_SCIFA1_TXD_C, 0,
+-		FN_SCIFB1_TXD_C, 0, FN_SCIFB1_SCK_B, 0, }
++		FN_SCIFB1_TXD_C, 0, FN_SCIFB1_SCK_B, 0, ))
+ 	},
+ 	{ PINMUX_CFG_REG_VAR("IPSR3", 0xE606002C, 32,
+-			     1, 3, 3, 3, 2, 2, 2, 2, 2, 3, 3, 3, 3) {
++			     GROUP(1, 3, 3, 3, 2, 2, 2, 2, 2, 3, 3, 3, 3),
++			     GROUP(
+ 		/* IP3_31 [1] */
+ 		0, 0,
+ 		/* IP3_30_28 [3] */
+@@ -5867,10 +5871,12 @@ static const struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 		FN_SCIFB1_RXD_B, FN_PWM1, FN_TPU_TO1, 0,
+ 		/* IP3_2_0 [3] */
+ 		FN_EX_CS4_N, FN_ATARD0_N, FN_MSIOF2_RXD, 0, FN_EX_WAIT2,
+-		0, 0, 0, }
++		0, 0, 0, ))
+ 	},
+ 	{ PINMUX_CFG_REG_VAR("IPSR4", 0xE6060030, 32,
+-			     1, 3, 2, 2, 2, 1, 1, 1, 3, 3, 3, 2, 3, 3, 2) {
++			     GROUP(1, 3, 2, 2, 2, 1, 1, 1, 3, 3, 3, 2,
++				   3, 3, 2),
++			     GROUP(
+ 		/* IP4_31 [1] */
+ 		0, 0,
+ 		/* IP4_30_28 [3] */
+@@ -5909,10 +5915,12 @@ static const struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 		FN_MSIOF2_SYNC_C, FN_GLO_I0_D,
+ 		0, 0, 0,
+ 		/* IP4_1_0 [2] */
+-		FN_SSI_SDATA0, FN_I2C0_SCL_B, FN_IIC0_SCL_B, FN_MSIOF2_SCK_C, }
++		FN_SSI_SDATA0, FN_I2C0_SCL_B, FN_IIC0_SCL_B, FN_MSIOF2_SCK_C,
++		))
+ 	},
+ 	{ PINMUX_CFG_REG_VAR("IPSR5", 0xE6060034, 32,
+-			     3, 3, 2, 2, 2, 3, 2, 3, 3, 3, 3, 3) {
++			     GROUP(3, 3, 2, 2, 2, 3, 2, 3, 3, 3, 3, 3),
++			     GROUP(
+ 		/* IP5_31_29 [3] */
+ 		FN_SSI_SDATA9, FN_RX3_D, FN_CAN0_RX_D,
+ 		0, 0, 0, 0, 0,
+@@ -5947,10 +5955,11 @@ static const struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 		/* IP5_2_0 [3] */
+ 		FN_SSI_WS5, FN_MSIOF1_SYNC_C, FN_TS_SCK0, FN_GLO_I1,
+ 		FN_MSIOF2_TXD_D, FN_VI1_R3_B,
+-		0, 0, }
++		0, 0, ))
+ 	},
+ 	{ PINMUX_CFG_REG_VAR("IPSR6", 0xE6060038, 32,
+-			     2, 3, 3, 3, 2, 3, 2, 2, 2, 2, 2, 3, 3) {
++			     GROUP(2, 3, 3, 3, 2, 3, 2, 2, 2, 2, 2, 3, 3),
++			     GROUP(
+ 		/* IP6_31_30 [2] */
+ 		0, 0, 0, 0,
+ 		/* IP6_29_27 [3] */
+@@ -5987,10 +5996,11 @@ static const struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 		/* IP6_2_0 [3] */
+ 		FN_AUDIO_CLKB, FN_STP_OPWM_0_B, FN_MSIOF1_SCK_B,
+ 		FN_SCIF_CLK, FN_DVC_MUTE, FN_BPFCLK_E,
+-		0, 0, }
++		0, 0, ))
+ 	},
+ 	{ PINMUX_CFG_REG_VAR("IPSR7", 0xE606003C, 32,
+-			     2, 3, 3, 3, 2, 2, 2, 2, 2, 2, 3, 3, 3) {
++			     GROUP(2, 3, 3, 3, 2, 2, 2, 2, 2, 2, 3, 3, 3),
++			     GROUP(
+ 		/* IP7_31_30 [2] */
+ 		0, 0, 0, 0,
+ 		/* IP7_29_27 [3] */
+@@ -6028,10 +6038,11 @@ static const struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 		/* IP7_2_0 [3] */
+ 		FN_IRQ9, FN_DU1_DOTCLKIN_B, FN_CAN_CLK_D, FN_GPS_MAG_C,
+ 		FN_SCIF_CLK_B, FN_GPS_MAG_D,
+-		0, 0, }
++		0, 0, ))
+ 	},
+ 	{ PINMUX_CFG_REG_VAR("IPSR8", 0xE6060040, 32,
+-			     1, 3, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3) {
++			     GROUP(1, 3, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3),
++			     GROUP(
+ 		/* IP8_31 [1] */
+ 		0, 0,
+ 		/* IP8_30_28 [3] */
+@@ -6071,10 +6082,12 @@ static const struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 		0, 0,
+ 		/* IP8_2_0 [3] */
+ 		FN_DU1_DG3, FN_LCDOUT11, FN_VI1_DATA5_B, 0, FN_SSI_WS78_B,
+-		0, 0, 0, }
++		0, 0, 0, ))
+ 	},
+ 	{ PINMUX_CFG_REG_VAR("IPSR9", 0xE6060044, 32,
+-			     3, 2, 2, 2, 2, 2, 2, 1, 3, 1, 1, 3, 1, 1, 3, 3) {
++			     GROUP(3, 2, 2, 2, 2, 2, 2, 1, 3, 1, 1, 3,
++				   1, 1, 3, 3),
++			     GROUP(
+ 		/* IP9_31_29 [3] */
+ 		FN_VI0_G0, FN_IIC1_SCL, FN_STP_IVCXO27_0_C, FN_I2C4_SCL,
+ 		FN_HCTS2_N, FN_SCIFB2_CTS_N, FN_ATAWR1_N, 0,
+@@ -6114,10 +6127,11 @@ static const struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 		0, 0, 0,
+ 		/* IP9_2_0 [3] */
+ 		FN_DU1_DB6, FN_LCDOUT22, FN_I2C3_SCL_C, FN_RX3, FN_SCIFA3_RXD,
+-		0, 0, 0, }
++		0, 0, 0, ))
+ 	},
+ 	{ PINMUX_CFG_REG_VAR("IPSR10", 0xE6060048, 32,
+-			     3, 2, 2, 3, 3, 2, 2, 3, 3, 3, 3, 3) {
++			     GROUP(3, 2, 2, 3, 3, 2, 2, 3, 3, 3, 3, 3),
++			     GROUP(
+ 		/* IP10_31_29 [3] */
+ 		FN_VI0_R4, FN_VI2_DATA5, FN_GLO_SCLK_B, FN_TX0_C, FN_I2C1_SCL_D,
+ 		0, 0, 0,
+@@ -6151,11 +6165,12 @@ static const struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 		FN_HSCK2, FN_SCIFB2_SCK, FN_ATARD1_N, 0,
+ 		/* IP10_2_0 [3] */
+ 		FN_VI0_G1, FN_IIC1_SDA, FN_STP_ISCLK_0_C, FN_I2C4_SDA,
+-		FN_HRTS2_N, FN_SCIFB2_RTS_N, FN_ATADIR1_N, 0, }
++		FN_HRTS2_N, FN_SCIFB2_RTS_N, FN_ATADIR1_N, 0, ))
+ 	},
+ 	{ PINMUX_CFG_REG_VAR("IPSR11", 0xE606004C, 32,
+-			     2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,
+-			     3, 3, 3, 3, 3) {
++			     GROUP(2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,
++				   2, 3, 3, 3, 3, 3),
++			     GROUP(
+ 		/* IP11_31_30 [2] */
+ 		FN_ETH_CRS_DV, FN_AVB_LINK, FN_I2C2_SDA_C, 0,
+ 		/* IP11_29_28 [2] */
+@@ -6198,10 +6213,11 @@ static const struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 		0, 0, 0,
+ 		/* IP11_2_0 [3] */
+ 		FN_VI0_R5, FN_VI2_DATA6, FN_GLO_SDATA_B, FN_RX0_C,
+-		FN_I2C1_SDA_D, 0, 0, 0, }
++		FN_I2C1_SDA_D, 0, 0, 0, ))
+ 	},
+ 	{ PINMUX_CFG_REG_VAR("IPSR12", 0xE6060050, 32,
+-			     2, 3, 3, 2, 2, 2, 2, 3, 3, 3, 3, 2, 2) {
++			     GROUP(2, 3, 3, 2, 2, 2, 2, 3, 3, 3, 3, 2, 2),
++			     GROUP(
+ 		/* IP12_31_30 [2] */
+ 		0, 0, 0, 0,
+ 		/* IP12_29_27 [3] */
+@@ -6239,11 +6255,12 @@ static const struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 		/* IP12_3_2 [2] */
+ 		FN_ETH_RXD0, FN_AVB_PHY_INT, FN_I2C3_SDA, FN_IIC0_SDA,
+ 		/* IP12_1_0 [2] */
+-		FN_ETH_RX_ER, FN_AVB_CRS, FN_I2C3_SCL, FN_IIC0_SCL, }
++		FN_ETH_RX_ER, FN_AVB_CRS, FN_I2C3_SCL, FN_IIC0_SCL, ))
+ 	},
+ 	{ PINMUX_CFG_REG_VAR("IPSR13", 0xE6060054, 32,
+-			     1, 3, 1, 1, 1, 2, 1, 3, 3, 1, 1, 1, 1, 1, 1,
+-			     3, 2, 2, 3) {
++			     GROUP(1, 3, 1, 1, 1, 2, 1, 3, 3, 1, 1, 1,
++				   1, 1, 1, 3, 2, 2, 3),
++			     GROUP(
+ 		/* IP13_31 [1] */
+ 		0, 0,
+ 		/* IP13_30_28 [3] */
+@@ -6290,10 +6307,12 @@ static const struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 		/* IP13_2_0 [3] */
+ 		FN_STP_ISD_0, FN_AVB_TX_ER, FN_SCIFB2_SCK_C,
+ 		FN_ADICLK_B, FN_MSIOF0_SS1_C,
+-		0, 0, 0, }
++		0, 0, 0, ))
+ 	},
+ 	{ PINMUX_CFG_REG_VAR("IPSR14", 0xE6060058, 32,
+-			     3, 3, 3, 3, 3, 3, 3, 3, 1, 1, 1, 1, 1, 1, 2) {
++			     GROUP(3, 3, 3, 3, 3, 3, 3, 3, 1, 1, 1, 1,
++				   1, 1, 2),
++			     GROUP(
+ 		/* IP14_31_29 [3] */
+ 		FN_MSIOF0_SS2, FN_MMC_D7, FN_ADICHS2, FN_RX0_E,
+ 		FN_VI1_VSYNC_N_C, FN_IIC0_SDA_C, FN_VI1_G5_B, 0,
+@@ -6333,10 +6352,11 @@ static const struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 		/* IP14_2 [1] */
+ 		FN_SD2_CLK, FN_MMC_CLK,
+ 		/* IP14_1_0 [2] */
+-		FN_SD1_WP, FN_PWM1_B, FN_I2C1_SDA_C, 0, }
++		FN_SD1_WP, FN_PWM1_B, FN_I2C1_SDA_C, 0, ))
+ 	},
+ 	{ PINMUX_CFG_REG_VAR("IPSR15", 0xE606005C, 32,
+-			     2, 3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2) {
++			     GROUP(2, 3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2),
++			     GROUP(
+ 		/* IP15_31_30 [2] */
+ 		0, 0, 0, 0,
+ 		/* IP15_29_27 [3] */
+@@ -6374,10 +6394,11 @@ static const struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 		/* IP15_3_2 [2] */
+ 		FN_SIM0_CLK, FN_IECLK, FN_CAN_CLK_C, 0,
+ 		/* IP15_1_0 [2] */
+-		FN_SIM0_RST, FN_IETX, FN_CAN1_TX_D, 0, }
++		FN_SIM0_RST, FN_IETX, FN_CAN1_TX_D, 0, ))
+ 	},
+ 	{ PINMUX_CFG_REG_VAR("IPSR16", 0xE6060160, 32,
+-			     4, 4, 4, 4, 4, 2, 2, 2, 3, 3) {
++			     GROUP(4, 4, 4, 4, 4, 2, 2, 2, 3, 3),
++			     GROUP(
+ 		/* IP16_31_28 [4] */
+ 		0, 0, 0, 0, 0, 0, 0, 0,
+ 		0, 0, 0, 0, 0, 0, 0, 0,
+@@ -6406,11 +6427,12 @@ static const struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 		/* IP16_2_0 [3] */
+ 		FN_HRX1, FN_SCIFB1_RXD, FN_VI1_R0_B,
+ 		FN_GLO_SDATA_C, FN_VI1_DATA6_C,
+-		0, 0, 0, }
++		0, 0, 0, ))
+ 	},
+ 	{ PINMUX_CFG_REG_VAR("MOD_SEL", 0xE6060090, 32,
+-			     1, 2, 2, 2, 3, 2, 1, 1, 1, 1,
+-			     3, 2, 2, 2, 1, 2, 2, 2) {
++			     GROUP(1, 2, 2, 2, 3, 2, 1, 1, 1, 1, 3, 2,
++				   2, 2, 1, 2, 2, 2),
++			     GROUP(
+ 		/* RESERVED [1] */
+ 		0, 0,
+ 		/* SEL_SCIF1 [2] */
+@@ -6451,11 +6473,12 @@ static const struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 		/* SEL_TSIF0 [2] */
+ 		FN_SEL_TSIF0_0, FN_SEL_TSIF0_1, FN_SEL_TSIF0_2, FN_SEL_TSIF0_3,
+ 		/* SEL_SOF0 [2] */
+-		FN_SEL_SOF0_0, FN_SEL_SOF0_1, FN_SEL_SOF0_2, 0, }
++		FN_SEL_SOF0_0, FN_SEL_SOF0_1, FN_SEL_SOF0_2, 0, ))
+ 	},
+ 	{ PINMUX_CFG_REG_VAR("MOD_SEL2", 0xE6060094, 32,
+-			     3, 1, 1, 3, 2, 1, 1, 2, 2,
+-			     1, 3, 2, 1, 2, 2, 2, 1, 1, 1) {
++			     GROUP(3, 1, 1, 3, 2, 1, 1, 2, 2, 1, 3, 2,
++				   1, 2, 2, 2, 1, 1, 1),
++			     GROUP(
+ 		/* SEL_SCIF0 [3] */
+ 		FN_SEL_SCIF0_0, FN_SEL_SCIF0_1, FN_SEL_SCIF0_2,
+ 		FN_SEL_SCIF0_3, FN_SEL_SCIF0_4,
+@@ -6499,11 +6522,12 @@ static const struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 		/* RESERVED [1] */
+ 		0, 0,
+ 		/* SEL_SSI8 [1] */
+-		FN_SEL_SSI8_0, FN_SEL_SSI8_1, }
++		FN_SEL_SSI8_0, FN_SEL_SSI8_1, ))
+ 	},
+ 	{ PINMUX_CFG_REG_VAR("MOD_SEL3", 0xE6060098, 32,
+-			     2, 2, 2, 2, 2, 2, 2, 2,
+-			     1, 1, 2, 2, 3, 2, 2, 2, 1) {
++			     GROUP(2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 2, 2,
++				   3, 2, 2, 2, 1),
++			     GROUP(
+ 		/* SEL_HSCIF2 [2] */
+ 		FN_SEL_HSCIF2_0, FN_SEL_HSCIF2_1,
+ 		FN_SEL_HSCIF2_2, FN_SEL_HSCIF2_3,
+@@ -6541,11 +6565,12 @@ static const struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 		/* RESERVED [2] */
+ 		0, 0, 0, 0,
+ 		/* RESERVED [1] */
+-		0, 0, }
++		0, 0, ))
+ 	},
+ 	{ PINMUX_CFG_REG_VAR("MOD_SEL4", 0xE606009C, 32,
+-			     3, 2, 2, 1, 1, 1, 1, 3, 2,
+-			     2, 3, 1, 1, 1, 2, 2, 2, 2) {
++			     GROUP(3, 2, 2, 1, 1, 1, 1, 3, 2, 2, 3, 1,
++				   1, 1, 2, 2, 2, 2),
++			     GROUP(
+ 		/* SEL_SOF1 [3] */
+ 		FN_SEL_SOF1_0, FN_SEL_SOF1_1, FN_SEL_SOF1_2, FN_SEL_SOF1_3,
+ 		FN_SEL_SOF1_4,
+@@ -6587,7 +6612,7 @@ static const struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 		/* RESERVED [2] */
+ 		0, 0, 0, 0,
+ 		/* RESERVED [2] */
+-		0, 0, 0, 0, }
++		0, 0, 0, 0, ))
+ 	},
+ 	{ },
+ };
+diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
+index 3848c104543d383e..95eb51168ed83856 100644
+--- a/drivers/pinctrl/sh-pfc/sh_pfc.h
++++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
+@@ -139,16 +139,17 @@ struct pinmux_cfg_reg {
+  *   - name: Register name (unused, for documentation purposes only)
+  *   - r: Physical register address
+  *   - r_width: Width of the register (in bits)
+- *   - var_fw0, var_fwn...: List of widths of the register fields (in bits),
+- *                          From left to right (i.e. MSB to LSB)
+- * This macro must be followed by initialization data: For each register field
+- * (from left to right, i.e. MSB to LSB), 2^var_fwi enum IDs must be specified,
+- * one for each possible combination of the register field bit values.
++ *   - f_widths: List of widths of the register fields (in bits), from left
++ *               to right (i.e. MSB to LSB), wrapped using the GROUP() macro.
++ *   - ids: For each register field (from left to right, i.e. MSB to LSB),
++ *          2^f_widths[i] enum IDs must be specified, one for each possible
++ *          combination of the register field bit values, all wrapped using
++ *          the GROUP() macro.
+  */
+-#define PINMUX_CFG_REG_VAR(name, r, r_width, var_fw0, var_fwn...) \
+-	.reg = r, .reg_width = r_width,	\
+-	.var_field_width = (const u8 []) { var_fw0, var_fwn, 0 }, \
+-	.enum_ids = (const u16 [])
++#define PINMUX_CFG_REG_VAR(name, r, r_width, f_widths, ids)		\
++	.reg = r, .reg_width = r_width,					\
++	.var_field_width = (const u8 []) { f_widths, 0 },		\
++	.enum_ids = (const u16 []) { ids }
  
- static inline void syscall_set_arguments(struct task_struct *task,
- 					 struct pt_regs *regs,
--					 unsigned int i, unsigned int n,
- 					 const unsigned long *args)
- {
--	if (n = 0)
--		return;
--
--	if (i + n > SYSCALL_MAX_ARGS) {
--		pr_warn("%s called with max args %d, handling only %d\n",
--			__func__, i + n, SYSCALL_MAX_ARGS);
--		n = SYSCALL_MAX_ARGS - i;
--	}
--
--	if (i = 0) {
--		regs->ARM_ORIG_r0 = args[0];
--		args++;
--		i++;
--		n--;
--	}
--
--	memcpy(&regs->ARM_r0 + i, args, n * sizeof(args[0]));
-+	regs->ARM_ORIG_r0 = args[0];
-+	args++;
-+
-+	memcpy(&regs->ARM_r0 + 1, args, 5 * sizeof(args[0]));
- }
- 
- static inline int syscall_get_arch(void)
-diff --git a/arch/arm64/include/asm/syscall.h b/arch/arm64/include/asm/syscall.h
-index 55b2dab21023..a179df3674a1 100644
---- a/arch/arm64/include/asm/syscall.h
-+++ b/arch/arm64/include/asm/syscall.h
-@@ -75,26 +75,12 @@ static inline void syscall_get_arguments(struct task_struct *task,
- 
- static inline void syscall_set_arguments(struct task_struct *task,
- 					 struct pt_regs *regs,
--					 unsigned int i, unsigned int n,
- 					 const unsigned long *args)
- {
--	if (n = 0)
--		return;
--
--	if (i + n > SYSCALL_MAX_ARGS) {
--		pr_warning("%s called with max args %d, handling only %d\n",
--			   __func__, i + n, SYSCALL_MAX_ARGS);
--		n = SYSCALL_MAX_ARGS - i;
--	}
--
--	if (i = 0) {
--		regs->orig_x0 = args[0];
--		args++;
--		i++;
--		n--;
--	}
--
--	memcpy(&regs->regs[i], args, n * sizeof(args[0]));
-+	regs->orig_x0 = args[0];
-+	args++;
-+
-+	memcpy(&regs->regs[1], args, 5 * sizeof(args[0]));
- }
+ struct pinmux_drive_reg_field {
+ 	u16 pin;
+@@ -667,7 +668,9 @@ extern const struct sh_pfc_soc_info shx3_pinmux_info;
+  */
+ #define PORTCR(nr, reg)							\
+ 	{								\
+-		PINMUX_CFG_REG_VAR("PORT" nr "CR", reg, 8, 2, 2, 1, 3) {\
++		PINMUX_CFG_REG_VAR("PORT" nr "CR", reg, 8,		\
++				   GROUP(2, 2, 1, 3),			\
++				   GROUP(				\
+ 			/* PULMD[1:0], handled by .set_bias() */	\
+ 			0, 0, 0, 0,					\
+ 			/* IE and OE */					\
+@@ -679,7 +682,7 @@ extern const struct sh_pfc_soc_info shx3_pinmux_info;
+ 			PORT##nr##_FN2, PORT##nr##_FN3,			\
+ 			PORT##nr##_FN4, PORT##nr##_FN5,			\
+ 			PORT##nr##_FN6, PORT##nr##_FN7			\
+-		}							\
++		))							\
+ 	}
  
  /*
-diff --git a/arch/c6x/include/asm/syscall.h b/arch/c6x/include/asm/syscall.h
-index 06db3251926b..15ba8599858e 100644
---- a/arch/c6x/include/asm/syscall.h
-+++ b/arch/c6x/include/asm/syscall.h
-@@ -59,40 +59,14 @@ static inline void syscall_get_arguments(struct task_struct *task,
- 
- static inline void syscall_set_arguments(struct task_struct *task,
- 					 struct pt_regs *regs,
--					 unsigned int i, unsigned int n,
- 					 const unsigned long *args)
- {
--	switch (i) {
--	case 0:
--		if (!n--)
--			break;
--		regs->a4 = *args++;
--	case 1:
--		if (!n--)
--			break;
--		regs->b4 = *args++;
--	case 2:
--		if (!n--)
--			break;
--		regs->a6 = *args++;
--	case 3:
--		if (!n--)
--			break;
--		regs->b6 = *args++;
--	case 4:
--		if (!n--)
--			break;
--		regs->a8 = *args++;
--	case 5:
--		if (!n--)
--			break;
--		regs->a9 = *args++;
--	case 6:
--		if (!n)
--			break;
--	default:
--		BUG();
--	}
-+	regs->a4 = *args++;
-+	regs->b4 = *args++;
-+	regs->a6 = *args++;
-+	regs->b6 = *args++;
-+	regs->a8 = *args++;
-+	regs->a9 = *args;
- }
- 
- #endif /* __ASM_C6X_SYSCALLS_H */
-diff --git a/arch/csky/include/asm/syscall.h b/arch/csky/include/asm/syscall.h
-index 5cc0b8283a69..34c02d6bb973 100644
---- a/arch/csky/include/asm/syscall.h
-+++ b/arch/csky/include/asm/syscall.h
-@@ -52,16 +52,11 @@ syscall_get_arguments(struct task_struct *task, struct pt_regs *regs,
- 
- static inline void
- syscall_set_arguments(struct task_struct *task, struct pt_regs *regs,
--		      unsigned int i, unsigned int n, const unsigned long *args)
-+		      const unsigned long *args)
- {
--	BUG_ON(i + n > 6);
--	if (i = 0) {
--		regs->orig_a0 = args[0];
--		args++;
--		i++;
--		n--;
--	}
--	memcpy(&regs->a1 + i * sizeof(regs->a1), args, n * sizeof(regs->a0));
-+	regs->orig_a0 = args[0];
-+	args++;
-+	memcpy(&regs->a1 + sizeof(regs->a1), args, 5 * sizeof(regs->a0));
- }
- 
- static inline int
-diff --git a/arch/ia64/include/asm/syscall.h b/arch/ia64/include/asm/syscall.h
-index 8204c1ff70ce..0d9e7fab4a79 100644
---- a/arch/ia64/include/asm/syscall.h
-+++ b/arch/ia64/include/asm/syscall.h
-@@ -59,23 +59,19 @@ static inline void syscall_set_return_value(struct task_struct *task,
- }
- 
- extern void ia64_syscall_get_set_arguments(struct task_struct *task,
--	struct pt_regs *regs, unsigned int i, unsigned int n,
--	unsigned long *args, int rw);
-+	struct pt_regs *regs, unsigned long *args, int rw);
- static inline void syscall_get_arguments(struct task_struct *task,
- 					 struct pt_regs *regs,
- 					 unsigned long *args)
- {
--	ia64_syscall_get_set_arguments(task, regs, 0, 6, args, 0);
-+	ia64_syscall_get_set_arguments(task, regs, args, 0);
- }
- 
- static inline void syscall_set_arguments(struct task_struct *task,
- 					 struct pt_regs *regs,
--					 unsigned int i, unsigned int n,
- 					 unsigned long *args)
- {
--	BUG_ON(i + n > 6);
--
--	ia64_syscall_get_set_arguments(task, regs, i, n, args, 1);
-+	ia64_syscall_get_set_arguments(task, regs, args, 1);
- }
- 
- static inline int syscall_get_arch(void)
-diff --git a/arch/ia64/kernel/ptrace.c b/arch/ia64/kernel/ptrace.c
-index 6d50ede0ed69..bf9c24d9ce84 100644
---- a/arch/ia64/kernel/ptrace.c
-+++ b/arch/ia64/kernel/ptrace.c
-@@ -2179,12 +2179,11 @@ static void syscall_get_set_args_cb(struct unw_frame_info *info, void *data)
- }
- 
- void ia64_syscall_get_set_arguments(struct task_struct *task,
--	struct pt_regs *regs, unsigned int i, unsigned int n,
--	unsigned long *args, int rw)
-+	struct pt_regs *regs, unsigned long *args, int rw)
- {
- 	struct syscall_get_set_args data = {
--		.i = i,
--		.n = n,
-+		.i = 0,
-+		.n = 6,
- 		.args = args,
- 		.regs = regs,
- 		.rw = rw,
-diff --git a/arch/microblaze/include/asm/syscall.h b/arch/microblaze/include/asm/syscall.h
-index 4b23e44e5c3c..833d3a53dab3 100644
---- a/arch/microblaze/include/asm/syscall.h
-+++ b/arch/microblaze/include/asm/syscall.h
-@@ -93,9 +93,11 @@ static inline void syscall_get_arguments(struct task_struct *task,
- 
- static inline void syscall_set_arguments(struct task_struct *task,
- 					 struct pt_regs *regs,
--					 unsigned int i, unsigned int n,
- 					 const unsigned long *args)
- {
-+	unsigned int i = 0;
-+	unsigned int n = 6;
-+
- 	while (n--)
- 		microblaze_set_syscall_arg(regs, i++, *args++);
- }
-diff --git a/arch/nds32/include/asm/syscall.h b/arch/nds32/include/asm/syscall.h
-index 89a6ec8731d8..671ebd357496 100644
---- a/arch/nds32/include/asm/syscall.h
-+++ b/arch/nds32/include/asm/syscall.h
-@@ -129,39 +129,20 @@ void syscall_get_arguments(struct task_struct *task, struct pt_regs *regs,
-  * syscall_set_arguments - change system call parameter value
-  * @task:	task of interest, must be in system call entry tracing
-  * @regs:	task_pt_regs() of @task
-- * @i:		argument index [0,5]
-- * @n:		number of arguments; n+i must be [1,6].
-  * @args:	array of argument values to store
-  *
-- * Changes @n arguments to the system call starting with the @i'th argument.
-- * Argument @i gets value @args[0], and so on.
-- * An arch inline version is probably optimal when @i and @n are constants.
-+ * Changes 6 arguments to the system call. The first argument gets value
-+ * @args[0], and so on.
-  *
-  * It's only valid to call this when @task is stopped for tracing on
-  * entry to a system call, due to %TIF_SYSCALL_TRACE or %TIF_SYSCALL_AUDIT.
-- * It's invalid to call this with @i + @n > 6; we only support system calls
-- * taking up to 6 arguments.
-  */
- void syscall_set_arguments(struct task_struct *task, struct pt_regs *regs,
--			   unsigned int i, unsigned int n,
- 			   const unsigned long *args)
- {
--	if (n = 0)
--		return;
--
--	if (i + n > SYSCALL_MAX_ARGS) {
--		pr_warn("%s called with max args %d, handling only %d\n",
--			__func__, i + n, SYSCALL_MAX_ARGS);
--		n = SYSCALL_MAX_ARGS - i;
--	}
--
--	if (i = 0) {
--		regs->orig_r0 = args[0];
--		args++;
--		i++;
--		n--;
--	}
-+	regs->orig_r0 = args[0];
-+	args++;
- 
--	memcpy(&regs->uregs[0] + i, args, n * sizeof(args[0]));
-+	memcpy(&regs->uregs[0] + 1, args, 5 * sizeof(args[0]));
- }
- #endif /* _ASM_NDS32_SYSCALL_H */
-diff --git a/arch/nios2/include/asm/syscall.h b/arch/nios2/include/asm/syscall.h
-index 792bd449d839..d7624ed06efb 100644
---- a/arch/nios2/include/asm/syscall.h
-+++ b/arch/nios2/include/asm/syscall.h
-@@ -69,42 +69,14 @@ static inline void syscall_get_arguments(struct task_struct *task,
- }
- 
- static inline void syscall_set_arguments(struct task_struct *task,
--	struct pt_regs *regs, unsigned int i, unsigned int n,
--	const unsigned long *args)
-+	struct pt_regs *regs, const unsigned long *args)
- {
--	BUG_ON(i + n > 6);
--
--	switch (i) {
--	case 0:
--		if (!n--)
--			break;
--		regs->r4 = *args++;
--	case 1:
--		if (!n--)
--			break;
--		regs->r5 = *args++;
--	case 2:
--		if (!n--)
--			break;
--		regs->r6 = *args++;
--	case 3:
--		if (!n--)
--			break;
--		regs->r7 = *args++;
--	case 4:
--		if (!n--)
--			break;
--		regs->r8 = *args++;
--	case 5:
--		if (!n--)
--			break;
--		regs->r9 = *args++;
--	case 6:
--		if (!n)
--			break;
--	default:
--		BUG();
--	}
-+	regs->r4 = *args++;
-+	regs->r5 = *args++;
-+	regs->r6 = *args++;
-+	regs->r7 = *args++;
-+	regs->r8 = *args++;
-+	regs->r9 = *args;
- }
- 
- #endif
-diff --git a/arch/openrisc/include/asm/syscall.h b/arch/openrisc/include/asm/syscall.h
-index 72607860cd55..b4ff07c1baed 100644
---- a/arch/openrisc/include/asm/syscall.h
-+++ b/arch/openrisc/include/asm/syscall.h
-@@ -63,11 +63,9 @@ syscall_get_arguments(struct task_struct *task, struct pt_regs *regs,
- 
- static inline void
- syscall_set_arguments(struct task_struct *task, struct pt_regs *regs,
--		      unsigned int i, unsigned int n, const unsigned long *args)
-+		      const unsigned long *args)
- {
--	BUG_ON(i + n > 6);
--
--	memcpy(&regs->gpr[3 + i], args, n * sizeof(args[0]));
-+	memcpy(&regs->gpr[3], args, 6 * sizeof(args[0]));
- }
- 
- static inline int syscall_get_arch(void)
-diff --git a/arch/powerpc/include/asm/syscall.h b/arch/powerpc/include/asm/syscall.h
-index 5c9b9dc82b7e..1243045bad2d 100644
---- a/arch/powerpc/include/asm/syscall.h
-+++ b/arch/powerpc/include/asm/syscall.h
-@@ -86,15 +86,12 @@ static inline void syscall_get_arguments(struct task_struct *task,
- 
- static inline void syscall_set_arguments(struct task_struct *task,
- 					 struct pt_regs *regs,
--					 unsigned int i, unsigned int n,
- 					 const unsigned long *args)
- {
--	BUG_ON(i + n > 6);
--	memcpy(&regs->gpr[3 + i], args, n * sizeof(args[0]));
-+	memcpy(&regs->gpr[3], args, 6 * sizeof(args[0]));
- 
- 	/* Also copy the first argument into orig_gpr3 */
--	if (i = 0 && n > 0)
--		regs->orig_gpr3 = args[0];
-+	regs->orig_gpr3 = args[0];
- }
- 
- static inline int syscall_get_arch(void)
-diff --git a/arch/riscv/include/asm/syscall.h b/arch/riscv/include/asm/syscall.h
-index 85a31dd0f2ba..7321644be1cf 100644
---- a/arch/riscv/include/asm/syscall.h
-+++ b/arch/riscv/include/asm/syscall.h
-@@ -81,17 +81,11 @@ static inline void syscall_get_arguments(struct task_struct *task,
- 
- static inline void syscall_set_arguments(struct task_struct *task,
- 					 struct pt_regs *regs,
--					 unsigned int i, unsigned int n,
- 					 const unsigned long *args)
- {
--	BUG_ON(i + n > 6);
--        if (i = 0) {
--                regs->orig_a0 = args[0];
--                args++;
--                i++;
--                n--;
--        }
--	memcpy(&regs->a1 + i * sizeof(regs->a1), args, n * sizeof(regs->a0));
-+	regs->orig_a0 = args[0];
-+	args++;
-+	memcpy(&regs->a1 + sizeof(regs->a1), args, 5 * sizeof(regs->a0));
- }
- 
- static inline int syscall_get_arch(void)
-diff --git a/arch/s390/include/asm/syscall.h b/arch/s390/include/asm/syscall.h
-index ee0b1f6aa36d..59c3e91f2cdb 100644
---- a/arch/s390/include/asm/syscall.h
-+++ b/arch/s390/include/asm/syscall.h
-@@ -74,15 +74,14 @@ static inline void syscall_get_arguments(struct task_struct *task,
- 
- static inline void syscall_set_arguments(struct task_struct *task,
- 					 struct pt_regs *regs,
--					 unsigned int i, unsigned int n,
- 					 const unsigned long *args)
- {
--	BUG_ON(i + n > 6);
-+	unsigned int n = 6;
-+
- 	while (n-- > 0)
--		if (i + n > 0)
--			regs->gprs[2 + i + n] = args[n];
--	if (i = 0)
--		regs->orig_gpr2 = args[0];
-+		if (n > 0)
-+			regs->gprs[2 + n] = args[n];
-+	regs->orig_gpr2 = args[0];
- }
- 
- static inline int syscall_get_arch(void)
-diff --git a/arch/sh/include/asm/syscall_32.h b/arch/sh/include/asm/syscall_32.h
-index 2bf1199a0595..8c9d7e5e5dcc 100644
---- a/arch/sh/include/asm/syscall_32.h
-+++ b/arch/sh/include/asm/syscall_32.h
-@@ -62,23 +62,14 @@ static inline void syscall_get_arguments(struct task_struct *task,
- 
- static inline void syscall_set_arguments(struct task_struct *task,
- 					 struct pt_regs *regs,
--					 unsigned int i, unsigned int n,
- 					 const unsigned long *args)
- {
--	/* Same note as above applies */
--	BUG_ON(i);
--
--	switch (n) {
--	case 6: regs->regs[1] = args[5];
--	case 5: regs->regs[0] = args[4];
--	case 4: regs->regs[7] = args[3];
--	case 3: regs->regs[6] = args[2];
--	case 2: regs->regs[5] = args[1];
--	case 1: regs->regs[4] = args[0];
--		break;
--	default:
--		BUG();
--	}
-+	regs->regs[1] = args[5];
-+	regs->regs[0] = args[4];
-+	regs->regs[7] = args[3];
-+	regs->regs[6] = args[2];
-+	regs->regs[5] = args[1];
-+	regs->regs[4] = args[0];
- }
- 
- static inline int syscall_get_arch(void)
-diff --git a/arch/sh/include/asm/syscall_64.h b/arch/sh/include/asm/syscall_64.h
-index 4e8f6460c703..22fad97da066 100644
---- a/arch/sh/include/asm/syscall_64.h
-+++ b/arch/sh/include/asm/syscall_64.h
-@@ -54,11 +54,9 @@ static inline void syscall_get_arguments(struct task_struct *task,
- 
- static inline void syscall_set_arguments(struct task_struct *task,
- 					 struct pt_regs *regs,
--					 unsigned int i, unsigned int n,
- 					 const unsigned long *args)
- {
--	BUG_ON(i + n > 6);
--	memcpy(&regs->regs[2 + i], args, n * sizeof(args[0]));
-+	memcpy(&regs->regs[2], args, 6 * sizeof(args[0]));
- }
- 
- static inline int syscall_get_arch(void)
-diff --git a/arch/sparc/include/asm/syscall.h b/arch/sparc/include/asm/syscall.h
-index 872dfee852d6..4d075434e816 100644
---- a/arch/sparc/include/asm/syscall.h
-+++ b/arch/sparc/include/asm/syscall.h
-@@ -119,13 +119,12 @@ static inline void syscall_get_arguments(struct task_struct *task,
- 
- static inline void syscall_set_arguments(struct task_struct *task,
- 					 struct pt_regs *regs,
--					 unsigned int i, unsigned int n,
- 					 const unsigned long *args)
- {
--	unsigned int j;
-+	unsigned int i;
- 
--	for (j = 0; j < n; j++)
--		regs->u_regs[UREG_I0 + i + j] = args[j];
-+	for (i = 0; i < 6; i++)
-+		regs->u_regs[UREG_I0 + i] = args[i];
- }
- 
- static inline int syscall_get_arch(void)
-diff --git a/arch/um/include/asm/syscall-generic.h b/arch/um/include/asm/syscall-generic.h
-index 25d00acd1322..98e50c50c12e 100644
---- a/arch/um/include/asm/syscall-generic.h
-+++ b/arch/um/include/asm/syscall-generic.h
-@@ -67,43 +67,16 @@ static inline void syscall_get_arguments(struct task_struct *task,
- 
- static inline void syscall_set_arguments(struct task_struct *task,
- 					 struct pt_regs *regs,
--					 unsigned int i, unsigned int n,
- 					 const unsigned long *args)
- {
- 	struct uml_pt_regs *r = &regs->regs;
- 
--	switch (i) {
--	case 0:
--		if (!n--)
--			break;
--		UPT_SYSCALL_ARG1(r) = *args++;
--	case 1:
--		if (!n--)
--			break;
--		UPT_SYSCALL_ARG2(r) = *args++;
--	case 2:
--		if (!n--)
--			break;
--		UPT_SYSCALL_ARG3(r) = *args++;
--	case 3:
--		if (!n--)
--			break;
--		UPT_SYSCALL_ARG4(r) = *args++;
--	case 4:
--		if (!n--)
--			break;
--		UPT_SYSCALL_ARG5(r) = *args++;
--	case 5:
--		if (!n--)
--			break;
--		UPT_SYSCALL_ARG6(r) = *args++;
--	case 6:
--		if (!n--)
--			break;
--	default:
--		BUG();
--		break;
--	}
-+	UPT_SYSCALL_ARG1(r) = *args++;
-+	UPT_SYSCALL_ARG2(r) = *args++;
-+	UPT_SYSCALL_ARG3(r) = *args++;
-+	UPT_SYSCALL_ARG4(r) = *args++;
-+	UPT_SYSCALL_ARG5(r) = *args++;
-+	UPT_SYSCALL_ARG6(r) = *args;
- }
- 
- /* See arch/x86/um/asm/syscall.h for syscall_get_arch() definition. */
-diff --git a/arch/x86/include/asm/syscall.h b/arch/x86/include/asm/syscall.h
-index 8dbb5c379450..4c305471ec33 100644
---- a/arch/x86/include/asm/syscall.h
-+++ b/arch/x86/include/asm/syscall.h
-@@ -138,63 +138,26 @@ static inline void syscall_get_arguments(struct task_struct *task,
- 
- static inline void syscall_set_arguments(struct task_struct *task,
- 					 struct pt_regs *regs,
--					 unsigned int i, unsigned int n,
- 					 const unsigned long *args)
- {
- # ifdef CONFIG_IA32_EMULATION
--	if (task->thread_info.status & TS_COMPAT)
--		switch (i) {
--		case 0:
--			if (!n--) break;
--			regs->bx = *args++;
--		case 1:
--			if (!n--) break;
--			regs->cx = *args++;
--		case 2:
--			if (!n--) break;
--			regs->dx = *args++;
--		case 3:
--			if (!n--) break;
--			regs->si = *args++;
--		case 4:
--			if (!n--) break;
--			regs->di = *args++;
--		case 5:
--			if (!n--) break;
--			regs->bp = *args++;
--		case 6:
--			if (!n--) break;
--		default:
--			BUG();
--			break;
--		}
--	else
-+	if (task->thread_info.status & TS_COMPAT) {
-+		regs->bx = *args++;
-+		regs->cx = *args++;
-+		regs->dx = *args++;
-+		regs->si = *args++;
-+		regs->di = *args++;
-+		regs->bp = *args;
-+	} else
- # endif
--		switch (i) {
--		case 0:
--			if (!n--) break;
--			regs->di = *args++;
--		case 1:
--			if (!n--) break;
--			regs->si = *args++;
--		case 2:
--			if (!n--) break;
--			regs->dx = *args++;
--		case 3:
--			if (!n--) break;
--			regs->r10 = *args++;
--		case 4:
--			if (!n--) break;
--			regs->r8 = *args++;
--		case 5:
--			if (!n--) break;
--			regs->r9 = *args++;
--		case 6:
--			if (!n--) break;
--		default:
--			BUG();
--			break;
--		}
-+	{
-+		regs->di = *args++;
-+		regs->si = *args++;
-+		regs->dx = *args++;
-+		regs->r10 = *args++;
-+		regs->r8 = *args++;
-+		regs->r9 = *args;
-+	}
- }
- 
- static inline int syscall_get_arch(void)
-diff --git a/arch/xtensa/include/asm/syscall.h b/arch/xtensa/include/asm/syscall.h
-index 1504ce9a233a..91dc06d58060 100644
---- a/arch/xtensa/include/asm/syscall.h
-+++ b/arch/xtensa/include/asm/syscall.h
-@@ -70,24 +70,13 @@ static inline void syscall_get_arguments(struct task_struct *task,
- 
- static inline void syscall_set_arguments(struct task_struct *task,
- 					 struct pt_regs *regs,
--					 unsigned int i, unsigned int n,
- 					 const unsigned long *args)
- {
- 	static const unsigned int reg[] = XTENSA_SYSCALL_ARGUMENT_REGS;
--	unsigned int j;
--
--	if (n = 0)
--		return;
--
--	if (WARN_ON_ONCE(i + n > SYSCALL_MAX_ARGS)) {
--		if (i < SYSCALL_MAX_ARGS)
--			n = SYSCALL_MAX_ARGS - i;
--		else
--			return;
--	}
-+	unsigned int i;
- 
--	for (j = 0; j < n; ++j)
--		regs->areg[reg[i + j]] = args[j];
-+	for (i = 0; i < 6; ++i)
-+		regs->areg[reg[i]] = args[i];
- }
- 
- asmlinkage long xtensa_rt_sigreturn(struct pt_regs*);
-diff --git a/include/asm-generic/syscall.h b/include/asm-generic/syscall.h
-index 269e9412ef42..b88239e9efe4 100644
---- a/include/asm-generic/syscall.h
-+++ b/include/asm-generic/syscall.h
-@@ -120,21 +120,15 @@ void syscall_get_arguments(struct task_struct *task, struct pt_regs *regs,
-  * syscall_set_arguments - change system call parameter value
-  * @task:	task of interest, must be in system call entry tracing
-  * @regs:	task_pt_regs() of @task
-- * @i:		argument index [0,5]
-- * @n:		number of arguments; n+i must be [1,6].
-  * @args:	array of argument values to store
-  *
-- * Changes @n arguments to the system call starting with the @i'th argument.
-- * Argument @i gets value @args[0], and so on.
-- * An arch inline version is probably optimal when @i and @n are constants.
-+ * Changes 6 arguments to the system call.
-+ * The first argument gets value @args[0], and so on.
-  *
-  * It's only valid to call this when @task is stopped for tracing on
-  * entry to a system call, due to %TIF_SYSCALL_TRACE or %TIF_SYSCALL_AUDIT.
-- * It's invalid to call this with @i + @n > 6; we only support system calls
-- * taking up to 6 arguments.
-  */
- void syscall_set_arguments(struct task_struct *task, struct pt_regs *regs,
--			   unsigned int i, unsigned int n,
- 			   const unsigned long *args);
- 
- /**
 -- 
-2.20.1
+2.17.1
