@@ -1,40 +1,79 @@
-From: Alexandre Ghiti <alex@ghiti.fr>
-Date: Wed, 27 Mar 2019 06:36:23 +0000
-Subject: [PATCH v8 1/4] sh: Advertise gigantic page support
-Message-Id: <20190327063626.18421-2-alex@ghiti.fr>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 20 Mar 2019 10:21:41 +0000
+Subject: [PATCH v3 10/10] pinctrl: sh-pfc: Validate enum IDs for regs with variable-width fields
+Message-Id: <20190320102141.19316-11-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190327063626.18421-1-alex@ghiti.fr>
-In-Reply-To: <20190327063626.18421-1-alex@ghiti.fr>
+References: <20190320102141.19316-1-geert+renesas@glider.be>
+In-Reply-To: <20190320102141.19316-1-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: aneesh.kumar@linux.ibm.com, mpe@ellerman.id.au, Andrew Morton <akpm@linux-foundation.org>, Vlastimil Babka <vbabka@suse.cz>, Catalin Marinas <catalin.marinas@arm.com>, Will Deacon <will.deacon@arm.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Martin Schwidefsky <schwidefsky@de.ibm.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, "David S . Miller" <davem@davemloft.net>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>, "H . Peter Anvin" <hpa@zytor.com>, x86@kernel.org, Dave Hansen <dave.hansen@linux.intel.com>, Andy Lutomirski <luto@kernel.org>, Peter Zijlstra <peterz@infradead.org>, Mike Kravetz <mike.kravetz@oracle.com>, linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-mm@kvack.org
-Cc: Alexandre Ghiti <alex@ghiti.fr>
+To: Linus Walleij <linus.walleij@linaro.org>
+Cc: linux-gpio@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-sh actually supports gigantic pages and selecting
-ARCH_HAS_GIGANTIC_PAGE allows it to allocate and free
-gigantic pages at runtime.
+Add a run-time check to the PINMUX_CFG_REG_VAR() macro, to ensure the
+number of provided enum IDs is correct.  This cannot be done at build
+time, as the number of values depends on the variable-width fields in
+the config register.
 
-At least sdk7786_defconfig exposes such a configuration with
-huge pages of 64MB, pages of 4KB and MAX_ORDER = 11:
-HPAGE_SHIFT (26) - PAGE_SHIFT (12) = 14 >= MAX_ORDER (11)
+This helps catching bugs early.
 
-Signed-off-by: Alexandre Ghiti <alex@ghiti.fr>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/sh/Kconfig | 1 +
- 1 file changed, 1 insertion(+)
+v3:
+  - Reduce nr_enum_ids to u16, and move it into the existing padding
+    hole,
+  - Introduce SET_NR_ENUM_IDS() macro to reduce duplication and ifdef
+    clutter,
 
-diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-index b1c91ea9a958..0d9fb2468e0b 100644
---- a/arch/sh/Kconfig
-+++ b/arch/sh/Kconfig
-@@ -53,6 +53,7 @@ config SUPERH
- 	select HAVE_FUTEX_CMPXCHG if FUTEX
- 	select HAVE_NMI
- 	select NEED_SG_DMA_LENGTH
-+	select ARCH_HAS_GIGANTIC_PAGE if (MEMORY_ISOLATION && COMPACTION) || CMA
+v2:
+  - Extract into its own patch.
+---
+ drivers/pinctrl/sh-pfc/core.c   | 6 ++++++
+ drivers/pinctrl/sh-pfc/sh_pfc.h | 7 +++++++
+ 2 files changed, 13 insertions(+)
+
+diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
+index 2ceed2f5ac08235b..3f989f5cb021ecbc 100644
+--- a/drivers/pinctrl/sh-pfc/core.c
++++ b/drivers/pinctrl/sh-pfc/core.c
+@@ -756,6 +756,12 @@ static void sh_pfc_check_cfg_reg(const char *drvname,
+ 		       drvname, cfg_reg->reg, rw, cfg_reg->reg_width);
+ 		sh_pfc_errors++;
+ 	}
++
++	if (n != cfg_reg->nr_enum_ids) {
++		pr_err("%s: reg 0x%x: enum_ids[] has %u instead of %u values\n",
++		       drvname, cfg_reg->reg, cfg_reg->nr_enum_ids, n);
++		sh_pfc_errors++;
++	}
+ }
  
- 	help
- 	  The SuperH is a RISC processor targeted for use in embedded systems
+ static void sh_pfc_check_info(const struct sh_pfc_soc_info *info)
+diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
+index 31acde5032a0691a..2a6abeb62bab659b 100644
+--- a/drivers/pinctrl/sh-pfc/sh_pfc.h
++++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
+@@ -111,6 +111,12 @@ struct pinmux_func {
+ struct pinmux_cfg_reg {
+ 	u32 reg;
+ 	u8 reg_width, field_width;
++#ifdef DEBUG
++	u16 nr_enum_ids;	/* for variable width regs only */
++#define SET_NR_ENUM_IDS(n)	.nr_enum_ids = n,
++#else
++#define SET_NR_ENUM_IDS(n)
++#endif
+ 	const u16 *enum_ids;
+ 	const u8 *var_field_width;
+ };
+@@ -151,6 +157,7 @@ struct pinmux_cfg_reg {
+ #define PINMUX_CFG_REG_VAR(name, r, r_width, f_widths, ids)		\
+ 	.reg = r, .reg_width = r_width,					\
+ 	.var_field_width = (const u8 []) { f_widths, 0 },		\
++	SET_NR_ENUM_IDS(sizeof((const u16 []) { ids }) / sizeof(u16))	\
+ 	.enum_ids = (const u16 []) { ids }
+ 
+ struct pinmux_drive_reg_field {
 -- 
-2.20.1
+2.17.1
