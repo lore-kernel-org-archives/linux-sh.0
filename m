@@ -1,72 +1,58 @@
-From: Alexandre Ghiti <alex@ghiti.fr>
-Date: Wed, 06 Mar 2019 19:00:01 +0000
-Subject: [PATCH v5 0/4] Fix free/allocation of runtime gigantic pages
-Message-Id: <20190306190005.7036-1-alex@ghiti.fr>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 20 Mar 2019 10:21:40 +0000
+Subject: [PATCH v3 09/10] pinctrl: sh-pfc: Validate enum IDs for regs with fixed-width fields
+Message-Id: <20190320102141.19316-10-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20190320102141.19316-1-geert+renesas@glider.be>
+In-Reply-To: <20190320102141.19316-1-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Vlastimil Babka <vbabka@suse.cz>, Catalin Marinas <catalin.marinas@arm.com>, Will Deacon <will.deacon@arm.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Michael Ellerman <mpe@ellerman.id.au>, Martin Schwidefsky <schwidefsky@de.ibm.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, "David S . Miller" <davem@davemloft.net>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>, "H . Peter Anvin" <hpa@zytor.com>, x86@kernel.org, Dave Hansen <dave.hansen@linux.intel.com>, Andy Lutomirski <luto@kernel.org>, Peter Zijlstra <peterz@infradead.org>, Mike Kravetz <mike.kravetz@oracle.com>, linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-mm@kvack.org
-Cc: Alexandre Ghiti <alex@ghiti.fr>
+To: Linus Walleij <linus.walleij@linaro.org>
+Cc: linux-gpio@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-This series fixes sh and sparc that did not advertise their gigantic page
-support and then were not able to allocate and free those pages at runtime.
-It renames MEMORY_ISOLATION && COMPACTION || CMA condition into the more
-accurate CONTIG_ALLOC, since it allows the definition of alloc_contig_range
-function.
-Finally, it then fixes the wrong definition of ARCH_HAS_GIGANTIC_PAGE config
-that, without MEMORY_ISOLATION && COMPACTION || CMA defined, did not allow
-architectures to free boottime allocated gigantic pages although unrelated.
+Add build-time checks to the PINMUX_CFG_REG() and PINMUX_DATA_REG()
+macros, to ensure the number of provided enum IDs is correct.
 
-Changes in v5:
-- Fix bug in previous version thanks to Mike Kravetz
-- Fix block comments that did not respect coding style thanks to Dave Hensen
-- Define ARCH_HAS_GIGANTIC_PAGE only for sparc64 as advised by David Miller
-- Factorize "def_bool" and "depends on" thanks to Vlastimil Babka
+This helps catching bugs early.
 
-Changes in v4 as suggested by Dave Hensen:
-- Split previous version into small patches
-- Do not compile alloc_gigantic** functions for architectures that do not
-  support those pages
-- Define correct ARCH_HAS_GIGANTIC_PAGE in all arch that support them to avoid
-  useless runtime check
-- Add comment in set_max_huge_pages to explain that freeing is possible even
-  without CONTIG_ALLOC defined
-- Remove gigantic_page_supported function across all archs
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+v3:
+  - No changes,
 
-Changes in v3 as suggested by Vlastimil Babka and Dave Hansen:
-- config definition was wrong and is now in mm/Kconfig
-- COMPACTION_CORE was renamed in CONTIG_ALLOC
+v2:
+  - Convert from run-time to build-time check.
+  - Add check for PINMUX_DATA_REG().
+---
+ drivers/pinctrl/sh-pfc/sh_pfc.h | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
 
-Changes in v2 as suggested by Vlastimil Babka:
-- Get rid of ARCH_HAS_GIGANTIC_PAGE
-- Get rid of architecture specific gigantic_page_supported
-- Factorize CMA or (MEMORY_ISOLATION && COMPACTION) into COMPACTION_CORE
-
-*** BLURB HERE ***
-
-Alexandre Ghiti (4):
-  sh: Advertise gigantic page support
-  sparc: Advertise gigantic page support
-  mm: Simplify MEMORY_ISOLATION && COMPACTION || CMA into CONTIG_ALLOC
-  hugetlb: allow to free gigantic pages regardless of the configuration
-
- arch/arm64/Kconfig                           |  2 +-
- arch/arm64/include/asm/hugetlb.h             |  4 --
- arch/powerpc/include/asm/book3s/64/hugetlb.h |  7 ---
- arch/powerpc/platforms/Kconfig.cputype       |  2 +-
- arch/s390/Kconfig                            |  2 +-
- arch/s390/include/asm/hugetlb.h              |  3 --
- arch/sh/Kconfig                              |  1 +
- arch/sparc/Kconfig                           |  1 +
- arch/x86/Kconfig                             |  2 +-
- arch/x86/include/asm/hugetlb.h               |  4 --
- arch/x86/mm/hugetlbpage.c                    |  2 +-
- include/linux/gfp.h                          |  4 +-
- mm/Kconfig                                   |  3 ++
- mm/hugetlb.c                                 | 54 ++++++++++++--------
- mm/page_alloc.c                              |  7 ++-
- 15 files changed, 48 insertions(+), 50 deletions(-)
-
+diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
+index 57e13b623b2e87ec..31acde5032a0691a 100644
+--- a/drivers/pinctrl/sh-pfc/sh_pfc.h
++++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
+@@ -130,7 +130,9 @@ struct pinmux_cfg_reg {
+  */
+ #define PINMUX_CFG_REG(name, r, r_width, f_width, ids)			\
+ 	.reg = r, .reg_width = r_width,					\
+-	.field_width = f_width + BUILD_BUG_ON_ZERO(r_width % f_width),	\
++	.field_width = f_width + BUILD_BUG_ON_ZERO(r_width % f_width) +	\
++	BUILD_BUG_ON_ZERO(sizeof((const u16 []) { ids }) / sizeof(u16) != \
++			  (r_width / f_width) * (1 << f_width)),	\
+ 	.enum_ids = (const u16 [(r_width / f_width) * (1 << f_width)])	\
+ 		{ ids }
+ 
+@@ -196,7 +198,9 @@ struct pinmux_data_reg {
+  *          enum ID must be specified, all wrapped using the GROUP() macro.
+  */
+ #define PINMUX_DATA_REG(name, r, r_width, ids)				\
+-	.reg = r, .reg_width = r_width,					\
++	.reg = r, .reg_width = r_width +				\
++	BUILD_BUG_ON_ZERO(sizeof((const u16 []) { ids }) / sizeof(u16) != \
++			  r_width),					\
+ 	.enum_ids = (const u16 [r_width]) { ids }
+ 
+ struct pinmux_irq {
 -- 
-2.20.1
+2.17.1
