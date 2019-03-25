@@ -1,36 +1,41 @@
-From: Colin King <colin.king@canonical.com>
-Date: Tue, 19 Mar 2019 14:27:58 +0000
-Subject: [PATCH] hw-breakpoints: fix missing break for SH_BREAKPOINT_READ
-Message-Id: <20190319142758.24856-1-colin.king@canonical.com>
+From: "Barr.Augusto Daniel." <chamberlawyer6@gmail.com>
+Date: Mon, 25 Mar 2019 10:13:45 +0000
+Subject: Attention Dear,
+Message-Id: <CAP+Od_nHvO-QKTjqTeuppU3bzbcAeeoAHzbora68bK6WbB=jMw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Frederic Weisbecker <frederic@kernel.org>, linux-sh@vger.kernel.org
-Cc: kernel-janitors@vger.kernel.org, linux-kernel@vger.kernel.org
+To: target-devel@vger.kernel.org
 
-From: Colin Ian King <colin.king@canonical.com>
-
-The SH_BREAKPOINT_READ case is missing a break and
-falling through to SH_BREAKPOINT_WRITE. Fix this.
-
-Fixes: 09a072947791 ("sh: hw-breakpoints: Add preliminary support for SH-4A UBC.")
-Signed-off-by: Colin Ian King <colin.king@canonical.com>
----
- arch/sh/kernel/hw_breakpoint.c | 1 +
- 1 file changed, 1 insertion(+)
-
-diff --git a/arch/sh/kernel/hw_breakpoint.c b/arch/sh/kernel/hw_breakpoint.c
-index bc96b16288c1..af6a65ac04cf 100644
---- a/arch/sh/kernel/hw_breakpoint.c
-+++ b/arch/sh/kernel/hw_breakpoint.c
-@@ -157,6 +157,7 @@ int arch_bp_generic_fields(int sh_len, int sh_type,
- 	switch (sh_type) {
- 	case SH_BREAKPOINT_READ:
- 		*gen_type = HW_BREAKPOINT_R;
-+		break;
- 	case SH_BREAKPOINT_WRITE:
- 		*gen_type = HW_BREAKPOINT_W;
- 		break;
 -- 
-2.20.1
+Attention Dear,
+
+I am personal representative to my late client, a national of your
+country, and the CEO of his own Construction Company here in Benin
+Republic West Africa. On the 27th of May 2015, my client, His wife and
+their only daughter were involved in a car accident Along express-high
+way, Unfortunately, they all lost their lives.
+
+Before his death the Ministry of public works and Transport Benin
+(MTPT) owed him the sum of Ten Million Eight Hundred Thousand United
+States Dollar Only) US$10.800.000 Only, for a contract he executed for
+the Ministry before his death.
+
+After these several unsuccessful attempts, I decided I want to present
+you as the next of kin for the inheritance fund transfer to your
+account for onward sharing between the both of us 50% to you and 50%
+for me. I guarantee that this will be executed under a legitimate
+arrangement that will protect you from any breach of the law. to
+enable me give you more details.Please kindly reply through my private
+email box for more information, overchambers@gmail.com
+
+Your Full Name and Address,
+Your Age : Occupation and Position,
+Your Private Email : Address
+Your Telephone and Mobile for Communication Purpose
+
+I await your reply via my private email:overchambers@gmail.com
+
+Best Regards.
+Augusto Daniel Esq.
