@@ -1,113 +1,104 @@
-From: ira.weiny@intel.com
-Date: Thu, 28 Mar 2019 08:44:19 +0000
-Subject: [PATCH V3 4/7] mm/gup: Add FOLL_LONGTERM capability to GUP fast
-Message-Id: <20190328084422.29911-5-ira.weiny@intel.com>
+From: Alexandre Ghiti <alex@ghiti.fr>
+Date: Wed, 27 Mar 2019 06:36:22 +0000
+Subject: [PATCH v8 0/4] Fix free/allocation of runtime gigantic pages
+Message-Id: <20190327063626.18421-1-alex@ghiti.fr>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190328084422.29911-1-ira.weiny@intel.com>
-In-Reply-To: <20190328084422.29911-1-ira.weiny@intel.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm@linux-foundation.org>, John Hubbard <jhubbard@nvidia.com>, Michal Hocko <mhocko@suse.com>, "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>, Peter Zijlstra <peterz@infradead.org>, Jason Gunthorpe <jgg@ziepe.ca>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, "David S. Miller" <davem@davemloft.net>, Martin Schwidefsky <schwidefsky@de.ibm.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, Rich Felker <dalias@libc.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>, Ralf Baechle <ralf@linux-mips.org>, James Hogan <jhogan@kernel.org>
-Cc: Ira Weiny <ira.weiny@intel.com>, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linux-mips@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-rdma@vger.kernel.org, netdev@vger.kernel.org
+To: aneesh.kumar@linux.ibm.com, mpe@ellerman.id.au, Andrew Morton <akpm@linux-foundation.org>, Vlastimil Babka <vbabka@suse.cz>, Catalin Marinas <catalin.marinas@arm.com>, Will Deacon <will.deacon@arm.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Martin Schwidefsky <schwidefsky@de.ibm.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, "David S . Miller" <davem@davemloft.net>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>, "H . Peter Anvin" <hpa@zytor.com>, x86@kernel.org, Dave Hansen <dave.hansen@linux.intel.com>, Andy Lutomirski <luto@kernel.org>, Peter Zijlstra <peterz@infradead.org>, Mike Kravetz <mike.kravetz@oracle.com>, linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-mm@kvack.org
+Cc: Alexandre Ghiti <alex@ghiti.fr>
 
-From: Ira Weiny <ira.weiny@intel.com>
+This series fixes sh and sparc that did not advertise their gigantic page        
+support and then were not able to allocate and free those pages at runtime.      
+It renames MEMORY_ISOLATION && COMPACTION || CMA condition into the more         
+accurate CONTIG_ALLOC, since it allows the definition of alloc_contig_range      
+function.                                                                        
+Finally, it then fixes the wrong definition of ARCH_HAS_GIGANTIC_PAGE config     
+that, without MEMORY_ISOLATION && COMPACTION || CMA defined, did not allow       
+architectures to free boottime allocated gigantic pages although unrelated.      
+                                                                                 
+Changes in v8:                                                                   
+  This (hopefully last) version is rebased against v5.1-rc2 so that              
+  it takes into account https://patchwork.ozlabs.org/patch/1047003/.             
+  This version:                                                                  
+  - factorizes gigantic_page_runtime_supported such as suggested                 
+    by Christophe.                                                               
+  - fix checkpath warning regarding the use of 'extern'                          
+  - fix s390 build that does not include asm-generic/hugetlb.h                   
+  And note that I did not add the reviewed-by and acked-by received in v6        
+  since the patch differs a little.                                              
+                                                                                 
+Changes in v7:                                                                   
+  I thought gigantic page support was settled at compile time, but Aneesh        
+  and Michael have just come up with a patch proving me wrong for                
+  powerpc: https://patchwork.ozlabs.org/patch/1047003/. So this version:         
+  - reintroduces gigantic_page_supported renamed into                            
+    gigantic_page_runtime_supported                                              
+  - reintroduces gigantic page page support corresponding checks (not            
+    everywhere though: set_max_huge_pages check was redundant with               
+    __nr_hugepages_store_common)                                                 
+  - introduces the possibility for arch to override this function                
+    by using asm-generic/hugetlb.h current semantics although Aneesh             
+    proposed something else.                                                     
+                                                                                 
+Changes in v6:                                                                   
+- Remove unnecessary goto since the fallthrough path does the same and is        
+  the 'normal' behaviour, as suggested by Dave Hensen                            
+- Be more explicit in comment in set_max_huge_page: we return an error           
+  if alloc_contig_range is not defined and the user tries to allocate a          
+  gigantic page (we keep the same behaviour as before this patch), but we        
+  now let her free boottime gigantic page, as suggested by Dave Hensen           
+- Add Acked-by, thanks.                                                          
+                                                                                 
+Changes in v5:                                                                   
+- Fix bug in previous version thanks to Mike Kravetz                             
+- Fix block comments that did not respect coding style thanks to Dave Hensen     
+- Define ARCH_HAS_GIGANTIC_PAGE only for sparc64 as advised by David Miller 
+- Factorize "def_bool" and "depends on" thanks to Vlastimil Babka                
+                                                                                 
+Changes in v4 as suggested by Dave Hensen:                                       
+- Split previous version into small patches                                      
+- Do not compile alloc_gigantic** functions for architectures that do not        
+  support those pages                                                            
+- Define correct ARCH_HAS_GIGANTIC_PAGE in all arch that support them to avoid   
+  useless runtime check                                                          
+- Add comment in set_max_huge_pages to explain that freeing is possible even     
+  without CONTIG_ALLOC defined                                                   
+- Remove gigantic_page_supported function across all archs                       
+                                                                                 
+Changes in v3 as suggested by Vlastimil Babka and Dave Hansen:                   
+- config definition was wrong and is now in mm/Kconfig                           
+- COMPACTION_CORE was renamed in CONTIG_ALLOC                                    
+                                                                                 
+Changes in v2 as suggested by Vlastimil Babka:                                   
+- Get rid of ARCH_HAS_GIGANTIC_PAGE                                              
+- Get rid of architecture specific gigantic_page_supported                       
+- Factorize CMA or (MEMORY_ISOLATION && COMPACTION) into COMPACTION_CORE 
 
-DAX pages were previously unprotected from longterm pins when users
-called get_user_pages_fast().
+Alexandre Ghiti (4):
+  sh: Advertise gigantic page support
+  sparc: Advertise gigantic page support
+  mm: Simplify MEMORY_ISOLATION && COMPACTION || CMA into CONTIG_ALLOC
+  hugetlb: allow to free gigantic pages regardless of the configuration
 
-Use the new FOLL_LONGTERM flag to check for DEVMAP pages and fall
-back to regular GUP processing if a DEVMAP page is encountered.
+ arch/arm64/Kconfig                           |  2 +-
+ arch/arm64/include/asm/hugetlb.h             |  4 --
+ arch/powerpc/include/asm/book3s/64/hugetlb.h |  5 +-
+ arch/powerpc/platforms/Kconfig.cputype       |  2 +-
+ arch/s390/Kconfig                            |  2 +-
+ arch/s390/include/asm/hugetlb.h              |  8 +--
+ arch/sh/Kconfig                              |  1 +
+ arch/sparc/Kconfig                           |  1 +
+ arch/x86/Kconfig                             |  2 +-
+ arch/x86/include/asm/hugetlb.h               |  4 --
+ arch/x86/mm/hugetlbpage.c                    |  2 +-
+ include/asm-generic/hugetlb.h                |  7 +++
+ include/linux/gfp.h                          |  4 +-
+ mm/Kconfig                                   |  3 ++
+ mm/hugetlb.c                                 | 54 ++++++++++++++------
+ mm/page_alloc.c                              |  7 ++-
+ 16 files changed, 67 insertions(+), 41 deletions(-)
 
-Signed-off-by: Ira Weiny <ira.weiny@intel.com>
-
----
-Changes from V2:
-	Add comment on special use case of FOLL_LONGTERM
-
- mm/gup.c | 40 ++++++++++++++++++++++++++++++++++++----
- 1 file changed, 36 insertions(+), 4 deletions(-)
-
-diff --git a/mm/gup.c b/mm/gup.c
-index 0fa7244d6f19..567bd1b295f0 100644
---- a/mm/gup.c
-+++ b/mm/gup.c
-@@ -1613,6 +1613,9 @@ static int gup_pte_range(pmd_t pmd, unsigned long addr, unsigned long end,
- 			goto pte_unmap;
- 
- 		if (pte_devmap(pte)) {
-+			if (unlikely(flags & FOLL_LONGTERM))
-+				goto pte_unmap;
-+
- 			pgmap = get_dev_pagemap(pte_pfn(pte), pgmap);
- 			if (unlikely(!pgmap)) {
- 				undo_dev_pagemap(nr, nr_start, pages);
-@@ -1752,8 +1755,11 @@ static int gup_huge_pmd(pmd_t orig, pmd_t *pmdp, unsigned long addr,
- 	if (!pmd_access_permitted(orig, flags & FOLL_WRITE))
- 		return 0;
- 
--	if (pmd_devmap(orig))
-+	if (pmd_devmap(orig)) {
-+		if (unlikely(flags & FOLL_LONGTERM))
-+			return 0;
- 		return __gup_device_huge_pmd(orig, pmdp, addr, end, pages, nr);
-+	}
- 
- 	refs = 0;
- 	page = pmd_page(orig) + ((addr & ~PMD_MASK) >> PAGE_SHIFT);
-@@ -1790,8 +1796,11 @@ static int gup_huge_pud(pud_t orig, pud_t *pudp, unsigned long addr,
- 	if (!pud_access_permitted(orig, flags & FOLL_WRITE))
- 		return 0;
- 
--	if (pud_devmap(orig))
-+	if (pud_devmap(orig)) {
-+		if (unlikely(flags & FOLL_LONGTERM))
-+			return 0;
- 		return __gup_device_huge_pud(orig, pudp, addr, end, pages, nr);
-+	}
- 
- 	refs = 0;
- 	page = pud_page(orig) + ((addr & ~PUD_MASK) >> PAGE_SHIFT);
-@@ -2034,6 +2043,29 @@ int __get_user_pages_fast(unsigned long start, int nr_pages, int write,
- 	return nr;
- }
- 
-+static int __gup_longterm_unlocked(unsigned long start, int nr_pages,
-+				   unsigned int gup_flags, struct page **pages)
-+{
-+	int ret;
-+
-+	/*
-+	 * FIXME: FOLL_LONGTERM does not work with
-+	 * get_user_pages_unlocked() (see comments in that function)
-+	 */
-+	if (gup_flags & FOLL_LONGTERM) {
-+		down_read(&current->mm->mmap_sem);
-+		ret = __gup_longterm_locked(current, current->mm,
-+					    start, nr_pages,
-+					    pages, NULL, gup_flags);
-+		up_read(&current->mm->mmap_sem);
-+	} else {
-+		ret = get_user_pages_unlocked(start, nr_pages,
-+					      pages, gup_flags);
-+	}
-+
-+	return ret;
-+}
-+
- /**
-  * get_user_pages_fast() - pin user pages in memory
-  * @start:	starting user address
-@@ -2079,8 +2111,8 @@ int get_user_pages_fast(unsigned long start, int nr_pages,
- 		start += nr << PAGE_SHIFT;
- 		pages += nr;
- 
--		ret = get_user_pages_unlocked(start, nr_pages - nr, pages,
--					      gup_flags);
-+		ret = __gup_longterm_unlocked(start, nr_pages - nr,
-+					      gup_flags, pages);
- 
- 		/* Have to be a bit careful with return values */
- 		if (nr > 0) {
 -- 
 2.20.1
