@@ -1,26 +1,43 @@
-From: "Mrs. Elia Rodrigues" <albiz@freemail.gr>
-Date: Sun, 03 Mar 2019 12:54:56 +0000
-Subject: From Mrs. Elia Rodrigues,
-Message-Id: <2068676155.7711357.1551617696376@mail.yahoo.com>
+From: ira.weiny@intel.com
+Date: Thu, 28 Mar 2019 08:44:22 +0000
+Subject: [PATCH V3 7/7] IB/mthca: Use the new FOLL_LONGTERM flag to get_user_pages_fast()
+Message-Id: <20190328084422.29911-8-ira.weiny@intel.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20190328084422.29911-1-ira.weiny@intel.com>
+In-Reply-To: <20190328084422.29911-1-ira.weiny@intel.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sctp@vger.kernel.org
+To: Andrew Morton <akpm@linux-foundation.org>, John Hubbard <jhubbard@nvidia.com>, Michal Hocko <mhocko@suse.com>, "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>, Peter Zijlstra <peterz@infradead.org>, Jason Gunthorpe <jgg@ziepe.ca>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, "David S. Miller" <davem@davemloft.net>, Martin Schwidefsky <schwidefsky@de.ibm.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, Rich Felker <dalias@libc.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>, Ralf Baechle <ralf@linux-mips.org>, James Hogan <jhogan@kernel.org>
+Cc: Ira Weiny <ira.weiny@intel.com>, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linux-mips@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-rdma@vger.kernel.org, netdev@vger.kernel.org
 
+From: Ira Weiny <ira.weiny@intel.com>
 
+Use the new FOLL_LONGTERM to get_user_pages_fast() to protect against
+FS DAX pages being mapped.
 
-Hello 
+Signed-off-by: Ira Weiny <ira.weiny@intel.com>
 
-I am Mrs. Elia Rodrigues I have been diagnosed with cancer. It has defied all forms of medical treatment, and right now I have only about a few months to live, according to medical experts. I have not particularly lived my life so well, as I never really cared for anyone (not even myself) but my business. Though I am very rich, I was never generous. I was always hostile to People and only focused on my business as that was the only thing I cared for. But now I regret all this as I now know that there is more to life than just wanting to have or make all the money in the world. I believe when God gives me a second chance to come to this world I would live my life a different way from how I have lived it.
+---
+Changes from V2:
+	<none>
 
-I would want to have a Personal and Trustworthy Relationship with you, as I intend and willing to empower the change of ownership for the transfer of my Deposits to your personal possession for Charity Disbursement to the Less Privilege and Homeless. I want this fund to be used in liberation work Activities like, help to Orphanages, and Christian schools, helping widows and up keeping of the Churches and propagating the word of God and to endeavor that the house of God is maintained. I am not afraid of death hence I know where I am going. I know that I am going to be in the bosom of the Lord. Exodus 14 vs 14 says that the lord will fight my case and I shall hold my peace.
-Because of my health condition when i try to speak it leads to a serious coughing out of blood. I will send you the photos of me,
+ drivers/infiniband/hw/mthca/mthca_memfree.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-As soon as I receive your reply I shall give you the details on how to contact the bank directly for onward transfer. I will also issue you an authority letter that will prove you as the present beneficiary of my funds. I want you and your family to always pray for me but the lord is my shepherd.
-
-Thank you for your due consideration. God be with you
-
-Yours Sister in the Lord.
-
-Mrs. Elia Rodrigues
+diff --git a/drivers/infiniband/hw/mthca/mthca_memfree.c b/drivers/infiniband/hw/mthca/mthca_memfree.c
+index 112d2f38e0de..8ff0e90d7564 100644
+--- a/drivers/infiniband/hw/mthca/mthca_memfree.c
++++ b/drivers/infiniband/hw/mthca/mthca_memfree.c
+@@ -472,7 +472,8 @@ int mthca_map_user_db(struct mthca_dev *dev, struct mthca_uar *uar,
+ 		goto out;
+ 	}
+ 
+-	ret = get_user_pages_fast(uaddr & PAGE_MASK, 1, FOLL_WRITE, pages);
++	ret = get_user_pages_fast(uaddr & PAGE_MASK, 1,
++				  FOLL_WRITE | FOLL_LONGTERM, pages);
+ 	if (ret < 0)
+ 		goto out;
+ 
+-- 
+2.20.1
