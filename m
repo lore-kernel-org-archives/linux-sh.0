@@ -1,39 +1,54 @@
-From: Masahiro Yamada <yamada.masahiro@socionext.com>
-Date: Mon, 29 Apr 2019 14:33:11 +0000
-Subject: [PATCH] sh: exclude vmlinux.scr from .gitignore pattern
-Message-Id: <1556548391-14520-1-git-send-email-yamada.masahiro@socionext.com>
+From: Randy Dunlap <rdunlap@infradead.org>
+Date: Tue, 02 Apr 2019 22:39:21 +0000
+Subject: [PATCH] sh: fix multiple function definition build errors
+Message-Id: <9ee4e0c5-f100-86a2-bd4d-1d3287ceab31@infradead.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
-Cc: Masahiro Yamada <yamada.masahiro@socionext.com>, linux-kernel@vger.kernel.org
+To: LKML <linux-kernel@vger.kernel.org>, Andrew Morton <akpm@linux-foundation.org>
+Cc: Takashi Iwai <tiwai@suse.de>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Linux-sh list <linux-sh@vger.kernel.org>
 
-arch/sh/boot/.gitignore has the pattern "vmlinux*"; this is effective
-not only for the current directory, but also for any sub-directories.
+From: Randy Dunlap <rdunlap@infradead.org>
 
-So, the following files are also considered to be ignored:
+Many of the sh CPU-types have their own plat_irq_setup() and
+arch_init_clk_ops() functions, so these same (empty) functions in
+arch/sh/boards/of-generic.c are not needed and cause build errors.
+If there is some case where these empty functions are needed,
+they can be retained by marking them as "__weak" while at the
+same time making builds that do not need them succeed.
 
-  arch/sh/boot/compressed/vmlinux.scr
-  arch/sh/boot/romimage/vmlinux.scr
+Fixes these build errors:
 
-They are obviously version-controlled, so should be excluded from the
-.gitignore pattern.
+arch/sh/boards/of-generic.o: In function `plat_irq_setup':
+(.init.text+0x134): multiple definition of `plat_irq_setup'
+arch/sh/kernel/cpu/sh2/setup-sh7619.o:(.init.text+0x30): first defined here
+arch/sh/boards/of-generic.o: In function `arch_init_clk_ops':
+(.init.text+0x118): multiple definition of `arch_init_clk_ops'
+arch/sh/kernel/cpu/sh2/clock-sh7619.o:(.init.text+0x0): first defined here
 
-Signed-off-by: Masahiro Yamada <yamada.masahiro@socionext.com>
+Reported-by: kbuild test robot <lkp@intel.com>
+Signed-off-by: Randy Dunlap <rdunlap@infradead.org>
+Cc: Takashi Iwai <tiwai@suse.de>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+Cc: linux-sh@vger.kernel.org
 ---
+ arch/sh/boards/of-generic.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
- arch/sh/boot/.gitignore | 1 +
- 1 file changed, 1 insertion(+)
-
-diff --git a/arch/sh/boot/.gitignore b/arch/sh/boot/.gitignore
-index 541087d..f50fdd9 100644
---- a/arch/sh/boot/.gitignore
-+++ b/arch/sh/boot/.gitignore
-@@ -1,3 +1,4 @@
- zImage
- vmlinux*
- uImage*
-+!vmlinux.scr
--- 
-2.7.4
+--- lnx-51-rc2.orig/arch/sh/boards/of-generic.c
++++ lnx-51-rc2/arch/sh/boards/of-generic.c
+@@ -164,10 +164,10 @@ static struct sh_machine_vector __initmv
+ 
+ struct sh_clk_ops;
+ 
+-void __init arch_init_clk_ops(struct sh_clk_ops **ops, int idx)
++void __init __weak arch_init_clk_ops(struct sh_clk_ops **ops, int idx)
+ {
+ }
+ 
+-void __init plat_irq_setup(void)
++void __init __weak plat_irq_setup(void)
+ {
+ }
