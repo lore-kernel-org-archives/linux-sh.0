@@ -1,36 +1,25 @@
-From: "MRS.ZARA KUMAR" <fredwilliam543210@gmail.com>
-Date: Fri, 12 Apr 2019 08:05:12 +0000
-Subject: ATTENTION:BENEFICIARY
-Message-Id: <CAJ=SBYbNDxvO7Ms1H_tpqsaCPboYG7G+aWgMgddfK6oWd4cXew@mail.gmail.com>
+From: "Vidat Advocaten" <infoadvocatenrafvedatraf@gmail.com>
+Date: Sat, 06 Apr 2019 01:23:45 +0000
+Subject: Vidat Advocaten
+Message-Id: <20190406005708.DF043711863@mail.tes.edu.ec>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: target-devel@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-DEAR:
 
-WE FINALLY CONCLUDED TO EFFECT YOUR PAYMENT OF (US$7,5M) VIA MONEY GRAM
-OFFICE THIS MORNING AS THE BEST AND EASIER WAY TO CASH YOUR FUNDS IN ANY OF
-YOUR NEAREST MONEY GRAM OFFICE IN YOUR CITY,
+Hello,
 
-WELL BASED ON MY AGREEMENT WITH MONEY GRAM DIRECTOR, MR JOHN GRECH, YOUR
-TRANSFER WILL START IMMEDIATELY YOU CONTACT HIM WITH ALL YOUR INFORMATION
-AS FOLLOW
+I have a business proposal for you.
 
-YOUR NAME___________
-YOUR HOME ADDRESS_______
-YOUR COUNTY/CITY___________
-YOUR AGE/SEX_____________
-DIRECT PHONE NUMBER_______
-ID COPY_______
-OCCUPATION_______
+I will give you further details if you are interested
 
-MONEY GRAM OFFICE:
-CONTACT PERSON:MR.JOHN GRECH
-E-MAIL: moneygram.payment@aol.com
-PHONE NO +229 65439498
+I like to hear from you soon.
 
-YOUR FUNDS AMOUNT DEPOSITED IS US$7.5million
-BEST REGARDS,
-MRS.ZARA KUMAR
+Best regards,
+
+Vidat Advocaten
+
+-- 
+This email was Malware checked by SOPHOS XG. http://www.sophos.com
