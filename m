@@ -1,303 +1,213 @@
-From: Mike Rapoport <rppt@linux.ibm.com>
-Date: Wed, 24 Apr 2019 10:35:50 +0000
-Subject: [PATCH] memblock: make keeping memblock memory opt-in rather than opt-out
-Message-Id: <1556102150-32517-1-git-send-email-rppt@linux.ibm.com>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Tue, 16 Apr 2019 20:32:50 +0000
+Subject: [PATCH net-next 3/3] net: socket: implement 64-bit timestamps
+Message-Id: <20190416203620.539628-3-arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20190416203620.539628-1-arnd@arndb.de>
+In-Reply-To: <20190416203620.539628-1-arnd@arndb.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: Rich Felker <dalias@libc.org>, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Heiko Carstens <heiko.carstens@de.ibm.com>, linux-mips@vger.kernel.org, linux-mm@kvack.org, Paul Mackerras <paulus@samba.org>, "H. Peter Anvin" <hpa@zytor.com>, linux-s390@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Michael Ellerman <mpe@ellerman.id.au>, x86@kernel.org, Russell King <linux@armlinux.org.uk>, Mike Rapoport <rppt@linux.ibm.com>, Ingo Molnar <mingo@redhat.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Catalin Marinas <catalin.marinas@arm.com>, James Hogan <jhogan@kernel.org>, Fenghua Yu <fenghua.yu@intel.com>, Will Deacon <will.deacon@arm.com>, linux-m68k@lists.linux-m68k.org, Borislav Petkov <bp@alien8.de>, nios2-dev@lists.rocketboards.org, Thomas Gleixner <tglx@linutronix.de>, linux-arm-kernel@lists.infradead.org, Tony Luck <tony.luck@intel.com>, kexec@lists.infradead.org, linux-kernel@vger.kernel.org, Ralf Baechle <ralf@linux-mips.org>, Richard Kuo <rkuo@codeaurora.org>, Paul Burton <paul.burton@mips.com>, Eric Biederman <ebiederm@xmission.com>, linux-hexagon@vger.kernel.org, Martin Schwidefsky <schwidefsky@de.ibm.com>, Ley Foon Tan <lftan@altera.com>, linuxppc-dev@lists.ozlabs.org
+To: Richard Henderson <rth@twiddle.net>, Ivan Kokshaysky <ink@jurassic.park.msu.ru>, Matt Turner <mattst88@gmail.com>, Ralf Baechle <ralf@linux-mips.org>, Paul Burton <paul.burton@mips.com>, James Hogan <jhogan@kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Chris Zankel <chris@zankel.net>, Max Filippov <jcmvbkbc@gmail.com>, Arnd Bergmann <arnd@arndb.de>, "David S. Miller" <davem@davemloft.net>
+Cc: Johannes Berg <johannes.berg@intel.com>, Deepa Dinamani <deepa.kernel@gmail.com>, Willem de Bruijn <willemb@google.com>, linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org, linux-mips@vger.kernel.org, linux-sh@vger.kernel.org, linux-arch@vger.kernel.org, netdev@vger.kernel.org
 
-Most architectures do not need the memblock memory after the page allocator
-is initialized, but only few enable ARCH_DISCARD_MEMBLOCK in the
-arch Kconfig.
+The 'timeval' and 'timespec' data structures used for socket timestamps
+are going to be redefined in user space based on 64-bit time_t in future
+versions of the C library to deal with the y2038 overflow problem,
+which breaks the ABI definition.
 
-Replacing ARCH_DISCARD_MEMBLOCK with ARCH_KEEP_MEMBLOCK and inverting the
-logic makes it clear which architectures actually use memblock after system
-initialization and skips the necessity to add ARCH_DISCARD_MEMBLOCK to the
-architectures that are still missing that option.
+Unlike many modern ioctl commands, SIOCGSTAMP and SIOCGSTAMPNS do not
+use the _IOR() macro to encode the size of the transferred data, so it
+remains ambiguous whether the application uses the old or new layout.
 
-Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
+The best workaround I could find is rather ugly: we redefine the command
+code based on the size of the respective data structure with a ternary
+operator. This lets it get evaluated as late as possible, hopefully after
+that structure is visible to the caller. We cannot use an #ifdef here,
+because inux/sockios.h might have been included before any libc header
+that could determine the size of time_t.
+
+The ioctl implementation now interprets the new command codes as always
+referring to the 64-bit structure on all architectures, while the old
+architecture specific command code still refers to the old architecture
+specific layout. The new command number is only used when they are
+actually different.
+
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
 ---
- arch/arm/Kconfig         |  2 +-
- arch/arm64/Kconfig       |  1 +
- arch/hexagon/Kconfig     |  1 -
- arch/ia64/Kconfig        |  1 -
- arch/m68k/Kconfig        |  1 -
- arch/mips/Kconfig        |  1 -
- arch/nios2/Kconfig       |  1 -
- arch/powerpc/Kconfig     |  1 +
- arch/s390/Kconfig        |  1 +
- arch/sh/Kconfig          |  1 -
- arch/x86/Kconfig         |  1 -
- include/linux/memblock.h |  3 ++-
- kernel/kexec_file.c      | 16 ++++++++--------
- mm/Kconfig               |  2 +-
- mm/memblock.c            |  6 +++---
- mm/page_alloc.c          |  3 +--
- 16 files changed, 19 insertions(+), 23 deletions(-)
+ arch/alpha/include/uapi/asm/sockios.h  |  4 ++--
+ arch/mips/include/uapi/asm/sockios.h   |  4 ++--
+ arch/sh/include/uapi/asm/sockios.h     |  5 +++--
+ arch/xtensa/include/uapi/asm/sockios.h |  4 ++--
+ include/uapi/asm-generic/sockios.h     |  4 ++--
+ include/uapi/linux/sockios.h           | 21 +++++++++++++++++++++
+ net/socket.c                           | 24 ++++++++++++++++++------
+ 7 files changed, 50 insertions(+), 16 deletions(-)
 
-diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
-index 850b480..7073436 100644
---- a/arch/arm/Kconfig
-+++ b/arch/arm/Kconfig
-@@ -4,7 +4,6 @@ config ARM
- 	default y
- 	select ARCH_32BIT_OFF_T
- 	select ARCH_CLOCKSOURCE_DATA
--	select ARCH_DISCARD_MEMBLOCK if !HAVE_ARCH_PFN_VALID && !KEXEC
- 	select ARCH_HAS_DEBUG_VIRTUAL if MMU
- 	select ARCH_HAS_DEVMEM_IS_ALLOWED
- 	select ARCH_HAS_ELF_RANDOMIZE
-@@ -21,6 +20,7 @@ config ARM
- 	select ARCH_HAS_TICK_BROADCAST if GENERIC_CLOCKEVENTS_BROADCAST
- 	select ARCH_HAVE_CUSTOM_GPIO_H
- 	select ARCH_HAS_GCOV_PROFILE_ALL
-+	select ARCH_KEEP_MEMBLOCK if HAVE_ARCH_PFN_VALID || KEXEC
- 	select ARCH_MIGHT_HAVE_PC_PARPORT
- 	select ARCH_NO_SG_CHAIN if !ARM_HAS_SG_CHAIN
- 	select ARCH_OPTIONAL_KERNEL_RWX if ARCH_HAS_STRICT_KERNEL_RWX
-diff --git a/arch/arm64/Kconfig b/arch/arm64/Kconfig
-index 7e34b9e..d71f043 100644
---- a/arch/arm64/Kconfig
-+++ b/arch/arm64/Kconfig
-@@ -58,6 +58,7 @@ config ARM64
- 	select ARCH_INLINE_SPIN_UNLOCK_BH if !PREEMPT
- 	select ARCH_INLINE_SPIN_UNLOCK_IRQ if !PREEMPT
- 	select ARCH_INLINE_SPIN_UNLOCK_IRQRESTORE if !PREEMPT
-+	select ARCH_KEEP_MEMBLOCK
- 	select ARCH_USE_CMPXCHG_LOCKREF
- 	select ARCH_USE_QUEUED_RWLOCKS
- 	select ARCH_USE_QUEUED_SPINLOCKS
-diff --git a/arch/hexagon/Kconfig b/arch/hexagon/Kconfig
-index ac44168..bbe3819 100644
---- a/arch/hexagon/Kconfig
-+++ b/arch/hexagon/Kconfig
-@@ -22,7 +22,6 @@ config HEXAGON
- 	select GENERIC_IRQ_SHOW
- 	select HAVE_ARCH_KGDB
- 	select HAVE_ARCH_TRACEHOOK
--	select ARCH_DISCARD_MEMBLOCK
- 	select NEED_SG_DMA_LENGTH
- 	select NO_IOPORT_MAP
- 	select GENERIC_IOMAP
-diff --git a/arch/ia64/Kconfig b/arch/ia64/Kconfig
-index 8d7396b..bd51d3b 100644
---- a/arch/ia64/Kconfig
-+++ b/arch/ia64/Kconfig
-@@ -33,7 +33,6 @@ config IA64
- 	select ARCH_HAS_DMA_COHERENT_TO_PFN if SWIOTLB
- 	select ARCH_HAS_SYNC_DMA_FOR_CPU if SWIOTLB
- 	select VIRT_TO_BUS
--	select ARCH_DISCARD_MEMBLOCK
- 	select GENERIC_IRQ_PROBE
- 	select GENERIC_PENDING_IRQ if SMP
- 	select GENERIC_IRQ_SHOW
-diff --git a/arch/m68k/Kconfig b/arch/m68k/Kconfig
-index b542064..7d1e5d9 100644
---- a/arch/m68k/Kconfig
-+++ b/arch/m68k/Kconfig
-@@ -27,7 +27,6 @@ config M68K
- 	select MODULES_USE_ELF_RELA
- 	select OLD_SIGSUSPEND3
- 	select OLD_SIGACTION
--	select ARCH_DISCARD_MEMBLOCK
+diff --git a/arch/alpha/include/uapi/asm/sockios.h b/arch/alpha/include/uapi/asm/sockios.h
+index ba287e4b01bf..af92bc27c3be 100644
+--- a/arch/alpha/include/uapi/asm/sockios.h
++++ b/arch/alpha/include/uapi/asm/sockios.h
+@@ -11,7 +11,7 @@
+ #define SIOCSPGRP	_IOW('s', 8, pid_t)
+ #define SIOCGPGRP	_IOR('s', 9, pid_t)
  
- config CPU_BIG_ENDIAN
- 	def_bool y
-diff --git a/arch/mips/Kconfig b/arch/mips/Kconfig
-index 4a5f5b0..8b9298b 100644
---- a/arch/mips/Kconfig
-+++ b/arch/mips/Kconfig
-@@ -5,7 +5,6 @@ config MIPS
- 	select ARCH_32BIT_OFF_T if !64BIT
- 	select ARCH_BINFMT_ELF_STATE if MIPS_FP_SUPPORT
- 	select ARCH_CLOCKSOURCE_DATA
--	select ARCH_DISCARD_MEMBLOCK
- 	select ARCH_HAS_ELF_RANDOMIZE
- 	select ARCH_HAS_TICK_BROADCAST if GENERIC_CLOCKEVENTS_BROADCAST
- 	select ARCH_HAS_UBSAN_SANITIZE_ALL
-diff --git a/arch/nios2/Kconfig b/arch/nios2/Kconfig
-index 4ef15a6..dc4239c 100644
---- a/arch/nios2/Kconfig
-+++ b/arch/nios2/Kconfig
-@@ -23,7 +23,6 @@ config NIOS2
- 	select SPARSE_IRQ
- 	select USB_ARCH_HAS_HCD if USB_SUPPORT
- 	select CPU_NO_EFFICIENT_FFS
--	select ARCH_DISCARD_MEMBLOCK
+-#define SIOCGSTAMP	0x8906		/* Get stamp (timeval) */
+-#define SIOCGSTAMPNS	0x8907		/* Get stamp (timespec) */
++#define SIOCGSTAMP_OLD	0x8906		/* Get stamp (timeval) */
++#define SIOCGSTAMPNS_OLD 0x8907		/* Get stamp (timespec) */
  
- config GENERIC_CSUM
- 	def_bool y
-diff --git a/arch/powerpc/Kconfig b/arch/powerpc/Kconfig
-index 2d0be82..39877b9 100644
---- a/arch/powerpc/Kconfig
-+++ b/arch/powerpc/Kconfig
-@@ -143,6 +143,7 @@ config PPC
- 	select ARCH_HAS_UBSAN_SANITIZE_ALL
- 	select ARCH_HAS_ZONE_DEVICE		if PPC_BOOK3S_64
- 	select ARCH_HAVE_NMI_SAFE_CMPXCHG
-+	select ARCH_KEEP_MEMBLOCK
- 	select ARCH_MIGHT_HAVE_PC_PARPORT
- 	select ARCH_MIGHT_HAVE_PC_SERIO
- 	select ARCH_OPTIONAL_KERNEL_RWX		if ARCH_HAS_STRICT_KERNEL_RWX
-diff --git a/arch/s390/Kconfig b/arch/s390/Kconfig
-index b6e3d06..3eaf660 100644
---- a/arch/s390/Kconfig
-+++ b/arch/s390/Kconfig
-@@ -106,6 +106,7 @@ config S390
- 	select ARCH_INLINE_WRITE_UNLOCK_BH
- 	select ARCH_INLINE_WRITE_UNLOCK_IRQ
- 	select ARCH_INLINE_WRITE_UNLOCK_IRQRESTORE
-+	select ARCH_KEEP_MEMBLOCK
- 	select ARCH_SAVE_PAGE_KEYS if HIBERNATION
- 	select ARCH_SUPPORTS_ATOMIC_RMW
- 	select ARCH_SUPPORTS_NUMA_BALANCING
-diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-index b1c91ea..418e928 100644
---- a/arch/sh/Kconfig
-+++ b/arch/sh/Kconfig
-@@ -10,7 +10,6 @@ config SUPERH
- 	select DMA_DECLARE_COHERENT
- 	select HAVE_IDE if HAS_IOPORT_MAP
- 	select HAVE_MEMBLOCK_NODE_MAP
--	select ARCH_DISCARD_MEMBLOCK
- 	select HAVE_OPROFILE
- 	select HAVE_ARCH_TRACEHOOK
- 	select HAVE_PERF_EVENTS
-diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
-index 62fc3fd..80bc582 100644
---- a/arch/x86/Kconfig
-+++ b/arch/x86/Kconfig
-@@ -48,7 +48,6 @@ config X86
- 	select ARCH_32BIT_OFF_T			if X86_32
- 	select ARCH_CLOCKSOURCE_DATA
- 	select ARCH_CLOCKSOURCE_INIT
--	select ARCH_DISCARD_MEMBLOCK
- 	select ARCH_HAS_ACPI_TABLE_UPGRADE	if ACPI
- 	select ARCH_HAS_DEBUG_VIRTUAL
- 	select ARCH_HAS_DEVMEM_IS_ALLOWED
-diff --git a/include/linux/memblock.h b/include/linux/memblock.h
-index 294d5d8..6ba69ba 100644
---- a/include/linux/memblock.h
-+++ b/include/linux/memblock.h
-@@ -96,13 +96,14 @@ struct memblock {
- extern struct memblock memblock;
- extern int memblock_debug;
+ #endif /* _ASM_ALPHA_SOCKIOS_H */
+diff --git a/arch/mips/include/uapi/asm/sockios.h b/arch/mips/include/uapi/asm/sockios.h
+index 5b40a88593fa..66f60234f290 100644
+--- a/arch/mips/include/uapi/asm/sockios.h
++++ b/arch/mips/include/uapi/asm/sockios.h
+@@ -21,7 +21,7 @@
+ #define SIOCSPGRP	_IOW('s', 8, pid_t)
+ #define SIOCGPGRP	_IOR('s', 9, pid_t)
  
--#ifdef CONFIG_ARCH_DISCARD_MEMBLOCK
-+#ifndef CONFIG_ARCH_KEEP_MEMBLOCK
- #define __init_memblock __meminit
- #define __initdata_memblock __meminitdata
- void memblock_discard(void);
- #else
- #define __init_memblock
- #define __initdata_memblock
-+static inline void memblock_discard(void) {}
- #endif
+-#define SIOCGSTAMP	0x8906		/* Get stamp (timeval) */
+-#define SIOCGSTAMPNS	0x8907		/* Get stamp (timespec) */
++#define SIOCGSTAMP_OLD	0x8906		/* Get stamp (timeval) */
++#define SIOCGSTAMPNS_OLD 0x8907		/* Get stamp (timespec) */
  
- #define memblock_dbg(fmt, ...) \
-diff --git a/kernel/kexec_file.c b/kernel/kexec_file.c
-index f1d0e00..623b022 100644
---- a/kernel/kexec_file.c
-+++ b/kernel/kexec_file.c
-@@ -500,13 +500,7 @@ static int locate_mem_hole_callback(struct resource *res, void *arg)
- 	return locate_mem_hole_bottom_up(start, end, kbuf);
- }
+ #endif /* _ASM_SOCKIOS_H */
+diff --git a/arch/sh/include/uapi/asm/sockios.h b/arch/sh/include/uapi/asm/sockios.h
+index 17313d2c3527..ef18a668456d 100644
+--- a/arch/sh/include/uapi/asm/sockios.h
++++ b/arch/sh/include/uapi/asm/sockios.h
+@@ -10,6 +10,7 @@
+ #define SIOCSPGRP	_IOW('s', 8, pid_t)
+ #define SIOCGPGRP	_IOR('s', 9, pid_t)
  
--#ifdef CONFIG_ARCH_DISCARD_MEMBLOCK
--static int kexec_walk_memblock(struct kexec_buf *kbuf,
--			       int (*func)(struct resource *, void *))
--{
--	return 0;
--}
--#else
-+#ifdef CONFIG_ARCH_KEEP_MEMBLOCK
- static int kexec_walk_memblock(struct kexec_buf *kbuf,
- 			       int (*func)(struct resource *, void *))
- {
-@@ -550,6 +544,12 @@ static int kexec_walk_memblock(struct kexec_buf *kbuf,
- 
- 	return ret;
- }
-+#else
-+static int kexec_walk_memblock(struct kexec_buf *kbuf,
-+			       int (*func)(struct resource *, void *))
-+{
-+	return 0;
-+}
- #endif
- 
- /**
-@@ -589,7 +589,7 @@ int kexec_locate_mem_hole(struct kexec_buf *kbuf)
- 	if (kbuf->mem != KEXEC_BUF_MEM_UNKNOWN)
- 		return 0;
- 
--	if (IS_ENABLED(CONFIG_ARCH_DISCARD_MEMBLOCK))
-+	if (!IS_ENABLED(CONFIG_ARCH_KEEP_MEMBLOCK))
- 		ret = kexec_walk_resources(kbuf, locate_mem_hole_callback);
- 	else
- 		ret = kexec_walk_memblock(kbuf, locate_mem_hole_callback);
-diff --git a/mm/Kconfig b/mm/Kconfig
-index 25c71eb..1e1c6ce 100644
---- a/mm/Kconfig
-+++ b/mm/Kconfig
-@@ -136,7 +136,7 @@ config HAVE_MEMBLOCK_PHYS_MAP
- config HAVE_GENERIC_GUP
- 	bool
- 
--config ARCH_DISCARD_MEMBLOCK
-+config ARCH_KEEP_MEMBLOCK
- 	bool
- 
- config MEMORY_ISOLATION
-diff --git a/mm/memblock.c b/mm/memblock.c
-index e7665cf..d6b5755 100644
---- a/mm/memblock.c
-+++ b/mm/memblock.c
-@@ -94,7 +94,7 @@
-  * :c:func:`mem_init` function frees all the memory to the buddy page
-  * allocator.
-  *
-- * If an architecure enables %CONFIG_ARCH_DISCARD_MEMBLOCK, the
-+ * Unless an architecure enables %CONFIG_ARCH_KEEP_MEMBLOCK, the
-  * memblock data structures will be discarded after the system
-  * initialization compltes.
-  */
-@@ -375,7 +375,7 @@ static void __init_memblock memblock_remove_region(struct memblock_type *type, u
- 	}
- }
- 
--#ifdef CONFIG_ARCH_DISCARD_MEMBLOCK
-+#ifndef CONFIG_ARCH_KEEP_MEMBLOCK
- /**
-  * memblock_discard - discard memory and reserved arrays if they were allocated
-  */
-@@ -1923,7 +1923,7 @@ unsigned long __init memblock_free_all(void)
- 	return pages;
- }
- 
--#if defined(CONFIG_DEBUG_FS) && !defined(CONFIG_ARCH_DISCARD_MEMBLOCK)
-+#if defined(CONFIG_DEBUG_FS) && defined(CONFIG_ARCH_KEEP_MEMBLOCK)
- 
- static int memblock_debug_show(struct seq_file *m, void *private)
- {
-diff --git a/mm/page_alloc.c b/mm/page_alloc.c
-index c6ce20a..a1825e9 100644
---- a/mm/page_alloc.c
-+++ b/mm/page_alloc.c
-@@ -1831,10 +1831,9 @@ void __init page_alloc_init_late(void)
- 	/* Reinit limits that are based on free pages after the kernel is up */
- 	files_maxfiles_init();
- #endif
--#ifdef CONFIG_ARCH_DISCARD_MEMBLOCK
+-#define SIOCGSTAMP	_IOR('s', 100, struct timeval) /* Get stamp (timeval) */
+-#define SIOCGSTAMPNS	_IOR('s', 101, struct timespec) /* Get stamp (timespec) */
++#define SIOCGSTAMP_OLD	_IOR('s', 100, struct timeval) /* Get stamp (timeval) */
++#define SIOCGSTAMPNS_OLD _IOR('s', 101, struct timespec) /* Get stamp (timespec) */
 +
- 	/* Discard memblock private memory */
- 	memblock_discard();
--#endif
+ #endif /* __ASM_SH_SOCKIOS_H */
+diff --git a/arch/xtensa/include/uapi/asm/sockios.h b/arch/xtensa/include/uapi/asm/sockios.h
+index fb8ac3607189..1a1f58f4b75a 100644
+--- a/arch/xtensa/include/uapi/asm/sockios.h
++++ b/arch/xtensa/include/uapi/asm/sockios.h
+@@ -26,7 +26,7 @@
+ #define SIOCSPGRP	_IOW('s', 8, pid_t)
+ #define SIOCGPGRP	_IOR('s', 9, pid_t)
  
- 	for_each_populated_zone(zone)
- 		set_zone_contiguous(zone);
+-#define SIOCGSTAMP	0x8906		/* Get stamp (timeval) */
+-#define SIOCGSTAMPNS	0x8907		/* Get stamp (timespec) */
++#define SIOCGSTAMP_OLD	0x8906		/* Get stamp (timeval) */
++#define SIOCGSTAMPNS_OLD 0x8907		/* Get stamp (timespec) */
+ 
+ #endif	/* _XTENSA_SOCKIOS_H */
+diff --git a/include/uapi/asm-generic/sockios.h b/include/uapi/asm-generic/sockios.h
+index 64f658c7cec2..44fa3ed70483 100644
+--- a/include/uapi/asm-generic/sockios.h
++++ b/include/uapi/asm-generic/sockios.h
+@@ -8,7 +8,7 @@
+ #define FIOGETOWN	0x8903
+ #define SIOCGPGRP	0x8904
+ #define SIOCATMARK	0x8905
+-#define SIOCGSTAMP	0x8906		/* Get stamp (timeval) */
+-#define SIOCGSTAMPNS	0x8907		/* Get stamp (timespec) */
++#define SIOCGSTAMP_OLD	0x8906		/* Get stamp (timeval) */
++#define SIOCGSTAMPNS_OLD 0x8907		/* Get stamp (timespec) */
+ 
+ #endif /* __ASM_GENERIC_SOCKIOS_H */
+diff --git a/include/uapi/linux/sockios.h b/include/uapi/linux/sockios.h
+index d393e9ed3964..7d1bccbbef78 100644
+--- a/include/uapi/linux/sockios.h
++++ b/include/uapi/linux/sockios.h
+@@ -19,6 +19,7 @@
+ #ifndef _LINUX_SOCKIOS_H
+ #define _LINUX_SOCKIOS_H
+ 
++#include <asm/bitsperlong.h>
+ #include <asm/sockios.h>
+ 
+ /* Linux-specific socket ioctls */
+@@ -27,6 +28,26 @@
+ 
+ #define SOCK_IOC_TYPE	0x89
+ 
++/*
++ * the timeval/timespec data structure layout is defined by libc,
++ * so we need to cover both possible versions on 32-bit.
++ */
++/* Get stamp (timeval) */
++#define SIOCGSTAMP_NEW	 _IOR(SOCK_IOC_TYPE, 0x06, long long[2])
++/* Get stamp (timespec) */
++#define SIOCGSTAMPNS_NEW _IOR(SOCK_IOC_TYPE, 0x07, long long[2])
++
++#if __BITS_PER_LONG = 64 || (defined(__x86_64__) && defined(__ILP32__))
++/* on 64-bit and x32, avoid the ?: operator */
++#define SIOCGSTAMP	SIOCGSTAMP_OLD
++#define SIOCGSTAMPNS	SIOCGSTAMPNS_OLD
++#else
++#define SIOCGSTAMP	((sizeof(struct timeval))  = 8 ? \
++			 SIOCGSTAMP_OLD   : SIOCGSTAMP_NEW)
++#define SIOCGSTAMPNS	((sizeof(struct timespec)) = 8 ? \
++			 SIOCGSTAMPNS_OLD : SIOCGSTAMPNS_NEW)
++#endif
++
+ /* Routing table calls. */
+ #define SIOCADDRT	0x890B		/* add routing table entry	*/
+ #define SIOCDELRT	0x890C		/* delete routing table entry	*/
+diff --git a/net/socket.c b/net/socket.c
+index ab624d42ead5..8d9d4fc7d962 100644
+--- a/net/socket.c
++++ b/net/socket.c
+@@ -1164,14 +1164,24 @@ static long sock_ioctl(struct file *file, unsigned cmd, unsigned long arg)
+ 
+ 			err = open_related_ns(&net->ns, get_net_ns);
+ 			break;
+-		case SIOCGSTAMP:
+-		case SIOCGSTAMPNS:
++		case SIOCGSTAMP_OLD:
++		case SIOCGSTAMPNS_OLD:
+ 			if (!sock->ops->gettstamp) {
+ 				err = -ENOIOCTLCMD;
+ 				break;
+ 			}
+ 			err = sock->ops->gettstamp(sock, argp,
+-						   cmd = SIOCGSTAMP, false);
++						   cmd = SIOCGSTAMP_OLD,
++						   !IS_ENABLED(CONFIG_64BIT));
++		case SIOCGSTAMP_NEW:
++		case SIOCGSTAMPNS_NEW:
++			if (!sock->ops->gettstamp) {
++				err = -ENOIOCTLCMD;
++				break;
++			}
++			err = sock->ops->gettstamp(sock, argp,
++						   cmd = SIOCGSTAMP_NEW,
++						   false);
+ 			break;
+ 		default:
+ 			err = sock_do_ioctl(net, sock, cmd, arg);
+@@ -3324,11 +3334,11 @@ static int compat_sock_ioctl_trans(struct file *file, struct socket *sock,
+ 	case SIOCADDRT:
+ 	case SIOCDELRT:
+ 		return routing_ioctl(net, sock, cmd, argp);
+-	case SIOCGSTAMP:
+-	case SIOCGSTAMPNS:
++	case SIOCGSTAMP_OLD:
++	case SIOCGSTAMPNS_OLD:
+ 		if (!sock->ops->gettstamp)
+ 			return -ENOIOCTLCMD;
+-		return sock->ops->gettstamp(sock, argp, cmd = SIOCGSTAMP,
++		return sock->ops->gettstamp(sock, argp, cmd = SIOCGSTAMP_OLD,
+ 					    !COMPAT_USE_64BIT_TIME);
+ 
+ 	case SIOCBONDSLAVEINFOQUERY:
+@@ -3348,6 +3358,8 @@ static int compat_sock_ioctl_trans(struct file *file, struct socket *sock,
+ 	case SIOCADDDLCI:
+ 	case SIOCDELDLCI:
+ 	case SIOCGSKNS:
++	case SIOCGSTAMP_NEW:
++	case SIOCGSTAMPNS_NEW:
+ 		return sock_ioctl(file, cmd, arg);
+ 
+ 	case SIOCGIFFLAGS:
 -- 
-2.7.4
+2.20.0
