@@ -1,54 +1,215 @@
-From: Randy Dunlap <rdunlap@infradead.org>
-Date: Tue, 02 Apr 2019 22:39:21 +0000
-Subject: [PATCH] sh: fix multiple function definition build errors
-Message-Id: <9ee4e0c5-f100-86a2-bd4d-1d3287ceab31@infradead.org>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Wed, 17 Apr 2019 20:56:11 +0000
+Subject: [PATCH 3/3 v3] net: socket: implement 64-bit timestamps
+Message-Id: <20190417205659.2036372-1-arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20190417205404.1877560-1-arnd@arndb.de>
+In-Reply-To: <20190417205404.1877560-1-arnd@arndb.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: LKML <linux-kernel@vger.kernel.org>, Andrew Morton <akpm@linux-foundation.org>
-Cc: Takashi Iwai <tiwai@suse.de>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Linux-sh list <linux-sh@vger.kernel.org>
+To: netdev@vger.kernel.org
+Cc: y2038@lists.linaro.org, Willem de Bruijn <willemdebruijn.kernel@gmail.com>, Deepa Dinamani <deepa.kernel@gmail.com>, Arnd Bergmann <arnd@arndb.de>, Richard Henderson <rth@twiddle.net>, Ivan Kokshaysky <ink@jurassic.park.msu.ru>, Matt Turner <mattst88@gmail.com>, Ralf Baechle <ralf@linux-mips.org>, Paul Burton <paul.burton@mips.com>, James Hogan <jhogan@kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Chris Zankel <chris@zankel.net>, Max Filippov <jcmvbkbc@gmail.com>, "David S. Miller" <davem@davemloft.net>, Willem de Bruijn <willemb@google.com>, linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org, linux-mips@vger.kernel.org, linux-sh@vger.kernel.org, linux-arch@vger.kernel.org
 
-From: Randy Dunlap <rdunlap@infradead.org>
+The 'timeval' and 'timespec' data structures used for socket timestamps
+are going to be redefined in user space based on 64-bit time_t in future
+versions of the C library to deal with the y2038 overflow problem,
+which breaks the ABI definition.
 
-Many of the sh CPU-types have their own plat_irq_setup() and
-arch_init_clk_ops() functions, so these same (empty) functions in
-arch/sh/boards/of-generic.c are not needed and cause build errors.
-If there is some case where these empty functions are needed,
-they can be retained by marking them as "__weak" while at the
-same time making builds that do not need them succeed.
+Unlike many modern ioctl commands, SIOCGSTAMP and SIOCGSTAMPNS do not
+use the _IOR() macro to encode the size of the transferred data, so it
+remains ambiguous whether the application uses the old or new layout.
 
-Fixes these build errors:
+The best workaround I could find is rather ugly: we redefine the command
+code based on the size of the respective data structure with a ternary
+operator. This lets it get evaluated as late as possible, hopefully after
+that structure is visible to the caller. We cannot use an #ifdef here,
+because inux/sockios.h might have been included before any libc header
+that could determine the size of time_t.
 
-arch/sh/boards/of-generic.o: In function `plat_irq_setup':
-(.init.text+0x134): multiple definition of `plat_irq_setup'
-arch/sh/kernel/cpu/sh2/setup-sh7619.o:(.init.text+0x30): first defined here
-arch/sh/boards/of-generic.o: In function `arch_init_clk_ops':
-(.init.text+0x118): multiple definition of `arch_init_clk_ops'
-arch/sh/kernel/cpu/sh2/clock-sh7619.o:(.init.text+0x0): first defined here
+The ioctl implementation now interprets the new command codes as always
+referring to the 64-bit structure on all architectures, while the old
+architecture specific command code still refers to the old architecture
+specific layout. The new command number is only used when they are
+actually different.
 
-Reported-by: kbuild test robot <lkp@intel.com>
-Signed-off-by: Randy Dunlap <rdunlap@infradead.org>
-Cc: Takashi Iwai <tiwai@suse.de>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: Rich Felker <dalias@libc.org>
-Cc: linux-sh@vger.kernel.org
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
 ---
- arch/sh/boards/of-generic.c |    4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+v3: no changes since v1
+---
+ arch/alpha/include/uapi/asm/sockios.h  |  4 ++--
+ arch/mips/include/uapi/asm/sockios.h   |  4 ++--
+ arch/sh/include/uapi/asm/sockios.h     |  5 +++--
+ arch/xtensa/include/uapi/asm/sockios.h |  4 ++--
+ include/uapi/asm-generic/sockios.h     |  4 ++--
+ include/uapi/linux/sockios.h           | 21 +++++++++++++++++++++
+ net/socket.c                           | 24 ++++++++++++++++++------
+ 7 files changed, 50 insertions(+), 16 deletions(-)
 
---- lnx-51-rc2.orig/arch/sh/boards/of-generic.c
-+++ lnx-51-rc2/arch/sh/boards/of-generic.c
-@@ -164,10 +164,10 @@ static struct sh_machine_vector __initmv
+diff --git a/arch/alpha/include/uapi/asm/sockios.h b/arch/alpha/include/uapi/asm/sockios.h
+index ba287e4b01bf..af92bc27c3be 100644
+--- a/arch/alpha/include/uapi/asm/sockios.h
++++ b/arch/alpha/include/uapi/asm/sockios.h
+@@ -11,7 +11,7 @@
+ #define SIOCSPGRP	_IOW('s', 8, pid_t)
+ #define SIOCGPGRP	_IOR('s', 9, pid_t)
  
- struct sh_clk_ops;
+-#define SIOCGSTAMP	0x8906		/* Get stamp (timeval) */
+-#define SIOCGSTAMPNS	0x8907		/* Get stamp (timespec) */
++#define SIOCGSTAMP_OLD	0x8906		/* Get stamp (timeval) */
++#define SIOCGSTAMPNS_OLD 0x8907		/* Get stamp (timespec) */
  
--void __init arch_init_clk_ops(struct sh_clk_ops **ops, int idx)
-+void __init __weak arch_init_clk_ops(struct sh_clk_ops **ops, int idx)
- {
- }
+ #endif /* _ASM_ALPHA_SOCKIOS_H */
+diff --git a/arch/mips/include/uapi/asm/sockios.h b/arch/mips/include/uapi/asm/sockios.h
+index 5b40a88593fa..66f60234f290 100644
+--- a/arch/mips/include/uapi/asm/sockios.h
++++ b/arch/mips/include/uapi/asm/sockios.h
+@@ -21,7 +21,7 @@
+ #define SIOCSPGRP	_IOW('s', 8, pid_t)
+ #define SIOCGPGRP	_IOR('s', 9, pid_t)
  
--void __init plat_irq_setup(void)
-+void __init __weak plat_irq_setup(void)
- {
- }
+-#define SIOCGSTAMP	0x8906		/* Get stamp (timeval) */
+-#define SIOCGSTAMPNS	0x8907		/* Get stamp (timespec) */
++#define SIOCGSTAMP_OLD	0x8906		/* Get stamp (timeval) */
++#define SIOCGSTAMPNS_OLD 0x8907		/* Get stamp (timespec) */
+ 
+ #endif /* _ASM_SOCKIOS_H */
+diff --git a/arch/sh/include/uapi/asm/sockios.h b/arch/sh/include/uapi/asm/sockios.h
+index 17313d2c3527..ef18a668456d 100644
+--- a/arch/sh/include/uapi/asm/sockios.h
++++ b/arch/sh/include/uapi/asm/sockios.h
+@@ -10,6 +10,7 @@
+ #define SIOCSPGRP	_IOW('s', 8, pid_t)
+ #define SIOCGPGRP	_IOR('s', 9, pid_t)
+ 
+-#define SIOCGSTAMP	_IOR('s', 100, struct timeval) /* Get stamp (timeval) */
+-#define SIOCGSTAMPNS	_IOR('s', 101, struct timespec) /* Get stamp (timespec) */
++#define SIOCGSTAMP_OLD	_IOR('s', 100, struct timeval) /* Get stamp (timeval) */
++#define SIOCGSTAMPNS_OLD _IOR('s', 101, struct timespec) /* Get stamp (timespec) */
++
+ #endif /* __ASM_SH_SOCKIOS_H */
+diff --git a/arch/xtensa/include/uapi/asm/sockios.h b/arch/xtensa/include/uapi/asm/sockios.h
+index fb8ac3607189..1a1f58f4b75a 100644
+--- a/arch/xtensa/include/uapi/asm/sockios.h
++++ b/arch/xtensa/include/uapi/asm/sockios.h
+@@ -26,7 +26,7 @@
+ #define SIOCSPGRP	_IOW('s', 8, pid_t)
+ #define SIOCGPGRP	_IOR('s', 9, pid_t)
+ 
+-#define SIOCGSTAMP	0x8906		/* Get stamp (timeval) */
+-#define SIOCGSTAMPNS	0x8907		/* Get stamp (timespec) */
++#define SIOCGSTAMP_OLD	0x8906		/* Get stamp (timeval) */
++#define SIOCGSTAMPNS_OLD 0x8907		/* Get stamp (timespec) */
+ 
+ #endif	/* _XTENSA_SOCKIOS_H */
+diff --git a/include/uapi/asm-generic/sockios.h b/include/uapi/asm-generic/sockios.h
+index 64f658c7cec2..44fa3ed70483 100644
+--- a/include/uapi/asm-generic/sockios.h
++++ b/include/uapi/asm-generic/sockios.h
+@@ -8,7 +8,7 @@
+ #define FIOGETOWN	0x8903
+ #define SIOCGPGRP	0x8904
+ #define SIOCATMARK	0x8905
+-#define SIOCGSTAMP	0x8906		/* Get stamp (timeval) */
+-#define SIOCGSTAMPNS	0x8907		/* Get stamp (timespec) */
++#define SIOCGSTAMP_OLD	0x8906		/* Get stamp (timeval) */
++#define SIOCGSTAMPNS_OLD 0x8907		/* Get stamp (timespec) */
+ 
+ #endif /* __ASM_GENERIC_SOCKIOS_H */
+diff --git a/include/uapi/linux/sockios.h b/include/uapi/linux/sockios.h
+index d393e9ed3964..7d1bccbbef78 100644
+--- a/include/uapi/linux/sockios.h
++++ b/include/uapi/linux/sockios.h
+@@ -19,6 +19,7 @@
+ #ifndef _LINUX_SOCKIOS_H
+ #define _LINUX_SOCKIOS_H
+ 
++#include <asm/bitsperlong.h>
+ #include <asm/sockios.h>
+ 
+ /* Linux-specific socket ioctls */
+@@ -27,6 +28,26 @@
+ 
+ #define SOCK_IOC_TYPE	0x89
+ 
++/*
++ * the timeval/timespec data structure layout is defined by libc,
++ * so we need to cover both possible versions on 32-bit.
++ */
++/* Get stamp (timeval) */
++#define SIOCGSTAMP_NEW	 _IOR(SOCK_IOC_TYPE, 0x06, long long[2])
++/* Get stamp (timespec) */
++#define SIOCGSTAMPNS_NEW _IOR(SOCK_IOC_TYPE, 0x07, long long[2])
++
++#if __BITS_PER_LONG = 64 || (defined(__x86_64__) && defined(__ILP32__))
++/* on 64-bit and x32, avoid the ?: operator */
++#define SIOCGSTAMP	SIOCGSTAMP_OLD
++#define SIOCGSTAMPNS	SIOCGSTAMPNS_OLD
++#else
++#define SIOCGSTAMP	((sizeof(struct timeval))  = 8 ? \
++			 SIOCGSTAMP_OLD   : SIOCGSTAMP_NEW)
++#define SIOCGSTAMPNS	((sizeof(struct timespec)) = 8 ? \
++			 SIOCGSTAMPNS_OLD : SIOCGSTAMPNS_NEW)
++#endif
++
+ /* Routing table calls. */
+ #define SIOCADDRT	0x890B		/* add routing table entry	*/
+ #define SIOCDELRT	0x890C		/* delete routing table entry	*/
+diff --git a/net/socket.c b/net/socket.c
+index ab624d42ead5..8d9d4fc7d962 100644
+--- a/net/socket.c
++++ b/net/socket.c
+@@ -1164,14 +1164,24 @@ static long sock_ioctl(struct file *file, unsigned cmd, unsigned long arg)
+ 
+ 			err = open_related_ns(&net->ns, get_net_ns);
+ 			break;
+-		case SIOCGSTAMP:
+-		case SIOCGSTAMPNS:
++		case SIOCGSTAMP_OLD:
++		case SIOCGSTAMPNS_OLD:
+ 			if (!sock->ops->gettstamp) {
+ 				err = -ENOIOCTLCMD;
+ 				break;
+ 			}
+ 			err = sock->ops->gettstamp(sock, argp,
+-						   cmd = SIOCGSTAMP, false);
++						   cmd = SIOCGSTAMP_OLD,
++						   !IS_ENABLED(CONFIG_64BIT));
++		case SIOCGSTAMP_NEW:
++		case SIOCGSTAMPNS_NEW:
++			if (!sock->ops->gettstamp) {
++				err = -ENOIOCTLCMD;
++				break;
++			}
++			err = sock->ops->gettstamp(sock, argp,
++						   cmd = SIOCGSTAMP_NEW,
++						   false);
+ 			break;
+ 		default:
+ 			err = sock_do_ioctl(net, sock, cmd, arg);
+@@ -3324,11 +3334,11 @@ static int compat_sock_ioctl_trans(struct file *file, struct socket *sock,
+ 	case SIOCADDRT:
+ 	case SIOCDELRT:
+ 		return routing_ioctl(net, sock, cmd, argp);
+-	case SIOCGSTAMP:
+-	case SIOCGSTAMPNS:
++	case SIOCGSTAMP_OLD:
++	case SIOCGSTAMPNS_OLD:
+ 		if (!sock->ops->gettstamp)
+ 			return -ENOIOCTLCMD;
+-		return sock->ops->gettstamp(sock, argp, cmd = SIOCGSTAMP,
++		return sock->ops->gettstamp(sock, argp, cmd = SIOCGSTAMP_OLD,
+ 					    !COMPAT_USE_64BIT_TIME);
+ 
+ 	case SIOCBONDSLAVEINFOQUERY:
+@@ -3348,6 +3358,8 @@ static int compat_sock_ioctl_trans(struct file *file, struct socket *sock,
+ 	case SIOCADDDLCI:
+ 	case SIOCDELDLCI:
+ 	case SIOCGSKNS:
++	case SIOCGSTAMP_NEW:
++	case SIOCGSTAMPNS_NEW:
+ 		return sock_ioctl(file, cmd, arg);
+ 
+ 	case SIOCGIFFLAGS:
+-- 
+2.20.0
