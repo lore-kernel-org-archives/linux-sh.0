@@ -1,58 +1,54 @@
-From: Nick Desaulniers <ndesaulniers@google.com>
-Date: Tue, 30 Apr 2019 20:26:00 +0000
-Subject: Re: [PATCH v2] sh: vsyscall: drop unnecessary cc-ldoption
-Message-Id: <CAKwvOd=5SVBFsfEgYc9Dpgr--h+pQgCwOnpAjg9B4HG2VY6kFg@mail.gmail.com>
+From: Yoshinori Sato <ysato@users.sourceforge.jp>
+Date: Sun, 21 Apr 2019 14:00:16 +0000
+Subject: [PATCH] Fix allyesconfig output.
+Message-Id: <20190421140016.89600-1-ysato@users.sourceforge.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <CAK7LNASLBQ=w9YFBD80s7dit1bd_Tr+ggVyRNms0jf1pR9k=ZA@mail.gmail.com>
- <20190424180223.253025-1-ndesaulniers@google.com>
-In-Reply-To: <20190424180223.253025-1-ndesaulniers@google.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshinori Sato <ysato@users.sourceforge.jp>, dalias@libc.org
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Andy Lutomirski <luto@kernel.org>, clang-built-linux <clang-built-linux@googlegroups.com>, Masahiro Yamada <yamada.masahiro@socionext.com>, linux-sh@vger.kernel.org, LKML <linux-kernel@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-On Wed, Apr 24, 2019 at 11:02 AM Nick Desaulniers
-<ndesaulniers@google.com> wrote:
->
-> Towards the goal of removing cc-ldoption, it seems that --hash-style> was added to binutils 2.17.50.0.2 in 2006. The minimal required version
-> of binutils for the kernel according to
-> Documentation/process/changes.rst is 2.20.
->
-> Link: https://gcc.gnu.org/ml/gcc/2007-01/msg01141.html
-> Cc: clang-built-linux@googlegroups.com
-> Suggested-by: Masahiro Yamada <yamada.masahiro@socionext.com>
-> Signed-off-by: Nick Desaulniers <ndesaulniers@google.com>
-> ---
-> Changes V1 -> V2:
-> * update commit subject and message as per Masahiro/Geert.
->
-> To Geert's question about minimum binutils versions; no change needed to
-> binutils.
->
->
->  arch/sh/kernel/vsyscall/Makefile | 3 +--
->  1 file changed, 1 insertion(+), 2 deletions(-)
->
-> diff --git a/arch/sh/kernel/vsyscall/Makefile b/arch/sh/kernel/vsyscall/Makefile
-> index 5db6579bc44c..6e8664448048 100644
-> --- a/arch/sh/kernel/vsyscall/Makefile
-> +++ b/arch/sh/kernel/vsyscall/Makefile
-> @@ -15,8 +15,7 @@ quiet_cmd_syscall = SYSCALL $@
->
->  export CPPFLAGS_vsyscall.lds += -P -C -Ush
->
-> -vsyscall-flags = -shared -s -Wl,-soname=linux-gate.so.1 \
-> -               $(call cc-ldoption, -Wl$(comma)--hash-style=sysv)
-> +vsyscall-flags = -shared -s -Wl,-soname=linux-gate.so.1 -Wl,--hash-style=sysv
->
->  SYSCFLAGS_vsyscall-trapa.so    = $(vsyscall-flags)
->
-> --
-> 2.21.0.593.g511ec345e18-goog
->
+Conflict JCore-SoC and SolutionEngine 7619.
 
-bumping for review
+Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
+---
+ arch/sh/boards/Kconfig | 14 +++-----------
+ 1 file changed, 3 insertions(+), 11 deletions(-)
+
+diff --git a/arch/sh/boards/Kconfig b/arch/sh/boards/Kconfig
+index b9a37057b77a..cee24c308337 100644
+--- a/arch/sh/boards/Kconfig
++++ b/arch/sh/boards/Kconfig
+@@ -8,27 +8,19 @@ config SH_ALPHA_BOARD
+ 	bool
+ 
+ config SH_DEVICE_TREE
+-	bool "Board Described by Device Tree"
++	bool
+ 	select OF
+ 	select OF_EARLY_FLATTREE
+ 	select TIMER_OF
+ 	select COMMON_CLK
+ 	select GENERIC_CALIBRATE_DELAY
+-	help
+-	  Select Board Described by Device Tree to build a kernel that
+-	  does not hard-code any board-specific knowledge but instead uses
+-	  a device tree blob provided by the boot-loader. You must enable
+-	  drivers for any hardware you want to use separately. At this
+-	  time, only boards based on the open-hardware J-Core processors
+-	  have sufficient driver coverage to use this option; do not
+-	  select it if you are using original SuperH hardware.
+ 
+ config SH_JCORE_SOC
+ 	bool "J-Core SoC"
+-	depends on SH_DEVICE_TREE && (CPU_SH2 || CPU_J2)
++	select SH_DEVICE_TREE
+ 	select CLKSRC_JCORE_PIT
+ 	select JCORE_AIC
+-	default y if CPU_J2
++	depends on CPU_J2
+ 	help
+ 	  Select this option to include drivers core components of the
+ 	  J-Core SoC, including interrupt controllers and timers.
 -- 
-Thanks,
-~Nick Desaulniers
+2.11.0
