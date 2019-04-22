@@ -1,288 +1,713 @@
-From: David Hildenbrand <david@redhat.com>
-Date: Tue, 09 Apr 2019 10:01:48 +0000
-Subject: [PATCH v1 4/4] mm/memory_hotplug: Make __remove_pages() and arch_remove_memory() never fail
-Message-Id: <20190409100148.24703-5-david@redhat.com>
+From: Mauro Carvalho Chehab <mchehab+samsung@kernel.org>
+Date: Mon, 22 Apr 2019 13:27:08 +0000
+Subject: [PATCH v2 19/79] docs: kdump: convert docs to ReST and rename to *.rst
+Message-Id: <9141ffcad8c415b883bfa368581a3aa885a92f7a.1555938376.git.mchehab+samsung@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190409100148.24703-1-david@redhat.com>
-In-Reply-To: <20190409100148.24703-1-david@redhat.com>
+References: <cover.1555938375.git.mchehab+samsung@kernel.org>
+In-Reply-To: <cover.1555938375.git.mchehab+samsung@kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-mm@kvack.org
-Cc: linux-kernel@vger.kernel.org, David Hildenbrand <david@redhat.com>, Tony Luck <tony.luck@intel.com>, Fenghua Yu <fenghua.yu@intel.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Michael Ellerman <mpe@ellerman.id.au>, Martin Schwidefsky <schwidefsky@de.ibm.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Dave Hansen <dave.hansen@linux.intel.com>, Andy Lutomirski <luto@kernel.org>, Peter Zijlstra <peterz@infradead.org>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>, "H. Peter Anvin" <hpa@zytor.com>, x86@kernel.org, Andrew Morton <akpm@linux-foundation.org>, Michal Hocko <mhocko@suse.com>, Mike Rapoport <rppt@linux.ibm.com>, Oscar Salvador <osalvador@suse.com>, "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>, Christophe Leroy <christophe.leroy@c-s.fr>, Stefan Agner <stefan@agner.ch>, Nicholas Piggin <npiggin@gmail.com>, Pavel Tatashin <pasha.tatashin@soleen.com>, Vasily Gorbik <gor@linux.ibm.com>, Arun KS <arunks@codeaurora.org>, Geert Uytterhoeven <geert@linux-m68k.org>, Masahiro Yamada <yamada.masahiro@socionext.com>, Rob Herring <robh@kernel.org>, Joonsoo Kim <iamjoonsoo.kim@lge.com>, Wei Yang <richard.weiyang@gmail.com>, Qian Cai <cai@lca.pw>, Mathieu Malaterre <malat@debian.org>, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, linux-s390@vger.kernel.org
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: Linux Doc Mailing List <linux-doc@vger.kernel.org>
+Cc: Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, Catalin Marinas <catalin.marinas@arm.com>, Will Deacon <will.deacon@arm.com>, Harry Wei <harryxiyou@gmail.com>, Paul Mackerras <paulus@samba.org>, "H. Peter Anvin" <hpa@zytor.com>, Mauro Carvalho Chehab <mchehab+samsung@kernel.org>, Alex Shi <alex.shi@linux.alibaba.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Jonathan Corbet <corbet@lwn.net>, Michael Ellerman <mpe@ellerman.id.au>, x86@kernel.org, Russell King <linux@armlinux.org.uk>, Ingo Molnar <mingo@redhat.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Dave Young <dyoung@redhat.com>, Guenter Roeck <linux@roeck-us.net>, linux-watchdog@vger.kernel.org, Mauro Carvalho Chehab <mchehab@infradead.org>, Borislav Petkov <bp@alien8.de>, Thomas Gleixner <tglx@linutronix.de>, Wim Van Sebroeck <wim@linux-watchdog.org>, linux-arm-kernel@lists.infradead.org, Baoquan He <bhe@redhat.com>, kexec@lists.infradead.org, linux-kernel@vger.kernel.org, Vivek Goyal <vgoyal@redhat.com>, linuxppc-dev@lists.ozlabs.org
 
-All callers of arch_remove_memory() ignore errors. And we should really
-try to remove any errors from the memory removal path.
-No more errors are reported from __remove_pages(). BUG() in s390x code
-in case arch_remove_memory() is triggered. We may implement that properly
-later. WARN in case powerpc code failed to remove the section mapping,
-which is better than ignoring the error completely right now.
+Convert kdump documentation to ReST and add it to the
+user faced manual, as the documents are mainly focused on
+sysadmins that would be enabling kdump.
 
-Cc: Tony Luck <tony.luck@intel.com>
-Cc: Fenghua Yu <fenghua.yu@intel.com>
-Cc: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-Cc: Paul Mackerras <paulus@samba.org>
-Cc: Michael Ellerman <mpe@ellerman.id.au>
-Cc: Martin Schwidefsky <schwidefsky@de.ibm.com>
-Cc: Heiko Carstens <heiko.carstens@de.ibm.com>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: Rich Felker <dalias@libc.org>
-Cc: Dave Hansen <dave.hansen@linux.intel.com>
-Cc: Andy Lutomirski <luto@kernel.org>
-Cc: Peter Zijlstra <peterz@infradead.org>
-Cc: Thomas Gleixner <tglx@linutronix.de>
-Cc: Ingo Molnar <mingo@redhat.com>
-Cc: Borislav Petkov <bp@alien8.de>
-Cc: "H. Peter Anvin" <hpa@zytor.com>
-Cc: x86@kernel.org
-Cc: Andrew Morton <akpm@linux-foundation.org>
-Cc: Michal Hocko <mhocko@suse.com>
-Cc: Mike Rapoport <rppt@linux.ibm.com>
-Cc: Oscar Salvador <osalvador@suse.com>
-Cc: "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>
-Cc: Christophe Leroy <christophe.leroy@c-s.fr>
-Cc: Stefan Agner <stefan@agner.ch>
-Cc: Nicholas Piggin <npiggin@gmail.com>
-Cc: Pavel Tatashin <pasha.tatashin@soleen.com>
-Cc: Vasily Gorbik <gor@linux.ibm.com>
-Cc: Arun KS <arunks@codeaurora.org>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Masahiro Yamada <yamada.masahiro@socionext.com>
-Cc: Rob Herring <robh@kernel.org>
-Cc: Joonsoo Kim <iamjoonsoo.kim@lge.com>
-Cc: Wei Yang <richard.weiyang@gmail.com>
-Cc: Qian Cai <cai@lca.pw>
-Cc: Mathieu Malaterre <malat@debian.org>
-Cc: linux-ia64@vger.kernel.org
-Cc: linuxppc-dev@lists.ozlabs.org
-Cc: linux-sh@vger.kernel.org
-Cc: linux-s390@vger.kernel.org
-Signed-off-by: David Hildenbrand <david@redhat.com>
+Note: the vmcoreinfo.rst has one very long title on one of its
+sub-sections:
+
+	PG_lru|PG_private|PG_swapcache|PG_swapbacked|PG_slab|PG_hwpoision|PG_head_mask|PAGE_BUDDY_MAPCOUNT_VALUE(~PG_buddy)|PAGE_OFFLINE_MAPCOUNT_VALUE(~PG_offline)
+
+I opted to break this one, into two entries with the same content,
+in order to make it easier to display after being parsed in html and PDF.
+
+The conversion is actually:
+  - add blank lines and identation in order to identify paragraphs;
+  - fix tables markups;
+  - add some lists markups;
+  - mark literal blocks;
+  - adjust title markups.
+
+At its new index.rst, let's add a :orphan: while this is not linked to
+the main index.rst file, in order to avoid build warnings.
+
+Signed-off-by: Mauro Carvalho Chehab <mchehab+samsung@kernel.org>
 ---
- arch/ia64/mm/init.c            | 11 +++--------
- arch/powerpc/mm/mem.c          | 11 ++++-------
- arch/s390/mm/init.c            |  5 +++--
- arch/sh/mm/init.c              | 11 +++--------
- arch/x86/mm/init_32.c          |  5 +++--
- arch/x86/mm/init_64.c          | 10 +++-------
- include/linux/memory_hotplug.h |  8 ++++----
- mm/memory_hotplug.c            |  5 ++---
- 8 files changed, 25 insertions(+), 41 deletions(-)
+ Documentation/admin-guide/bug-hunting.rst     |   2 +-
+ .../admin-guide/kernel-parameters.txt         |   6 +-
+ Documentation/kdump/index.rst                 |  21 +++
+ Documentation/kdump/{kdump.txt => kdump.rst}  | 131 +++++++++++-------
+ .../kdump/{vmcoreinfo.txt => vmcoreinfo.rst}  |  59 ++++----
+ .../powerpc/firmware-assisted-dump.txt        |   2 +-
+ .../translations/zh_CN/oops-tracing.txt       |   2 +-
+ Documentation/watchdog/hpwdt.txt              |   2 +-
+ arch/arm/Kconfig                              |   2 +-
+ arch/arm64/Kconfig                            |   2 +-
+ arch/sh/Kconfig                               |   2 +-
+ arch/x86/Kconfig                              |   4 +-
+ 12 files changed, 137 insertions(+), 98 deletions(-)
+ create mode 100644 Documentation/kdump/index.rst
+ rename Documentation/kdump/{kdump.txt => kdump.rst} (91%)
+ rename Documentation/kdump/{vmcoreinfo.txt => vmcoreinfo.rst} (95%)
 
-diff --git a/arch/ia64/mm/init.c b/arch/ia64/mm/init.c
-index 379eb1f9adc9..d28e29103bdb 100644
---- a/arch/ia64/mm/init.c
-+++ b/arch/ia64/mm/init.c
-@@ -682,20 +682,15 @@ int arch_add_memory(int nid, u64 start, u64 size,
- }
+diff --git a/Documentation/admin-guide/bug-hunting.rst b/Documentation/admin-guide/bug-hunting.rst
+index f278b289e260..b761aa2a51d2 100644
+--- a/Documentation/admin-guide/bug-hunting.rst
++++ b/Documentation/admin-guide/bug-hunting.rst
+@@ -90,7 +90,7 @@ the disk is not available then you have three options:
+     run a null modem to a second machine and capture the output there
+     using your favourite communication program.  Minicom works well.
  
- #ifdef CONFIG_MEMORY_HOTREMOVE
--int arch_remove_memory(int nid, u64 start, u64 size, struct vmem_altmap *altmap)
-+void arch_remove_memory(int nid, u64 start, u64 size,
-+			struct vmem_altmap *altmap)
- {
- 	unsigned long start_pfn = start >> PAGE_SHIFT;
- 	unsigned long nr_pages = size >> PAGE_SHIFT;
- 	struct zone *zone;
--	int ret;
+-(3) Use Kdump (see Documentation/kdump/kdump.txt),
++(3) Use Kdump (see Documentation/kdump/kdump.rst),
+     extract the kernel ring buffer from old memory with using dmesg
+     gdbmacro in Documentation/kdump/gdbmacros.txt.
  
- 	zone = page_zone(pfn_to_page(start_pfn));
--	ret = __remove_pages(zone, start_pfn, nr_pages, altmap);
--	if (ret)
--		pr_warn("%s: Problem encountered in __remove_pages() as"
--			" ret=%d\n", __func__,  ret);
--
--	return ret;
-+	__remove_pages(zone, start_pfn, nr_pages, altmap);
- }
- #endif
- #endif
-diff --git a/arch/powerpc/mm/mem.c b/arch/powerpc/mm/mem.c
-index 76deaa8525db..cc9425fb9056 100644
---- a/arch/powerpc/mm/mem.c
-+++ b/arch/powerpc/mm/mem.c
-@@ -131,8 +131,8 @@ int __meminit arch_add_memory(int nid, u64 start, u64 size,
- }
+diff --git a/Documentation/admin-guide/kernel-parameters.txt b/Documentation/admin-guide/kernel-parameters.txt
+index bfe926a7b15f..a4e8e6435fff 100644
+--- a/Documentation/admin-guide/kernel-parameters.txt
++++ b/Documentation/admin-guide/kernel-parameters.txt
+@@ -705,14 +705,14 @@
+ 			memory region [offset, offset + size] for that kernel
+ 			image. If '@offset' is omitted, then a suitable offset
+ 			is selected automatically. Check
+-			Documentation/kdump/kdump.txt for further details.
++			Documentation/kdump/kdump.rst for further details.
  
- #ifdef CONFIG_MEMORY_HOTREMOVE
--int __meminit arch_remove_memory(int nid, u64 start, u64 size,
--					struct vmem_altmap *altmap)
-+void __meminit arch_remove_memory(int nid, u64 start, u64 size,
-+				  struct vmem_altmap *altmap)
- {
- 	unsigned long start_pfn = start >> PAGE_SHIFT;
- 	unsigned long nr_pages = size >> PAGE_SHIFT;
-@@ -147,14 +147,13 @@ int __meminit arch_remove_memory(int nid, u64 start, u64 size,
- 	if (altmap)
- 		page += vmem_altmap_offset(altmap);
+ 	crashkernel=range1:size1[,range2:size2,...][@offset]
+ 			[KNL] Same as above, but depends on the memory
+ 			in the running system. The syntax of range is
+ 			start-[end] where start and end are both
+ 			a memory unit (amount[KMG]). See also
+-			Documentation/kdump/kdump.txt for an example.
++			Documentation/kdump/kdump.rst for an example.
  
--	ret = __remove_pages(page_zone(page), start_pfn, nr_pages, altmap);
--	if (ret)
--		return ret;
-+	__remove_pages(page_zone(page), start_pfn, nr_pages, altmap);
+ 	crashkernel=size[KMG],high
+ 			[KNL, x86_64] range could be above 4G. Allow kernel
+@@ -1206,7 +1206,7 @@
+ 			Specifies physical address of start of kernel core
+ 			image elf header and optionally the size. Generally
+ 			kexec loader will pass this option to capture kernel.
+-			See Documentation/kdump/kdump.txt for details.
++			See Documentation/kdump/kdump.rst for details.
  
- 	/* Remove htab bolted mappings for this section of memory */
- 	start = (unsigned long)__va(start);
- 	flush_inval_dcache_range(start, start + size);
- 	ret = remove_section_mapping(start, start + size);
-+	WARN_ON_ONCE(ret);
+ 	enable_mtrr_cleanup [X86]
+ 			The kernel tries to adjust MTRR layout from continuous
+diff --git a/Documentation/kdump/index.rst b/Documentation/kdump/index.rst
+new file mode 100644
+index 000000000000..2b17fcf6867a
+--- /dev/null
++++ b/Documentation/kdump/index.rst
+@@ -0,0 +1,21 @@
++:orphan:
++
++================================
++Documentation for Kdump - The kexec-based Crash Dumping Solution
++================================
++
++This document includes overview, setup and installation, and analysis
++information.
++
++.. toctree::
++    :maxdepth: 1
++
++    kdump
++    vmcoreinfo
++
++.. only::  subproject and html
++
++   Indices
++   ===+
++   * :ref:`genindex`
+diff --git a/Documentation/kdump/kdump.txt b/Documentation/kdump/kdump.rst
+similarity index 91%
+rename from Documentation/kdump/kdump.txt
+rename to Documentation/kdump/kdump.rst
+index 51814450a7f8..1da2d7b765f6 100644
+--- a/Documentation/kdump/kdump.txt
++++ b/Documentation/kdump/kdump.rst
+@@ -71,9 +71,8 @@ This is a symlink to the latest version.
  
- 	/* Ensure all vmalloc mappings are flushed in case they also
- 	 * hit that section of memory
-@@ -162,8 +161,6 @@ int __meminit arch_remove_memory(int nid, u64 start, u64 size,
- 	vm_unmap_aliases();
+ The latest kexec-tools git tree is available at:
  
- 	resize_hpt_for_hotplug(memblock_phys_mem_size());
--
--	return ret;
- }
- #endif
- #endif /* CONFIG_MEMORY_HOTPLUG */
-diff --git a/arch/s390/mm/init.c b/arch/s390/mm/init.c
-index f5db961ad792..31b1071315d7 100644
---- a/arch/s390/mm/init.c
-+++ b/arch/s390/mm/init.c
-@@ -234,14 +234,15 @@ int arch_add_memory(int nid, u64 start, u64 size,
- }
+-git://git.kernel.org/pub/scm/utils/kernel/kexec/kexec-tools.git
+-and
+-http://www.kernel.org/pub/scm/utils/kernel/kexec/kexec-tools.git
++- git://git.kernel.org/pub/scm/utils/kernel/kexec/kexec-tools.git
++- http://www.kernel.org/pub/scm/utils/kernel/kexec/kexec-tools.git
  
- #ifdef CONFIG_MEMORY_HOTREMOVE
--int arch_remove_memory(int nid, u64 start, u64 size, struct vmem_altmap *altmap)
-+void arch_remove_memory(int nid, u64 start, u64 size,
-+			struct vmem_altmap *altmap)
- {
- 	/*
- 	 * There is no hardware or firmware interface which could trigger a
- 	 * hot memory remove on s390. So there is nothing that needs to be
- 	 * implemented.
- 	 */
--	return -EBUSY;
-+	BUG();
- }
- #endif
- #endif /* CONFIG_MEMORY_HOTPLUG */
-diff --git a/arch/sh/mm/init.c b/arch/sh/mm/init.c
-index 168d3a6b9358..5aeb4d7099a1 100644
---- a/arch/sh/mm/init.c
-+++ b/arch/sh/mm/init.c
-@@ -429,20 +429,15 @@ EXPORT_SYMBOL_GPL(memory_add_physaddr_to_nid);
- #endif
+ There is also a gitweb interface available at
+ http://www.kernel.org/git/?p=utils/kernel/kexec/kexec-tools.git
+@@ -81,25 +80,25 @@ http://www.kernel.org/git/?p=utils/kernel/kexec/kexec-tools.git
+ More information about kexec-tools can be found at
+ http://horms.net/projects/kexec/
  
- #ifdef CONFIG_MEMORY_HOTREMOVE
--int arch_remove_memory(int nid, u64 start, u64 size, struct vmem_altmap *altmap)
-+void arch_remove_memory(int nid, u64 start, u64 size,
-+			struct vmem_altmap *altmap)
- {
- 	unsigned long start_pfn = PFN_DOWN(start);
- 	unsigned long nr_pages = size >> PAGE_SHIFT;
- 	struct zone *zone;
--	int ret;
+-3) Unpack the tarball with the tar command, as follows:
++3) Unpack the tarball with the tar command, as follows::
  
- 	zone = page_zone(pfn_to_page(start_pfn));
--	ret = __remove_pages(zone, start_pfn, nr_pages, altmap);
--	if (unlikely(ret))
--		pr_warn("%s: Failed, __remove_pages() = %d\n", __func__,
--			ret);
--
--	return ret;
-+	__remove_pages(zone, start_pfn, nr_pages, altmap);
- }
- #endif
- #endif /* CONFIG_MEMORY_HOTPLUG */
-diff --git a/arch/x86/mm/init_32.c b/arch/x86/mm/init_32.c
-index 755dbed85531..075e568098f2 100644
---- a/arch/x86/mm/init_32.c
-+++ b/arch/x86/mm/init_32.c
-@@ -860,14 +860,15 @@ int arch_add_memory(int nid, u64 start, u64 size,
- }
+-   tar xvpzf kexec-tools.tar.gz
++	tar xvpzf kexec-tools.tar.gz
  
- #ifdef CONFIG_MEMORY_HOTREMOVE
--int arch_remove_memory(int nid, u64 start, u64 size, struct vmem_altmap *altmap)
-+void arch_remove_memory(int nid, u64 start, u64 size,
-+			struct vmem_altmap *altmap)
- {
- 	unsigned long start_pfn = start >> PAGE_SHIFT;
- 	unsigned long nr_pages = size >> PAGE_SHIFT;
- 	struct zone *zone;
+-4) Change to the kexec-tools directory, as follows:
++4) Change to the kexec-tools directory, as follows::
  
- 	zone = page_zone(pfn_to_page(start_pfn));
--	return __remove_pages(zone, start_pfn, nr_pages, altmap);
-+	__remove_pages(zone, start_pfn, nr_pages, altmap);
- }
- #endif
- #endif
-diff --git a/arch/x86/mm/init_64.c b/arch/x86/mm/init_64.c
-index db42c11b48fb..20d14254b686 100644
---- a/arch/x86/mm/init_64.c
-+++ b/arch/x86/mm/init_64.c
-@@ -1141,24 +1141,20 @@ kernel_physical_mapping_remove(unsigned long start, unsigned long end)
- 	remove_pagetable(start, end, true, NULL);
- }
+-   cd kexec-tools-VERSION
++	cd kexec-tools-VERSION
  
--int __ref arch_remove_memory(int nid, u64 start, u64 size,
--				struct vmem_altmap *altmap)
-+void __ref arch_remove_memory(int nid, u64 start, u64 size,
-+			      struct vmem_altmap *altmap)
- {
- 	unsigned long start_pfn = start >> PAGE_SHIFT;
- 	unsigned long nr_pages = size >> PAGE_SHIFT;
- 	struct page *page = pfn_to_page(start_pfn);
- 	struct zone *zone;
--	int ret;
+-5) Configure the package, as follows:
++5) Configure the package, as follows::
  
- 	/* With altmap the first mapped page is offset from @start */
- 	if (altmap)
- 		page += vmem_altmap_offset(altmap);
- 	zone = page_zone(page);
--	ret = __remove_pages(zone, start_pfn, nr_pages, altmap);
--	WARN_ON_ONCE(ret);
-+	__remove_pages(zone, start_pfn, nr_pages, altmap);
- 	kernel_physical_mapping_remove(start, start + size);
--
--	return ret;
- }
- #endif
- #endif /* CONFIG_MEMORY_HOTPLUG */
-diff --git a/include/linux/memory_hotplug.h b/include/linux/memory_hotplug.h
-index d0a145ffa4fe..9d0efac902ec 100644
---- a/include/linux/memory_hotplug.h
-+++ b/include/linux/memory_hotplug.h
-@@ -112,10 +112,10 @@ static inline bool movable_node_is_enabled(void)
- }
+-   ./configure
++	./configure
  
- #ifdef CONFIG_MEMORY_HOTREMOVE
--extern int arch_remove_memory(int nid, u64 start, u64 size,
--				struct vmem_altmap *altmap);
--extern int __remove_pages(struct zone *zone, unsigned long start_pfn,
--	unsigned long nr_pages, struct vmem_altmap *altmap);
-+extern void arch_remove_memory(int nid, u64 start, u64 size,
-+			       struct vmem_altmap *altmap);
-+extern void __remove_pages(struct zone *zone, unsigned long start_pfn,
-+			   unsigned long nr_pages, struct vmem_altmap *altmap);
- #endif /* CONFIG_MEMORY_HOTREMOVE */
+-6) Compile the package, as follows:
++6) Compile the package, as follows::
  
- /*
-diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
-index 17a60281c36f..52fef4a81e4c 100644
---- a/mm/memory_hotplug.c
-+++ b/mm/memory_hotplug.c
-@@ -548,8 +548,8 @@ static void __remove_section(struct zone *zone, struct mem_section *ms,
-  * sure that pages are marked reserved and zones are adjust properly by
-  * calling offline_pages().
-  */
--int __remove_pages(struct zone *zone, unsigned long phys_start_pfn,
--		 unsigned long nr_pages, struct vmem_altmap *altmap)
-+void __remove_pages(struct zone *zone, unsigned long phys_start_pfn,
-+		    unsigned long nr_pages, struct vmem_altmap *altmap)
- {
- 	unsigned long i;
- 	unsigned long map_offset = 0;
-@@ -580,7 +580,6 @@ int __remove_pages(struct zone *zone, unsigned long phys_start_pfn,
- 	}
+-   make
++	make
  
- 	set_zone_contiguous(zone);
--	return 0;
- }
- #endif /* CONFIG_MEMORY_HOTREMOVE */
+-7) Install the package, as follows:
++7) Install the package, as follows::
  
+-   make install
++	make install
+ 
+ 
+ Build the system and dump-capture kernels
+@@ -126,25 +125,25 @@ dump-capture kernels for enabling kdump support.
+ System kernel config options
+ ----------------------------
+ 
+-1) Enable "kexec system call" in "Processor type and features."
++1) Enable "kexec system call" in "Processor type and features."::
+ 
+-   CONFIG_KEXEC=y
++	CONFIG_KEXEC=y
+ 
+ 2) Enable "sysfs file system support" in "Filesystem" -> "Pseudo
+-   filesystems." This is usually enabled by default.
++   filesystems." This is usually enabled by default::
+ 
+-   CONFIG_SYSFS=y
++	CONFIG_SYSFS=y
+ 
+    Note that "sysfs file system support" might not appear in the "Pseudo
+    filesystems" menu if "Configure standard kernel features (for small
+    systems)" is not enabled in "General Setup." In this case, check the
+-   .config file itself to ensure that sysfs is turned on, as follows:
++   .config file itself to ensure that sysfs is turned on, as follows::
+ 
+-   grep 'CONFIG_SYSFS' .config
++	grep 'CONFIG_SYSFS' .config
+ 
+-3) Enable "Compile the kernel with debug info" in "Kernel hacking."
++3) Enable "Compile the kernel with debug info" in "Kernel hacking."::
+ 
+-   CONFIG_DEBUG_INFO=Y
++	CONFIG_DEBUG_INFO=Y
+ 
+    This causes the kernel to be built with debug symbols. The dump
+    analysis tools require a vmlinux with debug symbols in order to read
+@@ -154,29 +153,32 @@ Dump-capture kernel config options (Arch Independent)
+ -----------------------------------------------------
+ 
+ 1) Enable "kernel crash dumps" support under "Processor type and
+-   features":
++   features"::
+ 
+-   CONFIG_CRASH_DUMP=y
++	CONFIG_CRASH_DUMP=y
+ 
+-2) Enable "/proc/vmcore support" under "Filesystems" -> "Pseudo filesystems".
++2) Enable "/proc/vmcore support" under "Filesystems" -> "Pseudo filesystems"::
++
++	CONFIG_PROC_VMCORE=y
+ 
+-   CONFIG_PROC_VMCORE=y
+    (CONFIG_PROC_VMCORE is set by default when CONFIG_CRASH_DUMP is selected.)
+ 
+ Dump-capture kernel config options (Arch Dependent, i386 and x86_64)
+ --------------------------------------------------------------------
+ 
+ 1) On i386, enable high memory support under "Processor type and
+-   features":
++   features"::
+ 
+-   CONFIG_HIGHMEM64G=y
+-   or
+-   CONFIG_HIGHMEM4G
++	CONFIG_HIGHMEM64G=y
++
++   or::
++
++	CONFIG_HIGHMEM4G
+ 
+ 2) On i386 and x86_64, disable symmetric multi-processing support
+-   under "Processor type and features":
++   under "Processor type and features"::
+ 
+-   CONFIG_SMP=n
++	CONFIG_SMP=n
+ 
+    (If CONFIG_SMP=y, then specify maxcpus=1 on the kernel command line
+    when loading the dump-capture kernel, see section "Load the Dump-capture
+@@ -184,9 +186,9 @@ Dump-capture kernel config options (Arch Dependent, i386 and x86_64)
+ 
+ 3) If one wants to build and use a relocatable kernel,
+    Enable "Build a relocatable kernel" support under "Processor type and
+-   features"
++   features"::
+ 
+-   CONFIG_RELOCATABLE=y
++	CONFIG_RELOCATABLE=y
+ 
+ 4) Use a suitable value for "Physical address where the kernel is
+    loaded" (under "Processor type and features"). This only appears when
+@@ -211,13 +213,13 @@ Dump-capture kernel config options (Arch Dependent, i386 and x86_64)
+ Dump-capture kernel config options (Arch Dependent, ppc64)
+ ----------------------------------------------------------
+ 
+-1) Enable "Build a kdump crash kernel" support under "Kernel" options:
++1) Enable "Build a kdump crash kernel" support under "Kernel" options::
+ 
+-   CONFIG_CRASH_DUMP=y
++	CONFIG_CRASH_DUMP=y
+ 
+-2)   Enable "Build a relocatable kernel" support
++2)   Enable "Build a relocatable kernel" support::
+ 
+-   CONFIG_RELOCATABLE=y
++	CONFIG_RELOCATABLE=y
+ 
+    Make and install the kernel and its modules.
+ 
+@@ -231,11 +233,13 @@ Dump-capture kernel config options (Arch Dependent, ia64)
+ 
+   The crashkernel region can be automatically placed by the system
+   kernel at run time. This is done by specifying the base address as 0,
+-  or omitting it all together.
++  or omitting it all together::
+ 
+-  crashkernel%6M@0
+-  or
+-  crashkernel%6M
++	crashkernel%6M@0
++
++  or::
++
++	crashkernel%6M
+ 
+   If the start address is specified, note that the start address of the
+   kernel will be aligned to 64Mb, so if the start address is not then
+@@ -245,9 +249,9 @@ Dump-capture kernel config options (Arch Dependent, arm)
+ ----------------------------------------------------------
+ 
+ -   To use a relocatable kernel,
+-    Enable "AUTO_ZRELADDR" support under "Boot" options:
++    Enable "AUTO_ZRELADDR" support under "Boot" options::
+ 
+-    AUTO_ZRELADDR=y
++	AUTO_ZRELADDR=y
+ 
+ Dump-capture kernel config options (Arch Dependent, arm64)
+ ----------------------------------------------------------
+@@ -265,12 +269,12 @@ on the value of System RAM -- that's mostly for distributors that pre-setup
+ the kernel command line to avoid a unbootable system after some memory has
+ been removed from the machine.
+ 
+-The syntax is:
++The syntax is::
+ 
+     crashkernel=<range1>:<size1>[,<range2>:<size2>,...][@offset]
+     range=start-[end]
+ 
+-For example:
++For example::
+ 
+     crashkernelQ2M-2G:64M,2G-:128M
+ 
+@@ -326,35 +330,46 @@ can choose to load the uncompressed vmlinux or compressed bzImage/vmlinuz
+ of dump-capture kernel. Following is the summary.
+ 
+ For i386 and x86_64:
++
+ 	- Use vmlinux if kernel is not relocatable.
+ 	- Use bzImage/vmlinuz if kernel is relocatable.
++
+ For ppc64:
++
+ 	- Use vmlinux
++
+ For ia64:
++
+ 	- Use vmlinux or vmlinuz.gz
++
+ For s390x:
++
+ 	- Use image or bzImage
++
+ For arm:
++
+ 	- Use zImage
++
+ For arm64:
++
+ 	- Use vmlinux or Image
+ 
+ If you are using an uncompressed vmlinux image then use following command
+-to load dump-capture kernel.
++to load dump-capture kernel::
+ 
+    kexec -p <dump-capture-kernel-vmlinux-image> \
+    --initrd=<initrd-for-dump-capture-kernel> --args-linux \
+    --append="root=<root-dev> <arch-specific-options>"
+ 
+ If you are using a compressed bzImage/vmlinuz, then use following command
+-to load dump-capture kernel.
++to load dump-capture kernel::
+ 
+    kexec -p <dump-capture-kernel-bzImage> \
+    --initrd=<initrd-for-dump-capture-kernel> \
+    --append="root=<root-dev> <arch-specific-options>"
+ 
+ If you are using a compressed zImage, then use following command
+-to load dump-capture kernel.
++to load dump-capture kernel::
+ 
+    kexec --type zImage -p <dump-capture-kernel-bzImage> \
+    --initrd=<initrd-for-dump-capture-kernel> \
+@@ -362,7 +377,7 @@ to load dump-capture kernel.
+    --append="root=<root-dev> <arch-specific-options>"
+ 
+ If you are using an uncompressed Image, then use following command
+-to load dump-capture kernel.
++to load dump-capture kernel::
+ 
+    kexec -p <dump-capture-kernel-Image> \
+    --initrd=<initrd-for-dump-capture-kernel> \
+@@ -376,18 +391,23 @@ Following are the arch specific command line options to be used while
+ loading dump-capture kernel.
+ 
+ For i386, x86_64 and ia64:
++
+ 	"1 irqpoll maxcpus=1 reset_devices"
+ 
+ For ppc64:
++
+ 	"1 maxcpus=1 noirqdistrib reset_devices"
+ 
+ For s390x:
++
+ 	"1 maxcpus=1 cgroup_disable=memory"
+ 
+ For arm:
++
+ 	"1 maxcpus=1 reset_devices"
+ 
+ For arm64:
++
+ 	"1 maxcpus=1 reset_devices"
+ 
+ Notes on loading the dump-capture kernel:
+@@ -464,7 +484,7 @@ Write Out the Dump File
+ =========== 
+ After the dump-capture kernel is booted, write out the dump file with
+-the following command:
++the following command::
+ 
+    cp /proc/vmcore <dump-file>
+ 
+@@ -476,7 +496,7 @@ Before analyzing the dump image, you should reboot into a stable kernel.
+ 
+ You can do limited analysis using GDB on the dump file copied out of
+ /proc/vmcore. Use the debug vmlinux built with -g and run the following
+-command:
++command::
+ 
+    gdb vmlinux <dump-file>
+ 
+@@ -504,6 +524,11 @@ to achieve the same behaviour.
+ Contact
+ === 
+-Vivek Goyal (vgoyal@redhat.com)
+-Maneesh Soni (maneesh@in.ibm.com)
++- Vivek Goyal (vgoyal@redhat.com)
++- Maneesh Soni (maneesh@in.ibm.com)
+ 
++GDB macros
++=====
++
++.. include:: gdbmacros.txt
++   :literal:
+diff --git a/Documentation/kdump/vmcoreinfo.txt b/Documentation/kdump/vmcoreinfo.rst
+similarity index 95%
+rename from Documentation/kdump/vmcoreinfo.txt
+rename to Documentation/kdump/vmcoreinfo.rst
+index bb94a4bd597a..007a6b86e0ee 100644
+--- a/Documentation/kdump/vmcoreinfo.txt
++++ b/Documentation/kdump/vmcoreinfo.rst
+@@ -1,8 +1,7 @@
+-================================
+-			VMCOREINFO
+-================================
++=====
++VMCOREINFO
++=====
+ 
+-===== What is it?
+ ===== 
+@@ -12,7 +11,6 @@ values, field offsets, etc. These data are packed into an ELF note
+ section and used by user-space tools like crash and makedumpfile to
+ analyze a kernel's memory layout.
+ 
+-========
+ Common variables
+ ========
+ 
+@@ -49,7 +47,7 @@ in a system, one bit position per node number. Used to keep track of
+ which nodes are in the system and online.
+ 
+ swapper_pg_dir
+--------------
++--------------
+ 
+ The global page directory pointer of the kernel. Used to translate
+ virtual to physical addresses.
+@@ -132,16 +130,14 @@ nodemask_t
+ The size of a nodemask_t type. Used to compute the number of online
+ nodes.
+ 
+-(page, flags|_refcount|mapping|lru|_mapcount|private|compound_dtor|
+-       compound_order|compound_head)
+--------------------------------------------------------------------
++(page, flags|_refcount|mapping|lru|_mapcount|private|compound_dtor|compound_order|compound_head)
++-------------------------------------------------------------------------------------------------
+ 
+ User-space tools compute their values based on the offset of these
+ variables. The variables are used when excluding unnecessary pages.
+ 
+-(pglist_data, node_zones|nr_zones|node_mem_map|node_start_pfn|node_
+-              spanned_pages|node_id)
+--------------------------------------------------------------------
++(pglist_data, node_zones|nr_zones|node_mem_map|node_start_pfn|node_spanned_pages|node_id)
++-----------------------------------------------------------------------------------------
+ 
+ On NUMA machines, each NUMA node has a pg_data_t to describe its memory
+ layout. On UMA machines there is a single pglist_data which describes the
+@@ -245,21 +241,25 @@ NR_FREE_PAGES
+ On linux-2.6.21 or later, the number of free pages is in
+ vm_stat[NR_FREE_PAGES]. Used to get the number of free pages.
+ 
+-PG_lru|PG_private|PG_swapcache|PG_swapbacked|PG_slab|PG_hwpoision
+-|PG_head_mask|PAGE_BUDDY_MAPCOUNT_VALUE(~PG_buddy)
+-|PAGE_OFFLINE_MAPCOUNT_VALUE(~PG_offline)
+------------------------------------------------------------------
++PG_lru|PG_private|PG_swapcache|PG_swapbacked|PG_slab|PG_hwpoision|PG_head_mask
++------------------------------------------------------------------------------
+ 
+ Page attributes. These flags are used to filter various unnecessary for
+ dumping pages.
+ 
++PAGE_BUDDY_MAPCOUNT_VALUE(~PG_buddy)|PAGE_OFFLINE_MAPCOUNT_VALUE(~PG_offline)
++-----------------------------------------------------------------------------
++
++More page attributes. These flags are used to filter various unnecessary for
++dumping pages.
++
++
+ HUGETLB_PAGE_DTOR
+ -----------------
+ 
+ The HUGETLB_PAGE_DTOR flag denotes hugetlbfs pages. Makedumpfile
+ excludes these pages.
+ 
+-===
+ x86_64
+ ===
+ 
+@@ -318,12 +318,12 @@ address.
+ Currently, sme_mask stores the value of the C-bit position. If needed,
+ additional SME-relevant info can be placed in that variable.
+ 
+-For example:
+-[ misc	        ][ enc bit  ][ other misc SME info       ]
+-0000_0000_0000_0000_1000_0000_0000_0000_0000_0000_..._0000
+-63   59   55   51   47   43   39   35   31   27   ... 3
++For example::
++
++  [ misc	        ][ enc bit  ][ other misc SME info       ]
++  0000_0000_0000_0000_1000_0000_0000_0000_0000_0000_..._0000
++  63   59   55   51   47   43   39   35   31   27   ... 3
+ 
+-===
+ x86_32
+ ===
+ 
+@@ -335,7 +335,6 @@ of a higher page table lookup overhead, and also consumes more page
+ table space per process. Used to check whether PAE was enabled in the
+ crash kernel when converting virtual addresses to physical addresses.
+ 
+-==
+ ia64
+ ==
+ 
+@@ -366,7 +365,6 @@ PGTABLE_3|PGTABLE_4
+ User-space tools need to know whether the crash kernel was in 3-level or
+ 4-level paging mode. Used to distinguish the page table.
+ 
+-== ARM64
+ == 
+@@ -395,9 +393,8 @@ KERNELOFFSET
+ The kernel randomization offset. Used to compute the page offset. If
+ KASLR is disabled, this value is zero.
+ 
+-==
+ arm
+-==
++= 
+ ARM_LPAE
+ --------
+@@ -405,12 +402,11 @@ ARM_LPAE
+ It indicates whether the crash kernel supports large physical address
+ extensions. Used to translate virtual to physical addresses.
+ 
+-==
+ s390
+ ==
+ 
+ lowcore_ptr
+-----------
++-----------
+ 
+ An array with a pointer to the lowcore of every CPU. Used to print the
+ psw and all registers information.
+@@ -425,7 +421,6 @@ Used to get the vmalloc_start address from the high_memory symbol.
+ 
+ The maximum number of CPUs.
+ 
+-=== powerpc
+ === 
+@@ -460,9 +455,8 @@ Page size definitions, i.e. 4k, 64k, or 16M.
+ 
+ Used to make vtop translations.
+ 
+-vmemmap_backing|(vmemmap_backing, list)|(vmemmap_backing, phys)|
+-(vmemmap_backing, virt_addr)
+-----------------------------------------------------------------
++vmemmap_backing|(vmemmap_backing, list)|(vmemmap_backing, phys)|(vmemmap_backing, virt_addr)
++--------------------------------------------------------------------------------------------
+ 
+ The vmemmap virtual address space management does not have a traditional
+ page table to track which virtual struct pages are backed by a physical
+@@ -480,7 +474,6 @@ member.
+ 
+ Used in vtop translations.
+ 
+-=
+ sh
+ =
+ 
+diff --git a/Documentation/powerpc/firmware-assisted-dump.txt b/Documentation/powerpc/firmware-assisted-dump.txt
+index 18c5feef2577..0c41d6d463f3 100644
+--- a/Documentation/powerpc/firmware-assisted-dump.txt
++++ b/Documentation/powerpc/firmware-assisted-dump.txt
+@@ -59,7 +59,7 @@ as follows:
+          the default calculated size. Use this option if default
+          boot memory size is not sufficient for second kernel to
+          boot successfully. For syntax of crashkernel= parameter,
+-         refer to Documentation/kdump/kdump.txt. If any offset is
++         refer to Documentation/kdump/kdump.rst. If any offset is
+          provided in crashkernel= parameter, it will be ignored
+          as fadump uses a predefined offset to reserve memory
+          for boot memory dump preservation in case of a crash.
+diff --git a/Documentation/translations/zh_CN/oops-tracing.txt b/Documentation/translations/zh_CN/oops-tracing.txt
+index 93fa061cf9e4..368ddd05b304 100644
+--- a/Documentation/translations/zh_CN/oops-tracing.txt
++++ b/Documentation/translations/zh_CN/oops-tracing.txt
+@@ -53,7 +53,7 @@ cat /proc/kmsg > file， 然而你必须介入中止传输， kmsg是一个“
+ （2）用串口终端启动（请参看Documentation/admin-guide/serial-console.rst），运行一个null
+ modem到另一台机器并用你喜欢的通讯工具获取输出。Minicom工作地很好。
+ 
+-（3）使用Kdump（请参看Documentation/kdump/kdump.txt），
++（3）使用Kdump（请参看Documentation/kdump/kdump.rst），
+ 使用在Documentation/kdump/gdbmacros.txt中定义的dmesg gdb宏，从旧的内存中提取内核
+ 环形缓冲区。
+ 
+diff --git a/Documentation/watchdog/hpwdt.txt b/Documentation/watchdog/hpwdt.txt
+index 55df692c5595..aaa9e4b4bdcd 100644
+--- a/Documentation/watchdog/hpwdt.txt
++++ b/Documentation/watchdog/hpwdt.txt
+@@ -51,7 +51,7 @@ Last reviewed: 08/20/2018
+  and loop forever.  This is generally not what a watchdog user wants.
+ 
+  For those wishing to learn more please see:
+-	Documentation/kdump/kdump.txt
++	Documentation/kdump/kdump.rst
+ 	Documentation/admin-guide/kernel-parameters.txt (panic=)
+ 	Your Linux Distribution specific documentation.
+ 
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index b509cd338219..c81ee94e8256 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -2007,7 +2007,7 @@ config CRASH_DUMP
+ 	  kdump/kexec. The crash dump kernel must be compiled to a
+ 	  memory address not used by the main kernel
+ 
+-	  For more details see Documentation/kdump/kdump.txt
++	  For more details see Documentation/kdump/kdump.rst
+ 
+ config AUTO_ZRELADDR
+ 	bool "Auto calculation of the decompressed kernel image address"
+diff --git a/arch/arm64/Kconfig b/arch/arm64/Kconfig
+index 8e33203e3583..e67ad4dad1cf 100644
+--- a/arch/arm64/Kconfig
++++ b/arch/arm64/Kconfig
+@@ -974,7 +974,7 @@ config CRASH_DUMP
+ 	  reserved region and then later executed after a crash by
+ 	  kdump/kexec.
+ 
+-	  For more details see Documentation/kdump/kdump.txt
++	  For more details see Documentation/kdump/kdump.rst
+ 
+ config XEN_DOM0
+ 	def_bool y
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index 2a77033e1e7c..9883516e682c 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -624,7 +624,7 @@ config CRASH_DUMP
+ 	  to a memory address not used by the main kernel using
+ 	  PHYSICAL_START.
+ 
+-	  For more details see Documentation/kdump/kdump.txt
++	  For more details see Documentation/kdump/kdump.rst
+ 
+ config KEXEC_JUMP
+ 	bool "kexec jump (EXPERIMENTAL)"
+diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
+index 17f01a0800b3..bd8dea466b04 100644
+--- a/arch/x86/Kconfig
++++ b/arch/x86/Kconfig
+@@ -2038,7 +2038,7 @@ config CRASH_DUMP
+ 	  to a memory address not used by the main kernel or BIOS using
+ 	  PHYSICAL_START, or it must be built as a relocatable image
+ 	  (CONFIG_RELOCATABLE=y).
+-	  For more details see Documentation/kdump/kdump.txt
++	  For more details see Documentation/kdump/kdump.rst
+ 
+ config KEXEC_JUMP
+ 	bool "kexec jump"
+@@ -2075,7 +2075,7 @@ config PHYSICAL_START
+ 	  the reserved region.  In other words, it can be set based on
+ 	  the "X" value as specified in the "crashkernel=YM@XM"
+ 	  command line boot parameter passed to the panic-ed
+-	  kernel. Please take a look at Documentation/kdump/kdump.txt
++	  kernel. Please take a look at Documentation/kdump/kdump.rst
+ 	  for more details about crash dumps.
+ 
+ 	  Usage of bzImage for capturing the crash dump is recommended as
 -- 
-2.17.2
+2.20.1
