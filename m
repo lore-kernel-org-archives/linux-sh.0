@@ -1,10 +1,10 @@
 From: Sasha Levin <sashal@kernel.org>
-Date: Wed, 24 Apr 2019 14:47:05 +0000
-Subject: [PATCH AUTOSEL 4.14 31/35] sh: fix multiple function definition build errors
-Message-Id: <20190424144709.30215-31-sashal@kernel.org>
+Date: Wed, 24 Apr 2019 14:33:29 +0000
+Subject: [PATCH AUTOSEL 5.0 55/66] sh: fix multiple function definition build errors
+Message-Id: <20190424143341.27665-55-sashal@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190424144709.30215-1-sashal@kernel.org>
-In-Reply-To: <20190424144709.30215-1-sashal@kernel.org>
+References: <20190424143341.27665-1-sashal@kernel.org>
+In-Reply-To: <20190424143341.27665-1-sashal@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -40,16 +40,16 @@ Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
 Cc: Rich Felker <dalias@libc.org>
 Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
 Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
-Signed-off-by: Sasha Levin <sashal@kernel.org>
+Signed-off-by: Sasha Levin (Microsoft) <sashal@kernel.org>
 ---
  arch/sh/boards/of-generic.c | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/arch/sh/boards/of-generic.c b/arch/sh/boards/of-generic.c
-index 4feb7c86f4ac..5e83ea12303b 100644
+index 958f46da3a79..d91065e81a4e 100644
 --- a/arch/sh/boards/of-generic.c
 +++ b/arch/sh/boards/of-generic.c
-@@ -180,10 +180,10 @@ static struct sh_machine_vector __initmv sh_of_generic_mv = {
+@@ -164,10 +164,10 @@ static struct sh_machine_vector __initmv sh_of_generic_mv = {
  
  struct sh_clk_ops;
  
