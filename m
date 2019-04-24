@@ -1,36 +1,55 @@
-From: huang ying <huang.ying.caritas@gmail.com>
-Date: Fri, 12 Apr 2019 00:49:21 +0000
-Subject: Re: [PATCH-tip 00/22] locking/rwsem: Rework rwsem-xadd & enable new rwsem features
-Message-Id: <CAC=cRTP38JmFWe8C=y6ew_m1Lswb8DghnqLtdiMc0EW_fyPH7g@mail.gmail.com>
+From: David Hildenbrand <david@redhat.com>
+Date: Wed, 24 Apr 2019 10:25:06 +0000
+Subject: [PATCH v1 2/7] s390x/mm: Implement arch_remove_memory()
+Message-Id: <20190424102511.29318-3-david@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1549566446-27967-1-git-send-email-longman@redhat.com>
- <20190213091936.GA22829@shao2-debian> <CAHk-=wiF2qv4TdKOTaTYeMnmsn4h6z9ot+MRj1=s7dm5y1FUwQ@mail.gmail.com>
- <CAC=cRTM5=e7rJX80m0vL10aQoLawK_VTnQubH8A7_sUO2VUCNA@mail.gmail.com> <cc8af095-50e0-cd3e-e498-8c3350d314b7@redhat.com>
-In-Reply-To: <cc8af095-50e0-cd3e-e498-8c3350d314b7@redhat.com>
+References: <20190424102511.29318-1-david@redhat.com>
+In-Reply-To: <20190424102511.29318-1-david@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Waiman Long <longman@redhat.com>
-Cc: Chen Rong <rong.a.chen@intel.com>, Peter Zijlstra <peterz@infradead.org>, "IngoMolnar@shao2-debian" <mingo@redhat.com>, Will Deacon <will.deacon@arm.com>, Thomas Gleixner <tglx@linutronix.de>, Linux List Kernel Mailing <linux-kernel@vger.kernel.org>, "linux-alpha@vger.kernel.org" <linux-arm-kernel@lists.infradead.org>, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, Linux-sh list <linux-sh@vger.kernel.org>, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-arch <linux-arch@vger.kernel.org>, the arch/x86 maintainers <x86@kernel.org>, Arnd Bergmann <arnd@arndb.de>, Borislav Petkov <bp@alien8.de>, "H. Peter Anvin" <hpa@zytor.com>, Davidlohr Bueso <dave@stgolabs.net>, Andrew Morton <akpm@linux-foundation>
+To: linux-mm@kvack.org
+Cc: linux-kernel@vger.kernel.org, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, akpm@linux-foundation.org, Dan Williams <dan.j.williams@intel.com>, David Hildenbrand <david@redhat.com>, Martin Schwidefsky <schwidefsky@de.ibm.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, Michal Hocko <mhocko@suse.com>, Mike Rapoport <rppt@linux.vnet.ibm.com>, Vasily Gorbik <gor@linux.ibm.com>, Oscar Salvador <osalvador@suse.com>
 
-On Thu, Apr 11, 2019 at 12:08 AM Waiman Long <longman@redhat.com> wrote:
->
-> On 04/10/2019 04:15 AM, huang ying wrote:
-> > Hi, Waiman,
-> >
-> > What's the status of this patchset?  And its merging plan?
-> >
-> > Best Regards,
-> > Huang, Ying
->
-> I have broken the patch into 3 parts (0/1/2) and rewritten some of them.
-> Part 0 has been merged into tip. Parts 1 and 2 are still under testing.
+Will come in handy when wanting to handle errors after
+arch_add_memory().
 
-Thanks!  Please keep me updated!
+Cc: Martin Schwidefsky <schwidefsky@de.ibm.com>
+Cc: Heiko Carstens <heiko.carstens@de.ibm.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>
+Cc: Michal Hocko <mhocko@suse.com>
+Cc: Mike Rapoport <rppt@linux.vnet.ibm.com>
+Cc: David Hildenbrand <david@redhat.com>
+Cc: Vasily Gorbik <gor@linux.ibm.com>
+Cc: Oscar Salvador <osalvador@suse.com>
+Signed-off-by: David Hildenbrand <david@redhat.com>
+---
+ arch/s390/mm/init.c | 13 +++++++------
+ 1 file changed, 7 insertions(+), 6 deletions(-)
 
-Best Regards,
-Huang, Ying
-
-> Cheers,
-> Longman
->
+diff --git a/arch/s390/mm/init.c b/arch/s390/mm/init.c
+index 31b1071315d7..2636d62df04e 100644
+--- a/arch/s390/mm/init.c
++++ b/arch/s390/mm/init.c
+@@ -237,12 +237,13 @@ int arch_add_memory(int nid, u64 start, u64 size,
+ void arch_remove_memory(int nid, u64 start, u64 size,
+ 			struct vmem_altmap *altmap)
+ {
+-	/*
+-	 * There is no hardware or firmware interface which could trigger a
+-	 * hot memory remove on s390. So there is nothing that needs to be
+-	 * implemented.
+-	 */
+-	BUG();
++	unsigned long start_pfn = start >> PAGE_SHIFT;
++	unsigned long nr_pages = size >> PAGE_SHIFT;
++	struct zone *zone;
++
++	vmem_remove_mapping(start, size);
++	zone = page_zone(pfn_to_page(start_pfn));
++	__remove_pages(zone, start_pfn, nr_pages, altmap);
+ }
+ #endif
+ #endif /* CONFIG_MEMORY_HOTPLUG */
+-- 
+2.20.1
