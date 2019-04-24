@@ -1,57 +1,66 @@
-From: David Hildenbrand <david@redhat.com>
-Date: Wed, 24 Apr 2019 10:25:05 +0000
-Subject: [PATCH v1 1/7] mm/memory_hotplug: Simplify and fix check_hotplug_memory_range()
-Message-Id: <20190424102511.29318-2-david@redhat.com>
+From: Sasha Levin <sashal@kernel.org>
+Date: Wed, 24 Apr 2019 14:50:08 +0000
+Subject: [PATCH AUTOSEL 4.9 24/28] sh: fix multiple function definition build errors
+Message-Id: <20190424145012.30886-24-sashal@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190424102511.29318-1-david@redhat.com>
-In-Reply-To: <20190424102511.29318-1-david@redhat.com>
+References: <20190424145012.30886-1-sashal@kernel.org>
+In-Reply-To: <20190424145012.30886-1-sashal@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mm@kvack.org
-Cc: linux-kernel@vger.kernel.org, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, akpm@linux-foundation.org, Dan Williams <dan.j.williams@intel.com>, David Hildenbrand <david@redhat.com>, Oscar Salvador <osalvador@suse.de>, Michal Hocko <mhocko@suse.com>, Pavel Tatashin <pasha.tatashin@soleen.com>, Qian Cai <cai@lca.pw>, Wei Yang <richard.weiyang@gmail.com>, Arun KS <arunks@codeaurora.org>, Mathieu Malaterre <malat@debian.org>
+To: linux-kernel@vger.kernel.org, stable@vger.kernel.org
+Cc: Randy Dunlap <rdunlap@infradead.org>, Takashi Iwai <tiwai@suse.de>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Andrew Morton <akpm@linux-foundation.org>, Linus Torvalds <torvalds@linux-foundation.org>, Sasha Levin <sashal@kernel.org>, linux-sh@vger.kernel.org
 
-By converting start and size to page granularity, we actually ignore
-unaligned parts within a page instead of properly bailing out with an
-error.
+From: Randy Dunlap <rdunlap@infradead.org>
 
-Cc: Andrew Morton <akpm@linux-foundation.org>
-Cc: Oscar Salvador <osalvador@suse.de>
-Cc: Michal Hocko <mhocko@suse.com>
-Cc: David Hildenbrand <david@redhat.com>
-Cc: Pavel Tatashin <pasha.tatashin@soleen.com>
-Cc: Qian Cai <cai@lca.pw>
-Cc: Wei Yang <richard.weiyang@gmail.com>
-Cc: Arun KS <arunks@codeaurora.org>
-Cc: Mathieu Malaterre <malat@debian.org>
-Signed-off-by: David Hildenbrand <david@redhat.com>
+[ Upstream commit acaf892ecbf5be7710ae05a61fd43c668f68ad95 ]
+
+Many of the sh CPU-types have their own plat_irq_setup() and
+arch_init_clk_ops() functions, so these same (empty) functions in
+arch/sh/boards/of-generic.c are not needed and cause build errors.
+
+If there is some case where these empty functions are needed, they can
+be retained by marking them as "__weak" while at the same time making
+builds that do not need them succeed.
+
+Fixes these build errors:
+
+arch/sh/boards/of-generic.o: In function `plat_irq_setup':
+(.init.text+0x134): multiple definition of `plat_irq_setup'
+arch/sh/kernel/cpu/sh2/setup-sh7619.o:(.init.text+0x30): first defined here
+arch/sh/boards/of-generic.o: In function `arch_init_clk_ops':
+(.init.text+0x118): multiple definition of `arch_init_clk_ops'
+arch/sh/kernel/cpu/sh2/clock-sh7619.o:(.init.text+0x0): first defined here
+
+Link: http://lkml.kernel.org/r/9ee4e0c5-f100-86a2-bd4d-1d3287ceab31@infradead.org
+Signed-off-by: Randy Dunlap <rdunlap@infradead.org>
+Reported-by: kbuild test robot <lkp@intel.com>
+Cc: Takashi Iwai <tiwai@suse.de>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
 ---
- mm/memory_hotplug.c | 11 +++--------
- 1 file changed, 3 insertions(+), 8 deletions(-)
+ arch/sh/boards/of-generic.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
-index 328878b6799d..202febe88b58 100644
---- a/mm/memory_hotplug.c
-+++ b/mm/memory_hotplug.c
-@@ -1050,16 +1050,11 @@ int try_online_node(int nid)
+diff --git a/arch/sh/boards/of-generic.c b/arch/sh/boards/of-generic.c
+index 1fb6d5714bae..fd00566677c9 100644
+--- a/arch/sh/boards/of-generic.c
++++ b/arch/sh/boards/of-generic.c
+@@ -180,10 +180,10 @@ static struct sh_machine_vector __initmv sh_of_generic_mv = {
  
- static int check_hotplug_memory_range(u64 start, u64 size)
+ struct sh_clk_ops;
+ 
+-void __init arch_init_clk_ops(struct sh_clk_ops **ops, int idx)
++void __init __weak arch_init_clk_ops(struct sh_clk_ops **ops, int idx)
  {
--	unsigned long block_sz = memory_block_size_bytes();
--	u64 block_nr_pages = block_sz >> PAGE_SHIFT;
--	u64 nr_pages = size >> PAGE_SHIFT;
--	u64 start_pfn = PFN_DOWN(start);
--
- 	/* memory range must be block size aligned */
--	if (!nr_pages || !IS_ALIGNED(start_pfn, block_nr_pages) ||
--	    !IS_ALIGNED(nr_pages, block_nr_pages)) {
-+	if (!size || !IS_ALIGNED(start, memory_block_size_bytes()) ||
-+	    !IS_ALIGNED(size, memory_block_size_bytes())) {
- 		pr_err("Block size [%#lx] unaligned hotplug range: start %#llx, size %#llx",
--		       block_sz, start, size);
-+		       memory_block_size_bytes(), start, size);
- 		return -EINVAL;
- 	}
+ }
  
+-void __init plat_irq_setup(void)
++void __init __weak plat_irq_setup(void)
+ {
+ }
 -- 
-2.20.1
+2.19.1
