@@ -1,68 +1,48 @@
-From: David Hildenbrand <david@redhat.com>
-Date: Fri, 26 Apr 2019 09:11:24 +0000
-Subject: Re: [PATCH v1 2/7] s390x/mm: Implement arch_remove_memory()
-Message-Id: <e4f92602-4eb8-2096-33ef-29ce5714a379@redhat.com>
+From: Nick Desaulniers <ndesaulniers@google.com>
+Date: Wed, 24 Apr 2019 18:02:21 +0000
+Subject: [PATCH v2] sh: vsyscall: drop unnecessary cc-ldoption
+Message-Id: <20190424180223.253025-1-ndesaulniers@google.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190424102511.29318-1-david@redhat.com>
- <20190424102511.29318-3-david@redhat.com>
-In-Reply-To: <20190424102511.29318-3-david@redhat.com>
+References: <CAK7LNASLBQ=w9YFBD80s7dit1bd_Tr+ggVyRNms0jf1pR9k=ZA@mail.gmail.com>
+In-Reply-To: <CAK7LNASLBQ=w9YFBD80s7dit1bd_Tr+ggVyRNms0jf1pR9k=ZA@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mm@kvack.org
-Cc: linux-kernel@vger.kernel.org, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, akpm@linux-foundation.org, Dan Williams <dan.j.williams@intel.com>, Martin Schwidefsky <schwidefsky@de.ibm.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, Michal Hocko <mhocko@suse.com>, Mike Rapoport <rppt@linux.vnet.ibm.com>, Vasily Gorbik <gor@linux.ibm.com>, Oscar Salvador <osalvador@suse.com>
+To: ysato@users.sourceforge.jp, dalias@libc.org
+Cc: geert@linux-m68k.org, luto@kernel.org, Nick Desaulniers <ndesaulniers@google.com>, clang-built-linux@googlegroups.com, Masahiro Yamada <yamada.masahiro@socionext.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-On 24.04.19 12:25, David Hildenbrand wrote:
-> Will come in handy when wanting to handle errors after
-> arch_add_memory().
-> 
-> Cc: Martin Schwidefsky <schwidefsky@de.ibm.com>
-> Cc: Heiko Carstens <heiko.carstens@de.ibm.com>
-> Cc: Andrew Morton <akpm@linux-foundation.org>
-> Cc: Michal Hocko <mhocko@suse.com>
-> Cc: Mike Rapoport <rppt@linux.vnet.ibm.com>
-> Cc: David Hildenbrand <david@redhat.com>
-> Cc: Vasily Gorbik <gor@linux.ibm.com>
-> Cc: Oscar Salvador <osalvador@suse.com>
-> Signed-off-by: David Hildenbrand <david@redhat.com>
-> ---
->  arch/s390/mm/init.c | 13 +++++++------
->  1 file changed, 7 insertions(+), 6 deletions(-)
-> 
-> diff --git a/arch/s390/mm/init.c b/arch/s390/mm/init.c
-> index 31b1071315d7..2636d62df04e 100644
-> --- a/arch/s390/mm/init.c
-> +++ b/arch/s390/mm/init.c
-> @@ -237,12 +237,13 @@ int arch_add_memory(int nid, u64 start, u64 size,
->  void arch_remove_memory(int nid, u64 start, u64 size,
->  			struct vmem_altmap *altmap)
->  {
-> -	/*
-> -	 * There is no hardware or firmware interface which could trigger a
-> -	 * hot memory remove on s390. So there is nothing that needs to be
-> -	 * implemented.
-> -	 */
-> -	BUG();
-> +	unsigned long start_pfn = start >> PAGE_SHIFT;
-> +	unsigned long nr_pages = size >> PAGE_SHIFT;
-> +	struct zone *zone;
-> +
-> +	vmem_remove_mapping(start, size);
-> +	zone = page_zone(pfn_to_page(start_pfn));
-> +	__remove_pages(zone, start_pfn, nr_pages, altmap);
+Towards the goal of removing cc-ldoption, it seems that --hash-stylewas added to binutils 2.17.50.0.2 in 2006. The minimal required version
+of binutils for the kernel according to
+Documentation/process/changes.rst is 2.20.
 
-I guess the correct way is to remove the mapping after __remove_pages.
-But as the pages should not be touched by anybody, it shouldn't really
-matter. Will change when I resend.
+Link: https://gcc.gnu.org/ml/gcc/2007-01/msg01141.html
+Cc: clang-built-linux@googlegroups.com
+Suggested-by: Masahiro Yamada <yamada.masahiro@socionext.com>
+Signed-off-by: Nick Desaulniers <ndesaulniers@google.com>
+---
+Changes V1 -> V2:
+* update commit subject and message as per Masahiro/Geert.
 
->  }
->  #endif
->  #endif /* CONFIG_MEMORY_HOTPLUG */
-> 
+To Geert's question about minimum binutils versions; no change needed to
+binutils.
 
 
+ arch/sh/kernel/vsyscall/Makefile | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/arch/sh/kernel/vsyscall/Makefile b/arch/sh/kernel/vsyscall/Makefile
+index 5db6579bc44c..6e8664448048 100644
+--- a/arch/sh/kernel/vsyscall/Makefile
++++ b/arch/sh/kernel/vsyscall/Makefile
+@@ -15,8 +15,7 @@ quiet_cmd_syscall = SYSCALL $@
+ 
+ export CPPFLAGS_vsyscall.lds += -P -C -Ush
+ 
+-vsyscall-flags = -shared -s -Wl,-soname=linux-gate.so.1 \
+-		$(call cc-ldoption, -Wl$(comma)--hash-style=sysv)
++vsyscall-flags = -shared -s -Wl,-soname=linux-gate.so.1 -Wl,--hash-style=sysv
+ 
+ SYSCFLAGS_vsyscall-trapa.so	= $(vsyscall-flags)
+ 
 -- 
-
-Thanks,
-
-David / dhildenb
+2.21.0.593.g511ec345e18-goog
