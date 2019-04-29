@@ -1,160 +1,39 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Thu, 04 Apr 2019 06:04:41 +0000
-Subject: Applied "spi: sh-msiof: Convert to use GPIO descriptors" to the spi tree
-Message-Id: <20190404060441.C5AE9441D3C@finisterre.ee.mobilebroadband>
+From: Masahiro Yamada <yamada.masahiro@socionext.com>
+Date: Mon, 29 Apr 2019 14:33:11 +0000
+Subject: [PATCH] sh: exclude vmlinux.scr from .gitignore pattern
+Message-Id: <1556548391-14520-1-git-send-email-yamada.masahiro@socionext.com>
 List-Id: <linux-sh.vger.kernel.org>
-In-Reply-To: <20190403150852.8002-1-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Mark Brown <broonie@kernel.org>Mark Brown <broonie@kernel.org>, Linus Walleij <linus.walleij@linaro.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Jacopo Mondi <jacopo+renesas@jmondi.org>, linux-spi@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.orglinux-spi@vger.kernel.org
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
+Cc: Masahiro Yamada <yamada.masahiro@socionext.com>, linux-kernel@vger.kernel.org
 
-The patch
+arch/sh/boot/.gitignore has the pattern "vmlinux*"; this is effective
+not only for the current directory, but also for any sub-directories.
 
-   spi: sh-msiof: Convert to use GPIO descriptors
+So, the following files are also considered to be ignored:
 
-has been applied to the spi tree at
+  arch/sh/boot/compressed/vmlinux.scr
+  arch/sh/boot/romimage/vmlinux.scr
 
-   https://git.kernel.org/pub/scm/linux/kernel/git/broonie/spi.git 
+They are obviously version-controlled, so should be excluded from the
+.gitignore pattern.
 
-All being well this means that it will be integrated into the linux-next
-tree (usually sometime in the next 24 hours) and sent to Linus during
-the next merge window (or sooner if it is a bug fix), however if
-problems are discovered then the patch may be dropped or reverted.  
-
-You may get further e-mails resulting from automated or manual testing
-and review of the tree, please engage with people reporting problems and
-send followup patches addressing any issues that are reported if needed.
-
-If any updates are required or you are submitting further changes they
-should be sent as incremental updates against current git, existing
-patches will not be replaced.
-
-Please add any relevant lists and maintainers to the CCs when replying
-to this mail.
-
-Thanks,
-Mark
-
-From 9fda6693335cd51b0a74cffaac266c83439f7efe Mon Sep 17 00:00:00 2001
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 3 Apr 2019 17:08:52 +0200
-Subject: [PATCH] spi: sh-msiof: Convert to use GPIO descriptors
-
-Convert GPIO chip selects in the Renesas MSIOF SPI driver from legacy
-GPIO numbers to GPIO descriptors.
-
-Notes:
-  - The board file for the SH7724-based Ecovec24 development board now
-    registers a GPIO descriptor lookup, instead of passing a GPIO number
-    through controller_data,
-  - sh_msiof_get_cs_gpios() must release all GPIOs, else
-    spi_get_gpio_descs() cannot claim them during SPI controller
-    registration.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Mark Brown <broonie@kernel.org>
+Signed-off-by: Masahiro Yamada <yamada.masahiro@socionext.com>
 ---
- arch/sh/boards/mach-ecovec24/setup.c | 12 +++++++++---
- drivers/spi/spi-sh-msiof.c           | 20 ++++----------------
- 2 files changed, 13 insertions(+), 19 deletions(-)
 
-diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
-index 34e5414c5563..f402aa741bf3 100644
---- a/arch/sh/boards/mach-ecovec24/setup.c
-+++ b/arch/sh/boards/mach-ecovec24/setup.c
-@@ -806,7 +806,6 @@ static struct spi_board_info spi_bus[] = {
- 		.platform_data	= &mmc_spi_info,
- 		.max_speed_hz	= 5000000,
- 		.mode		= SPI_MODE_0,
--		.controller_data = (void *) GPIO_PTM4,
- 	},
- };
- 
-@@ -838,6 +837,14 @@ static struct platform_device msiof0_device = {
- 	.resource	= msiof0_resources,
- };
- 
-+static struct gpiod_lookup_table msiof_gpio_table = {
-+	.dev_id = "spi_sh_msiof.0",
-+	.table = {
-+		GPIO_LOOKUP("sh7724_pfc", GPIO_PTM4, "cs", GPIO_ACTIVE_HIGH),
-+		{ },
-+	},
-+};
-+
- #endif
- 
- /* FSI */
-@@ -1296,12 +1303,11 @@ static int __init arch_setup(void)
- 	gpio_request(GPIO_FN_MSIOF0_TXD, NULL);
- 	gpio_request(GPIO_FN_MSIOF0_RXD, NULL);
- 	gpio_request(GPIO_FN_MSIOF0_TSCK, NULL);
--	gpio_request(GPIO_PTM4, NULL); /* software CS control of TSYNC pin */
--	gpio_direction_output(GPIO_PTM4, 1); /* active low CS */
- 	gpio_request(GPIO_PTB6, NULL); /* 3.3V power control */
- 	gpio_direction_output(GPIO_PTB6, 0); /* disable power by default */
- 
- 	gpiod_add_lookup_table(&mmc_spi_gpio_table);
-+	gpiod_add_lookup_table(&msiof_gpio_table);
- 	spi_register_board_info(spi_bus, ARRAY_SIZE(spi_bus));
- #endif
- 
-diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
-index d3794499915c..6aab7b2136db 100644
---- a/drivers/spi/spi-sh-msiof.c
-+++ b/drivers/spi/spi-sh-msiof.c
-@@ -549,25 +549,11 @@ static void sh_msiof_spi_read_fifo_s32u(struct sh_msiof_spi_priv *p,
- 
- static int sh_msiof_spi_setup(struct spi_device *spi)
- {
--	struct device_node *np = spi->controller->dev.of_node;
- 	struct sh_msiof_spi_priv *p  		spi_controller_get_devdata(spi->controller);
- 	u32 clr, set, tmp;
- 
--	if (!np) {
--		/*
--		 * Use spi->controller_data for CS (same strategy as spi_gpio),
--		 * if any. otherwise let HW control CS
--		 */
--		spi->cs_gpio = (uintptr_t)spi->controller_data;
--	}
--
--	if (gpio_is_valid(spi->cs_gpio)) {
--		gpio_direction_output(spi->cs_gpio, !(spi->mode & SPI_CS_HIGH));
--		return 0;
--	}
--
--	if (spi_controller_is_slave(p->ctlr))
-+	if (spi->cs_gpiod || spi_controller_is_slave(p->ctlr))
- 		return 0;
- 
- 	if (p->native_cs_inited &&
-@@ -600,7 +586,7 @@ static int sh_msiof_prepare_message(struct spi_controller *ctlr,
- 	u32 ss, cs_high;
- 
- 	/* Configure pins before asserting CS */
--	if (gpio_is_valid(spi->cs_gpio)) {
-+	if (spi->cs_gpiod) {
- 		ss = p->unused_ss;
- 		cs_high = p->native_cs_high;
- 	} else {
-@@ -1156,6 +1142,7 @@ static int sh_msiof_get_cs_gpios(struct sh_msiof_spi_priv *p)
- 
- 		gpiod = devm_gpiod_get_index(dev, "cs", i, GPIOD_ASIS);
- 		if (!IS_ERR(gpiod)) {
-+			devm_gpiod_put(dev, gpiod);
- 			cs_gpios++;
- 			continue;
- 		}
-@@ -1407,6 +1394,7 @@ static int sh_msiof_spi_probe(struct platform_device *pdev)
- 	ctlr->bits_per_word_mask = chipdata->bits_per_word_mask;
- 	ctlr->auto_runtime_pm = true;
- 	ctlr->transfer_one = sh_msiof_transfer_one;
-+	ctlr->use_gpio_descriptors = true;
- 
- 	ret = sh_msiof_request_dma(p);
- 	if (ret < 0)
+ arch/sh/boot/.gitignore | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/sh/boot/.gitignore b/arch/sh/boot/.gitignore
+index 541087d..f50fdd9 100644
+--- a/arch/sh/boot/.gitignore
++++ b/arch/sh/boot/.gitignore
+@@ -1,3 +1,4 @@
+ zImage
+ vmlinux*
+ uImage*
++!vmlinux.scr
 -- 
-2.20.1
+2.7.4
