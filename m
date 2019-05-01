@@ -1,80 +1,73 @@
-From: David Hildenbrand <david@redhat.com>
-Date: Mon, 27 May 2019 11:11:46 +0000
-Subject: [PATCH v3 05/11] drivers/base/memory: Pass a block_id to init_memory_block()
-Message-Id: <20190527111152.16324-6-david@redhat.com>
+From: Christoph Hellwig <hch@lst.de>
+Date: Wed, 01 May 2019 17:39:42 +0000
+Subject: [PATCH 4/5] x86: don't use asm-generic/ptrace.h
+Message-Id: <20190501173943.5688-5-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190527111152.16324-1-david@redhat.com>
-In-Reply-To: <20190527111152.16324-1-david@redhat.com>
+References: <20190501173943.5688-1-hch@lst.de>
+In-Reply-To: <20190501173943.5688-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mm@kvack.org
-Cc: linux-s390@vger.kernel.org, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, David Hildenbrand <david@redhat.com>, linux-kernel@vger.kernel.org, Wei Yang <richard.weiyang@gmail.com>, "Rafael J. Wysocki" <rafael@kernel.org>, Igor Mammedov <imammedo@redhat.com>, akpm@linux-foundation.org, linuxppc-dev@lists.ozlabs.org, Dan Williams <dan.j.williams@intel.com>, linux-arm-kernel@lists.infradead.org
+To: Oleg Nesterov <oleg@redhat.com>, Arnd Bergmann <arnd@arndb.de>
+Cc: x86@kernel.org, linux-arm-kernel@lists.infradead.org, linux-mips@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org
 
-We'll rework hotplug_memory_register() shortly, so it no longer consumes
-pass a section.
+Doing the indirection through macros for the regs accessors just
+makes them harder to read, so implement the helpers directly.
 
-Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-Cc: "Rafael J. Wysocki" <rafael@kernel.org>
-Signed-off-by: David Hildenbrand <david@redhat.com>
+Note that only the helpers actually used are implemented now.
+
+Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- drivers/base/memory.c | 15 +++++++--------
- 1 file changed, 7 insertions(+), 8 deletions(-)
+ arch/x86/include/asm/ptrace.h | 29 ++++++++++++++++++++++++-----
+ 1 file changed, 24 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/base/memory.c b/drivers/base/memory.c
-index f180427e48f4..f914fa6fe350 100644
---- a/drivers/base/memory.c
-+++ b/drivers/base/memory.c
-@@ -651,21 +651,18 @@ int register_memory(struct memory_block *memory)
- 	return ret;
+diff --git a/arch/x86/include/asm/ptrace.h b/arch/x86/include/asm/ptrace.h
+index 8a7fc0cca2d1..9b81ef539eb3 100644
+--- a/arch/x86/include/asm/ptrace.h
++++ b/arch/x86/include/asm/ptrace.h
+@@ -98,7 +98,6 @@ struct cpuinfo_x86;
+ struct task_struct;
+ 
+ extern unsigned long profile_pc(struct pt_regs *regs);
+-#define profile_pc profile_pc
+ 
+ extern unsigned long
+ convert_ip_to_linear(struct task_struct *child, struct pt_regs *regs);
+@@ -175,11 +174,31 @@ static inline unsigned long kernel_stack_pointer(struct pt_regs *regs)
  }
+ #endif
  
--static int init_memory_block(struct memory_block **memory,
--			     struct mem_section *section, unsigned long state)
-+static int init_memory_block(struct memory_block **memory, int block_id,
-+			     unsigned long state)
- {
- 	struct memory_block *mem;
- 	unsigned long start_pfn;
--	int scn_nr;
- 	int ret = 0;
+-#define GET_IP(regs) ((regs)->ip)
+-#define GET_FP(regs) ((regs)->bp)
+-#define GET_USP(regs) ((regs)->sp)
++static inline unsigned long instruction_pointer(struct pt_regs *regs)
++{
++	return regs->ip;
++}
++static inline void instruction_pointer_set(struct pt_regs *regs,
++		unsigned long val)
++{
++	regs->ip = val;
++}
++
++static inline unsigned long frame_pointer(struct pt_regs *regs)
++{
++	return regs->bp;
++}
  
- 	mem = kzalloc(sizeof(*mem), GFP_KERNEL);
- 	if (!mem)
- 		return -ENOMEM;
+-#include <asm-generic/ptrace.h>
++static inline unsigned long user_stack_pointer(struct pt_regs *regs)
++{
++	return regs->sp;
++}
++
++static inline void user_stack_pointer_set(struct pt_regs *regs,
++		unsigned long val)
++{
++	regs->sp = val;
++}
  
--	scn_nr = __section_nr(section);
--	mem->start_section_nr -			base_memory_block_id(scn_nr) * sections_per_block;
-+	mem->start_section_nr = block_id * sections_per_block;
- 	mem->end_section_nr = mem->start_section_nr + sections_per_block - 1;
- 	mem->state = state;
- 	start_pfn = section_nr_to_pfn(mem->start_section_nr);
-@@ -694,7 +691,8 @@ static int add_memory_block(int base_section_nr)
- 
- 	if (section_count = 0)
- 		return 0;
--	ret = init_memory_block(&mem, __nr_to_section(section_nr), MEM_ONLINE);
-+	ret = init_memory_block(&mem, base_memory_block_id(base_section_nr),
-+				MEM_ONLINE);
- 	if (ret)
- 		return ret;
- 	mem->section_count = section_count;
-@@ -707,6 +705,7 @@ static int add_memory_block(int base_section_nr)
-  */
- int hotplug_memory_register(int nid, struct mem_section *section)
- {
-+	int block_id = base_memory_block_id(__section_nr(section));
- 	int ret = 0;
- 	struct memory_block *mem;
- 
-@@ -717,7 +716,7 @@ int hotplug_memory_register(int nid, struct mem_section *section)
- 		mem->section_count++;
- 		put_device(&mem->dev);
- 	} else {
--		ret = init_memory_block(&mem, section, MEM_OFFLINE);
-+		ret = init_memory_block(&mem, block_id, MEM_OFFLINE);
- 		if (ret)
- 			goto out;
- 		mem->section_count++;
+ /* Query offset/name of register from its name/offset */
+ extern int regs_query_register_offset(const char *name);
 -- 
 2.20.1
