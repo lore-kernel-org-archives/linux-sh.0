@@ -1,42 +1,70 @@
-From: eddy william <pagentsif6@gmail.com>
-Date: Mon, 20 May 2019 11:14:06 +0000
-Subject: hello
-Message-Id: <CAKiDfoWoSC9=1ttassyZYFXE_QeEqVsX_bYpaO58jGVUe68_Nw@mail.gmail.com>
+From: Christoph Hellwig <hch@lst.de>
+Date: Wed, 01 May 2019 17:39:40 +0000
+Subject: [PATCH 2/5] powerpc: don't use asm-generic/ptrace.h
+Message-Id: <20190501173943.5688-3-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190326223131.DE3F72A85C37@06d01.mspz3.gob.ec>
-In-Reply-To: <20190326223131.DE3F72A85C37@06d01.mspz3.gob.ec>
+References: <20190501173943.5688-1-hch@lst.de>
+In-Reply-To: <20190501173943.5688-1-hch@lst.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Oleg Nesterov <oleg@redhat.com>, Arnd Bergmann <arnd@arndb.de>
+Cc: x86@kernel.org, linux-arm-kernel@lists.infradead.org, linux-mips@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Mijn naam is Eddy William. Ik ben van beroep advocaat. Ik wil je aanbieden
-nabestaanden van mijn cliënt. Je ervaart de som van ($ 14,2 miljoen)
-dollars die mijn cliënt voor zijn overlijden op de bank heeft achtergelaten.
+Doing the indirection through macros for the regs accessors just
+makes them harder to read, so implement the helpers directly.
 
-Mijn klant is een burger van jouw land die stierf in auto-ongeluk met zijn vrouw
-en alleen zoon. Ik krijg 50% van het totale fonds en 50% wel
-voor jou zijn.
+Note that only the helpers actually used are implemented now.
 
-Neem hier voor meer informatie contact op met mijn privémail:
-eddywilliam0002@gmail.com
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+---
+ arch/powerpc/include/asm/ptrace.h | 29 ++++++++++++++++++++++-------
+ 1 file changed, 22 insertions(+), 7 deletions(-)
 
-Bij voorbaat hartelijk dank,
-Eddy William,
-
-
-
-Hello
-
-My name is Eddy William I am a lawyer by profession. I wish to offer you
-the next of kin to my client. You will inherit the sum of ($14.2 Million)
-dollars my client left in the bank before his death.
-
-My client is a citizen of your country who died in auto crash with his wife
-and only son. I will be entitled with 50% of the total fund while 50% will
-be for you.
-
-Please contact my private email here for more details:eddywilliam0002@gmail.com
-
-Many thanks in advance,
-Mr.Eddy William,
+diff --git a/arch/powerpc/include/asm/ptrace.h b/arch/powerpc/include/asm/ptrace.h
+index 64271e562fed..5d30944f1f6b 100644
+--- a/arch/powerpc/include/asm/ptrace.h
++++ b/arch/powerpc/include/asm/ptrace.h
+@@ -108,18 +108,33 @@ struct pt_regs
+ 
+ #ifndef __ASSEMBLY__
+ 
+-#define GET_IP(regs)		((regs)->nip)
+-#define GET_USP(regs)		((regs)->gpr[1])
+-#define GET_FP(regs)		(0)
+-#define SET_FP(regs, val)
++static inline unsigned long instruction_pointer(struct pt_regs *regs)
++{
++	return regs->nip;
++}
++
++static inline void instruction_pointer_set(struct pt_regs *regs,
++		unsigned long val)
++{
++	regs->nip = val;
++}
++
++static inline unsigned long user_stack_pointer(struct pt_regs *regs)
++{
++	return regs->gpr[1];
++}
++
++static inline unsigned long frame_pointer(struct pt_regs *regs)
++{
++	return 0;
++}
+ 
+ #ifdef CONFIG_SMP
+ extern unsigned long profile_pc(struct pt_regs *regs);
+-#define profile_pc profile_pc
++#else
++#define profile_pc(regs) instruction_pointer(regs)
+ #endif
+ 
+-#include <asm-generic/ptrace.h>
+-
+ #define kernel_stack_pointer(regs) ((regs)->gpr[1])
+ static inline int is_syscall_success(struct pt_regs *regs)
+ {
+-- 
+2.20.1
