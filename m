@@ -1,48 +1,50 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Mon, 20 May 2019 14:59:16 +0000
-Subject: Re: [PATCH v2 1/2] pid: add pidfd_open()
-Message-Id: <CAK8P3a2u2gftAuzTfspAUCvWPPE0YVNOATFPN__tEQoO4GXg-g@mail.gmail.com>
+From: Pingfan Liu <kernelfans@gmail.com>
+Date: Thu, 02 May 2019 06:22:06 +0000
+Subject: Re: [PATCHv2] kernel/crash: make parse_crashkernel()'s return value more indicant
+Message-Id: <CAFgQCTtQm7SuBRfXik6B065Aa+uQ=Mx6i+Y1q+NJU1GEiUgH4g@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190520134605.29116-1-christian@brauner.io> <CAK8P3a1cZZ6SQe5mGjhga=MgTvCGF6OKyjvosR8J6z6EpH+rVA@mail.gmail.com>
- <20190520144822.xfaifawi65jus6ng@brauner.io>
-In-Reply-To: <20190520144822.xfaifawi65jus6ng@brauner.io>
+References: <1556087581-14513-1-git-send-email-kernelfans@gmail.com>
+ <10dc5468-6cd9-85c7-ba66-1dfa5aa922b7@suse.com>
+ <CAFgQCTstd667wP6g+maxYekz4u3iBR2R=FHUiS1V=XxTs6MKUw@mail.gmail.com>
+In-Reply-To: <CAFgQCTstd667wP6g+maxYekz4u3iBR2R=FHUiS1V=XxTs6MKUw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Christian Brauner <christian@brauner.io>
-Cc: Jann Horn <jannh@google.com>, Oleg Nesterov <oleg@redhat.com>, Al Viro <viro@zeniv.linux.org.uk>, Linus Torvalds <torvalds@linux-foundation.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Andrew Morton <akpm@linux-foundation.org>, cyphar@cyphar.com, David Howells <dhowells@redhat.com>, "Eric W . Biederman" <ebiederm@xmission.com>, "Reshetova, Elena" <elena.reshetova@intel.com>, Kees Cook <keescook@chromium.org>, Andy Lutomirski <luto@amacapital.net>, Andy Lutomirski <luto@kernel.org>, Thomas Gleixner <tglx@linutronix.de>, alpha <linux-alpha@vger.kernel.org>, Linux ARM <linux-arm-kernel@lists.infradead.org>, linux-ia64@vger.kernel.org, linux-m68k <linux-m68k@lists.linux-m68k.org>, linux-mips@vger.kernel.org, Parisc List <linux-parisc@v>
+To: Matthias Brugger <mbrugger@suse.com>
+Cc: Rich Felker <dalias@libc.org>, linux-ia64@vger.kernel.org, Julien Thierry <julien.thierry@arm.com>, Yangtao Li <tiny.windzz@gmail.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Palmer Dabbelt <palmer@sifive.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, Stefan Agner <stefan@agner.ch>, linux-mips@vger.kernel.org, Paul Mackerras <paulus@samba.org>, "H. Peter Anvin" <hpa@zytor.com>, Thomas Gleixner <tglx@linutronix.de>, Logan Gunthorpe <logang@deltatee.com>, linux-s390@vger.kernel.org, Florian Fainelli <f.fainelli@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh@vger.kernel.org, Michael Ellerman <mpe@ellerman.id.au>, x86@kernel.org, Russell King <linux@armlinux.org.uk>, Ingo Molnar <mingo@redhat.com>, Hari Bathini <hbathini@linux.ibm.com>, Catalin Marinas <catalin.marinas@arm.com>, James Hogan <jhogan@kernel.org>, Dave Young <dyoung@redhat.com>, Fenghua Yu <fenghua.yu@intel.com>, Will Deacon <will.deacon@arm.com>, Johannes Weiner <hannes@cmpxchg.org>, Ananth N Mavinakayanahalli <ananth@linux.vnet.ibm.com>, Borislav Petkov <bp@alien8.de>, David Hildenbrand <david@redhat.com>, linux-arm-kernel@lists.infradead.org, Jens Axboe <axboe@kernel.dk>, Tony Luck <tony.luck@intel.com>, Baoquan He <bhe@redhat.com>, Ard Biesheuvel <ard.biesheuvel@linaro.org>, Robin Murphy <robin.murphy@arm.com>, LKML <linux-kernel@vger.kernel.org>, Ralf Baechle <ralf@linux-mips.org>, Thomas Bogendoerfer <tbogendoerfer@suse.de>, Paul Burton <paul.burton@mips.com>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Martin Schwidefsky <schwidefsky@de.ibm.com>, Andrew Morton <akpm@linux-foundation.org>, linuxppc-dev@lists.ozlabs.org, Greg Hackmann <ghackmann@android.com>
 
-On Mon, May 20, 2019 at 4:48 PM Christian Brauner <christian@brauner.io> wrote:
+On Thu, Apr 25, 2019 at 4:20 PM Pingfan Liu <kernelfans@gmail.com> wrote:
 >
-> On Mon, May 20, 2019 at 04:37:03PM +0200, Arnd Bergmann wrote:
-> > On Mon, May 20, 2019 at 3:46 PM Christian Brauner <christian@brauner.io> wrote:
-> > >
-> > > In line with Arnd's recent changes to consolidate syscall numbers across
-> > > architectures, I have added the pidfd_open() syscall to all architectures
-> > > at the same time.
+> On Wed, Apr 24, 2019 at 4:31 PM Matthias Brugger <mbrugger@suse.com> wrote:
 > >
-> > Thanks! I've checked that the ones you have added are all
-> > done correctly. However, double-checking that you got all of them,
-> > I noticed that you missed mips-o32 and mips-n64. With those added:
 > >
-> > Acked-by: Arnd Bergmann <arnd@arndb.de>
+> [...]
+> > > @@ -139,6 +141,8 @@ static int __init parse_crashkernel_simple(char *cmdline,
+> > >               pr_warn("crashkernel: unrecognized char: %c\n", *cur);
+> > >               return -EINVAL;
+> > >       }
+> > > +     if (*crash_size = 0)
+> > > +             return -EINVAL;
+> >
+> > This covers the case where I pass an argument like "crashkernel=0M" ?
+> > Can't we fix that by using kstrtoull() in memparse and check if the return value
+> > is < 0? In that case we could return without updating the retptr and we will be
+> > fine.
+After a series of work, I suddenly realized that it can not be done
+like this way. "0M" causes kstrtoull() to return -EINVAL, but this is
+caused by "M", not "0". If passing "0" to kstrtoull(), it will return
+0 on success.
+
+> >
+> It seems that kstrtoull() treats 0M as invalid parameter, while
+> simple_strtoull() does not.
 >
-> Perfect, will plumb mips-o32 and mips-n64 and resend once more with your
-> ack added.
-> Sidenote: You plan on merging the common syscall tables or will there be
-> a script to do this work per-arch in the future?
+My careless going through the code. And I tested with a valid value
+"256M" using kstrtoull(), it also returned -EINVAL.
 
-David Howells also asked about this. I think having a common table will
-be best in the long run, patches welcome.
+So I think there is no way to distinguish 0 from a positive value
+inside this basic math function.
+Do I miss anything?
 
-As you noticed, there are still a few minor differences between the files
-on mips, arm, x86, alpha and s390, and we are missing the .tbl files
-for arm-compat and asm-generic, as well as an architecture independent
-script.
-
-Once that is all taken care of, we can move the entries for syscall
-403 and higher into a common file, and change the script to pick
-up the contents from there in addition to the architecture specific
-file.
-
-      Arnd
+Thanks and regards,
+Pingfan
