@@ -1,33 +1,27 @@
-From: Kefeng Wang <wangkefeng.wang@huawei.com>
-Date: Thu, 30 May 2019 02:10:32 +0000
-Subject: [PATCH] sh: configs: remove CONFIG_LOGFS from defconfig
-Message-Id: <20190530021032.190639-1-wangkefeng.wang@huawei.com>
+From: Michael Ellerman <mpe@ellerman.id.au>
+Date: Thu, 02 May 2019 15:31:10 +0000
+Subject: Re: [PATCH] memblock: make keeping memblock memory opt-in rather than opt-out
+Message-Id: <87h8acyitd.fsf@concordia.ellerman.id.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1556102150-32517-1-git-send-email-rppt@linux.ibm.com>
+In-Reply-To: <1556102150-32517-1-git-send-email-rppt@linux.ibm.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
-Cc: Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, Kefeng Wang <wangkefeng.wang@huawei.com>
+To: Mike Rapoport <rppt@linux.ibm.com>, Andrew Morton <akpm@linux-foundation.org>
+Cc: Rich Felker <dalias@libc.org>, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Heiko Carstens <heiko.carstens@de.ibm.com>, linux-mips@vger.kernel.org, linux-mm@kvack.org, Paul Mackerras <paulus@samba.org>, "H. Peter Anvin" <hpa@zytor.com>, linux-s390@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-hexagon@vger.kernel.org, x86@kernel.org, Russell King <linux@armlinux.org.uk>, Ingo Molnar <mingo@redhat.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Catalin Marinas <catalin.marinas@arm.com>, James Hogan <jhogan@kernel.org>, Fenghua Yu <fenghua.yu@intel.com>, Will Deacon <will.deacon@arm.com>, linux-m68k@lists.linux-m68k.org, Borislav Petkov <bp@alien8.de>, nios2-dev@lists.rocketboards.org, Thomas Gleixner <tglx@linutronix.de>, linux-arm-kernel@lists.infradead.org, Tony Luck <tony.luck@intel.com>, kexec@lists.infradead.org, linux-kernel@vger.kernel.org, Ralf Baechle <ralf@linux-mips.org>, Richard Kuo <rkuo@codeaurora.org>, Paul Burton <paul.burton@mips.com>, Eric Biederman <ebiederm@xmission.com>, Martin Schwidefsky <schwidefsky@de.ibm.com>, Ley Foon Tan <lftan@altera.com>, linuxppc-dev@lists.ozlabs.org
 
-After commit 1d0fd57a50aa ("logfs: remove from tree"),
-logfs was removed, drop CONFIG_LOGFS from all defconfigs.
+Mike Rapoport <rppt@linux.ibm.com> writes:
+> diff --git a/arch/powerpc/Kconfig b/arch/powerpc/Kconfig
+> index 2d0be82..39877b9 100644
+> --- a/arch/powerpc/Kconfig
+> +++ b/arch/powerpc/Kconfig
+> @@ -143,6 +143,7 @@ config PPC
+>  	select ARCH_HAS_UBSAN_SANITIZE_ALL
+>  	select ARCH_HAS_ZONE_DEVICE		if PPC_BOOK3S_64
+>  	select ARCH_HAVE_NMI_SAFE_CMPXCHG
+> +	select ARCH_KEEP_MEMBLOCK
 
-Signed-off-by: Kefeng Wang <wangkefeng.wang@huawei.com>
----
- arch/sh/configs/sdk7786_defconfig | 1 -
- 1 file changed, 1 deletion(-)
+Acked-by: Michael Ellerman <mpe@ellerman.id.au> (powerpc)
 
-diff --git a/arch/sh/configs/sdk7786_defconfig b/arch/sh/configs/sdk7786_defconfig
-index 5209889765ad..49a29338789b 100644
---- a/arch/sh/configs/sdk7786_defconfig
-+++ b/arch/sh/configs/sdk7786_defconfig
-@@ -191,7 +191,6 @@ CONFIG_CONFIGFS_FS=y
- CONFIG_JFFS2_FS=m
- CONFIG_JFFS2_FS_XATTR=y
- CONFIG_UBIFS_FS=m
--CONFIG_LOGFS=m
- CONFIG_CRAMFS=m
- CONFIG_SQUASHFS=m
- CONFIG_ROMFS_FS=m
--- 
-2.20.1
+cheers
