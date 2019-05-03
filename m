@@ -1,71 +1,97 @@
-From: David Hildenbrand <david@redhat.com>
-Date: Mon, 27 May 2019 11:11:45 +0000
-Subject: [PATCH v3 04/11] arm64/mm: Add temporary arch_remove_memory() implementation
-Message-Id: <20190527111152.16324-5-david@redhat.com>
+From: Masahiro Yamada <yamada.masahiro@socionext.com>
+Date: Fri, 03 May 2019 12:37:44 +0000
+Subject: [PATCH] x86,sh: use __builtin_constant_p() directly instead of IS_IMMEDIATE()
+Message-Id: <1556887064-12882-1-git-send-email-yamada.masahiro@socionext.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190527111152.16324-1-david@redhat.com>
-In-Reply-To: <20190527111152.16324-1-david@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mm@kvack.org
-Cc: Mark Rutland <mark.rutland@arm.com>, linux-s390@vger.kernel.org, Ard Biesheuvel <ard.biesheuvel@linaro.org>, linux-ia64@vger.kernel.org, Yu Zhao <yuzhao@google.com>, Anshuman Khandual <anshuman.khandual@arm.com>, linux-sh@vger.kernel.org, Catalin Marinas <catalin.marinas@arm.com>, David Hildenbrand <david@redhat.com>, Will Deacon <will.deacon@arm.com>, linux-kernel@vger.kernel.org, Wei Yang <richard.weiyang@gmail.com>, Jun Yao <yaojun8558363@gmail.com>, Chintan Pandya <cpandya@codeaurora.org>, Igor Mammedov <imammedo@redhat.com>, akpm@linux-foundation.org, Mike Rapoport <rppt@linux.ibm.com>, linuxppc-dev@lists.ozlabs.org, Dan Williams <dan.j.williams@intel.com>, linux-arm-kernel@lists.infradead.org, Robin Murphy <robin.murphy@arm.com>
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: x86@kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Masahiro Yamada <yamada.masahiro@socionext.com>
 
-A proper arch_remove_memory() implementation is on its way, which also
-cleanly removes page tables in arch_add_memory() in case something goes
-wrong.
+__builtin_constant_p(nr) is used everywhere now. It does not make
+much sense to define IS_IMMEDIATE() as its alias.
 
-As we want to use arch_remove_memory() in case something goes wrong
-during memory hotplug after arch_add_memory() finished, let's add
-a temporary hack that is sufficient enough until we get a proper
-implementation that cleans up page table entries.
-
-We will remove CONFIG_MEMORY_HOTREMOVE around this code in follow up
-patches.
-
-Cc: Catalin Marinas <catalin.marinas@arm.com>
-Cc: Will Deacon <will.deacon@arm.com>
-Cc: Mark Rutland <mark.rutland@arm.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>
-Cc: Ard Biesheuvel <ard.biesheuvel@linaro.org>
-Cc: Chintan Pandya <cpandya@codeaurora.org>
-Cc: Mike Rapoport <rppt@linux.ibm.com>
-Cc: Jun Yao <yaojun8558363@gmail.com>
-Cc: Yu Zhao <yuzhao@google.com>
-Cc: Robin Murphy <robin.murphy@arm.com>
-Cc: Anshuman Khandual <anshuman.khandual@arm.com>
-Signed-off-by: David Hildenbrand <david@redhat.com>
+Signed-off-by: Masahiro Yamada <yamada.masahiro@socionext.com>
 ---
- arch/arm64/mm/mmu.c | 19 +++++++++++++++++++
- 1 file changed, 19 insertions(+)
 
-diff --git a/arch/arm64/mm/mmu.c b/arch/arm64/mm/mmu.c
-index a1bfc4413982..e569a543c384 100644
---- a/arch/arm64/mm/mmu.c
-+++ b/arch/arm64/mm/mmu.c
-@@ -1084,4 +1084,23 @@ int arch_add_memory(int nid, u64 start, u64 size,
- 	return __add_pages(nid, start >> PAGE_SHIFT, size >> PAGE_SHIFT,
- 			   restrictions);
- }
-+#ifdef CONFIG_MEMORY_HOTREMOVE
-+void arch_remove_memory(int nid, u64 start, u64 size,
-+			struct vmem_altmap *altmap)
-+{
-+	unsigned long start_pfn = start >> PAGE_SHIFT;
-+	unsigned long nr_pages = size >> PAGE_SHIFT;
-+	struct zone *zone;
-+
-+	/*
-+	 * FIXME: Cleanup page tables (also in arch_add_memory() in case
-+	 * adding fails). Until then, this function should only be used
-+	 * during memory hotplug (adding memory), not for memory
-+	 * unplug. ARCH_ENABLE_MEMORY_HOTREMOVE must not be
-+	 * unlocked yet.
-+	 */
-+	zone = page_zone(pfn_to_page(start_pfn));
-+	__remove_pages(zone, start_pfn, nr_pages, altmap);
-+}
-+#endif
+ arch/sh/include/asm/bitops-op32.h | 8 +++-----
+ arch/x86/include/asm/bitops.h     | 7 +++----
+ 2 files changed, 6 insertions(+), 9 deletions(-)
+
+diff --git a/arch/sh/include/asm/bitops-op32.h b/arch/sh/include/asm/bitops-op32.h
+index 4668803..cfe5465 100644
+--- a/arch/sh/include/asm/bitops-op32.h
++++ b/arch/sh/include/asm/bitops-op32.h
+@@ -16,11 +16,9 @@
+ #define BYTE_OFFSET(nr)		((nr) % BITS_PER_BYTE)
  #endif
+ 
+-#define IS_IMMEDIATE(nr)	(__builtin_constant_p(nr))
+-
+ static inline void __set_bit(int nr, volatile unsigned long *addr)
+ {
+-	if (IS_IMMEDIATE(nr)) {
++	if (__builtin_constant_p(nr)) {
+ 		__asm__ __volatile__ (
+ 			"bset.b %1, @(%O2,%0)		! __set_bit\n\t"
+ 			: "+r" (addr)
+@@ -37,7 +35,7 @@ static inline void __set_bit(int nr, volatile unsigned long *addr)
+ 
+ static inline void __clear_bit(int nr, volatile unsigned long *addr)
+ {
+-	if (IS_IMMEDIATE(nr)) {
++	if (__builtin_constant_p(nr)) {
+ 		__asm__ __volatile__ (
+ 			"bclr.b %1, @(%O2,%0)		! __clear_bit\n\t"
+ 			: "+r" (addr)
+@@ -64,7 +62,7 @@ static inline void __clear_bit(int nr, volatile unsigned long *addr)
+  */
+ static inline void __change_bit(int nr, volatile unsigned long *addr)
+ {
+-	if (IS_IMMEDIATE(nr)) {
++	if (__builtin_constant_p(nr)) {
+ 		__asm__ __volatile__ (
+ 			"bxor.b %1, @(%O2,%0)		! __change_bit\n\t"
+ 			: "+r" (addr)
+diff --git a/arch/x86/include/asm/bitops.h b/arch/x86/include/asm/bitops.h
+index 8e790ec..2621438 100644
+--- a/arch/x86/include/asm/bitops.h
++++ b/arch/x86/include/asm/bitops.h
+@@ -45,7 +45,6 @@
+  * We do the locked ops that don't return the old value as
+  * a mask operation on a byte.
+  */
+-#define IS_IMMEDIATE(nr)		(__builtin_constant_p(nr))
+ #define CONST_MASK_ADDR(nr, addr)	WBYTE_ADDR((void *)(addr) + ((nr)>>3))
+ #define CONST_MASK(nr)			(1 << ((nr) & 7))
+ 
+@@ -67,7 +66,7 @@
+ static __always_inline void
+ set_bit(long nr, volatile unsigned long *addr)
+ {
+-	if (IS_IMMEDIATE(nr)) {
++	if (__builtin_constant_p(nr)) {
+ 		asm volatile(LOCK_PREFIX "orb %1,%0"
+ 			: CONST_MASK_ADDR(nr, addr)
+ 			: "iq" ((u8)CONST_MASK(nr))
+@@ -105,7 +104,7 @@ static __always_inline void __set_bit(long nr, volatile unsigned long *addr)
+ static __always_inline void
+ clear_bit(long nr, volatile unsigned long *addr)
+ {
+-	if (IS_IMMEDIATE(nr)) {
++	if (__builtin_constant_p(nr)) {
+ 		asm volatile(LOCK_PREFIX "andb %1,%0"
+ 			: CONST_MASK_ADDR(nr, addr)
+ 			: "iq" ((u8)~CONST_MASK(nr)));
+@@ -186,7 +185,7 @@ static __always_inline void __change_bit(long nr, volatile unsigned long *addr)
+  */
+ static __always_inline void change_bit(long nr, volatile unsigned long *addr)
+ {
+-	if (IS_IMMEDIATE(nr)) {
++	if (__builtin_constant_p(nr)) {
+ 		asm volatile(LOCK_PREFIX "xorb %1,%0"
+ 			: CONST_MASK_ADDR(nr, addr)
+ 			: "iq" ((u8)CONST_MASK(nr)));
 -- 
-2.20.1
+2.7.4
