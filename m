@@ -1,20 +1,55 @@
-From: Oleg Nesterov <oleg@redhat.com>
-Date: Mon, 20 May 2019 16:02:05 +0000
-Subject: Re: [PATCH 4/5] x86: don't use asm-generic/ptrace.h
-Message-Id: <20190520160205.GD771@redhat.com>
+From: David Hildenbrand <david@redhat.com>
+Date: Tue, 07 May 2019 18:37:58 +0000
+Subject: [PATCH v2 2/8] s390x/mm: Implement arch_remove_memory()
+Message-Id: <20190507183804.5512-3-david@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190520060018.25569-1-hch@lst.de>
- <20190520060018.25569-5-hch@lst.de>
-In-Reply-To: <20190520060018.25569-5-hch@lst.de>
+References: <20190507183804.5512-1-david@redhat.com>
+In-Reply-To: <20190507183804.5512-1-david@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Christoph Hellwig <hch@lst.de>
-Cc: Arnd Bergmann <arnd@arndb.de>, x86@kernel.org, linux-arm-kernel@lists.infradead.org, linux-mips@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org, Ingo Molnar <mingo@kernel.org>
+To: linux-mm@kvack.org
+Cc: linux-kernel@vger.kernel.org, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, akpm@linux-foundation.org, Dan Williams <dan.j.williams@intel.com>, David Hildenbrand <david@redhat.com>, Martin Schwidefsky <schwidefsky@de.ibm.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, Michal Hocko <mhocko@suse.com>, Mike Rapoport <rppt@linux.vnet.ibm.com>, Vasily Gorbik <gor@linux.ibm.com>, Oscar Salvador <osalvador@suse.com>
 
-On 05/20, Christoph Hellwig wrote:
->
-> Doing the indirection through macros for the regs accessors just
-> makes them harder to read, so implement the helpers directly.
+Will come in handy when wanting to handle errors after
+arch_add_memory().
 
-Acked-by: Oleg Nesterov <oleg@redhat.com>
+Cc: Martin Schwidefsky <schwidefsky@de.ibm.com>
+Cc: Heiko Carstens <heiko.carstens@de.ibm.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>
+Cc: Michal Hocko <mhocko@suse.com>
+Cc: Mike Rapoport <rppt@linux.vnet.ibm.com>
+Cc: David Hildenbrand <david@redhat.com>
+Cc: Vasily Gorbik <gor@linux.ibm.com>
+Cc: Oscar Salvador <osalvador@suse.com>
+Signed-off-by: David Hildenbrand <david@redhat.com>
+---
+ arch/s390/mm/init.c | 13 +++++++------
+ 1 file changed, 7 insertions(+), 6 deletions(-)
+
+diff --git a/arch/s390/mm/init.c b/arch/s390/mm/init.c
+index 31b1071315d7..1e0cbae69f12 100644
+--- a/arch/s390/mm/init.c
++++ b/arch/s390/mm/init.c
+@@ -237,12 +237,13 @@ int arch_add_memory(int nid, u64 start, u64 size,
+ void arch_remove_memory(int nid, u64 start, u64 size,
+ 			struct vmem_altmap *altmap)
+ {
+-	/*
+-	 * There is no hardware or firmware interface which could trigger a
+-	 * hot memory remove on s390. So there is nothing that needs to be
+-	 * implemented.
+-	 */
+-	BUG();
++	unsigned long start_pfn = start >> PAGE_SHIFT;
++	unsigned long nr_pages = size >> PAGE_SHIFT;
++	struct zone *zone;
++
++	zone = page_zone(pfn_to_page(start_pfn));
++	__remove_pages(zone, start_pfn, nr_pages, altmap);
++	vmem_remove_mapping(start, size);
+ }
+ #endif
+ #endif /* CONFIG_MEMORY_HOTPLUG */
+-- 
+2.20.1
