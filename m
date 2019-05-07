@@ -1,119 +1,194 @@
-From: Christian Brauner <christian@brauner.io>
-Date: Sat, 18 May 2019 10:04:46 +0000
-Subject: Re: [PATCH v1 1/2] pid: add pidfd_open()
-Message-Id: <20190518100435.c5bqpcnra53dsr6p@brauner.io>
+From: David Hildenbrand <david@redhat.com>
+Date: Tue, 07 May 2019 18:38:02 +0000
+Subject: [PATCH v2 6/8] mm/memory_hotplug: Remove memory block devices before arch_remove_memory()
+Message-Id: <20190507183804.5512-7-david@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190516135944.7205-1-christian@brauner.io>
- <20190516224949.GA15401@localhost>
-In-Reply-To: <20190516224949.GA15401@localhost>
+References: <20190507183804.5512-1-david@redhat.com>
+In-Reply-To: <20190507183804.5512-1-david@redhat.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: Joel Fernandes <joel@joelfernandes.org>
-Cc: jannh@google.com, oleg@redhat.com, viro@zeniv.linux.org.uk, torvalds@linux-foundation.org, linux-kernel@vger.kernel.org, arnd@arndb.de, akpm@linux-foundation.org, cyphar@cyphar.com, dhowells@redhat.com, ebiederm@xmission.com, elena.reshetova@intel.com, keescook@chromium.org, luto@amacapital.net, luto@kernel.org, tglx@linutronix.de, linux-alpha@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.orgg, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-api@vger.kernel.org, linux-arch@vger.kernel.org, linux-kselftest@vger.kernel.org, dancol@google.com, serge@hallyn.com, su
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-mm@kvack.org
+Cc: linux-kernel@vger.kernel.org, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, akpm@linux-foundation.org, Dan Williams <dan.j.williams@intel.com>, David Hildenbrand <david@redhat.com>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, "Rafael J. Wysocki" <rafael@kernel.org>, "mike.travis@hpe.com" <mike.travis@hpe.com>, Andrew Banman <andrew.banman@hpe.com>, Ingo Molnar <mingo@kernel.org>, Alex Deucher <alexander.deucher@amd.com>, "David S. Miller" <davem@davemloft.net>, Mark Brown <broonie@kernel.org>, Chris Wilson <chris@chris-wilson.co.uk>, Oscar Salvador <osalvador@suse.de>, Jonathan Cameron <Jonathan.Cameron@huawei.com>, Michal Hocko <mhocko@suse.com>, Pavel Tatashin <pavel.tatashin@microsoft.com>, Arun KS <arunks@codeaurora.org>, Mathieu Malaterre <malat@debian.org>
 
-On Sat, May 18, 2019 at 05:48:03AM -0400, Joel Fernandes wrote:
-> Hi Christian,
->=20
-> For next revision, could you also CC surenb@google.com as well? He is also
-> working on the low memory killer. And also suggest CC to
-> kernel-team@android.com. And mentioned some comments below, thanks.
+Let's factor out removing of memory block devices, which is only
+necessary for memory added via add_memory() and friends that created
+memory block devices. Remove the devices before calling
+arch_remove_memory().
 
-Yip, totally. Just added them both to my Cc list. :)
-(I saw you added Suren manually. I added the Android kernel team now too.)
+This finishes factoring out memory block device handling from
+arch_add_memory() and arch_remove_memory().
 
->=20
-> On Thu, May 16, 2019 at 03:59:42PM +0200, Christian Brauner wrote:
-> [snip] =20
-> > diff --git a/kernel/pid.c b/kernel/pid.c
-> > index 20881598bdfa..4afca3d6dcb8 100644
-> > --- a/kernel/pid.c
-> > +++ b/kernel/pid.c
-> > @@ -38,6 +38,7 @@
-> >  #include <linux/syscalls.h>
-> >  #include <linux/proc_ns.h>
-> >  #include <linux/proc_fs.h>
-> > +#include <linux/sched/signal.h>
-> >  #include <linux/sched/task.h>
-> >  #include <linux/idr.h>
-> > =20
-> > @@ -451,6 +452,55 @@ struct pid *find_ge_pid(int nr, struct pid_namespa=
-ce *ns)
-> >  	return idr_get_next(&ns->idr, &nr);
-> >  }
-> > =20
-> > +/**
-> > + * pidfd_open() - Open new pid file descriptor.
-> > + *
-> > + * @pid:   pid for which to retrieve a pidfd
-> > + * @flags: flags to pass
-> > + *
-> > + * This creates a new pid file descriptor with the O_CLOEXEC flag set =
-for
-> > + * the process identified by @pid. Currently, the process identified by
-> > + * @pid must be a thread-group leader. This restriction currently exis=
-ts
-> > + * for all aspects of pidfds including pidfd creation (CLONE_PIDFD can=
-not
-> > + * be used with CLONE_THREAD) and pidfd polling (only supports thread =
-group
-> > + * leaders).
-> > + *
-> > + * Return: On success, a cloexec pidfd is returned.
-> > + *         On error, a negative errno number will be returned.
-> > + */
-> > +SYSCALL_DEFINE2(pidfd_open, pid_t, pid, unsigned int, flags)
-> > +{
-> > +	int fd, ret;
-> > +	struct pid *p;
-> > +	struct task_struct *tsk;
-> > +
-> > +	if (flags)
-> > +		return -EINVAL;
-> > +
-> > +	if (pid <=3D 0)
-> > +		return -EINVAL;
-> > +
-> > +	p =3D find_get_pid(pid);
-> > +	if (!p)
-> > +		return -ESRCH;
-> > +
-> > +	ret =3D 0;
-> > +	rcu_read_lock();
-> > +	/*
-> > +	 * If this returns non-NULL the pid was used as a thread-group
-> > +	 * leader. Note, we race with exec here: If it changes the
-> > +	 * thread-group leader we might return the old leader.
-> > +	 */
-> > +	tsk =3D pid_task(p, PIDTYPE_TGID);
->=20
-> Just trying to understand the comment here. The issue is that we might ei=
-ther
-> return the new leader, or the old leader depending on the overlap with
-> concurrent de_thread right? In either case, we don't care though.
->=20
-> I suggest to remove the "Note..." part of the comment since it doesn't se=
-em the
-> race is relevant here unless we are doing something else with tsk in the
-> function, but if you want to keep it that's also fine. Comment text should
-> probably should be 'return the new leader' though.
+Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Cc: "Rafael J. Wysocki" <rafael@kernel.org>
+Cc: David Hildenbrand <david@redhat.com>
+Cc: "mike.travis@hpe.com" <mike.travis@hpe.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>
+Cc: Andrew Banman <andrew.banman@hpe.com>
+Cc: Ingo Molnar <mingo@kernel.org>
+Cc: Alex Deucher <alexander.deucher@amd.com>
+Cc: "David S. Miller" <davem@davemloft.net>
+Cc: Mark Brown <broonie@kernel.org>
+Cc: Chris Wilson <chris@chris-wilson.co.uk>
+Cc: Oscar Salvador <osalvador@suse.de>
+Cc: Jonathan Cameron <Jonathan.Cameron@huawei.com>
+Cc: Michal Hocko <mhocko@suse.com>
+Cc: Pavel Tatashin <pavel.tatashin@microsoft.com>
+Cc: Arun KS <arunks@codeaurora.org>
+Cc: Mathieu Malaterre <malat@debian.org>
+Signed-off-by: David Hildenbrand <david@redhat.com>
+---
+ drivers/base/memory.c  | 39 +++++++++++++++++++--------------------
+ drivers/base/node.c    | 11 ++++++-----
+ include/linux/memory.h |  2 +-
+ include/linux/node.h   |  6 ++----
+ mm/memory_hotplug.c    |  5 +++--
+ 5 files changed, 31 insertions(+), 32 deletions(-)
 
-Nah, I actually removed the comment already independently (cf. see [1]).
-
-[1]: https://git.kernel.org/pub/scm/linux/kernel/git/brauner/linux.git/comm=
-it/?h=3Dpidfd_open&id=DCfc98c2d957bf3ac14b06414cb2cf4c673fc297
->=20
-> > +	if (!tsk)
-> > +		ret =3D -ESRCH;
->=20
-> Perhaps -EINVAL?  AFAICS, this can only happen if a CLONE_THREAD pid was
-> passed as argument to pidfd_open which is invalid. But let me know what y=
-ou
-> had in mind..
-
-Hm, from the kernel's perspective ESRCH is correct but I guess EINVAL is
-nicer for userspace. So I don't have objections to using EINVAL. My
-first version did too I think.
-
-Thanks!
-Christian
+diff --git a/drivers/base/memory.c b/drivers/base/memory.c
+index 862c202a18ca..47ff49058d1f 100644
+--- a/drivers/base/memory.c
++++ b/drivers/base/memory.c
+@@ -756,32 +756,31 @@ int hotplug_memory_register(unsigned long start, unsigned long size)
+ 	return ret;
+ }
+ 
+-static int remove_memory_section(struct mem_section *section)
++/*
++ * Remove memory block devices for the given memory area. Start and size
++ * have to be aligned to memory block granularity. Memory block devices
++ * have to be offline.
++ */
++void hotplug_memory_unregister(unsigned long start, unsigned long size)
+ {
++	unsigned long block_nr_pages = memory_block_size_bytes() >> PAGE_SHIFT;
++	unsigned long start_pfn = PFN_DOWN(start);
++	unsigned long end_pfn = start_pfn + (size >> PAGE_SHIFT);
+ 	struct memory_block *mem;
++	unsigned long pfn;
+ 
+-	if (WARN_ON_ONCE(!present_section(section)))
+-		return;
++	BUG_ON(!IS_ALIGNED(start, memory_block_size_bytes()));
++	BUG_ON(!IS_ALIGNED(size, memory_block_size_bytes()));
+ 
+ 	mutex_lock(&mem_sysfs_mutex);
+-
+-	/*
+-	 * Some users of the memory hotplug do not want/need memblock to
+-	 * track all sections. Skip over those.
+-	 */
+-	mem = find_memory_block(section);
+-	if (!mem)
+-		goto out_unlock;
+-
+-	unregister_mem_sect_under_nodes(mem, __section_nr(section));
+-
+-	mem->section_count--;
+-	if (mem->section_count = 0)
++	for (pfn = start_pfn; pfn != end_pfn; pfn += block_nr_pages) {
++		mem = find_memory_block(__pfn_to_section(pfn));
++		if (!mem)
++			continue;
++		mem->section_count = 0;
++		unregister_memory_block_under_nodes(mem);
+ 		unregister_memory(mem);
+-	else
+-		put_device(&mem->dev);
+-
+-out_unlock:
++	}
+ 	mutex_unlock(&mem_sysfs_mutex);
+ }
+ 
+diff --git a/drivers/base/node.c b/drivers/base/node.c
+index 8598fcbd2a17..04fdfa99b8bc 100644
+--- a/drivers/base/node.c
++++ b/drivers/base/node.c
+@@ -801,9 +801,10 @@ int register_mem_sect_under_node(struct memory_block *mem_blk, void *arg)
+ 	return 0;
+ }
+ 
+-/* unregister memory section under all nodes that it spans */
+-int unregister_mem_sect_under_nodes(struct memory_block *mem_blk,
+-				    unsigned long phys_index)
++/*
++ * Unregister memory block device under all nodes that it spans.
++ */
++int unregister_memory_block_under_nodes(struct memory_block *mem_blk)
+ {
+ 	NODEMASK_ALLOC(nodemask_t, unlinked_nodes, GFP_KERNEL);
+ 	unsigned long pfn, sect_start_pfn, sect_end_pfn;
+@@ -816,8 +817,8 @@ int unregister_mem_sect_under_nodes(struct memory_block *mem_blk,
+ 		return -ENOMEM;
+ 	nodes_clear(*unlinked_nodes);
+ 
+-	sect_start_pfn = section_nr_to_pfn(phys_index);
+-	sect_end_pfn = sect_start_pfn + PAGES_PER_SECTION - 1;
++	sect_start_pfn = section_nr_to_pfn(mem_blk->start_section_nr);
++	sect_end_pfn = section_nr_to_pfn(mem_blk->end_section_nr);
+ 	for (pfn = sect_start_pfn; pfn <= sect_end_pfn; pfn++) {
+ 		int nid;
+ 
+diff --git a/include/linux/memory.h b/include/linux/memory.h
+index 95505fbb5f85..aa236c2a0466 100644
+--- a/include/linux/memory.h
++++ b/include/linux/memory.h
+@@ -112,7 +112,7 @@ extern void unregister_memory_notifier(struct notifier_block *nb);
+ extern int register_memory_isolate_notifier(struct notifier_block *nb);
+ extern void unregister_memory_isolate_notifier(struct notifier_block *nb);
+ int hotplug_memory_register(unsigned long start, unsigned long size);
+-extern void unregister_memory_section(struct mem_section *);
++void hotplug_memory_unregister(unsigned long start, unsigned long size);
+ extern int memory_dev_init(void);
+ extern int memory_notify(unsigned long val, void *v);
+ extern int memory_isolate_notify(unsigned long val, void *v);
+diff --git a/include/linux/node.h b/include/linux/node.h
+index 1a557c589ecb..02a29e71b175 100644
+--- a/include/linux/node.h
++++ b/include/linux/node.h
+@@ -139,8 +139,7 @@ extern int register_cpu_under_node(unsigned int cpu, unsigned int nid);
+ extern int unregister_cpu_under_node(unsigned int cpu, unsigned int nid);
+ extern int register_mem_sect_under_node(struct memory_block *mem_blk,
+ 						void *arg);
+-extern int unregister_mem_sect_under_nodes(struct memory_block *mem_blk,
+-					   unsigned long phys_index);
++extern int unregister_memory_block_under_nodes(struct memory_block *mem_blk);
+ 
+ extern int register_memory_node_under_compute_node(unsigned int mem_nid,
+ 						   unsigned int cpu_nid,
+@@ -176,8 +175,7 @@ static inline int register_mem_sect_under_node(struct memory_block *mem_blk,
+ {
+ 	return 0;
+ }
+-static inline int unregister_mem_sect_under_nodes(struct memory_block *mem_blk,
+-						  unsigned long phys_index)
++static inline int unregister_memory_block_under_nodes(struct memory_block *mem_blk)
+ {
+ 	return 0;
+ }
+diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
+index 107f72952347..527fe4f9c620 100644
+--- a/mm/memory_hotplug.c
++++ b/mm/memory_hotplug.c
+@@ -519,8 +519,6 @@ static void __remove_section(struct zone *zone, struct mem_section *ms,
+ 	if (WARN_ON_ONCE(!valid_section(ms)))
+ 		return;
+ 
+-	unregister_memory_section(ms);
+-
+ 	scn_nr = __section_nr(ms);
+ 	start_pfn = section_nr_to_pfn((unsigned long)scn_nr);
+ 	__remove_zone(zone, start_pfn);
+@@ -1844,6 +1842,9 @@ void __ref __remove_memory(int nid, u64 start, u64 size)
+ 	memblock_free(start, size);
+ 	memblock_remove(start, size);
+ 
++	/* remove memory block devices before removing memory */
++	hotplug_memory_unregister(start, size);
++
+ 	arch_remove_memory(nid, start, size, NULL);
+ 	__release_memory_resource(start, size);
+ 
+-- 
+2.20.1
