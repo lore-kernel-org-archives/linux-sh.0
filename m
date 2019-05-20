@@ -1,43 +1,42 @@
-From: Michael Ellerman <mpe@ellerman.id.au>
-Date: Tue, 28 May 2019 03:43:43 +0000
-Subject: Re: [PATCH v3 2/3] arch: wire-up close_range()
-Message-Id: <87woibp7kg.fsf@concordia.ellerman.id.au>
+From: eddy william <pagentsif6@gmail.com>
+Date: Mon, 20 May 2019 11:14:06 +0000
+Subject: hello
+Message-Id: <CAKiDfoWoSC9=1ttassyZYFXE_QeEqVsX_bYpaO58jGVUe68_Nw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190524111047.6892-1-christian@brauner.io> <20190524111047.6892-3-christian@brauner.io>
-In-Reply-To: <20190524111047.6892-3-christian@brauner.io>
+References: <20190326223131.DE3F72A85C37@06d01.mspz3.gob.ec>
+In-Reply-To: <20190326223131.DE3F72A85C37@06d01.mspz3.gob.ec>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: viro@zeniv.linux.org.uk, linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org, torvalds@linux-foundation.org, fweimer@redhat.com
-Cc: jannh@google.com, oleg@redhat.com, tglx@linutronix.de, arnd@arndb.de, shuah@kernel.org, dhowells@redhat.com, tkjos@android.com, ldv@altlinux.org, miklos@szeredi.hu, Christian Brauner <christian@brauner.io>, linux-api@vger.kernel.org, linux-alpha@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-arch@vger.kernel.org, x86@kernel.org
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: linux-sh@vger.kernel.org
 
-Christian Brauner <christian@brauner.io> writes:
-> diff --git a/arch/powerpc/kernel/syscalls/syscall.tbl b/arch/powerpc/kernel/syscalls/syscall.tbl
-> index 103655d84b4b..ba2c1f078cbd 100644
-> --- a/arch/powerpc/kernel/syscalls/syscall.tbl
-> +++ b/arch/powerpc/kernel/syscalls/syscall.tbl
-> @@ -515,3 +515,4 @@
->  431	common	fsconfig			sys_fsconfig
->  432	common	fsmount				sys_fsmount
->  433	common	fspick				sys_fspick
-> +435	common	close_range			sys_close_range
+Mijn naam is Eddy William. Ik ben van beroep advocaat. Ik wil je aanbieden
+nabestaanden van mijn cliënt. Je ervaart de som van ($ 14,2 miljoen)
+dollars die mijn cliënt voor zijn overlijden op de bank heeft achtergelaten.
 
-With a minor build fix the selftest passes for me on ppc64le:
+Mijn klant is een burger van jouw land die stierf in auto-ongeluk met zijn vrouw
+en alleen zoon. Ik krijg 50% van het totale fonds en 50% wel
+voor jou zijn.
 
-  # ./close_range_test 
-  1..9
-  ok 1 do not allow invalid flag values for close_range()
-  ok 2 close_range() from 3 to 53
-  ok 3 fcntl() verify closed range from 3 to 53
-  ok 4 close_range() from 54 to 95
-  ok 5 fcntl() verify closed range from 54 to 95
-  ok 6 close_range() from 96 to 102
-  ok 7 fcntl() verify closed range from 96 to 102
-  ok 8 close_range() closed single file descriptor
-  ok 9 fcntl() verify closed single file descriptor
-  # Pass 9 Fail 0 Xfail 0 Xpass 0 Skip 0 Error 0
+Neem hier voor meer informatie contact op met mijn privémail:
+eddywilliam0002@gmail.com
+
+Bij voorbaat hartelijk dank,
+Eddy William,
 
 
-Acked-by: Michael Ellerman <mpe@ellerman.id.au> (powerpc)
 
-cheers
+Hello
+
+My name is Eddy William I am a lawyer by profession. I wish to offer you
+the next of kin to my client. You will inherit the sum of ($14.2 Million)
+dollars my client left in the bank before his death.
+
+My client is a citizen of your country who died in auto crash with his wife
+and only son. I will be entitled with 50% of the total fund while 50% will
+be for you.
+
+Please contact my private email here for more details:eddywilliam0002@gmail.com
+
+Many thanks in advance,
+Mr.Eddy William,
