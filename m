@@ -1,75 +1,20 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Mon, 20 May 2019 06:00:17 +0000
-Subject: [PATCH 4/5] x86: don't use asm-generic/ptrace.h
-Message-Id: <20190520060018.25569-5-hch@lst.de>
+From: Oleg Nesterov <oleg@redhat.com>
+Date: Mon, 20 May 2019 16:02:05 +0000
+Subject: Re: [PATCH 4/5] x86: don't use asm-generic/ptrace.h
+Message-Id: <20190520160205.GD771@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20190520060018.25569-1-hch@lst.de>
-In-Reply-To: <20190520060018.25569-1-hch@lst.de>
+ <20190520060018.25569-5-hch@lst.de>
+In-Reply-To: <20190520060018.25569-5-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Oleg Nesterov <oleg@redhat.com>, Arnd Bergmann <arnd@arndb.de>
-Cc: x86@kernel.org, linux-arm-kernel@lists.infradead.org, linux-mips@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org, Ingo Molnar <mingo@kernel.org>
+To: Christoph Hellwig <hch@lst.de>
+Cc: Arnd Bergmann <arnd@arndb.de>, x86@kernel.org, linux-arm-kernel@lists.infradead.org, linux-mips@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org, Ingo Molnar <mingo@kernel.org>
 
-Doing the indirection through macros for the regs accessors just
-makes them harder to read, so implement the helpers directly.
+On 05/20, Christoph Hellwig wrote:
+>
+> Doing the indirection through macros for the regs accessors just
+> makes them harder to read, so implement the helpers directly.
 
-Note that only the helpers actually used are implemented now.
-
-Signed-off-by: Christoph Hellwig <hch@lst.de>
-Acked-by: Ingo Molnar <mingo@kernel.org>
----
- arch/x86/include/asm/ptrace.h | 30 +++++++++++++++++++++++++-----
- 1 file changed, 25 insertions(+), 5 deletions(-)
-
-diff --git a/arch/x86/include/asm/ptrace.h b/arch/x86/include/asm/ptrace.h
-index 8a7fc0cca2d1..e22816e865ca 100644
---- a/arch/x86/include/asm/ptrace.h
-+++ b/arch/x86/include/asm/ptrace.h
-@@ -98,7 +98,6 @@ struct cpuinfo_x86;
- struct task_struct;
- 
- extern unsigned long profile_pc(struct pt_regs *regs);
--#define profile_pc profile_pc
- 
- extern unsigned long
- convert_ip_to_linear(struct task_struct *child, struct pt_regs *regs);
-@@ -175,11 +174,32 @@ static inline unsigned long kernel_stack_pointer(struct pt_regs *regs)
- }
- #endif
- 
--#define GET_IP(regs) ((regs)->ip)
--#define GET_FP(regs) ((regs)->bp)
--#define GET_USP(regs) ((regs)->sp)
-+static inline unsigned long instruction_pointer(struct pt_regs *regs)
-+{
-+	return regs->ip;
-+}
-+
-+static inline void instruction_pointer_set(struct pt_regs *regs,
-+		unsigned long val)
-+{
-+	regs->ip = val;
-+}
-+
-+static inline unsigned long frame_pointer(struct pt_regs *regs)
-+{
-+	return regs->bp;
-+}
- 
--#include <asm-generic/ptrace.h>
-+static inline unsigned long user_stack_pointer(struct pt_regs *regs)
-+{
-+	return regs->sp;
-+}
-+
-+static inline void user_stack_pointer_set(struct pt_regs *regs,
-+		unsigned long val)
-+{
-+	regs->sp = val;
-+}
- 
- /* Query offset/name of register from its name/offset */
- extern int regs_query_register_offset(const char *name);
--- 
-2.20.1
+Acked-by: Oleg Nesterov <oleg@redhat.com>
