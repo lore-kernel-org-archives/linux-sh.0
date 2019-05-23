@@ -1,53 +1,225 @@
-From: Matthew Wilcox <willy@infradead.org>
-Date: Fri, 31 May 2019 17:48:54 +0000
-Subject: Re: [RFC] mm: Generalize notify_page_fault()
-Message-Id: <20190531174854.GA31852@bombadil.infradead.org>
+From: Christian Brauner <christian@brauner.io>
+Date: Thu, 23 May 2019 15:47:47 +0000
+Subject: [PATCH v2 2/2] tests: add close_range() tests
+Message-Id: <20190523154747.15162-3-christian@brauner.io>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1559195713-6956-1-git-send-email-anshuman.khandual@arm.com>
- <20190530110639.GC23461@bombadil.infradead.org>
- <4f9a610d-e856-60f6-4467-09e9c3836771@arm.com>
- <20190530133954.GA2024@bombadil.infradead.org>
- <f1995445-d5ab-f292-d26c-809581002184@arm.com>
-In-Reply-To: <f1995445-d5ab-f292-d26c-809581002184@arm.com>
+References: <20190523154747.15162-1-christian@brauner.io>
+In-Reply-To: <20190523154747.15162-1-christian@brauner.io>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Anshuman Khandual <anshuman.khandual@arm.com>
-Cc: Mark Rutland <mark.rutland@arm.com>, Michal Hocko <mhocko@suse.com>, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, Catalin Marinas <catalin.marinas@arm.com>, Will Deacon <will.deacon@arm.com>, linux-mm@kvack.org, Paul Mackerras <paulus@samba.org>, sparclinux@vger.kernel.org, linux-s390@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Michael Ellerman <mpe@ellerman.id.au>, Russell King <linux@armlinux.org.uk>, Fenghua Yu <fenghua.yu@intel.com>, Stephen Rothwell <sfr@canb.auug.org.au>, Andrey Konovalov <andreyknvl@google.com>, linux-arm-kernel@lists.infradead.org, Christophe Leroy <christophe.leroy@c-s.fr>, Tony Luck <tony.luck@intel.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, linux-kernel@vger.kernel.org, Martin Schwidefsky <schwidefsky@de.ibm.com>, Andrew Morton <akpm@linux-foundation.org>, linuxppc-dev@lists.ozlabs.org, "David S. Miller" <davem@davemloft.net>
+To: viro@zeniv.linux.org.uk, linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org, linux-api@vger.kernel.org, torvalds@linux-foundation.org, fweimer@redhat.com
+Cc: jannh@google.com, oleg@redhat.com, tglx@linutronix.de, arnd@arndb.de, shuah@kernel.org, dhowells@redhat.com, tkjos@android.com, ldv@altlinux.org, miklos@szeredi.hu, linux-alpha@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-arch@vger.kernel.org, linux-kselftest@vger.kernel.org, x86@kernel.org, Christian Brauner <christian@brauner.io>
 
-On Fri, May 31, 2019 at 02:17:43PM +0530, Anshuman Khandual wrote:
-> On 05/30/2019 07:09 PM, Matthew Wilcox wrote:
-> > On Thu, May 30, 2019 at 05:31:15PM +0530, Anshuman Khandual wrote:
-> >> On 05/30/2019 04:36 PM, Matthew Wilcox wrote:
-> >>> The two handle preemption differently.  Why is x86 wrong and this one
-> >>> correct?
-> >>
-> >> Here it expects context to be already non-preemptible where as the proposed
-> >> generic function makes it non-preemptible with a preempt_[disable|enable]()
-> >> pair for the required code section, irrespective of it's present state. Is
-> >> not this better ?
-> > 
-> > git log -p arch/x86/mm/fault.c
-> > 
-> > search for 'kprobes'.
-> > 
-> > tell me what you think.
-> 
-> Are you referring to these following commits
-> 
-> a980c0ef9f6d ("x86/kprobes: Refactor kprobes_fault() like kprobe_exceptions_notify()")
-> b506a9d08bae ("x86: code clarification patch to Kprobes arch code")
-> 
-> In particular the later one (b506a9d08bae). It explains how the invoking context
-> in itself should be non-preemptible for the kprobes processing context irrespective
-> of whether kprobe_running() or perhaps smp_processor_id() is safe or not. Hence it
-> does not make much sense to continue when original invoking context is preemptible.
-> Instead just bail out earlier. This seems to be making more sense than preempt
-> disable-enable pair. If there are no concerns about this change from other platforms,
-> I will change the preemption behavior in proposed generic function next time around.
+This adds basic tests for the new close_range() syscall.
+- test that no invalid flags can be passed
+- test that a range of file descriptors is correctly closed
+- test that a range of file descriptors is correctly closed if there there
+  are already closed file descriptors in the range
+- test that max_fd is correctly capped to the current fdtable maximum
 
-Exactly.
+Signed-off-by: Christian Brauner <christian@brauner.io>
+Cc: Arnd Bergmann <arnd@arndb.de>
+Cc: Jann Horn <jannh@google.com>
+Cc: David Howells <dhowells@redhat.com>
+Cc: Dmitry V. Levin <ldv@altlinux.org>
+Cc: Oleg Nesterov <oleg@redhat.com>
+Cc: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: Florian Weimer <fweimer@redhat.com>
+Cc: linux-api@vger.kernel.org
+---
+v1: unchanged
+v2:
+- Christian Brauner <christian@brauner.io>:
+  - verify that close_range() correctly closes a single file descriptor
+---
+ tools/testing/selftests/Makefile              |   1 +
+ tools/testing/selftests/core/.gitignore       |   1 +
+ tools/testing/selftests/core/Makefile         |   6 +
+ .../testing/selftests/core/close_range_test.c | 142 ++++++++++++++++++
+ 4 files changed, 150 insertions(+)
+ create mode 100644 tools/testing/selftests/core/.gitignore
+ create mode 100644 tools/testing/selftests/core/Makefile
+ create mode 100644 tools/testing/selftests/core/close_range_test.c
 
-So, any of the arch maintainers know of a reason they behave differently
-from x86 in this regard?  Or can Anshuman use the x86 implementation
-for all the architectures supporting kprobes?
+diff --git a/tools/testing/selftests/Makefile b/tools/testing/selftests/Makefile
+index 9781ca79794a..06e57fabbff9 100644
+--- a/tools/testing/selftests/Makefile
++++ b/tools/testing/selftests/Makefile
+@@ -4,6 +4,7 @@ TARGETS += bpf
+ TARGETS += breakpoints
+ TARGETS += capabilities
+ TARGETS += cgroup
++TARGETS += core
+ TARGETS += cpufreq
+ TARGETS += cpu-hotplug
+ TARGETS += drivers/dma-buf
+diff --git a/tools/testing/selftests/core/.gitignore b/tools/testing/selftests/core/.gitignore
+new file mode 100644
+index 000000000000..6e6712ce5817
+--- /dev/null
++++ b/tools/testing/selftests/core/.gitignore
+@@ -0,0 +1 @@
++close_range_test
+diff --git a/tools/testing/selftests/core/Makefile b/tools/testing/selftests/core/Makefile
+new file mode 100644
+index 000000000000..de3ae68aa345
+--- /dev/null
++++ b/tools/testing/selftests/core/Makefile
+@@ -0,0 +1,6 @@
++CFLAGS += -g -I../../../../usr/include/ -I../../../../include
++
++TEST_GEN_PROGS := close_range_test
++
++include ../lib.mk
++
+diff --git a/tools/testing/selftests/core/close_range_test.c b/tools/testing/selftests/core/close_range_test.c
+new file mode 100644
+index 000000000000..d6e6079d3d53
+--- /dev/null
++++ b/tools/testing/selftests/core/close_range_test.c
+@@ -0,0 +1,142 @@
++// SPDX-License-Identifier: GPL-2.0
++
++#define _GNU_SOURCE
++#include <errno.h>
++#include <fcntl.h>
++#include <linux/kernel.h>
++#include <limits.h>
++#include <stdbool.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++#include <syscall.h>
++#include <unistd.h>
++
++#include "../kselftest.h"
++
++static inline int sys_close_range(unsigned int fd, unsigned int max_fd,
++				  unsigned int flags)
++{
++	return syscall(__NR_close_range, fd, max_fd, flags);
++}
++
++#ifndef ARRAY_SIZE
++#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
++#endif
++
++int main(int argc, char **argv)
++{
++	const char *test_name = "close_range";
++	int i, ret;
++	int open_fds[101];
++	int fd_max, fd_mid, fd_min;
++
++	ksft_set_plan(9);
++
++	for (i = 0; i < ARRAY_SIZE(open_fds); i++) {
++		int fd;
++
++		fd = open("/dev/null", O_RDONLY | O_CLOEXEC);
++		if (fd < 0) {
++			if (errno = ENOENT)
++				ksft_exit_skip(
++					"%s test: skipping test since /dev/null does not exist\n",
++					test_name);
++
++			ksft_exit_fail_msg(
++				"%s test: %s - failed to open /dev/null\n",
++				strerror(errno), test_name);
++		}
++
++		open_fds[i] = fd;
++	}
++
++	fd_min = open_fds[0];
++	fd_max = open_fds[99];
++
++	ret = sys_close_range(fd_min, fd_max, 1);
++	if (!ret)
++		ksft_exit_fail_msg(
++			"%s test: managed to pass invalid flag value\n",
++			test_name);
++	ksft_test_result_pass("do not allow invalid flag values for close_range()\n");
++
++	fd_mid = open_fds[50];
++	ret = sys_close_range(fd_min, fd_mid, 0);
++	if (ret < 0)
++		ksft_exit_fail_msg(
++			"%s test: Failed to close range of file descriptors from %d to %d\n",
++			test_name, fd_min, fd_mid);
++	ksft_test_result_pass("close_range() from %d to %d\n", fd_min, fd_mid);
++
++	for (i = 0; i <= 50; i++) {
++		ret = fcntl(open_fds[i], F_GETFL);
++		if (ret >= 0)
++			ksft_exit_fail_msg(
++				"%s test: Failed to close range of file descriptors from %d to %d\n",
++				test_name, fd_min, fd_mid);
++	}
++	ksft_test_result_pass("fcntl() verify closed range from %d to %d\n", fd_min, fd_mid);
++
++	/* create a couple of gaps */
++	close(57);
++	close(78);
++	close(81);
++	close(82);
++	close(84);
++	close(90);
++
++	fd_mid = open_fds[51];
++	/* Choose slightly lower limit and leave some fds for a later test */
++	fd_max = open_fds[92];
++	ret = sys_close_range(fd_mid, fd_max, 0);
++	if (ret < 0)
++		ksft_exit_fail_msg(
++			"%s test: Failed to close range of file descriptors from 51 to 100\n",
++			test_name);
++	ksft_test_result_pass("close_range() from %d to %d\n", fd_mid, fd_max);
++
++	for (i = 51; i <= 92; i++) {
++		ret = fcntl(open_fds[i], F_GETFL);
++		if (ret >= 0)
++			ksft_exit_fail_msg(
++				"%s test: Failed to close range of file descriptors from 51 to 100\n",
++				test_name);
++	}
++	ksft_test_result_pass("fcntl() verify closed range from %d to %d\n", fd_mid, fd_max);
++
++	fd_mid = open_fds[93];
++	fd_max = open_fds[99];
++	/* test that the kernel caps and still closes all fds */
++	ret = sys_close_range(fd_mid, UINT_MAX, 0);
++	if (ret < 0)
++		ksft_exit_fail_msg(
++			"%s test: Failed to close range of file descriptors from 51 to 100\n",
++			test_name);
++	ksft_test_result_pass("close_range() from %d to %d\n", fd_mid, fd_max);
++
++	for (i = 93; i < 100; i++) {
++		ret = fcntl(open_fds[i], F_GETFL);
++		if (ret >= 0)
++			ksft_exit_fail_msg(
++				"%s test: Failed to close range of file descriptors from 51 to 100\n",
++				test_name);
++	}
++	ksft_test_result_pass("fcntl() verify closed range from %d to %d\n", fd_mid, fd_max);
++
++	ret = sys_close_range(open_fds[100], open_fds[100], 0);
++	if (ret < 0)
++		ksft_exit_fail_msg(
++			"%s test: Failed to close single file descriptor\n",
++			test_name);
++	ksft_test_result_pass("close_range() closed single file descriptor\n");
++
++	ret = fcntl(open_fds[100], F_GETFL);
++	if (ret >= 0)
++		ksft_exit_fail_msg(
++			"%s test: Failed to close single file descriptor\n",
++			test_name);
++	ksft_test_result_pass("fcntl() verify closed single file descriptor\n");
++
++	return ksft_exit_pass();
++}
+-- 
+2.21.0
