@@ -1,46 +1,47 @@
 From: David Hildenbrand <david@redhat.com>
-Date: Thu, 09 May 2019 07:05:23 +0000
-Subject: Re: [PATCH v2 5/8] mm/memory_hotplug: Drop MHP_MEMBLOCK_API
-Message-Id: <f7fac4cc-468e-0787-a364-760e68f6b1c2@redhat.com>
+Date: Mon, 27 May 2019 11:11:43 +0000
+Subject: [PATCH v3 02/11] s390x/mm: Fail when an altmap is used for arch_add_memory()
+Message-Id: <20190527111152.16324-3-david@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190507183804.5512-1-david@redhat.com>
- <20190507183804.5512-6-david@redhat.com>
- <CAPcyv4ge1pSOopfHof4USn=7Skc-UV4Xhd_s=h+M9VXSp_p1XQ@mail.gmail.com>
- <d83fec16-ceff-2f6f-72e1-48996187d5ba@redhat.com>
- <CAPcyv4iRQteuT9yESvbUyhp3KVVgTXDiGAo+TwPCM_4f0CzBgg@mail.gmail.com>
- <edd762a1-c012-fe05-a72e-2505cd98188a@redhat.com>
- <1557356938.3028.35.camel@suse.com>
-In-Reply-To: <1557356938.3028.35.camel@suse.com>
+References: <20190527111152.16324-1-david@redhat.com>
+In-Reply-To: <20190527111152.16324-1-david@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: osalvador <osalvador@suse.com>, Dan Williams <dan.j.williams@intel.com>
-Cc: Linux MM <linux-mm@kvack.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, linux-ia64@vger.kernel.org, linuxppc-dev <linuxppc-dev@lists.ozlabs.org>, linux-s390 <linux-s390@vger.kernel.org>, Linux-sh <linux-sh@vger.kernel.org>, Andrew Morton <akpm@linux-foundation.org>, Michal Hocko <mhocko@suse.com>, Pavel Tatashin <pasha.tatashin@soleen.com>, Wei Yang <richard.weiyang@gmail.com>, Joonsoo Kim <iamjoonsoo.kim@lge.com>, Qian Cai <cai@lca.pw>, Arun KS <arunks@codeaurora.org>, Mathieu Malaterre <malat@debian.org>
+To: linux-mm@kvack.org
+Cc: Oscar Salvador <osalvador@suse.com>, linux-s390@vger.kernel.org, Michal Hocko <mhocko@suse.com>, linux-ia64@vger.kernel.org, Vasily Gorbik <gor@linux.ibm.com>, linux-sh@vger.kernel.org, David Hildenbrand <david@redhat.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, linux-kernel@vger.kernel.org, Wei Yang <richard.weiyang@gmail.com>, Mike Rapoport <rppt@linux.vnet.ibm.com>, Martin Schwidefsky <schwidefsky@de.ibm.com>, Igor Mammedov <imammedo@redhat.com>, akpm@linux-foundation.org, linuxppc-dev@lists.ozlabs.org, Dan Williams <dan.j.williams@intel.com>, linux-arm-kernel@lists.infradead.org
 
-On 09.05.19 01:08, osalvador wrote:
-> On Wed, 2019-05-08 at 09:39 +0200, David Hildenbrand wrote:
->> However I haven't really thought it through yet, smalles like that
->> could
->> as well just be handled by the caller of
->> arch_add_memory()/arch_remove_memory() eventually, passing it via
->> something like the altmap parameter.
->>
->> Let's leave it in place for now, we can talk about that once we have
->> new
->> patches from Oscar.
-> Hi David,
-> 
-> I plan to send a new patchset once this is and Dan's are merged,
-> otherwise I will have a mayhem with the conflicts.
-> 
-> I also plan/want to review this patchset, but time is tight this week.
-> 
+ZONE_DEVICE is not yet supported, fail if an altmap is passed, so we
+don't forget arch_add_memory()/arch_remove_memory() when unlocking
+support.
 
-Sure, take your time. I'll resend this patch set most probably tomorrow
-or early next week. Cheers!
+Cc: Martin Schwidefsky <schwidefsky@de.ibm.com>
+Cc: Heiko Carstens <heiko.carstens@de.ibm.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>
+Cc: Michal Hocko <mhocko@suse.com>
+Cc: Mike Rapoport <rppt@linux.vnet.ibm.com>
+Cc: David Hildenbrand <david@redhat.com>
+Cc: Vasily Gorbik <gor@linux.ibm.com>
+Cc: Oscar Salvador <osalvador@suse.com>
+Suggested-by: Dan Williams <dan.j.williams@intel.com>
+Signed-off-by: David Hildenbrand <david@redhat.com>
+---
+ arch/s390/mm/init.c | 3 +++
+ 1 file changed, 3 insertions(+)
 
+diff --git a/arch/s390/mm/init.c b/arch/s390/mm/init.c
+index 14d1eae9fe43..d552e330fbcc 100644
+--- a/arch/s390/mm/init.c
++++ b/arch/s390/mm/init.c
+@@ -226,6 +226,9 @@ int arch_add_memory(int nid, u64 start, u64 size,
+ 	unsigned long size_pages = PFN_DOWN(size);
+ 	int rc;
+ 
++	if (WARN_ON_ONCE(restrictions->altmap))
++		return -EINVAL;
++
+ 	rc = vmem_add_mapping(start, size);
+ 	if (rc)
+ 		return rc;
 -- 
-
-Thanks,
-
-David / dhildenb
+2.20.1
