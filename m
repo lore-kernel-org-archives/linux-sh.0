@@ -1,69 +1,115 @@
-From: Yoshinori Sato <ysato@users.sourceforge.jp>
-Date: Sun, 12 May 2019 04:31:37 +0000
-Subject: Re: [PATCH v2] sh: vsyscall: drop unnecessary cc-ldoption
-Message-Id: <87sgtkqonq.wl-ysato@users.sourceforge.jp>
+From: David Hildenbrand <david@redhat.com>
+Date: Mon, 27 May 2019 11:11:51 +0000
+Subject: [PATCH v3 10/11] mm/memory_hotplug: Make unregister_memory_block_under_nodes() never fail
+Message-Id: <20190527111152.16324-11-david@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <CAK7LNASLBQ=w9YFBD80s7dit1bd_Tr+ggVyRNms0jf1pR9k=ZA@mail.gmail.com>
-        <20190424180223.253025-1-ndesaulniers@google.com>
-        <CAKwvOd=5SVBFsfEgYc9Dpgr--h+pQgCwOnpAjg9B4HG2VY6kFg@mail.gmail.com>
-        <CAKwvOdkpjwgt3pP9rjZtm=rEK9MhEfQdc6PEr91Bnb9tMVDBEA@mail.gmail.com>
-        <CAK7LNASL+oNNbZ4YaPtGnwka06sRr3Pz8HjjM7oxUC-JkvqF2Q@mail.gmail.com>
-        <fc61a1c2-5503-b18d-e178-491952e059f6@physik.fu-berlin.de>
-        <CAK7LNATEizpakgj_UT4-OyUy8cs7C_kz8wEWDJAdoftfVK=uKw@mail.gmail.com>
-        <fd075ea4-5fc9-a015-e4ae-180451f9bea0@physik.fu-berlin.de>
-In-Reply-To: <fd075ea4-5fc9-a015-e4ae-180451f9bea0@physik.fu-berlin.de>
+References: <20190527111152.16324-1-david@redhat.com>
+In-Reply-To: <20190527111152.16324-1-david@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc: Masahiro Yamada <yamada.masahiro@socionext.com>, Nick Desaulniers <ndesaulniers@google.com>, Rich Felker <dalias@libc.org>, Geert Uytterhoeven <geert@linux-m68k.org>, Andy Lutomirski <luto@kernel.org>, clang-built-linux <clang-built-linux@googlegroups.com>, Linux-sh list <linux-sh@vger.kernel.org>, LKML <linux-kernel@vger.kernel.org>
+To: linux-mm@kvack.org
+Cc: linux-s390@vger.kernel.org, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Mark Brown <broonie@kernel.org>, David Hildenbrand <david@redhat.com>, linux-kernel@vger.kernel.org, Wei Yang <richard.weiyang@gmail.com>, Alex Deucher <alexander.deucher@amd.com>, "David S. Miller" <davem@davemloft.net>, Jonathan Cameron <Jonathan.Cameron@huawei.com>, "Rafael J. Wysocki" <rafael@kernel.org>, Igor Mammedov <imammedo@redhat.com>, akpm@linux-foundation.org, Chris Wilson <chris@chris-wilson.co.uk>, linuxppc-dev@lists.ozlabs.org, Dan Williams <dan.j.williams@intel.com>, linux-arm-kernel@lists.infradead.org, Oscar Salvador <osalvador@suse.de>
 
-On Thu, 09 May 2019 17:44:45 +0900,
-John Paul Adrian Glaubitz wrote:
-> 
-> Hi Masahiro!
-> 
-> On 5/9/19 9:07 AM, Masahiro Yamada wrote:
-> >> So, if in doubt, there are folks in Debian which can test your kernel patch
-> >> if you fear that it breaks something.
-> > 
-> > Thanks for taking care of them in Debian.
-> > 
-> > I am talking about the sh sub-system in the kernel here.
-> 
-> Yes, I'm aware of that :).
-> 
-> > SH patches occasionally fly around in LKML, but
-> > the SH maintainers are not picking up them these days.
-> 
-> Rich was normally the one maintaining the SH tree and collecting the patches,
-> not sure whether he is still active. It's been a while since he sent Linus
-> a pull request.
-> 
-> Sato-san was recently a patch himself, but I think he doesn't have a tree
-> himself.
-> 
-> @Sato: Could you have a look at the patch and ack it if it's okay?
+We really don't want anything during memory hotunplug to fail.
+We always pass a valid memory block device, that check can go. Avoid
+allocating memory and eventually failing. As we are always called under
+lock, we can use a static piece of memory. This avoids having to put
+the structure onto the stack, having to guess about the stack size
+of callers.
 
-I sent ack now.
-Sorry too late reply.
+Patch inspired by a patch from Oscar Salvador.
 
-> > This one is trivial from the build system point of view.
-> > So, I offer to apply it to my tree.
-> 
-> I'm fine with that. If you need to test build the kernel for SH, Debian
-> has an easily installable cross-compiler for SH and every other architecture
-> except ia64 (working on fixing that) available.
-> 
-> In any case, thanks for taking care of SH in this case.
-> 
-> Adrian
-> 
-> -- 
->  .''`.  John Paul Adrian Glaubitz
-> : :' :  Debian Developer - glaubitz@debian.org
-> `. `'   Freie Universitaet Berlin - glaubitz@physik.fu-berlin.de
->   `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+In the future, there might be no need to iterate over nodes at all.
+mem->nid should tell us exactly what to remove. Memory block devices
+with mixed nodes (added during boot) should properly fenced off and never
+removed.
 
+Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Cc: "Rafael J. Wysocki" <rafael@kernel.org>
+Cc: Alex Deucher <alexander.deucher@amd.com>
+Cc: "David S. Miller" <davem@davemloft.net>
+Cc: Mark Brown <broonie@kernel.org>
+Cc: Chris Wilson <chris@chris-wilson.co.uk>
+Cc: David Hildenbrand <david@redhat.com>
+Cc: Oscar Salvador <osalvador@suse.de>
+Cc: Andrew Morton <akpm@linux-foundation.org>
+Cc: Jonathan Cameron <Jonathan.Cameron@huawei.com>
+Signed-off-by: David Hildenbrand <david@redhat.com>
+---
+ drivers/base/node.c  | 18 +++++-------------
+ include/linux/node.h |  5 ++---
+ 2 files changed, 7 insertions(+), 16 deletions(-)
+
+diff --git a/drivers/base/node.c b/drivers/base/node.c
+index 04fdfa99b8bc..9be88fd05147 100644
+--- a/drivers/base/node.c
++++ b/drivers/base/node.c
+@@ -803,20 +803,14 @@ int register_mem_sect_under_node(struct memory_block *mem_blk, void *arg)
+ 
+ /*
+  * Unregister memory block device under all nodes that it spans.
++ * Has to be called with mem_sysfs_mutex held (due to unlinked_nodes).
+  */
+-int unregister_memory_block_under_nodes(struct memory_block *mem_blk)
++void unregister_memory_block_under_nodes(struct memory_block *mem_blk)
+ {
+-	NODEMASK_ALLOC(nodemask_t, unlinked_nodes, GFP_KERNEL);
+ 	unsigned long pfn, sect_start_pfn, sect_end_pfn;
++	static nodemask_t unlinked_nodes;
+ 
+-	if (!mem_blk) {
+-		NODEMASK_FREE(unlinked_nodes);
+-		return -EFAULT;
+-	}
+-	if (!unlinked_nodes)
+-		return -ENOMEM;
+-	nodes_clear(*unlinked_nodes);
+-
++	nodes_clear(unlinked_nodes);
+ 	sect_start_pfn = section_nr_to_pfn(mem_blk->start_section_nr);
+ 	sect_end_pfn = section_nr_to_pfn(mem_blk->end_section_nr);
+ 	for (pfn = sect_start_pfn; pfn <= sect_end_pfn; pfn++) {
+@@ -827,15 +821,13 @@ int unregister_memory_block_under_nodes(struct memory_block *mem_blk)
+ 			continue;
+ 		if (!node_online(nid))
+ 			continue;
+-		if (node_test_and_set(nid, *unlinked_nodes))
++		if (node_test_and_set(nid, unlinked_nodes))
+ 			continue;
+ 		sysfs_remove_link(&node_devices[nid]->dev.kobj,
+ 			 kobject_name(&mem_blk->dev.kobj));
+ 		sysfs_remove_link(&mem_blk->dev.kobj,
+ 			 kobject_name(&node_devices[nid]->dev.kobj));
+ 	}
+-	NODEMASK_FREE(unlinked_nodes);
+-	return 0;
+ }
+ 
+ int link_mem_sections(int nid, unsigned long start_pfn, unsigned long end_pfn)
+diff --git a/include/linux/node.h b/include/linux/node.h
+index 02a29e71b175..548c226966a2 100644
+--- a/include/linux/node.h
++++ b/include/linux/node.h
+@@ -139,7 +139,7 @@ extern int register_cpu_under_node(unsigned int cpu, unsigned int nid);
+ extern int unregister_cpu_under_node(unsigned int cpu, unsigned int nid);
+ extern int register_mem_sect_under_node(struct memory_block *mem_blk,
+ 						void *arg);
+-extern int unregister_memory_block_under_nodes(struct memory_block *mem_blk);
++extern void unregister_memory_block_under_nodes(struct memory_block *mem_blk);
+ 
+ extern int register_memory_node_under_compute_node(unsigned int mem_nid,
+ 						   unsigned int cpu_nid,
+@@ -175,9 +175,8 @@ static inline int register_mem_sect_under_node(struct memory_block *mem_blk,
+ {
+ 	return 0;
+ }
+-static inline int unregister_memory_block_under_nodes(struct memory_block *mem_blk)
++static inline void unregister_memory_block_under_nodes(struct memory_block *mem_blk)
+ {
+-	return 0;
+ }
+ 
+ static inline void register_hugetlbfs_with_node(node_registration_func_t reg,
 -- 
-Yosinori Sato
+2.20.1
