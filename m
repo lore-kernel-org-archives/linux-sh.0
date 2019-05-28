@@ -1,26 +1,50 @@
-From: Christoph Hellwig <hch@infradead.org>
-Date: Thu, 02 May 2019 23:15:42 +0000
-Subject: Re: Linux 5.1-rc5
-Message-Id: <20190502231542.GA9336@infradead.org>
+From: Valentin Schneider <valentin.schneider@arm.com>
+Date: Tue, 28 May 2019 10:48:48 +0000
+Subject: [PATCH RESEND 7/7] sh64: entry: Remove unneeded need_resched() loop
+Message-Id: <20190528104848.13160-8-valentin.schneider@arm.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <CAHk-=wjvcuyCQGnfOhooaL1H4H63qXO=xgo+9yncSOG=eK+kbA@mail.gmail.com>
- <20190415051919.GA31481@infradead.org>
- <CAHk-=wj7jgMOVFW0tiU-X+zhg6+Rn7mEBTej+f26rV3zXezOSA@mail.gmail.com>
-In-Reply-To: <CAHk-=wj7jgMOVFW0tiU-X+zhg6+Rn7mEBTej+f26rV3zXezOSA@mail.gmail.com>
+References: <20190528104848.13160-1-valentin.schneider@arm.com>
+In-Reply-To: <20190528104848.13160-1-valentin.schneider@arm.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: Christoph Hellwig <hch@infradead.org>, Linux List Kernel Mailing <linux-kernel@vger.kernel.org>, Michael Ellerman <mpe@ellerman.id.au>, linuxppc-dev@lists.ozlabs.org, Martin Schwidefsky <schwidefsky@de.ibm.com>, linux-s390 <linux-s390@vger.kernel.org>, Hillf Danton <dhillf@gmail.com>, Paul Burton <paul.burton@mips.com>, James Hogan <jhogan@kernel.org>, linux-mips@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>, Stas Sergeev <stsp@list.ru>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, "David S. Miller" <davem@davemloft.net>, Khalid Aziz <khalid.aziz@oracle.com>, Nitin Gupta <nitin.m.gupta@oracle.com>, sparclinux@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
 
-On Mon, Apr 15, 2019 at 09:17:10AM -0700, Linus Torvalds wrote:
-> I ruthlessly also entirely ignored MIPS, SH and sparc, since they seem
-> largely irrelevant, partly since even theoretically this whole issue
-> needs a _lot_ of memory.
+Since the enabling and disabling of IRQs within preempt_schedule_irq()
+is contained in a need_resched() loop, we don't need the outer arch
+code loop.
 
-Adding the relevant people - while the might be irrelevant, at least
-mips and sparc have some giant memory systems.  And I'd really like
-to see the arch-specific GUP implementations to go away for other
-reasons, as we have a few issues to sort out with GUP usage now
-(we just had discussions at LSF/MM), and the less implementations we
-have to deal with the better.
+Signed-off-by: Valentin Schneider <valentin.schneider@arm.com>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+Cc: linux-sh@vger.kernel.org
+---
+ arch/sh/kernel/cpu/sh5/entry.S | 5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
+
+diff --git a/arch/sh/kernel/cpu/sh5/entry.S b/arch/sh/kernel/cpu/sh5/entry.S
+index de68ffdfffbf..40e6d9a7a6a2 100644
+--- a/arch/sh/kernel/cpu/sh5/entry.S
++++ b/arch/sh/kernel/cpu/sh5/entry.S
+@@ -897,7 +897,6 @@ resume_kernel:
+ 	ld.l	r6, TI_PRE_COUNT, r7
+ 	beq/u	r7, ZERO, tr0
+ 
+-need_resched:
+ 	ld.l	r6, TI_FLAGS, r7
+ 	movi	(1 << TIF_NEED_RESCHED), r8
+ 	and	r8, r7, r8
+@@ -911,9 +910,7 @@ need_resched:
+ 	ori	r7, 1, r7
+ 	ptabs	r7, tr1
+ 	blink	tr1, LINK
+-
+-	pta	need_resched, tr1
+-	blink	tr1, ZERO
++	blink   tr0, ZERO
+ #endif
+ 
+ 	.global ret_from_syscall
+-- 
+2.20.1
