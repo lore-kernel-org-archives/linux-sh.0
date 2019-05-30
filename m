@@ -1,50 +1,33 @@
-From: Valentin Schneider <valentin.schneider@arm.com>
-Date: Tue, 28 May 2019 10:48:48 +0000
-Subject: [PATCH RESEND 7/7] sh64: entry: Remove unneeded need_resched() loop
-Message-Id: <20190528104848.13160-8-valentin.schneider@arm.com>
+From: Kefeng Wang <wangkefeng.wang@huawei.com>
+Date: Thu, 30 May 2019 02:10:32 +0000
+Subject: [PATCH] sh: configs: remove CONFIG_LOGFS from defconfig
+Message-Id: <20190530021032.190639-1-wangkefeng.wang@huawei.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190528104848.13160-1-valentin.schneider@arm.com>
-In-Reply-To: <20190528104848.13160-1-valentin.schneider@arm.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
+Cc: Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, Kefeng Wang <wangkefeng.wang@huawei.com>
 
-Since the enabling and disabling of IRQs within preempt_schedule_irq()
-is contained in a need_resched() loop, we don't need the outer arch
-code loop.
+After commit 1d0fd57a50aa ("logfs: remove from tree"),
+logfs was removed, drop CONFIG_LOGFS from all defconfigs.
 
-Signed-off-by: Valentin Schneider <valentin.schneider@arm.com>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: Rich Felker <dalias@libc.org>
-Cc: linux-sh@vger.kernel.org
+Signed-off-by: Kefeng Wang <wangkefeng.wang@huawei.com>
 ---
- arch/sh/kernel/cpu/sh5/entry.S | 5 +----
- 1 file changed, 1 insertion(+), 4 deletions(-)
+ arch/sh/configs/sdk7786_defconfig | 1 -
+ 1 file changed, 1 deletion(-)
 
-diff --git a/arch/sh/kernel/cpu/sh5/entry.S b/arch/sh/kernel/cpu/sh5/entry.S
-index de68ffdfffbf..40e6d9a7a6a2 100644
---- a/arch/sh/kernel/cpu/sh5/entry.S
-+++ b/arch/sh/kernel/cpu/sh5/entry.S
-@@ -897,7 +897,6 @@ resume_kernel:
- 	ld.l	r6, TI_PRE_COUNT, r7
- 	beq/u	r7, ZERO, tr0
- 
--need_resched:
- 	ld.l	r6, TI_FLAGS, r7
- 	movi	(1 << TIF_NEED_RESCHED), r8
- 	and	r8, r7, r8
-@@ -911,9 +910,7 @@ need_resched:
- 	ori	r7, 1, r7
- 	ptabs	r7, tr1
- 	blink	tr1, LINK
--
--	pta	need_resched, tr1
--	blink	tr1, ZERO
-+	blink   tr0, ZERO
- #endif
- 
- 	.global ret_from_syscall
+diff --git a/arch/sh/configs/sdk7786_defconfig b/arch/sh/configs/sdk7786_defconfig
+index 5209889765ad..49a29338789b 100644
+--- a/arch/sh/configs/sdk7786_defconfig
++++ b/arch/sh/configs/sdk7786_defconfig
+@@ -191,7 +191,6 @@ CONFIG_CONFIGFS_FS=y
+ CONFIG_JFFS2_FS=m
+ CONFIG_JFFS2_FS_XATTR=y
+ CONFIG_UBIFS_FS=m
+-CONFIG_LOGFS=m
+ CONFIG_CRAMFS=m
+ CONFIG_SQUASHFS=m
+ CONFIG_ROMFS_FS=m
 -- 
 2.20.1
