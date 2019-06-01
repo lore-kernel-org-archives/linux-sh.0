@@ -1,129 +1,45 @@
 From: Christoph Hellwig <hch@lst.de>
-Date: Thu, 13 Jun 2019 07:08:48 +0000
-Subject: [PATCH 02/17] binfmt_flat: remove flat_set_persistent
-Message-Id: <20190613070903.17214-3-hch@lst.de>
+Date: Sat, 01 Jun 2019 07:49:45 +0000
+Subject: [PATCH 02/16] mm: use untagged_addr() for get_user_pages_fast addresses
+Message-Id: <20190601074959.14036-3-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190613070903.17214-1-hch@lst.de>
-In-Reply-To: <20190613070903.17214-1-hch@lst.de>
+References: <20190601074959.14036-1-hch@lst.de>
+In-Reply-To: <20190601074959.14036-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Ungerer <gerg@linux-m68k.org>
-Cc: uclinux-h8-devel@lists.sourceforge.jp, linux-xtensa@linux-xtensa.org, Michal Simek <monstr@monstr.eu>, Vladimir Murzin <vladimir.murzin@arm.com>, linux-c6x-dev@linux-c6x.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-riscv@lists.infradead.org, linux-arm-kernel@lists.infradead.org
+To: Linus Torvalds <torvalds@linux-foundation.org>, Paul Burton <paul.burton@mips.com>, James Hogan <jhogan@kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, "David S. Miller" <davem@davemloft.net>
+Cc: Nicholas Piggin <npiggin@gmail.com>, Khalid Aziz <khalid.aziz@oracle.com>, Andrey Konovalov <andreyknvl@google.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Michael Ellerman <mpe@ellerman.id.au>, linux-mips@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-mm@kvack.org, x86@kernel.org, linux-kernel@vger.kernel.org
 
-This helper is a no-op on all architectures, remove it.
+This will allow sparc64 to override its ADI tags for
+get_user_pages and get_user_pages_fast.
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
-Tested-by: Vladimir Murzin <vladimir.murzin@arm.com>
-Reviewed-by: Vladimir Murzin <vladimir.murzin@arm.com>
 ---
- arch/arm/include/asm/flat.h        | 1 -
- arch/c6x/include/asm/flat.h        | 1 -
- arch/h8300/include/asm/flat.h      | 1 -
- arch/m68k/include/asm/flat.h       | 5 -----
- arch/microblaze/include/asm/flat.h | 1 -
- arch/sh/include/asm/flat.h         | 1 -
- arch/xtensa/include/asm/flat.h     | 1 -
- fs/binfmt_flat.c                   | 2 --
- 8 files changed, 13 deletions(-)
+ mm/gup.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/include/asm/flat.h b/arch/arm/include/asm/flat.h
-index 10cce9ecf151..576241d74704 100644
---- a/arch/arm/include/asm/flat.h
-+++ b/arch/arm/include/asm/flat.h
-@@ -31,6 +31,5 @@ static inline int flat_put_addr_at_rp(u32 __user *rp, u32 addr, u32 rel)
- }
+diff --git a/mm/gup.c b/mm/gup.c
+index f173fcbaf1b2..9775f7675653 100644
+--- a/mm/gup.c
++++ b/mm/gup.c
+@@ -2145,7 +2145,7 @@ int __get_user_pages_fast(unsigned long start, int nr_pages, int write,
+ 	unsigned long flags;
+ 	int nr = 0;
  
- #define	flat_get_relocate_addr(rel)		(rel)
--#define	flat_set_persistent(relval, p)		0
+-	start &= PAGE_MASK;
++	start = untagged_addr(start) & PAGE_MASK;
+ 	len = (unsigned long) nr_pages << PAGE_SHIFT;
+ 	end = start + len;
  
- #endif /* __ARM_FLAT_H__ */
-diff --git a/arch/c6x/include/asm/flat.h b/arch/c6x/include/asm/flat.h
-index ecc6aea6606c..ac87368efad1 100644
---- a/arch/c6x/include/asm/flat.h
-+++ b/arch/c6x/include/asm/flat.h
-@@ -18,6 +18,5 @@ static inline int flat_put_addr_at_rp(u32 __user *rp, u32 addr, u32 rel)
- 	return 0;
- }
- #define flat_get_relocate_addr(rel)			(rel)
--#define flat_set_persistent(relval, p)			0
+@@ -2218,7 +2218,7 @@ int get_user_pages_fast(unsigned long start, int nr_pages,
+ 	unsigned long addr, len, end;
+ 	int nr = 0, ret = 0;
  
- #endif /* __ASM_C6X_FLAT_H */
-diff --git a/arch/h8300/include/asm/flat.h b/arch/h8300/include/asm/flat.h
-index dcc7775115dd..7ef7eefded3d 100644
---- a/arch/h8300/include/asm/flat.h
-+++ b/arch/h8300/include/asm/flat.h
-@@ -10,7 +10,6 @@
- 
- #define	flat_argvp_envp_on_stack()		1
- #define	flat_old_ram_flag(flags)		1
--#define	flat_set_persistent(relval, p)		0
- 
- /*
-  * on the H8 a couple of the relocations have an instruction in the
-diff --git a/arch/m68k/include/asm/flat.h b/arch/m68k/include/asm/flat.h
-index a631caf5e18f..955617bb937b 100644
---- a/arch/m68k/include/asm/flat.h
-+++ b/arch/m68k/include/asm/flat.h
-@@ -30,11 +30,6 @@ static inline int flat_put_addr_at_rp(u32 __user *rp, u32 addr, u32 rel)
- }
- #define	flat_get_relocate_addr(rel)		(rel)
- 
--static inline int flat_set_persistent(u32 relval, u32 *persistent)
--{
--	return 0;
--}
--
- #define FLAT_PLAT_INIT(regs) \
- 	do { \
- 		if (current->mm) \
-diff --git a/arch/microblaze/include/asm/flat.h b/arch/microblaze/include/asm/flat.h
-index 34be5ed011be..846084fa7f04 100644
---- a/arch/microblaze/include/asm/flat.h
-+++ b/arch/microblaze/include/asm/flat.h
-@@ -15,7 +15,6 @@
- 
- #define	flat_argvp_envp_on_stack()	0
- #define	flat_old_ram_flag(flags)	(flags)
--#define	flat_set_persistent(relval, p)		0
- 
- /*
-  * Microblaze works a little differently from other arches, because
-diff --git a/arch/sh/include/asm/flat.h b/arch/sh/include/asm/flat.h
-index 8f2929b32f2e..6f3b18679a98 100644
---- a/arch/sh/include/asm/flat.h
-+++ b/arch/sh/include/asm/flat.h
-@@ -25,7 +25,6 @@ static inline int flat_put_addr_at_rp(u32 __user *rp, u32 addr, u32 rel)
- 	return 0;
- }
- #define	flat_get_relocate_addr(rel)		(rel)
--#define	flat_set_persistent(relval, p)		({ (void)p; 0; })
- 
- #define FLAT_PLAT_INIT(_r) \
-   do { _r->regs[0]=0; _r->regs[1]=0; _r->regs[2]=0; _r->regs[3]=0; \
-diff --git a/arch/xtensa/include/asm/flat.h b/arch/xtensa/include/asm/flat.h
-index 6ee5a35eb0ec..b1bc0d9a8d4e 100644
---- a/arch/xtensa/include/asm/flat.h
-+++ b/arch/xtensa/include/asm/flat.h
-@@ -18,6 +18,5 @@ static inline int flat_put_addr_at_rp(u32 __user *rp, u32 addr, u32 rel)
- 	return 0;
- }
- #define flat_get_relocate_addr(rel)			(rel)
--#define flat_set_persistent(relval, p)			0
- 
- #endif /* __ASM_XTENSA_FLAT_H */
-diff --git a/fs/binfmt_flat.c b/fs/binfmt_flat.c
-index afddea583999..a4c0b245ab1f 100644
---- a/fs/binfmt_flat.c
-+++ b/fs/binfmt_flat.c
-@@ -787,8 +787,6 @@ static int load_flat_file(struct linux_binprm *bprm,
- 			if (get_user(relval, reloc + i))
- 				return -EFAULT;
- 			relval = ntohl(relval);
--			if (flat_set_persistent(relval, &persistent))
--				continue;
- 			addr = flat_get_relocate_addr(relval);
- 			rp = (u32 __user *)calc_reloc(addr, libinfo, id, 1);
- 			if (rp = (u32 __user *)RELOC_FAILED) {
+-	start &= PAGE_MASK;
++	start = untagged_addr(start) & PAGE_MASK;
+ 	addr = start;
+ 	len = (unsigned long) nr_pages << PAGE_SHIFT;
+ 	end = start + len;
 -- 
 2.20.1
