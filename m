@@ -1,42 +1,46 @@
-From: Anshuman Khandual <anshuman.khandual@arm.com>
-Date: Thu, 06 Jun 2019 02:52:28 +0000
-Subject: Re: [RFC V2] mm: Generalize notify_page_fault()
-Message-Id: <bc89341a-a2b6-bd34-d342-b46f6e902a7c@arm.com>
+From: Christoph Hellwig <hch@lst.de>
+Date: Sat, 01 Jun 2019 07:49:44 +0000
+Subject: [PATCH 01/16] uaccess: add untagged_addr definition for other arches
+Message-Id: <20190601074959.14036-2-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1559630046-12940-1-git-send-email-anshuman.khandual@arm.com>
- <87sgsomg91.fsf@concordia.ellerman.id.au>
- <20190605112328.GB2025@bombadil.infradead.org>
-In-Reply-To: <20190605112328.GB2025@bombadil.infradead.org>
+References: <20190601074959.14036-1-hch@lst.de>
+In-Reply-To: <20190601074959.14036-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Matthew Wilcox <willy@infradead.org>, Michael Ellerman <mpe@ellerman.id.au>
-Cc: Mark Rutland <mark.rutland@arm.com>, Michal Hocko <mhocko@suse.com>, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, Catalin Marinas <catalin.marinas@arm.com>, Dave Hansen <dave.hansen@linux.intel.com>, Will Deacon <will.deacon@arm.com>, linux-mm@kvack.org, Paul Mackerras <paulus@samba.org>, sparclinux@vger.kernel.org, linux-s390@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, x86@kernel.org, Russell King <linux@armlinux.org.uk>, Ingo Molnar <mingo@redhat.com>, Fenghua Yu <fenghua.yu@intel.com>, Stephen Rothwell <sfr@canb.auug.org.au>, Andrey Konovalov <andreyknvl@google.com>, Andy Lutomirski <luto@kernel.org>, Thomas Gleixner <tglx@linutronix.de>, linux-arm-kernel@lists.infradead.org, Christophe Leroy <christophe.leroy@c-s.fr>, Tony Luck <tony.luck@intel.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, linux-kernel@vger.kernel.org, Martin Schwidefsky <schwidefsky@de.ibm.com>, Andrew Morton <akpm@linux-foundation.org>, linuxppc-dev@lists.ozlabs.org, "David S. Miller" <davem@davemloft.net>
+To: Linus Torvalds <torvalds@linux-foundation.org>, Paul Burton <paul.burton@mips.com>, James Hogan <jhogan@kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, "David S. Miller" <davem@davemloft.net>
+Cc: Nicholas Piggin <npiggin@gmail.com>, Khalid Aziz <khalid.aziz@oracle.com>, Andrey Konovalov <andreyknvl@google.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Michael Ellerman <mpe@ellerman.id.au>, linux-mips@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-mm@kvack.org, x86@kernel.org, linux-kernel@vger.kernel.org, Catalin Marinas <catalin.marinas@arm.com>
 
+From: Andrey Konovalov <andreyknvl@google.com>
 
+To allow arm64 syscalls to accept tagged pointers from userspace, we must
+untag them when they are passed to the kernel. Since untagging is done in
+generic parts of the kernel, the untagged_addr macro needs to be defined
+for all architectures.
 
-On 06/05/2019 04:53 PM, Matthew Wilcox wrote:
-> On Wed, Jun 05, 2019 at 09:19:22PM +1000, Michael Ellerman wrote:
->> Anshuman Khandual <anshuman.khandual@arm.com> writes:
->>> Similar notify_page_fault() definitions are being used by architectures
->>> duplicating much of the same code. This attempts to unify them into a
->>> single implementation, generalize it and then move it to a common place.
->>> kprobes_built_in() can detect CONFIG_KPROBES, hence notify_page_fault()
->>> need not be wrapped again within CONFIG_KPROBES. Trap number argument can
->>> now contain upto an 'unsigned int' accommodating all possible platforms.
->> ...
->>
->> You've changed several of the architectures from something like above,
->> where it disables preemption around the call into the below:
->>
->>
->> Which skips everything if we're preemptible. Is that an equivalent
->> change? If so can you please explain why in more detail.
-> 
-> See the discussion in v1 of this patch, which you were cc'd on.
-> 
-> I agree the description here completely fails to mention why the change.
-> It should mention commit a980c0ef9f6d8c.
+Define it as a noop for architectures other than arm64.
 
-I will update the commit message to include an explanation for this new
-preempt behavior in the generic definition.
+Acked-by: Catalin Marinas <catalin.marinas@arm.com>
+Signed-off-by: Andrey Konovalov <andreyknvl@google.com>
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+---
+ include/linux/mm.h | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/include/linux/mm.h b/include/linux/mm.h
+index 0e8834ac32b7..949d43e9c0b6 100644
+--- a/include/linux/mm.h
++++ b/include/linux/mm.h
+@@ -99,6 +99,10 @@ extern int mmap_rnd_compat_bits __read_mostly;
+ #include <asm/pgtable.h>
+ #include <asm/processor.h>
+ 
++#ifndef untagged_addr
++#define untagged_addr(addr) (addr)
++#endif
++
+ #ifndef __pa_symbol
+ #define __pa_symbol(x)  __pa(RELOC_HIDE((unsigned long)(x), 0))
+ #endif
+-- 
+2.20.1
