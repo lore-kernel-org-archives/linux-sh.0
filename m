@@ -1,44 +1,39 @@
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Date: Wed, 26 Jun 2019 15:56:12 +0000
-Subject: Re: [RFC] remove arch/sh?
-Message-Id: <cf3c3583-2b6c-8c45-a37f-357aca8ee80c@physik.fu-berlin.de>
+From: Christoph Hellwig <hch@lst.de>
+Date: Sat, 01 Jun 2019 07:49:58 +0000
+Subject: [PATCH 15/16] mm: switch gup_hugepte to use try_get_compound_head
+Message-Id: <20190601074959.14036-16-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190625085616.GA32399@lst.de>
- <ccfa78f3-35c2-1d26-98b5-b21a76b90e1e@physik.fu-berlin.de>
- <20190625112146.GA9580@angband.pl>
- <401b12c0-d175-2720-d26c-b96ce3b28c71@physik.fu-berlin.de>
- <CAK8P3a3irwwwCQ_kPh5BTg-jGGbJOj=3fhVrTDBUZgH1V7bpFQ@mail.gmail.com>
- <20190625142832.GD1506@brightrain.aerifal.cx>
- <CAK8P3a0j_9fzZxhxqCMHfoJ5DdZpHFvANEPqs1pbP23TCei6ng@mail.gmail.com>
- <87tvccr3kv.wl-ysato@users.sourceforge.jp>
- <20190626153820.GP1506@brightrain.aerifal.cx>
-In-Reply-To: <20190626153820.GP1506@brightrain.aerifal.cx>
+References: <20190601074959.14036-1-hch@lst.de>
+In-Reply-To: <20190601074959.14036-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Rich Felker <dalias@libc.org>, Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: Arnd Bergmann <arnd@arndb.de>, Adam Borowski <kilobyte@angband.pl>, Christoph Hellwig <hch@lst.de>, Linus Torvalds <torvalds@linux-foundation.org>, Linux-sh list <linux-sh@vger.kernel.org>, linux-arch <linux-arch@vger.kernel.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
+To: Linus Torvalds <torvalds@linux-foundation.org>, Paul Burton <paul.burton@mips.com>, James Hogan <jhogan@kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, "David S. Miller" <davem@davemloft.net>
+Cc: Nicholas Piggin <npiggin@gmail.com>, Khalid Aziz <khalid.aziz@oracle.com>, Andrey Konovalov <andreyknvl@google.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Michael Ellerman <mpe@ellerman.id.au>, linux-mips@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-mm@kvack.org, x86@kernel.org, linux-kernel@vger.kernel.org
 
-On 6/26/19 5:38 PM, Rich Felker wrote:
->>> Maybe everything but J2 and SH4(a) can just get retired?
->>>
->>>      Arnd
->>
->> I also have some boards, so it's possible to rewrite more.
->> I can not rewrite the target I do not have, so I think that
->> there is nothing but to retire.
-> 
-> To clarify, are you agreeing with Arnd's suggestion to retire/remove
-> everything but jcore and sh4[a]?
+This applies the overflow fixes from 8fde12ca79aff
+("mm: prevent get_user_pages() from overflowing page refcount")
+to the powerpc hugepd code and brings it back in sync with the
+other GUP cases.
 
-I would keep J-Core, SH3 and SH4[a]. SH5 can go in any case since there
-is no hardware available and gcc has no longer support for the target
-either.
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+---
+ mm/gup.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-Adrian
-
+diff --git a/mm/gup.c b/mm/gup.c
+index e03c7e6b1422..6090044227f1 100644
+--- a/mm/gup.c
++++ b/mm/gup.c
+@@ -2006,7 +2006,8 @@ static int gup_hugepte(pte_t *ptep, unsigned long sz, unsigned long addr,
+ 		refs++;
+ 	} while (addr += PAGE_SIZE, addr != end);
+ 
+-	if (!page_cache_add_speculative(head, refs)) {
++	head = try_get_compound_head(head, refs);
++	if (!head) {
+ 		*nr -= refs;
+ 		return 0;
+ 	}
 -- 
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer - glaubitz@debian.org
-`. `'   Freie Universitaet Berlin - glaubitz@physik.fu-berlin.de
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+2.20.1
