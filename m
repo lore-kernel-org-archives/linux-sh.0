@@ -1,58 +1,47 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Mon, 10 Jun 2019 21:20:13 +0000
-Subject: [PATCH 13/15] binfmt_flat: move the MAX_SHARED_LIBS definition to binfmt_flat.c
-Message-Id: <20190610212015.9157-14-hch@lst.de>
+From: Krzysztof Kozlowski <krzk@kernel.org>
+Date: Mon, 03 Jun 2019 19:19:25 +0000
+Subject: [PATCH] sh: config: Remove left-over BACKLIGHT_LCD_SUPPORT
+Message-Id: <20190603191925.20659-1-krzk@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190610212015.9157-1-hch@lst.de>
-In-Reply-To: <20190610212015.9157-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Ungerer <gerg@linux-m68k.org>
-Cc: uclinux-h8-devel@lists.sourceforge.jp, linux-xtensa@linux-xtensa.org, Michal Simek <monstr@monstr.eu>, linux-c6x-dev@linux-c6x.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-riscv@lists.infradead.org, linux-arm-kernel@lists.infradead.org
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Krzysztof Kozlowski <krzk@kernel.org>, Andrew Morton <akpm@linux-foundation.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-MAX_SHARED_LIBS is an implementation detail of the kernel loader,
-and should be kept away from the file format definition.
+The CONFIG_BACKLIGHT_LCD_SUPPORT was removed in commit 8c5dc8d9f19c
+("video: backlight: Remove useless BACKLIGHT_LCD_SUPPORT kernel
+symbol"). Options protected by CONFIG_BACKLIGHT_LCD_SUPPORT are now
+available directly.
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
+Signed-off-by: Krzysztof Kozlowski <krzk@kernel.org>
 ---
- fs/binfmt_flat.c     | 6 ++++++
- include/linux/flat.h | 6 ------
- 2 files changed, 6 insertions(+), 6 deletions(-)
+ arch/sh/configs/hp6xx_defconfig  | 1 -
+ arch/sh/configs/sh2007_defconfig | 1 -
+ 2 files changed, 2 deletions(-)
 
-diff --git a/fs/binfmt_flat.c b/fs/binfmt_flat.c
-index 114ea225c5a5..2c7f32d5435f 100644
---- a/fs/binfmt_flat.c
-+++ b/fs/binfmt_flat.c
-@@ -68,6 +68,12 @@
- #define RELOC_FAILED 0xff00ff01		/* Relocation incorrect somewhere */
- #define UNLOADED_LIB 0x7ff000ff		/* Placeholder for unused library */
- 
-+#ifdef CONFIG_BINFMT_SHARED_FLAT
-+#define	MAX_SHARED_LIBS			(4)
-+#else
-+#define	MAX_SHARED_LIBS			(1)
-+#endif
-+
- struct lib_info {
- 	struct {
- 		unsigned long start_code;		/* Start of text segment */
-diff --git a/include/linux/flat.h b/include/linux/flat.h
-index 59e892d5fadb..a2232f1bd41b 100644
---- a/include/linux/flat.h
-+++ b/include/linux/flat.h
-@@ -12,12 +12,6 @@
- 
- #define	FLAT_VERSION			0x00000004L
- 
--#ifdef CONFIG_BINFMT_SHARED_FLAT
--#define	MAX_SHARED_LIBS			(4)
--#else
--#define	MAX_SHARED_LIBS			(1)
--#endif
--
- /*
-  * To make everything easier to port and manage cross platform
-  * development,  all fields are in network byte order.
+diff --git a/arch/sh/configs/hp6xx_defconfig b/arch/sh/configs/hp6xx_defconfig
+index 4dcf7f552582..91d43e2bffea 100644
+--- a/arch/sh/configs/hp6xx_defconfig
++++ b/arch/sh/configs/hp6xx_defconfig
+@@ -40,7 +40,6 @@ CONFIG_FB=y
+ CONFIG_FIRMWARE_EDID=y
+ CONFIG_FB_HIT=y
+ CONFIG_FB_SH_MOBILE_LCDC=y
+-CONFIG_BACKLIGHT_LCD_SUPPORT=y
+ CONFIG_FRAMEBUFFER_CONSOLE=y
+ CONFIG_FONTS=y
+ CONFIG_FONT_PEARL_8x8=y
+diff --git a/arch/sh/configs/sh2007_defconfig b/arch/sh/configs/sh2007_defconfig
+index a1cf6447dbb1..cbd6742eb423 100644
+--- a/arch/sh/configs/sh2007_defconfig
++++ b/arch/sh/configs/sh2007_defconfig
+@@ -85,7 +85,6 @@ CONFIG_WATCHDOG=y
+ CONFIG_SH_WDT=y
+ CONFIG_SSB=y
+ CONFIG_FB=y
+-CONFIG_BACKLIGHT_LCD_SUPPORT=y
+ # CONFIG_LCD_CLASS_DEVICE is not set
+ CONFIG_FRAMEBUFFER_CONSOLE=y
+ CONFIG_FRAMEBUFFER_CONSOLE_DETECT_PRIMARY=y
 -- 
-2.20.1
+2.17.1
