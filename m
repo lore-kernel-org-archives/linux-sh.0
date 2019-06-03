@@ -1,78 +1,89 @@
-From: Leonardo Bras <leonardo@linux.ibm.com>
-Date: Tue, 11 Jun 2019 17:31:12 +0000
-Subject: Re: [RFC V3] mm: Generalize and rename notify_page_fault() as kprobe_page_fault()
-Message-Id: <bec5983d50e37953b3962a6e53fca0a243c7158b.camel@linux.ibm.com>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="=-+TvBOjv046XEorglXBMQ"
+From: Wei Yang <richard.weiyang@gmail.com>
+Date: Mon, 03 Jun 2019 21:49:32 +0000
+Subject: Re: [PATCH v3 05/11] drivers/base/memory: Pass a block_id to init_memory_block()
+Message-Id: <20190603214932.3xsvxwiiutcve4tz@master>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1559903655-5609-1-git-send-email-anshuman.khandual@arm.com>
- <ec764ff4-f68a-fce5-ac1e-a4664e1123c7@c-s.fr>
- <97e9c9b3-89c8-d378-4730-841a900e6800@arm.com>
- <8dd6168592437378ff4a7c204e0f2962d002b44f.camel@linux.ibm.com>
- <7b0a7afd-2776-0d95-19c5-3e15959744eb@arm.com>
-In-Reply-To: <7b0a7afd-2776-0d95-19c5-3e15959744eb@arm.com>
-To: Anshuman Khandual <anshuman.khandual@arm.com>, Christophe Leroy <christophe.leroy@c-s.fr>, linux-kernel@vger.kernel.org, linux-mm@kvack.org
-Cc: Mark Rutland <mark.rutland@arm.com>, Michal Hocko <mhocko@suse.com>, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, Catalin Marinas <catalin.marinas@arm.com>, Dave Hansen <dave.hansen@linux.intel.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, Paul Mackerras <paulus@samba.org>, sparclinux@vger.kernel.org, linux-s390@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, x86@kernel.org, Russell King <linux@armlinux.org.uk>, Matthew Wilcox <willy@infradead.org>, Ingo Molnar <mingo@redhat.com>, Andrey Konovalov <andreyknvl@google.com>, Fenghua Yu <fenghua.yu@intel.com>, Stephen Rothwell <sfr@canb.auug.org.au>, Will Deacon <will.deacon@arm.com>, Andy Lutomirski <luto@kernel.org>, Thomas Gleixner <tglx@linutronix.de>, linux-arm-kernel@lists.infradead.org, Tony Luck <tony.luck@intel.com>, Martin Schwidefsky <schwidefsky@de.ibm.com>, Andrew Morton <akpm@linux-foundation.org>, linuxppc-dev@lists.ozlabs.org, "David S. Miller" <davem@davemloft.net>
-
-
---=-+TvBOjv046XEorglXBMQ
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-
-On Tue, 2019-06-11 at 10:44 +0530, Anshuman Khandual wrote:
->=20
-> On 06/10/2019 08:57 PM, Leonardo Bras wrote:
-> > On Mon, 2019-06-10 at 08:09 +0530, Anshuman Khandual wrote:
-> > > > > +    /*
-> > > > > +     * To be potentially processing a kprobe fault and to be all=
-owed
-> > > > > +     * to call kprobe_running(), we have to be non-preemptible.
-> > > > > +     */
-> > > > > +    if (kprobes_built_in() && !preemptible() && !user_mode(regs)=
-) {
-> > > > > +        if (kprobe_running() && kprobe_fault_handler(regs, trap)=
-)
-> > > >=20
-> > > > don't need an 'if A if B', can do 'if A && B'
-> > >=20
-> > > Which will make it a very lengthy condition check.
-> >=20
-> > Well, is there any problem line-breaking the if condition?
-> >=20
-> > if (A && B && C &&
-> >     D && E )
-> >=20
-> > Also, if it's used only to decide the return value, maybe would be fine
-> > to do somethink like that:
-> >=20
-> > return (A && B && C &&
-> >         D && E );=20
->=20
-> Got it. But as Dave and Matthew had pointed out earlier, the current x86
-> implementation has better readability. Hence will probably stick with it.
->=20
-Sure, I agree with them. It's way more readable.
-
---=-+TvBOjv046XEorglXBMQ
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part
+References: <20190527111152.16324-1-david@redhat.com>
+ <20190527111152.16324-6-david@redhat.com>
+In-Reply-To: <20190527111152.16324-6-david@redhat.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
+To: David Hildenbrand <david@redhat.com>
+Cc: linux-s390@vger.kernel.org, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, "Rafael J. Wysocki" <rafael@kernel.org>, linux-kernel@vger.kernel.org, Wei Yang <richard.weiyang@gmail.com>, linux-mm@kvack.org, Igor Mammedov <imammedo@redhat.com>, akpm@linux-foundation.org, linuxppc-dev@lists.ozlabs.org, Dan Williams <dan.j.williams@intel.com>, linux-arm-kernel@lists.infradead.org
 
------BEGIN PGP SIGNATURE-----
+On Mon, May 27, 2019 at 01:11:46PM +0200, David Hildenbrand wrote:
+>We'll rework hotplug_memory_register() shortly, so it no longer consumes
+>pass a section.
+>
+>Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+>Cc: "Rafael J. Wysocki" <rafael@kernel.org>
+>Signed-off-by: David Hildenbrand <david@redhat.com>
+>---
+> drivers/base/memory.c | 15 +++++++--------
+> 1 file changed, 7 insertions(+), 8 deletions(-)
+>
+>diff --git a/drivers/base/memory.c b/drivers/base/memory.c
+>index f180427e48f4..f914fa6fe350 100644
+>--- a/drivers/base/memory.c
+>+++ b/drivers/base/memory.c
+>@@ -651,21 +651,18 @@ int register_memory(struct memory_block *memory)
+> 	return ret;
+> }
+> 
+>-static int init_memory_block(struct memory_block **memory,
+>-			     struct mem_section *section, unsigned long state)
+>+static int init_memory_block(struct memory_block **memory, int block_id,
+>+			     unsigned long state)
+> {
+> 	struct memory_block *mem;
+> 	unsigned long start_pfn;
+>-	int scn_nr;
+> 	int ret = 0;
+> 
+> 	mem = kzalloc(sizeof(*mem), GFP_KERNEL);
+> 	if (!mem)
+> 		return -ENOMEM;
+> 
+>-	scn_nr = __section_nr(section);
+>-	mem->start_section_nr >-			base_memory_block_id(scn_nr) * sections_per_block;
+>+	mem->start_section_nr = block_id * sections_per_block;
+> 	mem->end_section_nr = mem->start_section_nr + sections_per_block - 1;
+> 	mem->state = state;
+> 	start_pfn = section_nr_to_pfn(mem->start_section_nr);
+>@@ -694,7 +691,8 @@ static int add_memory_block(int base_section_nr)
+> 
+> 	if (section_count = 0)
+> 		return 0;
+>-	ret = init_memory_block(&mem, __nr_to_section(section_nr), MEM_ONLINE);
+>+	ret = init_memory_block(&mem, base_memory_block_id(base_section_nr),
+>+				MEM_ONLINE);
 
-iQIzBAABCAAdFiEEMdeUgIzgjf6YmUyOlQYWtz9SttQFAlz/5WAACgkQlQYWtz9S
-ttSg4A/6A45T2BOxIm5qp+PJ+LwF0fbX0ZI762cE3X6nXDk5fJuRrjyQifBfrD0V
-IVWSUrnOXqarYOmPT3CxT33rW05vGtDWObX+OI6J/QW6qU7jSOD1Db1ZUHL0W3WL
-7B27RA3gNmEMugnjmM+JvtMkf5SwTdk3ZLr2IA22revoOBxOF5b8iICzA0HfaXg6
-8lFSegTY8C2nNQipkeSS4d3KiObNEA1TVJUFqhwJ/VA6qYMnOpKD6WR58QCOxFaF
-NIP4ln+HJccwleioGnQ+Q7jFGRD8Hb9zqLKNccpN1MfuZdE9OXcbFB5MXVuPyE/h
-JVYbITwMXbIxpZe8o6/Yoc875Tz1phA2GeprZlEF3FDbw/tH0tyb6U5o+8UNpOXp
-YdrNxy1oJRK6ZzhW0+FqgMJVo/BBh/8OV3r9ECwYxR3o8ELPVFAcyqrx2XEU7E6p
-fBWN/cYXuZFizM0/b2yKd3kO/JIemEdz58/aPOTgJevEb996p7JohS8H8/3lm4gu
-VcnlAsH9ivKDmkoFzz6JuXWJB19OSohPW8j2p9fqP5LA5snz8o+ehsewTjaVQsPJ
-eNlp1HQzVumviM07wrZmXzVc0zoUb3YhWHrUL26xcfvtfDZVQ+gIOCH9baNsgcoe
-U0uI1HQuuUreC4L10sgC2qrlYqbWMUmK5uj6T8fjTRaHlzP1UX8=
-=i2hD
------END PGP SIGNATURE-----
+If my understanding is correct, section_nr could be removed too.
 
---=-+TvBOjv046XEorglXBMQ--
+> 	if (ret)
+> 		return ret;
+> 	mem->section_count = section_count;
+>@@ -707,6 +705,7 @@ static int add_memory_block(int base_section_nr)
+>  */
+> int hotplug_memory_register(int nid, struct mem_section *section)
+> {
+>+	int block_id = base_memory_block_id(__section_nr(section));
+> 	int ret = 0;
+> 	struct memory_block *mem;
+> 
+>@@ -717,7 +716,7 @@ int hotplug_memory_register(int nid, struct mem_section *section)
+> 		mem->section_count++;
+> 		put_device(&mem->dev);
+> 	} else {
+>-		ret = init_memory_block(&mem, section, MEM_OFFLINE);
+>+		ret = init_memory_block(&mem, block_id, MEM_OFFLINE);
+> 		if (ret)
+> 			goto out;
+> 		mem->section_count++;
+>-- 
+>2.20.1
+
+-- 
+Wei Yang
+Help you, Help me
