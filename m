@@ -1,27 +1,27 @@
-From: Oscar Salvador <osalvador@suse.de>
-Date: Mon, 10 Jun 2019 16:58:35 +0000
-Subject: Re: [PATCH v3 11/11] mm/memory_hotplug: Remove "zone" parameter from sparse_remove_one_section
-Message-Id: <20190610165834.GC5643@linux>
+From: Christoph Hellwig <hch@lst.de>
+Date: Tue, 04 Jun 2019 07:02:05 +0000
+Subject: Re: remove asm-generic/ptrace.h v2
+Message-Id: <20190604070205.GA15438@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190527111152.16324-1-david@redhat.com>
- <20190527111152.16324-12-david@redhat.com>
-In-Reply-To: <20190527111152.16324-12-david@redhat.com>
+References: <20190520060018.25569-1-hch@lst.de>
+In-Reply-To: <20190520060018.25569-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: David Hildenbrand <david@redhat.com>
-Cc: linux-s390@vger.kernel.org, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Wei Yang <richard.weiyang@gmail.com>, linux-mm@kvack.org, Igor Mammedov <imammedo@redhat.com>, akpm@linux-foundation.org, linuxppc-dev@lists.ozlabs.org, Dan Williams <dan.j.williams@intel.com>, linux-arm-kernel@lists.infradead.org
+To: Oleg Nesterov <oleg@redhat.com>, Arnd Bergmann <arnd@arndb.de>
+Cc: x86@kernel.org, linux-arm-kernel@lists.infradead.org, linux-mips@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org
 
-On Mon, May 27, 2019 at 01:11:52PM +0200, David Hildenbrand wrote:
-> The parameter is unused, so let's drop it. Memory removal paths should
-> never care about zones. This is the job of memory offlining and will
-> require more refactorings.
+Is anyone going to pick this series up?
+
+On Mon, May 20, 2019 at 08:00:13AM +0200, Christoph Hellwig wrote:
+> Hi all,
 > 
-> Reviewed-by: Dan Williams <dan.j.williams@intel.com>
-> Signed-off-by: David Hildenbrand <david@redhat.com>
-
-Reviewed-by: Oscar Salvador <osalvador@suse.de>
-
--- 
-Oscar Salvador
-SUSE L3
+> asm-generic/ptrace.h is a little weird in that it doesn't actually
+> implement any functionality, but it provided multiple layers of macros
+> that just implement trivial inline functions.  We implement those
+> directly in the few architectures and be off with a much simpler
+> design.
+> 
+> Changes since v1:
+>  - add a missing empty line between functions
+---end quoted text---
