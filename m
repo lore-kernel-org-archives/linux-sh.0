@@ -1,195 +1,254 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Tue, 25 Jun 2019 14:37:02 +0000
-Subject: [PATCH 03/16] mm: lift the x86_32 PAE version of gup_get_pte to common code
-Message-Id: <20190625143715.1689-4-hch@lst.de>
+From: Wei Yang <richard.weiyang@gmail.com>
+Date: Tue, 04 Jun 2019 21:42:34 +0000
+Subject: Re: [PATCH v3 07/11] mm/memory_hotplug: Create memory block devices after arch_add_memory()
+Message-Id: <20190604214234.ltwtkcdoju2gxisx@master>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190625143715.1689-1-hch@lst.de>
-In-Reply-To: <20190625143715.1689-1-hch@lst.de>
+References: <20190527111152.16324-1-david@redhat.com>
+ <20190527111152.16324-8-david@redhat.com>
+In-Reply-To: <20190527111152.16324-8-david@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm@linux-foundation.org>, Linus Torvalds <torvalds@linux-foundation.org>, Paul Burton <paul.burton@mips.com>, James Hogan <jhogan@kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, "David S. Miller" <davem@davemloft.net>
-Cc: Nicholas Piggin <npiggin@gmail.com>, Khalid Aziz <khalid.aziz@oracle.com>, Andrey Konovalov <andreyknvl@google.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Michael Ellerman <mpe@ellerman.id.au>, linux-mips@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-mm@kvack.org, x86@kernel.org, linux-kernel@vger.kernel.org, Jason Gunthorpe <jgg@mellanox.com>
+To: David Hildenbrand <david@redhat.com>
+Cc: Michal Hocko <mhocko@suse.com>, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, Wei Yang <richard.weiyang@gmail.com>, linux-mm@kvack.org, Arun KS <arunks@codeaurora.org>, Ingo Molnar <mingo@kernel.org>, linux-s390@vger.kernel.org, "Rafael J. Wysocki" <rafael@kernel.org>, Pavel Tatashin <pasha.tatashin@soleen.com>, "mike.travis@hpe.com" <mike.travis@hpe.com>, Qian Cai <cai@lca.pw>, Dan Williams <dan.j.williams@intel.com>, linux-arm-kernel@lists.infradead.org, Oscar Salvador <osalvador@suse.de>, Andrew Banman <andrew.banman@hpe.com>, Mathieu Malaterre <malat@debian.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, linux-kernel@vger.kernel.org, Igor Mammedov <imammedo@redhat.com>, akpm@linux-foundation.org, linuxppc-dev@lists.ozlabs.org
 
-The split low/high access is the only non-READ_ONCE version of
-gup_get_pte that did show up in the various arch implemenations.
-Lift it to common code and drop the ifdef based arch override.
+On Mon, May 27, 2019 at 01:11:48PM +0200, David Hildenbrand wrote:
+>Only memory to be added to the buddy and to be onlined/offlined by
+>user space using /sys/devices/system/memory/... needs (and should have!)
+>memory block devices.
+>
+>Factor out creation of memory block devices. Create all devices after
+>arch_add_memory() succeeded. We can later drop the want_memblock parameter,
+>because it is now effectively stale.
+>
+>Only after memory block devices have been added, memory can be onlined
+>by user space. This implies, that memory is not visible to user space at
+>all before arch_add_memory() succeeded.
+>
+>While at it
+>- use WARN_ON_ONCE instead of BUG_ON in moved unregister_memory()
+>- introduce find_memory_block_by_id() to search via block id
+>- Use find_memory_block_by_id() in init_memory_block() to catch
+>  duplicates
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
-Reviewed-by: Jason Gunthorpe <jgg@mellanox.com>
----
- arch/x86/Kconfig                      |  1 +
- arch/x86/include/asm/pgtable-3level.h | 47 ------------------------
- arch/x86/kvm/mmu.c                    |  2 +-
- mm/Kconfig                            |  3 ++
- mm/gup.c                              | 51 ++++++++++++++++++++++++---
- 5 files changed, 52 insertions(+), 52 deletions(-)
+Generally looks good to me besides two tiny comments.
 
-diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
-index 2bbbd4d1ba31..7cd53cc59f0f 100644
---- a/arch/x86/Kconfig
-+++ b/arch/x86/Kconfig
-@@ -121,6 +121,7 @@ config X86
- 	select GENERIC_STRNCPY_FROM_USER
- 	select GENERIC_STRNLEN_USER
- 	select GENERIC_TIME_VSYSCALL
-+	select GUP_GET_PTE_LOW_HIGH		if X86_PAE
- 	select HARDLOCKUP_CHECK_TIMESTAMP	if X86_64
- 	select HAVE_ACPI_APEI			if ACPI
- 	select HAVE_ACPI_APEI_NMI		if ACPI
-diff --git a/arch/x86/include/asm/pgtable-3level.h b/arch/x86/include/asm/pgtable-3level.h
-index f8b1ad2c3828..e3633795fb22 100644
---- a/arch/x86/include/asm/pgtable-3level.h
-+++ b/arch/x86/include/asm/pgtable-3level.h
-@@ -285,53 +285,6 @@ static inline pud_t native_pudp_get_and_clear(pud_t *pudp)
- #define __pte_to_swp_entry(pte)	(__swp_entry(__pteval_swp_type(pte), \
- 					     __pteval_swp_offset(pte)))
- 
--#define gup_get_pte gup_get_pte
--/*
-- * WARNING: only to be used in the get_user_pages_fast() implementation.
-- *
-- * With get_user_pages_fast(), we walk down the pagetables without taking
-- * any locks.  For this we would like to load the pointers atomically,
-- * but that is not possible (without expensive cmpxchg8b) on PAE.  What
-- * we do have is the guarantee that a PTE will only either go from not
-- * present to present, or present to not present or both -- it will not
-- * switch to a completely different present page without a TLB flush in
-- * between; something that we are blocking by holding interrupts off.
-- *
-- * Setting ptes from not present to present goes:
-- *
-- *   ptep->pte_high = h;
-- *   smp_wmb();
-- *   ptep->pte_low = l;
-- *
-- * And present to not present goes:
-- *
-- *   ptep->pte_low = 0;
-- *   smp_wmb();
-- *   ptep->pte_high = 0;
-- *
-- * We must ensure here that the load of pte_low sees 'l' iff pte_high
-- * sees 'h'. We load pte_high *after* loading pte_low, which ensures we
-- * don't see an older value of pte_high.  *Then* we recheck pte_low,
-- * which ensures that we haven't picked up a changed pte high. We might
-- * have gotten rubbish values from pte_low and pte_high, but we are
-- * guaranteed that pte_low will not have the present bit set *unless*
-- * it is 'l'. Because get_user_pages_fast() only operates on present ptes
-- * we're safe.
-- */
--static inline pte_t gup_get_pte(pte_t *ptep)
--{
--	pte_t pte;
--
--	do {
--		pte.pte_low = ptep->pte_low;
--		smp_rmb();
--		pte.pte_high = ptep->pte_high;
--		smp_rmb();
--	} while (unlikely(pte.pte_low != ptep->pte_low));
--
--	return pte;
--}
--
- #include <asm/pgtable-invert.h>
- 
- #endif /* _ASM_X86_PGTABLE_3LEVEL_H */
-diff --git a/arch/x86/kvm/mmu.c b/arch/x86/kvm/mmu.c
-index 98f6e4f88b04..4a9c63d1c20a 100644
---- a/arch/x86/kvm/mmu.c
-+++ b/arch/x86/kvm/mmu.c
-@@ -650,7 +650,7 @@ static u64 __update_clear_spte_slow(u64 *sptep, u64 spte)
- 
- /*
-  * The idea using the light way get the spte on x86_32 guest is from
-- * gup_get_pte(arch/x86/mm/gup.c).
-+ * gup_get_pte (mm/gup.c).
-  *
-  * An spte tlb flush may be pending, because kvm_set_pte_rmapp
-  * coalesces them and we are running out of the MMU lock.  Therefore
-diff --git a/mm/Kconfig b/mm/Kconfig
-index f0c76ba47695..fe51f104a9e0 100644
---- a/mm/Kconfig
-+++ b/mm/Kconfig
-@@ -762,6 +762,9 @@ config GUP_BENCHMARK
- 
- 	  See tools/testing/selftests/vm/gup_benchmark.c
- 
-+config GUP_GET_PTE_LOW_HIGH
-+	bool
-+
- config ARCH_HAS_PTE_SPECIAL
- 	bool
- 
-diff --git a/mm/gup.c b/mm/gup.c
-index 3237f33792e6..9b72f2ea3471 100644
---- a/mm/gup.c
-+++ b/mm/gup.c
-@@ -1684,17 +1684,60 @@ struct page *get_dump_page(unsigned long addr)
-  * This code is based heavily on the PowerPC implementation by Nick Piggin.
-  */
- #ifdef CONFIG_HAVE_GENERIC_GUP
-+#ifdef CONFIG_GUP_GET_PTE_LOW_HIGH
-+/*
-+ * WARNING: only to be used in the get_user_pages_fast() implementation.
-+ *
-+ * With get_user_pages_fast(), we walk down the pagetables without taking any
-+ * locks.  For this we would like to load the pointers atomically, but sometimes
-+ * that is not possible (e.g. without expensive cmpxchg8b on x86_32 PAE).  What
-+ * we do have is the guarantee that a PTE will only either go from not present
-+ * to present, or present to not present or both -- it will not switch to a
-+ * completely different present page without a TLB flush in between; something
-+ * that we are blocking by holding interrupts off.
-+ *
-+ * Setting ptes from not present to present goes:
-+ *
-+ *   ptep->pte_high = h;
-+ *   smp_wmb();
-+ *   ptep->pte_low = l;
-+ *
-+ * And present to not present goes:
-+ *
-+ *   ptep->pte_low = 0;
-+ *   smp_wmb();
-+ *   ptep->pte_high = 0;
-+ *
-+ * We must ensure here that the load of pte_low sees 'l' IFF pte_high sees 'h'.
-+ * We load pte_high *after* loading pte_low, which ensures we don't see an older
-+ * value of pte_high.  *Then* we recheck pte_low, which ensures that we haven't
-+ * picked up a changed pte high. We might have gotten rubbish values from
-+ * pte_low and pte_high, but we are guaranteed that pte_low will not have the
-+ * present bit set *unless* it is 'l'. Because get_user_pages_fast() only
-+ * operates on present ptes we're safe.
-+ */
-+static inline pte_t gup_get_pte(pte_t *ptep)
-+{
-+	pte_t pte;
- 
--#ifndef gup_get_pte
-+	do {
-+		pte.pte_low = ptep->pte_low;
-+		smp_rmb();
-+		pte.pte_high = ptep->pte_high;
-+		smp_rmb();
-+	} while (unlikely(pte.pte_low != ptep->pte_low));
-+
-+	return pte;
-+}
-+#else /* CONFIG_GUP_GET_PTE_LOW_HIGH */
- /*
-- * We assume that the PTE can be read atomically. If this is not the case for
-- * your architecture, please provide the helper.
-+ * We require that the PTE can be read atomically.
-  */
- static inline pte_t gup_get_pte(pte_t *ptep)
- {
- 	return READ_ONCE(*ptep);
- }
--#endif
-+#endif /* CONFIG_GUP_GET_PTE_LOW_HIGH */
- 
- static void undo_dev_pagemap(int *nr, int nr_start, struct page **pages)
- {
+>
+>Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+>Cc: "Rafael J. Wysocki" <rafael@kernel.org>
+>Cc: David Hildenbrand <david@redhat.com>
+>Cc: "mike.travis@hpe.com" <mike.travis@hpe.com>
+>Cc: Andrew Morton <akpm@linux-foundation.org>
+>Cc: Ingo Molnar <mingo@kernel.org>
+>Cc: Andrew Banman <andrew.banman@hpe.com>
+>Cc: Oscar Salvador <osalvador@suse.de>
+>Cc: Michal Hocko <mhocko@suse.com>
+>Cc: Pavel Tatashin <pasha.tatashin@soleen.com>
+>Cc: Qian Cai <cai@lca.pw>
+>Cc: Wei Yang <richard.weiyang@gmail.com>
+>Cc: Arun KS <arunks@codeaurora.org>
+>Cc: Mathieu Malaterre <malat@debian.org>
+>Signed-off-by: David Hildenbrand <david@redhat.com>
+>---
+> drivers/base/memory.c  | 82 +++++++++++++++++++++++++++---------------
+> include/linux/memory.h |  2 +-
+> mm/memory_hotplug.c    | 15 ++++----
+> 3 files changed, 63 insertions(+), 36 deletions(-)
+>
+>diff --git a/drivers/base/memory.c b/drivers/base/memory.c
+>index ac17c95a5f28..5a0370f0c506 100644
+>--- a/drivers/base/memory.c
+>+++ b/drivers/base/memory.c
+>@@ -39,6 +39,11 @@ static inline int base_memory_block_id(int section_nr)
+> 	return section_nr / sections_per_block;
+> }
+> 
+>+static inline int pfn_to_block_id(unsigned long pfn)
+>+{
+>+	return base_memory_block_id(pfn_to_section_nr(pfn));
+>+}
+>+
+> static int memory_subsys_online(struct device *dev);
+> static int memory_subsys_offline(struct device *dev);
+> 
+>@@ -582,10 +587,9 @@ int __weak arch_get_memory_phys_device(unsigned long start_pfn)
+>  * A reference for the returned object is held and the reference for the
+>  * hinted object is released.
+>  */
+>-struct memory_block *find_memory_block_hinted(struct mem_section *section,
+>-					      struct memory_block *hint)
+>+static struct memory_block *find_memory_block_by_id(int block_id,
+>+						    struct memory_block *hint)
+> {
+>-	int block_id = base_memory_block_id(__section_nr(section));
+> 	struct device *hintdev = hint ? &hint->dev : NULL;
+> 	struct device *dev;
+> 
+>@@ -597,6 +601,14 @@ struct memory_block *find_memory_block_hinted(struct mem_section *section,
+> 	return to_memory_block(dev);
+> }
+> 
+>+struct memory_block *find_memory_block_hinted(struct mem_section *section,
+>+					      struct memory_block *hint)
+>+{
+>+	int block_id = base_memory_block_id(__section_nr(section));
+>+
+>+	return find_memory_block_by_id(block_id, hint);
+>+}
+>+
+> /*
+>  * For now, we have a linear search to go find the appropriate
+>  * memory_block corresponding to a particular phys_index. If
+>@@ -658,6 +670,11 @@ static int init_memory_block(struct memory_block **memory, int block_id,
+> 	unsigned long start_pfn;
+> 	int ret = 0;
+> 
+>+	mem = find_memory_block_by_id(block_id, NULL);
+>+	if (mem) {
+>+		put_device(&mem->dev);
+>+		return -EEXIST;
+>+	}
+
+find_memory_block_by_id() is not that close to the main idea in this patch.
+Would it be better to split this part?
+
+> 	mem = kzalloc(sizeof(*mem), GFP_KERNEL);
+> 	if (!mem)
+> 		return -ENOMEM;
+>@@ -699,44 +716,53 @@ static int add_memory_block(int base_section_nr)
+> 	return 0;
+> }
+> 
+>+static void unregister_memory(struct memory_block *memory)
+>+{
+>+	if (WARN_ON_ONCE(memory->dev.bus != &memory_subsys))
+>+		return;
+>+
+>+	/* drop the ref. we got via find_memory_block() */
+>+	put_device(&memory->dev);
+>+	device_unregister(&memory->dev);
+>+}
+>+
+> /*
+>- * need an interface for the VM to add new memory regions,
+>- * but without onlining it.
+>+ * Create memory block devices for the given memory area. Start and size
+>+ * have to be aligned to memory block granularity. Memory block devices
+>+ * will be initialized as offline.
+>  */
+>-int hotplug_memory_register(int nid, struct mem_section *section)
+>+int create_memory_block_devices(unsigned long start, unsigned long size)
+> {
+>-	int block_id = base_memory_block_id(__section_nr(section));
+>-	int ret = 0;
+>+	const int start_block_id = pfn_to_block_id(PFN_DOWN(start));
+>+	int end_block_id = pfn_to_block_id(PFN_DOWN(start + size));
+> 	struct memory_block *mem;
+>+	unsigned long block_id;
+>+	int ret = 0;
+> 
+>-	mutex_lock(&mem_sysfs_mutex);
+>+	if (WARN_ON_ONCE(!IS_ALIGNED(start, memory_block_size_bytes()) ||
+>+			 !IS_ALIGNED(size, memory_block_size_bytes())))
+>+		return -EINVAL;
+> 
+>-	mem = find_memory_block(section);
+>-	if (mem) {
+>-		mem->section_count++;
+>-		put_device(&mem->dev);
+>-	} else {
+>+	mutex_lock(&mem_sysfs_mutex);
+>+	for (block_id = start_block_id; block_id != end_block_id; block_id++) {
+> 		ret = init_memory_block(&mem, block_id, MEM_OFFLINE);
+> 		if (ret)
+>-			goto out;
+>-		mem->section_count++;
+>+			break;
+>+		mem->section_count = sections_per_block;
+>+	}
+>+	if (ret) {
+>+		end_block_id = block_id;
+>+		for (block_id = start_block_id; block_id != end_block_id;
+>+		     block_id++) {
+>+			mem = find_memory_block_by_id(block_id, NULL);
+>+			mem->section_count = 0;
+>+			unregister_memory(mem);
+>+		}
+> 	}
+
+Would it be better to do this in reverse order?
+
+And unregister_memory() would free mem, so it is still necessary to set
+section_count to 0?
+
+>-
+>-out:
+> 	mutex_unlock(&mem_sysfs_mutex);
+> 	return ret;
+> }
+> 
+>-static void
+>-unregister_memory(struct memory_block *memory)
+>-{
+>-	BUG_ON(memory->dev.bus != &memory_subsys);
+>-
+>-	/* drop the ref. we got via find_memory_block() */
+>-	put_device(&memory->dev);
+>-	device_unregister(&memory->dev);
+>-}
+>-
+> void unregister_memory_section(struct mem_section *section)
+> {
+> 	struct memory_block *mem;
+>diff --git a/include/linux/memory.h b/include/linux/memory.h
+>index 474c7c60c8f2..db3e8567f900 100644
+>--- a/include/linux/memory.h
+>+++ b/include/linux/memory.h
+>@@ -111,7 +111,7 @@ extern int register_memory_notifier(struct notifier_block *nb);
+> extern void unregister_memory_notifier(struct notifier_block *nb);
+> extern int register_memory_isolate_notifier(struct notifier_block *nb);
+> extern void unregister_memory_isolate_notifier(struct notifier_block *nb);
+>-int hotplug_memory_register(int nid, struct mem_section *section);
+>+int create_memory_block_devices(unsigned long start, unsigned long size);
+> extern void unregister_memory_section(struct mem_section *);
+> extern int memory_dev_init(void);
+> extern int memory_notify(unsigned long val, void *v);
+>diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
+>index 4b9d2974f86c..b1fde90bbf19 100644
+>--- a/mm/memory_hotplug.c
+>+++ b/mm/memory_hotplug.c
+>@@ -259,13 +259,7 @@ static int __meminit __add_section(int nid, unsigned long phys_start_pfn,
+> 		return -EEXIST;
+> 
+> 	ret = sparse_add_one_section(nid, phys_start_pfn, altmap);
+>-	if (ret < 0)
+>-		return ret;
+>-
+>-	if (!want_memblock)
+>-		return 0;
+>-
+>-	return hotplug_memory_register(nid, __pfn_to_section(phys_start_pfn));
+>+	return ret < 0 ? ret : 0;
+> }
+> 
+> /*
+>@@ -1107,6 +1101,13 @@ int __ref add_memory_resource(int nid, struct resource *res)
+> 	if (ret < 0)
+> 		goto error;
+> 
+>+	/* create memory block devices after memory was added */
+>+	ret = create_memory_block_devices(start, size);
+>+	if (ret) {
+>+		arch_remove_memory(nid, start, size, NULL);
+>+		goto error;
+>+	}
+>+
+> 	if (new_node) {
+> 		/* If sysfs file of new node can't be created, cpu on the node
+> 		 * can't be hot-added. There is no rollback way now.
+>-- 
+>2.20.1
+
 -- 
-2.20.1
+Wei Yang
+Help you, Help me
