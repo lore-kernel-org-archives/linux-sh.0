@@ -1,60 +1,124 @@
-From: Yoshinori Sato <ysato@users.sourceforge.jp>
-Date: Sun, 02 Jun 2019 11:29:08 +0000
-Subject: Re: [linux-stable-rc:linux-5.0.y 1434/2350] arch/sh/kernel/cpu/sh2/clock-sh7619.o:undefined referenc
-Message-Id: <87y32kp6nv.wl-ysato@users.sourceforge.jp>
+From: Wei Yang <richard.weiyang@gmail.com>
+Date: Wed, 05 Jun 2019 21:21:06 +0000
+Subject: Re: [PATCH v3 10/11] mm/memory_hotplug: Make unregister_memory_block_under_nodes() never fail
+Message-Id: <20190605212106.6folqx2zawbvzzmm@master>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201905301509.9Hu4aGF1%lkp@intel.com>
-	<92c0e331-9910-82e9-86de-67f593ef4e5d@infradead.org>
-	<20190531100004.0b1f4983@canb.auug.org.au>
-	<871s0cqx33.wl-ysato@users.sourceforge.jp>
-	<20190602174314.09f5f337@canb.auug.org.au>
-In-Reply-To: <20190602174314.09f5f337@canb.auug.org.au>
+References: <20190527111152.16324-1-david@redhat.com>
+ <20190527111152.16324-11-david@redhat.com>
+In-Reply-To: <20190527111152.16324-11-david@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Stephen Rothwell <sfr@canb.auug.org.au>
-Cc: Randy Dunlap <rdunlap@infradead.org>, kbuild test robot <lkp@intel.com>, kbuild-all@01.org, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Andrew Morton <akpm@linux-foundation.org>, Linux Memory Management List <linux-mm@kvack.org>, "Sasha Levin (Microsoft)" <sashal@kernel.org>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
+To: David Hildenbrand <david@redhat.com>
+Cc: linux-s390@vger.kernel.org, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Mark Brown <broonie@kernel.org>, "Rafael J. Wysocki" <rafael@kernel.org>, linux-kernel@vger.kernel.org, Wei Yang <richard.weiyang@gmail.com>, linux-mm@kvack.org, "David S. Miller" <davem@davemloft.net>, Jonathan Cameron <Jonathan.Cameron@huawei.com>, Alex Deucher <alexander.deucher@amd.com>, Igor Mammedov <imammedo@redhat.com>, akpm@linux-foundation.org, Chris Wilson <chris@chris-wilson.co.uk>, linuxppc-dev@lists.ozlabs.org, Dan Williams <dan.j.williams@intel.com>, linux-arm-kernel@lists.infradead.org, Oscar Salvador <osalvador@suse.de>
 
-On Sun, 02 Jun 2019 16:43:14 +0900,
-Stephen Rothwell wrote:
-> 
-> [1  <text/plain; US-ASCII (quoted-printable)>]
-> Hi Yoshinori,
-> 
-> On Sun, 02 Jun 2019 16:13:04 +0900 Yoshinori Sato <ysato@users.sourceforge.jp> wrote:
-> >
-> > Since I created a temporary sh-next, please get it here.
-> > git://git.sourceforge.jp/gitroot/uclinux-h8/linux.git tags/sh-next
-> 
-> I have added that tree to linux-next from tomorrow.  However, thet is
-> no sh-next tag in that tree, so I used the sh-next branch.  I don't
-> think you need the back merge of Linus' tree.
+On Mon, May 27, 2019 at 01:11:51PM +0200, David Hildenbrand wrote:
+>We really don't want anything during memory hotunplug to fail.
+>We always pass a valid memory block device, that check can go. Avoid
+>allocating memory and eventually failing. As we are always called under
+>lock, we can use a static piece of memory. This avoids having to put
+>the structure onto the stack, having to guess about the stack size
+>of callers.
+>
+>Patch inspired by a patch from Oscar Salvador.
+>
+>In the future, there might be no need to iterate over nodes at all.
+>mem->nid should tell us exactly what to remove. Memory block devices
+>with mixed nodes (added during boot) should properly fenced off and never
+>removed.
+>
+>Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+>Cc: "Rafael J. Wysocki" <rafael@kernel.org>
+>Cc: Alex Deucher <alexander.deucher@amd.com>
+>Cc: "David S. Miller" <davem@davemloft.net>
+>Cc: Mark Brown <broonie@kernel.org>
+>Cc: Chris Wilson <chris@chris-wilson.co.uk>
+>Cc: David Hildenbrand <david@redhat.com>
+>Cc: Oscar Salvador <osalvador@suse.de>
+>Cc: Andrew Morton <akpm@linux-foundation.org>
+>Cc: Jonathan Cameron <Jonathan.Cameron@huawei.com>
+>Signed-off-by: David Hildenbrand <david@redhat.com>
 
-Oh sorry. I created sh-next branch in this git repository.
+Reviewed-by: Wei Yang <richardw.yang@linux.intel.com>
 
-> Thanks for adding your subsystem tree as a participant of linux-next.  As
-> you may know, this is not a judgement of your code.  The purpose of
-> linux-next is for integration testing and to lower the impact of
-> conflicts between subsystems in the next merge window. 
+>---
+> drivers/base/node.c  | 18 +++++-------------
+> include/linux/node.h |  5 ++---
+> 2 files changed, 7 insertions(+), 16 deletions(-)
+>
+>diff --git a/drivers/base/node.c b/drivers/base/node.c
+>index 04fdfa99b8bc..9be88fd05147 100644
+>--- a/drivers/base/node.c
+>+++ b/drivers/base/node.c
+>@@ -803,20 +803,14 @@ int register_mem_sect_under_node(struct memory_block *mem_blk, void *arg)
 > 
-> You will need to ensure that the patches/commits in your tree/series have
-> been:
->      * submitted under GPL v2 (or later) and include the Contributor's
->         Signed-off-by,
->      * posted to the relevant mailing list,
->      * reviewed by you (or another maintainer of your subsystem tree),
->      * successfully unit tested, and 
->      * destined for the current or next Linux merge window.
+> /*
+>  * Unregister memory block device under all nodes that it spans.
+>+ * Has to be called with mem_sysfs_mutex held (due to unlinked_nodes).
+>  */
+>-int unregister_memory_block_under_nodes(struct memory_block *mem_blk)
+>+void unregister_memory_block_under_nodes(struct memory_block *mem_blk)
+> {
+>-	NODEMASK_ALLOC(nodemask_t, unlinked_nodes, GFP_KERNEL);
+> 	unsigned long pfn, sect_start_pfn, sect_end_pfn;
+>+	static nodemask_t unlinked_nodes;
 > 
-> Basically, this should be just what you would send to Linus (or ask him
-> to fetch).  It is allowed to be rebased if you deem it necessary.
+>-	if (!mem_blk) {
+>-		NODEMASK_FREE(unlinked_nodes);
+>-		return -EFAULT;
+>-	}
+>-	if (!unlinked_nodes)
+>-		return -ENOMEM;
+>-	nodes_clear(*unlinked_nodes);
+>-
+>+	nodes_clear(unlinked_nodes);
+> 	sect_start_pfn = section_nr_to_pfn(mem_blk->start_section_nr);
+> 	sect_end_pfn = section_nr_to_pfn(mem_blk->end_section_nr);
+> 	for (pfn = sect_start_pfn; pfn <= sect_end_pfn; pfn++) {
+>@@ -827,15 +821,13 @@ int unregister_memory_block_under_nodes(struct memory_block *mem_blk)
+> 			continue;
+> 		if (!node_online(nid))
+> 			continue;
+>-		if (node_test_and_set(nid, *unlinked_nodes))
+>+		if (node_test_and_set(nid, unlinked_nodes))
+> 			continue;
+> 		sysfs_remove_link(&node_devices[nid]->dev.kobj,
+> 			 kobject_name(&mem_blk->dev.kobj));
+> 		sysfs_remove_link(&mem_blk->dev.kobj,
+> 			 kobject_name(&node_devices[nid]->dev.kobj));
+> 	}
+>-	NODEMASK_FREE(unlinked_nodes);
+>-	return 0;
+> }
 > 
-> -- 
-> Cheers,
-> Stephen Rothwell 
-> sfr@canb.auug.org.au
-> [2 OpenPGP digital signature <application/pgp-signature (7bit)>]
-> No public key for 015042F34957D06C created at 2019-06-02T16:43:14+0900 using RSA
+> int link_mem_sections(int nid, unsigned long start_pfn, unsigned long end_pfn)
+>diff --git a/include/linux/node.h b/include/linux/node.h
+>index 02a29e71b175..548c226966a2 100644
+>--- a/include/linux/node.h
+>+++ b/include/linux/node.h
+>@@ -139,7 +139,7 @@ extern int register_cpu_under_node(unsigned int cpu, unsigned int nid);
+> extern int unregister_cpu_under_node(unsigned int cpu, unsigned int nid);
+> extern int register_mem_sect_under_node(struct memory_block *mem_blk,
+> 						void *arg);
+>-extern int unregister_memory_block_under_nodes(struct memory_block *mem_blk);
+>+extern void unregister_memory_block_under_nodes(struct memory_block *mem_blk);
+> 
+> extern int register_memory_node_under_compute_node(unsigned int mem_nid,
+> 						   unsigned int cpu_nid,
+>@@ -175,9 +175,8 @@ static inline int register_mem_sect_under_node(struct memory_block *mem_blk,
+> {
+> 	return 0;
+> }
+>-static inline int unregister_memory_block_under_nodes(struct memory_block *mem_blk)
+>+static inline void unregister_memory_block_under_nodes(struct memory_block *mem_blk)
+> {
+>-	return 0;
+> }
+> 
+> static inline void register_hugetlbfs_with_node(node_registration_func_t reg,
+>-- 
+>2.20.1
 
 -- 
-Yosinori Sato
+Wei Yang
+Help you, Help me
