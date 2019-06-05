@@ -1,23 +1,77 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Tue, 04 Jun 2019 07:26:10 +0000
-Subject: Re: [PATCH 03/16] mm: simplify gup_fast_permitted
-Message-Id: <20190604072610.GE15680@lst.de>
+From: Wei Yang <richard.weiyang@gmail.com>
+Date: Wed, 05 Jun 2019 21:21:25 +0000
+Subject: Re: [PATCH v3 11/11] mm/memory_hotplug: Remove "zone" parameter from sparse_remove_one_section
+Message-Id: <20190605212125.gwmvjjicylhp3wcz@master>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190601074959.14036-1-hch@lst.de> <20190601074959.14036-4-hch@lst.de> <CAHk-=whusWKhS=SYoC9f9HjVmPvR5uP51Mq=ZCtktqTBT2qiBw@mail.gmail.com> <20190603074121.GA22920@lst.de> <CAHk-=wg5mww3StP8HqPN4d5eij3KmEayM743v-nDKAMgRe2J6g@mail.gmail.com> <CAHk-=wjU3ycY2FvhKmYmOTi95L0qSi9Hj+yrzWTAWepW-zdBOA@mail.gmail.com>
-In-Reply-To: <CAHk-=wjU3ycY2FvhKmYmOTi95L0qSi9Hj+yrzWTAWepW-zdBOA@mail.gmail.com>
+References: <20190527111152.16324-1-david@redhat.com>
+ <20190527111152.16324-12-david@redhat.com>
+In-Reply-To: <20190527111152.16324-12-david@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: Christoph Hellwig <hch@lst.de>, Paul Burton <paul.burton@mips.com>, James Hogan <jhogan@kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, "David S. Miller" <davem@davemloft.net>, Nicholas Piggin <npiggin@gmail.com>, Khalid Aziz <khalid.aziz@oracle.com>, Andrey Konovalov <andreyknvl@google.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Michael Ellerman <mpe@ellerman.id.au>, linux-mips@vger.kernel.org, Linux-sh list <linux-sh@vger.kernel.org>, sparclinux@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, Linux-MM <linux-mm@kvack.org>, the arch/x86 maintainers <x86@kernel.org>, Linux List Kernel Mailing <linux-kernel@vger.kernel.org>
+To: David Hildenbrand <david@redhat.com>
+Cc: linux-s390@vger.kernel.org, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Wei Yang <richard.weiyang@gmail.com>, linux-mm@kvack.org, Igor Mammedov <imammedo@redhat.com>, akpm@linux-foundation.org, linuxppc-dev@lists.ozlabs.org, Dan Williams <dan.j.williams@intel.com>, linux-arm-kernel@lists.infradead.org
 
-On Mon, Jun 03, 2019 at 10:02:10AM -0700, Linus Torvalds wrote:
-> On Mon, Jun 3, 2019 at 9:08 AM Linus Torvalds
-> <torvalds@linux-foundation.org> wrote:
-> >
-> > The new code has no test at all for "nr_pages = 0", afaik.
+On Mon, May 27, 2019 at 01:11:52PM +0200, David Hildenbrand wrote:
+>The parameter is unused, so let's drop it. Memory removal paths should
+>never care about zones. This is the job of memory offlining and will
+>require more refactorings.
+>
+>Reviewed-by: Dan Williams <dan.j.williams@intel.com>
+>Signed-off-by: David Hildenbrand <david@redhat.com>
+
+Reviewed-by: Wei Yang <richardw.yang@linux.intel.com>
+
+>---
+> include/linux/memory_hotplug.h | 2 +-
+> mm/memory_hotplug.c            | 2 +-
+> mm/sparse.c                    | 4 ++--
+> 3 files changed, 4 insertions(+), 4 deletions(-)
+>
+>diff --git a/include/linux/memory_hotplug.h b/include/linux/memory_hotplug.h
+>index 2f1f87e13baa..1a4257c5f74c 100644
+>--- a/include/linux/memory_hotplug.h
+>+++ b/include/linux/memory_hotplug.h
+>@@ -346,7 +346,7 @@ extern void move_pfn_range_to_zone(struct zone *zone, unsigned long start_pfn,
+> extern bool is_memblock_offlined(struct memory_block *mem);
+> extern int sparse_add_one_section(int nid, unsigned long start_pfn,
+> 				  struct vmem_altmap *altmap);
+>-extern void sparse_remove_one_section(struct zone *zone, struct mem_section *ms,
+>+extern void sparse_remove_one_section(struct mem_section *ms,
+> 		unsigned long map_offset, struct vmem_altmap *altmap);
+> extern struct page *sparse_decode_mem_map(unsigned long coded_mem_map,
+> 					  unsigned long pnum);
+>diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
+>index 82136c5b4c5f..e48ec7b9dee2 100644
+>--- a/mm/memory_hotplug.c
+>+++ b/mm/memory_hotplug.c
+>@@ -524,7 +524,7 @@ static void __remove_section(struct zone *zone, struct mem_section *ms,
+> 	start_pfn = section_nr_to_pfn((unsigned long)scn_nr);
+> 	__remove_zone(zone, start_pfn);
 > 
-> Note that it really is important to check for that, because right now we do
+>-	sparse_remove_one_section(zone, ms, map_offset, altmap);
+>+	sparse_remove_one_section(ms, map_offset, altmap);
+> }
+> 
+> /**
+>diff --git a/mm/sparse.c b/mm/sparse.c
+>index d1d5e05f5b8d..1552c855d62a 100644
+>--- a/mm/sparse.c
+>+++ b/mm/sparse.c
+>@@ -800,8 +800,8 @@ static void free_section_usemap(struct page *memmap, unsigned long *usemap,
+> 		free_map_bootmem(memmap);
+> }
+> 
+>-void sparse_remove_one_section(struct zone *zone, struct mem_section *ms,
+>-		unsigned long map_offset, struct vmem_altmap *altmap)
+>+void sparse_remove_one_section(struct mem_section *ms, unsigned long map_offset,
+>+			       struct vmem_altmap *altmap)
+> {
+> 	struct page *memmap = NULL;
+> 	unsigned long *usemap = NULL;
+>-- 
+>2.20.1
 
-True.  The 0 check got lost.  I'll make sure we do the right thing for
-the next version.
+-- 
+Wei Yang
+Help you, Help me
