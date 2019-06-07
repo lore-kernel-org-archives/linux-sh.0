@@ -1,37 +1,107 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Tue, 25 Jun 2019 14:37:12 +0000
-Subject: [PATCH 13/16] mm: validate get_user_pages_fast flags
-Message-Id: <20190625143715.1689-14-hch@lst.de>
+From: Rolf Evers-Fischer <embedded24@evers-fischer.de>
+Date: Fri, 07 Jun 2019 11:54:03 +0000
+Subject: [PATCH] sh: dma: Add missing IS_ERR test
+Message-Id: <20190607115404.4557-1-embedded24@evers-fischer.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190625143715.1689-1-hch@lst.de>
-In-Reply-To: <20190625143715.1689-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm@linux-foundation.org>, Linus Torvalds <torvalds@linux-foundation.org>, Paul Burton <paul.burton@mips.com>, James Hogan <jhogan@kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, "David S. Miller" <davem@davemloft.net>
-Cc: Nicholas Piggin <npiggin@gmail.com>, Khalid Aziz <khalid.aziz@oracle.com>, Andrey Konovalov <andreyknvl@google.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Michael Ellerman <mpe@ellerman.id.au>, linux-mips@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-mm@kvack.org, x86@kernel.org, linux-kernel@vger.kernel.org
+To: ysato@users.sourceforge.jp, dalias@libc.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Cc: Rolf Evers-Fischer <embedded24@evers-fischer.de>
 
-We can only deal with FOLL_WRITE and/or FOLL_LONGTERM in
-get_user_pages_fast, so reject all other flags.
+get_dma_channel may return ERR_PTR, so a check is added.
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
+Signed-off-by: Rolf Evers-Fischer <embedded24@evers-fischer.de>
 ---
- mm/gup.c | 3 +++
- 1 file changed, 3 insertions(+)
+ arch/sh/drivers/dma/dma-api.c   | 20 +++++++++++++++++++-
+ arch/sh/drivers/dma/dma-sysfs.c |  2 +-
+ 2 files changed, 20 insertions(+), 2 deletions(-)
 
-diff --git a/mm/gup.c b/mm/gup.c
-index 0e83dba98dfd..37a2083b1ed8 100644
---- a/mm/gup.c
-+++ b/mm/gup.c
-@@ -2317,6 +2317,9 @@ int get_user_pages_fast(unsigned long start, int nr_pages,
- 	unsigned long addr, len, end;
- 	int nr = 0, ret = 0;
+diff --git a/arch/sh/drivers/dma/dma-api.c b/arch/sh/drivers/dma/dma-api.c
+index ab9170494dcc..5d6f1a46cc5e 100644
+--- a/arch/sh/drivers/dma/dma-api.c
++++ b/arch/sh/drivers/dma/dma-api.c
+@@ -94,7 +94,7 @@ int get_dma_residue(unsigned int chan)
+ 	struct dma_info *info = get_dma_info(chan);
+ 	struct dma_channel *channel = get_dma_channel(chan);
  
-+	if (WARN_ON_ONCE(gup_flags & ~(FOLL_WRITE | FOLL_LONGTERM)))
-+		return -EINVAL;
+-	if (info->ops->get_residue)
++	if (!IS_ERR(channel) && (info->ops->get_residue))
+ 		return info->ops->get_residue(channel);
+ 
+ 	return 0;
+@@ -195,6 +195,9 @@ int request_dma(unsigned int chan, const char *dev_id)
+ 	int result;
+ 
+ 	channel = get_dma_channel(chan);
++	if (IS_ERR(channel))
++		return PTR_ERR(channel);
 +
- 	start = untagged_addr(start) & PAGE_MASK;
- 	addr = start;
- 	len = (unsigned long) nr_pages << PAGE_SHIFT;
+ 	if (atomic_xchg(&channel->busy, 1))
+ 		return -EBUSY;
+ 
+@@ -217,6 +220,9 @@ void free_dma(unsigned int chan)
+ 	struct dma_info *info = get_dma_info(chan);
+ 	struct dma_channel *channel = get_dma_channel(chan);
+ 
++	if (IS_ERR(channel))
++		return;
++
+ 	if (info->ops->free)
+ 		info->ops->free(channel);
+ 
+@@ -229,6 +235,9 @@ void dma_wait_for_completion(unsigned int chan)
+ 	struct dma_info *info = get_dma_info(chan);
+ 	struct dma_channel *channel = get_dma_channel(chan);
+ 
++	if (IS_ERR(channel))
++		return;
++
+ 	if (channel->flags & DMA_TEI_CAPABLE) {
+ 		wait_event(channel->wait_queue,
+ 			   (info->ops->get_residue(channel) = 0));
+@@ -274,6 +283,9 @@ void dma_configure_channel(unsigned int chan, unsigned long flags)
+ 	struct dma_info *info = get_dma_info(chan);
+ 	struct dma_channel *channel = get_dma_channel(chan);
+ 
++	if (IS_ERR(channel))
++		return;
++
+ 	if (info->ops->configure)
+ 		info->ops->configure(channel, flags);
+ }
+@@ -285,6 +297,9 @@ int dma_xfer(unsigned int chan, unsigned long from,
+ 	struct dma_info *info = get_dma_info(chan);
+ 	struct dma_channel *channel = get_dma_channel(chan);
+ 
++	if (IS_ERR(channel))
++		return PTR_ERR(channel);
++
+ 	channel->sar	= from;
+ 	channel->dar	= to;
+ 	channel->count	= size;
+@@ -299,6 +314,9 @@ int dma_extend(unsigned int chan, unsigned long op, void *param)
+ 	struct dma_info *info = get_dma_info(chan);
+ 	struct dma_channel *channel = get_dma_channel(chan);
+ 
++	if (IS_ERR(channel))
++		return PTR_ERR(channel);
++
+ 	if (info->ops->extend)
+ 		return info->ops->extend(channel, op, param);
+ 
+diff --git a/arch/sh/drivers/dma/dma-sysfs.c b/arch/sh/drivers/dma/dma-sysfs.c
+index 8ef318150f84..6ba5b569d446 100644
+--- a/arch/sh/drivers/dma/dma-sysfs.c
++++ b/arch/sh/drivers/dma/dma-sysfs.c
+@@ -30,7 +30,7 @@ static ssize_t dma_show_devices(struct device *dev,
+ 		struct dma_info *info = get_dma_info(i);
+ 		struct dma_channel *channel = get_dma_channel(i);
+ 
+-		if (unlikely(!info) || !channel)
++		if (unlikely(!info) || IS_ERR_OR_NULL(channel))
+ 			continue;
+ 
+ 		len += sprintf(buf + len, "%2d: %14s    %s\n",
 -- 
-2.20.1
+2.21.0
