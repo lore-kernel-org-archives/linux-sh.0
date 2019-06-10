@@ -1,36 +1,128 @@
-From: Martins Henry <rws@aero.iitb.ac.in>
-Date: Fri, 07 Jun 2019 06:43:09 +0000
-Subject: Thanks and I wait for your answer
-Message-Id: <412557711.60336.1559889069980.JavaMail.zimbra@aero.iitb.ac.in>
+From: Christoph Hellwig <hch@lst.de>
+Date: Mon, 10 Jun 2019 21:20:12 +0000
+Subject: [PATCH 12/15] binfmt_flat: remove the persistent argument from flat_get_addr_from_rp
+Message-Id: <20190610212015.9157-13-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20190610212015.9157-1-hch@lst.de>
+In-Reply-To: <20190610212015.9157-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Greg Ungerer <gerg@linux-m68k.org>
+Cc: uclinux-h8-devel@lists.sourceforge.jp, linux-xtensa@linux-xtensa.org, Michal Simek <monstr@monstr.eu>, linux-c6x-dev@linux-c6x.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-riscv@lists.infradead.org, linux-arm-kernel@lists.infradead.org
 
-Hello,
+The argument is never used.
 
-I am Martin Henry, An American Citizen; I am the personal secretary to
-Mr. Donald Railton, the controller of a Lottery Company. Please I am
-having big problem now, I have a 6yrs old daughter who has leukemia, a
-disease of the blood, and she needs a bone marrow transplant or she
-will die.
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+---
+ arch/c6x/include/asm/flat.h        | 2 +-
+ arch/h8300/include/asm/flat.h      | 2 +-
+ arch/microblaze/include/asm/flat.h | 2 +-
+ arch/sh/include/asm/flat.h         | 2 +-
+ arch/xtensa/include/asm/flat.h     | 2 +-
+ fs/binfmt_flat.c                   | 4 +---
+ include/asm-generic/flat.h         | 2 +-
+ 7 files changed, 7 insertions(+), 9 deletions(-)
 
-Please I am only asking for your help and you will benefit from it
-also. As an insider with Lottery Firm, working as the personal
-secretary to the controller, I want you to send me your name to play,
-I have some numbers that are going to win, stored in his secret data
-system in the office. The Lottery is an online entry with credit card
-anywhere with a name and address. All I want you to do is to send your
-name to play it and I will send confirmation to you.
-
-I will play with my card on your name and the Prize will be shared
-equally between us. Immediately the results are released they will
-contact you for payment as the oversea winner. The lotto can be played
-with 9.00 dollars, or 50 dollars but the prize will be Millions.
-Remember that I am playing on your name with my card; I just want to
-front you for this, because I need this money to save the life of my
-little daughter.
-
-Thanks and I wait for your answer
-Martin Henry.
+diff --git a/arch/c6x/include/asm/flat.h b/arch/c6x/include/asm/flat.h
+index 2d57a9204d21..9e6544b51386 100644
+--- a/arch/c6x/include/asm/flat.h
++++ b/arch/c6x/include/asm/flat.h
+@@ -5,7 +5,7 @@
+ #include <asm/unaligned.h>
+ 
+ static inline int flat_get_addr_from_rp(u32 __user *rp, u32 relval, u32 flags,
+-					u32 *addr, u32 *persistent)
++					u32 *addr)
+ {
+ 	*addr = get_unaligned((__force u32 *)rp);
+ 	return 0;
+diff --git a/arch/h8300/include/asm/flat.h b/arch/h8300/include/asm/flat.h
+index 4683146f0e9e..78070f924177 100644
+--- a/arch/h8300/include/asm/flat.h
++++ b/arch/h8300/include/asm/flat.h
+@@ -17,7 +17,7 @@
+ 
+ #define	flat_get_relocate_addr(rel)		(rel & ~0x00000001)
+ static inline int flat_get_addr_from_rp(u32 __user *rp, u32 relval, u32 flags,
+-					u32 *addr, u32 *persistent)
++					u32 *addr)
+ {
+ 	u32 val = get_unaligned((__force u32 *)rp);
+ 	if (!(flags & FLAT_FLAG_GOTPIC))
+diff --git a/arch/microblaze/include/asm/flat.h b/arch/microblaze/include/asm/flat.h
+index 9e3d8e01d294..1ab86770eaee 100644
+--- a/arch/microblaze/include/asm/flat.h
++++ b/arch/microblaze/include/asm/flat.h
+@@ -28,7 +28,7 @@
+  */
+ 
+ static inline int flat_get_addr_from_rp(u32 __user *rp, u32 relval, u32 flags,
+-					u32 *addr, u32 *persistent)
++					u32 *addr)
+ {
+ 	u32 *p = (__force u32 *)rp;
+ 
+diff --git a/arch/sh/include/asm/flat.h b/arch/sh/include/asm/flat.h
+index 1002343dd84a..fee4f25555cb 100644
+--- a/arch/sh/include/asm/flat.h
++++ b/arch/sh/include/asm/flat.h
+@@ -12,7 +12,7 @@
+ #include <asm/unaligned.h>
+ 
+ static inline int flat_get_addr_from_rp(u32 __user *rp, u32 relval, u32 flags,
+-					u32 *addr, u32 *persistent)
++					u32 *addr)
+ {
+ 	*addr = get_unaligned((__force u32 *)rp);
+ 	return 0;
+diff --git a/arch/xtensa/include/asm/flat.h b/arch/xtensa/include/asm/flat.h
+index 3d357371b28b..ed5870c779f9 100644
+--- a/arch/xtensa/include/asm/flat.h
++++ b/arch/xtensa/include/asm/flat.h
+@@ -5,7 +5,7 @@
+ #include <asm/unaligned.h>
+ 
+ static inline int flat_get_addr_from_rp(u32 __user *rp, u32 relval, u32 flags,
+-					u32 *addr, u32 *persistent)
++					u32 *addr)
+ {
+ 	*addr = get_unaligned((__force u32 *)rp);
+ 	return 0;
+diff --git a/fs/binfmt_flat.c b/fs/binfmt_flat.c
+index ed7d969593d2..114ea225c5a5 100644
+--- a/fs/binfmt_flat.c
++++ b/fs/binfmt_flat.c
+@@ -794,7 +794,6 @@ static int load_flat_file(struct linux_binprm *bprm,
+ 	 * __start to address 4 so that is okay).
+ 	 */
+ 	if (rev > OLD_FLAT_VERSION) {
+-		u32 __maybe_unused persistent = 0;
+ 		for (i = 0; i < relocs; i++) {
+ 			u32 addr, relval;
+ 			__be32 tmp;
+@@ -815,8 +814,7 @@ static int load_flat_file(struct linux_binprm *bprm,
+ 			}
+ 
+ 			/* Get the pointer's value.  */
+-			ret = flat_get_addr_from_rp(rp, relval, flags,
+-							&addr, &persistent);
++			ret = flat_get_addr_from_rp(rp, relval, flags, &addr);
+ 			if (unlikely(ret))
+ 				goto err;
+ 
+diff --git a/include/asm-generic/flat.h b/include/asm-generic/flat.h
+index fcd2b45c0735..1928a3596938 100644
+--- a/include/asm-generic/flat.h
++++ b/include/asm-generic/flat.h
+@@ -5,7 +5,7 @@
+ #include <linux/uaccess.h>
+ 
+ static inline int flat_get_addr_from_rp(u32 __user *rp, u32 relval, u32 flags,
+-		u32 *addr, u32 *persistent)
++		u32 *addr)
+ {
+ #ifndef CONFIG_HAVE_EFFICIENT_UNALIGNED_ACCESS
+ 	return copy_from_user(addr, rp, 4) ? -EFAULT : 0;
+-- 
+2.20.1
