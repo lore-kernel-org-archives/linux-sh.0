@@ -1,52 +1,58 @@
-From: Alexandre Ghiti <alex@ghiti.fr>
-Date: Wed, 19 Jun 2019 05:08:40 +0000
-Subject: [PATCH 4/8] x86, hugetlbpage: Start fallback of top-down mmap at mm->mmap_base
-Message-Id: <20190619050844.5294-5-alex@ghiti.fr>
+From: Christoph Hellwig <hch@lst.de>
+Date: Mon, 10 Jun 2019 21:20:13 +0000
+Subject: [PATCH 13/15] binfmt_flat: move the MAX_SHARED_LIBS definition to binfmt_flat.c
+Message-Id: <20190610212015.9157-14-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190619050844.5294-1-alex@ghiti.fr>
-In-Reply-To: <20190619050844.5294-1-alex@ghiti.fr>
+References: <20190610212015.9157-1-hch@lst.de>
+In-Reply-To: <20190610212015.9157-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: "James E . J . Bottomley" <James.Bottomley@HansenPartnership.com>, Helge Deller <deller@gmx.de>, Heiko Carstens <heiko.carstens@de.ibm.com>, Vasily Gorbik <gor@linux.ibm.com>, Christian Borntraeger <borntraeger@de.ibm.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, "David S . Miller" <davem@davemloft.net>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>, "H . Peter Anvin" <hpa@zytor.com>, x86@kernel.org, Dave Hansen <dave.hansen@linux.intel.com>, Andy Lutomirski <luto@kernel.org>, Peter Zijlstra <peterz@infradead.org>, linux-parisc@vger.kernel.org, linux-kernel@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-mm@kvack.org, Alexandre Ghiti <alex@ghiti.fr>
+To: Greg Ungerer <gerg@linux-m68k.org>
+Cc: uclinux-h8-devel@lists.sourceforge.jp, linux-xtensa@linux-xtensa.org, Michal Simek <monstr@monstr.eu>, linux-c6x-dev@linux-c6x.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-riscv@lists.infradead.org, linux-arm-kernel@lists.infradead.org
 
-In case of mmap failure in top-down mode, there is no need to go through
-the whole address space again for the bottom-up fallback: the goal of this
-fallback is to find, as a last resort, space between the top-down mmap base
-and the stack, which is the only place not covered by the top-down mmap.
+MAX_SHARED_LIBS is an implementation detail of the kernel loader,
+and should be kept away from the file format definition.
 
-Signed-off-by: Alexandre Ghiti <alex@ghiti.fr>
+Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- arch/x86/mm/hugetlbpage.c | 5 +++--
- 1 file changed, 3 insertions(+), 2 deletions(-)
+ fs/binfmt_flat.c     | 6 ++++++
+ include/linux/flat.h | 6 ------
+ 2 files changed, 6 insertions(+), 6 deletions(-)
 
-diff --git a/arch/x86/mm/hugetlbpage.c b/arch/x86/mm/hugetlbpage.c
-index fab095362c50..4b90339aef50 100644
---- a/arch/x86/mm/hugetlbpage.c
-+++ b/arch/x86/mm/hugetlbpage.c
-@@ -106,11 +106,12 @@ static unsigned long hugetlb_get_unmapped_area_topdown(struct file *file,
- {
- 	struct hstate *h = hstate_file(file);
- 	struct vm_unmapped_area_info info;
-+	unsigned long mmap_base = get_mmap_base(0);
+diff --git a/fs/binfmt_flat.c b/fs/binfmt_flat.c
+index 114ea225c5a5..2c7f32d5435f 100644
+--- a/fs/binfmt_flat.c
++++ b/fs/binfmt_flat.c
+@@ -68,6 +68,12 @@
+ #define RELOC_FAILED 0xff00ff01		/* Relocation incorrect somewhere */
+ #define UNLOADED_LIB 0x7ff000ff		/* Placeholder for unused library */
  
- 	info.flags = VM_UNMAPPED_AREA_TOPDOWN;
- 	info.length = len;
- 	info.low_limit = PAGE_SIZE;
--	info.high_limit = get_mmap_base(0);
-+	info.high_limit = mmap_base;
++#ifdef CONFIG_BINFMT_SHARED_FLAT
++#define	MAX_SHARED_LIBS			(4)
++#else
++#define	MAX_SHARED_LIBS			(1)
++#endif
++
+ struct lib_info {
+ 	struct {
+ 		unsigned long start_code;		/* Start of text segment */
+diff --git a/include/linux/flat.h b/include/linux/flat.h
+index 59e892d5fadb..a2232f1bd41b 100644
+--- a/include/linux/flat.h
++++ b/include/linux/flat.h
+@@ -12,12 +12,6 @@
  
- 	/*
- 	 * If hint address is above DEFAULT_MAP_WINDOW, look for unmapped area
-@@ -132,7 +133,7 @@ static unsigned long hugetlb_get_unmapped_area_topdown(struct file *file,
- 	if (addr & ~PAGE_MASK) {
- 		VM_BUG_ON(addr != -ENOMEM);
- 		info.flags = 0;
--		info.low_limit = TASK_UNMAPPED_BASE;
-+		info.low_limit = mmap_base;
- 		info.high_limit = TASK_SIZE_LOW;
- 		addr = vm_unmapped_area(&info);
- 	}
+ #define	FLAT_VERSION			0x00000004L
+ 
+-#ifdef CONFIG_BINFMT_SHARED_FLAT
+-#define	MAX_SHARED_LIBS			(4)
+-#else
+-#define	MAX_SHARED_LIBS			(1)
+-#endif
+-
+ /*
+  * To make everything easier to port and manage cross platform
+  * development,  all fields are in network byte order.
 -- 
 2.20.1
