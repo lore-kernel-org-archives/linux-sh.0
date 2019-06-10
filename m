@@ -1,93 +1,93 @@
-From: Bartosz Golaszewski <brgl@bgdev.pl>
-Date: Fri, 28 Jun 2019 10:02:50 +0000
-Subject: [PATCH RFT 1/4] sh: ecovec24: add additional properties to the backlight device
-Message-Id: <20190628100253.8385-2-brgl@bgdev.pl>
+From: Christoph Hellwig <hch@lst.de>
+Date: Mon, 10 Jun 2019 21:20:14 +0000
+Subject: [PATCH 14/15] binfmt_flat: don't offset the data start
+Message-Id: <20190610212015.9157-15-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190628100253.8385-1-brgl@bgdev.pl>
-In-Reply-To: <20190628100253.8385-1-brgl@bgdev.pl>
+References: <20190610212015.9157-1-hch@lst.de>
+In-Reply-To: <20190610212015.9157-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Lee Jones <lee.jones@linaro.org>, Daniel Thompson <daniel.thompson@linaro.org>, Jingoo Han <jingoohan1@gmail.com>, Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>, Linus Walleij <linus.walleij@linaro.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, dri-devel@lists.freedesktop.org, linux-fbdev@vger.kernel.org, Bartosz Golaszewski <bgolaszewski@baylibre.com>
+To: Greg Ungerer <gerg@linux-m68k.org>
+Cc: uclinux-h8-devel@lists.sourceforge.jp, linux-xtensa@linux-xtensa.org, Michal Simek <monstr@monstr.eu>, linux-c6x-dev@linux-c6x.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-riscv@lists.infradead.org, linux-arm-kernel@lists.infradead.org
 
-From: Bartosz Golaszewski <bgolaszewski@baylibre.com>
+Ever since the initial commit of the binfmt_flat shared library
+support back in the bitkeeper days we've offset the actual in-memory
+.data start by one field per possible shared library, or 1 in case
+shared library support isn't enabled.  I can't find anything in the
+loader that actually makes use of it, nor was it present before
+shared library support it.
 
-Add a GPIO lookup entry and a device property for GPIO backlight to the
-board file. Tie them to the platform device which is now registered using
-platform_device_register_full() because of the properties. These changes
-are inactive now but will be used once the gpio backlight driver is
-modified.
-
-Signed-off-by: Bartosz Golaszewski <bgolaszewski@baylibre.com>
+Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- arch/sh/boards/mach-ecovec24/setup.c | 30 +++++++++++++++++++++++-----
- 1 file changed, 25 insertions(+), 5 deletions(-)
+ fs/binfmt_flat.c | 20 ++++++++------------
+ 1 file changed, 8 insertions(+), 12 deletions(-)
 
-diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
-index f402aa741bf3..6926bb3865b9 100644
---- a/arch/sh/boards/mach-ecovec24/setup.c
-+++ b/arch/sh/boards/mach-ecovec24/setup.c
-@@ -371,6 +371,19 @@ static struct platform_device lcdc_device = {
- 	},
- };
+diff --git a/fs/binfmt_flat.c b/fs/binfmt_flat.c
+index 2c7f32d5435f..e1ccc9f14150 100644
+--- a/fs/binfmt_flat.c
++++ b/fs/binfmt_flat.c
+@@ -572,7 +572,7 @@ static int load_flat_file(struct linux_binprm *bprm,
+ 			goto err;
+ 		}
  
-+static struct gpiod_lookup_table gpio_backlight_lookup = {
-+	.dev_id		= "gpio-backlight.0",
-+	.table = {
-+		GPIO_LOOKUP("sh7724_pfc", GPIO_PTR1, NULL, GPIO_ACTIVE_HIGH),
-+		{ }
-+	},
-+};
-+
-+static struct property_entry gpio_backlight_props[] = {
-+	PROPERTY_ENTRY_BOOL("default-on"),
-+	{ }
-+};
-+
- static struct gpio_backlight_platform_data gpio_backlight_data = {
- 	.fbdev = &lcdc_device.dev,
- 	.gpio = GPIO_PTR1,
-@@ -378,13 +391,15 @@ static struct gpio_backlight_platform_data gpio_backlight_data = {
- 	.name = "backlight",
- };
+-		len = data_len + extra + MAX_SHARED_LIBS * sizeof(unsigned long);
++		len = data_len + extra;
+ 		len = PAGE_ALIGN(len);
+ 		realdatastart = vm_mmap(NULL, 0, len,
+ 			PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE, 0);
+@@ -586,9 +586,7 @@ static int load_flat_file(struct linux_binprm *bprm,
+ 			vm_munmap(textpos, text_len);
+ 			goto err;
+ 		}
+-		datapos = ALIGN(realdatastart +
+-				MAX_SHARED_LIBS * sizeof(unsigned long),
+-				FLAT_DATA_ALIGN);
++		datapos = ALIGN(realdatastart, FLAT_DATA_ALIGN);
  
--static struct platform_device gpio_backlight_device = {
-+static const struct platform_device_info gpio_backlight_device_info = {
- 	.name = "gpio-backlight",
--	.dev = {
--		.platform_data = &gpio_backlight_data,
--	},
-+	.data = &gpio_backlight_data,
-+	.size_data = sizeof(gpio_backlight_data),
-+	.properties = gpio_backlight_props,
- };
+ 		pr_debug("Allocated data+bss+stack (%u bytes): %lx\n",
+ 			 data_len + bss_len + stack_len, datapos);
+@@ -618,7 +616,7 @@ static int load_flat_file(struct linux_binprm *bprm,
+ 		memp_size = len;
+ 	} else {
  
-+static struct platform_device *gpio_backlight_device;
-+
- /* CEU0 */
- static struct ceu_platform_data ceu0_pdata = {
- 	.num_subdevs			= 2,
-@@ -1006,7 +1021,6 @@ static struct platform_device *ecovec_devices[] __initdata = {
- 	&usb1_common_device,
- 	&usbhs_device,
- 	&lcdc_device,
--	&gpio_backlight_device,
- 	&keysc_device,
- 	&cn12_power,
- #if defined(CONFIG_MMC_SDHI) || defined(CONFIG_MMC_SDHI_MODULE)
-@@ -1464,6 +1478,12 @@ static int __init arch_setup(void)
- #endif
- #endif
+-		len = text_len + data_len + extra + MAX_SHARED_LIBS * sizeof(u32);
++		len = text_len + data_len + extra;
+ 		len = PAGE_ALIGN(len);
+ 		textpos = vm_mmap(NULL, 0, len,
+ 			PROT_READ | PROT_EXEC | PROT_WRITE, MAP_PRIVATE, 0);
+@@ -633,9 +631,7 @@ static int load_flat_file(struct linux_binprm *bprm,
+ 		}
  
-+	gpiod_add_lookup_table(&gpio_backlight_lookup);
-+	gpio_backlight_device = platform_device_register_full(
-+					&gpio_backlight_device_info);
-+	if (IS_ERR(gpio_backlight_device))
-+		return PTR_ERR(gpio_backlight_device);
-+
- 	return platform_add_devices(ecovec_devices,
- 				    ARRAY_SIZE(ecovec_devices));
- }
+ 		realdatastart = textpos + ntohl(hdr->data_start);
+-		datapos = ALIGN(realdatastart +
+-				MAX_SHARED_LIBS * sizeof(u32),
+-				FLAT_DATA_ALIGN);
++		datapos = ALIGN(realdatastart, FLAT_DATA_ALIGN);
+ 
+ 		reloc = (__be32 __user *)
+ 			(datapos + (ntohl(hdr->reloc_start) - text_len));
+@@ -652,8 +648,9 @@ static int load_flat_file(struct linux_binprm *bprm,
+ 					 (text_len + full_data
+ 						  - sizeof(struct flat_hdr)),
+ 					 0);
+-			memmove((void *) datapos, (void *) realdatastart,
+-					full_data);
++			if (datapos != realdatastart)
++				memmove((void *)datapos, (void *)realdatastart,
++						full_data);
+ #else
+ 			/*
+ 			 * This is used on MMU systems mainly for testing.
+@@ -709,8 +706,7 @@ static int load_flat_file(struct linux_binprm *bprm,
+ 		if (IS_ERR_VALUE(result)) {
+ 			ret = result;
+ 			pr_err("Unable to read code+data+bss, errno %d\n", ret);
+-			vm_munmap(textpos, text_len + data_len + extra +
+-				MAX_SHARED_LIBS * sizeof(u32));
++			vm_munmap(textpos, text_len + data_len + extra);
+ 			goto err;
+ 		}
+ 	}
 -- 
-2.21.0
+2.20.1
