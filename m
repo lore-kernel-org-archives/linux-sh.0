@@ -1,39 +1,35 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Tue, 25 Jun 2019 14:37:14 +0000
-Subject: [PATCH 15/16] mm: switch gup_hugepte to use try_get_compound_head
-Message-Id: <20190625143715.1689-16-hch@lst.de>
+From: Oscar Salvador <osalvador@suse.de>
+Date: Mon, 10 Jun 2019 17:07:06 +0000
+Subject: Re: [PATCH v3 02/11] s390x/mm: Fail when an altmap is used for arch_add_memory()
+Message-Id: <20190610170705.GD5643@linux>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190625143715.1689-1-hch@lst.de>
-In-Reply-To: <20190625143715.1689-1-hch@lst.de>
+References: <20190527111152.16324-1-david@redhat.com>
+ <20190527111152.16324-3-david@redhat.com>
+In-Reply-To: <20190527111152.16324-3-david@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm@linux-foundation.org>, Linus Torvalds <torvalds@linux-foundation.org>, Paul Burton <paul.burton@mips.com>, James Hogan <jhogan@kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, "David S. Miller" <davem@davemloft.net>
-Cc: Nicholas Piggin <npiggin@gmail.com>, Khalid Aziz <khalid.aziz@oracle.com>, Andrey Konovalov <andreyknvl@google.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Michael Ellerman <mpe@ellerman.id.au>, linux-mips@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-mm@kvack.org, x86@kernel.org, linux-kernel@vger.kernel.org
+To: David Hildenbrand <david@redhat.com>
+Cc: Oscar Salvador <osalvador@suse.com>, linux-s390@vger.kernel.org, Michal Hocko <mhocko@suse.com>, linux-ia64@vger.kernel.org, Vasily Gorbik <gor@linux.ibm.com>, linux-sh@vger.kernel.org, Heiko Carstens <heiko.carstens@de.ibm.com>, linux-kernel@vger.kernel.org, Wei Yang <richard.weiyang@gmail.com>, linux-mm@kvack.org, Mike Rapoport <rppt@linux.vnet.ibm.com>, Martin Schwidefsky <schwidefsky@de.ibm.com>, Igor Mammedov <imammedo@redhat.com>, akpm@linux-foundation.org, linuxppc-dev@lists.ozlabs.org, Dan Williams <dan.j.williams@intel.com>, linux-arm-kernel@lists.infradead.org
 
-This applies the overflow fixes from 8fde12ca79aff
-("mm: prevent get_user_pages() from overflowing page refcount")
-to the powerpc hugepd code and brings it back in sync with the
-other GUP cases.
+On Mon, May 27, 2019 at 01:11:43PM +0200, David Hildenbrand wrote:
+> ZONE_DEVICE is not yet supported, fail if an altmap is passed, so we
+> don't forget arch_add_memory()/arch_remove_memory() when unlocking
+> support.
+> 
+> Cc: Martin Schwidefsky <schwidefsky@de.ibm.com>
+> Cc: Heiko Carstens <heiko.carstens@de.ibm.com>
+> Cc: Andrew Morton <akpm@linux-foundation.org>
+> Cc: Michal Hocko <mhocko@suse.com>
+> Cc: Mike Rapoport <rppt@linux.vnet.ibm.com>
+> Cc: David Hildenbrand <david@redhat.com>
+> Cc: Vasily Gorbik <gor@linux.ibm.com>
+> Cc: Oscar Salvador <osalvador@suse.com>
+> Suggested-by: Dan Williams <dan.j.williams@intel.com>
+> Signed-off-by: David Hildenbrand <david@redhat.com>
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
----
- mm/gup.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+Reviewed-by: Oscar Salvador <osalvador@suse.de>
 
-diff --git a/mm/gup.c b/mm/gup.c
-index 7077549bc8ea..e06447cff635 100644
---- a/mm/gup.c
-+++ b/mm/gup.c
-@@ -2006,7 +2006,8 @@ static int gup_hugepte(pte_t *ptep, unsigned long sz, unsigned long addr,
- 		refs++;
- 	} while (addr += PAGE_SIZE, addr != end);
- 
--	if (!page_cache_add_speculative(head, refs)) {
-+	head = try_get_compound_head(head, refs);
-+	if (!head) {
- 		*nr -= refs;
- 		return 0;
- 	}
 -- 
-2.20.1
+Oscar Salvador
+SUSE L3
