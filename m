@@ -1,34 +1,50 @@
-From: Greg Ungerer <gerg@linux-m68k.org>
-Date: Thu, 13 Jun 2019 23:38:06 +0000
-Subject: Re: binfmt_flat cleanups and RISC-V support v2
-Message-Id: <9a7c0892-21f3-23fb-590d-011d66f97320@linux-m68k.org>
+From: Christoph Hellwig <hch@lst.de>
+Date: Mon, 10 Jun 2019 21:20:15 +0000
+Subject: [PATCH 15/15] riscv: add binfmt_flat support
+Message-Id: <20190610212015.9157-16-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190613070903.17214-1-hch@lst.de>
-In-Reply-To: <20190613070903.17214-1-hch@lst.de>
+References: <20190610212015.9157-1-hch@lst.de>
+In-Reply-To: <20190610212015.9157-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Christoph Hellwig <hch@lst.de>
+To: Greg Ungerer <gerg@linux-m68k.org>
 Cc: uclinux-h8-devel@lists.sourceforge.jp, linux-xtensa@linux-xtensa.org, Michal Simek <monstr@monstr.eu>, linux-c6x-dev@linux-c6x.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-riscv@lists.infradead.org, linux-arm-kernel@lists.infradead.org
 
-Hi Christoph,
+Use the generic support with arguments are on the stack.  Same as arm
+and m68k.
 
-On 13/6/19 5:08 pm, Christoph Hellwig wrote:
-> below is a larger stash of cleanups for the binfmt_misc code,
-> preparing for the last patch that now trivially adds RISC-V
-> support, which will be used for the RISC-V nommu series I am
-> about to post.
-> 
-> Changes since v2:
->   - fix the handling of old format flags
->   - don't pass arguments on stack for RISC-V
->   - small cleanups for flat_v2_reloc_t
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+---
+ arch/riscv/Kconfig            | 2 ++
+ arch/riscv/include/asm/Kbuild | 1 +
+ 2 files changed, 3 insertions(+)
 
-Thanks for doing this work. Tested and works for me on
-m68k/Coldfire too.
-
-I have pushed these onto the for-next branch of the
-m68knommu git tree.
-
-Regards
-Greg
+diff --git a/arch/riscv/Kconfig b/arch/riscv/Kconfig
+index 0c4b12205632..2e3b60cdeef4 100644
+--- a/arch/riscv/Kconfig
++++ b/arch/riscv/Kconfig
+@@ -17,7 +17,9 @@ config RISCV
+ 	select OF
+ 	select OF_EARLY_FLATTREE
+ 	select OF_IRQ
++	select ARCH_HAS_BINFMT_FLAT
+ 	select ARCH_WANT_FRAME_POINTERS
++	select BINFMT_FLAT_ARGVP_ENVP_ON_STACK
+ 	select CLONE_BACKWARDS
+ 	select COMMON_CLK
+ 	select GENERIC_CLOCKEVENTS
+diff --git a/arch/riscv/include/asm/Kbuild b/arch/riscv/include/asm/Kbuild
+index 5ee646619cc3..1efaeddf1e4b 100644
+--- a/arch/riscv/include/asm/Kbuild
++++ b/arch/riscv/include/asm/Kbuild
+@@ -5,6 +5,7 @@ generic-y += compat.h
+ generic-y += device.h
+ generic-y += div64.h
+ generic-y += extable.h
++generic-y += flat.h
+ generic-y += dma.h
+ generic-y += dma-contiguous.h
+ generic-y += dma-mapping.h
+-- 
+2.20.1
