@@ -1,133 +1,132 @@
-From: David Hildenbrand <david@redhat.com>
-Date: Wed, 05 Jun 2019 21:50:52 +0000
-Subject: Re: [PATCH v3 07/11] mm/memory_hotplug: Create memory block devices after arch_add_memory()
-Message-Id: <4d29c1d6-d394-903d-28ae-733d55ac06f4@redhat.com>
+From: Christoph Hellwig <hch@lst.de>
+Date: Mon, 10 Jun 2019 21:20:09 +0000
+Subject: [PATCH 09/15] binfmt_flat: add a ARCH_HAS_BINFMT_FLAT option
+Message-Id: <20190610212015.9157-10-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190527111152.16324-1-david@redhat.com>
- <20190527111152.16324-8-david@redhat.com>
- <20190604214234.ltwtkcdoju2gxisx@master>
- <f6523d67-cac9-1189-884a-67b6829320ba@redhat.com>
- <9a1d282f-8dd9-a48b-cc96-f9afaa435c62@redhat.com>
- <20190605212249.s7knac6vimealdmx@master>
-In-Reply-To: <20190605212249.s7knac6vimealdmx@master>
+References: <20190610212015.9157-1-hch@lst.de>
+In-Reply-To: <20190610212015.9157-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Wei Yang <richard.weiyang@gmail.com>
-Cc: linux-s390@vger.kernel.org, Michal Hocko <mhocko@suse.com>, linux-ia64@vger.kernel.org, Pavel Tatashin <pasha.tatashin@soleen.com>, linux-sh@vger.kernel.org, "mike.travis@hpe.com" <mike.travis@hpe.com>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, "Rafael J. Wysocki" <rafael@kernel.org>, Mathieu Malaterre <malat@debian.org>, linux-kernel@vger.kernel.org, Arun KS <arunks@codeaurora.org>, Ingo Molnar <mingo@kernel.org>, linux-mm@kvack.org, Andrew Banman <andrew.banman@hpe.com>, Qian Cai <cai@lca.pw>, Igor Mammedov <imammedo@redhat.com>, akpm@linux-foundation.org, linuxppc-dev@lists.ozlabs.org, Dan Williams <dan.j.williams@intel.com>, linux-arm-kernel@lists.infradead.org, Oscar Salvador <osalvador@suse.de>
+To: Greg Ungerer <gerg@linux-m68k.org>
+Cc: uclinux-h8-devel@lists.sourceforge.jp, linux-xtensa@linux-xtensa.org, Michal Simek <monstr@monstr.eu>, linux-c6x-dev@linux-c6x.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-riscv@lists.infradead.org, linux-arm-kernel@lists.infradead.org
 
-On 05.06.19 23:22, Wei Yang wrote:
-> On Wed, Jun 05, 2019 at 12:58:46PM +0200, David Hildenbrand wrote:
->> On 05.06.19 10:58, David Hildenbrand wrote:
->>>>> /*
->>>>>  * For now, we have a linear search to go find the appropriate
->>>>>  * memory_block corresponding to a particular phys_index. If
->>>>> @@ -658,6 +670,11 @@ static int init_memory_block(struct memory_block **memory, int block_id,
->>>>> 	unsigned long start_pfn;
->>>>> 	int ret = 0;
->>>>>
->>>>> +	mem = find_memory_block_by_id(block_id, NULL);
->>>>> +	if (mem) {
->>>>> +		put_device(&mem->dev);
->>>>> +		return -EEXIST;
->>>>> +	}
->>>>
->>>> find_memory_block_by_id() is not that close to the main idea in this patch.
->>>> Would it be better to split this part?
->>>
->>> I played with that but didn't like the temporary results (e.g. having to
->>> export find_memory_block_by_id()). I'll stick to this for now.
->>>
->>>>
->>>>> 	mem = kzalloc(sizeof(*mem), GFP_KERNEL);
->>>>> 	if (!mem)
->>>>> 		return -ENOMEM;
->>>>> @@ -699,44 +716,53 @@ static int add_memory_block(int base_section_nr)
->>>>> 	return 0;
->>>>> }
->>>>>
->>>>> +static void unregister_memory(struct memory_block *memory)
->>>>> +{
->>>>> +	if (WARN_ON_ONCE(memory->dev.bus != &memory_subsys))
->>>>> +		return;
->>>>> +
->>>>> +	/* drop the ref. we got via find_memory_block() */
->>>>> +	put_device(&memory->dev);
->>>>> +	device_unregister(&memory->dev);
->>>>> +}
->>>>> +
->>>>> /*
->>>>> - * need an interface for the VM to add new memory regions,
->>>>> - * but without onlining it.
->>>>> + * Create memory block devices for the given memory area. Start and size
->>>>> + * have to be aligned to memory block granularity. Memory block devices
->>>>> + * will be initialized as offline.
->>>>>  */
->>>>> -int hotplug_memory_register(int nid, struct mem_section *section)
->>>>> +int create_memory_block_devices(unsigned long start, unsigned long size)
->>>>> {
->>>>> -	int block_id = base_memory_block_id(__section_nr(section));
->>>>> -	int ret = 0;
->>>>> +	const int start_block_id = pfn_to_block_id(PFN_DOWN(start));
->>>>> +	int end_block_id = pfn_to_block_id(PFN_DOWN(start + size));
->>>>> 	struct memory_block *mem;
->>>>> +	unsigned long block_id;
->>>>> +	int ret = 0;
->>>>>
->>>>> -	mutex_lock(&mem_sysfs_mutex);
->>>>> +	if (WARN_ON_ONCE(!IS_ALIGNED(start, memory_block_size_bytes()) ||
->>>>> +			 !IS_ALIGNED(size, memory_block_size_bytes())))
->>>>> +		return -EINVAL;
->>>>>
->>>>> -	mem = find_memory_block(section);
->>>>> -	if (mem) {
->>>>> -		mem->section_count++;
->>>>> -		put_device(&mem->dev);
->>>>> -	} else {
->>>>> +	mutex_lock(&mem_sysfs_mutex);
->>>>> +	for (block_id = start_block_id; block_id != end_block_id; block_id++) {
->>>>> 		ret = init_memory_block(&mem, block_id, MEM_OFFLINE);
->>>>> 		if (ret)
->>>>> -			goto out;
->>>>> -		mem->section_count++;
->>>>> +			break;
->>>>> +		mem->section_count = sections_per_block;
->>>>> +	}
->>>>> +	if (ret) {
->>>>> +		end_block_id = block_id;
->>>>> +		for (block_id = start_block_id; block_id != end_block_id;
->>>>> +		     block_id++) {
->>>>> +			mem = find_memory_block_by_id(block_id, NULL);
->>>>> +			mem->section_count = 0;
->>>>> +			unregister_memory(mem);
->>>>> +		}
->>>>> 	}
->>>>
->>>> Would it be better to do this in reverse order?
->>>>
->>>> And unregister_memory() would free mem, so it is still necessary to set
->>>> section_count to 0?
->>>
->>> 1. I kept the existing behavior (setting it to 0) for now. I am planning
->>> to eventually remove the section count completely (it could be
->>> beneficial to detect removing of partially populated memory blocks).
->>
->> Correction: We already use it to block offlining of partially populated
->> memory blocks \o/
-> 
-> Would you mind letting me know where we leverage this?
+Allow architectures to opt into ARCH_HAS_BINFMT_FLAT support instead of
+assuming that all nommu ports support the format.
 
-Sure:
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+---
+ arch/arm/Kconfig        | 1 +
+ arch/c6x/Kconfig        | 1 +
+ arch/h8300/Kconfig      | 1 +
+ arch/m68k/Kconfig       | 1 +
+ arch/microblaze/Kconfig | 1 +
+ arch/sh/Kconfig         | 1 +
+ arch/xtensa/Kconfig     | 1 +
+ fs/Kconfig.binfmt       | 5 ++++-
+ 8 files changed, 11 insertions(+), 1 deletion(-)
 
-drivers/base/memory.c:memory_subsys_offline()
-
-if (mem->section_count != sections_per_block)
-	return -EINVAL;
-
-I would have expected such checks in the offline_pages() function instead.
-
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index b1b48c0bde76..695a26c68064 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -4,6 +4,7 @@ config ARM
+ 	default y
+ 	select ARCH_32BIT_OFF_T
+ 	select ARCH_CLOCKSOURCE_DATA
++	select ARCH_HAS_BINFMT_FLAT
+ 	select ARCH_HAS_DEBUG_VIRTUAL if MMU
+ 	select ARCH_HAS_DEVMEM_IS_ALLOWED
+ 	select ARCH_HAS_ELF_RANDOMIZE
+diff --git a/arch/c6x/Kconfig b/arch/c6x/Kconfig
+index eeb0471268a0..78dfe186d708 100644
+--- a/arch/c6x/Kconfig
++++ b/arch/c6x/Kconfig
+@@ -7,6 +7,7 @@
+ config C6X
+ 	def_bool y
+ 	select ARCH_32BIT_OFF_T
++	select ARCH_HAS_BINFMT_FLAT
+ 	select ARCH_HAS_SYNC_DMA_FOR_CPU
+ 	select ARCH_HAS_SYNC_DMA_FOR_DEVICE
+ 	select CLKDEV_LOOKUP
+diff --git a/arch/h8300/Kconfig b/arch/h8300/Kconfig
+index 7457f190caaa..ec800e9d5aad 100644
+--- a/arch/h8300/Kconfig
++++ b/arch/h8300/Kconfig
+@@ -2,6 +2,7 @@
+ config H8300
+         def_bool y
+ 	select ARCH_32BIT_OFF_T
++	select ARCH_HAS_BINFMT_FLAT
+ 	select BINFMT_FLAT_ARGVP_ENVP_ON_STACK
+ 	select BINFMT_FLAT_OLD_ALWAYS_RAM
+ 	select GENERIC_ATOMIC64
+diff --git a/arch/m68k/Kconfig b/arch/m68k/Kconfig
+index fd69ee5ad6ab..c0c43c624afa 100644
+--- a/arch/m68k/Kconfig
++++ b/arch/m68k/Kconfig
+@@ -3,6 +3,7 @@ config M68K
+ 	bool
+ 	default y
+ 	select ARCH_32BIT_OFF_T
++	select ARCH_HAS_BINFMT_FLAT
+ 	select ARCH_HAS_SYNC_DMA_FOR_DEVICE if HAS_DMA
+ 	select ARCH_MIGHT_HAVE_PC_PARPORT if ISA
+ 	select ARCH_NO_COHERENT_DMA_MMAP if !MMU
+diff --git a/arch/microblaze/Kconfig b/arch/microblaze/Kconfig
+index f11433daab4a..d411de05b628 100644
+--- a/arch/microblaze/Kconfig
++++ b/arch/microblaze/Kconfig
+@@ -3,6 +3,7 @@ config MICROBLAZE
+ 	def_bool y
+ 	select ARCH_32BIT_OFF_T
+ 	select ARCH_NO_SWAP
++	select ARCH_HAS_BINFMT_FLAT if !MMU
+ 	select ARCH_HAS_DMA_COHERENT_TO_PFN if MMU
+ 	select ARCH_HAS_GCOV_PROFILE_ALL
+ 	select ARCH_HAS_SYNC_DMA_FOR_CPU
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index b77f512bb176..df3e6215b78c 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -1,6 +1,7 @@
+ # SPDX-License-Identifier: GPL-2.0
+ config SUPERH
+ 	def_bool y
++	select ARCH_HAS_BINFMT_FLAT if !MMU
+ 	select ARCH_HAS_PTE_SPECIAL
+ 	select ARCH_HAS_TICK_BROADCAST if GENERIC_CLOCKEVENTS_BROADCAST
+ 	select ARCH_MIGHT_HAVE_PC_PARPORT
+diff --git a/arch/xtensa/Kconfig b/arch/xtensa/Kconfig
+index 6ec1b75eabc5..ebc135bda921 100644
+--- a/arch/xtensa/Kconfig
++++ b/arch/xtensa/Kconfig
+@@ -2,6 +2,7 @@
+ config XTENSA
+ 	def_bool y
+ 	select ARCH_32BIT_OFF_T
++	select ARCH_HAS_BINFMT_FLAT if !MMU
+ 	select ARCH_HAS_SYNC_DMA_FOR_CPU
+ 	select ARCH_HAS_SYNC_DMA_FOR_DEVICE
+ 	select ARCH_NO_COHERENT_DMA_MMAP if !MMU
+diff --git a/fs/Kconfig.binfmt b/fs/Kconfig.binfmt
+index 82f7d7f234f3..286b425b30b9 100644
+--- a/fs/Kconfig.binfmt
++++ b/fs/Kconfig.binfmt
+@@ -91,9 +91,12 @@ config BINFMT_SCRIPT
+ 
+ 	  Most systems will not boot if you say M or N here.  If unsure, say Y.
+ 
++config ARCH_HAS_BINFMT_FLAT
++	bool
++
+ config BINFMT_FLAT
+ 	bool "Kernel support for flat binaries"
+-	depends on !MMU || ARM || M68K
++	depends on ARCH_HAS_BINFMT_FLAT
+ 	help
+ 	  Support uClinux FLAT format binaries.
+ 
 -- 
-
-Thanks,
-
-David / dhildenb
+2.20.1
