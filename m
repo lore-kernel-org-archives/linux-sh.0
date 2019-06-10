@@ -1,272 +1,124 @@
 From: Christoph Hellwig <hch@lst.de>
-Date: Tue, 11 Jun 2019 14:40:59 +0000
-Subject: [PATCH 13/16] mm: move the powerpc hugepd code to mm/gup.c
-Message-Id: <20190611144102.8848-14-hch@lst.de>
+Date: Mon, 10 Jun 2019 21:20:10 +0000
+Subject: [PATCH 10/15] binfmt_flat: make support for old format binaries optional
+Message-Id: <20190610212015.9157-11-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190611144102.8848-1-hch@lst.de>
-In-Reply-To: <20190611144102.8848-1-hch@lst.de>
+References: <20190610212015.9157-1-hch@lst.de>
+In-Reply-To: <20190610212015.9157-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>, Paul Burton <paul.burton@mips.com>, James Hogan <jhogan@kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, "David S. Miller" <davem@davemloft.net>
-Cc: Nicholas Piggin <npiggin@gmail.com>, Khalid Aziz <khalid.aziz@oracle.com>, Andrey Konovalov <andreyknvl@google.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Michael Ellerman <mpe@ellerman.id.au>, linux-mips@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-mm@kvack.org, x86@kernel.org, linux-kernel@vger.kernel.org
+To: Greg Ungerer <gerg@linux-m68k.org>
+Cc: uclinux-h8-devel@lists.sourceforge.jp, linux-xtensa@linux-xtensa.org, Michal Simek <monstr@monstr.eu>, linux-c6x-dev@linux-c6x.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-riscv@lists.infradead.org, linux-arm-kernel@lists.infradead.org
 
-While only powerpc supports the hugepd case, the code is pretty
-generic and I'd like to keep all GUP internals in one place.
+No need to carry the extra code around, given that systems using flat
+binaries are generally very resource constrained.
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- arch/powerpc/Kconfig          |  1 +
- arch/powerpc/mm/hugetlbpage.c | 72 ------------------------------
- include/linux/hugetlb.h       | 18 --------
- mm/Kconfig                    | 10 +++++
- mm/gup.c                      | 82 +++++++++++++++++++++++++++++++++++
- 5 files changed, 93 insertions(+), 90 deletions(-)
+ fs/Kconfig.binfmt |  7 +++++++
+ fs/binfmt_flat.c  | 29 +++++++++++++++++++++--------
+ 2 files changed, 28 insertions(+), 8 deletions(-)
 
-diff --git a/arch/powerpc/Kconfig b/arch/powerpc/Kconfig
-index 992a04796e56..4f1b00979cde 100644
---- a/arch/powerpc/Kconfig
-+++ b/arch/powerpc/Kconfig
-@@ -125,6 +125,7 @@ config PPC
- 	select ARCH_HAS_FORTIFY_SOURCE
- 	select ARCH_HAS_GCOV_PROFILE_ALL
- 	select ARCH_HAS_KCOV
-+	select ARCH_HAS_HUGEPD			if HUGETLB_PAGE
- 	select ARCH_HAS_MMIOWB			if PPC64
- 	select ARCH_HAS_PHYS_TO_DMA
- 	select ARCH_HAS_PMEM_API                if PPC64
-diff --git a/arch/powerpc/mm/hugetlbpage.c b/arch/powerpc/mm/hugetlbpage.c
-index b5d92dc32844..51716c11d0fb 100644
---- a/arch/powerpc/mm/hugetlbpage.c
-+++ b/arch/powerpc/mm/hugetlbpage.c
-@@ -511,13 +511,6 @@ struct page *follow_huge_pd(struct vm_area_struct *vma,
- 	return page;
- }
- 
--static unsigned long hugepte_addr_end(unsigned long addr, unsigned long end,
--				      unsigned long sz)
--{
--	unsigned long __boundary = (addr + sz) & ~(sz-1);
--	return (__boundary - 1 < end - 1) ? __boundary : end;
--}
--
- #ifdef CONFIG_PPC_MM_SLICES
- unsigned long hugetlb_get_unmapped_area(struct file *file, unsigned long addr,
- 					unsigned long len, unsigned long pgoff,
-@@ -665,68 +658,3 @@ void flush_dcache_icache_hugepage(struct page *page)
- 		}
- 	}
- }
--
--static int gup_hugepte(pte_t *ptep, unsigned long sz, unsigned long addr,
--		       unsigned long end, int write, struct page **pages, int *nr)
--{
--	unsigned long pte_end;
--	struct page *head, *page;
--	pte_t pte;
--	int refs;
--
--	pte_end = (addr + sz) & ~(sz-1);
--	if (pte_end < end)
--		end = pte_end;
--
--	pte = READ_ONCE(*ptep);
--
--	if (!pte_access_permitted(pte, write))
--		return 0;
--
--	/* hugepages are never "special" */
--	VM_BUG_ON(!pfn_valid(pte_pfn(pte)));
--
--	refs = 0;
--	head = pte_page(pte);
--
--	page = head + ((addr & (sz-1)) >> PAGE_SHIFT);
--	do {
--		VM_BUG_ON(compound_head(page) != head);
--		pages[*nr] = page;
--		(*nr)++;
--		page++;
--		refs++;
--	} while (addr += PAGE_SIZE, addr != end);
--
--	if (!page_cache_add_speculative(head, refs)) {
--		*nr -= refs;
--		return 0;
--	}
--
--	if (unlikely(pte_val(pte) != pte_val(*ptep))) {
--		/* Could be optimized better */
--		*nr -= refs;
--		while (refs--)
--			put_page(head);
--		return 0;
--	}
--
--	return 1;
--}
--
--int gup_huge_pd(hugepd_t hugepd, unsigned long addr, unsigned int pdshift,
--		unsigned long end, int write, struct page **pages, int *nr)
--{
--	pte_t *ptep;
--	unsigned long sz = 1UL << hugepd_shift(hugepd);
--	unsigned long next;
--
--	ptep = hugepte_offset(hugepd, addr, pdshift);
--	do {
--		next = hugepte_addr_end(addr, end, sz);
--		if (!gup_hugepte(ptep, sz, addr, end, write, pages, nr))
--			return 0;
--	} while (ptep++, addr = next, addr != end);
--
--	return 1;
--}
-diff --git a/include/linux/hugetlb.h b/include/linux/hugetlb.h
-index edf476c8cfb9..0f91761e2c53 100644
---- a/include/linux/hugetlb.h
-+++ b/include/linux/hugetlb.h
-@@ -16,29 +16,11 @@ struct user_struct;
- struct mmu_gather;
- 
- #ifndef is_hugepd
--/*
-- * Some architectures requires a hugepage directory format that is
-- * required to support multiple hugepage sizes. For example
-- * a4fe3ce76 "powerpc/mm: Allow more flexible layouts for hugepage pagetables"
-- * introduced the same on powerpc. This allows for a more flexible hugepage
-- * pagetable layout.
-- */
- typedef struct { unsigned long pd; } hugepd_t;
- #define is_hugepd(hugepd) (0)
- #define __hugepd(x) ((hugepd_t) { (x) })
--static inline int gup_huge_pd(hugepd_t hugepd, unsigned long addr,
--			      unsigned pdshift, unsigned long end,
--			      int write, struct page **pages, int *nr)
--{
--	return 0;
--}
--#else
--extern int gup_huge_pd(hugepd_t hugepd, unsigned long addr,
--		       unsigned pdshift, unsigned long end,
--		       int write, struct page **pages, int *nr);
- #endif
- 
--
- #ifdef CONFIG_HUGETLB_PAGE
- 
- #include <linux/mempolicy.h>
-diff --git a/mm/Kconfig b/mm/Kconfig
-index 5c41409557da..44be3f01a2b2 100644
---- a/mm/Kconfig
-+++ b/mm/Kconfig
-@@ -769,4 +769,14 @@ config GUP_GET_PTE_LOW_HIGH
- config ARCH_HAS_PTE_SPECIAL
+diff --git a/fs/Kconfig.binfmt b/fs/Kconfig.binfmt
+index 286b425b30b9..62dc4f577ba1 100644
+--- a/fs/Kconfig.binfmt
++++ b/fs/Kconfig.binfmt
+@@ -106,6 +106,13 @@ config BINFMT_FLAT_ARGVP_ENVP_ON_STACK
+ config BINFMT_FLAT_OLD_ALWAYS_RAM
  	bool
  
-+#
-+# Some architectures require a special hugepage directory format that is
-+# required to support multiple hugepage sizes. For example a4fe3ce76
-+# "powerpc/mm: Allow more flexible layouts for hugepage pagetables"
-+# introduced it on powerpc.  This allows for a more flexible hugepage
-+# pagetable layouts.
-+#
-+config ARCH_HAS_HUGEPD
-+	bool
++config BINFMT_FLAT_OLD
++	bool "Enable support for very old legacy flat binaries"
++	depends on BINFMT_FLAT
++	help
++	  Support decade old uClinux FLAT format binaries.  Unless you know
++	  you have some of those say N here.
 +
- endmenu
-diff --git a/mm/gup.c b/mm/gup.c
-index 78dc1871b3d4..494aa4c3a55e 100644
---- a/mm/gup.c
-+++ b/mm/gup.c
-@@ -1967,6 +1967,88 @@ static int __gup_device_huge_pud(pud_t pud, pud_t *pudp, unsigned long addr,
- }
- #endif
+ config BINFMT_ZFLAT
+ 	bool "Enable ZFLAT support"
+ 	depends on BINFMT_FLAT
+diff --git a/fs/binfmt_flat.c b/fs/binfmt_flat.c
+index 6c1848dee724..ed7d969593d2 100644
+--- a/fs/binfmt_flat.c
++++ b/fs/binfmt_flat.c
+@@ -374,6 +374,7 @@ calc_reloc(unsigned long r, struct lib_info *p, int curid, int internalp)
  
-+#ifdef CONFIG_ARCH_HAS_HUGEPD
-+static unsigned long hugepte_addr_end(unsigned long addr, unsigned long end,
-+				      unsigned long sz)
-+{
-+	unsigned long __boundary = (addr + sz) & ~(sz-1);
-+	return (__boundary - 1 < end - 1) ? __boundary : end;
-+}
-+
-+static int gup_hugepte(pte_t *ptep, unsigned long sz, unsigned long addr,
-+		       unsigned long end, int write, struct page **pages, int *nr)
-+{
-+	unsigned long pte_end;
-+	struct page *head, *page;
-+	pte_t pte;
-+	int refs;
-+
-+	pte_end = (addr + sz) & ~(sz-1);
-+	if (pte_end < end)
-+		end = pte_end;
-+
-+	pte = READ_ONCE(*ptep);
-+
-+	if (!pte_access_permitted(pte, write))
-+		return 0;
-+
-+	/* hugepages are never "special" */
-+	VM_BUG_ON(!pfn_valid(pte_pfn(pte)));
-+
-+	refs = 0;
-+	head = pte_page(pte);
-+
-+	page = head + ((addr & (sz-1)) >> PAGE_SHIFT);
-+	do {
-+		VM_BUG_ON(compound_head(page) != head);
-+		pages[*nr] = page;
-+		(*nr)++;
-+		page++;
-+		refs++;
-+	} while (addr += PAGE_SIZE, addr != end);
-+
-+	if (!page_cache_add_speculative(head, refs)) {
-+		*nr -= refs;
-+		return 0;
-+	}
-+
-+	if (unlikely(pte_val(pte) != pte_val(*ptep))) {
-+		/* Could be optimized better */
-+		*nr -= refs;
-+		while (refs--)
-+			put_page(head);
-+		return 0;
-+	}
-+
-+	return 1;
-+}
-+
-+static int gup_huge_pd(hugepd_t hugepd, unsigned long addr,
-+		unsigned int pdshift, unsigned long end, int write,
-+		struct page **pages, int *nr)
-+{
-+	pte_t *ptep;
-+	unsigned long sz = 1UL << hugepd_shift(hugepd);
-+	unsigned long next;
-+
-+	ptep = hugepte_offset(hugepd, addr, pdshift);
-+	do {
-+		next = hugepte_addr_end(addr, end, sz);
-+		if (!gup_hugepte(ptep, sz, addr, end, write, pages, nr))
-+			return 0;
-+	} while (ptep++, addr = next, addr != end);
-+
-+	return 1;
-+}
-+#else
-+static inline int gup_huge_pd(hugepd_t hugepd, unsigned long addr,
-+		unsigned pdshift, unsigned long end, int write,
-+		struct page **pages, int *nr)
-+{
-+	return 0;
-+}
-+#endif /* CONFIG_ARCH_HAS_HUGEPD */
-+
- static int gup_huge_pmd(pmd_t orig, pmd_t *pmdp, unsigned long addr,
- 		unsigned long end, unsigned int flags, struct page **pages, int *nr)
+ /****************************************************************************/
+ 
++#ifdef CONFIG_BINFMT_FLAT_OLD
+ static void old_reloc(unsigned long rl)
  {
+ 	static const char *segment[] = { "TEXT", "DATA", "BSS", "*UNKNOWN*" };
+@@ -411,6 +412,7 @@ static void old_reloc(unsigned long rl)
+ 
+ 	pr_debug("Relocation became %lx\n", val);
+ }
++#endif /* CONFIG_BINFMT_FLAT_OLD */
+ 
+ /****************************************************************************/
+ 
+@@ -461,6 +463,7 @@ static int load_flat_file(struct linux_binprm *bprm,
+ 	if (flags & FLAT_FLAG_KTRACE)
+ 		pr_info("Loading file: %s\n", bprm->filename);
+ 
++#ifdef CONFIG_BINFMT_FLAT_OLD
+ 	if (rev != FLAT_VERSION && rev != OLD_FLAT_VERSION) {
+ 		pr_err("bad flat file version 0x%x (supported 0x%lx and 0x%lx)\n",
+ 		       rev, FLAT_VERSION, OLD_FLAT_VERSION);
+@@ -476,6 +479,22 @@ static int load_flat_file(struct linux_binprm *bprm,
+ 		goto err;
+ 	}
+ 
++	/*
++	 * fix up the flags for the older format,  there were all kinds
++	 * of endian hacks,  this only works for the simple cases
++	 */
++	if (IS_ENABLED(CONFIG_BINFMT_FLAT_OLD_ALWAYS_RAM) &&
++	    rev = OLD_FLAT_VERSION)
++		flags = FLAT_FLAG_RAM;
++#else /* CONFIG_BINFMT_FLAT_OLD */
++	if (rev != FLAT_VERSION) {
++		pr_err("bad flat file version 0x%x (supported 0x%lx)\n",
++		       rev, FLAT_VERSION);
++		ret = -ENOEXEC;
++		goto err;
++	}
++#endif /* !CONFIG_BINFMT_FLAT_OLD */
++
+ 	/*
+ 	 * Make sure the header params are sane.
+ 	 * 28 bits (256 MB) is way more than reasonable in this case.
+@@ -487,14 +506,6 @@ static int load_flat_file(struct linux_binprm *bprm,
+ 		goto err;
+ 	}
+ 
+-	/*
+-	 * fix up the flags for the older format,  there were all kinds
+-	 * of endian hacks,  this only works for the simple cases
+-	 */
+-	if (IS_ENABLED(CONFIG_BINFMT_FLAT_OLD_ALWAYS_RAM) &&
+-	    rev = OLD_FLAT_VERSION)
+-		flags = FLAT_FLAG_RAM;
+-
+ #ifndef CONFIG_BINFMT_ZFLAT
+ 	if (flags & (FLAT_FLAG_GZIP|FLAT_FLAG_GZDATA)) {
+ 		pr_err("Support for ZFLAT executables is not enabled.\n");
+@@ -833,6 +844,7 @@ static int load_flat_file(struct linux_binprm *bprm,
+ 					goto err;
+ 			}
+ 		}
++#ifdef CONFIG_BINFMT_FLAT_OLD
+ 	} else {
+ 		for (i = 0; i < relocs; i++) {
+ 			__be32 relval;
+@@ -840,6 +852,7 @@ static int load_flat_file(struct linux_binprm *bprm,
+ 				return -EFAULT;
+ 			old_reloc(ntohl(relval));
+ 		}
++#endif /* CONFIG_BINFMT_FLAT_OLD */
+ 	}
+ 
+ 	flush_icache_range(start_code, end_code);
 -- 
 2.20.1
