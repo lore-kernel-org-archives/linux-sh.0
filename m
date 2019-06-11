@@ -1,8 +1,10 @@
 From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Date: Mon, 10 Jun 2019 13:36:04 +0000
-Subject: Linux SH kernel currently broken on qemu-system
-Message-Id: <e7855beb-fbf6-8f67-140f-21820a0fe4af@physik.fu-berlin.de>
+Date: Tue, 11 Jun 2019 13:12:31 +0000
+Subject: Re: Linux SH kernel currently broken on qemu-system
+Message-Id: <434a052f-6bfa-5fb3-8545-4bd9e3a30c63@physik.fu-berlin.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <e7855beb-fbf6-8f67-140f-21820a0fe4af@physik.fu-berlin.de>
+In-Reply-To: <e7855beb-fbf6-8f67-140f-21820a0fe4af@physik.fu-berlin.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -10,49 +12,22 @@ To: linux-sh@vger.kernel.org
 
 Hi!
 
-Booting the Linux SH kernel in qemu-system currently doesn't work, the screen
-just stays black. Previously, the kernel suffered another regression where it
-booted but crashed very early.
+On 6/10/19 3:36 PM, John Paul Adrian Glaubitz wrote:
+> Booting the Linux SH kernel in qemu-system currently doesn't work, the screen
+> just stays black. Previously, the kernel suffered another regression where it
+> booted but crashed very early.
+Michael Karcher found out that the second issue is that the kernel is too big and
+overwrites the decompression code while being uncompressed.
 
-The first regression came with the following commit:
+Raising the the value for CONFIG_BOOT_LINK_OFFSET fixes the problem and lets the
+kernel boot but we still have the problem that qemu probably needs to be adjusted
+in order to accommodate for the larger kernel, see [1].
 
-205e1b7f51e4af2643eb1d61a6503e415cd1e014 is the first bad commit
-commit 205e1b7f51e4af2643eb1d61a6503e415cd1e014
-Author: Christoph Hellwig <hch@lst.de>
-Date:   Fri Dec 22 14:50:47 2017 +0100
-
-    dma-mapping: warn when there is no coherent_dma_mask
-    
-    These days all devices should have a DMA coherent mask, and most dma_ops
-    implementations rely on that fact.  But just to be sure add an assert to
-    ring the warning bell if that is not the case.
-    
-    Signed-off-by: Christoph Hellwig <hch@lst.de>
-    Reviewed-by: Vladimir Murzin <vladimir.murzin@arm.com>
-    Reviewed-by: Konrad Rzeszutek Wilk <konrad.wilk@oracle.com>
-
-:040000 040000 e0c021952944b917e5055be573140b11fc02134d aa01f012af1cad3af647b04aa12ee701ac0e1f6e M      include
-
-I haven't found the commit yet which caused the second regression but Michael
-Karcher (CC'ed) has found out that the kernel already crashing while trying
-to decompress the compressed zImage.
-
-To test, I used the current debian-installer netboot image for sh4 which
-I built and uploaded at [1].
-
-I'm booting with:
-
-$ qemu-system-sh4 -M r2d -kernel installer-sh4/current/images/sh7751r/netboot/vmlinuz-4.19.0-5-sh7751r \
-  -initrd installer-sh4/current/images/sh7751r/netboot/initrd.gz -hda debian.qcow \
-  -append "root=/dev/sda1 console=tty0"
-
-The qcow image was created with:
-
-$ qemu-img create -f qcow2 debian.qcow 10G
+Any suggestions how to resolve this problem?
 
 Adrian
 
-> [1] https://cdimage.debian.org/cdimage/ports/debian-installer/sh4/debian-installer-images_20190411_sh4.tar.gz
+> [1] https://github.com/qemu/qemu/blob/master/hw/sh4/r2d.c#L55
 
 -- 
  .''`.  John Paul Adrian Glaubitz
