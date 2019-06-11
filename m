@@ -1,50 +1,56 @@
-From: Paul Burton <paul.burton@mips.com>
-Date: Mon, 24 Jun 2019 20:33:58 +0000
-Subject: Re: [PATCH 5/5] asm-generic: remove ptrace.h
-Message-Id: <20190624203357.cgybfqklcflll2ti@pburton-laptop>
+From: Christoph Hellwig <hch@lst.de>
+Date: Tue, 11 Jun 2019 14:40:54 +0000
+Subject: [PATCH 08/16] sparc64: define untagged_addr()
+Message-Id: <20190611144102.8848-9-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190624054728.30966-1-hch@lst.de>
- <20190624054728.30966-6-hch@lst.de>
-In-Reply-To: <20190624054728.30966-6-hch@lst.de>
+References: <20190611144102.8848-1-hch@lst.de>
+In-Reply-To: <20190611144102.8848-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Christoph Hellwig <hch@lst.de>
-Cc: Oleg Nesterov <oleg@redhat.com>, Arnd Bergmann <arnd@arndb.de>, "x86@kernel.org" <x86@kernel.org>, "linux-arm-kernel@lists.infradead.org" <linux-arm-kernel@lists.infradead.org>, "linux-mips@vger.kernel.org" <linux-mips@vger.kernel.org>, "linuxppc-dev@lists.ozlabs.org" <linuxppc-dev@lists.ozlabs.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-arch@vger.kernel.org" <linux-arch@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+To: Linus Torvalds <torvalds@linux-foundation.org>, Paul Burton <paul.burton@mips.com>, James Hogan <jhogan@kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, "David S. Miller" <davem@davemloft.net>
+Cc: Nicholas Piggin <npiggin@gmail.com>, Khalid Aziz <khalid.aziz@oracle.com>, Andrey Konovalov <andreyknvl@google.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Michael Ellerman <mpe@ellerman.id.au>, linux-mips@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-mm@kvack.org, x86@kernel.org, linux-kernel@vger.kernel.org
 
-On Mon, Jun 24, 2019 at 07:47:28AM +0200, Christoph Hellwig wrote:
-> No one is using this header anymore.
-> 
-> Signed-off-by: Christoph Hellwig <hch@lst.de>
-> Acked-by: Arnd Bergmann <arnd@arndb.de>
-> Acked-by: Oleg Nesterov <oleg@redhat.com>
-> ---
->  MAINTAINERS                    |  1 -
->  arch/mips/include/asm/ptrace.h |  5 ---
->  include/asm-generic/ptrace.h   | 73 ----------------------------------
->  3 files changed, 79 deletions(-)
->  delete mode 100644 include/asm-generic/ptrace.h
+Add a helper to untag a user pointer.  This is needed for ADI support
+in get_user_pages_fast.
 
-FWIW:
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+---
+ arch/sparc/include/asm/pgtable_64.h | 22 ++++++++++++++++++++++
+ 1 file changed, 22 insertions(+)
 
-    Acked-by: Paul Burton <paul.burton@mips.com>
-
-Thanks,
-    Paul
-
-> diff --git a/arch/mips/include/asm/ptrace.h b/arch/mips/include/asm/ptrace.h
-> index b6578611dddb..1e76774b36dd 100644
-> --- a/arch/mips/include/asm/ptrace.h
-> +++ b/arch/mips/include/asm/ptrace.h
-> @@ -56,11 +56,6 @@ static inline unsigned long kernel_stack_pointer(struct pt_regs *regs)
->  	return regs->regs[31];
->  }
->  
-> -/*
-> - * Don't use asm-generic/ptrace.h it defines FP accessors that don't make
-> - * sense on MIPS.  We rather want an error if they get invoked.
-> - */
-> -
->  static inline void instruction_pointer_set(struct pt_regs *regs,
->                                             unsigned long val)
->  {
+diff --git a/arch/sparc/include/asm/pgtable_64.h b/arch/sparc/include/asm/pgtable_64.h
+index f0dcf991d27f..1904782dcd39 100644
+--- a/arch/sparc/include/asm/pgtable_64.h
++++ b/arch/sparc/include/asm/pgtable_64.h
+@@ -1076,6 +1076,28 @@ static inline int io_remap_pfn_range(struct vm_area_struct *vma,
+ }
+ #define io_remap_pfn_range io_remap_pfn_range 
+ 
++static inline unsigned long untagged_addr(unsigned long start)
++{
++	if (adi_capable()) {
++		long addr = start;
++
++		/* If userspace has passed a versioned address, kernel
++		 * will not find it in the VMAs since it does not store
++		 * the version tags in the list of VMAs. Storing version
++		 * tags in list of VMAs is impractical since they can be
++		 * changed any time from userspace without dropping into
++		 * kernel. Any address search in VMAs will be done with
++		 * non-versioned addresses. Ensure the ADI version bits
++		 * are dropped here by sign extending the last bit before
++		 * ADI bits. IOMMU does not implement version tags.
++		 */
++		return (addr << (long)adi_nbits()) >> (long)adi_nbits();
++	}
++
++	return start;
++}
++#define untagged_addr untagged_addr
++
+ #include <asm/tlbflush.h>
+ #include <asm-generic/pgtable.h>
+ 
+-- 
+2.20.1
