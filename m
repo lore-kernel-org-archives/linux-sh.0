@@ -1,104 +1,109 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Mon, 10 Jun 2019 21:20:08 +0000
-Subject: [PATCH 08/15] binfmt_flat: add endianess annotations
-Message-Id: <20190610212015.9157-9-hch@lst.de>
+From: Vladimir Murzin <vladimir.murzin@arm.com>
+Date: Tue, 11 Jun 2019 09:58:01 +0000
+Subject: Re: [PATCH 08/15] binfmt_flat: add endianess annotations
+Message-Id: <79a2f6d9-7161-b2c7-2eb0-6719daadca8b@arm.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20190610212015.9157-1-hch@lst.de>
-In-Reply-To: <20190610212015.9157-1-hch@lst.de>
+ <20190610212015.9157-9-hch@lst.de>
+In-Reply-To: <20190610212015.9157-9-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Ungerer <gerg@linux-m68k.org>
+To: Christoph Hellwig <hch@lst.de>, Greg Ungerer <gerg@linux-m68k.org>
 Cc: uclinux-h8-devel@lists.sourceforge.jp, linux-xtensa@linux-xtensa.org, Michal Simek <monstr@monstr.eu>, linux-c6x-dev@linux-c6x.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-riscv@lists.infradead.org, linux-arm-kernel@lists.infradead.org
 
-Most binfmt_flat on-disk fields are big endian.  Use the proper __be32
-type where applicable.
+On 6/10/19 10:20 PM, Christoph Hellwig wrote:
+> Most binfmt_flat on-disk fields are big endian.  Use the proper __be32
+> type where applicable.
+> 
+> Signed-off-by: Christoph Hellwig <hch@lst.de>
+> ---
+>  fs/binfmt_flat.c | 26 ++++++++++++++++----------
+>  1 file changed, 16 insertions(+), 10 deletions(-)
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
----
- fs/binfmt_flat.c | 26 ++++++++++++++++----------
- 1 file changed, 16 insertions(+), 10 deletions(-)
+Tested-by: Vladimir Murzin <vladimir.murzin@arm.com>
+Reviewed-by: Vladimir Murzin <vladimir.murzin@arm.com>
 
-diff --git a/fs/binfmt_flat.c b/fs/binfmt_flat.c
-index 6ae0f9af3fc9..6c1848dee724 100644
---- a/fs/binfmt_flat.c
-+++ b/fs/binfmt_flat.c
-@@ -421,7 +421,8 @@ static int load_flat_file(struct linux_binprm *bprm,
- 	unsigned long textpos, datapos, realdatastart;
- 	u32 text_len, data_len, bss_len, stack_len, full_data, flags;
- 	unsigned long len, memp, memp_size, extra, rlim;
--	u32 __user *reloc, *rp;
-+	__be32 __user *reloc;
-+	u32 __user *rp;
- 	struct inode *inode;
- 	int i, rev, relocs;
- 	loff_t fpos;
-@@ -594,7 +595,7 @@ static int load_flat_file(struct linux_binprm *bprm,
- 			goto err;
- 		}
- 
--		reloc = (u32 __user *)
-+		reloc = (__be32 __user *)
- 			(datapos + (ntohl(hdr->reloc_start) - text_len));
- 		memp = realdatastart;
- 		memp_size = len;
-@@ -619,7 +620,7 @@ static int load_flat_file(struct linux_binprm *bprm,
- 				MAX_SHARED_LIBS * sizeof(u32),
- 				FLAT_DATA_ALIGN);
- 
--		reloc = (u32 __user *)
-+		reloc = (__be32 __user *)
- 			(datapos + (ntohl(hdr->reloc_start) - text_len));
- 		memp = textpos;
- 		memp_size = len;
-@@ -785,15 +786,16 @@ static int load_flat_file(struct linux_binprm *bprm,
- 		u32 __maybe_unused persistent = 0;
- 		for (i = 0; i < relocs; i++) {
- 			u32 addr, relval;
-+			__be32 tmp;
- 
- 			/*
- 			 * Get the address of the pointer to be
- 			 * relocated (of course, the address has to be
- 			 * relocated first).
- 			 */
--			if (get_user(relval, reloc + i))
-+			if (get_user(tmp, reloc + i))
- 				return -EFAULT;
--			relval = ntohl(relval);
-+			relval = ntohl(tmp);
- 			addr = flat_get_relocate_addr(relval);
- 			rp = (u32 __user *)calc_reloc(addr, libinfo, id, 1);
- 			if (rp = (u32 __user *)RELOC_FAILED) {
-@@ -812,8 +814,13 @@ static int load_flat_file(struct linux_binprm *bprm,
- 				 * Do the relocation.  PIC relocs in the data section are
- 				 * already in target order
- 				 */
--				if ((flags & FLAT_FLAG_GOTPIC) = 0)
--					addr = ntohl(addr);
-+				if ((flags & FLAT_FLAG_GOTPIC) = 0) {
-+					/*
-+					 * Meh, the same value can have a different
-+					 * byte order based on a flag..
-+					 */
-+					addr = ntohl((__force __be32)addr);
-+				}
- 				addr = calc_reloc(addr, libinfo, id, 0);
- 				if (addr = RELOC_FAILED) {
- 					ret = -ENOEXEC;
-@@ -828,11 +835,10 @@ static int load_flat_file(struct linux_binprm *bprm,
- 		}
- 	} else {
- 		for (i = 0; i < relocs; i++) {
--			u32 relval;
-+			__be32 relval;
- 			if (get_user(relval, reloc + i))
- 				return -EFAULT;
--			relval = ntohl(relval);
--			old_reloc(relval);
-+			old_reloc(ntohl(relval));
- 		}
- 	}
- 
--- 
-2.20.1
+> 
+> diff --git a/fs/binfmt_flat.c b/fs/binfmt_flat.c
+> index 6ae0f9af3fc9..6c1848dee724 100644
+> --- a/fs/binfmt_flat.c
+> +++ b/fs/binfmt_flat.c
+> @@ -421,7 +421,8 @@ static int load_flat_file(struct linux_binprm *bprm,
+>  	unsigned long textpos, datapos, realdatastart;
+>  	u32 text_len, data_len, bss_len, stack_len, full_data, flags;
+>  	unsigned long len, memp, memp_size, extra, rlim;
+> -	u32 __user *reloc, *rp;
+> +	__be32 __user *reloc;
+> +	u32 __user *rp;
+>  	struct inode *inode;
+>  	int i, rev, relocs;
+>  	loff_t fpos;
+> @@ -594,7 +595,7 @@ static int load_flat_file(struct linux_binprm *bprm,
+>  			goto err;
+>  		}
+>  
+> -		reloc = (u32 __user *)
+> +		reloc = (__be32 __user *)
+>  			(datapos + (ntohl(hdr->reloc_start) - text_len));
+>  		memp = realdatastart;
+>  		memp_size = len;
+> @@ -619,7 +620,7 @@ static int load_flat_file(struct linux_binprm *bprm,
+>  				MAX_SHARED_LIBS * sizeof(u32),
+>  				FLAT_DATA_ALIGN);
+>  
+> -		reloc = (u32 __user *)
+> +		reloc = (__be32 __user *)
+>  			(datapos + (ntohl(hdr->reloc_start) - text_len));
+>  		memp = textpos;
+>  		memp_size = len;
+> @@ -785,15 +786,16 @@ static int load_flat_file(struct linux_binprm *bprm,
+>  		u32 __maybe_unused persistent = 0;
+>  		for (i = 0; i < relocs; i++) {
+>  			u32 addr, relval;
+> +			__be32 tmp;
+>  
+>  			/*
+>  			 * Get the address of the pointer to be
+>  			 * relocated (of course, the address has to be
+>  			 * relocated first).
+>  			 */
+> -			if (get_user(relval, reloc + i))
+> +			if (get_user(tmp, reloc + i))
+>  				return -EFAULT;
+> -			relval = ntohl(relval);
+> +			relval = ntohl(tmp);
+>  			addr = flat_get_relocate_addr(relval);
+>  			rp = (u32 __user *)calc_reloc(addr, libinfo, id, 1);
+>  			if (rp = (u32 __user *)RELOC_FAILED) {
+> @@ -812,8 +814,13 @@ static int load_flat_file(struct linux_binprm *bprm,
+>  				 * Do the relocation.  PIC relocs in the data section are
+>  				 * already in target order
+>  				 */
+> -				if ((flags & FLAT_FLAG_GOTPIC) = 0)
+> -					addr = ntohl(addr);
+> +				if ((flags & FLAT_FLAG_GOTPIC) = 0) {
+> +					/*
+> +					 * Meh, the same value can have a different
+> +					 * byte order based on a flag..
+> +					 */
+> +					addr = ntohl((__force __be32)addr);
+> +				}
+>  				addr = calc_reloc(addr, libinfo, id, 0);
+>  				if (addr = RELOC_FAILED) {
+>  					ret = -ENOEXEC;
+> @@ -828,11 +835,10 @@ static int load_flat_file(struct linux_binprm *bprm,
+>  		}
+>  	} else {
+>  		for (i = 0; i < relocs; i++) {
+> -			u32 relval;
+> +			__be32 relval;
+>  			if (get_user(relval, reloc + i))
+>  				return -EFAULT;
+> -			relval = ntohl(relval);
+> -			old_reloc(relval);
+> +			old_reloc(ntohl(relval));
+>  		}
+>  	}
+>  
+> 
