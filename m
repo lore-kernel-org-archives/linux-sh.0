@@ -1,121 +1,272 @@
 From: Christoph Hellwig <hch@lst.de>
-Date: Tue, 25 Jun 2019 14:37:01 +0000
-Subject: [PATCH 02/16] mm: simplify gup_fast_permitted
-Message-Id: <20190625143715.1689-3-hch@lst.de>
+Date: Tue, 11 Jun 2019 14:40:59 +0000
+Subject: [PATCH 13/16] mm: move the powerpc hugepd code to mm/gup.c
+Message-Id: <20190611144102.8848-14-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190625143715.1689-1-hch@lst.de>
-In-Reply-To: <20190625143715.1689-1-hch@lst.de>
+References: <20190611144102.8848-1-hch@lst.de>
+In-Reply-To: <20190611144102.8848-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm@linux-foundation.org>, Linus Torvalds <torvalds@linux-foundation.org>, Paul Burton <paul.burton@mips.com>, James Hogan <jhogan@kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, "David S. Miller" <davem@davemloft.net>
-Cc: Nicholas Piggin <npiggin@gmail.com>, Khalid Aziz <khalid.aziz@oracle.com>, Andrey Konovalov <andreyknvl@google.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Michael Ellerman <mpe@ellerman.id.au>, linux-mips@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-mm@kvack.org, x86@kernel.org, linux-kernel@vger.kernel.org, Jason Gunthorpe <jgg@mellanox.com>
+To: Linus Torvalds <torvalds@linux-foundation.org>, Paul Burton <paul.burton@mips.com>, James Hogan <jhogan@kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, "David S. Miller" <davem@davemloft.net>
+Cc: Nicholas Piggin <npiggin@gmail.com>, Khalid Aziz <khalid.aziz@oracle.com>, Andrey Konovalov <andreyknvl@google.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Michael Ellerman <mpe@ellerman.id.au>, linux-mips@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-mm@kvack.org, x86@kernel.org, linux-kernel@vger.kernel.org
 
-Pass in the already calculated end value instead of recomputing it, and
-leave the end > start check in the callers instead of duplicating them
-in the arch code.
+While only powerpc supports the hugepd case, the code is pretty
+generic and I'd like to keep all GUP internals in one place.
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
-Reviewed-by: Jason Gunthorpe <jgg@mellanox.com>
 ---
- arch/s390/include/asm/pgtable.h   |  8 +-------
- arch/x86/include/asm/pgtable_64.h |  8 +-------
- mm/gup.c                          | 17 +++++++----------
- 3 files changed, 9 insertions(+), 24 deletions(-)
+ arch/powerpc/Kconfig          |  1 +
+ arch/powerpc/mm/hugetlbpage.c | 72 ------------------------------
+ include/linux/hugetlb.h       | 18 --------
+ mm/Kconfig                    | 10 +++++
+ mm/gup.c                      | 82 +++++++++++++++++++++++++++++++++++
+ 5 files changed, 93 insertions(+), 90 deletions(-)
 
-diff --git a/arch/s390/include/asm/pgtable.h b/arch/s390/include/asm/pgtable.h
-index 9f0195d5fa16..9b274fcaacb6 100644
---- a/arch/s390/include/asm/pgtable.h
-+++ b/arch/s390/include/asm/pgtable.h
-@@ -1270,14 +1270,8 @@ static inline pte_t *pte_offset(pmd_t *pmd, unsigned long address)
- #define pte_offset_map(pmd, address) pte_offset_kernel(pmd, address)
- #define pte_unmap(pte) do { } while (0)
- 
--static inline bool gup_fast_permitted(unsigned long start, int nr_pages)
-+static inline bool gup_fast_permitted(unsigned long start, unsigned long end)
- {
--	unsigned long len, end;
--
--	len = (unsigned long) nr_pages << PAGE_SHIFT;
--	end = start + len;
--	if (end < start)
--		return false;
- 	return end <= current->mm->context.asce_limit;
+diff --git a/arch/powerpc/Kconfig b/arch/powerpc/Kconfig
+index 992a04796e56..4f1b00979cde 100644
+--- a/arch/powerpc/Kconfig
++++ b/arch/powerpc/Kconfig
+@@ -125,6 +125,7 @@ config PPC
+ 	select ARCH_HAS_FORTIFY_SOURCE
+ 	select ARCH_HAS_GCOV_PROFILE_ALL
+ 	select ARCH_HAS_KCOV
++	select ARCH_HAS_HUGEPD			if HUGETLB_PAGE
+ 	select ARCH_HAS_MMIOWB			if PPC64
+ 	select ARCH_HAS_PHYS_TO_DMA
+ 	select ARCH_HAS_PMEM_API                if PPC64
+diff --git a/arch/powerpc/mm/hugetlbpage.c b/arch/powerpc/mm/hugetlbpage.c
+index b5d92dc32844..51716c11d0fb 100644
+--- a/arch/powerpc/mm/hugetlbpage.c
++++ b/arch/powerpc/mm/hugetlbpage.c
+@@ -511,13 +511,6 @@ struct page *follow_huge_pd(struct vm_area_struct *vma,
+ 	return page;
  }
- #define gup_fast_permitted gup_fast_permitted
-diff --git a/arch/x86/include/asm/pgtable_64.h b/arch/x86/include/asm/pgtable_64.h
-index 0bb566315621..4990d26dfc73 100644
---- a/arch/x86/include/asm/pgtable_64.h
-+++ b/arch/x86/include/asm/pgtable_64.h
-@@ -259,14 +259,8 @@ extern void init_extra_mapping_uc(unsigned long phys, unsigned long size);
- extern void init_extra_mapping_wb(unsigned long phys, unsigned long size);
  
- #define gup_fast_permitted gup_fast_permitted
--static inline bool gup_fast_permitted(unsigned long start, int nr_pages)
-+static inline bool gup_fast_permitted(unsigned long start, unsigned long end)
- {
--	unsigned long len, end;
+-static unsigned long hugepte_addr_end(unsigned long addr, unsigned long end,
+-				      unsigned long sz)
+-{
+-	unsigned long __boundary = (addr + sz) & ~(sz-1);
+-	return (__boundary - 1 < end - 1) ? __boundary : end;
+-}
 -
--	len = (unsigned long)nr_pages << PAGE_SHIFT;
--	end = start + len;
--	if (end < start)
--		return false;
- 	if (end >> __VIRTUAL_MASK_SHIFT)
- 		return false;
- 	return true;
+ #ifdef CONFIG_PPC_MM_SLICES
+ unsigned long hugetlb_get_unmapped_area(struct file *file, unsigned long addr,
+ 					unsigned long len, unsigned long pgoff,
+@@ -665,68 +658,3 @@ void flush_dcache_icache_hugepage(struct page *page)
+ 		}
+ 	}
+ }
+-
+-static int gup_hugepte(pte_t *ptep, unsigned long sz, unsigned long addr,
+-		       unsigned long end, int write, struct page **pages, int *nr)
+-{
+-	unsigned long pte_end;
+-	struct page *head, *page;
+-	pte_t pte;
+-	int refs;
+-
+-	pte_end = (addr + sz) & ~(sz-1);
+-	if (pte_end < end)
+-		end = pte_end;
+-
+-	pte = READ_ONCE(*ptep);
+-
+-	if (!pte_access_permitted(pte, write))
+-		return 0;
+-
+-	/* hugepages are never "special" */
+-	VM_BUG_ON(!pfn_valid(pte_pfn(pte)));
+-
+-	refs = 0;
+-	head = pte_page(pte);
+-
+-	page = head + ((addr & (sz-1)) >> PAGE_SHIFT);
+-	do {
+-		VM_BUG_ON(compound_head(page) != head);
+-		pages[*nr] = page;
+-		(*nr)++;
+-		page++;
+-		refs++;
+-	} while (addr += PAGE_SIZE, addr != end);
+-
+-	if (!page_cache_add_speculative(head, refs)) {
+-		*nr -= refs;
+-		return 0;
+-	}
+-
+-	if (unlikely(pte_val(pte) != pte_val(*ptep))) {
+-		/* Could be optimized better */
+-		*nr -= refs;
+-		while (refs--)
+-			put_page(head);
+-		return 0;
+-	}
+-
+-	return 1;
+-}
+-
+-int gup_huge_pd(hugepd_t hugepd, unsigned long addr, unsigned int pdshift,
+-		unsigned long end, int write, struct page **pages, int *nr)
+-{
+-	pte_t *ptep;
+-	unsigned long sz = 1UL << hugepd_shift(hugepd);
+-	unsigned long next;
+-
+-	ptep = hugepte_offset(hugepd, addr, pdshift);
+-	do {
+-		next = hugepte_addr_end(addr, end, sz);
+-		if (!gup_hugepte(ptep, sz, addr, end, write, pages, nr))
+-			return 0;
+-	} while (ptep++, addr = next, addr != end);
+-
+-	return 1;
+-}
+diff --git a/include/linux/hugetlb.h b/include/linux/hugetlb.h
+index edf476c8cfb9..0f91761e2c53 100644
+--- a/include/linux/hugetlb.h
++++ b/include/linux/hugetlb.h
+@@ -16,29 +16,11 @@ struct user_struct;
+ struct mmu_gather;
+ 
+ #ifndef is_hugepd
+-/*
+- * Some architectures requires a hugepage directory format that is
+- * required to support multiple hugepage sizes. For example
+- * a4fe3ce76 "powerpc/mm: Allow more flexible layouts for hugepage pagetables"
+- * introduced the same on powerpc. This allows for a more flexible hugepage
+- * pagetable layout.
+- */
+ typedef struct { unsigned long pd; } hugepd_t;
+ #define is_hugepd(hugepd) (0)
+ #define __hugepd(x) ((hugepd_t) { (x) })
+-static inline int gup_huge_pd(hugepd_t hugepd, unsigned long addr,
+-			      unsigned pdshift, unsigned long end,
+-			      int write, struct page **pages, int *nr)
+-{
+-	return 0;
+-}
+-#else
+-extern int gup_huge_pd(hugepd_t hugepd, unsigned long addr,
+-		       unsigned pdshift, unsigned long end,
+-		       int write, struct page **pages, int *nr);
+ #endif
+ 
+-
+ #ifdef CONFIG_HUGETLB_PAGE
+ 
+ #include <linux/mempolicy.h>
+diff --git a/mm/Kconfig b/mm/Kconfig
+index 5c41409557da..44be3f01a2b2 100644
+--- a/mm/Kconfig
++++ b/mm/Kconfig
+@@ -769,4 +769,14 @@ config GUP_GET_PTE_LOW_HIGH
+ config ARCH_HAS_PTE_SPECIAL
+ 	bool
+ 
++#
++# Some architectures require a special hugepage directory format that is
++# required to support multiple hugepage sizes. For example a4fe3ce76
++# "powerpc/mm: Allow more flexible layouts for hugepage pagetables"
++# introduced it on powerpc.  This allows for a more flexible hugepage
++# pagetable layouts.
++#
++config ARCH_HAS_HUGEPD
++	bool
++
+ endmenu
 diff --git a/mm/gup.c b/mm/gup.c
-index 6bb521db67ec..3237f33792e6 100644
+index 78dc1871b3d4..494aa4c3a55e 100644
 --- a/mm/gup.c
 +++ b/mm/gup.c
-@@ -2123,13 +2123,9 @@ static void gup_pgd_range(unsigned long addr, unsigned long end,
-  * Check if it's allowed to use __get_user_pages_fast() for the range, or
-  * we need to fall back to the slow version:
-  */
--bool gup_fast_permitted(unsigned long start, int nr_pages)
-+static bool gup_fast_permitted(unsigned long start, unsigned long end)
- {
--	unsigned long len, end;
--
--	len = (unsigned long) nr_pages << PAGE_SHIFT;
--	end = start + len;
--	return end >= start;
-+	return true;
+@@ -1967,6 +1967,88 @@ static int __gup_device_huge_pud(pud_t pud, pud_t *pudp, unsigned long addr,
  }
  #endif
  
-@@ -2150,6 +2146,8 @@ int __get_user_pages_fast(unsigned long start, int nr_pages, int write,
- 	len = (unsigned long) nr_pages << PAGE_SHIFT;
- 	end = start + len;
- 
-+	if (end <= start)
++#ifdef CONFIG_ARCH_HAS_HUGEPD
++static unsigned long hugepte_addr_end(unsigned long addr, unsigned long end,
++				      unsigned long sz)
++{
++	unsigned long __boundary = (addr + sz) & ~(sz-1);
++	return (__boundary - 1 < end - 1) ? __boundary : end;
++}
++
++static int gup_hugepte(pte_t *ptep, unsigned long sz, unsigned long addr,
++		       unsigned long end, int write, struct page **pages, int *nr)
++{
++	unsigned long pte_end;
++	struct page *head, *page;
++	pte_t pte;
++	int refs;
++
++	pte_end = (addr + sz) & ~(sz-1);
++	if (pte_end < end)
++		end = pte_end;
++
++	pte = READ_ONCE(*ptep);
++
++	if (!pte_access_permitted(pte, write))
 +		return 0;
- 	if (unlikely(!access_ok((void __user *)start, len)))
- 		return 0;
- 
-@@ -2165,7 +2163,7 @@ int __get_user_pages_fast(unsigned long start, int nr_pages, int write,
- 	 * block IPIs that come from THPs splitting.
- 	 */
- 
--	if (gup_fast_permitted(start, nr_pages)) {
-+	if (gup_fast_permitted(start, end)) {
- 		local_irq_save(flags);
- 		gup_pgd_range(start, end, write ? FOLL_WRITE : 0, pages, &nr);
- 		local_irq_restore(flags);
-@@ -2224,13 +2222,12 @@ int get_user_pages_fast(unsigned long start, int nr_pages,
- 	len = (unsigned long) nr_pages << PAGE_SHIFT;
- 	end = start + len;
- 
--	if (nr_pages <= 0)
-+	if (end <= start)
- 		return 0;
--
- 	if (unlikely(!access_ok((void __user *)start, len)))
- 		return -EFAULT;
- 
--	if (gup_fast_permitted(start, nr_pages)) {
-+	if (gup_fast_permitted(start, end)) {
- 		local_irq_disable();
- 		gup_pgd_range(addr, end, gup_flags, pages, &nr);
- 		local_irq_enable();
++
++	/* hugepages are never "special" */
++	VM_BUG_ON(!pfn_valid(pte_pfn(pte)));
++
++	refs = 0;
++	head = pte_page(pte);
++
++	page = head + ((addr & (sz-1)) >> PAGE_SHIFT);
++	do {
++		VM_BUG_ON(compound_head(page) != head);
++		pages[*nr] = page;
++		(*nr)++;
++		page++;
++		refs++;
++	} while (addr += PAGE_SIZE, addr != end);
++
++	if (!page_cache_add_speculative(head, refs)) {
++		*nr -= refs;
++		return 0;
++	}
++
++	if (unlikely(pte_val(pte) != pte_val(*ptep))) {
++		/* Could be optimized better */
++		*nr -= refs;
++		while (refs--)
++			put_page(head);
++		return 0;
++	}
++
++	return 1;
++}
++
++static int gup_huge_pd(hugepd_t hugepd, unsigned long addr,
++		unsigned int pdshift, unsigned long end, int write,
++		struct page **pages, int *nr)
++{
++	pte_t *ptep;
++	unsigned long sz = 1UL << hugepd_shift(hugepd);
++	unsigned long next;
++
++	ptep = hugepte_offset(hugepd, addr, pdshift);
++	do {
++		next = hugepte_addr_end(addr, end, sz);
++		if (!gup_hugepte(ptep, sz, addr, end, write, pages, nr))
++			return 0;
++	} while (ptep++, addr = next, addr != end);
++
++	return 1;
++}
++#else
++static inline int gup_huge_pd(hugepd_t hugepd, unsigned long addr,
++		unsigned pdshift, unsigned long end, int write,
++		struct page **pages, int *nr)
++{
++	return 0;
++}
++#endif /* CONFIG_ARCH_HAS_HUGEPD */
++
+ static int gup_huge_pmd(pmd_t orig, pmd_t *pmdp, unsigned long addr,
+ 		unsigned long end, unsigned int flags, struct page **pages, int *nr)
+ {
 -- 
 2.20.1
