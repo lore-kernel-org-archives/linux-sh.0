@@ -1,238 +1,129 @@
-From: Mauro Carvalho Chehab <mchehab+samsung@kernel.org>
-Date: Tue, 18 Jun 2019 21:05:46 +0000
-Subject: [PATCH v1 22/22] admin-guide: add kdump documentation into it
-Message-Id: <e6a805d5b36d4dda2a474db4f9e7e86da710a9be.1560891322.git.mchehab+samsung@kernel.org>
+From: Christoph Hellwig <hch@lst.de>
+Date: Thu, 13 Jun 2019 07:08:47 +0000
+Subject: [PATCH 01/17] binfmt_flat: remove flat_reloc_valid
+Message-Id: <20190613070903.17214-2-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1560891322.git.mchehab+samsung@kernel.org>
-In-Reply-To: <cover.1560891322.git.mchehab+samsung@kernel.org>
+References: <20190613070903.17214-1-hch@lst.de>
+In-Reply-To: <20190613070903.17214-1-hch@lst.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: Linux Doc Mailing List <linux-doc@vger.kernel.org>
-Cc: Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, Catalin Marinas <catalin.marinas@arm.com>, Will Deacon <will.deacon@arm.com>, Jerry Hoemann <jerry.hoemann@hpe.com>, Harry Wei <harryxiyou@gmail.com>, Paul Mackerras <paulus@samba.org>, "H. Peter Anvin" <hpa@zytor.com>, Mauro Carvalho Chehab <mchehab+samsung@kernel.org>, Alex Shi <alex.shi@linux.alibaba.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Jonathan Corbet <corbet@lwn.net>, Michael Ellerman <mpe@ellerman.id.au>, x86@kernel.org, Russell King <linux@armlinux.org.uk>, Ingo Molnar <mingo@redhat.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Dave Young <dyoung@redhat.com>, Guenter Roeck <linux@roeck-us.net>, linux-watchdog@vger.kernel.org, Mauro Carvalho Chehab <mchehab@infradead.org>, Borislav Petkov <bp@alien8.de>, Thomas Gleixner <tglx@linutronix.de>, Wim Van Sebroeck <wim@linux-watchdog.org>, linux-arm-kernel@lists.infradead.org, Baoquan He <bhe@redhat.com>, kexec@lists.infradead.org, linux-kernel@vger.kernel.org, Vivek Goyal <vgoyal@redhat.com>, linuxppc-dev@lists.ozlabs.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Greg Ungerer <gerg@linux-m68k.org>
+Cc: uclinux-h8-devel@lists.sourceforge.jp, linux-xtensa@linux-xtensa.org, Michal Simek <monstr@monstr.eu>, Vladimir Murzin <vladimir.murzin@arm.com>, linux-c6x-dev@linux-c6x.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-riscv@lists.infradead.org, linux-arm-kernel@lists.infradead.org
 
-The Kdump documentation describes procedures with admins use
-in order to solve issues on their systems.
+This helper is the same for all architectures, open code it in the only
+caller.
 
-Signed-off-by: Mauro Carvalho Chehab <mchehab+samsung@kernel.org>
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+Tested-by: Vladimir Murzin <vladimir.murzin@arm.com>
+Reviewed-by: Vladimir Murzin <vladimir.murzin@arm.com>
 ---
- Documentation/admin-guide/bug-hunting.rst            | 4 ++--
- Documentation/admin-guide/index.rst                  | 1 +
- Documentation/{ => admin-guide}/kdump/gdbmacros.txt  | 0
- Documentation/{ => admin-guide}/kdump/index.rst      | 1 -
- Documentation/{ => admin-guide}/kdump/kdump.rst      | 0
- Documentation/{ => admin-guide}/kdump/vmcoreinfo.rst | 0
- Documentation/admin-guide/kernel-parameters.txt      | 6 +++---
- Documentation/powerpc/firmware-assisted-dump.rst     | 2 +-
- Documentation/translations/zh_CN/oops-tracing.txt    | 4 ++--
- Documentation/watchdog/hpwdt.rst                     | 2 +-
- MAINTAINERS                                          | 2 +-
- arch/arm/Kconfig                                     | 2 +-
- arch/arm64/Kconfig                                   | 2 +-
- arch/sh/Kconfig                                      | 2 +-
- arch/x86/Kconfig                                     | 4 ++--
- 15 files changed, 16 insertions(+), 16 deletions(-)
- rename Documentation/{ => admin-guide}/kdump/gdbmacros.txt (100%)
- rename Documentation/{ => admin-guide}/kdump/index.rst (97%)
- rename Documentation/{ => admin-guide}/kdump/kdump.rst (100%)
- rename Documentation/{ => admin-guide}/kdump/vmcoreinfo.rst (100%)
+ arch/arm/include/asm/flat.h        | 1 -
+ arch/c6x/include/asm/flat.h        | 1 -
+ arch/h8300/include/asm/flat.h      | 1 -
+ arch/m68k/include/asm/flat.h       | 1 -
+ arch/microblaze/include/asm/flat.h | 1 -
+ arch/sh/include/asm/flat.h         | 1 -
+ arch/xtensa/include/asm/flat.h     | 1 -
+ fs/binfmt_flat.c                   | 2 +-
+ 8 files changed, 1 insertion(+), 8 deletions(-)
 
-diff --git a/Documentation/admin-guide/bug-hunting.rst b/Documentation/admin-guide/bug-hunting.rst
-index b761aa2a51d2..44b8a4edd348 100644
---- a/Documentation/admin-guide/bug-hunting.rst
-+++ b/Documentation/admin-guide/bug-hunting.rst
-@@ -90,9 +90,9 @@ the disk is not available then you have three options:
-     run a null modem to a second machine and capture the output there
-     using your favourite communication program.  Minicom works well.
+diff --git a/arch/arm/include/asm/flat.h b/arch/arm/include/asm/flat.h
+index f0c75ddeea23..10cce9ecf151 100644
+--- a/arch/arm/include/asm/flat.h
++++ b/arch/arm/include/asm/flat.h
+@@ -10,7 +10,6 @@
  
--(3) Use Kdump (see Documentation/kdump/kdump.rst),
-+(3) Use Kdump (see Documentation/admin-guide/kdump/kdump.rst),
-     extract the kernel ring buffer from old memory with using dmesg
--    gdbmacro in Documentation/kdump/gdbmacros.txt.
-+    gdbmacro in Documentation/admin-guide/kdump/gdbmacros.txt.
+ #define	flat_argvp_envp_on_stack()		1
+ #define	flat_old_ram_flag(flags)		(flags)
+-#define	flat_reloc_valid(reloc, size)		((reloc) <= (size))
  
- Finding the bug's location
- --------------------------
-diff --git a/Documentation/admin-guide/index.rst b/Documentation/admin-guide/index.rst
-index e4f0cb2a02bd..9f6820a7e8f8 100644
---- a/Documentation/admin-guide/index.rst
-+++ b/Documentation/admin-guide/index.rst
-@@ -39,6 +39,7 @@ problems and bugs in particular.
-    ramoops
-    dynamic-debug-howto
-    init
-+   kdump/index
+ static inline int flat_get_addr_from_rp(u32 __user *rp, u32 relval, u32 flags,
+ 					u32 *addr, u32 *persistent)
+diff --git a/arch/c6x/include/asm/flat.h b/arch/c6x/include/asm/flat.h
+index 76fd0bb962a3..ecc6aea6606c 100644
+--- a/arch/c6x/include/asm/flat.h
++++ b/arch/c6x/include/asm/flat.h
+@@ -6,7 +6,6 @@
  
- This is the beginning of a section with information of interest to
- application developers.  Documents covering various aspects of the kernel
-diff --git a/Documentation/kdump/gdbmacros.txt b/Documentation/admin-guide/kdump/gdbmacros.txt
-similarity index 100%
-rename from Documentation/kdump/gdbmacros.txt
-rename to Documentation/admin-guide/kdump/gdbmacros.txt
-diff --git a/Documentation/kdump/index.rst b/Documentation/admin-guide/kdump/index.rst
-similarity index 97%
-rename from Documentation/kdump/index.rst
-rename to Documentation/admin-guide/kdump/index.rst
-index 2b17fcf6867a..8e2ebd0383cd 100644
---- a/Documentation/kdump/index.rst
-+++ b/Documentation/admin-guide/kdump/index.rst
-@@ -1,4 +1,3 @@
--:orphan:
+ #define flat_argvp_envp_on_stack()			0
+ #define flat_old_ram_flag(flags)			(flags)
+-#define flat_reloc_valid(reloc, size)			((reloc) <= (size))
+ static inline int flat_get_addr_from_rp(u32 __user *rp, u32 relval, u32 flags,
+ 					u32 *addr, u32 *persistent)
+ {
+diff --git a/arch/h8300/include/asm/flat.h b/arch/h8300/include/asm/flat.h
+index f4cdfcbdd2ba..dcc7775115dd 100644
+--- a/arch/h8300/include/asm/flat.h
++++ b/arch/h8300/include/asm/flat.h
+@@ -10,7 +10,6 @@
  
- ================================
- Documentation for Kdump - The kexec-based Crash Dumping Solution
-diff --git a/Documentation/kdump/kdump.rst b/Documentation/admin-guide/kdump/kdump.rst
-similarity index 100%
-rename from Documentation/kdump/kdump.rst
-rename to Documentation/admin-guide/kdump/kdump.rst
-diff --git a/Documentation/kdump/vmcoreinfo.rst b/Documentation/admin-guide/kdump/vmcoreinfo.rst
-similarity index 100%
-rename from Documentation/kdump/vmcoreinfo.rst
-rename to Documentation/admin-guide/kdump/vmcoreinfo.rst
-diff --git a/Documentation/admin-guide/kernel-parameters.txt b/Documentation/admin-guide/kernel-parameters.txt
-index 69a9e2e66dfb..1f3fc445c78d 100644
---- a/Documentation/admin-guide/kernel-parameters.txt
-+++ b/Documentation/admin-guide/kernel-parameters.txt
-@@ -708,14 +708,14 @@
- 			[KNL, x86_64] select a region under 4G first, and
- 			fall back to reserve region above 4G when '@offset'
- 			hasn't been specified.
--			See Documentation/kdump/kdump.rst for further details.
-+			See Documentation/admin-guide/kdump/kdump.rst for further details.
+ #define	flat_argvp_envp_on_stack()		1
+ #define	flat_old_ram_flag(flags)		1
+-#define	flat_reloc_valid(reloc, size)		((reloc) <= (size))
+ #define	flat_set_persistent(relval, p)		0
  
- 	crashkernel=range1:size1[,range2:size2,...][@offset]
- 			[KNL] Same as above, but depends on the memory
- 			in the running system. The syntax of range is
- 			start-[end] where start and end are both
- 			a memory unit (amount[KMG]). See also
--			Documentation/kdump/kdump.rst for an example.
-+			Documentation/admin-guide/kdump/kdump.rst for an example.
+ /*
+diff --git a/arch/m68k/include/asm/flat.h b/arch/m68k/include/asm/flat.h
+index 4f1d1e373420..a631caf5e18f 100644
+--- a/arch/m68k/include/asm/flat.h
++++ b/arch/m68k/include/asm/flat.h
+@@ -10,7 +10,6 @@
  
- 	crashkernel=size[KMG],high
- 			[KNL, x86_64] range could be above 4G. Allow kernel
-@@ -1207,7 +1207,7 @@
- 			Specifies physical address of start of kernel core
- 			image elf header and optionally the size. Generally
- 			kexec loader will pass this option to capture kernel.
--			See Documentation/kdump/kdump.rst for details.
-+			See Documentation/admin-guide/kdump/kdump.rst for details.
+ #define	flat_argvp_envp_on_stack()		1
+ #define	flat_old_ram_flag(flags)		(flags)
+-#define	flat_reloc_valid(reloc, size)		((reloc) <= (size))
+ static inline int flat_get_addr_from_rp(u32 __user *rp, u32 relval, u32 flags,
+ 					u32 *addr, u32 *persistent)
+ {
+diff --git a/arch/microblaze/include/asm/flat.h b/arch/microblaze/include/asm/flat.h
+index 3d2747d4c967..34be5ed011be 100644
+--- a/arch/microblaze/include/asm/flat.h
++++ b/arch/microblaze/include/asm/flat.h
+@@ -15,7 +15,6 @@
  
- 	enable_mtrr_cleanup [X86]
- 			The kernel tries to adjust MTRR layout from continuous
-diff --git a/Documentation/powerpc/firmware-assisted-dump.rst b/Documentation/powerpc/firmware-assisted-dump.rst
-index d7fa7c35dd12..9ca12830a48e 100644
---- a/Documentation/powerpc/firmware-assisted-dump.rst
-+++ b/Documentation/powerpc/firmware-assisted-dump.rst
-@@ -61,7 +61,7 @@ as follows:
-          the default calculated size. Use this option if default
-          boot memory size is not sufficient for second kernel to
-          boot successfully. For syntax of crashkernel= parameter,
--         refer to Documentation/kdump/kdump.rst. If any offset is
-+         refer to Documentation/admin-guide/kdump/kdump.rst. If any offset is
-          provided in crashkernel= parameter, it will be ignored
-          as fadump uses a predefined offset to reserve memory
-          for boot memory dump preservation in case of a crash.
-diff --git a/Documentation/translations/zh_CN/oops-tracing.txt b/Documentation/translations/zh_CN/oops-tracing.txt
-index 368ddd05b304..c5f3bda7abcb 100644
---- a/Documentation/translations/zh_CN/oops-tracing.txt
-+++ b/Documentation/translations/zh_CN/oops-tracing.txt
-@@ -53,8 +53,8 @@ cat /proc/kmsg > file， 然而你必须介入中止传输， kmsg是一个“
- （2）用串口终端启动（请参看Documentation/admin-guide/serial-console.rst），运行一个null
- modem到另一台机器并用你喜欢的通讯工具获取输出。Minicom工作地很好。
+ #define	flat_argvp_envp_on_stack()	0
+ #define	flat_old_ram_flag(flags)	(flags)
+-#define	flat_reloc_valid(reloc, size)	((reloc) <= (size))
+ #define	flat_set_persistent(relval, p)		0
  
--（3）使用Kdump（请参看Documentation/kdump/kdump.rst），
--使用在Documentation/kdump/gdbmacros.txt中定义的dmesg gdb宏，从旧的内存中提取内核
-+（3）使用Kdump（请参看Documentation/admin-guide/kdump/kdump.rst），
-+使用在Documentation/admin-guide/kdump/gdbmacros.txt中定义的dmesg gdb宏，从旧的内存中提取内核
- 环形缓冲区。
+ /*
+diff --git a/arch/sh/include/asm/flat.h b/arch/sh/include/asm/flat.h
+index 843d458b8329..8f2929b32f2e 100644
+--- a/arch/sh/include/asm/flat.h
++++ b/arch/sh/include/asm/flat.h
+@@ -13,7 +13,6 @@
  
- 完整信息
-diff --git a/Documentation/watchdog/hpwdt.rst b/Documentation/watchdog/hpwdt.rst
-index 437456bd91a4..9a75720dd51a 100644
---- a/Documentation/watchdog/hpwdt.rst
-+++ b/Documentation/watchdog/hpwdt.rst
-@@ -59,7 +59,7 @@ Last reviewed: 08/20/2018
-  and loop forever.  This is generally not what a watchdog user wants.
+ #define	flat_argvp_envp_on_stack()		0
+ #define	flat_old_ram_flag(flags)		(flags)
+-#define	flat_reloc_valid(reloc, size)		((reloc) <= (size))
+ static inline int flat_get_addr_from_rp(u32 __user *rp, u32 relval, u32 flags,
+ 					u32 *addr, u32 *persistent)
+ {
+diff --git a/arch/xtensa/include/asm/flat.h b/arch/xtensa/include/asm/flat.h
+index b8532d7877b3..6ee5a35eb0ec 100644
+--- a/arch/xtensa/include/asm/flat.h
++++ b/arch/xtensa/include/asm/flat.h
+@@ -6,7 +6,6 @@
  
-  For those wishing to learn more please see:
--	Documentation/kdump/kdump.rst
-+	Documentation/admin-guide/kdump/kdump.rst
- 	Documentation/admin-guide/kernel-parameters.txt (panic=)
- 	Your Linux Distribution specific documentation.
+ #define flat_argvp_envp_on_stack()			0
+ #define flat_old_ram_flag(flags)			(flags)
+-#define flat_reloc_valid(reloc, size)			((reloc) <= (size))
+ static inline int flat_get_addr_from_rp(u32 __user *rp, u32 relval, u32 flags,
+ 					u32 *addr, u32 *persistent)
+ {
+diff --git a/fs/binfmt_flat.c b/fs/binfmt_flat.c
+index 82a48e830018..afddea583999 100644
+--- a/fs/binfmt_flat.c
++++ b/fs/binfmt_flat.c
+@@ -345,7 +345,7 @@ calc_reloc(unsigned long r, struct lib_info *p, int curid, int internalp)
+ 	start_code = p->lib_list[id].start_code;
+ 	text_len = p->lib_list[id].text_len;
  
-diff --git a/MAINTAINERS b/MAINTAINERS
-index ab170522ec55..071b9e5a1664 100644
---- a/MAINTAINERS
-+++ b/MAINTAINERS
-@@ -8571,7 +8571,7 @@ R:	Vivek Goyal <vgoyal@redhat.com>
- L:	kexec@lists.infradead.org
- W:	http://lse.sourceforge.net/kdump/
- S:	Maintained
--F:	Documentation/kdump/
-+F:	Documentation/admin-guide/kdump/
- 
- KEENE FM RADIO TRANSMITTER DRIVER
- M:	Hans Verkuil <hverkuil@xs4all.nl>
-diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
-index ff0e247573d8..fc495004f148 100644
---- a/arch/arm/Kconfig
-+++ b/arch/arm/Kconfig
-@@ -2009,7 +2009,7 @@ config CRASH_DUMP
- 	  kdump/kexec. The crash dump kernel must be compiled to a
- 	  memory address not used by the main kernel
- 
--	  For more details see Documentation/kdump/kdump.rst
-+	  For more details see Documentation/admin-guide/kdump/kdump.rst
- 
- config AUTO_ZRELADDR
- 	bool "Auto calculation of the decompressed kernel image address"
-diff --git a/arch/arm64/Kconfig b/arch/arm64/Kconfig
-index a8a5fe91c579..9c2275b22904 100644
---- a/arch/arm64/Kconfig
-+++ b/arch/arm64/Kconfig
-@@ -995,7 +995,7 @@ config CRASH_DUMP
- 	  reserved region and then later executed after a crash by
- 	  kdump/kexec.
- 
--	  For more details see Documentation/kdump/kdump.rst
-+	  For more details see Documentation/admin-guide/kdump/kdump.rst
- 
- config XEN_DOM0
- 	def_bool y
-diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-index 7440639510a0..b731d22c5b9d 100644
---- a/arch/sh/Kconfig
-+++ b/arch/sh/Kconfig
-@@ -624,7 +624,7 @@ config CRASH_DUMP
- 	  to a memory address not used by the main kernel using
- 	  PHYSICAL_START.
- 
--	  For more details see Documentation/kdump/kdump.rst
-+	  For more details see Documentation/admin-guide/kdump/kdump.rst
- 
- config KEXEC_JUMP
- 	bool "kexec jump (EXPERIMENTAL)"
-diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
-index 586dd3529d14..8ed2e47ef4ba 100644
---- a/arch/x86/Kconfig
-+++ b/arch/x86/Kconfig
-@@ -2052,7 +2052,7 @@ config CRASH_DUMP
- 	  to a memory address not used by the main kernel or BIOS using
- 	  PHYSICAL_START, or it must be built as a relocatable image
- 	  (CONFIG_RELOCATABLE=y).
--	  For more details see Documentation/kdump/kdump.rst
-+	  For more details see Documentation/admin-guide/kdump/kdump.rst
- 
- config KEXEC_JUMP
- 	bool "kexec jump"
-@@ -2089,7 +2089,7 @@ config PHYSICAL_START
- 	  the reserved region.  In other words, it can be set based on
- 	  the "X" value as specified in the "crashkernel=YM@XM"
- 	  command line boot parameter passed to the panic-ed
--	  kernel. Please take a look at Documentation/kdump/kdump.rst
-+	  kernel. Please take a look at Documentation/admin-guide/kdump/kdump.rst
- 	  for more details about crash dumps.
- 
- 	  Usage of bzImage for capturing the crash dump is recommended as
+-	if (!flat_reloc_valid(r, start_brk - start_data + text_len)) {
++	if (r > start_brk - start_data + text_len) {
+ 		pr_err("reloc outside program 0x%lx (0 - 0x%lx/0x%lx)",
+ 		       r, start_brk-start_data+text_len, text_len);
+ 		goto failed;
 -- 
-2.21.0
+2.20.1
