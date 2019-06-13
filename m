@@ -1,428 +1,463 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Tue, 25 Jun 2019 14:37:08 +0000
-Subject: [PATCH 09/16] sparc64: use the generic get_user_pages_fast code
-Message-Id: <20190625143715.1689-10-hch@lst.de>
+From: Anshuman Khandual <anshuman.khandual@arm.com>
+Date: Thu, 13 Jun 2019 10:19:24 +0000
+Subject: [PATCH] mm: Generalize and rename notify_page_fault() as kprobe_page_fault()
+Message-Id: <1560420444-25737-1-git-send-email-anshuman.khandual@arm.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190625143715.1689-1-hch@lst.de>
-In-Reply-To: <20190625143715.1689-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm@linux-foundation.org>, Linus Torvalds <torvalds@linux-foundation.org>, Paul Burton <paul.burton@mips.com>, James Hogan <jhogan@kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, "David S. Miller" <davem@davemloft.net>
-Cc: Nicholas Piggin <npiggin@gmail.com>, Khalid Aziz <khalid.aziz@oracle.com>, Andrey Konovalov <andreyknvl@google.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Michael Ellerman <mpe@ellerman.id.au>, linux-mips@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-mm@kvack.org, x86@kernel.org, linux-kernel@vger.kernel.org
+To: linux-mm@kvack.org, linux-kernel@vger.kernel.org
+Cc: Mark Rutland <mark.rutland@arm.com>, Michal Hocko <mhocko@suse.com>, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, Catalin Marinas <catalin.marinas@arm.com>, Dave Hansen <dave.hansen@linux.intel.com>, Will Deacon <will.deacon@arm.com>, Paul Mackerras <paulus@samba.org>, sparclinux@vger.kernel.org, Stephen Rothwell <sfr@canb.auug.org.au>, linux-s390@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Michael Ellerman <mpe@ellerman.id.au>, x86@kernel.org, Russell King <linux@armlinux.org.uk>, Matthew Wilcox <willy@infradead.org>, Ingo Molnar <mingo@redhat.com>, James Hogan <jhogan@kernel.org>, linux-snps-arc@lists.infradead.org, Fenghua Yu <fenghua.yu@intel.com>, Anshuman Khandual <anshuman.khandual@arm.com>, Andrey Konovalov <andreyknvl@google.com>, Andy Lutomirski <luto@kernel.org>, Thomas Gleixner <tglx@linutronix.de>, linux-arm-kernel@lists.infradead.org, Christophe Leroy <christophe.leroy@c-s.fr>, Tony Luck <tony.luck@intel.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, Vineet Gupta <vgupta@synopsys.com>, linux-mips@vger.kernel.org, Ralf Baechle <ralf@linux-mips.org>, Paul Burton <paul.burton@mips.com>, Martin Schwidefsky <schwidefsky@de.ibm.com>, Andrew Morton <akpm@linux-foundation.org>, linuxppc-dev@lists.ozlabs.org, "David S. Miller" <davem@davemloft.net>
 
-The sparc64 code is mostly equivalent to the generic one, minus various
-bugfixes and two arch overrides that this patch adds to pgtable.h.
+Architectures which support kprobes have very similar boilerplate around
+calling kprobe_fault_handler(). Use a helper function in kprobes.h to unify
+them, based on the x86 code.
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
-Reviewed-by: Khalid Aziz <khalid.aziz@oracle.com>
+This changes the behaviour for other architectures when preemption is
+enabled. Previously, they would have disabled preemption while calling the
+kprobe handler. However, preemption would be disabled if this fault was
+due to a kprobe, so we know the fault was not due to a kprobe handler and
+can simply return failure.
+
+This behaviour was introduced in the commit a980c0ef9f6d ("x86/kprobes:
+Refactor kprobes_fault() like kprobe_exceptions_notify()")
+
+Cc: linux-snps-arc@lists.infradead.org
+Cc: linux-mips@vger.kernel.org
+Cc: linux-arm-kernel@lists.infradead.org
+Cc: linux-ia64@vger.kernel.org
+Cc: linuxppc-dev@lists.ozlabs.org
+Cc: linux-s390@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
+Cc: sparclinux@vger.kernel.org
+Cc: x86@kernel.org
+Cc: Andrew Morton <akpm@linux-foundation.org>
+Cc: Michal Hocko <mhocko@suse.com>
+Cc: Matthew Wilcox <willy@infradead.org>
+Cc: Mark Rutland <mark.rutland@arm.com>
+Cc: Christophe Leroy <christophe.leroy@c-s.fr>
+Cc: Stephen Rothwell <sfr@canb.auug.org.au>
+Cc: Andrey Konovalov <andreyknvl@google.com>
+Cc: Michael Ellerman <mpe@ellerman.id.au>
+Cc: Paul Mackerras <paulus@samba.org>
+Cc: Russell King <linux@armlinux.org.uk>
+Cc: Catalin Marinas <catalin.marinas@arm.com>
+Cc: Will Deacon <will.deacon@arm.com>
+Cc: Tony Luck <tony.luck@intel.com>
+Cc: Fenghua Yu <fenghua.yu@intel.com>
+Cc: Martin Schwidefsky <schwidefsky@de.ibm.com>
+Cc: Heiko Carstens <heiko.carstens@de.ibm.com>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: "David S. Miller" <davem@davemloft.net>
+Cc: Thomas Gleixner <tglx@linutronix.de>
+Cc: Peter Zijlstra <peterz@infradead.org>
+Cc: Ingo Molnar <mingo@redhat.com>
+Cc: Andy Lutomirski <luto@kernel.org>
+Cc: Dave Hansen <dave.hansen@linux.intel.com>
+Cc: Vineet Gupta <vgupta@synopsys.com>
+Cc: James Hogan <jhogan@kernel.org>
+Cc: Paul Burton <paul.burton@mips.com>
+Cc: Ralf Baechle <ralf@linux-mips.org>
+
+Reviewed-by: Dave Hansen <dave.hansen@linux.intel.com>
+Signed-off-by: Anshuman Khandual <anshuman.khandual@arm.com>
 ---
- arch/sparc/Kconfig                  |   1 +
- arch/sparc/include/asm/pgtable_64.h |  18 ++
- arch/sparc/mm/Makefile              |   2 +-
- arch/sparc/mm/gup.c                 | 340 ----------------------------
- 4 files changed, 20 insertions(+), 341 deletions(-)
- delete mode 100644 arch/sparc/mm/gup.c
+Questions:
 
-diff --git a/arch/sparc/Kconfig b/arch/sparc/Kconfig
-index 26ab6f5bbaaf..22435471f942 100644
---- a/arch/sparc/Kconfig
-+++ b/arch/sparc/Kconfig
-@@ -28,6 +28,7 @@ config SPARC
- 	select RTC_DRV_M48T59
- 	select RTC_SYSTOHC
- 	select HAVE_ARCH_JUMP_LABEL if SPARC64
-+	select HAVE_GENERIC_GUP if SPARC64
- 	select GENERIC_IRQ_SHOW
- 	select ARCH_WANT_IPC_PARSE_VERSION
- 	select GENERIC_PCI_IOMAP
-diff --git a/arch/sparc/include/asm/pgtable_64.h b/arch/sparc/include/asm/pgtable_64.h
-index 1904782dcd39..547ff96fb228 100644
---- a/arch/sparc/include/asm/pgtable_64.h
-+++ b/arch/sparc/include/asm/pgtable_64.h
-@@ -1098,6 +1098,24 @@ static inline unsigned long untagged_addr(unsigned long start)
+AFAICT there is no equivalent of erstwhile notify_page_fault() during page
+fault handling in arc and mips archs which can call this generic function.
+Please let me know if that is not the case.
+
+Testing:
+
+- Build and boot tested on arm64 and x86
+- Build tested on some other archs (arm, sparc64, alpha, powerpc etc)
+
+Changes in V1:
+
+- Updated commit message per Matthew
+- Changed kprobe_page_fault() to return bool per Stephen/Dave/Christophe/Matthew
+- Changed kprobe_page_fault() to follow x86 code flow per Dave/Matthew
+- Changed kprobe_fault variable as bool in powerpc __do_page_fault()
+- Added a comment to kprobe_page_fault() per Dave
+
+Changes in RFC V3: (https://patchwork.kernel.org/patch/10981353/)
+
+- Updated the commit message with an explanation for new preemption behaviour
+- Moved notify_page_fault() to kprobes.h with 'static nokprobe_inline' per Matthew
+- Changed notify_page_fault() return type from int to bool per Michael Ellerman
+- Renamed notify_page_fault() as kprobe_page_fault() per Peterz
+
+Changes in RFC V2: (https://patchwork.kernel.org/patch/10974221/)
+
+- Changed generic notify_page_fault() per Mathew Wilcox
+- Changed x86 to use new generic notify_page_fault()
+- s/must not/need not/ in commit message per Matthew Wilcox
+
+Changes in RFC V1: (https://patchwork.kernel.org/patch/10968273/)
+
+ arch/arm/mm/fault.c      | 24 +-----------------------
+ arch/arm64/mm/fault.c    | 24 +-----------------------
+ arch/ia64/mm/fault.c     | 24 +-----------------------
+ arch/powerpc/mm/fault.c  | 23 ++---------------------
+ arch/s390/mm/fault.c     | 16 +---------------
+ arch/sh/mm/fault.c       | 18 ++----------------
+ arch/sparc/mm/fault_64.c | 16 +---------------
+ arch/x86/mm/fault.c      | 21 ++-------------------
+ include/linux/kprobes.h  | 19 +++++++++++++++++++
+ 9 files changed, 30 insertions(+), 155 deletions(-)
+
+diff --git a/arch/arm/mm/fault.c b/arch/arm/mm/fault.c
+index 58f69fa..94a97a4 100644
+--- a/arch/arm/mm/fault.c
++++ b/arch/arm/mm/fault.c
+@@ -30,28 +30,6 @@
+ 
+ #ifdef CONFIG_MMU
+ 
+-#ifdef CONFIG_KPROBES
+-static inline int notify_page_fault(struct pt_regs *regs, unsigned int fsr)
+-{
+-	int ret = 0;
+-
+-	if (!user_mode(regs)) {
+-		/* kprobe_running() needs smp_processor_id() */
+-		preempt_disable();
+-		if (kprobe_running() && kprobe_fault_handler(regs, fsr))
+-			ret = 1;
+-		preempt_enable();
+-	}
+-
+-	return ret;
+-}
+-#else
+-static inline int notify_page_fault(struct pt_regs *regs, unsigned int fsr)
+-{
+-	return 0;
+-}
+-#endif
+-
+ /*
+  * This is useful to dump out the page tables associated with
+  * 'addr' in mm 'mm'.
+@@ -266,7 +244,7 @@ do_page_fault(unsigned long addr, unsigned int fsr, struct pt_regs *regs)
+ 	vm_fault_t fault;
+ 	unsigned int flags = FAULT_FLAG_ALLOW_RETRY | FAULT_FLAG_KILLABLE;
+ 
+-	if (notify_page_fault(regs, fsr))
++	if (kprobe_page_fault(regs, fsr))
+ 		return 0;
+ 
+ 	tsk = current;
+diff --git a/arch/arm64/mm/fault.c b/arch/arm64/mm/fault.c
+index a30818e..8fe4bbc 100644
+--- a/arch/arm64/mm/fault.c
++++ b/arch/arm64/mm/fault.c
+@@ -70,28 +70,6 @@ static inline const struct fault_info *esr_to_debug_fault_info(unsigned int esr)
+ 	return debug_fault_info + DBG_ESR_EVT(esr);
  }
- #define untagged_addr untagged_addr
  
-+static inline bool pte_access_permitted(pte_t pte, bool write)
-+{
-+	u64 prot;
-+
-+	if (tlb_type = hypervisor) {
-+		prot = _PAGE_PRESENT_4V | _PAGE_P_4V;
-+		if (write)
-+			prot |= _PAGE_WRITE_4V;
-+	} else {
-+		prot = _PAGE_PRESENT_4U | _PAGE_P_4U;
-+		if (write)
-+			prot |= _PAGE_WRITE_4U;
-+	}
-+
-+	return (pte_val(pte) & (prot | _PAGE_SPECIAL)) = prot;
-+}
-+#define pte_access_permitted pte_access_permitted
-+
+-#ifdef CONFIG_KPROBES
+-static inline int notify_page_fault(struct pt_regs *regs, unsigned int esr)
+-{
+-	int ret = 0;
+-
+-	/* kprobe_running() needs smp_processor_id() */
+-	if (!user_mode(regs)) {
+-		preempt_disable();
+-		if (kprobe_running() && kprobe_fault_handler(regs, esr))
+-			ret = 1;
+-		preempt_enable();
+-	}
+-
+-	return ret;
+-}
+-#else
+-static inline int notify_page_fault(struct pt_regs *regs, unsigned int esr)
+-{
+-	return 0;
+-}
+-#endif
+-
+ static void data_abort_decode(unsigned int esr)
+ {
+ 	pr_alert("Data abort info:\n");
+@@ -446,7 +424,7 @@ static int __kprobes do_page_fault(unsigned long addr, unsigned int esr,
+ 	unsigned long vm_flags = VM_READ | VM_WRITE;
+ 	unsigned int mm_flags = FAULT_FLAG_ALLOW_RETRY | FAULT_FLAG_KILLABLE;
+ 
+-	if (notify_page_fault(regs, esr))
++	if (kprobe_page_fault(regs, esr))
+ 		return 0;
+ 
+ 	tsk = current;
+diff --git a/arch/ia64/mm/fault.c b/arch/ia64/mm/fault.c
+index 5baeb02..22582f8 100644
+--- a/arch/ia64/mm/fault.c
++++ b/arch/ia64/mm/fault.c
+@@ -21,28 +21,6 @@
+ 
+ extern int die(char *, struct pt_regs *, long);
+ 
+-#ifdef CONFIG_KPROBES
+-static inline int notify_page_fault(struct pt_regs *regs, int trap)
+-{
+-	int ret = 0;
+-
+-	if (!user_mode(regs)) {
+-		/* kprobe_running() needs smp_processor_id() */
+-		preempt_disable();
+-		if (kprobe_running() && kprobe_fault_handler(regs, trap))
+-			ret = 1;
+-		preempt_enable();
+-	}
+-
+-	return ret;
+-}
+-#else
+-static inline int notify_page_fault(struct pt_regs *regs, int trap)
+-{
+-	return 0;
+-}
+-#endif
+-
+ /*
+  * Return TRUE if ADDRESS points at a page in the kernel's mapped segment
+  * (inside region 5, on ia64) and that page is present.
+@@ -116,7 +94,7 @@ ia64_do_page_fault (unsigned long address, unsigned long isr, struct pt_regs *re
+ 	/*
+ 	 * This is to handle the kprobes on user space access instructions
+ 	 */
+-	if (notify_page_fault(regs, TRAP_BRKPT))
++	if (kprobe_page_fault(regs, TRAP_BRKPT))
+ 		return;
+ 
+ 	if (user_mode(regs))
+diff --git a/arch/powerpc/mm/fault.c b/arch/powerpc/mm/fault.c
+index ec6b7ad..bc4e1af 100644
+--- a/arch/powerpc/mm/fault.c
++++ b/arch/powerpc/mm/fault.c
+@@ -42,26 +42,6 @@
+ #include <asm/debug.h>
+ #include <asm/kup.h>
+ 
+-static inline bool notify_page_fault(struct pt_regs *regs)
+-{
+-	bool ret = false;
+-
+-#ifdef CONFIG_KPROBES
+-	/* kprobe_running() needs smp_processor_id() */
+-	if (!user_mode(regs)) {
+-		preempt_disable();
+-		if (kprobe_running() && kprobe_fault_handler(regs, 11))
+-			ret = true;
+-		preempt_enable();
+-	}
+-#endif /* CONFIG_KPROBES */
+-
+-	if (unlikely(debugger_fault_handler(regs)))
+-		ret = true;
+-
+-	return ret;
+-}
+-
+ /*
+  * Check whether the instruction inst is a store using
+  * an update addressing form which will update r1.
+@@ -462,8 +442,9 @@ static int __do_page_fault(struct pt_regs *regs, unsigned long address,
+ 	int is_write = page_fault_is_write(error_code);
+ 	vm_fault_t fault, major = 0;
+ 	bool must_retry = false;
++	bool kprobe_fault = kprobe_page_fault(regs, 11);
+ 
+-	if (notify_page_fault(regs))
++	if (unlikely(debugger_fault_handler(regs) || kprobe_fault))
+ 		return 0;
+ 
+ 	if (unlikely(page_fault_is_bad(error_code))) {
+diff --git a/arch/s390/mm/fault.c b/arch/s390/mm/fault.c
+index df75d57..1aaae2c 100644
+--- a/arch/s390/mm/fault.c
++++ b/arch/s390/mm/fault.c
+@@ -67,20 +67,6 @@ static int __init fault_init(void)
+ }
+ early_initcall(fault_init);
+ 
+-static inline int notify_page_fault(struct pt_regs *regs)
+-{
+-	int ret = 0;
+-
+-	/* kprobe_running() needs smp_processor_id() */
+-	if (kprobes_built_in() && !user_mode(regs)) {
+-		preempt_disable();
+-		if (kprobe_running() && kprobe_fault_handler(regs, 14))
+-			ret = 1;
+-		preempt_enable();
+-	}
+-	return ret;
+-}
+-
+ /*
+  * Find out which address space caused the exception.
+  */
+@@ -414,7 +400,7 @@ static inline vm_fault_t do_exception(struct pt_regs *regs, int access)
+ 	 */
+ 	clear_pt_regs_flag(regs, PIF_PER_TRAP);
+ 
+-	if (notify_page_fault(regs))
++	if (kprobe_page_fault(regs, 14))
+ 		return 0;
+ 
+ 	mm = tsk->mm;
+diff --git a/arch/sh/mm/fault.c b/arch/sh/mm/fault.c
+index 6defd2c6..74cd4ac 100644
+--- a/arch/sh/mm/fault.c
++++ b/arch/sh/mm/fault.c
+@@ -24,20 +24,6 @@
  #include <asm/tlbflush.h>
- #include <asm-generic/pgtable.h>
+ #include <asm/traps.h>
  
-diff --git a/arch/sparc/mm/Makefile b/arch/sparc/mm/Makefile
-index d39075b1e3b7..b078205b70e0 100644
---- a/arch/sparc/mm/Makefile
-+++ b/arch/sparc/mm/Makefile
-@@ -5,7 +5,7 @@
- asflags-y := -ansi
- ccflags-y := -Werror
+-static inline int notify_page_fault(struct pt_regs *regs, int trap)
+-{
+-	int ret = 0;
+-
+-	if (kprobes_built_in() && !user_mode(regs)) {
+-		preempt_disable();
+-		if (kprobe_running() && kprobe_fault_handler(regs, trap))
+-			ret = 1;
+-		preempt_enable();
+-	}
+-
+-	return ret;
+-}
+-
+ static void
+ force_sig_info_fault(int si_signo, int si_code, unsigned long address,
+ 		     struct task_struct *tsk)
+@@ -415,14 +401,14 @@ asmlinkage void __kprobes do_page_fault(struct pt_regs *regs,
+ 	if (unlikely(fault_in_kernel_space(address))) {
+ 		if (vmalloc_fault(address) >= 0)
+ 			return;
+-		if (notify_page_fault(regs, vec))
++		if (kprobe_page_fault(regs, vec))
+ 			return;
  
--obj-$(CONFIG_SPARC64)   += ultra.o tlb.o tsb.o gup.o
-+obj-$(CONFIG_SPARC64)   += ultra.o tlb.o tsb.o
- obj-y                   += fault_$(BITS).o
- obj-y                   += init_$(BITS).o
- obj-$(CONFIG_SPARC32)   += extable.o srmmu.o iommu.o io-unit.o
-diff --git a/arch/sparc/mm/gup.c b/arch/sparc/mm/gup.c
-deleted file mode 100644
-index 1e770a517d4a..000000000000
---- a/arch/sparc/mm/gup.c
-+++ /dev/null
-@@ -1,340 +0,0 @@
--// SPDX-License-Identifier: GPL-2.0
--/*
-- * Lockless get_user_pages_fast for sparc, cribbed from powerpc
-- *
-- * Copyright (C) 2008 Nick Piggin
-- * Copyright (C) 2008 Novell Inc.
-- */
--
--#include <linux/sched.h>
--#include <linux/mm.h>
--#include <linux/vmstat.h>
--#include <linux/pagemap.h>
--#include <linux/rwsem.h>
--#include <asm/pgtable.h>
--#include <asm/adi.h>
--
--/*
-- * The performance critical leaf functions are made noinline otherwise gcc
-- * inlines everything into a single function which results in too much
-- * register pressure.
-- */
--static noinline int gup_pte_range(pmd_t pmd, unsigned long addr,
--		unsigned long end, int write, struct page **pages, int *nr)
+ 		bad_area_nosemaphore(regs, error_code, address);
+ 		return;
+ 	}
+ 
+-	if (unlikely(notify_page_fault(regs, vec)))
++	if (unlikely(kprobe_page_fault(regs, vec)))
+ 		return;
+ 
+ 	/* Only enable interrupts if they were on before the fault */
+diff --git a/arch/sparc/mm/fault_64.c b/arch/sparc/mm/fault_64.c
+index 8f8a604..6865f9c 100644
+--- a/arch/sparc/mm/fault_64.c
++++ b/arch/sparc/mm/fault_64.c
+@@ -38,20 +38,6 @@
+ 
+ int show_unhandled_signals = 1;
+ 
+-static inline __kprobes int notify_page_fault(struct pt_regs *regs)
 -{
--	unsigned long mask, result;
--	pte_t *ptep;
+-	int ret = 0;
 -
--	if (tlb_type = hypervisor) {
--		result = _PAGE_PRESENT_4V|_PAGE_P_4V;
--		if (write)
--			result |= _PAGE_WRITE_4V;
--	} else {
--		result = _PAGE_PRESENT_4U|_PAGE_P_4U;
--		if (write)
--			result |= _PAGE_WRITE_4U;
+-	/* kprobe_running() needs smp_processor_id() */
+-	if (kprobes_built_in() && !user_mode(regs)) {
+-		preempt_disable();
+-		if (kprobe_running() && kprobe_fault_handler(regs, 0))
+-			ret = 1;
+-		preempt_enable();
 -	}
--	mask = result | _PAGE_SPECIAL;
--
--	ptep = pte_offset_kernel(&pmd, addr);
--	do {
--		struct page *page, *head;
--		pte_t pte = *ptep;
--
--		if ((pte_val(pte) & mask) != result)
--			return 0;
--		VM_BUG_ON(!pfn_valid(pte_pfn(pte)));
--
--		/* The hugepage case is simplified on sparc64 because
--		 * we encode the sub-page pfn offsets into the
--		 * hugepage PTEs.  We could optimize this in the future
--		 * use page_cache_add_speculative() for the hugepage case.
--		 */
--		page = pte_page(pte);
--		head = compound_head(page);
--		if (!page_cache_get_speculative(head))
--			return 0;
--		if (unlikely(pte_val(pte) != pte_val(*ptep))) {
--			put_page(head);
--			return 0;
--		}
--
--		pages[*nr] = page;
--		(*nr)++;
--	} while (ptep++, addr += PAGE_SIZE, addr != end);
--
--	return 1;
+-	return ret;
 -}
 -
--static int gup_huge_pmd(pmd_t *pmdp, pmd_t pmd, unsigned long addr,
--			unsigned long end, int write, struct page **pages,
--			int *nr)
+ static void __kprobes unhandled_fault(unsigned long address,
+ 				      struct task_struct *tsk,
+ 				      struct pt_regs *regs)
+@@ -285,7 +271,7 @@ asmlinkage void __kprobes do_sparc64_fault(struct pt_regs *regs)
+ 
+ 	fault_code = get_thread_fault_code();
+ 
+-	if (notify_page_fault(regs))
++	if (kprobe_page_fault(regs, 0))
+ 		goto exit_exception;
+ 
+ 	si_code = SEGV_MAPERR;
+diff --git a/arch/x86/mm/fault.c b/arch/x86/mm/fault.c
+index 46df4c6..5400f4e 100644
+--- a/arch/x86/mm/fault.c
++++ b/arch/x86/mm/fault.c
+@@ -46,23 +46,6 @@ kmmio_fault(struct pt_regs *regs, unsigned long addr)
+ 	return 0;
+ }
+ 
+-static nokprobe_inline int kprobes_fault(struct pt_regs *regs)
 -{
--	struct page *head, *page;
--	int refs;
--
--	if (!(pmd_val(pmd) & _PAGE_VALID))
+-	if (!kprobes_built_in())
 -		return 0;
--
--	if (write && !pmd_write(pmd))
+-	if (user_mode(regs))
 -		return 0;
--
--	refs = 0;
--	page = pmd_page(pmd) + ((addr & ~PMD_MASK) >> PAGE_SHIFT);
--	head = compound_head(page);
--	do {
--		VM_BUG_ON(compound_head(page) != head);
--		pages[*nr] = page;
--		(*nr)++;
--		page++;
--		refs++;
--	} while (addr += PAGE_SIZE, addr != end);
--
--	if (!page_cache_add_speculative(head, refs)) {
--		*nr -= refs;
--		return 0;
--	}
--
--	if (unlikely(pmd_val(pmd) != pmd_val(*pmdp))) {
--		*nr -= refs;
--		while (refs--)
--			put_page(head);
--		return 0;
--	}
--
--	return 1;
--}
--
--static int gup_huge_pud(pud_t *pudp, pud_t pud, unsigned long addr,
--			unsigned long end, int write, struct page **pages,
--			int *nr)
--{
--	struct page *head, *page;
--	int refs;
--
--	if (!(pud_val(pud) & _PAGE_VALID))
--		return 0;
--
--	if (write && !pud_write(pud))
--		return 0;
--
--	refs = 0;
--	page = pud_page(pud) + ((addr & ~PUD_MASK) >> PAGE_SHIFT);
--	head = compound_head(page);
--	do {
--		VM_BUG_ON(compound_head(page) != head);
--		pages[*nr] = page;
--		(*nr)++;
--		page++;
--		refs++;
--	} while (addr += PAGE_SIZE, addr != end);
--
--	if (!page_cache_add_speculative(head, refs)) {
--		*nr -= refs;
--		return 0;
--	}
--
--	if (unlikely(pud_val(pud) != pud_val(*pudp))) {
--		*nr -= refs;
--		while (refs--)
--			put_page(head);
--		return 0;
--	}
--
--	return 1;
--}
--
--static int gup_pmd_range(pud_t pud, unsigned long addr, unsigned long end,
--		int write, struct page **pages, int *nr)
--{
--	unsigned long next;
--	pmd_t *pmdp;
--
--	pmdp = pmd_offset(&pud, addr);
--	do {
--		pmd_t pmd = *pmdp;
--
--		next = pmd_addr_end(addr, end);
--		if (pmd_none(pmd))
--			return 0;
--		if (unlikely(pmd_large(pmd))) {
--			if (!gup_huge_pmd(pmdp, pmd, addr, next,
--					  write, pages, nr))
--				return 0;
--		} else if (!gup_pte_range(pmd, addr, next, write,
--					  pages, nr))
--			return 0;
--	} while (pmdp++, addr = next, addr != end);
--
--	return 1;
--}
--
--static int gup_pud_range(pgd_t pgd, unsigned long addr, unsigned long end,
--		int write, struct page **pages, int *nr)
--{
--	unsigned long next;
--	pud_t *pudp;
--
--	pudp = pud_offset(&pgd, addr);
--	do {
--		pud_t pud = *pudp;
--
--		next = pud_addr_end(addr, end);
--		if (pud_none(pud))
--			return 0;
--		if (unlikely(pud_large(pud))) {
--			if (!gup_huge_pud(pudp, pud, addr, next,
--					  write, pages, nr))
--				return 0;
--		} else if (!gup_pmd_range(pud, addr, next, write, pages, nr))
--			return 0;
--	} while (pudp++, addr = next, addr != end);
--
--	return 1;
--}
--
--/*
-- * Note a difference with get_user_pages_fast: this always returns the
-- * number of pages pinned, 0 if no pages were pinned.
-- */
--int __get_user_pages_fast(unsigned long start, int nr_pages, int write,
--			  struct page **pages)
--{
--	struct mm_struct *mm = current->mm;
--	unsigned long addr, len, end;
--	unsigned long next, flags;
--	pgd_t *pgdp;
--	int nr = 0;
--
--#ifdef CONFIG_SPARC64
--	if (adi_capable()) {
--		long addr = start;
--
--		/* If userspace has passed a versioned address, kernel
--		 * will not find it in the VMAs since it does not store
--		 * the version tags in the list of VMAs. Storing version
--		 * tags in list of VMAs is impractical since they can be
--		 * changed any time from userspace without dropping into
--		 * kernel. Any address search in VMAs will be done with
--		 * non-versioned addresses. Ensure the ADI version bits
--		 * are dropped here by sign extending the last bit before
--		 * ADI bits. IOMMU does not implement version tags.
--		 */
--		addr = (addr << (long)adi_nbits()) >> (long)adi_nbits();
--		start = addr;
--	}
--#endif
--	start &= PAGE_MASK;
--	addr = start;
--	len = (unsigned long) nr_pages << PAGE_SHIFT;
--	end = start + len;
--
--	local_irq_save(flags);
--	pgdp = pgd_offset(mm, addr);
--	do {
--		pgd_t pgd = *pgdp;
--
--		next = pgd_addr_end(addr, end);
--		if (pgd_none(pgd))
--			break;
--		if (!gup_pud_range(pgd, addr, next, write, pages, &nr))
--			break;
--	} while (pgdp++, addr = next, addr != end);
--	local_irq_restore(flags);
--
--	return nr;
--}
--
--int get_user_pages_fast(unsigned long start, int nr_pages,
--			unsigned int gup_flags, struct page **pages)
--{
--	struct mm_struct *mm = current->mm;
--	unsigned long addr, len, end;
--	unsigned long next;
--	pgd_t *pgdp;
--	int nr = 0;
--
--#ifdef CONFIG_SPARC64
--	if (adi_capable()) {
--		long addr = start;
--
--		/* If userspace has passed a versioned address, kernel
--		 * will not find it in the VMAs since it does not store
--		 * the version tags in the list of VMAs. Storing version
--		 * tags in list of VMAs is impractical since they can be
--		 * changed any time from userspace without dropping into
--		 * kernel. Any address search in VMAs will be done with
--		 * non-versioned addresses. Ensure the ADI version bits
--		 * are dropped here by sign extending the last bit before
--		 * ADI bits. IOMMU does not implements version tags,
--		 */
--		addr = (addr << (long)adi_nbits()) >> (long)adi_nbits();
--		start = addr;
--	}
--#endif
--	start &= PAGE_MASK;
--	addr = start;
--	len = (unsigned long) nr_pages << PAGE_SHIFT;
--	end = start + len;
--
 -	/*
--	 * XXX: batch / limit 'nr', to avoid large irq off latency
--	 * needs some instrumenting to determine the common sizes used by
--	 * important workloads (eg. DB2), and whether limiting the batch size
--	 * will decrease performance.
--	 *
--	 * It seems like we're in the clear for the moment. Direct-IO is
--	 * the main guy that batches up lots of get_user_pages, and even
--	 * they are limited to 64-at-a-time which is not so many.
+-	 * To be potentially processing a kprobe fault and to be allowed to call
+-	 * kprobe_running(), we have to be non-preemptible.
 -	 */
--	/*
--	 * This doesn't prevent pagetable teardown, but does prevent
--	 * the pagetables from being freed on sparc.
--	 *
--	 * So long as we atomically load page table pointers versus teardown,
--	 * we can follow the address down to the the page and take a ref on it.
--	 */
--	local_irq_disable();
--
--	pgdp = pgd_offset(mm, addr);
--	do {
--		pgd_t pgd = *pgdp;
--
--		next = pgd_addr_end(addr, end);
--		if (pgd_none(pgd))
--			goto slow;
--		if (!gup_pud_range(pgd, addr, next, gup_flags & FOLL_WRITE,
--				   pages, &nr))
--			goto slow;
--	} while (pgdp++, addr = next, addr != end);
--
--	local_irq_enable();
--
--	VM_BUG_ON(nr != (end - start) >> PAGE_SHIFT);
--	return nr;
--
--	{
--		int ret;
--
--slow:
--		local_irq_enable();
--
--		/* Try to get the remaining pages with get_user_pages */
--		start += nr << PAGE_SHIFT;
--		pages += nr;
--
--		ret = get_user_pages_unlocked(start,
--			(end - start) >> PAGE_SHIFT, pages,
--			gup_flags);
--
--		/* Have to be a bit careful with return values */
--		if (nr > 0) {
--			if (ret < 0)
--				ret = nr;
--			else
--				ret += nr;
--		}
--
--		return ret;
--	}
+-	if (preemptible())
+-		return 0;
+-	if (!kprobe_running())
+-		return 0;
+-	return kprobe_fault_handler(regs, X86_TRAP_PF);
 -}
+-
+ /*
+  * Prefetch quirks:
+  *
+@@ -1280,7 +1263,7 @@ do_kern_addr_fault(struct pt_regs *regs, unsigned long hw_error_code,
+ 		return;
+ 
+ 	/* kprobes don't want to hook the spurious faults: */
+-	if (kprobes_fault(regs))
++	if (kprobe_page_fault(regs, X86_TRAP_PF))
+ 		return;
+ 
+ 	/*
+@@ -1311,7 +1294,7 @@ void do_user_addr_fault(struct pt_regs *regs,
+ 	mm = tsk->mm;
+ 
+ 	/* kprobes don't want to hook the spurious faults: */
+-	if (unlikely(kprobes_fault(regs)))
++	if (unlikely(kprobe_page_fault(regs, X86_TRAP_PF)))
+ 		return;
+ 
+ 	/*
+diff --git a/include/linux/kprobes.h b/include/linux/kprobes.h
+index 443d980..04bdaf0 100644
+--- a/include/linux/kprobes.h
++++ b/include/linux/kprobes.h
+@@ -458,4 +458,23 @@ static inline bool is_kprobe_optinsn_slot(unsigned long addr)
+ }
+ #endif
+ 
++/* Returns true if kprobes handled the fault */
++static nokprobe_inline bool kprobe_page_fault(struct pt_regs *regs,
++					      unsigned int trap)
++{
++	if (!kprobes_built_in())
++		return false;
++	if (user_mode(regs))
++		return false;
++	/*
++	 * To be potentially processing a kprobe fault and to be allowed
++	 * to call kprobe_running(), we have to be non-preemptible.
++	 */
++	if (preemptible())
++		return false;
++	if (!kprobe_running())
++		return false;
++	return kprobe_fault_handler(regs, trap);
++}
++
+ #endif /* _LINUX_KPROBES_H */
 -- 
-2.20.1
+2.7.4
