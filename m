@@ -1,57 +1,58 @@
 From: Christoph Hellwig <hch@lst.de>
-Date: Tue, 25 Jun 2019 14:37:07 +0000
-Subject: [PATCH 08/16] sparc64: define untagged_addr()
-Message-Id: <20190625143715.1689-9-hch@lst.de>
+Date: Thu, 13 Jun 2019 07:09:01 +0000
+Subject: [PATCH 15/17] binfmt_flat: move the MAX_SHARED_LIBS definition to binfmt_flat.c
+Message-Id: <20190613070903.17214-16-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190625143715.1689-1-hch@lst.de>
-In-Reply-To: <20190625143715.1689-1-hch@lst.de>
+References: <20190613070903.17214-1-hch@lst.de>
+In-Reply-To: <20190613070903.17214-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm@linux-foundation.org>, Linus Torvalds <torvalds@linux-foundation.org>, Paul Burton <paul.burton@mips.com>, James Hogan <jhogan@kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, "David S. Miller" <davem@davemloft.net>
-Cc: Nicholas Piggin <npiggin@gmail.com>, Khalid Aziz <khalid.aziz@oracle.com>, Andrey Konovalov <andreyknvl@google.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Michael Ellerman <mpe@ellerman.id.au>, linux-mips@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-mm@kvack.org, x86@kernel.org, linux-kernel@vger.kernel.org
+To: Greg Ungerer <gerg@linux-m68k.org>
+Cc: uclinux-h8-devel@lists.sourceforge.jp, linux-xtensa@linux-xtensa.org, Michal Simek <monstr@monstr.eu>, linux-c6x-dev@linux-c6x.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-riscv@lists.infradead.org, linux-arm-kernel@lists.infradead.org
 
-Add a helper to untag a user pointer.  This is needed for ADI support
-in get_user_pages_fast.
+MAX_SHARED_LIBS is an implementation detail of the kernel loader,
+and should be kept away from the file format definition.
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
-Reviewed-by: Khalid Aziz <khalid.aziz@oracle.com>
 ---
- arch/sparc/include/asm/pgtable_64.h | 22 ++++++++++++++++++++++
- 1 file changed, 22 insertions(+)
+ fs/binfmt_flat.c     | 6 ++++++
+ include/linux/flat.h | 6 ------
+ 2 files changed, 6 insertions(+), 6 deletions(-)
 
-diff --git a/arch/sparc/include/asm/pgtable_64.h b/arch/sparc/include/asm/pgtable_64.h
-index f0dcf991d27f..1904782dcd39 100644
---- a/arch/sparc/include/asm/pgtable_64.h
-+++ b/arch/sparc/include/asm/pgtable_64.h
-@@ -1076,6 +1076,28 @@ static inline int io_remap_pfn_range(struct vm_area_struct *vma,
- }
- #define io_remap_pfn_range io_remap_pfn_range 
+diff --git a/fs/binfmt_flat.c b/fs/binfmt_flat.c
+index 0ca65d51bb01..ccd9843e979e 100644
+--- a/fs/binfmt_flat.c
++++ b/fs/binfmt_flat.c
+@@ -68,6 +68,12 @@
+ #define RELOC_FAILED 0xff00ff01		/* Relocation incorrect somewhere */
+ #define UNLOADED_LIB 0x7ff000ff		/* Placeholder for unused library */
  
-+static inline unsigned long untagged_addr(unsigned long start)
-+{
-+	if (adi_capable()) {
-+		long addr = start;
++#ifdef CONFIG_BINFMT_SHARED_FLAT
++#define	MAX_SHARED_LIBS			(4)
++#else
++#define	MAX_SHARED_LIBS			(1)
++#endif
 +
-+		/* If userspace has passed a versioned address, kernel
-+		 * will not find it in the VMAs since it does not store
-+		 * the version tags in the list of VMAs. Storing version
-+		 * tags in list of VMAs is impractical since they can be
-+		 * changed any time from userspace without dropping into
-+		 * kernel. Any address search in VMAs will be done with
-+		 * non-versioned addresses. Ensure the ADI version bits
-+		 * are dropped here by sign extending the last bit before
-+		 * ADI bits. IOMMU does not implement version tags.
-+		 */
-+		return (addr << (long)adi_nbits()) >> (long)adi_nbits();
-+	}
-+
-+	return start;
-+}
-+#define untagged_addr untagged_addr
-+
- #include <asm/tlbflush.h>
- #include <asm-generic/pgtable.h>
+ struct lib_info {
+ 	struct {
+ 		unsigned long start_code;		/* Start of text segment */
+diff --git a/include/linux/flat.h b/include/linux/flat.h
+index d586bb6e64a7..83977c0ce3de 100644
+--- a/include/linux/flat.h
++++ b/include/linux/flat.h
+@@ -12,12 +12,6 @@
  
+ #define	FLAT_VERSION			0x00000004L
+ 
+-#ifdef CONFIG_BINFMT_SHARED_FLAT
+-#define	MAX_SHARED_LIBS			(4)
+-#else
+-#define	MAX_SHARED_LIBS			(1)
+-#endif
+-
+ /*
+  * To make everything easier to port and manage cross platform
+  * development,  all fields are in network byte order.
 -- 
 2.20.1
