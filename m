@@ -1,45 +1,34 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Sat, 01 Jun 2019 07:49:45 +0000
-Subject: [PATCH 02/16] mm: use untagged_addr() for get_user_pages_fast addresses
-Message-Id: <20190601074959.14036-3-hch@lst.de>
+From: "Mark Maths" <trade1@nejknio.cf>
+Date: Mon, 17 Jun 2019 07:08:39 +0000
+Subject: PRODUCT INQUIRY FOR EXPORT SHIPMENT
+Message-Id: <0.0.1.D63.1D524DB7223FA7A.0@slot0.nejknio.cf>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190601074959.14036-1-hch@lst.de>
-In-Reply-To: <20190601074959.14036-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>, Paul Burton <paul.burton@mips.com>, James Hogan <jhogan@kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, "David S. Miller" <davem@davemloft.net>
-Cc: Nicholas Piggin <npiggin@gmail.com>, Khalid Aziz <khalid.aziz@oracle.com>, Andrey Konovalov <andreyknvl@google.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Michael Ellerman <mpe@ellerman.id.au>, linux-mips@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-mm@kvack.org, x86@kernel.org, linux-kernel@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-This will allow sparc64 to override its ADI tags for
-get_user_pages and get_user_pages_fast.
+Dear Sales team,
+ 
+In furtherance to our market research, we have reviewed all your products types and we have finally interested in your product for our market here in 
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
----
- mm/gup.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+United State for your production. We introduce ourselves as Emilxa Tram SRL, A general group of company located in the United State. 
 
-diff --git a/mm/gup.c b/mm/gup.c
-index f173fcbaf1b2..9775f7675653 100644
---- a/mm/gup.c
-+++ b/mm/gup.c
-@@ -2145,7 +2145,7 @@ int __get_user_pages_fast(unsigned long start, int nr_pages, int write,
- 	unsigned long flags;
- 	int nr = 0;
- 
--	start &= PAGE_MASK;
-+	start = untagged_addr(start) & PAGE_MASK;
- 	len = (unsigned long) nr_pages << PAGE_SHIFT;
- 	end = start + len;
- 
-@@ -2218,7 +2218,7 @@ int get_user_pages_fast(unsigned long start, int nr_pages,
- 	unsigned long addr, len, end;
- 	int nr = 0, ret = 0;
- 
--	start &= PAGE_MASK;
-+	start = untagged_addr(start) & PAGE_MASK;
- 	addr = start;
- 	len = (unsigned long) nr_pages << PAGE_SHIFT;
- 	end = start + len;
--- 
-2.20.1
+We are sourcing for new suppliers from your location 
+
+Kindly advice us if you accept new purchase orders, I will forward our PO for urgent order.
+
+Waiting for your response to send order. Reply to ( purchase_m.maths@aol.com)
+
+Best regards.
+Mark Maths
+Company Address:
+Emilxa Tram SRL Company Limited
+P.O. Box 978
+Road Town
+Tortola
+British Virgin Islands
+Contact information:
+Tel: +1 (284) 493 7235
+Email: purchase_m.maths@aol.com
+https://meridianbvi.com/contact-us/
