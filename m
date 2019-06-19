@@ -1,109 +1,38 @@
-From: Vladimir Murzin <vladimir.murzin@arm.com>
-Date: Tue, 11 Jun 2019 09:58:01 +0000
-Subject: Re: [PATCH 08/15] binfmt_flat: add endianess annotations
-Message-Id: <79a2f6d9-7161-b2c7-2eb0-6719daadca8b@arm.com>
+From: Alexandre Ghiti <alex@ghiti.fr>
+Date: Wed, 19 Jun 2019 05:42:17 +0000
+Subject: [PATCH RESEND 1/8] s390: Start fallback of top-down mmap at mm->mmap_base
+Message-Id: <20190619054224.5983-2-alex@ghiti.fr>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190610212015.9157-1-hch@lst.de>
- <20190610212015.9157-9-hch@lst.de>
-In-Reply-To: <20190610212015.9157-9-hch@lst.de>
+References: <20190619054224.5983-1-alex@ghiti.fr>
+In-Reply-To: <20190619054224.5983-1-alex@ghiti.fr>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Christoph Hellwig <hch@lst.de>, Greg Ungerer <gerg@linux-m68k.org>
-Cc: uclinux-h8-devel@lists.sourceforge.jp, linux-xtensa@linux-xtensa.org, Michal Simek <monstr@monstr.eu>, linux-c6x-dev@linux-c6x.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-riscv@lists.infradead.org, linux-arm-kernel@lists.infradead.org
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: "James E . J . Bottomley" <James.Bottomley@HansenPartnership.com>, Helge Deller <deller@gmx.de>, Heiko Carstens <heiko.carstens@de.ibm.com>, Vasily Gorbik <gor@linux.ibm.com>, Christian Borntraeger <borntraeger@de.ibm.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, "David S . Miller" <davem@davemloft.net>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>, "H . Peter Anvin" <hpa@zytor.com>, x86@kernel.org, Dave Hansen <dave.hansen@linux.intel.com>, Andy Lutomirski <luto@kernel.org>, Peter Zijlstra <peterz@infradead.org>, linux-parisc@vger.kernel.org, linux-kernel@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-mm@kvack.org, Alexandre Ghiti <alex@ghiti.fr>
 
-On 6/10/19 10:20 PM, Christoph Hellwig wrote:
-> Most binfmt_flat on-disk fields are big endian.  Use the proper __be32
-> type where applicable.
-> 
-> Signed-off-by: Christoph Hellwig <hch@lst.de>
-> ---
->  fs/binfmt_flat.c | 26 ++++++++++++++++----------
->  1 file changed, 16 insertions(+), 10 deletions(-)
+In case of mmap failure in top-down mode, there is no need to go through
+the whole address space again for the bottom-up fallback: the goal of this
+fallback is to find, as a last resort, space between the top-down mmap base
+and the stack, which is the only place not covered by the top-down mmap.
 
-Tested-by: Vladimir Murzin <vladimir.murzin@arm.com>
-Reviewed-by: Vladimir Murzin <vladimir.murzin@arm.com>
+Signed-off-by: Alexandre Ghiti <alex@ghiti.fr>
+---
+ arch/s390/mm/mmap.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-> 
-> diff --git a/fs/binfmt_flat.c b/fs/binfmt_flat.c
-> index 6ae0f9af3fc9..6c1848dee724 100644
-> --- a/fs/binfmt_flat.c
-> +++ b/fs/binfmt_flat.c
-> @@ -421,7 +421,8 @@ static int load_flat_file(struct linux_binprm *bprm,
->  	unsigned long textpos, datapos, realdatastart;
->  	u32 text_len, data_len, bss_len, stack_len, full_data, flags;
->  	unsigned long len, memp, memp_size, extra, rlim;
-> -	u32 __user *reloc, *rp;
-> +	__be32 __user *reloc;
-> +	u32 __user *rp;
->  	struct inode *inode;
->  	int i, rev, relocs;
->  	loff_t fpos;
-> @@ -594,7 +595,7 @@ static int load_flat_file(struct linux_binprm *bprm,
->  			goto err;
->  		}
->  
-> -		reloc = (u32 __user *)
-> +		reloc = (__be32 __user *)
->  			(datapos + (ntohl(hdr->reloc_start) - text_len));
->  		memp = realdatastart;
->  		memp_size = len;
-> @@ -619,7 +620,7 @@ static int load_flat_file(struct linux_binprm *bprm,
->  				MAX_SHARED_LIBS * sizeof(u32),
->  				FLAT_DATA_ALIGN);
->  
-> -		reloc = (u32 __user *)
-> +		reloc = (__be32 __user *)
->  			(datapos + (ntohl(hdr->reloc_start) - text_len));
->  		memp = textpos;
->  		memp_size = len;
-> @@ -785,15 +786,16 @@ static int load_flat_file(struct linux_binprm *bprm,
->  		u32 __maybe_unused persistent = 0;
->  		for (i = 0; i < relocs; i++) {
->  			u32 addr, relval;
-> +			__be32 tmp;
->  
->  			/*
->  			 * Get the address of the pointer to be
->  			 * relocated (of course, the address has to be
->  			 * relocated first).
->  			 */
-> -			if (get_user(relval, reloc + i))
-> +			if (get_user(tmp, reloc + i))
->  				return -EFAULT;
-> -			relval = ntohl(relval);
-> +			relval = ntohl(tmp);
->  			addr = flat_get_relocate_addr(relval);
->  			rp = (u32 __user *)calc_reloc(addr, libinfo, id, 1);
->  			if (rp = (u32 __user *)RELOC_FAILED) {
-> @@ -812,8 +814,13 @@ static int load_flat_file(struct linux_binprm *bprm,
->  				 * Do the relocation.  PIC relocs in the data section are
->  				 * already in target order
->  				 */
-> -				if ((flags & FLAT_FLAG_GOTPIC) = 0)
-> -					addr = ntohl(addr);
-> +				if ((flags & FLAT_FLAG_GOTPIC) = 0) {
-> +					/*
-> +					 * Meh, the same value can have a different
-> +					 * byte order based on a flag..
-> +					 */
-> +					addr = ntohl((__force __be32)addr);
-> +				}
->  				addr = calc_reloc(addr, libinfo, id, 0);
->  				if (addr = RELOC_FAILED) {
->  					ret = -ENOEXEC;
-> @@ -828,11 +835,10 @@ static int load_flat_file(struct linux_binprm *bprm,
->  		}
->  	} else {
->  		for (i = 0; i < relocs; i++) {
-> -			u32 relval;
-> +			__be32 relval;
->  			if (get_user(relval, reloc + i))
->  				return -EFAULT;
-> -			relval = ntohl(relval);
-> -			old_reloc(relval);
-> +			old_reloc(ntohl(relval));
->  		}
->  	}
->  
-> 
+diff --git a/arch/s390/mm/mmap.c b/arch/s390/mm/mmap.c
+index cbc718ba6d78..4a222969843b 100644
+--- a/arch/s390/mm/mmap.c
++++ b/arch/s390/mm/mmap.c
+@@ -166,7 +166,7 @@ arch_get_unmapped_area_topdown(struct file *filp, const unsigned long addr0,
+ 	if (addr & ~PAGE_MASK) {
+ 		VM_BUG_ON(addr != -ENOMEM);
+ 		info.flags = 0;
+-		info.low_limit = TASK_UNMAPPED_BASE;
++		info.low_limit = mm->mmap_base;
+ 		info.high_limit = TASK_SIZE;
+ 		addr = vm_unmapped_area(&info);
+ 		if (addr & ~PAGE_MASK)
+-- 
+2.20.1
