@@ -1,449 +1,62 @@
-From: Mauro Carvalho Chehab <mchehab+samsung@kernel.org>
-Date: Fri, 28 Jun 2019 17:06:27 +0000
-Subject: Re: [PATCH v3] Documentation:sh:convert register-banks.txt  and new-machine.txt to rst format.
-Message-Id: <20190628140627.31f584ad@coco.lan>
+From: Alexandre Ghiti <alex@ghiti.fr>
+Date: Thu, 20 Jun 2019 05:03:26 +0000
+Subject: [PATCH RESEND 6/8] parisc: Use mmap_base, not mmap_legacy_base, as low_limit for bottom-up mmap
+Message-Id: <20190620050328.8942-7-alex@ghiti.fr>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190628150345.8490-1-bnvandana@gmail.com>
-In-Reply-To: <20190628150345.8490-1-bnvandana@gmail.com>
+References: <20190620050328.8942-1-alex@ghiti.fr>
+In-Reply-To: <20190620050328.8942-1-alex@ghiti.fr>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: "James E . J . Bottomley" <James.Bottomley@HansenPartnership.com>, Helge Deller <deller@gmx.de>, Heiko Carstens <heiko.carstens@de.ibm.com>, Vasily Gorbik <gor@linux.ibm.com>, Christian Borntraeger <borntraeger@de.ibm.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, "David S . Miller" <davem@davemloft.net>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>, "H . Peter Anvin" <hpa@zytor.com>, x86@kernel.org, Dave Hansen <dave.hansen@linux.intel.com>, Andy Lutomirski <luto@kernel.org>, Peter Zijlstra <peterz@infradead.org>, linux-parisc@vger.kernel.org, linux-kernel@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-mm@kvack.org, Alexandre Ghiti <alex@ghiti.fr>
 
-Em Fri, 28 Jun 2019 20:33:45 +0530
-Vandana BN <bnvandana@gmail.com> escreveu:
+Bottom-up mmap scheme is used twice:
 
-> This patch converts new-machine.txt and register-banks.txt
-> to ReST format, No content change.
-> Added interfaces.rst to contain kernel-doc markups from index.rst
-> Added interfaces.rst,new-machine.rst and register-banks.rst to sh/index.rst
-> 
-> Signed-off-by: Vandana BN <bnvandana@gmail.com>
-> ---
->  Documentation/sh/index.rst                    |  63 +------
->  Documentation/sh/interface.rst                |  59 ++++++
->  .../sh/{new-machine.txt => new-machine.rst}   | 171 +++++++++---------
->  ...{register-banks.txt => register-banks.rst} |   8 +-
->  4 files changed, 161 insertions(+), 140 deletions(-)
->  create mode 100644 Documentation/sh/interface.rst
->  rename Documentation/sh/{new-machine.txt => new-machine.rst} (79%)
->  rename Documentation/sh/{register-banks.txt => register-banks.rst} (90%)
-> 
-> diff --git a/Documentation/sh/index.rst b/Documentation/sh/index.rst
-> index bc8db7ba894a..e9e4720cce0c 100644
-> --- a/Documentation/sh/index.rst
-> +++ b/Documentation/sh/index.rst
-> @@ -1,59 +1,12 @@
-> -===========> -SuperH Interfaces Guide
-> -===========> +==========
-> +SuperH Documentation
-> +==========
+- for legacy mode, in which mmap_legacy_base and mmap_base are equal.
 
-Please add a SPDX tag before the title. As this is actually a new
-file, it makes easier if you add it directly.
+- in case of mmap failure in top-down mode, where there is no need to go
+through the whole address space again for the bottom-up fallback: the goal
+of this fallback is to find, as a last resort, space between the top-down
+mmap base and the stack, which is the only place not covered by the
+top-down mmap.
 
-With that:
+Then this commit removes the usage of mmap_legacy_base field from parisc
+code.
 
-Reviewed-by: Mauro Carvalho Chehab <mchehab+samsung@kernel.org>
+Signed-off-by: Alexandre Ghiti <alex@ghiti.fr>
+---
+ arch/parisc/kernel/sys_parisc.c | 8 +++-----
+ 1 file changed, 3 insertions(+), 5 deletions(-)
 
-> 
->  :Author: Paul Mundt
-> 
-> -Memory Management
-> -========> +.. toctree::
-> +   :maxdepth: 2
-> 
-> -SH-4
-> -----
-> -
-> -Store Queue API
-> -~~~~~~~~~~~~~~~
-> -
-> -.. kernel-doc:: arch/sh/kernel/cpu/sh4/sq.c
-> -   :export:
-> -
-> -SH-5
-> -----
-> -
-> -TLB Interfaces
-> -~~~~~~~~~~~~~~
-> -
-> -.. kernel-doc:: arch/sh/mm/tlb-sh5.c
-> -   :internal:
-> -
-> -.. kernel-doc:: arch/sh/include/asm/tlb_64.h
-> -   :internal:
-> -
-> -Machine Specific Interfaces
-> -=============> -
-> -mach-dreamcast
-> ---------------
-> -
-> -.. kernel-doc:: arch/sh/boards/mach-dreamcast/rtc.c
-> -   :internal:
-> -
-> -mach-x3proto
-> -------------
-> -
-> -.. kernel-doc:: arch/sh/boards/mach-x3proto/ilsel.c
-> -   :export:
-> -
-> -Busses
-> -===
-> -
-> -SuperHyway
-> -----------
-> -
-> -.. kernel-doc:: drivers/sh/superhyway/superhyway.c
-> -   :export:
-> -
-> -Maple
-> ------
-> -
-> -.. kernel-doc:: drivers/sh/maple/maple.c
-> -   :export:
-> +   interface
-> +   new-machine
-> +   register-banks
-> diff --git a/Documentation/sh/interface.rst b/Documentation/sh/interface.rst
-> new file mode 100644
-> index 000000000000..bc8db7ba894a
-> --- /dev/null
-> +++ b/Documentation/sh/interface.rst
-> @@ -0,0 +1,59 @@
-> +===========> +SuperH Interfaces Guide
-> +===========> +
-> +:Author: Paul Mundt
-> +
-> +Memory Management
-> +========> +
-> +SH-4
-> +----
-> +
-> +Store Queue API
-> +~~~~~~~~~~~~~~~
-> +
-> +.. kernel-doc:: arch/sh/kernel/cpu/sh4/sq.c
-> +   :export:
-> +
-> +SH-5
-> +----
-> +
-> +TLB Interfaces
-> +~~~~~~~~~~~~~~
-> +
-> +.. kernel-doc:: arch/sh/mm/tlb-sh5.c
-> +   :internal:
-> +
-> +.. kernel-doc:: arch/sh/include/asm/tlb_64.h
-> +   :internal:
-> +
-> +Machine Specific Interfaces
-> +=============> +
-> +mach-dreamcast
-> +--------------
-> +
-> +.. kernel-doc:: arch/sh/boards/mach-dreamcast/rtc.c
-> +   :internal:
-> +
-> +mach-x3proto
-> +------------
-> +
-> +.. kernel-doc:: arch/sh/boards/mach-x3proto/ilsel.c
-> +   :export:
-> +
-> +Busses
-> +===
-> +
-> +SuperHyway
-> +----------
-> +
-> +.. kernel-doc:: drivers/sh/superhyway/superhyway.c
-> +   :export:
-> +
-> +Maple
-> +-----
-> +
-> +.. kernel-doc:: drivers/sh/maple/maple.c
-> +   :export:
-> diff --git a/Documentation/sh/new-machine.txt b/Documentation/sh/new-machine.rst
-> similarity index 79%
-> rename from Documentation/sh/new-machine.txt
-> rename to Documentation/sh/new-machine.rst
-> index e0961a66130b..b16c33342642 100644
-> --- a/Documentation/sh/new-machine.txt
-> +++ b/Documentation/sh/new-machine.rst
-> @@ -1,8 +1,8 @@
-> +================
-> +Adding a new board to LinuxSH
-> +================
-> 
-> -                Adding a new board to LinuxSH
-> -               ================
-> -
-> -               Paul Mundt <lethal@linux-sh.org>
-> +Paul Mundt <lethal@linux-sh.org>
-> 
->  This document attempts to outline what steps are necessary to add support
->  for new boards to the LinuxSH port under the new 2.5 and 2.6 kernels. This
-> @@ -19,65 +19,67 @@ include/asm-sh/. For the new kernel, things are broken out by board type,
->  companion chip type, and CPU type. Looking at a tree view of this directory
->  hierarchy looks like the following:
-> 
-> -Board-specific code:
-> -
-> -.
-> -|-- arch
-> -|   `-- sh
-> -|       `-- boards
-> -|           |-- adx
-> -|           |   `-- board-specific files
-> -|           |-- bigsur
-> -|           |   `-- board-specific files
-> -|           |
-> -|           ... more boards here ...
-> -|
-> -`-- include
-> -    `-- asm-sh
-> -        |-- adx
-> -        |   `-- board-specific headers
-> -        |-- bigsur
-> -        |   `-- board-specific headers
-> -        |
-> -	.. more boards here ...
-> -
-> -Next, for companion chips:
-> -.
-> -`-- arch
-> -    `-- sh
-> -        `-- cchips
-> -            `-- hd6446x
-> -                `-- hd64461
-> -                    `-- cchip-specific files
-> +Board-specific code::
-> +
-> + .
-> + |-- arch
-> + |   `-- sh
-> + |       `-- boards
-> + |           |-- adx
-> + |           |   `-- board-specific files
-> + |           |-- bigsur
-> + |           |   `-- board-specific files
-> + |           |
-> + |           ... more boards here ...
-> + |
-> + `-- include
-> +     `-- asm-sh
-> +         |-- adx
-> +         |   `-- board-specific headers
-> +         |-- bigsur
-> +         |   `-- board-specific headers
-> +         |
-> +       	 .. more boards here ...
-> +
-> +Next, for companion chips::
-> +
-> + .
-> + `-- arch
-> +     `-- sh
-> +         `-- cchips
-> +             `-- hd6446x
-> +                 `-- hd64461
-> +                     `-- cchip-specific files
-> 
->  ... and so on. Headers for the companion chips are treated the same way as
->  board-specific headers. Thus, include/asm-sh/hd64461 is home to all of the
->  hd64461-specific headers.
-> 
-> -Finally, CPU family support is also abstracted:
-> -.
-> -|-- arch
-> -|   `-- sh
-> -|       |-- kernel
-> -|       |   `-- cpu
-> -|       |       |-- sh2
-> -|       |       |   `-- SH-2 generic files
-> -|       |       |-- sh3
-> -|       |       |   `-- SH-3 generic files
-> -|       |       `-- sh4
-> -|       |           `-- SH-4 generic files
-> -|       `-- mm
-> -|           `-- This is also broken out per CPU family, so each family can
-> -|               have their own set of cache/tlb functions.
-> -|
-> -`-- include
-> -    `-- asm-sh
-> -        |-- cpu-sh2
-> -        |   `-- SH-2 specific headers
-> -        |-- cpu-sh3
-> -        |   `-- SH-3 specific headers
-> -        `-- cpu-sh4
-> -            `-- SH-4 specific headers
-> +Finally, CPU family support is also abstracted::
-> +
-> + .
-> + |-- arch
-> + |   `-- sh
-> + |       |-- kernel
-> + |       |   `-- cpu
-> + |       |       |-- sh2
-> + |       |       |   `-- SH-2 generic files
-> + |       |       |-- sh3
-> + |       |       |   `-- SH-3 generic files
-> + |       |       `-- sh4
-> + |       |           `-- SH-4 generic files
-> + |       `-- mm
-> + |           `-- This is also broken out per CPU family, so each family can
-> + |               have their own set of cache/tlb functions.
-> + |
-> + `-- include
-> +     `-- asm-sh
-> +         |-- cpu-sh2
-> +         |   `-- SH-2 specific headers
-> +         |-- cpu-sh3
-> +         |   `-- SH-3 specific headers
-> +         `-- cpu-sh4
-> +             `-- SH-4 specific headers
-> 
->  It should be noted that CPU subtypes are _not_ abstracted. Thus, these still
->  need to be dealt with by the CPU family specific code.
-> @@ -112,18 +114,20 @@ setup code, we're required at the very least to provide definitions for
->  get_system_type() and platform_setup(). For our imaginary board, this
->  might look something like:
-> 
-> -/*
-> - * arch/sh/boards/vapor/setup.c - Setup code for imaginary board
-> - */
-> -#include <linux/init.h>
-> +.. code-block:: c
-> +
-> +    /*
-> +     * arch/sh/boards/vapor/setup.c - Setup code for imaginary board
-> +     */
-> +    #include <linux/init.h>
-> 
-> -const char *get_system_type(void)
-> -{
-> -	return "FooTech Vaporboard";
-> -}
-> +    const char *get_system_type(void)
-> +    {
-> +        return "FooTech Vaporboard";
-> +    }
-> 
-> -int __init platform_setup(void)
-> -{
-> +    int __init platform_setup(void)
-> +    {
->    	/*
->  	 * If our hardware actually existed, we would do real
->  	 * setup here. Though it's also sane to leave this empty
-> @@ -136,7 +140,8 @@ int __init platform_setup(void)
->  	/* And whatever else ... */
-> 
->  	return 0;
-> -}
-> +    }
-> +
-> 
->  Our new imaginary board will also have to tie into the machvec in order for it
->  to be of any use.
-> @@ -172,16 +177,17 @@ sufficient.
->     vector.
-> 
->     Note that these prototypes are generated automatically by setting
-> -   __IO_PREFIX to something sensible. A typical example would be:
-> +   __IO_PREFIX to something sensible. A typical example would be::
-> 
->  	#define __IO_PREFIX vapor
->     	#include <asm/io_generic.h>
-> 
-> +
->     somewhere in the board-specific header. Any boards being ported that still
->     have a legacy io.h should remove it entirely and switch to the new model.
-> 
->   - Add machine vector definitions to the board's setup.c. At a bare minimum,
-> -   this must be defined as something like:
-> +   this must be defined as something like::
-> 
->  	struct sh_machine_vector mv_vapor __initmv = {
->  		.mv_name = "vapor",
-> @@ -202,11 +208,11 @@ Large portions of the build system are now entirely dynamic, and merely
->  require the proper entry here and there in order to get things done.
-> 
->  The first thing to do is to add an entry to arch/sh/Kconfig, under the
-> -"System type" menu:
-> +"System type" menu::
-> 
-> -config SH_VAPOR
-> -	bool "Vapor"
-> -	help
-> + config SH_VAPOR
-> +	 bool "Vapor"
-> +	 help
->  	  select Vapor if configuring for a FooTech Vaporboard.
-> 
->  next, this has to be added into arch/sh/Makefile. All boards require a
-> @@ -232,6 +238,8 @@ space restating it here. After this is done, you will be able to use
->  implicit checks for your board if you need this somewhere throughout the
->  common code, such as:
-> 
-> +::
-> +
->  	/* Make sure we're on the FooTech Vaporboard */
->  	if (!mach_is_vapor())
->  		return -ENODEV;
-> @@ -253,12 +261,13 @@ build target, and it will be implicitly listed as such in the help text.
->  Looking at the 'make help' output, you should now see something like:
-> 
->  Architecture specific targets (sh):
-> -  zImage                  - Compressed kernel image (arch/sh/boot/zImage)
-> -  adx_defconfig           - Build for adx
-> -  cqreek_defconfig        - Build for cqreek
-> -  dreamcast_defconfig     - Build for dreamcast
-> -...
-> -  vapor_defconfig         - Build for vapor
-> +
-> + - zImage                  - Compressed kernel image (arch/sh/boot/zImage)
-> + - adx_defconfig           - Build for adx
-> + - cqreek_defconfig        - Build for cqreek
-> + - dreamcast_defconfig     - Build for dreamcast
-> + - ...
-> + - vapor_defconfig         - Build for vapor
-> 
->  which then allows you to do:
-> 
-> diff --git a/Documentation/sh/register-banks.txt b/Documentation/sh/register-banks.rst
-> similarity index 90%
-> rename from Documentation/sh/register-banks.txt
-> rename to Documentation/sh/register-banks.rst
-> index a6719f2f6594..acccfaf80355 100644
-> --- a/Documentation/sh/register-banks.txt
-> +++ b/Documentation/sh/register-banks.rst
-> @@ -1,8 +1,9 @@
-> -	Notes on register bank usage in the kernel
-> -	=====================
-> +=====================
-> +Notes on register bank usage in the kernel
-> +=====================
-> 
->  Introduction
-> -------------
-> +======
-> 
->  The SH-3 and SH-4 CPU families traditionally include a single partial register
->  bank (selected by SR.RB, only r0 ... r7 are banked), whereas other families
-> @@ -30,4 +31,3 @@ Presently the kernel uses several of these registers.
->  		- The SR.IMASK interrupt handler makes use of this to set the
->  		  interrupt priority level (used by local_irq_enable())
->  	- r7_bank (current)
-> -
-> --
-> 2.17.1
-> 
-
-
-
-Thanks,
-Mauro
+diff --git a/arch/parisc/kernel/sys_parisc.c b/arch/parisc/kernel/sys_parisc.c
+index 5d458a44b09c..e987f3a8eb0b 100644
+--- a/arch/parisc/kernel/sys_parisc.c
++++ b/arch/parisc/kernel/sys_parisc.c
+@@ -119,7 +119,7 @@ unsigned long arch_get_unmapped_area(struct file *filp, unsigned long addr,
+ 
+ 	info.flags = 0;
+ 	info.length = len;
+-	info.low_limit = mm->mmap_legacy_base;
++	info.low_limit = mm->mmap_base;
+ 	info.high_limit = mmap_upper_limit(NULL);
+ 	info.align_mask = last_mmap ? (PAGE_MASK & (SHM_COLOUR - 1)) : 0;
+ 	info.align_offset = shared_align_offset(last_mmap, pgoff);
+@@ -240,13 +240,11 @@ static unsigned long mmap_legacy_base(void)
+  */
+ void arch_pick_mmap_layout(struct mm_struct *mm, struct rlimit *rlim_stack)
+ {
+-	mm->mmap_legacy_base = mmap_legacy_base();
+-	mm->mmap_base = mmap_upper_limit(rlim_stack);
+-
+ 	if (mmap_is_legacy()) {
+-		mm->mmap_base = mm->mmap_legacy_base;
++		mm->mmap_base = mmap_legacy_base();
+ 		mm->get_unmapped_area = arch_get_unmapped_area;
+ 	} else {
++		mm->mmap_base = mmap_upper_limit(rlim_stack);
+ 		mm->get_unmapped_area = arch_get_unmapped_area_topdown;
+ 	}
+ }
+-- 
+2.20.1
