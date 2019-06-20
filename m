@@ -1,96 +1,52 @@
-From: Wei Yang <richard.weiyang@gmail.com>
-Date: Tue, 04 Jun 2019 21:47:53 +0000
-Subject: Re: [PATCH v3 08/11] mm/memory_hotplug: Drop MHP_MEMBLOCK_API
-Message-Id: <20190604214753.utbdrjtjavgi7yhf@master>
+From: Alexandre Ghiti <alex@ghiti.fr>
+Date: Thu, 20 Jun 2019 05:03:23 +0000
+Subject: [PATCH RESEND 3/8] sparc: Start fallback of top-down mmap at mm->mmap_base
+Message-Id: <20190620050328.8942-4-alex@ghiti.fr>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190527111152.16324-1-david@redhat.com>
- <20190527111152.16324-9-david@redhat.com>
-In-Reply-To: <20190527111152.16324-9-david@redhat.com>
+References: <20190620050328.8942-1-alex@ghiti.fr>
+In-Reply-To: <20190620050328.8942-1-alex@ghiti.fr>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: David Hildenbrand <david@redhat.com>
-Cc: Oscar Salvador <osalvador@suse.com>, linux-s390@vger.kernel.org, Michal Hocko <mhocko@suse.com>, linux-ia64@vger.kernel.org, Pavel Tatashin <pasha.tatashin@soleen.com>, linux-sh@vger.kernel.org, Mathieu Malaterre <malat@debian.org>, Joonsoo Kim <iamjoonsoo.kim@lge.com>, linux-kernel@vger.kernel.org, Wei Yang <richard.weiyang@gmail.com>, linux-mm@kvack.org, Arun KS <arunks@codeaurora.org>, Qian Cai <cai@lca.pw>, Igor Mammedov <imammedo@redhat.com>, akpm@linux-foundation.org, linuxppc-dev@lists.ozlabs.org, Dan Williams <dan.j.williams@intel.com>, linux-arm-kernel@lists.infradead.org
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: "James E . J . Bottomley" <James.Bottomley@HansenPartnership.com>, Helge Deller <deller@gmx.de>, Heiko Carstens <heiko.carstens@de.ibm.com>, Vasily Gorbik <gor@linux.ibm.com>, Christian Borntraeger <borntraeger@de.ibm.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, "David S . Miller" <davem@davemloft.net>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>, "H . Peter Anvin" <hpa@zytor.com>, x86@kernel.org, Dave Hansen <dave.hansen@linux.intel.com>, Andy Lutomirski <luto@kernel.org>, Peter Zijlstra <peterz@infradead.org>, linux-parisc@vger.kernel.org, linux-kernel@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-mm@kvack.org, Alexandre Ghiti <alex@ghiti.fr>
 
-On Mon, May 27, 2019 at 01:11:49PM +0200, David Hildenbrand wrote:
->No longer needed, the callers of arch_add_memory() can handle this
->manually.
->
->Cc: Andrew Morton <akpm@linux-foundation.org>
->Cc: David Hildenbrand <david@redhat.com>
->Cc: Michal Hocko <mhocko@suse.com>
->Cc: Oscar Salvador <osalvador@suse.com>
->Cc: Pavel Tatashin <pasha.tatashin@soleen.com>
->Cc: Wei Yang <richard.weiyang@gmail.com>
->Cc: Joonsoo Kim <iamjoonsoo.kim@lge.com>
->Cc: Qian Cai <cai@lca.pw>
->Cc: Arun KS <arunks@codeaurora.org>
->Cc: Mathieu Malaterre <malat@debian.org>
->Signed-off-by: David Hildenbrand <david@redhat.com>
+In case of mmap failure in top-down mode, there is no need to go through
+the whole address space again for the bottom-up fallback: the goal of this
+fallback is to find, as a last resort, space between the top-down mmap base
+and the stack, which is the only place not covered by the top-down mmap.
 
-Reviewed-by: Wei Yang <richardw.yang@linux.intel.com>
+Signed-off-by: Alexandre Ghiti <alex@ghiti.fr>
+---
+ arch/sparc/kernel/sys_sparc_64.c | 2 +-
+ arch/sparc/mm/hugetlbpage.c      | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
 
->---
-> include/linux/memory_hotplug.h | 8 --------
-> mm/memory_hotplug.c            | 9 +++------
-> 2 files changed, 3 insertions(+), 14 deletions(-)
->
->diff --git a/include/linux/memory_hotplug.h b/include/linux/memory_hotplug.h
->index 2d4de313926d..2f1f87e13baa 100644
->--- a/include/linux/memory_hotplug.h
->+++ b/include/linux/memory_hotplug.h
->@@ -128,14 +128,6 @@ extern void arch_remove_memory(int nid, u64 start, u64 size,
-> extern void __remove_pages(struct zone *zone, unsigned long start_pfn,
-> 			   unsigned long nr_pages, struct vmem_altmap *altmap);
-> 
->-/*
->- * Do we want sysfs memblock files created. This will allow userspace to online
->- * and offline memory explicitly. Lack of this bit means that the caller has to
->- * call move_pfn_range_to_zone to finish the initialization.
->- */
->-
->-#define MHP_MEMBLOCK_API               (1<<0)
->-
-> /* reasonably generic interface to expand the physical pages */
-> extern int __add_pages(int nid, unsigned long start_pfn, unsigned long nr_pages,
-> 		       struct mhp_restrictions *restrictions);
->diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
->index b1fde90bbf19..9a92549ef23b 100644
->--- a/mm/memory_hotplug.c
->+++ b/mm/memory_hotplug.c
->@@ -251,7 +251,7 @@ void __init register_page_bootmem_info_node(struct pglist_data *pgdat)
-> #endif /* CONFIG_HAVE_BOOTMEM_INFO_NODE */
-> 
-> static int __meminit __add_section(int nid, unsigned long phys_start_pfn,
->-		struct vmem_altmap *altmap, bool want_memblock)
->+				   struct vmem_altmap *altmap)
-> {
-> 	int ret;
-> 
->@@ -294,8 +294,7 @@ int __ref __add_pages(int nid, unsigned long phys_start_pfn,
-> 	}
-> 
-> 	for (i = start_sec; i <= end_sec; i++) {
->-		err = __add_section(nid, section_nr_to_pfn(i), altmap,
->-				restrictions->flags & MHP_MEMBLOCK_API);
->+		err = __add_section(nid, section_nr_to_pfn(i), altmap);
-> 
-> 		/*
-> 		 * EEXIST is finally dealt with by ioresource collision
->@@ -1067,9 +1066,7 @@ static int online_memory_block(struct memory_block *mem, void *arg)
->  */
-> int __ref add_memory_resource(int nid, struct resource *res)
-> {
->-	struct mhp_restrictions restrictions = {
->-		.flags = MHP_MEMBLOCK_API,
->-	};
->+	struct mhp_restrictions restrictions = {};
-> 	u64 start, size;
-> 	bool new_node = false;
-> 	int ret;
->-- 
->2.20.1
-
+diff --git a/arch/sparc/kernel/sys_sparc_64.c b/arch/sparc/kernel/sys_sparc_64.c
+index ccc88926bc00..ea1de1e5fa8d 100644
+--- a/arch/sparc/kernel/sys_sparc_64.c
++++ b/arch/sparc/kernel/sys_sparc_64.c
+@@ -206,7 +206,7 @@ arch_get_unmapped_area_topdown(struct file *filp, const unsigned long addr0,
+ 	if (addr & ~PAGE_MASK) {
+ 		VM_BUG_ON(addr != -ENOMEM);
+ 		info.flags = 0;
+-		info.low_limit = TASK_UNMAPPED_BASE;
++		info.low_limit = mm->mmap_base;
+ 		info.high_limit = STACK_TOP32;
+ 		addr = vm_unmapped_area(&info);
+ 	}
+diff --git a/arch/sparc/mm/hugetlbpage.c b/arch/sparc/mm/hugetlbpage.c
+index f78793a06bbd..9c67f805abc8 100644
+--- a/arch/sparc/mm/hugetlbpage.c
++++ b/arch/sparc/mm/hugetlbpage.c
+@@ -86,7 +86,7 @@ hugetlb_get_unmapped_area_topdown(struct file *filp, const unsigned long addr0,
+ 	if (addr & ~PAGE_MASK) {
+ 		VM_BUG_ON(addr != -ENOMEM);
+ 		info.flags = 0;
+-		info.low_limit = TASK_UNMAPPED_BASE;
++		info.low_limit = mm->mmap_base;
+ 		info.high_limit = STACK_TOP32;
+ 		addr = vm_unmapped_area(&info);
+ 	}
 -- 
-Wei Yang
-Help you, Help me
+2.20.1
