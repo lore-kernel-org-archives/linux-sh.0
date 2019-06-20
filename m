@@ -1,128 +1,38 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Mon, 10 Jun 2019 21:20:12 +0000
-Subject: [PATCH 12/15] binfmt_flat: remove the persistent argument from flat_get_addr_from_rp
-Message-Id: <20190610212015.9157-13-hch@lst.de>
+From: Alexandre Ghiti <alex@ghiti.fr>
+Date: Thu, 20 Jun 2019 05:03:25 +0000
+Subject: [PATCH RESEND 5/8] mm: Start fallback top-down mmap at mm->mmap_base
+Message-Id: <20190620050328.8942-6-alex@ghiti.fr>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190610212015.9157-1-hch@lst.de>
-In-Reply-To: <20190610212015.9157-1-hch@lst.de>
+References: <20190620050328.8942-1-alex@ghiti.fr>
+In-Reply-To: <20190620050328.8942-1-alex@ghiti.fr>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Ungerer <gerg@linux-m68k.org>
-Cc: uclinux-h8-devel@lists.sourceforge.jp, linux-xtensa@linux-xtensa.org, Michal Simek <monstr@monstr.eu>, linux-c6x-dev@linux-c6x.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-riscv@lists.infradead.org, linux-arm-kernel@lists.infradead.org
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: "James E . J . Bottomley" <James.Bottomley@HansenPartnership.com>, Helge Deller <deller@gmx.de>, Heiko Carstens <heiko.carstens@de.ibm.com>, Vasily Gorbik <gor@linux.ibm.com>, Christian Borntraeger <borntraeger@de.ibm.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, "David S . Miller" <davem@davemloft.net>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>, "H . Peter Anvin" <hpa@zytor.com>, x86@kernel.org, Dave Hansen <dave.hansen@linux.intel.com>, Andy Lutomirski <luto@kernel.org>, Peter Zijlstra <peterz@infradead.org>, linux-parisc@vger.kernel.org, linux-kernel@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-mm@kvack.org, Alexandre Ghiti <alex@ghiti.fr>
 
-The argument is never used.
+In case of mmap failure in top-down mode, there is no need to go through
+the whole address space again for the bottom-up fallback: the goal of this
+fallback is to find, as a last resort, space between the top-down mmap base
+and the stack, which is the only place not covered by the top-down mmap.
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
+Signed-off-by: Alexandre Ghiti <alex@ghiti.fr>
 ---
- arch/c6x/include/asm/flat.h        | 2 +-
- arch/h8300/include/asm/flat.h      | 2 +-
- arch/microblaze/include/asm/flat.h | 2 +-
- arch/sh/include/asm/flat.h         | 2 +-
- arch/xtensa/include/asm/flat.h     | 2 +-
- fs/binfmt_flat.c                   | 4 +---
- include/asm-generic/flat.h         | 2 +-
- 7 files changed, 7 insertions(+), 9 deletions(-)
+ mm/mmap.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/c6x/include/asm/flat.h b/arch/c6x/include/asm/flat.h
-index 2d57a9204d21..9e6544b51386 100644
---- a/arch/c6x/include/asm/flat.h
-+++ b/arch/c6x/include/asm/flat.h
-@@ -5,7 +5,7 @@
- #include <asm/unaligned.h>
- 
- static inline int flat_get_addr_from_rp(u32 __user *rp, u32 relval, u32 flags,
--					u32 *addr, u32 *persistent)
-+					u32 *addr)
- {
- 	*addr = get_unaligned((__force u32 *)rp);
- 	return 0;
-diff --git a/arch/h8300/include/asm/flat.h b/arch/h8300/include/asm/flat.h
-index 4683146f0e9e..78070f924177 100644
---- a/arch/h8300/include/asm/flat.h
-+++ b/arch/h8300/include/asm/flat.h
-@@ -17,7 +17,7 @@
- 
- #define	flat_get_relocate_addr(rel)		(rel & ~0x00000001)
- static inline int flat_get_addr_from_rp(u32 __user *rp, u32 relval, u32 flags,
--					u32 *addr, u32 *persistent)
-+					u32 *addr)
- {
- 	u32 val = get_unaligned((__force u32 *)rp);
- 	if (!(flags & FLAT_FLAG_GOTPIC))
-diff --git a/arch/microblaze/include/asm/flat.h b/arch/microblaze/include/asm/flat.h
-index 9e3d8e01d294..1ab86770eaee 100644
---- a/arch/microblaze/include/asm/flat.h
-+++ b/arch/microblaze/include/asm/flat.h
-@@ -28,7 +28,7 @@
-  */
- 
- static inline int flat_get_addr_from_rp(u32 __user *rp, u32 relval, u32 flags,
--					u32 *addr, u32 *persistent)
-+					u32 *addr)
- {
- 	u32 *p = (__force u32 *)rp;
- 
-diff --git a/arch/sh/include/asm/flat.h b/arch/sh/include/asm/flat.h
-index 1002343dd84a..fee4f25555cb 100644
---- a/arch/sh/include/asm/flat.h
-+++ b/arch/sh/include/asm/flat.h
-@@ -12,7 +12,7 @@
- #include <asm/unaligned.h>
- 
- static inline int flat_get_addr_from_rp(u32 __user *rp, u32 relval, u32 flags,
--					u32 *addr, u32 *persistent)
-+					u32 *addr)
- {
- 	*addr = get_unaligned((__force u32 *)rp);
- 	return 0;
-diff --git a/arch/xtensa/include/asm/flat.h b/arch/xtensa/include/asm/flat.h
-index 3d357371b28b..ed5870c779f9 100644
---- a/arch/xtensa/include/asm/flat.h
-+++ b/arch/xtensa/include/asm/flat.h
-@@ -5,7 +5,7 @@
- #include <asm/unaligned.h>
- 
- static inline int flat_get_addr_from_rp(u32 __user *rp, u32 relval, u32 flags,
--					u32 *addr, u32 *persistent)
-+					u32 *addr)
- {
- 	*addr = get_unaligned((__force u32 *)rp);
- 	return 0;
-diff --git a/fs/binfmt_flat.c b/fs/binfmt_flat.c
-index ed7d969593d2..114ea225c5a5 100644
---- a/fs/binfmt_flat.c
-+++ b/fs/binfmt_flat.c
-@@ -794,7 +794,6 @@ static int load_flat_file(struct linux_binprm *bprm,
- 	 * __start to address 4 so that is okay).
- 	 */
- 	if (rev > OLD_FLAT_VERSION) {
--		u32 __maybe_unused persistent = 0;
- 		for (i = 0; i < relocs; i++) {
- 			u32 addr, relval;
- 			__be32 tmp;
-@@ -815,8 +814,7 @@ static int load_flat_file(struct linux_binprm *bprm,
- 			}
- 
- 			/* Get the pointer's value.  */
--			ret = flat_get_addr_from_rp(rp, relval, flags,
--							&addr, &persistent);
-+			ret = flat_get_addr_from_rp(rp, relval, flags, &addr);
- 			if (unlikely(ret))
- 				goto err;
- 
-diff --git a/include/asm-generic/flat.h b/include/asm-generic/flat.h
-index fcd2b45c0735..1928a3596938 100644
---- a/include/asm-generic/flat.h
-+++ b/include/asm-generic/flat.h
-@@ -5,7 +5,7 @@
- #include <linux/uaccess.h>
- 
- static inline int flat_get_addr_from_rp(u32 __user *rp, u32 relval, u32 flags,
--		u32 *addr, u32 *persistent)
-+		u32 *addr)
- {
- #ifndef CONFIG_HAVE_EFFICIENT_UNALIGNED_ACCESS
- 	return copy_from_user(addr, rp, 4) ? -EFAULT : 0;
+diff --git a/mm/mmap.c b/mm/mmap.c
+index dedae10cb6e2..e563145c1ff4 100644
+--- a/mm/mmap.c
++++ b/mm/mmap.c
+@@ -2185,7 +2185,7 @@ arch_get_unmapped_area_topdown(struct file *filp, unsigned long addr,
+ 	if (offset_in_page(addr)) {
+ 		VM_BUG_ON(addr != -ENOMEM);
+ 		info.flags = 0;
+-		info.low_limit = TASK_UNMAPPED_BASE;
++		info.low_limit = arch_get_mmap_base(addr, mm->mmap_base);
+ 		info.high_limit = mmap_end;
+ 		addr = vm_unmapped_area(&info);
+ 	}
 -- 
 2.20.1
