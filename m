@@ -1,129 +1,52 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Thu, 13 Jun 2019 07:08:47 +0000
-Subject: [PATCH 01/17] binfmt_flat: remove flat_reloc_valid
-Message-Id: <20190613070903.17214-2-hch@lst.de>
+From: Alexandre Ghiti <alex@ghiti.fr>
+Date: Thu, 20 Jun 2019 05:03:24 +0000
+Subject: [PATCH RESEND 4/8] x86, hugetlbpage: Start fallback of top-down mmap at mm->mmap_base
+Message-Id: <20190620050328.8942-5-alex@ghiti.fr>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190613070903.17214-1-hch@lst.de>
-In-Reply-To: <20190613070903.17214-1-hch@lst.de>
+References: <20190620050328.8942-1-alex@ghiti.fr>
+In-Reply-To: <20190620050328.8942-1-alex@ghiti.fr>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Ungerer <gerg@linux-m68k.org>
-Cc: uclinux-h8-devel@lists.sourceforge.jp, linux-xtensa@linux-xtensa.org, Michal Simek <monstr@monstr.eu>, Vladimir Murzin <vladimir.murzin@arm.com>, linux-c6x-dev@linux-c6x.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-riscv@lists.infradead.org, linux-arm-kernel@lists.infradead.org
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: "James E . J . Bottomley" <James.Bottomley@HansenPartnership.com>, Helge Deller <deller@gmx.de>, Heiko Carstens <heiko.carstens@de.ibm.com>, Vasily Gorbik <gor@linux.ibm.com>, Christian Borntraeger <borntraeger@de.ibm.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, "David S . Miller" <davem@davemloft.net>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>, "H . Peter Anvin" <hpa@zytor.com>, x86@kernel.org, Dave Hansen <dave.hansen@linux.intel.com>, Andy Lutomirski <luto@kernel.org>, Peter Zijlstra <peterz@infradead.org>, linux-parisc@vger.kernel.org, linux-kernel@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-mm@kvack.org, Alexandre Ghiti <alex@ghiti.fr>
 
-This helper is the same for all architectures, open code it in the only
-caller.
+In case of mmap failure in top-down mode, there is no need to go through
+the whole address space again for the bottom-up fallback: the goal of this
+fallback is to find, as a last resort, space between the top-down mmap base
+and the stack, which is the only place not covered by the top-down mmap.
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
-Tested-by: Vladimir Murzin <vladimir.murzin@arm.com>
-Reviewed-by: Vladimir Murzin <vladimir.murzin@arm.com>
+Signed-off-by: Alexandre Ghiti <alex@ghiti.fr>
 ---
- arch/arm/include/asm/flat.h        | 1 -
- arch/c6x/include/asm/flat.h        | 1 -
- arch/h8300/include/asm/flat.h      | 1 -
- arch/m68k/include/asm/flat.h       | 1 -
- arch/microblaze/include/asm/flat.h | 1 -
- arch/sh/include/asm/flat.h         | 1 -
- arch/xtensa/include/asm/flat.h     | 1 -
- fs/binfmt_flat.c                   | 2 +-
- 8 files changed, 1 insertion(+), 8 deletions(-)
+ arch/x86/mm/hugetlbpage.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/include/asm/flat.h b/arch/arm/include/asm/flat.h
-index f0c75ddeea23..10cce9ecf151 100644
---- a/arch/arm/include/asm/flat.h
-+++ b/arch/arm/include/asm/flat.h
-@@ -10,7 +10,6 @@
- 
- #define	flat_argvp_envp_on_stack()		1
- #define	flat_old_ram_flag(flags)		(flags)
--#define	flat_reloc_valid(reloc, size)		((reloc) <= (size))
- 
- static inline int flat_get_addr_from_rp(u32 __user *rp, u32 relval, u32 flags,
- 					u32 *addr, u32 *persistent)
-diff --git a/arch/c6x/include/asm/flat.h b/arch/c6x/include/asm/flat.h
-index 76fd0bb962a3..ecc6aea6606c 100644
---- a/arch/c6x/include/asm/flat.h
-+++ b/arch/c6x/include/asm/flat.h
-@@ -6,7 +6,6 @@
- 
- #define flat_argvp_envp_on_stack()			0
- #define flat_old_ram_flag(flags)			(flags)
--#define flat_reloc_valid(reloc, size)			((reloc) <= (size))
- static inline int flat_get_addr_from_rp(u32 __user *rp, u32 relval, u32 flags,
- 					u32 *addr, u32 *persistent)
+diff --git a/arch/x86/mm/hugetlbpage.c b/arch/x86/mm/hugetlbpage.c
+index fab095362c50..4b90339aef50 100644
+--- a/arch/x86/mm/hugetlbpage.c
++++ b/arch/x86/mm/hugetlbpage.c
+@@ -106,11 +106,12 @@ static unsigned long hugetlb_get_unmapped_area_topdown(struct file *file,
  {
-diff --git a/arch/h8300/include/asm/flat.h b/arch/h8300/include/asm/flat.h
-index f4cdfcbdd2ba..dcc7775115dd 100644
---- a/arch/h8300/include/asm/flat.h
-+++ b/arch/h8300/include/asm/flat.h
-@@ -10,7 +10,6 @@
+ 	struct hstate *h = hstate_file(file);
+ 	struct vm_unmapped_area_info info;
++	unsigned long mmap_base = get_mmap_base(0);
  
- #define	flat_argvp_envp_on_stack()		1
- #define	flat_old_ram_flag(flags)		1
--#define	flat_reloc_valid(reloc, size)		((reloc) <= (size))
- #define	flat_set_persistent(relval, p)		0
+ 	info.flags = VM_UNMAPPED_AREA_TOPDOWN;
+ 	info.length = len;
+ 	info.low_limit = PAGE_SIZE;
+-	info.high_limit = get_mmap_base(0);
++	info.high_limit = mmap_base;
  
- /*
-diff --git a/arch/m68k/include/asm/flat.h b/arch/m68k/include/asm/flat.h
-index 4f1d1e373420..a631caf5e18f 100644
---- a/arch/m68k/include/asm/flat.h
-+++ b/arch/m68k/include/asm/flat.h
-@@ -10,7 +10,6 @@
- 
- #define	flat_argvp_envp_on_stack()		1
- #define	flat_old_ram_flag(flags)		(flags)
--#define	flat_reloc_valid(reloc, size)		((reloc) <= (size))
- static inline int flat_get_addr_from_rp(u32 __user *rp, u32 relval, u32 flags,
- 					u32 *addr, u32 *persistent)
- {
-diff --git a/arch/microblaze/include/asm/flat.h b/arch/microblaze/include/asm/flat.h
-index 3d2747d4c967..34be5ed011be 100644
---- a/arch/microblaze/include/asm/flat.h
-+++ b/arch/microblaze/include/asm/flat.h
-@@ -15,7 +15,6 @@
- 
- #define	flat_argvp_envp_on_stack()	0
- #define	flat_old_ram_flag(flags)	(flags)
--#define	flat_reloc_valid(reloc, size)	((reloc) <= (size))
- #define	flat_set_persistent(relval, p)		0
- 
- /*
-diff --git a/arch/sh/include/asm/flat.h b/arch/sh/include/asm/flat.h
-index 843d458b8329..8f2929b32f2e 100644
---- a/arch/sh/include/asm/flat.h
-+++ b/arch/sh/include/asm/flat.h
-@@ -13,7 +13,6 @@
- 
- #define	flat_argvp_envp_on_stack()		0
- #define	flat_old_ram_flag(flags)		(flags)
--#define	flat_reloc_valid(reloc, size)		((reloc) <= (size))
- static inline int flat_get_addr_from_rp(u32 __user *rp, u32 relval, u32 flags,
- 					u32 *addr, u32 *persistent)
- {
-diff --git a/arch/xtensa/include/asm/flat.h b/arch/xtensa/include/asm/flat.h
-index b8532d7877b3..6ee5a35eb0ec 100644
---- a/arch/xtensa/include/asm/flat.h
-+++ b/arch/xtensa/include/asm/flat.h
-@@ -6,7 +6,6 @@
- 
- #define flat_argvp_envp_on_stack()			0
- #define flat_old_ram_flag(flags)			(flags)
--#define flat_reloc_valid(reloc, size)			((reloc) <= (size))
- static inline int flat_get_addr_from_rp(u32 __user *rp, u32 relval, u32 flags,
- 					u32 *addr, u32 *persistent)
- {
-diff --git a/fs/binfmt_flat.c b/fs/binfmt_flat.c
-index 82a48e830018..afddea583999 100644
---- a/fs/binfmt_flat.c
-+++ b/fs/binfmt_flat.c
-@@ -345,7 +345,7 @@ calc_reloc(unsigned long r, struct lib_info *p, int curid, int internalp)
- 	start_code = p->lib_list[id].start_code;
- 	text_len = p->lib_list[id].text_len;
- 
--	if (!flat_reloc_valid(r, start_brk - start_data + text_len)) {
-+	if (r > start_brk - start_data + text_len) {
- 		pr_err("reloc outside program 0x%lx (0 - 0x%lx/0x%lx)",
- 		       r, start_brk-start_data+text_len, text_len);
- 		goto failed;
+ 	/*
+ 	 * If hint address is above DEFAULT_MAP_WINDOW, look for unmapped area
+@@ -132,7 +133,7 @@ static unsigned long hugetlb_get_unmapped_area_topdown(struct file *file,
+ 	if (addr & ~PAGE_MASK) {
+ 		VM_BUG_ON(addr != -ENOMEM);
+ 		info.flags = 0;
+-		info.low_limit = TASK_UNMAPPED_BASE;
++		info.low_limit = mmap_base;
+ 		info.high_limit = TASK_SIZE_LOW;
+ 		addr = vm_unmapped_area(&info);
+ 	}
 -- 
 2.20.1
