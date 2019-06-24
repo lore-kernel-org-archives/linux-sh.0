@@ -1,73 +1,26 @@
-From: David Hildenbrand <david@redhat.com>
-Date: Tue, 04 Jun 2019 06:56:40 +0000
-Subject: Re: [PATCH v3 05/11] drivers/base/memory: Pass a block_id to init_memory_block()
-Message-Id: <cd708cec-f369-4176-16c9-93a3c8ab6947@redhat.com>
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Mon, 24 Jun 2019 07:22:39 +0000
+Subject: Re: [PATCH 4/5] x86: don't use asm-generic/ptrace.h
+Message-Id: <alpine.DEB.2.21.1906240922270.32342@nanos.tec.linutronix.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190527111152.16324-1-david@redhat.com>
- <20190527111152.16324-6-david@redhat.com>
- <20190603214932.3xsvxwiiutcve4tz@master>
-In-Reply-To: <20190603214932.3xsvxwiiutcve4tz@master>
+References: <20190624054728.30966-1-hch@lst.de>
+ <20190624054728.30966-5-hch@lst.de>
+In-Reply-To: <20190624054728.30966-5-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Wei Yang <richard.weiyang@gmail.com>
-Cc: linux-s390@vger.kernel.org, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, "Rafael J. Wysocki" <rafael@kernel.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, Igor Mammedov <imammedo@redhat.com>, akpm@linux-foundation.org, linuxppc-dev@lists.ozlabs.org, Dan Williams <dan.j.williams@intel.com>, linux-arm-kernel@lists.infradead.org
+To: Christoph Hellwig <hch@lst.de>
+Cc: linux-arch@vger.kernel.org, Arnd Bergmann <arnd@arndb.de>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, x86@kernel.org, Oleg Nesterov <oleg@redhat.com>, linux-mips@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, Ingo Molnar <mingo@kernel.org>, linux-arm-kernel@lists.infradead.org
 
-On 03.06.19 23:49, Wei Yang wrote:
-> On Mon, May 27, 2019 at 01:11:46PM +0200, David Hildenbrand wrote:
->> We'll rework hotplug_memory_register() shortly, so it no longer consumes
->> pass a section.
->>
->> Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
->> Cc: "Rafael J. Wysocki" <rafael@kernel.org>
->> Signed-off-by: David Hildenbrand <david@redhat.com>
->> ---
->> drivers/base/memory.c | 15 +++++++--------
->> 1 file changed, 7 insertions(+), 8 deletions(-)
->>
->> diff --git a/drivers/base/memory.c b/drivers/base/memory.c
->> index f180427e48f4..f914fa6fe350 100644
->> --- a/drivers/base/memory.c
->> +++ b/drivers/base/memory.c
->> @@ -651,21 +651,18 @@ int register_memory(struct memory_block *memory)
->> 	return ret;
->> }
->>
->> -static int init_memory_block(struct memory_block **memory,
->> -			     struct mem_section *section, unsigned long state)
->> +static int init_memory_block(struct memory_block **memory, int block_id,
->> +			     unsigned long state)
->> {
->> 	struct memory_block *mem;
->> 	unsigned long start_pfn;
->> -	int scn_nr;
->> 	int ret = 0;
->>
->> 	mem = kzalloc(sizeof(*mem), GFP_KERNEL);
->> 	if (!mem)
->> 		return -ENOMEM;
->>
->> -	scn_nr = __section_nr(section);
->> -	mem->start_section_nr >> -			base_memory_block_id(scn_nr) * sections_per_block;
->> +	mem->start_section_nr = block_id * sections_per_block;
->> 	mem->end_section_nr = mem->start_section_nr + sections_per_block - 1;
->> 	mem->state = state;
->> 	start_pfn = section_nr_to_pfn(mem->start_section_nr);
->> @@ -694,7 +691,8 @@ static int add_memory_block(int base_section_nr)
->>
->> 	if (section_count = 0)
->> 		return 0;
->> -	ret = init_memory_block(&mem, __nr_to_section(section_nr), MEM_ONLINE);
->> +	ret = init_memory_block(&mem, base_memory_block_id(base_section_nr),
->> +				MEM_ONLINE);
+On Mon, 24 Jun 2019, Christoph Hellwig wrote:
+
+> Doing the indirection through macros for the regs accessors just
+> makes them harder to read, so implement the helpers directly.
 > 
-> If my understanding is correct, section_nr could be removed too.
+> Note that only the helpers actually used are implemented now.
+> 
+> Signed-off-by: Christoph Hellwig <hch@lst.de>
+> Acked-by: Ingo Molnar <mingo@kernel.org>
+> Acked-by: Oleg Nesterov <oleg@redhat.com>
 
-Yes you are, this has already been addressed in linux-next.
-
-
--- 
-
-Thanks,
-
-David / dhildenb
+Reviewed-by: Thomas Gleixner <tglx@linutronix.de>
