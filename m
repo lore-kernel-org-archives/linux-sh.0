@@ -1,109 +1,83 @@
-From: Vladimir Murzin <vladimir.murzin@arm.com>
-Date: Tue, 11 Jun 2019 09:46:18 +0000
-Subject: Re: [PATCH 03/15] binfmt_flat: provide a default version of flat_get_relocate_addr
-Message-Id: <6b676893-3b79-ed8f-01c9-8ab2d3acec65@arm.com>
+From: Christoph Hellwig <hch@lst.de>
+Date: Mon, 24 Jun 2019 05:47:24 +0000
+Subject: [PATCH 1/5] arm64: don't use asm-generic/ptrace.h
+Message-Id: <20190624054728.30966-2-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190610212015.9157-1-hch@lst.de>
- <20190610212015.9157-4-hch@lst.de>
-In-Reply-To: <20190610212015.9157-4-hch@lst.de>
+References: <20190624054728.30966-1-hch@lst.de>
+In-Reply-To: <20190624054728.30966-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Christoph Hellwig <hch@lst.de>, Greg Ungerer <gerg@linux-m68k.org>
-Cc: uclinux-h8-devel@lists.sourceforge.jp, linux-xtensa@linux-xtensa.org, Michal Simek <monstr@monstr.eu>, linux-c6x-dev@linux-c6x.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-riscv@lists.infradead.org, linux-arm-kernel@lists.infradead.org
+To: Oleg Nesterov <oleg@redhat.com>, Arnd Bergmann <arnd@arndb.de>
+Cc: x86@kernel.org, linux-arm-kernel@lists.infradead.org, linux-mips@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org, Catalin Marinas <catalin.marinas@arm.com>
 
-On 6/10/19 10:20 PM, Christoph Hellwig wrote:
-> This way only the two architectures that do masking need to provide
-> the helper.
-> 
-> Signed-off-by: Christoph Hellwig <hch@lst.de>
-> ---
->  arch/arm/include/asm/flat.h    | 2 --
->  arch/c6x/include/asm/flat.h    | 1 -
->  arch/m68k/include/asm/flat.h   | 1 -
->  arch/sh/include/asm/flat.h     | 1 -
->  arch/xtensa/include/asm/flat.h | 1 -
->  fs/binfmt_flat.c               | 4 ++++
->  6 files changed, 4 insertions(+), 6 deletions(-)
+Doing the indirection through macros for the regs accessors just
+makes them harder to read, so implement the helpers directly.
 
+Note that only the helpers actually used are implemented now.
 
-For ARM bits:
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+Acked-by: Catalin Marinas <catalin.marinas@arm.com>
+---
+ arch/arm64/include/asm/ptrace.h | 31 +++++++++++++++++++------------
+ 1 file changed, 19 insertions(+), 12 deletions(-)
 
-Tested-by: Vladimir Murzin <vladimir.murzin@arm.com>
-Reviewed-by: Vladimir Murzin <vladimir.murzin@arm.com>
-
-
-> 
-> diff --git a/arch/arm/include/asm/flat.h b/arch/arm/include/asm/flat.h
-> index 576241d74704..a185fe023b60 100644
-> --- a/arch/arm/include/asm/flat.h
-> +++ b/arch/arm/include/asm/flat.h
-> @@ -30,6 +30,4 @@ static inline int flat_put_addr_at_rp(u32 __user *rp, u32 addr, u32 rel)
->  #endif
->  }
->  
-> -#define	flat_get_relocate_addr(rel)		(rel)
-> -
->  #endif /* __ARM_FLAT_H__ */
-> diff --git a/arch/c6x/include/asm/flat.h b/arch/c6x/include/asm/flat.h
-> index ac87368efad1..c4d703b454c6 100644
-> --- a/arch/c6x/include/asm/flat.h
-> +++ b/arch/c6x/include/asm/flat.h
-> @@ -17,6 +17,5 @@ static inline int flat_put_addr_at_rp(u32 __user *rp, u32 addr, u32 rel)
->  	put_unaligned(addr, (__force u32 *)rp);
->  	return 0;
->  }
-> -#define flat_get_relocate_addr(rel)			(rel)
->  
->  #endif /* __ASM_C6X_FLAT_H */
-> diff --git a/arch/m68k/include/asm/flat.h b/arch/m68k/include/asm/flat.h
-> index 955617bb937b..217fa89c8e34 100644
-> --- a/arch/m68k/include/asm/flat.h
-> +++ b/arch/m68k/include/asm/flat.h
-> @@ -28,7 +28,6 @@ static inline int flat_put_addr_at_rp(u32 __user *rp, u32 addr, u32 rel)
->  	return put_user(addr, rp);
->  #endif
->  }
-> -#define	flat_get_relocate_addr(rel)		(rel)
->  
->  #define FLAT_PLAT_INIT(regs) \
->  	do { \
-> diff --git a/arch/sh/include/asm/flat.h b/arch/sh/include/asm/flat.h
-> index 6f3b18679a98..0d520b4cc5ea 100644
-> --- a/arch/sh/include/asm/flat.h
-> +++ b/arch/sh/include/asm/flat.h
-> @@ -24,7 +24,6 @@ static inline int flat_put_addr_at_rp(u32 __user *rp, u32 addr, u32 rel)
->  	put_unaligned(addr, (__force u32 *)rp);
->  	return 0;
->  }
-> -#define	flat_get_relocate_addr(rel)		(rel)
->  
->  #define FLAT_PLAT_INIT(_r) \
->    do { _r->regs[0]=0; _r->regs[1]=0; _r->regs[2]=0; _r->regs[3]=0; \
-> diff --git a/arch/xtensa/include/asm/flat.h b/arch/xtensa/include/asm/flat.h
-> index b1bc0d9a8d4e..a1d88aa3ef8a 100644
-> --- a/arch/xtensa/include/asm/flat.h
-> +++ b/arch/xtensa/include/asm/flat.h
-> @@ -17,6 +17,5 @@ static inline int flat_put_addr_at_rp(u32 __user *rp, u32 addr, u32 rel)
->  	put_unaligned(addr, (__force u32 *)rp);
->  	return 0;
->  }
-> -#define flat_get_relocate_addr(rel)			(rel)
->  
->  #endif /* __ASM_XTENSA_FLAT_H */
-> diff --git a/fs/binfmt_flat.c b/fs/binfmt_flat.c
-> index a4c0b245ab1f..c0e4535dc1ec 100644
-> --- a/fs/binfmt_flat.c
-> +++ b/fs/binfmt_flat.c
-> @@ -43,6 +43,10 @@
->  #include <asm/cacheflush.h>
->  #include <asm/page.h>
->  
-> +#ifndef flat_get_relocate_addr
-> +#define flat_get_relocate_addr(rel)	(rel)
-> +#endif
-> +
->  /****************************************************************************/
->  
->  /*
-> 
+diff --git a/arch/arm64/include/asm/ptrace.h b/arch/arm64/include/asm/ptrace.h
+index dad858b6adc6..5a1e5025db96 100644
+--- a/arch/arm64/include/asm/ptrace.h
++++ b/arch/arm64/include/asm/ptrace.h
+@@ -217,11 +217,12 @@ static inline void forget_syscall(struct pt_regs *regs)
+ #define fast_interrupts_enabled(regs) \
+ 	(!((regs)->pstate & PSR_F_BIT))
+ 
+-#define GET_USP(regs) \
+-	(!compat_user_mode(regs) ? (regs)->sp : (regs)->compat_sp)
+-
+-#define SET_USP(ptregs, value) \
+-	(!compat_user_mode(regs) ? ((regs)->sp = value) : ((regs)->compat_sp = value))
++static inline unsigned long user_stack_pointer(struct pt_regs *regs)
++{
++	if (compat_user_mode(regs))
++		return regs->compat_sp;
++	return regs->sp;
++}
+ 
+ extern int regs_query_register_offset(const char *name);
+ extern unsigned long regs_get_kernel_stack_nth(struct pt_regs *regs,
+@@ -320,13 +321,20 @@ static inline unsigned long regs_get_kernel_argument(struct pt_regs *regs,
+ struct task_struct;
+ int valid_user_regs(struct user_pt_regs *regs, struct task_struct *task);
+ 
+-#define GET_IP(regs)		((unsigned long)(regs)->pc)
+-#define SET_IP(regs, value)	((regs)->pc = ((u64) (value)))
+-
+-#define GET_FP(ptregs)		((unsigned long)(ptregs)->regs[29])
+-#define SET_FP(ptregs, value)	((ptregs)->regs[29] = ((u64) (value)))
++static inline unsigned long instruction_pointer(struct pt_regs *regs)
++{
++	return regs->pc;
++}
++static inline void instruction_pointer_set(struct pt_regs *regs,
++		unsigned long val)
++{
++	regs->pc = val;
++}
+ 
+-#include <asm-generic/ptrace.h>
++static inline unsigned long frame_pointer(struct pt_regs *regs)
++{
++	return regs->regs[29];
++}
+ 
+ #define procedure_link_pointer(regs)	((regs)->regs[30])
+ 
+@@ -336,7 +344,6 @@ static inline void procedure_link_pointer_set(struct pt_regs *regs,
+ 	procedure_link_pointer(regs) = val;
+ }
+ 
+-#undef profile_pc
+ extern unsigned long profile_pc(struct pt_regs *regs);
+ 
+ #endif /* __ASSEMBLY__ */
+-- 
+2.20.1
