@@ -1,83 +1,29 @@
 From: Christoph Hellwig <hch@lst.de>
-Date: Mon, 24 Jun 2019 05:47:24 +0000
-Subject: [PATCH 1/5] arm64: don't use asm-generic/ptrace.h
-Message-Id: <20190624054728.30966-2-hch@lst.de>
+Date: Mon, 24 Jun 2019 05:47:23 +0000
+Subject: remove asm-generic/ptrace.h v3
+Message-Id: <20190624054728.30966-1-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190624054728.30966-1-hch@lst.de>
-In-Reply-To: <20190624054728.30966-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Oleg Nesterov <oleg@redhat.com>, Arnd Bergmann <arnd@arndb.de>
-Cc: x86@kernel.org, linux-arm-kernel@lists.infradead.org, linux-mips@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org, Catalin Marinas <catalin.marinas@arm.com>
+Cc: linux-arch@vger.kernel.org, linux-sh@vger.kernel.org, x86@kernel.org, linux-mips@vger.kernel.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-arm-kernel@lists.infradead.org
 
-Doing the indirection through macros for the regs accessors just
-makes them harder to read, so implement the helpers directly.
+Hi all,
 
-Note that only the helpers actually used are implemented now.
+asm-generic/ptrace.h is a little weird in that it doesn't actually
+implement any functionality, but it provided multiple layers of macros
+that just implement trivial inline functions.  We implement those
+directly in the few architectures and be off with a much simpler
+design.
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
-Acked-by: Catalin Marinas <catalin.marinas@arm.com>
----
- arch/arm64/include/asm/ptrace.h | 31 +++++++++++++++++++------------
- 1 file changed, 19 insertions(+), 12 deletions(-)
+I'm not sure which tree is the right place, but may this can go through
+the asm-generic tree since it removes an asm-generic header?
 
-diff --git a/arch/arm64/include/asm/ptrace.h b/arch/arm64/include/asm/ptrace.h
-index dad858b6adc6..5a1e5025db96 100644
---- a/arch/arm64/include/asm/ptrace.h
-+++ b/arch/arm64/include/asm/ptrace.h
-@@ -217,11 +217,12 @@ static inline void forget_syscall(struct pt_regs *regs)
- #define fast_interrupts_enabled(regs) \
- 	(!((regs)->pstate & PSR_F_BIT))
- 
--#define GET_USP(regs) \
--	(!compat_user_mode(regs) ? (regs)->sp : (regs)->compat_sp)
--
--#define SET_USP(ptregs, value) \
--	(!compat_user_mode(regs) ? ((regs)->sp = value) : ((regs)->compat_sp = value))
-+static inline unsigned long user_stack_pointer(struct pt_regs *regs)
-+{
-+	if (compat_user_mode(regs))
-+		return regs->compat_sp;
-+	return regs->sp;
-+}
- 
- extern int regs_query_register_offset(const char *name);
- extern unsigned long regs_get_kernel_stack_nth(struct pt_regs *regs,
-@@ -320,13 +321,20 @@ static inline unsigned long regs_get_kernel_argument(struct pt_regs *regs,
- struct task_struct;
- int valid_user_regs(struct user_pt_regs *regs, struct task_struct *task);
- 
--#define GET_IP(regs)		((unsigned long)(regs)->pc)
--#define SET_IP(regs, value)	((regs)->pc = ((u64) (value)))
--
--#define GET_FP(ptregs)		((unsigned long)(ptregs)->regs[29])
--#define SET_FP(ptregs, value)	((ptregs)->regs[29] = ((u64) (value)))
-+static inline unsigned long instruction_pointer(struct pt_regs *regs)
-+{
-+	return regs->pc;
-+}
-+static inline void instruction_pointer_set(struct pt_regs *regs,
-+		unsigned long val)
-+{
-+	regs->pc = val;
-+}
- 
--#include <asm-generic/ptrace.h>
-+static inline unsigned long frame_pointer(struct pt_regs *regs)
-+{
-+	return regs->regs[29];
-+}
- 
- #define procedure_link_pointer(regs)	((regs)->regs[30])
- 
-@@ -336,7 +344,6 @@ static inline void procedure_link_pointer_set(struct pt_regs *regs,
- 	procedure_link_pointer(regs) = val;
- }
- 
--#undef profile_pc
- extern unsigned long profile_pc(struct pt_regs *regs);
- 
- #endif /* __ASSEMBLY__ */
--- 
-2.20.1
+
+Changes since v2:
+ - rebase to latest Linus' tree that added an SPDX tag to
+   asm-generic/ptrace.h
+ - collected two more Acks from Oleg
+Changes since v1:
+ - add a missing empty line between functions
