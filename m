@@ -1,45 +1,61 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Tue, 25 Jun 2019 12:50:01 +0000
+From: Rich Felker <dalias@libc.org>
+Date: Tue, 25 Jun 2019 14:21:44 +0000
 Subject: Re: [RFC] remove arch/sh?
-Message-Id: <CAK8P3a3irwwwCQ_kPh5BTg-jGGbJOj=3fhVrTDBUZgH1V7bpFQ@mail.gmail.com>
+Message-Id: <20190625142144.GC1506@brightrain.aerifal.cx>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190625085616.GA32399@lst.de> <ccfa78f3-35c2-1d26-98b5-b21a76b90e1e@physik.fu-berlin.de>
- <20190625112146.GA9580@angband.pl> <401b12c0-d175-2720-d26c-b96ce3b28c71@physik.fu-berlin.de>
-In-Reply-To: <401b12c0-d175-2720-d26c-b96ce3b28c71@physik.fu-berlin.de>
+References: <20190625085616.GA32399@lst.de>
+ <ccfa78f3-35c2-1d26-98b5-b21a76b90e1e@physik.fu-berlin.de>
+In-Reply-To: <ccfa78f3-35c2-1d26-98b5-b21a76b90e1e@physik.fu-berlin.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc: Adam Borowski <kilobyte@angband.pl>, Christoph Hellwig <hch@lst.de>, Linus Torvalds <torvalds@linux-foundation.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Linux-sh list <linux-sh@vger.kernel.org>, linux-arch <linux-arch@vger.kernel.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
+Cc: Christoph Hellwig <hch@lst.de>, Linus Torvalds <torvalds@linux-foundation.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Arnd Bergmann <arnd@arndb.de>, linux-sh@vger.kernel.org, linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org
 
-On Tue, Jun 25, 2019 at 2:02 PM John Paul Adrian Glaubitz
-<glaubitz@physik.fu-berlin.de> wrote:
->
-> Adam,
->
-> On 6/25/19 1:21 PM, Adam Borowski wrote:
-> >> We're still using sh4 in Debian
-> >
-> > I wouldn't call it "used": it has popcon of 1, and despite watching many
-> > Debian channels, I don't recall hearing a word about sh4 in quite a while.
->
-> So, according to your logic, Debian should drop the mips64el (popcon 1)
-> and riscv64 ports (popcon 2) [1]?
->
-> > Hardware development is dead: we were promised modern silicon by j-core
-> > after original patents expired, but after J2 nothing happened, there was
-> > silence from their side, and now https://j-core.org is down.
->
-> It's not dead. You can still run it on an FPGA, the code is freely available.
-> Plus, the architecture seems to be still in use in the industry [2].
+On Tue, Jun 25, 2019 at 11:02:36AM +0200, John Paul Adrian Glaubitz wrote:
+> Hi Christoph!
+> 
+> On 6/25/19 10:56 AM, Christoph Hellwig wrote:
+> > arch/sh seems pretty much unmaintained these days.  The last time I got
+> > any reply to sh patches from the list maintainers, and the last maintainer
+> > pull request was over a year ago, and even that has been rather sporadic.
+> > 
+> > In the meantime we've not really seen any updates for new kernel features
+> > and code seems to be bitrotting.
+> 
+> We're still using sh4 in Debian and most of the stuff works fine. There is
+> one patch by Michael Karcher that fixes a bug in the kprobes code that someone
+> should pull in as it unbreaks the kernel with kprobes enabled [1].
+> 
+> Yoshinori Sato is still active sporadically and has a kernel tree here
+> where he collects patches for -next [2].
+> 
+> Otherwise, the kernel works fine.
 
-It would be nice if one of the maintainers or the remaining users could go
-through the code though and figure out which bits are definitely dead
-(e.g. sh5), don't build, or are incomplete and not worked on for a long
-time, compared to the bits that are known to work and that someone
-is still using or at least playing with.
-I guess a lot of the SoCs that have no board support other than
-the Hitachi/Renesas reference platform can go away too, as any products
-based on those boards have long stopped updating their kernels.
+Seconded. I apologize that I haven't been active in maintaining the
+tree as well; funding for time working on it dried up quite a while
+back and I'm stretched rather thin.
 
-       Arnd
+I'm generally okay with all proposed non-functional changes that come
+up that are just eliminating arch-specific cruft to use new shared
+kernel infrastructure. I recall replying to a few indicating this, but
+I missed a lot more. If it would be helpful I think I can commit to
+doing at least this more consistently, but I'm happy to have other
+maintainers make that call too.
+
+I do still have WIP forward-ports of Yoshinori Sato's device tree
+patches from attempts to get them working on Landisk; they're sitting
+in my working tree, but the PCI stuff isn't working, probably due to
+changes out from under it. I'd like to work together on getting that
+fixed to unblock me on something I'm interested in getting working on
+my own time, but we've never managed to sync up on it.
+
+As Adrian probably remembers, there's also the forked-tree, bitrotted
+STlinux stuff I want to get merged back into mainline based on device
+tree once it's there (doing it now doesn't make sense, as it would
+just add a ton more board-file cruft where it's slated for removal).
+This would improve the future viability of the arch/platform since,
+currently, I think ST's chips are the main SH ones you can find/get --
+for example in the nextvod devices.
+
+Rich
