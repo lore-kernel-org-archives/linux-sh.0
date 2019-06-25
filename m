@@ -1,50 +1,56 @@
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Date: Tue, 25 Jun 2019 14:31:59 +0000
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Tue, 25 Jun 2019 15:48:09 +0000
 Subject: Re: [RFC] remove arch/sh?
-Message-Id: <17b69880-3adc-202a-8ee3-4bce118934cb@physik.fu-berlin.de>
+Message-Id: <CAK8P3a0j_9fzZxhxqCMHfoJ5DdZpHFvANEPqs1pbP23TCei6ng@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190625085616.GA32399@lst.de>
- <ccfa78f3-35c2-1d26-98b5-b21a76b90e1e@physik.fu-berlin.de>
- <20190625142144.GC1506@brightrain.aerifal.cx> <20190625142341.GA6948@lst.de>
- <20190625142927.GE1506@brightrain.aerifal.cx>
-In-Reply-To: <20190625142927.GE1506@brightrain.aerifal.cx>
+References: <20190625085616.GA32399@lst.de> <ccfa78f3-35c2-1d26-98b5-b21a76b90e1e@physik.fu-berlin.de>
+ <20190625112146.GA9580@angband.pl> <401b12c0-d175-2720-d26c-b96ce3b28c71@physik.fu-berlin.de>
+ <CAK8P3a3irwwwCQ_kPh5BTg-jGGbJOj=3fhVrTDBUZgH1V7bpFQ@mail.gmail.com> <20190625142832.GD1506@brightrain.aerifal.cx>
+In-Reply-To: <20190625142832.GD1506@brightrain.aerifal.cx>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Rich Felker <dalias@libc.org>, Christoph Hellwig <hch@lst.de>
-Cc: Linus Torvalds <torvalds@linux-foundation.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Arnd Bergmann <arnd@arndb.de>, linux-sh@vger.kernel.org, linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Rich Felker <dalias@libc.org>
+Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, Adam Borowski <kilobyte@angband.pl>, Christoph Hellwig <hch@lst.de>, Linus Torvalds <torvalds@linux-foundation.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Linux-sh list <linux-sh@vger.kernel.org>, linux-arch <linux-arch@vger.kernel.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
 
-Hi Rich and Sato-san!
+On Tue, Jun 25, 2019 at 4:28 PM Rich Felker <dalias@libc.org> wrote:
+> On Tue, Jun 25, 2019 at 02:50:01PM +0200, Arnd Bergmann wrote:
+> > don't build, or are incomplete and not worked on for a long
+> > time, compared to the bits that are known to work and that someone
+> > is still using or at least playing with.
+> > I guess a lot of the SoCs that have no board support other than
+> > the Hitachi/Renesas reference platform can go away too, as any products
+> > based on those boards have long stopped updating their kernels.
+>
+> My intent here was always, after getting device tree theoretically
+> working for some reasonable subset of socs/boards, drop the rest and
+> add them back as dts files (possibly plus some small drivers) only if
+> there's demand/complaint about regression.
 
-On 6/25/19 4:29 PM, Rich Felker wrote:
-> On Tue, Jun 25, 2019 at 04:23:41PM +0200, Christoph Hellwig wrote:
->> On Tue, Jun 25, 2019 at 10:21:44AM -0400, Rich Felker wrote:
->>> I'm generally okay with all proposed non-functional changes that come
->>> up that are just eliminating arch-specific cruft to use new shared
->>> kernel infrastructure. I recall replying to a few indicating this, but
->>> I missed a lot more. If it would be helpful I think I can commit to
->>> doing at least this more consistently, but I'm happy to have other
->>> maintainers make that call too.
->>
->> It woud be great if you could at least apply with a tentative ack.
->> At least for some trees we try very hard to get a maintainer ack,
->> so silence is holding things back to some extent.
-> 
-> OK.
+Do you still think that this is a likely scenario for the future though?
 
-Could either of you review this patch by Michael Karcher which unbreaks
-the SH kernel when kprobes are enabled [1]?
+If nobody's actively working on the DT support for the old chips and
+this is unlikely to change soon, removing the known-broken bits earlier
+should at least make it easier to keep maintaining the working bits
+afterwards.
 
-Sorry for being persistent, but the fix is actually needed to get the
-Debian kernel boot on qemu-sh4 again since Debian enables kprobes.
+FWIW, I went through the SH2, SH2A and SH3 based boards that
+are supported in the kernel and found almost all of them to
+be just reference platforms, with no actual product ever merged.
+IIRC the idea back then was that users would supply their
+own board files as an add-on patch, but I would consider all the
+ones that did to be obsolete now.
 
-Thanks a lot!
-Adrian
+HP Jornada 6xx is the main machine that was once supported, but
+given that according to the defconfig file it only comes with 4MB
+of RAM, it is unlikely to still boot any 5.x kernel, let alone user
+space (wikipedia claims there were models with 16MB of RAM,
+but that is still not a lot these days).
 
-> [1] https://marc.info/?l=linux-sh&m6034655921917&w=2
+"Magicpanel" was another product that is supported in theory, but
+the google search showed the 2007 patch for the required
+flash storage driver that was never merged.
 
--- 
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer - glaubitz@debian.org
-`. `'   Freie Universitaet Berlin - glaubitz@physik.fu-berlin.de
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+Maybe everything but J2 and SH4(a) can just get retired?
+
+     Arnd
