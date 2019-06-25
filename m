@@ -1,42 +1,39 @@
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Date: Tue, 25 Jun 2019 09:02:36 +0000
+From: Adam Borowski <kilobyte@angband.pl>
+Date: Tue, 25 Jun 2019 11:21:46 +0000
 Subject: Re: [RFC] remove arch/sh?
-Message-Id: <ccfa78f3-35c2-1d26-98b5-b21a76b90e1e@physik.fu-berlin.de>
+Message-Id: <20190625112146.GA9580@angband.pl>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20190625085616.GA32399@lst.de>
-In-Reply-To: <20190625085616.GA32399@lst.de>
+ <ccfa78f3-35c2-1d26-98b5-b21a76b90e1e@physik.fu-berlin.de>
+In-Reply-To: <ccfa78f3-35c2-1d26-98b5-b21a76b90e1e@physik.fu-berlin.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Christoph Hellwig <hch@lst.de>, Linus Torvalds <torvalds@linux-foundation.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
-Cc: Arnd Bergmann <arnd@arndb.de>, linux-sh@vger.kernel.org, linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc: Christoph Hellwig <hch@lst.de>, Linus Torvalds <torvalds@linux-foundation.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Arnd Bergmann <arnd@arndb.de>, linux-sh@vger.kernel.org, linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Hi Christoph!
-
-On 6/25/19 10:56 AM, Christoph Hellwig wrote:
-> arch/sh seems pretty much unmaintained these days.  The last time I got
-> any reply to sh patches from the list maintainers, and the last maintainer
-> pull request was over a year ago, and even that has been rather sporadic.
+On Tue, Jun 25, 2019 at 11:02:36AM +0200, John Paul Adrian Glaubitz wrote:
+> On 6/25/19 10:56 AM, Christoph Hellwig wrote:
+> > arch/sh seems pretty much unmaintained these days.  The last time I got
+> > any reply to sh patches from the list maintainers, and the last maintainer
+> > pull request was over a year ago, and even that has been rather sporadic.
+> > 
+> > In the meantime we've not really seen any updates for new kernel features
+> > and code seems to be bitrotting.
 > 
-> In the meantime we've not really seen any updates for new kernel features
-> and code seems to be bitrotting.
+> We're still using sh4 in Debian
 
-We're still using sh4 in Debian and most of the stuff works fine. There is
-one patch by Michael Karcher that fixes a bug in the kprobes code that someone
-should pull in as it unbreaks the kernel with kprobes enabled [1].
+I wouldn't call it "used": it has popcon of 1, and despite watching many
+Debian channels, I don't recall hearing a word about sh4 in quite a while.
 
-Yoshinori Sato is still active sporadically and has a kernel tree here
-where he collects patches for -next [2].
+Hardware development is dead: we were promised modern silicon by j-core
+after original patents expired, but after J2 nothing happened, there was
+silence from their side, and now https://j-core.org is down.
 
-Otherwise, the kernel works fine.
 
-Adrian
-
-> [1] https://marc.info/?l=linux-sh&m6034655921917&w=2
-> [2] https://osdn.net/projects/uclinux-h8/scm/git/linux/
-
+Meow!
 -- 
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer - glaubitz@debian.org
-`. `'   Freie Universitaet Berlin - glaubitz@physik.fu-berlin.de
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+⢀⣴⠾⠻⢶⣦⠀
+⣾⠁⢠⠒⠀⣿⡁ Packager's rule #1: upstream _always_ screws something up.  This
+⢿⡄⠘⠷⠚⠋⠀ is true especially if you're packaging your own project.
+⠈⠳⣄⠀⠀⠀⠀ 
