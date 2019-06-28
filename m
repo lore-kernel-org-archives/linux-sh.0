@@ -1,47 +1,35 @@
-From: Krzysztof Kozlowski <krzk@kernel.org>
-Date: Mon, 03 Jun 2019 19:19:25 +0000
-Subject: [PATCH] sh: config: Remove left-over BACKLIGHT_LCD_SUPPORT
-Message-Id: <20190603191925.20659-1-krzk@kernel.org>
+From: Fuqian Huang <huangfq.daxian@gmail.com>
+Date: Fri, 28 Jun 2019 02:45:48 +0000
+Subject: [PATCH v2 01/27] sh: mm: Remove call to memset after dma_alloc_coherent
+Message-Id: <20190628024549.14823-1-huangfq.daxian@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Krzysztof Kozlowski <krzk@kernel.org>, Andrew Morton <akpm@linux-foundation.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Cc: Fuqian Huang <huangfq.daxian@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-The CONFIG_BACKLIGHT_LCD_SUPPORT was removed in commit 8c5dc8d9f19c
-("video: backlight: Remove useless BACKLIGHT_LCD_SUPPORT kernel
-symbol"). Options protected by CONFIG_BACKLIGHT_LCD_SUPPORT are now
-available directly.
+In commit af7ddd8a627c
+("Merge tag 'dma-mapping-4.21' of git://git.infradead.org/users/hch/dma-mapping"),
+dma_alloc_coherent has already zeroed the memory.
+So memset is not needed.
 
-Signed-off-by: Krzysztof Kozlowski <krzk@kernel.org>
+Signed-off-by: Fuqian Huang <huangfq.daxian@gmail.com>
 ---
- arch/sh/configs/hp6xx_defconfig  | 1 -
- arch/sh/configs/sh2007_defconfig | 1 -
- 2 files changed, 2 deletions(-)
+ arch/sh/mm/consistent.c | 2 --
+ 1 file changed, 2 deletions(-)
 
-diff --git a/arch/sh/configs/hp6xx_defconfig b/arch/sh/configs/hp6xx_defconfig
-index 4dcf7f552582..91d43e2bffea 100644
---- a/arch/sh/configs/hp6xx_defconfig
-+++ b/arch/sh/configs/hp6xx_defconfig
-@@ -40,7 +40,6 @@ CONFIG_FB=y
- CONFIG_FIRMWARE_EDID=y
- CONFIG_FB_HIT=y
- CONFIG_FB_SH_MOBILE_LCDC=y
--CONFIG_BACKLIGHT_LCD_SUPPORT=y
- CONFIG_FRAMEBUFFER_CONSOLE=y
- CONFIG_FONTS=y
- CONFIG_FONT_PEARL_8x8=y
-diff --git a/arch/sh/configs/sh2007_defconfig b/arch/sh/configs/sh2007_defconfig
-index a1cf6447dbb1..cbd6742eb423 100644
---- a/arch/sh/configs/sh2007_defconfig
-+++ b/arch/sh/configs/sh2007_defconfig
-@@ -85,7 +85,6 @@ CONFIG_WATCHDOG=y
- CONFIG_SH_WDT=y
- CONFIG_SSB=y
- CONFIG_FB=y
--CONFIG_BACKLIGHT_LCD_SUPPORT=y
- # CONFIG_LCD_CLASS_DEVICE is not set
- CONFIG_FRAMEBUFFER_CONSOLE=y
- CONFIG_FRAMEBUFFER_CONSOLE_DETECT_PRIMARY=y
+diff --git a/arch/sh/mm/consistent.c b/arch/sh/mm/consistent.c
+index 792f36129062..b09510adfae9 100644
+--- a/arch/sh/mm/consistent.c
++++ b/arch/sh/mm/consistent.c
+@@ -58,8 +58,6 @@ int __init platform_resource_setup_memory(struct platform_device *pdev,
+ 		return -ENOMEM;
+ 	}
+ 
+-	memset(buf, 0, memsize);
+-
+ 	r->flags = IORESOURCE_MEM;
+ 	r->start = dma_handle;
+ 	r->end = r->start + memsize - 1;
 -- 
-2.17.1
+2.11.0
