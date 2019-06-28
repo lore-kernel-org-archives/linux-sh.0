@@ -1,52 +1,39 @@
-From: Alexandre Ghiti <alex@ghiti.fr>
-Date: Wed, 19 Jun 2019 05:08:39 +0000
-Subject: [PATCH 3/8] sparc: Start fallback of top-down mmap at mm->mmap_base
-Message-Id: <20190619050844.5294-4-alex@ghiti.fr>
+From: Bartosz Golaszewski <brgl@bgdev.pl>
+Date: Fri, 28 Jun 2019 10:02:52 +0000
+Subject: [PATCH RFT 3/4] sh: ecovec24: don't set unused fields in platform data
+Message-Id: <20190628100253.8385-4-brgl@bgdev.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190619050844.5294-1-alex@ghiti.fr>
-In-Reply-To: <20190619050844.5294-1-alex@ghiti.fr>
+References: <20190628100253.8385-1-brgl@bgdev.pl>
+In-Reply-To: <20190628100253.8385-1-brgl@bgdev.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: "James E . J . Bottomley" <James.Bottomley@HansenPartnership.com>, Helge Deller <deller@gmx.de>, Heiko Carstens <heiko.carstens@de.ibm.com>, Vasily Gorbik <gor@linux.ibm.com>, Christian Borntraeger <borntraeger@de.ibm.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, "David S . Miller" <davem@davemloft.net>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>, "H . Peter Anvin" <hpa@zytor.com>, x86@kernel.org, Dave Hansen <dave.hansen@linux.intel.com>, Andy Lutomirski <luto@kernel.org>, Peter Zijlstra <peterz@infradead.org>, linux-parisc@vger.kernel.org, linux-kernel@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-mm@kvack.org, Alexandre Ghiti <alex@ghiti.fr>
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Lee Jones <lee.jones@linaro.org>, Daniel Thompson <daniel.thompson@linaro.org>, Jingoo Han <jingoohan1@gmail.com>, Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>, Linus Walleij <linus.walleij@linaro.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, dri-devel@lists.freedesktop.org, linux-fbdev@vger.kernel.org, Bartosz Golaszewski <bgolaszewski@baylibre.com>
 
-In case of mmap failure in top-down mode, there is no need to go through
-the whole address space again for the bottom-up fallback: the goal of this
-fallback is to find, as a last resort, space between the top-down mmap base
-and the stack, which is the only place not covered by the top-down mmap.
+From: Bartosz Golaszewski <bgolaszewski@baylibre.com>
 
-Signed-off-by: Alexandre Ghiti <alex@ghiti.fr>
+Platform data fields other than fbdev are no longer used by the
+backlight driver. Remove them.
+
+Signed-off-by: Bartosz Golaszewski <bgolaszewski@baylibre.com>
 ---
- arch/sparc/kernel/sys_sparc_64.c | 2 +-
- arch/sparc/mm/hugetlbpage.c      | 2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
+ arch/sh/boards/mach-ecovec24/setup.c | 3 ---
+ 1 file changed, 3 deletions(-)
 
-diff --git a/arch/sparc/kernel/sys_sparc_64.c b/arch/sparc/kernel/sys_sparc_64.c
-index ccc88926bc00..ea1de1e5fa8d 100644
---- a/arch/sparc/kernel/sys_sparc_64.c
-+++ b/arch/sparc/kernel/sys_sparc_64.c
-@@ -206,7 +206,7 @@ arch_get_unmapped_area_topdown(struct file *filp, const unsigned long addr0,
- 	if (addr & ~PAGE_MASK) {
- 		VM_BUG_ON(addr != -ENOMEM);
- 		info.flags = 0;
--		info.low_limit = TASK_UNMAPPED_BASE;
-+		info.low_limit = mm->mmap_base;
- 		info.high_limit = STACK_TOP32;
- 		addr = vm_unmapped_area(&info);
- 	}
-diff --git a/arch/sparc/mm/hugetlbpage.c b/arch/sparc/mm/hugetlbpage.c
-index f78793a06bbd..9c67f805abc8 100644
---- a/arch/sparc/mm/hugetlbpage.c
-+++ b/arch/sparc/mm/hugetlbpage.c
-@@ -86,7 +86,7 @@ hugetlb_get_unmapped_area_topdown(struct file *filp, const unsigned long addr0,
- 	if (addr & ~PAGE_MASK) {
- 		VM_BUG_ON(addr != -ENOMEM);
- 		info.flags = 0;
--		info.low_limit = TASK_UNMAPPED_BASE;
-+		info.low_limit = mm->mmap_base;
- 		info.high_limit = STACK_TOP32;
- 		addr = vm_unmapped_area(&info);
- 	}
+diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
+index 6926bb3865b9..64a5a1662b6d 100644
+--- a/arch/sh/boards/mach-ecovec24/setup.c
++++ b/arch/sh/boards/mach-ecovec24/setup.c
+@@ -386,9 +386,6 @@ static struct property_entry gpio_backlight_props[] = {
+ 
+ static struct gpio_backlight_platform_data gpio_backlight_data = {
+ 	.fbdev = &lcdc_device.dev,
+-	.gpio = GPIO_PTR1,
+-	.def_value = 1,
+-	.name = "backlight",
+ };
+ 
+ static const struct platform_device_info gpio_backlight_device_info = {
 -- 
-2.20.1
+2.21.0
