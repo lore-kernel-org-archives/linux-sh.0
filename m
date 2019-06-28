@@ -1,56 +1,93 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Sat, 01 Jun 2019 07:49:52 +0000
-Subject: [PATCH 09/16] sparc64: define untagged_addr()
-Message-Id: <20190601074959.14036-10-hch@lst.de>
+From: Bartosz Golaszewski <brgl@bgdev.pl>
+Date: Fri, 28 Jun 2019 10:02:50 +0000
+Subject: [PATCH RFT 1/4] sh: ecovec24: add additional properties to the backlight device
+Message-Id: <20190628100253.8385-2-brgl@bgdev.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190601074959.14036-1-hch@lst.de>
-In-Reply-To: <20190601074959.14036-1-hch@lst.de>
+References: <20190628100253.8385-1-brgl@bgdev.pl>
+In-Reply-To: <20190628100253.8385-1-brgl@bgdev.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>, Paul Burton <paul.burton@mips.com>, James Hogan <jhogan@kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, "David S. Miller" <davem@davemloft.net>
-Cc: Nicholas Piggin <npiggin@gmail.com>, Khalid Aziz <khalid.aziz@oracle.com>, Andrey Konovalov <andreyknvl@google.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Michael Ellerman <mpe@ellerman.id.au>, linux-mips@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-mm@kvack.org, x86@kernel.org, linux-kernel@vger.kernel.org
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Lee Jones <lee.jones@linaro.org>, Daniel Thompson <daniel.thompson@linaro.org>, Jingoo Han <jingoohan1@gmail.com>, Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>, Linus Walleij <linus.walleij@linaro.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, dri-devel@lists.freedesktop.org, linux-fbdev@vger.kernel.org, Bartosz Golaszewski <bgolaszewski@baylibre.com>
 
-Add a helper to untag a user pointer.  This is needed for ADI support
-in get_user_pages_fast.
+From: Bartosz Golaszewski <bgolaszewski@baylibre.com>
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
+Add a GPIO lookup entry and a device property for GPIO backlight to the
+board file. Tie them to the platform device which is now registered using
+platform_device_register_full() because of the properties. These changes
+are inactive now but will be used once the gpio backlight driver is
+modified.
+
+Signed-off-by: Bartosz Golaszewski <bgolaszewski@baylibre.com>
 ---
- arch/sparc/include/asm/pgtable_64.h | 22 ++++++++++++++++++++++
- 1 file changed, 22 insertions(+)
+ arch/sh/boards/mach-ecovec24/setup.c | 30 +++++++++++++++++++++++-----
+ 1 file changed, 25 insertions(+), 5 deletions(-)
 
-diff --git a/arch/sparc/include/asm/pgtable_64.h b/arch/sparc/include/asm/pgtable_64.h
-index dcf970e82262..a93eca29e85a 100644
---- a/arch/sparc/include/asm/pgtable_64.h
-+++ b/arch/sparc/include/asm/pgtable_64.h
-@@ -1076,6 +1076,28 @@ static inline int io_remap_pfn_range(struct vm_area_struct *vma,
+diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
+index f402aa741bf3..6926bb3865b9 100644
+--- a/arch/sh/boards/mach-ecovec24/setup.c
++++ b/arch/sh/boards/mach-ecovec24/setup.c
+@@ -371,6 +371,19 @@ static struct platform_device lcdc_device = {
+ 	},
+ };
+ 
++static struct gpiod_lookup_table gpio_backlight_lookup = {
++	.dev_id		= "gpio-backlight.0",
++	.table = {
++		GPIO_LOOKUP("sh7724_pfc", GPIO_PTR1, NULL, GPIO_ACTIVE_HIGH),
++		{ }
++	},
++};
++
++static struct property_entry gpio_backlight_props[] = {
++	PROPERTY_ENTRY_BOOL("default-on"),
++	{ }
++};
++
+ static struct gpio_backlight_platform_data gpio_backlight_data = {
+ 	.fbdev = &lcdc_device.dev,
+ 	.gpio = GPIO_PTR1,
+@@ -378,13 +391,15 @@ static struct gpio_backlight_platform_data gpio_backlight_data = {
+ 	.name = "backlight",
+ };
+ 
+-static struct platform_device gpio_backlight_device = {
++static const struct platform_device_info gpio_backlight_device_info = {
+ 	.name = "gpio-backlight",
+-	.dev = {
+-		.platform_data = &gpio_backlight_data,
+-	},
++	.data = &gpio_backlight_data,
++	.size_data = sizeof(gpio_backlight_data),
++	.properties = gpio_backlight_props,
+ };
+ 
++static struct platform_device *gpio_backlight_device;
++
+ /* CEU0 */
+ static struct ceu_platform_data ceu0_pdata = {
+ 	.num_subdevs			= 2,
+@@ -1006,7 +1021,6 @@ static struct platform_device *ecovec_devices[] __initdata = {
+ 	&usb1_common_device,
+ 	&usbhs_device,
+ 	&lcdc_device,
+-	&gpio_backlight_device,
+ 	&keysc_device,
+ 	&cn12_power,
+ #if defined(CONFIG_MMC_SDHI) || defined(CONFIG_MMC_SDHI_MODULE)
+@@ -1464,6 +1478,12 @@ static int __init arch_setup(void)
+ #endif
+ #endif
+ 
++	gpiod_add_lookup_table(&gpio_backlight_lookup);
++	gpio_backlight_device = platform_device_register_full(
++					&gpio_backlight_device_info);
++	if (IS_ERR(gpio_backlight_device))
++		return PTR_ERR(gpio_backlight_device);
++
+ 	return platform_add_devices(ecovec_devices,
+ 				    ARRAY_SIZE(ecovec_devices));
  }
- #define io_remap_pfn_range io_remap_pfn_range 
- 
-+static inline unsigned long untagged_addr(unsigned long start)
-+{
-+	if (adi_capable()) {
-+		long addr = start;
-+
-+		/* If userspace has passed a versioned address, kernel
-+		 * will not find it in the VMAs since it does not store
-+		 * the version tags in the list of VMAs. Storing version
-+		 * tags in list of VMAs is impractical since they can be
-+		 * changed any time from userspace without dropping into
-+		 * kernel. Any address search in VMAs will be done with
-+		 * non-versioned addresses. Ensure the ADI version bits
-+		 * are dropped here by sign extending the last bit before
-+		 * ADI bits. IOMMU does not implement version tags.
-+		 */
-+		return (addr << (long)adi_nbits()) >> (long)adi_nbits();
-+	}
-+
-+	return start;
-+}
-+#define untagged_addr untagged_addr
-+
- #include <asm/tlbflush.h>
- #include <asm-generic/pgtable.h>
- 
 -- 
-2.20.1
+2.21.0
