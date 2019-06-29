@@ -1,128 +1,451 @@
-From: David Hildenbrand <david@redhat.com>
-Date: Tue, 04 Jun 2019 17:51:52 +0000
-Subject: Re: [PATCH v3 04/11] arm64/mm: Add temporary arch_remove_memory() implementation
-Message-Id: <4f2a87e9-7fd6-4b2b-892d-52482a330235@redhat.com>
+From: Vandana BN <bnvandana@gmail.com>
+Date: Sat, 29 Jun 2019 16:37:01 +0000
+Subject: [PATCH v5] Documentation:sh:convert register-banks.txt  and new-machine.txt to rst format.
+Message-Id: <20190629162501.4901-1-bnvandana@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190527111152.16324-1-david@redhat.com>
- <20190527111152.16324-5-david@redhat.com>
- <20190603214139.mercn5hol2yyfl2s@master>
- <5059f68d-45d2-784e-0770-ee67060773c7@redhat.com>
- <7a5b8c8d-f1bb-9c7e-9809-405af374fecd@arm.com>
-In-Reply-To: <7a5b8c8d-f1bb-9c7e-9809-405af374fecd@arm.com>
+References: <20190627063347.11137-1-bnvandana@gmail.com>
+In-Reply-To: <20190627063347.11137-1-bnvandana@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Robin Murphy <robin.murphy@arm.com>, Wei Yang <richard.weiyang@gmail.com>
-Cc: Mark Rutland <mark.rutland@arm.com>, linux-s390@vger.kernel.org, linux-ia64@vger.kernel.org, Yu Zhao <yuzhao@google.com>, Anshuman Khandual <anshuman.khandual@arm.com>, linux-sh@vger.kernel.org, Catalin Marinas <catalin.marinas@arm.com>, Ard Biesheuvel <ard.biesheuvel@linaro.org>, Will Deacon <will.deacon@arm.com>, linux-kernel@vger.kernel.org, Mike Rapoport <rppt@linux.ibm.com>, Jun Yao <yaojun8558363@gmail.com>, linux-mm@kvack.org, Chintan Pandya <cpandya@codeaurora.org>, Igor Mammedov <imammedo@redhat.com>, akpm@linux-foundation.org, linuxppc-dev@lists.ozlabs.org, Dan Williams <dan.j.williams@intel.com>, linux-arm-kernel@lists.infradead.org
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Jonathan Corbet <corbet@lwn.net>, linux-sh@vger.kernel.org, linux-doc@vger.kernel.org, linux-kernel@vger.kernel.org, mchehab@kernel.org
+Cc: skhan@linuxfoundation.org, gregkh@linuxfoundation.org, linux-kernel-mentees@lists.linuxfoundation.org, Vandana BN <bnvandana@gmail.com>
 
-On 04.06.19 19:36, Robin Murphy wrote:
-> On 04/06/2019 07:56, David Hildenbrand wrote:
->> On 03.06.19 23:41, Wei Yang wrote:
->>> On Mon, May 27, 2019 at 01:11:45PM +0200, David Hildenbrand wrote:
->>>> A proper arch_remove_memory() implementation is on its way, which also
->>>> cleanly removes page tables in arch_add_memory() in case something goes
->>>> wrong.
->>>
->>> Would this be better to understand?
->>>
->>>      removes page tables created in arch_add_memory
->>
->> That's not what this sentence expresses. Have a look at
->> arch_add_memory(), in case  __add_pages() fails, the page tables are not
->> removed. This will also be fixed by Anshuman in the same shot.
->>
->>>
->>>>
->>>> As we want to use arch_remove_memory() in case something goes wrong
->>>> during memory hotplug after arch_add_memory() finished, let's add
->>>> a temporary hack that is sufficient enough until we get a proper
->>>> implementation that cleans up page table entries.
->>>>
->>>> We will remove CONFIG_MEMORY_HOTREMOVE around this code in follow up
->>>> patches.
->>>>
->>>> Cc: Catalin Marinas <catalin.marinas@arm.com>
->>>> Cc: Will Deacon <will.deacon@arm.com>
->>>> Cc: Mark Rutland <mark.rutland@arm.com>
->>>> Cc: Andrew Morton <akpm@linux-foundation.org>
->>>> Cc: Ard Biesheuvel <ard.biesheuvel@linaro.org>
->>>> Cc: Chintan Pandya <cpandya@codeaurora.org>
->>>> Cc: Mike Rapoport <rppt@linux.ibm.com>
->>>> Cc: Jun Yao <yaojun8558363@gmail.com>
->>>> Cc: Yu Zhao <yuzhao@google.com>
->>>> Cc: Robin Murphy <robin.murphy@arm.com>
->>>> Cc: Anshuman Khandual <anshuman.khandual@arm.com>
->>>> Signed-off-by: David Hildenbrand <david@redhat.com>
->>>> ---
->>>> arch/arm64/mm/mmu.c | 19 +++++++++++++++++++
->>>> 1 file changed, 19 insertions(+)
->>>>
->>>> diff --git a/arch/arm64/mm/mmu.c b/arch/arm64/mm/mmu.c
->>>> index a1bfc4413982..e569a543c384 100644
->>>> --- a/arch/arm64/mm/mmu.c
->>>> +++ b/arch/arm64/mm/mmu.c
->>>> @@ -1084,4 +1084,23 @@ int arch_add_memory(int nid, u64 start, u64 size,
->>>> 	return __add_pages(nid, start >> PAGE_SHIFT, size >> PAGE_SHIFT,
->>>> 			   restrictions);
->>>> }
->>>> +#ifdef CONFIG_MEMORY_HOTREMOVE
->>>> +void arch_remove_memory(int nid, u64 start, u64 size,
->>>> +			struct vmem_altmap *altmap)
->>>> +{
->>>> +	unsigned long start_pfn = start >> PAGE_SHIFT;
->>>> +	unsigned long nr_pages = size >> PAGE_SHIFT;
->>>> +	struct zone *zone;
->>>> +
->>>> +	/*
->>>> +	 * FIXME: Cleanup page tables (also in arch_add_memory() in case
->>>> +	 * adding fails). Until then, this function should only be used
->>>> +	 * during memory hotplug (adding memory), not for memory
->>>> +	 * unplug. ARCH_ENABLE_MEMORY_HOTREMOVE must not be
->>>> +	 * unlocked yet.
->>>> +	 */
->>>> +	zone = page_zone(pfn_to_page(start_pfn));
->>>
->>> Compared with arch_remove_memory in x86. If altmap is not NULL, zone will be
->>> retrieved from page related to altmap. Not sure why this is not the same?
->>
->> This is a minimal implementation, sufficient for this use case here. A
->> full implementation is in the works. For now, this function will not be
->> used with an altmap (ZONE_DEVICE is not esupported for arm64 yet).
-> 
-> FWIW the other pieces of ZONE_DEVICE are now due to land in parallel, 
-> but as long as we don't throw the ARCH_ENABLE_MEMORY_HOTREMOVE switch 
-> then there should still be no issue. Besides, given that we should 
-> consistently ignore the altmap everywhere at the moment, it may even 
-> work out regardless.
+This patch converts new-machine.txt and register-banks.txt
+to ReST format, No content change.
+Added interfaces.rst to contain kernel-doc markups from index.rst
+Added interfaces.rst,new-machine.rst and register-banks.rst to sh/index.rst
+Added SPDX tag in index.rst
+Fixed broken reference in arch/sh/Kconfig.cpu
 
-Thanks for the info.
+Signed-off-by: Vandana BN <bnvandana@gmail.com>
+---
+ Documentation/sh/index.rst                    |  65 +------
+ Documentation/sh/interface.rst                |  59 ++++++
+ .../sh/{new-machine.txt => new-machine.rst}   | 171 +++++++++---------
+ ...{register-banks.txt => register-banks.rst} |   8 +-
+ arch/sh/Kconfig.cpu                           |   2 +-
+ 5 files changed, 164 insertions(+), 141 deletions(-)
+ create mode 100644 Documentation/sh/interface.rst
+ rename Documentation/sh/{new-machine.txt => new-machine.rst} (79%)
+ rename Documentation/sh/{register-banks.txt => register-banks.rst} (90%)
 
-> 
-> One thing stands out about the failure path thing, though - if 
-> __add_pages() did fail, can it still be guaranteed to have initialised 
-> the memmap such that page_zone() won't return nonsense? Last time I 
+diff --git a/Documentation/sh/index.rst b/Documentation/sh/index.rst
+index bc8db7ba894a..fec3c405b6b9 100644
+--- a/Documentation/sh/index.rst
++++ b/Documentation/sh/index.rst
+@@ -1,59 +1,14 @@
+-===========-SuperH Interfaces Guide
+-===========+.. SPDX-License-Identifier: GPL-2.0
 
-if __add_pages() fails, then arch_add_memory() fails and
-arch_remove_memory() will not be called in the context of this series.
-Only if it succeeded.
+-:Author: Paul Mundt
+-
+-Memory Management
+-========-
+-SH-4
+-----
+-
+-Store Queue API
+-~~~~~~~~~~~~~~~
+-
+-.. kernel-doc:: arch/sh/kernel/cpu/sh4/sq.c
+-   :export:
+-
+-SH-5
+-----
+-
+-TLB Interfaces
+-~~~~~~~~~~~~~~
+-
+-.. kernel-doc:: arch/sh/mm/tlb-sh5.c
+-   :internal:
+-
+-.. kernel-doc:: arch/sh/include/asm/tlb_64.h
+-   :internal:
++==========
++SuperH Documentation
++==========
 
-> looked that was still a problem when removing memory which had been 
-> successfully added, but never onlined (although I do know that 
-> particular case was already being discussed at the time, and I've not 
-> been paying the greatest attention since).
+-Machine Specific Interfaces
+-=============-
+-mach-dreamcast
+---------------
+-
+-.. kernel-doc:: arch/sh/boards/mach-dreamcast/rtc.c
+-   :internal:
+-
+-mach-x3proto
+-------------
+-
+-.. kernel-doc:: arch/sh/boards/mach-x3proto/ilsel.c
+-   :export:
+-
+-Busses
+-===
+-
+-SuperHyway
+-----------
+-
+-.. kernel-doc:: drivers/sh/superhyway/superhyway.c
+-   :export:
++:Author: Paul Mundt
 
-Yes, that part is next on my list. It works but is ugly. The memory
-removal process should not care about zones at all.
+-Maple
+------
++.. toctree::
++   :maxdepth: 2
 
-Slowly moving into the right direction :)
+-.. kernel-doc:: drivers/sh/maple/maple.c
+-   :export:
++   interface
++   new-machine
++   register-banks
+diff --git a/Documentation/sh/interface.rst b/Documentation/sh/interface.rst
+new file mode 100644
+index 000000000000..bc8db7ba894a
+--- /dev/null
++++ b/Documentation/sh/interface.rst
+@@ -0,0 +1,59 @@
++===========+SuperH Interfaces Guide
++===========+
++:Author: Paul Mundt
++
++Memory Management
++========+
++SH-4
++----
++
++Store Queue API
++~~~~~~~~~~~~~~~
++
++.. kernel-doc:: arch/sh/kernel/cpu/sh4/sq.c
++   :export:
++
++SH-5
++----
++
++TLB Interfaces
++~~~~~~~~~~~~~~
++
++.. kernel-doc:: arch/sh/mm/tlb-sh5.c
++   :internal:
++
++.. kernel-doc:: arch/sh/include/asm/tlb_64.h
++   :internal:
++
++Machine Specific Interfaces
++=============+
++mach-dreamcast
++--------------
++
++.. kernel-doc:: arch/sh/boards/mach-dreamcast/rtc.c
++   :internal:
++
++mach-x3proto
++------------
++
++.. kernel-doc:: arch/sh/boards/mach-x3proto/ilsel.c
++   :export:
++
++Busses
++===
++
++SuperHyway
++----------
++
++.. kernel-doc:: drivers/sh/superhyway/superhyway.c
++   :export:
++
++Maple
++-----
++
++.. kernel-doc:: drivers/sh/maple/maple.c
++   :export:
+diff --git a/Documentation/sh/new-machine.txt b/Documentation/sh/new-machine.rst
+similarity index 79%
+rename from Documentation/sh/new-machine.txt
+rename to Documentation/sh/new-machine.rst
+index e0961a66130b..b16c33342642 100644
+--- a/Documentation/sh/new-machine.txt
++++ b/Documentation/sh/new-machine.rst
+@@ -1,8 +1,8 @@
++================
++Adding a new board to LinuxSH
++================
 
-> 
-> Robin.
-> 
+-                Adding a new board to LinuxSH
+-               ================
+-
+-               Paul Mundt <lethal@linux-sh.org>
++Paul Mundt <lethal@linux-sh.org>
 
+ This document attempts to outline what steps are necessary to add support
+ for new boards to the LinuxSH port under the new 2.5 and 2.6 kernels. This
+@@ -19,65 +19,67 @@ include/asm-sh/. For the new kernel, things are broken out by board type,
+ companion chip type, and CPU type. Looking at a tree view of this directory
+ hierarchy looks like the following:
 
--- 
+-Board-specific code:
+-
+-.
+-|-- arch
+-|   `-- sh
+-|       `-- boards
+-|           |-- adx
+-|           |   `-- board-specific files
+-|           |-- bigsur
+-|           |   `-- board-specific files
+-|           |
+-|           ... more boards here ...
+-|
+-`-- include
+-    `-- asm-sh
+-        |-- adx
+-        |   `-- board-specific headers
+-        |-- bigsur
+-        |   `-- board-specific headers
+-        |
+-	.. more boards here ...
+-
+-Next, for companion chips:
+-.
+-`-- arch
+-    `-- sh
+-        `-- cchips
+-            `-- hd6446x
+-                `-- hd64461
+-                    `-- cchip-specific files
++Board-specific code::
++
++ .
++ |-- arch
++ |   `-- sh
++ |       `-- boards
++ |           |-- adx
++ |           |   `-- board-specific files
++ |           |-- bigsur
++ |           |   `-- board-specific files
++ |           |
++ |           ... more boards here ...
++ |
++ `-- include
++     `-- asm-sh
++         |-- adx
++         |   `-- board-specific headers
++         |-- bigsur
++         |   `-- board-specific headers
++         |
++       	 .. more boards here ...
++
++Next, for companion chips::
++
++ .
++ `-- arch
++     `-- sh
++         `-- cchips
++             `-- hd6446x
++                 `-- hd64461
++                     `-- cchip-specific files
 
-Thanks,
+ ... and so on. Headers for the companion chips are treated the same way as
+ board-specific headers. Thus, include/asm-sh/hd64461 is home to all of the
+ hd64461-specific headers.
 
-David / dhildenb
+-Finally, CPU family support is also abstracted:
+-.
+-|-- arch
+-|   `-- sh
+-|       |-- kernel
+-|       |   `-- cpu
+-|       |       |-- sh2
+-|       |       |   `-- SH-2 generic files
+-|       |       |-- sh3
+-|       |       |   `-- SH-3 generic files
+-|       |       `-- sh4
+-|       |           `-- SH-4 generic files
+-|       `-- mm
+-|           `-- This is also broken out per CPU family, so each family can
+-|               have their own set of cache/tlb functions.
+-|
+-`-- include
+-    `-- asm-sh
+-        |-- cpu-sh2
+-        |   `-- SH-2 specific headers
+-        |-- cpu-sh3
+-        |   `-- SH-3 specific headers
+-        `-- cpu-sh4
+-            `-- SH-4 specific headers
++Finally, CPU family support is also abstracted::
++
++ .
++ |-- arch
++ |   `-- sh
++ |       |-- kernel
++ |       |   `-- cpu
++ |       |       |-- sh2
++ |       |       |   `-- SH-2 generic files
++ |       |       |-- sh3
++ |       |       |   `-- SH-3 generic files
++ |       |       `-- sh4
++ |       |           `-- SH-4 generic files
++ |       `-- mm
++ |           `-- This is also broken out per CPU family, so each family can
++ |               have their own set of cache/tlb functions.
++ |
++ `-- include
++     `-- asm-sh
++         |-- cpu-sh2
++         |   `-- SH-2 specific headers
++         |-- cpu-sh3
++         |   `-- SH-3 specific headers
++         `-- cpu-sh4
++             `-- SH-4 specific headers
+
+ It should be noted that CPU subtypes are _not_ abstracted. Thus, these still
+ need to be dealt with by the CPU family specific code.
+@@ -112,18 +114,20 @@ setup code, we're required at the very least to provide definitions for
+ get_system_type() and platform_setup(). For our imaginary board, this
+ might look something like:
+
+-/*
+- * arch/sh/boards/vapor/setup.c - Setup code for imaginary board
+- */
+-#include <linux/init.h>
++.. code-block:: c
++
++    /*
++     * arch/sh/boards/vapor/setup.c - Setup code for imaginary board
++     */
++    #include <linux/init.h>
+
+-const char *get_system_type(void)
+-{
+-	return "FooTech Vaporboard";
+-}
++    const char *get_system_type(void)
++    {
++        return "FooTech Vaporboard";
++    }
+
+-int __init platform_setup(void)
+-{
++    int __init platform_setup(void)
++    {
+   	/*
+ 	 * If our hardware actually existed, we would do real
+ 	 * setup here. Though it's also sane to leave this empty
+@@ -136,7 +140,8 @@ int __init platform_setup(void)
+ 	/* And whatever else ... */
+
+ 	return 0;
+-}
++    }
++
+
+ Our new imaginary board will also have to tie into the machvec in order for it
+ to be of any use.
+@@ -172,16 +177,17 @@ sufficient.
+    vector.
+
+    Note that these prototypes are generated automatically by setting
+-   __IO_PREFIX to something sensible. A typical example would be:
++   __IO_PREFIX to something sensible. A typical example would be::
+
+ 	#define __IO_PREFIX vapor
+    	#include <asm/io_generic.h>
+
++
+    somewhere in the board-specific header. Any boards being ported that still
+    have a legacy io.h should remove it entirely and switch to the new model.
+
+  - Add machine vector definitions to the board's setup.c. At a bare minimum,
+-   this must be defined as something like:
++   this must be defined as something like::
+
+ 	struct sh_machine_vector mv_vapor __initmv = {
+ 		.mv_name = "vapor",
+@@ -202,11 +208,11 @@ Large portions of the build system are now entirely dynamic, and merely
+ require the proper entry here and there in order to get things done.
+
+ The first thing to do is to add an entry to arch/sh/Kconfig, under the
+-"System type" menu:
++"System type" menu::
+
+-config SH_VAPOR
+-	bool "Vapor"
+-	help
++ config SH_VAPOR
++	 bool "Vapor"
++	 help
+ 	  select Vapor if configuring for a FooTech Vaporboard.
+
+ next, this has to be added into arch/sh/Makefile. All boards require a
+@@ -232,6 +238,8 @@ space restating it here. After this is done, you will be able to use
+ implicit checks for your board if you need this somewhere throughout the
+ common code, such as:
+
++::
++
+ 	/* Make sure we're on the FooTech Vaporboard */
+ 	if (!mach_is_vapor())
+ 		return -ENODEV;
+@@ -253,12 +261,13 @@ build target, and it will be implicitly listed as such in the help text.
+ Looking at the 'make help' output, you should now see something like:
+
+ Architecture specific targets (sh):
+-  zImage                  - Compressed kernel image (arch/sh/boot/zImage)
+-  adx_defconfig           - Build for adx
+-  cqreek_defconfig        - Build for cqreek
+-  dreamcast_defconfig     - Build for dreamcast
+-...
+-  vapor_defconfig         - Build for vapor
++
++ - zImage                  - Compressed kernel image (arch/sh/boot/zImage)
++ - adx_defconfig           - Build for adx
++ - cqreek_defconfig        - Build for cqreek
++ - dreamcast_defconfig     - Build for dreamcast
++ - ...
++ - vapor_defconfig         - Build for vapor
+
+ which then allows you to do:
+
+diff --git a/Documentation/sh/register-banks.txt b/Documentation/sh/register-banks.rst
+similarity index 90%
+rename from Documentation/sh/register-banks.txt
+rename to Documentation/sh/register-banks.rst
+index a6719f2f6594..acccfaf80355 100644
+--- a/Documentation/sh/register-banks.txt
++++ b/Documentation/sh/register-banks.rst
+@@ -1,8 +1,9 @@
+-	Notes on register bank usage in the kernel
+-	=====================
++=====================
++Notes on register bank usage in the kernel
++=====================
+
+ Introduction
+-------------
++======
+
+ The SH-3 and SH-4 CPU families traditionally include a single partial register
+ bank (selected by SR.RB, only r0 ... r7 are banked), whereas other families
+@@ -30,4 +31,3 @@ Presently the kernel uses several of these registers.
+ 		- The SR.IMASK interrupt handler makes use of this to set the
+ 		  interrupt priority level (used by local_irq_enable())
+ 	- r7_bank (current)
+-
+diff --git a/arch/sh/Kconfig.cpu b/arch/sh/Kconfig.cpu
+index 4a4edc7e03d4..07ad7597cbe7 100644
+--- a/arch/sh/Kconfig.cpu
++++ b/arch/sh/Kconfig.cpu
+@@ -94,7 +94,7 @@ config CPU_HAS_SR_RB
+ 	  that are lacking this bit must have another method in place for
+ 	  accomplishing what is taken care of by the banked registers.
+
+-	  See <file:Documentation/sh/register-banks.txt> for further
++	  See <file:Documentation/sh/register-banks.rst> for further
+ 	  information on SR.RB and register banking in the kernel in general.
+
+ config CPU_HAS_PTEAEX
+--
+2.17.1
