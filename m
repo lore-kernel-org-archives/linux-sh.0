@@ -1,68 +1,79 @@
-From: Alexandre Ghiti <alex@ghiti.fr>
-Date: Tue, 30 Jul 2019 06:12:20 +0000
-Subject: Re: [PATCH RESEND 0/8] Fix mmap base in bottom-up mmap
-Message-Id: <175168c1-d25f-7a93-e19b-dbb6ae6289e1@ghiti.fr>
+From: Michal Hocko <mhocko@kernel.org>
+Date: Mon, 01 Jul 2019 12:48:09 +0000
+Subject: Re: [PATCH v3 04/11] arm64/mm: Add temporary arch_remove_memory() implementation
+Message-Id: <20190701124809.GV6376@dhcp22.suse.cz>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190620050328.8942-1-alex@ghiti.fr>
-In-Reply-To: <20190620050328.8942-1-alex@ghiti.fr>
+References: <20190527111152.16324-1-david@redhat.com>
+ <20190527111152.16324-5-david@redhat.com>
+In-Reply-To: <20190527111152.16324-5-david@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: "James E . J . Bottomley" <James.Bottomley@HansenPartnership.com>, Helge Deller <deller@gmx.de>, Heiko Carstens <heiko.carstens@de.ibm.com>, Vasily Gorbik <gor@linux.ibm.com>, Christian Borntraeger <borntraeger@de.ibm.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, "David S . Miller" <davem@davemloft.net>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>, "H . Peter Anvin" <hpa@zytor.com>, x86@kernel.org, Dave Hansen <dave.hansen@linux.intel.com>, Andy Lutomirski <luto@kernel.org>, Peter Zijlstra <peterz@infradead.org>, linux-parisc@vger.kernel.org, linux-kernel@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-mm@kvack.org
+To: David Hildenbrand <david@redhat.com>
+Cc: Mark Rutland <mark.rutland@arm.com>, linux-s390@vger.kernel.org, linux-ia64@vger.kernel.org, Yu Zhao <yuzhao@google.com>, Anshuman Khandual <anshuman.khandual@arm.com>, linux-sh@vger.kernel.org, Catalin Marinas <catalin.marinas@arm.com>, Ard Biesheuvel <ard.biesheuvel@linaro.org>, Will Deacon <will.deacon@arm.com>, linux-kernel@vger.kernel.org, Wei Yang <richard.weiyang@gmail.com>, Jun Yao <yaojun8558363@gmail.com>, linux-mm@kvack.org, Chintan Pandya <cpandya@codeaurora.org>, Igor Mammedov <imammedo@redhat.com>, akpm@linux-foundation.org, Mike Rapoport <rppt@linux.ibm.com>, linuxppc-dev@lists.ozlabs.org, Dan Williams <dan.j.williams@intel.com>, linux-arm-kernel@lists.infradead.org, Robin Murphy <robin.murphy@arm.com>
 
-On 6/20/19 7:03 AM, Alexandre Ghiti wrote:
-> This series fixes the fallback of the top-down mmap: in case of
-> failure, a bottom-up scheme can be tried as a last resort between
-> the top-down mmap base and the stack, hoping for a large unused stack
-> limit.
->
-> Lots of architectures and even mm code start this fallback
-> at TASK_UNMAPPED_BASE, which is useless since the top-down scheme
-> already failed on the whole address space: instead, simply use
-> mmap_base.
->
-> Along the way, it allows to get rid of of mmap_legacy_base and
-> mmap_compat_legacy_base from mm_struct.
->
-> Note that arm and mips already implement this behaviour.
->
-> Alexandre Ghiti (8):
->    s390: Start fallback of top-down mmap at mm->mmap_base
->    sh: Start fallback of top-down mmap at mm->mmap_base
->    sparc: Start fallback of top-down mmap at mm->mmap_base
->    x86, hugetlbpage: Start fallback of top-down mmap at mm->mmap_base
->    mm: Start fallback top-down mmap at mm->mmap_base
->    parisc: Use mmap_base, not mmap_legacy_base, as low_limit for
->      bottom-up mmap
->    x86: Use mmap_*base, not mmap_*legacy_base, as low_limit for bottom-up
->      mmap
->    mm: Remove mmap_legacy_base and mmap_compat_legacy_code fields from
->      mm_struct
->
->   arch/parisc/kernel/sys_parisc.c  |  8 +++-----
->   arch/s390/mm/mmap.c              |  2 +-
->   arch/sh/mm/mmap.c                |  2 +-
->   arch/sparc/kernel/sys_sparc_64.c |  2 +-
->   arch/sparc/mm/hugetlbpage.c      |  2 +-
->   arch/x86/include/asm/elf.h       |  2 +-
->   arch/x86/kernel/sys_x86_64.c     |  4 ++--
->   arch/x86/mm/hugetlbpage.c        |  7 ++++---
->   arch/x86/mm/mmap.c               | 20 +++++++++-----------
->   include/linux/mm_types.h         |  2 --
->   mm/debug.c                       |  4 ++--
->   mm/mmap.c                        |  2 +-
->   12 files changed, 26 insertions(+), 31 deletions(-)
->
+On Mon 27-05-19 13:11:45, David Hildenbrand wrote:
+> A proper arch_remove_memory() implementation is on its way, which also
+> cleanly removes page tables in arch_add_memory() in case something goes
+> wrong.
+> 
+> As we want to use arch_remove_memory() in case something goes wrong
+> during memory hotplug after arch_add_memory() finished, let's add
+> a temporary hack that is sufficient enough until we get a proper
+> implementation that cleans up page table entries.
+> 
+> We will remove CONFIG_MEMORY_HOTREMOVE around this code in follow up
+> patches.
 
-Hi everyone,
+I would drop this one as well (like s390 counterpart).
+ 
+> Cc: Catalin Marinas <catalin.marinas@arm.com>
+> Cc: Will Deacon <will.deacon@arm.com>
+> Cc: Mark Rutland <mark.rutland@arm.com>
+> Cc: Andrew Morton <akpm@linux-foundation.org>
+> Cc: Ard Biesheuvel <ard.biesheuvel@linaro.org>
+> Cc: Chintan Pandya <cpandya@codeaurora.org>
+> Cc: Mike Rapoport <rppt@linux.ibm.com>
+> Cc: Jun Yao <yaojun8558363@gmail.com>
+> Cc: Yu Zhao <yuzhao@google.com>
+> Cc: Robin Murphy <robin.murphy@arm.com>
+> Cc: Anshuman Khandual <anshuman.khandual@arm.com>
+> Signed-off-by: David Hildenbrand <david@redhat.com>
+> ---
+>  arch/arm64/mm/mmu.c | 19 +++++++++++++++++++
+>  1 file changed, 19 insertions(+)
+> 
+> diff --git a/arch/arm64/mm/mmu.c b/arch/arm64/mm/mmu.c
+> index a1bfc4413982..e569a543c384 100644
+> --- a/arch/arm64/mm/mmu.c
+> +++ b/arch/arm64/mm/mmu.c
+> @@ -1084,4 +1084,23 @@ int arch_add_memory(int nid, u64 start, u64 size,
+>  	return __add_pages(nid, start >> PAGE_SHIFT, size >> PAGE_SHIFT,
+>  			   restrictions);
+>  }
+> +#ifdef CONFIG_MEMORY_HOTREMOVE
+> +void arch_remove_memory(int nid, u64 start, u64 size,
+> +			struct vmem_altmap *altmap)
+> +{
+> +	unsigned long start_pfn = start >> PAGE_SHIFT;
+> +	unsigned long nr_pages = size >> PAGE_SHIFT;
+> +	struct zone *zone;
+> +
+> +	/*
+> +	 * FIXME: Cleanup page tables (also in arch_add_memory() in case
+> +	 * adding fails). Until then, this function should only be used
+> +	 * during memory hotplug (adding memory), not for memory
+> +	 * unplug. ARCH_ENABLE_MEMORY_HOTREMOVE must not be
+> +	 * unlocked yet.
+> +	 */
+> +	zone = page_zone(pfn_to_page(start_pfn));
+> +	__remove_pages(zone, start_pfn, nr_pages, altmap);
+> +}
+> +#endif
+>  #endif
+> -- 
+> 2.20.1
 
-This is just a preparatory series for the merging of x86 mmap top-down 
-functions with
-the generic ones (those should get into v5.3), if you could take some 
-time to take a look,
-that would be great :)
-
-Thanks,
-
-Alex
+-- 
+Michal Hocko
+SUSE Labs
