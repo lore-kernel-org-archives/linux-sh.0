@@ -1,64 +1,89 @@
-From: Bartosz Golaszewski <brgl@bgdev.pl>
-Date: Wed, 24 Jul 2019 08:27:34 +0000
-Subject: Re: [PATCH v3 0/7] backlight: gpio: simplify the driver
-Message-Id: <CAMRc=McfheXWjbvV=JeBz4hxHGb5XFqsKtun6+BfrSodH4tn_w@mail.gmail.com>
+From: Michal Hocko <mhocko@kernel.org>
+Date: Mon, 01 Jul 2019 07:56:15 +0000
+Subject: Re: [PATCH v3 05/11] drivers/base/memory: Pass a block_id to init_memory_block()
+Message-Id: <20190701075615.GE6376@dhcp22.suse.cz>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190724082508.27617-1-brgl@bgdev.pl>
-In-Reply-To: <20190724082508.27617-1-brgl@bgdev.pl>
+References: <20190527111152.16324-1-david@redhat.com>
+ <20190527111152.16324-6-david@redhat.com>
+In-Reply-To: <20190527111152.16324-6-david@redhat.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: Daniel Thompson <daniel.thompson@linaro.org>
-Cc: linux-sh@vger.kernel.org, Rich Felker <dalias@libc.org>, Linus Walleij <linus.walleij@linaro.org>, Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>, Andy Shevchenko <andriy.shevchenko@linux.intel.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Lee Jones <lee.jones@linaro.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, dri-devel@lists.freedesktop.org, linux-fbdev@vger.kernel.org, Bartosz Golaszewski <bgolaszewski@baylibre.com>, Jingoo Han <jingoohan1@gmail.com>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: David Hildenbrand <david@redhat.com>
+Cc: linux-s390@vger.kernel.org, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, "Rafael J. Wysocki" <rafael@kernel.org>, linux-kernel@vger.kernel.org, Wei Yang <richard.weiyang@gmail.com>, linux-mm@kvack.org, Igor Mammedov <imammedo@redhat.com>, akpm@linux-foundation.org, linuxppc-dev@lists.ozlabs.org, Dan Williams <dan.j.williams@intel.com>, linux-arm-kernel@lists.infradead.org
 
-śr., 24 lip 2019 o 10:25 Bartosz Golaszewski <brgl@bgdev.pl> napisał(a):
->
-> From: Bartosz Golaszewski <bgolaszewski@baylibre.com>
->
-> While working on my other series related to gpio-backlight[1] I noticed
-> that we could simplify the driver if we made the only user of platform
-> data use GPIO lookups and device properties. This series tries to do
-> that.
->
-> The first patch adds all necessary data structures to ecovec24. Patch
-> 2/7 unifies much of the code for both pdata and non-pdata cases. Patches
-> 3-4/7 remove unused platform data fields. Last three patches contain
-> additional improvements for the GPIO backlight driver while we're already
-> modifying it.
->
-> I don't have access to this HW but hopefully this works. Only compile
-> tested.
->
-> [1] https://lkml.org/lkml/2019/6/25/900
->
-> v1 -> v2:
-> - rebased on top of v5.3-rc1 and adjusted to the recent changes from Andy
-> - added additional two patches with minor improvements
->
-> v2 -> v3:
-> - in patch 7/7: used initializers to set values for pdata and dev local vars
->
-> Bartosz Golaszewski (7):
->   sh: ecovec24: add additional properties to the backlight device
->   backlight: gpio: simplify the platform data handling
->   sh: ecovec24: don't set unused fields in platform data
->   backlight: gpio: remove unused fields from platform data
->   backlight: gpio: remove dev from struct gpio_backlight
->   backlight: gpio: remove def_value from struct gpio_backlight
->   backlight: gpio: use a helper variable for &pdev->dev
->
->  arch/sh/boards/mach-ecovec24/setup.c         | 33 ++++++--
->  drivers/video/backlight/gpio_backlight.c     | 82 +++++---------------
->  include/linux/platform_data/gpio_backlight.h |  3 -
->  3 files changed, 44 insertions(+), 74 deletions(-)
->
-> --
-> 2.21.0
->
+On Mon 27-05-19 13:11:46, David Hildenbrand wrote:
+> We'll rework hotplug_memory_register() shortly, so it no longer consumes
+> pass a section.
+> 
+> Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+> Cc: "Rafael J. Wysocki" <rafael@kernel.org>
+> Signed-off-by: David Hildenbrand <david@redhat.com>
 
-Daniel,
+Acked-by: Michal Hocko <mhocko@suse.com>
 
-I missed your review tags - could you add them again?
+> ---
+>  drivers/base/memory.c | 15 +++++++--------
+>  1 file changed, 7 insertions(+), 8 deletions(-)
+> 
+> diff --git a/drivers/base/memory.c b/drivers/base/memory.c
+> index f180427e48f4..f914fa6fe350 100644
+> --- a/drivers/base/memory.c
+> +++ b/drivers/base/memory.c
+> @@ -651,21 +651,18 @@ int register_memory(struct memory_block *memory)
+>  	return ret;
+>  }
+>  
+> -static int init_memory_block(struct memory_block **memory,
+> -			     struct mem_section *section, unsigned long state)
+> +static int init_memory_block(struct memory_block **memory, int block_id,
+> +			     unsigned long state)
+>  {
+>  	struct memory_block *mem;
+>  	unsigned long start_pfn;
+> -	int scn_nr;
+>  	int ret = 0;
+>  
+>  	mem = kzalloc(sizeof(*mem), GFP_KERNEL);
+>  	if (!mem)
+>  		return -ENOMEM;
+>  
+> -	scn_nr = __section_nr(section);
+> -	mem->start_section_nr > -			base_memory_block_id(scn_nr) * sections_per_block;
+> +	mem->start_section_nr = block_id * sections_per_block;
+>  	mem->end_section_nr = mem->start_section_nr + sections_per_block - 1;
+>  	mem->state = state;
+>  	start_pfn = section_nr_to_pfn(mem->start_section_nr);
+> @@ -694,7 +691,8 @@ static int add_memory_block(int base_section_nr)
+>  
+>  	if (section_count = 0)
+>  		return 0;
+> -	ret = init_memory_block(&mem, __nr_to_section(section_nr), MEM_ONLINE);
+> +	ret = init_memory_block(&mem, base_memory_block_id(base_section_nr),
+> +				MEM_ONLINE);
+>  	if (ret)
+>  		return ret;
+>  	mem->section_count = section_count;
+> @@ -707,6 +705,7 @@ static int add_memory_block(int base_section_nr)
+>   */
+>  int hotplug_memory_register(int nid, struct mem_section *section)
+>  {
+> +	int block_id = base_memory_block_id(__section_nr(section));
+>  	int ret = 0;
+>  	struct memory_block *mem;
+>  
+> @@ -717,7 +716,7 @@ int hotplug_memory_register(int nid, struct mem_section *section)
+>  		mem->section_count++;
+>  		put_device(&mem->dev);
+>  	} else {
+> -		ret = init_memory_block(&mem, section, MEM_OFFLINE);
+> +		ret = init_memory_block(&mem, block_id, MEM_OFFLINE);
+>  		if (ret)
+>  			goto out;
+>  		mem->section_count++;
+> -- 
+> 2.20.1
 
-Thanks,
-Bart
+-- 
+Michal Hocko
+SUSE Labs
