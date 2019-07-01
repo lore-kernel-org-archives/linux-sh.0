@@ -1,53 +1,77 @@
-From: Yoshinori Sato <ysato@users.sourceforge.jp>
-Date: Sat, 27 Jul 2019 13:47:10 +0000
-Subject: Re: [PATCH] sh: remove unneeded uapi asm-generic wrappers
-Message-Id: <87o91fpp29.wl-ysato@users.sourceforge.jp>
+From: Michal Hocko <mhocko@kernel.org>
+Date: Mon, 01 Jul 2019 08:52:31 +0000
+Subject: Re: [PATCH v3 11/11] mm/memory_hotplug: Remove "zone" parameter from sparse_remove_one_section
+Message-Id: <20190701085231.GK6376@dhcp22.suse.cz>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190723113036.14576-1-yamada.masahiro@socionext.com>
-In-Reply-To: <20190723113036.14576-1-yamada.masahiro@socionext.com>
+References: <20190527111152.16324-1-david@redhat.com>
+ <20190527111152.16324-12-david@redhat.com>
+In-Reply-To: <20190527111152.16324-12-david@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Masahiro Yamada <yamada.masahiro@socionext.com>
-Cc: Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, Andrew Morton <akpm@linux-foundation.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Simon Horman <horms+renesas@verge.net.au>, linux-kernel@vger.kernel.org
+To: David Hildenbrand <david@redhat.com>
+Cc: linux-s390@vger.kernel.org, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Wei Yang <richard.weiyang@gmail.com>, linux-mm@kvack.org, Igor Mammedov <imammedo@redhat.com>, akpm@linux-foundation.org, linuxppc-dev@lists.ozlabs.org, Dan Williams <dan.j.williams@intel.com>, linux-arm-kernel@lists.infradead.org
 
-On Tue, 23 Jul 2019 20:30:36 +0900,
-Masahiro Yamada wrote:
+On Mon 27-05-19 13:11:52, David Hildenbrand wrote:
+> The parameter is unused, so let's drop it. Memory removal paths should
+> never care about zones. This is the job of memory offlining and will
+> require more refactorings.
 > 
-> These are listed in include/uapi/asm-generic/Kbuild, so Kbuild will
-> automatically generate them.
-> 
-> Signed-off-by: Masahiro Yamada <yamada.masahiro@socionext.com>
+> Reviewed-by: Dan Williams <dan.j.williams@intel.com>
+> Signed-off-by: David Hildenbrand <david@redhat.com>
+
+Acked-by: Michal Hocko <mhocko@suse.com>
+
 > ---
+>  include/linux/memory_hotplug.h | 2 +-
+>  mm/memory_hotplug.c            | 2 +-
+>  mm/sparse.c                    | 4 ++--
+>  3 files changed, 4 insertions(+), 4 deletions(-)
 > 
->  arch/sh/include/uapi/asm/setup.h | 2 --
->  arch/sh/include/uapi/asm/types.h | 2 --
->  2 files changed, 4 deletions(-)
->  delete mode 100644 arch/sh/include/uapi/asm/setup.h
->  delete mode 100644 arch/sh/include/uapi/asm/types.h
-> 
-> diff --git a/arch/sh/include/uapi/asm/setup.h b/arch/sh/include/uapi/asm/setup.h
-> deleted file mode 100644
-> index 4bd19f80f9b0..000000000000
-> --- a/arch/sh/include/uapi/asm/setup.h
-> +++ /dev/null
-> @@ -1,2 +0,0 @@
-> -/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
-> -#include <asm-generic/setup.h>
-> diff --git a/arch/sh/include/uapi/asm/types.h b/arch/sh/include/uapi/asm/types.h
-> deleted file mode 100644
-> index 68100e108ea6..000000000000
-> --- a/arch/sh/include/uapi/asm/types.h
-> +++ /dev/null
-> @@ -1,2 +0,0 @@
-> -/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
-> -#include <asm-generic/types.h>
+> diff --git a/include/linux/memory_hotplug.h b/include/linux/memory_hotplug.h
+> index 2f1f87e13baa..1a4257c5f74c 100644
+> --- a/include/linux/memory_hotplug.h
+> +++ b/include/linux/memory_hotplug.h
+> @@ -346,7 +346,7 @@ extern void move_pfn_range_to_zone(struct zone *zone, unsigned long start_pfn,
+>  extern bool is_memblock_offlined(struct memory_block *mem);
+>  extern int sparse_add_one_section(int nid, unsigned long start_pfn,
+>  				  struct vmem_altmap *altmap);
+> -extern void sparse_remove_one_section(struct zone *zone, struct mem_section *ms,
+> +extern void sparse_remove_one_section(struct mem_section *ms,
+>  		unsigned long map_offset, struct vmem_altmap *altmap);
+>  extern struct page *sparse_decode_mem_map(unsigned long coded_mem_map,
+>  					  unsigned long pnum);
+> diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
+> index 82136c5b4c5f..e48ec7b9dee2 100644
+> --- a/mm/memory_hotplug.c
+> +++ b/mm/memory_hotplug.c
+> @@ -524,7 +524,7 @@ static void __remove_section(struct zone *zone, struct mem_section *ms,
+>  	start_pfn = section_nr_to_pfn((unsigned long)scn_nr);
+>  	__remove_zone(zone, start_pfn);
+>  
+> -	sparse_remove_one_section(zone, ms, map_offset, altmap);
+> +	sparse_remove_one_section(ms, map_offset, altmap);
+>  }
+>  
+>  /**
+> diff --git a/mm/sparse.c b/mm/sparse.c
+> index d1d5e05f5b8d..1552c855d62a 100644
+> --- a/mm/sparse.c
+> +++ b/mm/sparse.c
+> @@ -800,8 +800,8 @@ static void free_section_usemap(struct page *memmap, unsigned long *usemap,
+>  		free_map_bootmem(memmap);
+>  }
+>  
+> -void sparse_remove_one_section(struct zone *zone, struct mem_section *ms,
+> -		unsigned long map_offset, struct vmem_altmap *altmap)
+> +void sparse_remove_one_section(struct mem_section *ms, unsigned long map_offset,
+> +			       struct vmem_altmap *altmap)
+>  {
+>  	struct page *memmap = NULL;
+>  	unsigned long *usemap = NULL;
 > -- 
-> 2.17.1
-> 
-
-Applied sh-next.
-Thanks.
+> 2.20.1
 
 -- 
-Yosinori Sato
+Michal Hocko
+SUSE Labs
