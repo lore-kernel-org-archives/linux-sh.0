@@ -1,68 +1,97 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Thu, 25 Jul 2019 06:33:58 +0000
-Subject: [PATCH 2/5] dma-mapping: move the dma_get_sgtable API comments from arm to common code
-Message-Id: <20190725063401.29904-3-hch@lst.de>
+From: Michal Hocko <mhocko@kernel.org>
+Date: Mon, 01 Jul 2019 08:15:08 +0000
+Subject: Re: [PATCH v3 08/11] mm/memory_hotplug: Drop MHP_MEMBLOCK_API
+Message-Id: <20190701081508.GH6376@dhcp22.suse.cz>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190725063401.29904-1-hch@lst.de>
-In-Reply-To: <20190725063401.29904-1-hch@lst.de>
+References: <20190527111152.16324-1-david@redhat.com>
+ <20190527111152.16324-9-david@redhat.com>
+In-Reply-To: <20190527111152.16324-9-david@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: iommu@lists.linux-foundation.org, Marek Szyprowski <m.szyprowski@samsung.com>
-Cc: linux-xtensa@linux-xtensa.org, Michal Simek <monstr@monstr.eu>, linux-parisc@vger.kernel.org, linux-sh@vger.kernel.org, Takashi Iwai <tiwai@suse.de>, linuxppc-dev@lists.ozlabs.org, x86@kernel.org, linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, Robin Murphy <robin.murphy@arm.com>, linux-arm-kernel@lists.infradead.org
+To: David Hildenbrand <david@redhat.com>
+Cc: Oscar Salvador <osalvador@suse.com>, linux-s390@vger.kernel.org, linux-ia64@vger.kernel.org, Pavel Tatashin <pasha.tatashin@soleen.com>, linux-sh@vger.kernel.org, Mathieu Malaterre <malat@debian.org>, Joonsoo Kim <iamjoonsoo.kim@lge.com>, linux-kernel@vger.kernel.org, Wei Yang <richard.weiyang@gmail.com>, linux-mm@kvack.org, Arun KS <arunks@codeaurora.org>, Qian Cai <cai@lca.pw>, Igor Mammedov <imammedo@redhat.com>, akpm@linux-foundation.org, linuxppc-dev@lists.ozlabs.org, Dan Williams <dan.j.williams@intel.com>, linux-arm-kernel@lists.infradead.org
 
-The comments are spot on and should be near the central API, not just
-near a single implementation.
+On Mon 27-05-19 13:11:49, David Hildenbrand wrote:
+> No longer needed, the callers of arch_add_memory() can handle this
+> manually.
+> 
+> Cc: Andrew Morton <akpm@linux-foundation.org>
+> Cc: David Hildenbrand <david@redhat.com>
+> Cc: Michal Hocko <mhocko@suse.com>
+> Cc: Oscar Salvador <osalvador@suse.com>
+> Cc: Pavel Tatashin <pasha.tatashin@soleen.com>
+> Cc: Wei Yang <richard.weiyang@gmail.com>
+> Cc: Joonsoo Kim <iamjoonsoo.kim@lge.com>
+> Cc: Qian Cai <cai@lca.pw>
+> Cc: Arun KS <arunks@codeaurora.org>
+> Cc: Mathieu Malaterre <malat@debian.org>
+> Signed-off-by: David Hildenbrand <david@redhat.com>
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
----
- arch/arm/mm/dma-mapping.c | 11 -----------
- kernel/dma/mapping.c      | 11 +++++++++++
- 2 files changed, 11 insertions(+), 11 deletions(-)
+Acked-by: Michal Hocko <mhocko@suse.com>
 
-diff --git a/arch/arm/mm/dma-mapping.c b/arch/arm/mm/dma-mapping.c
-index 6774b03aa405..4410af33c5c4 100644
---- a/arch/arm/mm/dma-mapping.c
-+++ b/arch/arm/mm/dma-mapping.c
-@@ -877,17 +877,6 @@ static void arm_coherent_dma_free(struct device *dev, size_t size, void *cpu_add
- 	__arm_dma_free(dev, size, cpu_addr, handle, attrs, true);
- }
- 
--/*
-- * The whole dma_get_sgtable() idea is fundamentally unsafe - it seems
-- * that the intention is to allow exporting memory allocated via the
-- * coherent DMA APIs through the dma_buf API, which only accepts a
-- * scattertable.  This presents a couple of problems:
-- * 1. Not all memory allocated via the coherent DMA APIs is backed by
-- *    a struct page
-- * 2. Passing coherent DMA memory into the streaming APIs is not allowed
-- *    as we will try to flush the memory through a different alias to that
-- *    actually being used (and the flushes are redundant.)
-- */
- int arm_dma_get_sgtable(struct device *dev, struct sg_table *sgt,
- 		 void *cpu_addr, dma_addr_t handle, size_t size,
- 		 unsigned long attrs)
-diff --git a/kernel/dma/mapping.c b/kernel/dma/mapping.c
-index b945239621d8..4ceb5b9016d8 100644
---- a/kernel/dma/mapping.c
-+++ b/kernel/dma/mapping.c
-@@ -136,6 +136,17 @@ int dma_common_get_sgtable(struct device *dev, struct sg_table *sgt,
- 	return ret;
- }
- 
-+/*
-+ * The whole dma_get_sgtable() idea is fundamentally unsafe - it seems
-+ * that the intention is to allow exporting memory allocated via the
-+ * coherent DMA APIs through the dma_buf API, which only accepts a
-+ * scattertable.  This presents a couple of problems:
-+ * 1. Not all memory allocated via the coherent DMA APIs is backed by
-+ *    a struct page
-+ * 2. Passing coherent DMA memory into the streaming APIs is not allowed
-+ *    as we will try to flush the memory through a different alias to that
-+ *    actually being used (and the flushes are redundant.)
-+ */
- int dma_get_sgtable_attrs(struct device *dev, struct sg_table *sgt,
- 		void *cpu_addr, dma_addr_t dma_addr, size_t size,
- 		unsigned long attrs)
+> ---
+>  include/linux/memory_hotplug.h | 8 --------
+>  mm/memory_hotplug.c            | 9 +++------
+>  2 files changed, 3 insertions(+), 14 deletions(-)
+> 
+> diff --git a/include/linux/memory_hotplug.h b/include/linux/memory_hotplug.h
+> index 2d4de313926d..2f1f87e13baa 100644
+> --- a/include/linux/memory_hotplug.h
+> +++ b/include/linux/memory_hotplug.h
+> @@ -128,14 +128,6 @@ extern void arch_remove_memory(int nid, u64 start, u64 size,
+>  extern void __remove_pages(struct zone *zone, unsigned long start_pfn,
+>  			   unsigned long nr_pages, struct vmem_altmap *altmap);
+>  
+> -/*
+> - * Do we want sysfs memblock files created. This will allow userspace to online
+> - * and offline memory explicitly. Lack of this bit means that the caller has to
+> - * call move_pfn_range_to_zone to finish the initialization.
+> - */
+> -
+> -#define MHP_MEMBLOCK_API               (1<<0)
+> -
+>  /* reasonably generic interface to expand the physical pages */
+>  extern int __add_pages(int nid, unsigned long start_pfn, unsigned long nr_pages,
+>  		       struct mhp_restrictions *restrictions);
+> diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
+> index b1fde90bbf19..9a92549ef23b 100644
+> --- a/mm/memory_hotplug.c
+> +++ b/mm/memory_hotplug.c
+> @@ -251,7 +251,7 @@ void __init register_page_bootmem_info_node(struct pglist_data *pgdat)
+>  #endif /* CONFIG_HAVE_BOOTMEM_INFO_NODE */
+>  
+>  static int __meminit __add_section(int nid, unsigned long phys_start_pfn,
+> -		struct vmem_altmap *altmap, bool want_memblock)
+> +				   struct vmem_altmap *altmap)
+>  {
+>  	int ret;
+>  
+> @@ -294,8 +294,7 @@ int __ref __add_pages(int nid, unsigned long phys_start_pfn,
+>  	}
+>  
+>  	for (i = start_sec; i <= end_sec; i++) {
+> -		err = __add_section(nid, section_nr_to_pfn(i), altmap,
+> -				restrictions->flags & MHP_MEMBLOCK_API);
+> +		err = __add_section(nid, section_nr_to_pfn(i), altmap);
+>  
+>  		/*
+>  		 * EEXIST is finally dealt with by ioresource collision
+> @@ -1067,9 +1066,7 @@ static int online_memory_block(struct memory_block *mem, void *arg)
+>   */
+>  int __ref add_memory_resource(int nid, struct resource *res)
+>  {
+> -	struct mhp_restrictions restrictions = {
+> -		.flags = MHP_MEMBLOCK_API,
+> -	};
+> +	struct mhp_restrictions restrictions = {};
+>  	u64 start, size;
+>  	bool new_node = false;
+>  	int ret;
+> -- 
+> 2.20.1
+> 
+
 -- 
-2.20.1
+Michal Hocko
+SUSE Labs
