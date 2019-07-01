@@ -1,74 +1,72 @@
 From: Michal Hocko <mhocko@kernel.org>
-Date: Mon, 01 Jul 2019 07:42:02 +0000
-Subject: Re: [PATCH v3 01/11] mm/memory_hotplug: Simplify and fix check_hotplug_memory_range()
-Message-Id: <20190701074202.GB6376@dhcp22.suse.cz>
+Date: Mon, 01 Jul 2019 12:47:17 +0000
+Subject: Re: [PATCH v3 03/11] s390x/mm: Implement arch_remove_memory()
+Message-Id: <20190701124717.GU6376@dhcp22.suse.cz>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20190527111152.16324-1-david@redhat.com>
- <20190527111152.16324-2-david@redhat.com>
-In-Reply-To: <20190527111152.16324-2-david@redhat.com>
+ <20190527111152.16324-4-david@redhat.com>
+ <20190701074503.GD6376@dhcp22.suse.cz>
+In-Reply-To: <20190701074503.GD6376@dhcp22.suse.cz>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: David Hildenbrand <david@redhat.com>
-Cc: linux-s390@vger.kernel.org, linux-ia64@vger.kernel.org, Pavel Tatashin <pasha.tatashin@soleen.com>, linux-sh@vger.kernel.org, Mathieu Malaterre <malat@debian.org>, linux-kernel@vger.kernel.org, Wei Yang <richard.weiyang@gmail.com>, linux-mm@kvack.org, Arun KS <arunks@codeaurora.org>, Qian Cai <cai@lca.pw>, Wei Yang <richardw.yang@linux.intel.com>, Igor Mammedov <imammedo@redhat.com>, akpm@linux-foundation.org, linuxppc-dev@lists.ozlabs.org, Dan Williams <dan.j.williams@intel.com>, linux-arm-kernel@lists.infradead.org, Oscar Salvador <osalvador@suse.de>
+Cc: Oscar Salvador <osalvador@suse.com>, linux-s390@vger.kernel.org, linux-ia64@vger.kernel.org, Vasily Gorbik <gor@linux.ibm.com>, linux-sh@vger.kernel.org, Heiko Carstens <heiko.carstens@de.ibm.com>, linux-kernel@vger.kernel.org, Wei Yang <richard.weiyang@gmail.com>, linux-mm@kvack.org, Mike Rapoport <rppt@linux.vnet.ibm.com>, Martin Schwidefsky <schwidefsky@de.ibm.com>, Igor Mammedov <imammedo@redhat.com>, akpm@linux-foundation.org, linuxppc-dev@lists.ozlabs.org, Dan Williams <dan.j.williams@intel.com>, linux-arm-kernel@lists.infradead.org
 
-[Sorry for a really late response]
-
-On Mon 27-05-19 13:11:42, David Hildenbrand wrote:
-> By converting start and size to page granularity, we actually ignore
-> unaligned parts within a page instead of properly bailing out with an
-> error.
-
-I do not expect any code path would ever provide an unaligned address
-and even if it did then rounding that to a pfn doesn't sound like a
-terrible thing to do. Anyway this removes few lines so why not.
+On Mon 01-07-19 09:45:03, Michal Hocko wrote:
+> On Mon 27-05-19 13:11:44, David Hildenbrand wrote:
+> > Will come in handy when wanting to handle errors after
+> > arch_add_memory().
 > 
-> Cc: Andrew Morton <akpm@linux-foundation.org>
-> Cc: Oscar Salvador <osalvador@suse.de>
-> Cc: Michal Hocko <mhocko@suse.com>
-> Cc: David Hildenbrand <david@redhat.com>
-> Cc: Pavel Tatashin <pasha.tatashin@soleen.com>
-> Cc: Qian Cai <cai@lca.pw>
-> Cc: Wei Yang <richard.weiyang@gmail.com>
-> Cc: Arun KS <arunks@codeaurora.org>
-> Cc: Mathieu Malaterre <malat@debian.org>
-> Reviewed-by: Dan Williams <dan.j.williams@intel.com>
-> Reviewed-by: Wei Yang <richardw.yang@linux.intel.com>
-> Signed-off-by: David Hildenbrand <david@redhat.com>
+> I do not understand this. Why do you add a code for something that is
+> not possible on this HW (based on the comment - is it still valid btw?)
 
-Acked-by: Michal Hocko <mhocko@suse.com>
+Same as the previous patch (drop it).
 
-> ---
->  mm/memory_hotplug.c | 11 +++--------
->  1 file changed, 3 insertions(+), 8 deletions(-)
+> > Cc: Martin Schwidefsky <schwidefsky@de.ibm.com>
+> > Cc: Heiko Carstens <heiko.carstens@de.ibm.com>
+> > Cc: Andrew Morton <akpm@linux-foundation.org>
+> > Cc: Michal Hocko <mhocko@suse.com>
+> > Cc: Mike Rapoport <rppt@linux.vnet.ibm.com>
+> > Cc: David Hildenbrand <david@redhat.com>
+> > Cc: Vasily Gorbik <gor@linux.ibm.com>
+> > Cc: Oscar Salvador <osalvador@suse.com>
+> > Signed-off-by: David Hildenbrand <david@redhat.com>
+> > ---
+> >  arch/s390/mm/init.c | 13 +++++++------
+> >  1 file changed, 7 insertions(+), 6 deletions(-)
+> > 
+> > diff --git a/arch/s390/mm/init.c b/arch/s390/mm/init.c
+> > index d552e330fbcc..14955e0a9fcf 100644
+> > --- a/arch/s390/mm/init.c
+> > +++ b/arch/s390/mm/init.c
+> > @@ -243,12 +243,13 @@ int arch_add_memory(int nid, u64 start, u64 size,
+> >  void arch_remove_memory(int nid, u64 start, u64 size,
+> >  			struct vmem_altmap *altmap)
+> >  {
+> > -	/*
+> > -	 * There is no hardware or firmware interface which could trigger a
+> > -	 * hot memory remove on s390. So there is nothing that needs to be
+> > -	 * implemented.
+> > -	 */
+> > -	BUG();
+> > +	unsigned long start_pfn = start >> PAGE_SHIFT;
+> > +	unsigned long nr_pages = size >> PAGE_SHIFT;
+> > +	struct zone *zone;
+> > +
+> > +	zone = page_zone(pfn_to_page(start_pfn));
+> > +	__remove_pages(zone, start_pfn, nr_pages, altmap);
+> > +	vmem_remove_mapping(start, size);
+> >  }
+> >  #endif
+> >  #endif /* CONFIG_MEMORY_HOTPLUG */
+> > -- 
+> > 2.20.1
+> > 
 > 
-> diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
-> index e096c987d261..762887b2358b 100644
-> --- a/mm/memory_hotplug.c
-> +++ b/mm/memory_hotplug.c
-> @@ -1051,16 +1051,11 @@ int try_online_node(int nid)
->  
->  static int check_hotplug_memory_range(u64 start, u64 size)
->  {
-> -	unsigned long block_sz = memory_block_size_bytes();
-> -	u64 block_nr_pages = block_sz >> PAGE_SHIFT;
-> -	u64 nr_pages = size >> PAGE_SHIFT;
-> -	u64 start_pfn = PFN_DOWN(start);
-> -
->  	/* memory range must be block size aligned */
-> -	if (!nr_pages || !IS_ALIGNED(start_pfn, block_nr_pages) ||
-> -	    !IS_ALIGNED(nr_pages, block_nr_pages)) {
-> +	if (!size || !IS_ALIGNED(start, memory_block_size_bytes()) ||
-> +	    !IS_ALIGNED(size, memory_block_size_bytes())) {
->  		pr_err("Block size [%#lx] unaligned hotplug range: start %#llx, size %#llx",
-> -		       block_sz, start, size);
-> +		       memory_block_size_bytes(), start, size);
->  		return -EINVAL;
->  	}
->  
 > -- 
-> 2.20.1
-> 
+> Michal Hocko
+> SUSE Labs
 
 -- 
 Michal Hocko
