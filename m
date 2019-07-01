@@ -1,128 +1,75 @@
-From: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
-Date: Wed, 24 Jul 2019 11:44:10 +0000
-Subject: Re: [PATCH v3 2/7] backlight: gpio: simplify the platform data handling
-Message-Id: <20190724114410.GX9224@smile.fi.intel.com>
+From: Michal Hocko <mhocko@kernel.org>
+Date: Mon, 01 Jul 2019 07:42:02 +0000
+Subject: Re: [PATCH v3 01/11] mm/memory_hotplug: Simplify and fix check_hotplug_memory_range()
+Message-Id: <20190701074202.GB6376@dhcp22.suse.cz>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190724082508.27617-1-brgl@bgdev.pl>
- <20190724082508.27617-3-brgl@bgdev.pl>
-In-Reply-To: <20190724082508.27617-3-brgl@bgdev.pl>
+References: <20190527111152.16324-1-david@redhat.com>
+ <20190527111152.16324-2-david@redhat.com>
+In-Reply-To: <20190527111152.16324-2-david@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Bartosz Golaszewski <brgl@bgdev.pl>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Lee Jones <lee.jones@linaro.org>, Daniel Thompson <daniel.thompson@linaro.org>, Jingoo Han <jingoohan1@gmail.com>, Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>, Linus Walleij <linus.walleij@linaro.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, dri-devel@lists.freedesktop.org, linux-fbdev@vger.kernel.org, Bartosz Golaszewski <bgolaszewski@baylibre.com>
+To: David Hildenbrand <david@redhat.com>
+Cc: linux-s390@vger.kernel.org, linux-ia64@vger.kernel.org, Pavel Tatashin <pasha.tatashin@soleen.com>, linux-sh@vger.kernel.org, Mathieu Malaterre <malat@debian.org>, linux-kernel@vger.kernel.org, Wei Yang <richard.weiyang@gmail.com>, linux-mm@kvack.org, Arun KS <arunks@codeaurora.org>, Qian Cai <cai@lca.pw>, Wei Yang <richardw.yang@linux.intel.com>, Igor Mammedov <imammedo@redhat.com>, akpm@linux-foundation.org, linuxppc-dev@lists.ozlabs.org, Dan Williams <dan.j.williams@intel.com>, linux-arm-kernel@lists.infradead.org, Oscar Salvador <osalvador@suse.de>
 
-On Wed, Jul 24, 2019 at 10:25:03AM +0200, Bartosz Golaszewski wrote:
-> From: Bartosz Golaszewski <bgolaszewski@baylibre.com>
-> 
-> Now that the last user of platform data (sh ecovec24) defines a proper
-> GPIO lookup and sets the 'default-on' device property, we can drop the
-> platform_data-specific GPIO handling and unify a big chunk of code.
-> 
-> The only field used from the platform data is now the fbdev pointer.
+[Sorry for a really late response]
 
-Reviewed-by: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+On Mon 27-05-19 13:11:42, David Hildenbrand wrote:
+> By converting start and size to page granularity, we actually ignore
+> unaligned parts within a page instead of properly bailing out with an
+> error.
 
+I do not expect any code path would ever provide an unaligned address
+and even if it did then rounding that to a pfn doesn't sound like a
+terrible thing to do. Anyway this removes few lines so why not.
 > 
-> Signed-off-by: Bartosz Golaszewski <bgolaszewski@baylibre.com>
+> Cc: Andrew Morton <akpm@linux-foundation.org>
+> Cc: Oscar Salvador <osalvador@suse.de>
+> Cc: Michal Hocko <mhocko@suse.com>
+> Cc: David Hildenbrand <david@redhat.com>
+> Cc: Pavel Tatashin <pasha.tatashin@soleen.com>
+> Cc: Qian Cai <cai@lca.pw>
+> Cc: Wei Yang <richard.weiyang@gmail.com>
+> Cc: Arun KS <arunks@codeaurora.org>
+> Cc: Mathieu Malaterre <malat@debian.org>
+> Reviewed-by: Dan Williams <dan.j.williams@intel.com>
+> Reviewed-by: Wei Yang <richardw.yang@linux.intel.com>
+> Signed-off-by: David Hildenbrand <david@redhat.com>
+
+Acked-by: Michal Hocko <mhocko@suse.com>
+
 > ---
->  drivers/video/backlight/gpio_backlight.c | 64 +++++-------------------
->  1 file changed, 13 insertions(+), 51 deletions(-)
+>  mm/memory_hotplug.c | 11 +++--------
+>  1 file changed, 3 insertions(+), 8 deletions(-)
 > 
-> diff --git a/drivers/video/backlight/gpio_backlight.c b/drivers/video/backlight/gpio_backlight.c
-> index e84f3087e29f..01262186fa1e 100644
-> --- a/drivers/video/backlight/gpio_backlight.c
-> +++ b/drivers/video/backlight/gpio_backlight.c
-> @@ -55,30 +55,6 @@ static const struct backlight_ops gpio_backlight_ops = {
->  	.check_fb	= gpio_backlight_check_fb,
->  };
+> diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
+> index e096c987d261..762887b2358b 100644
+> --- a/mm/memory_hotplug.c
+> +++ b/mm/memory_hotplug.c
+> @@ -1051,16 +1051,11 @@ int try_online_node(int nid)
 >  
-> -static int gpio_backlight_probe_dt(struct platform_device *pdev,
-> -				   struct gpio_backlight *gbl)
-> -{
-> -	struct device *dev = &pdev->dev;
-> -	enum gpiod_flags flags;
-> -	int ret;
-> -
-> -	gbl->def_value = device_property_read_bool(dev, "default-on");
-> -	flags = gbl->def_value ? GPIOD_OUT_HIGH : GPIOD_OUT_LOW;
-> -
-> -	gbl->gpiod = devm_gpiod_get(dev, NULL, flags);
-> -	if (IS_ERR(gbl->gpiod)) {
-> -		ret = PTR_ERR(gbl->gpiod);
-> -
-> -		if (ret != -EPROBE_DEFER) {
-> -			dev_err(dev,
-> -				"Error: The gpios parameter is missing or invalid.\n");
-> -		}
-> -		return ret;
-> -	}
-> -
-> -	return 0;
-> -}
-> -
->  static int gpio_backlight_probe(struct platform_device *pdev)
+>  static int check_hotplug_memory_range(u64 start, u64 size)
 >  {
->  	struct gpio_backlight_platform_data *pdata > @@ -86,6 +62,7 @@ static int gpio_backlight_probe(struct platform_device *pdev)
->  	struct backlight_properties props;
->  	struct backlight_device *bl;
->  	struct gpio_backlight *gbl;
-> +	enum gpiod_flags flags;
->  	int ret;
->  
->  	gbl = devm_kzalloc(&pdev->dev, sizeof(*gbl), GFP_KERNEL);
-> @@ -94,35 +71,20 @@ static int gpio_backlight_probe(struct platform_device *pdev)
->  
->  	gbl->dev = &pdev->dev;
->  
-> -	if (pdev->dev.fwnode) {
-> -		ret = gpio_backlight_probe_dt(pdev, gbl);
-> -		if (ret)
-> -			return ret;
-> -	} else if (pdata) {
-> -		/*
-> -		 * Legacy platform data GPIO retrieveal. Do not expand
-> -		 * the use of this code path, currently only used by one
-> -		 * SH board.
-> -		 */
-> -		unsigned long flags = GPIOF_DIR_OUT;
+> -	unsigned long block_sz = memory_block_size_bytes();
+> -	u64 block_nr_pages = block_sz >> PAGE_SHIFT;
+> -	u64 nr_pages = size >> PAGE_SHIFT;
+> -	u64 start_pfn = PFN_DOWN(start);
 > -
-> +	if (pdata)
->  		gbl->fbdev = pdata->fbdev;
-> -		gbl->def_value = pdata->def_value;
-> -		flags |= gbl->def_value ? GPIOF_INIT_HIGH : GPIOF_INIT_LOW;
-> -
-> -		ret = devm_gpio_request_one(gbl->dev, pdata->gpio, flags,
-> -					    pdata ? pdata->name : "backlight");
-> -		if (ret < 0) {
-> -			dev_err(&pdev->dev, "unable to request GPIO\n");
-> -			return ret;
-> +
-> +	gbl->def_value = device_property_read_bool(&pdev->dev, "default-on");
-> +	flags = gbl->def_value ? GPIOD_OUT_HIGH : GPIOD_OUT_LOW;
-> +
-> +	gbl->gpiod = devm_gpiod_get(&pdev->dev, NULL, flags);
-> +	if (IS_ERR(gbl->gpiod)) {
-> +		ret = PTR_ERR(gbl->gpiod);
-> +		if (ret != -EPROBE_DEFER) {
-> +			dev_err(&pdev->dev,
-> +				"Error: The gpios parameter is missing or invalid.\n");
->  		}
-> -		gbl->gpiod = gpio_to_desc(pdata->gpio);
-> -		if (!gbl->gpiod)
-> -			return -EINVAL;
-> -	} else {
-> -		dev_err(&pdev->dev,
-> -			"failed to find platform data or device tree node.\n");
-> -		return -ENODEV;
-> +		return ret;
+>  	/* memory range must be block size aligned */
+> -	if (!nr_pages || !IS_ALIGNED(start_pfn, block_nr_pages) ||
+> -	    !IS_ALIGNED(nr_pages, block_nr_pages)) {
+> +	if (!size || !IS_ALIGNED(start, memory_block_size_bytes()) ||
+> +	    !IS_ALIGNED(size, memory_block_size_bytes())) {
+>  		pr_err("Block size [%#lx] unaligned hotplug range: start %#llx, size %#llx",
+> -		       block_sz, start, size);
+> +		       memory_block_size_bytes(), start, size);
+>  		return -EINVAL;
 >  	}
 >  
->  	memset(&props, 0, sizeof(props));
 > -- 
-> 2.21.0
+> 2.20.1
 > 
 
 -- 
-With Best Regards,
-Andy Shevchenko
+Michal Hocko
+SUSE Labs
