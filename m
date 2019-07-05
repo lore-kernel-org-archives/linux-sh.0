@@ -1,38 +1,35 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Tue, 30 Jul 2019 06:26:51 +0000
-Subject: Re: [PATCH 4/5] dma-mapping: provide a better default ->get_required_mask
-Message-Id: <20190730062651.GA29518@lst.de>
+From: Alex Shi <alex.shi@linux.alibaba.com>
+Date: Fri, 05 Jul 2019 03:43:38 +0000
+Subject: Re: [PATCH 18/39] docs: admin-guide: add kdump documentation into it
+Message-Id: <6911b74c-848f-0060-3db5-b5d7e8061cb5@linux.alibaba.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190725063401.29904-1-hch@lst.de>
- <20190725063401.29904-5-hch@lst.de>
- <CAMuHMdUBPj8AVSuDwaBB_4gRD6k7vzo0WAFJEkTUbxSw31bzUg@mail.gmail.com>
-In-Reply-To: <CAMuHMdUBPj8AVSuDwaBB_4gRD6k7vzo0WAFJEkTUbxSw31bzUg@mail.gmail.com>
+References: <cover.1561724493.git.mchehab+samsung@kernel.org>
+ <654e7591c044632c06257e0f069a52c0bb993554.1561724493.git.mchehab+samsung@kernel.org>
+In-Reply-To: <654e7591c044632c06257e0f069a52c0bb993554.1561724493.git.mchehab+samsung@kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: linux-xtensa@linux-xtensa.org, Michal Simek <monstr@monstr.eu>, Parisc List <linux-parisc@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Takashi Iwai <tiwai@suse.de>, linuxppc-dev <linuxppc-dev@lists.ozlabs.org>, the arch/x86 maintainers <x86@kernel.org>, linux-m68k <linux-m68k@lists.linux-m68k.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Linux IOMMU <iommu@lists.linux-foundation.org>, Robin Murphy <robin.murphy@arm.com>, Christoph Hellwig <hch@lst.de>, Linux ARM <linux-arm-kernel@lists.infradead.org>, Marek Szyprowski <m.szyprowski@samsung.com>
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: Mauro Carvalho Chehab <mchehab+samsung@kernel.org>, Linux Doc Mailing List <linux-doc@vger.kernel.org>
+Cc: Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, Catalin Marinas <catalin.marinas@arm.com>, Jerry Hoemann <jerry.hoemann@hpe.com>, Harry Wei <harryxiyou@gmail.com>, Paul Mackerras <paulus@samba.org>, "H. Peter Anvin" <hpa@zytor.com>, Will Deacon <will@kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Jonathan Corbet <corbet@lwn.net>, Michael Ellerman <mpe@ellerman.id.au>, x86@kernel.org, Russell King <linux@armlinux.org.uk>, Ingo Molnar <mingo@redhat.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Dave Young <dyoung@redhat.com>, Guenter Roeck <linux@roeck-us.net>, linux-watchdog@vger.kernel.org, Mauro Carvalho Chehab <mchehab@infradead.org>, Borislav Petkov <bp@alien8.de>, Thomas Gleixner <tglx@linutronix.de>, Wim Van Sebroeck <wim@linux-watchdog.org>, linux-arm-kernel@lists.infradead.org, Baoquan He <bhe@redhat.com>, kexec@lists.infradead.org, linux-kernel@vger.kernel.org, Vivek Goyal <vgoyal@redhat.com>, linuxppc-dev@lists.ozlabs.org
 
-On Mon, Jul 29, 2019 at 11:57:19AM +0200, Geert Uytterhoeven wrote:
-> Hi Christoph,
-> 
-> On Thu, Jul 25, 2019 at 8:35 AM Christoph Hellwig <hch@lst.de> wrote:
-> > Most dma_map_ops instances are IOMMUs that work perfectly fine in 32-bits
-> > of IOVA space, and the generic direct mapping code already provides its
-> > own routines that is intelligent based on the amount of memory actually
-> > present.  Wire up the dma-direct routine for the ARM direct mapping code
-> > as well, and otherwise default to the constant 32-bit mask.  This way
-> > we only need to override it for the occasional odd IOMMU that requires
-> > 64-bit IOVA support, or IOMMU drivers that are more efficient if they
-> > can fall back to the direct mapping.
-> 
-> As I know you like diving into cans of worms ;-)
-> 
-> Does 64-bit IOVA support actually work in general? Or only on 64-bit
-> platforms, due to dma_addr_t to unsigned long truncation on 32-bit?
 
-Most IOMMUs use 32-bit IOVAs, and thus we default to the 32-bit mask
-because it is common and failsafe vs the normal linux assumptions.
-However the ia64 SGI SN2 platform, and the powerpc IBM ebus
-implementations seem to require a 64-bit mask already, so we keep that
-behavior as is.
+
+在 2019/6/28 下午8:30, Mauro Carvalho Chehab 写道:
+> The Kdump documentation describes procedures with admins use
+> in order to solve issues on their systems.
+> 
+> Signed-off-by: Mauro Carvalho Chehab <mchehab+samsung@kernel.org>
+> ---
+>  Documentation/admin-guide/bug-hunting.rst            | 4 ++--
+>  Documentation/admin-guide/index.rst                  | 1 +
+>  Documentation/{ => admin-guide}/kdump/gdbmacros.txt  | 0
+>  Documentation/{ => admin-guide}/kdump/index.rst      | 1 -
+>  Documentation/{ => admin-guide}/kdump/kdump.rst      | 0
+>  Documentation/{ => admin-guide}/kdump/vmcoreinfo.rst | 0
+
+I am not sure if it's convenience for people to have more levels in docs.
+
+But I guess, move archs into a Documentation/arch/ dir should be fine. like Documentation/arch/{x86,arm,arm64,ia64,m68k,s390,powerpc,...}
+
+Thanks
+Alex
