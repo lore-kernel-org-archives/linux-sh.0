@@ -1,58 +1,152 @@
-From: Alex Shi <alex.shi@linux.alibaba.com>
-Date: Sun, 14 Jul 2019 15:21:03 +0000
-Subject: Re: [PATCH 01/12] Documentation: move architectures together
-Message-Id: <36c522c5-975e-e38e-daad-0f3d9f93b186@linux.alibaba.com>
+From: Aleksa Sarai <cyphar@cyphar.com>
+Date: Sat, 06 Jul 2019 14:57:31 +0000
+Subject: [PATCH v9 04/10] namei: split out nd->dfd handling to dirfd_path_init
+Message-Id: <20190706145737.5299-5-cyphar@cyphar.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190712022018.27989-1-alex.shi@linux.alibaba.com>
- <20190712113427.62fa7ffc@lwn.net>
-In-Reply-To: <20190712113427.62fa7ffc@lwn.net>
+References: <20190706145737.5299-1-cyphar@cyphar.com>
+In-Reply-To: <20190706145737.5299-1-cyphar@cyphar.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: Jonathan Corbet <corbet@lwn.net>
-Cc: linux-doc@vger.kernel.org, linux-kernel@vger.kernel.org, linux-stm32@st-md-mailman.stormreply.com, linux-arm-kernel@lists.infradead.org, linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org, linux-omap@vger.kernel.org, linux-fbdev@vger.kernel.org, linux-samsung-soc@vger.kernel.org, linux-ia64@vger.kernel.org, linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org, linux-scsi@vger.kernel.org, linux-s390@vger.kernel.org, kvm@vger.kernel.org, linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Al Viro <viro@zeniv.linux.org.uk>, Jeff Layton <jlayton@kernel.org>, "J. Bruce Fields" <bfields@fieldses.org>, Arnd Bergmann <arnd@arndb.de>, David Howells <dhowells@redhat.com>, Shuah Khan <shuah@kernel.org>, Shuah Khan <skhan@linuxfoundation.org>
+Cc: Aleksa Sarai <cyphar@cyphar.com>, Eric Biederman <ebiederm@xmission.com>, Andy Lutomirski <luto@kernel.org>, Andrew Morton <akpm@linux-foundation.org>, Alexei Starovoitov <ast@kernel.org>, Kees Cook <keescook@chromium.org>, Jann Horn <jannh@google.com>, Christian Brauner <christian@brauner.io>, Tycho Andersen <tycho@tycho.ws>, David Drysdale <drysdale@google.com>, Chanho Min <chanho.min@lge.com>, Oleg Nesterov <oleg@redhat.com>, Aleksa Sarai <asarai@suse.de>, Linus Torvalds <torvalds@linux-foundation.org>, containers@lists.linux-foundation.org, linux-alpha@vger.kernel.org, linux-api@vger.kernel.org, linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-fsdevel@vger.kernel.org, linux-ia64@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Hi Jon,
+Previously, path_init's handling of *at(dfd, ...) was only done once,
+but with LOOKUP_BENEATH (and LOOKUP_IN_ROOT) we have to parse the
+initial nd->path at different times (before or after absolute path
+handling) depending on whether we have been asked to scope resolution
+within a root.
 
-Thanks for quick response!
+Signed-off-by: Aleksa Sarai <cyphar@cyphar.com>
+---
+ fs/namei.c | 103 ++++++++++++++++++++++++++++++-----------------------
+ 1 file changed, 59 insertions(+), 44 deletions(-)
 
-=D4=DA 2019/7/13 =C9=CF=CE=E71:34, Jonathan Corbet =D0=B4=B5=C0:
-> On Fri, 12 Jul 2019 10:20:07 +0800
-> Alex Shi <alex.shi@linux.alibaba.com> wrote:
->=20
->> There are many different archs in Documentation/ dir, it's better to
->> move them together in 'Documentation/arch' which follows from kernel sou=
-rce.
->=20
-> So this seems certain to collide badly with Mauro's RST-conversion monster
-> patch set.
-
-I don't mean that, sorry, and we can figure out if both of them are worthy =
-to be picked up.
-
->=20
-> More to the point, though...if we are going to thrash up things this
-> badly, we want to be sure that we're doing it right so we don't end up
-> renaming everything again.  Grouping stuff into a new arch/ subdirectory
-> adds a bit of order, but it doesn't do much toward trying to organize our
-> documentation for its readers, and it doesn't help us to modernize the
-> docs and get rid of the old, useless stuff.  A quick check shows that many
-> of these files have seen no changes other than typo fixes since the
-> beginning of the Git era.
-
-Right, there is some docs which need to be update or even drop, and a reord=
-er would be a timing to push each of arch maintainer to do something, isn't=
- it? Anyway, reordering  documents like kernel source dir could be one of c=
-hoices. :)
-
->=20
-> So, in my mind, this needs some thought.  Maybe we want a
-> Documentation/arch in the end, but I'm not convinced that we should just
-> create it and fill it with a snow shovel.  This might be a good thing to
-> discuss at the kernel summit in September.
-
-Thanks for considering, anyway, it could be a good start to get hands dirty=
- whether the arch dir is needed.=20
-
-Thanks
-Alex
+diff --git a/fs/namei.c b/fs/namei.c
+index 4895717d2760..b490bcf855f8 100644
+--- a/fs/namei.c
++++ b/fs/namei.c
+@@ -2257,9 +2257,59 @@ static int link_path_walk(const char *name, struct nameidata *nd)
+ 	}
+ }
+ 
++/*
++ * Configure nd->path based on the nd->dfd. This is only used as part of
++ * path_init().
++ */
++static inline int dirfd_path_init(struct nameidata *nd)
++{
++	if (nd->dfd = AT_FDCWD) {
++		if (nd->flags & LOOKUP_RCU) {
++			struct fs_struct *fs = current->fs;
++			unsigned seq;
++
++			do {
++				seq = read_seqcount_begin(&fs->seq);
++				nd->path = fs->pwd;
++				nd->inode = nd->path.dentry->d_inode;
++				nd->seq = __read_seqcount_begin(&nd->path.dentry->d_seq);
++			} while (read_seqcount_retry(&fs->seq, seq));
++		} else {
++			get_fs_pwd(current->fs, &nd->path);
++			nd->inode = nd->path.dentry->d_inode;
++		}
++	} else {
++		/* Caller must check execute permissions on the starting path component */
++		struct fd f = fdget_raw(nd->dfd);
++		struct dentry *dentry;
++
++		if (!f.file)
++			return -EBADF;
++
++		dentry = f.file->f_path.dentry;
++
++		if (*nd->name->name && unlikely(!d_can_lookup(dentry))) {
++			fdput(f);
++			return -ENOTDIR;
++		}
++
++		nd->path = f.file->f_path;
++		if (nd->flags & LOOKUP_RCU) {
++			nd->inode = nd->path.dentry->d_inode;
++			nd->seq = read_seqcount_begin(&nd->path.dentry->d_seq);
++		} else {
++			path_get(&nd->path);
++			nd->inode = nd->path.dentry->d_inode;
++		}
++		fdput(f);
++	}
++	return 0;
++}
++
+ /* must be paired with terminate_walk() */
+ static const char *path_init(struct nameidata *nd, unsigned flags)
+ {
++	int error;
+ 	const char *s = nd->name->name;
+ 
+ 	if (!*s)
+@@ -2293,52 +2343,17 @@ static const char *path_init(struct nameidata *nd, unsigned flags)
+ 
+ 	nd->m_seq = read_seqbegin(&mount_lock);
+ 	if (*s = '/') {
+-		set_root(nd);
+-		if (likely(!nd_jump_root(nd)))
+-			return s;
+-		return ERR_PTR(-ECHILD);
+-	} else if (nd->dfd = AT_FDCWD) {
+-		if (flags & LOOKUP_RCU) {
+-			struct fs_struct *fs = current->fs;
+-			unsigned seq;
+-
+-			do {
+-				seq = read_seqcount_begin(&fs->seq);
+-				nd->path = fs->pwd;
+-				nd->inode = nd->path.dentry->d_inode;
+-				nd->seq = __read_seqcount_begin(&nd->path.dentry->d_seq);
+-			} while (read_seqcount_retry(&fs->seq, seq));
+-		} else {
+-			get_fs_pwd(current->fs, &nd->path);
+-			nd->inode = nd->path.dentry->d_inode;
+-		}
+-		return s;
+-	} else {
+-		/* Caller must check execute permissions on the starting path component */
+-		struct fd f = fdget_raw(nd->dfd);
+-		struct dentry *dentry;
+-
+-		if (!f.file)
+-			return ERR_PTR(-EBADF);
+-
+-		dentry = f.file->f_path.dentry;
+-
+-		if (*s && unlikely(!d_can_lookup(dentry))) {
+-			fdput(f);
+-			return ERR_PTR(-ENOTDIR);
+-		}
+-
+-		nd->path = f.file->f_path;
+-		if (flags & LOOKUP_RCU) {
+-			nd->inode = nd->path.dentry->d_inode;
+-			nd->seq = read_seqcount_begin(&nd->path.dentry->d_seq);
+-		} else {
+-			path_get(&nd->path);
+-			nd->inode = nd->path.dentry->d_inode;
+-		}
+-		fdput(f);
++		if (likely(!nd->root.mnt))
++			set_root(nd);
++		error = nd_jump_root(nd);
++		if (unlikely(error))
++			s = ERR_PTR(error);
+ 		return s;
+ 	}
++	error = dirfd_path_init(nd);
++	if (unlikely(error))
++		return ERR_PTR(error);
++	return s;
+ }
+ 
+ static const char *trailing_symlink(struct nameidata *nd)
+-- 
+2.22.0
