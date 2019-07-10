@@ -1,132 +1,23 @@
-From: Aleksa Sarai <cyphar@cyphar.com>
-Date: Sat, 06 Jul 2019 14:57:36 +0000
-Subject: [PATCH v9 09/10] kselftest: save-and-restore errno to allow for %m formatting
-Message-Id: <20190706145737.5299-10-cyphar@cyphar.com>
+From: fuqingzheng@asia.com
+Date: Wed, 10 Jul 2019 05:07:49 +0000
+Subject: Greetings!
+Message-Id: <SBSRAluo3npvqnJNeO900008fee@hometime.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190706145737.5299-1-cyphar@cyphar.com>
-In-Reply-To: <20190706145737.5299-1-cyphar@cyphar.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Al Viro <viro@zeniv.linux.org.uk>, Jeff Layton <jlayton@kernel.org>, "J. Bruce Fields" <bfields@fieldses.org>, Arnd Bergmann <arnd@arndb.de>, David Howells <dhowells@redhat.com>, Shuah Khan <shuah@kernel.org>, Shuah Khan <skhan@linuxfoundation.org>
-Cc: Aleksa Sarai <cyphar@cyphar.com>, Eric Biederman <ebiederm@xmission.com>, Andy Lutomirski <luto@kernel.org>, Andrew Morton <akpm@linux-foundation.org>, Alexei Starovoitov <ast@kernel.org>, Kees Cook <keescook@chromium.org>, Jann Horn <jannh@google.com>, Christian Brauner <christian@brauner.io>, Tycho Andersen <tycho@tycho.ws>, David Drysdale <drysdale@google.com>, Chanho Min <chanho.min@lge.com>, Oleg Nesterov <oleg@redhat.com>, Aleksa Sarai <asarai@suse.de>, Linus Torvalds <torvalds@linux-foundation.org>, containers@lists.linux-foundation.org, linux-alpha@vger.kernel.org, linux-api@vger.kernel.org, linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-fsdevel@vger.kernel.org, linux-ia64@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-sctp@vger.kernel.org
 
-Previously, using "%m" in a ksft_* format string can result in strange
-output because the errno value wasn't saved before calling other libc
-functions. The solution is to simply save and restore the errno before
-we format the user-supplied format string.
+Good day,
 
-Signed-off-by: Aleksa Sarai <cyphar@cyphar.com>
+  I have a mutual business proposal, which refers to the transfer of a large amount of money to an account abroad, with your help as a foreign partner as a beneficiary of the funds. Everything about this transaction will be legal without any bridge of financial authority both in my country and yours. If you are interested and I will give you more information about the project as soon as I receive your positive response.
+
+Best regards,
+
+Executive Director.
+ 
+ICBC. China
+
 ---
- tools/testing/selftests/kselftest.h | 15 +++++++++++++++
- 1 file changed, 15 insertions(+)
-
-diff --git a/tools/testing/selftests/kselftest.h b/tools/testing/selftests/kselftest.h
-index ec15c4f6af55..0ac49d91a260 100644
---- a/tools/testing/selftests/kselftest.h
-+++ b/tools/testing/selftests/kselftest.h
-@@ -10,6 +10,7 @@
- #ifndef __KSELFTEST_H
- #define __KSELFTEST_H
- 
-+#include <errno.h>
- #include <stdlib.h>
- #include <unistd.h>
- #include <stdarg.h>
-@@ -81,58 +82,68 @@ static inline void ksft_print_cnts(void)
- 
- static inline void ksft_print_msg(const char *msg, ...)
- {
-+	int saved_errno = errno;
- 	va_list args;
- 
- 	va_start(args, msg);
- 	printf("# ");
-+	errno = saved_errno;
- 	vprintf(msg, args);
- 	va_end(args);
- }
- 
- static inline void ksft_test_result_pass(const char *msg, ...)
- {
-+	int saved_errno = errno;
- 	va_list args;
- 
- 	ksft_cnt.ksft_pass++;
- 
- 	va_start(args, msg);
- 	printf("ok %d ", ksft_test_num());
-+	errno = saved_errno;
- 	vprintf(msg, args);
- 	va_end(args);
- }
- 
- static inline void ksft_test_result_fail(const char *msg, ...)
- {
-+	int saved_errno = errno;
- 	va_list args;
- 
- 	ksft_cnt.ksft_fail++;
- 
- 	va_start(args, msg);
- 	printf("not ok %d ", ksft_test_num());
-+	errno = saved_errno;
- 	vprintf(msg, args);
- 	va_end(args);
- }
- 
- static inline void ksft_test_result_skip(const char *msg, ...)
- {
-+	int saved_errno = errno;
- 	va_list args;
- 
- 	ksft_cnt.ksft_xskip++;
- 
- 	va_start(args, msg);
- 	printf("not ok %d # SKIP ", ksft_test_num());
-+	errno = saved_errno;
- 	vprintf(msg, args);
- 	va_end(args);
- }
- 
- static inline void ksft_test_result_error(const char *msg, ...)
- {
-+	int saved_errno = errno;
- 	va_list args;
- 
- 	ksft_cnt.ksft_error++;
- 
- 	va_start(args, msg);
- 	printf("not ok %d # error ", ksft_test_num());
-+	errno = saved_errno;
- 	vprintf(msg, args);
- 	va_end(args);
- }
-@@ -152,10 +163,12 @@ static inline int ksft_exit_fail(void)
- 
- static inline int ksft_exit_fail_msg(const char *msg, ...)
- {
-+	int saved_errno = errno;
- 	va_list args;
- 
- 	va_start(args, msg);
- 	printf("Bail out! ");
-+	errno = saved_errno;
- 	vprintf(msg, args);
- 	va_end(args);
- 
-@@ -178,10 +191,12 @@ static inline int ksft_exit_xpass(void)
- static inline int ksft_exit_skip(const char *msg, ...)
- {
- 	if (msg) {
-+		int saved_errno = errno;
- 		va_list args;
- 
- 		va_start(args, msg);
- 		printf("not ok %d # SKIP ", 1 + ksft_test_num());
-+		errno = saved_errno;
- 		vprintf(msg, args);
- 		va_end(args);
- 	} else {
--- 
-2.22.0
+Dit e-mailbericht is gecontroleerd op virussen met Avast antivirussoftware.
+https://www.avast.com/antivirus
