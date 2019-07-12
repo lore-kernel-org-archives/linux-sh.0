@@ -1,71 +1,39 @@
-From: Sasha Levin <sashal@kernel.org>
-Date: Fri, 19 Jul 2019 03:56:25 +0000
-Subject: [PATCH AUTOSEL 5.2 154/171] sh: prevent warnings when using iounmap
-Message-Id: <20190719035643.14300-154-sashal@kernel.org>
+From: Alex Shi <alex.shi@linux.alibaba.com>
+Date: Fri, 12 Jul 2019 02:20:12 +0000
+Subject: [PATCH 06/12] Documentation/mips: repointer docs to Documentation/arch/
+Message-Id: <20190712022018.27989-6-alex.shi@linux.alibaba.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190719035643.14300-1-sashal@kernel.org>
-In-Reply-To: <20190719035643.14300-1-sashal@kernel.org>
+References: <20190712022018.27989-1-alex.shi@linux.alibaba.com>
+In-Reply-To: <20190712022018.27989-1-alex.shi@linux.alibaba.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc: Sam Ravnborg <sam@ravnborg.org>, Geert Uytterhoeven <geert+renesas@glider.be>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Will Deacon <will.deacon@arm.com>, Mark Brown <broonie@kernel.org>, Inki Dae <inki.dae@samsung.com>, Krzysztof Kozlowski <krzk@kernel.org>, Andrew Morton <akpm@linux-foundation.org>, Linus Torvalds <torvalds@linux-foundation.org>, Sasha Levin <sashal@kernel.org>, linux-sh@vger.kernel.org
+To: linux-doc@vger.kernel.org, Jonathan Corbet <corbet@lwn.net>
+Cc: Alex Shi <alex.shi@linux.alibaba.com>, linux-kernel@vger.kernel.org, linux-stm32@st-md-mailman.stormreply.com, linux-arm-kernel@lists.infradead.org, linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org, linux-omap@vger.kernel.org, linux-fbdev@vger.kernel.org, linux-samsung-soc@vger.kernel.org, linux-ia64@vger.kernel.org, linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org, linux-scsi@vger.kernel.org, linux-s390@vger.kernel.org, kvm@vger.kernel.org, linux-sh@vger.kernel.org, Mauro Carvalho Chehab <mchehab+samsung@kernel.org>, "David S. Miller" <davem@davemloft.net>
 
-From: Sam Ravnborg <sam@ravnborg.org>
+Since we move Documentation/mips docs to Documentation/arch/mips
+dir, redirect the doc pointer to them.
 
-[ Upstream commit 733f0025f0fb43e382b84db0930ae502099b7e62 ]
-
-When building drm/exynos for sh, as part of an allmodconfig build, the
-following warning triggered:
-
-  exynos7_drm_decon.c: In function `decon_remove':
-  exynos7_drm_decon.c:769:24: warning: unused variable `ctx'
-    struct decon_context *ctx = dev_get_drvdata(&pdev->dev);
-
-The ctx variable is only used as argument to iounmap().
-
-In sh - allmodconfig CONFIG_MMU is not defined
-so it ended up in:
-
-\#define __iounmap(addr)	do { } while (0)
-\#define iounmap		__iounmap
-
-Fix the warning by introducing a static inline function for iounmap.
-
-This is similar to several other architectures.
-
-Link: http://lkml.kernel.org/r/20190622114208.24427-1-sam@ravnborg.org
-Signed-off-by: Sam Ravnborg <sam@ravnborg.org>
-Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: Rich Felker <dalias@libc.org>
-Cc: Will Deacon <will.deacon@arm.com>
-Cc: Mark Brown <broonie@kernel.org>
-Cc: Inki Dae <inki.dae@samsung.com>
-Cc: Krzysztof Kozlowski <krzk@kernel.org>
-Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
-Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
-Signed-off-by: Sasha Levin <sashal@kernel.org>
+Signed-off-by: Alex Shi <alex.shi@linux.alibaba.com>
+Cc: Mauro Carvalho Chehab <mchehab+samsung@kernel.org>
+Cc: "David S. Miller" <davem@davemloft.net>
+Cc: linux-kernel@vger.kernel.org
 ---
- arch/sh/include/asm/io.h | 6 +++++-
- 1 file changed, 5 insertions(+), 1 deletion(-)
+ MAINTAINERS | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/sh/include/asm/io.h b/arch/sh/include/asm/io.h
-index c28e37a344ad..ac0561960c52 100644
---- a/arch/sh/include/asm/io.h
-+++ b/arch/sh/include/asm/io.h
-@@ -369,7 +369,11 @@ static inline int iounmap_fixed(void __iomem *addr) { return -EINVAL; }
+diff --git a/MAINTAINERS b/MAINTAINERS
+index 2c1e65c236db..03a8c687f87f 100644
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -10554,7 +10554,7 @@ T:	git git://git.kernel.org/pub/scm/linux/kernel/git/mips/linux.git
+ Q:	http://patchwork.linux-mips.org/project/linux-mips/list/
+ S:	Supported
+ F:	Documentation/devicetree/bindings/mips/
+-F:	Documentation/mips/
++F:	Documentation/arch/mips/
+ F:	arch/mips/
+ F:	drivers/platform/mips/
  
- #define ioremap_nocache	ioremap
- #define ioremap_uc	ioremap
--#define iounmap		__iounmap
-+
-+static inline void iounmap(void __iomem *addr)
-+{
-+	__iounmap(addr);
-+}
- 
- /*
-  * Convert a physical pointer to a virtual kernel pointer for /dev/mem
 -- 
-2.20.1
+2.19.1.856.g8858448bb
