@@ -1,179 +1,142 @@
-From: Aleksa Sarai <cyphar@cyphar.com>
-Date: Fri, 19 Jul 2019 16:42:22 +0000
-Subject: [PATCH v10 6/9] namei: aggressively check for nd->root escape on ".." resolution
-Message-Id: <20190719164225.27083-7-cyphar@cyphar.com>
+From: Mauro Carvalho Chehab <mchehab+samsung@kernel.org>
+Date: Sun, 14 Jul 2019 15:10:05 +0000
+Subject: [PATCH 0/8] docs: some improvements when producing PDF files
+Message-Id: <cover.1563115732.git.mchehab+samsung@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190719164225.27083-1-cyphar@cyphar.com>
-In-Reply-To: <20190719164225.27083-1-cyphar@cyphar.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Al Viro <viro@zeniv.linux.org.uk>, Jeff Layton <jlayton@kernel.org>, "J. Bruce Fields" <bfields@fieldses.org>, Arnd Bergmann <arnd@arndb.de>, David Howells <dhowells@redhat.com>, Shuah Khan <shuah@kernel.org>, Shuah Khan <skhan@linuxfoundation.org>
-Cc: Aleksa Sarai <cyphar@cyphar.com>, Jann Horn <jannh@google.com>, Kees Cook <keescook@chromium.org>, Eric Biederman <ebiederm@xmission.com>, Andy Lutomirski <luto@kernel.org>, Andrew Morton <akpm@linux-foundation.org>, Alexei Starovoitov <ast@kernel.org>, Christian Brauner <christian@brauner.io>, Tycho Andersen <tycho@tycho.ws>, David Drysdale <drysdale@google.com>, Chanho Min <chanho.min@lge.com>, Oleg Nesterov <oleg@redhat.com>, Aleksa Sarai <asarai@suse.de>, Linus Torvalds <torvalds@linux-foundation.org>, containers@lists.linux-foundation.org, linux-alpha@vger.kernel.org, linux-api@vger.kernel.org, linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-fsdevel@vger.kernel.org, linux-ia64@vger.kernel.org, linux-kernel@vger.kernel.orglinux-
+To: Linux Doc Mailing List <linux-doc@vger.kernel.org>, Jonathan Corbet <corbet@lwn.net>
+Cc: Mauro Carvalho Chehab <mchehab+samsung@kernel.org>, Mauro Carvalho Chehab <mchehab@infradead.org>, linux-kernel@vger.kernel.org, Herbert Xu <herbert@gondor.apana.org.au>, netdev@vger.kernel.org, Sean Paul <sean@poorly.run>, Maarten Lankhorst <maarten.lankhorst@linux.intel.com>, Rich Felker <dalias@libc.org>, Takashi Iwai <tiwai@suse.com>, Daniel Vetter <daniel@ffwll.ch>, x86@kernel.org, alsa-devel@alsa-project.org, Maxime Ripard <maxime.ripard@bootlin.com>, linux-sh@vger.kernel.org, David Airlie <airlied@linux.ie>, linux-crypto@vger.kernel.org, Jaroslav Kysela <perex@perex.cz>, dri-devel@lists.freedesktop.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>, "David S. Miller" <davem@davemloft.net>
 
-This patch allows for LOOKUP_BENEATH and LOOKUP_IN_ROOT to safely permit
-".." resolution (in the case of LOOKUP_BENEATH the resolution will still
-fail if ".." resolution would resolve a path outside of the root --
-while LOOKUP_IN_ROOT will chroot(2)-style scope it). Magic-link jumps
-are still disallowed entirely because now they could result in
-inconsistent behaviour if resolution encounters a subsequent ".."[*].
+Hi Jon,
 
-The need for this patch is explained by observing there is a fairly
-easy-to-exploit race condition with chroot(2) (and thus by extension
-LOOKUP_IN_ROOT and LOOKUP_BENEATH if ".." is allowed) where a rename(2)
-of a path can be used to "skip over" nd->root and thus escape to the
-filesystem above nd->root.
+This series addresses your concerns related to CJK fonts that are
+needed for translations.pdf.
 
-  thread1 [attacker]:
-    for (;;)
-      renameat2(AT_FDCWD, "/a/b/c", AT_FDCWD, "/a/d", RENAME_EXCHANGE);
-  thread2 [victim]:
-    for (;;)
-      resolveat(dirb, "b/c/../../etc/shadow", RESOLVE_IN_ROOT);
+It touches only the documentation build system, not the docs
+themselves.
 
-With fairly significant regularity, thread2 will resolve to
-"/etc/shadow" rather than "/a/b/etc/shadow". There is also a similar
-(though somewhat more privileged) attack using MS_MOVE.
+It ended to be bigger than I originally foreseen, as I found several issues
+when running "make pdfdocs" for the distros that are recognized by
+the  scripts/sphinx-pre-install script.
 
-With this patch, such cases will be detected *during* ".." resolution
-(which is the weak point of chroot(2) -- since walking *into* a
-subdirectory tautologically cannot result in you walking *outside*
-nd->root -- except through a bind-mount or magic-link). By detecting
-this at ".." resolution (rather than checking only at the end of the
-entire resolution) we can both correct escapes by jumping back to the
-root (in the case of LOOKUP_IN_ROOT), as well as avoid revealing to
-attackers the structure of the filesystem outside of the root (through
-timing attacks for instance).
+It also took a lot of time, as I tested it with several VMs (each
+one updated to latest packages):
 
-In order to avoid a quadratic lookup with each ".." entry, we only
-activate the slow path if a write through &rename_lock or &mount_lock
-has occurred during path resolution (&rename_lock and &mount_lock are
-re-taken to further optimise the lookup). Since the primary attack being
-protected against is MS_MOVE or rename(2), not doing additional checks
-unless a mount or rename have occurred avoids making the common case
-slow.
+- Fedora 30, CentOS 7, Mageia 7, ArchLinux, Ubuntu 18.04, Gentoo, 
+  OpenSuse Tumbleweed.
 
-The use of path_is_under() here might seem suspect, but on further
-inspection of the most important race (a path was *inside* the root but
-is now *outside*), there appears to be no attack potential:
+Patch 1 addresses an issue that could be related to the fact that I
+don't use openSUSE. Basically, I was unable to find the right package
+for texlive to use CJK fonts on openSUSE. [1]. So, the first patch on this
+series adds a workaround: if the needed CJK font is not found on a
+system, conf.py won't use xeCjk extension. That sounds a good
+thing to have, as other distros may not package it, or maybe the
+one building the doc is not that interested on translations.pdf file;
 
-  * If path_is_under() occurs before the rename, then the path will be
-    resolved -- however the path was originally inside the root and thus
-    there is no escape (and to userspace it'd look like the rename
-    occurred after the path was resolved). If path_is_under() occurs
-    afterwards, the resolution is blocked.
+[1] I actually found some, but they are not recognized with the
+    font name conf.py is expecting ("Noto Sans CJK SC"). Perhaps
+    SUSE uses a different name for those fonts?
 
-  * Subsequent ".." jumps are guaranteed to check path_is_under() -- by
-    construction, &rename_lock or &mount_lock must have been taken by
-    the attacker after path_is_under() returned in the victim. Thus ".."
-    will not be able to escape from the previously-inside-root path.
+Patch 2 fixes the logic with recognizes CentOS/RHEL;
 
-  * Walking down in the moved path is still safe since the entire
-    subtree was moved (either by rename(2) or MS_MOVE) and because (as
-    discussed above) walking down is safe.
+Patch 3 is another workaround: CentOS 7 (and similar distros) don't
+package all texlive packages we need. So, it just ignores PDF when
+recommending packages on such distros, and point to a URL with
+explains how to install TexLive outside distro-specific package
+management (for the brave enough people);
 
-A variant of the above attack is included in the selftests for
-openat2(2) later in this patch series. I've run this test on several
-machines for several days and no instances of a breakout were detected.
-While this is not concrete proof that this is safe, when combined with
-the above argument it should lend some trustworthiness to this
-construction.
+Patch 4 fixes latexmk dependency on a few distros;
 
-[*] It may be acceptable in the future to do a path_is_under() check
-    after resolving a magic-link and permit resolution if the
-    nd_jump_link() result is still within the dirfd. However this seems
-    unlikely to be a feature that people *really* need* -- it can be
-    added later if it turns out a lot of people want it.
+Patch 5 suppreses a Gentoo specific instruction if the user already
+followed in the past;
 
-Cc: Al Viro <viro@zeniv.linux.org.uk>
-Cc: Jann Horn <jannh@google.com>
-Cc: Kees Cook <keescook@chromium.org>
-Signed-off-by: Aleksa Sarai <cyphar@cyphar.com>
----
- fs/namei.c | 45 +++++++++++++++++++++++++++++++--------------
- 1 file changed, 31 insertions(+), 14 deletions(-)
+Patch 6 is the one that actually does what you requested.
 
-diff --git a/fs/namei.c b/fs/namei.c
-index 617fc7d55977..b3abf5754ddd 100644
---- a/fs/namei.c
-+++ b/fs/namei.c
-@@ -491,7 +491,7 @@ struct nameidata {
- 	struct path	root;
- 	struct inode	*inode; /* path.dentry.d_inode */
- 	unsigned int	flags;
--	unsigned	seq, m_seq;
-+	unsigned	seq, m_seq, r_seq;
- 	int		last_type;
- 	unsigned	depth;
- 	int		total_link_count;
-@@ -1758,22 +1758,36 @@ static inline int handle_dots(struct nameidata *nd, int type)
- 	if (type = LAST_DOTDOT) {
- 		int error = 0;
- 
--		/*
--		 * LOOKUP_BENEATH resolving ".." is not currently safe -- races can
--		 * cause our parent to have moved outside of the root and us to skip
--		 * over it.
--		 */
--		if (unlikely(nd->flags & (LOOKUP_BENEATH | LOOKUP_IN_ROOT)))
--			return -EXDEV;
- 		if (!nd->root.mnt) {
- 			error = set_root(nd);
- 			if (error)
- 				return error;
- 		}
--		if (nd->flags & LOOKUP_RCU) {
--			return follow_dotdot_rcu(nd);
--		} else
--			return follow_dotdot(nd);
-+		if (nd->flags & LOOKUP_RCU)
-+			error = follow_dotdot_rcu(nd);
-+		else
-+			error = follow_dotdot(nd);
-+		if (error)
-+			return error;
-+
-+		if (unlikely(nd->flags & (LOOKUP_BENEATH | LOOKUP_IN_ROOT))) {
-+			bool m_retry = read_seqretry(&mount_lock, nd->m_seq);
-+			bool r_retry = read_seqretry(&rename_lock, nd->r_seq);
-+
-+			/*
-+			 * Don't bother checking unless there's a racing
-+			 * rename(2) or MS_MOVE.
-+			 */
-+			if (likely(!m_retry && !r_retry))
-+				return 0;
-+
-+			if (m_retry && !(nd->flags & LOOKUP_RCU))
-+				nd->m_seq = read_seqbegin(&mount_lock);
-+			if (r_retry)
-+				nd->r_seq = read_seqbegin(&rename_lock);
-+			if (!path_is_under(&nd->path, &nd->root))
-+				return -EXDEV;
-+		}
- 	}
- 	return 0;
- }
-@@ -2245,6 +2259,11 @@ static const char *path_init(struct nameidata *nd, unsigned flags)
- 	nd->last_type = LAST_ROOT; /* if there are only slashes... */
- 	nd->flags = flags | LOOKUP_JUMPED | LOOKUP_PARENT;
- 	nd->depth = 0;
-+
-+	nd->m_seq = read_seqbegin(&mount_lock);
-+	if (flags & (LOOKUP_BENEATH | LOOKUP_IN_ROOT))
-+		nd->r_seq = read_seqbegin(&rename_lock);
-+
- 	if (flags & LOOKUP_ROOT) {
- 		struct dentry *root = nd->root.dentry;
- 		struct inode *inode = root->d_inode;
-@@ -2266,8 +2285,6 @@ static const char *path_init(struct nameidata *nd, unsigned flags)
- 	nd->path.mnt = NULL;
- 	nd->path.dentry = NULL;
- 
--	nd->m_seq = read_seqbegin(&mount_lock);
+Patch 7 solves an issue when SPHINXDIRS is used with make pdfdocs:
+right now, using it will produce a lot of warnings and won't do anything,
+if a dir-specific conf.py file is not found. With the patch, latex_documents
+are now properly updated when SPHINXDIRS is used.
+
+Patch 8 is a cleanup: with patch 7 applied, we don't need to have anymore
+any conf.py file due to pdfdocs. 
+
+With regard to the load_config.py extension, It keeps accepting custom
+configuration. That's helpful if someone wants, for example, to have
+something like:
+
+	Documentation/media/conf_nitpick.py
+
+with would enable extra nitpick options if one wants that.
+
 -
- 	/* LOOKUP_IN_ROOT treats absolute paths as being relative-to-dirfd. */
- 	if (flags & LOOKUP_IN_ROOT)
- 		while (*s = '/')
+
+Jon,
+
+Please let me know if you prefer if I submit those together with the big
+pile of doc files I have, or if you prefer adding (some of?) them on your
+tree after the merge window.
+
+Regards,
+Mauro
+
+Mauro Carvalho Chehab (8):
+  docs: conf.py: only use CJK if the font is available
+  scripts/sphinx-pre-install: fix script for RHEL/CentOS
+  scripts/sphinx-pre-install: don't use LaTeX with CentOS 7
+  scripts/sphinx-pre-install: fix latexmk dependencies
+  scripts/sphinx-pre-install: cleanup Gentoo checks
+  scripts/sphinx-pre-install: seek for Noto CJK fonts for pdf output
+  docs: load_config.py: avoid needing a conf.py just due to LaTeX docs
+  docs: remove extra conf.py files
+
+ Documentation/admin-guide/conf.py      |  10 ---
+ Documentation/conf.py                  |  13 ++-
+ Documentation/core-api/conf.py         |  10 ---
+ Documentation/crypto/conf.py           |  10 ---
+ Documentation/dev-tools/conf.py        |  10 ---
+ Documentation/doc-guide/conf.py        |  10 ---
+ Documentation/driver-api/80211/conf.py |  10 ---
+ Documentation/driver-api/conf.py       |  10 ---
+ Documentation/driver-api/pm/conf.py    |  10 ---
+ Documentation/filesystems/conf.py      |  10 ---
+ Documentation/gpu/conf.py              |  10 ---
+ Documentation/input/conf.py            |  10 ---
+ Documentation/kernel-hacking/conf.py   |  10 ---
+ Documentation/maintainer/conf.py       |  10 ---
+ Documentation/media/conf.py            |  12 ---
+ Documentation/networking/conf.py       |  10 ---
+ Documentation/process/conf.py          |  10 ---
+ Documentation/sh/conf.py               |  10 ---
+ Documentation/sound/conf.py            |  10 ---
+ Documentation/sphinx/load_config.py    |  25 +++++-
+ Documentation/userspace-api/conf.py    |  10 ---
+ Documentation/vm/conf.py               |  10 ---
+ Documentation/x86/conf.py              |  10 ---
+ scripts/sphinx-pre-install             | 118 ++++++++++++++++++++-----
+ 24 files changed, 131 insertions(+), 237 deletions(-)
+ delete mode 100644 Documentation/admin-guide/conf.py
+ delete mode 100644 Documentation/core-api/conf.py
+ delete mode 100644 Documentation/crypto/conf.py
+ delete mode 100644 Documentation/dev-tools/conf.py
+ delete mode 100644 Documentation/doc-guide/conf.py
+ delete mode 100644 Documentation/driver-api/80211/conf.py
+ delete mode 100644 Documentation/driver-api/conf.py
+ delete mode 100644 Documentation/driver-api/pm/conf.py
+ delete mode 100644 Documentation/filesystems/conf.py
+ delete mode 100644 Documentation/gpu/conf.py
+ delete mode 100644 Documentation/input/conf.py
+ delete mode 100644 Documentation/kernel-hacking/conf.py
+ delete mode 100644 Documentation/maintainer/conf.py
+ delete mode 100644 Documentation/media/conf.py
+ delete mode 100644 Documentation/networking/conf.py
+ delete mode 100644 Documentation/process/conf.py
+ delete mode 100644 Documentation/sh/conf.py
+ delete mode 100644 Documentation/sound/conf.py
+ delete mode 100644 Documentation/userspace-api/conf.py
+ delete mode 100644 Documentation/vm/conf.py
+ delete mode 100644 Documentation/x86/conf.py
+
 -- 
-2.22.0
+2.21.0
