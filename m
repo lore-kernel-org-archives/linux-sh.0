@@ -1,72 +1,37 @@
-From: Daniel Thompson <daniel.thompson@linaro.org>
-Date: Mon, 22 Jul 2019 15:22:06 +0000
-Subject: Re: [PATCH v2 6/7] backlight: gpio: remove def_value from struct gpio_backlight
-Message-Id: <20190722152206.bfjlws53yknq3xv4@holly.lan>
+From: Palmer Dabbelt <palmer@sifive.com>
+Date: Wed, 17 Jul 2019 01:27:16 +0000
+Subject: [PATCH v2 1/4] Non-functional cleanup of a "__user * filename"
+Message-Id: <20190717012719.5524-2-palmer@sifive.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190722150302.29526-1-brgl@bgdev.pl>
- <20190722150302.29526-7-brgl@bgdev.pl>
-In-Reply-To: <20190722150302.29526-7-brgl@bgdev.pl>
+References: <20190717012719.5524-1-palmer@sifive.com>
+In-Reply-To: <20190717012719.5524-1-palmer@sifive.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Bartosz Golaszewski <brgl@bgdev.pl>
-Cc: linux-fbdev@vger.kernel.org, Rich Felker <dalias@libc.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>, Jingoo Han <jingoohan1@gmail.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, dri-devel@lists.freedesktop.org, Bartosz Golaszewski <bgolaszewski@baylibre.com>, Andy Shevchenko <andriy.shevchenko@linux.intel.com>, Lee Jones <lee.jones@linaro.org>
+To: viro@zeniv.linux.org.uk, linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org, linux-api@vger.kernel.org
+Cc: rth@twiddle.net, ink@jurassic.park.msu.ru, mattst88@gmail.com, linux@armlinux.org.uk, catalin.marinas@arm.com, will@kernel.org, tony.luck@intel.com, fenghua.yu@intel.com, geert@linux-m68k.org, monstr@monstr.eu, ralf@linux-mips.org, paul.burton@mips.com, jhogan@kernel.org, James.Bottomley@HansenPartnership.com, deller@gmx.de, benh@kernel.crashing.org, paulus@samba.org, mpe@ellerman.id.au, heiko.carstens@de.ibm.com, gor@linux.ibm.com, borntraeger@de.ibm.com, ysato@users.sourceforge.jp, dalias@libc.org, davem@davemloft.net, luto@kernel.org, tglx@linutronix.de, mingo@redhat.com, bp@alien8.de, hpa@zytor.com, x86@kernel.org, Arnd Bergmann <arnd@arndb.de>, peterz@infradead.org, acme@kernel.org, alexander.shishkin@linux.intel.com, jolsa@redhat.com, namhyung@kernel.org, Palmer Dabbelt <palm>
 
-On Mon, Jul 22, 2019 at 05:03:01PM +0200, Bartosz Golaszewski wrote:
-> From: Bartosz Golaszewski <bgolaszewski@baylibre.com>
-> 
-> This field is unused outside of probe(). There's no need to store it.
-> We can make it into a local variable.
-> 
-> Signed-off-by: Bartosz Golaszewski <bgolaszewski@baylibre.com>
+The next patch defines a very similar interface, which I copied from
+this definition.  Since I'm touching it anyway I don't see any reason
+not to just go fix this one up.
 
-Reviewed-by: Daniel Thompson <daniel.thompson@linaro.org>
+Signed-off-by: Palmer Dabbelt <palmer@sifive.com>
+---
+ include/linux/syscalls.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-> ---
->  drivers/video/backlight/gpio_backlight.c | 9 ++++-----
->  1 file changed, 4 insertions(+), 5 deletions(-)
-> 
-> diff --git a/drivers/video/backlight/gpio_backlight.c b/drivers/video/backlight/gpio_backlight.c
-> index 70882556f047..cd6a75bca9cc 100644
-> --- a/drivers/video/backlight/gpio_backlight.c
-> +++ b/drivers/video/backlight/gpio_backlight.c
-> @@ -21,7 +21,6 @@
->  struct gpio_backlight {
->  	struct device *fbdev;
->  	struct gpio_desc *gpiod;
-> -	int def_value;
->  };
->  
->  static int gpio_backlight_update_status(struct backlight_device *bl)
-> @@ -61,7 +60,7 @@ static int gpio_backlight_probe(struct platform_device *pdev)
->  	struct backlight_device *bl;
->  	struct gpio_backlight *gbl;
->  	enum gpiod_flags flags;
-> -	int ret;
-> +	int ret, def_value;
->  
->  	gbl = devm_kzalloc(&pdev->dev, sizeof(*gbl), GFP_KERNEL);
->  	if (gbl = NULL)
-> @@ -70,8 +69,8 @@ static int gpio_backlight_probe(struct platform_device *pdev)
->  	if (pdata)
->  		gbl->fbdev = pdata->fbdev;
->  
-> -	gbl->def_value = device_property_read_bool(&pdev->dev, "default-on");
-> -	flags = gbl->def_value ? GPIOD_OUT_HIGH : GPIOD_OUT_LOW;
-> +	def_value = device_property_read_bool(&pdev->dev, "default-on");
-> +	flags = def_value ? GPIOD_OUT_HIGH : GPIOD_OUT_LOW;
->  
->  	gbl->gpiod = devm_gpiod_get(&pdev->dev, NULL, flags);
->  	if (IS_ERR(gbl->gpiod)) {
-> @@ -94,7 +93,7 @@ static int gpio_backlight_probe(struct platform_device *pdev)
->  		return PTR_ERR(bl);
->  	}
->  
-> -	bl->props.brightness = gbl->def_value;
-> +	bl->props.brightness = def_value;
->  	backlight_update_status(bl);
->  
->  	platform_set_drvdata(pdev, bl);
-> -- 
-> 2.21.0
-> 
+diff --git a/include/linux/syscalls.h b/include/linux/syscalls.h
+index 2bcef4c70183..e1c20f1d0525 100644
+--- a/include/linux/syscalls.h
++++ b/include/linux/syscalls.h
+@@ -431,7 +431,7 @@ asmlinkage long sys_chdir(const char __user *filename);
+ asmlinkage long sys_fchdir(unsigned int fd);
+ asmlinkage long sys_chroot(const char __user *filename);
+ asmlinkage long sys_fchmod(unsigned int fd, umode_t mode);
+-asmlinkage long sys_fchmodat(int dfd, const char __user * filename,
++asmlinkage long sys_fchmodat(int dfd, const char __user *filename,
+ 			     umode_t mode);
+ asmlinkage long sys_fchownat(int dfd, const char __user *filename, uid_t user,
+ 			     gid_t group, int flag);
+-- 
+2.21.0
