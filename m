@@ -1,267 +1,208 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Thu, 25 Jul 2019 06:33:59 +0000
-Subject: [PATCH 3/5] dma-mapping: explicitly wire up ->mmap and ->get_sgtable
-Message-Id: <20190725063401.29904-4-hch@lst.de>
+From: Palmer Dabbelt <palmer@sifive.com>
+Date: Wed, 17 Jul 2019 01:27:18 +0000
+Subject: [PATCH v2 3/4] arch: Register fchmodat4, usually as syscall 434
+Message-Id: <20190717012719.5524-4-palmer@sifive.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190725063401.29904-1-hch@lst.de>
-In-Reply-To: <20190725063401.29904-1-hch@lst.de>
+References: <20190717012719.5524-1-palmer@sifive.com>
+In-Reply-To: <20190717012719.5524-1-palmer@sifive.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: iommu@lists.linux-foundation.org, Marek Szyprowski <m.szyprowski@samsung.com>
-Cc: linux-xtensa@linux-xtensa.org, Michal Simek <monstr@monstr.eu>, linux-parisc@vger.kernel.org, linux-sh@vger.kernel.org, Takashi Iwai <tiwai@suse.de>, linuxppc-dev@lists.ozlabs.org, x86@kernel.org, linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, Robin Murphy <robin.murphy@arm.com>, linux-arm-kernel@lists.infradead.org
+To: viro@zeniv.linux.org.uk, linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org, linux-api@vger.kernel.org
+Cc: rth@twiddle.net, ink@jurassic.park.msu.ru, mattst88@gmail.com, linux@armlinux.org.uk, catalin.marinas@arm.com, will@kernel.org, tony.luck@intel.com, fenghua.yu@intel.com, geert@linux-m68k.org, monstr@monstr.eu, ralf@linux-mips.org, paul.burton@mips.com, jhogan@kernel.org, James.Bottomley@HansenPartnership.com, deller@gmx.de, benh@kernel.crashing.org, paulus@samba.org, mpe@ellerman.id.au, heiko.carstens@de.ibm.com, gor@linux.ibm.com, borntraeger@de.ibm.com, ysato@users.sourceforge.jp, dalias@libc.org, davem@davemloft.net, luto@kernel.org, tglx@linutronix.de, mingo@redhat.com, bp@alien8.de, hpa@zytor.com, x86@kernel.org, Arnd Bergmann <arnd@arndb.de>, peterz@infradead.org, acme@kernel.org, alexander.shishkin@linux.intel.com, jolsa@redhat.com, namhyung@kernel.org, Palmer Dabbelt <palm>
 
-While the default ->mmap and ->get_sgtable implementations work for the
-majority of our dma_map_ops impementations they are inherently safe
-for others that don't use the page allocator or CMA and/or use their
-own way of remapping not covered by the common code.  So remove the
-defaults if these methods are not wired up, but instead wire up the
-default implementations for all safe instances.
+This registers the new fchmodat4 syscall in most places as nuber 434,
+with alpha being the exception where it's 544.  I found all these sites
+by grepping for fspick, which I assume has found me everything.
 
-Fixes: e1c7e324539a ("dma-mapping: always provide the dma_map_ops based implementation")
-Signed-off-by: Christoph Hellwig <hch@lst.de>
+Signed-off-by: Palmer Dabbelt <palmer@sifive.com>
 ---
- arch/alpha/kernel/pci_iommu.c           |  2 ++
- arch/ia64/hp/common/sba_iommu.c         |  2 ++
- arch/ia64/sn/pci/pci_dma.c              |  2 ++
- arch/mips/jazz/jazzdma.c                |  2 ++
- arch/powerpc/kernel/dma-iommu.c         |  2 ++
- arch/powerpc/platforms/ps3/system-bus.c |  4 ++++
- arch/powerpc/platforms/pseries/vio.c    |  2 ++
- arch/s390/pci/pci_dma.c                 |  2 ++
- arch/sparc/kernel/iommu.c               |  2 ++
- arch/sparc/kernel/pci_sun4v.c           |  2 ++
- arch/x86/kernel/amd_gart_64.c           |  2 ++
- arch/x86/kernel/pci-calgary_64.c        |  2 ++
- drivers/iommu/amd_iommu.c               |  2 ++
- drivers/iommu/intel-iommu.c             |  2 ++
- kernel/dma/mapping.c                    | 20 ++++++++++++--------
- 15 files changed, 42 insertions(+), 8 deletions(-)
+ arch/alpha/kernel/syscalls/syscall.tbl      | 1 +
+ arch/arm/tools/syscall.tbl                  | 1 +
+ arch/arm64/include/asm/unistd32.h           | 2 ++
+ arch/ia64/kernel/syscalls/syscall.tbl       | 1 +
+ arch/m68k/kernel/syscalls/syscall.tbl       | 1 +
+ arch/microblaze/kernel/syscalls/syscall.tbl | 1 +
+ arch/mips/kernel/syscalls/syscall_n32.tbl   | 1 +
+ arch/mips/kernel/syscalls/syscall_n64.tbl   | 1 +
+ arch/mips/kernel/syscalls/syscall_o32.tbl   | 1 +
+ arch/parisc/kernel/syscalls/syscall.tbl     | 1 +
+ arch/powerpc/kernel/syscalls/syscall.tbl    | 1 +
+ arch/s390/kernel/syscalls/syscall.tbl       | 1 +
+ arch/sh/kernel/syscalls/syscall.tbl         | 1 +
+ arch/sparc/kernel/syscalls/syscall.tbl      | 1 +
+ arch/x86/entry/syscalls/syscall_32.tbl      | 1 +
+ arch/x86/entry/syscalls/syscall_64.tbl      | 1 +
+ include/uapi/asm-generic/unistd.h           | 5 ++++-
+ 17 files changed, 21 insertions(+), 1 deletion(-)
 
-diff --git a/arch/alpha/kernel/pci_iommu.c b/arch/alpha/kernel/pci_iommu.c
-index 242108439f42..7f1925a32c99 100644
---- a/arch/alpha/kernel/pci_iommu.c
-+++ b/arch/alpha/kernel/pci_iommu.c
-@@ -955,5 +955,7 @@ const struct dma_map_ops alpha_pci_ops = {
- 	.map_sg			= alpha_pci_map_sg,
- 	.unmap_sg		= alpha_pci_unmap_sg,
- 	.dma_supported		= alpha_pci_supported,
-+	.mmap			= dma_common_mmap,
-+	.get_sgtable		= dma_common_get_sgtable,
- };
- EXPORT_SYMBOL(alpha_pci_ops);
-diff --git a/arch/ia64/hp/common/sba_iommu.c b/arch/ia64/hp/common/sba_iommu.c
-index 3d24cc43385b..4c0ea6c2833d 100644
---- a/arch/ia64/hp/common/sba_iommu.c
-+++ b/arch/ia64/hp/common/sba_iommu.c
-@@ -2183,6 +2183,8 @@ const struct dma_map_ops sba_dma_ops = {
- 	.map_sg			= sba_map_sg_attrs,
- 	.unmap_sg		= sba_unmap_sg_attrs,
- 	.dma_supported		= sba_dma_supported,
-+	.mmap			= dma_common_mmap,
-+	.get_sgtable		= dma_common_get_sgtable,
- };
+diff --git a/arch/alpha/kernel/syscalls/syscall.tbl b/arch/alpha/kernel/syscalls/syscall.tbl
+index 9e7704e44f6d..6c4ef43c8b52 100644
+--- a/arch/alpha/kernel/syscalls/syscall.tbl
++++ b/arch/alpha/kernel/syscalls/syscall.tbl
+@@ -473,3 +473,4 @@
+ 541	common	fsconfig			sys_fsconfig
+ 542	common	fsmount				sys_fsmount
+ 543	common	fspick				sys_fspick
++544	common	fcmodat4			sys_fchmodat4
+diff --git a/arch/arm/tools/syscall.tbl b/arch/arm/tools/syscall.tbl
+index aaf479a9e92d..c008b76fbf92 100644
+--- a/arch/arm/tools/syscall.tbl
++++ b/arch/arm/tools/syscall.tbl
+@@ -447,3 +447,4 @@
+ 431	common	fsconfig			sys_fsconfig
+ 432	common	fsmount				sys_fsmount
+ 433	common	fspick				sys_fspick
++434	common	fchmodat4			sys_fchmodat4
+diff --git a/arch/arm64/include/asm/unistd32.h b/arch/arm64/include/asm/unistd32.h
+index aa995920bd34..049471b468c1 100644
+--- a/arch/arm64/include/asm/unistd32.h
++++ b/arch/arm64/include/asm/unistd32.h
+@@ -875,6 +875,8 @@ __SYSCALL(__NR_fsconfig, sys_fsconfig)
+ __SYSCALL(__NR_fsmount, sys_fsmount)
+ #define __NR_fspick 433
+ __SYSCALL(__NR_fspick, sys_fspick)
++#define __NR_fchmodat4 434
++__SYSCALL(__NR_fchmodat4, sys_fchmodat4)
  
- void sba_dma_init(void)
-diff --git a/arch/ia64/sn/pci/pci_dma.c b/arch/ia64/sn/pci/pci_dma.c
-index b7d42e4edc1f..12ffb9c0d738 100644
---- a/arch/ia64/sn/pci/pci_dma.c
-+++ b/arch/ia64/sn/pci/pci_dma.c
-@@ -438,6 +438,8 @@ static struct dma_map_ops sn_dma_ops = {
- 	.unmap_sg		= sn_dma_unmap_sg,
- 	.dma_supported		= sn_dma_supported,
- 	.get_required_mask	= sn_dma_get_required_mask,
-+	.mmap			= dma_common_mmap,
-+	.get_sgtable		= dma_common_get_sgtable,
- };
+ /*
+  * Please add new compat syscalls above this comment and update
+diff --git a/arch/ia64/kernel/syscalls/syscall.tbl b/arch/ia64/kernel/syscalls/syscall.tbl
+index e01df3f2f80d..d16e9801fe82 100644
+--- a/arch/ia64/kernel/syscalls/syscall.tbl
++++ b/arch/ia64/kernel/syscalls/syscall.tbl
+@@ -354,3 +354,4 @@
+ 431	common	fsconfig			sys_fsconfig
+ 432	common	fsmount				sys_fsmount
+ 433	common	fspick				sys_fspick
++434	common	fchmodat4			sys_fchmodat4
+diff --git a/arch/m68k/kernel/syscalls/syscall.tbl b/arch/m68k/kernel/syscalls/syscall.tbl
+index 7e3d0734b2f3..1bbff1a9153c 100644
+--- a/arch/m68k/kernel/syscalls/syscall.tbl
++++ b/arch/m68k/kernel/syscalls/syscall.tbl
+@@ -433,3 +433,4 @@
+ 431	common	fsconfig			sys_fsconfig
+ 432	common	fsmount				sys_fsmount
+ 433	common	fspick				sys_fspick
++434	common	fchmodat4			sys_fchmodat4
+diff --git a/arch/microblaze/kernel/syscalls/syscall.tbl b/arch/microblaze/kernel/syscalls/syscall.tbl
+index 26339e417695..3ed878cb10a3 100644
+--- a/arch/microblaze/kernel/syscalls/syscall.tbl
++++ b/arch/microblaze/kernel/syscalls/syscall.tbl
+@@ -439,3 +439,4 @@
+ 431	common	fsconfig			sys_fsconfig
+ 432	common	fsmount				sys_fsmount
+ 433	common	fspick				sys_fspick
++434	common	fchmodat4			sys_fchmodat4
+diff --git a/arch/mips/kernel/syscalls/syscall_n32.tbl b/arch/mips/kernel/syscalls/syscall_n32.tbl
+index 0e2dd68ade57..916cdb808e62 100644
+--- a/arch/mips/kernel/syscalls/syscall_n32.tbl
++++ b/arch/mips/kernel/syscalls/syscall_n32.tbl
+@@ -372,3 +372,4 @@
+ 431	n32	fsconfig			sys_fsconfig
+ 432	n32	fsmount				sys_fsmount
+ 433	n32	fspick				sys_fspick
++434	n32	fchmodat4			sys_fchmodat4
+diff --git a/arch/mips/kernel/syscalls/syscall_n64.tbl b/arch/mips/kernel/syscalls/syscall_n64.tbl
+index 5eebfa0d155c..48b4badb1914 100644
+--- a/arch/mips/kernel/syscalls/syscall_n64.tbl
++++ b/arch/mips/kernel/syscalls/syscall_n64.tbl
+@@ -348,3 +348,4 @@
+ 431	n64	fsconfig			sys_fsconfig
+ 432	n64	fsmount				sys_fsmount
+ 433	n64	fspick				sys_fspick
++434	n64	fchmodat4			sys_fchmodat4
+diff --git a/arch/mips/kernel/syscalls/syscall_o32.tbl b/arch/mips/kernel/syscalls/syscall_o32.tbl
+index 3cc1374e02d0..0a2ec339882a 100644
+--- a/arch/mips/kernel/syscalls/syscall_o32.tbl
++++ b/arch/mips/kernel/syscalls/syscall_o32.tbl
+@@ -421,3 +421,4 @@
+ 431	o32	fsconfig			sys_fsconfig
+ 432	o32	fsmount				sys_fsmount
+ 433	o32	fspick				sys_fspick
++434	o32	fchmodat4			sys_fchmodat4
+diff --git a/arch/parisc/kernel/syscalls/syscall.tbl b/arch/parisc/kernel/syscalls/syscall.tbl
+index c9e377d59232..07d38477f8f7 100644
+--- a/arch/parisc/kernel/syscalls/syscall.tbl
++++ b/arch/parisc/kernel/syscalls/syscall.tbl
+@@ -430,3 +430,4 @@
+ 431	common	fsconfig			sys_fsconfig
+ 432	common	fsmount				sys_fsmount
+ 433	common	fspick				sys_fspick
++434	common	fchmodat4			sys_fchmodat4
+diff --git a/arch/powerpc/kernel/syscalls/syscall.tbl b/arch/powerpc/kernel/syscalls/syscall.tbl
+index 103655d84b4b..3542b33d1bf3 100644
+--- a/arch/powerpc/kernel/syscalls/syscall.tbl
++++ b/arch/powerpc/kernel/syscalls/syscall.tbl
+@@ -515,3 +515,4 @@
+ 431	common	fsconfig			sys_fsconfig
+ 432	common	fsmount				sys_fsmount
+ 433	common	fspick				sys_fspick
++434	common	fchmodat4			sys_fchmodat4
+diff --git a/arch/s390/kernel/syscalls/syscall.tbl b/arch/s390/kernel/syscalls/syscall.tbl
+index e822b2964a83..cf7b3086ffaa 100644
+--- a/arch/s390/kernel/syscalls/syscall.tbl
++++ b/arch/s390/kernel/syscalls/syscall.tbl
+@@ -436,3 +436,4 @@
+ 431  common	fsconfig		sys_fsconfig			sys_fsconfig
+ 432  common	fsmount			sys_fsmount			sys_fsmount
+ 433  common	fspick			sys_fspick			sys_fspick
++434  common	fchmodat4		sys_fchmodat4			sys_fchmodat4
+diff --git a/arch/sh/kernel/syscalls/syscall.tbl b/arch/sh/kernel/syscalls/syscall.tbl
+index 016a727d4357..5afa9fb9b4d3 100644
+--- a/arch/sh/kernel/syscalls/syscall.tbl
++++ b/arch/sh/kernel/syscalls/syscall.tbl
+@@ -436,3 +436,4 @@
+ 431	common	fsconfig			sys_fsconfig
+ 432	common	fsmount				sys_fsmount
+ 433	common	fspick				sys_fspick
++434	common	fchmodat4			sys_fchmodat4
+diff --git a/arch/sparc/kernel/syscalls/syscall.tbl b/arch/sparc/kernel/syscalls/syscall.tbl
+index e047480b1605..ff19eb8185f3 100644
+--- a/arch/sparc/kernel/syscalls/syscall.tbl
++++ b/arch/sparc/kernel/syscalls/syscall.tbl
+@@ -479,3 +479,4 @@
+ 431	common	fsconfig			sys_fsconfig
+ 432	common	fsmount				sys_fsmount
+ 433	common	fspick				sys_fspick
++434	common	fchmodat4			sys_fchmodat4
+diff --git a/arch/x86/entry/syscalls/syscall_32.tbl b/arch/x86/entry/syscalls/syscall_32.tbl
+index ad968b7bac72..39609fa3536d 100644
+--- a/arch/x86/entry/syscalls/syscall_32.tbl
++++ b/arch/x86/entry/syscalls/syscall_32.tbl
+@@ -438,3 +438,4 @@
+ 431	i386	fsconfig		sys_fsconfig			__ia32_sys_fsconfig
+ 432	i386	fsmount			sys_fsmount			__ia32_sys_fsmount
+ 433	i386	fspick			sys_fspick			__ia32_sys_fspick
++434	i386	fchmodat4		sys_fchmodat4			__ia32_sys_fchmodat4
+diff --git a/arch/x86/entry/syscalls/syscall_64.tbl b/arch/x86/entry/syscalls/syscall_64.tbl
+index b4e6f9e6204a..b92d5b195e66 100644
+--- a/arch/x86/entry/syscalls/syscall_64.tbl
++++ b/arch/x86/entry/syscalls/syscall_64.tbl
+@@ -355,6 +355,7 @@
+ 431	common	fsconfig		__x64_sys_fsconfig
+ 432	common	fsmount			__x64_sys_fsmount
+ 433	common	fspick			__x64_sys_fspick
++434	common	fchmodat4		__x64_sys_fchmodat4
  
- void sn_dma_init(void)
-diff --git a/arch/mips/jazz/jazzdma.c b/arch/mips/jazz/jazzdma.c
-index 1804dc9d8136..a01e14955187 100644
---- a/arch/mips/jazz/jazzdma.c
-+++ b/arch/mips/jazz/jazzdma.c
-@@ -682,5 +682,7 @@ const struct dma_map_ops jazz_dma_ops = {
- 	.sync_sg_for_device	= jazz_dma_sync_sg_for_device,
- 	.dma_supported		= dma_direct_supported,
- 	.cache_sync		= arch_dma_cache_sync,
-+	.mmap			= dma_common_mmap,
-+	.get_sgtable		= dma_common_get_sgtable,
- };
- EXPORT_SYMBOL(jazz_dma_ops);
-diff --git a/arch/powerpc/kernel/dma-iommu.c b/arch/powerpc/kernel/dma-iommu.c
-index a0879674a9c8..2f5a53874f6d 100644
---- a/arch/powerpc/kernel/dma-iommu.c
-+++ b/arch/powerpc/kernel/dma-iommu.c
-@@ -208,4 +208,6 @@ const struct dma_map_ops dma_iommu_ops = {
- 	.sync_single_for_device	= dma_iommu_sync_for_device,
- 	.sync_sg_for_cpu	= dma_iommu_sync_sg_for_cpu,
- 	.sync_sg_for_device	= dma_iommu_sync_sg_for_device,
-+	.mmap			= dma_common_mmap,
-+	.get_sgtable		= dma_common_get_sgtable,
- };
-diff --git a/arch/powerpc/platforms/ps3/system-bus.c b/arch/powerpc/platforms/ps3/system-bus.c
-index 98410119c47b..70fcc9736a8c 100644
---- a/arch/powerpc/platforms/ps3/system-bus.c
-+++ b/arch/powerpc/platforms/ps3/system-bus.c
-@@ -700,6 +700,8 @@ static const struct dma_map_ops ps3_sb_dma_ops = {
- 	.get_required_mask = ps3_dma_get_required_mask,
- 	.map_page = ps3_sb_map_page,
- 	.unmap_page = ps3_unmap_page,
-+	.mmap = dma_common_mmap,
-+	.get_sgtable = dma_common_get_sgtable,
- };
+ #
+ # x32-specific system call numbers start at 512 to avoid cache impact
+diff --git a/include/uapi/asm-generic/unistd.h b/include/uapi/asm-generic/unistd.h
+index a87904daf103..6a7ba1e69e42 100644
+--- a/include/uapi/asm-generic/unistd.h
++++ b/include/uapi/asm-generic/unistd.h
+@@ -845,8 +845,11 @@ __SYSCALL(__NR_fsmount, sys_fsmount)
+ #define __NR_fspick 433
+ __SYSCALL(__NR_fspick, sys_fspick)
  
- static const struct dma_map_ops ps3_ioc0_dma_ops = {
-@@ -711,6 +713,8 @@ static const struct dma_map_ops ps3_ioc0_dma_ops = {
- 	.get_required_mask = ps3_dma_get_required_mask,
- 	.map_page = ps3_ioc0_map_page,
- 	.unmap_page = ps3_unmap_page,
-+	.mmap = dma_common_mmap,
-+	.get_sgtable = dma_common_get_sgtable,
- };
++#define __NR_fchmodat4 434
++__SYSCALL(__NR_fchmodat4, sys_fchmodat4)
++
+ #undef __NR_syscalls
+-#define __NR_syscalls 434
++#define __NR_syscalls 435
  
- /**
-diff --git a/arch/powerpc/platforms/pseries/vio.c b/arch/powerpc/platforms/pseries/vio.c
-index 6601b9d404dc..3473eef7628c 100644
---- a/arch/powerpc/platforms/pseries/vio.c
-+++ b/arch/powerpc/platforms/pseries/vio.c
-@@ -605,6 +605,8 @@ static const struct dma_map_ops vio_dma_mapping_ops = {
- 	.unmap_page        = vio_dma_iommu_unmap_page,
- 	.dma_supported     = dma_iommu_dma_supported,
- 	.get_required_mask = dma_iommu_get_required_mask,
-+	.mmap		   = dma_common_mmap,
-+	.get_sgtable	   = dma_common_get_sgtable,
- };
- 
- /**
-diff --git a/arch/s390/pci/pci_dma.c b/arch/s390/pci/pci_dma.c
-index 9e52d1527f71..03d8c1c9f82f 100644
---- a/arch/s390/pci/pci_dma.c
-+++ b/arch/s390/pci/pci_dma.c
-@@ -668,6 +668,8 @@ const struct dma_map_ops s390_pci_dma_ops = {
- 	.unmap_sg	= s390_dma_unmap_sg,
- 	.map_page	= s390_dma_map_pages,
- 	.unmap_page	= s390_dma_unmap_pages,
-+	.mmap		= dma_common_mmap,
-+	.get_sgtable	= dma_common_get_sgtable,
- 	/* dma_supported is unconditionally true without a callback */
- };
- EXPORT_SYMBOL_GPL(s390_pci_dma_ops);
-diff --git a/arch/sparc/kernel/iommu.c b/arch/sparc/kernel/iommu.c
-index 4ae7388b1bff..c915a7cbcc91 100644
---- a/arch/sparc/kernel/iommu.c
-+++ b/arch/sparc/kernel/iommu.c
-@@ -763,6 +763,8 @@ static const struct dma_map_ops sun4u_dma_ops = {
- 	.sync_single_for_cpu	= dma_4u_sync_single_for_cpu,
- 	.sync_sg_for_cpu	= dma_4u_sync_sg_for_cpu,
- 	.dma_supported		= dma_4u_supported,
-+	.mmap			= dma_common_mmap,
-+	.get_sgtable		= dma_common_get_sgtable,
- };
- 
- const struct dma_map_ops *dma_ops = &sun4u_dma_ops;
-diff --git a/arch/sparc/kernel/pci_sun4v.c b/arch/sparc/kernel/pci_sun4v.c
-index 14b93c5564e3..ab6909642ae1 100644
---- a/arch/sparc/kernel/pci_sun4v.c
-+++ b/arch/sparc/kernel/pci_sun4v.c
-@@ -692,6 +692,8 @@ static const struct dma_map_ops sun4v_dma_ops = {
- 	.map_sg				= dma_4v_map_sg,
- 	.unmap_sg			= dma_4v_unmap_sg,
- 	.dma_supported			= dma_4v_supported,
-+	.mmap				= dma_common_mmap,
-+	.get_sgtable			= dma_common_get_sgtable,
- };
- 
- static void pci_sun4v_scan_bus(struct pci_pbm_info *pbm, struct device *parent)
-diff --git a/arch/x86/kernel/amd_gart_64.c b/arch/x86/kernel/amd_gart_64.c
-index a585ea6f686a..a65b4a9c7f87 100644
---- a/arch/x86/kernel/amd_gart_64.c
-+++ b/arch/x86/kernel/amd_gart_64.c
-@@ -678,6 +678,8 @@ static const struct dma_map_ops gart_dma_ops = {
- 	.alloc				= gart_alloc_coherent,
- 	.free				= gart_free_coherent,
- 	.dma_supported			= dma_direct_supported,
-+	.mmap				= dma_common_mmap,
-+	.get_sgtable			= dma_common_get_sgtable,
- };
- 
- static void gart_iommu_shutdown(void)
-diff --git a/arch/x86/kernel/pci-calgary_64.c b/arch/x86/kernel/pci-calgary_64.c
-index 9d4343aa481b..23fdec030c37 100644
---- a/arch/x86/kernel/pci-calgary_64.c
-+++ b/arch/x86/kernel/pci-calgary_64.c
-@@ -468,6 +468,8 @@ static const struct dma_map_ops calgary_dma_ops = {
- 	.map_page = calgary_map_page,
- 	.unmap_page = calgary_unmap_page,
- 	.dma_supported = dma_direct_supported,
-+	.mmap = dma_common_mmap,
-+	.get_sgtable = dma_common_get_sgtable,
- };
- 
- static inline void __iomem * busno_to_bbar(unsigned char num)
-diff --git a/drivers/iommu/amd_iommu.c b/drivers/iommu/amd_iommu.c
-index b607a92791d3..2e74ad659985 100644
---- a/drivers/iommu/amd_iommu.c
-+++ b/drivers/iommu/amd_iommu.c
-@@ -2722,6 +2722,8 @@ static const struct dma_map_ops amd_iommu_dma_ops = {
- 	.map_sg		= map_sg,
- 	.unmap_sg	= unmap_sg,
- 	.dma_supported	= amd_iommu_dma_supported,
-+	.mmap		= dma_common_mmap,
-+	.get_sgtable	= dma_common_get_sgtable,
- };
- 
- static int init_reserved_iova_ranges(void)
-diff --git a/drivers/iommu/intel-iommu.c b/drivers/iommu/intel-iommu.c
-index ac4172c02244..f6776b359977 100644
---- a/drivers/iommu/intel-iommu.c
-+++ b/drivers/iommu/intel-iommu.c
-@@ -3737,6 +3737,8 @@ static const struct dma_map_ops intel_dma_ops = {
- 	.map_resource = intel_map_resource,
- 	.unmap_resource = intel_unmap_resource,
- 	.dma_supported = dma_direct_supported,
-+	.mmap = dma_common_mmap,
-+	.get_sgtable = dma_common_get_sgtable,
- };
- 
- static inline int iommu_domain_cache_init(void)
-diff --git a/kernel/dma/mapping.c b/kernel/dma/mapping.c
-index 4ceb5b9016d8..cdb157cd70e7 100644
---- a/kernel/dma/mapping.c
-+++ b/kernel/dma/mapping.c
-@@ -153,11 +153,12 @@ int dma_get_sgtable_attrs(struct device *dev, struct sg_table *sgt,
- {
- 	const struct dma_map_ops *ops = get_dma_ops(dev);
- 
--	if (!dma_is_direct(ops) && ops->get_sgtable)
--		return ops->get_sgtable(dev, sgt, cpu_addr, dma_addr, size,
--					attrs);
--	return dma_common_get_sgtable(dev, sgt, cpu_addr, dma_addr, size,
--			attrs);
-+	if (dma_is_direct(ops))
-+		return dma_common_get_sgtable(dev, sgt, cpu_addr, dma_addr,
-+				size, attrs);
-+	if (!ops->get_sgtable)
-+		return -ENXIO;
-+	return ops->get_sgtable(dev, sgt, cpu_addr, dma_addr, size, attrs);
- }
- EXPORT_SYMBOL(dma_get_sgtable_attrs);
- 
-@@ -221,9 +222,12 @@ int dma_mmap_attrs(struct device *dev, struct vm_area_struct *vma,
- {
- 	const struct dma_map_ops *ops = get_dma_ops(dev);
- 
--	if (!dma_is_direct(ops) && ops->mmap)
--		return ops->mmap(dev, vma, cpu_addr, dma_addr, size, attrs);
--	return dma_common_mmap(dev, vma, cpu_addr, dma_addr, size, attrs);
-+	if (dma_is_direct(ops))
-+		return dma_common_mmap(dev, vma, cpu_addr, dma_addr, size,
-+				attrs);
-+	if (!ops->mmap)
-+		return -ENXIO;
-+	return ops->mmap(dev, vma, cpu_addr, dma_addr, size, attrs);
- }
- EXPORT_SYMBOL(dma_mmap_attrs);
- 
+ /*
+  * 32 bit systems traditionally used different
 -- 
-2.20.1
+2.21.0
