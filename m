@@ -1,122 +1,104 @@
-From: Aleksa Sarai <cyphar@cyphar.com>
-Date: Sun, 14 Jul 2019 07:11:02 +0000
-Subject: Re: [PATCH v9 01/10] namei: obey trailing magic-link DAC permissions
-Message-Id: <20190714071102.gsc3kqpakz7chqt6@yavin>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="gghwwblfl4frle37"
+From: Palmer Dabbelt <palmer@sifive.com>
+Date: Wed, 17 Jul 2019 01:27:17 +0000
+Subject: [PATCH v2 2/4] Add fchmodat4(), a new syscall
+Message-Id: <20190717012719.5524-3-palmer@sifive.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190706145737.5299-1-cyphar@cyphar.com>
- <20190706145737.5299-2-cyphar@cyphar.com>
- <20190712041454.GG17978@ZenIV.linux.org.uk>
- <20190712122017.xkowq2cjreylpotm@yavin>
- <20190712131005.GM17978@ZenIV.linux.org.uk>
-In-Reply-To: <20190712131005.GM17978@ZenIV.linux.org.uk>
-To: Al Viro <viro@zeniv.linux.org.uk>
-Cc: Jeff Layton <jlayton@kernel.org>, "J. Bruce Fields" <bfields@fieldses.org>, Arnd Bergmann <arnd@arndb.de>, David Howells <dhowells@redhat.com>, Shuah Khan <shuah@kernel.org>, Shuah Khan <skhan@linuxfoundation.org>, Andy Lutomirski <luto@kernel.org>, Christian Brauner <christian@brauner.io>, Eric Biederman <ebiederm@xmission.com>, Andrew Morton <akpm@linux-foundation.org>, Alexei Starovoitov <ast@kernel.org>, Kees Cook <keescook@chromium.org>, Jann Horn <jannh@google.com>, Tycho Andersen <tycho@tycho.ws>, David Drysdale <drysdale@google.com>, Chanho Min <chanho.min@lge.com>, Oleg Nesterov <oleg@redhat.com>, Aleksa Sarai <asarai@suse.de>, Linus Torvalds <torvalds@linux-foundation.org>, containers@lists.linux-foundation.org, linux-alpha@vger.kernel.org
+References: <20190717012719.5524-1-palmer@sifive.com>
+In-Reply-To: <20190717012719.5524-1-palmer@sifive.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: viro@zeniv.linux.org.uk, linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org, linux-api@vger.kernel.org
+Cc: rth@twiddle.net, ink@jurassic.park.msu.ru, mattst88@gmail.com, linux@armlinux.org.uk, catalin.marinas@arm.com, will@kernel.org, tony.luck@intel.com, fenghua.yu@intel.com, geert@linux-m68k.org, monstr@monstr.eu, ralf@linux-mips.org, paul.burton@mips.com, jhogan@kernel.org, James.Bottomley@HansenPartnership.com, deller@gmx.de, benh@kernel.crashing.org, paulus@samba.org, mpe@ellerman.id.au, heiko.carstens@de.ibm.com, gor@linux.ibm.com, borntraeger@de.ibm.com, ysato@users.sourceforge.jp, dalias@libc.org, davem@davemloft.net, luto@kernel.org, tglx@linutronix.de, mingo@redhat.com, bp@alien8.de, hpa@zytor.com, x86@kernel.org, Arnd Bergmann <arnd@arndb.de>, peterz@infradead.org, acme@kernel.org, alexander.shishkin@linux.intel.com, jolsa@redhat.com, namhyung@kernel.org, Palmer Dabbelt <palm>
 
+man 3p says that fchmodat() takes a flags argument, but the Linux
+syscall does not.  There doesn't appear to be a good userspace
+workaround for this issue but the implementation in the kernel is pretty
+straight-forward.  The specific use case where the missing flags came up
+was WRT a fuse filesystem implemenation, but the functionality is pretty
+generic so I'm assuming there would be other use cases.
 
---gghwwblfl4frle37
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Signed-off-by: Palmer Dabbelt <palmer@sifive.com>
+---
+ fs/open.c                | 20 ++++++++++++++++----
+ include/linux/syscalls.h |  7 +++++--
+ 2 files changed, 21 insertions(+), 6 deletions(-)
 
-On 2019-07-12, Al Viro <viro@zeniv.linux.org.uk> wrote:
-> On Fri, Jul 12, 2019 at 10:20:17PM +1000, Aleksa Sarai wrote:
-> > On 2019-07-12, Al Viro <viro@zeniv.linux.org.uk> wrote:
-> > > On Sun, Jul 07, 2019 at 12:57:28AM +1000, Aleksa Sarai wrote:
-> > > > @@ -514,7 +516,14 @@ static void set_nameidata(struct nameidata *p,=
- int dfd, struct filename *name)
-> > > >  	p->stack =3D p->internal;
-> > > >  	p->dfd =3D dfd;
-> > > >  	p->name =3D name;
-> > > > -	p->total_link_count =3D old ? old->total_link_count : 0;
-> > > > +	p->total_link_count =3D 0;
-> > > > +	p->acc_mode =3D 0;
-> > > > +	p->opath_mask =3D FMODE_PATH_READ | FMODE_PATH_WRITE;
-> > > > +	if (old) {
-> > > > +		p->total_link_count =3D old->total_link_count;
-> > > > +		p->acc_mode =3D old->acc_mode;
-> > > > +		p->opath_mask =3D old->opath_mask;
-> > > > +	}
-> > >=20
-> > > Huh?  Could somebody explain why traversals of NFS4 referrals should =
-inherit
-> > > ->acc_mode and ->opath_mask?
-> >=20
-> > I'll be honest -- I don't understand what set_nameidata() did so I just
-> > did what I thought would be an obvious change (to just copy the
-> > contents). I thought it was related to some aspect of the symlink stack
-> > handling.
->=20
-> No.  It's handling of (very rare) nested pathwalk.  The only case I can t=
-hink
-> of is handling of NFS4 referrals - they are triggered by ->d_automount()
-> and include NFS4 mount.  Which does internal pathwalk of its own, to get
-> to the root of subtree being automounted.
->=20
-> NFS has its own recursion protection on that path (no deeper nesting than
-> one level of referral traversals), but there some nesting is inevitable;
-> we do get another nameidata instance on stack.  And for nd_jump_link() we
-> need to keep track of the innermost one.
->=20
-> For symlinks nothing of that sort happens - they are dealt with on the sa=
-me
-> struct nameidata.  ->total_link_count copying is there for one reason onl=
-y -
-> we want the total amount of symlinks traversed during the pathwalk (inclu=
-ding
-> the referral processing, etc.) to count towards MAXSYMLINKS check.  It co=
-uld've
-> been moved from nameidata to task_struct, but it's cheaper to handle it t=
-hat
-> way.
->=20
-> Again, nesting is *rare*.
-
-Thanks for the explanation, much appreciated. I will drop the old->...
-copying hunk.
-
-> > In that case, should they both be set to 0 on set_nameidata()? This will
-> > mean that fd re-opening (or magic-link opening) through a
-> > set_nameidata() would always fail.
->=20
-> Huh?  set_nameidata() is done for *all* instances - it's pretty much the
-> constructor of that object (and restore_nameidata() - a destructor).
-> Everything goes through it.
-
-Sorry, I meant to drop the copy-from-old logic -- not set it to zero
-explicitly in set_nameidata().
-
-> And again, I'm not sure we want these fields in nameidata - IMO they belo=
-ng
-> in open_flags.  Things like e.g. stat() don't need them at all.
-
-Yup, I'll work up a version that does the consolidation you mentioned
-in your other mail.
-
-> Incidentally, O_PATH opening of symlinks combined with subsequent procfs
-> symlink traversals is worth testing - that's where the things get subtle
-> and that's where it's easy to get in trouble on modifications.
-
-I have some self-tests of a symlink-to-a-magic-link in the last patch of
-the series. Did you mean something even more chained like a symlink to a
-/proc/self/fd/$n of an O_NOFOLLOW|O_PATH of a symlink?
-
---=20
-Aleksa Sarai
-Senior Software Engineer (Containers)
-SUSE Linux GmbH
-<https://www.cyphar.com/>
-
---gghwwblfl4frle37
-Content-Type: application/pgp-signature; name="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iHUEABYIAB0WIQSxZm6dtfE8gxLLfYqdlLljIbnQEgUCXSrVgAAKCRCdlLljIbnQ
-EupPAQDpi9m99/xBGy4or9AS/LoRkr4tSLDlWlOsdCn0tZ52WAEAqoZwgZWyT46F
-mjKoRQeNjgtDk5jRNWbrwkJAMPXy2AE=
-=GnH+
------END PGP SIGNATURE-----
-
---gghwwblfl4frle37--
+diff --git a/fs/open.c b/fs/open.c
+index b5b80469b93d..2f72b4d6a2c1 100644
+--- a/fs/open.c
++++ b/fs/open.c
+@@ -569,11 +569,17 @@ SYSCALL_DEFINE2(fchmod, unsigned int, fd, umode_t, mode)
+ 	return ksys_fchmod(fd, mode);
+ }
+ 
+-int do_fchmodat(int dfd, const char __user *filename, umode_t mode)
++int do_fchmodat4(int dfd, const char __user *filename, umode_t mode, int flags)
+ {
+ 	struct path path;
+ 	int error;
+-	unsigned int lookup_flags = LOOKUP_FOLLOW;
++	unsigned int lookup_flags;
++
++	if (unlikely(flags & ~AT_SYMLINK_NOFOLLOW))
++		return -EINVAL;
++
++	lookup_flags = flags & AT_SYMLINK_NOFOLLOW ? 0 : LOOKUP_FOLLOW;
++
+ retry:
+ 	error = user_path_at(dfd, filename, lookup_flags, &path);
+ 	if (!error) {
+@@ -587,15 +593,21 @@ int do_fchmodat(int dfd, const char __user *filename, umode_t mode)
+ 	return error;
+ }
+ 
++SYSCALL_DEFINE4(fchmodat4, int, dfd, const char __user *, filename,
++		umode_t, mode, int, flags)
++{
++	return do_fchmodat4(dfd, filename, mode, flags);
++}
++
+ SYSCALL_DEFINE3(fchmodat, int, dfd, const char __user *, filename,
+ 		umode_t, mode)
+ {
+-	return do_fchmodat(dfd, filename, mode);
++	return do_fchmodat4(dfd, filename, mode, 0);
+ }
+ 
+ SYSCALL_DEFINE2(chmod, const char __user *, filename, umode_t, mode)
+ {
+-	return do_fchmodat(AT_FDCWD, filename, mode);
++	return do_fchmodat4(AT_FDCWD, filename, mode, 0);
+ }
+ 
+ static int chown_common(const struct path *path, uid_t user, gid_t group)
+diff --git a/include/linux/syscalls.h b/include/linux/syscalls.h
+index e1c20f1d0525..a4bde25ad264 100644
+--- a/include/linux/syscalls.h
++++ b/include/linux/syscalls.h
+@@ -433,6 +433,8 @@ asmlinkage long sys_chroot(const char __user *filename);
+ asmlinkage long sys_fchmod(unsigned int fd, umode_t mode);
+ asmlinkage long sys_fchmodat(int dfd, const char __user *filename,
+ 			     umode_t mode);
++asmlinkage long sys_fchmodat4(int dfd, const char __user *filename,
++			     umode_t mode, int flags);
+ asmlinkage long sys_fchownat(int dfd, const char __user *filename, uid_t user,
+ 			     gid_t group, int flag);
+ asmlinkage long sys_fchown(unsigned int fd, uid_t user, gid_t group);
+@@ -1320,11 +1322,12 @@ static inline long ksys_link(const char __user *oldname,
+ 	return do_linkat(AT_FDCWD, oldname, AT_FDCWD, newname, 0);
+ }
+ 
+-extern int do_fchmodat(int dfd, const char __user *filename, umode_t mode);
++extern int do_fchmodat4(int dfd, const char __user *filename, umode_t mode,
++			int flags);
+ 
+ static inline int ksys_chmod(const char __user *filename, umode_t mode)
+ {
+-	return do_fchmodat(AT_FDCWD, filename, mode);
++	return do_fchmodat4(AT_FDCWD, filename, mode, 0);
+ }
+ 
+ extern long do_faccessat(int dfd, const char __user *filename, int mode);
+-- 
+2.21.0
