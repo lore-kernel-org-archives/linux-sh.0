@@ -1,160 +1,183 @@
 From: Aleksa Sarai <cyphar@cyphar.com>
-Date: Sat, 06 Jul 2019 14:57:30 +0000
-Subject: [PATCH v9 03/10] open: O_EMPTYPATH: procfs-less file descriptor re-opening
-Message-Id: <20190706145737.5299-4-cyphar@cyphar.com>
+Date: Fri, 19 Jul 2019 16:42:21 +0000
+Subject: [PATCH v10 5/9] namei: LOOKUP_IN_ROOT: chroot-like path resolution
+Message-Id: <20190719164225.27083-6-cyphar@cyphar.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190706145737.5299-1-cyphar@cyphar.com>
-In-Reply-To: <20190706145737.5299-1-cyphar@cyphar.com>
+References: <20190719164225.27083-1-cyphar@cyphar.com>
+In-Reply-To: <20190719164225.27083-1-cyphar@cyphar.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Al Viro <viro@zeniv.linux.org.uk>, Jeff Layton <jlayton@kernel.org>, "J. Bruce Fields" <bfields@fieldses.org>, Arnd Bergmann <arnd@arndb.de>, David Howells <dhowells@redhat.com>, Shuah Khan <shuah@kernel.org>, Shuah Khan <skhan@linuxfoundation.org>
-Cc: Aleksa Sarai <cyphar@cyphar.com>, Eric Biederman <ebiederm@xmission.com>, Andy Lutomirski <luto@kernel.org>, Andrew Morton <akpm@linux-foundation.org>, Alexei Starovoitov <ast@kernel.org>, Kees Cook <keescook@chromium.org>, Jann Horn <jannh@google.com>, Christian Brauner <christian@brauner.io>, Tycho Andersen <tycho@tycho.ws>, David Drysdale <drysdale@google.com>, Chanho Min <chanho.min@lge.com>, Oleg Nesterov <oleg@redhat.com>, Aleksa Sarai <asarai@suse.de>, Linus Torvalds <torvalds@linux-foundation.org>, containers@lists.linux-foundation.org, linux-alpha@vger.kernel.org, linux-api@vger.kernel.org, linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-fsdevel@vger.kernel.org, linux-ia64@vger.kernel.org, linux-kernel@vger.kernel.org
+Cc: Aleksa Sarai <cyphar@cyphar.com>, Christian Brauner <christian@brauner.io>, Eric Biederman <ebiederm@xmission.com>, Andy Lutomirski <luto@kernel.org>, Andrew Morton <akpm@linux-foundation.org>, Alexei Starovoitov <ast@kernel.org>, Kees Cook <keescook@chromium.org>, Jann Horn <jannh@google.com>, Tycho Andersen <tycho@tycho.ws>, David Drysdale <drysdale@google.com>, Chanho Min <chanho.min@lge.com>, Oleg Nesterov <oleg@redhat.com>, Aleksa Sarai <asarai@suse.de>, Linus Torvalds <torvalds@linux-foundation.org>, containers@lists.linux-foundation.org, linux-alpha@vger.kernel.org, linux-api@vger.kernel.org, linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-fsdevel@vger.kernel.org, linux-ia64@vger.kernel.org, linux-kernel@vger.kernel.orglinux-
 
-Userspace has made use of /proc/self/fd very liberally to allow for
-descriptors to be re-opened. There are a wide variety of uses for this
-feature, but it has always required constructing a pathname and could
-not be done without procfs mounted. The obvious solution for this is to
-extend openat(2) to have an AT_EMPTY_PATH-equivalent -- O_EMPTYPATH.
+The primary motivation for the need for this flag is container runtimes
+which have to interact with malicious root filesystems in the host
+namespaces. One of the first requirements for a container runtime to be
+secure against a malicious rootfs is that they correctly scope symlinks
+(that is, they should be scoped as though they are chroot(2)ed into the
+container's rootfs) and ".."-style paths[*]. The already-existing
+LOOKUP_NO_XDEV and LOOKUP_NO_MAGICLINKS help defend against other
+potential attacks in a malicious rootfs scenario.
 
-Now that descriptor re-opening has been made safe through the new
-magic-link resolution restrictions, we can replicate these restrictions
-for O_EMPTYPATH. In particular, we only allow "upgrading" the file
-descriptor if the corresponding FMODE_PATH_* bit is set (or the
-FMODE_{READ,WRITE} cases for non-O_PATH file descriptors).
+Currently most container runtimes try to do this resolution in
+userspace[1], causing many potential race conditions. In addition, the
+"obvious" alternative (actually performing a {ch,pivot_}root(2))
+requires a fork+exec (for some runtimes) which is *very* costly if
+necessary for every filesystem operation involving a container.
 
-When doing openat(O_EMPTYPATH|O_PATH), O_PATH takes precedence and
-O_EMPTYPATH is ignored. Very few users ever have a need to O_PATH
-re-open an existing file descriptor, and so accommodating them at the
-expense of further complicating O_PATH makes little sense. Ultimately,
-if users ask for this we can always add RESOLVE_EMPTY_PATH to
-resolveat(2) in the future.
+[*] At the moment, ".." and magic-link jumping are disallowed for the
+    same reason it is disabled for LOOKUP_BENEATH -- currently it is not
+    safe to allow it. Future patches may enable it unconditionally once
+    we have resolved the possible races (for "..") and semantics (for
+    magic-link jumping).
 
+The most significant *at(2) semantic change with LOOKUP_IN_ROOT is that
+absolute pathnames no longer cause the dirfd to be ignored completely.
+
+The rationale is that LOOKUP_IN_ROOT must necessarily chroot-scope
+symlinks with absolute paths to dirfd, and so doing it for the base path
+seems to be the most consistent behaviour (and also avoids foot-gunning
+users who want to scope paths that are absolute).
+
+[1]: https://github.com/cyphar/filepath-securejoin
+
+Co-developed-by: Christian Brauner <christian@brauner.io>
 Signed-off-by: Aleksa Sarai <cyphar@cyphar.com>
 ---
- fs/fcntl.c                       |  2 +-
- fs/namei.c                       | 27 +++++++++++++++++++++++++++
- fs/open.c                        |  7 ++++++-
- include/linux/fcntl.h            |  2 +-
- include/uapi/asm-generic/fcntl.h |  5 +++++
- 5 files changed, 40 insertions(+), 3 deletions(-)
+ fs/namei.c            | 41 +++++++++++++++++++++++++++++++----------
+ include/linux/namei.h |  1 +
+ 2 files changed, 32 insertions(+), 10 deletions(-)
 
-diff --git a/fs/fcntl.c b/fs/fcntl.c
-index 3d40771e8e7c..4cf05a2fd162 100644
---- a/fs/fcntl.c
-+++ b/fs/fcntl.c
-@@ -1031,7 +1031,7 @@ static int __init fcntl_init(void)
- 	 * Exceptions: O_NONBLOCK is a two bit define on parisc; O_NDELAY
- 	 * is defined as O_NONBLOCK on some platforms and not on others.
- 	 */
--	BUILD_BUG_ON(21 - 1 /* for O_RDONLY being 0 */ !+	BUILD_BUG_ON(22 - 1 /* for O_RDONLY being 0 */ ! 		HWEIGHT32(
- 			(VALID_OPEN_FLAGS & ~(O_NONBLOCK | O_NDELAY)) |
- 			__FMODE_EXEC | __FMODE_NONOTIFY));
 diff --git a/fs/namei.c b/fs/namei.c
-index 4ec6168762db..4895717d2760 100644
+index 9df4aa35aedc..617fc7d55977 100644
 --- a/fs/namei.c
 +++ b/fs/namei.c
-@@ -3605,6 +3605,31 @@ static int do_o_path(struct nameidata *nd, unsigned flags, struct file *file)
- 	return error;
+@@ -676,7 +676,7 @@ static int unlazy_walk(struct nameidata *nd)
+ 		goto out1;
+ 	if (!nd->root.mnt) {
+ 		/* Restart from path_init() if nd->root was cleared. */
+-		if (nd->flags & LOOKUP_BENEATH)
++		if (nd->flags & (LOOKUP_BENEATH | LOOKUP_IN_ROOT))
+ 			goto out;
+ 	} else if (!(nd->flags & LOOKUP_ROOT)) {
+ 		if (unlikely(!legitimize_path(nd, &nd->root, nd->root_seq)))
+@@ -809,10 +809,18 @@ static int complete_walk(struct nameidata *nd)
+ 	return status;
  }
  
-+static int do_o_emptypath(struct nameidata *nd, struct file *newfile)
-+{
-+	int error;
-+	struct fd f;
-+
-+	/* We don't support AT_FDCWD since O_PATH cannot be set here. */
-+	f = fdget_raw(nd->dfd);
-+	if (!f.file)
-+		return -EBADF;
-+
-+	/* Update opath_mask as though we went through trailing_symlink(). */
-+	if (!(f.file->f_mode & (FMODE_READ | FMODE_PATH_READ)))
-+		nd->opath_mask &= ~FMODE_PATH_READ;
-+	if (!(f.file->f_mode & (FMODE_WRITE | FMODE_PATH_WRITE)))
-+		nd->opath_mask &= ~FMODE_PATH_WRITE;
-+
-+	/* Obey the same restrictions as magic-links. */
-+	error = may_open_magiclink(f.file->f_mode, nd->acc_mode);
-+	if (!error)
-+		error = vfs_open(&f.file->f_path, newfile);
-+
-+	fdput(f);
-+	return error;
-+}
-+
- static struct file *path_openat(struct nameidata *nd,
- 			const struct open_flags *op, unsigned flags)
+-static void set_root(struct nameidata *nd)
++static int set_root(struct nameidata *nd)
  {
-@@ -3620,6 +3645,8 @@ static struct file *path_openat(struct nameidata *nd,
+ 	struct fs_struct *fs = current->fs;
  
- 	if (unlikely(file->f_flags & __O_TMPFILE)) {
- 		error = do_tmpfile(nd, flags, op, file);
-+	} else if (unlikely(file->f_flags & O_EMPTYPATH)) {
-+		error = do_o_emptypath(nd, file);
- 	} else if (unlikely(file->f_flags & O_PATH)) {
- 		error = do_o_path(nd, flags, file);
++	/*
++	 * Jumping to the real root as part of LOOKUP_IN_ROOT is a BUG in namei,
++	 * but we still have to ensure it doesn't happen because it will cause a
++	 * breakout from the dirfd.
++	 */
++	if (WARN_ON(nd->flags & LOOKUP_IN_ROOT))
++		return -ENOTRECOVERABLE;
++
+ 	if (nd->flags & LOOKUP_RCU) {
+ 		unsigned seq;
+ 
+@@ -824,6 +832,7 @@ static void set_root(struct nameidata *nd)
  	} else {
-diff --git a/fs/open.c b/fs/open.c
-index ab20eae39df7..bdca45528524 100644
---- a/fs/open.c
-+++ b/fs/open.c
-@@ -996,6 +996,8 @@ static inline int build_open_flags(int flags, umode_t mode, struct open_flags *o
- 		lookup_flags |= LOOKUP_DIRECTORY;
- 	if (!(flags & O_NOFOLLOW))
- 		lookup_flags |= LOOKUP_FOLLOW;
-+	if (flags & O_EMPTYPATH)
-+		lookup_flags |= LOOKUP_EMPTY;
- 	op->lookup_flags = lookup_flags;
- 	return 0;
+ 		get_fs_root(fs, &nd->root);
+ 	}
++	return 0;
  }
-@@ -1057,14 +1059,17 @@ long do_sys_open(int dfd, const char __user *filename, int flags, umode_t mode)
+ 
+ static void path_put_conditional(struct path *path, struct nameidata *nd)
+@@ -854,6 +863,11 @@ static int nd_jump_root(struct nameidata *nd)
+ 		if (nd->path.mnt != NULL && nd->path.mnt != nd->root.mnt)
+ 			return -EXDEV;
+ 	}
++	if (!nd->root.mnt) {
++		int error = set_root(nd);
++		if (error)
++			return error;
++	}
+ 	if (nd->flags & LOOKUP_RCU) {
+ 		struct dentry *d;
+ 		nd->path = nd->root;
+@@ -1100,15 +1114,13 @@ const char *get_link(struct nameidata *nd)
+ 			if (unlikely(nd->flags & LOOKUP_NO_MAGICLINKS))
+ 				return ERR_PTR(-ELOOP);
+ 			/* Not currently safe. */
+-			if (unlikely(nd->flags & LOOKUP_BENEATH))
++			if (unlikely(nd->flags & (LOOKUP_BENEATH | LOOKUP_IN_ROOT)))
+ 				return ERR_PTR(-EXDEV);
+ 		}
+ 		if (IS_ERR_OR_NULL(res))
+ 			return res;
+ 	}
+ 	if (*res = '/') {
+-		if (!nd->root.mnt)
+-			set_root(nd);
+ 		error = nd_jump_root(nd);
+ 		if (unlikely(error))
+ 			return ERR_PTR(error);
+@@ -1744,15 +1756,20 @@ static inline int may_lookup(struct nameidata *nd)
+ static inline int handle_dots(struct nameidata *nd, int type)
  {
- 	struct open_flags op;
- 	int fd = build_open_flags(flags, mode, &op);
-+	int empty = 0;
- 	struct filename *tmp;
- 
- 	if (fd)
- 		return fd;
- 
--	tmp = getname(filename);
-+	tmp = getname_flags(filename, op.lookup_flags, &empty);
- 	if (IS_ERR(tmp))
- 		return PTR_ERR(tmp);
-+	if (!empty)
-+		op.open_flag &= ~O_EMPTYPATH;
- 
- 	fd = get_unused_fd_flags(flags);
- 	if (fd >= 0) {
-diff --git a/include/linux/fcntl.h b/include/linux/fcntl.h
-index d019df946cb2..2868ae6c8fc1 100644
---- a/include/linux/fcntl.h
-+++ b/include/linux/fcntl.h
-@@ -9,7 +9,7 @@
- 	(O_RDONLY | O_WRONLY | O_RDWR | O_CREAT | O_EXCL | O_NOCTTY | O_TRUNC | \
- 	 O_APPEND | O_NDELAY | O_NONBLOCK | O_NDELAY | __O_SYNC | O_DSYNC | \
- 	 FASYNC	| O_DIRECT | O_LARGEFILE | O_DIRECTORY | O_NOFOLLOW | \
--	 O_NOATIME | O_CLOEXEC | O_PATH | __O_TMPFILE)
-+	 O_NOATIME | O_CLOEXEC | O_PATH | __O_TMPFILE | O_EMPTYPATH)
- 
- #ifndef force_o_largefile
- #define force_o_largefile() (!IS_ENABLED(CONFIG_ARCH_32BIT_OFF_T))
-diff --git a/include/uapi/asm-generic/fcntl.h b/include/uapi/asm-generic/fcntl.h
-index 9dc0bf0c5a6e..307f7c414a51 100644
---- a/include/uapi/asm-generic/fcntl.h
-+++ b/include/uapi/asm-generic/fcntl.h
-@@ -89,6 +89,11 @@
- #define __O_TMPFILE	020000000
- #endif
- 
-+#ifndef O_EMPTYPATH
-+#define O_EMPTYPATH 040000000
-+#endif
+ 	if (type = LAST_DOTDOT) {
++		int error = 0;
 +
+ 		/*
+ 		 * LOOKUP_BENEATH resolving ".." is not currently safe -- races can
+ 		 * cause our parent to have moved outside of the root and us to skip
+ 		 * over it.
+ 		 */
+-		if (unlikely(nd->flags & LOOKUP_BENEATH))
++		if (unlikely(nd->flags & (LOOKUP_BENEATH | LOOKUP_IN_ROOT)))
+ 			return -EXDEV;
+-		if (!nd->root.mnt)
+-			set_root(nd);
++		if (!nd->root.mnt) {
++			error = set_root(nd);
++			if (error)
++				return error;
++		}
+ 		if (nd->flags & LOOKUP_RCU) {
+ 			return follow_dotdot_rcu(nd);
+ 		} else
+@@ -2251,9 +2268,13 @@ static const char *path_init(struct nameidata *nd, unsigned flags)
+ 
+ 	nd->m_seq = read_seqbegin(&mount_lock);
+ 
++	/* LOOKUP_IN_ROOT treats absolute paths as being relative-to-dirfd. */
++	if (flags & LOOKUP_IN_ROOT)
++		while (*s = '/')
++			s++;
 +
- /* a horrid kludge trying to make sure that this will fail on old kernels */
- #define O_TMPFILE (__O_TMPFILE | O_DIRECTORY)
- #define O_TMPFILE_MASK (__O_TMPFILE | O_DIRECTORY | O_CREAT)      
+ 	/* Figure out the starting path and root (if needed). */
+ 	if (*s = '/') {
+-		set_root(nd);
+ 		error = nd_jump_root(nd);
+ 		if (unlikely(error))
+ 			return ERR_PTR(error);
+@@ -2298,7 +2319,7 @@ static const char *path_init(struct nameidata *nd, unsigned flags)
+ 		fdput(f);
+ 	}
+ 	/* For scoped-lookups we need to set the root to the dirfd as well. */
+-	if (flags & LOOKUP_BENEATH) {
++	if (flags & (LOOKUP_BENEATH | LOOKUP_IN_ROOT)) {
+ 		nd->root = nd->path;
+ 		if (flags & LOOKUP_RCU)
+ 			nd->root_seq = nd->seq;
+diff --git a/include/linux/namei.h b/include/linux/namei.h
+index be407415c28a..ec2c6c588ea7 100644
+--- a/include/linux/namei.h
++++ b/include/linux/namei.h
+@@ -57,6 +57,7 @@ enum {LAST_NORM, LAST_ROOT, LAST_DOT, LAST_DOTDOT, LAST_BIND};
+ #define LOOKUP_NO_MAGICLINKS	0x080000 /* No /proc/$pid/fd/ "symlink" crossing. */
+ #define LOOKUP_NO_SYMLINKS	0x100000 /* No symlink crossing *at all*.
+ 					    Implies LOOKUP_NO_MAGICLINKS. */
++#define LOOKUP_IN_ROOT		0x200000 /* Treat dirfd as %current->fs->root. */
+ 
+ extern int path_pts(struct path *path);
+ 
 -- 
 2.22.0
