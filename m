@@ -1,61 +1,132 @@
-From: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
-Date: Mon, 22 Jul 2019 16:09:50 +0000
-Subject: Re: [PATCH v2 0/7] backlight: gpio: simplify the driver
-Message-Id: <20190722160950.GA9224@smile.fi.intel.com>
+From: Aleksa Sarai <cyphar@cyphar.com>
+Date: Fri, 19 Jul 2019 16:42:24 +0000
+Subject: [PATCH v10 8/9] kselftest: save-and-restore errno to allow for %m formatting
+Message-Id: <20190719164225.27083-9-cyphar@cyphar.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190722150302.29526-1-brgl@bgdev.pl>
-In-Reply-To: <20190722150302.29526-1-brgl@bgdev.pl>
+References: <20190719164225.27083-1-cyphar@cyphar.com>
+In-Reply-To: <20190719164225.27083-1-cyphar@cyphar.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Bartosz Golaszewski <brgl@bgdev.pl>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Lee Jones <lee.jones@linaro.org>, Daniel Thompson <daniel.thompson@linaro.org>, Jingoo Han <jingoohan1@gmail.com>, Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>, Linus Walleij <linus.walleij@linaro.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, dri-devel@lists.freedesktop.org, linux-fbdev@vger.kernel.org, Bartosz Golaszewski <bgolaszewski@baylibre.com>
+To: Al Viro <viro@zeniv.linux.org.uk>, Jeff Layton <jlayton@kernel.org>, "J. Bruce Fields" <bfields@fieldses.org>, Arnd Bergmann <arnd@arndb.de>, David Howells <dhowells@redhat.com>, Shuah Khan <shuah@kernel.org>, Shuah Khan <skhan@linuxfoundation.org>
+Cc: Aleksa Sarai <cyphar@cyphar.com>, Eric Biederman <ebiederm@xmission.com>, Andy Lutomirski <luto@kernel.org>, Andrew Morton <akpm@linux-foundation.org>, Alexei Starovoitov <ast@kernel.org>, Kees Cook <keescook@chromium.org>, Jann Horn <jannh@google.com>, Christian Brauner <christian@brauner.io>, Tycho Andersen <tycho@tycho.ws>, David Drysdale <drysdale@google.com>, Chanho Min <chanho.min@lge.com>, Oleg Nesterov <oleg@redhat.com>, Aleksa Sarai <asarai@suse.de>, Linus Torvalds <torvalds@linux-foundation.org>, containers@lists.linux-foundation.org, linux-alpha@vger.kernel.org, linux-api@vger.kernel.org, linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-fsdevel@vger.kernel.org, linux-ia64@vger.kernel.org, linux-kernel@vger.kernel.org
 
-On Mon, Jul 22, 2019 at 05:02:55PM +0200, Bartosz Golaszewski wrote:
-> From: Bartosz Golaszewski <bgolaszewski@baylibre.com>
-> 
-> While working on my other series related to gpio-backlight[1] I noticed
-> that we could simplify the driver if we made the only user of platform
-> data use GPIO lookups and device properties. This series tries to do
-> that.
-> 
-> The first patch adds all necessary data structures to ecovec24. Patch
-> 2/7 unifies much of the code for both pdata and non-pdata cases. Patches
-> 3-4/7 remove unused platform data fields. Last three patches contain
-> additional improvements for the GPIO backlight driver while we're already
-> modifying it.
-> 
-> I don't have access to this HW but hopefully this works. Only compile
-> tested.
-> 
-> [1] https://lkml.org/lkml/2019/6/25/900
+Previously, using "%m" in a ksft_* format string can result in strange
+output because the errno value wasn't saved before calling other libc
+functions. The solution is to simply save and restore the errno before
+we format the user-supplied format string.
 
-For uncommented ones
-Reviewed-by: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+Signed-off-by: Aleksa Sarai <cyphar@cyphar.com>
+---
+ tools/testing/selftests/kselftest.h | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
 
-> 
-> v1 -> v2:
-> - rebased on top of v5.3-rc1 and adjusted to the recent changes from Andy
-> - added additional two patches with minor improvements
-> 
-> Bartosz Golaszewski (7):
->   sh: ecovec24: add additional properties to the backlight device
->   backlight: gpio: simplify the platform data handling
->   sh: ecovec24: don't set unused fields in platform data
->   backlight: gpio: remove unused fields from platform data
->   backlight: gpio: remove dev from struct gpio_backlight
->   backlight: gpio: remove def_value from struct gpio_backlight
->   backlight: gpio: use a helper variable for &pdev->dev
-> 
->  arch/sh/boards/mach-ecovec24/setup.c         | 33 ++++++--
->  drivers/video/backlight/gpio_backlight.c     | 87 ++++++--------------
->  include/linux/platform_data/gpio_backlight.h |  3 -
->  3 files changed, 48 insertions(+), 75 deletions(-)
-> 
-> -- 
-> 2.21.0
-> 
-
+diff --git a/tools/testing/selftests/kselftest.h b/tools/testing/selftests/kselftest.h
+index ec15c4f6af55..0ac49d91a260 100644
+--- a/tools/testing/selftests/kselftest.h
++++ b/tools/testing/selftests/kselftest.h
+@@ -10,6 +10,7 @@
+ #ifndef __KSELFTEST_H
+ #define __KSELFTEST_H
+ 
++#include <errno.h>
+ #include <stdlib.h>
+ #include <unistd.h>
+ #include <stdarg.h>
+@@ -81,58 +82,68 @@ static inline void ksft_print_cnts(void)
+ 
+ static inline void ksft_print_msg(const char *msg, ...)
+ {
++	int saved_errno = errno;
+ 	va_list args;
+ 
+ 	va_start(args, msg);
+ 	printf("# ");
++	errno = saved_errno;
+ 	vprintf(msg, args);
+ 	va_end(args);
+ }
+ 
+ static inline void ksft_test_result_pass(const char *msg, ...)
+ {
++	int saved_errno = errno;
+ 	va_list args;
+ 
+ 	ksft_cnt.ksft_pass++;
+ 
+ 	va_start(args, msg);
+ 	printf("ok %d ", ksft_test_num());
++	errno = saved_errno;
+ 	vprintf(msg, args);
+ 	va_end(args);
+ }
+ 
+ static inline void ksft_test_result_fail(const char *msg, ...)
+ {
++	int saved_errno = errno;
+ 	va_list args;
+ 
+ 	ksft_cnt.ksft_fail++;
+ 
+ 	va_start(args, msg);
+ 	printf("not ok %d ", ksft_test_num());
++	errno = saved_errno;
+ 	vprintf(msg, args);
+ 	va_end(args);
+ }
+ 
+ static inline void ksft_test_result_skip(const char *msg, ...)
+ {
++	int saved_errno = errno;
+ 	va_list args;
+ 
+ 	ksft_cnt.ksft_xskip++;
+ 
+ 	va_start(args, msg);
+ 	printf("not ok %d # SKIP ", ksft_test_num());
++	errno = saved_errno;
+ 	vprintf(msg, args);
+ 	va_end(args);
+ }
+ 
+ static inline void ksft_test_result_error(const char *msg, ...)
+ {
++	int saved_errno = errno;
+ 	va_list args;
+ 
+ 	ksft_cnt.ksft_error++;
+ 
+ 	va_start(args, msg);
+ 	printf("not ok %d # error ", ksft_test_num());
++	errno = saved_errno;
+ 	vprintf(msg, args);
+ 	va_end(args);
+ }
+@@ -152,10 +163,12 @@ static inline int ksft_exit_fail(void)
+ 
+ static inline int ksft_exit_fail_msg(const char *msg, ...)
+ {
++	int saved_errno = errno;
+ 	va_list args;
+ 
+ 	va_start(args, msg);
+ 	printf("Bail out! ");
++	errno = saved_errno;
+ 	vprintf(msg, args);
+ 	va_end(args);
+ 
+@@ -178,10 +191,12 @@ static inline int ksft_exit_xpass(void)
+ static inline int ksft_exit_skip(const char *msg, ...)
+ {
+ 	if (msg) {
++		int saved_errno = errno;
+ 		va_list args;
+ 
+ 		va_start(args, msg);
+ 		printf("not ok %d # SKIP ", 1 + ksft_test_num());
++		errno = saved_errno;
+ 		vprintf(msg, args);
+ 		va_end(args);
+ 	} else {
 -- 
-With Best Regards,
-Andy Shevchenko
+2.22.0
