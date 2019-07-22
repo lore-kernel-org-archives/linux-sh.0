@@ -1,47 +1,47 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Thu, 13 Jun 2019 07:09:03 +0000
-Subject: [PATCH 17/17] riscv: add binfmt_flat support
-Message-Id: <20190613070903.17214-18-hch@lst.de>
+From: Bartosz Golaszewski <brgl@bgdev.pl>
+Date: Mon, 22 Jul 2019 15:03:00 +0000
+Subject: [PATCH v2 5/7] backlight: gpio: remove dev from struct gpio_backlight
+Message-Id: <20190722150302.29526-6-brgl@bgdev.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190613070903.17214-1-hch@lst.de>
-In-Reply-To: <20190613070903.17214-1-hch@lst.de>
+References: <20190722150302.29526-1-brgl@bgdev.pl>
+In-Reply-To: <20190722150302.29526-1-brgl@bgdev.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Ungerer <gerg@linux-m68k.org>
-Cc: uclinux-h8-devel@lists.sourceforge.jp, linux-xtensa@linux-xtensa.org, Michal Simek <monstr@monstr.eu>, linux-c6x-dev@linux-c6x.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-riscv@lists.infradead.org, linux-arm-kernel@lists.infradead.org
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Lee Jones <lee.jones@linaro.org>, Daniel Thompson <daniel.thompson@linaro.org>, Jingoo Han <jingoohan1@gmail.com>, Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>, Linus Walleij <linus.walleij@linaro.org>, Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, dri-devel@lists.freedesktop.org, linux-fbdev@vger.kernel.org, Bartosz Golaszewski <bgolaszewski@baylibre.com>
 
-Just use the generic definitions.
+From: Bartosz Golaszewski <bgolaszewski@baylibre.com>
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
+This field is unused. Remove it.
+
+Signed-off-by: Bartosz Golaszewski <bgolaszewski@baylibre.com>
 ---
- arch/riscv/Kconfig            | 1 +
- arch/riscv/include/asm/Kbuild | 1 +
- 2 files changed, 2 insertions(+)
+ drivers/video/backlight/gpio_backlight.c | 4 ----
+ 1 file changed, 4 deletions(-)
 
-diff --git a/arch/riscv/Kconfig b/arch/riscv/Kconfig
-index 0c4b12205632..2c19baa8d6c3 100644
---- a/arch/riscv/Kconfig
-+++ b/arch/riscv/Kconfig
-@@ -17,6 +17,7 @@ config RISCV
- 	select OF
- 	select OF_EARLY_FLATTREE
- 	select OF_IRQ
-+	select ARCH_HAS_BINFMT_FLAT
- 	select ARCH_WANT_FRAME_POINTERS
- 	select CLONE_BACKWARDS
- 	select COMMON_CLK
-diff --git a/arch/riscv/include/asm/Kbuild b/arch/riscv/include/asm/Kbuild
-index 5ee646619cc3..1efaeddf1e4b 100644
---- a/arch/riscv/include/asm/Kbuild
-+++ b/arch/riscv/include/asm/Kbuild
-@@ -5,6 +5,7 @@ generic-y += compat.h
- generic-y += device.h
- generic-y += div64.h
- generic-y += extable.h
-+generic-y += flat.h
- generic-y += dma.h
- generic-y += dma-contiguous.h
- generic-y += dma-mapping.h
+diff --git a/drivers/video/backlight/gpio_backlight.c b/drivers/video/backlight/gpio_backlight.c
+index 01262186fa1e..70882556f047 100644
+--- a/drivers/video/backlight/gpio_backlight.c
++++ b/drivers/video/backlight/gpio_backlight.c
+@@ -19,9 +19,7 @@
+ #include <linux/slab.h>
+ 
+ struct gpio_backlight {
+-	struct device *dev;
+ 	struct device *fbdev;
+-
+ 	struct gpio_desc *gpiod;
+ 	int def_value;
+ };
+@@ -69,8 +67,6 @@ static int gpio_backlight_probe(struct platform_device *pdev)
+ 	if (gbl = NULL)
+ 		return -ENOMEM;
+ 
+-	gbl->dev = &pdev->dev;
+-
+ 	if (pdata)
+ 		gbl->fbdev = pdata->fbdev;
+ 
 -- 
-2.20.1
+2.21.0
