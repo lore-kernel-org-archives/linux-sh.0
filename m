@@ -1,77 +1,49 @@
-From: Michal Hocko <mhocko@kernel.org>
-Date: Mon, 01 Jul 2019 08:52:31 +0000
-Subject: Re: [PATCH v3 11/11] mm/memory_hotplug: Remove "zone" parameter from sparse_remove_one_section
-Message-Id: <20190701085231.GK6376@dhcp22.suse.cz>
+From: Bartosz Golaszewski <brgl@bgdev.pl>
+Date: Mon, 22 Jul 2019 15:02:55 +0000
+Subject: [PATCH v2 0/7] backlight: gpio: simplify the driver
+Message-Id: <20190722150302.29526-1-brgl@bgdev.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190527111152.16324-1-david@redhat.com>
- <20190527111152.16324-12-david@redhat.com>
-In-Reply-To: <20190527111152.16324-12-david@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: David Hildenbrand <david@redhat.com>
-Cc: linux-s390@vger.kernel.org, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Wei Yang <richard.weiyang@gmail.com>, linux-mm@kvack.org, Igor Mammedov <imammedo@redhat.com>, akpm@linux-foundation.org, linuxppc-dev@lists.ozlabs.org, Dan Williams <dan.j.williams@intel.com>, linux-arm-kernel@lists.infradead.org
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Lee Jones <lee.jones@linaro.org>, Daniel Thompson <daniel.thompson@linaro.org>, Jingoo Han <jingoohan1@gmail.com>, Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>, Linus Walleij <linus.walleij@linaro.org>, Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, dri-devel@lists.freedesktop.org, linux-fbdev@vger.kernel.org, Bartosz Golaszewski <bgolaszewski@baylibre.com>
 
-On Mon 27-05-19 13:11:52, David Hildenbrand wrote:
-> The parameter is unused, so let's drop it. Memory removal paths should
-> never care about zones. This is the job of memory offlining and will
-> require more refactorings.
-> 
-> Reviewed-by: Dan Williams <dan.j.williams@intel.com>
-> Signed-off-by: David Hildenbrand <david@redhat.com>
+From: Bartosz Golaszewski <bgolaszewski@baylibre.com>
 
-Acked-by: Michal Hocko <mhocko@suse.com>
+While working on my other series related to gpio-backlight[1] I noticed
+that we could simplify the driver if we made the only user of platform
+data use GPIO lookups and device properties. This series tries to do
+that.
 
-> ---
->  include/linux/memory_hotplug.h | 2 +-
->  mm/memory_hotplug.c            | 2 +-
->  mm/sparse.c                    | 4 ++--
->  3 files changed, 4 insertions(+), 4 deletions(-)
-> 
-> diff --git a/include/linux/memory_hotplug.h b/include/linux/memory_hotplug.h
-> index 2f1f87e13baa..1a4257c5f74c 100644
-> --- a/include/linux/memory_hotplug.h
-> +++ b/include/linux/memory_hotplug.h
-> @@ -346,7 +346,7 @@ extern void move_pfn_range_to_zone(struct zone *zone, unsigned long start_pfn,
->  extern bool is_memblock_offlined(struct memory_block *mem);
->  extern int sparse_add_one_section(int nid, unsigned long start_pfn,
->  				  struct vmem_altmap *altmap);
-> -extern void sparse_remove_one_section(struct zone *zone, struct mem_section *ms,
-> +extern void sparse_remove_one_section(struct mem_section *ms,
->  		unsigned long map_offset, struct vmem_altmap *altmap);
->  extern struct page *sparse_decode_mem_map(unsigned long coded_mem_map,
->  					  unsigned long pnum);
-> diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
-> index 82136c5b4c5f..e48ec7b9dee2 100644
-> --- a/mm/memory_hotplug.c
-> +++ b/mm/memory_hotplug.c
-> @@ -524,7 +524,7 @@ static void __remove_section(struct zone *zone, struct mem_section *ms,
->  	start_pfn = section_nr_to_pfn((unsigned long)scn_nr);
->  	__remove_zone(zone, start_pfn);
->  
-> -	sparse_remove_one_section(zone, ms, map_offset, altmap);
-> +	sparse_remove_one_section(ms, map_offset, altmap);
->  }
->  
->  /**
-> diff --git a/mm/sparse.c b/mm/sparse.c
-> index d1d5e05f5b8d..1552c855d62a 100644
-> --- a/mm/sparse.c
-> +++ b/mm/sparse.c
-> @@ -800,8 +800,8 @@ static void free_section_usemap(struct page *memmap, unsigned long *usemap,
->  		free_map_bootmem(memmap);
->  }
->  
-> -void sparse_remove_one_section(struct zone *zone, struct mem_section *ms,
-> -		unsigned long map_offset, struct vmem_altmap *altmap)
-> +void sparse_remove_one_section(struct mem_section *ms, unsigned long map_offset,
-> +			       struct vmem_altmap *altmap)
->  {
->  	struct page *memmap = NULL;
->  	unsigned long *usemap = NULL;
-> -- 
-> 2.20.1
+The first patch adds all necessary data structures to ecovec24. Patch
+2/7 unifies much of the code for both pdata and non-pdata cases. Patches
+3-4/7 remove unused platform data fields. Last three patches contain
+additional improvements for the GPIO backlight driver while we're already
+modifying it.
+
+I don't have access to this HW but hopefully this works. Only compile
+tested.
+
+[1] https://lkml.org/lkml/2019/6/25/900
+
+v1 -> v2:
+- rebased on top of v5.3-rc1 and adjusted to the recent changes from Andy
+- added additional two patches with minor improvements
+
+Bartosz Golaszewski (7):
+  sh: ecovec24: add additional properties to the backlight device
+  backlight: gpio: simplify the platform data handling
+  sh: ecovec24: don't set unused fields in platform data
+  backlight: gpio: remove unused fields from platform data
+  backlight: gpio: remove dev from struct gpio_backlight
+  backlight: gpio: remove def_value from struct gpio_backlight
+  backlight: gpio: use a helper variable for &pdev->dev
+
+ arch/sh/boards/mach-ecovec24/setup.c         | 33 ++++++--
+ drivers/video/backlight/gpio_backlight.c     | 87 ++++++--------------
+ include/linux/platform_data/gpio_backlight.h |  3 -
+ 3 files changed, 48 insertions(+), 75 deletions(-)
 
 -- 
-Michal Hocko
-SUSE Labs
+2.21.0
