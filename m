@@ -1,52 +1,118 @@
-From: Michal Hocko <mhocko@kernel.org>
-Date: Fri, 19 Jul 2019 06:45:10 +0000
-Subject: Re: [PATCH v3 02/11] s390x/mm: Fail when an altmap is used for arch_add_memory()
-Message-Id: <20190719064510.GL30461@dhcp22.suse.cz>
+From: Bartosz Golaszewski <brgl@bgdev.pl>
+Date: Wed, 24 Jul 2019 08:25:03 +0000
+Subject: [PATCH v3 2/7] backlight: gpio: simplify the platform data handling
+Message-Id: <20190724082508.27617-3-brgl@bgdev.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190527111152.16324-1-david@redhat.com>
- <20190527111152.16324-3-david@redhat.com>
- <20190701074306.GC6376@dhcp22.suse.cz>
- <20190701124628.GT6376@dhcp22.suse.cz>
- <86f3ff3d-d035-a806-88b7-b8c7b77c206e@redhat.com>
-In-Reply-To: <86f3ff3d-d035-a806-88b7-b8c7b77c206e@redhat.com>
+References: <20190724082508.27617-1-brgl@bgdev.pl>
+In-Reply-To: <20190724082508.27617-1-brgl@bgdev.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: David Hildenbrand <david@redhat.com>
-Cc: Oscar Salvador <osalvador@suse.com>, linux-s390@vger.kernel.org, linux-ia64@vger.kernel.org, Vasily Gorbik <gor@linux.ibm.com>, linux-sh@vger.kernel.org, Heiko Carstens <heiko.carstens@de.ibm.com>, linux-kernel@vger.kernel.org, Wei Yang <richard.weiyang@gmail.com>, linux-mm@kvack.org, Mike Rapoport <rppt@linux.vnet.ibm.com>, Martin Schwidefsky <schwidefsky@de.ibm.com>, Igor Mammedov <imammedo@redhat.com>, akpm@linux-foundation.org, linuxppc-dev@lists.ozlabs.org, Dan Williams <dan.j.williams@intel.com>, linux-arm-kernel@lists.infradead.org
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Lee Jones <lee.jones@linaro.org>, Daniel Thompson <daniel.thompson@linaro.org>, Jingoo Han <jingoohan1@gmail.com>, Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>, Linus Walleij <linus.walleij@linaro.org>, Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, dri-devel@lists.freedesktop.org, linux-fbdev@vger.kernel.org, Bartosz Golaszewski <bgolaszewski@baylibre.com>
 
-On Mon 15-07-19 12:51:27, David Hildenbrand wrote:
-> On 01.07.19 14:46, Michal Hocko wrote:
-> > On Mon 01-07-19 09:43:06, Michal Hocko wrote:
-> >> On Mon 27-05-19 13:11:43, David Hildenbrand wrote:
-> >>> ZONE_DEVICE is not yet supported, fail if an altmap is passed, so we
-> >>> don't forget arch_add_memory()/arch_remove_memory() when unlocking
-> >>> support.
-> >>
-> >> Why do we need this? Sure ZONE_DEVICE is not supported for s390 and so
-> >> might be the case for other arches which support hotplug. I do not see
-> >> much point in adding warning to each of them.
-> > 
-> > I would drop this one. If there is a strong reason to have something
-> > like that it should come with a better explanation and it can be done on
-> > top.
-> > 
-> 
-> This was requested by Dan and I agree it is the right thing to do.
+From: Bartosz Golaszewski <bgolaszewski@baylibre.com>
 
-This is probably a matter of taste. I would argue that altmap doesn't
-really equal ZONE_DEVICE. This is more a mechanism to use an alternative
-memmap allocator. Sure ZONE_DEVICE is the only in tree user of the
-feature but I really do not see why the arh specific code should care
-about it. The lack of altmap allocator is handled in the sparse code so
-this is just adding an early check which might confuse people in future.
+Now that the last user of platform data (sh ecovec24) defines a proper
+GPIO lookup and sets the 'default-on' device property, we can drop the
+platform_data-specific GPIO handling and unify a big chunk of code.
 
-> In
-> the context of paravirtualized devices (e.g., virtio-pmem), it makes
-> sense to block functionality an arch does not support.
+The only field used from the platform data is now the fbdev pointer.
 
-Then block it on the config dependences.
+Signed-off-by: Bartosz Golaszewski <bgolaszewski@baylibre.com>
+---
+ drivers/video/backlight/gpio_backlight.c | 64 +++++-------------------
+ 1 file changed, 13 insertions(+), 51 deletions(-)
 
+diff --git a/drivers/video/backlight/gpio_backlight.c b/drivers/video/backlight/gpio_backlight.c
+index e84f3087e29f..01262186fa1e 100644
+--- a/drivers/video/backlight/gpio_backlight.c
++++ b/drivers/video/backlight/gpio_backlight.c
+@@ -55,30 +55,6 @@ static const struct backlight_ops gpio_backlight_ops = {
+ 	.check_fb	= gpio_backlight_check_fb,
+ };
+ 
+-static int gpio_backlight_probe_dt(struct platform_device *pdev,
+-				   struct gpio_backlight *gbl)
+-{
+-	struct device *dev = &pdev->dev;
+-	enum gpiod_flags flags;
+-	int ret;
+-
+-	gbl->def_value = device_property_read_bool(dev, "default-on");
+-	flags = gbl->def_value ? GPIOD_OUT_HIGH : GPIOD_OUT_LOW;
+-
+-	gbl->gpiod = devm_gpiod_get(dev, NULL, flags);
+-	if (IS_ERR(gbl->gpiod)) {
+-		ret = PTR_ERR(gbl->gpiod);
+-
+-		if (ret != -EPROBE_DEFER) {
+-			dev_err(dev,
+-				"Error: The gpios parameter is missing or invalid.\n");
+-		}
+-		return ret;
+-	}
+-
+-	return 0;
+-}
+-
+ static int gpio_backlight_probe(struct platform_device *pdev)
+ {
+ 	struct gpio_backlight_platform_data *pdata @@ -86,6 +62,7 @@ static int gpio_backlight_probe(struct platform_device *pdev)
+ 	struct backlight_properties props;
+ 	struct backlight_device *bl;
+ 	struct gpio_backlight *gbl;
++	enum gpiod_flags flags;
+ 	int ret;
+ 
+ 	gbl = devm_kzalloc(&pdev->dev, sizeof(*gbl), GFP_KERNEL);
+@@ -94,35 +71,20 @@ static int gpio_backlight_probe(struct platform_device *pdev)
+ 
+ 	gbl->dev = &pdev->dev;
+ 
+-	if (pdev->dev.fwnode) {
+-		ret = gpio_backlight_probe_dt(pdev, gbl);
+-		if (ret)
+-			return ret;
+-	} else if (pdata) {
+-		/*
+-		 * Legacy platform data GPIO retrieveal. Do not expand
+-		 * the use of this code path, currently only used by one
+-		 * SH board.
+-		 */
+-		unsigned long flags = GPIOF_DIR_OUT;
+-
++	if (pdata)
+ 		gbl->fbdev = pdata->fbdev;
+-		gbl->def_value = pdata->def_value;
+-		flags |= gbl->def_value ? GPIOF_INIT_HIGH : GPIOF_INIT_LOW;
+-
+-		ret = devm_gpio_request_one(gbl->dev, pdata->gpio, flags,
+-					    pdata ? pdata->name : "backlight");
+-		if (ret < 0) {
+-			dev_err(&pdev->dev, "unable to request GPIO\n");
+-			return ret;
++
++	gbl->def_value = device_property_read_bool(&pdev->dev, "default-on");
++	flags = gbl->def_value ? GPIOD_OUT_HIGH : GPIOD_OUT_LOW;
++
++	gbl->gpiod = devm_gpiod_get(&pdev->dev, NULL, flags);
++	if (IS_ERR(gbl->gpiod)) {
++		ret = PTR_ERR(gbl->gpiod);
++		if (ret != -EPROBE_DEFER) {
++			dev_err(&pdev->dev,
++				"Error: The gpios parameter is missing or invalid.\n");
+ 		}
+-		gbl->gpiod = gpio_to_desc(pdata->gpio);
+-		if (!gbl->gpiod)
+-			return -EINVAL;
+-	} else {
+-		dev_err(&pdev->dev,
+-			"failed to find platform data or device tree node.\n");
+-		return -ENODEV;
++		return ret;
+ 	}
+ 
+ 	memset(&props, 0, sizeof(props));
 -- 
-Michal Hocko
-SUSE Labs
+2.21.0
