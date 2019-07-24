@@ -1,92 +1,40 @@
-From: Aleksa Sarai <cyphar@cyphar.com>
-Date: Sun, 28 Jul 2019 01:02:01 +0000
-Subject: [PATCH v11 2/8] procfs: switch magic-link modes to be more sane
-Message-Id: <20190728010207.9781-3-cyphar@cyphar.com>
+From: Bartosz Golaszewski <brgl@bgdev.pl>
+Date: Wed, 24 Jul 2019 08:25:04 +0000
+Subject: [PATCH v3 3/7] sh: ecovec24: don't set unused fields in platform data
+Message-Id: <20190724082508.27617-4-brgl@bgdev.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190728010207.9781-1-cyphar@cyphar.com>
-In-Reply-To: <20190728010207.9781-1-cyphar@cyphar.com>
+References: <20190724082508.27617-1-brgl@bgdev.pl>
+In-Reply-To: <20190724082508.27617-1-brgl@bgdev.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Al Viro <viro@zeniv.linux.org.uk>, Jeff Layton <jlayton@kernel.org>, "J. Bruce Fields" <bfields@fieldses.org>, Arnd Bergmann <arnd@arndb.de>, David Howells <dhowells@redhat.com>, Shuah Khan <shuah@kernel.org>, Shuah Khan <skhan@linuxfoundation.org>
-Cc: Aleksa Sarai <cyphar@cyphar.com>, Eric Biederman <ebiederm@xmission.com>, Andy Lutomirski <luto@kernel.org>, Andrew Morton <akpm@linux-foundation.org>, Alexei Starovoitov <ast@kernel.org>, Kees Cook <keescook@chromium.org>, Jann Horn <jannh@google.com>, Christian Brauner <christian@brauner.io>, Tycho Andersen <tycho@tycho.ws>, David Drysdale <drysdale@google.com>, Chanho Min <chanho.min@lge.com>, Oleg Nesterov <oleg@redhat.com>, Aleksa Sarai <asarai@suse.de>, Linus Torvalds <torvalds@linux-foundation.org>, containers@lists.linux-foundation.org, linux-alpha@vger.kernel.org, linux-api@vger.kernel.org, linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-fsdevel@vger.kernel.org, linux-ia64@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Lee Jones <lee.jones@linaro.org>, Daniel Thompson <daniel.thompson@linaro.org>, Jingoo Han <jingoohan1@gmail.com>, Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>, Linus Walleij <linus.walleij@linaro.org>, Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, dri-devel@lists.freedesktop.org, linux-fbdev@vger.kernel.org, Bartosz Golaszewski <bgolaszewski@baylibre.com>
 
-Now that magic-link modes are obeyed for file re-opening purposes, some
-of the pre-existing magic-link modes need to be adjusted to be more
-semantically correct.
+From: Bartosz Golaszewski <bgolaszewski@baylibre.com>
 
-The most blatant example of this is /proc/self/exe, which had a mode of
-a+rwx even though tautologically the file could never be opened for
-writing (because it is the current->mm of a live process).
+Platform data fields other than fbdev are no longer used by the
+backlight driver. Remove them.
 
-With the new O_PATH restrictions, changing the default mode of these
-magic-links allows us to avoid delayed-access attacks such as we saw in
-CVE-2019-5736.
-
-Signed-off-by: Aleksa Sarai <cyphar@cyphar.com>
+Signed-off-by: Bartosz Golaszewski <bgolaszewski@baylibre.com>
+Reviewed-by: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
 ---
- fs/proc/base.c       | 20 ++++++++++----------
- fs/proc/namespaces.c |  2 +-
- 2 files changed, 11 insertions(+), 11 deletions(-)
+ arch/sh/boards/mach-ecovec24/setup.c | 3 ---
+ 1 file changed, 3 deletions(-)
 
-diff --git a/fs/proc/base.c b/fs/proc/base.c
-index ebea9501afb8..297242174402 100644
---- a/fs/proc/base.c
-+++ b/fs/proc/base.c
-@@ -133,9 +133,9 @@ struct pid_entry {
+diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
+index 6926bb3865b9..64a5a1662b6d 100644
+--- a/arch/sh/boards/mach-ecovec24/setup.c
++++ b/arch/sh/boards/mach-ecovec24/setup.c
+@@ -386,9 +386,6 @@ static struct property_entry gpio_backlight_props[] = {
  
- #define DIR(NAME, MODE, iops, fops)	\
- 	NOD(NAME, (S_IFDIR|(MODE)), &iops, &fops, {} )
--#define LNK(NAME, get_link)					\
--	NOD(NAME, (S_IFLNK|S_IRWXUGO),				\
--		&proc_pid_link_inode_operations, NULL,		\
-+#define LNK(NAME, MODE, get_link)			\
-+	NOD(NAME, (S_IFLNK|(MODE)),			\
-+		&proc_pid_link_inode_operations, NULL,	\
- 		{ .proc_get_link = get_link } )
- #define REG(NAME, MODE, fops)				\
- 	NOD(NAME, (S_IFREG|(MODE)), NULL, &fops, {})
-@@ -3028,9 +3028,9 @@ static const struct pid_entry tgid_base_stuff[] = {
- 	REG("numa_maps",  S_IRUGO, proc_pid_numa_maps_operations),
- #endif
- 	REG("mem",        S_IRUSR|S_IWUSR, proc_mem_operations),
--	LNK("cwd",        proc_cwd_link),
--	LNK("root",       proc_root_link),
--	LNK("exe",        proc_exe_link),
-+	LNK("cwd",        S_IRWXUGO, proc_cwd_link),
-+	LNK("root",       S_IRWXUGO, proc_root_link),
-+	LNK("exe",        S_IRUGO|S_IXUGO, proc_exe_link),
- 	REG("mounts",     S_IRUGO, proc_mounts_operations),
- 	REG("mountinfo",  S_IRUGO, proc_mountinfo_operations),
- 	REG("mountstats", S_IRUSR, proc_mountstats_operations),
-@@ -3429,11 +3429,11 @@ static const struct pid_entry tid_base_stuff[] = {
- 	REG("numa_maps", S_IRUGO, proc_pid_numa_maps_operations),
- #endif
- 	REG("mem",       S_IRUSR|S_IWUSR, proc_mem_operations),
--	LNK("cwd",       proc_cwd_link),
--	LNK("root",      proc_root_link),
--	LNK("exe",       proc_exe_link),
-+	LNK("cwd",       S_IRWXUGO, proc_cwd_link),
-+	LNK("root",      S_IRWXUGO, proc_root_link),
-+	LNK("exe",       S_IRUGO|S_IXUGO, proc_exe_link),
- 	REG("mounts",    S_IRUGO, proc_mounts_operations),
--	REG("mountinfo",  S_IRUGO, proc_mountinfo_operations),
-+	REG("mountinfo", S_IRUGO, proc_mountinfo_operations),
- #ifdef CONFIG_PROC_PAGE_MONITOR
- 	REG("clear_refs", S_IWUSR, proc_clear_refs_operations),
- 	REG("smaps",     S_IRUGO, proc_pid_smaps_operations),
-diff --git a/fs/proc/namespaces.c b/fs/proc/namespaces.c
-index dd2b35f78b09..cd1e130913f7 100644
---- a/fs/proc/namespaces.c
-+++ b/fs/proc/namespaces.c
-@@ -94,7 +94,7 @@ static struct dentry *proc_ns_instantiate(struct dentry *dentry,
- 	struct inode *inode;
- 	struct proc_inode *ei;
+ static struct gpio_backlight_platform_data gpio_backlight_data = {
+ 	.fbdev = &lcdc_device.dev,
+-	.gpio = GPIO_PTR1,
+-	.def_value = 1,
+-	.name = "backlight",
+ };
  
--	inode = proc_pid_make_inode(dentry->d_sb, task, S_IFLNK | S_IRWXUGO);
-+	inode = proc_pid_make_inode(dentry->d_sb, task, S_IFLNK | S_IRUGO);
- 	if (!inode)
- 		return ERR_PTR(-ENOENT);
- 
+ static const struct platform_device_info gpio_backlight_device_info = {
 -- 
-2.22.0
+2.21.0
