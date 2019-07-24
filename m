@@ -1,54 +1,39 @@
-From: Daniel Thompson <daniel.thompson@linaro.org>
-Date: Mon, 22 Jul 2019 15:20:44 +0000
-Subject: Re: [PATCH v2 5/7] backlight: gpio: remove dev from struct gpio_backlight
-Message-Id: <20190722152044.7zwf2xtzbpesjrmv@holly.lan>
+From: Bartosz Golaszewski <brgl@bgdev.pl>
+Date: Wed, 24 Jul 2019 08:25:05 +0000
+Subject: [PATCH v3 4/7] backlight: gpio: remove unused fields from platform data
+Message-Id: <20190724082508.27617-5-brgl@bgdev.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190722150302.29526-1-brgl@bgdev.pl>
- <20190722150302.29526-6-brgl@bgdev.pl>
-In-Reply-To: <20190722150302.29526-6-brgl@bgdev.pl>
+References: <20190724082508.27617-1-brgl@bgdev.pl>
+In-Reply-To: <20190724082508.27617-1-brgl@bgdev.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Bartosz Golaszewski <brgl@bgdev.pl>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Lee Jones <lee.jones@linaro.org>, Jingoo Han <jingoohan1@gmail.com>, Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>, Linus Walleij <linus.walleij@linaro.org>, Andy Shevchenko <andriy.shevchenko@linux.intel.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, dri-devel@lists.freedesktop.org, linux-fbdev@vger.kernel.org, Bartosz Golaszewski <bgolaszewski@baylibre.com>
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Lee Jones <lee.jones@linaro.org>, Daniel Thompson <daniel.thompson@linaro.org>, Jingoo Han <jingoohan1@gmail.com>, Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>, Linus Walleij <linus.walleij@linaro.org>, Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, dri-devel@lists.freedesktop.org, linux-fbdev@vger.kernel.org, Bartosz Golaszewski <bgolaszewski@baylibre.com>
 
-On Mon, Jul 22, 2019 at 05:03:00PM +0200, Bartosz Golaszewski wrote:
-> From: Bartosz Golaszewski <bgolaszewski@baylibre.com>
-> 
-> This field is unused. Remove it.
-> 
-> Signed-off-by: Bartosz Golaszewski <bgolaszewski@baylibre.com>
+From: Bartosz Golaszewski <bgolaszewski@baylibre.com>
 
-Reviewed-by: Daniel Thompson <daniel.thompson@linaro.org>
+Remove the platform data fields that nobody uses.
 
+Signed-off-by: Bartosz Golaszewski <bgolaszewski@baylibre.com>
+Reviewed-by: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+---
+ include/linux/platform_data/gpio_backlight.h | 3 ---
+ 1 file changed, 3 deletions(-)
 
-> ---
->  drivers/video/backlight/gpio_backlight.c | 4 ----
->  1 file changed, 4 deletions(-)
-> 
-> diff --git a/drivers/video/backlight/gpio_backlight.c b/drivers/video/backlight/gpio_backlight.c
-> index 01262186fa1e..70882556f047 100644
-> --- a/drivers/video/backlight/gpio_backlight.c
-> +++ b/drivers/video/backlight/gpio_backlight.c
-> @@ -19,9 +19,7 @@
->  #include <linux/slab.h>
->  
->  struct gpio_backlight {
-> -	struct device *dev;
->  	struct device *fbdev;
-> -
->  	struct gpio_desc *gpiod;
->  	int def_value;
->  };
-> @@ -69,8 +67,6 @@ static int gpio_backlight_probe(struct platform_device *pdev)
->  	if (gbl = NULL)
->  		return -ENOMEM;
->  
-> -	gbl->dev = &pdev->dev;
-> -
->  	if (pdata)
->  		gbl->fbdev = pdata->fbdev;
->  
-> -- 
-> 2.21.0
-> 
+diff --git a/include/linux/platform_data/gpio_backlight.h b/include/linux/platform_data/gpio_backlight.h
+index 34179d600360..1a8b5b1946fe 100644
+--- a/include/linux/platform_data/gpio_backlight.h
++++ b/include/linux/platform_data/gpio_backlight.h
+@@ -9,9 +9,6 @@ struct device;
+ 
+ struct gpio_backlight_platform_data {
+ 	struct device *fbdev;
+-	int gpio;
+-	int def_value;
+-	const char *name;
+ };
+ 
+ #endif
+-- 
+2.21.0
