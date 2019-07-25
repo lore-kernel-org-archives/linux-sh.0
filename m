@@ -1,54 +1,151 @@
-From: Daniel Thompson <daniel.thompson@linaro.org>
-Date: Wed, 24 Jul 2019 11:13:11 +0000
-Subject: Re: [PATCH v3 5/7] backlight: gpio: remove dev from struct gpio_backlight
-Message-Id: <20190724111311.zkhc4qzdktrw4sak@holly.lan>
+From: Christoph Hellwig <hch@lst.de>
+Date: Thu, 25 Jul 2019 06:34:00 +0000
+Subject: [PATCH 4/5] dma-mapping: provide a better default ->get_required_mask
+Message-Id: <20190725063401.29904-5-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190724082508.27617-1-brgl@bgdev.pl>
- <20190724082508.27617-6-brgl@bgdev.pl>
-In-Reply-To: <20190724082508.27617-6-brgl@bgdev.pl>
+References: <20190725063401.29904-1-hch@lst.de>
+In-Reply-To: <20190725063401.29904-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Bartosz Golaszewski <brgl@bgdev.pl>
-Cc: linux-fbdev@vger.kernel.org, Rich Felker <dalias@libc.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>, Jingoo Han <jingoohan1@gmail.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, dri-devel@lists.freedesktop.org, Bartosz Golaszewski <bgolaszewski@baylibre.com>, Andy Shevchenko <andriy.shevchenko@linux.intel.com>, Lee Jones <lee.jones@linaro.org>
+To: iommu@lists.linux-foundation.org, Marek Szyprowski <m.szyprowski@samsung.com>
+Cc: linux-xtensa@linux-xtensa.org, Michal Simek <monstr@monstr.eu>, linux-parisc@vger.kernel.org, linux-sh@vger.kernel.org, Takashi Iwai <tiwai@suse.de>, linuxppc-dev@lists.ozlabs.org, x86@kernel.org, linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, Robin Murphy <robin.murphy@arm.com>, linux-arm-kernel@lists.infradead.org
 
-On Wed, Jul 24, 2019 at 10:25:06AM +0200, Bartosz Golaszewski wrote:
-> From: Bartosz Golaszewski <bgolaszewski@baylibre.com>
-> 
-> This field is unused. Remove it.
-> 
-> Signed-off-by: Bartosz Golaszewski <bgolaszewski@baylibre.com>
-> Reviewed-by: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+Most dma_map_ops instances are IOMMUs that work perfectly fine in 32-bits
+of IOVA space, and the generic direct mapping code already provides its
+own routines that is intelligent based on the amount of memory actually
+present.  Wire up the dma-direct routine for the ARM direct mapping code
+as well, and otherwise default to the constant 32-bit mask.  This way
+we only need to override it for the occasional odd IOMMU that requires
+64-bit IOVA support, or IOMMU drivers that are more efficient if they
+can fall back to the direct mapping.
 
-Reviewed-by: Daniel Thompson <daniel.thompson@linaro.org>
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+---
+ arch/arm/mm/dma-mapping.c               |  3 +++
+ arch/powerpc/platforms/ps3/system-bus.c |  7 ------
+ arch/x86/kernel/amd_gart_64.c           |  1 +
+ kernel/dma/mapping.c                    | 30 +++++++++----------------
+ 4 files changed, 14 insertions(+), 27 deletions(-)
 
-> ---
->  drivers/video/backlight/gpio_backlight.c | 4 ----
->  1 file changed, 4 deletions(-)
-> 
-> diff --git a/drivers/video/backlight/gpio_backlight.c b/drivers/video/backlight/gpio_backlight.c
-> index 01262186fa1e..70882556f047 100644
-> --- a/drivers/video/backlight/gpio_backlight.c
-> +++ b/drivers/video/backlight/gpio_backlight.c
-> @@ -19,9 +19,7 @@
->  #include <linux/slab.h>
->  
->  struct gpio_backlight {
-> -	struct device *dev;
->  	struct device *fbdev;
-> -
->  	struct gpio_desc *gpiod;
->  	int def_value;
->  };
-> @@ -69,8 +67,6 @@ static int gpio_backlight_probe(struct platform_device *pdev)
->  	if (gbl = NULL)
->  		return -ENOMEM;
->  
-> -	gbl->dev = &pdev->dev;
-> -
->  	if (pdata)
->  		gbl->fbdev = pdata->fbdev;
->  
-> -- 
-> 2.21.0
-> 
+diff --git a/arch/arm/mm/dma-mapping.c b/arch/arm/mm/dma-mapping.c
+index 4410af33c5c4..9c9a23e5600d 100644
+--- a/arch/arm/mm/dma-mapping.c
++++ b/arch/arm/mm/dma-mapping.c
+@@ -14,6 +14,7 @@
+ #include <linux/list.h>
+ #include <linux/init.h>
+ #include <linux/device.h>
++#include <linux/dma-direct.h>
+ #include <linux/dma-mapping.h>
+ #include <linux/dma-noncoherent.h>
+ #include <linux/dma-contiguous.h>
+@@ -192,6 +193,7 @@ const struct dma_map_ops arm_dma_ops = {
+ 	.sync_sg_for_cpu	= arm_dma_sync_sg_for_cpu,
+ 	.sync_sg_for_device	= arm_dma_sync_sg_for_device,
+ 	.dma_supported		= arm_dma_supported,
++	.get_required_mask	= dma_direct_get_required_mask,
+ };
+ EXPORT_SYMBOL(arm_dma_ops);
+ 
+@@ -212,6 +214,7 @@ const struct dma_map_ops arm_coherent_dma_ops = {
+ 	.map_sg			= arm_dma_map_sg,
+ 	.map_resource		= dma_direct_map_resource,
+ 	.dma_supported		= arm_dma_supported,
++	.get_required_mask	= dma_direct_get_required_mask,
+ };
+ EXPORT_SYMBOL(arm_coherent_dma_ops);
+ 
+diff --git a/arch/powerpc/platforms/ps3/system-bus.c b/arch/powerpc/platforms/ps3/system-bus.c
+index 70fcc9736a8c..3542b7bd6a46 100644
+--- a/arch/powerpc/platforms/ps3/system-bus.c
++++ b/arch/powerpc/platforms/ps3/system-bus.c
+@@ -686,18 +686,12 @@ static int ps3_dma_supported(struct device *_dev, u64 mask)
+ 	return mask >= DMA_BIT_MASK(32);
+ }
+ 
+-static u64 ps3_dma_get_required_mask(struct device *_dev)
+-{
+-	return DMA_BIT_MASK(32);
+-}
+-
+ static const struct dma_map_ops ps3_sb_dma_ops = {
+ 	.alloc = ps3_alloc_coherent,
+ 	.free = ps3_free_coherent,
+ 	.map_sg = ps3_sb_map_sg,
+ 	.unmap_sg = ps3_sb_unmap_sg,
+ 	.dma_supported = ps3_dma_supported,
+-	.get_required_mask = ps3_dma_get_required_mask,
+ 	.map_page = ps3_sb_map_page,
+ 	.unmap_page = ps3_unmap_page,
+ 	.mmap = dma_common_mmap,
+@@ -710,7 +704,6 @@ static const struct dma_map_ops ps3_ioc0_dma_ops = {
+ 	.map_sg = ps3_ioc0_map_sg,
+ 	.unmap_sg = ps3_ioc0_unmap_sg,
+ 	.dma_supported = ps3_dma_supported,
+-	.get_required_mask = ps3_dma_get_required_mask,
+ 	.map_page = ps3_ioc0_map_page,
+ 	.unmap_page = ps3_unmap_page,
+ 	.mmap = dma_common_mmap,
+diff --git a/arch/x86/kernel/amd_gart_64.c b/arch/x86/kernel/amd_gart_64.c
+index a65b4a9c7f87..d02662238b57 100644
+--- a/arch/x86/kernel/amd_gart_64.c
++++ b/arch/x86/kernel/amd_gart_64.c
+@@ -680,6 +680,7 @@ static const struct dma_map_ops gart_dma_ops = {
+ 	.dma_supported			= dma_direct_supported,
+ 	.mmap				= dma_common_mmap,
+ 	.get_sgtable			= dma_common_get_sgtable,
++	.get_required_mask		= dma_direct_get_required_mask,
+ };
+ 
+ static void gart_iommu_shutdown(void)
+diff --git a/kernel/dma/mapping.c b/kernel/dma/mapping.c
+index cdb157cd70e7..7dff1829c8c5 100644
+--- a/kernel/dma/mapping.c
++++ b/kernel/dma/mapping.c
+@@ -231,25 +231,6 @@ int dma_mmap_attrs(struct device *dev, struct vm_area_struct *vma,
+ }
+ EXPORT_SYMBOL(dma_mmap_attrs);
+ 
+-static u64 dma_default_get_required_mask(struct device *dev)
+-{
+-	u32 low_totalram = ((max_pfn - 1) << PAGE_SHIFT);
+-	u32 high_totalram = ((max_pfn - 1) >> (32 - PAGE_SHIFT));
+-	u64 mask;
+-
+-	if (!high_totalram) {
+-		/* convert to mask just covering totalram */
+-		low_totalram = (1 << (fls(low_totalram) - 1));
+-		low_totalram += low_totalram - 1;
+-		mask = low_totalram;
+-	} else {
+-		high_totalram = (1 << (fls(high_totalram) - 1));
+-		high_totalram += high_totalram - 1;
+-		mask = (((u64)high_totalram) << 32) + 0xffffffff;
+-	}
+-	return mask;
+-}
+-
+ u64 dma_get_required_mask(struct device *dev)
+ {
+ 	const struct dma_map_ops *ops = get_dma_ops(dev);
+@@ -258,7 +239,16 @@ u64 dma_get_required_mask(struct device *dev)
+ 		return dma_direct_get_required_mask(dev);
+ 	if (ops->get_required_mask)
+ 		return ops->get_required_mask(dev);
+-	return dma_default_get_required_mask(dev);
++
++	/*
++	 * We require every DMA ops implementation to at least support a 32-bit
++	 * DMA mask (and use bounce buffering if that isn't supported in
++	 * hardware).  As the direct mapping code has its own routine to
++	 * actually report an optimal mask we default to 32-bit here as that
++	 * is the right thing for most IOMMUs, and at least not actively
++	 * harmful in general.
++	 */
++	return DMA_BIT_MASK(32);
+ }
+ EXPORT_SYMBOL_GPL(dma_get_required_mask);
+ 
+-- 
+2.20.1
