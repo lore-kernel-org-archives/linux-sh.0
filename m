@@ -1,402 +1,267 @@
-From: Mauro Carvalho Chehab <mchehab+samsung@kernel.org>
-Date: Fri, 26 Jul 2019 11:31:24 +0000
-Subject: [PATCH v2 10/10] docs: remove extra conf.py files
-Message-Id: <4b04d4e7df9b638de0919417da31af491833400f.1564139914.git.mchehab+samsung@kernel.org>
+From: Christoph Hellwig <hch@lst.de>
+Date: Thu, 25 Jul 2019 06:33:59 +0000
+Subject: [PATCH 3/5] dma-mapping: explicitly wire up ->mmap and ->get_sgtable
+Message-Id: <20190725063401.29904-4-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1564139914.git.mchehab+samsung@kernel.org>
-In-Reply-To: <cover.1564139914.git.mchehab+samsung@kernel.org>
+References: <20190725063401.29904-1-hch@lst.de>
+In-Reply-To: <20190725063401.29904-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: Mauro Carvalho Chehab <mchehab+samsung@kernel.org>, Jonathan Corbet <corbet@lwn.net>, Herbert Xu <herbert@gondor.apana.org.au>, "David S. Miller" <davem@davemloft.net>, Maarten Lankhorst <maarten.lankhorst@linux.intel.com>, Maxime Ripard <maxime.ripard@bootlin.com>, Sean Paul <sean@poorly.run>, David Airlie <airlied@linux.ie>, Daniel Vetter <daniel@ffwll.ch>, Dmitry Torokhov <dmitry.torokhov@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Jaroslav Kysela <perex@perex.cz>, Takashi Iwai <tiwai@suse.com>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>, "H. Peter Anvin" <hpa@zytor.com>, x86@kernel.org, linux-doc@vger.kernel.org, linux-crypto@vger.kernel.org, dri
+To: iommu@lists.linux-foundation.org, Marek Szyprowski <m.szyprowski@samsung.com>
+Cc: linux-xtensa@linux-xtensa.org, Michal Simek <monstr@monstr.eu>, linux-parisc@vger.kernel.org, linux-sh@vger.kernel.org, Takashi Iwai <tiwai@suse.de>, linuxppc-dev@lists.ozlabs.org, x86@kernel.org, linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, Robin Murphy <robin.murphy@arm.com>, linux-arm-kernel@lists.infradead.org
 
-Now that the latex_documents are handled automatically, we can
-remove those extra conf.py files.
+While the default ->mmap and ->get_sgtable implementations work for the
+majority of our dma_map_ops impementations they are inherently safe
+for others that don't use the page allocator or CMA and/or use their
+own way of remapping not covered by the common code.  So remove the
+defaults if these methods are not wired up, but instead wire up the
+default implementations for all safe instances.
 
-Signed-off-by: Mauro Carvalho Chehab <mchehab+samsung@kernel.org>
+Fixes: e1c7e324539a ("dma-mapping: always provide the dma_map_ops based implementation")
+Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- Documentation/admin-guide/conf.py      | 10 ----------
- Documentation/core-api/conf.py         | 10 ----------
- Documentation/crypto/conf.py           | 10 ----------
- Documentation/dev-tools/conf.py        | 10 ----------
- Documentation/doc-guide/conf.py        | 10 ----------
- Documentation/driver-api/80211/conf.py | 10 ----------
- Documentation/driver-api/conf.py       | 10 ----------
- Documentation/driver-api/pm/conf.py    | 10 ----------
- Documentation/filesystems/conf.py      | 10 ----------
- Documentation/gpu/conf.py              | 10 ----------
- Documentation/input/conf.py            | 10 ----------
- Documentation/kernel-hacking/conf.py   | 10 ----------
- Documentation/maintainer/conf.py       | 10 ----------
- Documentation/media/conf.py            | 12 ------------
- Documentation/networking/conf.py       | 10 ----------
- Documentation/process/conf.py          | 10 ----------
- Documentation/sh/conf.py               | 10 ----------
- Documentation/sound/conf.py            | 10 ----------
- Documentation/userspace-api/conf.py    | 10 ----------
- Documentation/vm/conf.py               | 10 ----------
- Documentation/x86/conf.py              | 10 ----------
- 21 files changed, 212 deletions(-)
- delete mode 100644 Documentation/admin-guide/conf.py
- delete mode 100644 Documentation/core-api/conf.py
- delete mode 100644 Documentation/crypto/conf.py
- delete mode 100644 Documentation/dev-tools/conf.py
- delete mode 100644 Documentation/doc-guide/conf.py
- delete mode 100644 Documentation/driver-api/80211/conf.py
- delete mode 100644 Documentation/driver-api/conf.py
- delete mode 100644 Documentation/driver-api/pm/conf.py
- delete mode 100644 Documentation/filesystems/conf.py
- delete mode 100644 Documentation/gpu/conf.py
- delete mode 100644 Documentation/input/conf.py
- delete mode 100644 Documentation/kernel-hacking/conf.py
- delete mode 100644 Documentation/maintainer/conf.py
- delete mode 100644 Documentation/media/conf.py
- delete mode 100644 Documentation/networking/conf.py
- delete mode 100644 Documentation/process/conf.py
- delete mode 100644 Documentation/sh/conf.py
- delete mode 100644 Documentation/sound/conf.py
- delete mode 100644 Documentation/userspace-api/conf.py
- delete mode 100644 Documentation/vm/conf.py
- delete mode 100644 Documentation/x86/conf.py
+ arch/alpha/kernel/pci_iommu.c           |  2 ++
+ arch/ia64/hp/common/sba_iommu.c         |  2 ++
+ arch/ia64/sn/pci/pci_dma.c              |  2 ++
+ arch/mips/jazz/jazzdma.c                |  2 ++
+ arch/powerpc/kernel/dma-iommu.c         |  2 ++
+ arch/powerpc/platforms/ps3/system-bus.c |  4 ++++
+ arch/powerpc/platforms/pseries/vio.c    |  2 ++
+ arch/s390/pci/pci_dma.c                 |  2 ++
+ arch/sparc/kernel/iommu.c               |  2 ++
+ arch/sparc/kernel/pci_sun4v.c           |  2 ++
+ arch/x86/kernel/amd_gart_64.c           |  2 ++
+ arch/x86/kernel/pci-calgary_64.c        |  2 ++
+ drivers/iommu/amd_iommu.c               |  2 ++
+ drivers/iommu/intel-iommu.c             |  2 ++
+ kernel/dma/mapping.c                    | 20 ++++++++++++--------
+ 15 files changed, 42 insertions(+), 8 deletions(-)
 
-diff --git a/Documentation/admin-guide/conf.py b/Documentation/admin-guide/conf.py
-deleted file mode 100644
-index 86f738953799..000000000000
---- a/Documentation/admin-guide/conf.py
-+++ /dev/null
-@@ -1,10 +0,0 @@
--# -*- coding: utf-8; mode: python -*-
--
--project = 'Linux Kernel User Documentation'
--
--tags.add("subproject")
--
--latex_documents = [
--    ('index', 'linux-user.tex', 'Linux Kernel User Documentation',
--     'The kernel development community', 'manual'),
--]
-diff --git a/Documentation/core-api/conf.py b/Documentation/core-api/conf.py
-deleted file mode 100644
-index db1f7659f3da..000000000000
---- a/Documentation/core-api/conf.py
-+++ /dev/null
-@@ -1,10 +0,0 @@
--# -*- coding: utf-8; mode: python -*-
--
--project = "Core-API Documentation"
--
--tags.add("subproject")
--
--latex_documents = [
--    ('index', 'core-api.tex', project,
--     'The kernel development community', 'manual'),
--]
-diff --git a/Documentation/crypto/conf.py b/Documentation/crypto/conf.py
-deleted file mode 100644
-index 4335d251ddf3..000000000000
---- a/Documentation/crypto/conf.py
-+++ /dev/null
-@@ -1,10 +0,0 @@
--# -*- coding: utf-8; mode: python -*-
--
--project = 'Linux Kernel Crypto API'
--
--tags.add("subproject")
--
--latex_documents = [
--    ('index', 'crypto-api.tex', 'Linux Kernel Crypto API manual',
--     'The kernel development community', 'manual'),
--]
-diff --git a/Documentation/dev-tools/conf.py b/Documentation/dev-tools/conf.py
-deleted file mode 100644
-index 7faafa3f7888..000000000000
---- a/Documentation/dev-tools/conf.py
-+++ /dev/null
-@@ -1,10 +0,0 @@
--# -*- coding: utf-8; mode: python -*-
--
--project = "Development tools for the kernel"
--
--tags.add("subproject")
--
--latex_documents = [
--    ('index', 'dev-tools.tex', project,
--     'The kernel development community', 'manual'),
--]
-diff --git a/Documentation/doc-guide/conf.py b/Documentation/doc-guide/conf.py
-deleted file mode 100644
-index fd3731182d5a..000000000000
---- a/Documentation/doc-guide/conf.py
-+++ /dev/null
-@@ -1,10 +0,0 @@
--# -*- coding: utf-8; mode: python -*-
--
--project = 'Linux Kernel Documentation Guide'
--
--tags.add("subproject")
--
--latex_documents = [
--    ('index', 'kernel-doc-guide.tex', 'Linux Kernel Documentation Guide',
--     'The kernel development community', 'manual'),
--]
-diff --git a/Documentation/driver-api/80211/conf.py b/Documentation/driver-api/80211/conf.py
-deleted file mode 100644
-index 4424b4b0b9c3..000000000000
---- a/Documentation/driver-api/80211/conf.py
-+++ /dev/null
-@@ -1,10 +0,0 @@
--# -*- coding: utf-8; mode: python -*-
--
--project = "Linux 802.11 Driver Developer's Guide"
--
--tags.add("subproject")
--
--latex_documents = [
--    ('index', '80211.tex', project,
--     'The kernel development community', 'manual'),
--]
-diff --git a/Documentation/driver-api/conf.py b/Documentation/driver-api/conf.py
-deleted file mode 100644
-index 202726d20088..000000000000
---- a/Documentation/driver-api/conf.py
-+++ /dev/null
-@@ -1,10 +0,0 @@
--# -*- coding: utf-8; mode: python -*-
--
--project = "The Linux driver implementer's API guide"
--
--tags.add("subproject")
--
--latex_documents = [
--    ('index', 'driver-api.tex', project,
--     'The kernel development community', 'manual'),
--]
-diff --git a/Documentation/driver-api/pm/conf.py b/Documentation/driver-api/pm/conf.py
-deleted file mode 100644
-index a89fac11272f..000000000000
---- a/Documentation/driver-api/pm/conf.py
-+++ /dev/null
-@@ -1,10 +0,0 @@
--# -*- coding: utf-8; mode: python -*-
--
--project = "Device Power Management"
--
--tags.add("subproject")
--
--latex_documents = [
--    ('index', 'pm.tex', project,
--     'The kernel development community', 'manual'),
--]
-diff --git a/Documentation/filesystems/conf.py b/Documentation/filesystems/conf.py
-deleted file mode 100644
-index ea44172af5c4..000000000000
---- a/Documentation/filesystems/conf.py
-+++ /dev/null
-@@ -1,10 +0,0 @@
--# -*- coding: utf-8; mode: python -*-
--
--project = "Linux Filesystems API"
--
--tags.add("subproject")
--
--latex_documents = [
--    ('index', 'filesystems.tex', project,
--     'The kernel development community', 'manual'),
--]
-diff --git a/Documentation/gpu/conf.py b/Documentation/gpu/conf.py
-deleted file mode 100644
-index 1757b040fb32..000000000000
---- a/Documentation/gpu/conf.py
-+++ /dev/null
-@@ -1,10 +0,0 @@
--# -*- coding: utf-8; mode: python -*-
--
--project = "Linux GPU Driver Developer's Guide"
--
--tags.add("subproject")
--
--latex_documents = [
--    ('index', 'gpu.tex', project,
--     'The kernel development community', 'manual'),
--]
-diff --git a/Documentation/input/conf.py b/Documentation/input/conf.py
-deleted file mode 100644
-index d2352fdc92ed..000000000000
---- a/Documentation/input/conf.py
-+++ /dev/null
-@@ -1,10 +0,0 @@
--# -*- coding: utf-8; mode: python -*-
--
--project = "The Linux input driver subsystem"
--
--tags.add("subproject")
--
--latex_documents = [
--    ('index', 'linux-input.tex', project,
--     'The kernel development community', 'manual'),
--]
-diff --git a/Documentation/kernel-hacking/conf.py b/Documentation/kernel-hacking/conf.py
-deleted file mode 100644
-index 3d8acf0f33ad..000000000000
---- a/Documentation/kernel-hacking/conf.py
-+++ /dev/null
-@@ -1,10 +0,0 @@
--# -*- coding: utf-8; mode: python -*-
--
--project = "Kernel Hacking Guides"
--
--tags.add("subproject")
--
--latex_documents = [
--    ('index', 'kernel-hacking.tex', project,
--     'The kernel development community', 'manual'),
--]
-diff --git a/Documentation/maintainer/conf.py b/Documentation/maintainer/conf.py
-deleted file mode 100644
-index 81e9eb7a7884..000000000000
---- a/Documentation/maintainer/conf.py
-+++ /dev/null
-@@ -1,10 +0,0 @@
--# -*- coding: utf-8; mode: python -*-
--
--project = 'Linux Kernel Development Documentation'
--
--tags.add("subproject")
--
--latex_documents = [
--    ('index', 'maintainer.tex', 'Linux Kernel Development Documentation',
--     'The kernel development community', 'manual'),
--]
-diff --git a/Documentation/media/conf.py b/Documentation/media/conf.py
-deleted file mode 100644
-index 1f194fcd2cae..000000000000
---- a/Documentation/media/conf.py
-+++ /dev/null
-@@ -1,12 +0,0 @@
--# -*- coding: utf-8; mode: python -*-
--
--# SPDX-License-Identifier: GPL-2.0
--
--project = 'Linux Media Subsystem Documentation'
--
--tags.add("subproject")
--
--latex_documents = [
--    ('index', 'media.tex', 'Linux Media Subsystem Documentation',
--     'The kernel development community', 'manual'),
--]
-diff --git a/Documentation/networking/conf.py b/Documentation/networking/conf.py
-deleted file mode 100644
-index 40f69e67a883..000000000000
---- a/Documentation/networking/conf.py
-+++ /dev/null
-@@ -1,10 +0,0 @@
--# -*- coding: utf-8; mode: python -*-
--
--project = "Linux Networking Documentation"
--
--tags.add("subproject")
--
--latex_documents = [
--    ('index', 'networking.tex', project,
--     'The kernel development community', 'manual'),
--]
-diff --git a/Documentation/process/conf.py b/Documentation/process/conf.py
-deleted file mode 100644
-index 1b01a80ad9ce..000000000000
---- a/Documentation/process/conf.py
-+++ /dev/null
-@@ -1,10 +0,0 @@
--# -*- coding: utf-8; mode: python -*-
--
--project = 'Linux Kernel Development Documentation'
--
--tags.add("subproject")
--
--latex_documents = [
--    ('index', 'process.tex', 'Linux Kernel Development Documentation',
--     'The kernel development community', 'manual'),
--]
-diff --git a/Documentation/sh/conf.py b/Documentation/sh/conf.py
-deleted file mode 100644
-index 1eb684a13ac8..000000000000
---- a/Documentation/sh/conf.py
-+++ /dev/null
-@@ -1,10 +0,0 @@
--# -*- coding: utf-8; mode: python -*-
--
--project = "SuperH architecture implementation manual"
--
--tags.add("subproject")
--
--latex_documents = [
--    ('index', 'sh.tex', project,
--     'The kernel development community', 'manual'),
--]
-diff --git a/Documentation/sound/conf.py b/Documentation/sound/conf.py
-deleted file mode 100644
-index 3f1fc5e74e7b..000000000000
---- a/Documentation/sound/conf.py
-+++ /dev/null
-@@ -1,10 +0,0 @@
--# -*- coding: utf-8; mode: python -*-
--
--project = "Linux Sound Subsystem Documentation"
--
--tags.add("subproject")
--
--latex_documents = [
--    ('index', 'sound.tex', project,
--     'The kernel development community', 'manual'),
--]
-diff --git a/Documentation/userspace-api/conf.py b/Documentation/userspace-api/conf.py
-deleted file mode 100644
-index 2eaf59f844e5..000000000000
---- a/Documentation/userspace-api/conf.py
-+++ /dev/null
-@@ -1,10 +0,0 @@
--# -*- coding: utf-8; mode: python -*-
--
--project = "The Linux kernel user-space API guide"
--
--tags.add("subproject")
--
--latex_documents = [
--    ('index', 'userspace-api.tex', project,
--     'The kernel development community', 'manual'),
--]
-diff --git a/Documentation/vm/conf.py b/Documentation/vm/conf.py
-deleted file mode 100644
-index 3b0b601af558..000000000000
---- a/Documentation/vm/conf.py
-+++ /dev/null
-@@ -1,10 +0,0 @@
--# -*- coding: utf-8; mode: python -*-
--
--project = "Linux Memory Management Documentation"
--
--tags.add("subproject")
--
--latex_documents = [
--    ('index', 'memory-management.tex', project,
--     'The kernel development community', 'manual'),
--]
-diff --git a/Documentation/x86/conf.py b/Documentation/x86/conf.py
-deleted file mode 100644
-index 33c5c3142e20..000000000000
---- a/Documentation/x86/conf.py
-+++ /dev/null
-@@ -1,10 +0,0 @@
--# -*- coding: utf-8; mode: python -*-
--
--project = "X86 architecture specific documentation"
--
--tags.add("subproject")
--
--latex_documents = [
--    ('index', 'x86.tex', project,
--     'The kernel development community', 'manual'),
--]
+diff --git a/arch/alpha/kernel/pci_iommu.c b/arch/alpha/kernel/pci_iommu.c
+index 242108439f42..7f1925a32c99 100644
+--- a/arch/alpha/kernel/pci_iommu.c
++++ b/arch/alpha/kernel/pci_iommu.c
+@@ -955,5 +955,7 @@ const struct dma_map_ops alpha_pci_ops = {
+ 	.map_sg			= alpha_pci_map_sg,
+ 	.unmap_sg		= alpha_pci_unmap_sg,
+ 	.dma_supported		= alpha_pci_supported,
++	.mmap			= dma_common_mmap,
++	.get_sgtable		= dma_common_get_sgtable,
+ };
+ EXPORT_SYMBOL(alpha_pci_ops);
+diff --git a/arch/ia64/hp/common/sba_iommu.c b/arch/ia64/hp/common/sba_iommu.c
+index 3d24cc43385b..4c0ea6c2833d 100644
+--- a/arch/ia64/hp/common/sba_iommu.c
++++ b/arch/ia64/hp/common/sba_iommu.c
+@@ -2183,6 +2183,8 @@ const struct dma_map_ops sba_dma_ops = {
+ 	.map_sg			= sba_map_sg_attrs,
+ 	.unmap_sg		= sba_unmap_sg_attrs,
+ 	.dma_supported		= sba_dma_supported,
++	.mmap			= dma_common_mmap,
++	.get_sgtable		= dma_common_get_sgtable,
+ };
+ 
+ void sba_dma_init(void)
+diff --git a/arch/ia64/sn/pci/pci_dma.c b/arch/ia64/sn/pci/pci_dma.c
+index b7d42e4edc1f..12ffb9c0d738 100644
+--- a/arch/ia64/sn/pci/pci_dma.c
++++ b/arch/ia64/sn/pci/pci_dma.c
+@@ -438,6 +438,8 @@ static struct dma_map_ops sn_dma_ops = {
+ 	.unmap_sg		= sn_dma_unmap_sg,
+ 	.dma_supported		= sn_dma_supported,
+ 	.get_required_mask	= sn_dma_get_required_mask,
++	.mmap			= dma_common_mmap,
++	.get_sgtable		= dma_common_get_sgtable,
+ };
+ 
+ void sn_dma_init(void)
+diff --git a/arch/mips/jazz/jazzdma.c b/arch/mips/jazz/jazzdma.c
+index 1804dc9d8136..a01e14955187 100644
+--- a/arch/mips/jazz/jazzdma.c
++++ b/arch/mips/jazz/jazzdma.c
+@@ -682,5 +682,7 @@ const struct dma_map_ops jazz_dma_ops = {
+ 	.sync_sg_for_device	= jazz_dma_sync_sg_for_device,
+ 	.dma_supported		= dma_direct_supported,
+ 	.cache_sync		= arch_dma_cache_sync,
++	.mmap			= dma_common_mmap,
++	.get_sgtable		= dma_common_get_sgtable,
+ };
+ EXPORT_SYMBOL(jazz_dma_ops);
+diff --git a/arch/powerpc/kernel/dma-iommu.c b/arch/powerpc/kernel/dma-iommu.c
+index a0879674a9c8..2f5a53874f6d 100644
+--- a/arch/powerpc/kernel/dma-iommu.c
++++ b/arch/powerpc/kernel/dma-iommu.c
+@@ -208,4 +208,6 @@ const struct dma_map_ops dma_iommu_ops = {
+ 	.sync_single_for_device	= dma_iommu_sync_for_device,
+ 	.sync_sg_for_cpu	= dma_iommu_sync_sg_for_cpu,
+ 	.sync_sg_for_device	= dma_iommu_sync_sg_for_device,
++	.mmap			= dma_common_mmap,
++	.get_sgtable		= dma_common_get_sgtable,
+ };
+diff --git a/arch/powerpc/platforms/ps3/system-bus.c b/arch/powerpc/platforms/ps3/system-bus.c
+index 98410119c47b..70fcc9736a8c 100644
+--- a/arch/powerpc/platforms/ps3/system-bus.c
++++ b/arch/powerpc/platforms/ps3/system-bus.c
+@@ -700,6 +700,8 @@ static const struct dma_map_ops ps3_sb_dma_ops = {
+ 	.get_required_mask = ps3_dma_get_required_mask,
+ 	.map_page = ps3_sb_map_page,
+ 	.unmap_page = ps3_unmap_page,
++	.mmap = dma_common_mmap,
++	.get_sgtable = dma_common_get_sgtable,
+ };
+ 
+ static const struct dma_map_ops ps3_ioc0_dma_ops = {
+@@ -711,6 +713,8 @@ static const struct dma_map_ops ps3_ioc0_dma_ops = {
+ 	.get_required_mask = ps3_dma_get_required_mask,
+ 	.map_page = ps3_ioc0_map_page,
+ 	.unmap_page = ps3_unmap_page,
++	.mmap = dma_common_mmap,
++	.get_sgtable = dma_common_get_sgtable,
+ };
+ 
+ /**
+diff --git a/arch/powerpc/platforms/pseries/vio.c b/arch/powerpc/platforms/pseries/vio.c
+index 6601b9d404dc..3473eef7628c 100644
+--- a/arch/powerpc/platforms/pseries/vio.c
++++ b/arch/powerpc/platforms/pseries/vio.c
+@@ -605,6 +605,8 @@ static const struct dma_map_ops vio_dma_mapping_ops = {
+ 	.unmap_page        = vio_dma_iommu_unmap_page,
+ 	.dma_supported     = dma_iommu_dma_supported,
+ 	.get_required_mask = dma_iommu_get_required_mask,
++	.mmap		   = dma_common_mmap,
++	.get_sgtable	   = dma_common_get_sgtable,
+ };
+ 
+ /**
+diff --git a/arch/s390/pci/pci_dma.c b/arch/s390/pci/pci_dma.c
+index 9e52d1527f71..03d8c1c9f82f 100644
+--- a/arch/s390/pci/pci_dma.c
++++ b/arch/s390/pci/pci_dma.c
+@@ -668,6 +668,8 @@ const struct dma_map_ops s390_pci_dma_ops = {
+ 	.unmap_sg	= s390_dma_unmap_sg,
+ 	.map_page	= s390_dma_map_pages,
+ 	.unmap_page	= s390_dma_unmap_pages,
++	.mmap		= dma_common_mmap,
++	.get_sgtable	= dma_common_get_sgtable,
+ 	/* dma_supported is unconditionally true without a callback */
+ };
+ EXPORT_SYMBOL_GPL(s390_pci_dma_ops);
+diff --git a/arch/sparc/kernel/iommu.c b/arch/sparc/kernel/iommu.c
+index 4ae7388b1bff..c915a7cbcc91 100644
+--- a/arch/sparc/kernel/iommu.c
++++ b/arch/sparc/kernel/iommu.c
+@@ -763,6 +763,8 @@ static const struct dma_map_ops sun4u_dma_ops = {
+ 	.sync_single_for_cpu	= dma_4u_sync_single_for_cpu,
+ 	.sync_sg_for_cpu	= dma_4u_sync_sg_for_cpu,
+ 	.dma_supported		= dma_4u_supported,
++	.mmap			= dma_common_mmap,
++	.get_sgtable		= dma_common_get_sgtable,
+ };
+ 
+ const struct dma_map_ops *dma_ops = &sun4u_dma_ops;
+diff --git a/arch/sparc/kernel/pci_sun4v.c b/arch/sparc/kernel/pci_sun4v.c
+index 14b93c5564e3..ab6909642ae1 100644
+--- a/arch/sparc/kernel/pci_sun4v.c
++++ b/arch/sparc/kernel/pci_sun4v.c
+@@ -692,6 +692,8 @@ static const struct dma_map_ops sun4v_dma_ops = {
+ 	.map_sg				= dma_4v_map_sg,
+ 	.unmap_sg			= dma_4v_unmap_sg,
+ 	.dma_supported			= dma_4v_supported,
++	.mmap				= dma_common_mmap,
++	.get_sgtable			= dma_common_get_sgtable,
+ };
+ 
+ static void pci_sun4v_scan_bus(struct pci_pbm_info *pbm, struct device *parent)
+diff --git a/arch/x86/kernel/amd_gart_64.c b/arch/x86/kernel/amd_gart_64.c
+index a585ea6f686a..a65b4a9c7f87 100644
+--- a/arch/x86/kernel/amd_gart_64.c
++++ b/arch/x86/kernel/amd_gart_64.c
+@@ -678,6 +678,8 @@ static const struct dma_map_ops gart_dma_ops = {
+ 	.alloc				= gart_alloc_coherent,
+ 	.free				= gart_free_coherent,
+ 	.dma_supported			= dma_direct_supported,
++	.mmap				= dma_common_mmap,
++	.get_sgtable			= dma_common_get_sgtable,
+ };
+ 
+ static void gart_iommu_shutdown(void)
+diff --git a/arch/x86/kernel/pci-calgary_64.c b/arch/x86/kernel/pci-calgary_64.c
+index 9d4343aa481b..23fdec030c37 100644
+--- a/arch/x86/kernel/pci-calgary_64.c
++++ b/arch/x86/kernel/pci-calgary_64.c
+@@ -468,6 +468,8 @@ static const struct dma_map_ops calgary_dma_ops = {
+ 	.map_page = calgary_map_page,
+ 	.unmap_page = calgary_unmap_page,
+ 	.dma_supported = dma_direct_supported,
++	.mmap = dma_common_mmap,
++	.get_sgtable = dma_common_get_sgtable,
+ };
+ 
+ static inline void __iomem * busno_to_bbar(unsigned char num)
+diff --git a/drivers/iommu/amd_iommu.c b/drivers/iommu/amd_iommu.c
+index b607a92791d3..2e74ad659985 100644
+--- a/drivers/iommu/amd_iommu.c
++++ b/drivers/iommu/amd_iommu.c
+@@ -2722,6 +2722,8 @@ static const struct dma_map_ops amd_iommu_dma_ops = {
+ 	.map_sg		= map_sg,
+ 	.unmap_sg	= unmap_sg,
+ 	.dma_supported	= amd_iommu_dma_supported,
++	.mmap		= dma_common_mmap,
++	.get_sgtable	= dma_common_get_sgtable,
+ };
+ 
+ static int init_reserved_iova_ranges(void)
+diff --git a/drivers/iommu/intel-iommu.c b/drivers/iommu/intel-iommu.c
+index ac4172c02244..f6776b359977 100644
+--- a/drivers/iommu/intel-iommu.c
++++ b/drivers/iommu/intel-iommu.c
+@@ -3737,6 +3737,8 @@ static const struct dma_map_ops intel_dma_ops = {
+ 	.map_resource = intel_map_resource,
+ 	.unmap_resource = intel_unmap_resource,
+ 	.dma_supported = dma_direct_supported,
++	.mmap = dma_common_mmap,
++	.get_sgtable = dma_common_get_sgtable,
+ };
+ 
+ static inline int iommu_domain_cache_init(void)
+diff --git a/kernel/dma/mapping.c b/kernel/dma/mapping.c
+index 4ceb5b9016d8..cdb157cd70e7 100644
+--- a/kernel/dma/mapping.c
++++ b/kernel/dma/mapping.c
+@@ -153,11 +153,12 @@ int dma_get_sgtable_attrs(struct device *dev, struct sg_table *sgt,
+ {
+ 	const struct dma_map_ops *ops = get_dma_ops(dev);
+ 
+-	if (!dma_is_direct(ops) && ops->get_sgtable)
+-		return ops->get_sgtable(dev, sgt, cpu_addr, dma_addr, size,
+-					attrs);
+-	return dma_common_get_sgtable(dev, sgt, cpu_addr, dma_addr, size,
+-			attrs);
++	if (dma_is_direct(ops))
++		return dma_common_get_sgtable(dev, sgt, cpu_addr, dma_addr,
++				size, attrs);
++	if (!ops->get_sgtable)
++		return -ENXIO;
++	return ops->get_sgtable(dev, sgt, cpu_addr, dma_addr, size, attrs);
+ }
+ EXPORT_SYMBOL(dma_get_sgtable_attrs);
+ 
+@@ -221,9 +222,12 @@ int dma_mmap_attrs(struct device *dev, struct vm_area_struct *vma,
+ {
+ 	const struct dma_map_ops *ops = get_dma_ops(dev);
+ 
+-	if (!dma_is_direct(ops) && ops->mmap)
+-		return ops->mmap(dev, vma, cpu_addr, dma_addr, size, attrs);
+-	return dma_common_mmap(dev, vma, cpu_addr, dma_addr, size, attrs);
++	if (dma_is_direct(ops))
++		return dma_common_mmap(dev, vma, cpu_addr, dma_addr, size,
++				attrs);
++	if (!ops->mmap)
++		return -ENXIO;
++	return ops->mmap(dev, vma, cpu_addr, dma_addr, size, attrs);
+ }
+ EXPORT_SYMBOL(dma_mmap_attrs);
+ 
 -- 
-2.21.0
+2.20.1
