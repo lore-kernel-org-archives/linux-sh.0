@@ -1,191 +1,92 @@
-From: Mauro Carvalho Chehab <mchehab+samsung@kernel.org>
-Date: Tue, 16 Jul 2019 12:10:39 +0000
-Subject: [PATCH 00/14] pending doc patches for 5.3-rc
-Message-Id: <cover.1563277838.git.mchehab+samsung@kernel.org>
+From: Aleksa Sarai <cyphar@cyphar.com>
+Date: Sun, 28 Jul 2019 01:02:01 +0000
+Subject: [PATCH v11 2/8] procfs: switch magic-link modes to be more sane
+Message-Id: <20190728010207.9781-3-cyphar@cyphar.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20190728010207.9781-1-cyphar@cyphar.com>
+In-Reply-To: <20190728010207.9781-1-cyphar@cyphar.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-Cc: Mauro Carvalho Chehab <mchehab+samsung@kernel.org>, linux-scsi@vger.kernel.org, esc.storagedev@microsemi.com, linuxppc-dev@lists.ozlabs.org, Jonathan Corbet <corbet@lwn.net>, alsa-devel@alsa-project.org, kvm@vger.kernel.org, linux-i2c@vger.kernel.org, rcu@vger.kernel.org, linux-pm@vger.kernel.org, linux-doc@vger.kernel.org, devicetree@vger.kernel.org, linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-watchdog@vger.kernel.org, x86@kernel.org, dri-devel@lists.freedesktop.org, netdev@vger.kernel.org, linux-crypto@vger.kernel.org, linux-sh@vger.kernel.org, linux-input@vger.kernel.org, linux-pci@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Al Viro <viro@zeniv.linux.org.uk>, Jeff Layton <jlayton@kernel.org>, "J. Bruce Fields" <bfields@fieldses.org>, Arnd Bergmann <arnd@arndb.de>, David Howells <dhowells@redhat.com>, Shuah Khan <shuah@kernel.org>, Shuah Khan <skhan@linuxfoundation.org>
+Cc: Aleksa Sarai <cyphar@cyphar.com>, Eric Biederman <ebiederm@xmission.com>, Andy Lutomirski <luto@kernel.org>, Andrew Morton <akpm@linux-foundation.org>, Alexei Starovoitov <ast@kernel.org>, Kees Cook <keescook@chromium.org>, Jann Horn <jannh@google.com>, Christian Brauner <christian@brauner.io>, Tycho Andersen <tycho@tycho.ws>, David Drysdale <drysdale@google.com>, Chanho Min <chanho.min@lge.com>, Oleg Nesterov <oleg@redhat.com>, Aleksa Sarai <asarai@suse.de>, Linus Torvalds <torvalds@linux-foundation.org>, containers@lists.linux-foundation.org, linux-alpha@vger.kernel.org, linux-api@vger.kernel.org, linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-fsdevel@vger.kernel.org, linux-ia64@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Those are the pending documentation patches after my pull request
-for this branch:
+Now that magic-link modes are obeyed for file re-opening purposes, some
+of the pre-existing magic-link modes need to be adjusted to be more
+semantically correct.
 
-    git://git.kernel.org/pub/scm/linux/kernel/git/mchehab/linux-media.git t=
-ags/docs/v5.3-1
+The most blatant example of this is /proc/self/exe, which had a mode of
+a+rwx even though tautologically the file could never be opened for
+writing (because it is the current->mm of a live process).
 
-Patches 1 to 13 were already submitted, but got rebased. Patch 14
-is a new fixup one.
+With the new O_PATH restrictions, changing the default mode of these
+magic-links allows us to avoid delayed-access attacks such as we saw in
+CVE-2019-5736.
 
-Patches 1 and 2 weren't submitted before due to merge conflicts
-that are now solved upstream;
+Signed-off-by: Aleksa Sarai <cyphar@cyphar.com>
+---
+ fs/proc/base.c       | 20 ++++++++++----------
+ fs/proc/namespaces.c |  2 +-
+ 2 files changed, 11 insertions(+), 11 deletions(-)
 
-Patch 3 fixes a series of random Documentation/* references that
-are pointing to the wrong places.
-
-Patch 4 fix a longstanding issue: every time a new book is added,
-conf.py need changes, in order to allow generating a PDF file.
-After the patch, conf.py will automatically recognize new books,
-saving the trouble of keeping adding documents to it.
-
-Patches 5 to 11 are due to fonts support when building translations.pdf.
-The main focus is to add xeCJK support. While doing it, I discovered
-some bugs at sphinx-pre-install script after running it with 7 different
-distributions.
-
-Patch 12 improves support for partial doc building. Currently, each
-subdir needs to have its own conf.py, in order to support partial
-doc build. After it, any Documentation subdir can be used to=20
-roduce html/pdf docs with:
-
-	make SPHINXDIRS=3D"foo bar" htmldocs
-	(or pdfdocs, latexdocs, epubdocs, ...)
-
-Patch 13 is a cleanup patch: it simply get rid of all those extra
-conf.py files that  aren't needed anymore. The only extra config
-file after it is this one:
-
-	Documentation/media/conf_nitpick.py
-
-With enables some extra optional Sphinx features.
-
-Patch 14 adds Documentation/virtual to the main index.rst file
-and add a new *.rst file that was orphaned there.
-
--
-
-After this series, there's just one more patch meant to be applied
-for 5.3, with is still waiting for some patches to be merged from
-linux-next:
-
-    https://git.linuxtv.org/mchehab/experimental.git/commit/?id=B1b5dc7d7bb=
-fbbfdace2a248c6458301c6e34100
-
-
-Mauro Carvalho Chehab (14):
-  docs: powerpc: convert docs to ReST and rename to *.rst
-  docs: power: add it to to the main documentation index
-  docs: fix broken doc references due to renames
-  docs: pdf: add all Documentation/*/index.rst to PDF output
-  docs: conf.py: add CJK package needed by translations
-  docs: conf.py: only use CJK if the font is available
-  scripts/sphinx-pre-install: fix script for RHEL/CentOS
-  scripts/sphinx-pre-install: don't use LaTeX with CentOS 7
-  scripts/sphinx-pre-install: fix latexmk dependencies
-  scripts/sphinx-pre-install: cleanup Gentoo checks
-  scripts/sphinx-pre-install: seek for Noto CJK fonts for pdf output
-  docs: load_config.py: avoid needing a conf.py just due to LaTeX docs
-  docs: remove extra conf.py files
-  docs: virtual: add it to the documentation body
-
- Documentation/PCI/pci-error-recovery.rst      |   5 +-
- Documentation/RCU/rculist_nulls.txt           |   2 +-
- Documentation/admin-guide/conf.py             |  10 --
- Documentation/conf.py                         |  30 +++-
- Documentation/core-api/conf.py                |  10 --
- Documentation/crypto/conf.py                  |  10 --
- Documentation/dev-tools/conf.py               |  10 --
- .../devicetree/bindings/arm/idle-states.txt   |   2 +-
- Documentation/doc-guide/conf.py               |  10 --
- Documentation/driver-api/80211/conf.py        |  10 --
- Documentation/driver-api/conf.py              |  10 --
- Documentation/driver-api/pm/conf.py           |  10 --
- Documentation/filesystems/conf.py             |  10 --
- Documentation/gpu/conf.py                     |  10 --
- Documentation/index.rst                       |   3 +
- Documentation/input/conf.py                   |  10 --
- Documentation/kernel-hacking/conf.py          |  10 --
- Documentation/locking/spinlocks.rst           |   4 +-
- Documentation/maintainer/conf.py              |  10 --
- Documentation/media/conf.py                   |  12 --
- Documentation/memory-barriers.txt             |   2 +-
- Documentation/networking/conf.py              |  10 --
- Documentation/power/index.rst                 |   2 +-
- .../{bootwrapper.txt =3D> bootwrapper.rst}      |  28 +++-
- .../{cpu_families.txt =3D> cpu_families.rst}    |  23 +--
- .../{cpu_features.txt =3D> cpu_features.rst}    |   6 +-
- Documentation/powerpc/{cxl.txt =3D> cxl.rst}    |  46 ++++--
- .../powerpc/{cxlflash.txt =3D> cxlflash.rst}    |  10 +-
- .../{DAWR-POWER9.txt =3D> dawr-power9.rst}      |  15 +-
- Documentation/powerpc/{dscr.txt =3D> dscr.rst}  |  18 +-
- ...ecovery.txt =3D> eeh-pci-error-recovery.rst} | 108 ++++++------
- ...ed-dump.txt =3D> firmware-assisted-dump.rst} | 117 +++++++------
- Documentation/powerpc/{hvcs.txt =3D> hvcs.rst}  | 108 ++++++------
- Documentation/powerpc/index.rst               |  34 ++++
- Documentation/powerpc/isa-versions.rst        |  15 +-
- .../powerpc/{mpc52xx.txt =3D> mpc52xx.rst}      |  12 +-
- ...nv.txt =3D> pci_iov_resource_on_powernv.rst} |  15 +-
- .../powerpc/{pmu-ebb.txt =3D> pmu-ebb.rst}      |   1 +
- Documentation/powerpc/ptrace.rst              | 156 ++++++++++++++++++
- Documentation/powerpc/ptrace.txt              | 151 -----------------
- .../{qe_firmware.txt =3D> qe_firmware.rst}      |  37 +++--
- .../{syscall64-abi.txt =3D> syscall64-abi.rst}  |  29 ++--
- ...al_memory.txt =3D> transactional_memory.rst} |  45 ++---
- Documentation/process/conf.py                 |  10 --
- Documentation/sh/conf.py                      |  10 --
- Documentation/sound/conf.py                   |  10 --
- Documentation/sphinx/load_config.py           |  27 ++-
- .../translations/ko_KR/memory-barriers.txt    |   2 +-
- Documentation/userspace-api/conf.py           |  10 --
- Documentation/virtual/kvm/index.rst           |   1 +
- Documentation/vm/conf.py                      |  10 --
- Documentation/watchdog/hpwdt.rst              |   2 +-
- Documentation/x86/conf.py                     |  10 --
- MAINTAINERS                                   |  14 +-
- arch/powerpc/kernel/exceptions-64s.S          |   2 +-
- drivers/gpu/drm/drm_modes.c                   |   2 +-
- drivers/i2c/busses/i2c-nvidia-gpu.c           |   2 +-
- drivers/scsi/hpsa.c                           |   4 +-
- drivers/soc/fsl/qe/qe.c                       |   2 +-
- drivers/tty/hvc/hvcs.c                        |   2 +-
- include/soc/fsl/qe/qe.h                       |   2 +-
- scripts/sphinx-pre-install                    | 118 ++++++++++---
- 62 files changed, 738 insertions(+), 678 deletions(-)
- delete mode 100644 Documentation/admin-guide/conf.py
- delete mode 100644 Documentation/core-api/conf.py
- delete mode 100644 Documentation/crypto/conf.py
- delete mode 100644 Documentation/dev-tools/conf.py
- delete mode 100644 Documentation/doc-guide/conf.py
- delete mode 100644 Documentation/driver-api/80211/conf.py
- delete mode 100644 Documentation/driver-api/conf.py
- delete mode 100644 Documentation/driver-api/pm/conf.py
- delete mode 100644 Documentation/filesystems/conf.py
- delete mode 100644 Documentation/gpu/conf.py
- delete mode 100644 Documentation/input/conf.py
- delete mode 100644 Documentation/kernel-hacking/conf.py
- delete mode 100644 Documentation/maintainer/conf.py
- delete mode 100644 Documentation/media/conf.py
- delete mode 100644 Documentation/networking/conf.py
- rename Documentation/powerpc/{bootwrapper.txt =3D> bootwrapper.rst} (93%)
- rename Documentation/powerpc/{cpu_families.txt =3D> cpu_families.rst} (95%)
- rename Documentation/powerpc/{cpu_features.txt =3D> cpu_features.rst} (97%)
- rename Documentation/powerpc/{cxl.txt =3D> cxl.rst} (95%)
- rename Documentation/powerpc/{cxlflash.txt =3D> cxlflash.rst} (98%)
- rename Documentation/powerpc/{DAWR-POWER9.txt =3D> dawr-power9.rst} (95%)
- rename Documentation/powerpc/{dscr.txt =3D> dscr.rst} (91%)
- rename Documentation/powerpc/{eeh-pci-error-recovery.txt =3D> eeh-pci-erro=
-r-recovery.rst} (82%)
- rename Documentation/powerpc/{firmware-assisted-dump.txt =3D> firmware-ass=
-isted-dump.rst} (80%)
- rename Documentation/powerpc/{hvcs.txt =3D> hvcs.rst} (91%)
- create mode 100644 Documentation/powerpc/index.rst
- rename Documentation/powerpc/{mpc52xx.txt =3D> mpc52xx.rst} (91%)
- rename Documentation/powerpc/{pci_iov_resource_on_powernv.txt =3D> pci_iov=
-_resource_on_powernv.rst} (97%)
- rename Documentation/powerpc/{pmu-ebb.txt =3D> pmu-ebb.rst} (99%)
- create mode 100644 Documentation/powerpc/ptrace.rst
- delete mode 100644 Documentation/powerpc/ptrace.txt
- rename Documentation/powerpc/{qe_firmware.txt =3D> qe_firmware.rst} (95%)
- rename Documentation/powerpc/{syscall64-abi.txt =3D> syscall64-abi.rst} (8=
-2%)
- rename Documentation/powerpc/{transactional_memory.txt =3D> transactional_=
-memory.rst} (93%)
- delete mode 100644 Documentation/process/conf.py
- delete mode 100644 Documentation/sh/conf.py
- delete mode 100644 Documentation/sound/conf.py
- delete mode 100644 Documentation/userspace-api/conf.py
- delete mode 100644 Documentation/vm/conf.py
- delete mode 100644 Documentation/x86/conf.py
-
---=20
-2.21.0
+diff --git a/fs/proc/base.c b/fs/proc/base.c
+index ebea9501afb8..297242174402 100644
+--- a/fs/proc/base.c
++++ b/fs/proc/base.c
+@@ -133,9 +133,9 @@ struct pid_entry {
+ 
+ #define DIR(NAME, MODE, iops, fops)	\
+ 	NOD(NAME, (S_IFDIR|(MODE)), &iops, &fops, {} )
+-#define LNK(NAME, get_link)					\
+-	NOD(NAME, (S_IFLNK|S_IRWXUGO),				\
+-		&proc_pid_link_inode_operations, NULL,		\
++#define LNK(NAME, MODE, get_link)			\
++	NOD(NAME, (S_IFLNK|(MODE)),			\
++		&proc_pid_link_inode_operations, NULL,	\
+ 		{ .proc_get_link = get_link } )
+ #define REG(NAME, MODE, fops)				\
+ 	NOD(NAME, (S_IFREG|(MODE)), NULL, &fops, {})
+@@ -3028,9 +3028,9 @@ static const struct pid_entry tgid_base_stuff[] = {
+ 	REG("numa_maps",  S_IRUGO, proc_pid_numa_maps_operations),
+ #endif
+ 	REG("mem",        S_IRUSR|S_IWUSR, proc_mem_operations),
+-	LNK("cwd",        proc_cwd_link),
+-	LNK("root",       proc_root_link),
+-	LNK("exe",        proc_exe_link),
++	LNK("cwd",        S_IRWXUGO, proc_cwd_link),
++	LNK("root",       S_IRWXUGO, proc_root_link),
++	LNK("exe",        S_IRUGO|S_IXUGO, proc_exe_link),
+ 	REG("mounts",     S_IRUGO, proc_mounts_operations),
+ 	REG("mountinfo",  S_IRUGO, proc_mountinfo_operations),
+ 	REG("mountstats", S_IRUSR, proc_mountstats_operations),
+@@ -3429,11 +3429,11 @@ static const struct pid_entry tid_base_stuff[] = {
+ 	REG("numa_maps", S_IRUGO, proc_pid_numa_maps_operations),
+ #endif
+ 	REG("mem",       S_IRUSR|S_IWUSR, proc_mem_operations),
+-	LNK("cwd",       proc_cwd_link),
+-	LNK("root",      proc_root_link),
+-	LNK("exe",       proc_exe_link),
++	LNK("cwd",       S_IRWXUGO, proc_cwd_link),
++	LNK("root",      S_IRWXUGO, proc_root_link),
++	LNK("exe",       S_IRUGO|S_IXUGO, proc_exe_link),
+ 	REG("mounts",    S_IRUGO, proc_mounts_operations),
+-	REG("mountinfo",  S_IRUGO, proc_mountinfo_operations),
++	REG("mountinfo", S_IRUGO, proc_mountinfo_operations),
+ #ifdef CONFIG_PROC_PAGE_MONITOR
+ 	REG("clear_refs", S_IWUSR, proc_clear_refs_operations),
+ 	REG("smaps",     S_IRUGO, proc_pid_smaps_operations),
+diff --git a/fs/proc/namespaces.c b/fs/proc/namespaces.c
+index dd2b35f78b09..cd1e130913f7 100644
+--- a/fs/proc/namespaces.c
++++ b/fs/proc/namespaces.c
+@@ -94,7 +94,7 @@ static struct dentry *proc_ns_instantiate(struct dentry *dentry,
+ 	struct inode *inode;
+ 	struct proc_inode *ei;
+ 
+-	inode = proc_pid_make_inode(dentry->d_sb, task, S_IFLNK | S_IRWXUGO);
++	inode = proc_pid_make_inode(dentry->d_sb, task, S_IFLNK | S_IRUGO);
+ 	if (!inode)
+ 		return ERR_PTR(-ENOENT);
+ 
+-- 
+2.22.0
