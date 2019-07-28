@@ -1,7 +1,7 @@
 From: Aleksa Sarai <cyphar@cyphar.com>
-Date: Sun, 28 Jul 2019 01:02:06 +0000
-Subject: [PATCH v11 7/8] open: openat2(2) syscall
-Message-Id: <20190728010207.9781-8-cyphar@cyphar.com>
+Date: Sun, 28 Jul 2019 01:02:00 +0000
+Subject: [PATCH v11 1/8] namei: obey trailing magic-link DAC permissions
+Message-Id: <20190728010207.9781-2-cyphar@cyphar.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20190728010207.9781-1-cyphar@cyphar.com>
 In-Reply-To: <20190728010207.9781-1-cyphar@cyphar.com>
@@ -11,615 +11,335 @@ Content-Transfer-Encoding: 7bit
 To: Al Viro <viro@zeniv.linux.org.uk>, Jeff Layton <jlayton@kernel.org>, "J. Bruce Fields" <bfields@fieldses.org>, Arnd Bergmann <arnd@arndb.de>, David Howells <dhowells@redhat.com>, Shuah Khan <shuah@kernel.org>, Shuah Khan <skhan@linuxfoundation.org>
 Cc: linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, Alexei Starovoitov <ast@kernel.org>, Oleg Nesterov <oleg@redhat.com>, linux-kselftest@vger.kernel.org, sparclinux@vger.kernel.org, linux-arch@vger.kernel.org, linux-s390@vger.kernel.org, Tycho Andersen <tycho@tycho.ws>, Aleksa Sarai <asarai@suse.de>, linux-arm-kernel@lists.infradead.org, linux-mips@vger.kernel.org, linux-xtensa@linux-xtensa.org, Kees Cook <keescook@chromium.org>, Jann Horn <jannh@google.com>, linuxppc-dev@lists.ozlabs.org, Aleksa Sarai <cyphar@cyphar.com>, Andy Lutomirski <luto@kernel.org>, David Drysdale <drysdale@google.com>, Christian Brauner <christian@brauner.io>, linux-parisc@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-api@vger.kernel.org, Chanho Min <chanho.min@lge.com>, linux-kernel@vger.kernel.org, Eric Biederman <ebiederm@xmission.com>, linux-alpha@vger.kernel.org
 
-The most obvious syscall to add support for the new LOOKUP_* scoping
-flags would be openat(2). However, there are a few reasons why this is
-not the best course of action:
+The ability for userspace to "re-open" file descriptors through
+/proc/self/fd has been a very useful tool for all sorts of usecases
+(container runtimes are one common example). However, the current
+interface for doing this has resulted in some pretty subtle security
+holes. Userspace can re-open a file descriptor with more permissions
+than the original, which can result in cases such as /proc/$pid/exe
+being re-opened O_RDWR at a later date even though (by definition)
+/proc/$pid/exe cannot be opened for writing. When combined with O_PATH
+the results can get even more confusing.
 
- * The new LOOKUP_* flags are intended to be security features, and
-   openat(2) will silently ignore all unknown flags. This means that
-   users would need to avoid foot-gunning themselves constantly when
-   using this interface if it were part of openat(2). This can be fixed
-   by having userspace libraries handle this for users[1], but should be
-   avoided if possible.
+We cannot block this outright. Aside from userspace already depending on
+it, it's a useful feature which can actually increase the security of
+userspace. For instance, LXC keeps an O_PATH of the container's
+/dev/pts/ptmx that gets re-opened to create new ptys and then uses
+TIOCGPTPEER to get the slave end. This allows for pty allocation without
+resolving paths inside an (untrusted) container's rootfs. There isn't a
+trivial way of doing this that is as straight-forward and safe as O_PATH
+re-opening.
 
- * Resolution scoping feels like a different operation to the existing
-   O_* flags. And since openat(2) has limited flag space, it seems to be
-   quite wasteful to clutter it with 5 flags that are all
-   resolution-related. Arguably O_NOFOLLOW is also a resolution flag but
-   its entire purpose is to error out if you encounter a trailing
-   symlink -- not to scope resolution.
+Instead we have to restrict it in such a way that it doesn't break
+(good) users but does block potential attackers. The solution applied in
+this patch is to restrict *re-opening* (not resolution through)
+magic-links by requiring that mode of the link be obeyed. Normal
+symlinks have modes of a+rwx but magic-links have other modes. These
+magic-link modes were historically ignored during path resolution, but
+they've now been re-purposed for more useful ends.
 
- * Other systems would be able to reimplement this syscall allowing for
-   cross-OS standardisation rather than being hidden amongst O_* flags
-   which may result in it not being used by all the parties that might
-   want to use it (file servers, web servers, container runtimes, etc).
+It is also necessary to define semantics for the mode of an O_PATH
+descriptor, since re-opening a magic-link through an O_PATH needs to be
+just as restricted as the corresponding magic-link -- otherwise the
+above protection can be bypassed. There are two distinct cases:
 
- * It gives us the opportunity to iterate on the O_PATH interface. In
-   particular, the new @how->upgrade_mask field for fd re-opening is
-   only possible because we have a clean slate without needing to re-use
-   the ACC_MODE flag design nor the existing openat(2) @mode semantics.
+ 1. The target is a regular file (not a magic-link). Userspace depends
+    on being able to re-open the O_PATH of a regular file, so we must
+    define the mode to be a+rwx.
 
-To this end, we introduce the openat2(2) syscall. It provides all of the
-features of openat(2) through the @how->flags argument, but also
-also provides a new @how->resolve argument which exposes RESOLVE_* flags
-that map to our new LOOKUP_* flags. It also eliminates the long-standing
-ugliness of variadic-open(2) by embedding it in a struct.
+ 2. The target is a magic-link. In this case, we simply copy the mode of
+    the magic-link. This results in an O_PATH of a magic-link
+    effectively acting as a no-op in terms of how much re-opening
+    privileges a process has.
 
-In order to allow for userspace to lock down their usage of file
-descriptor re-opening, openat2(2) has the ability for users to disallow
-certain re-opening modes through @how->upgrade_mask. At the moment,
-there is no UPGRADE_NOEXEC. The open_how struct is padded to 64 bytes
-for future extensions (all of the reserved bits must be zeroed).
+CAP_DAC_OVERRIDE can be used to override all of these restrictions, but
+we only permit &init_userns's capabilities to affect these semantics.
+The reason for this is that there isn't a clear way to track what
+user_ns is the original owner of a given O_PATH chain -- thus an
+unprivileged user could create a new userns and O_PATH the file
+descriptor, owning it. All signs would indicate that the user really
+does have CAP_DAC_OVERRIDE over the new descriptor and the protection
+would be bypassed. We thus opt for the more conservative approach.
 
-[1]: https://github.com/openSUSE/libpathrs
+I have run this patch on several machines for several days. So far, the
+only processes which have hit this case ("loadkeys" and "kbd_mode" from
+the kbd package[1]) gracefully handle the permission error and do not
+cause any user-visible problems. In order to give users a heads-up, a
+warning is output to dmesg whenever may_open_magiclink() refuses access.
 
+[1]: http://git.altlinux.org/people/legion/packages/kbd.git
+
+Suggested-by: Andy Lutomirski <luto@kernel.org>
 Suggested-by: Christian Brauner <christian@brauner.io>
 Signed-off-by: Aleksa Sarai <cyphar@cyphar.com>
 ---
- arch/alpha/kernel/syscalls/syscall.tbl      |   1 +
- arch/arm/tools/syscall.tbl                  |   1 +
- arch/arm64/include/asm/unistd.h             |   2 +-
- arch/arm64/include/asm/unistd32.h           |   2 +
- arch/ia64/kernel/syscalls/syscall.tbl       |   1 +
- arch/m68k/kernel/syscalls/syscall.tbl       |   1 +
- arch/microblaze/kernel/syscalls/syscall.tbl |   1 +
- arch/mips/kernel/syscalls/syscall_n32.tbl   |   1 +
- arch/mips/kernel/syscalls/syscall_n64.tbl   |   1 +
- arch/mips/kernel/syscalls/syscall_o32.tbl   |   1 +
- arch/parisc/kernel/syscalls/syscall.tbl     |   1 +
- arch/powerpc/kernel/syscalls/syscall.tbl    |   1 +
- arch/s390/kernel/syscalls/syscall.tbl       |   1 +
- arch/sh/kernel/syscalls/syscall.tbl         |   1 +
- arch/sparc/kernel/syscalls/syscall.tbl      |   1 +
- arch/x86/entry/syscalls/syscall_32.tbl      |   1 +
- arch/x86/entry/syscalls/syscall_64.tbl      |   1 +
- arch/xtensa/kernel/syscalls/syscall.tbl     |   1 +
- fs/open.c                                   | 106 ++++++++++++++++----
- include/linux/fcntl.h                       |  15 ++-
- include/linux/fs.h                          |   4 +-
- include/linux/syscalls.h                    |  17 +++-
- include/uapi/asm-generic/unistd.h           |   5 +-
- include/uapi/linux/fcntl.h                  |  42 ++++++++
- 24 files changed, 179 insertions(+), 30 deletions(-)
+ Documentation/filesystems/path-lookup.rst |  12 +--
+ fs/internal.h                             |   1 +
+ fs/namei.c                                | 105 +++++++++++++++++++---
+ fs/open.c                                 |   3 +-
+ fs/proc/fd.c                              |  23 ++++-
+ include/linux/fs.h                        |   4 +
+ include/linux/namei.h                     |   1 +
+ 7 files changed, 130 insertions(+), 19 deletions(-)
 
-diff --git a/arch/alpha/kernel/syscalls/syscall.tbl b/arch/alpha/kernel/syscalls/syscall.tbl
-index 728fe028c02c..9f374f7d9514 100644
---- a/arch/alpha/kernel/syscalls/syscall.tbl
-+++ b/arch/alpha/kernel/syscalls/syscall.tbl
-@@ -475,3 +475,4 @@
- 543	common	fspick				sys_fspick
- 544	common	pidfd_open			sys_pidfd_open
- # 545 reserved for clone3
-+547	common	openat2				sys_openat2
-diff --git a/arch/arm/tools/syscall.tbl b/arch/arm/tools/syscall.tbl
-index 6da7dc4d79cc..4ba54bc7e19a 100644
---- a/arch/arm/tools/syscall.tbl
-+++ b/arch/arm/tools/syscall.tbl
-@@ -449,3 +449,4 @@
- 433	common	fspick				sys_fspick
- 434	common	pidfd_open			sys_pidfd_open
- 435	common	clone3				sys_clone3
-+437	common	openat2				sys_openat2
-diff --git a/arch/arm64/include/asm/unistd.h b/arch/arm64/include/asm/unistd.h
-index 2629a68b8724..8aa00ccb0b96 100644
---- a/arch/arm64/include/asm/unistd.h
-+++ b/arch/arm64/include/asm/unistd.h
-@@ -38,7 +38,7 @@
- #define __ARM_NR_compat_set_tls		(__ARM_NR_COMPAT_BASE + 5)
- #define __ARM_NR_COMPAT_END		(__ARM_NR_COMPAT_BASE + 0x800)
+diff --git a/Documentation/filesystems/path-lookup.rst b/Documentation/filesystems/path-lookup.rst
+index 434a07b0002b..a57d78ec8bee 100644
+--- a/Documentation/filesystems/path-lookup.rst
++++ b/Documentation/filesystems/path-lookup.rst
+@@ -1310,12 +1310,14 @@ longer needed.
+ ``LOOKUP_JUMPED`` means that the current dentry was chosen not because
+ it had the right name but for some other reason.  This happens when
+ following "``..``", following a symlink to ``/``, crossing a mount point
+-or accessing a "``/proc/$PID/fd/$FD``" symlink.  In this case the
+-filesystem has not been asked to revalidate the name (with
+-``d_revalidate()``).  In such cases the inode may still need to be
+-revalidated, so ``d_op->d_weak_revalidate()`` is called if
++or accessing a "``/proc/$PID/fd/$FD``" symlink (also known as a "magic
++link"). In this case the filesystem has not been asked to revalidate the
++name (with ``d_revalidate()``).  In such cases the inode may still need
++to be revalidated, so ``d_op->d_weak_revalidate()`` is called if
+ ``LOOKUP_JUMPED`` is set when the look completes - which may be at the
+-final component or, when creating, unlinking, or renaming, at the penultimate component.
++final component or, when creating, unlinking, or renaming, at the
++penultimate component. ``LOOKUP_MAGICLINK_JUMPED`` is set alongside
++``LOOKUP_JUMPED`` if a magic-link was traversed.
  
--#define __NR_compat_syscalls		436
-+#define __NR_compat_syscalls		438
- #endif
+ Final-component flags
+ ~~~~~~~~~~~~~~~~~~~~~
+diff --git a/fs/internal.h b/fs/internal.h
+index 315fcd8d237c..f48449a43626 100644
+--- a/fs/internal.h
++++ b/fs/internal.h
+@@ -119,6 +119,7 @@ struct open_flags {
+ 	int acc_mode;
+ 	int intent;
+ 	int lookup_flags;
++	fmode_t opath_mask;
+ };
+ extern struct file *do_filp_open(int dfd, struct filename *pathname,
+ 		const struct open_flags *op);
+diff --git a/fs/namei.c b/fs/namei.c
+index 209c51a5226c..54d57dad0f91 100644
+--- a/fs/namei.c
++++ b/fs/namei.c
+@@ -872,7 +872,7 @@ void nd_jump_link(struct path *path)
  
- #define __ARCH_WANT_SYS_CLONE
-diff --git a/arch/arm64/include/asm/unistd32.h b/arch/arm64/include/asm/unistd32.h
-index 94ab29cf4f00..57f6f592d460 100644
---- a/arch/arm64/include/asm/unistd32.h
-+++ b/arch/arm64/include/asm/unistd32.h
-@@ -879,6 +879,8 @@ __SYSCALL(__NR_fspick, sys_fspick)
- __SYSCALL(__NR_pidfd_open, sys_pidfd_open)
- #define __NR_clone3 435
- __SYSCALL(__NR_clone3, sys_clone3)
-+#define __NR_openat2 437
-+__SYSCALL(__NR_openat2, sys_openat2)
+ 	nd->path = *path;
+ 	nd->inode = nd->path.dentry->d_inode;
+-	nd->flags |= LOOKUP_JUMPED;
++	nd->flags |= LOOKUP_JUMPED | LOOKUP_MAGICLINK_JUMPED;
+ }
  
- /*
-  * Please add new compat syscalls above this comment and update
-diff --git a/arch/ia64/kernel/syscalls/syscall.tbl b/arch/ia64/kernel/syscalls/syscall.tbl
-index 36d5faf4c86c..8d36f2e2dc89 100644
---- a/arch/ia64/kernel/syscalls/syscall.tbl
-+++ b/arch/ia64/kernel/syscalls/syscall.tbl
-@@ -356,3 +356,4 @@
- 433	common	fspick				sys_fspick
- 434	common	pidfd_open			sys_pidfd_open
- # 435 reserved for clone3
-+437	common	openat2				sys_openat2
-diff --git a/arch/m68k/kernel/syscalls/syscall.tbl b/arch/m68k/kernel/syscalls/syscall.tbl
-index a88a285a0e5f..2559925f1924 100644
---- a/arch/m68k/kernel/syscalls/syscall.tbl
-+++ b/arch/m68k/kernel/syscalls/syscall.tbl
-@@ -435,3 +435,4 @@
- 433	common	fspick				sys_fspick
- 434	common	pidfd_open			sys_pidfd_open
- # 435 reserved for clone3
-+437	common	openat2				sys_openat2
-diff --git a/arch/microblaze/kernel/syscalls/syscall.tbl b/arch/microblaze/kernel/syscalls/syscall.tbl
-index 09b0cd7dab0a..c04385e60833 100644
---- a/arch/microblaze/kernel/syscalls/syscall.tbl
-+++ b/arch/microblaze/kernel/syscalls/syscall.tbl
-@@ -441,3 +441,4 @@
- 433	common	fspick				sys_fspick
- 434	common	pidfd_open			sys_pidfd_open
- 435	common	clone3				sys_clone3
-+437	common	openat2				sys_openat2
-diff --git a/arch/mips/kernel/syscalls/syscall_n32.tbl b/arch/mips/kernel/syscalls/syscall_n32.tbl
-index c9c879ec9b6d..ba06cae655c6 100644
---- a/arch/mips/kernel/syscalls/syscall_n32.tbl
-+++ b/arch/mips/kernel/syscalls/syscall_n32.tbl
-@@ -374,3 +374,4 @@
- 433	n32	fspick				sys_fspick
- 434	n32	pidfd_open			sys_pidfd_open
- # 435 reserved for clone3
-+437	n32	openat2				sys_openat2
-diff --git a/arch/mips/kernel/syscalls/syscall_n64.tbl b/arch/mips/kernel/syscalls/syscall_n64.tbl
-index bbce9159caa1..0f3de320ae51 100644
---- a/arch/mips/kernel/syscalls/syscall_n64.tbl
-+++ b/arch/mips/kernel/syscalls/syscall_n64.tbl
-@@ -350,3 +350,4 @@
- 433	n64	fspick				sys_fspick
- 434	n64	pidfd_open			sys_pidfd_open
- # 435 reserved for clone3
-+437	n64	openat2				sys_openat2
-diff --git a/arch/mips/kernel/syscalls/syscall_o32.tbl b/arch/mips/kernel/syscalls/syscall_o32.tbl
-index 9653591428ec..f108464d09a3 100644
---- a/arch/mips/kernel/syscalls/syscall_o32.tbl
-+++ b/arch/mips/kernel/syscalls/syscall_o32.tbl
-@@ -423,3 +423,4 @@
- 433	o32	fspick				sys_fspick
- 434	o32	pidfd_open			sys_pidfd_open
- # 435 reserved for clone3
-+437	o32	openat2				sys_openat2			sys_openat2
-diff --git a/arch/parisc/kernel/syscalls/syscall.tbl b/arch/parisc/kernel/syscalls/syscall.tbl
-index 670d1371aca1..45ddc4485844 100644
---- a/arch/parisc/kernel/syscalls/syscall.tbl
-+++ b/arch/parisc/kernel/syscalls/syscall.tbl
-@@ -432,3 +432,4 @@
- 433	common	fspick				sys_fspick
- 434	common	pidfd_open			sys_pidfd_open
- 435	common	clone3				sys_clone3_wrapper
-+437	common	openat2				sys_openat2
-diff --git a/arch/powerpc/kernel/syscalls/syscall.tbl b/arch/powerpc/kernel/syscalls/syscall.tbl
-index 3331749aab20..a89952a4bc7f 100644
---- a/arch/powerpc/kernel/syscalls/syscall.tbl
-+++ b/arch/powerpc/kernel/syscalls/syscall.tbl
-@@ -517,3 +517,4 @@
- 433	common	fspick				sys_fspick
- 434	common	pidfd_open			sys_pidfd_open
- # 435 reserved for clone3
-+437	common	openat2				sys_openat2
-diff --git a/arch/s390/kernel/syscalls/syscall.tbl b/arch/s390/kernel/syscalls/syscall.tbl
-index a90d3e945445..23a50a776a91 100644
---- a/arch/s390/kernel/syscalls/syscall.tbl
-+++ b/arch/s390/kernel/syscalls/syscall.tbl
-@@ -438,3 +438,4 @@
- 433  common	fspick			sys_fspick			sys_fspick
- 434  common	pidfd_open		sys_pidfd_open			sys_pidfd_open
- # 435 reserved for clone3
-+437  common	openat2			sys_openat2			sys_openat2
-diff --git a/arch/sh/kernel/syscalls/syscall.tbl b/arch/sh/kernel/syscalls/syscall.tbl
-index b5ed26c4c005..a7185cc18626 100644
---- a/arch/sh/kernel/syscalls/syscall.tbl
-+++ b/arch/sh/kernel/syscalls/syscall.tbl
-@@ -438,3 +438,4 @@
- 433	common	fspick				sys_fspick
- 434	common	pidfd_open			sys_pidfd_open
- # 435 reserved for clone3
-+437	common	openat2				sys_openat2
-diff --git a/arch/sparc/kernel/syscalls/syscall.tbl b/arch/sparc/kernel/syscalls/syscall.tbl
-index 8c8cc7537fb2..b11c19552022 100644
---- a/arch/sparc/kernel/syscalls/syscall.tbl
-+++ b/arch/sparc/kernel/syscalls/syscall.tbl
-@@ -481,3 +481,4 @@
- 433	common	fspick				sys_fspick
- 434	common	pidfd_open			sys_pidfd_open
- # 435 reserved for clone3
-+437	common	openat2			sys_openat2
-diff --git a/arch/x86/entry/syscalls/syscall_32.tbl b/arch/x86/entry/syscalls/syscall_32.tbl
-index c00019abd076..dfa1dc5c8587 100644
---- a/arch/x86/entry/syscalls/syscall_32.tbl
-+++ b/arch/x86/entry/syscalls/syscall_32.tbl
-@@ -440,3 +440,4 @@
- 433	i386	fspick			sys_fspick			__ia32_sys_fspick
- 434	i386	pidfd_open		sys_pidfd_open			__ia32_sys_pidfd_open
- 435	i386	clone3			sys_clone3			__ia32_sys_clone3
-+437	i386	openat2			sys_openat2			__ia32_sys_openat2
-diff --git a/arch/x86/entry/syscalls/syscall_64.tbl b/arch/x86/entry/syscalls/syscall_64.tbl
-index c29976eca4a8..9035647ef236 100644
---- a/arch/x86/entry/syscalls/syscall_64.tbl
-+++ b/arch/x86/entry/syscalls/syscall_64.tbl
-@@ -357,6 +357,7 @@
- 433	common	fspick			__x64_sys_fspick
- 434	common	pidfd_open		__x64_sys_pidfd_open
- 435	common	clone3			__x64_sys_clone3/ptregs
-+437	common	openat2			__x64_sys_openat2
+ static inline void put_link(struct nameidata *nd)
+@@ -1066,6 +1066,7 @@ const char *get_link(struct nameidata *nd)
+ 		return ERR_PTR(error);
  
- #
- # x32-specific system call numbers start at 512 to avoid cache impact
-diff --git a/arch/xtensa/kernel/syscalls/syscall.tbl b/arch/xtensa/kernel/syscalls/syscall.tbl
-index 25f4de729a6d..f0a68013c038 100644
---- a/arch/xtensa/kernel/syscalls/syscall.tbl
-+++ b/arch/xtensa/kernel/syscalls/syscall.tbl
-@@ -406,3 +406,4 @@
- 433	common	fspick				sys_fspick
- 434	common	pidfd_open			sys_pidfd_open
- 435	common	clone3				sys_clone3
-+437	common	openat2				sys_openat2
+ 	nd->last_type = LAST_BIND;
++	nd->flags &= ~LOOKUP_MAGICLINK_JUMPED;
+ 	res = READ_ONCE(inode->i_link);
+ 	if (!res) {
+ 		const char * (*get)(struct dentry *, struct inode *,
+@@ -3501,16 +3502,73 @@ static int do_tmpfile(struct nameidata *nd, unsigned flags,
+ 	return error;
+ }
+ 
+-static int do_o_path(struct nameidata *nd, unsigned flags, struct file *file)
++/**
++ * may_reopen_magiclink - Check permissions for opening a trailing magic-link
++ * @upgrade_mask: the upgrade-mask of the magic-link
++ * @acc_mode: ACC_MODE which the user is attempting
++ *
++ * We block magic-link re-opening if the @upgrade_mask is more strict than the
++ * @acc_mode being requested, unless the user is capable(CAP_DAC_OVERRIDE).
++ *
++ * Returns 0 if successful, -EACCES on error.
++ */
++static int may_open_magiclink(fmode_t upgrade_mask, int acc_mode)
+ {
+-	struct path path;
+-	int error = path_lookupat(nd, flags, &path);
+-	if (!error) {
+-		audit_inode(nd->name, path.dentry, 0);
+-		error = vfs_open(&path, file);
+-		path_put(&path);
+-	}
+-	return error;
++	/*
++	 * We only allow for init_userns to be able to override magic-links.
++	 * This is done to avoid cases where an unprivileged userns could take
++	 * an O_PATH of the fd, resulting in it being very unclear whether
++	 * CAP_DAC_OVERRIDE should work on the new O_PATH fd (given that it
++	 * pipes through to the underlying file).
++	 */
++	if (capable(CAP_DAC_OVERRIDE))
++		return 0;
++
++	if ((acc_mode & MAY_READ) &&
++	    !(upgrade_mask & (FMODE_READ | FMODE_PATH_READ)))
++		goto err;
++	if ((acc_mode & MAY_WRITE) &&
++	    !(upgrade_mask & (FMODE_WRITE | FMODE_PATH_WRITE)))
++		goto err;
++
++	return 0;
++
++err:
++	pr_warn_ratelimited("%s[%d]: magic-link re-open blocked ('%s%s%s' requested with an upgrade-mask of '%s%s%s%s')",
++		current->comm, task_pid_nr(current),
++		(acc_mode & MAY_READ) ? "r" : "",
++		(acc_mode & MAY_WRITE) ? "w" : "",
++		(acc_mode & MAY_EXEC) ? "x" : "",
++		(upgrade_mask & FMODE_READ) ? "r" : "",
++		(upgrade_mask & FMODE_PATH_READ) ? "R" : "",
++		(upgrade_mask & FMODE_WRITE) ? "w" : "",
++		(upgrade_mask & FMODE_PATH_WRITE) ? "W" : "");
++	return -EACCES;
++}
++
++static int trailing_magiclink(struct nameidata *nd, int acc_mode,
++			      fmode_t *opath_mask)
++{
++	struct inode *inode = nd->link_inode;
++	fmode_t upgrade_mask = 0;
++
++	/* Was the trailing_symlink() a magic-link? */
++	if (!(nd->flags & LOOKUP_MAGICLINK_JUMPED))
++		return 0;
++
++	/*
++	 * Figure out the upgrade-mask of the link_inode. Since these aren't
++	 * strictly POSIX semantics we don't do an acl_permission_check() here,
++	 * so we only care that at least one bit is set for each upgrade-mode.
++	 */
++	if (inode->i_mode & S_IRUGO)
++		upgrade_mask |= FMODE_PATH_READ;
++	if (inode->i_mode & S_IWUGO)
++		upgrade_mask |= FMODE_PATH_WRITE;
++	/* Restrict the O_PATH upgrade-mask of the caller. */
++	if (opath_mask)
++		*opath_mask &= upgrade_mask;
++	return may_open_magiclink(upgrade_mask, acc_mode);
+ }
+ 
+ static struct file *path_openat(struct nameidata *nd,
+@@ -3526,13 +3584,38 @@ static struct file *path_openat(struct nameidata *nd,
+ 	if (unlikely(file->f_flags & __O_TMPFILE)) {
+ 		error = do_tmpfile(nd, flags, op, file);
+ 	} else if (unlikely(file->f_flags & O_PATH)) {
+-		error = do_o_path(nd, flags, file);
++		/* Inlined path_lookupat() with a trailing_magiclink() check. */
++		fmode_t opath_mask = op->opath_mask;
++		const char *s = path_init(nd, flags);
++
++		while (!(error = link_path_walk(s, nd))
++			&& ((error = lookup_last(nd)) > 0)) {
++			s = trailing_symlink(nd);
++			error = trailing_magiclink(nd, op->acc_mode, &opath_mask);
++			if (error)
++				s = ERR_PTR(error);
++		}
++		if (!error)
++			error = complete_walk(nd);
++
++		if (!error && nd->flags & LOOKUP_DIRECTORY)
++			if (!d_can_lookup(nd->path.dentry))
++				error = -ENOTDIR;
++		if (!error) {
++			audit_inode(nd->name, nd->path.dentry, 0);
++			error = vfs_open(&nd->path, file);
++			file->f_mode |= opath_mask;
++		}
++		terminate_walk(nd);
+ 	} else {
+ 		const char *s = path_init(nd, flags);
+ 		while (!(error = link_path_walk(s, nd)) &&
+ 			(error = do_last(nd, file, op)) > 0) {
+ 			nd->flags &= ~(LOOKUP_OPEN|LOOKUP_CREATE|LOOKUP_EXCL);
+ 			s = trailing_symlink(nd);
++			error = trailing_magiclink(nd, op->acc_mode, NULL);
++			if (error)
++				s = ERR_PTR(error);
+ 		}
+ 		terminate_walk(nd);
+ 	}
 diff --git a/fs/open.c b/fs/open.c
-index bdca45528524..062761136f21 100644
+index b5b80469b93d..ab20eae39df7 100644
 --- a/fs/open.c
 +++ b/fs/open.c
-@@ -928,19 +928,29 @@ struct file *open_with_fake_path(const struct path *path, int flags,
- }
- EXPORT_SYMBOL(open_with_fake_path);
- 
--static inline int build_open_flags(int flags, umode_t mode, struct open_flags *op)
-+static inline int build_open_flags(const struct open_how *how,
-+				   struct open_flags *op)
- {
-+	int flags = how->flags;
- 	int lookup_flags = 0;
-+	int opath_mask = 0;
- 	int acc_mode = ACC_MODE(flags);
- 
- 	/*
--	 * Clear out all open flags we don't know about so that we don't report
--	 * them in fcntl(F_GETFD) or similar interfaces.
-+	 * Older syscalls still clear these bits before calling
-+	 * build_open_flags(), but openat2(2) checks all its arguments.
- 	 */
--	flags &= VALID_OPEN_FLAGS;
-+	if (flags & ~VALID_OPEN_FLAGS)
-+		return -EINVAL;
-+	if (how->resolve & ~VALID_RESOLVE_FLAGS)
-+		return -EINVAL;
-+	if (!(how->flags & (O_PATH | O_CREAT | __O_TMPFILE)) && how->mode != 0)
-+		return -EINVAL;
-+	if (memchr_inv(how->reserved, 0, sizeof(how->reserved)))
-+		return -EINVAL;
- 
- 	if (flags & (O_CREAT | __O_TMPFILE))
--		op->mode = (mode & S_IALLUGO) | S_IFREG;
-+		op->mode = (how->mode & S_IALLUGO) | S_IFREG;
- 	else
- 		op->mode = 0;
- 
-@@ -968,6 +978,14 @@ static inline int build_open_flags(int flags, umode_t mode, struct open_flags *o
- 		 */
- 		flags &= O_DIRECTORY | O_NOFOLLOW | O_PATH;
- 		acc_mode = 0;
-+
-+		/* Allow userspace to restrict the re-opening of O_PATH fds. */
-+		if (how->upgrade_mask & ~VALID_UPGRADE_FLAGS)
-+			return -EINVAL;
-+		if (!(how->upgrade_mask & UPGRADE_NOREAD))
-+			opath_mask |= FMODE_PATH_READ;
-+		if (!(how->upgrade_mask & UPGRADE_NOWRITE))
-+			opath_mask |= FMODE_PATH_WRITE;
- 	}
- 
- 	op->open_flag = flags;
-@@ -983,8 +1001,7 @@ static inline int build_open_flags(int flags, umode_t mode, struct open_flags *o
+@@ -982,8 +982,9 @@ static inline int build_open_flags(int flags, umode_t mode, struct open_flags *o
+ 		acc_mode |= MAY_APPEND;
  
  	op->acc_mode = acc_mode;
+-
  	op->intent = flags & O_PATH ? 0 : LOOKUP_OPEN;
--	/* For O_PATH backwards-compatibility we default to an all-set mask. */
--	op->opath_mask = FMODE_PATH_READ | FMODE_PATH_WRITE;
-+	op->opath_mask = opath_mask;
++	/* For O_PATH backwards-compatibility we default to an all-set mask. */
++	op->opath_mask = FMODE_PATH_READ | FMODE_PATH_WRITE;
  
  	if (flags & O_CREAT) {
  		op->intent |= LOOKUP_CREATE;
-@@ -998,6 +1015,18 @@ static inline int build_open_flags(int flags, umode_t mode, struct open_flags *o
- 		lookup_flags |= LOOKUP_FOLLOW;
- 	if (flags & O_EMPTYPATH)
- 		lookup_flags |= LOOKUP_EMPTY;
-+
-+	if (how->resolve & RESOLVE_NO_XDEV)
-+		lookup_flags |= LOOKUP_NO_XDEV;
-+	if (how->resolve & RESOLVE_NO_MAGICLINKS)
-+		lookup_flags |= LOOKUP_NO_MAGICLINKS;
-+	if (how->resolve & RESOLVE_NO_SYMLINKS)
-+		lookup_flags |= LOOKUP_NO_SYMLINKS;
-+	if (how->resolve & RESOLVE_BENEATH)
-+		lookup_flags |= LOOKUP_BENEATH;
-+	if (how->resolve & RESOLVE_IN_ROOT)
-+		lookup_flags |= LOOKUP_IN_ROOT;
-+
- 	op->lookup_flags = lookup_flags;
- 	return 0;
- }
-@@ -1016,8 +1045,14 @@ static inline int build_open_flags(int flags, umode_t mode, struct open_flags *o
- struct file *file_open_name(struct filename *name, int flags, umode_t mode)
- {
- 	struct open_flags op;
--	int err = build_open_flags(flags, mode, &op);
--	return err ? ERR_PTR(err) : do_filp_open(AT_FDCWD, name, &op);
-+	struct open_how how = {
-+		.flags = flags & VALID_OPEN_FLAGS,
-+		.mode = OPENHOW_MODE(flags, mode),
-+	};
-+	int err = build_open_flags(&how, &op);
-+	if (err)
-+		return ERR_PTR(err);
-+	return do_filp_open(AT_FDCWD, name, &op);
- }
+diff --git a/fs/proc/fd.c b/fs/proc/fd.c
+index 81882a13212d..9b7d8becb002 100644
+--- a/fs/proc/fd.c
++++ b/fs/proc/fd.c
+@@ -104,11 +104,30 @@ static void tid_fd_update_inode(struct task_struct *task, struct inode *inode,
+ 	task_dump_owner(task, 0, &inode->i_uid, &inode->i_gid);
  
- /**
-@@ -1048,17 +1083,22 @@ struct file *file_open_root(struct dentry *dentry, struct vfsmount *mnt,
- 			    const char *filename, int flags, umode_t mode)
- {
- 	struct open_flags op;
--	int err = build_open_flags(flags, mode, &op);
-+	struct open_how how = {
-+		.flags = flags & VALID_OPEN_FLAGS,
-+		.mode = OPENHOW_MODE(flags, mode),
-+	};
-+	int err = build_open_flags(&how, &op);
- 	if (err)
- 		return ERR_PTR(err);
- 	return do_file_open_root(dentry, mnt, filename, &op);
- }
- EXPORT_SYMBOL(file_open_root);
- 
--long do_sys_open(int dfd, const char __user *filename, int flags, umode_t mode)
-+long do_sys_open(int dfd, const char __user *filename,
-+		 struct open_how *how)
- {
- 	struct open_flags op;
--	int fd = build_open_flags(flags, mode, &op);
-+	int fd = build_open_flags(how, &op);
- 	int empty = 0;
- 	struct filename *tmp;
- 
-@@ -1071,7 +1111,7 @@ long do_sys_open(int dfd, const char __user *filename, int flags, umode_t mode)
- 	if (!empty)
- 		op.open_flag &= ~O_EMPTYPATH;
- 
--	fd = get_unused_fd_flags(flags);
-+	fd = get_unused_fd_flags(how->flags);
- 	if (fd >= 0) {
- 		struct file *f = do_filp_open(dfd, tmp, &op);
- 		if (IS_ERR(f)) {
-@@ -1088,19 +1128,35 @@ long do_sys_open(int dfd, const char __user *filename, int flags, umode_t mode)
- 
- SYSCALL_DEFINE3(open, const char __user *, filename, int, flags, umode_t, mode)
- {
--	if (force_o_largefile())
--		flags |= O_LARGEFILE;
--
--	return do_sys_open(AT_FDCWD, filename, flags, mode);
-+	return ksys_open(filename, flags, mode);
- }
- 
- SYSCALL_DEFINE4(openat, int, dfd, const char __user *, filename, int, flags,
- 		umode_t, mode)
- {
-+	struct open_how how = {
-+		.flags = flags & VALID_OPEN_FLAGS,
-+		.mode = OPENHOW_MODE(flags, mode),
-+	};
-+
-+	if (force_o_largefile())
-+		how.flags |= O_LARGEFILE;
-+
-+	return do_sys_open(dfd, filename, &how);
-+}
-+
-+SYSCALL_DEFINE3(openat2, int, dfd, const char __user *, filename,
-+		const struct open_how __user *, how)
-+{
-+	struct open_how tmp;
-+
-+	if (copy_from_user(&tmp, how, sizeof(tmp)))
-+		return -EFAULT;
-+
- 	if (force_o_largefile())
--		flags |= O_LARGEFILE;
-+		tmp.flags |= O_LARGEFILE;
- 
--	return do_sys_open(dfd, filename, flags, mode);
-+	return do_sys_open(dfd, filename, &tmp);
- }
- 
- #ifdef CONFIG_COMPAT
-@@ -1110,7 +1166,11 @@ SYSCALL_DEFINE4(openat, int, dfd, const char __user *, filename, int, flags,
-  */
- COMPAT_SYSCALL_DEFINE3(open, const char __user *, filename, int, flags, umode_t, mode)
- {
--	return do_sys_open(AT_FDCWD, filename, flags, mode);
-+	struct open_how how = {
-+		.flags = flags & VALID_OPEN_FLAGS,
-+		.mode = OPENHOW_MODE(flags, mode),
-+	};
-+	return do_sys_open(AT_FDCWD, filename, &how);
- }
- 
- /*
-@@ -1119,7 +1179,11 @@ COMPAT_SYSCALL_DEFINE3(open, const char __user *, filename, int, flags, umode_t,
-  */
- COMPAT_SYSCALL_DEFINE4(openat, int, dfd, const char __user *, filename, int, flags, umode_t, mode)
- {
--	return do_sys_open(dfd, filename, flags, mode);
-+	struct open_how how = {
-+		.flags = flags & VALID_OPEN_FLAGS,
-+		.mode = OPENHOW_MODE(flags, mode),
-+	};
-+	return do_sys_open(dfd, filename, &how);
- }
- #endif
- 
-diff --git a/include/linux/fcntl.h b/include/linux/fcntl.h
-index 2868ae6c8fc1..f7f378e1f43c 100644
---- a/include/linux/fcntl.h
-+++ b/include/linux/fcntl.h
-@@ -4,13 +4,26 @@
- 
- #include <uapi/linux/fcntl.h>
- 
--/* list of all valid flags for the open/openat flags argument: */
-+/* Should open_how.mode be set for older syscalls wrappers? */
-+#define OPENHOW_MODE(flags, mode) \
-+	(((flags) & (O_CREAT | __O_TMPFILE)) ? (mode) : 0)
-+
-+/* List of all valid flags for the open/openat flags argument: */
- #define VALID_OPEN_FLAGS \
- 	(O_RDONLY | O_WRONLY | O_RDWR | O_CREAT | O_EXCL | O_NOCTTY | O_TRUNC | \
- 	 O_APPEND | O_NDELAY | O_NONBLOCK | O_NDELAY | __O_SYNC | O_DSYNC | \
- 	 FASYNC	| O_DIRECT | O_LARGEFILE | O_DIRECTORY | O_NOFOLLOW | \
- 	 O_NOATIME | O_CLOEXEC | O_PATH | __O_TMPFILE | O_EMPTYPATH)
- 
-+/* List of all valid flags for the how->upgrade_mask argument: */
-+#define VALID_UPGRADE_FLAGS \
-+	(UPGRADE_NOWRITE | UPGRADE_NOREAD)
-+
-+/* List of all valid flags for the how->resolve argument: */
-+#define VALID_RESOLVE_FLAGS \
-+	(RESOLVE_NO_XDEV | RESOLVE_NO_MAGICLINKS | RESOLVE_NO_SYMLINKS | \
-+	 RESOLVE_BENEATH | RESOLVE_IN_ROOT)
-+
- #ifndef force_o_largefile
- #define force_o_largefile() (!IS_ENABLED(CONFIG_ARCH_32BIT_OFF_T))
- #endif
+ 	if (S_ISLNK(inode->i_mode)) {
++		/*
++		 * Always set +x (depending on the fmode type), since there
++		 * currently aren't FMODE_PATH_EXEC restrictions and there is
++		 * no O_MAYEXEC yet. This might change in the future, in which
++		 * case we will restrict +x.
++		 */
+ 		unsigned i_mode = S_IFLNK;
++		if (f_mode & FMODE_PATH)
++			i_mode |= S_IXGRP;
++		else
++			i_mode |= S_IXUSR;
++		/*
++		 * Construct the mode bits based on the open-mode. The u+rwx
++		 * bits are for "ordinary" open modes while g+rwx are for
++		 * O_PATH modes.
++		 */
+ 		if (f_mode & FMODE_READ)
+-			i_mode |= S_IRUSR | S_IXUSR;
++			i_mode |= S_IRUSR;
+ 		if (f_mode & FMODE_WRITE)
+-			i_mode |= S_IWUSR | S_IXUSR;
++			i_mode |= S_IWUSR;
++		if (f_mode & FMODE_PATH_READ)
++			i_mode |= S_IRGRP;
++		if (f_mode & FMODE_PATH_WRITE)
++			i_mode |= S_IWGRP;
+ 		inode->i_mode = i_mode;
+ 	}
+ 	security_task_to_inode(task, inode);
 diff --git a/include/linux/fs.h b/include/linux/fs.h
-index dc0f5660af43..88f51af9ecb6 100644
+index 56b8e358af5c..dc0f5660af43 100644
 --- a/include/linux/fs.h
 +++ b/include/linux/fs.h
-@@ -2498,8 +2498,8 @@ extern int do_truncate(struct dentry *, loff_t start, unsigned int time_attrs,
- 		       struct file *filp);
- extern int vfs_fallocate(struct file *file, int mode, loff_t offset,
- 			loff_t len);
--extern long do_sys_open(int dfd, const char __user *filename, int flags,
--			umode_t mode);
-+extern long do_sys_open(int dfd, const char __user *filename,
-+			struct open_how *how);
- extern struct file *file_open_name(struct filename *, int, umode_t);
- extern struct file *filp_open(const char *, int, umode_t);
- extern struct file *file_open_root(struct dentry *, struct vfsmount *,
-diff --git a/include/linux/syscalls.h b/include/linux/syscalls.h
-index 88145da7d140..a4f2f135001e 100644
---- a/include/linux/syscalls.h
-+++ b/include/linux/syscalls.h
-@@ -69,6 +69,7 @@ struct rseq;
- union bpf_attr;
- struct io_uring_params;
- struct clone_args;
-+struct open_how;
+@@ -173,6 +173,10 @@ typedef int (dio_iodone_t)(struct kiocb *iocb, loff_t offset,
+ /* File does not contribute to nr_files count */
+ #define FMODE_NOACCOUNT		((__force fmode_t)0x20000000)
  
- #include <linux/types.h>
- #include <linux/aio_abi.h>
-@@ -439,6 +440,8 @@ asmlinkage long sys_fchownat(int dfd, const char __user *filename, uid_t user,
- asmlinkage long sys_fchown(unsigned int fd, uid_t user, gid_t group);
- asmlinkage long sys_openat(int dfd, const char __user *filename, int flags,
- 			   umode_t mode);
-+asmlinkage long sys_openat2(int dfd, const char __user *filename,
-+			    const struct open_how *how);
- asmlinkage long sys_close(unsigned int fd);
- asmlinkage long sys_vhangup(void);
- 
-@@ -1374,15 +1377,21 @@ static inline int ksys_close(unsigned int fd)
- 	return __close_fd(current->files, fd);
- }
- 
--extern long do_sys_open(int dfd, const char __user *filename, int flags,
--			umode_t mode);
-+extern long do_sys_open(int dfd, const char __user *filename,
-+			struct open_how *how);
- 
- static inline long ksys_open(const char __user *filename, int flags,
- 			     umode_t mode)
- {
-+	struct open_how how = {
-+		.flags = flags & VALID_OPEN_FLAGS,
-+		.mode = OPENHOW_MODE(flags, mode),
-+	};
++/* File is an O_PATH descriptor which can be upgraded to (read, write). */
++#define FMODE_PATH_READ		((__force fmode_t)0x40000000)
++#define FMODE_PATH_WRITE	((__force fmode_t)0x80000000)
 +
- 	if (force_o_largefile())
--		flags |= O_LARGEFILE;
--	return do_sys_open(AT_FDCWD, filename, flags, mode);
-+		how.flags |= O_LARGEFILE;
-+
-+	return do_sys_open(AT_FDCWD, filename, &how);
- }
- 
- extern long do_sys_truncate(const char __user *pathname, loff_t length);
-diff --git a/include/uapi/asm-generic/unistd.h b/include/uapi/asm-generic/unistd.h
-index 1be0e798e362..b28c11b338ee 100644
---- a/include/uapi/asm-generic/unistd.h
-+++ b/include/uapi/asm-generic/unistd.h
-@@ -851,8 +851,11 @@ __SYSCALL(__NR_pidfd_open, sys_pidfd_open)
- __SYSCALL(__NR_clone3, sys_clone3)
- #endif
- 
-+#define __NR_openat2 437
-+__SYSCALL(__NR_openat2, sys_openat2)
-+
- #undef __NR_syscalls
--#define __NR_syscalls 436
-+#define __NR_syscalls 438
- 
  /*
-  * 32 bit systems traditionally used different
-diff --git a/include/uapi/linux/fcntl.h b/include/uapi/linux/fcntl.h
-index 1d338357df8a..ebfc97b3d8aa 100644
---- a/include/uapi/linux/fcntl.h
-+++ b/include/uapi/linux/fcntl.h
-@@ -93,5 +93,47 @@
+  * Flag for rw_copy_check_uvector and compat_rw_copy_check_uvector
+  * that indicates that they should check the contents of the iovec are
+diff --git a/include/linux/namei.h b/include/linux/namei.h
+index 9138b4471dbf..bd6d3eb7764d 100644
+--- a/include/linux/namei.h
++++ b/include/linux/namei.h
+@@ -49,6 +49,7 @@ enum {LAST_NORM, LAST_ROOT, LAST_DOT, LAST_DOTDOT, LAST_BIND};
+ #define LOOKUP_ROOT		0x2000
+ #define LOOKUP_EMPTY		0x4000
+ #define LOOKUP_DOWN		0x8000
++#define LOOKUP_MAGICLINK_JUMPED	0x10000
  
- #define AT_RECURSIVE		0x8000	/* Apply to the entire subtree */
+ extern int path_pts(struct path *path);
  
-+/**
-+ * Arguments for how openat2(2) should open the target path. If @resolve is
-+ * zero, then openat2(2) operates identically to openat(2).
-+ *
-+ * However, unlike openat(2), unknown bits in @flags result in -EINVAL rather
-+ * than being silently ignored. In addition, @mode (or @upgrade_mask) must be
-+ * zero unless one of {O_CREAT, O_TMPFILE, O_PATH} are set.
-+ *
-+ * @flags: O_* flags.
-+ * @mode: O_CREAT/O_TMPFILE file mode.
-+ * @upgrade_mask: UPGRADE_* flags (to restrict O_PATH re-opening).
-+ * @resolve: RESOLVE_* flags.
-+ * @reserved: reserved for future extensions, must be zeroed.
-+ */
-+struct open_how {
-+	__u32 flags;
-+	union {
-+		__u16 mode;
-+		__u16 upgrade_mask;
-+	};
-+	__u16 resolve;
-+	__u64 reserved[7]; /* must be zeroed */
-+};
-+
-+/* how->resolve flags for openat2(2). */
-+#define RESOLVE_NO_XDEV		0x01 /* Block mount-point crossings
-+					(includes bind-mounts). */
-+#define RESOLVE_NO_MAGICLINKS	0x02 /* Block traversal through procfs-style
-+					"magic-links". */
-+#define RESOLVE_NO_SYMLINKS	0x04 /* Block traversal through all symlinks
-+					(implies OEXT_NO_MAGICLINKS) */
-+#define RESOLVE_BENEATH		0x08 /* Block "lexical" trickery like
-+					"..", symlinks, and absolute
-+					paths which escape the dirfd. */
-+#define RESOLVE_IN_ROOT		0x10 /* Make all jumps to "/" and ".."
-+					be scoped inside the dirfd
-+					(similar to chroot(2)). */
-+
-+/* how->upgrade flags for openat2(2). */
-+/* First bit is reserved for a future UPGRADE_NOEXEC flag. */
-+#define UPGRADE_NOREAD		0x02 /* Block re-opening with MAY_READ. */
-+#define UPGRADE_NOWRITE		0x04 /* Block re-opening with MAY_WRITE. */
- 
- #endif /* _UAPI_LINUX_FCNTL_H */
 -- 
 2.22.0
