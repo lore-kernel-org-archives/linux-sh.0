@@ -1,7 +1,7 @@
 From: Aleksa Sarai <cyphar@cyphar.com>
-Date: Fri, 19 Jul 2019 16:42:16 +0000
-Subject: [PATCH v10 0/9] namei: openat2(2) path resolution restrictions
-Message-Id: <20190719164225.27083-1-cyphar@cyphar.com>
+Date: Sun, 28 Jul 2019 01:01:59 +0000
+Subject: [PATCH v11 0/8] namei: openat2(2) path resolution restrictions
+Message-Id: <20190728010207.9781-1-cyphar@cyphar.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -15,6 +15,11 @@ version being stashed in separate branches with names of the form
     <https://github.com/cyphar/linux/tree/resolveat/master>
 
 Patch changelog:
+ v11:
+    * Fix checkpatch.pl errors and warnings where reasonable.
+    * Minor cleanup to pr_warn logging for may_open_magiclink().
+    * Drop kselftests patch to handle %m formatting correctly, and send
+      it through the kselftests tree directly. [Shuah Khan]
  v10:
     * Ensure that unlazy_walk() will fail if we are in a scoped walk and
       the caller has zeroed nd->root (this happens in a few places, I'm
@@ -57,9 +62,9 @@ previous discussion within [5] as well as others I felt were useful.
 In line with the conclusions of the original discussion of AT_NO_JUMPS,
 the flag has been split up into separate flags. However, instead of
 being an openat(2) flag it is provided through a new syscall openat2(2)
-which provides an alternative way to get an O_PATH file descriptor (the
-reasoning for doing this is included in the patch description). The
-following new LOOKUP_* flags are added:
+which provides several other improvements to the openat(2) interface (see the
+patch description for more details). The following new LOOKUP_* flags are
+added:
 
   * LOOKUP_NO_XDEV blocks all mountpoint crossings (upwards, downwards,
     or through absolute links). Absolute pathnames alone in openat(2) do
@@ -155,7 +160,7 @@ Cc: <linux-api@vger.kernel.org>
 [6]: https://github.com/cyphar/filepath-securejoin
 [7]: https://github.com/openSUSE/libpathrs
 
-Aleksa Sarai (9):
+Aleksa Sarai (8):
   namei: obey trailing magic-link DAC permissions
   procfs: switch magic-link modes to be more sane
   open: O_EMPTYPATH: procfs-less file descriptor re-opening
@@ -163,7 +168,6 @@ Aleksa Sarai (9):
   namei: LOOKUP_IN_ROOT: chroot-like path resolution
   namei: aggressively check for nd->root escape on ".." resolution
   open: openat2(2) syscall
-  kselftest: save-and-restore errno to allow for %m formatting
   selftests: add openat2(2) selftests
 
  Documentation/filesystems/path-lookup.rst     |  12 +-
@@ -200,19 +204,18 @@ Aleksa Sarai (9):
  include/linux/namei.h                         |   9 +
  include/linux/syscalls.h                      |  17 +-
  include/uapi/asm-generic/fcntl.h              |   4 +
- include/uapi/asm-generic/unistd.h             |   4 +-
+ include/uapi/asm-generic/unistd.h             |   5 +-
  include/uapi/linux/fcntl.h                    |  42 ++
  tools/testing/selftests/Makefile              |   1 +
- tools/testing/selftests/kselftest.h           |  15 +
  tools/testing/selftests/memfd/memfd_test.c    |   7 +-
  tools/testing/selftests/openat2/.gitignore    |   1 +
  tools/testing/selftests/openat2/Makefile      |   8 +
  tools/testing/selftests/openat2/helpers.c     | 162 +++++++
- tools/testing/selftests/openat2/helpers.h     | 114 +++++
- .../testing/selftests/openat2/linkmode_test.c | 326 ++++++++++++++
- .../selftests/openat2/rename_attack_test.c    | 124 ++++++
- .../testing/selftests/openat2/resolve_test.c  | 397 ++++++++++++++++++
- 46 files changed, 1652 insertions(+), 107 deletions(-)
+ tools/testing/selftests/openat2/helpers.h     | 116 +++++
+ .../testing/selftests/openat2/linkmode_test.c | 333 +++++++++++++++
+ .../selftests/openat2/rename_attack_test.c    | 127 ++++++
+ .../testing/selftests/openat2/resolve_test.c  | 402 ++++++++++++++++++
+ 45 files changed, 1655 insertions(+), 107 deletions(-)
  create mode 100644 tools/testing/selftests/openat2/.gitignore
  create mode 100644 tools/testing/selftests/openat2/Makefile
  create mode 100644 tools/testing/selftests/openat2/helpers.c
