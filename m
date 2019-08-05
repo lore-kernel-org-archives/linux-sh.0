@@ -1,42 +1,39 @@
-From: Will Deacon <will@kernel.org>
-Date: Sat, 31 Aug 2019 16:29:38 +0000
-Subject: Re: [PATCH 19/26] arm64: remove __iounmap
-Message-Id: <20190831162937.5ybulvaa4eq7mybs@willie-the-truck>
+From: Guenter Roeck <linux@roeck-us.net>
+Date: Mon, 05 Aug 2019 02:14:23 +0000
+Subject: [PATCH] sh: Drop -Werror from kernel Makefile
+Message-Id: <1564971263-21562-1-git-send-email-linux@roeck-us.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190817073253.27819-1-hch@lst.de>
- <20190817073253.27819-20-hch@lst.de>
- <20190819073601.4yxjvmyjtpi7tk56@willie-the-truck>
- <20190830160515.GC26887@lst.de>
-In-Reply-To: <20190830160515.GC26887@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Christoph Hellwig <hch@lst.de>
-Cc: Arnd Bergmann <arnd@arndb.de>, Guo Ren <guoren@kernel.org>, Michal Simek <monstr@monstr.eu>, Greentime Hu <green.hu@gmail.com>, Vincent Chen <deanbo422@gmail.com>, Guan Xuetao <gxt@pku.edu.cn>, x86@kernel.org, linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, nios2-dev@lists.rocketboards.org, openrisc@lists.librecores.org, linux-parisc@vger.kernel.org, linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-mtd@lists.infradead.org, linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Guenter Roeck <linux@roeck-us.net>, "Gustavo A . R . Silva" <gustavo@embeddedor.com>
 
-Hi Christoph,
+Since commit a035d552a93b ("Makefile: Globally enable fall-through
+warning"), all sh builds fail with errors such as
 
-On Fri, Aug 30, 2019 at 06:05:15PM +0200, Christoph Hellwig wrote:
-> On Mon, Aug 19, 2019 at 08:36:02AM +0100, Will Deacon wrote:
-> > On Sat, Aug 17, 2019 at 09:32:46AM +0200, Christoph Hellwig wrote:
-> > > No need to indirect iounmap for arm64.
-> > > 
-> > > Signed-off-by: Christoph Hellwig <hch@lst.de>
-> > > ---
-> > >  arch/arm64/include/asm/io.h | 3 +--
-> > >  arch/arm64/mm/ioremap.c     | 4 ++--
-> > >  2 files changed, 3 insertions(+), 4 deletions(-)
-> > 
-> > Not sure why we did it like this...
-> > 
-> > Acked-by: Will Deacon <will@kernel.org>
-> 
-> Can you just pick this one up through the arm64 tree for 5.4?
+arch/sh/kernel/disassemble.c: In function 'print_sh_insn':
+arch/sh/kernel/disassemble.c:478:8: error: this statement may fall through
 
-Unfortunately, it doesn't apply because the tree you've based it on has
-removed ioremap_wt(). If you send a version based on mainline, I can
-queue it.
+Since this effectively disables all build and boot tests for the
+architecture, let's drop -Werror from the sh kernel Makefile until
+the problems are fixed.
 
-Cheers,
+Cc: Gustavo A. R. Silva <gustavo@embeddedor.com>
+Signed-off-by: Guenter Roeck <linux@roeck-us.net>
+---
+ arch/sh/kernel/Makefile | 2 --
+ 1 file changed, 2 deletions(-)
 
-Will
+diff --git a/arch/sh/kernel/Makefile b/arch/sh/kernel/Makefile
+index 59673f8a3379..ef65f0625c6c 100644
+--- a/arch/sh/kernel/Makefile
++++ b/arch/sh/kernel/Makefile
+@@ -47,5 +47,3 @@ obj-$(CONFIG_DWARF_UNWINDER)	+= dwarf.o
+ obj-$(CONFIG_PERF_EVENTS)	+= perf_event.o perf_callchain.o
+ obj-$(CONFIG_DMA_NONCOHERENT)	+= dma-coherent.o
+ obj-$(CONFIG_HAVE_HW_BREAKPOINT)		+= hw_breakpoint.o
+-
+-ccflags-y := -Werror
+-- 
+2.7.4
