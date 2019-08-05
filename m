@@ -1,31 +1,38 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Mon, 05 Aug 2019 09:53:04 +0000
-Subject: Re: [PATCH v2 1/7] sh: ecovec24: add additional properties to the backlight device
-Message-Id: <CACRpkdYexsXR=n+t1iVb1QMZc9U1FeKdyHy3w4VnfPy4B=xeiA@mail.gmail.com>
+From: Christoph Hellwig <hch@lst.de>
+Date: Mon, 05 Aug 2019 09:11:57 +0000
+Subject: [PATCH 5/7] m68knommu: add a pgprot_noncached stub
+Message-Id: <20190805091159.7826-6-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190722150302.29526-1-brgl@bgdev.pl> <20190722150302.29526-2-brgl@bgdev.pl>
-In-Reply-To: <20190722150302.29526-2-brgl@bgdev.pl>
+References: <20190805091159.7826-1-hch@lst.de>
+In-Reply-To: <20190805091159.7826-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Bartosz Golaszewski <brgl@bgdev.pl>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Lee Jones <lee.jones@linaro.org>, Daniel Thompson <daniel.thompson@linaro.org>, Jingoo Han <jingoohan1@gmail.com>, Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>, Andy Shevchenko <andriy.shevchenko@linux.intel.com>, linux-sh@vger.kernel.org, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "open list:DRM PANEL DRIVERS" <dri-devel@lists.freedesktop.org>, linux-fbdev@vger.kernel.org, Bartosz Golaszewski <bgolaszewski@baylibre.com>
+To: iommu@lists.linux-foundation.org, Marek Szyprowski <m.szyprowski@samsung.com>
+Cc: linux-xtensa@linux-xtensa.org, Michal Simek <monstr@monstr.eu>, linux-parisc@vger.kernel.org, linux-sh@vger.kernel.org, Takashi Iwai <tiwai@suse.de>, linuxppc-dev@lists.ozlabs.org, x86@kernel.org, linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, Robin Murphy <robin.murphy@arm.com>, linux-arm-kernel@lists.infradead.org
 
-On Mon, Jul 22, 2019 at 5:03 PM Bartosz Golaszewski <brgl@bgdev.pl> wrote:
+Provide a pgprot_noncached like all the other nommu ports so that
+common code can rely on it being able to be present.  Note that this is
+generally code that is not actually run on nommu, but at least we can
+avoid nasty ifdefs by having a stub.
 
-> From: Bartosz Golaszewski <bgolaszewski@baylibre.com>
->
-> Add a GPIO lookup entry and a device property for GPIO backlight to the
-> board file. Tie them to the platform device which is now registered using
-> platform_device_register_full() because of the properties. These changes
-> are inactive now but will be used once the gpio backlight driver is
-> modified.
->
-> Signed-off-by: Bartosz Golaszewski <bgolaszewski@baylibre.com>
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+---
+ arch/m68k/include/asm/pgtable_no.h | 2 ++
+ 1 file changed, 2 insertions(+)
 
-Clever! I must also use these dynamic properties now.
-
-Reviewed-by: Linus Walleij <linus.walleij@linaro.org>
-
-Yours,
-Linus Walleij
+diff --git a/arch/m68k/include/asm/pgtable_no.h b/arch/m68k/include/asm/pgtable_no.h
+index fc3a96c77bd8..06194c7ba151 100644
+--- a/arch/m68k/include/asm/pgtable_no.h
++++ b/arch/m68k/include/asm/pgtable_no.h
+@@ -29,6 +29,8 @@
+ #define PAGE_READONLY	__pgprot(0)
+ #define PAGE_KERNEL	__pgprot(0)
+ 
++#define pgprot_noncached(prot)   (prot)
++
+ extern void paging_init(void);
+ #define swapper_pg_dir ((pgd_t *) 0)
+ 
+-- 
+2.20.1
