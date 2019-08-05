@@ -1,121 +1,151 @@
 From: Christoph Hellwig <hch@lst.de>
-Date: Wed, 14 Aug 2019 13:46:15 +0000
-Subject: [PATCH] sh: use the generic dma coherent remap allocator
-Message-Id: <20190814134615.29442-2-hch@lst.de>
+Date: Mon, 05 Aug 2019 09:11:59 +0000
+Subject: [PATCH 7/7] dma-mapping: provide a better default ->get_required_mask
+Message-Id: <20190805091159.7826-8-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190814134615.29442-1-hch@lst.de>
-In-Reply-To: <20190814134615.29442-1-hch@lst.de>
+References: <20190805091159.7826-1-hch@lst.de>
+In-Reply-To: <20190805091159.7826-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, iommu@lists.linux-foundation.org, Jacopo Mondi <jacopo+renesas@jmondi.org>, Thomas Petazzoni <thomas.petazzoni@bootlin.com>
+To: iommu@lists.linux-foundation.org, Marek Szyprowski <m.szyprowski@samsung.com>
+Cc: linux-xtensa@linux-xtensa.org, Michal Simek <monstr@monstr.eu>, linux-parisc@vger.kernel.org, linux-sh@vger.kernel.org, Takashi Iwai <tiwai@suse.de>, linuxppc-dev@lists.ozlabs.org, x86@kernel.org, linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, Robin Murphy <robin.murphy@arm.com>, linux-arm-kernel@lists.infradead.org
 
-This switches to using common code for the DMA allocations, including
-potential use of the CMA allocator if configured.
-
-Switching to the generic code enables DMA allocations from atomic
-context, which is required by the DMA API documentation, and also
-adds various other minor features drivers start relying upon.  It
-also makes sure we have on tested code base for all architectures
-that require uncached pte bits for coherent DMA allocations.
+Most dma_map_ops instances are IOMMUs that work perfectly fine in 32-bits
+of IOVA space, and the generic direct mapping code already provides its
+own routines that is intelligent based on the amount of memory actually
+present.  Wire up the dma-direct routine for the ARM direct mapping code
+as well, and otherwise default to the constant 32-bit mask.  This way
+we only need to override it for the occasional odd IOMMU that requires
+64-bit IOVA support, or IOMMU drivers that are more efficient if they
+can fall back to the direct mapping.
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- arch/sh/Kconfig               |  2 ++
- arch/sh/kernel/dma-coherent.c | 57 +++++------------------------------
- 2 files changed, 10 insertions(+), 49 deletions(-)
+ arch/arm/mm/dma-mapping.c               |  3 +++
+ arch/powerpc/platforms/ps3/system-bus.c |  7 ------
+ arch/x86/kernel/amd_gart_64.c           |  1 +
+ kernel/dma/mapping.c                    | 30 +++++++++----------------
+ 4 files changed, 14 insertions(+), 27 deletions(-)
 
-diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-index 6b1b5941b618..21eefe7c4ba6 100644
---- a/arch/sh/Kconfig
-+++ b/arch/sh/Kconfig
-@@ -158,7 +158,9 @@ config DMA_COHERENT
- 
- config DMA_NONCOHERENT
- 	def_bool !DMA_COHERENT
-+	select ARCH_HAS_DMA_PREP_COHERENT
- 	select ARCH_HAS_SYNC_DMA_FOR_DEVICE
-+	select DMA_DIRECT_REMAP
- 
- config PGTABLE_LEVELS
- 	default 3 if X2TLB
-diff --git a/arch/sh/kernel/dma-coherent.c b/arch/sh/kernel/dma-coherent.c
-index b17514619b7e..2f0e2f2d1f9c 100644
---- a/arch/sh/kernel/dma-coherent.c
-+++ b/arch/sh/kernel/dma-coherent.c
-@@ -3,60 +3,13 @@
-  * Copyright (C) 2004 - 2007  Paul Mundt
-  */
- #include <linux/mm.h>
--#include <linux/init.h>
+diff --git a/arch/arm/mm/dma-mapping.c b/arch/arm/mm/dma-mapping.c
+index 4410af33c5c4..9c9a23e5600d 100644
+--- a/arch/arm/mm/dma-mapping.c
++++ b/arch/arm/mm/dma-mapping.c
+@@ -14,6 +14,7 @@
+ #include <linux/list.h>
+ #include <linux/init.h>
+ #include <linux/device.h>
++#include <linux/dma-direct.h>
+ #include <linux/dma-mapping.h>
  #include <linux/dma-noncoherent.h>
--#include <linux/module.h>
- #include <asm/cacheflush.h>
- #include <asm/addrspace.h>
+ #include <linux/dma-contiguous.h>
+@@ -192,6 +193,7 @@ const struct dma_map_ops arm_dma_ops = {
+ 	.sync_sg_for_cpu	= arm_dma_sync_sg_for_cpu,
+ 	.sync_sg_for_device	= arm_dma_sync_sg_for_device,
+ 	.dma_supported		= arm_dma_supported,
++	.get_required_mask	= dma_direct_get_required_mask,
+ };
+ EXPORT_SYMBOL(arm_dma_ops);
  
--void *arch_dma_alloc(struct device *dev, size_t size, dma_addr_t *dma_handle,
--		gfp_t gfp, unsigned long attrs)
-+void arch_dma_prep_coherent(struct page *page, size_t size)
- {
--	void *ret, *ret_nocache;
--	int order = get_order(size);
--
--	gfp |= __GFP_ZERO;
--
--	ret = (void *)__get_free_pages(gfp, order);
--	if (!ret)
--		return NULL;
--
--	/*
--	 * Pages from the page allocator may have data present in
--	 * cache. So flush the cache before using uncached memory.
--	 */
--	arch_sync_dma_for_device(dev, virt_to_phys(ret), size,
--			DMA_BIDIRECTIONAL);
--
--	ret_nocache = (void __force *)ioremap_nocache(virt_to_phys(ret), size);
--	if (!ret_nocache) {
--		free_pages((unsigned long)ret, order);
--		return NULL;
--	}
--
--	split_page(pfn_to_page(virt_to_phys(ret) >> PAGE_SHIFT), order);
--
--	*dma_handle = virt_to_phys(ret);
--	if (!WARN_ON(!dev))
--		*dma_handle -= PFN_PHYS(dev->dma_pfn_offset);
--
--	return ret_nocache;
+@@ -212,6 +214,7 @@ const struct dma_map_ops arm_coherent_dma_ops = {
+ 	.map_sg			= arm_dma_map_sg,
+ 	.map_resource		= dma_direct_map_resource,
+ 	.dma_supported		= arm_dma_supported,
++	.get_required_mask	= dma_direct_get_required_mask,
+ };
+ EXPORT_SYMBOL(arm_coherent_dma_ops);
+ 
+diff --git a/arch/powerpc/platforms/ps3/system-bus.c b/arch/powerpc/platforms/ps3/system-bus.c
+index 70fcc9736a8c..3542b7bd6a46 100644
+--- a/arch/powerpc/platforms/ps3/system-bus.c
++++ b/arch/powerpc/platforms/ps3/system-bus.c
+@@ -686,18 +686,12 @@ static int ps3_dma_supported(struct device *_dev, u64 mask)
+ 	return mask >= DMA_BIT_MASK(32);
+ }
+ 
+-static u64 ps3_dma_get_required_mask(struct device *_dev)
+-{
+-	return DMA_BIT_MASK(32);
 -}
 -
--void arch_dma_free(struct device *dev, size_t size, void *vaddr,
--		dma_addr_t dma_handle, unsigned long attrs)
--{
--	int order = get_order(size);
--	unsigned long pfn = (dma_handle >> PAGE_SHIFT);
--	int k;
--
--	if (!WARN_ON(!dev))
--		pfn += dev->dma_pfn_offset;
--
--	for (k = 0; k < (1 << order); k++)
--		__free_pages(pfn_to_page(pfn + k), 0);
--
--	iounmap(vaddr);
-+	__flush_purge_region(page_address(page), size);
- }
+ static const struct dma_map_ops ps3_sb_dma_ops = {
+ 	.alloc = ps3_alloc_coherent,
+ 	.free = ps3_free_coherent,
+ 	.map_sg = ps3_sb_map_sg,
+ 	.unmap_sg = ps3_sb_unmap_sg,
+ 	.dma_supported = ps3_dma_supported,
+-	.get_required_mask = ps3_dma_get_required_mask,
+ 	.map_page = ps3_sb_map_page,
+ 	.unmap_page = ps3_unmap_page,
+ 	.mmap = dma_common_mmap,
+@@ -710,7 +704,6 @@ static const struct dma_map_ops ps3_ioc0_dma_ops = {
+ 	.map_sg = ps3_ioc0_map_sg,
+ 	.unmap_sg = ps3_ioc0_unmap_sg,
+ 	.dma_supported = ps3_dma_supported,
+-	.get_required_mask = ps3_dma_get_required_mask,
+ 	.map_page = ps3_ioc0_map_page,
+ 	.unmap_page = ps3_unmap_page,
+ 	.mmap = dma_common_mmap,
+diff --git a/arch/x86/kernel/amd_gart_64.c b/arch/x86/kernel/amd_gart_64.c
+index a65b4a9c7f87..d02662238b57 100644
+--- a/arch/x86/kernel/amd_gart_64.c
++++ b/arch/x86/kernel/amd_gart_64.c
+@@ -680,6 +680,7 @@ static const struct dma_map_ops gart_dma_ops = {
+ 	.dma_supported			= dma_direct_supported,
+ 	.mmap				= dma_common_mmap,
+ 	.get_sgtable			= dma_common_get_sgtable,
++	.get_required_mask		= dma_direct_get_required_mask,
+ };
  
- void arch_sync_dma_for_device(struct device *dev, phys_addr_t paddr,
-@@ -78,3 +31,9 @@ void arch_sync_dma_for_device(struct device *dev, phys_addr_t paddr,
- 		BUG();
- 	}
+ static void gart_iommu_shutdown(void)
+diff --git a/kernel/dma/mapping.c b/kernel/dma/mapping.c
+index 47765c96fe09..96599f39f67a 100644
+--- a/kernel/dma/mapping.c
++++ b/kernel/dma/mapping.c
+@@ -247,25 +247,6 @@ int dma_mmap_attrs(struct device *dev, struct vm_area_struct *vma,
  }
+ EXPORT_SYMBOL(dma_mmap_attrs);
+ 
+-static u64 dma_default_get_required_mask(struct device *dev)
+-{
+-	u32 low_totalram = ((max_pfn - 1) << PAGE_SHIFT);
+-	u32 high_totalram = ((max_pfn - 1) >> (32 - PAGE_SHIFT));
+-	u64 mask;
+-
+-	if (!high_totalram) {
+-		/* convert to mask just covering totalram */
+-		low_totalram = (1 << (fls(low_totalram) - 1));
+-		low_totalram += low_totalram - 1;
+-		mask = low_totalram;
+-	} else {
+-		high_totalram = (1 << (fls(high_totalram) - 1));
+-		high_totalram += high_totalram - 1;
+-		mask = (((u64)high_totalram) << 32) + 0xffffffff;
+-	}
+-	return mask;
+-}
+-
+ u64 dma_get_required_mask(struct device *dev)
+ {
+ 	const struct dma_map_ops *ops = get_dma_ops(dev);
+@@ -274,7 +255,16 @@ u64 dma_get_required_mask(struct device *dev)
+ 		return dma_direct_get_required_mask(dev);
+ 	if (ops->get_required_mask)
+ 		return ops->get_required_mask(dev);
+-	return dma_default_get_required_mask(dev);
 +
-+static int __init atomic_pool_init(void)
-+{
-+	return dma_atomic_pool_init(GFP_KERNEL, pgprot_noncached(PAGE_KERNEL));
-+}
-+postcore_initcall(atomic_pool_init);
++	/*
++	 * We require every DMA ops implementation to at least support a 32-bit
++	 * DMA mask (and use bounce buffering if that isn't supported in
++	 * hardware).  As the direct mapping code has its own routine to
++	 * actually report an optimal mask we default to 32-bit here as that
++	 * is the right thing for most IOMMUs, and at least not actively
++	 * harmful in general.
++	 */
++	return DMA_BIT_MASK(32);
+ }
+ EXPORT_SYMBOL_GPL(dma_get_required_mask);
+ 
 -- 
 2.20.1
