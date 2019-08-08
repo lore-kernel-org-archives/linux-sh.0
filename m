@@ -1,63 +1,68 @@
-From: Yunsheng Lin <linyunsheng@huawei.com>
-Date: Sat, 31 Aug 2019 05:58:22 +0000
-Subject: [PATCH v2 8/9] mips: numa: check the node id consistently for mips ip27
-Message-Id: <1567231103-13237-9-git-send-email-linyunsheng@huawei.com>
+From: Christoph Hellwig <hch@lst.de>
+Date: Thu, 08 Aug 2019 15:59:59 +0000
+Subject: [PATCH 2/8] dma-mapping: move the dma_get_sgtable API comments from arm to common code
+Message-Id: <20190808160005.10325-3-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1567231103-13237-1-git-send-email-linyunsheng@huawei.com>
-In-Reply-To: <1567231103-13237-1-git-send-email-linyunsheng@huawei.com>
+References: <20190808160005.10325-1-hch@lst.de>
+In-Reply-To: <20190808160005.10325-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: catalin.marinas@arm.com, will@kernel.org, mingo@redhat.com, bp@alien8.de, rth@twiddle.net, ink@jurassic.park.msu.ru, mattst88@gmail.com, benh@kernel.crashing.org, paulus@samba.org, mpe@ellerman.id.au, heiko.carstens@de.ibm.com, gor@linux.ibm.com, borntraeger@de.ibm.com, ysato@users.sourceforge.jp, dalias@libc.org, davem@davemloft.net, ralf@linux-mips.org, paul.burton@mips.com, jhogan@kernel.org, jiaxun.yang@flygoat.com, chenhc@lemote.com
-Cc: linux-sh@vger.kernel.org, peterz@infradead.org, dave.hansen@linux.intel.com, linuxarm@huawei.com, linux-mips@vger.kernel.org, mwb@linux.vnet.ibm.com, hpa@zytor.com, sparclinux@vger.kernel.org, linux-s390@vger.kernel.org, x86@kernel.org, rppt@linux.ibm.com, dledford@redhat.com, jeffrey.t.kirsher@intel.com, nfont@linux.vnet.ibm.com, naveen.n.rao@linux.vnet.ibm.com, len.brown@intel.com, anshuman.khandual@arm.com, cai@lca.pw, luto@kernel.org, tglx@linutronix.de, linux-arm-kernel@lists.infradead.org, axboe@kernel.dk, robin.murphy@arm.com, linux-kernel@vger.kernel.org, tbogendoerfer@suse.de, linux-alpha@vger.kernel.org, akpm@linux-foundation.org, linuxppc-dev@lists.ozlabs.org
+To: iommu@lists.linux-foundation.org, Marek Szyprowski <m.szyprowski@samsung.com>
+Cc: linux-xtensa@linux-xtensa.org, Michal Simek <monstr@monstr.eu>, Vladimir Murzin <vladimir.murzin@arm.com>, linux-parisc@vger.kernel.org, linux-sh@vger.kernel.org, Takashi Iwai <tiwai@suse.de>, linuxppc-dev@lists.ozlabs.org, Helge Deller <deller@gmx.de>, x86@kernel.org, linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, Robin Murphy <robin.murphy@arm.com>, linux-arm-kernel@lists.infradead.org
 
-According to Section 6.2.14 from ACPI spec 6.3 [1], the setting
-of proximity domain is optional, as below:
+The comments are spot on and should be near the central API, not just
+near a single implementation.
 
-This optional object is used to describe proximity domain
-associations within a machine. _PXM evaluates to an integer
-that identifies a device as belonging to a Proximity Domain
-defined in the System Resource Affinity Table (SRAT).
-
-Since mips ip27 uses hub_data instead of node_to_cpumask_map,
-this patch checks node id with the below case before returning
-&hub_data(node)->h_cpus:
-1. if node_id >= MAX_COMPACT_NODES, return cpu_none_mask
-2. if node_id < 0, return cpu_online_mask
-3. if hub_data(node) is NULL, return cpu_online_mask
-
-[1] https://uefi.org/sites/default/files/resources/ACPI_6_3_final_Jan30.pdf
-
-Signed-off-by: Yunsheng Lin <linyunsheng@huawei.com>
+Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- arch/mips/include/asm/mach-ip27/topology.h | 15 ++++++++++++---
- 1 file changed, 12 insertions(+), 3 deletions(-)
+ arch/arm/mm/dma-mapping.c | 11 -----------
+ kernel/dma/mapping.c      | 11 +++++++++++
+ 2 files changed, 11 insertions(+), 11 deletions(-)
 
-diff --git a/arch/mips/include/asm/mach-ip27/topology.h b/arch/mips/include/asm/mach-ip27/topology.h
-index 965f079..914a55a 100644
---- a/arch/mips/include/asm/mach-ip27/topology.h
-+++ b/arch/mips/include/asm/mach-ip27/topology.h
-@@ -15,9 +15,18 @@ struct cpuinfo_ip27 {
- extern struct cpuinfo_ip27 sn_cpu_info[NR_CPUS];
+diff --git a/arch/arm/mm/dma-mapping.c b/arch/arm/mm/dma-mapping.c
+index ad64d32fb39a..b4d65da76393 100644
+--- a/arch/arm/mm/dma-mapping.c
++++ b/arch/arm/mm/dma-mapping.c
+@@ -880,17 +880,6 @@ static void arm_coherent_dma_free(struct device *dev, size_t size, void *cpu_add
+ 	__arm_dma_free(dev, size, cpu_addr, handle, attrs, true);
+ }
  
- #define cpu_to_node(cpu)	(sn_cpu_info[(cpu)].p_nodeid)
--#define cpumask_of_node(node)	((node) = -1 ?				\
--				 cpu_all_mask :				\
--				 &hub_data(node)->h_cpus)
-+
-+static inline const struct cpumask *cpumask_of_node(int node)
-+{
-+	if (node >= MAX_COMPACT_NODES)
-+		return cpu_none_mask;
-+
-+	if (node < 0 || !hub_data(node))
-+		return cpu_online_mask;
-+
-+	return &hub_data(node)->h_cpus;
-+}
-+
- struct pci_bus;
- extern int pcibus_to_node(struct pci_bus *);
+-/*
+- * The whole dma_get_sgtable() idea is fundamentally unsafe - it seems
+- * that the intention is to allow exporting memory allocated via the
+- * coherent DMA APIs through the dma_buf API, which only accepts a
+- * scattertable.  This presents a couple of problems:
+- * 1. Not all memory allocated via the coherent DMA APIs is backed by
+- *    a struct page
+- * 2. Passing coherent DMA memory into the streaming APIs is not allowed
+- *    as we will try to flush the memory through a different alias to that
+- *    actually being used (and the flushes are redundant.)
+- */
+ int arm_dma_get_sgtable(struct device *dev, struct sg_table *sgt,
+ 		 void *cpu_addr, dma_addr_t handle, size_t size,
+ 		 unsigned long attrs)
+diff --git a/kernel/dma/mapping.c b/kernel/dma/mapping.c
+index 9c0f6a8eb5cb..41590d003465 100644
+--- a/kernel/dma/mapping.c
++++ b/kernel/dma/mapping.c
+@@ -136,6 +136,17 @@ int dma_common_get_sgtable(struct device *dev, struct sg_table *sgt,
+ 	return ret;
+ }
  
++/*
++ * The whole dma_get_sgtable() idea is fundamentally unsafe - it seems
++ * that the intention is to allow exporting memory allocated via the
++ * coherent DMA APIs through the dma_buf API, which only accepts a
++ * scattertable.  This presents a couple of problems:
++ * 1. Not all memory allocated via the coherent DMA APIs is backed by
++ *    a struct page
++ * 2. Passing coherent DMA memory into the streaming APIs is not allowed
++ *    as we will try to flush the memory through a different alias to that
++ *    actually being used (and the flushes are redundant.)
++ */
+ int dma_get_sgtable_attrs(struct device *dev, struct sg_table *sgt,
+ 		void *cpu_addr, dma_addr_t dma_addr, size_t size,
+ 		unsigned long attrs)
 -- 
-2.8.1
+2.20.1
