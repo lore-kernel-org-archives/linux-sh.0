@@ -1,41 +1,66 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 09 Aug 2019 07:21:28 +0000
-Subject: Re: [PATCH 8/8] dma-mapping: remove CONFIG_ARCH_NO_COHERENT_DMA_MMAP
-Message-Id: <CAMuHMdV0JfZ_K2V7W0FQkobE_zLwe4Uez-EWzMMdTfVffpAWtA@mail.gmail.com>
+From: "Gustavo A. R. Silva" <gustavo@embeddedor.com>
+Date: Sat, 10 Aug 2019 05:24:42 +0000
+Subject: [PATCH v2] sh: kernel: disassemble: Mark expected switch fall-throughs
+Message-Id: <20190810052442.GA21354@embeddedor>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190808160005.10325-1-hch@lst.de>
- <20190808160005.10325-9-hch@lst.de>
-In-Reply-To: <20190808160005.10325-9-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Christoph Hellwig <hch@lst.de>
-Cc: linux-xtensa@linux-xtensa.org, Michal Simek <monstr@monstr.eu>, Vladimir Murzin <vladimir.murzin@arm.com>, Parisc List <linux-parisc@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Takashi Iwai <tiwai@suse.de>, linuxppc-dev <linuxppc-dev@lists.ozlabs.org>, Helge Deller <deller@gmx.de>, the arch/x86 maintainers <x86@kernel.org>, linux-m68k <linux-m68k@lists.linux-m68k.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Linux IOMMU <iommu@lists.linux-foundation.org>, Robin Murphy <robin.murphy@arm.com>, Linux ARM <linux-arm-kernel@lists.infradead.org>, Marek Szyprowski <m.szyprowski@samsung.com>
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, "Gustavo A. R. Silva" <gustavo@embeddedor.com>, Guenter Roeck <linux@roeck-us.net>, Joe Perches <joe@perches.com>
 
-Hi Christoph,
+Remove logically dead code and mark switch cases where we are expecting
+to fall through.
 
-On Thu, Aug 8, 2019 at 6:01 PM Christoph Hellwig <hch@lst.de> wrote:
-> CONFIG_ARCH_NO_COHERENT_DMA_MMAP is now functionally identical to
-> !CONFIG_MMU, so remove the separate symbol.  The only difference is that
-> arm did not set it for !CONFIG_MMU, but arm uses a separate dma mapping
-> implementation including its own mmap method, which is handled by moving
-> the CONFIG_MMU check in dma_can_mmap so that is only applies to the
-> dma-direct case, just as the other ifdefs for it.
->
-> Signed-off-by: Christoph Hellwig <hch@lst.de>
+Fix the following warnings (Building: defconfig sh):
 
->  arch/m68k/Kconfig       |  1 -
+arch/sh/kernel/disassemble.c:478:8: warning: this statement may fall
+through [-Wimplicit-fallthrough=]
+arch/sh/kernel/disassemble.c:487:8: warning: this statement may fall
+through [-Wimplicit-fallthrough=]
+arch/sh/kernel/disassemble.c:496:8: warning: this statement may fall
+through [-Wimplicit-fallthrough=]
 
-For m68k:
-Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Signed-off-by: Gustavo A. R. Silva <gustavo@embeddedor.com>
+---
+Changes in v2:
+ - Remove logically dead code. Pointed out by Joe Perches.
 
-Gr{oetje,eeting}s,
+NOTE: If no one cares, I'll apply this to my tree and queue it up
+      for 5.3-rc4.
 
-                        Geert
+ arch/sh/kernel/disassemble.c | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
 
+diff --git a/arch/sh/kernel/disassemble.c b/arch/sh/kernel/disassemble.c
+index defebf1a9c8a..845543780cc5 100644
+--- a/arch/sh/kernel/disassemble.c
++++ b/arch/sh/kernel/disassemble.c
+@@ -475,8 +475,6 @@ static void print_sh_insn(u32 memaddr, u16 insn)
+ 				printk("dbr");
+ 				break;
+ 			case FD_REG_N:
+-				if (0)
+-					goto d_reg_n;
+ 			case F_REG_N:
+ 				printk("fr%d", rn);
+ 				break;
+@@ -488,7 +486,7 @@ static void print_sh_insn(u32 memaddr, u16 insn)
+ 					printk("xd%d", rn & ~1);
+ 					break;
+ 				}
+-			d_reg_n:
++				/* else, fall through */
+ 			case D_REG_N:
+ 				printk("dr%d", rn);
+ 				break;
+@@ -497,6 +495,7 @@ static void print_sh_insn(u32 memaddr, u16 insn)
+ 					printk("xd%d", rm & ~1);
+ 					break;
+ 				}
++				/* else, fall through */
+ 			case D_REG_M:
+ 				printk("dr%d", rm);
+ 				break;
 -- 
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+2.22.0
