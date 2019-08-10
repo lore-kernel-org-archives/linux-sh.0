@@ -1,37 +1,38 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 17 Aug 2019 16:00:48 +0000
-Subject: Re: [PATCH 06/26] ia64: rename ioremap_nocache to ioremap_uc
-Message-Id: <b19607c1-07aa-e361-3c26-8bcb063ed8c1@cogentembedded.com>
+From: "Gustavo A. R. Silva" <gustavo@embeddedor.com>
+Date: Sat, 10 Aug 2019 04:59:44 +0000
+Subject: [PATCH] sh: kernel: hw_breakpoint: Fix missing break in switch statement
+Message-Id: <20190810045944.GA13815@embeddedor>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190817073253.27819-1-hch@lst.de>
- <20190817073253.27819-7-hch@lst.de>
-In-Reply-To: <20190817073253.27819-7-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Christoph Hellwig <hch@lst.de>, Arnd Bergmann <arnd@arndb.de>, Guo Ren <guoren@kernel.org>, Michal Simek <monstr@monstr.eu>, Greentime Hu <green.hu@gmail.com>, Vincent Chen <deanbo422@gmail.com>, Guan Xuetao <gxt@pku.edu.cn>, x86@kernel.org
-Cc: linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, nios2-dev@lists.rocketboards.org, openrisc@lists.librecores.org, linux-parisc@vger.kernel.org, linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-mtd@lists.infradead.org, linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, "Gustavo A. R. Silva" <gustavo@embeddedor.com>, Guenter Roeck <linux@roeck-us.net>
 
-Hello!
+Add missing break statement in order to prevent the code from
+erroneously falling through to case SH_BREAKPOINT_WRITE.
 
-On 17.08.2019 10:32, Christoph Hellwig wrote:
+Fixes: 09a072947791 ("sh: hw-breakpoints: Add preliminary support for SH-4A UBC.")
+Cc: stable@vger.kernel.org
+Signed-off-by: Gustavo A. R. Silva <gustavo@embeddedor.com>
+---
 
-> On ia64 ioremap_nocache fails if attributs don't match.  Not other
+If no one cares, I'll apply this to my tree and queue it up for 5.3-rc4.
 
-    Attributes. :-)
+ arch/sh/kernel/hw_breakpoint.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-> architectures does this, and we plan to get rid of ioremap_nocache.
-> So get rid of the special semantics and define ioremap_nocache in
-> terms of ioremap as no portable driver could rely on the behavior
-> anyway.
-> 
-> However x86 implements ioremap_uc with a in a similar way as the ia64
-
-    "With a" not really needed?
-
-> version of ioremap_nocache, so implement that instead.
-> 
-> Signed-off-by: Christoph Hellwig <hch@lst.de>
-[...]
-
-MBR, Sergei
+diff --git a/arch/sh/kernel/hw_breakpoint.c b/arch/sh/kernel/hw_breakpoint.c
+index 3bd010b4c55f..f10d64311127 100644
+--- a/arch/sh/kernel/hw_breakpoint.c
++++ b/arch/sh/kernel/hw_breakpoint.c
+@@ -157,6 +157,7 @@ int arch_bp_generic_fields(int sh_len, int sh_type,
+ 	switch (sh_type) {
+ 	case SH_BREAKPOINT_READ:
+ 		*gen_type = HW_BREAKPOINT_R;
++		break;
+ 	case SH_BREAKPOINT_WRITE:
+ 		*gen_type = HW_BREAKPOINT_W;
+ 		break;
+-- 
+2.22.0
