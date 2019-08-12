@@ -1,17 +1,35 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Thu, 29 Aug 2019 15:38:23 +0000
-Subject: Re: remove default fallbacks in dma_map_ops v3
-Message-Id: <20190829153823.GA20459@lst.de>
+From: Nick Desaulniers <ndesaulniers@google.com>
+Date: Mon, 12 Aug 2019 21:50:38 +0000
+Subject: [PATCH 05/16] sh: prefer __section from compiler_attributes.h
+Message-Id: <20190812215052.71840-5-ndesaulniers@google.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190808160005.10325-1-hch@lst.de>
-In-Reply-To: <20190808160005.10325-1-hch@lst.de>
+References: <20190812215052.71840-1-ndesaulniers@google.com>
+In-Reply-To: <20190812215052.71840-1-ndesaulniers@google.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: iommu@lists.linux-foundation.org, Marek Szyprowski <m.szyprowski@samsung.com>
-Cc: linux-xtensa@linux-xtensa.org, Michal Simek <monstr@monstr.eu>, Vladimir Murzin <vladimir.murzin@arm.com>, linux-parisc@vger.kernel.org, linux-sh@vger.kernel.org, Takashi Iwai <tiwai@suse.de>, Robin Murphy <robin.murphy@arm.com>, Helge Deller <deller@gmx.de>, x86@kernel.org, linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linuxppc-dev@lists.ozlabs.org, linux-arm-kernel@lists.infradead.org
+To: akpm@linux-foundation.org
+Cc: sedat.dilek@gmail.com, jpoimboe@redhat.com, yhs@fb.com, miguel.ojeda.sandonis@gmail.com, clang-built-linux@googlegroups.com, Nick Desaulniers <ndesaulniers@google.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Alexei Starovoitov <ast@kernel.org>, Daniel Borkmann <daniel@iogearbox.net>, Martin KaFai Lau <kafai@fb.com>, Song Liu <songliubraving@fb.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, netdev@vger.kernel.org, bpf@vger.kernel.org
 
-I've applied this to the dma-mapping for-next tree now.
+Reported-by: Sedat Dilek <sedat.dilek@gmail.com>
+Suggested-by: Josh Poimboeuf <jpoimboe@redhat.com>
+Signed-off-by: Nick Desaulniers <ndesaulniers@google.com>
+---
+ arch/sh/include/asm/cache.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-If there are any issues with the parisc patch I'll happily take
-incremental patches.
+diff --git a/arch/sh/include/asm/cache.h b/arch/sh/include/asm/cache.h
+index 2408ac4873aa..07ddf31124a3 100644
+--- a/arch/sh/include/asm/cache.h
++++ b/arch/sh/include/asm/cache.h
+@@ -15,7 +15,7 @@
+ 
+ #define L1_CACHE_BYTES		(1 << L1_CACHE_SHIFT)
+ 
+-#define __read_mostly __attribute__((__section__(".data..read_mostly")))
++#define __read_mostly __section(.data..read_mostly)
+ 
+ #ifndef __ASSEMBLY__
+ struct cache_info {
+-- 
+2.23.0.rc1.153.gdeed80330f-goog
