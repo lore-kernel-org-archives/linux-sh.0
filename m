@@ -1,87 +1,51 @@
-From: "Gustavo A. R. Silva" <gustavo@embeddedor.com>
-Date: Sat, 10 Aug 2019 04:43:19 +0000
+From: Yoshinori Sato <ysato@users.sourceforge.jp>
+Date: Tue, 13 Aug 2019 08:49:29 +0000
 Subject: Re: [PATCH] sh: Drop -Werror from kernel Makefile
-Message-Id: <32a4fa83-db72-f0b0-85ab-03f360a555a8@embeddedor.com>
+Message-Id: <87a7cdpi06.wl-ysato@users.sourceforge.jp>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1564971263-21562-1-git-send-email-linux@roeck-us.net>
- <20190805032441.GO9017@brightrain.aerifal.cx>
- <20190809195630.GA15606@roeck-us.net>
- <5f26547f-b48e-4b9f-b8ef-858283915e3d@embeddedor.com>
- <20190809215608.GA11065@roeck-us.net>
- <6a06245f-33f2-1d92-0d0e-c8b270dc24af@embeddedor.com>
- <667995275e6a1cbcdaa93029c1b33e6b52fc6803.camel@perches.com>
- <afceec12-e5eb-42b7-c67e-0dc5a23affdf@embeddedor.com>
-In-Reply-To: <afceec12-e5eb-42b7-c67e-0dc5a23affdf@embeddedor.com>
+In-Reply-To: <1564971263-21562-1-git-send-email-linux@roeck-us.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Joe Perches <joe@perches.com>, Guenter Roeck <linux@roeck-us.net>
-Cc: Rich Felker <dalias@libc.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Guenter Roeck <linux@roeck-us.net>
+Cc: Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, "Gustavo A . R . Silva" <gustavo@embeddedor.com>
 
-
-
-On 8/9/19 11:31 PM, Gustavo A. R. Silva wrote:
+On Mon, 05 Aug 2019 11:14:23 +0900,
+Guenter Roeck wrote:
 > 
+> Since commit a035d552a93b ("Makefile: Globally enable fall-through
+> warning"), all sh builds fail with errors such as
 > 
-> On 8/9/19 11:20 PM, Joe Perches wrote:
->> On Fri, 2019-08-09 at 21:47 -0500, Gustavo A. R. Silva wrote:
->>> On 8/9/19 4:56 PM, Guenter Roeck wrote:
->>>> On Fri, Aug 09, 2019 at 04:36:01PM -0500, Gustavo A. R. Silva wrote:
->>>>> On 8/9/19 2:56 PM, Guenter Roeck wrote:
->>>>>> On Sun, Aug 04, 2019 at 11:24:41PM -0400, Rich Felker wrote:
->>>>>>> On Sun, Aug 04, 2019 at 07:14:23PM -0700, Guenter Roeck wrote:
->>>>>>>> Since commit a035d552a93b ("Makefile: Globally enable fall-through
->>>>>>>> warning"), all sh builds fail with errors such as
->>>>>>>>
->>>>>>>> arch/sh/kernel/disassemble.c: In function 'print_sh_insn':
->>>>>>>> arch/sh/kernel/disassemble.c:478:8: error: this statement may fall through
->>>>>>>>
->>>>>>>> Since this effectively disables all build and boot tests for the
->>>>>>>> architecture, let's drop -Werror from the sh kernel Makefile until
->>>>>>>> the problems are fixed.
->> []
->>> On second thought it seems to me that this is not a good idea, at least
->>> for mainline. For the time being I'll take this patch for linux-next only.
->>>
->>> Who is the maintainer of sh?
->>
->> But whoever it may be, isn't particularly active.
->>
->> MAINTAINERS-SUPERH
->> MAINTAINERS-M:  Yoshinori Sato <ysato@users.sourceforge.jp>
->> MAINTAINERS-M:  Rich Felker <dalias@libc.org>
->> MAINTAINERS-L:  linux-sh@vger.kernel.org
->> MAINTAINERS-Q:  http://patchwork.kernel.org/project/linux-sh/list/
->> MAINTAINERS-S:  Maintained
->> MAINTAINERS-F:  Documentation/sh/
->> MAINTAINERS:F:  arch/sh/
->> MAINTAINERS-F:  drivers/sh/
->>
->>> The best solution is to fix those fall-through warnings you see. Could you
->>> please send me all the warnings you see? I can try to fix them.
->>
->> It's true it's a warning, but adding -Werror is rarely
->> a good idea as gcc error output can change with every
->> version.
->>
+> arch/sh/kernel/disassemble.c: In function 'print_sh_insn':
+> arch/sh/kernel/disassemble.c:478:8: error: this statement may fall through
 > 
-> In the meantime I'll install sh4 and fix those warnings.
+> Since this effectively disables all build and boot tests for the
+> architecture, let's drop -Werror from the sh kernel Makefile until
+> the problems are fixed.
+> 
+> Cc: Gustavo A. R. Silva <gustavo@embeddedor.com>
+> Signed-off-by: Guenter Roeck <linux@roeck-us.net>
+> ---
+>  arch/sh/kernel/Makefile | 2 --
+>  1 file changed, 2 deletions(-)
+> 
+> diff --git a/arch/sh/kernel/Makefile b/arch/sh/kernel/Makefile
+> index 59673f8a3379..ef65f0625c6c 100644
+> --- a/arch/sh/kernel/Makefile
+> +++ b/arch/sh/kernel/Makefile
+> @@ -47,5 +47,3 @@ obj-$(CONFIG_DWARF_UNWINDER)	+= dwarf.o
+>  obj-$(CONFIG_PERF_EVENTS)	+= perf_event.o perf_callchain.o
+>  obj-$(CONFIG_DMA_NONCOHERENT)	+= dma-coherent.o
+>  obj-$(CONFIG_HAVE_HW_BREAKPOINT)		+= hw_breakpoint.o
+> -
+> -ccflags-y := -Werror
+> -- 
+> 2.7.4
 > 
 
-Well, I think it has paid off. It seems there is an ancient bug right there:
+Applied sh-next.
+Sorry too late replay.
 
-diff --git a/arch/sh/kernel/hw_breakpoint.c b/arch/sh/kernel/hw_breakpoint.c
-index 3bd010b4c55f..f10d64311127 100644
---- a/arch/sh/kernel/hw_breakpoint.c
-+++ b/arch/sh/kernel/hw_breakpoint.c
-@@ -157,6 +157,7 @@ int arch_bp_generic_fields(int sh_len, int sh_type,
-        switch (sh_type) {
-        case SH_BREAKPOINT_READ:
-                *gen_type = HW_BREAKPOINT_R;
-+               break;
-        case SH_BREAKPOINT_WRITE:
-                *gen_type = HW_BREAKPOINT_W;
-                break;
-
---
-Gustavo
+-- 
+Yosinori Sato
