@@ -1,7 +1,7 @@
-From: Guenter Roeck <linux@roeck-us.net>
-Date: Sat, 10 Aug 2019 12:53:29 +0000
+From: Yoshinori Sato <ysato@users.sourceforge.jp>
+Date: Tue, 13 Aug 2019 08:50:08 +0000
 Subject: Re: [PATCH] sh: kernel: hw_breakpoint: Fix missing break in switch statement
-Message-Id: <20190810125329.GA19990@roeck-us.net>
+Message-Id: <878srxphz3.wl-ysato@users.sourceforge.jp>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20190810045944.GA13815@embeddedor>
 In-Reply-To: <20190810045944.GA13815@embeddedor>
@@ -9,19 +9,17 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: "Gustavo A. R. Silva" <gustavo@embeddedor.com>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Cc: Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Guenter Roeck <linux@roeck-us.net>
 
-On Fri, Aug 09, 2019 at 11:59:44PM -0500, Gustavo A. R. Silva wrote:
+On Sat, 10 Aug 2019 13:59:44 +0900,
+Gustavo A. R. Silva wrote:
+> 
 > Add missing break statement in order to prevent the code from
 > erroneously falling through to case SH_BREAKPOINT_WRITE.
 > 
 > Fixes: 09a072947791 ("sh: hw-breakpoints: Add preliminary support for SH-4A UBC.")
 > Cc: stable@vger.kernel.org
 > Signed-off-by: Gustavo A. R. Silva <gustavo@embeddedor.com>
-
-Reviewed-by: Guenter Roeck <linux@roeck-us.net>
-Tested-by: Guenter Roeck <linux@roeck-us.net>
-
 > ---
 > 
 > If no one cares, I'll apply this to my tree and queue it up for 5.3-rc4.
@@ -44,3 +42,9 @@ Tested-by: Guenter Roeck <linux@roeck-us.net>
 > -- 
 > 2.22.0
 > 
+
+Applied sh-next.
+Thanks.
+
+-- 
+Yosinori Sato
