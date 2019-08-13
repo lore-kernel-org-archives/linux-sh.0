@@ -1,7 +1,7 @@
-From: Guenter Roeck <linux@roeck-us.net>
-Date: Sat, 10 Aug 2019 12:54:16 +0000
+From: Yoshinori Sato <ysato@users.sourceforge.jp>
+Date: Tue, 13 Aug 2019 08:50:27 +0000
 Subject: Re: [PATCH v2] sh: kernel: disassemble: Mark expected switch fall-throughs
-Message-Id: <20190810125416.GB19990@roeck-us.net>
+Message-Id: <877e7hphyk.wl-ysato@users.sourceforge.jp>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20190810052442.GA21354@embeddedor>
 In-Reply-To: <20190810052442.GA21354@embeddedor>
@@ -9,9 +9,11 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: "Gustavo A. R. Silva" <gustavo@embeddedor.com>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Joe Perches <joe@perches.com>
+Cc: Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Guenter Roeck <linux@roeck-us.net>, Joe Perches <joe@perches.com>
 
-On Sat, Aug 10, 2019 at 12:24:42AM -0500, Gustavo A. R. Silva wrote:
+On Sat, 10 Aug 2019 14:24:42 +0900,
+Gustavo A. R. Silva wrote:
+> 
 > Remove logically dead code and mark switch cases where we are expecting
 > to fall through.
 > 
@@ -25,10 +27,6 @@ On Sat, Aug 10, 2019 at 12:24:42AM -0500, Gustavo A. R. Silva wrote:
 > through [-Wimplicit-fallthrough=]
 > 
 > Signed-off-by: Gustavo A. R. Silva <gustavo@embeddedor.com>
-
-Reviewed-by: Guenter Roeck <linux@roeck-us.net>
-Tested-by: Guenter Roeck <linux@roeck-us.net>
-
 > ---
 > Changes in v2:
 >  - Remove logically dead code. Pointed out by Joe Perches.
@@ -72,3 +70,9 @@ Tested-by: Guenter Roeck <linux@roeck-us.net>
 > -- 
 > 2.22.0
 > 
+
+Applied sh-next.
+Thanks.
+
+-- 
+Yosinori Sato
