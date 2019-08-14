@@ -1,75 +1,40 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Sat, 17 Aug 2019 07:32:47 +0000
-Subject: [PATCH 20/26] hexagon: remove __iounmap
-Message-Id: <20190817073253.27819-21-hch@lst.de>
+From: "MS. MARYANNA B. THOMASON" <westernunion.benin982@gmail.com>
+Date: Wed, 14 Aug 2019 22:14:19 +0000
+Subject: TODAY, Wed, Aug 14, 2019 I AM READY FOR COMING TO YOUR ADDRESS WITH THIS ATM CARD
+Message-Id: <CAP=nHB+U+By16HzeUHiDfPT5KNtemGam6gniZhL2s7_itZ3F8w@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190817073253.27819-1-hch@lst.de>
-In-Reply-To: <20190817073253.27819-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Arnd Bergmann <arnd@arndb.de>, Guo Ren <guoren@kernel.org>, Michal Simek <monstr@monstr.eu>, Greentime Hu <green.hu@gmail.com>, Vincent Chen <deanbo422@gmail.com>, Guan Xuetao <gxt@pku.edu.cn>, x86@kernel.org
-Cc: linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, nios2-dev@lists.rocketboards.org, openrisc@lists.librecores.org, linux-parisc@vger.kernel.org, linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-mtd@lists.infradead.org, linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-No need to indirect iounmap for hexagon.
+ATTN DEAR PARCEL BENEFICIARY.
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
----
- arch/hexagon/include/asm/io.h       | 7 +------
- arch/hexagon/kernel/hexagon_ksyms.c | 2 +-
- arch/hexagon/mm/ioremap.c           | 2 +-
- 3 files changed, 3 insertions(+), 8 deletions(-)
+I AM CATHY JONES,DIPLOMATIC AGENT ASIGNED ON THE DELIVERY OF YOUR ATM
+CARD THROUGH MS. MARYANNA B. THOMASON, DHL MANAGEMENT DIRECTOR NEW
+YORK.
+TODAY, Wed, Aug 14, 2019 I AM READY FOR COMING TO YOUR ADDRESS WITH
+THIS ATM CARD, So before i deliver I want you to send me.
+official diplomatic agent delivery fee sum of $150.00 us
+ only. I am here at JFK Airport,Florida. USA
 
-diff --git a/arch/hexagon/include/asm/io.h b/arch/hexagon/include/asm/io.h
-index 89537dc1cf97..539e3efcf39c 100644
---- a/arch/hexagon/include/asm/io.h
-+++ b/arch/hexagon/include/asm/io.h
-@@ -27,7 +27,7 @@
- extern int remap_area_pages(unsigned long start, unsigned long phys_addr,
- 				unsigned long end, unsigned long flags);
- 
--extern void __iounmap(const volatile void __iomem *addr);
-+extern void iounmap(const volatile void __iomem *addr);
- 
- /* Defined in lib/io.c, needed for smc91x driver. */
- extern void __raw_readsw(const void __iomem *addr, void *data, int wordlen);
-@@ -175,11 +175,6 @@ void __iomem *ioremap(unsigned long phys_addr, unsigned long size);
- #define ioremap_nocache ioremap
- 
- 
--static inline void iounmap(volatile void __iomem *addr)
--{
--	__iounmap(addr);
--}
--
- #define __raw_writel writel
- 
- static inline void memcpy_fromio(void *dst, const volatile void __iomem *src,
-diff --git a/arch/hexagon/kernel/hexagon_ksyms.c b/arch/hexagon/kernel/hexagon_ksyms.c
-index b3dbb472572e..6fb1aaab1c29 100644
---- a/arch/hexagon/kernel/hexagon_ksyms.c
-+++ b/arch/hexagon/kernel/hexagon_ksyms.c
-@@ -14,7 +14,7 @@
- EXPORT_SYMBOL(__clear_user_hexagon);
- EXPORT_SYMBOL(raw_copy_from_user);
- EXPORT_SYMBOL(raw_copy_to_user);
--EXPORT_SYMBOL(__iounmap);
-+EXPORT_SYMBOL(iounmap);
- EXPORT_SYMBOL(__strnlen_user);
- EXPORT_SYMBOL(__vmgetie);
- EXPORT_SYMBOL(__vmsetie);
-diff --git a/arch/hexagon/mm/ioremap.c b/arch/hexagon/mm/ioremap.c
-index b103d83b5fbb..255c5b1ee1a7 100644
---- a/arch/hexagon/mm/ioremap.c
-+++ b/arch/hexagon/mm/ioremap.c
-@@ -38,7 +38,7 @@ void __iomem *ioremap(unsigned long phys_addr, unsigned long size)
- 	return (void __iomem *) (offset + addr);
- }
- 
--void __iounmap(const volatile void __iomem *addr)
-+void iounmap(const volatile void __iomem *addr)
- {
- 	vunmap((void *) ((unsigned long) addr & PAGE_MASK));
- }
--- 
-2.20.1
+SEND THIS FEE BY WESTERN UNION OR MONEY WITH RECEIVER'S NAME AND ADDRESS BELOW.
+
+RECEIVER'S NAME-----------------ERROL PRINGLE
+ADDRESS----------------3500 OLD DENTON RD APT 208; CARROLLTON, TEXAS 75007
+COUNTRY----------------USA
+AMOUNT--------------------$150.00 ONLY
+TEST QUESTION----------------WHO IS THE CREATOR
+ANSWER------------------GOD
+ meanwhile this $150.00 is required by the Custom Service,USA Homeland
+Security,for protection of your delivery, it will make the ATM CARD
+and funds worth $15.8MILLION US DOLLARS secure, Beleiev me, this is my
+word, remark my word,you will receive your delivery from me, Mrs.
+Cathy Jones once you send this only $150.00 today.
+I WAIT ON YOUR PAYMENT CONFIRMATION, ONCE I GOT YOUR PAYMENT, I WILL
+FINALLY ARRIVE TO YOUR NEAREST ADDRESS. today
+THANKS AND MAY GOD BLESS  YOU
+CATHY JONES,DIPLOMATIC AGENT
+EMAIL; katerinejones19@gmail.com
+CALL OR TEXT ME, DIPLOMATIC AGENT MS. CATHY JONES
+Phone Number; (408) 650-6103,
