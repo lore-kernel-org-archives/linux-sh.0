@@ -1,28 +1,18 @@
-From: "Mr NARESH KUMAR" <mscarolynsmtih@gmail.com>
-Date: Wed, 14 Aug 2019 07:52:08 +0000
-Subject: PLEASE CONFIRM PURCHASE ORDER
-Message-Id: <0.0.3.461.1D55274E46D92E6.0@slot0.abamarket.ga>
+From: Christoph Hellwig <hch@lst.de>
+Date: Wed, 14 Aug 2019 13:46:14 +0000
+Subject: convert sh to the generic dma remap allocator
+Message-Id: <20190814134615.29442-1-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+Cc: Geert Uytterhoeven <geert+renesas@glider.be>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, iommu@lists.linux-foundation.org, Jacopo Mondi <jacopo+renesas@jmondi.org>, Thomas Petazzoni <thomas.petazzoni@bootlin.com>
 
-Could you please confirm if your recieved our purchase order last week.
+Hi Rich and Yoshinori,
 
-If no please confirm let me resend it to you.
-
-
-
-
-NARESH KUMAR
-
-Executive Purchase Saiapextrading Ltd
-
-Dubai, KSA.
-
-(T/F): +96-2667-264 777 / 778
-
-(Mo): +96 94284 02803
-
-Website - http://www.saiapexgeneraltrading.com
+can you take a quick look at this patch that moves sh over to the
+generic DMA remap allocator?  I've been trying to slowly get all
+architectures over to the generic code, and I'd like merge this one
+for 5.4 now that it has been posted a handful of times without any
+feedback.
