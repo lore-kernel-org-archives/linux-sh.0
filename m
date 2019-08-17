@@ -1,50 +1,45 @@
-From: Yoshinori Sato <ysato@users.sourceforge.jp>
-Date: Tue, 13 Aug 2019 08:50:08 +0000
-Subject: Re: [PATCH] sh: kernel: hw_breakpoint: Fix missing break in switch statement
-Message-Id: <878srxphz3.wl-ysato@users.sourceforge.jp>
+From: Christoph Hellwig <hch@lst.de>
+Date: Sat, 17 Aug 2019 07:32:35 +0000
+Subject: [PATCH 08/26] m68k: simplify ioremap_nocache
+Message-Id: <20190817073253.27819-9-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190810045944.GA13815@embeddedor>
-In-Reply-To: <20190810045944.GA13815@embeddedor>
+References: <20190817073253.27819-1-hch@lst.de>
+In-Reply-To: <20190817073253.27819-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "Gustavo A. R. Silva" <gustavo@embeddedor.com>
-Cc: Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Guenter Roeck <linux@roeck-us.net>
+To: Arnd Bergmann <arnd@arndb.de>, Guo Ren <guoren@kernel.org>, Michal Simek <monstr@monstr.eu>, Greentime Hu <green.hu@gmail.com>, Vincent Chen <deanbo422@gmail.com>, Guan Xuetao <gxt@pku.edu.cn>, x86@kernel.org
+Cc: linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, nios2-dev@lists.rocketboards.org, openrisc@lists.librecores.org, linux-parisc@vger.kernel.org, linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-mtd@lists.infradead.org, linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org
 
-On Sat, 10 Aug 2019 13:59:44 +0900,
-Gustavo A. R. Silva wrote:
-> 
-> Add missing break statement in order to prevent the code from
-> erroneously falling through to case SH_BREAKPOINT_WRITE.
-> 
-> Fixes: 09a072947791 ("sh: hw-breakpoints: Add preliminary support for SH-4A UBC.")
-> Cc: stable@vger.kernel.org
-> Signed-off-by: Gustavo A. R. Silva <gustavo@embeddedor.com>
-> ---
-> 
-> If no one cares, I'll apply this to my tree and queue it up for 5.3-rc4.
-> 
->  arch/sh/kernel/hw_breakpoint.c | 1 +
->  1 file changed, 1 insertion(+)
-> 
-> diff --git a/arch/sh/kernel/hw_breakpoint.c b/arch/sh/kernel/hw_breakpoint.c
-> index 3bd010b4c55f..f10d64311127 100644
-> --- a/arch/sh/kernel/hw_breakpoint.c
-> +++ b/arch/sh/kernel/hw_breakpoint.c
-> @@ -157,6 +157,7 @@ int arch_bp_generic_fields(int sh_len, int sh_type,
->  	switch (sh_type) {
->  	case SH_BREAKPOINT_READ:
->  		*gen_type = HW_BREAKPOINT_R;
-> +		break;
->  	case SH_BREAKPOINT_WRITE:
->  		*gen_type = HW_BREAKPOINT_W;
->  		break;
-> -- 
-> 2.22.0
-> 
+Just define ioremap_nocache to ioremap instead of duplicating the
+inline.  Also defined ioremap_uc in terms of ioremap instead of
+the using a double indirection.
 
-Applied sh-next.
-Thanks.
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+---
+ arch/m68k/include/asm/kmap.h | 10 ++--------
+ 1 file changed, 2 insertions(+), 8 deletions(-)
 
+diff --git a/arch/m68k/include/asm/kmap.h b/arch/m68k/include/asm/kmap.h
+index 03d904fe6087..421b6c9c769d 100644
+--- a/arch/m68k/include/asm/kmap.h
++++ b/arch/m68k/include/asm/kmap.h
+@@ -28,14 +28,8 @@ static inline void __iomem *ioremap(unsigned long physaddr, unsigned long size)
+ 	return __ioremap(physaddr, size, IOMAP_NOCACHE_SER);
+ }
+ 
+-#define ioremap_nocache ioremap_nocache
+-static inline void __iomem *ioremap_nocache(unsigned long physaddr,
+-					    unsigned long size)
+-{
+-	return __ioremap(physaddr, size, IOMAP_NOCACHE_SER);
+-}
+-
+-#define ioremap_uc ioremap_nocache
++#define ioremap_nocache ioremap
++#define ioremap_uc ioremap
+ #define ioremap_wt ioremap_wt
+ static inline void __iomem *ioremap_wt(unsigned long physaddr,
+ 				       unsigned long size)
 -- 
-Yosinori Sato
+2.20.1
