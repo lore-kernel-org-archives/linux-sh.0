@@ -1,174 +1,75 @@
-From: Changbin Du <changbin.du@gmail.com>
-Date: Sun, 25 Aug 2019 13:23:19 +0000
-Subject: [PATCH 00/11] ftrace: add support for recording function parameters and return value
-Message-Id: <20190825132330.5015-1-changbin.du@gmail.com>
+From: Christoph Hellwig <hch@lst.de>
+Date: Sat, 17 Aug 2019 07:32:47 +0000
+Subject: [PATCH 20/26] hexagon: remove __iounmap
+Message-Id: <20190817073253.27819-21-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20190817073253.27819-1-hch@lst.de>
+In-Reply-To: <20190817073253.27819-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Steven Rostedt <rostedt@goodmis.org>, Ingo Molnar <mingo@redhat.com>
-Cc: Jonathan Corbet <corbet@lwn.net>, Jessica Yu <jeyu@kernel.org>, Thomas Gleixner <tglx@linutronix.de>, x86@kernel.org, linux-doc@vger.kernel.org, linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-arch@vger.kernel.org, linux-kbuild@vger.kernel.org, Changbin Du <changbin.du@gmail.com>
+To: Arnd Bergmann <arnd@arndb.de>, Guo Ren <guoren@kernel.org>, Michal Simek <monstr@monstr.eu>, Greentime Hu <green.hu@gmail.com>, Vincent Chen <deanbo422@gmail.com>, Guan Xuetao <gxt@pku.edu.cn>, x86@kernel.org
+Cc: linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, nios2-dev@lists.rocketboards.org, openrisc@lists.librecores.org, linux-parisc@vger.kernel.org, linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-mtd@lists.infradead.org, linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org
 
-This series introduces a new ftrace feature CONFIG_FTRACE_FUNC_PROTOTYPE to
-record function parameters and return value. It can be enabled/disabled at
-runtime by a new trace option "record-funcproto".
+No need to indirect iounmap for hexagon.
 
-To achieve this, we need the function prototype infomation and the location of
-parameters. A new tool scripts/ftrace/funcprototype is provided to collect such
-necessary infomation and put them into kernel. It walks through the DWARF debug
-sections in each object file and output assembly code which defines the function
-prototype data. Then the assembly code is built into the original object file.
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+---
+ arch/hexagon/include/asm/io.h       | 7 +------
+ arch/hexagon/kernel/hexagon_ksyms.c | 2 +-
+ arch/hexagon/mm/ioremap.c           | 2 +-
+ 3 files changed, 3 insertions(+), 8 deletions(-)
 
-Here is an example of memremap() function:
-            .section __funcprotostr, "a"
-    .P_memremap_0:
-            .string "offset"
-    .P_memremap_1:
-            .string "size"
-    .P_memremap_2:
-            .string "flags"
-    
-            .section __funcproto,  "a"
-            .quad memremap
-            .byte 0x8
-            .byte 0x3
-            .quad .P_memremap_0
-            .byte 0x8
-            .byte 0x55
-            .byte 0x0
-            .quad .P_memremap_1
-            .byte 0x8
-            .byte 0x54
-            .byte 0x0
-            .quad .P_memremap_2
-            .byte 0x8
-            .byte 0x51
-            .byte 0x0
-
-Note that currently funcprototype only support global functions. Local functions
-can also be supported by using the idea described in recordmcount.pl - temporary
-change local functions to global.
-
-The C ABI is arch specific. For arch which supports this feature must
-implement a new  arch-specific interface arch_fgraph_record_params() and
-deliver the return value of function to ftrace core part.
-
-This series only add support for x86_64 platform. Other platforms can be
-supported in the future.
-
-Here is an example of the graph trace of function pick_next_task_fair().
-Note that we only record the parameter and return value of global
-functions.
-    
-     2)               |  pick_next_task_fair() {
-     2)               |    update_blocked_averages() {
-     2)   0.765 us    |      _raw_spin_lock_irqsave(lock=0xffff88807da2b100); /* ret=0x0000000000000082 */
-     2)   0.944 us    |      update_rq_clock(rq=0xffff88807da2b100);
-     2)   0.612 us    |      __update_load_avg_cfs_rq(now=0x000000251b8516ee, cfs_rq=0xffff8880754f7488); /* ret=0 */
-     2)   0.654 us    |      __update_load_avg_se(now=0x000000251b8516ee, cfs_rq=0xffff88807da2b180, se=0xffff88807be2e0d8); /* ret=0 */
-     2)   0.206 us    |      __update_load_avg_cfs_rq(now=0x000000251b8516ee, cfs_rq=0xffff88807da2b180); /* ret=0 */
-     2)               |      __update_load_avg_cfs_rq(now=0x000000251b8516ee, cfs_rq=0xffff888079b5fb18) {
-     2)   2.410 us    |        __accumulate_pelt_segments();
-     2)   3.103 us    |      } /* ret=1 */
-     2)   0.193 us    |      __update_load_avg_cfs_rq(now=0x000000251b8516ee, cfs_rq=0xffff88807da2b180); /* ret=0 */
-     2)               |      update_rt_rq_load_avg(now=0x000000251b8516ee, rq=0xffff88807da2b100, running=0) {
-     2)   0.258 us    |        __accumulate_pelt_segments();
-     2)   1.617 us    |      } /* ret=1 */
-     2)               |      update_dl_rq_load_avg(now=0x000000251b8516ee, rq=0xffff88807da2b100, running=0) {
-     2)   0.230 us    |        __accumulate_pelt_segments();
-     2)   1.511 us    |      } /* ret=1 */
-     2)   1.040 us    |      _raw_spin_unlock_irqrestore(lock=0xffff88807da2b100, flags=0x0000000000000082);
-     2) + 14.739 us   |    }
-     2)               |    load_balance() {
-     2)               |      find_busiest_group() {
-     2)   0.874 us    |        update_group_capacity(sd=0xffff88807c1d37d0, cpu=2);
-     2)   1.761 us    |        idle_cpu();
-     2)   0.262 us    |        idle_cpu();
-     2)   0.217 us    |        idle_cpu();
-     2)   6.338 us    |      }
-     2)   8.442 us    |    }
-     2)   1.823 us    |    __msecs_to_jiffies(m=0x00000006); /* ret=0x0000000000000002 */
-     2)               |    load_balance() {
-     2)               |      find_busiest_group() {
-     2)   0.434 us    |        idle_cpu();
-     2)   0.233 us    |        idle_cpu();
-     2)   0.210 us    |        idle_cpu();
-     2)   2.308 us    |      }
-     2)   2.821 us    |    }
-     2)   0.263 us    |    __msecs_to_jiffies(m=0x00000008); /* ret=0x0000000000000002 */
-     2)   0.977 us    |    _raw_spin_lock(lock=0xffff88807da2b100);
-     2) + 32.262 us   |  }
-    
-The printing rules of each value is:
-   o For signed value, it is always printed as decimal number.
-   o For unsigned value,
-     - For value has size great than 8, it is printed as '{..}'.
-     - For value has size of 1,2,4,8, it is printed as hexadecimal number.
-     - If failed to record a parameter, it is printed as '?'.
-
-
-Changbin Du (11):
-  ftrace: move recordmcount tools to scripts/ftrace
-  ftrace: introduce new building tool funcprototype
-  asm-generic: add generic dwarf definition
-  ftrace/hash: add private data field
-  ftrace: create memcache for hash entries
-  ftrace: process function prototype data in vmlinux and modules
-  ftrace: prepare arch specific interfaces for function prototype
-    feature
-  ftrace: introduce core part of function prototype recording
-  x86_64: add function prototype recording support
-  ftrace: add doc for new option record-funcproto
-  MAINTAINERS: make scripts/ftrace/ maintained
-
- Documentation/trace/ftrace.rst       |   6 +
- MAINTAINERS                          |   2 +
- arch/arm/kernel/ftrace.c             |   2 +-
- arch/arm64/kernel/ftrace.c           |   2 +-
- arch/csky/kernel/ftrace.c            |   2 +-
- arch/microblaze/kernel/ftrace.c      |   2 +-
- arch/mips/kernel/ftrace.c            |   2 +-
- arch/nds32/kernel/ftrace.c           |   5 +-
- arch/parisc/kernel/ftrace.c          |   2 +-
- arch/powerpc/kernel/trace/ftrace.c   |   2 +-
- arch/riscv/kernel/ftrace.c           |   2 +-
- arch/s390/kernel/ftrace.c            |   2 +-
- arch/sh/kernel/ftrace.c              |   2 +-
- arch/sparc/kernel/ftrace.c           |   2 +-
- arch/x86/Kconfig                     |   1 +
- arch/x86/kernel/ftrace.c             |  84 +++-
- arch/x86/kernel/ftrace_64.S          |   4 +-
- include/asm-generic/dwarf.h          | 199 +++++++++
- include/asm-generic/vmlinux.lds.h    |  18 +
- include/linux/ftrace.h               |  55 ++-
- include/linux/module.h               |   4 +
- kernel/module.c                      |  25 +-
- kernel/trace/Kconfig                 |  19 +
- kernel/trace/fgraph.c                |  26 +-
- kernel/trace/ftrace.c                | 164 +++++++-
- kernel/trace/trace.h                 |  20 +-
- kernel/trace/trace_entries.h         |  10 +
- kernel/trace/trace_functions_graph.c | 108 ++++-
- kernel/trace/trace_irqsoff.c         |   3 +-
- kernel/trace/trace_sched_wakeup.c    |   3 +-
- scripts/.gitignore                   |   1 -
- scripts/Makefile                     |   2 +-
- scripts/Makefile.build               |  28 +-
- scripts/ftrace/.gitignore            |   6 +
- scripts/ftrace/Makefile              |   9 +
- scripts/ftrace/funcprototype.c       | 576 +++++++++++++++++++++++++++
- scripts/{ => ftrace}/recordmcount.c  |   0
- scripts/{ => ftrace}/recordmcount.h  |   0
- scripts/{ => ftrace}/recordmcount.pl |   0
- 39 files changed, 1340 insertions(+), 60 deletions(-)
- create mode 100644 include/asm-generic/dwarf.h
- create mode 100644 scripts/ftrace/.gitignore
- create mode 100644 scripts/ftrace/Makefile
- create mode 100644 scripts/ftrace/funcprototype.c
- rename scripts/{ => ftrace}/recordmcount.c (100%)
- rename scripts/{ => ftrace}/recordmcount.h (100%)
- rename scripts/{ => ftrace}/recordmcount.pl (100%)
- mode change 100755 => 100644
-
+diff --git a/arch/hexagon/include/asm/io.h b/arch/hexagon/include/asm/io.h
+index 89537dc1cf97..539e3efcf39c 100644
+--- a/arch/hexagon/include/asm/io.h
++++ b/arch/hexagon/include/asm/io.h
+@@ -27,7 +27,7 @@
+ extern int remap_area_pages(unsigned long start, unsigned long phys_addr,
+ 				unsigned long end, unsigned long flags);
+ 
+-extern void __iounmap(const volatile void __iomem *addr);
++extern void iounmap(const volatile void __iomem *addr);
+ 
+ /* Defined in lib/io.c, needed for smc91x driver. */
+ extern void __raw_readsw(const void __iomem *addr, void *data, int wordlen);
+@@ -175,11 +175,6 @@ void __iomem *ioremap(unsigned long phys_addr, unsigned long size);
+ #define ioremap_nocache ioremap
+ 
+ 
+-static inline void iounmap(volatile void __iomem *addr)
+-{
+-	__iounmap(addr);
+-}
+-
+ #define __raw_writel writel
+ 
+ static inline void memcpy_fromio(void *dst, const volatile void __iomem *src,
+diff --git a/arch/hexagon/kernel/hexagon_ksyms.c b/arch/hexagon/kernel/hexagon_ksyms.c
+index b3dbb472572e..6fb1aaab1c29 100644
+--- a/arch/hexagon/kernel/hexagon_ksyms.c
++++ b/arch/hexagon/kernel/hexagon_ksyms.c
+@@ -14,7 +14,7 @@
+ EXPORT_SYMBOL(__clear_user_hexagon);
+ EXPORT_SYMBOL(raw_copy_from_user);
+ EXPORT_SYMBOL(raw_copy_to_user);
+-EXPORT_SYMBOL(__iounmap);
++EXPORT_SYMBOL(iounmap);
+ EXPORT_SYMBOL(__strnlen_user);
+ EXPORT_SYMBOL(__vmgetie);
+ EXPORT_SYMBOL(__vmsetie);
+diff --git a/arch/hexagon/mm/ioremap.c b/arch/hexagon/mm/ioremap.c
+index b103d83b5fbb..255c5b1ee1a7 100644
+--- a/arch/hexagon/mm/ioremap.c
++++ b/arch/hexagon/mm/ioremap.c
+@@ -38,7 +38,7 @@ void __iomem *ioremap(unsigned long phys_addr, unsigned long size)
+ 	return (void __iomem *) (offset + addr);
+ }
+ 
+-void __iounmap(const volatile void __iomem *addr)
++void iounmap(const volatile void __iomem *addr)
+ {
+ 	vunmap((void *) ((unsigned long) addr & PAGE_MASK));
+ }
 -- 
 2.20.1
