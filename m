@@ -1,112 +1,126 @@
-From: Changbin Du <changbin.du@gmail.com>
-Date: Sun, 25 Aug 2019 13:23:23 +0000
-Subject: [PATCH 04/11] ftrace/hash: add private data field
-Message-Id: <20190825132330.5015-5-changbin.du@gmail.com>
+From: Christoph Hellwig <hch@lst.de>
+Date: Sat, 17 Aug 2019 07:32:50 +0000
+Subject: [PATCH 23/26] lib: provide a simple generic ioremap implementation
+Message-Id: <20190817073253.27819-24-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190825132330.5015-1-changbin.du@gmail.com>
-In-Reply-To: <20190825132330.5015-1-changbin.du@gmail.com>
+References: <20190817073253.27819-1-hch@lst.de>
+In-Reply-To: <20190817073253.27819-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Steven Rostedt <rostedt@goodmis.org>, Ingo Molnar <mingo@redhat.com>
-Cc: Jonathan Corbet <corbet@lwn.net>, Jessica Yu <jeyu@kernel.org>, Thomas Gleixner <tglx@linutronix.de>, x86@kernel.org, linux-doc@vger.kernel.org, linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-arch@vger.kernel.org, linux-kbuild@vger.kernel.org, Changbin Du <changbin.du@gmail.com>
+To: Arnd Bergmann <arnd@arndb.de>, Guo Ren <guoren@kernel.org>, Michal Simek <monstr@monstr.eu>, Greentime Hu <green.hu@gmail.com>, Vincent Chen <deanbo422@gmail.com>, Guan Xuetao <gxt@pku.edu.cn>, x86@kernel.org
+Cc: linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, nios2-dev@lists.rocketboards.org, openrisc@lists.librecores.org, linux-parisc@vger.kernel.org, linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-mtd@lists.infradead.org, linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org
 
-We will reuse ftrace_hash to lookup function prototype information. So
-we need an additional field to bind ftrace_func_entry to prototype
-information.
+A lot of architectures reuse the same simple ioremap implementation, so
+start lifting the most simple variant to lib/ioremap.c.  It provides
+ioremap_prot and iounmap, plus a default ioremap that uses prot_noncached,
+although that can be overridden by asm/io.h.
 
-Signed-off-by: Changbin Du <changbin.du@gmail.com>
+Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- kernel/trace/ftrace.c | 17 +++++++----------
- kernel/trace/trace.h  |  6 ++++++
- 2 files changed, 13 insertions(+), 10 deletions(-)
+ include/asm-generic/io.h | 20 ++++++++++++++++----
+ lib/Kconfig              |  3 +++
+ lib/ioremap.c            | 39 +++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 58 insertions(+), 4 deletions(-)
 
-diff --git a/kernel/trace/ftrace.c b/kernel/trace/ftrace.c
-index eca34503f178..a314f0768b2c 100644
---- a/kernel/trace/ftrace.c
-+++ b/kernel/trace/ftrace.c
-@@ -1017,11 +1017,6 @@ static bool update_all_ops;
- # error Dynamic ftrace depends on MCOUNT_RECORD
- #endif
- 
--struct ftrace_func_entry {
--	struct hlist_node hlist;
--	unsigned long ip;
--};
--
- struct ftrace_func_probe {
- 	struct ftrace_probe_ops	*probe_ops;
- 	struct ftrace_ops	ops;
-@@ -1169,7 +1164,8 @@ static void __add_hash_entry(struct ftrace_hash *hash,
- 	hash->count++;
- }
- 
--static int add_hash_entry(struct ftrace_hash *hash, unsigned long ip)
-+static int add_hash_entry(struct ftrace_hash *hash, unsigned long ip,
-+			  void *priv)
+diff --git a/include/asm-generic/io.h b/include/asm-generic/io.h
+index 4e45e1cb6560..4a661fdd1937 100644
+--- a/include/asm-generic/io.h
++++ b/include/asm-generic/io.h
+@@ -923,9 +923,10 @@ static inline void *phys_to_virt(unsigned long address)
+  * DOC: ioremap() and ioremap_*() variants
+  *
+  * Architectures with an MMU are expected to provide ioremap() and iounmap()
+- * themselves.  For NOMMU architectures we provide a default nop-op
+- * implementation that expect that the physical address used for MMIO are
+- * already marked as uncached, and can be used as kernel virtual addresses.
++ * themselves or rely on GENERIC_IOREMAP.  For NOMMU architectures we provide
++ * a default nop-op implementation that expect that the physical address used
++ * for MMIO are already marked as uncached, and can be used as kernel virtual
++ * addresses.
+  *
+  * ioremap_wc() and ioremap_wt() can provide more relaxed caching attributes
+  * for specific drivers if the architecture choses to implement them.  If they
+@@ -946,7 +947,18 @@ static inline void iounmap(void __iomem *addr)
  {
- 	struct ftrace_func_entry *entry;
- 
-@@ -1178,6 +1174,7 @@ static int add_hash_entry(struct ftrace_hash *hash, unsigned long ip)
- 		return -ENOMEM;
- 
- 	entry->ip = ip;
-+	entry->priv = priv;
- 	__add_hash_entry(hash, entry);
- 
- 	return 0;
-@@ -1346,7 +1343,7 @@ alloc_and_copy_ftrace_hash(int size_bits, struct ftrace_hash *hash)
- 	size = 1 << hash->size_bits;
- 	for (i = 0; i < size; i++) {
- 		hlist_for_each_entry(entry, &hash->buckets[i], hlist) {
--			ret = add_hash_entry(new_hash, entry->ip);
-+			ret = add_hash_entry(new_hash, entry->ip, NULL);
- 			if (ret < 0)
- 				goto free_hash;
- 		}
-@@ -3694,7 +3691,7 @@ enter_record(struct ftrace_hash *hash, struct dyn_ftrace *rec, int clear_filter)
- 		if (entry)
- 			return 0;
- 
--		ret = add_hash_entry(hash, rec->ip);
-+		ret = add_hash_entry(hash, rec->ip, NULL);
- 	}
- 	return ret;
  }
-@@ -4700,7 +4697,7 @@ ftrace_match_addr(struct ftrace_hash *hash, unsigned long ip, int remove)
- 		return 0;
- 	}
- 
--	return add_hash_entry(hash, ip);
-+	return add_hash_entry(hash, ip, NULL);
- }
- 
- static int
-@@ -5380,7 +5377,7 @@ ftrace_graph_set_hash(struct ftrace_hash *hash, char *buffer)
- 
- 				if (entry)
- 					continue;
--				if (add_hash_entry(hash, rec->ip) < 0)
-+				if (add_hash_entry(hash, rec->ip, NULL) < 0)
- 					goto out;
- 			} else {
- 				if (entry) {
-diff --git a/kernel/trace/trace.h b/kernel/trace/trace.h
-index 005f08629b8b..ad619c73a505 100644
---- a/kernel/trace/trace.h
-+++ b/kernel/trace/trace.h
-@@ -882,6 +882,12 @@ struct ftrace_hash {
- 	struct rcu_head		rcu;
- };
- 
-+struct ftrace_func_entry {
-+	struct hlist_node hlist;
-+	unsigned long ip;
-+	void *priv;
-+};
+ #endif
+-#endif /* CONFIG_MMU */
++#elif defined(CONFIG_GENERIC_IOREMAP)
++#include <asm/pgtable.h>
 +
- struct ftrace_func_entry *
- ftrace_lookup_ip(struct ftrace_hash *hash, unsigned long ip);
++void __iomem *ioremap_prot(phys_addr_t addr, size_t size, unsigned long prot);
++void iounmap(volatile void __iomem *addr);
++
++static inline void __iomem *ioremap(phys_addr_t addr, size_t size)
++{
++	/* _PAGE_IOREMAP needs to be supplied by the architecture */
++	return ioremap_prot(addr, size, _PAGE_IOREMAP);
++}
++#endif /* !CONFIG_MMU || CONFIG_GENERIC_IOREMAP */
  
+ #ifndef ioremap_nocache
+ #define ioremap_nocache ioremap
+diff --git a/lib/Kconfig b/lib/Kconfig
+index f33d66fc0e86..5d452e1072ab 100644
+--- a/lib/Kconfig
++++ b/lib/Kconfig
+@@ -636,6 +636,9 @@ config STRING_SELFTEST
+ 
+ endmenu
+ 
++config GENERIC_IOREMAP
++	bool
++
+ config GENERIC_LIB_ASHLDI3
+ 	bool
+ 
+diff --git a/lib/ioremap.c b/lib/ioremap.c
+index 0a2ffadc6d71..3f0e18543de8 100644
+--- a/lib/ioremap.c
++++ b/lib/ioremap.c
+@@ -231,3 +231,42 @@ int ioremap_page_range(unsigned long addr,
+ 
+ 	return err;
+ }
++
++#ifdef CONFIG_GENERIC_IOREMAP
++void __iomem *ioremap_prot(phys_addr_t addr, size_t size, unsigned long prot)
++{
++	unsigned long offset, vaddr;
++	phys_addr_t last_addr;
++	struct vm_struct *area;
++
++	/* Disallow wrap-around or zero size */
++	last_addr = addr + size - 1;
++	if (!size || last_addr < addr)
++		return NULL;
++
++	/* Page-align mappings */
++	offset = addr & (~PAGE_MASK);
++	addr -= offset;
++	size = PAGE_ALIGN(size + offset);
++
++	area = get_vm_area_caller(size, VM_IOREMAP,
++			__builtin_return_address(0));
++	if (!area)
++		return NULL;
++	vaddr = (unsigned long)area->addr;
++
++	if (ioremap_page_range(vaddr, vaddr + size, addr, __pgprot(prot))) {
++		free_vm_area(area);
++		return NULL;
++	}
++
++	return (void __iomem *)(vaddr + offset);
++}
++EXPORT_SYMBOL(ioremap_prot);
++
++void iounmap(volatile void __iomem *addr)
++{
++	vunmap((void *)((unsigned long)addr & PAGE_MASK));
++}
++EXPORT_SYMBOL(iounmap);
++#endif /* CONFIG_GENERIC_IOREMAP */
 -- 
 2.20.1
