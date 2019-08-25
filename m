@@ -1,29 +1,73 @@
-From: David Miller <davem@davemloft.net>
-Date: Sat, 31 Aug 2019 20:02:50 +0000
-Subject: Re: [PATCH v2 7/9] sparc64: numa: check the node id consistently for sparc64
-Message-Id: <20190831.130250.1236116087422472663.davem@davemloft.net>
+From: Changbin Du <changbin.du@gmail.com>
+Date: Sun, 25 Aug 2019 13:23:24 +0000
+Subject: [PATCH 05/11] ftrace: create memcache for hash entries
+Message-Id: <20190825132330.5015-6-changbin.du@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1567231103-13237-8-git-send-email-linyunsheng@huawei.com>
- <20190830.235337.570776316111294728.davem@davemloft.net>
- <0195eb73-99ae-fec2-3e11-2cb9e6677926@huawei.com>
-In-Reply-To: <0195eb73-99ae-fec2-3e11-2cb9e6677926@huawei.com>
+References: <20190825132330.5015-1-changbin.du@gmail.com>
+In-Reply-To: <20190825132330.5015-1-changbin.du@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linyunsheng@huawei.com
-Cc: dalias@libc.org, linux-sh@vger.kernel.org, peterz@infradead.org, catalin.marinas@arm.com, dave.hansen@linux.intel.com, heiko.carstens@de.ibm.com, linuxarm@huawei.com, jiaxun.yang@flygoat.com, linux-mips@vger.kernel.org, mwb@linux.vnet.ibm.com, paulus@samba.org, hpa@zytor.com, sparclinux@vger.kernel.org, chenhc@lemote.com, will@kernel.org, cai@lca.pw, linux-s390@vger.kernel.org, ysato@users.sourceforge.jp, mpe@ellerman.id.au, x86@kernel.org, rppt@linux.ibm.com, borntraeger@de.ibm.com, dledford@redhat.com, mingo@redhat.com, jeffrey.t.kirsher@intel.com, benh@kernel.crashing.org, jhogan@kernel.org, nfont@linux.vnet.ibm.com, mattst88@gmail.com, len.brown@intel.com, gor@linux.ibm.com, anshuman.khandual@arm.com, bp@alien8.de, luto@kernel.org, tglx@linutronix.de, naveen.n.rao@linux.vnet.ibm.com, linux-arm-kernel@lists.infradead.org, rth@twiddle.net, axboe@kernel.dk, linuxppc-dev@lists.ozlabs.org, linux-kernel@vger.kernel.org, ralf@linux-mips.org, tbogendoerfer@suse.de, paul.burton@mips.com, linux-alpha@vger.kernel.org, ink@jurassic.park.msu.ru, akpm@linux-foundation.org, robin.murphy@arm.com
+To: Steven Rostedt <rostedt@goodmis.org>, Ingo Molnar <mingo@redhat.com>
+Cc: Jonathan Corbet <corbet@lwn.net>, Jessica Yu <jeyu@kernel.org>, Thomas Gleixner <tglx@linutronix.de>, x86@kernel.org, linux-doc@vger.kernel.org, linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-arch@vger.kernel.org, linux-kbuild@vger.kernel.org, Changbin Du <changbin.du@gmail.com>
 
-From: Yunsheng Lin <linyunsheng@huawei.com>
-Date: Sat, 31 Aug 2019 16:57:04 +0800
+When CONFIG_FTRACE_FUNC_PROTOTYPE is enabled, thousands of
+ftrace_func_entry instances are created. So create a dedicated
+memcache to enhance performance.
 
-> Did you mean sparc64 system does not has ACPI, the device's node id will
-> not specified by ACPI, so the ACPI is unrelated here?
+Signed-off-by: Changbin Du <changbin.du@gmail.com>
+---
+ kernel/trace/ftrace.c | 17 ++++++++++++++++-
+ 1 file changed, 16 insertions(+), 1 deletion(-)
 
-Yes, sparc64 never has and never will have ACPI.
-
-This is also true for several other platforms where you have made this
-change.
-
-The assumption of your entire patch set is that the semantics of the
-NUMA node ID are somehow completely defined by ACPI semantics.  Which
-is not true.
+diff --git a/kernel/trace/ftrace.c b/kernel/trace/ftrace.c
+index a314f0768b2c..cfcb8dad93ea 100644
+--- a/kernel/trace/ftrace.c
++++ b/kernel/trace/ftrace.c
+@@ -94,6 +94,8 @@ struct ftrace_ops *function_trace_op __read_mostly = &ftrace_list_end;
+ /* What to set function_trace_op to */
+ static struct ftrace_ops *set_function_trace_op;
+ 
++struct kmem_cache *hash_entry_cache;
++
+ static bool ftrace_pids_enabled(struct ftrace_ops *ops)
+ {
+ 	struct trace_array *tr;
+@@ -1169,7 +1171,7 @@ static int add_hash_entry(struct ftrace_hash *hash, unsigned long ip,
+ {
+ 	struct ftrace_func_entry *entry;
+ 
+-	entry = kmalloc(sizeof(*entry), GFP_KERNEL);
++	entry = kmem_cache_alloc(hash_entry_cache, GFP_KERNEL);
+ 	if (!entry)
+ 		return -ENOMEM;
+ 
+@@ -6153,6 +6155,15 @@ void __init ftrace_init(void)
+ 	if (ret)
+ 		goto failed;
+ 
++	hash_entry_cache = kmem_cache_create("ftrace-hash",
++					     sizeof(struct ftrace_func_entry),
++					     sizeof(struct ftrace_func_entry),
++					     0, NULL);
++	if (!hash_entry_cache) {
++		pr_err("failed to create ftrace hash entry cache\n");
++		goto failed;
++	}
++
+ 	count = __stop_mcount_loc - __start_mcount_loc;
+ 	if (!count) {
+ 		pr_info("ftrace: No functions to be traced?\n");
+@@ -6172,6 +6183,10 @@ void __init ftrace_init(void)
+ 
+ 	return;
+  failed:
++	if (hash_entry_cache) {
++		kmem_cache_destroy(hash_entry_cache);
++		hash_entry_cache = NULL;
++	}
+ 	ftrace_disabled = 1;
+ }
+ 
+-- 
+2.20.1
