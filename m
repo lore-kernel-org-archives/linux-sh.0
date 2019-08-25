@@ -1,60 +1,46 @@
-From: Yunsheng Lin <linyunsheng@huawei.com>
-Date: Sat, 31 Aug 2019 05:58:23 +0000
-Subject: [PATCH v2 9/9] mips: numa: check the node id consistently for mips loongson64
-Message-Id: <1567231103-13237-10-git-send-email-linyunsheng@huawei.com>
+From: Changbin Du <changbin.du@gmail.com>
+Date: Sun, 25 Aug 2019 13:23:29 +0000
+Subject: [PATCH 10/11] ftrace: add doc for new option record-funcproto
+Message-Id: <20190825132330.5015-11-changbin.du@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1567231103-13237-1-git-send-email-linyunsheng@huawei.com>
-In-Reply-To: <1567231103-13237-1-git-send-email-linyunsheng@huawei.com>
+References: <20190825132330.5015-1-changbin.du@gmail.com>
+In-Reply-To: <20190825132330.5015-1-changbin.du@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: catalin.marinas@arm.com, will@kernel.org, mingo@redhat.com, bp@alien8.de, rth@twiddle.net, ink@jurassic.park.msu.ru, mattst88@gmail.com, benh@kernel.crashing.org, paulus@samba.org, mpe@ellerman.id.au, heiko.carstens@de.ibm.com, gor@linux.ibm.com, borntraeger@de.ibm.com, ysato@users.sourceforge.jp, dalias@libc.org, davem@davemloft.net, ralf@linux-mips.org, paul.burton@mips.com, jhogan@kernel.org, jiaxun.yang@flygoat.com, chenhc@lemote.com
-Cc: linux-sh@vger.kernel.org, peterz@infradead.org, dave.hansen@linux.intel.com, linuxarm@huawei.com, linux-mips@vger.kernel.org, mwb@linux.vnet.ibm.com, hpa@zytor.com, sparclinux@vger.kernel.org, linux-s390@vger.kernel.org, x86@kernel.org, rppt@linux.ibm.com, dledford@redhat.com, jeffrey.t.kirsher@intel.com, nfont@linux.vnet.ibm.com, naveen.n.rao@linux.vnet.ibm.com, len.brown@intel.com, anshuman.khandual@arm.com, cai@lca.pw, luto@kernel.org, tglx@linutronix.de, linux-arm-kernel@lists.infradead.org, axboe@kernel.dk, robin.murphy@arm.com, linux-kernel@vger.kernel.org, tbogendoerfer@suse.de, linux-alpha@vger.kernel.org, akpm@linux-foundation.org, linuxppc-dev@lists.ozlabs.org
+To: Steven Rostedt <rostedt@goodmis.org>, Ingo Molnar <mingo@redhat.com>
+Cc: Jonathan Corbet <corbet@lwn.net>, Jessica Yu <jeyu@kernel.org>, Thomas Gleixner <tglx@linutronix.de>, x86@kernel.org, linux-doc@vger.kernel.org, linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-arch@vger.kernel.org, linux-kbuild@vger.kernel.org, Changbin Du <changbin.du@gmail.com>
 
-According to Section 6.2.14 from ACPI spec 6.3 [1], the setting
-of proximity domain is optional, as below:
+Just add the doc for our new feature.
 
-This optional object is used to describe proximity domain
-associations within a machine. _PXM evaluates to an integer
-that identifies a device as belonging to a Proximity Domain
-defined in the System Resource Affinity Table (SRAT).
-
-Since mips loongson64 uses __node_data instead of
-node_to_cpumask_map, this patch checks node id with the below
-case before returning &__node_data[node]->cpumask:
-1. if node_id >= MAX_NUMNODES, return cpu_none_mask
-2. if node_id < 0, return cpu_online_mask
-3. if hub_data(node) is NULL, return cpu_online_mask
-
-[1] https://uefi.org/sites/default/files/resources/ACPI_6_3_final_Jan30.pdf
-
-Signed-off-by: Yunsheng Lin <linyunsheng@huawei.com>
+Signed-off-by: Changbin Du <changbin.du@gmail.com>
 ---
- arch/mips/include/asm/mach-loongson64/topology.h | 12 +++++++++++-
- 1 file changed, 11 insertions(+), 1 deletion(-)
+ Documentation/trace/ftrace.rst | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
-diff --git a/arch/mips/include/asm/mach-loongson64/topology.h b/arch/mips/include/asm/mach-loongson64/topology.h
-index 7ff819a..b19b983 100644
---- a/arch/mips/include/asm/mach-loongson64/topology.h
-+++ b/arch/mips/include/asm/mach-loongson64/topology.h
-@@ -5,7 +5,17 @@
- #ifdef CONFIG_NUMA
+diff --git a/Documentation/trace/ftrace.rst b/Documentation/trace/ftrace.rst
+index f60079259669..c68fbbedb8bd 100644
+--- a/Documentation/trace/ftrace.rst
++++ b/Documentation/trace/ftrace.rst
+@@ -988,6 +988,7 @@ To see what is available, simply cat the file::
+ 	nolatency-format
+ 	record-cmd
+ 	norecord-tgid
++	norecord-funcproto
+ 	overwrite
+ 	nodisable_on_free
+ 	irq-info
+@@ -1131,6 +1132,11 @@ Here are the available options:
+ 	mapped Thread Group IDs (TGID) mapping to pids. See
+ 	"saved_tgids".
  
- #define cpu_to_node(cpu)	(cpu_logical_map(cpu) >> 2)
--#define cpumask_of_node(node)	(&__node_data[(node)]->cpumask)
++  record-funcproto
++	Record function parameters and return value. This option
++	is only supported by function_graph tracer on x86_64
++	platform by now.
 +
-+static inline const struct cpumask *cpumask_of_node(int node)
-+{
-+	if (node >= MAX_NUMNODES)
-+		return cpu_none_mask;
-+
-+	if (node < 0 || !__node_data[node])
-+		return cpu_online_mask;
-+
-+	return &__node_data[node]->cpumask;
-+}
- 
- struct pci_bus;
- extern int pcibus_to_node(struct pci_bus *);
+   overwrite
+ 	This controls what happens when the trace buffer is
+ 	full. If "1" (default), the oldest events are
 -- 
-2.8.1
+2.20.1
