@@ -1,49 +1,182 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Mon, 19 Aug 2019 14:25:16 +0000
-Subject: Re: [PATCH 7/8] parisc: don't set ARCH_NO_COHERENT_DMA_MMAP
-Message-Id: <20190819142516.GA6366@lst.de>
+From: Changbin Du <changbin.du@gmail.com>
+Date: Sun, 25 Aug 2019 13:23:28 +0000
+Subject: [PATCH 09/11] x86_64: add function prototype recording support
+Message-Id: <20190825132330.5015-10-changbin.du@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190808160005.10325-1-hch@lst.de>
- <20190808160005.10325-8-hch@lst.de>
- <1565861152.2963.7.camel@HansenPartnership.com>
- <20190815105002.GA30805@lst.de>
-In-Reply-To: <20190815105002.GA30805@lst.de>
+References: <20190825132330.5015-1-changbin.du@gmail.com>
+In-Reply-To: <20190825132330.5015-1-changbin.du@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: James Bottomley <James.Bottomley@HansenPartnership.com>
-Cc: linux-xtensa@linux-xtensa.org, Michal Simek <monstr@monstr.eu>, Vladimir Murzin <vladimir.murzin@arm.com>, linux-parisc@vger.kernel.org, linux-sh@vger.kernel.org, Takashi Iwai <tiwai@suse.de>, linuxppc-dev@lists.ozlabs.org, Helge Deller <deller@gmx.de>, x86@kernel.org, linux-m68k@lists.linux-m68k.org, linux-kernel@vger.kernel.org, iommu@lists.linux-foundation.org, Robin Murphy <robin.murphy@arm.com>, Christoph Hellwig <hch@lst.de>, linux-arm-kernel@lists.infradead.org, Marek Szyprowski <m.szyprowski@samsung.com>
+To: Steven Rostedt <rostedt@goodmis.org>, Ingo Molnar <mingo@redhat.com>
+Cc: Jonathan Corbet <corbet@lwn.net>, Jessica Yu <jeyu@kernel.org>, Thomas Gleixner <tglx@linutronix.de>, x86@kernel.org, linux-doc@vger.kernel.org, linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-arch@vger.kernel.org, linux-kbuild@vger.kernel.org, Changbin Du <changbin.du@gmail.com>
 
-Does my explanation from Thursday make sense or is it completely
-off?  Does the patch description need some update to be less
-confusing to those used to different terminology?
+This patch implements the arch_fgraph_record_params() function for x86_64
+platform and deliver the return value of function to ftrace core part.
 
-On Thu, Aug 15, 2019 at 12:50:02PM +0200, Christoph Hellwig wrote:
-> Except for the different naming scheme vs the code this matches my
-> assumptions.
-> 
-> In the code we have three cases (and a fourth EISA case mention in
-> comments, but not actually implemented as far as I can tell):
-> 
-> arch/parisc/kernel/pci-dma.c says in the top of file comments:
-> 
-> ** AFAIK, all PA7100LC and PA7300LC platforms can use this code.
-> 
-> and the handles two different case.  for cpu_type = pcxl or pcxl2
-> it maps the memory as uncached for dma_alloc_coherent, and for all
-> other cpu types it fails the coherent allocations.
-> 
-> In addition to that there are the ccio and sba iommu drivers, of which
-> according to your above comment one is always present for pa8xxx.
-> 
-> Which brings us back to this patch, which ensures that no cacheable
-> memory is exported to userspace by removing ->mmap from ccio and sba.
-> It then enabled dma_mmap_coherent for the pcxl or pcxl2 case that
-> allocates uncached memory, which dma_mmap_coherent does not work
-> because dma_alloc_coherent already failed for the !pcxl && !pcxl2
-> and thus there is no memory to mmap.
-> 
-> So if the description is too confusing please suggest a better
-> one, I'm a little lost between all these code names and product
-> names (arch/parisc/include/asm/dma-mapping.h uses yet another set).
----end quoted text---
+Signed-off-by: Changbin Du <changbin.du@gmail.com>
+---
+ arch/x86/Kconfig            |  1 +
+ arch/x86/kernel/ftrace.c    | 84 +++++++++++++++++++++++++++++++++++--
+ arch/x86/kernel/ftrace_64.S |  4 +-
+ 3 files changed, 85 insertions(+), 4 deletions(-)
+
+diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
+index 222855cc0158..34e583bfdab8 100644
+--- a/arch/x86/Kconfig
++++ b/arch/x86/Kconfig
+@@ -31,6 +31,7 @@ config X86_64
+ 	select NEED_DMA_MAP_STATE
+ 	select SWIOTLB
+ 	select ARCH_HAS_SYSCALL_WRAPPER
++	select HAVE_FTRACE_FUNC_PROTOTYPE
+ 
+ config FORCE_DYNAMIC_FTRACE
+ 	def_bool y
+diff --git a/arch/x86/kernel/ftrace.c b/arch/x86/kernel/ftrace.c
+index a044734167af..fc0a062ce762 100644
+--- a/arch/x86/kernel/ftrace.c
++++ b/arch/x86/kernel/ftrace.c
+@@ -31,6 +31,7 @@
+ #include <asm/ftrace.h>
+ #include <asm/nops.h>
+ #include <asm/text-patching.h>
++#include <asm-generic/dwarf.h>
+ 
+ #ifdef CONFIG_DYNAMIC_FTRACE
+ 
+@@ -918,7 +919,8 @@ static void *addr_from_call(void *ptr)
+ }
+ 
+ void prepare_ftrace_return(unsigned long self_addr, unsigned long *parent,
+-			   unsigned long frame_pointer);
++			   unsigned long frame_pointer,
++			   struct pt_regs *pt_regs);
+ 
+ /*
+  * If the ops->trampoline was not allocated, then it probably
+@@ -973,6 +975,82 @@ void arch_ftrace_trampoline_free(struct ftrace_ops *ops)
+ 	ops->trampoline = 0;
+ }
+ 
++#ifdef CONFIG_FTRACE_FUNC_PROTOTYPE
++void arch_fgraph_record_params(struct ftrace_graph_ent *trace,
++			       struct func_prototype *proto,
++			       struct pt_regs *pt_regs)
++{
++	int i;
++
++	trace->nr_param = min(proto->nr_param, (uint8_t)FTRACE_MAX_FUNC_PARAMS);
++
++	for (i = 0; i < trace->nr_param; i++) {
++		struct func_param *param = &proto->params[i];
++		unsigned int sz = FTRACE_PROTOTYPE_SIZE(param->type);
++		long off = (char)param->loc[1];
++		unsigned long value = 0;
++		bool good = true;
++
++		if (sz > sizeof(value)) {
++			/* Don't record value of complex type. */
++			trace->param_types[i] = param->type;
++			trace->param_values[i] = 0;
++			continue;
++		}
++
++		switch (param->loc[0]) {
++		case DW_OP_reg1:
++			value = pt_regs->dx;
++			break;
++		case DW_OP_reg2:
++			value = pt_regs->cx;
++			break;
++		case DW_OP_reg3:
++			value = pt_regs->bx;
++			break;
++		case DW_OP_reg4:
++			value = pt_regs->si;
++			break;
++		case DW_OP_reg5:
++			value = pt_regs->di;
++			break;
++		case DW_OP_reg6:
++			value = pt_regs->bp;
++			break;
++		case DW_OP_reg8:
++			value = pt_regs->r8;
++			break;
++		case DW_OP_reg9:
++			value = pt_regs->r9;
++			break;
++		case DW_OP_fbreg:
++			if (probe_kernel_read(&value,
++					(void *)pt_regs->bp + off,
++					sz))
++				good = false;
++			break;
++		case DW_OP_breg7:
++			if (probe_kernel_read(&value,
++					(void *)pt_regs->sp + off,
++					sz))
++				good = false;
++			break;
++		default:
++			/* unexpected loc expression */
++			good = false;
++		}
++
++		trace->param_names[i] = param->name;
++		if (good) {
++			trace->param_types[i] = param->type;
++			trace->param_values[i] = value;
++		} else {
++			/* set the type to 0 so we skip it when printing. */
++			trace->param_types[i] = 0;
++		}
++	}
++}
++#endif /* CONFIG_FTRACE_FUNC_PROTOTYPE */
+ #endif /* CONFIG_X86_64 */
+ #endif /* CONFIG_DYNAMIC_FTRACE */
+ 
+@@ -1017,7 +1095,7 @@ int ftrace_disable_ftrace_graph_caller(void)
+  * in current thread info.
+  */
+ void prepare_ftrace_return(unsigned long self_addr, unsigned long *parent,
+-			   unsigned long frame_pointer)
++			   unsigned long frame_pointer, struct pt_regs *pt_regs)
+ {
+ 	unsigned long old;
+ 	int faulted;
+@@ -1072,7 +1150,7 @@ void prepare_ftrace_return(unsigned long self_addr, unsigned long *parent,
+ 		return;
+ 	}
+ 
+-	if (function_graph_enter(old, self_addr, frame_pointer, parent, NULL))
++	if (function_graph_enter(old, self_addr, frame_pointer, parent, pt_regs))
+ 		*parent = old;
+ }
+ #endif /* CONFIG_FUNCTION_GRAPH_TRACER */
+diff --git a/arch/x86/kernel/ftrace_64.S b/arch/x86/kernel/ftrace_64.S
+index 809d54397dba..e01d6358e859 100644
+--- a/arch/x86/kernel/ftrace_64.S
++++ b/arch/x86/kernel/ftrace_64.S
+@@ -289,7 +289,8 @@ ENTRY(ftrace_graph_caller)
+ 
+ 	leaq MCOUNT_REG_SIZE+8(%rsp), %rsi
+ 	movq $0, %rdx	/* No framepointers needed */
+-	call	prepare_ftrace_return
++	movq %rsp, %rcx /* the fourth parameter */
++	call prepare_ftrace_return
+ 
+ 	restore_mcount_regs
+ 
+@@ -304,6 +305,7 @@ ENTRY(return_to_handler)
+ 	movq %rax, (%rsp)
+ 	movq %rdx, 8(%rsp)
+ 	movq %rbp, %rdi
++	movq %rax, %rsi
+ 
+ 	call ftrace_return_to_handler
+ 
+-- 
+2.20.1
