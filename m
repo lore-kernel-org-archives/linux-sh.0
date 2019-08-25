@@ -1,230 +1,112 @@
-From: Aleksa Sarai <cyphar@cyphar.com>
-Date: Tue, 20 Aug 2019 03:34:01 +0000
-Subject: [PATCH RESEND v11 3/8] open: O_EMPTYPATH: procfs-less file descriptor re-opening
-Message-Id: <20190820033406.29796-4-cyphar@cyphar.com>
+From: Changbin Du <changbin.du@gmail.com>
+Date: Sun, 25 Aug 2019 13:23:23 +0000
+Subject: [PATCH 04/11] ftrace/hash: add private data field
+Message-Id: <20190825132330.5015-5-changbin.du@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190820033406.29796-1-cyphar@cyphar.com>
-In-Reply-To: <20190820033406.29796-1-cyphar@cyphar.com>
+References: <20190825132330.5015-1-changbin.du@gmail.com>
+In-Reply-To: <20190825132330.5015-1-changbin.du@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Al Viro <viro@zeniv.linux.org.uk>, Jeff Layton <jlayton@kernel.org>, "J. Bruce Fields" <bfields@fieldses.org>, Arnd Bergmann <arnd@arndb.de>, David Howells <dhowells@redhat.com>, Shuah Khan <shuah@kernel.org>, Shuah Khan <skhan@linuxfoundation.org>
-Cc: Aleksa Sarai <cyphar@cyphar.com>, Eric Biederman <ebiederm@xmission.com>, Andy Lutomirski <luto@kernel.org>, Andrew Morton <akpm@linux-foundation.org>, Alexei Starovoitov <ast@kernel.org>, Kees Cook <keescook@chromium.org>, Jann Horn <jannh@google.com>, Christian Brauner <christian@brauner.io>, Tycho Andersen <tycho@tycho.ws>, David Drysdale <drysdale@google.com>, Chanho Min <chanho.min@lge.com>, Oleg Nesterov <oleg@redhat.com>, Aleksa Sarai <asarai@suse.de>, Linus Torvalds <torvalds@linux-foundation.org>, containers@lists.linux-foundation.org, linux-alpha@vger.kernel.org, linux-api@vger.kernel.org, linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-fsdevel@vger.kernel.org, linux-ia64@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Steven Rostedt <rostedt@goodmis.org>, Ingo Molnar <mingo@redhat.com>
+Cc: Jonathan Corbet <corbet@lwn.net>, Jessica Yu <jeyu@kernel.org>, Thomas Gleixner <tglx@linutronix.de>, x86@kernel.org, linux-doc@vger.kernel.org, linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-arch@vger.kernel.org, linux-kbuild@vger.kernel.org, Changbin Du <changbin.du@gmail.com>
 
-Userspace has made use of /proc/self/fd very liberally to allow for
-descriptors to be re-opened. There are a wide variety of uses for this
-feature, but it has always required constructing a pathname and could
-not be done without procfs mounted. The obvious solution for this is to
-extend openat(2) to have an AT_EMPTY_PATH-equivalent -- O_EMPTYPATH.
+We will reuse ftrace_hash to lookup function prototype information. So
+we need an additional field to bind ftrace_func_entry to prototype
+information.
 
-Now that descriptor re-opening has been made safe through the new
-magic-link resolution restrictions, we can replicate these restrictions
-for O_EMPTYPATH. In particular, we only allow "upgrading" the file
-descriptor if the corresponding FMODE_PATH_* bit is set (or the
-FMODE_{READ,WRITE} cases for non-O_PATH file descriptors).
-
-When doing openat(O_EMPTYPATH|O_PATH), O_PATH takes precedence and
-O_EMPTYPATH is ignored. Very few users ever have a need to O_PATH
-re-open an existing file descriptor, and so accommodating them at the
-expense of further complicating O_PATH makes little sense. Ultimately,
-if users ask for this we can always add RESOLVE_EMPTY_PATH to
-resolveat(2) in the future.
-
-Signed-off-by: Aleksa Sarai <cyphar@cyphar.com>
+Signed-off-by: Changbin Du <changbin.du@gmail.com>
 ---
- arch/alpha/include/uapi/asm/fcntl.h  |  1 +
- arch/parisc/include/uapi/asm/fcntl.h | 39 ++++++++++++++--------------
- arch/sparc/include/uapi/asm/fcntl.h  |  1 +
- fs/fcntl.c                           |  2 +-
- fs/namei.c                           | 20 ++++++++++++++
- fs/open.c                            |  7 ++++-
- include/linux/fcntl.h                |  2 +-
- include/uapi/asm-generic/fcntl.h     |  4 +++
- 8 files changed, 54 insertions(+), 22 deletions(-)
+ kernel/trace/ftrace.c | 17 +++++++----------
+ kernel/trace/trace.h  |  6 ++++++
+ 2 files changed, 13 insertions(+), 10 deletions(-)
 
-diff --git a/arch/alpha/include/uapi/asm/fcntl.h b/arch/alpha/include/uapi/asm/fcntl.h
-index 50bdc8e8a271..1f879bade68b 100644
---- a/arch/alpha/include/uapi/asm/fcntl.h
-+++ b/arch/alpha/include/uapi/asm/fcntl.h
-@@ -34,6 +34,7 @@
- 
- #define O_PATH		040000000
- #define __O_TMPFILE	0100000000
-+#define O_EMPTYPATH	0200000000
- 
- #define F_GETLK		7
- #define F_SETLK		8
-diff --git a/arch/parisc/include/uapi/asm/fcntl.h b/arch/parisc/include/uapi/asm/fcntl.h
-index 03ce20e5ad7d..5d709058a76f 100644
---- a/arch/parisc/include/uapi/asm/fcntl.h
-+++ b/arch/parisc/include/uapi/asm/fcntl.h
-@@ -2,26 +2,27 @@
- #ifndef _PARISC_FCNTL_H
- #define _PARISC_FCNTL_H
- 
--#define O_APPEND	000000010
--#define O_BLKSEEK	000000100 /* HPUX only */
--#define O_CREAT		000000400 /* not fcntl */
--#define O_EXCL		000002000 /* not fcntl */
--#define O_LARGEFILE	000004000
--#define __O_SYNC	000100000
-+#define O_APPEND	0000000010
-+#define O_BLKSEEK	0000000100 /* HPUX only */
-+#define O_CREAT		0000000400 /* not fcntl */
-+#define O_EXCL		0000002000 /* not fcntl */
-+#define O_LARGEFILE	0000004000
-+#define __O_SYNC	0000100000
- #define O_SYNC		(__O_SYNC|O_DSYNC)
--#define O_NONBLOCK	000200004 /* HPUX has separate NDELAY & NONBLOCK */
--#define O_NOCTTY	000400000 /* not fcntl */
--#define O_DSYNC		001000000 /* HPUX only */
--#define O_RSYNC		002000000 /* HPUX only */
--#define O_NOATIME	004000000
--#define O_CLOEXEC	010000000 /* set close_on_exec */
--
--#define O_DIRECTORY	000010000 /* must be a directory */
--#define O_NOFOLLOW	000000200 /* don't follow links */
--#define O_INVISIBLE	004000000 /* invisible I/O, for DMAPI/XDSM */
--
--#define O_PATH		020000000
--#define __O_TMPFILE	040000000
-+#define O_NONBLOCK	0000200004 /* HPUX has separate NDELAY & NONBLOCK */
-+#define O_NOCTTY	0000400000 /* not fcntl */
-+#define O_DSYNC		0001000000 /* HPUX only */
-+#define O_RSYNC		0002000000 /* HPUX only */
-+#define O_NOATIME	0004000000
-+#define O_CLOEXEC	0010000000 /* set close_on_exec */
-+
-+#define O_DIRECTORY	0000010000 /* must be a directory */
-+#define O_NOFOLLOW	0000000200 /* don't follow links */
-+#define O_INVISIBLE	0004000000 /* invisible I/O, for DMAPI/XDSM */
-+
-+#define O_PATH		0020000000
-+#define __O_TMPFILE	0040000000
-+#define O_EMPTYPATH	0100000000
- 
- #define F_GETLK64	8
- #define F_SETLK64	9
-diff --git a/arch/sparc/include/uapi/asm/fcntl.h b/arch/sparc/include/uapi/asm/fcntl.h
-index 67dae75e5274..dc86c9eaf950 100644
---- a/arch/sparc/include/uapi/asm/fcntl.h
-+++ b/arch/sparc/include/uapi/asm/fcntl.h
-@@ -37,6 +37,7 @@
- 
- #define O_PATH		0x1000000
- #define __O_TMPFILE	0x2000000
-+#define O_EMPTYPATH	0x4000000
- 
- #define F_GETOWN	5	/*  for sockets. */
- #define F_SETOWN	6	/*  for sockets. */
-diff --git a/fs/fcntl.c b/fs/fcntl.c
-index 3d40771e8e7c..4cf05a2fd162 100644
---- a/fs/fcntl.c
-+++ b/fs/fcntl.c
-@@ -1031,7 +1031,7 @@ static int __init fcntl_init(void)
- 	 * Exceptions: O_NONBLOCK is a two bit define on parisc; O_NDELAY
- 	 * is defined as O_NONBLOCK on some platforms and not on others.
- 	 */
--	BUILD_BUG_ON(21 - 1 /* for O_RDONLY being 0 */ !+	BUILD_BUG_ON(22 - 1 /* for O_RDONLY being 0 */ ! 		HWEIGHT32(
- 			(VALID_OPEN_FLAGS & ~(O_NONBLOCK | O_NDELAY)) |
- 			__FMODE_EXEC | __FMODE_NONOTIFY));
-diff --git a/fs/namei.c b/fs/namei.c
-index 54d57dad0f91..e39b573fcc4d 100644
---- a/fs/namei.c
-+++ b/fs/namei.c
-@@ -3571,6 +3571,24 @@ static int trailing_magiclink(struct nameidata *nd, int acc_mode,
- 	return may_open_magiclink(upgrade_mask, acc_mode);
- }
- 
-+static int do_emptypath(struct nameidata *nd, const struct open_flags *op,
-+			struct file *file)
-+{
-+	int error;
-+	/* We don't support AT_FDCWD (since O_PATH is disallowed here). */
-+	struct fd f = fdget_raw(nd->dfd);
-+
-+	if (!f.file)
-+		return -EBADF;
-+
-+	/* Apply trailing_magiclink()-like restrictions. */
-+	error = may_open_magiclink(f.file->f_mode, op->acc_mode);
-+	if (!error)
-+		error = vfs_open(&f.file->f_path, file);
-+	fdput(f);
-+	return error;
-+}
-+
- static struct file *path_openat(struct nameidata *nd,
- 			const struct open_flags *op, unsigned flags)
- {
-@@ -3583,6 +3601,8 @@ static struct file *path_openat(struct nameidata *nd,
- 
- 	if (unlikely(file->f_flags & __O_TMPFILE)) {
- 		error = do_tmpfile(nd, flags, op, file);
-+	} else if (unlikely(file->f_flags & O_EMPTYPATH)) {
-+		error = do_emptypath(nd, op, file);
- 	} else if (unlikely(file->f_flags & O_PATH)) {
- 		/* Inlined path_lookupat() with a trailing_magiclink() check. */
- 		fmode_t opath_mask = op->opath_mask;
-diff --git a/fs/open.c b/fs/open.c
-index 806a75d685e1..310b896eecf0 100644
---- a/fs/open.c
-+++ b/fs/open.c
-@@ -1015,6 +1015,8 @@ static inline int build_open_flags(int flags, umode_t mode, struct open_flags *o
- 		lookup_flags |= LOOKUP_DIRECTORY;
- 	if (!(flags & O_NOFOLLOW))
- 		lookup_flags |= LOOKUP_FOLLOW;
-+	if (flags & O_EMPTYPATH)
-+		lookup_flags |= LOOKUP_EMPTY;
- 	op->lookup_flags = lookup_flags;
- 	return 0;
- }
-@@ -1076,14 +1078,17 @@ long do_sys_open(int dfd, const char __user *filename, int flags, umode_t mode)
- {
- 	struct open_flags op;
- 	int fd = build_open_flags(flags, mode, &op);
-+	int empty = 0;
- 	struct filename *tmp;
- 
- 	if (fd)
- 		return fd;
- 
--	tmp = getname(filename);
-+	tmp = getname_flags(filename, op.lookup_flags, &empty);
- 	if (IS_ERR(tmp))
- 		return PTR_ERR(tmp);
-+	if (!empty)
-+		op.open_flag &= ~O_EMPTYPATH;
- 
- 	fd = get_unused_fd_flags(flags);
- 	if (fd >= 0) {
-diff --git a/include/linux/fcntl.h b/include/linux/fcntl.h
-index d019df946cb2..2868ae6c8fc1 100644
---- a/include/linux/fcntl.h
-+++ b/include/linux/fcntl.h
-@@ -9,7 +9,7 @@
- 	(O_RDONLY | O_WRONLY | O_RDWR | O_CREAT | O_EXCL | O_NOCTTY | O_TRUNC | \
- 	 O_APPEND | O_NDELAY | O_NONBLOCK | O_NDELAY | __O_SYNC | O_DSYNC | \
- 	 FASYNC	| O_DIRECT | O_LARGEFILE | O_DIRECTORY | O_NOFOLLOW | \
--	 O_NOATIME | O_CLOEXEC | O_PATH | __O_TMPFILE)
-+	 O_NOATIME | O_CLOEXEC | O_PATH | __O_TMPFILE | O_EMPTYPATH)
- 
- #ifndef force_o_largefile
- #define force_o_largefile() (!IS_ENABLED(CONFIG_ARCH_32BIT_OFF_T))
-diff --git a/include/uapi/asm-generic/fcntl.h b/include/uapi/asm-generic/fcntl.h
-index 9dc0bf0c5a6e..ae6862f69cc2 100644
---- a/include/uapi/asm-generic/fcntl.h
-+++ b/include/uapi/asm-generic/fcntl.h
-@@ -89,6 +89,10 @@
- #define __O_TMPFILE	020000000
+diff --git a/kernel/trace/ftrace.c b/kernel/trace/ftrace.c
+index eca34503f178..a314f0768b2c 100644
+--- a/kernel/trace/ftrace.c
++++ b/kernel/trace/ftrace.c
+@@ -1017,11 +1017,6 @@ static bool update_all_ops;
+ # error Dynamic ftrace depends on MCOUNT_RECORD
  #endif
  
-+#ifndef O_EMPTYPATH
-+#define O_EMPTYPATH 040000000
-+#endif
+-struct ftrace_func_entry {
+-	struct hlist_node hlist;
+-	unsigned long ip;
+-};
+-
+ struct ftrace_func_probe {
+ 	struct ftrace_probe_ops	*probe_ops;
+ 	struct ftrace_ops	ops;
+@@ -1169,7 +1164,8 @@ static void __add_hash_entry(struct ftrace_hash *hash,
+ 	hash->count++;
+ }
+ 
+-static int add_hash_entry(struct ftrace_hash *hash, unsigned long ip)
++static int add_hash_entry(struct ftrace_hash *hash, unsigned long ip,
++			  void *priv)
+ {
+ 	struct ftrace_func_entry *entry;
+ 
+@@ -1178,6 +1174,7 @@ static int add_hash_entry(struct ftrace_hash *hash, unsigned long ip)
+ 		return -ENOMEM;
+ 
+ 	entry->ip = ip;
++	entry->priv = priv;
+ 	__add_hash_entry(hash, entry);
+ 
+ 	return 0;
+@@ -1346,7 +1343,7 @@ alloc_and_copy_ftrace_hash(int size_bits, struct ftrace_hash *hash)
+ 	size = 1 << hash->size_bits;
+ 	for (i = 0; i < size; i++) {
+ 		hlist_for_each_entry(entry, &hash->buckets[i], hlist) {
+-			ret = add_hash_entry(new_hash, entry->ip);
++			ret = add_hash_entry(new_hash, entry->ip, NULL);
+ 			if (ret < 0)
+ 				goto free_hash;
+ 		}
+@@ -3694,7 +3691,7 @@ enter_record(struct ftrace_hash *hash, struct dyn_ftrace *rec, int clear_filter)
+ 		if (entry)
+ 			return 0;
+ 
+-		ret = add_hash_entry(hash, rec->ip);
++		ret = add_hash_entry(hash, rec->ip, NULL);
+ 	}
+ 	return ret;
+ }
+@@ -4700,7 +4697,7 @@ ftrace_match_addr(struct ftrace_hash *hash, unsigned long ip, int remove)
+ 		return 0;
+ 	}
+ 
+-	return add_hash_entry(hash, ip);
++	return add_hash_entry(hash, ip, NULL);
+ }
+ 
+ static int
+@@ -5380,7 +5377,7 @@ ftrace_graph_set_hash(struct ftrace_hash *hash, char *buffer)
+ 
+ 				if (entry)
+ 					continue;
+-				if (add_hash_entry(hash, rec->ip) < 0)
++				if (add_hash_entry(hash, rec->ip, NULL) < 0)
+ 					goto out;
+ 			} else {
+ 				if (entry) {
+diff --git a/kernel/trace/trace.h b/kernel/trace/trace.h
+index 005f08629b8b..ad619c73a505 100644
+--- a/kernel/trace/trace.h
++++ b/kernel/trace/trace.h
+@@ -882,6 +882,12 @@ struct ftrace_hash {
+ 	struct rcu_head		rcu;
+ };
+ 
++struct ftrace_func_entry {
++	struct hlist_node hlist;
++	unsigned long ip;
++	void *priv;
++};
 +
- /* a horrid kludge trying to make sure that this will fail on old kernels */
- #define O_TMPFILE (__O_TMPFILE | O_DIRECTORY)
- #define O_TMPFILE_MASK (__O_TMPFILE | O_DIRECTORY | O_CREAT)      
+ struct ftrace_func_entry *
+ ftrace_lookup_ip(struct ftrace_hash *hash, unsigned long ip);
+ 
 -- 
-2.22.0
+2.20.1
