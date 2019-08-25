@@ -1,81 +1,303 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Thu, 08 Aug 2019 16:00:01 +0000
-Subject: [PATCH 4/8] dma-mapping: add a dma_can_mmap helper
-Message-Id: <20190808160005.10325-5-hch@lst.de>
+From: Changbin Du <changbin.du@gmail.com>
+Date: Sun, 25 Aug 2019 13:23:25 +0000
+Subject: [PATCH 06/11] ftrace: process function prototype data in vmlinux and modules
+Message-Id: <20190825132330.5015-7-changbin.du@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190808160005.10325-1-hch@lst.de>
-In-Reply-To: <20190808160005.10325-1-hch@lst.de>
+References: <20190825132330.5015-1-changbin.du@gmail.com>
+In-Reply-To: <20190825132330.5015-1-changbin.du@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: iommu@lists.linux-foundation.org, Marek Szyprowski <m.szyprowski@samsung.com>
-Cc: linux-xtensa@linux-xtensa.org, Michal Simek <monstr@monstr.eu>, Vladimir Murzin <vladimir.murzin@arm.com>, linux-parisc@vger.kernel.org, linux-sh@vger.kernel.org, Takashi Iwai <tiwai@suse.de>, linuxppc-dev@lists.ozlabs.org, Helge Deller <deller@gmx.de>, x86@kernel.org, linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, Robin Murphy <robin.murphy@arm.com>, linux-arm-kernel@lists.infradead.org
+To: Steven Rostedt <rostedt@goodmis.org>, Ingo Molnar <mingo@redhat.com>
+Cc: Jonathan Corbet <corbet@lwn.net>, Jessica Yu <jeyu@kernel.org>, Thomas Gleixner <tglx@linutronix.de>, x86@kernel.org, linux-doc@vger.kernel.org, linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-arch@vger.kernel.org, linux-kbuild@vger.kernel.org, Changbin Du <changbin.du@gmail.com>
 
-Add a helper to check if DMA allocations for a specific device can be
-mapped to userspace using dma_mmap_*.
+Walk through the '__funcproto' section in vmlinux and kernel modules.
+For each item we add it to a new ftrace hash table ftrace_prototype_hash.
+When unloading a module, its items are removed from hash table.
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
+Signed-off-by: Changbin Du <changbin.du@gmail.com>
 ---
- include/linux/dma-mapping.h |  5 +++++
- kernel/dma/mapping.c        | 23 +++++++++++++++++++++++
- 2 files changed, 28 insertions(+)
+ include/asm-generic/vmlinux.lds.h | 18 ++++++++
+ include/linux/ftrace.h            | 18 ++++++++
+ include/linux/module.h            |  4 ++
+ kernel/module.c                   | 25 ++++++++--
+ kernel/trace/ftrace.c             | 76 ++++++++++++++++++++++++++++++-
+ kernel/trace/trace.h              |  4 ++
+ 6 files changed, 140 insertions(+), 5 deletions(-)
 
-diff --git a/include/linux/dma-mapping.h b/include/linux/dma-mapping.h
-index f7d1eea32c78..17271857be5d 100644
---- a/include/linux/dma-mapping.h
-+++ b/include/linux/dma-mapping.h
-@@ -462,6 +462,7 @@ int dma_get_sgtable_attrs(struct device *dev, struct sg_table *sgt,
- int dma_mmap_attrs(struct device *dev, struct vm_area_struct *vma,
- 		void *cpu_addr, dma_addr_t dma_addr, size_t size,
- 		unsigned long attrs);
-+bool dma_can_mmap(struct device *dev);
- int dma_supported(struct device *dev, u64 mask);
- int dma_set_mask(struct device *dev, u64 mask);
- int dma_set_coherent_mask(struct device *dev, u64 mask);
-@@ -552,6 +553,10 @@ static inline int dma_mmap_attrs(struct device *dev, struct vm_area_struct *vma,
- {
- 	return -ENXIO;
- }
-+static inline bool dma_can_mmap(struct device *dev)
-+{
-+	return false;
-+}
- static inline int dma_supported(struct device *dev, u64 mask)
- {
- 	return 0;
-diff --git a/kernel/dma/mapping.c b/kernel/dma/mapping.c
-index 67b900ad0836..64d1de59e133 100644
---- a/kernel/dma/mapping.c
-+++ b/kernel/dma/mapping.c
-@@ -220,6 +220,29 @@ int dma_common_mmap(struct device *dev, struct vm_area_struct *vma,
- #endif /* !CONFIG_ARCH_NO_COHERENT_DMA_MMAP */
+diff --git a/include/asm-generic/vmlinux.lds.h b/include/asm-generic/vmlinux.lds.h
+index cd28f63bfbc7..3b0a10cbf0ca 100644
+--- a/include/asm-generic/vmlinux.lds.h
++++ b/include/asm-generic/vmlinux.lds.h
+@@ -125,6 +125,23 @@
+ #define MCOUNT_REC()
+ #endif
+ 
++#ifdef CONFIG_FTRACE_FUNC_PROTOTYPE
++#define FUNC_PROTOTYPE							\
++	. = ALIGN(8);							\
++	__funcprotostr : AT(ADDR(__funcprotostr) - LOAD_OFFSET) {	\
++		KEEP(*(__funcprotostr)) 				\
++	}								\
++									\
++	. = ALIGN(8);							\
++	__funcproto : AT(ADDR(__funcproto) - LOAD_OFFSET) {		\
++		__start_funcproto = .;					\
++		KEEP(*(__funcproto))					\
++		__stop_funcproto = .;					\
++	}
++#else
++#define	FUNC_PROTOTYPE
++#endif
++
+ #ifdef CONFIG_TRACE_BRANCH_PROFILING
+ #define LIKELY_PROFILE()	__start_annotated_branch_profile = .;	\
+ 				KEEP(*(_ftrace_annotated_branch))	\
+@@ -396,6 +413,7 @@
+ 	}								\
+ 									\
+ 	TRACEDATA							\
++	FUNC_PROTOTYPE							\
+ 									\
+ 	/* Kernel symbol table: Normal symbols */			\
+ 	__ksymtab         : AT(ADDR(__ksymtab) - LOAD_OFFSET) {		\
+diff --git a/include/linux/ftrace.h b/include/linux/ftrace.h
+index 8a8cb3c401b2..f5aab37a8c34 100644
+--- a/include/linux/ftrace.h
++++ b/include/linux/ftrace.h
+@@ -361,6 +361,24 @@ struct dyn_ftrace {
+ 	struct dyn_arch_ftrace	arch;
+ };
+ 
++#ifdef CONFIG_FTRACE_FUNC_PROTOTYPE
++struct func_param {
++	char *name;
++	uint8_t type;
++	uint8_t loc[2];
++} __packed;
++
++struct func_prototype {
++	unsigned long ip;
++	uint8_t ret_type;
++	uint8_t nr_param;
++	struct func_param params[0];
++} __packed;
++
++#define FTRACE_PROTOTYPE_SIGNED(t)	(t & BIT(7))
++#define FTRACE_PROTOTYPE_SIZE(t)	(t & GENMASK(6, 0))
++#endif
++
+ int ftrace_force_update(void);
+ int ftrace_set_filter_ip(struct ftrace_ops *ops, unsigned long ip,
+ 			 int remove, int reset);
+diff --git a/include/linux/module.h b/include/linux/module.h
+index 1455812dd325..516062dfe567 100644
+--- a/include/linux/module.h
++++ b/include/linux/module.h
+@@ -477,6 +477,10 @@ struct module {
+ 	unsigned int num_ftrace_callsites;
+ 	unsigned long *ftrace_callsites;
+ #endif
++#ifdef CONFIG_FTRACE_FUNC_PROTOTYPE
++	struct func_prototype *funcproto_start;
++	size_t funcproto_sec_size;
++#endif
+ 
+ #ifdef CONFIG_LIVEPATCH
+ 	bool klp; /* Is this a livepatch module? */
+diff --git a/kernel/module.c b/kernel/module.c
+index 9ee93421269c..1c5eea7b6a28 100644
+--- a/kernel/module.c
++++ b/kernel/module.c
+@@ -360,17 +360,30 @@ static void *section_addr(const struct load_info *info, const char *name)
+ 	return (void *)info->sechdrs[find_sec(info, name)].sh_addr;
  }
  
-+/**
-+ * dma_can_mmap - check if a given device supports dma_mmap_*
-+ * @dev: device to check
-+ *
-+ * Returns %true if @dev supports dma_mmap_coherent() and dma_mmap_attrs() to
-+ * map DMA allocations to userspace.
-+ */
-+bool dma_can_mmap(struct device *dev)
++/* Get info of a module section. */
++static void *section_info(const struct load_info *info,
++			  const char *name,
++			  size_t *size)
 +{
-+	const struct dma_map_ops *ops = get_dma_ops(dev);
++	unsigned int sec = find_sec(info, name);
 +
-+	if (IS_ENABLED(CONFIG_ARCH_NO_COHERENT_DMA_MMAP))
-+		return false;
++	/* Section 0 has sh_addr 0 and sh_size 0. */
++	*size = info->sechdrs[sec].sh_size;
++	return (void *)info->sechdrs[sec].sh_addr;
++}
 +
-+	if (dma_is_direct(ops)) {
-+		return dev_is_dma_coherent(dev) ||
-+			IS_ENABLED(CONFIG_ARCH_HAS_DMA_COHERENT_TO_PFN);
+ /* Find a module section, or NULL.  Fill in number of "objects" in section. */
+ static void *section_objs(const struct load_info *info,
+ 			  const char *name,
+ 			  size_t object_size,
+ 			  unsigned int *num)
+ {
+-	unsigned int sec = find_sec(info, name);
++	void *addr;
++	size_t sz;
+ 
+-	/* Section 0 has sh_addr 0 and sh_size 0. */
+-	*num = info->sechdrs[sec].sh_size / object_size;
+-	return (void *)info->sechdrs[sec].sh_addr;
++	addr = section_info(info, name, &sz);
++	*num = sz / object_size;
++	return addr;
+ }
+ 
+ /* Provided by the linker */
+@@ -3140,6 +3153,10 @@ static int find_module_sections(struct module *mod, struct load_info *info)
+ 					     sizeof(*mod->ftrace_callsites),
+ 					     &mod->num_ftrace_callsites);
+ #endif
++#ifdef CONFIG_FTRACE_FUNC_PROTOTYPE
++	mod->funcproto_start = section_info(info, "__funcproto",
++					    &mod->funcproto_sec_size);
++#endif
+ #ifdef CONFIG_FUNCTION_ERROR_INJECTION
+ 	mod->ei_funcs = section_objs(info, "_error_injection_whitelist",
+ 					    sizeof(*mod->ei_funcs),
+diff --git a/kernel/trace/ftrace.c b/kernel/trace/ftrace.c
+index cfcb8dad93ea..438b8b47198f 100644
+--- a/kernel/trace/ftrace.c
++++ b/kernel/trace/ftrace.c
+@@ -5060,6 +5060,9 @@ static DEFINE_MUTEX(graph_lock);
+ 
+ struct ftrace_hash *ftrace_graph_hash = EMPTY_HASH;
+ struct ftrace_hash *ftrace_graph_notrace_hash = EMPTY_HASH;
++#ifdef CONFIG_FTRACE_FUNC_PROTOTYPE
++struct ftrace_hash *ftrace_prototype_hash = EMPTY_HASH;
++#endif
+ 
+ enum graph_filter_type {
+ 	GRAPH_FILTER_NOTRACE	= 0,
+@@ -5615,6 +5618,46 @@ static int ftrace_process_locs(struct module *mod,
+ 	return ret;
+ }
+ 
++#ifdef CONFIG_FTRACE_FUNC_PROTOTYPE
++static int ftrace_process_funcproto(struct module *mod,
++			       struct func_prototype *start,
++			       struct func_prototype *end,
++			       bool remove)
++{
++	struct ftrace_func_entry *ent;
++	struct func_prototype *proto;
++	int ret = 0;
++
++	mutex_lock(&ftrace_lock);
++
++restart:
++	proto = start;
++	while (proto < end) {
++		if (remove) {
++			ent = ftrace_lookup_ip(ftrace_prototype_hash,
++					       proto->ip);
++			if (ent)
++				free_hash_entry(ftrace_prototype_hash, ent);
++		} else {
++			ret = add_hash_entry(ftrace_prototype_hash,
++					     proto->ip, proto);
++			if (ret < 0) {
++				end = proto;
++				remove = 1;
++				goto restart;
++			}
++		}
++		proto = (struct func_prototype *)((char *)proto +
++			sizeof(*proto) +
++			sizeof(proto->params[0]) * proto->nr_param);
 +	}
 +
-+	return ops->mmap != NULL;
-+}
-+EXPORT_SYMBOL_GPL(dma_can_mmap);
++	mutex_unlock(&ftrace_lock);
 +
- /**
-  * dma_mmap_attrs - map a coherent DMA allocation into user space
-  * @dev: valid struct device pointer, or NULL for ISA and EISA-like devices
++	return ret;
++}
++#endif
++
+ struct ftrace_mod_func {
+ 	struct list_head	list;
+ 	char			*name;
+@@ -5707,7 +5750,7 @@ static void ftrace_free_mod_map(struct rcu_head *rcu)
+ 	kfree(mod_map);
+ }
+ 
+-void ftrace_release_mod(struct module *mod)
++void ftrace_release_dyn(struct module *mod)
+ {
+ 	struct ftrace_mod_map *mod_map;
+ 	struct ftrace_mod_map *n;
+@@ -5773,6 +5816,17 @@ void ftrace_release_mod(struct module *mod)
+ 	}
+ }
+ 
++void ftrace_release_mod(struct module *mod)
++{
++	ftrace_release_dyn(mod);
++
++#ifdef CONFIG_FTRACE_FUNC_PROTOTYPE
++	ftrace_process_funcproto(mod, mod->funcproto_start,
++			(void *)mod->funcproto_start + mod->funcproto_sec_size,
++			true);
++#endif
++}
++
+ void ftrace_module_enable(struct module *mod)
+ {
+ 	struct dyn_ftrace *rec;
+@@ -5852,6 +5906,11 @@ void ftrace_module_init(struct module *mod)
+ 
+ 	ftrace_process_locs(mod, mod->ftrace_callsites,
+ 			    mod->ftrace_callsites + mod->num_ftrace_callsites);
++#ifdef CONFIG_FTRACE_FUNC_PROTOTYPE
++	ftrace_process_funcproto(mod, mod->funcproto_start,
++			(void *)mod->funcproto_start + mod->funcproto_sec_size,
++			false);
++#endif
+ }
+ 
+ static void save_ftrace_mod_rec(struct ftrace_mod_map *mod_map,
+@@ -6146,6 +6205,10 @@ void __init ftrace_init(void)
+ {
+ 	extern unsigned long __start_mcount_loc[];
+ 	extern unsigned long __stop_mcount_loc[];
++#ifdef CONFIG_FTRACE_FUNC_PROTOTYPE
++	extern struct func_prototype __start_funcproto[];
++	extern struct func_prototype __stop_funcproto[];
++#endif
+ 	unsigned long count, flags;
+ 	int ret;
+ 
+@@ -6179,6 +6242,17 @@ void __init ftrace_init(void)
+ 				  __start_mcount_loc,
+ 				  __stop_mcount_loc);
+ 
++#ifdef CONFIG_FTRACE_FUNC_PROTOTYPE
++	ftrace_prototype_hash = alloc_ftrace_hash(FTRACE_HASH_DEFAULT_BITS);
++	if (WARN_ON(!ftrace_prototype_hash))
++		goto failed;
++
++	ftrace_process_funcproto(NULL,
++				 __start_funcproto,
++				 __stop_funcproto,
++				 false);
++#endif
++
+ 	set_ftrace_early_filters();
+ 
+ 	return;
+diff --git a/kernel/trace/trace.h b/kernel/trace/trace.h
+index ad619c73a505..22433a15e340 100644
+--- a/kernel/trace/trace.h
++++ b/kernel/trace/trace.h
+@@ -940,6 +940,10 @@ extern void __trace_graph_return(struct trace_array *tr,
+ extern struct ftrace_hash *ftrace_graph_hash;
+ extern struct ftrace_hash *ftrace_graph_notrace_hash;
+ 
++#ifdef CONFIG_FTRACE_FUNC_PROTOTYPE
++extern struct ftrace_hash *ftrace_prototype_hash;
++#endif
++
+ static inline int ftrace_graph_addr(struct ftrace_graph_ent *trace)
+ {
+ 	unsigned long addr = trace->func;
 -- 
 2.20.1
