@@ -1,183 +1,234 @@
-From: Aleksa Sarai <cyphar@cyphar.com>
-Date: Tue, 20 Aug 2019 03:34:03 +0000
-Subject: [PATCH RESEND v11 5/8] namei: LOOKUP_IN_ROOT: chroot-like path resolution
-Message-Id: <20190820033406.29796-6-cyphar@cyphar.com>
+From: Michal Suchanek <msuchanek@suse.de>
+Date: Fri, 30 Aug 2019 19:46:51 +0000
+Subject: [PATCH] Revert "asm-generic: Remove unneeded __ARCH_WANT_SYS_LLSEEK macro"
+Message-Id: <20190830194651.31043-1-msuchanek@suse.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190820033406.29796-1-cyphar@cyphar.com>
-In-Reply-To: <20190820033406.29796-1-cyphar@cyphar.com>
+References: <bb6d25c6baae315d05b571d8c508f0e8fa90027c.1567188299.git.msuchanek@suse.de>
+In-Reply-To: <bb6d25c6baae315d05b571d8c508f0e8fa90027c.1567188299.git.msuchanek@suse.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Al Viro <viro@zeniv.linux.org.uk>, Jeff Layton <jlayton@kernel.org>, "J. Bruce Fields" <bfields@fieldses.org>, Arnd Bergmann <arnd@arndb.de>, David Howells <dhowells@redhat.com>, Shuah Khan <shuah@kernel.org>, Shuah Khan <skhan@linuxfoundation.org>
-Cc: Aleksa Sarai <cyphar@cyphar.com>, Christian Brauner <christian@brauner.io>, Eric Biederman <ebiederm@xmission.com>, Andy Lutomirski <luto@kernel.org>, Andrew Morton <akpm@linux-foundation.org>, Alexei Starovoitov <ast@kernel.org>, Kees Cook <keescook@chromium.org>, Jann Horn <jannh@google.com>, Tycho Andersen <tycho@tycho.ws>, David Drysdale <drysdale@google.com>, Chanho Min <chanho.min@lge.com>, Oleg Nesterov <oleg@redhat.com>, Aleksa Sarai <asarai@suse.de>, Linus Torvalds <torvalds@linux-foundation.org>, containers@lists.linux-foundation.org, linux-alpha@vger.kernel.org, linux-api@vger.kernel.org, linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-fsdevel@vger.kernel.org, linux-ia64@vger.kernel.org, linux-kernel@vger.kernel.orglinux-
+To: linux-arch@vger.kernel.org
+Cc: Michal Suchanek <msuchanek@suse.de>, Russell King <linux@armlinux.org.uk>, Catalin Marinas <catalin.marinas@arm.com>, Will Deacon <will@kernel.org>, Guo Ren <guoren@kernel.org>, Geert Uytterhoeven <geert@linux-m68k.org>, Michal Simek <monstr@monstr.eu>, Ralf Baechle <ralf@linux-mips.org>, Paul Burton <paul.burton@mips.com>, James Hogan <jhogan@kernel.org>, "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>, Helge Deller <deller@gmx.de>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Michael Ellerman <mpe@ellerman.id.au>, Heiko Carstens <heiko.carstens@de.ibm.com>, Vasily Gorbik <gor@linux.ibm.com>, Christian Borntraeger <borntraeger@de.ibm.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Ri
 
-The primary motivation for the need for this flag is container runtimes
-which have to interact with malicious root filesystems in the host
-namespaces. One of the first requirements for a container runtime to be
-secure against a malicious rootfs is that they correctly scope symlinks
-(that is, they should be scoped as though they are chroot(2)ed into the
-container's rootfs) and ".."-style paths[*]. The already-existing
-LOOKUP_NO_XDEV and LOOKUP_NO_MAGICLINKS help defend against other
-potential attacks in a malicious rootfs scenario.
+This reverts commit caf6f9c8a326cffd1d4b3ff3f1cfba75d159d70b.
 
-Currently most container runtimes try to do this resolution in
-userspace[1], causing many potential race conditions. In addition, the
-"obvious" alternative (actually performing a {ch,pivot_}root(2))
-requires a fork+exec (for some runtimes) which is *very* costly if
-necessary for every filesystem operation involving a container.
+Maybe it was needed after all.
 
-[*] At the moment, ".." and magic-link jumping are disallowed for the
-    same reason it is disabled for LOOKUP_BENEATH -- currently it is not
-    safe to allow it. Future patches may enable it unconditionally once
-    we have resolved the possible races (for "..") and semantics (for
-    magic-link jumping).
+When CONFIG_COMPAT is disabled on ppc64 the kernel does not build.
 
-The most significant *at(2) semantic change with LOOKUP_IN_ROOT is that
-absolute pathnames no longer cause the dirfd to be ignored completely.
+There is resistance to both removing the llseek syscall from the 64bit
+syscall tables and building the llseek interface unconditionally.
 
-The rationale is that LOOKUP_IN_ROOT must necessarily chroot-scope
-symlinks with absolute paths to dirfd, and so doing it for the base path
-seems to be the most consistent behaviour (and also avoids foot-gunning
-users who want to scope paths that are absolute).
+Link: https://lore.kernel.org/lkml/20190828151552.GA16855@infradead.org/
+Link: https://lore.kernel.org/lkml/20190829214319.498c7de2@naga/
 
-[1]: https://github.com/cyphar/filepath-securejoin
-
-Suggested-by: Christian Brauner <christian@brauner.io>
-Signed-off-by: Aleksa Sarai <cyphar@cyphar.com>
+Signed-off-by: Michal Suchanek <msuchanek@suse.de>
 ---
- fs/namei.c            | 41 +++++++++++++++++++++++++++++++----------
- include/linux/namei.h |  1 +
- 2 files changed, 32 insertions(+), 10 deletions(-)
+ arch/arm/include/asm/unistd.h        |  1 +
+ arch/arm64/include/asm/unistd.h      |  1 +
+ arch/csky/include/asm/unistd.h       |  2 +-
+ arch/m68k/include/asm/unistd.h       |  1 +
+ arch/microblaze/include/asm/unistd.h |  1 +
+ arch/mips/include/asm/unistd.h       |  1 +
+ arch/parisc/include/asm/unistd.h     |  1 +
+ arch/powerpc/include/asm/unistd.h    |  1 +
+ arch/s390/include/asm/unistd.h       |  1 +
+ arch/sh/include/asm/unistd.h         |  1 +
+ arch/sparc/include/asm/unistd.h      |  1 +
+ arch/x86/include/asm/unistd.h        |  1 +
+ arch/xtensa/include/asm/unistd.h     |  1 +
+ fs/read_write.c                      |  2 +-
+ include/asm-generic/unistd.h         | 12 ++++++++++++
+ 15 files changed, 26 insertions(+), 2 deletions(-)
+ create mode 100644 include/asm-generic/unistd.h
 
-diff --git a/fs/namei.c b/fs/namei.c
-index 2e18ce5a313e..0352d275bd13 100644
---- a/fs/namei.c
-+++ b/fs/namei.c
-@@ -676,7 +676,7 @@ static int unlazy_walk(struct nameidata *nd)
- 		goto out1;
- 	if (!nd->root.mnt) {
- 		/* Restart from path_init() if nd->root was cleared. */
--		if (nd->flags & LOOKUP_BENEATH)
-+		if (nd->flags & (LOOKUP_BENEATH | LOOKUP_IN_ROOT))
- 			goto out;
- 	} else if (!(nd->flags & LOOKUP_ROOT)) {
- 		if (unlikely(!legitimize_path(nd, &nd->root, nd->root_seq)))
-@@ -809,10 +809,18 @@ static int complete_walk(struct nameidata *nd)
- 	return status;
+diff --git a/arch/arm/include/asm/unistd.h b/arch/arm/include/asm/unistd.h
+index 3676e82cf95c..e35ec8100a21 100644
+--- a/arch/arm/include/asm/unistd.h
++++ b/arch/arm/include/asm/unistd.h
+@@ -18,6 +18,7 @@
+ #define __ARCH_WANT_SYS_GETHOSTNAME
+ #define __ARCH_WANT_SYS_PAUSE
+ #define __ARCH_WANT_SYS_GETPGRP
++#define __ARCH_WANT_SYS_LLSEEK
+ #define __ARCH_WANT_SYS_NICE
+ #define __ARCH_WANT_SYS_SIGPENDING
+ #define __ARCH_WANT_SYS_SIGPROCMASK
+diff --git a/arch/arm64/include/asm/unistd.h b/arch/arm64/include/asm/unistd.h
+index 2629a68b8724..2c9d8d91e347 100644
+--- a/arch/arm64/include/asm/unistd.h
++++ b/arch/arm64/include/asm/unistd.h
+@@ -7,6 +7,7 @@
+ #define __ARCH_WANT_SYS_GETHOSTNAME
+ #define __ARCH_WANT_SYS_PAUSE
+ #define __ARCH_WANT_SYS_GETPGRP
++#define __ARCH_WANT_SYS_LLSEEK
+ #define __ARCH_WANT_SYS_NICE
+ #define __ARCH_WANT_SYS_SIGPENDING
+ #define __ARCH_WANT_SYS_SIGPROCMASK
+diff --git a/arch/csky/include/asm/unistd.h b/arch/csky/include/asm/unistd.h
+index da7a18295615..bee8ba8309e7 100644
+--- a/arch/csky/include/asm/unistd.h
++++ b/arch/csky/include/asm/unistd.h
+@@ -1,6 +1,6 @@
+ /* SPDX-License-Identifier: GPL-2.0 */
+ // Copyright (C) 2018 Hangzhou C-SKY Microsystems co.,ltd.
+ 
+-#include <uapi/asm/unistd.h>
++#include <asm-generic/unistd.h>
+ 
+ #define NR_syscalls (__NR_syscalls)
+diff --git a/arch/m68k/include/asm/unistd.h b/arch/m68k/include/asm/unistd.h
+index 2e0047cf86f8..54c04eb4495a 100644
+--- a/arch/m68k/include/asm/unistd.h
++++ b/arch/m68k/include/asm/unistd.h
+@@ -21,6 +21,7 @@
+ #define __ARCH_WANT_SYS_SOCKETCALL
+ #define __ARCH_WANT_SYS_FADVISE64
+ #define __ARCH_WANT_SYS_GETPGRP
++#define __ARCH_WANT_SYS_LLSEEK
+ #define __ARCH_WANT_SYS_NICE
+ #define __ARCH_WANT_SYS_OLD_GETRLIMIT
+ #define __ARCH_WANT_SYS_OLD_MMAP
+diff --git a/arch/microblaze/include/asm/unistd.h b/arch/microblaze/include/asm/unistd.h
+index d79d35ac6253..c5fcbce1f997 100644
+--- a/arch/microblaze/include/asm/unistd.h
++++ b/arch/microblaze/include/asm/unistd.h
+@@ -27,6 +27,7 @@
+ #define __ARCH_WANT_SYS_SOCKETCALL
+ #define __ARCH_WANT_SYS_FADVISE64
+ #define __ARCH_WANT_SYS_GETPGRP
++#define __ARCH_WANT_SYS_LLSEEK
+ #define __ARCH_WANT_SYS_NICE
+ /* #define __ARCH_WANT_SYS_OLD_GETRLIMIT */
+ #define __ARCH_WANT_SYS_OLDUMOUNT
+diff --git a/arch/mips/include/asm/unistd.h b/arch/mips/include/asm/unistd.h
+index 071053ece677..8e8c7cab95ca 100644
+--- a/arch/mips/include/asm/unistd.h
++++ b/arch/mips/include/asm/unistd.h
+@@ -38,6 +38,7 @@
+ #define __ARCH_WANT_SYS_WAITPID
+ #define __ARCH_WANT_SYS_SOCKETCALL
+ #define __ARCH_WANT_SYS_GETPGRP
++#define __ARCH_WANT_SYS_LLSEEK
+ #define __ARCH_WANT_SYS_NICE
+ #define __ARCH_WANT_SYS_OLD_UNAME
+ #define __ARCH_WANT_SYS_OLDUMOUNT
+diff --git a/arch/parisc/include/asm/unistd.h b/arch/parisc/include/asm/unistd.h
+index cd438e4150f6..29bd46381f2e 100644
+--- a/arch/parisc/include/asm/unistd.h
++++ b/arch/parisc/include/asm/unistd.h
+@@ -159,6 +159,7 @@ type name(type1 arg1, type2 arg2, type3 arg3, type4 arg4, type5 arg5)	\
+ #define __ARCH_WANT_SYS_SOCKETCALL
+ #define __ARCH_WANT_SYS_FADVISE64
+ #define __ARCH_WANT_SYS_GETPGRP
++#define __ARCH_WANT_SYS_LLSEEK
+ #define __ARCH_WANT_SYS_NICE
+ #define __ARCH_WANT_SYS_OLDUMOUNT
+ #define __ARCH_WANT_SYS_SIGPENDING
+diff --git a/arch/powerpc/include/asm/unistd.h b/arch/powerpc/include/asm/unistd.h
+index b0720c7c3fcf..700fcdac2e3c 100644
+--- a/arch/powerpc/include/asm/unistd.h
++++ b/arch/powerpc/include/asm/unistd.h
+@@ -31,6 +31,7 @@
+ #define __ARCH_WANT_SYS_SOCKETCALL
+ #define __ARCH_WANT_SYS_FADVISE64
+ #define __ARCH_WANT_SYS_GETPGRP
++#define __ARCH_WANT_SYS_LLSEEK
+ #define __ARCH_WANT_SYS_NICE
+ #define __ARCH_WANT_SYS_OLD_GETRLIMIT
+ #define __ARCH_WANT_SYS_OLD_UNAME
+diff --git a/arch/s390/include/asm/unistd.h b/arch/s390/include/asm/unistd.h
+index 9e9f75ef046a..52e9e2fe3768 100644
+--- a/arch/s390/include/asm/unistd.h
++++ b/arch/s390/include/asm/unistd.h
+@@ -21,6 +21,7 @@
+ #define __ARCH_WANT_SYS_IPC
+ #define __ARCH_WANT_SYS_FADVISE64
+ #define __ARCH_WANT_SYS_GETPGRP
++#define __ARCH_WANT_SYS_LLSEEK
+ #define __ARCH_WANT_SYS_NICE
+ #define __ARCH_WANT_SYS_OLD_GETRLIMIT
+ #define __ARCH_WANT_SYS_OLD_MMAP
+diff --git a/arch/sh/include/asm/unistd.h b/arch/sh/include/asm/unistd.h
+index 9c7d9d9999c6..4899b6b72f1a 100644
+--- a/arch/sh/include/asm/unistd.h
++++ b/arch/sh/include/asm/unistd.h
+@@ -22,6 +22,7 @@
+ # define __ARCH_WANT_SYS_SOCKETCALL
+ # define __ARCH_WANT_SYS_FADVISE64
+ # define __ARCH_WANT_SYS_GETPGRP
++# define __ARCH_WANT_SYS_LLSEEK
+ # define __ARCH_WANT_SYS_NICE
+ # define __ARCH_WANT_SYS_OLD_GETRLIMIT
+ # define __ARCH_WANT_SYS_OLD_UNAME
+diff --git a/arch/sparc/include/asm/unistd.h b/arch/sparc/include/asm/unistd.h
+index 1e66278ba4a5..7edfc208e2af 100644
+--- a/arch/sparc/include/asm/unistd.h
++++ b/arch/sparc/include/asm/unistd.h
+@@ -36,6 +36,7 @@
+ #define __ARCH_WANT_SYS_SOCKETCALL
+ #define __ARCH_WANT_SYS_FADVISE64
+ #define __ARCH_WANT_SYS_GETPGRP
++#define __ARCH_WANT_SYS_LLSEEK
+ #define __ARCH_WANT_SYS_NICE
+ #define __ARCH_WANT_SYS_OLDUMOUNT
+ #define __ARCH_WANT_SYS_SIGPENDING
+diff --git a/arch/x86/include/asm/unistd.h b/arch/x86/include/asm/unistd.h
+index 097589753fec..9e5a1748b4ce 100644
+--- a/arch/x86/include/asm/unistd.h
++++ b/arch/x86/include/asm/unistd.h
+@@ -39,6 +39,7 @@
+ # define __ARCH_WANT_SYS_FADVISE64
+ # define __ARCH_WANT_SYS_GETHOSTNAME
+ # define __ARCH_WANT_SYS_GETPGRP
++# define __ARCH_WANT_SYS_LLSEEK
+ # define __ARCH_WANT_SYS_NICE
+ # define __ARCH_WANT_SYS_OLDUMOUNT
+ # define __ARCH_WANT_SYS_OLD_GETRLIMIT
+diff --git a/arch/xtensa/include/asm/unistd.h b/arch/xtensa/include/asm/unistd.h
+index b52236245e51..9fd236a7825e 100644
+--- a/arch/xtensa/include/asm/unistd.h
++++ b/arch/xtensa/include/asm/unistd.h
+@@ -9,6 +9,7 @@
+ #define __ARCH_WANT_NEW_STAT
+ #define __ARCH_WANT_STAT64
+ #define __ARCH_WANT_SYS_UTIME32
++#define __ARCH_WANT_SYS_LLSEEK
+ #define __ARCH_WANT_SYS_GETPGRP
+ 
+ #define NR_syscalls				__NR_syscalls
+diff --git a/fs/read_write.c b/fs/read_write.c
+index 5bbf587f5bc1..2f3c4bb138c4 100644
+--- a/fs/read_write.c
++++ b/fs/read_write.c
+@@ -331,7 +331,7 @@ COMPAT_SYSCALL_DEFINE3(lseek, unsigned int, fd, compat_off_t, offset, unsigned i
  }
+ #endif
  
--static void set_root(struct nameidata *nd)
-+static int set_root(struct nameidata *nd)
- {
- 	struct fs_struct *fs = current->fs;
- 
-+	/*
-+	 * Jumping to the real root as part of LOOKUP_IN_ROOT is a BUG in namei,
-+	 * but we still have to ensure it doesn't happen because it will cause a
-+	 * breakout from the dirfd.
-+	 */
-+	if (WARN_ON(nd->flags & LOOKUP_IN_ROOT))
-+		return -ENOTRECOVERABLE;
+-#if !defined(CONFIG_64BIT) || defined(CONFIG_COMPAT)
++#ifdef __ARCH_WANT_SYS_LLSEEK
+ SYSCALL_DEFINE5(llseek, unsigned int, fd, unsigned long, offset_high,
+ 		unsigned long, offset_low, loff_t __user *, result,
+ 		unsigned int, whence)
+diff --git a/include/asm-generic/unistd.h b/include/asm-generic/unistd.h
+new file mode 100644
+index 000000000000..ea74eca8463f
+--- /dev/null
++++ b/include/asm-generic/unistd.h
+@@ -0,0 +1,12 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++#include <uapi/asm-generic/unistd.h>
++#include <linux/export.h>
 +
- 	if (nd->flags & LOOKUP_RCU) {
- 		unsigned seq;
- 
-@@ -824,6 +832,7 @@ static void set_root(struct nameidata *nd)
- 	} else {
- 		get_fs_root(fs, &nd->root);
- 	}
-+	return 0;
- }
- 
- static void path_put_conditional(struct path *path, struct nameidata *nd)
-@@ -854,6 +863,11 @@ static int nd_jump_root(struct nameidata *nd)
- 		if (nd->path.mnt != NULL && nd->path.mnt != nd->root.mnt)
- 			return -EXDEV;
- 	}
-+	if (!nd->root.mnt) {
-+		int error = set_root(nd);
-+		if (error)
-+			return error;
-+	}
- 	if (nd->flags & LOOKUP_RCU) {
- 		struct dentry *d;
- 		nd->path = nd->root;
-@@ -1100,15 +1114,13 @@ const char *get_link(struct nameidata *nd)
- 			if (unlikely(nd->flags & LOOKUP_NO_MAGICLINKS))
- 				return ERR_PTR(-ELOOP);
- 			/* Not currently safe. */
--			if (unlikely(nd->flags & LOOKUP_BENEATH))
-+			if (unlikely(nd->flags & (LOOKUP_BENEATH | LOOKUP_IN_ROOT)))
- 				return ERR_PTR(-EXDEV);
- 		}
- 		if (IS_ERR_OR_NULL(res))
- 			return res;
- 	}
- 	if (*res = '/') {
--		if (!nd->root.mnt)
--			set_root(nd);
- 		error = nd_jump_root(nd);
- 		if (unlikely(error))
- 			return ERR_PTR(error);
-@@ -1744,15 +1756,20 @@ static inline int may_lookup(struct nameidata *nd)
- static inline int handle_dots(struct nameidata *nd, int type)
- {
- 	if (type = LAST_DOTDOT) {
-+		int error = 0;
-+
- 		/*
- 		 * LOOKUP_BENEATH resolving ".." is not currently safe -- races
- 		 * can cause our parent to have moved outside of the root and
- 		 * us to skip over it.
- 		 */
--		if (unlikely(nd->flags & LOOKUP_BENEATH))
-+		if (unlikely(nd->flags & (LOOKUP_BENEATH | LOOKUP_IN_ROOT)))
- 			return -EXDEV;
--		if (!nd->root.mnt)
--			set_root(nd);
-+		if (!nd->root.mnt) {
-+			error = set_root(nd);
-+			if (error)
-+				return error;
-+		}
- 		if (nd->flags & LOOKUP_RCU) {
- 			return follow_dotdot_rcu(nd);
- 		} else
-@@ -2251,9 +2268,13 @@ static const char *path_init(struct nameidata *nd, unsigned flags)
- 
- 	nd->m_seq = read_seqbegin(&mount_lock);
- 
-+	/* LOOKUP_IN_ROOT treats absolute paths as being relative-to-dirfd. */
-+	if (flags & LOOKUP_IN_ROOT)
-+		while (*s = '/')
-+			s++;
-+
- 	/* Figure out the starting path and root (if needed). */
- 	if (*s = '/') {
--		set_root(nd);
- 		error = nd_jump_root(nd);
- 		if (unlikely(error))
- 			return ERR_PTR(error);
-@@ -2298,7 +2319,7 @@ static const char *path_init(struct nameidata *nd, unsigned flags)
- 		fdput(f);
- 	}
- 	/* For scoped-lookups we need to set the root to the dirfd as well. */
--	if (flags & LOOKUP_BENEATH) {
-+	if (flags & (LOOKUP_BENEATH | LOOKUP_IN_ROOT)) {
- 		nd->root = nd->path;
- 		if (flags & LOOKUP_RCU)
- 			nd->root_seq = nd->seq;
-diff --git a/include/linux/namei.h b/include/linux/namei.h
-index be407415c28a..ec2c6c588ea7 100644
---- a/include/linux/namei.h
-+++ b/include/linux/namei.h
-@@ -57,6 +57,7 @@ enum {LAST_NORM, LAST_ROOT, LAST_DOT, LAST_DOTDOT, LAST_BIND};
- #define LOOKUP_NO_MAGICLINKS	0x080000 /* No /proc/$pid/fd/ "symlink" crossing. */
- #define LOOKUP_NO_SYMLINKS	0x100000 /* No symlink crossing *at all*.
- 					    Implies LOOKUP_NO_MAGICLINKS. */
-+#define LOOKUP_IN_ROOT		0x200000 /* Treat dirfd as %current->fs->root. */
- 
- extern int path_pts(struct path *path);
- 
++/*
++ * These are required system calls, we should
++ * invert the logic eventually and let them
++ * be selected by default.
++ */
++#if __BITS_PER_LONG = 32
++#define __ARCH_WANT_SYS_LLSEEK
++#endif
 -- 
 2.22.0
