@@ -1,81 +1,60 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Mon, 05 Aug 2019 09:11:55 +0000
-Subject: [PATCH 3/7] dma-mapping: add a dma_can_mmap helper
-Message-Id: <20190805091159.7826-4-hch@lst.de>
+From: Yunsheng Lin <linyunsheng@huawei.com>
+Date: Sat, 31 Aug 2019 05:58:18 +0000
+Subject: [PATCH v2 4/9] powerpc: numa: check the node id consistently for powerpc
+Message-Id: <1567231103-13237-5-git-send-email-linyunsheng@huawei.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190805091159.7826-1-hch@lst.de>
-In-Reply-To: <20190805091159.7826-1-hch@lst.de>
+References: <1567231103-13237-1-git-send-email-linyunsheng@huawei.com>
+In-Reply-To: <1567231103-13237-1-git-send-email-linyunsheng@huawei.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: iommu@lists.linux-foundation.org, Marek Szyprowski <m.szyprowski@samsung.com>
-Cc: linux-xtensa@linux-xtensa.org, Michal Simek <monstr@monstr.eu>, linux-parisc@vger.kernel.org, linux-sh@vger.kernel.org, Takashi Iwai <tiwai@suse.de>, linuxppc-dev@lists.ozlabs.org, x86@kernel.org, linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, Robin Murphy <robin.murphy@arm.com>, linux-arm-kernel@lists.infradead.org
+To: catalin.marinas@arm.com, will@kernel.org, mingo@redhat.com, bp@alien8.de, rth@twiddle.net, ink@jurassic.park.msu.ru, mattst88@gmail.com, benh@kernel.crashing.org, paulus@samba.org, mpe@ellerman.id.au, heiko.carstens@de.ibm.com, gor@linux.ibm.com, borntraeger@de.ibm.com, ysato@users.sourceforge.jp, dalias@libc.org, davem@davemloft.net, ralf@linux-mips.org, paul.burton@mips.com, jhogan@kernel.org, jiaxun.yang@flygoat.com, chenhc@lemote.com
+Cc: linux-sh@vger.kernel.org, peterz@infradead.org, dave.hansen@linux.intel.com, linuxarm@huawei.com, linux-mips@vger.kernel.org, mwb@linux.vnet.ibm.com, hpa@zytor.com, sparclinux@vger.kernel.org, linux-s390@vger.kernel.org, x86@kernel.org, rppt@linux.ibm.com, dledford@redhat.com, jeffrey.t.kirsher@intel.com, nfont@linux.vnet.ibm.com, naveen.n.rao@linux.vnet.ibm.com, len.brown@intel.com, anshuman.khandual@arm.com, cai@lca.pw, luto@kernel.org, tglx@linutronix.de, linux-arm-kernel@lists.infradead.org, axboe@kernel.dk, robin.murphy@arm.com, linux-kernel@vger.kernel.org, tbogendoerfer@suse.de, linux-alpha@vger.kernel.org, akpm@linux-foundation.org, linuxppc-dev@lists.ozlabs.org
 
-Add a helper to check if DMA allocations for a specific device can be
-mapped to userspace using dma_mmap_*.
+According to Section 6.2.14 from ACPI spec 6.3 [1], the setting
+of proximity domain is optional, as below:
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
+This optional object is used to describe proximity domain
+associations within a machine. _PXM evaluates to an integer
+that identifies a device as belonging to a Proximity Domain
+defined in the System Resource Affinity Table (SRAT).
+
+This patch checks node id with the below case before returning
+node_to_cpumask_map[node]:
+1. if node_id >= nr_node_ids, return cpu_none_mask
+2. if node_id < 0, return cpu_online_mask
+3. if node_to_cpumask_map[node_id] is NULL, return cpu_online_mask
+
+[1] https://uefi.org/sites/default/files/resources/ACPI_6_3_final_Jan30.pdf
+
+Signed-off-by: Yunsheng Lin <linyunsheng@huawei.com>
 ---
- include/linux/dma-mapping.h |  5 +++++
- kernel/dma/mapping.c        | 23 +++++++++++++++++++++++
- 2 files changed, 28 insertions(+)
+ arch/powerpc/include/asm/topology.h | 13 ++++++++++---
+ 1 file changed, 10 insertions(+), 3 deletions(-)
 
-diff --git a/include/linux/dma-mapping.h b/include/linux/dma-mapping.h
-index f7d1eea32c78..17271857be5d 100644
---- a/include/linux/dma-mapping.h
-+++ b/include/linux/dma-mapping.h
-@@ -462,6 +462,7 @@ int dma_get_sgtable_attrs(struct device *dev, struct sg_table *sgt,
- int dma_mmap_attrs(struct device *dev, struct vm_area_struct *vma,
- 		void *cpu_addr, dma_addr_t dma_addr, size_t size,
- 		unsigned long attrs);
-+bool dma_can_mmap(struct device *dev);
- int dma_supported(struct device *dev, u64 mask);
- int dma_set_mask(struct device *dev, u64 mask);
- int dma_set_coherent_mask(struct device *dev, u64 mask);
-@@ -552,6 +553,10 @@ static inline int dma_mmap_attrs(struct device *dev, struct vm_area_struct *vma,
- {
- 	return -ENXIO;
- }
-+static inline bool dma_can_mmap(struct device *dev)
-+{
-+	return false;
-+}
- static inline int dma_supported(struct device *dev, u64 mask)
- {
- 	return 0;
-diff --git a/kernel/dma/mapping.c b/kernel/dma/mapping.c
-index cdb157cd70e7..ab6aa355e1a0 100644
---- a/kernel/dma/mapping.c
-+++ b/kernel/dma/mapping.c
-@@ -203,6 +203,29 @@ int dma_common_mmap(struct device *dev, struct vm_area_struct *vma,
- #endif /* !CONFIG_ARCH_NO_COHERENT_DMA_MMAP */
- }
+diff --git a/arch/powerpc/include/asm/topology.h b/arch/powerpc/include/asm/topology.h
+index 2f7e1ea..217dc9b 100644
+--- a/arch/powerpc/include/asm/topology.h
++++ b/arch/powerpc/include/asm/topology.h
+@@ -17,9 +17,16 @@ struct device_node;
  
-+/**
-+ * dma_can_mmap - check if a given device supports dma_mmap_*
-+ * @dev: device to check
-+ *
-+ * Returns %true if @dev supports dma_mmap_coherent() and dma_mmap_attrs() to
-+ * map DMA allocations to userspace.
-+ */
-+bool dma_can_mmap(struct device *dev)
+ #include <asm/mmzone.h>
+ 
+-#define cpumask_of_node(node) ((node) = -1 ?				\
+-			       cpu_all_mask :				\
+-			       node_to_cpumask_map[node])
++static inline const struct cpumask *cpumask_of_node(int node)
 +{
-+	const struct dma_map_ops *ops = get_dma_ops(dev);
++	if (node >= nr_node_ids)
++		return cpu_none_mask;
 +
-+	if (IS_ENABLED(CONFIG_ARCH_NO_COHERENT_DMA_MMAP))
-+		return false;
++	if (node < 0 || !node_to_cpumask_map[node])
++		return cpu_online_mask;
 +
-+	if (dma_is_direct(ops)) {
-+		return dev_is_dma_coherent(dev) ||
-+			IS_ENABLED(CONFIG_ARCH_HAS_DMA_COHERENT_TO_PFN);
-+	}
-+
-+	return ops->mmap != NULL;
++	return node_to_cpumask_map[node];
 +}
-+EXPORT_SYMBOL_GPL(dma_can_mmap);
-+
- /**
-  * dma_mmap_attrs - map a coherent DMA allocation into user space
-  * @dev: valid struct device pointer, or NULL for ISA and EISA-like devices
+ 
+ struct pci_bus;
+ #ifdef CONFIG_PCI
 -- 
-2.20.1
+2.8.1
