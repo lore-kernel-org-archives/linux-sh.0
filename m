@@ -1,75 +1,67 @@
-From: Anshuman Khandual <anshuman.khandual@arm.com>
-Date: Wed, 28 Aug 2019 09:34:54 +0000
-Subject: Re: [RFC V2 0/1] mm/debug: Add tests for architecture exported page table helpers
-Message-Id: <504f891e-7346-7328-74b0-7df3acc230e8@arm.com>
+From: Yunsheng Lin <linyunsheng@huawei.com>
+Date: Sat, 31 Aug 2019 05:58:16 +0000
+Subject: [PATCH v2 2/9] x86: numa: check the node id consistently for x86
+Message-Id: <1567231103-13237-3-git-send-email-linyunsheng@huawei.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1565335998-22553-1-git-send-email-anshuman.khandual@arm.com>
- <20190809101632.GM5482@bombadil.infradead.org>
- <a5aab7ff-f7fd-9cc1-6e37-e4185eee65ac@arm.com>
- <20190809135202.GN5482@bombadil.infradead.org>
- <7a88f6bb-e8c7-3ac7-2f92-1de752a01f33@arm.com>
- <20190826131308.GA15933@bombadil.infradead.org>
-In-Reply-To: <20190826131308.GA15933@bombadil.infradead.org>
+References: <1567231103-13237-1-git-send-email-linyunsheng@huawei.com>
+In-Reply-To: <1567231103-13237-1-git-send-email-linyunsheng@huawei.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Matthew Wilcox <willy@infradead.org>
-Cc: Mark Rutland <mark.rutland@arm.com>, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, James Hogan <jhogan@kernel.org>, Tetsuo Handa <penguin-kernel@i-love.sakura.ne.jp>, Heiko Carstens <heiko.carstens@de.ibm.com>, Michal Hocko <mhocko@kernel.org>, linux-mm@kvack.org, Dave Hansen <dave.hansen@intel.com>, Paul Mackerras <paulus@samba.org>, sparclinux@vger.kernel.org, Thomas Gleixner <tglx@linutronix.de>, linux-s390@vger.kernel.org, Michael Ellerman <mpe@ellerman.id.au>, x86@kernel.org, Russell King - ARM Linux <linux@armlinux.org.uk>, Steven Price <Steven.Price@arm.com>, Jason Gunthorpe <jgg@ziepe.ca>, linux-arm-kernel@lists.infradead.org, linux-snps-arc@lists.infradead.org, Kees Cook <keescook@chromium.org>, Masahiro Yamada <yamada.masahiro@socionext.com>, Mark Brown <broonie@kernel.org>, Dan Williams <dan.j.williams@intel.com>, Vlastimil Babka <vbabka@suse.cz>, Sri Krishna chowdary <schowdary@nvidia.com>, Ard Biesheuvel <ard.biesheuvel@linaro.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, linux-mips@vger.kernel.org, Ralf Baechle <ralf@linux-mips.org>, linux-kernel@vger.kernel.org, Paul Burton <paul.burton@mips.com>, Mike Rapoport <rppt@linux.vnet.ibm.com>, Vineet Gupta <vgupta@synopsys.com>, Martin Schwidefsky <schwidefsky@de.ibm.com>, Andrew Morton <akpm@linux-foundation.org>, linuxppc-dev@lists.ozlabs.org, "David S. Miller" <davem@davemloft.net>
+To: catalin.marinas@arm.com, will@kernel.org, mingo@redhat.com, bp@alien8.de, rth@twiddle.net, ink@jurassic.park.msu.ru, mattst88@gmail.com, benh@kernel.crashing.org, paulus@samba.org, mpe@ellerman.id.au, heiko.carstens@de.ibm.com, gor@linux.ibm.com, borntraeger@de.ibm.com, ysato@users.sourceforge.jp, dalias@libc.org, davem@davemloft.net, ralf@linux-mips.org, paul.burton@mips.com, jhogan@kernel.org, jiaxun.yang@flygoat.com, chenhc@lemote.com
+Cc: linux-sh@vger.kernel.org, peterz@infradead.org, dave.hansen@linux.intel.com, linuxarm@huawei.com, linux-mips@vger.kernel.org, mwb@linux.vnet.ibm.com, hpa@zytor.com, sparclinux@vger.kernel.org, linux-s390@vger.kernel.org, x86@kernel.org, rppt@linux.ibm.com, dledford@redhat.com, jeffrey.t.kirsher@intel.com, nfont@linux.vnet.ibm.com, naveen.n.rao@linux.vnet.ibm.com, len.brown@intel.com, anshuman.khandual@arm.com, cai@lca.pw, luto@kernel.org, tglx@linutronix.de, linux-arm-kernel@lists.infradead.org, axboe@kernel.dk, robin.murphy@arm.com, linux-kernel@vger.kernel.org, tbogendoerfer@suse.de, linux-alpha@vger.kernel.org, akpm@linux-foundation.org, linuxppc-dev@lists.ozlabs.org
 
+According to Section 6.2.14 from ACPI spec 6.3 [1], the setting
+of proximity domain is optional, as below:
 
+This optional object is used to describe proximity domain
+associations within a machine. _PXM evaluates to an integer
+that identifies a device as belonging to a Proximity Domain
+defined in the System Resource Affinity Table (SRAT).
 
-On 08/26/2019 06:43 PM, Matthew Wilcox wrote:
-> On Mon, Aug 26, 2019 at 08:07:13AM +0530, Anshuman Khandual wrote:
->> On 08/09/2019 07:22 PM, Matthew Wilcox wrote:
->>> On Fri, Aug 09, 2019 at 04:05:07PM +0530, Anshuman Khandual wrote:
->>>> On 08/09/2019 03:46 PM, Matthew Wilcox wrote:
->>>>> On Fri, Aug 09, 2019 at 01:03:17PM +0530, Anshuman Khandual wrote:
->>>>>> Should alloc_gigantic_page() be made available as an interface for general
->>>>>> use in the kernel. The test module here uses very similar implementation from
->>>>>> HugeTLB to allocate a PUD aligned memory block. Similar for mm_alloc() which
->>>>>> needs to be exported through a header.
->>>>>
->>>>> Why are you allocating memory at all instead of just using some
->>>>> known-to-exist PFNs like I suggested?
->>>>
->>>> We needed PFN to be PUD aligned for pfn_pud() and PMD aligned for mk_pmd().
->>>> Now walking the kernel page table for a known symbol like kernel_init()
->>>
->>> I didn't say to walk the kernel page table.  I said to call virt_to_pfn()
->>> for a known symbol like kernel_init().
->>>
->>>> as you had suggested earlier we might encounter page table page entries at PMD
->>>> and PUD which might not be PMD or PUD aligned respectively. It seemed to me
->>>> that alignment requirement is applicable only for mk_pmd() and pfn_pud()
->>>> which create large mappings at those levels but that requirement does not
->>>> exist for page table pages pointing to next level. Is not that correct ? Or
->>>> I am missing something here ?
->>>
->>> Just clear the bottom bits off the PFN until you get a PMD or PUD aligned
->>> PFN.  It's really not hard.
->>
->> As Mark pointed out earlier that might end up being just a synthetic PFN
->> which might not even exist on a given system.
-> 
-> And why would that matter?
-> 
+This patch checks node id with the below case before returning
+node_to_cpumask_map[node]:
+1. if node_id >= nr_node_ids, return cpu_none_mask
+2. if node_id < 0, return cpu_online_mask
+3. if node_to_cpumask_map[node_id] is NULL, return cpu_online_mask
 
-To start with the test uses struct page with mk_pte() and mk_pmd() while
-pfn gets used in pfn_pud() during pXX_basic_tests(). So we will not be able
-to derive a valid struct page from a synthetic pfn. Also if synthetic pfn is
-going to be used anyway then why derive it from a real kernel symbol like
-kernel_init(). Could not one be just made up with right alignment ?
+[1] https://uefi.org/sites/default/files/resources/ACPI_6_3_final_Jan30.pdf
 
-Currently the test allocates 'mm_struct' and other page table pages from real
-memory then why should it use synthetic pfn while creating actual page table
-entries ? Couple of benefits going with synthetic pfn will be..
+Signed-off-by: Yunsheng Lin <linyunsheng@huawei.com>
+---
+ arch/x86/include/asm/topology.h | 6 ++++++
+ arch/x86/mm/numa.c              | 2 +-
+ 2 files changed, 7 insertions(+), 1 deletion(-)
 
-- It simplifies the test a bit removing PUD_SIZE allocation helpers
-- It might enable the test to be run on systems without adequate memory
-
-In the current proposal the allocation happens during boot making it much more
-likely to succeed than not and when it fails, respective tests will be skipped.
-
-I am just wondering if being able to run complete set of tests on smaller
-systems with less memory weighs lot more in favor of going with synthetic
-pfn instead.
+diff --git a/arch/x86/include/asm/topology.h b/arch/x86/include/asm/topology.h
+index 4b14d23..f36e9c8 100644
+--- a/arch/x86/include/asm/topology.h
++++ b/arch/x86/include/asm/topology.h
+@@ -69,6 +69,12 @@ extern const struct cpumask *cpumask_of_node(int node);
+ /* Returns a pointer to the cpumask of CPUs on Node 'node'. */
+ static inline const struct cpumask *cpumask_of_node(int node)
+ {
++	if (node >= nr_node_ids)
++		return cpu_none_mask;
++
++	if (node < 0 || !node_to_cpumask_map[node])
++		return cpu_online_mask;
++
+ 	return node_to_cpumask_map[node];
+ }
+ #endif
+diff --git a/arch/x86/mm/numa.c b/arch/x86/mm/numa.c
+index e6dad60..5e393d2 100644
+--- a/arch/x86/mm/numa.c
++++ b/arch/x86/mm/numa.c
+@@ -868,7 +868,7 @@ const struct cpumask *cpumask_of_node(int node)
+ 		dump_stack();
+ 		return cpu_none_mask;
+ 	}
+-	if (node_to_cpumask_map[node] = NULL) {
++	if (node < 0 || !node_to_cpumask_map[node]) {
+ 		printk(KERN_WARNING
+ 			"cpumask_of_node(%d): no node_to_cpumask_map!\n",
+ 			node);
+-- 
+2.8.1
