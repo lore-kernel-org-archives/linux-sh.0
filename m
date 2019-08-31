@@ -1,79 +1,64 @@
-From: Alex Ghiti <alex@ghiti.fr>
-Date: Wed, 28 Aug 2019 04:53:12 +0000
-Subject: Re: [PATCH RESEND 0/8] Fix mmap base in bottom-up mmap
-Message-Id: <904d05d1-e42e-233f-2321-7cd3a2a742eb@ghiti.fr>
+From: Yunsheng Lin <linyunsheng@huawei.com>
+Date: Sat, 31 Aug 2019 05:58:21 +0000
+Subject: [PATCH v2 7/9] sparc64: numa: check the node id consistently for sparc64
+Message-Id: <1567231103-13237-8-git-send-email-linyunsheng@huawei.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190620050328.8942-1-alex@ghiti.fr>
- <abc7ed75-0f51-7f21-5a74-d389f968ee55@ghiti.fr>
- <9639ebd4-7dcb-0ea5-e0a6-adb8eaecd92a@gmx.de>
-In-Reply-To: <9639ebd4-7dcb-0ea5-e0a6-adb8eaecd92a@gmx.de>
+References: <1567231103-13237-1-git-send-email-linyunsheng@huawei.com>
+In-Reply-To: <1567231103-13237-1-git-send-email-linyunsheng@huawei.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: Helge Deller <deller@gmx.de>, Andrew Morton <akpm@linux-foundation.org>
-Cc: "James E . J . Bottomley" <James.Bottomley@HansenPartnership.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, Vasily Gorbik <gor@linux.ibm.com>, Christian Borntraeger <borntraeger@de.ibm.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, "David S . Miller" <davem@davemloft.net>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>, "H . Peter Anvin" <hpa@zytor.com>, x86@kernel.org, Dave Hansen <dave.hansen@linux.intel.com>, Andy Lutomirski <luto@kernel.org>, Peter Zijlstra <peterz@infradead.org>, linux-parisc@vger.kernel.org, linux-kernel@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-mm@kvack.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: catalin.marinas@arm.com, will@kernel.org, mingo@redhat.com, bp@alien8.de, rth@twiddle.net, ink@jurassic.park.msu.ru, mattst88@gmail.com, benh@kernel.crashing.org, paulus@samba.org, mpe@ellerman.id.au, heiko.carstens@de.ibm.com, gor@linux.ibm.com, borntraeger@de.ibm.com, ysato@users.sourceforge.jp, dalias@libc.org, davem@davemloft.net, ralf@linux-mips.org, paul.burton@mips.com, jhogan@kernel.org, jiaxun.yang@flygoat.com, chenhc@lemote.com
+Cc: linux-sh@vger.kernel.org, peterz@infradead.org, dave.hansen@linux.intel.com, linuxarm@huawei.com, linux-mips@vger.kernel.org, mwb@linux.vnet.ibm.com, hpa@zytor.com, sparclinux@vger.kernel.org, linux-s390@vger.kernel.org, x86@kernel.org, rppt@linux.ibm.com, dledford@redhat.com, jeffrey.t.kirsher@intel.com, nfont@linux.vnet.ibm.com, naveen.n.rao@linux.vnet.ibm.com, len.brown@intel.com, anshuman.khandual@arm.com, cai@lca.pw, luto@kernel.org, tglx@linutronix.de, linux-arm-kernel@lists.infradead.org, axboe@kernel.dk, robin.murphy@arm.com, linux-kernel@vger.kernel.org, tbogendoerfer@suse.de, linux-alpha@vger.kernel.org, akpm@linux-foundation.org, linuxppc-dev@lists.ozlabs.org
 
-On 8/26/19 6:37 PM, Helge Deller wrote:
-> On 26.08.19 09:34, Alexandre Ghiti wrote:
->> On 6/20/19 7:03 AM, Alexandre Ghiti wrote:
->>> This series fixes the fallback of the top-down mmap: in case of
->>> failure, a bottom-up scheme can be tried as a last resort between
->>> the top-down mmap base and the stack, hoping for a large unused stack
->>> limit.
->>>
->>> Lots of architectures and even mm code start this fallback
->>> at TASK_UNMAPPED_BASE, which is useless since the top-down scheme
->>> already failed on the whole address space: instead, simply use
->>> mmap_base.
->>>
->>> Along the way, it allows to get rid of of mmap_legacy_base and
->>> mmap_compat_legacy_base from mm_struct.
->>>
->>> Note that arm and mips already implement this behaviour.
->>>
->>> Alexandre Ghiti (8):
->>>    s390: Start fallback of top-down mmap at mm->mmap_base
->>>    sh: Start fallback of top-down mmap at mm->mmap_base
->>>    sparc: Start fallback of top-down mmap at mm->mmap_base
->>>    x86, hugetlbpage: Start fallback of top-down mmap at mm->mmap_base
->>>    mm: Start fallback top-down mmap at mm->mmap_base
->>>    parisc: Use mmap_base, not mmap_legacy_base, as low_limit for
->>>      bottom-up mmap
->>>    x86: Use mmap_*base, not mmap_*legacy_base, as low_limit for 
->>> bottom-up
->>>      mmap
->>>    mm: Remove mmap_legacy_base and mmap_compat_legacy_code fields from
->>>      mm_struct
->>>
->>>   arch/parisc/kernel/sys_parisc.c  |  8 +++-----
->>>   arch/s390/mm/mmap.c              |  2 +-
->>>   arch/sh/mm/mmap.c                |  2 +-
->>>   arch/sparc/kernel/sys_sparc_64.c |  2 +-
->>>   arch/sparc/mm/hugetlbpage.c      |  2 +-
->>>   arch/x86/include/asm/elf.h       |  2 +-
->>>   arch/x86/kernel/sys_x86_64.c     |  4 ++--
->>>   arch/x86/mm/hugetlbpage.c        |  7 ++++---
->>>   arch/x86/mm/mmap.c               | 20 +++++++++-----------
->>>   include/linux/mm_types.h         |  2 --
->>>   mm/debug.c                       |  4 ++--
->>>   mm/mmap.c                        |  2 +-
->>>   12 files changed, 26 insertions(+), 31 deletions(-)
->>>
->>
->> Any thoughts about that series ? As said before, this is just a 
->> preparatory patchset in order to
->> merge x86 mmap top down code with the generic version.
->
-> I just tested your patch series successfully on the parisc
-> architeture. You may add:
->
-> Tested-by: Helge Deller <deller@gmx.de> # parisc
+According to Section 6.2.14 from ACPI spec 6.3 [1], the setting
+of proximity domain is optional, as below:
 
-Thanks again Helge !
+This optional object is used to describe proximity domain
+associations within a machine. _PXM evaluates to an integer
+that identifies a device as belonging to a Proximity Domain
+defined in the System Resource Affinity Table (SRAT).
 
-Alex
+This patch checks node id with the below case before returning
+&numa_cpumask_lookup_table[node]:
+1. if node_id >= nr_node_ids, return cpu_none_mask
+2. if node_id < 0, return cpu_online_mask
+3. Since numa_cpumask_lookup_table is not a pointer, a comment
+   is added to indicate that
 
+[1] https://uefi.org/sites/default/files/resources/ACPI_6_3_final_Jan30.pdf
 
->
-> Thanks!
-> Helge
+Signed-off-by: Yunsheng Lin <linyunsheng@huawei.com>
+---
+ arch/sparc/include/asm/topology_64.h | 16 +++++++++++++---
+ 1 file changed, 13 insertions(+), 3 deletions(-)
+
+diff --git a/arch/sparc/include/asm/topology_64.h b/arch/sparc/include/asm/topology_64.h
+index 34c628a..66a7917 100644
+--- a/arch/sparc/include/asm/topology_64.h
++++ b/arch/sparc/include/asm/topology_64.h
+@@ -11,9 +11,19 @@ static inline int cpu_to_node(int cpu)
+ 	return numa_cpu_lookup_table[cpu];
+ }
+ 
+-#define cpumask_of_node(node) ((node) = -1 ?				\
+-			       cpu_all_mask :				\
+-			       &numa_cpumask_lookup_table[node])
++static inline const struct cpumask *cpumask_of_node(int node)
++{
++	if (node >= MAX_NUMNODES)
++		return cpu_none_mask;
++
++	/* numa_cpumask_lookup_table[node] is not a pointer, so
++	 * no need to check for NULL here.
++	 */
++	if (node < 0)
++		return cpu_online_mask;
++
++	return &numa_cpumask_lookup_table[node];
++}
+ 
+ struct pci_bus;
+ #ifdef CONFIG_PCI
+-- 
+2.8.1
