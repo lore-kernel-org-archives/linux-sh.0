@@ -1,50 +1,50 @@
-From: Valentin Schneider <valentin.schneider@arm.com>
-Date: Mon, 23 Sep 2019 14:36:19 +0000
-Subject: [PATCH v2 8/9] sh64: entry: Remove unneeded need_resched() loop
-Message-Id: <20190923143620.29334-9-valentin.schneider@arm.com>
+From: Bartosz Golaszewski <brgl@bgdev.pl>
+Date: Mon, 02 Sep 2019 12:34:42 +0000
+Subject: [RESEND PATCH v3 5/7] backlight: gpio: remove dev from struct gpio_backlight
+Message-Id: <20190902123444.19924-6-brgl@bgdev.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190923143620.29334-1-valentin.schneider@arm.com>
-In-Reply-To: <20190923143620.29334-1-valentin.schneider@arm.com>
+References: <20190902123444.19924-1-brgl@bgdev.pl>
+In-Reply-To: <20190902123444.19924-1-brgl@bgdev.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Lee Jones <lee.jones@linaro.org>, Daniel Thompson <daniel.thompson@linaro.org>, Jingoo Han <jingoohan1@gmail.com>, Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>, Linus Walleij <linus.walleij@linaro.org>, Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, dri-devel@lists.freedesktop.org, linux-fbdev@vger.kernel.org, Bartosz Golaszewski <bgolaszewski@baylibre.com>
 
-Since the enabling and disabling of IRQs within preempt_schedule_irq()
-is contained in a need_resched() loop, we don't need the outer arch
-code loop.
+From: Bartosz Golaszewski <bgolaszewski@baylibre.com>
 
-Signed-off-by: Valentin Schneider <valentin.schneider@arm.com>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: Rich Felker <dalias@libc.org>
-Cc: linux-sh@vger.kernel.org
+This field is unused. Remove it.
+
+Signed-off-by: Bartosz Golaszewski <bgolaszewski@baylibre.com>
+Reviewed-by: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+Reviewed-by: Linus Walleij <linus.walleij@linaro.org>
+Reviewed-by: Daniel Thompson <daniel.thompson@linaro.org>
 ---
- arch/sh/kernel/cpu/sh5/entry.S | 5 +----
- 1 file changed, 1 insertion(+), 4 deletions(-)
+ drivers/video/backlight/gpio_backlight.c | 4 ----
+ 1 file changed, 4 deletions(-)
 
-diff --git a/arch/sh/kernel/cpu/sh5/entry.S b/arch/sh/kernel/cpu/sh5/entry.S
-index de68ffdfffbf..40e6d9a7a6a2 100644
---- a/arch/sh/kernel/cpu/sh5/entry.S
-+++ b/arch/sh/kernel/cpu/sh5/entry.S
-@@ -897,7 +897,6 @@ resume_kernel:
- 	ld.l	r6, TI_PRE_COUNT, r7
- 	beq/u	r7, ZERO, tr0
+diff --git a/drivers/video/backlight/gpio_backlight.c b/drivers/video/backlight/gpio_backlight.c
+index 01262186fa1e..70882556f047 100644
+--- a/drivers/video/backlight/gpio_backlight.c
++++ b/drivers/video/backlight/gpio_backlight.c
+@@ -19,9 +19,7 @@
+ #include <linux/slab.h>
  
--need_resched:
- 	ld.l	r6, TI_FLAGS, r7
- 	movi	(1 << TIF_NEED_RESCHED), r8
- 	and	r8, r7, r8
-@@ -911,9 +910,7 @@ need_resched:
- 	ori	r7, 1, r7
- 	ptabs	r7, tr1
- 	blink	tr1, LINK
+ struct gpio_backlight {
+-	struct device *dev;
+ 	struct device *fbdev;
 -
--	pta	need_resched, tr1
--	blink	tr1, ZERO
-+	blink   tr0, ZERO
- #endif
+ 	struct gpio_desc *gpiod;
+ 	int def_value;
+ };
+@@ -69,8 +67,6 @@ static int gpio_backlight_probe(struct platform_device *pdev)
+ 	if (gbl = NULL)
+ 		return -ENOMEM;
  
- 	.global ret_from_syscall
+-	gbl->dev = &pdev->dev;
+-
+ 	if (pdata)
+ 		gbl->fbdev = pdata->fbdev;
+ 
 -- 
-2.22.0
+2.21.0
