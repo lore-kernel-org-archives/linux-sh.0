@@ -1,68 +1,41 @@
-From: Anshuman Khandual <anshuman.khandual@arm.com>
-Date: Fri, 20 Sep 2019 04:18:12 +0000
-Subject: Re: [PATCH V2 2/2] mm/pgtable/debug: Add test validating architecture page table helpers
-Message-Id: <5a6045af-bcfb-12c2-0f4a-3b49a905ec4d@arm.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 02 Sep 2019 07:53:01 +0000
+Subject: Re: [PATCH 08/26] m68k: simplify ioremap_nocache
+Message-Id: <CAMuHMdXB=DWyu=Y25gih5poeanVnhLEP2MXoozvxdEY6op32FA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1568268173-31302-1-git-send-email-anshuman.khandual@arm.com>
- <1568268173-31302-3-git-send-email-anshuman.khandual@arm.com>
- <ab0ca38b-1e4f-b636-f8b4-007a15903984@c-s.fr>
- <502c497a-9bf1-7d2e-95f2-cfebcd9cf1d9@arm.com>
- <95ed9d92-dd43-4c45-2e52-738aed7f2fb5@c-s.fr>
- <f872e6f4-a5cb-069d-2034-78961930cb9f@arm.com>
- <64504101-d9dd-f273-02f9-e9a8b178eecc@c-s.fr>
- <20190918202243.37e709df@thinkpad>
-In-Reply-To: <20190918202243.37e709df@thinkpad>
+References: <20190817073253.27819-1-hch@lst.de> <20190817073253.27819-9-hch@lst.de>
+ <CAMuHMdWyXGjokWi7tn9JHCTz9YMb_vHn6XKeE7KzH5n-54Sy0A@mail.gmail.com> <20190830160620.GD26887@lst.de>
+In-Reply-To: <20190830160620.GD26887@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Gerald Schaefer <gerald.schaefer@de.ibm.com>, Christophe Leroy <christophe.leroy@c-s.fr>
-Cc: Mark Rutland <mark.rutland@arm.com>, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, James Hogan <jhogan@kernel.org>, Tetsuo Handa <penguin-kernel@i-love.sakura.ne.jp>, Heiko Carstens <heiko.carstens@de.ibm.com>, Michal Hocko <mhocko@kernel.org>, linux-mm@kvack.org, Dave Hansen <dave.hansen@intel.com>, Paul Mackerras <paulus@samba.org>, sparclinux@vger.kernel.org, Thomas Gleixner <tglx@linutronix.de>, linux-s390@vger.kernel.org, Michael Ellerman <mpe@ellerman.id.au>, x86@kernel.org, Russell King - ARM Linux <linux@armlinux.org.uk>, Matthew Wilcox <willy@infradead.org>, Steven Price <Steven.Price@arm.com>, Jason Gunthorpe <jgg@ziepe.ca>, linux-arm-kernel@lists.infradead.org, linux-snps-arc@lists.infradead.org, Kees Cook <keescook@chromium.org>, Masahiro Yamada <yamada.masahiro@socionext.com>, Mark Brown <broonie@kernel.org>, "Kirill A . Shutemov" <kirill@shutemov.name>, Dan Williams <dan.j.williams@intel.com>, Vlastimil Babka <vbabka@suse.cz>, Sri Krishna chowdary <schowdary@nvidia.com>, Ard Biesheuvel <ard.biesheuvel@linaro.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, linux-mips@vger.kernel.org, Ralf Baechle <ralf@linux-mips.org>, linux-kernel@vger.kernel.org, Paul Burton <paul.burton@mips.com>, Mike Rapoport <rppt@linux.vnet.ibm.com>, Vineet Gupta <vgupta@synopsys.com>, Martin Schwidefsky <schwidefsky@de.ibm.com>, Andrew Morton <akpm@linux-foundation.org>, linuxppc-dev@lists.ozlabs.org, "David S. Miller" <davem@davemloft.net>
+To: Christoph Hellwig <hch@lst.de>
+Cc: Arnd Bergmann <arnd@arndb.de>, Guo Ren <guoren@kernel.org>, Michal Simek <monstr@monstr.eu>, Greentime Hu <green.hu@gmail.com>, Vincent Chen <deanbo422@gmail.com>, Guan Xuetao <gxt@pku.edu.cn>, the arch/x86 maintainers <x86@kernel.org>, alpha <linux-alpha@vger.kernel.org>, arcml <linux-snps-arc@lists.infradead.org>, Linux ARM <linux-arm-kernel@lists.infradead.org>, "open list:QUALCOMM HEXAGON..." <linux-hexagon@vger.kernel.org>, "linux-ia64@vger.kernel.org" <linux-ia64@vger.kernel.org>, linux-m68k <linux-m68k@lists.linux-m68k.org>, linux-mips@vger.kernel.org, nios2-dev@lists.rocketboards.org, Openrisc <openrisc@lists.librecores.org>, Parisc List <linux-parisc@vger.kernel.org>, linux-riscv@lists.infradead.org, linux-s390 <linux-s390@vger.kernel.org>
 
+Hi Christoph,
 
+On Fri, Aug 30, 2019 at 6:06 PM Christoph Hellwig <hch@lst.de> wrote:
+> On Mon, Aug 19, 2019 at 10:56:02AM +0200, Geert Uytterhoeven wrote:
+> > On Sat, Aug 17, 2019 at 9:48 AM Christoph Hellwig <hch@lst.de> wrote:
+> > > Just define ioremap_nocache to ioremap instead of duplicating the
+> > > inline.  Also defined ioremap_uc in terms of ioremap instead of
+> > > the using a double indirection.
+> > >
+> > > Signed-off-by: Christoph Hellwig <hch@lst.de>
+> >
+> > Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
+>
+> Do you mind picking this up through the m68k tree?
 
-On 09/18/2019 11:52 PM, Gerald Schaefer wrote:
-> On Wed, 18 Sep 2019 18:26:03 +0200
-> Christophe Leroy <christophe.leroy@c-s.fr> wrote:
-> 
-> [..] 
->> My suggestion was not to completely drop the #ifdef but to do like you 
->> did in pgd_clear_tests() for instance, ie to add the following test on 
->> top of the function:
->>
->> 	if (mm_pud_folded(mm) || is_defined(__ARCH_HAS_5LEVEL_HACK))
->> 		return;
->>
-> 
-> Ah, very nice, this would also fix the remaining issues for s390. Since
-> we have dynamic page table folding, neither __PAGETABLE_PXX_FOLDED nor
-> __ARCH_HAS_XLEVEL_HACK is defined, but mm_pxx_folded() will work.
+Sure. Applied and queued for v5.4.
 
-Like Christophe mentioned earlier on the other thread, we will convert
-all __PGTABLE_PXX_FOLDED checks as mm_pxx_folded() but looks like 
-ARCH_HAS_[4 and 5]LEVEL_HACK macros will still be around. Will respin
-the series with all agreed upon changes first and probably we can then
-discuss pending issues from there.
+Gr{oetje,eeting}s,
 
-> 
-> mm_alloc() returns with a 3-level page table by default on s390, so we
-> will run into issues in p4d_clear/populate_tests(), and also at the end
-> with p4d/pud_free() (double free).
-> 
-> So, adding the mm_pud_folded() check to p4d_clear/populate_tests(),
-> and also adding mm_p4d/pud_folded() checks at the end before calling> p4d/pud_free(), would make it all work on s390.
+                        Geert
 
-Atleast p4d_clear/populate_tests() tests will be taken care.
+-- 
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-> 
-> BTW, regarding p4d/pud_free(), I'm not sure if we should rather check
-> the folding inside our s390 functions, similar to how we do it for
-> p4d/pud_free_tlb(), instead of relying on not being called for folded
-> p4d/pud. So far, I see no problem with this behavior, all callers of
-> p4d/pud_free() should be fine because of our folding check within
-> p4d/pud_present/none(). But that doesn't mean that it is correct not
-> to check for the folding inside p4d/pud_free(). At least, with this
-> test module we do now have a caller of p4d/pud_free() on potentially
-> folded entries, so instead of adding pxx_folded() checks to this
-> test module, we could add them to our p4d/pud_free() functions.
-> Any thoughts on this?
-Agreed, it seems better to do the check inside p4d/pud_free() functions.
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
