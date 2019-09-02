@@ -1,68 +1,131 @@
-From: Bartosz Golaszewski <brgl@bgdev.pl>
-Date: Mon, 02 Sep 2019 12:35:30 +0000
-Subject: Re: [PATCH v3 0/7] backlight: gpio: simplify the driver
-Message-Id: <CAMRc=Me2FYJDDHo=8noU5bPNdPXBL23jDU_3XQiPfRJ3-pGh7g@mail.gmail.com>
+From: Yunsheng Lin <linyunsheng@huawei.com>
+Date: Mon, 02 Sep 2019 05:46:51 +0000
+Subject: Re: [PATCH v2 2/9] x86: numa: check the node id consistently for x86
+Message-Id: <ae64285f-5134-4147-7b02-34bb5d519e8c@huawei.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190724082508.27617-1-brgl@bgdev.pl> <20190902093137.GI32232@dell>
-In-Reply-To: <20190902093137.GI32232@dell>
+References: <1567231103-13237-1-git-send-email-linyunsheng@huawei.com>
+ <1567231103-13237-3-git-send-email-linyunsheng@huawei.com>
+ <20190831085539.GG2369@hirez.programming.kicks-ass.net>
+ <4d89c688-49e4-a2aa-32ee-65e36edcd913@huawei.com>
+ <20190831161247.GM2369@hirez.programming.kicks-ass.net>
+In-Reply-To: <20190831161247.GM2369@hirez.programming.kicks-ass.net>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: Lee Jones <lee.jones@linaro.org>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Daniel Thompson <daniel.thompson@linaro.org>, Jingoo Han <jingoohan1@gmail.com>, Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>, Linus Walleij <linus.walleij@linaro.org>, Andy Shevchenko <andriy.shevchenko@linux.intel.com>, linux-sh@vger.kernel.org, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, dri-devel@lists.freedesktop.org, linux-fbdev@vger.kernel.org, Bartosz Golaszewski <bgolaszewski@baylibre.com>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Peter Zijlstra <peterz@infradead.org>
+Cc: dalias@libc.org, linux-sh@vger.kernel.org, catalin.marinas@arm.com, dave.hansen@linux.intel.com, heiko.carstens@de.ibm.com, linuxarm@huawei.com, jiaxun.yang@flygoat.com, linux-kernel@vger.kernel.org, mwb@linux.vnet.ibm.com, paulus@samba.org, hpa@zytor.com, sparclinux@vger.kernel.org, chenhc@lemote.com, will@kernel.org, linux-s390@vger.kernel.org, ysato@users.sourceforge.jp, mpe@ellerman.id.au, x86@kernel.org, rppt@linux.ibm.com, borntraeger@de.ibm.com, dledford@redhat.com, mingo@redhat.com, jeffrey.t.kirsher@intel.com, benh@kernel.crashing.org, jhogan@kernel.org, nfont@linux.vnet.ibm.com, mattst88@gmail.com, len.brown@intel.com, gor@linux.ibm.com, anshuman.khandual@arm.com, ink@jurassic.park.msu.ru, cai@lca.pw, luto@kernel.org, tglx@linutronix.de, naveen.n.rao@linux.vnet.ibm.com, linux-arm-kernel@lists.infradead.org, rth@twiddle.net, axboe@kernel.dk, robin.murphy@arm.com, linux-mips@vger.kernel.org, ralf@linux-mips.org, tbogendoerfer@suse.de, paul.burton@mips.com, linux-alpha@vger.kernel.org, bp@alien8.de, akpm@linux-foundation.org, linuxppc-dev@lists.ozlabs.org, davem@davemloft.net
 
-pon., 2 wrz 2019 o 11:31 Lee Jones <lee.jones@linaro.org> napisał(a):
->
-> On Wed, 24 Jul 2019, Bartosz Golaszewski wrote:
->
-> > From: Bartosz Golaszewski <bgolaszewski@baylibre.com>
-> >
-> > While working on my other series related to gpio-backlight[1] I noticed
-> > that we could simplify the driver if we made the only user of platform
-> > data use GPIO lookups and device properties. This series tries to do
-> > that.
-> >
-> > The first patch adds all necessary data structures to ecovec24. Patch
-> > 2/7 unifies much of the code for both pdata and non-pdata cases. Patches
-> > 3-4/7 remove unused platform data fields. Last three patches contain
-> > additional improvements for the GPIO backlight driver while we're already
-> > modifying it.
-> >
-> > I don't have access to this HW but hopefully this works. Only compile
-> > tested.
-> >
-> > [1] https://lkml.org/lkml/2019/6/25/900
-> >
-> > v1 -> v2:
-> > - rebased on top of v5.3-rc1 and adjusted to the recent changes from Andy
-> > - added additional two patches with minor improvements
-> >
-> > v2 -> v3:
-> > - in patch 7/7: used initializers to set values for pdata and dev local vars
-> >
-> > Bartosz Golaszewski (7):
-> >   sh: ecovec24: add additional properties to the backlight device
-> >   backlight: gpio: simplify the platform data handling
-> >   sh: ecovec24: don't set unused fields in platform data
-> >   backlight: gpio: remove unused fields from platform data
-> >   backlight: gpio: remove dev from struct gpio_backlight
-> >   backlight: gpio: remove def_value from struct gpio_backlight
-> >   backlight: gpio: use a helper variable for &pdev->dev
-> >
-> >  arch/sh/boards/mach-ecovec24/setup.c         | 33 ++++++--
-> >  drivers/video/backlight/gpio_backlight.c     | 82 +++++---------------
-> >  include/linux/platform_data/gpio_backlight.h |  3 -
-> >  3 files changed, 44 insertions(+), 74 deletions(-)
->
-> Can you collect all your Acks and re-submit please?
->
+On 2019/9/1 0:12, Peter Zijlstra wrote:
+> On Sat, Aug 31, 2019 at 06:09:39PM +0800, Yunsheng Lin wrote:
+>>
+>>
+>> On 2019/8/31 16:55, Peter Zijlstra wrote:
+>>> On Sat, Aug 31, 2019 at 01:58:16PM +0800, Yunsheng Lin wrote:
+>>>> According to Section 6.2.14 from ACPI spec 6.3 [1], the setting
+>>>> of proximity domain is optional, as below:
+>>>>
+>>>> This optional object is used to describe proximity domain
+>>>> associations within a machine. _PXM evaluates to an integer
+>>>> that identifies a device as belonging to a Proximity Domain
+>>>> defined in the System Resource Affinity Table (SRAT).
+>>>
+>>> That's just words.. what does it actually mean?
+>>
+>> It means the dev_to_node(dev) may return -1 if the bios does not
+>> implement the proximity domain feature, user may use that value
+>> to call cpumask_of_node and cpumask_of_node does not protect itself
+>> from node id being -1, which causes out of bound access.
+> 
+>>>> @@ -69,6 +69,12 @@ extern const struct cpumask *cpumask_of_node(int node);
+>>>>  /* Returns a pointer to the cpumask of CPUs on Node 'node'. */
+>>>>  static inline const struct cpumask *cpumask_of_node(int node)
+>>>>  {
+>>>> +	if (node >= nr_node_ids)
+>>>> +		return cpu_none_mask;
+>>>> +
+>>>> +	if (node < 0 || !node_to_cpumask_map[node])
+>>>> +		return cpu_online_mask;
+>>>> +
+>>>>  	return node_to_cpumask_map[node];
+>>>>  }
+>>>>  #endif
+>>>
+>>> I _reallly_ hate this. Users are expected to use valid numa ids. Now
+>>> we're adding all this checking to all users. Why do we want to do that?
+>>
+>> As above, the dev_to_node(dev) may return -1.
+>>
+>>>
+>>> Using '(unsigned)node >= nr_nods_ids' is an error.
+>>
+>> 'node >= nr_node_ids' can be dropped if all user is expected to not call
+>> cpumask_of_node with node id greater or equal to nr_nods_ids.
+> 
+> you copied my typo :-)
 
-Done.
+I did note the typo, corrected the first one, but missed the second one :)
 
-Bart
+> 
+>> From what I can see, the problem can be fixed in three place:
+>> 1. Make user dev_to_node return a valid node id even when proximity
+>>    domain is not set by bios(or node id set by buggy bios is not valid),
+>>    which may need info from the numa system to make sure it will return
+>>    a valid node.
+>>
+>> 2. User that call cpumask_of_node should ensure the node id is valid
+>>    before calling cpumask_of_node, and user also need some info to
+>>    make ensure node id is valid.
+>>
+>> 3. Make sure cpumask_of_node deal with invalid node id as this patchset.
+>>
+>> Which one do you prefer to make sure node id is valid, or do you
+>> have any better idea?
+>>
+>> Any detail advice and suggestion will be very helpful, thanks.
+> 
+> 1) because even it is not set, the device really does belong to a node.
+> It is impossible a device will have magic uniform access to memory when
+> CPUs cannot.
 
-> --
-> Lee Jones [李琼斯]
-> Linaro Services Technical Lead
-> Linaro.org │ Open source software for ARM SoCs
-> Follow Linaro: Facebook | Twitter | Blog
+So it means dev_to_node() will return either NUMA_NO_NODE or a
+valid node id?
+
+> 
+> 2) is already true today, cpumask_of_node() requires a valid node_id.
+
+Ok, most of the user does check node_id before calling
+cpumask_of_node(), but does a little different type of checking:
+
+1) some does " < 0" check;
+2) some does "= NUMA_NO_NODE" check;
+3) some does ">= MAX_NUMNODES" check;
+4) some does "< 0 || >= MAX_NUMNODES || !node_online(node)" check.
+
+
+> 
+> 3) is just wrong and increases overhead for everyone.
+
+Ok, cpumask_of_node() is also used in some critical path such
+as scheduling, which may not need those checking, the overhead
+is unnecessary.
+
+But for non-critical path such as setup or configuration path,
+it better to have consistent checking, and also simplify the
+user code that calls cpumask_of_node().
+
+Do you think it is worth the trouble to add a new function
+such as cpumask_of_node_check(maybe some other name) to do
+consistent checking?
+
+Or caller just simply check if dev_to_node()'s return value is
+NUMA_NO_NODE before calling cpumask_of_node()?
+
+
+> 
+> _______________________________________________
+> linux-arm-kernel mailing list
+> linux-arm-kernel@lists.infradead.org
+> http://lists.infradead.org/mailman/listinfo/linux-arm-kernel
+> 
+> .
+> 
