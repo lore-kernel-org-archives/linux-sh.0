@@ -1,7 +1,7 @@
 From: Bartosz Golaszewski <brgl@bgdev.pl>
-Date: Mon, 02 Sep 2019 12:34:42 +0000
-Subject: [RESEND PATCH v3 5/7] backlight: gpio: remove dev from struct gpio_backlight
-Message-Id: <20190902123444.19924-6-brgl@bgdev.pl>
+Date: Mon, 02 Sep 2019 12:34:39 +0000
+Subject: [RESEND PATCH v3 2/7] backlight: gpio: simplify the platform data handling
+Message-Id: <20190902123444.19924-3-brgl@bgdev.pl>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20190902123444.19924-1-brgl@bgdev.pl>
 In-Reply-To: <20190902123444.19924-1-brgl@bgdev.pl>
@@ -13,38 +13,109 @@ Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, dri-devel@lists.free
 
 From: Bartosz Golaszewski <bgolaszewski@baylibre.com>
 
-This field is unused. Remove it.
+Now that the last user of platform data (sh ecovec24) defines a proper
+GPIO lookup and sets the 'default-on' device property, we can drop the
+platform_data-specific GPIO handling and unify a big chunk of code.
+
+The only field used from the platform data is now the fbdev pointer.
 
 Signed-off-by: Bartosz Golaszewski <bgolaszewski@baylibre.com>
-Reviewed-by: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
 Reviewed-by: Linus Walleij <linus.walleij@linaro.org>
 Reviewed-by: Daniel Thompson <daniel.thompson@linaro.org>
+Reviewed-by: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
 ---
- drivers/video/backlight/gpio_backlight.c | 4 ----
- 1 file changed, 4 deletions(-)
+ drivers/video/backlight/gpio_backlight.c | 64 +++++-------------------
+ 1 file changed, 13 insertions(+), 51 deletions(-)
 
 diff --git a/drivers/video/backlight/gpio_backlight.c b/drivers/video/backlight/gpio_backlight.c
-index 01262186fa1e..70882556f047 100644
+index e84f3087e29f..01262186fa1e 100644
 --- a/drivers/video/backlight/gpio_backlight.c
 +++ b/drivers/video/backlight/gpio_backlight.c
-@@ -19,9 +19,7 @@
- #include <linux/slab.h>
- 
- struct gpio_backlight {
--	struct device *dev;
- 	struct device *fbdev;
--
- 	struct gpio_desc *gpiod;
- 	int def_value;
+@@ -55,30 +55,6 @@ static const struct backlight_ops gpio_backlight_ops = {
+ 	.check_fb	= gpio_backlight_check_fb,
  };
-@@ -69,8 +67,6 @@ static int gpio_backlight_probe(struct platform_device *pdev)
- 	if (gbl = NULL)
- 		return -ENOMEM;
  
--	gbl->dev = &pdev->dev;
+-static int gpio_backlight_probe_dt(struct platform_device *pdev,
+-				   struct gpio_backlight *gbl)
+-{
+-	struct device *dev = &pdev->dev;
+-	enum gpiod_flags flags;
+-	int ret;
 -
- 	if (pdata)
- 		gbl->fbdev = pdata->fbdev;
+-	gbl->def_value = device_property_read_bool(dev, "default-on");
+-	flags = gbl->def_value ? GPIOD_OUT_HIGH : GPIOD_OUT_LOW;
+-
+-	gbl->gpiod = devm_gpiod_get(dev, NULL, flags);
+-	if (IS_ERR(gbl->gpiod)) {
+-		ret = PTR_ERR(gbl->gpiod);
+-
+-		if (ret != -EPROBE_DEFER) {
+-			dev_err(dev,
+-				"Error: The gpios parameter is missing or invalid.\n");
+-		}
+-		return ret;
+-	}
+-
+-	return 0;
+-}
+-
+ static int gpio_backlight_probe(struct platform_device *pdev)
+ {
+ 	struct gpio_backlight_platform_data *pdata @@ -86,6 +62,7 @@ static int gpio_backlight_probe(struct platform_device *pdev)
+ 	struct backlight_properties props;
+ 	struct backlight_device *bl;
+ 	struct gpio_backlight *gbl;
++	enum gpiod_flags flags;
+ 	int ret;
  
+ 	gbl = devm_kzalloc(&pdev->dev, sizeof(*gbl), GFP_KERNEL);
+@@ -94,35 +71,20 @@ static int gpio_backlight_probe(struct platform_device *pdev)
+ 
+ 	gbl->dev = &pdev->dev;
+ 
+-	if (pdev->dev.fwnode) {
+-		ret = gpio_backlight_probe_dt(pdev, gbl);
+-		if (ret)
+-			return ret;
+-	} else if (pdata) {
+-		/*
+-		 * Legacy platform data GPIO retrieveal. Do not expand
+-		 * the use of this code path, currently only used by one
+-		 * SH board.
+-		 */
+-		unsigned long flags = GPIOF_DIR_OUT;
+-
++	if (pdata)
+ 		gbl->fbdev = pdata->fbdev;
+-		gbl->def_value = pdata->def_value;
+-		flags |= gbl->def_value ? GPIOF_INIT_HIGH : GPIOF_INIT_LOW;
+-
+-		ret = devm_gpio_request_one(gbl->dev, pdata->gpio, flags,
+-					    pdata ? pdata->name : "backlight");
+-		if (ret < 0) {
+-			dev_err(&pdev->dev, "unable to request GPIO\n");
+-			return ret;
++
++	gbl->def_value = device_property_read_bool(&pdev->dev, "default-on");
++	flags = gbl->def_value ? GPIOD_OUT_HIGH : GPIOD_OUT_LOW;
++
++	gbl->gpiod = devm_gpiod_get(&pdev->dev, NULL, flags);
++	if (IS_ERR(gbl->gpiod)) {
++		ret = PTR_ERR(gbl->gpiod);
++		if (ret != -EPROBE_DEFER) {
++			dev_err(&pdev->dev,
++				"Error: The gpios parameter is missing or invalid.\n");
+ 		}
+-		gbl->gpiod = gpio_to_desc(pdata->gpio);
+-		if (!gbl->gpiod)
+-			return -EINVAL;
+-	} else {
+-		dev_err(&pdev->dev,
+-			"failed to find platform data or device tree node.\n");
+-		return -ENODEV;
++		return ret;
+ 	}
+ 
+ 	memset(&props, 0, sizeof(props));
 -- 
 2.21.0
