@@ -1,62 +1,164 @@
-From: Yunsheng Lin <linyunsheng@huawei.com>
-Date: Thu, 12 Sep 2019 10:15:30 +0000
-Subject: [PATCH v3 4/8] powerpc: numa: make node_to_cpumask_map() NUMA_NO_NODE aware for powerpc
-Message-Id: <1568283334-178380-5-git-send-email-linyunsheng@huawei.com>
+From: Aleksa Sarai <cyphar@cyphar.com>
+Date: Wed, 04 Sep 2019 20:19:24 +0000
+Subject: [PATCH v12 03/12] sched_setattr: switch to copy_struct_{to,from}_user()
+Message-Id: <20190904201933.10736-4-cyphar@cyphar.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1568283334-178380-1-git-send-email-linyunsheng@huawei.com>
-In-Reply-To: <1568283334-178380-1-git-send-email-linyunsheng@huawei.com>
+References: <20190904201933.10736-1-cyphar@cyphar.com>
+In-Reply-To: <20190904201933.10736-1-cyphar@cyphar.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: catalin.marinas@arm.com, will@kernel.org, mingo@redhat.com, bp@alien8.de, rth@twiddle.net, ink@jurassic.park.msu.ru, mattst88@gmail.com, benh@kernel.crashing.org, paulus@samba.org, mpe@ellerman.id.au, heiko.carstens@de.ibm.com, gor@linux.ibm.com, borntraeger@de.ibm.com, ysato@users.sourceforge.jp, dalias@libc.org, davem@davemloft.net, ralf@linux-mips.org, paul.burton@mips.com, jhogan@kernel.org, jiaxun.yang@flygoat.com, chenhc@lemote.com
-Cc: akpm@linux-foundation.org, rppt@linux.ibm.com, anshuman.khandual@arm.com, tglx@linutronix.de, cai@lca.pw, robin.murphy@arm.com, linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org, hpa@zytor.com, x86@kernel.org, dave.hansen@linux.intel.com, luto@kernel.org, peterz@infradead.org, len.brown@intel.com, axboe@kernel.dk, dledford@redhat.com, jeffrey.t.kirsher@intel.com, linux-alpha@vger.kernel.org, naveen.n.rao@linux.vnet.ibm.com, mwb@linux.vnet.ibm.com, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, tbogendoerfer@suse.de, linux-mips@vger.kernel.org, rafael@kernel.org, mhocko@kernel.org, gregkh@linuxfoundation.org
+To: Al Viro <viro@zeniv.linux.org.uk>, Jeff Layton <jlayton@kernel.org>, "J. Bruce Fields" <bfields@fieldses.org>, Arnd Bergmann <arnd@arndb.de>, David Howells <dhowells@redhat.com>, Shuah Khan <shuah@kernel.org>, Shuah Khan <skhan@linuxfoundation.org>, Ingo Molnar <mingo@redhat.com>, Peter Zijlstra <peterz@infradead.org>, Christian Brauner <christian@brauner.io>
+Cc: Aleksa Sarai <cyphar@cyphar.com>, Eric Biederman <ebiederm@xmission.com>, Andy Lutomirski <luto@kernel.org>, Andrew Morton <akpm@linux-foundation.org>, Alexei Starovoitov <ast@kernel.org>, Kees Cook <keescook@chromium.org>, Jann Horn <jannh@google.com>, Tycho Andersen <tycho@tycho.ws>, David Drysdale <drysdale@google.com>, Chanho Min <chanho.min@lge.com>, Oleg Nesterov <oleg@redhat.com>, Rasmus Villemoes <linux@rasmusvillemoes.dk>, Alexander Shishkin <alexander.shishkin@linux.intel.com>, Jiri Olsa <jolsa@redhat.com>, Namhyung Kim <namhyung@kernel.org>, Aleksa Sarai <asarai@suse.de>, Linus Torvalds <torvalds@linux-foundation.org>, containers@lists.linux-foundation.org, linux-alpha@vger.kernel.org, linux-api@vger.kernel.org, linux-arch@vger.kernel.org
 
-When passing the return value of dev_to_node() to cpumask_of_node()
-without checking the node id if the node id is NUMA_NO_NODE, there is
-global-out-of-bounds detected by KASAN.
+The change is very straightforward, and takes advantage of the (very
+minor) efficiency improvements in copy_struct_{to,from}_user() -- that
+the memchr_inv() check is done on a buffer instead of one-at-at-time
+with get_user() or put_user().
 
-From the discussion [1], NUMA_NO_NODE really means no node affinity,
-which also means all cpus should be usable. So the cpumask_of_node()
-should always return all cpus online when user passes the node id
-as NUMA_NO_NODE, just like similar semantic that page allocator handles
-NUMA_NO_NODE.
-
-But we cannot really copy the page allocator logic. Simply because the
-page allocator doesn't enforce the near node affinity. It just picks it
-up as a preferred node but then it is free to fallback to any other numa
-node. This is not the case here and node_to_cpumask_map will only restrict
-to the particular node's cpus which would have really non deterministic
-behavior depending on where the code is executed. So in fact we really
-want to return cpu_online_mask for NUMA_NO_NODE.
-
-Since this arch was already NUMA_NO_NODE aware, this patch only changes
-it to return cpu_online_mask and use NUMA_NO_NODE instead of "-1".
-
-[1] https://lore.kernel.org/patchwork/patch/1125789/
-Signed-off-by: Yunsheng Lin <linyunsheng@huawei.com>
-Suggested-by: Michal Hocko <mhocko@kernel.org>
+Signed-off-by: Aleksa Sarai <cyphar@cyphar.com>
 ---
-V3: Change to only handle NUMA_NO_NODE, and return cpu_online_mask
-    for NUMA_NO_NODE case, and change the commit log to better justify
-    the change.
----
- arch/powerpc/include/asm/topology.h | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ kernel/sched/core.c | 85 ++++++---------------------------------------
+ 1 file changed, 10 insertions(+), 75 deletions(-)
 
-diff --git a/arch/powerpc/include/asm/topology.h b/arch/powerpc/include/asm/topology.h
-index 2f7e1ea..107f5cd 100644
---- a/arch/powerpc/include/asm/topology.h
-+++ b/arch/powerpc/include/asm/topology.h
-@@ -17,8 +17,8 @@ struct device_node;
+diff --git a/kernel/sched/core.c b/kernel/sched/core.c
+index 010d578118d6..2f58b07d3468 100644
+--- a/kernel/sched/core.c
++++ b/kernel/sched/core.c
+@@ -4900,9 +4900,6 @@ static int sched_copy_attr(struct sched_attr __user *uattr, struct sched_attr *a
+ 	u32 size;
+ 	int ret;
  
- #include <asm/mmzone.h>
+-	if (!access_ok(uattr, SCHED_ATTR_SIZE_VER0))
+-		return -EFAULT;
+-
+ 	/* Zero the full structure, so that a short copy will be nice: */
+ 	memset(attr, 0, sizeof(*attr));
  
--#define cpumask_of_node(node) ((node) = -1 ?				\
--			       cpu_all_mask :				\
-+#define cpumask_of_node(node) ((node) = NUMA_NO_NODE ?			\
-+			       cpu_online_mask :			\
- 			       node_to_cpumask_map[node])
+@@ -4910,45 +4907,19 @@ static int sched_copy_attr(struct sched_attr __user *uattr, struct sched_attr *a
+ 	if (ret)
+ 		return ret;
  
- struct pci_bus;
+-	/* Bail out on silly large: */
+-	if (size > PAGE_SIZE)
+-		goto err_size;
+-
+ 	/* ABI compatibility quirk: */
+ 	if (!size)
+ 		size = SCHED_ATTR_SIZE_VER0;
+-
+ 	if (size < SCHED_ATTR_SIZE_VER0)
+ 		goto err_size;
+ 
+-	/*
+-	 * If we're handed a bigger struct than we know of,
+-	 * ensure all the unknown bits are 0 - i.e. new
+-	 * user-space does not rely on any kernel feature
+-	 * extensions we dont know about yet.
+-	 */
+-	if (size > sizeof(*attr)) {
+-		unsigned char __user *addr;
+-		unsigned char __user *end;
+-		unsigned char val;
+-
+-		addr = (void __user *)uattr + sizeof(*attr);
+-		end  = (void __user *)uattr + size;
+-
+-		for (; addr < end; addr++) {
+-			ret = get_user(val, addr);
+-			if (ret)
+-				return ret;
+-			if (val)
+-				goto err_size;
+-		}
+-		size = sizeof(*attr);
++	ret = copy_struct_from_user(attr, sizeof(*attr), uattr, size);
++	if (ret) {
++		if (ret = -E2BIG)
++			goto err_size;
++		return ret;
+ 	}
+ 
+-	ret = copy_from_user(attr, uattr, size);
+-	if (ret)
+-		return -EFAULT;
+-
+ 	if ((attr->sched_flags & SCHED_FLAG_UTIL_CLAMP) &&
+ 	    size < SCHED_ATTR_SIZE_VER1)
+ 		return -EINVAL;
+@@ -5105,51 +5076,15 @@ SYSCALL_DEFINE2(sched_getparam, pid_t, pid, struct sched_param __user *, param)
+ 	return retval;
+ }
+ 
+-static int sched_read_attr(struct sched_attr __user *uattr,
+-			   struct sched_attr *attr,
+-			   unsigned int usize)
+-{
+-	int ret;
+-
+-	if (!access_ok(uattr, usize))
+-		return -EFAULT;
+-
+-	/*
+-	 * If we're handed a smaller struct than we know of,
+-	 * ensure all the unknown bits are 0 - i.e. old
+-	 * user-space does not get uncomplete information.
+-	 */
+-	if (usize < sizeof(*attr)) {
+-		unsigned char *addr;
+-		unsigned char *end;
+-
+-		addr = (void *)attr + usize;
+-		end  = (void *)attr + sizeof(*attr);
+-
+-		for (; addr < end; addr++) {
+-			if (*addr)
+-				return -EFBIG;
+-		}
+-
+-		attr->size = usize;
+-	}
+-
+-	ret = copy_to_user(uattr, attr, attr->size);
+-	if (ret)
+-		return -EFAULT;
+-
+-	return 0;
+-}
+-
+ /**
+  * sys_sched_getattr - similar to sched_getparam, but with sched_attr
+  * @pid: the pid in question.
+  * @uattr: structure containing the extended parameters.
+- * @size: sizeof(attr) for fwd/bwd comp.
++ * @usize: sizeof(attr) for fwd/bwd comp.
+  * @flags: for future extension.
+  */
+ SYSCALL_DEFINE4(sched_getattr, pid_t, pid, struct sched_attr __user *, uattr,
+-		unsigned int, size, unsigned int, flags)
++		unsigned int, usize, unsigned int, flags)
+ {
+ 	struct sched_attr attr = {
+ 		.size = sizeof(struct sched_attr),
+@@ -5157,8 +5092,8 @@ SYSCALL_DEFINE4(sched_getattr, pid_t, pid, struct sched_attr __user *, uattr,
+ 	struct task_struct *p;
+ 	int retval;
+ 
+-	if (!uattr || pid < 0 || size > PAGE_SIZE ||
+-	    size < SCHED_ATTR_SIZE_VER0 || flags)
++	if (!uattr || pid < 0 || usize > PAGE_SIZE ||
++	    usize < SCHED_ATTR_SIZE_VER0 || flags)
+ 		return -EINVAL;
+ 
+ 	rcu_read_lock();
+@@ -5188,7 +5123,7 @@ SYSCALL_DEFINE4(sched_getattr, pid_t, pid, struct sched_attr __user *, uattr,
+ 
+ 	rcu_read_unlock();
+ 
+-	retval = sched_read_attr(uattr, &attr, size);
++	retval = copy_struct_to_user(uattr, usize, &attr, sizeof(attr));
+ 	return retval;
+ 
+ out_unlock:
 -- 
-2.8.1
+2.23.0
