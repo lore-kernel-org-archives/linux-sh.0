@@ -1,28 +1,92 @@
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Date: Wed, 18 Sep 2019 16:03:15 +0000
-Subject: Pull request for SH Linux changes
-Message-Id: <9c582fea-5c4f-a973-181c-28716ea06151@physik.fu-berlin.de>
+From: Aleksa Sarai <cyphar@cyphar.com>
+Date: Wed, 04 Sep 2019 20:19:27 +0000
+Subject: [PATCH v12 06/12] procfs: switch magic-link modes to be more sane
+Message-Id: <20190904201933.10736-7-cyphar@cyphar.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20190904201933.10736-1-cyphar@cyphar.com>
+In-Reply-To: <20190904201933.10736-1-cyphar@cyphar.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Al Viro <viro@zeniv.linux.org.uk>, Jeff Layton <jlayton@kernel.org>, "J. Bruce Fields" <bfields@fieldses.org>, Arnd Bergmann <arnd@arndb.de>, David Howells <dhowells@redhat.com>, Shuah Khan <shuah@kernel.org>, Shuah Khan <skhan@linuxfoundation.org>, Ingo Molnar <mingo@redhat.com>, Peter Zijlstra <peterz@infradead.org>, Christian Brauner <christian@brauner.io>
+Cc: Aleksa Sarai <cyphar@cyphar.com>, Eric Biederman <ebiederm@xmission.com>, Andy Lutomirski <luto@kernel.org>, Andrew Morton <akpm@linux-foundation.org>, Alexei Starovoitov <ast@kernel.org>, Kees Cook <keescook@chromium.org>, Jann Horn <jannh@google.com>, Tycho Andersen <tycho@tycho.ws>, David Drysdale <drysdale@google.com>, Chanho Min <chanho.min@lge.com>, Oleg Nesterov <oleg@redhat.com>, Rasmus Villemoes <linux@rasmusvillemoes.dk>, Alexander Shishkin <alexander.shishkin@linux.intel.com>, Jiri Olsa <jolsa@redhat.com>, Namhyung Kim <namhyung@kernel.org>, Aleksa Sarai <asarai@suse.de>, Linus Torvalds <torvalds@linux-foundation.org>, containers@lists.linux-foundation.org, linux-alpha@vger.kernel.org, linux-api@vger.kernel.org, linux-arch@vger.kernel.org
 
-Hi!
+Now that magic-link modes are obeyed for file re-opening purposes, some
+of the pre-existing magic-link modes need to be adjusted to be more
+semantically correct.
 
-Now that J-Core has picked up some traction again, it would be nice if the changes
-that have accumulated in Yoshinori Sato's SH Linux tree [1] could actually be sent
-to Linus' upstream kernel tree.
+The most blatant example of this is /proc/self/exe, which had a mode of
+a+rwx even though tautologically the file could never be opened for
+writing (because it is the current->mm of a live process).
 
-Could someone initiate that? These changes actually contain some important fixes.
+With the new O_PATH restrictions, changing the default mode of these
+magic-links allows us to avoid delayed-access attacks such as we saw in
+CVE-2019-5736.
 
-Thanks,
-Adrian
+Signed-off-by: Aleksa Sarai <cyphar@cyphar.com>
+---
+ fs/proc/base.c       | 20 ++++++++++----------
+ fs/proc/namespaces.c |  2 +-
+ 2 files changed, 11 insertions(+), 11 deletions(-)
 
-> [1] https://osdn.net/projects/uclinux-h8/scm/git/linux/
-
+diff --git a/fs/proc/base.c b/fs/proc/base.c
+index ebea9501afb8..297242174402 100644
+--- a/fs/proc/base.c
++++ b/fs/proc/base.c
+@@ -133,9 +133,9 @@ struct pid_entry {
+ 
+ #define DIR(NAME, MODE, iops, fops)	\
+ 	NOD(NAME, (S_IFDIR|(MODE)), &iops, &fops, {} )
+-#define LNK(NAME, get_link)					\
+-	NOD(NAME, (S_IFLNK|S_IRWXUGO),				\
+-		&proc_pid_link_inode_operations, NULL,		\
++#define LNK(NAME, MODE, get_link)			\
++	NOD(NAME, (S_IFLNK|(MODE)),			\
++		&proc_pid_link_inode_operations, NULL,	\
+ 		{ .proc_get_link = get_link } )
+ #define REG(NAME, MODE, fops)				\
+ 	NOD(NAME, (S_IFREG|(MODE)), NULL, &fops, {})
+@@ -3028,9 +3028,9 @@ static const struct pid_entry tgid_base_stuff[] = {
+ 	REG("numa_maps",  S_IRUGO, proc_pid_numa_maps_operations),
+ #endif
+ 	REG("mem",        S_IRUSR|S_IWUSR, proc_mem_operations),
+-	LNK("cwd",        proc_cwd_link),
+-	LNK("root",       proc_root_link),
+-	LNK("exe",        proc_exe_link),
++	LNK("cwd",        S_IRWXUGO, proc_cwd_link),
++	LNK("root",       S_IRWXUGO, proc_root_link),
++	LNK("exe",        S_IRUGO|S_IXUGO, proc_exe_link),
+ 	REG("mounts",     S_IRUGO, proc_mounts_operations),
+ 	REG("mountinfo",  S_IRUGO, proc_mountinfo_operations),
+ 	REG("mountstats", S_IRUSR, proc_mountstats_operations),
+@@ -3429,11 +3429,11 @@ static const struct pid_entry tid_base_stuff[] = {
+ 	REG("numa_maps", S_IRUGO, proc_pid_numa_maps_operations),
+ #endif
+ 	REG("mem",       S_IRUSR|S_IWUSR, proc_mem_operations),
+-	LNK("cwd",       proc_cwd_link),
+-	LNK("root",      proc_root_link),
+-	LNK("exe",       proc_exe_link),
++	LNK("cwd",       S_IRWXUGO, proc_cwd_link),
++	LNK("root",      S_IRWXUGO, proc_root_link),
++	LNK("exe",       S_IRUGO|S_IXUGO, proc_exe_link),
+ 	REG("mounts",    S_IRUGO, proc_mounts_operations),
+-	REG("mountinfo",  S_IRUGO, proc_mountinfo_operations),
++	REG("mountinfo", S_IRUGO, proc_mountinfo_operations),
+ #ifdef CONFIG_PROC_PAGE_MONITOR
+ 	REG("clear_refs", S_IWUSR, proc_clear_refs_operations),
+ 	REG("smaps",     S_IRUGO, proc_pid_smaps_operations),
+diff --git a/fs/proc/namespaces.c b/fs/proc/namespaces.c
+index dd2b35f78b09..cd1e130913f7 100644
+--- a/fs/proc/namespaces.c
++++ b/fs/proc/namespaces.c
+@@ -94,7 +94,7 @@ static struct dentry *proc_ns_instantiate(struct dentry *dentry,
+ 	struct inode *inode;
+ 	struct proc_inode *ei;
+ 
+-	inode = proc_pid_make_inode(dentry->d_sb, task, S_IFLNK | S_IRWXUGO);
++	inode = proc_pid_make_inode(dentry->d_sb, task, S_IFLNK | S_IRUGO);
+ 	if (!inode)
+ 		return ERR_PTR(-ENOENT);
+ 
 -- 
-  .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer - glaubitz@debian.org
-`. `'   Freie Universitaet Berlin - glaubitz@physik.fu-berlin.de
-   `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+2.23.0
