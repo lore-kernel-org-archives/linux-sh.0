@@ -1,45 +1,44 @@
-From: Yunsheng Lin <linyunsheng@huawei.com>
-Date: Mon, 16 Sep 2019 12:55:01 +0000
-Subject: Re: [PATCH v4] numa: make node_to_cpumask_map() NUMA_NO_NODE aware
-Message-Id: <c3a90839-703e-718a-a489-9905e52bbc46@huawei.com>
+From: Christophe Leroy <christophe.leroy@c-s.fr>
+Date: Fri, 13 Sep 2019 06:23:49 +0000
+Subject: [PATCH] mm/pgtable/debug: Fix test validating architecture page table helpers
+Message-Id: <1892b37d1fd9a4ed39e76c4b999b6556077201c0.1568355752.git.christophe.leroy@c-s.fr>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1568535656-158979-1-git-send-email-linyunsheng@huawei.com>
- <20190916084328.GC10231@dhcp22.suse.cz>
- <8df06e27-ad21-bf14-dbd6-cc8f5a274ec2@huawei.com>
- <20190916122359.GG10231@dhcp22.suse.cz>
-In-Reply-To: <20190916122359.GG10231@dhcp22.suse.cz>
+In-Reply-To: <ab0ca38b-1e4f-b636-f8b4-007a15903984@c-s.fr>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Michal Hocko <mhocko@kernel.org>
-Cc: catalin.marinas@arm.com, will@kernel.org, mingo@redhat.com, bp@alien8.de, rth@twiddle.net, ink@jurassic.park.msu.ru, mattst88@gmail.com, benh@kernel.crashing.org, paulus@samba.org, mpe@ellerman.id.au, heiko.carstens@de.ibm.com, gor@linux.ibm.com, borntraeger@de.ibm.com, ysato@users.sourceforge.jp, dalias@libc.org, davem@davemloft.net, ralf@linux-mips.org, paul.burton@mips.com, jhogan@kernel.org, jiaxun.yang@flygoat.com, chenhc@lemote.com, akpm@linux-foundation.org, rppt@linux.ibm.com, anshuman.khandual@arm.com, tglx@linutronix.de, cai@lca.pw, robin.murphy@arm.com, linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org, hpa@zytor.com, x86@kernel.org, dave.hansen@linux.intel.com, luto@kernel.org, peterz@infradead.org, len.brown@intel.com, axboe@kernel.dk, dledford@redhat.com, jeffrey.t.kirsher@intel.com, linux-alpha@vger.kernel.org, naveen.n.rao@linux.vnet.ibm.com, mwb@linux.vnet.ibm.com, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, tbogendoerfer@suse.de, linux-mips@vger.kernel.org, rafael@kernel.org, gregkh@linuxfoundation.org
+To: Anshuman Khandual <anshuman.khandual@arm.com>, linux-mm@kvack.org
+Cc: Mark Rutland <mark.rutland@arm.com>, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, James Hogan <jhogan@kernel.org>, Heiko Carstens <heiko.carstens@de.ibm.com>, Michal Hocko <mhocko@kernel.org>, Dave Hansen <dave.hansen@intel.com>, Paul Mackerras <paulus@samba.org>, sparclinux@vger.kernel.org, Dan Williams <dan.j.williams@intel.com>, linux-s390@vger.kernel.org, Jason Gunthorpe <jgg@ziepe.ca>, x86@kernel.org, Russell King - ARM Linux <linux@armlinux.org.uk>, Matthew Wilcox <willy@infradead.org>, Steven Price <Steven.Price@arm.com>, Tetsuo Handa <penguin-kernel@i-love.sakura.ne.jp>, Vlastimil Babka <vbabka@suse.cz>, linux-snps-arc@lists.infradead.org, Kees Cook <keescook@chromium.org>, Mark Brown <broonie@kernel.org>, "Kirill A . Shutemov" <kirill@shutemov.name>, Thomas Gleixner <tglx@linutronix.de>, Gerald Schaefer <gerald.schaefer@de.ibm.com>, linux-arm-kernel@lists.infradead.org, Sri Krishna chowdary <schowdary@nvidia.com>, Masahiro Yamada <yamada.masahiro@socionext.com>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Ard Biesheuvel <ard.biesheuvel@linaro.org>, linux-mips@vger.kernel.org, Ralf Baechle <ralf@linux-mips.org>, linux-kernel@vger.kernel.org, Paul Burton <paul.burton@mips.com>, Mike Rapoport <rppt@linux.vnet.ibm.com>, Vineet Gupta <vgupta@synopsys.com>, Martin Schwidefsky <schwidefsky@de.ibm.com>, Andrew Morton <akpm@linux-foundation.org>, linuxppc-dev@lists.ozlabs.org, "David S. Miller" <davem@davemloft.net>
 
-On 2019/9/16 20:23, Michal Hocko wrote:
-> On Mon 16-09-19 20:07:22, Yunsheng Lin wrote:
-> [...]
->>>> @@ -861,9 +861,12 @@ void numa_remove_cpu(int cpu)
->>>>   */
->>>>  const struct cpumask *cpumask_of_node(int node)
->>>>  {
->>>> -	if (node >= nr_node_ids) {
->>>> +	if (node = NUMA_NO_NODE)
->>>> +		return cpu_online_mask;
->>>> +
->>>> +	if ((unsigned int)node >= nr_node_ids) {
->>>>  		printk(KERN_WARNING
->>>> -			"cpumask_of_node(%d): node > nr_node_ids(%u)\n",
->>>> +			"cpumask_of_node(%d): node >= nr_node_ids(%u)\n",
->>>>  			node, nr_node_ids);
->>>>  		dump_stack();
->>>>  		return cpu_none_mask;
->>>
->>> Why do we need this?
->>
->> As the commit log says, the above cpumask_of_node() is for debugging,
->> it should catch other "node < 0" cases except NUMA_NO_NODE.
-> 
-> OK, I would just make it a separate patch.
+Fix build failure on powerpc.
 
-Ok, thanks.
+Fix preemption imbalance.
 
-> 
+Signed-off-by: Christophe Leroy <christophe.leroy@c-s.fr>
+---
+ mm/arch_pgtable_test.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/mm/arch_pgtable_test.c b/mm/arch_pgtable_test.c
+index 8b4a92756ad8..f2b3c9ec35fa 100644
+--- a/mm/arch_pgtable_test.c
++++ b/mm/arch_pgtable_test.c
+@@ -24,6 +24,7 @@
+ #include <linux/swap.h>
+ #include <linux/swapops.h>
+ #include <linux/sched/mm.h>
++#include <linux/highmem.h>
+ #include <asm/pgalloc.h>
+ #include <asm/pgtable.h>
+ 
+@@ -400,6 +401,8 @@ static int __init arch_pgtable_tests_init(void)
+ 	p4d_clear_tests(p4dp);
+ 	pgd_clear_tests(mm, pgdp);
+ 
++	pte_unmap(ptep);
++
+ 	pmd_populate_tests(mm, pmdp, saved_ptep);
+ 	pud_populate_tests(mm, pudp, saved_pmdp);
+ 	p4d_populate_tests(mm, p4dp, saved_pudp);
+-- 
+2.13.3
