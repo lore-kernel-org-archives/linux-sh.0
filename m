@@ -1,133 +1,212 @@
-From: Aleksa Sarai <cyphar@cyphar.com>
-Date: Wed, 18 Sep 2019 15:46:15 +0000
-Subject: Re: [PATCH v12 05/12] namei: obey trailing magic-link DAC permissions
-Message-Id: <20190918154615.suruy5v5xjftfwyl@yavin.microfocus.com>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="blplt4ksioniygek"
+From: Yunsheng Lin <linyunsheng@huawei.com>
+Date: Mon, 16 Sep 2019 13:28:01 +0000
+Subject: [PATCH v5] numa: make node_to_cpumask_map() NUMA_NO_NODE aware
+Message-Id: <1568640481-133352-1-git-send-email-linyunsheng@huawei.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190904201933.10736-1-cyphar@cyphar.com>
- <20190904201933.10736-6-cyphar@cyphar.com>
- <CAG48ez1_64249RdX6Nj_32YS+jhuXZBAd_ZL9ozggbSQy+cc-A@mail.gmail.com>
- <20190918135100.sdxdmdluq6wlwryv@yavin.microfocus.com>
-In-Reply-To: <20190918135100.sdxdmdluq6wlwryv@yavin.microfocus.com>
-To: Jann Horn <jannh@google.com>
-Cc: Al Viro <viro@zeniv.linux.org.uk>, Jeff Layton <jlayton@kernel.org>, "J. Bruce Fields" <bfields@fieldses.org>, Arnd Bergmann <arnd@arndb.de>, David Howells <dhowells@redhat.com>, Shuah Khan <shuah@kernel.org>, Shuah Khan <skhan@linuxfoundation.org>, Ingo Molnar <mingo@redhat.com>, Peter Zijlstra <peterz@infradead.org>, Christian Brauner <christian@brauner.io>, Andy Lutomirski <luto@kernel.org>, Eric Biederman <ebiederm@xmission.com>, Andrew Morton <akpm@linux-foundation.org>, Alexei Starovoitov <ast@kernel.org>, Kees Cook <keescook@chromium.org>, Tycho Andersen <tycho@tycho.ws>, David Drysdale <drysdale@google.com>, Chanho Min <chanho.min@lge.com>, Oleg Nesterov <oleg@redhat.com>, Rasmus Villemoes <linux@rasmusvillemoes.dk>A
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: catalin.marinas@arm.com, will@kernel.org, mingo@redhat.com, bp@alien8.de, rth@twiddle.net, ink@jurassic.park.msu.ru, mattst88@gmail.com, benh@kernel.crashing.org, paulus@samba.org, mpe@ellerman.id.au, heiko.carstens@de.ibm.com, gor@linux.ibm.com, borntraeger@de.ibm.com, ysato@users.sourceforge.jp, dalias@libc.org, davem@davemloft.net, ralf@linux-mips.org, paul.burton@mips.com, jhogan@kernel.org, jiaxun.yang@flygoat.com, chenhc@lemote.com
+Cc: akpm@linux-foundation.org, rppt@linux.ibm.com, anshuman.khandual@arm.com, tglx@linutronix.de, cai@lca.pw, robin.murphy@arm.com, linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org, hpa@zytor.com, x86@kernel.org, dave.hansen@linux.intel.com, luto@kernel.org, peterz@infradead.org, len.brown@intel.com, axboe@kernel.dk, dledford@redhat.com, jeffrey.t.kirsher@intel.com, linux-alpha@vger.kernel.org, naveen.n.rao@linux.vnet.ibm.com, mwb@linux.vnet.ibm.com, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, tbogendoerfer@suse.de, linux-mips@vger.kernel.org, rafael@kernel.org, mhocko@kernel.org, gregkh@linuxfoundation.org
 
+When passing the return value of dev_to_node() to cpumask_of_node()
+without checking if the device's node id is NUMA_NO_NODE, there is
+global-out-of-bounds detected by KASAN.
 
---blplt4ksioniygek
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+From the discussion [1], NUMA_NO_NODE really means no node affinity,
+which also means all cpus should be usable. So the cpumask_of_node()
+should always return all cpus online when user passes the node id as
+NUMA_NO_NODE, just like similar semantic that page allocator handles
+NUMA_NO_NODE.
 
-On 2019-09-18, Aleksa Sarai <cyphar@cyphar.com> wrote:
-> On 2019-09-17, Jann Horn <jannh@google.com> wrote:
-> > On Wed, Sep 4, 2019 at 10:21 PM Aleksa Sarai <cyphar@cyphar.com> wrote:
-> > > The ability for userspace to "re-open" file descriptors through
-> > > /proc/self/fd has been a very useful tool for all sorts of usecases
-> > > (container runtimes are one common example). However, the current
-> > > interface for doing this has resulted in some pretty subtle security
-> > > holes. Userspace can re-open a file descriptor with more permissions
-> > > than the original, which can result in cases such as /proc/$pid/exe
-> > > being re-opened O_RDWR at a later date even though (by definition)
-> > > /proc/$pid/exe cannot be opened for writing. When combined with O_PATH
-> > > the results can get even more confusing.
-> > [...]
-> > > Instead we have to restrict it in such a way that it doesn't break
-> > > (good) users but does block potential attackers. The solution applied=
- in
-> > > this patch is to restrict *re-opening* (not resolution through)
-> > > magic-links by requiring that mode of the link be obeyed. Normal
-> > > symlinks have modes of a+rwx but magic-links have other modes. These
-> > > magic-link modes were historically ignored during path resolution, but
-> > > they've now been re-purposed for more useful ends.
-> >=20
-> > Thanks for dealing with this issue!
-> >=20
-> > [...]
-> > > diff --git a/fs/namei.c b/fs/namei.c
-> > > index 209c51a5226c..54d57dad0f91 100644
-> > > --- a/fs/namei.c
-> > > +++ b/fs/namei.c
-> > > @@ -872,7 +872,7 @@ void nd_jump_link(struct path *path)
-> > >
-> > >         nd->path =3D *path;
-> > >         nd->inode =3D nd->path.dentry->d_inode;
-> > > -       nd->flags |=3D LOOKUP_JUMPED;
-> > > +       nd->flags |=3D LOOKUP_JUMPED | LOOKUP_MAGICLINK_JUMPED;
-> > >  }
-> > [...]
-> > > +static int trailing_magiclink(struct nameidata *nd, int acc_mode,
-> > > +                             fmode_t *opath_mask)
-> > > +{
-> > > +       struct inode *inode =3D nd->link_inode;
-> > > +       fmode_t upgrade_mask =3D 0;
-> > > +
-> > > +       /* Was the trailing_symlink() a magic-link? */
-> > > +       if (!(nd->flags & LOOKUP_MAGICLINK_JUMPED))
-> > > +               return 0;
-> > > +
-> > > +       /*
-> > > +        * Figure out the upgrade-mask of the link_inode. Since these=
- aren't
-> > > +        * strictly POSIX semantics we don't do an acl_permission_che=
-ck() here,
-> > > +        * so we only care that at least one bit is set for each upgr=
-ade-mode.
-> > > +        */
-> > > +       if (inode->i_mode & S_IRUGO)
-> > > +               upgrade_mask |=3D FMODE_PATH_READ;
-> > > +       if (inode->i_mode & S_IWUGO)
-> > > +               upgrade_mask |=3D FMODE_PATH_WRITE;
-> > > +       /* Restrict the O_PATH upgrade-mask of the caller. */
-> > > +       if (opath_mask)
-> > > +               *opath_mask &=3D upgrade_mask;
-> > > +       return may_open_magiclink(upgrade_mask, acc_mode);
-> > >  }
-> >=20
-> > This looks racy because entries in the file descriptor table can be
-> > switched out as long as task->files->file_lock isn't held. Unless I'm
-> > missing something, something like the following (untested) would
-> > bypass this restriction:
->=20
-> You're absolutely right -- good catch!
->=20
-> > Perhaps you could change nd_jump_link() to "void nd_jump_link(struct
-> > path *path, umode_t link_mode)", and let proc_pid_get_link() pass the
-> > link_mode through from an out-argument of .proc_get_link()? Then
-> > proc_fd_link() could grab the proper mode in a race-free manner. And
-> > nd_jump_link() could stash the mode in the nameidata.
->=20
-> This indeed does appear to be the simplest solution -- I'm currently
-> testing a variation of the patch you proposed (with a few extra bits to
-> deal with nd_jump_link and proc_get_link being used elsewhere).
->=20
-> I'll include this change (assuming it fixes the flaw you found) in the
-> v13 series I'll send around next week. Thanks, Jann!
+But we cannot really copy the page allocator logic. Simply because the
+page allocator doesn't enforce the near node affinity. It just picks it
+up as a preferred node but then it is free to fallback to any other numa
+node. This is not the case here and node_to_cpumask_map will only restrict
+to the particular node's cpus which would have really non deterministic
+behavior depending on where the code is executed. So in fact we really
+want to return cpu_online_mask for NUMA_NO_NODE.
 
-In case you're interested -- I've also included a selftest based on this
-attack in my series (though it uses CLONE_FILES so that we could also
-test O_EMPTYPATH, which wasn't affected because it didn't go through
-procfs and thus couldn't hit the "outdated inode->i_mode" problem).
+Some arches were already NUMA_NO_NODE aware, but they return cpu_all_mask,
+which should be identical with cpu_online_mask when those arches do not
+support cpu hotplug, this patch also changes them to return cpu_online_mask
+in order to be consistent and use NUMA_NO_NODE instead of "-1".
 
-The attack script succeeds around 20% of the time on the original
-patchset, and with the updated patchset it doesn't succeed in several
-hundred thousand attempts (which I've repeated a few times).
+Also there is a debugging version of node_to_cpumask_map() for x86 and
+arm64, which is only used when CONFIG_DEBUG_PER_CPU_MAPS is defined, this
+patch changes it to handle NUMA_NO_NODE as normal node_to_cpumask_map().
 
---=20
-Aleksa Sarai
-Senior Software Engineer (Containers)
-SUSE Linux GmbH
-<https://www.cyphar.com/>
+[1] https://lore.kernel.org/patchwork/patch/1125789/
+Signed-off-by: Yunsheng Lin <linyunsheng@huawei.com>
+Suggested-by: Michal Hocko <mhocko@kernel.org>
+Acked-by: Michal Hocko <mhocko@suse.com>
+---
+V5: Drop unsigned "fix" change for x86/arm64, and change comment log
+    according to Michal's comment.
+V4: Have all these changes in a single patch.
+V3: Change to only handle NUMA_NO_NODE, and return cpu_online_mask
+    for NUMA_NO_NODE case, and change the commit log to better justify
+    the change.
+V2: make the node id checking change to other arches too.
+---
+ arch/alpha/include/asm/topology.h                | 2 +-
+ arch/arm64/include/asm/numa.h                    | 3 +++
+ arch/arm64/mm/numa.c                             | 3 +++
+ arch/mips/include/asm/mach-ip27/topology.h       | 4 ++--
+ arch/mips/include/asm/mach-loongson64/topology.h | 4 +++-
+ arch/powerpc/include/asm/topology.h              | 6 +++---
+ arch/s390/include/asm/topology.h                 | 3 +++
+ arch/sparc/include/asm/topology_64.h             | 6 +++---
+ arch/x86/include/asm/topology.h                  | 3 +++
+ arch/x86/mm/numa.c                               | 3 +++
+ 10 files changed, 27 insertions(+), 10 deletions(-)
 
---blplt4ksioniygek
-Content-Type: application/pgp-signature; name="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iHUEABYIAB0WIQSxZm6dtfE8gxLLfYqdlLljIbnQEgUCXYJRRAAKCRCdlLljIbnQ
-Ep3WAP0cvG8YTD9aS1zuiIbFfMQLKt1nuxBciHwn7LaCHk9Z0QEAtNdPaxztVO/p
-utsBd24Q6vZYzx6vj8OnW5nGpjaLpQA=
-=rL8c
------END PGP SIGNATURE-----
-
---blplt4ksioniygek--
+diff --git a/arch/alpha/include/asm/topology.h b/arch/alpha/include/asm/topology.h
+index 5a77a40..836c9e2 100644
+--- a/arch/alpha/include/asm/topology.h
++++ b/arch/alpha/include/asm/topology.h
+@@ -31,7 +31,7 @@ static const struct cpumask *cpumask_of_node(int node)
+ 	int cpu;
+ 
+ 	if (node = NUMA_NO_NODE)
+-		return cpu_all_mask;
++		return cpu_online_mask;
+ 
+ 	cpumask_clear(&node_to_cpumask_map[node]);
+ 
+diff --git a/arch/arm64/include/asm/numa.h b/arch/arm64/include/asm/numa.h
+index 626ad01..c8a4b31 100644
+--- a/arch/arm64/include/asm/numa.h
++++ b/arch/arm64/include/asm/numa.h
+@@ -25,6 +25,9 @@ const struct cpumask *cpumask_of_node(int node);
+ /* Returns a pointer to the cpumask of CPUs on Node 'node'. */
+ static inline const struct cpumask *cpumask_of_node(int node)
+ {
++	if (node = NUMA_NO_NODE)
++		return cpu_online_mask;
++
+ 	return node_to_cpumask_map[node];
+ }
+ #endif
+diff --git a/arch/arm64/mm/numa.c b/arch/arm64/mm/numa.c
+index 4f241cc..f57202d 100644
+--- a/arch/arm64/mm/numa.c
++++ b/arch/arm64/mm/numa.c
+@@ -46,6 +46,9 @@ EXPORT_SYMBOL(node_to_cpumask_map);
+  */
+ const struct cpumask *cpumask_of_node(int node)
+ {
++	if (node = NUMA_NO_NODE)
++		return cpu_online_mask;
++
+ 	if (WARN_ON(node >= nr_node_ids))
+ 		return cpu_none_mask;
+ 
+diff --git a/arch/mips/include/asm/mach-ip27/topology.h b/arch/mips/include/asm/mach-ip27/topology.h
+index 965f079..04505e6 100644
+--- a/arch/mips/include/asm/mach-ip27/topology.h
++++ b/arch/mips/include/asm/mach-ip27/topology.h
+@@ -15,8 +15,8 @@ struct cpuinfo_ip27 {
+ extern struct cpuinfo_ip27 sn_cpu_info[NR_CPUS];
+ 
+ #define cpu_to_node(cpu)	(sn_cpu_info[(cpu)].p_nodeid)
+-#define cpumask_of_node(node)	((node) = -1 ?				\
+-				 cpu_all_mask :				\
++#define cpumask_of_node(node)	((node) = NUMA_NO_NODE ?		\
++				 cpu_online_mask :			\
+ 				 &hub_data(node)->h_cpus)
+ struct pci_bus;
+ extern int pcibus_to_node(struct pci_bus *);
+diff --git a/arch/mips/include/asm/mach-loongson64/topology.h b/arch/mips/include/asm/mach-loongson64/topology.h
+index 7ff819a..e78daa6 100644
+--- a/arch/mips/include/asm/mach-loongson64/topology.h
++++ b/arch/mips/include/asm/mach-loongson64/topology.h
+@@ -5,7 +5,9 @@
+ #ifdef CONFIG_NUMA
+ 
+ #define cpu_to_node(cpu)	(cpu_logical_map(cpu) >> 2)
+-#define cpumask_of_node(node)	(&__node_data[(node)]->cpumask)
++#define cpumask_of_node(node)	((node) = NUMA_NO_NODE ?		\
++				 cpu_online_mask :			\
++				 &__node_data[(node)]->cpumask)
+ 
+ struct pci_bus;
+ extern int pcibus_to_node(struct pci_bus *);
+diff --git a/arch/powerpc/include/asm/topology.h b/arch/powerpc/include/asm/topology.h
+index 2f7e1ea..309f847 100644
+--- a/arch/powerpc/include/asm/topology.h
++++ b/arch/powerpc/include/asm/topology.h
+@@ -17,9 +17,9 @@ struct device_node;
+ 
+ #include <asm/mmzone.h>
+ 
+-#define cpumask_of_node(node) ((node) = -1 ?				\
+-			       cpu_all_mask :				\
+-			       node_to_cpumask_map[node])
++#define cpumask_of_node(node)	((node) = NUMA_NO_NODE ?		\
++				 cpu_online_mask :			\
++				 node_to_cpumask_map[node])
+ 
+ struct pci_bus;
+ #ifdef CONFIG_PCI
+diff --git a/arch/s390/include/asm/topology.h b/arch/s390/include/asm/topology.h
+index cca406f..1bd2e73 100644
+--- a/arch/s390/include/asm/topology.h
++++ b/arch/s390/include/asm/topology.h
+@@ -78,6 +78,9 @@ static inline int cpu_to_node(int cpu)
+ #define cpumask_of_node cpumask_of_node
+ static inline const struct cpumask *cpumask_of_node(int node)
+ {
++	if (node = NUMA_NO_NODE)
++		return cpu_online_mask;
++
+ 	return &node_to_cpumask_map[node];
+ }
+ 
+diff --git a/arch/sparc/include/asm/topology_64.h b/arch/sparc/include/asm/topology_64.h
+index 34c628a..8c29357 100644
+--- a/arch/sparc/include/asm/topology_64.h
++++ b/arch/sparc/include/asm/topology_64.h
+@@ -11,9 +11,9 @@ static inline int cpu_to_node(int cpu)
+ 	return numa_cpu_lookup_table[cpu];
+ }
+ 
+-#define cpumask_of_node(node) ((node) = -1 ?				\
+-			       cpu_all_mask :				\
+-			       &numa_cpumask_lookup_table[node])
++#define cpumask_of_node(node)	((node) = NUMA_NO_NODE ?		\
++				 cpu_online_mask :			\
++				 &numa_cpumask_lookup_table[node])
+ 
+ struct pci_bus;
+ #ifdef CONFIG_PCI
+diff --git a/arch/x86/include/asm/topology.h b/arch/x86/include/asm/topology.h
+index 4b14d23..7fa82e1 100644
+--- a/arch/x86/include/asm/topology.h
++++ b/arch/x86/include/asm/topology.h
+@@ -69,6 +69,9 @@ extern const struct cpumask *cpumask_of_node(int node);
+ /* Returns a pointer to the cpumask of CPUs on Node 'node'. */
+ static inline const struct cpumask *cpumask_of_node(int node)
+ {
++	if (node = NUMA_NO_NODE)
++		return cpu_online_mask;
++
+ 	return node_to_cpumask_map[node];
+ }
+ #endif
+diff --git a/arch/x86/mm/numa.c b/arch/x86/mm/numa.c
+index e6dad60..84b28ef 100644
+--- a/arch/x86/mm/numa.c
++++ b/arch/x86/mm/numa.c
+@@ -861,6 +861,9 @@ void numa_remove_cpu(int cpu)
+  */
+ const struct cpumask *cpumask_of_node(int node)
+ {
++	if (node = NUMA_NO_NODE)
++		return cpu_online_mask;
++
+ 	if (node >= nr_node_ids) {
+ 		printk(KERN_WARNING
+ 			"cpumask_of_node(%d): node > nr_node_ids(%u)\n",
+-- 
+2.8.1
