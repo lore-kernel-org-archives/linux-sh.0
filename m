@@ -1,31 +1,144 @@
-From: Paul Burton <paul.burton@mips.com>
-Date: Tue, 03 Sep 2019 08:57:00 +0000
-Subject: Re: [PATCH 04/26] mips: remove ioremap_cachable
-Message-Id: <MWHPR2201MB1277E4E8214F6E50E5EC9BFCC1B90@MWHPR2201MB1277.namprd22.prod.outlook.com>
+From: Yunsheng Lin <linyunsheng@huawei.com>
+Date: Tue, 17 Sep 2019 12:48:54 +0000
+Subject: [PATCH v6] numa: make node_to_cpumask_map() NUMA_NO_NODE aware
+Message-Id: <1568724534-146242-1-git-send-email-linyunsheng@huawei.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190817073253.27819-5-hch@lst.de>
-In-Reply-To: <20190817073253.27819-5-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Christoph Hellwig <hch@lst.de>
-Cc: Arnd Bergmann <arnd@arndb.de>, Guo Ren <guoren@kernel.org>, Michal Simek <monstr@monstr.eu>, Greentime Hu <green.hu@gmail.com>, Vincent Chen <deanbo422@gmail.com>, Guan Xuetao <gxt@pku.edu.cn>, "x86@kernel.org" <x86@kernel.org>, "linux-alpha@vger.kernel.org" <linux-alpha@vger.kernel.org>, "linux-snps-arc@lists.infradead.org" <linux-snps-arc@lists.infradead.org>, "linux-arm-kernel@lists.infradead.org" <linux-arm-kernel@lists.infradead.org>, "linux-hexagon@vger.kernel.org" <linux-hexagon@vger.kernel.org>, "linux-ia64@vger.kernel.org" <linux-ia64@vger.kernel.org>, "linux-m68k@lists.linux-m68k.org" <linux-m68k@lists.linux-m68k.org>, "linux-mips@vger.kernel.org" <linux-mips@vger.kernel.org>, "nios2-dev@lists.rocketboards.org" <nios2-dev@lists.rocketboards.org>
+To: catalin.marinas@arm.com, will@kernel.org, mingo@redhat.com, bp@alien8.de, rth@twiddle.net, ink@jurassic.park.msu.ru, mattst88@gmail.com, benh@kernel.crashing.org, paulus@samba.org, mpe@ellerman.id.au, heiko.carstens@de.ibm.com, gor@linux.ibm.com, borntraeger@de.ibm.com, ysato@users.sourceforge.jp, dalias@libc.org, davem@davemloft.net, ralf@linux-mips.org, paul.burton@mips.com, jhogan@kernel.org, jiaxun.yang@flygoat.com, chenhc@lemote.com
+Cc: akpm@linux-foundation.org, rppt@linux.ibm.com, anshuman.khandual@arm.com, tglx@linutronix.de, cai@lca.pw, robin.murphy@arm.com, linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org, hpa@zytor.com, x86@kernel.org, dave.hansen@linux.intel.com, luto@kernel.org, peterz@infradead.org, len.brown@intel.com, axboe@kernel.dk, dledford@redhat.com, jeffrey.t.kirsher@intel.com, linux-alpha@vger.kernel.org, naveen.n.rao@linux.vnet.ibm.com, mwb@linux.vnet.ibm.com, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, tbogendoerfer@suse.de, linux-mips@vger.kernel.org, rafael@kernel.org, mhocko@kernel.org, gregkh@linuxfoundation.org
 
-Hello,
+When passing the return value of dev_to_node() to cpumask_of_node()
+without checking if the device's node id is NUMA_NO_NODE, there is
+global-out-of-bounds detected by KASAN.
 
-Christoph Hellwig wrote:
-> Just define ioremap_cache directly.
+From the discussion [1], NUMA_NO_NODE really means no node affinity,
+which also means all cpus should be usable. So the cpumask_of_node()
+should always return all cpus online when user passes the node id as
+NUMA_NO_NODE, just like similar semantic that page allocator handles
+NUMA_NO_NODE.
 
-Applied to mips-next.
+But we cannot really copy the page allocator logic. Simply because the
+page allocator doesn't enforce the near node affinity. It just picks it
+up as a preferred node but then it is free to fallback to any other numa
+node. This is not the case here and node_to_cpumask_map will only restrict
+to the particular node's cpus which would have really non deterministic
+behavior depending on where the code is executed. So in fact we really
+want to return cpu_online_mask for NUMA_NO_NODE.
 
-> commit 60af0d94cc37
-> https://git.kernel.org/mips/c/60af0d94cc37
-> 
-> Signed-off-by: Christoph Hellwig <hch@lst.de>
-> Signed-off-by: Paul Burton <paul.burton@mips.com>
+Also there is a debugging version of node_to_cpumask_map() for x86 and
+arm64, which is only used when CONFIG_DEBUG_PER_CPU_MAPS is defined, this
+patch changes it to handle NUMA_NO_NODE as normal node_to_cpumask_map().
 
-Thanks,
-    Paul
+[1] https://lore.kernel.org/patchwork/patch/1125789/
+Signed-off-by: Yunsheng Lin <linyunsheng@huawei.com>
+Suggested-by: Michal Hocko <mhocko@kernel.org>
+Acked-by: Michal Hocko <mhocko@suse.com>
+---
+V6: Drop the cpu_all_mask -> cpu_online_mask change for it seems a
+    little controversial, may need deeper investigation, and rebased
+    on the latest linux-next.
+V5: Drop unsigned "fix" change for x86/arm64, and change comment log
+    according to Michal's comment.
+V4: Have all these changes in a single patch.
+V3: Change to only handle NUMA_NO_NODE, and return cpu_online_mask
+    for NUMA_NO_NODE case, and change the commit log to better justify
+    the change.
+V2: make the node id checking change to other arches too.
+---
+ arch/arm64/include/asm/numa.h                    | 3 +++
+ arch/arm64/mm/numa.c                             | 3 +++
+ arch/mips/include/asm/mach-loongson64/topology.h | 4 +++-
+ arch/s390/include/asm/topology.h                 | 3 +++
+ arch/x86/include/asm/topology.h                  | 3 +++
+ arch/x86/mm/numa.c                               | 3 +++
+ 6 files changed, 18 insertions(+), 1 deletion(-)
 
-[ This message was auto-generated; if you believe anything is incorrect
-  then please email paul.burton@mips.com to report it. ]
+diff --git a/arch/arm64/include/asm/numa.h b/arch/arm64/include/asm/numa.h
+index 626ad01..c8a4b31 100644
+--- a/arch/arm64/include/asm/numa.h
++++ b/arch/arm64/include/asm/numa.h
+@@ -25,6 +25,9 @@ const struct cpumask *cpumask_of_node(int node);
+ /* Returns a pointer to the cpumask of CPUs on Node 'node'. */
+ static inline const struct cpumask *cpumask_of_node(int node)
+ {
++	if (node = NUMA_NO_NODE)
++		return cpu_online_mask;
++
+ 	return node_to_cpumask_map[node];
+ }
+ #endif
+diff --git a/arch/arm64/mm/numa.c b/arch/arm64/mm/numa.c
+index 4decf16..5ae7eea 100644
+--- a/arch/arm64/mm/numa.c
++++ b/arch/arm64/mm/numa.c
+@@ -46,6 +46,9 @@ EXPORT_SYMBOL(node_to_cpumask_map);
+  */
+ const struct cpumask *cpumask_of_node(int node)
+ {
++	if (node = NUMA_NO_NODE)
++		return cpu_online_mask;
++
+ 	if (WARN_ON(node >= nr_node_ids))
+ 		return cpu_none_mask;
+ 
+diff --git a/arch/mips/include/asm/mach-loongson64/topology.h b/arch/mips/include/asm/mach-loongson64/topology.h
+index 7ff819a..e78daa6 100644
+--- a/arch/mips/include/asm/mach-loongson64/topology.h
++++ b/arch/mips/include/asm/mach-loongson64/topology.h
+@@ -5,7 +5,9 @@
+ #ifdef CONFIG_NUMA
+ 
+ #define cpu_to_node(cpu)	(cpu_logical_map(cpu) >> 2)
+-#define cpumask_of_node(node)	(&__node_data[(node)]->cpumask)
++#define cpumask_of_node(node)	((node) = NUMA_NO_NODE ?		\
++				 cpu_online_mask :			\
++				 &__node_data[(node)]->cpumask)
+ 
+ struct pci_bus;
+ extern int pcibus_to_node(struct pci_bus *);
+diff --git a/arch/s390/include/asm/topology.h b/arch/s390/include/asm/topology.h
+index cca406f..1bd2e73 100644
+--- a/arch/s390/include/asm/topology.h
++++ b/arch/s390/include/asm/topology.h
+@@ -78,6 +78,9 @@ static inline int cpu_to_node(int cpu)
+ #define cpumask_of_node cpumask_of_node
+ static inline const struct cpumask *cpumask_of_node(int node)
+ {
++	if (node = NUMA_NO_NODE)
++		return cpu_online_mask;
++
+ 	return &node_to_cpumask_map[node];
+ }
+ 
+diff --git a/arch/x86/include/asm/topology.h b/arch/x86/include/asm/topology.h
+index 4b14d23..7fa82e1 100644
+--- a/arch/x86/include/asm/topology.h
++++ b/arch/x86/include/asm/topology.h
+@@ -69,6 +69,9 @@ extern const struct cpumask *cpumask_of_node(int node);
+ /* Returns a pointer to the cpumask of CPUs on Node 'node'. */
+ static inline const struct cpumask *cpumask_of_node(int node)
+ {
++	if (node = NUMA_NO_NODE)
++		return cpu_online_mask;
++
+ 	return node_to_cpumask_map[node];
+ }
+ #endif
+diff --git a/arch/x86/mm/numa.c b/arch/x86/mm/numa.c
+index 4123100e..9859acb 100644
+--- a/arch/x86/mm/numa.c
++++ b/arch/x86/mm/numa.c
+@@ -861,6 +861,9 @@ void numa_remove_cpu(int cpu)
+  */
+ const struct cpumask *cpumask_of_node(int node)
+ {
++	if (node = NUMA_NO_NODE)
++		return cpu_online_mask;
++
+ 	if ((unsigned)node >= nr_node_ids) {
+ 		printk(KERN_WARNING
+ 			"cpumask_of_node(%d): (unsigned)node >= nr_node_ids(%u)\n",
+-- 
+2.8.1
