@@ -1,105 +1,230 @@
 From: Aleksa Sarai <cyphar@cyphar.com>
-Date: Mon, 30 Sep 2019 22:41:59 +0000
-Subject: Re: [PATCH v13 7/9] open: openat2(2) syscall
-Message-Id: <20190930224159.gp2hqm57qxlm2eat@yavin.dot.cyphar.com>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="t4elbyhlilsmpd4b"
+Date: Mon, 30 Sep 2019 18:33:10 +0000
+Subject: [PATCH v13 3/9] open: O_EMPTYPATH: procfs-less file descriptor re-opening
+Message-Id: <20190930183316.10190-4-cyphar@cyphar.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190930183316.10190-8-cyphar@cyphar.com>
- <201910010404.WLqR1mUW%lkp@intel.com>
-In-Reply-To: <201910010404.WLqR1mUW%lkp@intel.com>
-To: kbuild test robot <lkp@intel.com>
-Cc: kbuild-all@01.org, Al Viro <viro@zeniv.linux.org.uk>, Jeff Layton <jlayton@kernel.org>, "J. Bruce Fields" <bfields@fieldses.org>, Arnd Bergmann <arnd@arndb.de>, David Howells <dhowells@redhat.com>, Shuah Khan <shuah@kernel.org>, Shuah Khan <skhan@linuxfoundation.org>, Ingo Molnar <mingo@redhat.com>, Peter Zijlstra <peterz@infradead.org>, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, Alexander Shishkin <alexander.shishkin@linux.intel.com>, Rasmus Villemoes <linux@rasmusvillemoes.dk>, Alexei Starovoitov <ast@kernel.org>, linux-kernel@vger.kernel.org, linux-kselftest@vger.kernel.org, sparclinux@vger.kernel.org, Jiri Olsa <jolsa@redhat.com>, linux-arch@vger.kernel.org, linux-s390@vger.kernel.org, Tycho Andersen <tycho@tycho.ws>, Aleksa Sarai <asarai@suse>
+References: <20190930183316.10190-1-cyphar@cyphar.com>
+In-Reply-To: <20190930183316.10190-1-cyphar@cyphar.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Al Viro <viro@zeniv.linux.org.uk>, Jeff Layton <jlayton@kernel.org>, "J. Bruce Fields" <bfields@fieldses.org>, Arnd Bergmann <arnd@arndb.de>, David Howells <dhowells@redhat.com>, Shuah Khan <shuah@kernel.org>, Shuah Khan <skhan@linuxfoundation.org>, Ingo Molnar <mingo@redhat.com>, Peter Zijlstra <peterz@infradead.org>
+Cc: linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, Alexander Shishkin <alexander.shishkin@linux.intel.com>, Rasmus Villemoes <linux@rasmusvillemoes.dk>, Alexei Starovoitov <ast@kernel.org>, linux-kernel@vger.kernel.org, linux-kselftest@vger.kernel.org, sparclinux@vger.kernel.org, Jiri Olsa <jolsa@redhat.com>, linux-arch@vger.kernel.org, linux-s390@vger.kernel.org, Tycho Andersen <tycho@tycho.ws>, Aleksa Sarai <asarai@suse.de>, linux-arm-kernel@lists.infradead.org, linux-mips@vger.kernel.org, linux-xtensa@linux-xtensa.org, Kees Cook <keescook@chromium.org>, Jann Horn <jannh@google.com>, linuxppc-dev@lists.ozlabs.org, Aleksa Sarai <cyphar@cyphar.com>, Andy Lutomirski <luto@kernel.org>, Namhyung Kim <namhyung@kernel.org>, David Drysdale <drysdale@google.com>, Christian Brauner <christian@brauner.io>, libc-alpha@sourceware.org, linux-parisc@vger.kernel.org, linux-m68k@li
 
+Userspace has made use of /proc/self/fd very liberally to allow for
+descriptors to be re-opened. There are a wide variety of uses for this
+feature, but it has always required constructing a pathname and could
+not be done without procfs mounted. The obvious solution for this is to
+extend openat(2) to have an AT_EMPTY_PATH-equivalent -- O_EMPTYPATH.
 
---t4elbyhlilsmpd4b
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Now that descriptor re-opening has been made safe through the new
+magic-link resolution restrictions, we can replicate these restrictions
+for O_EMPTYPATH. In particular, we only allow "upgrading" the file
+descriptor if the corresponding FMODE_PATH_* bit is set (or the
+FMODE_{READ,WRITE} cases for non-O_PATH file descriptors).
 
-On 2019-10-01, kbuild test robot <lkp@intel.com> wrote:
-> Hi Aleksa,
->=20
-> Thank you for the patch! Yet something to improve:
->=20
-> [auto build test ERROR on linus/master]
-> [cannot apply to v5.4-rc1 next-20190930]
-> [if your patch is applied to the wrong git tree, please drop us a note to=
- help
-> improve the system. BTW, we also suggest to use '--base' option to specif=
-y the
-> base tree in git format-patch, please see https://stackoverflow.com/a/374=
-06982]
+When doing openat(O_EMPTYPATH|O_PATH), O_PATH takes precedence and
+O_EMPTYPATH is ignored. Very few users ever have a need to O_PATH
+re-open an existing file descriptor, and so accommodating them at the
+expense of further complicating O_PATH makes little sense. Ultimately,
+if users ask for this we can always add RESOLVE_EMPTY_PATH to
+resolveat(2) in the future.
 
-I forgot to include --base to signify this series depends on the
-copy_struct_from_user() one. I'll include it in the next version.
+Signed-off-by: Aleksa Sarai <cyphar@cyphar.com>
+---
+ arch/alpha/include/uapi/asm/fcntl.h  |  1 +
+ arch/parisc/include/uapi/asm/fcntl.h | 39 ++++++++++++++--------------
+ arch/sparc/include/uapi/asm/fcntl.h  |  1 +
+ fs/fcntl.c                           |  2 +-
+ fs/namei.c                           | 20 ++++++++++++++
+ fs/open.c                            |  7 ++++-
+ include/linux/fcntl.h                |  2 +-
+ include/uapi/asm-generic/fcntl.h     |  4 +++
+ 8 files changed, 54 insertions(+), 22 deletions(-)
 
-> url:    https://github.com/0day-ci/linux/commits/Aleksa-Sarai/namei-opena=
-t2-2-path-resolution-restrictions/20191001-025628
-> config: i386-defconfig (attached as .config)
-> compiler: gcc-7 (Debian 7.4.0-13) 7.4.0
-> reproduce:
->         # save the attached .config to linux build tree
->         make ARCH=3Di386=20
->=20
-> If you fix the issue, kindly add following tag
-> Reported-by: kbuild test robot <lkp@intel.com>
->=20
-> All errors (new ones prefixed by >>):
->=20
->    fs/open.c: In function '__do_sys_openat2':
-> >> fs/open.c:1173:8: error: implicit declaration of function 'copy_struct=
-_from_user'; did you mean 'copy_siginfo_from_user'? [-Werror=3Dimplicit-fun=
-ction-declaration]
->      err =3D copy_struct_from_user(&tmp, sizeof(tmp), how, usize);
->            ^~~~~~~~~~~~~~~~~~~~~
->            copy_siginfo_from_user
->    cc1: some warnings being treated as errors
->=20
-> vim +1173 fs/open.c
->=20
->   1163=09
->   1164	SYSCALL_DEFINE4(openat2, int, dfd, const char __user *, filename,
->   1165			const struct open_how __user *, how, size_t, usize)
->   1166	{
->   1167		int err;
->   1168		struct open_how tmp;
->   1169=09
->   1170		if (unlikely(usize < OPEN_HOW_SIZE_VER0))
->   1171			return -EINVAL;
->   1172=09
-> > 1173		err =3D copy_struct_from_user(&tmp, sizeof(tmp), how, usize);
->   1174		if (err)
->   1175			return err;
->   1176=09
->   1177		if (force_o_largefile())
->   1178			tmp.flags |=3D O_LARGEFILE;
->   1179=09
->   1180		return do_sys_open(dfd, filename, &tmp);
->   1181	}
->   1182=09
->=20
-> ---
-> 0-DAY kernel test infrastructure                Open Source Technology Ce=
-nter
-> https://lists.01.org/pipermail/kbuild-all                   Intel Corpora=
-tion
-
---=20
-Aleksa Sarai
-Senior Software Engineer (Containers)
-SUSE Linux GmbH
-<https://www.cyphar.com/>
-
---t4elbyhlilsmpd4b
-Content-Type: application/pgp-signature; name="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iHUEABYIAB0WIQSxZm6dtfE8gxLLfYqdlLljIbnQEgUCXZKEtAAKCRCdlLljIbnQ
-EmxJAQDTSUj176CMMvs56b+zPL9VCZGAIFkQ+0fXCW8y6GyasAD/d8NBlZ2zmc9b
-DdtZcltEmeWc0Rd4LR1wAUrHajuvTAU=
-=sSPC
------END PGP SIGNATURE-----
-
---t4elbyhlilsmpd4b--
+diff --git a/arch/alpha/include/uapi/asm/fcntl.h b/arch/alpha/include/uapi/asm/fcntl.h
+index 50bdc8e8a271..1f879bade68b 100644
+--- a/arch/alpha/include/uapi/asm/fcntl.h
++++ b/arch/alpha/include/uapi/asm/fcntl.h
+@@ -34,6 +34,7 @@
+ 
+ #define O_PATH		040000000
+ #define __O_TMPFILE	0100000000
++#define O_EMPTYPATH	0200000000
+ 
+ #define F_GETLK		7
+ #define F_SETLK		8
+diff --git a/arch/parisc/include/uapi/asm/fcntl.h b/arch/parisc/include/uapi/asm/fcntl.h
+index 03ce20e5ad7d..5d709058a76f 100644
+--- a/arch/parisc/include/uapi/asm/fcntl.h
++++ b/arch/parisc/include/uapi/asm/fcntl.h
+@@ -2,26 +2,27 @@
+ #ifndef _PARISC_FCNTL_H
+ #define _PARISC_FCNTL_H
+ 
+-#define O_APPEND	000000010
+-#define O_BLKSEEK	000000100 /* HPUX only */
+-#define O_CREAT		000000400 /* not fcntl */
+-#define O_EXCL		000002000 /* not fcntl */
+-#define O_LARGEFILE	000004000
+-#define __O_SYNC	000100000
++#define O_APPEND	0000000010
++#define O_BLKSEEK	0000000100 /* HPUX only */
++#define O_CREAT		0000000400 /* not fcntl */
++#define O_EXCL		0000002000 /* not fcntl */
++#define O_LARGEFILE	0000004000
++#define __O_SYNC	0000100000
+ #define O_SYNC		(__O_SYNC|O_DSYNC)
+-#define O_NONBLOCK	000200004 /* HPUX has separate NDELAY & NONBLOCK */
+-#define O_NOCTTY	000400000 /* not fcntl */
+-#define O_DSYNC		001000000 /* HPUX only */
+-#define O_RSYNC		002000000 /* HPUX only */
+-#define O_NOATIME	004000000
+-#define O_CLOEXEC	010000000 /* set close_on_exec */
+-
+-#define O_DIRECTORY	000010000 /* must be a directory */
+-#define O_NOFOLLOW	000000200 /* don't follow links */
+-#define O_INVISIBLE	004000000 /* invisible I/O, for DMAPI/XDSM */
+-
+-#define O_PATH		020000000
+-#define __O_TMPFILE	040000000
++#define O_NONBLOCK	0000200004 /* HPUX has separate NDELAY & NONBLOCK */
++#define O_NOCTTY	0000400000 /* not fcntl */
++#define O_DSYNC		0001000000 /* HPUX only */
++#define O_RSYNC		0002000000 /* HPUX only */
++#define O_NOATIME	0004000000
++#define O_CLOEXEC	0010000000 /* set close_on_exec */
++
++#define O_DIRECTORY	0000010000 /* must be a directory */
++#define O_NOFOLLOW	0000000200 /* don't follow links */
++#define O_INVISIBLE	0004000000 /* invisible I/O, for DMAPI/XDSM */
++
++#define O_PATH		0020000000
++#define __O_TMPFILE	0040000000
++#define O_EMPTYPATH	0100000000
+ 
+ #define F_GETLK64	8
+ #define F_SETLK64	9
+diff --git a/arch/sparc/include/uapi/asm/fcntl.h b/arch/sparc/include/uapi/asm/fcntl.h
+index 67dae75e5274..dc86c9eaf950 100644
+--- a/arch/sparc/include/uapi/asm/fcntl.h
++++ b/arch/sparc/include/uapi/asm/fcntl.h
+@@ -37,6 +37,7 @@
+ 
+ #define O_PATH		0x1000000
+ #define __O_TMPFILE	0x2000000
++#define O_EMPTYPATH	0x4000000
+ 
+ #define F_GETOWN	5	/*  for sockets. */
+ #define F_SETOWN	6	/*  for sockets. */
+diff --git a/fs/fcntl.c b/fs/fcntl.c
+index 3d40771e8e7c..4cf05a2fd162 100644
+--- a/fs/fcntl.c
++++ b/fs/fcntl.c
+@@ -1031,7 +1031,7 @@ static int __init fcntl_init(void)
+ 	 * Exceptions: O_NONBLOCK is a two bit define on parisc; O_NDELAY
+ 	 * is defined as O_NONBLOCK on some platforms and not on others.
+ 	 */
+-	BUILD_BUG_ON(21 - 1 /* for O_RDONLY being 0 */ !+	BUILD_BUG_ON(22 - 1 /* for O_RDONLY being 0 */ ! 		HWEIGHT32(
+ 			(VALID_OPEN_FLAGS & ~(O_NONBLOCK | O_NDELAY)) |
+ 			__FMODE_EXEC | __FMODE_NONOTIFY));
+diff --git a/fs/namei.c b/fs/namei.c
+index 0e3a47e6f12c..bfeac55b23b7 100644
+--- a/fs/namei.c
++++ b/fs/namei.c
+@@ -3567,6 +3567,24 @@ static int trailing_magiclink(struct nameidata *nd, int acc_mode,
+ 	return may_open_magiclink(upgrade_mask, acc_mode);
+ }
+ 
++static int do_emptypath(struct nameidata *nd, const struct open_flags *op,
++			struct file *file)
++{
++	int error;
++	/* We don't support AT_FDCWD (since O_PATH is disallowed here). */
++	struct fd f = fdget_raw(nd->dfd);
++
++	if (!f.file)
++		return -EBADF;
++
++	/* Apply trailing_magiclink()-like restrictions. */
++	error = may_open_magiclink(f.file->f_mode, op->acc_mode);
++	if (!error)
++		error = vfs_open(&f.file->f_path, file);
++	fdput(f);
++	return error;
++}
++
+ static struct file *path_openat(struct nameidata *nd,
+ 			const struct open_flags *op, unsigned flags)
+ {
+@@ -3579,6 +3597,8 @@ static struct file *path_openat(struct nameidata *nd,
+ 
+ 	if (unlikely(file->f_flags & __O_TMPFILE)) {
+ 		error = do_tmpfile(nd, flags, op, file);
++	} else if (unlikely(file->f_flags & O_EMPTYPATH)) {
++		error = do_emptypath(nd, op, file);
+ 	} else if (unlikely(file->f_flags & O_PATH)) {
+ 		/* Inlined path_lookupat() with a trailing_magiclink() check. */
+ 		fmode_t opath_mask = op->opath_mask;
+diff --git a/fs/open.c b/fs/open.c
+index 44704f9184cc..a45fd4cbda1f 100644
+--- a/fs/open.c
++++ b/fs/open.c
+@@ -1023,6 +1023,8 @@ static inline int build_open_flags(int flags, umode_t mode, struct open_flags *o
+ 		lookup_flags |= LOOKUP_DIRECTORY;
+ 	if (!(flags & O_NOFOLLOW))
+ 		lookup_flags |= LOOKUP_FOLLOW;
++	if (flags & O_EMPTYPATH)
++		lookup_flags |= LOOKUP_EMPTY;
+ 	op->lookup_flags = lookup_flags;
+ 	return 0;
+ }
+@@ -1084,14 +1086,17 @@ long do_sys_open(int dfd, const char __user *filename, int flags, umode_t mode)
+ {
+ 	struct open_flags op;
+ 	int fd = build_open_flags(flags, mode, &op);
++	int empty = 0;
+ 	struct filename *tmp;
+ 
+ 	if (fd)
+ 		return fd;
+ 
+-	tmp = getname(filename);
++	tmp = getname_flags(filename, op.lookup_flags, &empty);
+ 	if (IS_ERR(tmp))
+ 		return PTR_ERR(tmp);
++	if (!empty)
++		op.open_flag &= ~O_EMPTYPATH;
+ 
+ 	fd = get_unused_fd_flags(flags);
+ 	if (fd >= 0) {
+diff --git a/include/linux/fcntl.h b/include/linux/fcntl.h
+index d019df946cb2..2868ae6c8fc1 100644
+--- a/include/linux/fcntl.h
++++ b/include/linux/fcntl.h
+@@ -9,7 +9,7 @@
+ 	(O_RDONLY | O_WRONLY | O_RDWR | O_CREAT | O_EXCL | O_NOCTTY | O_TRUNC | \
+ 	 O_APPEND | O_NDELAY | O_NONBLOCK | O_NDELAY | __O_SYNC | O_DSYNC | \
+ 	 FASYNC	| O_DIRECT | O_LARGEFILE | O_DIRECTORY | O_NOFOLLOW | \
+-	 O_NOATIME | O_CLOEXEC | O_PATH | __O_TMPFILE)
++	 O_NOATIME | O_CLOEXEC | O_PATH | __O_TMPFILE | O_EMPTYPATH)
+ 
+ #ifndef force_o_largefile
+ #define force_o_largefile() (!IS_ENABLED(CONFIG_ARCH_32BIT_OFF_T))
+diff --git a/include/uapi/asm-generic/fcntl.h b/include/uapi/asm-generic/fcntl.h
+index 9dc0bf0c5a6e..ae6862f69cc2 100644
+--- a/include/uapi/asm-generic/fcntl.h
++++ b/include/uapi/asm-generic/fcntl.h
+@@ -89,6 +89,10 @@
+ #define __O_TMPFILE	020000000
+ #endif
+ 
++#ifndef O_EMPTYPATH
++#define O_EMPTYPATH 040000000
++#endif
++
+ /* a horrid kludge trying to make sure that this will fail on old kernels */
+ #define O_TMPFILE (__O_TMPFILE | O_DIRECTORY)
+ #define O_TMPFILE_MASK (__O_TMPFILE | O_DIRECTORY | O_CREAT)      
+-- 
+2.23.0
