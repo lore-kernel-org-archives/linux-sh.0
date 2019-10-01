@@ -1,48 +1,41 @@
-From: "Mr Ekrem Bayraktar" <dave@dbsoundfactory.com>
-Date: Fri, 18 Oct 2019 00:20:33 +0000
-Subject: MOTHERLESS CHILDREN IN YOUR CITY !!
-Message-Id: <9$4n3z523f$d$rou@1wu6v8t.44r>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="EFA7_FB09FAD2"
+From: Bartosz Golaszewski <brgl@bgdev.pl>
+Date: Tue, 01 Oct 2019 12:58:34 +0000
+Subject: [PATCH v4 4/7] sh: ecovec24: don't set unused fields in platform data
+Message-Id: <20191001125837.4472-5-brgl@bgdev.pl>
 List-Id: <linux-sh.vger.kernel.org>
-To: linux-sh@vger.kernel.org
+References: <20191001125837.4472-1-brgl@bgdev.pl>
+In-Reply-To: <20191001125837.4472-1-brgl@bgdev.pl>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Lee Jones <lee.jones@linaro.org>, Daniel Thompson <daniel.thompson@linaro.org>, Jingoo Han <jingoohan1@gmail.com>, Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>, Linus Walleij <linus.walleij@linaro.org>, Andy Shevchenko <andriy.shevchenko@linux.intel.com>, Jacopo Mondi <jacopo@jmondi.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, dri-devel@lists.freedesktop.org, linux-fbdev@vger.kernel.org, Bartosz Golaszewski <bgolaszewski@baylibre.com>
 
+From: Bartosz Golaszewski <bgolaszewski@baylibre.com>
 
---EFA7_FB09FAD2
-Content-Type: text/plain;
-Content-Transfer-Encoding: quoted-printable
+Platform data fields other than fbdev are no longer used by the
+backlight driver. Remove them.
 
-Dear Sir / Madam
+Signed-off-by: Bartosz Golaszewski <bgolaszewski@baylibre.com>
+Reviewed-by: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+Reviewed-by: Linus Walleij <linus.walleij@linaro.org>
+---
+ arch/sh/boards/mach-ecovec24/setup.c | 3 ---
+ 1 file changed, 3 deletions(-)
 
-
-
-Since ever we left your country back to Canada , we have gotten Government=
- approval and we have been busying planning for the less privilege Childre=
-n projects.
-
-We are planning to release first batch of the funds $2,990,000.00 within 1=
-4 days for building an estate for motherless children in your city.
-
-I want you to use my mother;s company name to register this charity projec=
-t in your country after receiving the project funds.
-
-It must be registered as { Bayraktar Group Homeless Children Ltd }.
-
-
-Can you handle and supervise this big project ?
-Can you manager all the workers as a senior supervisor ?
-We want to be sure you can handle it before we proceed with this project.
-
-
-Please call me if you want to hear from us + 1-917 580 4919.
-Please can you manage such project please Kindly reply for further details=
-.
-
-Your full names-----------
-
-
-
-Ekrem Bayraktar.
-Bayraktar Shipping Group
-
---EFA7_FB09FAD2--
+diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
+index aaa8ea62636f..dd427bac5cde 100644
+--- a/arch/sh/boards/mach-ecovec24/setup.c
++++ b/arch/sh/boards/mach-ecovec24/setup.c
+@@ -386,9 +386,6 @@ static struct property_entry gpio_backlight_props[] = {
+ 
+ static struct gpio_backlight_platform_data gpio_backlight_data = {
+ 	.fbdev = &lcdc_device.dev,
+-	.gpio = GPIO_PTR1,
+-	.def_value = 1,
+-	.name = "backlight",
+ };
+ 
+ static const struct platform_device_info gpio_backlight_device_info = {
+-- 
+2.23.0
