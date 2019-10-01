@@ -1,107 +1,60 @@
-From: Bartosz Golaszewski <brgl@bgdev.pl>
-Date: Sat, 19 Oct 2019 08:35:56 +0000
-Subject: [PATCH v6 9/9] backlight: gpio: pull gpio_backlight_initial_power_state() into probe
-Message-Id: <20191019083556.19466-10-brgl@bgdev.pl>
+From: David Hildenbrand <david@redhat.com>
+Date: Tue, 01 Oct 2019 14:40:07 +0000
+Subject: [PATCH v5 06/10] mm/memory_hotplug: Poison memmap in remove_pfn_range_from_zone()
+Message-Id: <20191001144011.3801-7-david@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20191019083556.19466-1-brgl@bgdev.pl>
-In-Reply-To: <20191019083556.19466-1-brgl@bgdev.pl>
+References: <20191001144011.3801-1-david@redhat.com>
+In-Reply-To: <20191001144011.3801-1-david@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Lee Jones <lee.jones@linaro.org>, Daniel Thompson <daniel.thompson@linaro.org>, Jingoo Han <jingoohan1@gmail.com>, Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>, Linus Walleij <linus.walleij@linaro.org>, Andy Shevchenko <andriy.shevchenko@linux.intel.com>, Jacopo Mondi <jacopo@jmondi.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, dri-devel@lists.freedesktop.org, linux-fbdev@vger.kernel.org, Bartosz Golaszewski <bgolaszewski@baylibre.com>
+To: linux-kernel@vger.kernel.org
+Cc: linux-s390@vger.kernel.org, Michal Hocko <mhocko@suse.com>, linux-ia64@vger.kernel.org, Pavel Tatashin <pasha.tatashin@soleen.com>, linux-sh@vger.kernel.org, David Hildenbrand <david@redhat.com>, linux-mm@kvack.org, Andrew Morton <akpm@linux-foundation.org>, linuxppc-dev@lists.ozlabs.org, Dan Williams <dan.j.williams@intel.com>, linux-arm-kernel@lists.infradead.org, Oscar Salvador <osalvador@suse.de>
 
-From: Bartosz Golaszewski <bgolaszewski@baylibre.com>
+Let's poison the pages similar to when adding new memory in
+sparse_add_section(). Also call remove_pfn_range_from_zone() from
+memunmap_pages(), so we can poison the memmap from there as well.
 
-The probe function in the gpio-backlight driver is quite short. If we
-pull gpio_backlight_initial_power_state() into probe we can drop two
-more fields from struct gpio_backlight and shrink the driver code.
+While at it, calculate the pfn in memunmap_pages() only once.
 
-Signed-off-by: Bartosz Golaszewski <bgolaszewski@baylibre.com>
-Acked-by: Daniel Thompson <daniel.thompson@linaro.org>
+Cc: Andrew Morton <akpm@linux-foundation.org>
+Cc: David Hildenbrand <david@redhat.com>
+Cc: Oscar Salvador <osalvador@suse.de>
+Cc: Michal Hocko <mhocko@suse.com>
+Cc: Pavel Tatashin <pasha.tatashin@soleen.com>
+Cc: Dan Williams <dan.j.williams@intel.com>
+Signed-off-by: David Hildenbrand <david@redhat.com>
 ---
- drivers/video/backlight/gpio_backlight.c | 38 +++++++++---------------
- 1 file changed, 14 insertions(+), 24 deletions(-)
+ mm/memory_hotplug.c | 3 +++
+ mm/memremap.c       | 2 ++
+ 2 files changed, 5 insertions(+)
 
-diff --git a/drivers/video/backlight/gpio_backlight.c b/drivers/video/backlight/gpio_backlight.c
-index 7b411f6ee15a..4336db6bf6b5 100644
---- a/drivers/video/backlight/gpio_backlight.c
-+++ b/drivers/video/backlight/gpio_backlight.c
-@@ -17,11 +17,8 @@
- #include <linux/slab.h>
+diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
+index cef909ebd807..640309236a58 100644
+--- a/mm/memory_hotplug.c
++++ b/mm/memory_hotplug.c
+@@ -464,6 +464,9 @@ void __ref remove_pfn_range_from_zone(struct zone *zone,
+ 	struct pglist_data *pgdat = zone->zone_pgdat;
+ 	unsigned long flags;
  
- struct gpio_backlight {
--	struct device *dev;
- 	struct device *fbdev;
--
- 	struct gpio_desc *gpiod;
--	int def_value;
- };
- 
- static int gpio_backlight_get_curr_brightness(struct backlight_device *bl)
-@@ -60,41 +57,24 @@ static const struct backlight_ops gpio_backlight_ops = {
- 	.check_fb	= gpio_backlight_check_fb,
- };
- 
--static int gpio_backlight_initial_power_state(struct gpio_backlight *gbl)
--{
--	struct device_node *node = gbl->dev->of_node;
--
--	/* Not booted with device tree or no phandle link to the node */
--	if (!node || !node->phandle)
--		return gbl->def_value ? FB_BLANK_UNBLANK : FB_BLANK_POWERDOWN;
--
--	/* if the enable GPIO is disabled, do not enable the backlight */
--	if (gpiod_get_direction(gbl->gpiod) = 0 &&
--	    gpiod_get_value_cansleep(gbl->gpiod) = 0)
--		return FB_BLANK_POWERDOWN;
--
--	return FB_BLANK_UNBLANK;
--}
--
- static int gpio_backlight_probe(struct platform_device *pdev)
- {
- 	struct device *dev = &pdev->dev;
- 	struct gpio_backlight_platform_data *pdata = dev_get_platdata(dev);
-+	struct device_node *of_node = dev->of_node;
- 	struct backlight_properties props;
- 	struct backlight_device *bl;
- 	struct gpio_backlight *gbl;
--	int ret, init_brightness;
-+	int ret, init_brightness, def_value;
- 
- 	gbl = devm_kzalloc(dev, sizeof(*gbl), GFP_KERNEL);
- 	if (gbl = NULL)
- 		return -ENOMEM;
- 
--	gbl->dev = dev;
--
- 	if (pdata)
- 		gbl->fbdev = pdata->fbdev;
- 
--	gbl->def_value = device_property_read_bool(dev, "default-on");
-+	def_value = device_property_read_bool(dev, "default-on");
- 
- 	gbl->gpiod = devm_gpiod_get(dev, NULL, GPIOD_ASIS);
- 	if (IS_ERR(gbl->gpiod)) {
-@@ -115,7 +95,17 @@ static int gpio_backlight_probe(struct platform_device *pdev)
- 		return PTR_ERR(bl);
- 	}
- 
--	bl->props.power = gpio_backlight_initial_power_state(gbl);
-+	/* Set the initial power state */
-+	if (!of_node || !of_node->phandle)
-+		/* Not booted with device tree or no phandle link to the node */
-+		bl->props.power = def_value ? FB_BLANK_UNBLANK
-+					    : FB_BLANK_POWERDOWN;
-+	else if (gpiod_get_direction(gbl->gpiod) = 0 &&
-+		 gpiod_get_value_cansleep(gbl->gpiod) = 0)
-+		bl->props.power = FB_BLANK_POWERDOWN;
-+	else
-+		bl->props.power = FB_BLANK_UNBLANK;
++	/* Poison struct pages because they are now uninitialized again. */
++	page_init_poison(pfn_to_page(start_pfn), sizeof(struct page) * nr_pages);
 +
- 	bl->props.brightness = 1;
+ 	/*
+ 	 * Zone shrinking code cannot properly deal with ZONE_DEVICE. So
+ 	 * we will not try to shrink the zones - which is okay as
+diff --git a/mm/memremap.c b/mm/memremap.c
+index 734afeaad811..371939f92b69 100644
+--- a/mm/memremap.c
++++ b/mm/memremap.c
+@@ -139,6 +139,8 @@ void memunmap_pages(struct dev_pagemap *pgmap)
+ 	nid = page_to_nid(pfn_to_page(start_pfn));
  
- 	init_brightness = gpio_backlight_get_curr_brightness(bl);
+ 	mem_hotplug_begin();
++	remove_pfn_range_from_zone(page_zone(pfn_to_page(start_pfn)),
++				   start_pfn, nr_pages);
+ 	if (pgmap->type = MEMORY_DEVICE_PRIVATE) {
+ 		__remove_pages(start_pfn, nr_pages, NULL);
+ 	} else {
 -- 
-2.23.0
+2.21.0
