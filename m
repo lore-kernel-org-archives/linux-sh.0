@@ -1,690 +1,887 @@
-From: Anshuman Khandual <anshuman.khandual@arm.com>
-Date: Fri, 11 Oct 2019 06:37:42 +0000
-Subject: [PATCH V5 2/2] mm/debug: Add tests validating architecture page table helpers
-Message-Id: <1570775142-31425-3-git-send-email-anshuman.khandual@arm.com>
+From: Bartosz Golaszewski <brgl@bgdev.pl>
+Date: Thu, 03 Oct 2019 09:29:13 +0000
+Subject: [PATCH v4 2/2] sh: add the sh_ prefix to early platform symbols
+Message-Id: <20191003092913.10731-3-brgl@bgdev.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1570775142-31425-1-git-send-email-anshuman.khandual@arm.com>
-In-Reply-To: <1570775142-31425-1-git-send-email-anshuman.khandual@arm.com>
+References: <20191003092913.10731-1-brgl@bgdev.pl>
+In-Reply-To: <20191003092913.10731-1-brgl@bgdev.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mm@kvack.org
-Cc: Mark Rutland <mark.rutland@arm.com>, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, James Hogan <jhogan@kernel.org>, Tetsuo Handa <penguin-kernel@i-love.sakura.ne.jp>, Heiko Carstens <heiko.carstens@de.ibm.com>, Michal Hocko <mhocko@kernel.org>, Dave Hansen <dave.hansen@intel.com>, Paul Mackerras <paulus@samba.org>, sparclinux@vger.kernel.org, Thomas Gleixner <tglx@linutronix.de>, linux-s390@vger.kernel.org, Michael Ellerman <mpe@ellerman.id.au>, x86@kernel.org, Russell King - ARM Linux <linux@armlinux.org.uk>, Matthew Wilcox <willy@infradead.org>, Steven Price <Steven.Price@arm.com>, Jason Gunthorpe <jgg@ziepe.ca>, Gerald Schaefer <gerald.schaefer@de.ibm.com>, linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org, Kees Cook <keescook@chromium.org>, Anshuman Khandual <anshuman.khandual@arm.com>, Masahiro Yamada <yamada.masahiro@socionext.com>, Mark Brown <broonie@kernel.org>, "Kirill A . Shutemov" <kirill@shutemov.name>, Dan Williams <dan.j.williams@intel.com>, Vlastimil Babka <vbabka@suse.cz>, Christophe Leroy <christophe.leroy@c-s.fr>, Sri Krishna chowdary <schowdary@nvidia.com>, Ard Biesheuvel <ard.biesheuvel@linaro.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, linux-mips@vger.kernel.org, Ralf Baechle <ralf@linux-mips.org>, linux-kernel@vger.kernel.org, Paul Burton <paul.burton@mips.com>, Mike Rapoport <rppt@linux.vnet.ibm.com>, Vineet Gupta <vgupta@synopsys.com>, Martin Schwidefsky <schwidefsky@de.ibm.com>, Andrew Morton <akpm@linux-foundation.org>, linuxppc-dev@lists.ozlabs.org, "David S. Miller" <davem@davemloft.net>
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, "Rafael J . Wysocki" <rafael@kernel.org>, Daniel Lezcano <daniel.lezcano@linaro.org>, Thomas Gleixner <tglx@linutronix.de>, Jiri Slaby <jslaby@suse.com>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, linux-serial@vger.kernel.org, Bartosz Golaszewski <bgolaszewski@baylibre.com>
 
-This adds tests which will validate architecture page table helpers and
-other accessors in their compliance with expected generic MM semantics.
-This will help various architectures in validating changes to existing
-page table helpers or addition of new ones.
+From: Bartosz Golaszewski <bgolaszewski@baylibre.com>
 
-Test page table and memory pages creating it's entries at various level are
-all allocated from system memory with required size and alignments. But if
-memory pages with required size and alignment could not be allocated, then
-all depending individual tests are just skipped afterwards. This test gets
-called right after init_mm_internals() required for alloc_contig_range() to
-work correctly.
+Old early platform device support is now sh-specific. Before moving on
+to implementing new early platform framework based on real platform
+devices, prefix all early platform symbols with 'sh_'.
 
-This gets build and run when CONFIG_DEBUG_VM_PGTABLE is selected along with
-CONFIG_VM_DEBUG. Architectures willing to subscribe this test also need to
-select CONFIG_ARCH_HAS_DEBUG_VM_PGTABLE which for now is limited to x86 and
-arm64. Going forward, other architectures too can enable this after fixing
-build or runtime problems (if any) with their page table helpers.
-
-Cc: Andrew Morton <akpm@linux-foundation.org>
-Cc: Vlastimil Babka <vbabka@suse.cz>
-Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-Cc: Thomas Gleixner <tglx@linutronix.de>
-Cc: Mike Rapoport <rppt@linux.vnet.ibm.com>
-Cc: Jason Gunthorpe <jgg@ziepe.ca>
-Cc: Dan Williams <dan.j.williams@intel.com>
-Cc: Peter Zijlstra <peterz@infradead.org>
-Cc: Michal Hocko <mhocko@kernel.org>
-Cc: Mark Rutland <mark.rutland@arm.com>
-Cc: Mark Brown <broonie@kernel.org>
-Cc: Steven Price <Steven.Price@arm.com>
-Cc: Ard Biesheuvel <ard.biesheuvel@linaro.org>
-Cc: Masahiro Yamada <yamada.masahiro@socionext.com>
-Cc: Kees Cook <keescook@chromium.org>
-Cc: Tetsuo Handa <penguin-kernel@i-love.sakura.ne.jp>
-Cc: Matthew Wilcox <willy@infradead.org>
-Cc: Sri Krishna chowdary <schowdary@nvidia.com>
-Cc: Dave Hansen <dave.hansen@intel.com>
-Cc: Russell King - ARM Linux <linux@armlinux.org.uk>
-Cc: Michael Ellerman <mpe@ellerman.id.au>
-Cc: Paul Mackerras <paulus@samba.org>
-Cc: Martin Schwidefsky <schwidefsky@de.ibm.com>
-Cc: Heiko Carstens <heiko.carstens@de.ibm.com>
-Cc: "David S. Miller" <davem@davemloft.net>
-Cc: Vineet Gupta <vgupta@synopsys.com>
-Cc: James Hogan <jhogan@kernel.org>
-Cc: Paul Burton <paul.burton@mips.com>
-Cc: Ralf Baechle <ralf@linux-mips.org>
-Cc: Kirill A. Shutemov <kirill@shutemov.name>
-Cc: Gerald Schaefer <gerald.schaefer@de.ibm.com>
-Cc: Christophe Leroy <christophe.leroy@c-s.fr>
-Cc: linux-snps-arc@lists.infradead.org
-Cc: linux-mips@vger.kernel.org
-Cc: linux-arm-kernel@lists.infradead.org
-Cc: linux-ia64@vger.kernel.org
-Cc: linuxppc-dev@lists.ozlabs.org
-Cc: linux-s390@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
-Cc: sparclinux@vger.kernel.org
-Cc: x86@kernel.org
-Cc: linux-kernel@vger.kernel.org
-
-Tested-by: Christophe Leroy <christophe.leroy@c-s.fr>		#PPC32
-Suggested-by: Catalin Marinas <catalin.marinas@arm.com>
-Signed-off-by: Christophe Leroy <christophe.leroy@c-s.fr>
-Signed-off-by: Anshuman Khandual <anshuman.khandual@arm.com>
+Signed-off-by: Bartosz Golaszewski <bgolaszewski@baylibre.com>
 ---
- .../debug/debug-vm-pgtable/arch-support.txt        |  34 ++
- arch/arm64/Kconfig                                 |   1 +
- arch/x86/Kconfig                                   |   1 +
- arch/x86/include/asm/pgtable_64.h                  |   6 +
- include/asm-generic/pgtable.h                      |   6 +
- init/main.c                                        |   1 +
- lib/Kconfig.debug                                  |  21 +
- mm/Makefile                                        |   1 +
- mm/debug_vm_pgtable.c                              | 438 +++++++++++++++++++++
- 9 files changed, 509 insertions(+)
- create mode 100644 Documentation/features/debug/debug-vm-pgtable/arch-support.txt
- create mode 100644 mm/debug_vm_pgtable.c
+ arch/sh/drivers/platform_early.c       | 66 +++++++++++++-------------
+ arch/sh/include/asm/platform_early.h   | 30 ++++++------
+ arch/sh/kernel/cpu/sh2/setup-sh7619.c  |  2 +-
+ arch/sh/kernel/cpu/sh2a/setup-mxg.c    |  2 +-
+ arch/sh/kernel/cpu/sh2a/setup-sh7201.c |  2 +-
+ arch/sh/kernel/cpu/sh2a/setup-sh7203.c |  2 +-
+ arch/sh/kernel/cpu/sh2a/setup-sh7206.c |  2 +-
+ arch/sh/kernel/cpu/sh2a/setup-sh7264.c |  2 +-
+ arch/sh/kernel/cpu/sh2a/setup-sh7269.c |  2 +-
+ arch/sh/kernel/cpu/sh3/setup-sh7705.c  |  2 +-
+ arch/sh/kernel/cpu/sh3/setup-sh770x.c  |  2 +-
+ arch/sh/kernel/cpu/sh3/setup-sh7710.c  |  2 +-
+ arch/sh/kernel/cpu/sh3/setup-sh7720.c  |  2 +-
+ arch/sh/kernel/cpu/sh4/setup-sh4-202.c |  2 +-
+ arch/sh/kernel/cpu/sh4/setup-sh7750.c  |  8 ++--
+ arch/sh/kernel/cpu/sh4/setup-sh7760.c  |  2 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7343.c |  2 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7366.c |  2 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7722.c |  2 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7723.c |  2 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7724.c |  2 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7734.c |  2 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7757.c |  2 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7763.c |  2 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7770.c |  2 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7780.c |  2 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7785.c |  2 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7786.c |  2 +-
+ arch/sh/kernel/cpu/sh4a/setup-shx3.c   |  2 +-
+ arch/sh/kernel/cpu/sh5/setup-sh5.c     |  2 +-
+ arch/sh/kernel/setup.c                 |  2 +-
+ arch/sh/kernel/time.c                  |  4 +-
+ drivers/clocksource/sh_cmt.c           |  6 +--
+ drivers/clocksource/sh_mtu2.c          |  6 +--
+ drivers/clocksource/sh_tmu.c           |  6 +--
+ drivers/tty/serial/sh-sci.c            |  4 +-
+ include/linux/platform_device.h        |  2 +-
+ 37 files changed, 94 insertions(+), 94 deletions(-)
 
-diff --git a/Documentation/features/debug/debug-vm-pgtable/arch-support.txt b/Documentation/features/debug/debug-vm-pgtable/arch-support.txt
-new file mode 100644
-index 0000000..d6b8185
---- /dev/null
-+++ b/Documentation/features/debug/debug-vm-pgtable/arch-support.txt
-@@ -0,0 +1,34 @@
-+#
-+# Feature name:          debug-vm-pgtable
-+#         Kconfig:       ARCH_HAS_DEBUG_VM_PGTABLE
-+#         description:   arch supports pgtable tests for semantics compliance
-+#
-+    -----------------------
-+    |         arch |status|
-+    -----------------------
-+    |       alpha: | TODO |
-+    |         arc: | TODO |
-+    |         arm: | TODO |
-+    |       arm64: |  ok  |
-+    |         c6x: | TODO |
-+    |        csky: | TODO |
-+    |       h8300: | TODO |
-+    |     hexagon: | TODO |
-+    |        ia64: | TODO |
-+    |        m68k: | TODO |
-+    |  microblaze: | TODO |
-+    |        mips: | TODO |
-+    |       nds32: | TODO |
-+    |       nios2: | TODO |
-+    |    openrisc: | TODO |
-+    |      parisc: | TODO |
-+    |     powerpc: | TODO |
-+    |       riscv: | TODO |
-+    |        s390: | TODO |
-+    |          sh: | TODO |
-+    |       sparc: | TODO |
-+    |          um: | TODO |
-+    |   unicore32: | TODO |
-+    |         x86: |  ok  |
-+    |      xtensa: | TODO |
-+    -----------------------
-diff --git a/arch/arm64/Kconfig b/arch/arm64/Kconfig
-index 950a56b..8a3b3ea 100644
---- a/arch/arm64/Kconfig
-+++ b/arch/arm64/Kconfig
-@@ -11,6 +11,7 @@ config ARM64
- 	select ACPI_PPTT if ACPI
- 	select ARCH_CLOCKSOURCE_DATA
- 	select ARCH_HAS_DEBUG_VIRTUAL
-+	select ARCH_HAS_DEBUG_VM_PGTABLE
- 	select ARCH_HAS_DEVMEM_IS_ALLOWED
- 	select ARCH_HAS_DMA_COHERENT_TO_PFN
- 	select ARCH_HAS_DMA_PREP_COHERENT
-diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
-index abe822d..13c9bd9 100644
---- a/arch/x86/Kconfig
-+++ b/arch/x86/Kconfig
-@@ -61,6 +61,7 @@ config X86
- 	select ARCH_CLOCKSOURCE_INIT
- 	select ARCH_HAS_ACPI_TABLE_UPGRADE	if ACPI
- 	select ARCH_HAS_DEBUG_VIRTUAL
-+	select ARCH_HAS_DEBUG_VM_PGTABLE
- 	select ARCH_HAS_DEVMEM_IS_ALLOWED
- 	select ARCH_HAS_ELF_RANDOMIZE
- 	select ARCH_HAS_FAST_MULTIPLIER
-diff --git a/arch/x86/include/asm/pgtable_64.h b/arch/x86/include/asm/pgtable_64.h
-index 0b6c4042..fb0e76d 100644
---- a/arch/x86/include/asm/pgtable_64.h
-+++ b/arch/x86/include/asm/pgtable_64.h
-@@ -53,6 +53,12 @@ static inline void sync_initial_page_table(void) { }
+diff --git a/arch/sh/drivers/platform_early.c b/arch/sh/drivers/platform_early.c
+index 3dfe9f3541bb..f6d148451dfc 100644
+--- a/arch/sh/drivers/platform_early.c
++++ b/arch/sh/drivers/platform_early.c
+@@ -4,8 +4,8 @@
+ #include <linux/mod_devicetable.h>
+ #include <linux/pm.h>
  
- struct mm_struct;
+-static __initdata LIST_HEAD(early_platform_driver_list);
+-static __initdata LIST_HEAD(early_platform_device_list);
++static __initdata LIST_HEAD(sh_early_platform_driver_list);
++static __initdata LIST_HEAD(sh_early_platform_device_list);
  
-+#define mm_p4d_folded mm_p4d_folded
-+static inline bool mm_p4d_folded(struct mm_struct *mm)
-+{
-+	return !pgtable_l5_enabled();
-+}
-+
- void set_pte_vaddr_p4d(p4d_t *p4d_page, unsigned long vaddr, pte_t new_pte);
- void set_pte_vaddr_pud(pud_t *pud_page, unsigned long vaddr, pte_t new_pte);
- 
-diff --git a/include/asm-generic/pgtable.h b/include/asm-generic/pgtable.h
-index 8186918..9e5c248 100644
---- a/include/asm-generic/pgtable.h
-+++ b/include/asm-generic/pgtable.h
-@@ -1187,4 +1187,10 @@ static inline bool arch_has_pfn_modify_check(void)
- #define mm_pmd_folded(mm)	__is_defined(__PAGETABLE_PMD_FOLDED)
+ static const struct platform_device_id *
+ platform_match_id(const struct platform_device_id *id,
+@@ -58,13 +58,13 @@ static void pm_runtime_early_init(struct device *dev) {}
  #endif
  
-+#ifdef CONFIG_DEBUG_VM_PGTABLE
-+extern void debug_vm_pgtable(void);
-+#else
-+static inline void debug_vm_pgtable(void) { }
-+#endif
-+
- #endif /* _ASM_GENERIC_PGTABLE_H */
-diff --git a/init/main.c b/init/main.c
-index 91f6ebb..676d8020 100644
---- a/init/main.c
-+++ b/init/main.c
-@@ -1177,6 +1177,7 @@ static noinline void __init kernel_init_freeable(void)
- 	workqueue_init();
+ /**
+- * early_platform_driver_register - register early platform driver
+- * @epdrv: early_platform driver structure
++ * sh_early_platform_driver_register - register early platform driver
++ * @epdrv: sh_early_platform driver structure
+  * @buf: string passed from early_param()
+  *
+- * Helper function for early_platform_init() / early_platform_init_buffer()
++ * Helper function for sh_early_platform_init() / sh_early_platform_init_buffer()
+  */
+-int __init early_platform_driver_register(struct early_platform_driver *epdrv,
++int __init sh_early_platform_driver_register(struct sh_early_platform_driver *epdrv,
+ 					  char *buf)
+ {
+ 	char *tmp;
+@@ -75,7 +75,7 @@ int __init early_platform_driver_register(struct early_platform_driver *epdrv,
+ 	 */
+ 	if (!epdrv->list.next) {
+ 		INIT_LIST_HEAD(&epdrv->list);
+-		list_add_tail(&epdrv->list, &early_platform_driver_list);
++		list_add_tail(&epdrv->list, &sh_early_platform_driver_list);
+ 	}
  
- 	init_mm_internals();
-+	debug_vm_pgtable();
+ 	/* If the user has specified device then make sure the driver
+@@ -84,7 +84,7 @@ int __init early_platform_driver_register(struct early_platform_driver *epdrv,
+ 	 */
+ 	n = strlen(epdrv->pdrv->driver.name);
+ 	if (buf && !strncmp(buf, epdrv->pdrv->driver.name, n)) {
+-		list_move(&epdrv->list, &early_platform_driver_list);
++		list_move(&epdrv->list, &sh_early_platform_driver_list);
  
- 	do_pre_smp_initcalls();
- 	lockup_detector_init();
-diff --git a/lib/Kconfig.debug b/lib/Kconfig.debug
-index cb1fc48..b9b8fe1 100644
---- a/lib/Kconfig.debug
-+++ b/lib/Kconfig.debug
-@@ -698,6 +698,27 @@ config DEBUG_VM_PGFLAGS
+ 		/* Allow passing parameters after device name */
+ 		if (buf[n] = '\0' || buf[n] = ',')
+@@ -114,14 +114,14 @@ int __init early_platform_driver_register(struct early_platform_driver *epdrv,
+ }
  
- 	  If unsure, say N.
+ /**
+- * early_platform_add_devices - adds a number of early platform devices
++ * sh_early_platform_add_devices - adds a number of early platform devices
+  * @devs: array of early platform devices to add
+  * @num: number of early platform devices in array
+  *
+  * Used by early architecture code to register early platform devices and
+  * their platform data.
+  */
+-void __init early_platform_add_devices(struct platform_device **devs, int num)
++void __init sh_early_platform_add_devices(struct platform_device **devs, int num)
+ {
+ 	struct device *dev;
+ 	int i;
+@@ -134,20 +134,20 @@ void __init early_platform_add_devices(struct platform_device **devs, int num)
+ 			pm_runtime_early_init(dev);
+ 			INIT_LIST_HEAD(&dev->devres_head);
+ 			list_add_tail(&dev->devres_head,
+-				      &early_platform_device_list);
++				      &sh_early_platform_device_list);
+ 		}
+ 	}
+ }
  
-+config ARCH_HAS_DEBUG_VM_PGTABLE
-+	bool
-+	help
-+	  An architecture should select this when it can successfully
-+	  build and run DEBUG_VM_PGTABLE.
-+
-+config DEBUG_VM_PGTABLE
-+	bool "Debug arch page table for semantics compliance"
-+	depends on MMU
-+	depends on DEBUG_VM
-+	depends on ARCH_HAS_DEBUG_VM_PGTABLE
-+	help
-+	  This option provides a debug method which can be used to test
-+	  architecture page table helper functions on various platforms in
-+	  verifying if they comply with expected generic MM semantics. This
-+	  will help architecture code in making sure that any changes or
-+	  new additions of these helpers still conform to expected
-+	  semantics of the generic MM.
-+
-+	  If unsure, say N.
-+
- config ARCH_HAS_DEBUG_VIRTUAL
- 	bool
+ /**
+- * early_platform_driver_register_all - register early platform drivers
++ * sh_early_platform_driver_register_all - register early platform drivers
+  * @class_str: string to identify early platform driver class
+  *
+  * Used by architecture code to register all early platform drivers
+  * for a certain class. If omitted then only early platform drivers
+  * with matching kernel command line class parameters will be registered.
+  */
+-void __init early_platform_driver_register_all(char *class_str)
++void __init sh_early_platform_driver_register_all(char *class_str)
+ {
+ 	/* The "class_str" parameter may or may not be present on the kernel
+ 	 * command line. If it is present then there may be more than one
+@@ -160,23 +160,23 @@ void __init early_platform_driver_register_all(char *class_str)
+ 	 * We use parse_early_options() to make sure the early_param() gets
+ 	 * called at least once. The early_param() may be called more than
+ 	 * once since the name of the preferred device may be specified on
+-	 * the kernel command line. early_platform_driver_register() handles
++	 * the kernel command line. sh_early_platform_driver_register() handles
+ 	 * this case for us.
+ 	 */
+ 	parse_early_options(class_str);
+ }
  
-diff --git a/mm/Makefile b/mm/Makefile
-index d996846..2f085b9 100644
---- a/mm/Makefile
-+++ b/mm/Makefile
-@@ -86,6 +86,7 @@ obj-$(CONFIG_HWPOISON_INJECT) += hwpoison-inject.o
- obj-$(CONFIG_DEBUG_KMEMLEAK) += kmemleak.o
- obj-$(CONFIG_DEBUG_KMEMLEAK_TEST) += kmemleak-test.o
- obj-$(CONFIG_DEBUG_RODATA_TEST) += rodata_test.o
-+obj-$(CONFIG_DEBUG_VM_PGTABLE) += debug_vm_pgtable.o
- obj-$(CONFIG_PAGE_OWNER) += page_owner.o
- obj-$(CONFIG_CLEANCACHE) += cleancache.o
- obj-$(CONFIG_MEMORY_ISOLATION) += page_isolation.o
-diff --git a/mm/debug_vm_pgtable.c b/mm/debug_vm_pgtable.c
-new file mode 100644
-index 0000000..885d1e5
---- /dev/null
-+++ b/mm/debug_vm_pgtable.c
-@@ -0,0 +1,438 @@
-+// SPDX-License-Identifier: GPL-2.0-only
-+/*
-+ * This kernel module validates architecture page table helpers &
-+ * accessors and helps in verifying their continued compliance with
-+ * generic MM semantics.
-+ *
-+ * Copyright (C) 2019 ARM Ltd.
-+ *
-+ * Author: Anshuman Khandual <anshuman.khandual@arm.com>
-+ */
-+#define pr_fmt(fmt) "arch_pgtable_test: %s " fmt, __func__
-+
-+#include <linux/gfp.h>
-+#include <linux/highmem.h>
-+#include <linux/hugetlb.h>
-+#include <linux/kernel.h>
-+#include <linux/kconfig.h>
-+#include <linux/mm.h>
-+#include <linux/mman.h>
-+#include <linux/mm_types.h>
-+#include <linux/module.h>
-+#include <linux/pfn_t.h>
-+#include <linux/printk.h>
-+#include <linux/random.h>
-+#include <linux/spinlock.h>
-+#include <linux/swap.h>
-+#include <linux/swapops.h>
-+#include <linux/sched/mm.h>
-+#include <asm/pgalloc.h>
-+#include <asm/pgtable.h>
-+
-+/*
-+ * Basic operations
-+ *
-+ * mkold(entry)			= An old and not a young entry
-+ * mkyoung(entry)		= A young and not an old entry
-+ * mkdirty(entry)		= A dirty and not a clean entry
-+ * mkclean(entry)		= A clean and not a dirty entry
-+ * mkwrite(entry)		= A write and not a write protected entry
-+ * wrprotect(entry)		= A write protected and not a write entry
-+ * pxx_bad(entry)		= A mapped and non-table entry
-+ * pxx_same(entry1, entry2)	= Both entries hold the exact same value
-+ */
-+#define VMFLAGS	(VM_READ|VM_WRITE|VM_EXEC)
-+
-+/*
-+ * On s390 platform, the lower 12 bits are used to identify given page table
-+ * entry type and for other arch specific requirements. But these bits might
-+ * affect the ability to clear entries with pxx_clear(). So while loading up
-+ * the entries skip all lower 12 bits in order to accommodate s390 platform.
-+ * It does not have affect any other platform.
-+ */
-+#define RANDOM_ORVALUE	(0xfffffffffffff000UL)
-+#define RANDOM_NZVALUE	(0xff)
-+
-+static bool pud_aligned __initdata;
-+static bool pmd_aligned __initdata;
-+
-+static void __init pte_basic_tests(struct page *page, pgprot_t prot)
-+{
-+	pte_t pte = mk_pte(page, prot);
-+
-+	WARN_ON(!pte_same(pte, pte));
-+	WARN_ON(!pte_young(pte_mkyoung(pte)));
-+	WARN_ON(!pte_dirty(pte_mkdirty(pte)));
-+	WARN_ON(!pte_write(pte_mkwrite(pte)));
-+	WARN_ON(pte_young(pte_mkold(pte)));
-+	WARN_ON(pte_dirty(pte_mkclean(pte)));
-+	WARN_ON(pte_write(pte_wrprotect(pte)));
-+}
-+
-+#ifdef CONFIG_HAVE_ARCH_TRANSPARENT_HUGEPAGE
-+static void __init pmd_basic_tests(struct page *page, pgprot_t prot)
-+{
-+	pmd_t pmd;
-+
-+	/*
-+	 * Memory block here must be PMD_SIZE aligned. Abort this
-+	 * test in case we could not allocate such a memory block.
-+	 */
-+	if (!pmd_aligned) {
-+		pr_warn("Could not proceed with PMD tests\n");
-+		return;
-+	}
-+
-+	pmd = mk_pmd(page, prot);
-+	WARN_ON(!pmd_same(pmd, pmd));
-+	WARN_ON(!pmd_young(pmd_mkyoung(pmd)));
-+	WARN_ON(!pmd_dirty(pmd_mkdirty(pmd)));
-+	WARN_ON(!pmd_write(pmd_mkwrite(pmd)));
-+	WARN_ON(pmd_young(pmd_mkold(pmd)));
-+	WARN_ON(pmd_dirty(pmd_mkclean(pmd)));
-+	WARN_ON(pmd_write(pmd_wrprotect(pmd)));
-+	/*
-+	 * A huge page does not point to next level page table
-+	 * entry. Hence this must qualify as pmd_bad().
-+	 */
-+	WARN_ON(!pmd_bad(pmd_mkhuge(pmd)));
-+}
-+#else
-+static void __init pmd_basic_tests(struct page *page, pgprot_t prot) { }
-+#endif
-+
-+#ifdef CONFIG_HAVE_ARCH_TRANSPARENT_HUGEPAGE_PUD
-+static void __init pud_basic_tests(struct page *page, pgprot_t prot)
-+{
-+	pud_t pud;
-+
-+	/*
-+	 * Memory block here must be PUD_SIZE aligned. Abort this
-+	 * test in case we could not allocate such a memory block.
-+	 */
-+	if (!pud_aligned) {
-+		pr_warn("Could not proceed with PUD tests\n");
-+		return;
-+	}
-+
-+	pud = pfn_pud(page_to_pfn(page), prot);
-+	WARN_ON(!pud_same(pud, pud));
-+	WARN_ON(!pud_young(pud_mkyoung(pud)));
-+	WARN_ON(!pud_write(pud_mkwrite(pud)));
-+	WARN_ON(pud_write(pud_wrprotect(pud)));
-+	WARN_ON(pud_young(pud_mkold(pud)));
-+
-+	if (mm_pmd_folded(mm) || __is_defined(ARCH_HAS_4LEVEL_HACK))
-+		return;
-+
-+	/*
-+	 * A huge page does not point to next level page table
-+	 * entry. Hence this must qualify as pud_bad().
-+	 */
-+	WARN_ON(!pud_bad(pud_mkhuge(pud)));
-+}
-+#else
-+static void __init pud_basic_tests(struct page *page, pgprot_t prot) { }
-+#endif
-+
-+static void __init p4d_basic_tests(struct page *page, pgprot_t prot)
-+{
-+	p4d_t p4d;
-+
-+	memset(&p4d, RANDOM_NZVALUE, sizeof(p4d_t));
-+	WARN_ON(!p4d_same(p4d, p4d));
-+}
-+
-+static void __init pgd_basic_tests(struct page *page, pgprot_t prot)
-+{
-+	pgd_t pgd;
-+
-+	memset(&pgd, RANDOM_NZVALUE, sizeof(pgd_t));
-+	WARN_ON(!pgd_same(pgd, pgd));
-+}
-+
-+#ifndef __ARCH_HAS_4LEVEL_HACK
-+static void __init pud_clear_tests(struct mm_struct *mm, pud_t *pudp)
-+{
-+	pud_t pud = READ_ONCE(*pudp);
-+
-+	if (mm_pmd_folded(mm))
-+		return;
-+
-+	pud = __pud(pud_val(pud) | RANDOM_ORVALUE);
-+	WRITE_ONCE(*pudp, pud);
-+	pud_clear(pudp);
-+	pud = READ_ONCE(*pudp);
-+	WARN_ON(!pud_none(pud));
-+}
-+
-+static void __init pud_populate_tests(struct mm_struct *mm, pud_t *pudp,
-+				      pmd_t *pmdp)
-+{
-+	pud_t pud;
-+
-+	if (mm_pmd_folded(mm))
-+		return;
-+	/*
-+	 * This entry points to next level page table page.
-+	 * Hence this must not qualify as pud_bad().
-+	 */
-+	pmd_clear(pmdp);
-+	pud_clear(pudp);
-+	pud_populate(mm, pudp, pmdp);
-+	pud = READ_ONCE(*pudp);
-+	WARN_ON(pud_bad(pud));
-+}
-+#else
-+static void __init pud_clear_tests(struct mm_struct *mm, pud_t *pudp) { }
-+static void __init pud_populate_tests(struct mm_struct *mm, pud_t *pudp,
-+				      pmd_t *pmdp)
-+{
-+}
-+#endif
-+
-+#ifndef __ARCH_HAS_5LEVEL_HACK
-+static void __init p4d_clear_tests(struct mm_struct *mm, p4d_t *p4dp)
-+{
-+	p4d_t p4d = READ_ONCE(*p4dp);
-+
-+	if (mm_pud_folded(mm))
-+		return;
-+
-+	p4d = __p4d(p4d_val(p4d) | RANDOM_ORVALUE);
-+	WRITE_ONCE(*p4dp, p4d);
-+	p4d_clear(p4dp);
-+	p4d = READ_ONCE(*p4dp);
-+	WARN_ON(!p4d_none(p4d));
-+}
-+
-+static void __init p4d_populate_tests(struct mm_struct *mm, p4d_t *p4dp,
-+				      pud_t *pudp)
-+{
-+	p4d_t p4d;
-+
-+	if (mm_pud_folded(mm))
-+		return;
-+
-+	/*
-+	 * This entry points to next level page table page.
-+	 * Hence this must not qualify as p4d_bad().
-+	 */
-+	pud_clear(pudp);
-+	p4d_clear(p4dp);
-+	p4d_populate(mm, p4dp, pudp);
-+	p4d = READ_ONCE(*p4dp);
-+	WARN_ON(p4d_bad(p4d));
-+}
-+
-+static void __init pgd_clear_tests(struct mm_struct *mm, pgd_t *pgdp)
-+{
-+	pgd_t pgd = READ_ONCE(*pgdp);
-+
-+	if (mm_p4d_folded(mm))
-+		return;
-+
-+	pgd = __pgd(pgd_val(pgd) | RANDOM_ORVALUE);
-+	WRITE_ONCE(*pgdp, pgd);
-+	pgd_clear(pgdp);
-+	pgd = READ_ONCE(*pgdp);
-+	WARN_ON(!pgd_none(pgd));
-+}
-+
-+static void __init pgd_populate_tests(struct mm_struct *mm, pgd_t *pgdp,
-+				      p4d_t *p4dp)
-+{
-+	pgd_t pgd;
-+
-+	if (mm_p4d_folded(mm))
-+		return;
-+
-+	/*
-+	 * This entry points to next level page table page.
-+	 * Hence this must not qualify as pgd_bad().
-+	 */
-+	p4d_clear(p4dp);
-+	pgd_clear(pgdp);
-+	pgd_populate(mm, pgdp, p4dp);
-+	pgd = READ_ONCE(*pgdp);
-+	WARN_ON(pgd_bad(pgd));
-+}
-+#else
-+static void __init p4d_clear_tests(struct mm_struct *mm, p4d_t *p4dp) { }
-+static void __init pgd_clear_tests(struct mm_struct *mm, pgd_t *pgdp) { }
-+static void __init p4d_populate_tests(struct mm_struct *mm, p4d_t *p4dp,
-+				      pud_t *pudp)
-+{
-+}
-+static void __init pgd_populate_tests(struct mm_struct *mm, pgd_t *pgdp,
-+				      p4d_t *p4dp)
-+{
-+}
-+#endif
-+
-+static void __init pte_clear_tests(struct mm_struct *mm, pte_t *ptep)
-+{
-+	pte_t pte = READ_ONCE(*ptep);
-+
-+	pte = __pte(pte_val(pte) | RANDOM_ORVALUE);
-+	WRITE_ONCE(*ptep, pte);
-+	pte_clear(mm, 0, ptep);
-+	pte = READ_ONCE(*ptep);
-+	WARN_ON(!pte_none(pte));
-+}
-+
-+static void __init pmd_clear_tests(struct mm_struct *mm, pmd_t *pmdp)
-+{
-+	pmd_t pmd = READ_ONCE(*pmdp);
-+
-+	pmd = __pmd(pmd_val(pmd) | RANDOM_ORVALUE);
-+	WRITE_ONCE(*pmdp, pmd);
-+	pmd_clear(pmdp);
-+	pmd = READ_ONCE(*pmdp);
-+	WARN_ON(!pmd_none(pmd));
-+}
-+
-+static void __init pmd_populate_tests(struct mm_struct *mm, pmd_t *pmdp,
-+				      pgtable_t pgtable)
-+{
-+	pmd_t pmd;
-+
-+	/*
-+	 * This entry points to next level page table page.
-+	 * Hence this must not qualify as pmd_bad().
-+	 */
-+	pmd_clear(pmdp);
-+	pmd_populate(mm, pmdp, pgtable);
-+	pmd = READ_ONCE(*pmdp);
-+	WARN_ON(pmd_bad(pmd));
-+}
-+
-+static struct page * __init alloc_mapped_page(void)
-+{
-+	struct page *page;
-+	gfp_t gfp_mask = GFP_KERNEL | __GFP_ZERO;
-+
-+	page = alloc_gigantic_page_order(get_order(PUD_SIZE), gfp_mask,
-+				first_memory_node, &node_states[N_MEMORY]);
-+	if (page) {
-+		pud_aligned = true;
-+		pmd_aligned = true;
-+		return page;
-+	}
-+
-+	page = alloc_pages(gfp_mask, get_order(PMD_SIZE));
-+	if (page) {
-+		pmd_aligned = true;
-+		return page;
-+	}
-+	return alloc_page(gfp_mask);
-+}
-+
-+static void __init free_mapped_page(struct page *page)
-+{
-+	if (pud_aligned) {
-+		unsigned long pfn = page_to_pfn(page);
-+
-+		free_contig_range(pfn, 1ULL << get_order(PUD_SIZE));
-+		return;
-+	}
-+
-+	if (pmd_aligned) {
-+		int order = get_order(PMD_SIZE);
-+
-+		free_pages((unsigned long)page_address(page), order);
-+		return;
-+	}
-+	free_page((unsigned long)page_address(page));
-+}
-+
-+static unsigned long __init get_random_vaddr(void)
-+{
-+	unsigned long random_vaddr, random_pages, total_user_pages;
-+
-+	total_user_pages = (TASK_SIZE - FIRST_USER_ADDRESS) / PAGE_SIZE;
-+
-+	random_pages = get_random_long() % total_user_pages;
-+	random_vaddr = FIRST_USER_ADDRESS + random_pages * PAGE_SIZE;
-+
-+	WARN_ON(random_vaddr > TASK_SIZE);
-+	WARN_ON(random_vaddr < FIRST_USER_ADDRESS);
-+	return random_vaddr;
-+}
-+
-+void __init debug_vm_pgtable(void)
-+{
-+	struct mm_struct *mm;
-+	struct page *page;
-+	pgd_t *pgdp;
-+	p4d_t *p4dp, *saved_p4dp;
-+	pud_t *pudp, *saved_pudp;
-+	pmd_t *pmdp, *saved_pmdp, pmd;
-+	pte_t *ptep;
-+	pgtable_t saved_ptep;
-+	pgprot_t prot;
-+	unsigned long vaddr;
-+
-+	prot = vm_get_page_prot(VMFLAGS);
-+	vaddr = get_random_vaddr();
-+	mm = mm_alloc();
-+	if (!mm) {
-+		pr_err("mm_struct allocation failed\n");
-+		return;
-+	}
-+
-+	page = alloc_mapped_page();
-+	if (!page) {
-+		pr_err("memory allocation failed\n");
-+		return;
-+	}
-+
-+	pgdp = pgd_offset(mm, vaddr);
-+	p4dp = p4d_alloc(mm, pgdp, vaddr);
-+	pudp = pud_alloc(mm, p4dp, vaddr);
-+	pmdp = pmd_alloc(mm, pudp, vaddr);
-+	ptep = pte_alloc_map(mm, pmdp, vaddr);
-+
-+	/*
-+	 * Save all the page table page addresses as the page table
-+	 * entries will be used for testing with random or garbage
-+	 * values. These saved addresses will be used for freeing
-+	 * page table pages.
-+	 */
-+	pmd = READ_ONCE(*pmdp);
-+	saved_p4dp = p4d_offset(pgdp, 0UL);
-+	saved_pudp = pud_offset(p4dp, 0UL);
-+	saved_pmdp = pmd_offset(pudp, 0UL);
-+	saved_ptep = pmd_pgtable(pmd);
-+
-+	pte_basic_tests(page, prot);
-+	pmd_basic_tests(page, prot);
-+	pud_basic_tests(page, prot);
-+	p4d_basic_tests(page, prot);
-+	pgd_basic_tests(page, prot);
-+
-+	pte_clear_tests(mm, ptep);
-+	pmd_clear_tests(mm, pmdp);
-+	pud_clear_tests(mm, pudp);
-+	p4d_clear_tests(mm, p4dp);
-+	pgd_clear_tests(mm, pgdp);
-+
-+	pte_unmap(ptep);
-+
-+	pmd_populate_tests(mm, pmdp, saved_ptep);
-+	pud_populate_tests(mm, pudp, saved_pmdp);
-+	p4d_populate_tests(mm, p4dp, saved_pudp);
-+	pgd_populate_tests(mm, pgdp, saved_p4dp);
-+
-+	p4d_free(mm, saved_p4dp);
-+	pud_free(mm, saved_pudp);
-+	pmd_free(mm, saved_pmdp);
-+	pte_free(mm, saved_ptep);
-+
-+	mm_dec_nr_puds(mm);
-+	mm_dec_nr_pmds(mm);
-+	mm_dec_nr_ptes(mm);
-+	__mmdrop(mm);
-+
-+	free_mapped_page(page);
-+}
+ /**
+- * early_platform_match - find early platform device matching driver
++ * sh_early_platform_match - find early platform device matching driver
+  * @epdrv: early platform driver structure
+  * @id: id to match against
+  */
+ static struct platform_device * __init
+-early_platform_match(struct early_platform_driver *epdrv, int id)
++sh_early_platform_match(struct sh_early_platform_driver *epdrv, int id)
+ {
+ 	struct platform_device *pd;
+ 
+-	list_for_each_entry(pd, &early_platform_device_list, dev.devres_head)
++	list_for_each_entry(pd, &sh_early_platform_device_list, dev.devres_head)
+ 		if (platform_match(&pd->dev, &epdrv->pdrv->driver))
+ 			if (pd->id = id)
+ 				return pd;
+@@ -185,16 +185,16 @@ early_platform_match(struct early_platform_driver *epdrv, int id)
+ }
+ 
+ /**
+- * early_platform_left - check if early platform driver has matching devices
++ * sh_early_platform_left - check if early platform driver has matching devices
+  * @epdrv: early platform driver structure
+  * @id: return true if id or above exists
+  */
+-static int __init early_platform_left(struct early_platform_driver *epdrv,
++static int __init sh_early_platform_left(struct sh_early_platform_driver *epdrv,
+ 				       int id)
+ {
+ 	struct platform_device *pd;
+ 
+-	list_for_each_entry(pd, &early_platform_device_list, dev.devres_head)
++	list_for_each_entry(pd, &sh_early_platform_device_list, dev.devres_head)
+ 		if (platform_match(&pd->dev, &epdrv->pdrv->driver))
+ 			if (pd->id >= id)
+ 				return 1;
+@@ -203,22 +203,22 @@ static int __init early_platform_left(struct early_platform_driver *epdrv,
+ }
+ 
+ /**
+- * early_platform_driver_probe_id - probe drivers matching class_str and id
++ * sh_early_platform_driver_probe_id - probe drivers matching class_str and id
+  * @class_str: string to identify early platform driver class
+  * @id: id to match against
+  * @nr_probe: number of platform devices to successfully probe before exiting
+  */
+-static int __init early_platform_driver_probe_id(char *class_str,
++static int __init sh_early_platform_driver_probe_id(char *class_str,
+ 						 int id,
+ 						 int nr_probe)
+ {
+-	struct early_platform_driver *epdrv;
++	struct sh_early_platform_driver *epdrv;
+ 	struct platform_device *match;
+ 	int match_id;
+ 	int n = 0;
+ 	int left = 0;
+ 
+-	list_for_each_entry(epdrv, &early_platform_driver_list, list) {
++	list_for_each_entry(epdrv, &sh_early_platform_driver_list, list) {
+ 		/* only use drivers matching our class_str */
+ 		if (strcmp(class_str, epdrv->class_str))
+ 			continue;
+@@ -229,7 +229,7 @@ static int __init early_platform_driver_probe_id(char *class_str,
+ 
+ 		} else {
+ 			match_id = id;
+-			left += early_platform_left(epdrv, id);
++			left += sh_early_platform_left(epdrv, id);
+ 
+ 			/* skip requested id */
+ 			switch (epdrv->requested_id) {
+@@ -251,7 +251,7 @@ static int __init early_platform_driver_probe_id(char *class_str,
+ 			match = NULL;
+ 			break;
+ 		default:
+-			match = early_platform_match(epdrv, match_id);
++			match = sh_early_platform_match(epdrv, match_id);
+ 		}
+ 
+ 		if (match) {
+@@ -293,7 +293,7 @@ static int __init early_platform_driver_probe_id(char *class_str,
+ }
+ 
+ /**
+- * early_platform_driver_probe - probe a class of registered drivers
++ * sh_early_platform_driver_probe - probe a class of registered drivers
+  * @class_str: string to identify early platform driver class
+  * @nr_probe: number of platform devices to successfully probe before exiting
+  * @user_only: only probe user specified early platform devices
+@@ -302,7 +302,7 @@ static int __init early_platform_driver_probe_id(char *class_str,
+  * within a certain class. For probe to happen a registered early platform
+  * device matching a registered early platform driver is needed.
+  */
+-int __init early_platform_driver_probe(char *class_str,
++int __init sh_early_platform_driver_probe(char *class_str,
+ 				       int nr_probe,
+ 				       int user_only)
+ {
+@@ -310,7 +310,7 @@ int __init early_platform_driver_probe(char *class_str,
+ 
+ 	n = 0;
+ 	for (i = -2; n < nr_probe; i++) {
+-		k = early_platform_driver_probe_id(class_str, i, nr_probe - n);
++		k = sh_early_platform_driver_probe_id(class_str, i, nr_probe - n);
+ 
+ 		if (k < 0)
+ 			break;
+@@ -325,14 +325,14 @@ int __init early_platform_driver_probe(char *class_str,
+ }
+ 
+ /**
+- * early_platform_cleanup - clean up early platform code
++ * sh_early_platform_cleanup - clean up early platform code
+  */
+-static int __init early_platform_cleanup(void)
++static int __init sh_early_platform_cleanup(void)
+ {
+ 	struct platform_device *pd, *pd2;
+ 
+ 	/* clean up the devres list used to chain devices */
+-	list_for_each_entry_safe(pd, pd2, &early_platform_device_list,
++	list_for_each_entry_safe(pd, pd2, &sh_early_platform_device_list,
+ 				 dev.devres_head) {
+ 		list_del(&pd->dev.devres_head);
+ 		memset(&pd->dev.devres_head, 0, sizeof(pd->dev.devres_head));
+@@ -344,4 +344,4 @@ static int __init early_platform_cleanup(void)
+  * This must happen once after all early devices are probed but before probing
+  * real platform devices.
+  */
+-subsys_initcall(early_platform_cleanup);
++subsys_initcall(sh_early_platform_cleanup);
+diff --git a/arch/sh/include/asm/platform_early.h b/arch/sh/include/asm/platform_early.h
+index 4590ab757d5f..fc802137c37d 100644
+--- a/arch/sh/include/asm/platform_early.h
++++ b/arch/sh/include/asm/platform_early.h
+@@ -8,7 +8,7 @@
+ #include <linux/pm_runtime.h>
+ #include <linux/slab.h>
+ 
+-struct early_platform_driver {
++struct sh_early_platform_driver {
+ 	const char *class_str;
+ 	struct platform_driver *pdrv;
+ 	struct list_head list;
+@@ -20,39 +20,39 @@ struct early_platform_driver {
+ #define EARLY_PLATFORM_ID_UNSET -2
+ #define EARLY_PLATFORM_ID_ERROR -3
+ 
+-extern int early_platform_driver_register(struct early_platform_driver *epdrv,
++extern int sh_early_platform_driver_register(struct sh_early_platform_driver *epdrv,
+ 					  char *buf);
+-extern void early_platform_add_devices(struct platform_device **devs, int num);
++extern void sh_early_platform_add_devices(struct platform_device **devs, int num);
+ 
+-static inline int is_early_platform_device(struct platform_device *pdev)
++static inline int is_sh_early_platform_device(struct platform_device *pdev)
+ {
+ 	return !pdev->dev.driver;
+ }
+ 
+-extern void early_platform_driver_register_all(char *class_str);
+-extern int early_platform_driver_probe(char *class_str,
++extern void sh_early_platform_driver_register_all(char *class_str);
++extern int sh_early_platform_driver_probe(char *class_str,
+ 				       int nr_probe, int user_only);
+ 
+-#define early_platform_init(class_string, platdrv)		\
+-	early_platform_init_buffer(class_string, platdrv, NULL, 0)
++#define sh_early_platform_init(class_string, platdrv)		\
++	sh_early_platform_init_buffer(class_string, platdrv, NULL, 0)
+ 
+ #ifndef MODULE
+-#define early_platform_init_buffer(class_string, platdrv, buf, bufsiz)	\
+-static __initdata struct early_platform_driver early_driver = {		\
++#define sh_early_platform_init_buffer(class_string, platdrv, buf, bufsiz)	\
++static __initdata struct sh_early_platform_driver early_driver = {		\
+ 	.class_str = class_string,					\
+ 	.buffer = buf,							\
+ 	.bufsize = bufsiz,						\
+ 	.pdrv = platdrv,						\
+ 	.requested_id = EARLY_PLATFORM_ID_UNSET,			\
+ };									\
+-static int __init early_platform_driver_setup_func(char *buffer)	\
++static int __init sh_early_platform_driver_setup_func(char *buffer)	\
+ {									\
+-	return early_platform_driver_register(&early_driver, buffer);	\
++	return sh_early_platform_driver_register(&early_driver, buffer);	\
+ }									\
+-early_param(class_string, early_platform_driver_setup_func)
++early_param(class_string, sh_early_platform_driver_setup_func)
+ #else /* MODULE */
+-#define early_platform_init_buffer(class_string, platdrv, buf, bufsiz)	\
+-static inline char *early_platform_driver_setup_func(void)		\
++#define sh_early_platform_init_buffer(class_string, platdrv, buf, bufsiz)	\
++static inline char *sh_early_platform_driver_setup_func(void)		\
+ {									\
+ 	return bufsiz ? buf : NULL;					\
+ }
+diff --git a/arch/sh/kernel/cpu/sh2/setup-sh7619.c b/arch/sh/kernel/cpu/sh2/setup-sh7619.c
+index 27d459e8a598..b1c877b6a420 100644
+--- a/arch/sh/kernel/cpu/sh2/setup-sh7619.c
++++ b/arch/sh/kernel/cpu/sh2/setup-sh7619.c
+@@ -200,6 +200,6 @@ void __init plat_early_device_setup(void)
+ 	/* enable CMT clock */
+ 	__raw_writeb(__raw_readb(STBCR3) & ~0x10, STBCR3);
+ 
+-	early_platform_add_devices(sh7619_early_devices,
++	sh_early_platform_add_devices(sh7619_early_devices,
+ 				   ARRAY_SIZE(sh7619_early_devices));
+ }
+diff --git a/arch/sh/kernel/cpu/sh2a/setup-mxg.c b/arch/sh/kernel/cpu/sh2a/setup-mxg.c
+index 8a19c5754978..cefa07924c16 100644
+--- a/arch/sh/kernel/cpu/sh2a/setup-mxg.c
++++ b/arch/sh/kernel/cpu/sh2a/setup-mxg.c
+@@ -170,6 +170,6 @@ static struct platform_device *mxg_early_devices[] __initdata = {
+ 
+ void __init plat_early_device_setup(void)
+ {
+-	early_platform_add_devices(mxg_early_devices,
++	sh_early_platform_add_devices(mxg_early_devices,
+ 				   ARRAY_SIZE(mxg_early_devices));
+ }
+diff --git a/arch/sh/kernel/cpu/sh2a/setup-sh7201.c b/arch/sh/kernel/cpu/sh2a/setup-sh7201.c
+index d975e4d404bd..28f1bebf3405 100644
+--- a/arch/sh/kernel/cpu/sh2a/setup-sh7201.c
++++ b/arch/sh/kernel/cpu/sh2a/setup-sh7201.c
+@@ -413,6 +413,6 @@ void __init plat_early_device_setup(void)
+ 	/* enable MTU2 clock */
+ 	__raw_writeb(__raw_readb(STBCR3) & ~0x20, STBCR3);
+ 
+-	early_platform_add_devices(sh7201_early_devices,
++	sh_early_platform_add_devices(sh7201_early_devices,
+ 				   ARRAY_SIZE(sh7201_early_devices));
+ }
+diff --git a/arch/sh/kernel/cpu/sh2a/setup-sh7203.c b/arch/sh/kernel/cpu/sh2a/setup-sh7203.c
+index 318b8cd8d5b7..4839f3aaeb4c 100644
+--- a/arch/sh/kernel/cpu/sh2a/setup-sh7203.c
++++ b/arch/sh/kernel/cpu/sh2a/setup-sh7203.c
+@@ -350,6 +350,6 @@ void __init plat_early_device_setup(void)
+ 	/* enable MTU2 clock */
+ 	__raw_writeb(__raw_readb(STBCR3) & ~0x20, STBCR3);
+ 
+-	early_platform_add_devices(sh7203_early_devices,
++	sh_early_platform_add_devices(sh7203_early_devices,
+ 				   ARRAY_SIZE(sh7203_early_devices));
+ }
+diff --git a/arch/sh/kernel/cpu/sh2a/setup-sh7206.c b/arch/sh/kernel/cpu/sh2a/setup-sh7206.c
+index 8e6fae60074a..68add5af4cc5 100644
+--- a/arch/sh/kernel/cpu/sh2a/setup-sh7206.c
++++ b/arch/sh/kernel/cpu/sh2a/setup-sh7206.c
+@@ -286,6 +286,6 @@ void __init plat_early_device_setup(void)
+ 	/* enable MTU2 clock */
+ 	__raw_writeb(__raw_readb(STBCR3) & ~0x20, STBCR3);
+ 
+-	early_platform_add_devices(sh7206_early_devices,
++	sh_early_platform_add_devices(sh7206_early_devices,
+ 				   ARRAY_SIZE(sh7206_early_devices));
+ }
+diff --git a/arch/sh/kernel/cpu/sh2a/setup-sh7264.c b/arch/sh/kernel/cpu/sh2a/setup-sh7264.c
+index 2d95c9b38330..8a1cb613dd2e 100644
+--- a/arch/sh/kernel/cpu/sh2a/setup-sh7264.c
++++ b/arch/sh/kernel/cpu/sh2a/setup-sh7264.c
+@@ -547,6 +547,6 @@ static struct platform_device *sh7264_early_devices[] __initdata = {
+ 
+ void __init plat_early_device_setup(void)
+ {
+-	early_platform_add_devices(sh7264_early_devices,
++	sh_early_platform_add_devices(sh7264_early_devices,
+ 				   ARRAY_SIZE(sh7264_early_devices));
+ }
+diff --git a/arch/sh/kernel/cpu/sh2a/setup-sh7269.c b/arch/sh/kernel/cpu/sh2a/setup-sh7269.c
+index ef4ff76cbe9e..8b1ef3028320 100644
+--- a/arch/sh/kernel/cpu/sh2a/setup-sh7269.c
++++ b/arch/sh/kernel/cpu/sh2a/setup-sh7269.c
+@@ -563,6 +563,6 @@ static struct platform_device *sh7269_early_devices[] __initdata = {
+ 
+ void __init plat_early_device_setup(void)
+ {
+-	early_platform_add_devices(sh7269_early_devices,
++	sh_early_platform_add_devices(sh7269_early_devices,
+ 				   ARRAY_SIZE(sh7269_early_devices));
+ }
+diff --git a/arch/sh/kernel/cpu/sh3/setup-sh7705.c b/arch/sh/kernel/cpu/sh3/setup-sh7705.c
+index 9b34d1f4e797..0544134b3f20 100644
+--- a/arch/sh/kernel/cpu/sh3/setup-sh7705.c
++++ b/arch/sh/kernel/cpu/sh3/setup-sh7705.c
+@@ -179,7 +179,7 @@ static struct platform_device *sh7705_early_devices[] __initdata = {
+ 
+ void __init plat_early_device_setup(void)
+ {
+-	early_platform_add_devices(sh7705_early_devices,
++	sh_early_platform_add_devices(sh7705_early_devices,
+ 				   ARRAY_SIZE(sh7705_early_devices));
+ }
+ 
+diff --git a/arch/sh/kernel/cpu/sh3/setup-sh770x.c b/arch/sh/kernel/cpu/sh3/setup-sh770x.c
+index 39f09504bd96..4947f57748bc 100644
+--- a/arch/sh/kernel/cpu/sh3/setup-sh770x.c
++++ b/arch/sh/kernel/cpu/sh3/setup-sh770x.c
+@@ -231,7 +231,7 @@ static struct platform_device *sh770x_early_devices[] __initdata = {
+ 
+ void __init plat_early_device_setup(void)
+ {
+-	early_platform_add_devices(sh770x_early_devices,
++	sh_early_platform_add_devices(sh770x_early_devices,
+ 				   ARRAY_SIZE(sh770x_early_devices));
+ }
+ 
+diff --git a/arch/sh/kernel/cpu/sh3/setup-sh7710.c b/arch/sh/kernel/cpu/sh3/setup-sh7710.c
+index c006c8fcfa0f..381910761579 100644
+--- a/arch/sh/kernel/cpu/sh3/setup-sh7710.c
++++ b/arch/sh/kernel/cpu/sh3/setup-sh7710.c
+@@ -178,7 +178,7 @@ static struct platform_device *sh7710_early_devices[] __initdata = {
+ 
+ void __init plat_early_device_setup(void)
+ {
+-	early_platform_add_devices(sh7710_early_devices,
++	sh_early_platform_add_devices(sh7710_early_devices,
+ 				   ARRAY_SIZE(sh7710_early_devices));
+ }
+ 
+diff --git a/arch/sh/kernel/cpu/sh3/setup-sh7720.c b/arch/sh/kernel/cpu/sh3/setup-sh7720.c
+index cf2eec9f6abd..425d067dae9b 100644
+--- a/arch/sh/kernel/cpu/sh3/setup-sh7720.c
++++ b/arch/sh/kernel/cpu/sh3/setup-sh7720.c
+@@ -212,7 +212,7 @@ static struct platform_device *sh7720_early_devices[] __initdata = {
+ 
+ void __init plat_early_device_setup(void)
+ {
+-	early_platform_add_devices(sh7720_early_devices,
++	sh_early_platform_add_devices(sh7720_early_devices,
+ 				   ARRAY_SIZE(sh7720_early_devices));
+ }
+ 
+diff --git a/arch/sh/kernel/cpu/sh4/setup-sh4-202.c b/arch/sh/kernel/cpu/sh4/setup-sh4-202.c
+index 2480ce4a3b1e..e6737f3d0df2 100644
+--- a/arch/sh/kernel/cpu/sh4/setup-sh4-202.c
++++ b/arch/sh/kernel/cpu/sh4/setup-sh4-202.c
+@@ -77,7 +77,7 @@ static struct platform_device *sh4202_early_devices[] __initdata = {
+ 
+ void __init plat_early_device_setup(void)
+ {
+-	early_platform_add_devices(sh4202_early_devices,
++	sh_early_platform_add_devices(sh4202_early_devices,
+ 				   ARRAY_SIZE(sh4202_early_devices));
+ }
+ 
+diff --git a/arch/sh/kernel/cpu/sh4/setup-sh7750.c b/arch/sh/kernel/cpu/sh4/setup-sh7750.c
+index 4592d660b942..19c8f1d69071 100644
+--- a/arch/sh/kernel/cpu/sh4/setup-sh7750.c
++++ b/arch/sh/kernel/cpu/sh4/setup-sh7750.c
+@@ -162,15 +162,15 @@ void __init plat_early_device_setup(void)
+ 	if (mach_is_rts7751r2d()) {
+ 		scif_platform_data.scscr |= SCSCR_CKE1;
+ 		dev[0] = &scif_device;
+-		early_platform_add_devices(dev, 1);
++		sh_early_platform_add_devices(dev, 1);
+ 	} else {
+ 		dev[0] = &sci_device;
+-		early_platform_add_devices(dev, 1);
++		sh_early_platform_add_devices(dev, 1);
+ 		dev[0] = &scif_device;
+-		early_platform_add_devices(dev, 1);
++		sh_early_platform_add_devices(dev, 1);
+ 	}
+ 
+-	early_platform_add_devices(sh7750_early_devices,
++	sh_early_platform_add_devices(sh7750_early_devices,
+ 				   ARRAY_SIZE(sh7750_early_devices));
+ }
+ 
+diff --git a/arch/sh/kernel/cpu/sh4/setup-sh7760.c b/arch/sh/kernel/cpu/sh4/setup-sh7760.c
+index e64eb96e3589..14212f5d803c 100644
+--- a/arch/sh/kernel/cpu/sh4/setup-sh7760.c
++++ b/arch/sh/kernel/cpu/sh4/setup-sh7760.c
+@@ -272,7 +272,7 @@ static struct platform_device *sh7760_early_devices[] __initdata = {
+ 
+ void __init plat_early_device_setup(void)
+ {
+-	early_platform_add_devices(sh7760_early_devices,
++	sh_early_platform_add_devices(sh7760_early_devices,
+ 				   ARRAY_SIZE(sh7760_early_devices));
+ }
+ 
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7343.c b/arch/sh/kernel/cpu/sh4a/setup-sh7343.c
+index 0fa56128bdca..b6015188fab1 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7343.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7343.c
+@@ -297,7 +297,7 @@ static struct platform_device *sh7343_early_devices[] __initdata = {
+ 
+ void __init plat_early_device_setup(void)
+ {
+-	early_platform_add_devices(sh7343_early_devices,
++	sh_early_platform_add_devices(sh7343_early_devices,
+ 				   ARRAY_SIZE(sh7343_early_devices));
+ }
+ 
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7366.c b/arch/sh/kernel/cpu/sh4a/setup-sh7366.c
+index 9f2f75285ec3..6676beef053e 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7366.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7366.c
+@@ -241,7 +241,7 @@ static struct platform_device *sh7366_early_devices[] __initdata = {
+ 
+ void __init plat_early_device_setup(void)
+ {
+-	early_platform_add_devices(sh7366_early_devices,
++	sh_early_platform_add_devices(sh7366_early_devices,
+ 				   ARRAY_SIZE(sh7366_early_devices));
+ }
+ 
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7722.c b/arch/sh/kernel/cpu/sh4a/setup-sh7722.c
+index 8e5eaac789a7..0c6757ef63f4 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7722.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7722.c
+@@ -513,7 +513,7 @@ static struct platform_device *sh7722_early_devices[] __initdata = {
+ 
+ void __init plat_early_device_setup(void)
+ {
+-	early_platform_add_devices(sh7722_early_devices,
++	sh_early_platform_add_devices(sh7722_early_devices,
+ 				   ARRAY_SIZE(sh7722_early_devices));
+ }
+ 
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7723.c b/arch/sh/kernel/cpu/sh4a/setup-sh7723.c
+index b4b54aa0c267..83ae1ad4a86e 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7723.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7723.c
+@@ -411,7 +411,7 @@ static struct platform_device *sh7723_early_devices[] __initdata = {
+ 
+ void __init plat_early_device_setup(void)
+ {
+-	early_platform_add_devices(sh7723_early_devices,
++	sh_early_platform_add_devices(sh7723_early_devices,
+ 				   ARRAY_SIZE(sh7723_early_devices));
+ }
+ 
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7724.c b/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
+index ec237ab112cf..0d990ab1ba2a 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
+@@ -831,7 +831,7 @@ static struct platform_device *sh7724_early_devices[] __initdata = {
+ 
+ void __init plat_early_device_setup(void)
+ {
+-	early_platform_add_devices(sh7724_early_devices,
++	sh_early_platform_add_devices(sh7724_early_devices,
+ 				   ARRAY_SIZE(sh7724_early_devices));
+ }
+ 
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7734.c b/arch/sh/kernel/cpu/sh4a/setup-sh7734.c
+index 7ea9a8b43955..9911da794358 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7734.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7734.c
+@@ -281,7 +281,7 @@ static struct platform_device *sh7734_early_devices[] __initdata = {
+ 
+ void __init plat_early_device_setup(void)
+ {
+-	early_platform_add_devices(sh7734_early_devices,
++	sh_early_platform_add_devices(sh7734_early_devices,
+ 		ARRAY_SIZE(sh7734_early_devices));
+ }
+ 
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7757.c b/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
+index 922d9886be18..67e330b7ea46 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
+@@ -768,7 +768,7 @@ static struct platform_device *sh7757_early_devices[] __initdata = {
+ 
+ void __init plat_early_device_setup(void)
+ {
+-	early_platform_add_devices(sh7757_early_devices,
++	sh_early_platform_add_devices(sh7757_early_devices,
+ 				   ARRAY_SIZE(sh7757_early_devices));
+ }
+ 
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7763.c b/arch/sh/kernel/cpu/sh4a/setup-sh7763.c
+index 8725d4751baf..b0608664785f 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7763.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7763.c
+@@ -222,7 +222,7 @@ static struct platform_device *sh7763_early_devices[] __initdata = {
+ 
+ void __init plat_early_device_setup(void)
+ {
+-	early_platform_add_devices(sh7763_early_devices,
++	sh_early_platform_add_devices(sh7763_early_devices,
+ 				   ARRAY_SIZE(sh7763_early_devices));
+ }
+ 
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7770.c b/arch/sh/kernel/cpu/sh4a/setup-sh7770.c
+index 035a0d4f2a2e..5efec6ceb04d 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7770.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7770.c
+@@ -317,7 +317,7 @@ static struct platform_device *sh7770_early_devices[] __initdata = {
+ 
+ void __init plat_early_device_setup(void)
+ {
+-	early_platform_add_devices(sh7770_early_devices,
++	sh_early_platform_add_devices(sh7770_early_devices,
+ 				   ARRAY_SIZE(sh7770_early_devices));
+ }
+ 
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7780.c b/arch/sh/kernel/cpu/sh4a/setup-sh7780.c
+index 983be87cb7be..c818b788ecb0 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7780.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7780.c
+@@ -286,7 +286,7 @@ void __init plat_early_device_setup(void)
+ 		scif1_platform_data.scscr &= ~SCSCR_CKE1;
+ 	}
+ 
+-	early_platform_add_devices(sh7780_early_devices,
++	sh_early_platform_add_devices(sh7780_early_devices,
+ 				   ARRAY_SIZE(sh7780_early_devices));
+ }
+ 
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7785.c b/arch/sh/kernel/cpu/sh4a/setup-sh7785.c
+index bb0cb710c16e..3b4a414d60a9 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7785.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7785.c
+@@ -354,7 +354,7 @@ static struct platform_device *sh7785_early_devices[] __initdata = {
+ 
+ void __init plat_early_device_setup(void)
+ {
+-	early_platform_add_devices(sh7785_early_devices,
++	sh_early_platform_add_devices(sh7785_early_devices,
+ 				   ARRAY_SIZE(sh7785_early_devices));
+ }
+ 
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7786.c b/arch/sh/kernel/cpu/sh4a/setup-sh7786.c
+index b5d94366eed3..4b0db8259e3d 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7786.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7786.c
+@@ -835,6 +835,6 @@ arch_initcall(sh7786_devices_setup);
+ 
+ void __init plat_early_device_setup(void)
+ {
+-	early_platform_add_devices(sh7786_early_devices,
++	sh_early_platform_add_devices(sh7786_early_devices,
+ 				   ARRAY_SIZE(sh7786_early_devices));
+ }
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-shx3.c b/arch/sh/kernel/cpu/sh4a/setup-shx3.c
+index e82398d80b74..7014d6d199b3 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-shx3.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-shx3.c
+@@ -153,7 +153,7 @@ arch_initcall(shx3_devices_setup);
+ 
+ void __init plat_early_device_setup(void)
+ {
+-	early_platform_add_devices(shx3_early_devices,
++	sh_early_platform_add_devices(shx3_early_devices,
+ 				   ARRAY_SIZE(shx3_early_devices));
+ }
+ 
+diff --git a/arch/sh/kernel/cpu/sh5/setup-sh5.c b/arch/sh/kernel/cpu/sh5/setup-sh5.c
+index 584a6aeeca26..dc8476d67244 100644
+--- a/arch/sh/kernel/cpu/sh5/setup-sh5.c
++++ b/arch/sh/kernel/cpu/sh5/setup-sh5.c
+@@ -116,6 +116,6 @@ arch_initcall(sh5_devices_setup);
+ 
+ void __init plat_early_device_setup(void)
+ {
+-	early_platform_add_devices(sh5_early_devices,
++	sh_early_platform_add_devices(sh5_early_devices,
+ 				   ARRAY_SIZE(sh5_early_devices));
+ }
+diff --git a/arch/sh/kernel/setup.c b/arch/sh/kernel/setup.c
+index e535507851e1..914174a125a4 100644
+--- a/arch/sh/kernel/setup.c
++++ b/arch/sh/kernel/setup.c
+@@ -329,7 +329,7 @@ void __init setup_arch(char **cmdline_p)
+ 	sh_mv_setup();
+ 
+ 	/* Let earlyprintk output early console messages */
+-	early_platform_driver_probe("earlyprintk", 1, 1);
++	sh_early_platform_driver_probe("earlyprintk", 1, 1);
+ 
+ #ifdef CONFIG_OF_FLATTREE
+ #ifdef CONFIG_USE_BUILTIN_DTB
+diff --git a/arch/sh/kernel/time.c b/arch/sh/kernel/time.c
+index 8ad9fd5c4ff6..821a09cbd605 100644
+--- a/arch/sh/kernel/time.c
++++ b/arch/sh/kernel/time.c
+@@ -31,8 +31,8 @@ static void __init sh_late_time_init(void)
+ 	 * clocksource and the jiffies clocksource is used transparently
+ 	 * instead. No error handling is necessary here.
+ 	 */
+-	early_platform_driver_register_all("earlytimer");
+-	early_platform_driver_probe("earlytimer", 2, 0);
++	sh_early_platform_driver_register_all("earlytimer");
++	sh_early_platform_driver_probe("earlytimer", 2, 0);
+ }
+ 
+ void __init time_init(void)
+diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
+index 3a185485300e..9cde50cb3220 100644
+--- a/drivers/clocksource/sh_cmt.c
++++ b/drivers/clocksource/sh_cmt.c
+@@ -1056,7 +1056,7 @@ static int sh_cmt_probe(struct platform_device *pdev)
+ 	struct sh_cmt_device *cmt = platform_get_drvdata(pdev);
+ 	int ret;
+ 
+-	if (!is_early_platform_device(pdev)) {
++	if (!is_sh_early_platform_device(pdev)) {
+ 		pm_runtime_set_active(&pdev->dev);
+ 		pm_runtime_enable(&pdev->dev);
+ 	}
+@@ -1076,7 +1076,7 @@ static int sh_cmt_probe(struct platform_device *pdev)
+ 		pm_runtime_idle(&pdev->dev);
+ 		return ret;
+ 	}
+-	if (is_early_platform_device(pdev))
++	if (is_sh_early_platform_device(pdev))
+ 		return 0;
+ 
+  out:
+@@ -1114,7 +1114,7 @@ static void __exit sh_cmt_exit(void)
+ }
+ 
+ #ifdef CONFIG_SUPERH
+-early_platform_init("earlytimer", &sh_cmt_device_driver);
++sh_early_platform_init("earlytimer", &sh_cmt_device_driver);
+ #endif
+ 
+ subsys_initcall(sh_cmt_init);
+diff --git a/drivers/clocksource/sh_mtu2.c b/drivers/clocksource/sh_mtu2.c
+index d581060d33a2..c40eef091a04 100644
+--- a/drivers/clocksource/sh_mtu2.c
++++ b/drivers/clocksource/sh_mtu2.c
+@@ -446,7 +446,7 @@ static int sh_mtu2_probe(struct platform_device *pdev)
+ 	struct sh_mtu2_device *mtu = platform_get_drvdata(pdev);
+ 	int ret;
+ 
+-	if (!is_early_platform_device(pdev)) {
++	if (!is_sh_early_platform_device(pdev)) {
+ 		pm_runtime_set_active(&pdev->dev);
+ 		pm_runtime_enable(&pdev->dev);
+ 	}
+@@ -466,7 +466,7 @@ static int sh_mtu2_probe(struct platform_device *pdev)
+ 		pm_runtime_idle(&pdev->dev);
+ 		return ret;
+ 	}
+-	if (is_early_platform_device(pdev))
++	if (is_sh_early_platform_device(pdev))
+ 		return 0;
+ 
+  out:
+@@ -516,7 +516,7 @@ static void __exit sh_mtu2_exit(void)
+ }
+ 
+ #ifdef CONFIG_SUPERH
+-early_platform_init("earlytimer", &sh_mtu2_device_driver);
++sh_early_platform_init("earlytimer", &sh_mtu2_device_driver);
+ #endif
+ 
+ subsys_initcall(sh_mtu2_init);
+diff --git a/drivers/clocksource/sh_tmu.c b/drivers/clocksource/sh_tmu.c
+index 50e30ead050e..d49690d15536 100644
+--- a/drivers/clocksource/sh_tmu.c
++++ b/drivers/clocksource/sh_tmu.c
+@@ -599,7 +599,7 @@ static int sh_tmu_probe(struct platform_device *pdev)
+ 	struct sh_tmu_device *tmu = platform_get_drvdata(pdev);
+ 	int ret;
+ 
+-	if (!is_early_platform_device(pdev)) {
++	if (!is_sh_early_platform_device(pdev)) {
+ 		pm_runtime_set_active(&pdev->dev);
+ 		pm_runtime_enable(&pdev->dev);
+ 	}
+@@ -620,7 +620,7 @@ static int sh_tmu_probe(struct platform_device *pdev)
+ 		return ret;
+ 	}
+ 
+-	if (is_early_platform_device(pdev))
++	if (is_sh_early_platform_device(pdev))
+ 		return 0;
+ 
+  out:
+@@ -671,7 +671,7 @@ static void __exit sh_tmu_exit(void)
+ }
+ 
+ #ifdef CONFIG_SUPERH
+-early_platform_init("earlytimer", &sh_tmu_device_driver);
++sh_early_platform_init("earlytimer", &sh_tmu_device_driver);
+ #endif
+ 
+ subsys_initcall(sh_tmu_init);
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 2a645fd7f07b..970f1f86b945 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -3318,7 +3318,7 @@ static int sci_probe(struct platform_device *dev)
+ 	 * to make it beyond this yet.
+ 	 */
+ #ifdef CONFIG_SUPERH
+-	if (is_early_platform_device(dev))
++	if (is_sh_early_platform_device(dev))
+ 		return sci_probe_earlyprintk(dev);
+ #endif
+ 
+@@ -3416,7 +3416,7 @@ static void __exit sci_exit(void)
+ }
+ 
+ #if defined(CONFIG_SUPERH) && defined(CONFIG_SERIAL_SH_SCI_CONSOLE)
+-early_platform_init_buffer("earlyprintk", &sci_driver,
++sh_early_platform_init_buffer("earlyprintk", &sci_driver,
+ 			   early_serial_buf, ARRAY_SIZE(early_serial_buf));
+ #endif
+ #ifdef CONFIG_SERIAL_SH_SCI_EARLYCON
+diff --git a/include/linux/platform_device.h b/include/linux/platform_device.h
+index 85aa28a041a9..f086b6a1bc6b 100644
+--- a/include/linux/platform_device.h
++++ b/include/linux/platform_device.h
+@@ -332,7 +332,7 @@ extern int platform_dma_configure(struct device *dev);
+  * drivers. It should go away once we introduce the new platform_device-based
+  * early driver framework.
+  */
+-static inline int is_early_platform_device(struct platform_device *pdev)
++static inline int is_sh_early_platform_device(struct platform_device *pdev)
+ {
+ 	return 0;
+ }
 -- 
-2.7.4
+2.23.0
