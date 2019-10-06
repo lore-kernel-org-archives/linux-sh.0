@@ -1,44 +1,52 @@
-From: Lee Jones <lee.jones@linaro.org>
-Date: Thu, 24 Oct 2019 12:10:47 +0000
-Subject: Re: [PATCH v7 0/9] backlight: gpio: simplify the driver
-Message-Id: <20191024121047.GM15843@dell>
+From: David Hildenbrand <david@redhat.com>
+Date: Sun, 06 Oct 2019 08:56:43 +0000
+Subject: [PATCH v6 07/10] mm/memory_hotplug: We always have a zone in find_(smallest|biggest)_section_pfn
+Message-Id: <20191006085646.5768-8-david@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20191022083630.28175-1-brgl@bgdev.pl>
- <CAMRc=MeyrDZgmHJ+2SMipP7y9NggxiVfkAh4kCLePFWvUku9aQ@mail.gmail.com>
- <20191023155941.q563d3cfizre4zvt@holly.lan>
- <20191024064726.GB15843@dell>
- <20191024071703.6keoebzlfnn2qmyd@uno.localdomain>
-In-Reply-To: <20191024071703.6keoebzlfnn2qmyd@uno.localdomain>
+References: <20191006085646.5768-1-david@redhat.com>
+In-Reply-To: <20191006085646.5768-1-david@redhat.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: Jacopo Mondi <jacopo@jmondi.org>
-Cc: Daniel Thompson <daniel.thompson@linaro.org>, Bartosz Golaszewski <brgl@bgdev.pl>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Jingoo Han <jingoohan1@gmail.com>, Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>, Linus Walleij <linus.walleij@linaro.org>, Andy Shevchenko <andriy.shevchenko@linux.intel.com>, Linux-sh list <linux-sh@vger.kernel.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, "open list:DRM PANEL DRIVERS" <dri-devel@lists.freedesktop.org>, Linux Fbdev development list <linux-fbdev@vger.kernel.org>, Bartosz Golaszewski <bgolaszewski@baylibre.com>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-kernel@vger.kernel.org
+Cc: linux-s390@vger.kernel.org, Michal Hocko <mhocko@suse.com>, linux-ia64@vger.kernel.org, Pavel Tatashin <pasha.tatashin@soleen.com>, linux-sh@vger.kernel.org, x86@kernel.org, David Hildenbrand <david@redhat.com>, linux-mm@kvack.org, Wei Yang <richardw.yang@linux.intel.com>, Andrew Morton <akpm@linux-foundation.org>, linuxppc-dev@lists.ozlabs.org, Dan Williams <dan.j.williams@intel.com>, linux-arm-kernel@lists.infradead.org, Oscar Salvador <osalvador@suse.de>
 
-On Thu, 24 Oct 2019, Jacopo Mondi wrote:
-> On Thu, Oct 24, 2019 at 07:47:26AM +0100, Lee Jones wrote:
-> > On Wed, 23 Oct 2019, Daniel Thompson wrote:
+With shrink_pgdat_span() out of the way, we now always have a valid
+zone.
 
-[...]
+Cc: Andrew Morton <akpm@linux-foundation.org>
+Cc: Oscar Salvador <osalvador@suse.de>
+Cc: David Hildenbrand <david@redhat.com>
+Cc: Michal Hocko <mhocko@suse.com>
+Cc: Pavel Tatashin <pasha.tatashin@soleen.com>
+Cc: Dan Williams <dan.j.williams@intel.com>
+Cc: Wei Yang <richardw.yang@linux.intel.com>
+Signed-off-by: David Hildenbrand <david@redhat.com>
+---
+ mm/memory_hotplug.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-> > > > Jacopo is travelling until November 1st and won't be able to test this
-> > > > again before this date. Do you think you can pick it up and in case
-> > > > anything's broken on SH, we can fix it after v5.5-rc1, so that it
-> > > > doesn't miss another merge window?
-> >
-> > November 1st (-rc6) will be fine.
-> >
-> > I'd rather apply it late-tested than early-non-tested.
-> >
-> > Hopefully Jacopo can prioritise testing this on Thursday or Friday,
-> > since Monday will be -rc7 which is really cutting it fine.
-> 
-> I'll do my best, I'll get home Friday late afternoon :)
-
-Thanks. We'd all really appreciate it.
-
+diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
+index bf5173e7913d..f294918f7211 100644
+--- a/mm/memory_hotplug.c
++++ b/mm/memory_hotplug.c
+@@ -337,7 +337,7 @@ static unsigned long find_smallest_section_pfn(int nid, struct zone *zone,
+ 		if (unlikely(pfn_to_nid(start_pfn) != nid))
+ 			continue;
+ 
+-		if (zone && zone != page_zone(pfn_to_page(start_pfn)))
++		if (zone != page_zone(pfn_to_page(start_pfn)))
+ 			continue;
+ 
+ 		return start_pfn;
+@@ -362,7 +362,7 @@ static unsigned long find_biggest_section_pfn(int nid, struct zone *zone,
+ 		if (unlikely(pfn_to_nid(pfn) != nid))
+ 			continue;
+ 
+-		if (zone && zone != page_zone(pfn_to_page(pfn)))
++		if (zone != page_zone(pfn_to_page(pfn)))
+ 			continue;
+ 
+ 		return pfn;
 -- 
-Lee Jones [李琼斯]
-Linaro Services Technical Lead
-Linaro.org │ Open source software for ARM SoCs
-Follow Linaro: Facebook | Twitter | Blog
+2.21.0
