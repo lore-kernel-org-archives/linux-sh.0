@@ -1,35 +1,84 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 30 Oct 2019 08:51:39 +0000
-Subject: Re: [PATCH 13/21] m68k: rename __iounmap and mark it static
-Message-Id: <CAMuHMdWGiHhSv=xCqnsUXok7wYG7Wr1EQh+yuPOZBxPCskUFVw@mail.gmail.com>
+From: David Hildenbrand <david@redhat.com>
+Date: Sun, 06 Oct 2019 08:56:44 +0000
+Subject: [PATCH v6 08/10] mm/memory_hotplug: Don't check for "all holes" in shrink_zone_span()
+Message-Id: <20191006085646.5768-9-david@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20191029064834.23438-1-hch@lst.de> <20191029064834.23438-14-hch@lst.de>
-In-Reply-To: <20191029064834.23438-14-hch@lst.de>
+References: <20191006085646.5768-1-david@redhat.com>
+In-Reply-To: <20191006085646.5768-1-david@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Christoph Hellwig <hch@lst.de>
-Cc: Arnd Bergmann <arnd@arndb.de>, Guo Ren <guoren@kernel.org>, Michal Simek <monstr@monstr.eu>, Greentime Hu <green.hu@gmail.com>, Vincent Chen <deanbo422@gmail.com>, Guan Xuetao <gxt@pku.edu.cn>, the arch/x86 maintainers <x86@kernel.org>, Linux-Arch <linux-arch@vger.kernel.org>, linux-s390 <linux-s390@vger.kernel.org>, "linux-ia64@vger.kernel.org" <linux-ia64@vger.kernel.org>, Parisc List <linux-parisc@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "open list:QUALCOMM HEXAGON..." <linux-hexagon@vger.kernel.org>, linux-xtensa@linux-xtensa.org, linux-mips@vger.kernel.org, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, linux-m68k <linux-m68k@lists.linux-m68k.org>, Openrisc <openrisc@lists.librecores.org>, MTD Maling List <linux-mtd@lists>
+To: linux-kernel@vger.kernel.org
+Cc: linux-s390@vger.kernel.org, Michal Hocko <mhocko@suse.com>, linux-ia64@vger.kernel.org, Pavel Tatashin <pasha.tatashin@soleen.com>, linux-sh@vger.kernel.org, x86@kernel.org, David Hildenbrand <david@redhat.com>, linux-mm@kvack.org, Wei Yang <richardw.yang@linux.intel.com>, Andrew Morton <akpm@linux-foundation.org>, linuxppc-dev@lists.ozlabs.org, Dan Williams <dan.j.williams@intel.com>, linux-arm-kernel@lists.infradead.org, Oscar Salvador <osalvador@suse.de>
 
-On Tue, Oct 29, 2019 at 7:56 AM Christoph Hellwig <hch@lst.de> wrote:
-> m68k uses __iounmap as the name for an internal helper that is only
-> used for some CPU types.  Mark it static, give it a better name
-> and move it around a bit to avoid a forward declaration.
->
-> Signed-off-by: Christoph Hellwig <hch@lst.de>
+If we have holes, the holes will automatically get detected and removed
+once we remove the next bigger/smaller section. The extra checks can
+go.
 
-Thanks for the update!
+Cc: Andrew Morton <akpm@linux-foundation.org>
+Cc: Oscar Salvador <osalvador@suse.de>
+Cc: Michal Hocko <mhocko@suse.com>
+Cc: David Hildenbrand <david@redhat.com>
+Cc: Pavel Tatashin <pasha.tatashin@soleen.com>
+Cc: Dan Williams <dan.j.williams@intel.com>
+Cc: Wei Yang <richardw.yang@linux.intel.com>
+Signed-off-by: David Hildenbrand <david@redhat.com>
+---
+ mm/memory_hotplug.c | 34 +++++++---------------------------
+ 1 file changed, 7 insertions(+), 27 deletions(-)
 
-Reviewed-by: Geert Uytterhoeven <geert@linux-m68k.org>
-Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
+diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
+index f294918f7211..8dafa1ba8d9f 100644
+--- a/mm/memory_hotplug.c
++++ b/mm/memory_hotplug.c
+@@ -393,6 +393,9 @@ static void shrink_zone_span(struct zone *zone, unsigned long start_pfn,
+ 		if (pfn) {
+ 			zone->zone_start_pfn = pfn;
+ 			zone->spanned_pages = zone_end_pfn - pfn;
++		} else {
++			zone->zone_start_pfn = 0;
++			zone->spanned_pages = 0;
+ 		}
+ 	} else if (zone_end_pfn = end_pfn) {
+ 		/*
+@@ -405,34 +408,11 @@ static void shrink_zone_span(struct zone *zone, unsigned long start_pfn,
+ 					       start_pfn);
+ 		if (pfn)
+ 			zone->spanned_pages = pfn - zone_start_pfn + 1;
++		else {
++			zone->zone_start_pfn = 0;
++			zone->spanned_pages = 0;
++		}
+ 	}
+-
+-	/*
+-	 * The section is not biggest or smallest mem_section in the zone, it
+-	 * only creates a hole in the zone. So in this case, we need not
+-	 * change the zone. But perhaps, the zone has only hole data. Thus
+-	 * it check the zone has only hole or not.
+-	 */
+-	pfn = zone_start_pfn;
+-	for (; pfn < zone_end_pfn; pfn += PAGES_PER_SUBSECTION) {
+-		if (unlikely(!pfn_to_online_page(pfn)))
+-			continue;
+-
+-		if (page_zone(pfn_to_page(pfn)) != zone)
+-			continue;
+-
+-		/* Skip range to be removed */
+-		if (pfn >= start_pfn && pfn < end_pfn)
+-			continue;
+-
+-		/* If we find valid section, we have nothing to do */
+-		zone_span_writeunlock(zone);
+-		return;
+-	}
+-
+-	/* The zone has no valid section */
+-	zone->zone_start_pfn = 0;
+-	zone->spanned_pages = 0;
+ 	zone_span_writeunlock(zone);
+ }
+ 
 -- 
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+2.21.0
