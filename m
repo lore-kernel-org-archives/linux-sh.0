@@ -1,81 +1,87 @@
-From: Anshuman Khandual <anshuman.khandual@arm.com>
-Date: Tue, 08 Oct 2019 08:25:22 +0000
-Subject: Re: [PATCH V4 2/2] mm/pgtable/debug: Add test validating architecture page table helpers
-Message-Id: <881796fc-c35e-3790-a1ee-7031c6cdb38d@arm.com>
+From: David Hildenbrand <david@redhat.com>
+Date: Sun, 06 Oct 2019 08:56:37 +0000
+Subject: [PATCH v6 01/10] mm/memunmap: Don't access uninitialized memmap in memunmap_pages()
+Message-Id: <20191006085646.5768-2-david@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1570427124-21887-1-git-send-email-anshuman.khandual@arm.com>
- <1570427124-21887-3-git-send-email-anshuman.khandual@arm.com>
- <20191007130617.GB56546@gmail.com> <20191007132607.4q537nauwfn5thol@box>
- <20191007135158.GA36360@gmail.com> <20191007140058.um5g44rvxyzyiref@box>
-In-Reply-To: <20191007140058.um5g44rvxyzyiref@box>
+References: <20191006085646.5768-1-david@redhat.com>
+In-Reply-To: <20191006085646.5768-1-david@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "Kirill A. Shutemov" <kirill@shutemov.name>, Ingo Molnar <mingo@kernel.org>
-Cc: Mark Rutland <mark.rutland@arm.com>, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, James Hogan <jhogan@kernel.org>, Tetsuo Handa <penguin-kernel@i-love.sakura.ne.jp>, Heiko Carstens <heiko.carstens@de.ibm.com>, Michal Hocko <mhocko@kernel.org>, linux-mm@kvack.org, Dave Hansen <dave.hansen@intel.com>, Paul Mackerras <paulus@samba.org>, sparclinux@vger.kernel.org, Thomas Gleixner <tglx@linutronix.de>, linux-s390@vger.kernel.org, Michael Ellerman <mpe@ellerman.id.au>, x86@kernel.org, Russell King - ARM Linux <linux@armlinux.org.uk>, Matthew Wilcox <willy@infradead.org>, Steven Price <Steven.Price@arm.com>, Jason Gunthorpe <jgg@ziepe.ca>, Gerald Schaefer <gerald.schaefer@de.ibm.com>, linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org, Kees Cook <keescook@chromium.org>, Masahiro Yamada <yamada.masahiro@socionext.com>, Mark Brown <broonie@kernel.org>, Dan Williams <dan.j.williams@intel.com>, Vlastimil Babka <vbabka@suse.cz>, Christophe Leroy <christophe.leroy@c-s.fr>, Sri Krishna chowdary <schowdary@nvidia.com>, Ard Biesheuvel <ard.biesheuvel@linaro.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, linux-mips@vger.kernel.org, Ralf Baechle <ralf@linux-mips.org>, linux-kernel@vger.kernel.org, Paul Burton <paul.burton@mips.com>, Mike Rapoport <rppt@linux.vnet.ibm.com>, Vineet Gupta <vgupta@synopsys.com>, Martin Schwidefsky <schwidefsky@de.ibm.com>, Andrew Morton <akpm@linux-foundation.org>, linuxppc-dev@lists.ozlabs.org, "David S. Miller" <davem@davemloft.net>
+To: linux-kernel@vger.kernel.org
+Cc: linux-s390@vger.kernel.org, linux-ia64@vger.kernel.org, Ira Weiny <ira.weiny@intel.com>, linux-sh@vger.kernel.org, Jason Gunthorpe <jgg@ziepe.ca>, "Aneesh Kumar K.V" <aneesh.kumar@linux.ibm.com>, x86@kernel.org, David Hildenbrand <david@redhat.com>, linux-mm@kvack.org, Logan Gunthorpe <logang@deltatee.com>, Dan Williams <dan.j.williams@intel.com>, linuxppc-dev@lists.ozlabs.org, Andrew Morton <akpm@linux-foundation.org>, linux-arm-kernel@lists.infradead.org
 
+From: "Aneesh Kumar K.V" <aneesh.kumar@linux.ibm.com>
 
+With an altmap, the memmap falling into the reserved altmap space are
+not initialized and, therefore, contain a garbage NID and a garbage
+zone. Make sure to read the NID/zone from a memmap that was initialzed.
 
-On 10/07/2019 07:30 PM, Kirill A. Shutemov wrote:
-> On Mon, Oct 07, 2019 at 03:51:58PM +0200, Ingo Molnar wrote:
->>
->> * Kirill A. Shutemov <kirill@shutemov.name> wrote:
->>
->>> On Mon, Oct 07, 2019 at 03:06:17PM +0200, Ingo Molnar wrote:
->>>>
->>>> * Anshuman Khandual <anshuman.khandual@arm.com> wrote:
->>>>
->>>>> This adds a test module which will validate architecture page table helpers
->>>>> and accessors regarding compliance with generic MM semantics expectations.
->>>>> This will help various architectures in validating changes to the existing
->>>>> page table helpers or addition of new ones.
->>>>>
->>>>> Test page table and memory pages creating it's entries at various level are
->>>>> all allocated from system memory with required alignments. If memory pages
->>>>> with required size and alignment could not be allocated, then all depending
->>>>> individual tests are skipped.
->>>>
->>>>> diff --git a/arch/x86/include/asm/pgtable_64_types.h b/arch/x86/include/asm/pgtable_64_types.h
->>>>> index 52e5f5f2240d..b882792a3999 100644
->>>>> --- a/arch/x86/include/asm/pgtable_64_types.h
->>>>> +++ b/arch/x86/include/asm/pgtable_64_types.h
->>>>> @@ -40,6 +40,8 @@ static inline bool pgtable_l5_enabled(void)
->>>>>  #define pgtable_l5_enabled() 0
->>>>>  #endif /* CONFIG_X86_5LEVEL */
->>>>>  
->>>>> +#define mm_p4d_folded(mm) (!pgtable_l5_enabled())
->>>>> +
->>>>>  extern unsigned int pgdir_shift;
->>>>>  extern unsigned int ptrs_per_p4d;
->>>>
->>>> Any deep reason this has to be a macro instead of proper C?
->>>
->>> It's a way to override the generic mm_p4d_folded(). It can be rewritten
->>> as inline function + define. Something like:
->>>
->>> #define mm_p4d_folded mm_p4d_folded
->>> static inline bool mm_p4d_folded(struct mm_struct *mm)
->>> {
->>> 	return !pgtable_l5_enabled();
->>> }
->>>
->>> But I don't see much reason to be more verbose here than needed.
->>
->> C type checking? Documentation? Yeah, I know it's just a one-liner, but 
->> the principle of the death by a thousand cuts applies here.
-> 
-> Okay, if you think it worth it. Anshuman, could you fix it up for the next
-> submission?
+This fixes a kernel crash that is observed when destroying a namespace:
 
-Sure, will do.
+[   81.356173] kernel BUG at include/linux/mm.h:1107!
+cpu 0x1: Vector: 700 (Program Check) at [c000000274087890]
+    pc: c0000000004b9728: memunmap_pages+0x238/0x340
+    lr: c0000000004b9724: memunmap_pages+0x234/0x340
+...
+    pid   = 3669, comm = ndctl
+kernel BUG at include/linux/mm.h:1107!
+[c000000274087ba0] c0000000009e3500 devm_action_release+0x30/0x50
+[c000000274087bc0] c0000000009e4758 release_nodes+0x268/0x2d0
+[c000000274087c30] c0000000009dd144 device_release_driver_internal+0x174/0x240
+[c000000274087c70] c0000000009d9dfc unbind_store+0x13c/0x190
+[c000000274087cb0] c0000000009d8a24 drv_attr_store+0x44/0x60
+[c000000274087cd0] c0000000005a7470 sysfs_kf_write+0x70/0xa0
+[c000000274087d10] c0000000005a5cac kernfs_fop_write+0x1ac/0x290
+[c000000274087d60] c0000000004be45c __vfs_write+0x3c/0x70
+[c000000274087d80] c0000000004c26e4 vfs_write+0xe4/0x200
+[c000000274087dd0] c0000000004c2a6c ksys_write+0x7c/0x140
+[c000000274087e20] c00000000000bbd0 system_call+0x5c/0x68
 
-> 
-> 
->> BTW., any reason this must be in the low level pgtable_64_types.h type 
->> header, instead of one of the API level header files?
-> 
-> I defined it next pgtable_l5_enabled(). What is more appropriate place to
-> you? pgtable_64.h? Yeah, it makes sense.
+Cc: Dan Williams <dan.j.williams@intel.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>
+Cc: Jason Gunthorpe <jgg@ziepe.ca>
+Cc: Logan Gunthorpe <logang@deltatee.com>
+Cc: Ira Weiny <ira.weiny@intel.com>
+Signed-off-by: Aneesh Kumar K.V <aneesh.kumar@linux.ibm.com>
+[ minimze code changes, rephrase description ]
+Signed-off-by: David Hildenbrand <david@redhat.com>
+---
+ mm/memremap.c | 11 +++++++----
+ 1 file changed, 7 insertions(+), 4 deletions(-)
 
-
-Needs to be moved to arch/x86/include/asm/pgtable_64.h as well ?
+diff --git a/mm/memremap.c b/mm/memremap.c
+index 557e53c6fb46..8c2fb44c3b4d 100644
+--- a/mm/memremap.c
++++ b/mm/memremap.c
+@@ -123,6 +123,7 @@ static void dev_pagemap_cleanup(struct dev_pagemap *pgmap)
+ void memunmap_pages(struct dev_pagemap *pgmap)
+ {
+ 	struct resource *res = &pgmap->res;
++	struct page *first_page;
+ 	unsigned long pfn;
+ 	int nid;
+ 
+@@ -131,14 +132,16 @@ void memunmap_pages(struct dev_pagemap *pgmap)
+ 		put_page(pfn_to_page(pfn));
+ 	dev_pagemap_cleanup(pgmap);
+ 
++	/* make sure to access a memmap that was actually initialized */
++	first_page = pfn_to_page(pfn_first(pgmap));
++
+ 	/* pages are dead and unused, undo the arch mapping */
+-	nid = page_to_nid(pfn_to_page(PHYS_PFN(res->start)));
++	nid = page_to_nid(first_page);
+ 
+ 	mem_hotplug_begin();
+ 	if (pgmap->type = MEMORY_DEVICE_PRIVATE) {
+-		pfn = PHYS_PFN(res->start);
+-		__remove_pages(page_zone(pfn_to_page(pfn)), pfn,
+-				 PHYS_PFN(resource_size(res)), NULL);
++		__remove_pages(page_zone(first_page), PHYS_PFN(res->start),
++			       PHYS_PFN(resource_size(res)), NULL);
+ 	} else {
+ 		arch_remove_memory(nid, res->start, resource_size(res),
+ 				pgmap_altmap(pgmap));
+-- 
+2.21.0
