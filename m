@@ -1,7 +1,7 @@
 From: David Hildenbrand <david@redhat.com>
-Date: Sun, 06 Oct 2019 08:56:45 +0000
-Subject: [PATCH v6 09/10] mm/memory_hotplug: Drop local variables in shrink_zone_span()
-Message-Id: <20191006085646.5768-10-david@redhat.com>
+Date: Sun, 06 Oct 2019 08:56:46 +0000
+Subject: [PATCH v6 10/10] mm/memory_hotplug: Cleanup __remove_pages()
+Message-Id: <20191006085646.5768-11-david@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20191006085646.5768-1-david@redhat.com>
 In-Reply-To: <20191006085646.5768-1-david@redhat.com>
@@ -11,70 +11,57 @@ Content-Transfer-Encoding: 7bit
 To: linux-kernel@vger.kernel.org
 Cc: linux-s390@vger.kernel.org, Michal Hocko <mhocko@suse.com>, linux-ia64@vger.kernel.org, Pavel Tatashin <pasha.tatashin@soleen.com>, linux-sh@vger.kernel.org, x86@kernel.org, David Hildenbrand <david@redhat.com>, linux-mm@kvack.org, Wei Yang <richardw.yang@linux.intel.com>, Andrew Morton <akpm@linux-foundation.org>, linuxppc-dev@lists.ozlabs.org, Dan Williams <dan.j.williams@intel.com>, linux-arm-kernel@lists.infradead.org, Oscar Salvador <osalvador@suse.de>
 
-Get rid of the unnecessary local variables.
+Let's drop the basically unused section stuff and simplify.
+
+Also, let's use a shorter variant to calculate the number of pages to
+the next section boundary.
 
 Cc: Andrew Morton <akpm@linux-foundation.org>
 Cc: Oscar Salvador <osalvador@suse.de>
-Cc: David Hildenbrand <david@redhat.com>
 Cc: Michal Hocko <mhocko@suse.com>
 Cc: Pavel Tatashin <pasha.tatashin@soleen.com>
 Cc: Dan Williams <dan.j.williams@intel.com>
 Cc: Wei Yang <richardw.yang@linux.intel.com>
 Signed-off-by: David Hildenbrand <david@redhat.com>
 ---
- mm/memory_hotplug.c | 15 ++++++---------
- 1 file changed, 6 insertions(+), 9 deletions(-)
+ mm/memory_hotplug.c | 17 ++++++-----------
+ 1 file changed, 6 insertions(+), 11 deletions(-)
 
 diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
-index 8dafa1ba8d9f..843481bd507d 100644
+index 843481bd507d..2275240cfa10 100644
 --- a/mm/memory_hotplug.c
 +++ b/mm/memory_hotplug.c
-@@ -374,14 +374,11 @@ static unsigned long find_biggest_section_pfn(int nid, struct zone *zone,
- static void shrink_zone_span(struct zone *zone, unsigned long start_pfn,
- 			     unsigned long end_pfn)
+@@ -490,25 +490,20 @@ static void __remove_section(unsigned long pfn, unsigned long nr_pages,
+ void __remove_pages(unsigned long pfn, unsigned long nr_pages,
+ 		    struct vmem_altmap *altmap)
  {
--	unsigned long zone_start_pfn = zone->zone_start_pfn;
--	unsigned long z = zone_end_pfn(zone); /* zone_end_pfn namespace clash */
--	unsigned long zone_end_pfn = z;
- 	unsigned long pfn;
- 	int nid = zone_to_nid(zone);
++	const unsigned long end_pfn = pfn + nr_pages;
++	unsigned long cur_nr_pages;
+ 	unsigned long map_offset = 0;
+-	unsigned long nr, start_sec, end_sec;
  
- 	zone_span_writelock(zone);
--	if (zone_start_pfn = start_pfn) {
-+	if (zone->zone_start_pfn = start_pfn) {
- 		/*
- 		 * If the section is smallest section in the zone, it need
- 		 * shrink zone->zone_start_pfn and zone->zone_spanned_pages.
-@@ -389,25 +386,25 @@ static void shrink_zone_span(struct zone *zone, unsigned long start_pfn,
- 		 * for shrinking zone.
- 		 */
- 		pfn = find_smallest_section_pfn(nid, zone, end_pfn,
--						zone_end_pfn);
-+						zone_end_pfn(zone));
- 		if (pfn) {
-+			zone->spanned_pages = zone_end_pfn(zone) - pfn;
- 			zone->zone_start_pfn = pfn;
--			zone->spanned_pages = zone_end_pfn - pfn;
- 		} else {
- 			zone->zone_start_pfn = 0;
- 			zone->spanned_pages = 0;
- 		}
--	} else if (zone_end_pfn = end_pfn) {
-+	} else if (zone_end_pfn(zone) = end_pfn) {
- 		/*
- 		 * If the section is biggest section in the zone, it need
- 		 * shrink zone->spanned_pages.
- 		 * In this case, we find second biggest valid mem_section for
- 		 * shrinking zone.
- 		 */
--		pfn = find_biggest_section_pfn(nid, zone, zone_start_pfn,
-+		pfn = find_biggest_section_pfn(nid, zone, zone->zone_start_pfn,
- 					       start_pfn);
- 		if (pfn)
--			zone->spanned_pages = pfn - zone_start_pfn + 1;
-+			zone->spanned_pages = pfn - zone->zone_start_pfn + 1;
- 		else {
- 			zone->zone_start_pfn = 0;
- 			zone->spanned_pages = 0;
+ 	map_offset = vmem_altmap_offset(altmap);
+ 
+ 	if (check_pfn_span(pfn, nr_pages, "remove"))
+ 		return;
+ 
+-	start_sec = pfn_to_section_nr(pfn);
+-	end_sec = pfn_to_section_nr(pfn + nr_pages - 1);
+-	for (nr = start_sec; nr <= end_sec; nr++) {
+-		unsigned long pfns;
+-
++	for (; pfn < end_pfn; pfn += cur_nr_pages) {
+ 		cond_resched();
+-		pfns = min(nr_pages, PAGES_PER_SECTION
+-				- (pfn & ~PAGE_SECTION_MASK));
+-		__remove_section(pfn, pfns, map_offset, altmap);
+-		pfn += pfns;
+-		nr_pages -= pfns;
++		/* Select all remaining pages up to the next section boundary */
++		cur_nr_pages = min(end_pfn - pfn, -(pfn | PAGE_SECTION_MASK));
++		__remove_section(pfn, cur_nr_pages, map_offset, altmap);
+ 		map_offset = 0;
+ 	}
+ }
 -- 
 2.21.0
