@@ -1,10 +1,10 @@
 From: Bartosz Golaszewski <brgl@bgdev.pl>
-Date: Tue, 22 Oct 2019 08:36:30 +0000
-Subject: [PATCH v7 9/9] backlight: gpio: pull gpio_backlight_initial_power_state() into probe
-Message-Id: <20191022083630.28175-10-brgl@bgdev.pl>
+Date: Mon, 07 Oct 2019 03:31:56 +0000
+Subject: [PATCH v5 3/7] backlight: gpio: simplify the platform data handling
+Message-Id: <20191007033200.13443-4-brgl@bgdev.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20191022083630.28175-1-brgl@bgdev.pl>
-In-Reply-To: <20191022083630.28175-1-brgl@bgdev.pl>
+References: <20191007033200.13443-1-brgl@bgdev.pl>
+In-Reply-To: <20191007033200.13443-1-brgl@bgdev.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -13,95 +13,107 @@ Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, dri-devel@lists.free
 
 From: Bartosz Golaszewski <bgolaszewski@baylibre.com>
 
-The probe function in the gpio-backlight driver is quite short. If we
-pull gpio_backlight_initial_power_state() into probe we can drop two
-more fields from struct gpio_backlight and shrink the driver code.
+Now that the last user of platform data (sh ecovec24) defines a proper
+GPIO lookup and sets the 'default-on' device property, we can drop the
+platform_data-specific GPIO handling and unify a big chunk of code.
+
+The only field used from the platform data is now the fbdev pointer.
 
 Signed-off-by: Bartosz Golaszewski <bgolaszewski@baylibre.com>
-Acked-by: Daniel Thompson <daniel.thompson@linaro.org>
+Reviewed-by: Linus Walleij <linus.walleij@linaro.org>
+Reviewed-by: Daniel Thompson <daniel.thompson@linaro.org>
+Reviewed-by: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
 ---
- drivers/video/backlight/gpio_backlight.c | 38 +++++++++---------------
- 1 file changed, 14 insertions(+), 24 deletions(-)
+ drivers/video/backlight/gpio_backlight.c | 62 +++++-------------------
+ 1 file changed, 11 insertions(+), 51 deletions(-)
 
 diff --git a/drivers/video/backlight/gpio_backlight.c b/drivers/video/backlight/gpio_backlight.c
-index d6969fae25cd..75409ddfba3e 100644
+index 7e1990199fae..20c5311c7ed2 100644
 --- a/drivers/video/backlight/gpio_backlight.c
 +++ b/drivers/video/backlight/gpio_backlight.c
-@@ -17,11 +17,8 @@
- #include <linux/slab.h>
- 
- struct gpio_backlight {
--	struct device *dev;
- 	struct device *fbdev;
--
- 	struct gpio_desc *gpiod;
--	int def_value;
- };
- 
- static int gpio_backlight_get_next_brightness(struct backlight_device *bl)
-@@ -60,41 +57,24 @@ static const struct backlight_ops gpio_backlight_ops = {
+@@ -6,7 +6,6 @@
+ #include <linux/backlight.h>
+ #include <linux/err.h>
+ #include <linux/fb.h>
+-#include <linux/gpio.h> /* Only for legacy support */
+ #include <linux/gpio/consumer.h>
+ #include <linux/init.h>
+ #include <linux/kernel.h>
+@@ -54,28 +53,6 @@ static const struct backlight_ops gpio_backlight_ops = {
  	.check_fb	= gpio_backlight_check_fb,
  };
  
--static int gpio_backlight_initial_power_state(struct gpio_backlight *gbl)
+-static int gpio_backlight_probe_dt(struct platform_device *pdev,
+-				   struct gpio_backlight *gbl)
 -{
--	struct device_node *node = gbl->dev->of_node;
+-	struct device *dev = &pdev->dev;
+-	int ret;
 -
--	/* Not booted with device tree or no phandle link to the node */
--	if (!node || !node->phandle)
--		return gbl->def_value ? FB_BLANK_UNBLANK : FB_BLANK_POWERDOWN;
+-	gbl->def_value = device_property_read_bool(dev, "default-on");
 -
--	/* if the enable GPIO is disabled, do not enable the backlight */
--	if (gpiod_get_direction(gbl->gpiod) = 0 &&
--	    gpiod_get_value_cansleep(gbl->gpiod) = 0)
--		return FB_BLANK_POWERDOWN;
+-	gbl->gpiod = devm_gpiod_get(dev, NULL, GPIOD_ASIS);
+-	if (IS_ERR(gbl->gpiod)) {
+-		ret = PTR_ERR(gbl->gpiod);
 -
--	return FB_BLANK_UNBLANK;
+-		if (ret != -EPROBE_DEFER) {
+-			dev_err(dev,
+-				"Error: The gpios parameter is missing or invalid.\n");
+-		}
+-		return ret;
+-	}
+-
+-	return 0;
 -}
 -
- static int gpio_backlight_probe(struct platform_device *pdev)
+ static int gpio_backlight_initial_power_state(struct gpio_backlight *gbl)
  {
- 	struct device *dev = &pdev->dev;
- 	struct gpio_backlight_platform_data *pdata = dev_get_platdata(dev);
-+	struct device_node *of_node = dev->of_node;
- 	struct backlight_properties props;
- 	struct backlight_device *bl;
- 	struct gpio_backlight *gbl;
--	int ret, init_brightness;
-+	int ret, init_brightness, def_value;
+ 	struct device_node *node = gbl->dev->of_node;
+@@ -107,35 +84,18 @@ static int gpio_backlight_probe(struct platform_device *pdev)
  
- 	gbl = devm_kzalloc(dev, sizeof(*gbl), GFP_KERNEL);
- 	if (gbl = NULL)
- 		return -ENOMEM;
+ 	gbl->dev = &pdev->dev;
  
--	gbl->dev = dev;
+-	if (pdev->dev.fwnode) {
+-		ret = gpio_backlight_probe_dt(pdev, gbl);
+-		if (ret)
+-			return ret;
+-	} else if (pdata) {
+-		/*
+-		 * Legacy platform data GPIO retrieveal. Do not expand
+-		 * the use of this code path, currently only used by one
+-		 * SH board.
+-		 */
+-		unsigned long flags = GPIOF_DIR_OUT;
 -
- 	if (pdata)
++	if (pdata)
  		gbl->fbdev = pdata->fbdev;
- 
--	gbl->def_value = device_property_read_bool(dev, "default-on");
-+	def_value = device_property_read_bool(dev, "default-on");
- 
- 	gbl->gpiod = devm_gpiod_get(dev, NULL, GPIOD_ASIS);
- 	if (IS_ERR(gbl->gpiod)) {
-@@ -115,7 +95,17 @@ static int gpio_backlight_probe(struct platform_device *pdev)
- 		return PTR_ERR(bl);
+-		gbl->def_value = pdata->def_value;
+-		flags |= gbl->def_value ? GPIOF_INIT_HIGH : GPIOF_INIT_LOW;
+-
+-		ret = devm_gpio_request_one(gbl->dev, pdata->gpio, flags,
+-					    pdata ? pdata->name : "backlight");
+-		if (ret < 0) {
+-			dev_err(&pdev->dev, "unable to request GPIO\n");
+-			return ret;
+-		}
+-		gbl->gpiod = gpio_to_desc(pdata->gpio);
+-		if (!gbl->gpiod)
+-			return -EINVAL;
+-	} else {
+-		dev_err(&pdev->dev,
+-			"failed to find platform data or device tree node.\n");
+-		return -ENODEV;
++
++	gbl->def_value = device_property_read_bool(&pdev->dev, "default-on");
++
++	gbl->gpiod = devm_gpiod_get(&pdev->dev, NULL, GPIOD_ASIS);
++	if (IS_ERR(gbl->gpiod)) {
++		ret = PTR_ERR(gbl->gpiod);
++		if (ret != -EPROBE_DEFER)
++			dev_err(&pdev->dev,
++				"Error: The gpios parameter is missing or invalid.\n");
++		return ret;
  	}
  
--	bl->props.power = gpio_backlight_initial_power_state(gbl);
-+	/* Set the initial power state */
-+	if (!of_node || !of_node->phandle)
-+		/* Not booted with device tree or no phandle link to the node */
-+		bl->props.power = def_value ? FB_BLANK_UNBLANK
-+					    : FB_BLANK_POWERDOWN;
-+	else if (gpiod_get_direction(gbl->gpiod) = 0 &&
-+		 gpiod_get_value_cansleep(gbl->gpiod) = 0)
-+		bl->props.power = FB_BLANK_POWERDOWN;
-+	else
-+		bl->props.power = FB_BLANK_UNBLANK;
-+
- 	bl->props.brightness = 1;
- 
- 	init_brightness = gpio_backlight_get_next_brightness(bl);
+ 	memset(&props, 0, sizeof(props));
 -- 
 2.23.0
