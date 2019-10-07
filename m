@@ -1,10 +1,10 @@
 From: Bartosz Golaszewski <brgl@bgdev.pl>
-Date: Sat, 19 Oct 2019 08:35:54 +0000
-Subject: [PATCH v6 7/9] backlight: gpio: remove unused fields from platform data
-Message-Id: <20191019083556.19466-8-brgl@bgdev.pl>
+Date: Mon, 07 Oct 2019 03:31:58 +0000
+Subject: [PATCH v5 5/7] backlight: gpio: remove unused fields from platform data
+Message-Id: <20191007033200.13443-6-brgl@bgdev.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20191019083556.19466-1-brgl@bgdev.pl>
-In-Reply-To: <20191019083556.19466-1-brgl@bgdev.pl>
+References: <20191007033200.13443-1-brgl@bgdev.pl>
+In-Reply-To: <20191007033200.13443-1-brgl@bgdev.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
