@@ -1,111 +1,143 @@
-From: Daniel Thompson <daniel.thompson@linaro.org>
-Date: Mon, 07 Oct 2019 12:56:03 +0000
-Subject: Re: [PATCH v5 7/7] backlight: gpio: pull gpio_backlight_initial_power_state() into probe
-Message-Id: <20191007125603.qmb6jfu2tjxnzmm6@holly.lan>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Wed, 09 Oct 2019 11:39:30 +0000
+Subject: [PATCH] proc: centralise declaration of cpuinfo_op
+Message-Id: <20191009113930.13236-1-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20191007033200.13443-1-brgl@bgdev.pl>
- <20191007033200.13443-8-brgl@bgdev.pl>
-In-Reply-To: <20191007033200.13443-8-brgl@bgdev.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Bartosz Golaszewski <brgl@bgdev.pl>
-Cc: Jacopo Mondi <jacopo@jmondi.org>, Rich Felker <dalias@libc.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>, Jingoo Han <jingoohan1@gmail.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, dri-devel@lists.freedesktop.org, Bartosz Golaszewski <bgolaszewski@baylibre.com>, linux-fbdev@vger.kernel.org, Andy Shevchenko <andriy.shevchenko@linux.intel.com>, Lee Jones <lee.jones@linaro.org>
+To: linux-kernel@lists.codethink.co.uk
+Cc: linux-s390@vger.kernel.org, Rich Felker <dalias@libc.org>, linux-c6x-dev@linux-c6x.org, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh@vger.kernel.org, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, "H. Peter Anvin" <hpa@zytor.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, x86@kernel.org, Aurelien Jacquiot <jacquiot.aurelien@gmail.com>, Ben Dooks <ben.dooks@codethink.co.uk>, Borislav Petkov <bp@alien8.de>, linux-arm-kernel@lists.infradead.org, Mark Salter <msalter@redhat.com>, sparclinux@vger.kernel.org, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, "David S. Miller" <davem@davemloft.net>, linux-kernel@vger.kernel.org
 
-On Mon, Oct 07, 2019 at 05:32:00AM +0200, Bartosz Golaszewski wrote:
-> From: Bartosz Golaszewski <bgolaszewski@baylibre.com>
-> 
-> The probe function in the gpio-backlight driver is quite short. If we
-> pull gpio_backlight_initial_power_state() into probe we can drop two
-> more fields from struct gpio_backlight and shrink the driver code.
-> 
-> Signed-off-by: Bartosz Golaszewski <bgolaszewski@baylibre.com>
+When building for arm, cpuinfo_op generates a warning due
+to no declaration. Since this is used in fs/proc/cpuinfo.c
+and inconsitently declared across archiectures move the
+declaration info <linux/seq_file.h>. This means that the
+cpuinfo_op will have a declaration any place it is used.
 
-Acked-by: Daniel Thompson <daniel.thompson@linaro.org>
+Removes the following sparse warning:
 
-> ---
->  drivers/video/backlight/gpio_backlight.c | 37 +++++++++---------------
->  1 file changed, 13 insertions(+), 24 deletions(-)
-> 
-> diff --git a/drivers/video/backlight/gpio_backlight.c b/drivers/video/backlight/gpio_backlight.c
-> index 6247687b6330..407d4eaafc5c 100644
-> --- a/drivers/video/backlight/gpio_backlight.c
-> +++ b/drivers/video/backlight/gpio_backlight.c
-> @@ -17,11 +17,8 @@
->  #include <linux/slab.h>
->  
->  struct gpio_backlight {
-> -	struct device *dev;
->  	struct device *fbdev;
-> -
->  	struct gpio_desc *gpiod;
-> -	int def_value;
->  };
->  
->  static int gpio_backlight_update_status(struct backlight_device *bl)
-> @@ -53,41 +50,24 @@ static const struct backlight_ops gpio_backlight_ops = {
->  	.check_fb	= gpio_backlight_check_fb,
->  };
->  
-> -static int gpio_backlight_initial_power_state(struct gpio_backlight *gbl)
-> -{
-> -	struct device_node *node = gbl->dev->of_node;
-> -
-> -	/* Not booted with device tree or no phandle link to the node */
-> -	if (!node || !node->phandle)
-> -		return gbl->def_value ? FB_BLANK_UNBLANK : FB_BLANK_POWERDOWN;
-> -
-> -	/* if the enable GPIO is disabled, do not enable the backlight */
-> -	if (gpiod_get_value_cansleep(gbl->gpiod) = 0)
-> -		return FB_BLANK_POWERDOWN;
-> -
-> -	return FB_BLANK_UNBLANK;
-> -}
-> -
-> -
->  static int gpio_backlight_probe(struct platform_device *pdev)
->  {
->  	struct device *dev = &pdev->dev;
->  	struct gpio_backlight_platform_data *pdata = dev_get_platdata(dev);
-> +	struct device_node *of_node = dev->of_node;
->  	struct backlight_properties props;
->  	struct backlight_device *bl;
->  	struct gpio_backlight *gbl;
-> -	int ret;
-> +	int ret, def_value;
->  
->  	gbl = devm_kzalloc(dev, sizeof(*gbl), GFP_KERNEL);
->  	if (gbl = NULL)
->  		return -ENOMEM;
->  
-> -	gbl->dev = dev;
-> -
->  	if (pdata)
->  		gbl->fbdev = pdata->fbdev;
->  
-> -	gbl->def_value = device_property_read_bool(dev, "default-on");
-> +	def_value = device_property_read_bool(dev, "default-on");
->  
->  	gbl->gpiod = devm_gpiod_get(dev, NULL, GPIOD_ASIS);
->  	if (IS_ERR(gbl->gpiod)) {
-> @@ -109,7 +89,16 @@ static int gpio_backlight_probe(struct platform_device *pdev)
->  		return PTR_ERR(bl);
->  	}
->  
-> -	bl->props.power = gpio_backlight_initial_power_state(gbl);
-> +	/* Set the initial power state */
-> +	if (!of_node || !of_node->phandle)
-> +		/* Not booted with device tree or no phandle link to the node */
-> +		bl->props.power = def_value ? FB_BLANK_UNBLANK
-> +					    : FB_BLANK_POWERDOWN;
-> +	else if (gpiod_get_value_cansleep(gbl->gpiod) = 0)
-> +		bl->props.power = FB_BLANK_POWERDOWN;
-> +	else
-> +		bl->props.power = FB_BLANK_UNBLANK;
-> +
->  	bl->props.brightness = 1;
->  
->  	backlight_update_status(bl);
-> -- 
-> 2.23.0
-> 
+arch/arm/kernel/setup.c:1320:29: warning: symbol 'cpuinfo_op' was not declared. Should it be static?
+
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+---
+Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Cc: Mark Salter <msalter@redhat.com>
+Cc: Aurelien Jacquiot <jacquiot.aurelien@gmail.com>
+Cc: Heiko Carstens <heiko.carstens@de.ibm.com>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+Cc: "David S. Miller" <davem@davemloft.net>
+Cc: Thomas Gleixner <tglx@linutronix.de>
+Cc: Ingo Molnar <mingo@redhat.com>
+Cc: Borislav Petkov <bp@alien8.de>
+Cc: "H. Peter Anvin" <hpa@zytor.com>
+Cc: x86@kernel.org
+Cc: linux-c6x-dev@linux-c6x.org
+Cc: linux-kernel@vger.kernel.org
+Cc: linux-s390@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
+Cc: sparclinux@vger.kernel.org
+Cc: linux-arm-kernel@lists.infradead.org
+---
+ arch/c6x/include/asm/processor.h        | 2 --
+ arch/microblaze/include/asm/processor.h | 3 ---
+ arch/s390/include/asm/processor.h       | 1 -
+ arch/sh/include/asm/processor.h         | 1 -
+ arch/sparc/include/asm/cpudata.h        | 2 --
+ arch/x86/include/asm/processor.h        | 2 --
+ include/linux/seq_file.h                | 2 ++
+ 7 files changed, 2 insertions(+), 11 deletions(-)
+
+diff --git a/arch/c6x/include/asm/processor.h b/arch/c6x/include/asm/processor.h
+index 1456f5e11de3..ecc906854b6a 100644
+--- a/arch/c6x/include/asm/processor.h
++++ b/arch/c6x/include/asm/processor.h
+@@ -100,8 +100,6 @@ extern unsigned long get_wchan(struct task_struct *p);
+ 
+ #define cpu_relax()		do { } while (0)
+ 
+-extern const struct seq_operations cpuinfo_op;
+-
+ /* Reset the board */
+ #define HARD_RESET_NOW()
+ 
+diff --git a/arch/microblaze/include/asm/processor.h b/arch/microblaze/include/asm/processor.h
+index 66b537b8d138..8ab09e94b8ae 100644
+--- a/arch/microblaze/include/asm/processor.h
++++ b/arch/microblaze/include/asm/processor.h
+@@ -18,9 +18,6 @@
+ #include <asm/current.h>
+ 
+ # ifndef __ASSEMBLY__
+-/* from kernel/cpu/mb.c */
+-extern const struct seq_operations cpuinfo_op;
+-
+ # define cpu_relax()		barrier()
+ 
+ #define task_pt_regs(tsk) \
+diff --git a/arch/s390/include/asm/processor.h b/arch/s390/include/asm/processor.h
+index 51a0e4a2dc96..813d2bfc63ac 100644
+--- a/arch/s390/include/asm/processor.h
++++ b/arch/s390/include/asm/processor.h
+@@ -83,7 +83,6 @@ void s390_adjust_jiffies(void);
+ void s390_update_cpu_mhz(void);
+ void cpu_detect_mhz_feature(void);
+ 
+-extern const struct seq_operations cpuinfo_op;
+ extern int sysctl_ieee_emulation_warnings;
+ extern void execve_tail(void);
+ extern void __bpon(void);
+diff --git a/arch/sh/include/asm/processor.h b/arch/sh/include/asm/processor.h
+index 6fbf8c80e498..25ddb34f31d9 100644
+--- a/arch/sh/include/asm/processor.h
++++ b/arch/sh/include/asm/processor.h
+@@ -128,7 +128,6 @@ extern unsigned int mem_init_done;
+ 
+ /* arch/sh/kernel/setup.c */
+ const char *get_cpu_subtype(struct sh_cpuinfo *c);
+-extern const struct seq_operations cpuinfo_op;
+ 
+ /* thread_struct flags */
+ #define SH_THREAD_UAC_NOPRINT	(1 << 0)
+diff --git a/arch/sparc/include/asm/cpudata.h b/arch/sparc/include/asm/cpudata.h
+index d213165ee713..f7e690a7860b 100644
+--- a/arch/sparc/include/asm/cpudata.h
++++ b/arch/sparc/include/asm/cpudata.h
+@@ -7,8 +7,6 @@
+ #include <linux/threads.h>
+ #include <linux/percpu.h>
+ 
+-extern const struct seq_operations cpuinfo_op;
+-
+ #endif /* !(__ASSEMBLY__) */
+ 
+ #if defined(__sparc__) && defined(__arch64__)
+diff --git a/arch/x86/include/asm/processor.h b/arch/x86/include/asm/processor.h
+index 6e0a3b43d027..6f22daf892ea 100644
+--- a/arch/x86/include/asm/processor.h
++++ b/arch/x86/include/asm/processor.h
+@@ -169,8 +169,6 @@ DECLARE_PER_CPU_READ_MOSTLY(struct cpuinfo_x86, cpu_info);
+ #define cpu_data(cpu)		boot_cpu_data
+ #endif
+ 
+-extern const struct seq_operations cpuinfo_op;
+-
+ #define cache_line_size()	(boot_cpu_data.x86_cache_alignment)
+ 
+ extern void cpu_detect(struct cpuinfo_x86 *c);
+diff --git a/include/linux/seq_file.h b/include/linux/seq_file.h
+index 5998e1f4ff06..629b0d8302e8 100644
+--- a/include/linux/seq_file.h
++++ b/include/linux/seq_file.h
+@@ -36,6 +36,8 @@ struct seq_operations {
+ 	int (*show) (struct seq_file *m, void *v);
+ };
+ 
++extern const struct seq_operations cpuinfo_op;
++
+ #define SEQ_SKIP 1
+ 
+ /**
+-- 
+2.23.0
