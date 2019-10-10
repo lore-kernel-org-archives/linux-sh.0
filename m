@@ -1,75 +1,92 @@
-From: Yunsheng Lin <linyunsheng@huawei.com>
-Date: Thu, 31 Oct 2019 03:26:04 +0000
-Subject: Re: [PATCH v7] numa: make node_to_cpumask_map() NUMA_NO_NODE aware
-Message-Id: <f7aa833e-3ed3-aba0-8c6e-8753a68182c2@huawei.com>
+From: Aleksa Sarai <cyphar@cyphar.com>
+Date: Thu, 10 Oct 2019 05:41:36 +0000
+Subject: [PATCH v14 2/6] namei: LOOKUP_IN_ROOT: chroot-like path resolution
+Message-Id: <20191010054140.8483-3-cyphar@cyphar.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1572428068-180880-1-git-send-email-linyunsheng@huawei.com>
- <20191030101449.GW4097@hirez.programming.kicks-ass.net>
-In-Reply-To: <20191030101449.GW4097@hirez.programming.kicks-ass.net>
+References: <20191010054140.8483-1-cyphar@cyphar.com>
+In-Reply-To: <20191010054140.8483-1-cyphar@cyphar.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Peter Zijlstra <peterz@infradead.org>
-Cc: catalin.marinas@arm.com, will@kernel.org, mingo@redhat.com, bp@alien8.de, rth@twiddle.net, ink@jurassic.park.msu.ru, mattst88@gmail.com, benh@kernel.crashing.org, paulus@samba.org, mpe@ellerman.id.au, heiko.carstens@de.ibm.com, gor@linux.ibm.com, borntraeger@de.ibm.com, ysato@users.sourceforge.jp, dalias@libc.org, davem@davemloft.net, ralf@linux-mips.org, paul.burton@mips.com, jhogan@kernel.org, jiaxun.yang@flygoat.com, chenhc@lemote.com, akpm@linux-foundation.org, rppt@linux.ibm.com, anshuman.khandual@arm.com, tglx@linutronix.de, cai@lca.pw, robin.murphy@arm.com, linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org, hpa@zytor.com, x86@kernel.org, dave.hansen@linux.intel.com, luto@kernel.org, len.brown@intel.com, axboe@kernel.dk, dledford@redhat.com, jeffrey.t.kirsher@intel.com, linux-alpha@vger.kernel.org, naveen.n.rao@linux.vnet.ibm.com, mwb@linux.vnet.ibm.com, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, tbogendoerfer@suse.de, linux-mips@vger.kernel.org, rafael@kernel.org, mhocko@kernel.org, gregkh@linuxfoundation.org, bhelgaas@google.com, linux-pci@vger.kernel.org, rjw@rjwysocki.net, lenb@kernel.org, linux-acpi@vger.kernel.org
+To: Al Viro <viro@zeniv.linux.org.uk>, Jeff Layton <jlayton@kernel.org>, "J. Bruce Fields" <bfields@fieldses.org>, Arnd Bergmann <arnd@arndb.de>, David Howells <dhowells@redhat.com>, Shuah Khan <shuah@kernel.org>, Shuah Khan <skhan@linuxfoundation.org>, Ingo Molnar <mingo@redhat.com>, Peter Zijlstra <peterz@infradead.org>
+Cc: Aleksa Sarai <cyphar@cyphar.com>, Eric Biederman <ebiederm@xmission.com>, Andy Lutomirski <luto@kernel.org>, Andrew Morton <akpm@linux-foundation.org>, Alexei Starovoitov <ast@kernel.org>, Kees Cook <keescook@chromium.org>, Jann Horn <jannh@google.com>, Tycho Andersen <tycho@tycho.ws>, David Drysdale <drysdale@google.com>, Chanho Min <chanho.min@lge.com>, Oleg Nesterov <oleg@redhat.com>, Rasmus Villemoes <linux@rasmusvillemoes.dk>, Alexander Shishkin <alexander.shishkin@linux.intel.com>, Jiri Olsa <jolsa@redhat.com>, Namhyung Kim <namhyung@kernel.org>, Christian Brauner <christian@brauner.io>, Aleksa Sarai <asarai@suse.de>, Linus Torvalds <torvalds@linux-foundation.org>, containers@lists.linux-foundation.org, linux-alpha@vger.kernel.org, linux-api@vger.kernel.org, libc-alpha@sourceware.org, linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.orglinu
 
-On 2019/10/30 18:14, Peter Zijlstra wrote:
-> On Wed, Oct 30, 2019 at 05:34:28PM +0800, Yunsheng Lin wrote:
->> When passing the return value of dev_to_node() to cpumask_of_node()
->> without checking if the device's node id is NUMA_NO_NODE, there is
->> global-out-of-bounds detected by KASAN.
->>
->> From the discussion [1], NUMA_NO_NODE really means no node affinity,
->> which also means all cpus should be usable. So the cpumask_of_node()
->> should always return all cpus online when user passes the node id as
->> NUMA_NO_NODE, just like similar semantic that page allocator handles
->> NUMA_NO_NODE.
->>
->> But we cannot really copy the page allocator logic. Simply because the
->> page allocator doesn't enforce the near node affinity. It just picks it
->> up as a preferred node but then it is free to fallback to any other numa
->> node. This is not the case here and node_to_cpumask_map will only restrict
->> to the particular node's cpus which would have really non deterministic
->> behavior depending on where the code is executed. So in fact we really
->> want to return cpu_online_mask for NUMA_NO_NODE.
->>
->> Also there is a debugging version of node_to_cpumask_map() for x86 and
->> arm64, which is only used when CONFIG_DEBUG_PER_CPU_MAPS is defined, this
->> patch changes it to handle NUMA_NO_NODE as normal node_to_cpumask_map().
->>
->> [1] https://lkml.org/lkml/2019/9/11/66
->> Signed-off-by: Yunsheng Lin <linyunsheng@huawei.com>
->> Suggested-by: Michal Hocko <mhocko@kernel.org>
->> Acked-by: Michal Hocko <mhocko@suse.com>
->> Acked-by: Paul Burton <paul.burton@mips.com> # MIPS bits
-> 
-> Still:
-> 
-> Nacked-by: Peter Zijlstra (Intel) <peterz@infradead.org>
+/* Background. */
+Container runtimes or other administrative management processes will
+often interact with root filesystems while in the host mount namespace,
+because the cost of doing a chroot(2) on every operation is too
+prohibitive (especially in Go, which cannot safely use vfork). However,
+a malicious program can trick the management process into doing
+operations on files outside of the root filesystem through careful
+crafting of symlinks.
 
-It seems I still misunderstood your meaning by "We must not silently accept
-NO_NODE there" in [1].
+Most programs that need this feature have attempted to make this process
+safe, by doing all of the path resolution in userspace (with symlinks
+being scoped to the root of the malicious root filesystem).
+Unfortunately, this method is prone to foot-guns and usually such
+implementations have subtle security bugs.
 
-I am not sure if there is still disagreement that the NO_NODE state for
-dev->numa_node should exist at all.
+Thus, what userspace needs is a way to resolve a path as though it were
+in a chroot(2) -- with all absolute symlinks being resolved relative to
+the dirfd root (and ".." components being stuck under the dirfd root[1])
+It is much simpler and more straight-forward to provide this
+functionality in-kernel (because it can be done far more cheaply and
+correctly).
 
-From the previous disscussion [2], you seem to propose to do "wild guess" or
-"fixup" for all devices(including virtual and physcial) with NO_NODE, which means
-the NO_NODE is needed anymore and should be removed when the "wild guess" or "fixup"
-is done. So maybe the reason for your nack here it is that there should be no other
-NO_NODE handling or fixing related to NO_NODE before the "wild guess" or "fixup"
-process is finished, so making node_to_cpumask_map() NUMA_NO_NODE aware is unnecessary.
+More classical applications that also have this problem (which have
+their own potentially buggy userspace path sanitisation code) include
+web servers, archive extraction tools, network file servers, and so on.
 
-Or your reason for the nack is still specific to the pcie device without a numa node,
-the "wild guess" need to be done for this case before making node_to_cpumask_map()
-NUMA_NO_NODE?
+[1]: At the moment, ".." and magic-link jumping are disallowed for the
+     same reason it is disabled for LOOKUP_BENEATH -- currently it is
+     not safe to allow it. Future patches may enable it unconditionally
+     once we have resolved the possible races (for "..") and semantics
+     (for magic-link jumping).
 
-Please help to clarify the reason for nack. Or is there still some other reason for the
-nack I missed from the previous disscussion?
+/* Userspace API. */
+LOOKUP_IN_ROOT will be exposed to userspace through openat2(2).
 
-Thanks.
+There is a slight change in behaviour regarding pathnames -- if the
+pathname is absolute then the dirfd is still used as the root of
+resolution of LOOKUP_IN_ROOT is specified (this is to avoid obvious
+foot-guns, at the cost of a minor API inconsistency).
 
-[1] https://lore.kernel.org/lkml/20191011111539.GX2311@hirez.programming.kicks-ass.net/
-[2] https://lore.kernel.org/lkml/20191014094912.GY2311@hirez.programming.kicks-ass.net/
-> 
-> .
-> 
+Signed-off-by: Aleksa Sarai <cyphar@cyphar.com>
+---
+ fs/namei.c            | 5 +++++
+ include/linux/namei.h | 3 ++-
+ 2 files changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/fs/namei.c b/fs/namei.c
+index 54fdbdfbeb94..9d00b138f54c 100644
+--- a/fs/namei.c
++++ b/fs/namei.c
+@@ -2277,6 +2277,11 @@ static const char *path_init(struct nameidata *nd, unsigned flags)
+ 
+ 	nd->m_seq = read_seqbegin(&mount_lock);
+ 
++	/* LOOKUP_IN_ROOT treats absolute paths as being relative-to-dirfd. */
++	if (flags & LOOKUP_IN_ROOT)
++		while (*s = '/')
++			s++;
++
+ 	/* Figure out the starting path and root (if needed). */
+ 	if (*s = '/') {
+ 		error = nd_jump_root(nd);
+diff --git a/include/linux/namei.h b/include/linux/namei.h
+index 35a1bf074ff1..c7a010570d05 100644
+--- a/include/linux/namei.h
++++ b/include/linux/namei.h
+@@ -47,8 +47,9 @@ enum {LAST_NORM, LAST_ROOT, LAST_DOT, LAST_DOTDOT, LAST_BIND};
+ #define LOOKUP_NO_MAGICLINKS	0x080000 /* No /proc/$pid/fd/ "symlink" crossing. */
+ #define LOOKUP_NO_SYMLINKS	0x100000 /* No symlink crossing *at all*.
+ 					    Implies LOOKUP_NO_MAGICLINKS. */
++#define LOOKUP_IN_ROOT		0x200000 /* Treat dirfd as %current->fs->root. */
+ /* LOOKUP_* flags which do scope-related checks based on the dirfd. */
+-#define LOOKUP_IS_SCOPED LOOKUP_BENEATH
++#define LOOKUP_IS_SCOPED (LOOKUP_BENEATH | LOOKUP_IN_ROOT)
+ 
+ extern int path_pts(struct path *path);
+ 
+-- 
+2.23.0
