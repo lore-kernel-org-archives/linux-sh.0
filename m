@@ -1,67 +1,65 @@
-From: David Hildenbrand <david@redhat.com>
-Date: Sun, 06 Oct 2019 08:56:46 +0000
-Subject: [PATCH v6 10/10] mm/memory_hotplug: Cleanup __remove_pages()
-Message-Id: <20191006085646.5768-11-david@redhat.com>
+From: Nicolas Saenz Julienne <nsaenzjulienne@suse.de>
+Date: Fri, 11 Oct 2019 16:51:29 +0000
+Subject: [PATCH] sh: use dma_to_phys() instead of dev->dma_pfn_offset
+Message-Id: <20191011165129.29655-1-nsaenzjulienne@suse.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20191006085646.5768-1-david@redhat.com>
-In-Reply-To: <20191006085646.5768-1-david@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-kernel@vger.kernel.org
-Cc: linux-s390@vger.kernel.org, Michal Hocko <mhocko@suse.com>, linux-ia64@vger.kernel.org, Pavel Tatashin <pasha.tatashin@soleen.com>, linux-sh@vger.kernel.org, x86@kernel.org, David Hildenbrand <david@redhat.com>, linux-mm@kvack.org, Wei Yang <richardw.yang@linux.intel.com>, Andrew Morton <akpm@linux-foundation.org>, linuxppc-dev@lists.ozlabs.org, Dan Williams <dan.j.williams@intel.com>, linux-arm-kernel@lists.infradead.org, Oscar Salvador <osalvador@suse.de>
+Cc: hch@infradead.org, Nicolas Saenz Julienne <nsaenzjulienne@suse.de>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
 
-Let's drop the basically unused section stuff and simplify.
+It's more explicit and lets dma-direct handle the specifics of how to
+translate addresses.
 
-Also, let's use a shorter variant to calculate the number of pages to
-the next section boundary.
+On top of that get rid of warnings as, since the introduction of commit
+6fa1d28e38c ("sh: use generic dma_noncoherent_ops"), it's impossible for
+the dev to be NULL.
 
-Cc: Andrew Morton <akpm@linux-foundation.org>
-Cc: Oscar Salvador <osalvador@suse.de>
-Cc: Michal Hocko <mhocko@suse.com>
-Cc: Pavel Tatashin <pasha.tatashin@soleen.com>
-Cc: Dan Williams <dan.j.williams@intel.com>
-Cc: Wei Yang <richardw.yang@linux.intel.com>
-Signed-off-by: David Hildenbrand <david@redhat.com>
+Signed-off-by: Nicolas Saenz Julienne <nsaenzjulienne@suse.de>
 ---
- mm/memory_hotplug.c | 17 ++++++-----------
- 1 file changed, 6 insertions(+), 11 deletions(-)
 
-diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
-index 843481bd507d..2275240cfa10 100644
---- a/mm/memory_hotplug.c
-+++ b/mm/memory_hotplug.c
-@@ -490,25 +490,20 @@ static void __remove_section(unsigned long pfn, unsigned long nr_pages,
- void __remove_pages(unsigned long pfn, unsigned long nr_pages,
- 		    struct vmem_altmap *altmap)
- {
-+	const unsigned long end_pfn = pfn + nr_pages;
-+	unsigned long cur_nr_pages;
- 	unsigned long map_offset = 0;
--	unsigned long nr, start_sec, end_sec;
+NOTE: this was only compile tested.
+
+ arch/sh/kernel/dma-coherent.c | 10 +++-------
+ 1 file changed, 3 insertions(+), 7 deletions(-)
+
+diff --git a/arch/sh/kernel/dma-coherent.c b/arch/sh/kernel/dma-coherent.c
+index b17514619b7e..f6618ed01a42 100644
+--- a/arch/sh/kernel/dma-coherent.c
++++ b/arch/sh/kernel/dma-coherent.c
+@@ -4,6 +4,7 @@
+  */
+ #include <linux/mm.h>
+ #include <linux/init.h>
++#include <linux/dma-direct.h>
+ #include <linux/dma-noncoherent.h>
+ #include <linux/module.h>
+ #include <asm/cacheflush.h>
+@@ -36,9 +37,7 @@ void *arch_dma_alloc(struct device *dev, size_t size, dma_addr_t *dma_handle,
  
- 	map_offset = vmem_altmap_offset(altmap);
+ 	split_page(pfn_to_page(virt_to_phys(ret) >> PAGE_SHIFT), order);
  
- 	if (check_pfn_span(pfn, nr_pages, "remove"))
- 		return;
+-	*dma_handle = virt_to_phys(ret);
+-	if (!WARN_ON(!dev))
+-		*dma_handle -= PFN_PHYS(dev->dma_pfn_offset);
++	*dma_handle = phys_to_dma(dev, virt_to_phys(ret));
  
--	start_sec = pfn_to_section_nr(pfn);
--	end_sec = pfn_to_section_nr(pfn + nr_pages - 1);
--	for (nr = start_sec; nr <= end_sec; nr++) {
--		unsigned long pfns;
--
-+	for (; pfn < end_pfn; pfn += cur_nr_pages) {
- 		cond_resched();
--		pfns = min(nr_pages, PAGES_PER_SECTION
--				- (pfn & ~PAGE_SECTION_MASK));
--		__remove_section(pfn, pfns, map_offset, altmap);
--		pfn += pfns;
--		nr_pages -= pfns;
-+		/* Select all remaining pages up to the next section boundary */
-+		cur_nr_pages = min(end_pfn - pfn, -(pfn | PAGE_SECTION_MASK));
-+		__remove_section(pfn, cur_nr_pages, map_offset, altmap);
- 		map_offset = 0;
- 	}
+ 	return ret_nocache;
  }
+@@ -47,12 +46,9 @@ void arch_dma_free(struct device *dev, size_t size, void *vaddr,
+ 		dma_addr_t dma_handle, unsigned long attrs)
+ {
+ 	int order = get_order(size);
+-	unsigned long pfn = (dma_handle >> PAGE_SHIFT);
++	unsigned long pfn = __phys_to_pfn(dma_to_phys(dev, dma_handle));
+ 	int k;
+ 
+-	if (!WARN_ON(!dev))
+-		pfn += dev->dma_pfn_offset;
+-
+ 	for (k = 0; k < (1 << order); k++)
+ 		__free_pages(pfn_to_page(pfn + k), 0);
+ 
 -- 
-2.21.0
+2.23.0
