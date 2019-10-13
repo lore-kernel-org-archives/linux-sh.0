@@ -1,40 +1,47 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Fri, 11 Oct 2019 13:43:32 +0000
-Subject: Re: [PATCH] proc: centralise declaration of cpuinfo_op
-Message-Id: <5c4ad594-55a3-a9c5-1674-e85665422aa1@codethink.co.uk>
+From: Sebastian Andrzej Siewior <sebastian@breakpoint.cc>
+Date: Sun, 13 Oct 2019 22:13:05 +0000
+Subject: [PATCH 1/6] sh: Move cmpxchg-xchg.h to asm-generic
+Message-Id: <20191013221310.30748-2-sebastian@breakpoint.cc>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20191009113930.13236-1-ben.dooks@codethink.co.uk>
- <20191009175149.GA28540@infradead.org>
-In-Reply-To: <20191009175149.GA28540@infradead.org>
+References: <20191013221310.30748-1-sebastian@breakpoint.cc>
+In-Reply-To: <20191013221310.30748-1-sebastian@breakpoint.cc>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Christoph Hellwig <hch@infradead.org>
-Cc: linux-kernel@lists.codethink.co.uk, linux-s390@vger.kernel.org, Rich Felker <dalias@libc.org>, linux-c6x-dev@linux-c6x.org, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh@vger.kernel.org, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, "H. Peter Anvin" <hpa@zytor.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, x86@kernel.org, Aurelien Jacquiot <jacquiot.aurelien@gmail.com>, Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>, linux-arm-kernel@lists.infradead.org, Mark Salter <msalter@redhat.com>, sparclinux@vger.kernel.org, Thomas Gleixner <tglx@linutronix.de>, "David S. Miller" <davem@davemloft.net>, linux-kernel@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
+Cc: linux-arch@vger.kernel.org, Rich Felker <dalias@libc.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Arnd Bergmann <arnd@arndb.de>, linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, Russell King <linux@armlinux.org.uk>, Sebastian Andrzej Siewior <sebastian@breakpoint.cc>, Ingo Molnar <mingo@redhat.com>, Waiman Long <longman@redhat.com>, Will Deacon <will@kernel.org>
 
-On 09/10/2019 18:51, Christoph Hellwig wrote:
-> On Wed, Oct 09, 2019 at 12:39:30PM +0100, Ben Dooks wrote:
->> When building for arm, cpuinfo_op generates a warning due
->> to no declaration. Since this is used in fs/proc/cpuinfo.c
->> and inconsitently declared across archiectures move the
->> declaration info <linux/seq_file.h>. This means that the
->> cpuinfo_op will have a declaration any place it is used.
->>
->> Removes the following sparse warning:
->>
->> arch/arm/kernel/setup.c:1320:29: warning: symbol 'cpuinfo_op' was not declared. Should it be static?
-> 
-> I like the consolidation, but I don't think seq_file.h is the right
-> place.  A procfs or cpu topology related header seems like the better
-> choice.
+The header file is very generic and could be reused by other
+architectures as long as they provide __cmpxchg_u32().
 
-Ok, thanks.
+Move sh's cmpxchg-xchg.h to asm-generic.
 
-I'll have a look at where else it could go, but I'm not sure if I have
-the resources to build /all/ kernels that this would effect.
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+Cc: Arnd Bergmann <arnd@arndb.de>
+Cc: linux-sh@vger.kernel.org
+Cc: linux-arch@vger.kernel.org
+Signed-off-by: Sebastian Andrzej Siewior <sebastian@breakpoint.cc>
+---
+ arch/sh/include/asm/Kbuild                                  | 1 +
+ {arch/sh/include/asm => include/asm-generic}/cmpxchg-xchg.h | 0
+ 2 files changed, 1 insertion(+)
+ rename {arch/sh/include/asm => include/asm-generic}/cmpxchg-xchg.h (100%)
 
+diff --git a/arch/sh/include/asm/Kbuild b/arch/sh/include/asm/Kbuild
+index 51a54df22c110..08c1d96286d9d 100644
+--- a/arch/sh/include/asm/Kbuild
++++ b/arch/sh/include/asm/Kbuild
+@@ -1,5 +1,6 @@
+ # SPDX-License-Identifier: GPL-2.0
+ generated-y += syscall_table.h
++generic-y += cmpxchg-xchg.h
+ generic-y += compat.h
+ generic-y += current.h
+ generic-y += delay.h
+diff --git a/arch/sh/include/asm/cmpxchg-xchg.h b/include/asm-generic/cmpxchg-xchg.h
+similarity index 100%
+rename from arch/sh/include/asm/cmpxchg-xchg.h
+rename to include/asm-generic/cmpxchg-xchg.h
 -- 
-Ben Dooks				http://www.codethink.co.uk/
-Senior Engineer				Codethink - Providing Genius
-
-https://www.codethink.co.uk/privacy.html
+2.23.0
