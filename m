@@ -1,41 +1,72 @@
-From: Bartosz Golaszewski <brgl@bgdev.pl>
-Date: Tue, 22 Oct 2019 08:36:27 +0000
-Subject: [PATCH v7 6/9] sh: ecovec24: don't set unused fields in platform data
-Message-Id: <20191022083630.28175-7-brgl@bgdev.pl>
+From: Sebastian Andrzej Siewior <sebastian@breakpoint.cc>
+Date: Tue, 15 Oct 2019 22:31:55 +0000
+Subject: [PATCH 1/6 v2] sh: Move cmpxchg-xchg.h to asm-generic
+Message-Id: <20191015223154.7wcsc7x5edrpasfc@flow>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20191022083630.28175-1-brgl@bgdev.pl>
-In-Reply-To: <20191022083630.28175-1-brgl@bgdev.pl>
+References: <20191013221310.30748-1-sebastian@breakpoint.cc>
+ <20191013221310.30748-2-sebastian@breakpoint.cc>
+ <CAK8P3a0q+03=uNcnnHrGqHGOcAO3-mytxSmoBWLtHY+5StMNOQ@mail.gmail.com>
+In-Reply-To: <CAK8P3a0q+03=uNcnnHrGqHGOcAO3-mytxSmoBWLtHY+5StMNOQ@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Lee Jones <lee.jones@linaro.org>, Daniel Thompson <daniel.thompson@linaro.org>, Jingoo Han <jingoohan1@gmail.com>, Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>, Linus Walleij <linus.walleij@linaro.org>, Andy Shevchenko <andriy.shevchenko@linux.intel.com>, Jacopo Mondi <jacopo@jmondi.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, dri-devel@lists.freedesktop.org, linux-fbdev@vger.kernel.org, Bartosz Golaszewski <bgolaszewski@baylibre.com>
+Content-Type: text/plain; charset="windows-1252"
+Content-Transfer-Encoding: quoted-printable
+To: Arnd Bergmann <arnd@arndb.de>
+Cc: linux-arch <linux-arch@vger.kernel.org>, Rich Felker <dalias@libc.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Linux-sh list <linux-sh@vger.kernel.org>, Peter Zijlstra <peterz@infradead.org>, Russell King <linux@armlinux.org.uk>, Ingo Molnar <mingo@redhat.com>, Waiman Long <longman@redhat.com>, Will Deacon <will@kernel.org>, Linux ARM <linux-arm-kernel@lists.infradead.org>
 
-From: Bartosz Golaszewski <bgolaszewski@baylibre.com>
+The header file is very generic and could be reused by other
+architectures as long as they provide __cmpxchg_u32().
 
-Platform data fields other than fbdev are no longer used by the
-backlight driver. Remove them.
+Move sh's cmpxchg-xchg.h to asm-generic.
 
-Signed-off-by: Bartosz Golaszewski <bgolaszewski@baylibre.com>
-Reviewed-by: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
-Reviewed-by: Linus Walleij <linus.walleij@linaro.org>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+Cc: Arnd Bergmann <arnd@arndb.de>
+Cc: linux-sh@vger.kernel.org
+Cc: linux-arch@vger.kernel.org
+Acked-by: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Sebastian Andrzej Siewior <sebastian@breakpoint.cc>
 ---
- arch/sh/boards/mach-ecovec24/setup.c | 3 ---
- 1 file changed, 3 deletions(-)
+v1=E2=80=A6v2: s@__ASM_SH_CMPXCHG_XCHG_H@__ASM_GENERIC_CMPXCHG_XCHG_H@
 
-diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
-index aaa8ea62636f..dd427bac5cde 100644
---- a/arch/sh/boards/mach-ecovec24/setup.c
-+++ b/arch/sh/boards/mach-ecovec24/setup.c
-@@ -386,9 +386,6 @@ static struct property_entry gpio_backlight_props[] = {
- 
- static struct gpio_backlight_platform_data gpio_backlight_data = {
- 	.fbdev = &lcdc_device.dev,
--	.gpio = GPIO_PTR1,
--	.def_value = 1,
--	.name = "backlight",
- };
- 
- static const struct platform_device_info gpio_backlight_device_info = {
--- 
+ arch/sh/include/asm/Kbuild                                  | 1 +
+ {arch/sh/include/asm =3D> include/asm-generic}/cmpxchg-xchg.h | 6 +++---
+ 2 files changed, 4 insertions(+), 3 deletions(-)
+ rename {arch/sh/include/asm =3D> include/asm-generic}/cmpxchg-xchg.h (91%)
+
+diff --git a/arch/sh/include/asm/Kbuild b/arch/sh/include/asm/Kbuild
+index 51a54df22c110..08c1d96286d9d 100644
+--- a/arch/sh/include/asm/Kbuild
++++ b/arch/sh/include/asm/Kbuild
+@@ -1,5 +1,6 @@
+ # SPDX-License-Identifier: GPL-2.0
+ generated-y +=3D syscall_table.h
++generic-y +=3D cmpxchg-xchg.h
+ generic-y +=3D compat.h
+ generic-y +=3D current.h
+ generic-y +=3D delay.h
+diff --git a/arch/sh/include/asm/cmpxchg-xchg.h b/include/asm-generic/cmpxc=
+hg-xchg.h
+similarity index 91%
+rename from arch/sh/include/asm/cmpxchg-xchg.h
+rename to include/asm-generic/cmpxchg-xchg.h
+index c373f21efe4d9..c9acd6ff8741d 100644
+--- a/arch/sh/include/asm/cmpxchg-xchg.h
++++ b/include/asm-generic/cmpxchg-xchg.h
+@@ -1,6 +1,6 @@
+ /* SPDX-License-Identifier: GPL-2.0 */
+-#ifndef __ASM_SH_CMPXCHG_XCHG_H
+-#define __ASM_SH_CMPXCHG_XCHG_H
++#ifndef __ASM_GENERIC_CMPXCHG_XCHG_H
++#define __ASM_GENERIC_CMPXCHG_XCHG_H
+=20
+ /*
+  * Copyright (C) 2016 Red Hat, Inc.
+@@ -47,4 +47,4 @@ static inline unsigned long xchg_u8(volatile u8 *m, unsig=
+ned long val)
+ 	return __xchg_cmpxchg(m, val, sizeof *m);
+ }
+=20
+-#endif /* __ASM_SH_CMPXCHG_XCHG_H */
++#endif /* __ASM_GENERIC_CMPXCHG_XCHG_H */
+--=20
 2.23.0
