@@ -1,42 +1,70 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 24 Oct 2019 15:27:00 +0000
-Subject: [PATCH trivial] sh: mach-highlander: Spelling s/Conector/Connector/
-Message-Id: <20191024152700.30520-1-geert+renesas@glider.be>
+From: Bartosz Golaszewski <brgl@bgdev.pl>
+Date: Sat, 19 Oct 2019 08:35:47 +0000
+Subject: [PATCH v6 0/9] backlight: gpio: simplify the driver
+Message-Id: <20191019083556.19466-1-brgl@bgdev.pl>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Jiri Kosina <trivial@kernel.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Lee Jones <lee.jones@linaro.org>, Daniel Thompson <daniel.thompson@linaro.org>, Jingoo Han <jingoohan1@gmail.com>, Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>, Linus Walleij <linus.walleij@linaro.org>, Andy Shevchenko <andriy.shevchenko@linux.intel.com>, Jacopo Mondi <jacopo@jmondi.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, dri-devel@lists.freedesktop.org, linux-fbdev@vger.kernel.org, Bartosz Golaszewski <bgolaszewski@baylibre.com>
 
-Fix misspellings of "Connector".
+From: Bartosz Golaszewski <bgolaszewski@baylibre.com>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- arch/sh/include/mach-common/mach/highlander.h | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+While working on my other series related to gpio-backlight[1] I noticed
+that we could simplify the driver if we made the only user of platform
+data use GPIO lookups and device properties. This series tries to do
+that.
 
-diff --git a/arch/sh/include/mach-common/mach/highlander.h b/arch/sh/include/mach-common/mach/highlander.h
-index 66d3e40fd0464b9c..fb44c299d0337e3f 100644
---- a/arch/sh/include/mach-common/mach/highlander.h
-+++ b/arch/sh/include/mach-common/mach/highlander.h
-@@ -18,7 +18,7 @@
- #define PA_IRLPRI4      (PA_BCR+0x000a) /* Interrupt Priorty 4 */
- #define PA_RSTCTL       (PA_BCR+0x000c) /* Reset Control */
- #define PA_PCIBD        (PA_BCR+0x000e) /* PCI Board detect control */
--#define PA_PCICD        (PA_BCR+0x0010) /* PCI Conector detect control */
-+#define PA_PCICD        (PA_BCR+0x0010) /* PCI Connector detect control */
- #define PA_EXTGIO       (PA_BCR+0x0016) /* Extension GPIO Control */
- #define PA_IVDRMON      (PA_BCR+0x0018) /* iVDR Moniter control */
- #define PA_IVDRCTL      (PA_BCR+0x001a) /* iVDR control */
-@@ -80,7 +80,7 @@
- #define	PA_SDPOW	(PA_BCR+0x0004)	/* SD Power control */
- #define	PA_RSTCTL	(PA_BCR+0x0006)	/* Device Reset control */
- #define	PA_PCIBD	(PA_BCR+0x0008)	/* PCI Board detect control */
--#define	PA_PCICD	(PA_BCR+0x000a)	/* PCI Conector detect control */
-+#define	PA_PCICD	(PA_BCR+0x000a)	/* PCI Connector detect control */
- #define	PA_ZIGIO1	(PA_BCR+0x000c)	/* Zigbee IO control 1 */
- #define	PA_ZIGIO2	(PA_BCR+0x000e)	/* Zigbee IO control 2 */
- #define	PA_ZIGIO3	(PA_BCR+0x0010)	/* Zigbee IO control 3 */
+First two patches contain minor fixes. Third patch makes the driver
+explicitly drive the GPIO line. Fourth patch adds all necessary data
+structures to ecovec24. Patch 5/9 unifies much of the code for both
+pdata and non-pdata cases. Patches 6-7/9 remove unused platform data
+fields. Last two patches contain additional improvements for the GPIO
+backlight driver while we're already modifying it.
+
+I don't have access to this HW but hopefully this works. Only compile
+tested.
+
+[1] https://lkml.org/lkml/2019/6/25/900
+
+v1 -> v2:
+- rebased on top of v5.3-rc1 and adjusted to the recent changes from Andy
+- added additional two patches with minor improvements
+
+v2 -> v3:
+- in patch 7/7: used initializers to set values for pdata and dev local vars
+
+v3 -> v4:
+- rebased on top of v5.4-rc1
+- removed changes that are no longer relevant after commit ec665b756e6f
+  ("backlight: gpio-backlight: Correct initial power state handling")
+- added patch 7/7
+
+v4 -> v5:
+- in patch 7/7: added a comment replacing the name of the function being
+  pulled into probe()
+
+v5 -> v6:
+- added a patch making the driver explicitly set the direction of the GPIO
+  to output
+- added a patch removing a redundant newline
+
+Bartosz Golaszewski (9):
+  backlight: gpio: remove unneeded include
+  backlight: gpio: remove stray newline
+  backlight: gpio: explicitly set the direction of the GPIO
+  sh: ecovec24: add additional properties to the backlight device
+  backlight: gpio: simplify the platform data handling
+  sh: ecovec24: don't set unused fields in platform data
+  backlight: gpio: remove unused fields from platform data
+  backlight: gpio: use a helper variable for &pdev->dev
+  backlight: gpio: pull gpio_backlight_initial_power_state() into probe
+
+ arch/sh/boards/mach-ecovec24/setup.c         |  33 +++--
+ drivers/video/backlight/gpio_backlight.c     | 128 +++++++------------
+ include/linux/platform_data/gpio_backlight.h |   3 -
+ 3 files changed, 69 insertions(+), 95 deletions(-)
+
 -- 
-2.17.1
+2.23.0
