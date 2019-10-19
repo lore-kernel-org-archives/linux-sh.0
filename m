@@ -1,84 +1,35 @@
-From: David Hildenbrand <david@redhat.com>
-Date: Sun, 06 Oct 2019 08:56:44 +0000
-Subject: [PATCH v6 08/10] mm/memory_hotplug: Don't check for "all holes" in shrink_zone_span()
-Message-Id: <20191006085646.5768-9-david@redhat.com>
+From: Bartosz Golaszewski <brgl@bgdev.pl>
+Date: Sat, 19 Oct 2019 08:35:49 +0000
+Subject: [PATCH v6 2/9] backlight: gpio: remove stray newline
+Message-Id: <20191019083556.19466-3-brgl@bgdev.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20191006085646.5768-1-david@redhat.com>
-In-Reply-To: <20191006085646.5768-1-david@redhat.com>
+References: <20191019083556.19466-1-brgl@bgdev.pl>
+In-Reply-To: <20191019083556.19466-1-brgl@bgdev.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: linux-s390@vger.kernel.org, Michal Hocko <mhocko@suse.com>, linux-ia64@vger.kernel.org, Pavel Tatashin <pasha.tatashin@soleen.com>, linux-sh@vger.kernel.org, x86@kernel.org, David Hildenbrand <david@redhat.com>, linux-mm@kvack.org, Wei Yang <richardw.yang@linux.intel.com>, Andrew Morton <akpm@linux-foundation.org>, linuxppc-dev@lists.ozlabs.org, Dan Williams <dan.j.williams@intel.com>, linux-arm-kernel@lists.infradead.org, Oscar Salvador <osalvador@suse.de>
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Lee Jones <lee.jones@linaro.org>, Daniel Thompson <daniel.thompson@linaro.org>, Jingoo Han <jingoohan1@gmail.com>, Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>, Linus Walleij <linus.walleij@linaro.org>, Andy Shevchenko <andriy.shevchenko@linux.intel.com>, Jacopo Mondi <jacopo@jmondi.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, dri-devel@lists.freedesktop.org, linux-fbdev@vger.kernel.org, Bartosz Golaszewski <bgolaszewski@baylibre.com>
 
-If we have holes, the holes will automatically get detected and removed
-once we remove the next bigger/smaller section. The extra checks can
-go.
+From: Bartosz Golaszewski <bgolaszewski@baylibre.com>
 
-Cc: Andrew Morton <akpm@linux-foundation.org>
-Cc: Oscar Salvador <osalvador@suse.de>
-Cc: Michal Hocko <mhocko@suse.com>
-Cc: David Hildenbrand <david@redhat.com>
-Cc: Pavel Tatashin <pasha.tatashin@soleen.com>
-Cc: Dan Williams <dan.j.williams@intel.com>
-Cc: Wei Yang <richardw.yang@linux.intel.com>
-Signed-off-by: David Hildenbrand <david@redhat.com>
+Remove a double newline from the driver.
+
+Signed-off-by: Bartosz Golaszewski <bgolaszewski@baylibre.com>
 ---
- mm/memory_hotplug.c | 34 +++++++---------------------------
- 1 file changed, 7 insertions(+), 27 deletions(-)
+ drivers/video/backlight/gpio_backlight.c | 1 -
+ 1 file changed, 1 deletion(-)
 
-diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
-index f294918f7211..8dafa1ba8d9f 100644
---- a/mm/memory_hotplug.c
-+++ b/mm/memory_hotplug.c
-@@ -393,6 +393,9 @@ static void shrink_zone_span(struct zone *zone, unsigned long start_pfn,
- 		if (pfn) {
- 			zone->zone_start_pfn = pfn;
- 			zone->spanned_pages = zone_end_pfn - pfn;
-+		} else {
-+			zone->zone_start_pfn = 0;
-+			zone->spanned_pages = 0;
- 		}
- 	} else if (zone_end_pfn = end_pfn) {
- 		/*
-@@ -405,34 +408,11 @@ static void shrink_zone_span(struct zone *zone, unsigned long start_pfn,
- 					       start_pfn);
- 		if (pfn)
- 			zone->spanned_pages = pfn - zone_start_pfn + 1;
-+		else {
-+			zone->zone_start_pfn = 0;
-+			zone->spanned_pages = 0;
-+		}
- 	}
--
--	/*
--	 * The section is not biggest or smallest mem_section in the zone, it
--	 * only creates a hole in the zone. So in this case, we need not
--	 * change the zone. But perhaps, the zone has only hole data. Thus
--	 * it check the zone has only hole or not.
--	 */
--	pfn = zone_start_pfn;
--	for (; pfn < zone_end_pfn; pfn += PAGES_PER_SUBSECTION) {
--		if (unlikely(!pfn_to_online_page(pfn)))
--			continue;
--
--		if (page_zone(pfn_to_page(pfn)) != zone)
--			continue;
--
--		/* Skip range to be removed */
--		if (pfn >= start_pfn && pfn < end_pfn)
--			continue;
--
--		/* If we find valid section, we have nothing to do */
--		zone_span_writeunlock(zone);
--		return;
--	}
--
--	/* The zone has no valid section */
--	zone->zone_start_pfn = 0;
--	zone->spanned_pages = 0;
- 	zone_span_writeunlock(zone);
+diff --git a/drivers/video/backlight/gpio_backlight.c b/drivers/video/backlight/gpio_backlight.c
+index 7e1990199fae..3955b513f2f8 100644
+--- a/drivers/video/backlight/gpio_backlight.c
++++ b/drivers/video/backlight/gpio_backlight.c
+@@ -91,7 +91,6 @@ static int gpio_backlight_initial_power_state(struct gpio_backlight *gbl)
+ 	return FB_BLANK_UNBLANK;
  }
  
--- 
-2.21.0
+-
+ static int gpio_backlight_probe(struct platform_device *pdev)
+ {
+ 	struct gpio_backlight_platform_data *pdata -- 
+2.23.0
