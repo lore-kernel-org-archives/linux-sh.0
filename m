@@ -1,92 +1,21 @@
-From: Bartosz Golaszewski <brgl@bgdev.pl>
-Date: Sat, 19 Oct 2019 08:35:55 +0000
-Subject: [PATCH v6 8/9] backlight: gpio: use a helper variable for &pdev->dev
-Message-Id: <20191019083556.19466-9-brgl@bgdev.pl>
+From: Daniel Murray <sinara-group@bk.ru>
+Date: Sun, 20 Oct 2019 20:04:35 +0000
+Subject: Purchase Order
+Message-Id: <20191020223427.4213D3C76A0@mail.gatefjohn.tk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20191019083556.19466-1-brgl@bgdev.pl>
-In-Reply-To: <20191019083556.19466-1-brgl@bgdev.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Lee Jones <lee.jones@linaro.org>, Daniel Thompson <daniel.thompson@linaro.org>, Jingoo Han <jingoohan1@gmail.com>, Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>, Linus Walleij <linus.walleij@linaro.org>, Andy Shevchenko <andriy.shevchenko@linux.intel.com>, Jacopo Mondi <jacopo@jmondi.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, dri-devel@lists.freedesktop.org, linux-fbdev@vger.kernel.org, Bartosz Golaszewski <bgolaszewski@baylibre.com>
+To: linux-sh@vger.kernel.org
 
-From: Bartosz Golaszewski <bgolaszewski@baylibre.com>
+Hi,friend,
 
-Instead of dereferencing pdev each time, use a helper variable for
-the associated device pointer.
+This is Daniel Murray and i am purchasing manager from Sinara Group Co.,LTD in Russia.
+We are glad to know about your company from the web and we are interested in your products.
+Could you kindly send us your Latest catalog and price list for our trial order.
 
-Signed-off-by: Bartosz Golaszewski <bgolaszewski@baylibre.com>
-Reviewed-by: Linus Walleij <linus.walleij@linaro.org>
-Reviewed-by: Daniel Thompson <daniel.thompson@linaro.org>
-Reviewed-by: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
----
- drivers/video/backlight/gpio_backlight.c | 23 +++++++++++------------
- 1 file changed, 11 insertions(+), 12 deletions(-)
+Thanks and Best Regards,
 
-diff --git a/drivers/video/backlight/gpio_backlight.c b/drivers/video/backlight/gpio_backlight.c
-index c829b82f5372..7b411f6ee15a 100644
---- a/drivers/video/backlight/gpio_backlight.c
-+++ b/drivers/video/backlight/gpio_backlight.c
-@@ -78,29 +78,29 @@ static int gpio_backlight_initial_power_state(struct gpio_backlight *gbl)
- 
- static int gpio_backlight_probe(struct platform_device *pdev)
- {
--	struct gpio_backlight_platform_data *pdata -		dev_get_platdata(&pdev->dev);
-+	struct device *dev = &pdev->dev;
-+	struct gpio_backlight_platform_data *pdata = dev_get_platdata(dev);
- 	struct backlight_properties props;
- 	struct backlight_device *bl;
- 	struct gpio_backlight *gbl;
- 	int ret, init_brightness;
- 
--	gbl = devm_kzalloc(&pdev->dev, sizeof(*gbl), GFP_KERNEL);
-+	gbl = devm_kzalloc(dev, sizeof(*gbl), GFP_KERNEL);
- 	if (gbl = NULL)
- 		return -ENOMEM;
- 
--	gbl->dev = &pdev->dev;
-+	gbl->dev = dev;
- 
- 	if (pdata)
- 		gbl->fbdev = pdata->fbdev;
- 
--	gbl->def_value = device_property_read_bool(&pdev->dev, "default-on");
-+	gbl->def_value = device_property_read_bool(dev, "default-on");
- 
--	gbl->gpiod = devm_gpiod_get(&pdev->dev, NULL, GPIOD_ASIS);
-+	gbl->gpiod = devm_gpiod_get(dev, NULL, GPIOD_ASIS);
- 	if (IS_ERR(gbl->gpiod)) {
- 		ret = PTR_ERR(gbl->gpiod);
- 		if (ret != -EPROBE_DEFER)
--			dev_err(&pdev->dev,
-+			dev_err(dev,
- 				"Error: The gpios parameter is missing or invalid.\n");
- 		return ret;
- 	}
-@@ -108,11 +108,10 @@ static int gpio_backlight_probe(struct platform_device *pdev)
- 	memset(&props, 0, sizeof(props));
- 	props.type = BACKLIGHT_RAW;
- 	props.max_brightness = 1;
--	bl = devm_backlight_device_register(&pdev->dev, dev_name(&pdev->dev),
--					&pdev->dev, gbl, &gpio_backlight_ops,
--					&props);
-+	bl = devm_backlight_device_register(dev, dev_name(dev), dev, gbl,
-+					    &gpio_backlight_ops, &props);
- 	if (IS_ERR(bl)) {
--		dev_err(&pdev->dev, "failed to register backlight\n");
-+		dev_err(dev, "failed to register backlight\n");
- 		return PTR_ERR(bl);
- 	}
- 
-@@ -122,7 +121,7 @@ static int gpio_backlight_probe(struct platform_device *pdev)
- 	init_brightness = gpio_backlight_get_curr_brightness(bl);
- 	ret = gpiod_direction_output(gbl->gpiod, init_brightness);
- 	if (ret) {
--		dev_err(&pdev->dev, "failed to set initial brightness\n");
-+		dev_err(dev, "failed to set initial brightness\n");
- 		return ret;
- 	}
- 
--- 
-2.23.0
+Daniel Murray
+Purchasing Manager
+Sinara Group Co.,LTD
