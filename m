@@ -1,302 +1,174 @@
-From: David Hildenbrand <david@redhat.com>
-Date: Sun, 06 Oct 2019 08:13:45 +0000
-Subject: Re: [PATCH v5 01/10] mm/memunmap: Use the correct start and end pfn when removing pages from zone
-Message-Id: <96d3cab9-965d-f363-f3ea-e31e89e2fc01@redhat.com>
+From: Anshuman Khandual <anshuman.khandual@arm.com>
+Date: Mon, 21 Oct 2019 02:54:18 +0000
+Subject: [PATCH V7] mm/debug: Add tests validating architecture page table helpers
+Message-Id: <1571625739-29943-1-git-send-email-anshuman.khandual@arm.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20191001144011.3801-1-david@redhat.com>
- <20191001144011.3801-2-david@redhat.com>
- <933f9cd8-9a32-8566-bd97-7e475a009275@redhat.com>
- <09b61ab1-6099-d825-8e04-fbfb43abe4d2@redhat.com>
- <cb6807a4-93c8-3964-bd65-e7087a0c7bf1@linux.ibm.com>
- <6e71cd24-7696-e7ca-15a1-8f126b0860ee@redhat.com>
- <25a72fa3-9859-3fdb-ffd3-deb7bf154fe0@redhat.com>
- <cbb82f0a-a578-5fb0-6b62-00bcd0a09b2e@linux.ibm.com>
-In-Reply-To: <cbb82f0a-a578-5fb0-6b62-00bcd0a09b2e@linux.ibm.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "Aneesh Kumar K.V" <aneesh.kumar@linux.ibm.com>, linux-kernel@vger.kernel.org, Dan Williams <dan.j.williams@intel.com>
-Cc: linux-s390@vger.kernel.org, linux-ia64@vger.kernel.org, Ira Weiny <ira.weiny@intel.com>, linux-sh@vger.kernel.org, Jason Gunthorpe <jgg@ziepe.ca>, Logan Gunthorpe <logang@deltatee.com>, Pankaj Gupta <pagupta@redhat.com>, linux-mm@kvack.org, Andrew Morton <akpm@linux-foundation.org>, linuxppc-dev@lists.ozlabs.org, linux-arm-kernel@lists.infradead.org
+To: linux-mm@kvack.org
+Cc: Mark Rutland <mark.rutland@arm.com>, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, James Hogan <jhogan@kernel.org>, Tetsuo Handa <penguin-kernel@i-love.sakura.ne.jp>, Heiko Carstens <heiko.carstens@de.ibm.com>, Michal Hocko <mhocko@kernel.org>, Dave Hansen <dave.hansen@intel.com>, Paul Mackerras <paulus@samba.org>, sparclinux@vger.kernel.org, Thomas Gleixner <tglx@linutronix.de>, linux-s390@vger.kernel.org, Michael Ellerman <mpe@ellerman.id.au>, x86@kernel.org, Russell King - ARM Linux <linux@armlinux.org.uk>, Matthew Wilcox <willy@infradead.org>, Steven Price <Steven.Price@arm.com>, Jason Gunthorpe <jgg@ziepe.ca>, Gerald Schaefer <gerald.schaefer@de.ibm.com>, linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org, Ingo Molnar <mingo@kernel.org>, Kees Cook <keescook@chromium.org>, Anshuman Khandual <anshuman.khandual@arm.com>, Masahiro Yamada <yamada.masahiro@socionext.com>, Mark Brown <broonie@kernel.org>, "Kirill A . Shutemov" <kirill@shutemov.name>, Dan Williams <dan.j.williams@intel.com>, Vlastimil Babka <vbabka@suse.cz>, Christophe Leroy <christophe.leroy@c-s.fr>, Sri Krishna chowdary <schowdary@nvidia.com>, Ard Biesheuvel <ard.biesheuvel@linaro.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, linux-mips@vger.kernel.org, Ralf Baechle <ralf@linux-mips.org>, linux-kernel@vger.kernel.org, Paul Burton <paul.burton@mips.com>, Mike Rapoport <rppt@linux.vnet.ibm.com>, Vineet Gupta <vgupta@synopsys.com>, Martin Schwidefsky <schwidefsky@de.ibm.com>, Andrew Morton <akpm@linux-foundation.org>, linuxppc-dev@lists.ozlabs.org, "David S. Miller" <davem@davemloft.net>, Mike Kravetz <mike.kravetz@oracle.com>
 
-On 05.10.19 08:13, Aneesh Kumar K.V wrote:
-> On 10/4/19 2:33 PM, David Hildenbrand wrote:
->> On 04.10.19 11:00, David Hildenbrand wrote:
->>> On 03.10.19 18:48, Aneesh Kumar K.V wrote:
->>>> On 10/1/19 8:33 PM, David Hildenbrand wrote:
->>>>> On 01.10.19 16:57, David Hildenbrand wrote:
->>>>>> On 01.10.19 16:40, David Hildenbrand wrote:
->>>>>>> From: "Aneesh Kumar K.V" <aneesh.kumar@linux.ibm.com>
->>>>>>>
->>>>>>> With altmap, all the resource pfns are not initialized. While initializing
->>>>>>> pfn, altmap reserve space is skipped. Hence when removing pfn from zone
->>>>>>> skip pfns that were never initialized.
->>>>>>>
->>>>>>> Update memunmap_pages to calculate start and end pfn based on altmap
->>>>>>> values. This fixes a kernel crash that is observed when destroying
->>>>>>> a namespace.
->>>>>>>
->>>>>>> [   81.356173] kernel BUG at include/linux/mm.h:1107!
->>>>>>> cpu 0x1: Vector: 700 (Program Check) at [c000000274087890]
->>>>>>>       pc: c0000000004b9728: memunmap_pages+0x238/0x340
->>>>>>>       lr: c0000000004b9724: memunmap_pages+0x234/0x340
->>>>>>> ...
->>>>>>>       pid   = 3669, comm = ndctl
->>>>>>> kernel BUG at include/linux/mm.h:1107!
->>>>>>> [c000000274087ba0] c0000000009e3500 devm_action_release+0x30/0x50
->>>>>>> [c000000274087bc0] c0000000009e4758 release_nodes+0x268/0x2d0
->>>>>>> [c000000274087c30] c0000000009dd144 device_release_driver_internal+0x174/0x240
->>>>>>> [c000000274087c70] c0000000009d9dfc unbind_store+0x13c/0x190
->>>>>>> [c000000274087cb0] c0000000009d8a24 drv_attr_store+0x44/0x60
->>>>>>> [c000000274087cd0] c0000000005a7470 sysfs_kf_write+0x70/0xa0
->>>>>>> [c000000274087d10] c0000000005a5cac kernfs_fop_write+0x1ac/0x290
->>>>>>> [c000000274087d60] c0000000004be45c __vfs_write+0x3c/0x70
->>>>>>> [c000000274087d80] c0000000004c26e4 vfs_write+0xe4/0x200
->>>>>>> [c000000274087dd0] c0000000004c2a6c ksys_write+0x7c/0x140
->>>>>>> [c000000274087e20] c00000000000bbd0 system_call+0x5c/0x68
->>>>>>>
->>>>>>> Cc: Dan Williams <dan.j.williams@intel.com>
->>>>>>> Cc: Andrew Morton <akpm@linux-foundation.org>
->>>>>>> Cc: Jason Gunthorpe <jgg@ziepe.ca>
->>>>>>> Cc: Logan Gunthorpe <logang@deltatee.com>
->>>>>>> Cc: Ira Weiny <ira.weiny@intel.com>
->>>>>>> Reviewed-by: Pankaj Gupta <pagupta@redhat.com>
->>>>>>> Signed-off-by: Aneesh Kumar K.V <aneesh.kumar@linux.ibm.com>
->>>>>>> [ move all pfn-realted declarations into a single line ]
->>>>>>> Signed-off-by: David Hildenbrand <david@redhat.com>
->>>>>>> ---
->>>>>>>    mm/memremap.c | 13 ++++++++-----
->>>>>>>    1 file changed, 8 insertions(+), 5 deletions(-)
->>>>>>>
->>>>>>> diff --git a/mm/memremap.c b/mm/memremap.c
->>>>>>> index 557e53c6fb46..026788b2ac69 100644
->>>>>>> --- a/mm/memremap.c
->>>>>>> +++ b/mm/memremap.c
->>>>>>> @@ -123,7 +123,7 @@ static void dev_pagemap_cleanup(struct dev_pagemap *pgmap)
->>>>>>>    void memunmap_pages(struct dev_pagemap *pgmap)
->>>>>>>    {
->>>>>>>    	struct resource *res = &pgmap->res;
->>>>>>> -	unsigned long pfn;
->>>>>>> +	unsigned long pfn, nr_pages, start_pfn, end_pfn;
->>>>>>>    	int nid;
->>>>>>>    
->>>>>>>    	dev_pagemap_kill(pgmap);
->>>>>>> @@ -131,14 +131,17 @@ void memunmap_pages(struct dev_pagemap *pgmap)
->>>>>>>    		put_page(pfn_to_page(pfn));
->>>>>>>    	dev_pagemap_cleanup(pgmap);
->>>>>>>    
->>>>>>> +	start_pfn = pfn_first(pgmap);
->>>>>>> +	end_pfn = pfn_end(pgmap);
->>>>>>> +	nr_pages = end_pfn - start_pfn;
->>>>>>> +
->>>>>>>    	/* pages are dead and unused, undo the arch mapping */
->>>>>>> -	nid = page_to_nid(pfn_to_page(PHYS_PFN(res->start)));
->>>>>>> +	nid = page_to_nid(pfn_to_page(start_pfn));
->>>>>>>    
->>>>>>>    	mem_hotplug_begin();
->>>>>>>    	if (pgmap->type = MEMORY_DEVICE_PRIVATE) {
->>>>>>> -		pfn = PHYS_PFN(res->start);
->>>>>>> -		__remove_pages(page_zone(pfn_to_page(pfn)), pfn,
->>>>>>> -				 PHYS_PFN(resource_size(res)), NULL);
->>>>>>> +		__remove_pages(page_zone(pfn_to_page(start_pfn)), start_pfn,
->>>>>>> +			       nr_pages, NULL);
->>>>>>>    	} else {
->>>>>>>    		arch_remove_memory(nid, res->start, resource_size(res),
->>>>>>>    				pgmap_altmap(pgmap));
->>>>>>>
->>>>>>
->>>>>> Aneesh, I was wondering why the use of "res->start" is correct (and we
->>>>>> shouldn't also witch to start_pfn/nr_pages here. It would be good if Dan
->>>>>> could review.
->>>>>>
->>>>>
->>>>> To be more precise, I wonder if it should actually be
->>>>>
->>>>> __remove_pages(page_zone(pfn_to_page(start_pfn)), res->start,
->>>>>                  resource_size(res))
->>>>>
->>>>
->>>> yes, that would be make it much clear.
->>>>
->>>> But for MEMORY_DEVICE_PRIVATE start_pfn and pfn should be same?
->>>
->>> Okay, let's recap. We should call add_pages()/__remove_pages()
->>> and arch_add_memory()/arch_remove_memory() with the exact same ranges.
->>>
->>> So with PHYS_PFN(res->start) and PHYS_PFN(resource_size(res)
->>>
->>> Now, only a subset of the pages gets actually initialized,
->>> meaning the NID and the ZONE we read could be stale.
->>> That, we have to fix.
->>>
->>> What about something like this (am I missing something?):
->>>
->>>  From d77b5c50f86570819a437517a897cc40ed29eefb Mon Sep 17 00:00:00 2001
->>> From: "Aneesh Kumar K.V" <aneesh.kumar@linux.ibm.com>
->>> Date: Fri, 27 Sep 2019 16:02:24 +0530
->>> Subject: [PATCH] mm/memunmap: Don't access uninitialized memmap in
->>>   memunmap_pages()
->>>
->>> With an altmap, the memmap falling into the reserved altmap space are
->>> not initialized and, therefore, contain a garbage NID and a garbage
->>> zone. Make sure to read the NID/zone from a memmap that was initialzed.
->>>
->>> This fixes a kernel crash that is observed when destroying a namespace:
->>>
->>> [   81.356173] kernel BUG at include/linux/mm.h:1107!
->>> cpu 0x1: Vector: 700 (Program Check) at [c000000274087890]
->>>      pc: c0000000004b9728: memunmap_pages+0x238/0x340
->>>      lr: c0000000004b9724: memunmap_pages+0x234/0x340
->>> ...
->>>      pid   = 3669, comm = ndctl
->>> kernel BUG at include/linux/mm.h:1107!
->>> [c000000274087ba0] c0000000009e3500 devm_action_release+0x30/0x50
->>> [c000000274087bc0] c0000000009e4758 release_nodes+0x268/0x2d0
->>> [c000000274087c30] c0000000009dd144 device_release_driver_internal+0x174/0x240
->>> [c000000274087c70] c0000000009d9dfc unbind_store+0x13c/0x190
->>> [c000000274087cb0] c0000000009d8a24 drv_attr_store+0x44/0x60
->>> [c000000274087cd0] c0000000005a7470 sysfs_kf_write+0x70/0xa0
->>> [c000000274087d10] c0000000005a5cac kernfs_fop_write+0x1ac/0x290
->>> [c000000274087d60] c0000000004be45c __vfs_write+0x3c/0x70
->>> [c000000274087d80] c0000000004c26e4 vfs_write+0xe4/0x200
->>> [c000000274087dd0] c0000000004c2a6c ksys_write+0x7c/0x140
->>> [c000000274087e20] c00000000000bbd0 system_call+0x5c/0x68
->>>
->>> Cc: Dan Williams <dan.j.williams@intel.com>
->>> Cc: Andrew Morton <akpm@linux-foundation.org>
->>> Cc: Jason Gunthorpe <jgg@ziepe.ca>
->>> Cc: Logan Gunthorpe <logang@deltatee.com>
->>> Cc: Ira Weiny <ira.weiny@intel.com>
->>> Signed-off-by: Aneesh Kumar K.V <aneesh.kumar@linux.ibm.com>
->>> [ minimze code changes, rephrase description ]
->>> Signed-off-by: David Hildenbrand <david@redhat.com>
->>> ---
->>>   mm/memremap.c | 11 +++++++----
->>>   1 file changed, 7 insertions(+), 4 deletions(-)
->>>
->>> diff --git a/mm/memremap.c b/mm/memremap.c
->>> index 557e53c6fb46..8b11c0da345c 100644
->>> --- a/mm/memremap.c
->>> +++ b/mm/memremap.c
->>> @@ -123,6 +123,7 @@ static void dev_pagemap_cleanup(struct dev_pagemap *pgmap)
->>>   void memunmap_pages(struct dev_pagemap *pgmap)
->>>   {
->>>   	struct resource *res = &pgmap->res;
->>> +	struct page *first_page;
->>>   	unsigned long pfn;
->>>   	int nid;
->>>   
->>> @@ -131,14 +132,16 @@ void memunmap_pages(struct dev_pagemap *pgmap)
->>>   		put_page(pfn_to_page(pfn));
->>>   	dev_pagemap_cleanup(pgmap);
->>>   
->>> +	/* make sure to access a memmap that was actually initialized */
->>> +	first_page = pfn_to_page(pfn_first(pgmap));
->>> +
->>>   	/* pages are dead and unused, undo the arch mapping */
->>> -	nid = page_to_nid(pfn_to_page(PHYS_PFN(res->start)));
->>> +	nid = page_to_nid(first_page);
->>>   
->>>   	mem_hotplug_begin();
->>>   	if (pgmap->type = MEMORY_DEVICE_PRIVATE) {
->>> -		pfn = PHYS_PFN(res->start);
->>> -		__remove_pages(page_zone(pfn_to_page(pfn)), pfn,
->>> -				 PHYS_PFN(resource_size(res)), NULL);
->>> +		__remove_pages(page_zone(first_page), res->start,
->>> +			       resource_size(res), NULL);
->>
->> Keeping the PHYS_PFN() calls of course ...
->>
-> 
-> 
-> That is not different from what I posted right?  For MEMORY_DEVICE_PRIVATE
+This series adds a test validation for architecture exported page table
+helpers. Patch in the series adds basic transformation tests at various
+levels of the page table.
 
-I'll go with this modified patch for now, which does not change the ranges
-passed to  __remove_pages(), because that looked like a unrelated change to me.
-__remove_ages() has to be called with the same range as add_pages().
+This test was originally suggested by Catalin during arm64 THP migration
+RFC discussion earlier. Going forward it can include more specific tests
+with respect to various generic MM functions like THP, HugeTLB etc and
+platform specific tests.
 
+https://lore.kernel.org/linux-mm/20190628102003.GA56463@arrakis.emea.arm.com/
 
-commit f66c2fa09293ae0f99afc4363146941579152409 (HEAD)
-Author: Aneesh Kumar K.V <aneesh.kumar@linux.ibm.com>
-Date:   Fri Sep 27 16:02:24 2019 +0530
+Needs to be applied on linux-next (next-20191017) after reverting all commits
+from V5 of this series.
 
-    mm/memunmap: Don't access uninitialized memmap in memunmap_pages()
-    
-    With an altmap, the memmap falling into the reserved altmap space are
-    not initialized and, therefore, contain a garbage NID and a garbage
-    zone. Make sure to read the NID/zone from a memmap that was initialzed.
-    
-    This fixes a kernel crash that is observed when destroying a namespace:
-    
-    [   81.356173] kernel BUG at include/linux/mm.h:1107!
-    cpu 0x1: Vector: 700 (Program Check) at [c000000274087890]
-        pc: c0000000004b9728: memunmap_pages+0x238/0x340
-        lr: c0000000004b9724: memunmap_pages+0x234/0x340
-    ...
-        pid   = 3669, comm = ndctl
-    kernel BUG at include/linux/mm.h:1107!
-    [c000000274087ba0] c0000000009e3500 devm_action_release+0x30/0x50
-    [c000000274087bc0] c0000000009e4758 release_nodes+0x268/0x2d0
-    [c000000274087c30] c0000000009dd144 device_release_driver_internal+0x174/0x240
-    [c000000274087c70] c0000000009d9dfc unbind_store+0x13c/0x190
-    [c000000274087cb0] c0000000009d8a24 drv_attr_store+0x44/0x60
-    [c000000274087cd0] c0000000005a7470 sysfs_kf_write+0x70/0xa0
-    [c000000274087d10] c0000000005a5cac kernfs_fop_write+0x1ac/0x290
-    [c000000274087d60] c0000000004be45c __vfs_write+0x3c/0x70
-    [c000000274087d80] c0000000004c26e4 vfs_write+0xe4/0x200
-    [c000000274087dd0] c0000000004c2a6c ksys_write+0x7c/0x140
-    [c000000274087e20] c00000000000bbd0 system_call+0x5c/0x68
-    
-    Cc: Dan Williams <dan.j.williams@intel.com>
-    Cc: Andrew Morton <akpm@linux-foundation.org>
-    Cc: Jason Gunthorpe <jgg@ziepe.ca>
-    Cc: Logan Gunthorpe <logang@deltatee.com>
-    Cc: Ira Weiny <ira.weiny@intel.com>
-    Signed-off-by: Aneesh Kumar K.V <aneesh.kumar@linux.ibm.com>
-    [ minimze code changes, rephrase description ]
-    Signed-off-by: David Hildenbrand <david@redhat.com>
+Changes in V7:
 
-diff --git a/mm/memremap.c b/mm/memremap.c
-index 557e53c6fb46..8c2fb44c3b4d 100644
---- a/mm/memremap.c
-+++ b/mm/memremap.c
-@@ -123,6 +123,7 @@ static void dev_pagemap_cleanup(struct dev_pagemap *pgmap)
- void memunmap_pages(struct dev_pagemap *pgmap)
- {
-        struct resource *res = &pgmap->res;
-+       struct page *first_page;
-        unsigned long pfn;
-        int nid;
- 
-@@ -131,14 +132,16 @@ void memunmap_pages(struct dev_pagemap *pgmap)
-                put_page(pfn_to_page(pfn));
-        dev_pagemap_cleanup(pgmap);
- 
-+       /* make sure to access a memmap that was actually initialized */
-+       first_page = pfn_to_page(pfn_first(pgmap));
-+
-        /* pages are dead and unused, undo the arch mapping */
--       nid = page_to_nid(pfn_to_page(PHYS_PFN(res->start)));
-+       nid = page_to_nid(first_page);
- 
-        mem_hotplug_begin();
-        if (pgmap->type = MEMORY_DEVICE_PRIVATE) {
--               pfn = PHYS_PFN(res->start);
--               __remove_pages(page_zone(pfn_to_page(pfn)), pfn,
--                                PHYS_PFN(resource_size(res)), NULL);
-+               __remove_pages(page_zone(first_page), PHYS_PFN(res->start),
-+                              PHYS_PFN(resource_size(res)), NULL);
-        } else {
-                arch_remove_memory(nid, res->start, resource_size(res),
-                                pgmap_altmap(pgmap));
+- Memory allocation and free routines for mapped pages have been droped
+- Mapped pfns are derived from standard kernel text symbol per Matthew
+- Moved debug_vm_pgtaable() after page_alloc_init_late() per Michal and Qian 
+- Updated the commit message per Michal
+- Updated W=1 GCC warning problem on x86 per Qian Cai
+- Addition of new alloc_contig_pages() helper has been submitted separately
 
+Changes in V6: (https://patchwork.kernel.org/project/linux-mm/list/?series7589)
 
+- Moved alloc_gigantic_page_order() into mm/page_alloc.c per Michal
+- Moved alloc_gigantic_page_order() within CONFIG_CONTIG_ALLOC in the test
+- Folded Andrew's include/asm-generic/pgtable.h fix into the test patch 2/2
 
-As Andrew wants to give this some testing, I'll send out a new version
-shortly, then we can discuss there.
+Changes in V5: (https://patchwork.kernel.org/project/linux-mm/list/?series5991)
 
+- Redefined and moved X86 mm_p4d_folded() into a different header per Kirill/Ingo
+- Updated the config option comment per Ingo and dropped 'kernel module' reference
+- Updated the commit message and dropped 'kernel module' reference
+- Changed DEBUG_ARCH_PGTABLE_TEST into DEBUG_VM_PGTABLE per Ingo
+- Moved config option from mm/Kconfig.debug into lib/Kconfig.debug
+- Renamed core test function arch_pgtable_tests() as debug_vm_pgtable()
+- Renamed mm/arch_pgtable_test.c as mm/debug_vm_pgtable.c
+- debug_vm_pgtable() gets called from kernel_init_freeable() after init_mm_internals()
+- Added an entry in Documentation/features/debug/ per Ingo
+- Enabled the test on arm64 and x86 platforms for now
+
+Changes in V4: (https://patchwork.kernel.org/project/linux-mm/list/?series3465)
+
+- Disable DEBUG_ARCH_PGTABLE_TEST for ARM and IA64 platforms
+
+Changes in V3: (https://lore.kernel.org/patchwork/project/lkml/list/?seriesA1216)
+
+- Changed test trigger from module format into late_initcall()
+- Marked all functions with __init to be freed after completion
+- Changed all __PGTABLE_PXX_FOLDED checks as mm_pxx_folded()
+- Folded in PPC32 fixes from Christophe
+
+Changes in V2:
+
+https://lore.kernel.org/linux-mm/1568268173-31302-1-git-send-email-anshuman.khandual@arm.com/T/#t
+
+- Fixed small typo error in MODULE_DESCRIPTION()
+- Fixed m64k build problems for lvalue concerns in pmd_xxx_tests()
+- Fixed dynamic page table level folding problems on x86 as per Kirril
+- Fixed second pointers during pxx_populate_tests() per Kirill and Gerald
+- Allocate and free pte table with pte_alloc_one/pte_free per Kirill
+- Modified pxx_clear_tests() to accommodate s390 lower 12 bits situation
+- Changed RANDOM_NZVALUE value from 0xbe to 0xff
+- Changed allocation, usage, free sequence for saved_ptep
+- Renamed VMA_FLAGS as VMFLAGS
+- Implemented a new method for random vaddr generation
+- Implemented some other cleanups
+- Dropped extern reference to mm_alloc()
+- Created and exported new alloc_gigantic_page_order()
+- Dropped the custom allocator and used new alloc_gigantic_page_order()
+
+Changes in V1:
+
+https://lore.kernel.org/linux-mm/1567497706-8649-1-git-send-email-anshuman.khandual@arm.com/
+
+- Added fallback mechanism for PMD aligned memory allocation failure
+
+Changes in RFC V2:
+
+https://lore.kernel.org/linux-mm/1565335998-22553-1-git-send-email-anshuman.khandual@arm.com/T/#u
+
+- Moved test module and it's config from lib/ to mm/
+- Renamed config TEST_ARCH_PGTABLE as DEBUG_ARCH_PGTABLE_TEST
+- Renamed file from test_arch_pgtable.c to arch_pgtable_test.c
+- Added relevant MODULE_DESCRIPTION() and MODULE_AUTHOR() details
+- Dropped loadable module config option
+- Basic tests now use memory blocks with required size and alignment
+- PUD aligned memory block gets allocated with alloc_contig_range()
+- If PUD aligned memory could not be allocated it falls back on PMD aligned
+  memory block from page allocator and pud_* tests are skipped
+- Clear and populate tests now operate on real in memory page table entries
+- Dummy mm_struct gets allocated with mm_alloc()
+- Dummy page table entries get allocated with [pud|pmd|pte]_alloc_[map]()
+- Simplified [p4d|pgd]_basic_tests(), now has random values in the entries
+
+Original RFC V1:
+
+https://lore.kernel.org/linux-mm/1564037723-26676-1-git-send-email-anshuman.khandual@arm.com/
+
+Cc: Andrew Morton <akpm@linux-foundation.org>
+Cc: Vlastimil Babka <vbabka@suse.cz>
+Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Cc: Thomas Gleixner <tglx@linutronix.de>
+Cc: Mike Rapoport <rppt@linux.vnet.ibm.com>
+Cc: Jason Gunthorpe <jgg@ziepe.ca>
+Cc: Dan Williams <dan.j.williams@intel.com>
+Cc: Peter Zijlstra <peterz@infradead.org>
+Cc: Michal Hocko <mhocko@kernel.org>
+Cc: Mark Rutland <mark.rutland@arm.com>
+Cc: Mark Brown <broonie@kernel.org>
+Cc: Steven Price <Steven.Price@arm.com>
+Cc: Ard Biesheuvel <ard.biesheuvel@linaro.org>
+Cc: Masahiro Yamada <yamada.masahiro@socionext.com>
+Cc: Kees Cook <keescook@chromium.org>
+Cc: Tetsuo Handa <penguin-kernel@i-love.sakura.ne.jp>
+Cc: Matthew Wilcox <willy@infradead.org>
+Cc: Sri Krishna chowdary <schowdary@nvidia.com>
+Cc: Dave Hansen <dave.hansen@intel.com>
+Cc: Russell King - ARM Linux <linux@armlinux.org.uk>
+Cc: Michael Ellerman <mpe@ellerman.id.au>
+Cc: Paul Mackerras <paulus@samba.org>
+Cc: Martin Schwidefsky <schwidefsky@de.ibm.com>
+Cc: Heiko Carstens <heiko.carstens@de.ibm.com>
+Cc: "David S. Miller" <davem@davemloft.net>
+Cc: Vineet Gupta <vgupta@synopsys.com>
+Cc: James Hogan <jhogan@kernel.org>
+Cc: Paul Burton <paul.burton@mips.com>
+Cc: Ralf Baechle <ralf@linux-mips.org>
+Cc: Kirill A. Shutemov <kirill@shutemov.name>
+Cc: Gerald Schaefer <gerald.schaefer@de.ibm.com>
+Cc: Christophe Leroy <christophe.leroy@c-s.fr>
+Cc: Mike Kravetz <mike.kravetz@oracle.com>
+Cc: Ingo Molnar <mingo@kernel.org>
+Cc: linux-snps-arc@lists.infradead.org
+Cc: linux-mips@vger.kernel.org
+Cc: linux-arm-kernel@lists.infradead.org
+Cc: linux-ia64@vger.kernel.org
+Cc: linuxppc-dev@lists.ozlabs.org
+Cc: linux-s390@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
+Cc: sparclinux@vger.kernel.org
+Cc: x86@kernel.org
+Cc: linux-kernel@vger.kernel.org
+
+Anshuman Khandual (1):
+  mm/debug: Add tests validating architecture page table helpers
+
+ .../debug/debug-vm-pgtable/arch-support.txt        |  34 ++
+ arch/arm64/Kconfig                                 |   1 +
+ arch/x86/Kconfig                                   |   1 +
+ arch/x86/include/asm/pgtable_64.h                  |   6 +
+ include/asm-generic/pgtable.h                      |   6 +
+ init/main.c                                        |   1 +
+ lib/Kconfig.debug                                  |  21 ++
+ mm/Makefile                                        |   1 +
+ mm/debug_vm_pgtable.c                              | 388 +++++++++++++++++++++
+ 9 files changed, 459 insertions(+)
+ create mode 100644 Documentation/features/debug/debug-vm-pgtable/arch-support.txt
+ create mode 100644 mm/debug_vm_pgtable.c
 
 -- 
-
-Thanks,
-
-David / dhildenb
+2.7.4
