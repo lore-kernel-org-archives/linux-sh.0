@@ -1,39 +1,37 @@
 From: Bartosz Golaszewski <brgl@bgdev.pl>
-Date: Sat, 19 Oct 2019 08:35:48 +0000
-Subject: [PATCH v6 1/9] backlight: gpio: remove unneeded include
-Message-Id: <20191019083556.19466-2-brgl@bgdev.pl>
+Date: Tue, 22 Oct 2019 08:36:23 +0000
+Subject: [PATCH v7 2/9] backlight: gpio: remove stray newline
+Message-Id: <20191022083630.28175-3-brgl@bgdev.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20191019083556.19466-1-brgl@bgdev.pl>
-In-Reply-To: <20191019083556.19466-1-brgl@bgdev.pl>
+References: <20191022083630.28175-1-brgl@bgdev.pl>
+In-Reply-To: <20191022083630.28175-1-brgl@bgdev.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Lee Jones <lee.jones@linaro.org>, Daniel Thompson <daniel.thompson@linaro.org>, Jingoo Han <jingoohan1@gmail.com>, Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>, Linus Walleij <linus.walleij@linaro.org>, Andy Shevchenko <andriy.shevchenko@linux.intel.com>, Jacopo Mondi <jacopo@jmondi.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, dri-devel@lists.freedesktop.org, linux-fbdev@vger.kernel.org, Bartosz Golaszewski <bgolaszewski@baylibre.com>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, dri-devel@lists.freedesktop.org, linux-fbdev@vger.kernel.org, Bartosz Golaszewski <bgolaszewski@baylibre.com>, Andy Shevchenko <andy.shevchenko@gmail.com>
 
 From: Bartosz Golaszewski <bgolaszewski@baylibre.com>
 
-We no longer use any symbols from of_gpio.h. Remove this include.
+Remove a double newline from the driver.
 
 Signed-off-by: Bartosz Golaszewski <bgolaszewski@baylibre.com>
-Reviewed-by: Linus Walleij <linus.walleij@linaro.org>
+Reviewed-by: Andy Shevchenko <andy.shevchenko@gmail.com>
 Reviewed-by: Daniel Thompson <daniel.thompson@linaro.org>
-Reviewed-by: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
 ---
  drivers/video/backlight/gpio_backlight.c | 1 -
  1 file changed, 1 deletion(-)
 
 diff --git a/drivers/video/backlight/gpio_backlight.c b/drivers/video/backlight/gpio_backlight.c
-index 18e053e4716c..7e1990199fae 100644
+index 7e1990199fae..3955b513f2f8 100644
 --- a/drivers/video/backlight/gpio_backlight.c
 +++ b/drivers/video/backlight/gpio_backlight.c
-@@ -12,7 +12,6 @@
- #include <linux/kernel.h>
- #include <linux/module.h>
- #include <linux/of.h>
--#include <linux/of_gpio.h>
- #include <linux/platform_data/gpio_backlight.h>
- #include <linux/platform_device.h>
- #include <linux/property.h>
--- 
+@@ -91,7 +91,6 @@ static int gpio_backlight_initial_power_state(struct gpio_backlight *gbl)
+ 	return FB_BLANK_UNBLANK;
+ }
+ 
+-
+ static int gpio_backlight_probe(struct platform_device *pdev)
+ {
+ 	struct gpio_backlight_platform_data *pdata -- 
 2.23.0
