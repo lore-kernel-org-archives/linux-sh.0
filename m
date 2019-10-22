@@ -1,72 +1,107 @@
-From: Sebastian Andrzej Siewior <sebastian@breakpoint.cc>
-Date: Tue, 15 Oct 2019 22:31:55 +0000
-Subject: [PATCH 1/6 v2] sh: Move cmpxchg-xchg.h to asm-generic
-Message-Id: <20191015223154.7wcsc7x5edrpasfc@flow>
+From: Bartosz Golaszewski <brgl@bgdev.pl>
+Date: Tue, 22 Oct 2019 08:36:30 +0000
+Subject: [PATCH v7 9/9] backlight: gpio: pull gpio_backlight_initial_power_state() into probe
+Message-Id: <20191022083630.28175-10-brgl@bgdev.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20191013221310.30748-1-sebastian@breakpoint.cc>
- <20191013221310.30748-2-sebastian@breakpoint.cc>
- <CAK8P3a0q+03=uNcnnHrGqHGOcAO3-mytxSmoBWLtHY+5StMNOQ@mail.gmail.com>
-In-Reply-To: <CAK8P3a0q+03=uNcnnHrGqHGOcAO3-mytxSmoBWLtHY+5StMNOQ@mail.gmail.com>
+References: <20191022083630.28175-1-brgl@bgdev.pl>
+In-Reply-To: <20191022083630.28175-1-brgl@bgdev.pl>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
-To: Arnd Bergmann <arnd@arndb.de>
-Cc: linux-arch <linux-arch@vger.kernel.org>, Rich Felker <dalias@libc.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Linux-sh list <linux-sh@vger.kernel.org>, Peter Zijlstra <peterz@infradead.org>, Russell King <linux@armlinux.org.uk>, Ingo Molnar <mingo@redhat.com>, Waiman Long <longman@redhat.com>, Will Deacon <will@kernel.org>, Linux ARM <linux-arm-kernel@lists.infradead.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Lee Jones <lee.jones@linaro.org>, Daniel Thompson <daniel.thompson@linaro.org>, Jingoo Han <jingoohan1@gmail.com>, Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>, Linus Walleij <linus.walleij@linaro.org>, Andy Shevchenko <andriy.shevchenko@linux.intel.com>, Jacopo Mondi <jacopo@jmondi.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, dri-devel@lists.freedesktop.org, linux-fbdev@vger.kernel.org, Bartosz Golaszewski <bgolaszewski@baylibre.com>
 
-The header file is very generic and could be reused by other
-architectures as long as they provide __cmpxchg_u32().
+From: Bartosz Golaszewski <bgolaszewski@baylibre.com>
 
-Move sh's cmpxchg-xchg.h to asm-generic.
+The probe function in the gpio-backlight driver is quite short. If we
+pull gpio_backlight_initial_power_state() into probe we can drop two
+more fields from struct gpio_backlight and shrink the driver code.
 
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: Rich Felker <dalias@libc.org>
-Cc: Arnd Bergmann <arnd@arndb.de>
-Cc: linux-sh@vger.kernel.org
-Cc: linux-arch@vger.kernel.org
-Acked-by: Arnd Bergmann <arnd@arndb.de>
-Signed-off-by: Sebastian Andrzej Siewior <sebastian@breakpoint.cc>
+Signed-off-by: Bartosz Golaszewski <bgolaszewski@baylibre.com>
+Acked-by: Daniel Thompson <daniel.thompson@linaro.org>
 ---
-v1=E2=80=A6v2: s@__ASM_SH_CMPXCHG_XCHG_H@__ASM_GENERIC_CMPXCHG_XCHG_H@
+ drivers/video/backlight/gpio_backlight.c | 38 +++++++++---------------
+ 1 file changed, 14 insertions(+), 24 deletions(-)
 
- arch/sh/include/asm/Kbuild                                  | 1 +
- {arch/sh/include/asm =3D> include/asm-generic}/cmpxchg-xchg.h | 6 +++---
- 2 files changed, 4 insertions(+), 3 deletions(-)
- rename {arch/sh/include/asm =3D> include/asm-generic}/cmpxchg-xchg.h (91%)
-
-diff --git a/arch/sh/include/asm/Kbuild b/arch/sh/include/asm/Kbuild
-index 51a54df22c110..08c1d96286d9d 100644
---- a/arch/sh/include/asm/Kbuild
-+++ b/arch/sh/include/asm/Kbuild
-@@ -1,5 +1,6 @@
- # SPDX-License-Identifier: GPL-2.0
- generated-y +=3D syscall_table.h
-+generic-y +=3D cmpxchg-xchg.h
- generic-y +=3D compat.h
- generic-y +=3D current.h
- generic-y +=3D delay.h
-diff --git a/arch/sh/include/asm/cmpxchg-xchg.h b/include/asm-generic/cmpxc=
-hg-xchg.h
-similarity index 91%
-rename from arch/sh/include/asm/cmpxchg-xchg.h
-rename to include/asm-generic/cmpxchg-xchg.h
-index c373f21efe4d9..c9acd6ff8741d 100644
---- a/arch/sh/include/asm/cmpxchg-xchg.h
-+++ b/include/asm-generic/cmpxchg-xchg.h
-@@ -1,6 +1,6 @@
- /* SPDX-License-Identifier: GPL-2.0 */
--#ifndef __ASM_SH_CMPXCHG_XCHG_H
--#define __ASM_SH_CMPXCHG_XCHG_H
-+#ifndef __ASM_GENERIC_CMPXCHG_XCHG_H
-+#define __ASM_GENERIC_CMPXCHG_XCHG_H
-=20
- /*
-  * Copyright (C) 2016 Red Hat, Inc.
-@@ -47,4 +47,4 @@ static inline unsigned long xchg_u8(volatile u8 *m, unsig=
-ned long val)
- 	return __xchg_cmpxchg(m, val, sizeof *m);
- }
-=20
--#endif /* __ASM_SH_CMPXCHG_XCHG_H */
-+#endif /* __ASM_GENERIC_CMPXCHG_XCHG_H */
---=20
+diff --git a/drivers/video/backlight/gpio_backlight.c b/drivers/video/backlight/gpio_backlight.c
+index d6969fae25cd..75409ddfba3e 100644
+--- a/drivers/video/backlight/gpio_backlight.c
++++ b/drivers/video/backlight/gpio_backlight.c
+@@ -17,11 +17,8 @@
+ #include <linux/slab.h>
+ 
+ struct gpio_backlight {
+-	struct device *dev;
+ 	struct device *fbdev;
+-
+ 	struct gpio_desc *gpiod;
+-	int def_value;
+ };
+ 
+ static int gpio_backlight_get_next_brightness(struct backlight_device *bl)
+@@ -60,41 +57,24 @@ static const struct backlight_ops gpio_backlight_ops = {
+ 	.check_fb	= gpio_backlight_check_fb,
+ };
+ 
+-static int gpio_backlight_initial_power_state(struct gpio_backlight *gbl)
+-{
+-	struct device_node *node = gbl->dev->of_node;
+-
+-	/* Not booted with device tree or no phandle link to the node */
+-	if (!node || !node->phandle)
+-		return gbl->def_value ? FB_BLANK_UNBLANK : FB_BLANK_POWERDOWN;
+-
+-	/* if the enable GPIO is disabled, do not enable the backlight */
+-	if (gpiod_get_direction(gbl->gpiod) = 0 &&
+-	    gpiod_get_value_cansleep(gbl->gpiod) = 0)
+-		return FB_BLANK_POWERDOWN;
+-
+-	return FB_BLANK_UNBLANK;
+-}
+-
+ static int gpio_backlight_probe(struct platform_device *pdev)
+ {
+ 	struct device *dev = &pdev->dev;
+ 	struct gpio_backlight_platform_data *pdata = dev_get_platdata(dev);
++	struct device_node *of_node = dev->of_node;
+ 	struct backlight_properties props;
+ 	struct backlight_device *bl;
+ 	struct gpio_backlight *gbl;
+-	int ret, init_brightness;
++	int ret, init_brightness, def_value;
+ 
+ 	gbl = devm_kzalloc(dev, sizeof(*gbl), GFP_KERNEL);
+ 	if (gbl = NULL)
+ 		return -ENOMEM;
+ 
+-	gbl->dev = dev;
+-
+ 	if (pdata)
+ 		gbl->fbdev = pdata->fbdev;
+ 
+-	gbl->def_value = device_property_read_bool(dev, "default-on");
++	def_value = device_property_read_bool(dev, "default-on");
+ 
+ 	gbl->gpiod = devm_gpiod_get(dev, NULL, GPIOD_ASIS);
+ 	if (IS_ERR(gbl->gpiod)) {
+@@ -115,7 +95,17 @@ static int gpio_backlight_probe(struct platform_device *pdev)
+ 		return PTR_ERR(bl);
+ 	}
+ 
+-	bl->props.power = gpio_backlight_initial_power_state(gbl);
++	/* Set the initial power state */
++	if (!of_node || !of_node->phandle)
++		/* Not booted with device tree or no phandle link to the node */
++		bl->props.power = def_value ? FB_BLANK_UNBLANK
++					    : FB_BLANK_POWERDOWN;
++	else if (gpiod_get_direction(gbl->gpiod) = 0 &&
++		 gpiod_get_value_cansleep(gbl->gpiod) = 0)
++		bl->props.power = FB_BLANK_POWERDOWN;
++	else
++		bl->props.power = FB_BLANK_UNBLANK;
++
+ 	bl->props.brightness = 1;
+ 
+ 	init_brightness = gpio_backlight_get_next_brightness(bl);
+-- 
 2.23.0
