@@ -1,45 +1,61 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 30 Oct 2019 07:17:53 +0000
-Subject: [PATCH] sh: kgdb: Mark expected switch fall-throughs
-Message-Id: <878sp2d7mm.wl-kuninori.morimoto.gx@renesas.com>
+From: Daniel Thompson <daniel.thompson@linaro.org>
+Date: Wed, 30 Oct 2019 08:44:10 +0000
+Subject: Re: [PATCH] sh: kgdb: Mark expected switch fall-throughs
+Message-Id: <20191030084410.c7x2sa4ak3m2h2l7@pine>
 List-Id: <linux-sh.vger.kernel.org>
+References: <878sp2d7mm.wl-kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <878sp2d7mm.wl-kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
-Cc: Daniel Thompson <daniel.thompson@linaro.org>, Will Deacon <will@kernel.org>, Douglas Anderson <dianders@chromium.org>, Paul Burton <paul.burton@mips.com>, Christophe Leroy <christophe.leroy@c-s.fr>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Will Deacon <will@kernel.org>, Douglas Anderson <dianders@chromium.org>, Paul Burton <paul.burton@mips.com>, Christophe Leroy <christophe.leroy@c-s.fr>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, joe@perches.com
+
+On Wed, Oct 30, 2019 at 04:17:53PM +0900, Kuninori Morimoto wrote:
+> 
+> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> 
+> Mark switch cases where we are expecting to fall through.
+> 
+> This patch fixes the following error:
+> 
+> LINUX/arch/sh/kernel/kgdb.c: In function 'kgdb_arch_handle_exception':
+> LINUX/arch/sh/kernel/kgdb.c:267:6: error: this statement may fall through [-Werror=implicit-fallthrough=]
+> if (kgdb_hex2long(&ptr, &addr))
+> ^
+> LINUX/arch/sh/kernel/kgdb.c:269:2: note: here
+> case 'D':
+> ^~~~
+> 
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+
+Acked-by: Daniel Thompson <daniel.thompson@linaro.org>
+
+Just FYI this is likely to be converted to be the fallthrough
+pseudo-keyword shortly after introductionb but IIRC the keyword is only
+available in linux-next right now (and the conversion, from Joe Perches,
+is script based so it is likely the change will get picked up by the
+script without you having to do anything explicit).
 
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Daniel.
 
-Mark switch cases where we are expecting to fall through.
-
-This patch fixes the following error:
-
-LINUX/arch/sh/kernel/kgdb.c: In function 'kgdb_arch_handle_exception':
-LINUX/arch/sh/kernel/kgdb.c:267:6: error: this statement may fall through [-Werror=implicit-fallthrough=]
-if (kgdb_hex2long(&ptr, &addr))
-^
-LINUX/arch/sh/kernel/kgdb.c:269:2: note: here
-case 'D':
-^~~~
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
- arch/sh/kernel/kgdb.c | 1 +
- 1 file changed, 1 insertion(+)
-
-diff --git a/arch/sh/kernel/kgdb.c b/arch/sh/kernel/kgdb.c
-index 6d61f8c..0d5f3c9 100644
---- a/arch/sh/kernel/kgdb.c
-+++ b/arch/sh/kernel/kgdb.c
-@@ -266,6 +266,7 @@ int kgdb_arch_handle_exception(int e_vector, int signo, int err_code,
- 		ptr = &remcomInBuffer[1];
- 		if (kgdb_hex2long(&ptr, &addr))
- 			linux_regs->pc = addr;
-+		/* fallthrough */
- 	case 'D':
- 	case 'k':
- 		atomic_set(&kgdb_cpu_doing_single_step, -1);
--- 
-2.7.4
+> ---
+>  arch/sh/kernel/kgdb.c | 1 +
+>  1 file changed, 1 insertion(+)
+> 
+> diff --git a/arch/sh/kernel/kgdb.c b/arch/sh/kernel/kgdb.c
+> index 6d61f8c..0d5f3c9 100644
+> --- a/arch/sh/kernel/kgdb.c
+> +++ b/arch/sh/kernel/kgdb.c
+> @@ -266,6 +266,7 @@ int kgdb_arch_handle_exception(int e_vector, int signo, int err_code,
+>  		ptr = &remcomInBuffer[1];
+>  		if (kgdb_hex2long(&ptr, &addr))
+>  			linux_regs->pc = addr;
+> +		/* fallthrough */
+>  	case 'D':
+>  	case 'k':
+>  		atomic_set(&kgdb_cpu_doing_single_step, -1);
+> -- 
+> 2.7.4
+> 
