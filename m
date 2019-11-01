@@ -1,159 +1,115 @@
-From: Anshuman Khandual <anshuman.khandual@arm.com>
-Date: Fri, 11 Oct 2019 06:37:40 +0000
-Subject: [PATCH V5 0/2] mm/debug: Add tests validating architecture page table helpers
-Message-Id: <1570775142-31425-1-git-send-email-anshuman.khandual@arm.com>
+From: Lee Jones <lee.jones@linaro.org>
+Date: Fri, 01 Nov 2019 08:58:03 +0000
+Subject: Re: [PATCH v7 0/9] backlight: gpio: simplify the driver
+Message-Id: <20191101085803.GD5700@dell>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20191022083630.28175-1-brgl@bgdev.pl>
+ <CAMRc=MeyrDZgmHJ+2SMipP7y9NggxiVfkAh4kCLePFWvUku9aQ@mail.gmail.com>
+ <20191023155941.q563d3cfizre4zvt@holly.lan>
+ <20191024064726.GB15843@dell>
+ <20191024071703.6keoebzlfnn2qmyd@uno.localdomain>
+In-Reply-To: <20191024071703.6keoebzlfnn2qmyd@uno.localdomain>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-mm@kvack.org
-Cc: Mark Rutland <mark.rutland@arm.com>, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, James Hogan <jhogan@kernel.org>, Tetsuo Handa <penguin-kernel@i-love.sakura.ne.jp>, Heiko Carstens <heiko.carstens@de.ibm.com>, Michal Hocko <mhocko@kernel.org>, Dave Hansen <dave.hansen@intel.com>, Paul Mackerras <paulus@samba.org>, sparclinux@vger.kernel.org, Thomas Gleixner <tglx@linutronix.de>, linux-s390@vger.kernel.org, Michael Ellerman <mpe@ellerman.id.au>, x86@kernel.org, Russell King - ARM Linux <linux@armlinux.org.uk>, Matthew Wilcox <willy@infradead.org>, Steven Price <Steven.Price@arm.com>, Jason Gunthorpe <jgg@ziepe.ca>, Gerald Schaefer <gerald.schaefer@de.ibm.com>, linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org, Kees Cook <keescook@chromium.org>, Anshuman Khandual <anshuman.khandual@arm.com>, Masahiro Yamada <yamada.masahiro@socionext.com>, Mark Brown <broonie@kernel.org>, "Kirill A . Shutemov" <kirill@shutemov.name>, Dan Williams <dan.j.williams@intel.com>, Vlastimil Babka <vbabka@suse.cz>, Christophe Leroy <christophe.leroy@c-s.fr>, Sri Krishna chowdary <schowdary@nvidia.com>, Ard Biesheuvel <ard.biesheuvel@linaro.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, linux-mips@vger.kernel.org, Ralf Baechle <ralf@linux-mips.org>, linux-kernel@vger.kernel.org, Paul Burton <paul.burton@mips.com>, Mike Rapoport <rppt@linux.vnet.ibm.com>, Vineet Gupta <vgupta@synopsys.com>, Martin Schwidefsky <schwidefsky@de.ibm.com>, Andrew Morton <akpm@linux-foundation.org>, linuxppc-dev@lists.ozlabs.org, "David S. Miller" <davem@davemloft.net>, Mike Kravetz <mike.kravetz@oracle.com>
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: Jacopo Mondi <jacopo@jmondi.org>
+Cc: Daniel Thompson <daniel.thompson@linaro.org>, Rich Felker <dalias@libc.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>, Jingoo Han <jingoohan1@gmail.com>, Bartosz Golaszewski <brgl@bgdev.pl>, Linux-sh list <linux-sh@vger.kernel.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, "open list:DRM PANEL DRIVERS" <dri-devel@lists.freedesktop.org>, Bartosz Golaszewski <bgolaszewski@baylibre.com>, Linux Fbdev development list <linux-fbdev@vger.kernel.org>, Andy Shevchenko <andriy.shevchenko@linux.intel.com>
 
-This series adds a test validation for architecture exported page table
-helpers. Patch in the series adds basic transformation tests at various
-levels of the page table. Before that it exports gigantic page allocation
-function from HugeTLB.
+On Thu, 24 Oct 2019, Jacopo Mondi wrote:
 
-This test was originally suggested by Catalin during arm64 THP migration
-RFC discussion earlier. Going forward it can include more specific tests
-with respect to various generic MM functions like THP, HugeTLB etc and
-platform specific tests.
+> Hello,
+> 
+> On Thu, Oct 24, 2019 at 07:47:26AM +0100, Lee Jones wrote:
+> > On Wed, 23 Oct 2019, Daniel Thompson wrote:
+> >
+> > > On Tue, Oct 22, 2019 at 11:29:54AM +0200, Bartosz Golaszewski wrote:
+> > > > wt., 22 paź 2019 o 10:36 Bartosz Golaszewski <brgl@bgdev.pl> napisał(a):
+> > > > >
+> > > > > From: Bartosz Golaszewski <bgolaszewski@baylibre.com>
+> > > > >
+> > > > > While working on my other series related to gpio-backlight[1] I noticed
+> > > > > that we could simplify the driver if we made the only user of platform
+> > > > > data use GPIO lookups and device properties. This series tries to do
+> > > > > that.
+> > > > >
+> > > > > First two patches contain minor fixes. Third patch makes the driver
+> > > > > explicitly drive the GPIO line. Fourth patch adds all necessary data
+> > > > > structures to ecovec24. Patch 5/9 unifies much of the code for both
+> > > > > pdata and non-pdata cases. Patches 6-7/9 remove unused platform data
+> > > > > fields. Last two patches contain additional improvements for the GPIO
+> > > > > backlight driver while we're already modifying it.
+> > > > >
+> > > > > I don't have access to this HW but hopefully this works. Only compile
+> > > > > tested.
+> > > > >
+> > > > > [1] https://lkml.org/lkml/2019/6/25/900
+> > > > >
+> > > > > v1 -> v2:
+> > > > > - rebased on top of v5.3-rc1 and adjusted to the recent changes from Andy
+> > > > > - added additional two patches with minor improvements
+> > > > >
+> > > > > v2 -> v3:
+> > > > > - in patch 7/7: used initializers to set values for pdata and dev local vars
+> > > > >
+> > > > > v3 -> v4:
+> > > > > - rebased on top of v5.4-rc1
+> > > > > - removed changes that are no longer relevant after commit ec665b756e6f
+> > > > >   ("backlight: gpio-backlight: Correct initial power state handling")
+> > > > > - added patch 7/7
+> > > > >
+> > > > > v4 -> v5:
+> > > > > - in patch 7/7: added a comment replacing the name of the function being
+> > > > >   pulled into probe()
+> > > > >
+> > > > > v5 -> v6:
+> > > > > - added a patch making the driver explicitly set the direction of the GPIO
+> > > > >   to output
+> > > > > - added a patch removing a redundant newline
+> > > > >
+> > > > > v6 -> v7:
+> > > > > - renamed the function calculating the new GPIO value for status update
+> > > > > - collected more tags
+> > > > >
+> > > > > Bartosz Golaszewski (9):
+> > > > >   backlight: gpio: remove unneeded include
+> > > > >   backlight: gpio: remove stray newline
+> > > > >   backlight: gpio: explicitly set the direction of the GPIO
+> > > > >   sh: ecovec24: add additional properties to the backlight device
+> > > > >   backlight: gpio: simplify the platform data handling
+> > > > >   sh: ecovec24: don't set unused fields in platform data
+> > > > >   backlight: gpio: remove unused fields from platform data
+> > > > >   backlight: gpio: use a helper variable for &pdev->dev
+> > > > >   backlight: gpio: pull gpio_backlight_initial_power_state() into probe
+> > > > >
+> > > > >  arch/sh/boards/mach-ecovec24/setup.c         |  33 +++--
+> > > > >  drivers/video/backlight/gpio_backlight.c     | 128 +++++++------------
+> > > > >  include/linux/platform_data/gpio_backlight.h |   3 -
+> > > > >  3 files changed, 69 insertions(+), 95 deletions(-)
+> > > > >
+> > > > >
+> > > >
+> > > > Lee, Daniel, Jingoo,
+> > > >
+> > > > Jacopo is travelling until November 1st and won't be able to test this
+> > > > again before this date. Do you think you can pick it up and in case
+> > > > anything's broken on SH, we can fix it after v5.5-rc1, so that it
+> > > > doesn't miss another merge window?
+> >
+> > November 1st (-rc6) will be fine.
+> >
+> > I'd rather apply it late-tested than early-non-tested.
+> >
+> > Hopefully Jacopo can prioritise testing this on Thursday or Friday,
+> > since Monday will be -rc7 which is really cutting it fine.
+> 
+> I'll do my best, I'll get home Friday late afternoon :)
 
-https://lore.kernel.org/linux-mm/20190628102003.GA56463@arrakis.emea.arm.com/
+Welcome home!
 
-Changes in V5:
-
-- Redefined and moved X86 mm_p4d_folded() into a different header per Kirill/Ingo
-- Updated the config option comment per Ingo and dropped 'kernel module' reference
-- Updated the commit message and dropped 'kernel module' reference
-- Changed DEBUG_ARCH_PGTABLE_TEST into DEBUG_VM_PGTABLE per Ingo
-- Moved config option from mm/Kconfig.debug into lib/Kconfig.debug
-- Renamed core test function arch_pgtable_tests() as debug_vm_pgtable()
-- Renamed mm/arch_pgtable_test.c as mm/debug_vm_pgtable.c
-- debug_vm_pgtable() gets called from kernel_init_freeable() after init_mm_internals()
-- Added an entry in Documentation/features/debug/ per Ingo
-- Enabled the test on arm64 and x86 platforms for now
-
-Changes in V4: (https://patchwork.kernel.org/project/linux-mm/list/?series3465)
-
-- Disable DEBUG_ARCH_PGTABLE_TEST for ARM and IA64 platforms
-
-Changes in V3: (https://lore.kernel.org/patchwork/project/lkml/list/?seriesA1216)
-
-- Changed test trigger from module format into late_initcall()
-- Marked all functions with __init to be freed after completion
-- Changed all __PGTABLE_PXX_FOLDED checks as mm_pxx_folded()
-- Folded in PPC32 fixes from Christophe
-
-Changes in V2:
-
-https://lore.kernel.org/linux-mm/1568268173-31302-1-git-send-email-anshuman.khandual@arm.com/T/#t
-
-- Fixed small typo error in MODULE_DESCRIPTION()
-- Fixed m64k build problems for lvalue concerns in pmd_xxx_tests()
-- Fixed dynamic page table level folding problems on x86 as per Kirril
-- Fixed second pointers during pxx_populate_tests() per Kirill and Gerald
-- Allocate and free pte table with pte_alloc_one/pte_free per Kirill
-- Modified pxx_clear_tests() to accommodate s390 lower 12 bits situation
-- Changed RANDOM_NZVALUE value from 0xbe to 0xff
-- Changed allocation, usage, free sequence for saved_ptep
-- Renamed VMA_FLAGS as VMFLAGS
-- Implemented a new method for random vaddr generation
-- Implemented some other cleanups
-- Dropped extern reference to mm_alloc()
-- Created and exported new alloc_gigantic_page_order()
-- Dropped the custom allocator and used new alloc_gigantic_page_order()
-
-Changes in V1:
-
-https://lore.kernel.org/linux-mm/1567497706-8649-1-git-send-email-anshuman.khandual@arm.com/
-
-- Added fallback mechanism for PMD aligned memory allocation failure
-
-Changes in RFC V2:
-
-https://lore.kernel.org/linux-mm/1565335998-22553-1-git-send-email-anshuman.khandual@arm.com/T/#u
-
-- Moved test module and it's config from lib/ to mm/
-- Renamed config TEST_ARCH_PGTABLE as DEBUG_ARCH_PGTABLE_TEST
-- Renamed file from test_arch_pgtable.c to arch_pgtable_test.c
-- Added relevant MODULE_DESCRIPTION() and MODULE_AUTHOR() details
-- Dropped loadable module config option
-- Basic tests now use memory blocks with required size and alignment
-- PUD aligned memory block gets allocated with alloc_contig_range()
-- If PUD aligned memory could not be allocated it falls back on PMD aligned
-  memory block from page allocator and pud_* tests are skipped
-- Clear and populate tests now operate on real in memory page table entries
-- Dummy mm_struct gets allocated with mm_alloc()
-- Dummy page table entries get allocated with [pud|pmd|pte]_alloc_[map]()
-- Simplified [p4d|pgd]_basic_tests(), now has random values in the entries
-
-Original RFC V1:
-
-https://lore.kernel.org/linux-mm/1564037723-26676-1-git-send-email-anshuman.khandual@arm.com/
-
-Cc: Andrew Morton <akpm@linux-foundation.org>
-Cc: Vlastimil Babka <vbabka@suse.cz>
-Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-Cc: Thomas Gleixner <tglx@linutronix.de>
-Cc: Mike Rapoport <rppt@linux.vnet.ibm.com>
-Cc: Jason Gunthorpe <jgg@ziepe.ca>
-Cc: Dan Williams <dan.j.williams@intel.com>
-Cc: Peter Zijlstra <peterz@infradead.org>
-Cc: Michal Hocko <mhocko@kernel.org>
-Cc: Mark Rutland <mark.rutland@arm.com>
-Cc: Mark Brown <broonie@kernel.org>
-Cc: Steven Price <Steven.Price@arm.com>
-Cc: Ard Biesheuvel <ard.biesheuvel@linaro.org>
-Cc: Masahiro Yamada <yamada.masahiro@socionext.com>
-Cc: Kees Cook <keescook@chromium.org>
-Cc: Tetsuo Handa <penguin-kernel@i-love.sakura.ne.jp>
-Cc: Matthew Wilcox <willy@infradead.org>
-Cc: Sri Krishna chowdary <schowdary@nvidia.com>
-Cc: Dave Hansen <dave.hansen@intel.com>
-Cc: Russell King - ARM Linux <linux@armlinux.org.uk>
-Cc: Michael Ellerman <mpe@ellerman.id.au>
-Cc: Paul Mackerras <paulus@samba.org>
-Cc: Martin Schwidefsky <schwidefsky@de.ibm.com>
-Cc: Heiko Carstens <heiko.carstens@de.ibm.com>
-Cc: "David S. Miller" <davem@davemloft.net>
-Cc: Vineet Gupta <vgupta@synopsys.com>
-Cc: James Hogan <jhogan@kernel.org>
-Cc: Paul Burton <paul.burton@mips.com>
-Cc: Ralf Baechle <ralf@linux-mips.org>
-Cc: Kirill A. Shutemov <kirill@shutemov.name>
-Cc: Gerald Schaefer <gerald.schaefer@de.ibm.com>
-Cc: Christophe Leroy <christophe.leroy@c-s.fr>
-Cc: Mike Kravetz <mike.kravetz@oracle.com>
-Cc: linux-snps-arc@lists.infradead.org
-Cc: linux-mips@vger.kernel.org
-Cc: linux-arm-kernel@lists.infradead.org
-Cc: linux-ia64@vger.kernel.org
-Cc: linuxppc-dev@lists.ozlabs.org
-Cc: linux-s390@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
-Cc: sparclinux@vger.kernel.org
-Cc: x86@kernel.org
-Cc: linux-kernel@vger.kernel.org
-
-Anshuman Khandual (2):
-  mm/hugetlb: Make alloc_gigantic_page() available for general use
-  mm/debug: Add tests validating architecture page table helpers
-
- .../debug/debug-vm-pgtable/arch-support.txt        |  34 ++
- arch/arm64/Kconfig                                 |   1 +
- arch/x86/Kconfig                                   |   1 +
- arch/x86/include/asm/pgtable_64.h                  |   6 +
- include/asm-generic/pgtable.h                      |   6 +
- include/linux/hugetlb.h                            |   9 +
- init/main.c                                        |   1 +
- lib/Kconfig.debug                                  |  21 +
- mm/Makefile                                        |   1 +
- mm/debug_vm_pgtable.c                              | 438 +++++++++++++++++++++
- mm/hugetlb.c                                       |  24 +-
- 11 files changed, 540 insertions(+), 2 deletions(-)
- create mode 100644 Documentation/features/debug/debug-vm-pgtable/arch-support.txt
- create mode 100644 mm/debug_vm_pgtable.c
+Just a little reminder in your inbox. TIA. :)
 
 -- 
-2.7.4
+Lee Jones [李琼斯]
+Linaro Services Technical Lead
+Linaro.org │ Open source software for ARM SoCs
+Follow Linaro: Facebook | Twitter | Blog
