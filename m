@@ -1,89 +1,133 @@
-From: Aleksa Sarai <asarai@suse.de>
-Date: Sat, 16 Nov 2019 18:09:34 +0000
-Subject: Re: [PATCH v16 02/12] namei: allow nd_jump_link() to produce errors
-Message-Id: <20191116180934.fajrkc4jqcewiuqd@yavin.dot.cyphar.com>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="ushqsy2n2ywnjdre"
+From: Aleksa Sarai <cyphar@cyphar.com>
+Date: Tue, 05 Nov 2019 09:05:49 +0000
+Subject: [PATCH v15 5/9] namei: LOOKUP_IN_ROOT: chroot-like scoped resolution
+Message-Id: <20191105090553.6350-6-cyphar@cyphar.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20191116002802.6663-1-cyphar@cyphar.com>
- <20191116002802.6663-3-cyphar@cyphar.com>
- <20191116003702.GX26530@ZenIV.linux.org.uk>
-In-Reply-To: <20191116003702.GX26530@ZenIV.linux.org.uk>
-To: Al Viro <viro@zeniv.linux.org.uk>
-Cc: Aleksa Sarai <cyphar@cyphar.com>, Jeff Layton <jlayton@kernel.org>, "J. Bruce Fields" <bfields@fieldses.org>, Arnd Bergmann <arnd@arndb.de>, David Howells <dhowells@redhat.com>, Shuah Khan <shuah@kernel.org>, Shuah Khan <skhan@linuxfoundation.org>, Ingo Molnar <mingo@redhat.com>, Peter Zijlstra <peterz@infradead.org>, Alexei Starovoitov <ast@kernel.org>, Daniel Borkmann <daniel@iogearbox.net>, Martin KaFai Lau <kafai@fb.com>, Song Liu <songliubraving@fb.com>, Yonghong Song <yhs@fb.com>, Andrii Nakryiko <andriin@fb.com>, Eric Biederman <ebiederm@xmission.com>, Andy Lutomirski <luto@kernel.org>, Andrew Morton <akpm@linux-foundation.org>, Kees Cook <keescook@chromium.org>, Jann Horn <jannh@google.com>, Tycho Andersen <tycho@tycho.ws>, David Drysdale <drysdale@google.com>, Chanho Min <chanho.min@lge.com>, Oleg Nesterov <oleg@redhat.com>, Rasmus Villemoes <linux@rasmusvillemoes.dk>, Alexander Shishkin <alexander.shishkin@linux.intel.com>, Jiri Olsa <jolsa@redhat.com>, Namhyung Kim <namhyung@kernel.org>, Christian Brauner <christian@brauner.io>, Linus Torvalds <torvalds@linux-foundation.org>, dev@opencontainers.org, containers@lists.linux-foundation.org, bpf@vger.kernel.org, netdev@vger.kernel.org, linux-alpha@vger.kernel.org, linux-api@vger.kernel.org, libc-alpha@sourceware.org, linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-fsdevel@vger.kernel.org, linux-ia64@vger.kernel.org, linux-kernel@vger.kernel.org, linux-kselftest@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-xtensa@linux-xtensa.org, sparclinux@vger.kernel.org
+References: <20191105090553.6350-1-cyphar@cyphar.com>
+In-Reply-To: <20191105090553.6350-1-cyphar@cyphar.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Al Viro <viro@zeniv.linux.org.uk>, Jeff Layton <jlayton@kernel.org>, "J. Bruce Fields" <bfields@fieldses.org>, Arnd Bergmann <arnd@arndb.de>, David Howells <dhowells@redhat.com>, Shuah Khan <shuah@kernel.org>, Shuah Khan <skhan@linuxfoundation.org>, Ingo Molnar <mingo@redhat.com>, Peter Zijlstra <peterz@infradead.org>
+Cc: Aleksa Sarai <cyphar@cyphar.com>, Christian Brauner <christian.brauner@ubuntu.com>, Eric Biederman <ebiederm@xmission.com>, Andy Lutomirski <luto@kernel.org>, Andrew Morton <akpm@linux-foundation.org>, Alexei Starovoitov <ast@kernel.org>, Kees Cook <keescook@chromium.org>, Jann Horn <jannh@google.com>, Tycho Andersen <tycho@tycho.ws>, David Drysdale <drysdale@google.com>, Chanho Min <chanho.min@lge.com>, Oleg Nesterov <oleg@redhat.com>, Rasmus Villemoes <linux@rasmusvillemoes.dk>, Alexander Shishkin <alexander.shishkin@linux.intel.com>, Jiri Olsa <jolsa@redhat.com>, Namhyung Kim <namhyung@kernel.org>, Christian Brauner <christian@brauner.io>, Aleksa Sarai <asarai@suse.de>, Linus Torvalds <torvalds@linux-foundation.org>, containers@lists.linux-foundation.org, linux-alpha@vger.kernel.org, linux-api@vger.kernel.org, libc-alpha@sourceware.org, linux-arch@vger.kerne
 
+/* Background. */
+Container runtimes or other administrative management processes will
+often interact with root filesystems while in the host mount namespace,
+because the cost of doing a chroot(2) on every operation is too
+prohibitive (especially in Go, which cannot safely use vfork). However,
+a malicious program can trick the management process into doing
+operations on files outside of the root filesystem through careful
+crafting of symlinks.
 
---ushqsy2n2ywnjdre
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Most programs that need this feature have attempted to make this process
+safe, by doing all of the path resolution in userspace (with symlinks
+being scoped to the root of the malicious root filesystem).
+Unfortunately, this method is prone to foot-guns and usually such
+implementations have subtle security bugs.
 
-On 2019-11-16, Al Viro <viro@zeniv.linux.org.uk> wrote:
-> On Sat, Nov 16, 2019 at 11:27:52AM +1100, Aleksa Sarai wrote:
-> > +	error =3D nd_jump_link(&path);
-> > +	if (error)
-> > +		path_put(&path);
->=20
-> > +	error =3D nd_jump_link(&ns_path);
-> > +	if (error)
-> > +		path_put(&ns_path);
->=20
-> > +	error =3D nd_jump_link(&path);
-> > +	if (error)
-> > +		path_put(&path);
->=20
-> 3 calls.  Exact same boilerplate in each to handle a failure case.
-> Which spells "wrong calling conventions"; it's absolutely clear
-> that we want that path_put() inside nd_jump_link().
->=20
-> The rule should be this: reference that used to be held in
-> *path is consumed in any case.  On success it goes into
-> nd->path, on error it's just dropped, but in any case, the
-> caller has the same refcounting environment to deal with.
->=20
-> If you need the same boilerplate cleanup on failure again and again,
-> the calling conventions are wrong and need to be fixed.
+Thus, what userspace needs is a way to resolve a path as though it were
+in a chroot(2) -- with all absolute symlinks being resolved relative to
+the dirfd root (and ".." components being stuck under the dirfd root).
+It is much simpler and more straight-forward to provide this
+functionality in-kernel (because it can be done far more cheaply and
+correctly).
 
-Will do.
+More classical applications that also have this problem (which have
+their own potentially buggy userspace path sanitisation code) include
+web servers, archive extraction tools, network file servers, and so on.
 
-> And I'm not sure that int is the right return type here, to be honest.
-> void * might be better - return ERR_PTR() or NULL, so that the value
-> could be used as return value of ->get_link() that calls that thing.
+/* Userspace API. */
+LOOKUP_IN_ROOT will be exposed to userspace through openat2(2).
 
-I don't agree, given that the few callers of ns_get_path() are
-inconsistent with regards to whether they should use IS_ERR() or check
-for NULL, not to mention that "void *error" reads to me as being very
-odd given how common "int error" is throughout the kernel. There's also
-the "error =3D=3D ERR_PTR(-EAGAIN)" checks which also read as being quite
-odd too.
+/* Semantics. */
+Unlike most other LOOKUP flags (most notably LOOKUP_FOLLOW),
+LOOKUP_IN_ROOT applies to all components of the path.
 
-But the main motivating factor for changing it was that the one use
-where "void *" is useful (proc_ns_get_link) becomes needlessly ugly
-because of the "nd_jump_link() can return errors" change:
+With LOOKUP_IN_ROOT, any path component which attempts to cross the
+starting point of the pathname lookup (the dirfd passed to openat) will
+remain at the starting point. Thus, all absolute paths and symlinks will
+be scoped within the starting point.
 
-	error =3D ERR_PTR(nd_jump_link(&ns_path));
+There is a slight change in behaviour regarding pathnames -- if the
+pathname is absolute then the dirfd is still used as the root of
+resolution of LOOKUP_IN_ROOT is specified (this is to avoid obvious
+foot-guns, at the cost of a minor API inconsistency).
 
-Or probably (if you don't want to rely on ERR_PTR(0) =3D=3D NULL):
+As with LOOKUP_BENEATH, Jann's security concern about ".."[1] applies to
+LOOKUP_IN_ROOT -- therefore ".." resolution is blocked. This restriction
+will be lifted in a future patch, but requires more work to ensure that
+permitting ".." is done safely.
 
-	int err =3D nd_jump_link(&ns_path);
-	if (err)
-		error =3D ERR_PTR(err);
+Magic-link jumps are also blocked, because they can beam the path lookup
+across the starting point. It would be possible to detect and block
+only the "bad" crossings with path_is_under() checks, but it's unclear
+whether it makes sense to permit magic-links at all. However, userspace
+is recommended to pass LOOKUP_NO_MAGICLINKS if they want to ensure that
+magic-link crossing is entirely disabled.
 
---=20
-Aleksa Sarai
-Senior Software Engineer (Containers)
-SUSE Linux GmbH
-<https://www.cyphar.com/>
+/* Testing. */
+LOOKUP_IN_ROOT is tested as part of the openat2(2) selftests.
 
---ushqsy2n2ywnjdre
-Content-Type: application/pgp-signature; name="signature.asc"
+[1]: https://lore.kernel.org/lkml/CAG48ez1jzNvxB+bfOBnERFGp=oMM0vHWuLD6EULmne3R6xa53w@mail.gmail.com/
 
------BEGIN PGP SIGNATURE-----
+Cc: Christian Brauner <christian.brauner@ubuntu.com>
+Signed-off-by: Aleksa Sarai <cyphar@cyphar.com>
+---
+ fs/namei.c            | 15 ++++++++++++---
+ include/linux/namei.h |  3 ++-
+ 2 files changed, 14 insertions(+), 4 deletions(-)
 
-iHUEABYIAB0WIQSxZm6dtfE8gxLLfYqdlLljIbnQEgUCXdA7WwAKCRCdlLljIbnQ
-EkhIAQCTW+ppymqPGqw4uOB2Z70GQdn52zl46zQ6xxp5L3kEHQD9FZ2+HHtYsZC+
-LGfFupqoyojLXID+lx72AXf4CJ7KLw4=
-=aGSY
------END PGP SIGNATURE-----
-
---ushqsy2n2ywnjdre--
+diff --git a/fs/namei.c b/fs/namei.c
+index 54fdbdfbeb94..a3d199a60708 100644
+--- a/fs/namei.c
++++ b/fs/namei.c
+@@ -2277,12 +2277,20 @@ static const char *path_init(struct nameidata *nd, unsigned flags)
+ 
+ 	nd->m_seq = read_seqbegin(&mount_lock);
+ 
+-	/* Figure out the starting path and root (if needed). */
+-	if (*s = '/') {
++	/* Absolute pathname -- fetch the root. */
++	if (flags & LOOKUP_IN_ROOT) {
++		/* With LOOKUP_IN_ROOT, act as a relative path. */
++		while (*s = '/')
++			s++;
++	} else if (*s = '/') {
+ 		error = nd_jump_root(nd);
+ 		if (unlikely(error))
+ 			return ERR_PTR(error);
+-	} else if (nd->dfd = AT_FDCWD) {
++		return s;
++	}
++
++	/* Relative pathname -- get the starting-point it is relative to. */
++	if (nd->dfd = AT_FDCWD) {
+ 		if (flags & LOOKUP_RCU) {
+ 			struct fs_struct *fs = current->fs;
+ 			unsigned seq;
+@@ -2322,6 +2330,7 @@ static const char *path_init(struct nameidata *nd, unsigned flags)
+ 		}
+ 		fdput(f);
+ 	}
++
+ 	/* For scoped-lookups we need to set the root to the dirfd as well. */
+ 	if (flags & LOOKUP_IS_SCOPED) {
+ 		nd->root = nd->path;
+diff --git a/include/linux/namei.h b/include/linux/namei.h
+index 12f4f36835c2..96b374e08230 100644
+--- a/include/linux/namei.h
++++ b/include/linux/namei.h
+@@ -46,8 +46,9 @@ enum {LAST_NORM, LAST_ROOT, LAST_DOT, LAST_DOTDOT, LAST_BIND};
+ #define LOOKUP_NO_MAGICLINKS	0x040000 /* No /proc/$pid/fd/ "symlink" crossing. */
+ #define LOOKUP_NO_XDEV		0x080000 /* No mountpoint crossing. */
+ #define LOOKUP_BENEATH		0x100000 /* No escaping from starting point. */
++#define LOOKUP_IN_ROOT		0x200000 /* Treat dirfd as %current->fs->root. */
+ /* LOOKUP_* flags which do scope-related checks based on the dirfd. */
+-#define LOOKUP_IS_SCOPED LOOKUP_BENEATH
++#define LOOKUP_IS_SCOPED (LOOKUP_BENEATH | LOOKUP_IN_ROOT)
+ 
+ extern int path_pts(struct path *path);
+ 
+-- 
+2.23.0
