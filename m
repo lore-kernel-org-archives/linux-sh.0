@@ -1,229 +1,101 @@
-From: Aleksa Sarai <cyphar@cyphar.com>
-Date: Sat, 16 Nov 2019 00:27:57 +0000
-Subject: [PATCH v16 07/12] namei: LOOKUP_BENEATH: O_BENEATH-like scoped resolution
-Message-Id: <20191116002802.6663-8-cyphar@cyphar.com>
+From: Dmitry Safonov <dima@arista.com>
+Date: Wed, 06 Nov 2019 03:05:22 +0000
+Subject: [PATCH 31/50] sh: Add loglvl to printk_address()
+Message-Id: <20191106030542.868541-32-dima@arista.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20191116002802.6663-1-cyphar@cyphar.com>
-In-Reply-To: <20191116002802.6663-1-cyphar@cyphar.com>
+References: <20191106030542.868541-1-dima@arista.com>
+In-Reply-To: <20191106030542.868541-1-dima@arista.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Al Viro <viro@zeniv.linux.org.uk>, Jeff Layton <jlayton@kernel.org>, "J. Bruce Fields" <bfields@fieldses.org>, Arnd Bergmann <arnd@arndb.de>, David Howells <dhowells@redhat.com>, Shuah Khan <shuah@kernel.org>, Shuah Khan <skhan@linuxfoundation.org>, Ingo Molnar <mingo@redhat.com>, Peter Zijlstra <peterz@infradead.org>, Alexei Starovoitov <ast@kernel.org>, Daniel Borkmann <daniel@iogearbox.net>, Martin KaFai Lau <kafai@fb.com>, Song Liu <songliubraving@fb.com>, Yonghong Song <yhs@fb.com>, Andrii Nakryiko <andriin@fb.com>
-Cc: Aleksa Sarai <cyphar@cyphar.com>, Christian Brauner <christian.brauner@ubuntu.com>, David Drysdale <drysdale@google.com>, Andy Lutomirski <luto@kernel.org>, Linus Torvalds <torvalds@linux-foundation.org>, Eric Biederman <ebiederm@xmission.com>, Andrew Morton <akpm@linux-foundation.org>, Kees Cook <keescook@chromium.org>, Jann Horn <jannh@google.com>, Tycho Andersen <tycho@tycho.ws>, Chanho Min <chanho.min@lge.com>, Oleg Nesterov <oleg@redhat.com>, Rasmus Villemoes <linux@rasmusvillemoes.dk>, Alexander Shishkin <alexander.shishkin@linux.intel.com>, Jiri Olsa <jolsa@redhat.com>, Namhyung Kim <namhyung@kernel.org>, Christian Brauner <christian@brauner.io>, Aleksa Sarai <asarai@suse.de>, dev@opencontainers.org, containers@lists.linux-foundation.org, bpf@vger.kernel.org, netdev@vger.kernel.org, linux-alpha@vger.kernel.org, linux-api@vger.kernel.org, libc-alpha@sourceware.org, linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-fsdevel@vger.kernel.org, linux-ia64@vger.kernel.org, linux-kernel@vger.kernel.org, linux-kselftest@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-xtensa@linux-xtensa.org, sparclinux@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: Dmitry Safonov <0x7f454c46@gmail.com>, Dmitry Safonov <dima@arista.com>, Andrew Morton <akpm@linux-foundation.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Ingo Molnar <mingo@kernel.org>, Jiri Slaby <jslaby@suse.com>, Petr Mladek <pmladek@suse.com>, Sergey Senozhatsky <sergey.senozhatsky@gmail.com>, Steven Rostedt <rostedt@goodmis.org>, Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
 
-/* Background. */
-There are many circumstances when userspace wants to resolve a path and
-ensure that it doesn't go outside of a particular root directory during
-resolution. Obvious examples include archive extraction tools, as well as
-other security-conscious userspace programs. FreeBSD spun out O_BENEATH
-from their Capsicum project[1,2], so it also seems reasonable to
-implement similar functionality for Linux.
+Currently, the log-level of show_stack() depends on a platform
+realization. It creates situations where the headers are printed with
+lower log level or higher than the stacktrace (depending on
+a platform or user).
 
-This is part of a refresh of Al's AT_NO_JUMPS patchset[3] (which was a
-variation on David Drysdale's O_BENEATH patchset[4], which in turn was
-based on the Capsicum project[5]).
+Furthermore, it forces the logic decision from user to an architecture
+side. In result, some users as sysrq/kdb/etc are doing tricks with
+temporary rising console_loglevel while printing their messages.
+And in result it not only may print unwanted messages from other CPUs,
+but also omit printing at all in the unlucky case where the printk()
+was deferred.
 
-/* Userspace API. */
-LOOKUP_BENEATH will be exposed to userspace through openat2(2).
+Introducing log-level parameter and KERN_UNSUPPRESSED [1] seems
+an easier approach than introducing more printk buffers.
+Also, it will consolidate printings with headers.
 
-/* Semantics. */
-Unlike most other LOOKUP flags (most notably LOOKUP_FOLLOW),
-LOOKUP_BENEATH applies to all components of the path.
+Add log level argument to printk_address() as a preparation to introduce
+show_stack_loglvl().
 
-With LOOKUP_BENEATH, any path component which attempts to "escape" the
-starting point of the filesystem lookup (the dirfd passed to openat)
-will yield -EXDEV. Thus, all absolute paths and symlinks are disallowed.
+As a good side-effect show_fault_oops() now prints the address with
+KERN_EMREG as the rest of output, making sure there won't be situation
+where "PC: " is printed without actual address.
 
-Due to a security concern brought up by Jann[6], any ".." path
-components are also blocked. This restriction will be lifted in a future
-patch, but requires more work to ensure that permitting ".." is done
-safely.
-
-Magic-link jumps are also blocked, because they can beam the path lookup
-across the starting point. It would be possible to detect and block
-only the "bad" crossings with path_is_under() checks, but it's unclear
-whether it makes sense to permit magic-links at all. However, userspace
-is recommended to pass LOOKUP_NO_MAGICLINKS if they want to ensure that
-magic-link crossing is entirely disabled.
-
-/* Testing. */
-LOOKUP_BENEATH is tested as part of the openat2(2) selftests.
-
-[1]: https://reviews.freebsd.org/D2808
-[2]: https://reviews.freebsd.org/D17547
-[3]: https://lore.kernel.org/lkml/20170429220414.GT29622@ZenIV.linux.org.uk/
-[4]: https://lore.kernel.org/lkml/1415094884-18349-1-git-send-email-drysdale@google.com/
-[5]: https://lore.kernel.org/lkml/1404124096-21445-1-git-send-email-drysdale@google.com/
-[6]: https://lore.kernel.org/lkml/CAG48ez1jzNvxB+bfOBnERFGp=oMM0vHWuLD6EULmne3R6xa53w@mail.gmail.com/
-
-Cc: Christian Brauner <christian.brauner@ubuntu.com>
-Suggested-by: David Drysdale <drysdale@google.com>
-Suggested-by: Al Viro <viro@zeniv.linux.org.uk>
-Suggested-by: Andy Lutomirski <luto@kernel.org>
-Suggested-by: Linus Torvalds <torvalds@linux-foundation.org>
-Signed-off-by: Aleksa Sarai <cyphar@cyphar.com>
+Cc: Rich Felker <dalias@libc.org>
+Cc: Rich Felker <dalias@libc.org>
+Cc: linux-sh@vger.kernel.org
+[1]: https://lore.kernel.org/lkml/20190528002412.1625-1-dima@arista.com/T/#u
+Signed-off-by: Dmitry Safonov <dima@arista.com>
 ---
- fs/namei.c            | 59 ++++++++++++++++++++++++++++++++++++++-----
- include/linux/namei.h |  4 +++
- 2 files changed, 57 insertions(+), 6 deletions(-)
+ arch/sh/include/asm/kdebug.h | 3 ++-
+ arch/sh/kernel/dumpstack.c   | 6 +++---
+ arch/sh/mm/fault.c           | 2 +-
+ 3 files changed, 6 insertions(+), 5 deletions(-)
 
-diff --git a/fs/namei.c b/fs/namei.c
-index 854a1cbbe7b0..bad5ef56b4c8 100644
---- a/fs/namei.c
-+++ b/fs/namei.c
-@@ -641,6 +641,14 @@ static bool legitimize_links(struct nameidata *nd)
+diff --git a/arch/sh/include/asm/kdebug.h b/arch/sh/include/asm/kdebug.h
+index de8693fabb1d..960545306afa 100644
+--- a/arch/sh/include/asm/kdebug.h
++++ b/arch/sh/include/asm/kdebug.h
+@@ -12,7 +12,8 @@ enum die_val {
+ };
  
- static bool legitimize_root(struct nameidata *nd)
- {
-+	/*
-+	 * For scoped-lookups (where nd->root has been zeroed), we need to
-+	 * restart the whole lookup from scratch -- because set_root() is wrong
-+	 * for these lookups (nd->dfd is the root, not the filesystem root).
-+	 */
-+	if (!nd->root.mnt && (nd->flags & LOOKUP_IS_SCOPED))
-+		return false;
-+	/* Nothing to do if nd->root is zero or is managed by the VFS user. */
- 	if (!nd->root.mnt || (nd->flags & LOOKUP_ROOT))
- 		return true;
- 	nd->flags |= LOOKUP_ROOT_GRABBED;
-@@ -776,7 +784,11 @@ static int complete_walk(struct nameidata *nd)
- 	int status;
+ /* arch/sh/kernel/dumpstack.c */
+-extern void printk_address(unsigned long address, int reliable);
++extern void printk_address(unsigned long address, int reliable,
++			   const char *loglvl);
+ extern void dump_mem(const char *str, const char *loglvl,
+ 		     unsigned long bottom, unsigned long top);
  
- 	if (nd->flags & LOOKUP_RCU) {
--		if (!(nd->flags & LOOKUP_ROOT))
-+		/*
-+		 * We don't want to zero nd->root for scoped-lookups or
-+		 * externally-managed nd->root.
-+		 */
-+		if (!(nd->flags & (LOOKUP_ROOT | LOOKUP_IS_SCOPED)))
- 			nd->root.mnt = NULL;
- 		if (unlikely(unlazy_walk(nd)))
- 			return -ECHILD;
-@@ -802,6 +814,14 @@ static int set_root(struct nameidata *nd)
- {
- 	struct fs_struct *fs = current->fs;
- 
-+	/*
-+	 * Jumping to the real root in a scoped-lookup is a BUG in namei, but we
-+	 * still have to ensure it doesn't happen because it will cause a breakout
-+	 * from the dirfd.
-+	 */
-+	if (WARN_ON(nd->flags & LOOKUP_IS_SCOPED))
-+		return -ENOTRECOVERABLE;
-+
- 	if (nd->flags & LOOKUP_RCU) {
- 		unsigned seq;
- 
-@@ -838,6 +858,8 @@ static inline void path_to_nameidata(const struct path *path,
- 
- static int nd_jump_root(struct nameidata *nd)
- {
-+	if (unlikely(nd->flags & LOOKUP_BENEATH))
-+		return -EXDEV;
- 	if (unlikely(nd->flags & LOOKUP_NO_XDEV)) {
- 		/* Absolute path arguments to path_init() are allowed. */
- 		if (nd->path.mnt != NULL && nd->path.mnt != nd->root.mnt)
-@@ -880,6 +902,9 @@ int nd_jump_link(struct path *path)
- 		if (nd->path.mnt != path->mnt)
- 			return -EXDEV;
+diff --git a/arch/sh/kernel/dumpstack.c b/arch/sh/kernel/dumpstack.c
+index 2c1a78e5776b..959064b90055 100644
+--- a/arch/sh/kernel/dumpstack.c
++++ b/arch/sh/kernel/dumpstack.c
+@@ -44,9 +44,9 @@ void dump_mem(const char *str, const char *loglvl,
  	}
-+	/* Not currently safe for scoped-lookups. */
-+	if (unlikely(nd->flags & LOOKUP_IS_SCOPED))
-+		return -EXDEV;
- 
- 	path_put(&nd->path);
- 	nd->path = *path;
-@@ -1372,8 +1397,11 @@ static int follow_dotdot_rcu(struct nameidata *nd)
- 	struct inode *inode = nd->inode;
- 
- 	while (1) {
--		if (path_equal(&nd->path, &nd->root))
-+		if (path_equal(&nd->path, &nd->root)) {
-+			if (unlikely(nd->flags & LOOKUP_BENEATH))
-+				return -ECHILD;
- 			break;
-+		}
- 		if (nd->path.dentry != nd->path.mnt->mnt_root) {
- 			struct dentry *old = nd->path.dentry;
- 			struct dentry *parent = old->d_parent;
-@@ -1503,9 +1531,12 @@ static int path_parent_directory(struct path *path)
- 
- static int follow_dotdot(struct nameidata *nd)
- {
--	while(1) {
--		if (path_equal(&nd->path, &nd->root))
-+	while (1) {
-+		if (path_equal(&nd->path, &nd->root)) {
-+			if (unlikely(nd->flags & LOOKUP_BENEATH))
-+				return -EXDEV;
- 			break;
-+		}
- 		if (nd->path.dentry != nd->path.mnt->mnt_root) {
- 			int ret = path_parent_directory(&nd->path);
- 			if (ret)
-@@ -1732,6 +1763,13 @@ static inline int handle_dots(struct nameidata *nd, int type)
- 	if (type = LAST_DOTDOT) {
- 		int error = 0;
- 
-+		/*
-+		 * Scoped-lookup flags resolving ".." is not currently safe --
-+		 * races can cause our parent to have moved outside of the root
-+		 * and us to skip over it.
-+		 */
-+		if (unlikely(nd->flags & LOOKUP_IS_SCOPED))
-+			return -EXDEV;
- 		if (!nd->root.mnt) {
- 			error = set_root(nd);
- 			if (error)
-@@ -2254,7 +2292,6 @@ static const char *path_init(struct nameidata *nd, unsigned flags)
- 			get_fs_pwd(current->fs, &nd->path);
- 			nd->inode = nd->path.dentry->d_inode;
- 		}
--		return s;
- 	} else {
- 		/* Caller must check execute permissions on the starting path component */
- 		struct fd f = fdget_raw(nd->dfd);
-@@ -2279,8 +2316,18 @@ static const char *path_init(struct nameidata *nd, unsigned flags)
- 			nd->inode = nd->path.dentry->d_inode;
- 		}
- 		fdput(f);
--		return s;
- 	}
-+	/* For scoped-lookups we need to set the root to the dirfd as well. */
-+	if (flags & LOOKUP_IS_SCOPED) {
-+		nd->root = nd->path;
-+		if (flags & LOOKUP_RCU) {
-+			nd->root_seq = nd->seq;
-+		} else {
-+			path_get(&nd->root);
-+			nd->flags |= LOOKUP_ROOT_GRABBED;
-+		}
-+	}
-+	return s;
  }
  
- static const char *trailing_symlink(struct nameidata *nd)
-diff --git a/include/linux/namei.h b/include/linux/namei.h
-index 25ee88c4acb1..93dad378f1e8 100644
---- a/include/linux/namei.h
-+++ b/include/linux/namei.h
-@@ -2,6 +2,7 @@
- #ifndef _LINUX_NAMEI_H
- #define _LINUX_NAMEI_H
+-void printk_address(unsigned long address, int reliable)
++void printk_address(unsigned long address, int reliable, const char *loglvl)
+ {
+-	printk(" [<%p>] %s%pS\n", (void *) address,
++	printk("%s [<%p>] %s%pS\n", loglvl, (void *) address,
+ 			reliable ? "" : "? ", (void *) address);
+ }
  
-+#include <linux/fs.h>
- #include <linux/kernel.h>
- #include <linux/path.h>
- #include <linux/fcntl.h>
-@@ -43,6 +44,9 @@ enum {LAST_NORM, LAST_ROOT, LAST_DOT, LAST_DOTDOT, LAST_BIND};
- #define LOOKUP_NO_SYMLINKS	0x010000 /* No symlink crossing. */
- #define LOOKUP_NO_MAGICLINKS	0x020000 /* No nd_jump_link() crossing. */
- #define LOOKUP_NO_XDEV		0x040000 /* No mountpoint crossing. */
-+#define LOOKUP_BENEATH		0x080000 /* No escaping from starting point. */
-+/* LOOKUP_* flags which do scope-related checks based on the dirfd. */
-+#define LOOKUP_IS_SCOPED LOOKUP_BENEATH
+@@ -118,7 +118,7 @@ static int print_trace_stack(void *data, char *name)
+  */
+ static void print_trace_address(void *data, unsigned long addr, int reliable)
+ {
+-	printk_address(addr, reliable);
++	printk_address(addr, reliable, (char *)data);
+ }
  
- extern int path_pts(struct path *path);
+ static const struct stacktrace_ops print_trace_ops = {
+diff --git a/arch/sh/mm/fault.c b/arch/sh/mm/fault.c
+index 5f51456f4fc7..b11f0c5e65b6 100644
+--- a/arch/sh/mm/fault.c
++++ b/arch/sh/mm/fault.c
+@@ -196,7 +196,7 @@ show_fault_oops(struct pt_regs *regs, unsigned long address)
  
+ 	printk(KERN_CONT " at %08lx\n", address);
+ 	printk(KERN_ALERT "PC:");
+-	printk_address(regs->pc, 1);
++	printk_address(regs->pc, 1, KERN_ALERT);
+ 
+ 	show_pte(NULL, address);
+ }
 -- 
-2.24.0
+2.23.0
