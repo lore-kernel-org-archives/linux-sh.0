@@ -1,83 +1,125 @@
-From: Krzysztof Kozlowski <krzk@kernel.org>
-Date: Thu, 21 Nov 2019 03:20:53 +0000
-Subject: [PATCH v2] sh: Fix Kconfig indentation
-Message-Id: <1574306454-4008-1-git-send-email-krzk@kernel.org>
+From: Dmitry Safonov <dima@arista.com>
+Date: Wed, 06 Nov 2019 03:05:20 +0000
+Subject: [PATCH 29/50] sh: Add loglvl to dump_mem()
+Message-Id: <20191106030542.868541-30-dima@arista.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20191106030542.868541-1-dima@arista.com>
+In-Reply-To: <20191106030542.868541-1-dima@arista.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-kernel@vger.kernel.org
-Cc: Krzysztof Kozlowski <krzk@kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
+Cc: Dmitry Safonov <0x7f454c46@gmail.com>, Dmitry Safonov <dima@arista.com>, Andrew Morton <akpm@linux-foundation.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Ingo Molnar <mingo@kernel.org>, Jiri Slaby <jslaby@suse.com>, Petr Mladek <pmladek@suse.com>, Sergey Senozhatsky <sergey.senozhatsky@gmail.com>, Steven Rostedt <rostedt@goodmis.org>, Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>, Rich Felker <dalias@libc.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh@vger.kernel.org
 
-Adjust indentation from spaces to tab (+optional two spaces) as in
-coding style with command like:
-	$ sed -e 's/^        /\t/' -i */Kconfig
+Currently, the log-level of show_stack() depends on a platform
+realization. It creates situations where the headers are printed with
+lower log level or higher than the stacktrace (depending on
+a platform or user).
 
-Signed-off-by: Krzysztof Kozlowski <krzk@kernel.org>
+Furthermore, it forces the logic decision from user to an architecture
+side. In result, some users as sysrq/kdb/etc are doing tricks with
+temporary rising console_loglevel while printing their messages.
+And in result it not only may print unwanted messages from other CPUs,
+but also omit printing at all in the unlucky case where the printk()
+was deferred.
 
+Introducing log-level parameter and KERN_UNSUPPRESSED [1] seems
+an easier approach than introducing more printk buffers.
+Also, it will consolidate printings with headers.
+
+Add log level argument to dump_mem() as a preparation to introduce
+show_stack_loglvl().
+
+Cc: Rich Felker <dalias@libc.org>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: linux-sh@vger.kernel.org
+[1]: https://lore.kernel.org/lkml/20190528002412.1625-1-dima@arista.com/T/#u
+Signed-off-by: Dmitry Safonov <dima@arista.com>
 ---
+ arch/sh/include/asm/kdebug.h |  3 ++-
+ arch/sh/kernel/dumpstack.c   | 17 +++++++++--------
+ arch/sh/kernel/traps.c       |  4 ++--
+ 3 files changed, 13 insertions(+), 11 deletions(-)
 
-Changes since v1:
-1. Fix also 7-space and tab+1 space indentation issues.
----
- arch/sh/Kconfig        | 6 +++---
- arch/sh/boards/Kconfig | 2 +-
- arch/sh/mm/Kconfig     | 6 +++---
- 3 files changed, 7 insertions(+), 7 deletions(-)
-
-diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-index f356ee674d89..39048ab92f73 100644
---- a/arch/sh/Kconfig
-+++ b/arch/sh/Kconfig
-@@ -229,9 +229,9 @@ config ARCH_SHMOBILE
- 	select PM
+diff --git a/arch/sh/include/asm/kdebug.h b/arch/sh/include/asm/kdebug.h
+index 5212f5fcd752..de8693fabb1d 100644
+--- a/arch/sh/include/asm/kdebug.h
++++ b/arch/sh/include/asm/kdebug.h
+@@ -13,6 +13,7 @@ enum die_val {
  
- config CPU_HAS_PMU
--       depends on CPU_SH4 || CPU_SH4A
--       default y
--       bool
-+	depends on CPU_SH4 || CPU_SH4A
-+	default y
-+	bool
+ /* arch/sh/kernel/dumpstack.c */
+ extern void printk_address(unsigned long address, int reliable);
+-extern void dump_mem(const char *str, unsigned long bottom, unsigned long top);
++extern void dump_mem(const char *str, const char *loglvl,
++		     unsigned long bottom, unsigned long top);
  
- if SUPERH32
+ #endif /* __ASM_SH_KDEBUG_H */
+diff --git a/arch/sh/kernel/dumpstack.c b/arch/sh/kernel/dumpstack.c
+index 9f1c9c11d62d..6784b914fba0 100644
+--- a/arch/sh/kernel/dumpstack.c
++++ b/arch/sh/kernel/dumpstack.c
+@@ -16,30 +16,31 @@
+ #include <asm/unwinder.h>
+ #include <asm/stacktrace.h>
  
-diff --git a/arch/sh/boards/Kconfig b/arch/sh/boards/Kconfig
-index cee24c308337..60a113114a76 100644
---- a/arch/sh/boards/Kconfig
-+++ b/arch/sh/boards/Kconfig
-@@ -231,7 +231,7 @@ config SH_MIGOR
- 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
- 	help
- 	  Select Migo-R if configuring for the SH7722 Migo-R platform
--          by Renesas System Solutions Asia Pte. Ltd.
-+	  by Renesas System Solutions Asia Pte. Ltd.
+-void dump_mem(const char *str, unsigned long bottom, unsigned long top)
++void dump_mem(const char *str, const char *loglvl,
++	      unsigned long bottom, unsigned long top)
+ {
+ 	unsigned long p;
+ 	int i;
  
- config SH_AP325RXA
- 	bool "AP-325RXA"
-diff --git a/arch/sh/mm/Kconfig b/arch/sh/mm/Kconfig
-index 5c8a2ebfc720..130b2d235f0c 100644
---- a/arch/sh/mm/Kconfig
-+++ b/arch/sh/mm/Kconfig
-@@ -2,7 +2,7 @@
- menu "Memory management options"
+-	printk("%s(0x%08lx to 0x%08lx)\n", str, bottom, top);
++	printk("%s%s(0x%08lx to 0x%08lx)\n", loglvl, str, bottom, top);
  
- config MMU
--        bool "Support for memory management hardware"
-+	bool "Support for memory management hardware"
- 	depends on !CPU_SH2
- 	default y
- 	help
-@@ -151,8 +151,8 @@ config ARCH_MEMORY_PROBE
- 	depends on MEMORY_HOTPLUG
+ 	for (p = bottom & ~31; p < top; ) {
+-		printk("%04lx: ", p & 0xffff);
++		printk("%s%04lx: ", loglvl,  p & 0xffff);
  
- config IOREMAP_FIXED
--       def_bool y
--       depends on X2TLB || SUPERH64
-+	def_bool y
-+	depends on X2TLB || SUPERH64
+ 		for (i = 0; i < 8; i++, p += 4) {
+ 			unsigned int val;
  
- config UNCACHED_MAPPING
- 	bool
+ 			if (p < bottom || p >= top)
+-				printk("         ");
++				printk("%s         ", loglvl);
+ 			else {
+ 				if (__get_user(val, (unsigned int __user *)p)) {
+-					printk("\n");
++					printk("%s\n", loglvl);
+ 					return;
+ 				}
+-				printk("%08x ", val);
++				printk("%s%08x ", loglvl, val);
+ 			}
+ 		}
+-		printk("\n");
++		printk("%s\n", loglvl);
+ 	}
+ }
+ 
+@@ -156,7 +157,7 @@ void show_stack(struct task_struct *tsk, unsigned long *sp)
+ 		sp = (unsigned long *)tsk->thread.sp;
+ 
+ 	stack = (unsigned long)sp;
+-	dump_mem("Stack: ", stack, THREAD_SIZE +
++	dump_mem("Stack: ", KERN_DEFAULT, stack, THREAD_SIZE +
+ 		 (unsigned long)task_stack_page(tsk));
+ 	show_trace(tsk, sp, NULL);
+ }
+diff --git a/arch/sh/kernel/traps.c b/arch/sh/kernel/traps.c
+index 63cf17bc760d..faad65409075 100644
+--- a/arch/sh/kernel/traps.c
++++ b/arch/sh/kernel/traps.c
+@@ -38,8 +38,8 @@ void die(const char *str, struct pt_regs *regs, long err)
+ 			task_pid_nr(current), task_stack_page(current) + 1);
+ 
+ 	if (!user_mode(regs) || in_interrupt())
+-		dump_mem("Stack: ", regs->regs[15], THREAD_SIZE +
+-			 (unsigned long)task_stack_page(current));
++		dump_mem("Stack: ", KERN_DEFAULT, regs->regs[15],
++			THREAD_SIZE + (unsigned long)task_stack_page(current));
+ 
+ 	notify_die(DIE_OOPS, str, regs, err, 255, SIGSEGV);
+ 
 -- 
-2.7.4
+2.23.0
