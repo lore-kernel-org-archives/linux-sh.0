@@ -1,78 +1,126 @@
-From: Aleksa Sarai <cyphar@cyphar.com>
-Date: Thu, 14 Nov 2019 04:57:44 +0000
-Subject: Re: [PATCH v15 4/9] namei: LOOKUP_BENEATH: O_BENEATH-like scoped resolution
-Message-Id: <20191114045744.d3e7mp3zrupfe2wr@yavin.dot.cyphar.com>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="6gz2i7fpwlz4mefu"
+From: Palmer Dabbelt <palmer@dabbelt.com>
+Date: Wed, 06 Nov 2019 18:11:37 +0000
+Subject: Re: [PATCH 11/21] asm-generic: don't provide ioremap for CONFIG_MMU
+Message-Id: <mhng-33ea9141-2440-4a2d-8133-62094486fc48@palmer-si-x1c4>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20191105090553.6350-1-cyphar@cyphar.com>
- <20191105090553.6350-5-cyphar@cyphar.com>
- <20191113015534.GA26530@ZenIV.linux.org.uk>
- <20191113074757.5b4u5vlyx2u6pbn6@yavin.dot.cyphar.com>
-In-Reply-To: <20191113074757.5b4u5vlyx2u6pbn6@yavin.dot.cyphar.com>
-To: Al Viro <viro@zeniv.linux.org.uk>
-Cc: linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, Rasmus Villemoes <linux@rasmusvillemoes.dk>, Alexei Starovoitov <ast@kernel.org>, linux-kernel@vger.kernel.org, David Howells <dhowells@redhat.com>, linux-kselftest@vger.kernel.org, sparclinux@vger.kernel.org, Christian Brauner <christian.brauner@ubuntu.com>, Shuah Khan <shuah@kernel.org>, linux-arch@vger.kernel.org, linux-s390@vger.kernel.org, Jiri Olsa <jolsa@redhat.com>, Alexander Shishkin <alexander.shishkin@linux.intel.com>, Ingo Molnar <mingo@redhat.com>, linux-arm-kernel@lists.infradead.org, linux-mips@vger.kernel.org, linux-xtensa@linux-xtensa.org, Kees Cook <keescook@chromium.org>, Arnd Bergmann <arnd@arndb.de>, Jann Horn <jannh@google.com>, linuxppc-dev@lists.ozlabs.org, linux-m68k@lists.linux-m68k.org, Andy
+References: <20191029064834.23438-12-hch@lst.de>
+In-Reply-To: <20191029064834.23438-12-hch@lst.de>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Christoph Hellwig <hch@lst.de>
+Cc: Arnd Bergmann <arnd@arndb.de>, guoren@kernel.org, monstr@monstr.eu, green.hu@gmail.com, deanbo422@gmail.com, gxt@pku.edu.cn, x86@kernel.org, linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, nios2-dev@lists.rocketboards.org, openrisc@lists.librecores.org, linux-parisc@vger.kernel.org, linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-mtd@lists.infradead.org, linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org
 
+On Mon, 28 Oct 2019 23:48:24 PDT (-0700), Christoph Hellwig wrote:
+> All MMU-enabled ports have a non-trivial ioremap and should thus provide
+> the prototype for their implementation instead of providing a generic
+> one unless a different symbol is not defined.  Note that this only
+> affects sparc32 nds32 as all others do provide their own version.
+>
+> Also update the kerneldoc comments in asm-generic/io.h to explain the
+> situation around the default ioremap* implementations correctly.
+>
+> Signed-off-by: Christoph Hellwig <hch@lst.de>
+> ---
+>  arch/nds32/include/asm/io.h    |  2 ++
+>  arch/sparc/include/asm/io_32.h |  1 +
+>  include/asm-generic/io.h       | 29 ++++++++---------------------
+>  3 files changed, 11 insertions(+), 21 deletions(-)
+>
+> diff --git a/arch/nds32/include/asm/io.h b/arch/nds32/include/asm/io.h
+> index 16f262322b8f..fb0e8a24c7af 100644
+> --- a/arch/nds32/include/asm/io.h
+> +++ b/arch/nds32/include/asm/io.h
+> @@ -6,6 +6,7 @@
+>
+>  #include <linux/types.h>
+>
+> +void __iomem *ioremap(phys_addr_t phys_addr, size_t size);
+>  extern void iounmap(volatile void __iomem *addr);
+>  #define __raw_writeb __raw_writeb
+>  static inline void __raw_writeb(u8 val, volatile void __iomem *addr)
+> @@ -80,4 +81,5 @@ static inline u32 __raw_readl(const volatile void __iomem *addr)
+>  #define writew(v,c)	({ __iowmb(); writew_relaxed((v),(c)); })
+>  #define writel(v,c)	({ __iowmb(); writel_relaxed((v),(c)); })
+>  #include <asm-generic/io.h>
+> +
+>  #endif /* __ASM_NDS32_IO_H */
+> diff --git a/arch/sparc/include/asm/io_32.h b/arch/sparc/include/asm/io_32.h
+> index df2dc1784673..9a52d9506f80 100644
+> --- a/arch/sparc/include/asm/io_32.h
+> +++ b/arch/sparc/include/asm/io_32.h
+> @@ -127,6 +127,7 @@ static inline void sbus_memcpy_toio(volatile void __iomem *dst,
+>   * Bus number may be embedded in the higher bits of the physical address.
+>   * This is why we have no bus number argument to ioremap().
+>   */
+> +void __iomem *ioremap(phys_addr_t offset, size_t size);
+>  void iounmap(volatile void __iomem *addr);
+>  /* Create a virtual mapping cookie for an IO port range */
+>  void __iomem *ioport_map(unsigned long port, unsigned int nr);
+> diff --git a/include/asm-generic/io.h b/include/asm-generic/io.h
+> index a98ed6325727..6a5edc23afe2 100644
+> --- a/include/asm-generic/io.h
+> +++ b/include/asm-generic/io.h
+> @@ -922,28 +922,16 @@ static inline void *phys_to_virt(unsigned long address)
+>  /**
+>   * DOC: ioremap() and ioremap_*() variants
+>   *
+> - * If you have an IOMMU your architecture is expected to have both ioremap()
+> - * and iounmap() implemented otherwise the asm-generic helpers will provide a
+> - * direct mapping.
+> + * Architectures with an MMU are expected to provide ioremap() and iounmap()
+> + * themselves.  For NOMMU architectures we provide a default nop-op
+> + * implementation that expect that the physical address used for MMIO are
+> + * already marked as uncached, and can be used as kernel virtual addresses.
+>   *
+> - * There are ioremap_*() call variants, if you have no IOMMU we naturally will
+> - * default to direct mapping for all of them, you can override these defaults.
+> - * If you have an IOMMU you are highly encouraged to provide your own
+> - * ioremap variant implementation as there currently is no safe architecture
+> - * agnostic default. To avoid possible improper behaviour default asm-generic
+> - * ioremap_*() variants all return NULL when an IOMMU is available. If you've
+> - * defined your own ioremap_*() variant you must then declare your own
+> - * ioremap_*() variant as defined to itself to avoid the default NULL return.
+> + * ioremap_wc() and ioremap_wt() can provide more relaxed caching attributes
+> + * for specific drivers if the architecture choses to implement them.  If they
+> + * are not implemented we fall back to plain ioremap.
+>   */
+>  #ifndef CONFIG_MMU
+> -
+> -/*
+> - * Change "struct page" to physical address.
+> - *
+> - * This implementation is for the no-MMU case only... if you have an MMU
+> - * you'll need to provide your own definitions.
+> - */
+> -
+>  #ifndef ioremap
+>  #define ioremap ioremap
+>  static inline void __iomem *ioremap(phys_addr_t offset, size_t size)
+> @@ -954,14 +942,13 @@ static inline void __iomem *ioremap(phys_addr_t offset, size_t size)
+>
+>  #ifndef iounmap
+>  #define iounmap iounmap
+> -
+>  static inline void iounmap(void __iomem *addr)
+>  {
+>  }
+>  #endif
+>  #endif /* CONFIG_MMU */
+> +
+>  #ifndef ioremap_nocache
+> -void __iomem *ioremap(phys_addr_t phys_addr, size_t size);
+>  #define ioremap_nocache ioremap_nocache
+>  static inline void __iomem *ioremap_nocache(phys_addr_t offset, size_t size)
+>  {
 
---6gz2i7fpwlz4mefu
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+It looks like the difference in prototype between the architectures is between
 
-On 2019-11-13, Aleksa Sarai <cyphar@cyphar.com> wrote:
-> On 2019-11-13, Al Viro <viro@zeniv.linux.org.uk> wrote:
-> > Minor nit here - I'd split "move the conditional call of set_root()
-> > into nd_jump_root()" into a separate patch before that one.  Makes
-> > for fewer distractions in this one.  I'd probably fold "and be
-> > ready for errors other than -ECHILD" into the same preliminary
-> > patch.
->=20
-> Will do.
->=20
-> > > +			/* Not currently safe for scoped-lookups. */
-> > > +			if (unlikely(nd->flags & LOOKUP_IS_SCOPED))
-> > > +				return ERR_PTR(-EXDEV);
-> >=20
-> > Also a candidate for doing in nd_jump_link()...
-> >=20
-> > > @@ -1373,8 +1403,11 @@ static int follow_dotdot_rcu(struct nameidata =
-*nd)
-> > >  	struct inode *inode =3D nd->inode;
-> > > =20
-> > >  	while (1) {
-> > > -		if (path_equal(&nd->path, &nd->root))
-> > > +		if (path_equal(&nd->path, &nd->root)) {
-> > > +			if (unlikely(nd->flags & LOOKUP_BENEATH))
-> > > +				return -EXDEV;
-> >=20
-> > Umm...  Are you sure it's not -ECHILD?
->=20
-> It wouldn't hurt to be -ECHILD -- though it's not clear to me how likely
-> a success would be in REF-walk if the parent components didn't already
-> trigger an unlazy_walk() in RCU-walk.
->=20
-> I guess that also means LOOKUP_NO_XDEV should trigger -ECHILD in
-> follow_dotdot_rcu()?
+    void __iomem *ioremap(resource_size_t, size_t)
+    void __iomem *ioremap(phys_addr_t, size_t)
+    void __iomem *ioremap(phys_addr_t, unsigned long)
+    void __iomem *ioremap(unsigned long, unsigned long)
 
-Scratch the last question -- AFAICS we don't need to do that for
-LOOKUP_NO_XDEV because we check against mount_lock so it's very unlikely
-that -ECHILD will have any benefit.
-
---=20
-Aleksa Sarai
-Senior Software Engineer (Containers)
-SUSE Linux GmbH
-<https://www.cyphar.com/>
-
---6gz2i7fpwlz4mefu
-Content-Type: application/pgp-signature; name="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iHUEABYIAB0WIQSxZm6dtfE8gxLLfYqdlLljIbnQEgUCXczexQAKCRCdlLljIbnQ
-Em3mAQDOIg6+v9zFmJZ9+uYnLQ8tGd3ay8OeAsu6/xVlfCimMwD/cMP8o+o1KTbo
-+rDSfA6D7b6Zhy7K3Vlf0k0OTebeSwI=
-=kHIA
------END PGP SIGNATURE-----
-
---6gz2i7fpwlz4mefu--
+shouldn't they all just be that first one?  In other words, wouldn't it be 
+better to always provide the generic ioremap prototype and unify the ports 
+instead?
