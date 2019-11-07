@@ -1,67 +1,129 @@
-From: Takashi Iwai <tiwai@suse.de>
-Date: Mon, 04 Nov 2019 09:03:34 +0000
-Subject: Re: ALSA: pcm: use dma_can_mmap() to check if a device supports dma_mmap_*
-Message-Id: <s5hbltsc8t5.wl-tiwai@suse.de>
+From: Palmer Dabbelt <palmer@dabbelt.com>
+Date: Thu, 07 Nov 2019 15:29:10 +0000
+Subject: Re: [PATCH 17/21] lib: provide a simple generic ioremap implementation
+Message-Id: <mhng-e96b8613-e384-4e94-90f8-d1cf78c5627a@palmer-si-x1c4>
 List-Id: <linux-sh.vger.kernel.org>
-References: <CAOzgRdYSaaF6OkXGME2=fn1dfTbpyt_GqEs=10oXH=V6SudfyA@mail.gmail.com>
- <s5himo0cbmm.wl-tiwai@suse.de>
- <CAOzgRdYTa-nAa7QV6c2aZs910BACg91vAjcjw4V-Oy8KCZVmmQ@mail.gmail.com>
- <60ee349a-1fe7-46f0-5161-1dcfcb6fbee9@google.com>
- <19c3f0ca-9b21-0c5e-894d-976594f38a86@google.com>
-In-Reply-To: <19c3f0ca-9b21-0c5e-894d-976594f38a86@google.com>
+References: <20191029064834.23438-18-hch@lst.de>
+In-Reply-To: <20191029064834.23438-18-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@google.com>
-Cc: linux-xtensa@linux-xtensa.org, youling 257 <youling257@gmail.com>, Vladimir Murzin <vladimir.murzin@arm.com>, linux-parisc@vger.kernel.org, linux-sh@vger.kernel.org, Takashi Iwai <tiwai@suse.de>, Robin Murphy <robin.murphy@arm.com>, Helge Deller <deller@gmx.de>, x86@kernel.org, Michal Simek <monstr@monstr.eu>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, linux-m68k@lists.linux-m68k.org, linuxppc-dev@lists.ozlabs.org, hch@lst.de, linux-arm-kernel@lists.infradead.org
+To: Christoph Hellwig <hch@lst.de>
+Cc: Arnd Bergmann <arnd@arndb.de>, guoren@kernel.org, monstr@monstr.eu, green.hu@gmail.com, deanbo422@gmail.com, gxt@pku.edu.cn, x86@kernel.org, linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, nios2-dev@lists.rocketboards.org, openrisc@lists.librecores.org, linux-parisc@vger.kernel.org, linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-mtd@lists.infradead.org, linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org
 
-On Mon, 04 Nov 2019 09:49:43 +0100,
-Greg Kroah-Hartman wrote:
-> 
-> On 11/4/19 9:32 AM, Greg Kroah-Hartman wrote:
-> > On 11/4/19 9:27 AM, youling 257 wrote:
-> >  > This driver
-> > 
-> https://android.googlesource.com/kernel/common/+/refs/heads/android-mainline/drivers/usb/gadget/function/f_audio_source.c 
-> 
-> >
-> >  >
-> >
-> > The driver is broken and needs to be fixed.  Please feel free to submit
-> > patches to AOSP to do so as you can trigger this easily.
-> 
-> Hm, maybe the driver isn't broken...
+On Mon, 28 Oct 2019 23:48:30 PDT (-0700), Christoph Hellwig wrote:
+> A lot of architectures reuse the same simple ioremap implementation, so
+> start lifting the most simple variant to lib/ioremap.c.  It provides
+> ioremap_prot and iounmap, plus a default ioremap that uses prot_noncached,
+> although that can be overridden by asm/io.h.
+>
+> Signed-off-by: Christoph Hellwig <hch@lst.de>
+> ---
+>  include/asm-generic/io.h | 20 ++++++++++++++++----
+>  lib/Kconfig              |  3 +++
+>  lib/ioremap.c            | 39 +++++++++++++++++++++++++++++++++++++++
+>  3 files changed, 58 insertions(+), 4 deletions(-)
+>
+> diff --git a/include/asm-generic/io.h b/include/asm-generic/io.h
+> index 4e45e1cb6560..4a661fdd1937 100644
+> --- a/include/asm-generic/io.h
+> +++ b/include/asm-generic/io.h
+> @@ -923,9 +923,10 @@ static inline void *phys_to_virt(unsigned long address)
+>   * DOC: ioremap() and ioremap_*() variants
+>   *
+>   * Architectures with an MMU are expected to provide ioremap() and iounmap()
+> - * themselves.  For NOMMU architectures we provide a default nop-op
+> - * implementation that expect that the physical address used for MMIO are
+> - * already marked as uncached, and can be used as kernel virtual addresses.
+> + * themselves or rely on GENERIC_IOREMAP.  For NOMMU architectures we provide
+> + * a default nop-op implementation that expect that the physical address used
+> + * for MMIO are already marked as uncached, and can be used as kernel virtual
+> + * addresses.
+>   *
+>   * ioremap_wc() and ioremap_wt() can provide more relaxed caching attributes
+>   * for specific drivers if the architecture choses to implement them.  If they
+> @@ -946,7 +947,18 @@ static inline void iounmap(void __iomem *addr)
+>  {
+>  }
+>  #endif
+> -#endif /* CONFIG_MMU */
+> +#elif defined(CONFIG_GENERIC_IOREMAP)
+> +#include <asm/pgtable.h>
+> +
+> +void __iomem *ioremap_prot(phys_addr_t addr, size_t size, unsigned long prot);
+> +void iounmap(volatile void __iomem *addr);
+> +
+> +static inline void __iomem *ioremap(phys_addr_t addr, size_t size)
+> +{
+> +	/* _PAGE_IOREMAP needs to be supplied by the architecture */
+> +	return ioremap_prot(addr, size, _PAGE_IOREMAP);
+> +}
+> +#endif /* !CONFIG_MMU || CONFIG_GENERIC_IOREMAP */
+>
+>  #ifndef ioremap_nocache
+>  #define ioremap_nocache ioremap
+> diff --git a/lib/Kconfig b/lib/Kconfig
+> index 183f92a297ca..afc78aaf2b25 100644
+> --- a/lib/Kconfig
+> +++ b/lib/Kconfig
+> @@ -638,6 +638,9 @@ config STRING_SELFTEST
+>
+>  endmenu
+>
+> +config GENERIC_IOREMAP
+> +	bool
+> +
+>  config GENERIC_LIB_ASHLDI3
+>  	bool
+>
+> diff --git a/lib/ioremap.c b/lib/ioremap.c
+> index 0a2ffadc6d71..3f0e18543de8 100644
+> --- a/lib/ioremap.c
+> +++ b/lib/ioremap.c
+> @@ -231,3 +231,42 @@ int ioremap_page_range(unsigned long addr,
+>
+>  	return err;
+>  }
+> +
+> +#ifdef CONFIG_GENERIC_IOREMAP
+> +void __iomem *ioremap_prot(phys_addr_t addr, size_t size, unsigned long prot)
+> +{
+> +	unsigned long offset, vaddr;
+> +	phys_addr_t last_addr;
+> +	struct vm_struct *area;
+> +
+> +	/* Disallow wrap-around or zero size */
+> +	last_addr = addr + size - 1;
+> +	if (!size || last_addr < addr)
+> +		return NULL;
+> +
+> +	/* Page-align mappings */
+> +	offset = addr & (~PAGE_MASK);
+> +	addr -= offset;
+> +	size = PAGE_ALIGN(size + offset);
+> +
+> +	area = get_vm_area_caller(size, VM_IOREMAP,
+> +			__builtin_return_address(0));
+> +	if (!area)
+> +		return NULL;
+> +	vaddr = (unsigned long)area->addr;
+> +
+> +	if (ioremap_page_range(vaddr, vaddr + size, addr, __pgprot(prot))) {
+> +		free_vm_area(area);
+> +		return NULL;
+> +	}
+> +
+> +	return (void __iomem *)(vaddr + offset);
+> +}
+> +EXPORT_SYMBOL(ioremap_prot);
+> +
+> +void iounmap(volatile void __iomem *addr)
+> +{
+> +	vunmap((void *)((unsigned long)addr & PAGE_MASK));
+> +}
+> +EXPORT_SYMBOL(iounmap);
+> +#endif /* CONFIG_GENERIC_IOREMAP */
 
-It is :)
+Reviewed-by: Palmer Dabbelt <palmer@dabbelt.com>
 
-> snd_pcm_lib_preallocate_pages_for_all() is called with
-> SNDRV_DMA_TYPE_DEV set, so that should be fine,
-
-That's the cause.  It passes NULL to the device object, which is
-incorrect in anyway.  I guess this used to work casually just because
-x86 accepts the NULL device object as if an ISA device.
-
-> and the only other
-> buffer I can see allocate here is with a call to
-> snd_pcm_lib_alloc_vmalloc_buffer() which _should_ be ok, right?
-
-If the driver allocates the buffer via vmalloc (and the snd_* helper),
-it shouldn't do preallocate in that way.  That is, the correct fix
-would  be simply to drop snd_pcm_lib_preallocate_pages_for_all() call
-from the driver code.
-
-Also, a quick skimming showed that the driver needs to set
-snd_pcm_lib_get_vmalloc_page to the snd_pcm_ops.page ops.
-
-> I don't see any buffers coming off the stack here, unless the gadget
-> controller is the one creating them?
-
-That's the code before actually allocating the buffer itself.  It
-checks the availability of mmap support on the architecture, and the
-helper code assumed a proper device object passed there via the
-preallocation helper.
-
-
-thanks,
-
-Takashi
+Thanks!  This should let us get rid of arch/riscv/mm/ioremap.c.
