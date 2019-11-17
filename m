@@ -1,10 +1,10 @@
 From: Aleksa Sarai <cyphar@cyphar.com>
-Date: Wed, 20 Nov 2019 05:06:24 +0000
-Subject: [PATCH RESEND v17 06/13] namei: LOOKUP_NO_MAGICLINKS: block magic-link resolution
-Message-Id: <20191120050631.12816-7-cyphar@cyphar.com>
+Date: Sun, 17 Nov 2019 01:17:06 +0000
+Subject: [PATCH v17 06/13] namei: LOOKUP_NO_MAGICLINKS: block magic-link resolution
+Message-Id: <20191117011713.13032-7-cyphar@cyphar.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20191120050631.12816-1-cyphar@cyphar.com>
-In-Reply-To: <20191120050631.12816-1-cyphar@cyphar.com>
+References: <20191117011713.13032-1-cyphar@cyphar.com>
+In-Reply-To: <20191117011713.13032-1-cyphar@cyphar.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
