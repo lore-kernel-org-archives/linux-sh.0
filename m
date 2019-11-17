@@ -1,10 +1,10 @@
 From: Aleksa Sarai <cyphar@cyphar.com>
-Date: Wed, 20 Nov 2019 05:06:28 +0000
-Subject: [PATCH RESEND v17 10/13] namei: LOOKUP_{IN_ROOT,BENEATH}: permit limited ".." resolution
-Message-Id: <20191120050631.12816-11-cyphar@cyphar.com>
+Date: Sun, 17 Nov 2019 01:17:10 +0000
+Subject: [PATCH v17 10/13] namei: LOOKUP_{IN_ROOT,BENEATH}: permit limited ".." resolution
+Message-Id: <20191117011713.13032-11-cyphar@cyphar.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20191120050631.12816-1-cyphar@cyphar.com>
-In-Reply-To: <20191120050631.12816-1-cyphar@cyphar.com>
+References: <20191117011713.13032-1-cyphar@cyphar.com>
+In-Reply-To: <20191117011713.13032-1-cyphar@cyphar.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
