@@ -1,125 +1,228 @@
-From: Dmitry Safonov <dima@arista.com>
-Date: Wed, 06 Nov 2019 03:05:20 +0000
-Subject: [PATCH 29/50] sh: Add loglvl to dump_mem()
-Message-Id: <20191106030542.868541-30-dima@arista.com>
+From: Aleksa Sarai <cyphar@cyphar.com>
+Date: Sun, 17 Nov 2019 01:17:02 +0000
+Subject: [PATCH v17 02/13] nsfs: clean-up ns_get_path() signature to return int
+Message-Id: <20191117011713.13032-3-cyphar@cyphar.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20191106030542.868541-1-dima@arista.com>
-In-Reply-To: <20191106030542.868541-1-dima@arista.com>
+References: <20191117011713.13032-1-cyphar@cyphar.com>
+In-Reply-To: <20191117011713.13032-1-cyphar@cyphar.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Dmitry Safonov <0x7f454c46@gmail.com>, Dmitry Safonov <dima@arista.com>, Andrew Morton <akpm@linux-foundation.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Ingo Molnar <mingo@kernel.org>, Jiri Slaby <jslaby@suse.com>, Petr Mladek <pmladek@suse.com>, Sergey Senozhatsky <sergey.senozhatsky@gmail.com>, Steven Rostedt <rostedt@goodmis.org>, Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>, Rich Felker <dalias@libc.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh@vger.kernel.org
+To: Al Viro <viro@zeniv.linux.org.uk>, Jeff Layton <jlayton@kernel.org>, "J. Bruce Fields" <bfields@fieldses.org>, Arnd Bergmann <arnd@arndb.de>, David Howells <dhowells@redhat.com>, Shuah Khan <shuah@kernel.org>, Shuah Khan <skhan@linuxfoundation.org>, Ingo Molnar <mingo@redhat.com>, Peter Zijlstra <peterz@infradead.org>, Alexei Starovoitov <ast@kernel.org>, Daniel Borkmann <daniel@iogearbox.net>, Martin KaFai Lau <kafai@fb.com>, Song Liu <songliubraving@fb.com>, Yonghong Song <yhs@fb.com>, Andrii Nakryiko <andriin@fb.com>, Jonathan Corbet <corbet@lwn.net>
+Cc: Aleksa Sarai <cyphar@cyphar.com>, Eric Biederman <ebiederm@xmission.com>, Andy Lutomirski <luto@kernel.org>, Andrew Morton <akpm@linux-foundation.org>, Kees Cook <keescook@chromium.org>, Jann Horn <jannh@google.com>, Tycho Andersen <tycho@tycho.ws>, David Drysdale <drysdale@google.com>, Chanho Min <chanho.min@lge.com>, Oleg Nesterov <oleg@redhat.com>, Rasmus Villemoes <linux@rasmusvillemoes.dk>, Alexander Shishkin <alexander.shishkin@linux.intel.com>, Jiri Olsa <jolsa@redhat.com>, Namhyung Kim <namhyung@kernel.org>, Christian Brauner <christian@brauner.io>, Aleksa Sarai <asarai@suse.de>, Linus Torvalds <torvalds@linux-foundation.org>, dev@opencontainers.org, containers@lists.linux-foundation.org, bpf@vger.kernel.org, netdev@vger.kernel.org, linux-alpha@vger.kernel.org, linux-api@vger.kernel.org, libc-alpha@sourceware.org, linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-doc@vger.kernel.org, linux-fsdevel@vger.kernel.org, linux-ia64@vger.kernel.org, linux-kernel@vger.kernel.org, linux-kselftest@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-xtensa@linux-xtensa.org, sparclinux@vger.kernel.org
 
-Currently, the log-level of show_stack() depends on a platform
-realization. It creates situations where the headers are printed with
-lower log level or higher than the stacktrace (depending on
-a platform or user).
+ns_get_path() and ns_get_path_cb() only ever return either NULL or an
+ERR_PTR. It is far more idiomatic to simply return an integer, and it
+makes all of the callers of ns_get_path() more straightforward to read.
 
-Furthermore, it forces the logic decision from user to an architecture
-side. In result, some users as sysrq/kdb/etc are doing tricks with
-temporary rising console_loglevel while printing their messages.
-And in result it not only may print unwanted messages from other CPUs,
-but also omit printing at all in the unlucky case where the printk()
-was deferred.
-
-Introducing log-level parameter and KERN_UNSUPPRESSED [1] seems
-an easier approach than introducing more printk buffers.
-Also, it will consolidate printings with headers.
-
-Add log level argument to dump_mem() as a preparation to introduce
-show_stack_loglvl().
-
-Cc: Rich Felker <dalias@libc.org>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: linux-sh@vger.kernel.org
-[1]: https://lore.kernel.org/lkml/20190528002412.1625-1-dima@arista.com/T/#u
-Signed-off-by: Dmitry Safonov <dima@arista.com>
+Fixes: e149ed2b805f ("take the targets of /proc/*/ns/* symlinks to separate fs")
+Signed-off-by: Aleksa Sarai <cyphar@cyphar.com>
 ---
- arch/sh/include/asm/kdebug.h |  3 ++-
- arch/sh/kernel/dumpstack.c   | 17 +++++++++--------
- arch/sh/kernel/traps.c       |  4 ++--
- 3 files changed, 13 insertions(+), 11 deletions(-)
+ fs/nsfs.c               | 29 ++++++++++++++---------------
+ fs/proc/namespaces.c    |  6 +++---
+ include/linux/proc_ns.h |  4 ++--
+ kernel/bpf/offload.c    | 12 ++++++------
+ kernel/events/core.c    |  2 +-
+ 5 files changed, 26 insertions(+), 27 deletions(-)
 
-diff --git a/arch/sh/include/asm/kdebug.h b/arch/sh/include/asm/kdebug.h
-index 5212f5fcd752..de8693fabb1d 100644
---- a/arch/sh/include/asm/kdebug.h
-+++ b/arch/sh/include/asm/kdebug.h
-@@ -13,6 +13,7 @@ enum die_val {
+diff --git a/fs/nsfs.c b/fs/nsfs.c
+index a0431642c6b5..f3d2833c5781 100644
+--- a/fs/nsfs.c
++++ b/fs/nsfs.c
+@@ -52,7 +52,7 @@ static void nsfs_evict(struct inode *inode)
+ 	ns->ops->put(ns);
+ }
  
- /* arch/sh/kernel/dumpstack.c */
- extern void printk_address(unsigned long address, int reliable);
--extern void dump_mem(const char *str, unsigned long bottom, unsigned long top);
-+extern void dump_mem(const char *str, const char *loglvl,
-+		     unsigned long bottom, unsigned long top);
- 
- #endif /* __ASM_SH_KDEBUG_H */
-diff --git a/arch/sh/kernel/dumpstack.c b/arch/sh/kernel/dumpstack.c
-index 9f1c9c11d62d..6784b914fba0 100644
---- a/arch/sh/kernel/dumpstack.c
-+++ b/arch/sh/kernel/dumpstack.c
-@@ -16,30 +16,31 @@
- #include <asm/unwinder.h>
- #include <asm/stacktrace.h>
- 
--void dump_mem(const char *str, unsigned long bottom, unsigned long top)
-+void dump_mem(const char *str, const char *loglvl,
-+	      unsigned long bottom, unsigned long top)
+-static void *__ns_get_path(struct path *path, struct ns_common *ns)
++static int __ns_get_path(struct path *path, struct ns_common *ns)
  {
- 	unsigned long p;
- 	int i;
- 
--	printk("%s(0x%08lx to 0x%08lx)\n", str, bottom, top);
-+	printk("%s%s(0x%08lx to 0x%08lx)\n", loglvl, str, bottom, top);
- 
- 	for (p = bottom & ~31; p < top; ) {
--		printk("%04lx: ", p & 0xffff);
-+		printk("%s%04lx: ", loglvl,  p & 0xffff);
- 
- 		for (i = 0; i < 8; i++, p += 4) {
- 			unsigned int val;
- 
- 			if (p < bottom || p >= top)
--				printk("         ");
-+				printk("%s         ", loglvl);
- 			else {
- 				if (__get_user(val, (unsigned int __user *)p)) {
--					printk("\n");
-+					printk("%s\n", loglvl);
- 					return;
- 				}
--				printk("%08x ", val);
-+				printk("%s%08x ", loglvl, val);
- 			}
- 		}
--		printk("\n");
-+		printk("%s\n", loglvl);
+ 	struct vfsmount *mnt = nsfs_mnt;
+ 	struct dentry *dentry;
+@@ -71,13 +71,13 @@ static void *__ns_get_path(struct path *path, struct ns_common *ns)
+ got_it:
+ 	path->mnt = mntget(mnt);
+ 	path->dentry = dentry;
+-	return NULL;
++	return 0;
+ slow:
+ 	rcu_read_unlock();
+ 	inode = new_inode_pseudo(mnt->mnt_sb);
+ 	if (!inode) {
+ 		ns->ops->put(ns);
+-		return ERR_PTR(-ENOMEM);
++		return -ENOMEM;
  	}
+ 	inode->i_ino = ns->inum;
+ 	inode->i_mtime = inode->i_atime = inode->i_ctime = current_time(inode);
+@@ -89,7 +89,7 @@ static void *__ns_get_path(struct path *path, struct ns_common *ns)
+ 	dentry = d_alloc_anon(mnt->mnt_sb);
+ 	if (!dentry) {
+ 		iput(inode);
+-		return ERR_PTR(-ENOMEM);
++		return -ENOMEM;
+ 	}
+ 	d_instantiate(dentry, inode);
+ 	dentry->d_fsdata = (void *)ns->ops;
+@@ -98,23 +98,22 @@ static void *__ns_get_path(struct path *path, struct ns_common *ns)
+ 		d_delete(dentry);	/* make sure ->d_prune() does nothing */
+ 		dput(dentry);
+ 		cpu_relax();
+-		return ERR_PTR(-EAGAIN);
++		return -EAGAIN;
+ 	}
+ 	goto got_it;
  }
  
-@@ -156,7 +157,7 @@ void show_stack(struct task_struct *tsk, unsigned long *sp)
- 		sp = (unsigned long *)tsk->thread.sp;
+-void *ns_get_path_cb(struct path *path, ns_get_path_helper_t *ns_get_cb,
++int ns_get_path_cb(struct path *path, ns_get_path_helper_t *ns_get_cb,
+ 		     void *private_data)
+ {
+-	void *ret;
++	int ret;
  
- 	stack = (unsigned long)sp;
--	dump_mem("Stack: ", stack, THREAD_SIZE +
-+	dump_mem("Stack: ", KERN_DEFAULT, stack, THREAD_SIZE +
- 		 (unsigned long)task_stack_page(tsk));
- 	show_trace(tsk, sp, NULL);
+ 	do {
+ 		struct ns_common *ns = ns_get_cb(private_data);
+ 		if (!ns)
+-			return ERR_PTR(-ENOENT);
+-
++			return -ENOENT;
+ 		ret = __ns_get_path(path, ns);
+-	} while (ret = ERR_PTR(-EAGAIN));
++	} while (ret = -EAGAIN);
+ 
+ 	return ret;
  }
-diff --git a/arch/sh/kernel/traps.c b/arch/sh/kernel/traps.c
-index 63cf17bc760d..faad65409075 100644
---- a/arch/sh/kernel/traps.c
-+++ b/arch/sh/kernel/traps.c
-@@ -38,8 +38,8 @@ void die(const char *str, struct pt_regs *regs, long err)
- 			task_pid_nr(current), task_stack_page(current) + 1);
+@@ -131,7 +130,7 @@ static struct ns_common *ns_get_path_task(void *private_data)
+ 	return args->ns_ops->get(args->task);
+ }
  
- 	if (!user_mode(regs) || in_interrupt())
--		dump_mem("Stack: ", regs->regs[15], THREAD_SIZE +
--			 (unsigned long)task_stack_page(current));
-+		dump_mem("Stack: ", KERN_DEFAULT, regs->regs[15],
-+			THREAD_SIZE + (unsigned long)task_stack_page(current));
+-void *ns_get_path(struct path *path, struct task_struct *task,
++int ns_get_path(struct path *path, struct task_struct *task,
+ 		  const struct proc_ns_operations *ns_ops)
+ {
+ 	struct ns_get_path_task_args args = {
+@@ -147,7 +146,7 @@ int open_related_ns(struct ns_common *ns,
+ {
+ 	struct path path = {};
+ 	struct file *f;
+-	void *err;
++	int err;
+ 	int fd;
  
- 	notify_die(DIE_OOPS, str, regs, err, 255, SIGSEGV);
+ 	fd = get_unused_fd_flags(O_CLOEXEC);
+@@ -164,11 +163,11 @@ int open_related_ns(struct ns_common *ns,
+ 		}
  
+ 		err = __ns_get_path(&path, relative);
+-	} while (err = ERR_PTR(-EAGAIN));
++	} while (err = -EAGAIN);
+ 
+-	if (IS_ERR(err)) {
++	if (err) {
+ 		put_unused_fd(fd);
+-		return PTR_ERR(err);
++		return err;
+ 	}
+ 
+ 	f = dentry_open(&path, O_RDONLY, current_cred());
+diff --git a/fs/proc/namespaces.c b/fs/proc/namespaces.c
+index dd2b35f78b09..08dd94df1a66 100644
+--- a/fs/proc/namespaces.c
++++ b/fs/proc/namespaces.c
+@@ -42,14 +42,14 @@ static const char *proc_ns_get_link(struct dentry *dentry,
+ 	const struct proc_ns_operations *ns_ops = PROC_I(inode)->ns_ops;
+ 	struct task_struct *task;
+ 	struct path ns_path;
+-	void *error = ERR_PTR(-EACCES);
++	int error = -EACCES;
+ 
+ 	if (!dentry)
+ 		return ERR_PTR(-ECHILD);
+ 
+ 	task = get_proc_task(inode);
+ 	if (!task)
+-		return error;
++		return ERR_PTR(-EACCES);
+ 
+ 	if (ptrace_may_access(task, PTRACE_MODE_READ_FSCREDS)) {
+ 		error = ns_get_path(&ns_path, task, ns_ops);
+@@ -57,7 +57,7 @@ static const char *proc_ns_get_link(struct dentry *dentry,
+ 			nd_jump_link(&ns_path);
+ 	}
+ 	put_task_struct(task);
+-	return error;
++	return ERR_PTR(error);
+ }
+ 
+ static int proc_ns_readlink(struct dentry *dentry, char __user *buffer, int buflen)
+diff --git a/include/linux/proc_ns.h b/include/linux/proc_ns.h
+index d31cb6215905..aed366b4795c 100644
+--- a/include/linux/proc_ns.h
++++ b/include/linux/proc_ns.h
+@@ -76,10 +76,10 @@ static inline int ns_alloc_inum(struct ns_common *ns)
+ 
+ extern struct file *proc_ns_fget(int fd);
+ #define get_proc_ns(inode) ((struct ns_common *)(inode)->i_private)
+-extern void *ns_get_path(struct path *path, struct task_struct *task,
++extern int ns_get_path(struct path *path, struct task_struct *task,
+ 			const struct proc_ns_operations *ns_ops);
+ typedef struct ns_common *ns_get_path_helper_t(void *);
+-extern void *ns_get_path_cb(struct path *path, ns_get_path_helper_t ns_get_cb,
++extern int ns_get_path_cb(struct path *path, ns_get_path_helper_t ns_get_cb,
+ 			    void *private_data);
+ 
+ extern int ns_get_name(char *buf, size_t size, struct task_struct *task,
+diff --git a/kernel/bpf/offload.c b/kernel/bpf/offload.c
+index ba635209ae9a..a2253a044f90 100644
+--- a/kernel/bpf/offload.c
++++ b/kernel/bpf/offload.c
+@@ -302,14 +302,14 @@ int bpf_prog_offload_info_fill(struct bpf_prog_info *info,
+ 	struct inode *ns_inode;
+ 	struct path ns_path;
+ 	char __user *uinsns;
+-	void *res;
++	int res;
+ 	u32 ulen;
+ 
+ 	res = ns_get_path_cb(&ns_path, bpf_prog_offload_info_fill_ns, &args);
+-	if (IS_ERR(res)) {
++	if (res) {
+ 		if (!info->ifindex)
+ 			return -ENODEV;
+-		return PTR_ERR(res);
++		return res;
+ 	}
+ 
+ 	down_read(&bpf_devs_lock);
+@@ -526,13 +526,13 @@ int bpf_map_offload_info_fill(struct bpf_map_info *info, struct bpf_map *map)
+ 	};
+ 	struct inode *ns_inode;
+ 	struct path ns_path;
+-	void *res;
++	int res;
+ 
+ 	res = ns_get_path_cb(&ns_path, bpf_map_offload_info_fill_ns, &args);
+-	if (IS_ERR(res)) {
++	if (res) {
+ 		if (!info->ifindex)
+ 			return -ENODEV;
+-		return PTR_ERR(res);
++		return res;
+ 	}
+ 
+ 	ns_inode = ns_path.dentry->d_inode;
+diff --git a/kernel/events/core.c b/kernel/events/core.c
+index aec8dba2bea4..39c5711e868a 100644
+--- a/kernel/events/core.c
++++ b/kernel/events/core.c
+@@ -7258,7 +7258,7 @@ static void perf_fill_ns_link_info(struct perf_ns_link_info *ns_link_info,
+ {
+ 	struct path ns_path;
+ 	struct inode *ns_inode;
+-	void *error;
++	int error;
+ 
+ 	error = ns_get_path(&ns_path, task, ns_ops);
+ 	if (!error) {
 -- 
-2.23.0
+2.24.0
