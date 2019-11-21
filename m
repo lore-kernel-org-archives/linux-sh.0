@@ -1,108 +1,83 @@
-From: Aleksa Sarai <cyphar@cyphar.com>
-Date: Sun, 17 Nov 2019 01:17:06 +0000
-Subject: [PATCH v17 06/13] namei: LOOKUP_NO_MAGICLINKS: block magic-link resolution
-Message-Id: <20191117011713.13032-7-cyphar@cyphar.com>
+From: Krzysztof Kozlowski <krzk@kernel.org>
+Date: Thu, 21 Nov 2019 03:20:53 +0000
+Subject: [PATCH v2] sh: Fix Kconfig indentation
+Message-Id: <1574306454-4008-1-git-send-email-krzk@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20191117011713.13032-1-cyphar@cyphar.com>
-In-Reply-To: <20191117011713.13032-1-cyphar@cyphar.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Al Viro <viro@zeniv.linux.org.uk>, Jeff Layton <jlayton@kernel.org>, "J. Bruce Fields" <bfields@fieldses.org>, Arnd Bergmann <arnd@arndb.de>, David Howells <dhowells@redhat.com>, Shuah Khan <shuah@kernel.org>, Shuah Khan <skhan@linuxfoundation.org>, Ingo Molnar <mingo@redhat.com>, Peter Zijlstra <peterz@infradead.org>, Alexei Starovoitov <ast@kernel.org>, Daniel Borkmann <daniel@iogearbox.net>, Martin KaFai Lau <kafai@fb.com>, Song Liu <songliubraving@fb.com>, Yonghong Song <yhs@fb.com>, Andrii Nakryiko <andriin@fb.com>, Jonathan Corbet <corbet@lwn.net>
-Cc: Aleksa Sarai <cyphar@cyphar.com>, Christian Brauner <christian.brauner@ubuntu.com>, David Drysdale <drysdale@google.com>, Andy Lutomirski <luto@kernel.org>, Linus Torvalds <torvalds@linux-foundation.org>, Eric Biederman <ebiederm@xmission.com>, Andrew Morton <akpm@linux-foundation.org>, Kees Cook <keescook@chromium.org>, Jann Horn <jannh@google.com>, Tycho Andersen <tycho@tycho.ws>, Chanho Min <chanho.min@lge.com>, Oleg Nesterov <oleg@redhat.com>, Rasmus Villemoes <linux@rasmusvillemoes.dk>, Alexander Shishkin <alexander.shishkin@linux.intel.com>, Jiri Olsa <jolsa@redhat.com>, Namhyung Kim <namhyung@kernel.org>, Christian Brauner <christian@brauner.io>, Aleksa Sarai <asarai@suse.de>, dev@opencontainers.org, containers@lists.linux-foundation.org, bpf@vger.kernel.org, netdev@vger.kernel.org, linux-alpha@vger.kernel.org, linux-api@vger.kernel.org, libc-alpha@sourceware.org, linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-doc@vger.kernel.org, linux-fsdevel@vger.kernel.org, linux-ia64@vger.kernel.org, linux-kernel@vger.kernel.org, linux-kselftest@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-xtensa@linux-xtensa.org, sparclinux@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: Krzysztof Kozlowski <krzk@kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
 
-/* Background. */
-There has always been a special class of symlink-like objects in procfs
-(and a few other pseudo-filesystems) which allow for non-lexical
-resolution of paths using nd_jump_link(). These "magic-links" do not
-follow traditional mount namespace boundaries, and have been used
-consistently in container escape attacks because they can be used to
-trick unsuspecting privileged processes into resolving unexpected paths.
+Adjust indentation from spaces to tab (+optional two spaces) as in
+coding style with command like:
+	$ sed -e 's/^        /\t/' -i */Kconfig
 
-It is also non-trivial for userspace to unambiguously avoid resolving
-magic-links, because they do not have a reliable indication that they
-are a magic-link (in order to verify them you'd have to manually open
-the path given by readlink(2) and then verify that the two file
-descriptors reference the same underlying file, which is plagued with
-possible race conditions or supplementary attack scenarios).
+Signed-off-by: Krzysztof Kozlowski <krzk@kernel.org>
 
-It would therefore be very helpful for userspace to be able to avoid
-these symlinks easily, thus hopefully removing a tool from attackers'
-toolboxes.
-
-This is part of a refresh of Al's AT_NO_JUMPS patchset[1] (which was a
-variation on David Drysdale's O_BENEATH patchset[2], which in turn was
-based on the Capsicum project[3]).
-
-/* Userspace API. */
-LOOKUP_NO_MAGICLINKS will be exposed to userspace through openat2(2).
-
-/* Semantics. */
-Unlike most other LOOKUP flags (most notably LOOKUP_FOLLOW),
-LOOKUP_NO_MAGICLINKS applies to all components of the path.
-
-With LOOKUP_NO_MAGICLINKS, any magic-link path component encountered
-during path resolution will yield -ELOOP. The handling of ~LOOKUP_FOLLOW
-for a trailing magic-link is identical to LOOKUP_NO_SYMLINKS.
-
-LOOKUP_NO_SYMLINKS implies LOOKUP_NO_MAGICLINKS.
-
-/* Testing. */
-LOOKUP_NO_MAGICLINKS is tested as part of the openat2(2) selftests.
-
-[1]: https://lore.kernel.org/lkml/20170429220414.GT29622@ZenIV.linux.org.uk/
-[2]: https://lore.kernel.org/lkml/1415094884-18349-1-git-send-email-drysdale@google.com/
-[3]: https://lore.kernel.org/lkml/1404124096-21445-1-git-send-email-drysdale@google.com/
-
-Cc: Christian Brauner <christian.brauner@ubuntu.com>
-Suggested-by: David Drysdale <drysdale@google.com>
-Suggested-by: Al Viro <viro@zeniv.linux.org.uk>
-Suggested-by: Andy Lutomirski <luto@kernel.org>
-Suggested-by: Linus Torvalds <torvalds@linux-foundation.org>
-Signed-off-by: Aleksa Sarai <cyphar@cyphar.com>
 ---
- fs/namei.c            | 10 +++++++++-
- include/linux/namei.h |  1 +
- 2 files changed, 10 insertions(+), 1 deletion(-)
 
-diff --git a/fs/namei.c b/fs/namei.c
-index 303731935eb2..415a897729c8 100644
---- a/fs/namei.c
-+++ b/fs/namei.c
-@@ -867,13 +867,21 @@ static int nd_jump_root(struct nameidata *nd)
-  */
- int nd_jump_link(struct path *path)
- {
-+	int error = -ELOOP;
- 	struct nameidata *nd = current->nameidata;
--	path_put(&nd->path);
+Changes since v1:
+1. Fix also 7-space and tab+1 space indentation issues.
+---
+ arch/sh/Kconfig        | 6 +++---
+ arch/sh/boards/Kconfig | 2 +-
+ arch/sh/mm/Kconfig     | 6 +++---
+ 3 files changed, 7 insertions(+), 7 deletions(-)
+
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index f356ee674d89..39048ab92f73 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -229,9 +229,9 @@ config ARCH_SHMOBILE
+ 	select PM
  
-+	if (unlikely(nd->flags & LOOKUP_NO_MAGICLINKS))
-+		goto err;
-+
-+	path_put(&nd->path);
- 	nd->path = *path;
- 	nd->inode = nd->path.dentry->d_inode;
- 	nd->flags |= LOOKUP_JUMPED;
- 	return 0;
-+
-+err:
-+	path_put(path);
-+	return error;
- }
+ config CPU_HAS_PMU
+-       depends on CPU_SH4 || CPU_SH4A
+-       default y
+-       bool
++	depends on CPU_SH4 || CPU_SH4A
++	default y
++	bool
  
- static inline void put_link(struct nameidata *nd)
-diff --git a/include/linux/namei.h b/include/linux/namei.h
-index 0d86e75c04a7..1573b8493d98 100644
---- a/include/linux/namei.h
-+++ b/include/linux/namei.h
-@@ -41,6 +41,7 @@ enum {LAST_NORM, LAST_ROOT, LAST_DOT, LAST_DOTDOT, LAST_BIND};
+ if SUPERH32
  
- /* Scoping flags for lookup. */
- #define LOOKUP_NO_SYMLINKS	0x010000 /* No symlink crossing. */
-+#define LOOKUP_NO_MAGICLINKS	0x020000 /* No nd_jump_link() crossing. */
+diff --git a/arch/sh/boards/Kconfig b/arch/sh/boards/Kconfig
+index cee24c308337..60a113114a76 100644
+--- a/arch/sh/boards/Kconfig
++++ b/arch/sh/boards/Kconfig
+@@ -231,7 +231,7 @@ config SH_MIGOR
+ 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+ 	help
+ 	  Select Migo-R if configuring for the SH7722 Migo-R platform
+-          by Renesas System Solutions Asia Pte. Ltd.
++	  by Renesas System Solutions Asia Pte. Ltd.
  
- extern int path_pts(struct path *path);
+ config SH_AP325RXA
+ 	bool "AP-325RXA"
+diff --git a/arch/sh/mm/Kconfig b/arch/sh/mm/Kconfig
+index 5c8a2ebfc720..130b2d235f0c 100644
+--- a/arch/sh/mm/Kconfig
++++ b/arch/sh/mm/Kconfig
+@@ -2,7 +2,7 @@
+ menu "Memory management options"
  
+ config MMU
+-        bool "Support for memory management hardware"
++	bool "Support for memory management hardware"
+ 	depends on !CPU_SH2
+ 	default y
+ 	help
+@@ -151,8 +151,8 @@ config ARCH_MEMORY_PROBE
+ 	depends on MEMORY_HOTPLUG
+ 
+ config IOREMAP_FIXED
+-       def_bool y
+-       depends on X2TLB || SUPERH64
++	def_bool y
++	depends on X2TLB || SUPERH64
+ 
+ config UNCACHED_MAPPING
+ 	bool
 -- 
-2.24.0
+2.7.4
