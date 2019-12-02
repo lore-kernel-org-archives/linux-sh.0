@@ -1,75 +1,94 @@
-From: Mike Rapoport <rppt@kernel.org>
-Date: Tue, 17 Dec 2019 18:32:14 +0000
-Subject: Re: [PATCH 2/2] sh: add support for folded p4d page tables
-Message-Id: <20191217183213.GA29446@rapoport-lnx>
+From: Bartosz Golaszewski <bgolaszewski@baylibre.com>
+Date: Mon, 02 Dec 2019 07:40:07 +0000
+Subject: Re: [PATCH v4 1/2] drivers: move the early platform device support to arch/sh
+Message-Id: <CAMpxmJW3i4zmJJ14Xg65+T27kF3sgR1WG0K3FUT6+jeKtiHx=Q@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20191217142150.10392-1-rppt@kernel.org>
- <20191217142150.10392-3-rppt@kernel.org>
- <CAMuHMdXYp7EBK446EsDt_HLDvc96TPP9oPZmsLtFL5VvhSejjw@mail.gmail.com>
-In-Reply-To: <CAMuHMdXYp7EBK446EsDt_HLDvc96TPP9oPZmsLtFL5VvhSejjw@mail.gmail.com>
+References: <20191003092913.10731-1-brgl@bgdev.pl> <20191003092912.G3pupKBmyct1r9ScP5Skuw9D-_ALcMVSnfMfHAlwe0Y@z>
+ <20191202041440.GA1628@roeck-us.net>
+In-Reply-To: <20191202041440.GA1628@roeck-us.net>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Linux-sh list <linux-sh@vger.kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Linux MM <linux-mm@kvack.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Mike Rapoport <rppt@linux.ibm.com>
+Content-Type: text/plain; charset="windows-1252"
+Content-Transfer-Encoding: quoted-printable
+To: Guenter Roeck <linux@roeck-us.net>
+Cc: Bartosz Golaszewski <brgl@bgdev.pl>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, "Rafael J . Wysocki" <rafael@kernel.org>, Daniel Lezcano <daniel.lezcano@linaro.org>, Thomas Gleixner <tglx@linutronix.de>, Jiri Slaby <jslaby@suse.com>, linux-sh@vger.kernel.org, LKML <linux-kernel@vger.kernel.org>, linux-serial@vger.kernel.org
 
-On Tue, Dec 17, 2019 at 06:59:43PM +0100, Geert Uytterhoeven wrote:
-> Hi Mike,
-> 
-> On Tue, Dec 17, 2019 at 3:23 PM Mike Rapoport <rppt@kernel.org> wrote:
-> > From: Mike Rapoport <rppt@linux.ibm.com>
+pon., 2 gru 2019 o 05:14 Guenter Roeck <linux@roeck-us.net> napisa=C5=82(a):
+>
+> On Thu, Oct 03, 2019 at 11:29:12AM +0200, Bartosz Golaszewski wrote:
+> > From: Bartosz Golaszewski <bgolaszewski@baylibre.com>
 > >
-> > Implement primitives necessary for the 4th level folding, add walks of p4d
-> > level where appropriate and remove usage of __ARCH_USE_5LEVEL_HACK.
+> > SuperH is the only user of the current implementation of early platform
+> > device support. We want to introduce a more robust approach to early
+> > probing. As the first step - move all the current early platform code
+> > to arch/sh.
 > >
-> > Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
-> 
-> Thanks for your patch!
-> 
-> > --- a/arch/sh/mm/fault.c
-> > +++ b/arch/sh/mm/fault.c
-> > @@ -65,7 +66,20 @@ static void show_pte(struct mm_struct *mm, unsigned long addr)
-> >                         break;
-> >                 }
+> > In order not to export internal drivers/base functions to arch code for
+> > this temporary solution - copy the two needed routines for driver
+> > matching from drivers/base/platform.c to arch/sh/drivers/platform_early=
+.c.
 > >
-> > -               pud = pud_offset(pgd, addr);
-> > +               p4d = p4d_offset(pgd, addr);
-> > +               if (PTRS_PER_P4D != 1)
-> > +                       printk(", *p4d=%0*Lx", (u32)(sizeof(*p4d) * 2),
-> > +                              (u64)p4d_val(*p4d));
-> 
-> This (and the prints below) is gonna cause lots of broken output lines.
-> You should use pr_cont() instead, and probably rebase on top of  my
-> "[PATCH 7/7] sh: fault: Modernize printing of kernel messages"
-> (https://lore.kernel.org/lkml/20191203162645.19950-8-geert+renesas@glider.be/).
+> > Also: call early_platform_cleanup() from subsys_initcall() so that it's
+> > called after all early devices are probed.
+> >
+> > Signed-off-by: Bartosz Golaszewski <bgolaszewski@baylibre.com>
+>
+> Wondering ... has anyone tested this patch on affected hardware ?
+> All my qemu boot tests (both sh and sheb) fail because of it.
+> Bisect log below.
+>
+> Guenter
+>
+> ---
+> # bad: [72c0870e3a05d9cd5466d08c3d2a3069ed0a2f9f] Merge branch 'for-linus=
+' of git://git.kernel.org/pub/scm/linux/kernel/git/dtor/input
+> # good: [89d57dddd7d319ded00415790a0bb3c954b7e386] Merge tag 'media/v5.5-=
+1' of git://git.kernel.org/pub/scm/linux/kernel/git/mchehab/linux-media
+> git bisect start 'HEAD' '89d57dddd7d3'
+> # good: [0a6cad5df541108cfd3fbd79eef48eb824c89bdc] Merge branch 'vmwgfx-c=
+oherent' of git://people.freedesktop.org/~thomash/linux into drm-next
+> git bisect good 0a6cad5df541108cfd3fbd79eef48eb824c89bdc
+> # bad: [9a3d7fd275be4559277667228902824165153c80] Merge tag 'driver-core-=
+5.5-rc1' of git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/driver-core
+> git bisect bad 9a3d7fd275be4559277667228902824165153c80
+> # good: [59274c7164807d27b24e6c068dfe734f7bea4623] Merge tag 'usb-5.5-rc1=
+' of git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/usb
+> git bisect good 59274c7164807d27b24e6c068dfe734f7bea4623
+> # good: [e71903106721dc53923e90aa484d78bc86c039a9] staging: mt7621-dma: a=
+lign to match open parenthesis
+> git bisect good e71903106721dc53923e90aa484d78bc86c039a9
+> # good: [8f56e4ebe05c26c30e167519273843476e39e244] Merge tag 'char-misc-5=
+.5-rc1' of git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/char-misc
+> git bisect good 8f56e4ebe05c26c30e167519273843476e39e244
+> # good: [8bde9f3d2a217d1635a7c7bdf8ad4c25c9a34b50] Merge tag 'iio-for-5.5=
+c' of https://git.kernel.org/pub/scm/linux/kernel/git/jic23/iio into stagin=
+g-next
+> git bisect good 8bde9f3d2a217d1635a7c7bdf8ad4c25c9a34b50
+> # bad: [0628cda318df6baec439ca6e6e274007492f1ccd] mac80211: Use debugfs_c=
+reate_xul() helper
+> git bisect bad 0628cda318df6baec439ca6e6e274007492f1ccd
+> # bad: [03324507e66c7664c754b1ef92c5c3be24c78aa2] driver core: Allow fwno=
+de_operations.add_links to differentiate errors
+> git bisect bad 03324507e66c7664c754b1ef92c5c3be24c78aa2
+> # bad: [313f5dbba41d905d59c820bb2d91ee6c661aff99] debugfs: remove return =
+value of debugfs_create_u16()
+> git bisect bad 313f5dbba41d905d59c820bb2d91ee6c661aff99
+> # good: [d4387cd117414ba80230f27a514be5ca4a09cfcc] of: property: Create d=
+evice links for all child-supplier depencencies
+> git bisect good d4387cd117414ba80230f27a514be5ca4a09cfcc
+> # bad: [c31e73121f4c1ec45a3e523ac6ce3ce6dafdcec1] base: soc: Handle custo=
+m soc information sysfs entries
+> git bisect bad c31e73121f4c1ec45a3e523ac6ce3ce6dafdcec1
+> # bad: [201e91091b1d47047f55580b5474e1239f4d17aa] sh: add the sh_ prefix =
+to early platform symbols
+> git bisect bad 201e91091b1d47047f55580b5474e1239f4d17aa
+> # bad: [507fd01d5333338753a1cc26322dfc9f856c109f] drivers: move the early=
+ platform device support to arch/sh
+> git bisect bad 507fd01d5333338753a1cc26322dfc9f856c109f
+> # first bad commit: [507fd01d5333338753a1cc26322dfc9f856c109f] drivers: m=
+ove the early platform device support to arch/sh
 
-Ok, will fix.	 
+Hi Guenter,
 
-> > +
-> > +               if (p4d_none(*p4d))
-> > +                       break;
-> > +
-> > +               if (p4d_bad(*p4d)) {
-> > +                       printk("(bad)");
-> > +                       break;
-> > +               }
-> > +
-> > +               pud = pud_offset(p4d, addr);
-> >                 if (PTRS_PER_PUD != 1)
-> >                         printk(", *pud=%0*Lx", (u32)(sizeof(*pud) * 2),
-> >                                (u64)pud_val(*pud));
-> 
-> Gr{oetje,eeting}s,
-> 
->                         Geert
-> 
-> -- 
-> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-> 
-> In personal conversations with technical people, I call myself a hacker. But
-> when I'm talking to journalists I just say "programmer" or something like that.
->                                 -- Linus Torvalds
+can you post some bootlogs? Is it the same problem everywhere?
 
--- 
-Sincerely yours,
-Mike.
+Bart
