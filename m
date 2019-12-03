@@ -1,61 +1,95 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 18 Dec 2019 19:48:11 +0000
-Subject: [PATCH 5/6] sh: sh7264: Remove bogus SSU GPIO function definitions
-Message-Id: <20191218194812.12741-6-geert+renesas@glider.be>
+Date: Tue, 03 Dec 2019 16:26:41 +0000
+Subject: [PATCH 3/7] sh: process: Fix broken lines in register dumps
+Message-Id: <20191203162645.19950-4-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20191218194812.12741-1-geert+renesas@glider.be>
-In-Reply-To: <20191218194812.12741-1-geert+renesas@glider.be>
+References: <20191203162645.19950-1-geert+renesas@glider.be>
+In-Reply-To: <20191203162645.19950-1-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Walleij <linus.walleij@linaro.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
-Cc: linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+Cc: Andrew Morton <akpm@linux-foundation.org>, Guenter Roeck <linux@roeck-us.net>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-SH7264 has no Synchronous Serial Communication Unit (SSU).
-Remove the bogus enum IDs, which caused holes in pinmux_func_gpios[].
+Rejoin the broken lines by using pr_cont().
+Convert the remaining printk() calls to pr_*() while at it.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-Presumably this has been copied from sh7203.
+Sample impact:
 
-The runtime-check under development reports:
-
-    sh7264_pfc: empty function gpio 118
-    sh7264_pfc: empty function gpio 119
-    sh7264_pfc: empty function gpio 120
-    sh7264_pfc: empty function gpio 121
-    sh7264_pfc: empty function gpio 122
-    sh7264_pfc: empty function gpio 123
-    sh7264_pfc: empty function gpio 124
-    sh7264_pfc: empty function gpio 125
-    sh7264_pfc: empty function gpio 126
-    sh7264_pfc: empty function gpio 127
-    sh7264_pfc: empty function gpio 128
-    sh7264_pfc: empty function gpio 129
-    sh7264_pfc: empty function gpio 130
-    sh7264_pfc: empty function gpio 131
-    sh7264_pfc: empty function gpio 132
-    sh7264_pfc: empty function gpio 133
+ PC is at dma_alloc_attrs+0x32/0xb0
+ PR is at platform_resource_setup_memory+0xbc/0x150
+-PC  : 8c043d06 SP  : 8f41fe9c SR  : 40000001
+-TEA : 00000000
+-R0  : 8c043cd4 R1  : 00000000 R2  : 00000000 R3  : 8c213e7c
++PC  : 8c043cfa SP  : 8f41fe9c SR  : 40000001 TEA : 8c00369e
++R0  : 8c043cc8 R1  : 00000000 R2  : 00000000 R3  : 8c213e7c
+ R4  : 8c29cc38 R5  : 00100000 R6  : 8f41fecc R7  : 00000cc0
+ R8  : 8c29cc38 R9  : 8c29720c R10 : 00000cc0 R11 : 00100000
+-R12 : 00000000 R13 : 8f41fecc R14 : 8c274773
+-MACH: 00000001 MACL: b16b1ded GBR : 09102e96 PR  : 8c2c0524
++R12 : 00000000 R13 : 8f41fecc R14 : 8c27479f
++MACH: 00000001 MACL: b16b1ded GBR : 004c5450 PR  : 8c2c0524
 ---
- arch/sh/include/cpu-sh2a/cpu/sh7264.h | 6 ------
- 1 file changed, 6 deletions(-)
+ arch/sh/kernel/process_32.c | 38 +++++++++++++++++--------------------
+ 1 file changed, 17 insertions(+), 21 deletions(-)
 
-diff --git a/arch/sh/include/cpu-sh2a/cpu/sh7264.h b/arch/sh/include/cpu-sh2a/cpu/sh7264.h
-index d12c1918684518b3..8a1338aaf10a5c41 100644
---- a/arch/sh/include/cpu-sh2a/cpu/sh7264.h
-+++ b/arch/sh/include/cpu-sh2a/cpu/sh7264.h
-@@ -112,12 +112,6 @@ enum {
- 	GPIO_FN_TIOC0D, GPIO_FN_TIOC0C, GPIO_FN_TIOC0B, GPIO_FN_TIOC0A,
- 	GPIO_FN_TCLKD, GPIO_FN_TCLKC, GPIO_FN_TCLKB, GPIO_FN_TCLKA,
+diff --git a/arch/sh/kernel/process_32.c b/arch/sh/kernel/process_32.c
+index a094633874c373ef..348c245124c2c227 100644
+--- a/arch/sh/kernel/process_32.c
++++ b/arch/sh/kernel/process_32.c
+@@ -30,34 +30,30 @@
  
--	/* SSU */
--	GPIO_FN_SCS0_PD, GPIO_FN_SSO0_PD, GPIO_FN_SSI0_PD, GPIO_FN_SSCK0_PD,
--	GPIO_FN_SCS0_PF, GPIO_FN_SSO0_PF, GPIO_FN_SSI0_PF, GPIO_FN_SSCK0_PF,
--	GPIO_FN_SCS1_PD, GPIO_FN_SSO1_PD, GPIO_FN_SSI1_PD, GPIO_FN_SSCK1_PD,
--	GPIO_FN_SCS1_PF, GPIO_FN_SSO1_PF, GPIO_FN_SSI1_PF, GPIO_FN_SSCK1_PF,
--
- 	/* SCIF */
- 	GPIO_FN_SCK0, GPIO_FN_SCK1, GPIO_FN_SCK2, GPIO_FN_SCK3,
- 	GPIO_FN_RXD0, GPIO_FN_RXD1, GPIO_FN_RXD2, GPIO_FN_RXD3,
+ void show_regs(struct pt_regs * regs)
+ {
+-	printk("\n");
++	pr_info("\n");
+ 	show_regs_print_info(KERN_DEFAULT);
+ 
+-	printk("PC is at %pS\n", (void *)instruction_pointer(regs));
+-	printk("PR is at %pS\n", (void *)regs->pr);
++	pr_info("PC is at %pS\n", (void *)instruction_pointer(regs));
++	pr_info("PR is at %pS\n", (void *)regs->pr);
+ 
+-	printk("PC  : %08lx SP  : %08lx SR  : %08lx ",
+-	       regs->pc, regs->regs[15], regs->sr);
++	pr_info("PC  : %08lx SP  : %08lx SR  : %08lx ", regs->pc,
++		regs->regs[15], regs->sr);
+ #ifdef CONFIG_MMU
+-	printk("TEA : %08x\n", __raw_readl(MMU_TEA));
++	pr_cont("TEA : %08x\n", __raw_readl(MMU_TEA));
+ #else
+-	printk("\n");
++	pr_cont("\n");
+ #endif
+ 
+-	printk("R0  : %08lx R1  : %08lx R2  : %08lx R3  : %08lx\n",
+-	       regs->regs[0],regs->regs[1],
+-	       regs->regs[2],regs->regs[3]);
+-	printk("R4  : %08lx R5  : %08lx R6  : %08lx R7  : %08lx\n",
+-	       regs->regs[4],regs->regs[5],
+-	       regs->regs[6],regs->regs[7]);
+-	printk("R8  : %08lx R9  : %08lx R10 : %08lx R11 : %08lx\n",
+-	       regs->regs[8],regs->regs[9],
+-	       regs->regs[10],regs->regs[11]);
+-	printk("R12 : %08lx R13 : %08lx R14 : %08lx\n",
+-	       regs->regs[12],regs->regs[13],
+-	       regs->regs[14]);
+-	printk("MACH: %08lx MACL: %08lx GBR : %08lx PR  : %08lx\n",
+-	       regs->mach, regs->macl, regs->gbr, regs->pr);
++	pr_info("R0  : %08lx R1  : %08lx R2  : %08lx R3  : %08lx\n",
++		regs->regs[0], regs->regs[1], regs->regs[2], regs->regs[3]);
++	pr_info("R4  : %08lx R5  : %08lx R6  : %08lx R7  : %08lx\n",
++		regs->regs[4], regs->regs[5], regs->regs[6], regs->regs[7]);
++	pr_info("R8  : %08lx R9  : %08lx R10 : %08lx R11 : %08lx\n",
++		regs->regs[8], regs->regs[9], regs->regs[10], regs->regs[11]);
++	pr_info("R12 : %08lx R13 : %08lx R14 : %08lx\n",
++		regs->regs[12], regs->regs[13], regs->regs[14]);
++	pr_info("MACH: %08lx MACL: %08lx GBR : %08lx PR  : %08lx\n",
++		regs->mach, regs->macl, regs->gbr, regs->pr);
+ 
+ 	show_trace(NULL, (unsigned long *)regs->regs[15], regs);
+ 	show_code(regs);
 -- 
 2.17.1
