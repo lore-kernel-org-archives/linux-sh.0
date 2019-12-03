@@ -1,50 +1,77 @@
-From: Michal Hocko <mhocko@kernel.org>
-Date: Wed, 11 Dec 2019 08:37:45 +0000
-Subject: Re: [PATCH 5/6] mm, memory_hotplug: Provide argument for the pgprot_t in arch_add_memory()
-Message-Id: <20191211083745.GA14655@dhcp22.suse.cz>
+From: Guenter Roeck <linux@roeck-us.net>
+Date: Tue, 03 Dec 2019 20:58:52 +0000
+Subject: [PATCH v2] drivers: Fix boot problem on SuperH
+Message-Id: <20191203205852.15659-1-linux@roeck-us.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20191209191346.5197-1-logang@deltatee.com>
- <20191209191346.5197-6-logang@deltatee.com>
- <ce50d9da-c60e-05a1-a86b-3bb3629de502@redhat.com>
- <f34a4c52-cc95-15ed-8a72-c05ab4fd6d33@deltatee.com>
- <CAPcyv4hpXCZxV5p7WaeGgE7ceujBBa5NOz9Z8fepDHOt6zHO2A@mail.gmail.com>
- <20191210100432.GC10404@dhcp22.suse.cz>
- <6da2b279-6a6d-d89c-a34c-962ed021d91d@redhat.com>
- <20191210103452.GF10404@dhcp22.suse.cz>
- <a9d6cfe8-39fb-accf-acdc-7cce5578bf2f@redhat.com>
- <297b7cc0-c5bc-a4c6-83eb-afc008395234@deltatee.com>
-In-Reply-To: <297b7cc0-c5bc-a4c6-83eb-afc008395234@deltatee.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Logan Gunthorpe <logang@deltatee.com>
-Cc: linux-s390 <linux-s390@vger.kernel.org>, Dave Hansen <dave.hansen@linux.intel.com>, linux-ia64@vger.kernel.org, Andrew Morton <akpm@linux-foundation.org>, Will Deacon <will@kernel.org>, David Hildenbrand <david@redhat.com>, Peter Zijlstra <peterz@infradead.org>, Catalin Marinas <catalin.marinas@arm.com>, Linux-sh <linux-sh@vger.kernel.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, platform-driver-x86@vger.kernel.org, Linux MM <linux-mm@kvack.org>, Ingo Molnar <mingo@redhat.com>, Thomas Gleixner <tglx@linutronix.de>, Andy Lutomirski <luto@kernel.org>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Borislav Petkov <bp@alien8.de>, Dan Williams <dan.j.williams@intel.com>, linuxppc-dev <linuxppc-dev@lists.ozlabs.org>, Christoph Hellwig <hch@lst.de>, Linux ARM <linux-arm-kernel@lists.infradead.org>
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Geert Uytterhoeven <geert+renesas@glider.be>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Guenter Roeck <linux@roeck-us.net>, Bartosz Golaszewski <brgl@bgdev.pl>
 
-On Tue 10-12-19 16:52:31, Logan Gunthorpe wrote:
-[...]
-> In my opinion, having a coder and reviewer see PAGE_KERNEL and ask if
-> that makes sense is a benefit. Having it hidden because we don't want
-> people to think about it is worse, harder to understand and results in
-> bugs that are more difficult to spot.
+SuperH images crash too eearly to display any console output. Bisect
+points to commit 507fd01d5333 ("drivers: move the early platform device
+support to arch/sh"). An analysis of that patch suggests that
+early_platform_cleanup() is now called at the wrong time. Restoring its
+call point fixes the problem.
 
-My experience would disagree here. We have several examples in the MM
-where an overly complex and versatile APIs led to suble bugs, a lot of
-copy&pasting and cargo cult programing (just look at the page allocator
-as a shiny example - e.g. gfp_flags). So I am always trying to be
-carefull here.
+Cc: Bartosz Golaszewski <brgl@bgdev.pl>
+Fixes: 507fd01d5333 ("drivers: move the early platform device support to arch/sh")
+Tested-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Guenter Roeck <linux@roeck-us.net>
+---
+v2: Use __init annotation for early_platform_cleanup()
 
-> Though, we may be overthinking this: arch_add_memory() is a low level
-> non-exported API that's currently used in exactly two places.
+ arch/sh/drivers/platform_early.c | 11 ++---------
+ drivers/base/platform.c          |  4 ++++
+ 2 files changed, 6 insertions(+), 9 deletions(-)
 
-This is a fair argument. Most users are and should be using
-add_memory().
-
-> I don't
-> think there's going to be many, if any, valid new use cases coming up
-> for it in the future. That's more what memremap_pages() is for.
-
-OK, fair enough. If this is indeed the simplest way forward then I will
-not stand in the way.
+diff --git a/arch/sh/drivers/platform_early.c b/arch/sh/drivers/platform_early.c
+index f6d148451dfc..f3dc3f25b3ff 100644
+--- a/arch/sh/drivers/platform_early.c
++++ b/arch/sh/drivers/platform_early.c
+@@ -325,9 +325,9 @@ int __init sh_early_platform_driver_probe(char *class_str,
+ }
+ 
+ /**
+- * sh_early_platform_cleanup - clean up early platform code
++ * early_platform_cleanup - clean up early platform code
+  */
+-static int __init sh_early_platform_cleanup(void)
++void __init early_platform_cleanup(void)
+ {
+ 	struct platform_device *pd, *pd2;
+ 
+@@ -337,11 +337,4 @@ static int __init sh_early_platform_cleanup(void)
+ 		list_del(&pd->dev.devres_head);
+ 		memset(&pd->dev.devres_head, 0, sizeof(pd->dev.devres_head));
+ 	}
+-
+-	return 0;
+ }
+-/*
+- * This must happen once after all early devices are probed but before probing
+- * real platform devices.
+- */
+-subsys_initcall(sh_early_platform_cleanup);
+diff --git a/drivers/base/platform.c b/drivers/base/platform.c
+index 7c532548b0a6..cf6b6b722e5c 100644
+--- a/drivers/base/platform.c
++++ b/drivers/base/platform.c
+@@ -1325,10 +1325,14 @@ struct device *platform_find_device_by_driver(struct device *start,
+ }
+ EXPORT_SYMBOL_GPL(platform_find_device_by_driver);
+ 
++void __weak __init early_platform_cleanup(void) { }
++
+ int __init platform_bus_init(void)
+ {
+ 	int error;
+ 
++	early_platform_cleanup();
++
+ 	error = device_register(&platform_bus);
+ 	if (error) {
+ 		put_device(&platform_bus);
 -- 
-Michal Hocko
-SUSE Labs
+2.17.1
