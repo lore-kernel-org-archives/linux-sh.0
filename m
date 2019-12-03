@@ -1,155 +1,327 @@
-From: Aleksa Sarai <cyphar@cyphar.com>
-Date: Fri, 06 Dec 2019 14:13:32 +0000
-Subject: [PATCH v18 07/13] namei: LOOKUP_NO_XDEV: block mountpoint crossing
-Message-Id: <20191206141338.23338-8-cyphar@cyphar.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 03 Dec 2019 16:26:39 +0000
+Subject: [PATCH 1/7] sh: kernel: disassemble: Fix broken lines in disassembly dumps
+Message-Id: <20191203162645.19950-2-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20191206141338.23338-1-cyphar@cyphar.com>
-In-Reply-To: <20191206141338.23338-1-cyphar@cyphar.com>
+References: <20191203162645.19950-1-geert+renesas@glider.be>
+In-Reply-To: <20191203162645.19950-1-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Al Viro <viro@zeniv.linux.org.uk>, Jeff Layton <jlayton@kernel.org>, "J. Bruce Fields" <bfields@fieldses.org>, Arnd Bergmann <arnd@arndb.de>, David Howells <dhowells@redhat.com>, Shuah Khan <shuah@kernel.org>, Shuah Khan <skhan@linuxfoundation.org>, Ingo Molnar <mingo@redhat.com>, Peter Zijlstra <peterz@infradead.org>, Alexei Starovoitov <ast@kernel.org>, Daniel Borkmann <daniel@iogearbox.net>, Martin KaFai Lau <kafai@fb.com>, Song Liu <songliubraving@fb.com>, Yonghong Song <yhs@fb.com>, Andrii Nakryiko <andriin@fb.com>, Jonathan Corbet <corbet@lwn.net>
-Cc: Aleksa Sarai <cyphar@cyphar.com>, Christian Brauner <christian.brauner@ubuntu.com>, David Drysdale <drysdale@google.com>, Andy Lutomirski <luto@kernel.org>, Linus Torvalds <torvalds@linux-foundation.org>, Eric Biederman <ebiederm@xmission.com>, Andrew Morton <akpm@linux-foundation.org>, Kees Cook <keescook@chromium.org>, Jann Horn <jannh@google.com>, Tycho Andersen <tycho@tycho.ws>, Chanho Min <chanho.min@lge.com>, Oleg Nesterov <oleg@redhat.com>, Rasmus Villemoes <linux@rasmusvillemoes.dk>, Alexander Shishkin <alexander.shishkin@linux.intel.com>, Jiri Olsa <jolsa@redhat.com>, Namhyung Kim <namhyung@kernel.org>, Christian Brauner <christian@brauner.io>, Aleksa Sarai <asarai@suse.de>, dev@opencontainers.org, containers@lists.linux-foundation.org, bpf@vger.kernel.org, netdev@vger.kernel.org, linux-alpha@vger.kernel.org, linux-api@vger.kernel.org, libc-alpha@sourceware.org, linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-doc@vger.kernel.org, linux-fsdevel@vger.kernel.org, linux-ia64@vger.kernel.org, linux-kernel@vger.kernel.org, linux-kselftest@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-xtensa@linux-xtensa.org, sparclinux@vger.kernel.org
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+Cc: Andrew Morton <akpm@linux-foundation.org>, Guenter Roeck <linux@roeck-us.net>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-/* Background. */
-The need to contain path operations within a mountpoint has been a
-long-standing usecase that userspace has historically implemented
-manually with liberal usage of stat(). find, rsync, tar and
-many other programs implement these semantics -- but it'd be much
-simpler to have a fool-proof way of refusing to open a path if it
-crosses a mountpoint.
+Rejoin the broken lines by using pr_cont().
+Convert the remaining printk() calls to pr_*() while at it.
 
-This is part of a refresh of Al's AT_NO_JUMPS patchset[1] (which was a
-variation on David Drysdale's O_BENEATH patchset[2], which in turn was
-based on the Capsicum project[3]).
-
-/* Userspace API. */
-LOOKUP_NO_XDEV will be exposed to userspace through openat2(2).
-
-/* Semantics. */
-Unlike most other LOOKUP flags (most notably LOOKUP_FOLLOW),
-LOOKUP_NO_XDEV applies to all components of the path.
-
-With LOOKUP_NO_XDEV, any path component which crosses a mount-point
-during path resolution (including "..") will yield an -EXDEV. Absolute
-paths, absolute symlinks, and magic-links will only yield an -EXDEV if
-the jump involved changing mount-points.
-
-/* Testing. */
-LOOKUP_NO_XDEV is tested as part of the openat2(2) selftests.
-
-[1]: https://lore.kernel.org/lkml/20170429220414.GT29622@ZenIV.linux.org.uk/
-[2]: https://lore.kernel.org/lkml/1415094884-18349-1-git-send-email-drysdale@google.com/
-[3]: https://lore.kernel.org/lkml/1404124096-21445-1-git-send-email-drysdale@google.com/
-
-Cc: Christian Brauner <christian.brauner@ubuntu.com>
-Suggested-by: David Drysdale <drysdale@google.com>
-Suggested-by: Al Viro <viro@zeniv.linux.org.uk>
-Suggested-by: Andy Lutomirski <luto@kernel.org>
-Suggested-by: Linus Torvalds <torvalds@linux-foundation.org>
-Signed-off-by: Aleksa Sarai <cyphar@cyphar.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- fs/namei.c            | 31 +++++++++++++++++++++++++++----
- include/linux/namei.h |  1 +
- 2 files changed, 28 insertions(+), 4 deletions(-)
+Sample impact:
 
-diff --git a/fs/namei.c b/fs/namei.c
-index 415a897729c8..321c8ad5d6b3 100644
---- a/fs/namei.c
-+++ b/fs/namei.c
-@@ -838,6 +838,11 @@ static inline void path_to_nameidata(const struct path *path,
- 
- static int nd_jump_root(struct nameidata *nd)
- {
-+	if (unlikely(nd->flags & LOOKUP_NO_XDEV)) {
-+		/* Absolute path arguments to path_init() are allowed. */
-+		if (nd->path.mnt != NULL && nd->path.mnt != nd->root.mnt)
-+			return -EXDEV;
-+	}
- 	if (!nd->root.mnt) {
- 		int error = set_root(nd);
- 		if (error)
-@@ -873,6 +878,12 @@ int nd_jump_link(struct path *path)
- 	if (unlikely(nd->flags & LOOKUP_NO_MAGICLINKS))
- 		goto err;
- 
-+	error = -EXDEV;
-+	if (unlikely(nd->flags & LOOKUP_NO_XDEV)) {
-+		if (nd->path.mnt != path->mnt)
-+			goto err;
-+	}
-+
- 	path_put(&nd->path);
- 	nd->path = *path;
- 	nd->inode = nd->path.dentry->d_inode;
-@@ -1280,12 +1291,16 @@ static int follow_managed(struct path *path, struct nameidata *nd)
- 		break;
- 	}
- 
--	if (need_mntput && path->mnt = mnt)
--		mntput(path->mnt);
-+	if (need_mntput) {
-+		if (path->mnt = mnt)
-+			mntput(path->mnt);
-+		if (unlikely(nd->flags & LOOKUP_NO_XDEV))
-+			ret = -EXDEV;
-+		else
-+			nd->flags |= LOOKUP_JUMPED;
-+	}
- 	if (ret = -EISDIR || !ret)
- 		ret = 1;
--	if (need_mntput)
--		nd->flags |= LOOKUP_JUMPED;
- 	if (unlikely(ret < 0))
- 		path_put_conditional(path, nd);
- 	return ret;
-@@ -1342,6 +1357,8 @@ static bool __follow_mount_rcu(struct nameidata *nd, struct path *path,
- 		mounted = __lookup_mnt(path->mnt, path->dentry);
- 		if (!mounted)
- 			break;
-+		if (unlikely(nd->flags & LOOKUP_NO_XDEV))
-+			return false;
- 		path->mnt = &mounted->mnt;
- 		path->dentry = mounted->mnt.mnt_root;
- 		nd->flags |= LOOKUP_JUMPED;
-@@ -1388,6 +1405,8 @@ static int follow_dotdot_rcu(struct nameidata *nd)
- 				return -ECHILD;
- 			if (&mparent->mnt = nd->path.mnt)
- 				break;
-+			if (unlikely(nd->flags & LOOKUP_NO_XDEV))
-+				return -ECHILD;
- 			/* we know that mountpoint was pinned */
- 			nd->path.dentry = mountpoint;
- 			nd->path.mnt = &mparent->mnt;
-@@ -1402,6 +1421,8 @@ static int follow_dotdot_rcu(struct nameidata *nd)
- 			return -ECHILD;
- 		if (!mounted)
- 			break;
-+		if (unlikely(nd->flags & LOOKUP_NO_XDEV))
-+			return -ECHILD;
- 		nd->path.mnt = &mounted->mnt;
- 		nd->path.dentry = mounted->mnt.mnt_root;
- 		inode = nd->path.dentry->d_inode;
-@@ -1500,6 +1521,8 @@ static int follow_dotdot(struct nameidata *nd)
+ Code:
+-  8c043d00:
+-bf.s
+-8c043d08
+-
+-  8c043d02:
+-tst
+-r2
+-,
+-r2
+-
+-  8c043d04:
+-bf
+-8c043d08
+-
+-->8c043d06:
+-trapa
+-#62
+-
+-  8c043d08:
+-mov.l
+-8c043d78 <dma_alloc_attrs+0xa4/0xb0>
+-,
+-r0
+-  ! 8c044d14 <dma_alloc_from_dev_coherent+0x0/0x38>
+-
+-  8c043d0a:
+-mov
+-r15
+-,
+-r7
+-
+-  8c043d0c:
+-mov
+-r13
+-,
+-r6
+-
+-  8c043d0e:
+-add
+-#4
+-,
+-r7
+-
+-  8c043d10:
+-mov
+-r11
+-,
+-r5
+-
++  8c043cf4:  bf.s      8c043cfc
++  8c043cf6:  tst       r2, r2
++  8c043cf8:  bf        8c043cfc
++->8c043cfa:  trapa     #62
++  8c043cfc:  mov.l     8c043d6c <dma_alloc_attrs+0xa4/0xb0>, r0  ! 8c044d08 <dma_alloc_from_dev_coherent+0x0/0x38>
++  8c043cfe:  mov       r15, r7
++  8c043d00:  mov       r13, r6
++  8c043d02:  add       #4, r7
++  8c043d04:  mov       r11, r5
+---
+ arch/sh/kernel/disassemble.c | 103 ++++++++++++++++++-----------------
+ 1 file changed, 52 insertions(+), 51 deletions(-)
+
+diff --git a/arch/sh/kernel/disassemble.c b/arch/sh/kernel/disassemble.c
+index 845543780cc55014..08e1af63edd9623c 100644
+--- a/arch/sh/kernel/disassemble.c
++++ b/arch/sh/kernel/disassemble.c
+@@ -376,148 +376,148 @@ static void print_sh_insn(u32 memaddr, u16 insn)
  		}
- 		if (!follow_up(&nd->path))
- 			break;
-+		if (unlikely(nd->flags & LOOKUP_NO_XDEV))
-+			return -EXDEV;
+ 
+ 	ok:
+-		printk("%-8s  ", op->name);
++		pr_cont("%-8s  ", op->name);
+ 		lastsp = (op->arg[0] = A_END);
+ 		disp_pc = 0;
+ 		for (n = 0; n < 6 && op->arg[n] != A_END; n++) {
+ 			if (n && op->arg[1] != A_END)
+-				printk(", ");
++				pr_cont(", ");
+ 			switch (op->arg[n]) {
+ 			case A_IMM:
+-				printk("#%d", (char)(imm));
++				pr_cont("#%d", (char)(imm));
+ 				break;
+ 			case A_R0:
+-				printk("r0");
++				pr_cont("r0");
+ 				break;
+ 			case A_REG_N:
+-				printk("r%d", rn);
++				pr_cont("r%d", rn);
+ 				break;
+ 			case A_INC_N:
+-				printk("@r%d+", rn);
++				pr_cont("@r%d+", rn);
+ 				break;
+ 			case A_DEC_N:
+-				printk("@-r%d", rn);
++				pr_cont("@-r%d", rn);
+ 				break;
+ 			case A_IND_N:
+-				printk("@r%d", rn);
++				pr_cont("@r%d", rn);
+ 				break;
+ 			case A_DISP_REG_N:
+-				printk("@(%d,r%d)", imm, rn);
++				pr_cont("@(%d,r%d)", imm, rn);
+ 				break;
+ 			case A_REG_M:
+-				printk("r%d", rm);
++				pr_cont("r%d", rm);
+ 				break;
+ 			case A_INC_M:
+-				printk("@r%d+", rm);
++				pr_cont("@r%d+", rm);
+ 				break;
+ 			case A_DEC_M:
+-				printk("@-r%d", rm);
++				pr_cont("@-r%d", rm);
+ 				break;
+ 			case A_IND_M:
+-				printk("@r%d", rm);
++				pr_cont("@r%d", rm);
+ 				break;
+ 			case A_DISP_REG_M:
+-				printk("@(%d,r%d)", imm, rm);
++				pr_cont("@(%d,r%d)", imm, rm);
+ 				break;
+ 			case A_REG_B:
+-				printk("r%d_bank", rb);
++				pr_cont("r%d_bank", rb);
+ 				break;
+ 			case A_DISP_PC:
+ 				disp_pc = 1;
+ 				disp_pc_addr = imm + 4 + (memaddr & relmask);
+-				printk("%08x <%pS>", disp_pc_addr,
+-				       (void *)disp_pc_addr);
++				pr_cont("%08x <%pS>", disp_pc_addr,
++					(void *)disp_pc_addr);
+ 				break;
+ 			case A_IND_R0_REG_N:
+-				printk("@(r0,r%d)", rn);
++				pr_cont("@(r0,r%d)", rn);
+ 				break;
+ 			case A_IND_R0_REG_M:
+-				printk("@(r0,r%d)", rm);
++				pr_cont("@(r0,r%d)", rm);
+ 				break;
+ 			case A_DISP_GBR:
+-				printk("@(%d,gbr)",imm);
++				pr_cont("@(%d,gbr)", imm);
+ 				break;
+ 			case A_R0_GBR:
+-				printk("@(r0,gbr)");
++				pr_cont("@(r0,gbr)");
+ 				break;
+ 			case A_BDISP12:
+ 			case A_BDISP8:
+-				printk("%08x", imm + memaddr);
++				pr_cont("%08x", imm + memaddr);
+ 				break;
+ 			case A_SR:
+-				printk("sr");
++				pr_cont("sr");
+ 				break;
+ 			case A_GBR:
+-				printk("gbr");
++				pr_cont("gbr");
+ 				break;
+ 			case A_VBR:
+-				printk("vbr");
++				pr_cont("vbr");
+ 				break;
+ 			case A_SSR:
+-				printk("ssr");
++				pr_cont("ssr");
+ 				break;
+ 			case A_SPC:
+-				printk("spc");
++				pr_cont("spc");
+ 				break;
+ 			case A_MACH:
+-				printk("mach");
++				pr_cont("mach");
+ 				break;
+ 			case A_MACL:
+-				printk("macl");
++				pr_cont("macl");
+ 				break;
+ 			case A_PR:
+-				printk("pr");
++				pr_cont("pr");
+ 				break;
+ 			case A_SGR:
+-				printk("sgr");
++				pr_cont("sgr");
+ 				break;
+ 			case A_DBR:
+-				printk("dbr");
++				pr_cont("dbr");
+ 				break;
+ 			case FD_REG_N:
+ 			case F_REG_N:
+-				printk("fr%d", rn);
++				pr_cont("fr%d", rn);
+ 				break;
+ 			case F_REG_M:
+-				printk("fr%d", rm);
++				pr_cont("fr%d", rm);
+ 				break;
+ 			case DX_REG_N:
+ 				if (rn & 1) {
+-					printk("xd%d", rn & ~1);
++					pr_cont("xd%d", rn & ~1);
+ 					break;
+ 				}
+ 				/* else, fall through */
+ 			case D_REG_N:
+-				printk("dr%d", rn);
++				pr_cont("dr%d", rn);
+ 				break;
+ 			case DX_REG_M:
+ 				if (rm & 1) {
+-					printk("xd%d", rm & ~1);
++					pr_cont("xd%d", rm & ~1);
+ 					break;
+ 				}
+ 				/* else, fall through */
+ 			case D_REG_M:
+-				printk("dr%d", rm);
++				pr_cont("dr%d", rm);
+ 				break;
+ 			case FPSCR_M:
+ 			case FPSCR_N:
+-				printk("fpscr");
++				pr_cont("fpscr");
+ 				break;
+ 			case FPUL_M:
+ 			case FPUL_N:
+-				printk("fpul");
++				pr_cont("fpul");
+ 				break;
+ 			case F_FR0:
+-				printk("fr0");
++				pr_cont("fr0");
+ 				break;
+ 			case V_REG_N:
+-				printk("fv%d", rn*4);
++				pr_cont("fv%d", rn*4);
+ 				break;
+ 			case V_REG_M:
+-				printk("fv%d", rm*4);
++				pr_cont("fv%d", rm*4);
+ 				break;
+ 			case XMTRX_M4:
+-				printk("xmtrx");
++				pr_cont("xmtrx");
+ 				break;
+ 			default:
+ 				return;
+@@ -532,7 +532,7 @@ static void print_sh_insn(u32 memaddr, u16 insn)
+ 			else
+ 				__get_user(val, (u32 *)disp_pc_addr);
+ 
+-			printk("  ! %08x <%pS>", val, (void *)val);
++			pr_cont("  ! %08x <%pS>", val, (void *)val);
+ 		}
+ 
+ 		return;
+@@ -541,7 +541,7 @@ static void print_sh_insn(u32 memaddr, u16 insn)
+ 
  	}
- 	follow_mount(&nd->path);
- 	nd->inode = nd->path.dentry->d_inode;
-diff --git a/include/linux/namei.h b/include/linux/namei.h
-index 1573b8493d98..25ee88c4acb1 100644
---- a/include/linux/namei.h
-+++ b/include/linux/namei.h
-@@ -42,6 +42,7 @@ enum {LAST_NORM, LAST_ROOT, LAST_DOT, LAST_DOTDOT, LAST_BIND};
- /* Scoping flags for lookup. */
- #define LOOKUP_NO_SYMLINKS	0x010000 /* No symlink crossing. */
- #define LOOKUP_NO_MAGICLINKS	0x020000 /* No nd_jump_link() crossing. */
-+#define LOOKUP_NO_XDEV		0x040000 /* No mountpoint crossing. */
  
- extern int path_pts(struct path *path);
+-	printk(".word 0x%x%x%x%x", nibs[0], nibs[1], nibs[2], nibs[3]);
++	pr_info(".word 0x%x%x%x%x", nibs[0], nibs[1], nibs[2], nibs[3]);
+ }
  
+ void show_code(struct pt_regs *regs)
+@@ -552,20 +552,21 @@ void show_code(struct pt_regs *regs)
+ 	if (regs->pc & 0x1)
+ 		return;
+ 
+-	printk("Code:\n");
++	pr_info("Code:\n");
+ 
+ 	for (i = -3 ; i < 6 ; i++) {
+ 		unsigned short insn;
+ 
+ 		if (__get_user(insn, pc + i)) {
+-			printk(" (Bad address in pc)\n");
++			pr_err(" (Bad address in pc)\n");
+ 			break;
+ 		}
+ 
+-		printk("%s%08lx:  ", (i ? "  ": "->"), (unsigned long)(pc + i));
++		pr_info("%s%08lx:  ", (i ? "  " : "->"),
++			(unsigned long)(pc + i));
+ 		print_sh_insn((unsigned long)(pc + i), insn);
+-		printk("\n");
++		pr_cont("\n");
+ 	}
+ 
+-	printk("\n");
++	pr_info("\n");
+ }
 -- 
-2.24.0
+2.17.1
