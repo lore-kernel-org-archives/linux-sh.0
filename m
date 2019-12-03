@@ -1,111 +1,75 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 18 Dec 2019 07:33:44 +0000
-Subject: [PATCH] sh: fixup strncpy()
-Message-Id: <87zhfqhyuf.wl-kuninori.morimoto.gx@renesas.com>
+From: Guenter Roeck <linux@roeck-us.net>
+Date: Tue, 03 Dec 2019 14:46:31 +0000
+Subject: [PATCH] drivers: Fix boot problem on SuperH
+Message-Id: <20191203144631.6629-1-linux@roeck-us.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <8736dijdit.wl-kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <8736dijdit.wl-kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Karl Nasrallah <knnspeed@aol.com>
-Cc: Linux-SH <linux-sh@vger.kernel.org>, Linux-Renesas <linux-renesas-soc@vger.kernel.org>
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert@linux-m68k.org>, Guenter Roeck <linux@roeck-us.net>, Bartosz Golaszewski <brgl@bgdev.pl>
 
-From: Karl Nasrallah <knnspeed@aol.com>
+SuperH images crash too eearly to display any console output. Bisect
+points to commit 507fd01d5333 ("drivers: move the early platform device
+support to arch/sh"). An analysis of that patch suggests that
+early_platform_cleanup() is now called at the wrong time. Restoring its
+call point fixes the problem.
 
-Current SH will get below warning at strncpy()
-
-In file included from ${LINUX}/arch/sh/include/asm/string.h:3,
-                 from ${LINUX}/include/linux/string.h:20,
-                 from ${LINUX}/include/linux/bitmap.h:9,
-                 from ${LINUX}/include/linux/nodemask.h:95,
-                 from ${LINUX}/include/linux/mmzone.h:17,
-                 from ${LINUX}/include/linux/gfp.h:6,
-                 from ${LINUX}/innclude/linux/slab.h:15,
-                 from ${LINUX}/linux/drivers/mmc/host/vub300.c:38:
-${LINUX}/drivers/mmc/host/vub300.c: In function 'new_system_port_status':
-${LINUX}/arch/sh/include/asm/string_32.h:51:42: warning: array subscript\
-  80 is above array bounds of 'char[26]' [-Warray-bounds]
-   : "0" (__dest), "1" (__src), "r" (__src+__n)
-                                     ~~~~~^~~~
-
-This patch fixup it
-
-Signed-off-by: Karl Nasrallah <knnspeed@aol.com>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: Bartosz Golaszewski <brgl@bgdev.pl>
+Fixes: 507fd01d5333 ("drivers: move the early platform device support to arch/sh")
+Tested-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Guenter Roeck <linux@roeck-us.net>
 ---
+ arch/sh/drivers/platform_early.c | 11 ++---------
+ drivers/base/platform.c          |  4 ++++
+ 2 files changed, 6 insertions(+), 9 deletions(-)
 
-This is Karl's 2nd pattern
-
- arch/sh/include/asm/string_32.h | 54 ++++++++++++++++++++++++++---------------
- 1 file changed, 35 insertions(+), 19 deletions(-)
-
-diff --git a/arch/sh/include/asm/string_32.h b/arch/sh/include/asm/string_32.h
-index 3558b1d..5a398dd 100644
---- a/arch/sh/include/asm/string_32.h
-+++ b/arch/sh/include/asm/string_32.h
-@@ -31,27 +31,43 @@ static inline char *strcpy(char *__dest, const char *__src)
- #define __HAVE_ARCH_STRNCPY
- static inline char *strncpy(char *__dest, const char *__src, size_t __n)
- {
--	register char *__xdest = __dest;
--	unsigned long __dummy;
-+	char * retval = __dest;
-+	const char * __dest_end = __dest + __n - 1;
- 
-+	/* size_t is always unsigned */
- 	if (__n = 0)
--		return __xdest;
--
--	__asm__ __volatile__(
--		"1:\n"
--		"mov.b	@%1+, %2\n\t"
--		"mov.b	%2, @%0\n\t"
--		"cmp/eq	#0, %2\n\t"
--		"bt/s	2f\n\t"
--		" cmp/eq	%5,%1\n\t"
--		"bf/s	1b\n\t"
--		" add	#1, %0\n"
--		"2:"
--		: "=r" (__dest), "=r" (__src), "=&z" (__dummy)
--		: "0" (__dest), "1" (__src), "r" (__src+__n)
--		: "memory", "t");
--
--	return __xdest;
-+		return retval;
-+
-+	/*
-+	 * Some notes:
-+	 * - cmp/eq #imm8,r0 is its own instruction
-+	 * - incrementing dest and comparing to dest_end handles the size parameter in only one instruction
-+	 * - mov.b R0,@Rn+ is SH2A only, but we can fill a delay slot with "add #1,%[dest]"
-+	 */
-+
-+	__asm__ __volatile__ (
-+		"strncpy_start:\n\t"
-+		"mov.b @%[src]+,r0\n\t"
-+		"cmp/eq #0,r0\n\t"
-+		"bt.s strncpy_pad\n\t"
-+		"cmp/eq %[dest],%[dest_end]\n\t"
-+		"bt.s strncpy_end\n\t"
-+		"mov.b r0,@%[dest]\n\t"
-+		"bra strncpy_start\n\t"
-+		"add #1,%[dest]\n\t"
-+		"strncpy_pad:\n\t"
-+		"bt.s strncpy_end\n\t"
-+		"mov.b r0,@%[dest]\n\t"
-+		"add #1,%[dest]\n\t"
-+		"bra strncpy_pad\n\t"
-+		"cmp/eq %[dest],%[dest_end]\n\t"
-+		"strncpy_end:\n\t"
-+		: [src] "+r" (__src), [dest] "+r" (__dest)
-+		: [dest_end] "r" (__dest_end)
-+		: "r0","t","memory"
-+		);
-+
-+	return retval;
+diff --git a/arch/sh/drivers/platform_early.c b/arch/sh/drivers/platform_early.c
+index f6d148451dfc..16f33bffd8fc 100644
+--- a/arch/sh/drivers/platform_early.c
++++ b/arch/sh/drivers/platform_early.c
+@@ -325,9 +325,9 @@ int __init sh_early_platform_driver_probe(char *class_str,
  }
  
- #define __HAVE_ARCH_STRCMP
+ /**
+- * sh_early_platform_cleanup - clean up early platform code
++ * early_platform_cleanup - clean up early platform code
+  */
+-static int __init sh_early_platform_cleanup(void)
++void early_platform_cleanup(void)
+ {
+ 	struct platform_device *pd, *pd2;
+ 
+@@ -337,11 +337,4 @@ static int __init sh_early_platform_cleanup(void)
+ 		list_del(&pd->dev.devres_head);
+ 		memset(&pd->dev.devres_head, 0, sizeof(pd->dev.devres_head));
+ 	}
+-
+-	return 0;
+ }
+-/*
+- * This must happen once after all early devices are probed but before probing
+- * real platform devices.
+- */
+-subsys_initcall(sh_early_platform_cleanup);
+diff --git a/drivers/base/platform.c b/drivers/base/platform.c
+index 7c532548b0a6..3ba153e356ee 100644
+--- a/drivers/base/platform.c
++++ b/drivers/base/platform.c
+@@ -1325,10 +1325,14 @@ struct device *platform_find_device_by_driver(struct device *start,
+ }
+ EXPORT_SYMBOL_GPL(platform_find_device_by_driver);
+ 
++void __weak early_platform_cleanup(void) { }
++
+ int __init platform_bus_init(void)
+ {
+ 	int error;
+ 
++	early_platform_cleanup();
++
+ 	error = device_register(&platform_bus);
+ 	if (error) {
+ 		put_device(&platform_bus);
 -- 
-2.7.4
+2.17.1
