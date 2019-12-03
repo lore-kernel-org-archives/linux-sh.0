@@ -1,51 +1,46 @@
-From: Logan Gunthorpe <logang@deltatee.com>
-Date: Mon, 09 Dec 2019 19:13:46 +0000
-Subject: [PATCH 6/6] mm/memremap: Set caching mode for PCI P2PDMA memory to WC
-Message-Id: <20191209191346.5197-7-logang@deltatee.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 03 Dec 2019 16:26:42 +0000
+Subject: [PATCH 4/7] sh: sh2007: Modernize printing of kernel messages
+Message-Id: <20191203162645.19950-5-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20191209191346.5197-1-logang@deltatee.com>
-In-Reply-To: <20191209191346.5197-1-logang@deltatee.com>
+References: <20191203162645.19950-1-geert+renesas@glider.be>
+In-Reply-To: <20191203162645.19950-1-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, platform-driver-x86@vger.kernel.org, linux-mm@kvack.org, Christoph Hellwig <hch@lst.de>, Dan Williams <dan.j.williams@intel.com>, Andrew Morton <akpm@linux-foundation.org>
-Cc: Peter Zijlstra <peterz@infradead.org>, Catalin Marinas <catalin.marinas@arm.com>, Dave Hansen <dave.hansen@linux.intel.com>, Jason Gunthorpe <jgg@ziepe.ca>, Logan Gunthorpe <logang@deltatee.com>, Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>, Andy Lutomirski <luto@kernel.org>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Thomas Gleixner <tglx@linutronix.de>, Will Deacon <will@kernel.org>
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+Cc: Andrew Morton <akpm@linux-foundation.org>, Guenter Roeck <linux@roeck-us.net>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-PCI BAR IO memory should never be mapped as WB, however prior to this
-the PAT bits were set WB and it was typically overridden by MTRR
-registers set by the firmware.
+  - Convert from printk() to pr_*(),
+  - Add missing continuation.
 
-Set PCI P2PDMA memory to be WC (writecombining) as the only current
-user (the NVMe CMB) was originally mapped WC before the P2PDMA code
-replaced the mapping with devm_memremap_pages().
-
-Future use-cases may need to generalize this by adding flags to
-select the caching type, as some P2PDMA cases will not want WC.
-However, those use-cases are not upstream yet and this can be changed
-when they arrive.
-
-Cc: Dan Williams <dan.j.williams@intel.com>
-Cc: Christoph Hellwig <hch@lst.de>
-Cc: Jason Gunthorpe <jgg@ziepe.ca>
-Signed-off-by: Logan Gunthorpe <logang@deltatee.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- mm/memremap.c | 3 +++
- 1 file changed, 3 insertions(+)
+Compile-tested only.
+---
+ arch/sh/boards/board-sh2007.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/mm/memremap.c b/mm/memremap.c
-index 4edcca074e15..ced32593e4a7 100644
---- a/mm/memremap.c
-+++ b/mm/memremap.c
-@@ -187,7 +187,10 @@ void *memremap_pages(struct dev_pagemap *pgmap, int nid)
- 		}
- 		break;
- 	case MEMORY_DEVICE_DEVDAX:
-+		need_devmap_managed = false;
-+		break;
- 	case MEMORY_DEVICE_PCI_P2PDMA:
-+		pgprot = pgprot_writecombine(pgprot);
- 		need_devmap_managed = false;
- 		break;
- 	default:
+diff --git a/arch/sh/boards/board-sh2007.c b/arch/sh/boards/board-sh2007.c
+index ef9c87deeb08828c..6ea85e4808512f94 100644
+--- a/arch/sh/boards/board-sh2007.c
++++ b/arch/sh/boards/board-sh2007.c
+@@ -126,14 +126,14 @@ static void __init sh2007_init_irq(void)
+  */
+ static void __init sh2007_setup(char **cmdline_p)
+ {
+-	printk(KERN_INFO "SH-2007 Setup...");
++	pr_info("SH-2007 Setup...");
+ 
+ 	/* setup wait control registers for area 5 */
+ 	__raw_writel(CS5BCR_D, CS5BCR);
+ 	__raw_writel(CS5WCR_D, CS5WCR);
+ 	__raw_writel(CS5PCR_D, CS5PCR);
+ 
+-	printk(KERN_INFO " done.\n");
++	pr_cont(" done.\n");
+ }
+ 
+ /*
 -- 
-2.20.1
+2.17.1
