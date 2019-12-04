@@ -1,61 +1,98 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 04 Dec 2019 15:17:26 +0000
+From: Peter Zijlstra <peterz@infradead.org>
+Date: Wed, 04 Dec 2019 16:41:43 +0000
 Subject: Re: [PATCH v6 10/18] sh/tlb: Convert SH to generic mmu_gather
-Message-Id: <CAMuHMdVKcTum5vMmT1TdttVnGnhnQihGU1jrguF26TW7ZeOJPg@mail.gmail.com>
+Message-Id: <20191204164143.GB2810@hirez.programming.kicks-ass.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190219103148.192029670@infradead.org> <20190219103233.443069009@infradead.org>
+References: <20190219103148.192029670@infradead.org>
+ <20190219103233.443069009@infradead.org>
  <CAMuHMdW3nwckjA9Bt-_Dmf50B__sZH+9E5s0_ziK1U_y9onN=g@mail.gmail.com>
- <20191204104733.GR2844@hirez.programming.kicks-ass.net> <CAMuHMdXs_Fm93t=O9jJPLxcREZy-T53Z_U_RtHcvaWyV+ESdjg@mail.gmail.com>
- <156fa92f-4c5a-08bd-bcda-20029724c0de@roeck-us.net>
-In-Reply-To: <156fa92f-4c5a-08bd-bcda-20029724c0de@roeck-us.net>
+ <20191204104733.GR2844@hirez.programming.kicks-ass.net>
+ <CAMuHMdXs_Fm93t=O9jJPLxcREZy-T53Z_U_RtHcvaWyV+ESdjg@mail.gmail.com>
+ <20191204133454.GW2844@hirez.programming.kicks-ass.net>
+ <CAMuHMdVnhNFBqPQXKYCQbCnoQjZPSXRkuxbsbaguZ7_TcXXmVg@mail.gmail.com>
+In-Reply-To: <CAMuHMdVnhNFBqPQXKYCQbCnoQjZPSXRkuxbsbaguZ7_TcXXmVg@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: Guenter Roeck <linux@roeck-us.net>
-Cc: Peter Zijlstra <peterz@infradead.org>, Will Deacon <will.deacon@arm.com>, "Aneesh Kumar K.V" <aneesh.kumar@linux.vnet.ibm.com>, Andrew Morton <akpm@linux-foundation.org>, Nicholas Piggin <npiggin@gmail.com>, Linux-Arch <linux-arch@vger.kernel.org>, Linux MM <linux-mm@kvack.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Russell King <linux@armlinux.org.uk>, Heiko Carstens <heiko.carstens@de.ibm.com>, Rik van Riel <riel@surriel.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Linux-sh list <linux-sh@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: Will Deacon <will.deacon@arm.com>, "Aneesh Kumar K.V" <aneesh.kumar@linux.vnet.ibm.com>, Andrew Morton <akpm@linux-foundation.org>, Nicholas Piggin <npiggin@gmail.com>, Linux-Arch <linux-arch@vger.kernel.org>, Linux MM <linux-mm@kvack.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Russell King <linux@armlinux.org.uk>, Heiko Carstens <heiko.carstens@de.ibm.com>, Rik van Riel <riel@surriel.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Linux-sh list <linux-sh@vger.kernel.org>, Guenter Roeck <linux@roeck-us.net>
 
-Hi G=C3=BCnter,
+On Wed, Dec 04, 2019 at 04:07:53PM +0100, Geert Uytterhoeven wrote:
+> On Wed, Dec 4, 2019 at 2:35 PM Peter Zijlstra <peterz@infradead.org> wrote:
 
-On Wed, Dec 4, 2019 at 2:22 PM Guenter Roeck <linux@roeck-us.net> wrote:
-> On 12/4/19 4:32 AM, Geert Uytterhoeven wrote:
-> > On Wed, Dec 4, 2019 at 11:48 AM Peter Zijlstra <peterz@infradead.org> w=
-rote:
-> >> On Tue, Dec 03, 2019 at 12:19:00PM +0100, Geert Uytterhoeven wrote:
-> >>> On Tue, Feb 19, 2019 at 11:35 AM Peter Zijlstra <peterz@infradead.org=
-> wrote:
-> >>>> Generic mmu_gather provides everything SH needs (range tracking and
-> >>>> cache coherency).
+> > Does this fare better?
+> 
+> Yes. Migo-R is happy again.
+> Tested-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> 
+> > --- a/arch/sh/include/asm/pgalloc.h
+> > +++ b/arch/sh/include/asm/pgalloc.h
+> > @@ -36,9 +36,7 @@ do {                                                  \
+> >  #if CONFIG_PGTABLE_LEVELS > 2
+> >  #define __pmd_free_tlb(tlb, pmdp, addr)                        \
+> >  do {                                                   \
+> > -       struct page *page = virt_to_page(pmdp);         \
+> > -       pgtable_pmd_page_dtor(page);                    \
+> > -       tlb_remove_page((tlb), page);                   \
+> > +       pmd_free((tlb)->mm, (pmdp));                    \
+> >  } while (0);
+> >  #endif
 
-> >>> I got remote access to an SH7722-based Migo-R again, which spews a lo=
-ng
-> >>> sequence of BUGs during userspace startup.  I've bisected this to com=
-mit
-> >>> c5b27a889da92f4a ("sh/tlb: Convert SH to generic mmu_gather").
-> >>
-> >> Whoopsy.. also, is this really the first time anybody booted an SH
-> >> kernel in over a year ?!?
-> >
-> > Nah, but the v5.4-rc3 I booted recently on qemu -M r2d had
-> > CONFIG_PGTABLE_LEVELS=3D2, so it didn't show the problem.
-> >
->
-> Guess that explains why I do not see the problem with my qemu boots.
-> I use rts7751r2dplus_defconfig. Is it possible to reproduce the problem
-> with qemu ? I don't think so, but maybe I am missing something.
+OK, so I was going to write a Changelog to go with that, but then I
+realized that while this works and is similar to before the patch, I'm
+not sure this is in fact correct.
 
-Qemu seems to support r2d and shix only.
-For the latter, the website pointed to by the qemu sources no longer exists.
-But according to those sources, it's also sh7750-based, so no luck.
+With this on (and also before) we're freeing the PMD before we've done
+the TLB invalidate, that seems wrong!
 
-Gr{oetje,eeting}s,
+Looking at the size of that pmd_cache, that looks to be 30-(12+12-3)+3
+= 12, which is exactly 1 page, for PAGE_SIZE_4K, less for the larger
+pages.
 
-                        Geert
+I'm thinking perhaps we should do something like the below instead?
 
---=20
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k=
-.org
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like t=
-hat.
-                                -- Linus Torvalds
+---
+ arch/sh/mm/pgtable.c | 16 ++--------------
+ 1 file changed, 2 insertions(+), 14 deletions(-)
+
+diff --git a/arch/sh/mm/pgtable.c b/arch/sh/mm/pgtable.c
+index 5c8f9247c3c2..fac7e822fd0c 100644
+--- a/arch/sh/mm/pgtable.c
++++ b/arch/sh/mm/pgtable.c
+@@ -5,9 +5,6 @@
+ #define PGALLOC_GFP GFP_KERNEL | __GFP_ZERO
+ 
+ static struct kmem_cache *pgd_cachep;
+-#if PAGETABLE_LEVELS > 2
+-static struct kmem_cache *pmd_cachep;
+-#endif
+ 
+ void pgd_ctor(void *x)
+ {
+@@ -23,11 +20,6 @@ void pgtable_cache_init(void)
+ 	pgd_cachep = kmem_cache_create("pgd_cache",
+ 				       PTRS_PER_PGD * (1<<PTE_MAGNITUDE),
+ 				       PAGE_SIZE, SLAB_PANIC, pgd_ctor);
+-#if PAGETABLE_LEVELS > 2
+-	pmd_cachep = kmem_cache_create("pmd_cache",
+-				       PTRS_PER_PMD * (1<<PTE_MAGNITUDE),
+-				       PAGE_SIZE, SLAB_PANIC, NULL);
+-#endif
+ }
+ 
+ pgd_t *pgd_alloc(struct mm_struct *mm)
+@@ -48,11 +40,7 @@ void pud_populate(struct mm_struct *mm, pud_t *pud, pmd_t *pmd)
+ 
+ pmd_t *pmd_alloc_one(struct mm_struct *mm, unsigned long address)
+ {
+-	return kmem_cache_alloc(pmd_cachep, PGALLOC_GFP);
+-}
+-
+-void pmd_free(struct mm_struct *mm, pmd_t *pmd)
+-{
+-	kmem_cache_free(pmd_cachep, pmd);
++	BUILD_BUG_ON(PTRS_PER_PMD * (1<<PTE_MAGNITUDE) <= PAGE_SIZE);
++	return (pmd_t *)__get_free_page(PGALLOC_GFP);
+ }
+ #endif /* PAGETABLE_LEVELS > 2 */
