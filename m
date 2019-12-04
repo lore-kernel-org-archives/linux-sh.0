@@ -1,121 +1,64 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 19 Dec 2019 01:24:09 +0000
-Subject: [PATCH v2 2/3] sh: fixup strncpy() warning and add missing padding
-Message-Id: <87tv5xyuo6.wl-kuninori.morimoto.gx@renesas.com>
+From: "Rev.Dr Emmanuel Okoye CEO Ecobank-benin" <eco.bank1204@gmail.com>
+Date: Wed, 04 Dec 2019 12:22:15 +0000
+Subject: God has remembered your prayers I have already sent you Money Gram payment of $5000.00 today, MG 102
+Message-Id: <CAOE+jABwsq4QTifFZJGuzmZ8p9kMY_tMmS5N39hvEALE6d=OJw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87woatyutt.wl-kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87woatyutt.wl-kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Karl Nasrallah <knnspeed@aol.com>
-Cc: Linux-SH <linux-sh@vger.kernel.org>, Linux-Renesas <linux-renesas-soc@vger.kernel.org>, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-sh@vger.kernel.org
 
-From: Karl Nasrallah <knnspeed@aol.com>
+Attn, dear Beneficiary.
 
-Current SH will get below warning at strncpy()
+God has remembered your prayers
+I have already sent you Money Gram payment of $5000.00 today, MG 1029-8096
+This is because we have finally concluded to effect your transfer
+funds of $4.8,000.000usd
+through MONEY GRAM International Fund transfer Service
+Each payment will be sending to you by $5000.00 daily until the
+($4.8,000.000usd) is completely transferred
+we have this morning sent  MONEY GRAM payment of $5,000.00 in your name today
+So contact the MONEY GRAM Agent to pick up this first payment of $5000 now
 
-In file included from ${LINUX}/arch/sh/include/asm/string.h:3,
-                 from ${LINUX}/include/linux/string.h:20,
-                 from ${LINUX}/include/linux/bitmap.h:9,
-                 from ${LINUX}/include/linux/nodemask.h:95,
-                 from ${LINUX}/include/linux/mmzone.h:17,
-                 from ${LINUX}/include/linux/gfp.h:6,
-                 from ${LINUX}/innclude/linux/slab.h:15,
-                 from ${LINUX}/linux/drivers/mmc/host/vub300.c:38:
-${LINUX}/drivers/mmc/host/vub300.c: In function 'new_system_port_status':
-${LINUX}/arch/sh/include/asm/string_32.h:51:42: warning: array subscript\
-  80 is above array bounds of 'char[26]' [-Warray-bounds]
-   : "0" (__dest), "1" (__src), "r" (__src+__n)
-                                     ~~~~~^~~~
+Contact person Mrs. Alan Ude
+Dir. MONEY GRAM Service,Benin
+Phone number: +229 98856728
+E-mail: moneygram.1820@outlook.fr
 
-And current implementation is missing padding which strncpy()
-should support.
+Ask him to give you the complete mtcn, sender name, question and
+answer to enable you
+pick up the $5000.00 sent today,
+Also you are instructed to re-confirm your information's
+to Mrs.Alan Ude as listed below to avoid wrong transactions.
 
-This patch solves these 2 issues.
+(1Your Full name:............................................
+(2 Phone number.....................................................
+(3 Contact address:.....................................
+(4 Age:..................................................................
+(5 Country..............................................
+(6) Sex .................................................................
+(7) your occupation...........................................
 
-Signed-off-by: Karl Nasrallah <knnspeed@aol.com>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
-v1 -> v2
+(8)Passport/By Attach or Drivers License Number:
+Contact Mrs. Alan Ude for your MONEY GRAM payment of $4.8,000.000usd
+Note please: I have paid service fees for you but the only money you
+are required
+to send to Mrs. Alan Ude is $90.00 only Transfer fee before you can
+pick up your transfer today.
 
-	- tidyup git-log
-	- tidyup 80char
-	- tidyup Subject
+Send it to via Money Gram
+Receiver's Name-----Alan Ude
+Country----------Benin
+Address-----------Cotonou
+Quest--------Honest
+Ans-----------Trust
 
- arch/sh/include/asm/string_32.h | 58 +++++++++++++++++++++++++++--------------
- 1 file changed, 39 insertions(+), 19 deletions(-)
+I done all my best for you to receive your transfer now ok.
+We need your urgent reply
+Best Regards
+Rev.Dr Emmanuel Okoye
+CEO Ecobank-benin
 
-diff --git a/arch/sh/include/asm/string_32.h b/arch/sh/include/asm/string_32.h
-index 3558b1d..3b4aec0 100644
---- a/arch/sh/include/asm/string_32.h
-+++ b/arch/sh/include/asm/string_32.h
-@@ -31,27 +31,47 @@ static inline char *strcpy(char *__dest, const char *__src)
- #define __HAVE_ARCH_STRNCPY
- static inline char *strncpy(char *__dest, const char *__src, size_t __n)
- {
--	register char *__xdest = __dest;
--	unsigned long __dummy;
-+	char * retval = __dest;
-+	const char * __dest_end = __dest + __n - 1;
-+	register unsigned int * r0_register __asm__ ("r0");
- 
-+	/* size_t is always unsigned */
- 	if (__n = 0)
--		return __xdest;
--
--	__asm__ __volatile__(
--		"1:\n"
--		"mov.b	@%1+, %2\n\t"
--		"mov.b	%2, @%0\n\t"
--		"cmp/eq	#0, %2\n\t"
--		"bt/s	2f\n\t"
--		" cmp/eq	%5,%1\n\t"
--		"bf/s	1b\n\t"
--		" add	#1, %0\n"
--		"2:"
--		: "=r" (__dest), "=r" (__src), "=&z" (__dummy)
--		: "0" (__dest), "1" (__src), "r" (__src+__n)
--		: "memory", "t");
--
--	return __xdest;
-+		return retval;
-+
-+	/*
-+	 * Some notes:
-+	 * - cmp/eq #imm8,r0 is its own instruction
-+	 * - incrementing dest and comparing to dest_end handles the size
-+	 *   parameter in only one instruction
-+	 * - mov.b R0,@Rn+ is SH2A only, but we can fill a delay slot with
-+	 *   "add #1,%[dest]"
-+	 */
-+
-+	__asm__ __volatile__ (
-+		"strncpy_start:\n\t"
-+		"mov.b @%[src]+,%[r0_reg]\n\t"
-+		"cmp/eq #0,%[r0_reg]\n\t"
-+		"bt.s strncpy_pad\n\t"
-+		"cmp/eq %[dest],%[dest_end]\n\t"
-+		"bt.s strncpy_end\n\t"
-+		"mov.b %[r0_reg],@%[dest]\n\t"
-+		"bra strncpy_start\n\t"
-+		"add #1,%[dest]\n\t"
-+		"strncpy_pad:\n\t"
-+		"bt.s strncpy_end\n\t"
-+		"mov.b %[r0_reg],@%[dest]\n\t"
-+		"add #1,%[dest]\n\t"
-+		"bra strncpy_pad\n\t"
-+		"cmp/eq %[dest],%[dest_end]\n\t"
-+		"strncpy_end:\n\t"
-+		: [src] "+r" (__src), [dest] "+r" (__dest),
-+		  [r0_reg] "+&z" (r0_register)
-+		: [dest_end] "r" (__dest_end)
-+		: "t","memory"
-+		);
-+
-+	return retval;
- }
- 
- #define __HAVE_ARCH_STRCMP
--- 
-2.7.4
+If we did not receive it urgent from you today,
+I will go ahead and release you funds to Mrs. Lyndia Ppaulson as your
+representative.
