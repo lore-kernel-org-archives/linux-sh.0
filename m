@@ -1,100 +1,166 @@
-From: Yoshinori Sato <ysato@users.sourceforge.jp>
-Date: Mon, 16 Dec 2019 11:28:32 +0000
-Subject: Re: [PATCH v2] sh: add missing DECLARE_EXPORT() for __ashiftrt_r4_xx
-Message-Id: <87pngofr1b.wl-ysato@users.sourceforge.jp>
+From: Daniel Lezcano <daniel.lezcano@linaro.org>
+Date: Thu, 05 Dec 2019 11:15:05 +0000
+Subject: Re: [PATCH 1/2] cpuidle: Drop disabled field from struct cpuidle_state
+Message-Id: <6c7863ab-8efc-ab2c-cab0-3cd68e415a57@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87zhfx3uo2.wl-kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87zhfx3uo2.wl-kuninori.morimoto.gx@renesas.com>
+References: <5961586.ml7s97geqL@kreacher> <3690440.Wzkxfdnirm@kreacher>
+In-Reply-To: <3690440.Wzkxfdnirm@kreacher>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Cc: Rich Felker <dalias@libc.org>, Andrew Morton <akpm@linux-foundation.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset="windows-1252"
+Content-Transfer-Encoding: quoted-printable
+To: "Rafael J. Wysocki" <rjw@rjwysocki.net>, Linux PM <linux-pm@vger.kernel.org>
+Cc: LKML <linux-kernel@vger.kernel.org>, Srinivas Pandruvada <srinivas.pandruvada@linux.intel.com>, Len Brown <len.brown@intel.com>, Len Brown <lenb@kernel.org>, Rafael Wysocki <rafael@kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
 
-On Fri, 13 Dec 2019 10:01:49 +0900,
-Kuninori Morimoto wrote:
-> 
-> 
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> 
-> __ashiftrt_r4_xx might be used from kernel module.
-> We need DECLARE_EXPORT() for them, otherwise we will get compile error.
-> This patch adds missing DECLARE_EXPORT()
-> 
-> ERROR: "__ashiftrt_r4_25" [drivers/iio/pressure/bmp280.ko] undefined!
-> ERROR: "__ashiftrt_r4_26" [drivers/iio/dac/ad5764.ko] undefined!
-> ERROR: "__ashiftrt_r4_26" [drivers/iio/accel/mma7660.ko] undefined!
-> ERROR: "__ashiftrt_r4_25" [drivers/iio/accel/dmard06.ko] undefined!
-> ERROR: "__ashiftrt_r4_26" [drivers/iio/accel/bma220_spi.ko] undefined!
-> ERROR: "__ashiftrt_r4_25" [drivers/crypto/hisilicon/sec/hisi_sec.ko] undefined!
-> ERROR: "__ashiftrt_r4_26" [drivers/rtc/rtc-x1205.ko] undefined!
-> ERROR: "__ashiftrt_r4_25" [drivers/rtc/rtc-pcf85063.ko] undefined!
-> ERROR: "__ashiftrt_r4_25" [drivers/rtc/rtc-pcf2123.ko] undefined!
-> ERROR: "__ashiftrt_r4_25" [drivers/input/tablet/gtco.ko] undefined!
-> ERROR: "__ashiftrt_r4_26" [drivers/input/mouse/psmouse.ko] undefined!
-> ERROR: "__ashiftrt_r4_28" [drivers/input/mouse/psmouse.ko] undefined!
-> ERROR: "__ashiftrt_r4_28" [drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu.ko] undefined!
-> ERROR: "__ashiftrt_r4_28" [fs/udf/udf.ko] undefined!
-> 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+On 21/11/2019 19:41, Rafael J. Wysocki wrote:
+> From: Rafael J. Wysocki <rafael.j.wysocki@intel.com>
+>=20
+> After recent cpuidle updates the "disabled" field in struct
+> cpuidle_state is only used by two drivers (intel_idle and shmobile
+> cpuidle) for marking unusable idle states, but that may as well be
+> achieved with the help of a state flag, so define an "unusable" idle
+> state flag, CPUIDLE_FLAG_UNUSABLE, make the drivers in question use
+> it instead of the "disabled" field and make the core set
+> CPUIDLE_STATE_DISABLED_BY_DRIVER for the idle states with that flag
+> set.
+>=20
+> After the above changes, the "disabled" field in struct cpuidle_state
+> is not used any more, so drop it.
+>=20
+> No intentional functional impact.
+>=20
+> Signed-off-by: Rafael J. Wysocki <rafael.j.wysocki@intel.com>
 > ---
-> v1 -> v2
-> 
-> 	- r4_0  - r4_5  are added
-> 	- r4_16 - r4_19 are added
-> 
->  arch/sh/kernel/sh_ksyms_32.c | 17 +++++++++++++++++
->  1 file changed, 17 insertions(+)
-> 
-> diff --git a/arch/sh/kernel/sh_ksyms_32.c b/arch/sh/kernel/sh_ksyms_32.c
-> index 2827744..5858936 100644
-> --- a/arch/sh/kernel/sh_ksyms_32.c
-> +++ b/arch/sh/kernel/sh_ksyms_32.c
-> @@ -38,6 +38,13 @@ DECLARE_EXPORT(__ashlsi3);
->  DECLARE_EXPORT(__lshrsi3_r0);
->  DECLARE_EXPORT(__ashrsi3_r0);
->  DECLARE_EXPORT(__ashlsi3_r0);
-> +
-> +DECLARE_EXPORT(__ashiftrt_r4_0);
-> +DECLARE_EXPORT(__ashiftrt_r4_1);
-> +DECLARE_EXPORT(__ashiftrt_r4_2);
-> +DECLARE_EXPORT(__ashiftrt_r4_3);
-> +DECLARE_EXPORT(__ashiftrt_r4_4);
-> +DECLARE_EXPORT(__ashiftrt_r4_5);
->  DECLARE_EXPORT(__ashiftrt_r4_6);
->  DECLARE_EXPORT(__ashiftrt_r4_7);
->  DECLARE_EXPORT(__ashiftrt_r4_8);
-> @@ -48,13 +55,23 @@ DECLARE_EXPORT(__ashiftrt_r4_12);
->  DECLARE_EXPORT(__ashiftrt_r4_13);
->  DECLARE_EXPORT(__ashiftrt_r4_14);
->  DECLARE_EXPORT(__ashiftrt_r4_15);
-> +DECLARE_EXPORT(__ashiftrt_r4_16);
-> +DECLARE_EXPORT(__ashiftrt_r4_17);
-> +DECLARE_EXPORT(__ashiftrt_r4_18);
-> +DECLARE_EXPORT(__ashiftrt_r4_19);
->  DECLARE_EXPORT(__ashiftrt_r4_20);
->  DECLARE_EXPORT(__ashiftrt_r4_21);
->  DECLARE_EXPORT(__ashiftrt_r4_22);
->  DECLARE_EXPORT(__ashiftrt_r4_23);
->  DECLARE_EXPORT(__ashiftrt_r4_24);
-> +DECLARE_EXPORT(__ashiftrt_r4_25);
-> +DECLARE_EXPORT(__ashiftrt_r4_26);
->  DECLARE_EXPORT(__ashiftrt_r4_27);
-> +DECLARE_EXPORT(__ashiftrt_r4_28);
-> +DECLARE_EXPORT(__ashiftrt_r4_29);
->  DECLARE_EXPORT(__ashiftrt_r4_30);
-> +DECLARE_EXPORT(__ashiftrt_r4_31);
-> +DECLARE_EXPORT(__ashiftrt_r4_32);
->  DECLARE_EXPORT(__movstr);
->  DECLARE_EXPORT(__movstrSI8);
->  DECLARE_EXPORT(__movstrSI12);
-> -- 
-> 2.7.4
-> 
+>=20
+> Changes from RFC:
+>=20
+>  - Do not add extra braces (unrelated to the rest of the patch).
+>=20
+> ---
+>  arch/sh/kernel/cpu/shmobile/cpuidle.c |    8 ++++----
+>  drivers/cpuidle/cpuidle.c             |    2 +-
+>  drivers/cpuidle/poll_state.c          |    1 -
+>  drivers/idle/intel_idle.c             |    6 +++---
+>  include/linux/cpuidle.h               |    2 +-
+>  5 files changed, 9 insertions(+), 10 deletions(-)
+>=20
+> Index: linux-pm/drivers/idle/intel_idle.c
+> =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D> --- linux-pm.orig/drivers/idle/intel_idle.c
+> +++ linux-pm/drivers/idle/intel_idle.c
+> @@ -1291,8 +1291,8 @@ static void sklh_idle_state_table_update
+>  			return;
+>  	}
+> =20
+> -	skl_cstates[5].disabled =3D 1;	/* C8-SKL */
+> -	skl_cstates[6].disabled =3D 1;	/* C9-SKL */
+> +	skl_cstates[5].flags |=3D CPUIDLE_FLAG_UNUSABLE;	/* C8-SKL */
+> +	skl_cstates[6].flags |=3D CPUIDLE_FLAG_UNUSABLE;	/* C9-SKL */
+>  }
+>  /*
+>   * intel_idle_state_table_update()
+> @@ -1355,7 +1355,7 @@ static void __init intel_idle_cpuidle_dr
+>  			continue;
+> =20
+>  		/* if state marked as disabled, skip it */
+> -		if (cpuidle_state_table[cstate].disabled !=3D 0) {
+> +		if (cpuidle_state_table[cstate].flags & CPUIDLE_FLAG_UNUSABLE) {
+>  			pr_debug("state %s is disabled\n",
+>  				 cpuidle_state_table[cstate].name);
+>  			continue;
+> Index: linux-pm/include/linux/cpuidle.h
+> =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D> --- linux-pm.orig/include/linux/cpuidle.h
+> +++ linux-pm/include/linux/cpuidle.h
+> @@ -54,7 +54,6 @@ struct cpuidle_state {
+>  	unsigned int	exit_latency; /* in US */
+>  	int		power_usage; /* in mW */
+>  	unsigned int	target_residency; /* in US */
+> -	bool		disabled; /* disabled on all CPUs */
+> =20
+>  	int (*enter)	(struct cpuidle_device *dev,
+>  			struct cpuidle_driver *drv,
+> @@ -77,6 +76,7 @@ struct cpuidle_state {
+>  #define CPUIDLE_FLAG_POLLING	BIT(0) /* polling state */
+>  #define CPUIDLE_FLAG_COUPLED	BIT(1) /* state applies to multiple cpus */
+>  #define CPUIDLE_FLAG_TIMER_STOP BIT(2) /* timer is stopped on this state=
+ */
+> +#define CPUIDLE_FLAG_UNUSABLE	BIT(3) /* avoid using this state */
+> =20
+>  struct cpuidle_device_kobj;
+>  struct cpuidle_state_kobj;
+> Index: linux-pm/arch/sh/kernel/cpu/shmobile/cpuidle.c
+> =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D> --- linux-pm.orig/arch/sh/kernel/cpu/shmobile/=
+cpuidle.c
+> +++ linux-pm/arch/sh/kernel/cpu/shmobile/cpuidle.c
+> @@ -67,7 +67,7 @@ static struct cpuidle_driver cpuidle_dri
+>  			.enter =3D cpuidle_sleep_enter,
+>  			.name =3D "C2",
+>  			.desc =3D "SuperH Sleep Mode [SF]",
+> -			.disabled =3D true,
+> +			.flags =3D CPUIDLE_FLAG_UNUSABLE,
+>  		},
+>  		{
+>  			.exit_latency =3D 2300,
+> @@ -76,7 +76,7 @@ static struct cpuidle_driver cpuidle_dri
+>  			.enter =3D cpuidle_sleep_enter,
+>  			.name =3D "C3",
+>  			.desc =3D "SuperH Mobile Standby Mode [SF]",
+> -			.disabled =3D true,
+> +			.flags =3D CPUIDLE_FLAG_UNUSABLE,
+>  		},
+>  	},
+>  	.safe_state_index =3D 0,
+> @@ -86,10 +86,10 @@ static struct cpuidle_driver cpuidle_dri
+>  int __init sh_mobile_setup_cpuidle(void)
+>  {
+>  	if (sh_mobile_sleep_supported & SUSP_SH_SF)
+> -		cpuidle_driver.states[1].disabled =3D false;
+> +		cpuidle_driver.states[1].flags =3D CPUIDLE_FLAG_NONE;
 
-Applied sh-next.
-Thanks.
+That will overwrite other flags value, bit operation should be used here
+to remove CPUIDLE_FLAG_UNUSABLE.
 
--- 
-Yosinori Sato
+>  	if (sh_mobile_sleep_supported & SUSP_SH_STANDBY)
+> -		cpuidle_driver.states[2].disabled =3D false;
+> +		cpuidle_driver.states[2].flags =3D CPUIDLE_FLAG_NONE;
+> =20
+>  	return cpuidle_register(&cpuidle_driver, NULL);
+>  }
+> Index: linux-pm/drivers/cpuidle/cpuidle.c
+> =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D> --- linux-pm.orig/drivers/cpuidle/cpuidle.c
+> +++ linux-pm/drivers/cpuidle/cpuidle.c
+> @@ -570,7 +570,7 @@ static int __cpuidle_register_device(str
+>  		return -EINVAL;
+> =20
+>  	for (i =3D 0; i < drv->state_count; i++)
+> -		if (drv->states[i].disabled)
+> +		if (drv->states[i].flags & CPUIDLE_FLAG_UNUSABLE)
+>  			dev->states_usage[i].disable |=3D CPUIDLE_STATE_DISABLED_BY_DRIVER;
+> =20
+>  	per_cpu(cpuidle_devices, dev->cpu) =3D dev;
+> Index: linux-pm/drivers/cpuidle/poll_state.c
+> =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D> --- linux-pm.orig/drivers/cpuidle/poll_state.c
+> +++ linux-pm/drivers/cpuidle/poll_state.c
+> @@ -53,7 +53,6 @@ void cpuidle_poll_state_init(struct cpui
+>  	state->target_residency_ns =3D 0;
+>  	state->power_usage =3D -1;
+>  	state->enter =3D poll_idle;
+> -	state->disabled =3D false;
+>  	state->flags =3D CPUIDLE_FLAG_POLLING;
+>  }
+>  EXPORT_SYMBOL_GPL(cpuidle_poll_state_init);
+>=20
+>=20
+>=20
+
+
+--=20
+ <http://www.linaro.org/> Linaro.org =E2=94=82 Open source software for ARM=
+ SoCs
+
+Follow Linaro:  <http://www.facebook.com/pages/Linaro> Facebook |
+<http://twitter.com/#!/linaroorg> Twitter |
+<http://www.linaro.org/linaro-blog/> Blog
