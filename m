@@ -1,121 +1,169 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 03 Dec 2019 16:26:45 +0000
-Subject: [PATCH 7/7] sh: fault: Modernize printing of kernel messages
-Message-Id: <20191203162645.19950-8-geert+renesas@glider.be>
+From: Aleksa Sarai <cyphar@cyphar.com>
+Date: Fri, 06 Dec 2019 14:13:35 +0000
+Subject: [PATCH v18 10/13] namei: LOOKUP_{IN_ROOT,BENEATH}: permit limited ".." resolution
+Message-Id: <20191206141338.23338-11-cyphar@cyphar.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20191203162645.19950-1-geert+renesas@glider.be>
-In-Reply-To: <20191203162645.19950-1-geert+renesas@glider.be>
+References: <20191206141338.23338-1-cyphar@cyphar.com>
+In-Reply-To: <20191206141338.23338-1-cyphar@cyphar.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
-Cc: Andrew Morton <akpm@linux-foundation.org>, Guenter Roeck <linux@roeck-us.net>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Al Viro <viro@zeniv.linux.org.uk>, Jeff Layton <jlayton@kernel.org>, "J. Bruce Fields" <bfields@fieldses.org>, Arnd Bergmann <arnd@arndb.de>, David Howells <dhowells@redhat.com>, Shuah Khan <shuah@kernel.org>, Shuah Khan <skhan@linuxfoundation.org>, Ingo Molnar <mingo@redhat.com>, Peter Zijlstra <peterz@infradead.org>, Alexei Starovoitov <ast@kernel.org>, Daniel Borkmann <daniel@iogearbox.net>, Martin KaFai Lau <kafai@fb.com>, Song Liu <songliubraving@fb.com>, Yonghong Song <yhs@fb.com>, Andrii Nakryiko <andriin@fb.com>, Jonathan Corbet <corbet@lwn.net>
+Cc: Aleksa Sarai <cyphar@cyphar.com>, Christian Brauner <christian.brauner@ubuntu.com>, Jann Horn <jannh@google.com>, Linus Torvalds <torvalds@linux-foundation.org>, Eric Biederman <ebiederm@xmission.com>, Andy Lutomirski <luto@kernel.org>, Andrew Morton <akpm@linux-foundation.org>, Kees Cook <keescook@chromium.org>, Tycho Andersen <tycho@tycho.ws>, David Drysdale <drysdale@google.com>, Chanho Min <chanho.min@lge.com>, Oleg Nesterov <oleg@redhat.com>, Rasmus Villemoes <linux@rasmusvillemoes.dk>, Alexander Shishkin <alexander.shishkin@linux.intel.com>, Jiri Olsa <jolsa@redhat.com>, Namhyung Kim <namhyung@kernel.org>, Christian Brauner <christian@brauner.io>, Aleksa Sarai <asarai@suse.de>, dev@opencontainers.org, containers@lists.linux-foundation.org, bpf@vger.kernel.org, netdev@vger.kernel.org, linux-alpha@vger.kernel.org, linux-api@vger.kernel.org, libc-alpha@sourceware.org, linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-doc@vger.kernel.org, linux-fsdevel@vger.kernel.org, linux-ia64@vger.kernel.org, linux-kernel@vger.kernel.org, linux-kselftest@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-xtensa@linux-xtensa.org, sparclinux@vger.kernel.org
 
-  - Convert from printk() to pr_*(),
-  - Add missing continuations,
-  - Use "%llx" to format u64,
-  - Join multiple prints in show_fault_oops() into a single print.
+Allow LOOKUP_BENEATH and LOOKUP_IN_ROOT to safely permit ".." resolution
+(in the case of LOOKUP_BENEATH the resolution will still fail if ".."
+resolution would resolve a path outside of the root -- while
+LOOKUP_IN_ROOT will chroot(2)-style scope it). Magic-link jumps are
+still disallowed entirely[*].
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+As Jann explains[1,2], the need for this patch (and the original no-".."
+restriction) is explained by observing there is a fairly easy-to-exploit
+race condition with chroot(2) (and thus by extension LOOKUP_IN_ROOT and
+LOOKUP_BENEATH if ".." is allowed) where a rename(2) of a path can be
+used to "skip over" nd->root and thus escape to the filesystem above
+nd->root.
+
+  thread1 [attacker]:
+    for (;;)
+      renameat2(AT_FDCWD, "/a/b/c", AT_FDCWD, "/a/d", RENAME_EXCHANGE);
+  thread2 [victim]:
+    for (;;)
+      openat2(dirb, "b/c/../../etc/shadow",
+              { .flags = O_PATH, .resolve = RESOLVE_IN_ROOT } );
+
+With fairly significant regularity, thread2 will resolve to
+"/etc/shadow" rather than "/a/b/etc/shadow". There is also a similar
+(though somewhat more privileged) attack using MS_MOVE.
+
+With this patch, such cases will be detected *during* ".." resolution
+and will return -EAGAIN for userspace to decide to either retry or abort
+the lookup. It should be noted that ".." is the weak point of chroot(2)
+-- walking *into* a subdirectory tautologically cannot result in you
+walking *outside* nd->root (except through a bind-mount or magic-link).
+There is also no other way for a directory's parent to change (which is
+the primary worry with ".." resolution here) other than a rename or
+MS_MOVE.
+
+The primary reason for deferring to userspace with -EAGAIN is that an
+in-kernel retry loop (or doing a path_is_under() check after re-taking
+the relevant seqlocks) can become unreasonably expensive on machines
+with lots of VFS activity (nfsd can cause lots of rename_lock updates).
+Thus it should be up to userspace how many times they wish to retry the
+lookup -- the selftests for this attack indicate that there is a ~35%
+chance of the lookup succeeding on the first try even with an attacker
+thrashing rename_lock.
+
+A variant of the above attack is included in the selftests for
+openat2(2) later in this patch series. I've run this test on several
+machines for several days and no instances of a breakout were detected.
+While this is not concrete proof that this is safe, when combined with
+the above argument it should lend some trustworthiness to this
+construction.
+
+[*] It may be acceptable in the future to do a path_is_under() check for
+    magic-links after they are resolved. However this seems unlikely to
+    be a feature that people *really* need -- it can be added later if
+    it turns out a lot of people want it.
+
+[1]: https://lore.kernel.org/lkml/CAG48ez1jzNvxB+bfOBnERFGp=oMM0vHWuLD6EULmne3R6xa53w@mail.gmail.com/
+[2]: https://lore.kernel.org/lkml/CAG48ez30WJhbsro2HOc_DR7V91M+hNFzBP5ogRMZaxbAORvqzg@mail.gmail.com/
+
+Cc: Christian Brauner <christian.brauner@ubuntu.com>
+Suggested-by: Jann Horn <jannh@google.com>
+Suggested-by: Linus Torvalds <torvalds@linux-foundation.org>
+Signed-off-by: Aleksa Sarai <cyphar@cyphar.com>
 ---
-Compile-tested only.
----
- arch/sh/mm/fault.c | 39 ++++++++++++++++++---------------------
- 1 file changed, 18 insertions(+), 21 deletions(-)
+ fs/namei.c | 43 +++++++++++++++++++++++++++----------------
+ 1 file changed, 27 insertions(+), 16 deletions(-)
 
-diff --git a/arch/sh/mm/fault.c b/arch/sh/mm/fault.c
-index 5f51456f4fc7167a..a2b0275413e8c29c 100644
---- a/arch/sh/mm/fault.c
-+++ b/arch/sh/mm/fault.c
-@@ -47,10 +47,10 @@ static void show_pte(struct mm_struct *mm, unsigned long addr)
- 			pgd = swapper_pg_dir;
+diff --git a/fs/namei.c b/fs/namei.c
+index 69cd0b296e8e..9f60c3f49b8b 100644
+--- a/fs/namei.c
++++ b/fs/namei.c
+@@ -491,7 +491,7 @@ struct nameidata {
+ 	struct path	root;
+ 	struct inode	*inode; /* path.dentry.d_inode */
+ 	unsigned int	flags;
+-	unsigned	seq, m_seq;
++	unsigned	seq, m_seq, r_seq;
+ 	int		last_type;
+ 	unsigned	depth;
+ 	int		total_link_count;
+@@ -1791,22 +1791,31 @@ static inline int handle_dots(struct nameidata *nd, int type)
+ 	if (type = LAST_DOTDOT) {
+ 		int error = 0;
+ 
+-		/*
+-		 * Scoped-lookup flags resolving ".." is not currently safe --
+-		 * races can cause our parent to have moved outside of the root
+-		 * and us to skip over it.
+-		 */
+-		if (unlikely(nd->flags & LOOKUP_IS_SCOPED))
+-			return -EXDEV;
+ 		if (!nd->root.mnt) {
+ 			error = set_root(nd);
+ 			if (error)
+ 				return error;
+ 		}
+-		if (nd->flags & LOOKUP_RCU) {
+-			return follow_dotdot_rcu(nd);
+-		} else
+-			return follow_dotdot(nd);
++		if (nd->flags & LOOKUP_RCU)
++			error = follow_dotdot_rcu(nd);
++		else
++			error = follow_dotdot(nd);
++		if (error)
++			return error;
++
++		if (unlikely(nd->flags & LOOKUP_IS_SCOPED)) {
++			/*
++			 * If there was a racing rename or mount along our
++			 * path, then we can't be sure that ".." hasn't jumped
++			 * above nd->root (and so userspace should retry or use
++			 * some fallback).
++			 */
++			smp_rmb();
++			if (unlikely(__read_seqcount_retry(&mount_lock.seqcount, nd->m_seq)))
++				return -EAGAIN;
++			if (unlikely(__read_seqcount_retry(&rename_lock.seqcount, nd->r_seq)))
++				return -EAGAIN;
++		}
  	}
- 
--	printk(KERN_ALERT "pgd = %p\n", pgd);
-+	pr_alert("pgd = %p\n", pgd);
- 	pgd += pgd_index(addr);
--	printk(KERN_ALERT "[%08lx] *pgd=%0*Lx", addr,
--	       (u32)(sizeof(*pgd) * 2), (u64)pgd_val(*pgd));
-+	pr_alert("[%08lx] *pgd=%0*llx", addr, (u32)(sizeof(*pgd) * 2),
-+		 (u64)pgd_val(*pgd));
- 
- 	do {
- 		pud_t *pud;
-@@ -61,33 +61,33 @@ static void show_pte(struct mm_struct *mm, unsigned long addr)
- 			break;
- 
- 		if (pgd_bad(*pgd)) {
--			printk("(bad)");
-+			pr_cont("(bad)");
- 			break;
- 		}
- 
- 		pud = pud_offset(pgd, addr);
- 		if (PTRS_PER_PUD != 1)
--			printk(", *pud=%0*Lx", (u32)(sizeof(*pud) * 2),
--			       (u64)pud_val(*pud));
-+			pr_cont(", *pud=%0*llx", (u32)(sizeof(*pud) * 2),
-+				(u64)pud_val(*pud));
- 
- 		if (pud_none(*pud))
- 			break;
- 
- 		if (pud_bad(*pud)) {
--			printk("(bad)");
-+			pr_cont("(bad)");
- 			break;
- 		}
- 
- 		pmd = pmd_offset(pud, addr);
- 		if (PTRS_PER_PMD != 1)
--			printk(", *pmd=%0*Lx", (u32)(sizeof(*pmd) * 2),
--			       (u64)pmd_val(*pmd));
-+			pr_cont(", *pmd=%0*llx", (u32)(sizeof(*pmd) * 2),
-+				(u64)pmd_val(*pmd));
- 
- 		if (pmd_none(*pmd))
- 			break;
- 
- 		if (pmd_bad(*pmd)) {
--			printk("(bad)");
-+			pr_cont("(bad)");
- 			break;
- 		}
- 
-@@ -96,11 +96,11 @@ static void show_pte(struct mm_struct *mm, unsigned long addr)
- 			break;
- 
- 		pte = pte_offset_kernel(pmd, addr);
--		printk(", *pte=%0*Lx", (u32)(sizeof(*pte) * 2),
--		       (u64)pte_val(*pte));
-+		pr_cont(", *pte=%0*llx", (u32)(sizeof(*pte) * 2),
-+			(u64)pte_val(*pte));
- 	} while (0);
- 
--	printk("\n");
-+	pr_cont("\n");
+ 	return 0;
  }
+@@ -2276,6 +2285,11 @@ static const char *path_init(struct nameidata *nd, unsigned flags)
+ 	nd->last_type = LAST_ROOT; /* if there are only slashes... */
+ 	nd->flags = flags | LOOKUP_JUMPED | LOOKUP_PARENT;
+ 	nd->depth = 0;
++
++	nd->m_seq = __read_seqcount_begin(&mount_lock.seqcount);
++	nd->r_seq = __read_seqcount_begin(&rename_lock.seqcount);
++	smp_rmb();
++
+ 	if (flags & LOOKUP_ROOT) {
+ 		struct dentry *root = nd->root.dentry;
+ 		struct inode *inode = root->d_inode;
+@@ -2284,9 +2298,8 @@ static const char *path_init(struct nameidata *nd, unsigned flags)
+ 		nd->path = nd->root;
+ 		nd->inode = inode;
+ 		if (flags & LOOKUP_RCU) {
+-			nd->seq = __read_seqcount_begin(&nd->path.dentry->d_seq);
++			nd->seq = read_seqcount_begin(&nd->path.dentry->d_seq);
+ 			nd->root_seq = nd->seq;
+-			nd->m_seq = read_seqbegin(&mount_lock);
+ 		} else {
+ 			path_get(&nd->path);
+ 		}
+@@ -2297,8 +2310,6 @@ static const char *path_init(struct nameidata *nd, unsigned flags)
+ 	nd->path.mnt = NULL;
+ 	nd->path.dentry = NULL;
  
- static inline pmd_t *vmalloc_sync_one(pgd_t *pgd, unsigned long address)
-@@ -188,14 +188,11 @@ show_fault_oops(struct pt_regs *regs, unsigned long address)
- 	if (!oops_may_print())
- 		return;
- 
--	printk(KERN_ALERT "BUG: unable to handle kernel ");
--	if (address < PAGE_SIZE)
--		printk(KERN_CONT "NULL pointer dereference");
--	else
--		printk(KERN_CONT "paging request");
+-	nd->m_seq = read_seqbegin(&mount_lock);
 -
--	printk(KERN_CONT " at %08lx\n", address);
--	printk(KERN_ALERT "PC:");
-+	pr_alert("BUG: unable to handle kernel %s at %08lx\n",
-+		 address < PAGE_SIZE ? "NULL pointer dereference"
-+				     : "paging request",
-+		 address);
-+	pr_alert("PC:");
- 	printk_address(regs->pc, 1);
- 
- 	show_pte(NULL, address);
+ 	/* Absolute pathname -- fetch the root (LOOKUP_IN_ROOT uses nd->dfd). */
+ 	if (*s = '/' && !(flags & LOOKUP_IN_ROOT)) {
+ 		error = nd_jump_root(nd);
 -- 
-2.17.1
+2.24.0
