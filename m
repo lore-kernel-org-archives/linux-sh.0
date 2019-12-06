@@ -1,95 +1,114 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 03 Dec 2019 16:26:41 +0000
-Subject: [PATCH 3/7] sh: process: Fix broken lines in register dumps
-Message-Id: <20191203162645.19950-4-geert+renesas@glider.be>
+From: Aleksa Sarai <cyphar@cyphar.com>
+Date: Fri, 06 Dec 2019 14:13:29 +0000
+Subject: [PATCH v18 04/13] namei: allow set_root() to produce errors
+Message-Id: <20191206141338.23338-5-cyphar@cyphar.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20191203162645.19950-1-geert+renesas@glider.be>
-In-Reply-To: <20191203162645.19950-1-geert+renesas@glider.be>
+References: <20191206141338.23338-1-cyphar@cyphar.com>
+In-Reply-To: <20191206141338.23338-1-cyphar@cyphar.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
-Cc: Andrew Morton <akpm@linux-foundation.org>, Guenter Roeck <linux@roeck-us.net>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Al Viro <viro@zeniv.linux.org.uk>, Jeff Layton <jlayton@kernel.org>, "J. Bruce Fields" <bfields@fieldses.org>, Arnd Bergmann <arnd@arndb.de>, David Howells <dhowells@redhat.com>, Shuah Khan <shuah@kernel.org>, Shuah Khan <skhan@linuxfoundation.org>, Ingo Molnar <mingo@redhat.com>, Peter Zijlstra <peterz@infradead.org>, Alexei Starovoitov <ast@kernel.org>, Daniel Borkmann <daniel@iogearbox.net>, Martin KaFai Lau <kafai@fb.com>, Song Liu <songliubraving@fb.com>, Yonghong Song <yhs@fb.com>, Andrii Nakryiko <andriin@fb.com>, Jonathan Corbet <corbet@lwn.net>
+Cc: Aleksa Sarai <cyphar@cyphar.com>, Eric Biederman <ebiederm@xmission.com>, Andy Lutomirski <luto@kernel.org>, Andrew Morton <akpm@linux-foundation.org>, Kees Cook <keescook@chromium.org>, Jann Horn <jannh@google.com>, Tycho Andersen <tycho@tycho.ws>, David Drysdale <drysdale@google.com>, Chanho Min <chanho.min@lge.com>, Oleg Nesterov <oleg@redhat.com>, Rasmus Villemoes <linux@rasmusvillemoes.dk>, Alexander Shishkin <alexander.shishkin@linux.intel.com>, Jiri Olsa <jolsa@redhat.com>, Namhyung Kim <namhyung@kernel.org>, Christian Brauner <christian@brauner.io>, Aleksa Sarai <asarai@suse.de>, Linus Torvalds <torvalds@linux-foundation.org>, dev@opencontainers.org, containers@lists.linux-foundation.org, bpf@vger.kernel.org, netdev@vger.kernel.org, linux-alpha@vger.kernel.org, linux-api@vger.kernel.org, libc-alpha@sourceware.org, linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-doc@vger.kernel.org, linux-fsdevel@vger.kernel.org, linux-ia64@vger.kernel.org, linux-kernel@vger.kernel.org, linux-kselftest@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-xtensa@linux-xtensa.org, sparclinux@vger.kernel.org
 
-Rejoin the broken lines by using pr_cont().
-Convert the remaining printk() calls to pr_*() while at it.
+For LOOKUP_BENEATH and LOOKUP_IN_ROOT it is necessary to ensure that
+set_root() is never called, and thus (for hardening purposes) it should
+return an error rather than permit a breakout from the root. In
+addition, move all of the repetitive set_root() calls to nd_jump_root().
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Aleksa Sarai <cyphar@cyphar.com>
 ---
-Sample impact:
+ fs/namei.c | 35 ++++++++++++++++++++++++-----------
+ 1 file changed, 24 insertions(+), 11 deletions(-)
 
- PC is at dma_alloc_attrs+0x32/0xb0
- PR is at platform_resource_setup_memory+0xbc/0x150
--PC  : 8c043d06 SP  : 8f41fe9c SR  : 40000001
--TEA : 00000000
--R0  : 8c043cd4 R1  : 00000000 R2  : 00000000 R3  : 8c213e7c
-+PC  : 8c043cfa SP  : 8f41fe9c SR  : 40000001 TEA : 8c00369e
-+R0  : 8c043cc8 R1  : 00000000 R2  : 00000000 R3  : 8c213e7c
- R4  : 8c29cc38 R5  : 00100000 R6  : 8f41fecc R7  : 00000cc0
- R8  : 8c29cc38 R9  : 8c29720c R10 : 00000cc0 R11 : 00100000
--R12 : 00000000 R13 : 8f41fecc R14 : 8c274773
--MACH: 00000001 MACL: b16b1ded GBR : 09102e96 PR  : 8c2c0524
-+R12 : 00000000 R13 : 8f41fecc R14 : 8c27479f
-+MACH: 00000001 MACL: b16b1ded GBR : 004c5450 PR  : 8c2c0524
----
- arch/sh/kernel/process_32.c | 38 +++++++++++++++++--------------------
- 1 file changed, 17 insertions(+), 21 deletions(-)
-
-diff --git a/arch/sh/kernel/process_32.c b/arch/sh/kernel/process_32.c
-index a094633874c373ef..348c245124c2c227 100644
---- a/arch/sh/kernel/process_32.c
-+++ b/arch/sh/kernel/process_32.c
-@@ -30,34 +30,30 @@
+diff --git a/fs/namei.c b/fs/namei.c
+index 1024a641f075..74574a69a614 100644
+--- a/fs/namei.c
++++ b/fs/namei.c
+@@ -798,7 +798,7 @@ static int complete_walk(struct nameidata *nd)
+ 	return status;
+ }
  
- void show_regs(struct pt_regs * regs)
+-static void set_root(struct nameidata *nd)
++static int set_root(struct nameidata *nd)
  {
--	printk("\n");
-+	pr_info("\n");
- 	show_regs_print_info(KERN_DEFAULT);
+ 	struct fs_struct *fs = current->fs;
  
--	printk("PC is at %pS\n", (void *)instruction_pointer(regs));
--	printk("PR is at %pS\n", (void *)regs->pr);
-+	pr_info("PC is at %pS\n", (void *)instruction_pointer(regs));
-+	pr_info("PR is at %pS\n", (void *)regs->pr);
+@@ -814,6 +814,7 @@ static void set_root(struct nameidata *nd)
+ 		get_fs_root(fs, &nd->root);
+ 		nd->flags |= LOOKUP_ROOT_GRABBED;
+ 	}
++	return 0;
+ }
  
--	printk("PC  : %08lx SP  : %08lx SR  : %08lx ",
--	       regs->pc, regs->regs[15], regs->sr);
-+	pr_info("PC  : %08lx SP  : %08lx SR  : %08lx ", regs->pc,
-+		regs->regs[15], regs->sr);
- #ifdef CONFIG_MMU
--	printk("TEA : %08x\n", __raw_readl(MMU_TEA));
-+	pr_cont("TEA : %08x\n", __raw_readl(MMU_TEA));
- #else
--	printk("\n");
-+	pr_cont("\n");
- #endif
+ static void path_put_conditional(struct path *path, struct nameidata *nd)
+@@ -837,6 +838,11 @@ static inline void path_to_nameidata(const struct path *path,
  
--	printk("R0  : %08lx R1  : %08lx R2  : %08lx R3  : %08lx\n",
--	       regs->regs[0],regs->regs[1],
--	       regs->regs[2],regs->regs[3]);
--	printk("R4  : %08lx R5  : %08lx R6  : %08lx R7  : %08lx\n",
--	       regs->regs[4],regs->regs[5],
--	       regs->regs[6],regs->regs[7]);
--	printk("R8  : %08lx R9  : %08lx R10 : %08lx R11 : %08lx\n",
--	       regs->regs[8],regs->regs[9],
--	       regs->regs[10],regs->regs[11]);
--	printk("R12 : %08lx R13 : %08lx R14 : %08lx\n",
--	       regs->regs[12],regs->regs[13],
--	       regs->regs[14]);
--	printk("MACH: %08lx MACL: %08lx GBR : %08lx PR  : %08lx\n",
--	       regs->mach, regs->macl, regs->gbr, regs->pr);
-+	pr_info("R0  : %08lx R1  : %08lx R2  : %08lx R3  : %08lx\n",
-+		regs->regs[0], regs->regs[1], regs->regs[2], regs->regs[3]);
-+	pr_info("R4  : %08lx R5  : %08lx R6  : %08lx R7  : %08lx\n",
-+		regs->regs[4], regs->regs[5], regs->regs[6], regs->regs[7]);
-+	pr_info("R8  : %08lx R9  : %08lx R10 : %08lx R11 : %08lx\n",
-+		regs->regs[8], regs->regs[9], regs->regs[10], regs->regs[11]);
-+	pr_info("R12 : %08lx R13 : %08lx R14 : %08lx\n",
-+		regs->regs[12], regs->regs[13], regs->regs[14]);
-+	pr_info("MACH: %08lx MACL: %08lx GBR : %08lx PR  : %08lx\n",
-+		regs->mach, regs->macl, regs->gbr, regs->pr);
+ static int nd_jump_root(struct nameidata *nd)
+ {
++	if (!nd->root.mnt) {
++		int error = set_root(nd);
++		if (error)
++			return error;
++	}
+ 	if (nd->flags & LOOKUP_RCU) {
+ 		struct dentry *d;
+ 		nd->path = nd->root;
+@@ -1080,10 +1086,9 @@ const char *get_link(struct nameidata *nd)
+ 			return res;
+ 	}
+ 	if (*res = '/') {
+-		if (!nd->root.mnt)
+-			set_root(nd);
+-		if (unlikely(nd_jump_root(nd)))
+-			return ERR_PTR(-ECHILD);
++		error = nd_jump_root(nd);
++		if (unlikely(error))
++			return ERR_PTR(error);
+ 		while (unlikely(*++res = '/'))
+ 			;
+ 	}
+@@ -1698,8 +1703,13 @@ static inline int may_lookup(struct nameidata *nd)
+ static inline int handle_dots(struct nameidata *nd, int type)
+ {
+ 	if (type = LAST_DOTDOT) {
+-		if (!nd->root.mnt)
+-			set_root(nd);
++		int error = 0;
++
++		if (!nd->root.mnt) {
++			error = set_root(nd);
++			if (error)
++				return error;
++		}
+ 		if (nd->flags & LOOKUP_RCU) {
+ 			return follow_dotdot_rcu(nd);
+ 		} else
+@@ -2162,6 +2172,7 @@ static int link_path_walk(const char *name, struct nameidata *nd)
+ /* must be paired with terminate_walk() */
+ static const char *path_init(struct nameidata *nd, unsigned flags)
+ {
++	int error;
+ 	const char *s = nd->name->name;
  
- 	show_trace(NULL, (unsigned long *)regs->regs[15], regs);
- 	show_code(regs);
+ 	if (!*s)
+@@ -2194,11 +2205,13 @@ static const char *path_init(struct nameidata *nd, unsigned flags)
+ 	nd->path.dentry = NULL;
+ 
+ 	nd->m_seq = read_seqbegin(&mount_lock);
++
++	/* Figure out the starting path and root (if needed). */
+ 	if (*s = '/') {
+-		set_root(nd);
+-		if (likely(!nd_jump_root(nd)))
+-			return s;
+-		return ERR_PTR(-ECHILD);
++		error = nd_jump_root(nd);
++		if (unlikely(error))
++			return ERR_PTR(error);
++		return s;
+ 	} else if (nd->dfd = AT_FDCWD) {
+ 		if (flags & LOOKUP_RCU) {
+ 			struct fs_struct *fs = current->fs;
 -- 
-2.17.1
+2.24.0
