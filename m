@@ -1,105 +1,155 @@
-From: "tip-bot2 for Thomas Gleixner" <tip-bot2@linutronix.de>
-Date: Sun, 08 Dec 2019 14:58:31 +0000
-Subject: [tip: sched/urgent] sched/rt, sh: Use CONFIG_PREEMPTION
-Message-Id: <157581711194.21853.14714840736791910225.tip-bot2@tip-bot2>
+From: Aleksa Sarai <cyphar@cyphar.com>
+Date: Fri, 06 Dec 2019 14:13:32 +0000
+Subject: [PATCH v18 07/13] namei: LOOKUP_NO_XDEV: block mountpoint crossing
+Message-Id: <20191206141338.23338-8-cyphar@cyphar.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20191015191821.11479-19-bigeasy@linutronix.de>
-In-Reply-To: <20191015191821.11479-19-bigeasy@linutronix.de>
+References: <20191206141338.23338-1-cyphar@cyphar.com>
+In-Reply-To: <20191206141338.23338-1-cyphar@cyphar.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-tip-commits@vger.kernel.org
-Cc: Thomas Gleixner <tglx@linutronix.de>, Sebastian Andrzej Siewior <bigeasy@linutronix.de>, Linus Torvalds <torvalds@linux-foundation.org>, Peter Zijlstra <peterz@infradead.org>, Rich Felker <dalias@libc.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh@vger.kernel.org, Ingo Molnar <mingo@kernel.org>, x86 <x86@kernel.org>, LKML <linux-kernel@vger.kernel.org>
+To: Al Viro <viro@zeniv.linux.org.uk>, Jeff Layton <jlayton@kernel.org>, "J. Bruce Fields" <bfields@fieldses.org>, Arnd Bergmann <arnd@arndb.de>, David Howells <dhowells@redhat.com>, Shuah Khan <shuah@kernel.org>, Shuah Khan <skhan@linuxfoundation.org>, Ingo Molnar <mingo@redhat.com>, Peter Zijlstra <peterz@infradead.org>, Alexei Starovoitov <ast@kernel.org>, Daniel Borkmann <daniel@iogearbox.net>, Martin KaFai Lau <kafai@fb.com>, Song Liu <songliubraving@fb.com>, Yonghong Song <yhs@fb.com>, Andrii Nakryiko <andriin@fb.com>, Jonathan Corbet <corbet@lwn.net>
+Cc: Aleksa Sarai <cyphar@cyphar.com>, Christian Brauner <christian.brauner@ubuntu.com>, David Drysdale <drysdale@google.com>, Andy Lutomirski <luto@kernel.org>, Linus Torvalds <torvalds@linux-foundation.org>, Eric Biederman <ebiederm@xmission.com>, Andrew Morton <akpm@linux-foundation.org>, Kees Cook <keescook@chromium.org>, Jann Horn <jannh@google.com>, Tycho Andersen <tycho@tycho.ws>, Chanho Min <chanho.min@lge.com>, Oleg Nesterov <oleg@redhat.com>, Rasmus Villemoes <linux@rasmusvillemoes.dk>, Alexander Shishkin <alexander.shishkin@linux.intel.com>, Jiri Olsa <jolsa@redhat.com>, Namhyung Kim <namhyung@kernel.org>, Christian Brauner <christian@brauner.io>, Aleksa Sarai <asarai@suse.de>, dev@opencontainers.org, containers@lists.linux-foundation.org, bpf@vger.kernel.org, netdev@vger.kernel.org, linux-alpha@vger.kernel.org, linux-api@vger.kernel.org, libc-alpha@sourceware.org, linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-doc@vger.kernel.org, linux-fsdevel@vger.kernel.org, linux-ia64@vger.kernel.org, linux-kernel@vger.kernel.org, linux-kselftest@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-xtensa@linux-xtensa.org, sparclinux@vger.kernel.org
 
-The following commit has been merged into the sched/urgent branch of tip:
+/* Background. */
+The need to contain path operations within a mountpoint has been a
+long-standing usecase that userspace has historically implemented
+manually with liberal usage of stat(). find, rsync, tar and
+many other programs implement these semantics -- but it'd be much
+simpler to have a fool-proof way of refusing to open a path if it
+crosses a mountpoint.
 
-Commit-ID:     7be60ccbc59098f5251edae51bbf08e2d2226da0
-Gitweb:        https://git.kernel.org/tip/7be60ccbc59098f5251edae51bbf08e2d2226da0
-Author:        Thomas Gleixner <tglx@linutronix.de>
-AuthorDate:    Tue, 15 Oct 2019 21:18:05 +02:00
-Committer:     Ingo Molnar <mingo@kernel.org>
-CommitterDate: Sun, 08 Dec 2019 14:37:35 +01:00
+This is part of a refresh of Al's AT_NO_JUMPS patchset[1] (which was a
+variation on David Drysdale's O_BENEATH patchset[2], which in turn was
+based on the Capsicum project[3]).
 
-sched/rt, sh: Use CONFIG_PREEMPTION
+/* Userspace API. */
+LOOKUP_NO_XDEV will be exposed to userspace through openat2(2).
 
-CONFIG_PREEMPTION is selected by CONFIG_PREEMPT and by CONFIG_PREEMPT_RT.
-Both PREEMPT and PREEMPT_RT require the same functionality which today
-depends on CONFIG_PREEMPT.
+/* Semantics. */
+Unlike most other LOOKUP flags (most notably LOOKUP_FOLLOW),
+LOOKUP_NO_XDEV applies to all components of the path.
 
-Switch the entry code over to use CONFIG_PREEMPTION.
+With LOOKUP_NO_XDEV, any path component which crosses a mount-point
+during path resolution (including "..") will yield an -EXDEV. Absolute
+paths, absolute symlinks, and magic-links will only yield an -EXDEV if
+the jump involved changing mount-points.
 
-[bigeasy: +Kconfig]
+/* Testing. */
+LOOKUP_NO_XDEV is tested as part of the openat2(2) selftests.
 
-Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
-Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
-Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
-Cc: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: Peter Zijlstra <peterz@infradead.org>
-Cc: Rich Felker <dalias@libc.org>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: linux-sh@vger.kernel.org
-Link: https://lore.kernel.org/r/20191015191821.11479-19-bigeasy@linutronix.de
-Signed-off-by: Ingo Molnar <mingo@kernel.org>
+[1]: https://lore.kernel.org/lkml/20170429220414.GT29622@ZenIV.linux.org.uk/
+[2]: https://lore.kernel.org/lkml/1415094884-18349-1-git-send-email-drysdale@google.com/
+[3]: https://lore.kernel.org/lkml/1404124096-21445-1-git-send-email-drysdale@google.com/
+
+Cc: Christian Brauner <christian.brauner@ubuntu.com>
+Suggested-by: David Drysdale <drysdale@google.com>
+Suggested-by: Al Viro <viro@zeniv.linux.org.uk>
+Suggested-by: Andy Lutomirski <luto@kernel.org>
+Suggested-by: Linus Torvalds <torvalds@linux-foundation.org>
+Signed-off-by: Aleksa Sarai <cyphar@cyphar.com>
 ---
- arch/sh/Kconfig                | 2 +-
- arch/sh/kernel/cpu/sh5/entry.S | 4 ++--
- arch/sh/kernel/entry-common.S  | 4 ++--
- 3 files changed, 5 insertions(+), 5 deletions(-)
+ fs/namei.c            | 31 +++++++++++++++++++++++++++----
+ include/linux/namei.h |  1 +
+ 2 files changed, 28 insertions(+), 4 deletions(-)
 
-diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-index f356ee6..9ece111 100644
---- a/arch/sh/Kconfig
-+++ b/arch/sh/Kconfig
-@@ -108,7 +108,7 @@ config GENERIC_CALIBRATE_DELAY
+diff --git a/fs/namei.c b/fs/namei.c
+index 415a897729c8..321c8ad5d6b3 100644
+--- a/fs/namei.c
++++ b/fs/namei.c
+@@ -838,6 +838,11 @@ static inline void path_to_nameidata(const struct path *path,
  
- config GENERIC_LOCKBREAK
- 	def_bool y
--	depends on SMP && PREEMPT
-+	depends on SMP && PREEMPTION
+ static int nd_jump_root(struct nameidata *nd)
+ {
++	if (unlikely(nd->flags & LOOKUP_NO_XDEV)) {
++		/* Absolute path arguments to path_init() are allowed. */
++		if (nd->path.mnt != NULL && nd->path.mnt != nd->root.mnt)
++			return -EXDEV;
++	}
+ 	if (!nd->root.mnt) {
+ 		int error = set_root(nd);
+ 		if (error)
+@@ -873,6 +878,12 @@ int nd_jump_link(struct path *path)
+ 	if (unlikely(nd->flags & LOOKUP_NO_MAGICLINKS))
+ 		goto err;
  
- config ARCH_SUSPEND_POSSIBLE
- 	def_bool n
-diff --git a/arch/sh/kernel/cpu/sh5/entry.S b/arch/sh/kernel/cpu/sh5/entry.S
-index de68ffd..81c8b64 100644
---- a/arch/sh/kernel/cpu/sh5/entry.S
-+++ b/arch/sh/kernel/cpu/sh5/entry.S
-@@ -86,7 +86,7 @@
- 	andi	r6, ~0xf0, r6;		\
- 	putcon	r6, SR;
++	error = -EXDEV;
++	if (unlikely(nd->flags & LOOKUP_NO_XDEV)) {
++		if (nd->path.mnt != path->mnt)
++			goto err;
++	}
++
+ 	path_put(&nd->path);
+ 	nd->path = *path;
+ 	nd->inode = nd->path.dentry->d_inode;
+@@ -1280,12 +1291,16 @@ static int follow_managed(struct path *path, struct nameidata *nd)
+ 		break;
+ 	}
  
--#ifdef CONFIG_PREEMPT
-+#ifdef CONFIG_PREEMPTION
- #  define preempt_stop()	CLI()
- #else
- #  define preempt_stop()
-@@ -884,7 +884,7 @@ ret_from_exception:
+-	if (need_mntput && path->mnt = mnt)
+-		mntput(path->mnt);
++	if (need_mntput) {
++		if (path->mnt = mnt)
++			mntput(path->mnt);
++		if (unlikely(nd->flags & LOOKUP_NO_XDEV))
++			ret = -EXDEV;
++		else
++			nd->flags |= LOOKUP_JUMPED;
++	}
+ 	if (ret = -EISDIR || !ret)
+ 		ret = 1;
+-	if (need_mntput)
+-		nd->flags |= LOOKUP_JUMPED;
+ 	if (unlikely(ret < 0))
+ 		path_put_conditional(path, nd);
+ 	return ret;
+@@ -1342,6 +1357,8 @@ static bool __follow_mount_rcu(struct nameidata *nd, struct path *path,
+ 		mounted = __lookup_mnt(path->mnt, path->dentry);
+ 		if (!mounted)
+ 			break;
++		if (unlikely(nd->flags & LOOKUP_NO_XDEV))
++			return false;
+ 		path->mnt = &mounted->mnt;
+ 		path->dentry = mounted->mnt.mnt_root;
+ 		nd->flags |= LOOKUP_JUMPED;
+@@ -1388,6 +1405,8 @@ static int follow_dotdot_rcu(struct nameidata *nd)
+ 				return -ECHILD;
+ 			if (&mparent->mnt = nd->path.mnt)
+ 				break;
++			if (unlikely(nd->flags & LOOKUP_NO_XDEV))
++				return -ECHILD;
+ 			/* we know that mountpoint was pinned */
+ 			nd->path.dentry = mountpoint;
+ 			nd->path.mnt = &mparent->mnt;
+@@ -1402,6 +1421,8 @@ static int follow_dotdot_rcu(struct nameidata *nd)
+ 			return -ECHILD;
+ 		if (!mounted)
+ 			break;
++		if (unlikely(nd->flags & LOOKUP_NO_XDEV))
++			return -ECHILD;
+ 		nd->path.mnt = &mounted->mnt;
+ 		nd->path.dentry = mounted->mnt.mnt_root;
+ 		inode = nd->path.dentry->d_inode;
+@@ -1500,6 +1521,8 @@ static int follow_dotdot(struct nameidata *nd)
+ 		}
+ 		if (!follow_up(&nd->path))
+ 			break;
++		if (unlikely(nd->flags & LOOKUP_NO_XDEV))
++			return -EXDEV;
+ 	}
+ 	follow_mount(&nd->path);
+ 	nd->inode = nd->path.dentry->d_inode;
+diff --git a/include/linux/namei.h b/include/linux/namei.h
+index 1573b8493d98..25ee88c4acb1 100644
+--- a/include/linux/namei.h
++++ b/include/linux/namei.h
+@@ -42,6 +42,7 @@ enum {LAST_NORM, LAST_ROOT, LAST_DOT, LAST_DOTDOT, LAST_BIND};
+ /* Scoping flags for lookup. */
+ #define LOOKUP_NO_SYMLINKS	0x010000 /* No symlink crossing. */
+ #define LOOKUP_NO_MAGICLINKS	0x020000 /* No nd_jump_link() crossing. */
++#define LOOKUP_NO_XDEV		0x040000 /* No mountpoint crossing. */
  
- 	/* Check softirqs */
+ extern int path_pts(struct path *path);
  
--#ifdef CONFIG_PREEMPT
-+#ifdef CONFIG_PREEMPTION
- 	pta   ret_from_syscall, tr0
- 	blink   tr0, ZERO
- 
-diff --git a/arch/sh/kernel/entry-common.S b/arch/sh/kernel/entry-common.S
-index d31f66e..956a7a0 100644
---- a/arch/sh/kernel/entry-common.S
-+++ b/arch/sh/kernel/entry-common.S
-@@ -41,7 +41,7 @@
-  */
- #include <asm/dwarf.h>
- 
--#if defined(CONFIG_PREEMPT)
-+#if defined(CONFIG_PREEMPTION)
- #  define preempt_stop()	cli ; TRACE_IRQS_OFF
- #else
- #  define preempt_stop()
-@@ -84,7 +84,7 @@ ENTRY(ret_from_irq)
- 	get_current_thread_info r8, r0
- 	bt	resume_kernel	! Yes, it's from kernel, go back soon
- 
--#ifdef CONFIG_PREEMPT
-+#ifdef CONFIG_PREEMPTION
- 	bra	resume_userspace
- 	 nop
- ENTRY(resume_kernel)
+-- 
+2.24.0
