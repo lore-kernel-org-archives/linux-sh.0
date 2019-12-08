@@ -1,112 +1,105 @@
-From: Sasha Levin <sashal@kernel.org>
-Date: Tue, 10 Dec 2019 20:58:40 +0000
-Subject: [PATCH AUTOSEL 5.4 028/350] Revert "pinctrl: sh-pfc: r8a77990: Fix MOD_SEL1 bit30 when using SSI_SCK
-Message-Id: <20191210210402.8367-28-sashal@kernel.org>
+From: "tip-bot2 for Thomas Gleixner" <tip-bot2@linutronix.de>
+Date: Sun, 08 Dec 2019 14:58:31 +0000
+Subject: [tip: sched/urgent] sched/rt, sh: Use CONFIG_PREEMPTION
+Message-Id: <157581711194.21853.14714840736791910225.tip-bot2@tip-bot2>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20191210210402.8367-1-sashal@kernel.org>
-In-Reply-To: <20191210210402.8367-1-sashal@kernel.org>
+References: <20191015191821.11479-19-bigeasy@linutronix.de>
+In-Reply-To: <20191015191821.11479-19-bigeasy@linutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Simon Horman <horms+renesas@verge.net.au>, Sasha Levin <sashal@kernel.org>, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org
+To: linux-tip-commits@vger.kernel.org
+Cc: Thomas Gleixner <tglx@linutronix.de>, Sebastian Andrzej Siewior <bigeasy@linutronix.de>, Linus Torvalds <torvalds@linux-foundation.org>, Peter Zijlstra <peterz@infradead.org>, Rich Felker <dalias@libc.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh@vger.kernel.org, Ingo Molnar <mingo@kernel.org>, x86 <x86@kernel.org>, LKML <linux-kernel@vger.kernel.org>
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+The following commit has been merged into the sched/urgent branch of tip:
 
-[ Upstream commit 3672bc7093434621c83299ef27ea3b3225a67600 ]
+Commit-ID:     7be60ccbc59098f5251edae51bbf08e2d2226da0
+Gitweb:        https://git.kernel.org/tip/7be60ccbc59098f5251edae51bbf08e2d2226da0
+Author:        Thomas Gleixner <tglx@linutronix.de>
+AuthorDate:    Tue, 15 Oct 2019 21:18:05 +02:00
+Committer:     Ingo Molnar <mingo@kernel.org>
+CommitterDate: Sun, 08 Dec 2019 14:37:35 +01:00
 
-This reverts commit e87882eb9be10b2b9e28156922c2a47d877f5db4.
+sched/rt, sh: Use CONFIG_PREEMPTION
 
-According to the R-Car Gen3 Hardware Manual Errata for Rev 1.00 of Aug
-24, 2018, the SEL_SSI2_{0,1} definition was to be deleted.  However,
-this errata merely fixed an accidental double definition in the Hardware
-User's Manual Rev. 1.00.  The real definition is still present in later
-revisions of the manual (Rev. 1.50 and Rev. 2.00).
+CONFIG_PREEMPTION is selected by CONFIG_PREEMPT and by CONFIG_PREEMPT_RT.
+Both PREEMPT and PREEMPT_RT require the same functionality which today
+depends on CONFIG_PREEMPT.
 
-Hence revert the commit to recover the definition.
+Switch the entry code over to use CONFIG_PREEMPTION.
 
-Based on a patch in the BSP by Takeshi Kihara
-<takeshi.kihara.df@renesas.com>.
+[bigeasy: +Kconfig]
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Reviewed-by: Simon Horman <horms+renesas@verge.net.au>
-Link: https://lore.kernel.org/r/20190904121658.2617-3-geert+renesas@glider.be
-Signed-off-by: Sasha Levin <sashal@kernel.org>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Cc: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: Peter Zijlstra <peterz@infradead.org>
+Cc: Rich Felker <dalias@libc.org>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: linux-sh@vger.kernel.org
+Link: https://lore.kernel.org/r/20191015191821.11479-19-bigeasy@linutronix.de
+Signed-off-by: Ingo Molnar <mingo@kernel.org>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a77990.c | 20 +++++++++++---------
- 1 file changed, 11 insertions(+), 9 deletions(-)
+ arch/sh/Kconfig                | 2 +-
+ arch/sh/kernel/cpu/sh5/entry.S | 4 ++--
+ arch/sh/kernel/entry-common.S  | 4 ++--
+ 3 files changed, 5 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a77990.c b/drivers/pinctrl/sh-pfc/pfc-r8a77990.c
-index 2dfb8d9cfda12..3808409cab385 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a77990.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a77990.c
-@@ -448,6 +448,7 @@ FM(IP12_31_28)	IP12_31_28	FM(IP13_31_28)	IP13_31_28	FM(IP14_31_28)	IP14_31_28	FM
- #define MOD_SEL0_1_0	   REV4(FM(SEL_SPEED_PULSE_IF_0),	FM(SEL_SPEED_PULSE_IF_1),	FM(SEL_SPEED_PULSE_IF_2),	F_(0, 0))
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index f356ee6..9ece111 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -108,7 +108,7 @@ config GENERIC_CALIBRATE_DELAY
  
- /* MOD_SEL1 */			/* 0 */				/* 1 */				/* 2 */				/* 3 */			/* 4 */			/* 5 */		/* 6 */		/* 7 */
-+#define MOD_SEL1_30		FM(SEL_SSI2_0)			FM(SEL_SSI2_1)
- #define MOD_SEL1_29		FM(SEL_TIMER_TMU_0)		FM(SEL_TIMER_TMU_1)
- #define MOD_SEL1_28		FM(SEL_USB_20_CH0_0)		FM(SEL_USB_20_CH0_1)
- #define MOD_SEL1_26		FM(SEL_DRIF2_0)			FM(SEL_DRIF2_1)
-@@ -468,7 +469,7 @@ FM(IP12_31_28)	IP12_31_28	FM(IP13_31_28)	IP13_31_28	FM(IP14_31_28)	IP14_31_28	FM
+ config GENERIC_LOCKBREAK
+ 	def_bool y
+-	depends on SMP && PREEMPT
++	depends on SMP && PREEMPTION
  
- #define PINMUX_MOD_SELS	\
- \
--MOD_SEL0_30_29 \
-+MOD_SEL0_30_29		MOD_SEL1_30 \
- 			MOD_SEL1_29 \
- MOD_SEL0_28		MOD_SEL1_28 \
- MOD_SEL0_27_26 \
-@@ -1058,7 +1059,7 @@ static const u16 pinmux_data[] = {
- 	PINMUX_IPSR_MSEL(IP10_27_24,		RIF0_CLK_B,	SEL_DRIF0_1),
- 	PINMUX_IPSR_MSEL(IP10_27_24,		SCL2_B,		SEL_I2C2_1),
- 	PINMUX_IPSR_MSEL(IP10_27_24,		TCLK1_A,	SEL_TIMER_TMU_0),
--	PINMUX_IPSR_GPSR(IP10_27_24,		SSI_SCK2_B),
-+	PINMUX_IPSR_MSEL(IP10_27_24,		SSI_SCK2_B,	SEL_SSI2_1),
- 	PINMUX_IPSR_GPSR(IP10_27_24,		TS_SCK0),
+ config ARCH_SUSPEND_POSSIBLE
+ 	def_bool n
+diff --git a/arch/sh/kernel/cpu/sh5/entry.S b/arch/sh/kernel/cpu/sh5/entry.S
+index de68ffd..81c8b64 100644
+--- a/arch/sh/kernel/cpu/sh5/entry.S
++++ b/arch/sh/kernel/cpu/sh5/entry.S
+@@ -86,7 +86,7 @@
+ 	andi	r6, ~0xf0, r6;		\
+ 	putcon	r6, SR;
  
- 	PINMUX_IPSR_GPSR(IP10_31_28,		SD0_WP),
-@@ -1067,7 +1068,7 @@ static const u16 pinmux_data[] = {
- 	PINMUX_IPSR_MSEL(IP10_31_28,		RIF0_D0_B,	SEL_DRIF0_1),
- 	PINMUX_IPSR_MSEL(IP10_31_28,		SDA2_B,		SEL_I2C2_1),
- 	PINMUX_IPSR_MSEL(IP10_31_28,		TCLK2_A,	SEL_TIMER_TMU_0),
--	PINMUX_IPSR_GPSR(IP10_31_28,		SSI_WS2_B),
-+	PINMUX_IPSR_MSEL(IP10_31_28,		SSI_WS2_B,	SEL_SSI2_1),
- 	PINMUX_IPSR_GPSR(IP10_31_28,		TS_SDAT0),
+-#ifdef CONFIG_PREEMPT
++#ifdef CONFIG_PREEMPTION
+ #  define preempt_stop()	CLI()
+ #else
+ #  define preempt_stop()
+@@ -884,7 +884,7 @@ ret_from_exception:
  
- 	/* IPSR11 */
-@@ -1085,13 +1086,13 @@ static const u16 pinmux_data[] = {
+ 	/* Check softirqs */
  
- 	PINMUX_IPSR_MSEL(IP11_11_8,		RX0_A,		SEL_SCIF0_0),
- 	PINMUX_IPSR_MSEL(IP11_11_8,		HRX1_A,		SEL_HSCIF1_0),
--	PINMUX_IPSR_GPSR(IP11_11_8,		SSI_SCK2_A),
-+	PINMUX_IPSR_MSEL(IP11_11_8,		SSI_SCK2_A,	SEL_SSI2_0),
- 	PINMUX_IPSR_GPSR(IP11_11_8,		RIF1_SYNC),
- 	PINMUX_IPSR_GPSR(IP11_11_8,		TS_SCK1),
+-#ifdef CONFIG_PREEMPT
++#ifdef CONFIG_PREEMPTION
+ 	pta   ret_from_syscall, tr0
+ 	blink   tr0, ZERO
  
- 	PINMUX_IPSR_MSEL(IP11_15_12,		TX0_A,		SEL_SCIF0_0),
- 	PINMUX_IPSR_GPSR(IP11_15_12,		HTX1_A),
--	PINMUX_IPSR_GPSR(IP11_15_12,		SSI_WS2_A),
-+	PINMUX_IPSR_MSEL(IP11_15_12,		SSI_WS2_A,	SEL_SSI2_0),
- 	PINMUX_IPSR_GPSR(IP11_15_12,		RIF1_D0),
- 	PINMUX_IPSR_GPSR(IP11_15_12,		TS_SDAT1),
+diff --git a/arch/sh/kernel/entry-common.S b/arch/sh/kernel/entry-common.S
+index d31f66e..956a7a0 100644
+--- a/arch/sh/kernel/entry-common.S
++++ b/arch/sh/kernel/entry-common.S
+@@ -41,7 +41,7 @@
+  */
+ #include <asm/dwarf.h>
  
-@@ -4957,11 +4958,12 @@ static const struct pinmux_cfg_reg pinmux_config_regs[] = {
- 		MOD_SEL0_1_0 ))
- 	},
- 	{ PINMUX_CFG_REG_VAR("MOD_SEL1", 0xe6060504, 32,
--			     GROUP(2, 1, 1, 1, 1, 1, 3, 3, 1, 1, 1, 1,
--				   2, 2, 2, 1, 1, 2, 1, 4),
-+			     GROUP(1, 1, 1, 1, 1, 1, 1, 3, 3, 1, 1, 1,
-+				   1, 2, 2, 2, 1, 1, 2, 1, 4),
- 			     GROUP(
--		/* RESERVED 31, 30 */
--		0, 0, 0, 0,
-+		/* RESERVED 31 */
-+		0, 0,
-+		MOD_SEL1_30
- 		MOD_SEL1_29
- 		MOD_SEL1_28
- 		/* RESERVED 27 */
--- 
-2.20.1
+-#if defined(CONFIG_PREEMPT)
++#if defined(CONFIG_PREEMPTION)
+ #  define preempt_stop()	cli ; TRACE_IRQS_OFF
+ #else
+ #  define preempt_stop()
+@@ -84,7 +84,7 @@ ENTRY(ret_from_irq)
+ 	get_current_thread_info r8, r0
+ 	bt	resume_kernel	! Yes, it's from kernel, go back soon
+ 
+-#ifdef CONFIG_PREEMPT
++#ifdef CONFIG_PREEMPTION
+ 	bra	resume_userspace
+ 	 nop
+ ENTRY(resume_kernel)
