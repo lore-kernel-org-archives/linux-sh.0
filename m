@@ -1,228 +1,120 @@
-From: Aleksa Sarai <cyphar@cyphar.com>
-Date: Fri, 06 Dec 2019 14:13:27 +0000
-Subject: [PATCH v18 02/13] nsfs: clean-up ns_get_path() signature to return int
-Message-Id: <20191206141338.23338-3-cyphar@cyphar.com>
+From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Date: Mon, 09 Dec 2019 17:19:06 +0000
+Subject: 2nd RESEND: Native build fails with malloc(): corrupted top size
+Message-Id: <bea762ff-abcb-b8aa-81f4-2201c53f19c3@physik.fu-berlin.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20191206141338.23338-1-cyphar@cyphar.com>
-In-Reply-To: <20191206141338.23338-1-cyphar@cyphar.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Al Viro <viro@zeniv.linux.org.uk>, Jeff Layton <jlayton@kernel.org>, "J. Bruce Fields" <bfields@fieldses.org>, Arnd Bergmann <arnd@arndb.de>, David Howells <dhowells@redhat.com>, Shuah Khan <shuah@kernel.org>, Shuah Khan <skhan@linuxfoundation.org>, Ingo Molnar <mingo@redhat.com>, Peter Zijlstra <peterz@infradead.org>, Alexei Starovoitov <ast@kernel.org>, Daniel Borkmann <daniel@iogearbox.net>, Martin KaFai Lau <kafai@fb.com>, Song Liu <songliubraving@fb.com>, Yonghong Song <yhs@fb.com>, Andrii Nakryiko <andriin@fb.com>, Jonathan Corbet <corbet@lwn.net>
-Cc: Aleksa Sarai <cyphar@cyphar.com>, Eric Biederman <ebiederm@xmission.com>, Andy Lutomirski <luto@kernel.org>, Andrew Morton <akpm@linux-foundation.org>, Kees Cook <keescook@chromium.org>, Jann Horn <jannh@google.com>, Tycho Andersen <tycho@tycho.ws>, David Drysdale <drysdale@google.com>, Chanho Min <chanho.min@lge.com>, Oleg Nesterov <oleg@redhat.com>, Rasmus Villemoes <linux@rasmusvillemoes.dk>, Alexander Shishkin <alexander.shishkin@linux.intel.com>, Jiri Olsa <jolsa@redhat.com>, Namhyung Kim <namhyung@kernel.org>, Christian Brauner <christian@brauner.io>, Aleksa Sarai <asarai@suse.de>, Linus Torvalds <torvalds@linux-foundation.org>, dev@opencontainers.org, containers@lists.linux-foundation.org, bpf@vger.kernel.org, netdev@vger.kernel.org, linux-alpha@vger.kernel.org, linux-api@vger.kernel.org, libc-alpha@sourceware.org, linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-doc@vger.kernel.org, linux-fsdevel@vger.kernel.org, linux-ia64@vger.kernel.org, linux-kernel@vger.kernel.org, linux-kselftest@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-xtensa@linux-xtensa.org, sparclinux@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-ns_get_path() and ns_get_path_cb() only ever return either NULL or an
-ERR_PTR. It is far more idiomatic to simply return an integer, and it
-makes all of the callers of ns_get_path() more straightforward to read.
-
-Fixes: e149ed2b805f ("take the targets of /proc/*/ns/* symlinks to separate fs")
-Signed-off-by: Aleksa Sarai <cyphar@cyphar.com>
----
- fs/nsfs.c               | 29 ++++++++++++++---------------
- fs/proc/namespaces.c    |  6 +++---
- include/linux/proc_ns.h |  4 ++--
- kernel/bpf/offload.c    | 12 ++++++------
- kernel/events/core.c    |  2 +-
- 5 files changed, 26 insertions(+), 27 deletions(-)
-
-diff --git a/fs/nsfs.c b/fs/nsfs.c
-index a0431642c6b5..f3d2833c5781 100644
---- a/fs/nsfs.c
-+++ b/fs/nsfs.c
-@@ -52,7 +52,7 @@ static void nsfs_evict(struct inode *inode)
- 	ns->ops->put(ns);
- }
- 
--static void *__ns_get_path(struct path *path, struct ns_common *ns)
-+static int __ns_get_path(struct path *path, struct ns_common *ns)
- {
- 	struct vfsmount *mnt = nsfs_mnt;
- 	struct dentry *dentry;
-@@ -71,13 +71,13 @@ static void *__ns_get_path(struct path *path, struct ns_common *ns)
- got_it:
- 	path->mnt = mntget(mnt);
- 	path->dentry = dentry;
--	return NULL;
-+	return 0;
- slow:
- 	rcu_read_unlock();
- 	inode = new_inode_pseudo(mnt->mnt_sb);
- 	if (!inode) {
- 		ns->ops->put(ns);
--		return ERR_PTR(-ENOMEM);
-+		return -ENOMEM;
- 	}
- 	inode->i_ino = ns->inum;
- 	inode->i_mtime = inode->i_atime = inode->i_ctime = current_time(inode);
-@@ -89,7 +89,7 @@ static void *__ns_get_path(struct path *path, struct ns_common *ns)
- 	dentry = d_alloc_anon(mnt->mnt_sb);
- 	if (!dentry) {
- 		iput(inode);
--		return ERR_PTR(-ENOMEM);
-+		return -ENOMEM;
- 	}
- 	d_instantiate(dentry, inode);
- 	dentry->d_fsdata = (void *)ns->ops;
-@@ -98,23 +98,22 @@ static void *__ns_get_path(struct path *path, struct ns_common *ns)
- 		d_delete(dentry);	/* make sure ->d_prune() does nothing */
- 		dput(dentry);
- 		cpu_relax();
--		return ERR_PTR(-EAGAIN);
-+		return -EAGAIN;
- 	}
- 	goto got_it;
- }
- 
--void *ns_get_path_cb(struct path *path, ns_get_path_helper_t *ns_get_cb,
-+int ns_get_path_cb(struct path *path, ns_get_path_helper_t *ns_get_cb,
- 		     void *private_data)
- {
--	void *ret;
-+	int ret;
- 
- 	do {
- 		struct ns_common *ns = ns_get_cb(private_data);
- 		if (!ns)
--			return ERR_PTR(-ENOENT);
--
-+			return -ENOENT;
- 		ret = __ns_get_path(path, ns);
--	} while (ret = ERR_PTR(-EAGAIN));
-+	} while (ret = -EAGAIN);
- 
- 	return ret;
- }
-@@ -131,7 +130,7 @@ static struct ns_common *ns_get_path_task(void *private_data)
- 	return args->ns_ops->get(args->task);
- }
- 
--void *ns_get_path(struct path *path, struct task_struct *task,
-+int ns_get_path(struct path *path, struct task_struct *task,
- 		  const struct proc_ns_operations *ns_ops)
- {
- 	struct ns_get_path_task_args args = {
-@@ -147,7 +146,7 @@ int open_related_ns(struct ns_common *ns,
- {
- 	struct path path = {};
- 	struct file *f;
--	void *err;
-+	int err;
- 	int fd;
- 
- 	fd = get_unused_fd_flags(O_CLOEXEC);
-@@ -164,11 +163,11 @@ int open_related_ns(struct ns_common *ns,
- 		}
- 
- 		err = __ns_get_path(&path, relative);
--	} while (err = ERR_PTR(-EAGAIN));
-+	} while (err = -EAGAIN);
- 
--	if (IS_ERR(err)) {
-+	if (err) {
- 		put_unused_fd(fd);
--		return PTR_ERR(err);
-+		return err;
- 	}
- 
- 	f = dentry_open(&path, O_RDONLY, current_cred());
-diff --git a/fs/proc/namespaces.c b/fs/proc/namespaces.c
-index dd2b35f78b09..08dd94df1a66 100644
---- a/fs/proc/namespaces.c
-+++ b/fs/proc/namespaces.c
-@@ -42,14 +42,14 @@ static const char *proc_ns_get_link(struct dentry *dentry,
- 	const struct proc_ns_operations *ns_ops = PROC_I(inode)->ns_ops;
- 	struct task_struct *task;
- 	struct path ns_path;
--	void *error = ERR_PTR(-EACCES);
-+	int error = -EACCES;
- 
- 	if (!dentry)
- 		return ERR_PTR(-ECHILD);
- 
- 	task = get_proc_task(inode);
- 	if (!task)
--		return error;
-+		return ERR_PTR(-EACCES);
- 
- 	if (ptrace_may_access(task, PTRACE_MODE_READ_FSCREDS)) {
- 		error = ns_get_path(&ns_path, task, ns_ops);
-@@ -57,7 +57,7 @@ static const char *proc_ns_get_link(struct dentry *dentry,
- 			nd_jump_link(&ns_path);
- 	}
- 	put_task_struct(task);
--	return error;
-+	return ERR_PTR(error);
- }
- 
- static int proc_ns_readlink(struct dentry *dentry, char __user *buffer, int buflen)
-diff --git a/include/linux/proc_ns.h b/include/linux/proc_ns.h
-index d31cb6215905..aed366b4795c 100644
---- a/include/linux/proc_ns.h
-+++ b/include/linux/proc_ns.h
-@@ -76,10 +76,10 @@ static inline int ns_alloc_inum(struct ns_common *ns)
- 
- extern struct file *proc_ns_fget(int fd);
- #define get_proc_ns(inode) ((struct ns_common *)(inode)->i_private)
--extern void *ns_get_path(struct path *path, struct task_struct *task,
-+extern int ns_get_path(struct path *path, struct task_struct *task,
- 			const struct proc_ns_operations *ns_ops);
- typedef struct ns_common *ns_get_path_helper_t(void *);
--extern void *ns_get_path_cb(struct path *path, ns_get_path_helper_t ns_get_cb,
-+extern int ns_get_path_cb(struct path *path, ns_get_path_helper_t ns_get_cb,
- 			    void *private_data);
- 
- extern int ns_get_name(char *buf, size_t size, struct task_struct *task,
-diff --git a/kernel/bpf/offload.c b/kernel/bpf/offload.c
-index 5b9da0954a27..2c5dc6541ece 100644
---- a/kernel/bpf/offload.c
-+++ b/kernel/bpf/offload.c
-@@ -302,14 +302,14 @@ int bpf_prog_offload_info_fill(struct bpf_prog_info *info,
- 	struct inode *ns_inode;
- 	struct path ns_path;
- 	char __user *uinsns;
--	void *res;
-+	int res;
- 	u32 ulen;
- 
- 	res = ns_get_path_cb(&ns_path, bpf_prog_offload_info_fill_ns, &args);
--	if (IS_ERR(res)) {
-+	if (res) {
- 		if (!info->ifindex)
- 			return -ENODEV;
--		return PTR_ERR(res);
-+		return res;
- 	}
- 
- 	down_read(&bpf_devs_lock);
-@@ -526,13 +526,13 @@ int bpf_map_offload_info_fill(struct bpf_map_info *info, struct bpf_map *map)
- 	};
- 	struct inode *ns_inode;
- 	struct path ns_path;
--	void *res;
-+	int res;
- 
- 	res = ns_get_path_cb(&ns_path, bpf_map_offload_info_fill_ns, &args);
--	if (IS_ERR(res)) {
-+	if (res) {
- 		if (!info->ifindex)
- 			return -ENODEV;
--		return PTR_ERR(res);
-+		return res;
- 	}
- 
- 	ns_inode = ns_path.dentry->d_inode;
-diff --git a/kernel/events/core.c b/kernel/events/core.c
-index 00a014670ed0..3772a04ca802 100644
---- a/kernel/events/core.c
-+++ b/kernel/events/core.c
-@@ -7258,7 +7258,7 @@ static void perf_fill_ns_link_info(struct perf_ns_link_info *ns_link_info,
- {
- 	struct path ns_path;
- 	struct inode *ns_inode;
--	void *error;
-+	int error;
- 
- 	error = ns_get_path(&ns_path, task, ns_ops);
- 	if (!error) {
--- 
-2.24.0
+KFJlc2VuZCB3aXRob3V0IGF0dGFjaG1lbnRzIG5vdyBzaW5jZSB0aGlzIHNlZW1zIHRvIGJl
+IGJsb2NrZWQgYnkgdGhlIGxpc3Qgc2VydmVycykNCg0KSGkhDQoNClNpbmNlIGFyb3VuZCB0
+aGUgNS4zIHJlbGVhc2UsIHRyeWluZyB0byBidWlsZCB0aGUgU0gga2VybmVsIG5hdGl2ZWx5
+IG9uDQpteSBTSDc3ODZMQ1IgZXZhbHVhdGlvbiBib2FyZCB1bmRlciBEZWJpYW4gdW5zdGFi
+bGUgd2l0aCBhIGN1cnJlbnQgZ2NjLTkNCnRvb2xjaGFpbiBmYWlscyB3aXRoIGVycm9ycyB3
+aGljaCBzZWVtIHRvIGJlIGdlbmVyYXRlZCBieSB0aGUgQyBsaWJyYXJ5Og0KDQpnbGF1Yml0
+ekB0aXJwaXR6Oi9zcnYvZ2xhdWJpdHovbGludXgtNS4zLjE1JCBtYWtlIGNsZWFuICYmIG1h
+a2UNCkFib3J0ZWQNCkFib3J0ZWQNCkFib3J0ZWQNCkFib3J0ZWQNCkFib3J0ZWQNCkFib3J0
+ZWQNCkFib3J0ZWQNCkFib3J0ZWQNCkFib3J0ZWQNCkFib3J0ZWQNCkFib3J0ZWQNCkFib3J0
+ZWQNCkFib3J0ZWQNCkFib3J0ZWQNCkFib3J0ZWQNCkFib3J0ZWQNCkFib3J0ZWQNCkFib3J0
+ZWQNCkFib3J0ZWQNCkFib3J0ZWQNCkFib3J0ZWQNCiAgSE9TVENDICBzY3JpcHRzL2Jhc2lj
+L2ZpeGRlcA0KICBIT1NUQ0MgIHNjcmlwdHMvYmluMmMNCiAgSE9TVENDICBzY3JpcHRzL2th
+bGxzeW1zDQogIEhPU1RDQyAgc2NyaXB0cy9jb25tYWtlaGFzaA0KbWFrZVsxXTogJ2luY2x1
+ZGUvZ2VuZXJhdGVkL21hY2h0eXBlcy5oJyBpcyB1cCB0byBkYXRlLg0KICBDQyAgICAgIHNj
+cmlwdHMvbW9kL2VtcHR5Lm8NCm1hbGxvYygpOiBpbnZhbGlkIHNpemUgKHVuc29ydGVkKQ0K
+QWJvcnRlZA0KbWFrZVsxXTogKioqIFtzY3JpcHRzL01ha2VmaWxlLmJ1aWxkOjI4MTogc2Ny
+aXB0cy9tb2QvZW1wdHkub10gRXJyb3IgMTM0DQptYWtlOiAqKiogW01ha2VmaWxlOjExMjg6
+IHByZXBhcmUwXSBFcnJvciAyDQpnbGF1Yml0ekB0aXJwaXR6Oi9zcnYvZ2xhdWJpdHovbGlu
+dXgtNS4zLjE1JA0KDQpFdmVuIHdpdGggIm1ha2UgVj0xIiBpdCBkb2Vzbid0IGJlY29tZSBh
+bnkgbW9yZSBvYnZpb3VzIHdoYXQncyBnb2luZyBvbjoNCg0KZ2xhdWJpdHpAdGlycGl0ejov
+c3J2L2dsYXViaXR6L2xpbnV4LTUuMy4xNSQgbWFrZSBWPTENCkFib3J0ZWQNCkFib3J0ZWQN
+CkFib3J0ZWQNCkFib3J0ZWQNCkFib3J0ZWQNCkFib3J0ZWQNCkFib3J0ZWQNCkFib3J0ZWQN
+CkFib3J0ZWQNCkFib3J0ZWQNCkFib3J0ZWQNCkFib3J0ZWQNCkFib3J0ZWQNCkFib3J0ZWQN
+CkFib3J0ZWQNCkFib3J0ZWQNCkFib3J0ZWQNCkFib3J0ZWQNCkFib3J0ZWQNCkFib3J0ZWQN
+CkFib3J0ZWQNCm1ha2UgLWYgLi9zY3JpcHRzL01ha2VmaWxlLmJ1aWxkIG9iaj1hcmNoL3No
+L2tlcm5lbC9zeXNjYWxscyBhbGwNCm1ha2UgLWYgLi9zY3JpcHRzL01ha2VmaWxlLmJ1aWxk
+IG9iaj1zY3JpcHRzL2Jhc2ljDQpybSAtZiAudG1wX3F1aWV0X3JlY29yZG1jb3VudA0KbWFr
+ZSAtZiAuL3NjcmlwdHMvTWFrZWZpbGUuYnVpbGQgb2JqPXNjcmlwdHMvZHRjDQptYWtlIC1m
+IC4vc2NyaXB0cy9NYWtlZmlsZS5idWlsZCBvYmo9c2NyaXB0cw0Kc2V0IC1lOyBta2RpciAt
+cCBpbmNsdWRlL2NvbmZpZy87IHsgZWNobyAiNS4zLjE1JCgvYmluL2Jhc2ggLi9zY3JpcHRz
+L3NldGxvY2FsdmVyc2lvbiAuKSI7IH0gPiBpbmNsdWRlL2NvbmZpZy9rZXJuZWwucmVsZWFz
+ZS50bXA7IGlmIFsgLXIgaW5jbHVkZS9jb25maWcva2VybmVsLnJlbGVhc2UgXSAmJiBjbXAg
+LXMgaW5jbHVkZS9jb25maWcva2VybmVsLnJlbGVhc2UgaW5jbHVkZS9jb25maWcva2VybmVs
+LnJlbGVhc2UudG1wOyB0aGVuIHJtIC1mIGluY2x1ZGUvY29uZmlnL2tlcm5lbC5yZWxlYXNl
+LnRtcDsgZWxzZSA6ICcgIFVQRCAgICAgaW5jbHVkZS9jb25maWcva2VybmVsLnJlbGVhc2Un
+OyBtdiAtZiBpbmNsdWRlL2NvbmZpZy9rZXJuZWwucmVsZWFzZS50bXAgaW5jbHVkZS9jb25m
+aWcva2VybmVsLnJlbGVhc2U7IGZpDQptYWtlIC1mIC4vc2NyaXB0cy9NYWtlZmlsZS5hc20t
+Z2VuZXJpYyBvYmo9YXJjaC9zaC9pbmNsdWRlL2dlbmVyYXRlZC91YXBpL2FzbSBcDQpnZW5l
+cmljPWluY2x1ZGUvdWFwaS9hc20tZ2VuZXJpYw0KbWFrZSAtZiAuL3NjcmlwdHMvTWFrZWZp
+bGUuYXNtLWdlbmVyaWMgb2JqPWFyY2gvc2gvaW5jbHVkZS9nZW5lcmF0ZWQvYXNtIFwNCmdl
+bmVyaWM9aW5jbHVkZS9hc20tZ2VuZXJpYw0Kc2V0IC1lOyBta2RpciAtcCBpbmNsdWRlL2dl
+bmVyYXRlZC91YXBpL2xpbnV4LzsgeyAgICAgICBlY2hvIFwjZGVmaW5lIExJTlVYX1ZFUlNJ
+T05fQ09ERSAzMjg0NjM7IGVjaG8gJyNkZWZpbmUgS0VSTkVMX1ZFUlNJT04oYSxiLGMpICgo
+KGEpIDw8IDE2KSArICgoYikgPDwgOCkgKyAoYykpJzsgfSA+IGluY2x1ZGUvZ2VuZXJhdGVk
+L3VhcGkvbGludXgvdmVyc2lvbi5oLnRtcDsgaWYgWyAtciBpbmNsdWRlL2dlbmVyYXRlZC91
+YXBpL2xpbnV4L3ZlcnNpb24uaCBdICYmIGNtcCAtcyBpbmNsdWRlL2dlbmVyYXRlZC91YXBp
+L2xpbnV4L3ZlcnNpb24uaCBpbmNsdWRlL2dlbmVyYXRlZC91YXBpL2xpbnV4L3ZlcnNpb24u
+aC50bXA7IHRoZW4gcm0gLWYgaW5jbHVkZS9nZW5lcmF0ZWQvdWFwaS9saW51eC92ZXJzaW9u
+LmgudG1wOyBlbHNlIDogJyAgVVBEICAgICBpbmNsdWRlL2dlbmVyYXRlZC91YXBpL2xpbnV4
+L3ZlcnNpb24uaCc7IG12IC1mIGluY2x1ZGUvZ2VuZXJhdGVkL3VhcGkvbGludXgvdmVyc2lv
+bi5oLnRtcCBpbmNsdWRlL2dlbmVyYXRlZC91YXBpL2xpbnV4L3ZlcnNpb24uaDsgZmkNCnJt
+IC1mIGluY2x1ZGUvbGludXgvdmVyc2lvbi5oDQpzZXQgLWU7IG1rZGlyIC1wIGluY2x1ZGUv
+Z2VuZXJhdGVkLzsgeyAgaWYgWyBgZWNobyAtbiAiNS4zLjE1IiB8IHdjIC1jIGAgLWd0IDY0
+IF07IHRoZW4gZWNobyAnIjUuMy4xNSIgZXhjZWVkcyA2NCBjaGFyYWN0ZXJzJyA+JjI7IGV4
+aXQgMTsgZmk7IGVjaG8gXCNkZWZpbmUgVVRTX1JFTEVBU0UgXCI1LjMuMTVcIjsgfSA+IGlu
+Y2x1ZGUvZ2VuZXJhdGVkL3V0c3JlbGVhc2UuaC50bXA7IGlmIFsgLXIgaW5jbHVkZS9nZW5l
+cmF0ZWQvdXRzcmVsZWFzZS5oIF0gJiYgY21wIC1zIGluY2x1ZGUvZ2VuZXJhdGVkL3V0c3Jl
+bGVhc2UuaCBpbmNsdWRlL2dlbmVyYXRlZC91dHNyZWxlYXNlLmgudG1wOyB0aGVuIHJtIC1m
+IGluY2x1ZGUvZ2VuZXJhdGVkL3V0c3JlbGVhc2UuaC50bXA7IGVsc2UgOiAnICBVUEQgICAg
+IGluY2x1ZGUvZ2VuZXJhdGVkL3V0c3JlbGVhc2UuaCc7IG12IC1mIGluY2x1ZGUvZ2VuZXJh
+dGVkL3V0c3JlbGVhc2UuaC50bXAgaW5jbHVkZS9nZW5lcmF0ZWQvdXRzcmVsZWFzZS5oOyBm
+aQ0KbWFrZSAtZiAuL3NjcmlwdHMvTWFrZWZpbGUuYnVpbGQgb2JqPWFyY2gvc2gvdG9vbHMg
+aW5jbHVkZS9nZW5lcmF0ZWQvbWFjaHR5cGVzLmgNCm1ha2VbMV06ICdpbmNsdWRlL2dlbmVy
+YXRlZC9tYWNodHlwZXMuaCcgaXMgdXAgdG8gZGF0ZS4NCm1ha2UgLWYgLi9zY3JpcHRzL01h
+a2VmaWxlLmJ1aWxkIG9iaj1zY3JpcHRzL21vZA0KICBnY2MgLVdwLC1NRCxzY3JpcHRzL21v
+ZC8uZW1wdHkuby5kICAtbm9zdGRpbmMgLWlzeXN0ZW0gL3Vzci9saWIvZ2NjL3NoNC1saW51
+eC1nbnUvOS9pbmNsdWRlIC1JLi9hcmNoL3NoL2luY2x1ZGUgLUkuL2FyY2gvc2gvaW5jbHVk
+ZS9nZW5lcmF0ZWQgIC1JLi9pbmNsdWRlIC1JLi9hcmNoL3NoL2luY2x1ZGUvdWFwaSAtSS4v
+YXJjaC9zaC9pbmNsdWRlL2dlbmVyYXRlZC91YXBpIC1JLi9pbmNsdWRlL3VhcGkgLUkuL2lu
+Y2x1ZGUvZ2VuZXJhdGVkL3VhcGkgLWluY2x1ZGUgLi9pbmNsdWRlL2xpbnV4L2tjb25maWcu
+aCAtaW5jbHVkZSAuL2luY2x1ZGUvbGludXgvY29tcGlsZXJfdHlwZXMuaCAtRF9fS0VSTkVM
+X18gLW00IC1tNC1ub2ZwdSAtbTRhIC1tNGEtbm9mcHUgLW1sIC1tbm8tZmRwaWMgLVdhLC1p
+c2E9c2g0YS11cCAtZmZyZWVzdGFuZGluZyAtSSAuL2FyY2gvc2gvaW5jbHVkZS9jcHUtc2g0
+YSAtSSAuL2FyY2gvc2gvaW5jbHVkZS9jcHUtc2g0IC1JIC4vYXJjaC9zaC9pbmNsdWRlL2Nw
+dS1jb21tb24gLUkgLi9hcmNoL3NoL2luY2x1ZGUvbWFjaC1jb21tb24gLVdhbGwgLVd1bmRl
+ZiAtV2Vycm9yPXN0cmljdC1wcm90b3R5cGVzIC1Xbm8tdHJpZ3JhcGhzIC1mbm8tc3RyaWN0
+LWFsaWFzaW5nIC1mbm8tY29tbW9uIC1mc2hvcnQtd2NoYXIgLWZuby1QSUUgLVdlcnJvcj1p
+bXBsaWNpdC1mdW5jdGlvbi1kZWNsYXJhdGlvbiAtV2Vycm9yPWltcGxpY2l0LWludCAtV25v
+LWZvcm1hdC1zZWN1cml0eSAtc3RkPWdudTg5IC1waXBlIC1tNCAtbTQtbm9mcHUgLW00YSAt
+bTRhLW5vZnB1IC1tbCAtbW5vLWZkcGljIC1XYSwtaXNhPXNoNGEtdXAgLWZmcmVlc3RhbmRp
+bmcgLUkgLi9hcmNoL3NoL2luY2x1ZGUvY3B1LXNoNGEgLUkgLi9hcmNoL3NoL2luY2x1ZGUv
+Y3B1LXNoNCAtSSAuL2FyY2gvc2gvaW5jbHVkZS9jcHUtY29tbW9uIC1JIC4vYXJjaC9zaC9p
+bmNsdWRlL21hY2gtY29tbW9uIC1PMiAtZnN0YWNrLXByb3RlY3Rvci1zdHJvbmcgLVduby11
+bnVzZWQtYnV0LXNldC12YXJpYWJsZSAtZm5vLW9taXQtZnJhbWUtcG9pbnRlciAtZm5vLW9w
+dGltaXplLXNpYmxpbmctY2FsbHMgLWcgLVdkZWNsYXJhdGlvbi1hZnRlci1zdGF0ZW1lbnQg
+LVd2bGEgLVduby1wb2ludGVyLXNpZ24gICAgIC1ES0JVSUxEX0JBU0VOQU1FPSciZW1wdHki
+JyAtREtCVUlMRF9NT0ROQU1FPSciZW1wdHkiJyAtYyAtbyBzY3JpcHRzL21vZC9lbXB0eS5v
+IHNjcmlwdHMvbW9kL2VtcHR5LmMNCm1hbGxvYygpOiBjb3JydXB0ZWQgdG9wIHNpemUNCkFi
+b3J0ZWQNCm1ha2VbMV06ICoqKiBbc2NyaXB0cy9NYWtlZmlsZS5idWlsZDoyODE6IHNjcmlw
+dHMvbW9kL2VtcHR5Lm9dIEVycm9yIDEzNA0KbWFrZTogKioqIFtNYWtlZmlsZToxMTI4OiBw
+cmVwYXJlMF0gRXJyb3IgMg0KZ2xhdWJpdHpAdGlycGl0ejovc3J2L2dsYXViaXR6L2xpbnV4
+LTUuMy4xNSQNCg0KRnJvbSB0aGUgYnVpbGQgbG9nIGhpc3RvcnkgaW4gRGViaWFuLCBpdCBz
+ZWVtcyB0aGUgcHJvYmxlbSBzaG93ZWQgZmlyc3Qgd2l0aCA1LjMtcjUgWzFdLg0KDQpIb3dl
+dmVyLCBJIGhhdmUgdGVzdGVkIHRoaXMgb24gYW4gb2xkZXIgMy4xNi43IHNvdXJjZSB0aGF0
+IEkgaGF2ZSBzdGlsbCBvbiBkaXNrIGFuZA0KdGhlIHByb2JsZW0gcmVwcm9kdWNlcyB0aGVy
+ZSBhcyB3ZWxsLiBUaGUgZ2xpYmMgdmVyc2lvbiBvZiBidWlsZHMgd2hlcmUgaXQgZmFpbHMg
+YW5kDQp3aGVyZSBpdCBkaWRuJ3QsIHNlZW1zIHRvIGJlIGlkZW50aWNhbCBbMiwgM10uDQoN
+CkRvZXMgYW55b25lIGhhdmUgYW4gaWRlYSB3aGF0IGNvdWxkIGJlIGdvaW5nIG9uPyBJJ20g
+dXNpbmcgdGhlIGtlcm5lbCBjb25maWd1cmF0aW9uDQphcyBmb3VuZCBpbiBbNF0uDQoNCkFk
+cmlhbg0KDQo+IFsxXSBodHRwczovL2J1aWxkZC5kZWJpYW4ub3JnL3N0YXR1cy9sb2dzLnBo
+cD9wa2c9bGludXgmYXJjaD1zaDQNCj4gWzJdIGh0dHBzOi8vYnVpbGRkLmRlYmlhbi5vcmcv
+c3RhdHVzL2ZldGNoLnBocD9wa2c9bGludXgmYXJjaD1zaDQmdmVyPTUuMyU3RXJjNS0xJTdF
+ZXhwMSZzdGFtcD0xNTY2Njg2NDI3JnJhdz0wDQo+IFszXSBodHRwczovL2J1aWxkZC5kZWJp
+YW4ub3JnL3N0YXR1cy9mZXRjaC5waHA/cGtnPWxpbnV4JmFyY2g9c2g0JnZlcj01LjMlN0Vy
+YzUtMSU3RWV4cDImc3RhbXA9MTU2Njg4NTA2OSZyYXc9MA0KPiBbNF0gaHR0cHM6Ly9wZW9w
+bGUuZGViaWFuLm9yZy9+Z2xhdWJpdHovc2g0LWtlcm5lbC1jb25maWcudHh0DQoNCi0tIA0K
+IC4nJ2AuICBKb2huIFBhdWwgQWRyaWFuIEdsYXViaXR6DQo6IDonIDogIERlYmlhbiBEZXZl
+bG9wZXIgLSBnbGF1Yml0ekBkZWJpYW4ub3JnDQpgLiBgJyAgIEZyZWllIFVuaXZlcnNpdGFl
+dCBCZXJsaW4gLSBnbGF1Yml0ekBwaHlzaWsuZnUtYmVybGluLmRlDQogIGAtICAgIEdQRzog
+NjJGRiA4QTc1IDg0RTAgMjk1NiA5NTQ2ICAwMDA2IDc0MjYgM0IzNyBGNUI1IEY5MTMNCg0K
