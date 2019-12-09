@@ -1,68 +1,118 @@
-From: Guenter Roeck <linux@roeck-us.net>
-Date: Mon, 02 Dec 2019 04:14:40 +0000
-Subject: Re: [PATCH v4 1/2] drivers: move the early platform device support to arch/sh
-Message-Id: <20191202041440.GA1628@roeck-us.net>
+From: Logan Gunthorpe <logang@deltatee.com>
+Date: Mon, 09 Dec 2019 19:13:44 +0000
+Subject: [PATCH 4/6] s390/mm: Thread pgprot_t through vmem_add_mapping()
+Message-Id: <20191209191346.5197-5-logang@deltatee.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20191003092913.10731-1-brgl@bgdev.pl>
- <20191003092912.G3pupKBmyct1r9ScP5Skuw9D-_ALcMVSnfMfHAlwe0Y@z>
-In-Reply-To: <20191003092912.G3pupKBmyct1r9ScP5Skuw9D-_ALcMVSnfMfHAlwe0Y@z>
+References: <20191209191346.5197-1-logang@deltatee.com>
+In-Reply-To: <20191209191346.5197-1-logang@deltatee.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Bartosz Golaszewski <brgl@bgdev.pl>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, "Rafael J . Wysocki" <rafael@kernel.org>, Daniel Lezcano <daniel.lezcano@linaro.org>, Thomas Gleixner <tglx@linutronix.de>, Jiri Slaby <jslaby@suse.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, linux-serial@vger.kernel.org, Bartosz Golaszewski <bgolaszewski@baylibre.com>
+To: linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, platform-driver-x86@vger.kernel.org, linux-mm@kvack.org, Christoph Hellwig <hch@lst.de>, Dan Williams <dan.j.williams@intel.com>, Andrew Morton <akpm@linux-foundation.org>
+Cc: Vasily Gorbik <gor@linux.ibm.com>, Peter Zijlstra <peterz@infradead.org>, Catalin Marinas <catalin.marinas@arm.com>, Dave Hansen <dave.hansen@linux.intel.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, Christian Borntraeger <borntraeger@de.ibm.com>, Logan Gunthorpe <logang@deltatee.com>, Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>, Andy Lutomirski <luto@kernel.org>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Thomas Gleixner <tglx@linutronix.de>, Will Deacon <will@kernel.org>
 
-On Thu, Oct 03, 2019 at 11:29:12AM +0200, Bartosz Golaszewski wrote:
-> From: Bartosz Golaszewski <bgolaszewski@baylibre.com>
-> 
-> SuperH is the only user of the current implementation of early platform
-> device support. We want to introduce a more robust approach to early
-> probing. As the first step - move all the current early platform code
-> to arch/sh.
-> 
-> In order not to export internal drivers/base functions to arch code for
-> this temporary solution - copy the two needed routines for driver
-> matching from drivers/base/platform.c to arch/sh/drivers/platform_early.c.
-> 
-> Also: call early_platform_cleanup() from subsys_initcall() so that it's
-> called after all early devices are probed.
-> 
-> Signed-off-by: Bartosz Golaszewski <bgolaszewski@baylibre.com>
+In prepartion to support a pgprot_t argument for arch_add_memory().
 
-Wondering ... has anyone tested this patch on affected hardware ?
-All my qemu boot tests (both sh and sheb) fail because of it.
-Bisect log below.
-
-Guenter
-
+Cc: Heiko Carstens <heiko.carstens@de.ibm.com>
+Cc: Vasily Gorbik <gor@linux.ibm.com>
+Cc: Christian Borntraeger <borntraeger@de.ibm.com>
+Signed-off-by: Logan Gunthorpe <logang@deltatee.com>
 ---
-# bad: [72c0870e3a05d9cd5466d08c3d2a3069ed0a2f9f] Merge branch 'for-linus' of git://git.kernel.org/pub/scm/linux/kernel/git/dtor/input
-# good: [89d57dddd7d319ded00415790a0bb3c954b7e386] Merge tag 'media/v5.5-1' of git://git.kernel.org/pub/scm/linux/kernel/git/mchehab/linux-media
-git bisect start 'HEAD' '89d57dddd7d3'
-# good: [0a6cad5df541108cfd3fbd79eef48eb824c89bdc] Merge branch 'vmwgfx-coherent' of git://people.freedesktop.org/~thomash/linux into drm-next
-git bisect good 0a6cad5df541108cfd3fbd79eef48eb824c89bdc
-# bad: [9a3d7fd275be4559277667228902824165153c80] Merge tag 'driver-core-5.5-rc1' of git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/driver-core
-git bisect bad 9a3d7fd275be4559277667228902824165153c80
-# good: [59274c7164807d27b24e6c068dfe734f7bea4623] Merge tag 'usb-5.5-rc1' of git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/usb
-git bisect good 59274c7164807d27b24e6c068dfe734f7bea4623
-# good: [e71903106721dc53923e90aa484d78bc86c039a9] staging: mt7621-dma: align to match open parenthesis
-git bisect good e71903106721dc53923e90aa484d78bc86c039a9
-# good: [8f56e4ebe05c26c30e167519273843476e39e244] Merge tag 'char-misc-5.5-rc1' of git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/char-misc
-git bisect good 8f56e4ebe05c26c30e167519273843476e39e244
-# good: [8bde9f3d2a217d1635a7c7bdf8ad4c25c9a34b50] Merge tag 'iio-for-5.5c' of https://git.kernel.org/pub/scm/linux/kernel/git/jic23/iio into staging-next
-git bisect good 8bde9f3d2a217d1635a7c7bdf8ad4c25c9a34b50
-# bad: [0628cda318df6baec439ca6e6e274007492f1ccd] mac80211: Use debugfs_create_xul() helper
-git bisect bad 0628cda318df6baec439ca6e6e274007492f1ccd
-# bad: [03324507e66c7664c754b1ef92c5c3be24c78aa2] driver core: Allow fwnode_operations.add_links to differentiate errors
-git bisect bad 03324507e66c7664c754b1ef92c5c3be24c78aa2
-# bad: [313f5dbba41d905d59c820bb2d91ee6c661aff99] debugfs: remove return value of debugfs_create_u16()
-git bisect bad 313f5dbba41d905d59c820bb2d91ee6c661aff99
-# good: [d4387cd117414ba80230f27a514be5ca4a09cfcc] of: property: Create device links for all child-supplier depencencies
-git bisect good d4387cd117414ba80230f27a514be5ca4a09cfcc
-# bad: [c31e73121f4c1ec45a3e523ac6ce3ce6dafdcec1] base: soc: Handle custom soc information sysfs entries
-git bisect bad c31e73121f4c1ec45a3e523ac6ce3ce6dafdcec1
-# bad: [201e91091b1d47047f55580b5474e1239f4d17aa] sh: add the sh_ prefix to early platform symbols
-git bisect bad 201e91091b1d47047f55580b5474e1239f4d17aa
-# bad: [507fd01d5333338753a1cc26322dfc9f856c109f] drivers: move the early platform device support to arch/sh
-git bisect bad 507fd01d5333338753a1cc26322dfc9f856c109f
-# first bad commit: [507fd01d5333338753a1cc26322dfc9f856c109f] drivers: move the early platform device support to arch/sh
+ arch/s390/include/asm/pgtable.h |  3 ++-
+ arch/s390/mm/extmem.c           |  3 ++-
+ arch/s390/mm/init.c             |  2 +-
+ arch/s390/mm/vmem.c             | 10 +++++-----
+ 4 files changed, 10 insertions(+), 8 deletions(-)
+
+diff --git a/arch/s390/include/asm/pgtable.h b/arch/s390/include/asm/pgtable.h
+index 5ff98d76a66c..e0d5ed38282b 100644
+--- a/arch/s390/include/asm/pgtable.h
++++ b/arch/s390/include/asm/pgtable.h
+@@ -1673,7 +1673,8 @@ static inline swp_entry_t __swp_entry(unsigned long type, unsigned long offset)
+ 
+ #define kern_addr_valid(addr)   (1)
+ 
+-extern int vmem_add_mapping(unsigned long start, unsigned long size);
++extern int vmem_add_mapping(unsigned long start, unsigned long size,
++			    pgprot_t prot);
+ extern int vmem_remove_mapping(unsigned long start, unsigned long size);
+ extern int s390_enable_sie(void);
+ extern int s390_enable_skey(void);
+diff --git a/arch/s390/mm/extmem.c b/arch/s390/mm/extmem.c
+index fd0dae9d10f4..6cf7029a7b35 100644
+--- a/arch/s390/mm/extmem.c
++++ b/arch/s390/mm/extmem.c
+@@ -313,7 +313,8 @@ __segment_load (char *name, int do_nonshared, unsigned long *addr, unsigned long
+ 		goto out_free;
+ 	}
+ 
+-	rc = vmem_add_mapping(seg->start_addr, seg->end - seg->start_addr + 1);
++	rc = vmem_add_mapping(seg->start_addr, seg->end - seg->start_addr + 1,
++			      PAGE_KERNEL);
+ 
+ 	if (rc)
+ 		goto out_free;
+diff --git a/arch/s390/mm/init.c b/arch/s390/mm/init.c
+index a124f19f7b3c..263ebb074cdd 100644
+--- a/arch/s390/mm/init.c
++++ b/arch/s390/mm/init.c
+@@ -276,7 +276,7 @@ int arch_add_memory(int nid, u64 start, u64 size,
+ 	if (WARN_ON_ONCE(restrictions->altmap))
+ 		return -EINVAL;
+ 
+-	rc = vmem_add_mapping(start, size);
++	rc = vmem_add_mapping(start, size, PAGE_KERNEL);
+ 	if (rc)
+ 		return rc;
+ 
+diff --git a/arch/s390/mm/vmem.c b/arch/s390/mm/vmem.c
+index b403fa14847d..8a5e95f184a2 100644
+--- a/arch/s390/mm/vmem.c
++++ b/arch/s390/mm/vmem.c
+@@ -66,7 +66,7 @@ pte_t __ref *vmem_pte_alloc(void)
+ /*
+  * Add a physical memory range to the 1:1 mapping.
+  */
+-static int vmem_add_mem(unsigned long start, unsigned long size)
++static int vmem_add_mem(unsigned long start, unsigned long size, pgprot_t prot)
+ {
+ 	unsigned long pgt_prot, sgt_prot, r3_prot;
+ 	unsigned long pages4k, pages1m, pages2g;
+@@ -79,7 +79,7 @@ static int vmem_add_mem(unsigned long start, unsigned long size)
+ 	pte_t *pt_dir;
+ 	int ret = -ENOMEM;
+ 
+-	pgt_prot = pgprot_val(PAGE_KERNEL);
++	pgt_prot = pgprot_val(prot);
+ 	sgt_prot = pgprot_val(SEGMENT_KERNEL);
+ 	r3_prot = pgprot_val(REGION3_KERNEL);
+ 	if (!MACHINE_HAS_NX) {
+@@ -362,7 +362,7 @@ int vmem_remove_mapping(unsigned long start, unsigned long size)
+ 	return ret;
+ }
+ 
+-int vmem_add_mapping(unsigned long start, unsigned long size)
++int vmem_add_mapping(unsigned long start, unsigned long size, pgprot_t prot)
+ {
+ 	struct memory_segment *seg;
+ 	int ret;
+@@ -379,7 +379,7 @@ int vmem_add_mapping(unsigned long start, unsigned long size)
+ 	if (ret)
+ 		goto out_free;
+ 
+-	ret = vmem_add_mem(start, size);
++	ret = vmem_add_mem(start, size, prot);
+ 	if (ret)
+ 		goto out_remove;
+ 	goto out;
+@@ -403,7 +403,7 @@ void __init vmem_map_init(void)
+ 	struct memblock_region *reg;
+ 
+ 	for_each_memblock(memory, reg)
+-		vmem_add_mem(reg->base, reg->size);
++		vmem_add_mem(reg->base, reg->size, PAGE_KERNEL);
+ 	__set_memory((unsigned long)_stext,
+ 		     (unsigned long)(_etext - _stext) >> PAGE_SHIFT,
+ 		     SET_MEMORY_RO | SET_MEMORY_X);
+-- 
+2.20.1
