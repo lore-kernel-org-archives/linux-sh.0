@@ -1,15 +1,15 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 10 Dec 2019 00:27:45 +0000
+Date: Tue, 10 Dec 2019 08:39:00 +0000
 Subject: [PATCH] sh: kgdb: Mark expected switch fall-throughs
-Message-Id: <87lfrlyqgu.wl-kuninori.morimoto.gx@renesas.com>
+Message-Id: <87muc0y3q4.wl-kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87muc1yqip.wl-kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87muc1yqip.wl-kuninori.morimoto.gx@renesas.com>
+References: <87o8wgy3ra.wl-kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87o8wgy3ra.wl-kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Daniel Thompson <daniel.thompson@linaro.org>, Will Deacon <will@kernel.org>, Douglas Anderson <dianders@chromium.org>, Paul Burton <paul.burton@mips.com>, Christophe Leroy <christophe.leroy@c-s.fr>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.orgDaniel Thompson <daniel.thompson@linaro.org>
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Daniel Thompson <daniel.thompson@linaro.org>, Will Deacon <will@kernel.org>, Douglas Anderson <dianders@chromium.org>, Paul Burton <paul.burton@mips.com>, Christophe Leroy <christophe.leroy@c-s.fr>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
 
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
