@@ -1,114 +1,112 @@
-From: Aleksa Sarai <cyphar@cyphar.com>
-Date: Fri, 06 Dec 2019 14:13:29 +0000
-Subject: [PATCH v18 04/13] namei: allow set_root() to produce errors
-Message-Id: <20191206141338.23338-5-cyphar@cyphar.com>
+From: Sasha Levin <sashal@kernel.org>
+Date: Tue, 10 Dec 2019 20:58:40 +0000
+Subject: [PATCH AUTOSEL 5.4 028/350] Revert "pinctrl: sh-pfc: r8a77990: Fix MOD_SEL1 bit30 when using SSI_SCK
+Message-Id: <20191210210402.8367-28-sashal@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20191206141338.23338-1-cyphar@cyphar.com>
-In-Reply-To: <20191206141338.23338-1-cyphar@cyphar.com>
+References: <20191210210402.8367-1-sashal@kernel.org>
+In-Reply-To: <20191210210402.8367-1-sashal@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Al Viro <viro@zeniv.linux.org.uk>, Jeff Layton <jlayton@kernel.org>, "J. Bruce Fields" <bfields@fieldses.org>, Arnd Bergmann <arnd@arndb.de>, David Howells <dhowells@redhat.com>, Shuah Khan <shuah@kernel.org>, Shuah Khan <skhan@linuxfoundation.org>, Ingo Molnar <mingo@redhat.com>, Peter Zijlstra <peterz@infradead.org>, Alexei Starovoitov <ast@kernel.org>, Daniel Borkmann <daniel@iogearbox.net>, Martin KaFai Lau <kafai@fb.com>, Song Liu <songliubraving@fb.com>, Yonghong Song <yhs@fb.com>, Andrii Nakryiko <andriin@fb.com>, Jonathan Corbet <corbet@lwn.net>
-Cc: Aleksa Sarai <cyphar@cyphar.com>, Eric Biederman <ebiederm@xmission.com>, Andy Lutomirski <luto@kernel.org>, Andrew Morton <akpm@linux-foundation.org>, Kees Cook <keescook@chromium.org>, Jann Horn <jannh@google.com>, Tycho Andersen <tycho@tycho.ws>, David Drysdale <drysdale@google.com>, Chanho Min <chanho.min@lge.com>, Oleg Nesterov <oleg@redhat.com>, Rasmus Villemoes <linux@rasmusvillemoes.dk>, Alexander Shishkin <alexander.shishkin@linux.intel.com>, Jiri Olsa <jolsa@redhat.com>, Namhyung Kim <namhyung@kernel.org>, Christian Brauner <christian@brauner.io>, Aleksa Sarai <asarai@suse.de>, Linus Torvalds <torvalds@linux-foundation.org>, dev@opencontainers.org, containers@lists.linux-foundation.org, bpf@vger.kernel.org, netdev@vger.kernel.org, linux-alpha@vger.kernel.org, linux-api@vger.kernel.org, libc-alpha@sourceware.org, linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-doc@vger.kernel.org, linux-fsdevel@vger.kernel.org, linux-ia64@vger.kernel.org, linux-kernel@vger.kernel.org, linux-kselftest@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-xtensa@linux-xtensa.org, sparclinux@vger.kernel.org
+To: linux-kernel@vger.kernel.org, stable@vger.kernel.org
+Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Simon Horman <horms+renesas@verge.net.au>, Sasha Levin <sashal@kernel.org>, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org
 
-For LOOKUP_BENEATH and LOOKUP_IN_ROOT it is necessary to ensure that
-set_root() is never called, and thus (for hardening purposes) it should
-return an error rather than permit a breakout from the root. In
-addition, move all of the repetitive set_root() calls to nd_jump_root().
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Aleksa Sarai <cyphar@cyphar.com>
+[ Upstream commit 3672bc7093434621c83299ef27ea3b3225a67600 ]
+
+This reverts commit e87882eb9be10b2b9e28156922c2a47d877f5db4.
+
+According to the R-Car Gen3 Hardware Manual Errata for Rev 1.00 of Aug
+24, 2018, the SEL_SSI2_{0,1} definition was to be deleted.  However,
+this errata merely fixed an accidental double definition in the Hardware
+User's Manual Rev. 1.00.  The real definition is still present in later
+revisions of the manual (Rev. 1.50 and Rev. 2.00).
+
+Hence revert the commit to recover the definition.
+
+Based on a patch in the BSP by Takeshi Kihara
+<takeshi.kihara.df@renesas.com>.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reviewed-by: Simon Horman <horms+renesas@verge.net.au>
+Link: https://lore.kernel.org/r/20190904121658.2617-3-geert+renesas@glider.be
+Signed-off-by: Sasha Levin <sashal@kernel.org>
 ---
- fs/namei.c | 35 ++++++++++++++++++++++++-----------
- 1 file changed, 24 insertions(+), 11 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-r8a77990.c | 20 +++++++++++---------
+ 1 file changed, 11 insertions(+), 9 deletions(-)
 
-diff --git a/fs/namei.c b/fs/namei.c
-index 1024a641f075..74574a69a614 100644
---- a/fs/namei.c
-+++ b/fs/namei.c
-@@ -798,7 +798,7 @@ static int complete_walk(struct nameidata *nd)
- 	return status;
- }
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a77990.c b/drivers/pinctrl/sh-pfc/pfc-r8a77990.c
+index 2dfb8d9cfda12..3808409cab385 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a77990.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a77990.c
+@@ -448,6 +448,7 @@ FM(IP12_31_28)	IP12_31_28	FM(IP13_31_28)	IP13_31_28	FM(IP14_31_28)	IP14_31_28	FM
+ #define MOD_SEL0_1_0	   REV4(FM(SEL_SPEED_PULSE_IF_0),	FM(SEL_SPEED_PULSE_IF_1),	FM(SEL_SPEED_PULSE_IF_2),	F_(0, 0))
  
--static void set_root(struct nameidata *nd)
-+static int set_root(struct nameidata *nd)
- {
- 	struct fs_struct *fs = current->fs;
+ /* MOD_SEL1 */			/* 0 */				/* 1 */				/* 2 */				/* 3 */			/* 4 */			/* 5 */		/* 6 */		/* 7 */
++#define MOD_SEL1_30		FM(SEL_SSI2_0)			FM(SEL_SSI2_1)
+ #define MOD_SEL1_29		FM(SEL_TIMER_TMU_0)		FM(SEL_TIMER_TMU_1)
+ #define MOD_SEL1_28		FM(SEL_USB_20_CH0_0)		FM(SEL_USB_20_CH0_1)
+ #define MOD_SEL1_26		FM(SEL_DRIF2_0)			FM(SEL_DRIF2_1)
+@@ -468,7 +469,7 @@ FM(IP12_31_28)	IP12_31_28	FM(IP13_31_28)	IP13_31_28	FM(IP14_31_28)	IP14_31_28	FM
  
-@@ -814,6 +814,7 @@ static void set_root(struct nameidata *nd)
- 		get_fs_root(fs, &nd->root);
- 		nd->flags |= LOOKUP_ROOT_GRABBED;
- 	}
-+	return 0;
- }
+ #define PINMUX_MOD_SELS	\
+ \
+-MOD_SEL0_30_29 \
++MOD_SEL0_30_29		MOD_SEL1_30 \
+ 			MOD_SEL1_29 \
+ MOD_SEL0_28		MOD_SEL1_28 \
+ MOD_SEL0_27_26 \
+@@ -1058,7 +1059,7 @@ static const u16 pinmux_data[] = {
+ 	PINMUX_IPSR_MSEL(IP10_27_24,		RIF0_CLK_B,	SEL_DRIF0_1),
+ 	PINMUX_IPSR_MSEL(IP10_27_24,		SCL2_B,		SEL_I2C2_1),
+ 	PINMUX_IPSR_MSEL(IP10_27_24,		TCLK1_A,	SEL_TIMER_TMU_0),
+-	PINMUX_IPSR_GPSR(IP10_27_24,		SSI_SCK2_B),
++	PINMUX_IPSR_MSEL(IP10_27_24,		SSI_SCK2_B,	SEL_SSI2_1),
+ 	PINMUX_IPSR_GPSR(IP10_27_24,		TS_SCK0),
  
- static void path_put_conditional(struct path *path, struct nameidata *nd)
-@@ -837,6 +838,11 @@ static inline void path_to_nameidata(const struct path *path,
+ 	PINMUX_IPSR_GPSR(IP10_31_28,		SD0_WP),
+@@ -1067,7 +1068,7 @@ static const u16 pinmux_data[] = {
+ 	PINMUX_IPSR_MSEL(IP10_31_28,		RIF0_D0_B,	SEL_DRIF0_1),
+ 	PINMUX_IPSR_MSEL(IP10_31_28,		SDA2_B,		SEL_I2C2_1),
+ 	PINMUX_IPSR_MSEL(IP10_31_28,		TCLK2_A,	SEL_TIMER_TMU_0),
+-	PINMUX_IPSR_GPSR(IP10_31_28,		SSI_WS2_B),
++	PINMUX_IPSR_MSEL(IP10_31_28,		SSI_WS2_B,	SEL_SSI2_1),
+ 	PINMUX_IPSR_GPSR(IP10_31_28,		TS_SDAT0),
  
- static int nd_jump_root(struct nameidata *nd)
- {
-+	if (!nd->root.mnt) {
-+		int error = set_root(nd);
-+		if (error)
-+			return error;
-+	}
- 	if (nd->flags & LOOKUP_RCU) {
- 		struct dentry *d;
- 		nd->path = nd->root;
-@@ -1080,10 +1086,9 @@ const char *get_link(struct nameidata *nd)
- 			return res;
- 	}
- 	if (*res = '/') {
--		if (!nd->root.mnt)
--			set_root(nd);
--		if (unlikely(nd_jump_root(nd)))
--			return ERR_PTR(-ECHILD);
-+		error = nd_jump_root(nd);
-+		if (unlikely(error))
-+			return ERR_PTR(error);
- 		while (unlikely(*++res = '/'))
- 			;
- 	}
-@@ -1698,8 +1703,13 @@ static inline int may_lookup(struct nameidata *nd)
- static inline int handle_dots(struct nameidata *nd, int type)
- {
- 	if (type = LAST_DOTDOT) {
--		if (!nd->root.mnt)
--			set_root(nd);
-+		int error = 0;
-+
-+		if (!nd->root.mnt) {
-+			error = set_root(nd);
-+			if (error)
-+				return error;
-+		}
- 		if (nd->flags & LOOKUP_RCU) {
- 			return follow_dotdot_rcu(nd);
- 		} else
-@@ -2162,6 +2172,7 @@ static int link_path_walk(const char *name, struct nameidata *nd)
- /* must be paired with terminate_walk() */
- static const char *path_init(struct nameidata *nd, unsigned flags)
- {
-+	int error;
- 	const char *s = nd->name->name;
+ 	/* IPSR11 */
+@@ -1085,13 +1086,13 @@ static const u16 pinmux_data[] = {
  
- 	if (!*s)
-@@ -2194,11 +2205,13 @@ static const char *path_init(struct nameidata *nd, unsigned flags)
- 	nd->path.dentry = NULL;
+ 	PINMUX_IPSR_MSEL(IP11_11_8,		RX0_A,		SEL_SCIF0_0),
+ 	PINMUX_IPSR_MSEL(IP11_11_8,		HRX1_A,		SEL_HSCIF1_0),
+-	PINMUX_IPSR_GPSR(IP11_11_8,		SSI_SCK2_A),
++	PINMUX_IPSR_MSEL(IP11_11_8,		SSI_SCK2_A,	SEL_SSI2_0),
+ 	PINMUX_IPSR_GPSR(IP11_11_8,		RIF1_SYNC),
+ 	PINMUX_IPSR_GPSR(IP11_11_8,		TS_SCK1),
  
- 	nd->m_seq = read_seqbegin(&mount_lock);
-+
-+	/* Figure out the starting path and root (if needed). */
- 	if (*s = '/') {
--		set_root(nd);
--		if (likely(!nd_jump_root(nd)))
--			return s;
--		return ERR_PTR(-ECHILD);
-+		error = nd_jump_root(nd);
-+		if (unlikely(error))
-+			return ERR_PTR(error);
-+		return s;
- 	} else if (nd->dfd = AT_FDCWD) {
- 		if (flags & LOOKUP_RCU) {
- 			struct fs_struct *fs = current->fs;
+ 	PINMUX_IPSR_MSEL(IP11_15_12,		TX0_A,		SEL_SCIF0_0),
+ 	PINMUX_IPSR_GPSR(IP11_15_12,		HTX1_A),
+-	PINMUX_IPSR_GPSR(IP11_15_12,		SSI_WS2_A),
++	PINMUX_IPSR_MSEL(IP11_15_12,		SSI_WS2_A,	SEL_SSI2_0),
+ 	PINMUX_IPSR_GPSR(IP11_15_12,		RIF1_D0),
+ 	PINMUX_IPSR_GPSR(IP11_15_12,		TS_SDAT1),
+ 
+@@ -4957,11 +4958,12 @@ static const struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 		MOD_SEL0_1_0 ))
+ 	},
+ 	{ PINMUX_CFG_REG_VAR("MOD_SEL1", 0xe6060504, 32,
+-			     GROUP(2, 1, 1, 1, 1, 1, 3, 3, 1, 1, 1, 1,
+-				   2, 2, 2, 1, 1, 2, 1, 4),
++			     GROUP(1, 1, 1, 1, 1, 1, 1, 3, 3, 1, 1, 1,
++				   1, 2, 2, 2, 1, 1, 2, 1, 4),
+ 			     GROUP(
+-		/* RESERVED 31, 30 */
+-		0, 0, 0, 0,
++		/* RESERVED 31 */
++		0, 0,
++		MOD_SEL1_30
+ 		MOD_SEL1_29
+ 		MOD_SEL1_28
+ 		/* RESERVED 27 */
 -- 
-2.24.0
+2.20.1
