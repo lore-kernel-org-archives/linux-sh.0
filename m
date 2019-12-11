@@ -1,7 +1,7 @@
-From: Christophe Leroy <christophe.leroy@c-s.fr>
-Date: Tue, 10 Dec 2019 08:47:56 +0000
+From: Daniel Thompson <daniel.thompson@linaro.org>
+Date: Wed, 11 Dec 2019 15:18:56 +0000
 Subject: Re: [PATCH] sh: kgdb: Mark expected switch fall-throughs
-Message-Id: <1009e85d-882a-d43b-8936-a0b4de596aa3@c-s.fr>
+Message-Id: <20191211151856.krh7jbrl5vsa7imq@holly.lan>
 List-Id: <linux-sh.vger.kernel.org>
 References: <87o8wgy3ra.wl-kuninori.morimoto.gx@renesas.com>
  <87muc0y3q4.wl-kuninori.morimoto.gx@renesas.com>
@@ -9,12 +9,10 @@ In-Reply-To: <87muc0y3q4.wl-kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Andrew Morton <akpm@linux-foundation.org>
-Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Daniel Thompson <daniel.thompson@linaro.org>, Will Deacon <will@kernel.org>, Douglas Anderson <dianders@chromium.org>, Paul Burton <paul.burton@mips.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, "stable@vger.kernel.org" <stable@vger.kernel.org>
+To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Will Deacon <will@kernel.org>, Douglas Anderson <dianders@chromium.org>, Paul Burton <paul.burton@mips.com>, Christophe Leroy <christophe.leroy@c-s.fr>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-
-
-On 12/10/2019 08:39 AM, Kuninori Morimoto wrote:
+On Tue, Dec 10, 2019 at 05:39:00PM +0900, Kuninori Morimoto wrote:
 > 
 > From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 > 
@@ -32,10 +30,31 @@ On 12/10/2019 08:39 AM, Kuninori Morimoto wrote:
 > 
 > Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 > Acked-by: Daniel Thompson <daniel.thompson@linaro.org>
+> ---
+>  arch/sh/kernel/kgdb.c | 1 +
+>  1 file changed, 1 insertion(+)
+> 
+> diff --git a/arch/sh/kernel/kgdb.c b/arch/sh/kernel/kgdb.c
+> index 6d61f8c..0d5f3c9 100644
+> --- a/arch/sh/kernel/kgdb.c
+> +++ b/arch/sh/kernel/kgdb.c
+> @@ -266,6 +266,7 @@ int kgdb_arch_handle_exception(int e_vector, int signo, int err_code,
+>  		ptr = &remcomInBuffer[1];
+>  		if (kgdb_hex2long(&ptr, &addr))
+>  			linux_regs->pc = addr;
+> +		/* fallthrough */
 
-I guess you should also add:
+Since v5.5-rc1 there is the fallthrough pseudo keyword to document
+these cases:
+https://elixir.bootlin.com/linux/v5.5-rc1/source/Documentation/process/coding-style.rst#L59
 
-Fixes: ab6e570ba33d ("sh: Generic kgdb stub support.")
-Cc: stable@vger.kernel.org
 
-Christophe
+Daniel.
+
+
+>  	case 'D':
+>  	case 'k':
+>  		atomic_set(&kgdb_cpu_doing_single_step, -1);
+> -- 
+> 2.7.4
+> 
