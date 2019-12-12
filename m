@@ -1,35 +1,39 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 17 Dec 2019 07:37:05 +0000
-Subject: Re: [PATCH] SH: Convert iounmap() macros to inline functions
-Message-Id: <87bls7h07z.wl-kuninori.morimoto.gx@renesas.com>
+From: morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 12 Dec 2019 02:34:48 +0000
+Subject: [PATCH] sh: add missing EXPORT_SYMBOL() for __delay
+Message-Id: <87zhfyclvb.wl-kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87eex3h2g6.wl-kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87eex3h2g6.wl-kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Andrew Morton <akpm@linux-foundation.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
 
-Hi Sam
+From: morimoto <kuninori.morimoto.gx@renesas.com>
 
-Thank you for your review
+__delay() is used from kernel module.
+We need EXPORT_SYMBOL(), otherwise we will get compile error.
 
-> > From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> > 
-> > Macro iounmap() do nothing, but that results in
-> > unused variable warnings all over the place.
-> > This patch convert it to inline to avoid warning
-> 
-> To help other people with the same warning it is always a good idea to
-> include the warning you fix in the changelog.
->
-> With this fixed:
-> Acked-by: Sam Ravnborg <sam@ravnborg.org>
+ERROR: "__delay" [drivers/net/phy/mdio-cavium.ko] undefined!
 
-will fix and post v2, Thanks
-
-Thank you for your help !!
-Best regards
+Signed-off-by: morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-Kuninori Morimoto
+ arch/sh/lib/delay.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/sh/lib/delay.c b/arch/sh/lib/delay.c
+index dad8e6a..540e670 100644
+--- a/arch/sh/lib/delay.c
++++ b/arch/sh/lib/delay.c
+@@ -29,6 +29,7 @@ void __delay(unsigned long loops)
+ 		: "0" (loops)
+ 		: "t");
+ }
++EXPORT_SYMBOL(__delay);
+ 
+ inline void __const_udelay(unsigned long xloops)
+ {
+-- 
+2.7.4
