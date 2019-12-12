@@ -1,40 +1,58 @@
-From: "yukuai (C)" <yukuai3@huawei.com>
-Date: Thu, 26 Dec 2019 11:33:05 +0000
-Subject: Re: [PATCH] scsi: don't memset to zero after dma_alloc_coherent
-Message-Id: <bbec6a4a-2c57-2254-2970-95acb098c7f3@huawei.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 12 Dec 2019 02:38:59 +0000
+Subject: [PATCH] sh: add missing DECLARE_EXPORT() for __ashiftrt_r4_2x
+Message-Id: <87v9qmcloc.wl-kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20191225132327.7121-1-yukuai3@huawei.com>
- <a3b27b94-1ab6-c33f-611c-56143fd390f8@cogentembedded.com>
- <958ffbe5-f3da-da16-9f2b-05923d13485b@huawei.com>
- <68771eb5-03c4-422b-9956-930a0e3c9de8@cogentembedded.com>
-In-Reply-To: <68771eb5-03c4-422b-9956-930a0e3c9de8@cogentembedded.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, ysato@users.sourceforge.jp, dalias@libc.org, aacraid@microsemi.com, jejb@linux.ibm.com, martin.petersen@oracle.com, sathya.prakash@broadcom.com, chaitra.basappa@broadcom.com, suganath-prabu.subramani@broadcom.com
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, linux-scsi@vger.kernel.org, MPT-FusionLinux.pdl@broadcom.com, zhengbin13@huawei.com, yi.zhang@huawei.com
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Andrew Morton <akpm@linux-foundation.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
 
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-On 2019/12/26 19:16, Sergei Shtylyov wrote:
-> On 26.12.2019 14:13, yukuai (C) wrote:
-> 
->>>> dma_alloc_coherent already zeros out memory, so memset to zero is not
->>>> needed.
->>>>
->>>> Signed-off-by: yu kuai <yukuai3@huawei.com>
->>>> ---
->>>>   arch/sh/mm/consistent.c             | 2 --
->>>
->>>     How this one is related to SCSI?
->>>
->> Thank you for your response!
->> I put them in the same patch because I thougt they are the same 
->> situation. I'm sorry if it's not appropriate.
-> 
->     I'd recommend to split such patch to (at least) different 
-> subsystems, e.g. arch/sh/ part, drivers/scsi/ part.
+__ashiftrt_r4_2x is used from kernel module.
+We need DECLARE_EXPORT(), otherwise we will get compile error.
 
-I'll do that, thank you again for your advise!
+ERROR: "__ashiftrt_r4_25" [drivers/iio/pressure/bmp280.ko] undefined!
+ERROR: "__ashiftrt_r4_26" [drivers/iio/dac/ad5764.ko] undefined!
+ERROR: "__ashiftrt_r4_26" [drivers/iio/accel/mma7660.ko] undefined!
+ERROR: "__ashiftrt_r4_25" [drivers/iio/accel/dmard06.ko] undefined!
+ERROR: "__ashiftrt_r4_26" [drivers/iio/accel/bma220_spi.ko] undefined!
+ERROR: "__ashiftrt_r4_25" [drivers/crypto/hisilicon/sec/hisi_sec.ko] undefined!
+ERROR: "__ashiftrt_r4_26" [drivers/rtc/rtc-x1205.ko] undefined!
+ERROR: "__ashiftrt_r4_25" [drivers/rtc/rtc-pcf85063.ko] undefined!
+ERROR: "__ashiftrt_r4_25" [drivers/rtc/rtc-pcf2123.ko] undefined!
+ERROR: "__ashiftrt_r4_25" [drivers/input/tablet/gtco.ko] undefined!
+ERROR: "__ashiftrt_r4_26" [drivers/input/mouse/psmouse.ko] undefined!
+ERROR: "__ashiftrt_r4_28" [drivers/input/mouse/psmouse.ko] undefined!
+ERROR: "__ashiftrt_r4_28" [drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu.ko] undefined!
+ERROR: "__ashiftrt_r4_28" [fs/udf/udf.ko] undefined!
 
-Yu Kuai
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/sh/kernel/sh_ksyms_32.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/arch/sh/kernel/sh_ksyms_32.c b/arch/sh/kernel/sh_ksyms_32.c
+index 2827744..5818f98 100644
+--- a/arch/sh/kernel/sh_ksyms_32.c
++++ b/arch/sh/kernel/sh_ksyms_32.c
+@@ -53,8 +53,14 @@ DECLARE_EXPORT(__ashiftrt_r4_21);
+ DECLARE_EXPORT(__ashiftrt_r4_22);
+ DECLARE_EXPORT(__ashiftrt_r4_23);
+ DECLARE_EXPORT(__ashiftrt_r4_24);
++DECLARE_EXPORT(__ashiftrt_r4_25);
++DECLARE_EXPORT(__ashiftrt_r4_26);
+ DECLARE_EXPORT(__ashiftrt_r4_27);
++DECLARE_EXPORT(__ashiftrt_r4_28);
++DECLARE_EXPORT(__ashiftrt_r4_29);
+ DECLARE_EXPORT(__ashiftrt_r4_30);
++DECLARE_EXPORT(__ashiftrt_r4_31);
++DECLARE_EXPORT(__ashiftrt_r4_32);
+ DECLARE_EXPORT(__movstr);
+ DECLARE_EXPORT(__movstrSI8);
+ DECLARE_EXPORT(__movstrSI12);
+-- 
+2.7.4
