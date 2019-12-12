@@ -1,40 +1,55 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 12 Dec 2019 02:38:43 +0000
-Subject: [PATCH] sh: add missing EXPORT_SYMBOL() for __delay
-Message-Id: <87wob2clos.wl-kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 12 Dec 2019 07:43:04 +0000
+Subject: Re: [PATCH] sh: add missing EXPORT_SYMBOL() for __delay
+Message-Id: <CAMuHMdWb_ipn7FVHbz8=PTdGod=MW+2xHY7yuq3yJcWwNnDvcg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87zhfyclvb.wl-kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87zhfyclvb.wl-kuninori.morimoto.gx@renesas.com>
+References: <87wob2clos.wl-kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87wob2clos.wl-kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Andrew Morton <akpm@linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Andrew Morton <akpm@linux-foundation.org>, Linux-sh list <linux-sh@vger.kernel.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
 
+Hi Morimoto-san,
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+On Thu, Dec 12, 2019 at 3:38 AM Kuninori Morimoto
+<kuninori.morimoto.gx@renesas.com> wrote:
+> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+>
+> __delay() is used from kernel module.
+> We need EXPORT_SYMBOL(), otherwise we will get compile error.
+>
+> ERROR: "__delay" [drivers/net/phy/mdio-cavium.ko] undefined!
+>
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-__delay() is used from kernel module.
-We need EXPORT_SYMBOL(), otherwise we will get compile error.
+Thanks for your patch!
 
-ERROR: "__delay" [drivers/net/phy/mdio-cavium.ko] undefined!
+> --- a/arch/sh/lib/delay.c
+> +++ b/arch/sh/lib/delay.c
+> @@ -29,6 +29,7 @@ void __delay(unsigned long loops)
+>                 : "0" (loops)
+>                 : "t");
+>  }
+> +EXPORT_SYMBOL(__delay);
+>
+>  inline void __const_udelay(unsigned long xloops)
+>  {
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
- arch/sh/lib/delay.c | 1 +
- 1 file changed, 1 insertion(+)
+I believe the correct fix is make drivers/net/phy/mdio-cavium.c use one
+of [nmu]delay() instead.
 
-diff --git a/arch/sh/lib/delay.c b/arch/sh/lib/delay.c
-index dad8e6a..540e670 100644
---- a/arch/sh/lib/delay.c
-+++ b/arch/sh/lib/delay.c
-@@ -29,6 +29,7 @@ void __delay(unsigned long loops)
- 		: "0" (loops)
- 		: "t");
- }
-+EXPORT_SYMBOL(__delay);
- 
- inline void __const_udelay(unsigned long xloops)
- {
+Cfr.
+https://lore.kernel.org/lkml/CAMuHMdUERaoHLNKi03zCuYi7NevgBFjXrV=pt0Yy=HOeRiL25Q@mail.gmail.com/
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
 -- 
-2.7.4
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
