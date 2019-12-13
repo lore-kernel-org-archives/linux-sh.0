@@ -1,55 +1,88 @@
-From: Guenter Roeck <linux@roeck-us.net>
-Date: Fri, 06 Dec 2019 14:03:50 +0000
-Subject: Re: [PATCH v6 10/18] sh/tlb: Convert SH to generic mmu_gather
-Message-Id: <4f959f9b-9b8c-c880-0f55-172db732b783@roeck-us.net>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 13 Dec 2019 01:01:49 +0000
+Subject: [PATCH v2] sh: add missing DECLARE_EXPORT() for __ashiftrt_r4_xx
+Message-Id: <87zhfx3uo2.wl-kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190219103148.192029670@infradead.org>
- <20190219103233.443069009@infradead.org>
- <CAMuHMdW3nwckjA9Bt-_Dmf50B__sZH+9E5s0_ziK1U_y9onN=g@mail.gmail.com>
- <20191204104733.GR2844@hirez.programming.kicks-ass.net>
- <3c83eaec-8f33-1b90-1c70-9e7c1c8b1855@physik.fu-berlin.de>
- <20191205225610.GB2532@roeck-us.net>
- <a188f905-bb08-db98-0b8a-e31bec1dfa31@physik.fu-berlin.de>
-In-Reply-To: <a188f905-bb08-db98-0b8a-e31bec1dfa31@physik.fu-berlin.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc: Peter Zijlstra <peterz@infradead.org>, Geert Uytterhoeven <geert@linux-m68k.org>, Will Deacon <will.deacon@arm.com>, "Aneesh Kumar K.V" <aneesh.kumar@linux.vnet.ibm.com>, Andrew Morton <akpm@linux-foundation.org>, Nicholas Piggin <npiggin@gmail.com>, Linux-Arch <linux-arch@vger.kernel.org>, Linux MM <linux-mm@kvack.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Russell King <linux@armlinux.org.uk>, Heiko Carstens <heiko.carstens@de.ibm.com>, Rik van Riel <riel@surriel.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Linux-sh list <linux-sh@vger.kernel.org>
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Andrew Morton <akpm@linux-foundation.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-On 12/6/19 5:38 AM, John Paul Adrian Glaubitz wrote:
-> Hi!
-> 
-> On 12/5/19 11:56 PM, Guenter Roeck wrote:
->>> I have to admit, I have been very lazy with kernel updates. I have been
->>> planning to upgrade to a much more recent release on my boards for a while
->>> now, I have just been postponing it since the machines run very stable
->>> with the current kernel I am using.
->>>
->>
->> Hey, if you write a qemu emulation, I'll be happy to run it on a regular
->> basis :-)
-> 
-> There is working SH emulation in QEMU. I have been wanting to prepare a
-> current Debian/sh4 test image for that purpose for a while now.
-> 
 
-I do run this emulation in my tests. It does not support the affected CPU,
-unfortunately.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Guenter
+__ashiftrt_r4_xx might be used from kernel module.
+We need DECLARE_EXPORT() for them, otherwise we will get compile error.
+This patch adds missing DECLARE_EXPORT()
 
-> For the time being, you can use the image by Aurelien Jarno:
-> 
->> https://people.debian.org/~aurel32/qemu/sh4/
-> 
->> Problem is really that the architecture doesn't get as much attention as
->> it needs. The backtrace pointed to by Rob has been seen for a long time,
->> but either there is no one with the knowledge to fix it, or they are all
->> busy with other stuff.
-> 
-> I fully agree. I'm mostly busy with the userland stuff, i.e. Debian packages
-> for sh4 and not so much with the kernel.
-> 
-> Adrian
-> 
+ERROR: "__ashiftrt_r4_25" [drivers/iio/pressure/bmp280.ko] undefined!
+ERROR: "__ashiftrt_r4_26" [drivers/iio/dac/ad5764.ko] undefined!
+ERROR: "__ashiftrt_r4_26" [drivers/iio/accel/mma7660.ko] undefined!
+ERROR: "__ashiftrt_r4_25" [drivers/iio/accel/dmard06.ko] undefined!
+ERROR: "__ashiftrt_r4_26" [drivers/iio/accel/bma220_spi.ko] undefined!
+ERROR: "__ashiftrt_r4_25" [drivers/crypto/hisilicon/sec/hisi_sec.ko] undefined!
+ERROR: "__ashiftrt_r4_26" [drivers/rtc/rtc-x1205.ko] undefined!
+ERROR: "__ashiftrt_r4_25" [drivers/rtc/rtc-pcf85063.ko] undefined!
+ERROR: "__ashiftrt_r4_25" [drivers/rtc/rtc-pcf2123.ko] undefined!
+ERROR: "__ashiftrt_r4_25" [drivers/input/tablet/gtco.ko] undefined!
+ERROR: "__ashiftrt_r4_26" [drivers/input/mouse/psmouse.ko] undefined!
+ERROR: "__ashiftrt_r4_28" [drivers/input/mouse/psmouse.ko] undefined!
+ERROR: "__ashiftrt_r4_28" [drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu.ko] undefined!
+ERROR: "__ashiftrt_r4_28" [fs/udf/udf.ko] undefined!
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+v1 -> v2
+
+	- r4_0  - r4_5  are added
+	- r4_16 - r4_19 are added
+
+ arch/sh/kernel/sh_ksyms_32.c | 17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
+
+diff --git a/arch/sh/kernel/sh_ksyms_32.c b/arch/sh/kernel/sh_ksyms_32.c
+index 2827744..5858936 100644
+--- a/arch/sh/kernel/sh_ksyms_32.c
++++ b/arch/sh/kernel/sh_ksyms_32.c
+@@ -38,6 +38,13 @@ DECLARE_EXPORT(__ashlsi3);
+ DECLARE_EXPORT(__lshrsi3_r0);
+ DECLARE_EXPORT(__ashrsi3_r0);
+ DECLARE_EXPORT(__ashlsi3_r0);
++
++DECLARE_EXPORT(__ashiftrt_r4_0);
++DECLARE_EXPORT(__ashiftrt_r4_1);
++DECLARE_EXPORT(__ashiftrt_r4_2);
++DECLARE_EXPORT(__ashiftrt_r4_3);
++DECLARE_EXPORT(__ashiftrt_r4_4);
++DECLARE_EXPORT(__ashiftrt_r4_5);
+ DECLARE_EXPORT(__ashiftrt_r4_6);
+ DECLARE_EXPORT(__ashiftrt_r4_7);
+ DECLARE_EXPORT(__ashiftrt_r4_8);
+@@ -48,13 +55,23 @@ DECLARE_EXPORT(__ashiftrt_r4_12);
+ DECLARE_EXPORT(__ashiftrt_r4_13);
+ DECLARE_EXPORT(__ashiftrt_r4_14);
+ DECLARE_EXPORT(__ashiftrt_r4_15);
++DECLARE_EXPORT(__ashiftrt_r4_16);
++DECLARE_EXPORT(__ashiftrt_r4_17);
++DECLARE_EXPORT(__ashiftrt_r4_18);
++DECLARE_EXPORT(__ashiftrt_r4_19);
+ DECLARE_EXPORT(__ashiftrt_r4_20);
+ DECLARE_EXPORT(__ashiftrt_r4_21);
+ DECLARE_EXPORT(__ashiftrt_r4_22);
+ DECLARE_EXPORT(__ashiftrt_r4_23);
+ DECLARE_EXPORT(__ashiftrt_r4_24);
++DECLARE_EXPORT(__ashiftrt_r4_25);
++DECLARE_EXPORT(__ashiftrt_r4_26);
+ DECLARE_EXPORT(__ashiftrt_r4_27);
++DECLARE_EXPORT(__ashiftrt_r4_28);
++DECLARE_EXPORT(__ashiftrt_r4_29);
+ DECLARE_EXPORT(__ashiftrt_r4_30);
++DECLARE_EXPORT(__ashiftrt_r4_31);
++DECLARE_EXPORT(__ashiftrt_r4_32);
+ DECLARE_EXPORT(__movstr);
+ DECLARE_EXPORT(__movstrSI8);
+ DECLARE_EXPORT(__movstrSI12);
+-- 
+2.7.4
