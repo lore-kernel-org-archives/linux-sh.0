@@ -1,85 +1,24 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 18 Dec 2019 05:19:32 +0000
-Subject: [PATCH] sh: clkfwk: remove r8/r16/r32
-Message-Id: <87bls6jjmj.wl-kuninori.morimoto.gx@renesas.com>
+From: Gon Solo <gonsolo@gmail.com>
+Date: Mon, 16 Dec 2019 10:35:21 +0000
+Subject: [PATCH 0/1] Fix SH config error.
+Message-Id: <20191216103522.32215-1-gonsolo@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
-Cc: Linux-SH <linux-sh@vger.kernel.org>, Linux-Renesas <linux-renesas-soc@vger.kernel.org>
+Cc: Andrew Morton <akpm@linux-foundation.org>, Mike Rapoport <rppt@linux.ibm.com>, Nicholas Piggin <npiggin@gmail.com>, Gon Solo <gonsolo@gmail.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
+This fixes an error reported at 
+http://kisskb.ellerman.id.au/kisskb/buildresult/14067948.
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+On SH4 it was possible to configure NUMA without SMP.
 
-SH will get below warning
+Gon Solo (1):
+  Fix undefined reference to 'node_reclaim_distance'.
 
-${LINUX}/drivers/sh/clk/cpg.c: In function 'r8':
-${LINUX}/drivers/sh/clk/cpg.c:41:17: warning: passing argument 1 of 'ioread8'
- discards 'const' qualifier from pointer target type [-Wdiscarded-qualifiers]
-  return ioread8(addr);
-                 ^~~~
-In file included from ${LINUX}/arch/sh/include/asm/io.h:21,
-                 from ${LINUX}/include/linux/io.h:13,
-                 from ${LINUX}/drivers/sh/clk/cpg.c:14:
-${LINUX}/include/asm-generic/iomap.h:29:29: note: expected 'void *' but
-argument is of type 'const void *'
- extern unsigned int ioread8(void __iomem *);
-                             ^~~~~~~~~~~~~~
+ arch/sh/mm/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-We don't need "const" for r8/r16/r32.
-And we don't need r8/r16/r32 themselvs.
-This patch cleanup these.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
- drivers/sh/clk/cpg.c | 23 ++++-------------------
- 1 file changed, 4 insertions(+), 19 deletions(-)
-
-diff --git a/drivers/sh/clk/cpg.c b/drivers/sh/clk/cpg.c
-index eeb028b9..a5cacfe 100644
---- a/drivers/sh/clk/cpg.c
-+++ b/drivers/sh/clk/cpg.c
-@@ -36,36 +36,21 @@ static void sh_clk_write(int value, struct clk *clk)
- 		iowrite32(value, clk->mapped_reg);
- }
- 
--static unsigned int r8(const void __iomem *addr)
--{
--	return ioread8(addr);
--}
--
--static unsigned int r16(const void __iomem *addr)
--{
--	return ioread16(addr);
--}
--
--static unsigned int r32(const void __iomem *addr)
--{
--	return ioread32(addr);
--}
--
- static int sh_clk_mstp_enable(struct clk *clk)
- {
- 	sh_clk_write(sh_clk_read(clk) & ~(1 << clk->enable_bit), clk);
- 	if (clk->status_reg) {
--		unsigned int (*read)(const void __iomem *addr);
-+		unsigned int (*read)(void __iomem *addr);
- 		int i;
- 		void __iomem *mapped_status = (phys_addr_t)clk->status_reg -
- 			(phys_addr_t)clk->enable_reg + clk->mapped_reg;
- 
- 		if (clk->flags & CLK_ENABLE_REG_8BIT)
--			read = r8;
-+			read = ioread8;
- 		else if (clk->flags & CLK_ENABLE_REG_16BIT)
--			read = r16;
-+			read = ioread16;
- 		else
--			read = r32;
-+			read = ioread32;
- 
- 		for (i = 1000;
- 		     (read(mapped_status) & (1 << clk->enable_bit)) && i;
 -- 
-2.7.4
+2.20.1
