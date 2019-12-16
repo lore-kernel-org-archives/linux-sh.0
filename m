@@ -1,43 +1,49 @@
-From: Yoshinori Sato <ysato@users.sourceforge.jp>
-Date: Wed, 11 Dec 2019 09:17:44 +0000
-Subject: Re: [PATCH][resend] sh: kgdb: Mark expected switch fall-throughs
-Message-Id: <s594ky7mdaf.wl-ysato@users.sourceforge.jp>
+From: Gon Solo <gonsolo@gmail.com>
+Date: Mon, 16 Dec 2019 10:35:22 +0000
+Subject: [PATCH 1/1] Fix undefined reference to 'node_reclaim_distance'.
+Message-Id: <20191216103522.32215-2-gonsolo@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87o8wgy3ra.wl-kuninori.morimoto.gx@renesas.com>
-        <983e0029-28d1-a428-4932-aa0588225293@embeddedor.com>
-In-Reply-To: <983e0029-28d1-a428-4932-aa0588225293@embeddedor.com>
+References: <20191216103522.32215-1-gonsolo@gmail.com>
+In-Reply-To: <20191216103522.32215-1-gonsolo@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "Gustavo A. R. Silva" <gustavo@embeddedor.com>
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Andrew Morton <akpm@linux-foundation.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Rich Felker <dalias@libc.org>, Daniel Thompson <daniel.thompson@linaro.org>, Will Deacon <will@kernel.org>, Douglas Anderson <dianders@chromium.org>, Paul Burton <paul.burton@mips.com>, Christophe Leroy <christophe.leroy@c-s.fr>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+Cc: Andrew Morton <akpm@linux-foundation.org>, Mike Rapoport <rppt@linux.ibm.com>, Nicholas Piggin <npiggin@gmail.com>, Gon Solo <gonsolo@gmail.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-On Wed, 11 Dec 2019 07:28:43 +0900,
-Gustavo A. R. Silva wrote:
-> 
-> Hi,
-> 
-> On 12/10/19 02:38, Kuninori Morimoto wrote:
-> > 
-> > Hi Andrew
-> > 
-> > I'm posting this patch from few month ago,
-> > but it seems SH maintainer is not working in these days...
-> > 
-> > Is it possible to consider about it ?
-> > SH compile will be error without this patch.
-> > 
-> 
-> I've added this to my -next tree and will consider it for 5.5-rc2.
-> 
-> Thanks!
-> --
-> Gustavo
-> 
+According to https://lkml.org/lkml/2019/12/16/101 and
+http://kisskb.ellerman.id.au/kisskb/buildresult/14067948/ building on
+sh4 is broken due to a
 
-Thanks.
-I was going to work tonight or tomorrow.
-Dose nothing if merged.
+page_alloc.c:(.text+0x3148): undefined reference to `node_reclaim_distance'.
 
---
-Yoshinori Sato
+This only happens with CONFIG_NUMA=y (variable used with #ifdef
+CONFIG_NUMA at mm/page_alloc.c:3529) and CONFIG_SMP=n (variable defined at
+kernel/sched/topology.c:2291 but the whole file to be built depends on
+CONFIG_SMP in kernel/sched/Makefile:23.
+
+Follow the lead of arch/x86/Kconfig:1547 and depend on SMP.
+
+This assumes that there are no NUMA systems without SMP which is
+reasonable I guess.
+
+Signed-off-by: Gon Solo <gonsolo@gmail.com>
+---
+ arch/sh/mm/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/sh/mm/Kconfig b/arch/sh/mm/Kconfig
+index 5c8a2ebfc720..cf655d8e8758 100644
+--- a/arch/sh/mm/Kconfig
++++ b/arch/sh/mm/Kconfig
+@@ -108,7 +108,7 @@ config VSYSCALL
+ 
+ config NUMA
+ 	bool "Non Uniform Memory Access (NUMA) Support"
+-	depends on MMU && SYS_SUPPORTS_NUMA
++	depends on MMU && SMP && SYS_SUPPORTS_NUMA
+ 	select ARCH_WANT_NUMA_VARIABLE_LOCALITY
+ 	default n
+ 	help
+-- 
+2.20.1
