@@ -1,69 +1,32 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 17 Dec 2019 06:50:05 +0000
-Subject: [PATCH] SH: Convert ins[bwl]/outs[bwl] macros to inline functions
-Message-Id: <87d0cnh2eb.wl-kuninori.morimoto.gx@renesas.com>
+Date: Tue, 17 Dec 2019 07:48:43 +0000
+Subject: Re: [PATCH] SH: Convert ins[bwl]/outs[bwl] macros to inline functions
+Message-Id: <878snbgzol.wl-kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87d0cnh2eb.wl-kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87d0cnh2eb.wl-kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Hi
 
-Macro ins[bwl]/outs[bwl] are just calling BUG(), but that results in
-unused variable warnings all over the place.
-This patch convert macro to inline to avoid warning
+> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> 
+> Macro ins[bwl]/outs[bwl] are just calling BUG(), but that results in
+> unused variable warnings all over the place.
+> This patch convert macro to inline to avoid warning
+> 
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> ---
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+I will post v2 patch soon.
+Please drop it
+
+
+Thank you for your help !!
+Best regards
 ---
- arch/sh/include/asm/io_noioport.h | 34 ++++++++++++++++++++++++++++------
- 1 file changed, 28 insertions(+), 6 deletions(-)
-
-diff --git a/arch/sh/include/asm/io_noioport.h b/arch/sh/include/asm/io_noioport.h
-index 90d6109..d39a1a8 100644
---- a/arch/sh/include/asm/io_noioport.h
-+++ b/arch/sh/include/asm/io_noioport.h
-@@ -53,12 +53,34 @@ static inline void ioport_unmap(void __iomem *addr)
- #define outw_p(x, addr)	outw((x), (addr))
- #define outl_p(x, addr)	outl((x), (addr))
- 
--#define insb(a, b, c)	BUG()
--#define insw(a, b, c)	BUG()
--#define insl(a, b, c)	BUG()
-+static inline void insb (unsigned long port, void *dst, unsigned long count)
-+{
-+	BUG();
-+}
-+
-+static inline void insw (unsigned long port, void *dst, unsigned long count)
-+{
-+	BUG();
-+}
-+
-+static inline void insl (unsigned long port, void *dst, unsigned long count)
-+{
-+	BUG();
-+}
- 
--#define outsb(a, b, c)	BUG()
--#define outsw(a, b, c)	BUG()
--#define outsl(a, b, c)	BUG()
-+static inline void outsb (unsigned long port, const void *src, unsigned long count)
-+{
-+	BUG();
-+}
-+
-+static inline void outsw (unsigned long port, const void *src, unsigned long count)
-+{
-+	BUG();
-+}
-+
-+static inline void outsl (unsigned long port, const void *src, unsigned long count)
-+{
-+	BUG();
-+}
- 
- #endif /* __ASM_SH_IO_NOIOPORT_H */
--- 
-2.7.4
+Kuninori Morimoto
