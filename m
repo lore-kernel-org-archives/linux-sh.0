@@ -1,100 +1,336 @@
-From: Aleksa Sarai <cyphar@cyphar.com>
-Date: Tue, 17 Dec 2019 06:39:50 +0000
-Subject: Re: [PATCH v18 11/13] open: introduce openat2(2) syscall
-Message-Id: <20191217063950.5oqwwqz5p3bu7t2x@yavin.dot.cyphar.com>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="vzwczu2ztdefrrfu"
+From: Mike Rapoport <rppt@kernel.org>
+Date: Tue, 17 Dec 2019 14:21:50 +0000
+Subject: [PATCH 2/2] sh: add support for folded p4d page tables
+Message-Id: <20191217142150.10392-3-rppt@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20191206141338.23338-1-cyphar@cyphar.com>
- <20191206141338.23338-12-cyphar@cyphar.com>
- <20191216192158.B9F19832924A@oldenburg2.str.redhat.com>
-In-Reply-To: <20191216192158.B9F19832924A@oldenburg2.str.redhat.com>
-To: Florian Weimer <fweimer@redhat.com>
-Cc: Al Viro <viro@zeniv.linux.org.uk>, Jeff Layton <jlayton@kernel.org>, "J. Bruce Fields" <bfields@fieldses.org>, Arnd Bergmann <arnd@arndb.de>, David Howells <dhowells@redhat.com>, Shuah Khan <shuah@kernel.org>, Shuah Khan <skhan@linuxfoundation.org>, Ingo Molnar <mingo@redhat.com>, Peter Zijlstra <peterz@infradead.org>, Alexei Starovoitov <ast@kernel.org>, Daniel Borkmann <daniel@iogearbox.net>, Martin KaFai Lau <kafai@fb.com>, Song Liu <songliubraving@fb.com>, Yonghong Song <yhs@fb.com>, Andrii Nakryiko <andriin@fb.com>, Jonathan Corbet <corbet@lwn.net>, linux-ia64@vger.kernel.org, linux-doc@vger.kernel.org, Alexander Shishkin <alexander.shishkin@linux.intel.com>, Rasmus Villemoes <linux@rasmusvillemoes.dk>, linux-kernel@vger.kernel.org, linux-kselftest@vger.kernel.org, sparclinux@vger.kernel.org, linux-api@vger.kernel.org, Jiri Olsa <jolsa@redhat.com>, linux-arch@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, David Drysdale <drysdale@google.com>, linux-arm-kernel@lists.infradead.org, linux-mips@vger.kernel.org, linux-xtensa@linux-xtensa.org, Kees Cook <keescook@chromium.org>, Jann Horn <jannh@google.com>, linuxppc-dev@lists.ozlabs.org, dev@opencontainers.org, Andy Lutomirski <luto@kernel.org>, Namhyung Kim <namhyung@kernel.org>, Andrew Morton <akpm@linux-foundation.org>, libc-alpha@sourceware.org, linux-parisc@vger.kernel.org, linux-m68k@lists.linux-m68k.org, netdev@vger.kernel.org, Chanho Min <chanho.min@lge.com>, Oleg Nesterov <oleg@redhat.com>, Eric Biederman <ebiederm@xmission.com>, linux-alpha@vger.kernel.org, linux-fsdevel@vger.kernel.org, bpf@vger.kernel.org, Linus Torvalds <torvalds@linux-foundation.org>, containers@lists.linux-foundation.org
+References: <20191217142150.10392-1-rppt@kernel.org>
+In-Reply-To: <20191217142150.10392-1-rppt@kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-mm@kvack.org, linux-kernel@vger.kernel.org, Mike Rapoport <rppt@kernel.org>, Mike Rapoport <rppt@linux.ibm.com>
 
+From: Mike Rapoport <rppt@linux.ibm.com>
 
---vzwczu2ztdefrrfu
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Implement primitives necessary for the 4th level folding, add walks of p4d
+level where appropriate and remove usage of __ARCH_USE_5LEVEL_HACK.
 
-On 2019-12-16, Florian Weimer <fweimer@redhat.com> wrote:
-> > diff --git a/include/uapi/linux/fcntl.h b/include/uapi/linux/fcntl.h
-> > index 1d338357df8a..58c3a0e543c6 100644
-> > --- a/include/uapi/linux/fcntl.h
-> > +++ b/include/uapi/linux/fcntl.h
-> > @@ -93,5 +93,40 @@
-> > =20
-> >  #define AT_RECURSIVE		0x8000	/* Apply to the entire subtree */
-> > =20
-> > +/*
-> > + * Arguments for how openat2(2) should open the target path. If @resol=
-ve is
-> > + * zero, then openat2(2) operates very similarly to openat(2).
-> > + *
-> > + * However, unlike openat(2), unknown bits in @flags result in -EINVAL=
- rather
-> > + * than being silently ignored. @mode must be zero unless one of {O_CR=
-EAT,
-> > + * O_TMPFILE} are set.
-> > + *
-> > + * @flags: O_* flags.
-> > + * @mode: O_CREAT/O_TMPFILE file mode.
-> > + * @resolve: RESOLVE_* flags.
-> > + */
-> > +struct open_how {
-> > +	__aligned_u64 flags;
-> > +	__u16 mode;
-> > +	__u16 __padding[3]; /* must be zeroed */
-> > +	__aligned_u64 resolve;
-> > +};
-> > +
-> > +#define OPEN_HOW_SIZE_VER0	24 /* sizeof first published struct */
-> > +#define OPEN_HOW_SIZE_LATEST	OPEN_HOW_SIZE_VER0
-> > +
-> > +/* how->resolve flags for openat2(2). */
-> > +#define RESOLVE_NO_XDEV		0x01 /* Block mount-point crossings
-> > +					(includes bind-mounts). */
-> > +#define RESOLVE_NO_MAGICLINKS	0x02 /* Block traversal through procfs-s=
-tyle
-> > +					"magic-links". */
-> > +#define RESOLVE_NO_SYMLINKS	0x04 /* Block traversal through all symlin=
-ks
-> > +					(implies OEXT_NO_MAGICLINKS) */
-> > +#define RESOLVE_BENEATH		0x08 /* Block "lexical" trickery like
-> > +					"..", symlinks, and absolute
-> > +					paths which escape the dirfd. */
-> > +#define RESOLVE_IN_ROOT		0x10 /* Make all jumps to "/" and ".."
-> > +					be scoped inside the dirfd
-> > +					(similar to chroot(2)). */
-> > =20
-> >  #endif /* _UAPI_LINUX_FCNTL_H */
->=20
-> Would it be possible to move these to a new UAPI header?
->=20
-> In glibc, we currently do not #include <linux/fcntl.h>.  We need some of
-> the AT_* constants in POSIX mode, and the header is not necessarily
-> namespace-clean.  If there was a separate header for openat2 support, we
-> could use that easily, and we would only have to maintain the baseline
-> definitions (which never change).
+Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
+---
+ arch/sh/include/asm/pgtable-2level.h |  1 -
+ arch/sh/include/asm/pgtable-3level.h |  1 -
+ arch/sh/kernel/io_trapped.c          |  7 ++++++-
+ arch/sh/mm/cache-sh4.c               |  4 +++-
+ arch/sh/mm/cache-sh5.c               |  7 ++++++-
+ arch/sh/mm/fault.c                   | 26 +++++++++++++++++++++++---
+ arch/sh/mm/hugetlbpage.c             | 28 ++++++++++++++++++----------
+ arch/sh/mm/init.c                    |  9 ++++++++-
+ arch/sh/mm/kmap.c                    |  2 +-
+ arch/sh/mm/tlbex_32.c                |  6 +++++-
+ arch/sh/mm/tlbex_64.c                |  7 ++++++-
+ 11 files changed, 76 insertions(+), 22 deletions(-)
 
-Sure, (assuming nobody objects) I can move it to "linux/openat2.h".
-
---=20
-Aleksa Sarai
-Senior Software Engineer (Containers)
-SUSE Linux GmbH
-<https://www.cyphar.com/>
-
---vzwczu2ztdefrrfu
-Content-Type: application/pgp-signature; name="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iHUEABYIAB0WIQSxZm6dtfE8gxLLfYqdlLljIbnQEgUCXfh4MQAKCRCdlLljIbnQ
-EvJ/AP9e+RbEhnKlfXeue8RftgpgyUu8To5+ZOcmuoKfUFVefgEAmch0tDU0glq6
-a0g2iw25N8tzxhAIzQpE/p2HRuzcPgo=
-=p/bo
------END PGP SIGNATURE-----
-
---vzwczu2ztdefrrfu--
+diff --git a/arch/sh/include/asm/pgtable-2level.h b/arch/sh/include/asm/pgtable-2level.h
+index bf1eb51c3ee5..08bff93927ff 100644
+--- a/arch/sh/include/asm/pgtable-2level.h
++++ b/arch/sh/include/asm/pgtable-2level.h
+@@ -2,7 +2,6 @@
+ #ifndef __ASM_SH_PGTABLE_2LEVEL_H
+ #define __ASM_SH_PGTABLE_2LEVEL_H
+ 
+-#define __ARCH_USE_5LEVEL_HACK
+ #include <asm-generic/pgtable-nopmd.h>
+ 
+ /*
+diff --git a/arch/sh/include/asm/pgtable-3level.h b/arch/sh/include/asm/pgtable-3level.h
+index 779260b721ca..0f80097e5c9c 100644
+--- a/arch/sh/include/asm/pgtable-3level.h
++++ b/arch/sh/include/asm/pgtable-3level.h
+@@ -2,7 +2,6 @@
+ #ifndef __ASM_SH_PGTABLE_3LEVEL_H
+ #define __ASM_SH_PGTABLE_3LEVEL_H
+ 
+-#define __ARCH_USE_5LEVEL_HACK
+ #include <asm-generic/pgtable-nopud.h>
+ 
+ /*
+diff --git a/arch/sh/kernel/io_trapped.c b/arch/sh/kernel/io_trapped.c
+index 60c828a2b8a2..037aab2708b7 100644
+--- a/arch/sh/kernel/io_trapped.c
++++ b/arch/sh/kernel/io_trapped.c
+@@ -136,6 +136,7 @@ EXPORT_SYMBOL_GPL(match_trapped_io_handler);
+ static struct trapped_io *lookup_tiop(unsigned long address)
+ {
+ 	pgd_t *pgd_k;
++	p4d_t *p4d_k;
+ 	pud_t *pud_k;
+ 	pmd_t *pmd_k;
+ 	pte_t *pte_k;
+@@ -145,7 +146,11 @@ static struct trapped_io *lookup_tiop(unsigned long address)
+ 	if (!pgd_present(*pgd_k))
+ 		return NULL;
+ 
+-	pud_k = pud_offset(pgd_k, address);
++	p4d_k = p4d_offset(pgd_k, address);
++	if (!p4d_present(*p4d_k))
++		return NULL;
++
++	pud_k = pud_offset(p4d_k, address);
+ 	if (!pud_present(*pud_k))
+ 		return NULL;
+ 
+diff --git a/arch/sh/mm/cache-sh4.c b/arch/sh/mm/cache-sh4.c
+index eee911422cf9..45943bcb7042 100644
+--- a/arch/sh/mm/cache-sh4.c
++++ b/arch/sh/mm/cache-sh4.c
+@@ -209,6 +209,7 @@ static void sh4_flush_cache_page(void *args)
+ 	unsigned long address, pfn, phys;
+ 	int map_coherent = 0;
+ 	pgd_t *pgd;
++	p4d_t *p4d;
+ 	pud_t *pud;
+ 	pmd_t *pmd;
+ 	pte_t *pte;
+@@ -224,7 +225,8 @@ static void sh4_flush_cache_page(void *args)
+ 		return;
+ 
+ 	pgd = pgd_offset(vma->vm_mm, address);
+-	pud = pud_offset(pgd, address);
++	p4d = p4d_offset(pgd, address);
++	pud = pud_offset(p4d, address);
+ 	pmd = pmd_offset(pud, address);
+ 	pte = pte_offset_kernel(pmd, address);
+ 
+diff --git a/arch/sh/mm/cache-sh5.c b/arch/sh/mm/cache-sh5.c
+index 445b5e69b73c..442a77cc2957 100644
+--- a/arch/sh/mm/cache-sh5.c
++++ b/arch/sh/mm/cache-sh5.c
+@@ -383,6 +383,7 @@ static void sh64_dcache_purge_user_pages(struct mm_struct *mm,
+ 				unsigned long addr, unsigned long end)
+ {
+ 	pgd_t *pgd;
++	p4d_t *p4d;
+ 	pud_t *pud;
+ 	pmd_t *pmd;
+ 	pte_t *pte;
+@@ -397,7 +398,11 @@ static void sh64_dcache_purge_user_pages(struct mm_struct *mm,
+ 	if (pgd_bad(*pgd))
+ 		return;
+ 
+-	pud = pud_offset(pgd, addr);
++	p4d = p4d_offset(pgd, addr);
++	if (p4d_none(*p4d) || p4d_bad(*p4d))
++		return;
++
++	pud = pud_offset(p4d, addr);
+ 	if (pud_none(*pud) || pud_bad(*pud))
+ 		return;
+ 
+diff --git a/arch/sh/mm/fault.c b/arch/sh/mm/fault.c
+index 5f51456f4fc7..001c9c23aa56 100644
+--- a/arch/sh/mm/fault.c
++++ b/arch/sh/mm/fault.c
+@@ -53,6 +53,7 @@ static void show_pte(struct mm_struct *mm, unsigned long addr)
+ 	       (u32)(sizeof(*pgd) * 2), (u64)pgd_val(*pgd));
+ 
+ 	do {
++		p4d_t *p4d;
+ 		pud_t *pud;
+ 		pmd_t *pmd;
+ 		pte_t *pte;
+@@ -65,7 +66,20 @@ static void show_pte(struct mm_struct *mm, unsigned long addr)
+ 			break;
+ 		}
+ 
+-		pud = pud_offset(pgd, addr);
++		p4d = p4d_offset(pgd, addr);
++		if (PTRS_PER_P4D != 1)
++			printk(", *p4d=%0*Lx", (u32)(sizeof(*p4d) * 2),
++			       (u64)p4d_val(*p4d));
++
++		if (p4d_none(*p4d))
++			break;
++
++		if (p4d_bad(*p4d)) {
++			printk("(bad)");
++			break;
++		}
++
++		pud = pud_offset(p4d, addr);
+ 		if (PTRS_PER_PUD != 1)
+ 			printk(", *pud=%0*Lx", (u32)(sizeof(*pud) * 2),
+ 			       (u64)pud_val(*pud));
+@@ -107,6 +121,7 @@ static inline pmd_t *vmalloc_sync_one(pgd_t *pgd, unsigned long address)
+ {
+ 	unsigned index = pgd_index(address);
+ 	pgd_t *pgd_k;
++	p4d_t *p4d, *p4d_k;
+ 	pud_t *pud, *pud_k;
+ 	pmd_t *pmd, *pmd_k;
+ 
+@@ -116,8 +131,13 @@ static inline pmd_t *vmalloc_sync_one(pgd_t *pgd, unsigned long address)
+ 	if (!pgd_present(*pgd_k))
+ 		return NULL;
+ 
+-	pud = pud_offset(pgd, address);
+-	pud_k = pud_offset(pgd_k, address);
++	p4d = p4d_offset(pgd, address);
++	p4d_k = p4d_offset(pgd_k, address);
++	if (!p4d_present(*p4d_k))
++		return NULL;
++
++	pud = pud_offset(p4d, address);
++	pud_k = pud_offset(p4d_k, address);
+ 	if (!pud_present(*pud_k))
+ 		return NULL;
+ 
+diff --git a/arch/sh/mm/hugetlbpage.c b/arch/sh/mm/hugetlbpage.c
+index 960deb1f24a1..acd5652a0de3 100644
+--- a/arch/sh/mm/hugetlbpage.c
++++ b/arch/sh/mm/hugetlbpage.c
+@@ -26,17 +26,21 @@ pte_t *huge_pte_alloc(struct mm_struct *mm,
+ 			unsigned long addr, unsigned long sz)
+ {
+ 	pgd_t *pgd;
++	p4d_t *p4d;
+ 	pud_t *pud;
+ 	pmd_t *pmd;
+ 	pte_t *pte = NULL;
+ 
+ 	pgd = pgd_offset(mm, addr);
+ 	if (pgd) {
+-		pud = pud_alloc(mm, pgd, addr);
+-		if (pud) {
+-			pmd = pmd_alloc(mm, pud, addr);
+-			if (pmd)
+-				pte = pte_alloc_map(mm, pmd, addr);
++		p4d = p4d_alloc(mm, pgd, addr);
++		if (p4d) {
++			pud = pud_alloc(mm, p4d, addr);
++			if (pud) {
++				pmd = pmd_alloc(mm, pud, addr);
++				if (pmd)
++					pte = pte_alloc_map(mm, pmd, addr);
++			}
+ 		}
+ 	}
+ 
+@@ -47,17 +51,21 @@ pte_t *huge_pte_offset(struct mm_struct *mm,
+ 		       unsigned long addr, unsigned long sz)
+ {
+ 	pgd_t *pgd;
++	p4d_t *p4d;
+ 	pud_t *pud;
+ 	pmd_t *pmd;
+ 	pte_t *pte = NULL;
+ 
+ 	pgd = pgd_offset(mm, addr);
+ 	if (pgd) {
+-		pud = pud_offset(pgd, addr);
+-		if (pud) {
+-			pmd = pmd_offset(pud, addr);
+-			if (pmd)
+-				pte = pte_offset_map(pmd, addr);
++		p4d = p4d_offset(pgd, addr);
++		if (p4d) {
++			pud = pud_offset(p4d, addr);
++			if (pud) {
++				pmd = pmd_offset(pud, addr);
++				if (pmd)
++					pte = pte_offset_map(pmd, addr);
++			}
+ 		}
+ 	}
+ 
+diff --git a/arch/sh/mm/init.c b/arch/sh/mm/init.c
+index 4bce5fc4b63e..ed3fc4e5ded7 100644
+--- a/arch/sh/mm/init.c
++++ b/arch/sh/mm/init.c
+@@ -45,6 +45,7 @@ void __init __weak plat_mem_setup(void)
+ static pte_t *__get_pte_phys(unsigned long addr)
+ {
+ 	pgd_t *pgd;
++	p4d_t *p4d;
+ 	pud_t *pud;
+ 	pmd_t *pmd;
+ 
+@@ -54,7 +55,13 @@ static pte_t *__get_pte_phys(unsigned long addr)
+ 		return NULL;
+ 	}
+ 
+-	pud = pud_alloc(NULL, pgd, addr);
++	p4d = p4d_alloc(NULL, pgd, addr);
++	if (unlikely(!p4d)) {
++		p4d_ERROR(*p4d);
++		return NULL;
++	}
++
++	pud = pud_alloc(NULL, p4d, addr);
+ 	if (unlikely(!pud)) {
+ 		pud_ERROR(*pud);
+ 		return NULL;
+diff --git a/arch/sh/mm/kmap.c b/arch/sh/mm/kmap.c
+index 9e6b38b03cf7..0e7039137f5a 100644
+--- a/arch/sh/mm/kmap.c
++++ b/arch/sh/mm/kmap.c
+@@ -15,7 +15,7 @@
+ #include <asm/cacheflush.h>
+ 
+ #define kmap_get_fixmap_pte(vaddr)                                     \
+-	pte_offset_kernel(pmd_offset(pud_offset(pgd_offset_k(vaddr), (vaddr)), (vaddr)), (vaddr))
++	pte_offset_kernel(pmd_offset(pud_offset(p4d_offset(pgd_offset_k(vaddr), (vaddr)), (vaddr)), (vaddr)), vaddr)
+ 
+ static pte_t *kmap_coherent_pte;
+ 
+diff --git a/arch/sh/mm/tlbex_32.c b/arch/sh/mm/tlbex_32.c
+index 382262dc0c4b..1c53868632ee 100644
+--- a/arch/sh/mm/tlbex_32.c
++++ b/arch/sh/mm/tlbex_32.c
+@@ -23,6 +23,7 @@ handle_tlbmiss(struct pt_regs *regs, unsigned long error_code,
+ 	       unsigned long address)
+ {
+ 	pgd_t *pgd;
++	p4d_t *p4d;
+ 	pud_t *pud;
+ 	pmd_t *pmd;
+ 	pte_t *pte;
+@@ -42,7 +43,10 @@ handle_tlbmiss(struct pt_regs *regs, unsigned long error_code,
+ 		pgd = pgd_offset(current->mm, address);
+ 	}
+ 
+-	pud = pud_offset(pgd, address);
++	p4d = p4d_offset(pgd, address);
++	if (p4d_none_or_clear_bad(p4d))
++		return 1;
++	pud = pud_offset(p4d, address);
+ 	if (pud_none_or_clear_bad(pud))
+ 		return 1;
+ 	pmd = pmd_offset(pud, address);
+diff --git a/arch/sh/mm/tlbex_64.c b/arch/sh/mm/tlbex_64.c
+index 8ff966dd0c74..0d015f7556fa 100644
+--- a/arch/sh/mm/tlbex_64.c
++++ b/arch/sh/mm/tlbex_64.c
+@@ -44,6 +44,7 @@ static int handle_tlbmiss(unsigned long long protection_flags,
+ 			  unsigned long address)
+ {
+ 	pgd_t *pgd;
++	p4d_t *p4d;
+ 	pud_t *pud;
+ 	pmd_t *pmd;
+ 	pte_t *pte;
+@@ -58,7 +59,11 @@ static int handle_tlbmiss(unsigned long long protection_flags,
+ 		pgd = pgd_offset(current->mm, address);
+ 	}
+ 
+-	pud = pud_offset(pgd, address);
++	p4d = p4d_offset(pgd, address);
++	if (p4d_none(*p4d) || !p4d_present(*p4d))
++		return 1;
++
++	pud = pud_offset(p4d, address);
+ 	if (pud_none(*pud) || !pud_present(*pud))
+ 		return 1;
+ 
+-- 
+2.24.0
