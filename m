@@ -1,38 +1,38 @@
-From: Mike Rapoport <rppt@kernel.org>
-Date: Tue, 17 Dec 2019 15:36:52 +0000
-Subject: Re: [PATCH 0/2] sh: get rid of __ARCH_USE_5LEVEL_HACK
-Message-Id: <20191217153651.GB4094@rapoport-lnx>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 17 Dec 2019 06:48:57 +0000
+Subject: [PATCH] SH: Convert iounmap() macros to inline functions
+Message-Id: <87eex3h2g6.wl-kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20191217142150.10392-1-rppt@kernel.org>
- <20191217151549.GH1666@brightrain.aerifal.cx>
-In-Reply-To: <20191217151549.GH1666@brightrain.aerifal.cx>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Rich Felker <dalias@libc.org>
-Cc: linux-sh@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-mm@kvack.org, linux-kernel@vger.kernel.org, Mike Rapoport <rppt@linux.ibm.com>, Mike Rapoport <rppt@kernel.org>
+To: linux-sh@vger.kernel.org
 
-On Tue, Dec 17, 2019 at 10:15:49AM -0500, Rich Felker wrote:
-> On Tue, Dec 17, 2019 at 04:21:48PM +0200, Mike Rapoport wrote:
-> > From: Mike Rapoport <rppt@linux.ibm.com>
-> > 
-> > Hi,
-> > 
-> > These patches update the SuperH page table folding/unfolding to take into
-> > account the 5th level.
-> 
-> Is this only for 64-bit/sh5? If so, I'd really like to avoid having
-> patch churn that nominally keeps it working, since it doesn't; GCC
-> dropped support a long time ago and it was experimental to begin with,
-> never appeared in production. Has anyone looked lately at what it
-> would take to remove it?
 
-This is a part of a generic cleanup of page table manipulations and removal
-of __ARCH_USE_5LEVEL_HACK and the related code from the kernel. So this is
-not related to a particular sh variant.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+
+Macro iounmap() do nothing, but that results in
+unused variable warnings all over the place.
+This patch convert it to inline to avoid warning
+
+Fixes: 98c90e5ea34e9 ("sh: remove __iounmap")
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/sh/include/asm/io.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/sh/include/asm/io.h b/arch/sh/include/asm/io.h
+index 1495489..351a0a9 100644
+--- a/arch/sh/include/asm/io.h
++++ b/arch/sh/include/asm/io.h
+@@ -328,7 +328,7 @@ __ioremap_mode(phys_addr_t offset, unsigned long size, pgprot_t prot)
+ #else
+ #define __ioremap(offset, size, prot)		((void __iomem *)(offset))
+ #define __ioremap_mode(offset, size, prot)	((void __iomem *)(offset))
+-#define iounmap(addr)				do { } while (0)
++static inline void iounmap(void __iomem *addr) {}
+ #endif /* CONFIG_MMU */
  
-> Rich
-
+ static inline void __iomem *ioremap(phys_addr_t offset, unsigned long size)
 -- 
-Sincerely yours,
-Mike.
+2.7.4
