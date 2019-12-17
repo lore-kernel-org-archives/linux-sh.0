@@ -1,71 +1,87 @@
-From: Sasha Levin <sashal@kernel.org>
-Date: Tue, 10 Dec 2019 22:32:41 +0000
-Subject: [PATCH AUTOSEL 4.4 36/71] pinctrl: sh-pfc: sh7734: Fix duplicate TCLK1_B
-Message-Id: <20191210223316.14988-36-sashal@kernel.org>
+From: Mike Rapoport <rppt@kernel.org>
+Date: Tue, 17 Dec 2019 14:21:49 +0000
+Subject: [PATCH 1/2] sh: drop __pXd_offset() macros that duplicate pXd_index() ones
+Message-Id: <20191217142150.10392-2-rppt@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20191210223316.14988-1-sashal@kernel.org>
-In-Reply-To: <20191210223316.14988-1-sashal@kernel.org>
+References: <20191217142150.10392-1-rppt@kernel.org>
+In-Reply-To: <20191217142150.10392-1-rppt@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Ben Dooks <ben.dooks@codethink.co.uk>, Sasha Levin <sashal@kernel.org>, linux-sh@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-gpio@vger.kernel.org
+To: linux-sh@vger.kernel.org
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-mm@kvack.org, linux-kernel@vger.kernel.org, Mike Rapoport <rppt@kernel.org>, Mike Rapoport <rppt@linux.ibm.com>
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Mike Rapoport <rppt@linux.ibm.com>
 
-[ Upstream commit 884caadad128efad8e00c1cdc3177bc8912ee8ec ]
+The __pXd_offset() macros are identical to the pXd_index() macros and there
+is no point to keep both of them. All architectures define and use
+pXd_index() so let's keep only those to make mips consistent with the rest
+of the kernel.
 
-The definitions for bit field [19:18] of the Peripheral Function Select
-Register 3 were accidentally copied from bit field [20], leading to
-duplicates for the TCLK1_B function, and missing TCLK0, CAN_CLK_B, and
-ET0_ETXD4 functions.
-
-Fix this by adding the missing GPIO_FN_CAN_CLK_B and GPIO_FN_ET0_ETXD4
-enum values, and correcting the functions.
-
-Reported-by: Ben Dooks <ben.dooks@codethink.co.uk>
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Link: https://lore.kernel.org/r/20191024131308.16659-1-geert+renesas@glider.be
-Signed-off-by: Sasha Levin <sashal@kernel.org>
+Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
 ---
- arch/sh/include/cpu-sh4/cpu/sh7734.h | 2 +-
- drivers/pinctrl/sh-pfc/pfc-sh7734.c  | 4 ++--
- 2 files changed, 3 insertions(+), 3 deletions(-)
+ arch/sh/include/asm/pgtable_32.h | 5 ++---
+ arch/sh/include/asm/pgtable_64.h | 5 ++---
+ arch/sh/mm/init.c                | 6 +++---
+ 3 files changed, 7 insertions(+), 9 deletions(-)
 
-diff --git a/arch/sh/include/cpu-sh4/cpu/sh7734.h b/arch/sh/include/cpu-sh4/cpu/sh7734.h
-index 2fb9a7b71b412..a2667c9b5819a 100644
---- a/arch/sh/include/cpu-sh4/cpu/sh7734.h
-+++ b/arch/sh/include/cpu-sh4/cpu/sh7734.h
-@@ -133,7 +133,7 @@ enum {
- 	GPIO_FN_EX_WAIT1, GPIO_FN_SD1_DAT0_A, GPIO_FN_DREQ2, GPIO_FN_CAN1_TX_C,
- 		GPIO_FN_ET0_LINK_C, GPIO_FN_ET0_ETXD5_A,
- 	GPIO_FN_EX_WAIT0, GPIO_FN_TCLK1_B,
--	GPIO_FN_RD_WR, GPIO_FN_TCLK0,
-+	GPIO_FN_RD_WR, GPIO_FN_TCLK0, GPIO_FN_CAN_CLK_B, GPIO_FN_ET0_ETXD4,
- 	GPIO_FN_EX_CS5, GPIO_FN_SD1_CMD_A, GPIO_FN_ATADIR, GPIO_FN_QSSL_B,
- 		GPIO_FN_ET0_ETXD3_A,
- 	GPIO_FN_EX_CS4, GPIO_FN_SD1_WP_A, GPIO_FN_ATAWR, GPIO_FN_QMI_QIO1_B,
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7734.c b/drivers/pinctrl/sh-pfc/pfc-sh7734.c
-index c691b2e343746..ab09d385f95d1 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7734.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7734.c
-@@ -1458,7 +1458,7 @@ static const struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(ET0_ETXD2_A),
- 	GPIO_FN(EX_CS5), GPIO_FN(SD1_CMD_A), GPIO_FN(ATADIR), GPIO_FN(QSSL_B),
- 	GPIO_FN(ET0_ETXD3_A),
--	GPIO_FN(RD_WR), GPIO_FN(TCLK1_B),
-+	GPIO_FN(RD_WR), GPIO_FN(TCLK0), GPIO_FN(CAN_CLK_B), GPIO_FN(ET0_ETXD4),
- 	GPIO_FN(EX_WAIT0), GPIO_FN(TCLK1_B),
- 	GPIO_FN(EX_WAIT1), GPIO_FN(SD1_DAT0_A), GPIO_FN(DREQ2),
- 		GPIO_FN(CAN1_TX_C), GPIO_FN(ET0_LINK_C), GPIO_FN(ET0_ETXD5_A),
-@@ -1954,7 +1954,7 @@ static const struct pinmux_cfg_reg pinmux_config_regs[] = {
- 	    /* IP3_20 [1] */
- 		FN_EX_WAIT0, FN_TCLK1_B,
- 	    /* IP3_19_18 [2] */
--		FN_RD_WR, FN_TCLK1_B, 0, 0,
-+		FN_RD_WR, FN_TCLK0, FN_CAN_CLK_B, FN_ET0_ETXD4,
- 	    /* IP3_17_15 [3] */
- 		FN_EX_CS5, FN_SD1_CMD_A, FN_ATADIR, FN_QSSL_B,
- 		FN_ET0_ETXD3_A, 0, 0, 0,
+diff --git a/arch/sh/include/asm/pgtable_32.h b/arch/sh/include/asm/pgtable_32.h
+index 29274f0e428e..4acce5f2cbf9 100644
+--- a/arch/sh/include/asm/pgtable_32.h
++++ b/arch/sh/include/asm/pgtable_32.h
+@@ -407,13 +407,12 @@ static inline pte_t pte_modify(pte_t pte, pgprot_t newprot)
+ /* to find an entry in a page-table-directory. */
+ #define pgd_index(address)	(((address) >> PGDIR_SHIFT) & (PTRS_PER_PGD-1))
+ #define pgd_offset(mm, address)	((mm)->pgd + pgd_index(address))
+-#define __pgd_offset(address)	pgd_index(address)
+ 
+ /* to find an entry in a kernel page-table-directory */
+ #define pgd_offset_k(address)	pgd_offset(&init_mm, address)
+ 
+-#define __pud_offset(address)	(((address) >> PUD_SHIFT) & (PTRS_PER_PUD-1))
+-#define __pmd_offset(address)	(((address) >> PMD_SHIFT) & (PTRS_PER_PMD-1))
++#define pud_index(address)	(((address) >> PUD_SHIFT) & (PTRS_PER_PUD-1))
++#define pmd_index(address)	(((address) >> PMD_SHIFT) & (PTRS_PER_PMD-1))
+ 
+ /* Find an entry in the third-level page table.. */
+ #define pte_index(address)	((address >> PAGE_SHIFT) & (PTRS_PER_PTE - 1))
+diff --git a/arch/sh/include/asm/pgtable_64.h b/arch/sh/include/asm/pgtable_64.h
+index 1778bc5971e7..27cc282ec6c0 100644
+--- a/arch/sh/include/asm/pgtable_64.h
++++ b/arch/sh/include/asm/pgtable_64.h
+@@ -46,14 +46,13 @@ static __inline__ void set_pte(pte_t *pteptr, pte_t pteval)
+ 
+ /* To find an entry in a generic PGD. */
+ #define pgd_index(address) (((address) >> PGDIR_SHIFT) & (PTRS_PER_PGD-1))
+-#define __pgd_offset(address) pgd_index(address)
+ #define pgd_offset(mm, address) ((mm)->pgd+pgd_index(address))
+ 
+ /* To find an entry in a kernel PGD. */
+ #define pgd_offset_k(address) pgd_offset(&init_mm, address)
+ 
+-#define __pud_offset(address)	(((address) >> PUD_SHIFT) & (PTRS_PER_PUD-1))
+-#define __pmd_offset(address)	(((address) >> PMD_SHIFT) & (PTRS_PER_PMD-1))
++#define pud_index(address)	(((address) >> PUD_SHIFT) & (PTRS_PER_PUD-1))
++/* #define pmd_index(address)	(((address) >> PMD_SHIFT) & (PTRS_PER_PMD-1)) */
+ 
+ /*
+  * PMD level access routines. Same notes as above.
+diff --git a/arch/sh/mm/init.c b/arch/sh/mm/init.c
+index dfdbaa50946e..4bce5fc4b63e 100644
+--- a/arch/sh/mm/init.c
++++ b/arch/sh/mm/init.c
+@@ -172,9 +172,9 @@ void __init page_table_range_init(unsigned long start, unsigned long end,
+ 	unsigned long vaddr;
+ 
+ 	vaddr = start;
+-	i = __pgd_offset(vaddr);
+-	j = __pud_offset(vaddr);
+-	k = __pmd_offset(vaddr);
++	i = pgd_index(vaddr);
++	j = pud_index(vaddr);
++	k = pmd_index(vaddr);
+ 	pgd = pgd_base + i;
+ 
+ 	for ( ; (i < PTRS_PER_PGD) && (vaddr != end); pgd++, i++) {
 -- 
-2.20.1
+2.24.0
