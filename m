@@ -1,66 +1,81 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 03 Dec 2019 09:06:37 +0000
-Subject: Re: Build failure on latest powerpc/merge (311ae9e159d8 io_uring: fix dead-hung for non-iter fixed r
-Message-Id: <CAMuHMdUzqnPpbSXB1JaY-+BbAvKno3akSYi6c8ZLQfLuOCC7rg@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 17 Dec 2019 07:51:16 +0000
+Subject: [PATCH v2] SH: Convert ins[bwl]/outs[bwl] macros to inline functions
+Message-Id: <875zifgzkb.wl-kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <71cf82d5-5986-43b7-cf1c-acba429a89d6@c-s.fr>
- <3a95d445-1f5c-7750-f0de-ddc427800b3b@kernel.dk>
-In-Reply-To: <3a95d445-1f5c-7750-f0de-ddc427800b3b@kernel.dk>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: Jens Axboe <axboe@kernel.dk>
-Cc: Linux-sh list <linux-sh@vger.kernel.org>, LKML <linux-kernel@vger.kernel.org>, stable <stable@vger.kernel.org>, "linuxppc-dev@lists.ozlabs.org" <linuxppc-dev@lists.ozlabs.org>, Pavel Begunkov <asml.silence@gmail.com>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+Cc: Linux-SH <linux-sh@vger.kernel.org>, Linux-Renesas <linux-renesas-soc@vger.kernel.org>
 
-Hi Jens,
 
-On Fri, Nov 29, 2019 at 5:06 PM Jens Axboe <axboe@kernel.dk> wrote:
-> On 11/29/19 6:53 AM, Christophe Leroy wrote:
-> >     CC      fs/io_uring.o
-> > fs/io_uring.c: In function ‘loop_rw_iter’:
-> > fs/io_uring.c:1628:21: error: implicit declaration of function ‘kmap’
-> > [-Werror=implicit-function-declaration]
-> >       iovec.iov_base = kmap(iter->bvec->bv_page)
-> >                        ^
-> > fs/io_uring.c:1628:19: warning: assignment makes pointer from integer
-> > without a cast [-Wint-conversion]
-> >       iovec.iov_base = kmap(iter->bvec->bv_page)
-> >                      ^
-> > fs/io_uring.c:1643:4: error: implicit declaration of function ‘kunmap’
-> > [-Werror=implicit-function-declaration]
-> >       kunmap(iter->bvec->bv_page);
-> >       ^
-> >
-> >
-> > Reverting commit 311ae9e159d8 ("io_uring: fix dead-hung for non-iter
-> > fixed rw") clears the failure.
-> >
-> > Most likely an #include is missing.
->
-> Huh weird how the build bots didn't catch that. Does the below work?
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Thanks, this fixes the same issue on SuperH:
+Macro ins[bwl]/outs[bwl] are just calling BUG(), but that results in
+unused variable warnings all over the place.
+This patch convert macro to inline to avoid warning
 
-Tested-by: Geert Uytterhoeven <geert+renesas@glider.be>
+We will get this kind of warning without this patch
 
-> --- a/fs/io_uring.c
-> +++ b/fs/io_uring.c
-> @@ -69,6 +69,7 @@
->   #include <linux/nospec.h>
->   #include <linux/sizes.h>
->   #include <linux/hugetlb.h>
-> +#include <linux/highmem.h>
->
->   #define CREATE_TRACE_POINTS
->   #include <trace/events/io_uring.h>
+	${LINUX}/drivers/iio/adc/ad7606_par.c:21:23: \
+	  warning: unused variable 'st' [-Wunused-variable]
+	struct ad7606_state *st = iio_priv(indio_dev);
+	^~
 
-Gr{oetje,eeting}s,
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v1 -> v2
 
-                        Geert
+	- add warning on git-log
 
+ arch/sh/include/asm/io_noioport.h | 34 ++++++++++++++++++++++++++++------
+ 1 file changed, 28 insertions(+), 6 deletions(-)
+
+diff --git a/arch/sh/include/asm/io_noioport.h b/arch/sh/include/asm/io_noioport.h
+index 90d6109..d39a1a8 100644
+--- a/arch/sh/include/asm/io_noioport.h
++++ b/arch/sh/include/asm/io_noioport.h
+@@ -53,12 +53,34 @@ static inline void ioport_unmap(void __iomem *addr)
+ #define outw_p(x, addr)	outw((x), (addr))
+ #define outl_p(x, addr)	outl((x), (addr))
+ 
+-#define insb(a, b, c)	BUG()
+-#define insw(a, b, c)	BUG()
+-#define insl(a, b, c)	BUG()
++static inline void insb (unsigned long port, void *dst, unsigned long count)
++{
++	BUG();
++}
++
++static inline void insw (unsigned long port, void *dst, unsigned long count)
++{
++	BUG();
++}
++
++static inline void insl (unsigned long port, void *dst, unsigned long count)
++{
++	BUG();
++}
+ 
+-#define outsb(a, b, c)	BUG()
+-#define outsw(a, b, c)	BUG()
+-#define outsl(a, b, c)	BUG()
++static inline void outsb (unsigned long port, const void *src, unsigned long count)
++{
++	BUG();
++}
++
++static inline void outsw (unsigned long port, const void *src, unsigned long count)
++{
++	BUG();
++}
++
++static inline void outsl (unsigned long port, const void *src, unsigned long count)
++{
++	BUG();
++}
+ 
+ #endif /* __ASM_SH_IO_NOIOPORT_H */
 -- 
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+2.7.4
