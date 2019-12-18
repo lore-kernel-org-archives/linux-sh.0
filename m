@@ -1,36 +1,111 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 18 Dec 2019 01:04:19 +0000
-Subject: Re: [PATCH] SH: Convert ins[bwl]/outs[bwl] macros to inline functions
-Message-Id: <87zhfqjvfw.wl-kuninori.morimoto.gx@renesas.com>
+Date: Wed, 18 Dec 2019 07:33:44 +0000
+Subject: [PATCH] sh: fixup strncpy()
+Message-Id: <87zhfqhyuf.wl-kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87d0cnh2eb.wl-kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87d0cnh2eb.wl-kuninori.morimoto.gx@renesas.com>
+References: <8736dijdit.wl-kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <8736dijdit.wl-kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Karl Nasrallah <knnspeed@aol.com>
+Cc: Linux-SH <linux-sh@vger.kernel.org>, Linux-Renesas <linux-renesas-soc@vger.kernel.org>
 
+From: Karl Nasrallah <knnspeed@aol.com>
 
-Hi Sergei
+Current SH will get below warning at strncpy()
 
-> > From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> > 
-> > Macro ins[bwl]/outs[bwl] are just calling BUG(), but that results in
-> > unused variable warnings all over the place.
-> > This patch convert macro to inline to avoid warning
-> > 
-> > Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> > ---
-(snip)
-> > +static inline void insb (unsigned long port, void *dst, unsigned long count)
-> 
->    Why this space after the function name? I don't think scripts/checkpatch.pl
-> is happy about it...
+In file included from ${LINUX}/arch/sh/include/asm/string.h:3,
+                 from ${LINUX}/include/linux/string.h:20,
+                 from ${LINUX}/include/linux/bitmap.h:9,
+                 from ${LINUX}/include/linux/nodemask.h:95,
+                 from ${LINUX}/include/linux/mmzone.h:17,
+                 from ${LINUX}/include/linux/gfp.h:6,
+                 from ${LINUX}/innclude/linux/slab.h:15,
+                 from ${LINUX}/linux/drivers/mmc/host/vub300.c:38:
+${LINUX}/drivers/mmc/host/vub300.c: In function 'new_system_port_status':
+${LINUX}/arch/sh/include/asm/string_32.h:51:42: warning: array subscript\
+  80 is above array bounds of 'char[26]' [-Warray-bounds]
+   : "0" (__dest), "1" (__src), "r" (__src+__n)
+                                     ~~~~~^~~~
 
-Indeed.
-will post v2 patch
+This patch fixup it
 
-Thank you for your help !!
-Best regards
+Signed-off-by: Karl Nasrallah <knnspeed@aol.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-Kuninori Morimoto
+
+This is Karl's 2nd pattern
+
+ arch/sh/include/asm/string_32.h | 54 ++++++++++++++++++++++++++---------------
+ 1 file changed, 35 insertions(+), 19 deletions(-)
+
+diff --git a/arch/sh/include/asm/string_32.h b/arch/sh/include/asm/string_32.h
+index 3558b1d..5a398dd 100644
+--- a/arch/sh/include/asm/string_32.h
++++ b/arch/sh/include/asm/string_32.h
+@@ -31,27 +31,43 @@ static inline char *strcpy(char *__dest, const char *__src)
+ #define __HAVE_ARCH_STRNCPY
+ static inline char *strncpy(char *__dest, const char *__src, size_t __n)
+ {
+-	register char *__xdest = __dest;
+-	unsigned long __dummy;
++	char * retval = __dest;
++	const char * __dest_end = __dest + __n - 1;
+ 
++	/* size_t is always unsigned */
+ 	if (__n = 0)
+-		return __xdest;
+-
+-	__asm__ __volatile__(
+-		"1:\n"
+-		"mov.b	@%1+, %2\n\t"
+-		"mov.b	%2, @%0\n\t"
+-		"cmp/eq	#0, %2\n\t"
+-		"bt/s	2f\n\t"
+-		" cmp/eq	%5,%1\n\t"
+-		"bf/s	1b\n\t"
+-		" add	#1, %0\n"
+-		"2:"
+-		: "=r" (__dest), "=r" (__src), "=&z" (__dummy)
+-		: "0" (__dest), "1" (__src), "r" (__src+__n)
+-		: "memory", "t");
+-
+-	return __xdest;
++		return retval;
++
++	/*
++	 * Some notes:
++	 * - cmp/eq #imm8,r0 is its own instruction
++	 * - incrementing dest and comparing to dest_end handles the size parameter in only one instruction
++	 * - mov.b R0,@Rn+ is SH2A only, but we can fill a delay slot with "add #1,%[dest]"
++	 */
++
++	__asm__ __volatile__ (
++		"strncpy_start:\n\t"
++		"mov.b @%[src]+,r0\n\t"
++		"cmp/eq #0,r0\n\t"
++		"bt.s strncpy_pad\n\t"
++		"cmp/eq %[dest],%[dest_end]\n\t"
++		"bt.s strncpy_end\n\t"
++		"mov.b r0,@%[dest]\n\t"
++		"bra strncpy_start\n\t"
++		"add #1,%[dest]\n\t"
++		"strncpy_pad:\n\t"
++		"bt.s strncpy_end\n\t"
++		"mov.b r0,@%[dest]\n\t"
++		"add #1,%[dest]\n\t"
++		"bra strncpy_pad\n\t"
++		"cmp/eq %[dest],%[dest_end]\n\t"
++		"strncpy_end:\n\t"
++		: [src] "+r" (__src), [dest] "+r" (__dest)
++		: [dest_end] "r" (__dest_end)
++		: "r0","t","memory"
++		);
++
++	return retval;
+ }
+ 
+ #define __HAVE_ARCH_STRCMP
+-- 
+2.7.4
