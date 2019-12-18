@@ -1,71 +1,85 @@
-From: Sasha Levin <sashal@kernel.org>
-Date: Tue, 10 Dec 2019 21:30:58 +0000
-Subject: [PATCH AUTOSEL 4.19 094/177] pinctrl: sh-pfc: sh7734: Fix duplicate TCLK1_B
-Message-Id: <20191210213221.11921-94-sashal@kernel.org>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 18 Dec 2019 05:19:32 +0000
+Subject: [PATCH] sh: clkfwk: remove r8/r16/r32
+Message-Id: <87bls6jjmj.wl-kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20191210213221.11921-1-sashal@kernel.org>
-In-Reply-To: <20191210213221.11921-1-sashal@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Ben Dooks <ben.dooks@codethink.co.uk>, Sasha Levin <sashal@kernel.org>, linux-sh@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-gpio@vger.kernel.org
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+Cc: Linux-SH <linux-sh@vger.kernel.org>, Linux-Renesas <linux-renesas-soc@vger.kernel.org>
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-[ Upstream commit 884caadad128efad8e00c1cdc3177bc8912ee8ec ]
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-The definitions for bit field [19:18] of the Peripheral Function Select
-Register 3 were accidentally copied from bit field [20], leading to
-duplicates for the TCLK1_B function, and missing TCLK0, CAN_CLK_B, and
-ET0_ETXD4 functions.
+SH will get below warning
 
-Fix this by adding the missing GPIO_FN_CAN_CLK_B and GPIO_FN_ET0_ETXD4
-enum values, and correcting the functions.
+${LINUX}/drivers/sh/clk/cpg.c: In function 'r8':
+${LINUX}/drivers/sh/clk/cpg.c:41:17: warning: passing argument 1 of 'ioread8'
+ discards 'const' qualifier from pointer target type [-Wdiscarded-qualifiers]
+  return ioread8(addr);
+                 ^~~~
+In file included from ${LINUX}/arch/sh/include/asm/io.h:21,
+                 from ${LINUX}/include/linux/io.h:13,
+                 from ${LINUX}/drivers/sh/clk/cpg.c:14:
+${LINUX}/include/asm-generic/iomap.h:29:29: note: expected 'void *' but
+argument is of type 'const void *'
+ extern unsigned int ioread8(void __iomem *);
+                             ^~~~~~~~~~~~~~
 
-Reported-by: Ben Dooks <ben.dooks@codethink.co.uk>
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Link: https://lore.kernel.org/r/20191024131308.16659-1-geert+renesas@glider.be
-Signed-off-by: Sasha Levin <sashal@kernel.org>
+We don't need "const" for r8/r16/r32.
+And we don't need r8/r16/r32 themselvs.
+This patch cleanup these.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/sh/include/cpu-sh4/cpu/sh7734.h | 2 +-
- drivers/pinctrl/sh-pfc/pfc-sh7734.c  | 4 ++--
- 2 files changed, 3 insertions(+), 3 deletions(-)
+ drivers/sh/clk/cpg.c | 23 ++++-------------------
+ 1 file changed, 4 insertions(+), 19 deletions(-)
 
-diff --git a/arch/sh/include/cpu-sh4/cpu/sh7734.h b/arch/sh/include/cpu-sh4/cpu/sh7734.h
-index 96f0246ad2f2b..82b63208135ae 100644
---- a/arch/sh/include/cpu-sh4/cpu/sh7734.h
-+++ b/arch/sh/include/cpu-sh4/cpu/sh7734.h
-@@ -134,7 +134,7 @@ enum {
- 	GPIO_FN_EX_WAIT1, GPIO_FN_SD1_DAT0_A, GPIO_FN_DREQ2, GPIO_FN_CAN1_TX_C,
- 		GPIO_FN_ET0_LINK_C, GPIO_FN_ET0_ETXD5_A,
- 	GPIO_FN_EX_WAIT0, GPIO_FN_TCLK1_B,
--	GPIO_FN_RD_WR, GPIO_FN_TCLK0,
-+	GPIO_FN_RD_WR, GPIO_FN_TCLK0, GPIO_FN_CAN_CLK_B, GPIO_FN_ET0_ETXD4,
- 	GPIO_FN_EX_CS5, GPIO_FN_SD1_CMD_A, GPIO_FN_ATADIR, GPIO_FN_QSSL_B,
- 		GPIO_FN_ET0_ETXD3_A,
- 	GPIO_FN_EX_CS4, GPIO_FN_SD1_WP_A, GPIO_FN_ATAWR, GPIO_FN_QMI_QIO1_B,
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7734.c b/drivers/pinctrl/sh-pfc/pfc-sh7734.c
-index 33232041ee86d..3eccc9b3ca84a 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7734.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7734.c
-@@ -1453,7 +1453,7 @@ static const struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(ET0_ETXD2_A),
- 	GPIO_FN(EX_CS5), GPIO_FN(SD1_CMD_A), GPIO_FN(ATADIR), GPIO_FN(QSSL_B),
- 	GPIO_FN(ET0_ETXD3_A),
--	GPIO_FN(RD_WR), GPIO_FN(TCLK1_B),
-+	GPIO_FN(RD_WR), GPIO_FN(TCLK0), GPIO_FN(CAN_CLK_B), GPIO_FN(ET0_ETXD4),
- 	GPIO_FN(EX_WAIT0), GPIO_FN(TCLK1_B),
- 	GPIO_FN(EX_WAIT1), GPIO_FN(SD1_DAT0_A), GPIO_FN(DREQ2),
- 		GPIO_FN(CAN1_TX_C), GPIO_FN(ET0_LINK_C), GPIO_FN(ET0_ETXD5_A),
-@@ -1949,7 +1949,7 @@ static const struct pinmux_cfg_reg pinmux_config_regs[] = {
- 	    /* IP3_20 [1] */
- 		FN_EX_WAIT0, FN_TCLK1_B,
- 	    /* IP3_19_18 [2] */
--		FN_RD_WR, FN_TCLK1_B, 0, 0,
-+		FN_RD_WR, FN_TCLK0, FN_CAN_CLK_B, FN_ET0_ETXD4,
- 	    /* IP3_17_15 [3] */
- 		FN_EX_CS5, FN_SD1_CMD_A, FN_ATADIR, FN_QSSL_B,
- 		FN_ET0_ETXD3_A, 0, 0, 0,
+diff --git a/drivers/sh/clk/cpg.c b/drivers/sh/clk/cpg.c
+index eeb028b9..a5cacfe 100644
+--- a/drivers/sh/clk/cpg.c
++++ b/drivers/sh/clk/cpg.c
+@@ -36,36 +36,21 @@ static void sh_clk_write(int value, struct clk *clk)
+ 		iowrite32(value, clk->mapped_reg);
+ }
+ 
+-static unsigned int r8(const void __iomem *addr)
+-{
+-	return ioread8(addr);
+-}
+-
+-static unsigned int r16(const void __iomem *addr)
+-{
+-	return ioread16(addr);
+-}
+-
+-static unsigned int r32(const void __iomem *addr)
+-{
+-	return ioread32(addr);
+-}
+-
+ static int sh_clk_mstp_enable(struct clk *clk)
+ {
+ 	sh_clk_write(sh_clk_read(clk) & ~(1 << clk->enable_bit), clk);
+ 	if (clk->status_reg) {
+-		unsigned int (*read)(const void __iomem *addr);
++		unsigned int (*read)(void __iomem *addr);
+ 		int i;
+ 		void __iomem *mapped_status = (phys_addr_t)clk->status_reg -
+ 			(phys_addr_t)clk->enable_reg + clk->mapped_reg;
+ 
+ 		if (clk->flags & CLK_ENABLE_REG_8BIT)
+-			read = r8;
++			read = ioread8;
+ 		else if (clk->flags & CLK_ENABLE_REG_16BIT)
+-			read = r16;
++			read = ioread16;
+ 		else
+-			read = r32;
++			read = ioread32;
+ 
+ 		for (i = 1000;
+ 		     (read(mapped_status) & (1 << clk->enable_bit)) && i;
 -- 
-2.20.1
+2.7.4
