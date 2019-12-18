@@ -1,152 +1,99 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 03 Dec 2019 16:26:40 +0000
-Subject: [PATCH 2/7] sh: dump_stack: Fix broken lines and ptrval in calltrace dumps
-Message-Id: <20191203162645.19950-3-geert+renesas@glider.be>
+Date: Wed, 18 Dec 2019 19:48:09 +0000
+Subject: [PATCH 3/6] pinctrl: sh-pfc: sh7264: Fix CAN function GPIOs
+Message-Id: <20191218194812.12741-4-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20191203162645.19950-1-geert+renesas@glider.be>
-In-Reply-To: <20191203162645.19950-1-geert+renesas@glider.be>
+References: <20191218194812.12741-1-geert+renesas@glider.be>
+In-Reply-To: <20191218194812.12741-1-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
-Cc: Andrew Morton <akpm@linux-foundation.org>, Guenter Roeck <linux@roeck-us.net>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Linus Walleij <linus.walleij@linaro.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+Cc: linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Rejoin the broken lines by using pr_cont(), and use "%px" to print
-sensible addresses.
-Convert the remaining printk() calls to pr_*() while at it.
+pinmux_func_gpios[] contains a hole due to the missing function GPIO
+definition for the "CTX0&CTX1" signal, which is the logical "AND" of the
+two CAN outputs.
+
+Fix this by:
+  - Renaming CRX0_CRX1_MARK to CTX0_CTX1_MARK, as PJ2MD[2:0]0
+    configures the combined "CTX0&CTX1" output signal,
+  - Renaming CRX0X1_MARK to CRX0_CRX1_MARK, as PJ3MD[1:0] configures
+    the shared "CRX0/CRX1" input signal, which is fed to both CAN
+    inputs,
+  - Adding the missing function GPIO definition for "CTX0&CTX1" to
+    pinmux_func_gpios[],
+  - Moving all CAN enums next to each other.
+
+See SH7262 Group, SH7264 Group User's Manual: Hardware, Rev. 4.00:
+  [1] Figure 1.2 (3) (Pin Assignment for the SH7264 Group (1-Mbyte
+      Version),
+  [2] Figure 1.2 (4) Pin Assignment for the SH7264 Group (640-Kbyte
+      Version,
+  [3] Table 1.4 List of Pins,
+  [4] Figure 20.29 Connection Example when Using This Module as 1-Channel
+      Module (64 Mailboxes x 1 Channel),
+  [5] Table 32.10 Multiplexed Pins (Port J),
+  [6] Section 32.2.30 (3) Port J Control Register 0 (PJCR0).
+
+Note that the last 2 disagree about PJ2MD[2:0], which is probably the
+root cause of this bug.  But considering [4], "CTx0&CTx1" in [5] must
+be correct, and "CRx0&CRx1" in [6] must be wrong.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-Sample impact:
+The runtime-check under development reports:
 
--Stack: (0x8e8b1d58 to 0x8e8b2000)
--1d40:
--
--
--
--
--
--
--8c09a2b4
--8fb51b40
--
--1d60:
--8fbf400c
--00000000
--8c09a7da
--00000122
--8fbf4010
--00000001
--00000002
--8fbf4000
--
--1d80:
--00000002
--8fbf400c
--0030f231
--00000100
--8e8b1db0
--00000000
--8e8b1dac
--8c2b64b4
-+Stack: (0x8eeabc80 to 0x8eeac000)
-+bc80: 8c09a2a8 8fb5cce0 8fbf400c 00000000 8c09a7ce 00000122 8fbf4010 00000002
-+bca0: 00000001 8fbf4000 00000001 8fbf400c 0030f231 00000100 8eeabcd8 00000000
-+bcc0: 00001000 8c2b64b4 00460000 00000004 232d0f3f 8c21b788 8fb075a4 8fb50e44
-
- [...]
-
- Call trace:
-- [<(ptrval)>] free_pcppages_bulk+0x106/0x348
-- [<(ptrval)>] __get_free_pages+0xe/0x54
-- [<(ptrval)>] free_unref_page_list+0xca/0x12c
-- [<(ptrval)>] arch_local_irq_restore+0x0/0x24
-- [<(ptrval)>] free_unref_page_commit.isra.141+0x0/0x74
-+ [<8c09a7ce>] free_pcppages_bulk+0x106/0x348
-+ [<8c21b788>] _cond_resched+0x38/0x54
-+ [<8c09bb5a>] free_unref_page_list+0xca/0x12c
-+ [<8c002808>] arch_local_irq_restore+0x0/0x24
-+ [<8c09aaf8>] free_unref_page_commit.isra.141+0x0/0x74
+    sh7264_pfc: empty function gpio 23
 ---
- arch/sh/kernel/dumpstack.c | 24 ++++++++++++------------
- 1 file changed, 12 insertions(+), 12 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-sh7264.c | 9 ++++-----
+ 1 file changed, 4 insertions(+), 5 deletions(-)
 
-diff --git a/arch/sh/kernel/dumpstack.c b/arch/sh/kernel/dumpstack.c
-index 9f1c9c11d62df46a..6009281f83442ae3 100644
---- a/arch/sh/kernel/dumpstack.c
-+++ b/arch/sh/kernel/dumpstack.c
-@@ -21,32 +21,32 @@ void dump_mem(const char *str, unsigned long bottom, unsigned long top)
- 	unsigned long p;
- 	int i;
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7264.c b/drivers/pinctrl/sh-pfc/pfc-sh7264.c
+index 4117bd8c0f413f99..908837ea487bdcb9 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7264.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7264.c
+@@ -497,17 +497,15 @@ enum {
+ 	SD_WP_MARK, SD_CLK_MARK, SD_CMD_MARK,
+ 	CRX0_MARK, CRX1_MARK,
+ 	CTX0_MARK, CTX1_MARK,
++	CRX0_CRX1_MARK, CTX0_CTX1_MARK,
  
--	printk("%s(0x%08lx to 0x%08lx)\n", str, bottom, top);
-+	pr_info("%s(0x%08lx to 0x%08lx)\n", str, bottom, top);
+ 	PWM1A_MARK, PWM1B_MARK, PWM1C_MARK, PWM1D_MARK,
+ 	PWM1E_MARK, PWM1F_MARK, PWM1G_MARK, PWM1H_MARK,
+ 	PWM2A_MARK, PWM2B_MARK, PWM2C_MARK, PWM2D_MARK,
+ 	PWM2E_MARK, PWM2F_MARK, PWM2G_MARK, PWM2H_MARK,
+ 	IERXD_MARK, IETXD_MARK,
+-	CRX0_CRX1_MARK,
+ 	WDTOVF_MARK,
  
- 	for (p = bottom & ~31; p < top; ) {
--		printk("%04lx: ", p & 0xffff);
-+		pr_info("%04lx: ", p & 0xffff);
+-	CRX0X1_MARK,
+-
+ 	/* DMAC */
+ 	TEND0_MARK, DACK0_MARK, DREQ0_MARK,
+ 	TEND1_MARK, DACK1_MARK, DREQ1_MARK,
+@@ -995,12 +993,12 @@ static const u16 pinmux_data[] = {
  
- 		for (i = 0; i < 8; i++, p += 4) {
- 			unsigned int val;
+ 	PINMUX_DATA(PJ3_DATA, PJ3MD_00),
+ 	PINMUX_DATA(CRX1_MARK, PJ3MD_01),
+-	PINMUX_DATA(CRX0X1_MARK, PJ3MD_10),
++	PINMUX_DATA(CRX0_CRX1_MARK, PJ3MD_10),
+ 	PINMUX_DATA(IRQ1_PJ_MARK, PJ3MD_11),
  
- 			if (p < bottom || p >= top)
--				printk("         ");
-+				pr_cont("         ");
- 			else {
- 				if (__get_user(val, (unsigned int __user *)p)) {
--					printk("\n");
-+					pr_cont("\n");
- 					return;
- 				}
--				printk("%08x ", val);
-+				pr_cont("%08x ", val);
- 			}
- 		}
--		printk("\n");
-+		pr_cont("\n");
- 	}
- }
+ 	PINMUX_DATA(PJ2_DATA, PJ2MD_000),
+ 	PINMUX_DATA(CTX1_MARK, PJ2MD_001),
+-	PINMUX_DATA(CRX0_CRX1_MARK, PJ2MD_010),
++	PINMUX_DATA(CTX0_CTX1_MARK, PJ2MD_010),
+ 	PINMUX_DATA(CS2_MARK, PJ2MD_011),
+ 	PINMUX_DATA(SCK0_MARK, PJ2MD_100),
+ 	PINMUX_DATA(LCD_M_DISP_MARK, PJ2MD_101),
+@@ -1245,6 +1243,7 @@ static const struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(CTX1),
+ 	GPIO_FN(CRX1),
+ 	GPIO_FN(CTX0),
++	GPIO_FN(CTX0_CTX1),
+ 	GPIO_FN(CRX0),
+ 	GPIO_FN(CRX0_CRX1),
  
- void printk_address(unsigned long address, int reliable)
- {
--	printk(" [<%p>] %s%pS\n", (void *) address,
--			reliable ? "" : "? ", (void *) address);
-+	pr_cont(" [<%px>] %s%pS\n", (void *)address, reliable ? "" : "? ",
-+		(void *)address);
- }
- 
- #ifdef CONFIG_FUNCTION_GRAPH_TRACER
-@@ -108,7 +108,7 @@ stack_reader_dump(struct task_struct *task, struct pt_regs *regs,
- 
- static int print_trace_stack(void *data, char *name)
- {
--	printk("%s <%s> ", (char *)data, name);
-+	pr_info("%s <%s> ", (char *)data, name);
- 	return 0;
- }
- 
-@@ -117,7 +117,7 @@ static int print_trace_stack(void *data, char *name)
-  */
- static void print_trace_address(void *data, unsigned long addr, int reliable)
- {
--	printk("%s", (char *)data);
-+	pr_info("%s", (char *)data);
- 	printk_address(addr, reliable);
- }
- 
-@@ -132,11 +132,11 @@ void show_trace(struct task_struct *tsk, unsigned long *sp,
- 	if (regs && user_mode(regs))
- 		return;
- 
--	printk("\nCall trace:\n");
-+	pr_info("\nCall trace:\n");
- 
- 	unwind_stack(tsk, regs, sp, &print_trace_ops, "");
- 
--	printk("\n");
-+	pr_cont("\n");
- 
- 	if (!tsk)
- 		tsk = current;
 -- 
 2.17.1
