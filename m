@@ -1,30 +1,37 @@
-From: Rob Landley <rob@landley.net>
-Date: Thu, 05 Dec 2019 19:13:04 +0000
-Subject: Re: [PATCH v2] drivers: Fix boot problem on SuperH
-Message-Id: <4e06aa64-59e1-888d-184a-0cb49ac175d5@landley.net>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Wed, 18 Dec 2019 16:45:11 +0000
+Subject: [PATCH] y2038: sh: remove timeval/timespec usage from headers
+Message-Id: <20191218164527.542823-1-arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20191203205852.15659-1-linux@roeck-us.net>
-In-Reply-To: <20191203205852.15659-1-linux@roeck-us.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guenter Roeck <linux@roeck-us.net>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Geert Uytterhoeven <geert+renesas@glider.be>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Bartosz Golaszewski <brgl@bgdev.pl>
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+Cc: Arnd Bergmann <arnd@arndb.de>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-On 12/3/19 2:58 PM, Guenter Roeck wrote:
-> SuperH images crash too eearly to display any console output. Bisect
-> points to commit 507fd01d5333 ("drivers: move the early platform device
-> support to arch/sh"). An analysis of that patch suggests that
-> early_platform_cleanup() is now called at the wrong time. Restoring its
-> call point fixes the problem.
-> 
-> Cc: Bartosz Golaszewski <brgl@bgdev.pl>
-> Fixes: 507fd01d5333 ("drivers: move the early platform device support to arch/sh")
-> Tested-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> Signed-off-by: Guenter Roeck <linux@roeck-us.net>
+This header file escaped my earlier cleanups for removing
+the in-kernel usage of timeval and timespec structs.
 
-Yup, I need this too.
+Replace them with the corresponding __kernel_old_* types.
 
-Acked-by: Rob Landley <rob@landley.net>
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+---
+ arch/sh/include/uapi/asm/sockios.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-Rob
+diff --git a/arch/sh/include/uapi/asm/sockios.h b/arch/sh/include/uapi/asm/sockios.h
+index ef18a668456d..3da561453260 100644
+--- a/arch/sh/include/uapi/asm/sockios.h
++++ b/arch/sh/include/uapi/asm/sockios.h
+@@ -10,7 +10,7 @@
+ #define SIOCSPGRP	_IOW('s', 8, pid_t)
+ #define SIOCGPGRP	_IOR('s', 9, pid_t)
+ 
+-#define SIOCGSTAMP_OLD	_IOR('s', 100, struct timeval) /* Get stamp (timeval) */
+-#define SIOCGSTAMPNS_OLD _IOR('s', 101, struct timespec) /* Get stamp (timespec) */
++#define SIOCGSTAMP_OLD	_IOR('s', 100, struct __kernel_old_timeval) /* Get stamp (timeval) */
++#define SIOCGSTAMPNS_OLD _IOR('s', 101, struct __kernel_old_timespec) /* Get stamp (timespec) */
+ 
+ #endif /* __ASM_SH_SOCKIOS_H */
+-- 
+2.20.0
