@@ -1,119 +1,61 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 19 Dec 2019 01:23:11 +0000
-Subject: [PATCH v2 1/3] sh: fixup strncpy() warning and add missing padding
-Message-Id: <87v9qdyups.wl-kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 18 Dec 2019 19:48:12 +0000
+Subject: [PATCH 6/6] sh: sh7269: Remove bogus SSU GPIO function definitions
+Message-Id: <20191218194812.12741-7-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87woatyutt.wl-kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87woatyutt.wl-kuninori.morimoto.gx@renesas.com>
+References: <20191218194812.12741-1-geert+renesas@glider.be>
+In-Reply-To: <20191218194812.12741-1-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Karl Nasrallah <knnspeed@aol.com>
-Cc: Linux-SH <linux-sh@vger.kernel.org>, Linux-Renesas <linux-renesas-soc@vger.kernel.org>, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Linus Walleij <linus.walleij@linaro.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+Cc: linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Karl Nasrallah <knnspeed@aol.com>
+SH7269 has no Synchronous Serial Communication Unit (SSU).
+Remove the bogus enum IDs, which caused holes in pinmux_func_gpios[].
 
-Current SH will get below warning at strncpy()
-
-In file included from ${LINUX}/arch/sh/include/asm/string.h:3,
-                 from ${LINUX}/include/linux/string.h:20,
-                 from ${LINUX}/include/linux/bitmap.h:9,
-                 from ${LINUX}/include/linux/nodemask.h:95,
-                 from ${LINUX}/include/linux/mmzone.h:17,
-                 from ${LINUX}/include/linux/gfp.h:6,
-                 from ${LINUX}/innclude/linux/slab.h:15,
-                 from ${LINUX}/linux/drivers/mmc/host/vub300.c:38:
-${LINUX}/drivers/mmc/host/vub300.c: In function 'new_system_port_status':
-${LINUX}/arch/sh/include/asm/string_32.h:51:42: warning: array subscript\
-  80 is above array bounds of 'char[26]' [-Warray-bounds]
-   : "0" (__dest), "1" (__src), "r" (__src+__n)
-                                     ~~~~~^~~~
-
-And current implementation is missing padding which strncpy()
-should support.
-
-This patch solves these 2 issues.
-
-Signed-off-by: Karl Nasrallah <knnspeed@aol.com>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-v1 -> v2
+Presumably this has been copied from sh7203.
 
-	- tidyup git-log
-	- tidyup 80char
-	- tidyup Subject
+The runtime-check under development reports:
 
- arch/sh/include/asm/string_32.h | 56 +++++++++++++++++++++++++++--------------
- 1 file changed, 37 insertions(+), 19 deletions(-)
+    sh7269_pfc: empty function gpio 141
+    sh7269_pfc: empty function gpio 142
+    sh7269_pfc: empty function gpio 143
+    sh7269_pfc: empty function gpio 144
+    sh7269_pfc: empty function gpio 145
+    sh7269_pfc: empty function gpio 146
+    sh7269_pfc: empty function gpio 147
+    sh7269_pfc: empty function gpio 148
+    sh7269_pfc: empty function gpio 149
+    sh7269_pfc: empty function gpio 150
+    sh7269_pfc: empty function gpio 151
+    sh7269_pfc: empty function gpio 152
+    sh7269_pfc: empty function gpio 153
+    sh7269_pfc: empty function gpio 154
+    sh7269_pfc: empty function gpio 155
+    sh7269_pfc: empty function gpio 156
+---
+ arch/sh/include/cpu-sh2a/cpu/sh7269.h | 6 ------
+ 1 file changed, 6 deletions(-)
 
-diff --git a/arch/sh/include/asm/string_32.h b/arch/sh/include/asm/string_32.h
-index 3558b1d..4978f6e 100644
---- a/arch/sh/include/asm/string_32.h
-+++ b/arch/sh/include/asm/string_32.h
-@@ -31,27 +31,45 @@ static inline char *strcpy(char *__dest, const char *__src)
- #define __HAVE_ARCH_STRNCPY
- static inline char *strncpy(char *__dest, const char *__src, size_t __n)
- {
--	register char *__xdest = __dest;
--	unsigned long __dummy;
-+	char * retval = __dest;
-+	const char * __dest_end = __dest + __n - 1;
+diff --git a/arch/sh/include/cpu-sh2a/cpu/sh7269.h b/arch/sh/include/cpu-sh2a/cpu/sh7269.h
+index b887cc402b712557..fece521c74b30d4d 100644
+--- a/arch/sh/include/cpu-sh2a/cpu/sh7269.h
++++ b/arch/sh/include/cpu-sh2a/cpu/sh7269.h
+@@ -126,12 +126,6 @@ enum {
+ 	GPIO_FN_TIOC0D, GPIO_FN_TIOC0C, GPIO_FN_TIOC0B, GPIO_FN_TIOC0A,
+ 	GPIO_FN_TCLKD, GPIO_FN_TCLKC, GPIO_FN_TCLKB, GPIO_FN_TCLKA,
  
-+	/* size_t is always unsigned */
- 	if (__n = 0)
--		return __xdest;
+-	/* SSU */
+-	GPIO_FN_SCS0_PD, GPIO_FN_SSO0_PD, GPIO_FN_SSI0_PD, GPIO_FN_SSCK0_PD,
+-	GPIO_FN_SCS0_PF, GPIO_FN_SSO0_PF, GPIO_FN_SSI0_PF, GPIO_FN_SSCK0_PF,
+-	GPIO_FN_SCS1_PD, GPIO_FN_SSO1_PD, GPIO_FN_SSI1_PD, GPIO_FN_SSCK1_PD,
+-	GPIO_FN_SCS1_PF, GPIO_FN_SSO1_PF, GPIO_FN_SSI1_PF, GPIO_FN_SSCK1_PF,
 -
--	__asm__ __volatile__(
--		"1:\n"
--		"mov.b	@%1+, %2\n\t"
--		"mov.b	%2, @%0\n\t"
--		"cmp/eq	#0, %2\n\t"
--		"bt/s	2f\n\t"
--		" cmp/eq	%5,%1\n\t"
--		"bf/s	1b\n\t"
--		" add	#1, %0\n"
--		"2:"
--		: "=r" (__dest), "=r" (__src), "=&z" (__dummy)
--		: "0" (__dest), "1" (__src), "r" (__src+__n)
--		: "memory", "t");
--
--	return __xdest;
-+		return retval;
-+
-+	/*
-+	 * Some notes:
-+	 * - cmp/eq #imm8,r0 is its own instruction
-+	 * - incrementing dest and comparing to dest_end handles the size
-+	 *   parameter in only one instruction
-+	 * - mov.b R0,@Rn+ is SH2A only, but we can fill a delay slot with
-+	 *   "add #1,%[dest]"
-+	 */
-+
-+	__asm__ __volatile__ (
-+		"strncpy_start:\n\t"
-+		"mov.b @%[src]+,r0\n\t"
-+		"cmp/eq #0,r0\n\t"
-+		"bt.s strncpy_pad\n\t"
-+		"cmp/eq %[dest],%[dest_end]\n\t"
-+		"bt.s strncpy_end\n\t"
-+		"mov.b r0,@%[dest]\n\t"
-+		"bra strncpy_start\n\t"
-+		"add #1,%[dest]\n\t"
-+		"strncpy_pad:\n\t"
-+		"bt.s strncpy_end\n\t"
-+		"mov.b r0,@%[dest]\n\t"
-+		"add #1,%[dest]\n\t"
-+		"bra strncpy_pad\n\t"
-+		"cmp/eq %[dest],%[dest_end]\n\t"
-+		"strncpy_end:\n\t"
-+		: [src] "+r" (__src), [dest] "+r" (__dest)
-+		: [dest_end] "r" (__dest_end)
-+		: "r0","t","memory"
-+		);
-+
-+	return retval;
- }
- 
- #define __HAVE_ARCH_STRCMP
+ 	/* SCIF */
+ 	GPIO_FN_SCK0, GPIO_FN_RXD0, GPIO_FN_TXD0,
+ 	GPIO_FN_SCK1, GPIO_FN_RXD1, GPIO_FN_TXD1, GPIO_FN_RTS1, GPIO_FN_CTS1,
 -- 
-2.7.4
+2.17.1
