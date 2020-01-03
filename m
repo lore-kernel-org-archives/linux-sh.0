@@ -1,51 +1,32 @@
-From: Logan Gunthorpe <logang@deltatee.com>
-Date: Tue, 07 Jan 2020 20:59:59 +0000
-Subject: [PATCH v2 8/8] mm/memremap: Set caching mode for PCI P2PDMA memory to WC
-Message-Id: <20200107205959.7575-9-logang@deltatee.com>
+From: Brian Gilvary <1brian.gilvary@gmail.com>
+Date: Fri, 03 Jan 2020 07:37:55 +0000
+Subject: Happy New Year For Our Mutual Benefits
+Message-Id: <466166173.6197256.1578037075711@mail.yahoo.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200107205959.7575-1-logang@deltatee.com>
-In-Reply-To: <20200107205959.7575-1-logang@deltatee.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, platform-driver-x86@vger.kernel.org, linux-mm@kvack.org, Dan Williams <dan.j.williams@intel.com>, Michal Hocko <mhocko@kernel.org>, David Hildenbrand <david@redhat.com>, Andrew Morton <akpm@linux-foundation.org>
-Cc: Eric Badger <ebadger@gigaio.com>, Peter Zijlstra <peterz@infradead.org>, Catalin Marinas <catalin.marinas@arm.com>, Dave Hansen <dave.hansen@linux.intel.com>, Jason Gunthorpe <jgg@ziepe.ca>, Logan Gunthorpe <logang@deltatee.com>, Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>, Andy Lutomirski <luto@kernel.org>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Thomas Gleixner <tglx@linutronix.de>, Will Deacon <will@kernel.org>, Christoph Hellwig <hch@lst.de>
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: linux-sh@vger.kernel.org
 
-PCI BAR IO memory should never be mapped as WB, however prior to this
-the PAT bits were set WB and it was typically overridden by MTRR
-registers set by the firmware.
+Hi
 
-Set PCI P2PDMA memory to be WC (writecombining) as the only current
-user (the NVMe CMB) was originally mapped WC before the P2PDMA code
-replaced the mapping with devm_memremap_pages().
+As the Chief Financial Officer, British Petroleum Company plc (BP), I am in=
+ a position to facilitate immediate transfer of =C2=A3 48,000,000.00 (Forty=
+ Eight Million British Pounds Sterling), to any of your nominated Bank Acco=
+unt.
 
-Future use-cases may need to generalize this by adding flags to
-select the caching type, as some P2PDMA cases will not want WC.
-However, those use-cases are not upstream yet and this can be changed
-when they arrive.
+Source of Funds: An over-invoiced payment from a past project executed in m=
+y department. I cannot successfully achieve this transaction without presen=
+ting you as foreign contractor who will provide the bank account to receive=
+ the funds. Every documentation for the claim of the funds will be legally =
+processed and documented, so I will need your full co-operation for our mut=
+ual benefits.
 
-Cc: Dan Williams <dan.j.williams@intel.com>
-Cc: Christoph Hellwig <hch@lst.de>
-Cc: Jason Gunthorpe <jgg@ziepe.ca>
-Signed-off-by: Logan Gunthorpe <logang@deltatee.com>
----
- mm/memremap.c | 3 +++
- 1 file changed, 3 insertions(+)
+We will discuss details if you are interested to work with me to secure thi=
+s funds, as I said for our mutual benefits. I will be looking forward to yo=
+ur prompt response.
 
-diff --git a/mm/memremap.c b/mm/memremap.c
-index 45ab4ef0643d..d36ff688b768 100644
---- a/mm/memremap.c
-+++ b/mm/memremap.c
-@@ -187,7 +187,10 @@ void *memremap_pages(struct dev_pagemap *pgmap, int nid)
- 		}
- 		break;
- 	case MEMORY_DEVICE_DEVDAX:
-+		need_devmap_managed = false;
-+		break;
- 	case MEMORY_DEVICE_PCI_P2PDMA:
-+		modifiers.pgprot = pgprot_writecombine(modifiers.pgprot);
- 		need_devmap_managed = false;
- 		break;
- 	default:
--- 
-2.20.1
+Best regards
+Brian Gilvary
+Chief financial officer
+BP, Plc.
