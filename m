@@ -1,83 +1,52 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 20 Jan 2020 01:22:13 +0000
-Subject: [PATCH resend 1/3] sh: Add missing DECLARE_EXPORT() for __ashiftrt_r4_xx
-Message-Id: <87muaiyla3.wl-kuninori.morimoto.gx@renesas.com>
+From: Krzysztof Kozlowski <krzk@kernel.org>
+Date: Tue, 07 Jan 2020 16:53:10 +0000
+Subject: [RFT 11/13] net: wireless: rtl818x: Constify ioreadX() iomem argument (as in generic implementation)
+Message-Id: <1578415992-24054-14-git-send-email-krzk@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87o8uyylat.wl-kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87o8uyylat.wl-kuninori.morimoto.gx@renesas.com>
+References: <1578415992-24054-1-git-send-email-krzk@kernel.org>
+In-Reply-To: <1578415992-24054-1-git-send-email-krzk@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: Linux-SH <linux-sh@vger.kernel.org>, Linux-Renesas <linux-renesas-soc@vger.kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+To: Richard Henderson <rth@twiddle.net>, Ivan Kokshaysky <ink@jurassic.park.msu.ru>, Matt Turner <mattst88@gmail.com>, Alexey Brodkin <abrodkin@synopsys.com>, Vineet Gupta <vgupta@synopsys.com>, "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>, Helge Deller <deller@gmx.de>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Michael Ellerman <mpe@ellerman.id.au>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Dave Airlie <airlied@redhat.com>, David Airlie <airlied@linux.ie>, Daniel Vetter <daniel@ffwll.ch>, Ben Skeggs <bskeggs@redhat.com>, Mauro Carvalho Chehab <mchehab@kernel.org>, Jiri Slaby <jirislaby@gmail.com>, Nick Kossifidis <mickflemm@gmail.com>, Luis Chamberlain <mcgrof@kernel.org>, Kalle Valo <kvalo@codeaurora.org>, "David S. Miller" <davem@davemloft.net>, Dave Jiang <dave.jiang@intel.com>, Jon Mason <jdmason@kudzu.us>, Allen Hubbe <allenbh@gmail.com>, "Michael S. Tsirkin" <mst@redhat.com>, Jason Wang <jasowang@redhat.com>, Arnd Bergmann <arnd@arndb.de>, Andrew Morton <akpm@linux-foundation.org>, Thomas Gleixner <tglx@linutronix.de>, Geert Uytterhoeven <geert@linux-m68k.org>, linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, dri-devel@lists.freedesktop.org, nouveau@lists.freedesktop.org, linux-media@vger.kernel.org, linux-wireless@vger.kernel.org, netdev@vger.kernel.org, linux-ntb@googlegroups.com, virtualization@lists.linux-foundation.org, linux-arch@vger.kernel.org
+Cc: Krzysztof Kozlowski <krzk@kernel.org>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The ioreadX() helpers have inconsistent interface.  On some architectures
+void *__iomem address argument is a pointer to const, on some not.
 
-__ashiftrt_r4_xx might be used from kernel module.
-We need DECLARE_EXPORT() for them, otherwise we will get compile error.
-This patch adds missing DECLARE_EXPORT()
+Implementations of ioreadX() do not modify the memory under the address
+so they can be converted to a "const" version for const-safety and
+consistency among architectures.
 
-ERROR: "__ashiftrt_r4_25" [drivers/iio/pressure/bmp280.ko] undefined!
-ERROR: "__ashiftrt_r4_26" [drivers/iio/dac/ad5764.ko] undefined!
-ERROR: "__ashiftrt_r4_26" [drivers/iio/accel/mma7660.ko] undefined!
-ERROR: "__ashiftrt_r4_25" [drivers/iio/accel/dmard06.ko] undefined!
-ERROR: "__ashiftrt_r4_26" [drivers/iio/accel/bma220_spi.ko] undefined!
-ERROR: "__ashiftrt_r4_25" [drivers/crypto/hisilicon/sec/hisi_sec.ko] undefined!
-ERROR: "__ashiftrt_r4_26" [drivers/rtc/rtc-x1205.ko] undefined!
-ERROR: "__ashiftrt_r4_25" [drivers/rtc/rtc-pcf85063.ko] undefined!
-ERROR: "__ashiftrt_r4_25" [drivers/rtc/rtc-pcf2123.ko] undefined!
-ERROR: "__ashiftrt_r4_25" [drivers/input/tablet/gtco.ko] undefined!
-ERROR: "__ashiftrt_r4_26" [drivers/input/mouse/psmouse.ko] undefined!
-ERROR: "__ashiftrt_r4_28" [drivers/input/mouse/psmouse.ko] undefined!
-ERROR: "__ashiftrt_r4_28" [drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu.ko] undefined!
-ERROR: "__ashiftrt_r4_28" [fs/udf/udf.ko] undefined!
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Krzysztof Kozlowski <krzk@kernel.org>
 ---
- arch/sh/kernel/sh_ksyms_32.c | 17 +++++++++++++++++
- 1 file changed, 17 insertions(+)
+ drivers/net/wireless/realtek/rtl818x/rtl8180/rtl8180.h | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/arch/sh/kernel/sh_ksyms_32.c b/arch/sh/kernel/sh_ksyms_32.c
-index 2827744..5858936 100644
---- a/arch/sh/kernel/sh_ksyms_32.c
-+++ b/arch/sh/kernel/sh_ksyms_32.c
-@@ -38,6 +38,13 @@ DECLARE_EXPORT(__ashlsi3);
- DECLARE_EXPORT(__lshrsi3_r0);
- DECLARE_EXPORT(__ashrsi3_r0);
- DECLARE_EXPORT(__ashlsi3_r0);
-+
-+DECLARE_EXPORT(__ashiftrt_r4_0);
-+DECLARE_EXPORT(__ashiftrt_r4_1);
-+DECLARE_EXPORT(__ashiftrt_r4_2);
-+DECLARE_EXPORT(__ashiftrt_r4_3);
-+DECLARE_EXPORT(__ashiftrt_r4_4);
-+DECLARE_EXPORT(__ashiftrt_r4_5);
- DECLARE_EXPORT(__ashiftrt_r4_6);
- DECLARE_EXPORT(__ashiftrt_r4_7);
- DECLARE_EXPORT(__ashiftrt_r4_8);
-@@ -48,13 +55,23 @@ DECLARE_EXPORT(__ashiftrt_r4_12);
- DECLARE_EXPORT(__ashiftrt_r4_13);
- DECLARE_EXPORT(__ashiftrt_r4_14);
- DECLARE_EXPORT(__ashiftrt_r4_15);
-+DECLARE_EXPORT(__ashiftrt_r4_16);
-+DECLARE_EXPORT(__ashiftrt_r4_17);
-+DECLARE_EXPORT(__ashiftrt_r4_18);
-+DECLARE_EXPORT(__ashiftrt_r4_19);
- DECLARE_EXPORT(__ashiftrt_r4_20);
- DECLARE_EXPORT(__ashiftrt_r4_21);
- DECLARE_EXPORT(__ashiftrt_r4_22);
- DECLARE_EXPORT(__ashiftrt_r4_23);
- DECLARE_EXPORT(__ashiftrt_r4_24);
-+DECLARE_EXPORT(__ashiftrt_r4_25);
-+DECLARE_EXPORT(__ashiftrt_r4_26);
- DECLARE_EXPORT(__ashiftrt_r4_27);
-+DECLARE_EXPORT(__ashiftrt_r4_28);
-+DECLARE_EXPORT(__ashiftrt_r4_29);
- DECLARE_EXPORT(__ashiftrt_r4_30);
-+DECLARE_EXPORT(__ashiftrt_r4_31);
-+DECLARE_EXPORT(__ashiftrt_r4_32);
- DECLARE_EXPORT(__movstr);
- DECLARE_EXPORT(__movstrSI8);
- DECLARE_EXPORT(__movstrSI12);
+diff --git a/drivers/net/wireless/realtek/rtl818x/rtl8180/rtl8180.h b/drivers/net/wireless/realtek/rtl818x/rtl8180/rtl8180.h
+index 7948a2da195a..2ff00800d45b 100644
+--- a/drivers/net/wireless/realtek/rtl818x/rtl8180/rtl8180.h
++++ b/drivers/net/wireless/realtek/rtl818x/rtl8180/rtl8180.h
+@@ -150,17 +150,17 @@ void rtl8180_write_phy(struct ieee80211_hw *dev, u8 addr, u32 data);
+ void rtl8180_set_anaparam(struct rtl8180_priv *priv, u32 anaparam);
+ void rtl8180_set_anaparam2(struct rtl8180_priv *priv, u32 anaparam2);
+ 
+-static inline u8 rtl818x_ioread8(struct rtl8180_priv *priv, u8 __iomem *addr)
++static inline u8 rtl818x_ioread8(struct rtl8180_priv *priv, const u8 __iomem *addr)
+ {
+ 	return ioread8(addr);
+ }
+ 
+-static inline u16 rtl818x_ioread16(struct rtl8180_priv *priv, __le16 __iomem *addr)
++static inline u16 rtl818x_ioread16(struct rtl8180_priv *priv, const __le16 __iomem *addr)
+ {
+ 	return ioread16(addr);
+ }
+ 
+-static inline u32 rtl818x_ioread32(struct rtl8180_priv *priv, __le32 __iomem *addr)
++static inline u32 rtl818x_ioread32(struct rtl8180_priv *priv, const __le32 __iomem *addr)
+ {
+ 	return ioread32(addr);
+ }
 -- 
 2.7.4
