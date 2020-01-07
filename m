@@ -1,7 +1,7 @@
 From: Krzysztof Kozlowski <krzk@kernel.org>
-Date: Tue, 07 Jan 2020 16:53:00 +0000
-Subject: [RFT 02/13] sh: Constify ioreadX() iomem argument (as in generic implementation)
-Message-Id: <1578415992-24054-4-git-send-email-krzk@kernel.org>
+Date: Tue, 07 Jan 2020 16:53:07 +0000
+Subject: [RFT 08/13] drm/nouveau: Constify ioreadX() iomem argument (as in generic implementation)
+Message-Id: <1578415992-24054-11-git-send-email-krzk@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1578415992-24054-1-git-send-email-krzk@kernel.org>
 In-Reply-To: <1578415992-24054-1-git-send-email-krzk@kernel.org>
@@ -18,52 +18,23 @@ Implementations of ioreadX() do not modify the memory under the address
 so they can be converted to a "const" version for const-safety and
 consistency among architectures.
 
-Suggested-by: Geert Uytterhoeven <geert@linux-m68k.org>
 Signed-off-by: Krzysztof Kozlowski <krzk@kernel.org>
 ---
- arch/sh/kernel/iomap.c | 10 +++++-----
- 1 file changed, 5 insertions(+), 5 deletions(-)
+ drivers/gpu/drm/nouveau/nouveau_bo.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/sh/kernel/iomap.c b/arch/sh/kernel/iomap.c
-index ef9e2c97cbb7..bd5e212c6ea6 100644
---- a/arch/sh/kernel/iomap.c
-+++ b/arch/sh/kernel/iomap.c
-@@ -8,31 +8,31 @@
- #include <linux/module.h>
- #include <linux/io.h>
+diff --git a/drivers/gpu/drm/nouveau/nouveau_bo.c b/drivers/gpu/drm/nouveau/nouveau_bo.c
+index f8015e0318d7..5120d062c2df 100644
+--- a/drivers/gpu/drm/nouveau/nouveau_bo.c
++++ b/drivers/gpu/drm/nouveau/nouveau_bo.c
+@@ -613,7 +613,7 @@ nouveau_bo_rd32(struct nouveau_bo *nvbo, unsigned index)
+ 	mem += index;
  
--unsigned int ioread8(void __iomem *addr)
-+unsigned int ioread8(const void __iomem *addr)
- {
- 	return readb(addr);
- }
- EXPORT_SYMBOL(ioread8);
- 
--unsigned int ioread16(void __iomem *addr)
-+unsigned int ioread16(const void __iomem *addr)
- {
- 	return readw(addr);
- }
- EXPORT_SYMBOL(ioread16);
- 
--unsigned int ioread16be(void __iomem *addr)
-+unsigned int ioread16be(const void __iomem *addr)
- {
- 	return be16_to_cpu(__raw_readw(addr));
- }
- EXPORT_SYMBOL(ioread16be);
- 
--unsigned int ioread32(void __iomem *addr)
-+unsigned int ioread32(const void __iomem *addr)
- {
- 	return readl(addr);
- }
- EXPORT_SYMBOL(ioread32);
- 
--unsigned int ioread32be(void __iomem *addr)
-+unsigned int ioread32be(const void __iomem *addr)
- {
- 	return be32_to_cpu(__raw_readl(addr));
+ 	if (is_iomem)
+-		return ioread32_native((void __force __iomem *)mem);
++		return ioread32_native((const void __force __iomem *)mem);
+ 	else
+ 		return *mem;
  }
 -- 
 2.7.4
