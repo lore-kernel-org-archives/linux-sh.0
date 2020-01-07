@@ -1,174 +1,203 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 10 Jan 2020 13:19:16 +0000
-Subject: [PATCH 02/13] pinctrl: sh-pfc: checker: Add helpers for reporting
-Message-Id: <20200110131927.1029-3-geert+renesas@glider.be>
+From: Logan Gunthorpe <logang@deltatee.com>
+Date: Tue, 07 Jan 2020 20:59:56 +0000
+Subject: [PATCH v2 5/8] powerpc/mm: Thread pgprot_t through create_section_mapping()
+Message-Id: <20200107205959.7575-6-logang@deltatee.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200110131927.1029-1-geert+renesas@glider.be>
-In-Reply-To: <20200110131927.1029-1-geert+renesas@glider.be>
+References: <20200107205959.7575-1-logang@deltatee.com>
+In-Reply-To: <20200107205959.7575-1-logang@deltatee.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Walleij <linus.walleij@linaro.org>
-Cc: linux-gpio@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, platform-driver-x86@vger.kernel.org, linux-mm@kvack.org, Dan Williams <dan.j.williams@intel.com>, Michal Hocko <mhocko@kernel.org>, David Hildenbrand <david@redhat.com>, Andrew Morton <akpm@linux-foundation.org>
+Cc: Eric Badger <ebadger@gigaio.com>, Peter Zijlstra <peterz@infradead.org>, Catalin Marinas <catalin.marinas@arm.com>, Dave Hansen <dave.hansen@linux.intel.com>, Logan Gunthorpe <logang@deltatee.com>, Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>, Michael Ellerman <mpe@ellerman.id.au>, Andy Lutomirski <luto@kernel.org>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Thomas Gleixner <tglx@linutronix.de>, Will Deacon <will@kernel.org>, Christoph Hellwig <hch@lst.de>
 
-Add helpers to report errors and warnings, and to increase the
-corresponding counters.  This simplifies callers.
+In prepartion to support a pgprot_t argument for arch_add_memory().
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+Cc: Paul Mackerras <paulus@samba.org>
+Cc: Michael Ellerman <mpe@ellerman.id.au>
+Signed-off-by: Logan Gunthorpe <logang@deltatee.com>
 ---
- drivers/pinctrl/sh-pfc/core.c | 96 ++++++++++++++++-------------------
- 1 file changed, 44 insertions(+), 52 deletions(-)
+ arch/powerpc/include/asm/book3s/64/hash.h  |  3 ++-
+ arch/powerpc/include/asm/book3s/64/radix.h |  3 ++-
+ arch/powerpc/include/asm/sparsemem.h       |  3 ++-
+ arch/powerpc/mm/book3s64/hash_utils.c      |  5 +++--
+ arch/powerpc/mm/book3s64/pgtable.c         |  7 ++++---
+ arch/powerpc/mm/book3s64/radix_pgtable.c   | 18 +++++++++++-------
+ arch/powerpc/mm/mem.c                      |  5 +++--
+ 7 files changed, 27 insertions(+), 17 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
-index a565effbff12f5a9..45bdaf88819fa498 100644
---- a/drivers/pinctrl/sh-pfc/core.c
-+++ b/drivers/pinctrl/sh-pfc/core.c
-@@ -729,6 +729,17 @@ static int sh_pfc_suspend_init(struct sh_pfc *pfc) { return 0; }
- static unsigned int sh_pfc_errors __initdata = 0;
- static unsigned int sh_pfc_warnings __initdata = 0;
+diff --git a/arch/powerpc/include/asm/book3s/64/hash.h b/arch/powerpc/include/asm/book3s/64/hash.h
+index 2781ebf6add4..6fc4520092c7 100644
+--- a/arch/powerpc/include/asm/book3s/64/hash.h
++++ b/arch/powerpc/include/asm/book3s/64/hash.h
+@@ -251,7 +251,8 @@ extern int __meminit hash__vmemmap_create_mapping(unsigned long start,
+ extern void hash__vmemmap_remove_mapping(unsigned long start,
+ 				     unsigned long page_size);
  
-+#define sh_pfc_err(fmt, ...)					 \
-+	do {							 \
-+		pr_err("%s: " fmt, drvname, ##__VA_ARGS__);	\
-+		sh_pfc_errors++;				\
-+	} while (0)
-+#define sh_pfc_warn(fmt, ...)					 \
-+	do {							 \
-+		pr_warn("%s: " fmt, drvname, ##__VA_ARGS__);	\
-+		sh_pfc_warnings++;				\
-+	} while (0)
-+
- static bool __init is0s(const u16 *enum_ids, unsigned int n)
- {
- 	unsigned int i;
-@@ -751,26 +762,20 @@ static void __init sh_pfc_check_cfg_reg(const char *drvname,
- 	}
+-int hash__create_section_mapping(unsigned long start, unsigned long end, int nid);
++int hash__create_section_mapping(unsigned long start, unsigned long end,
++				 int nid, pgprot_t prot);
+ int hash__remove_section_mapping(unsigned long start, unsigned long end);
  
- 	for (i = 0, n = 0, rw = 0; (fw = cfg_reg->var_field_width[i]); i++) {
--		if (fw > 3 && is0s(&cfg_reg->enum_ids[n], 1 << fw)) {
--			pr_warn("%s: reg 0x%x: reserved field [%u:%u] can be split to reduce table size\n",
--				drvname, cfg_reg->reg, rw, rw + fw - 1);
--			sh_pfc_warnings++;
--		}
-+		if (fw > 3 && is0s(&cfg_reg->enum_ids[n], 1 << fw))
-+			sh_pfc_warn("reg 0x%x: reserved field [%u:%u] can be split to reduce table size\n",
-+				    cfg_reg->reg, rw, rw + fw - 1);
- 		n += 1 << fw;
- 		rw += fw;
- 	}
- 
--	if (rw != cfg_reg->reg_width) {
--		pr_err("%s: reg 0x%x: var_field_width declares %u instead of %u bits\n",
--		       drvname, cfg_reg->reg, rw, cfg_reg->reg_width);
--		sh_pfc_errors++;
--	}
-+	if (rw != cfg_reg->reg_width)
-+		sh_pfc_err("reg 0x%x: var_field_width declares %u instead of %u bits\n",
-+			   cfg_reg->reg, rw, cfg_reg->reg_width);
- 
--	if (n != cfg_reg->nr_enum_ids) {
--		pr_err("%s: reg 0x%x: enum_ids[] has %u instead of %u values\n",
--		       drvname, cfg_reg->reg, cfg_reg->nr_enum_ids, n);
--		sh_pfc_errors++;
--	}
-+	if (n != cfg_reg->nr_enum_ids)
-+		sh_pfc_err("reg 0x%x: enum_ids[] has %u instead of %u values\n",
-+			   cfg_reg->reg, cfg_reg->nr_enum_ids, n);
+ #endif /* !__ASSEMBLY__ */
+diff --git a/arch/powerpc/include/asm/book3s/64/radix.h b/arch/powerpc/include/asm/book3s/64/radix.h
+index d97db3ad9aae..46799f3c3d1d 100644
+--- a/arch/powerpc/include/asm/book3s/64/radix.h
++++ b/arch/powerpc/include/asm/book3s/64/radix.h
+@@ -289,7 +289,8 @@ static inline unsigned long radix__get_tree_size(void)
  }
  
- static void __init sh_pfc_check_info(const struct sh_pfc_soc_info *info)
-@@ -785,29 +790,24 @@ static void __init sh_pfc_check_info(const struct sh_pfc_soc_info *info)
- 	/* Check pins */
- 	for (i = 0; i < info->nr_pins; i++) {
- 		for (j = 0; j < i; j++) {
--			if (!strcmp(info->pins[i].name, info->pins[j].name)) {
--				pr_err("%s: pin %s/%s: name conflict\n",
--				       drvname, info->pins[i].name,
--				       info->pins[j].name);
--				sh_pfc_errors++;
--			}
-+			if (!strcmp(info->pins[i].name, info->pins[j].name))
-+				sh_pfc_err("pin %s/%s: name conflict\n",
-+					   info->pins[i].name,
-+					   info->pins[j].name);
+ #ifdef CONFIG_MEMORY_HOTPLUG
+-int radix__create_section_mapping(unsigned long start, unsigned long end, int nid);
++int radix__create_section_mapping(unsigned long start, unsigned long end,
++				  int nid, pgprot_t prot);
+ int radix__remove_section_mapping(unsigned long start, unsigned long end);
+ #endif /* CONFIG_MEMORY_HOTPLUG */
+ #endif /* __ASSEMBLY__ */
+diff --git a/arch/powerpc/include/asm/sparsemem.h b/arch/powerpc/include/asm/sparsemem.h
+index 3192d454a733..c89b32443cff 100644
+--- a/arch/powerpc/include/asm/sparsemem.h
++++ b/arch/powerpc/include/asm/sparsemem.h
+@@ -13,7 +13,8 @@
+ #endif /* CONFIG_SPARSEMEM */
  
- 			if (info->pins[i].pin != (u16)-1 &&
--			    info->pins[i].pin = info->pins[j].pin) {
--				pr_err("%s: pin %s/%s: pin %u conflict\n",
--				       drvname, info->pins[i].name,
--				       info->pins[j].name, info->pins[i].pin);
--				sh_pfc_errors++;
--			}
-+			    info->pins[i].pin = info->pins[j].pin)
-+				sh_pfc_err("pin %s/%s: pin %u conflict\n",
-+					   info->pins[i].name,
-+					   info->pins[j].name,
-+					   info->pins[i].pin);
+ #ifdef CONFIG_MEMORY_HOTPLUG
+-extern int create_section_mapping(unsigned long start, unsigned long end, int nid);
++extern int create_section_mapping(unsigned long start, unsigned long end,
++				  int nid, pgprot_t prot);
+ extern int remove_section_mapping(unsigned long start, unsigned long end);
  
- 			if (info->pins[i].enum_id &&
--			    info->pins[i].enum_id = info->pins[j].enum_id) {
--				pr_err("%s: pin %s/%s: enum_id %u conflict\n",
--				       drvname, info->pins[i].name,
--				       info->pins[j].name,
--				       info->pins[i].enum_id);
--				sh_pfc_errors++;
--			}
-+			    info->pins[i].enum_id = info->pins[j].enum_id)
-+				sh_pfc_err("pin %s/%s: enum_id %u conflict\n",
-+					   info->pins[i].name,
-+					   info->pins[j].name,
-+					   info->pins[i].enum_id);
- 		}
+ #ifdef CONFIG_PPC_BOOK3S_64
+diff --git a/arch/powerpc/mm/book3s64/hash_utils.c b/arch/powerpc/mm/book3s64/hash_utils.c
+index b30435c7d804..276e353d5264 100644
+--- a/arch/powerpc/mm/book3s64/hash_utils.c
++++ b/arch/powerpc/mm/book3s64/hash_utils.c
+@@ -800,7 +800,8 @@ int resize_hpt_for_hotplug(unsigned long new_mem_size)
+ 	return 0;
+ }
+ 
+-int hash__create_section_mapping(unsigned long start, unsigned long end, int nid)
++int hash__create_section_mapping(unsigned long start, unsigned long end,
++				 int nid, pgprot_t prot)
+ {
+ 	int rc;
+ 
+@@ -810,7 +811,7 @@ int hash__create_section_mapping(unsigned long start, unsigned long end, int nid
  	}
  
-@@ -819,8 +819,7 @@ static void __init sh_pfc_check_info(const struct sh_pfc_soc_info *info)
- 	for (i = 0; i < info->nr_functions; i++) {
- 		func = &info->functions[i];
- 		if (!func->name) {
--			pr_err("%s: empty function %u\n", drvname, i);
--			sh_pfc_errors++;
-+			sh_pfc_err("empty function %u\n", i);
- 			continue;
- 		}
- 		for (j = 0; j < func->nr_groups; j++) {
-@@ -833,29 +832,22 @@ static void __init sh_pfc_check_info(const struct sh_pfc_soc_info *info)
- 				}
- 			}
+ 	rc = htab_bolt_mapping(start, end, __pa(start),
+-			       pgprot_val(PAGE_KERNEL), mmu_linear_psize,
++			       pgprot_val(prot), mmu_linear_psize,
+ 			       mmu_kernel_ssize);
  
--			if (k = info->nr_groups) {
--				pr_err("%s: function %s: group %s not found\n",
--				       drvname, func->name, func->groups[j]);
--				sh_pfc_errors++;
--			}
-+			if (k = info->nr_groups)
-+				sh_pfc_err("function %s: group %s not found\n",
-+					   func->name, func->groups[j]);
+ 	if (rc < 0) {
+diff --git a/arch/powerpc/mm/book3s64/pgtable.c b/arch/powerpc/mm/book3s64/pgtable.c
+index 75483b40fcb1..b60c18d2e5c9 100644
+--- a/arch/powerpc/mm/book3s64/pgtable.c
++++ b/arch/powerpc/mm/book3s64/pgtable.c
+@@ -171,12 +171,13 @@ void mmu_cleanup_all(void)
+ }
+ 
+ #ifdef CONFIG_MEMORY_HOTPLUG
+-int __meminit create_section_mapping(unsigned long start, unsigned long end, int nid)
++int __meminit create_section_mapping(unsigned long start, unsigned long end,
++				     int nid, pgprot_t prot)
+ {
+ 	if (radix_enabled())
+-		return radix__create_section_mapping(start, end, nid);
++		return radix__create_section_mapping(start, end, nid, prot);
+ 
+-	return hash__create_section_mapping(start, end, nid);
++	return hash__create_section_mapping(start, end, nid, prot);
+ }
+ 
+ int __meminit remove_section_mapping(unsigned long start, unsigned long end)
+diff --git a/arch/powerpc/mm/book3s64/radix_pgtable.c b/arch/powerpc/mm/book3s64/radix_pgtable.c
+index 974109bb85db..2a21fb4a22b2 100644
+--- a/arch/powerpc/mm/book3s64/radix_pgtable.c
++++ b/arch/powerpc/mm/book3s64/radix_pgtable.c
+@@ -253,7 +253,7 @@ static unsigned long next_boundary(unsigned long addr, unsigned long end)
+ 
+ static int __meminit create_physical_mapping(unsigned long start,
+ 					     unsigned long end,
+-					     int nid)
++					     int nid, pgprot_t _prot)
+ {
+ 	unsigned long vaddr, addr, mapping_size = 0;
+ 	bool prev_exec, exec = false;
+@@ -289,7 +289,7 @@ static int __meminit create_physical_mapping(unsigned long start,
+ 			prot = PAGE_KERNEL_X;
+ 			exec = true;
+ 		} else {
+-			prot = PAGE_KERNEL;
++			prot = _prot;
+ 			exec = false;
  		}
+ 
+@@ -333,7 +333,7 @@ static void __init radix_init_pgtable(void)
+ 
+ 		WARN_ON(create_physical_mapping(reg->base,
+ 						reg->base + reg->size,
+-						-1));
++						-1, PAGE_KERNEL));
  	}
  
- 	for (i = 0; i < info->nr_groups; i++) {
- 		if (!info->groups[i].name) {
--			pr_err("%s: empty group %u\n", drvname, i);
--			sh_pfc_errors++;
-+			sh_pfc_err("empty group %u\n", i);
- 			continue;
- 		}
--		if (!refcnts[i]) {
--			pr_err("%s: orphan group %s\n", drvname,
--			       info->groups[i].name);
--			sh_pfc_errors++;
--		} else if (refcnts[i] > 1) {
--			pr_warn("%s: group %s referenced by %u functions\n",
--				drvname, info->groups[i].name, refcnts[i]);
--			sh_pfc_warnings++;
--		}
-+		if (!refcnts[i])
-+			sh_pfc_err("orphan group %s\n", info->groups[i].name);
-+		else if (refcnts[i] > 1)
-+			sh_pfc_warn("group %s referenced by %u functions\n",
-+				    info->groups[i].name, refcnts[i]);
+ 	/* Find out how many PID bits are supported */
+@@ -708,8 +708,10 @@ static int __meminit stop_machine_change_mapping(void *data)
+ 
+ 	spin_unlock(&init_mm.page_table_lock);
+ 	pte_clear(&init_mm, params->aligned_start, params->pte);
+-	create_physical_mapping(__pa(params->aligned_start), __pa(params->start), -1);
+-	create_physical_mapping(__pa(params->end), __pa(params->aligned_end), -1);
++	create_physical_mapping(__pa(params->aligned_start),
++				__pa(params->start), -1, PAGE_KERNEL);
++	create_physical_mapping(__pa(params->end), __pa(params->aligned_end),
++				-1, PAGE_KERNEL);
+ 	spin_lock(&init_mm.page_table_lock);
+ 	return 0;
+ }
+@@ -866,14 +868,16 @@ static void __meminit remove_pagetable(unsigned long start, unsigned long end)
+ 	radix__flush_tlb_kernel_range(start, end);
+ }
+ 
+-int __meminit radix__create_section_mapping(unsigned long start, unsigned long end, int nid)
++int __meminit radix__create_section_mapping(unsigned long start,
++					    unsigned long end, int nid,
++					    pgprot_t prot)
+ {
+ 	if (end >= RADIX_VMALLOC_START) {
+ 		pr_warn("Outside the supported range\n");
+ 		return -1;
  	}
  
- 	kfree(refcnts);
+-	return create_physical_mapping(__pa(start), __pa(end), nid);
++	return create_physical_mapping(__pa(start), __pa(end), nid, prot);
+ }
+ 
+ int __meminit radix__remove_section_mapping(unsigned long start, unsigned long end)
+diff --git a/arch/powerpc/mm/mem.c b/arch/powerpc/mm/mem.c
+index 9dd9c3c1be7f..631ee684721f 100644
+--- a/arch/powerpc/mm/mem.c
++++ b/arch/powerpc/mm/mem.c
+@@ -95,7 +95,8 @@ int memory_add_physaddr_to_nid(u64 start)
+ }
+ #endif
+ 
+-int __weak create_section_mapping(unsigned long start, unsigned long end, int nid)
++int __weak create_section_mapping(unsigned long start, unsigned long end,
++				  int nid, pgprot_t prot)
+ {
+ 	return -ENODEV;
+ }
+@@ -136,7 +137,7 @@ int __ref arch_add_memory(int nid, u64 start, u64 size,
+ 	resize_hpt_for_hotplug(memblock_phys_mem_size());
+ 
+ 	start = (unsigned long)__va(start);
+-	rc = create_section_mapping(start, start + size, nid);
++	rc = create_section_mapping(start, start + size, nid, PAGE_KERNEL);
+ 	if (rc) {
+ 		pr_warn("Unable to create mapping for hot added memory 0x%llx..0x%llx: %d\n",
+ 			start, start + size, rc);
 -- 
-2.17.1
+2.20.1
