@@ -1,81 +1,32 @@
-From: Sasha Levin <sashal@kernel.org>
-Date: Fri, 24 Jan 2020 14:19:39 +0000
-Subject: [PATCH AUTOSEL 4.19 23/56] sh_eth: check sh_eth_cpu_data::dual_port when dumping registers
-Message-Id: <20200124142012.29752-23-sashal@kernel.org>
+From: "Dr. William Johnson" <currency1000000@gmail.com>
+Date: Tue, 07 Jan 2020 19:54:18 +0000
+Subject: contact Dhl office New York to receive your Prepaid ATM Master Card worth $15.8Million US DOLLARS no
+Message-Id: <CAPqfnSFyOwF0m-QsrOdcFV_PCC3TSBr=YQHoQHvH0baKHfeF6Q@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200124142012.29752-1-sashal@kernel.org>
-In-Reply-To: <20200124142012.29752-1-sashal@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, "David S . Miller" <davem@davemloft.net>, Sasha Levin <sashal@kernel.org>, netdev@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
-[ Upstream commit 3249b1e442a1be1a6b9f1026785b519d1443f807 ]
-
-When adding the sh_eth_cpu_data::dual_port flag I forgot to add the flag
-checks to __sh_eth_get_regs(), causing the non-existing TSU registers to
-be dumped by 'ethtool' on the single port Ether controllers having TSU...
-
-Fixes: a94cf2a614f8 ("sh_eth: fix TSU init on SH7734/R8A7740")
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Signed-off-by: David S. Miller <davem@davemloft.net>
-Signed-off-by: Sasha Levin <sashal@kernel.org>
----
- drivers/net/ethernet/renesas/sh_eth.c | 38 +++++++++++++++------------
- 1 file changed, 21 insertions(+), 17 deletions(-)
-
-diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
-index 5e3e6e262ba37..6068e96f5ac1e 100644
---- a/drivers/net/ethernet/renesas/sh_eth.c
-+++ b/drivers/net/ethernet/renesas/sh_eth.c
-@@ -2184,24 +2184,28 @@ static size_t __sh_eth_get_regs(struct net_device *ndev, u32 *buf)
- 	if (cd->tsu) {
- 		add_tsu_reg(ARSTR);
- 		add_tsu_reg(TSU_CTRST);
--		add_tsu_reg(TSU_FWEN0);
--		add_tsu_reg(TSU_FWEN1);
--		add_tsu_reg(TSU_FCM);
--		add_tsu_reg(TSU_BSYSL0);
--		add_tsu_reg(TSU_BSYSL1);
--		add_tsu_reg(TSU_PRISL0);
--		add_tsu_reg(TSU_PRISL1);
--		add_tsu_reg(TSU_FWSL0);
--		add_tsu_reg(TSU_FWSL1);
-+		if (cd->dual_port) {
-+			add_tsu_reg(TSU_FWEN0);
-+			add_tsu_reg(TSU_FWEN1);
-+			add_tsu_reg(TSU_FCM);
-+			add_tsu_reg(TSU_BSYSL0);
-+			add_tsu_reg(TSU_BSYSL1);
-+			add_tsu_reg(TSU_PRISL0);
-+			add_tsu_reg(TSU_PRISL1);
-+			add_tsu_reg(TSU_FWSL0);
-+			add_tsu_reg(TSU_FWSL1);
-+		}
- 		add_tsu_reg(TSU_FWSLC);
--		add_tsu_reg(TSU_QTAGM0);
--		add_tsu_reg(TSU_QTAGM1);
--		add_tsu_reg(TSU_FWSR);
--		add_tsu_reg(TSU_FWINMK);
--		add_tsu_reg(TSU_ADQT0);
--		add_tsu_reg(TSU_ADQT1);
--		add_tsu_reg(TSU_VTAG0);
--		add_tsu_reg(TSU_VTAG1);
-+		if (cd->dual_port) {
-+			add_tsu_reg(TSU_QTAGM0);
-+			add_tsu_reg(TSU_QTAGM1);
-+			add_tsu_reg(TSU_FWSR);
-+			add_tsu_reg(TSU_FWINMK);
-+			add_tsu_reg(TSU_ADQT0);
-+			add_tsu_reg(TSU_ADQT1);
-+			add_tsu_reg(TSU_VTAG0);
-+			add_tsu_reg(TSU_VTAG1);
-+		}
- 		add_tsu_reg(TSU_ADSBSY);
- 		add_tsu_reg(TSU_TEN);
- 		add_tsu_reg(TSU_POST1);
--- 
-2.20.1
+ATTN Dear Beneficiary.
+Goodnews
+I have Registered your Prepaid ATM Master Card
+worth $15.800,000.00 US DOLLARS Courier company asigned to deliver it
+to you today.
+So contact Dhl office New York to receive your Prepaid ATM Master Card
+worth $15.8Million US DOLLARS now.
+Contact Person: Mrs. Mary Michael, Director, DHL Courier Company-NY USA. 10218
+Email. dhlexpresscouriercompany.nyusa@gmail.com
+Call the office +(202) 890-8752
+Rec-Confirmed your mailing address to the office as I listed below.
+Your Full Name--------------
+House Address-----------
+Your working Phone Number----------------
+ID copy-------------------------
+Sex-----------------------------
+Note,delivery fee to your address is only $50.00. send it to this
+company urgent on itunes card today so that DHL will deliver this
+Prepaid ATM Master Card to you today according to our finally
+agreement.
+Thanks for coperations,
+Dr. William Johnson
