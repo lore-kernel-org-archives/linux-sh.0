@@ -1,78 +1,51 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 20 Jan 2020 01:22:21 +0000
-Subject: [PATCH resend 3/3] sh: Convert ins[bwl]/outs[bwl] macros to inline functions
-Message-Id: <87k15myl9u.wl-kuninori.morimoto.gx@renesas.com>
+From: Krzysztof Kozlowski <krzk@kernel.org>
+Date: Tue, 07 Jan 2020 16:53:12 +0000
+Subject: [RFT 13/13] virtio: pci: Constify ioreadX() iomem argument (as in generic implementation)
+Message-Id: <1578415992-24054-16-git-send-email-krzk@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87o8uyylat.wl-kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87o8uyylat.wl-kuninori.morimoto.gx@renesas.com>
+References: <1578415992-24054-1-git-send-email-krzk@kernel.org>
+In-Reply-To: <1578415992-24054-1-git-send-email-krzk@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: Linux-SH <linux-sh@vger.kernel.org>, Linux-Renesas <linux-renesas-soc@vger.kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+To: Richard Henderson <rth@twiddle.net>, Ivan Kokshaysky <ink@jurassic.park.msu.ru>, Matt Turner <mattst88@gmail.com>, Alexey Brodkin <abrodkin@synopsys.com>, Vineet Gupta <vgupta@synopsys.com>, "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>, Helge Deller <deller@gmx.de>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Michael Ellerman <mpe@ellerman.id.au>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Dave Airlie <airlied@redhat.com>, David Airlie <airlied@linux.ie>, Daniel Vetter <daniel@ffwll.ch>, Ben Skeggs <bskeggs@redhat.com>, Mauro Carvalho Chehab <mchehab@kernel.org>, Jiri Slaby <jirislaby@gmail.com>, Nick Kossifidis <mickflemm@gmail.com>, Luis Chamberlain <mcgrof@kernel.org>, Kalle Valo <kvalo@codeaurora.org>, "David S. Miller" <davem@davemloft.net>, Dave Jiang <dave.jiang@intel.com>, Jon Mason <jdmason@kudzu.us>, Allen Hubbe <allenbh@gmail.com>, "Michael S. Tsirkin" <mst@redhat.com>, Jason Wang <jasowang@redhat.com>, Arnd Bergmann <arnd@arndb.de>, Andrew Morton <akpm@linux-foundation.org>, Thomas Gleixner <tglx@linutronix.de>, Geert Uytterhoeven <geert@linux-m68k.org>, linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, dri-devel@lists.freedesktop.org, nouveau@lists.freedesktop.org, linux-media@vger.kernel.org, linux-wireless@vger.kernel.org, netdev@vger.kernel.org, linux-ntb@googlegroups.com, virtualization@lists.linux-foundation.org, linux-arch@vger.kernel.org
+Cc: Krzysztof Kozlowski <krzk@kernel.org>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The ioreadX() helpers have inconsistent interface.  On some architectures
+void *__iomem address argument is a pointer to const, on some not.
 
-Macro ins[bwl]/outs[bwl] are just calling BUG(), but that results in
-unused variable warnings all over the place.
-This patch convert macro to inline to avoid warning
+Implementations of ioreadX() do not modify the memory under the address
+so they can be converted to a "const" version for const-safety and
+consistency among architectures.
 
-We will get this kind of warning without this patch
-
-	${LINUX}/drivers/iio/adc/ad7606_par.c:21:23: \
-	  warning: unused variable 'st' [-Wunused-variable]
-	struct ad7606_state *st = iio_priv(indio_dev);
-	^~
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Krzysztof Kozlowski <krzk@kernel.org>
 ---
- arch/sh/include/asm/io_noioport.h | 34 ++++++++++++++++++++++++++++------
- 1 file changed, 28 insertions(+), 6 deletions(-)
+ drivers/virtio/virtio_pci_modern.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/arch/sh/include/asm/io_noioport.h b/arch/sh/include/asm/io_noioport.h
-index 90d6109..f7938fe 100644
---- a/arch/sh/include/asm/io_noioport.h
-+++ b/arch/sh/include/asm/io_noioport.h
-@@ -53,12 +53,34 @@ static inline void ioport_unmap(void __iomem *addr)
- #define outw_p(x, addr)	outw((x), (addr))
- #define outl_p(x, addr)	outl((x), (addr))
+diff --git a/drivers/virtio/virtio_pci_modern.c b/drivers/virtio/virtio_pci_modern.c
+index 7abcc50838b8..fc58db4ab6c3 100644
+--- a/drivers/virtio/virtio_pci_modern.c
++++ b/drivers/virtio/virtio_pci_modern.c
+@@ -26,16 +26,16 @@
+  * method, i.e. 32-bit accesses for 32-bit fields, 16-bit accesses
+  * for 16-bit fields and 8-bit accesses for 8-bit fields.
+  */
+-static inline u8 vp_ioread8(u8 __iomem *addr)
++static inline u8 vp_ioread8(const u8 __iomem *addr)
+ {
+ 	return ioread8(addr);
+ }
+-static inline u16 vp_ioread16 (__le16 __iomem *addr)
++static inline u16 vp_ioread16 (const __le16 __iomem *addr)
+ {
+ 	return ioread16(addr);
+ }
  
--#define insb(a, b, c)	BUG()
--#define insw(a, b, c)	BUG()
--#define insl(a, b, c)	BUG()
-+static inline void insb(unsigned long port, void *dst, unsigned long count)
-+{
-+	BUG();
-+}
-+
-+static inline void insw(unsigned long port, void *dst, unsigned long count)
-+{
-+	BUG();
-+}
-+
-+static inline void insl(unsigned long port, void *dst, unsigned long count)
-+{
-+	BUG();
-+}
- 
--#define outsb(a, b, c)	BUG()
--#define outsw(a, b, c)	BUG()
--#define outsl(a, b, c)	BUG()
-+static inline void outsb(unsigned long port, const void *src, unsigned long count)
-+{
-+	BUG();
-+}
-+
-+static inline void outsw(unsigned long port, const void *src, unsigned long count)
-+{
-+	BUG();
-+}
-+
-+static inline void outsl(unsigned long port, const void *src, unsigned long count)
-+{
-+	BUG();
-+}
- 
- #endif /* __ASM_SH_IO_NOIOPORT_H */
+-static inline u32 vp_ioread32(__le32 __iomem *addr)
++static inline u32 vp_ioread32(const __le32 __iomem *addr)
+ {
+ 	return ioread32(addr);
+ }
 -- 
 2.7.4
