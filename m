@@ -1,140 +1,98 @@
-From: Anshuman Khandual <anshuman.khandual@arm.com>
-Date: Thu, 30 Jan 2020 15:18:47 +0000
-Subject: Re: [PATCH V12] mm/debug: Add tests validating architecture page table helpers
-Message-Id: <fe26671a-7f26-17d7-402b-5e01fdca773e@arm.com>
+From: Krzysztof Kozlowski <krzk@kernel.org>
+Date: Tue, 07 Jan 2020 16:52:57 +0000
+Subject: [RFT 00/13] iomap: Constify ioreadX() iomem argument
+Message-Id: <1578415992-24054-1-git-send-email-krzk@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1580174873-18117-1-git-send-email-anshuman.khandual@arm.com>
-In-Reply-To: <1580174873-18117-1-git-send-email-anshuman.khandual@arm.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mm@kvack.org, linux-alpha@vger.kernel.org, Richard Henderson <rth@twiddle.net>, Ivan Kokshaysky <ink@jurassic.park.msu.ru>, Matt Turner <mattst88@gmail.com>, linux-c6x-dev@linux-c6x.org, Mark Salter <msalter@redhat.com>, Aurelien Jacquiot <jacquiot.aurelien@gmail.com>, uclinux-h8-devel@lists.sourceforge.jp, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-hexagon@vger.kernel.org, Brian Cain <bcain@codeaurora.org>, linux-m68k@lists.linux-m68k.org, Geert Uytterhoeven <geert@linux-m68k.org>, Michal Simek <monstr@monstr.eu>, linux-riscv@lists.infradead.org, Paul Walmsley <paul.walmsley@sifive.com>, Palmer Dabbelt <palmer@dabbelt.com>, Guan Xuetao <gxt@pku.edu.cn>, linux-xtensa@linux-xtensa.org, Chris Zankel <chris@zankel.net>, Max Filippov <jcmvbkbc@gmail.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>, Vlastimil Babka <vbabka@suse.cz>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Thomas Gleixner <tglx@linutronix.de>, Mike Rapoport <rppt@linux.vnet.ibm.com>, Jason Gunthorpe <jgg@ziepe.ca>, Dan Williams <dan.j.williams@intel.com>, Peter Zijlstra <peterz@infradead.org>, Michal Hocko <mhocko@kernel.org>, Mark Rutland <mark.rutland@arm.com>, Mark Brown <broonie@kernel.org>, Steven Price <Steven.Price@arm.com>, Ard Biesheuvel <ard.biesheuvel@linaro.org>, Masahiro Yamada <yamada.masahiro@socionext.com>, Kees Cook <keescook@chromium.org>, Tetsuo Handa <penguin-kernel@i-love.sakura.ne.jp>, Matthew Wilcox <willy@infradead.org>, Dave Hansen <dave.hansen@intel.com>, Russell King - ARM Linux <linux@armlinux.org.uk>, Michael Ellerman <mpe@ellerman.id.au>, Paul Mackerras <paulus@samba.org>, Martin Schwidefsky <schwidefsky@de.ibm.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, "David S. Miller" <davem@davemloft.net>, Vineet Gupta <vgupta@synopsys.com>, James Hogan <jhogan@kernel.org>, Paul Burton <paul.burton@mips.com>, Ralf Baechle <ralf@linux-mips.org>, "Kirill A . Shutemov" <kirill@shutemov.name>, Gerald Schaefer <gerald.schaefer@de.ibm.com>, Christophe Leroy <christophe.leroy@c-s.fr>, Ingo Molnar <mingo@kernel.org>, linux-snps-arc@lists.infradead.org, linux-mips@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, x86@kernel.org, linux-kernel@vger.kernel.org
+To: Richard Henderson <rth@twiddle.net>, Ivan Kokshaysky <ink@jurassic.park.msu.ru>, Matt Turner <mattst88@gmail.com>, Alexey Brodkin <abrodkin@synopsys.com>, Vineet Gupta <vgupta@synopsys.com>, "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>, Helge Deller <deller@gmx.de>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Michael Ellerman <mpe@ellerman.id.au>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Dave Airlie <airlied@redhat.com>, David Airlie <airlied@linux.ie>, Daniel Vetter <daniel@ffwll.ch>, Ben Skeggs <bskeggs@redhat.com>, Mauro Carvalho Chehab <mchehab@kernel.org>, Jiri Slaby <jirislaby@gmail.com>, Nick Kossifidis <mickflemm@gmail.com>, Luis Chamberlain <mcgrof@kernel.org>, Kalle Valo <kvalo@codeaurora.org>, "David S. Miller" <davem@davemloft.net>, Dave Jiang <dave.jiang@intel.com>, Jon Mason <jdmason@kudzu.us>, Allen Hubbe <allenbh@gmail.com>, "Michael S. Tsirkin" <mst@redhat.com>, Jason Wang <jasowang@redhat.com>, Arnd Bergmann <arnd@arndb.de>, Andrew Morton <akpm@linux-foundation.org>, Thomas Gleixner <tglx@linutronix.de>, Geert Uytterhoeven <geert@linux-m68k.org>, linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, dri-devel@lists.freedesktop.org, nouveau@lists.freedesktop.org, linux-media@vger.kernel.org, linux-wireless@vger.kernel.org, netdev@vger.kernel.org, linux-ntb@googlegroups.com, virtualization@lists.linux-foundation.org, linux-arch@vger.kernel.org
+Cc: Krzysztof Kozlowski <krzk@kernel.org>
 
-On 01/28/2020 06:57 AM, Anshuman Khandual wrote:
-> This adds tests which will validate architecture page table helpers and
-> other accessors in their compliance with expected generic MM semantics.
-> This will help various architectures in validating changes to existing
-> page table helpers or addition of new ones.
-> 
-> This test covers basic page table entry transformations including but not
-> limited to old, young, dirty, clean, write, write protect etc at various
-> level along with populating intermediate entries with next page table page
-> and validating them.
-> 
-> Test page table pages are allocated from system memory with required size
-> and alignments. The mapped pfns at page table levels are derived from a
-> real pfn representing a valid kernel text symbol. This test gets called
-> right after page_alloc_init_late().
-> 
-> This gets build and run when CONFIG_DEBUG_VM_PGTABLE is selected along with
-> CONFIG_VM_DEBUG. Architectures willing to subscribe this test also need to
-> select CONFIG_ARCH_HAS_DEBUG_VM_PGTABLE which for now is limited to x86 and
-> arm64. Going forward, other architectures too can enable this after fixing
-> build or runtime problems (if any) with their page table helpers.
-> 
-> Folks interested in making sure that a given platform's page table helpers
-> conform to expected generic MM semantics should enable the above config
-> which will just trigger this test during boot. Any non conformity here will
-> be reported as an warning which would need to be fixed. This test will help
-> catch any changes to the agreed upon semantics expected from generic MM and
-> enable platforms to accommodate it thereafter.
-> 
-> Cc: Andrew Morton <akpm@linux-foundation.org>
-> Cc: Vlastimil Babka <vbabka@suse.cz>
-> Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-> Cc: Thomas Gleixner <tglx@linutronix.de>
-> Cc: Mike Rapoport <rppt@linux.vnet.ibm.com>
-> Cc: Jason Gunthorpe <jgg@ziepe.ca>
-> Cc: Dan Williams <dan.j.williams@intel.com>
-> Cc: Peter Zijlstra <peterz@infradead.org>
-> Cc: Michal Hocko <mhocko@kernel.org>
-> Cc: Mark Rutland <mark.rutland@arm.com>
-> Cc: Mark Brown <broonie@kernel.org>
-> Cc: Steven Price <Steven.Price@arm.com>
-> Cc: Ard Biesheuvel <ard.biesheuvel@linaro.org>
-> Cc: Masahiro Yamada <yamada.masahiro@socionext.com>
-> Cc: Kees Cook <keescook@chromium.org>
-> Cc: Tetsuo Handa <penguin-kernel@i-love.sakura.ne.jp>
-> Cc: Matthew Wilcox <willy@infradead.org>
-> Cc: Sri Krishna chowdary <schowdary@nvidia.com>
-> Cc: Dave Hansen <dave.hansen@intel.com>
-> Cc: Russell King - ARM Linux <linux@armlinux.org.uk>
-> Cc: Michael Ellerman <mpe@ellerman.id.au>
-> Cc: Paul Mackerras <paulus@samba.org>
-> Cc: Martin Schwidefsky <schwidefsky@de.ibm.com>
-> Cc: Heiko Carstens <heiko.carstens@de.ibm.com>
-> Cc: "David S. Miller" <davem@davemloft.net>
-> Cc: Vineet Gupta <vgupta@synopsys.com>
-> Cc: James Hogan <jhogan@kernel.org>
-> Cc: Paul Burton <paul.burton@mips.com>
-> Cc: Ralf Baechle <ralf@linux-mips.org>
-> Cc: Kirill A. Shutemov <kirill@shutemov.name>
-> Cc: Gerald Schaefer <gerald.schaefer@de.ibm.com>
-> Cc: Christophe Leroy <christophe.leroy@c-s.fr>
-> Cc: Ingo Molnar <mingo@kernel.org>
-> Cc: linux-snps-arc@lists.infradead.org
-> Cc: linux-mips@vger.kernel.org
-> Cc: linux-arm-kernel@lists.infradead.org
-> Cc: linux-ia64@vger.kernel.org
-> Cc: linuxppc-dev@lists.ozlabs.org
-> Cc: linux-s390@vger.kernel.org
-> Cc: linux-sh@vger.kernel.org
-> Cc: sparclinux@vger.kernel.org
-> Cc: x86@kernel.org
-> Cc: linux-kernel@vger.kernel.org
+Hi,
 
-I should have included mailing lists for all missing platforms here.
-Will add them in the patch next time around but for now just adding
-them here explicitly so that hopefully in case some of them can build
-and run the test successfully on respective platforms.
+The ioread8/16/32() and others have inconsistent interface among the
+architectures: some taking address as const, some not.
 
-ALPHA:
+It seems there is nothing really stopping all of them to take
+pointer to const.
 
-+ linux-alpha@vger.kernel.org
-+ Richard Henderson <rth@twiddle.net>
-+ Ivan Kokshaysky <ink@jurassic.park.msu.ru>
-+ Matt Turner <mattst88@gmail.com>
+Patchset was really tested on all affected architectures.
+Build testing is in progress - I hope auto-builders will point any issues.
 
-C6X:
 
-+ linux-c6x-dev@linux-c6x.org
-+ Mark Salter <msalter@redhat.com>
-+ Aurelien Jacquiot <jacquiot.aurelien@gmail.com>
+Todo
+==
+Convert also string versions (ioread16_rep() etc) if this aproach looks OK.
 
-H8300:
 
-+ uclinux-h8-devel@lists.sourceforge.jp
-+ Yoshinori Sato <ysato@users.sourceforge.jp>
+Merging
+===The first 5 patches - iomap, alpha, sh, parisc and powerpc - should probably go
+via one tree, or even squashed into one.
 
-HEXAGON:
+All other can go separately after these get merged.
 
-+ linux-hexagon@vger.kernel.org
-+ Brian Cain <bcain@codeaurora.org>
+Best regards,
+Krzysztof
 
-M68K:
 
-+ linux-m68k@lists.linux-m68k.org
-+ Geert Uytterhoeven <geert@linux-m68k.org>
+Krzysztof Kozlowski (13):
+  iomap: Constify ioreadX() iomem argument (as in generic
+    implementation)
+  alpha: Constify ioreadX() iomem argument (as in generic
+    implementation)
+  sh: Constify ioreadX() iomem argument (as in generic implementation)
+  parisc: Constify ioreadX() iomem argument (as in generic
+    implementation)
+  powerpc: Constify ioreadX() iomem argument (as in generic
+    implementation)
+  arc: Constify ioreadX() iomem argument (as in generic implementation)
+  drm/mgag200: Constify ioreadX() iomem argument (as in generic
+    implementation)
+  drm/nouveau: Constify ioreadX() iomem argument (as in generic
+    implementation)
+  media: fsl-viu: Constify ioreadX() iomem argument (as in generic
+    implementation)
+  net: wireless: ath5k: Constify ioreadX() iomem argument (as in generic
+    implementation)
+  net: wireless: rtl818x: Constify ioreadX() iomem argument (as in
+    generic implementation)
+  ntb: intel: Constify ioreadX() iomem argument (as in generic
+    implementation)
+  virtio: pci: Constify ioreadX() iomem argument (as in generic
+    implementation)
 
-MICROBLAZE:
+ arch/alpha/include/asm/core_apecs.h                |  6 +--
+ arch/alpha/include/asm/core_cia.h                  |  6 +--
+ arch/alpha/include/asm/core_lca.h                  |  6 +--
+ arch/alpha/include/asm/core_marvel.h               |  4 +-
+ arch/alpha/include/asm/core_mcpcia.h               |  6 +--
+ arch/alpha/include/asm/core_t2.h                   |  2 +-
+ arch/alpha/include/asm/io.h                        | 12 +++---
+ arch/alpha/include/asm/io_trivial.h                | 16 ++++----
+ arch/alpha/include/asm/jensen.h                    |  2 +-
+ arch/alpha/include/asm/machvec.h                   |  6 +--
+ arch/alpha/kernel/core_marvel.c                    |  2 +-
+ arch/alpha/kernel/io.c                             |  6 +--
+ arch/arc/plat-axs10x/axs10x.c                      |  4 +-
+ arch/parisc/include/asm/io.h                       |  4 +-
+ arch/parisc/lib/iomap.c                            | 48 +++++++++++-----------
+ arch/powerpc/kernel/iomap.c                        | 22 +++++-----
+ arch/sh/kernel/iomap.c                             | 10 ++---
+ drivers/gpu/drm/mgag200/mgag200_drv.h              |  4 +-
+ drivers/gpu/drm/nouveau/nouveau_bo.c               |  2 +-
+ drivers/media/platform/fsl-viu.c                   |  2 +-
+ drivers/net/wireless/ath/ath5k/ahb.c               | 10 ++---
+ .../net/wireless/realtek/rtl818x/rtl8180/rtl8180.h |  6 +--
+ drivers/ntb/hw/intel/ntb_hw_gen1.c                 |  2 +-
+ drivers/ntb/hw/intel/ntb_hw_gen3.h                 |  2 +-
+ drivers/ntb/hw/intel/ntb_hw_intel.h                |  2 +-
+ drivers/virtio/virtio_pci_modern.c                 |  6 +--
+ include/asm-generic/iomap.h                        | 22 +++++-----
+ include/linux/io-64-nonatomic-hi-lo.h              |  4 +-
+ include/linux/io-64-nonatomic-lo-hi.h              |  4 +-
+ lib/iomap.c                                        | 18 ++++----
+ 30 files changed, 123 insertions(+), 123 deletions(-)
 
-+ Michal Simek <monstr@monstr.eu>
-
-RISCV:
-
-+ linux-riscv@lists.infradead.org
-+ Paul Walmsley <paul.walmsley@sifive.com>
-+ Palmer Dabbelt <palmer@dabbelt.com>
-
-UNICORE32:
-
-+ Guan Xuetao <gxt@pku.edu.cn>
-
-XTENSA:
-
-+ linux-xtensa@linux-xtensa.org
-+ Chris Zankel <chris@zankel.net>
-+ Max Filippov <jcmvbkbc@gmail.com>
-
-Please feel free to add others if I have missed.
+-- 
+2.7.4
