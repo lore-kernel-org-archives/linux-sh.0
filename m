@@ -1,291 +1,184 @@
-From: Logan Gunthorpe <logang@deltatee.com>
-Date: Tue, 07 Jan 2020 20:59:54 +0000
-Subject: [PATCH v2 3/8] x86/mm: Thread pgprot_t through init_memory_mapping()
-Message-Id: <20200107205959.7575-4-logang@deltatee.com>
+From: Krzysztof Kozlowski <krzk@kernel.org>
+Date: Tue, 07 Jan 2020 16:52:58 +0000
+Subject: [RFT 01/13] iomap: Constify ioreadX() iomem argument (as in generic implementation)
+Message-Id: <1578415992-24054-2-git-send-email-krzk@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200107205959.7575-1-logang@deltatee.com>
-In-Reply-To: <20200107205959.7575-1-logang@deltatee.com>
+References: <1578415992-24054-1-git-send-email-krzk@kernel.org>
+In-Reply-To: <1578415992-24054-1-git-send-email-krzk@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, platform-driver-x86@vger.kernel.org, linux-mm@kvack.org, Dan Williams <dan.j.williams@intel.com>, Michal Hocko <mhocko@kernel.org>, David Hildenbrand <david@redhat.com>, Andrew Morton <akpm@linux-foundation.org>
-Cc: Eric Badger <ebadger@gigaio.com>, "H. Peter Anvin" <hpa@zytor.com>, Peter Zijlstra <peterz@infradead.org>, Catalin Marinas <catalin.marinas@arm.com>, Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org, Logan Gunthorpe <logang@deltatee.com>, Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>, Andy Lutomirski <luto@kernel.org>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Thomas Gleixner <tglx@linutronix.de>, Will Deacon <will@kernel.org>, Christoph Hellwig <hch@lst.de>
+To: Richard Henderson <rth@twiddle.net>, Ivan Kokshaysky <ink@jurassic.park.msu.ru>, Matt Turner <mattst88@gmail.com>, Alexey Brodkin <abrodkin@synopsys.com>, Vineet Gupta <vgupta@synopsys.com>, "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>, Helge Deller <deller@gmx.de>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Michael Ellerman <mpe@ellerman.id.au>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Dave Airlie <airlied@redhat.com>, David Airlie <airlied@linux.ie>, Daniel Vetter <daniel@ffwll.ch>, Ben Skeggs <bskeggs@redhat.com>, Mauro Carvalho Chehab <mchehab@kernel.org>, Jiri Slaby <jirislaby@gmail.com>, Nick Kossifidis <mickflemm@gmail.com>, Luis Chamberlain <mcgrof@kernel.org>, Kalle Valo <kvalo@codeaurora.org>, "David S. Miller" <davem@davemloft.net>, Dave Jiang <dave.jiang@intel.com>, Jon Mason <jdmason@kudzu.us>, Allen Hubbe <allenbh@gmail.com>, "Michael S. Tsirkin" <mst@redhat.com>, Jason Wang <jasowang@redhat.com>, Arnd Bergmann <arnd@arndb.de>, Andrew Morton <akpm@linux-foundation.org>, Thomas Gleixner <tglx@linutronix.de>, Geert Uytterhoeven <geert@linux-m68k.org>, linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, dri-devel@lists.freedesktop.org, nouveau@lists.freedesktop.org, linux-media@vger.kernel.org, linux-wireless@vger.kernel.org, netdev@vger.kernel.org, linux-ntb@googlegroups.com, virtualization@lists.linux-foundation.org, linux-arch@vger.kernel.org
+Cc: Krzysztof Kozlowski <krzk@kernel.org>
 
-In prepartion to support a pgprot_t argument for arch_add_memory().
+The ioreadX() helpers have inconsistent interface.  On some architectures
+void *__iomem address argument is a pointer to const, on some not.
 
-It's required to move the prototype of init_memory_mapping() seeing
-the original location came before the definition of pgprot_t.
+Implementations of ioreadX() do not modify the memory under the address
+so they can be converted to a "const" version for const-safety and
+consistency among architectures.
 
-Cc: Thomas Gleixner <tglx@linutronix.de>
-Cc: Ingo Molnar <mingo@redhat.com>
-Cc: Borislav Petkov <bp@alien8.de>
-Cc: "H. Peter Anvin" <hpa@zytor.com>
-Cc: x86@kernel.org
-Cc: Dave Hansen <dave.hansen@linux.intel.com>
-Cc: Andy Lutomirski <luto@kernel.org>
-Cc: Peter Zijlstra <peterz@infradead.org>
-Signed-off-by: Logan Gunthorpe <logang@deltatee.com>
+Suggested-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Signed-off-by: Krzysztof Kozlowski <krzk@kernel.org>
 ---
- arch/x86/include/asm/page_types.h |  3 ---
- arch/x86/include/asm/pgtable.h    |  3 +++
- arch/x86/kernel/amd_gart_64.c     |  3 ++-
- arch/x86/mm/init.c                |  9 +++++----
- arch/x86/mm/init_32.c             |  3 ++-
- arch/x86/mm/init_64.c             | 32 +++++++++++++++++--------------
- arch/x86/mm/mm_internal.h         |  3 ++-
- arch/x86/platform/efi/efi_64.c    |  3 ++-
- 8 files changed, 34 insertions(+), 25 deletions(-)
+ include/asm-generic/iomap.h           | 22 +++++++++++-----------
+ include/linux/io-64-nonatomic-hi-lo.h |  4 ++--
+ include/linux/io-64-nonatomic-lo-hi.h |  4 ++--
+ lib/iomap.c                           | 18 +++++++++---------
+ 4 files changed, 24 insertions(+), 24 deletions(-)
 
-diff --git a/arch/x86/include/asm/page_types.h b/arch/x86/include/asm/page_types.h
-index c85e15010f48..bf7aa2e290ef 100644
---- a/arch/x86/include/asm/page_types.h
-+++ b/arch/x86/include/asm/page_types.h
-@@ -73,9 +73,6 @@ static inline phys_addr_t get_max_mapped(void)
- 
- bool pfn_range_is_mapped(unsigned long start_pfn, unsigned long end_pfn);
- 
--extern unsigned long init_memory_mapping(unsigned long start,
--					 unsigned long end);
--
- extern void initmem_init(void);
- 
- #endif	/* !__ASSEMBLY__ */
-diff --git a/arch/x86/include/asm/pgtable.h b/arch/x86/include/asm/pgtable.h
-index ad97dc155195..844635e02da5 100644
---- a/arch/x86/include/asm/pgtable.h
-+++ b/arch/x86/include/asm/pgtable.h
-@@ -1041,6 +1041,9 @@ static inline void __meminit init_trampoline_default(void)
- 
- void __init poking_init(void);
- 
-+unsigned long init_memory_mapping(unsigned long start,
-+				  unsigned long end, pgprot_t prot);
-+
- # ifdef CONFIG_RANDOMIZE_MEMORY
- void __meminit init_trampoline(void);
- # else
-diff --git a/arch/x86/kernel/amd_gart_64.c b/arch/x86/kernel/amd_gart_64.c
-index 4e5f50236048..16133819415c 100644
---- a/arch/x86/kernel/amd_gart_64.c
-+++ b/arch/x86/kernel/amd_gart_64.c
-@@ -744,7 +744,8 @@ int __init gart_iommu_init(void)
- 
- 	start_pfn = PFN_DOWN(aper_base);
- 	if (!pfn_range_is_mapped(start_pfn, end_pfn))
--		init_memory_mapping(start_pfn<<PAGE_SHIFT, end_pfn<<PAGE_SHIFT);
-+		init_memory_mapping(start_pfn<<PAGE_SHIFT, end_pfn<<PAGE_SHIFT,
-+				    PAGE_KERNEL);
- 
- 	pr_info("PCI-DMA: using GART IOMMU.\n");
- 	iommu_size = check_iommu_size(info.aper_base, aper_size);
-diff --git a/arch/x86/mm/init.c b/arch/x86/mm/init.c
-index e7bb483557c9..1bba16c5742b 100644
---- a/arch/x86/mm/init.c
-+++ b/arch/x86/mm/init.c
-@@ -467,7 +467,7 @@ bool pfn_range_is_mapped(unsigned long start_pfn, unsigned long end_pfn)
-  * the physical memory. To access them they are temporarily mapped.
+diff --git a/include/asm-generic/iomap.h b/include/asm-generic/iomap.h
+index 9d28a5e82f73..986e894bef49 100644
+--- a/include/asm-generic/iomap.h
++++ b/include/asm-generic/iomap.h
+@@ -26,14 +26,14 @@
+  * in the low address range. Architectures for which this is not
+  * true can't use this generic implementation.
   */
- unsigned long __ref init_memory_mapping(unsigned long start,
--					       unsigned long end)
-+					unsigned long end, pgprot_t prot)
- {
- 	struct map_range mr[NR_RANGE_MR];
- 	unsigned long ret = 0;
-@@ -481,7 +481,8 @@ unsigned long __ref init_memory_mapping(unsigned long start,
- 
- 	for (i = 0; i < nr_range; i++)
- 		ret = kernel_physical_mapping_init(mr[i].start, mr[i].end,
--						   mr[i].page_size_mask);
-+						   mr[i].page_size_mask,
-+						   prot);
- 
- 	add_pfn_range_mapped(start >> PAGE_SHIFT, ret >> PAGE_SHIFT);
- 
-@@ -521,7 +522,7 @@ static unsigned long __init init_range_memory_mapping(
- 		 */
- 		can_use_brk_pgt = max(start, (u64)pgt_buf_end<<PAGE_SHIFT) > 				    min(end, (u64)pgt_buf_top<<PAGE_SHIFT);
--		init_memory_mapping(start, end);
-+		init_memory_mapping(start, end, PAGE_KERNEL);
- 		mapped_ram_size += end - start;
- 		can_use_brk_pgt = true;
- 	}
-@@ -661,7 +662,7 @@ void __init init_mem_mapping(void)
+-extern unsigned int ioread8(void __iomem *);
+-extern unsigned int ioread16(void __iomem *);
+-extern unsigned int ioread16be(void __iomem *);
+-extern unsigned int ioread32(void __iomem *);
+-extern unsigned int ioread32be(void __iomem *);
++extern unsigned int ioread8(const void __iomem *);
++extern unsigned int ioread16(const void __iomem *);
++extern unsigned int ioread16be(const void __iomem *);
++extern unsigned int ioread32(const void __iomem *);
++extern unsigned int ioread32be(const void __iomem *);
+ #ifdef CONFIG_64BIT
+-extern u64 ioread64(void __iomem *);
+-extern u64 ioread64be(void __iomem *);
++extern u64 ioread64(const void __iomem *);
++extern u64 ioread64be(const void __iomem *);
  #endif
  
- 	/* the ISA range is always mapped regardless of memory holes */
--	init_memory_mapping(0, ISA_END_ADDRESS);
-+	init_memory_mapping(0, ISA_END_ADDRESS, PAGE_KERNEL);
+ #ifdef readq
+@@ -41,10 +41,10 @@ extern u64 ioread64be(void __iomem *);
+ #define ioread64_hi_lo ioread64_hi_lo
+ #define ioread64be_lo_hi ioread64be_lo_hi
+ #define ioread64be_hi_lo ioread64be_hi_lo
+-extern u64 ioread64_lo_hi(void __iomem *addr);
+-extern u64 ioread64_hi_lo(void __iomem *addr);
+-extern u64 ioread64be_lo_hi(void __iomem *addr);
+-extern u64 ioread64be_hi_lo(void __iomem *addr);
++extern u64 ioread64_lo_hi(const void __iomem *addr);
++extern u64 ioread64_hi_lo(const void __iomem *addr);
++extern u64 ioread64be_lo_hi(const void __iomem *addr);
++extern u64 ioread64be_hi_lo(const void __iomem *addr);
+ #endif
  
- 	/* Init the trampoline, possibly with KASLR memory offset */
- 	init_trampoline();
-diff --git a/arch/x86/mm/init_32.c b/arch/x86/mm/init_32.c
-index e6fce2d547f0..630d8a36fcd7 100644
---- a/arch/x86/mm/init_32.c
-+++ b/arch/x86/mm/init_32.c
-@@ -252,7 +252,8 @@ static inline int is_kernel_text(unsigned long addr)
- unsigned long __init
- kernel_physical_mapping_init(unsigned long start,
- 			     unsigned long end,
--			     unsigned long page_size_mask)
-+			     unsigned long page_size_mask,
-+			     pgprot_t prot)
+ extern void iowrite8(u8, void __iomem *);
+diff --git a/include/linux/io-64-nonatomic-hi-lo.h b/include/linux/io-64-nonatomic-hi-lo.h
+index ae21b72cce85..f32522bb3aa5 100644
+--- a/include/linux/io-64-nonatomic-hi-lo.h
++++ b/include/linux/io-64-nonatomic-hi-lo.h
+@@ -57,7 +57,7 @@ static inline void hi_lo_writeq_relaxed(__u64 val, volatile void __iomem *addr)
+ 
+ #ifndef ioread64_hi_lo
+ #define ioread64_hi_lo ioread64_hi_lo
+-static inline u64 ioread64_hi_lo(void __iomem *addr)
++static inline u64 ioread64_hi_lo(const void __iomem *addr)
  {
- 	int use_pse = page_size_mask = (1<<PG_LEVEL_2M);
- 	unsigned long last_map_addr = end;
-diff --git a/arch/x86/mm/init_64.c b/arch/x86/mm/init_64.c
-index 516133f555e9..17ea0bfc0b83 100644
---- a/arch/x86/mm/init_64.c
-+++ b/arch/x86/mm/init_64.c
-@@ -585,7 +585,7 @@ phys_pmd_init(pmd_t *pmd_page, unsigned long paddr, unsigned long paddr_end,
-  */
- static unsigned long __meminit
- phys_pud_init(pud_t *pud_page, unsigned long paddr, unsigned long paddr_end,
--	      unsigned long page_size_mask, bool init)
-+	      unsigned long page_size_mask, pgprot_t _prot, bool init)
+ 	u32 low, high;
+ 
+@@ -79,7 +79,7 @@ static inline void iowrite64_hi_lo(u64 val, void __iomem *addr)
+ 
+ #ifndef ioread64be_hi_lo
+ #define ioread64be_hi_lo ioread64be_hi_lo
+-static inline u64 ioread64be_hi_lo(void __iomem *addr)
++static inline u64 ioread64be_hi_lo(const void __iomem *addr)
  {
- 	unsigned long pages = 0, paddr_next;
- 	unsigned long paddr_last = paddr_end;
-@@ -595,7 +595,7 @@ phys_pud_init(pud_t *pud_page, unsigned long paddr, unsigned long paddr_end,
- 	for (; i < PTRS_PER_PUD; i++, paddr = paddr_next) {
- 		pud_t *pud;
- 		pmd_t *pmd;
--		pgprot_t prot = PAGE_KERNEL;
-+		pgprot_t prot = _prot;
+ 	u32 low, high;
  
- 		vaddr = (unsigned long)__va(paddr);
- 		pud = pud_page + pud_index(vaddr);
-@@ -644,9 +644,12 @@ phys_pud_init(pud_t *pud_page, unsigned long paddr, unsigned long paddr_end,
- 		if (page_size_mask & (1<<PG_LEVEL_1G)) {
- 			pages++;
- 			spin_lock(&init_mm.page_table_lock);
-+
-+			prot = __pgprot(pgprot_val(prot) | __PAGE_KERNEL_LARGE);
-+
- 			set_pte_init((pte_t *)pud,
- 				     pfn_pte((paddr & PUD_MASK) >> PAGE_SHIFT,
--					     PAGE_KERNEL_LARGE),
-+					     prot),
- 				     init);
- 			spin_unlock(&init_mm.page_table_lock);
- 			paddr_last = paddr_next;
-@@ -669,7 +672,7 @@ phys_pud_init(pud_t *pud_page, unsigned long paddr, unsigned long paddr_end,
+diff --git a/include/linux/io-64-nonatomic-lo-hi.h b/include/linux/io-64-nonatomic-lo-hi.h
+index faaa842dbdb9..448a21435dba 100644
+--- a/include/linux/io-64-nonatomic-lo-hi.h
++++ b/include/linux/io-64-nonatomic-lo-hi.h
+@@ -57,7 +57,7 @@ static inline void lo_hi_writeq_relaxed(__u64 val, volatile void __iomem *addr)
  
- static unsigned long __meminit
- phys_p4d_init(p4d_t *p4d_page, unsigned long paddr, unsigned long paddr_end,
--	      unsigned long page_size_mask, bool init)
-+	      unsigned long page_size_mask, pgprot_t prot, bool init)
+ #ifndef ioread64_lo_hi
+ #define ioread64_lo_hi ioread64_lo_hi
+-static inline u64 ioread64_lo_hi(void __iomem *addr)
++static inline u64 ioread64_lo_hi(const void __iomem *addr)
  {
- 	unsigned long vaddr, vaddr_end, vaddr_next, paddr_next, paddr_last;
+ 	u32 low, high;
  
-@@ -679,7 +682,7 @@ phys_p4d_init(p4d_t *p4d_page, unsigned long paddr, unsigned long paddr_end,
+@@ -79,7 +79,7 @@ static inline void iowrite64_lo_hi(u64 val, void __iomem *addr)
  
- 	if (!pgtable_l5_enabled())
- 		return phys_pud_init((pud_t *) p4d_page, paddr, paddr_end,
--				     page_size_mask, init);
-+				     page_size_mask, prot, init);
- 
- 	for (; vaddr < vaddr_end; vaddr = vaddr_next) {
- 		p4d_t *p4d = p4d_page + p4d_index(vaddr);
-@@ -702,13 +705,13 @@ phys_p4d_init(p4d_t *p4d_page, unsigned long paddr, unsigned long paddr_end,
- 		if (!p4d_none(*p4d)) {
- 			pud = pud_offset(p4d, 0);
- 			paddr_last = phys_pud_init(pud, paddr, __pa(vaddr_end),
--					page_size_mask, init);
-+					page_size_mask, prot, init);
- 			continue;
- 		}
- 
- 		pud = alloc_low_page();
- 		paddr_last = phys_pud_init(pud, paddr, __pa(vaddr_end),
--					   page_size_mask, init);
-+					   page_size_mask, prot, init);
- 
- 		spin_lock(&init_mm.page_table_lock);
- 		p4d_populate_init(&init_mm, p4d, pud, init);
-@@ -722,7 +725,7 @@ static unsigned long __meminit
- __kernel_physical_mapping_init(unsigned long paddr_start,
- 			       unsigned long paddr_end,
- 			       unsigned long page_size_mask,
--			       bool init)
-+			       pgprot_t prot, bool init)
+ #ifndef ioread64be_lo_hi
+ #define ioread64be_lo_hi ioread64be_lo_hi
+-static inline u64 ioread64be_lo_hi(void __iomem *addr)
++static inline u64 ioread64be_lo_hi(const void __iomem *addr)
  {
- 	bool pgd_changed = false;
- 	unsigned long vaddr, vaddr_start, vaddr_end, vaddr_next, paddr_last;
-@@ -743,13 +746,13 @@ __kernel_physical_mapping_init(unsigned long paddr_start,
- 			paddr_last = phys_p4d_init(p4d, __pa(vaddr),
- 						   __pa(vaddr_end),
- 						   page_size_mask,
--						   init);
-+						   prot, init);
- 			continue;
- 		}
+ 	u32 low, high;
  
- 		p4d = alloc_low_page();
- 		paddr_last = phys_p4d_init(p4d, __pa(vaddr), __pa(vaddr_end),
--					   page_size_mask, init);
-+					   page_size_mask, prot, init);
+diff --git a/lib/iomap.c b/lib/iomap.c
+index e909ab71e995..3b10c0ab2cee 100644
+--- a/lib/iomap.c
++++ b/lib/iomap.c
+@@ -70,27 +70,27 @@ static void bad_io_access(unsigned long port, const char *access)
+ #define mmio_read64be(addr) swab64(readq(addr))
+ #endif
  
- 		spin_lock(&init_mm.page_table_lock);
- 		if (pgtable_l5_enabled())
-@@ -778,10 +781,10 @@ __kernel_physical_mapping_init(unsigned long paddr_start,
- unsigned long __meminit
- kernel_physical_mapping_init(unsigned long paddr_start,
- 			     unsigned long paddr_end,
--			     unsigned long page_size_mask)
-+			     unsigned long page_size_mask, pgprot_t prot)
+-unsigned int ioread8(void __iomem *addr)
++unsigned int ioread8(const void __iomem *addr)
  {
- 	return __kernel_physical_mapping_init(paddr_start, paddr_end,
--					      page_size_mask, true);
-+					      page_size_mask, prot, true);
+ 	IO_COND(addr, return inb(port), return readb(addr));
+ 	return 0xff;
+ }
+-unsigned int ioread16(void __iomem *addr)
++unsigned int ioread16(const void __iomem *addr)
+ {
+ 	IO_COND(addr, return inw(port), return readw(addr));
+ 	return 0xffff;
+ }
+-unsigned int ioread16be(void __iomem *addr)
++unsigned int ioread16be(const void __iomem *addr)
+ {
+ 	IO_COND(addr, return pio_read16be(port), return mmio_read16be(addr));
+ 	return 0xffff;
+ }
+-unsigned int ioread32(void __iomem *addr)
++unsigned int ioread32(const void __iomem *addr)
+ {
+ 	IO_COND(addr, return inl(port), return readl(addr));
+ 	return 0xffffffff;
+ }
+-unsigned int ioread32be(void __iomem *addr)
++unsigned int ioread32be(const void __iomem *addr)
+ {
+ 	IO_COND(addr, return pio_read32be(port), return mmio_read32be(addr));
+ 	return 0xffffffff;
+@@ -142,26 +142,26 @@ static u64 pio_read64be_hi_lo(unsigned long port)
+ 	return lo | (hi << 32);
  }
  
- /*
-@@ -796,7 +799,8 @@ kernel_physical_mapping_change(unsigned long paddr_start,
- 			       unsigned long page_size_mask)
+-u64 ioread64_lo_hi(void __iomem *addr)
++u64 ioread64_lo_hi(const void __iomem *addr)
  {
- 	return __kernel_physical_mapping_init(paddr_start, paddr_end,
--					      page_size_mask, false);
-+					      page_size_mask, PAGE_KERNEL,
-+					      false);
+ 	IO_COND(addr, return pio_read64_lo_hi(port), return readq(addr));
+ 	return 0xffffffffffffffffULL;
  }
  
- #ifndef CONFIG_NUMA
-@@ -864,7 +868,7 @@ int arch_add_memory(int nid, u64 start, u64 size,
- 	unsigned long start_pfn = start >> PAGE_SHIFT;
- 	unsigned long nr_pages = size >> PAGE_SHIFT;
- 
--	init_memory_mapping(start, start + size);
-+	init_memory_mapping(start, start + size, PAGE_KERNEL);
- 
- 	return add_pages(nid, start_pfn, nr_pages, modifiers);
+-u64 ioread64_hi_lo(void __iomem *addr)
++u64 ioread64_hi_lo(const void __iomem *addr)
+ {
+ 	IO_COND(addr, return pio_read64_hi_lo(port), return readq(addr));
+ 	return 0xffffffffffffffffULL;
  }
-diff --git a/arch/x86/mm/mm_internal.h b/arch/x86/mm/mm_internal.h
-index eeae142062ed..3f37b5c80bb3 100644
---- a/arch/x86/mm/mm_internal.h
-+++ b/arch/x86/mm/mm_internal.h
-@@ -12,7 +12,8 @@ void early_ioremap_page_table_range_init(void);
  
- unsigned long kernel_physical_mapping_init(unsigned long start,
- 					     unsigned long end,
--					     unsigned long page_size_mask);
-+					     unsigned long page_size_mask,
-+					     pgprot_t prot);
- unsigned long kernel_physical_mapping_change(unsigned long start,
- 					     unsigned long end,
- 					     unsigned long page_size_mask);
-diff --git a/arch/x86/platform/efi/efi_64.c b/arch/x86/platform/efi/efi_64.c
-index 08ce8177c3af..3d0acfdb58c3 100644
---- a/arch/x86/platform/efi/efi_64.c
-+++ b/arch/x86/platform/efi/efi_64.c
-@@ -499,7 +499,8 @@ void __iomem *__init efi_ioremap(unsigned long phys_addr, unsigned long size,
- 	if (type = EFI_MEMORY_MAPPED_IO)
- 		return ioremap(phys_addr, size);
+-u64 ioread64be_lo_hi(void __iomem *addr)
++u64 ioread64be_lo_hi(const void __iomem *addr)
+ {
+ 	IO_COND(addr, return pio_read64be_lo_hi(port),
+ 		return mmio_read64be(addr));
+ 	return 0xffffffffffffffffULL;
+ }
  
--	last_map_pfn = init_memory_mapping(phys_addr, phys_addr + size);
-+	last_map_pfn = init_memory_mapping(phys_addr, phys_addr + size,
-+					   PAGE_KERNEL);
- 	if ((last_map_pfn << PAGE_SHIFT) < phys_addr + size) {
- 		unsigned long top = last_map_pfn << PAGE_SHIFT;
- 		efi_ioremap(top, size - (top - phys_addr), type, attribute);
+-u64 ioread64be_hi_lo(void __iomem *addr)
++u64 ioread64be_hi_lo(const void __iomem *addr)
+ {
+ 	IO_COND(addr, return pio_read64be_hi_lo(port),
+ 		return mmio_read64be(addr));
 -- 
-2.20.1
+2.7.4
