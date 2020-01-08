@@ -1,98 +1,56 @@
-From: Krzysztof Kozlowski <krzk@kernel.org>
-Date: Tue, 07 Jan 2020 16:52:57 +0000
-Subject: [RFT 00/13] iomap: Constify ioreadX() iomem argument
-Message-Id: <1578415992-24054-1-git-send-email-krzk@kernel.org>
+From: Christophe Leroy <christophe.leroy@c-s.fr>
+Date: Wed, 08 Jan 2020 08:35:54 +0000
+Subject: Re: [RFT 00/13] iomap: Constify ioreadX() iomem argument
+Message-Id: <2355489c-a207-1927-54cf-85c04b62f18f@c-s.fr>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1578415992-24054-1-git-send-email-krzk@kernel.org>
+ <CAMuHMdW4ek0OYQDrrbcpZjNUTTP04nSbwkmiZvBmKcU=PQM9qA@mail.gmail.com>
+ <CAMuHMdUBmYtJKtSYzS_5u67hVZOqcKSgFY1rDGme6gLNRBJ_gA@mail.gmail.com>
+ <CAJKOXPfq9vS4kSyx1jOPHBvi9_HjviRv0LU2A8ZwdmqgUuebHQ@mail.gmail.com>
+In-Reply-To: <CAJKOXPfq9vS4kSyx1jOPHBvi9_HjviRv0LU2A8ZwdmqgUuebHQ@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Richard Henderson <rth@twiddle.net>, Ivan Kokshaysky <ink@jurassic.park.msu.ru>, Matt Turner <mattst88@gmail.com>, Alexey Brodkin <abrodkin@synopsys.com>, Vineet Gupta <vgupta@synopsys.com>, "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>, Helge Deller <deller@gmx.de>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Michael Ellerman <mpe@ellerman.id.au>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Dave Airlie <airlied@redhat.com>, David Airlie <airlied@linux.ie>, Daniel Vetter <daniel@ffwll.ch>, Ben Skeggs <bskeggs@redhat.com>, Mauro Carvalho Chehab <mchehab@kernel.org>, Jiri Slaby <jirislaby@gmail.com>, Nick Kossifidis <mickflemm@gmail.com>, Luis Chamberlain <mcgrof@kernel.org>, Kalle Valo <kvalo@codeaurora.org>, "David S. Miller" <davem@davemloft.net>, Dave Jiang <dave.jiang@intel.com>, Jon Mason <jdmason@kudzu.us>, Allen Hubbe <allenbh@gmail.com>, "Michael S. Tsirkin" <mst@redhat.com>, Jason Wang <jasowang@redhat.com>, Arnd Bergmann <arnd@arndb.de>, Andrew Morton <akpm@linux-foundation.org>, Thomas Gleixner <tglx@linutronix.de>, Geert Uytterhoeven <geert@linux-m68k.org>, linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, dri-devel@lists.freedesktop.org, nouveau@lists.freedesktop.org, linux-media@vger.kernel.org, linux-wireless@vger.kernel.org, netdev@vger.kernel.org, linux-ntb@googlegroups.com, virtualization@lists.linux-foundation.org, linux-arch@vger.kernel.org
-Cc: Krzysztof Kozlowski <krzk@kernel.org>
-
-Hi,
-
-The ioread8/16/32() and others have inconsistent interface among the
-architectures: some taking address as const, some not.
-
-It seems there is nothing really stopping all of them to take
-pointer to const.
-
-Patchset was really tested on all affected architectures.
-Build testing is in progress - I hope auto-builders will point any issues.
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: Krzysztof Kozlowski <krzk@kernel.org>, Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: Rich Felker <dalias@libc.org>, Jiri Slaby <jirislaby@gmail.com>, "Michael S. Tsirkin" <mst@redhat.com>, David Airlie <airlied@linux.ie>, nouveau@lists.freedesktop.org, Jason Wang <jasowang@redhat.com>, DRI Development <dri-devel@lists.freedesktop.org>, virtualization@lists.linux-foundation.org, "James E.J. Bottomley" <James.Bottomley@hansenpartnership.com>, Paul Mackerras <paulus@samba.org>, Linux-Arch <linux-arch@vger.kernel.org>, Dave Jiang <dave.jiang@intel.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Helge Deller <deller@gmx.de>, Linux-sh list <linux-sh@vger.kernel.org>, Alexey Brodkin <abrodkin@synopsys.com>, Ben Skeggs <bskeggs@redhat.com>, Dave Airlie <airlied@redhat.com>, Matt Turner <mattst88@gmail.com>, arcml <linux-snps-arc@lists.infradead.org>, Nick Kossifidis <mickflemm@gmail.com>, Allen Hubbe <allenbh@gmail.com>, Arnd Bergmann <arnd@arndb.de>, Jon Mason <jdmason@kudzu.us>, Ivan Kokshaysky <ink@jurassic.park.msu.ru>, Thomas Gleixner <tglx@linutronix.de>, Mauro Carvalho Chehab <mchehab@kernel.org>, Kalle Valo <kvalo@codeaurora.org>, Richard Henderson <rth@twiddle.net>, Parisc List <linux-parisc@vger.kernel.org>, netdev <netdev@vger.kernel.org>, linux-wireless <linux-wireless@vger.kernel.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Luis Chamberlain <mcgrof@kernel.org>, Vineet Gupta <vgupta@synopsys.com>, alpha <linux-alpha@vger.kernel.org>, linux-ntb@googlegroups.com, Andrew Morton <akpm@linux-foundation.org>, Linux Media Mailing List <linux-media@vger.kernel.org>, linuxppc-dev <linuxppc-dev@lists.ozlabs.org>, "David S. Miller" <davem@davemloft.net>
 
 
-Todo
-==
-Convert also string versions (ioread16_rep() etc) if this aproach looks OK.
 
+Le 08/01/2020 à 09:18, Krzysztof Kozlowski a écrit :
+> On Wed, 8 Jan 2020 at 09:13, Geert Uytterhoeven <geert@linux-m68k.org> wrote:
+>>
+>> Hi Krzysztof,
+>>
+>> On Wed, Jan 8, 2020 at 9:07 AM Geert Uytterhoeven <geert@linux-m68k.org> wrote:
+>>> On Tue, Jan 7, 2020 at 5:53 PM Krzysztof Kozlowski <krzk@kernel.org> wrote:
+>>>> The ioread8/16/32() and others have inconsistent interface among the
+>>>> architectures: some taking address as const, some not.
+>>>>
+>>>> It seems there is nothing really stopping all of them to take
+>>>> pointer to const.
+>>>
+>>> Shouldn't all of them take const volatile __iomem pointers?
+>>> It seems the "volatile" is missing from all but the implementations in
+>>> include/asm-generic/io.h.
+>>
+>> As my "volatile" comment applies to iowrite*(), too, probably that should be
+>> done in a separate patch.
+>>
+>> Hence with patches 1-5 squashed, and for patches 11-13:
+>> Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> 
+> I'll add to this one also changes to ioreadX_rep() and add another
+> patch for volatile for reads and writes. I guess your review will be
+> appreciated once more because of ioreadX_rep()
+> 
 
-Merging
-===The first 5 patches - iomap, alpha, sh, parisc and powerpc - should probably go
-via one tree, or even squashed into one.
+volatile should really only be used where deemed necessary:
 
-All other can go separately after these get merged.
+https://www.kernel.org/doc/html/latest/process/volatile-considered-harmful.html
 
-Best regards,
-Krzysztof
+It is said: " ...  accessor functions might use volatile on 
+architectures where direct I/O memory access does work. Essentially, 
+each accessor call becomes a little critical section on its own and 
+ensures that the access happens as expected by the programmer."
 
-
-Krzysztof Kozlowski (13):
-  iomap: Constify ioreadX() iomem argument (as in generic
-    implementation)
-  alpha: Constify ioreadX() iomem argument (as in generic
-    implementation)
-  sh: Constify ioreadX() iomem argument (as in generic implementation)
-  parisc: Constify ioreadX() iomem argument (as in generic
-    implementation)
-  powerpc: Constify ioreadX() iomem argument (as in generic
-    implementation)
-  arc: Constify ioreadX() iomem argument (as in generic implementation)
-  drm/mgag200: Constify ioreadX() iomem argument (as in generic
-    implementation)
-  drm/nouveau: Constify ioreadX() iomem argument (as in generic
-    implementation)
-  media: fsl-viu: Constify ioreadX() iomem argument (as in generic
-    implementation)
-  net: wireless: ath5k: Constify ioreadX() iomem argument (as in generic
-    implementation)
-  net: wireless: rtl818x: Constify ioreadX() iomem argument (as in
-    generic implementation)
-  ntb: intel: Constify ioreadX() iomem argument (as in generic
-    implementation)
-  virtio: pci: Constify ioreadX() iomem argument (as in generic
-    implementation)
-
- arch/alpha/include/asm/core_apecs.h                |  6 +--
- arch/alpha/include/asm/core_cia.h                  |  6 +--
- arch/alpha/include/asm/core_lca.h                  |  6 +--
- arch/alpha/include/asm/core_marvel.h               |  4 +-
- arch/alpha/include/asm/core_mcpcia.h               |  6 +--
- arch/alpha/include/asm/core_t2.h                   |  2 +-
- arch/alpha/include/asm/io.h                        | 12 +++---
- arch/alpha/include/asm/io_trivial.h                | 16 ++++----
- arch/alpha/include/asm/jensen.h                    |  2 +-
- arch/alpha/include/asm/machvec.h                   |  6 +--
- arch/alpha/kernel/core_marvel.c                    |  2 +-
- arch/alpha/kernel/io.c                             |  6 +--
- arch/arc/plat-axs10x/axs10x.c                      |  4 +-
- arch/parisc/include/asm/io.h                       |  4 +-
- arch/parisc/lib/iomap.c                            | 48 +++++++++++-----------
- arch/powerpc/kernel/iomap.c                        | 22 +++++-----
- arch/sh/kernel/iomap.c                             | 10 ++---
- drivers/gpu/drm/mgag200/mgag200_drv.h              |  4 +-
- drivers/gpu/drm/nouveau/nouveau_bo.c               |  2 +-
- drivers/media/platform/fsl-viu.c                   |  2 +-
- drivers/net/wireless/ath/ath5k/ahb.c               | 10 ++---
- .../net/wireless/realtek/rtl818x/rtl8180/rtl8180.h |  6 +--
- drivers/ntb/hw/intel/ntb_hw_gen1.c                 |  2 +-
- drivers/ntb/hw/intel/ntb_hw_gen3.h                 |  2 +-
- drivers/ntb/hw/intel/ntb_hw_intel.h                |  2 +-
- drivers/virtio/virtio_pci_modern.c                 |  6 +--
- include/asm-generic/iomap.h                        | 22 +++++-----
- include/linux/io-64-nonatomic-hi-lo.h              |  4 +-
- include/linux/io-64-nonatomic-lo-hi.h              |  4 +-
- lib/iomap.c                                        | 18 ++++----
- 30 files changed, 123 insertions(+), 123 deletions(-)
-
--- 
-2.7.4
+Christophe
