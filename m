@@ -1,38 +1,57 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Sat, 18 Jan 2020 09:36:17 +0000
-Subject: Re: [PATCH v2] sh: sh4a: Bring back tmu3_device early device
-Message-Id: <CAMuHMdVTg+Amw6Epuqhd60pdUDeCbTzJ=7TNDLE0BQRgCLQHPQ@mail.gmail.com>
+From: Krzysztof Kozlowski <krzk@kernel.org>
+Date: Wed, 08 Jan 2020 20:05:21 +0000
+Subject: [PATCH v2 2/9] net: wireless: rtl818x: Constify ioreadX() iomem argument (as in generic implementati
+Message-Id: <20200108200528.4614-3-krzk@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200118081356.22167-1-krzk@kernel.org>
-In-Reply-To: <20200118081356.22167-1-krzk@kernel.org>
+References: <20200108200528.4614-1-krzk@kernel.org>
+In-Reply-To: <20200108200528.4614-1-krzk@kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: Krzysztof Kozlowski <krzk@kernel.org>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Simon Horman <horms+renesas@verge.net.au>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Linux-sh list <linux-sh@vger.kernel.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Richard Henderson <rth@twiddle.net>, Ivan Kokshaysky <ink@jurassic.park.msu.ru>, Matt Turner <mattst88@gmail.com>, Alexey Brodkin <abrodkin@synopsys.com>, Vineet Gupta <vgupta@synopsys.com>, "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>, Helge Deller <deller@gmx.de>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Michael Ellerman <mpe@ellerman.id.au>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Dave Airlie <airlied@redhat.com>, David Airlie <airlied@linux.ie>, Daniel Vetter <daniel@ffwll.ch>, Ben Skeggs <bskeggs@redhat.com>, Mauro Carvalho Chehab <mchehab@kernel.org>, Jiri Slaby <jirislaby@gmail.com>, Nick Kossifidis <mickflemm@gmail.com>, Luis Chamberlain <mcgrof@kernel.org>, Kalle Valo <kvalo@codeaurora.org>, "David S. Miller" <davem@davemloft.net>, Dave Jiang <dave.jiang@intel.com>, Jon Mason <jdmason@kudzu.us>, Allen Hubbe <allenbh@gmail.com>, "Michael S. Tsirkin" <mst@redhat.com>, Jason Wang <jasowang@redhat.com>, Arnd Bergmann <arnd@arndb.de>, Krzysztof Kozlowski <krzk@kernel.org>, Geert Uytterhoeven <geert+renesas@glider.be>, Thomas Gleixner <tglx@linutronix.de>, linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, dri-devel@lists.freedesktop.org, nouveau@lists.freedesktop.org, linux-media@vger.kernel.org, linux-wireless@vger.kernel.org, netdev@vger.kernel.org, linux-ntb@googlegroups.com, virtualization@lists.linux-foundation.org, linux-arch@vger.kernel.org
 
-On Sat, Jan 18, 2020 at 9:14 AM Krzysztof Kozlowski <krzk@kernel.org> wrote:
-> Commit 1399c195ef50 ("sh: Switch to new style TMU device") converted
-> tmu3_device platform device to new style of platform data but removed it
-> from sh7786_early_devices array effectively removing last three timers
-> and causing a warning:
->
->     arch/sh/kernel/cpu/sh4a/setup-sh7786.c:243:31:
->         warning: ‘tmu3_device’ defined but not used [-Wunused-variable]
->
-> Fixes: 1399c195ef50 ("sh: Switch to new style TMU device")
-> Signed-off-by: Krzysztof Kozlowski <krzk@kernel.org>
+The ioreadX() helpers have inconsistent interface.  On some architectures
+void *__iomem address argument is a pointer to const, on some not.
 
+Implementations of ioreadX() do not modify the memory under the address
+so they can be converted to a "const" version for const-safety and
+consistency among architectures.
+
+Signed-off-by: Krzysztof Kozlowski <krzk@kernel.org>
 Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Gr{oetje,eeting}s,
+---
 
-                        Geert
+Changes since v1:
+1. Add Geert's review.
+---
+ drivers/net/wireless/realtek/rtl818x/rtl8180/rtl8180.h | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+diff --git a/drivers/net/wireless/realtek/rtl818x/rtl8180/rtl8180.h b/drivers/net/wireless/realtek/rtl818x/rtl8180/rtl8180.h
+index 7948a2da195a..2ff00800d45b 100644
+--- a/drivers/net/wireless/realtek/rtl818x/rtl8180/rtl8180.h
++++ b/drivers/net/wireless/realtek/rtl818x/rtl8180/rtl8180.h
+@@ -150,17 +150,17 @@ void rtl8180_write_phy(struct ieee80211_hw *dev, u8 addr, u32 data);
+ void rtl8180_set_anaparam(struct rtl8180_priv *priv, u32 anaparam);
+ void rtl8180_set_anaparam2(struct rtl8180_priv *priv, u32 anaparam2);
+ 
+-static inline u8 rtl818x_ioread8(struct rtl8180_priv *priv, u8 __iomem *addr)
++static inline u8 rtl818x_ioread8(struct rtl8180_priv *priv, const u8 __iomem *addr)
+ {
+ 	return ioread8(addr);
+ }
+ 
+-static inline u16 rtl818x_ioread16(struct rtl8180_priv *priv, __le16 __iomem *addr)
++static inline u16 rtl818x_ioread16(struct rtl8180_priv *priv, const __le16 __iomem *addr)
+ {
+ 	return ioread16(addr);
+ }
+ 
+-static inline u32 rtl818x_ioread32(struct rtl8180_priv *priv, __le32 __iomem *addr)
++static inline u32 rtl818x_ioread32(struct rtl8180_priv *priv, const __le32 __iomem *addr)
+ {
+ 	return ioread32(addr);
+ }
+-- 
+2.17.1
