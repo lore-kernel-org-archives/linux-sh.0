@@ -1,55 +1,56 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 10 Jan 2020 13:19:22 +0000
-Subject: [PATCH 08/13] pinctrl: sh-pfc: checker: Improve pin group checks
-Message-Id: <20200110131927.1029-9-geert+renesas@glider.be>
+From: Krzysztof Kozlowski <krzk@kernel.org>
+Date: Wed, 08 Jan 2020 20:05:23 +0000
+Subject: [PATCH v2 4/9] virtio: pci: Constify ioreadX() iomem argument (as in generic implementation)
+Message-Id: <20200108200528.4614-5-krzk@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200110131927.1029-1-geert+renesas@glider.be>
-In-Reply-To: <20200110131927.1029-1-geert+renesas@glider.be>
+References: <20200108200528.4614-1-krzk@kernel.org>
+In-Reply-To: <20200108200528.4614-1-krzk@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Walleij <linus.walleij@linaro.org>
-Cc: linux-gpio@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Richard Henderson <rth@twiddle.net>, Ivan Kokshaysky <ink@jurassic.park.msu.ru>, Matt Turner <mattst88@gmail.com>, Alexey Brodkin <abrodkin@synopsys.com>, Vineet Gupta <vgupta@synopsys.com>, "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>, Helge Deller <deller@gmx.de>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Michael Ellerman <mpe@ellerman.id.au>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Dave Airlie <airlied@redhat.com>, David Airlie <airlied@linux.ie>, Daniel Vetter <daniel@ffwll.ch>, Ben Skeggs <bskeggs@redhat.com>, Mauro Carvalho Chehab <mchehab@kernel.org>, Jiri Slaby <jirislaby@gmail.com>, Nick Kossifidis <mickflemm@gmail.com>, Luis Chamberlain <mcgrof@kernel.org>, Kalle Valo <kvalo@codeaurora.org>, "David S. Miller" <davem@davemloft.net>, Dave Jiang <dave.jiang@intel.com>, Jon Mason <jdmason@kudzu.us>, Allen Hubbe <allenbh@gmail.com>, "Michael S. Tsirkin" <mst@redhat.com>, Jason Wang <jasowang@redhat.com>, Arnd Bergmann <arnd@arndb.de>, Krzysztof Kozlowski <krzk@kernel.org>, Geert Uytterhoeven <geert+renesas@glider.be>, Thomas Gleixner <tglx@linutronix.de>, linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, dri-devel@lists.freedesktop.org, nouveau@lists.freedesktop.org, linux-media@vger.kernel.org, linux-wireless@vger.kernel.org, netdev@vger.kernel.org, linux-ntb@googlegroups.com, virtualization@lists.linux-foundation.org, linux-arch@vger.kernel.org
 
-Improve the checks for pin group descriptors:
-  1. Introduce a local variable for the current group, to make the
-     checks easier to read,
-  2. Pin group names must be unique.
+The ioreadX() helpers have inconsistent interface.  On some architectures
+void *__iomem address argument is a pointer to const, on some not.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Implementations of ioreadX() do not modify the memory under the address
+so they can be converted to a "const" version for const-safety and
+consistency among architectures.
+
+Signed-off-by: Krzysztof Kozlowski <krzk@kernel.org>
+Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+
 ---
- drivers/pinctrl/sh-pfc/core.c | 13 ++++++++++---
- 1 file changed, 10 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
-index 54e433149e9bf715..4642959714f97102 100644
---- a/drivers/pinctrl/sh-pfc/core.c
-+++ b/drivers/pinctrl/sh-pfc/core.c
-@@ -916,15 +916,22 @@ static void __init sh_pfc_check_info(const struct sh_pfc_soc_info *info)
- 	}
+Changes since v1:
+1. Add Geert's review.
+---
+ drivers/virtio/virtio_pci_modern.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/virtio/virtio_pci_modern.c b/drivers/virtio/virtio_pci_modern.c
+index 7abcc50838b8..fc58db4ab6c3 100644
+--- a/drivers/virtio/virtio_pci_modern.c
++++ b/drivers/virtio/virtio_pci_modern.c
+@@ -26,16 +26,16 @@
+  * method, i.e. 32-bit accesses for 32-bit fields, 16-bit accesses
+  * for 16-bit fields and 8-bit accesses for 8-bit fields.
+  */
+-static inline u8 vp_ioread8(u8 __iomem *addr)
++static inline u8 vp_ioread8(const u8 __iomem *addr)
+ {
+ 	return ioread8(addr);
+ }
+-static inline u16 vp_ioread16 (__le16 __iomem *addr)
++static inline u16 vp_ioread16 (const __le16 __iomem *addr)
+ {
+ 	return ioread16(addr);
+ }
  
- 	for (i = 0; i < info->nr_groups; i++) {
--		if (!info->groups[i].name) {
-+		const struct sh_pfc_pin_group *group = &info->groups[i];
-+
-+		if (!group->name) {
- 			sh_pfc_err("empty group %u\n", i);
- 			continue;
- 		}
-+		for (j = 0; j < i; j++) {
-+			if (same_name(group->name, info->groups[j].name))
-+				sh_pfc_err("group %s: name conflict\n",
-+					   group->name);
-+		}
- 		if (!refcnts[i])
--			sh_pfc_err("orphan group %s\n", info->groups[i].name);
-+			sh_pfc_err("orphan group %s\n", group->name);
- 		else if (refcnts[i] > 1)
- 			sh_pfc_warn("group %s referenced by %u functions\n",
--				    info->groups[i].name, refcnts[i]);
-+				    group->name, refcnts[i]);
- 	}
- 
- 	kfree(refcnts);
+-static inline u32 vp_ioread32(__le32 __iomem *addr)
++static inline u32 vp_ioread32(const __le32 __iomem *addr)
+ {
+ 	return ioread32(addr);
+ }
 -- 
 2.17.1
