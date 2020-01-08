@@ -1,27 +1,73 @@
-From: Rob Landley <rob@landley.net>
-Date: Wed, 22 Jan 2020 01:51:45 +0000
-Subject: Re: [PATCH resend 0/3] SH: compile fixup patches
-Message-Id: <656cb059-366e-06b1-0d8f-741454c472b8@landley.net>
+From: Krzysztof Kozlowski <krzk@kernel.org>
+Date: Wed, 08 Jan 2020 20:05:22 +0000
+Subject: [PATCH v2 3/9] ntb: intel: Constify ioreadX() iomem argument (as in generic implementation)
+Message-Id: <20200108200528.4614-4-krzk@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87o8uyylat.wl-kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87o8uyylat.wl-kuninori.morimoto.gx@renesas.com>
+References: <20200108200528.4614-1-krzk@kernel.org>
+In-Reply-To: <20200108200528.4614-1-krzk@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Andrew Morton <akpm@linux-foundation.org>
-Cc: Linux-SH <linux-sh@vger.kernel.org>, Linux-Renesas <linux-renesas-soc@vger.kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+To: Richard Henderson <rth@twiddle.net>, Ivan Kokshaysky <ink@jurassic.park.msu.ru>, Matt Turner <mattst88@gmail.com>, Alexey Brodkin <abrodkin@synopsys.com>, Vineet Gupta <vgupta@synopsys.com>, "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>, Helge Deller <deller@gmx.de>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Michael Ellerman <mpe@ellerman.id.au>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Dave Airlie <airlied@redhat.com>, David Airlie <airlied@linux.ie>, Daniel Vetter <daniel@ffwll.ch>, Ben Skeggs <bskeggs@redhat.com>, Mauro Carvalho Chehab <mchehab@kernel.org>, Jiri Slaby <jirislaby@gmail.com>, Nick Kossifidis <mickflemm@gmail.com>, Luis Chamberlain <mcgrof@kernel.org>, Kalle Valo <kvalo@codeaurora.org>, "David S. Miller" <davem@davemloft.net>, Dave Jiang <dave.jiang@intel.com>, Jon Mason <jdmason@kudzu.us>, Allen Hubbe <allenbh@gmail.com>, "Michael S. Tsirkin" <mst@redhat.com>, Jason Wang <jasowang@redhat.com>, Arnd Bergmann <arnd@arndb.de>, Krzysztof Kozlowski <krzk@kernel.org>, Geert Uytterhoeven <geert+renesas@glider.be>, Thomas Gleixner <tglx@linutronix.de>, linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, dri-devel@lists.freedesktop.org, nouveau@lists.freedesktop.org, linux-media@vger.kernel.org, linux-wireless@vger.kernel.org, netdev@vger.kernel.org, linux-ntb@googlegroups.com, virtualization@lists.linux-foundation.org, linux-arch@vger.kernel.org
 
-On 1/19/20 7:21 PM, Kuninori Morimoto wrote:
-> 
-> Hi Andrew
-> Cc: Yoshinori, Rich
-> 
-> I'm posting these patches to SH ML from few month ago,
-> but SH maintainer is not working in these days...
+The ioreadX() helpers have inconsistent interface.  On some architectures
+void *__iomem address argument is a pointer to const, on some not.
 
-There are two, they're still working, I spoke to Rich yesterday.
+Implementations of ioreadX() do not modify the memory under the address
+so they can be converted to a "const" version for const-safety and
+consistency among architectures.
 
-It is entirely possible you've convinced them to spam-block _you_ for repeatedly
-saying that...
+Signed-off-by: Krzysztof Kozlowski <krzk@kernel.org>
+Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Rob
+---
+
+Changes since v1:
+1. Add Geert's review.
+---
+ drivers/ntb/hw/intel/ntb_hw_gen1.c  | 2 +-
+ drivers/ntb/hw/intel/ntb_hw_gen3.h  | 2 +-
+ drivers/ntb/hw/intel/ntb_hw_intel.h | 2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/ntb/hw/intel/ntb_hw_gen1.c b/drivers/ntb/hw/intel/ntb_hw_gen1.c
+index bb57ec239029..9202502a9787 100644
+--- a/drivers/ntb/hw/intel/ntb_hw_gen1.c
++++ b/drivers/ntb/hw/intel/ntb_hw_gen1.c
+@@ -1202,7 +1202,7 @@ int intel_ntb_peer_spad_write(struct ntb_dev *ntb, int pidx, int sidx,
+ 			       ndev->peer_reg->spad);
+ }
+ 
+-static u64 xeon_db_ioread(void __iomem *mmio)
++static u64 xeon_db_ioread(const void __iomem *mmio)
+ {
+ 	return (u64)ioread16(mmio);
+ }
+diff --git a/drivers/ntb/hw/intel/ntb_hw_gen3.h b/drivers/ntb/hw/intel/ntb_hw_gen3.h
+index 75fb86ca27bb..d1455f24ec99 100644
+--- a/drivers/ntb/hw/intel/ntb_hw_gen3.h
++++ b/drivers/ntb/hw/intel/ntb_hw_gen3.h
+@@ -91,7 +91,7 @@
+ #define GEN3_DB_TOTAL_SHIFT		33
+ #define GEN3_SPAD_COUNT			16
+ 
+-static inline u64 gen3_db_ioread(void __iomem *mmio)
++static inline u64 gen3_db_ioread(const void __iomem *mmio)
+ {
+ 	return ioread64(mmio);
+ }
+diff --git a/drivers/ntb/hw/intel/ntb_hw_intel.h b/drivers/ntb/hw/intel/ntb_hw_intel.h
+index e071e28bca3f..3c0a5a2da241 100644
+--- a/drivers/ntb/hw/intel/ntb_hw_intel.h
++++ b/drivers/ntb/hw/intel/ntb_hw_intel.h
+@@ -102,7 +102,7 @@ struct intel_ntb_dev;
+ struct intel_ntb_reg {
+ 	int (*poll_link)(struct intel_ntb_dev *ndev);
+ 	int (*link_is_up)(struct intel_ntb_dev *ndev);
+-	u64 (*db_ioread)(void __iomem *mmio);
++	u64 (*db_ioread)(const void __iomem *mmio);
+ 	void (*db_iowrite)(u64 db_bits, void __iomem *mmio);
+ 	unsigned long			ntb_ctl;
+ 	resource_size_t			db_size;
+-- 
+2.17.1
