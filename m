@@ -1,49 +1,87 @@
-From: David Hildenbrand <david@redhat.com>
-Date: Wed, 08 Jan 2020 12:27:14 +0000
-Subject: Re: [PATCH v2 1/8] mm/memory_hotplug: Drop the flags field from struct mhp_restrictions
-Message-Id: <c3c3c475-f828-13f7-b5c9-f691ef0fe1ff@redhat.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 09 Jan 2020 00:28:59 +0000
+Subject: [PATCH][repost] sh: clkfwk: remove r8/r16/r32
+Message-Id: <87lfqhscac.wl-kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200107205959.7575-1-logang@deltatee.com>
- <20200107205959.7575-2-logang@deltatee.com>
-In-Reply-To: <20200107205959.7575-2-logang@deltatee.com>
+References: <87o8vdsceg.wl-kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87o8vdsceg.wl-kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Logan Gunthorpe <logang@deltatee.com>, linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, platform-driver-x86@vger.kernel.org, linux-mm@kvack.org, Dan Williams <dan.j.williams@intel.com>, Michal Hocko <mhocko@kernel.org>, Andrew Morton <akpm@linux-foundation.org>
-Cc: Eric Badger <ebadger@gigaio.com>, Peter Zijlstra <peterz@infradead.org>, Catalin Marinas <catalin.marinas@arm.com>, Dave Hansen <dave.hansen@linux.intel.com>, Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>, Andy Lutomirski <luto@kernel.org>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Thomas Gleixner <tglx@linutronix.de>, Will Deacon <will@kernel.org>, Christoph Hellwig <hch@lst.de>
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Andrew Morton <akpm@linux-foundation.org>
+Cc: Linux-SH <linux-sh@vger.kernel.org>, Linux-Renesas <linux-renesas-soc@vger.kernel.org>
 
-On 07.01.20 21:59, Logan Gunthorpe wrote:
-> This variable is not used anywhere and should therefore be removed
-> from the structure.
-> 
-> Signed-off-by: Logan Gunthorpe <logang@deltatee.com>
-> ---
->  include/linux/memory_hotplug.h | 2 --
->  1 file changed, 2 deletions(-)
-> 
-> diff --git a/include/linux/memory_hotplug.h b/include/linux/memory_hotplug.h
-> index ba0dca6aac6e..e47a29761088 100644
-> --- a/include/linux/memory_hotplug.h
-> +++ b/include/linux/memory_hotplug.h
-> @@ -55,11 +55,9 @@ enum {
->  
->  /*
->   * Restrictions for the memory hotplug:
-> - * flags:  MHP_ flags
->   * altmap: alternative allocator for memmap array
->   */
->  struct mhp_restrictions {
-> -	unsigned long flags;
->  	struct vmem_altmap *altmap;
->  };
 
-We wanted to use that for the "vmemmap on added memory" config knob. But
-that might still take some time and we might actually realize it using
-the altmap instead (hopefully :) ).
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Reviewed-by: David Hildenbrand <david@redhat.com>
+SH will get below warning
 
+${LINUX}/drivers/sh/clk/cpg.c: In function 'r8':
+${LINUX}/drivers/sh/clk/cpg.c:41:17: warning: passing argument 1 of 'ioread8'
+ discards 'const' qualifier from pointer target type [-Wdiscarded-qualifiers]
+  return ioread8(addr);
+                 ^~~~
+In file included from ${LINUX}/arch/sh/include/asm/io.h:21,
+                 from ${LINUX}/include/linux/io.h:13,
+                 from ${LINUX}/drivers/sh/clk/cpg.c:14:
+${LINUX}/include/asm-generic/iomap.h:29:29: note: expected 'void *' but
+argument is of type 'const void *'
+ extern unsigned int ioread8(void __iomem *);
+                             ^~~~~~~~~~~~~~
+
+We don't need "const" for r8/r16/r32.
+And we don't need r8/r16/r32 themselvs.
+This patch cleanup these.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ drivers/sh/clk/cpg.c | 23 ++++-------------------
+ 1 file changed, 4 insertions(+), 19 deletions(-)
+
+diff --git a/drivers/sh/clk/cpg.c b/drivers/sh/clk/cpg.c
+index eeb028b9..a5cacfe 100644
+--- a/drivers/sh/clk/cpg.c
++++ b/drivers/sh/clk/cpg.c
+@@ -36,36 +36,21 @@ static void sh_clk_write(int value, struct clk *clk)
+ 		iowrite32(value, clk->mapped_reg);
+ }
+ 
+-static unsigned int r8(const void __iomem *addr)
+-{
+-	return ioread8(addr);
+-}
+-
+-static unsigned int r16(const void __iomem *addr)
+-{
+-	return ioread16(addr);
+-}
+-
+-static unsigned int r32(const void __iomem *addr)
+-{
+-	return ioread32(addr);
+-}
+-
+ static int sh_clk_mstp_enable(struct clk *clk)
+ {
+ 	sh_clk_write(sh_clk_read(clk) & ~(1 << clk->enable_bit), clk);
+ 	if (clk->status_reg) {
+-		unsigned int (*read)(const void __iomem *addr);
++		unsigned int (*read)(void __iomem *addr);
+ 		int i;
+ 		void __iomem *mapped_status = (phys_addr_t)clk->status_reg -
+ 			(phys_addr_t)clk->enable_reg + clk->mapped_reg;
+ 
+ 		if (clk->flags & CLK_ENABLE_REG_8BIT)
+-			read = r8;
++			read = ioread8;
+ 		else if (clk->flags & CLK_ENABLE_REG_16BIT)
+-			read = r16;
++			read = ioread16;
+ 		else
+-			read = r32;
++			read = ioread32;
+ 
+ 		for (i = 1000;
+ 		     (read(mapped_status) & (1 << clk->enable_bit)) && i;
 -- 
-Thanks,
-
-David / dhildenb
+2.7.4
