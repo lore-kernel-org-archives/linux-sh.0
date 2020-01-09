@@ -1,87 +1,105 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 09 Jan 2020 00:28:59 +0000
-Subject: [PATCH][repost] sh: clkfwk: remove r8/r16/r32
-Message-Id: <87lfqhscac.wl-kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 09 Jan 2020 08:18:34 +0000
+Subject: Re: [PATCH][repost] sh: clkfwk: remove r8/r16/r32
+Message-Id: <CAMuHMdWo2w=Uf-yKReg+BMjKk4otGqG0DE4urtWhVOTE9+o1kw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87o8vdsceg.wl-kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87o8vdsceg.wl-kuninori.morimoto.gx@renesas.com>
+References: <87o8vdsceg.wl-kuninori.morimoto.gx@renesas.com> <87lfqhscac.wl-kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87lfqhscac.wl-kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Andrew Morton <akpm@linux-foundation.org>
-Cc: Linux-SH <linux-sh@vger.kernel.org>, Linux-Renesas <linux-renesas-soc@vger.kernel.org>
+To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Andrew Morton <akpm@linux-foundation.org>, Linux-SH <linux-sh@vger.kernel.org>, Linux-Renesas <linux-renesas-soc@vger.kernel.org>
 
+Hi Morimoto-san,
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+On Thu, Jan 9, 2020 at 1:29 AM Kuninori Morimoto
+<kuninori.morimoto.gx@renesas.com> wrote:
+> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+>
+> SH will get below warning
+>
+> ${LINUX}/drivers/sh/clk/cpg.c: In function 'r8':
+> ${LINUX}/drivers/sh/clk/cpg.c:41:17: warning: passing argument 1 of 'ioread8'
+>  discards 'const' qualifier from pointer target type [-Wdiscarded-qualifiers]
+>   return ioread8(addr);
+>                  ^~~~
+> In file included from ${LINUX}/arch/sh/include/asm/io.h:21,
+>                  from ${LINUX}/include/linux/io.h:13,
+>                  from ${LINUX}/drivers/sh/clk/cpg.c:14:
+> ${LINUX}/include/asm-generic/iomap.h:29:29: note: expected 'void *' but
+> argument is of type 'const void *'
+>  extern unsigned int ioread8(void __iomem *);
+>                              ^~~~~~~~~~~~~~
+>
+> We don't need "const" for r8/r16/r32.
+> And we don't need r8/r16/r32 themselvs.
+> This patch cleanup these.
+>
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-SH will get below warning
+Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-${LINUX}/drivers/sh/clk/cpg.c: In function 'r8':
-${LINUX}/drivers/sh/clk/cpg.c:41:17: warning: passing argument 1 of 'ioread8'
- discards 'const' qualifier from pointer target type [-Wdiscarded-qualifiers]
-  return ioread8(addr);
-                 ^~~~
-In file included from ${LINUX}/arch/sh/include/asm/io.h:21,
-                 from ${LINUX}/include/linux/io.h:13,
-                 from ${LINUX}/drivers/sh/clk/cpg.c:14:
-${LINUX}/include/asm-generic/iomap.h:29:29: note: expected 'void *' but
-argument is of type 'const void *'
- extern unsigned int ioread8(void __iomem *);
-                             ^~~~~~~~~~~~~~
+One note below.
 
-We don't need "const" for r8/r16/r32.
-And we don't need r8/r16/r32 themselvs.
-This patch cleanup these.
+> --- a/drivers/sh/clk/cpg.c
+> +++ b/drivers/sh/clk/cpg.c
+> @@ -36,36 +36,21 @@ static void sh_clk_write(int value, struct clk *clk)
+>                 iowrite32(value, clk->mapped_reg);
+>  }
+>
+> -static unsigned int r8(const void __iomem *addr)
+> -{
+> -       return ioread8(addr);
+> -}
+> -
+> -static unsigned int r16(const void __iomem *addr)
+> -{
+> -       return ioread16(addr);
+> -}
+> -
+> -static unsigned int r32(const void __iomem *addr)
+> -{
+> -       return ioread32(addr);
+> -}
+> -
+>  static int sh_clk_mstp_enable(struct clk *clk)
+>  {
+>         sh_clk_write(sh_clk_read(clk) & ~(1 << clk->enable_bit), clk);
+>         if (clk->status_reg) {
+> -               unsigned int (*read)(const void __iomem *addr);
+> +               unsigned int (*read)(void __iomem *addr);
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
- drivers/sh/clk/cpg.c | 23 ++++-------------------
- 1 file changed, 4 insertions(+), 19 deletions(-)
+While it is good to get rid of the wrappers, the change above will conflict with
+[PATCH v2 1/9] iomap: Constify ioreadX() iomem argument (as in generic
+implementation)
+(https://lore.kernel.org/lkml/20200108200528.4614-2-krzk@kernel.org/),
+which will add const to ioread*().
 
-diff --git a/drivers/sh/clk/cpg.c b/drivers/sh/clk/cpg.c
-index eeb028b9..a5cacfe 100644
---- a/drivers/sh/clk/cpg.c
-+++ b/drivers/sh/clk/cpg.c
-@@ -36,36 +36,21 @@ static void sh_clk_write(int value, struct clk *clk)
- 		iowrite32(value, clk->mapped_reg);
- }
- 
--static unsigned int r8(const void __iomem *addr)
--{
--	return ioread8(addr);
--}
--
--static unsigned int r16(const void __iomem *addr)
--{
--	return ioread16(addr);
--}
--
--static unsigned int r32(const void __iomem *addr)
--{
--	return ioread32(addr);
--}
--
- static int sh_clk_mstp_enable(struct clk *clk)
- {
- 	sh_clk_write(sh_clk_read(clk) & ~(1 << clk->enable_bit), clk);
- 	if (clk->status_reg) {
--		unsigned int (*read)(const void __iomem *addr);
-+		unsigned int (*read)(void __iomem *addr);
- 		int i;
- 		void __iomem *mapped_status = (phys_addr_t)clk->status_reg -
- 			(phys_addr_t)clk->enable_reg + clk->mapped_reg;
- 
- 		if (clk->flags & CLK_ENABLE_REG_8BIT)
--			read = r8;
-+			read = ioread8;
- 		else if (clk->flags & CLK_ENABLE_REG_16BIT)
--			read = r16;
-+			read = ioread16;
- 		else
--			read = r32;
-+			read = ioread32;
- 
- 		for (i = 1000;
- 		     (read(mapped_status) & (1 << clk->enable_bit)) && i;
+>                 int i;
+>                 void __iomem *mapped_status = (phys_addr_t)clk->status_reg -
+>                         (phys_addr_t)clk->enable_reg + clk->mapped_reg;
+>
+>                 if (clk->flags & CLK_ENABLE_REG_8BIT)
+> -                       read = r8;
+> +                       read = ioread8;
+>                 else if (clk->flags & CLK_ENABLE_REG_16BIT)
+> -                       read = r16;
+> +                       read = ioread16;
+>                 else
+> -                       read = r32;
+> +                       read = ioread32;
+>
+>                 for (i = 1000;
+>                      (read(mapped_status) & (1 << clk->enable_bit)) && i;
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
 -- 
-2.7.4
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
