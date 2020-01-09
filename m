@@ -1,58 +1,79 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 10 Jan 2020 13:19:24 +0000
-Subject: [PATCH 10/13] pinctrl: sh-pfc: checker: Add bias register checks
-Message-Id: <20200110131927.1029-11-geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 09 Jan 2020 00:28:23 +0000
+Subject: [PATCH][repost] sh: Convert ins[bwl]/outs[bwl] macros to inline functions
+Message-Id: <87muaxscbd.wl-kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200110131927.1029-1-geert+renesas@glider.be>
-In-Reply-To: <20200110131927.1029-1-geert+renesas@glider.be>
+References: <87o8vdsceg.wl-kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87o8vdsceg.wl-kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Walleij <linus.walleij@linaro.org>
-Cc: linux-gpio@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Andrew Morton <akpm@linux-foundation.org>
+Cc: Linux-SH <linux-sh@vger.kernel.org>, Linux-Renesas <linux-renesas-soc@vger.kernel.org>
 
-Add checks for bias register descriptors:
-  1. Pull-up and optional pull-down register addresses must be unique,
-  2. Referred pins must exist.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+
+Macro ins[bwl]/outs[bwl] are just calling BUG(), but that results in
+unused variable warnings all over the place.
+This patch convert macro to inline to avoid warning
+
+We will get this kind of warning without this patch
+
+	${LINUX}/drivers/iio/adc/ad7606_par.c:21:23: \
+	  warning: unused variable 'st' [-Wunused-variable]
+	struct ad7606_state *st = iio_priv(indio_dev);
+	^~
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/pinctrl/sh-pfc/core.c | 16 ++++++++++++++++
- 1 file changed, 16 insertions(+)
+ arch/sh/include/asm/io_noioport.h | 34 ++++++++++++++++++++++++++++------
+ 1 file changed, 28 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
-index a1667a29dd69c3ff..b737aa5978b7daa4 100644
---- a/drivers/pinctrl/sh-pfc/core.c
-+++ b/drivers/pinctrl/sh-pfc/core.c
-@@ -888,6 +888,18 @@ static void __init sh_pfc_check_drive_reg(const struct sh_pfc_soc_info *info,
- 	}
- }
+diff --git a/arch/sh/include/asm/io_noioport.h b/arch/sh/include/asm/io_noioport.h
+index 90d6109..f7938fe 100644
+--- a/arch/sh/include/asm/io_noioport.h
++++ b/arch/sh/include/asm/io_noioport.h
+@@ -53,12 +53,34 @@ static inline void ioport_unmap(void __iomem *addr)
+ #define outw_p(x, addr)	outw((x), (addr))
+ #define outl_p(x, addr)	outl((x), (addr))
  
-+static void __init sh_pfc_check_bias_reg(const struct sh_pfc_soc_info *info,
-+					 const struct pinmux_bias_reg *bias)
+-#define insb(a, b, c)	BUG()
+-#define insw(a, b, c)	BUG()
+-#define insl(a, b, c)	BUG()
++static inline void insb(unsigned long port, void *dst, unsigned long count)
 +{
-+	unsigned int i;
-+
-+	sh_pfc_check_reg(info->name, bias->puen);
-+	if (bias->pud)
-+		sh_pfc_check_reg(info->name, bias->pud);
-+	for (i = 0; i < ARRAY_SIZE(bias->pins); i++)
-+		sh_pfc_check_pin(info, bias->puen, bias->pins[i]);
++	BUG();
 +}
 +
- static void __init sh_pfc_check_info(const struct sh_pfc_soc_info *info)
- {
- 	const char *drvname = info->name;
-@@ -984,6 +996,10 @@ static void __init sh_pfc_check_info(const struct sh_pfc_soc_info *info)
- 	/* Check drive strength registers */
- 	for (i = 0; info->drive_regs && info->drive_regs[i].reg; i++)
- 		sh_pfc_check_drive_reg(info, &info->drive_regs[i]);
++static inline void insw(unsigned long port, void *dst, unsigned long count)
++{
++	BUG();
++}
 +
-+	/* Check bias registers */
-+	for (i = 0; info->bias_regs && info->bias_regs[i].puen; i++)
-+		sh_pfc_check_bias_reg(info, &info->bias_regs[i]);
- }
++static inline void insl(unsigned long port, void *dst, unsigned long count)
++{
++	BUG();
++}
  
- static void __init sh_pfc_check_driver(const struct platform_driver *pdrv)
+-#define outsb(a, b, c)	BUG()
+-#define outsw(a, b, c)	BUG()
+-#define outsl(a, b, c)	BUG()
++static inline void outsb(unsigned long port, const void *src, unsigned long count)
++{
++	BUG();
++}
++
++static inline void outsw(unsigned long port, const void *src, unsigned long count)
++{
++	BUG();
++}
++
++static inline void outsl(unsigned long port, const void *src, unsigned long count)
++{
++	BUG();
++}
+ 
+ #endif /* __ASM_SH_IO_NOIOPORT_H */
 -- 
-2.17.1
+2.7.4
