@@ -1,54 +1,80 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 20 Jan 2020 08:28:05 +0000
-Subject: Re: [PATCH resend 2/3] sh: Convert iounmap() macros to inline functions
-Message-Id: <8c6c0d91-4e99-9b85-10a2-c3e89fa25bac@cogentembedded.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 10 Jan 2020 13:19:27 +0000
+Subject: [PATCH 13/13] pinctrl: sh-pfc: checker: Add function GPIO checks
+Message-Id: <20200110131927.1029-14-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87o8uyylat.wl-kuninori.morimoto.gx@renesas.com>
- <87lfq2yl9y.wl-kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87lfq2yl9y.wl-kuninori.morimoto.gx@renesas.com>
+References: <20200110131927.1029-1-geert+renesas@glider.be>
+In-Reply-To: <20200110131927.1029-1-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Andrew Morton <akpm@linux-foundation.org>
-Cc: Linux-SH <linux-sh@vger.kernel.org>, Linux-Renesas <linux-renesas-soc@vger.kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+To: Linus Walleij <linus.walleij@linaro.org>
+Cc: linux-gpio@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Hello!
+Add checks for legacy function GPIO descriptors:
+  1. Function GPIOs must have a name,
+  2. Names must be unique,
+  3. Enum ID values must be unique.
 
-On 20.01.2020 4:22, Kuninori Morimoto wrote:
+This exposes bugs like those fixed in
+  - commit 884caadad128efad ("pinctrl: sh-pfc: sh7734: Fix duplicate
+    TCLK1_B"),
+  - commit 55b1cb1f03ad5eea ("pinctrl: sh-pfc: sh7264: Fix CAN function
+    GPIOs"),
+  - commit 02aeb2f21530c98f ("pinctrl: sh-pfc: sh7269: Fix CAN function
+    GPIOs"),
+  - commit db9c07272c8245a2 ("sh: sh7264: Remove bogus SSU GPIO function
+    definitions"),
+  - commit b4fba344a2930769 ("sh: sh7269: Remove bogus SSU GPIO function
+    definitions").
 
-    Why plurals in the subject if you only convert 1 function?
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ drivers/pinctrl/sh-pfc/core.c | 25 +++++++++++++++++++++++++
+ 1 file changed, 25 insertions(+)
 
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> 
-> Macro iounmap() do nothing, but that results in
-> unused variable warnings all over the place.
-> This patch convert it to inline to avoid warning
-> 
-> We will get this warning without this patch
-> 
-> 	${LINUX}/drivers/thermal/broadcom/ns-thermal.c:78:21: \
-> 	  warning: unused variable 'ns_thermal' [-Wunused-variable]
-> 	struct ns_thermal *ns_thermal = platform_get_drvdata(pdev);
-> 	^~~~~~~~~~
-> 
-> Fixes: 98c90e5ea34e9 ("sh: remove __iounmap")
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> ---
->   arch/sh/include/asm/io.h | 2 +-
->   1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/arch/sh/include/asm/io.h b/arch/sh/include/asm/io.h
-> index 1495489..351a0a9 100644
-> --- a/arch/sh/include/asm/io.h
-> +++ b/arch/sh/include/asm/io.h
-> @@ -328,7 +328,7 @@ __ioremap_mode(phys_addr_t offset, unsigned long size, pgprot_t prot)
->   #else
->   #define __ioremap(offset, size, prot)		((void __iomem *)(offset))
->   #define __ioremap_mode(offset, size, prot)	((void __iomem *)(offset))
-> -#define iounmap(addr)				do { } while (0)
-> +static inline void iounmap(void __iomem *addr) {}
->   #endif /* CONFIG_MMU */
->   
->   static inline void __iomem *ioremap(phys_addr_t offset, unsigned long size)
-
-MBR, Sergei
+diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
+index 34d3d210c7347336..5343729574849531 100644
+--- a/drivers/pinctrl/sh-pfc/core.c
++++ b/drivers/pinctrl/sh-pfc/core.c
+@@ -802,6 +802,13 @@ static int __init __sh_pfc_check_enum(const char *drvname, u16 enum_id)
+ 	return 0;
+ }
+ 
++static void __init sh_pfc_check_enum(const char *drvname, const char *name,
++				     u16 enum_id)
++{
++	if (__sh_pfc_check_enum(drvname, enum_id))
++		sh_pfc_err("%s enum_id %u conflict\n", name, enum_id);
++}
++
+ static void __init sh_pfc_check_reg_enums(const char *drvname, u32 reg,
+ 					  const u16 *enums, unsigned int n)
+ {
+@@ -1012,6 +1019,24 @@ static void __init sh_pfc_check_info(const struct sh_pfc_soc_info *info)
+ 				       info->data_regs[i].enum_ids,
+ 				       info->data_regs[i].reg_width);
+ 	}
++
++#ifdef CONFIG_PINCTRL_SH_FUNC_GPIO
++	/* Check function GPIOs */
++	for (i = 0; i < info->nr_func_gpios; i++) {
++		const struct pinmux_func *func = &info->func_gpios[i];
++
++		if (!func->name) {
++			sh_pfc_err("empty function gpio %u\n", i);
++			continue;
++		}
++		for (j = 0; j < i; j++) {
++			if (same_name(func->name, info->func_gpios[j].name))
++				sh_pfc_err("func_gpio %s: name conflict\n",
++					   func->name);
++		}
++		sh_pfc_check_enum(drvname, func->name, func->enum_id);
++	}
++#endif
+ }
+ 
+ static void __init sh_pfc_check_driver(const struct platform_driver *pdrv)
+-- 
+2.17.1
