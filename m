@@ -1,40 +1,95 @@
-From: Krzysztof Kozlowski <krzk@kernel.org>
-Date: Tue, 07 Jan 2020 16:53:08 +0000
-Subject: [RFT 09/13] media: fsl-viu: Constify ioreadX() iomem argument (as in generic implementation)
-Message-Id: <1578415992-24054-12-git-send-email-krzk@kernel.org>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 10 Jan 2020 13:19:23 +0000
+Subject: [PATCH 09/13] pinctrl: sh-pfc: checker: Add drive strength register checks
+Message-Id: <20200110131927.1029-10-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1578415992-24054-1-git-send-email-krzk@kernel.org>
-In-Reply-To: <1578415992-24054-1-git-send-email-krzk@kernel.org>
+References: <20200110131927.1029-1-geert+renesas@glider.be>
+In-Reply-To: <20200110131927.1029-1-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Richard Henderson <rth@twiddle.net>, Ivan Kokshaysky <ink@jurassic.park.msu.ru>, Matt Turner <mattst88@gmail.com>, Alexey Brodkin <abrodkin@synopsys.com>, Vineet Gupta <vgupta@synopsys.com>, "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>, Helge Deller <deller@gmx.de>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Michael Ellerman <mpe@ellerman.id.au>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Dave Airlie <airlied@redhat.com>, David Airlie <airlied@linux.ie>, Daniel Vetter <daniel@ffwll.ch>, Ben Skeggs <bskeggs@redhat.com>, Mauro Carvalho Chehab <mchehab@kernel.org>, Jiri Slaby <jirislaby@gmail.com>, Nick Kossifidis <mickflemm@gmail.com>, Luis Chamberlain <mcgrof@kernel.org>, Kalle Valo <kvalo@codeaurora.org>, "David S. Miller" <davem@davemloft.net>, Dave Jiang <dave.jiang@intel.com>, Jon Mason <jdmason@kudzu.us>, Allen Hubbe <allenbh@gmail.com>, "Michael S. Tsirkin" <mst@redhat.com>, Jason Wang <jasowang@redhat.com>, Arnd Bergmann <arnd@arndb.de>, Andrew Morton <akpm@linux-foundation.org>, Thomas Gleixner <tglx@linutronix.de>, Geert Uytterhoeven <geert@linux-m68k.org>, linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, dri-devel@lists.freedesktop.org, nouveau@lists.freedesktop.org, linux-media@vger.kernel.org, linux-wireless@vger.kernel.org, netdev@vger.kernel.org, linux-ntb@googlegroups.com, virtualization@lists.linux-foundation.org, linux-arch@vger.kernel.org
-Cc: Krzysztof Kozlowski <krzk@kernel.org>
+To: Linus Walleij <linus.walleij@linaro.org>
+Cc: linux-gpio@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-The ioreadX() helpers have inconsistent interface.  On some architectures
-void *__iomem address argument is a pointer to const, on some not.
+Add checks for drive strength register descriptors:
+  1. Register addresses must be unique,
+  2. Register fields must be non-overlapping,
+  3. Referred pins must exist.
 
-Implementations of ioreadX() do not modify the memory under the address
-so they can be converted to a "const" version for const-safety and
-consistency among architectures.
-
-Signed-off-by: Krzysztof Kozlowski <krzk@kernel.org>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/media/platform/fsl-viu.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ drivers/pinctrl/sh-pfc/core.c | 45 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 45 insertions(+)
 
-diff --git a/drivers/media/platform/fsl-viu.c b/drivers/media/platform/fsl-viu.c
-index 81a8faedbba6..991d9dc82749 100644
---- a/drivers/media/platform/fsl-viu.c
-+++ b/drivers/media/platform/fsl-viu.c
-@@ -34,7 +34,7 @@
- /* Allow building this driver with COMPILE_TEST */
- #if !defined(CONFIG_PPC) && !defined(CONFIG_MICROBLAZE)
- #define out_be32(v, a)	iowrite32be(a, (void __iomem *)v)
--#define in_be32(a)	ioread32be((void __iomem *)a)
-+#define in_be32(a)	ioread32be((const void __iomem *)a)
- #endif
+diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
+index 4642959714f97102..a1667a29dd69c3ff 100644
+--- a/drivers/pinctrl/sh-pfc/core.c
++++ b/drivers/pinctrl/sh-pfc/core.c
+@@ -814,6 +814,23 @@ static void __init sh_pfc_check_reg_enums(const char *drvname, u32 reg,
+ 	}
+ }
  
- #define BUFFER_TIMEOUT		msecs_to_jiffies(500)  /* 0.5 seconds */
++static void __init sh_pfc_check_pin(const struct sh_pfc_soc_info *info,
++				    u32 reg, unsigned int pin)
++{
++	const char *drvname = info->name;
++	unsigned int i;
++
++	if (pin = SH_PFC_PIN_NONE)
++		return;
++
++	for (i = 0; i < info->nr_pins; i++) {
++		if (pin = info->pins[i].pin)
++			return;
++	}
++
++	sh_pfc_err("reg 0x%x: pin %u not found\n", reg, pin);
++}
++
+ static void __init sh_pfc_check_cfg_reg(const char *drvname,
+ 					const struct pinmux_cfg_reg *cfg_reg)
+ {
+@@ -847,6 +864,30 @@ static void __init sh_pfc_check_cfg_reg(const char *drvname,
+ 	sh_pfc_check_reg_enums(drvname, cfg_reg->reg, cfg_reg->enum_ids, n);
+ }
+ 
++static void __init sh_pfc_check_drive_reg(const struct sh_pfc_soc_info *info,
++					  const struct pinmux_drive_reg *drive)
++{
++	const char *drvname = info->name;
++	unsigned long seen = 0, mask;
++	unsigned int i;
++
++	sh_pfc_check_reg(info->name, drive->reg);
++	for (i = 0; i < ARRAY_SIZE(drive->fields); i++) {
++		const struct pinmux_drive_reg_field *field = &drive->fields[i];
++
++		if (!field->pin && !field->offset && !field->size)
++			continue;
++
++		mask = GENMASK(field->offset + field->size, field->offset);
++		if (mask & seen)
++			sh_pfc_err("drive_reg 0x%x: field %u overlap\n",
++				   drive->reg, i);
++		seen |= mask;
++
++		sh_pfc_check_pin(info, drive->reg, field->pin);
++	}
++}
++
+ static void __init sh_pfc_check_info(const struct sh_pfc_soc_info *info)
+ {
+ 	const char *drvname = info->name;
+@@ -939,6 +980,10 @@ static void __init sh_pfc_check_info(const struct sh_pfc_soc_info *info)
+ 	/* Check config register descriptions */
+ 	for (i = 0; info->cfg_regs && info->cfg_regs[i].reg; i++)
+ 		sh_pfc_check_cfg_reg(drvname, &info->cfg_regs[i]);
++
++	/* Check drive strength registers */
++	for (i = 0; info->drive_regs && info->drive_regs[i].reg; i++)
++		sh_pfc_check_drive_reg(info, &info->drive_regs[i]);
+ }
+ 
+ static void __init sh_pfc_check_driver(const struct platform_driver *pdrv)
 -- 
-2.7.4
+2.17.1
