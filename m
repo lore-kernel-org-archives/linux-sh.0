@@ -1,56 +1,72 @@
-From: Krzysztof Kozlowski <krzk@kernel.org>
-Date: Wed, 08 Jan 2020 20:05:23 +0000
-Subject: [PATCH v2 4/9] virtio: pci: Constify ioreadX() iomem argument (as in generic implementation)
-Message-Id: <20200108200528.4614-5-krzk@kernel.org>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 10 Jan 2020 13:19:20 +0000
+Subject: [PATCH 06/13] pinctrl: sh-pfc: checker: Improve pin checks
+Message-Id: <20200110131927.1029-7-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200108200528.4614-1-krzk@kernel.org>
-In-Reply-To: <20200108200528.4614-1-krzk@kernel.org>
+References: <20200110131927.1029-1-geert+renesas@glider.be>
+In-Reply-To: <20200110131927.1029-1-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Richard Henderson <rth@twiddle.net>, Ivan Kokshaysky <ink@jurassic.park.msu.ru>, Matt Turner <mattst88@gmail.com>, Alexey Brodkin <abrodkin@synopsys.com>, Vineet Gupta <vgupta@synopsys.com>, "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>, Helge Deller <deller@gmx.de>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Michael Ellerman <mpe@ellerman.id.au>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Dave Airlie <airlied@redhat.com>, David Airlie <airlied@linux.ie>, Daniel Vetter <daniel@ffwll.ch>, Ben Skeggs <bskeggs@redhat.com>, Mauro Carvalho Chehab <mchehab@kernel.org>, Jiri Slaby <jirislaby@gmail.com>, Nick Kossifidis <mickflemm@gmail.com>, Luis Chamberlain <mcgrof@kernel.org>, Kalle Valo <kvalo@codeaurora.org>, "David S. Miller" <davem@davemloft.net>, Dave Jiang <dave.jiang@intel.com>, Jon Mason <jdmason@kudzu.us>, Allen Hubbe <allenbh@gmail.com>, "Michael S. Tsirkin" <mst@redhat.com>, Jason Wang <jasowang@redhat.com>, Arnd Bergmann <arnd@arndb.de>, Krzysztof Kozlowski <krzk@kernel.org>, Geert Uytterhoeven <geert+renesas@glider.be>, Thomas Gleixner <tglx@linutronix.de>, linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, dri-devel@lists.freedesktop.org, nouveau@lists.freedesktop.org, linux-media@vger.kernel.org, linux-wireless@vger.kernel.org, netdev@vger.kernel.org, linux-ntb@googlegroups.com, virtualization@lists.linux-foundation.org, linux-arch@vger.kernel.org
+To: Linus Walleij <linus.walleij@linaro.org>
+Cc: linux-gpio@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-The ioreadX() helpers have inconsistent interface.  On some architectures
-void *__iomem address argument is a pointer to const, on some not.
+Improve the checks for pin descriptors:
+  1. Introduce local variables for the current pin, to make the checks
+     easier to read,
+  2. Pins must have a name,
+  3. Fix double printing of identical pin names.
 
-Implementations of ioreadX() do not modify the memory under the address
-so they can be converted to a "const" version for const-safety and
-consistency among architectures.
-
-Signed-off-by: Krzysztof Kozlowski <krzk@kernel.org>
-Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
-
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
+ drivers/pinctrl/sh-pfc/core.c | 30 ++++++++++++++++--------------
+ 1 file changed, 16 insertions(+), 14 deletions(-)
 
-Changes since v1:
-1. Add Geert's review.
----
- drivers/virtio/virtio_pci_modern.c | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
-
-diff --git a/drivers/virtio/virtio_pci_modern.c b/drivers/virtio/virtio_pci_modern.c
-index 7abcc50838b8..fc58db4ab6c3 100644
---- a/drivers/virtio/virtio_pci_modern.c
-+++ b/drivers/virtio/virtio_pci_modern.c
-@@ -26,16 +26,16 @@
-  * method, i.e. 32-bit accesses for 32-bit fields, 16-bit accesses
-  * for 16-bit fields and 8-bit accesses for 8-bit fields.
-  */
--static inline u8 vp_ioread8(u8 __iomem *addr)
-+static inline u8 vp_ioread8(const u8 __iomem *addr)
- {
- 	return ioread8(addr);
- }
--static inline u16 vp_ioread16 (__le16 __iomem *addr)
-+static inline u16 vp_ioread16 (const __le16 __iomem *addr)
- {
- 	return ioread16(addr);
- }
+diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
+index f82f483b98a25da5..6ff0f19403dc7813 100644
+--- a/drivers/pinctrl/sh-pfc/core.c
++++ b/drivers/pinctrl/sh-pfc/core.c
+@@ -860,25 +860,27 @@ static void __init sh_pfc_check_info(const struct sh_pfc_soc_info *info)
  
--static inline u32 vp_ioread32(__le32 __iomem *addr)
-+static inline u32 vp_ioread32(const __le32 __iomem *addr)
- {
- 	return ioread32(addr);
- }
+ 	/* Check pins */
+ 	for (i = 0; i < info->nr_pins; i++) {
++		const struct sh_pfc_pin *pin = &info->pins[i];
++
++		if (!pin->name) {
++			sh_pfc_err("empty pin %u\n", i);
++			continue;
++		}
+ 		for (j = 0; j < i; j++) {
+-			if (same_name(info->pins[i].name, info->pins[j].name))
+-				sh_pfc_err("pin %s/%s: name conflict\n",
+-					   info->pins[i].name,
+-					   info->pins[j].name);
++			const struct sh_pfc_pin *pin2 = &info->pins[j];
++
++			if (same_name(pin->name, pin2->name))
++				sh_pfc_err("pin %s: name conflict\n",
++					   pin->name);
+ 
+-			if (info->pins[i].pin != (u16)-1 &&
+-			    info->pins[i].pin = info->pins[j].pin)
++			if (pin->pin != (u16)-1 && pin->pin = pin2->pin)
+ 				sh_pfc_err("pin %s/%s: pin %u conflict\n",
+-					   info->pins[i].name,
+-					   info->pins[j].name,
+-					   info->pins[i].pin);
++					   pin->name, pin2->name, pin->pin);
+ 
+-			if (info->pins[i].enum_id &&
+-			    info->pins[i].enum_id = info->pins[j].enum_id)
++			if (pin->enum_id && pin->enum_id = pin2->enum_id)
+ 				sh_pfc_err("pin %s/%s: enum_id %u conflict\n",
+-					   info->pins[i].name,
+-					   info->pins[j].name,
+-					   info->pins[i].enum_id);
++					   pin->name, pin2->name,
++					   pin->enum_id);
+ 		}
+ 	}
+ 
 -- 
 2.17.1
