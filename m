@@ -1,72 +1,60 @@
-From: Christophe Leroy <christophe.leroy@c-s.fr>
-Date: Wed, 08 Jan 2020 08:48:46 +0000
-Subject: Re: [RFT 00/13] iomap: Constify ioreadX() iomem argument
-Message-Id: <00a43e5c-0708-d49a-9cc4-eb2ce8b4cf99@c-s.fr>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 10 Jan 2020 13:19:14 +0000
+Subject: [PATCH 00/13] pinctrl: sh-pfc: checker: Various improvements
+Message-Id: <20200110131927.1029-1-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1578415992-24054-1-git-send-email-krzk@kernel.org>
- <CAMuHMdW4ek0OYQDrrbcpZjNUTTP04nSbwkmiZvBmKcU=PQM9qA@mail.gmail.com>
- <CAMuHMdUBmYtJKtSYzS_5u67hVZOqcKSgFY1rDGme6gLNRBJ_gA@mail.gmail.com>
- <CAJKOXPfq9vS4kSyx1jOPHBvi9_HjviRv0LU2A8ZwdmqgUuebHQ@mail.gmail.com>
- <2355489c-a207-1927-54cf-85c04b62f18f@c-s.fr>
- <CAMuHMdV=-m-eN4rOa=XQhk2oBDZZwgXXMU6RMVQRVsc6ALyeoA@mail.gmail.com>
-In-Reply-To: <CAMuHMdV=-m-eN4rOa=XQhk2oBDZZwgXXMU6RMVQRVsc6ALyeoA@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Rich Felker <dalias@libc.org>, Jiri Slaby <jirislaby@gmail.com>, "Michael S. Tsirkin" <mst@redhat.com>, David Airlie <airlied@linux.ie>, nouveau@lists.freedesktop.org, Jason Wang <jasowang@redhat.com>, DRI Development <dri-devel@lists.freedesktop.org>, virtualization@lists.linux-foundation.org, "James E.J. Bottomley" <James.Bottomley@hansenpartnership.com>, Paul Mackerras <paulus@samba.org>, Linux-Arch <linux-arch@vger.kernel.org>, Dave Jiang <dave.jiang@intel.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Helge Deller <deller@gmx.de>, Linux-sh list <linux-sh@vger.kernel.org>, Alexey Brodkin <abrodkin@synopsys.com>, Krzysztof Kozlowski <krzk@kernel.org>, Ben Skeggs <bskeggs@redhat.com>, Dave Airlie <airlied@redhat.com>, Matt Turner <mattst88@gmail.com>, arcml <linux-snps-arc@lists.infradead.org>, Nick Kossifidis <mickflemm@gmail.com>, Allen Hubbe <allenbh@gmail.com>, Arnd Bergmann <arnd@arndb.de>, Jon Mason <jdmason@kudzu.us>, Ivan Kokshaysky <ink@jurassic.park.msu.ru>, Thomas Gleixner <tglx@linutronix.de>, Mauro Carvalho Chehab <mchehab@kernel.org>, Kalle Valo <kvalo@codeaurora.org>, Richard Henderson <rth@twiddle.net>, Parisc List <linux-parisc@vger.kernel.org>, netdev <netdev@vger.kernel.org>, linux-wireless <linux-wireless@vger.kernel.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Luis Chamberlain <mcgrof@kernel.org>, Vineet Gupta <vgupta@synopsys.com>, alpha <linux-alpha@vger.kernel.org>, linux-ntb@googlegroups.com, Andrew Morton <akpm@linux-foundation.org>, Linux Media Mailing List <linux-media@vger.kernel.org>, linuxppc-dev <linuxppc-dev@lists.ozlabs.org>, "David S. Miller" <davem@davemloft.net>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Linus Walleij <linus.walleij@linaro.org>
+Cc: linux-gpio@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Hi Geert,
+	Hi all,
 
-Le 08/01/2020 à 09:43, Geert Uytterhoeven a écrit :
-> Hi Christophe,
-> 
-> On Wed, Jan 8, 2020 at 9:35 AM Christophe Leroy <christophe.leroy@c-s.fr> wrote:
->> Le 08/01/2020 à 09:18, Krzysztof Kozlowski a écrit :
->>> On Wed, 8 Jan 2020 at 09:13, Geert Uytterhoeven <geert@linux-m68k.org> wrote:
->>>> On Wed, Jan 8, 2020 at 9:07 AM Geert Uytterhoeven <geert@linux-m68k.org> wrote:
->>>>> On Tue, Jan 7, 2020 at 5:53 PM Krzysztof Kozlowski <krzk@kernel.org> wrote:
->>>>>> The ioread8/16/32() and others have inconsistent interface among the
->>>>>> architectures: some taking address as const, some not.
->>>>>>
->>>>>> It seems there is nothing really stopping all of them to take
->>>>>> pointer to const.
->>>>>
->>>>> Shouldn't all of them take const volatile __iomem pointers?
->>>>> It seems the "volatile" is missing from all but the implementations in
->>>>> include/asm-generic/io.h.
->>>>
->>>> As my "volatile" comment applies to iowrite*(), too, probably that should be
->>>> done in a separate patch.
->>>>
->>>> Hence with patches 1-5 squashed, and for patches 11-13:
->>>> Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
->>>
->>> I'll add to this one also changes to ioreadX_rep() and add another
->>> patch for volatile for reads and writes. I guess your review will be
->>> appreciated once more because of ioreadX_rep()
->>
->> volatile should really only be used where deemed necessary:
->>
->> https://www.kernel.org/doc/html/latest/process/volatile-considered-harmful.html
->>
->> It is said: " ...  accessor functions might use volatile on
->> architectures where direct I/O memory access does work. Essentially,
->> each accessor call becomes a little critical section on its own and
->> ensures that the access happens as expected by the programmer."
-> 
-> That is exactly the use case here: all above are accessor functions.
-> 
-> Why would ioreadX() not need volatile, while readY() does?
-> 
+This patch series contains various improvements for the builtin pin
+control table runtime checks of the Renesas Pin Function Controller
+driver.  These checks are enabled with CONFIG_DEBUG_PINCTRL=y, which can
+be combined with CONFIG_COMPILE_TEST=y to increase coverage to all
+Renesas ARM and SuperH SoCs..
 
-My point was: it might be necessary for some arches and not for others.
+Note that all issues detected by this have already been fixed in "[PATCH
+0/6] pinctrl: sh-pfc: More miscellenaous fixes"[1], and are now part of
+linux-next.
 
-And as pointed by Arnd, the volatile is really only necessary for the 
-dereference itself, should the arch use dereferencing.
+I plan to queue this in sh-pfc-for-v5.7.
 
-So I guess the best would be to go in the other direction: remove 
-volatile keyword wherever possible instead of adding it where it is not 
-needed.
+Thanks for your comments!
 
-Christophe
+[1] https://lore.kernel.org/linux-renesas-soc/20191218194812.12741-1-geert+renesas@glider.be/
+
+Geert Uytterhoeven (13):
+  pinctrl: sh-pfc: checker: Move data before code
+  pinctrl: sh-pfc: checker: Add helpers for reporting
+  pinctrl: sh-pfc: checker: Add helper for safe name comparison
+  pinctrl: sh-pfc: checker: Add check for config register conflicts
+  pinctrl: sh-pfc: checker: Add check for enum ID conflicts
+  pinctrl: sh-pfc: checker: Improve pin checks
+  pinctrl: sh-pfc: checker: Improve pin function checks
+  pinctrl: sh-pfc: checker: Improve pin group checks
+  pinctrl: sh-pfc: checker: Add drive strength register checks
+  pinctrl: sh-pfc: checker: Add bias register checks
+  pinctrl: sh-pfc: checker: Add ioctrl register checks
+  pinctrl: sh-pfc: checker: Add data register checks
+  pinctrl: sh-pfc: checker: Add function GPIO checks
+
+ drivers/pinctrl/sh-pfc/core.c | 312 +++++++++++++++++++++++++++-------
+ 1 file changed, 250 insertions(+), 62 deletions(-)
+
+-- 
+2.17.1
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
