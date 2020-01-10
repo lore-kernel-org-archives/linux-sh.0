@@ -1,39 +1,138 @@
-From: Krzysztof Kozlowski <krzk@kernel.org>
-Date: Wed, 08 Jan 2020 20:05:27 +0000
-Subject: [PATCH v2 8/9] media: fsl-viu: Constify ioreadX() iomem argument (as in generic implementation)
-Message-Id: <20200108200528.4614-9-krzk@kernel.org>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 10 Jan 2020 13:19:19 +0000
+Subject: [PATCH 05/13] pinctrl: sh-pfc: checker: Add check for enum ID conflicts
+Message-Id: <20200110131927.1029-6-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200108200528.4614-1-krzk@kernel.org>
-In-Reply-To: <20200108200528.4614-1-krzk@kernel.org>
+References: <20200110131927.1029-1-geert+renesas@glider.be>
+In-Reply-To: <20200110131927.1029-1-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Richard Henderson <rth@twiddle.net>, Ivan Kokshaysky <ink@jurassic.park.msu.ru>, Matt Turner <mattst88@gmail.com>, Alexey Brodkin <abrodkin@synopsys.com>, Vineet Gupta <vgupta@synopsys.com>, "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>, Helge Deller <deller@gmx.de>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Michael Ellerman <mpe@ellerman.id.au>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Dave Airlie <airlied@redhat.com>, David Airlie <airlied@linux.ie>, Daniel Vetter <daniel@ffwll.ch>, Ben Skeggs <bskeggs@redhat.com>, Mauro Carvalho Chehab <mchehab@kernel.org>, Jiri Slaby <jirislaby@gmail.com>, Nick Kossifidis <mickflemm@gmail.com>, Luis Chamberlain <mcgrof@kernel.org>, Kalle Valo <kvalo@codeaurora.org>, "David S. Miller" <davem@davemloft.net>, Dave Jiang <dave.jiang@intel.com>, Jon Mason <jdmason@kudzu.us>, Allen Hubbe <allenbh@gmail.com>, "Michael S. Tsirkin" <mst@redhat.com>, Jason Wang <jasowang@redhat.com>, Arnd Bergmann <arnd@arndb.de>, Krzysztof Kozlowski <krzk@kernel.org>, Geert Uytterhoeven <geert+renesas@glider.be>, Thomas Gleixner <tglx@linutronix.de>, linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, dri-devel@lists.freedesktop.org, nouveau@lists.freedesktop.org, linux-media@vger.kernel.org, linux-wireless@vger.kernel.org, netdev@vger.kernel.org, linux-ntb@googlegroups.com, virtualization@lists.linux-foundation.org, linux-arch@vger.kernel.org
+To: Linus Walleij <linus.walleij@linaro.org>
+Cc: linux-gpio@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-The ioreadX() helpers have inconsistent interface.  On some architectures
-void *__iomem address argument is a pointer to const, on some not.
+Add a helper to verify that enum IDs are unique, and use it to validate
+the enum ID arrays in config register descriptors.
 
-Implementations of ioreadX() do not modify the memory under the address
-so they can be converted to a "const" version for const-safety and
-consistency among architectures.
+This exposes bugs like those fixed in:
+  - commit 805f635703b2562b ("pinctrl: sh-pfc: r8a7778: Fix duplicate
+    SDSELF_B and SD1_CLK_B"),
+  - commit 884caadad128efad ("pinctrl: sh-pfc: sh7734: Fix duplicate
+    TCLK1_B"),
+  - commit 2a069a92811fb35b ("pinctrl: sh-pfc: sh7264: Fix Port K I/O
+    Register 0 definition").
 
-Signed-off-by: Krzysztof Kozlowski <krzk@kernel.org>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/media/platform/fsl-viu.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ drivers/pinctrl/sh-pfc/core.c | 49 +++++++++++++++++++++++++++++++++--
+ 1 file changed, 47 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/media/platform/fsl-viu.c b/drivers/media/platform/fsl-viu.c
-index 81a8faedbba6..991d9dc82749 100644
---- a/drivers/media/platform/fsl-viu.c
-+++ b/drivers/media/platform/fsl-viu.c
-@@ -34,7 +34,7 @@
- /* Allow building this driver with COMPILE_TEST */
- #if !defined(CONFIG_PPC) && !defined(CONFIG_MICROBLAZE)
- #define out_be32(v, a)	iowrite32be(a, (void __iomem *)v)
--#define in_be32(a)	ioread32be((void __iomem *)a)
-+#define in_be32(a)	ioread32be((const void __iomem *)a)
- #endif
+diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
+index 2edf6efe8dfe3fdf..f82f483b98a25da5 100644
+--- a/drivers/pinctrl/sh-pfc/core.c
++++ b/drivers/pinctrl/sh-pfc/core.c
+@@ -727,11 +727,14 @@ static int sh_pfc_suspend_init(struct sh_pfc *pfc) { return 0; }
  
- #define BUFFER_TIMEOUT		msecs_to_jiffies(500)  /* 0.5 seconds */
+ #ifdef DEBUG
+ #define SH_PFC_MAX_REGS		300
++#define SH_PFC_MAX_ENUMS	3000
+ 
+ static unsigned int sh_pfc_errors __initdata = 0;
+ static unsigned int sh_pfc_warnings __initdata = 0;
+ static u32 *sh_pfc_regs __initdata = NULL;
+ static u32 sh_pfc_num_regs __initdata = 0;
++static u16 *sh_pfc_enums __initdata = NULL;
++static u32 sh_pfc_num_enums __initdata = 0;
+ 
+ #define sh_pfc_err(fmt, ...)					 \
+ 	do {							 \
+@@ -781,6 +784,36 @@ static void __init sh_pfc_check_reg(const char *drvname, u32 reg)
+ 	sh_pfc_regs[sh_pfc_num_regs++] = reg;
+ }
+ 
++static int __init __sh_pfc_check_enum(const char *drvname, u16 enum_id)
++{
++	unsigned int i;
++
++	for (i = 0; i < sh_pfc_num_enums; i++) {
++		if (enum_id = sh_pfc_enums[i])
++			return -EINVAL;
++	}
++
++	if (sh_pfc_num_enums = SH_PFC_MAX_ENUMS) {
++		pr_warn_once("%s: Please increase SH_PFC_MAX_ENUMS\n", drvname);
++		return 0;
++	}
++
++	sh_pfc_enums[sh_pfc_num_enums++] = enum_id;
++	return 0;
++}
++
++static void __init sh_pfc_check_reg_enums(const char *drvname, u32 reg,
++					  const u16 *enums, unsigned int n)
++{
++	unsigned int i;
++
++	for (i = 0; i < n; i++) {
++		if (enums[i] && __sh_pfc_check_enum(drvname, enums[i]))
++			sh_pfc_err("reg 0x%x enum_id %u conflict\n", reg,
++				   enums[i]);
++	}
++}
++
+ static void __init sh_pfc_check_cfg_reg(const char *drvname,
+ 					const struct pinmux_cfg_reg *cfg_reg)
+ {
+@@ -789,8 +822,9 @@ static void __init sh_pfc_check_cfg_reg(const char *drvname,
+ 	sh_pfc_check_reg(drvname, cfg_reg->reg);
+ 
+ 	if (cfg_reg->field_width) {
+-		/* Checked at build time */
+-		return;
++		n = cfg_reg->reg_width / cfg_reg->field_width;
++		/* Skip field checks (done at build time) */
++		goto check_enum_ids;
+ 	}
+ 
+ 	for (i = 0, n = 0, rw = 0; (fw = cfg_reg->var_field_width[i]); i++) {
+@@ -808,6 +842,9 @@ static void __init sh_pfc_check_cfg_reg(const char *drvname,
+ 	if (n != cfg_reg->nr_enum_ids)
+ 		sh_pfc_err("reg 0x%x: enum_ids[] has %u instead of %u values\n",
+ 			   cfg_reg->reg, cfg_reg->nr_enum_ids, n);
++
++check_enum_ids:
++	sh_pfc_check_reg_enums(drvname, cfg_reg->reg, cfg_reg->enum_ids, n);
+ }
+ 
+ static void __init sh_pfc_check_info(const struct sh_pfc_soc_info *info)
+@@ -819,6 +856,7 @@ static void __init sh_pfc_check_info(const struct sh_pfc_soc_info *info)
+ 
+ 	pr_info("Checking %s\n", drvname);
+ 	sh_pfc_num_regs = 0;
++	sh_pfc_num_enums = 0;
+ 
+ 	/* Check pins */
+ 	for (i = 0; i < info->nr_pins; i++) {
+@@ -898,6 +936,11 @@ static void __init sh_pfc_check_driver(const struct platform_driver *pdrv)
+ 	if (!sh_pfc_regs)
+ 		return;
+ 
++	sh_pfc_enums = kcalloc(SH_PFC_MAX_ENUMS, sizeof(*sh_pfc_enums),
++			      GFP_KERNEL);
++	if (!sh_pfc_enums)
++		goto free_regs;
++
+ 	pr_warn("Checking builtin pinmux tables\n");
+ 
+ 	for (i = 0; pdrv->id_table[i].name[0]; i++)
+@@ -911,6 +954,8 @@ static void __init sh_pfc_check_driver(const struct platform_driver *pdrv)
+ 	pr_warn("Detected %u errors and %u warnings\n", sh_pfc_errors,
+ 		sh_pfc_warnings);
+ 
++	kfree(sh_pfc_enums);
++free_regs:
+ 	kfree(sh_pfc_regs);
+ }
+ 
 -- 
 2.17.1
