@@ -1,7 +1,7 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 10 Jan 2020 13:19:21 +0000
-Subject: [PATCH 07/13] pinctrl: sh-pfc: checker: Improve pin function checks
-Message-Id: <20200110131927.1029-8-geert+renesas@glider.be>
+Date: Fri, 10 Jan 2020 13:19:22 +0000
+Subject: [PATCH 08/13] pinctrl: sh-pfc: checker: Improve pin group checks
+Message-Id: <20200110131927.1029-9-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20200110131927.1029-1-geert+renesas@glider.be>
 In-Reply-To: <20200110131927.1029-1-geert+renesas@glider.be>
@@ -11,46 +11,45 @@ Content-Transfer-Encoding: 7bit
 To: Linus Walleij <linus.walleij@linaro.org>
 Cc: linux-gpio@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Improve the checks for pin function descriptors:
-  1. Merge declaration and assignment of the local variable for the
-     current pin function,
-  2. Pin function names must be unique.
+Improve the checks for pin group descriptors:
+  1. Introduce a local variable for the current group, to make the
+     checks easier to read,
+  2. Pin group names must be unique.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/pinctrl/sh-pfc/core.c | 9 +++++++--
- 1 file changed, 7 insertions(+), 2 deletions(-)
+ drivers/pinctrl/sh-pfc/core.c | 13 ++++++++++---
+ 1 file changed, 10 insertions(+), 3 deletions(-)
 
 diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
-index 6ff0f19403dc7813..54e433149e9bf715 100644
+index 54e433149e9bf715..4642959714f97102 100644
 --- a/drivers/pinctrl/sh-pfc/core.c
 +++ b/drivers/pinctrl/sh-pfc/core.c
-@@ -849,7 +849,6 @@ static void __init sh_pfc_check_cfg_reg(const char *drvname,
+@@ -916,15 +916,22 @@ static void __init sh_pfc_check_info(const struct sh_pfc_soc_info *info)
+ 	}
  
- static void __init sh_pfc_check_info(const struct sh_pfc_soc_info *info)
- {
--	const struct sh_pfc_function *func;
- 	const char *drvname = info->name;
- 	unsigned int *refcnts;
- 	unsigned int i, j, k;
-@@ -890,11 +889,17 @@ static void __init sh_pfc_check_info(const struct sh_pfc_soc_info *info)
- 		return;
- 
- 	for (i = 0; i < info->nr_functions; i++) {
--		func = &info->functions[i];
-+		const struct sh_pfc_function *func = &info->functions[i];
+ 	for (i = 0; i < info->nr_groups; i++) {
+-		if (!info->groups[i].name) {
++		const struct sh_pfc_pin_group *group = &info->groups[i];
 +
- 		if (!func->name) {
- 			sh_pfc_err("empty function %u\n", i);
++		if (!group->name) {
+ 			sh_pfc_err("empty group %u\n", i);
  			continue;
  		}
 +		for (j = 0; j < i; j++) {
-+			if (same_name(func->name, info->functions[j].name))
-+				sh_pfc_err("function %s: name conflict\n",
-+					   func->name);
++			if (same_name(group->name, info->groups[j].name))
++				sh_pfc_err("group %s: name conflict\n",
++					   group->name);
 +		}
- 		for (j = 0; j < func->nr_groups; j++) {
- 			for (k = 0; k < info->nr_groups; k++) {
- 				if (same_name(func->groups[j],
+ 		if (!refcnts[i])
+-			sh_pfc_err("orphan group %s\n", info->groups[i].name);
++			sh_pfc_err("orphan group %s\n", group->name);
+ 		else if (refcnts[i] > 1)
+ 			sh_pfc_warn("group %s referenced by %u functions\n",
+-				    info->groups[i].name, refcnts[i]);
++				    group->name, refcnts[i]);
+ 	}
+ 
+ 	kfree(refcnts);
 -- 
 2.17.1
