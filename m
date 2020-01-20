@@ -1,101 +1,78 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 10 Jan 2020 13:19:18 +0000
-Subject: [PATCH 04/13] pinctrl: sh-pfc: checker: Add check for config register conflicts
-Message-Id: <20200110131927.1029-5-geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 20 Jan 2020 01:22:21 +0000
+Subject: [PATCH resend 3/3] sh: Convert ins[bwl]/outs[bwl] macros to inline functions
+Message-Id: <87k15myl9u.wl-kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200110131927.1029-1-geert+renesas@glider.be>
-In-Reply-To: <20200110131927.1029-1-geert+renesas@glider.be>
+References: <87o8uyylat.wl-kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87o8uyylat.wl-kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Walleij <linus.walleij@linaro.org>
-Cc: linux-gpio@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: Linux-SH <linux-sh@vger.kernel.org>, Linux-Renesas <linux-renesas-soc@vger.kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
 
-Add a helper to verify that register addresses are unique, and use it to
-validate config register descriptors.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Macro ins[bwl]/outs[bwl] are just calling BUG(), but that results in
+unused variable warnings all over the place.
+This patch convert macro to inline to avoid warning
+
+We will get this kind of warning without this patch
+
+	${LINUX}/drivers/iio/adc/ad7606_par.c:21:23: \
+	  warning: unused variable 'st' [-Wunused-variable]
+	struct ad7606_state *st = iio_priv(indio_dev);
+	^~
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/pinctrl/sh-pfc/core.c | 32 ++++++++++++++++++++++++++++++++
- 1 file changed, 32 insertions(+)
+ arch/sh/include/asm/io_noioport.h | 34 ++++++++++++++++++++++++++++------
+ 1 file changed, 28 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
-index fe11841e8ce81dbb..2edf6efe8dfe3fdf 100644
---- a/drivers/pinctrl/sh-pfc/core.c
-+++ b/drivers/pinctrl/sh-pfc/core.c
-@@ -726,8 +726,12 @@ static int sh_pfc_suspend_init(struct sh_pfc *pfc) { return 0; }
- #endif /* CONFIG_PM_SLEEP && CONFIG_ARM_PSCI_FW */
+diff --git a/arch/sh/include/asm/io_noioport.h b/arch/sh/include/asm/io_noioport.h
+index 90d6109..f7938fe 100644
+--- a/arch/sh/include/asm/io_noioport.h
++++ b/arch/sh/include/asm/io_noioport.h
+@@ -53,12 +53,34 @@ static inline void ioport_unmap(void __iomem *addr)
+ #define outw_p(x, addr)	outw((x), (addr))
+ #define outl_p(x, addr)	outl((x), (addr))
  
- #ifdef DEBUG
-+#define SH_PFC_MAX_REGS		300
-+
- static unsigned int sh_pfc_errors __initdata = 0;
- static unsigned int sh_pfc_warnings __initdata = 0;
-+static u32 *sh_pfc_regs __initdata = NULL;
-+static u32 sh_pfc_num_regs __initdata = 0;
- 
- #define sh_pfc_err(fmt, ...)					 \
- 	do {							 \
-@@ -759,11 +763,31 @@ static bool __init same_name(const char *a, const char *b)
- 	return !strcmp(a, b);
- }
- 
-+static void __init sh_pfc_check_reg(const char *drvname, u32 reg)
+-#define insb(a, b, c)	BUG()
+-#define insw(a, b, c)	BUG()
+-#define insl(a, b, c)	BUG()
++static inline void insb(unsigned long port, void *dst, unsigned long count)
 +{
-+	unsigned int i;
-+
-+	for (i = 0; i < sh_pfc_num_regs; i++)
-+		if (reg = sh_pfc_regs[i]) {
-+			sh_pfc_err("reg 0x%x conflict\n", reg);
-+			return;
-+		}
-+
-+	if (sh_pfc_num_regs = SH_PFC_MAX_REGS) {
-+		pr_warn_once("%s: Please increase SH_PFC_MAX_REGS\n", drvname);
-+		return;
-+	}
-+
-+	sh_pfc_regs[sh_pfc_num_regs++] = reg;
++	BUG();
 +}
 +
- static void __init sh_pfc_check_cfg_reg(const char *drvname,
- 					const struct pinmux_cfg_reg *cfg_reg)
- {
- 	unsigned int i, n, rw, fw;
- 
-+	sh_pfc_check_reg(drvname, cfg_reg->reg);
++static inline void insw(unsigned long port, void *dst, unsigned long count)
++{
++	BUG();
++}
 +
- 	if (cfg_reg->field_width) {
- 		/* Checked at build time */
- 		return;
-@@ -794,6 +818,7 @@ static void __init sh_pfc_check_info(const struct sh_pfc_soc_info *info)
- 	unsigned int i, j, k;
++static inline void insl(unsigned long port, void *dst, unsigned long count)
++{
++	BUG();
++}
  
- 	pr_info("Checking %s\n", drvname);
-+	sh_pfc_num_regs = 0;
- 
- 	/* Check pins */
- 	for (i = 0; i < info->nr_pins; i++) {
-@@ -868,6 +893,11 @@ static void __init sh_pfc_check_driver(const struct platform_driver *pdrv)
- {
- 	unsigned int i;
- 
-+	sh_pfc_regs = kcalloc(SH_PFC_MAX_REGS, sizeof(*sh_pfc_regs),
-+			      GFP_KERNEL);
-+	if (!sh_pfc_regs)
-+		return;
+-#define outsb(a, b, c)	BUG()
+-#define outsw(a, b, c)	BUG()
+-#define outsl(a, b, c)	BUG()
++static inline void outsb(unsigned long port, const void *src, unsigned long count)
++{
++	BUG();
++}
 +
- 	pr_warn("Checking builtin pinmux tables\n");
- 
- 	for (i = 0; pdrv->id_table[i].name[0]; i++)
-@@ -880,6 +910,8 @@ static void __init sh_pfc_check_driver(const struct platform_driver *pdrv)
- 
- 	pr_warn("Detected %u errors and %u warnings\n", sh_pfc_errors,
- 		sh_pfc_warnings);
++static inline void outsw(unsigned long port, const void *src, unsigned long count)
++{
++	BUG();
++}
 +
-+	kfree(sh_pfc_regs);
- }
++static inline void outsl(unsigned long port, const void *src, unsigned long count)
++{
++	BUG();
++}
  
- #else /* !DEBUG */
+ #endif /* __ASM_SH_IO_NOIOPORT_H */
 -- 
-2.17.1
+2.7.4
