@@ -1,138 +1,83 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 10 Jan 2020 13:19:19 +0000
-Subject: [PATCH 05/13] pinctrl: sh-pfc: checker: Add check for enum ID conflicts
-Message-Id: <20200110131927.1029-6-geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 20 Jan 2020 01:22:13 +0000
+Subject: [PATCH resend 1/3] sh: Add missing DECLARE_EXPORT() for __ashiftrt_r4_xx
+Message-Id: <87muaiyla3.wl-kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200110131927.1029-1-geert+renesas@glider.be>
-In-Reply-To: <20200110131927.1029-1-geert+renesas@glider.be>
+References: <87o8uyylat.wl-kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87o8uyylat.wl-kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Walleij <linus.walleij@linaro.org>
-Cc: linux-gpio@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: Linux-SH <linux-sh@vger.kernel.org>, Linux-Renesas <linux-renesas-soc@vger.kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
 
-Add a helper to verify that enum IDs are unique, and use it to validate
-the enum ID arrays in config register descriptors.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-This exposes bugs like those fixed in:
-  - commit 805f635703b2562b ("pinctrl: sh-pfc: r8a7778: Fix duplicate
-    SDSELF_B and SD1_CLK_B"),
-  - commit 884caadad128efad ("pinctrl: sh-pfc: sh7734: Fix duplicate
-    TCLK1_B"),
-  - commit 2a069a92811fb35b ("pinctrl: sh-pfc: sh7264: Fix Port K I/O
-    Register 0 definition").
+__ashiftrt_r4_xx might be used from kernel module.
+We need DECLARE_EXPORT() for them, otherwise we will get compile error.
+This patch adds missing DECLARE_EXPORT()
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+ERROR: "__ashiftrt_r4_25" [drivers/iio/pressure/bmp280.ko] undefined!
+ERROR: "__ashiftrt_r4_26" [drivers/iio/dac/ad5764.ko] undefined!
+ERROR: "__ashiftrt_r4_26" [drivers/iio/accel/mma7660.ko] undefined!
+ERROR: "__ashiftrt_r4_25" [drivers/iio/accel/dmard06.ko] undefined!
+ERROR: "__ashiftrt_r4_26" [drivers/iio/accel/bma220_spi.ko] undefined!
+ERROR: "__ashiftrt_r4_25" [drivers/crypto/hisilicon/sec/hisi_sec.ko] undefined!
+ERROR: "__ashiftrt_r4_26" [drivers/rtc/rtc-x1205.ko] undefined!
+ERROR: "__ashiftrt_r4_25" [drivers/rtc/rtc-pcf85063.ko] undefined!
+ERROR: "__ashiftrt_r4_25" [drivers/rtc/rtc-pcf2123.ko] undefined!
+ERROR: "__ashiftrt_r4_25" [drivers/input/tablet/gtco.ko] undefined!
+ERROR: "__ashiftrt_r4_26" [drivers/input/mouse/psmouse.ko] undefined!
+ERROR: "__ashiftrt_r4_28" [drivers/input/mouse/psmouse.ko] undefined!
+ERROR: "__ashiftrt_r4_28" [drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu.ko] undefined!
+ERROR: "__ashiftrt_r4_28" [fs/udf/udf.ko] undefined!
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/pinctrl/sh-pfc/core.c | 49 +++++++++++++++++++++++++++++++++--
- 1 file changed, 47 insertions(+), 2 deletions(-)
+ arch/sh/kernel/sh_ksyms_32.c | 17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
 
-diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
-index 2edf6efe8dfe3fdf..f82f483b98a25da5 100644
---- a/drivers/pinctrl/sh-pfc/core.c
-+++ b/drivers/pinctrl/sh-pfc/core.c
-@@ -727,11 +727,14 @@ static int sh_pfc_suspend_init(struct sh_pfc *pfc) { return 0; }
- 
- #ifdef DEBUG
- #define SH_PFC_MAX_REGS		300
-+#define SH_PFC_MAX_ENUMS	3000
- 
- static unsigned int sh_pfc_errors __initdata = 0;
- static unsigned int sh_pfc_warnings __initdata = 0;
- static u32 *sh_pfc_regs __initdata = NULL;
- static u32 sh_pfc_num_regs __initdata = 0;
-+static u16 *sh_pfc_enums __initdata = NULL;
-+static u32 sh_pfc_num_enums __initdata = 0;
- 
- #define sh_pfc_err(fmt, ...)					 \
- 	do {							 \
-@@ -781,6 +784,36 @@ static void __init sh_pfc_check_reg(const char *drvname, u32 reg)
- 	sh_pfc_regs[sh_pfc_num_regs++] = reg;
- }
- 
-+static int __init __sh_pfc_check_enum(const char *drvname, u16 enum_id)
-+{
-+	unsigned int i;
+diff --git a/arch/sh/kernel/sh_ksyms_32.c b/arch/sh/kernel/sh_ksyms_32.c
+index 2827744..5858936 100644
+--- a/arch/sh/kernel/sh_ksyms_32.c
++++ b/arch/sh/kernel/sh_ksyms_32.c
+@@ -38,6 +38,13 @@ DECLARE_EXPORT(__ashlsi3);
+ DECLARE_EXPORT(__lshrsi3_r0);
+ DECLARE_EXPORT(__ashrsi3_r0);
+ DECLARE_EXPORT(__ashlsi3_r0);
 +
-+	for (i = 0; i < sh_pfc_num_enums; i++) {
-+		if (enum_id = sh_pfc_enums[i])
-+			return -EINVAL;
-+	}
-+
-+	if (sh_pfc_num_enums = SH_PFC_MAX_ENUMS) {
-+		pr_warn_once("%s: Please increase SH_PFC_MAX_ENUMS\n", drvname);
-+		return 0;
-+	}
-+
-+	sh_pfc_enums[sh_pfc_num_enums++] = enum_id;
-+	return 0;
-+}
-+
-+static void __init sh_pfc_check_reg_enums(const char *drvname, u32 reg,
-+					  const u16 *enums, unsigned int n)
-+{
-+	unsigned int i;
-+
-+	for (i = 0; i < n; i++) {
-+		if (enums[i] && __sh_pfc_check_enum(drvname, enums[i]))
-+			sh_pfc_err("reg 0x%x enum_id %u conflict\n", reg,
-+				   enums[i]);
-+	}
-+}
-+
- static void __init sh_pfc_check_cfg_reg(const char *drvname,
- 					const struct pinmux_cfg_reg *cfg_reg)
- {
-@@ -789,8 +822,9 @@ static void __init sh_pfc_check_cfg_reg(const char *drvname,
- 	sh_pfc_check_reg(drvname, cfg_reg->reg);
- 
- 	if (cfg_reg->field_width) {
--		/* Checked at build time */
--		return;
-+		n = cfg_reg->reg_width / cfg_reg->field_width;
-+		/* Skip field checks (done at build time) */
-+		goto check_enum_ids;
- 	}
- 
- 	for (i = 0, n = 0, rw = 0; (fw = cfg_reg->var_field_width[i]); i++) {
-@@ -808,6 +842,9 @@ static void __init sh_pfc_check_cfg_reg(const char *drvname,
- 	if (n != cfg_reg->nr_enum_ids)
- 		sh_pfc_err("reg 0x%x: enum_ids[] has %u instead of %u values\n",
- 			   cfg_reg->reg, cfg_reg->nr_enum_ids, n);
-+
-+check_enum_ids:
-+	sh_pfc_check_reg_enums(drvname, cfg_reg->reg, cfg_reg->enum_ids, n);
- }
- 
- static void __init sh_pfc_check_info(const struct sh_pfc_soc_info *info)
-@@ -819,6 +856,7 @@ static void __init sh_pfc_check_info(const struct sh_pfc_soc_info *info)
- 
- 	pr_info("Checking %s\n", drvname);
- 	sh_pfc_num_regs = 0;
-+	sh_pfc_num_enums = 0;
- 
- 	/* Check pins */
- 	for (i = 0; i < info->nr_pins; i++) {
-@@ -898,6 +936,11 @@ static void __init sh_pfc_check_driver(const struct platform_driver *pdrv)
- 	if (!sh_pfc_regs)
- 		return;
- 
-+	sh_pfc_enums = kcalloc(SH_PFC_MAX_ENUMS, sizeof(*sh_pfc_enums),
-+			      GFP_KERNEL);
-+	if (!sh_pfc_enums)
-+		goto free_regs;
-+
- 	pr_warn("Checking builtin pinmux tables\n");
- 
- 	for (i = 0; pdrv->id_table[i].name[0]; i++)
-@@ -911,6 +954,8 @@ static void __init sh_pfc_check_driver(const struct platform_driver *pdrv)
- 	pr_warn("Detected %u errors and %u warnings\n", sh_pfc_errors,
- 		sh_pfc_warnings);
- 
-+	kfree(sh_pfc_enums);
-+free_regs:
- 	kfree(sh_pfc_regs);
- }
- 
++DECLARE_EXPORT(__ashiftrt_r4_0);
++DECLARE_EXPORT(__ashiftrt_r4_1);
++DECLARE_EXPORT(__ashiftrt_r4_2);
++DECLARE_EXPORT(__ashiftrt_r4_3);
++DECLARE_EXPORT(__ashiftrt_r4_4);
++DECLARE_EXPORT(__ashiftrt_r4_5);
+ DECLARE_EXPORT(__ashiftrt_r4_6);
+ DECLARE_EXPORT(__ashiftrt_r4_7);
+ DECLARE_EXPORT(__ashiftrt_r4_8);
+@@ -48,13 +55,23 @@ DECLARE_EXPORT(__ashiftrt_r4_12);
+ DECLARE_EXPORT(__ashiftrt_r4_13);
+ DECLARE_EXPORT(__ashiftrt_r4_14);
+ DECLARE_EXPORT(__ashiftrt_r4_15);
++DECLARE_EXPORT(__ashiftrt_r4_16);
++DECLARE_EXPORT(__ashiftrt_r4_17);
++DECLARE_EXPORT(__ashiftrt_r4_18);
++DECLARE_EXPORT(__ashiftrt_r4_19);
+ DECLARE_EXPORT(__ashiftrt_r4_20);
+ DECLARE_EXPORT(__ashiftrt_r4_21);
+ DECLARE_EXPORT(__ashiftrt_r4_22);
+ DECLARE_EXPORT(__ashiftrt_r4_23);
+ DECLARE_EXPORT(__ashiftrt_r4_24);
++DECLARE_EXPORT(__ashiftrt_r4_25);
++DECLARE_EXPORT(__ashiftrt_r4_26);
+ DECLARE_EXPORT(__ashiftrt_r4_27);
++DECLARE_EXPORT(__ashiftrt_r4_28);
++DECLARE_EXPORT(__ashiftrt_r4_29);
+ DECLARE_EXPORT(__ashiftrt_r4_30);
++DECLARE_EXPORT(__ashiftrt_r4_31);
++DECLARE_EXPORT(__ashiftrt_r4_32);
+ DECLARE_EXPORT(__movstr);
+ DECLARE_EXPORT(__movstrSI8);
+ DECLARE_EXPORT(__movstrSI12);
 -- 
-2.17.1
+2.7.4
