@@ -1,40 +1,27 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 20 Jan 2020 01:21:46 +0000
-Subject: [PATCH resend 0/3] SH: compile fixup patches
-Message-Id: <87o8uyylat.wl-kuninori.morimoto.gx@renesas.com>
+From: Rob Landley <rob@landley.net>
+Date: Wed, 22 Jan 2020 01:51:45 +0000
+Subject: Re: [PATCH resend 0/3] SH: compile fixup patches
+Message-Id: <656cb059-366e-06b1-0d8f-741454c472b8@landley.net>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87o8uyylat.wl-kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87o8uyylat.wl-kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm@linux-foundation.org>
+To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Andrew Morton <akpm@linux-foundation.org>
 Cc: Linux-SH <linux-sh@vger.kernel.org>, Linux-Renesas <linux-renesas-soc@vger.kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
 
+On 1/19/20 7:21 PM, Kuninori Morimoto wrote:
+> 
+> Hi Andrew
+> Cc: Yoshinori, Rich
+> 
+> I'm posting these patches to SH ML from few month ago,
+> but SH maintainer is not working in these days...
 
-Hi Andrew
-Cc: Yoshinori, Rich
+There are two, they're still working, I spoke to Rich yesterday.
 
-I'm posting these patches to SH ML from few month ago,
-but SH maintainer is not working in these days...
+It is entirely possible you've convinced them to spam-block _you_ for repeatedly
+saying that...
 
-Is it possible to consider about these ?
-SH compile will be fail without these patchese.
-
-I have +1 patch, but will has conflict to Geert's this patch,
-thus, I'm skipping it now.
-
-iomap: Constify ioreadX() iomem argument (as in generic implementation)
-https://lore.kernel.org/lkml/20200108200528.4614-2-krzk@kernel.org/
-
-
-Kuninori Morimoto (3):
-  sh: Add missing DECLARE_EXPORT() for __ashiftrt_r4_xx
-  sh: Convert iounmap() macros to inline functions
-  sh: Convert ins[bwl]/outs[bwl] macros to inline functions
-
- arch/sh/include/asm/io.h          |  2 +-
- arch/sh/include/asm/io_noioport.h | 34 ++++++++++++++++++++++++++++------
- arch/sh/kernel/sh_ksyms_32.c      | 17 +++++++++++++++++
- 3 files changed, 46 insertions(+), 7 deletions(-)
-
--- 
-2.7.4
+Rob
