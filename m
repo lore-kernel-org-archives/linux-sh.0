@@ -1,83 +1,228 @@
-From: Rob Landley <rob@landley.net>
-Date: Tue, 04 Feb 2020 10:18:06 +0000
-Subject: Re: [PATCH 0/3] dmaengine: Stear users towards dma_request_slave_chan()
-Message-Id: <3601f6ef-1666-2fd5-263c-388c0c48db16@landley.net>
+From: Anshuman Khandual <anshuman.khandual@arm.com>
+Date: Sun, 02 Feb 2020 07:30:29 +0000
+Subject: Re: [PATCH V12] mm/debug: Add tests validating architecture page table helpers
+Message-Id: <ad5ad414-3524-2efa-df16-1ee357e6e2e4@arm.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200203101806.2441-1-peter.ujfalusi@ti.com>
- <CAHp75Vf__isc59YBS9=O+9ApSV62XuZ2nBAWKKD_K7i72P-yFg@mail.gmail.com>
- <e47927aa-8d40-aa71-aef4-5f9c4cbbc03a@ti.com>
- <CAHp75Vd1A+8N_RPq3oeoXS19XeFtv7YK69H5XfzLMxWyCHbzBQ@mail.gmail.com>
- <701ab186-c240-3c37-2c0b-8ac195f8073f@ti.com>
- <CAMuHMdUYRvjR5qe5RVzggN+BaHw8ObEtnm8Kdn25XUiv2sJpPg@mail.gmail.com>
- <38f686ae-66fa-0e3a-ec2e-a09fc4054ac4@physik.fu-berlin.de>
- <CAMuHMdXahPt4q7Dd-mQ9RNr7JiCt8PhXeT5U2D+n-ngJmEQMgw@mail.gmail.com>
- <b09ad222-f5b8-af5a-6c2b-2dd6b30f1c73@ti.com>
- <CAMuHMdUYcSPoK8NOSdMzU_Jtg84aPMNKeGnacnF7=aidV4eqvw@mail.gmail.com>
- <64cffbfe-a639-c09d-8aa2-fdda8fad2cf7@landley.net>
- <CAMuHMdVeCaRu=D9stdEuWKpnVm1YBibwuVrxogVx+2RBvOb1tA@mail.gmail.com>
-In-Reply-To: <CAMuHMdVeCaRu=D9stdEuWKpnVm1YBibwuVrxogVx+2RBvOb1tA@mail.gmail.com>
+References: <1580174873-18117-1-git-send-email-anshuman.khandual@arm.com>
+ <68ed6488-aa25-ab41-8da6-f0ddeb15d52b@c-s.fr>
+ <49754f74-53a7-0e4a-bb16-53617f8c902c@arm.com>
+ <473d8198-3ac4-af3b-e2ec-c0698a3565d3@c-s.fr>
+In-Reply-To: <473d8198-3ac4-af3b-e2ec-c0698a3565d3@c-s.fr>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Peter Ujfalusi <peter.ujfalusi@ti.com>, John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, Andy Shevchenko <andy.shevchenko@gmail.com>, Vinod Koul <vkoul@kernel.org>, dmaengine <dmaengine@vger.kernel.org>, Dan Williams <dan.j.williams@intel.com>, Linux-sh list <linux-sh@vger.kernel.org>, Linux-Renesas <linux-renesas-soc@vger.kernel.org>
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: Christophe Leroy <christophe.leroy@c-s.fr>, linux-mm@kvack.org
+Cc: Mark Rutland <mark.rutland@arm.com>, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, James Hogan <jhogan@kernel.org>, Heiko Carstens <heiko.carstens@de.ibm.com>, Michal Hocko <mhocko@kernel.org>, Dave Hansen <dave.hansen@intel.com>, Paul Mackerras <paulus@samba.org>, sparclinux@vger.kernel.org, Thomas Gleixner <tglx@linutronix.de>, linux-s390@vger.kernel.org, Jason Gunthorpe <jgg@ziepe.ca>, Michael Ellerman <mpe@ellerman.id.au>, x86@kernel.org, Russell King - ARM Linux <linux@armlinux.org.uk>, Matthew Wilcox <willy@infradead.org>, Steven Price <Steven.Price@arm.com>, Tetsuo Handa <penguin-kernel@i-love.sakura.ne.jp>, Gerald Schaefer <gerald.schaefer@de.ibm.com>, linux-snps-arc@lists.infradead.org, Ingo Molnar <mingo@kernel.org>, Kees Cook <keescook@chromium.org>, Masahiro Yamada <yamada.masahiro@socionext.com>, Mark Brown <broonie@kernel.org>, "Kirill A . Shutemov" <kirill@shutemov.name>, Dan Williams <dan.j.williams@intel.com>, Vlastimil Babka <vbabka@suse.cz>, linux-arm-kernel@lists.infradead.org, Sri Krishna chowdary <schowdary@nvidia.com>, Ard Biesheuvel <ard.biesheuvel@linaro.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, linux-mips@vger.kernel.org, Ralf Baechle <ralf@linux-mips.org>, linux-kernel@vger.kernel.org, Paul Burton <paul.burton@mips.com>, Mike Rapoport <rppt@linux.vnet.ibm.com>, Vineet Gupta <vgupta@synopsys.com>, Martin Schwidefsky <schwidefsky@de.ibm.com>, Andrew Morton <akpm@linux-foundation.org>, linuxppc-dev@lists.ozlabs.org, "David S. Miller" <davem@davemloft.net>
 
-On 2/4/20 3:27 AM, Geert Uytterhoeven wrote:
-> Hi Rob,
+On 01/30/2020 07:43 PM, Christophe Leroy wrote:
 > 
-> On Tue, Feb 4, 2020 at 10:12 AM Rob Landley <rob@landley.net> wrote:
->> On 2/4/20 2:01 AM, Geert Uytterhoeven wrote:
->>> On Tue, Feb 4, 2020 at 7:52 AM Peter Ujfalusi <peter.ujfalusi@ti.com> wrote:
->>>> On 03/02/2020 22.34, Geert Uytterhoeven wrote:
->>>>> On Mon, Feb 3, 2020 at 9:21 PM John Paul Adrian Glaubitz
->>>>> <glaubitz@physik.fu-berlin.de> wrote:
->>>>>> On 2/3/20 2:32 PM, Geert Uytterhoeven wrote:
->>>>>>> Both rspi and sh-msiof have users on legacy SH (i.e. without DT):
->>>>>>
->>>>>> FWIW, there is a patch set by Yoshinori Sato to add device tree support
->>>>>> for classical SuperH hardware. It was never merged, unfortunately :(.
-
-The problem with converting everything else to j-core has always been regression
-testing. I have 2 pieces of classing sh4 hardware, and one classing sh2 board,
-and none of them are currently on the same continent I am. :)
-
-(I've got 3 different j-core boards, though. And am currently in the same room
-as 2 others. :)
-
->>>>> True.
->>>>>
->>>>>>> Anyone who cares for DMA on SuperH?
->>>>>>
->>>>>> What is DMA used for on SuperH? Wouldn't dropping it cut support for
->>>>>> essential hardware features?
->>>>>
->>>>> It may make a few things slower.
+> 
+> Le 30/01/2020 à 14:04, Anshuman Khandual a écrit :
 >>
->> The j-core stuff has DMA but we haven't hooked it up to dmaengine yet. (It's on
->> the todo list but pretty far down.)
+>> On 01/28/2020 10:35 PM, Christophe Leroy wrote:
+>>>
+>>>
+>>> Le 28/01/2020 à 02:27, Anshuman Khandual a écrit :
+>>>> diff --git a/arch/x86/include/asm/pgtable_64.h b/arch/x86/include/asm/pgtable_64.h
+>>>> index 0b6c4042942a..fb0e76d254b3 100644
+>>>> --- a/arch/x86/include/asm/pgtable_64.h
+>>>> +++ b/arch/x86/include/asm/pgtable_64.h
+>>>> @@ -53,6 +53,12 @@ static inline void sync_initial_page_table(void) { }
+>>>>      struct mm_struct;
+>>>>    +#define mm_p4d_folded mm_p4d_folded
+>>>> +static inline bool mm_p4d_folded(struct mm_struct *mm)
+>>>> +{
+>>>> +    return !pgtable_l5_enabled();
+>>>> +}
+>>>> +
+>>>
+>>> For me this should be part of another patch, it is not directly linked to the tests.
+>>
+>> We did discuss about this earlier and Kirril mentioned its not worth
+>> a separate patch.
+>>
+>> https://lore.kernel.org/linux-arm-kernel/20190913091305.rkds4f3fqv3yjhjy@box/
 > 
-> And would use DT.  Hence the issue is not applicable to j-core.
-
-Indeed.
-
-The last classic sh4 board I used did not have DMA hooked up in Linux, and
-trying to make current kernels work hit the fact that the device tree people
-kept breaking various pre-device tree APIs, and my patches to fix them were met
-with "you should convert everything to device tree rather than fix this obvious
-regression we caused" and thus never went upstream. (Johnson Controls shipped
-them locally and I handed the patches over to the lawyers to do the license
-compliance tarball before I left. And of course I posted the fixes to this list...)
-
-It's nice that at least this time somebody is _asking_ before breaking
-non-device-tree support for stuff that used to work...
-
->> The turtle boards need it USB, ethernet, and sdcard, but Rich Felker hasn't
->> finished the j32 port yet (we just got him the updated docs last month) and the
->> existing implementation is nommu so the things that are using it are reaching
->> around behind the OS's back...
+> For me it would make sense to not mix this patch which implement tests, and changes that are needed for the test to work (or even build) on the different architectures.
 > 
-> Is j32 the (rebranded) j4?
+> But that's up to you.
+> 
+>>
+>>>
+>>>>    void set_pte_vaddr_p4d(p4d_t *p4d_page, unsigned long vaddr, pte_t new_pte);
+>>>>    void set_pte_vaddr_pud(pud_t *pud_page, unsigned long vaddr, pte_t new_pte);
+>>>>    diff --git a/include/asm-generic/pgtable.h b/include/asm-generic/pgtable.h
+>>>> index 798ea36a0549..e0b04787e789 100644
+>>>> --- a/include/asm-generic/pgtable.h
+>>>> +++ b/include/asm-generic/pgtable.h
+>>>> @@ -1208,6 +1208,12 @@ static inline bool arch_has_pfn_modify_check(void)
+>>>>    # define PAGE_KERNEL_EXEC PAGE_KERNEL
+>>>>    #endif
+>>>>    +#ifdef CONFIG_DEBUG_VM_PGTABLE
+>>>
+>>> Not sure it is a good idea to put that in include/asm-generic/pgtable.h
+>>
+>> Logically that is the right place, as it is related to page table but
+>> not something platform related.
+> 
+> I can't see any debug related features in that file.
+> 
+>>
+>>>
+>>> By doing this you are forcing a rebuild of almost all files, whereas only init/main.o and mm/debug_vm_pgtable.o should be rebuilt when activating this config option.
+>>
+>> I agreed but whats the alternative ? We could move these into init/main.c
+>> to make things simpler but will that be a right place, given its related
+>> to generic page table.
+> 
+> What about linux/mmdebug.h instead ? (I have not checked if it would reduce the impact, but that's where things related to CONFIG_DEBUG_VM seems to be).
+> 
+> Otherwise, you can just create new file, for instance <linux/mmdebug-pgtable.h> and include that file only in the init/main.c and mm/debug_vm_pgtable.c
 
-Yes.
+IMHO it might not be wise to add yet another header file for this purpose.
+Instead lets use <linux/mmdebug.h> in line with DEBUG_VM, DEBUG_VM_PGFLAGS,
+DEBUG_VIRTUAL (which is also a stand alone test). A simple grep shows that
+the impact of mmdebug.h would be less than generic pgtable.h header.
 
-Rob
+> 
+> 
+> 
+>>
+>>>
+>>>> +extern void debug_vm_pgtable(void);
+>>>
+>>> Please don't use the 'extern' keyword, it is useless and not to be used for functions declaration.
+>>
+>> Really ? But, there are tons of examples doing the same thing both in
+>> generic and platform code as well.
+> 
+> Yes, but how can we improve if we blindly copy the errors from the past ? Having tons of 'extern' doesn't mean we must add more.
+> 
+> I think checkpatch.pl usually complains when a patch brings a new unreleval extern symbol.
+
+Sure np, will drop it. But checkpatch.pl never complained.
+
+> 
+>>
+>>>
+>>>> +#else
+>>>> +static inline void debug_vm_pgtable(void) { }
+>>>> +#endif
+>>>> +
+>>>>    #endif /* !__ASSEMBLY__ */
+>>>>      #ifndef io_remap_pfn_range
+>>>> diff --git a/init/main.c b/init/main.c
+>>>> index da1bc0b60a7d..5e59e6ac0780 100644
+>>>> --- a/init/main.c
+>>>> +++ b/init/main.c
+>>>> @@ -1197,6 +1197,7 @@ static noinline void __init kernel_init_freeable(void)
+>>>>        sched_init_smp();
+>>>>          page_alloc_init_late();
+>>>> +    debug_vm_pgtable();
+>>>
+>>> Wouldn't it be better to call debug_vm_pgtable() in kernel_init() between the call to async_synchronise_full() and ftrace_free_init_mem() ?
+>>
+>> IIRC, proposed location is the earliest we could call debug_vm_pgtable().
+>> Is there any particular benefit or reason to move it into kernel_init() ?
+> 
+> It would avoid having it lost in the middle of drivers logs, would be close to the end of init, at a place we can't miss it, close to the result of other tests like CONFIG_DEBUG_RODATA_TEST for instance.
+> 
+> At the moment, you have to look for it to be sure the test is done and what the result is.
+
+Sure, will move it.
+
+> 
+>>
+>>>
+>>>>        /* Initialize page ext after all struct pages are initialized. */
+>>>>        page_ext_init();
+>>>>    diff --git a/lib/Kconfig.debug b/lib/Kconfig.debug
+>>>> index 5ffe144c9794..7cceae923c05 100644
+>>>> --- a/lib/Kconfig.debug
+>>>> +++ b/lib/Kconfig.debug
+>>>> @@ -653,6 +653,12 @@ config SCHED_STACK_END_CHECK
+>>>>          data corruption or a sporadic crash at a later stage once the region
+>>>>          is examined. The runtime overhead introduced is minimal.
+>>>>    +config ARCH_HAS_DEBUG_VM_PGTABLE
+>>>> +    bool
+>>>> +    help
+>>>> +      An architecture should select this when it can successfully
+>>>> +      build and run DEBUG_VM_PGTABLE.
+>>>> +
+>>>>    config DEBUG_VM
+>>>>        bool "Debug VM"
+>>>>        depends on DEBUG_KERNEL
+>>>> @@ -688,6 +694,22 @@ config DEBUG_VM_PGFLAGS
+>>>>            If unsure, say N.
+>>>>    +config DEBUG_VM_PGTABLE
+>>>> +    bool "Debug arch page table for semantics compliance"
+>>>> +    depends on MMU
+>>>> +    depends on DEBUG_VM
+>>>
+>>> Does it really need to depend on DEBUG_VM ?
+>>
+>> No. It seemed better to package this test along with DEBUG_VM (although I
+>> dont remember the conversation around it) and hence this dependency.
+> 
+> Yes but it perfectly work as standalone. The more easy it is to activate and the more people will use it. DEBUG_VM obliges to rebuild the kernel entirely and could modify the behaviour. Could the helpers we are testing behave differently when DEBUG_VM is not set ? I think it's good the test things as close as possible to final config.
+
+Makes sense. There is no functional dependency for the individual tests
+here on DEBUG_VM.
+
+> 
+>>
+>>> I think we could make it standalone and 'default y if DEBUG_VM' instead.
+>>
+>> Which will yield the same result like before but in a different way. But
+>> yes, this test could go about either way but unless there is a good enough
+>> reason why change the current one.
+> 
+> I think if we want people to really use it on other architectures it must be possible to activate it without having to modify Kconfig. Otherwise people won't even know the test exists and the architecture fails the test.
+> 
+> The purpose of a test suite is to detect bugs. If you can't run the test until you have fixed the bugs, I guess nobody will ever detect the bugs and they will never be fixed.
+> 
+> So I think:
+> - the test should be 'default y' when ARCH_HAS_DEBUG_VM_PGTABLE is selected
+> - the test should be 'default n' when ARCH_HAS_DEBUG_VM_PGTABLE is not selected, and it should be user selectable if EXPERT is selected.
+> 
+> Something like:
+> 
+> config DEBUG_VM_PGTABLE
+>     bool "Debug arch page table for semantics compliance" if ARCH_HAS_DEBUG_VM_PGTABLE || EXPERT
+>     depends on MMU
+
+(ARCH_HAS_DEBUG_VM_PGTABLE || EXPERT) be moved along side MMU on the same line ?
+
+>     default 'n' if !ARCH_HAS_DEBUG_VM_PGTABLE
+>     default 'y' if DEBUG_VM
+
+This looks good, at least until we get all platforms enabled. Will do all these
+changes along with s390 enablement and re-spin.
+
+> 
+> 
+>>
+>>>
+>>>> +    depends on ARCH_HAS_DEBUG_VM_PGTABLE
+>>>> +    default y
+>>>> +    help
+>>>> +      This option provides a debug method which can be used to test
+>>>> +      architecture page table helper functions on various platforms in
+>>>> +      verifying if they comply with expected generic MM semantics. This
+>>>> +      will help architecture code in making sure that any changes or
+>>>> +      new additions of these helpers still conform to expected
+>>>> +      semantics of the generic MM.
+>>>> +
+>>>> +      If unsure, say N.
+>>>> +
+>>>
+>>> Does it make sense to make it 'default y' and say 'If unsure, say N' ?
+>>
+>> No it does. Not when it defaults 'y' unconditionally. Will drop the last
+>> sentence "If unsure, say N". Nice catch, thank you.
+> 
+> Well I was not asking if 'default y' was making sense but only if 'If unsure say N' was making sense due to the 'default y'. You got it.
+> 
+> Christophe
+> 
+> 
