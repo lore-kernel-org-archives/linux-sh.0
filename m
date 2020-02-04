@@ -1,50 +1,96 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 10 Feb 2020 13:46:39 +0000
-Subject: Re: [PATCH 00/13] pinctrl: sh-pfc: checker: Various improvements
-Message-Id: <CAMuHMdVCwkwobX=LTx3Oz6Jq3orZ9j6VjdfbZTXAREZTWM3Mgw@mail.gmail.com>
+From: Oscar Salvador <osalvador@suse.de>
+Date: Tue, 04 Feb 2020 09:26:23 +0000
+Subject: Re: [PATCH v6 09/10] mm/memory_hotplug: Drop local variables in shrink_zone_span()
+Message-Id: <20200204092623.GD6494@linux>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200110131927.1029-1-geert+renesas@glider.be> <20200110202950.GA695049@oden.dyn.berto.se>
-In-Reply-To: <20200110202950.GA695049@oden.dyn.berto.se>
+References: <20191006085646.5768-1-david@redhat.com>
+ <20191006085646.5768-10-david@redhat.com>
+In-Reply-To: <20191006085646.5768-10-david@redhat.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: =?UTF-8?Q?Niklas_S=C3=B6derlund?= <niklas.soderlund@ragnatech.se>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Linus Walleij <linus.walleij@linaro.org>, "open list:GPIO SUBSYSTEM" <linux-gpio@vger.kernel.org>, Linux-Renesas <linux-renesas-soc@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: David Hildenbrand <david@redhat.com>
+Cc: linux-s390@vger.kernel.org, Michal Hocko <mhocko@suse.com>, linux-ia64@vger.kernel.org, Pavel Tatashin <pasha.tatashin@soleen.com>, linux-sh@vger.kernel.org, x86@kernel.org, linux-kernel@vger.kernel.org, linux-mm@kvack.org, Wei Yang <richardw.yang@linux.intel.com>, Andrew Morton <akpm@linux-foundation.org>, linuxppc-dev@lists.ozlabs.org, Dan Williams <dan.j.williams@intel.com>, linux-arm-kernel@lists.infradead.org
 
-On Fri, Jan 10, 2020 at 9:29 PM Niklas Söderlund
-<niklas.soderlund@ragnatech.se> wrote:
-> Neat series. I always worry when my eyes start to cross each other when
-> looking at the big tables I will make mistakes like this ;-)
->
-> On 2020-01-10 14:19:14 +0100, Geert Uytterhoeven wrote:
-> > This patch series contains various improvements for the builtin pin
-> > control table runtime checks of the Renesas Pin Function Controller
-> > driver.  These checks are enabled with CONFIG_DEBUG_PINCTRL=y, which can
-> > be combined with CONFIG_COMPILE_TEST=y to increase coverage to all
-> > Renesas ARM and SuperH SoCs..
-> >
-> > Note that all issues detected by this have already been fixed in "[PATCH
-> > 0/6] pinctrl: sh-pfc: More miscellenaous fixes"[1], and are now part of
-> > linux-next.
-> >
-> > I plan to queue this in sh-pfc-for-v5.7.
->
-> With the fix you point out yourself in 13/13 for
-> CONFIG_PINCTRL_SH_FUNC_GPIO=n feel free to add
->
-> Reviewed-by: Niklas Söderlund <niklas.soderlund+renesas@ragnatech.se>
->
-> For the whole series.
+On Sun, Oct 06, 2019 at 10:56:45AM +0200, David Hildenbrand wrote:
+> Get rid of the unnecessary local variables.
+> 
+> Cc: Andrew Morton <akpm@linux-foundation.org>
+> Cc: Oscar Salvador <osalvador@suse.de>
+> Cc: David Hildenbrand <david@redhat.com>
+> Cc: Michal Hocko <mhocko@suse.com>
+> Cc: Pavel Tatashin <pasha.tatashin@soleen.com>
+> Cc: Dan Williams <dan.j.williams@intel.com>
+> Cc: Wei Yang <richardw.yang@linux.intel.com>
+> Signed-off-by: David Hildenbrand <david@redhat.com>
+> ---
+>  mm/memory_hotplug.c | 15 ++++++---------
+>  1 file changed, 6 insertions(+), 9 deletions(-)
+> 
+> diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
+> index 8dafa1ba8d9f..843481bd507d 100644
+> --- a/mm/memory_hotplug.c
+> +++ b/mm/memory_hotplug.c
+> @@ -374,14 +374,11 @@ static unsigned long find_biggest_section_pfn(int nid, struct zone *zone,
+>  static void shrink_zone_span(struct zone *zone, unsigned long start_pfn,
+>  			     unsigned long end_pfn)
+>  {
+> -	unsigned long zone_start_pfn = zone->zone_start_pfn;
+> -	unsigned long z = zone_end_pfn(zone); /* zone_end_pfn namespace clash */
+> -	unsigned long zone_end_pfn = z;
+>  	unsigned long pfn;
+>  	int nid = zone_to_nid(zone);
 
-Thanks, queue in sh-pfc-for-v5.7.
+We could also remove the nid, right?
+AFAICS, the nid is only used in find_{smallest/biggest}_section_pfn so we could
+place there as well.
 
-Gr{oetje,eeting}s,
+Anyway, nothing to nit-pick about:
 
-                        Geert
+Reviewed-by: Oscar Salvador <osalvador@suse.de>
+
+>  
+>  	zone_span_writelock(zone);
+> -	if (zone_start_pfn = start_pfn) {
+> +	if (zone->zone_start_pfn = start_pfn) {
+>  		/*
+>  		 * If the section is smallest section in the zone, it need
+>  		 * shrink zone->zone_start_pfn and zone->zone_spanned_pages.
+> @@ -389,25 +386,25 @@ static void shrink_zone_span(struct zone *zone, unsigned long start_pfn,
+>  		 * for shrinking zone.
+>  		 */
+>  		pfn = find_smallest_section_pfn(nid, zone, end_pfn,
+> -						zone_end_pfn);
+> +						zone_end_pfn(zone));
+>  		if (pfn) {
+> +			zone->spanned_pages = zone_end_pfn(zone) - pfn;
+>  			zone->zone_start_pfn = pfn;
+> -			zone->spanned_pages = zone_end_pfn - pfn;
+>  		} else {
+>  			zone->zone_start_pfn = 0;
+>  			zone->spanned_pages = 0;
+>  		}
+> -	} else if (zone_end_pfn = end_pfn) {
+> +	} else if (zone_end_pfn(zone) = end_pfn) {
+>  		/*
+>  		 * If the section is biggest section in the zone, it need
+>  		 * shrink zone->spanned_pages.
+>  		 * In this case, we find second biggest valid mem_section for
+>  		 * shrinking zone.
+>  		 */
+> -		pfn = find_biggest_section_pfn(nid, zone, zone_start_pfn,
+> +		pfn = find_biggest_section_pfn(nid, zone, zone->zone_start_pfn,
+>  					       start_pfn);
+>  		if (pfn)
+> -			zone->spanned_pages = pfn - zone_start_pfn + 1;
+> +			zone->spanned_pages = pfn - zone->zone_start_pfn + 1;
+>  		else {
+>  			zone->zone_start_pfn = 0;
+>  			zone->spanned_pages = 0;
+> -- 
+> 2.21.0
+> 
 
 -- 
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+Oscar Salvador
+SUSE L3
