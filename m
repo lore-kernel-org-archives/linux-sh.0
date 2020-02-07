@@ -1,20 +1,27 @@
-From: Peter Wong <peterwong@bodazone.com>
-Date: Sun, 09 Feb 2020 00:49:07 +0000
-Subject: Investment opportunity
-Message-Id: <16312820.233973.1581209357396.JavaMail.cash@217.130.24.55>
+From: "Mr. Theophilus Odadudu" <cristinamedina0010@gmail.com>
+Date: Fri, 07 Feb 2020 20:44:08 +0000
+Subject: LETTER OF INQUIRY
+Message-Id: <CAPNvSTj-8q7w5QPmnH26+_3xCKjEWyE+9xcb8QyQs9Xie+iYgg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Greetings,
-Please check the attached email for a buisness proposal to explore.
-Looking forward to hearing from you for more details.
-Sincerely: Peter Wong
+Good Day,
 
+I work as a clerk in a Bank here in Nigeria, I have a very
+confidential Business Proposition for you. There is a said amount of
+money floating in the bank unclaimed, belonging to the bank Foreign
+customer who die with his family in the Ethiopian Airline crash of
+March 11, 2019.
 
+I seek your good collaboration to move the fund for our benefit. we
+have agreed that 40% be yours once you help claim.
 
+Do get back to with 1) Your Full Name: (2) Residential Address: (3)
+Phone, Mobile  (4) Scan Copy of Your ID. to apply for claims of the
+funds.
 
-----------------------------------------------------
-This email was sent by the shareware version of Postman Professional.
+Regards
+Theophilus Odadudu
