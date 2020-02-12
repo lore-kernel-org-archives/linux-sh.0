@@ -1,96 +1,35 @@
-From: Mike Rapoport <rppt@kernel.org>
-Date: Sun, 16 Feb 2020 08:18:35 +0000
-Subject: [PATCH v2 05/13] nios2: add support for folded p4d page tables
-Message-Id: <20200216081843.28670-6-rppt@kernel.org>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 12 Feb 2020 08:50:47 +0000
+Subject: [PATCH] sh/intc: Restore devm_ioremap() alignment
+Message-Id: <20200212085047.9783-1-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200216081843.28670-1-rppt@kernel.org>
-In-Reply-To: <20200216081843.28670-1-rppt@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Rich Felker <dalias@libc.org>, linux-ia64@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>, linux-sh@vger.kernel.org, Benjamin Herrenschmidt <benh@kernel.crashing.org>, linux-mm@kvack.org, Paul Mackerras <paulus@samba.org>, linux-hexagon@vger.kernel.org, Will Deacon <will@kernel.org>, kvmarm@lists.cs.columbia.edu, Jonas Bonn <jonas@southpole.se>, linux-arch@vger.kernel.org, Brian Cain <bcain@codeaurora.org>, Marc Zyngier <maz@kernel.org>, Russell King <linux@armlinux.org.uk>, Ley Foon Tan <ley.foon.tan@intel.com>, Mike Rapoport <rppt@linux.ibm.com>, Catalin Marinas <catalin.marinas@arm.com>, uclinux-h8-devel@lists.sourceforge.jp, Fenghua Yu <fenghua.yu@intel.com>, Arnd Bergmann <arnd@arndb.de>, kvm-ppc@vger.kernel.org, Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>, openrisc@lists.librecores.org, Stafford Horne <shorne@gmail.com>, Guan Xuetao <gxt@pku.edu.cn>, linux-arm-kernel@lists.infradead.org, Christophe Leroy <christophe.leroy@c-s.fr>, Tony Luck <tony.luck@intel.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Michael Ellerman <mpe@ellerman.id.au>, nios2-dev@lists.rocketboards.org, Andrew Morton <akpm@linux-foundation.org>, linuxppc-dev@lists.ozlabs.org, Mike Rapoport <rppt@kernel.org>
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+Cc: Christoph Hellwig <hch@lst.de>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Mike Rapoport <rppt@linux.ibm.com>
+Restore alignment of the continuation of the devm_ioremap() call in
+register_intc_controller().
 
-Implement primitives necessary for the 4th level folding, add walks of p4d
-level where appropriate and remove usage of __ARCH_USE_5LEVEL_HACK.
-
-Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
+Fixes: 4bdc0d676a643140 ("remove ioremap_nocache and devm_ioremap_nocache")
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/nios2/include/asm/pgtable.h | 3 +--
- arch/nios2/mm/fault.c            | 9 +++++++--
- arch/nios2/mm/ioremap.c          | 6 +++++-
- 3 files changed, 13 insertions(+), 5 deletions(-)
+ drivers/sh/intc/core.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/nios2/include/asm/pgtable.h b/arch/nios2/include/asm/pgtable.h
-index 99985d8b7166..54305aa09b74 100644
---- a/arch/nios2/include/asm/pgtable.h
-+++ b/arch/nios2/include/asm/pgtable.h
-@@ -22,7 +22,6 @@
- #include <asm/tlbflush.h>
- 
- #include <asm/pgtable-bits.h>
--#define __ARCH_USE_5LEVEL_HACK
- #include <asm-generic/pgtable-nopmd.h>
- 
- #define FIRST_USER_ADDRESS	0UL
-@@ -100,7 +99,7 @@ extern pte_t invalid_pte_table[PAGE_SIZE/sizeof(pte_t)];
-  */
- static inline void set_pmd(pmd_t *pmdptr, pmd_t pmdval)
- {
--	pmdptr->pud.pgd.pgd = pmdval.pud.pgd.pgd;
-+	*pmdptr = pmdval;
- }
- 
- /* to find an entry in a page-table-directory */
-diff --git a/arch/nios2/mm/fault.c b/arch/nios2/mm/fault.c
-index 6a2e716b959f..d3da995665c3 100644
---- a/arch/nios2/mm/fault.c
-+++ b/arch/nios2/mm/fault.c
-@@ -245,6 +245,7 @@ asmlinkage void do_page_fault(struct pt_regs *regs, unsigned long cause,
- 		 */
- 		int offset = pgd_index(address);
- 		pgd_t *pgd, *pgd_k;
-+		p4d_t *p4d, *p4d_k;
- 		pud_t *pud, *pud_k;
- 		pmd_t *pmd, *pmd_k;
- 		pte_t *pte_k;
-@@ -256,8 +257,12 @@ asmlinkage void do_page_fault(struct pt_regs *regs, unsigned long cause,
- 			goto no_context;
- 		set_pgd(pgd, *pgd_k);
- 
--		pud = pud_offset(pgd, address);
--		pud_k = pud_offset(pgd_k, address);
-+		p4d = p4d_offset(pgd, address);
-+		p4d_k = p4d_offset(pgd_k, address);
-+		if (!p4d_present(*p4d_k))
-+			goto no_context;
-+		pud = pud_offset(p4d, address);
-+		pud_k = pud_offset(p4d_k, address);
- 		if (!pud_present(*pud_k))
- 			goto no_context;
- 		pmd = pmd_offset(pud, address);
-diff --git a/arch/nios2/mm/ioremap.c b/arch/nios2/mm/ioremap.c
-index 819bdfcc2e71..fe821efb9a99 100644
---- a/arch/nios2/mm/ioremap.c
-+++ b/arch/nios2/mm/ioremap.c
-@@ -86,11 +86,15 @@ static int remap_area_pages(unsigned long address, unsigned long phys_addr,
- 	if (address >= end)
- 		BUG();
- 	do {
-+		p4d_t *p4d;
- 		pud_t *pud;
- 		pmd_t *pmd;
- 
- 		error = -ENOMEM;
--		pud = pud_alloc(&init_mm, dir, address);
-+		p4d = p4d_alloc(&init_mm, dir, address);
-+		if (!p4d)
-+			break;
-+		pud = pud_alloc(&init_mm, p4d, address);
- 		if (!pud)
- 			break;
- 		pmd = pmd_alloc(&init_mm, pud, address);
+diff --git a/drivers/sh/intc/core.c b/drivers/sh/intc/core.c
+index f8e070d67fa3266d..a14684ffe4c1a8ef 100644
+--- a/drivers/sh/intc/core.c
++++ b/drivers/sh/intc/core.c
+@@ -214,7 +214,7 @@ int __init register_intc_controller(struct intc_desc *desc)
+ 			d->window[k].phys = res->start;
+ 			d->window[k].size = resource_size(res);
+ 			d->window[k].virt = ioremap(res->start,
+-							 resource_size(res));
++						    resource_size(res));
+ 			if (!d->window[k].virt)
+ 				goto err2;
+ 		}
 -- 
-2.24.0
+2.17.1
