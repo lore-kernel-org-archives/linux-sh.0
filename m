@@ -1,34 +1,39 @@
-From: Dan Williams <dan.j.williams@intel.com>
-Date: Sat, 29 Feb 2020 22:37:31 +0000
-Subject: Re: [PATCH v3 3/7] x86/mm: Thread pgprot_t through init_memory_mapping()
-Message-Id: <CAPcyv4ici3h_C_c+9eapcehq+Lg3cabkq3n3XXvbSg=qUrJLgQ@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 12 Feb 2020 10:18:13 +0000
+Subject: [PATCH] sh: boards: Replace <linux/clk-provider.h> by <linux/of_clk.h>
+Message-Id: <20200212101813.9230-1-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200221182503.28317-1-logang@deltatee.com>
- <20200221182503.28317-4-logang@deltatee.com>
-In-Reply-To: <20200221182503.28317-4-logang@deltatee.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Logan Gunthorpe <logang@deltatee.com>
-Cc: X86 ML <x86@kernel.org>, linux-ia64@vger.kernel.org, Linux-sh <linux-sh@vger.kernel.org>, Peter Zijlstra <peterz@infradead.org>, Catalin Marinas <catalin.marinas@arm.com>, Dave Hansen <dave.hansen@linux.intel.com>, platform-driver-x86@vger.kernel.org, Linux MM <linux-mm@kvack.org>, "H. Peter Anvin" <hpa@zytor.com>, Will Deacon <will@kernel.org>, Christoph Hellwig <hch@lst.de>, linux-s390 <linux-s390@vger.kernel.org>, David Hildenbrand <david@redhat.com>, Ingo Molnar <mingo@redhat.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Borislav Petkov <bp@alien8.de>, Andy Lutomirski <luto@kernel.org>, Thomas Gleixner <tglx@linutronix.de>, Michal Hocko <mhocko@kernel.org>, Linux ARM <linux-arm-kernel@lists.infradead.org>, Eric Badger <ebadger@gigaio.com>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Andrew Morton <akpm@linux-foundation.org>, linuxppc-dev <linuxppc-dev@lists.ozlabs.org>
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+Cc: linux-sh@vger.kernel.org, linux-clk@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Fri, Feb 21, 2020 at 10:25 AM Logan Gunthorpe <logang@deltatee.com> wrote:
->
-> In prepartion to support a pgprot_t argument for arch_add_memory().
->
-> It's required to move the prototype of init_memory_mapping() seeing
-> the original location came before the definition of pgprot_t.
->
-> Cc: Thomas Gleixner <tglx@linutronix.de>
-> Cc: Ingo Molnar <mingo@redhat.com>
-> Cc: Borislav Petkov <bp@alien8.de>
-> Cc: "H. Peter Anvin" <hpa@zytor.com>
-> Cc: x86@kernel.org
-> Cc: Dave Hansen <dave.hansen@linux.intel.com>
-> Cc: Andy Lutomirski <luto@kernel.org>
-> Cc: Peter Zijlstra <peterz@infradead.org>
-> Signed-off-by: Logan Gunthorpe <logang@deltatee.com>
+The SuperH/J2 DT platform code is not a clock provider, and just needs
+to call of_clk_init().
 
-Looks good, checked for argument confusion, passes the nvdimm unit tests.
+Hence it can include <linux/of_clk.h> instead of <linux/clk-provider.h>.
 
-Reviewed-by: Dan Williams <dan.j.williams@intel.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/sh/boards/of-generic.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/sh/boards/of-generic.c b/arch/sh/boards/of-generic.c
+index d91065e81a4e5cff..97a536d986a23f91 100644
+--- a/arch/sh/boards/of-generic.c
++++ b/arch/sh/boards/of-generic.c
+@@ -6,10 +6,10 @@
+  */
+ 
+ #include <linux/of.h>
++#include <linux/of_clk.h>
+ #include <linux/of_fdt.h>
+ #include <linux/clocksource.h>
+ #include <linux/irqchip.h>
+-#include <linux/clk-provider.h>
+ #include <asm/machvec.h>
+ #include <asm/rtc.h>
+ 
+-- 
+2.17.1
