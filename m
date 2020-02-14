@@ -1,167 +1,188 @@
-From: Mike Rapoport <rppt@kernel.org>
-Date: Thu, 27 Feb 2020 08:46:08 +0000
-Subject: [PATCH v3 14/14] mm: remove __ARCH_HAS_5LEVEL_HACK and include/asm-generic/5level-fixup.h
-Message-Id: <20200227084608.18223-15-rppt@kernel.org>
+From: Sasha Levin <sashal@kernel.org>
+Date: Fri, 14 Feb 2020 16:20:16 +0000
+Subject: [PATCH AUTOSEL 4.9 076/141] pinctrl: sh-pfc: sh7269: Fix CAN function GPIOs
+Message-Id: <20200214162122.19794-76-sashal@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200227084608.18223-1-rppt@kernel.org>
-In-Reply-To: <20200227084608.18223-1-rppt@kernel.org>
+References: <20200214162122.19794-1-sashal@kernel.org>
+In-Reply-To: <20200214162122.19794-1-sashal@kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Rich Felker <dalias@libc.org>, linux-ia64@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>, linux-sh@vger.kernel.org, Benjamin Herrenschmidt <benh@kernel.crashing.org>, linux-mm@kvack.org, Paul Mackerras <paulus@samba.org>, linux-hexagon@vger.kernel.org, Will Deacon <will@kernel.org>, kvmarm@lists.cs.columbia.edu, Jonas Bonn <jonas@southpole.se>, linux-arch@vger.kernel.org, Brian Cain <bcain@codeaurora.org>, Marc Zyngier <maz@kernel.org>, Russell King <linux@armlinux.org.uk>, Ley Foon Tan <ley.foon.tan@intel.com>, Mike Rapoport <rppt@linux.ibm.com>, Catalin Marinas <catalin.marinas@arm.com>, uclinux-h8-devel@lists.sourceforge.jp, Fenghua Yu <fenghua.yu@intel.com>, Arnd Bergmann <arnd@arndb.de>, kvm-ppc@vger.kernel.org, Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>, openrisc@lists.librecores.org, Stafford Horne <shorne@gmail.com>, Guan Xuetao <gxt@pku.edu.cn>, linux-arm-kernel@lists.infradead.org, Christophe Leroy <christophe.leroy@c-s.fr>, Tony Luck <tony.luck@intel.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Michael Ellerman <mpe@ellerman.id.au>, nios2-dev@lists.rocketboards.org, Andrew Morton <akpm@linux-foundation.org>, linuxppc-dev@lists.ozlabs.org, Mike Rapoport <rppt@kernel.org>
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: linux-kernel@vger.kernel.org, stable@vger.kernel.org
+Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Sasha Levin <sashal@kernel.org>, linux-sh@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-gpio@vger.kernel.org
 
-From: Mike Rapoport <rppt@linux.ibm.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-There are no architectures that use include/asm-generic/5level-fixup.h
-therefore it can be removed along with __ARCH_HAS_5LEVEL_HACK define and
-the code it surrounds
+[ Upstream commit 02aeb2f21530c98fc3ca51028eda742a3fafbd9f ]
 
-Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
+pinmux_func_gpios[] contains a hole due to the missing function GPIO
+definition for the "CTX0&CTX1" signal, which is the logical "AND" of the
+first two CAN outputs.
+
+A closer look reveals other issues:
+  - Some functionality is available on alternative pins, but the
+    PINMUX_DATA() entries is using the wrong marks,
+  - Several configurations are missing.
+
+Fix this by:
+  - Renaming CTX0CTX1CTX2_MARK, CRX0CRX1_PJ22_MARK, and
+    CRX0CRX1CRX2_PJ20_MARK to CTX0_CTX1_CTX2_MARK, CRX0_CRX1_PJ22_MARK,
+    resp. CRX0_CRX1_CRX2_PJ20_MARK for consistency with the
+    corresponding enum IDs,
+  - Adding all missing enum IDs and marks,
+  - Use the right (*_PJ2x) variants for alternative pins,
+  - Adding all missing configurations to pinmux_data[],
+  - Adding all missing function GPIO definitions to pinmux_func_gpios[].
+
+See SH7268 Group, SH7269 Group User’s Manual: Hardware, Rev. 2.00:
+  [1] Table 1.4 List of Pins
+  [2] Figure 23.29 Connection Example when Using Channels 0 and 1 as One
+      Channel (64 Mailboxes × 1 Channel) and Channel 2 as One Channel
+      (32 Mailboxes × 1 Channel),
+  [3] Figure 23.30 Connection Example when Using Channels 0, 1, and 2 as
+      One Channel (96 Mailboxes × 1 Channel),
+  [4] Table 48.3 Multiplexed Pins (Port B),
+  [5] Table 48.4 Multiplexed Pins (Port C),
+  [6] Table 48.10 Multiplexed Pins (Port J),
+  [7] Section 48.2.4 Port B Control Registers 0 to 5 (PBCR0 to PBCR5).
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Link: https://lore.kernel.org/r/20191218194812.12741-5-geert+renesas@glider.be
+Signed-off-by: Sasha Levin <sashal@kernel.org>
 ---
- include/asm-generic/5level-fixup.h | 58 ------------------------------
- include/linux/mm.h                 |  6 ----
- mm/kasan/init.c                    | 11 ------
- mm/memory.c                        |  8 -----
- 4 files changed, 83 deletions(-)
- delete mode 100644 include/asm-generic/5level-fixup.h
+ arch/sh/include/cpu-sh2a/cpu/sh7269.h | 11 ++++++--
+ drivers/pinctrl/sh-pfc/pfc-sh7269.c   | 39 ++++++++++++++++++---------
+ 2 files changed, 36 insertions(+), 14 deletions(-)
 
-diff --git a/include/asm-generic/5level-fixup.h b/include/asm-generic/5level-fixup.h
-deleted file mode 100644
-index 4c74b1c1d13b..000000000000
---- a/include/asm-generic/5level-fixup.h
-+++ /dev/null
-@@ -1,58 +0,0 @@
--/* SPDX-License-Identifier: GPL-2.0 */
--#ifndef _5LEVEL_FIXUP_H
--#define _5LEVEL_FIXUP_H
--
--#define __ARCH_HAS_5LEVEL_HACK
--#define __PAGETABLE_P4D_FOLDED 1
--
--#define P4D_SHIFT			PGDIR_SHIFT
--#define P4D_SIZE			PGDIR_SIZE
--#define P4D_MASK			PGDIR_MASK
--#define MAX_PTRS_PER_P4D		1
--#define PTRS_PER_P4D			1
--
--#define p4d_t				pgd_t
--
--#define pud_alloc(mm, p4d, address) \
--	((unlikely(pgd_none(*(p4d))) && __pud_alloc(mm, p4d, address)) ? \
--		NULL : pud_offset(p4d, address))
--
--#define p4d_alloc(mm, pgd, address)	(pgd)
--#define p4d_offset(pgd, start)		(pgd)
--
--#ifndef __ASSEMBLY__
--static inline int p4d_none(p4d_t p4d)
--{
--	return 0;
--}
--
--static inline int p4d_bad(p4d_t p4d)
--{
--	return 0;
--}
--
--static inline int p4d_present(p4d_t p4d)
--{
--	return 1;
--}
--#endif
--
--#define p4d_ERROR(p4d)			do { } while (0)
--#define p4d_clear(p4d)			pgd_clear(p4d)
--#define p4d_val(p4d)			pgd_val(p4d)
--#define p4d_populate(mm, p4d, pud)	pgd_populate(mm, p4d, pud)
--#define p4d_populate_safe(mm, p4d, pud)	pgd_populate(mm, p4d, pud)
--#define p4d_page(p4d)			pgd_page(p4d)
--#define p4d_page_vaddr(p4d)		pgd_page_vaddr(p4d)
--
--#define __p4d(x)			__pgd(x)
--#define set_p4d(p4dp, p4d)		set_pgd(p4dp, p4d)
--
--#undef p4d_free_tlb
--#define p4d_free_tlb(tlb, x, addr)	do { } while (0)
--#define p4d_free(mm, x)			do { } while (0)
--
--#undef  p4d_addr_end
--#define p4d_addr_end(addr, end)		(end)
--
--#endif
-diff --git a/include/linux/mm.h b/include/linux/mm.h
-index 52269e56c514..69fb46e1d91b 100644
---- a/include/linux/mm.h
-+++ b/include/linux/mm.h
-@@ -1841,11 +1841,6 @@ int __pte_alloc_kernel(pmd_t *pmd);
+diff --git a/arch/sh/include/cpu-sh2a/cpu/sh7269.h b/arch/sh/include/cpu-sh2a/cpu/sh7269.h
+index 2a0ca8780f0d8..e4caddd443daf 100644
+--- a/arch/sh/include/cpu-sh2a/cpu/sh7269.h
++++ b/arch/sh/include/cpu-sh2a/cpu/sh7269.h
+@@ -79,8 +79,15 @@ enum {
+ 	GPIO_FN_WDTOVF,
  
- #if defined(CONFIG_MMU)
+ 	/* CAN */
+-	GPIO_FN_CTX1, GPIO_FN_CRX1, GPIO_FN_CTX0, GPIO_FN_CTX0_CTX1,
+-	GPIO_FN_CRX0, GPIO_FN_CRX0_CRX1, GPIO_FN_CRX0_CRX1_CRX2,
++	GPIO_FN_CTX2, GPIO_FN_CRX2,
++	GPIO_FN_CTX1, GPIO_FN_CRX1,
++	GPIO_FN_CTX0, GPIO_FN_CRX0,
++	GPIO_FN_CTX0_CTX1, GPIO_FN_CRX0_CRX1,
++	GPIO_FN_CTX0_CTX1_CTX2, GPIO_FN_CRX0_CRX1_CRX2,
++	GPIO_FN_CTX2_PJ21, GPIO_FN_CRX2_PJ20,
++	GPIO_FN_CTX1_PJ23, GPIO_FN_CRX1_PJ22,
++	GPIO_FN_CTX0_CTX1_PJ23, GPIO_FN_CRX0_CRX1_PJ22,
++	GPIO_FN_CTX0_CTX1_CTX2_PJ21, GPIO_FN_CRX0_CRX1_CRX2_PJ20,
  
--/*
-- * The following ifdef needed to get the 5level-fixup.h header to work.
-- * Remove it when 5level-fixup.h has been removed.
-- */
--#ifndef __ARCH_HAS_5LEVEL_HACK
- static inline p4d_t *p4d_alloc(struct mm_struct *mm, pgd_t *pgd,
- 		unsigned long address)
- {
-@@ -1859,7 +1854,6 @@ static inline pud_t *pud_alloc(struct mm_struct *mm, p4d_t *p4d,
- 	return (unlikely(p4d_none(*p4d)) && __pud_alloc(mm, p4d, address)) ?
- 		NULL : pud_offset(p4d, address);
- }
--#endif /* !__ARCH_HAS_5LEVEL_HACK */
+ 	/* DMAC */
+ 	GPIO_FN_TEND0, GPIO_FN_DACK0, GPIO_FN_DREQ0,
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7269.c b/drivers/pinctrl/sh-pfc/pfc-sh7269.c
+index cfdb4fc177c3e..3df0c0d139d08 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7269.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7269.c
+@@ -740,13 +740,12 @@ enum {
+ 	CRX0_MARK, CTX0_MARK,
+ 	CRX1_MARK, CTX1_MARK,
+ 	CRX2_MARK, CTX2_MARK,
+-	CRX0_CRX1_MARK,
+-	CRX0_CRX1_CRX2_MARK,
+-	CTX0CTX1CTX2_MARK,
++	CRX0_CRX1_MARK, CTX0_CTX1_MARK,
++	CRX0_CRX1_CRX2_MARK, CTX0_CTX1_CTX2_MARK,
+ 	CRX1_PJ22_MARK, CTX1_PJ23_MARK,
+ 	CRX2_PJ20_MARK, CTX2_PJ21_MARK,
+-	CRX0CRX1_PJ22_MARK,
+-	CRX0CRX1CRX2_PJ20_MARK,
++	CRX0_CRX1_PJ22_MARK, CTX0_CTX1_PJ23_MARK,
++	CRX0_CRX1_CRX2_PJ20_MARK, CTX0_CTX1_CTX2_PJ21_MARK,
  
- static inline pmd_t *pmd_alloc(struct mm_struct *mm, pud_t *pud, unsigned long address)
- {
-diff --git a/mm/kasan/init.c b/mm/kasan/init.c
-index ce45c491ebcd..fe6be0be1f76 100644
---- a/mm/kasan/init.c
-+++ b/mm/kasan/init.c
-@@ -250,20 +250,9 @@ int __ref kasan_populate_early_shadow(const void *shadow_start,
- 			 * 3,2 - level page tables where we don't have
- 			 * puds,pmds, so pgd_populate(), pud_populate()
- 			 * is noops.
--			 *
--			 * The ifndef is required to avoid build breakage.
--			 *
--			 * With 5level-fixup.h, pgd_populate() is not nop and
--			 * we reference kasan_early_shadow_p4d. It's not defined
--			 * unless 5-level paging enabled.
--			 *
--			 * The ifndef can be dropped once all KASAN-enabled
--			 * architectures will switch to pgtable-nop4d.h.
- 			 */
--#ifndef __ARCH_HAS_5LEVEL_HACK
- 			pgd_populate(&init_mm, pgd,
- 					lm_alias(kasan_early_shadow_p4d));
--#endif
- 			p4d = p4d_offset(pgd, addr);
- 			p4d_populate(&init_mm, p4d,
- 					lm_alias(kasan_early_shadow_pud));
-diff --git a/mm/memory.c b/mm/memory.c
-index 0bccc622e482..10cc147db1b8 100644
---- a/mm/memory.c
-+++ b/mm/memory.c
-@@ -4252,19 +4252,11 @@ int __pud_alloc(struct mm_struct *mm, p4d_t *p4d, unsigned long address)
- 	smp_wmb(); /* See comment in __pte_alloc */
+ 	/* VDC */
+ 	DV_CLK_MARK,
+@@ -824,6 +823,7 @@ static const u16 pinmux_data[] = {
+ 	PINMUX_DATA(CS3_MARK, PC8MD_001),
+ 	PINMUX_DATA(TXD7_MARK, PC8MD_010),
+ 	PINMUX_DATA(CTX1_MARK, PC8MD_011),
++	PINMUX_DATA(CTX0_CTX1_MARK, PC8MD_100),
  
- 	spin_lock(&mm->page_table_lock);
--#ifndef __ARCH_HAS_5LEVEL_HACK
- 	if (!p4d_present(*p4d)) {
- 		mm_inc_nr_puds(mm);
- 		p4d_populate(mm, p4d, new);
- 	} else	/* Another has populated it */
- 		pud_free(mm, new);
--#else
--	if (!pgd_present(*p4d)) {
--		mm_inc_nr_puds(mm);
--		pgd_populate(mm, p4d, new);
--	} else	/* Another has populated it */
--		pud_free(mm, new);
--#endif /* __ARCH_HAS_5LEVEL_HACK */
- 	spin_unlock(&mm->page_table_lock);
- 	return 0;
- }
+ 	PINMUX_DATA(PC7_DATA, PC7MD_000),
+ 	PINMUX_DATA(CKE_MARK, PC7MD_001),
+@@ -836,11 +836,12 @@ static const u16 pinmux_data[] = {
+ 	PINMUX_DATA(CAS_MARK, PC6MD_001),
+ 	PINMUX_DATA(SCK7_MARK, PC6MD_010),
+ 	PINMUX_DATA(CTX0_MARK, PC6MD_011),
++	PINMUX_DATA(CTX0_CTX1_CTX2_MARK, PC6MD_100),
+ 
+ 	PINMUX_DATA(PC5_DATA, PC5MD_000),
+ 	PINMUX_DATA(RAS_MARK, PC5MD_001),
+ 	PINMUX_DATA(CRX0_MARK, PC5MD_011),
+-	PINMUX_DATA(CTX0CTX1CTX2_MARK, PC5MD_100),
++	PINMUX_DATA(CTX0_CTX1_CTX2_MARK, PC5MD_100),
+ 	PINMUX_DATA(IRQ0_PC_MARK, PC5MD_101),
+ 
+ 	PINMUX_DATA(PC4_DATA, PC4MD_00),
+@@ -1292,30 +1293,32 @@ static const u16 pinmux_data[] = {
+ 	PINMUX_DATA(LCD_DATA23_PJ23_MARK, PJ23MD_010),
+ 	PINMUX_DATA(LCD_TCON6_MARK, PJ23MD_011),
+ 	PINMUX_DATA(IRQ3_PJ_MARK, PJ23MD_100),
+-	PINMUX_DATA(CTX1_MARK, PJ23MD_101),
++	PINMUX_DATA(CTX1_PJ23_MARK, PJ23MD_101),
++	PINMUX_DATA(CTX0_CTX1_PJ23_MARK, PJ23MD_110),
+ 
+ 	PINMUX_DATA(PJ22_DATA, PJ22MD_000),
+ 	PINMUX_DATA(DV_DATA22_MARK, PJ22MD_001),
+ 	PINMUX_DATA(LCD_DATA22_PJ22_MARK, PJ22MD_010),
+ 	PINMUX_DATA(LCD_TCON5_MARK, PJ22MD_011),
+ 	PINMUX_DATA(IRQ2_PJ_MARK, PJ22MD_100),
+-	PINMUX_DATA(CRX1_MARK, PJ22MD_101),
+-	PINMUX_DATA(CRX0_CRX1_MARK, PJ22MD_110),
++	PINMUX_DATA(CRX1_PJ22_MARK, PJ22MD_101),
++	PINMUX_DATA(CRX0_CRX1_PJ22_MARK, PJ22MD_110),
+ 
+ 	PINMUX_DATA(PJ21_DATA, PJ21MD_000),
+ 	PINMUX_DATA(DV_DATA21_MARK, PJ21MD_001),
+ 	PINMUX_DATA(LCD_DATA21_PJ21_MARK, PJ21MD_010),
+ 	PINMUX_DATA(LCD_TCON4_MARK, PJ21MD_011),
+ 	PINMUX_DATA(IRQ1_PJ_MARK, PJ21MD_100),
+-	PINMUX_DATA(CTX2_MARK, PJ21MD_101),
++	PINMUX_DATA(CTX2_PJ21_MARK, PJ21MD_101),
++	PINMUX_DATA(CTX0_CTX1_CTX2_PJ21_MARK, PJ21MD_110),
+ 
+ 	PINMUX_DATA(PJ20_DATA, PJ20MD_000),
+ 	PINMUX_DATA(DV_DATA20_MARK, PJ20MD_001),
+ 	PINMUX_DATA(LCD_DATA20_PJ20_MARK, PJ20MD_010),
+ 	PINMUX_DATA(LCD_TCON3_MARK, PJ20MD_011),
+ 	PINMUX_DATA(IRQ0_PJ_MARK, PJ20MD_100),
+-	PINMUX_DATA(CRX2_MARK, PJ20MD_101),
+-	PINMUX_DATA(CRX0CRX1CRX2_PJ20_MARK, PJ20MD_110),
++	PINMUX_DATA(CRX2_PJ20_MARK, PJ20MD_101),
++	PINMUX_DATA(CRX0_CRX1_CRX2_PJ20_MARK, PJ20MD_110),
+ 
+ 	PINMUX_DATA(PJ19_DATA, PJ19MD_000),
+ 	PINMUX_DATA(DV_DATA19_MARK, PJ19MD_001),
+@@ -1666,12 +1669,24 @@ static const struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(WDTOVF),
+ 
+ 	/* CAN */
++	GPIO_FN(CTX2),
++	GPIO_FN(CRX2),
+ 	GPIO_FN(CTX1),
+ 	GPIO_FN(CRX1),
+ 	GPIO_FN(CTX0),
+ 	GPIO_FN(CRX0),
++	GPIO_FN(CTX0_CTX1),
+ 	GPIO_FN(CRX0_CRX1),
++	GPIO_FN(CTX0_CTX1_CTX2),
+ 	GPIO_FN(CRX0_CRX1_CRX2),
++	GPIO_FN(CTX2_PJ21),
++	GPIO_FN(CRX2_PJ20),
++	GPIO_FN(CTX1_PJ23),
++	GPIO_FN(CRX1_PJ22),
++	GPIO_FN(CTX0_CTX1_PJ23),
++	GPIO_FN(CRX0_CRX1_PJ22),
++	GPIO_FN(CTX0_CTX1_CTX2_PJ21),
++	GPIO_FN(CRX0_CRX1_CRX2_PJ20),
+ 
+ 	/* DMAC */
+ 	GPIO_FN(TEND0),
 -- 
-2.24.0
+2.20.1
