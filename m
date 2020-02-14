@@ -1,72 +1,188 @@
-From: Christophe Leroy <christophe.leroy@c-s.fr>
-Date: Wed, 26 Feb 2020 11:20:49 +0000
-Subject: Re: [PATCH v2 07/13] powerpc: add support for folded p4d page tables
-Message-Id: <7a008227-433c-73d7-b01a-1c6c7c66f04e@c-s.fr>
+From: Sasha Levin <sashal@kernel.org>
+Date: Fri, 14 Feb 2020 15:44:25 +0000
+Subject: [PATCH AUTOSEL 5.5 273/542] pinctrl: sh-pfc: sh7269: Fix CAN function GPIOs
+Message-Id: <20200214154854.6746-273-sashal@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200216081843.28670-1-rppt@kernel.org>
- <20200216081843.28670-8-rppt@kernel.org>
- <c79b363c-a111-389a-5752-51cf85fa8c44@c-s.fr> <20200218105440.GA1698@hump>
- <20200226091315.GA11803@hump> <f881f732-729b-a098-f520-b30e44dc10c8@c-s.fr>
- <20200226105615.GB11803@hump>
-In-Reply-To: <20200226105615.GB11803@hump>
+References: <20200214154854.6746-1-sashal@kernel.org>
+In-Reply-To: <20200214154854.6746-1-sashal@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 8bit
-To: Mike Rapoport <rppt@kernel.org>
-Cc: Rich Felker <dalias@libc.org>, linux-ia64@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>, linux-sh@vger.kernel.org, Benjamin Herrenschmidt <benh@kernel.crashing.org>, linux-mm@kvack.org, Paul Mackerras <paulus@samba.org>, linux-hexagon@vger.kernel.org, Will Deacon <will@kernel.org>, kvmarm@lists.cs.columbia.edu, Jonas Bonn <jonas@southpole.se>, linux-arch@vger.kernel.org, Brian Cain <bcain@codeaurora.org>, Marc Zyngier <maz@kernel.org>, Russell King <linux@armlinux.org.uk>, Ley Foon Tan <ley.foon.tan@intel.com>, Mike Rapoport <rppt@linux.ibm.com>, Catalin Marinas <catalin.marinas@arm.com>, uclinux-h8-devel@lists.sourceforge.jp, Fenghua Yu <fenghua.yu@intel.com>, Arnd Bergmann <arnd@arndb.de>, kvm-ppc@vger.kernel.org, Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>, openrisc@lists.librecores.org, Stafford Horne <shorne@gmail.com>, Guan Xuetao <gxt@pku.edu.cn>, linux-arm-kernel@lists.infradead.org, Tony Luck <tony.luck@intel.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-kernel@vger.kernel.org, Michael Ellerman <mpe@ellerman.id.au>, nios2-dev@lists.rocketboards.org, Andrew Morton <akpm@linux-foundation.org>, linuxppc-dev@lists.ozlabs.org
+To: linux-kernel@vger.kernel.org, stable@vger.kernel.org
+Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Sasha Levin <sashal@kernel.org>, linux-sh@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-gpio@vger.kernel.org
 
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
+[ Upstream commit 02aeb2f21530c98fc3ca51028eda742a3fafbd9f ]
 
-Le 26/02/2020 à 11:56, Mike Rapoport a écrit :
-> On Wed, Feb 26, 2020 at 10:46:13AM +0100, Christophe Leroy wrote:
->>
->>
->> Le 26/02/2020 à 10:13, Mike Rapoport a écrit :
->>> On Tue, Feb 18, 2020 at 12:54:40PM +0200, Mike Rapoport wrote:
->>>> On Sun, Feb 16, 2020 at 11:41:07AM +0100, Christophe Leroy wrote:
->>>>>
->>>>>
->>>>> Le 16/02/2020 à 09:18, Mike Rapoport a écrit :
->>>>>> From: Mike Rapoport <rppt@linux.ibm.com>
->>>>>>
->>>>>> Implement primitives necessary for the 4th level folding, add walks of p4d
->>>>>> level where appropriate and replace 5level-fixup.h with pgtable-nop4d.h.
->>>>>
->>>>> I don't think it is worth adding all this additionnals walks of p4d, this
->>>>> patch could be limited to changes like:
->>>>>
->>>>> -		pud = pud_offset(pgd, gpa);
->>>>> +		pud = pud_offset(p4d_offset(pgd, gpa), gpa);
->>>>>
->>>>> The additionnal walks should be added through another patch the day powerpc
->>>>> need them.
->>>>
->>>> Ok, I'll update the patch to reduce walking the p4d.
->>>
->>> Here's what I have with more direct acceses from pgd to pud.
->>
->> I went quickly through. This looks promising.
->>
->> Do we need the walk_p4d() in arch/powerpc/mm/ptdump/hashpagetable.c ?
->> Can't we just do
->>
->> @@ -445,7 +459,7 @@ static void walk_pagetables(struct pg_state *st)
->>   		addr = KERN_VIRT_START + i * PGDIR_SIZE;
->>   		if (!pgd_none(*pgd))
->>   			/* pgd exists */
->> -			walk_pud(st, pgd, addr);
->> +			walk_pud(st, p4d_offset(pgd, addr), addr);
-> 
-> We can do
-> 
-> 	addr = KERN_VIRT_START + i * PGDIR_SIZE;
-> 	p4d = p4d_offset(pgd, addr);
-> 	if (!p4d_none(*pgd))
-> 		walk_pud()
-> 
-> But I don't think this is really essential. Again, we are trading off code
-> consistency vs line count. I don't think line count is that important.
+pinmux_func_gpios[] contains a hole due to the missing function GPIO
+definition for the "CTX0&CTX1" signal, which is the logical "AND" of the
+first two CAN outputs.
 
-Ok.
+A closer look reveals other issues:
+  - Some functionality is available on alternative pins, but the
+    PINMUX_DATA() entries is using the wrong marks,
+  - Several configurations are missing.
 
-Christophe
+Fix this by:
+  - Renaming CTX0CTX1CTX2_MARK, CRX0CRX1_PJ22_MARK, and
+    CRX0CRX1CRX2_PJ20_MARK to CTX0_CTX1_CTX2_MARK, CRX0_CRX1_PJ22_MARK,
+    resp. CRX0_CRX1_CRX2_PJ20_MARK for consistency with the
+    corresponding enum IDs,
+  - Adding all missing enum IDs and marks,
+  - Use the right (*_PJ2x) variants for alternative pins,
+  - Adding all missing configurations to pinmux_data[],
+  - Adding all missing function GPIO definitions to pinmux_func_gpios[].
+
+See SH7268 Group, SH7269 Group User’s Manual: Hardware, Rev. 2.00:
+  [1] Table 1.4 List of Pins
+  [2] Figure 23.29 Connection Example when Using Channels 0 and 1 as One
+      Channel (64 Mailboxes × 1 Channel) and Channel 2 as One Channel
+      (32 Mailboxes × 1 Channel),
+  [3] Figure 23.30 Connection Example when Using Channels 0, 1, and 2 as
+      One Channel (96 Mailboxes × 1 Channel),
+  [4] Table 48.3 Multiplexed Pins (Port B),
+  [5] Table 48.4 Multiplexed Pins (Port C),
+  [6] Table 48.10 Multiplexed Pins (Port J),
+  [7] Section 48.2.4 Port B Control Registers 0 to 5 (PBCR0 to PBCR5).
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Link: https://lore.kernel.org/r/20191218194812.12741-5-geert+renesas@glider.be
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ arch/sh/include/cpu-sh2a/cpu/sh7269.h | 11 ++++++--
+ drivers/pinctrl/sh-pfc/pfc-sh7269.c   | 39 ++++++++++++++++++---------
+ 2 files changed, 36 insertions(+), 14 deletions(-)
+
+diff --git a/arch/sh/include/cpu-sh2a/cpu/sh7269.h b/arch/sh/include/cpu-sh2a/cpu/sh7269.h
+index d516e5d488180..b887cc402b712 100644
+--- a/arch/sh/include/cpu-sh2a/cpu/sh7269.h
++++ b/arch/sh/include/cpu-sh2a/cpu/sh7269.h
+@@ -78,8 +78,15 @@ enum {
+ 	GPIO_FN_WDTOVF,
+ 
+ 	/* CAN */
+-	GPIO_FN_CTX1, GPIO_FN_CRX1, GPIO_FN_CTX0, GPIO_FN_CTX0_CTX1,
+-	GPIO_FN_CRX0, GPIO_FN_CRX0_CRX1, GPIO_FN_CRX0_CRX1_CRX2,
++	GPIO_FN_CTX2, GPIO_FN_CRX2,
++	GPIO_FN_CTX1, GPIO_FN_CRX1,
++	GPIO_FN_CTX0, GPIO_FN_CRX0,
++	GPIO_FN_CTX0_CTX1, GPIO_FN_CRX0_CRX1,
++	GPIO_FN_CTX0_CTX1_CTX2, GPIO_FN_CRX0_CRX1_CRX2,
++	GPIO_FN_CTX2_PJ21, GPIO_FN_CRX2_PJ20,
++	GPIO_FN_CTX1_PJ23, GPIO_FN_CRX1_PJ22,
++	GPIO_FN_CTX0_CTX1_PJ23, GPIO_FN_CRX0_CRX1_PJ22,
++	GPIO_FN_CTX0_CTX1_CTX2_PJ21, GPIO_FN_CRX0_CRX1_CRX2_PJ20,
+ 
+ 	/* DMAC */
+ 	GPIO_FN_TEND0, GPIO_FN_DACK0, GPIO_FN_DREQ0,
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7269.c b/drivers/pinctrl/sh-pfc/pfc-sh7269.c
+index 6cbb18ef77dc0..d20974a55d93a 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7269.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7269.c
+@@ -737,13 +737,12 @@ enum {
+ 	CRX0_MARK, CTX0_MARK,
+ 	CRX1_MARK, CTX1_MARK,
+ 	CRX2_MARK, CTX2_MARK,
+-	CRX0_CRX1_MARK,
+-	CRX0_CRX1_CRX2_MARK,
+-	CTX0CTX1CTX2_MARK,
++	CRX0_CRX1_MARK, CTX0_CTX1_MARK,
++	CRX0_CRX1_CRX2_MARK, CTX0_CTX1_CTX2_MARK,
+ 	CRX1_PJ22_MARK, CTX1_PJ23_MARK,
+ 	CRX2_PJ20_MARK, CTX2_PJ21_MARK,
+-	CRX0CRX1_PJ22_MARK,
+-	CRX0CRX1CRX2_PJ20_MARK,
++	CRX0_CRX1_PJ22_MARK, CTX0_CTX1_PJ23_MARK,
++	CRX0_CRX1_CRX2_PJ20_MARK, CTX0_CTX1_CTX2_PJ21_MARK,
+ 
+ 	/* VDC */
+ 	DV_CLK_MARK,
+@@ -821,6 +820,7 @@ static const u16 pinmux_data[] = {
+ 	PINMUX_DATA(CS3_MARK, PC8MD_001),
+ 	PINMUX_DATA(TXD7_MARK, PC8MD_010),
+ 	PINMUX_DATA(CTX1_MARK, PC8MD_011),
++	PINMUX_DATA(CTX0_CTX1_MARK, PC8MD_100),
+ 
+ 	PINMUX_DATA(PC7_DATA, PC7MD_000),
+ 	PINMUX_DATA(CKE_MARK, PC7MD_001),
+@@ -833,11 +833,12 @@ static const u16 pinmux_data[] = {
+ 	PINMUX_DATA(CAS_MARK, PC6MD_001),
+ 	PINMUX_DATA(SCK7_MARK, PC6MD_010),
+ 	PINMUX_DATA(CTX0_MARK, PC6MD_011),
++	PINMUX_DATA(CTX0_CTX1_CTX2_MARK, PC6MD_100),
+ 
+ 	PINMUX_DATA(PC5_DATA, PC5MD_000),
+ 	PINMUX_DATA(RAS_MARK, PC5MD_001),
+ 	PINMUX_DATA(CRX0_MARK, PC5MD_011),
+-	PINMUX_DATA(CTX0CTX1CTX2_MARK, PC5MD_100),
++	PINMUX_DATA(CTX0_CTX1_CTX2_MARK, PC5MD_100),
+ 	PINMUX_DATA(IRQ0_PC_MARK, PC5MD_101),
+ 
+ 	PINMUX_DATA(PC4_DATA, PC4MD_00),
+@@ -1289,30 +1290,32 @@ static const u16 pinmux_data[] = {
+ 	PINMUX_DATA(LCD_DATA23_PJ23_MARK, PJ23MD_010),
+ 	PINMUX_DATA(LCD_TCON6_MARK, PJ23MD_011),
+ 	PINMUX_DATA(IRQ3_PJ_MARK, PJ23MD_100),
+-	PINMUX_DATA(CTX1_MARK, PJ23MD_101),
++	PINMUX_DATA(CTX1_PJ23_MARK, PJ23MD_101),
++	PINMUX_DATA(CTX0_CTX1_PJ23_MARK, PJ23MD_110),
+ 
+ 	PINMUX_DATA(PJ22_DATA, PJ22MD_000),
+ 	PINMUX_DATA(DV_DATA22_MARK, PJ22MD_001),
+ 	PINMUX_DATA(LCD_DATA22_PJ22_MARK, PJ22MD_010),
+ 	PINMUX_DATA(LCD_TCON5_MARK, PJ22MD_011),
+ 	PINMUX_DATA(IRQ2_PJ_MARK, PJ22MD_100),
+-	PINMUX_DATA(CRX1_MARK, PJ22MD_101),
+-	PINMUX_DATA(CRX0_CRX1_MARK, PJ22MD_110),
++	PINMUX_DATA(CRX1_PJ22_MARK, PJ22MD_101),
++	PINMUX_DATA(CRX0_CRX1_PJ22_MARK, PJ22MD_110),
+ 
+ 	PINMUX_DATA(PJ21_DATA, PJ21MD_000),
+ 	PINMUX_DATA(DV_DATA21_MARK, PJ21MD_001),
+ 	PINMUX_DATA(LCD_DATA21_PJ21_MARK, PJ21MD_010),
+ 	PINMUX_DATA(LCD_TCON4_MARK, PJ21MD_011),
+ 	PINMUX_DATA(IRQ1_PJ_MARK, PJ21MD_100),
+-	PINMUX_DATA(CTX2_MARK, PJ21MD_101),
++	PINMUX_DATA(CTX2_PJ21_MARK, PJ21MD_101),
++	PINMUX_DATA(CTX0_CTX1_CTX2_PJ21_MARK, PJ21MD_110),
+ 
+ 	PINMUX_DATA(PJ20_DATA, PJ20MD_000),
+ 	PINMUX_DATA(DV_DATA20_MARK, PJ20MD_001),
+ 	PINMUX_DATA(LCD_DATA20_PJ20_MARK, PJ20MD_010),
+ 	PINMUX_DATA(LCD_TCON3_MARK, PJ20MD_011),
+ 	PINMUX_DATA(IRQ0_PJ_MARK, PJ20MD_100),
+-	PINMUX_DATA(CRX2_MARK, PJ20MD_101),
+-	PINMUX_DATA(CRX0CRX1CRX2_PJ20_MARK, PJ20MD_110),
++	PINMUX_DATA(CRX2_PJ20_MARK, PJ20MD_101),
++	PINMUX_DATA(CRX0_CRX1_CRX2_PJ20_MARK, PJ20MD_110),
+ 
+ 	PINMUX_DATA(PJ19_DATA, PJ19MD_000),
+ 	PINMUX_DATA(DV_DATA19_MARK, PJ19MD_001),
+@@ -1663,12 +1666,24 @@ static const struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(WDTOVF),
+ 
+ 	/* CAN */
++	GPIO_FN(CTX2),
++	GPIO_FN(CRX2),
+ 	GPIO_FN(CTX1),
+ 	GPIO_FN(CRX1),
+ 	GPIO_FN(CTX0),
+ 	GPIO_FN(CRX0),
++	GPIO_FN(CTX0_CTX1),
+ 	GPIO_FN(CRX0_CRX1),
++	GPIO_FN(CTX0_CTX1_CTX2),
+ 	GPIO_FN(CRX0_CRX1_CRX2),
++	GPIO_FN(CTX2_PJ21),
++	GPIO_FN(CRX2_PJ20),
++	GPIO_FN(CTX1_PJ23),
++	GPIO_FN(CRX1_PJ22),
++	GPIO_FN(CTX0_CTX1_PJ23),
++	GPIO_FN(CRX0_CRX1_PJ22),
++	GPIO_FN(CTX0_CTX1_CTX2_PJ21),
++	GPIO_FN(CRX0_CRX1_CRX2_PJ20),
+ 
+ 	/* DMAC */
+ 	GPIO_FN(TEND0),
+-- 
+2.20.1
