@@ -1,81 +1,58 @@
-From: Oscar Salvador <osalvador@suse.de>
-Date: Tue, 04 Feb 2020 09:46:53 +0000
-Subject: Re: [PATCH v6 10/10] mm/memory_hotplug: Cleanup __remove_pages()
-Message-Id: <20200204094652.GE6494@linux>
+From: Anshuman Khandual <anshuman.khandual@arm.com>
+Date: Mon, 17 Feb 2020 05:15:48 +0000
+Subject: [PATCH 0/5] mm/vma: Use available wrappers when possible
+Message-Id: <1581915833-21984-1-git-send-email-anshuman.khandual@arm.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20191006085646.5768-1-david@redhat.com>
- <20191006085646.5768-11-david@redhat.com>
-In-Reply-To: <20191006085646.5768-11-david@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: David Hildenbrand <david@redhat.com>
-Cc: linux-s390@vger.kernel.org, Michal Hocko <mhocko@suse.com>, linux-ia64@vger.kernel.org, Pavel Tatashin <pasha.tatashin@soleen.com>, linux-sh@vger.kernel.org, x86@kernel.org, linux-kernel@vger.kernel.org, linux-mm@kvack.org, Wei Yang <richardw.yang@linux.intel.com>, Andrew Morton <akpm@linux-foundation.org>, linuxppc-dev@lists.ozlabs.org, Dan Williams <dan.j.williams@intel.com>, linux-arm-kernel@lists.infradead.org
+To: linux-mm@kvack.org, linux-kernel@vger.kernel.org
+Cc: Anshuman Khandual <anshuman.khandual@arm.com>, linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, kvm-ppc@vger.kernel.org, linux-fsdevel@vger.kernel.org, linux-arch@vger.kernel.org
 
-On Sun, Oct 06, 2019 at 10:56:46AM +0200, David Hildenbrand wrote:
-> Let's drop the basically unused section stuff and simplify.
-> 
-> Also, let's use a shorter variant to calculate the number of pages to
-> the next section boundary.
-> 
-> Cc: Andrew Morton <akpm@linux-foundation.org>
-> Cc: Oscar Salvador <osalvador@suse.de>
-> Cc: Michal Hocko <mhocko@suse.com>
-> Cc: Pavel Tatashin <pasha.tatashin@soleen.com>
-> Cc: Dan Williams <dan.j.williams@intel.com>
-> Cc: Wei Yang <richardw.yang@linux.intel.com>
-> Signed-off-by: David Hildenbrand <david@redhat.com>
+Apart from adding a VMA flag readable name for trace purpose, this series
+does some open encoding replacements with availabe VMA specific wrappers.
+This skips VM_HUGETLB check in vma_migratable() as its already being done
+with another patch (https://patchwork.kernel.org/patch/11347831/) which
+is yet to be merged.
 
-I have to confess that it took me while to wrap around my head
-with the new min() change, but looks ok:
+This series applies on 5.6-rc2. This has been build tested on multiple
+platforms, though boot and runtime testing was limited to arm64 and x86.
 
-Reviewed-by: Oscar Salvador <osalvador@suse.de>
+Cc: linux-kernel@vger.kernel.org
+Cc: linux-m68k@lists.linux-m68k.org
+Cc: linux-mips@vger.kernel.org
+Cc: linuxppc-dev@lists.ozlabs.org
+Cc: linux-sh@vger.kernel.org
+Cc: kvm-ppc@vger.kernel.org
+Cc: linux-fsdevel@vger.kernel.org
+Cc: linux-arch@vger.kernel.org
+Cc: linux-mm@kvack.org
 
-> ---
->  mm/memory_hotplug.c | 17 ++++++-----------
->  1 file changed, 6 insertions(+), 11 deletions(-)
-> 
-> diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
-> index 843481bd507d..2275240cfa10 100644
-> --- a/mm/memory_hotplug.c
-> +++ b/mm/memory_hotplug.c
-> @@ -490,25 +490,20 @@ static void __remove_section(unsigned long pfn, unsigned long nr_pages,
->  void __remove_pages(unsigned long pfn, unsigned long nr_pages,
->  		    struct vmem_altmap *altmap)
->  {
-> +	const unsigned long end_pfn = pfn + nr_pages;
-> +	unsigned long cur_nr_pages;
->  	unsigned long map_offset = 0;
-> -	unsigned long nr, start_sec, end_sec;
->  
->  	map_offset = vmem_altmap_offset(altmap);
->  
->  	if (check_pfn_span(pfn, nr_pages, "remove"))
->  		return;
->  
-> -	start_sec = pfn_to_section_nr(pfn);
-> -	end_sec = pfn_to_section_nr(pfn + nr_pages - 1);
-> -	for (nr = start_sec; nr <= end_sec; nr++) {
-> -		unsigned long pfns;
-> -
-> +	for (; pfn < end_pfn; pfn += cur_nr_pages) {
->  		cond_resched();
-> -		pfns = min(nr_pages, PAGES_PER_SECTION
-> -				- (pfn & ~PAGE_SECTION_MASK));
-> -		__remove_section(pfn, pfns, map_offset, altmap);
-> -		pfn += pfns;
-> -		nr_pages -= pfns;
-> +		/* Select all remaining pages up to the next section boundary */
-> +		cur_nr_pages = min(end_pfn - pfn, -(pfn | PAGE_SECTION_MASK));
-> +		__remove_section(pfn, cur_nr_pages, map_offset, altmap);
->  		map_offset = 0;
->  	}
->  }
-> -- 
-> 2.21.0
-> 
-> 
+Anshuman Khandual (5):
+  mm/vma: Add missing VMA flag readable name for VM_SYNC
+  mm/vma: Make vma_is_accessible() available for general use
+  mm/vma: Replace all remaining open encodings with is_vm_hugetlb_page()
+  mm/vma: Replace all remaining open encodings with vma_set_anonymous()
+  mm/vma: Replace all remaining open encodings with vma_is_anonymous()
+
+ arch/csky/mm/fault.c              | 2 +-
+ arch/m68k/mm/fault.c              | 2 +-
+ arch/mips/mm/fault.c              | 2 +-
+ arch/powerpc/kvm/e500_mmu_host.c  | 2 +-
+ arch/powerpc/mm/fault.c           | 2 +-
+ arch/sh/mm/fault.c                | 2 +-
+ arch/x86/mm/fault.c               | 2 +-
+ drivers/misc/mic/scif/scif_mmap.c | 2 +-
+ fs/binfmt_elf.c                   | 2 +-
+ include/asm-generic/tlb.h         | 2 +-
+ include/linux/mm.h                | 5 +++++
+ include/trace/events/mmflags.h    | 1 +
+ kernel/events/core.c              | 3 ++-
+ kernel/sched/fair.c               | 2 +-
+ mm/gup.c                          | 5 +++--
+ mm/memory.c                       | 5 -----
+ mm/mempolicy.c                    | 3 +--
+ 17 files changed, 23 insertions(+), 21 deletions(-)
 
 -- 
-Oscar Salvador
-SUSE L3
+2.20.1
