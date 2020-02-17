@@ -1,203 +1,315 @@
-From: Logan Gunthorpe <logang@deltatee.com>
-Date: Fri, 21 Feb 2020 18:25:01 +0000
-Subject: [PATCH v3 5/7] powerpc/mm: Thread pgprot_t through create_section_mapping()
-Message-Id: <20200221182503.28317-6-logang@deltatee.com>
+From: Mauro Carvalho Chehab <mchehab+huawei@kernel.org>
+Date: Mon, 17 Feb 2020 16:20:40 +0000
+Subject: [PATCH v2 22/24] docs: sh: convert new-machine.txt to ReST
+Message-Id: <3623fa8b3045ca7ad3373763578ba8690a469dbd.1581956285.git.mchehab+huawei@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200221182503.28317-1-logang@deltatee.com>
-In-Reply-To: <20200221182503.28317-1-logang@deltatee.com>
+References: <cover.1581956285.git.mchehab+huawei@kernel.org>
+In-Reply-To: <cover.1581956285.git.mchehab+huawei@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, platform-driver-x86@vger.kernel.org, linux-mm@kvack.org, Dan Williams <dan.j.williams@intel.com>, Michal Hocko <mhocko@kernel.org>, David Hildenbrand <david@redhat.com>, Andrew Morton <akpm@linux-foundation.org>
-Cc: Eric Badger <ebadger@gigaio.com>, Peter Zijlstra <peterz@infradead.org>, Catalin Marinas <catalin.marinas@arm.com>, Dave Hansen <dave.hansen@linux.intel.com>, Logan Gunthorpe <logang@deltatee.com>, Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>, Michael Ellerman <mpe@ellerman.id.au>, Andy Lutomirski <luto@kernel.org>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Thomas Gleixner <tglx@linutronix.de>, Will Deacon <will@kernel.org>, Christoph Hellwig <hch@lst.de>
+To: Linux Doc Mailing List <linux-doc@vger.kernel.org>
+Cc: Mauro Carvalho Chehab <mchehab+huawei@kernel.org>, Jonathan Corbet <corbet@lwn.net>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
 
-In prepartion to support a pgprot_t argument for arch_add_memory().
+- Add a SPDX header;
+- Adjust document title to follow ReST style;
+- Mark literal blocks as such;
+- Mark a table as such;
+- Add it to sh/index.rst.
 
-Cc: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-Cc: Paul Mackerras <paulus@samba.org>
-Cc: Michael Ellerman <mpe@ellerman.id.au>
-Signed-off-by: Logan Gunthorpe <logang@deltatee.com>
+Signed-off-by: Mauro Carvalho Chehab <mchehab+huawei@kernel.org>
 ---
- arch/powerpc/include/asm/book3s/64/hash.h  |  3 ++-
- arch/powerpc/include/asm/book3s/64/radix.h |  3 ++-
- arch/powerpc/include/asm/sparsemem.h       |  3 ++-
- arch/powerpc/mm/book3s64/hash_utils.c      |  5 +++--
- arch/powerpc/mm/book3s64/pgtable.c         |  7 ++++---
- arch/powerpc/mm/book3s64/radix_pgtable.c   | 18 +++++++++++-------
- arch/powerpc/mm/mem.c                      |  5 +++--
- 7 files changed, 27 insertions(+), 17 deletions(-)
+ Documentation/sh/index.rst                    |   5 +
+ .../sh/{new-machine.txt => new-machine.rst}   | 193 +++++++++---------
+ 2 files changed, 105 insertions(+), 93 deletions(-)
+ rename Documentation/sh/{new-machine.txt => new-machine.rst} (73%)
 
-diff --git a/arch/powerpc/include/asm/book3s/64/hash.h b/arch/powerpc/include/asm/book3s/64/hash.h
-index 2781ebf6add4..6fc4520092c7 100644
---- a/arch/powerpc/include/asm/book3s/64/hash.h
-+++ b/arch/powerpc/include/asm/book3s/64/hash.h
-@@ -251,7 +251,8 @@ extern int __meminit hash__vmemmap_create_mapping(unsigned long start,
- extern void hash__vmemmap_remove_mapping(unsigned long start,
- 				     unsigned long page_size);
+diff --git a/Documentation/sh/index.rst b/Documentation/sh/index.rst
+index bc8db7ba894a..56c08790265d 100644
+--- a/Documentation/sh/index.rst
++++ b/Documentation/sh/index.rst
+@@ -4,6 +4,11 @@ SuperH Interfaces Guide
  
--int hash__create_section_mapping(unsigned long start, unsigned long end, int nid);
-+int hash__create_section_mapping(unsigned long start, unsigned long end,
-+				 int nid, pgprot_t prot);
- int hash__remove_section_mapping(unsigned long start, unsigned long end);
+ :Author: Paul Mundt
  
- #endif /* !__ASSEMBLY__ */
-diff --git a/arch/powerpc/include/asm/book3s/64/radix.h b/arch/powerpc/include/asm/book3s/64/radix.h
-index d97db3ad9aae..46799f3c3d1d 100644
---- a/arch/powerpc/include/asm/book3s/64/radix.h
-+++ b/arch/powerpc/include/asm/book3s/64/radix.h
-@@ -289,7 +289,8 @@ static inline unsigned long radix__get_tree_size(void)
- }
++.. toctree::
++    :maxdepth: 1
++
++    new-machine
++
+ Memory Management
+ ======== 
+diff --git a/Documentation/sh/new-machine.txt b/Documentation/sh/new-machine.rst
+similarity index 73%
+rename from Documentation/sh/new-machine.txt
+rename to Documentation/sh/new-machine.rst
+index e0961a66130b..07d69049c220 100644
+--- a/Documentation/sh/new-machine.txt
++++ b/Documentation/sh/new-machine.rst
+@@ -1,6 +1,8 @@
++.. SPDX-License-Identifier: GPL-2.0
  
- #ifdef CONFIG_MEMORY_HOTPLUG
--int radix__create_section_mapping(unsigned long start, unsigned long end, int nid);
-+int radix__create_section_mapping(unsigned long start, unsigned long end,
-+				  int nid, pgprot_t prot);
- int radix__remove_section_mapping(unsigned long start, unsigned long end);
- #endif /* CONFIG_MEMORY_HOTPLUG */
- #endif /* __ASSEMBLY__ */
-diff --git a/arch/powerpc/include/asm/sparsemem.h b/arch/powerpc/include/asm/sparsemem.h
-index 3192d454a733..c89b32443cff 100644
---- a/arch/powerpc/include/asm/sparsemem.h
-+++ b/arch/powerpc/include/asm/sparsemem.h
-@@ -13,7 +13,8 @@
- #endif /* CONFIG_SPARSEMEM */
+-                Adding a new board to LinuxSH
+-               ================
++==============+Adding a new board to LinuxSH
++============== 
+                Paul Mundt <lethal@linux-sh.org>
  
- #ifdef CONFIG_MEMORY_HOTPLUG
--extern int create_section_mapping(unsigned long start, unsigned long end, int nid);
-+extern int create_section_mapping(unsigned long start, unsigned long end,
-+				  int nid, pgprot_t prot);
- extern int remove_section_mapping(unsigned long start, unsigned long end);
+@@ -19,65 +21,67 @@ include/asm-sh/. For the new kernel, things are broken out by board type,
+ companion chip type, and CPU type. Looking at a tree view of this directory
+ hierarchy looks like the following:
  
- #ifdef CONFIG_PPC_BOOK3S_64
-diff --git a/arch/powerpc/mm/book3s64/hash_utils.c b/arch/powerpc/mm/book3s64/hash_utils.c
-index 523d4d39d11e..201738e07a1d 100644
---- a/arch/powerpc/mm/book3s64/hash_utils.c
-+++ b/arch/powerpc/mm/book3s64/hash_utils.c
-@@ -809,7 +809,8 @@ int resize_hpt_for_hotplug(unsigned long new_mem_size)
- 	return 0;
- }
+-Board-specific code:
++Board-specific code::
  
--int hash__create_section_mapping(unsigned long start, unsigned long end, int nid)
-+int hash__create_section_mapping(unsigned long start, unsigned long end,
-+				 int nid, pgprot_t prot)
- {
- 	int rc;
+-.
+-|-- arch
+-|   `-- sh
+-|       `-- boards
+-|           |-- adx
+-|           |   `-- board-specific files
+-|           |-- bigsur
+-|           |   `-- board-specific files
+-|           |
+-|           ... more boards here ...
+-|
+-`-- include
+-    `-- asm-sh
+-        |-- adx
+-        |   `-- board-specific headers
+-        |-- bigsur
+-        |   `-- board-specific headers
+-        |
+-	.. more boards here ...
++    .
++    |-- arch
++    |   `-- sh
++    |       `-- boards
++    |           |-- adx
++    |           |   `-- board-specific files
++    |           |-- bigsur
++    |           |   `-- board-specific files
++    |           |
++    |           ... more boards here ...
++    |
++    `-- include
++	`-- asm-sh
++	    |-- adx
++	    |   `-- board-specific headers
++	    |-- bigsur
++	    |   `-- board-specific headers
++	    |
++	    .. more boards here ...
  
-@@ -819,7 +820,7 @@ int hash__create_section_mapping(unsigned long start, unsigned long end, int nid
- 	}
+-Next, for companion chips:
+-.
+-`-- arch
+-    `-- sh
+-        `-- cchips
+-            `-- hd6446x
+-                `-- hd64461
+-                    `-- cchip-specific files
++Next, for companion chips::
++
++    .
++    `-- arch
++	`-- sh
++	    `-- cchips
++		`-- hd6446x
++		    `-- hd64461
++			`-- cchip-specific files
  
- 	rc = htab_bolt_mapping(start, end, __pa(start),
--			       pgprot_val(PAGE_KERNEL), mmu_linear_psize,
-+			       pgprot_val(prot), mmu_linear_psize,
- 			       mmu_kernel_ssize);
+ ... and so on. Headers for the companion chips are treated the same way as
+ board-specific headers. Thus, include/asm-sh/hd64461 is home to all of the
+ hd64461-specific headers.
  
- 	if (rc < 0) {
-diff --git a/arch/powerpc/mm/book3s64/pgtable.c b/arch/powerpc/mm/book3s64/pgtable.c
-index 2bf7e1b4fd82..e0bb69c616e4 100644
---- a/arch/powerpc/mm/book3s64/pgtable.c
-+++ b/arch/powerpc/mm/book3s64/pgtable.c
-@@ -171,12 +171,13 @@ void mmu_cleanup_all(void)
- }
+-Finally, CPU family support is also abstracted:
+-.
+-|-- arch
+-|   `-- sh
+-|       |-- kernel
+-|       |   `-- cpu
+-|       |       |-- sh2
+-|       |       |   `-- SH-2 generic files
+-|       |       |-- sh3
+-|       |       |   `-- SH-3 generic files
+-|       |       `-- sh4
+-|       |           `-- SH-4 generic files
+-|       `-- mm
+-|           `-- This is also broken out per CPU family, so each family can
+-|               have their own set of cache/tlb functions.
+-|
+-`-- include
+-    `-- asm-sh
+-        |-- cpu-sh2
+-        |   `-- SH-2 specific headers
+-        |-- cpu-sh3
+-        |   `-- SH-3 specific headers
+-        `-- cpu-sh4
+-            `-- SH-4 specific headers
++Finally, CPU family support is also abstracted::
++
++    .
++    |-- arch
++    |   `-- sh
++    |       |-- kernel
++    |       |   `-- cpu
++    |       |       |-- sh2
++    |       |       |   `-- SH-2 generic files
++    |       |       |-- sh3
++    |       |       |   `-- SH-3 generic files
++    |       |       `-- sh4
++    |       |           `-- SH-4 generic files
++    |       `-- mm
++    |           `-- This is also broken out per CPU family, so each family can
++    |               have their own set of cache/tlb functions.
++    |
++    `-- include
++	`-- asm-sh
++	    |-- cpu-sh2
++	    |   `-- SH-2 specific headers
++	    |-- cpu-sh3
++	    |   `-- SH-3 specific headers
++	    `-- cpu-sh4
++		`-- SH-4 specific headers
  
- #ifdef CONFIG_MEMORY_HOTPLUG
--int __meminit create_section_mapping(unsigned long start, unsigned long end, int nid)
-+int __meminit create_section_mapping(unsigned long start, unsigned long end,
-+				     int nid, pgprot_t prot)
- {
- 	if (radix_enabled())
--		return radix__create_section_mapping(start, end, nid);
-+		return radix__create_section_mapping(start, end, nid, prot);
+ It should be noted that CPU subtypes are _not_ abstracted. Thus, these still
+ need to be dealt with by the CPU family specific code.
+@@ -110,33 +114,33 @@ arch/sh/boards and the include/asm-sh/ hierarchy. In order to better
+ explain this, we use some examples for adding an imaginary board. For
+ setup code, we're required at the very least to provide definitions for
+ get_system_type() and platform_setup(). For our imaginary board, this
+-might look something like:
++might look something like::
  
--	return hash__create_section_mapping(start, end, nid);
-+	return hash__create_section_mapping(start, end, nid, prot);
- }
+-/*
+- * arch/sh/boards/vapor/setup.c - Setup code for imaginary board
+- */
+-#include <linux/init.h>
++    /*
++    * arch/sh/boards/vapor/setup.c - Setup code for imaginary board
++    */
++    #include <linux/init.h>
  
- int __meminit remove_section_mapping(unsigned long start, unsigned long end)
-diff --git a/arch/powerpc/mm/book3s64/radix_pgtable.c b/arch/powerpc/mm/book3s64/radix_pgtable.c
-index dd1bea45325c..0ef10b5c26ba 100644
---- a/arch/powerpc/mm/book3s64/radix_pgtable.c
-+++ b/arch/powerpc/mm/book3s64/radix_pgtable.c
-@@ -253,7 +253,7 @@ static unsigned long next_boundary(unsigned long addr, unsigned long end)
+-const char *get_system_type(void)
+-{
+-	return "FooTech Vaporboard";
+-}
++    const char *get_system_type(void)
++    {
++	    return "FooTech Vaporboard";
++    }
  
- static int __meminit create_physical_mapping(unsigned long start,
- 					     unsigned long end,
--					     int nid)
-+					     int nid, pgprot_t _prot)
- {
- 	unsigned long vaddr, addr, mapping_size = 0;
- 	bool prev_exec, exec = false;
-@@ -289,7 +289,7 @@ static int __meminit create_physical_mapping(unsigned long start,
- 			prot = PAGE_KERNEL_X;
- 			exec = true;
- 		} else {
--			prot = PAGE_KERNEL;
-+			prot = _prot;
- 			exec = false;
- 		}
+-int __init platform_setup(void)
+-{
+-  	/*
+-	 * If our hardware actually existed, we would do real
+-	 * setup here. Though it's also sane to leave this empty
+-	 * if there's no real init work that has to be done for
+-	 * this board.
+-	 */
++    int __init platform_setup(void)
++    {
++	    /*
++	    * If our hardware actually existed, we would do real
++	    * setup here. Though it's also sane to leave this empty
++	    * if there's no real init work that has to be done for
++	    * this board.
++	    */
  
-@@ -333,7 +333,7 @@ static void __init radix_init_pgtable(void)
+-	/* Start-up imaginary PCI ... */
++	    /* Start-up imaginary PCI ... */
  
- 		WARN_ON(create_physical_mapping(reg->base,
- 						reg->base + reg->size,
--						-1));
-+						-1, PAGE_KERNEL));
- 	}
+-	/* And whatever else ... */
++	    /* And whatever else ... */
  
- 	/* Find out how many PID bits are supported */
-@@ -712,8 +712,10 @@ static int __meminit stop_machine_change_mapping(void *data)
+-	return 0;
+-}
++	    return 0;
++    }
  
- 	spin_unlock(&init_mm.page_table_lock);
- 	pte_clear(&init_mm, params->aligned_start, params->pte);
--	create_physical_mapping(__pa(params->aligned_start), __pa(params->start), -1);
--	create_physical_mapping(__pa(params->end), __pa(params->aligned_end), -1);
-+	create_physical_mapping(__pa(params->aligned_start),
-+				__pa(params->start), -1, PAGE_KERNEL);
-+	create_physical_mapping(__pa(params->end), __pa(params->aligned_end),
-+				-1, PAGE_KERNEL);
- 	spin_lock(&init_mm.page_table_lock);
- 	return 0;
- }
-@@ -870,14 +872,16 @@ static void __meminit remove_pagetable(unsigned long start, unsigned long end)
- 	radix__flush_tlb_kernel_range(start, end);
- }
+ Our new imaginary board will also have to tie into the machvec in order for it
+ to be of any use.
+@@ -172,7 +176,7 @@ sufficient.
+    vector.
  
--int __meminit radix__create_section_mapping(unsigned long start, unsigned long end, int nid)
-+int __meminit radix__create_section_mapping(unsigned long start,
-+					    unsigned long end, int nid,
-+					    pgprot_t prot)
- {
- 	if (end >= RADIX_VMALLOC_START) {
- 		pr_warn("Outside the supported range\n");
- 		return -1;
- 	}
+    Note that these prototypes are generated automatically by setting
+-   __IO_PREFIX to something sensible. A typical example would be:
++   __IO_PREFIX to something sensible. A typical example would be::
  
--	return create_physical_mapping(__pa(start), __pa(end), nid);
-+	return create_physical_mapping(__pa(start), __pa(end), nid, prot);
- }
+ 	#define __IO_PREFIX vapor
+    	#include <asm/io_generic.h>
+@@ -181,7 +185,7 @@ sufficient.
+    have a legacy io.h should remove it entirely and switch to the new model.
  
- int __meminit radix__remove_section_mapping(unsigned long start, unsigned long end)
-diff --git a/arch/powerpc/mm/mem.c b/arch/powerpc/mm/mem.c
-index b4bece53bec0..19b1da5d7eca 100644
---- a/arch/powerpc/mm/mem.c
-+++ b/arch/powerpc/mm/mem.c
-@@ -96,7 +96,8 @@ int memory_add_physaddr_to_nid(u64 start)
- }
- #endif
+  - Add machine vector definitions to the board's setup.c. At a bare minimum,
+-   this must be defined as something like:
++   this must be defined as something like::
  
--int __weak create_section_mapping(unsigned long start, unsigned long end, int nid)
-+int __weak create_section_mapping(unsigned long start, unsigned long end,
-+				  int nid, pgprot_t prot)
- {
- 	return -ENODEV;
- }
-@@ -137,7 +138,7 @@ int __ref arch_add_memory(int nid, u64 start, u64 size,
- 	resize_hpt_for_hotplug(memblock_phys_mem_size());
+ 	struct sh_machine_vector mv_vapor __initmv = {
+ 		.mv_name = "vapor",
+@@ -202,20 +206,20 @@ Large portions of the build system are now entirely dynamic, and merely
+ require the proper entry here and there in order to get things done.
  
- 	start = (unsigned long)__va(start);
--	rc = create_section_mapping(start, start + size, nid);
-+	rc = create_section_mapping(start, start + size, nid, PAGE_KERNEL);
- 	if (rc) {
- 		pr_warn("Unable to create mapping for hot added memory 0x%llx..0x%llx: %d\n",
- 			start, start + size, rc);
+ The first thing to do is to add an entry to arch/sh/Kconfig, under the
+-"System type" menu:
++"System type" menu::
+ 
+-config SH_VAPOR
+-	bool "Vapor"
+-	help
+-	  select Vapor if configuring for a FooTech Vaporboard.
++    config SH_VAPOR
++	    bool "Vapor"
++	    help
++	    select Vapor if configuring for a FooTech Vaporboard.
+ 
+ next, this has to be added into arch/sh/Makefile. All boards require a
+ machdir-y entry in order to be built. This entry needs to be the name of
+ the board directory as it appears in arch/sh/boards, even if it is in a
+ sub-directory (in which case, all parent directories below arch/sh/boards/
+-need to be listed). For our new board, this entry can look like:
++need to be listed). For our new board, this entry can look like::
+ 
+-machdir-$(CONFIG_SH_VAPOR)	+= vapor
++    machdir-$(CONFIG_SH_VAPOR)	+= vapor
+ 
+ provided that we've placed everything in the arch/sh/boards/vapor/ directory.
+ 
+@@ -230,7 +234,7 @@ This is done by adding an entry to the end of the arch/sh/tools/mach-types
+ list. The method for doing this is self explanatory, and so we won't waste
+ space restating it here. After this is done, you will be able to use
+ implicit checks for your board if you need this somewhere throughout the
+-common code, such as:
++common code, such as::
+ 
+ 	/* Make sure we're on the FooTech Vaporboard */
+ 	if (!mach_is_vapor())
+@@ -253,16 +257,19 @@ build target, and it will be implicitly listed as such in the help text.
+ Looking at the 'make help' output, you should now see something like:
+ 
+ Architecture specific targets (sh):
+-  zImage                  - Compressed kernel image (arch/sh/boot/zImage)
+-  adx_defconfig           - Build for adx
+-  cqreek_defconfig        - Build for cqreek
+-  dreamcast_defconfig     - Build for dreamcast
+-...
+-  vapor_defconfig         - Build for vapor
+ 
+-which then allows you to do:
++  ============   ======================+  zImage                    Compressed kernel image (arch/sh/boot/zImage)
++  adx_defconfig             Build for adx
++  cqreek_defconfig          Build for cqreek
++  dreamcast_defconfig       Build for dreamcast
++  ...
++  vapor_defconfig           Build for vapor
++  ============   ====================== 
+-$ make ARCH=sh CROSS_COMPILE=sh4-linux- vapor_defconfig vmlinux
++which then allows you to do::
++
++    $ make ARCH=sh CROSS_COMPILE=sh4-linux- vapor_defconfig vmlinux
+ 
+ which will in turn copy the defconfig for this board, run it through
+ oldconfig (prompting you for any new options since the time of creation),
 -- 
-2.20.1
+2.24.1
