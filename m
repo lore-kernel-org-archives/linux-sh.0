@@ -1,53 +1,109 @@
-From: Krzysztof Kozlowski <krzk@kernel.org>
-Date: Mon, 24 Feb 2020 12:47:44 +0000
-Subject: Re: [RESEND PATCH v2 9/9] ath5k: Constify ioreadX() iomem argument (as in generic implementation)
-Message-Id: <20200224124744.GA1949@pi3>
+From: Logan Gunthorpe <logang@deltatee.com>
+Date: Fri, 21 Feb 2020 18:24:56 +0000
+Subject: [PATCH v3 0/7] Allow setting caching mode in arch_add_memory() for P2PDMA
+Message-Id: <20200221182503.28317-1-logang@deltatee.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200219175007.13627-1-krzk@kernel.org>
- <20200219175007.13627-10-krzk@kernel.org>
- <518a9023-f802-17b3-fca5-582400bc34ae@gmail.com>
-In-Reply-To: <518a9023-f802-17b3-fca5-582400bc34ae@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: Jiri Slaby <jirislaby@gmail.com>
-Cc: Rich Felker <dalias@libc.org>, Geert Uytterhoeven <geert+renesas@glider.be>, "Michael S. Tsirkin" <mst@redhat.com>, David Airlie <airlied@linux.ie>, Jason Wang <jasowang@redhat.com>, dri-devel@lists.freedesktop.org, virtualization@lists.linux-foundation.org, "James E.J. Bottomley" <James.Bottomley@hansenpartnership.com>, netdev@vger.kernel.org, Paul Mackerras <paulus@samba.org>, linux-arch@vger.kernel.org, Dave Jiang <dave.jiang@intel.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Michael Ellerman <mpe@ellerman.id.au>, Helge Deller <deller@gmx.de>, linux-sh@vger.kernel.org, Alexey Brodkin <abrodkin@synopsys.com>, Ben Skeggs <bskeggs@redhat.com>, nouveau@lists.freedesktop.org, Dave Airlie <airlied@redhat.com>, Matt Turner <mattst88@gmail.com>, linux-snps-arc@lists.infradead.org, Nick Kossifidis <mickflemm@gmail.com>, Allen Hubbe <allenbh@gmail.com>, Arnd Bergmann <arnd@arndb.de>, linux-alpha@vger.kernel.org, Ivan Kokshaysky <ink@jurassic.park.msu.ru>, Thomas Gleixner <tglx@linutronix.de>, Mauro Carvalho Chehab <mchehab@kernel.org>, Kalle Valo <kvalo@codeaurora.org>, Richard Henderson <rth@twiddle.net>, linux-parisc@vger.kernel.org, Vineet Gupta <vgupta@synopsys.com>, linux-wireless@vger.kernel.org, linux-kernel@vger.kernel.org, Luis Chamberlain <mcgrof@kernel.org>, Jon Mason <jdmason@kudzu.us>, linux-ntb@googlegroups.com, Andrew Morton <akpm@linux-foundation.org>, linux-media@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, "David S. Miller" <davem@davemloft.net>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, platform-driver-x86@vger.kernel.org, linux-mm@kvack.org, Dan Williams <dan.j.williams@intel.com>, Michal Hocko <mhocko@kernel.org>, David Hildenbrand <david@redhat.com>, Andrew Morton <akpm@linux-foundation.org>
+Cc: Eric Badger <ebadger@gigaio.com>, Peter Zijlstra <peterz@infradead.org>, Catalin Marinas <catalin.marinas@arm.com>, Dave Hansen <dave.hansen@linux.intel.com>, Logan Gunthorpe <logang@deltatee.com>, Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>, Andy Lutomirski <luto@kernel.org>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Thomas Gleixner <tglx@linutronix.de>, Will Deacon <will@kernel.org>, Christoph Hellwig <hch@lst.de>
 
-On Thu, Feb 20, 2020 at 10:48:33AM +0100, Jiri Slaby wrote:
-> On 19. 02. 20, 18:50, Krzysztof Kozlowski wrote:
-> > The ioreadX() helpers have inconsistent interface.  On some architectures
-> > void *__iomem address argument is a pointer to const, on some not.
-> > 
-> > Implementations of ioreadX() do not modify the memory under the address
-> > so they can be converted to a "const" version for const-safety and
-> > consistency among architectures.
-> > 
-> > Signed-off-by: Krzysztof Kozlowski <krzk@kernel.org>
-> > Acked-by: Kalle Valo <kvalo@codeaurora.org>
-> > ---
-> >  drivers/net/wireless/ath/ath5k/ahb.c | 10 +++++-----
-> >  1 file changed, 5 insertions(+), 5 deletions(-)
-> > 
-> > diff --git a/drivers/net/wireless/ath/ath5k/ahb.c b/drivers/net/wireless/ath/ath5k/ahb.c
-> > index 2c9cec8b53d9..8bd01df369fb 100644
-> > --- a/drivers/net/wireless/ath/ath5k/ahb.c
-> > +++ b/drivers/net/wireless/ath/ath5k/ahb.c
-> > @@ -138,18 +138,18 @@ static int ath_ahb_probe(struct platform_device *pdev)
-> >  
-> >  	if (bcfg->devid >= AR5K_SREV_AR2315_R6) {
-> >  		/* Enable WMAC AHB arbitration */
-> > -		reg = ioread32((void __iomem *) AR5K_AR2315_AHB_ARB_CTL);
-> > +		reg = ioread32((const void __iomem *) AR5K_AR2315_AHB_ARB_CTL);
-> 
-> While I understand why the parameter of ioread32 should be const, I
-> don't see a reason for these casts on the users' side. What does it
-> bring except longer code to read?
+Hi,
 
-Because the argument is an int:
+This is v3 of the patchset which cleans up a number of minor issues
+from the feedback of v2 and rebases onto v5.6-rc2. Additional feedback
+is welcome.
 
-drivers/net/wireless/ath/ath5k/ahb.c: In function ‘ath_ahb_probe’:
-drivers/net/wireless/ath/ath5k/ahb.c:141:18: warning: passing argument 1 of ‘ioread32’ makes pointer from integer without a cast [-Wint-conversion]
-   reg = ioread32(AR5K_AR2315_AHB_ARB_CTL);
+Thanks,
 
-Best regards,
-Krzysztof
+Logan
+
+--
+
+Changes in v3:
+ * Rebased onto v5.6-rc2
+ * Rename mhp_modifiers to mhp_params per David with an updated kernel
+   doc per Dan
+ * Drop support for s390 per David seeing it does not support
+   ZONE_DEVICE yet and there was a potential problem with huge pages.
+ * Added WARN_ON_ONCE in cases where arches recieve non PAGE_KERNEL
+   parameters
+ * Collected David and Micheal's Reviewed-By and Acked-by Tags
+
+Changes in v2:
+ * Rebased onto v5.5-rc5
+ * Renamed mhp_restrictions to mhp_modifiers and added the pgprot field
+   to that structure instead of using an argument for
+   arch_add_memory().
+ * Add patch to drop the unused flags field in mhp_restrictions
+
+A git branch is available here:
+
+https://github.com/sbates130272/linux-p2pmem remap_pages_cache_v3
+
+--
+
+Currently, the page tables created using memremap_pages() are always
+created with the PAGE_KERNEL cacheing mode. However, the P2PDMA code
+is creating pages for PCI BAR memory which should never be accessed
+through the cache and instead use either WC or UC. This still works in
+most cases, on x86, because the MTRR registers typically override the
+caching settings in the page tables for all of the IO memory to be
+UC-. However, this tends not to work so well on other arches or
+some rare x86 machines that have firmware which does not setup the
+MTRR registers in this way.
+
+Instead of this, this series proposes a change to arch_add_memory()
+to take the pgprot required by the mapping which allows us to
+explicitly set pagetable entries for P2PDMA memory to WC.
+
+This changes is pretty routine for most of the arches: x86_64, s390, arm64
+and powerpc simply need to thread the pgprot through to where the page
+tables are setup. x86_32 unfortunately sets up the page tables at boot so
+must use _set_memory_prot() to change their caching mode. ia64 and sh
+don't appear to have an easy way to change the page tables so, for now
+at least, we just return -EINVAL on such mappings and thus they will
+not support P2PDMA memory until the work for this is done.
+
+--
+
+Logan Gunthorpe (7):
+  mm/memory_hotplug: Drop the flags field from struct mhp_restrictions
+  mm/memory_hotplug: Rename mhp_restrictions to mhp_params
+  x86/mm: Thread pgprot_t through init_memory_mapping()
+  x86/mm: Introduce _set_memory_prot()
+  powerpc/mm: Thread pgprot_t through create_section_mapping()
+  mm/memory_hotplug: Add pgprot_t to mhp_params
+  mm/memremap: Set caching mode for PCI P2PDMA memory to WC
+
+ arch/arm64/mm/mmu.c                        |  7 ++--
+ arch/ia64/mm/init.c                        |  7 ++--
+ arch/powerpc/include/asm/book3s/64/hash.h  |  3 +-
+ arch/powerpc/include/asm/book3s/64/radix.h |  3 +-
+ arch/powerpc/include/asm/sparsemem.h       |  3 +-
+ arch/powerpc/mm/book3s64/hash_utils.c      |  5 +--
+ arch/powerpc/mm/book3s64/pgtable.c         |  7 ++--
+ arch/powerpc/mm/book3s64/radix_pgtable.c   | 18 ++++++----
+ arch/powerpc/mm/mem.c                      | 10 +++---
+ arch/s390/mm/init.c                        |  9 +++--
+ arch/sh/mm/init.c                          |  7 ++--
+ arch/x86/include/asm/page_types.h          |  3 --
+ arch/x86/include/asm/pgtable.h             |  3 ++
+ arch/x86/include/asm/set_memory.h          |  1 +
+ arch/x86/kernel/amd_gart_64.c              |  3 +-
+ arch/x86/mm/init.c                         |  9 ++---
+ arch/x86/mm/init_32.c                      | 12 +++++--
+ arch/x86/mm/init_64.c                      | 40 ++++++++++++----------
+ arch/x86/mm/mm_internal.h                  |  3 +-
+ arch/x86/mm/pat/set_memory.c               |  7 ++++
+ arch/x86/platform/uv/bios_uv.c             |  3 +-
+ include/linux/memory_hotplug.h             | 20 +++++------
+ mm/memory_hotplug.c                        | 11 +++---
+ mm/memremap.c                              | 17 +++++----
+ 24 files changed, 130 insertions(+), 81 deletions(-)
+
+
+base-commit: 11a48a5a18c63fd7621bb050228cebf13566e4d8
+--
+2.20.1
