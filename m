@@ -1,89 +1,66 @@
-From: Mike Rapoport <rppt@kernel.org>
-Date: Sun, 16 Feb 2020 08:18:36 +0000
-Subject: [PATCH v2 06/13] openrisc: add support for folded p4d page tables
-Message-Id: <20200216081843.28670-7-rppt@kernel.org>
+From: Anshuman Khandual <anshuman.khandual@arm.com>
+Date: Mon, 24 Feb 2020 05:15:09 +0000
+Subject: [PATCH V2 0/4] mm/vma: Use all available wrappers when possible
+Message-Id: <1582520593-30704-1-git-send-email-anshuman.khandual@arm.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200216081843.28670-1-rppt@kernel.org>
-In-Reply-To: <20200216081843.28670-1-rppt@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Rich Felker <dalias@libc.org>, linux-ia64@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>, linux-sh@vger.kernel.org, Benjamin Herrenschmidt <benh@kernel.crashing.org>, linux-mm@kvack.org, Paul Mackerras <paulus@samba.org>, linux-hexagon@vger.kernel.org, Will Deacon <will@kernel.org>, kvmarm@lists.cs.columbia.edu, Jonas Bonn <jonas@southpole.se>, linux-arch@vger.kernel.org, Brian Cain <bcain@codeaurora.org>, Marc Zyngier <maz@kernel.org>, Russell King <linux@armlinux.org.uk>, Ley Foon Tan <ley.foon.tan@intel.com>, Mike Rapoport <rppt@linux.ibm.com>, Catalin Marinas <catalin.marinas@arm.com>, uclinux-h8-devel@lists.sourceforge.jp, Fenghua Yu <fenghua.yu@intel.com>, Arnd Bergmann <arnd@arndb.de>, kvm-ppc@vger.kernel.org, Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>, openrisc@lists.librecores.org, Stafford Horne <shorne@gmail.com>, Guan Xuetao <gxt@pku.edu.cn>, linux-arm-kernel@lists.infradead.org, Christophe Leroy <christophe.leroy@c-s.fr>, Tony Luck <tony.luck@intel.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Michael Ellerman <mpe@ellerman.id.au>, nios2-dev@lists.rocketboards.org, Andrew Morton <akpm@linux-foundation.org>, linuxppc-dev@lists.ozlabs.org, Mike Rapoport <rppt@kernel.org>
+To: linux-mm@kvack.org, linux-kernel@vger.kernel.org
+Cc: Anshuman Khandual <anshuman.khandual@arm.com>, linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, kvm-ppc@vger.kernel.org, linux-fsdevel@vger.kernel.org, linux-arch@vger.kernel.org
 
-From: Mike Rapoport <rppt@linux.ibm.com>
+Apart from adding a VMA flag readable name for trace purpose, this series
+does some open encoding replacements with availabe VMA specific wrappers.
+This skips VM_HUGETLB check in vma_migratable() as its already being done
+with another patch (https://patchwork.kernel.org/patch/11347831/) which
+is yet to be merged.
 
-Implement primitives necessary for the 4th level folding, add walks of p4d
-level where appropriate and remove usage of __ARCH_USE_5LEVEL_HACK.
+This series applies on 5.6-rc3. This has been build tested on multiple
+platforms, though boot and runtime testing was limited to arm64 and x86.
 
-Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
----
- arch/openrisc/include/asm/pgtable.h |  1 -
- arch/openrisc/mm/fault.c            | 10 ++++++++--
- arch/openrisc/mm/init.c             |  4 +++-
- 3 files changed, 11 insertions(+), 4 deletions(-)
+Cc: linux-kernel@vger.kernel.org
+Cc: linux-m68k@lists.linux-m68k.org
+Cc: linux-mips@vger.kernel.org
+Cc: linuxppc-dev@lists.ozlabs.org
+Cc: linux-sh@vger.kernel.org
+Cc: kvm-ppc@vger.kernel.org
+Cc: linux-fsdevel@vger.kernel.org
+Cc: linux-arch@vger.kernel.org
+Cc: linux-mm@kvack.org
 
-diff --git a/arch/openrisc/include/asm/pgtable.h b/arch/openrisc/include/asm/pgtable.h
-index 248d22d8faa7..c072943fc721 100644
---- a/arch/openrisc/include/asm/pgtable.h
-+++ b/arch/openrisc/include/asm/pgtable.h
-@@ -21,7 +21,6 @@
- #ifndef __ASM_OPENRISC_PGTABLE_H
- #define __ASM_OPENRISC_PGTABLE_H
- 
--#define __ARCH_USE_5LEVEL_HACK
- #include <asm-generic/pgtable-nopmd.h>
- 
- #ifndef __ASSEMBLY__
-diff --git a/arch/openrisc/mm/fault.c b/arch/openrisc/mm/fault.c
-index 5d4d3a9691d0..44aa04545de3 100644
---- a/arch/openrisc/mm/fault.c
-+++ b/arch/openrisc/mm/fault.c
-@@ -296,6 +296,7 @@ asmlinkage void do_page_fault(struct pt_regs *regs, unsigned long address,
- 
- 		int offset = pgd_index(address);
- 		pgd_t *pgd, *pgd_k;
-+		p4d_t *p4d, *p4d_k;
- 		pud_t *pud, *pud_k;
- 		pmd_t *pmd, *pmd_k;
- 		pte_t *pte_k;
-@@ -322,8 +323,13 @@ asmlinkage void do_page_fault(struct pt_regs *regs, unsigned long address,
- 		 * it exists.
- 		 */
- 
--		pud = pud_offset(pgd, address);
--		pud_k = pud_offset(pgd_k, address);
-+		p4d = p4d_offset(pgd, address);
-+		p4d_k = p4d_offset(pgd_k, address);
-+		if (!p4d_present(*p4d_k))
-+			goto no_context;
-+
-+		pud = pud_offset(p4d, address);
-+		pud_k = pud_offset(p4d_k, address);
- 		if (!pud_present(*pud_k))
- 			goto no_context;
- 
-diff --git a/arch/openrisc/mm/init.c b/arch/openrisc/mm/init.c
-index 1f87b524db78..2536aeae0975 100644
---- a/arch/openrisc/mm/init.c
-+++ b/arch/openrisc/mm/init.c
-@@ -71,6 +71,7 @@ static void __init map_ram(void)
- 	unsigned long v, p, e;
- 	pgprot_t prot;
- 	pgd_t *pge;
-+	p4d_t *p4e;
- 	pud_t *pue;
- 	pmd_t *pme;
- 	pte_t *pte;
-@@ -90,7 +91,8 @@ static void __init map_ram(void)
- 
- 		while (p < e) {
- 			int j;
--			pue = pud_offset(pge, v);
-+			p4e = p4d_offset(pge, v);
-+			pue = pud_offset(p4e, v);
- 			pme = pmd_offset(pue, v);
- 
- 			if ((u32) pue != (u32) pge || (u32) pme != (u32) pge) {
+Changes in V2:
+
+- Dropped patch [PATCH 4/5] mm/vma: Replace....vma_set_anonymous() per Kirril
+- Dropped braces around is_vm_hugetlb_page() in kvmppc_e500_shadow_map()
+- Replaced two open encodings in mm/mmap.c with vma_is_accessible()
+- Added hugetlb headers to prevent build failures wrt is_vm_hugetlb_page()
+
+Changes in V1: (https://patchwork.kernel.org/cover/11385219/)
+
+Anshuman Khandual (4):
+  mm/vma: Add missing VMA flag readable name for VM_SYNC
+  mm/vma: Make vma_is_accessible() available for general use
+  mm/vma: Replace all remaining open encodings with is_vm_hugetlb_page()
+  mm/vma: Replace all remaining open encodings with vma_is_anonymous()
+
+ arch/csky/mm/fault.c             | 2 +-
+ arch/m68k/mm/fault.c             | 2 +-
+ arch/mips/mm/fault.c             | 2 +-
+ arch/powerpc/kvm/e500_mmu_host.c | 2 +-
+ arch/powerpc/mm/fault.c          | 2 +-
+ arch/sh/mm/fault.c               | 2 +-
+ arch/x86/mm/fault.c              | 2 +-
+ fs/binfmt_elf.c                  | 3 ++-
+ include/asm-generic/tlb.h        | 3 ++-
+ include/linux/mm.h               | 5 +++++
+ include/trace/events/mmflags.h   | 1 +
+ kernel/events/core.c             | 3 ++-
+ kernel/sched/fair.c              | 2 +-
+ mm/gup.c                         | 5 +++--
+ mm/memory.c                      | 5 -----
+ mm/mempolicy.c                   | 3 +--
+ mm/mmap.c                        | 5 ++---
+ 17 files changed, 26 insertions(+), 23 deletions(-)
+
 -- 
-2.24.0
+2.20.1
