@@ -1,10 +1,10 @@
 From: Mike Rapoport <rppt@kernel.org>
-Date: Sun, 16 Feb 2020 08:18:33 +0000
-Subject: [PATCH v2 03/13] hexagon: remove __ARCH_USE_5LEVEL_HACK
-Message-Id: <20200216081843.28670-4-rppt@kernel.org>
+Date: Thu, 27 Feb 2020 08:45:59 +0000
+Subject: [PATCH v3 05/14] nios2: add support for folded p4d page tables
+Message-Id: <20200227084608.18223-6-rppt@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200216081843.28670-1-rppt@kernel.org>
-In-Reply-To: <20200216081843.28670-1-rppt@kernel.org>
+References: <20200227084608.18223-1-rppt@kernel.org>
+In-Reply-To: <20200227084608.18223-1-rppt@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -13,43 +13,84 @@ Cc: Rich Felker <dalias@libc.org>, linux-ia64@vger.kernel.org, Geert Uytterhoeve
 
 From: Mike Rapoport <rppt@linux.ibm.com>
 
-The hexagon architecture has 2 level page tables and as such most of the
-page table folding is already implemented in asm-generic/pgtable-nopmd.h.
-
-Fixup the only place in arch/hexagon to unfold the p4d level and remove
-__ARCH_USE_5LEVEL_HACK.
+Implement primitives necessary for the 4th level folding, add walks of p4d
+level where appropriate and remove usage of __ARCH_USE_5LEVEL_HACK.
 
 Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
 ---
- arch/hexagon/include/asm/fixmap.h  | 4 ++--
- arch/hexagon/include/asm/pgtable.h | 1 -
- 2 files changed, 2 insertions(+), 3 deletions(-)
+ arch/nios2/include/asm/pgtable.h | 3 +--
+ arch/nios2/mm/fault.c            | 9 +++++++--
+ arch/nios2/mm/ioremap.c          | 6 +++++-
+ 3 files changed, 13 insertions(+), 5 deletions(-)
 
-diff --git a/arch/hexagon/include/asm/fixmap.h b/arch/hexagon/include/asm/fixmap.h
-index 933dac167504..97b1b062e750 100644
---- a/arch/hexagon/include/asm/fixmap.h
-+++ b/arch/hexagon/include/asm/fixmap.h
-@@ -16,7 +16,7 @@
- #include <asm-generic/fixmap.h>
+diff --git a/arch/nios2/include/asm/pgtable.h b/arch/nios2/include/asm/pgtable.h
+index 99985d8b7166..54305aa09b74 100644
+--- a/arch/nios2/include/asm/pgtable.h
++++ b/arch/nios2/include/asm/pgtable.h
+@@ -22,7 +22,6 @@
+ #include <asm/tlbflush.h>
  
- #define kmap_get_fixmap_pte(vaddr) \
--	pte_offset_kernel(pmd_offset(pud_offset(pgd_offset_k(vaddr), \
--				(vaddr)), (vaddr)), (vaddr))
-+	pte_offset_kernel(pmd_offset(pud_offset(p4d_offset(pgd_offset_k(vaddr), \
-+				(vaddr)), (vaddr)), (vaddr)), (vaddr))
- 
- #endif
-diff --git a/arch/hexagon/include/asm/pgtable.h b/arch/hexagon/include/asm/pgtable.h
-index 2fec20ad939e..83b544936eed 100644
---- a/arch/hexagon/include/asm/pgtable.h
-+++ b/arch/hexagon/include/asm/pgtable.h
-@@ -12,7 +12,6 @@
-  * Page table definitions for Qualcomm Hexagon processor.
-  */
- #include <asm/page.h>
+ #include <asm/pgtable-bits.h>
 -#define __ARCH_USE_5LEVEL_HACK
  #include <asm-generic/pgtable-nopmd.h>
  
- /* A handy thing to have if one has the RAM. Declared in head.S */
+ #define FIRST_USER_ADDRESS	0UL
+@@ -100,7 +99,7 @@ extern pte_t invalid_pte_table[PAGE_SIZE/sizeof(pte_t)];
+  */
+ static inline void set_pmd(pmd_t *pmdptr, pmd_t pmdval)
+ {
+-	pmdptr->pud.pgd.pgd = pmdval.pud.pgd.pgd;
++	*pmdptr = pmdval;
+ }
+ 
+ /* to find an entry in a page-table-directory */
+diff --git a/arch/nios2/mm/fault.c b/arch/nios2/mm/fault.c
+index 6a2e716b959f..d3da995665c3 100644
+--- a/arch/nios2/mm/fault.c
++++ b/arch/nios2/mm/fault.c
+@@ -245,6 +245,7 @@ asmlinkage void do_page_fault(struct pt_regs *regs, unsigned long cause,
+ 		 */
+ 		int offset = pgd_index(address);
+ 		pgd_t *pgd, *pgd_k;
++		p4d_t *p4d, *p4d_k;
+ 		pud_t *pud, *pud_k;
+ 		pmd_t *pmd, *pmd_k;
+ 		pte_t *pte_k;
+@@ -256,8 +257,12 @@ asmlinkage void do_page_fault(struct pt_regs *regs, unsigned long cause,
+ 			goto no_context;
+ 		set_pgd(pgd, *pgd_k);
+ 
+-		pud = pud_offset(pgd, address);
+-		pud_k = pud_offset(pgd_k, address);
++		p4d = p4d_offset(pgd, address);
++		p4d_k = p4d_offset(pgd_k, address);
++		if (!p4d_present(*p4d_k))
++			goto no_context;
++		pud = pud_offset(p4d, address);
++		pud_k = pud_offset(p4d_k, address);
+ 		if (!pud_present(*pud_k))
+ 			goto no_context;
+ 		pmd = pmd_offset(pud, address);
+diff --git a/arch/nios2/mm/ioremap.c b/arch/nios2/mm/ioremap.c
+index 819bdfcc2e71..fe821efb9a99 100644
+--- a/arch/nios2/mm/ioremap.c
++++ b/arch/nios2/mm/ioremap.c
+@@ -86,11 +86,15 @@ static int remap_area_pages(unsigned long address, unsigned long phys_addr,
+ 	if (address >= end)
+ 		BUG();
+ 	do {
++		p4d_t *p4d;
+ 		pud_t *pud;
+ 		pmd_t *pmd;
+ 
+ 		error = -ENOMEM;
+-		pud = pud_alloc(&init_mm, dir, address);
++		p4d = p4d_alloc(&init_mm, dir, address);
++		if (!p4d)
++			break;
++		pud = pud_alloc(&init_mm, p4d, address);
+ 		if (!pud)
+ 			break;
+ 		pmd = pmd_alloc(&init_mm, pud, address);
 -- 
 2.24.0
