@@ -1,45 +1,41 @@
-From: Krzysztof Kozlowski <krzk@kernel.org>
-Date: Sat, 15 Feb 2020 15:28:28 +0000
-Subject: [RESEND PATCH v2] sh: sh4a: Bring back tmu3_device early device
-Message-Id: <20200215152828.28439-1-krzk@kernel.org>
+From: Mike Rapoport <rppt@kernel.org>
+Date: Thu, 27 Feb 2020 08:45:56 +0000
+Subject: [PATCH v3 02/14] h8300: remove usage of __ARCH_USE_5LEVEL_HACK
+Message-Id: <20200227084608.18223-3-rppt@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20200227084608.18223-1-rppt@kernel.org>
+In-Reply-To: <20200227084608.18223-1-rppt@kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Geert Uytterhoeven <geert+renesas@glider.be>, Krzysztof Kozlowski <krzk@kernel.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-kernel@vger.kernel.org
+Cc: Rich Felker <dalias@libc.org>, linux-ia64@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>, linux-sh@vger.kernel.org, Benjamin Herrenschmidt <benh@kernel.crashing.org>, linux-mm@kvack.org, Paul Mackerras <paulus@samba.org>, linux-hexagon@vger.kernel.org, Will Deacon <will@kernel.org>, kvmarm@lists.cs.columbia.edu, Jonas Bonn <jonas@southpole.se>, linux-arch@vger.kernel.org, Brian Cain <bcain@codeaurora.org>, Marc Zyngier <maz@kernel.org>, Russell King <linux@armlinux.org.uk>, Ley Foon Tan <ley.foon.tan@intel.com>, Mike Rapoport <rppt@linux.ibm.com>, Catalin Marinas <catalin.marinas@arm.com>, uclinux-h8-devel@lists.sourceforge.jp, Fenghua Yu <fenghua.yu@intel.com>, Arnd Bergmann <arnd@arndb.de>, kvm-ppc@vger.kernel.org, Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>, openrisc@lists.librecores.org, Stafford Horne <shorne@gmail.com>, Guan Xuetao <gxt@pku.edu.cn>, linux-arm-kernel@lists.infradead.org, Christophe Leroy <christophe.leroy@c-s.fr>, Tony Luck <tony.luck@intel.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Michael Ellerman <mpe@ellerman.id.au>, nios2-dev@lists.rocketboards.org, Andrew Morton <akpm@linux-foundation.org>, linuxppc-dev@lists.ozlabs.org, Mike Rapoport <rppt@kernel.org>
 
-Commit 1399c195ef50 ("sh: Switch to new style TMU device") converted
-tmu3_device platform device to new style of platform data but removed it
-from sh7786_early_devices array effectively removing last three timers
-and causing a warning:
+From: Mike Rapoport <rppt@linux.ibm.com>
 
-    arch/sh/kernel/cpu/sh4a/setup-sh7786.c:243:31:
-        warning: ‘tmu3_device’ defined but not used [-Wunused-variable]
+h8300 is a nommu architecture and does not require fixup for upper layers
+of the page tables because it is already handled by the generic nommu
+implementation.
 
-Fixes: 1399c195ef50 ("sh: Switch to new style TMU device")
-Signed-off-by: Krzysztof Kozlowski <krzk@kernel.org>
-Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Remove definition of __ARCH_USE_5LEVEL_HACK in
+arch/h8300/include/asm/pgtable.h
 
+Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
 ---
+ arch/h8300/include/asm/pgtable.h | 1 -
+ 1 file changed, 1 deletion(-)
 
-Changes since v1:
-1. Add tmu3_device to early device list, as suggested by Geert.
-2. Add Fixes tag.
----
- arch/sh/kernel/cpu/sh4a/setup-sh7786.c | 1 +
- 1 file changed, 1 insertion(+)
-
-diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7786.c b/arch/sh/kernel/cpu/sh4a/setup-sh7786.c
-index 4b0db8259e3d..74620f30b19b 100644
---- a/arch/sh/kernel/cpu/sh4a/setup-sh7786.c
-+++ b/arch/sh/kernel/cpu/sh4a/setup-sh7786.c
-@@ -391,6 +391,7 @@ static struct platform_device *sh7786_early_devices[] __initdata = {
- 	&tmu0_device,
- 	&tmu1_device,
- 	&tmu2_device,
-+	&tmu3_device,
- };
- 
- static struct platform_device *sh7786_devices[] __initdata = {
+diff --git a/arch/h8300/include/asm/pgtable.h b/arch/h8300/include/asm/pgtable.h
+index 4d00152fab58..f00828720dc4 100644
+--- a/arch/h8300/include/asm/pgtable.h
++++ b/arch/h8300/include/asm/pgtable.h
+@@ -1,7 +1,6 @@
+ /* SPDX-License-Identifier: GPL-2.0 */
+ #ifndef _H8300_PGTABLE_H
+ #define _H8300_PGTABLE_H
+-#define __ARCH_USE_5LEVEL_HACK
+ #include <asm-generic/pgtable-nopud.h>
+ #include <asm-generic/pgtable.h>
+ extern void paging_init(void);
 -- 
-2.17.1
+2.24.0
