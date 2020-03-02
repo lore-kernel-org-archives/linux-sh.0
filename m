@@ -1,100 +1,135 @@
-From: Dmitry Safonov <dima@arista.com>
-Date: Mon, 16 Mar 2020 14:38:57 +0000
-Subject: [PATCHv2 31/50] sh: Add loglvl to printk_address()
-Message-Id: <20200316143916.195608-32-dima@arista.com>
+From: Anshuman Khandual <anshuman.khandual@arm.com>
+Date: Mon, 02 Mar 2020 06:59:43 +0000
+Subject: [RFC 0/3] mm/vma: some new flags and helpers
+Message-Id: <1583131666-15531-1-git-send-email-anshuman.khandual@arm.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200316143916.195608-1-dima@arista.com>
-In-Reply-To: <20200316143916.195608-1-dima@arista.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Dmitry Safonov <0x7f454c46@gmail.com>, Dmitry Safonov <dima@arista.com>, Andrew Morton <akpm@linux-foundation.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Ingo Molnar <mingo@kernel.org>, Jiri Slaby <jslaby@suse.com>, Petr Mladek <pmladek@suse.com>, Sergey Senozhatsky <sergey.senozhatsky@gmail.com>, Steven Rostedt <rostedt@goodmis.org>, Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
+To: linux-mm@kvack.org
+Cc: uclinux-h8-devel@lists.sourceforge.jp, linux-s390@vger.kernel.org, linux-ia64@vger.kernel.org, linux-c6x-dev@linux-c6x.org, linux-parisc@vger.kernel.org, Anshuman Khandual <anshuman.khandual@arm.com>, linux-hexagon@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-sh@vger.kernel.org, linux-um@lists.infradead.org, linux-kernel@vger.kernel.org, linux-mips@vger.kernel.org, linux-m68k@lists.linux-m68k.org, openrisc@lists.librecores.org, linux-alpha@vger.kernel.org, sparclinux@vger.kernel.org, nios2-dev@lists.rocketboards.org, linux-riscv@lists.infradead.org, linux-snps-arc@lists.infradead.org, linuxppc-dev@lists.ozlabs.org, linux-arm-kernel@lists.infradead.org
 
-Currently, the log-level of show_stack() depends on a platform
-realization. It creates situations where the headers are printed with
-lower log level or higher than the stacktrace (depending on
-a platform or user).
+The motivation here is to consolidate VMA flag combinations commonly used
+across platforms and reduce code duplication while making it uncluttered
+in general.
 
-Furthermore, it forces the logic decision from user to an architecture
-side. In result, some users as sysrq/kdb/etc are doing tricks with
-temporary rising console_loglevel while printing their messages.
-And in result it not only may print unwanted messages from other CPUs,
-but also omit printing at all in the unlucky case where the printk()
-was deferred.
+This first introduces a default VM_DATA_DEFAULT_FLAGS which platforms can
+easily fall back on without requiring to define any similar data flag
+combinations as they currently do. This also adds some more common data
+flag combinations which are generally used when the platforms decide to
+override the default.
 
-Introducing log-level parameter and KERN_UNSUPPRESSED [1] seems
-an easier approach than introducing more printk buffers.
-Also, it will consolidate printings with headers.
+The second patch consolidates VM_READ, VM_WRITE, VM_EXEC as VM_ACCESS_FLAGS
+extending the existing VMA accessibility concept via vma_is_accessibility().
+VM_ACCESS_FLAGS replaces many other instances which used check all three
+VMA access flags simultaneously.
 
-Add log level argument to printk_address() as a preparation to introduce
-show_stack_loglvl().
+While here, this also adds some more special VMA flag based helpers which
+wraps around similar checks at various places thus improving readability.
+This series intentionally limits these new helpers which are applicable 
+only for special purpose VM flags than the more common ones like VM_READ,
+VM_WRITE, VM_EXEC, VM_SHARED etc just to limit code churn. But if there is
+common agreement that every flag should have it's own wrapper here, we can
+do that as well. Otherwise if this patch seems really unnecessary with much
+code churn, will be happy to drop it.
 
-As a good side-effect show_fault_oops() now prints the address with
-KERN_EMREG as the rest of output, making sure there won't be situation
-where "PC: " is printed without actual address.
+Reviews, comments, suggestions and concerns welcome. Thank you.
 
-Cc: Rich Felker <dalias@libc.org>
+This series is based on v5.6-r4 after applying these patches.
+
+1. https://patchwork.kernel.org/cover/11399319/
+2. https://patchwork.kernel.org/patch/11399379/
+
+This series is build tested across multiple architectures but boot tested
+only on arm64 and x86 platforms.
+
+Cc: linux-alpha@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org
+Cc: linux-snps-arc@lists.infradead.org
+Cc: linux-arm-kernel@lists.infradead.org
+Cc: linux-c6x-dev@linux-c6x.org
+Cc: uclinux-h8-devel@lists.sourceforge.jp
+Cc: linux-hexagon@vger.kernel.org
+Cc: linux-ia64@vger.kernel.org
+Cc: linux-m68k@lists.linux-m68k.org
+Cc: linux-mips@vger.kernel.org
+Cc: nios2-dev@lists.rocketboards.org
+Cc: openrisc@lists.librecores.org
+Cc: linux-parisc@vger.kernel.org
+Cc: linuxppc-dev@lists.ozlabs.org
+Cc: linux-riscv@lists.infradead.org
+Cc: linux-s390@vger.kernel.org
 Cc: linux-sh@vger.kernel.org
-[1]: https://lore.kernel.org/lkml/20190528002412.1625-1-dima@arista.com/T/#u
-Signed-off-by: Dmitry Safonov <dima@arista.com>
----
- arch/sh/include/asm/kdebug.h | 3 ++-
- arch/sh/kernel/dumpstack.c   | 6 +++---
- arch/sh/mm/fault.c           | 2 +-
- 3 files changed, 6 insertions(+), 5 deletions(-)
+Cc: sparclinux@vger.kernel.org
+Cc: linux-um@lists.infradead.org
+Cc: linux-xtensa@linux-xtensa.org
+Cc: linux-mm@kvack.org
 
-diff --git a/arch/sh/include/asm/kdebug.h b/arch/sh/include/asm/kdebug.h
-index de8693fabb1d..960545306afa 100644
---- a/arch/sh/include/asm/kdebug.h
-+++ b/arch/sh/include/asm/kdebug.h
-@@ -12,7 +12,8 @@ enum die_val {
- };
- 
- /* arch/sh/kernel/dumpstack.c */
--extern void printk_address(unsigned long address, int reliable);
-+extern void printk_address(unsigned long address, int reliable,
-+			   const char *loglvl);
- extern void dump_mem(const char *str, const char *loglvl,
- 		     unsigned long bottom, unsigned long top);
- 
-diff --git a/arch/sh/kernel/dumpstack.c b/arch/sh/kernel/dumpstack.c
-index 2c1a78e5776b..959064b90055 100644
---- a/arch/sh/kernel/dumpstack.c
-+++ b/arch/sh/kernel/dumpstack.c
-@@ -44,9 +44,9 @@ void dump_mem(const char *str, const char *loglvl,
- 	}
- }
- 
--void printk_address(unsigned long address, int reliable)
-+void printk_address(unsigned long address, int reliable, const char *loglvl)
- {
--	printk(" [<%p>] %s%pS\n", (void *) address,
-+	printk("%s [<%p>] %s%pS\n", loglvl, (void *) address,
- 			reliable ? "" : "? ", (void *) address);
- }
- 
-@@ -118,7 +118,7 @@ static int print_trace_stack(void *data, char *name)
-  */
- static void print_trace_address(void *data, unsigned long addr, int reliable)
- {
--	printk_address(addr, reliable);
-+	printk_address(addr, reliable, (char *)data);
- }
- 
- static const struct stacktrace_ops print_trace_ops = {
-diff --git a/arch/sh/mm/fault.c b/arch/sh/mm/fault.c
-index 5f51456f4fc7..b11f0c5e65b6 100644
---- a/arch/sh/mm/fault.c
-+++ b/arch/sh/mm/fault.c
-@@ -196,7 +196,7 @@ show_fault_oops(struct pt_regs *regs, unsigned long address)
- 
- 	printk(KERN_CONT " at %08lx\n", address);
- 	printk(KERN_ALERT "PC:");
--	printk_address(regs->pc, 1);
-+	printk_address(regs->pc, 1, KERN_ALERT);
- 
- 	show_pte(NULL, address);
- }
+Anshuman Khandual (3):
+  mm/vma: Define a default value for VM_DATA_DEFAULT_FLAGS
+  mm/vma: Introduce VM_ACCESS_FLAGS
+  mm/vma: Introduce some more VMA flag wrappers
+
+ arch/alpha/include/asm/page.h        |  3 --
+ arch/arc/include/asm/page.h          |  2 +-
+ arch/arm/include/asm/page.h          |  4 +-
+ arch/arm/mm/fault.c                  |  2 +-
+ arch/arm64/include/asm/page.h        |  4 +-
+ arch/arm64/mm/fault.c                |  2 +-
+ arch/c6x/include/asm/page.h          |  5 +--
+ arch/c6x/include/asm/processor.h     |  2 +-
+ arch/csky/include/asm/page.h         |  3 --
+ arch/h8300/include/asm/page.h        |  2 -
+ arch/hexagon/include/asm/page.h      |  3 +-
+ arch/ia64/include/asm/page.h         |  5 +--
+ arch/m68k/include/asm/page.h         |  3 --
+ arch/microblaze/include/asm/page.h   |  2 -
+ arch/mips/include/asm/page.h         |  5 +--
+ arch/nds32/include/asm/page.h        |  3 --
+ arch/nds32/mm/fault.c                |  2 +-
+ arch/nios2/include/asm/page.h        |  3 +-
+ arch/nios2/include/asm/processor.h   |  2 +-
+ arch/openrisc/include/asm/page.h     |  5 ---
+ arch/parisc/include/asm/page.h       |  3 --
+ arch/powerpc/include/asm/page.h      |  9 +----
+ arch/powerpc/include/asm/page_64.h   |  7 +---
+ arch/powerpc/mm/book3s64/pkeys.c     |  2 +-
+ arch/riscv/include/asm/page.h        |  3 +-
+ arch/s390/include/asm/page.h         |  3 +-
+ arch/s390/mm/fault.c                 |  2 +-
+ arch/sh/include/asm/page.h           |  3 --
+ arch/sh/include/asm/processor_64.h   |  2 +-
+ arch/sparc/include/asm/mman.h        |  2 +-
+ arch/sparc/include/asm/page_32.h     |  3 --
+ arch/sparc/include/asm/page_64.h     |  3 --
+ arch/unicore32/include/asm/page.h    |  3 --
+ arch/unicore32/mm/fault.c            |  2 +-
+ arch/x86/include/asm/page_types.h    |  4 +-
+ arch/x86/mm/pkeys.c                  |  2 +-
+ arch/x86/um/asm/vm-flags.h           | 10 +----
+ arch/xtensa/include/asm/page.h       |  3 --
+ drivers/staging/gasket/gasket_core.c |  2 +-
+ fs/binfmt_elf.c                      |  2 +-
+ fs/proc/task_mmu.c                   | 14 +++----
+ include/linux/huge_mm.h              |  4 +-
+ include/linux/mm.h                   | 58 +++++++++++++++++++++++++++-
+ kernel/events/core.c                 |  2 +-
+ kernel/events/uprobes.c              |  2 +-
+ mm/gup.c                             |  2 +-
+ mm/huge_memory.c                     |  6 +--
+ mm/hugetlb.c                         |  4 +-
+ mm/ksm.c                             |  8 ++--
+ mm/madvise.c                         |  4 +-
+ mm/memory.c                          |  4 +-
+ mm/migrate.c                         |  4 +-
+ mm/mlock.c                           |  4 +-
+ mm/mmap.c                            | 20 +++++-----
+ mm/mprotect.c                        |  9 ++---
+ mm/mremap.c                          |  4 +-
+ mm/msync.c                           |  3 +-
+ mm/rmap.c                            |  6 +--
+ mm/shmem.c                           |  8 ++--
+ 59 files changed, 140 insertions(+), 158 deletions(-)
+
 -- 
-2.25.1
+2.20.1
