@@ -1,49 +1,71 @@
-From: Michal Hocko <mhocko@kernel.org>
-Date: Tue, 03 Mar 2020 09:50:05 +0000
-Subject: Re: [PATCH v3 1/7] mm/memory_hotplug: Drop the flags field from struct mhp_restrictions
-Message-Id: <20200303095005.GE4380@dhcp22.suse.cz>
+From: Logan Gunthorpe <logang@deltatee.com>
+Date: Mon, 02 Mar 2020 18:46:13 +0000
+Subject: Re: [PATCH v3 4/7] x86/mm: Introduce _set_memory_prot()
+Message-Id: <1be997b0-e17a-5d48-efad-a01d84d5e496@deltatee.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20200221182503.28317-1-logang@deltatee.com>
- <20200221182503.28317-2-logang@deltatee.com>
-In-Reply-To: <20200221182503.28317-2-logang@deltatee.com>
+ <20200221182503.28317-5-logang@deltatee.com>
+ <CAPcyv4j=bZ5KBPp6PbViERdDe+HZpV_W6qbSJupTNAzyfiK6xg@mail.gmail.com>
+In-Reply-To: <CAPcyv4j=bZ5KBPp6PbViERdDe+HZpV_W6qbSJupTNAzyfiK6xg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Logan Gunthorpe <logang@deltatee.com>
-Cc: linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, Catalin Marinas <catalin.marinas@arm.com>, Dave Hansen <dave.hansen@linux.intel.com>, platform-driver-x86@vger.kernel.org, linux-mm@kvack.org, Will Deacon <will@kernel.org>, Christoph Hellwig <hch@lst.de>, linux-s390@vger.kernel.org, David Hildenbrand <david@redhat.com>, Ingo Molnar <mingo@redhat.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Dan Williams <dan.j.williams@intel.com>, Borislav Petkov <bp@alien8.de>, Andy Lutomirski <luto@kernel.org>, Thomas Gleixner <tglx@linutronix.de>, linux-arm-kernel@lists.infradead.org, Eric Badger <ebadger@gigaio.com>, linux-kernel@vger.kernel.org, Andrew Morton <akpm@linux-foundation.org>, linuxppc-dev@lists.ozlabs.org
+To: Dan Williams <dan.j.williams@intel.com>
+Cc: X86 ML <x86@kernel.org>, linux-ia64@vger.kernel.org, Linux-sh <linux-sh@vger.kernel.org>, Peter Zijlstra <peterz@infradead.org>, Catalin Marinas <catalin.marinas@arm.com>, Dave Hansen <dave.hansen@linux.intel.com>, platform-driver-x86@vger.kernel.org, Linux MM <linux-mm@kvack.org>, "H. Peter Anvin" <hpa@zytor.com>, Will Deacon <will@kernel.org>, Christoph Hellwig <hch@lst.de>, linux-s390 <linux-s390@vger.kernel.org>, David Hildenbrand <david@redhat.com>, Ingo Molnar <mingo@redhat.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Borislav Petkov <bp@alien8.de>, Andy Lutomirski <luto@kernel.org>, Thomas Gleixner <tglx@linutronix.de>, Michal Hocko <mhocko@kernel.org>, Linux ARM <linux-arm-kernel@lists.infradead.org>, Eric Badger <ebadger@gigaio.com>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Andrew Morton <akpm@linux-foundation.org>, linuxppc-dev <linuxppc-dev@lists.ozlabs.org>
 
-On Fri 21-02-20 11:24:57, Logan Gunthorpe wrote:
-> This variable is not used anywhere and should therefore be removed
-> from the structure.
+
+
+On 2020-02-29 3:33 p.m., Dan Williams wrote:
+> On Fri, Feb 21, 2020 at 10:25 AM Logan Gunthorpe <logang@deltatee.com> wrote:
+>>
+>> For use in the 32bit arch_add_memory() to set the pgprot type of the
+>> memory to add.
+>>
+>> Cc: Thomas Gleixner <tglx@linutronix.de>
+>> Cc: Ingo Molnar <mingo@redhat.com>
+>> Cc: Borislav Petkov <bp@alien8.de>
+>> Cc: "H. Peter Anvin" <hpa@zytor.com>
+>> Cc: x86@kernel.org
+>> Cc: Dave Hansen <dave.hansen@linux.intel.com>
+>> Cc: Andy Lutomirski <luto@kernel.org>
+>> Cc: Peter Zijlstra <peterz@infradead.org>
+>> Signed-off-by: Logan Gunthorpe <logang@deltatee.com>
+>> ---
+>>  arch/x86/include/asm/set_memory.h | 1 +
+>>  arch/x86/mm/pat/set_memory.c      | 7 +++++++
+>>  2 files changed, 8 insertions(+)
+>>
+>> diff --git a/arch/x86/include/asm/set_memory.h b/arch/x86/include/asm/set_memory.h
+>> index 64c3dce374e5..0aca959cf9a4 100644
+>> --- a/arch/x86/include/asm/set_memory.h
+>> +++ b/arch/x86/include/asm/set_memory.h
+>> @@ -34,6 +34,7 @@
+>>   * The caller is required to take care of these.
+>>   */
+>>
+>> +int _set_memory_prot(unsigned long addr, int numpages, pgprot_t prot);
 > 
-> Signed-off-by: Logan Gunthorpe <logang@deltatee.com>
-> Reviewed-by: David Hildenbrand <david@redhat.com>
-
-Acked-by: Michal Hocko <mhocko@suse.com>
-
-> ---
->  include/linux/memory_hotplug.h | 2 --
->  1 file changed, 2 deletions(-)
+> I wonder if this should be separated from the naming convention of the
+> other routines because this is only an internal helper for code paths
+> where the prot was established by an upper layer. For example, I
+> expect that the kernel does not want new usages to make the mistake of
+> calling:
 > 
-> diff --git a/include/linux/memory_hotplug.h b/include/linux/memory_hotplug.h
-> index f4d59155f3d4..69ff3037528d 100644
-> --- a/include/linux/memory_hotplug.h
-> +++ b/include/linux/memory_hotplug.h
-> @@ -55,11 +55,9 @@ enum {
->  
->  /*
->   * Restrictions for the memory hotplug:
-> - * flags:  MHP_ flags
->   * altmap: alternative allocator for memmap array
->   */
->  struct mhp_restrictions {
-> -	unsigned long flags;
->  	struct vmem_altmap *altmap;
->  };
->  
-> -- 
-> 2.20.1
+>    _set_memory_prot(..., pgprot_writecombine(pgprot))
+> 
+> ...instead of
+> 
+>     _set_memory_wc()
+> 
+> I'm thinking just a double underscore rename (__set_memory_prot) and a
+> kerneldoc comment for that  pointing people to use the direct
+> _set_memory_<cachemode> helpers.
 
--- 
-Michal Hocko
-SUSE Labs
+Thanks! Will do. Note, though, that even _set_memory_wc() is an internal
+x86-specific function. But the extra comment and underscore still make
+sense.
+
+> With that you can add:
+> 
+> Reviewed-by: Dan Williams <dan.j.williams@intel.com>
+> 
