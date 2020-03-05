@@ -1,49 +1,24 @@
-From: Rob Herring <robh@kernel.org>
-Date: Tue, 31 Mar 2020 21:28:57 +0000
-Subject: Re: [PATCH v2] dt-bindings: serial: sh-sci: Convert to json-schema
-Message-Id: <20200331212857.GA27690@bogus>
+From: ''Michael Weirsky'' <alex.zari@11d02.mspz7.gob.ec>
+Date: Thu, 05 Mar 2020 08:51:15 +0000
+Subject: =?utf-8?q?Wohlt=C3=A4tigkeitsspende_von_2=2E000=2E000_Millionen_Euro?=
+Message-Id: <20200305085815.22403143C27@mail.11d02.mspz7.gob.ec>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200325095721.11946-1-geert+renesas@glider.be>
-In-Reply-To: <20200325095721.11946-1-geert+renesas@glider.be>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Ulrich Hecht <uli+renesas@fpond.eu>, Chris Brandt <chris.brandt@renesas.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-serial@vger.kernel.org, devicetree@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, uclinux-h8-devel@lists.sourceforge.jp
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: linux-sh@vger.kernel.org
 
-On Wed, 25 Mar 2020 10:57:21 +0100, Geert Uytterhoeven wrote:
-> Convert the Renesas Serial Communication Interface ((H)SCI(F)(A|B))
-> Device Tree binding documentation to json-schema.
-> 
-> Split the bindings in 5 files, one per major type, to ease expressing
-> constraints.
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> ---
-> v2:
->   - Drop paragraph about aliases,
->   - Fix power-domains and resets to maxItems 1,
->   - Use a single const compatible value for SCI,
->   - Use lists of descriptions and const values for interrupts resp.
->     interrupt-names for SCI and SCIF,
->   - Use multiple possible lists of descriptions and const values for
->     interrupts resp. interrupt-names for SCIF.
-> ---
->  .../bindings/serial/renesas,hscif.yaml        | 135 ++++++++++++++
->  .../bindings/serial/renesas,sci-serial.txt    | 150 ---------------
->  .../bindings/serial/renesas,sci.yaml          |  69 +++++++
->  .../bindings/serial/renesas,scif.yaml         | 172 ++++++++++++++++++
->  .../bindings/serial/renesas,scifa.yaml        | 107 +++++++++++
->  .../bindings/serial/renesas,scifb.yaml        |  98 ++++++++++
->  6 files changed, 581 insertions(+), 150 deletions(-)
->  create mode 100644 Documentation/devicetree/bindings/serial/renesas,hscif.yaml
->  delete mode 100644 Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
->  create mode 100644 Documentation/devicetree/bindings/serial/renesas,sci.yaml
->  create mode 100644 Documentation/devicetree/bindings/serial/renesas,scif.yaml
->  create mode 100644 Documentation/devicetree/bindings/serial/renesas,scifa.yaml
->  create mode 100644 Documentation/devicetree/bindings/serial/renesas,scifb.yaml
-> 
+Lieber Freund,
 
-Applied, thanks.
+Ich bin Herr Mike Weirsky, New Jersey, Vereinigte Staaten von Amerika, der Mega-Gewinner von $ 273million In Mega Millions Jackpot, spende ich an 5 zufällige Personen, wenn Sie diese E-Mail erhalten, dann wurde Ihre E-Mail nach einem Spinball ausgewählt.Ich habe den größten Teil meines Vermögens auf eine Reihe von Wohltätigkeitsorganisationen und Organisationen verteilt.Ich habe mich freiwillig dazu entschieden, die Summe von € 2.000.000,00 an Sie als eine der ausgewählten 5 zu spenden, um meine Gewinne zu überprüfen.
+Das ist dein Spendencode: [MW530342019]
+www.youtube.com/watch?v=un8yRTmrYMY
 
-Rob
+Antworten Sie mit dem SPENDE-CODE an diese 
+
+E-Mail:mikeweirskyspende@gmail.com
+
+Ich hoffe, Sie und Ihre Familie glücklich zu machen.
+
+Grüße
+Herr Mike Weirsky
