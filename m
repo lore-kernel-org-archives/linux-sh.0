@@ -1,109 +1,107 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 09 Mar 2020 17:15:37 +0000
-Subject: [PATCH] spi: rspi: Add support for active-high chip selects
-Message-Id: <20200309171537.21551-1-geert+renesas@glider.be>
+From: Anshuman Khandual <anshuman.khandual@arm.com>
+Date: Thu, 05 Mar 2020 06:50:38 +0000
+Subject: [PATCH 0/2]  mm/vma: some new flags
+Message-Id: <1583391014-8170-1-git-send-email-anshuman.khandual@arm.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
-Cc: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Chris Brandt <Chris.Brandt@renesas.com>, Wolfram Sang <wsa+renesas@sang-engineering.com>, linux-spi@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-mm@kvack.org
+Cc: linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, linux-mips@vger.kernel.org, sparclinux@vger.kernel.org, linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org, linux-c6x-dev@linux-c6x.org, linux-hexagon@vger.kernel.org, hughd@google.com, vbabka@suse.cz, linux-snps-arc@lists.infradead.org, uclinux-h8-devel@lists.sourceforge.jp, linux-xtensa@linux-xtensa.org, Anshuman Khandual <anshuman.khandual@arm.com>, linux-um@lists.infradead.org, linux-m68k@lists.linux-m68k.org, openrisc@lists.librecores.org, linux-arm-kernel@lists.infradead.org, linux-parisc@vger.kernel.org, linux-kernel@vger.kernel.org, linux-alpha@vger.kernel.org, nios2-dev@lists.rocketboards.org, linuxppc-dev@lists.ozlabs.org
 
-All RSPI variants support setting the polarity of the SSL signal.
-Advertize support for active-high chip selects, and configure polarity
-according to the state of the flag.
+The motivation here is to consolidate VMA flag combinations commonly used
+across platforms and reduce code duplication while making it uncluttered
+in general.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
-Tested on r8a7791/koelsch using spidev_test and a logic analyzer.
----
- drivers/spi/spi-rspi.c | 36 ++++++++++++++++++++++++++++++++----
- 1 file changed, 32 insertions(+), 4 deletions(-)
+This first introduces a default VM_DATA_DEFAULT_FLAGS which platforms can
+easily fall back on without requiring to define any similar data flag
+combinations as they currently do. This also adds some more common data
+flag combinations which are generally used when the platforms decide to
+override the default.
 
-diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
-index aef05f2ac749c21d..06192c9ea8132911 100644
---- a/drivers/spi/spi-rspi.c
-+++ b/drivers/spi/spi-rspi.c
-@@ -24,6 +24,7 @@
- #include <linux/sh_dma.h>
- #include <linux/spi/spi.h>
- #include <linux/spi/rspi.h>
-+#include <linux/spinlock.h>
- 
- #define RSPI_SPCR		0x00	/* Control Register */
- #define RSPI_SSLP		0x01	/* Slave Select Polarity Register */
-@@ -79,8 +80,7 @@
- #define SPCR_BSWAP		0x01	/* Byte Swap of read-data for DMAC */
- 
- /* SSLP - Slave Select Polarity Register */
--#define SSLP_SSL1P		0x02	/* SSL1 Signal Polarity Setting */
--#define SSLP_SSL0P		0x01	/* SSL0 Signal Polarity Setting */
-+#define SSLP_SSLP(i)		BIT(i)	/* SSLi Signal Polarity Setting */
- 
- /* SPPCR - Pin Control Register */
- #define SPPCR_MOIFE		0x20	/* MOSI Idle Value Fixing Enable */
-@@ -181,7 +181,9 @@ struct rspi_data {
- 	void __iomem *addr;
- 	u32 max_speed_hz;
- 	struct spi_controller *ctlr;
-+	struct platform_device *pdev;
- 	wait_queue_head_t wait;
-+	spinlock_t lock;		/* Protects RMW-access to RSPI_SSLP */
- 	struct clk *clk;
- 	u16 spcmd;
- 	u8 spsr;
-@@ -919,6 +921,29 @@ static int qspi_setup_sequencer(struct rspi_data *rspi,
- 	return 0;
- }
- 
-+static int rspi_setup(struct spi_device *spi)
-+{
-+	struct rspi_data *rspi = spi_controller_get_devdata(spi->controller);
-+	u8 sslp;
-+
-+	if (spi->cs_gpiod)
-+		return 0;
-+
-+	pm_runtime_get_sync(&rspi->pdev->dev);
-+	spin_lock_irq(&rspi->lock);
-+
-+	sslp = rspi_read8(rspi, RSPI_SSLP);
-+	if (spi->mode & SPI_CS_HIGH)
-+		sslp |= SSLP_SSLP(spi->chip_select);
-+	else
-+		sslp &= ~SSLP_SSLP(spi->chip_select);
-+	rspi_write8(rspi, sslp, RSPI_SSLP);
-+
-+	spin_unlock_irq(&rspi->lock);
-+	pm_runtime_put(&rspi->pdev->dev);
-+	return 0;
-+}
-+
- static int rspi_prepare_message(struct spi_controller *ctlr,
- 				struct spi_message *msg)
- {
-@@ -1248,17 +1273,20 @@ static int rspi_probe(struct platform_device *pdev)
- 		goto error1;
- 	}
- 
-+	rspi->pdev = pdev;
- 	pm_runtime_enable(&pdev->dev);
- 
- 	init_waitqueue_head(&rspi->wait);
-+	spin_lock_init(&rspi->lock);
- 
- 	ctlr->bus_num = pdev->id;
-+	ctlr->setup = rspi_setup;
- 	ctlr->auto_runtime_pm = true;
- 	ctlr->transfer_one = ops->transfer_one;
- 	ctlr->prepare_message = rspi_prepare_message;
- 	ctlr->unprepare_message = rspi_unprepare_message;
--	ctlr->mode_bits = SPI_CPHA | SPI_CPOL | SPI_LSB_FIRST | SPI_LOOP |
--			  ops->extra_mode_bits;
-+	ctlr->mode_bits = SPI_CPHA | SPI_CPOL | SPI_CS_HIGH | SPI_LSB_FIRST |
-+			  SPI_LOOP | ops->extra_mode_bits;
- 	ctlr->flags = ops->flags;
- 	ctlr->dev.of_node = pdev->dev.of_node;
- 	ctlr->use_gpio_descriptors = true;
+The second patch consolidates VM_READ, VM_WRITE, VM_EXEC as VM_ACCESS_FLAGS
+extending the existing VMA accessibility concept via vma_is_accessibility().
+VM_ACCESS_FLAGS replaces many other instances which used check all three
+VMA access flags simultaneously.
+
+This series is based on v5.6-rc4 after applying these.
+
+1. https://patchwork.kernel.org/cover/11399319/
+2. https://patchwork.kernel.org/patch/11399379/
+
+Changes in V1:
+
+- Dropped the [PATCH 3/3] which was adding more vma_is_* wrappers
+- Used VM_DATA_FLAGS_EXEC for VM_DATA_DEFAULT_FLAGS instead per Vlastimil
+- Dropped init use cases for VM_ACCESS_FLAGS as suggested by Vlastimil
+
+Changes in RFC: (https://patchwork.kernel.org/project/linux-mm/list/?series$9733)
+
+Cc: linux-alpha@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org
+Cc: linux-snps-arc@lists.infradead.org
+Cc: linux-arm-kernel@lists.infradead.org
+Cc: linux-c6x-dev@linux-c6x.org
+Cc: uclinux-h8-devel@lists.sourceforge.jp
+Cc: linux-hexagon@vger.kernel.org
+Cc: linux-ia64@vger.kernel.org
+Cc: linux-m68k@lists.linux-m68k.org
+Cc: linux-mips@vger.kernel.org
+Cc: nios2-dev@lists.rocketboards.org
+Cc: openrisc@lists.librecores.org
+Cc: linux-parisc@vger.kernel.org
+Cc: linuxppc-dev@lists.ozlabs.org
+Cc: linux-riscv@lists.infradead.org
+Cc: linux-s390@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
+Cc: sparclinux@vger.kernel.org
+Cc: linux-um@lists.infradead.org
+Cc: linux-xtensa@linux-xtensa.org
+Cc: linux-mm@kvack.org
+
+Anshuman Khandual (2):
+  mm/vma: Define a default value for VM_DATA_DEFAULT_FLAGS
+  mm/vma: Introduce VM_ACCESS_FLAGS
+
+ arch/alpha/include/asm/page.h        |  3 ---
+ arch/arc/include/asm/page.h          |  2 +-
+ arch/arm/include/asm/page.h          |  4 +---
+ arch/arm/mm/fault.c                  |  2 +-
+ arch/arm64/include/asm/page.h        |  4 +---
+ arch/arm64/mm/fault.c                |  2 +-
+ arch/c6x/include/asm/page.h          |  5 +----
+ arch/csky/include/asm/page.h         |  3 ---
+ arch/h8300/include/asm/page.h        |  2 --
+ arch/hexagon/include/asm/page.h      |  3 +--
+ arch/ia64/include/asm/page.h         |  5 +----
+ arch/m68k/include/asm/page.h         |  3 ---
+ arch/microblaze/include/asm/page.h   |  2 --
+ arch/mips/include/asm/page.h         |  5 +----
+ arch/nds32/include/asm/page.h        |  3 ---
+ arch/nds32/mm/fault.c                |  2 +-
+ arch/nios2/include/asm/page.h        |  3 +--
+ arch/openrisc/include/asm/page.h     |  5 -----
+ arch/parisc/include/asm/page.h       |  3 ---
+ arch/powerpc/include/asm/page.h      |  9 ++-------
+ arch/powerpc/include/asm/page_64.h   |  7 ++-----
+ arch/powerpc/mm/book3s64/pkeys.c     |  2 +-
+ arch/riscv/include/asm/page.h        |  3 +--
+ arch/s390/include/asm/page.h         |  3 +--
+ arch/s390/mm/fault.c                 |  2 +-
+ arch/sh/include/asm/page.h           |  3 ---
+ arch/sparc/include/asm/page_32.h     |  3 ---
+ arch/sparc/include/asm/page_64.h     |  3 ---
+ arch/unicore32/include/asm/page.h    |  3 ---
+ arch/unicore32/mm/fault.c            |  2 +-
+ arch/x86/include/asm/page_types.h    |  4 +---
+ arch/x86/mm/pkeys.c                  |  2 +-
+ arch/x86/um/asm/vm-flags.h           | 10 ++--------
+ arch/xtensa/include/asm/page.h       |  3 ---
+ drivers/staging/gasket/gasket_core.c |  2 +-
+ include/linux/mm.h                   | 20 +++++++++++++++++++-
+ mm/mmap.c                            |  2 +-
+ mm/mprotect.c                        |  4 ++--
+ 38 files changed, 47 insertions(+), 101 deletions(-)
+
 -- 
-2.17.1
+2.20.1
