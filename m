@@ -1,45 +1,84 @@
-From: Rich Felker <dalias@libc.org>
-Date: Thu, 26 Mar 2020 20:42:26 +0000
-Subject: Re: [PATCH 1/2] arch/sh: vmlinux.scr
-Message-Id: <20200326204226.GE11469@brightrain.aerifal.cx>
+From: Arvind Sankar <nivedita@alum.mit.edu>
+Date: Thu, 05 Mar 2020 15:10:10 +0000
+Subject: [PATCH] sh: Stop printing the virtual memory layout
+Message-Id: <20200305151010.835954-1-nivedita@alum.mit.edu>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200315175108.9694-1-romain.naour@gmail.com>
-In-Reply-To: <20200315175108.9694-1-romain.naour@gmail.com>
+References: <202003021038.8F0369D907@keescook>
+In-Reply-To: <202003021038.8F0369D907@keescook>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Kees Cook <keescook@chromium.org>
+Cc: "Tobin C . Harding" <me@tobin.cc>, Tycho Andersen <tycho@tycho.ws>, kernel-hardening@lists.openwall.com, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-On Sun, Mar 15, 2020 at 06:51:07PM +0100, Romain Naour wrote:
-> Since the patch [1], building the kernel using a toolchain built with
-> Binutils 2.33.1 prevent booting a sh4 system under Qemu.
-> Apply the patch provided by Alan Modra [2] that fix alignment of rodata.
->=20
-> [1] https://sourceware.org/git/gitweb.cgi?p=3Dbinutils-gdb.git;h=EBd2263b=
-a9a9124d93bbc0ece63d7e0fae89b40e
-> [2] https://www.sourceware.org/ml/binutils/2019-12/msg00112.html
->=20
-> Signed-off-by: Romain Naour <romain.naour@gmail.com>
-> Cc: Alan Modra <amodra@gmail.com>
+For security, don't display the kernel's virtual memory layout.
 
-Acked-by: Rich Felker <dalias@libc.org>
+Kees Cook points out:
+"These have been entirely removed on other architectures, so let's
+just do the same for ia32 and remove it unconditionally."
 
-> ---
->  arch/sh/boot/compressed/vmlinux.scr | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
->=20
-> diff --git a/arch/sh/boot/compressed/vmlinux.scr b/arch/sh/boot/compresse=
-d/vmlinux.scr
-> index 862d74808236..dd292b4b9082 100644
-> --- a/arch/sh/boot/compressed/vmlinux.scr
-> +++ b/arch/sh/boot/compressed/vmlinux.scr
-> @@ -1,6 +1,6 @@
->  SECTIONS
->  {
-> -  .rodata..compressed : {
-> +  .rodata..compressed : ALIGN(8) {
->  	input_len =3D .;
->  	LONG(input_data_end - input_data) input_data =3D .;
->  	*(.data)
-> --=20
-> 2.24.1
+071929dbdd86 ("arm64: Stop printing the virtual memory layout")
+1c31d4e96b8c ("ARM: 8820/1: mm: Stop printing the virtual memory layout")
+31833332f798 ("m68k/mm: Stop printing the virtual memory layout")
+fd8d0ca25631 ("parisc: Hide virtual kernel memory layout")
+adb1fe9ae2ee ("mm/page_alloc: Remove kernel address exposure in free_reserved_area()")
+
+Signed-off-by: Arvind Sankar <nivedita@alum.mit.edu>
+---
+ arch/sh/mm/init.c | 41 -----------------------------------------
+ 1 file changed, 41 deletions(-)
+
+diff --git a/arch/sh/mm/init.c b/arch/sh/mm/init.c
+index d1b1ff2be17a..e68a1106e99b 100644
+--- a/arch/sh/mm/init.c
++++ b/arch/sh/mm/init.c
+@@ -360,47 +360,6 @@ void __init mem_init(void)
+ 	vsyscall_init();
+ 
+ 	mem_init_print_info(NULL);
+-	pr_info("virtual kernel memory layout:\n"
+-		"    fixmap  : 0x%08lx - 0x%08lx   (%4ld kB)\n"
+-#ifdef CONFIG_HIGHMEM
+-		"    pkmap   : 0x%08lx - 0x%08lx   (%4ld kB)\n"
+-#endif
+-		"    vmalloc : 0x%08lx - 0x%08lx   (%4ld MB)\n"
+-		"    lowmem  : 0x%08lx - 0x%08lx   (%4ld MB) (cached)\n"
+-#ifdef CONFIG_UNCACHED_MAPPING
+-		"            : 0x%08lx - 0x%08lx   (%4ld MB) (uncached)\n"
+-#endif
+-		"      .init : 0x%08lx - 0x%08lx   (%4ld kB)\n"
+-		"      .data : 0x%08lx - 0x%08lx   (%4ld kB)\n"
+-		"      .text : 0x%08lx - 0x%08lx   (%4ld kB)\n",
+-		FIXADDR_START, FIXADDR_TOP,
+-		(FIXADDR_TOP - FIXADDR_START) >> 10,
+-
+-#ifdef CONFIG_HIGHMEM
+-		PKMAP_BASE, PKMAP_BASE+LAST_PKMAP*PAGE_SIZE,
+-		(LAST_PKMAP*PAGE_SIZE) >> 10,
+-#endif
+-
+-		(unsigned long)VMALLOC_START, VMALLOC_END,
+-		(VMALLOC_END - VMALLOC_START) >> 20,
+-
+-		(unsigned long)memory_start, (unsigned long)high_memory,
+-		((unsigned long)high_memory - (unsigned long)memory_start) >> 20,
+-
+-#ifdef CONFIG_UNCACHED_MAPPING
+-		uncached_start, uncached_end, uncached_size >> 20,
+-#endif
+-
+-		(unsigned long)&__init_begin, (unsigned long)&__init_end,
+-		((unsigned long)&__init_end -
+-		 (unsigned long)&__init_begin) >> 10,
+-
+-		(unsigned long)&_etext, (unsigned long)&_edata,
+-		((unsigned long)&_edata - (unsigned long)&_etext) >> 10,
+-
+-		(unsigned long)&_text, (unsigned long)&_etext,
+-		((unsigned long)&_etext - (unsigned long)&_text) >> 10);
+-
+ 	mem_init_done = 1;
+ }
+ 
+-- 
+2.24.1
