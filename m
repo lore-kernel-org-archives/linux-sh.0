@@ -1,7 +1,7 @@
-From: Kees Cook <keescook@chromium.org>
-Date: Thu, 05 Mar 2020 17:34:47 +0000
+From: Tycho Andersen <tycho@tycho.ws>
+Date: Thu, 05 Mar 2020 20:51:58 +0000
 Subject: Re: [PATCH] sh: Stop printing the virtual memory layout
-Message-Id: <202003050933.14BDEDBF1@keescook>
+Message-Id: <20200305205158.GF6506@cisco>
 List-Id: <linux-sh.vger.kernel.org>
 References: <202003021038.8F0369D907@keescook>
  <20200305151010.835954-1-nivedita@alum.mit.edu>
@@ -9,44 +9,35 @@ References: <202003021038.8F0369D907@keescook>
  <31d1567c4c195f3bc5c6b610386cf0f559f9094f.camel@perches.com>
  <3c628a5a-35c7-3d92-b94b-23704500f7c4@physik.fu-berlin.de>
  <20200305154657.GA848330@rani.riverdale.lan>
-In-Reply-To: <20200305154657.GA848330@rani.riverdale.lan>
+ <456fddd9-c980-b0f2-9dd0-19befee7861e@physik.fu-berlin.de>
+ <20200305155628.GA857024@rani.riverdale.lan>
+In-Reply-To: <20200305155628.GA857024@rani.riverdale.lan>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Arvind Sankar <nivedita@alum.mit.edu>
-Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, Joe Perches <joe@perches.com>, "Tobin C . Harding" <me@tobin.cc>, Tycho Andersen <tycho@tycho.ws>, kernel-hardening@lists.openwall.com, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, Joe Perches <joe@perches.com>, Kees Cook <keescook@chromium.org>, "Tobin C . Harding" <me@tobin.cc>, kernel-hardening@lists.openwall.com, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-On Thu, Mar 05, 2020 at 10:46:58AM -0500, Arvind Sankar wrote:
-> On Thu, Mar 05, 2020 at 04:41:05PM +0100, John Paul Adrian Glaubitz wrote:
-> > On 3/5/20 4:38 PM, Joe Perches wrote:
-> > >> Aww, why wasn't this made configurable? I found these memory map printouts
-> > >> very useful for development.
+On Thu, Mar 05, 2020 at 10:56:29AM -0500, Arvind Sankar wrote:
+> On Thu, Mar 05, 2020 at 04:49:22PM +0100, John Paul Adrian Glaubitz wrote:
+> > On 3/5/20 4:46 PM, Arvind Sankar wrote:
+> > > Not really too late. I can do s/pr_info/pr_devel and resubmit.
 > > > 
-> > > It could be changed from pr_info to pr_devel.
+> > > parisc for eg actually hides this in #if 0 rather than deleting the
+> > > code.
 > > > 
-> > > A #define DEBUG would have to be added to emit it.
+> > > Kees, you fine with that?
 > > 
-> > Well, from the discussion it seems the decision to cut it out has already been
-> > made, so I guess it's too late :(.
+> > But wasn't it removed for all the other architectures already? Or are these
+> > changes not in Linus' tree yet?
 > > 
 > > Adrian
-> > 
-> > -- 
-> >  .''`.  John Paul Adrian Glaubitz
-> > : :' :  Debian Developer - glaubitz@debian.org
-> > `. `'   Freie Universitaet Berlin - glaubitz@physik.fu-berlin.de
-> >   `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
 > 
-> Not really too late. I can do s/pr_info/pr_devel and resubmit.
-> 
-> parisc for eg actually hides this in #if 0 rather than deleting the
-> code.
-> 
-> Kees, you fine with that?
+> The ones mentioned in the commit message, yes, those are long gone. But
+> I don't see any reason why the remaining ones (there are 6 left that I
+> submitted patches just now for) couldn't switch to pr_devel instead.
 
-I don't mind pr_devel(). ("#if 0" tends to lead to code-rot since it's
-not subjected to syntax checking in case the names of things change.)
-That said, it's really up to the arch maintainers.
+If you do happen to re-send with pr_debug() instead, feel free to add
+my ack to that series as well. But in any case, this one is also:
 
--- 
-Kees Cook
+Acked-by: Tycho Andersen <tycho@tycho.ws>
