@@ -1,334 +1,821 @@
-From: Michal Hocko <mhocko@kernel.org>
-Date: Tue, 03 Mar 2020 09:50:32 +0000
-Subject: Re: [PATCH v3 2/7] mm/memory_hotplug: Rename mhp_restrictions to mhp_params
-Message-Id: <20200303095032.GF4380@dhcp22.suse.cz>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 06 Mar 2020 09:07:20 +0000
+Subject: [PATCH] dt-bindings: serial: sh-sci: Convert to json-schema
+Message-Id: <20200306090720.9365-1-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200221182503.28317-1-logang@deltatee.com>
- <20200221182503.28317-3-logang@deltatee.com>
-In-Reply-To: <20200221182503.28317-3-logang@deltatee.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Logan Gunthorpe <logang@deltatee.com>
-Cc: linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, Catalin Marinas <catalin.marinas@arm.com>, Dave Hansen <dave.hansen@linux.intel.com>, platform-driver-x86@vger.kernel.org, linux-mm@kvack.org, Will Deacon <will@kernel.org>, Christoph Hellwig <hch@lst.de>, linux-s390@vger.kernel.org, David Hildenbrand <david@redhat.com>, Ingo Molnar <mingo@redhat.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Dan Williams <dan.j.williams@intel.com>, Borislav Petkov <bp@alien8.de>, Andy Lutomirski <luto@kernel.org>, Thomas Gleixner <tglx@linutronix.de>, linux-arm-kernel@lists.infradead.org, Eric Badger <ebadger@gigaio.com>, linux-kernel@vger.kernel.org, Andrew Morton <akpm@linux-foundation.org>, linuxppc-dev@lists.ozlabs.org
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Rob Herring <robh+dt@kernel.org>
+Cc: Ulrich Hecht <uli+renesas@fpond.eu>, Chris Brandt <chris.brandt@renesas.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-serial@vger.kernel.org, devicetree@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Fri 21-02-20 11:24:58, Logan Gunthorpe wrote:
-> The mhp_restrictions struct really doesn't specify anything resembling
-> a restriction anymore so rename it to be mhp_params as it is a list
-> of extended parameters.
-> 
-> Signed-off-by: Logan Gunthorpe <logang@deltatee.com>
+Convert the Renesas Serial Communication Interface ((H)SCI(F)(A|B))
+Device Tree binding documentation to json-schema.
 
-Acked-by: Michal Hocko <mhocko@suse.com>
+Split the bindings in 5 files, one per major type, to ease expressing
+constraints.
 
-> ---
->  arch/arm64/mm/mmu.c            |  4 ++--
->  arch/ia64/mm/init.c            |  4 ++--
->  arch/powerpc/mm/mem.c          |  4 ++--
->  arch/s390/mm/init.c            |  6 +++---
->  arch/sh/mm/init.c              |  4 ++--
->  arch/x86/mm/init_32.c          |  4 ++--
->  arch/x86/mm/init_64.c          |  8 ++++----
->  include/linux/memory_hotplug.h | 16 ++++++++--------
->  mm/memory_hotplug.c            |  8 ++++----
->  mm/memremap.c                  |  8 ++++----
->  10 files changed, 33 insertions(+), 33 deletions(-)
-> 
-> diff --git a/arch/arm64/mm/mmu.c b/arch/arm64/mm/mmu.c
-> index 128f70852bf3..ee37bca8aba8 100644
-> --- a/arch/arm64/mm/mmu.c
-> +++ b/arch/arm64/mm/mmu.c
-> @@ -1050,7 +1050,7 @@ int p4d_free_pud_page(p4d_t *p4d, unsigned long addr)
->  
->  #ifdef CONFIG_MEMORY_HOTPLUG
->  int arch_add_memory(int nid, u64 start, u64 size,
-> -			struct mhp_restrictions *restrictions)
-> +		    struct mhp_params *params)
->  {
->  	int flags = 0;
->  
-> @@ -1063,7 +1063,7 @@ int arch_add_memory(int nid, u64 start, u64 size,
->  	memblock_clear_nomap(start, size);
->  
->  	return __add_pages(nid, start >> PAGE_SHIFT, size >> PAGE_SHIFT,
-> -			   restrictions);
-> +			   params);
->  }
->  void arch_remove_memory(int nid, u64 start, u64 size,
->  			struct vmem_altmap *altmap)
-> diff --git a/arch/ia64/mm/init.c b/arch/ia64/mm/init.c
-> index b01d68a2d5d9..97bbc23ea1e3 100644
-> --- a/arch/ia64/mm/init.c
-> +++ b/arch/ia64/mm/init.c
-> @@ -670,13 +670,13 @@ mem_init (void)
->  
->  #ifdef CONFIG_MEMORY_HOTPLUG
->  int arch_add_memory(int nid, u64 start, u64 size,
-> -			struct mhp_restrictions *restrictions)
-> +		    struct mhp_params *params)
->  {
->  	unsigned long start_pfn = start >> PAGE_SHIFT;
->  	unsigned long nr_pages = size >> PAGE_SHIFT;
->  	int ret;
->  
-> -	ret = __add_pages(nid, start_pfn, nr_pages, restrictions);
-> +	ret = __add_pages(nid, start_pfn, nr_pages, params);
->  	if (ret)
->  		printk("%s: Problem encountered in __add_pages() as ret=%d\n",
->  		       __func__,  ret);
-> diff --git a/arch/powerpc/mm/mem.c b/arch/powerpc/mm/mem.c
-> index ef7b1119b2e2..b4bece53bec0 100644
-> --- a/arch/powerpc/mm/mem.c
-> +++ b/arch/powerpc/mm/mem.c
-> @@ -128,7 +128,7 @@ static void flush_dcache_range_chunked(unsigned long start, unsigned long stop,
->  }
->  
->  int __ref arch_add_memory(int nid, u64 start, u64 size,
-> -			struct mhp_restrictions *restrictions)
-> +			  struct mhp_params *params)
->  {
->  	unsigned long start_pfn = start >> PAGE_SHIFT;
->  	unsigned long nr_pages = size >> PAGE_SHIFT;
-> @@ -144,7 +144,7 @@ int __ref arch_add_memory(int nid, u64 start, u64 size,
->  		return -EFAULT;
->  	}
->  
-> -	return __add_pages(nid, start_pfn, nr_pages, restrictions);
-> +	return __add_pages(nid, start_pfn, nr_pages, params);
->  }
->  
->  void __ref arch_remove_memory(int nid, u64 start, u64 size,
-> diff --git a/arch/s390/mm/init.c b/arch/s390/mm/init.c
-> index ac44bd76db4b..e9e4a7abd0cc 100644
-> --- a/arch/s390/mm/init.c
-> +++ b/arch/s390/mm/init.c
-> @@ -268,20 +268,20 @@ device_initcall(s390_cma_mem_init);
->  #endif /* CONFIG_CMA */
->  
->  int arch_add_memory(int nid, u64 start, u64 size,
-> -		struct mhp_restrictions *restrictions)
-> +		    struct mhp_params *params)
->  {
->  	unsigned long start_pfn = PFN_DOWN(start);
->  	unsigned long size_pages = PFN_DOWN(size);
->  	int rc;
->  
-> -	if (WARN_ON_ONCE(restrictions->altmap))
-> +	if (WARN_ON_ONCE(params->altmap))
->  		return -EINVAL;
->  
->  	rc = vmem_add_mapping(start, size);
->  	if (rc)
->  		return rc;
->  
-> -	rc = __add_pages(nid, start_pfn, size_pages, restrictions);
-> +	rc = __add_pages(nid, start_pfn, size_pages, params);
->  	if (rc)
->  		vmem_remove_mapping(start, size);
->  	return rc;
-> diff --git a/arch/sh/mm/init.c b/arch/sh/mm/init.c
-> index d1b1ff2be17a..e5114c053364 100644
-> --- a/arch/sh/mm/init.c
-> +++ b/arch/sh/mm/init.c
-> @@ -406,14 +406,14 @@ void __init mem_init(void)
->  
->  #ifdef CONFIG_MEMORY_HOTPLUG
->  int arch_add_memory(int nid, u64 start, u64 size,
-> -			struct mhp_restrictions *restrictions)
-> +		    struct mhp_params *params)
->  {
->  	unsigned long start_pfn = PFN_DOWN(start);
->  	unsigned long nr_pages = size >> PAGE_SHIFT;
->  	int ret;
->  
->  	/* We only have ZONE_NORMAL, so this is easy.. */
-> -	ret = __add_pages(nid, start_pfn, nr_pages, restrictions);
-> +	ret = __add_pages(nid, start_pfn, nr_pages, params);
->  	if (unlikely(ret))
->  		printk("%s: Failed, __add_pages() = %d\n", __func__, ret);
->  
-> diff --git a/arch/x86/mm/init_32.c b/arch/x86/mm/init_32.c
-> index 23df4885bbed..3ec3dac7c268 100644
-> --- a/arch/x86/mm/init_32.c
-> +++ b/arch/x86/mm/init_32.c
-> @@ -853,12 +853,12 @@ void __init mem_init(void)
->  
->  #ifdef CONFIG_MEMORY_HOTPLUG
->  int arch_add_memory(int nid, u64 start, u64 size,
-> -			struct mhp_restrictions *restrictions)
-> +		    struct mhp_params *params)
->  {
->  	unsigned long start_pfn = start >> PAGE_SHIFT;
->  	unsigned long nr_pages = size >> PAGE_SHIFT;
->  
-> -	return __add_pages(nid, start_pfn, nr_pages, restrictions);
-> +	return __add_pages(nid, start_pfn, nr_pages, params);
->  }
->  
->  void arch_remove_memory(int nid, u64 start, u64 size,
-> diff --git a/arch/x86/mm/init_64.c b/arch/x86/mm/init_64.c
-> index abbdecb75fad..87977a8bfbbf 100644
-> --- a/arch/x86/mm/init_64.c
-> +++ b/arch/x86/mm/init_64.c
-> @@ -844,11 +844,11 @@ static void update_end_of_memory_vars(u64 start, u64 size)
->  }
->  
->  int add_pages(int nid, unsigned long start_pfn, unsigned long nr_pages,
-> -				struct mhp_restrictions *restrictions)
-> +	      struct mhp_params *params)
->  {
->  	int ret;
->  
-> -	ret = __add_pages(nid, start_pfn, nr_pages, restrictions);
-> +	ret = __add_pages(nid, start_pfn, nr_pages, params);
->  	WARN_ON_ONCE(ret);
->  
->  	/* update max_pfn, max_low_pfn and high_memory */
-> @@ -859,14 +859,14 @@ int add_pages(int nid, unsigned long start_pfn, unsigned long nr_pages,
->  }
->  
->  int arch_add_memory(int nid, u64 start, u64 size,
-> -			struct mhp_restrictions *restrictions)
-> +		    struct mhp_params *params)
->  {
->  	unsigned long start_pfn = start >> PAGE_SHIFT;
->  	unsigned long nr_pages = size >> PAGE_SHIFT;
->  
->  	init_memory_mapping(start, start + size);
->  
-> -	return add_pages(nid, start_pfn, nr_pages, restrictions);
-> +	return add_pages(nid, start_pfn, nr_pages, params);
->  }
->  
->  #define PAGE_INUSE 0xFD
-> diff --git a/include/linux/memory_hotplug.h b/include/linux/memory_hotplug.h
-> index 69ff3037528d..c5df1b3dada0 100644
-> --- a/include/linux/memory_hotplug.h
-> +++ b/include/linux/memory_hotplug.h
-> @@ -54,10 +54,10 @@ enum {
->  };
->  
->  /*
-> - * Restrictions for the memory hotplug:
-> - * altmap: alternative allocator for memmap array
-> + * Extended parameters for memory hotplug:
-> + * altmap: alternative allocator for memmap array (optional)
->   */
-> -struct mhp_restrictions {
-> +struct mhp_params {
->  	struct vmem_altmap *altmap;
->  };
->  
-> @@ -108,7 +108,7 @@ extern int restore_online_page_callback(online_page_callback_t callback);
->  extern int try_online_node(int nid);
->  
->  extern int arch_add_memory(int nid, u64 start, u64 size,
-> -			struct mhp_restrictions *restrictions);
-> +			   struct mhp_params *params);
->  extern u64 max_mem_size;
->  
->  extern bool memhp_auto_online;
-> @@ -126,17 +126,17 @@ extern void __remove_pages(unsigned long start_pfn, unsigned long nr_pages,
->  
->  /* reasonably generic interface to expand the physical pages */
->  extern int __add_pages(int nid, unsigned long start_pfn, unsigned long nr_pages,
-> -		       struct mhp_restrictions *restrictions);
-> +		       struct mhp_params *params);
->  
->  #ifndef CONFIG_ARCH_HAS_ADD_PAGES
->  static inline int add_pages(int nid, unsigned long start_pfn,
-> -		unsigned long nr_pages, struct mhp_restrictions *restrictions)
-> +		unsigned long nr_pages, struct mhp_params *params)
->  {
-> -	return __add_pages(nid, start_pfn, nr_pages, restrictions);
-> +	return __add_pages(nid, start_pfn, nr_pages, params);
->  }
->  #else /* ARCH_HAS_ADD_PAGES */
->  int add_pages(int nid, unsigned long start_pfn, unsigned long nr_pages,
-> -	      struct mhp_restrictions *restrictions);
-> +	      struct mhp_params *params);
->  #endif /* ARCH_HAS_ADD_PAGES */
->  
->  #ifdef CONFIG_NUMA
-> diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
-> index 0a54ffac8c68..c69469e1b40e 100644
-> --- a/mm/memory_hotplug.c
-> +++ b/mm/memory_hotplug.c
-> @@ -299,11 +299,11 @@ static int check_hotplug_memory_addressable(unsigned long pfn,
->   * add the new pages.
->   */
->  int __ref __add_pages(int nid, unsigned long pfn, unsigned long nr_pages,
-> -		struct mhp_restrictions *restrictions)
-> +		      struct mhp_params *params)
->  {
->  	int err;
->  	unsigned long nr, start_sec, end_sec;
-> -	struct vmem_altmap *altmap = restrictions->altmap;
-> +	struct vmem_altmap *altmap = params->altmap;
->  
->  	err = check_hotplug_memory_addressable(pfn, nr_pages);
->  	if (err)
-> @@ -993,7 +993,7 @@ static int online_memory_block(struct memory_block *mem, void *arg)
->   */
->  int __ref add_memory_resource(int nid, struct resource *res)
->  {
-> -	struct mhp_restrictions restrictions = {};
-> +	struct mhp_params params = {};
->  	u64 start, size;
->  	bool new_node = false;
->  	int ret;
-> @@ -1021,7 +1021,7 @@ int __ref add_memory_resource(int nid, struct resource *res)
->  	new_node = ret;
->  
->  	/* call arch's memory hotadd */
-> -	ret = arch_add_memory(nid, start, size, &restrictions);
-> +	ret = arch_add_memory(nid, start, size, &params);
->  	if (ret < 0)
->  		goto error;
->  
-> diff --git a/mm/memremap.c b/mm/memremap.c
-> index 09b5b7adc773..6891a503a078 100644
-> --- a/mm/memremap.c
-> +++ b/mm/memremap.c
-> @@ -161,7 +161,7 @@ void *memremap_pages(struct dev_pagemap *pgmap, int nid)
->  {
->  	struct resource *res = &pgmap->res;
->  	struct dev_pagemap *conflict_pgmap;
-> -	struct mhp_restrictions restrictions = {
-> +	struct mhp_params params = {
->  		/*
->  		 * We do not want any optional features only our own memmap
->  		 */
-> @@ -275,7 +275,7 @@ void *memremap_pages(struct dev_pagemap *pgmap, int nid)
->  	 */
->  	if (pgmap->type = MEMORY_DEVICE_PRIVATE) {
->  		error = add_pages(nid, PHYS_PFN(res->start),
-> -				PHYS_PFN(resource_size(res)), &restrictions);
-> +				PHYS_PFN(resource_size(res)), &params);
->  	} else {
->  		error = kasan_add_zero_shadow(__va(res->start), resource_size(res));
->  		if (error) {
-> @@ -284,7 +284,7 @@ void *memremap_pages(struct dev_pagemap *pgmap, int nid)
->  		}
->  
->  		error = arch_add_memory(nid, res->start, resource_size(res),
-> -					&restrictions);
-> +					&params);
->  	}
->  
->  	if (!error) {
-> @@ -292,7 +292,7 @@ void *memremap_pages(struct dev_pagemap *pgmap, int nid)
->  
->  		zone = &NODE_DATA(nid)->node_zones[ZONE_DEVICE];
->  		move_pfn_range_to_zone(zone, PHYS_PFN(res->start),
-> -				PHYS_PFN(resource_size(res)), restrictions.altmap);
-> +				PHYS_PFN(resource_size(res)), params.altmap);
->  	}
->  
->  	mem_hotplug_done();
-> -- 
-> 2.20.1
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+This depends on "[PATCH v2 1/2] dt-bindings: serial: Convert generic
+bindings to json-schema".
+https://lore.kernel.org/linux-devicetree/20200306090046.8890-2-geert+renesas@glider.be/
+---
+ .../bindings/serial/renesas,hscif.yaml        | 138 ++++++++++++++
+ .../bindings/serial/renesas,sci-serial.txt    | 150 ----------------
+ .../bindings/serial/renesas,sci.yaml          |  79 ++++++++
+ .../bindings/serial/renesas,scif.yaml         | 168 ++++++++++++++++++
+ .../bindings/serial/renesas,scifa.yaml        | 110 ++++++++++++
+ .../bindings/serial/renesas,scifb.yaml        | 101 +++++++++++
+ 6 files changed, 596 insertions(+), 150 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/serial/renesas,hscif.yaml
+ delete mode 100644 Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+ create mode 100644 Documentation/devicetree/bindings/serial/renesas,sci.yaml
+ create mode 100644 Documentation/devicetree/bindings/serial/renesas,scif.yaml
+ create mode 100644 Documentation/devicetree/bindings/serial/renesas,scifa.yaml
+ create mode 100644 Documentation/devicetree/bindings/serial/renesas,scifb.yaml
 
+diff --git a/Documentation/devicetree/bindings/serial/renesas,hscif.yaml b/Documentation/devicetree/bindings/serial/renesas,hscif.yaml
+new file mode 100644
+index 0000000000000000..2af15ff7f4f24020
+--- /dev/null
++++ b/Documentation/devicetree/bindings/serial/renesas,hscif.yaml
+@@ -0,0 +1,138 @@
++# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: "http://devicetree.org/schemas/serial/renesas,hscif.yaml#"
++$schema: "http://devicetree.org/meta-schemas/core.yaml#"
++
++title: Renesas High Speed Serial Communication Interface with FIFO (HSCIF)
++
++maintainers:
++  - Geert Uytterhoeven <geert+renesas@glider.be>
++
++description:
++  Each enabled UART may have an optional "serialN" alias in the "aliases" node,
++  where N is the port number (non-negative decimal integer) as printed on the
++  label next to the physical port.
++
++allOf:
++  - $ref: serial.yaml#
++
++properties:
++  compatible:
++    oneOf:
++      - items:
++          - enum:
++              - renesas,hscif-r8a7778      # R-Car M1
++              - renesas,hscif-r8a7779      # R-Car H1
++          - const: renesas,rcar-gen1-hscif # R-Car Gen1
++          - const: renesas,hscif           # generic HSCIF compatible UART
++
++      - items:
++          - enum:
++              - renesas,hscif-r8a7743      # RZ/G1M
++              - renesas,hscif-r8a7744      # RZ/G1N
++              - renesas,hscif-r8a7745      # RZ/G1E
++              - renesas,hscif-r8a77470     # RZ/G1C
++              - renesas,hscif-r8a7790      # R-Car H2
++              - renesas,hscif-r8a7791      # R-Car M2-W
++              - renesas,hscif-r8a7792      # R-Car V2H
++              - renesas,hscif-r8a7793      # R-Car M2-N
++              - renesas,hscif-r8a7794      # R-Car E2
++          - const: renesas,rcar-gen2-hscif # R-Car Gen2 and RZ/G1
++          - const: renesas,hscif           # generic HSCIF compatible UART
++
++      - items:
++          - enum:
++              - renesas,hscif-r8a774a1     # RZ/G2M
++              - renesas,hscif-r8a774b1     # RZ/G2N
++              - renesas,hscif-r8a774c0     # RZ/G2E
++              - renesas,hscif-r8a7795      # R-Car H3
++              - renesas,hscif-r8a7796      # R-Car M3-W
++              - renesas,hscif-r8a77961     # R-Car M3-W+
++              - renesas,hscif-r8a77965     # R-Car M3-N
++              - renesas,hscif-r8a77970     # R-Car V3M
++              - renesas,hscif-r8a77980     # R-Car V3H
++              - renesas,hscif-r8a77990     # R-Car E3
++              - renesas,hscif-r8a77995     # R-Car D3
++          - const: renesas,rcar-gen3-hscif # R-Car Gen3 and RZ/G2
++          - const: renesas,hscif           # generic HSCIF compatible UART
++
++  reg:
++    maxItems: 1
++
++  interrupts:
++    maxItems: 1
++
++  clocks:
++    minItems: 1
++    maxItems: 4
++
++  clock-names:
++    minItems: 1
++    maxItems: 4
++    items:
++      enum:
++        - fck # UART functional clock
++        - hsck # optional external clock input
++        - brg_int # optional internal clock source for BRG frequency divider
++        - scif_clk # optional external clock source for BRG frequency divider
++
++  power-domains: true
++
++  resets: true
++
++  dmas:
++    description:
++      Must contain a list of pairs of references to DMA specifiers, one for
++      transmission, and one for reception.
++
++  dma-names:
++    minItems: 2
++    maxItems: 4
++    items:
++      enum:
++        - tx
++        - rx
++
++required:
++  - compatible
++  - reg
++  - interrupts
++  - clocks
++  - clock-names
++  - power-domains
++
++if:
++  properties:
++    compatible:
++      contains:
++        enum:
++          - renesas,rcar-gen2-hscif
++          - renesas,rcar-gen3-hscif
++then:
++  required:
++    - resets
++
++examples:
++  - |
++    #include <dt-bindings/clock/r8a7795-cpg-mssr.h>
++    #include <dt-bindings/interrupt-controller/arm-gic.h>
++    #include <dt-bindings/power/r8a7795-sysc.h>
++    aliases {
++            serial1 = &hscif1;
++    };
++
++    hscif1: serial@e6550000 {
++            compatible = "renesas,hscif-r8a7795", "renesas,rcar-gen3-hscif",
++                         "renesas,hscif";
++            reg = <0xe6550000 96>;
++            interrupts = <GIC_SPI 155 IRQ_TYPE_LEVEL_HIGH>;
++            clocks = <&cpg CPG_MOD 519>, <&cpg CPG_CORE R8A7795_CLK_S3D1>,
++                     <&scif_clk>;
++            clock-names = "fck", "brg_int", "scif_clk";
++            dmas = <&dmac1 0x33>, <&dmac1 0x32>, <&dmac2 0x33>, <&dmac2 0x32>;
++            dma-names = "tx", "rx", "tx", "rx";
++            power-domains = <&sysc R8A7795_PD_ALWAYS_ON>;
++            resets = <&cpg 519>;
++            uart-has-rtscts;
++    };
+diff --git a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+deleted file mode 100644
+index 5816e7d739f618e4..0000000000000000
+--- a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
++++ /dev/null
+@@ -1,150 +0,0 @@
+-* Renesas SH-Mobile Serial Communication Interface
+-
+-Required properties:
+-
+-  - compatible: Must contain one or more of the following:
+-
+-    - "renesas,scif-r7s72100" for R7S72100 (RZ/A1H) SCIF compatible UART.
+-    - "renesas,scif-r7s9210" for R7S9210 (RZ/A2) SCIF compatible UART.
+-    - "renesas,scifa-r8a73a4" for R8A73A4 (R-Mobile APE6) SCIFA compatible UART.
+-    - "renesas,scifb-r8a73a4" for R8A73A4 (R-Mobile APE6) SCIFB compatible UART.
+-    - "renesas,scifa-r8a7740" for R8A7740 (R-Mobile A1) SCIFA compatible UART.
+-    - "renesas,scifb-r8a7740" for R8A7740 (R-Mobile A1) SCIFB compatible UART.
+-    - "renesas,scif-r8a7743" for R8A7743 (RZ/G1M) SCIF compatible UART.
+-    - "renesas,scifa-r8a7743" for R8A7743 (RZ/G1M) SCIFA compatible UART.
+-    - "renesas,scifb-r8a7743" for R8A7743 (RZ/G1M) SCIFB compatible UART.
+-    - "renesas,hscif-r8a7743" for R8A7743 (RZ/G1M) HSCIF compatible UART.
+-    - "renesas,scif-r8a7744" for R8A7744 (RZ/G1N) SCIF compatible UART.
+-    - "renesas,scifa-r8a7744" for R8A7744 (RZ/G1N) SCIFA compatible UART.
+-    - "renesas,scifb-r8a7744" for R8A7744 (RZ/G1N) SCIFB compatible UART.
+-    - "renesas,hscif-r8a7744" for R8A7744 (RZ/G1N) HSCIF compatible UART.
+-    - "renesas,scif-r8a7745" for R8A7745 (RZ/G1E) SCIF compatible UART.
+-    - "renesas,scifa-r8a7745" for R8A7745 (RZ/G1E) SCIFA compatible UART.
+-    - "renesas,scifb-r8a7745" for R8A7745 (RZ/G1E) SCIFB compatible UART.
+-    - "renesas,hscif-r8a7745" for R8A7745 (RZ/G1E) HSCIF compatible UART.
+-    - "renesas,scif-r8a77470" for R8A77470 (RZ/G1C) SCIF compatible UART.
+-    - "renesas,hscif-r8a77470" for R8A77470 (RZ/G1C) HSCIF compatible UART.
+-    - "renesas,scif-r8a774a1" for R8A774A1 (RZ/G2M) SCIF compatible UART.
+-    - "renesas,hscif-r8a774a1" for R8A774A1 (RZ/G2M) HSCIF compatible UART.
+-    - "renesas,scif-r8a774b1" for R8A774B1 (RZ/G2N) SCIF compatible UART.
+-    - "renesas,hscif-r8a774b1" for R8A774B1 (RZ/G2N) HSCIF compatible UART.
+-    - "renesas,scif-r8a774c0" for R8A774C0 (RZ/G2E) SCIF compatible UART.
+-    - "renesas,hscif-r8a774c0" for R8A774C0 (RZ/G2E) HSCIF compatible UART.
+-    - "renesas,scif-r8a7778" for R8A7778 (R-Car M1) SCIF compatible UART.
+-    - "renesas,hscif-r8a7778" for R8A7778 (R-Car M1) HSCIF compatible UART.
+-    - "renesas,scif-r8a7779" for R8A7779 (R-Car H1) SCIF compatible UART.
+-    - "renesas,hscif-r8a7779" for R8A7779 (R-Car H1) HSCIF compatible UART.
+-    - "renesas,scif-r8a7790" for R8A7790 (R-Car H2) SCIF compatible UART.
+-    - "renesas,scifa-r8a7790" for R8A7790 (R-Car H2) SCIFA compatible UART.
+-    - "renesas,scifb-r8a7790" for R8A7790 (R-Car H2) SCIFB compatible UART.
+-    - "renesas,hscif-r8a7790" for R8A7790 (R-Car H2) HSCIF compatible UART.
+-    - "renesas,scif-r8a7791" for R8A7791 (R-Car M2-W) SCIF compatible UART.
+-    - "renesas,scifa-r8a7791" for R8A7791 (R-Car M2-W) SCIFA compatible UART.
+-    - "renesas,scifb-r8a7791" for R8A7791 (R-Car M2-W) SCIFB compatible UART.
+-    - "renesas,hscif-r8a7791" for R8A7791 (R-Car M2-W) HSCIF compatible UART.
+-    - "renesas,scif-r8a7792" for R8A7792 (R-Car V2H) SCIF compatible UART.
+-    - "renesas,hscif-r8a7792" for R8A7792 (R-Car V2H) HSCIF compatible UART.
+-    - "renesas,scif-r8a7793" for R8A7793 (R-Car M2-N) SCIF compatible UART.
+-    - "renesas,scifa-r8a7793" for R8A7793 (R-Car M2-N) SCIFA compatible UART.
+-    - "renesas,scifb-r8a7793" for R8A7793 (R-Car M2-N) SCIFB compatible UART.
+-    - "renesas,hscif-r8a7793" for R8A7793 (R-Car M2-N) HSCIF compatible UART.
+-    - "renesas,scif-r8a7794" for R8A7794 (R-Car E2) SCIF compatible UART.
+-    - "renesas,scifa-r8a7794" for R8A7794 (R-Car E2) SCIFA compatible UART.
+-    - "renesas,scifb-r8a7794" for R8A7794 (R-Car E2) SCIFB compatible UART.
+-    - "renesas,hscif-r8a7794" for R8A7794 (R-Car E2) HSCIF compatible UART.
+-    - "renesas,scif-r8a7795" for R8A7795 (R-Car H3) SCIF compatible UART.
+-    - "renesas,hscif-r8a7795" for R8A7795 (R-Car H3) HSCIF compatible UART.
+-    - "renesas,scif-r8a7796" for R8A77960 (R-Car M3-W) SCIF compatible UART.
+-    - "renesas,hscif-r8a7796" for R8A77960 (R-Car M3-W) HSCIF compatible UART.
+-    - "renesas,scif-r8a77961" for R8A77961 (R-Car M3-W+) SCIF compatible UART.
+-    - "renesas,hscif-r8a77961" for R8A77961 (R-Car M3-W+) HSCIF compatible UART.
+-    - "renesas,scif-r8a77965" for R8A77965 (R-Car M3-N) SCIF compatible UART.
+-    - "renesas,hscif-r8a77965" for R8A77965 (R-Car M3-N) HSCIF compatible UART.
+-    - "renesas,scif-r8a77970" for R8A77970 (R-Car V3M) SCIF compatible UART.
+-    - "renesas,hscif-r8a77970" for R8A77970 (R-Car V3M) HSCIF compatible UART.
+-    - "renesas,scif-r8a77980" for R8A77980 (R-Car V3H) SCIF compatible UART.
+-    - "renesas,hscif-r8a77980" for R8A77980 (R-Car V3H) HSCIF compatible UART.
+-    - "renesas,scif-r8a77990" for R8A77990 (R-Car E3) SCIF compatible UART.
+-    - "renesas,hscif-r8a77990" for R8A77990 (R-Car E3) HSCIF compatible UART.
+-    - "renesas,scif-r8a77995" for R8A77995 (R-Car D3) SCIF compatible UART.
+-    - "renesas,hscif-r8a77995" for R8A77995 (R-Car D3) HSCIF compatible UART.
+-    - "renesas,scifa-sh73a0" for SH73A0 (SH-Mobile AG5) SCIFA compatible UART.
+-    - "renesas,scifb-sh73a0" for SH73A0 (SH-Mobile AG5) SCIFB compatible UART.
+-    - "renesas,rcar-gen1-scif" for R-Car Gen1 SCIF compatible UART,
+-    - "renesas,rcar-gen2-scif" for R-Car Gen2 and RZ/G1 SCIF compatible UART,
+-    - "renesas,rcar-gen3-scif" for R-Car Gen3 and RZ/G2 SCIF compatible UART,
+-    - "renesas,rcar-gen2-scifa" for R-Car Gen2 and RZ/G1 SCIFA compatible UART,
+-    - "renesas,rcar-gen2-scifb" for R-Car Gen2 and RZ/G1 SCIFB compatible UART,
+-    - "renesas,rcar-gen1-hscif" for R-Car Gen1 HSCIF compatible UART,
+-    - "renesas,rcar-gen2-hscif" for R-Car Gen2 and RZ/G1 HSCIF compatible UART,
+-    - "renesas,rcar-gen3-hscif" for R-Car Gen3 and RZ/G2 HSCIF compatible UART,
+-    - "renesas,scif" for generic SCIF compatible UART.
+-    - "renesas,scifa" for generic SCIFA compatible UART.
+-    - "renesas,scifb" for generic SCIFB compatible UART.
+-    - "renesas,hscif" for generic HSCIF compatible UART.
+-    - "renesas,sci" for generic SCI compatible UART.
+-
+-    When compatible with the generic version, nodes must list the
+-    SoC-specific version corresponding to the platform first, followed by the
+-    family-specific and/or generic versions.
+-
+-  - reg: Base address and length of the I/O registers used by the UART.
+-  - interrupts: Must contain one or more interrupt-specifiers for the SCIx.
+-                If a single interrupt is expressed, then all events are
+-                multiplexed into this single interrupt.
+-
+-                If multiple interrupts are provided by the hardware, the order
+-                in which the interrupts are listed must match order below. Note
+-                that some HW interrupt events may be muxed together resulting
+-                in duplicate entries.
+-                The interrupt order is as follows:
+-                  1. Error (ERI)
+-                  2. Receive buffer full (RXI)
+-                  3. Transmit buffer empty (TXI)
+-                  4. Break (BRI)
+-                  5. Data Ready (DRI)
+-                  6. Transmit End (TEI)
+-
+-  - clocks: Must contain a phandle and clock-specifier pair for each entry
+-    in clock-names.
+-  - clock-names: Must contain "fck" for the SCIx UART functional clock.
+-    Apart from the divided functional clock, there may be other possible
+-    sources for the sampling clock, depending on SCIx variant.
+-    On (H)SCI(F) and some SCIFA, an additional clock may be specified:
+-      - "hsck" for the optional external clock input (on HSCIF),
+-      - "sck" for the optional external clock input (on other variants).
+-    On UARTs equipped with a Baud Rate Generator for External Clock (BRG)
+-    (some SCIF and HSCIF), additional clocks may be specified:
+-      - "brg_int" for the optional internal clock source for the frequency
+-	divider (typically the (AXI or SHwy) bus clock),
+-      - "scif_clk" for the optional external clock source for the frequency
+-	divider (SCIF_CLK).
+-
+-Note: Each enabled SCIx UART may have an optional "serialN" alias in the
+-"aliases" node.
+-
+-Optional properties:
+-  - dmas: Must contain a list of two references to DMA specifiers, one for
+-	  transmission, and one for reception.
+-  - dma-names: Must contain a list of two DMA names, "tx" and "rx".
+-  - {cts,dsr,dcd,rng,rts,dtr}-gpios: Specify GPIOs for modem lines, cfr. the
+-    generic serial DT bindings in serial.yaml.
+-  - uart-has-rtscts: Indicates dedicated lines for RTS/CTS hardware flow
+-    control, cfr. the generic serial DT bindings in serial.yaml.
+-
+-Example:
+-	aliases {
+-		serial0 = &scifa0;
+-	};
+-
+-	scifa0: serial@e6c40000 {
+-		compatible = "renesas,scifa-r8a7790",
+-			     "renesas,rcar-gen2-scifa", "renesas,scifa";
+-		reg = <0 0xe6c40000 0 64>;
+-		interrupt-parent = <&gic>;
+-		interrupts = <0 144 IRQ_TYPE_LEVEL_HIGH>;
+-		clocks = <&mstp2_clks R8A7790_CLK_SCIFA0>;
+-		clock-names = "fck";
+-		dmas = <&dmac0 0x21>, <&dmac0 0x22>;
+-		dma-names = "tx", "rx";
+-	};
+diff --git a/Documentation/devicetree/bindings/serial/renesas,sci.yaml b/Documentation/devicetree/bindings/serial/renesas,sci.yaml
+new file mode 100644
+index 0000000000000000..720b3a5c944f9fe9
+--- /dev/null
++++ b/Documentation/devicetree/bindings/serial/renesas,sci.yaml
+@@ -0,0 +1,79 @@
++# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: "http://devicetree.org/schemas/serial/renesas,sci.yaml#"
++$schema: "http://devicetree.org/meta-schemas/core.yaml#"
++
++title: Renesas Serial Communication Interface
++
++maintainers:
++  - Geert Uytterhoeven <geert+renesas@glider.be>
++
++description:
++  Each enabled UART may have an optional "serialN" alias in the "aliases" node,
++  where N is the port number (non-negative decimal integer) as printed on the
++  label next to the physical port.
++
++allOf:
++  - $ref: serial.yaml#
++
++properties:
++  compatible:
++    oneOf:
++      - items:
++          - const: renesas,sci
++
++  reg:
++    maxItems: 1
++
++  interrupts:
++    description: |
++      Must contain four interrupt-specifiers for the serial interface.
++      The order in which the interrupts are listed must match order below.
++    minItems: 4
++    maxItems: 4
++
++  interrupt-names:
++    minItems: 4
++    maxItems: 4
++    items:
++      enum:
++        - eri # Error
++        - rxi # Receive buffer full
++        - txi # Transmit buffer empty
++        - tei # Transmit End
++
++  clocks:
++    minItems: 1
++    maxItems: 2
++
++  clock-names:
++    minItems: 1
++    maxItems: 2
++    items:
++      enum:
++        - fck # UART functional clock
++        - sck # optional external clock input
++
++  uart-has-rtscts: false
++
++required:
++  - compatible
++  - reg
++  - interrupts
++  - clocks
++  - clock-names
++
++examples:
++  - |
++    aliases {
++            serial0 = &sci0;
++    };
++
++    sci0: serial@ffff78 {
++            compatible = "renesas,sci";
++            reg = <0xffff78 8>;
++            interrupts = <88 0>, <89 0>, <90 0>, <91 0>;
++            clocks = <&fclk>;
++            clock-names = "fck";
++    };
+diff --git a/Documentation/devicetree/bindings/serial/renesas,scif.yaml b/Documentation/devicetree/bindings/serial/renesas,scif.yaml
+new file mode 100644
+index 0000000000000000..28a7f99547990295
+--- /dev/null
++++ b/Documentation/devicetree/bindings/serial/renesas,scif.yaml
+@@ -0,0 +1,168 @@
++# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: "http://devicetree.org/schemas/serial/renesas,scif.yaml#"
++$schema: "http://devicetree.org/meta-schemas/core.yaml#"
++
++title: Renesas Serial Communication Interface with FIFO (SCIF)
++
++maintainers:
++  - Geert Uytterhoeven <geert+renesas@glider.be>
++
++description:
++  Each enabled UART may have an optional "serialN" alias in the "aliases" node,
++  where N is the port number (non-negative decimal integer) as printed on the
++  label next to the physical port.
++
++allOf:
++  - $ref: serial.yaml#
++
++properties:
++  compatible:
++    oneOf:
++      - items:
++          - enum:
++              - renesas,scif-r7s72100     # RZ/A1H
++          - const: renesas,scif           # generic SCIF compatible UART
++
++      - items:
++          - enum:
++              - renesas,scif-r7s9210      # RZ/A2
++
++      - items:
++          - enum:
++              - renesas,scif-r8a7778      # R-Car M1
++              - renesas,scif-r8a7779      # R-Car H1
++          - const: renesas,rcar-gen1-scif # R-Car Gen1
++          - const: renesas,scif           # generic SCIF compatible UART
++
++      - items:
++          - enum:
++              - renesas,scif-r8a7743      # RZ/G1M
++              - renesas,scif-r8a7744      # RZ/G1N
++              - renesas,scif-r8a7745      # RZ/G1E
++              - renesas,scif-r8a77470     # RZ/G1C
++              - renesas,scif-r8a7790      # R-Car H2
++              - renesas,scif-r8a7791      # R-Car M2-W
++              - renesas,scif-r8a7792      # R-Car V2H
++              - renesas,scif-r8a7793      # R-Car M2-N
++              - renesas,scif-r8a7794      # R-Car E2
++          - const: renesas,rcar-gen2-scif # R-Car Gen2 and RZ/G1
++          - const: renesas,scif           # generic SCIF compatible UART
++
++      - items:
++          - enum:
++              - renesas,scif-r8a774a1     # RZ/G2M
++              - renesas,scif-r8a774b1     # RZ/G2N
++              - renesas,scif-r8a774c0     # RZ/G2E
++              - renesas,scif-r8a7795      # R-Car H3
++              - renesas,scif-r8a7796      # R-Car M3-W
++              - renesas,scif-r8a77961     # R-Car M3-W+
++              - renesas,scif-r8a77965     # R-Car M3-N
++              - renesas,scif-r8a77970     # R-Car V3M
++              - renesas,scif-r8a77980     # R-Car V3H
++              - renesas,scif-r8a77990     # R-Car E3
++              - renesas,scif-r8a77995     # R-Car D3
++          - const: renesas,rcar-gen3-scif # R-Car Gen3 and RZ/G2
++          - const: renesas,scif           # generic SCIF compatible UART
++
++  reg:
++    maxItems: 1
++
++  interrupts:
++    description: |
++      Must contain one or more interrupt-specifiers for the serial interface.
++      If a single interrupt is expressed, then all events are
++      multiplexed into this single interrupt.
++
++      If multiple interrupts are provided by the hardware, the order
++      in which the interrupts are listed must match order below. Note
++      that some HW interrupt events may be muxed together resulting
++      in duplicate entries.
++    minItems: 1
++    maxItems: 6
++
++  interrupt-names:
++    minItems: 1
++    maxItems: 6
++    items:
++      enum:
++        - eri # Error
++        - rxi # Receive buffer full
++        - txi # Transmit buffer empty
++        - bri # Break
++        - dri # Data Ready
++        - tei # Transmit End
++
++  clocks:
++    minItems: 1
++    maxItems: 4
++
++  clock-names:
++    minItems: 1
++    maxItems: 4
++    items:
++      enum:
++        - fck # UART functional clock
++        - sck # optional external clock input
++        - brg_int # optional internal clock source for BRG frequency divider
++        - scif_clk # optional external clock source for BRG frequency divider
++
++  power-domains: true
++
++  resets: true
++
++  dmas:
++    description:
++      Must contain a list of pairs of references to DMA specifiers, one for
++      transmission, and one for reception.
++
++  dma-names:
++    minItems: 2
++    maxItems: 4
++    items:
++      enum:
++        - tx
++        - rx
++
++required:
++  - compatible
++  - reg
++  - interrupts
++  - clocks
++  - clock-names
++  - power-domains
++
++if:
++  properties:
++    compatible:
++      contains:
++        enum:
++          - renesas,rcar-gen2-scif
++          - renesas,rcar-gen3-scif
++then:
++  required:
++    - resets
++
++examples:
++  - |
++    #include <dt-bindings/clock/r8a7791-cpg-mssr.h>
++    #include <dt-bindings/interrupt-controller/arm-gic.h>
++    #include <dt-bindings/power/r8a7791-sysc.h>
++    aliases {
++            serial0 = &scif0;
++    };
++
++    scif0: serial@e6e60000 {
++            compatible = "renesas,scif-r8a7791", "renesas,rcar-gen2-scif",
++                         "renesas,scif";
++            reg = <0xe6e60000 64>;
++            interrupts = <GIC_SPI 152 IRQ_TYPE_LEVEL_HIGH>;
++            clocks = <&cpg CPG_MOD 721>, <&cpg CPG_CORE R8A7791_CLK_ZS>,
++                     <&scif_clk>;
++            clock-names = "fck", "brg_int", "scif_clk";
++            dmas = <&dmac0 0x29>, <&dmac0 0x2a>, <&dmac1 0x29>, <&dmac1 0x2a>;
++            dma-names = "tx", "rx", "tx", "rx";
++            power-domains = <&sysc R8A7791_PD_ALWAYS_ON>;
++            resets = <&cpg 721>;
++    };
+diff --git a/Documentation/devicetree/bindings/serial/renesas,scifa.yaml b/Documentation/devicetree/bindings/serial/renesas,scifa.yaml
+new file mode 100644
+index 0000000000000000..5d847d45d7013425
+--- /dev/null
++++ b/Documentation/devicetree/bindings/serial/renesas,scifa.yaml
+@@ -0,0 +1,110 @@
++# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: "http://devicetree.org/schemas/serial/renesas,scifa.yaml#"
++$schema: "http://devicetree.org/meta-schemas/core.yaml#"
++
++title: Renesas Serial Communications Interface with FIFO A (SCIFA)
++
++maintainers:
++  - Geert Uytterhoeven <geert+renesas@glider.be>
++
++description:
++  Each enabled UART may have an optional "serialN" alias in the "aliases" node,
++  where N is the port number (non-negative decimal integer) as printed on the
++  label next to the physical port.
++
++allOf:
++  - $ref: serial.yaml#
++
++properties:
++  compatible:
++    oneOf:
++      - items:
++          - enum:
++              - renesas,scifa-r8a73a4      # R-Mobile APE6
++              - renesas,scifa-r8a7740      # R-Mobile A1
++              - renesas,scifa-sh73a0       # SH-Mobile AG5
++          - const: renesas,scifa           # generic SCIFA compatible UART
++
++      - items:
++          - enum:
++              - renesas,scifa-r8a7743      # R8A7743 RZ/G1M
++              - renesas,scifa-r8a7744      # R8A7744 RZ/G1N
++              - renesas,scifa-r8a7745      # R8A7745 RZ/G1E
++              - renesas,scifa-r8a7790      # R8A7790 R-Car H2
++              - renesas,scifa-r8a7791      # R8A7791 R-Car M2-W
++              - renesas,scifa-r8a7793      # R8A7793 R-Car M2-N
++              - renesas,scifa-r8a7794      # R8A7794 R-Car E2
++          - const: renesas,rcar-gen2-scifa # R-Car Gen2 and RZ/G1
++          - const: renesas,scifa           # generic SCIFA compatible UART
++
++  reg:
++    maxItems: 1
++
++  interrupts:
++    maxItems: 1
++
++  clocks:
++    maxItems: 1
++
++  clock-names:
++    enum:
++      - fck # UART functional clock
++
++  power-domains: true
++
++  resets: true
++
++  dmas:
++    description:
++      Must contain a list of pairs of references to DMA specifiers, one for
++      transmission, and one for reception.
++
++  dma-names:
++    minItems: 2
++    maxItems: 4
++    items:
++      enum:
++        - tx
++        - rx
++
++required:
++  - compatible
++  - reg
++  - interrupts
++  - clocks
++  - clock-names
++  - power-domains
++
++if:
++  properties:
++    compatible:
++      contains:
++        enum:
++          - renesas,rcar-gen2-scifa
++then:
++  required:
++    - resets
++
++examples:
++  - |
++    #include <dt-bindings/clock/r8a7790-cpg-mssr.h>
++    #include <dt-bindings/interrupt-controller/arm-gic.h>
++    #include <dt-bindings/power/r8a7790-sysc.h>
++    aliases {
++            serial0 = &scifa0;
++    };
++
++    scifa0: serial@e6c40000 {
++            compatible = "renesas,scifa-r8a7790", "renesas,rcar-gen2-scifa",
++                         "renesas,scifa";
++            reg = <0xe6c40000 64>;
++            interrupts = <GIC_SPI 144 IRQ_TYPE_LEVEL_HIGH>;
++            clocks = <&cpg CPG_MOD 204>;
++            clock-names = "fck";
++            power-domains = <&sysc R8A7790_PD_ALWAYS_ON>;
++            resets = <&cpg 204>;
++            dmas = <&dmac0 0x21>, <&dmac0 0x22>, <&dmac1 0x21>, <&dmac1 0x22>;
++            dma-names = "tx", "rx", "tx", "rx";
++    };
+diff --git a/Documentation/devicetree/bindings/serial/renesas,scifb.yaml b/Documentation/devicetree/bindings/serial/renesas,scifb.yaml
+new file mode 100644
+index 0000000000000000..432d057a7b31755b
+--- /dev/null
++++ b/Documentation/devicetree/bindings/serial/renesas,scifb.yaml
+@@ -0,0 +1,101 @@
++# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: "http://devicetree.org/schemas/serial/renesas,scifb.yaml#"
++$schema: "http://devicetree.org/meta-schemas/core.yaml#"
++
++title: Renesas Serial Communications Interface with FIFO B (SCIFB)
++
++maintainers:
++  - Geert Uytterhoeven <geert+renesas@glider.be>
++
++description:
++  Each enabled UART may have an optional "serialN" alias in the "aliases" node,
++  where N is the port number (non-negative decimal integer) as printed on the
++  label next to the physical port.
++
++allOf:
++  - $ref: serial.yaml#
++
++properties:
++  compatible:
++    oneOf:
++      - items:
++          - enum:
++              - renesas,scifb-r8a73a4      # R-Mobile APE6
++              - renesas,scifb-r8a7740      # R-Mobile A1
++              - renesas,scifb-sh73a0       # SH-Mobile AG5
++          - const: renesas,scifb           # generic SCIFB compatible UART
++
++      - items:
++          - enum:
++              - renesas,scifb-r8a7743      # RZ/G1M
++              - renesas,scifb-r8a7744      # RZ/G1N
++              - renesas,scifb-r8a7745      # RZ/G1E
++              - renesas,scifb-r8a7790      # R-Car H2
++              - renesas,scifb-r8a7791      # R-Car M2-W
++              - renesas,scifb-r8a7793      # R-Car M2-N
++              - renesas,scifb-r8a7794      # R-Car E2
++          - const: renesas,rcar-gen2-scifb # R-Car Gen2 and RZ/G1
++          - const: renesas,scifb           # generic SCIFB compatible UART
++
++  reg:
++    maxItems: 1
++
++  interrupts:
++    maxItems: 1
++
++  clocks:
++    maxItems: 1
++
++  clock-names:
++    enum:
++      - fck # UART functional clock
++
++  power-domains: true
++
++  resets: true
++
++  dmas:
++    description:
++      Must contain a list of pairs of references to DMA specifiers, one for
++      transmission, and one for reception.
++
++  dma-names:
++    minItems: 2
++    maxItems: 4
++    items:
++      enum:
++        - tx
++        - rx
++
++required:
++  - compatible
++  - reg
++  - interrupts
++  - clocks
++  - clock-names
++  - power-domains
++
++if:
++  properties:
++    compatible:
++      contains:
++        enum:
++          - renesas,rcar-gen2-scifb
++then:
++  required:
++    - resets
++
++examples:
++  - |
++    #include <dt-bindings/clock/r8a7740-clock.h>
++    #include <dt-bindings/interrupt-controller/arm-gic.h>
++    scifb: serial@e6c30000 {
++            compatible = "renesas,scifb-r8a7740", "renesas,scifb";
++            reg = <0xe6c30000 0x100>;
++            interrupts = <GIC_SPI 108 IRQ_TYPE_LEVEL_HIGH>;
++            clocks = <&mstp2_clks R8A7740_CLK_SCIFB>;
++            clock-names = "fck";
++            power-domains = <&pd_a3sp>;
++    };
 -- 
-Michal Hocko
-SUSE Labs
+2.17.1
