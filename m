@@ -1,86 +1,69 @@
-From: Mauro Carvalho Chehab <mchehab+huawei@kernel.org>
-Date: Tue, 03 Mar 2020 13:59:23 +0000
-Subject: [PATCH v3 16/18] docs: sh: convert register-banks.txt to ReST
-Message-Id: <8095ea8e231bb75d66e343491880a8561c8dc043.1583243826.git.mchehab+huawei@kernel.org>
+From: Logan Gunthorpe <logang@deltatee.com>
+Date: Fri, 06 Mar 2020 17:08:43 +0000
+Subject: [PATCH v4 4/7] x86/mm: Introduce __set_memory_prot()
+Message-Id: <20200306170846.9333-5-logang@deltatee.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1583243826.git.mchehab+huawei@kernel.org>
-In-Reply-To: <cover.1583243826.git.mchehab+huawei@kernel.org>
+References: <20200306170846.9333-1-logang@deltatee.com>
+In-Reply-To: <20200306170846.9333-1-logang@deltatee.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Cc: Mauro Carvalho Chehab <mchehab+huawei@kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Jonathan Corbet <corbet@lwn.net>, linux-sh@vger.kernel.org, linux-doc@vger.kernel.org
+To: linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, platform-driver-x86@vger.kernel.org, linux-mm@kvack.org, Dan Williams <dan.j.williams@intel.com>, Michal Hocko <mhocko@kernel.org>, David Hildenbrand <david@redhat.com>, Andrew Morton <akpm@linux-foundation.org>
+Cc: Eric Badger <ebadger@gigaio.com>, "H. Peter Anvin" <hpa@zytor.com>, Peter Zijlstra <peterz@infradead.org>, Catalin Marinas <catalin.marinas@arm.com>, Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org, Logan Gunthorpe <logang@deltatee.com>, Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>, Andy Lutomirski <luto@kernel.org>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Thomas Gleixner <tglx@linutronix.de>, Will Deacon <will@kernel.org>, Christoph Hellwig <hch@lst.de>
 
-- Add a SPDX header;
-- Adjust document title to follow ReST style;
-- Add blank lines to make ReST markup happy
-- Add it to sh/index.rst.
+For use in the 32bit arch_add_memory() to set the pgprot type of the
+memory to add.
 
-Signed-off-by: Mauro Carvalho Chehab <mchehab+huawei@kernel.org>
+Cc: Thomas Gleixner <tglx@linutronix.de>
+Cc: Ingo Molnar <mingo@redhat.com>
+Cc: Borislav Petkov <bp@alien8.de>
+Cc: "H. Peter Anvin" <hpa@zytor.com>
+Cc: x86@kernel.org
+Cc: Dave Hansen <dave.hansen@linux.intel.com>
+Cc: Andy Lutomirski <luto@kernel.org>
+Cc: Peter Zijlstra <peterz@infradead.org>
+Signed-off-by: Logan Gunthorpe <logang@deltatee.com>
+Reviewed-by: Dan Williams <dan.j.williams@intel.com>
 ---
- Documentation/sh/index.rst                          |  1 +
- .../sh/{register-banks.txt => register-banks.rst}   | 13 ++++++++++---
- arch/sh/Kconfig.cpu                                 |  2 +-
- 3 files changed, 12 insertions(+), 4 deletions(-)
- rename Documentation/sh/{register-banks.txt => register-banks.rst} (88%)
+ arch/x86/include/asm/set_memory.h |  1 +
+ arch/x86/mm/pat/set_memory.c      | 13 +++++++++++++
+ 2 files changed, 14 insertions(+)
 
-diff --git a/Documentation/sh/index.rst b/Documentation/sh/index.rst
-index 56c08790265d..580f3b17e841 100644
---- a/Documentation/sh/index.rst
-+++ b/Documentation/sh/index.rst
-@@ -8,6 +8,7 @@ SuperH Interfaces Guide
-     :maxdepth: 1
+diff --git a/arch/x86/include/asm/set_memory.h b/arch/x86/include/asm/set_memory.h
+index 64c3dce374e5..034358da4837 100644
+--- a/arch/x86/include/asm/set_memory.h
++++ b/arch/x86/include/asm/set_memory.h
+@@ -34,6 +34,7 @@
+  * The caller is required to take care of these.
+  */
  
-     new-machine
-+    register-banks
++int __set_memory_prot(unsigned long addr, int numpages, pgprot_t prot);
+ int _set_memory_uc(unsigned long addr, int numpages);
+ int _set_memory_wc(unsigned long addr, int numpages);
+ int _set_memory_wt(unsigned long addr, int numpages);
+diff --git a/arch/x86/mm/pat/set_memory.c b/arch/x86/mm/pat/set_memory.c
+index c4aedd00c1ba..a7b14dffeb0b 100644
+--- a/arch/x86/mm/pat/set_memory.c
++++ b/arch/x86/mm/pat/set_memory.c
+@@ -1792,6 +1792,19 @@ static inline int cpa_clear_pages_array(struct page **pages, int numpages,
+ 		CPA_PAGES_ARRAY, pages);
+ }
  
- Memory Management
- ========diff --git a/Documentation/sh/register-banks.txt b/Documentation/sh/register-banks.rst
-similarity index 88%
-rename from Documentation/sh/register-banks.txt
-rename to Documentation/sh/register-banks.rst
-index a6719f2f6594..2bef5c8fcbbc 100644
---- a/Documentation/sh/register-banks.txt
-+++ b/Documentation/sh/register-banks.rst
-@@ -1,5 +1,8 @@
--	Notes on register bank usage in the kernel
--	=====================
-+.. SPDX-License-Identifier: GPL-2.0
++/*
++ * _set_memory_prot is an internal helper for callers that have been passed
++ * a pgprot_t value from upper layers and a reservation has already been taken.
++ * If you want to set the pgprot to a specific page protocol, use the
++ * set_memory_xx() functions.
++ */
++int __set_memory_prot(unsigned long addr, int numpages, pgprot_t prot)
++{
++	return change_page_attr_set_clr(&addr, numpages, prot,
++					__pgprot(~pgprot_val(prot)), 0, 0,
++					NULL);
++}
 +
-+=====================
-+Notes on register bank usage in the kernel
-+=====================
- 
- Introduction
- ------------
-@@ -23,11 +26,15 @@ Presently the kernel uses several of these registers.
- 
- 	- r0_bank, r1_bank (referenced as k0 and k1, used for scratch
- 	  registers when doing exception handling).
-+
- 	- r2_bank (used to track the EXPEVT/INTEVT code)
-+
- 		- Used by do_IRQ() and friends for doing irq mapping based off
- 		  of the interrupt exception vector jump table offset
-+
- 	- r6_bank (global interrupt mask)
-+
- 		- The SR.IMASK interrupt handler makes use of this to set the
- 		  interrupt priority level (used by local_irq_enable())
-+
- 	- r7_bank (current)
--
-diff --git a/arch/sh/Kconfig.cpu b/arch/sh/Kconfig.cpu
-index 4a4edc7e03d4..07ad7597cbe7 100644
---- a/arch/sh/Kconfig.cpu
-+++ b/arch/sh/Kconfig.cpu
-@@ -94,7 +94,7 @@ config CPU_HAS_SR_RB
- 	  that are lacking this bit must have another method in place for
- 	  accomplishing what is taken care of by the banked registers.
- 
--	  See <file:Documentation/sh/register-banks.txt> for further
-+	  See <file:Documentation/sh/register-banks.rst> for further
- 	  information on SR.RB and register banking in the kernel in general.
- 
- config CPU_HAS_PTEAEX
+ int _set_memory_uc(unsigned long addr, int numpages)
+ {
+ 	/*
 -- 
-2.24.1
+2.20.1
