@@ -1,135 +1,227 @@
-From: Anshuman Khandual <anshuman.khandual@arm.com>
-Date: Mon, 02 Mar 2020 06:59:43 +0000
-Subject: [RFC 0/3] mm/vma: some new flags and helpers
-Message-Id: <1583131666-15531-1-git-send-email-anshuman.khandual@arm.com>
+From: Logan Gunthorpe <logang@deltatee.com>
+Date: Fri, 06 Mar 2020 17:08:45 +0000
+Subject: [PATCH v4 6/7] mm/memory_hotplug: Add pgprot_t to mhp_params
+Message-Id: <20200306170846.9333-7-logang@deltatee.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20200306170846.9333-1-logang@deltatee.com>
+In-Reply-To: <20200306170846.9333-1-logang@deltatee.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mm@kvack.org
-Cc: uclinux-h8-devel@lists.sourceforge.jp, linux-s390@vger.kernel.org, linux-ia64@vger.kernel.org, linux-c6x-dev@linux-c6x.org, linux-parisc@vger.kernel.org, Anshuman Khandual <anshuman.khandual@arm.com>, linux-hexagon@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-sh@vger.kernel.org, linux-um@lists.infradead.org, linux-kernel@vger.kernel.org, linux-mips@vger.kernel.org, linux-m68k@lists.linux-m68k.org, openrisc@lists.librecores.org, linux-alpha@vger.kernel.org, sparclinux@vger.kernel.org, nios2-dev@lists.rocketboards.org, linux-riscv@lists.infradead.org, linux-snps-arc@lists.infradead.org, linuxppc-dev@lists.ozlabs.org, linux-arm-kernel@lists.infradead.org
+To: linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, platform-driver-x86@vger.kernel.org, linux-mm@kvack.org, Dan Williams <dan.j.williams@intel.com>, Michal Hocko <mhocko@kernel.org>, David Hildenbrand <david@redhat.com>, Andrew Morton <akpm@linux-foundation.org>
+Cc: Eric Badger <ebadger@gigaio.com>, Peter Zijlstra <peterz@infradead.org>, Catalin Marinas <catalin.marinas@arm.com>, Dave Hansen <dave.hansen@linux.intel.com>, Michal Hocko <mhocko@suse.com>, Logan Gunthorpe <logang@deltatee.com>, Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>, Andy Lutomirski <luto@kernel.org>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Thomas Gleixner <tglx@linutronix.de>, Will Deacon <will@kernel.org>, Christoph Hellwig <hch@lst.de>
 
-The motivation here is to consolidate VMA flag combinations commonly used
-across platforms and reduce code duplication while making it uncluttered
-in general.
+devm_memremap_pages() is currently used by the PCI P2PDMA code to create
+struct page mappings for IO memory. At present, these mappings are created
+with PAGE_KERNEL which implies setting the PAT bits to be WB. However, on
+x86, an mtrr register will typically override this and force the cache
+type to be UC-. In the case firmware doesn't set this register it is
+effectively WB and will typically result in a machine check exception
+when it's accessed.
 
-This first introduces a default VM_DATA_DEFAULT_FLAGS which platforms can
-easily fall back on without requiring to define any similar data flag
-combinations as they currently do. This also adds some more common data
-flag combinations which are generally used when the platforms decide to
-override the default.
+Other arches are not currently likely to function correctly seeing they
+don't have any MTRR registers to fall back on.
 
-The second patch consolidates VM_READ, VM_WRITE, VM_EXEC as VM_ACCESS_FLAGS
-extending the existing VMA accessibility concept via vma_is_accessibility().
-VM_ACCESS_FLAGS replaces many other instances which used check all three
-VMA access flags simultaneously.
+To solve this, provide a way to specify the pgprot value explicitly to
+arch_add_memory().
 
-While here, this also adds some more special VMA flag based helpers which
-wraps around similar checks at various places thus improving readability.
-This series intentionally limits these new helpers which are applicable 
-only for special purpose VM flags than the more common ones like VM_READ,
-VM_WRITE, VM_EXEC, VM_SHARED etc just to limit code churn. But if there is
-common agreement that every flag should have it's own wrapper here, we can
-do that as well. Otherwise if this patch seems really unnecessary with much
-code churn, will be happy to drop it.
+Of the arches that support MEMORY_HOTPLUG: x86_64, and arm64 need a simple
+change to pass the pgprot_t down to their respective functions which set
+up the page tables. For x86_32, set the page tables explicitly using
+_set_memory_prot() (seeing they are already mapped). For ia64, s390 and
+sh, reject anything but PAGE_KERNEL settings -- this should be fine,
+for now, seeing these architectures don't support ZONE_DEVICE.
 
-Reviews, comments, suggestions and concerns welcome. Thank you.
+A check in __add_pages() is also added to ensure the pgprot parameter was
+set for all arches.
 
-This series is based on v5.6-r4 after applying these patches.
+Signed-off-by: Logan Gunthorpe <logang@deltatee.com>
+Acked-by: David Hildenbrand <david@redhat.com>
+Acked-by: Michal Hocko <mhocko@suse.com>
+Acked-by: Dan Williams <dan.j.williams@intel.com>
+---
+ arch/arm64/mm/mmu.c            |  3 ++-
+ arch/ia64/mm/init.c            |  3 +++
+ arch/powerpc/mm/mem.c          |  3 ++-
+ arch/s390/mm/init.c            |  3 +++
+ arch/sh/mm/init.c              |  3 +++
+ arch/x86/mm/init_32.c          | 12 ++++++++++++
+ arch/x86/mm/init_64.c          |  2 +-
+ include/linux/memory_hotplug.h |  3 +++
+ mm/memory_hotplug.c            |  5 ++++-
+ mm/memremap.c                  |  6 +++---
+ 10 files changed, 36 insertions(+), 7 deletions(-)
 
-1. https://patchwork.kernel.org/cover/11399319/
-2. https://patchwork.kernel.org/patch/11399379/
-
-This series is build tested across multiple architectures but boot tested
-only on arm64 and x86 platforms.
-
-Cc: linux-alpha@vger.kernel.org
-Cc: linux-kernel@vger.kernel.org
-Cc: linux-snps-arc@lists.infradead.org
-Cc: linux-arm-kernel@lists.infradead.org
-Cc: linux-c6x-dev@linux-c6x.org
-Cc: uclinux-h8-devel@lists.sourceforge.jp
-Cc: linux-hexagon@vger.kernel.org
-Cc: linux-ia64@vger.kernel.org
-Cc: linux-m68k@lists.linux-m68k.org
-Cc: linux-mips@vger.kernel.org
-Cc: nios2-dev@lists.rocketboards.org
-Cc: openrisc@lists.librecores.org
-Cc: linux-parisc@vger.kernel.org
-Cc: linuxppc-dev@lists.ozlabs.org
-Cc: linux-riscv@lists.infradead.org
-Cc: linux-s390@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
-Cc: sparclinux@vger.kernel.org
-Cc: linux-um@lists.infradead.org
-Cc: linux-xtensa@linux-xtensa.org
-Cc: linux-mm@kvack.org
-
-Anshuman Khandual (3):
-  mm/vma: Define a default value for VM_DATA_DEFAULT_FLAGS
-  mm/vma: Introduce VM_ACCESS_FLAGS
-  mm/vma: Introduce some more VMA flag wrappers
-
- arch/alpha/include/asm/page.h        |  3 --
- arch/arc/include/asm/page.h          |  2 +-
- arch/arm/include/asm/page.h          |  4 +-
- arch/arm/mm/fault.c                  |  2 +-
- arch/arm64/include/asm/page.h        |  4 +-
- arch/arm64/mm/fault.c                |  2 +-
- arch/c6x/include/asm/page.h          |  5 +--
- arch/c6x/include/asm/processor.h     |  2 +-
- arch/csky/include/asm/page.h         |  3 --
- arch/h8300/include/asm/page.h        |  2 -
- arch/hexagon/include/asm/page.h      |  3 +-
- arch/ia64/include/asm/page.h         |  5 +--
- arch/m68k/include/asm/page.h         |  3 --
- arch/microblaze/include/asm/page.h   |  2 -
- arch/mips/include/asm/page.h         |  5 +--
- arch/nds32/include/asm/page.h        |  3 --
- arch/nds32/mm/fault.c                |  2 +-
- arch/nios2/include/asm/page.h        |  3 +-
- arch/nios2/include/asm/processor.h   |  2 +-
- arch/openrisc/include/asm/page.h     |  5 ---
- arch/parisc/include/asm/page.h       |  3 --
- arch/powerpc/include/asm/page.h      |  9 +----
- arch/powerpc/include/asm/page_64.h   |  7 +---
- arch/powerpc/mm/book3s64/pkeys.c     |  2 +-
- arch/riscv/include/asm/page.h        |  3 +-
- arch/s390/include/asm/page.h         |  3 +-
- arch/s390/mm/fault.c                 |  2 +-
- arch/sh/include/asm/page.h           |  3 --
- arch/sh/include/asm/processor_64.h   |  2 +-
- arch/sparc/include/asm/mman.h        |  2 +-
- arch/sparc/include/asm/page_32.h     |  3 --
- arch/sparc/include/asm/page_64.h     |  3 --
- arch/unicore32/include/asm/page.h    |  3 --
- arch/unicore32/mm/fault.c            |  2 +-
- arch/x86/include/asm/page_types.h    |  4 +-
- arch/x86/mm/pkeys.c                  |  2 +-
- arch/x86/um/asm/vm-flags.h           | 10 +----
- arch/xtensa/include/asm/page.h       |  3 --
- drivers/staging/gasket/gasket_core.c |  2 +-
- fs/binfmt_elf.c                      |  2 +-
- fs/proc/task_mmu.c                   | 14 +++----
- include/linux/huge_mm.h              |  4 +-
- include/linux/mm.h                   | 58 +++++++++++++++++++++++++++-
- kernel/events/core.c                 |  2 +-
- kernel/events/uprobes.c              |  2 +-
- mm/gup.c                             |  2 +-
- mm/huge_memory.c                     |  6 +--
- mm/hugetlb.c                         |  4 +-
- mm/ksm.c                             |  8 ++--
- mm/madvise.c                         |  4 +-
- mm/memory.c                          |  4 +-
- mm/migrate.c                         |  4 +-
- mm/mlock.c                           |  4 +-
- mm/mmap.c                            | 20 +++++-----
- mm/mprotect.c                        |  9 ++---
- mm/mremap.c                          |  4 +-
- mm/msync.c                           |  3 +-
- mm/rmap.c                            |  6 +--
- mm/shmem.c                           |  8 ++--
- 59 files changed, 140 insertions(+), 158 deletions(-)
-
+diff --git a/arch/arm64/mm/mmu.c b/arch/arm64/mm/mmu.c
+index ee37bca8aba8..ea3fa844a8a2 100644
+--- a/arch/arm64/mm/mmu.c
++++ b/arch/arm64/mm/mmu.c
+@@ -1058,7 +1058,8 @@ int arch_add_memory(int nid, u64 start, u64 size,
+ 		flags = NO_BLOCK_MAPPINGS | NO_CONT_MAPPINGS;
+ 
+ 	__create_pgd_mapping(swapper_pg_dir, start, __phys_to_virt(start),
+-			     size, PAGE_KERNEL, __pgd_pgtable_alloc, flags);
++			     size, params->pgprot, __pgd_pgtable_alloc,
++			     flags);
+ 
+ 	memblock_clear_nomap(start, size);
+ 
+diff --git a/arch/ia64/mm/init.c b/arch/ia64/mm/init.c
+index 97bbc23ea1e3..d637b4ea3147 100644
+--- a/arch/ia64/mm/init.c
++++ b/arch/ia64/mm/init.c
+@@ -676,6 +676,9 @@ int arch_add_memory(int nid, u64 start, u64 size,
+ 	unsigned long nr_pages = size >> PAGE_SHIFT;
+ 	int ret;
+ 
++	if (WARN_ON_ONCE(params->pgprot.pgprot != PAGE_KERNEL.pgprot))
++		return -EINVAL;
++
+ 	ret = __add_pages(nid, start_pfn, nr_pages, params);
+ 	if (ret)
+ 		printk("%s: Problem encountered in __add_pages() as ret=%d\n",
+diff --git a/arch/powerpc/mm/mem.c b/arch/powerpc/mm/mem.c
+index 19b1da5d7eca..832412bc7fad 100644
+--- a/arch/powerpc/mm/mem.c
++++ b/arch/powerpc/mm/mem.c
+@@ -138,7 +138,8 @@ int __ref arch_add_memory(int nid, u64 start, u64 size,
+ 	resize_hpt_for_hotplug(memblock_phys_mem_size());
+ 
+ 	start = (unsigned long)__va(start);
+-	rc = create_section_mapping(start, start + size, nid, PAGE_KERNEL);
++	rc = create_section_mapping(start, start + size, nid,
++				    params->pgprot);
+ 	if (rc) {
+ 		pr_warn("Unable to create mapping for hot added memory 0x%llx..0x%llx: %d\n",
+ 			start, start + size, rc);
+diff --git a/arch/s390/mm/init.c b/arch/s390/mm/init.c
+index e9e4a7abd0cc..87b2d024e75a 100644
+--- a/arch/s390/mm/init.c
++++ b/arch/s390/mm/init.c
+@@ -277,6 +277,9 @@ int arch_add_memory(int nid, u64 start, u64 size,
+ 	if (WARN_ON_ONCE(params->altmap))
+ 		return -EINVAL;
+ 
++	if (WARN_ON_ONCE(params->pgprot.pgprot != PAGE_KERNEL.pgprot))
++		return -EINVAL;
++
+ 	rc = vmem_add_mapping(start, size);
+ 	if (rc)
+ 		return rc;
+diff --git a/arch/sh/mm/init.c b/arch/sh/mm/init.c
+index e5114c053364..b9de2d4fa57e 100644
+--- a/arch/sh/mm/init.c
++++ b/arch/sh/mm/init.c
+@@ -412,6 +412,9 @@ int arch_add_memory(int nid, u64 start, u64 size,
+ 	unsigned long nr_pages = size >> PAGE_SHIFT;
+ 	int ret;
+ 
++	if (WARN_ON_ONCE(params->pgprot.pgprot != PAGE_KERNEL.pgprot)
++		return -EINVAL;
++
+ 	/* We only have ZONE_NORMAL, so this is easy.. */
+ 	ret = __add_pages(nid, start_pfn, nr_pages, params);
+ 	if (unlikely(ret))
+diff --git a/arch/x86/mm/init_32.c b/arch/x86/mm/init_32.c
+index e25a4218e6ff..69128f1a22ac 100644
+--- a/arch/x86/mm/init_32.c
++++ b/arch/x86/mm/init_32.c
+@@ -858,6 +858,18 @@ int arch_add_memory(int nid, u64 start, u64 size,
+ {
+ 	unsigned long start_pfn = start >> PAGE_SHIFT;
+ 	unsigned long nr_pages = size >> PAGE_SHIFT;
++	int ret;
++
++	/*
++	 * The page tables were already mapped at boot so if the caller
++	 * requests a different mapping type then we must change all the
++	 * pages with __set_memory_prot().
++	 */
++	if (params->pgprot.pgprot != PAGE_KERNEL.pgprot) {
++		ret = __set_memory_prot(start, nr_pages, params->pgprot);
++		if (ret)
++			return ret;
++	}
+ 
+ 	return __add_pages(nid, start_pfn, nr_pages, params);
+ }
+diff --git a/arch/x86/mm/init_64.c b/arch/x86/mm/init_64.c
+index 9e7692080dda..230240af38b4 100644
+--- a/arch/x86/mm/init_64.c
++++ b/arch/x86/mm/init_64.c
+@@ -868,7 +868,7 @@ int arch_add_memory(int nid, u64 start, u64 size,
+ 	unsigned long start_pfn = start >> PAGE_SHIFT;
+ 	unsigned long nr_pages = size >> PAGE_SHIFT;
+ 
+-	init_memory_mapping(start, start + size, PAGE_KERNEL);
++	init_memory_mapping(start, start + size, params->pgprot);
+ 
+ 	return add_pages(nid, start_pfn, nr_pages, params);
+ }
+diff --git a/include/linux/memory_hotplug.h b/include/linux/memory_hotplug.h
+index c5df1b3dada0..3195d11876ea 100644
+--- a/include/linux/memory_hotplug.h
++++ b/include/linux/memory_hotplug.h
+@@ -56,9 +56,12 @@ enum {
+ /*
+  * Extended parameters for memory hotplug:
+  * altmap: alternative allocator for memmap array (optional)
++ * pgprot: page protection flags to apply to newly created page tables
++ *	(required)
+  */
+ struct mhp_params {
+ 	struct vmem_altmap *altmap;
++	pgprot_t pgprot;
+ };
+ 
+ /*
+diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
+index c69469e1b40e..d7d4806ad81b 100644
+--- a/mm/memory_hotplug.c
++++ b/mm/memory_hotplug.c
+@@ -305,6 +305,9 @@ int __ref __add_pages(int nid, unsigned long pfn, unsigned long nr_pages,
+ 	unsigned long nr, start_sec, end_sec;
+ 	struct vmem_altmap *altmap = params->altmap;
+ 
++	if (WARN_ON_ONCE(!params->pgprot.pgprot))
++		return -EINVAL;
++
+ 	err = check_hotplug_memory_addressable(pfn, nr_pages);
+ 	if (err)
+ 		return err;
+@@ -993,7 +996,7 @@ static int online_memory_block(struct memory_block *mem, void *arg)
+  */
+ int __ref add_memory_resource(int nid, struct resource *res)
+ {
+-	struct mhp_params params = {};
++	struct mhp_params params = { .pgprot = PAGE_KERNEL };
+ 	u64 start, size;
+ 	bool new_node = false;
+ 	int ret;
+diff --git a/mm/memremap.c b/mm/memremap.c
+index 6891a503a078..06742372a203 100644
+--- a/mm/memremap.c
++++ b/mm/memremap.c
+@@ -166,8 +166,8 @@ void *memremap_pages(struct dev_pagemap *pgmap, int nid)
+ 		 * We do not want any optional features only our own memmap
+ 		 */
+ 		.altmap = pgmap_altmap(pgmap),
++		.pgprot = PAGE_KERNEL,
+ 	};
+-	pgprot_t pgprot = PAGE_KERNEL;
+ 	int error, is_ram;
+ 	bool need_devmap_managed = true;
+ 
+@@ -255,8 +255,8 @@ void *memremap_pages(struct dev_pagemap *pgmap, int nid)
+ 	if (nid < 0)
+ 		nid = numa_mem_id();
+ 
+-	error = track_pfn_remap(NULL, &pgprot, PHYS_PFN(res->start), 0,
+-			resource_size(res));
++	error = track_pfn_remap(NULL, &params.pgprot, PHYS_PFN(res->start),
++				0, resource_size(res));
+ 	if (error)
+ 		goto err_pfn_remap;
+ 
 -- 
 2.20.1
