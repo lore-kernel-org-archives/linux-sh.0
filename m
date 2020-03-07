@@ -1,94 +1,35 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Tue, 24 Mar 2020 16:26:31 +0000
-Subject: [PATCH 08/10] dma-mapping: consolidate the NO_DMA definition in kernel/dma/Kconfig
-Message-Id: <20200324162633.754714-9-hch@lst.de>
+From: Andrew Morton <akpm@linux-foundation.org>
+Date: Sat, 07 Mar 2020 04:00:16 +0000
+Subject: Re: [PATCH v3 07/14] powerpc/32: drop get_pteptr()
+Message-Id: <20200306200016.6f3865ada0daa68b645fe5d7@linux-foundation.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200324162633.754714-1-hch@lst.de>
-In-Reply-To: <20200324162633.754714-1-hch@lst.de>
+References: <20200227084608.18223-1-rppt@kernel.org>
+ <20200227084608.18223-8-rppt@kernel.org>
+In-Reply-To: <20200227084608.18223-8-rppt@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Mike Rapoport <rppt@kernel.org>
+Cc: Rich Felker <dalias@libc.org>, linux-ia64@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>, linux-sh@vger.kernel.org, Benjamin Herrenschmidt <benh@kernel.crashing.org>, linux-mm@kvack.org, Paul Mackerras <paulus@samba.org>, linux-hexagon@vger.kernel.org, Will Deacon <will@kernel.org>, kvmarm@lists.cs.columbia.edu, Jonas Bonn <jonas@southpole.se>, linux-arch@vger.kernel.org, Brian Cain <bcain@codeaurora.org>, Marc Zyngier <maz@kernel.org>, Russell King <linux@armlinux.org.uk>, Ley Foon Tan <ley.foon.tan@intel.com>, Mike Rapoport <rppt@linux.ibm.com>, Catalin Marinas <catalin.marinas@arm.com>, uclinux-h8-devel@lists.sourceforge.jp, Fenghua Yu <fenghua.yu@intel.com>, Arnd Bergmann <arnd@arndb.de>, kvm-ppc@vger.kernel.org, Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>, openrisc@lists.librecores.org, Stafford Horne <shorne@gmail.com>, Guan Xuetao <gxt@pku.edu.cn>, linux-arm-kernel@lists.infradead.org, Christophe Leroy <christophe.leroy@c-s.fr>, Tony Luck <tony.luck@intel.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-kernel@vger.kernel.org, Michael Ellerman <mpe@ellerman.id.au>, nios2-dev@lists.rocketboards.org, linuxppc-dev@lists.ozlabs.org
 
-Have a single definition that architetures can select.
+On Thu, 27 Feb 2020 10:46:01 +0200 Mike Rapoport <rppt@kernel.org> wrote:
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
----
- arch/m68k/Kconfig         | 4 +---
- arch/m68k/Kconfig.machine | 1 +
- arch/um/Kconfig           | 4 +---
- kernel/dma/Kconfig        | 3 +++
- 4 files changed, 6 insertions(+), 6 deletions(-)
+> Commit 8d30c14cab30 ("powerpc/mm: Rework I$/D$ coherency (v3)") and
+> commit 90ac19a8b21b ("[POWERPC] Abolish iopa(), mm_ptov(),
+> io_block_mapping() from arch/powerpc") removed the use of get_pteptr()
+> outside of mm/pgtable_32.c
+> 
+> In mm/pgtable_32.c, the only user of get_pteptr() is __change_page_attr()
+> which operates on kernel context and on lowmem pages only.
+> 
+> Move page table traversal to __change_page_attr() and drop get_pteptr().
 
-diff --git a/arch/m68k/Kconfig b/arch/m68k/Kconfig
-index 6ad6cdac74b3..8e488369a7e5 100644
---- a/arch/m68k/Kconfig
-+++ b/arch/m68k/Kconfig
-@@ -17,6 +17,7 @@ config M68K
- 	select HAVE_COPY_THREAD_TLS
- 	select GENERIC_IRQ_SHOW
- 	select GENERIC_ATOMIC64
-+	select NO_DMA if !MMU && !COLDFIRE
- 	select HAVE_UID16
- 	select VIRT_TO_BUS
- 	select ARCH_HAVE_NMI_SAFE_CMPXCHG if RMW_INSNS
-@@ -60,9 +61,6 @@ config TIME_LOW_RES
- config NO_IOPORT_MAP
- 	def_bool y
- 
--config NO_DMA
--	def_bool (MMU && SUN3) || (!MMU && !COLDFIRE)
--
- config ZONE_DMA
- 	bool
- 	default y
-diff --git a/arch/m68k/Kconfig.machine b/arch/m68k/Kconfig.machine
-index c01e103492fd..0b95bc980070 100644
---- a/arch/m68k/Kconfig.machine
-+++ b/arch/m68k/Kconfig.machine
-@@ -126,6 +126,7 @@ config SUN3
- 	depends on MMU
- 	depends on !MMU_MOTOROLA
- 	select MMU_SUN3 if MMU
-+	select NO_DMA
- 	select M68020
- 	help
- 	  This option enables support for the Sun 3 series of workstations
-diff --git a/arch/um/Kconfig b/arch/um/Kconfig
-index 0917f8443c28..4e92502407df 100644
---- a/arch/um/Kconfig
-+++ b/arch/um/Kconfig
-@@ -15,6 +15,7 @@ config UML
- 	select HAVE_DEBUG_KMEMLEAK
- 	select HAVE_DEBUG_BUGVERBOSE
- 	select HAVE_COPY_THREAD_TLS
-+	select NO_DMA
- 	select GENERIC_IRQ_SHOW
- 	select GENERIC_CPU_DEVICES
- 	select GENERIC_CLOCKEVENTS
-@@ -162,9 +163,6 @@ config MMAPPER
- 	  This driver allows a host file to be used as emulated IO memory inside
- 	  UML.
- 
--config NO_DMA
--	def_bool y
--
- config PGTABLE_LEVELS
- 	int
- 	default 3 if 3_LEVEL_PGTABLES
-diff --git a/kernel/dma/Kconfig b/kernel/dma/Kconfig
-index 4c103a24e380..3df749b1fd23 100644
---- a/kernel/dma/Kconfig
-+++ b/kernel/dma/Kconfig
-@@ -1,5 +1,8 @@
- # SPDX-License-Identifier: GPL-2.0-only
- 
-+config NO_DMA
-+	bool
-+
- config HAS_DMA
- 	bool
- 	depends on !NO_DMA
--- 
-2.25.1
+People have been changing things in linux-next and the powerpc patches
+are hurting.
+
+I'll disable this patch series for now.  Can you please redo
+powerpc-32-drop-get_pteptr.patch and
+powerpc-add-support-for-folded-p4d-page-tables.patch (and
+powerpc-add-support-for-folded-p4d-page-tables-fix.patch)?
+
+Thanks.
