@@ -1,62 +1,108 @@
-From: Oscar Salvador <osalvador@suse.de>
-Date: Tue, 04 Feb 2020 09:06:22 +0000
-Subject: Re: [PATCH v6 07/10] mm/memory_hotplug: We always have a zone in find_(smallest|biggest)_section_pfn
-Message-Id: <20200204090622.GB6494@linux>
+From: Michael Ellerman <mpe@ellerman.id.au>
+Date: Thu, 12 Mar 2020 10:55:44 +0000
+Subject: Re: [RESEND PATCH v2 1/9] iomap: Constify ioreadX() iomem argument (as in generic implementation)
+Message-Id: <87ftedj0zz.fsf@mpe.ellerman.id.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20191006085646.5768-1-david@redhat.com>
- <20191006085646.5768-8-david@redhat.com>
-In-Reply-To: <20191006085646.5768-8-david@redhat.com>
+References: <20200219175007.13627-1-krzk@kernel.org>
+ <20200219175007.13627-2-krzk@kernel.org>
+In-Reply-To: <20200219175007.13627-2-krzk@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: David Hildenbrand <david@redhat.com>
-Cc: linux-s390@vger.kernel.org, Michal Hocko <mhocko@suse.com>, linux-ia64@vger.kernel.org, Pavel Tatashin <pasha.tatashin@soleen.com>, linux-sh@vger.kernel.org, x86@kernel.org, linux-kernel@vger.kernel.org, linux-mm@kvack.org, Wei Yang <richardw.yang@linux.intel.com>, Andrew Morton <akpm@linux-foundation.org>, linuxppc-dev@lists.ozlabs.org, Dan Williams <dan.j.williams@intel.com>, linux-arm-kernel@lists.infradead.org
+To: Krzysztof Kozlowski <krzk@kernel.org>, Richard Henderson <rth@twiddle.net>, Ivan Kokshaysky <ink@jurassic.park.msu.ru>, Matt Turner <mattst88@gmail.com>, Alexey Brodkin <abrodkin@synopsys.com>, Vineet Gupta <vgupta@synopsys.com>, "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>, Helge Deller <deller@gmx.de>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Dave Airlie <airlied@redhat.com>, David Airlie <airlied@linux.ie>, Daniel Vetter <daniel@ffwll.ch>, Ben Skeggs <bskeggs@redhat.com>, Mauro Carvalho Chehab <mchehab@kernel.org>, Jiri Slaby <jirislaby@gmail.com>, Nick Kossifidis <mickflemm@gmail.com>, Luis Chamberlain <mcgrof@kernel.org>, Kalle Valo <kvalo@codeaurora.org>, "David
+ S. Miller" <davem@davemloft.net>, Dave Jiang <dave.jiang@intel.com>, Jon Mason <jdmason@kudzu.us>, Allen Hubbe <allenbh@gmail.com>, "Michael S.
+ Tsirkin" <mst@redhat.com>, Jason Wang <jasowang@redhat.com>, Arnd Bergmann <arnd@arndb.de>, Geert Uytterhoeven <geert+renesas@glider.be>, Andrew Morton <akpm@linux-foundation.org>, Thomas Gleixner <tglx@linutronix.de>, linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, dri-devel@lists.freedesktop.org, nouveau@lists.freedesktop.org, linux-media@vger.kernel.org, linux-wireless@vger.kernel.org, netdev@vger.kernel.org, linux-ntb@googlegroups.com, virtualization@lists.linux-foundation.org, linux-arch@vger.kernel.org
 
-On Sun, Oct 06, 2019 at 10:56:43AM +0200, David Hildenbrand wrote:
-> With shrink_pgdat_span() out of the way, we now always have a valid
-> zone.
-> 
-> Cc: Andrew Morton <akpm@linux-foundation.org>
-> Cc: Oscar Salvador <osalvador@suse.de>
-> Cc: David Hildenbrand <david@redhat.com>
-> Cc: Michal Hocko <mhocko@suse.com>
-> Cc: Pavel Tatashin <pasha.tatashin@soleen.com>
-> Cc: Dan Williams <dan.j.williams@intel.com>
-> Cc: Wei Yang <richardw.yang@linux.intel.com>
-> Signed-off-by: David Hildenbrand <david@redhat.com>
+Krzysztof Kozlowski <krzk@kernel.org> writes:
+> diff --git a/arch/powerpc/kernel/iomap.c b/arch/powerpc/kernel/iomap.c
+> index 5ac84efc6ede..9fe4fb3b08aa 100644
+> --- a/arch/powerpc/kernel/iomap.c
+> +++ b/arch/powerpc/kernel/iomap.c
+> @@ -15,23 +15,23 @@
+>   * Here comes the ppc64 implementation of the IOMAP 
+>   * interfaces.
+>   */
+> -unsigned int ioread8(void __iomem *addr)
+> +unsigned int ioread8(const void __iomem *addr)
+>  {
+>  	return readb(addr);
+>  }
+> -unsigned int ioread16(void __iomem *addr)
+> +unsigned int ioread16(const void __iomem *addr)
+>  {
+>  	return readw(addr);
+>  }
+> -unsigned int ioread16be(void __iomem *addr)
+> +unsigned int ioread16be(const void __iomem *addr)
+>  {
+>  	return readw_be(addr);
+>  }
+> -unsigned int ioread32(void __iomem *addr)
+> +unsigned int ioread32(const void __iomem *addr)
+>  {
+>  	return readl(addr);
+>  }
+> -unsigned int ioread32be(void __iomem *addr)
+> +unsigned int ioread32be(const void __iomem *addr)
+>  {
+>  	return readl_be(addr);
+>  }
+> @@ -41,27 +41,27 @@ EXPORT_SYMBOL(ioread16be);
+>  EXPORT_SYMBOL(ioread32);
+>  EXPORT_SYMBOL(ioread32be);
+>  #ifdef __powerpc64__
+> -u64 ioread64(void __iomem *addr)
+> +u64 ioread64(const void __iomem *addr)
+>  {
+>  	return readq(addr);
+>  }
+> -u64 ioread64_lo_hi(void __iomem *addr)
+> +u64 ioread64_lo_hi(const void __iomem *addr)
+>  {
+>  	return readq(addr);
+>  }
+> -u64 ioread64_hi_lo(void __iomem *addr)
+> +u64 ioread64_hi_lo(const void __iomem *addr)
+>  {
+>  	return readq(addr);
+>  }
+> -u64 ioread64be(void __iomem *addr)
+> +u64 ioread64be(const void __iomem *addr)
+>  {
+>  	return readq_be(addr);
+>  }
+> -u64 ioread64be_lo_hi(void __iomem *addr)
+> +u64 ioread64be_lo_hi(const void __iomem *addr)
+>  {
+>  	return readq_be(addr);
+>  }
+> -u64 ioread64be_hi_lo(void __iomem *addr)
+> +u64 ioread64be_hi_lo(const void __iomem *addr)
+>  {
+>  	return readq_be(addr);
+>  }
+> @@ -139,15 +139,15 @@ EXPORT_SYMBOL(iowrite64be_hi_lo);
+>   * FIXME! We could make these do EEH handling if we really
+>   * wanted. Not clear if we do.
+>   */
+> -void ioread8_rep(void __iomem *addr, void *dst, unsigned long count)
+> +void ioread8_rep(const void __iomem *addr, void *dst, unsigned long count)
+>  {
+>  	readsb(addr, dst, count);
+>  }
+> -void ioread16_rep(void __iomem *addr, void *dst, unsigned long count)
+> +void ioread16_rep(const void __iomem *addr, void *dst, unsigned long count)
+>  {
+>  	readsw(addr, dst, count);
+>  }
+> -void ioread32_rep(void __iomem *addr, void *dst, unsigned long count)
+> +void ioread32_rep(const void __iomem *addr, void *dst, unsigned long count)
+>  {
+>  	readsl(addr, dst, count);
+>  }
 
-Reviewed-by: Oscar Salvador <osalvador@suse.de>
+This looks OK to me.
 
-> ---
->  mm/memory_hotplug.c | 4 ++--
->  1 file changed, 2 insertions(+), 2 deletions(-)
-> 
-> diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
-> index bf5173e7913d..f294918f7211 100644
-> --- a/mm/memory_hotplug.c
-> +++ b/mm/memory_hotplug.c
-> @@ -337,7 +337,7 @@ static unsigned long find_smallest_section_pfn(int nid, struct zone *zone,
->  		if (unlikely(pfn_to_nid(start_pfn) != nid))
->  			continue;
->  
-> -		if (zone && zone != page_zone(pfn_to_page(start_pfn)))
-> +		if (zone != page_zone(pfn_to_page(start_pfn)))
->  			continue;
->  
->  		return start_pfn;
-> @@ -362,7 +362,7 @@ static unsigned long find_biggest_section_pfn(int nid, struct zone *zone,
->  		if (unlikely(pfn_to_nid(pfn) != nid))
->  			continue;
->  
-> -		if (zone && zone != page_zone(pfn_to_page(pfn)))
-> +		if (zone != page_zone(pfn_to_page(pfn)))
->  			continue;
->  
->  		return pfn;
-> -- 
-> 2.21.0
-> 
+Acked-by: Michael Ellerman <mpe@ellerman.id.au> (powerpc)
 
--- 
-Oscar Salvador
-SUSE L3
+cheers
