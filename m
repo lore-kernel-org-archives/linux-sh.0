@@ -1,45 +1,39 @@
-From: afzal mohammed <afzal.mohd.ma@gmail.com>
-Date: Sat, 21 Mar 2020 17:55:03 +0000
-Subject: Re: [PATCH 00/18] genirq: Remove setup_irq()
-Message-Id: <20200321174303.GA7930@afzalpc>
+From: Romain Naour <romain.naour@gmail.com>
+Date: Sun, 15 Mar 2020 17:51:07 +0000
+Subject: [PATCH 1/2] arch/sh: vmlinux.scr
+Message-Id: <20200315175108.9694-1-romain.naour@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1581478323.git.afzal.mohd.ma@gmail.com>
- <87y2somido.fsf@nanos.tec.linutronix.de>
- <20200227110713.GA5708@afzalpc>
-In-Reply-To: <20200227110713.GA5708@afzalpc>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Thomas Gleixner <tglx@linutronix.de>
-Cc: linux-s390@vger.kernel.org, linux-samsung-soc@vger.kernel.org, linux-ia64@vger.kernel.org, linux-c6x-dev@linux-c6x.org, linux-parisc@vger.kernel.org, linux-sh@vger.kernel.org, linux-hexagon@vger.kernel.org, x86@kernel.org, Nicolas Palix <nicolas.palix@imag.fr>, linux-kernel@vger.kernel.org, linux-mips@vger.kernel.org, Julia Lawall <Julia.Lawall@lip6.fr>, linux-m68k@lists.linux-m68k.org, Michal Marek <michal.lkml@markovi.net>, linux-rpi-kernel@lists.infradead.org, linux-alpha@vger.kernel.org, Gilles Muller <Gilles.Muller@lip6.fr>, linux-omap@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: linux-sh@vger.kernel.org
 
-Hi Thomas,
+Since the patch [1], building the kernel using a toolchain built with
+Binutils 2.33.1 prevent booting a sh4 system under Qemu.
+Apply the patch provided by Alan Modra [2] that fix alignment of rodata.
 
-On Thu, Feb 27, 2020 at 04:37:13PM +0530, afzal mohammed wrote:
-> On Thu, Feb 27, 2020 at 11:31:15AM +0100, Thomas Gleixner wrote:
+[1] https://sourceware.org/git/gitweb.cgi?p=3Dbinutils-gdb.git;h=EBd2263ba9=
+a9124d93bbc0ece63d7e0fae89b40e
+[2] https://www.sourceware.org/ml/binutils/2019-12/msg00112.html
 
-> > Vs. merging this series, I suggest the following approach:
-> > 
-> >    - Resubmit the individual changes as single patches or small series
-> >      to the relevant maintainers and subsystem mailing lists. They have
-> >      no dependency on a core change and can be applied where they belong
-> >      to.
-> > 
-> >    - After 5.6-rc6, verify which parts have made their way into
-> >      linux-next and resubmit the ignored ones as a series to me along
-> >      with the removal of the core parts.
-> > 
-> > That way we can avoid conflicting changes between subsystems and the tip
-> > irq/core branch as much as possible.
-> 
-> Okay, i will do accordingly.
+Signed-off-by: Romain Naour <romain.naour@gmail.com>
+Cc: Alan Modra <amodra@gmail.com>
+---
+ arch/sh/boot/compressed/vmlinux.scr | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-i am on it, is delayed due to the reason as mentioned at,
-
-https://lkml.kernel.org/r/20200321172626.GA6323@afzalpc
-
-[ not repeating contents here since other mail was sent just now,
-  cc'ing you ]
-
-Regards
-afzal
+diff --git a/arch/sh/boot/compressed/vmlinux.scr b/arch/sh/boot/compressed/=
+vmlinux.scr
+index 862d74808236..dd292b4b9082 100644
+--- a/arch/sh/boot/compressed/vmlinux.scr
++++ b/arch/sh/boot/compressed/vmlinux.scr
+@@ -1,6 +1,6 @@
+ SECTIONS
+ {
+-  .rodata..compressed : {
++  .rodata..compressed : ALIGN(8) {
+ 	input_len =3D .;
+ 	LONG(input_data_end - input_data) input_data =3D .;
+ 	*(.data)
+--=20
+2.24.1
